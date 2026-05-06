@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { SESSION_EXPIRY_DAYS } from "./auth";
+import { SESSION_EXPIRY_DAYS } from "./auth-edge";
 import {
   buildHackathonTeams,
   canCreateValidTeams,

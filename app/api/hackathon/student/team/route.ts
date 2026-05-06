@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getSessionParticipant } from "@/lib/hackathon/db";
-import { getCorsHeaders, extractHackathonToken } from "@/lib/hackathon/auth";
+import { getCorsHeaders, extractHackathonToken } from "@/lib/hackathon/auth-edge";
 
 function getClient() {
   return createClient(

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { SESSION_COOKIE } from "@/lib/hackathon/auth";
+import { SESSION_COOKIE } from "@/lib/hackathon/auth-edge";
 import { getSessionParticipant, getParticipantTeam } from "@/lib/hackathon/db";
 import { cookies } from "next/headers";
 
