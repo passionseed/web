@@ -9,8 +9,15 @@ import {
 } from "@/lib/hackathon/email-templates";
 import { type EmailTemplateVars } from "@/lib/hackathon/email";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "hi@noreply.passionseed.org";
+
+function getResendClient() {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error("Missing env.RESEND_API_KEY");
+  }
+  return new Resend(apiKey);
+}
 
 function getServiceClient() {
   return createServiceClient(
@@ -263,6 +270,7 @@ export async function POST(req: NextRequest) {
 
     for (let i = 0; i < emailList.length; i += BATCH_SIZE) {
       const chunk = emailList.slice(i, i + BATCH_SIZE);
+      const resend = getResendClient();
 
       try {
         const { error } = await resend.batch.send(chunk);
