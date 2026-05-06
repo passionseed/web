@@ -17,30 +17,34 @@ const fetchWithLocalTimeout = (url: RequestInfo | URL, options?: RequestInit) =>
 export async function createClient() {
   const cookieStore = await cookies();
 
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      global: { fetch: isLocal ? fetchWithLocalTimeout : fetch },
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-          } catch {
-            // The `setAll` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
-          }
-        },
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error(
+      `Missing env.NEXT_PUBLIC_SUPABASE_URL${!supabaseUrl ? "" : " or NEXT_PUBLIC_SUPABASE_ANON_KEY"}`
+    );
+  }
+
+  return createServerClient(supabaseUrl, supabaseAnonKey, {
+    global: { fetch: isLocal ? fetchWithLocalTimeout : fetch },
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
       },
-    }
-  );
+      setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, options)
+          );
+        } catch {
+          // The `setAll` method was called from a Server Component.
+          // This can be ignored if you have middleware refreshing
+          // user sessions.
+        }
+      },
+    },
+  });
 }
 
 /**
@@ -48,13 +52,15 @@ export async function createClient() {
  * This bypasses RLS and should only be used in server-side admin functions.
  */
 export function createServiceRoleClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  
-  if (!key) {
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY is not set");
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !key) {
+    throw new Error(
+      `Missing env${!url ? ".NEXT_PUBLIC_SUPABASE_URL" : ""}${!key ? ".SUPABASE_SERVICE_ROLE_KEY" : ""}`
+    );
   }
-  
+
   return createSupabaseClient(url, key);
 }
 
