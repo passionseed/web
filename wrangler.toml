@@ -1,0 +1,6 @@
+name = "passionseed"
+main = "src/worker.ts"
+compatibility_date = "2026-05-06"
+
+[site]
+bucket = "./out"
