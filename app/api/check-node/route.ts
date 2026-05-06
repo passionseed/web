@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireDebugAccess, safeServerError } from "@/lib/security/route-guards";
 
-export const runtime = "edge";
 
 export async function GET(request: Request) {
   const debug = await requireDebugAccess();

@@ -26,8 +26,6 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  output: "export",
-  distDir: "out",
   // Disable Vercel image optimization — images served directly from Cloudflare CDN
   images: {
     unoptimized: true,
@@ -162,3 +160,5 @@ if (userConfig) {
 }
 
 export default withBundleAnalyzer(nextConfig);
+
+import('@opennextjs/cloudflare').then(m => m.initOpenNextCloudflareForDev());

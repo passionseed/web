@@ -4,7 +4,6 @@ import { getSessionParticipant } from "@/lib/hackathon/db-edge";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 
-export const runtime = "edge";
 
 export async function GET() {
   try {

@@ -3,7 +3,6 @@ import { SESSION_COOKIE } from "@/lib/hackathon/auth-edge";
 import { getSessionParticipant, getParticipantTeam } from "@/lib/hackathon/db";
 import { cookies } from "next/headers";
 
-export const runtime = "edge";
 
 export async function GET() {
     try {
