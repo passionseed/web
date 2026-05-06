@@ -11,7 +11,7 @@ import {
   formatImageAnalysisForPrompt,
   type SubmissionImageAnalysis,
 } from "@/lib/hackathon/image-analysis";
-import { getActiveGradingPrompt } from "@/lib/hackathon/grading-prompt";
+import { getActiveGradingPrompt, getCalibrationExamples, formatCalibrationExamples } from "@/lib/hackathon/grading-prompt";
 
 // Hobby plan max is 60s
 export const maxDuration = 60;
@@ -265,6 +265,7 @@ function buildPrompt(params: {
   graderComment: string | null;
   upcomingActivities: { title: string; instructions: string | null; display_order: number | null }[];
   template?: string | null;
+  calibrationExamples?: string | null;
 }) {
   const {
     phaseSpec,
@@ -284,6 +285,7 @@ function buildPrompt(params: {
     graderComment,
     upcomingActivities,
     template,
+    calibrationExamples,
   } = params;
 
   const phaseContext = compactPhaseSpec(phaseSpec, phaseNumber, phaseTitle);
@@ -328,6 +330,8 @@ function buildPrompt(params: {
     ? `\n=== HUMAN GRADER NOTE ===\n${graderComment}`
     : "";
 
+  const calibrationSection = calibrationExamples ?? "";
+
   // If we have a DB template, use placeholder substitution
   if (template) {
     const rendered = template
@@ -347,6 +351,7 @@ function buildPrompt(params: {
       .replace(/\{\{scoring_rules\}\}/g, scoringRules)
       .replace(/\{\{score_field\}\}/g, scoreField)
       .replace(/\{\{grader_comment_section\}\}/g, graderCommentSection)
+      .replace(/\{\{calibration_examples\}\}/g, calibrationSection)
       .replace(/\n{3,}/g, "\n\n")
       .trim();
     return rendered;
@@ -402,6 +407,7 @@ function buildPrompt(params: {
     "2. GAPS OR SUGGESTIONS — 1-2 specific things to improve. Tie each to the learning goal.",
     "3. NEXT STEP — One clear action they should take next. If revision_required, state exactly what needs to change.",
     "",
+    calibrationSection,
     "=== REASONING ===",
     "Provide a short admin-only explanation of your grading decision. What evidence made you decide? What was the decisive factor?",
     "",
@@ -533,6 +539,13 @@ async function gatherPromptContext(
     template = dbPrompt?.template ?? null;
   }
 
+  // Fetch calibration examples for this activity (admin overrides)
+  const activityId = activity?.id ?? null;
+  const calibrationExamplesRaw = activityId
+    ? await getCalibrationExamples(activityId, 3)
+    : [];
+  const calibrationExamples = formatCalibrationExamples(calibrationExamplesRaw);
+
   const prompt = buildPrompt({
     phaseSpec,
     phaseNumber: phase?.phase_number ?? null,
@@ -553,6 +566,7 @@ async function gatherPromptContext(
     graderComment: graderComment ?? null,
     upcomingActivities,
     template,
+    calibrationExamples,
   });
 
   return {
@@ -565,6 +579,7 @@ async function gatherPromptContext(
     activityTitle: activity?.title ?? null,
     pointsPossible,
     hasImageAnalysis: Boolean(imageAnalysis?.primaryImage?.analysis || imageAnalysis?.files?.length),
+    calibration_examples_count: calibrationExamplesRaw.length,
   };
 }
 
@@ -649,6 +664,7 @@ export async function GET(
       has_image_analysis: false,
       prompt: context.prompt,
       template: context.template,
+      calibration_examples_count: (context as any).calibration_examples_count ?? 0,
     });
   } catch (err: any) {
     console.error("[admin/hackathon/ai-grade] GET error:", err);

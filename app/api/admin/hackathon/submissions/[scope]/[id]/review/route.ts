@@ -133,7 +133,7 @@ export async function POST(
     getRecipientParticipantIds({ serviceClient, scope, submission }),
     serviceClient
       .from("hackathon_submission_reviews")
-      .select("id")
+      .select("id, ai_draft, override_log")
       .eq(reviewKey.column, reviewKey.value)
       .maybeSingle(),
   ]);
@@ -150,6 +150,35 @@ export async function POST(
     return NextResponse.json({ error: "No participants found for submission" }, { status: 400 });
   }
 
+  // Build override log entry if admin changed the AI draft outcome
+  const draft = (existingReview as any)?.ai_draft as {
+    status?: string;
+    score_awarded?: number | null;
+    feedback?: string;
+  } | null;
+  const existingLog = ((existingReview as any)?.override_log as unknown[]) ?? [];
+  let overrideLog = Array.isArray(existingLog) ? existingLog : [];
+
+  const draftChanged =
+    draft != null &&
+    (draft.status !== reviewStatus ||
+      draft.score_awarded !== scoreAwarded ||
+      draft.feedback !== feedback);
+
+  if (draftChanged) {
+    const entry = {
+      overridden_at: now,
+      ai_status: draft.status ?? null,
+      ai_score: draft.score_awarded ?? null,
+      ai_feedback: draft.feedback ?? null,
+      final_status: reviewStatus,
+      final_score: scoreAwarded,
+      final_feedback: feedback,
+      reviewed_by_user_id: admin.id,
+    };
+    overrideLog = [...overrideLog, entry];
+  }
+
   const reviewPayload = {
     submission_scope: scope,
     ...reviewTarget,
@@ -164,6 +193,7 @@ export async function POST(
     ai_draft_generated_at: null,
     ai_draft_model: null,
     ai_draft_source: null,
+    override_log: overrideLog,
   };
 
   const reviewResult = existingReview
