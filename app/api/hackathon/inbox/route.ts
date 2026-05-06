@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
-import { SESSION_COOKIE } from "@/lib/hackathon/auth";
+import { SESSION_COOKIE } from "@/lib/hackathon/auth-edge";
 import { getSessionParticipant } from "@/lib/hackathon/db";
 
 export const runtime = "edge";

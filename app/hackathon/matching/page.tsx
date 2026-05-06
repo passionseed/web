@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { SESSION_COOKIE } from "@/lib/hackathon/auth";
+import { SESSION_COOKIE } from "@/lib/hackathon/auth-edge";
 import { getSessionParticipant } from "@/lib/hackathon/db";
 import HackathonMatchingPage from "@/components/hackathon/HackathonMatchingPage";
 

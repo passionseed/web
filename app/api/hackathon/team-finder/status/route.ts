@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionParticipant } from "@/lib/hackathon/db";
-import { getCorsHeaders, extractHackathonToken } from "@/lib/hackathon/auth";
+import { getCorsHeaders, extractHackathonToken } from "@/lib/hackathon/auth-edge";
 import {
   getTeamFinderEntry,
   listTeamFinderParticipantsExcluding,

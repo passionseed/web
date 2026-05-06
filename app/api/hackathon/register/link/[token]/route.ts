@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { hashPassword, generateSessionToken, SESSION_COOKIE, SESSION_EXPIRY_DAYS } from "@/lib/hackathon/auth";
+import { hashPassword, generateSessionToken } from "@/lib/hackathon/auth";
+import { SESSION_COOKIE, SESSION_EXPIRY_DAYS } from "@/lib/hackathon/auth-edge";
 import { findParticipantByEmail, createParticipant, createSession } from "@/lib/hackathon/db";
 import { getRegisterLinkByToken, claimRegisterLink } from "@/lib/hackathon/register-links";
 

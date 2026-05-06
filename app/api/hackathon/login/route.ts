@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyPassword, generateSessionToken, SESSION_COOKIE, SESSION_EXPIRY_DAYS, getCorsHeaders } from "@/lib/hackathon/auth";
+import { verifyPassword, generateSessionToken } from "@/lib/hackathon/auth";
+import { SESSION_COOKIE, SESSION_EXPIRY_DAYS, getCorsHeaders } from "@/lib/hackathon/auth-edge";
 import { findParticipantByEmail, createSession } from "@/lib/hackathon/db";
 
 export async function POST(req: NextRequest) {
