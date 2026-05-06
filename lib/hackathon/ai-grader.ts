@@ -21,6 +21,21 @@ import {
 export type AiDraftStatus = "passed" | "revision_required" | "pending_review";
 export type AiDraftSource = "manual" | "bulk" | "auto_on_submit";
 
+export type ConsensusAgreement = "agree" | "disagree" | "single_model";
+
+export type ConsensusModelInfo = {
+  model: string;
+  status: string;
+  score_awarded: number | null;
+  feedback: string;
+  reasoning: string;
+};
+
+export type ConsensusInfo = {
+  agreement: ConsensusAgreement;
+  models?: ConsensusModelInfo[];
+};
+
 export type AiDraft = {
   status: AiDraftStatus;
   score_awarded: number | null;
@@ -29,6 +44,7 @@ export type AiDraft = {
   reasoning: string | null;
   raw_output: string;
   error: string | null;
+  consensus?: ConsensusInfo;
 };
 
 export type PersistDraftOptions = {
@@ -45,6 +61,12 @@ export type PersistDraftOptions = {
    * is system-generated and stays attributed to the null user.
    */
   reviewedByUserId?: string | null;
+  /**
+   * Optimistic lock: if set, the update only succeeds when the review row's
+   * ai_draft_generated_at matches this value. Prevents concurrent grading
+   * race conditions.
+   */
+  expectedGeneratedAt?: string | null;
 };
 
 /**
@@ -63,10 +85,32 @@ export function maybeAutoApprove(draft: AiDraft): boolean {
  * ai_draft is cleared.
  */
 export async function persistDraft(
-  serviceClient: any,
+  serviceClient: {
+    from: (table: string) => {
+      select: (...cols: string[]) => {
+        eq: (col: string, val: string) => {
+          maybeSingle: () => Promise<{ data: Record<string, unknown> | null; error: unknown }>;
+          single: () => Promise<{ data: Record<string, unknown> | null; error: unknown }>;
+        };
+      };
+      update: (payload: Record<string, unknown>) => {
+        eq: (col: string, val: string) => {
+          eq: (col: string, val: string | null) => Promise<{ data: Record<string, unknown> | null; error: unknown }>;
+          select: (...cols: string[]) => {
+            single: () => Promise<{ data: Record<string, unknown> | null; error: unknown }>;
+          };
+        };
+      };
+      insert: (payload: Record<string, unknown>) => {
+        select: (...cols: string[]) => {
+          single: () => Promise<{ data: Record<string, unknown> | null; error: unknown }>;
+        };
+      };
+    };
+  },
   opts: PersistDraftOptions
 ): Promise<{ promoted: boolean; reviewId: string | null }> {
-  const { scope, submissionId, draft, source, model, forceReview, reviewedByUserId } = opts;
+  const { scope, submissionId, draft, source, model, forceReview, reviewedByUserId, expectedGeneratedAt } = opts;
   const now = new Date().toISOString();
 
   const reviewKey =
@@ -81,7 +125,7 @@ export async function persistDraft(
 
   const { data: existing } = await serviceClient
     .from("hackathon_submission_reviews")
-    .select("id")
+    .select("id, ai_draft_generated_at")
     .eq(reviewKey.column, reviewKey.value)
     .maybeSingle();
 
@@ -110,18 +154,26 @@ export async function persistDraft(
     payload.points_possible = draft.points_possible;
   }
 
-  const result = existing
-    ? await serviceClient
-        .from("hackathon_submission_reviews")
-        .update(payload)
-        .eq("id", existing.id)
-        .select("id")
-        .single()
-    : await serviceClient
-        .from("hackathon_submission_reviews")
-        .insert(payload)
-        .select("id")
-        .single();
+  let result;
+  if (existing) {
+    const builder = serviceClient
+      .from("hackathon_submission_reviews")
+      .update(payload)
+      .eq("id", existing.id);
+
+    // Optimistic lock: only update if ai_draft_generated_at matches expected value
+    if (expectedGeneratedAt != null) {
+      builder.eq("ai_draft_generated_at", expectedGeneratedAt);
+    }
+
+    result = await builder.select("id").single();
+  } else {
+    result = await serviceClient
+      .from("hackathon_submission_reviews")
+      .insert(payload)
+      .select("id")
+      .single();
+  }
 
   if (result.error) {
     console.error("[ai-grader.persistDraft] upsert failed", result.error);
@@ -149,16 +201,17 @@ export async function persistDraft(
       .eq("id", submissionId)
       .single();
 
-    const activityId = (subRow as any)?.activity_id ?? null;
+    const subRecord = subRow as Record<string, unknown> | null;
+    const activityId = (subRecord?.activity_id as string | null) ?? null;
 
     // Fetch team members (if team scope) and the activity title in parallel.
     const [participantIds, activityTitle] = await Promise.all([
       (async (): Promise<string[]> => {
         if (scope === "individual") {
-          const pid = (subRow as any)?.participant_id;
+          const pid = subRecord?.participant_id as string | null;
           return pid ? [pid] : [];
         }
-        const teamId = (subRow as any)?.team_id;
+        const teamId = subRecord?.team_id as string | null;
         if (!teamId) return [];
         const { data } = await serviceClient
           .from("hackathon_team_members")
@@ -175,7 +228,8 @@ export async function persistDraft(
           .select("title")
           .eq("id", activityId)
           .maybeSingle();
-        return ((data as any)?.title as string) || "Hackathon submission";
+        const act = data as Record<string, unknown> | null;
+        return (act?.title as string) || "Hackathon submission";
       })(),
     ]);
 
@@ -185,7 +239,7 @@ export async function persistDraft(
             submissionScope: scope,
             recipientParticipantIds: participantIds,
             activityTitle,
-            reviewStatus: draft.status as any,
+            reviewStatus: draft.status,
             scoreAwarded: draft.score_awarded,
             pointsPossible: draft.points_possible,
             feedback: draft.feedback,
@@ -198,7 +252,7 @@ export async function persistDraft(
       serviceClient
         .from(table)
         .update({
-          status: reviewStatusToSubmissionStatus(draft.status as any),
+          status: reviewStatusToSubmissionStatus(draft.status),
           updated_at: now,
         })
         .eq("id", submissionId),
@@ -215,7 +269,8 @@ export async function persistDraft(
     }
   }
 
-  return { promoted: promote, reviewId: (result.data as any)?.id ?? null };
+  const resultData = result.data as Record<string, unknown> | null;
+  return { promoted: promote, reviewId: (resultData?.id as string | undefined) ?? null };
 }
 
 /**
@@ -224,7 +279,18 @@ export async function persistDraft(
  * manually approves.
  */
 export async function clearDraft(
-  serviceClient: any,
+  serviceClient: {
+    from: (table: string) => {
+      select: (...cols: string[]) => {
+        eq: (col: string, val: string) => {
+          maybeSingle: () => Promise<{ data: Record<string, unknown> | null; error: unknown }>;
+        };
+      };
+      update: (payload: Record<string, unknown>) => {
+        eq: (col: string, val: string) => Promise<{ data: Record<string, unknown> | null; error: unknown }>;
+      };
+    };
+  },
   scope: "individual" | "team",
   submissionId: string
 ): Promise<void> {
