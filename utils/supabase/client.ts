@@ -1,17 +1,19 @@
 import { createBrowserClient } from "@supabase/ssr";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const isLocal = supabaseUrl?.includes("127.0.0.1") || supabaseUrl?.includes("localhost");
-
 export function createClient() {
-  return createBrowserClient(
-    supabaseUrl,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-      },
-    }
-  );
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error(
+      `Missing env${!supabaseUrl ? ".NEXT_PUBLIC_SUPABASE_URL" : ""}${!supabaseAnonKey ? ".NEXT_PUBLIC_SUPABASE_ANON_KEY" : ""}`
+    );
+  }
+
+  return createBrowserClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+    },
+  });
 }
