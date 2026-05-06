@@ -432,4 +432,19 @@ class BackblazeB2 {
   }
 }
 
-export const b2 = new BackblazeB2();
+// Lazy initialization to avoid build-time env var errors
+let _b2: BackblazeB2 | null = null;
+
+export function getB2(): BackblazeB2 {
+  if (!_b2) {
+    _b2 = new BackblazeB2();
+  }
+  return _b2;
+}
+
+// Backward-compatible proxy that lazily initializes on first access
+export const b2 = new Proxy({} as BackblazeB2, {
+  get(_target, prop) {
+    return (getB2() as any)[prop];
+  },
+});
