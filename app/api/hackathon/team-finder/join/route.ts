@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { SESSION_COOKIE } from "@/lib/hackathon/auth";
+import { SESSION_COOKIE } from "@/lib/hackathon/auth-edge";
 import { getSessionParticipant } from "@/lib/hackathon/db";
 import { upsertTeamFinderEntry } from "@/lib/hackathon/team-finder";
 

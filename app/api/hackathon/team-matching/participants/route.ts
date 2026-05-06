@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { SESSION_COOKIE } from "@/lib/hackathon/auth";
+import { SESSION_COOKIE } from "@/lib/hackathon/auth-edge";
 import {
   getLatestHackathonMatchingEvent,
   getParticipantTeam,
   getSessionParticipant,
   listHackathonMatchingCandidates,
-} from "@/lib/hackathon/db";
+} from "@/lib/hackathon/db-edge";
 
 export async function GET() {
   try {

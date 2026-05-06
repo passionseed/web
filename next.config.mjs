@@ -26,9 +26,9 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Enable image optimization for production
+  // Disable Vercel image optimization — images served directly from Cloudflare CDN
   images: {
-    unoptimized: process.env.NODE_ENV === "development",
+    unoptimized: true,
     domains: ["localhost", "127.0.0.1"],
     formats: ["image/webp", "image/avif"],
     remotePatterns: [
@@ -40,6 +40,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "*.backblazeb2.com",
       },
+      {
+        protocol: "https",
+        hostname: "cdn.passionseed.org",
+      },
     ],
   },
   // Production optimizations
@@ -50,6 +54,7 @@ const nextConfig = {
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
+    optimizePackageImports: ["lucide-react"],
     serverActions: {
       bodySizeLimit: "50mb", // Allow up to 50MB for server actions and streaming
     },
@@ -155,3 +160,5 @@ if (userConfig) {
 }
 
 export default withBundleAnalyzer(nextConfig);
+
+import('@opennextjs/cloudflare').then(m => m.initOpenNextCloudflareForDev());

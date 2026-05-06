@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { MentorProfile } from "@/types/mentor";
 import { getCorsHeaders } from "@/lib/hackathon/auth";
 
+
 function getClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionParticipant, updateParticipant } from "@/lib/hackathon/db";
 import { createClient } from "@/utils/supabase/server";
-import { getCorsHeaders, extractHackathonToken } from "@/lib/hackathon/auth";
+import { getCorsHeaders, extractHackathonToken } from "@/lib/hackathon/auth-edge";
+
 
 export async function GET(req: NextRequest) {
   const corsHeaders = getCorsHeaders(req);

@@ -25,7 +25,7 @@ async function getSpotifyAccessToken(): Promise<string> {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
-      'Authorization': `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`,
+      'Authorization': `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
     },
     body: 'grant_type=client_credentials',
   });

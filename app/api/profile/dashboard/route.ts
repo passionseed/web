@@ -8,6 +8,7 @@ import {
   type DashboardProgress,
 } from "@/components/profile/profile-dashboard-utils";
 
+
 async function safeQuery<T>(
   label: string,
   run: () => PromiseLike<{ data: T | null; error: { message?: string } | null }>,

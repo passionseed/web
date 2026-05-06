@@ -10,9 +10,8 @@ import {
   CohortData
 } from "@/components/admin/ceo/types";
 
-const supabase = createClient();
-
 export async function getNorthStarMetrics(): Promise<NorthStarMetrics> {
+  const supabase = createClient();
   const { data: allEvents } = await supabase
     .from('funnel_events')
     .select('event_name, user_id, event_timestamp');
@@ -59,6 +58,7 @@ function calculateRetention(currentEvents: any[], previousEvents: any[]): number
 }
 
 export async function getFunnelMetrics(): Promise<FunnelStage[]> {
+  const supabase = createClient();
   const { data: events } = await supabase
     .from('funnel_events')
     .select('event_name, user_id')
@@ -104,6 +104,7 @@ export async function getFunnelMetrics(): Promise<FunnelStage[]> {
 }
 
 export async function getCohortRetention(): Promise<CohortData[]> {
+  const supabase = createClient();
   const { data: cohorts } = await supabase
     .from('cohort_assignments')
     .select('*')
@@ -165,6 +166,7 @@ export async function getCohortRetention(): Promise<CohortData[]> {
 }
 
 export async function getActiveAlerts(): Promise<DashboardAlert[]> {
+  const supabase = createClient();
   const { data: alerts } = await supabase
     .from('dashboard_alerts')
     .select('*')
@@ -176,6 +178,7 @@ export async function getActiveAlerts(): Promise<DashboardAlert[]> {
 }
 
 export async function resolveAlert(alertId: string): Promise<void> {
+  const supabase = createClient();
   await supabase
     .from('dashboard_alerts')
     .update({ 
@@ -186,6 +189,7 @@ export async function resolveAlert(alertId: string): Promise<void> {
 }
 
 export async function getAIAgentStatuses(): Promise<AIAgentStatus[]> {
+  const supabase = createClient();
   const agents = ['funnel_guardian', 'content_strategist', 'churn_predictor', 'retro_bot'];
   
   const statuses: AIAgentStatus[] = [];
@@ -213,6 +217,7 @@ export async function getAIAgentStatuses(): Promise<AIAgentStatus[]> {
 }
 
 export async function getContentSuggestions(): Promise<ContentSuggestion[]> {
+  const supabase = createClient();
   const { data: suggestions } = await supabase
     .from('content_suggestions')
     .select('*')
@@ -226,6 +231,7 @@ export async function getContentSuggestions(): Promise<ContentSuggestion[]> {
 }
 
 export async function approveContent(suggestionId: string): Promise<void> {
+  const supabase = createClient();
   await supabase
     .from('content_suggestions')
     .update({ is_approved: true })
@@ -233,6 +239,7 @@ export async function approveContent(suggestionId: string): Promise<void> {
 }
 
 export async function getLatestRetro(): Promise<WeeklyRetro | null> {
+  const supabase = createClient();
   const { data: retros } = await supabase
     .from('weekly_retro')
     .select('*')
@@ -243,6 +250,7 @@ export async function getLatestRetro(): Promise<WeeklyRetro | null> {
 }
 
 export async function generateRetro(): Promise<WeeklyRetro> {
+  const supabase = createClient();
   const endOfWeek = new Date();
   endOfWeek.setDate(endOfWeek.getDate() - endOfWeek.getDay());
   

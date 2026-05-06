@@ -1,7 +1,8 @@
 import { createAdminClient } from "@/utils/supabase/admin";
 import { SponsorshipContent } from "./SponsorshipContent";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
+export const revalidate = 300;
 
 async function getHackathonStats() {
   const admin = createAdminClient();
@@ -48,7 +49,13 @@ async function getHackathonStats() {
 }
 
 export default async function SponsorshipPage() {
-  const stats = await getHackathonStats();
+  let stats;
+  try {
+    stats = await getHackathonStats();
+  } catch (error) {
+    console.error("Error fetching hackathon stats:", error);
+    stats = { participants: 0, teams: 0, gradeLevels: {} };
+  }
 
   return <SponsorshipContent stats={stats} />;
 }

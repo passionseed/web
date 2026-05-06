@@ -7,13 +7,12 @@ import {
   SimpleRoadmap
 } from '@/types/education'
 
-const supabase = createClient()
-
 // =====================================
 // UNIVERSITIES
 // =====================================
 
 export async function getAllUniversities(): Promise<University[]> {
+  const supabase = createClient()
   const { data, error } = await supabase
     .from('universities')
     .select('*')
@@ -39,6 +38,7 @@ export async function getAllUniversities(): Promise<University[]> {
 }
 
 export async function getUniversityById(id: string): Promise<University | null> {
+  const supabase = createClient()
   const { data, error } = await supabase
     .from('universities')
     .select('*')
@@ -105,6 +105,7 @@ export async function deleteUniversity(id: string): Promise<void> {
 // =====================================
 
 export async function getUserUniversityTargets(userId: string): Promise<UserUniversityTarget[]> {
+  const supabase = createClient()
   const { data, error } = await supabase
     .from('user_university_targets')
     .select(`
@@ -126,6 +127,7 @@ export async function saveUserUniversityTargets(
   userId: string,
   universities: { university_id: string; priority_rank: 1 | 2 | 3 }[]
 ): Promise<UserUniversityTarget[]> {
+  const supabase = createClient()
   // First, delete existing targets for this user
   const { error: deleteError } = await supabase
     .from('user_university_targets')
@@ -165,6 +167,7 @@ export async function saveUserUniversityTargets(
 // =====================================
 
 export async function getUserInterestPriorities(userId: string): Promise<UserInterestPriority[]> {
+  const supabase = createClient()
   const { data, error } = await supabase
     .from('user_interest_priorities')
     .select('*')
@@ -183,6 +186,7 @@ export async function saveUserInterestPriorities(
   userId: string,
   interests: string[]
 ): Promise<UserInterestPriority[]> {
+  const supabase = createClient()
   // First, delete existing interests for this user
   const { error: deleteError } = await supabase
     .from('user_interest_priorities')
@@ -218,6 +222,7 @@ export async function addUserInterest(
   userId: string,
   interest: string
 ): Promise<UserInterestPriority> {
+  const supabase = createClient()
   // Get current max priority rank
   const { data: existingInterests } = await supabase
     .from('user_interest_priorities')
@@ -247,6 +252,7 @@ export async function addUserInterest(
 }
 
 export async function removeUserInterest(id: string): Promise<void> {
+  const supabase = createClient()
   const { error } = await supabase
     .from('user_interest_priorities')
     .delete()
@@ -263,6 +269,7 @@ export async function removeUserInterest(id: string): Promise<void> {
 // =====================================
 
 export async function getUserRoadmap(userId: string): Promise<AIRoadmap | null> {
+  const supabase = createClient()
   const { data, error } = await supabase
     .from('ai_roadmaps')
     .select(`
@@ -290,6 +297,7 @@ export async function saveUserRoadmap(
   primaryInterest: string,
   roadmapData: SimpleRoadmap
 ): Promise<AIRoadmap> {
+  const supabase = createClient()
   const { data, error } = await supabase
     .from('ai_roadmaps')
     .insert({
@@ -318,6 +326,7 @@ export async function saveUserRoadmap(
 // =====================================
 
 export async function getUniversityExampleMaps(universityId: string) {
+  const supabase = createClient()
   const { data, error } = await supabase
     .from('university_example_maps')
     .select('*')
@@ -337,6 +346,7 @@ export async function getUniversityExampleMaps(universityId: string) {
 }
 
 export async function getUniversityExampleMapById(mapId: string) {
+  const supabase = createClient()
   const { data, error } = await supabase
     .from('university_example_maps')
     .select('*')
@@ -356,6 +366,7 @@ export async function getUniversityExampleMapById(mapId: string) {
 // =====================================
 
 export async function getThailandUniversities(): Promise<University[]> {
+  const supabase = createClient()
   const { data, error } = await supabase
     .from('thailand_admission_plans')
     .select('university_name_th')
@@ -377,6 +388,7 @@ export async function getThailandUniversities(): Promise<University[]> {
 }
 
 export async function getProgramsForUniversity(universityName: string) {
+  const supabase = createClient()
   const { data, error } = await supabase
     .from('thailand_admission_plans')
     .select('*')
@@ -394,6 +406,7 @@ export async function getProgramsForUniversity(universityName: string) {
 export async function searchThailandUniversities(query: string): Promise<University[]> {
   if (!query || query.length < 2) return [];
 
+  const supabase = createClient()
   const { data, error } = await supabase
     .from('thailand_admission_plans')
     .select('university_name_th')
@@ -419,6 +432,7 @@ export async function searchThailandUniversities(query: string): Promise<Univers
 export async function searchThailandCurriculums(query: string, level?: string) {
   if (!query || query.length < 2) return [];
 
+  const supabase = createClient()
   let dbQuery = supabase
     .from('thailand_admission_plans')
     .select('*')
@@ -443,6 +457,7 @@ export async function browseThailandCurriculums() {
   // Fetch a random set or purely ID based for browsing
   // Since random is hard in Supabase without function, we'll just fetch a range or distinct
   // For now, let's fetch a diverse set by just taking latest or simple limit
+  const supabase = createClient()
   const { data, error } = await supabase
     .from('thailand_admission_plans')
     .select('*')

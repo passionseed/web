@@ -11,13 +11,11 @@ import {
 
 export const COMMUNITY_PAGE_SIZE = 10;
 
-// Initialize Supabase client
-const supabase = createClient();
-
 // Community CRUD operations
 export const createCommunity = async (
   input: CreateCommunityInput
 ): Promise<Community> => {
+  const supabase = createClient()
   const { data, error } = await supabase
     .from("communities")
     .insert({
@@ -42,6 +40,7 @@ export const updateCommunity = async (
   id: string,
   input: UpdateCommunityInput
 ): Promise<Community> => {
+  const supabase = createClient()
   const { data, error } = await supabase
     .from("communities")
     .update(input)
@@ -54,6 +53,7 @@ export const updateCommunity = async (
 };
 
 export const getCommunity = async (id: string): Promise<Community | null> => {
+  const supabase = createClient()
   const { data, error } = await supabase
     .from("communities")
     .select("*")
@@ -67,6 +67,7 @@ export const getCommunity = async (id: string): Promise<Community | null> => {
 export const getCommunityBySlug = async (
   slug: string
 ): Promise<Community | null> => {
+  const supabase = createClient()
   const { data, error } = await supabase
     .from("communities")
     .select("*")
@@ -78,6 +79,7 @@ export const getCommunityBySlug = async (
 };
 
 export const listCommunities = async (filters: CommunityFilters = {}) => {
+  const supabase = createClient()
   let query = supabase.from("communities").select("*", { count: "exact" });
 
   // Apply filters
@@ -134,6 +136,7 @@ export const listCommunities = async (filters: CommunityFilters = {}) => {
 
 // Membership operations
 export const joinCommunity = async (input: JoinCommunityInput) => {
+  const supabase = createClient()
   const { data: existing, error: checkError } = await supabase
     .from("user_communities")
     .select("*")
@@ -177,6 +180,7 @@ export const joinCommunity = async (input: JoinCommunityInput) => {
 };
 
 export const leaveCommunity = async (communityId: string) => {
+  const supabase = createClient()
   const { error } = await supabase
     .from("user_communities")
     .delete()
@@ -189,6 +193,7 @@ export const leaveCommunity = async (communityId: string) => {
 
 // Post operations
 export const createPost = async (input: CreatePostInput) => {
+  const supabase = createClient()
   const { data, error } = await supabase
     .from("community_posts")
     .insert({
@@ -214,6 +219,7 @@ export const createPost = async (input: CreatePostInput) => {
 };
 
 export const getPost = async (postId: string) => {
+  const supabase = createClient()
   const { data, error } = await supabase
     .from("community_posts")
     .select(
@@ -248,6 +254,7 @@ export const listCommunityPosts = async (
   page = 1,
   limit = 10
 ) => {
+  const supabase = createClient()
   const from = (page - 1) * limit;
   const to = from + limit - 1;
 
@@ -289,6 +296,7 @@ export const listCommunityPosts = async (
 
 // Comment operations
 export const createComment = async (input: CreateCommentInput) => {
+  const supabase = createClient()
   const { data, error } = await supabase
     .from("post_comments")
     .insert({
@@ -305,6 +313,7 @@ export const createComment = async (input: CreateCommentInput) => {
 };
 
 export const listPostComments = async (postId: string) => {
+  const supabase = createClient()
   const { data, error } = await supabase
     .from("post_comments")
     .select(
@@ -322,6 +331,7 @@ export const listPostComments = async (postId: string) => {
 
 // Like operations
 export const toggleLike = async (postId: string) => {
+  const supabase = createClient()
   const userId = (await supabase.auth.getUser()).data.user?.id;
   if (!userId) throw new Error("Not authenticated");
 
