@@ -1,7 +1,7 @@
 {
-  "name": "passionseed",
+  "name": "web",
   "compatibility_date": "2026-05-06",
   "assets": {
-    "directory": ".next"
+    "directory": ".vercel/output/static"
   }
 }
