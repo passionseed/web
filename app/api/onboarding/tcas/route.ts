@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { createClient } from "@/utils/supabase/server";
 
-export const runtime = "edge";
 
 const UNIVERSITY_LIMIT = 8;
 const PROGRAM_LIMIT = 10;

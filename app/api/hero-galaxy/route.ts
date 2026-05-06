@@ -1,7 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 
-export const runtime = "edge";
 
 // University brand colors for visualization
 const UNIVERSITY_COLORS: Record<string, string> = {
