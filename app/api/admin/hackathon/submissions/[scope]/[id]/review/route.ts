@@ -193,7 +193,6 @@ export async function POST(
     ai_draft_generated_at: null,
     ai_draft_model: null,
     ai_draft_source: null,
-    override_log: overrideLog,
   };
 
   const reviewResult = existingReview
@@ -212,6 +211,32 @@ export async function POST(
   if (reviewResult.error) {
     console.error("[admin/hackathon/submissions/review] review save error", reviewResult.error);
     return NextResponse.json({ error: "Failed to save review" }, { status: 500 });
+  }
+
+  // Capture override log in a separate, best-effort update so that a
+  // capture failure (missing column, constraint violation, etc.) does NOT
+  // block the review from being saved.
+  if (draftChanged && overrideLog.length > 0) {
+    try {
+      const { error: overrideError } = await serviceClient
+        .from("hackathon_submission_reviews")
+        .update({ override_log: overrideLog })
+        .eq("id", reviewResult.data.id);
+
+      if (overrideError) {
+        console.error(
+          "[override capture FAILED] could not write override_log for review",
+          reviewResult.data.id,
+          overrideError
+        );
+      }
+    } catch (err) {
+      console.error(
+        "[override capture FAILED] exception writing override_log for review",
+        reviewResult.data.id,
+        err
+      );
+    }
   }
 
   const inboxItems = buildReviewInboxItems({

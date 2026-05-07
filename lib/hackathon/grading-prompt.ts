@@ -94,20 +94,20 @@ export async function getCalibrationExamples(
     individualSubmissions.length > 0
       ? client
           .from("hackathon_submission_reviews")
-          .select("override_log")
+          .select("override_log, reviewed_at")
           .not("override_log", "is", null)
-          .gt("jsonb_array_length(override_log)", 0)
           .eq("submission_scope", "individual")
           .in("individual_submission_id", individualSubmissions)
+          .order("reviewed_at", { ascending: false })
       : Promise.resolve({ data: [], error: null }),
     teamSubmissions.length > 0
       ? client
           .from("hackathon_submission_reviews")
-          .select("override_log")
+          .select("override_log, reviewed_at")
           .not("override_log", "is", null)
-          .gt("jsonb_array_length(override_log)", 0)
           .eq("submission_scope", "team")
           .in("team_submission_id", teamSubmissions)
+          .order("reviewed_at", { ascending: false })
       : Promise.resolve({ data: [], error: null }),
   ]);
 

@@ -8,6 +8,9 @@ COMMENT ON COLUMN public.hackathon_submission_reviews.override_log IS
   'Append-only log of admin overrides. Each entry: { overridden_at, ai_status, ai_score, ai_feedback, final_status, final_score, final_feedback, reviewed_by_user_id }';
 
 -- Partial index: only rows that have an override_log entry (fast calibration lookup)
+-- NOTE: activity_id is not a column on hackathon_submission_reviews (it lives on
+-- the submission tables). The index uses reviewed_at DESC instead, which
+-- getCalibrationExamples orders by to efficiently fetch recent overrides.
 CREATE INDEX IF NOT EXISTS idx_hackathon_submission_reviews_override_log
-  ON public.hackathon_submission_reviews (id)
-  WHERE jsonb_array_length(override_log) > 0;
+  ON public.hackathon_submission_reviews (reviewed_at DESC)
+  WHERE override_log IS NOT NULL;
