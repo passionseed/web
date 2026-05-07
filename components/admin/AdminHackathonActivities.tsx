@@ -1975,7 +1975,7 @@ export function AdminHackathonActivities() {
 
                     <Button
                       onClick={submitGrade}
-                      disabled={savingGrade}
+                      disabled={savingGrade || aiSuggesting}
                       className="w-full h-9 text-xs font-medium bg-blue-500 text-blue-950 hover:bg-blue-400"
                     >
                       {savingGrade ? (
