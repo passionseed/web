@@ -5,7 +5,7 @@ ALTER TABLE public.hackathon_submission_reviews
   ADD COLUMN IF NOT EXISTS override_log JSONB DEFAULT '[]'::jsonb;
 
 COMMENT ON COLUMN public.hackathon_submission_reviews.override_log IS
-  'Append-only log of admin overrides. Each entry: { overridden_at, ai_status, ai_score, ai_feedback, final_status, final_score, final_feedback, reviewed_by_user_id }';
+  'Append-only log of admin overrides. Each entry: { ai_draft: { status, score_awarded, feedback, reasoning }, final_review: { status, score_awarded, feedback }, captured_at, activity_id }';
 
 -- Partial index: only rows that have an override_log entry (fast calibration lookup)
 -- NOTE: activity_id is not a column on hackathon_submission_reviews (it lives on

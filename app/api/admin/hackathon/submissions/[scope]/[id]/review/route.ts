@@ -155,6 +155,7 @@ export async function POST(
     status?: string;
     score_awarded?: number | null;
     feedback?: string;
+    reasoning?: string | null;
   } | null;
   const existingLog = ((existingReview as any)?.override_log as unknown[]) ?? [];
   let overrideLog = Array.isArray(existingLog) ? existingLog : [];
@@ -167,14 +168,19 @@ export async function POST(
 
   if (draftChanged) {
     const entry = {
-      overridden_at: now,
-      ai_status: draft.status ?? null,
-      ai_score: draft.score_awarded ?? null,
-      ai_feedback: draft.feedback ?? null,
-      final_status: reviewStatus,
-      final_score: scoreAwarded,
-      final_feedback: feedback,
-      reviewed_by_user_id: admin.id,
+      ai_draft: {
+        status: draft.status ?? null,
+        score_awarded: draft.score_awarded ?? null,
+        feedback: draft.feedback ?? null,
+        reasoning: draft.reasoning ?? null,
+      },
+      final_review: {
+        status: reviewStatus,
+        score_awarded: scoreAwarded,
+        feedback: feedback,
+      },
+      captured_at: now,
+      activity_id: activity?.id ?? null,
     };
     overrideLog = [...overrideLog, entry];
   }

@@ -116,7 +116,7 @@ export async function getCalibrationExamples(
     ...(teamResult.data ?? []),
   ];
 
-  // Flatten all override_log entries, sort by overridden_at desc, take limit
+  // Flatten all override_log entries, sort by captured_at desc, take limit
   const examples: CalibrationExample[] = rows
     .flatMap((row) => {
       const log = row.override_log as unknown as Array<Record<string, unknown>> | null;
@@ -126,17 +126,21 @@ export async function getCalibrationExamples(
           (entry): entry is Record<string, unknown> =>
             entry != null && typeof entry === "object"
         )
-        .map((entry) => ({
-          ai_status: String(entry.ai_status ?? ""),
-          ai_score:
-            typeof entry.ai_score === "number" ? entry.ai_score : null,
-          ai_feedback: String(entry.ai_feedback ?? ""),
-          final_status: String(entry.final_status ?? ""),
-          final_score:
-            typeof entry.final_score === "number" ? entry.final_score : null,
-          final_feedback: String(entry.final_feedback ?? ""),
-          overridden_at: String(entry.overridden_at ?? ""),
-        }));
+        .map((entry) => {
+          const aiDraft = entry.ai_draft as Record<string, unknown> | null;
+          const finalReview = entry.final_review as Record<string, unknown> | null;
+          return {
+            ai_status: String(aiDraft?.status ?? ""),
+            ai_score:
+              typeof aiDraft?.score_awarded === "number" ? aiDraft.score_awarded : null,
+            ai_feedback: String(aiDraft?.feedback ?? ""),
+            final_status: String(finalReview?.status ?? ""),
+            final_score:
+              typeof finalReview?.score_awarded === "number" ? finalReview.score_awarded : null,
+            final_feedback: String(finalReview?.feedback ?? ""),
+            overridden_at: String(entry.captured_at ?? ""),
+          };
+        });
     })
     .filter((ex) => ex.overridden_at)
     .sort(
