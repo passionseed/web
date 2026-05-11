@@ -1,9 +1,0 @@
-{
-  "setup": [
-    "pnpm install\ncp $SUPERSET_ROOT_PATH/.env.local .env.local\ncp $SUPERSET_ROOT_PATH/.env.production .env.production\ncp $SUPERSET_ROOT_PATH/.env .env"
-  ],
-  "teardown": [],
-  "run": [
-    "pnpm dev:prod"
-  ]
-}

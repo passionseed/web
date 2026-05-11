@@ -52,11 +52,36 @@ coverage
 .gstack/
 .cursor/
 
+# AI tool configurations (personal/developer-specific, not project source)
+.agent/
+.agents/
+.augment/
+.claude/
+.factory/
+.gstack/
+.impeccable/live/
+.jules/
+.kilocode/mcp.json
+.mcp.json
+.sisyphus/
+.superpowers/
+.superset/
+.trae/
+.vscode/settings.json
+.windsurf/
+
+# Generated / binary files that shouldn't be in source control
+*.pdf
+*.csv
+*.xls
+*.xlsx
+*.zip
+*.tar.gz
+*.dmg
+*.exe
+
 # SECURITY: specific dotfolders that have leaked secrets before
 .cursor/mcp.json
-.kilocode/mcp.json
-.agents/skills/
-.augment/skills/
 
 # SECURITY: specific files that contained hardcoded secrets
 outlook-chula.json
@@ -69,3 +94,5 @@ scripts/sync-participants-to-resend.js
 scripts/sync-to-ghost.sh
 scripts/test-db-access.js
 scripts/update-invitation-template.js
+.DS_Store
+invitation.html
