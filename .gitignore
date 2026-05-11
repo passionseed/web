@@ -50,3 +50,12 @@ coverage
 # local worktrees
 .worktrees/
 .gstack/
+
+# secret/credential files
+.cursor/
+outlook-chula.json
+scripts/*-local.js
+scripts/*-local.mjs
+
+# supabase temp files
+supabase/.temp/
