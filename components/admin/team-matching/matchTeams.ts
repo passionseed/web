@@ -53,7 +53,7 @@ export function matchTeams(users: SimUser[]): Team[] {
   users = users.filter((u) => u.preferences.length > 0);
 
   const prefSet = new Set(
-    users.flatMap((u) => u.preferences.map((p) => `${u.id}:${p}`))
+    users.flatMap((u) => u.preferences.map((p) => `${u.id}:${p}`)),
   );
   const isMutual = (a: string, b: string) =>
     prefSet.has(`${a}:${b}`) && prefSet.has(`${b}:${a}`);
@@ -115,7 +115,8 @@ export function matchTeams(users: SimUser[]): Team[] {
       if (group.length >= 5) return;
       const score =
         group.filter((mid) => user.preferences.includes(mid)).length +
-        group.filter((mid) => userById[mid].preferences.includes(userId)).length;
+        group.filter((mid) => userById[mid].preferences.includes(userId))
+          .length;
       if (
         score > bestScore ||
         (score === bestScore &&
@@ -133,9 +134,10 @@ export function matchTeams(users: SimUser[]): Team[] {
   });
 
   // Step 6: Handle remaining solos
+  const placedSet = new Set(placed);
   const remaining = soloGroups
     .map(([id]) => id)
-    .filter((id) => !placed.includes(id));
+    .filter((id) => !placedSet.has(id));
 
   if (remaining.length >= 3) {
     // Form their own group(s), never exceeding 5, never leaving a group of 1-2
