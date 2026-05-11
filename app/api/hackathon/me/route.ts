@@ -3,6 +3,8 @@ import { getSessionParticipant, updateParticipant } from "@/lib/hackathon/db";
 import { createClient } from "@/utils/supabase/server";
 import { getCorsHeaders, extractHackathonToken } from "@/lib/hackathon/auth";
 
+export const runtime = "edge";
+
 export async function GET(req: NextRequest) {
   const corsHeaders = getCorsHeaders(req);
   const token = extractHackathonToken(req);

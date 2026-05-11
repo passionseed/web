@@ -10,7 +10,7 @@ const content = {
     eyebrow: "For Professionals",
     title: "Share your career with the next generation.",
     subtitle:
-      "Answer a 10-minute AI interview about your daily work. We turn it into a 5-day career exploration that students can try on the app.",
+      "Answer 10 questions about your daily work. We'll turn it into a 5-day career exploration students can try on the app.",
     cta: "Start the Interview",
     details: [
       {
@@ -27,13 +27,13 @@ const content = {
       },
     ],
     mentorNote:
-      "Choose whether to offer free or paid mentoring sessions. Parents can book directly through the app.",
+      "Choose whether to offer free or paid mentoring. Parents can book sessions directly through the app.",
   },
   th: {
     eyebrow: "สำหรับผู้เชี่ยวชาญ",
     title: "แบ่งปันอาชีพของคุณให้คนรุ่นต่อไป",
     subtitle:
-      "ตอบสัมภาษณ์ AI 10 นาทีเกี่ยวกับงานประจำวันของคุณ เราจะเปลี่ยนมันเป็นการสำรวจอาชีพ 5 วัน ที่นักเรียนสามารถลองทำได้บนแอป",
+      "ตอบคำถาม 10 ข้อเกี่ยวกับงานประจำวันของคุณ เราจะเปลี่ยนมันเป็นการสำรวจอาชีพ 5 วัน ที่นักเรียนสามารถลองทำได้บนแอป",
     cta: "เริ่มสัมภาษณ์",
     details: [
       {
@@ -59,11 +59,14 @@ export function LandingExpertCta() {
   const t = content[language];
 
   return (
-    <section className="py-32 bg-gradient-to-b from-[#0d0d0d] to-[#0a0a0a] relative overflow-hidden border-t border-white/[0.03]">
+    <section className="py-24 bg-gradient-to-b from-[#0d0d0d] to-[#0a0a0a] relative overflow-hidden border-t border-white/[0.03]">
       {/* Ambient background */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-purple-950/15 rounded-full blur-[120px]" />
       </div>
+
+      {/* Top atmospheric fade */}
+      <div className="absolute inset-x-0 -top-24 h-24 bg-gradient-to-b from-transparent to-[#0d0d0d] pointer-events-none" />
 
       <div className="container px-4 md:px-6 relative z-10 max-w-4xl mx-auto">
         <motion.div
@@ -81,7 +84,7 @@ export function LandingExpertCta() {
             {t.title}
           </h2>
 
-          <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-12 leading-relaxed font-medium">
+          <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
             {t.subtitle}
           </p>
 

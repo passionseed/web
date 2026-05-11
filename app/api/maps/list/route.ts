@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getMapsWithStats } from "@/lib/supabase/maps";
 
+export const runtime = "edge";
+
 // OPTIMIZATION: Dedicated API endpoint for paginated map data
 export async function GET(request: NextRequest) {
   try {

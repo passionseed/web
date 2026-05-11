@@ -137,6 +137,8 @@ export function LandingPageWrapper({ children }: LandingPageWrapperProps) {
 
       <main className="flex flex-col" style={{ paddingTop: bannerHeight }}>
         <LandingHero />
+        {/* Atmospheric fade from hero to next section */}
+        <div className="h-24 bg-gradient-to-b from-transparent via-[#0d0d0d]/40 to-[#0d0d0d]" />
         <LandingLogos />
         <LandingTestimonials />
         <LandingFeatures />

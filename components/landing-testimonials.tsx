@@ -41,7 +41,7 @@ const content = {
     title: "Join 20+ students who found their path.",
     subtitle: "Every direction report tells a story of self-discovery.",
     stats: {
-      students: { value: 20, suffix: "+", label: "Students guided" },
+      students: { value: 20, suffix: "+", label: "Students discovered their path" },
       paths: { value: 15, suffix: "+", label: "Career paths explored" },
       schools: { value: 5, suffix: "+", label: "Partner universities" },
     },
@@ -95,7 +95,7 @@ const content = {
         color: "from-blue-500/20 to-blue-500/5",
       },
       {
-        quote: "Passionseed ช่วยให้หนูเลือกระหว่างสัตวแพทย์หรือรังสีเทคนิคและอื่นๆ ถ้าไม่ได้มารู้ว่าจริงๆ แล้วคณะอักษรเรียนอะไร หนูอาจจะต้องมานั่งเสียใจทีหลังแน่ๆ เลยค่ะ",
+        quote: "หนูลังเลระหว่างสัตวแพทย์กับเทคนิคการแพทย์ พอได้ลอง PathLab ถึงรู้ว่าชอบตรวจวินิจฉัยมากกว่าการผ่าตัด ตอนนี้มั่นใจขึ้นเยอะเลยค่ะ",
         name: "มิ้นท์",
         school: "KMUTT",
         avatar: "ม",
@@ -160,32 +160,32 @@ function TestimonialCard({
       viewport={{ once: true }}
       className={`ei-card group relative p-8 border border-white/[0.06] bg-gradient-to-br ${testimonial.color} hover:border-white/[0.12] transition-all duration-500`}
     >
-      {/* Quote icon */}
-      <Quote className="absolute top-6 right-6 h-8 w-8 text-white/10 group-hover:text-white/20 transition-colors duration-500" />
+      {/* Quote icon — aligned to card padding, larger, with theme-aware hover */}
+      <Quote className="absolute top-8 right-8 h-10 w-10 text-white/[0.08] group-hover:text-white/[0.18] transition-colors duration-500" />
 
-      {/* Badge */}
+      {/* Badge — theme-matched verification status */}
       <div className="flex items-center gap-2 mb-6">
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20">
-          <CheckCircle2 className="h-3.5 w-3.5 text-green-400" />
-          <span className="text-xs font-medium text-green-400">{badge}</span>
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/[0.08] border border-emerald-500/[0.18]">
+          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+          <span className="text-xs font-semibold text-emerald-400 tracking-wide">{badge}</span>
         </div>
       </div>
 
-      {/* Quote */}
-      <p className="text-gray-300 leading-relaxed mb-6 text-sm md:text-base">
+      {/* Quote — improved typography with max line length */}
+      <p className="text-slate-300 leading-[1.7] mb-8 text-[0.9375rem] max-w-[55ch]">
         &ldquo;{testimonial.quote}&rdquo;
       </p>
 
-      {/* Author */}
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold text-sm">
+      {/* Author — refined spacing and alignment */}
+      <div className="flex items-center gap-3.5 pt-4 border-t border-white/[0.04]">
+        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold text-sm">
           {testimonial.avatar}
         </div>
-        <div>
+        <div className="min-w-0">
           <div className="font-semibold text-white text-sm">{testimonial.name}</div>
-          <div className="flex items-center gap-1 text-xs text-gray-500">
-            <GraduationCap className="h-3 w-3" />
-            {testimonial.school}
+          <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-0.5">
+            <GraduationCap className="h-3 w-3 flex-shrink-0" />
+            <span className="truncate">{testimonial.school}</span>
           </div>
         </div>
       </div>
@@ -198,7 +198,7 @@ export function LandingTestimonials() {
   const t = content[language];
 
   return (
-    <section className="py-32 bg-[#0d0d0d] relative overflow-hidden border-t border-white/[0.03]">
+    <section className="py-24 bg-[#0d0d0d] relative overflow-hidden border-t border-white/[0.03]">
       {/* Ambient background glow */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-purple-950/10 rounded-full blur-[120px]" />
@@ -207,7 +207,7 @@ export function LandingTestimonials() {
 
       <div className="container px-4 md:px-6 relative z-10 max-w-6xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-12">
           <motion.span
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -238,7 +238,7 @@ export function LandingTestimonials() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-16">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
           <StatCard
             value={t.stats.students.value}
             suffix={t.stats.students.suffix}

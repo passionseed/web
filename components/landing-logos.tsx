@@ -18,7 +18,7 @@ export function LandingLogos() {
   const { language } = useLanguage();
 
   return (
-    <div className="w-full py-24 bg-[#0d0d0d] overflow-hidden flex flex-col items-center justify-center relative z-20 border-t border-white/[0.03]">
+    <div className="w-full py-20 bg-[#0d0d0d] overflow-hidden flex flex-col items-center justify-center relative z-20 border-t border-white/[0.03]">
 
       {/* Subtle background glow */}
       <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none">

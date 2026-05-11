@@ -60,12 +60,15 @@ export function LandingParents() {
   return (
     <section
       id="parents"
-      className="py-32 bg-[#0a0a0a] relative overflow-hidden border-t border-white/[0.03]"
+      className="py-24 bg-[#0a0a0a] relative overflow-hidden border-t border-white/[0.03]"
     >
       {/* Ambient background */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-blue-950/10 rounded-full blur-[100px]" />
       </div>
+
+      {/* Top atmospheric fade */}
+      <div className="absolute inset-x-0 -top-24 h-24 bg-gradient-to-b from-[#0a0a0a] to-transparent pointer-events-none" />
 
       <div className="container px-4 md:px-6 relative z-10 max-w-5xl mx-auto">
         <motion.div
@@ -73,7 +76,7 @@ export function LandingParents() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center mb-12"
         >
           <span className="inline-block text-xs font-medium text-blue-400 tracking-widest uppercase mb-4">
             {t.eyebrow}

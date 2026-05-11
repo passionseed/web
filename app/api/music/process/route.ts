@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 
+export const runtime = "edge";
+
 interface SpotifyToken {
   access_token: string;
   token_type: string;
@@ -25,7 +27,7 @@ async function getSpotifyAccessToken(): Promise<string> {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
-      'Authorization': `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`,
+      'Authorization': `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
     },
     body: 'grant_type=client_credentials',
   });

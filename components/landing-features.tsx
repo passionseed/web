@@ -26,7 +26,7 @@ const content = {
         number: "02",
         title: "Reflect & Discover",
         description:
-          "After each day, reflect on your energy, interest, and confusion. The system learns what excites you, where you excel, and what drains you.",
+          "After each day, reflect on what energized you, what frustrated you, and what surprised you. You'll discover patterns in what you naturally enjoy.",
         color: "from-purple-500/20 to-purple-500/5",
         iconColor: "text-purple-400",
         borderColor: "border-purple-500/10",
@@ -64,7 +64,7 @@ const content = {
         number: "02",
         title: "สะท้อนคิดเพื่อค้นหาตัวเอง",
         description:
-          "ทุกครั้งที่จบบทเรียน เราจะชวนน้องๆ มาทบทวนความรู้สึก (Reflection) ทั้งเรื่องความสนุก ความท้าทาย และความถนัด เพื่อให้ระบบช่วยวิเคราะห์ตัวตนที่ซ่อนอยู่",
+          "ทุกครั้งที่จบวัน เราจะชวนมาทบทวนว่าวันนี้สนุกตรงไหน หงุดหงิดตรงไหน ตื่นเต้นตรงไหน คุณจะเห็นแบบแผนของสิ่งที่ตัวเองชอบ",
         color: "from-purple-500/20 to-purple-500/5",
         iconColor: "text-purple-400",
         borderColor: "border-purple-500/10",
@@ -88,16 +88,19 @@ export function LandingFeatures() {
   const t = content[language];
 
   return (
-    <section className="py-32 bg-[#0d0d0d] relative overflow-hidden border-t border-white/[0.03]">
+    <section className="py-24 bg-[#0d0d0d] relative overflow-hidden border-t border-white/[0.03]">
       {/* Subtle ambient glow */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] bg-purple-950/10 rounded-full blur-[100px]" />
         <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-blue-950/10 rounded-full blur-[100px]" />
       </div>
 
+      {/* Top atmospheric fade from previous section */}
+      <div className="absolute inset-x-0 -top-24 h-24 bg-gradient-to-b from-[#0d0d0d] to-transparent pointer-events-none" />
+
       <div className="container px-4 md:px-6 relative z-10 max-w-5xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-20">
+        <div className="text-center mb-12">
           <motion.span
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}

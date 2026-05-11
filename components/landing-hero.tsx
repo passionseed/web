@@ -13,18 +13,18 @@ import { LandingDemoPaths } from "@/components/landing-demo-paths";
 
 const content = {
   en: {
-    eyebrow: "Career exploration, reimagined",
+    eyebrow: "No more career guessing",
     headline: "Try a career before you choose one.",
     subheadline:
-      "5-day real-world challenges designed by working professionals. Free for students.",
-    cta: "Start exploring",
+      "5-day challenges built by working professionals. Design, code, research, heal — actually do the work.",
+    cta: "Start for free",
   },
   th: {
-    eyebrow: "เปลี่ยนวิธีค้นหาตัวเอง",
-    headline: "ลองทำงานจริง ก่อนเลือกอนาคต",
+    eyebrow: "เลิกเดาอนาคต",
+    headline: "ลองลงมือทำจริง ก่อนเลือกคณะ",
     subheadline:
-      "ลองทำจริง 5 วันกับโปรเจกต์ที่ออกแบบโดยมือโปรในสายงาน... ฟรีสำหรับนักเรียน",
-    cta: "เริ่มต้นที่นี่",
+      "ลองทำโปรเจกต์ 5 วันที่ออกแบบโดยมือโปรในสายงานจริง ฟรีสำหรับนักเรียน",
+    cta: "เริ่มต้นฟรี",
   },
 };
 
@@ -51,8 +51,8 @@ export function LandingHero() {
       } else {
         toast.error(
           language === "th"
-            ? "ไม่สามารถเริ่มได้ กรุณาสมัครสมาชิกแทน"
-            : "Failed to start. Please try signing up instead.",
+            ? "เกิดข้อผิดพลาด กรุณาลองใหม่"
+            : "Something went wrong. Please try again.",
         );
       }
     } finally {
@@ -63,7 +63,7 @@ export function LandingHero() {
   const t = content[language];
 
   return (
-    <section className="relative w-full min-h-[calc(100vh-var(--landing-header-offset,6.5rem))] flex flex-col items-center justify-center overflow-hidden pt-12 sm:pt-16">
+    <section className="relative w-full min-h-[calc(100vh-var(--landing-header-offset,6.5rem))] flex flex-col items-center justify-center overflow-hidden pt-8 sm:pt-12">
       {/* Animated background with sunrise gradient */}
       <HeroBackground />
 

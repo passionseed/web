@@ -1,7 +1,8 @@
 import { createAdminClient } from "@/utils/supabase/admin";
 import { ParticipantTable, BetaTable } from "./ParticipantTable";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
+export const revalidate = 3600; // ISR: revalidate every hour
 
 const BETA_FORM_TOKEN = "2d1a7a73-e3dd-4c5a-b0d5-1b7f5a5c2e11";
 

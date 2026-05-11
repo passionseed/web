@@ -26,11 +26,9 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Enable image optimization for production
+  // Image optimization offloaded to Cloudflare CDN + Backblaze B2
   images: {
-    unoptimized: process.env.NODE_ENV === "development",
-    domains: ["localhost", "127.0.0.1"],
-    formats: ["image/webp", "image/avif"],
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: "https",
@@ -40,6 +38,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "*.backblazeb2.com",
       },
+      {
+        protocol: "https",
+        hostname: "cdn.passionseed.org",
+      },
     ],
   },
   // Production optimizations
@@ -47,6 +49,7 @@ const nextConfig = {
   productionBrowserSourceMaps: false,
   // Optimize bundle splitting
   experimental: {
+    optimizePackageImports: ["lucide-react"],
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,

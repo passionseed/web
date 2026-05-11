@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import { createHash } from "crypto";
+
+export const runtime = "edge";
 
 /**
  * Track hackathon page views for analytics
@@ -24,11 +25,13 @@ export async function POST(request: NextRequest) {
                request.headers.get("x-real-ip") ||
                "unknown";
 
-    // Create a privacy-preserving visitor fingerprint
+    // Create a privacy-preserving visitor fingerprint using Web Crypto
     // Hash IP + user agent to anonymize while still tracking unique visitors
-    const visitorFingerprint = createHash("sha256")
-      .update(`${ip}-${userAgent}`)
-      .digest("hex");
+    const encoder = new TextEncoder();
+    const data = encoder.encode(`${ip}-${userAgent}`);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const visitorFingerprint = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
 
     // Generate a session ID if not provided (browser-based tracking)
     const sessionId = body.session_id || visitorFingerprint;

@@ -15,7 +15,8 @@ import {
   Lightbulb,
 } from "lucide-react";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
+export const revalidate = 300; // ISR: revalidate every 5 minutes
 
 // ============================================================================
 // DATA FETCHING

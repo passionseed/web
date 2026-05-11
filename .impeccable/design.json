@@ -1,0 +1,337 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-06T00:00:00Z",
+  "title": "Design System: PassionSeed",
+  "extensions": {
+    "colorMeta": {
+      "dusk-space-950": {
+        "role": "neutral",
+        "displayName": "Deep Space Violet",
+        "canonical": "#06000f",
+        "tonalRamp": [
+          "#06000f",
+          "#1a0336",
+          "#2d065c",
+          "#3b0764",
+          "#4a0e82",
+          "#5c1a9e",
+          "#7c3aed",
+          "#a78bfa"
+        ]
+      },
+      "dusk-ember-orange": {
+        "role": "primary",
+        "displayName": "Amber Horizon",
+        "canonical": "#f97316",
+        "tonalRamp": [
+          "#7c2d12",
+          "#9a3412",
+          "#c2410c",
+          "#ea580c",
+          "#f97316",
+          "#fb923c",
+          "#fdba74",
+          "#fed7aa"
+        ]
+      },
+      "dusk-pink": {
+        "role": "primary",
+        "displayName": "Ember Rose",
+        "canonical": "#be185d",
+        "tonalRamp": [
+          "#500724",
+          "#831843",
+          "#9d174d",
+          "#be185d",
+          "#db2777",
+          "#f472b6",
+          "#f9a8d4",
+          "#fbcfe8"
+        ]
+      },
+      "dawn-blue": {
+        "role": "primary",
+        "displayName": "Morning Blue",
+        "canonical": "#3b82f6",
+        "tonalRamp": [
+          "#1e3a8a",
+          "#1e40af",
+          "#1d4ed8",
+          "#2563eb",
+          "#3b82f6",
+          "#60a5fa",
+          "#93c5fd",
+          "#bfdbfe"
+        ]
+      },
+      "dawn-indigo": {
+        "role": "primary",
+        "displayName": "Sunrise Indigo",
+        "canonical": "#6366f1",
+        "tonalRamp": [
+          "#312e81",
+          "#3730a3",
+          "#4338ca",
+          "#4f46e5",
+          "#6366f1",
+          "#818cf8",
+          "#a5b4fc",
+          "#c7d2fe"
+        ]
+      },
+      "dawn-violet": {
+        "role": "primary",
+        "displayName": "Dawn Violet",
+        "canonical": "#a855f7",
+        "tonalRamp": [
+          "#5b21b6",
+          "#6b21a8",
+          "#7e22ce",
+          "#9333ea",
+          "#a855f7",
+          "#c084fc",
+          "#d8b4fe",
+          "#e9d5ff"
+        ]
+      },
+      "neutral-text-primary": {
+        "role": "neutral",
+        "displayName": "Cloud White",
+        "canonical": "#e2e8f0",
+        "tonalRamp": [
+          "#0f172a",
+          "#1e293b",
+          "#334155",
+          "#475569",
+          "#64748b",
+          "#94a3b8",
+          "#cbd5e1",
+          "#e2e8f0"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Hero headlines, landing page titles. One per page maximum."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section titles, modal headers, map names."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Card titles, node names, form section headers."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Paragraphs, descriptions, form content. Max 65-75ch line length."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "UI labels, button text, badge text, uppercase section labels."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "Code blocks, technical IDs, timestamps."
+      }
+    },
+    "shadows": [
+      {
+        "name": "ambient",
+        "value": "0 4px 12px rgba(0, 0, 0, 0.3)",
+        "purpose": "Card base shadow, barely visible. Structural, not decorative."
+      },
+      {
+        "name": "elevated",
+        "value": "0 8px 24px rgba(0, 0, 0, 0.4)",
+        "purpose": "Card hover state, paired with glow."
+      },
+      {
+        "name": "glow-dusk",
+        "value": "0 0 28px rgba(251, 146, 60, 0.38), 0 0 72px rgba(251, 146, 60, 0.16)",
+        "purpose": "Dusk button hover glow. Emotional, not structural."
+      },
+      {
+        "name": "glow-dawn",
+        "value": "0 0 24px rgba(99, 102, 241, 0.35), 0 0 60px rgba(168, 85, 247, 0.14)",
+        "purpose": "Dawn button hover glow. Emotional, not structural."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-tension",
+        "value": "cubic-bezier(0.05, 0.7, 0.35, 0.99)",
+        "purpose": "Primary hover, glow reveals. Slow charge-in."
+      },
+      {
+        "name": "ease-snap",
+        "value": "cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Fast exits, UI state changes. Snap back."
+      },
+      {
+        "name": "ease-spring",
+        "value": "cubic-bezier(0.34, 1.56, 0.64, 1)",
+        "purpose": "Micro-interactions, buttons. Slight overshoot."
+      },
+      {
+        "name": "duration-rise",
+        "value": "9000ms",
+        "purpose": "Glow reveal duration. Slow, atmospheric."
+      },
+      {
+        "name": "duration-pulse-a",
+        "value": "4231ms",
+        "purpose": "Prime number. First infinite pulse layer."
+      },
+      {
+        "name": "duration-pulse-b",
+        "value": "5711ms",
+        "purpose": "Prime number. Second infinite pulse layer. Never syncs with pulse-a."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      },
+      {
+        "name": "xl",
+        "value": "1280px"
+      },
+      {
+        "name": "2xl",
+        "value": "1400px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Dusk Primary Button",
+      "kind": "button",
+      "refersTo": "button-dusk",
+      "description": "Primary CTA for expert-facing surfaces. Gradient from amber to rose with layered glow animation on hover.",
+      "html": "<button class=\"ds-btn-dusk\">Start the Interview<svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/></svg></button>",
+      "css": ".ds-btn-dusk { position: relative; overflow: hidden; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 2rem; font-family: var(--font-bai-jamjuree), sans-serif; font-size: 0.875rem; font-weight: 600; color: white; background: linear-gradient(180deg, #f97316 0%, #ea580c 45%, #be185d 100%); border: 1px solid rgba(0,0,0,0.14); border-radius: 12px; cursor: pointer; box-shadow: 0 0 0 1px rgba(249,115,22,0.32), 0 1px 2px -1px rgba(0,0,0,0.55), 0 3px 14px rgba(194,65,12,0.28), inset 0 1px 0 rgba(255,255,255,0.2), inset 0 -2px 4px rgba(0,0,0,0.24); transition: box-shadow 160ms ease-out, transform 160ms ease-out, filter 160ms ease-out; min-height: 48px; } .ds-btn-dusk::before { content: ''; position: absolute; inset: 0; border-radius: 12px; background: linear-gradient(to top, rgba(255,210,100,0.26) 0%, rgba(255,170,50,0.09) 45%, transparent 100%); filter: blur(22px); transform: translateY(100%); opacity: 0; pointer-events: none; } .ds-btn-dusk::after { content: ''; position: absolute; inset: 0; border-radius: 12px; background: linear-gradient(to top, rgba(234,88,12,0.22) 0%, rgba(251,146,60,0.07) 40%, transparent 100%); filter: blur(18px); transform: translateY(100%); opacity: 0; pointer-events: none; } .ds-btn-dusk > * { position: relative; z-index: 1; } .ds-btn-dusk:hover:not(:disabled) { animation: ds-btn-rise 10000ms cubic-bezier(0.05,0.7,0.35,0.99) forwards, ds-btn-glow 14000ms cubic-bezier(0.05,0.7,0.35,0.99) forwards; } .ds-btn-dusk:hover:not(:disabled)::before { animation: ds-btn-inner-rise 14000ms cubic-bezier(0.05,0.7,0.35,0.99) 350ms forwards, ds-btn-wave-a 4231ms ease-in-out 14350ms infinite; } .ds-btn-dusk:hover:not(:disabled)::after { animation: ds-btn-inner-rise-b 14000ms cubic-bezier(0.05,0.7,0.35,0.99) 900ms forwards, ds-btn-wave-b 5711ms ease-in-out 14900ms infinite; } @keyframes ds-btn-rise { 0% { transform: translateY(0); } 100% { transform: translateY(-3px); } } @keyframes ds-btn-glow { 0% { box-shadow: 0 0 0 1px rgba(249,115,22,0.32), 0 1px 2px -1px rgba(0,0,0,0.55), 0 3px 14px rgba(194,65,12,0.28), inset 0 1px 0 rgba(255,255,255,0.2), inset 0 -2px 4px rgba(0,0,0,0.24); } 100% { box-shadow: 0 0 0 1px rgba(251,146,60,0.5), 0 0 28px rgba(251,146,60,0.38), 0 0 72px rgba(251,146,60,0.16), 0 6px 22px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.24), inset 0 -2px 4px rgba(0,0,0,0.22); } } @keyframes ds-btn-inner-rise { 0% { transform: translateY(100%); opacity: 0; filter: blur(22px); } 100% { transform: translateY(0%); opacity: 0.52; filter: blur(7px); } } @keyframes ds-btn-inner-rise-b { 0% { transform: translateY(100%); opacity: 0; filter: blur(18px); } 100% { transform: translateY(0%); opacity: 0.24; filter: blur(12px); } } @keyframes ds-btn-wave-a { 0%,100% { opacity: 0.52; filter: blur(7px); } 50% { opacity: 0.78; filter: blur(3px); } } @keyframes ds-btn-wave-b { 0%,100% { opacity: 0.24; filter: blur(12px); } 50% { opacity: 0.48; filter: blur(7px); } }"
+    },
+    {
+      "name": "Dawn Primary Button",
+      "kind": "button",
+      "refersTo": "button-dawn",
+      "description": "Primary CTA for student-facing surfaces. Gradient from blue to violet with layered glow animation on hover.",
+      "html": "<button class=\"ds-btn-dawn\">Start Exploring<svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/></svg></button>",
+      "css": ".ds-btn-dawn { position: relative; overflow: hidden; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 2rem; font-family: var(--font-bai-jamjuree), sans-serif; font-size: 0.875rem; font-weight: 600; color: white; background: linear-gradient(180deg, #3b82f6 0%, #6366f1 45%, #a855f7 100%); border: 1px solid rgba(0,0,0,0.12); border-radius: 12px; cursor: pointer; box-shadow: 0 0 0 1px rgba(99,102,241,0.32), 0 1px 2px -1px rgba(0,0,0,0.45), 0 3px 14px rgba(59,130,246,0.22), inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -2px 4px rgba(0,0,0,0.18); transition: box-shadow 160ms ease-out, transform 160ms ease-out, filter 160ms ease-out; min-height: 48px; } .ds-btn-dawn::before { content: ''; position: absolute; inset: 0; border-radius: 12px; background: linear-gradient(to top, rgba(254,217,92,0.35) 0%, transparent 100%); filter: blur(22px); transform: translateY(100%); opacity: 0; pointer-events: none; } .ds-btn-dawn::after { content: ''; position: absolute; inset: 0; border-radius: 12px; background: radial-gradient(circle at center, rgba(99,102,241,0.25) 0%, transparent 70%); filter: blur(18px); transform: translateY(100%); opacity: 0; pointer-events: none; } .ds-btn-dawn > * { position: relative; z-index: 1; } .ds-btn-dawn:hover:not(:disabled) { animation: ds-dawn-rise 10000ms cubic-bezier(0.05,0.7,0.35,0.99) forwards, ds-dawn-glow 14000ms cubic-bezier(0.05,0.7,0.35,0.99) forwards; } .ds-btn-dawn:hover:not(:disabled)::before { animation: ds-dawn-inner-rise 14000ms cubic-bezier(0.05,0.7,0.35,0.99) 350ms forwards, ds-dawn-wave-a 4127ms ease-in-out 14350ms infinite; } .ds-btn-dawn:hover:not(:disabled)::after { animation: ds-dawn-inner-rise-b 14000ms cubic-bezier(0.05,0.7,0.35,0.99) 900ms forwards, ds-dawn-wave-b 5503ms ease-in-out 14900ms infinite; } @keyframes ds-dawn-rise { 0% { transform: translateY(0); } 100% { transform: translateY(-3px); } } @keyframes ds-dawn-glow { 0% { box-shadow: 0 0 0 1px rgba(99,102,241,0.32), 0 1px 2px -1px rgba(0,0,0,0.45), 0 3px 14px rgba(59,130,246,0.22), inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -2px 4px rgba(0,0,0,0.18); } 100% { box-shadow: 0 0 0 1px rgba(99,102,241,0.55), 0 0 24px rgba(99,102,241,0.35), 0 0 60px rgba(168,85,247,0.14), 0 6px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.28), inset 0 -2px 4px rgba(0,0,0,0.18); } } @keyframes ds-dawn-inner-rise { 0% { transform: translateY(100%); opacity: 0; filter: blur(22px); } 100% { transform: translateY(0%); opacity: 0.5; filter: blur(7px); } } @keyframes ds-dawn-inner-rise-b { 0% { transform: translateY(100%); opacity: 0; filter: blur(18px); } 100% { transform: translateY(0%); opacity: 0.22; filter: blur(12px); } } @keyframes ds-dawn-wave-a { 0%,100% { opacity: 0.5; filter: blur(8px); } 50% { opacity: 0.75; filter: blur(4px); } } @keyframes ds-dawn-wave-b { 0%,100% { opacity: 0.2; filter: blur(13px); } 50% { opacity: 0.42; filter: blur(8px); } }"
+    },
+    {
+      "name": "Dusk Card",
+      "kind": "card",
+      "refersTo": "card-dusk",
+      "description": "Dark glass card with bottom-to-top amber glow reveal on hover. Used for expert-facing content.",
+      "html": "<div class=\"ds-card-dusk\"><h3 class=\"ds-card-title\">Card Title</h3><p class=\"ds-card-text\">Card content goes here.</p></div>",
+      "css": ".ds-card-dusk { position: relative; background: linear-gradient(160deg, rgba(255,255,255,0.065) 0%, rgba(255,255,255,0.018) 100%); border: 1px solid rgba(255,255,255,0.09); border-radius: 12px; box-shadow: 0 0 0 1px rgba(139,26,90,0.14), 0 1px 3px -1px rgba(0,0,0,0.55), 0 4px 18px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.07), inset 0 -2px 6px rgba(0,0,0,0.22); transition: box-shadow 180ms ease-out, border-color 180ms ease-out, transform 180ms ease-out; overflow: hidden; padding: 1.5rem; } .ds-card-dusk::before { content: ''; position: absolute; inset: -1px; border-radius: 13px; background: linear-gradient(to top, rgba(251,146,60,0.38) 0%, rgba(251,146,60,0.14) 40%, rgba(251,146,60,0.03) 70%, transparent 100%); clip-path: inset(100% 0 0 0 round 13px); opacity: 0; filter: blur(18px); pointer-events: none; z-index: 0; transition: clip-path 200ms ease-out, opacity 200ms ease-out, filter 200ms ease-out; } .ds-card-dusk > * { position: relative; z-index: 1; } .ds-card-dusk:hover::before { clip-path: inset(0% 0 0 0 round 13px); opacity: 1; filter: blur(3px); transition: clip-path 9000ms cubic-bezier(0.05,0.7,0.35,0.99), opacity 9000ms cubic-bezier(0.05,0.7,0.35,0.99), filter 9000ms cubic-bezier(0.05,0.7,0.35,0.99); } .ds-card-dusk:hover { border-color: rgba(251,146,60,0.22); box-shadow: 0 0 0 1px rgba(251,146,60,0.16), 0 4px 20px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,200,100,0.09), inset 0 -2px 6px rgba(0,0,0,0.3); transform: translateY(-3px); transition: box-shadow 8000ms cubic-bezier(0.05,0.7,0.35,0.99), border-color 7000ms cubic-bezier(0.05,0.7,0.35,0.99), transform 5000ms cubic-bezier(0.05,0.7,0.35,0.99); } .ds-card-title { font-family: var(--font-libre-franklin), sans-serif; font-size: 1.25rem; font-weight: 600; color: #e2e8f0; margin: 0 0 0.5rem; } .ds-card-text { font-family: var(--font-bai-jamjuree), sans-serif; font-size: 1rem; font-weight: 400; color: #94a3b8; line-height: 1.6; margin: 0; }"
+    },
+    {
+      "name": "Dawn Card",
+      "kind": "card",
+      "refersTo": "card-dawn",
+      "description": "Dark glass card with bottom-to-top gold glow reveal on hover. Used for student-facing content.",
+      "html": "<div class=\"ds-card-dawn\"><h3 class=\"ds-card-title\">Card Title</h3><p class=\"ds-card-text\">Card content goes here.</p></div>",
+      "css": ".ds-card-dawn { position: relative; border-radius: 16px; transition: box-shadow 180ms ease-out, border-color 180ms ease-out, transform 180ms ease-out; overflow: hidden; padding: 1.5rem; background: linear-gradient(160deg, rgba(255,255,255,0.065) 0%, rgba(255,255,255,0.018) 100%); border: 1px solid rgba(255,255,255,0.09); box-shadow: 0 0 0 1px rgba(139,26,90,0.14), 0 1px 3px -1px rgba(0,0,0,0.55), 0 4px 18px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.07), inset 0 -2px 6px rgba(0,0,0,0.22); } .ds-card-dawn::before { content: ''; position: absolute; inset: -1px; border-radius: 17px; background: linear-gradient(to top, rgba(251,191,36,0.3) 0%, rgba(251,191,36,0.1) 40%, rgba(251,191,36,0.02) 70%, transparent 100%); clip-path: inset(100% 0 0 0 round 17px); opacity: 0; filter: blur(16px); pointer-events: none; z-index: 0; transition: clip-path 200ms ease-out, opacity 200ms ease-out, filter 200ms ease-out; } .ds-card-dawn > * { position: relative; z-index: 1; } .ds-card-dawn:hover::before { clip-path: inset(0% 0 0 0 round 17px); opacity: 1; filter: blur(4px); transition: clip-path 9000ms cubic-bezier(0.05,0.7,0.35,0.99), opacity 9000ms cubic-bezier(0.05,0.7,0.35,0.99), filter 9000ms cubic-bezier(0.05,0.7,0.35,0.99); } .ds-card-dawn:hover { border-color: rgba(251,191,36,0.2); transform: translateY(-3px); transition: box-shadow 8000ms cubic-bezier(0.05,0.7,0.35,0.99), border-color 7000ms cubic-bezier(0.05,0.7,0.35,0.99), transform 5000ms cubic-bezier(0.05,0.7,0.35,0.99); } .ds-card-title { font-family: var(--font-libre-franklin), sans-serif; font-size: 1.25rem; font-weight: 600; color: #e2e8f0; margin: 0 0 0.5rem; } .ds-card-text { font-family: var(--font-bai-jamjuree), sans-serif; font-size: 1rem; font-weight: 400; color: #94a3b8; line-height: 1.6; margin: 0; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Theme-aware text input with subtle background, focus glow ring, and hover border shift.",
+      "html": "<div class=\"ds-input-group\"><label class=\"ds-label\">Email Address</label><input type=\"email\" class=\"ds-input\" placeholder=\"john@example.com\" /></div>",
+      "css": ".ds-input-group { display: flex; flex-direction: column; gap: 0.375rem; } .ds-label { font-family: var(--font-bai-jamjuree), sans-serif; font-size: 0.875rem; font-weight: 600; letter-spacing: 0.02em; color: #94a3b8; } .ds-input { width: 100%; padding: 0.75rem 1rem; font-family: var(--font-bai-jamjuree), sans-serif; font-size: 0.875rem; color: #e2e8f0; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; transition: border-color 200ms ease, box-shadow 200ms ease, background 200ms ease; outline: none; } .ds-input::placeholder { color: #64748b; } .ds-input:hover { border-color: rgba(251,146,60,0.3); background: rgba(255,255,255,0.05); } .ds-input:focus { border-color: rgba(251,146,60,0.5); box-shadow: 0 0 0 3px rgba(251,146,60,0.15); background: rgba(255,255,255,0.06); }"
+    },
+    {
+      "name": "Dusk Badge",
+      "kind": "chip",
+      "refersTo": "badge-dusk",
+      "description": "Status pill for Dusk contexts. Amber tint with optional pulsing dot.",
+      "html": "<span class=\"ds-badge-dusk\"><span class=\"ds-badge-dot\"></span>Beta Access</span>",
+      "css": ".ds-badge-dusk { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.25rem 0.75rem; font-family: var(--font-bai-jamjuree), sans-serif; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; border-radius: 9999px; border: 1px solid rgba(251,146,60,0.3); background: rgba(251,146,60,0.1); color: #fb923c; } .ds-badge-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: #fb923c; animation: ds-badge-pulse 2s ease-in-out infinite; } @keyframes ds-badge-pulse { 0%,100% { opacity: 0.5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.1); } }"
+    },
+    {
+      "name": "Dawn Badge",
+      "kind": "chip",
+      "refersTo": "badge-dawn",
+      "description": "Status pill for Dawn contexts. Indigo tint with optional pulsing dot.",
+      "html": "<span class=\"ds-badge-dawn\"><span class=\"ds-badge-dot\"></span>New</span>",
+      "css": ".ds-badge-dawn { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.25rem 0.75rem; font-family: var(--font-bai-jamjuree), sans-serif; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; border-radius: 9999px; border: 1px solid rgba(99,102,241,0.3); background: rgba(99,102,241,0.1); color: #818cf8; } .ds-badge-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: #818cf8; animation: ds-badge-pulse 2s ease-in-out infinite; } @keyframes ds-badge-pulse { 0%,100% { opacity: 0.5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.1); } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Sunrise Workshop",
+    "overview": "PassionSeed is a warm studio where potential is crafted into reality. The interface feels like walking into a maker space at dawn: the light is soft and golden, the tools are inviting, and everything hums with possibility. This is not a sterile classroom or a corporate dashboard. It is a place where young people come to build their future, guided by those who have already walked the path. The visual system is built around two atmospheric themes — Dawn for students (rising sun, cool blues warming into gold) and Dusk for experts (setting sun, deep purples cooling into amber). Both share the same structural DNA: fluid, luminous components that glow and respond like living things.",
+    "keyCharacteristics": [
+      "Atmospheric depth through glow, blur, and gradient stacks — never flat colors",
+      "Dual-theme identity (Dawn/Dusk) with a unified structural language",
+      "Components that feel fluid and luminous, responding to interaction with slow-building warmth",
+      "Thai-first typography with Bai Jamjuree and Kodchasan",
+      "Prime-number animation durations for organic, never-syncing pulse effects",
+      "Mobile-first with touch fallbacks for all hover-driven animations"
+    ],
+    "rules": [
+      {
+        "name": "The Gradient Minimum Rule",
+        "body": "Never use flat colors on hero surfaces or primary interactive elements. Minimum 3 gradient stops. A flat color is a dead color.",
+        "section": "colors"
+      },
+      {
+        "name": "The Atmosphere-First Rule",
+        "body": "Depth is created through layered gradients, glow effects, and blur — not through shadows or borders. Shadows are structural and rare; glow is emotional and primary.",
+        "section": "colors"
+      },
+      {
+        "name": "The Thai Space Rule",
+        "body": "Thai script requires more vertical breathing room. Minimum line-height 1.5 for body text, 1.6 preferred. Never go below 10px for Thai — complex glyphs become illegible.",
+        "section": "typography"
+      },
+      {
+        "name": "The One Voice Rule",
+        "body": "The display font (Kodchasan/Libre Franklin) is used for headlines only. Body and UI text always use Bai Jamjuree/Libre Franklin. Never mix display fonts into body text for emphasis.",
+        "section": "typography"
+      },
+      {
+        "name": "The Glow-Not-Shadow Rule",
+        "body": "Surfaces are flat at rest. Depth emerges through colored glow (amber for Dusk, gold/blue for Dawn) that builds slowly on interaction. A shadow says 'this is above'; a glow says 'this is alive.'",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use gradient backgrounds with 3+ stops on all hero and atmospheric surfaces",
+      "Do animate clip-path + opacity + filter together for all glow effects",
+      "Do use prime-number durations (4127ms, 4231ms, 5503ms, 5711ms) for infinite pulse layers",
+      "Do use cubic-bezier(0.05, 0.7, 0.35, 0.99) for tension animations and cubic-bezier(0.4, 0, 0.2, 1) for snap transitions",
+      "Do provide IntersectionObserver + .in-view class fallbacks for all hover animations on touch devices",
+      "Do respect prefers-reduced-motion — disable atmospheric animations, keep essential state transitions",
+      "Do use Thai fonts (Bai Jamjuree, Kodchasan) for all Thai text",
+      "Do maintain a minimum 48x48px touch target for all interactive elements"
+    ],
+    "donts": [
+      "Don't use flat colors on hero surfaces or primary interactive elements. Every surface should have gradient depth.",
+      "Don't animate a single property for glow effects. A glow that reveals but stays sharp looks fake.",
+      "Don't use slow exit animations. Fast snap-out (100–200ms) on mouse-leave; slow charge-in (9s+) on hover.",
+      "Don't leave hover-only animations without touch fallbacks. Always handle @media (hover: none).",
+      "Don't use border-left or border-right greater than 1px as a colored accent on cards or list items.",
+      "Don't use gradient text (background-clip: text). Use a single solid color with weight or size for emphasis.",
+      "Don't use glassmorphism decoratively. Blur and transparency are purposeful, never default.",
+      "Don't use the hero-metric template (big number, small label, supporting stats, gradient accent).",
+      "Don't create identical card grids with icon + heading + text repeated endlessly.",
+      "Don't use modals as a first thought. Exhaust inline and progressive alternatives first.",
+      "Don't design like corporate ed-tech: bright primary colors, stock illustrations, rigid module layouts, progress bars that feel like compliance tracking.",
+      "Don't design like generic SaaS: gray-on-white, thin lines, no personality, everything looks like Notion or Linear."
+    ]
+  }
+}

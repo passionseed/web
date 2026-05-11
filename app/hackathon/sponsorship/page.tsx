@@ -1,7 +1,8 @@
 import { createAdminClient } from "@/utils/supabase/admin";
 import { SponsorshipContent } from "./SponsorshipContent";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
+export const revalidate = 300; // ISR: revalidate every 5 minutes
 
 async function getHackathonStats() {
   const admin = createAdminClient();
