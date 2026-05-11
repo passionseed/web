@@ -51,3 +51,11 @@ coverage
 .worktrees/
 .gstack/
 .cursor/
+
+# SECURITY: ignore all dotfolders at root (prevent future secret leaks)
+.*/
+!.gitignore
+
+# SECURITY: ignore sensitive files with hardcoded secrets
+outlook-chula.json
+scripts/
