@@ -51,3 +51,21 @@ coverage
 .worktrees/
 .gstack/
 .cursor/
+
+# SECURITY: specific dotfolders that have leaked secrets before
+.cursor/mcp.json
+.kilocode/mcp.json
+.agents/skills/
+.augment/skills/
+
+# SECURITY: specific files that contained hardcoded secrets
+outlook-chula.json
+test-email-auth.js
+migrate-existing-assessments.js
+scripts/apply-rls-fix.js
+scripts/check-end-node.js
+scripts/check-node-type.mjs
+scripts/sync-participants-to-resend.js
+scripts/sync-to-ghost.sh
+scripts/test-db-access.js
+scripts/update-invitation-template.js
