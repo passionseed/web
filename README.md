@@ -1,79 +1,142 @@
-# Passion Seed :fire:
+# PassionSeed :fire:
 
-Discover Your Passion, Ignite Your Potential
+> Discover Your Passion, Ignite Your Potential
 
-## Usage
+PassionSeed is a Next.js learning platform where students explore career paths through immersive, real-world challenges designed by actual professionals. Features include interactive learning maps, AI-guided expert interviews, hackathon simulations, team collaboration, and classroom management.
 
-- To install package
+## Tech Stack
+
+- **Framework**: [Next.js 15](https://nextjs.org/) (App Router, Turbopack)
+- **Language**: TypeScript
+- **Styling**: TailwindCSS + [Shadcn/ui](https://ui.shadcn.com/)
+- **Database**: [Supabase](https://supabase.com/) (PostgreSQL)
+- **Auth**: Supabase Auth with SSR cookie sessions
+- **Maps**: [React Flow](https://reactflow.dev/) for interactive learning map visualization
+- **AI**: Vercel AI SDK (OpenAI, Anthropic, Google, DeepSeek)
+- **Deployment**: Vercel
+
+## Quick Start
+
+### Prerequisites
+
+- Node.js 20+
+- [pnpm](https://pnpm.io/)
+- [Supabase CLI](https://supabase.com/docs/guides/cli)
+
+### Installation
 
 ```bash
+# Install dependencies
 pnpm install
-```
 
-- To start development
+# Set up local secrets (creates .env.local)
+./scripts/setup-local-secrets.sh
 
-```bash
+# Start Supabase locally
+npx supabase start
+
+# Start the dev server (with Turbopack)
 pnpm dev
 ```
 
-- **Setup Local Environment Securely**
+Open [http://localhost:3000](http://localhost:3000).
+
+### Other Commands
+
+| Command | Description |
+|---------|-------------|
+| `pnpm build` | Production build |
+| `pnpm build:analyze` | Build with bundle analyzer |
+| `pnpm lint` | Run ESLint |
+| `pnpm test` | Run Jest tests |
+| `pnpm test:watch` | Run Jest in watch mode |
+| `pnpm optimize:images` | Convert PNGs to WebP |
+
+---
+
+## Architecture
+
+### Key Directories
+
+| Directory | Purpose |
+|-----------|---------|
+| `app/` | Next.js App Router pages and API routes |
+| `components/` | Reusable React components |
+| `components/ui/` | Shadcn/ui primitives (50+ components) |
+| `lib/` | Application logic — Supabase wrappers, hooks, AI services |
+| `lib/supabase/` | Database operations and queries |
+| `lib/ai/` | AI generation services (direction finder, quiz, etc.) |
+| `utils/supabase/` | Browser + server Supabase client configuration |
+| `types/` | Shared TypeScript type definitions |
+| `supabase/migrations/` | Database schema migrations |
+| `docs/` | Project documentation (see [docs/README.md](docs/README.md)) |
+| `scripts/` | Utility scripts (SQL imports, debug, etc.) |
+
+### Core Domains
+
+1. **Learning Maps** — Gamified node-based learning paths with content, assessments, and progress tracking. Students unlock nodes as they complete prerequisites.
+2. **Expert Interviews** — AI-facilitated career exploration through structured conversations with professionals.
+3. **Hackathons** — 5-day simulation events with team formation, challenges, submissions, and AI-assisted grading.
+4. **Classrooms** — Instructor-created environments with join codes, assignments, team management, and progress dashboards.
+5. **Direction Finder** — AI-powered career recommendation system based on student profiles.
+
+### Authentication
+
+Supabase Auth with SSR. Uses `@supabase/ssr` with `getAll()`/`setAll()` cookie methods only. See `utils/supabase/server.ts` and `utils/supabase/client.ts` for implementation patterns.
+
+### Design System
+
+PassionSeed uses two atmospheric themes:
+
+- **Dawn** — Student-facing. Cool blues warming into gold. Optimistic, exploratory.
+- **Dusk** — Expert-facing. Deep purples cooling into amber. Warm, authoritative.
+
+Both share the same structural DNA: fluid, luminous components that glow and respond like living things. See [docs/architecture/DESIGN.md](docs/architecture/DESIGN.md) for the full design system specification.
+
+---
+
+## Database
+
+Local development uses the Supabase CLI. Migrations live in `supabase/migrations/` and are applied with:
 
 ```bash
-# Run the setup script to configure secrets safely
-./scripts/setup-local-secrets.sh
+npx supabase db push --local
 ```
 
-- Run Supabase Locally
+The `supabase/schema.sql` file contains the complete schema for reference.
 
-```bash
-npx supabase start
-```
+---
 
-- To start production
+## Documentation
 
-```bash
-pnpm build
-pnpm start
-```
+All documentation is organized in `docs/`:
 
-Key Directories
-app/ – Next.js routes and pages. Examples include authentication flows (app/auth/_), the main dashboard (app/me/_), community pages, and workshop listings.
+| Category | Path |
+|----------|------|
+| Product & Project | [docs/project/](docs/project/) |
+| Architecture & Schema | [docs/architecture/](docs/architecture/) |
+| Feature Guides | [docs/features/](docs/features/) |
+| Hackathon | [docs/hackathon/](docs/hackathon/) |
+| Operations & Deployment | [docs/operations/](docs/operations/) |
+| Testing | [docs/testing/](docs/testing/) |
+| Reference | [docs/reference/](docs/reference/) |
 
-components/ – Reusable UI and feature components (e.g., login-form.tsx, user-portal.tsx, community/ components).
+See [docs/README.md](docs/README.md) for the full index.
 
-components/ui/ – Shadcn-styled UI primitives (50+ components).
+---
 
-lib/ – Application logic, such as Supabase API wrappers (lib/supabase/reflection.ts, lib/api/community.ts), and small hooks (lib/hooks/use-multi-step-form.ts).
+## AI Assistant Guidelines
 
-utils/ – Supabase client helpers for browser and server usage. The server client follows the pattern prescribed in system-prompt.md.
+When working in this codebase:
 
-types/ – Shared TypeScript types for reflections, projects, communities, etc.
+- **Follow the Supabase SSR pattern** in `utils/supabase/server.ts` — use `getAll()`/`setAll()` only, never individual cookie methods
+- **Use `lib/supabase/` for all database queries** — don't query Supabase directly from components
+- **Respect the design system** — Dawn for students, Dusk for experts. See `docs/architecture/DESIGN.md`
+- **Read `AGENTS.md`** for Codex-specific guidance
+- **Read `CLAUDE.md`** for Claude Code-specific guidance
 
-supabase/ – Database migrations and config. schema.sql defines the schema for passions, reflections, workshops, and more.
+---
 
-styles/ – Tailwind setup (globals.css) and configuration (tailwind.config.ts shows custom fonts and color tokens).
+## License
 
-Authentication & Middleware
-system-prompt.md contains strict rules for implementing Supabase Auth with SSR, emphasizing the use of cookie getAll/setAll and forbidding deprecated APIs. The project’s proxy.ts imports updateSession from utils/supabase/proxy.ts, applying these rules to every request path except static assets.
-
-Styling Guidelines
-The .trae/rules/project_rules.md file outlines aesthetic choices—fonts, color palette, layout guidelines, and animation cues—to maintain a cohesive look.
-
-Example Component
-A typical component like LoginForm performs Discord OAuth using the Supabase client and displays a styled form card with Tailwind classes.
-
-Data Access
-The lib/supabase/reflection.ts module includes functions for creating reflections and aggregating dashboard data. For instance, getUserDashboardData pulls projects, reflections, and workshops, then computes the user’s reflection streak.
-
-Next Steps & Learning Pointers
-Understand the Supabase SSR pattern – Review utils/supabase/\* and the detailed instructions in system-prompt.md to ensure all server and client requests handle cookies correctly.
-
-Explore the schema – supabase/migrations/ and schema.sql illustrate how tables such as projects, reflections, tags, and communities are structured. Familiarity with this schema is key for adding new features.
-
-Study the UI/UX guidelines – The style rules and Tailwind configuration define the design language of the application.
-
-Check out major pages – app/me/\* (user dashboard and reflection workflow), app/communities/, and app/workshops/ showcase how data is fetched from Supabase and presented with the Shadcn component library.
-
-Review programmatic API wrappers – Files in lib/api/ and lib/supabase/ demonstrate how to encapsulate database operations, which will be helpful when adding new CRUD endpoints or features.
-
-Overall, the codebase is organized around Next.js conventions: routes in app/, reusable components in components/, and utilities in lib and utils. Supabase handles both authentication and database operations, and styling is done with TailwindCSS following the project’s design guidelines. To become comfortable with this codebase, focus on the Supabase helpers, the project types, and the key pages in app/ that orchestrate the user flows.
+Private. All rights reserved.
