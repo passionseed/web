@@ -231,6 +231,42 @@ Authentication middleware in `middleware.ts` handles:
 - Use proper error handling to avoid information leakage
 - Follow Supabase authentication best practices
 
+### Secret Management — CRITICAL
+
+**NEVER hardcode secrets, API keys, tokens, or credentials in any source file.** This includes:
+- Supabase anon keys, service role keys, or JWT tokens
+- Resend API keys (`re_*`)
+- MCP server access tokens
+- Session cookies, auth tokens, or refresh tokens
+- Database connection strings with embedded passwords
+
+**Always use environment variables.** Scripts must validate required env vars and exit gracefully if missing:
+
+```typescript
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!supabaseUrl || !supabaseKey) {
+  console.error('❌ Missing required environment variables');
+  process.exit(1);
+}
+```
+
+**Never commit credential dump files.** This includes:
+- Browser cookie exports (e.g., `outlook-chula.json`)
+- MCP server configurations with tokens (e.g., `.cursor/mcp.json`)
+- Local database dumps containing user data
+- `.env.local` or any `.env*` files
+
+**Add sensitive patterns to `.gitignore` immediately** when discovered:
+```
+.cursor/
+outlook-chula.json
+scripts/*-local.js
+scripts/*-local.mjs
+```
+
+Before staging changes, always audit for accidental secret inclusion.
+
 ## Module Resolution Rules
 - When working with components that have both `Component.tsx` and `Component/index.tsx`:
   1. ALWAYS check which version is imported in the consuming files

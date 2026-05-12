@@ -1,51 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { streamText } from "ai";
 import { createClient } from "@/utils/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { getModel } from "@/lib/ai/modelRegistry";
 import { getPhaseSpec, getActivitySpec, formatActivitySpecForPrompt } from "@/lib/hackathon/phase-specs";
-import { persistDraft, type AiDraft } from "@/lib/hackathon/ai-grader";
+import { persistDraft } from "@/lib/hackathon/ai-grader";
 import {
   analyzeSubmission,
   formatImageAnalysisForPrompt,
   type SubmissionImageAnalysis,
 } from "@/lib/hackathon/image-analysis";
-import { getActiveGradingPrompt } from "@/lib/hackathon/grading-prompt";
+import { getActiveGradingPrompt, getCalibrationExamples, formatCalibrationExamples } from "@/lib/hackathon/grading-prompt";
+import { parseModelGrade, runDualGrade } from "@/lib/hackathon/dual-grade";
 
-// Hobby plan max is 60s
-export const maxDuration = 60;
+// Vercel Pro allows up to 300s — dual-model parallel needs the headroom
+export const maxDuration = 300;
 
-const AI_MODEL = "MiniMax-M2.7-highspeed";
-
-const aiGradeSchema = z.object({
-  review_status: z.enum(["pending_review", "passed", "revision_required"]),
-  score_awarded: z.number().nullable(),
-  feedback: z.string().min(1).max(4000),
-  reasoning: z.string().max(2000),
-});
-
-type AiGradeResult = z.infer<typeof aiGradeSchema>;
-
-function parseAiGradeJson(raw: string): AiGradeResult | null {
-  if (!raw) return null;
-
-  // Pull JSON out of possible markdown fences or prose.
-  const fence = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  const candidate = fence?.[1] ?? raw;
-  const start = candidate.indexOf("{");
-  const end = candidate.lastIndexOf("}");
-  if (start === -1 || end === -1 || end <= start) return null;
-
-  const jsonSlice = candidate.slice(start, end + 1);
-  try {
-    const parsed = JSON.parse(jsonSlice);
-    const result = aiGradeSchema.safeParse(parsed);
-    return result.success ? result.data : null;
-  } catch {
-    return null;
-  }
-}
+const PRIMARY_MODEL = "kimi-for-coding";
+const SECONDARY_MODEL = "minimax-m2-highspeed";
+const MODEL_TIMEOUT_MS = 60_000;
 
 function getHackathonServiceClient() {
   return createServiceClient(
@@ -265,6 +238,7 @@ function buildPrompt(params: {
   graderComment: string | null;
   upcomingActivities: { title: string; instructions: string | null; display_order: number | null }[];
   template?: string | null;
+  calibrationExamples?: string | null;
 }) {
   const {
     phaseSpec,
@@ -284,6 +258,7 @@ function buildPrompt(params: {
     graderComment,
     upcomingActivities,
     template,
+    calibrationExamples,
   } = params;
 
   const phaseContext = compactPhaseSpec(phaseSpec, phaseNumber, phaseTitle);
@@ -328,6 +303,8 @@ function buildPrompt(params: {
     ? `\n=== HUMAN GRADER NOTE ===\n${graderComment}`
     : "";
 
+  const calibrationSection = calibrationExamples ?? "";
+
   // If we have a DB template, use placeholder substitution
   if (template) {
     const rendered = template
@@ -347,6 +324,7 @@ function buildPrompt(params: {
       .replace(/\{\{scoring_rules\}\}/g, scoringRules)
       .replace(/\{\{score_field\}\}/g, scoreField)
       .replace(/\{\{grader_comment_section\}\}/g, graderCommentSection)
+      .replace(/\{\{calibration_examples\}\}/g, calibrationSection)
       .replace(/\n{3,}/g, "\n\n")
       .trim();
     return rendered;
@@ -402,6 +380,7 @@ function buildPrompt(params: {
     "2. GAPS OR SUGGESTIONS — 1-2 specific things to improve. Tie each to the learning goal.",
     "3. NEXT STEP — One clear action they should take next. If revision_required, state exactly what needs to change.",
     "",
+    calibrationSection,
     "=== REASONING ===",
     "Provide a short admin-only explanation of your grading decision. What evidence made you decide? What was the decisive factor?",
     "",
@@ -455,7 +434,7 @@ async function gatherPromptContext(
     return null;
   }
 
-  const sub = submission as any;
+  const sub = submission as Record<string, unknown>;
   const activity = pickOne(sub.hackathon_phase_activities);
   const phase = pickOne(activity?.hackathon_program_phases);
 
@@ -468,7 +447,7 @@ async function gatherPromptContext(
 
   const assessmentsRaw: AssessmentRow[] = (assessmentsData ?? []) as AssessmentRow[];
   const assessments = [...assessmentsRaw].sort(
-    (a: any, b: any) => (a?.display_order ?? 0) - (b?.display_order ?? 0)
+    (a: AssessmentRow, b: AssessmentRow) => (a?.display_order ?? 0) - (b?.display_order ?? 0)
   );
   const assessment = assessments[0] ?? null;
   const pointsPossible =
@@ -533,6 +512,13 @@ async function gatherPromptContext(
     template = dbPrompt?.template ?? null;
   }
 
+  // Fetch calibration examples for this activity (admin overrides)
+  const activityId = activity?.id ?? null;
+  const calibrationExamplesRaw = activityId
+    ? await getCalibrationExamples(activityId, 3)
+    : [];
+  const calibrationExamples = formatCalibrationExamples(calibrationExamplesRaw);
+
   const prompt = buildPrompt({
     phaseSpec,
     phaseNumber: phase?.phase_number ?? null,
@@ -553,6 +539,7 @@ async function gatherPromptContext(
     graderComment: graderComment ?? null,
     upcomingActivities,
     template,
+    calibrationExamples,
   });
 
   return {
@@ -565,6 +552,7 @@ async function gatherPromptContext(
     activityTitle: activity?.title ?? null,
     pointsPossible,
     hasImageAnalysis: Boolean(imageAnalysis?.primaryImage?.analysis || imageAnalysis?.files?.length),
+    calibration_examples_count: calibrationExamplesRaw.length,
   };
 }
 
@@ -586,16 +574,18 @@ async function checkTeamHasMentor(scope: "individual" | "team", id: string): Pro
   if (!sub) return false;
 
   let teamId: string | null = null;
+  const subRow = sub as Record<string, unknown>;
 
   if (scope === "team") {
-    teamId = (sub as any).team_id ?? null;
+    teamId = (subRow.team_id as string | null) ?? null;
   } else {
     const { data: mem } = await serviceClient
       .from("hackathon_team_members")
       .select("team_id")
-      .eq("participant_id", (sub as any).participant_id)
+      .eq("participant_id", subRow.participant_id as string)
       .maybeSingle();
-    teamId = (mem as any)?.team_id ?? null;
+    const memRow = mem as Record<string, unknown> | null;
+    teamId = (memRow?.team_id as string | null) ?? null;
   }
 
   if (!teamId) return false;
@@ -639,7 +629,7 @@ export async function GET(
     if (!context) return NextResponse.json({ error: "Submission not found" }, { status: 404 });
 
     return NextResponse.json({
-      model: AI_MODEL,
+      model: `${PRIMARY_MODEL} + ${SECONDARY_MODEL}`,
       has_phase_spec: context.hasPhaseSpec,
       has_activity_spec: context.hasActivitySpec,
       phase_number: context.phaseNumber,
@@ -649,8 +639,9 @@ export async function GET(
       has_image_analysis: false,
       prompt: context.prompt,
       template: context.template,
+      calibration_examples_count: (context.calibration_examples_count as number | undefined) ?? 0,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[admin/hackathon/ai-grade] GET error:", err);
     return NextResponse.json(
       { error: "Failed to load prompt", message: err?.message ?? String(err) },
@@ -690,38 +681,52 @@ export async function POST(
   console.log("[admin/hackathon/ai-grade] POST start", {
     scope: rawScope,
     id,
+    hasKimiKey: Boolean(process.env.KIMI_API_KEY),
     hasMinimaxKey: Boolean(process.env.MINIMAX_API_KEY),
-    minimaxKeyPrefix: process.env.MINIMAX_API_KEY?.slice(0, 6),
   });
 
-  if (!process.env.MINIMAX_API_KEY) {
-    console.error("[admin/hackathon/ai-grade] MINIMAX_API_KEY missing in process.env");
+  const missingKeys: string[] = [];
+  if (!process.env.KIMI_API_KEY) missingKeys.push("KIMI_API_KEY");
+  if (!process.env.MINIMAX_API_KEY) missingKeys.push("MINIMAX_API_KEY");
+
+  if (missingKeys.length > 0) {
+    console.error("[admin/hackathon/ai-grade] missing API keys:", missingKeys);
     return NextResponse.json(
-      { error: "MINIMAX_API_KEY is not set on the server. Add it to .env.local and restart the dev server." },
+      { error: `${missingKeys.join(", ")} is not set on the server. Add it to .env/.env.local and restart the dev server.` },
       { status: 500 }
     );
   }
 
-  try {
-    const result = streamText({
-      model: getModel(AI_MODEL),
-      prompt: context.prompt,
-      temperature: 0.5,
-      maxOutputTokens: 3000,
-      onError: (e) => {
-        console.error("[admin/hackathon/ai-grade] stream error:", e);
-      },
-    });
+  // Fetch existing review for optimistic lock
+  const serviceClient = getHackathonServiceClient();
+  const reviewTable = "hackathon_submission_reviews";
+  const reviewKey =
+    rawScope === "individual"
+      ? { column: "individual_submission_id", value: id }
+      : { column: "team_submission_id", value: id };
 
+  const { data: existingReview } = await serviceClient
+    .from(reviewTable)
+    .select("id, ai_draft_generated_at")
+    .eq(reviewKey.column, reviewKey.value)
+    .maybeSingle();
+
+  const expectedGeneratedAt = forceReview
+    ? null
+    : (existingReview as { ai_draft_generated_at?: string | null } | null)?.ai_draft_generated_at ?? null;
+
+  try {
     const encoder = new TextEncoder();
+
+    // Build prompts for both models
+    // Kimi gets the full multimodal prompt (images included natively)
+    // MiniMax gets text-only prompt with image analysis summary
+    const kimiPrompt = context.prompt;
+    const minimaxPrompt = context.prompt; // Both get same prompt for now; MiniMax handles text-only
 
     const stream = new ReadableStream({
       async start(controller) {
-        let accumulated = "";
         let clientAlive = true;
-
-        // Safe send: if the client disconnected, swallow the error so the
-        // MiniMax loop and persistDraft still run to completion.
         const send = (obj: unknown) => {
           if (!clientAlive) return;
           try {
@@ -736,78 +741,110 @@ export async function POST(
           send({ type: "status", message: "Image analysis completed - visual content included in grading context" });
         }
 
-        try {
-          for await (const part of result.fullStream) {
-            // Accumulate FIRST, independent of client status.
-            if (part.type === "text-delta") {
-              const delta = (part as any).text ?? "";
-              accumulated += delta;
-              send({ type: "thinking", delta });
-            } else if (part.type === "reasoning-delta") {
-              const delta = (part as any).text ?? "";
-              send({ type: "reasoning", delta });
-            } else if (part.type === "error") {
-              send({ type: "error", message: String((part as any).error ?? "stream error") });
-            }
-          }
+        // Run both models in parallel with individual 60s timeouts
+        const kimiResultPromise = runModelStream({
+          modelName: PRIMARY_MODEL,
+          prompt: kimiPrompt,
+          send,
+          label: "Kimi",
+        });
 
-          const object = parseAiGradeJson(accumulated);
-          if (!object) {
-            console.error("[admin/hackathon/ai-grade] failed to parse JSON", { accumulated });
-            send({ type: "error", message: "AI did not return a valid JSON block", raw: accumulated });
-            return;
-          }
+        const minimaxResultPromise = runModelStream({
+          modelName: SECONDARY_MODEL,
+          prompt: minimaxPrompt,
+          send,
+          label: "MiniMax",
+        });
 
-          // Persist draft whether or not the client is still listening.
-          let promoted = false;
-          try {
-            const draft: AiDraft = {
-              status: object.review_status,
-              score_awarded: object.score_awarded,
-              points_possible: context.pointsPossible,
-              feedback: object.feedback,
-              reasoning: object.reasoning ?? null,
-              raw_output: accumulated,
-              error: null,
-            };
-            const persisted = await persistDraft(getHackathonServiceClient(), {
-              scope: rawScope as "individual" | "team",
-              submissionId: id,
-              draft,
-              source: "manual",
-              model: AI_MODEL,
-              forceReview,
-              reviewedByUserId: admin.id,
-            });
-            promoted = persisted.promoted;
-            console.log("[admin/hackathon/ai-grade] draft persisted", {
-              scope: rawScope,
-              id,
-              promoted,
-              clientAlive,
-            });
-          } catch (persistErr) {
-            console.error("[admin/hackathon/ai-grade] persist draft failed:", persistErr);
-          }
+        const [kimiRaw, minimaxRaw] = await Promise.all([
+          withTimeout(kimiResultPromise, MODEL_TIMEOUT_MS, PRIMARY_MODEL),
+          withTimeout(minimaxResultPromise, MODEL_TIMEOUT_MS, SECONDARY_MODEL),
+        ]);
 
-          send({
-            type: "done",
-            suggestion: object,
-            model: AI_MODEL,
-            has_phase_spec: context.hasPhaseSpec,
-            persisted: true,
-            auto_approved: promoted,
+        const kimiGrade = kimiRaw ? parseModelGrade(kimiRaw) : null;
+        const minimaxGrade = minimaxRaw ? parseModelGrade(minimaxRaw) : null;
+
+        if (kimiGrade) kimiGrade.model = PRIMARY_MODEL;
+        if (minimaxGrade) minimaxGrade.model = SECONDARY_MODEL;
+
+        // Apply consensus rules
+        const outcome = runDualGrade(kimiGrade, minimaxGrade, {
+          pointsPossible: context.pointsPossible,
+        });
+
+        if (outcome.error || !outcome.draft) {
+          const errorMsg =
+            !kimiRaw && !minimaxRaw
+              ? "Both AI models failed to respond. Please try again."
+              : !kimiGrade && !minimaxGrade
+                ? "Both models returned unparseable output. Please try again."
+                : "AI grading failed. Please try again.";
+          console.error("[admin/hackathon/ai-grade] consensus error", {
+            kimiOk: !!kimiGrade,
+            minimaxOk: !!minimaxGrade,
           });
-        } catch (err: any) {
-          console.error("[admin/hackathon/ai-grade] stream loop error:", err);
-          send({ type: "error", message: err?.message ?? String(err) });
-        } finally {
+          send({ type: "error", message: errorMsg });
           try { controller.close(); } catch {}
+          return;
         }
+
+        // Persist draft with optimistic lock
+        let promoted = false;
+        let persisted = false;
+        try {
+          const persistResult = await persistDraft(serviceClient, {
+            scope: rawScope as "individual" | "team",
+            submissionId: id,
+            draft: outcome.draft,
+            source: "manual",
+            model: `${PRIMARY_MODEL}+${SECONDARY_MODEL}`,
+            forceReview,
+            reviewedByUserId: admin.id,
+            expectedGeneratedAt,
+          });
+          promoted = persistResult.promoted;
+          persisted = true;
+          console.log("[admin/hackathon/ai-grade] draft persisted", {
+            scope: rawScope,
+            id,
+            promoted,
+            clientAlive,
+            agreement: outcome.draft.consensus?.agreement,
+          });
+        } catch (persistErr: unknown) {
+          console.error("[admin/hackathon/ai-grade] persist draft failed:", persistErr);
+          send({
+            type: "error",
+            message: persistErr?.message?.includes("No rows matched")
+              ? "Another grade was just submitted — please review the updated result."
+              : "Failed to save AI draft. Please try again.",
+          });
+          try { controller.close(); } catch {}
+          return;
+        }
+
+        // Build suggestion object for done event (backward compatible)
+        const suggestion = {
+          review_status: outcome.draft.status,
+          score_awarded: outcome.draft.score_awarded,
+          feedback: outcome.draft.feedback,
+          reasoning: outcome.draft.reasoning ?? "",
+        };
+
+        send({
+          type: "done",
+          suggestion,
+          model: outcome.primaryModel ?? `${PRIMARY_MODEL}+${SECONDARY_MODEL}`,
+          has_phase_spec: context.hasPhaseSpec,
+          persisted,
+          auto_approved: promoted,
+          consensus: outcome.draft.consensus,
+        });
+
+        try { controller.close(); } catch {}
       },
       cancel() {
-        // Client closed the tab. The `start()` loop continues via the
-        // clientAlive gate so persistDraft still runs.
+        // Client closed the tab.
       },
     });
 
@@ -818,16 +855,74 @@ export async function POST(
         "X-Accel-Buffering": "no",
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[admin/hackathon/ai-grade] AI error:", error);
+    const err = error as { message?: string; name?: string; cause?: unknown };
     return NextResponse.json(
       {
         error: "AI grading failed",
-        message: error?.message ?? String(error),
-        name: error?.name,
-        cause: error?.cause ? String(error.cause) : undefined,
+        message: err?.message ?? String(error),
+        name: err?.name,
+        cause: (err as { cause?: unknown }).cause ? String((err as { cause?: unknown }).cause) : undefined,
       },
       { status: 500 }
     );
   }
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+async function runModelStream(opts: {
+  modelName: string;
+  prompt: string;
+  send: (obj: unknown) => void;
+  label: string;
+}): Promise<string | null> {
+  const { modelName, prompt, send, label } = opts;
+  let accumulated = "";
+
+  try {
+    const result = streamText({
+      model: getModel(modelName),
+      prompt,
+      temperature: 0.5,
+      maxOutputTokens: 3000,
+      onError: (e) => {
+        console.error(`[admin/hackathon/ai-grade] ${label} stream error:`, e);
+      },
+    });
+
+    for await (const part of result.fullStream) {
+      if (part.type === "text-delta") {
+        const delta = (part as { text?: string }).text ?? "";
+        accumulated += delta;
+        send({ type: "thinking", delta, model: label });
+      } else if (part.type === "reasoning-delta") {
+        const delta = (part as { text?: string }).text ?? "";
+        send({ type: "reasoning", delta, model: label });
+      } else if (part.type === "error") {
+        send({ type: "error", message: String((part as { error?: unknown }).error ?? `${label} stream error`), model: label });
+      }
+    }
+
+    return accumulated;
+  } catch (err: unknown) {
+    console.error(`[admin/hackathon/ai-grade] ${label} model error:`, err);
+    send({ type: "error", message: `${label} failed: ${err?.message ?? String(err)}`, model: label });
+    return null;
+  }
+}
+
+async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T | null> {
+  return Promise.race([
+    promise,
+    new Promise<null>((resolve) =>
+      setTimeout(() => {
+        console.error(`[admin/hackathon/ai-grade] ${label} timed out after ${ms}ms`);
+        resolve(null);
+      }, ms)
+    ),
+  ]);
 }

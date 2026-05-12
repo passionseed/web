@@ -31,6 +31,12 @@ const openai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY || "",
 });
 
+const KIMI_API_KEY = process.env.KIMI_API_KEY || "";
+const kimi = createOpenAI({
+  apiKey: KIMI_API_KEY,
+  baseURL: "https://api.kimi.com/coding/v1",
+});
+
 // Allow up to 300 seconds (5 minutes) for AI generation to handle 65 concurrent users
 // Vercel Pro allows up to 300s, provides buffer for 190s generation + network overhead
 export const maxDuration = 300;
@@ -56,6 +62,9 @@ export const AVAILABLE_MODELS = {
     { id: 'gpt-5.3-chat-latest', name: 'GPT-5.3 Chat', speed: 'fast', cost: 'high' },
     { id: 'gpt-5.2-chat-latest', name: 'GPT-5.2 Chat', speed: 'slow', cost: 'high' },
     // { id: 'codex-mini-latest', name: 'Codex Mini', speed: 'medium', cost: 'medium' },
+  ],
+  kimi: [
+    { id: 'kimi-for-coding', name: 'Kimi K2.6', speed: 'fast', cost: 'low' },
   ],
   // DeepSeek disabled - not used in A/B testing
   // deepseek: [
@@ -129,6 +138,16 @@ export function getModel(modelName?: string) {
   if (resolvedModelName === 'gpt-5.3-chat-latest') return openai('gpt-5.3-chat-latest');
   if (resolvedModelName === 'gpt-5.2-chat-latest') return openai('gpt-5.2-chat-latest');
   // if (resolvedModelName === 'codex-mini-latest') return openai('codex-mini-latest');
+
+  // Kimi Models (OpenAI-compatible endpoint)
+  if (resolvedModelName === 'kimi-for-coding') {
+    if (!KIMI_API_KEY) {
+      throw new Error(
+        `KIMI_API_KEY is not set. Please set the KIMI_API_KEY environment variable to use the Kimi provider.`
+      );
+    }
+    return kimi('kimi-for-coding');
+  }
 
   // DeepSeek Models (2 variants)
   if (resolvedModelName.includes('deepseek')) {

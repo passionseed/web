@@ -114,6 +114,19 @@ interface Team {
   lobby_code: string | null;
 }
 
+interface ConsensusModelInfo {
+  model: string;
+  status: string;
+  score_awarded: number | null;
+  feedback: string;
+  reasoning: string;
+}
+
+interface ConsensusInfo {
+  agreement: "agree" | "disagree" | "single_model";
+  models?: ConsensusModelInfo[];
+}
+
 interface AiDraft {
   status: ReviewStatus;
   score_awarded: number | null;
@@ -122,6 +135,7 @@ interface AiDraft {
   reasoning: string | null;
   raw_output?: string;
   error?: string | null;
+  consensus?: ConsensusInfo;
 }
 
 interface Review {
@@ -329,6 +343,7 @@ export function AdminHackathonActivities() {
   const [editingTemplate, setEditingTemplate] = useState("");
   const [savingTemplate, setSavingTemplate] = useState(false);
   const [templateMessage, setTemplateMessage] = useState("");
+  const [consensusExpanded, setConsensusExpanded] = useState(false);
   const activityRequestControllers = useRef(new Map<string, AbortController>());
   const detailRequestId = useRef(0);
 
@@ -1701,6 +1716,64 @@ export function AdminHackathonActivities() {
                             or edit below and click Save to approve.
                           </span>
                         </div>
+                        {/* Consensus toggle — only show when models disagreed */}
+                        {selectedSubmission.review.ai_draft.consensus &&
+                          selectedSubmission.review.ai_draft.consensus.agreement === "disagree" &&
+                          selectedSubmission.review.ai_draft.consensus.models &&
+                          selectedSubmission.review.ai_draft.consensus.models.length > 0 && (
+                            <div className="space-y-1.5">
+                              <button
+                                type="button"
+                                onClick={() => setConsensusExpanded((v) => !v)}
+                                className="flex items-center gap-1 text-[11px] font-light text-violet-300/70 hover:text-violet-200 transition-colors"
+                              >
+                                {consensusExpanded ? (
+                                  <ChevronDown className="h-3 w-3 shrink-0" />
+                                ) : (
+                                  <ChevronRight className="h-3 w-3 shrink-0" />
+                                )}
+                                {selectedSubmission.review.ai_draft.consensus.agreement === "disagree"
+                                  ? "Models disagreed — view other opinion"
+                                  : "Single model available — view fallback details"}
+                              </button>
+                              {consensusExpanded && (
+                                <div className="space-y-2 rounded border border-violet-500/20 bg-violet-500/5 px-2.5 py-2">
+                                  {selectedSubmission.review.ai_draft.consensus.models.map((m) => (
+                                    <div key={m.model} className="space-y-1">
+                                      <div className="flex items-center gap-1.5 text-[11px] font-light">
+                                        <span className="text-violet-200">{m.model}</span>
+                                        <Badge
+                                          variant="outline"
+                                          className={`h-5 px-1 text-[10px] font-light ${
+                                            m.status === "passed"
+                                              ? "border-emerald-500/40 text-emerald-300"
+                                              : m.status === "revision_required"
+                                                ? "border-rose-500/40 text-rose-300"
+                                                : "border-amber-500/40 text-amber-300"
+                                          }`}
+                                        >
+                                          {m.status.replace(/_/g, " ")}
+                                        </Badge>
+                                        {m.score_awarded !== null && (
+                                          <span className="text-slate-500">
+                                            {m.score_awarded} pts
+                                          </span>
+                                        )}
+                                      </div>
+                                      <p className="whitespace-pre-wrap text-[11px] font-light leading-relaxed text-violet-100/70 break-words">
+                                        {m.feedback}
+                                      </p>
+                                      {m.reasoning && (
+                                        <p className="whitespace-pre-wrap text-[10px] font-light leading-relaxed text-violet-100/50 break-words">
+                                          {m.reasoning}
+                                        </p>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
                       </div>
                     )}
 
@@ -1708,7 +1781,7 @@ export function AdminHackathonActivities() {
                       <div className="flex items-center justify-between gap-2 min-w-0 text-[11px] font-light text-violet-300/80">
                         <div className="flex items-center gap-1.5 min-w-0">
                           <Sparkles className="h-3 w-3 shrink-0" />
-                          <span className="truncate">AI mentor (MiniMax M2.7)</span>
+                          <span className="truncate">AI mentor (Kimi + MiniMax)</span>
                           <button
                             type="button"
                             onClick={openPromptPreview}
@@ -1902,7 +1975,7 @@ export function AdminHackathonActivities() {
 
                     <Button
                       onClick={submitGrade}
-                      disabled={savingGrade}
+                      disabled={savingGrade || aiSuggesting}
                       className="w-full h-9 text-xs font-medium bg-blue-500 text-blue-950 hover:bg-blue-400"
                     >
                       {savingGrade ? (

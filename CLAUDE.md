@@ -231,6 +231,42 @@ Authentication middleware in `middleware.ts` handles:
 - Use proper error handling to avoid information leakage
 - Follow Supabase authentication best practices
 
+### Secret Management — CRITICAL
+
+**NEVER hardcode secrets, API keys, tokens, or credentials in any source file.** This includes:
+- Supabase anon keys, service role keys, or JWT tokens
+- Resend API keys (`re_*`)
+- MCP server access tokens
+- Session cookies, auth tokens, or refresh tokens
+- Database connection strings with embedded passwords
+
+**Always use environment variables.** Scripts must validate required env vars and exit gracefully if missing:
+
+```typescript
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!supabaseUrl || !supabaseKey) {
+  console.error('❌ Missing required environment variables');
+  process.exit(1);
+}
+```
+
+**Never commit credential dump files.** This includes:
+- Browser cookie exports (e.g., `outlook-chula.json`)
+- MCP server configurations with tokens (e.g., `.cursor/mcp.json`)
+- Local database dumps containing user data
+- `.env.local` or any `.env*` files
+
+**Add sensitive patterns to `.gitignore` immediately** when discovered:
+```
+.cursor/
+outlook-chula.json
+scripts/*-local.js
+scripts/*-local.mjs
+```
+
+Before staging changes, always audit for accidental secret inclusion.
+
 ## PathLab Schema Rule
 
 **REQUIRED:** Whenever you add, remove, or rename a column/table/enum in any PathLab-related migration or code (`path_days`, `path_activities`, `path_content`, `path_assessments`, `path_quiz_questions`, `path_activity_progress`, `path_assessment_submissions`, `path_enrollments`, `path_reflections`, `path_npc_conversations`, `path_npc_conversation_nodes`, `path_npc_conversation_choices`, `path_ai_chat_sessions`, `path_ai_chat_messages`, `activity_templates`, `page_templates`, `seeds`, `paths`, `expert_pathlabs`, `expert_profiles`, `seed_npc_avatars`), you MUST also update:

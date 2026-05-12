@@ -50,7 +50,6 @@ coverage
 # local worktrees
 .worktrees/
 .gstack/
-.cursor/
 
 # AI tool configurations (personal/developer-specific, not project source)
 .agent/
@@ -96,3 +95,8 @@ scripts/test-db-access.js
 scripts/update-invitation-template.js
 .DS_Store
 invitation.html
+
+# SECURITY: wildcard patterns for local scripts and temp files
+scripts/*-local.js
+scripts/*-local.mjs
+supabase/.temp/

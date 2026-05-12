@@ -133,7 +133,7 @@ export async function POST(
     getRecipientParticipantIds({ serviceClient, scope, submission }),
     serviceClient
       .from("hackathon_submission_reviews")
-      .select("id")
+      .select("id, ai_draft, override_log")
       .eq(reviewKey.column, reviewKey.value)
       .maybeSingle(),
   ]);
@@ -148,6 +148,41 @@ export async function POST(
 
   if (recipientParticipantIds.length === 0) {
     return NextResponse.json({ error: "No participants found for submission" }, { status: 400 });
+  }
+
+  // Build override log entry if admin changed the AI draft outcome
+  const draft = (existingReview as any)?.ai_draft as {
+    status?: string;
+    score_awarded?: number | null;
+    feedback?: string;
+    reasoning?: string | null;
+  } | null;
+  const existingLog = ((existingReview as any)?.override_log as unknown[]) ?? [];
+  let overrideLog = Array.isArray(existingLog) ? existingLog : [];
+
+  const draftChanged =
+    draft != null &&
+    (draft.status !== reviewStatus ||
+      draft.score_awarded !== scoreAwarded ||
+      draft.feedback !== feedback);
+
+  if (draftChanged) {
+    const entry = {
+      ai_draft: {
+        status: draft.status ?? null,
+        score_awarded: draft.score_awarded ?? null,
+        feedback: draft.feedback ?? null,
+        reasoning: draft.reasoning ?? null,
+      },
+      final_review: {
+        status: reviewStatus,
+        score_awarded: scoreAwarded,
+        feedback: feedback,
+      },
+      captured_at: now,
+      activity_id: activity?.id ?? null,
+    };
+    overrideLog = [...overrideLog, entry];
   }
 
   const reviewPayload = {
@@ -182,6 +217,32 @@ export async function POST(
   if (reviewResult.error) {
     console.error("[admin/hackathon/submissions/review] review save error", reviewResult.error);
     return NextResponse.json({ error: "Failed to save review" }, { status: 500 });
+  }
+
+  // Capture override log in a separate, best-effort update so that a
+  // capture failure (missing column, constraint violation, etc.) does NOT
+  // block the review from being saved.
+  if (draftChanged && overrideLog.length > 0) {
+    try {
+      const { error: overrideError } = await serviceClient
+        .from("hackathon_submission_reviews")
+        .update({ override_log: overrideLog })
+        .eq("id", reviewResult.data.id);
+
+      if (overrideError) {
+        console.error(
+          "[override capture FAILED] could not write override_log for review",
+          reviewResult.data.id,
+          overrideError
+        );
+      }
+    } catch (err) {
+      console.error(
+        "[override capture FAILED] exception writing override_log for review",
+        reviewResult.data.id,
+        err
+      );
+    }
   }
 
   const inboxItems = buildReviewInboxItems({
