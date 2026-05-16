@@ -101,6 +101,24 @@ export async function recalculateAndUpsertTeamScore(
     }
   }
 
+  // Phase 3: add best score per category from phase3_score_events
+  const { data: phase3Scores } = await serviceClient
+    .from("hackathon_phase3_score_events")
+    .select("score_category, points_awarded")
+    .eq("team_id", teamId);
+
+  const bestPhase3ByCategory = new Map<string, number>();
+  for (const row of phase3Scores ?? []) {
+    const cat = row.score_category as string;
+    const score = (row.points_awarded as number) ?? 0;
+    const current = bestPhase3ByCategory.get(cat) ?? 0;
+    if (score > current) bestPhase3ByCategory.set(cat, score);
+  }
+
+  for (const score of bestPhase3ByCategory.values()) {
+    total += score;
+  }
+
   await serviceClient
     .from("hackathon_team_scores")
     .upsert({ team_id: teamId, total_score: total }, { onConflict: "team_id" });

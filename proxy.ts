@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/utils/supabase/proxy";
 
-export async function proxy(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   // Add caching headers for GET API requests
   if (request.method === 'GET' && request.nextUrl.pathname.startsWith('/api/')) {
     const { pathname } = request.nextUrl
