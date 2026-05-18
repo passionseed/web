@@ -22,7 +22,6 @@ import { AdminHackathonMentors } from "./AdminHackathonMentors";
 import { AdminHackathonSubmissions } from "./AdminHackathonSubmissions";
 import { AdminHackathonTeamSubmissions } from "./AdminHackathonTeamSubmissions";
 import { AdminHackathonActivities } from "./AdminHackathonActivities";
-import { AdminHackathonEmailSender } from "./AdminHackathonEmailSender";
 import { AdminBetaRegistrations } from "./AdminBetaRegistrations";
 import { AdminEventTracker } from "./AdminEventTracker";
 import { AdminProductAnalytics } from "./AdminProductAnalytics";
@@ -154,7 +153,7 @@ export function AdminDashboard() {
                   <TabsTrigger value="mentors">Mentors</TabsTrigger>
                   <TabsTrigger value="email-sender">Email Sender</TabsTrigger>
                 </TabsList>
-                <TabsContent value="activities">
+                <TabsContent value="activities" className="space-y-6">
                   <AdminHackathonActivities key={`activities-${refreshKey}`} />
                 </TabsContent>
                 <TabsContent value="participants">

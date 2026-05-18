@@ -344,6 +344,7 @@ export function AdminHackathonActivities() {
   const [savingTemplate, setSavingTemplate] = useState(false);
   const [templateMessage, setTemplateMessage] = useState("");
   const [consensusExpanded, setConsensusExpanded] = useState(false);
+  const [questionsOpen, setQuestionsOpen] = useState(false);
   const activityRequestControllers = useRef(new Map<string, AbortController>());
   const detailRequestId = useRef(0);
 
@@ -1469,6 +1470,15 @@ export function AdminHackathonActivities() {
                         {selectedActivity?.title}
                       </h3>
                       <StatusBadge status={selectedSubmission.review_status} />
+                      {selectedActivity?.assessments?.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setQuestionsOpen(true)}
+                          className="rounded border border-slate-700 bg-slate-900/60 px-2 py-0.5 text-[11px] font-light text-slate-400 hover:border-slate-500 hover:text-slate-200 transition"
+                        >
+                          Questions
+                        </button>
+                      )}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <div className="text-xs font-light text-slate-400 break-words">
@@ -2275,6 +2285,54 @@ export function AdminHackathonActivities() {
                 )}
               </ul>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={questionsOpen} onOpenChange={setQuestionsOpen}>
+        <DialogContent className="max-w-xl max-h-[80vh] flex flex-col border-slate-700 bg-slate-950">
+          <DialogHeader className="space-y-1">
+            <DialogTitle className="text-sm font-medium tracking-wide uppercase text-slate-200">
+              Assessment questions
+            </DialogTitle>
+            <DialogDescription className="text-xs font-light text-slate-400">
+              {selectedActivity?.title}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+            {(selectedActivity?.assessments ?? []).map((a, idx) => {
+              const m = (a.metadata ?? {}) as Record<string, unknown>;
+              const label = (typeof m.label === "string" && m.label) || (typeof m.title === "string" && m.title) || null;
+              const prompt = (typeof m.prompt === "string" && m.prompt) || (typeof m.question === "string" && m.question) || (typeof m.submission_label === "string" && m.submission_label) || null;
+              const helper = (typeof m.helper_text === "string" && m.helper_text) || (typeof m.description === "string" && m.description) || null;
+              const minLen = typeof m.min_length === "number" ? m.min_length : typeof m.min_words === "number" ? m.min_words : null;
+              const maxLen = typeof m.max_length === "number" ? m.max_length : null;
+              const restKeys = Object.keys(m).filter((k) => !["label","title","prompt","question","submission_label","helper_text","description","min_length","max_length","min_words"].includes(k) && typeof m[k] !== "object");
+              return (
+                <div key={a.id} className="rounded-md border border-slate-800 bg-slate-900/40 p-3 space-y-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Q{idx + 1}</span>
+                    <span className="text-[11px] text-slate-500">{a.assessment_type}</span>
+                    {a.points_possible != null && <span className="text-[11px] text-slate-500">{a.points_possible}pt</span>}
+                    {a.is_graded && <span className="text-[11px] text-emerald-400">graded</span>}
+                  </div>
+                  {label && <p className="text-xs font-medium text-slate-200">{label}</p>}
+                  {prompt && <p className="text-sm font-light text-slate-100 leading-relaxed">{prompt}</p>}
+                  {helper && <p className="text-xs text-slate-400 leading-relaxed">{helper}</p>}
+                  {(minLen != null || maxLen != null) && (
+                    <p className="text-[11px] text-slate-500">
+                      Length: {minLen ?? 0}–{maxLen ?? "∞"}
+                    </p>
+                  )}
+                  {!label && !prompt && !helper && restKeys.length > 0 && (
+                    <p className="text-[11px] font-mono text-slate-500">{restKeys.map((k) => `${k}=${m[k]}`).join(" · ")}</p>
+                  )}
+                  {!label && !prompt && !helper && restKeys.length === 0 && (
+                    <p className="text-[11px] italic text-slate-600">No question text configured.</p>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </DialogContent>
       </Dialog>

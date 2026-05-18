@@ -25,7 +25,7 @@ export function TeamHoverCard({ children, teamName, lobbyCode, members }: TeamHo
     <HoverCard openDelay={200} closeDelay={100}>
       <HoverCardTrigger asChild>{children}</HoverCardTrigger>
       <HoverCardContent
-        side="top"
+        side="right"
         className="w-72 border-slate-700 bg-slate-900 p-0"
       >
         {/* Header */}
