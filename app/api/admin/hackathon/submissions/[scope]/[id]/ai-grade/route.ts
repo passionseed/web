@@ -13,8 +13,8 @@ import {
 import { getActiveGradingPrompt, getCalibrationExamples, formatCalibrationExamples } from "@/lib/hackathon/grading-prompt";
 import { parseModelGrade, runDualGrade } from "@/lib/hackathon/dual-grade";
 
-// Vercel Pro allows up to 300s — dual-model parallel needs the headroom
-export const maxDuration = 300;
+// Vercel Hobby plan allows up to 60s
+export const maxDuration = 60;
 
 const PRIMARY_MODEL = "kimi-for-coding";
 const SECONDARY_MODEL = "minimax-m2-highspeed";

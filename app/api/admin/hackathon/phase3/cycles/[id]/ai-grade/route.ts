@@ -7,7 +7,7 @@ import { buildPhase3GradingPrompt, parseCycleScorecard } from "@/lib/hackathon/p
 import { parseModelGrade, runDualGrade } from "@/lib/hackathon/dual-grade";
 import { recalculateAndUpsertTeamScore } from "@/lib/hackathon/team-score";
 
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 const PRIMARY_MODEL = "kimi-for-coding";
 const SECONDARY_MODEL = "minimax-m2-highspeed";
