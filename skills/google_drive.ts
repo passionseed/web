@@ -2,6 +2,7 @@ import { google } from 'googleapis';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { Readable } from 'stream';
 
 /**
  * Downloads a file from Google Drive and returns the local file path.
@@ -9,9 +10,6 @@ import os from 'os';
  */
 export async function fetchFromGoogleDrive(fileUrl: string): Promise<string> {
   // Extract file ID from typical Drive URLs
-  // Examples: 
-  // https://drive.google.com/file/d/1X_abc123/view
-  // https://drive.google.com/open?id=1X_abc123
   let fileId = '';
   const matchD = fileUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
   const matchId = fileUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
@@ -24,50 +22,72 @@ export async function fetchFromGoogleDrive(fileUrl: string): Promise<string> {
     throw new Error('Invalid Google Drive URL. Could not extract file ID.');
   }
 
-  // Setup auth
-  let auth;
-  // If we have a service account key or standard ADC, we can use it.
-  // Otherwise we try without auth (for public files)
-  try {
-    if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-       auth = new google.auth.GoogleAuth({
-          scopes: ['https://www.googleapis.com/auth/drive.readonly'],
-       });
-    } else {
-       auth = new google.auth.GoogleAuth();
+  const tmpDir = os.tmpdir();
+  
+  // If we have API credentials, try the official Google API first
+  if (process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.GOOGLE_API_KEY) {
+    try {
+      let auth;
+      if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+         auth = new google.auth.GoogleAuth({
+            scopes: ['https://www.googleapis.com/auth/drive.readonly'],
+         });
+      } else {
+         auth = process.env.GOOGLE_API_KEY;
+      }
+
+      const drive = google.drive({ version: 'v3', auth: auth as any });
+
+      // Get file metadata to determine extension
+      const meta = await drive.files.get({
+        fileId,
+        fields: 'name, mimeType',
+      });
+
+      const ext = path.extname(meta.data.name || '') || '.bin';
+      const filePath = path.join(tmpDir, `${fileId}${ext}`);
+
+      // Download the file
+      const dest = fs.createWriteStream(filePath);
+      const res = await drive.files.get(
+        { fileId, alt: 'media' },
+        { responseType: 'stream' }
+      );
+
+      return await new Promise((resolve, reject) => {
+        res.data
+          .on('end', () => resolve(filePath))
+          .on('error', (err: any) => reject(err))
+          .pipe(dest);
+      });
+    } catch (e: any) {
+      console.warn("Official Google API failed, attempting public download fallback:", e.message);
     }
-  } catch (e) {
-    // Fallback to unauthenticated if ADC fails
-    auth = process.env.GOOGLE_API_KEY || null;
   }
 
-  const drive = google.drive({ version: 'v3', auth: auth as any });
+  // Fallback: Direct public download for "Anyone with the link can view" files
+  const filePath = path.join(tmpDir, `${fileId}.bin`);
+  const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+  
+  const response = await fetch(downloadUrl);
+  
+  if (!response.ok) {
+    throw new Error(`Failed to download public Drive file. Status: ${response.status}. Make sure the Drive link is shared as "Anyone with the link can view".`);
+  }
 
-  // Get file metadata to determine extension
-  const meta = await drive.files.get({
-    fileId,
-    fields: 'name, mimeType',
-  });
-
-  const ext = path.extname(meta.data.name || '') || '.bin';
-  const tmpDir = os.tmpdir();
-  const filePath = path.join(tmpDir, `${fileId}${ext}`);
-
-  // Download the file
   const dest = fs.createWriteStream(filePath);
-  const res = await drive.files.get(
-    { fileId, alt: 'media' },
-    { responseType: 'stream' }
-  );
-
-  return new Promise((resolve, reject) => {
-    res.data
-      .on('end', () => {
-        resolve(filePath);
-      })
-      .on('error', (err: any) => {
-        reject(err);
-      })
-      .pipe(dest);
-  });
+  
+  if (response.body) {
+    // @ts-ignore - response.body is ReadableStream in Node 18+
+    const readable = Readable.fromWeb(response.body as any);
+    readable.pipe(dest);
+    
+    return await new Promise((resolve, reject) => {
+      dest.on('finish', () => resolve(filePath));
+      dest.on('error', reject);
+      readable.on('error', reject);
+    });
+  } else {
+    throw new Error("Empty response body when downloading public drive file.");
+  }
 }

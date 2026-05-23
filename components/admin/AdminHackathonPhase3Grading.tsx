@@ -415,9 +415,24 @@ export function AdminHackathonPhase3Grading() {
   }
 
   function startBulkAiGrade() {
-    const targets = visibleItems.filter((i) => i.type !== "video" && !i.scored_by);
+    const targets = visibleItems.filter((i) => {
+      if (i.type === "video" || i.scored_by) return false;
+      
+      // Skip items that look "unfinished" (very short content)
+      // This prevents teams from getting an unfair 0 score before they are actually done
+      if (i.type === "cycle") {
+        const hLen = (i.hypothesis || "").trim().length;
+        const sLen = (i.synthesis_result || "").trim().length;
+        if (hLen < 20 && sLen < 20) return false;
+      } else if (i.type === "midphase") {
+        const wLen = (i.what_learned || "").trim().length;
+        if (wLen < 20) return false;
+      }
+      return true;
+    });
+
     if (targets.length === 0) {
-      setMessage("No ungraded cycles or midphase items in the current view.");
+      setMessage("No finished and ungraded items in the current view.");
       return;
     }
     setBulkGradeStep("preflight");
@@ -427,7 +442,19 @@ export function AdminHackathonPhase3Grading() {
   }
 
   async function executeBulkAiGrade() {
-    const targets = visibleItems.filter((i) => i.type !== "video" && !i.scored_by);
+    const targets = visibleItems.filter((i) => {
+      if (i.type === "video" || i.scored_by) return false;
+      if (i.type === "cycle") {
+        const hLen = (i.hypothesis || "").trim().length;
+        const sLen = (i.synthesis_result || "").trim().length;
+        if (hLen < 20 && sLen < 20) return false;
+      } else if (i.type === "midphase") {
+        const wLen = (i.what_learned || "").trim().length;
+        if (wLen < 20) return false;
+      }
+      return true;
+    });
+
     setBulkGradeStep("grading");
     setBulkProgress({ current: 0, total: targets.length });
     const results = [];
@@ -1336,6 +1363,9 @@ export function AdminHackathonPhase3Grading() {
                 </p>
                 <p className="text-sm text-slate-400">
                   The AI will process each item. You will be able to review and adjust the feedback before any scores are saved to the database.
+                </p>
+                <p className="text-xs text-amber-400/70 bg-amber-400/5 py-1 px-2 rounded border border-amber-400/20 inline-block mt-2">
+                  Note: Submissions with insufficient content are skipped to ensure fairness.
                 </p>
               </div>
             )}
