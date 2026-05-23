@@ -177,8 +177,8 @@ export async function POST(
         const kimiGrade = kimiRaw ? parseModelGrade(kimiRaw) : null;
         const minimaxGrade = minimaxRaw ? parseModelGrade(minimaxRaw) : null;
 
-        if (kimiGrade) kimiGrade.model = PRIMARY_MODEL;
-        if (minimaxGrade) minimaxGrade.model = SECONDARY_MODEL;
+        if (kimiGrade) kimiGrade.model = "Gemini";
+        if (minimaxGrade) minimaxGrade.model = "Gemini Lite";
 
         // Phase 3 uses scorecard format, not the standard grade format.
         // Parse the scorecard from the JSON response.
