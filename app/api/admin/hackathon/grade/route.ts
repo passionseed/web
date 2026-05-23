@@ -11,8 +11,13 @@ export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
+    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json({ error: "Missing Gemini API Key. Please restart the dev server to load the .env.local file." }, { status: 500 });
+    }
+    
     // Initialize Gemini Client
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY });
+    const ai = new GoogleGenAI({ apiKey });
     const body = await req.json();
     const { prompt, text_answer, image_url, file_urls } = body;
 

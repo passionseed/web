@@ -14,11 +14,14 @@ export async function fetchFromGoogleDrive(fileUrl: string): Promise<string> {
   // match /d/ID for drive and docs
   const matchD = fileUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
   const matchId = fileUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  const matchFolder = fileUrl.match(/\/folders\/([a-zA-Z0-9_-]+)/);
   
   if (matchD && matchD[1]) {
     fileId = matchD[1];
   } else if (matchId && matchId[1]) {
     fileId = matchId[1];
+  } else if (matchFolder && matchFolder[1]) {
+    throw new Error('This appears to be a Google Drive Folder link. AI grading requires direct file links, not folders.');
   } else {
     throw new Error('Invalid Google Drive/Docs URL. Could not extract file ID.');
   }
