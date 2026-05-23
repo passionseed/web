@@ -180,16 +180,12 @@ export async function POST(
         if (kimiGrade) kimiGrade.model = "Gemini";
         if (minimaxGrade) minimaxGrade.model = "Gemini Lite";
 
-        // Phase 3 uses scorecard format, not the standard grade format.
-        // Parse the scorecard from the JSON response.
-        const kimiScorecard = parsePhase3Scorecard(kimiRaw);
-        const minimaxScorecard = parsePhase3Scorecard(minimaxRaw);
+        const kimiResponse = parsePhase3Response(kimiRaw);
+        const minimaxResponse = parsePhase3Response(minimaxRaw);
 
         const outcome = runPhase3Consensus(
-          kimiScorecard,
-          minimaxScorecard,
-          kimiGrade,
-          minimaxGrade
+          kimiResponse,
+          minimaxResponse
         );
 
         if (outcome.error || !outcome.draft) {
@@ -247,7 +243,13 @@ type Phase3Scorecard = {
   total: number;
 };
 
-function parsePhase3Scorecard(raw: string | null): Phase3Scorecard | null {
+type Phase3Response = {
+  scorecard: Phase3Scorecard;
+  feedback: string;
+  reasoning: string;
+};
+
+function parsePhase3Response(raw: string | null): Phase3Response | null {
   if (!raw) return null;
 
   const fence = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
@@ -267,12 +269,16 @@ function parsePhase3Scorecard(raw: string | null): Phase3Scorecard | null {
         (s.tester_freshness ?? 0) +
         (s.synthesis_honesty ?? 0);
       return {
-        hypothesis_quality: s.hypothesis_quality ?? 0,
-        variable_isolation: s.variable_isolation ?? 0,
-        behavioral_evidence: s.behavioral_evidence ?? 0,
-        tester_freshness: s.tester_freshness ?? 0,
-        synthesis_honesty: s.synthesis_honesty ?? 0,
-        total,
+        scorecard: {
+          hypothesis_quality: s.hypothesis_quality ?? 0,
+          variable_isolation: s.variable_isolation ?? 0,
+          behavioral_evidence: s.behavioral_evidence ?? 0,
+          tester_freshness: s.tester_freshness ?? 0,
+          synthesis_honesty: s.synthesis_honesty ?? 0,
+          total,
+        },
+        feedback: typeof parsed.feedback === "string" ? parsed.feedback : "",
+        reasoning: typeof parsed.reasoning === "string" ? parsed.reasoning : "",
       };
     }
     return null;
@@ -298,15 +304,13 @@ type Phase3ConsensusOutcome = {
 };
 
 function runPhase3Consensus(
-  kimi: Phase3Scorecard | null,
-  minimax: Phase3Scorecard | null,
-  kimiGrade: ReturnType<typeof parseModelGrade>,
-  minimaxGrade: ReturnType<typeof parseModelGrade>
+  kimi: Phase3Response | null,
+  minimax: Phase3Response | null
 ): Phase3ConsensusOutcome {
   // Extract feedback from whichever model gave structured output
-  const kimiFeedback = kimiGrade?.feedback ?? "";
-  const minimaxFeedback = minimaxGrade?.feedback ?? "";
-  const kimiReasoning = kimiGrade?.reasoning ?? "";
+  const kimiFeedback = kimi?.feedback ?? "";
+  const minimaxFeedback = minimax?.feedback ?? "";
+  const kimiReasoning = kimi?.reasoning ?? "";
 
   // Both error
   if (!kimi && !minimax) {
@@ -322,20 +326,20 @@ function runPhase3Consensus(
   if (!kimi || !minimax) {
     const winner = kimi ?? minimax!;
     const passThreshold = 60;
-    const passed = winner.total >= passThreshold;
+    const passed = winner.scorecard.total >= passThreshold;
 
     return {
       draft: {
         status: passed ? "passed" : "revision_required",
-        score_awarded: winner.total,
+        score_awarded: winner.scorecard.total,
         points_possible: 100,
         feedback: kimiFeedback || minimaxFeedback || "",
         reasoning: kimiReasoning || "",
-        raw_output: JSON.stringify(winner),
+        raw_output: JSON.stringify(winner.scorecard),
         error: null,
         consensus: { agreement: "single_model", models: [] },
       },
-      scorecard: winner,
+      scorecard: winner.scorecard,
       autoApprove: passed,
       error: false,
     };
@@ -343,12 +347,12 @@ function runPhase3Consensus(
 
   // Average the scorecards
   const averaged: Phase3Scorecard = {
-    hypothesis_quality: Math.round((kimi.hypothesis_quality + minimax.hypothesis_quality) / 2),
-    variable_isolation: Math.round((kimi.variable_isolation + minimax.variable_isolation) / 2),
-    behavioral_evidence: Math.round((kimi.behavioral_evidence + minimax.behavioral_evidence) / 2),
-    tester_freshness: Math.round((kimi.tester_freshness + minimax.tester_freshness) / 2),
-    synthesis_honesty: Math.round((kimi.synthesis_honesty + minimax.synthesis_honesty) / 2),
-    total: Math.round((kimi.total + minimax.total) / 2),
+    hypothesis_quality: Math.round((kimi.scorecard.hypothesis_quality + minimax.scorecard.hypothesis_quality) / 2),
+    variable_isolation: Math.round((kimi.scorecard.variable_isolation + minimax.scorecard.variable_isolation) / 2),
+    behavioral_evidence: Math.round((kimi.scorecard.behavioral_evidence + minimax.scorecard.behavioral_evidence) / 2),
+    tester_freshness: Math.round((kimi.scorecard.tester_freshness + minimax.scorecard.tester_freshness) / 2),
+    synthesis_honesty: Math.round((kimi.scorecard.synthesis_honesty + minimax.scorecard.synthesis_honesty) / 2),
+    total: Math.round((kimi.scorecard.total + minimax.scorecard.total) / 2),
   };
 
   const passThreshold = 60;
@@ -366,8 +370,8 @@ function runPhase3Consensus(
       consensus: {
         agreement: "agree",
         models: [
-          { model: PRIMARY_MODEL, ...kimi },
-          { model: SECONDARY_MODEL, ...minimax },
+          { model: PRIMARY_MODEL, ...kimi.scorecard },
+          { model: SECONDARY_MODEL, ...minimax.scorecard },
         ],
       },
     },

@@ -4,7 +4,6 @@ import { createClient } from "@/utils/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { getModel } from "@/lib/ai/modelRegistry";
 import { buildPhase3GradingPrompt } from "@/lib/hackathon/phase3-grading";
-import { parseModelGrade, runDualGrade } from "@/lib/hackathon/dual-grade";
 
 export const maxDuration = 60;
 
@@ -81,17 +80,13 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
         try { controller.enqueue(encoder.encode(JSON.stringify(obj) + "\n")); } catch { alive = false; }
       };
 
-      const [kimiRaw, minimaxRaw] = await Promise.all([
-        withTimeout(runModelStream({ modelName: PRIMARY_MODEL, prompt, send, label: "Kimi" }), MODEL_TIMEOUT_MS, "Kimi"),
-        withTimeout(runModelStream({ modelName: SECONDARY_MODEL, prompt, send, label: "MiniMax" }), MODEL_TIMEOUT_MS, "MiniMax"),
-      ]);
+      const kimiRawOutput = await withTimeout(runModelStream({ modelName: PRIMARY_MODEL, prompt, send, label: "Kimi" }), MODEL_TIMEOUT_MS, "Kimi");
+      const minimaxRawOutput = await withTimeout(runModelStream({ modelName: SECONDARY_MODEL, prompt, send, label: "MiniMax" }), MODEL_TIMEOUT_MS, "MiniMax");
 
-      const kimiGrade = kimiRaw ? parseModelGrade(kimiRaw) : null;
-      const minimaxGrade = minimaxRaw ? parseModelGrade(minimaxRaw) : null;
-      if (kimiGrade) kimiGrade.model = PRIMARY_MODEL;
-      if (minimaxGrade) minimaxGrade.model = SECONDARY_MODEL;
+      const kimiResponse = kimiRawOutput ? parsePhase3Response(kimiRawOutput) : null;
+      const minimaxResponse = minimaxRawOutput ? parsePhase3Response(minimaxRawOutput) : null;
 
-      const outcome = runDualGrade(kimiGrade, minimaxGrade, { pointsPossible: 100 });
+      const outcome = runPhase3Consensus(kimiResponse, minimaxResponse);
       if (outcome.error || !outcome.draft) {
         send({ type: "error", message: "AI grading failed." });
         try { controller.close(); } catch {}
@@ -145,4 +140,77 @@ async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): P
     promise,
     new Promise<null>((resolve) => setTimeout(() => { console.error(`${label} timed out`); resolve(null); }, ms)),
   ]);
+}
+
+type Phase3Response = {
+  scorecard: { total: number };
+  feedback: string;
+  reasoning: string;
+};
+
+function parsePhase3Response(raw: string | null): Phase3Response | null {
+  if (!raw) return null;
+
+  const fence = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const candidate = fence?.[1] ?? raw;
+  const start = candidate.indexOf("{");
+  const end = candidate.lastIndexOf("}");
+  if (start === -1 || end === -1 || end <= start) return null;
+
+  try {
+    const parsed = JSON.parse(candidate.slice(start, end + 1));
+    return {
+      scorecard: {
+        total: parsed.scorecard?.total ?? 0,
+      },
+      feedback: typeof parsed.feedback === "string" ? parsed.feedback : "",
+      reasoning: typeof parsed.reasoning === "string" ? parsed.reasoning : "",
+    };
+  } catch {
+    return null;
+  }
+}
+
+function runPhase3Consensus(
+  kimi: Phase3Response | null,
+  minimax: Phase3Response | null
+) {
+  const kimiFeedback = kimi?.feedback ?? "";
+  const minimaxFeedback = minimax?.feedback ?? "";
+  const kimiReasoning = kimi?.reasoning ?? "";
+
+  if (!kimi && !minimax) {
+    return { draft: null, error: true };
+  }
+
+  if (!kimi || !minimax) {
+    const winner = kimi ?? minimax!;
+    return {
+      draft: {
+        score_awarded: winner.scorecard.total,
+        feedback: kimiFeedback || minimaxFeedback || "",
+        reasoning: kimiReasoning || "",
+        consensus: { agreement: "single_model", models: [] },
+      },
+      error: false,
+    };
+  }
+
+  const averagedScore = Math.round((kimi.scorecard.total + minimax.scorecard.total) / 2);
+
+  return {
+    draft: {
+      score_awarded: averagedScore,
+      feedback: kimiFeedback || minimaxFeedback || "",
+      reasoning: kimiReasoning || "",
+      consensus: {
+        agreement: "agree",
+        models: [
+          { model: PRIMARY_MODEL, ...kimi.scorecard },
+          { model: SECONDARY_MODEL, ...minimax.scorecard },
+        ],
+      },
+    },
+    error: false,
+  };
 }
