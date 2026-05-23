@@ -3,12 +3,14 @@ import { GoogleGenAI } from "@google/genai";
 import { fetchFromGoogleDrive } from "@/skills/google_drive";
 import fs from "fs";
 import path from "path";
+import { GRADER_SYSTEM_INSTRUCTION } from "@/agents/graderPrompt";
 
-// Initialize Gemini Client
-const ai = new GoogleGenAI();
+export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
+    // Initialize Gemini Client
+    const ai = new GoogleGenAI({});
     const body = await req.json();
     const { prompt, text_answer, image_url, file_urls } = body;
 
@@ -61,9 +63,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // Read the system instruction prompt
-    const graderPromptPath = path.join(process.cwd(), 'agents', 'grader.md');
-    const systemInstruction = fs.readFileSync(graderPromptPath, 'utf-8');
+    const systemInstruction = GRADER_SYSTEM_INSTRUCTION;
 
     console.log("Calling Gemini API for grading...");
     // Call Gemini to grade
