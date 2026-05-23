@@ -281,20 +281,6 @@ function exportTeamToMarkdown(team: TeamData) {
           });
         }
 
-        // Comments
-        if (activity.comments && activity.comments.length > 0) {
-          md += `#### Activity Comments\n\n`;
-          activity.comments.forEach((comment) => {
-            md += `- **${comment.participant_name}**: ${comment.content} (${new Date(comment.created_at).toLocaleString()})\n`;
-            if (comment.replies && comment.replies.length > 0) {
-              comment.replies.forEach((reply) => {
-                md += `  - **Reply from ${reply.participant_name}**: ${reply.content} (${new Date(reply.created_at).toLocaleString()})\n`;
-              });
-            }
-          });
-          md += `\n`;
-        }
-
         md += `\n---\n\n`;
       });
     });

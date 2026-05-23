@@ -52,9 +52,6 @@ The downloaded Markdown file will use the following standard GFM (GitHub Flavore
 *Attachments:*
 - ![Image](image_url)
 
-#### Comments
-- **<participant_name>**: <content> (<created_at>)
-  - **Reply from <reply_participant_name>**: <reply_content> (<created_at>)
 ```
 
 ## UI and Styling Design
