@@ -34,7 +34,7 @@ const openai = createOpenAI({
 const KIMI_API_KEY = process.env.KIMI_API_KEY || "";
 const kimi = createOpenAI({
   apiKey: KIMI_API_KEY,
-  baseURL: "https://api.kimi.com/coding/v1",
+  baseURL: "https://api.fireworks.ai/inference/v1",
 });
 
 // Allow up to 300 seconds (5 minutes) for AI generation to handle 65 concurrent users
@@ -146,7 +146,7 @@ export function getModel(modelName?: string) {
         `KIMI_API_KEY is not set. Please set the KIMI_API_KEY environment variable to use the Kimi provider.`
       );
     }
-    return kimi('kimi-for-coding');
+    return kimi('accounts/fireworks/models/kimi-k2-instruct');
   }
 
   // DeepSeek Models (2 variants)
