@@ -8,8 +8,8 @@ import { parseModelGrade, runDualGrade } from "@/lib/hackathon/dual-grade";
 
 export const maxDuration = 60;
 
-const PRIMARY_MODEL = "kimi-for-coding";
-const SECONDARY_MODEL = "minimax-m2-highspeed";
+const PRIMARY_MODEL = "gemini-2.5-flash";
+const SECONDARY_MODEL = "gemini-flash-lite-latest";
 const MODEL_TIMEOUT_MS = 60_000;
 
 function getHackathonServiceClient() {

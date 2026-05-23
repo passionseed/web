@@ -8,8 +8,8 @@ import { parseModelGrade, runDualGrade } from "@/lib/hackathon/dual-grade";
 
 export const maxDuration = 60;
 
-const PRIMARY_MODEL = "kimi-for-coding";
-const SECONDARY_MODEL = "minimax-m2-highspeed";
+const PRIMARY_MODEL = "gemini-2.5-flash";
+const SECONDARY_MODEL = "gemini-flash-lite-latest";
 const MODEL_TIMEOUT_MS = 60_000;
 
 function getHackathonServiceClient() {
@@ -131,8 +131,7 @@ export async function POST(
   });
 
   const missingKeys: string[] = [];
-  if (!process.env.KIMI_API_KEY) missingKeys.push("KIMI_API_KEY");
-  if (!process.env.MINIMAX_API_KEY) missingKeys.push("MINIMAX_API_KEY");
+  if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) missingKeys.push("GOOGLE_GENERATIVE_AI_API_KEY");
 
   if (missingKeys.length > 0) {
     return NextResponse.json(
