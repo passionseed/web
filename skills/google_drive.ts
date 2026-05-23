@@ -25,21 +25,29 @@ export async function fetchFromGoogleDrive(fileUrl: string): Promise<string> {
   const tmpDir = os.tmpdir();
   
   // If we have API credentials, try the official Google API first
-  if (process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.GOOGLE_API_KEY) {
+  let driveClient = null;
+  try {
+    if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+       const auth = new google.auth.GoogleAuth({
+          scopes: ['https://www.googleapis.com/auth/drive.readonly'],
+       });
+       driveClient = google.drive({ version: 'v3', auth: auth as any });
+    } else if (process.env.GOOGLE_API_KEY) {
+       driveClient = google.drive({ version: 'v3', auth: process.env.GOOGLE_API_KEY as any });
+    } else {
+       // We can attempt unauthenticated request without throwing, which will only work for API key but worth a shot
+       const auth = new google.auth.GoogleAuth();
+       driveClient = google.drive({ version: 'v3', auth: auth as any });
+    }
+  } catch (e: any) {
+    console.warn("Failed to initialize Google API Auth client, skipping to public fallback:", e.message);
+    driveClient = null;
+  }
+
+  if (driveClient) {
     try {
-      let auth;
-      if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-         auth = new google.auth.GoogleAuth({
-            scopes: ['https://www.googleapis.com/auth/drive.readonly'],
-         });
-      } else {
-         auth = process.env.GOOGLE_API_KEY;
-      }
-
-      const drive = google.drive({ version: 'v3', auth: auth as any });
-
       // Get file metadata to determine extension
-      const meta = await drive.files.get({
+      const meta = await driveClient.files.get({
         fileId,
         fields: 'name, mimeType',
       });
@@ -49,7 +57,7 @@ export async function fetchFromGoogleDrive(fileUrl: string): Promise<string> {
 
       // Download the file
       const dest = fs.createWriteStream(filePath);
-      const res = await drive.files.get(
+      const res = await driveClient.files.get(
         { fileId, alt: 'media' },
         { responseType: 'stream' }
       );
@@ -61,7 +69,7 @@ export async function fetchFromGoogleDrive(fileUrl: string): Promise<string> {
           .pipe(dest);
       });
     } catch (e: any) {
-      console.warn("Official Google API failed, attempting public download fallback:", e.message);
+      console.warn("Official Google API fetch failed, attempting public download fallback:", e.message);
     }
   }
 
