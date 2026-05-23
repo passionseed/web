@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/utils/supabase/admin";
-import { formatVectorLiteral } from "@/lib/embeddings/bge";
+import { formatVectorLiteral } from "@/lib/embeddings/gemini";
 import { runKMeans, suggestClusterCount, cosineDistance } from "./kmeans";
 import { project2D } from "./umap";
 import { clusterColor } from "./colors";

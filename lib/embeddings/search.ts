@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/utils/supabase/admin";
-import { embedText } from "./bge";
+import { embedText } from "./gemini";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export interface SearchResult {

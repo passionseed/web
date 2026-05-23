@@ -9,7 +9,7 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
-import { embedTexts, formatVectorLiteral, hashText } from "../lib/embeddings/bge";
+import { embedTexts, formatVectorLiteral, hashText } from "../lib/embeddings/gemini";
 
 const PROD_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const PROD_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;

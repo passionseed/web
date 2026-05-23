@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { embedText, formatVectorLiteral } from "../lib/embeddings/gemini";
 
 const TEI_URL = process.env.TEI_URL ?? "https://ai.passionseed.org";
 const BATCH_SIZE = 64;
@@ -8,15 +9,10 @@ const PROD_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 const supabase = createClient(PROD_URL, PROD_KEY);
 
+import { embedTexts } from "../lib/embeddings/gemini";
+
 async function getEmbeddings(texts: string[]): Promise<number[][]> {
-  const res = await fetch(`${TEI_URL}/v1/embeddings`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ input: texts, model: "BAAI/bge-m3" }),
-  });
-  if (!res.ok) throw new Error(`TEI error: ${res.status} ${await res.text()}`);
-  const data = await res.json();
-  return data.data.map((d: any) => d.embedding);
+  return embedTexts(texts);
 }
 
 async function main() {

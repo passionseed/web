@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/utils/supabase/admin";
-import { embedText, formatVectorLiteral, hashText } from "./bge";
+import { embedText, formatVectorLiteral, hashText } from "./gemini";
 
 export type SubmissionEmbeddingScope = "hackathon_individual" | "hackathon_team";
 
@@ -51,6 +51,7 @@ export async function upsertSubmissionEmbedding(args: UpsertArgs): Promise<void>
     text_hash: newHash,
     embedding: vectorLiteral,
     generated_at: new Date().toISOString(),
+    model: "gemini-embedding-2",
   };
   payload[targetColumn] = submissionId;
 

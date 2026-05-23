@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/utils/supabase/admin";
-import { embedTexts, formatVectorLiteral, hashText } from "./bge";
+import { embedTexts, formatVectorLiteral, hashText } from "./gemini";
 import { extractTeamProfile, formatMissionText, formatTechText, formatMarketText } from "./profile-extractor";
 import type { TeamProfile } from "./profile-extractor";
 import { getHackathonClient } from "./hackathon-client";
@@ -185,6 +185,7 @@ export async function createTeamDirectionSnapshot(
       source_text: sourceText,
       text_hash: textHash,
       is_latest: true,
+      model: "gemini-embedding-2",
     })
     .select("*")
     .single();
@@ -205,6 +206,7 @@ export async function createTeamDirectionSnapshot(
       text_hash: textHash,
       embedding: formatVectorLiteral(compositeEmbed),
       generated_at: new Date().toISOString(),
+      model: "gemini-embedding-2",
     }, { onConflict: "team_id" });
 
   await updateSearchCache(teamId, profile, snapshot.id, admin);
