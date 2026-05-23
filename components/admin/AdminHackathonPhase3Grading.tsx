@@ -18,6 +18,7 @@ import {
   Send,
   Users,
   Sparkles,
+  MessageSquare,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageLightbox } from "@/components/admin/ImageLightbox";
@@ -177,6 +179,14 @@ export function AdminHackathonPhase3Grading() {
   const [pagination, setPagination] = useState<Pagination>({ page: 1, page_size: 50, total_items: 0, total_pages: 1 });
   const [detailCache, setDetailCache] = useState<Record<string, CycleDetail | MidphaseDetail | VideoDetail>>({});
   const [loadingDetail, setLoadingDetail] = useState(false);
+
+  const [bulkGrading, setBulkGrading] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
+
+  const [bulkCommentOpen, setBulkCommentOpen] = useState(false);
+  const [bulkCommentFeedback, setBulkCommentFeedback] = useState("");
+  const [bulkCommentNotes, setBulkCommentNotes] = useState("");
+  const [bulkCommenting, setBulkCommenting] = useState(false);
 
   // Review form state
   const [cycleScores, setCycleScores] = useState({ hypothesis_quality: "", variable_isolation: "", behavioral_evidence: "", tester_freshness: "", synthesis_honesty: "" });
@@ -399,6 +409,158 @@ export function AdminHackathonPhase3Grading() {
     }
   }
 
+  async function runBulkAiGrade() {
+    const targets = visibleItems.filter((i) => i.type !== "video" && !i.scored_by);
+    if (targets.length === 0) {
+      setMessage("No ungraded cycles or midphase items in the current view.");
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to AI grade and auto-save ${targets.length} items?`)) {
+      return;
+    }
+
+    setBulkGrading(true);
+    setBulkProgress({ current: 0, total: targets.length });
+    setMessage("");
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < targets.length; i++) {
+      const target = targets[i];
+      setBulkProgress({ current: i + 1, total: targets.length });
+      
+      try {
+        const response = await fetch(
+          `/api/admin/hackathon/phase3/${target.type === 'cycle' ? 'cycles' : target.type}/${target.id}/ai-grade`,
+          { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) }
+        );
+        
+        if (!response.ok) throw new Error("AI grade failed");
+        
+        const reader = response.body?.getReader();
+        if (!reader) throw new Error("No stream");
+        
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let finalData: any = null;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+          for (const line of lines) {
+            if (!line.trim()) continue;
+            try {
+              const obj = JSON.parse(line);
+              if (obj.type === "done") {
+                finalData = obj;
+              }
+            } catch {}
+          }
+        }
+
+        if (!finalData) throw new Error("No final data");
+
+        let reviewBody: Record<string, unknown> = {
+          feedback: finalData.feedback || "",
+          notes: finalData.reasoning ? `AI Reasoning:\n${finalData.reasoning}` : ""
+        };
+
+        if (target.type === "cycle") {
+           const c = finalData.scorecard || {};
+           reviewBody = {
+             ...reviewBody,
+             hypothesis_quality: Number(c.hypothesis_quality) || 0,
+             variable_isolation: Number(c.variable_isolation) || 0,
+             behavioral_evidence: Number(c.behavioral_evidence) || 0,
+             tester_freshness: Number(c.tester_freshness) || 0,
+             synthesis_honesty: Number(c.synthesis_honesty) || 0,
+           };
+        } else if (target.type === "midphase") {
+           reviewBody = { ...reviewBody, confidence_score: null };
+        }
+
+        const reviewRes = await fetch(
+          `/api/admin/hackathon/phase3/${target.type === 'cycle' ? 'cycles' : target.type}/${target.id}/review`,
+          { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(reviewBody) }
+        );
+
+        if (!reviewRes.ok) throw new Error("Save review failed");
+
+        successCount++;
+      } catch (err) {
+        console.error(`Failed to bulk grade ${target.id}:`, err);
+        failCount++;
+      }
+    }
+
+    setBulkGrading(false);
+    setMessage(`Bulk grading complete: ${successCount} succeeded, ${failCount} failed.`);
+    await fetchItems();
+  }
+
+  async function runBulkComment() {
+    const targets = visibleItems.filter((i) => i.type !== "video" && !i.scored_by);
+    if (targets.length === 0) {
+      setMessage("No ungraded cycles or midphase items in the current view to comment on.");
+      return;
+    }
+
+    setBulkCommenting(true);
+    setBulkProgress({ current: 0, total: targets.length });
+    setMessage("");
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < targets.length; i++) {
+      const target = targets[i];
+      setBulkProgress({ current: i + 1, total: targets.length });
+
+      try {
+        let reviewBody: Record<string, unknown> = {
+          feedback: bulkCommentFeedback,
+          notes: bulkCommentNotes,
+        };
+
+        if (target.type === "cycle") {
+           reviewBody = {
+             ...reviewBody,
+             hypothesis_quality: 0,
+             variable_isolation: 0,
+             behavioral_evidence: 0,
+             tester_freshness: 0,
+             synthesis_honesty: 0,
+           };
+        } else if (target.type === "midphase") {
+           reviewBody = { ...reviewBody, confidence_score: null };
+        }
+
+        const reviewRes = await fetch(
+          `/api/admin/hackathon/phase3/${target.type === 'cycle' ? 'cycles' : target.type}/${target.id}/review`,
+          { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(reviewBody) }
+        );
+
+        if (!reviewRes.ok) throw new Error("Save review failed");
+        successCount++;
+      } catch (err) {
+        console.error(`Failed to bulk comment ${target.id}:`, err);
+        failCount++;
+      }
+    }
+
+    setBulkCommenting(false);
+    setBulkCommentOpen(false);
+    setBulkCommentFeedback("");
+    setBulkCommentNotes("");
+    setMessage(`Bulk comment complete: ${successCount} sent, ${failCount} failed.`);
+    await fetchItems();
+  }
+
   return (
     <div className="space-y-4">
       {/* Stats */}
@@ -431,10 +593,20 @@ export function AdminHackathonPhase3Grading() {
               </CardTitle>
               <CardDescription>Grade cycles, mid-phase synthesis, and video submissions.</CardDescription>
             </div>
-            <Button variant="outline" size="sm" onClick={() => fetchItems()} disabled={loading}>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setBulkCommentOpen(true)} disabled={loading || bulkGrading || bulkCommenting} className="bg-indigo-500/10 text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/20">
+                <MessageSquare className="mr-2 h-4 w-4" />
+                Bulk Comment
+              </Button>
+              <Button variant="outline" size="sm" onClick={runBulkAiGrade} disabled={loading || bulkGrading || bulkCommenting} className="bg-emerald-500/10 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20">
+                {bulkGrading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                {bulkGrading ? `Grading ${bulkProgress.current}/${bulkProgress.total}...` : "Bulk AI Grade"}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => fetchItems()} disabled={loading}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Refresh
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -1167,6 +1339,48 @@ export function AdminHackathonPhase3Grading() {
       </Card>
 
       <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
+      {/* Bulk Comment Dialog */}
+      <Dialog open={bulkCommentOpen} onOpenChange={setBulkCommentOpen}>
+        <DialogContent className="border-slate-700 bg-slate-900 text-slate-100 sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Bulk Comment Team</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Send the same feedback and mentor notes to all {visibleItems.filter((i) => i.type !== "video" && !i.scored_by).length} ungraded items currently visible in the list. This will submit them with a score of 0.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="bulk-feedback">Student Feedback</Label>
+              <Textarea
+                id="bulk-feedback"
+                className="min-h-[150px] border-slate-700 bg-slate-950 font-mono text-xs"
+                placeholder="Message for students..."
+                value={bulkCommentFeedback}
+                onChange={(e) => setBulkCommentFeedback(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="bulk-notes">Private Mentor Notes</Label>
+              <Textarea
+                id="bulk-notes"
+                className="min-h-[100px] border-slate-700 bg-slate-950 font-mono text-xs"
+                placeholder="Internal notes..."
+                value={bulkCommentNotes}
+                onChange={(e) => setBulkCommentNotes(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkCommentOpen(false)} disabled={bulkCommenting} className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white">
+              Cancel
+            </Button>
+            <Button onClick={runBulkComment} disabled={bulkCommenting || (!bulkCommentFeedback.trim() && !bulkCommentNotes.trim())} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+              {bulkCommenting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {bulkCommenting ? `Sending ${bulkProgress.current}/${bulkProgress.total}...` : "Send Bulk Comment"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
