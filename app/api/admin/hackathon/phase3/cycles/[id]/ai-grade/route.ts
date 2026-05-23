@@ -159,14 +159,14 @@ export async function POST(
           modelName: PRIMARY_MODEL,
           prompt,
           send,
-          label: "Kimi",
+          label: "Gemini",
         });
 
         const minimaxResultPromise = runModelStream({
           modelName: SECONDARY_MODEL,
           prompt,
           send,
-          label: "MiniMax",
+          label: "Gemini Lite",
         });
 
         const [kimiRaw, minimaxRaw] = await Promise.all([
