@@ -11,6 +11,7 @@ import { Readable } from 'stream';
 export async function fetchFromGoogleDrive(fileUrl: string): Promise<string> {
   // Extract file ID from typical Drive URLs
   let fileId = '';
+  // match /d/ID for drive and docs
   const matchD = fileUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
   const matchId = fileUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
   
@@ -19,7 +20,7 @@ export async function fetchFromGoogleDrive(fileUrl: string): Promise<string> {
   } else if (matchId && matchId[1]) {
     fileId = matchId[1];
   } else {
-    throw new Error('Invalid Google Drive URL. Could not extract file ID.');
+    throw new Error('Invalid Google Drive/Docs URL. Could not extract file ID.');
   }
 
   const tmpDir = os.tmpdir();
@@ -75,7 +76,17 @@ export async function fetchFromGoogleDrive(fileUrl: string): Promise<string> {
 
   // Fallback: Direct public download for "Anyone with the link can view" files
   const filePath = path.join(tmpDir, `${fileId}.bin`);
-  const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+  
+  // If it's a doc/spreadsheet/presentation, export as PDF.
+  // Otherwise, use the standard uc?export=download endpoint for files
+  let downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+  if (fileUrl.includes('docs.google.com/document')) {
+    downloadUrl = `https://docs.google.com/document/d/${fileId}/export?format=pdf`;
+  } else if (fileUrl.includes('docs.google.com/spreadsheets')) {
+    downloadUrl = `https://docs.google.com/spreadsheets/d/${fileId}/export?format=pdf`;
+  } else if (fileUrl.includes('docs.google.com/presentation')) {
+    downloadUrl = `https://docs.google.com/presentation/d/${fileId}/export/pdf`;
+  }
   
   const response = await fetch(downloadUrl);
   
