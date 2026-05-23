@@ -27,6 +27,9 @@ export async function GET(req: NextRequest) {
   const entityType = searchParams.get("type"); // 'cycle', 'midphase', 'video', 'all'
   const status = searchParams.get("status"); // 'ungraded', 'graded', 'all'
   const q = searchParams.get("q")?.trim() ?? "";
+  const showTest = searchParams.get("show_test") === "true";
+  const cycleFilter = searchParams.get("cycle"); // '1','2','3','4','5','all'
+  const sortBy = searchParams.get("sort") ?? "submitted_desc"; // 'submitted_desc', 'submitted_asc', 'score_desc', 'score_asc', 'cycle_asc'
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
   const offset = (page - 1) * PAGE_SIZE;
 
@@ -35,6 +38,16 @@ export async function GET(req: NextRequest) {
   const queryCycles = !entityType || entityType === "cycle" || entityType === "all";
   const queryMidphase = !entityType || entityType === "midphase" || entityType === "all";
   const queryVideo = !entityType || entityType === "video" || entityType === "all";
+
+  // Resolve test team IDs to exclude by default
+  let testTeamIds: string[] = [];
+  if (!showTest) {
+    const { data: testTeams } = await serviceClient
+      .from("hackathon_teams")
+      .select("id")
+      .or("name.ilike.%test%,lobby_code.eq.U4SU5F");
+    testTeamIds = (testTeams ?? []).map((t) => t.id);
+  }
 
   // Helper: build cycles query
   async function fetchCycles() {
@@ -45,9 +58,11 @@ export async function GET(req: NextRequest) {
         hypothesis_full, synthesis_result,
         ai_score, mentor_score, started_at, submitted_at, completed_at,
         hackathon_teams(id, name, lobby_code)
-      `, { count: "exact" })
-      .order("submitted_at", { ascending: false, nullsFirst: false })
-      .range(offset, offset + PAGE_SIZE - 1);
+      `, { count: "exact" });
+
+    if (testTeamIds.length > 0) {
+      dbQuery = dbQuery.not("team_id", "in", `(${testTeamIds.join(",")})`);
+    }
 
     if (status === "ungraded") {
       dbQuery = dbQuery.is("ai_score", null).is("mentor_score", null);
@@ -55,8 +70,22 @@ export async function GET(req: NextRequest) {
       dbQuery = dbQuery.or("ai_score.not.is.null,mentor_score.not.is.null");
     }
 
+    if (cycleFilter && cycleFilter !== "all") {
+      dbQuery = dbQuery.eq("cycle_number", parseInt(cycleFilter, 10));
+    }
+
     if (q) {
       dbQuery = dbQuery.or(`hackathon_teams.name.ilike.%${q}%,hypothesis_full.ilike.%${q}%`);
+    }
+
+    // Sort
+    if (sortBy === "submitted_asc") {
+      dbQuery = dbQuery.order("submitted_at", { ascending: true, nullsFirst: false });
+    } else if (sortBy === "cycle_asc") {
+      dbQuery = dbQuery.order("cycle_number", { ascending: true });
+    } else {
+      // default submitted_desc
+      dbQuery = dbQuery.order("submitted_at", { ascending: false, nullsFirst: false });
     }
 
     return dbQuery;
@@ -70,9 +99,11 @@ export async function GET(req: NextRequest) {
         id, team_id, what_learned, what_changed, what_wrong, confidence_score,
         ai_score, status, submitted_at,
         hackathon_teams(id, name, lobby_code)
-      `, { count: "exact" })
-      .order("submitted_at", { ascending: false, nullsFirst: false })
-      .range(offset, offset + PAGE_SIZE - 1);
+      `, { count: "exact" });
+
+    if (testTeamIds.length > 0) {
+      dbQuery = dbQuery.not("team_id", "in", `(${testTeamIds.join(",")})`);
+    }
 
     if (status === "ungraded") {
       dbQuery = dbQuery.is("ai_score", null).is("confidence_score", null);
@@ -82,6 +113,13 @@ export async function GET(req: NextRequest) {
 
     if (q) {
       dbQuery = dbQuery.or(`hackathon_teams.name.ilike.%${q}%,what_learned.ilike.%${q}%`);
+    }
+
+    // Sort
+    if (sortBy === "submitted_asc") {
+      dbQuery = dbQuery.order("submitted_at", { ascending: true, nullsFirst: false });
+    } else {
+      dbQuery = dbQuery.order("submitted_at", { ascending: false, nullsFirst: false });
     }
 
     return dbQuery;
@@ -95,9 +133,11 @@ export async function GET(req: NextRequest) {
         id, team_id, video_url, ai_scrutinizer_output, judge_scores,
         human_review_status, submitted_at,
         hackathon_teams(id, name, lobby_code)
-      `, { count: "exact" })
-      .order("submitted_at", { ascending: false, nullsFirst: false })
-      .range(offset, offset + PAGE_SIZE - 1);
+      `, { count: "exact" });
+
+    if (testTeamIds.length > 0) {
+      dbQuery = dbQuery.not("team_id", "in", `(${testTeamIds.join(",")})`);
+    }
 
     if (status === "ungraded") {
       dbQuery = dbQuery.is("ai_scrutinizer_output", null).is("judge_scores", null);
@@ -109,6 +149,13 @@ export async function GET(req: NextRequest) {
       dbQuery = dbQuery.ilike("hackathon_teams.name", `%${q}%`);
     }
 
+    // Sort
+    if (sortBy === "submitted_asc") {
+      dbQuery = dbQuery.order("submitted_at", { ascending: true, nullsFirst: false });
+    } else {
+      dbQuery = dbQuery.order("submitted_at", { ascending: false, nullsFirst: false });
+    }
+
     return dbQuery;
   }
 
@@ -117,6 +164,21 @@ export async function GET(req: NextRequest) {
     queryMidphase ? fetchMidphase() : Promise.resolve({ data: [], count: 0, error: null }),
     queryVideo ? fetchVideo() : Promise.resolve({ data: [], count: 0, error: null }),
   ]);
+
+  // Batch-fetch cycle steps for visible cycles
+  let cycleStepsMap = new Map<string, Array<{ step_type: string; status: string }>>();
+  if (queryCycles && cyclesResult.data && cyclesResult.data.length > 0) {
+    const cycleIds = cyclesResult.data.map((row: any) => row.id);
+    const { data: stepsData } = await serviceClient
+      .from("hackathon_phase3_cycle_steps")
+      .select("cycle_id, step_type, status")
+      .in("cycle_id", cycleIds);
+    for (const step of (stepsData ?? [])) {
+      const list = cycleStepsMap.get(step.cycle_id) ?? [];
+      list.push({ step_type: step.step_type, status: step.status });
+      cycleStepsMap.set(step.cycle_id, list);
+    }
+  }
 
   if (cyclesResult.error || midphaseResult.error || videoResult.error) {
     console.error("[phase3/queue] fetch error", {
@@ -152,6 +214,7 @@ export async function GET(req: NextRequest) {
       started_at: row.started_at,
       submitted_at: row.submitted_at,
       completed_at: row.completed_at,
+      steps: cycleStepsMap.get(row.id) ?? [],
     };
   });
 
@@ -193,19 +256,32 @@ export async function GET(req: NextRequest) {
     };
   });
 
-  // Combine and sort by submitted_at desc
+  // Combine and sort
   let items = [...cycles, ...midphases, ...videos];
   items.sort((a, b) => {
+    if (sortBy === "score_desc") {
+      return (b.score ?? -1) - (a.score ?? -1);
+    }
+    if (sortBy === "score_asc") {
+      return (a.score ?? 9999) - (b.score ?? 9999);
+    }
+    if (sortBy === "cycle_asc") {
+      const aCycle = a.type === "cycle" ? (a.cycle_number ?? 9999) : 9999;
+      const bCycle = b.type === "cycle" ? (b.cycle_number ?? 9999) : 9999;
+      if (aCycle !== bCycle) return aCycle - bCycle;
+    }
+    // default: submitted_at desc (or submitted_asc when chosen)
     const aTime = a.submitted_at ? new Date(a.submitted_at).getTime() : 0;
     const bTime = b.submitted_at ? new Date(b.submitted_at).getTime() : 0;
-    return bTime - aTime;
+    return sortBy === "submitted_asc" ? aTime - bTime : bTime - aTime;
   });
 
-  const totalItems = (cyclesResult.count ?? 0) + (midphaseResult.count ?? 0) + (videoResult.count ?? 0);
+  const totalItems = items.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+  const paginatedItems = items.slice(offset, offset + PAGE_SIZE);
 
   return NextResponse.json({
-    items,
+    items: paginatedItems,
     counts: {
       total: totalItems,
       cycles: cyclesResult.count ?? 0,

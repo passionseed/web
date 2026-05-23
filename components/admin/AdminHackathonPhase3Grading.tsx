@@ -24,6 +24,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageLightbox } from "@/components/admin/ImageLightbox";
 
@@ -51,6 +54,7 @@ interface Phase3Item {
   started_at?: string | null;
   submitted_at: string | null;
   completed_at?: string | null;
+  steps?: Array<{ step_type: string; status: string }>;
 }
 
 interface Phase3Counts {
@@ -162,8 +166,12 @@ export function AdminHackathonPhase3Grading() {
   const [aiStreamMessages, setAiStreamMessages] = useState<string[]>([]);
   const [message, setMessage] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedCycleStep, setSelectedCycleStep] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<Phase3Status | "all">("ungraded");
   const [typeFilter, setTypeFilter] = useState<Phase3EntityType | "all">("all");
+  const [cycleFilter, setCycleFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("submitted_desc");
+  const [showTest, setShowTest] = useState(false);
   const [search, setSearch] = useState("");
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [pagination, setPagination] = useState<Pagination>({ page: 1, page_size: 50, total_items: 0, total_pages: 1 });
@@ -174,6 +182,7 @@ export function AdminHackathonPhase3Grading() {
   const [cycleScores, setCycleScores] = useState({ hypothesis_quality: "", variable_isolation: "", behavioral_evidence: "", tester_freshness: "", synthesis_honesty: "" });
   const [midphaseConfidence, setMidphaseConfidence] = useState("");
   const [judgeScore, setJudgeScore] = useState("");
+  const [expandedTeams, setExpandedTeams] = useState<Record<string, boolean>>({});
   const [feedback, setFeedback] = useState("");
   const [notes, setNotes] = useState("");
   const pageRef = useRef(1);
@@ -190,6 +199,9 @@ export function AdminHackathonPhase3Grading() {
     const params = new URLSearchParams();
     if (statusFilter !== "all") params.set("status", statusFilter);
     if (typeFilter !== "all") params.set("type", typeFilter);
+    if (cycleFilter !== "all") params.set("cycle", cycleFilter);
+    if (sortBy !== "submitted_desc") params.set("sort", sortBy);
+    if (showTest) params.set("show_test", "true");
     params.set("page", String(targetPage));
 
     try {
@@ -212,12 +224,14 @@ export function AdminHackathonPhase3Grading() {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, typeFilter]);
+  }, [statusFilter, typeFilter, cycleFilter, sortBy, showTest]);
 
   useEffect(() => {
     pageRef.current = 1;
     void fetchItems(1);
   }, [fetchItems]);
+
+
 
   // Reset form when selection changes
   useEffect(() => {
@@ -228,6 +242,7 @@ export function AdminHackathonPhase3Grading() {
     setMidphaseConfidence("");
     setJudgeScore("");
     setAiStreamMessages([]);
+    setSelectedCycleStep(null);
   }, [selected?.id]);
 
   // Load detail when selected
@@ -422,30 +437,67 @@ export function AdminHackathonPhase3Grading() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-3 lg:grid-cols-[1fr_auto_auto_auto]">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by team, lobby code, or hypothesis" className="pl-9" />
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative w-full lg:w-60">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search team, lobby, or hypothesis" className="pl-9" />
+              </div>
+              <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val as Phase3Status | "all")}>
+                <SelectTrigger className="h-10 w-40 border-slate-700 bg-slate-950 text-slate-100">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent className="border-slate-700 bg-slate-950 text-slate-100">
+                  <SelectItem value="all">All statuses</SelectItem>
+                  <SelectItem value="ungraded">Needs grading</SelectItem>
+                  <SelectItem value="graded">Graded</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={typeFilter} onValueChange={(val) => setTypeFilter(val as Phase3EntityType | "all")}>
+                <SelectTrigger className="h-10 w-36 border-slate-700 bg-slate-950 text-slate-100">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent className="border-slate-700 bg-slate-950 text-slate-100">
+                  <SelectItem value="all">All types</SelectItem>
+                  <SelectItem value="cycle">Cycles</SelectItem>
+                  <SelectItem value="midphase">Midphase</SelectItem>
+                  <SelectItem value="video">Videos</SelectItem>
+                </SelectContent>
+              </Select>
+              {typeFilter === "cycle" || typeFilter === "all" ? (
+                <Select value={cycleFilter} onValueChange={setCycleFilter}>
+                  <SelectTrigger className="h-10 w-32 border-slate-700 bg-slate-950 text-slate-100">
+                    <SelectValue placeholder="Cycle" />
+                  </SelectTrigger>
+                  <SelectContent className="border-slate-700 bg-slate-950 text-slate-100">
+                    <SelectItem value="all">All cycles</SelectItem>
+                    <SelectItem value="1">Cycle 1</SelectItem>
+                    <SelectItem value="2">Cycle 2</SelectItem>
+                    <SelectItem value="3">Cycle 3</SelectItem>
+                    <SelectItem value="4">Cycle 4</SelectItem>
+                    <SelectItem value="5">Cycle 5</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : null}
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="h-10 w-40 border-slate-700 bg-slate-950 text-slate-100">
+                  <SelectValue placeholder="Sort" />
+                </SelectTrigger>
+                <SelectContent className="border-slate-700 bg-slate-950 text-slate-100">
+                  <SelectItem value="submitted_desc">Newest first</SelectItem>
+                  <SelectItem value="submitted_asc">Oldest first</SelectItem>
+                  <SelectItem value="score_desc">Highest score</SelectItem>
+                  <SelectItem value="score_asc">Lowest score</SelectItem>
+                  <SelectItem value="cycle_asc">Cycle number</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="flex items-center gap-2 rounded-md border border-slate-700 bg-slate-950 px-3 py-1.5">
+                <Switch id="show-test" checked={showTest} onCheckedChange={setShowTest} />
+                <Label htmlFor="show-test" className="cursor-pointer text-xs text-slate-300">
+                  Test teams
+                </Label>
+              </div>
             </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as Phase3Status | "all")}
-              className="h-10 rounded-md border border-slate-700 bg-slate-950 px-3 text-sm text-slate-100"
-            >
-              <option value="all">All</option>
-              <option value="ungraded">Needs grading</option>
-              <option value="graded">Graded</option>
-            </select>
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value as Phase3EntityType | "all")}
-              className="h-10 rounded-md border border-slate-700 bg-slate-950 px-3 text-sm text-slate-100"
-            >
-              <option value="all">All types</option>
-              <option value="cycle">Cycles</option>
-              <option value="midphase">Midphase</option>
-              <option value="video">Videos</option>
-            </select>
             <Button variant="outline" size="sm" onClick={runAiGrade} disabled={aiGrading || !selected || selected.type === "video"}>
               {aiGrading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
               AI Grade
@@ -460,57 +512,169 @@ export function AdminHackathonPhase3Grading() {
             <div className="py-16 text-center text-sm text-slate-500">No Phase 3 items match these filters.</div>
           ) : (
             <div className="grid gap-4 xl:grid-cols-[minmax(320px,420px)_1fr]">
-              {/* Sidebar list */}
-              <div className="max-h-[720px] space-y-2 overflow-y-auto pr-1">
-                {visibleItems.map((item) => (
-                  <button
-                    key={`${item.type}-${item.id}`}
-                    type="button"
-                    onClick={() => setSelectedId(item.id)}
-                    className={`w-full rounded-md border p-3 text-left transition-colors ${
-                      selected?.id === item.id ? "border-amber-400/60 bg-amber-500/10" : "border-slate-800 bg-slate-950/50 hover:border-slate-600"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="text-sm font-semibold text-slate-100">{item.team_name ?? "Unnamed team"}</div>
-                        <div className="mt-1 text-xs text-slate-400">
-                          {item.type === "cycle" ? `Cycle #${item.cycle_number}` : item.type === "midphase" ? "Mid-phase synthesis" : "Video submission"}
-                        </div>
-                      </div>
-                      <ScoredByBadge scoredBy={item.scored_by} score={item.score} />
-                    </div>
-                    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                      <EntityTypeBadge type={item.type} />
-                      {item.team_lobby_code && <Badge variant="outline" className="border-slate-700 text-slate-400">{item.team_lobby_code}</Badge>}
-                      {item.submitted_at && <span>{format(new Date(item.submitted_at), "MMM d, HH:mm")}</span>}
-                    </div>
-                  </button>
-                ))}
-              </div>
+              <div className="flex flex-col gap-4">
+                {/* Sidebar list — grouped by team */}
+                <div className="max-h-[720px] space-y-2 overflow-y-auto pr-1">
+                  {(() => {
+                    // Group visible items by team_id
+                    const groups = new Map<string, Phase3Item[]>();
+                    for (const item of visibleItems) {
+                      const list = groups.get(item.team_id) ?? [];
+                      list.push(item);
+                      groups.set(item.team_id, list);
+                    }
 
-              {/* Pagination */}
-              {pagination.total_pages > 1 && (
-                <div className="col-span-full flex items-center justify-between border-t border-slate-800 pt-3">
-                  <span className="text-xs text-slate-500">Page {pagination.page} of {pagination.total_pages} · {pagination.total_items} items</span>
-                  <div className="flex items-center gap-1">
-                    <Button variant="outline" size="sm" disabled={pagination.page <= 1} onClick={() => goToPage(pagination.page - 1)}><ChevronLeft className="h-4 w-4" /></Button>
-                    {Array.from({ length: Math.min(5, pagination.total_pages) }, (_, i) => {
-                      const start = Math.max(1, Math.min(pagination.page - 2, pagination.total_pages - 4));
-                      const pg = start + i;
-                      if (pg > pagination.total_pages) return null;
+                    // Sort teams by their most recent submission
+                    const teamIds = Array.from(groups.keys()).sort((a, b) => {
+                      const aItems = groups.get(a)!;
+                      const bItems = groups.get(b)!;
+                      const aTime = Math.max(...aItems.map((i) => i.submitted_at ? new Date(i.submitted_at).getTime() : 0));
+                      const bTime = Math.max(...bItems.map((i) => i.submitted_at ? new Date(i.submitted_at).getTime() : 0));
+                      return bTime - aTime;
+                    });
+
+                    return teamIds.map((teamId) => {
+                      const teamItems = groups.get(teamId)!;
+                      const first = teamItems[0];
+                      const teamName = first.team_name ?? "Unnamed team";
+                      const lobbyCode = first.team_lobby_code;
+                      const isExpanded = expandedTeams[teamId] ?? true;
+
+                      // Cycles for this team
+                      const cycles = teamItems.filter((i) => i.type === "cycle");
+                      const nonCycles = teamItems.filter((i) => i.type !== "cycle");
+
                       return (
-                        <Button key={pg} variant={pg === pagination.page ? "default" : "outline"} size="sm" onClick={() => goToPage(pg)} className="min-w-[36px]">{pg}</Button>
+                        <div key={teamId} className="rounded-md border border-slate-800 bg-slate-950/30">
+                          {/* Team header */}
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => setExpandedTeams((prev) => ({ ...prev, [teamId]: !isExpanded }))}
+                            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpandedTeams((prev) => ({ ...prev, [teamId]: !isExpanded })); } }}
+                            className="flex items-center justify-between gap-2 p-3 cursor-pointer hover:bg-slate-900/50 transition-colors"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-sm font-semibold text-slate-100 truncate">{teamName}</span>
+                              {lobbyCode && <Badge variant="outline" className="border-slate-700 text-slate-400 shrink-0 text-[10px]">{lobbyCode}</Badge>}
+                              <span className="text-xs text-slate-500 shrink-0">{teamItems.length} item{teamItems.length > 1 ? "s" : ""}</span>
+                            </div>
+                            <div className="shrink-0 text-slate-500">
+                              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                            </div>
+                          </div>
+
+                          {/* Team items */}
+                          {isExpanded && (
+                            <div className="border-t border-slate-800/50 space-y-1 p-2">
+                              {/* Cycles shown as compact pills */}
+                              {cycles.length > 0 && (
+                                <div className="flex flex-wrap items-center gap-1.5 py-1">
+                                  <span className="text-[10px] text-slate-500 mr-1">Cycles:</span>
+                                  {cycles
+                                    .sort((a, b) => (a.cycle_number ?? 0) - (b.cycle_number ?? 0))
+                                    .map((cycle) => {
+                                      const isSelected = selected?.id === cycle.id;
+                                      return (
+                                        <button
+                                          key={cycle.id}
+                                          type="button"
+                                          onClick={() => {
+                                            setSelectedId(cycle.id);
+                                            setSelectedCycleStep(null);
+                                          }}
+                                          className={`inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-xs font-medium transition-colors ${
+                                            isSelected
+                                              ? "bg-amber-500/20 text-amber-200 border border-amber-500/40"
+                                              : cycle.scored_by
+                                              ? "bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/20"
+                                              : "bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700"
+                                          }`}
+                                        >
+                                          <span>#{cycle.cycle_number}</span>
+                                          {cycle.scored_by && <span className="text-[9px] opacity-70">· {cycle.score}</span>}
+                                          {/* Step progress dots */}
+                                          <span className="ml-1 inline-flex items-center gap-0.5">
+                                            {(["hypothesis", "pretotype", "test_session", "test_run", "synthesis"] as const).map((st) => {
+                                              const step = cycle.steps?.find((s) => s.step_type === st);
+                                              const isSubmitted = step?.status === "submitted" || step?.status === "completed";
+                                              const hasStep = Boolean(step);
+                                              return (
+                                                <span
+                                                  key={st}
+                                                  title={st}
+                                                  className={`inline-block h-2 w-2 rounded-full ${
+                                                    isSubmitted
+                                                      ? "bg-emerald-400"
+                                                      : hasStep
+                                                      ? "bg-amber-400/70"
+                                                      : "bg-slate-600"
+                                                  }`}
+                                                />
+                                              );
+                                            })}
+                                          </span>
+                                        </button>
+                                      );
+                                    })}
+                                </div>
+                              )}
+                              {/* Non-cycle items */}
+                              {nonCycles.map((item) => {
+                                const isSelected = selected?.id === item.id;
+                                return (
+                                  <div
+                                    key={`${item.type}-${item.id}`}
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={() => setSelectedId(item.id)}
+                                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedId(item.id); } }}
+                                    className={`flex items-center justify-between gap-2 rounded-md border p-2 text-left transition-colors cursor-pointer ${
+                                      isSelected ? "border-amber-400/60 bg-amber-500/10" : "border-slate-800 bg-slate-950/50 hover:border-slate-600"
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <EntityTypeBadge type={item.type} />
+                                      <span className="text-xs text-slate-300 truncate">
+                                        {item.type === "midphase" ? "Mid-phase synthesis" : "Video submission"}
+                                      </span>
+                                      {item.submitted_at && <span className="text-[10px] text-slate-500 shrink-0">{format(new Date(item.submitted_at), "MMM d, HH:mm")}</span>}
+                                    </div>
+                                    <ScoredByBadge scoredBy={item.scored_by} score={item.score} />
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
                       );
-                    })}
-                    <Button variant="outline" size="sm" disabled={pagination.page >= pagination.total_pages} onClick={() => goToPage(pagination.page + 1)}><ChevronRight className="h-4 w-4" /></Button>
-                  </div>
+                    });
+                  })()}
                 </div>
-              )}
+
+                {/* Pagination */}
+                {pagination.total_pages > 1 && (
+                  <div className="flex items-center justify-between border-t border-slate-800 pt-3">
+                    <span className="text-xs text-slate-500">Page {pagination.page} of {pagination.total_pages} · {pagination.total_items} items</span>
+                    <div className="flex items-center gap-1">
+                      <Button variant="outline" size="sm" disabled={pagination.page <= 1} onClick={() => goToPage(pagination.page - 1)}><ChevronLeft className="h-4 w-4" /></Button>
+                      {Array.from({ length: Math.min(5, pagination.total_pages) }, (_, i) => {
+                        const start = Math.max(1, Math.min(pagination.page - 2, pagination.total_pages - 4));
+                        const pg = start + i;
+                        if (pg > pagination.total_pages) return null;
+                        return (
+                          <Button key={pg} variant={pg === pagination.page ? "default" : "outline"} size="sm" onClick={() => goToPage(pg)} className="min-w-[36px]">{pg}</Button>
+                        );
+                      })}
+                      <Button variant="outline" size="sm" disabled={pagination.page >= pagination.total_pages} onClick={() => goToPage(pagination.page + 1)}><ChevronRight className="h-4 w-4" /></Button>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Detail panel */}
               {selected && (
-                <div className="rounded-md border border-slate-800 bg-slate-950/50 p-4">
+                <div className="max-h-[720px] overflow-y-auto rounded-md border border-slate-800 bg-slate-950/50 p-4">
                   <div className="flex flex-col gap-3 border-b border-slate-800 pb-4 lg:flex-row lg:items-start lg:justify-between">
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
@@ -540,148 +704,234 @@ export function AdminHackathonPhase3Grading() {
                   {/* CYCLE DETAIL */}
                   {selected.type === "cycle" && (
                     <div className="grid gap-4 py-4 lg:grid-cols-[1fr_320px]">
-                      <div className="space-y-4">
-                        {selected.hypothesis && (
-                          <div className="rounded-md border border-slate-800 bg-slate-900/40 p-3">
-                            <h4 className="mb-2 text-sm font-semibold text-slate-300">Hypothesis</h4>
-                            <p className="whitespace-pre-wrap text-sm text-slate-200">{selected.hypothesis}</p>
-                          </div>
-                        )}
+                      <div>
                         {(() => {
                           const detail = detailCache[selected.id] as CycleDetail | undefined;
-                          const pretotypeStep = detail?.steps?.find((s) => s.step_type === "pretotype");
-                          const pretotypeData = pretotypeStep?.submission_data;
-                          
-                          const varChanged = detail?.variable_changed || pretotypeData?.variable_changed;
-                          const method = detail?.pretotype_method || pretotypeData?.method;
-                          const desc = detail?.pretotype_description || pretotypeData?.description;
-                          const artifact = detail?.pretotype_artifact_url || pretotypeData?.artifact_url;
+                          // Preloaded steps from the list API give us immediate tab rendering.
+                          // Full detail fetch brings in submission_data lazily.
+                          const listSteps = (selected.steps ?? []).map((s) => ({
+                            id: "",
+                            step_type: s.step_type,
+                            status: s.status,
+                            submission_data: {},
+                          }));
+                          const allSteps = detail?.steps ?? listSteps;
+                          const stepOrder = ["hypothesis", "pretotype", "test_session", "test_run", "synthesis"];
+                          const stepLabel: Record<string, string> = {
+                            hypothesis: "Hypothesis",
+                            pretotype: "Pretotype",
+                            test_session: "Test Session",
+                            test_run: "Test Run",
+                            synthesis: "Synthesis",
+                          };
+                          const hasSteps = stepOrder.some((st) => allSteps.some((s) => s.step_type === st));
 
-                          if (!method && !desc && !varChanged && !artifact) return null;
-                          return (
-                            <div className="rounded-md border border-slate-800 bg-slate-900/40 p-3">
-                              <h4 className="mb-2 text-sm font-semibold text-slate-300">Pretotype & Setup</h4>
-                              <div className="space-y-2 text-sm text-slate-200">
-                                {varChanged && (
-                                  <div><span className="font-semibold text-slate-400">Variable Changed:</span> {varChanged}</div>
-                                )}
-                                {method && (
-                                  <div><span className="font-semibold text-slate-400">Method:</span> {method}</div>
-                                )}
-                                {desc && (
-                                  <div><span className="font-semibold text-slate-400">Description:</span> <p className="whitespace-pre-wrap mt-1">{desc}</p></div>
-                                )}
-                                {artifact && (
-                                  <div>
-                                    <span className="font-semibold text-slate-400">Artifact:</span>{" "}
-                                    <a href={artifact} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline break-all">
-                                      {artifact}
-                                    </a>
+                          if (!hasSteps) {
+                            return (
+                              <div className="space-y-4">
+                                {selected.hypothesis && (
+                                  <div className="rounded-md border border-slate-800 bg-slate-900/40 p-3">
+                                    <h4 className="mb-2 text-sm font-semibold text-slate-300">Hypothesis</h4>
+                                    <p className="whitespace-pre-wrap text-sm text-slate-200">{selected.hypothesis}</p>
                                   </div>
                                 )}
                               </div>
-                            </div>
-                          );
-                        })()}
-                        {(() => {
-                          const detail = detailCache[selected.id] as CycleDetail | undefined;
-                          const synthesisStep = detail?.steps?.find((s) => s.step_type === "synthesis");
-                          const synthesisData = synthesisStep?.submission_data;
-                          
-                          const result = selected.synthesis_result || detail?.synthesis_result || synthesisData?.gate_decision;
-                          const changed = detail?.synthesis_what_changed || synthesisData?.what_changed;
-                          const wrongness = detail?.synthesis_honest_wrongness || synthesisData?.honest_wrongness;
-                          const nextVar = synthesisData?.next_variable;
+                            );
+                          }
 
-                          if (!result && !changed && !wrongness && !nextVar) return null;
-                          return (
-                            <div className="rounded-md border border-slate-800 bg-slate-900/40 p-3">
-                              <h4 className="mb-2 text-sm font-semibold text-slate-300">Synthesis</h4>
-                              {result && <Badge variant="outline" className="mb-3">{result}</Badge>}
-                              <div className="space-y-3 text-sm text-slate-200">
-                                {changed && (
-                                  <div>
-                                    <span className="font-semibold text-slate-400 block mb-1">What Changed/Learned:</span>
-                                    <p className="whitespace-pre-wrap">{changed}</p>
-                                  </div>
-                                )}
-                                {wrongness && (
-                                  <div>
-                                    <span className="font-semibold text-slate-400 block mb-1">Honest Wrongness:</span>
-                                    <p className="whitespace-pre-wrap">{wrongness}</p>
-                                  </div>
-                                )}
-                                {nextVar && (
-                                  <div>
-                                    <span className="font-semibold text-slate-400 block mb-1">Next Variable to Test:</span>
-                                    <p className="whitespace-pre-wrap">{nextVar}</p>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })()}
-                        {/* Test sessions */}
-                        {(() => {
-                          const detail = detailCache[selected.id] as CycleDetail | undefined;
-                          const testSessionStep = detail?.steps?.find((s) => s.step_type === "test_session");
-                          const stepTesters = testSessionStep?.submission_data?.testers as Array<any> | undefined;
-                          const testRunStep = detail?.steps?.find((s) => s.step_type === "test_run");
-                          const testRuns = testRunStep?.submission_data?.runs as Array<any> | undefined;
+                          const firstAvailable = stepOrder.find((st) => allSteps.some((s) => s.step_type === st)) ?? "hypothesis";
+                          const activeTab = selectedCycleStep && allSteps.some((s) => s.step_type === selectedCycleStep)
+                            ? selectedCycleStep
+                            : firstAvailable;
 
-                          if (!detail?.test_sessions?.length && !stepTesters?.length && !testRuns?.length) return null;
                           return (
-                            <div className="rounded-md border border-slate-800 bg-slate-900/40 p-3">
-                              <h4 className="mb-2 text-sm font-semibold text-slate-300">Test Sessions ({(detail?.test_sessions?.length || 0) + (stepTesters?.length || 0) + (testRuns?.length || 0)})</h4>
-                              <div className="space-y-3">
-                                {detail?.test_sessions?.map((ts) => (
-                                  <div key={ts.id} className="rounded border border-slate-700 bg-slate-950/60 p-3">
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-sm font-medium text-slate-200">{ts.tester_name}</span>
-                                      <Badge variant="outline" className={ts.fresh_tester ? "border-emerald-500/40 text-emerald-300" : "border-slate-600 text-slate-400"}>
-                                        {ts.fresh_tester ? "Fresh" : "Repeat"}
-                                      </Badge>
-                                    </div>
-                                    {ts.session_result && <Badge variant="outline" className="mt-1">{ts.session_result}</Badge>}
-                                    {ts.painful_detail && <p className="mt-2 text-xs text-slate-400">Pain: {ts.painful_detail}</p>}
-                                    {ts.unprompted_quotes?.length > 0 && (
-                                      <div className="mt-2 space-y-1">
-                                        {ts.unprompted_quotes.map((q, i) => (
-                                          <p key={i} className="text-xs text-slate-300 italic">&ldquo;{q}&rdquo;</p>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                                {stepTesters?.map((t, idx) => (
-                                  <div key={idx} className="rounded border border-slate-700 bg-slate-950/60 p-3 space-y-1">
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-sm font-medium text-slate-200">{t.name || t.tester_name}</span>
-                                      {t.fresh_tester !== undefined && (
-                                        <Badge variant="outline" className={t.fresh_tester ? "border-emerald-500/40 text-emerald-300" : "border-slate-600 text-slate-400"}>
-                                          {t.fresh_tester ? "Fresh" : "Repeat"}
-                                        </Badge>
+                            <Tabs
+                              value={activeTab}
+                              onValueChange={(val) => setSelectedCycleStep(val)}
+                              className="w-full"
+                            >
+                              <TabsList className="mb-3 flex-wrap h-auto gap-1 bg-slate-950/60 border border-slate-800">
+                                {stepOrder.map((st) => {
+                                  const step = allSteps.find((s) => s.step_type === st);
+                                  const isSubmitted = step?.status === "submitted" || step?.status === "completed";
+                                  return (
+                                    <TabsTrigger
+                                      key={st}
+                                      value={st}
+                                      disabled={!step}
+                                      className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-200 text-xs px-2 py-1"
+                                    >
+                                      {stepLabel[st]}
+                                      {isSubmitted && <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />}
+                                      {!step && <span className="ml-1 text-slate-600">—</span>}
+                                    </TabsTrigger>
+                                  );
+                                })}
+                              </TabsList>
+
+                              <TabsContent value="hypothesis" className="mt-0">
+                                {(() => {
+                                  const step = allSteps.find((s) => s.step_type === "hypothesis");
+                                  const stepData = step?.submission_data ?? {};
+                                  const detail = detailCache[selected.id] as CycleDetail | undefined;
+
+                                  const full = stepData?.full_hypothesis || selected.hypothesis || stepData?.hypothesis || detail?.hypothesis_full;
+                                  const who = stepData?.who || stepData?.hypothesis_who || detail?.hypothesis_who;
+                                  const willDo = stepData?.will_do || stepData?.will || stepData?.hypothesis_will_do || detail?.hypothesis_will_do;
+                                  const because = stepData?.because || stepData?.hypothesis_because || detail?.hypothesis_because;
+                                  const measuredBy = stepData?.measured_by || stepData?.hypothesis_measured_by || detail?.hypothesis_measured_by;
+
+                                  if (!full && !who && !willDo && !because && !measuredBy) return <div className="text-sm text-slate-500">No hypothesis data yet.</div>;
+                                  return (
+                                    <div className="space-y-4">
+                                      {full && (
+                                        <div className="rounded-md border border-slate-800 bg-slate-900/40 p-3">
+                                          <h4 className="mb-2 text-sm font-semibold text-slate-300">Full Hypothesis</h4>
+                                          <p className="whitespace-pre-wrap text-sm text-slate-200">{full}</p>
+                                        </div>
+                                      )}
+                                      {(who || willDo || because || measuredBy) && (
+                                        <div className="rounded-md border border-slate-800 bg-slate-900/40 p-3 space-y-2 text-sm text-slate-200">
+                                          {who && <div><span className="font-semibold text-slate-400">Who:</span> {who}</div>}
+                                          {willDo && <div><span className="font-semibold text-slate-400">Will do:</span> {willDo}</div>}
+                                          {because && <div><span className="font-semibold text-slate-400">Because:</span> {because}</div>}
+                                          {measuredBy && <div><span className="font-semibold text-slate-400">Measured by:</span> {measuredBy}</div>}
+                                        </div>
                                       )}
                                     </div>
-                                    {t.role && <p className="text-xs text-slate-400">Role: {t.role}</p>}
-                                    {t.oldHabit && <p className="text-xs text-slate-400">Old Habit: {t.oldHabit}</p>}
-                                    {t.painful_detail && <p className="mt-1 text-xs text-slate-400">Pain: {t.painful_detail}</p>}
-                                    {t.session_result && <Badge variant="outline" className="mt-1">{t.session_result}</Badge>}
-                                  </div>
-                                ))}
-                                {testRuns?.map((t, idx) => (
-                                  <div key={`run-${idx}`} className="rounded border border-slate-700 bg-slate-950/60 p-3 space-y-1">
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-sm font-medium text-slate-200">{t.name}</span>
+                                  );
+                                })()}
+                              </TabsContent>
+
+                              <TabsContent value="pretotype" className="mt-0">
+                                {(() => {
+                                  const step = allSteps.find((s) => s.step_type === "pretotype");
+                                  const stepData = step?.submission_data ?? {};
+                                  const detail = detailCache[selected.id] as CycleDetail | undefined;
+
+                                  const varChanged = stepData?.variable_changed || stepData?.prior_variable || stepData?.variable || detail?.variable_changed || detail?.prior_variable;
+                                  const method = stepData?.method || stepData?.pretotype_method || detail?.pretotype_method;
+                                  const desc = stepData?.description || stepData?.pretotype_description || detail?.pretotype_description;
+                                  const artifact = stepData?.artifact_url || stepData?.pretotype_artifact_url || detail?.pretotype_artifact_url;
+
+                                  if (!method && !desc && !varChanged && !artifact) return <div className="text-sm text-slate-500">No pretotype data yet.</div>;
+                                  return (
+                                    <div className="rounded-md border border-slate-800 bg-slate-900/40 p-3">
+                                      <h4 className="mb-2 text-sm font-semibold text-slate-300">Pretotype & Setup</h4>
+                                      <div className="space-y-2 text-sm text-slate-200">
+                                        {varChanged && <div><span className="font-semibold text-slate-400">Variable Changed:</span> {varChanged}</div>}
+                                        {method && <div><span className="font-semibold text-slate-400">Method:</span> {method}</div>}
+                                        {desc && <div><span className="font-semibold text-slate-400">Description:</span> <p className="whitespace-pre-wrap mt-1">{desc}</p></div>}
+                                        {artifact && (
+                                          <div>
+                                            <span className="font-semibold text-slate-400">Artifact:</span>{" "}
+                                            <a href={artifact} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline break-all">{artifact}</a>
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
-                                    {t.role && <p className="text-xs text-slate-400">Role: {t.role}</p>}
-                                    {t.oldHabit && <p className="text-xs text-slate-400">Old Habit: {t.oldHabit}</p>}
-                                    {t.observation && <p className="mt-1 text-xs text-slate-400">Observation: {t.observation}</p>}
-                                    {t.result && <Badge variant="outline" className="mt-1">{t.result}</Badge>}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
+                                  );
+                                })()}
+                              </TabsContent>
+
+                              <TabsContent value="test_session" className="mt-0">
+                                {(() => {
+                                  const step = allSteps.find((s) => s.step_type === "test_session");
+                                  const data = step?.submission_data;
+                                  const testers = data?.testers as Array<any> | undefined;
+                                  if (!testers?.length) return <div className="text-sm text-slate-500">No test session data yet.</div>;
+                                  return (
+                                    <div className="space-y-3">
+                                      {testers.map((t, idx) => (
+                                        <div key={idx} className="rounded border border-slate-700 bg-slate-950/60 p-3 space-y-1">
+                                          <div className="flex items-center justify-between">
+                                            <span className="text-sm font-medium text-slate-200">{t.name || t.tester_name || `Tester ${idx + 1}`}</span>
+                                            {t.fresh_tester !== undefined && (
+                                              <Badge variant="outline" className={t.fresh_tester ? "border-emerald-500/40 text-emerald-300" : "border-slate-600 text-slate-400"}>
+                                                {t.fresh_tester ? "Fresh" : "Repeat"}
+                                              </Badge>
+                                            )}
+                                          </div>
+                                          {t.role && <p className="text-xs text-slate-400">Role: {t.role}</p>}
+                                          {t.oldHabit && <p className="text-xs text-slate-400">Old Habit: {t.oldHabit}</p>}
+                                          {t.painful_detail && <p className="mt-1 text-xs text-slate-400">Pain: {t.painful_detail}</p>}
+                                          {t.session_result && <Badge variant="outline" className="mt-1">{t.session_result}</Badge>}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  );
+                                })()}
+                              </TabsContent>
+
+                              <TabsContent value="test_run" className="mt-0">
+                                {(() => {
+                                  const step = allSteps.find((s) => s.step_type === "test_run");
+                                  const data = step?.submission_data;
+                                  const runs = data?.runs as Array<any> | undefined;
+                                  if (!runs?.length) return <div className="text-sm text-slate-500">No test run data yet.</div>;
+                                  return (
+                                    <div className="space-y-3">
+                                      {runs.map((t, idx) => (
+                                        <div key={idx} className="rounded border border-slate-700 bg-slate-950/60 p-3 space-y-1">
+                                          <div className="flex items-center justify-between">
+                                            <span className="text-sm font-medium text-slate-200">{t.name || `Run ${idx + 1}`}</span>
+                                            {t.result && <Badge variant="outline" className="mt-1">{t.result}</Badge>}
+                                          </div>
+                                          {t.role && <p className="text-xs text-slate-400">Role: {t.role}</p>}
+                                          {t.oldHabit && <p className="text-xs text-slate-400">Old Habit: {t.oldHabit}</p>}
+                                          {t.observation && <p className="mt-1 text-xs text-slate-400">Observation: {t.observation}</p>}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  );
+                                })()}
+                              </TabsContent>
+
+                              <TabsContent value="synthesis" className="mt-0">
+                                {(() => {
+                                  const step = allSteps.find((s) => s.step_type === "synthesis");
+                                  const stepData = step?.submission_data ?? {};
+                                  const detail = detailCache[selected.id] as CycleDetail | undefined;
+
+                                  const result = selected.synthesis_result || stepData?.gate_decision || stepData?.result || detail?.synthesis_result;
+                                  const changed = stepData?.what_changed || stepData?.synthesis_what_changed || detail?.synthesis_what_changed;
+                                  const wrongness = stepData?.honest_wrongness || stepData?.synthesis_honest_wrongness || detail?.synthesis_honest_wrongness;
+                                  const nextVar = stepData?.next_variable;
+
+                                  if (!result && !changed && !wrongness && !nextVar) return <div className="text-sm text-slate-500">No synthesis data yet.</div>;
+                                  return (
+                                    <div className="space-y-4">
+                                      {result && (
+                                        <div className="rounded-md border border-slate-800 bg-slate-900/40 p-3">
+                                          <h4 className="mb-2 text-sm font-semibold text-slate-300">Result</h4>
+                                          <Badge variant="outline">{result}</Badge>
+                                        </div>
+                                      )}
+                                      <div className="rounded-md border border-slate-800 bg-slate-900/40 p-3 space-y-3 text-sm text-slate-200">
+                                        {changed && (
+                                          <div>
+                                            <span className="font-semibold text-slate-400 block mb-1">What Changed / Learned:</span>
+                                            <p className="whitespace-pre-wrap">{changed}</p>
+                                          </div>
+                                        )}
+                                        {wrongness && (
+                                          <div>
+                                            <span className="font-semibold text-slate-400 block mb-1">Honest Wrongness:</span>
+                                            <p className="whitespace-pre-wrap">{wrongness}</p>
+                                          </div>
+                                        )}
+                                        {nextVar && (
+                                          <div>
+                                            <span className="font-semibold text-slate-400 block mb-1">Next Variable to Test:</span>
+                                            <p className="whitespace-pre-wrap">{nextVar}</p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
+                              </TabsContent>
+                            </Tabs>
                           );
                         })()}
                       </div>

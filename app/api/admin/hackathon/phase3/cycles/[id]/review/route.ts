@@ -3,6 +3,7 @@ import { createClient } from "@/utils/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { recalculateAndUpsertTeamScore } from "@/lib/hackathon/team-score";
+import { buildReviewInboxItems } from "@/lib/hackathon/admin-submissions";
 
 const reviewSchema = z.object({
   hypothesis_quality: z.number().min(0).max(20).optional(),
@@ -97,6 +98,29 @@ export async function POST(
   recalculateAndUpsertTeamScore(serviceClient, (cycle as any).team_id).catch((err) => {
     console.error("[phase3/cycles/review] score recalc error", err);
   });
+
+  // Notify team participants in app
+  const { data: members } = await serviceClient
+    .from("hackathon_team_members")
+    .select("participant_id")
+    .eq("team_id", (cycle as any).team_id);
+  const participantIds = ((members ?? []) as Array<{ participant_id: string }>).map((m) => m.participant_id).filter(Boolean);
+
+  if (participantIds.length > 0) {
+    const inboxItems = buildReviewInboxItems({
+      submissionScope: "team",
+      recipientParticipantIds: participantIds,
+      activityTitle: `Phase 3 Cycle ${(updateResult.data as any)?.cycle_number ?? ""}`,
+      reviewStatus: scores.total >= 60 ? "passed" : "revision_required",
+      scoreAwarded: scores.total,
+      pointsPossible: 100,
+      feedback: data.feedback ?? "",
+      submissionId: id,
+    });
+    await serviceClient.from("hackathon_participant_inbox_items").insert(inboxItems).catch((err) => {
+      console.error("[phase3/cycles/review] inbox insert error", err);
+    });
+  }
 
   return NextResponse.json({
     review: updateResult.data,

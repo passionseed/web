@@ -3,6 +3,7 @@ import { createClient } from "@/utils/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { recalculateAndUpsertTeamScore } from "@/lib/hackathon/team-score";
+import { buildReviewInboxItems } from "@/lib/hackathon/admin-submissions";
 
 const reviewSchema = z.object({
   confidence_score: z.number().min(1).max(10).optional(),
@@ -53,6 +54,29 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (updateResult.error) return NextResponse.json({ error: "Failed to save review" }, { status: 500 });
 
   recalculateAndUpsertTeamScore(serviceClient, (row as any).team_id).catch(() => {});
+
+  // Notify team participants in app
+  const { data: members } = await serviceClient
+    .from("hackathon_team_members")
+    .select("participant_id")
+    .eq("team_id", (row as any).team_id);
+  const participantIds = ((members ?? []) as Array<{ participant_id: string }>).map((m) => m.participant_id).filter(Boolean);
+
+  if (participantIds.length > 0) {
+    const inboxItems = buildReviewInboxItems({
+      submissionScope: "team",
+      recipientParticipantIds: participantIds,
+      activityTitle: "Phase 3 Mid-phase Synthesis",
+      reviewStatus: (data.confidence_score ?? 0) >= 6 ? "passed" : "revision_required",
+      scoreAwarded: data.confidence_score ?? null,
+      pointsPossible: 10,
+      feedback: data.feedback ?? "",
+      submissionId: id,
+    });
+    await serviceClient.from("hackathon_participant_inbox_items").insert(inboxItems).catch((err) => {
+      console.error("[phase3/midphase/review] inbox insert error", err);
+    });
+  }
 
   return NextResponse.json({ review: updateResult.data });
 }
