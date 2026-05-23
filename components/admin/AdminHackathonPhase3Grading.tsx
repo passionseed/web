@@ -369,6 +369,7 @@ export function AdminHackathonPhase3Grading() {
               setAiStreamMessages((prev) => prev.slice(-10).concat(`[${obj.model}] ${obj.delta?.slice(0, 80) ?? ""}`));
             } else if (obj.type === "done") {
               finalScorecard = obj.scorecard ?? null;
+              if (obj.feedback) setFeedback(obj.feedback);
               setAiStreamMessages((prev) => prev.concat("AI grading complete."));
             } else if (obj.type === "error") {
               setAiStreamMessages((prev) => prev.concat(`Error: ${obj.message}`));

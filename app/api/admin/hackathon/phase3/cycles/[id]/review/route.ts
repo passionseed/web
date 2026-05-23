@@ -84,6 +84,8 @@ export async function POST(
     .update({
       mentor_score: scores,
       mentor_notes: data.notes ?? null,
+      ai_feedback: data.feedback ? { text: data.feedback } : null,
+      ai_feedback_at: data.feedback ? now : null,
       updated_at: now,
     })
     .eq("id", id)
