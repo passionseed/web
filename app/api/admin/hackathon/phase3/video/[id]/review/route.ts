@@ -4,6 +4,7 @@ import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { recalculateAndUpsertTeamScore } from "@/lib/hackathon/team-score";
 import { buildReviewInboxItems } from "@/lib/hackathon/admin-submissions";
+import { sendInboxPushNotification } from "@/lib/hackathon/push-notify";
 
 const reviewSchema = z.object({
   judge_scores: z.record(z.number().min(0).max(100)).optional(),
@@ -79,8 +80,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       feedback: data.notes ?? "",
       submissionId: id,
     });
-    await serviceClient.from("hackathon_participant_inbox_items").insert(inboxItems).catch((err) => {
-      console.error("[phase3/video/review] inbox insert error", err);
+    const { error: inboxError } = await serviceClient.from("hackathon_participant_inbox_items").insert(inboxItems);
+    if (inboxError) {
+      console.error("[phase3/video/review] inbox insert error", inboxError);
+    }
+
+    sendInboxPushNotification({
+      serviceClient,
+      participantIds,
+      title: inboxItems[0]?.title ?? "Phase 3 Review",
+      body: inboxItems[0]?.body ?? "Your submission has been reviewed.",
+      url: "/hackathon/dashboard",
+    }).catch((err) => {
+      console.error("[phase3/video/review] push notify error", err);
     });
   }
 

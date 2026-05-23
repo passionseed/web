@@ -938,39 +938,137 @@ export function AdminHackathonPhase3Grading() {
 
                       {/* Grading form */}
                       <div className="space-y-4 rounded-md border border-slate-800 bg-slate-900/40 p-4">
-                        <h4 className="text-sm font-semibold text-slate-300">Scorecard (0-20 each)</h4>
-                        {[
-                          { key: "hypothesis_quality", label: "Hypothesis quality" },
-                          { key: "variable_isolation", label: "Variable isolation" },
-                          { key: "behavioral_evidence", label: "Behavioral evidence" },
-                          { key: "tester_freshness", label: "Tester freshness" },
-                          { key: "synthesis_honesty", label: "Synthesis honesty" },
-                        ].map(({ key, label }) => (
-                          <div key={key} className="space-y-1">
-                            <Label htmlFor={`score-${key}`}>{label}</Label>
-                            <Input
-                              id={`score-${key}`}
-                              type="number"
-                              min="0"
-                              max="20"
-                              value={cycleScores[key as keyof typeof cycleScores]}
-                              onChange={(e) => setCycleScores((prev) => ({ ...prev, [key]: e.target.value }))}
-                              placeholder="0-20"
-                            />
-                          </div>
-                        ))}
-                        <div className="space-y-1">
-                          <Label htmlFor="feedback">Feedback</Label>
-                          <Textarea id="feedback" value={feedback} onChange={(e) => setFeedback(e.target.value)} rows={5} placeholder="Student-facing feedback" />
-                        </div>
-                        <div className="space-y-1">
-                          <Label htmlFor="notes">Mentor notes</Label>
-                          <Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} placeholder="Private mentor notes" />
-                        </div>
-                        <Button onClick={submitReview} disabled={saving} className="w-full">
-                          {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                          Save review
-                        </Button>
+                        {(() => {
+                          const detail = detailCache[selected.id] as CycleDetail | undefined;
+                          const aiScore = detail?.ai_score;
+                          const mentorScore = detail?.mentor_score;
+                          const hasAi = aiScore != null && typeof aiScore === "object";
+                          const hasMentor = mentorScore != null && typeof mentorScore === "object";
+
+                          const scoreLabels = [
+                            { key: "hypothesis_quality" as const, label: "Hypothesis Quality", icon: "🎯" },
+                            { key: "variable_isolation" as const, label: "Variable Isolation", icon: "🔬" },
+                            { key: "behavioral_evidence" as const, label: "Behavioral Evidence", icon: "📊" },
+                            { key: "tester_freshness" as const, label: "Tester Freshness", icon: "👤" },
+                            { key: "synthesis_honesty" as const, label: "Synthesis Honesty", icon: "🧠" },
+                          ];
+
+                          const getVal = (key: string) => Number(cycleScores[key as keyof typeof cycleScores]) || 0;
+                          const total = scoreLabels.reduce((sum, { key }) => sum + getVal(key), 0);
+                          const maxTotal = 100;
+                          const passing = 60;
+
+                          return (
+                            <div className="space-y-5">
+                              {/* Score summary card */}
+                              <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-4">
+                                <div className="flex items-center justify-between mb-3">
+                                  <span className="text-sm font-semibold text-slate-200">Total Score</span>
+                                  <span className={`text-2xl font-bold ${total >= passing ? "text-emerald-400" : "text-amber-400"}`}>
+                                    {total}<span className="text-sm text-slate-500 font-normal">/{maxTotal}</span>
+                                  </span>
+                                </div>
+                                <div className="h-3 w-full rounded-full bg-slate-800 overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full transition-all duration-500 ${total >= passing ? "bg-emerald-500" : "bg-amber-500"}`}
+                                    style={{ width: `${Math.min(100, (total / maxTotal) * 100)}%` }}
+                                  />
+                                </div>
+                                <div className="flex justify-between mt-1.5 text-[10px] text-slate-500">
+                                  <span>0</span>
+                                  <span className={total >= passing ? "text-emerald-400" : "text-amber-400"}>
+                                    {total >= passing ? "✓ Passed" : `Needs ${passing - total} more`}
+                                  </span>
+                                  <span>{maxTotal}</span>
+                                </div>
+                              </div>
+
+                              {/* Dimension bars */}
+                              <div className="space-y-3">
+                                {scoreLabels.map(({ key, label, icon }) => {
+                                  const val = getVal(key);
+                                  const aiVal = hasAi ? (aiScore as Record<string, number>)[key] : null;
+                                  const mentorVal = hasMentor ? (mentorScore as Record<string, number>)[key] : null;
+                                  return (
+                                    <div key={key} className="space-y-1.5">
+                                      <div className="flex items-center justify-between text-xs">
+                                        <span className="text-slate-300">{icon} {label}</span>
+                                        <div className="flex items-center gap-2">
+                                          {aiVal != null && (
+                                            <span className="text-[10px] text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded">AI {aiVal}</span>
+                                          )}
+                                          {mentorVal != null && (
+                                            <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">Mentor {mentorVal}</span>
+                                          )}
+                                          <span className={`font-mono font-bold w-6 text-right ${val >= 12 ? "text-emerald-300" : val >= 8 ? "text-amber-300" : "text-rose-300"}`}>{val}</span>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <div className="flex-1 h-2 rounded-full bg-slate-800 overflow-hidden">
+                                          <div
+                                            className={`h-full rounded-full transition-all duration-300 ${val >= 15 ? "bg-emerald-500" : val >= 10 ? "bg-amber-500" : val >= 5 ? "bg-orange-500" : "bg-rose-500"}`}
+                                            style={{ width: `${Math.min(100, (val / 20) * 100)}%` }}
+                                          />
+                                        </div>
+                                        <div className="flex items-center gap-0.5">
+                                          {[0, 5, 10, 15, 20].map((tick) => (
+                                            <button
+                                              key={tick}
+                                              type="button"
+                                              onClick={() => setCycleScores((prev) => ({ ...prev, [key]: String(tick) }))}
+                                              className={`w-5 h-6 rounded text-[10px] font-mono transition-colors ${
+                                                val === tick
+                                                  ? "bg-slate-200 text-slate-900 font-bold"
+                                                  : "bg-slate-800 text-slate-500 hover:bg-slate-700"
+                                              }`}
+                                            >
+                                              {tick}
+                                            </button>
+                                          ))}
+                                        </div>
+                                        <input
+                                          type="number"
+                                          min="0"
+                                          max="20"
+                                          value={cycleScores[key as keyof typeof cycleScores]}
+                                          onChange={(e) => setCycleScores((prev) => ({ ...prev, [key]: e.target.value }))}
+                                          className="w-12 h-7 rounded border border-slate-700 bg-slate-950 px-1 text-center text-xs text-slate-200"
+                                        />
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+
+                              <div className="space-y-1">
+                                <Label htmlFor="feedback" className="text-slate-300">Student Feedback</Label>
+                                <Textarea
+                                  id="feedback"
+                                  value={feedback}
+                                  onChange={(e) => setFeedback(e.target.value)}
+                                  rows={4}
+                                  placeholder="What should the team improve? Be specific..."
+                                  className="border-slate-700 bg-slate-950 text-slate-200 placeholder:text-slate-600"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label htmlFor="notes" className="text-slate-300">Private Mentor Notes</Label>
+                                <Textarea
+                                  id="notes"
+                                  value={notes}
+                                  onChange={(e) => setNotes(e.target.value)}
+                                  rows={2}
+                                  placeholder="Internal notes (not shown to students)"
+                                  className="border-slate-700 bg-slate-950 text-slate-200 placeholder:text-slate-600"
+                                />
+                              </div>
+                              <Button onClick={submitReview} disabled={saving} className="w-full">
+                                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                                Save Review
+                              </Button>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                   )}
