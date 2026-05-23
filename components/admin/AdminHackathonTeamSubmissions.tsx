@@ -12,6 +12,7 @@ import {
   ChevronRight,
   MessageSquare,
   Users,
+  Download,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { SubmissionClusterView } from "@/components/admin/SubmissionClusterView";
@@ -202,6 +203,113 @@ function buildPhaseGroups(team: TeamData): PhaseGroup[] {
       (a, b) =>
         (a.phase_number ?? Number.MAX_SAFE_INTEGER) - (b.phase_number ?? Number.MAX_SAFE_INTEGER)
     );
+}
+
+function exportTeamToMarkdown(team: TeamData) {
+  let md = `# Hackathon Submissions: ${team.name}\n\n`;
+  md += `- **Lobby Code:** \`${team.lobby_code}\`\n`;
+  md += `- **Total Score:** ${team.total_score} pts\n`;
+  md += `- **Members:** ${team.member_count} members\n\n`;
+
+  md += `## Team Members\n`;
+  if (team.members && team.members.length > 0) {
+    team.members.forEach((m) => {
+      const role = m.is_owner ? "Owner" : "Member";
+      md += `- **${m.name}** (${m.email}) - ${m.university || "Unknown"} (${role})\n`;
+    });
+  } else {
+    md += `*No members recorded.*\n`;
+  }
+  md += `\n---\n\n`;
+
+  const phases = buildPhaseGroups(team);
+  if (phases.length === 0) {
+    md += `*No submissions recorded for this team.*\n`;
+  } else {
+    phases.forEach((phase) => {
+      md += `## Phase ${phase.phase_number ?? "?"}: ${phase.phase_title ?? "Untitled Phase"}\n\n`;
+
+      phase.activities.forEach((activity) => {
+        md += `### Activity: ${activity.activity_title ?? activity.activity_id}\n`;
+        md += `- **Status:** ${activity.status.toUpperCase().replace(/_/g, " ")}\n`;
+        if (activity.submitted_at) {
+          md += `- **Last Submitted:** ${new Date(activity.submitted_at).toLocaleString()}\n`;
+        }
+        md += `- **Prompt:** *${activity.prompt ?? "No prompt available"}*\n\n`;
+
+        // Team submission
+        if (activity.team_submission) {
+          const ts = activity.team_submission;
+          md += `#### Team Submission by ${ts.submitted_by_name ?? "Unknown"}\n`;
+          if (ts.text_answer) {
+            md += `\n\`\`\`markdown\n${ts.text_answer}\n\`\`\`\n\n`;
+          }
+          if (ts.image_url) {
+            md += `**Attached Image:**\n![Team Submission Image](${ts.image_url})\n\n`;
+          }
+          if (ts.file_urls && ts.file_urls.length > 0) {
+            md += `**Attached Files:**\n`;
+            ts.file_urls.forEach((url, idx) => {
+              md += `- [File ${idx + 1}](${url})\n`;
+            });
+            md += `\n`;
+          }
+        }
+
+        // Individual submissions
+        if (activity.participant_submissions && activity.participant_submissions.length > 0) {
+          md += `#### Individual Submissions\n\n`;
+          activity.participant_submissions.forEach((ps) => {
+            md += `##### Submitted by ${ps.participant_name ?? "Unknown"}\n`;
+            md += `- **Status:** ${ps.status.toUpperCase().replace(/_/g, " ")}\n`;
+            if (ps.submitted_at) {
+              md += `- **Submitted At:** ${new Date(ps.submitted_at).toLocaleString()}\n`;
+            }
+            if (ps.text_answer) {
+              md += `\n\`\`\`markdown\n${ps.text_answer}\n\`\`\`\n\n`;
+            }
+            if (ps.image_url) {
+              md += `**Attached Image:**\n![Submission Image](${ps.image_url})\n\n`;
+            }
+            if (ps.file_urls && ps.file_urls.length > 0) {
+              md += `**Attached Files:**\n`;
+              ps.file_urls.forEach((url, idx) => {
+                md += `- [File ${idx + 1}](${url})\n`;
+              });
+              md += `\n`;
+            }
+          });
+        }
+
+        // Comments
+        if (activity.comments && activity.comments.length > 0) {
+          md += `#### Activity Comments\n\n`;
+          activity.comments.forEach((comment) => {
+            md += `- **${comment.participant_name}**: ${comment.content} (${new Date(comment.created_at).toLocaleString()})\n`;
+            if (comment.replies && comment.replies.length > 0) {
+              comment.replies.forEach((reply) => {
+                md += `  - **Reply from ${reply.participant_name}**: ${reply.content} (${new Date(reply.created_at).toLocaleString()})\n`;
+              });
+            }
+          });
+          md += `\n`;
+        }
+
+        md += `\n---\n\n`;
+      });
+    });
+  }
+
+  // Trigger file download
+  const blob = new Blob([md], { type: "text/markdown;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${team.name.replace(/[^a-z0-9]/gi, "_").toLowerCase()}_submissions.md`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 // ─── TeamGrid ─────────────────────────────────────────────────────────────────
@@ -939,13 +1047,22 @@ export function AdminHackathonTeamSubmissions() {
       </button>
 
       {/* Team name + members summary */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 w-full">
         <span className="text-base font-semibold text-slate-100">{selectedTeam.name}</span>
         <span className="text-[10px] font-mono text-slate-600">{selectedTeam.lobby_code}</span>
         <div className="flex items-center gap-1 text-slate-500">
           <Users className="h-3 w-3" />
           <span className="text-[10px]">{selectedTeam.member_count} members</span>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => exportTeamToMarkdown(selectedTeam)}
+          className="ml-auto text-xs bg-slate-900/60 border-slate-800 hover:border-slate-600 hover:bg-slate-800/80 text-indigo-400 hover:text-indigo-300 flex items-center gap-1.5"
+        >
+          <Download className="h-3.5 w-3.5" />
+          Export Submissions (.md)
+        </Button>
       </div>
 
       {/* Two-panel layout */}
