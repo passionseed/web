@@ -3,7 +3,7 @@ import { checkRateLimit } from "@/lib/expert-interview/rate-limiter";
 import { getFirstQuestion, getTotalQuestions } from "@/lib/expert-interview/chat-service";
 import type { InterviewType } from "@/types/expert-interview";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 function getClientIp(request: NextRequest): string {
   return (

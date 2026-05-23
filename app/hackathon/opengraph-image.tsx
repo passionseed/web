@@ -1,4 +1,6 @@
 import { ImageResponse } from 'next/og'
+import fs from 'fs'
+import path from 'path'
 
 export const alt = 'The Next Decade Hackathon 2026'
 export const size = {
@@ -6,14 +8,17 @@ export const size = {
   height: 630,
 }
 export const contentType = 'image/png'
-
-// Next.js will automatically use the public URL in production
-// but for development we need to handle it.
-const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://passionseed.org'
+export const runtime = 'nodejs'
 
 export default async function Image() {
-  const logoUrl = `${baseUrl}/hackathon/HackLogo.png`
-  const jellyfishUrl = `${baseUrl}/hackathon/Creature/Jellyfish%201.svg`
+  const logoPath = path.join(process.cwd(), 'public', 'hackathon', 'HackLogo.png')
+  const jellyfishPath = path.join(process.cwd(), 'public', 'hackathon', 'Creature', 'Jellyfish 1.svg')
+  
+  const logoData = fs.readFileSync(logoPath)
+  const logoBase64 = `data:image/png;base64,${logoData.toString('base64')}`
+
+  const jellyfishData = fs.readFileSync(jellyfishPath)
+  const jellyfishBase64 = `data:image/svg+xml;base64,${jellyfishData.toString('base64')}`
   
   // Define colors from themes
   const hackBlue = '#91C4E3'
@@ -62,7 +67,9 @@ export default async function Image() {
 
         {/* Floating Jellyfish - Left */}
         <img
-          src={jellyfishUrl}
+          src={jellyfishBase64}
+          width={450}
+          height={450}
           style={{
             position: 'absolute',
             top: '-40px',
@@ -76,7 +83,9 @@ export default async function Image() {
 
         {/* Floating Jellyfish - Right */}
         <img
-          src={jellyfishUrl}
+          src={jellyfishBase64}
+          width={550}
+          height={550}
           style={{
             position: 'absolute',
             bottom: '-80px',
@@ -115,7 +124,8 @@ export default async function Image() {
             marginBottom: '40px',
           }}>
             <img
-              src={logoUrl}
+              src={logoBase64}
+              width={640}
               style={{
                 width: '640px',
                 filter: 'drop-shadow(0 0 40px rgba(145, 196, 227, 0.4))',

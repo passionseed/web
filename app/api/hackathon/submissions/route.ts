@@ -3,7 +3,7 @@ import { getSessionParticipant } from "@/lib/hackathon/db";
 import { createClient } from "@supabase/supabase-js";
 import { getCorsHeaders, extractHackathonToken } from "@/lib/hackathon/auth";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 function getHackathonAuthClient() {
   const url = process.env.HACKATHON_SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL!;

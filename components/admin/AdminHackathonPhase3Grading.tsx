@@ -177,6 +177,9 @@ export function AdminHackathonPhase3Grading() {
   const [showTest, setShowTest] = useState(false);
   const [search, setSearch] = useState("");
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [pagination, setPagination] = useState<Pagination>({ page: 1, page_size: 50, total_items: 0, total_pages: 1 });
+  const [detailCache, setDetailCache] = useState<Record<string, CycleDetail | MidphaseDetail | VideoDetail>>({});
+  const [loadingDetail, setLoadingDetail] = useState(false);
   const [bulkGradeDialogOpen, setBulkGradeDialogOpen] = useState(false);
   const [bulkGradeStep, setBulkGradeStep] = useState<'preflight' | 'grading' | 'review' | 'submitting'>('preflight');
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });

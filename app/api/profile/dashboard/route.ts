@@ -8,7 +8,7 @@ import {
   type DashboardProgress,
 } from "@/components/profile/profile-dashboard-utils";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 async function safeQuery<T>(
   label: string,

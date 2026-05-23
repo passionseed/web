@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { MentorProfile } from "@/types/mentor";
 import { getCorsHeaders } from "@/lib/hackathon/auth";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 function getClient() {
   return createClient(

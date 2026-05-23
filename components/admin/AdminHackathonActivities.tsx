@@ -313,6 +313,37 @@ export function AdminHackathonActivities() {
   const [supergraderCancel, setSupergraderCancel] = useState(false);
   const SUPERGRADER_BATCH = 10;
 
+  const [isGeminiGrading, setIsGeminiGrading] = useState(false);
+
+  const handleGeminiGrade = async () => {
+    if (!selectedSubmission || !selectedActivity) return;
+    setIsGeminiGrading(true);
+    try {
+      const res = await fetch("/api/admin/hackathon/grade", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: selectedActivity.instructions || selectedActivity.title,
+          text_answer: selectedSubmission.text_answer,
+          image_url: selectedSubmission.image_url,
+          file_urls: selectedSubmission.file_urls,
+        }),
+      });
+      const data = await res.json();
+      if (data.result) {
+        setGradeStatus(data.result.status as ReviewStatus);
+        setGradeFeedback(data.result.feedback);
+      } else {
+        alert(data.error || "Failed to grade with Gemini");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Error calling grading API");
+    } finally {
+      setIsGeminiGrading(false);
+    }
+  };
+
   function updateAiJob(id: string, patch: Partial<AiJobState>) {
     setAiJobs((prev) => {
       const base: AiJobState = prev[id] ?? {
@@ -1801,32 +1832,45 @@ export function AdminHackathonActivities() {
                             <HelpCircle className="h-3 w-3" />
                           </button>
                         </div>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            const isRegrade = selectedSubmission.review_status === "passed";
-                            const comment = graderNoteRef.current.trim() || undefined;
-                            requestAiSuggestion(undefined, { regrade: isRegrade, graderComment: comment });
-                            graderNoteRef.current = "";
-                          }}
-                          disabled={aiSuggesting}
-                          className="h-7 px-2 text-[11px] font-light text-violet-200 hover:bg-violet-500/10"
-                        >
-                          {aiSuggesting ? (
-                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                          ) : (
-                            <Sparkles className="mr-1 h-3 w-3" />
-                          )}
-                          {aiSuggesting
-                            ? "Thinking…"
-                            : selectedSubmission.review?.ai_draft
-                              ? "Regenerate AI draft"
-                              : selectedSubmission.review_status === "passed"
-                                ? "AI Regrade"
-                                : "Suggest with AI"}
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={handleGeminiGrade}
+                            disabled={isGeminiGrading || aiSuggesting}
+                            className="h-7 px-2 text-[11px] font-light border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/10"
+                          >
+                            {isGeminiGrading ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Sparkles className="mr-1 h-3 w-3" />}
+                            Grade with Gemini
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              const isRegrade = selectedSubmission.review_status === "passed";
+                              const comment = graderNoteRef.current.trim() || undefined;
+                              requestAiSuggestion(undefined, { regrade: isRegrade, graderComment: comment });
+                              graderNoteRef.current = "";
+                            }}
+                            disabled={aiSuggesting || isGeminiGrading}
+                            className="h-7 px-2 text-[11px] font-light text-violet-200 hover:bg-violet-500/10"
+                          >
+                            {aiSuggesting ? (
+                              <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                            ) : (
+                              <Sparkles className="mr-1 h-3 w-3" />
+                            )}
+                            {aiSuggesting
+                              ? "Thinking…"
+                              : selectedSubmission.review?.ai_draft
+                                ? "Regenerate AI draft"
+                                : selectedSubmission.review_status === "passed"
+                                  ? "AI Regrade"
+                                  : "Suggest with AI"}
+                          </Button>
+                        </div>
                       </div>
                       <GraderNoteInput
                         ref={graderNoteInputRef}
