@@ -28,6 +28,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageLightbox } from "@/components/admin/ImageLightbox";
@@ -176,17 +177,18 @@ export function AdminHackathonPhase3Grading() {
   const [showTest, setShowTest] = useState(false);
   const [search, setSearch] = useState("");
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
-  const [pagination, setPagination] = useState<Pagination>({ page: 1, page_size: 50, total_items: 0, total_pages: 1 });
-  const [detailCache, setDetailCache] = useState<Record<string, CycleDetail | MidphaseDetail | VideoDetail>>({});
-  const [loadingDetail, setLoadingDetail] = useState(false);
-
-  const [bulkGrading, setBulkGrading] = useState(false);
+  const [bulkGradeDialogOpen, setBulkGradeDialogOpen] = useState(false);
+  const [bulkGradeStep, setBulkGradeStep] = useState<'preflight' | 'grading' | 'review' | 'submitting'>('preflight');
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
-
-  const [bulkCommentOpen, setBulkCommentOpen] = useState(false);
-  const [bulkCommentFeedback, setBulkCommentFeedback] = useState("");
-  const [bulkCommentNotes, setBulkCommentNotes] = useState("");
-  const [bulkCommenting, setBulkCommenting] = useState(false);
+  const [bulkGradeResults, setBulkGradeResults] = useState<Array<{
+    id: string;
+    type: Phase3EntityType;
+    team_name: string | null;
+    feedback: string;
+    reasoning: string;
+    scorecard?: any;
+    confidence_score?: number | null;
+  }>>([]);
 
   // Review form state
   const [cycleScores, setCycleScores] = useState({ hypothesis_quality: "", variable_isolation: "", behavioral_evidence: "", tester_freshness: "", synthesis_honesty: "" });
@@ -409,23 +411,23 @@ export function AdminHackathonPhase3Grading() {
     }
   }
 
-  async function runBulkAiGrade() {
+  function startBulkAiGrade() {
     const targets = visibleItems.filter((i) => i.type !== "video" && !i.scored_by);
     if (targets.length === 0) {
       setMessage("No ungraded cycles or midphase items in the current view.");
       return;
     }
-
-    if (!confirm(`Are you sure you want to AI grade and auto-save ${targets.length} items?`)) {
-      return;
-    }
-
-    setBulkGrading(true);
+    setBulkGradeStep("preflight");
+    setBulkGradeResults([]);
     setBulkProgress({ current: 0, total: targets.length });
-    setMessage("");
+    setBulkGradeDialogOpen(true);
+  }
 
-    let successCount = 0;
-    let failCount = 0;
+  async function executeBulkAiGrade() {
+    const targets = visibleItems.filter((i) => i.type !== "video" && !i.scored_by);
+    setBulkGradeStep("grading");
+    setBulkProgress({ current: 0, total: targets.length });
+    const results = [];
 
     for (let i = 0; i < targets.length; i++) {
       const target = targets[i];
@@ -465,13 +467,49 @@ export function AdminHackathonPhase3Grading() {
 
         if (!finalData) throw new Error("No final data");
 
-        let reviewBody: Record<string, unknown> = {
+        results.push({
+          id: target.id,
+          type: target.type,
+          team_name: target.team_name,
           feedback: finalData.feedback || "",
-          notes: finalData.reasoning ? `AI Reasoning:\n${finalData.reasoning}` : ""
+          reasoning: finalData.reasoning || "",
+          scorecard: finalData.scorecard,
+        });
+
+      } catch (err) {
+        console.error(`Failed to AI grade ${target.id}:`, err);
+        // Push an empty result so the admin knows it failed
+        results.push({
+          id: target.id,
+          type: target.type,
+          team_name: target.team_name,
+          feedback: "",
+          reasoning: "AI GRADING FAILED. Please review manually.",
+        });
+      }
+    }
+
+    setBulkGradeResults(results);
+    setBulkGradeStep("review");
+  }
+
+  async function submitBulkAiGrade() {
+    setBulkGradeStep("submitting");
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < bulkGradeResults.length; i++) {
+      const result = bulkGradeResults[i];
+      setBulkProgress({ current: i + 1, total: bulkGradeResults.length });
+
+      try {
+        let reviewBody: Record<string, unknown> = {
+          feedback: result.feedback,
+          notes: result.reasoning ? `AI Reasoning:\n${result.reasoning}` : "",
         };
 
-        if (target.type === "cycle") {
-           const c = finalData.scorecard || {};
+        if (result.type === "cycle") {
+           const c = result.scorecard || {};
            reviewBody = {
              ...reviewBody,
              hypothesis_quality: Number(c.hypothesis_quality) || 0,
@@ -480,84 +518,25 @@ export function AdminHackathonPhase3Grading() {
              tester_freshness: Number(c.tester_freshness) || 0,
              synthesis_honesty: Number(c.synthesis_honesty) || 0,
            };
-        } else if (target.type === "midphase") {
+        } else if (result.type === "midphase") {
            reviewBody = { ...reviewBody, confidence_score: null };
         }
 
         const reviewRes = await fetch(
-          `/api/admin/hackathon/phase3/${target.type === 'cycle' ? 'cycles' : target.type}/${target.id}/review`,
-          { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(reviewBody) }
-        );
-
-        if (!reviewRes.ok) throw new Error("Save review failed");
-
-        successCount++;
-      } catch (err) {
-        console.error(`Failed to bulk grade ${target.id}:`, err);
-        failCount++;
-      }
-    }
-
-    setBulkGrading(false);
-    setMessage(`Bulk grading complete: ${successCount} succeeded, ${failCount} failed.`);
-    await fetchItems();
-  }
-
-  async function runBulkComment() {
-    const targets = visibleItems.filter((i) => i.type !== "video" && !i.scored_by);
-    if (targets.length === 0) {
-      setMessage("No ungraded cycles or midphase items in the current view to comment on.");
-      return;
-    }
-
-    setBulkCommenting(true);
-    setBulkProgress({ current: 0, total: targets.length });
-    setMessage("");
-
-    let successCount = 0;
-    let failCount = 0;
-
-    for (let i = 0; i < targets.length; i++) {
-      const target = targets[i];
-      setBulkProgress({ current: i + 1, total: targets.length });
-
-      try {
-        let reviewBody: Record<string, unknown> = {
-          feedback: bulkCommentFeedback,
-          notes: bulkCommentNotes,
-        };
-
-        if (target.type === "cycle") {
-           reviewBody = {
-             ...reviewBody,
-             hypothesis_quality: 0,
-             variable_isolation: 0,
-             behavioral_evidence: 0,
-             tester_freshness: 0,
-             synthesis_honesty: 0,
-           };
-        } else if (target.type === "midphase") {
-           reviewBody = { ...reviewBody, confidence_score: null };
-        }
-
-        const reviewRes = await fetch(
-          `/api/admin/hackathon/phase3/${target.type === 'cycle' ? 'cycles' : target.type}/${target.id}/review`,
+          `/api/admin/hackathon/phase3/${result.type === 'cycle' ? 'cycles' : result.type}/${result.id}/review`,
           { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(reviewBody) }
         );
 
         if (!reviewRes.ok) throw new Error("Save review failed");
         successCount++;
       } catch (err) {
-        console.error(`Failed to bulk comment ${target.id}:`, err);
+        console.error(`Failed to submit bulk comment for ${result.id}:`, err);
         failCount++;
       }
     }
 
-    setBulkCommenting(false);
-    setBulkCommentOpen(false);
-    setBulkCommentFeedback("");
-    setBulkCommentNotes("");
-    setMessage(`Bulk comment complete: ${successCount} sent, ${failCount} failed.`);
+    setBulkGradeDialogOpen(false);
+    setMessage(`Bulk grade complete: ${successCount} saved, ${failCount} failed.`);
     await fetchItems();
   }
 
@@ -594,13 +573,9 @@ export function AdminHackathonPhase3Grading() {
               <CardDescription>Grade cycles, mid-phase synthesis, and video submissions.</CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => setBulkCommentOpen(true)} disabled={loading || bulkGrading || bulkCommenting} className="bg-indigo-500/10 text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/20">
-                <MessageSquare className="mr-2 h-4 w-4" />
-                Bulk Comment
-              </Button>
-              <Button variant="outline" size="sm" onClick={runBulkAiGrade} disabled={loading || bulkGrading || bulkCommenting} className="bg-emerald-500/10 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20">
-                {bulkGrading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                {bulkGrading ? `Grading ${bulkProgress.current}/${bulkProgress.total}...` : "Bulk AI Grade"}
+              <Button variant="outline" size="sm" onClick={startBulkAiGrade} disabled={loading} className="bg-emerald-500/10 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20">
+                <Sparkles className="mr-2 h-4 w-4" />
+                Bulk AI Grade
               </Button>
               <Button variant="outline" size="sm" onClick={() => fetchItems()} disabled={loading}>
                 <RefreshCw className="mr-2 h-4 w-4" />
@@ -1339,45 +1314,132 @@ export function AdminHackathonPhase3Grading() {
       </Card>
 
       <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
-      {/* Bulk Comment Dialog */}
-      <Dialog open={bulkCommentOpen} onOpenChange={setBulkCommentOpen}>
-        <DialogContent className="border-slate-700 bg-slate-900 text-slate-100 sm:max-w-[600px]">
+      {/* Bulk Grade Dialog */}
+      <Dialog open={bulkGradeDialogOpen} onOpenChange={setBulkGradeDialogOpen}>
+        <DialogContent className="border-slate-700 bg-slate-900 text-slate-100 sm:max-w-[700px] max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle>Bulk Comment Team</DialogTitle>
+            <DialogTitle>Bulk AI Grade & Review</DialogTitle>
             <DialogDescription className="text-slate-400">
-              Send the same feedback and mentor notes to all {visibleItems.filter((i) => i.type !== "video" && !i.scored_by).length} ungraded items currently visible in the list. This will submit them with a score of 0.
+              Grade multiple items simultaneously, review the AI outputs, and submit them in one go.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="bulk-feedback">Student Feedback</Label>
-              <Textarea
-                id="bulk-feedback"
-                className="min-h-[150px] border-slate-700 bg-slate-950 font-mono text-xs"
-                placeholder="Message for students..."
-                value={bulkCommentFeedback}
-                onChange={(e) => setBulkCommentFeedback(e.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="bulk-notes">Private Mentor Notes</Label>
-              <Textarea
-                id="bulk-notes"
-                className="min-h-[100px] border-slate-700 bg-slate-950 font-mono text-xs"
-                placeholder="Internal notes..."
-                value={bulkCommentNotes}
-                onChange={(e) => setBulkCommentNotes(e.target.value)}
-              />
-            </div>
+          
+          <div className="flex-1 overflow-y-auto pr-2 py-4">
+            {bulkGradeStep === "preflight" && (
+              <div className="space-y-4 text-center py-8">
+                <Sparkles className="mx-auto h-12 w-12 text-emerald-400 opacity-80" />
+                <p className="text-lg">
+                  You are about to grade <span className="font-bold text-white">{bulkProgress.total}</span> items.
+                </p>
+                <p className="text-sm text-slate-400">
+                  The AI will process each item. You will be able to review and adjust the feedback before any scores are saved to the database.
+                </p>
+              </div>
+            )}
+
+            {bulkGradeStep === "grading" && (
+              <div className="space-y-6 text-center py-8">
+                <Loader2 className="mx-auto h-12 w-12 animate-spin text-emerald-400" />
+                <div className="space-y-2">
+                  <p className="text-lg font-medium">Grading in progress...</p>
+                  <p className="text-sm text-slate-400">
+                    {bulkProgress.current} / {bulkProgress.total} completed
+                  </p>
+                  <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-emerald-500 transition-all duration-300"
+                      style={{ width: `${(bulkProgress.current / bulkProgress.total) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {bulkGradeStep === "review" && (
+              <div className="space-y-4">
+                <p className="text-sm text-slate-400 mb-4">
+                  Review the generated feedback. If you make changes here, they will be saved when you click submit.
+                </p>
+                <Accordion type="multiple" className="w-full">
+                  {bulkGradeResults.map((result, idx) => (
+                    <AccordionItem value={`item-${idx}`} key={result.id} className="border-slate-800">
+                      <AccordionTrigger className="hover:no-underline hover:bg-slate-800/50 rounded-sm px-3 data-[state=open]:bg-slate-800/50">
+                        <div className="flex justify-between items-center w-full pr-4">
+                          <span className="font-medium text-slate-200">
+                            {result.team_name || "Unknown Team"} <span className="text-slate-500 text-xs font-normal">({result.type})</span>
+                          </span>
+                          <span className="text-sm font-semibold text-emerald-400">
+                            {result.scorecard?.total ? `Score: ${result.scorecard.total}` : "No score"}
+                          </span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="pt-4 pb-2 px-3 space-y-4">
+                        <div className="space-y-2">
+                          <Label className="text-xs text-slate-400 uppercase tracking-wider">Student Feedback</Label>
+                          <Textarea 
+                            className="min-h-[120px] font-mono text-sm border-slate-700 bg-slate-950" 
+                            value={result.feedback}
+                            onChange={(e) => {
+                              const newResults = [...bulkGradeResults];
+                              newResults[idx].feedback = e.target.value;
+                              setBulkGradeResults(newResults);
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs text-slate-400 uppercase tracking-wider">AI Reasoning (Mentor Notes)</Label>
+                          <Textarea 
+                            className="min-h-[80px] font-mono text-sm border-slate-700 bg-slate-950 text-slate-400" 
+                            value={result.reasoning}
+                            onChange={(e) => {
+                              const newResults = [...bulkGradeResults];
+                              newResults[idx].reasoning = e.target.value;
+                              setBulkGradeResults(newResults);
+                            }}
+                          />
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </div>
+            )}
+
+            {bulkGradeStep === "submitting" && (
+              <div className="space-y-6 text-center py-8">
+                <Loader2 className="mx-auto h-12 w-12 animate-spin text-indigo-400" />
+                <div className="space-y-2">
+                  <p className="text-lg font-medium">Submitting to Database...</p>
+                  <p className="text-sm text-slate-400">
+                    {bulkProgress.current} / {bulkProgress.total} saved
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setBulkCommentOpen(false)} disabled={bulkCommenting} className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white">
+
+          <DialogFooter className="pt-4 border-t border-slate-800">
+            <Button 
+              variant="outline" 
+              onClick={() => setBulkGradeDialogOpen(false)} 
+              disabled={bulkGradeStep === 'grading' || bulkGradeStep === 'submitting'} 
+              className="border-slate-700 text-slate-300 hover:bg-slate-800"
+            >
               Cancel
             </Button>
-            <Button onClick={runBulkComment} disabled={bulkCommenting || (!bulkCommentFeedback.trim() && !bulkCommentNotes.trim())} className="bg-indigo-600 hover:bg-indigo-700 text-white">
-              {bulkCommenting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {bulkCommenting ? `Sending ${bulkProgress.current}/${bulkProgress.total}...` : "Send Bulk Comment"}
-            </Button>
+            
+            {bulkGradeStep === "preflight" && (
+              <Button onClick={executeBulkAiGrade} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                Start AI Grading
+              </Button>
+            )}
+
+            {bulkGradeStep === "review" && (
+              <Button onClick={submitBulkAiGrade} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                <Send className="mr-2 h-4 w-4" />
+                Submit All to Database
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

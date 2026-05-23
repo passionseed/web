@@ -597,10 +597,42 @@ function ActivityCommentsSection({ comments }: { comments: ActivityComment[] }) 
 function SubmissionContent({
   sub,
   onViewImage,
+  prompt,
 }: {
   sub: TeamSubmissionDetail | IndividualSubmissionDetail;
   onViewImage: (url: string) => void;
+  prompt: string | null;
 }) {
+  const [isGrading, setIsGrading] = useState(false);
+  const [gradeResult, setGradeResult] = useState<{ status: string; feedback: string } | null>(null);
+
+  const handleGrade = async () => {
+    setIsGrading(true);
+    setGradeResult(null);
+    try {
+      const res = await fetch("/api/admin/hackathon/grade", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: prompt,
+          text_answer: sub.text_answer,
+          image_url: sub.image_url,
+          file_urls: sub.file_urls,
+        }),
+      });
+      const data = await res.json();
+      if (data.result) {
+        setGradeResult(data.result);
+      } else {
+        alert(data.error || "Failed to grade");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Error calling grading API");
+    } finally {
+      setIsGrading(false);
+    }
+  };
   const hasTextAnswer = Boolean(sub.text_answer?.trim());
 
   return (
@@ -683,6 +715,30 @@ function SubmissionContent({
       {!hasTextAnswer && !sub.image_url && (!sub.file_urls || sub.file_urls.length === 0) && (
         <p className="text-xs text-slate-600 italic">No content submitted.</p>
       )}
+
+      {/* AI Grading Section */}
+      <div className="pt-2 mt-4 border-t border-slate-800/60">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleGrade}
+          disabled={isGrading || !prompt}
+          className="bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20 border-indigo-500/30"
+        >
+          {isGrading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+          Grade with AI
+        </Button>
+        
+        {gradeResult && (
+          <div className={`mt-3 p-3 rounded-md border ${gradeResult.status === 'passed' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200' : 'bg-red-500/10 border-red-500/30 text-red-200'}`}>
+             <div className="flex items-center gap-2 mb-2">
+                <span className="font-semibold text-xs tracking-wider uppercase">AI Verdict:</span>
+                <StatusBadge status={gradeResult.status} />
+             </div>
+             <p className="text-xs whitespace-pre-wrap">{gradeResult.feedback}</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -762,7 +818,7 @@ function SubmissionDetail({
                 </span>
               )}
             </div>
-            <SubmissionContent sub={activity.team_submission!} onViewImage={onViewImage} />
+            <SubmissionContent sub={activity.team_submission!} onViewImage={onViewImage} prompt={activity.prompt} />
           </div>
         )}
 
@@ -783,7 +839,7 @@ function SubmissionDetail({
                     </span>
                   )}
                 </div>
-                <SubmissionContent sub={ps} onViewImage={onViewImage} />
+                <SubmissionContent sub={ps} onViewImage={onViewImage} prompt={activity.prompt} />
               </div>
             ))}
           </div>
