@@ -12,7 +12,7 @@ export const runtime = "nodejs";
 export async function POST(req: Request) {
   try {
     // Initialize Gemini Client
-    const ai = new GoogleGenAI({});
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY });
     const body = await req.json();
     const { prompt, text_answer, image_url, file_urls } = body;
 

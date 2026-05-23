@@ -36,9 +36,8 @@ export async function fetchFromGoogleDrive(fileUrl: string): Promise<string> {
     } else if (process.env.GOOGLE_API_KEY) {
        driveClient = google.drive({ version: 'v3', auth: process.env.GOOGLE_API_KEY as any });
     } else {
-       // We can attempt unauthenticated request without throwing, which will only work for API key but worth a shot
-       const auth = new google.auth.GoogleAuth();
-       driveClient = google.drive({ version: 'v3', auth: auth as any });
+       console.log("No Google API credentials found, skipping official Drive API client.");
+       driveClient = null;
     }
   } catch (e: any) {
     console.warn("Failed to initialize Google API Auth client, skipping to public fallback:", e.message);
