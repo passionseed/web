@@ -5,7 +5,6 @@ import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { getModel } from "@/lib/ai/modelRegistry";
 import { buildPhase3GradingPrompt, parseCycleScorecard } from "@/lib/hackathon/phase3-grading";
 import { parseModelGrade, runDualGrade } from "@/lib/hackathon/dual-grade";
-import { recalculateAndUpsertTeamScore } from "@/lib/hackathon/team-score";
 
 export const maxDuration = 60;
 
@@ -204,41 +203,15 @@ export async function POST(
           return;
         }
 
-        // Persist the score to the cycle's ai_score field
-        try {
-          const now = new Date().toISOString();
-          const aiScore = outcome.scorecard;
-
-          await serviceClient
-            .from("hackathon_phase3_cycles")
-            .update({
-              ai_score: aiScore,
-              updated_at: now,
-            })
-            .eq("id", id);
-
-          // Recalculate team score
-          recalculateAndUpsertTeamScore(serviceClient, (cycle as any).team_id).catch((err) => {
-            console.error("[phase3/cycles/ai-grade] score recalc error", err);
-          });
-
-          send({
-            type: "done",
-            scorecard: aiScore,
-            feedback: outcome.draft.feedback,
-            reasoning: outcome.draft.reasoning,
-            auto_approved: outcome.autoApprove,
-            consensus: outcome.draft.consensus,
-          });
-        } catch (persistErr: unknown) {
-          console.error("[phase3/cycles/ai-grade] persist error:", persistErr);
-          send({
-            type: "error",
-            message: "Failed to save AI score. Please try again.",
-          });
-          try { controller.close(); } catch {}
-          return;
-        }
+        // Return scorecard to UI only — admin must submit review to persist
+        send({
+          type: "done",
+          scorecard: outcome.scorecard,
+          feedback: outcome.draft.feedback,
+          reasoning: outcome.draft.reasoning,
+          auto_approved: outcome.autoApprove,
+          consensus: outcome.draft.consensus,
+        });
 
         try { controller.close(); } catch {}
       },

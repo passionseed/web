@@ -5,7 +5,6 @@ import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { getModel } from "@/lib/ai/modelRegistry";
 import { buildPhase3GradingPrompt } from "@/lib/hackathon/phase3-grading";
 import { parseModelGrade, runDualGrade } from "@/lib/hackathon/dual-grade";
-import { recalculateAndUpsertTeamScore } from "@/lib/hackathon/team-score";
 
 export const maxDuration = 60;
 
@@ -99,15 +98,8 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
         return;
       }
 
+      // Return score to UI only — admin must submit review to persist
       const score = outcome.draft.score_awarded ?? 0;
-      const now = new Date().toISOString();
-      await serviceClient
-        .from("hackathon_phase3_midphase_synthesis")
-        .update({ ai_score: { total: score }, updated_at: now })
-        .eq("id", id);
-
-      recalculateAndUpsertTeamScore(serviceClient, (row as any).team_id).catch(() => {});
-
       send({
         type: "done",
         score,
