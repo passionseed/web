@@ -1412,7 +1412,19 @@ export function AdminHackathonPhase3Grading() {
                   <p className="text-sm text-slate-400">
                     The AI will process each item. You will be able to review and adjust the feedback before any scores are saved to the database.
                   </p>
-                  <div className="flex justify-center gap-2 mt-2">
+                  
+                  <div className="grid grid-cols-2 gap-4 mt-6 px-8">
+                    <div className="rounded-lg bg-slate-800/50 p-3 border border-slate-700/50">
+                      <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Total Graded</p>
+                      <p className="text-xl font-bold text-emerald-400">{counts.graded}</p>
+                    </div>
+                    <div className="rounded-lg bg-slate-800/50 p-3 border border-slate-700/50">
+                      <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Total Ungraded</p>
+                      <p className="text-xl font-bold text-amber-400">{counts.ungraded}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-center gap-2 mt-6">
                     <Button variant="outline" size="xs" onClick={() => selectFirstN(10)} className="h-7 text-[10px] bg-slate-800/50 border-slate-700">First 10</Button>
                     <Button variant="outline" size="xs" onClick={() => selectFirstN(20)} className="h-7 text-[10px] bg-slate-800/50 border-slate-700">First 20</Button>
                     <Button variant="outline" size="xs" onClick={() => selectFirstN(bulkTargets.length)} className="h-7 text-[10px] bg-slate-800/50 border-slate-700">Select All</Button>
