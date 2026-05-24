@@ -183,13 +183,15 @@ export function AdminHackathonPhase3Grading() {
   const [bulkGradeDialogOpen, setBulkGradeDialogOpen] = useState(false);
   const [bulkGradeStep, setBulkGradeStep] = useState<'preflight' | 'grading' | 'review' | 'submitting'>('preflight');
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
+  const [bulkTargets, setBulkTargets] = useState<Phase3Item[]>([]);
   const [bulkGradeResults, setBulkGradeResults] = useState<Array<{
     id: string;
-    type: Phase3EntityType;
+    type: string;
     team_name: string | null;
     feedback: string;
     reasoning: string;
     scorecard?: any;
+    score?: number;
     confidence_score?: number | null;
   }>>([]);
 
@@ -437,24 +439,13 @@ export function AdminHackathonPhase3Grading() {
     }
     setBulkGradeStep("preflight");
     setBulkGradeResults([]);
+    setBulkTargets(targets);
     setBulkProgress({ current: 0, total: targets.length });
     setBulkGradeDialogOpen(true);
   }
 
   async function executeBulkAiGrade() {
-    const targets = visibleItems.filter((i) => {
-      if (i.type === "video" || i.scored_by) return false;
-      if (i.type === "cycle") {
-        const hLen = (i.hypothesis || "").trim().length;
-        const sLen = (i.synthesis_result || "").trim().length;
-        if (hLen < 20 && sLen < 20) return false;
-      } else if (i.type === "midphase") {
-        const wLen = (i.what_learned || "").trim().length;
-        if (wLen < 20) return false;
-      }
-      return true;
-    });
-
+    const targets = bulkTargets;
     setBulkGradeStep("grading");
     setBulkProgress({ current: 0, total: targets.length });
     const results = [];
@@ -504,6 +495,7 @@ export function AdminHackathonPhase3Grading() {
           feedback: finalData.feedback || "",
           reasoning: finalData.reasoning || "",
           scorecard: finalData.scorecard,
+          score: finalData.score,
         });
 
       } catch (err) {
@@ -549,7 +541,10 @@ export function AdminHackathonPhase3Grading() {
              synthesis_honesty: Number(c.synthesis_honesty) || 0,
            };
         } else if (result.type === "midphase") {
-           reviewBody = { ...reviewBody, confidence_score: null };
+           reviewBody = { 
+             ...reviewBody, 
+             confidence_score: result.score !== undefined ? Math.max(1, Math.min(10, Math.round(result.score))) : null 
+           };
         }
 
         const reviewRes = await fetch(
@@ -1345,7 +1340,20 @@ export function AdminHackathonPhase3Grading() {
 
       <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
       {/* Bulk Grade Dialog */}
-      <Dialog open={bulkGradeDialogOpen} onOpenChange={setBulkGradeDialogOpen}>
+      <Dialog 
+        open={bulkGradeDialogOpen} 
+        onOpenChange={(open) => {
+          if (!open) {
+            if (bulkGradeStep === 'grading' || bulkGradeStep === 'submitting') return;
+            if (bulkGradeStep === 'review') {
+              if (!confirm("Are you sure you want to close? You will lose all AI-generated feedback that hasn't been saved yet.")) {
+                return;
+              }
+            }
+          }
+          setBulkGradeDialogOpen(open);
+        }}
+      >
         <DialogContent className="border-slate-700 bg-slate-900 text-slate-100 sm:max-w-[700px] max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Bulk AI Grade & Review</DialogTitle>
@@ -1356,17 +1364,33 @@ export function AdminHackathonPhase3Grading() {
           
           <div className="flex-1 overflow-y-auto pr-2 py-4">
             {bulkGradeStep === "preflight" && (
-              <div className="space-y-4 text-center py-8">
-                <Sparkles className="mx-auto h-12 w-12 text-emerald-400 opacity-80" />
-                <p className="text-lg">
-                  You are about to grade <span className="font-bold text-white">{bulkProgress.total}</span> items.
-                </p>
-                <p className="text-sm text-slate-400">
-                  The AI will process each item. You will be able to review and adjust the feedback before any scores are saved to the database.
-                </p>
-                <p className="text-xs text-amber-400/70 bg-amber-400/5 py-1 px-2 rounded border border-amber-400/20 inline-block mt-2">
-                  Note: Submissions with insufficient content are skipped to ensure fairness.
-                </p>
+              <div className="space-y-4 py-4">
+                <div className="text-center space-y-2 mb-6">
+                  <Sparkles className="mx-auto h-12 w-12 text-emerald-400 opacity-80" />
+                  <p className="text-lg">
+                    You are about to grade <span className="font-bold text-white">{bulkProgress.total}</span> items.
+                  </p>
+                  <p className="text-sm text-slate-400">
+                    The AI will process each item. You will be able to review and adjust the feedback before any scores are saved to the database.
+                  </p>
+                  <p className="text-xs text-amber-400/70 bg-amber-400/5 py-1 px-2 rounded border border-amber-400/20 inline-block mt-2">
+                    Note: Submissions with insufficient content are skipped to ensure fairness.
+                  </p>
+                </div>
+
+                <div className="rounded-md border border-slate-800 bg-slate-950/50 p-3 max-h-[300px] overflow-y-auto">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-1">Selected Teams</p>
+                  <div className="divide-y divide-slate-800">
+                    {bulkTargets.map((t) => (
+                      <div key={t.id} className="py-2 px-1 flex justify-between items-center text-sm">
+                        <span className="text-slate-200">{t.team_name || "Unknown Team"}</span>
+                        <Badge variant="outline" className="text-[10px] uppercase py-0 px-1.5 h-4 border-slate-700 text-slate-400">
+                          {t.type} {t.cycle_number ? `#${t.cycle_number}` : ""}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
