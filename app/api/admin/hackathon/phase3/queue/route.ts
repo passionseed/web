@@ -291,10 +291,6 @@ export async function GET(req: NextRequest) {
   const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
   const paginatedItems = items.slice(offset, offset + PAGE_SIZE);
 
-  const allItems = [...cycles, ...midphases, ...videos];
-  const globalGraded = allItems.filter(i => i.scored_by).length;
-  const globalUngraded = allItems.filter(i => !i.scored_by).length;
-
   return NextResponse.json({
     items: paginatedItems,
     counts: {
