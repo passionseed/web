@@ -8,8 +8,8 @@ import { sendInboxPushNotification } from "@/lib/hackathon/push-notify";
 
 const reviewSchema = z.object({
   confidence_score: z.number().min(1).max(10).optional(),
-  feedback: z.string().max(5000).optional(),
-  notes: z.string().max(2000).optional(),
+  feedback: z.string().max(10000).optional(),
+  notes: z.string().max(10000).optional(),
 });
 
 function getHackathonServiceClient() {

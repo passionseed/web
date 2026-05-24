@@ -12,8 +12,8 @@ const reviewSchema = z.object({
   behavioral_evidence: z.number().min(0).max(20).optional(),
   tester_freshness: z.number().min(0).max(20).optional(),
   synthesis_honesty: z.number().min(0).max(20).optional(),
-  feedback: z.string().max(5000).optional(),
-  notes: z.string().max(2000).optional(),
+  feedback: z.string().max(10000).optional(),
+  notes: z.string().max(10000).optional(),
 });
 
 function getHackathonServiceClient() {

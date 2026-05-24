@@ -488,8 +488,12 @@ export function AdminHackathonPhase3Grading() {
               const obj = JSON.parse(line);
               if (obj.type === "done") {
                 finalData = obj;
+              } else if (obj.type === "error") {
+                throw new Error(obj.message || "AI stream error");
               }
-            } catch {}
+            } catch (e: any) {
+              if (e.message) throw e;
+            }
           }
         }
 
@@ -505,7 +509,7 @@ export function AdminHackathonPhase3Grading() {
           score: finalData.score,
         });
 
-      } catch (err) {
+      } catch (err: any) {
         console.error(`Failed to AI grade ${target.id}:`, err);
         // Push an empty result so the admin knows it failed
         results.push({
@@ -513,7 +517,7 @@ export function AdminHackathonPhase3Grading() {
           type: target.type,
           team_name: target.team_name,
           feedback: "",
-          reasoning: "AI GRADING FAILED. Please review manually.",
+          reasoning: `AI GRADING FAILED: ${err.message || "Unknown error"}`,
         });
       }
     }
@@ -530,6 +534,18 @@ export function AdminHackathonPhase3Grading() {
     for (let i = 0; i < bulkGradeResults.length; i++) {
       const result = bulkGradeResults[i];
       setBulkProgress({ current: i + 1, total: bulkGradeResults.length });
+
+      // Skip failed results
+      if (result.type === "cycle" && !result.scorecard) {
+        console.warn(`Skipping bulk submit for ${result.id} due to missing scorecard`);
+        failCount++;
+        continue;
+      }
+      if (result.type !== "cycle" && result.score === undefined) {
+         console.warn(`Skipping bulk submit for ${result.id} due to missing score`);
+         failCount++;
+         continue;
+      }
 
       try {
         let reviewBody: Record<string, unknown> = {

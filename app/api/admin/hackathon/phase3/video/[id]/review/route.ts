@@ -9,7 +9,7 @@ import { sendInboxPushNotification } from "@/lib/hackathon/push-notify";
 const reviewSchema = z.object({
   judge_scores: z.record(z.number().min(0).max(100)).optional(),
   total_score: z.number().min(0).max(100).optional(),
-  notes: z.string().max(2000).optional(),
+  notes: z.string().max(10000).optional(),
   human_review_status: z.enum(["pending", "flagged", "cleared", "reviewed"]).optional(),
 });
 
