@@ -94,6 +94,7 @@ interface CycleDetail {
   synthesis_honest_wrongness: string | null;
   ai_score: Record<string, number> | null;
   mentor_score: Record<string, number> | null;
+  mentor_feedback: string | null;
   mentor_notes: string | null;
   steps?: Array<{
     id: string;
@@ -301,13 +302,13 @@ export function AdminHackathonPhase3Grading() {
         tester_freshness: String(score.tester_freshness ?? ""),
         synthesis_honesty: String(score.synthesis_honesty ?? ""),
       });
-      setFeedback(d.mentor_notes || "");
-      setNotes("");
+      setFeedback(d.mentor_feedback || "");
+      setNotes(d.mentor_notes || "");
     } else if (selected.type === 'midphase') {
       const d = detail as MidphaseDetail;
       setMidphaseConfidence(String(d.confidence_score ?? ""));
-      setFeedback(d.mentor_notes || "");
-      setNotes("");
+      setFeedback(d.mentor_feedback || "");
+      setNotes(d.mentor_notes || "");
     } else if (selected.type === 'video') {
       const d = detail as VideoDetail;
       setJudgeScore(String(d.judge_scores?.total || ""));
