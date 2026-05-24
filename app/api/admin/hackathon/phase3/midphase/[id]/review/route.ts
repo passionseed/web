@@ -46,7 +46,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     .update({
       confidence_score: data.confidence_score ?? null,
       mentor_notes: data.notes ?? null,
-      updated_at: now,
     })
     .eq("id", id)
     .select("*")

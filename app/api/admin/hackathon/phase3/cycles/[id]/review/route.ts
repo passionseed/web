@@ -77,16 +77,11 @@ export async function POST(
       (data.synthesis_honesty ?? 0),
   };
 
-  const now = new Date().toISOString();
-
   const updateResult = await serviceClient
     .from("hackathon_phase3_cycles")
     .update({
       mentor_score: scores,
-      mentor_notes: data.notes ?? null,
-      ai_feedback: data.feedback ? { text: data.feedback } : null,
-      ai_feedback_at: data.feedback ? now : null,
-      updated_at: now,
+      mentor_notes: data.notes || (data.feedback ? `AI Feedback:\n${data.feedback}` : null),
     })
     .eq("id", id)
     .select("*")

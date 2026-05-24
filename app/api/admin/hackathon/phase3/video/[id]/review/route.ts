@@ -52,7 +52,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       judge_scores: judgeScores,
       human_reviewer_notes: data.notes ?? null,
       human_review_status: data.human_review_status ?? "reviewed",
-      updated_at: now,
     })
     .eq("id", id)
     .select("*")

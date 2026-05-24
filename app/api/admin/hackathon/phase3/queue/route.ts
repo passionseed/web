@@ -159,11 +159,22 @@ export async function GET(req: NextRequest) {
     return dbQuery;
   }
 
-  const [cyclesResult, midphaseResult, videoResult] = await Promise.all([
+  const [cyclesResult, midphaseResult, videoResult, globalCounts] = await Promise.all([
     queryCycles ? fetchCycles() : Promise.resolve({ data: [], count: 0, error: null }),
     queryMidphase ? fetchMidphase() : Promise.resolve({ data: [], count: 0, error: null }),
     queryVideo ? fetchVideo() : Promise.resolve({ data: [], count: 0, error: null }),
+    Promise.all([
+      serviceClient.from("hackathon_phase3_cycles").select("id", { count: "exact", head: true }).or("ai_score.not.is.null,mentor_score.not.is.null"),
+      serviceClient.from("hackathon_phase3_cycles").select("id", { count: "exact", head: true }).is("ai_score", null).is("mentor_score", null),
+      serviceClient.from("hackathon_phase3_midphase_synthesis").select("id", { count: "exact", head: true }).or("ai_score.not.is.null,confidence_score.not.is.null"),
+      serviceClient.from("hackathon_phase3_midphase_synthesis").select("id", { count: "exact", head: true }).is("ai_score", null).is("confidence_score", null),
+      serviceClient.from("hackathon_phase3_video_submissions").select("id", { count: "exact", head: true }).or("ai_scrutinizer_output.not.is.null,judge_scores.not.is.null"),
+      serviceClient.from("hackathon_phase3_video_submissions").select("id", { count: "exact", head: true }).is("ai_scrutinizer_output", null).is("judge_scores", null),
+    ])
   ]);
+
+  const globalGraded = (globalCounts[0].count ?? 0) + (globalCounts[2].count ?? 0) + (globalCounts[4].count ?? 0);
+  const globalUngraded = (globalCounts[1].count ?? 0) + (globalCounts[3].count ?? 0) + (globalCounts[5].count ?? 0);
 
   // Batch-fetch cycle steps for visible cycles
   let cycleStepsMap = new Map<string, Array<{ step_type: string; status: string }>>();
@@ -280,6 +291,10 @@ export async function GET(req: NextRequest) {
   const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
   const paginatedItems = items.slice(offset, offset + PAGE_SIZE);
 
+  const allItems = [...cycles, ...midphases, ...videos];
+  const globalGraded = allItems.filter(i => i.scored_by).length;
+  const globalUngraded = allItems.filter(i => !i.scored_by).length;
+
   return NextResponse.json({
     items: paginatedItems,
     counts: {
@@ -287,8 +302,8 @@ export async function GET(req: NextRequest) {
       cycles: cyclesResult.count ?? 0,
       midphase: midphaseResult.count ?? 0,
       videos: videoResult.count ?? 0,
-      graded: items.filter(i => i.scored_by).length,
-      ungraded: items.filter(i => !i.scored_by).length,
+      graded: globalGraded,
+      ungraded: globalUngraded,
     },
     pagination: { page, page_size: PAGE_SIZE, total_items: totalItems, total_pages: totalPages },
   });
