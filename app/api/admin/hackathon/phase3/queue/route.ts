@@ -287,6 +287,8 @@ export async function GET(req: NextRequest) {
       cycles: cyclesResult.count ?? 0,
       midphase: midphaseResult.count ?? 0,
       videos: videoResult.count ?? 0,
+      graded: items.filter(i => i.scored_by).length,
+      ungraded: items.filter(i => !i.scored_by).length,
     },
     pagination: { page, page_size: PAGE_SIZE, total_items: totalItems, total_pages: totalPages },
   });

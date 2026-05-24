@@ -16,10 +16,11 @@ import {
   RefreshCw,
   Search,
   Send,
-  Users,
-  Sparkles,
   MessageSquare,
+  Check,
+  Sparkles,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,6 +66,8 @@ interface Phase3Counts {
   cycles: number;
   midphase: number;
   videos: number;
+  graded: number;
+  ungraded: number;
 }
 
 interface Pagination {
@@ -184,6 +187,7 @@ export function AdminHackathonPhase3Grading() {
   const [bulkGradeStep, setBulkGradeStep] = useState<'preflight' | 'grading' | 'review' | 'submitting'>('preflight');
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
   const [bulkTargets, setBulkTargets] = useState<Phase3Item[]>([]);
+  const [selectedBulkIds, setSelectedBulkIds] = useState<Set<string>>(new Set());
   const [bulkGradeResults, setBulkGradeResults] = useState<Array<{
     id: string;
     type: string;
@@ -229,7 +233,7 @@ export function AdminHackathonPhase3Grading() {
         return;
       }
       setItems(data.items ?? []);
-      setCounts(data.counts ?? { total: 0, cycles: 0, midphase: 0, videos: 0 });
+      setCounts(data.counts ?? { total: 0, cycles: 0, midphase: 0, videos: 0, graded: 0, ungraded: 0 });
       if (data.pagination) setPagination(data.pagination);
       pageRef.current = data.pagination?.page ?? 1;
       setSelectedId((current) => {
@@ -440,12 +444,15 @@ export function AdminHackathonPhase3Grading() {
     setBulkGradeStep("preflight");
     setBulkGradeResults([]);
     setBulkTargets(targets);
+    setSelectedBulkIds(new Set(targets.map(t => t.id)));
     setBulkProgress({ current: 0, total: targets.length });
     setBulkGradeDialogOpen(true);
   }
 
   async function executeBulkAiGrade() {
-    const targets = bulkTargets;
+    const targets = bulkTargets.filter(t => selectedBulkIds.has(t.id));
+    if (targets.length === 0) return;
+    
     setBulkGradeStep("grading");
     setBulkProgress({ current: 0, total: targets.length });
     const results = [];
@@ -565,10 +572,22 @@ export function AdminHackathonPhase3Grading() {
     await fetchItems();
   }
 
+  const toggleAllSelection = () => {
+    if (selectedBulkIds.size === bulkTargets.length) {
+      setSelectedBulkIds(new Set());
+    } else {
+      setSelectedBulkIds(new Set(bulkTargets.map(t => t.id)));
+    }
+  };
+
+  const selectFirstN = (n: number) => {
+    setSelectedBulkIds(new Set(bulkTargets.slice(0, n).map(t => t.id)));
+  };
+
   return (
     <div className="space-y-4">
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card className="border-slate-700/50 bg-slate-900/50">
           <CardHeader className="pb-2"><CardTitle className="text-sm">Total</CardTitle></CardHeader>
           <CardContent className="text-2xl font-bold">{pagination.total_items || counts.total}</CardContent>
@@ -581,9 +600,13 @@ export function AdminHackathonPhase3Grading() {
           <CardHeader className="pb-2"><CardTitle className="text-sm">Midphase</CardTitle></CardHeader>
           <CardContent className="text-2xl font-bold text-blue-200">{counts.midphase}</CardContent>
         </Card>
-        <Card className="border-purple-500/30 bg-purple-500/10">
-          <CardHeader className="pb-2"><CardTitle className="text-sm">Videos</CardTitle></CardHeader>
-          <CardContent className="text-2xl font-bold text-purple-200">{counts.videos}</CardContent>
+        <Card className="border-emerald-500/30 bg-emerald-500/10">
+          <CardHeader className="pb-2"><CardTitle className="text-sm">Graded</CardTitle></CardHeader>
+          <CardContent className="text-2xl font-bold text-emerald-200">{counts.graded}</CardContent>
+        </Card>
+        <Card className="border-slate-500/30 bg-slate-500/10">
+          <CardHeader className="pb-2"><CardTitle className="text-sm">Ungraded</CardTitle></CardHeader>
+          <CardContent className="text-2xl font-bold text-slate-300">{counts.ungraded}</CardContent>
         </Card>
       </div>
 
@@ -1368,23 +1391,49 @@ export function AdminHackathonPhase3Grading() {
                 <div className="text-center space-y-2 mb-6">
                   <Sparkles className="mx-auto h-12 w-12 text-emerald-400 opacity-80" />
                   <p className="text-lg">
-                    You are about to grade <span className="font-bold text-white">{bulkProgress.total}</span> items.
+                    You are about to grade <span className="font-bold text-white">{selectedBulkIds.size}</span> of <span className="font-bold text-white">{bulkTargets.length}</span> items.
                   </p>
                   <p className="text-sm text-slate-400">
                     The AI will process each item. You will be able to review and adjust the feedback before any scores are saved to the database.
                   </p>
-                  <p className="text-xs text-amber-400/70 bg-amber-400/5 py-1 px-2 rounded border border-amber-400/20 inline-block mt-2">
-                    Note: Submissions with insufficient content are skipped to ensure fairness.
-                  </p>
+                  <div className="flex justify-center gap-2 mt-2">
+                    <Button variant="outline" size="xs" onClick={() => selectFirstN(10)} className="h-7 text-[10px] bg-slate-800/50 border-slate-700">First 10</Button>
+                    <Button variant="outline" size="xs" onClick={() => selectFirstN(20)} className="h-7 text-[10px] bg-slate-800/50 border-slate-700">First 20</Button>
+                    <Button variant="outline" size="xs" onClick={() => selectFirstN(bulkTargets.length)} className="h-7 text-[10px] bg-slate-800/50 border-slate-700">Select All</Button>
+                  </div>
                 </div>
 
-                <div className="rounded-md border border-slate-800 bg-slate-950/50 p-3 max-h-[300px] overflow-y-auto">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-1">Selected Teams</p>
-                  <div className="divide-y divide-slate-800">
+                <div className="rounded-md border border-slate-800 bg-slate-950/50 overflow-hidden flex flex-col max-h-[300px]">
+                  <div className="bg-slate-900/80 px-3 py-2 border-b border-slate-800 flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <Checkbox 
+                        id="select-all" 
+                        checked={selectedBulkIds.size === bulkTargets.length && bulkTargets.length > 0}
+                        onCheckedChange={toggleAllSelection}
+                      />
+                      <Label htmlFor="select-all" className="text-xs font-semibold text-slate-400 uppercase tracking-wider cursor-pointer">Selected Teams</Label>
+                    </div>
+                    <span className="text-[10px] text-slate-500">{selectedBulkIds.size} selected</span>
+                  </div>
+                  <div className="overflow-y-auto divide-y divide-slate-800/50">
                     {bulkTargets.map((t) => (
-                      <div key={t.id} className="py-2 px-1 flex justify-between items-center text-sm">
-                        <span className="text-slate-200">{t.team_name || "Unknown Team"}</span>
-                        <Badge variant="outline" className="text-[10px] uppercase py-0 px-1.5 h-4 border-slate-700 text-slate-400">
+                      <div key={t.id} className="py-2.5 px-3 flex justify-between items-center text-sm hover:bg-slate-800/20 transition-colors group">
+                        <div className="flex items-center gap-3">
+                          <Checkbox 
+                            id={`bulk-${t.id}`}
+                            checked={selectedBulkIds.has(t.id)}
+                            onCheckedChange={(checked) => {
+                              setSelectedBulkIds((prev) => {
+                                const next = new Set(prev);
+                                if (checked) next.add(t.id);
+                                else next.delete(t.id);
+                                return next;
+                              });
+                            }}
+                          />
+                          <Label htmlFor={`bulk-${t.id}`} className="text-slate-200 cursor-pointer group-hover:text-white transition-colors">{t.team_name || "Unknown Team"}</Label>
+                        </div>
+                        <Badge variant="outline" className="text-[10px] uppercase py-0 px-1.5 h-4 border-slate-700 text-slate-500 bg-slate-900/50">
                           {t.type} {t.cycle_number ? `#${t.cycle_number}` : ""}
                         </Badge>
                       </div>
@@ -1476,23 +1525,30 @@ export function AdminHackathonPhase3Grading() {
           </div>
 
           <DialogFooter className="pt-4 border-t border-slate-800">
-            <Button 
-              variant="outline" 
-              onClick={() => setBulkGradeDialogOpen(false)} 
-              disabled={bulkGradeStep === 'grading' || bulkGradeStep === 'submitting'} 
-              className="border-slate-700 text-slate-300 hover:bg-slate-800"
-            >
-              Cancel
-            </Button>
+            {(bulkGradeStep === "preflight" || bulkGradeStep === "grading" || bulkGradeStep === "submitting") && (
+              <Button 
+                variant="outline" 
+                onClick={() => setBulkGradeDialogOpen(false)} 
+                disabled={bulkGradeStep === 'grading' || bulkGradeStep === 'submitting'} 
+                className="border-slate-700 text-slate-300 hover:bg-slate-800"
+              >
+                Cancel
+              </Button>
+            )}
             
             {bulkGradeStep === "preflight" && (
-              <Button onClick={executeBulkAiGrade} className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                Start AI Grading
+              <Button 
+                onClick={executeBulkAiGrade} 
+                disabled={selectedBulkIds.size === 0}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-8 shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+              >
+                <Sparkles className="mr-2 h-4 w-4" />
+                Start AI Grading ({selectedBulkIds.size})
               </Button>
             )}
 
             {bulkGradeStep === "review" && (
-              <Button onClick={submitBulkAiGrade} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+              <Button onClick={submitBulkAiGrade} className="bg-indigo-600 hover:bg-indigo-700 text-white w-full">
                 <Send className="mr-2 h-4 w-4" />
                 Submit All to Database
               </Button>
