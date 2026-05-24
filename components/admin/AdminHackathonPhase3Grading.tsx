@@ -268,8 +268,7 @@ export function AdminHackathonPhase3Grading() {
 
   // Load detail when selected
   useEffect(() => {
-    if (!selected) return;
-    if (detailCache[selected.id]) return;
+    if (!selected || detailCache[selected.id]) return;
 
     let cancelled = false;
     setLoadingDetail(true);
@@ -285,6 +284,34 @@ export function AdminHackathonPhase3Grading() {
 
     return () => { cancelled = true; };
   }, [selected?.id, selected?.type]);
+
+  // Populate form from cache when detail becomes available
+  useEffect(() => {
+    if (!selected) return;
+    const detail = detailCache[selected.id];
+    if (!detail) return;
+
+    if (selected.type === 'cycle') {
+      const d = detail as CycleDetail;
+      const score = d.mentor_score || d.ai_score || {};
+      setCycleScores({
+        hypothesis_quality: String(score.hypothesis_quality ?? ""),
+        variable_isolation: String(score.variable_isolation ?? ""),
+        behavioral_evidence: String(score.behavioral_evidence ?? ""),
+        tester_freshness: String(score.tester_freshness ?? ""),
+        synthesis_honesty: String(score.synthesis_honesty ?? ""),
+      });
+      setNotes(d.mentor_notes || "");
+    } else if (selected.type === 'midphase') {
+      const d = detail as MidphaseDetail;
+      setMidphaseConfidence(String(d.confidence_score ?? ""));
+      setNotes(d.mentor_notes || "");
+    } else if (selected.type === 'video') {
+      const d = detail as VideoDetail;
+      setJudgeScore(String(d.judge_scores?.total || ""));
+      setNotes(d.human_reviewer_notes || "");
+    }
+  }, [selected?.id, detailCache]);
 
   function goToPage(pg: number) {
     if (pg < 1 || pg > pagination.total_pages || pg === pagination.page) return;
