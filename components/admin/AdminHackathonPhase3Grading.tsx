@@ -301,11 +301,13 @@ export function AdminHackathonPhase3Grading() {
         tester_freshness: String(score.tester_freshness ?? ""),
         synthesis_honesty: String(score.synthesis_honesty ?? ""),
       });
-      setNotes(d.mentor_notes || "");
+      setFeedback(d.mentor_notes || "");
+      setNotes("");
     } else if (selected.type === 'midphase') {
       const d = detail as MidphaseDetail;
       setMidphaseConfidence(String(d.confidence_score ?? ""));
-      setNotes(d.mentor_notes || "");
+      setFeedback(d.mentor_notes || "");
+      setNotes("");
     } else if (selected.type === 'video') {
       const d = detail as VideoDetail;
       setJudgeScore(String(d.judge_scores?.total || ""));

@@ -81,7 +81,7 @@ export async function POST(
     .from("hackathon_phase3_cycles")
     .update({
       mentor_score: scores,
-      mentor_notes: data.notes || (data.feedback ? `AI Feedback:\n${data.feedback}` : null),
+      mentor_notes: data.feedback ?? null,
     })
     .eq("id", id)
     .select("*")
