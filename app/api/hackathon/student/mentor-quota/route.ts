@@ -9,12 +9,6 @@ function getClient() {
   );
 }
 
-function getHackathonClient() {
-  return createClient(
-    process.env.HACKATHON_SUPABASE_URL!,
-    process.env.HACKATHON_SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
 
 function extractToken(req: NextRequest): string | null {
   const auth = req.headers.get("authorization") ?? "";
@@ -38,24 +32,10 @@ export async function GET(req: NextRequest) {
     .maybeSingle();
 
   if (!membership?.team_id) {
-    return NextResponse.json({ chances_left: 1, booking: null, assigned_mentor_ids: null });
+    return NextResponse.json({ chances_left: 999, booking: null, assigned_mentor_ids: null });
   }
 
   const teamId = membership.team_id;
-
-  // Fetch mentor IDs assigned to this team (from hackathon DB) and booking config in parallel
-  const hackathonDb = getHackathonClient();
-  const [assignmentsResult, configResult] = await Promise.all([
-    hackathonDb.from("mentor_team_assignments").select("mentor_id").eq("team_id", teamId),
-    supabase.from("hackathon_booking_config").select("max_bookings_per_team").eq("id", 1).maybeSingle(),
-  ]);
-
-  const assignedMentorIds: string[] | null =
-    assignmentsResult.data && assignmentsResult.data.length > 0
-      ? assignmentsResult.data.map((a: { mentor_id: string }) => a.mentor_id)
-      : null;
-
-  const maxBookings: number = configResult.data?.max_bookings_per_team ?? 1;
 
   // Find bookings for this team with mentor profile joined
   const { data: bookings } = await supabase
@@ -82,25 +62,8 @@ export async function GET(req: NextRequest) {
     .limit(20);
 
   if (!bookings || bookings.length === 0) {
-    return NextResponse.json({ chances_left: maxBookings, booking: null, assigned_mentor_ids: assignedMentorIds });
+    return NextResponse.json({ chances_left: 999, booking: null, assigned_mentor_ids: null });
   }
-
-  // Count bookings that consume quota:
-  // - NOT cancelled by student ("ยกเลิกโดยผู้เข้าร่วม") — those are refunded
-  // - NOT cancelled by mentor (any cancellation reason that isn't student/admin) — those are also refunded
-  const STUDENT_CANCEL = "ยกเลิกโดยผู้เข้าร่วม";
-  const ADMIN_RESET = "รีเซ็ตสิทธิ์โดย Admin";
-  const usedBookings = bookings.filter((b) => {
-    if (b.status !== "cancelled") return true; // active booking uses quota
-    // Cancelled by student voluntarily = quota used
-    if (b.cancellation_reason === STUDENT_CANCEL) return true;
-    // Cancelled by admin = quota freed
-    if (b.cancellation_reason === ADMIN_RESET) return false;
-    // Cancelled by mentor (any other reason, including null = declined) = quota refunded
-    return false;
-  });
-  const usedCount = usedBookings.length;
-  const chancesLeft = Math.max(0, maxBookings - usedCount);
 
   // Active = pending or confirmed
   const activeBooking = bookings.find((b) => b.status !== "cancelled") ?? null;
@@ -109,16 +72,16 @@ export async function GET(req: NextRequest) {
     // If meeting time has already passed for a confirmed booking, hide the card
     const meetingEnd = new Date(activeBooking.slot_datetime).getTime() + (activeBooking.duration_minutes ?? 30) * 60 * 1000;
     if (activeBooking.status === "confirmed" && Date.now() > meetingEnd) {
-      return NextResponse.json({ chances_left: chancesLeft, booking: null, assigned_mentor_ids: assignedMentorIds });
+      return NextResponse.json({ chances_left: 999, booking: null, assigned_mentor_ids: null });
     }
-    return NextResponse.json({ chances_left: chancesLeft, booking: activeBooking, assigned_mentor_ids: assignedMentorIds });
+    return NextResponse.json({ chances_left: 999, booking: activeBooking, assigned_mentor_ids: null });
   }
 
   // No active booking — show latest cancelled for context
   const latestCancelled = bookings[0];
   return NextResponse.json({
-    chances_left: chancesLeft,
+    chances_left: 999,
     booking: latestCancelled,
-    assigned_mentor_ids: assignedMentorIds,
+    assigned_mentor_ids: null,
   });
 }
