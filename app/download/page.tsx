@@ -3,7 +3,7 @@ import React from "react";
 import QRCode from "react-qr-code";
 
 const ANDROID_APK_URL =
-  "https://cdn.passionseed.org/build/build-1778789507899.apk";
+  "https://expo.dev/artifacts/eas/evrw2BSZVrrur8SYiykim3.apk";
 
 export default function DownloadPage() {
   return (
