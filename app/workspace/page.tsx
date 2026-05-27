@@ -1,4 +1,4 @@
-import { Users, Target, AlertTriangle, Heart, Compass, BookOpen, Lightbulb, Flame, ShieldAlert, ArrowRight } from "lucide-react";
+import { Users, Target, AlertTriangle, Heart, Compass, BookOpen, Lightbulb, Flame, ShieldAlert, ArrowRight, MessageSquare, ClipboardList } from "lucide-react";
 
 export const metadata = {
   title: "Workspace | PassionSeed",
@@ -52,6 +52,138 @@ const consequences = [
     label: "Wasted tuition and time",
     detail: "4 years of university in a field they don't care about. Public unis: ~15,000–30,000 THB/year. Private: up to 200,000 THB/year. Families pay for a degree that leads nowhere useful.",
     severity: "medium",
+  },
+];
+
+const interviewProfiles = [
+  {
+    who: "Grade 9 student — currently deciding",
+    count: "5–8 people",
+    goal: "Validate the decision experience in real time",
+    color: "text-indigo-400",
+    border: "border-indigo-500/20",
+    bg: "bg-indigo-500/5",
+    questions: [
+      "How are you choosing your track? Who have you talked to?",
+      "Do you feel like you have enough information to decide confidently?",
+      "What do your parents want you to choose — and do you agree?",
+      "Have you ever met someone working in the field you're considering?",
+      "What would make this decision feel easier?",
+    ],
+    validates: "Root causes 1–4 in real time. Strongest signal source.",
+  },
+  {
+    who: "Parent of a Grade 9 student",
+    count: "4–6 people",
+    goal: "Understand parental decision logic and openness to outside guidance",
+    color: "text-pink-400",
+    border: "border-pink-500/20",
+    bg: "bg-pink-500/5",
+    questions: [
+      "How are you advising your child on their track choice?",
+      "What careers do you think are realistic for them?",
+      "Would you trust a career advisor outside the school? What would make you trust them?",
+      "What are you most worried about with this decision?",
+      "Have you heard of careers like UX design, data science, or game development as real paths?",
+    ],
+    validates: "Narrow parental worldview, willingness to pay, openness to service.",
+  },
+  {
+    who: "Grade 10–11 student — recently chose",
+    count: "6–10 people",
+    goal: "Retrospective on the decision — regret, confidence, what was missing",
+    color: "text-violet-400",
+    border: "border-violet-500/20",
+    bg: "bg-violet-500/5",
+    questions: [
+      "Looking back, how did you make your track decision?",
+      "Do you feel like you chose the right track? Why or why not?",
+      "Did you feel pressured by anyone — parents, friends, teachers?",
+      "What information do you wish you had before deciding?",
+      "If you could redo it, what would you do differently?",
+    ],
+    validates: "Consequence severity. Whether regret is real and how common it is.",
+  },
+  {
+    who: "School counselor or homeroom teacher",
+    count: "2–4 people",
+    goal: "Understand actual guidance capacity and what they see students struggling with",
+    color: "text-amber-400",
+    border: "border-amber-500/20",
+    bg: "bg-amber-500/5",
+    questions: [
+      "How many students do you advise? How much time do you spend on career guidance?",
+      "What do most students struggle with when choosing their track?",
+      "What do parents usually want — and is that different from what students want?",
+      "Do you feel equipped to give real career guidance? What's missing?",
+      "If a service like PassionSeed existed, would you refer students to it?",
+    ],
+    validates: "400:1 ratio reality. Whether institutional gap is real. Channel opportunity.",
+  },
+  {
+    who: "University student year 1–2 — recent track decision",
+    count: "4–6 people",
+    goal: "Validate long-term consequence of Grade 9 decision",
+    color: "text-emerald-400",
+    border: "border-emerald-500/20",
+    bg: "bg-emerald-500/5",
+    questions: [
+      "Does your university major connect to the track you chose in Grade 9?",
+      "Do you feel like you chose the right direction back then?",
+      "Did you ever feel trapped by your track choice? How did you handle it?",
+      "What do you wish existed when you were in Grade 9?",
+      "Would you have paid for career guidance then? Would your parents?",
+    ],
+    validates: "Downstream consequences. Willingness to pay in hindsight. Validates urgency framing.",
+  },
+  {
+    who: "University student or young professional — wrong path, corrected",
+    count: "3–5 people",
+    goal: "Understand the cost of a wrong choice in concrete terms",
+    color: "text-rose-400",
+    border: "border-rose-500/20",
+    bg: "bg-rose-500/5",
+    questions: [
+      "Tell me about when you realized you were on the wrong path. When was that?",
+      "What did it cost you — time, money, emotionally — to course-correct?",
+      "What was the hardest part of changing direction?",
+      "What would have helped you make a better choice earlier?",
+      "If you could talk to your Grade 9 self, what would you say?",
+    ],
+    validates: "Real cost of consequences. Emotional truth. Strong testimonial material.",
+  },
+];
+
+const hypotheses = [
+  {
+    claim: "52% of Grade 9 students lack formal aptitude testing",
+    status: "unverified",
+    how: "Find source or conduct survey of 50+ Grade 9 students asking 'have you done any aptitude test?'",
+  },
+  {
+    claim: "Students stay in wrong track rather than switching",
+    status: "unverified",
+    how: "Ask Grade 10–11 students directly. Ask counselors how often they see track switches.",
+  },
+  {
+    claim: "Parents' career vocabulary is limited to 4–5 paths",
+    status: "hypothesis",
+    how: "Ask parents to list careers they'd consider 'good' for their child. Count unique answers.",
+  },
+  {
+    claim: "Students use friends/social media, not counselors, to decide",
+    status: "hypothesis",
+    how: "Ask Grade 9 and 10 students: 'How did you decide?' Rank their top 3 influences.",
+  },
+  {
+    claim: "400:1 counselor-to-student ratio in Thai public schools",
+    status: "unverified",
+    how: "Find Ministry of Education data or ask counselors directly how many students they serve.",
+  },
+  {
+    claim: "Parents would pay for career guidance if they trusted it",
+    status: "hypothesis",
+    how: "Ask parents: 'Would you pay 500–2,000 THB for a guided session?' Test with price anchors.",
   },
 ];
 
@@ -430,10 +562,29 @@ export default function WorkspacePage() {
           </p>
 
           {/* Brand block */}
-          <div className="border border-white/10 rounded-xl p-6 bg-white/3 max-w-2xl">
+          <div className="border border-white/10 rounded-xl p-6 bg-white/3 max-w-2xl mb-10">
             <p className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-3">Brand</p>
             <p className="text-white font-semibold text-lg mb-2">{tagline}</p>
             <p className="text-slate-400 text-sm">{purpose}</p>
+          </div>
+
+          {/* Table of contents */}
+          <div className="flex flex-wrap gap-3">
+            {[
+              { href: "#problem", label: "Problem" },
+              { href: "#segment-1", label: "Segment 1 — Grade 9" },
+              { href: "#segment-2", label: "Segment 2 — Grade 10–12" },
+              { href: "#segment-3", label: "Segment 3 — University" },
+              { href: "#validation", label: "Validation Plan" },
+            ].map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                className="text-xs font-mono text-slate-400 hover:text-white border border-white/10 hover:border-white/30 px-3 py-1.5 rounded-lg transition-colors"
+              >
+                {link.label}
+              </a>
+            ))}
           </div>
         </div>
 
@@ -448,7 +599,7 @@ export default function WorkspacePage() {
         </div>
 
         {/* Problem Framework */}
-        <div className="mb-24">
+        <div id="problem" className="mb-24 scroll-mt-8">
           <div className="flex items-center gap-3 mb-10">
             <div className="w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center justify-center">
               <ShieldAlert className="w-4 h-4 text-red-400" />
@@ -519,7 +670,7 @@ export default function WorkspacePage() {
         {/* All segments */}
         <div className="space-y-24">
           {segments.map((seg, segIdx) => (
-            <section key={seg.label}>
+            <section key={seg.label} id={`segment-${segIdx + 1}`} className="scroll-mt-8">
               {/* Segment header */}
               <div className="flex items-start gap-4 mb-8">
                 <div className="flex items-center gap-3">
@@ -647,6 +798,101 @@ export default function WorkspacePage() {
               )}
             </section>
           ))}
+        </div>
+
+        {/* Validation Plan */}
+        <div id="validation" className="mt-20 scroll-mt-8">
+          <div className="mb-12 border-t border-white/5" />
+
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
+              <ClipboardList className="w-4 h-4 text-cyan-400" />
+            </div>
+            <div>
+              <span className="text-xs font-mono text-cyan-400 uppercase tracking-widest">Research</span>
+              <h2 className="text-2xl font-bold text-white">Validation Plan</h2>
+            </div>
+          </div>
+          <p className="text-slate-400 text-sm mb-12 max-w-2xl">
+            Every claim in the problem section is a hypothesis until someone confirms it. Interview these people in this order. 25–30 conversations total.
+          </p>
+
+          {/* Hypotheses to verify */}
+          <div className="mb-14">
+            <p className="text-xs text-slate-500 uppercase tracking-widest mb-5 flex items-center gap-1.5">
+              <AlertTriangle className="w-3 h-3" /> Claims that need evidence before going external
+            </p>
+            <div className="space-y-3">
+              {hypotheses.map((h) => (
+                <div key={h.claim} className="border border-white/10 rounded-xl p-5 bg-white/3 flex flex-col md:flex-row md:items-start gap-4">
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className={`text-xs font-mono px-2 py-0.5 rounded-full ${
+                      h.status === "unverified"
+                        ? "bg-red-500/20 text-red-300"
+                        : "bg-yellow-500/20 text-yellow-300"
+                    }`}>
+                      {h.status}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white text-sm font-medium mb-1">{h.claim}</p>
+                    <p className="text-slate-400 text-xs leading-relaxed">{h.how}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Who to interview */}
+          <p className="text-xs text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-1.5">
+            <MessageSquare className="w-3 h-3" /> Who to interview — in priority order
+          </p>
+          <div className="space-y-6">
+            {interviewProfiles.map((profile, i) => (
+              <div key={profile.who} className={`border ${profile.border} rounded-2xl ${profile.bg} p-7`}>
+                <div className="flex items-start justify-between mb-5 flex-wrap gap-3">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-mono text-slate-600">{String(i + 1).padStart(2, "0")}</span>
+                      <p className={`font-bold text-base ${profile.color}`}>{profile.who}</p>
+                    </div>
+                    <p className="text-slate-500 text-xs">{profile.goal}</p>
+                  </div>
+                  <span className="text-xs font-mono bg-white/5 border border-white/10 px-3 py-1 rounded-full text-slate-400">
+                    {profile.count}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div>
+                    <p className="text-xs text-slate-500 uppercase tracking-widest mb-3">Questions to ask</p>
+                    <ul className="space-y-2">
+                      {profile.questions.map((q, qi) => (
+                        <li key={qi} className="flex items-start gap-2 text-sm text-slate-300">
+                          <span className="text-slate-600 font-mono text-xs mt-0.5 flex-shrink-0">{qi + 1}.</span>
+                          {q}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="bg-black/20 rounded-xl p-4 self-start">
+                    <p className="text-xs text-slate-500 uppercase tracking-widest mb-2">What this validates</p>
+                    <p className="text-white text-sm leading-relaxed">{profile.validates}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-10 border border-white/10 rounded-xl p-5 bg-white/3">
+            <p className="text-xs text-slate-500 uppercase tracking-widest mb-3">Target</p>
+            <div className="flex flex-wrap gap-6">
+              <div><p className="text-2xl font-bold text-white">25–30</p><p className="text-slate-400 text-xs">total interviews</p></div>
+              <div><p className="text-2xl font-bold text-white">2–3 weeks</p><p className="text-slate-400 text-xs">to complete first round</p></div>
+              <div><p className="text-2xl font-bold text-white">6 types</p><p className="text-slate-400 text-xs">of interviewees</p></div>
+              <div><p className="text-2xl font-bold text-white">6 claims</p><p className="text-slate-400 text-xs">to verify before publishing</p></div>
+            </div>
+          </div>
         </div>
 
         <div className="mt-20 text-center text-slate-600 text-xs font-mono">
