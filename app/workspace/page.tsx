@@ -6,7 +6,7 @@ export const metadata = {
 };
 
 const tagline = "Guidance for young people to choose a path that's actually theirs.";
-const purpose = "To guide the newer generation to design their own future so they can live fully.";
+const purpose = "To guide newer generation to design their own future so they can live fully.";
 
 const stats = [
   { value: "52%", label: "of Grade 9 students lack formal aptitude testing" },
