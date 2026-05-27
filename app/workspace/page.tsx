@@ -1,9 +1,59 @@
-import { Users, Target, AlertTriangle, Heart, Compass, BookOpen, Lightbulb, Flame } from "lucide-react";
+import { Users, Target, AlertTriangle, Heart, Compass, BookOpen, Lightbulb, Flame, ShieldAlert, ArrowRight } from "lucide-react";
 
 export const metadata = {
-  title: "Workspace — Personas | PassionSeed",
-  description: "Student personas across Grade 9, Grade 10–12, and University — who we serve and why.",
+  title: "Workspace | PassionSeed",
+  description: "Problem framework and student personas — who we serve and why.",
 };
+
+const rootCauses = [
+  {
+    id: "no-guidance",
+    label: "No independent guidance",
+    detail: "School counselors exist on paper — 400:1 ratio, mostly admin tasks, not career-focused. Parents are the default advisor but they are not neutral. No trusted adult exists who has breadth of career knowledge AND genuine investment in this specific child.",
+    fix: "Expert mentors with no agenda except the student's fit — not parents, not school, not rankings.",
+  },
+  {
+    id: "narrow-parent-view",
+    label: "Narrow parental worldview",
+    detail: "Thai parent career vocabulary: หมอ วิศวะ บัญชี ครู. Parents project a 1990s career landscape onto a 2030s future. Science track = safe = love for their child. Financial anxiety becomes career prescription — 'stable' overrides 'fits you.'",
+    fix: "Parent-facing content + real career landscape data showing modern paths and their viability.",
+  },
+  {
+    id: "no-exposure",
+    label: "No real information or experience",
+    detail: "Students have never spent a day with a professional in any field. Career understanding = TV dramas + parents' job + TikTok. No framework to understand their own strengths, values, or working style. Aptitude tests exist but don't connect to real paths.",
+    fix: "Expert interviews, day-in-the-life sessions, career reality content before the decision is made.",
+  },
+  {
+    id: "outside-pressure",
+    label: "Outside pressure fills the vacuum",
+    detail: "Friends choosing Science → social pull. Schools treat Science as more prestigious. GPA used as career compass: 'you're good at Math so do Engineering.' Decision made by social gravity, not genuine self-knowledge.",
+    fix: "Peer community + data-backed decision frameworks so students own their choice with confidence.",
+  },
+];
+
+const consequences = [
+  {
+    label: "Stays in wrong track",
+    detail: "Most students don't switch — switching means repeating a year, family shame, financial cost. They white-knuckle through the wrong track for 3 years instead. The trap is de facto permanent, not structural.",
+    severity: "high",
+  },
+  {
+    label: "Locked out of right university",
+    detail: "TCAS eligibility depends on track. Arts track students cannot apply to Medicine or Engineering at top universities. Wrong choice at 14 = closed doors at 18.",
+    severity: "high",
+  },
+  {
+    label: "Unhappy, lost, disengaged",
+    detail: "Wrong fit → declining grades → motivation collapse → mental health strain. Present in classrooms across Thailand, normalized as 'just being a teenager.'",
+    severity: "medium",
+  },
+  {
+    label: "Wasted tuition and time",
+    detail: "4 years of university in a field they don't care about. Public unis: ~15,000–30,000 THB/year. Private: up to 200,000 THB/year. Families pay for a degree that leads nowhere useful.",
+    severity: "medium",
+  },
+];
 
 const tagline = "Guidance for young people to choose a path that's actually theirs.";
 const purpose = "To guide newer generation to design their own future so they can live fully.";
@@ -374,9 +424,9 @@ export default function WorkspacePage() {
           <div className="flex items-center gap-2 mb-6">
             <span className="text-xs font-mono text-slate-500 uppercase tracking-widest">PassionSeed / Workspace</span>
           </div>
-          <h1 className="text-4xl font-bold text-white mb-3 tracking-tight">Personas</h1>
+          <h1 className="text-4xl font-bold text-white mb-3 tracking-tight">Problem + Personas</h1>
           <p className="text-slate-400 text-lg mb-8 max-w-2xl">
-            Who we serve across all three segments, what they feel, and how we help.
+            Why Grade 9 in Thailand is broken, who suffers, and how we help.
           </p>
 
           {/* Brand block */}
@@ -396,6 +446,75 @@ export default function WorkspacePage() {
             </div>
           ))}
         </div>
+
+        {/* Problem Framework */}
+        <div className="mb-24">
+          <div className="flex items-center gap-3 mb-10">
+            <div className="w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center justify-center">
+              <ShieldAlert className="w-4 h-4 text-red-400" />
+            </div>
+            <div>
+              <span className="text-xs font-mono text-red-400 uppercase tracking-widest">Problem</span>
+              <h2 className="text-2xl font-bold text-white">Why Grade 9 in Thailand Is Uniquely Brutal</h2>
+            </div>
+          </div>
+
+          {/* The decision */}
+          <div className="border border-white/10 rounded-xl p-6 bg-white/3 mb-10">
+            <p className="text-xs text-slate-500 uppercase tracking-widest mb-4">The Decision</p>
+            <p className="text-white text-sm leading-relaxed mb-4">
+              At age 14–15, Thai students choose their high school track — <span className="text-white font-semibold">Science-Math, Arts-Math, Arts-Language, or Vocational</span>. This is not a preference. It is structural gatekeeping: Science track unlocks Medicine, Engineering, Architecture at top universities. Arts track closes those doors entirely.
+            </p>
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4">
+              <p className="text-amber-300 text-sm font-medium">
+                Most students don't switch even when they know they chose wrong — repeating a year means family shame, wasted time, and financial cost. They stay. White-knuckle through 3 years. Arrive at university already defeated.
+              </p>
+              <p className="text-amber-400/70 text-xs mt-2">Our goal: prevent this before it happens.</p>
+            </div>
+          </div>
+
+          {/* Root causes */}
+          <p className="text-xs text-slate-500 uppercase tracking-widest mb-5">Why They Struggle — Root Causes</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12">
+            {rootCauses.map((cause, i) => (
+              <div key={cause.id} className="border border-white/10 rounded-xl p-6 bg-white/3">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-xs font-mono text-slate-600">{String(i + 1).padStart(2, "0")}</span>
+                  <p className="text-white font-semibold text-sm">{cause.label}</p>
+                </div>
+                <p className="text-slate-400 text-sm leading-relaxed mb-4">{cause.detail}</p>
+                <div className="flex items-start gap-2 pt-3 border-t border-white/5">
+                  <ArrowRight className="w-3 h-3 text-emerald-400 mt-0.5 flex-shrink-0" />
+                  <p className="text-emerald-300 text-xs leading-relaxed">{cause.fix}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Consequences */}
+          <p className="text-xs text-slate-500 uppercase tracking-widest mb-5">What Goes Wrong — Consequences</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            {consequences.map((c) => (
+              <div
+                key={c.label}
+                className={`border rounded-xl p-5 ${
+                  c.severity === "high"
+                    ? "border-red-500/30 bg-red-500/5"
+                    : "border-orange-500/20 bg-orange-500/5"
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${c.severity === "high" ? "bg-red-400" : "bg-orange-400"}`} />
+                  <p className={`font-semibold text-sm ${c.severity === "high" ? "text-red-300" : "text-orange-300"}`}>{c.label}</p>
+                </div>
+                <p className="text-slate-400 text-sm leading-relaxed">{c.detail}</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-slate-600 text-xs">* Tuition figures approximate. Counselor ratio needs Thai-specific verification.</p>
+        </div>
+
+        <div className="mb-12 border-t border-white/5" />
 
         {/* All segments */}
         <div className="space-y-24">
@@ -531,7 +650,7 @@ export default function WorkspacePage() {
         </div>
 
         <div className="mt-20 text-center text-slate-600 text-xs font-mono">
-          PassionSeed / Internal Workspace — Personas v1 · {new Date().getFullYear()}
+          PassionSeed / Internal Workspace — Problem + Personas v1 · {new Date().getFullYear()}
         </div>
       </div>
     </div>
