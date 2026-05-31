@@ -556,24 +556,23 @@ PassionSeed Team"
           </Card>
 
           <Card>
+            <Tabs value={previewTab} onValueChange={(v) => setPreviewTab(v as "rendered" | "html")}>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Eye className="h-5 w-5" />
                   Preview
                 </CardTitle>
-                <Tabs value={previewTab} onValueChange={(v) => setPreviewTab(v as "rendered" | "html")} className="w-auto">
-                  <TabsList className="h-8">
-                    <TabsTrigger value="rendered" className="text-xs px-2">
-                      <Eye className="h-3 w-3 mr-1" />
-                      Rendered
-                    </TabsTrigger>
-                    <TabsTrigger value="html" className="text-xs px-2">
-                      <Code className="h-3 w-3 mr-1" />
-                      HTML
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
+                <TabsList className="h-8 w-auto">
+                  <TabsTrigger value="rendered" className="text-xs px-2">
+                    <Eye className="h-3 w-3 mr-1" />
+                    Rendered
+                  </TabsTrigger>
+                  <TabsTrigger value="html" className="text-xs px-2">
+                    <Code className="h-3 w-3 mr-1" />
+                    HTML
+                  </TabsTrigger>
+                </TabsList>
               </div>
               <CardDescription>
                 {previewParticipant ? `Previewing for ${previewParticipant.name}` : "Preview with sample data"}
@@ -619,6 +618,7 @@ PassionSeed Team"
                 Send to {selectedIds.size} Participants
               </Button>
             </CardContent>
+            </Tabs>
           </Card>
         </div>
       </div>
