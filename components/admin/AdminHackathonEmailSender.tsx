@@ -36,7 +36,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Search, Mail, X, Send, Eye, Users, FileText, LayoutTemplate, Code } from "lucide-react";
+import { Loader2, Search, Mail, X, Send, Eye, Users, FileText, LayoutTemplate, Code, LayoutList, UsersRound } from "lucide-react";
 import { TEMPLATE_VARIABLES, type EmailTemplateVars } from "@/lib/hackathon/email";
 import { renderCustomEmail, type EmailTemplate } from "@/lib/hackathon/email-templates";
 
@@ -89,6 +89,8 @@ export function AdminHackathonEmailSender() {
   
   const subjectRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
+
+  const [groupByTeam, setGroupByTeam] = useState(false);
 
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [sending, setSending] = useState(false);
@@ -226,6 +228,47 @@ export function AdminHackathonEmailSender() {
       setSending(false);
       setConfirmDialogOpen(false);
     }
+  }
+
+  // Group participants by team for the grouped view
+  const teamGroups: Array<{ teamName: string; members: typeof participants }> = [];
+  if (groupByTeam) {
+    const map = new Map<string, typeof participants>();
+    for (const p of participants) {
+      const key = p.team_status === "has_team" ? p.team_name || "Unknown Team" : "— No Team —";
+      const group = map.get(key) ?? [];
+      group.push(p);
+      map.set(key, group);
+    }
+    // Teams first, then no-team group last
+    for (const [name, members] of map.entries()) {
+      if (name !== "— No Team —") teamGroups.push({ teamName: name, members });
+    }
+    teamGroups.sort((a, b) => a.teamName.localeCompare(b.teamName));
+    if (map.has("— No Team —")) {
+      teamGroups.push({ teamName: "— No Team —", members: map.get("— No Team —")! });
+    }
+  }
+
+  function isTeamSelected(members: typeof participants) {
+    return members.length > 0 && members.every((m) => selectedIds.has(m.id));
+  }
+
+  function isTeamIndeterminate(members: typeof participants) {
+    const count = members.filter((m) => selectedIds.has(m.id)).length;
+    return count > 0 && count < members.length;
+  }
+
+  function toggleTeam(members: typeof participants) {
+    const allIn = isTeamSelected(members);
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      for (const m of members) {
+        if (allIn) next.delete(m.id);
+        else next.add(m.id);
+      }
+      return next;
+    });
   }
 
   const allSelected = selectedIds.size === participants.length && participants.length > 0;
@@ -402,6 +445,26 @@ export function AdminHackathonEmailSender() {
                     {selectedIds.size} of {participants.length} participants selected
                   </CardDescription>
                 </div>
+                <div className="flex items-center gap-1 rounded-md border p-1">
+                  <Button
+                    variant={groupByTeam ? "ghost" : "secondary"}
+                    size="sm"
+                    className="h-7 px-2 gap-1.5"
+                    onClick={() => setGroupByTeam(false)}
+                  >
+                    <LayoutList className="h-3.5 w-3.5" />
+                    <span className="text-xs">Flat</span>
+                  </Button>
+                  <Button
+                    variant={groupByTeam ? "secondary" : "ghost"}
+                    size="sm"
+                    className="h-7 px-2 gap-1.5"
+                    onClick={() => setGroupByTeam(true)}
+                  >
+                    <UsersRound className="h-3.5 w-3.5" />
+                    <span className="text-xs">By Team</span>
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -415,7 +478,9 @@ export function AdminHackathonEmailSender() {
                     <TableHeader className="sticky top-0 bg-background z-10 shadow-sm">
                       <TableRow>
                         <TableHead className="w-[50px]">
-                          <Checkbox checked={selectAllChecked} onCheckedChange={toggleSelectAll} />
+                          {!groupByTeam && (
+                            <Checkbox checked={selectAllChecked} onCheckedChange={toggleSelectAll} />
+                          )}
                         </TableHead>
                         <TableHead>Name</TableHead>
                         <TableHead>Email</TableHead>
@@ -430,6 +495,51 @@ export function AdminHackathonEmailSender() {
                             No participants match the current filters
                           </TableCell>
                         </TableRow>
+                      ) : groupByTeam ? (
+                        teamGroups.map(({ teamName, members }) => (
+                          <>
+                            <TableRow key={`team-${teamName}`} className="bg-muted/50 hover:bg-muted/70">
+                              <TableCell>
+                                <Checkbox
+                                  checked={isTeamIndeterminate(members) ? "indeterminate" : isTeamSelected(members)}
+                                  onCheckedChange={() => toggleTeam(members)}
+                                />
+                              </TableCell>
+                              <TableCell colSpan={4}>
+                                <div className="flex items-center gap-2">
+                                  <UsersRound className="h-3.5 w-3.5 text-muted-foreground" />
+                                  <span className="font-semibold text-sm">{teamName}</span>
+                                  <Badge variant="outline" className="text-xs font-normal">
+                                    {members.length} member{members.length !== 1 ? "s" : ""}
+                                  </Badge>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                            {members.map((p) => (
+                              <TableRow key={p.id}>
+                                <TableCell className="pl-8">
+                                  <Checkbox
+                                    checked={selectedIds.has(p.id)}
+                                    onCheckedChange={() => toggleSelection(p.id)}
+                                  />
+                                </TableCell>
+                                <TableCell className="font-medium pl-2">{p.name}</TableCell>
+                                <TableCell className="text-sm text-muted-foreground">{p.email}</TableCell>
+                                <TableCell>
+                                  <Badge variant="outline" className="text-xs">{p.track}</Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge
+                                    variant={p.team_status === "has_team" ? "default" : p.team_status === "waitlist" ? "secondary" : "outline"}
+                                    className={p.team_status === "has_team" ? "bg-green-500 hover:bg-green-600" : ""}
+                                  >
+                                    {p.team_status.replace("_", " ")}
+                                  </Badge>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </>
+                        ))
                       ) : (
                         participants.map((p) => (
                           <TableRow key={p.id}>
@@ -445,7 +555,7 @@ export function AdminHackathonEmailSender() {
                               <Badge variant="outline" className="text-xs">{p.track}</Badge>
                             </TableCell>
                             <TableCell>
-                              <Badge 
+                              <Badge
                                 variant={p.team_status === "has_team" ? "default" : p.team_status === "waitlist" ? "secondary" : "outline"}
                                 className={p.team_status === "has_team" ? "bg-green-500 hover:bg-green-600" : ""}
                               >

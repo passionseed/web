@@ -365,10 +365,6 @@ export function wrapEmailContent(contentHtml: string): string {
                     <p style="margin: 0 0 12px 0;">
                       <strong style="color: #374151; font-weight: 600;">PassionSeed</strong> — Empowering the next generation of innovators
                     </p>
-                    <p style="margin: 0 0 16px 0;">
-                      Questions? Reply to this email or 
-                      <a href="mailto:hi@passionseed.org" style="color: #6366f1; text-decoration: none; font-weight: 500;">contact us</a>
-                    </p>
                     <p style="margin: 0; font-size: 12px; color: #9ca3af;">
                       © 2025 PassionSeed. All rights reserved.
                     </p>
