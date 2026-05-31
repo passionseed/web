@@ -347,10 +347,10 @@ export function wrapEmailContent(contentHtml: string): string {
             </td>
           </tr>
           <tr>
-            <td style="padding: 40px;">
+            <td style="padding: 32px 32px;">
               <table border="0" cellpadding="0" cellspacing="0" width="100%">
                 <tr>
-                  <td style="color: #1f2937; font-size: 16px; line-height: 1.7;">
+                  <td style="color: #1f2937; font-size: 16px; line-height: 1.5; word-break: break-word; overflow-wrap: break-word;">
                     ${contentHtml}
                   </td>
                 </tr>
@@ -405,15 +405,15 @@ function formatBodyHtml(bodyHtml: string): string {
   
   bodyHtml = bodyHtml.replace(
     /<ul>/g,
-    '<ul style="margin: 16px 0; padding-left: 24px; color: #374151;">'
+    '<ul style="margin: 16px 0; padding-left: 20px; color: #374151; mso-padding-alt: 0 0 0 20px;">'
   );
   bodyHtml = bodyHtml.replace(
     /<ol>/g,
-    '<ol style="margin: 16px 0; padding-left: 24px; color: #374151;">'
+    '<ol style="margin: 16px 0; padding-left: 20px; color: #374151; mso-padding-alt: 0 0 0 20px;">'
   );
   bodyHtml = bodyHtml.replace(
     /<li>/g,
-    '<li style="margin: 10px 0; line-height: 1.6;">'
+    '<li style="margin: 10px 0; line-height: 1.6; word-break: break-word;">'
   );
   
   bodyHtml = bodyHtml.replace(
