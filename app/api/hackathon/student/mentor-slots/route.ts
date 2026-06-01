@@ -37,8 +37,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ slots: [] });
   }
 
-  // Build a set for quick lookup: "dayOfWeek:hour"
-  const availSet = new Set(availability.map((a: { day_of_week: number; hour: number }) => `${a.day_of_week}:${a.hour}`));
+  // Build a set for quick lookup: "dayOfWeek:hour:minute"
+  const availSet = new Set(availability.map((a: { day_of_week: number; hour: number; minute: number }) => `${a.day_of_week}:${a.hour}:${a.minute ?? 0}`));
 
   // 2. Fetch existing bookings for the next 14 days (pending + confirmed)
   const now = new Date();
@@ -57,11 +57,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Failed to fetch bookings" }, { status: 500 });
   }
 
-  // Build a set of booked slot starts (ISO strings rounded to the hour)
+  // Build a set of booked slot starts (ISO strings rounded to 30-min boundary)
   const bookedSet = new Set(
     (bookings ?? []).map((b: { slot_datetime: string }) => {
       const d = new Date(b.slot_datetime);
-      d.setMinutes(0, 0, 0);
+      d.setMinutes(d.getMinutes() < 30 ? 0 : 30, 0, 0);
       return d.toISOString();
     })
   );
@@ -93,20 +93,22 @@ export async function GET(req: NextRequest) {
     const dayOfWeek = (bangkokDayDate.getUTCDay() + 6) % 7;
 
     for (let hour = 0; hour <= 23; hour++) {
-      if (!availSet.has(`${dayOfWeek}:${hour}`)) continue;
+      for (const minute of [0, 30]) {
+        if (!availSet.has(`${dayOfWeek}:${hour}:${minute}`)) continue;
 
-      // Slot UTC = Bangkok midnight UTC + hour offset
-      const slotUTC = new Date(dayMidnightUTC + hour * 60 * 60 * 1000);
+        // Slot UTC = Bangkok midnight UTC + hour + minute offset
+        const slotUTC = new Date(dayMidnightUTC + (hour * 60 + minute) * 60 * 1000);
 
-      // Must be in the future (with a 30min buffer)
-      if (slotUTC.getTime() <= now.getTime() + 30 * 60 * 1000) continue;
+        // Must be in the future (with a 30min buffer)
+        if (slotUTC.getTime() <= now.getTime() + 30 * 60 * 1000) continue;
 
-      // Must not already be booked
-      const slotKey = new Date(slotUTC);
-      slotKey.setMinutes(0, 0, 0);
-      if (bookedSet.has(slotKey.toISOString())) continue;
+        // Must not already be booked
+        const slotKey = new Date(slotUTC);
+        slotKey.setSeconds(0, 0);
+        if (bookedSet.has(slotKey.toISOString())) continue;
 
-      slots.push(slotUTC.toISOString());
+        slots.push(slotUTC.toISOString());
+      }
     }
   }
 

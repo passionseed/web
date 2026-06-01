@@ -268,13 +268,14 @@ export async function getMentorAvailability(mentorId: string): Promise<MentorAva
     .select("*")
     .eq("mentor_id", mentorId)
     .order("day_of_week")
-    .order("hour");
+    .order("hour")
+    .order("minute");
   return (data ?? []) as MentorAvailabilitySlot[];
 }
 
 export async function replaceMentorAvailability(
   mentorId: string,
-  slots: Array<{ day_of_week: number; hour: number }>
+  slots: Array<{ day_of_week: number; hour: number; minute: number }>
 ): Promise<MentorAvailabilitySlot[]> {
   const { error: deleteError } = await getClient()
     .from("mentor_availability")

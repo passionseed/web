@@ -38,6 +38,11 @@ export async function PUT(req: NextRequest) {
       if (typeof s.hour !== "number" || s.hour < 0 || s.hour > 23) {
         return NextResponse.json({ error: "Invalid hour" }, { status: 400 });
       }
+      const minute = s.minute ?? 0;
+      if (minute !== 0 && minute !== 30) {
+        return NextResponse.json({ error: "Invalid minute (must be 0 or 30)" }, { status: 400 });
+      }
+      s.minute = minute;
     }
 
     const updated = await replaceMentorAvailability(mentor.id, slots);

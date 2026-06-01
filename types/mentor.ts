@@ -27,6 +27,7 @@ export type MentorAvailabilitySlot = {
   mentor_id: string;
   day_of_week: number; // 0=Mon … 6=Sun
   hour: number;        // 0–23
+  minute: number;      // 0 or 30
 };
 
 export type MentorBooking = {
