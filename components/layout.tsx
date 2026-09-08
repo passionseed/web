@@ -41,6 +41,8 @@ export function Layout({ children }: LayoutProps) {
     pathname === "/business-model-canvas" ||
     // SHIFT landing is a standalone shareable page with its own sticky CTA
     pathname?.startsWith("/shift") ||
+    pathname?.startsWith("/slide") ||
+    pathname?.startsWith("/worksheet") ||
     pathname?.startsWith("/talent") ||
     pathname?.startsWith("/pathlab") ||
     pathname?.startsWith("/plan") ||

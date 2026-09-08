@@ -38,6 +38,12 @@ const workAreas = [
   },
 ] as const;
 
+const growthModelLink = {
+  title: "Growth model",
+  description: "Why the student has to want it, and which scaling unit that leaves us.",
+  href: "/work/model",
+} as const;
+
 const operatingLoop = [
   ["01", "Observe", "Capture behavior, payment, and student outcomes"],
   ["02", "Test", "Run the cheapest credible test of the riskiest belief"],
@@ -101,7 +107,9 @@ export default function WorkOverviewPage() {
             <p className={styles.eyebrow}>Pareto operating system</p>
             <h2 className="mt-2 font-kodchasan text-xl font-semibold text-white">Three loops only</h2>
           </div>
-          <p className="hidden text-xs text-stone-500 sm:block">If it does not move a loop, it stays out</p>
+          <Link href={growthModelLink.href} className="text-xs text-stone-500 hover:text-white">
+            Read the growth model
+          </Link>
         </div>
 
         <div className="mt-5 divide-y divide-white/[0.07] border-y border-white/[0.07]">

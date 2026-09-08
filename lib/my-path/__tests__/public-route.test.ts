@@ -39,4 +39,7 @@ test("App Store support and legal pages stay public without login", () => {
   assert.equal(isPublicRoute("/terms"), true);
   assert.equal(isPublicRoute("/tos"), true);
   assert.equal(isPublicRoute("/cookies"), true);
+  assert.equal(isPublicRoute("/slide/csii"), true);
+  assert.equal(isPublicRoute("/worksheet"), true);
+  assert.equal(isPublicRoute("/worksheet/portfolio-weight-test"), true);
 });

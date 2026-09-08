@@ -6,8 +6,10 @@ import {
   Boxes,
   ChevronRight,
   FlaskConical,
+  Compass,
   Home,
   Megaphone,
+  Users,
 } from "lucide-react";
 
 import styles from "./work.module.css";
@@ -15,6 +17,8 @@ import styles from "./work.module.css";
 const primaryNav = [
   { href: "/work", label: "Overview", icon: Home, exact: true },
   { href: "/work/mkt/funnel", label: "Demand", icon: Megaphone, exact: false },
+  { href: "/work/mkt/segments", label: "Segments", icon: Users, exact: false },
+  { href: "/work/model", label: "Model", icon: Compass, exact: false },
   { href: "/work/product", label: "Validate / PMF", icon: FlaskConical, exact: false },
 ] as const;
 

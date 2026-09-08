@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowDown, ArrowRight, ExternalLink, Instagram, MessageCircle, Pencil, Plus, Users } from "lucide-react";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import {
@@ -106,9 +107,15 @@ export function MarketingFunnelWorkspace() {
             <h1 className="font-kodchasan text-3xl font-semibold tracking-tight text-white sm:text-4xl">Attention → conversation → sale</h1>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-stone-400 sm:text-base">Plan, assign, and move content from idea to published. TechSeed catches exploration; SHIFT converts readiness into proof of work.</p>
           </div>
-          <button type="button" onClick={() => openEditor(null)} disabled={!canEdit} className={styles.primaryButton} title={!canEdit ? workspace.message : undefined}>
-            <Plus className="mr-2 h-4 w-4" aria-hidden="true" />Add content
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <Link href="/work/mkt/segments" className={styles.secondaryButton}>
+              Segments &amp; worksheets
+              <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+            </Link>
+            <button type="button" onClick={() => openEditor(null)} disabled={!canEdit} className={styles.primaryButton} title={!canEdit ? workspace.message : undefined}>
+              <Plus className="mr-2 h-4 w-4" aria-hidden="true" />Add content
+            </button>
+          </div>
         </div>
         <p className="mt-3 font-space-mono text-[9px] uppercase tracking-[0.14em] text-white/30">Social metrics: manual snapshot, 04 Sep 2026</p>
         <div className={styles.rule} />
