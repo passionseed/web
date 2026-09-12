@@ -48,22 +48,23 @@ export default async function TipsPage({ params }: PageProps) {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-6 px-6 text-center">
-      <h1 className="text-2xl font-semibold tracking-tight">{file.title}</h1>
-      <p className="text-muted-foreground">{file.description}</p>
+      {/* The page is a pass-through to the PDF, so it shows only a spinner.
+          The title still lives in the document metadata, which is what the DM
+          link preview reads. */}
+      <div
+        className="h-8 w-8 animate-spin rounded-full border-2 border-current border-t-transparent text-muted-foreground"
+        role="status"
+        aria-label={`กำลังเปิด ${file.title}`}
+      />
 
-      <a
-        href={file.fileUrl}
-        className="ei-button-dusk inline-flex items-center justify-center rounded-full px-6 py-3 text-base font-medium"
-      >
-        เปิดไฟล์ PDF
-      </a>
+      {/* Anyone the auto-redirect fails for (blocked navigation, no JS) still
+          has a way through, without the spinner turning into a landing page. */}
+      <noscript>
+        <a href={file.fileUrl} className="text-sm underline">
+          เปิดไฟล์ PDF
+        </a>
+      </noscript>
 
-      <p className="text-sm text-muted-foreground">
-        ถ้าไฟล์ไม่เปิดอัตโนมัติ กดปุ่มด้านบนได้เลย
-      </p>
-
-      {/* Sends a reader straight to the PDF, but only after the page has
-          rendered, so a preview crawler still sees the card above. */}
       <TipsRedirect fileUrl={file.fileUrl} />
     </main>
   );
