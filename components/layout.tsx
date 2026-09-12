@@ -43,6 +43,8 @@ export function Layout({ children }: LayoutProps) {
     pathname?.startsWith("/shift") ||
     pathname?.startsWith("/slide") ||
     pathname?.startsWith("/worksheet") ||
+    // Tips links are a pass-through to a PDF: spinner only, no site chrome
+    pathname?.startsWith("/tips") ||
     pathname?.startsWith("/talent") ||
     pathname?.startsWith("/pathlab") ||
     pathname?.startsWith("/plan") ||
