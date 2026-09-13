@@ -10,7 +10,7 @@ import {
   type BulkReplyMode,
   type BulkRunResult,
 } from "@/app/admin/ig-comments/actions";
-import { BULK_REPLY_BATCH_CAP } from "@/app/admin/ig-comments/constants";
+import { getBatchCap } from "@/app/admin/ig-comments/constants";
 import type { CampaignKey } from "@/lib/meta/comment-intent";
 
 export interface MissedCommentItem {
@@ -39,6 +39,26 @@ const MODE_HINT: Record<BulkReplyMode, string> = {
 
 function daysAgo(iso: string): number {
   return Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24));
+}
+
+/** One labelled number in the run report. */
+function ReportStat({
+  label,
+  value,
+  muted = false,
+}: {
+  label: string;
+  value: number;
+  muted?: boolean;
+}) {
+  return (
+    <div className="flex items-baseline justify-between gap-2">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className={`font-medium tabular-nums ${muted && value === 0 ? "text-muted-foreground" : ""}`}>
+        {value}
+      </dd>
+    </div>
+  );
 }
 
 export function MissedCommentsCard({
@@ -98,7 +118,12 @@ export function MissedCommentsCard({
 
   if (comments.length === 0) return null;
 
-  const batchSize = Math.min(visible.length, BULK_REPLY_BATCH_CAP);
+  // Custom copy skips the Qwen rewrite, so a verbatim run fits more per pass.
+  const verbatim =
+    mode === "both"
+      ? Boolean(dmMessage.trim() && publicMessage.trim())
+      : Boolean(mode === "private" ? dmMessage.trim() : publicMessage.trim());
+  const batchSize = Math.min(visible.length, getBatchCap(mode, verbatim));
   const campaign = tab === "all" ? undefined : tab;
 
   /**
@@ -131,14 +156,29 @@ export function MissedCommentsCard({
 
     try {
       for (;;) {
-        const pass = await runBulkReply({
-          mode,
-          campaign,
-          dmMessage: dmMessage.trim() || undefined,
-          publicMessage: publicMessage.trim() || undefined,
-          onlyNeverContacted,
-          dryRun,
-        });
+        let pass: BulkRunResult;
+        try {
+          pass = await runBulkReply({
+            mode,
+            campaign,
+            dmMessage: dmMessage.trim() || undefined,
+            publicMessage: publicMessage.trim() || undefined,
+            onlyNeverContacted,
+            dryRun,
+          });
+        } catch (error) {
+          // A pass that never returns (function timeout, network drop) takes
+          // its counts with it. Everything from earlier passes is still real,
+          // so keep it on screen instead of clearing the report — that silence
+          // is what made a 504 look like nothing had happened.
+          const detail = error instanceof Error ? error.message : String(error);
+          totals.crashed = true;
+          totals.errors.push(
+            `Pass ${passes + 1} did not return (${detail.slice(0, 120)}). Sends completed before this point are counted above; the rest are still queued.`
+          );
+          setResult({ ...totals, errors: [...totals.errors], sentTo: [...totals.sentTo] });
+          break;
+        }
         passes += 1;
         totals.sent += pass.sent;
         totals.failed += pass.failed;
@@ -149,6 +189,7 @@ export function MissedCommentsCard({
         totals.privacyBlocked += pass.privacyBlocked;
         totals.dmsDelivered += pass.dmsDelivered;
         totals.publicReplies += pass.publicReplies;
+        if (pass.timedOut) totals.timedOut = true;
         setResult({ ...totals, errors: [...totals.errors], sentTo: [...totals.sentTo] });
         setRuns(passes);
 
@@ -305,24 +346,66 @@ export function MissedCommentsCard({
           </p>
         )}
 
-        {result && (
-          <p className="text-sm">
-            {result.dryRun ? "Preview: would contact" : "Reached"} {result.sent}
-            {!result.dryRun && result.dmsDelivered > 0 && ` · ${result.dmsDelivered} DM`}
-            {!result.dryRun && result.publicReplies > 0 && ` · ${result.publicReplies} public`}
-            {!result.dryRun && `, failed ${result.failed}`}
-            {result.privacyBlocked > 0 && `, ${result.privacyBlocked} refused the DM`}
-            {result.unreachable > 0 && `, ${result.unreachable} deleted and retired`}
-            {result.skipped > 0 && `, ${result.skipped} still queued`}
-            {runs > 1 && ` · ${runs} runs`}
-            {running && " · running…"}.
-            {result.errors.length > 0 && (
-              <span className="block text-xs text-destructive">
-                {result.errors.slice(0, 5).join(" · ")}
-                {result.errors.length > 5 && ` · +${result.errors.length - 5} more`}
-              </span>
-            )}
+        {result?.crashed && (
+          <p className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
+            <span className="font-medium">A batch did not finish.</span> The run stopped early, most
+            likely on the server&apos;s time limit. Everything counted below was really sent, and the
+            rest is still queued, so pressing send again continues where this left off.
           </p>
+        )}
+
+        {result?.timedOut && !result.crashed && (
+          <p className="rounded-md border p-3 text-sm text-muted-foreground">
+            A pass stopped early to stay inside the time limit. Nothing was lost, the remainder is
+            still queued.
+          </p>
+        )}
+
+        {result && (
+          <div className="space-y-2 rounded-md border p-3">
+            <p className="text-sm font-medium">
+              {result.dryRun ? "Preview" : "Report"}
+              {running && " · running…"}
+              {runs > 1 && ` · ${runs} passes`}
+            </p>
+
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-3">
+              <ReportStat
+                label={result.dryRun ? "Would contact" : "People reached"}
+                value={result.sent}
+              />
+              {!result.dryRun && <ReportStat label="DMs delivered" value={result.dmsDelivered} />}
+              {!result.dryRun && <ReportStat label="Public replies" value={result.publicReplies} />}
+              {!result.dryRun && (
+                <ReportStat label="Refused the DM" value={result.privacyBlocked} muted />
+              )}
+              {!result.dryRun && <ReportStat label="Failed" value={result.failed} muted />}
+              {!result.dryRun && result.unreachable > 0 && (
+                <ReportStat label="Deleted, retired" value={result.unreachable} muted />
+              )}
+              <ReportStat label="Still queued" value={result.skipped} muted />
+            </dl>
+
+            {!result.dryRun && result.privacyBlocked > 0 && (
+              <p className="text-xs text-muted-foreground">
+                A refused DM is normal: those accounts do not accept message requests.
+                {mode === "both" && " They still got the public reply."}
+              </p>
+            )}
+
+            {result.errors.length > 0 && (
+              <details className="text-xs">
+                <summary className="cursor-pointer text-destructive">
+                  {result.errors.length} error{result.errors.length === 1 ? "" : "s"}
+                </summary>
+                <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto break-words font-mono leading-5 select-text">
+                  {result.errors.map((e, i) => (
+                    <li key={i}>{e}</li>
+                  ))}
+                </ul>
+              </details>
+            )}
+          </div>
         )}
 
         {result && result.sentTo.length > 0 && (

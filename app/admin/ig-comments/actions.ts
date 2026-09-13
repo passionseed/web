@@ -11,7 +11,7 @@ import {
   isDeliveryBlockedByPrivacy,
 } from "@/lib/dm-leads/delivery-status";
 import { createAdminClient } from "@/utils/supabase/admin";
-import { BULK_REPLY_BATCH_CAP } from "./constants";
+import { getBatchCap } from "./constants";
 
 async function getIgCommentId(commentId: string): Promise<string> {
   const supabase = createAdminClient();
@@ -151,6 +151,17 @@ export interface BulkRunResult extends BulkReplyResult {
    * retired in that case.
    */
   systemicFailure?: boolean;
+  /**
+   * True when the pass stopped early to stay inside the function's time
+   * budget. Not an error: the remainder is still queued and the next pass
+   * picks it up.
+   */
+  timedOut?: boolean;
+  /**
+   * Set by the client, not the action: a pass that never returned at all.
+   * Lives on the same shape so the summary can report it alongside real counts.
+   */
+  crashed?: boolean;
   /** True when the run only previewed and sent nothing. */
   dryRun: boolean;
 }
@@ -200,11 +211,28 @@ export async function runBulkReply(options: BulkRunOptions): Promise<BulkRunResu
   const windowDays = mode === "public" ? BULK_REPLY_WINDOW_DAYS : BULK_DM_WINDOW_DAYS;
   const missed = await getCommentsMissedByDm(windowDays, undefined, onlyNeverContacted);
   const scoped = campaign ? missed.filter((c) => getCampaign(c.text) === campaign) : missed;
-  const batch = scoped.slice(0, BULK_REPLY_BATCH_CAP);
+
+  // Custom copy skips the Qwen rewrite, which is the slowest part of a send,
+  // so a verbatim run can safely attempt more people per pass.
+  const verbatim =
+    mode === "both"
+      ? Boolean(customDm && customPublic)
+      : Boolean(mode === "private" ? customDm : customPublic);
+  const batch = dryRun ? scoped : scoped.slice(0, getBatchCap(mode, verbatim));
+
+  /**
+   * Hard stop before the platform kills the function. A 504 loses the whole
+   * response, so the operator cannot tell what was sent; returning early with
+   * real counts is always better. Budget is `maxDuration` on the page (60s)
+   * minus headroom for the final DB writes and the response itself.
+   */
+  const deadline = Date.now() + 45_000;
 
   const result: BulkRunResult = {
     sent: 0,
     failed: 0,
+    // Recomputed after the loop, since an early stop leaves more behind than
+    // the batch cap alone accounts for.
     skipped: scoped.length - batch.length,
     errors: [],
     sentTo: [],
@@ -222,6 +250,7 @@ export async function runBulkReply(options: BulkRunOptions): Promise<BulkRunResu
    */
   const ambiguous: { id: string; who: string }[] = [];
   let attempted = 0;
+  let processed = 0;
 
   for (const comment of batch) {
     const who = comment.username ?? comment.ig_comment_id;
@@ -232,6 +261,14 @@ export async function runBulkReply(options: BulkRunOptions): Promise<BulkRunResu
       continue;
     }
 
+    // Out of time: stop cleanly so the counts come back, rather than letting
+    // the platform kill the function and lose them.
+    if (Date.now() > deadline) {
+      result.timedOut = true;
+      break;
+    }
+
+    processed += 1;
     attempted += 1;
     const lead = { username: comment.username, gradeLevel: comment.grade_level };
     let delivered = false;
@@ -291,6 +328,10 @@ export async function runBulkReply(options: BulkRunOptions): Promise<BulkRunResu
 
     await new Promise((resolve) => setTimeout(resolve, BULK_REPLY_DELAY_MS));
   }
+
+  // Anything the batch never reached is still queued, whether it was beyond
+  // the cap or cut off by the deadline.
+  if (!dryRun) result.skipped = scoped.length - processed;
 
   if (isSystemicFailure(attempted, ambiguous.length)) {
     // Every send failed the same way, so the fault is ours. Nothing is retired
