@@ -26,13 +26,13 @@ type TabKey = "all" | CampaignKey;
 const MODE_LABEL: Record<BulkReplyMode, string> = {
   public: "Public reply only",
   private: "DM only (private reply)",
-  both: "DM, then public reply if blocked",
+  both: "DM and public reply",
 };
 
 const MODE_HINT: Record<BulkReplyMode, string> = {
   public: "Visible under the comment. No 7-day limit, so it reaches older comments too.",
   private: "A real DM. Only possible within 7 days, and only once per comment, ever.",
-  both: "Tries the DM first and falls back to a public @mention when Instagram refuses it.",
+  both: "Everyone gets both: a DM, and a public reply under their comment. Anyone whose privacy settings refuse the DM still gets the public reply.",
 };
 
 function daysAgo(iso: string): number {
@@ -53,7 +53,8 @@ export function MissedCommentsCard({
   const router = useRouter();
   const [tab, setTab] = useState<TabKey>("all");
   const [mode, setMode] = useState<BulkReplyMode>("both");
-  const [message, setMessage] = useState("");
+  const [dmMessage, setDmMessage] = useState("");
+  const [publicMessage, setPublicMessage] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [result, setResult] = useState<BulkRunResult | null>(null);
   const [running, setRunning] = useState(false);
@@ -84,7 +85,6 @@ export function MissedCommentsCard({
 
   const batchSize = Math.min(visible.length, BULK_REPLY_BATCH_CAP);
   const campaign = tab === "all" ? undefined : tab;
-  const defaultMessage = mode === "private" ? defaultDmMessage : defaultPublicMessage;
 
   /**
    * One pass is capped so it finishes inside the platform's 60s function limit,
@@ -108,7 +108,8 @@ export function MissedCommentsCard({
       sentTo: [],
       unreachable: 0,
       privacyBlocked: 0,
-      publicFallbacks: 0,
+      dmsDelivered: 0,
+      publicReplies: 0,
       dryRun,
     };
     let passes = 0;
@@ -118,7 +119,8 @@ export function MissedCommentsCard({
         const pass = await runBulkReply({
           mode,
           campaign,
-          message: message.trim() || undefined,
+          dmMessage: dmMessage.trim() || undefined,
+          publicMessage: publicMessage.trim() || undefined,
           dryRun,
         });
         passes += 1;
@@ -129,7 +131,8 @@ export function MissedCommentsCard({
         totals.sentTo.push(...pass.sentTo);
         totals.unreachable += pass.unreachable;
         totals.privacyBlocked += pass.privacyBlocked;
-        totals.publicFallbacks += pass.publicFallbacks;
+        totals.dmsDelivered += pass.dmsDelivered;
+        totals.publicReplies += pass.publicReplies;
         setResult({ ...totals, errors: [...totals.errors], sentTo: [...totals.sentTo] });
         setRuns(passes);
 
@@ -196,22 +199,43 @@ export function MissedCommentsCard({
           <p className="text-xs text-muted-foreground">{MODE_HINT[mode]}</p>
         </div>
 
-        {/* Message */}
-        <div className="space-y-2">
-          <p className="text-sm font-medium">Message</p>
-          <Textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder={defaultMessage}
-            rows={5}
-            disabled={running}
-            className="text-sm"
-          />
-          <p className="text-xs text-muted-foreground">
-            {message.trim()
-              ? "Sent exactly as written, with no personalization."
-              : "Empty: the default above is used and personalized per commenter."}
-          </p>
+        {/* Message, one box per channel this run will use. */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          {(mode === "private" || mode === "both") && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium">DM message</p>
+              <Textarea
+                value={dmMessage}
+                onChange={(e) => setDmMessage(e.target.value)}
+                placeholder={defaultDmMessage}
+                rows={6}
+                disabled={running}
+                className="text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                {dmMessage.trim() ? "Sent exactly as written." : "Empty: uses the default, personalized."}
+              </p>
+            </div>
+          )}
+
+          {(mode === "public" || mode === "both") && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Public reply</p>
+              <Textarea
+                value={publicMessage}
+                onChange={(e) => setPublicMessage(e.target.value)}
+                placeholder={defaultPublicMessage}
+                rows={6}
+                disabled={running}
+                className="text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                {publicMessage.trim()
+                  ? "Sent exactly as written."
+                  : "Empty: uses the default, personalized and @mentioning them."}
+              </p>
+            </div>
+          )}
         </div>
 
         <ul className="max-h-60 divide-y overflow-y-auto rounded-md border text-sm">
@@ -233,10 +257,11 @@ export function MissedCommentsCard({
 
         {result && (
           <p className="text-sm">
-            {result.dryRun ? "Preview: would contact" : "Sent"} {result.sent}
+            {result.dryRun ? "Preview: would contact" : "Reached"} {result.sent}
+            {!result.dryRun && result.dmsDelivered > 0 && ` · ${result.dmsDelivered} DM`}
+            {!result.dryRun && result.publicReplies > 0 && ` · ${result.publicReplies} public`}
             {!result.dryRun && `, failed ${result.failed}`}
             {result.privacyBlocked > 0 && `, ${result.privacyBlocked} refused the DM`}
-            {result.publicFallbacks > 0 && ` (${result.publicFallbacks} got a public reply instead)`}
             {result.unreachable > 0 && `, ${result.unreachable} deleted and retired`}
             {result.skipped > 0 && `, ${result.skipped} still queued`}
             {runs > 1 && ` · ${runs} runs`}

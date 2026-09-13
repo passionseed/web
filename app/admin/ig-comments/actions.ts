@@ -113,10 +113,9 @@ const BULK_DM_WINDOW_DAYS = 7;
 /**
  * Which channels one bulk run uses.
  *
- * "both" is the useful default for a backfill: try the DM first, and fall back
- * to a public @mention for whoever refuses message requests, which is roughly
- * half of real commenters. Running them as separate passes would spend each
- * comment's single private reply before knowing whether it landed.
+ * "both" sends a DM *and* a public reply to everyone, regardless of whether
+ * the DM landed: the public @mention is a visible answer under the comment,
+ * which is worth posting even for someone who also received the DM.
  */
 export type BulkReplyMode = "public" | "private" | "both";
 
@@ -127,8 +126,10 @@ export interface BulkRunResult extends BulkReplyResult {
    * from `failed` rather than reported as a fault.
    */
   privacyBlocked: number;
-  /** Public replies sent as a fallback after a DM was refused. */
-  publicFallbacks: number;
+  /** DMs that were actually delivered. */
+  dmsDelivered: number;
+  /** Public replies posted under the comment. */
+  publicReplies: number;
   /** True when the run only previewed and sent nothing. */
   dryRun: boolean;
 }
@@ -138,10 +139,16 @@ export interface BulkRunOptions {
   /** Restricts the run to one campaign's keyword; omit for every campaign. */
   campaign?: CampaignKey;
   /**
-   * Overrides the default copy. Personalization is skipped for a custom
-   * message so what is typed is what is sent.
+   * Overrides the DM copy. Personalization is skipped for a custom message so
+   * what is typed is what is sent.
    */
-  message?: string;
+  dmMessage?: string;
+  /**
+   * Overrides the public reply copy. Kept separate from `dmMessage` because
+   * the two do different jobs: the public reply is visible under the comment
+   * and tags the commenter, while the DM speaks to them directly.
+   */
+  publicMessage?: string;
   /** Lists who would be contacted without sending anything. */
   dryRun?: boolean;
 }
@@ -152,15 +159,16 @@ export interface BulkRunOptions {
  * Each comment affords exactly one private reply, ever, so `dryRun` exists to
  * inspect the recipient list before spending them.
  *
- * One failure never aborts the batch: a privacy refusal falls back to a public
- * reply when the mode allows it, an unreachable comment is retired so it stops
- * occupying a slot in future runs, and anything else is left unmarked to be
- * retried on the next pass.
+ * One failure never aborts the batch: in "both" mode the public reply still
+ * goes out when the DM is refused, an unreachable comment is retired so it
+ * stops occupying a slot in future runs, and anything else is left unmarked to
+ * be retried on the next pass.
  */
 export async function runBulkReply(options: BulkRunOptions): Promise<BulkRunResult> {
   await requireAdmin();
   const { mode, campaign, dryRun = false } = options;
-  const customMessage = options.message?.trim();
+  const customDm = options.dmMessage?.trim();
+  const customPublic = options.publicMessage?.trim();
 
   // A DM is only possible inside 7 days; a public-only run can sweep 30.
   const windowDays = mode === "public" ? BULK_REPLY_WINDOW_DAYS : BULK_DM_WINDOW_DAYS;
@@ -176,7 +184,8 @@ export async function runBulkReply(options: BulkRunOptions): Promise<BulkRunResu
     sentTo: [],
     unreachable: 0,
     privacyBlocked: 0,
-    publicFallbacks: 0,
+    dmsDelivered: 0,
+    publicReplies: 0,
     dryRun,
   };
 
@@ -191,29 +200,31 @@ export async function runBulkReply(options: BulkRunOptions): Promise<BulkRunResu
 
     const lead = { username: comment.username, gradeLevel: comment.grade_level };
     let delivered = false;
-    let privacyRefused = false;
+    /** Set when the comment is gone from Instagram, so neither channel can work. */
+    let commentGone = false;
 
     if (mode === "private" || mode === "both") {
       try {
-        const dm = customMessage ?? (await getPersonalizedDmMessage(lead));
+        const dm = customDm ?? (await getPersonalizedDmMessage(lead));
         await privateReplyToComment(comment.ig_comment_id, dm);
+        result.dmsDelivered += 1;
         delivered = true;
       } catch (error) {
         const message = error instanceof Error ? error.message : "unknown error";
         console.error(`runBulkReply DM failed for ${who}:`, error);
 
         if (isDeliveryBlockedByPrivacy({ send_status: "failed", body: "", metadata: { send_error: message } })) {
+          // Expected for about half of commenters. In "both" mode the public
+          // reply below still runs, so this is not a dead end.
           result.privacyBlocked += 1;
-          privacyRefused = true;
         } else if (isUnrecoverableCommentError(message)) {
+          commentGone = true;
           result.unreachable += 1;
           result.failed += 1;
           result.errors.push(`${who}: ${message}`);
           await markCommentReplied(comment.id).catch((markError) => {
             console.error(`Could not retire unreachable comment ${who}:`, markError);
           });
-          await new Promise((resolve) => setTimeout(resolve, BULK_REPLY_DELAY_MS));
-          continue;
         } else {
           result.failed += 1;
           result.errors.push(`${who}: ${message}`);
@@ -221,16 +232,14 @@ export async function runBulkReply(options: BulkRunOptions): Promise<BulkRunResu
       }
     }
 
-    // Public reply: either the chosen channel, or the fallback for a DM the
-    // recipient's privacy settings refused.
-    const needsPublic =
-      mode === "public" || (mode === "both" && privacyRefused);
-
-    if (needsPublic) {
+    // In "both" mode the public reply always goes out, not only when the DM
+    // was refused: it is a visible answer under the comment, worth posting
+    // even for someone who also got the DM.
+    if ((mode === "public" || mode === "both") && !commentGone) {
       try {
-        const reply = customMessage ?? (await getPersonalizedPublicCommentReply(lead));
+        const reply = customPublic ?? (await getPersonalizedPublicCommentReply(lead));
         await replyToComment(comment.ig_comment_id, reply);
-        if (mode === "both") result.publicFallbacks += 1;
+        result.publicReplies += 1;
         delivered = true;
       } catch (error) {
         const message = error instanceof Error ? error.message : "unknown error";
