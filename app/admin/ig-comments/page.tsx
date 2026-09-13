@@ -10,7 +10,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getCommentsForAdmin, getCommentsMissedByDm } from "@/lib/supabase/ig-comments";
-import { getDefaultPublicCommentReply } from "@/lib/dm-leads/delivery-status";
+import {
+  getDefaultCommentDmMessage,
+  getDefaultPublicCommentReply,
+} from "@/lib/dm-leads/delivery-status";
+import { getCampaign } from "@/lib/meta/comment-intent";
 import { IgCommentReplyRow } from "@/components/admin/IgCommentReplyRow";
 import { LeadTagBadges } from "@/components/admin/LeadTagBadges";
 import { MissedCommentsCard } from "@/components/admin/MissedCommentsCard";
@@ -90,8 +94,10 @@ export default async function IgCommentsPage({
           username: c.username,
           text: c.text,
           commented_at: c.commented_at,
+          campaign: getCampaign(c.text),
         }))}
-        messagePreview={getDefaultPublicCommentReply("username")}
+        defaultPublicMessage={getDefaultPublicCommentReply("username")}
+        defaultDmMessage={getDefaultCommentDmMessage()}
       />
 
       <Card>

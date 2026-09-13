@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin/requireAdmin";
 import { replyToComment, privateReplyToComment } from "@/lib/meta/graph";
 import { getCommentsMissedByDm, markCommentReplied } from "@/lib/supabase/ig-comments";
+import { getCampaign, type CampaignKey } from "@/lib/meta/comment-intent";
 import {
   getPersonalizedDmMessage,
   getPersonalizedPublicCommentReply,
@@ -102,105 +103,80 @@ function isUnrecoverableCommentError(message: string): boolean {
   return message.includes('"code":100') && message.includes('"error_subcode":33');
 }
 
-/**
- * Sends the default "please DM us first" public reply to every comment the DM
- * automation never reached. One failure never aborts the batch — the comment
- * just stays unreplied and shows up again next run, unless it is unreachable,
- * in which case it is retired so it stops occupying a slot.
- */
-export async function replyToAllMissedComments(): Promise<BulkReplyResult> {
-  await requireAdmin();
-
-  const missed = await getCommentsMissedByDm(BULK_REPLY_WINDOW_DAYS);
-  const batch = missed.slice(0, BULK_REPLY_BATCH_CAP);
-  const result: BulkReplyResult = {
-    sent: 0,
-    failed: 0,
-    skipped: missed.length - batch.length,
-    errors: [],
-    sentTo: [],
-    unreachable: 0,
-  };
-
-  for (const comment of batch) {
-    const who = comment.username ?? comment.ig_comment_id;
-    try {
-      const reply = await getPersonalizedPublicCommentReply({
-        username: comment.username,
-        gradeLevel: comment.grade_level,
-      });
-      await replyToComment(comment.ig_comment_id, reply);
-      await markCommentReplied(comment.id);
-      result.sent += 1;
-      result.sentTo.push(who);
-    } catch (error) {
-      console.error(`replyToAllMissedComments failed for ${who}:`, error);
-      result.failed += 1;
-      const message = error instanceof Error ? error.message : "unknown error";
-      result.errors.push(`${who}: ${message}`);
-      // A comment that no longer exists can never be replied to, so retiring it
-      // keeps it from taking a slot in every future batch and re-reporting the
-      // same error. Other failures stay unmarked so they are retried.
-      if (isUnrecoverableCommentError(message)) {
-        result.unreachable += 1;
-        await markCommentReplied(comment.id).catch((markError) => {
-          console.error(`Could not retire unreachable comment ${who}:`, markError);
-        });
-      }
-    }
-    await new Promise((resolve) => setTimeout(resolve, BULK_REPLY_DELAY_MS));
-  }
-
-  revalidatePath("/admin/ig-comments");
-  return result;
-}
 
 /**
- * The private-reply endpoint is only valid within 7 days of the comment, so
- * the DM sweep cannot use the public sweep's 30-day window.
+ * The private-reply endpoint is only valid within 7 days of the comment, so a
+ * run that includes a DM cannot use the public sweep's 30-day window.
  */
 const BULK_DM_WINDOW_DAYS = 7;
 
-export interface BulkDmResult extends BulkReplyResult {
+/**
+ * Which channels one bulk run uses.
+ *
+ * "both" is the useful default for a backfill: try the DM first, and fall back
+ * to a public @mention for whoever refuses message requests, which is roughly
+ * half of real commenters. Running them as separate passes would spend each
+ * comment's single private reply before knowing whether it landed.
+ */
+export type BulkReplyMode = "public" | "private" | "both";
+
+export interface BulkRunResult extends BulkReplyResult {
   /**
-   * Sends Instagram refused because the account does not accept message
-   * requests. Counted apart from `failed` because it is the expected outcome
-   * for roughly half of commenters, not a fault to investigate — those people
-   * need the public @mention reply instead.
+   * DMs Instagram refused because the account does not accept message
+   * requests. Expected for about half of commenters, so it is counted apart
+   * from `failed` rather than reported as a fault.
    */
   privacyBlocked: number;
-  /** True when nothing was sent because this was a preview run. */
+  /** Public replies sent as a fallback after a DM was refused. */
+  publicFallbacks: number;
+  /** True when the run only previewed and sent nothing. */
   dryRun: boolean;
 }
 
-/**
- * DMs every comment still inside the private-reply window.
- *
- * This is the only route to someone who has never messaged us, and each
- * comment affords exactly one attempt, so a dry run is offered first: pass
- * `dryRun` to see who would be messaged without consuming anyone's single
- * chance.
- *
- * One failure never aborts the batch. A privacy refusal is recorded and the
- * comment is left unreplied so the public-reply sweep can pick it up; an
- * unreachable comment is retired the same way the public sweep retires it.
- */
-export async function dmAllMissedComments(
-  options: { dryRun?: boolean } = {}
-): Promise<BulkDmResult> {
-  await requireAdmin();
-  const dryRun = options.dryRun ?? false;
+export interface BulkRunOptions {
+  mode: BulkReplyMode;
+  /** Restricts the run to one campaign's keyword; omit for every campaign. */
+  campaign?: CampaignKey;
+  /**
+   * Overrides the default copy. Personalization is skipped for a custom
+   * message so what is typed is what is sent.
+   */
+  message?: string;
+  /** Lists who would be contacted without sending anything. */
+  dryRun?: boolean;
+}
 
-  const missed = await getCommentsMissedByDm(BULK_DM_WINDOW_DAYS);
-  const batch = missed.slice(0, BULK_REPLY_BATCH_CAP);
-  const result: BulkDmResult = {
+/**
+ * One bulk pass over the comments the DM automation never reached.
+ *
+ * Each comment affords exactly one private reply, ever, so `dryRun` exists to
+ * inspect the recipient list before spending them.
+ *
+ * One failure never aborts the batch: a privacy refusal falls back to a public
+ * reply when the mode allows it, an unreachable comment is retired so it stops
+ * occupying a slot in future runs, and anything else is left unmarked to be
+ * retried on the next pass.
+ */
+export async function runBulkReply(options: BulkRunOptions): Promise<BulkRunResult> {
+  await requireAdmin();
+  const { mode, campaign, dryRun = false } = options;
+  const customMessage = options.message?.trim();
+
+  // A DM is only possible inside 7 days; a public-only run can sweep 30.
+  const windowDays = mode === "public" ? BULK_REPLY_WINDOW_DAYS : BULK_DM_WINDOW_DAYS;
+  const missed = await getCommentsMissedByDm(windowDays);
+  const scoped = campaign ? missed.filter((c) => getCampaign(c.text) === campaign) : missed;
+  const batch = scoped.slice(0, BULK_REPLY_BATCH_CAP);
+
+  const result: BulkRunResult = {
     sent: 0,
     failed: 0,
-    skipped: missed.length - batch.length,
+    skipped: scoped.length - batch.length,
     errors: [],
     sentTo: [],
     unreachable: 0,
     privacyBlocked: 0,
+    publicFallbacks: 0,
     dryRun,
   };
 
@@ -213,35 +189,69 @@ export async function dmAllMissedComments(
       continue;
     }
 
-    try {
-      const message = await getPersonalizedDmMessage({
-        username: comment.username,
-        gradeLevel: comment.grade_level,
-      });
-      await privateReplyToComment(comment.ig_comment_id, message);
+    const lead = { username: comment.username, gradeLevel: comment.grade_level };
+    let delivered = false;
+    let privacyRefused = false;
+
+    if (mode === "private" || mode === "both") {
+      try {
+        const dm = customMessage ?? (await getPersonalizedDmMessage(lead));
+        await privateReplyToComment(comment.ig_comment_id, dm);
+        delivered = true;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "unknown error";
+        console.error(`runBulkReply DM failed for ${who}:`, error);
+
+        if (isDeliveryBlockedByPrivacy({ send_status: "failed", body: "", metadata: { send_error: message } })) {
+          result.privacyBlocked += 1;
+          privacyRefused = true;
+        } else if (isUnrecoverableCommentError(message)) {
+          result.unreachable += 1;
+          result.failed += 1;
+          result.errors.push(`${who}: ${message}`);
+          await markCommentReplied(comment.id).catch((markError) => {
+            console.error(`Could not retire unreachable comment ${who}:`, markError);
+          });
+          await new Promise((resolve) => setTimeout(resolve, BULK_REPLY_DELAY_MS));
+          continue;
+        } else {
+          result.failed += 1;
+          result.errors.push(`${who}: ${message}`);
+        }
+      }
+    }
+
+    // Public reply: either the chosen channel, or the fallback for a DM the
+    // recipient's privacy settings refused.
+    const needsPublic =
+      mode === "public" || (mode === "both" && privacyRefused);
+
+    if (needsPublic) {
+      try {
+        const reply = customMessage ?? (await getPersonalizedPublicCommentReply(lead));
+        await replyToComment(comment.ig_comment_id, reply);
+        if (mode === "both") result.publicFallbacks += 1;
+        delivered = true;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "unknown error";
+        console.error(`runBulkReply public reply failed for ${who}:`, error);
+        result.failed += 1;
+        result.errors.push(`${who}: ${message}`);
+        if (isUnrecoverableCommentError(message)) {
+          result.unreachable += 1;
+          await markCommentReplied(comment.id).catch((markError) => {
+            console.error(`Could not retire unreachable comment ${who}:`, markError);
+          });
+        }
+      }
+    }
+
+    if (delivered) {
       await markCommentReplied(comment.id);
       result.sent += 1;
       result.sentTo.push(who);
-    } catch (error) {
-      console.error(`dmAllMissedComments failed for ${who}:`, error);
-      const message = error instanceof Error ? error.message : "unknown error";
-
-      // Blocked by the recipient's privacy settings: expected, and the comment
-      // stays unreplied so the public sweep can reach them instead.
-      if (isDeliveryBlockedByPrivacy({ send_status: "failed", body: "", metadata: { send_error: message } })) {
-        result.privacyBlocked += 1;
-      } else if (isUnrecoverableCommentError(message)) {
-        result.unreachable += 1;
-        result.failed += 1;
-        result.errors.push(`${who}: ${message}`);
-        await markCommentReplied(comment.id).catch((markError) => {
-          console.error(`Could not retire unreachable comment ${who}:`, markError);
-        });
-      } else {
-        result.failed += 1;
-        result.errors.push(`${who}: ${message}`);
-      }
     }
+
     await new Promise((resolve) => setTimeout(resolve, BULK_REPLY_DELAY_MS));
   }
 

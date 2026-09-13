@@ -1,4 +1,9 @@
-import { isCampaignRequest, isPortRequest, isUniRequest } from "@/lib/meta/comment-intent";
+import {
+  getCampaign,
+  isCampaignRequest,
+  isPortRequest,
+  isUniRequest,
+} from "@/lib/meta/comment-intent";
 
 describe("isPortRequest", () => {
   it.each(["port", "Port", "PORT", "portfolio", "ขอ port ครับ", "พอร์ต", "พอร์ท", "port ค่ะ", "อยากได้พอร์ตค่ะ"])(
@@ -31,6 +36,24 @@ describe("isUniRequest", () => {
   ])("treats %p as not an opt-in", (text) =>
     expect(isUniRequest(text as string | null | undefined)).toBe(false)
   );
+});
+
+describe("getCampaign", () => {
+  it("attributes each keyword to its campaign", () => {
+    expect(getCampaign("uni")).toBe("uni");
+    expect(getCampaign("port")).toBe("port");
+    expect(getCampaign("พอร์ต")).toBe("port");
+  });
+
+  it("attributes a comment naming both to the current campaign", () => {
+    expect(getCampaign("uni port")).toBe("uni");
+  });
+
+  it("returns null when nothing was opted into", () => {
+    expect(getCampaign("university")).toBeNull();
+    expect(getCampaign("❤️")).toBeNull();
+    expect(getCampaign(null)).toBeNull();
+  });
 });
 
 describe("isCampaignRequest", () => {

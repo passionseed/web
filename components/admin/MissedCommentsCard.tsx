@@ -1,18 +1,39 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { replyToAllMissedComments, type BulkReplyResult } from "@/app/admin/ig-comments/actions";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  runBulkReply,
+  type BulkReplyMode,
+  type BulkRunResult,
+} from "@/app/admin/ig-comments/actions";
 import { BULK_REPLY_BATCH_CAP } from "@/app/admin/ig-comments/constants";
+import type { CampaignKey } from "@/lib/meta/comment-intent";
 
 export interface MissedCommentItem {
   id: string;
   username: string | null;
   text: string;
   commented_at: string;
+  campaign: CampaignKey | null;
 }
+
+type TabKey = "all" | CampaignKey;
+
+const MODE_LABEL: Record<BulkReplyMode, string> = {
+  public: "Public reply only",
+  private: "DM only (private reply)",
+  both: "DM, then public reply if blocked",
+};
+
+const MODE_HINT: Record<BulkReplyMode, string> = {
+  public: "Visible under the comment. No 7-day limit, so it reaches older comments too.",
+  private: "A real DM. Only possible within 7 days, and only once per comment, ever.",
+  both: "Tries the DM first and falls back to a public @mention when Instagram refuses it.",
+};
 
 function daysAgo(iso: string): number {
   return Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24));
@@ -20,15 +41,21 @@ function daysAgo(iso: string): number {
 
 export function MissedCommentsCard({
   comments,
-  messagePreview,
+  defaultPublicMessage,
+  defaultDmMessage,
 }: {
   comments: MissedCommentItem[];
-  /** The exact default message, rendered with a sample @mention. */
-  messagePreview: string;
+  /** Default public reply copy, rendered with a sample @mention. */
+  defaultPublicMessage: string;
+  /** Default DM copy. */
+  defaultDmMessage: string;
 }) {
   const router = useRouter();
+  const [tab, setTab] = useState<TabKey>("all");
+  const [mode, setMode] = useState<BulkReplyMode>("both");
+  const [message, setMessage] = useState("");
   const [confirming, setConfirming] = useState(false);
-  const [result, setResult] = useState<BulkReplyResult | null>(null);
+  const [result, setResult] = useState<BulkRunResult | null>(null);
   const [running, setRunning] = useState(false);
   const [runs, setRuns] = useState(0);
   /**
@@ -38,9 +65,26 @@ export function MissedCommentsCard({
    */
   const stopRequested = useRef(false);
 
+  const counts = useMemo(() => {
+    const uni = comments.filter((c) => c.campaign === "uni").length;
+    return { all: comments.length, uni, port: comments.length - uni };
+  }, [comments]);
+
+  /**
+   * A DM is only possible inside 7 days, so a private or "both" run works from
+   * a smaller pool than a public-only sweep. Showing the public count while a
+   * DM mode is selected would promise sends that cannot happen.
+   */
+  const visible = useMemo(() => {
+    const byTab = tab === "all" ? comments : comments.filter((c) => c.campaign === tab);
+    return mode === "public" ? byTab : byTab.filter((c) => daysAgo(c.commented_at) <= 7);
+  }, [comments, tab, mode]);
+
   if (comments.length === 0) return null;
 
-  const batchSize = Math.min(comments.length, BULK_REPLY_BATCH_CAP);
+  const batchSize = Math.min(visible.length, BULK_REPLY_BATCH_CAP);
+  const campaign = tab === "all" ? undefined : tab;
+  const defaultMessage = mode === "private" ? defaultDmMessage : defaultPublicMessage;
 
   /**
    * One pass is capped so it finishes inside the platform's 60s function limit,
@@ -48,31 +92,35 @@ export function MissedCommentsCard({
    * keeps every request short while still draining the queue in one click.
    *
    * The loop trusts `skipped`, the count the action could not reach this pass,
-   * rather than a local guess at what is left. Successes are marked as replied
-   * before the next pass queries again, so the queue shrinks; failures are not,
-   * so a pass that sends nothing means only unsendable work is left and
-   * repeating it would spin. It stops on any of: nothing left, no progress,
-   * Stop pressed, or MAX_PASSES as a backstop against an unforeseen loop.
+   * rather than a local guess at what is left.
    */
   const MAX_PASSES = 60;
 
-  const send = async () => {
+  const run = async (dryRun: boolean) => {
     setRunning(true);
     setConfirming(false);
     stopRequested.current = false;
-    const totals: BulkReplyResult = {
+    const totals: BulkRunResult = {
       sent: 0,
       failed: 0,
       skipped: 0,
       errors: [],
       sentTo: [],
       unreachable: 0,
+      privacyBlocked: 0,
+      publicFallbacks: 0,
+      dryRun,
     };
     let passes = 0;
 
     try {
       for (;;) {
-        const pass = await replyToAllMissedComments();
+        const pass = await runBulkReply({
+          mode,
+          campaign,
+          message: message.trim() || undefined,
+          dryRun,
+        });
         passes += 1;
         totals.sent += pass.sent;
         totals.failed += pass.failed;
@@ -80,52 +128,116 @@ export function MissedCommentsCard({
         totals.errors.push(...pass.errors);
         totals.sentTo.push(...pass.sentTo);
         totals.unreachable += pass.unreachable;
+        totals.privacyBlocked += pass.privacyBlocked;
+        totals.publicFallbacks += pass.publicFallbacks;
         setResult({ ...totals, errors: [...totals.errors], sentTo: [...totals.sentTo] });
         setRuns(passes);
 
-        const madeProgress = pass.sent > 0;
-        if (pass.skipped === 0 || !madeProgress || stopRequested.current) break;
+        // A dry run never marks anything replied, so the queue cannot shrink
+        // and a second pass would return the same people forever.
+        if (dryRun) break;
+        if (pass.skipped === 0 || pass.sent === 0 || stopRequested.current) break;
         if (passes >= MAX_PASSES) break;
       }
     } finally {
       setRunning(false);
-      router.refresh();
+      if (!dryRun) router.refresh();
     }
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Missed by DM — {comments.length} unreplied</CardTitle>
+        <CardTitle>Missed by DM — {counts.all} unreplied</CardTitle>
         <CardDescription>
-          These commenters have no DM thread (Instagram blocked the automated DM), so we can
-          only reach them with a public reply. This exact message goes to each, {batchSize} at
-          a time until the queue is empty:
+          Commenters who asked for something and never got a reply. Pick a campaign, choose how
+          to reach them, and edit the message if you want. Sends {batchSize} at a time until the
+          queue is empty.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <p className="rounded-md border bg-muted/40 p-3 text-sm whitespace-pre-wrap">
-          {messagePreview}
-        </p>
+        {/* Campaign tabs */}
+        <div className="flex gap-2">
+          {(["all", "uni", "port"] as const).map((key) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              disabled={running}
+              className={`rounded-full border px-3 py-1 text-sm transition-colors disabled:opacity-50 ${
+                tab === key
+                  ? "border-foreground bg-foreground text-background"
+                  : "border-border text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {key === "all" ? "All" : key} ({counts[key]})
+            </button>
+          ))}
+        </div>
 
-        <ul className="divide-y rounded-md border text-sm">
-          {comments.map((comment) => (
+        {/* Channel */}
+        <div className="space-y-2">
+          <p className="text-sm font-medium">How to reply</p>
+          <div className="flex flex-wrap gap-2">
+            {(["both", "private", "public"] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => setMode(m)}
+                disabled={running}
+                className={`rounded-md border px-3 py-1.5 text-sm transition-colors disabled:opacity-50 ${
+                  mode === m
+                    ? "border-foreground bg-muted"
+                    : "border-border text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {MODE_LABEL[m]}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">{MODE_HINT[mode]}</p>
+        </div>
+
+        {/* Message */}
+        <div className="space-y-2">
+          <p className="text-sm font-medium">Message</p>
+          <Textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder={defaultMessage}
+            rows={5}
+            disabled={running}
+            className="text-sm"
+          />
+          <p className="text-xs text-muted-foreground">
+            {message.trim()
+              ? "Sent exactly as written, with no personalization."
+              : "Empty: the default above is used and personalized per commenter."}
+          </p>
+        </div>
+
+        <ul className="max-h-60 divide-y overflow-y-auto rounded-md border text-sm">
+          {visible.map((comment) => (
             <li key={comment.id} className="flex items-baseline justify-between gap-3 px-3 py-2">
-              <span className="font-medium shrink-0">
-                {comment.username ?? "—"}
-              </span>
+              <span className="shrink-0 font-medium">{comment.username ?? "—"}</span>
               <span className="flex-1 truncate text-muted-foreground">{comment.text}</span>
               <span className="shrink-0 text-xs text-muted-foreground">
                 {daysAgo(comment.commented_at)}d ago
               </span>
             </li>
           ))}
+          {visible.length === 0 && (
+            <li className="px-3 py-4 text-center text-muted-foreground">
+              Nothing in this campaign can be reached with that option.
+            </li>
+          )}
         </ul>
 
         {result && (
           <p className="text-sm">
-            Sent {result.sent}, failed {result.failed}
-            {result.unreachable > 0 && ` (${result.unreachable} comment${result.unreachable === 1 ? "" : "s"} deleted, retired)`}
+            {result.dryRun ? "Preview: would contact" : "Sent"} {result.sent}
+            {!result.dryRun && `, failed ${result.failed}`}
+            {result.privacyBlocked > 0 && `, ${result.privacyBlocked} refused the DM`}
+            {result.publicFallbacks > 0 && ` (${result.publicFallbacks} got a public reply instead)`}
+            {result.unreachable > 0 && `, ${result.unreachable} deleted and retired`}
             {result.skipped > 0 && `, ${result.skipped} still queued`}
             {runs > 1 && ` · ${runs} runs`}
             {running && " · running…"}.
@@ -141,7 +253,7 @@ export function MissedCommentsCard({
         {result && result.sentTo.length > 0 && (
           <details className="rounded-md border bg-muted/40 p-3 text-sm">
             <summary className="cursor-pointer font-medium">
-              Replied to {result.sentTo.length} {result.sentTo.length === 1 ? "person" : "people"}
+              {result.dryRun ? "Would contact" : "Replied to"} {result.sentTo.length}
               {running ? " so far" : ""}
             </summary>
             {/* Selectable so the list can be copied out before the card refreshes. */}
@@ -153,26 +265,29 @@ export function MissedCommentsCard({
 
         {running ? (
           <div className="flex items-center gap-2">
-            <Button disabled>
-              Replying… {result ? `${result.sent} sent` : ""}
-            </Button>
+            <Button disabled>Working… {result ? `${result.sent} done` : ""}</Button>
             <Button variant="outline" onClick={() => (stopRequested.current = true)}>
               Stop after this batch
             </Button>
           </div>
         ) : confirming ? (
           <div className="flex items-center gap-2">
-            <Button onClick={send}>
-              Confirm — reply publicly to all {comments.length}
+            <Button onClick={() => run(false)}>
+              Confirm — {MODE_LABEL[mode].toLowerCase()} to {visible.length}
             </Button>
             <Button variant="outline" onClick={() => setConfirming(false)}>
               Cancel
             </Button>
           </div>
         ) : (
-          <Button variant="outline" onClick={() => setConfirming(true)}>
-            Reply publicly to all {comments.length}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => run(true)} disabled={visible.length === 0}>
+              Preview recipients
+            </Button>
+            <Button onClick={() => setConfirming(true)} disabled={visible.length === 0}>
+              Send to {visible.length}
+            </Button>
+          </div>
         )}
       </CardContent>
     </Card>

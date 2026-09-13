@@ -50,3 +50,20 @@ export function isUniRequest(text: string | null | undefined): boolean {
 export function isCampaignRequest(text: string | null | undefined): boolean {
   return isPortRequest(text) || isUniRequest(text);
 }
+
+/** The live campaigns, plus "all" for the unfiltered view. */
+export type CampaignKey = "uni" | "port";
+export const CAMPAIGN_KEYS: CampaignKey[] = ["uni", "port"];
+
+/**
+ * Which campaign a comment opted into.
+ *
+ * A comment containing both keywords is attributed to "uni", the current
+ * campaign, so the newer push is never under-counted. Returns null for
+ * comments that opted into nothing.
+ */
+export function getCampaign(text: string | null | undefined): CampaignKey | null {
+  if (isUniRequest(text)) return "uni";
+  if (isPortRequest(text)) return "port";
+  return null;
+}
