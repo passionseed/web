@@ -94,13 +94,28 @@ export interface BulkReplyResult {
 }
 
 /**
- * Instagram reports a deleted, hidden, or otherwise unreachable comment as
- * error code 100 with subcode 33 ("does not exist, cannot be loaded due to
- * missing permissions, or does not support this operation"). Nothing about
- * that changes on a retry, unlike a rate limit or a network blip.
+ * Instagram reports a deleted comment as code 100 / subcode 33, but that same
+ * pair also covers "cannot be loaded due to missing permissions" and a wrong
+ * endpoint or token type. A run that hit the wrong edge therefore looks
+ * identical to 15 deleted comments.
+ *
+ * Retiring on this alone once marked 15 live comments as replied that had
+ * never been contacted, so the signal is treated as ambiguous: the caller
+ * retires only when the batch as a whole shows individual failures rather than
+ * a systemic one. See `isSystemicFailure`.
  */
-function isUnrecoverableCommentError(message: string): boolean {
+function isAmbiguousCommentError(message: string): boolean {
   return message.includes('"code":100') && message.includes('"error_subcode":33');
+}
+
+/**
+ * A batch where every single send failed the same ambiguous way is a fault on
+ * our side — a bad token, a wrong endpoint, a revoked permission — not a batch
+ * that happens to contain only deleted comments. Retiring those would silently
+ * discard real leads, so the run reports the problem instead.
+ */
+function isSystemicFailure(attempted: number, ambiguous: number): boolean {
+  return attempted >= 3 && ambiguous === attempted;
 }
 
 
@@ -130,6 +145,12 @@ export interface BulkRunResult extends BulkReplyResult {
   dmsDelivered: number;
   /** Public replies posted under the comment. */
   publicReplies: number;
+  /**
+   * True when every send in the batch failed the same ambiguous way, which
+   * points at our token or endpoint rather than the comments. Nothing is
+   * retired in that case.
+   */
+  systemicFailure?: boolean;
   /** True when the run only previewed and sent nothing. */
   dryRun: boolean;
 }
@@ -194,6 +215,14 @@ export async function runBulkReply(options: BulkRunOptions): Promise<BulkRunResu
     dryRun,
   };
 
+  /**
+   * Comments that failed the ambiguous way. Retirement is deferred to the end
+   * of the run: only once the batch proves the failures were individual, not
+   * systemic, is it safe to mark them permanently handled.
+   */
+  const ambiguous: { id: string; who: string }[] = [];
+  let attempted = 0;
+
   for (const comment of batch) {
     const who = comment.username ?? comment.ig_comment_id;
 
@@ -203,10 +232,10 @@ export async function runBulkReply(options: BulkRunOptions): Promise<BulkRunResu
       continue;
     }
 
+    attempted += 1;
     const lead = { username: comment.username, gradeLevel: comment.grade_level };
     let delivered = false;
-    /** Set when the comment is gone from Instagram, so neither channel can work. */
-    let commentGone = false;
+    let commentAmbiguous = false;
 
     if (mode === "private" || mode === "both") {
       try {
@@ -222,14 +251,10 @@ export async function runBulkReply(options: BulkRunOptions): Promise<BulkRunResu
           // Expected for about half of commenters. In "both" mode the public
           // reply below still runs, so this is not a dead end.
           result.privacyBlocked += 1;
-        } else if (isUnrecoverableCommentError(message)) {
-          commentGone = true;
-          result.unreachable += 1;
+        } else if (isAmbiguousCommentError(message)) {
+          commentAmbiguous = true;
           result.failed += 1;
           result.errors.push(`${who}: ${message}`);
-          await markCommentReplied(comment.id).catch((markError) => {
-            console.error(`Could not retire unreachable comment ${who}:`, markError);
-          });
         } else {
           result.failed += 1;
           result.errors.push(`${who}: ${message}`);
@@ -239,8 +264,9 @@ export async function runBulkReply(options: BulkRunOptions): Promise<BulkRunResu
 
     // In "both" mode the public reply always goes out, not only when the DM
     // was refused: it is a visible answer under the comment, worth posting
-    // even for someone who also got the DM.
-    if ((mode === "public" || mode === "both") && !commentGone) {
+    // even for someone who also got the DM. Skipped when the DM said the
+    // comment cannot be loaded, since the same lookup backs both calls.
+    if ((mode === "public" || mode === "both") && !commentAmbiguous) {
       try {
         const reply = customPublic ?? (await getPersonalizedPublicCommentReply(lead));
         await replyToComment(comment.ig_comment_id, reply);
@@ -251,12 +277,7 @@ export async function runBulkReply(options: BulkRunOptions): Promise<BulkRunResu
         console.error(`runBulkReply public reply failed for ${who}:`, error);
         result.failed += 1;
         result.errors.push(`${who}: ${message}`);
-        if (isUnrecoverableCommentError(message)) {
-          result.unreachable += 1;
-          await markCommentReplied(comment.id).catch((markError) => {
-            console.error(`Could not retire unreachable comment ${who}:`, markError);
-          });
-        }
+        if (isAmbiguousCommentError(message)) commentAmbiguous = true;
       }
     }
 
@@ -264,9 +285,27 @@ export async function runBulkReply(options: BulkRunOptions): Promise<BulkRunResu
       await markCommentReplied(comment.id);
       result.sent += 1;
       result.sentTo.push(who);
+    } else if (commentAmbiguous) {
+      ambiguous.push({ id: comment.id, who });
     }
 
     await new Promise((resolve) => setTimeout(resolve, BULK_REPLY_DELAY_MS));
+  }
+
+  if (isSystemicFailure(attempted, ambiguous.length)) {
+    // Every send failed the same way, so the fault is ours. Nothing is retired
+    // and the queue is left intact for a retry once it is fixed.
+    result.systemicFailure = true;
+    result.errors.unshift(
+      `All ${attempted} sends failed the same way. This looks like a token, permission, or endpoint problem rather than deleted comments, so nothing was retired. Fix the cause and run again.`
+    );
+  } else {
+    for (const { id, who } of ambiguous) {
+      result.unreachable += 1;
+      await markCommentReplied(id).catch((markError) => {
+        console.error(`Could not retire unreachable comment ${who}:`, markError);
+      });
+    }
   }
 
   if (!dryRun) revalidatePath("/admin/ig-comments");

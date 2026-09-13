@@ -470,22 +470,31 @@ export async function getConversationMessages(conversationId: string): Promise<G
 }
 
 /**
- * Sends a DM triggered by a comment, via the private-reply endpoint. This is
- * the ONLY way to message someone who hasn't DM'd us first — the regular
- * Send API (sendMetaMessage) rejects that with "not opted in" style errors.
- * Only valid within 7 days of the comment, and only once per comment.
+ * Sends a DM triggered by a comment. This is the ONLY way to message someone
+ * who hasn't DM'd us first — the regular Send API (sendMetaMessage) rejects
+ * that with "not opted in" style errors. Only valid within 7 days of the
+ * comment, and only once per comment.
+ *
+ * Uses the Send API with `recipient.comment_id`, which is the form the
+ * Instagram-Login flow takes. The older `POST /{comment-id}/private_replies`
+ * edge belongs to the Facebook Page-token flow; called with an IGAA token it
+ * cannot resolve the comment and fails for every comment alike with code 100 /
+ * subcode 33 ("does not exist, cannot be loaded due to missing permissions").
  */
 export async function privateReplyToComment(commentId: string, message: string): Promise<void> {
   const accessToken = requireAccessToken();
 
-  const res = await fetch(
-    `${IG_GRAPH_HOST}/${GRAPH_API_VERSION}/${commentId}/private_replies`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, access_token: accessToken }),
-    }
-  );
+  const res = await fetch(`${IG_GRAPH_HOST}/${GRAPH_API_VERSION}/me/messages`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      recipient: { comment_id: commentId },
+      message: { text: message },
+    }),
+  });
 
   if (!res.ok) {
     const errBody = await res.text();

@@ -155,6 +155,13 @@ export function MissedCommentsCard({
         // A dry run never marks anything replied, so the queue cannot shrink
         // and a second pass would return the same people forever.
         if (dryRun) break;
+        // Every send failed identically: retrying would burn through the whole
+        // queue against the same broken call.
+        if (pass.systemicFailure) {
+          totals.systemicFailure = true;
+          setResult({ ...totals, errors: [...totals.errors], sentTo: [...totals.sentTo] });
+          break;
+        }
         if (pass.skipped === 0 || pass.sent === 0 || stopRequested.current) break;
         if (passes >= MAX_PASSES) break;
       }
@@ -289,6 +296,14 @@ export function MissedCommentsCard({
             </li>
           )}
         </ul>
+
+        {result?.systemicFailure && (
+          <p className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
+            <span className="font-medium">Every send failed the same way.</span> That points at the
+            access token, a permission, or the endpoint rather than the comments themselves.
+            Nothing was retired, so the queue is intact once the cause is fixed.
+          </p>
+        )}
 
         {result && (
           <p className="text-sm">
