@@ -43,6 +43,15 @@ export const TIPS_FILES: TipsFile[] = [
     description: "ทิปส์สำหรับคนที่ใกล้ยื่นพอร์ต ใกล้สอบ ใกล้ตัดสินใจครั้งสำคัญ",
     fileUrl: `${CDN_BASE}/LastStage_Tips.pdf`,
   },
+  {
+    // Served from all-tips.pdf, not all.pdf: a check for the latter before it
+    // was uploaded left a 404 cached at the CDN for a year, so the plain URL
+    // still 404s even though the file is there.
+    slug: "all",
+    title: "รวมทิปส์ทั้งหมด",
+    description: "ทิปส์ทุกช่วง รวมไว้ในไฟล์เดียว",
+    fileUrl: `${CDN_BASE}/all-tips.pdf`,
+  },
 ];
 
 export function getTipsFile(slug: string): TipsFile | undefined {
