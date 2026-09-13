@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/utils/supabase/admin";
-import { isPortRequest } from "@/lib/meta/comment-intent";
+import { isCampaignRequest } from "@/lib/meta/comment-intent";
 import { isExcludedFromAutoReply } from "@/lib/meta/reply-exclusions";
 import { isSelfAuthored } from "@/lib/meta/self-account";
 import type { DmLeadClassification, IgComment } from "@/types/dm-leads";
@@ -164,8 +164,9 @@ export async function getCommentsMissedByDm(
       !reachedIds.has(c.ig_user_id) &&
       // A reply must never be addressed to ourselves.
       !isSelfAuthored({ igUserId: c.ig_user_id, username: c.username }) &&
-      // Only people who commented the reel's keyword asked to hear from us.
-      isPortRequest(c.text) &&
+      // Only people who commented a live campaign's keyword asked to hear
+      // from us ("port" and "uni" run alongside each other).
+      isCampaignRequest(c.text) &&
       // Hand-maintained skip list: handled off the automation, or asked us to stop.
       !isExcludedFromAutoReply(c.username)
   );

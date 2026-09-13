@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin/requireAdmin";
 import { replyToComment, privateReplyToComment } from "@/lib/meta/graph";
 import { getCommentsMissedByDm, markCommentReplied } from "@/lib/supabase/ig-comments";
-import { getPersonalizedPublicCommentReply } from "@/lib/dm-leads/delivery-status";
+import {
+  getPersonalizedDmMessage,
+  getPersonalizedPublicCommentReply,
+  isDeliveryBlockedByPrivacy,
+} from "@/lib/dm-leads/delivery-status";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { BULK_REPLY_BATCH_CAP } from "./constants";
 
@@ -148,5 +152,99 @@ export async function replyToAllMissedComments(): Promise<BulkReplyResult> {
   }
 
   revalidatePath("/admin/ig-comments");
+  return result;
+}
+
+/**
+ * The private-reply endpoint is only valid within 7 days of the comment, so
+ * the DM sweep cannot use the public sweep's 30-day window.
+ */
+const BULK_DM_WINDOW_DAYS = 7;
+
+export interface BulkDmResult extends BulkReplyResult {
+  /**
+   * Sends Instagram refused because the account does not accept message
+   * requests. Counted apart from `failed` because it is the expected outcome
+   * for roughly half of commenters, not a fault to investigate — those people
+   * need the public @mention reply instead.
+   */
+  privacyBlocked: number;
+  /** True when nothing was sent because this was a preview run. */
+  dryRun: boolean;
+}
+
+/**
+ * DMs every comment still inside the private-reply window.
+ *
+ * This is the only route to someone who has never messaged us, and each
+ * comment affords exactly one attempt, so a dry run is offered first: pass
+ * `dryRun` to see who would be messaged without consuming anyone's single
+ * chance.
+ *
+ * One failure never aborts the batch. A privacy refusal is recorded and the
+ * comment is left unreplied so the public-reply sweep can pick it up; an
+ * unreachable comment is retired the same way the public sweep retires it.
+ */
+export async function dmAllMissedComments(
+  options: { dryRun?: boolean } = {}
+): Promise<BulkDmResult> {
+  await requireAdmin();
+  const dryRun = options.dryRun ?? false;
+
+  const missed = await getCommentsMissedByDm(BULK_DM_WINDOW_DAYS);
+  const batch = missed.slice(0, BULK_REPLY_BATCH_CAP);
+  const result: BulkDmResult = {
+    sent: 0,
+    failed: 0,
+    skipped: missed.length - batch.length,
+    errors: [],
+    sentTo: [],
+    unreachable: 0,
+    privacyBlocked: 0,
+    dryRun,
+  };
+
+  for (const comment of batch) {
+    const who = comment.username ?? comment.ig_comment_id;
+
+    if (dryRun) {
+      result.sent += 1;
+      result.sentTo.push(who);
+      continue;
+    }
+
+    try {
+      const message = await getPersonalizedDmMessage({
+        username: comment.username,
+        gradeLevel: comment.grade_level,
+      });
+      await privateReplyToComment(comment.ig_comment_id, message);
+      await markCommentReplied(comment.id);
+      result.sent += 1;
+      result.sentTo.push(who);
+    } catch (error) {
+      console.error(`dmAllMissedComments failed for ${who}:`, error);
+      const message = error instanceof Error ? error.message : "unknown error";
+
+      // Blocked by the recipient's privacy settings: expected, and the comment
+      // stays unreplied so the public sweep can reach them instead.
+      if (isDeliveryBlockedByPrivacy({ send_status: "failed", body: "", metadata: { send_error: message } })) {
+        result.privacyBlocked += 1;
+      } else if (isUnrecoverableCommentError(message)) {
+        result.unreachable += 1;
+        result.failed += 1;
+        result.errors.push(`${who}: ${message}`);
+        await markCommentReplied(comment.id).catch((markError) => {
+          console.error(`Could not retire unreachable comment ${who}:`, markError);
+        });
+      } else {
+        result.failed += 1;
+        result.errors.push(`${who}: ${message}`);
+      }
+    }
+    await new Promise((resolve) => setTimeout(resolve, BULK_REPLY_DELAY_MS));
+  }
+
+  if (!dryRun) revalidatePath("/admin/ig-comments");
   return result;
 }
