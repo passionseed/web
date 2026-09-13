@@ -56,12 +56,16 @@ export default async function IgCommentsPage({
   searchParams: Promise<{ stage?: string }>;
 }) {
   const { stage } = await searchParams;
-  const [comments, missedComments] = await Promise.all([
+  const [comments, missedComments, neverContacted] = await Promise.all([
     getCommentsForAdmin(stage && stage !== "all" ? stage : undefined),
     // Same 30-day window as the bulk-reply action, so the card lists exactly
     // what the button would send to.
     getCommentsMissedByDm(30),
+    // The subset no outbound message has ever gone to, so the card can offer
+    // "skip anyone already messaged" without a second round trip.
+    getCommentsMissedByDm(30, undefined, true),
   ]);
+  const neverContactedIds = new Set(neverContacted.map((c) => c.id));
 
   return (
     <div className="space-y-6">
@@ -95,6 +99,7 @@ export default async function IgCommentsPage({
           text: c.text,
           commented_at: c.commented_at,
           campaign: getCampaign(c.text),
+          neverContacted: neverContactedIds.has(c.id),
         }))}
         defaultPublicMessage={getDefaultPublicCommentReply("username")}
         defaultDmMessage={getDefaultCommentDmMessage()}

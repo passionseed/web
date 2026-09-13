@@ -120,7 +120,18 @@ const DEFAULT_MIN_SILENCE_HOURS = 24;
  */
 export async function getCommentsMissedByDm(
   maxAgeDays = 7,
-  minSilenceHours = DEFAULT_MIN_SILENCE_HOURS
+  minSilenceHours = DEFAULT_MIN_SILENCE_HOURS,
+  /**
+   * When true, also drops anyone we have already sent a message to, leaving
+   * only commenters no outbound attempt has ever reached.
+   *
+   * The default keeps the historical behaviour: silence is not proof a DM was
+   * delivered (Instagram reports success even when a message request is
+   * refused), so a previously-messaged lead is still worth another try. Set
+   * this when the goal is specifically to reach untouched people and not to
+   * message anyone twice.
+   */
+  onlyNeverContacted = false
 ): Promise<IgComment[]> {
   const supabase = createAdminClient();
 
@@ -157,11 +168,32 @@ export async function getCommentsMissedByDm(
   }
 
   const reachedIds = new Set((matched ?? []).map((m) => m.platform_user_id));
+
+  // Any conversation row at all means an outbound attempt exists, whether or
+  // not it was delivered. Only looked up when the caller asks to exclude them,
+  // so the default path keeps its single cross-check.
+  const contactedIds = new Set<string>();
+  if (onlyNeverContacted) {
+    const { data: anyConvo, error: anyConvoError } = await supabase
+      .from("dm_conversations")
+      .select("platform_user_id")
+      .eq("platform", "instagram")
+      .in("platform_user_id", igUserIds);
+
+    if (anyConvoError) {
+      console.error("Error checking prior contact for gap check:", anyConvoError);
+      throw new Error("Failed to cross-check prior contact");
+    }
+    for (const row of anyConvo ?? []) contactedIds.add(row.platform_user_id);
+  }
+
   return comments.filter(
     (c) =>
       c.ig_user_id &&
       // Reached means they wrote back, not merely that we sent something.
       !reachedIds.has(c.ig_user_id) &&
+      // Optional: skip anyone an earlier send already went out to.
+      !(onlyNeverContacted && contactedIds.has(c.ig_user_id)) &&
       // A reply must never be addressed to ourselves.
       !isSelfAuthored({ igUserId: c.ig_user_id, username: c.username }) &&
       // Only people who commented a live campaign's keyword asked to hear

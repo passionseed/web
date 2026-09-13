@@ -149,6 +149,11 @@ export interface BulkRunOptions {
    * and tags the commenter, while the DM speaks to them directly.
    */
   publicMessage?: string;
+  /**
+   * Restricts the run to commenters no message has ever gone out to, so a
+   * backfill does not message someone the live automation already handled.
+   */
+  onlyNeverContacted?: boolean;
   /** Lists who would be contacted without sending anything. */
   dryRun?: boolean;
 }
@@ -166,13 +171,13 @@ export interface BulkRunOptions {
  */
 export async function runBulkReply(options: BulkRunOptions): Promise<BulkRunResult> {
   await requireAdmin();
-  const { mode, campaign, dryRun = false } = options;
+  const { mode, campaign, dryRun = false, onlyNeverContacted = false } = options;
   const customDm = options.dmMessage?.trim();
   const customPublic = options.publicMessage?.trim();
 
   // A DM is only possible inside 7 days; a public-only run can sweep 30.
   const windowDays = mode === "public" ? BULK_REPLY_WINDOW_DAYS : BULK_DM_WINDOW_DAYS;
-  const missed = await getCommentsMissedByDm(windowDays);
+  const missed = await getCommentsMissedByDm(windowDays, undefined, onlyNeverContacted);
   const scoped = campaign ? missed.filter((c) => getCampaign(c.text) === campaign) : missed;
   const batch = scoped.slice(0, BULK_REPLY_BATCH_CAP);
 

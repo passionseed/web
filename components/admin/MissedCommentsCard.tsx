@@ -19,6 +19,8 @@ export interface MissedCommentItem {
   text: string;
   commented_at: string;
   campaign: CampaignKey | null;
+  /** True when no message has ever gone out to this commenter. */
+  neverContacted: boolean;
 }
 
 type TabKey = "all" | CampaignKey;
@@ -55,6 +57,11 @@ export function MissedCommentsCard({
   const [mode, setMode] = useState<BulkReplyMode>("both");
   const [dmMessage, setDmMessage] = useState("");
   const [publicMessage, setPublicMessage] = useState("");
+  /**
+   * Defaults on: the common task is reaching people the live automation never
+   * got to, and the expensive mistake is messaging someone a second time.
+   */
+  const [onlyNeverContacted, setOnlyNeverContacted] = useState(true);
   const [confirming, setConfirming] = useState(false);
   const [result, setResult] = useState<BulkRunResult | null>(null);
   const [running, setRunning] = useState(false);
@@ -67,9 +74,10 @@ export function MissedCommentsCard({
   const stopRequested = useRef(false);
 
   const counts = useMemo(() => {
-    const uni = comments.filter((c) => c.campaign === "uni").length;
-    return { all: comments.length, uni, port: comments.length - uni };
-  }, [comments]);
+    const pool = onlyNeverContacted ? comments.filter((c) => c.neverContacted) : comments;
+    const uni = pool.filter((c) => c.campaign === "uni").length;
+    return { all: pool.length, uni, port: pool.length - uni };
+  }, [comments, onlyNeverContacted]);
 
   /**
    * A DM is only possible inside 7 days, so a private or "both" run works from
@@ -77,8 +85,15 @@ export function MissedCommentsCard({
    * DM mode is selected would promise sends that cannot happen.
    */
   const visible = useMemo(() => {
+    let rows = tab === "all" ? comments : comments.filter((c) => c.campaign === tab);
+    if (onlyNeverContacted) rows = rows.filter((c) => c.neverContacted);
+    return mode === "public" ? rows : rows.filter((c) => daysAgo(c.commented_at) <= 7);
+  }, [comments, tab, mode, onlyNeverContacted]);
+
+  const alreadyMessaged = useMemo(() => {
     const byTab = tab === "all" ? comments : comments.filter((c) => c.campaign === tab);
-    return mode === "public" ? byTab : byTab.filter((c) => daysAgo(c.commented_at) <= 7);
+    const inWindow = mode === "public" ? byTab : byTab.filter((c) => daysAgo(c.commented_at) <= 7);
+    return inWindow.filter((c) => !c.neverContacted).length;
   }, [comments, tab, mode]);
 
   if (comments.length === 0) return null;
@@ -121,6 +136,7 @@ export function MissedCommentsCard({
           campaign,
           dmMessage: dmMessage.trim() || undefined,
           publicMessage: publicMessage.trim() || undefined,
+          onlyNeverContacted,
           dryRun,
         });
         passes += 1;
@@ -176,6 +192,25 @@ export function MissedCommentsCard({
             </button>
           ))}
         </div>
+
+        {/* Audience */}
+        <label className="flex items-start gap-2 rounded-md border p-3 text-sm">
+          <input
+            type="checkbox"
+            checked={onlyNeverContacted}
+            onChange={(e) => setOnlyNeverContacted(e.target.checked)}
+            disabled={running}
+            className="mt-0.5"
+          />
+          <span>
+            <span className="font-medium">Only people never messaged before</span>
+            <span className="block text-xs text-muted-foreground">
+              {onlyNeverContacted
+                ? `Skipping ${alreadyMessaged} who already received a message. Uncheck to include them.`
+                : `Includes ${alreadyMessaged} who were already messaged and never answered, so they would hear from us twice.`}
+            </span>
+          </span>
+        </label>
 
         {/* Channel */}
         <div className="space-y-2">
