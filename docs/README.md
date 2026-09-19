@@ -8,6 +8,7 @@ Documentation index. Files are organized by purpose, not by date.
 
 | File | Purpose |
 |------|---------|
+| [STRATEGY.md](STRATEGY.md) | Comprehensive strategic summary, commercial engine & 6-month roadmap |
 | [ui-design-system.md](ui-design-system.md) | The Dawn/Dusk design system spec — **read before touching UI** |
 | [map_system_overview.md](map_system_overview.md) | Learning Map system overview |
 | [map_creation_guideline.md](map_creation_guideline.md) | How to author learning maps |
