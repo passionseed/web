@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { ArrowRight } from "lucide-react";
+import { ShiftApplicationModal } from "./ShiftApplicationModal";
 
 export const SHIFT_APPLY_URL = "https://forms.gle/3DaMNzuuFV4EHD2m7";
 
@@ -18,7 +19,12 @@ export function ShiftApplyButton({
   location = "hero",
   href = SHIFT_APPLY_URL,
 }: ShiftApplyButtonProps) {
-  const handleClick = () => {
+  const [modalOpen, setModalOpen] = useState(false);
+
+  // If pointing to external / custom route (e.g. techseed bridge pointing to /shift)
+  const isNavigational = href !== SHIFT_APPLY_URL;
+
+  const logClick = () => {
     try {
       const payload = JSON.stringify({
         event_type: "shift_apply_click",
@@ -43,20 +49,36 @@ export function ShiftApplyButton({
         }).catch(() => {});
       }
     } catch {
-      // Fail silently to never block user intent
+      // Fail silently
+    }
+  };
+
+  const handleClick = (e: React.MouseEvent) => {
+    logClick();
+    if (!isNavigational) {
+      e.preventDefault();
+      setModalOpen(true);
     }
   };
 
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={handleClick}
-      className={`shift-button ${className}`}
-    >
-      <span>{children}</span>
-      <ArrowRight className="h-4 w-4" />
-    </a>
+    <>
+      <a
+        href={href}
+        onClick={handleClick}
+        className={`shift-button cursor-pointer ${className}`}
+      >
+        <span>{children}</span>
+        <ArrowRight className="h-4 w-4" />
+      </a>
+
+      {!isNavigational && (
+        <ShiftApplicationModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          sourceLocation={location}
+        />
+      )}
+    </>
   );
 }
