@@ -128,14 +128,34 @@ export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL ?? "https://passionseed.org"
   ),
-  title: "Passion Seed",
-  description: "Discover and nurture your passions",
+  title: {
+    default: "PassionSeed | Empowering Youth Agency & Real-World Proof of Work",
+    template: "%s | PassionSeed",
+  },
+  description:
+    "Empowering high school and university students to break free from passive certificate-collecting, test-drive real careers, and ship empirical projects with real user telemetry for TCAS 1.",
+  keywords: [
+    "PassionSeed",
+    "TCAS 1",
+    "พอร์ต TCAS 1",
+    "ทำพอร์ต TCAS",
+    "SHIFT sandbox",
+    "TechSeed",
+    "ผลงานวิศวะคอม",
+    "Hackathon นักเรียน",
+    "Career exploration",
+    "Proof of work",
+  ],
+  alternates: {
+    canonical: "/",
+  },
   manifest: "/manifest.json",
   openGraph: {
     type: "website",
-    title: "Passion Seed",
-    description: "Discover and nurture your passions",
-    siteName: "Passion Seed",
+    title: "PassionSeed | Empowering Youth Agency & Real-World Proof of Work",
+    description:
+      "Break free from passive compliance. Build real things through authentic experimentation and unignorable proof of work.",
+    siteName: "PassionSeed",
     // Without an explicit image, scrapers guess and pick the first thing they
     // find on the page, which is why shared links showed a random card image.
     images: [
@@ -203,11 +223,48 @@ export default async function RootLayout({
     // show their own error/login state.
   }
 
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "EducationalOrganization",
+        "@id": "https://passionseed.org/#organization",
+        "name": "PassionSeed",
+        "url": "https://passionseed.org",
+        "logo": "https://passionseed.org/passionseed-logo.svg",
+        "description":
+          "Empowering young people to break free from passive compliance, build real things through authentic experimentation, and take ownership of their own trajectory.",
+        "sameAs": [
+          "https://www.instagram.com/passionseed",
+          "https://github.com/passionseed"
+        ],
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Bangkok",
+          "addressCountry": "TH"
+        }
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://passionseed.org/#website",
+        "url": "https://passionseed.org",
+        "name": "PassionSeed",
+        "publisher": {
+          "@id": "https://passionseed.org/#organization"
+        }
+      }
+    ]
+  };
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body
         className={`${libreFranklin.variable} ${spaceMono.variable} ${krub.variable} ${baiJamjuree.variable} ${mitr.variable} ${poppins.variable} ${reenieBeanie.variable} ${kodchasan.variable} ${notoSansThai.variable} ${notoSerifThai.variable} ${instrumentSerif.variable} ${athiti.variable} ${tiny5.variable}`}
       >
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+        />
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"

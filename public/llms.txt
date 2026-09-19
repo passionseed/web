@@ -1,0 +1,24 @@
+# PassionSeed
+
+> PassionSeed (https://passionseed.org) is an AI-driven career exploration and youth agency platform built in Thailand. It replaces passive certificate-collecting with enactive mastery and empirical proof-of-work for high school and university students preparing for TCAS 1 admissions and authentic career paths.
+
+## Core Products
+
+- **SHIFT (The Crucible)** (https://passionseed.org/shift): A 7-day intensive sandbox where students build a functional prototype, test it with 15–30 real users, and package user telemetry and pivot logs into an unignorable 1-page TCAS 1 defense case study.
+- **TechSeed (The Gateway)** (https://passionseed.org/techseed): Low-ticket 1–2 day micro-sprints and student proof-of-work gallery showcasing authentic high school projects (AI, software, hardware, equity research).
+- **The Next Decade Hackathon (TNDH)** (https://passionseed.org/hackathon): 5-day team health-tech and deep-tech hackathons evaluated by industry mentors and university professors.
+- **PathLab & Learning Maps** (https://passionseed.org): Interactive node-based career simulations designed as "decision instruments" to let students test-drive careers in 5 days before committing years to a university major.
+
+## Pedagogical Foundations
+
+- **Self-Determination Theory (Deci & Ryan):** Cultivating Autonomy (choosing real problems), Competence (overcoming user friction), and Relatedness (high-trust peer accountability).
+- **Constructionism (Seymour Papert, MIT):** Mastery through building public, inspectable, and testable artifacts rather than passive instruction.
+- **Self-Efficacy Theory (Albert Bandura, Stanford):** Enduring confidence forged through enactive mastery experiences without artificial bailouts.
+
+## Key Links & Resources
+
+- Strategy & Whitepaper: https://passionseed.org/docs/STRATEGY.md
+- Comprehensive Knowledge Base: https://passionseed.org/llms-full.txt
+- Student Gallery: https://passionseed.org/techseed
+- Admissions Sandbox: https://passionseed.org/shift
+- Official Organization: PassionSeed, Bangkok, Thailand

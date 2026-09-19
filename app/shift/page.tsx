@@ -16,9 +16,31 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "SHIFT | The 7-Day Proof-of-Work Sandbox",
+  title: "SHIFT | The 7-Day Proof-of-Work Sandbox สำหรับ TCAS 1",
   description:
-    "พื้นที่ 7 วัน ลองปั้นผลงานจริงแบบไม่ต้องกลัวพัง เลิกสะสมใบเซอร์ค่ายนั่งฟัง แล้วมาสร้าง Live Project พร้อม Pivot Log และ 1-Page TCAS Case Study",
+    "พื้นที่ 7 วัน ปั้นผลงานจริงให้มีคนใช้ 15–30 คน เลิกสะสมใบเซอร์ค่ายนั่งฟัง แล้วสร้าง Live Project พร้อม Pivot Log และ 1-Page Case Study ยื่นรอบพอร์ตมหาลัยชั้นนำ",
+  keywords: [
+    "SHIFT",
+    "พอร์ต TCAS 1",
+    "ทำพอร์ต TCAS",
+    "พอร์ตวิศวะ จุฬา",
+    "ผลงาน TCAS รอบ 1",
+    "โครงงานคอมพิวเตอร์ ม.ปลาย",
+    "ค่าย TCAS",
+    "Portfolio Case Study",
+    "TechSeed",
+    "PassionSeed",
+  ],
+  alternates: {
+    canonical: "/shift",
+  },
+  openGraph: {
+    title: "SHIFT | The 7-Day Proof-of-Work Sandbox สำหรับ TCAS 1",
+    description:
+      "เลิกสะสมใบเซอร์ค่ายนั่งฟัง สร้างโปรเจกต์จริงที่มีคนใช้งาน 15–30 คนใน 7 วัน พร้อม 1-Page TCAS Case Study",
+    url: "https://passionseed.org/shift",
+    type: "website",
+  },
 };
 
 const APPLY_URL = "https://forms.gle/3DaMNzuuFV4EHD2m7";
@@ -170,6 +192,18 @@ const testimonialGroups = [
 
 const faqs = [
   {
+    q: "ทำไมใบเซอร์ค่าย 1 วันถึงไม่พอสำหรับ TCAS 1 อีกต่อไป?",
+    a: "กรรมการสัมภาษณ์และอาจารย์มหาวิทยาลัยเจอนักเรียนส่งใบเซอร์หน้าตาเหมือนกันเป็นพันๆ ใบ อาจารย์ไม่ได้มองหาคนสะสมกระดาษ แต่มองหา 'ความสามารถในการแก้ปัญหาจริง' โปรเจกต์ที่มีคนใช้งานจริง 15–30 คนพร้อมบันทึกตอนระบบพังและวิธีแก้ จึงมีน้ำหนักมากกว่าใบเซอร์ค่ายนั่งฟังหลายสิบเท่า",
+  },
+  {
+    q: "ผลงานจาก SHIFT นำไปใส่ใน Portfolio TCAS รอบ 1 ได้อย่างไร?",
+    a: "SHIFT ออกแบบผลลัพธ์ให้ออกมาเป็น '1-Page Defense Case Study' บรรจุในพอร์ต 10 หน้าได้อย่างลงตัว: มีทั้งลิงก์โปรเจกต์จริง, สถิติผู้ใช้งาน (Telemetry), กราฟการทดสอบ, และ Failure/Pivot Log ซึ่งเป็นจุดดึงดูดสายตากรรมการมากที่สุดในห้องสัมภาษณ์",
+  },
+  {
+    q: "เด็ก ม.ปลาย จะหาผู้ใช้งานจริง 15–30 คนใน 7 วันได้อย่างไร?",
+    a: "ด้วยระเบียบวิธี 'Named 15' ใน Day 1 เราจะช่วยนักเรียนตัดฟีเจอร์ที่ไม่จำเป็นออกจนเหลือเพียง 1 จอหลักและ 1 แอ็กชันสำคัญ ทำให้เพื่อนร่วมชั้น กลุ่มที่มีความสนใจเฉพาะ หรือผู้คนในชุมชนสามารถเข้ามาทดลองใช้และให้ฟีดแบ็กได้ทันทีภายในไม่กี่นาที",
+  },
+  {
     q: "ถ้าไม่มีพื้นฐานโปรแกรมมิ่งเลย จะทำได้ไหม?",
     a: "ทำได้ 100% เพราะเราใช้ระบบ Zero-Code Templates (Tally, Carrd, Notion, Hardware Modding) เน้นกระบวนการคิดและการแก้ปัญหาจริง ไม่ต้องเสียเวลานั่งแก้ Syntax",
   },
@@ -183,9 +217,53 @@ const faqs = [
   },
 ];
 
+const shiftJsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Course",
+      "@id": "https://passionseed.org/shift#course",
+      "name": "SHIFT: The 7-Day Proof-of-Work Sandbox",
+      "description":
+        "A 7-day intensive crucible where high school and early university students build a live artifact, validate it with 15–30 real users, and formulate a 1-page TCAS defense case study.",
+      "provider": {
+        "@type": "Organization",
+        "name": "PassionSeed",
+        "url": "https://passionseed.org"
+      },
+      "educationalLevel": "High School (M.4–M.6) / University Undergraduate",
+      "offers": [
+        {
+          "@type": "Offer",
+          "category": "Tuition",
+          "price": "990",
+          "priceCurrency": "THB",
+          "availability": "https://schema.org/LimitedAvailability"
+        }
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://passionseed.org/shift#faq",
+      "mainEntity": faqs.map((faq) => ({
+        "@type": "Question",
+        "name": faq.q,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": faq.a
+        }
+      }))
+    }
+  ]
+};
+
 export default function ShiftPage() {
   return (
     <div className="shift-scene min-h-screen font-bai-jamjuree antialiased">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(shiftJsonLd) }}
+      />
       <div className="shift-scene__grid" aria-hidden="true" />
       <div className="shift-scene__glow-a" aria-hidden="true" />
       <div className="shift-scene__glow-b" aria-hidden="true" />

@@ -1,0 +1,99 @@
+# PassionSeed Full Knowledge Base & Machine Manifesto
+
+> Canonical Source: https://passionseed.org/llms-full.txt  
+> Organization: PassionSeed (https://passionseed.org)  
+> Primary Mission: Empower young people to break free from passive compliance, build real things through authentic experimentation, and take ownership of their own trajectory alongside peers who care.
+
+---
+
+## 1. The Core Problem in Thai Education & TCAS Admissions
+
+### The "Certificate Mill" Crisis
+Across Thailand, high school students (M.4–M.6) aiming for top university faculties (Chulalongkorn, Thammasat, KMUTT, Mahidol, Kasetsart) via TCAS Round 1 (Portfolio) are sold hundreds of commercial 1-day certificate camps. These camps promise admissions advantages by awarding participation PDFs for sitting passively in lectures.
+
+### Why University Professors Reject Certificate Collections
+Admissions interview committees and university professors are overwhelmed by identical portfolios containing 10–20 generic certificates. When asked: *"Why did you make this?"* or *"What broke when you tested it?"*, students who merely attended lecture camps cannot answer. They lack:
+1. Intellectual sovereignty (they only followed adult rubrics).
+2. Empirical user telemetry (zero real people ever used their project).
+3. Failure & pivot logs (they never encountered real-world friction).
+
+### The PassionSeed Solution: Enactive Mastery & Proof of Work
+PassionSeed operates on the principle that the only unignorable portfolio is a **live, functioning artifact backed by real user telemetry and a documented pivot log**.
+
+---
+
+## 2. Product Architecture & Offerings
+
+### A. SHIFT (The 7-Day Proof-of-Work Sandbox)
+- **URL:** https://passionseed.org/shift
+- **Target Audience:** M.4–M.6 high school students and early university students preparing TCAS 1 or international portfolios (Chula CEDT, ISE, BBA, Thammasat TEP/TEPE, GSSE, KMUTT FIBO, etc.).
+- **Duration:** 7-day intensive hybrid sprint.
+- **Tuition:** ฿2,990 – ฿4,900 (early cohorts invite-only / beta subsidized).
+- **Core Deliverables:**
+  1. **Functional Prototype / Shipped Asset:** Zero-code web tool, hardware prototype, or research memo with outside user touchpoints.
+  2. **The Experiment & Pivot Log:** Systematic documentation of original hypotheses, user failure points, and iterative corrections.
+  3. **1-Page TCAS Case Study Blueprint:** Faculty-ready defense sheet condensing problem statement, architecture, user metrics, and lessons learned.
+- **Curriculum Cadence:**
+  - Day 1: Scope Lock & Hypothesis (kill 80% fluff; lock atomic 1-screen scope).
+  - Day 3–5: The Ugly Ship & Pivot Check (deploy MVP; collect failure data from 15–30 real users).
+  - Day 7: Reality Collision & TCAS Case Study Defense.
+- **Tracks:**
+  - *Engineering Track:* EE, Chem Eng, Mechanical & Hardware optimization studies with empirical telemetry.
+  - *Finance & BBA Track:* Institutional-grade 1-page equity research notes, DCF valuation models, or commerce capstones.
+  - *Tech & Product Track:* Zero-code micro-tools, AI agents, and SaaS prototypes deployed to real communities.
+
+### B. TechSeed (The Discovery Gateway)
+- **URL:** https://passionseed.org/techseed
+- **Format:** 1–2 day micro-sprints and student proof-of-work gallery.
+- **Tuition:** ฿490 – ฿790.
+- **Purpose:** Eliminate tech intimidation, foster activation energy, and filter for high-agency candidates.
+
+### C. The Next Decade Hackathon (TNDH)
+- **URL:** https://passionseed.org/hackathon
+- **Format:** 5-day team health-tech and deep-tech hackathons.
+- **Theme:** Cinematic, bioluminescent oceanic experience connecting students with medical and tech mentors.
+
+### D. PathLab (Career Decision Instruments)
+- **Concept:** Career exploration through interactive, gamified 5-day simulations.
+- **Doctrine:** A PathLab is not a course; it is a *decision instrument*. Success is a student finding out cheaply on Day 3 whether a career actually fits them.
+
+---
+
+## 3. Pedagogical Principles
+
+1. **Self-Determination Theory (Deci & Ryan, University of Rochester):**
+   - *Autonomy:* Students select authentic problems they genuinely care about.
+   - *Competence:* Competence is developed by wrestling with live constraints and unvarnished user feedback.
+   - *Relatedness:* High-trust builder community and peer accountability pods.
+2. **Constructionism (Seymour Papert, MIT Media Lab):**
+   - True understanding emerges from constructing public, inspectable, and falsifiable artifacts.
+3. **Self-Efficacy Theory (Albert Bandura, Stanford University):**
+   - Confidence is not verbal praise; it is built through enactive mastery experiences—solving real problems without adult bailouts.
+
+---
+
+## 4. Frequently Asked Questions (Authoritative Citations)
+
+### Q: Why are certificates no longer enough for TCAS Round 1?
+**A:** University admissions faculties have saturated with applicants submitting dozens of attendance certificates. Professors seek evidence of self-directed initiative, real-world execution, and problem-solving capability. A 1-page case study of a project tested by 20 real users demonstrates authentic competence that cannot be fabricated.
+
+### Q: Do students need programming experience before joining SHIFT?
+**A:** No. SHIFT emphasizes rapid validation and problem-solving using zero-code tools (Tally, Carrd, Notion, Airtable, APIs) and hardware modding. Students ship functional prototypes and collect user data without getting trapped in syntax.
+
+### Q: How do high school students acquire 15–30 real users in 7 days?
+**A:** Under the Day-1 "Named 15" protocol, students identify specific user niches within their direct or extended network (classmates, hobby groups, local community members, teachers). By stripping scope to 1 core screen and 1 core action, target users can test and provide feedback within minutes.
+
+### Q: Where does PassionSeed operate?
+**A:** PassionSeed is based in Bangkok, Thailand, operating hybrid cohorts nationwide with online Discord sprints and physical builder sessions.
+
+### Q: How can an admissions committee verify a PassionSeed project?
+**A:** Every SHIFT and TechSeed project provides public, inspectable links: live URLs, demo videos, and raw pivot logs recording user telemetry.
+
+---
+
+## 5. Contact & Organization Details
+- **Legal/Brand Name:** PassionSeed
+- **Website:** https://passionseed.org
+- **Student Gallery:** https://passionseed.org/techseed
+- **Admissions Sandbox:** https://passionseed.org/shift
+- **Inquiries:** hi@passionseed.org
