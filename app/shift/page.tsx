@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import {
   ArrowRight,
   Banknote,
@@ -14,6 +15,8 @@ import {
   X,
   Zap,
 } from "lucide-react";
+import { ShiftApplyButton } from "@/components/shift/ShiftApplyButton";
+import { ShiftPageViewTracker } from "@/components/shift/ShiftPageViewTracker";
 
 export const metadata: Metadata = {
   title: "SHIFT | The 7-Day Proof-of-Work Sandbox สำหรับ TCAS 1",
@@ -45,17 +48,19 @@ export const metadata: Metadata = {
 
 const APPLY_URL = "https://forms.gle/3DaMNzuuFV4EHD2m7";
 
-function ApplyButton({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+function ApplyButton({
+  children,
+  className = "",
+  location = "hero",
+}: {
+  children: React.ReactNode;
+  className?: string;
+  location?: string;
+}) {
   return (
-    <a
-      href={APPLY_URL}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={`shift-button ${className}`}
-    >
-      <span>{children}</span>
-      <ArrowRight className="h-4 w-4" />
-    </a>
+    <ShiftApplyButton className={className} location={location}>
+      {children}
+    </ShiftApplyButton>
   );
 }
 
@@ -264,6 +269,7 @@ export default function ShiftPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(shiftJsonLd) }}
       />
+      <ShiftPageViewTracker />
       <div className="shift-scene__grid" aria-hidden="true" />
       <div className="shift-scene__glow-a" aria-hidden="true" />
       <div className="shift-scene__glow-b" aria-hidden="true" />
@@ -471,6 +477,16 @@ export default function ShiftPage() {
               </div>
             </div>
           ))}
+
+          <div className="mt-12 text-center">
+            <Link
+              href="/techseed"
+              className="inline-flex items-center gap-2 rounded-xl border border-[var(--shift-card-line)] bg-white/[0.03] px-6 py-3.5 font-mono text-xs font-semibold uppercase tracking-[0.16em] text-[var(--shift-hazard)] transition hover:border-[var(--shift-hazard-line)] hover:bg-[var(--shift-hazard-soft)]"
+            >
+              <span>สำรวจคลังชิ้นงานจริงของรุ่นพี่ที่ TechSeed Gallery</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
         </section>
 
         {/* ============ 7. COHORT & PRICING ============ */}
@@ -547,7 +563,7 @@ export default function ShiftPage() {
             ถ้าคุณมีไอเดียดิบที่อยากเห็นมันกลายเป็นของจริง นี่คือพื้นที่ของคุณ
           </p>
           <div className="mt-10">
-            <ApplyButton>Apply for SHIFT[0]</ApplyButton>
+            <ApplyButton location="final_cta">Apply for SHIFT[0]</ApplyButton>
           </div>
         </section>
       </div>
@@ -561,15 +577,9 @@ export default function ShiftPage() {
           <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--shift-text-dim)] sm:hidden">
             SHIFT[0] · ฿990
           </p>
-          <a
-            href={APPLY_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="shift-button !px-5 !py-2.5 !text-sm"
-          >
-            <span>สมัครเลย</span>
-            <ArrowRight className="h-4 w-4" />
-          </a>
+          <ShiftApplyButton location="sticky_bar" className="!px-5 !py-2.5 !text-sm">
+            สมัครเลย
+          </ShiftApplyButton>
         </div>
       </div>
     </div>

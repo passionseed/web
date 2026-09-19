@@ -76,6 +76,23 @@ export async function GET(request: NextRequest) {
       dailyStats[0]
     );
 
+    // Fetch event analytics
+    const { data: eventsByType, error: eventsError } = await supabase
+      .from("hackathon_events_by_type")
+      .select("*")
+      .limit(20);
+
+    if (eventsError) {
+      console.error("Error fetching events:", eventsError);
+    }
+
+    // Calculate event totals
+    const totalEvents = eventsByType?.reduce(
+      (sum, event) => sum + (event.total_events || 0),
+      0
+    ) || 0;
+    const uniqueEventTypes = eventsByType?.length || 0;
+
     return NextResponse.json({
       summary: {
         total_unique_visitors: totalUniqueVisitors,
@@ -87,10 +104,13 @@ export async function GET(request: NextRequest) {
               visitors: peakDay.unique_visitors,
             }
           : null,
+        total_events: totalEvents,
+        unique_event_types: uniqueEventTypes,
       },
       daily_stats: dailyStats || [],
       top_referrers: referrers || [],
       hourly_stats: hourlyStats || [],
+      events_by_type: eventsByType || [],
     });
   } catch (error) {
     console.error("Error in analytics API:", error);

@@ -17,6 +17,7 @@ import { Bell, Users, Check, Sparkles, BookOpen, Home, ArrowRight, Search, Setti
 import { Slider } from "@/components/ui/slider";
 import type { HackathonParticipant } from "@/lib/hackathon/db";
 import { FeedbackInvitationCard } from "@/components/hackathon/FeedbackInvitationCard";
+import { useTrackPageView } from "@/hooks/useHackathonAnalytics";
 
 import FractalGlassBackground from "@/components/hackathon/ClarityGlassBackground";
 
@@ -88,6 +89,9 @@ export default function HackathonDashboardPage() {
   const contentRef = useRef<HTMLDivElement>(null);
   const [participant, setParticipant] = useState<HackathonParticipant | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  
+  // Track page view for analytics
+  useTrackPageView("/hackathon/dashboard", participant?.id || null);
   const [settingsForm, setSettingsForm] = useState({
     name: "",
     phone: "",

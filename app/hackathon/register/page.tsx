@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import gsap from "gsap";
 import { Slider } from "@/components/ui/slider";
+import { useTrackPageView } from "@/hooks/useHackathonAnalytics";
 
 
 
@@ -56,6 +57,10 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [focused, setFocused] = useState<string | null>(null);
+  
+  // Track page view for analytics
+  useTrackPageView("/hackathon/register");
+  
   const [form, setForm] = useState({
     name: "",
     email: "",

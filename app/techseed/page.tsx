@@ -2,12 +2,48 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { TechseedSignup } from "@/components/techseed/techseed-signup";
+import { ShiftApplyButton } from "@/components/shift/ShiftApplyButton";
 import gallery from "@/lib/content/techseed-gallery.json";
 
 export const metadata: Metadata = {
-  title: "TechSeed รุ่น 6 | PassionSeed",
+  title: "TechSeed | คลังผลงานจริงจากนักเรียน ม.ปลาย (Proof of Work)",
   description:
-    "ค่ายออนไลน์หลายสัปดาห์: ทีม (squad) + แผนการเรียนส่วนตัว (plan) + คอมมูนิตี้ ทำโปรเจกต์จริง มีพี่ ๆ ดูแล ชวนเพื่อน 1 คนลด 150฿",
+    "รวม Final Projects จากนักเรียน TechSeed ปั้นเองจริงใน 5 วัน ตั้งแต่ AI, Web Apps, 3D Games ไปจนถึง Hardware Prototype พร้อมหลักฐานการทดสอบจริง ยกระดับพอร์ต TCAS 1",
+  keywords: [
+    "TechSeed",
+    "ผลงาน Tech ม.ปลาย",
+    "พอร์ต TCAS 1",
+    "โครงงานคอมพิวเตอร์ ม.ปลาย",
+    "ผลงาน AI นักเรียน",
+    "PassionSeed",
+    "Proof of work portfolio",
+    "SHIFT sandbox",
+  ],
+  alternates: {
+    canonical: "/techseed",
+  },
+  openGraph: {
+    title: "TechSeed | คลังผลงานจริงจากนักเรียน ม.ปลาย (Proof of Work)",
+    description:
+      "รวมชิ้นงานจริงที่นักเรียนสร้างเองและปล่อยสู่โลกจริง ตั้งแต่ AI, Web Apps ไปจนถึง 3D Games พร้อมหลักฐานการทดสอบจริง",
+    url: "https://passionseed.org/techseed",
+    type: "website",
+    images: [
+      {
+        url: "/og-passionseed.jpg",
+        width: 1200,
+        height: 630,
+        alt: "TechSeed Proof of Work Gallery",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "TechSeed | คลังผลงานจริงจากนักเรียน ม.ปลาย (Proof of Work)",
+    description:
+      "รวม Final Projects จากนักเรียน TechSeed ปั้นเองจริงใน 5 วัน พร้อมหลักฐานการทดสอบจริง",
+    images: ["/og-passionseed.jpg"],
+  },
 };
 
 // Curate a spread of final projects so the marquee stays light: at most 18
@@ -18,9 +54,44 @@ const curated = images.filter((_, i) => i % sampleStep === 0).slice(0, 18);
 const columns = [0, 1, 2].map((c) => curated.filter((_, i) => i % 3 === c));
 const columnDuration = ["61s", "83s", "71s"]; // prime-ish, never sync
 
+const techseedJsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "CollectionPage",
+      "@id": "https://passionseed.org/techseed#collection",
+      "name": "TechSeed Student Proof-of-Work Gallery",
+      "url": "https://passionseed.org/techseed",
+      "description":
+        "Curated showcase of real student projects built by high school students in TechSeed cohorts across Thailand, spanning AI, web tools, game dev, and hardware.",
+      "publisher": {
+        "@type": "Organization",
+        "name": "PassionSeed",
+        "url": "https://passionseed.org"
+      }
+    },
+    {
+      "@type": "ItemList",
+      "@id": "https://passionseed.org/techseed#items",
+      "name": "TechSeed Final Projects",
+      "numberOfItems": curated.length,
+      "itemListElement": curated.map((item, index) => ({
+        "@type": "ListItem",
+        "position": index + 1,
+        "name": `TechSeed #${item.cohort} Project Artifact`,
+        "image": item.url
+      }))
+    }
+  ]
+};
+
 export default function TechseedPage() {
   return (
     <div className="dawn-theme relative min-h-screen overflow-hidden">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(techseedJsonLd) }}
+      />
       {/* Dawn atmosphere: base gradient + cloud blobs + horizon glow */}
       <div
         aria-hidden="true"
@@ -118,6 +189,26 @@ export default function TechseedPage() {
         <p className="mt-8 text-center font-mono text-[11px] uppercase tracking-[0.18em] text-slate-400">
           Final Projects · TechSeed #3, #4 & #5 · Shared with student permission
         </p>
+
+        {/* ============ SHIFT CRUCIBLE BRIDGE ============ */}
+        <div className="mt-16 rounded-3xl border border-amber-400/30 bg-gradient-to-b from-amber-500/10 via-purple-500/10 to-transparent p-8 text-center backdrop-blur-md sm:p-12">
+          <p className="dawn-eyebrow text-amber-300">The 7-Day Admissions Crucible</p>
+          <h3 className="font-kodchasan mt-3 text-2xl font-bold tracking-tight text-white sm:text-4xl">
+            พร้อมยกระดับไอเดียเป็น <span className="text-amber-300">1-Page TCAS Case Study</span> หรือยัง?
+          </h3>
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-slate-300/90 sm:text-base">
+            หลังจากเห็นสิ่งที่รุ่นพี่สร้างใน TechSeed แล้ว หากคุณต้องการสร้างโปรเจกต์ที่มีผู้ใช้งานจริง 15–30 คน พร้อม Failure &amp; Pivot Log เพื่อยื่นพอร์ตมหาลัยชั้นนำใน 7 วัน
+          </p>
+          <div className="mt-8 flex justify-center">
+            <ShiftApplyButton
+              location="techseed_bridge"
+              href="/shift"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-300 !px-8 !py-4 font-mono !text-xs font-bold uppercase tracking-wider !text-black shadow-xl shadow-amber-400/20 transition hover:scale-105"
+            >
+              ดูรายละเอียด SHIFT Sandbox (7 Days)
+            </ShiftApplyButton>
+          </div>
+        </div>
       </section>
     </div>
   );

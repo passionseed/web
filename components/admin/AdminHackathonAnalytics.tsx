@@ -20,7 +20,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { Loader2, TrendingUp, Users, Eye, BarChart3 } from "lucide-react";
+import { Loader2, TrendingUp, Users, Eye, BarChart3, MousePointerClick } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
 interface DailyStat {
@@ -37,6 +37,15 @@ interface Referrer {
   total_visits: number;
 }
 
+interface EventStat {
+  event_type: string;
+  total_events: number;
+  unique_visitors: number;
+  unique_participants: number;
+  first_event: string;
+  last_event: string;
+}
+
 interface AnalyticsData {
   summary: {
     total_unique_visitors: number;
@@ -46,9 +55,12 @@ interface AnalyticsData {
       date: string;
       visitors: number;
     } | null;
+    total_events: number;
+    unique_event_types: number;
   };
   daily_stats: DailyStat[];
   top_referrers: Referrer[];
+  events_by_type: EventStat[];
 }
 
 export function AdminHackathonAnalytics() {
@@ -122,7 +134,7 @@ export function AdminHackathonAnalytics() {
   return (
     <div className="space-y-4">
       {/* Summary Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -187,6 +199,21 @@ export function AdminHackathonAnalytics() {
               {analytics.summary.peak_day?.date
                 ? format(parseISO(analytics.summary.peak_day.date), "MMM d, yyyy")
                 : "No data"}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Events</CardTitle>
+            <MousePointerClick className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {(analytics.summary.total_events || 0).toLocaleString()}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {analytics.summary.unique_event_types || 0} event types
             </p>
           </CardContent>
         </Card>
@@ -352,6 +379,58 @@ export function AdminHackathonAnalytics() {
                   dataKey="visitors"
                   name="Unique Visitors"
                   fill="hsl(var(--chart-4))"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Events by Type */}
+      {analytics.events_by_type && analytics.events_by_type.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Events by Type</CardTitle>
+            <CardDescription>
+              User interactions and engagement events
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart
+                data={analytics.events_by_type.slice(0, 10).map((e) => ({
+                  type: e.event_type.length > 20 ? e.event_type.substring(0, 20) + "..." : e.event_type,
+                  events: e.total_events,
+                  visitors: e.unique_visitors,
+                }))}
+                layout="vertical"
+              >
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis type="number" className="text-xs" stroke="currentColor" />
+                <YAxis
+                  type="category"
+                  dataKey="type"
+                  width={150}
+                  className="text-xs"
+                  stroke="currentColor"
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "6px",
+                  }}
+                />
+                <Legend />
+                <Bar
+                  dataKey="events"
+                  name="Total Events"
+                  fill="hsl(var(--primary))"
+                />
+                <Bar
+                  dataKey="visitors"
+                  name="Unique Visitors"
+                  fill="hsl(var(--chart-2))"
                 />
               </BarChart>
             </ResponsiveContainer>
