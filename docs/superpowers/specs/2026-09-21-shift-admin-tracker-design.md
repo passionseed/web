@@ -71,11 +71,12 @@ defense-in-depth.
 ## API routes
 
 All under `app/api/admin/shift/`, each guarded by `requireAdmin` from
-`lib/security/route-guards.ts` (returns 401/403 JSON). Auth check uses the SSR
-client (`utils/supabase/server.ts`); DB work uses `createAdminClient()` from
-`utils/supabase/admin.ts`. Validation failures return 400 `{ error }`; unexpected
-failures return 500 `{ error }` with a `console.error` server-side (no internals
-leaked to the client).
+`lib/security/route-guards.ts` (returns 401/403 JSON). DB work uses the SSR
+client handed back by `requireAdmin` (`admin.value.supabase`), the same pattern
+as `app/api/admin/users/roles/route.ts` — the admin RLS policy already grants
+full access, so no service-role client is needed. Validation failures return
+400 `{ error }`; unexpected failures return 500 `{ error }` via
+`safeServerError` (no internals leaked to the client).
 
 | Route | Methods | Behavior |
 | --- | --- | --- |
@@ -111,7 +112,8 @@ Follows `AdminBetaRegistrations.tsx` conventions (shadcn `Card`/`Table`/`Badge`/
 - **Kids table** — columns: Name, IG (`@handle`, links to
   `https://instagram.com/<handle>`), Discord, Last note (week label + relative
   date), Notes count, actions (edit kid inline, delete kid with confirm).
-- **Row expand** — clicking a row expands a notes panel beneath it: a timeline of
+- **Row expand** — clicking a row renders `<ShiftStudentNotesPanel />`
+  (`components/admin/ShiftStudentNotesPanel.tsx`) beneath it: a timeline of
   entries (week-label `Badge`, date, body) plus an add-note box (week label input
   prefilled by the helper, textarea, submit). Each note has edit (inline textarea)
   and delete (confirm) controls.
