@@ -28,7 +28,7 @@ PassionSeed operates on the principle that the only unignorable portfolio is a *
 - **URL:** https://passionseed.org/shift
 - **Target Audience:** M.4–M.6 high school students and early university students preparing TCAS 1 or international portfolios (Chula CEDT, ISE, BBA, Thammasat TEP/TEPE, GSSE, KMUTT FIBO, etc.).
 - **Duration:** 7-day intensive hybrid sprint.
-- **Tuition:** ฿2,990 – ฿4,900 (early cohorts invite-only / beta subsidized).
+- **Tuition:** ฿1,999 (Early Bird from ฿3,900; backed by 100% Reality Collision Guarantee — continued 1-on-1 coaching until 15 real users reached).
 - **Core Deliverables:**
   1. **Functional Prototype / Shipped Asset:** Zero-code web tool, hardware prototype, or research memo with outside user touchpoints.
   2. **The Experiment & Pivot Log:** Systematic documentation of original hypotheses, user failure points, and iterative corrections.

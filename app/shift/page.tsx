@@ -241,7 +241,7 @@ const shiftJsonLd = {
         {
           "@type": "Offer",
           "category": "Tuition",
-          "price": "990",
+          "price": "1999",
           "priceCurrency": "THB",
           "availability": "https://schema.org/LimitedAvailability"
         }
@@ -509,11 +509,10 @@ export default function ShiftPage() {
             <div className="shift-card border-[var(--shift-hazard-line)] p-6">
               <Banknote className="mb-4 h-6 w-6 text-[var(--shift-hazard)]" />
               <h3 className="font-kodchasan text-lg font-semibold">
-                ฿990 <span className="text-sm font-normal text-[var(--shift-text-dim)] line-through">฿1,500</span>
+                ฿1,999 <span className="text-sm font-normal text-[var(--shift-text-dim)] line-through">฿3,900</span>
               </h3>
               <p className="mt-3 text-sm leading-relaxed text-[var(--shift-text-dim)]">
-                ราคา Beta พิเศษ แลกกับการให้ feedback ระบบและอนุญาตใช้ case
-                study ของคุณเป็นตัวอย่างในรุ่นถัดไป
+                Early Bird พิเศษสำหรับ 9 คนแรก โค้ชตัวต่อตัวจนปล่อยของสู่มือผู้ใช้จริง พร้อมสิทธิ์เข้าถึง Discord Builder Community ตลอดชีพ
               </p>
             </div>
             <div className="shift-card p-6">
@@ -525,6 +524,28 @@ export default function ShiftPage() {
                 ตอบคำถามสั้นๆ เรื่องคณะเป้าหมายใน TCAS 1
                 และไอเดียโปรเจกต์ดิบที่อยากลองปั้น
               </p>
+            </div>
+          </div>
+
+          {/* 100% Reality Collision Guarantee Card */}
+          <div className="mt-8 rounded-3xl border border-[var(--shift-hazard-line)] bg-gradient-to-br from-[#13072a] to-[#070112] p-6 sm:p-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+              <div className="space-y-2.5">
+                <span className="inline-flex items-center gap-1.5 font-mono text-xs font-bold uppercase tracking-widest text-[var(--shift-hazard)]">
+                  <ShieldCheck className="h-4 w-4" /> 100% Reality Collision Guarantee
+                </span>
+                <h3 className="font-kodchasan text-xl font-bold text-white sm:text-2xl">
+                  ยังไม่แตะ 15 ผู้ใช้งานจริง? เราดูแลต่อเนื่องฟรีจนกว่าจะแตะ
+                </h3>
+                <p className="text-sm text-[var(--shift-text-dim)] leading-relaxed max-w-2xl">
+                  เราไม่ขายแค่คอร์สวิดีโอหรือปล่อยให้ผลงานของคุณค้างในเครื่อง ถ้าภายใน 7 วันโปรเจกต์ยังไม่แตะ 15 active users ทีมพี่เลี้ยงจะช่วยปรับ scope, ช่องทางกระจาย และ pivot ชิ้นงานต่อเนื่องแบบ 1-on-1 โดยไม่มีค่าใช้จ่ายเพิ่มแม้แต่บาทเดียว
+                </p>
+              </div>
+              <div className="shrink-0 w-full sm:w-auto">
+                <ShiftApplyButton location="guarantee_card" className="w-full sm:w-auto !px-6 !py-3">
+                  สมัครคัดเลือก ฿1,999
+                </ShiftApplyButton>
+              </div>
             </div>
           </div>
         </section>
@@ -563,7 +584,7 @@ export default function ShiftPage() {
             ถ้าคุณมีไอเดียดิบที่อยากเห็นมันกลายเป็นของจริง นี่คือพื้นที่ของคุณ
           </p>
           <div className="mt-10">
-            <ApplyButton location="final_cta">Apply for SHIFT[0]</ApplyButton>
+            <ShiftApplyButton location="final_cta">Apply for SHIFT[0]</ShiftApplyButton>
           </div>
         </section>
       </div>
@@ -575,7 +596,7 @@ export default function ShiftPage() {
             SHIFT[0] · 9 Seats · Invite Only
           </p>
           <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--shift-text-dim)] sm:hidden">
-            SHIFT[0] · ฿990
+            SHIFT[0] · ฿1,999
           </p>
           <ShiftApplyButton location="sticky_bar" className="!px-5 !py-2.5 !text-sm">
             สมัครเลย

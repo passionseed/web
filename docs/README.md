@@ -11,6 +11,7 @@ Documentation index. Files are organized by purpose, not by date.
 | [STRATEGY.md](STRATEGY.md) | Comprehensive strategic summary, commercial engine & 6-month roadmap |
 | [strategy/seo-aeo-next-gen-marketing.md](strategy/seo-aeo-next-gen-marketing.md) | SEO, AEO (Answer Engine Optimization) & Organic Viral Distribution Plan |
 | [strategy/backlink-campus-distribution-playbook.md](strategy/backlink-campus-distribution-playbook.md) | Backlink outreach, Facebook communities & campus club playbook |
+| [strategy/shift-seeding-trust-engine.md](strategy/shift-seeding-trust-engine.md) | SHIFT ฿1,999 Seeding & Trust Engine: Forum masterthreads, viral FB posts, video scripts & guarantee closing |
 | [ui-design-system.md](ui-design-system.md) | The Dawn/Dusk design system spec — **read before touching UI** |
 | [map_system_overview.md](map_system_overview.md) | Learning Map system overview |
 | [map_creation_guideline.md](map_creation_guideline.md) | How to author learning maps |

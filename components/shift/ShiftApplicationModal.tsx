@@ -135,14 +135,15 @@ export function ShiftApplicationModal({
           <div>
             <div className="flex items-center gap-2 font-mono text-xs font-semibold uppercase tracking-widest text-[var(--shift-hazard)]">
               <Sparkles className="h-4 w-4" />
-              <span>SHIFT[0] Cohort Application · 9 Seats</span>
+              <span>SHIFT[0] Cohort Application · 9 Seats · ฿1,999 Early Bird</span>
             </div>
             <h2 className="font-kodchasan mt-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">
               ใบสมัครคัดเลือก 7-Day Crucible
             </h2>
             <p className="mt-2 text-xs text-zinc-400">
               ไม่มีการคัดเลือกด้วยเกรดเฉลี่ย เราคัดเลือกจาก{" "}
-              <strong className="text-white">ความตั้งใจและความพร้อมในการแตะผู้ใช้งานจริง</strong>
+              <strong className="text-white">ความตั้งใจและความพร้อมในการแตะผู้ใช้งานจริง</strong>{" "}
+              (พร้อม 100% Reality Collision Guarantee ดูแลต่อเนื่องฟรีจนกว่าจะมีคนใช้จริง 15 คน)
             </p>
 
             {error && (
@@ -290,8 +291,20 @@ export function ShiftApplicationModal({
                 />
               </div>
 
+              {/* Trust & Guarantee Badge */}
+              <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 text-[11px] text-zinc-400 flex items-center justify-between">
+                <div>
+                  <span className="text-white font-medium">ค่าลงทะเบียน ฿1,999</span>{" "}
+                  <span className="line-through text-zinc-500">฿3,900</span>
+                  <p className="text-[10px] text-[var(--shift-hazard)]">ชำระเมื่อผ่านการคัดเลือกเท่านั้น · การันตีมีผู้ใช้จริง 15 คน</p>
+                </div>
+                <div className="text-right font-mono text-[10px] text-emerald-400 font-semibold uppercase">
+                  Zero Risk Guarantee
+                </div>
+              </div>
+
               {/* Submit CTA */}
-              <div className="pt-2">
+              <div className="pt-1">
                 <button
                   type="submit"
                   disabled={loading}
