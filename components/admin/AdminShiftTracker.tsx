@@ -1,13 +1,16 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import {
   Check,
   ChevronDown,
   ChevronRight,
+  Instagram,
   Loader2,
+  MessageCircle,
   Pencil,
+  Plus,
   Trash2,
   X,
 } from "lucide-react";
@@ -15,17 +18,10 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { ShiftStudentNotesPanel } from "@/components/admin/ShiftStudentNotesPanel";
+import { SHIFT_COHORT } from "@/lib/content/shift-cohort";
+import { cn } from "@/lib/utils";
 import type { ShiftStudentSummary, ShiftStudentsResponse } from "@/types/shift";
 
 const EMPTY_KID = { full_name: "", ig_handle: "", discord_handle: "" };
@@ -37,7 +33,9 @@ export function AdminShiftTracker() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState(EMPTY_KID);
   const [newKid, setNewKid] = useState(EMPTY_KID);
+  const [showAddForm, setShowAddForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     try {
@@ -55,9 +53,14 @@ export function AdminShiftTracker() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    if (showAddForm) nameInputRef.current?.focus();
+  }, [showAddForm]);
+
   async function addKid(e: React.FormEvent) {
     e.preventDefault();
-    if (!newKid.full_name.trim()) {
+    const name = newKid.full_name.trim();
+    if (!name) {
       toast.error("Name is required");
       return;
     }
@@ -69,8 +72,9 @@ export function AdminShiftTracker() {
         body: JSON.stringify(newKid),
       });
       if (!res.ok) throw new Error();
-      toast.success(`Added ${newKid.full_name.trim()}`);
+      toast.success(`Added ${name}`);
       setNewKid(EMPTY_KID);
+      nameInputRef.current?.focus();
       await load();
     } catch {
       toast.error("Failed to add student");
@@ -128,8 +132,10 @@ export function AdminShiftTracker() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 py-8 text-muted-foreground">
-        <Loader2 className="h-5 w-5 animate-spin" /> Loading SHIFT tracker...
+      <div className="space-y-2 pt-2">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="h-16 animate-pulse rounded-lg bg-muted" />
+        ))}
       </div>
     );
   }
@@ -140,212 +146,276 @@ export function AdminShiftTracker() {
     kidsMissingNoteThisWeek: 0,
     currentWeekLabel: "Week 1",
   };
-  const students = data?.students ?? [];
+  const notedCount = stats.totalKids - stats.kidsMissingNoteThisWeek;
+  const students = [...(data?.students ?? [])].sort(
+    (a, b) => Number(a.has_note_this_week) - Number(b.has_note_this_week)
+  );
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Kids tracked
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-2xl font-bold">{stats.totalKids}</CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Notes in {stats.currentWeekLabel}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-2xl font-bold">{stats.notesThisWeek}</CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Missing a note this week
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-2xl font-bold">
-            {stats.kidsMissingNoteThisWeek}
-          </CardContent>
-        </Card>
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Badge variant="secondary">{stats.currentWeekLabel}</Badge>
+          {stats.totalKids > 0 && (
+            <>
+              <div
+                className="h-1.5 w-32 overflow-hidden rounded-full bg-muted"
+                role="progressbar"
+                aria-valuenow={notedCount}
+                aria-valuemax={stats.totalKids}
+                aria-label={`Kids with a note in ${stats.currentWeekLabel}`}
+              >
+                <div
+                  className="h-full rounded-full bg-emerald-500 transition-all"
+                  style={{
+                    width: `${Math.round((notedCount / stats.totalKids) * 100)}%`,
+                  }}
+                />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {notedCount} of {stats.totalKids} noted
+                {stats.kidsMissingNoteThisWeek > 0 && (
+                  <span className="font-medium text-amber-600 dark:text-amber-500">
+                    {" "}
+                    · {stats.kidsMissingNoteThisWeek} to go
+                  </span>
+                )}
+              </p>
+            </>
+          )}
+        </div>
+        <Button
+          size="sm"
+          variant={showAddForm ? "secondary" : "outline"}
+          onClick={() => setShowAddForm((v) => !v)}
+        >
+          <Plus className="mr-1 h-4 w-4" />
+          Add kid
+        </Button>
       </div>
 
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium">Add a kid</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={addKid} className="flex flex-wrap gap-2">
-            <Input
-              value={newKid.full_name}
-              onChange={(e) => setNewKid({ ...newKid, full_name: e.target.value })}
-              placeholder="Full name"
-              className="w-48"
-            />
-            <Input
-              value={newKid.ig_handle}
-              onChange={(e) => setNewKid({ ...newKid, ig_handle: e.target.value })}
-              placeholder="IG handle"
-              className="w-40"
-            />
-            <Input
-              value={newKid.discord_handle}
-              onChange={(e) => setNewKid({ ...newKid, discord_handle: e.target.value })}
-              placeholder="Discord handle"
-              className="w-40"
-            />
-            <Button type="submit" disabled={saving}>
-              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Add
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+      {showAddForm && (
+        <form
+          onSubmit={addKid}
+          className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/40 p-3"
+        >
+          <Input
+            ref={nameInputRef}
+            value={newKid.full_name}
+            onChange={(e) => setNewKid({ ...newKid, full_name: e.target.value })}
+            placeholder="Full name"
+            aria-label="Full name"
+            className="w-48 bg-background"
+          />
+          <Input
+            value={newKid.ig_handle}
+            onChange={(e) => setNewKid({ ...newKid, ig_handle: e.target.value })}
+            placeholder="IG handle"
+            aria-label="Instagram handle"
+            className="w-40 bg-background"
+          />
+          <Input
+            value={newKid.discord_handle}
+            onChange={(e) => setNewKid({ ...newKid, discord_handle: e.target.value })}
+            placeholder="Discord handle"
+            aria-label="Discord handle"
+            className="w-40 bg-background"
+          />
+          <Button type="submit" size="sm" disabled={saving}>
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Add
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            stays open so you can add the whole cohort
+          </span>
+        </form>
+      )}
 
       {students.length === 0 ? (
-        <p className="py-8 text-center text-muted-foreground">No kids added yet.</p>
+        <div className="rounded-lg border border-dashed py-12 text-center">
+          <p className="font-medium">No kids yet</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Add the kids of {SHIFT_COHORT.name} to start logging weekly notes.
+          </p>
+          <Button
+            size="sm"
+            className="mt-4"
+            onClick={() => setShowAddForm(true)}
+          >
+            <Plus className="mr-1 h-4 w-4" />
+            Add the first kid
+          </Button>
+        </div>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>IG</TableHead>
-              <TableHead>Discord</TableHead>
-              <TableHead>Last note</TableHead>
-              <TableHead>Notes</TableHead>
-              <TableHead className="w-24">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {students.map((student) => (
-              <Fragment key={student.id}>
-                <TableRow>
-                  {editingId === student.id ? (
-                    <>
-                      <TableCell>
+        <ul className="space-y-2">
+          {students.map((student) => {
+            const isExpanded = expandedId === student.id;
+            const isEditing = editingId === student.id;
+            return (
+              <li
+                key={student.id}
+                className={cn(
+                  "rounded-lg border bg-card transition-colors",
+                  !isExpanded && "hover:bg-muted/50"
+                )}
+              >
+                <button
+                  type="button"
+                  onClick={() => setExpandedId(isExpanded ? null : student.id)}
+                  aria-expanded={isExpanded}
+                  className="flex w-full items-center gap-3 px-4 py-3 text-left"
+                >
+                  <span
+                    className={cn(
+                      "h-2 w-2 shrink-0 rounded-full",
+                      student.has_note_this_week ? "bg-emerald-500" : "bg-amber-500"
+                    )}
+                    title={
+                      student.has_note_this_week
+                        ? `Noted in ${stats.currentWeekLabel}`
+                        : `No note in ${stats.currentWeekLabel} yet`
+                    }
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-medium">{student.full_name}</span>
+                      {student.ig_handle && (
+                        <span className="text-xs text-muted-foreground">
+                          @{student.ig_handle}
+                        </span>
+                      )}
+                      {student.discord_handle && (
+                        <span className="text-xs text-muted-foreground">
+                          {student.discord_handle}
+                        </span>
+                      )}
+                    </div>
+                    <p className="truncate text-sm text-muted-foreground">
+                      {student.latest_note ? student.latest_note.body : "No notes yet"}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-3">
+                    {!student.has_note_this_week && (
+                      <span className="text-xs font-medium text-amber-600 dark:text-amber-500">
+                        Needs note
+                      </span>
+                    )}
+                    {student.latest_note && (
+                      <span className="hidden text-xs text-muted-foreground sm:inline">
+                        {formatDistanceToNow(new Date(student.latest_note.created_at), {
+                          addSuffix: true,
+                        })}
+                      </span>
+                    )}
+                    <span className="text-xs text-muted-foreground">
+                      {student.note_count} {student.note_count === 1 ? "note" : "notes"}
+                    </span>
+                    {isExpanded ? (
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </div>
+                </button>
+
+                {isExpanded && (
+                  <div className="border-t px-4 py-4">
+                    <div className="mb-3 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        {student.ig_handle && (
+                          <a
+                            href={`https://instagram.com/${student.ig_handle}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 hover:text-foreground"
+                          >
+                            <Instagram className="h-3.5 w-3.5" />@{student.ig_handle}
+                          </a>
+                        )}
+                        {student.discord_handle && (
+                          <span className="inline-flex items-center gap-1">
+                            <MessageCircle className="h-3.5 w-3.5" />
+                            {student.discord_handle}
+                          </span>
+                        )}
+                        {!student.ig_handle && !student.discord_handle && (
+                          <span>No contact info</span>
+                        )}
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          aria-label={`Edit ${student.full_name}`}
+                          onClick={() => startEdit(student)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          aria-label={`Remove ${student.full_name}`}
+                          onClick={() => removeKid(student)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {isEditing && (
+                      <div className="mb-4 flex flex-wrap items-center gap-2 rounded-md border bg-background p-3">
                         <Input
                           value={editForm.full_name}
                           onChange={(e) =>
                             setEditForm({ ...editForm, full_name: e.target.value })
                           }
+                          aria-label="Full name"
+                          className="w-48"
                         />
-                      </TableCell>
-                      <TableCell>
                         <Input
                           value={editForm.ig_handle}
                           onChange={(e) =>
                             setEditForm({ ...editForm, ig_handle: e.target.value })
                           }
+                          aria-label="Instagram handle"
+                          className="w-40"
                         />
-                      </TableCell>
-                      <TableCell>
                         <Input
                           value={editForm.discord_handle}
                           onChange={(e) =>
                             setEditForm({ ...editForm, discord_handle: e.target.value })
                           }
+                          aria-label="Discord handle"
+                          className="w-40"
                         />
-                      </TableCell>
-                      <TableCell colSpan={2} />
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => saveEdit(student.id)}
-                            disabled={saving}
-                          >
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button size="icon" variant="ghost" onClick={() => setEditingId(null)}>
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </>
-                  ) : (
-                    <>
-                      <TableCell>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setExpandedId(expandedId === student.id ? null : student.id)
-                          }
-                          className="flex items-center gap-1 font-medium hover:underline"
+                        <Button
+                          size="sm"
+                          onClick={() => saveEdit(student.id)}
+                          disabled={saving}
                         >
-                          {expandedId === student.id ? (
-                            <ChevronDown className="h-4 w-4" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4" />
-                          )}
-                          {student.full_name}
-                        </button>
-                      </TableCell>
-                      <TableCell>
-                        {student.ig_handle ? (
-                          <a
-                            href={`https://instagram.com/${student.ig_handle}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary hover:underline"
-                          >
-                            @{student.ig_handle}
-                          </a>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {student.discord_handle ?? (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {student.latest_note ? (
-                          <span className="text-sm">
-                            <Badge variant="secondary" className="mr-1">
-                              {student.latest_note.week_label}
-                            </Badge>
-                            {formatDistanceToNow(new Date(student.latest_note.created_at), {
-                              addSuffix: true,
-                            })}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">No notes yet</span>
-                        )}
-                      </TableCell>
-                      <TableCell>{student.note_count}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button size="icon" variant="ghost" onClick={() => startEdit(student)}>
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button size="icon" variant="ghost" onClick={() => removeKid(student)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </>
-                  )}
-                </TableRow>
-                {expandedId === student.id && editingId !== student.id && (
-                  <TableRow>
-                    <TableCell colSpan={6} className="p-0">
-                      <ShiftStudentNotesPanel
-                        studentId={student.id}
-                        currentWeekLabel={stats.currentWeekLabel}
-                        onChanged={load}
-                      />
-                    </TableCell>
-                  </TableRow>
+                          <Check className="mr-1 h-4 w-4" /> Save
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setEditingId(null)}
+                        >
+                          <X className="mr-1 h-4 w-4" /> Cancel
+                        </Button>
+                      </div>
+                    )}
+
+                    <ShiftStudentNotesPanel
+                      studentId={student.id}
+                      currentWeekLabel={stats.currentWeekLabel}
+                      onChanged={load}
+                    />
+                  </div>
                 )}
-              </Fragment>
-            ))}
-          </TableBody>
-        </Table>
+              </li>
+            );
+          })}
+        </ul>
       )}
     </div>
   );

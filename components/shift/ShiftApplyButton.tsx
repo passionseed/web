@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { ArrowRight } from "lucide-react";
-import { ShiftApplicationModal } from "./ShiftApplicationModal";
 
-export const SHIFT_APPLY_URL = "https://forms.gle/3DaMNzuuFV4EHD2m7";
+import { SHIFT_COHORT } from "@/lib/content/shift-cohort";
+
+export const SHIFT_APPLY_URL = SHIFT_COHORT.applyUrl;
 
 interface ShiftApplyButtonProps {
   children: React.ReactNode;
@@ -19,12 +20,7 @@ export function ShiftApplyButton({
   location = "hero",
   href = SHIFT_APPLY_URL,
 }: ShiftApplyButtonProps) {
-  const [modalOpen, setModalOpen] = useState(false);
-
-  // If pointing to external / custom route (e.g. techseed bridge pointing to /shift)
-  const isNavigational = href !== SHIFT_APPLY_URL;
-
-  const logClick = () => {
+  const handleClick = () => {
     try {
       const payload = JSON.stringify({
         event_type: "shift_apply_click",
@@ -49,36 +45,20 @@ export function ShiftApplyButton({
         }).catch(() => {});
       }
     } catch {
-      // Fail silently
-    }
-  };
-
-  const handleClick = (e: React.MouseEvent) => {
-    logClick();
-    if (!isNavigational) {
-      e.preventDefault();
-      setModalOpen(true);
+      // Fail silently to never block user intent
     }
   };
 
   return (
-    <>
-      <a
-        href={href}
-        onClick={handleClick}
-        className={`shift-button cursor-pointer ${className}`}
-      >
-        <span>{children}</span>
-        <ArrowRight className="h-4 w-4" />
-      </a>
-
-      {!isNavigational && (
-        <ShiftApplicationModal
-          isOpen={modalOpen}
-          onClose={() => setModalOpen(false)}
-          sourceLocation={location}
-        />
-      )}
-    </>
+    <a
+      href={href}
+      // The native form lives on-site; only external forms open a new tab.
+      {...(href.startsWith("/") ? {} : { target: "_blank", rel: "noopener noreferrer" })}
+      onClick={handleClick}
+      className={`shift-button ${className}`}
+    >
+      <span>{children}</span>
+      <ArrowRight className="h-4 w-4" />
+    </a>
   );
 }

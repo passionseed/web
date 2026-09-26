@@ -1,4 +1,4 @@
-import { LandingPageWrapper } from "@/components/landing-page-wrapper";
+import { HomePage } from "@/components/home/HomePage";
 import { isAnonymousUser } from "@/lib/supabase/auth";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
@@ -90,5 +90,5 @@ export default async function Home() {
 
   const studentCount = await getStudentCount().catch(() => null);
 
-  return <LandingPageWrapper studentCount={studentCount} />;
+  return <HomePage studentCount={studentCount} />;
 }

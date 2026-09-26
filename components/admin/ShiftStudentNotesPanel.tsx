@@ -178,10 +178,20 @@ export function ShiftStudentNotesPanel({
                       </span>
                     </div>
                     <div className="flex gap-1">
-                      <Button size="icon" variant="ghost" onClick={() => startEdit(note)}>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label="Edit note"
+                        onClick={() => startEdit(note)}
+                      >
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button size="icon" variant="ghost" onClick={() => removeNote(note.id)}>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label="Delete note"
+                        onClick={() => removeNote(note.id)}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>

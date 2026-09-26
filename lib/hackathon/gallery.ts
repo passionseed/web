@@ -8,9 +8,13 @@ function getClient() {
 }
 
 function getAdminClient() {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceKey) {
+    return getClient();
+  }
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    serviceKey
   );
 }
 
@@ -62,94 +66,112 @@ export type GalleryProductSummary = Pick<
 > & { team_name: string };
 
 export async function getGalleryProducts(): Promise<GalleryProductSummary[]> {
-  const { data, error } = await getClient()
-    .from("hackathon_gallery_products")
-    .select(`
-      id,
-      team_id,
-      product_name,
-      product_name_th,
-      problem_statement,
-      problem_statement_th,
-      cover_image_url,
-      tags,
-      hackathon_year,
-      hackathon_name,
-      interest_count,
-      hackathon_teams!inner ( name )
-    `)
-    .eq("is_published", true)
-    .order("interest_count", { ascending: false });
+  try {
+    const { data, error } = await getAdminClient()
+      .from("hackathon_gallery_products")
+      .select(`
+        id,
+        team_id,
+        product_name,
+        product_name_th,
+        problem_statement,
+        problem_statement_th,
+        cover_image_url,
+        tags,
+        hackathon_year,
+        hackathon_name,
+        interest_count,
+        hackathon_teams!inner ( name )
+      `)
+      .eq("is_published", true)
+      .order("interest_count", { ascending: false });
 
-  if (error) throw error;
+    if (error) {
+      console.error("[getGalleryProducts] Error fetching gallery products:", error);
+      return [];
+    }
 
-  return (data ?? []).map((row: any) => ({
-    id: row.id,
-    team_id: row.team_id,
-    product_name: row.product_name,
-    product_name_th: row.product_name_th ?? null,
-    problem_statement: row.problem_statement,
-    problem_statement_th: row.problem_statement_th ?? null,
-    cover_image_url: row.cover_image_url,
-    tags: row.tags,
-    hackathon_year: row.hackathon_year,
-    hackathon_name: row.hackathon_name,
-    interest_count: row.interest_count,
-    match_count: row.match_count ?? 0,
-    target_personas: row.target_personas ?? null,
-    team_name: row.hackathon_teams?.name ?? "",
-  }));
+    return (data ?? []).map((row: any) => ({
+      id: row.id,
+      team_id: row.team_id,
+      product_name: row.product_name,
+      product_name_th: row.product_name_th ?? null,
+      problem_statement: row.problem_statement,
+      problem_statement_th: row.problem_statement_th ?? null,
+      cover_image_url: row.cover_image_url,
+      tags: row.tags,
+      hackathon_year: row.hackathon_year,
+      hackathon_name: row.hackathon_name,
+      interest_count: row.interest_count,
+      match_count: row.match_count ?? 0,
+      target_personas: row.target_personas ?? null,
+      team_name: row.hackathon_teams?.name ?? "",
+    }));
+  } catch (err) {
+    console.error("[getGalleryProducts] Unexpected error:", err);
+    return [];
+  }
 }
 
 export async function getGalleryProduct(teamId: string): Promise<GalleryProduct | null> {
-  const { data, error } = await getClient()
-    .from("hackathon_gallery_products")
-    .select(`
-      *,
-      hackathon_teams!inner (
-        name,
-        hackathon_team_members (
-          hackathon_participants ( name )
+  try {
+    const { data, error } = await getAdminClient()
+      .from("hackathon_gallery_products")
+      .select(`
+        *,
+        hackathon_teams!inner (
+          name,
+          hackathon_team_members (
+            hackathon_participants ( name )
+          )
         )
-      )
-    `)
-    .eq("team_id", teamId)
-    .eq("is_published", true)
-    .single();
+      `)
+      .eq("team_id", teamId)
+      .eq("is_published", true)
+      .single();
 
-  if (error || !data) return null;
+    if (error || !data) {
+      if (error && error.code !== "PGRST116") {
+        console.error("[getGalleryProduct] Error fetching product for team:", teamId, error);
+      }
+      return null;
+    }
 
-  return {
-    id: data.id,
-    team_id: data.team_id,
-    product_name: data.product_name,
-    product_name_th: data.product_name_th ?? null,
-    problem_statement: data.problem_statement,
-    problem_statement_th: data.problem_statement_th ?? null,
-    solution_description: data.solution_description,
-    solution_description_th: data.solution_description_th ?? null,
-    cover_image_url: data.cover_image_url,
-    additional_images: data.additional_images ?? [],
-    test_mode: data.test_mode ?? "contact",
-    demo_url: data.demo_url,
-    contact_email: data.contact_email ?? null,
-    line_qr_url: data.line_qr_url ?? null,
-    line_id: data.line_id ?? null,
-    youtube_url: data.youtube_url ?? null,
-    tags: data.tags,
-    hackathon_year: data.hackathon_year,
-    hackathon_name: data.hackathon_name,
-    interest_count: data.interest_count,
-    match_count: data.match_count ?? 0,
-    target_personas: data.target_personas ?? null,
-    created_at: data.created_at,
-    team: {
-      name: data.hackathon_teams.name,
-      members: (data.hackathon_teams.hackathon_team_members ?? []).map(
-        (m: any) => ({ name: m.hackathon_participants?.name ?? "" })
-      ),
-    },
-  };
+    return {
+      id: data.id,
+      team_id: data.team_id,
+      product_name: data.product_name,
+      product_name_th: data.product_name_th ?? null,
+      problem_statement: data.problem_statement,
+      problem_statement_th: data.problem_statement_th ?? null,
+      solution_description: data.solution_description,
+      solution_description_th: data.solution_description_th ?? null,
+      cover_image_url: data.cover_image_url,
+      additional_images: data.additional_images ?? [],
+      test_mode: data.test_mode ?? "contact",
+      demo_url: data.demo_url,
+      contact_email: data.contact_email ?? null,
+      line_qr_url: data.line_qr_url ?? null,
+      line_id: data.line_id ?? null,
+      youtube_url: data.youtube_url ?? null,
+      tags: data.tags,
+      hackathon_year: data.hackathon_year,
+      hackathon_name: data.hackathon_name,
+      interest_count: data.interest_count,
+      match_count: data.match_count ?? 0,
+      target_personas: data.target_personas ?? null,
+      created_at: data.created_at,
+      team: {
+        name: data.hackathon_teams.name,
+        members: (data.hackathon_teams.hackathon_team_members ?? []).map(
+          (m: any) => ({ name: m.hackathon_participants?.name ?? "" })
+        ),
+      },
+    };
+  } catch (err) {
+    console.error("[getGalleryProduct] Unexpected error:", err);
+    return null;
+  }
 }
 
 export async function submitGalleryInterest(params: {

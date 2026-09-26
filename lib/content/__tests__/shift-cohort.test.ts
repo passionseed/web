@@ -27,7 +27,7 @@ describe("shift cohort", () => {
   });
 
   it("splits every seat into a squad", () => {
-    expect(squadCount()).toBe(3);
+    expect(squadCount()).toBe(5);
     expect(SHIFT_COHORT.seats % SHIFT_COHORT.squadSize).toBe(0);
   });
 

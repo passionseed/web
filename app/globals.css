@@ -19596,157 +19596,17 @@ a.pathlab-fields__button {
 }
 
 /* ============================================================
-   SHIFT — R&D Sandbox landing (/shift)
-   Dawn-gradient identity (poster-led): a deep violet sky melting
-   through magenta into sunrise orange near the horizon. Warm
-   amber/gold accent, iridescent wordmark, violet glass cards.
-   Motion contract matches the design system: hover-in uses a
-   tension-eased charge, hover-out snaps back via the short base
-   transition; clip-path + opacity + filter animate together;
-   everything stops under prefers-reduced-motion.
+   SHIFT — R&D Sandbox landing (/shift) and posters (/shift/poster)
+   Riso print identity: spot inks (blue, fluoro pink, orange, yellow,
+   black) on paper, dawn seen from orbit, chrome wordmark on the
+   horizon. Inks, sky, and grain live in components/shift/poster/riso.tsx;
+   only the wordmark and button need global CSS.
    ============================================================ */
 
-:root {
-  --shift-bg: #05010d;
-  --shift-surface: rgba(34, 16, 66, 0.55);
-  --shift-hazard: #ffc84d;
-  --shift-hazard-soft: rgba(255, 200, 77, 0.14);
-  --shift-hazard-line: rgba(255, 200, 77, 0.3);
-  --shift-accent-hot: #ff7a2a;
-  --shift-accent-magenta: #e04fa0;
-  --shift-card-line: rgba(178, 140, 255, 0.16);
-  --shift-text: #f7f2ff;
-  --shift-text-dim: #d4c8ec;
-}
 
-.shift-scene {
-  position: relative;
-  background-color: var(--shift-bg);
-  /* Night sky dominant, like the Dawn theme: near-black overhead, the violet
-     lift held back until the last ~25%, warmth confined to the horizon glows */
-  background-image: linear-gradient(
-    180deg,
-    #05010d 0%,
-    #08030f 18%,
-    #0c0519 38%,
-    #120828 58%,
-    #1a0c3a 74%,
-    #221148 87%,
-    #2a1757 95%,
-    #331d63 100%
-  );
-  color: var(--shift-text);
-  overflow: hidden;
-}
-
-/* Blueprint grid (top-masked) + ambient glows, prime-number pulses so layers never sync */
-.shift-scene__grid {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 56px 56px;
-  mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, black 30%, transparent 75%);
-  pointer-events: none;
-}
-
-.shift-scene__glow-a,
-.shift-scene__glow-b {
-  position: absolute;
-  border-radius: 9999px;
-  filter: blur(110px);
-  pointer-events: none;
-}
-
-.shift-scene__glow-a {
-  top: -180px;
-  left: 50%;
-  width: 720px;
-  height: 420px;
-  transform: translateX(-50%);
-  background: radial-gradient(circle, rgba(224, 79, 160, 0.16) 0%, transparent 70%);
-  animation: shift-glow-pulse 4231ms ease-in-out infinite;
-}
-
-.shift-scene__glow-b {
-  bottom: -260px;
-  right: -200px;
-  width: 920px;
-  height: 620px;
-  background: radial-gradient(circle, rgba(255, 122, 42, 0.3) 0%, transparent 70%);
-  animation: shift-glow-pulse 5711ms ease-in-out infinite;
-}
-
-@keyframes shift-glow-pulse {
-  0%, 100% { opacity: 0.75; }
-  50% { opacity: 1; }
-}
-
-.shift-eyebrow {
-  font-family: var(--font-space-mono), monospace;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--shift-hazard);
-  text-shadow: 0 0 18px rgba(255, 200, 77, 0.35);
-}
-
-/* Violet glass card: same glow contract as .ei-card, dawn palette */
-.shift-card {
-  position: relative;
-  background: var(--shift-surface);
-  /* NO backdrop-filter here: a composited ancestor makes Chromium clip Thai
-     vowel/tone-mark glyphs (Bai Jamjuree, Kodchasan) at the font metrics box,
-     slicing the tops off every line of card text */
-  border: 1px solid var(--shift-card-line);
-  border-radius: var(--space-card-radius, 12px);
-  box-shadow: 0 0 0 1px rgba(255, 154, 61, 0),
-              0 4px 12px rgba(10, 3, 28, 0.35),
-              0 0 40px rgba(255, 122, 42, 0);
-  transition: transform var(--duration-snap, 160ms) var(--ease-snap, cubic-bezier(0.4, 0, 0.2, 1)),
-              box-shadow var(--duration-snap, 160ms) var(--ease-snap, cubic-bezier(0.4, 0, 0.2, 1));
-  overflow: hidden;
-}
-
-.shift-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 13px;
-  background: linear-gradient(to top, rgba(255, 138, 42, 0.22) 0%, rgba(224, 79, 160, 0.08) 45%, transparent 65%);
-  clip-path: inset(100% 0 0 0 round 13px);
-  opacity: 0;
-  filter: blur(18px);
-  transition: clip-path var(--duration-snap, 160ms) var(--ease-snap, cubic-bezier(0.4, 0, 0.2, 1)),
-              opacity var(--duration-snap, 160ms) var(--ease-snap, cubic-bezier(0.4, 0, 0.2, 1)),
-              filter var(--duration-snap, 160ms) var(--ease-snap, cubic-bezier(0.4, 0, 0.2, 1));
-  pointer-events: none;
-}
-
-.shift-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 0 0 1px rgba(255, 170, 80, 0.38),
-              0 8px 24px rgba(10, 3, 28, 0.45),
-              0 0 60px rgba(255, 122, 42, 0.2);
-}
-
-.shift-card:hover::before {
-  clip-path: inset(0% 0 0 0 round 13px);
-  opacity: 1;
-  filter: blur(3px);
-  transition: clip-path var(--duration-rise, 9000ms) var(--ease-tension, cubic-bezier(0.05, 0.7, 0.35, 0.99)),
-              opacity var(--duration-rise, 9000ms) var(--ease-tension, cubic-bezier(0.05, 0.7, 0.35, 0.99)),
-              filter var(--duration-rise, 9000ms) var(--ease-tension, cubic-bezier(0.05, 0.7, 0.35, 0.99));
-}
-
-.shift-card > * {
-  position: relative;
-  z-index: 1;
-}
-
-/* Primary CTA: sunrise gradient, dark text */
+/* Riso block button: paper-colored ink with the pink plate landing a touch
+   off. Hover-in builds the offset with a keyframe (tension ease), hover-out
+   snaps back on the short base transition. */
 .shift-button {
   position: relative;
   display: inline-flex;
@@ -19757,33 +19617,30 @@ a.pathlab-fields__button {
   font-family: var(--font-bai-jamjuree), sans-serif;
   font-size: 1.0625rem;
   font-weight: 700;
-  color: #2a1200;
-  background: linear-gradient(180deg, #ffd76a 0%, #ffa534 45%, #ff7a1f 100%);
+  color: #17151c;
+  background: #f2ead9;
   border: none;
-  border-radius: 14px;
+  border-radius: 4px;
   cursor: pointer;
-  overflow: hidden;
-  box-shadow: 0 0 0 1px rgba(255, 170, 60, 0.4), 0 8px 30px rgba(255, 122, 42, 0.28);
-  transition: transform 320ms var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1)),
-              box-shadow 320ms var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
-}
-
-.shift-button::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.35) 0%, transparent 70%);
-  opacity: 0;
-  transition: opacity 400ms ease;
+  box-shadow: 3px 3px 2px 0 rgba(255, 72, 176, 0.75), -2px -1px 2px 0 rgba(0, 120, 191, 0.45);
+  transition: transform 140ms ease-out, box-shadow 140ms ease-out;
 }
 
 .shift-button:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 0 0 1px rgba(255, 190, 90, 0.6), 0 14px 44px rgba(255, 122, 42, 0.42);
+  animation: shift-button-lift 420ms cubic-bezier(0.05, 0.7, 0.35, 0.99) forwards;
 }
 
-.shift-button:hover::after {
-  opacity: 1;
+@keyframes shift-button-lift {
+  to {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 3px 0 rgba(255, 72, 176, 0.85), -3px -2px 3px 0 rgba(0, 120, 191, 0.55);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shift-button:hover {
+    animation: none;
+  }
 }
 
 .shift-button > * {
@@ -19791,50 +19648,10 @@ a.pathlab-fields__button {
   z-index: 1;
 }
 
-/* Warm gradient text for Thai headline accents (Kodchasan bold);
-   drop-shadow keeps it legible over the warm horizon stops */
-.shift-gradient-text {
-  background: linear-gradient(92deg, #ffd76a 0%, #ff9a3d 60%, #ff7a5e 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  filter: drop-shadow(0 2px 10px rgba(23, 7, 54, 0.45));
-  /* Thai vowels/tone marks extend past the line box; background-clip: text
-     clips at the element box, so give the glyphs room without shifting layout */
-  display: inline-block;
-  padding: 0.14em 0.06em 0.04em;
-  margin: -0.14em -0.06em -0.04em;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .shift-scene__glow-a,
-  .shift-scene__glow-b {
-    animation: none;
-  }
-
-  .shift-card,
-  .shift-card::before,
-  .shift-button,
-  .shift-button::after {
+  .shift-button {
     transition: none;
   }
-
-  .shift-card:hover {
-    transform: none;
-  }
-
-  .shift-button:hover {
-    transform: none;
-  }
-}
-
-/* SHIFT FAQ: hide native details triangle across engines */
-.shift-card summary {
-  list-style: none;
-}
-
-.shift-card summary::-webkit-details-marker {
-  display: none;
 }
 
 /* SHIFT wordmark — tilted poster title (Figma spec: Libre Franklin italic 600,
@@ -19862,6 +19679,38 @@ a.pathlab-fields__button {
   color: transparent;
   filter: drop-shadow(0.094em -0.062em 0 rgba(20, 6, 48, 0.55));
   transform: rotate(-4.08deg);
+}
+
+/* Chrome variant: a mirror reflecting the dawn scene. Cool sky on top, a
+   hard dark horizon just below center, sunrise warmth underneath, with a
+   diagonal specular sweep layered over it. Pair with the #shift-chrome-bevel
+   SVG filter for the raised edge lighting. */
+.shift-wordmark--chrome {
+  /* Reflections run horizontally so every stroke of every glyph mirrors the
+     same sky. A diagonal sweep would light one leg of an H and miss the other. */
+  background: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #f4f6fb 12%,
+    #ffffff 20%,
+    #c9d1e2 32%,
+    #e8edf6 38%,
+    #8a93ab 46%,
+    #3b3f55 50%,
+    #0b0619 51%,
+    #140a28 56%,
+    #4a1f5e 60%,
+    #c0508f 68%,
+    #ff8a4c 79%,
+    #ffd58f 90%,
+    #fff8ea 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-stroke: 0.008em rgba(255, 255, 255, 0.55);
+  filter: url(#shift-chrome-bevel) drop-shadow(0 0.04em 0.02em rgba(8, 2, 20, 0.7))
+    drop-shadow(0 0 0.35em rgba(255, 150, 90, 0.18));
 }
 
 /* ============================================================
