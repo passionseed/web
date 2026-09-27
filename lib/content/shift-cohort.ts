@@ -15,6 +15,8 @@ export interface ShiftDay {
 }
 
 export interface ShiftCohort {
+  /** Round number, also the URL segment: /shift/1, /shift/2. */
+  round: number;
   /** Wordmark shown on the page, e.g. "SHIFT[1]". */
   name: string;
   seats: number;
@@ -29,7 +31,22 @@ export interface ShiftCohort {
   /** Outside users each student names on Day 1 and asks directly. A target,
    *  not a promise: the last batch fell short when it relied on group posts. */
   testerTarget: number;
+  /** Nightly live session on Discord, Bangkok time. */
+  sessionTime: string;
   schedule: ShiftDay[];
+  /** Set once a round has actually wrapped, when the dates alone would say
+   *  otherwise (e.g. approximate dates for a pilot). */
+  completed?: boolean;
+  /** 1200x630 listing banner shown on the /shift gallery card. */
+  bannerSrc?: string;
+  /** Live projects the round shipped, shown once it is over. Titles only:
+   *  students are minors, so no names or handles go on the public page. */
+  showcase?: ShiftShowcaseProject[];
+}
+
+export interface ShiftShowcaseProject {
+  title: string;
+  url: string;
 }
 
 export interface ShiftSkillCard {
@@ -67,16 +84,19 @@ export function formatThaiDateRange(startIso: string, endIso: string): string {
 }
 
 export const SHIFT_COHORT: ShiftCohort = {
+  round: 1,
   name: "SHIFT[1]",
   seats: 15,
-  priceBaht: 990,
+  priceBaht: 670,
   anchorPriceBaht: 1500,
   startDate: "2026-10-05",
   endDate: "2026-10-11",
   applyDeadline: "2026-10-03",
-  applyUrl: "/shift/apply",
+  applyUrl: "/shift/apply?round=1",
+  bannerSrc: "/shift/banners/shift-1.png",
   squadSize: 3,
   testerTarget: 15,
+  sessionTime: "19:00–21:00",
   schedule: [
     {
       date: "2026-10-05",
@@ -109,9 +129,9 @@ export const SHIFT_COHORT: ShiftCohort = {
     {
       date: "2026-10-09",
       day: 5,
-      label: "Pivot Check",
+      label: "Fix Check",
       title: "อะไรพัง และเราเปลี่ยนอะไร",
-      detail: "บันทึก failure data ลง Pivot Log พร้อมวันที่ ของที่พังคือหลักฐานที่ลอกกันไม่ได้",
+      detail: "จดทุกจุดที่พังพร้อมวันที่ ว่าเจออะไรแล้วแก้ยังไง ของที่พังคือหลักฐานที่ลอกกันไม่ได้",
     },
     {
       date: "2026-10-10",
@@ -125,10 +145,123 @@ export const SHIFT_COHORT: ShiftCohort = {
       day: 7,
       label: "Demo Day",
       title: "โชว์ให้ทุกคนดู แล้วเล่าว่าเราเรียนรู้อะไร",
-      detail: "เดโมของจริงต่อหน้าทั้งรุ่น เล่าจุดพัง สิ่งที่เปลี่ยน และสิ่งที่ได้เรียนรู้ แล้วเรียบเรียงเป็น Case Study 1 หน้า",
+      detail: "เดโมของจริงต่อหน้าทั้งรุ่น เล่าจุดพัง สิ่งที่เปลี่ยน และสิ่งที่ได้เรียนรู้ แล้วสรุปเป็นพอร์ต 1 หน้า",
     },
   ],
 };
+
+function addDays(iso: string, days: number): string {
+  const [year, month, day] = iso.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
+}
+
+/** Every date in a round moved by `days` (negative moves it earlier). */
+function shiftDates(prev: ShiftCohort, days: number): ShiftCohort {
+  return {
+    ...prev,
+    startDate: addDays(prev.startDate, days),
+    endDate: addDays(prev.endDate, days),
+    applyDeadline: addDays(prev.applyDeadline, days),
+    schedule: prev.schedule.map((d) => ({ ...d, date: addDays(d.date, days) })),
+  };
+}
+
+/** A round `rounds` away from `prev`, running `days` later (or earlier). */
+function sibling(prev: ShiftCohort, rounds: number, days: number): ShiftCohort {
+  const round = prev.round + rounds;
+  return {
+    ...shiftDates(prev, days),
+    round,
+    name: `SHIFT[${round}]`,
+    applyUrl: `/shift/apply?round=${round}`,
+    bannerSrc: `/shift/banners/shift-${round}.png`,
+    showcase: undefined,
+  };
+}
+
+/**
+ * SHIFT[0], the free pilot: 9 students, invite only, two weeks before
+ * SHIFT[1]. Dates are approximate (the week the projects were posted).
+ */
+export const SHIFT_COHORT_0: ShiftCohort = {
+  ...sibling(SHIFT_COHORT, -1, -14),
+  seats: 9,
+  priceBaht: 0,
+  anchorPriceBaht: null,
+  completed: true,
+  showcase: [
+    { title: "CRVC Academic Portal", url: "https://work-for-school-theta.vercel.app/" },
+    { title: "ปฏิทิน กสพท70", url: "https://potter-wine.vercel.app/" },
+    { title: "TradBid", url: "https://trad-bid.vercel.app/" },
+    { title: "Self-Learning", url: "https://learning-app-eight-flax.vercel.app/" },
+    { title: "TRADE", url: "https://bi-ddi-n-gdot-c-omp.vercel.app/" },
+  ],
+};
+
+/** SHIFT[2] starts the Monday after SHIFT[1] ends. */
+export const SHIFT_COHORT_2: ShiftCohort = {
+  ...sibling(SHIFT_COHORT, 1, 7),
+  seats: 21,
+  priceBaht: 990,
+};
+
+/** The round the printed posters are promoting right now. */
+export const POSTER_COHORT = SHIFT_COHORT_2;
+
+/** Every round, oldest first. /shift lists these; /shift/[round] renders one. */
+export const SHIFT_COHORTS: ShiftCohort[] = [SHIFT_COHORT_0, SHIFT_COHORT, SHIFT_COHORT_2];
+
+export function getShiftCohort(round: number): ShiftCohort | undefined {
+  return SHIFT_COHORTS.find((c) => c.round === round);
+}
+
+/** Off each person's price when two friends apply together. */
+export const PAIR_DISCOUNT_BAHT = 100;
+
+/** Per-person price for a pair of friends, or null for a free round. */
+export function pairPriceBaht(cohort: ShiftCohort): number | null {
+  return cohort.priceBaht > 0 ? cohort.priceBaht - PAIR_DISCOUNT_BAHT : null;
+}
+
+/**
+ * How people pay: scan the PromptPay QR, then send the slip to PassionSeed's
+ * LINE Official Account, where a human confirms the seat.
+ */
+export const SHIFT_PAYMENT = {
+  /** Full bank QR slip, offered as a download for bank apps. */
+  qrSrc: "/shift/pay/promptpay-qr.jpg",
+  /** Just the QR, cropped from the slip so it scans off a laptop screen. */
+  qrCardSrc: "/shift/pay/promptpay-qr-card.jpg",
+  lineId: "@161irjbq",
+  lineUrl: "https://line.me/R/ti/p/@161irjbq",
+} as const;
+
+/** "฿670", or "ฟรี" for a free round. */
+export function priceLabel(cohort: ShiftCohort): string {
+  return cohort.priceBaht === 0 ? "ฟรี" : `฿${cohort.priceBaht.toLocaleString("en-US")}`;
+}
+
+export function cohortPath(cohort: ShiftCohort): string {
+  return `/shift/${cohort.round}`;
+}
+
+export type CohortStatus = "open" | "closed" | "running" | "done";
+
+/** Today as YYYY-MM-DD in Bangkok, the only calendar the cohorts run on. */
+export function bangkokToday(now: Date = new Date()): string {
+  return now.toLocaleDateString("en-CA", { timeZone: "Asia/Bangkok" });
+}
+
+/**
+ * Where a round is in its life, from Bangkok's calendar date. ISO dates
+ * compare correctly as strings, so no Date maths is needed.
+ */
+export function cohortStatus(cohort: ShiftCohort, today: string = bangkokToday()): CohortStatus {
+  if (cohort.completed || today > cohort.endDate) return "done";
+  if (today >= cohort.startDate) return "running";
+  if (today > cohort.applyDeadline) return "closed";
+  return "open";
+}
 
 /** Squads pick one card a day based on what their projects need, then teach
  *  it back to the room. The menu keeps quality up; the choice stays theirs. */
@@ -143,7 +276,7 @@ export const SHIFT_SKILL_CARDS: ShiftSkillCard[] = [
   },
   {
     title: "AI Tools (OpenCode)",
-    detail: "ใช้ AI ขึ้นโครงเว็บ วิจัย และทำเครื่องมือได้ในวันเดียว",
+    detail: "ลองใช้เครื่องมือ AI สร้างต้นแบบที่ใช้ได้จริง ไม่ต้องมีพื้นฐาน",
   },
   {
     title: "Anti Meat Proxy",
@@ -170,7 +303,7 @@ export const SHIFT_SDT: ShiftSdtPillar[] = [
   {
     pillar: "Autonomy",
     title: "เลือกเอง",
-    detail: "โจทย์ สกิลที่เรียน และการ pivot เราเลือกเอง พี่เลี้ยงไม่คิดแทน",
+    detail: "โจทย์ สกิลที่เรียน และจะเปลี่ยนทางเมื่อไหร่ เราเลือกเอง พี่เลี้ยงไม่คิดแทน",
   },
   {
     pillar: "Competence",
@@ -187,7 +320,7 @@ export const SHIFT_SDT: ShiftSdtPillar[] = [
 /** Every evening each squad gets a few minutes, always in this order. */
 export const SHIFT_DAILY_SHOW: ShiftShowBeat[] = [
   { label: "Shipped", detail: "วันนี้อะไรใช้ได้จริงแล้ว เปิดให้ดูเลย ไม่ต้องทำสไลด์" },
-  { label: "Broke", detail: "อะไรพัง ใครติดตรงไหน จดลง Pivot Log" },
+  { label: "Broke", detail: "อะไรพัง ใครติดตรงไหน จดไว้แล้วแก้" },
   { label: "Learned", detail: "สกิลที่ทีมเรียนวันนี้ สอนเพื่อนอีก 2 ทีมใน 1 นาที" },
 ];
 
@@ -199,3 +332,9 @@ export function cohortDayCount(cohort: ShiftCohort = SHIFT_COHORT): number {
 export function squadCount(cohort: ShiftCohort = SHIFT_COHORT): number {
   return Math.ceil(cohort.seats / cohort.squadSize);
 }
+
+/** Who SHIFT fits: the fields, and faculty programs students aim for. */
+export const SHIFT_TRACKS = {
+  fields: ["Tech", "Business", "Innovation"],
+  programs: ["CEDT", "CS", "CE", "BBA", "BAScii"],
+} as const;

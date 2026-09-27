@@ -19617,12 +19617,16 @@ a.pathlab-fields__button {
   font-family: var(--font-bai-jamjuree), sans-serif;
   font-size: 1.0625rem;
   font-weight: 700;
-  color: #17151c;
-  background: #f2ead9;
+  color: var(--shift-button-fg, #17151c);
+  background: var(--shift-button-bg, #f2ead9);
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  box-shadow: 3px 3px 2px 0 rgba(255, 72, 176, 0.75), -2px -1px 2px 0 rgba(0, 120, 191, 0.45);
+  box-shadow: var(
+    --shift-button-shadow,
+    3px 3px 2px 0 rgba(255, 72, 176, 0.75),
+    -2px -1px 2px 0 rgba(0, 120, 191, 0.45)
+  );
   transition: transform 140ms ease-out, box-shadow 140ms ease-out;
 }
 
@@ -19633,7 +19637,11 @@ a.pathlab-fields__button {
 @keyframes shift-button-lift {
   to {
     transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 3px 0 rgba(255, 72, 176, 0.85), -3px -2px 3px 0 rgba(0, 120, 191, 0.55);
+    box-shadow: var(
+      --shift-button-shadow-hover,
+      6px 6px 3px 0 rgba(255, 72, 176, 0.85),
+      -3px -2px 3px 0 rgba(0, 120, 191, 0.55)
+    );
   }
 }
 

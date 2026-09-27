@@ -4,7 +4,12 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import { ArrowRight, Check } from "lucide-react";
 
 import { INK, MISREG_TEXT } from "@/components/shift/poster/riso";
-import { SHIFT_COHORT, formatThaiDateRange } from "@/lib/content/shift-cohort";
+import {
+  formatThaiDateRange,
+  type ShiftCohort,
+} from "@/lib/content/shift-cohort";
+
+import { ShiftPayment } from "./ShiftPayment";
 import {
   SHIFT_AVAILABILITY,
   SHIFT_GRADES,
@@ -40,8 +45,6 @@ const EMPTY: ShiftApplicationInput = {
 
 const paper = (alpha: string) => `${INK.paper}${alpha}`;
 
-const COHORT_DATES = formatThaiDateRange(SHIFT_COHORT.startDate, SHIFT_COHORT.endDate);
-
 const INPUT =
   "w-full border-0 border-b bg-transparent px-0 py-3 text-base outline-none transition-colors placeholder:text-[rgba(242,234,217,0.3)] focus:border-[#ff6c2f] focus:ring-0";
 
@@ -62,19 +65,31 @@ function Question({
     <fieldset className="border-t py-7" style={{ borderColor: paper("1f") }}>
       <legend className="sr-only">{label}</legend>
       <div className="flex items-baseline gap-4">
-        <span className="font-kodchasan text-2xl font-bold" style={{ color: INK.orange }}>
+        <span
+          className="font-kodchasan text-2xl font-bold"
+          style={{ color: INK.orange }}
+        >
           {num}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="font-kodchasan text-lg font-semibold leading-snug">{label}</p>
+          <p className="font-kodchasan text-lg font-semibold leading-snug">
+            {label}
+          </p>
           {hint && (
-            <p className="mt-1 text-sm leading-relaxed" style={{ color: paper("80") }}>
+            <p
+              className="mt-1 text-sm leading-relaxed"
+              style={{ color: paper("80") }}
+            >
               {hint}
             </p>
           )}
           <div className="mt-3">{children}</div>
           {error && (
-            <p className="mt-2 text-sm font-semibold" style={{ color: INK.pink }} role="alert">
+            <p
+              className="mt-2 text-sm font-semibold"
+              style={{ color: INK.pink }}
+              role="alert"
+            >
               {error}
             </p>
           )}
@@ -125,24 +140,56 @@ function ChoiceChips<T extends string>({
   );
 }
 
-function Done({ nickname }: { nickname: string }) {
+function Done({ nickname, cohort }: { nickname: string; cohort: ShiftCohort }) {
   return (
     <div className="py-16 text-center">
-      <p className="mx-auto flex h-14 w-14 items-center justify-center rounded-full" style={{ backgroundColor: INK.paper }}>
+      <p
+        className="mx-auto flex h-14 w-14 items-center justify-center rounded-full"
+        style={{ backgroundColor: INK.paper }}
+      >
         <Check className="h-7 w-7" style={{ color: INK.black }} />
       </p>
-      <h2 className="mt-8 font-kodchasan text-3xl font-bold sm:text-4xl" style={MISREG_TEXT}>
+      <h2
+        className="mt-8 font-kodchasan text-3xl font-bold sm:text-4xl"
+        style={MISREG_TEXT}
+      >
         ได้รับใบสมัครแล้ว{nickname ? ` ${nickname}` : ""}
       </h2>
-      <p className="mx-auto mt-4 max-w-md leading-relaxed" style={{ color: paper("b3") }}>
-        เราจะทักกลับทาง IG ภายใน 24 ชม. ระหว่างนี้ลองคิดต่อว่าใครอีก 3 คนที่เจอปัญหาเดียวกับเรา
+      <p
+        className="mx-auto mt-4 max-w-md leading-relaxed"
+        style={{ color: paper("b3") }}
+      >
+        เราจะทักกลับทาง IG ภายใน 24 ชม. ระหว่างนี้ลองคิดต่อว่าใครอีก 3
+        คนที่เจอปัญหาเดียวกับเรา
       </p>
+      {cohort.priceBaht > 0 && (
+        <div
+          className="mx-auto mt-12 max-w-xl border-t pt-10"
+          style={{ borderColor: paper("1f") }}
+        >
+          <p className="mb-6 font-kodchasan text-xl font-semibold">
+            ยืนยันที่นั่ง: โอนแล้วส่งสลิป
+          </p>
+          <ShiftPayment cohort={cohort} />
+        </div>
+      )}
     </div>
   );
 }
 
-export function ShiftApplyForm({ source }: { source?: string }) {
-  const [values, setValues] = useState<ShiftApplicationInput>({ ...EMPTY, source: source ?? "" });
+export function ShiftApplyForm({
+  cohort,
+  source,
+}: {
+  cohort: ShiftCohort;
+  source?: string;
+}) {
+  const [values, setValues] = useState<ShiftApplicationInput>({
+    ...EMPTY,
+    source: source ?? "",
+    round: cohort.round,
+  });
+  const cohortDates = formatThaiDateRange(cohort.startDate, cohort.endDate);
   const [errors, setErrors] = useState<ShiftApplicationErrors>({});
   const [status, setStatus] = useState<Status>("idle");
 
@@ -153,9 +200,13 @@ export function ShiftApplyForm({ source }: { source?: string }) {
 
   const text = (field: Field) => ({
     value: (values[field] as string) ?? "",
-    onChange: (e: { target: { value: string } }) => set(field, e.target.value as never),
+    onChange: (e: { target: { value: string } }) =>
+      set(field, e.target.value as never),
     className: INPUT,
-    style: { borderColor: errors[field] ? INK.pink : paper("33"), color: INK.paper },
+    style: {
+      borderColor: errors[field] ? INK.pink : paper("33"),
+      color: INK.paper,
+    },
   });
 
   async function submit(event: FormEvent) {
@@ -185,14 +236,27 @@ export function ShiftApplyForm({ source }: { source?: string }) {
     }
   }
 
-  if (status === "done") return <Done nickname={values.nickname.trim()} />;
+  if (status === "done")
+    return <Done nickname={values.nickname.trim()} cohort={cohort} />;
 
   return (
     <form onSubmit={submit} noValidate>
-      <Question num={1} label="ชื่อเล่น และชื่อจริง" error={errors.nickname ?? errors.fullName}>
+      <Question
+        num={1}
+        label="ชื่อเล่น และชื่อจริง"
+        error={errors.nickname ?? errors.fullName}
+      >
         <div className="grid gap-4 sm:grid-cols-[10rem_1fr]">
-          <input {...text("nickname")} placeholder="ชื่อเล่น" autoComplete="nickname" />
-          <input {...text("fullName")} placeholder="ชื่อ นามสกุล" autoComplete="name" />
+          <input
+            {...text("nickname")}
+            placeholder="ชื่อเล่น"
+            autoComplete="nickname"
+          />
+          <input
+            {...text("fullName")}
+            placeholder="ชื่อ นามสกุล"
+            autoComplete="name"
+          />
         </div>
       </Question>
 
@@ -205,8 +269,16 @@ export function ShiftApplyForm({ source }: { source?: string }) {
         />
       </Question>
 
-      <Question num={3} label="คณะหรือสายที่เล็งไว้ใน TCAS1" hint="ยังไม่รู้ก็ข้ามได้" error={errors.targetTrack}>
-        <input {...text("targetTrack")} placeholder="เช่น วิศวะคอม, BBA, ยังไม่แน่ใจ" />
+      <Question
+        num={3}
+        label="คณะหรือสายที่เล็งไว้ใน TCAS1"
+        hint="ยังไม่รู้ก็ข้ามได้"
+        error={errors.targetTrack}
+      >
+        <input
+          {...text("targetTrack")}
+          placeholder="เช่น วิศวะคอม, BBA, ยังไม่แน่ใจ"
+        />
       </Question>
 
       <Question
@@ -223,7 +295,11 @@ export function ShiftApplyForm({ source }: { source?: string }) {
         />
       </Question>
 
-      <Question num={5} label={`ว่างช่วง ${COHORT_DATES} วันละ 1-2 ชม. ไหม`} error={errors.availability}>
+      <Question
+        num={5}
+        label={`ว่างช่วง ${cohortDates} ${cohort.sessionTime} น. ไหม`}
+        error={errors.availability}
+      >
         <ChoiceChips
           name="เวลาว่าง"
           options={SHIFT_AVAILABILITY}
@@ -232,10 +308,25 @@ export function ShiftApplyForm({ source }: { source?: string }) {
         />
       </Question>
 
-      <Question num={6} label="IG และ Discord" hint="เราจะทักกลับทาง IG ส่วน Discord ถ้ายังไม่มีก็ไม่เป็นไร" error={errors.igHandle ?? errors.discordHandle}>
+      <Question
+        num={6}
+        label="IG และ Discord"
+        hint="เราจะทักกลับทาง IG ส่วน Discord ถ้ายังไม่มีก็ไม่เป็นไร"
+        error={errors.igHandle ?? errors.discordHandle}
+      >
         <div className="grid gap-4 sm:grid-cols-2">
-          <input {...text("igHandle")} placeholder="@ig ของเรา" autoCapitalize="none" autoCorrect="off" />
-          <input {...text("discordHandle")} placeholder="Discord (ถ้ามี)" autoCapitalize="none" autoCorrect="off" />
+          <input
+            {...text("igHandle")}
+            placeholder="@ig ของเรา"
+            autoCapitalize="none"
+            autoCorrect="off"
+          />
+          <input
+            {...text("discordHandle")}
+            placeholder="Discord (ถ้ามี)"
+            autoCapitalize="none"
+            autoCorrect="off"
+          />
         </div>
       </Question>
 
@@ -245,7 +336,10 @@ export function ShiftApplyForm({ source }: { source?: string }) {
         hint="เบอร์โทรหรือ LINE ไว้ยืนยันการเข้าร่วมและการชำระเงินเท่านั้น"
         error={errors.parentContact}
       >
-        <input {...text("parentContact")} placeholder="เช่น 08x-xxx-xxxx หรือ LINE ID" />
+        <input
+          {...text("parentContact")}
+          placeholder="เช่น 08x-xxx-xxxx หรือ LINE ID"
+        />
       </Question>
 
       {/* Honeypot: hidden from people, visible to naive bots */}
@@ -261,28 +355,44 @@ export function ShiftApplyForm({ source }: { source?: string }) {
       />
 
       <div className="border-t pt-7" style={{ borderColor: paper("1f") }}>
-        <label className="flex cursor-pointer items-start gap-3 text-sm leading-relaxed" style={{ color: paper("b3") }}>
+        <label
+          className="flex cursor-pointer items-start gap-3 text-sm leading-relaxed"
+          style={{ color: paper("b3") }}
+        >
           <input
             type="checkbox"
             checked={Boolean(values.consent)}
             onChange={(e) => set("consent", e.target.checked as true)}
             className="mt-1 h-4 w-4 shrink-0 accent-[#ff6c2f]"
           />
-          ยินยอมให้ PassionSeed ใช้ข้อมูลนี้เพื่อคัดเลือกและติดต่อเรื่อง SHIFT เท่านั้น ไม่ส่งต่อให้ใคร
+          ยินยอมให้ PassionSeed ใช้ข้อมูลนี้เพื่อคัดเลือกและติดต่อเรื่อง SHIFT
+          เท่านั้น ไม่ส่งต่อให้ใคร
         </label>
         {errors.consent && (
-          <p className="mt-2 text-sm font-semibold" style={{ color: INK.pink }} role="alert">
+          <p
+            className="mt-2 text-sm font-semibold"
+            style={{ color: INK.pink }}
+            role="alert"
+          >
             {errors.consent}
           </p>
         )}
 
         {status === "error" && (
-          <p className="mt-6 text-sm font-semibold" style={{ color: INK.pink }} role="alert">
+          <p
+            className="mt-6 text-sm font-semibold"
+            style={{ color: INK.pink }}
+            role="alert"
+          >
             ส่งไม่สำเร็จ ลองกดส่งใหม่อีกครั้งนะ ข้อมูลที่กรอกยังอยู่ครบ
           </p>
         )}
 
-        <button type="submit" disabled={status === "sending"} className="shift-button mt-8 w-full sm:w-auto">
+        <button
+          type="submit"
+          disabled={status === "sending"}
+          className="shift-button mt-8 w-full sm:w-auto"
+        >
           <span>{status === "sending" ? "กำลังส่ง..." : "ส่งใบสมัคร"}</span>
           <ArrowRight className="h-4 w-4" />
         </button>

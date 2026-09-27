@@ -83,7 +83,7 @@ function MobileMenu({ user, onClose }: { user: User | null; onClose: () => void 
       </ul>
       <div className="mt-6 flex items-center justify-between gap-4">
         <AccountLink user={user} />
-        <ShiftApplyButton location="site_nav_mobile" className="!px-5 !py-2.5 !text-sm">
+        <ShiftApplyButton href="/shift" location="site_nav_mobile" className="!px-5 !py-2.5 !text-sm">
           สมัคร SHIFT
         </ShiftApplyButton>
       </div>
@@ -128,7 +128,7 @@ export function SiteNav() {
 
         <div className="hidden items-center gap-5 md:flex">
           <AccountLink user={user} />
-          <ShiftApplyButton location="site_nav" className="!px-5 !py-2 !text-sm">
+          <ShiftApplyButton href="/shift" location="site_nav" className="!px-5 !py-2 !text-sm">
             สมัคร SHIFT
           </ShiftApplyButton>
         </div>

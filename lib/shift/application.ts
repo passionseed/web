@@ -53,6 +53,9 @@ export const shiftApplicationSchema = z.object({
   parentContact: trimmed(5, 120, "ใส่ช่องทางติดต่อผู้ปกครองด้วยนะ"),
   consent: z.literal(true, { errorMap: () => ({ message: "ติ๊กยินยอมก่อนส่งนะ" }) }),
   source: optionalTrimmed(80),
+  /** Which SHIFT round this is for. Missing means the first round, which is
+   *  what every form sent before rounds existed. */
+  round: z.number().int().nonnegative().optional(),
   /** Honeypot. Humans never see it; bots fill it. */
   website: z.string().max(0).optional(),
 });

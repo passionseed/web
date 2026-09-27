@@ -14,7 +14,7 @@ export function HomeFinalCta() {
           7 วันนี้ทำให้มันเป็นของจริง
         </RisoHeading>
         <p className="mx-auto mt-6 max-w-xl" style={{ color: paper("b3") }}>
-          รับ {SHIFT_COHORT.seats} คน สมัคร 2 นาที จ่ายหลังได้รับคัดเลือก ปิดรับสมัคร{" "}
+          รับ {SHIFT_COHORT.seats} คน สมัคร 2 นาที โอนผ่านพร้อมเพย์แล้วส่งสลิปทาง LINE ปิดรับสมัคร{" "}
           {formatThaiDate(SHIFT_COHORT.applyDeadline)}
         </p>
         <div className="mt-10">

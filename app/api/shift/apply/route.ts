@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { safeServerError } from "@/lib/security/route-guards";
-import { SHIFT_COHORT } from "@/lib/content/shift-cohort";
+import { SHIFT_COHORT, getShiftCohort } from "@/lib/content/shift-cohort";
 import { shiftApplicationSchema, toFieldErrors } from "@/lib/shift/application";
 import { createAdminClient } from "@/utils/supabase/admin";
 
@@ -33,10 +33,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   }
 
+  const cohort =
+    application.round === undefined ? SHIFT_COHORT : getShiftCohort(application.round);
+  if (!cohort) {
+    return NextResponse.json({ error: "Unknown SHIFT round" }, { status: 422 });
+  }
+
   try {
     const supabase = createAdminClient();
     const { error } = await supabase.from("shift_applications").insert({
-      cohort: SHIFT_COHORT.name,
+      cohort: cohort.name,
       full_name: application.fullName,
       nickname: application.nickname,
       grade: application.grade,

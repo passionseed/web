@@ -1,6 +1,12 @@
 import {
   SHIFT_COHORT,
+  SHIFT_COHORTS,
   cohortDayCount,
+  cohortPath,
+  cohortStatus,
+  getShiftCohort,
+  pairPriceBaht,
+  priceLabel,
   formatThaiDate,
   formatThaiDateRange,
   squadCount,
@@ -21,6 +27,17 @@ describe("shift cohort", () => {
     expect(SHIFT_COHORT.applyDeadline < SHIFT_COHORT.startDate).toBe(true);
   });
 
+  it("labels a free round as free", () => {
+    expect(priceLabel(getShiftCohort(0)!)).toBe("ฟรี");
+    expect(priceLabel(SHIFT_COHORT)).toBe("฿670");
+  });
+
+  it("takes 100 off each person in a pair, and never on a free round", () => {
+    expect(pairPriceBaht(SHIFT_COHORT)).toBe(570);
+    expect(pairPriceBaht(getShiftCohort(2)!)).toBe(890);
+    expect(pairPriceBaht(getShiftCohort(0)!)).toBeNull();
+  });
+
   it("prices below its anchor", () => {
     expect(SHIFT_COHORT.priceBaht).toBeGreaterThan(0);
     expect(SHIFT_COHORT.anchorPriceBaht!).toBeGreaterThan(SHIFT_COHORT.priceBaht);
@@ -35,5 +52,31 @@ describe("shift cohort", () => {
     expect(formatThaiDate("2026-09-28")).toBe("จ. 28 ก.ย.");
     expect(formatThaiDate("2026-10-04", false)).toBe("4 ต.ค.");
     expect(formatThaiDateRange("2026-09-28", "2026-10-04")).toBe("จ. 28 ก.ย. ถึง อา. 4 ต.ค.");
+  });
+
+  it("gives every round a unique number, path and apply link", () => {
+    const rounds = SHIFT_COHORTS.map((c) => c.round);
+    expect(new Set(rounds).size).toBe(rounds.length);
+    for (const cohort of SHIFT_COHORTS) {
+      expect(getShiftCohort(cohort.round)).toBe(cohort);
+      expect(cohortPath(cohort)).toBe(`/shift/${cohort.round}`);
+      expect(cohort.applyUrl).toBe(`/shift/apply?round=${cohort.round}`);
+      expect(cohort.name).toBe(`SHIFT[${cohort.round}]`);
+      expect(cohort.seats % cohort.squadSize).toBe(0);
+      expect(cohort.applyDeadline < cohort.startDate).toBe(true);
+    }
+    expect(getShiftCohort(99)).toBeUndefined();
+    expect(getShiftCohort(0)?.name).toBe("SHIFT[0]");
+  });
+
+  it("moves a round from open to done on Bangkok dates", () => {
+    // SHIFT[1]: apply by 3 Oct, runs 5-11 Oct.
+    expect(cohortStatus(SHIFT_COHORT, "2026-10-03")).toBe("open");
+    expect(cohortStatus(SHIFT_COHORT, "2026-10-04")).toBe("closed");
+    expect(cohortStatus(SHIFT_COHORT, "2026-10-05")).toBe("running");
+    expect(cohortStatus(SHIFT_COHORT, "2026-10-11")).toBe("running");
+    expect(cohortStatus(SHIFT_COHORT, "2026-10-12")).toBe("done");
+    // A round marked completed is done whatever the calendar says.
+    expect(cohortStatus(getShiftCohort(0)!, "2026-09-01")).toBe("done");
   });
 });

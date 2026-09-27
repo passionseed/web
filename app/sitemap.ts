@@ -1,5 +1,7 @@
 import type { MetadataRoute } from "next";
 
+import { SHIFT_COHORTS, cohortPath } from "@/lib/content/shift-cohort";
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://passionseed.org";
   const now = new Date();
@@ -17,6 +19,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "daily",
       priority: 1.0,
     },
+    ...SHIFT_COHORTS.map((cohort) => ({
+      url: `${baseUrl}${cohortPath(cohort)}`,
+      lastModified: now,
+      changeFrequency: "daily" as const,
+      priority: 0.9,
+    })),
     {
       url: `${baseUrl}/techseed`,
       lastModified: now,

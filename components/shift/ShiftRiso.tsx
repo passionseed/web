@@ -8,10 +8,11 @@ import {
   INK,
   MISREG_TEXT,
   OrbitSky,
-  PassionSeedMark,
   Speckle,
 } from "@/components/shift/poster/riso";
-import { SHIFT_COHORT } from "@/lib/content/shift-cohort";
+import type { ShiftCohort } from "@/lib/content/shift-cohort";
+
+import { HEADING, T, THEME_HAIR, accentFor } from "./theme/tokens";
 
 /**
  * Web building blocks for the riso /shift page. Same inks, sky, and chrome
@@ -34,7 +35,7 @@ export function labelClass(text: string) {
     : "font-mono text-[11px] font-bold uppercase tracking-[0.28em]";
 }
 /** Paper at 12%: the only line weight on the page. */
-export const HAIR = "border-[rgba(242,234,217,0.12)] divide-[rgba(242,234,217,0.12)]";
+export const HAIR = THEME_HAIR;
 
 /** Ink grain across the whole page, pinned to the viewport. */
 export function RisoPageTexture() {
@@ -47,9 +48,11 @@ export function RisoPageTexture() {
 }
 
 export function RisoHero({
+  cohort,
   headline,
   children,
 }: {
+  cohort: ShiftCohort;
   headline: ReactNode;
   children: ReactNode;
 }) {
@@ -57,10 +60,6 @@ export function RisoHero({
     <header className="relative overflow-hidden">
       <ChromeBevelFilter />
       <OrbitSky horizon={HERO_HORIZON} speckle={0} />
-
-      <div className="absolute left-5 top-5 z-10 sm:left-8 sm:top-7">
-        <PassionSeedMark size={40} />
-      </div>
 
       <div className="relative mx-auto max-w-5xl px-5 sm:px-8">
         <div
@@ -71,8 +70,8 @@ export function RisoHero({
             className="font-mono text-[11px] uppercase tracking-[0.3em] sm:text-xs"
             style={{ color: paper("cc") }}
           >
-            <span className="hidden sm:inline">R&amp;D Lab · </span>Cohort 01 ·{" "}
-            {SHIFT_COHORT.seats} seats
+            <span className="hidden sm:inline">R&amp;D Lab · </span>Cohort{" "}
+            {String(cohort.round).padStart(2, "0")} · {cohort.seats} seats
           </p>
           <h1
             className="mt-8 font-kodchasan text-[clamp(40px,7vw,80px)] font-bold leading-[1.3] tracking-tight"
@@ -81,7 +80,7 @@ export function RisoHero({
             {headline}
           </h1>
           <div className="mt-4 sm:mt-6">
-            <ChromeWordmark size="clamp(76px, 15vw, 188px)" />
+            <ChromeWordmark size="clamp(76px, 15vw, 188px)" name={cohort.name} />
           </div>
         </div>
 
@@ -104,12 +103,12 @@ export function RisoHeading({
 }) {
   return (
     <div className={align === "center" ? "text-center" : undefined}>
-      <p className={labelClass(eyebrow)} style={{ color: INK.orange }}>
+      <p className={labelClass(eyebrow)} style={{ color: T.accent1 }}>
         {eyebrow}
       </p>
       <h2
         className="mt-3 font-kodchasan text-3xl font-bold leading-[1.35] tracking-tight sm:text-[44px]"
-        style={MISREG_TEXT}
+        style={HEADING}
       >
         {children}
       </h2>
@@ -117,16 +116,14 @@ export function RisoHeading({
   );
 }
 
-const NUMERAL_INKS = [INK.orange, INK.pink, INK.yellow];
-
 /** Big spot-ink numeral with a soft blue plate bleeding behind it. */
 export function RisoNumeral({ index, children }: { index: number; children: ReactNode }) {
   return (
     <span
       className="font-kodchasan text-6xl font-bold leading-none sm:text-7xl"
       style={{
-        color: NUMERAL_INKS[index % NUMERAL_INKS.length],
-        textShadow: `2px -1.5px 2px ${INK.blue}99`,
+        color: accentFor(index),
+        textShadow: `2px -1.5px 2px color-mix(in srgb, ${T.accent4} 60%, transparent)`,
       }}
     >
       {children}
@@ -135,7 +132,7 @@ export function RisoNumeral({ index, children }: { index: number; children: Reac
 }
 
 export function inkFor(index: number) {
-  return NUMERAL_INKS[index % NUMERAL_INKS.length];
+  return accentFor(index);
 }
 
 /** Columns split by hairlines instead of cards. Stacks on mobile. */

@@ -1,5 +1,10 @@
 -- Create table to track hackathon user events for detailed analytics
 -- This enables tracking user interactions, button clicks, form submissions, etc.
+-- Also backs /api/hackathon/track-event, which the SHIFT pages use for clicks.
+--
+-- Safe to re-run: IF NOT EXISTS / OR REPLACE / DROP ... IF EXISTS throughout.
+-- Views use security_invoker so they respect the table's RLS instead of the
+-- view owner's rights.
 
 create table if not exists public.hackathon_events (
   id uuid primary key default gen_random_uuid(),
@@ -29,7 +34,8 @@ CREATE INDEX IF NOT EXISTS idx_hackathon_events_event_type ON public.hackathon_e
 CREATE INDEX IF NOT EXISTS idx_hackathon_events_page_path ON public.hackathon_events(page_path);
 
 -- Create view for event analytics by type
-CREATE OR REPLACE VIEW hackathon_events_by_type AS
+CREATE OR REPLACE VIEW hackathon_events_by_type
+WITH (security_invoker = true) AS
 SELECT
   event_type,
   COUNT(*) as total_events,
@@ -42,24 +48,38 @@ WHERE created_at > NOW() - INTERVAL '30 days'
 GROUP BY event_type
 ORDER BY total_events DESC;
 
--- Create view for page engagement analytics
-CREATE OR REPLACE VIEW hackathon_page_engagement AS
+-- Create view for page engagement analytics.
+-- The per-type breakdown is counted in its own step first: Postgres cannot
+-- nest COUNT(*) inside jsonb_object_agg in a single aggregate.
+CREATE OR REPLACE VIEW hackathon_page_engagement
+WITH (security_invoker = true) AS
+WITH recent AS (
+  SELECT page_path, event_type, visitor_fingerprint
+  FROM hackathon_events
+  WHERE created_at > NOW() - INTERVAL '7 days'
+),
+per_type AS (
+  SELECT page_path, event_type, COUNT(*) AS n
+  FROM recent
+  GROUP BY page_path, event_type
+)
 SELECT
-  page_path,
+  r.page_path,
   COUNT(*) as total_events,
-  COUNT(DISTINCT visitor_fingerprint) as unique_visitors,
-  COUNT(DISTINCT event_type) as event_types,
-  jsonb_object_agg(
-    event_type,
-    COUNT(*)
+  COUNT(DISTINCT r.visitor_fingerprint) as unique_visitors,
+  COUNT(DISTINCT r.event_type) as event_types,
+  (
+    SELECT jsonb_object_agg(p.event_type, p.n)
+    FROM per_type p
+    WHERE p.page_path = r.page_path
   ) as events_breakdown
-FROM hackathon_events
-WHERE created_at > NOW() - INTERVAL '7 days'
-GROUP BY page_path
+FROM recent r
+GROUP BY r.page_path
 ORDER BY total_events DESC;
 
 -- Create view for daily event counts
-CREATE OR REPLACE VIEW hackathon_daily_events AS
+CREATE OR REPLACE VIEW hackathon_daily_events
+WITH (security_invoker = true) AS
 SELECT
   DATE(created_at) as date,
   event_type,
@@ -82,14 +102,26 @@ COMMENT ON VIEW hackathon_daily_events IS 'Daily event counts broken down by eve
 ALTER TABLE public.hackathon_events ENABLE ROW LEVEL SECURITY;
 
 -- Allow anonymous inserts (for tracking events)
+DROP POLICY IF EXISTS "Anyone can insert hackathon events" ON public.hackathon_events;
 CREATE POLICY "Anyone can insert hackathon events"
   ON public.hackathon_events FOR INSERT
+  TO anon, authenticated
   WITH CHECK (true);
 
--- Only allow reads for authenticated users
-CREATE POLICY "Authenticated users can view hackathon events"
+-- Only admins read: rows hold visitor fingerprints, and the only reader is
+-- the admin analytics route.
+DROP POLICY IF EXISTS "Authenticated users can view hackathon events" ON public.hackathon_events;
+DROP POLICY IF EXISTS "Admins can view hackathon events" ON public.hackathon_events;
+CREATE POLICY "Admins can view hackathon events"
   ON public.hackathon_events FOR SELECT
-  USING (auth.uid() IS NOT NULL);
+  TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM public.user_roles
+    WHERE user_id = auth.uid() AND role = 'admin'
+  ));
+
+GRANT INSERT ON TABLE public.hackathon_events TO anon, authenticated;
+GRANT SELECT ON TABLE public.hackathon_events TO authenticated;
 
 -- Grant SELECT on views to authenticated users
 GRANT SELECT ON hackathon_events_by_type TO authenticated;
