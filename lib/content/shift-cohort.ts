@@ -47,6 +47,14 @@ export interface ShiftCohort {
 export interface ShiftShowcaseProject {
   title: string;
   url: string;
+  /** One line: what it is and who it is for. */
+  pitch?: string;
+  /** How it works, concrete enough that a stranger can picture using it. */
+  detail?: string;
+  /** The evidence that makes it more than a build: users, feedback, a changed brief. */
+  proof?: string;
+  /** Shown on the marketing slides. Keep it to the strongest three. */
+  featured?: boolean;
 }
 
 export interface ShiftSkillCard {
@@ -190,11 +198,32 @@ export const SHIFT_COHORT_0: ShiftCohort = {
   anchorPriceBaht: null,
   completed: true,
   showcase: [
+    {
+      title: "Magnified Lens",
+      url: "https://magnified-lens-2uoi.vercel.app/",
+      pitch: "แว่นขยายบนมือถือ สำหรับคนที่อ่านตัวหนังสือเล็กไม่ถนัด",
+      detail: "แตะแถบข้างจอเพื่อหยุดภาพ ลากกรอบเหลืองไปส่องฉลากยา สัญญา หรือรหัสพัสดุ แล้วดูภาพขยายชัดๆ ด้านล่าง ใช้ได้ทั้งไทยและอังกฤษ",
+      proof: "ฟีดแบ็กจากคนลองใช้จริงมากกว่า 15 คน",
+      featured: true,
+    },
+    {
+      title: "TradBid",
+      url: "https://bi-ddi-n-gdot-c-omp.vercel.app/",
+      pitch: "เว็บสอนเทรดหุ้น ผ่านมังงะเล่าเรื่องกับเกมจำลองการซื้อขาย",
+      detail: "อ่านมังงะวาดมือตอนแรก \"Trading คืออะไร\" แล้วลองซื้อขายหุ้นสมมติด้วยเงินจำลอง ฿10,000 ดูราคาขยับขึ้นลงโดยไม่เสียเงินจริง",
+      proof: "ปล่อยเวอร์ชันแรกแล้วอัปเกรดต่อเป็นเวอร์ชัน 2 ภายในรุ่น",
+      featured: true,
+    },
+    {
+      title: "ปฏิทิน กสพท70",
+      url: "https://potter-wine.vercel.app/",
+      pitch: "ปฏิทินนับถอยหลังสำหรับเด็กสายหมอ",
+      detail: "รวม 11 กำหนดการ กสพท และ TCAS รอบ 3 เรียงตามเวลา นับถอยหลังถึงวินาที พร้อมคลังเกณฑ์คะแนน 10 คณะสายสุขภาพ",
+      proof: "เริ่มจากเว็บเกณฑ์พอร์ต คุยกับคนใช้จริงแล้วเจอว่าเขาอยากรู้วันสอบมากกว่า เลยเปลี่ยนโจทย์",
+      featured: true,
+    },
     { title: "CRVC Academic Portal", url: "https://work-for-school-theta.vercel.app/" },
-    { title: "ปฏิทิน กสพท70", url: "https://potter-wine.vercel.app/" },
-    { title: "TradBid", url: "https://trad-bid.vercel.app/" },
     { title: "Self-Learning", url: "https://learning-app-eight-flax.vercel.app/" },
-    { title: "TRADE", url: "https://bi-ddi-n-gdot-c-omp.vercel.app/" },
   ],
 };
 

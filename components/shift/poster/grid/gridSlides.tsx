@@ -11,6 +11,7 @@ import {
   formatThaiDate,
   pairPriceBaht,
   priceLabel,
+  type ShiftShowcaseProject,
 } from "@/lib/content/shift-cohort";
 
 import { MarkerHighlight, REFUND_PROMISE } from "../riso";
@@ -71,29 +72,51 @@ export function SlideA2() {
   );
 }
 
+const shortUrl = (url: string) => url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+
+/** One pilot project told in depth: what it is, how it works, and the proof. */
+function ProjectCard({ project, index }: { project: ShiftShowcaseProject; index: number }) {
+  return (
+    <DeckCard className="!py-7">
+      <div className="flex items-center gap-5">
+        <Plate label={String(index + 1)} size={52} hot={index === 0} />
+        <div className="min-w-0">
+          <p className="font-kodchasan text-[38px] font-bold leading-tight">{project.title}</p>
+          <p className="truncate text-[19px]" style={{ ...PIXEL_FONT, color: MUTED }}>
+            {shortUrl(project.url)}
+          </p>
+        </div>
+      </div>
+      <p className="mt-4 font-kodchasan text-[28px] font-bold leading-[1.35]" style={{ color: PX.accentLight }}>
+        {project.pitch}
+      </p>
+      <p className="mt-2 text-[24px] leading-[1.5]" style={{ color: MUTED }}>
+        {project.detail}
+      </p>
+      {project.proof && (
+        <p className="mt-3 flex items-start gap-3 text-[23px] font-semibold leading-[1.45]" style={{ color: PX.cream }}>
+          <span
+            className="mt-[3px] shrink-0 px-2 py-0.5 text-[17px] tracking-[0.1em]"
+            style={{ ...PIXEL_FONT, backgroundColor: PX.accent, color: PX.ink }}
+          >
+            PROOF
+          </span>
+          {project.proof}
+        </p>
+      )}
+    </DeckCard>
+  );
+}
+
 export function SlideA3() {
-  const projects = SHIFT_COHORT_0.showcase ?? [];
+  const projects = (SHIFT_COHORT_0.showcase ?? []).filter((p) => p.featured).slice(0, 3);
   return (
     <GridSlideFrame id="shift1-grid-a-3" tag={`${SHIFT_COHORT_0.name} · PILOT`} title="รุ่นทดลองปล่อยของจริงแล้ว" page="3/4">
-      <DeckLabel>7 วัน น้องๆ ม.ปลาย ทำสิ่งนี้</DeckLabel>
-      <ol className="mt-6 space-y-4">
+      <div className="space-y-5">
         {projects.map((project, i) => (
-          <li key={project.url}>
-            <DeckCard className="flex items-center gap-6">
-              <Plate label={String(i + 1)} hot={i === 0} />
-              <div className="min-w-0">
-                <p className="font-kodchasan text-[36px] font-bold leading-tight">{project.title}</p>
-                <p className="mt-1 truncate text-[22px]" style={{ ...PIXEL_FONT, color: MUTED }}>
-                  {project.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
-                </p>
-              </div>
-            </DeckCard>
-          </li>
+          <ProjectCard key={project.url} project={project} index={i} />
         ))}
-      </ol>
-      <p className="font-kodchasan text-[32px] font-semibold" style={{ color: PX.accentLight }}>
-        ลองพิมพ์ลิงก์เข้าไปกดเล่นได้เลย
-      </p>
+      </div>
     </GridSlideFrame>
   );
 }
