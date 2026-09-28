@@ -154,7 +154,7 @@ function CoverB() {
         <p className="mt-3 font-kodchasan text-[54px] font-bold leading-[1.3]" style={{ color: PX.ink }}>
           7 วัน ปั้นโปรเจกต์ที่มี
         </p>
-        <p className="mt-1 text-[104px] leading-[1.15]">
+        <p className="mt-2 text-[76px] leading-[1.2]">
           <MarkerHighlight>คนใช้จริง</MarkerHighlight>
         </p>
       </div>
