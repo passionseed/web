@@ -3,6 +3,7 @@ import {
   SHIFT_DAILY_SHOW,
   SHIFT_SKILL_CARDS,
   formatThaiDate,
+  teamSizeLabel,
 } from "@/lib/content/shift-cohort";
 
 import { MarkerHighlight, REFUND_PROMISE } from "../riso";
@@ -83,7 +84,7 @@ function SkillCard({ title, detail }: { title: string; detail: string }) {
 
 export function SlideB3() {
   return (
-    <GridSlideFrame id="shift1-grid-b-3" tag="HOW THE ROOM RUNS" title="โปรเจกต์ของเรา ทีมละ 3 คน" page="3/4" critters={B3_CRITTERS}>
+    <GridSlideFrame id="shift1-grid-b-3" tag="HOW THE ROOM RUNS" title={`ทำเดี่ยว หรือทีม ${teamSizeLabel(COHORT)}`} page="3/4" critters={B3_CRITTERS}>
       <DeckLabel>ทุกเย็น ทุกทีมโชว์ 3 เรื่อง</DeckLabel>
       <div className="mt-6 space-y-4">
         {SHIFT_DAILY_SHOW.map((beat, i) => (

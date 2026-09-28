@@ -7,6 +7,7 @@ import {
   formatThaiDate,
   pairPriceBaht,
   priceLabel,
+  teamSizeLabel,
 } from "@/lib/content/shift-cohort";
 
 import { MarkerHighlight, REFUND_PROMISE } from "../riso";
@@ -68,7 +69,7 @@ export function SlideC2() {
         </p>
       )}
       <div className="mt-10 space-y-5">
-        <Fact k="รับ" v={`${COHORT.seats} คน · ทีมละ ${COHORT.squadSize}`} />
+        <Fact k="รับ" v={`${COHORT.seats} คน · เดี่ยวหรือทีม ${teamSizeLabel(COHORT)}`} />
         <Fact k="ใครสมัครได้" v="ม.4-ม.6 ไม่ต้องมีพื้นฐาน" />
         <Fact k="เรียนที่ไหน" v={`Discord ทุกเย็น ${COHORT.sessionTime}`} />
         <Fact k="ปิดรับสมัคร" v={formatThaiDate(COHORT.applyDeadline)} />

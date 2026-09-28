@@ -27,7 +27,8 @@ export interface ShiftCohort {
   endDate: string;
   applyDeadline: string;
   applyUrl: string;
-  squadSize: number;
+  /** People per project team. Solo builders are welcome, so min is 1. */
+  teamSize: { min: number; max: number };
   /** Outside users each student names on Day 1 and asks directly. A target,
    *  not a promise: the last batch fell short when it relied on group posts. */
   testerTarget: number;
@@ -102,7 +103,7 @@ export const SHIFT_COHORT: ShiftCohort = {
   applyDeadline: "2026-10-03",
   applyUrl: "/shift/apply?round=1",
   bannerSrc: "/shift/banners/shift-1.png",
-  squadSize: 3,
+  teamSize: { min: 1, max: 3 },
   testerTarget: 15,
   sessionTime: "19:00–21:00",
   schedule: [
@@ -357,9 +358,9 @@ export function cohortDayCount(cohort: ShiftCohort = SHIFT_COHORT): number {
   return cohort.schedule.length;
 }
 
-/** Seats are held by squads, so the number of squads is what caps the round. */
-export function squadCount(cohort: ShiftCohort = SHIFT_COHORT): number {
-  return Math.ceil(cohort.seats / cohort.squadSize);
+/** "1-3 คน": how many people can build one project together. */
+export function teamSizeLabel(cohort: ShiftCohort = SHIFT_COHORT): string {
+  return `${cohort.teamSize.min}-${cohort.teamSize.max} คน`;
 }
 
 /** Who SHIFT fits: the fields, and faculty programs students aim for. */

@@ -52,7 +52,7 @@ import {
   formatThaiDateRange,
   getShiftCohort,
   priceLabel,
-  squadCount,
+  teamSizeLabel,
   type ShiftCohort,
 } from "@/lib/content/shift-cohort";
 import { SHIFT_TESTIMONIAL_GROUPS } from "@/lib/content/shift-testimonials";
@@ -496,8 +496,8 @@ export default async function ShiftRoundPage({ params }: RoundParams) {
             className="mt-4 max-w-2xl text-base leading-relaxed"
             style={{ color: paper("99") }}
           >
-            ทุกคนทำโปรเจกต์ของตัวเอง แต่ไม่ได้ทำคนเดียว ทีมละ {cohort.squadSize}{" "}
-            คน เลือกสกิลจากเมนูตามที่โปรเจกต์ต้องใช้วันนั้น เรียนด้วยกัน
+            ทำคนเดียวก็ได้ หรือชวนเพื่อนมาเป็นทีม {teamSizeLabel(cohort)}{" "}
+            แต่ไม่มีใครสร้างอยู่คนเดียว เลือกสกิลจากเมนูตามที่โปรเจกต์ต้องใช้วันนั้น เรียนด้วยกัน
             แล้วใช้กับงานจริงในวันเดียวกัน คุยกับพี่เลี้ยงได้ทั้งวันในห้อง
             Discord ของทีม
           </p>
@@ -738,9 +738,8 @@ export default async function ShiftRoundPage({ params }: RoundParams) {
                   className="mt-3 text-sm leading-relaxed"
                   style={{ color: paper("99") }}
                 >
-                  ทุกคนมีโปรเจกต์ของตัวเอง แบ่งเป็น {squadCount(cohort)} ทีม
-                  ทีมละ {cohort.squadSize} คน
-                  ไว้เรียนสกิลใหม่ด้วยกันและช่วยกันหาคนมาลอง
+                  ทำคนเดียวหรือเป็นทีม {teamSizeLabel(cohort)} ก็ได้
+                  เรียนสกิลใหม่ด้วยกันและช่วยกันหาคนมาลอง
                   ทุกเย็นโชว์ของจริงให้ทั้งห้องดู
                 </p>
               </div>

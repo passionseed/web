@@ -9,7 +9,7 @@ import {
   priceLabel,
   formatThaiDate,
   formatThaiDateRange,
-  squadCount,
+  teamSizeLabel,
 } from "../shift-cohort";
 
 describe("shift cohort", () => {
@@ -43,9 +43,9 @@ describe("shift cohort", () => {
     expect(SHIFT_COHORT.anchorPriceBaht!).toBeGreaterThan(SHIFT_COHORT.priceBaht);
   });
 
-  it("splits every seat into a squad", () => {
-    expect(squadCount()).toBe(5);
-    expect(SHIFT_COHORT.seats % SHIFT_COHORT.squadSize).toBe(0);
+  it("takes solo builders and teams up to three", () => {
+    expect(SHIFT_COHORT.teamSize).toEqual({ min: 1, max: 3 });
+    expect(teamSizeLabel()).toBe("1-3 คน");
   });
 
   it("formats Thai dates without a year", () => {
@@ -62,7 +62,8 @@ describe("shift cohort", () => {
       expect(cohortPath(cohort)).toBe(`/shift/${cohort.round}`);
       expect(cohort.applyUrl).toBe(`/shift/apply?round=${cohort.round}`);
       expect(cohort.name).toBe(`SHIFT[${cohort.round}]`);
-      expect(cohort.seats % cohort.squadSize).toBe(0);
+      expect(cohort.teamSize.min).toBeGreaterThanOrEqual(1);
+      expect(cohort.teamSize.max).toBeGreaterThanOrEqual(cohort.teamSize.min);
       expect(cohort.applyDeadline < cohort.startDate).toBe(true);
     }
     expect(getShiftCohort(99)).toBeUndefined();
