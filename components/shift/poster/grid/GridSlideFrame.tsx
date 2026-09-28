@@ -16,7 +16,7 @@ import {
   waveBand,
   type Rect,
 } from "../pixel/pixelKit";
-import { TILE_H, TILE_W } from "./panoramaScene";
+import { TILE_H, TILE_W } from "./floodPanorama";
 
 /**
  * Inner carousel slide for the SHIFT[1] grid posts: the same flooded city
@@ -49,7 +49,22 @@ function skyline(): Rect[] {
   return out;
 }
 
-function StripScene() {
+/** Deck colours: the flood gets darker the deeper the content sits. */
+export const DECK_TOP = mix(PX.ink, PX.waterDeep, 0.45);
+
+/** Deck rows the content area spans, exported so slides can place critters. */
+export const DECK_ROWS = { top: DECK + 8, bottom: FOOT - 4 } as const;
+
+function deckWater(): Rect[] {
+  // One seam only, low in the deck, so no dither row runs through the type.
+  return bands(0, TILE_W, [
+    [DECK + 3, DECK_TOP],
+    [DECK + 118, PX.ink],
+    [FOOT + 3, PX.ink],
+  ]);
+}
+
+function StripScene({ critters }: { critters: Rect[] }) {
   const above = skyline();
   const scene: Rect[] = [
     ...bands(0, TILE_W, [
@@ -80,7 +95,9 @@ function StripScene() {
       aria-hidden="true"
     >
       <Rects rects={scene} />
-      <Rects rects={waveBand(DECK, PX.ink, 12, TILE_W, TILE_H)} />
+      <Rects rects={waveBand(DECK, DECK_TOP, 12, TILE_W, TILE_H)} />
+      <Rects rects={deckWater()} />
+      <Rects rects={critters} />
       <Rects rects={waveBand(FOOT, mix(PX.ink, "#000000", 0.35), 12, TILE_W, TILE_H)} />
     </svg>
   );
@@ -91,6 +108,8 @@ export function GridSlideFrame({
   tag,
   title,
   page,
+  critters = [],
+  align = "start",
   children,
 }: {
   id: string;
@@ -99,6 +118,10 @@ export function GridSlideFrame({
   title: string;
   /** e.g. "2/4" */
   page: string;
+  /** Underwater life for this slide, in tile cells. Keep it in the empty space. */
+  critters?: Rect[];
+  /** Where content sits in the deck; "start" leaves the bottom free for critters. */
+  align?: "start" | "center";
   children: ReactNode;
 }) {
   return (
@@ -107,7 +130,7 @@ export function GridSlideFrame({
       className="relative shrink-0 overflow-hidden font-bai-jamjuree antialiased"
       style={{ width: TILE_W * CELL, height: TILE_H * CELL, backgroundColor: PX.sky }}
     >
-      <StripScene />
+      <StripScene critters={critters} />
       <div className="absolute inset-x-0 top-[44px] flex flex-col items-center text-center">
         <p className="text-[26px] leading-none tracking-[0.1em]" style={{ ...PIXEL_FONT, color: PX.ink }}>
           {tag}
@@ -120,7 +143,7 @@ export function GridSlideFrame({
         </h2>
       </div>
       <div
-        className="absolute inset-x-0 flex flex-col justify-center gap-14 px-[64px]"
+        className={`absolute inset-x-0 flex flex-col px-[64px] ${align === "center" ? "justify-center gap-14" : "justify-start"}`}
         style={{ top: (DECK + 8) * CELL, height: (FOOT - DECK - 12) * CELL }}
       >
         {children}

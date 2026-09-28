@@ -18,6 +18,28 @@ import {
   waveBand,
   type Rect,
 } from "../pixel/pixelKit";
+import {
+  BIG_FISH,
+  CROC,
+  CROC_PEEK,
+  STOOL,
+  STOOL_PALETTE,
+  TUKTUK,
+  TUKTUK_PALETTE,
+  bubbles,
+  crocPalette,
+  fishPalette,
+  flip,
+  mahanakhon,
+  powerLines,
+  prang,
+  scaled,
+  school,
+  skytrain,
+  skytrainTrack,
+  templeHall,
+  weed,
+} from "./bangkokKit";
 
 /**
  * SHIFT[1] IG grid panorama: one flooded city, three posts wide.
@@ -141,13 +163,49 @@ function farCity(): Rect[] {
     x += w;
     i++;
   }
-  // One stepped landmark tower per tile, so each post has its own skyline.
-  out.push(
-    ...building(92, 88, 10, WATER, { body: PX.far, roof: "antenna" }),
-    ...building(214, 92, 10, WATER, { body: PX.far, roof: "antenna" }),
-    ...building(520, 86, 10, WATER, { body: PX.far, roof: "antenna" }),
-  );
+  // Tile A keeps one plain tall tower; B and C get Bangkok's own landmarks.
+  out.push(...building(92, 88, 10, WATER, { body: PX.far, roof: "antenna" }));
   return out;
+}
+
+/** Row colour of the sky gradient, for anything that cuts holes in a building. */
+function skyAt(y: number): string {
+  if (y < 48) return PX.skyTop;
+  if (y < 108) return PX.sky;
+  return PX.skyHaze;
+}
+
+/**
+ * Bangkok landmarks, one per tile: a temple hall in the rain (A), MahaNakhon
+ * over the student (B), and Wat Arun, the Temple of Dawn, at sunrise (C).
+ */
+function landmarks(): Rect[] {
+  const prangFill = mix(PX.mid, PX.skyHaze, 0.2);
+  return [
+    ...scaled(templeHall(0, 22, 0, mix(PX.cream, PX.mid, 0.35), mix(PX.accentDark, PX.mid, 0.45), PX.windowLit), 50, WATER, 2),
+    ...mahanakhon(320, 90, 12, WATER, mix(PX.far, PX.mid, 0.4), skyAt),
+    ...prang(456, WATER, 36, 6, prangFill),
+    ...prang(500, WATER, 36, 6, prangFill),
+    ...prang(478, WATER, 64, 12, prangFill),
+  ];
+}
+
+/** BTS viaduct across all three tiles, with a train crossing tile A. */
+const BEAM = 118;
+function skytrainLine(): Rect[] {
+  const fill = mix(PX.mid, PX.near, 0.45);
+  return [
+    ...skytrainTrack(0, PANO_W, BEAM, WATER, [30, 96, 150, 214, 336, 392, 530], fill),
+    ...skytrain(34, BEAM),
+  ];
+}
+
+/** Street things caught in the flood: power-line tangle, a tuk-tuk, a stool. */
+function street(): Rect[] {
+  return [
+    ...powerLines([[140, 98], [228, 104]], WATER),
+    ...scaled(sprite(TUKTUK, TUKTUK_PALETTE, 0, 0), 104, WATER - 12, 2),
+  ];
 }
 
 function midCity(): Rect[] {
@@ -157,7 +215,6 @@ function midCity(): Rect[] {
     [128, 124, 16],
     [206, 118, 14],
     [292, 114, 12],
-    [318, 124, 14],
     [380, 120, 12],
     [496, 116, 14],
   ];
@@ -217,8 +274,8 @@ function heroWorld(): Rect[] {
 function certs(): Rect[] {
   const spots: [number, number][] = [
     [16, WATER + 8],
-    [58, WATER + 20],
-    [104, WATER + 11],
+    [40, WATER + 20],
+    [100, WATER + 14],
     [138, WATER + 28],
     [34, WATER + 34],
   ];
@@ -258,12 +315,49 @@ function water(above: Rect[]): Rect[] {
     [HERO.x + HERO.w * HERO.scale - 1, hullLine, 5, 1, PX.foam],
     ...certs(),
     ...sprite(RING, { A: PX.accent, W: PX.cream }, 330, WATER + 16),
+    ...sprite(STOOL, STOOL_PALETTE, 372, WATER + 5),
+    ...underwater(),
+  ];
+}
+
+/**
+ * Life under the flood. Everything is pulled toward the water colour so it
+ * reads as submerged; only the croc's eyes keep their light.
+ */
+function underwater(): Rect[] {
+  const fishBody = mix(PX.waterLight, PX.foam, 0.25);
+  const deepFish = mix(PX.waterLight, PX.waterDeep, 0.35);
+  const weedFill = mix(PX.plant, PX.waterDeep, 0.45);
+  return [
+    // Tile A: a croc eyeing the certificates.
+    ...scaled(sprite(CROC_PEEK, crocPalette(PX.water), 0, 0), 64, WATER + 3, 2),
+    [60, WATER + 7, 4, 1, PX.foam],
+    [88, WATER + 7, 4, 1, PX.foam],
+    ...weed(8, BAND + 3, 10, weedFill),
+    // Tile B: a school under the boat and a big pla buek below.
+    ...school(196, WATER + 24, 6, fishBody, PX.waterDeep, true),
+    ...sprite(BIG_FISH, fishPalette(deepFish, PX.waterDeep), 312, WATER + 32),
+    ...bubbles(308, WATER + 30, 4, fishBody),
+    ...weed(236, BAND + 3, 12, weedFill),
+    // Tile C: a full croc cruising under the Demo Day roof.
+    ...scaled(sprite(flip(CROC), crocPalette(PX.waterDeep), 0, 0), 404, WATER + 26, 2),
+    ...school(486, WATER + 12, 4, fishBody, PX.waterDeep),
+    ...bubbles(470, WATER + 26, 3, fishBody),
+    ...weed(520, BAND + 3, 11, weedFill),
   ];
 }
 
 /** Everything behind the hero, bottom band included, in panorama cells. */
 export function panoramaRects(): { back: Rect[]; front: Rect[] } {
-  const above = [...farCity(), ...midCity(), ...nearCity(), ...demoRoof()];
+  const above = [
+    ...farCity(),
+    ...landmarks(),
+    ...midCity(),
+    ...skytrainLine(),
+    ...nearCity(),
+    ...street(),
+    ...demoRoof(),
+  ];
   return {
     back: [...sky(), ...above, ...water(above)],
     front: waveBand(BAND, PX.ink, 12, PANO_W, TILE_H),

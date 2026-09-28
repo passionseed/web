@@ -16,7 +16,7 @@ import {
   TILE_W,
   heroRects,
   panoramaRects,
-} from "./panoramaScene";
+} from "./floodPanorama";
 
 /**
  * SHIFT[1] IG grid: three carousel covers that join into one panorama on the
