@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 
 import { safeServerError } from "@/lib/security/route-guards";
 import { SHIFT_COHORT, getShiftCohort } from "@/lib/content/shift-cohort";
 import { shiftApplicationSchema, toFieldErrors } from "@/lib/shift/application";
+import { notifyShiftApplication } from "@/lib/shift/notifyDiscord";
 import { createAdminClient } from "@/utils/supabase/admin";
 
 /**
@@ -58,6 +59,29 @@ export async function POST(request: Request) {
     if (error) {
       return safeServerError("Failed to save SHIFT application", error);
     }
+
+    // Runs after the response is sent, so the applicant never waits on Discord.
+    after(async () => {
+      let applicationNumber: number | null = null;
+      try {
+        const { count, error: countError } = await supabase
+          .from("shift_applications")
+          .select("id", { count: "exact", head: true })
+          .eq("cohort", cohort.name);
+        if (countError) console.error("[shift] application count failed", countError);
+        else applicationNumber = count;
+      } catch (countError) {
+        console.error("[shift] application count failed", countError);
+      }
+
+      await notifyShiftApplication({
+        cohortName: cohort.name,
+        seats: cohort.seats,
+        applicationNumber,
+        application,
+      });
+    });
+
     return NextResponse.json({ ok: true });
   } catch (error) {
     return safeServerError("Failed to save SHIFT application", error);

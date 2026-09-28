@@ -32,3 +32,26 @@ export interface ShiftStudentsResponse {
     currentWeekLabel: string;
   };
 }
+
+export type ShiftApplicationStatus = "new" | "accepted" | "waitlist" | "declined";
+
+export interface ShiftApplicationRow {
+  id: string;
+  cohort: string;
+  full_name: string;
+  nickname: string;
+  grade: "m4" | "m5" | "m6" | "other";
+  target_track: string | null;
+  problem: string;
+  availability: "all_days" | "some_days";
+  ig_handle: string;
+  discord_handle: string | null;
+  parent_contact: string;
+  consent: boolean;
+  source: string | null;
+  status: ShiftApplicationStatus;
+  paid_at: string | null;
+  admin_note: string | null;
+  created_at: string;
+  updated_at: string;
+}

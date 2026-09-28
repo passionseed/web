@@ -293,8 +293,28 @@ export const STUDENT_PALETTE = {
   P: PX.denim,
 };
 
-export const BIRD = ["..WW..", ".WWWD.", "WWWWWY", ".WWW..", "..K..."];
-export const BIRD_PALETTE = { W: PX.cream, D: PX.ink, Y: PX.accent, K: PX.accentDark };
+/**
+ * Gull perched on the stern, facing the student: round head with a dark eye
+ * and yellow beak, a neck, grey wing folded over a white chest, darker
+ * wingtips at the tail, two legs. Six cells wide so it fits behind the student.
+ */
+export const BIRD = [
+  "...WW.",
+  "..WWDY",
+  "...WW.",
+  "GSSSWW",
+  ".GSSWW",
+  "..SSW.",
+  "..K.K.",
+];
+export const BIRD_PALETTE = {
+  W: PX.cream,
+  D: PX.ink,
+  Y: PX.accentLight,
+  S: PX.mid,
+  G: PX.ink,
+  K: PX.accentDark,
+};
 
 /** Distant gull, two strokes. */
 export const GULL = ["W...W", ".W.W."];

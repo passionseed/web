@@ -13,6 +13,7 @@ const ADMIN_NAV_ITEMS = [
   { href: "/admin/hackathon", label: "Hackathon" },
   { href: "/admin/beta", label: "Beta" },
   { href: "/admin/shift", label: "SHIFT" },
+  { href: "/admin/shift/applications", label: "SHIFT Apps" },
   { href: "/admin/event-tracker", label: "Event Tracker" },
   { href: "/admin/experts", label: "Experts" },
   { href: "/admin/dm-leads", label: "DM Leads" },
