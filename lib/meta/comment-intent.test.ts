@@ -2,6 +2,7 @@ import {
   getCampaign,
   isCampaignRequest,
   isPortRequest,
+  isShiftRequest,
   isUniRequest,
 } from "@/lib/meta/comment-intent";
 
@@ -36,6 +37,24 @@ describe("isUniRequest", () => {
   ])("treats %p as not an opt-in", (text) =>
     expect(isUniRequest(text as string | null | undefined)).toBe(false)
   );
+});
+
+describe("isShiftRequest", () => {
+  it.each(["SHIFT", "shift", "Shift ครับ", "ขอลิงก์ shift", "ชิฟ", "ชิฟท์ค่ะ", "SHIFT[1]"])(
+    "treats %p as an opt-in",
+    (text) => expect(isShiftRequest(text)).toBe(true)
+  );
+
+  it.each(["shifting gears", "shifted", "night shifts", "🔥", "", null, undefined])(
+    "treats %p as not an opt-in",
+    (text) => expect(isShiftRequest(text)).toBe(false)
+  );
+
+  it("attributes a SHIFT comment to the shift campaign, even with other keywords", () => {
+    expect(getCampaign("shift")).toBe("shift");
+    expect(getCampaign("shift port")).toBe("shift");
+    expect(isCampaignRequest("ชิฟ")).toBe(true);
+  });
 });
 
 describe("getCampaign", () => {

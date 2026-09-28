@@ -174,13 +174,24 @@ export function DeckLabel({ children }: { children: ReactNode }) {
 }
 
 /** Notched panel on the deck; `hot` swaps to the orange accent for the one thing to notice. */
-export function DeckCard({ children, hot, className = "" }: { children: ReactNode; hot?: boolean; className?: string }) {
+export function DeckCard({
+  children,
+  hot,
+  fill,
+  className = "",
+}: {
+  children: ReactNode;
+  hot?: boolean;
+  /** Any CSS background, e.g. a gradient, overriding the flat card colour. */
+  fill?: string;
+  className?: string;
+}) {
   return (
     <div
       className={`px-8 py-6 ${className}`}
       style={{
         clipPath: notch(CELL * 2),
-        backgroundColor: hot ? PX.accent : mix(PX.ink, PX.near, 0.45),
+        background: fill ?? (hot ? PX.accent : mix(PX.ink, PX.near, 0.45)),
         color: hot ? PX.ink : PX.cream,
       }}
     >

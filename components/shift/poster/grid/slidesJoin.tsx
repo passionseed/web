@@ -12,6 +12,7 @@ import {
 import { MarkerHighlight, REFUND_PROMISE } from "../riso";
 import { PIXEL_FONT } from "../pixel/PixelRects";
 import { PX } from "../pixel/pixelKit";
+import { HOT_GRADIENT } from "./ApplyCta";
 import { deck } from "./deckCritters";
 import { DeckCard, GridSlideFrame, MUTED, Plate, notch } from "./GridSlideFrame";
 
@@ -50,7 +51,7 @@ export function SlideC2() {
   const pair = pairPriceBaht(COHORT);
   return (
     <GridSlideFrame id="shift1-grid-c-2" tag="PRICE · SEATS" title="ราคาและรายละเอียด" page="2/4" critters={C2_CRITTERS}>
-      <DeckCard hot className="flex items-end justify-between">
+      <DeckCard hot fill={HOT_GRADIENT} className="flex items-end justify-between">
         <div>
           <p className="font-kodchasan text-[30px] font-bold">ต่อคน ตลอด 7 วัน</p>
           {COHORT.anchorPriceBaht && (
@@ -123,9 +124,9 @@ export function SlideC3() {
 }
 
 const APPLY_STEPS = [
+  "คอมเมนต์ SHIFT หรือกดลิงก์ในไบโอ",
   "กรอกใบสมัคร 2 นาที",
-  "โอนผ่าน PromptPay ตามยอด",
-  `ส่งสลิปใน LINE ${SHIFT_PAYMENT.lineId} แล้วรอพี่ยืนยันที่นั่ง`,
+  `โอน PromptPay แล้วส่งสลิปใน LINE ${SHIFT_PAYMENT.lineId}`,
 ];
 
 /** A croc peering up at the QR code from the bottom corner. */

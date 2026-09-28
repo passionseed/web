@@ -270,7 +270,11 @@ export async function runBulkReply(options: BulkRunOptions): Promise<BulkRunResu
 
     processed += 1;
     attempted += 1;
-    const lead = { username: comment.username, gradeLevel: comment.grade_level };
+    const lead = {
+      username: comment.username,
+      gradeLevel: comment.grade_level,
+      campaign: getCampaign(comment.text),
+    };
     let delivered = false;
     let commentAmbiguous = false;
 

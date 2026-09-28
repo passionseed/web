@@ -11,7 +11,7 @@ import {
   type BulkRunResult,
 } from "@/app/admin/ig-comments/actions";
 import { getBatchCap } from "@/app/admin/ig-comments/constants";
-import type { CampaignKey } from "@/lib/meta/comment-intent";
+import { CAMPAIGN_KEYS, type CampaignKey } from "@/lib/meta/comment-intent";
 
 export interface MissedCommentItem {
   id: string;
@@ -95,8 +95,10 @@ export function MissedCommentsCard({
 
   const counts = useMemo(() => {
     const pool = onlyNeverContacted ? comments.filter((c) => c.neverContacted) : comments;
-    const uni = pool.filter((c) => c.campaign === "uni").length;
-    return { all: pool.length, uni, port: pool.length - uni };
+    const byCampaign = Object.fromEntries(
+      CAMPAIGN_KEYS.map((key) => [key, pool.filter((c) => c.campaign === key).length]),
+    ) as Record<CampaignKey, number>;
+    return { all: pool.length, ...byCampaign };
   }, [comments, onlyNeverContacted]);
 
   /**
@@ -225,7 +227,7 @@ export function MissedCommentsCard({
       <CardContent className="space-y-4">
         {/* Campaign tabs */}
         <div className="flex gap-2">
-          {(["all", "uni", "port"] as const).map((key) => (
+          {(["all", ...CAMPAIGN_KEYS] as const).map((key) => (
             <button
               key={key}
               onClick={() => setTab(key)}

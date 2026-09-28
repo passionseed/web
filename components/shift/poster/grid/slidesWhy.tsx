@@ -1,5 +1,4 @@
 import {
-  SHIFT_COHORT,
   SHIFT_COHORT_0,
   SHIFT_SDT,
   type ShiftShowcaseProject,
@@ -8,6 +7,7 @@ import {
 import { PIXEL_FONT, PixelIcon } from "../pixel/PixelRects";
 import { CREW, ICON_PALETTE, SIGNPOST, TROPHY } from "../pixel/pixelIcons";
 import { PX } from "../pixel/pixelKit";
+import { ApplyCtaLine } from "./ApplyCta";
 import { deck, sinkingCert } from "./deckCritters";
 import { DeckCard, GridSlideFrame, MUTED, Plate } from "./GridSlideFrame";
 
@@ -225,13 +225,9 @@ export function SlideA4() {
           </div>
         ))}
       </div>
-      <p
-        className="mt-auto pb-2 font-kodchasan text-[40px] font-bold"
-        style={{ color: PX.cream }}
-      >
-        สมัคร {SHIFT_COHORT.name}{" "}
-        <span style={{ color: PX.accentLight }}>ลิงก์ในไบโอ</span>
-      </p>
+      <div className="mt-auto pb-2">
+        <ApplyCtaLine />
+      </div>
     </GridSlideFrame>
   );
 }

@@ -1,4 +1,5 @@
 import type { DmMessage } from "@/types/dm-leads";
+import type { CampaignKey } from "@/lib/meta/comment-intent";
 
 /**
  * Checks whether an outbound message failed to deliver specifically because
@@ -70,7 +71,8 @@ export function getDefaultPublicCommentReply(username?: string | null): string {
  * automatically. The private-reply endpoint takes plain text only, which is
  * why the follow-up asks for a typed number rather than offering buttons.
  */
-export function getDefaultCommentDmMessage(): string {
+export function getDefaultCommentDmMessage(campaign?: CampaignKey | null): string {
+  if (campaign === "shift") return getShiftCommentDmMessage();
   return [
     "ลองดูในลิงค์นี้ได้เลยนะ✌️",
     "https://passionseed.org/tips/intro",
@@ -79,15 +81,30 @@ export function getDefaultCommentDmMessage(): string {
   ].join("\n");
 }
 
+/**
+ * The DM for someone who commented SHIFT on the SHIFT[1] posts: the form link
+ * straight away (source-tagged), and the deadline, so one message is enough
+ * to apply. No numbered follow-up; the ask here is the form, not a reply.
+ */
+function getShiftCommentDmMessage(): string {
+  return [
+    "ส่งลิงก์สมัคร SHIFT[1] ให้แล้วน้า 🌱",
+    "https://passionseed.org/shift/apply?round=1&utm_source=ig-comment",
+    "กรอก 2 นาที ปิดรับ ส. 3 ต.ค. รับแค่ 15 คน",
+    "สงสัยอะไรพิมพ์ถามในนี้ได้เลย",
+  ].join("\n");
+}
+
 export async function getPersonalizedDmMessage(lead: {
   username?: string | null;
   displayName?: string | null;
   gradeLevel?: string | null;
   interests?: string[];
+  campaign?: CampaignKey | null;
 }): Promise<string> {
   const { personalizeMessage } = await import("@/lib/dm-leads/personalize");
   return personalizeMessage({
-    template: getDefaultCommentDmMessage(),
+    template: getDefaultCommentDmMessage(lead.campaign),
     lead: {
       displayName: lead.displayName,
       username: lead.username,

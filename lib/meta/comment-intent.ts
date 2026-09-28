@@ -41,6 +41,20 @@ export function isUniRequest(text: string | null | undefined): boolean {
 }
 
 /**
+ * Latin "shift" as a whole word, so "shifting" and "shifted" in ordinary
+ * sentences do not qualify. The SHIFT[1] posts ask people to comment SHIFT.
+ */
+const LATIN_SHIFT = /(?:^|[^a-z])shift(?![a-z])/i;
+
+/** Thai spellings of SHIFT, matched as substrings (no word boundaries). */
+const THAI_SHIFT = /ชิ[ฟพ]/;
+
+export function isShiftRequest(text: string | null | undefined): boolean {
+  if (!text) return false;
+  return LATIN_SHIFT.test(text) || THAI_SHIFT.test(text);
+}
+
+/**
  * Whether a comment opted into a follow-up from any live campaign.
  *
  * Campaigns run alongside each other: the "port" reels are still in the feed
@@ -48,21 +62,22 @@ export function isUniRequest(text: string | null | undefined): boolean {
  * commenter on either is someone who asked to hear from us.
  */
 export function isCampaignRequest(text: string | null | undefined): boolean {
-  return isPortRequest(text) || isUniRequest(text);
+  return isShiftRequest(text) || isPortRequest(text) || isUniRequest(text);
 }
 
 /** The live campaigns, plus "all" for the unfiltered view. */
-export type CampaignKey = "uni" | "port";
-export const CAMPAIGN_KEYS: CampaignKey[] = ["uni", "port"];
+export type CampaignKey = "shift" | "uni" | "port";
+export const CAMPAIGN_KEYS: CampaignKey[] = ["shift", "uni", "port"];
 
 /**
  * Which campaign a comment opted into.
  *
- * A comment containing both keywords is attributed to "uni", the current
- * campaign, so the newer push is never under-counted. Returns null for
- * comments that opted into nothing.
+ * A comment containing more than one keyword is attributed to the newest
+ * campaign (shift, then uni, then port), so the current push is never
+ * under-counted. Returns null for comments that opted into nothing.
  */
 export function getCampaign(text: string | null | undefined): CampaignKey | null {
+  if (isShiftRequest(text)) return "shift";
   if (isUniRequest(text)) return "uni";
   if (isPortRequest(text)) return "port";
   return null;

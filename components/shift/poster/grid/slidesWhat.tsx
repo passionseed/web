@@ -12,6 +12,7 @@ import { PX } from "../pixel/pixelKit";
 import { deck } from "./deckCritters";
 import { DeckCard, DeckLabel, GridSlideFrame, MUTED, Plate } from "./GridSlideFrame";
 import { SKILL_CARD_ART } from "./skillIcons";
+import { ApplyCtaPanel } from "./ApplyCta";
 
 /** Post B, what: the seven days, how each evening runs, what you leave with. */
 
@@ -117,32 +118,33 @@ const OUTCOMES = [
   { title: "พอร์ต 1 หน้า", icon: PORTFOLIO, body: "สรุปทั้งหมดใน 1 หน้า ใส่พอร์ตและใช้เล่าตอนสัมภาษณ์ TCAS1" },
 ];
 
-const B4_CRITTERS = [
-  ...deck.school(112, 188, 6, true),
-  ...deck.bubbles(104, 184, 4),
-  ...deck.weed(12, 14),
-  ...deck.weed(164, 20),
-];
+const B4_CRITTERS = [...deck.weed(8, 6), ...deck.weed(168, 8)];
+
+/**
+ * B is the post most people land on, so its last slide carries the apply
+ * step: outcomes compressed into one row, the refund, then the ask.
+ */
 
 export function SlideB4() {
   return (
     <GridSlideFrame id="shift1-grid-b-4" tag="WHAT YOU SHIP" title="จบ 7 วัน ได้อะไรกลับไป" page="4/4" critters={B4_CRITTERS}>
-      <div className="space-y-5">
+      <div className="grid grid-cols-3 gap-4">
         {OUTCOMES.map((o) => (
-          <DeckCard key={o.title} className="flex items-center gap-7">
-            <PixelIcon grid={o.icon} palette={ICON_PALETTE} scale={8} className="shrink-0" />
-            <div>
-              <p className="font-kodchasan text-[42px] font-bold leading-tight">{o.title}</p>
-              <p className="mt-1 text-[27px] leading-[1.45]" style={{ opacity: 0.8 }}>
-                {o.body}
-              </p>
-            </div>
+          <DeckCard key={o.title} className="!px-6 !py-8">
+            <PixelIcon grid={o.icon} palette={ICON_PALETTE} scale={8} />
+            <p className="mt-5 font-kodchasan text-[36px] font-bold leading-tight">{o.title}</p>
+            <p className="mt-2 text-[24px] leading-[1.45]" style={{ opacity: 0.8 }}>
+              {o.body}
+            </p>
           </DeckCard>
         ))}
       </div>
-      <p className="mt-10 text-[38px]">
+      <p className="mt-8 text-[38px]">
         <MarkerHighlight>{REFUND_PROMISE}</MarkerHighlight>
       </p>
+      <div className="mt-auto pb-2">
+        <ApplyCtaPanel />
+      </div>
     </GridSlideFrame>
   );
 }
