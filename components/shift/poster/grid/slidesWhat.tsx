@@ -8,9 +8,10 @@ import {
 import { MarkerHighlight, REFUND_PROMISE } from "../riso";
 import { PIXEL_FONT, PixelIcon } from "../pixel/PixelRects";
 import { CHART, ICON_PALETTE, PORTFOLIO, ROCKET } from "../pixel/pixelIcons";
-import { PX, mix } from "../pixel/pixelKit";
+import { PX } from "../pixel/pixelKit";
 import { deck } from "./deckCritters";
-import { DeckCard, DeckLabel, GridSlideFrame, MUTED, Plate, notch } from "./GridSlideFrame";
+import { DeckCard, DeckLabel, GridSlideFrame, MUTED, Plate } from "./GridSlideFrame";
+import { SKILL_CARD_ART } from "./skillIcons";
 
 /** Post B, what: the seven days, how each evening runs, what you leave with. */
 
@@ -59,24 +60,35 @@ export function SlideB2() {
   );
 }
 
-/** A croc cruising the bottom, a school getting out of its way. */
-const B3_CRITTERS = [
-  ...deck.croc(70, 184, 3, false),
-  ...deck.school(14, 176, 6, false),
-  ...deck.bubbles(66, 180, 4),
-  ...deck.weed(8, 12),
-  ...deck.weed(162, 18),
-];
+/** The skill cards fill the deck, so only a little life along the floor. */
+const B3_CRITTERS = [...deck.weed(8, 6), ...deck.weed(168, 8)];
+
+function SkillCard({ title, detail }: { title: string; detail: string }) {
+  const art = SKILL_CARD_ART[title];
+  return (
+    <DeckCard className="flex items-start gap-5 !px-6 !py-7">
+      {art && <PixelIcon grid={art.icon} palette={ICON_PALETTE} scale={7} className="mt-1 shrink-0" />}
+      <div className="min-w-0">
+        <p className="text-[31px] leading-tight tracking-[0.03em]" style={{ ...PIXEL_FONT, color: PX.accentLight }}>
+          {art?.label ?? title}
+        </p>
+        <p className="mt-2 text-[23px] leading-[1.45]" style={{ color: MUTED }}>
+          {detail}
+        </p>
+      </div>
+    </DeckCard>
+  );
+}
 
 export function SlideB3() {
   return (
     <GridSlideFrame id="shift1-grid-b-3" tag="HOW THE ROOM RUNS" title="โปรเจกต์ของเรา ทีมละ 3 คน" page="3/4" critters={B3_CRITTERS}>
       <DeckLabel>ทุกเย็น ทุกทีมโชว์ 3 เรื่อง</DeckLabel>
-      <div className="mt-7 space-y-6">
+      <div className="mt-6 space-y-4">
         {SHIFT_DAILY_SHOW.map((beat, i) => (
           <div key={beat.label} className="flex items-baseline gap-8">
             <p
-              className="w-[300px] shrink-0 text-[60px] leading-none tracking-[0.04em]"
+              className="w-[270px] shrink-0 text-[52px] leading-none tracking-[0.04em]"
               style={{ ...PIXEL_FONT, color: i === 1 ? PX.accent : PX.cream }}
             >
               {beat.label.toUpperCase()}
@@ -87,22 +99,11 @@ export function SlideB3() {
           </div>
         ))}
       </div>
-      <div className="mt-14">
+      <div className="mt-10">
         <DeckLabel>การ์ดสกิล ทีมเลือกเองวันละใบ</DeckLabel>
-        <div className="mt-6 flex flex-wrap gap-3">
+        <div className="mt-5 grid grid-cols-2 gap-4">
           {SHIFT_SKILL_CARDS.map((card) => (
-            <span
-              key={card.title}
-              className="px-5 py-3 text-[24px] tracking-[0.04em]"
-              style={{
-                ...PIXEL_FONT,
-                clipPath: notch(6),
-                backgroundColor: mix(PX.ink, PX.near, 0.55),
-                color: PX.accentLight,
-              }}
-            >
-              {card.title}
-            </span>
+            <SkillCard key={card.title} title={card.title} detail={card.detail} />
           ))}
         </div>
       </div>
