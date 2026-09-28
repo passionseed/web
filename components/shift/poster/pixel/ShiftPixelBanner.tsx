@@ -149,11 +149,11 @@ function Scene() {
   );
 }
 
-function Title() {
+function Title({ isPrivate }: { isPrivate?: boolean }) {
   return (
     <div className="absolute left-[56px] top-[40px]">
       <p className="text-[24px] leading-none tracking-[0.08em]" style={{ ...PIXEL_FONT, color: PX.ink }}>
-        5-11 OCT · ONLINE
+        {isPrivate ? "7 DAYS · ONLINE" : "5-11 OCT · ONLINE"}
       </p>
       <h1
         className="mt-3 text-[136px] leading-[0.9]"
@@ -173,8 +173,9 @@ function Title() {
 }
 
 /** Two rows in the deep-water band: when and deadline, then price and terms. */
-function Facts() {
+function Facts({ isPrivate }: { isPrivate?: boolean }) {
   const price = `฿${COHORT.priceBaht.toLocaleString("en-US")}`;
+  if (isPrivate) return null;
   return (
     <div
       className="absolute inset-x-0 bottom-0 flex flex-col justify-center gap-2 px-[56px]"
@@ -201,7 +202,7 @@ function Facts() {
   );
 }
 
-export function ShiftPixelBanner() {
+export function ShiftPixelBanner({ isPrivate }: { isPrivate?: boolean }) {
   return (
     <div
       id="shift1-pixel-banner"
@@ -209,8 +210,8 @@ export function ShiftPixelBanner() {
       style={{ width: PIXEL_BANNER_W, height: PIXEL_BANNER_H, backgroundColor: PX.sky }}
     >
       <Scene />
-      <Title />
-      <Facts />
+      <Title isPrivate={isPrivate} />
+      <Facts isPrivate={isPrivate} />
     </div>
   );
 }

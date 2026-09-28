@@ -102,7 +102,7 @@ function sky(): Rect[] {
 
 /** A low skyline: far blocks, with three nearer towers as landmarks. */
 function skyline(): Rect[] {
-  const tops = [22, 27, 19, 29, 24, 17, 28, 21, 25, 30, 22, 26];
+  const tops = [22, 27, 19, 29, 24, 25, 28, 26, 25, 30, 22, 26];
   const out: Rect[] = [];
   let x = 0;
   tops.forEach((top, i) => {
@@ -156,7 +156,7 @@ function PixelScene() {
 
 function Header() {
   return (
-    <div className="absolute inset-x-0 top-[16px] flex flex-col items-center text-center">
+    <div className="absolute inset-x-0 top-[48px] flex flex-col items-center text-center">
       <p
         className="text-[24px] leading-none tracking-[0.08em]"
         style={{ ...PIXEL_FONT, color: PX.ink }}
@@ -214,11 +214,11 @@ function Plate({ label, size = 42 }: { label: string; size?: number }) {
 /** What you ship, as three inventory cards: icon first, words second. */
 function Outcomes() {
   return (
-    <ul className="mt-5 grid grid-cols-3 gap-[18px]">
+    <ul className="mt-6 grid grid-cols-3 gap-[22px]">
       {OUTCOMES.map((o) => (
         <li
           key={o.num}
-          className="relative flex flex-col px-[22px] pb-[18px] pt-[16px]"
+          className="relative flex flex-col px-[22px] pb-[20px] pt-[18px]"
           style={{ backgroundColor: PX.waterDeep, clipPath: notch(CELL) }}
         >
           <span className="absolute right-[18px] top-[18px]">
@@ -251,7 +251,7 @@ function Outcomes() {
  */
 function Week() {
   return (
-    <div className="mt-5">
+    <div className="mt-6">
       <div className="grid grid-cols-7">
         {PHASES.map((p) => (
           <div key={p.label} className="px-[10px]" style={{ gridColumn: `span ${p.days}` }}>
@@ -272,7 +272,7 @@ function Week() {
           </div>
         ))}
       </div>
-      <div className="relative mt-[18px] grid grid-cols-7">
+      <div className="relative mt-[20px] grid grid-cols-7">
         <div
           className="absolute top-[18px] h-[6px]"
           style={{
@@ -299,7 +299,7 @@ function Week() {
               {d.label}
             </p>
             <p
-              className="mt-[5px] font-kodchasan text-[16px] font-semibold leading-[1.3]"
+              className="mt-[6px] font-kodchasan text-[16px] font-semibold leading-[1.3]"
               style={{ color: PX.cream }}
             >
               {d.title}
@@ -314,11 +314,11 @@ function Week() {
 /** How each day runs, as four tools on the belt. */
 function Toolkit() {
   return (
-    <ul className="mt-[26px] grid grid-cols-4 gap-[12px]">
+    <ul className="mt-[24px] grid grid-cols-4 gap-[14px]">
       {TOOLKIT.map((t) => (
         <li
           key={t.title}
-          className="flex items-center gap-[12px] px-[14px] py-[12px]"
+          className="flex items-center gap-[12px] px-[14px] py-[13px]"
           style={{ backgroundColor: `${PX.cream}10`, clipPath: notch(CELL / 2) }}
         >
           <PixelIcon className="shrink-0" grid={t.icon} palette={ICON_PALETTE} scale={4} />
@@ -345,7 +345,7 @@ function Toolkit() {
 /** Self-Determination Theory, named so a parent can look it up. */
 function WhyItWorks() {
   return (
-    <div className="mt-5 grid grid-cols-3 gap-[18px]">
+    <div className="mt-6 grid grid-cols-3 gap-[20px]">
       {SHIFT_SDT.map((p, i) => (
         <div key={p.pillar} className="flex items-center gap-[16px]">
           <span
@@ -374,39 +374,43 @@ function WhyItWorks() {
   );
 }
 
-function Band() {
+function Band({ isPrivate }: { isPrivate?: boolean }) {
   const price = `฿${COHORT.priceBaht.toLocaleString("en-US")}`;
   return (
     <div
       className="absolute inset-x-0 bottom-0 px-[56px] pb-[22px]"
       style={{ top: (BAND + 3) * CELL }}
     >
-      <div className="flex h-full items-start justify-between gap-7">
+      <div className={`flex h-full ${isPrivate ? "items-center" : "items-start"} justify-between gap-7`}>
         <div className="min-w-0">
-          <div className="flex items-baseline gap-3.5">
-            <p
-              className="font-kodchasan text-[33px] font-bold leading-[1.2]"
-              style={{ color: PX.cream }}
-            >
-              {formatThaiDateRange(COHORT.startDate, COHORT.endDate)}
-            </p>
-            <span
-              className="font-kodchasan text-[28px] font-bold"
-              style={{ color: PX.accentLight }}
-            >
-              {price}
-            </span>
-          </div>
-          <p className="mt-0.5 text-[19px] leading-[1.5]" style={{ color: `${PX.cream}bf` }}>
-            รับ {COHORT.seats} คน · Discord ทุกวัน {COHORT.sessionTime} น.
-          </p>
-          <p className="mt-2 flex items-center gap-3.5 text-[19px]">
-            <MarkerHighlight>{REFUND_PROMISE}</MarkerHighlight>
-            <span className="font-kodchasan font-semibold" style={{ color: PX.accent }}>
-              ■ ปิดรับสมัคร {formatThaiDate(COHORT.applyDeadline)}
-            </span>
-          </p>
-          <div className="mt-2.5 flex items-center gap-4">
+          {!isPrivate && (
+            <>
+              <div className="flex items-baseline gap-3.5">
+                <p
+                  className="font-kodchasan text-[33px] font-bold leading-[1.2]"
+                  style={{ color: PX.cream }}
+                >
+                  {formatThaiDateRange(COHORT.startDate, COHORT.endDate)}
+                </p>
+                <span
+                  className="font-kodchasan text-[28px] font-bold"
+                  style={{ color: PX.accentLight }}
+                >
+                  {price}
+                </span>
+              </div>
+              <p className="mt-0.5 text-[19px] leading-[1.5]" style={{ color: `${PX.cream}bf` }}>
+                รับ {COHORT.seats} คน · Discord ทุกวัน {COHORT.sessionTime} น.
+              </p>
+              <p className="mt-2 flex items-center gap-3.5 text-[19px]">
+                <MarkerHighlight>{REFUND_PROMISE}</MarkerHighlight>
+                <span className="font-kodchasan font-semibold" style={{ color: PX.accent }}>
+                  ■ ปิดรับสมัคร {formatThaiDate(COHORT.applyDeadline)}
+                </span>
+              </p>
+            </>
+          )}
+          <div className={`${isPrivate ? "" : "mt-2.5 "}flex items-center gap-4`}>
             <PassionSeedMark size={26} />
             <p
               className="text-[16px] tracking-[0.08em]"
@@ -416,20 +420,22 @@ function Band() {
             </p>
           </div>
         </div>
-        <div className="shrink-0 text-center">
-          <div className="p-2" style={{ backgroundColor: PX.cream }}>
-            <QRCode value={POSTER_URL} size={96} fgColor={PX.ink} bgColor={PX.cream} />
+        {!isPrivate && (
+          <div className="shrink-0 text-center">
+            <div className="p-2" style={{ backgroundColor: PX.cream }}>
+              <QRCode value={POSTER_URL} size={96} fgColor={PX.ink} bgColor={PX.cream} />
+            </div>
+            <p className="mt-1 text-[13px]" style={{ color: `${PX.cream}8c` }}>
+              สแกนสมัคร
+            </p>
           </div>
-          <p className="mt-1 text-[13px]" style={{ color: `${PX.cream}8c` }}>
-            สแกนสมัคร
-          </p>
-        </div>
+        )}
       </div>
     </div>
   );
 }
 
-export function ShiftPixelDetails() {
+export function ShiftPixelDetails({ isPrivate }: { isPrivate?: boolean }) {
   return (
     <div
       id="shift1-pixel-2"
@@ -442,7 +448,7 @@ export function ShiftPixelDetails() {
           than leaving a gap above the footer. */}
       <div
         className="absolute inset-x-0 flex flex-col justify-between px-[56px]"
-        style={{ top: (DECK + 5) * CELL, height: (BAND - DECK - 10) * CELL }}
+        style={{ top: (DECK + 6) * CELL, height: (BAND - DECK - 11) * CELL }}
       >
         <section>
           <SectionLabel th="สิ่งที่จะได้" en="What you ship" />
@@ -460,7 +466,7 @@ export function ShiftPixelDetails() {
           <WhyItWorks />
         </section>
       </div>
-      <Band />
+      <Band isPrivate={isPrivate} />
     </div>
   );
 }

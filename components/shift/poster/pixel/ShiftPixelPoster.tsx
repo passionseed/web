@@ -195,11 +195,11 @@ function PixelScene() {
   );
 }
 
-function Title() {
+function Title({ isPrivate }: { isPrivate?: boolean }) {
   return (
     <div className="absolute inset-x-0 top-[70px] flex flex-col items-center text-center">
       <p className="text-[34px] leading-none tracking-[0.08em]" style={{ ...PIXEL_FONT, color: PX.ink }}>
-        5-11 OCT · ONLINE
+        {isPrivate ? "7 DAYS · ONLINE" : "5-11 OCT · ONLINE"}
       </p>
       <span className="mt-2 h-[4px] w-[330px]" style={{ backgroundColor: PX.ink }} />
       <h1
@@ -222,41 +222,43 @@ function Title() {
   );
 }
 
-function Band() {
+function Band({ isPrivate }: { isPrivate?: boolean }) {
   const price = `฿${COHORT.priceBaht.toLocaleString("en-US")}`;
   return (
     <div className="absolute inset-x-0 bottom-0 px-[56px] pb-[34px]" style={{ top: (BAND + 5) * CELL }}>
       <div className="flex h-full flex-col">
-        <div className="flex items-start justify-between gap-8">
-          <div>
-            <p className="font-kodchasan text-[46px] font-bold leading-[1.3]" style={{ color: PX.cream }}>
-              {formatThaiDateRange(COHORT.startDate, COHORT.endDate)}
-            </p>
-            <p className="mt-1 text-[23px] leading-[1.6]" style={{ color: `${PX.cream}bf` }}>
-              <span className="font-kodchasan text-[32px] font-bold" style={{ color: PX.accentLight }}>
-                {price}
-              </span>{" "}
-              · รับ {COHORT.seats} คน · Discord ทุกวัน {COHORT.sessionTime} น.
-            </p>
-            <p className="mt-3 flex items-center gap-4 text-[23px]">
-              <MarkerHighlight>{REFUND_PROMISE}</MarkerHighlight>
-              <span className="font-kodchasan font-semibold" style={{ color: PX.accent }}>
-                ■ ปิดรับสมัคร {formatThaiDate(COHORT.applyDeadline)}
-              </span>
-            </p>
-            <p className="mt-3 text-[18px]" style={{ color: `${PX.cream}99` }}>
-              ม.4–ม.6 · โปรเจกต์ของตัวเอง มีกลุ่มเพื่อนเล็กๆ คอยช่วย · ใช้ AI ไม่ต้องมีพื้นฐาน
-            </p>
-          </div>
-          <div className="shrink-0 text-center">
-            <div className="p-2.5" style={{ backgroundColor: PX.cream }}>
-              <QRCode value={POSTER_URL} size={128} fgColor={PX.ink} bgColor={PX.cream} />
+        {!isPrivate && (
+          <div className="flex items-start justify-between gap-8">
+            <div>
+              <p className="font-kodchasan text-[46px] font-bold leading-[1.3]" style={{ color: PX.cream }}>
+                {formatThaiDateRange(COHORT.startDate, COHORT.endDate)}
+              </p>
+              <p className="mt-1 text-[23px] leading-[1.6]" style={{ color: `${PX.cream}bf` }}>
+                <span className="font-kodchasan text-[32px] font-bold" style={{ color: PX.accentLight }}>
+                  {price}
+                </span>{" "}
+                · รับ {COHORT.seats} คน · Discord ทุกวัน {COHORT.sessionTime} น.
+              </p>
+              <p className="mt-3 flex items-center gap-4 text-[23px]">
+                <MarkerHighlight>{REFUND_PROMISE}</MarkerHighlight>
+                <span className="font-kodchasan font-semibold" style={{ color: PX.accent }}>
+                  ■ ปิดรับสมัคร {formatThaiDate(COHORT.applyDeadline)}
+                </span>
+              </p>
+              <p className="mt-3 text-[18px]" style={{ color: `${PX.cream}99` }}>
+                ม.4–ม.6 · โปรเจกต์ของตัวเอง มีกลุ่มเพื่อนเล็กๆ คอยช่วย · ใช้ AI ไม่ต้องมีพื้นฐาน
+              </p>
             </div>
-            <p className="mt-1.5 text-[14px]" style={{ color: `${PX.cream}8c` }}>
-              สแกนสมัคร
-            </p>
+            <div className="shrink-0 text-center">
+              <div className="p-2.5" style={{ backgroundColor: PX.cream }}>
+                <QRCode value={POSTER_URL} size={128} fgColor={PX.ink} bgColor={PX.cream} />
+              </div>
+              <p className="mt-1.5 text-[14px]" style={{ color: `${PX.cream}8c` }}>
+                สแกนสมัคร
+              </p>
+            </div>
           </div>
-        </div>
+        )}
         <div className="mt-auto flex items-center justify-between">
           <PassionSeedMark size={34} />
           <p className="text-[18px] tracking-[0.08em]" style={{ ...PIXEL_FONT, color: `${PX.cream}b3` }}>
@@ -268,7 +270,7 @@ function Band() {
   );
 }
 
-export function ShiftPixelPoster() {
+export function ShiftPixelPoster({ isPrivate }: { isPrivate?: boolean }) {
   return (
     <div
       id="shift1-pixel-1"
@@ -276,8 +278,8 @@ export function ShiftPixelPoster() {
       style={{ width: GRID_W * CELL, height: GRID_H * CELL, backgroundColor: PX.sky }}
     >
       <PixelScene />
-      <Title />
-      <Band />
+      <Title isPrivate={isPrivate} />
+      <Band isPrivate={isPrivate} />
     </div>
   );
 }
