@@ -7,6 +7,7 @@ import {
 } from "@/lib/content/shift-cohort";
 
 import { CELL, PX } from "../pixel/pixelKit";
+import { MarkerHighlight } from "../riso";
 import { PIXEL_FONT, Rects } from "../pixel/PixelRects";
 import {
   BAND,
@@ -69,20 +70,42 @@ function Rule() {
 
 const HEADLINE_SHADOW = `${CELL}px ${CELL}px 0 ${PX.cloudShade}`;
 
-/** Bottom band line: cream on the deep water, with a swipe cue. */
-function BandLine({ children, page }: { children: ReactNode; page: string }) {
+/** "คนใช้จริง", the one promise the whole grid leans on. Orange on the deep water. */
+function RealUsers() {
+  return <span style={{ color: PX.accentLight }}>คนใช้จริง</span>;
+}
+
+/**
+ * Tiles A and C are often seen alone in the feed, so they say what SHIFT[1]
+ * is and send people to the profile for the rest of the grid.
+ */
+const CONTEXT_LINE = (
+  <>
+    {COHORT.name} · 7 วัน ปั้นโปรเจกต์ที่มี<RealUsers />
+  </>
+);
+const TO_PROFILE = "ดูทั้ง 3 โพสต์ที่โปรไฟล์ ↗";
+
+/** Bottom band line: cream on the deep water, a note, and a swipe cue. */
+function BandLine({ children, page, note }: { children: ReactNode; page: string; note?: ReactNode }) {
   return (
     <div
       className="absolute inset-x-0 bottom-0 flex flex-col justify-between px-[64px] pb-[40px]"
       style={{ top: BAND_TOP }}
     >
-      <div className="font-kodchasan text-[44px] font-bold leading-[1.3]" style={{ color: PX.cream }}>
+      <div className="font-kodchasan text-[42px] font-bold leading-[1.3]" style={{ color: PX.cream }}>
         {children}
       </div>
       <div className="flex items-center justify-between">
-        <p className="text-[22px] tracking-[0.1em]" style={{ ...PIXEL_FONT, color: `${PX.cream}99` }}>
-          passionseed.org/shift
-        </p>
+        {note ? (
+          <p className="font-kodchasan text-[28px] font-semibold" style={{ color: `${PX.cream}cc` }}>
+            {note}
+          </p>
+        ) : (
+          <p className="text-[22px] tracking-[0.1em]" style={{ ...PIXEL_FONT, color: `${PX.cream}99` }}>
+            passionseed.org/shift
+          </p>
+        )}
         <p className="text-[26px] tracking-[0.1em]" style={{ ...PIXEL_FONT, color: PX.accentLight }}>
           {page}
         </p>
@@ -109,7 +132,9 @@ function CoverA() {
           ค่ายนั่งฟัง ใครก็มีเหมือนกัน
         </p>
       </div>
-      <BandLine page="SWIPE →">แล้วกรรมการอยากเห็นอะไร?</BandLine>
+      <BandLine page="SWIPE →" note={TO_PROFILE}>
+        {CONTEXT_LINE}
+      </BandLine>
     </>
   );
 }
@@ -126,14 +151,16 @@ function CoverB() {
         >
           {COHORT.name}
         </h1>
-        <p className="mt-4 font-kodchasan text-[58px] font-bold leading-[1.3]" style={{ color: PX.ink }}>
-          7 วัน ปั้น 1 โปรเจกต์จริง
+        <p className="mt-3 font-kodchasan text-[54px] font-bold leading-[1.3]" style={{ color: PX.ink }}>
+          7 วัน ปั้นโปรเจกต์ที่มี
         </p>
-        <p className="mt-2 text-[30px] tracking-[0.06em]" style={{ ...PIXEL_FONT, color: PX.accentDark }}>
-          TECH · BUSINESS · INNOVATION
+        <p className="mt-1 text-[104px] leading-[1.15]">
+          <MarkerHighlight>คนใช้จริง</MarkerHighlight>
         </p>
       </div>
-      <BandLine page="SWIPE →">ของที่คนใช้จริง + พอร์ต 1 หน้า</BandLine>
+      <BandLine page="SWIPE →">
+        ทำเสร็จยังไม่พอ ต้องมี<RealUsers />
+      </BandLine>
     </>
   );
 }
@@ -165,7 +192,9 @@ function CoverC() {
           </span>
         </div>
       </div>
-      <BandLine page="HOW TO →">ปิดรับสมัคร {formatThaiDate(COHORT.applyDeadline)}</BandLine>
+      <BandLine page="HOW TO →" note={`ปิดรับ ${formatThaiDate(COHORT.applyDeadline)} · ${TO_PROFILE}`}>
+        {CONTEXT_LINE}
+      </BandLine>
     </>
   );
 }
