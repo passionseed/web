@@ -11,14 +11,12 @@ export async function GET() {
     const adminSupabase = createAdminClient();
 
     const [
-      totalUsersResult,
       totalStudentsResult,
       totalInstructorsResult,
       totalAdminsResult,
       totalClassroomsResult,
       totalMapsResult,
     ] = await Promise.all([
-      adminSupabase.auth.admin.listUsers({ page: 1, perPage: 1000 }),
       supabase.from("user_roles").select("user_id", { count: "exact" }).eq("role", "student"),
       supabase.from("user_roles").select("user_id", { count: "exact" }).eq("role", "instructor"),
       supabase.from("user_roles").select("user_id", { count: "exact" }).eq("role", "admin"),
@@ -26,8 +24,20 @@ export async function GET() {
       supabase.from("learning_maps").select("id", { count: "exact" }),
     ]);
 
+    // Auth Admin's listUsers endpoint returns one page at a time. Walk every
+    // page so the dashboard count remains correct beyond the first 1,000 users.
+    const perPage = 1000;
+    let totalUsers = 0;
+    for (let page = 1; ; page += 1) {
+      const { data, error } = await adminSupabase.auth.admin.listUsers({ page, perPage });
+      if (error) throw error;
+      const usersOnPage = data?.users?.length ?? 0;
+      totalUsers += usersOnPage;
+      if (usersOnPage < perPage) break;
+    }
+
     return NextResponse.json({
-      total_users: totalUsersResult.data?.users?.length || 0,
+      total_users: totalUsers,
       total_students: totalStudentsResult.count || 0,
       total_instructors: totalInstructorsResult.count || 0,
       total_admins: totalAdminsResult.count || 0,
