@@ -17,4 +17,4 @@ export function themeForRound(round: number): ShiftTheme {
   return THEMES[round] ?? RISO_THEME;
 }
 
-export type { ShiftHeroProps, ShiftTheme } from "./types";
+export type { ShiftArtKind, ShiftHeroProps, ShiftTheme } from "./types";

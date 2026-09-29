@@ -120,6 +120,7 @@ function HoloBookend() {
 }
 
 export const HOLO_THEME: ShiftTheme = {
+  kind: "riso",
   palette: PALETTE,
   Hero: HoloHero,
   Bookend: HoloBookend,

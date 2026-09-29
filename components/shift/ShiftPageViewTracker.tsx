@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
+import { trackShiftEvent } from "@/lib/shift/attribution";
 
 export function ShiftPageViewTracker({ pagePath = "/shift" }: { pagePath?: string }) {
   useEffect(() => {
+    trackShiftEvent("shift_page_view", { path: pagePath });
     try {
       fetch("/api/hackathon/track-view", {
         method: "POST",

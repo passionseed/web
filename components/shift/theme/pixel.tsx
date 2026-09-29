@@ -202,6 +202,7 @@ function PixelBookend() {
 }
 
 export const PIXEL_THEME: ShiftTheme = {
+  kind: "pixel",
   palette: PALETTE,
   Hero: PixelHero,
   Bookend: PixelBookend,

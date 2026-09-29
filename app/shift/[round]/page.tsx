@@ -1,35 +1,26 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import {
-  ArrowRight,
-  Banknote,
-  Check,
-  ClipboardList,
-  Code2,
-  Mic,
-  FlaskConical,
-  Hammer,
-  Rocket,
-  ShieldCheck,
-  TrendingUp,
-  Users,
-  X,
-  Zap,
-} from "lucide-react";
+import { ArrowRight, ShieldCheck } from "lucide-react";
 import { ShiftApplyButton } from "@/components/shift/ShiftApplyButton";
+import { ShiftSeatsRemaining } from "@/components/shift/ShiftSeatsRemaining";
+import { ShiftParentShare } from "@/components/shift/ShiftParentShare";
 import { ShiftPageViewTracker } from "@/components/shift/ShiftPageViewTracker";
 import { ShiftPayment } from "@/components/shift/ShiftPayment";
 import { ShiftTopBar } from "@/components/shift/ShiftTopBar";
+import type { RisoIconName } from "@/components/shift/poster/RisoIcons";
+import { ShiftIcon } from "@/components/shift/round/ShiftIcon";
+import { RisoHeading } from "@/components/shift/ShiftRiso";
+import { ShiftGlance } from "@/components/shift/round/ShiftGlance";
+import { ShiftProblem } from "@/components/shift/round/ShiftProblem";
+import { ShiftSdt } from "@/components/shift/round/ShiftSdt";
+import { ShiftSquads } from "@/components/shift/round/ShiftSquads";
 import {
-  RisoIcon,
-  type RisoIconName,
-} from "@/components/shift/poster/RisoIcons";
-import {
-  HairlineColumns,
-  RisoHeading,
-  RisoNumeral,
-} from "@/components/shift/ShiftRiso";
+  ShiftCadence,
+  ShiftSchedule,
+} from "@/components/shift/round/ShiftTimeline";
+import { floatClass, revealClass } from "@/components/shift/round/motion";
+import "@/components/shift/round/shiftRound.css";
 import { themeForRound } from "@/components/shift/theme";
 import {
   HEADING,
@@ -43,9 +34,6 @@ import {
 import {
   PAIR_DISCOUNT_BAHT,
   SHIFT_COHORTS,
-  SHIFT_DAILY_SHOW,
-  SHIFT_SDT,
-  SHIFT_SKILL_CARDS,
   formatThaiDate,
   cohortPath,
   cohortStatus,
@@ -141,42 +129,26 @@ function ApplyButton({
   );
 }
 
-const cadence = [
+const tracks: {
+  icon: RisoIconName;
+  title: string;
+  tag: string;
+  body: string;
+}[] = [
   {
-    icon: Rocket,
-    day: "Day 1–2 (Mon–Tue)",
-    title: "Lock One Problem",
-    body: "ตัดฟีเจอร์ที่ไม่จำเป็นออก 80% แล้วล็อกสโคปโปรเจกต์ระดับอะตอมให้จบใน 1 หน้า",
-  },
-  {
-    icon: Hammer,
-    day: "Day 3–5 (Wed–Fri)",
-    title: "Ship to Strangers",
-    body: "ปล่อย MVP แบบ zero-code หรือ hardware ให้คนภายนอกใช้จริง ถ้าพังหรือไม่มีคนใช้ ดีแล้ว! นั่นคือ failure data ที่ต้องบันทึก",
-  },
-  {
-    icon: Zap,
-    day: "Day 6–7 (Sat–Sun)",
-    title: "Demo Day",
-    body: "โชว์ของจริงต่อหน้าทั้งรุ่น เล่าว่าอะไรพัง เปลี่ยนอะไร และได้เรียนรู้อะไร แล้วเรียบเรียงเป็น 1-Page Case Study ไว้ใช้ในพอร์ต",
-  },
-];
-
-const tracks = [
-  {
-    icon: FlaskConical,
+    icon: "flask",
     title: "Engineering Track",
     tag: "Chem Eng / EE / Hardware",
     body: "เปลี่ยนงานคราฟต์งานวิทยาศาสตร์ (เช่น โคมไฟน้ำทะเล หรือ Sensor Board) ให้เป็น Engineering Optimization Study พร้อม voltage logs และ stress-test data จริง",
   },
   {
-    icon: TrendingUp,
+    icon: "trend",
     title: "Finance & BBA Track",
     tag: "Equity Research",
     body: "ก้าวข้าม binary options และ paper trading ไปสู่ 1-Page Equity Research Note & Valuation Model ที่อาจารย์ BBA มองว่าเป็นงานจริง",
   },
   {
-    icon: Code2,
+    icon: "code",
     title: "Tech & Product Track",
     tag: "Zero-Code Ship",
     body: "ปล่อย micro-tool จาก zero-code stack (Tally / Carrd / Notion) แล้วหาผู้ใช้งานจริง 10-20 คนพร้อม feedback จริง",
@@ -298,6 +270,7 @@ export default async function ShiftRoundPage({ params }: RoundParams) {
     <div
       className="relative min-h-screen font-bai-jamjuree antialiased"
       style={paletteVars(theme.palette)}
+      data-shift-kind={theme.kind}
     >
       <script
         type="application/ld+json"
@@ -332,6 +305,12 @@ export default async function ShiftRoundPage({ params }: RoundParams) {
             <ApplyButton cohort={cohort}>
               จองที่นั่ง {cohort.name} (รับ {cohort.seats} คน)
             </ApplyButton>
+            {isOpen && (
+              <div className="mt-4">
+                <ShiftSeatsRemaining round={cohort.round} capacity={cohort.seats} />
+                <ShiftParentShare cohort={cohort} />
+              </div>
+            )}
           </div>
           <p
             className="mt-8 font-kodchasan text-lg font-semibold sm:text-xl"
@@ -352,268 +331,57 @@ export default async function ShiftRoundPage({ params }: RoundParams) {
       </div>
 
       <main className="relative mx-auto max-w-5xl px-5 pb-10 sm:px-8">
+        <ShiftGlance cohort={cohort} kind={theme.kind} />
+
         {/* ============ 2. THE PROBLEM ============ */}
-        <section className="py-16 sm:py-24">
-          <RisoHeading eyebrow="The Problem">
-            กับดัก &ldquo;พอร์ตเมค&rdquo; ที่กรรมการรู้ทัน
-          </RisoHeading>
+        <ShiftProblem kind={theme.kind} />
 
-          <div className="mt-10">
-            <HairlineColumns cols={2}>
-              <div>
-                <p
-                  className="mb-5 flex items-center gap-2 text-sm font-semibold"
-                  style={{ color: paper("73") }}
-                >
-                  <X className="h-4 w-4" /> ใบเซอร์ค่ายทั่วไป
-                </p>
-                <ul className="space-y-4" style={{ color: paper("80") }}>
-                  <li className="leading-relaxed">
-                    นั่งฟังบรรยาย 6 ชั่วโมง และเล่นเกมกลุ่ม
-                  </li>
-                  <li className="leading-relaxed">
-                    ใบประกาศเข้าร่วมที่เด็กอีก 1,000 คนก็มีเหมือนกัน
-                  </li>
-                  <li className="leading-relaxed">
-                    พอร์ตสร้างภาพ &ldquo;ทำสำเร็จ 100%&rdquo;
-                    ซึ่งอาจารย์มองว่าเมค
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <p
-                  className="mb-5 flex items-center gap-2 font-mono text-xs font-bold uppercase tracking-[0.18em]"
-                  style={{ color: T.accent3 }}
-                >
-                  <Check className="h-4 w-4" /> SHIFT Sandbox
-                </p>
-                <ul className="space-y-4">
-                  <li className="leading-relaxed">
-                    <strong>Zero Theory, 100% Execution:</strong>{" "}
-                    ลงมือสร้างตั้งแต่วันแรก ไม่มีสไลด์บรรยาย
-                  </li>
-                  <li className="leading-relaxed">
-                    <strong>Live Project:</strong> ผลงานที่มีคนภายนอกใช้งานจริง
-                    พร้อมเมตริกจริง
-                  </li>
-                  <li className="leading-relaxed">
-                    <strong>The Pivot Log:</strong> บันทึกจุดพังและการแก้ปัญหา
-                    ซึ่งคือสัญญาณที่แรงที่สุดในสายตาอาจารย์
-                  </li>
-                </ul>
-              </div>
-            </HairlineColumns>
-          </div>
-        </section>
-
-        {/* ============ 3. CADENCE ============ */}
-        <section className="py-16 sm:py-24">
-          <RisoHeading eyebrow="How It Works">
-            จังหวะ 7 วัน ไม่กระทบเวลาเรียน
-          </RisoHeading>
-          <div className="mt-10">
-            <HairlineColumns>
-              {cadence.map((step) => (
-                <div key={step.day}>
-                  <p
-                    className="font-mono text-[11px] font-bold uppercase tracking-[0.22em]"
-                    style={{ color: T.accent1 }}
-                  >
-                    {step.day}
-                  </p>
-                  <h3 className="mt-2 font-kodchasan text-2xl font-semibold leading-snug">
-                    {step.title}
-                  </h3>
-                  <p
-                    className="mt-3 text-sm leading-relaxed"
-                    style={{ color: paper("99") }}
-                  >
-                    {step.body}
-                  </p>
-                </div>
-              ))}
-            </HairlineColumns>
-          </div>
-        </section>
-
-        {/* ============ 3b. DATED SCHEDULE ============ */}
-        <section className="py-16 sm:py-24">
-          <RisoHeading eyebrow="ตารางรอบนี้">7 วัน วันละหนึ่งงาน</RisoHeading>
-          <p
-            className="mt-4 max-w-2xl text-base leading-relaxed"
-            style={{ color: paper("99") }}
-          >
-            {COHORT_DATES} ทำวันละ 1 ถึง 2 ชั่วโมง ไม่ต้องลาเรียน
-            ทุกวันมีของต้องส่ง ถ้าวันไหนหาย
-            ทีมกับพี่เลี้ยงรู้ทันทีตั้งแต่วันนั้น ไม่ใช่ตอนจบ
-          </p>
-
-          <ol className={`mt-10 border-t ${HAIR}`}>
-            {cohort.schedule.map((step) => (
-              <li
-                key={step.date}
-                className={`grid gap-2 border-b py-6 sm:grid-cols-[9rem_11rem_1fr] sm:items-baseline sm:gap-6 ${HAIR}`}
-              >
-                <div>
-                  <p
-                    className="font-mono text-[11px] font-bold uppercase tracking-[0.2em]"
-                    style={{ color: T.accent1 }}
-                  >
-                    Day {step.day}
-                  </p>
-                  <p className="mt-1 font-kodchasan text-base font-semibold">
-                    {formatThaiDate(step.date)}
-                  </p>
-                </div>
-                <p
-                  className="font-mono text-[11px] uppercase tracking-[0.18em]"
-                  style={{ color: T.accent3 }}
-                >
-                  {step.label}
-                </p>
-                <div>
-                  <h3 className="font-kodchasan text-lg font-semibold leading-snug">
-                    {step.title}
-                  </h3>
-                  <p
-                    className="mt-1.5 text-sm leading-relaxed"
-                    style={{ color: paper("99") }}
-                  >
-                    {step.detail}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </section>
+        {/* ============ 3. CADENCE + DATED SCHEDULE ============ */}
+        <ShiftCadence kind={theme.kind} />
+        <ShiftSchedule cohort={cohort} dates={COHORT_DATES} kind={theme.kind} />
 
         {/* ============ 3c. SQUADS & DAILY SHOW ============ */}
-        <section className="py-16 sm:py-24">
-          <RisoHeading eyebrow="Squads & Daily Show">
-            โปรเจกต์ของคุณ ทีมของคุณ สกิลที่คุณเลือก
-          </RisoHeading>
-          <p
-            className="mt-4 max-w-2xl text-base leading-relaxed"
-            style={{ color: paper("99") }}
-          >
-            ทำคนเดียวก็ได้ หรือชวนเพื่อนมาเป็นทีม {teamSizeLabel(cohort)}{" "}
-            แต่ไม่มีใครสร้างอยู่คนเดียว เลือกสกิลจากเมนูตามที่โปรเจกต์ต้องใช้วันนั้น เรียนด้วยกัน
-            แล้วใช้กับงานจริงในวันเดียวกัน คุยกับพี่เลี้ยงได้ทั้งวันในห้อง
-            Discord ของทีม
-          </p>
-
-          <div className="mt-10">
-            <HairlineColumns cols={2}>
-              <div>
-                <h3
-                  className="flex items-center gap-2 font-kodchasan text-xl font-semibold"
-                  style={{ color: T.accent3 }}
-                >
-                  <Users className="h-5 w-5" /> เมนูสกิล
-                </h3>
-                <ul className="mt-5 space-y-4">
-                  {SHIFT_SKILL_CARDS.map((card) => (
-                    <li key={card.title} className="text-sm leading-relaxed">
-                      <span className="font-semibold">{card.title}</span>
-                      <span style={{ color: paper("99") }}>
-                        : {card.detail}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h3
-                  className="flex items-center gap-2 font-kodchasan text-xl font-semibold"
-                  style={{ color: T.accent3 }}
-                >
-                  <Mic className="h-5 w-5" /> Daily Show ทุกเย็น
-                </h3>
-                <ol className="mt-5 space-y-5">
-                  {SHIFT_DAILY_SHOW.map((beat, i) => (
-                    <li key={beat.label} className="flex items-baseline gap-4">
-                      <RisoNumeral index={i}>{i + 1}</RisoNumeral>
-                      <p className="text-sm leading-relaxed">
-                        <span className="font-semibold">{beat.label}</span>
-                        <span style={{ color: paper("99") }}>
-                          {" "}
-                          {beat.detail}
-                        </span>
-                      </p>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            </HairlineColumns>
-          </div>
-        </section>
+        <ShiftSquads cohort={cohort} kind={theme.kind} />
 
         {/* ============ 3d. WHY IT WORKS (SDT) ============ */}
-        <section className="py-16 sm:py-24">
-          <RisoHeading eyebrow="Self-Determination">ทำไมถึงเวิร์ก</RisoHeading>
-          <p
-            className="mt-4 max-w-2xl text-base leading-relaxed"
-            style={{ color: paper("99") }}
-          >
-            คนจะลงมือเองได้นานเมื่อได้ 3 อย่างนี้พร้อมกัน ทุกส่วนของ 7
-            วันออกแบบมาจากตรงนี้
-          </p>
-          <div className="mt-10">
-            <HairlineColumns>
-              {SHIFT_SDT.map((item, i) => (
-                <div key={item.pillar}>
-                  <p
-                    className="font-mono text-[11px] font-bold uppercase tracking-[0.24em]"
-                    style={{ color: inkFor(i) }}
-                  >
-                    {item.pillar}
-                  </p>
-                  <h3 className="mt-2 font-kodchasan text-2xl font-semibold">
-                    {item.title}
-                  </h3>
-                  <p
-                    className="mt-3 text-sm leading-relaxed"
-                    style={{ color: paper("99") }}
-                  >
-                    {item.detail}
-                  </p>
-                </div>
-              ))}
-            </HairlineColumns>
-          </div>
-        </section>
+        <ShiftSdt kind={theme.kind} />
 
         {/* ============ 4. TRACKS ============ */}
         <section className="py-16 sm:py-24">
           <RisoHeading eyebrow="Project Tracks">
             โปรเจกต์จริงที่ปั้นใน SHIFT
           </RisoHeading>
-          <div className="mt-10">
-            <HairlineColumns>
-              {tracks.map((track, i) => (
-                <div key={track.title}>
-                  <track.icon
-                    className="mb-4 h-6 w-6"
-                    style={{ color: inkFor(i) }}
-                  />
-                  <h3 className="font-kodchasan text-xl font-semibold">
-                    {track.title}
-                  </h3>
-                  <p
-                    className="mt-1 font-mono text-[11px] uppercase tracking-[0.16em]"
-                    style={{ color: paper("73") }}
-                  >
-                    {track.tag}
-                  </p>
-                  <p
-                    className="mt-3 text-sm leading-relaxed"
-                    style={{ color: paper("99") }}
-                  >
-                    {track.body}
-                  </p>
-                </div>
-              ))}
-            </HairlineColumns>
+          <div className="mt-10 grid gap-4 md:grid-cols-3">
+            {tracks.map((track, i) => (
+              <div
+                key={track.title}
+                className={`shift-tile ${revealClass(i)} p-6`}
+                style={{ borderTop: `3px solid ${inkFor(i)}` }}
+              >
+                <ShiftIcon
+                    kind={theme.kind}
+                  name={track.icon}
+                  ink={inkFor(i)}
+                  size={52}
+                  className={floatClass(i)}
+                />
+                <h3 className="mt-5 font-kodchasan text-xl font-semibold">
+                  {track.title}
+                </h3>
+                <p
+                  className="mt-1 font-mono text-[11px] uppercase tracking-[0.16em]"
+                  style={{ color: paper("73") }}
+                >
+                  {track.tag}
+                </p>
+                <p
+                  className="mt-3 text-sm leading-relaxed"
+                  style={{ color: paper("99") }}
+                >
+                  {track.body}
+                </p>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -622,11 +390,20 @@ export default async function ShiftRoundPage({ params }: RoundParams) {
           <RisoHeading eyebrow="What You Will Ship">
             ครบ 7 วัน คุณถือของ 3 ชิ้นนี้ออกไป
           </RisoHeading>
-          <div className="mt-12 grid gap-12 md:grid-cols-3 md:gap-8">
+          <div className="mt-12 grid gap-4 md:grid-cols-3">
             {deliverables.map((item, i) => (
-              <div key={item.num}>
+              <div
+                key={item.num}
+                className={`shift-tile ${revealClass(i)} p-6 sm:p-7`}
+              >
                 <div className="flex items-end gap-3">
-                  <RisoIcon name={item.icon} ink={inkFor(i)} size={52} />
+                  <ShiftIcon
+                    kind={theme.kind}
+                    name={item.icon}
+                    ink={inkFor(i)}
+                    size={64}
+                    className={floatClass(i)}
+                  />
                   <span
                     className="font-kodchasan text-3xl font-bold leading-none"
                     style={{
@@ -677,14 +454,23 @@ export default async function ShiftRoundPage({ params }: RoundParams) {
                 {group.label}
               </p>
               <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-3">
-                {group.cards.map((card) => (
+                {group.cards.map((card, ci) => (
                   <figure
                     key={card.name}
-                    className="flex flex-col border-l-2 pl-5"
+                    className={`${revealClass(ci)} relative flex flex-col border-l-2 pl-5`}
                     style={{ borderColor: inkFor(gi) }}
                   >
+                    <span
+                      aria-hidden="true"
+                      className="pointer-events-none absolute -top-6 left-3 font-kodchasan text-6xl font-bold leading-none"
+                      style={{
+                        color: `color-mix(in srgb, ${inkFor(gi)} 35%, transparent)`,
+                      }}
+                    >
+                      &ldquo;
+                    </span>
                     <blockquote
-                      className="flex-1 text-sm leading-relaxed"
+                      className="relative flex-1 text-sm leading-relaxed"
                       style={{ color: paper("d9") }}
                     >
                       &ldquo;{card.quote}&rdquo;
@@ -727,10 +513,9 @@ export default async function ShiftRoundPage({ params }: RoundParams) {
           <RisoHeading eyebrow="Cohort Details">
             ทำไมต้องสมัครคัดเลือก
           </RisoHeading>
-          <div className="mt-10">
-            <HairlineColumns>
-              <div>
-                <Users className="mb-4 h-6 w-6" style={{ color: T.accent1 }} />
+          <div className={`mt-10 grid gap-4 ${showPrice ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
+              <div className={`shift-tile ${revealClass(0)} p-6`}>
+                <ShiftIcon kind={theme.kind} name="people" ink={inkFor(0)} size={44} className="mb-4" />
                 <h3 className="font-kodchasan text-xl font-semibold">
                   รับ {cohort.seats} คน · ดูแลทั่วถึง
                 </h3>
@@ -744,11 +529,13 @@ export default async function ShiftRoundPage({ params }: RoundParams) {
                 </p>
               </div>
               {showPrice && (
-                <div>
-                  <Banknote
-                    className="mb-4 h-6 w-6"
-                    style={{ color: T.accent2 }}
-                  />
+                <div
+                  className={`shift-tile ${revealClass(1)} p-6`}
+                  style={{
+                    borderColor: `color-mix(in srgb, ${T.accent2} 50%, transparent)`,
+                  }}
+                >
+                  <ShiftIcon kind={theme.kind} name="target" ink={T.accent2} size={44} className="mb-4" />
                   <h3
                     className="font-kodchasan text-3xl font-bold"
                     style={HEADING}
@@ -770,11 +557,8 @@ export default async function ShiftRoundPage({ params }: RoundParams) {
                   </p>
                 </div>
               )}
-              <div>
-                <ClipboardList
-                  className="mb-4 h-6 w-6"
-                  style={{ color: T.accent3 }}
-                />
+              <div className={`shift-tile ${revealClass(2)} p-6`}>
+                <ShiftIcon kind={theme.kind} name="calendar" ink={T.accent3} size={44} className="mb-4" />
                 <h3 className="font-kodchasan text-xl font-semibold">
                   สมัคร 2 นาที · ปิด {DEADLINE}
                 </h3>
@@ -786,7 +570,6 @@ export default async function ShiftRoundPage({ params }: RoundParams) {
                   และไอเดียโปรเจกต์ดิบที่อยากลองปั้น
                 </p>
               </div>
-            </HairlineColumns>
           </div>
         </section>
 

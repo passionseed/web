@@ -1907,6 +1907,26 @@ Minimum touch target size: **44x44px** (iOS HIG) or **48x48px** (Material Design
 
 ---
 
+## Admin workspace (Dusk)
+
+The `/admin` route uses `AdminShell` and `app/admin/admin.css`. This is an
+operational Dusk surface: near-black plum, restrained horizon warmth, and amber
+for the selected navigation item. The public site navigation is replaced with
+the admin sidebar and account menu.
+
+- Group tools using `components/admin/admin-navigation.ts`. Keep daily work
+  expanded; reveal other groups on demand or when their route is active. Search
+  includes every group. Only the longest matching route is selected.
+- Use a single divided statistics row and simple action rows on the overview.
+  Avoid adding a separate card or accent color for every metric or tool.
+- Semantic Shadcn tokens are scoped to the workspace and, while it is mounted,
+  the body so portaled dialogs, menus, and selects share the Dusk palette.
+- Below 1024px, navigation becomes a labeled, keyboard-accessible sheet. Below
+  640px, metrics use two columns. Keep interactive targets at least 44px tall.
+- Motion is limited to a short content entrance, disclosure chevrons, and action
+  arrows. Touch uses pressed states; reduced motion disables transitions and
+  animations. This workspace does not add animated glow layers.
+
 ## Contributing
 
 1. **New component?** Add it to the Component Library section with full CSS and usage example.

@@ -4,6 +4,7 @@ import React from "react";
 import { ArrowRight } from "lucide-react";
 
 import { SHIFT_COHORT } from "@/lib/content/shift-cohort";
+import { getShiftSource, trackShiftEvent, withShiftSource } from "@/lib/shift/attribution";
 
 export const SHIFT_APPLY_URL = SHIFT_COHORT.applyUrl;
 
@@ -20,38 +21,15 @@ export function ShiftApplyButton({
   location = "hero",
   href = SHIFT_APPLY_URL,
 }: ShiftApplyButtonProps) {
+  const [source, setSource] = React.useState<string | null>(null);
+  React.useEffect(() => { setSource(getShiftSource()); }, []);
   const handleClick = () => {
-    try {
-      const payload = JSON.stringify({
-        event_type: "shift_apply_click",
-        event_data: {
-          location,
-          timestamp: new Date().toISOString(),
-        },
-        page_path: typeof window !== "undefined" ? window.location.pathname : "/shift",
-      });
-
-      if (typeof navigator !== "undefined" && navigator.sendBeacon) {
-        navigator.sendBeacon(
-          "/api/hackathon/track-event",
-          new Blob([payload], { type: "application/json" })
-        );
-      } else {
-        fetch("/api/hackathon/track-event", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: payload,
-          keepalive: true,
-        }).catch(() => {});
-      }
-    } catch {
-      // Fail silently to never block user intent
-    }
+    trackShiftEvent("shift_apply_click", { location });
   };
 
   return (
     <a
-      href={href}
+      href={withShiftSource(href, source)}
       // The native form lives on-site; only external forms open a new tab.
       {...(href.startsWith("/") ? {} : { target: "_blank", rel: "noopener noreferrer" })}
       onClick={handleClick}

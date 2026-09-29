@@ -12,12 +12,17 @@ export interface ShiftHeroProps {
   children: ReactNode;
 }
 
+/** Pixel rounds draw sprites; everything else uses the riso line plates. */
+export type ShiftArtKind = "riso" | "pixel";
+
 /**
  * Everything that makes a round page look like that round's poster. The
  * page body (sections, copy, FAQ) is shared; a theme only swaps these slots
  * and the palette the body reads through CSS variables.
  */
 export interface ShiftTheme {
+  /** Art family for icons and illustrations in the shared page body. */
+  kind: ShiftArtKind;
   palette: ShiftPalette;
   /** Top of the page: the round's poster art, headline and wordmark. */
   Hero: ComponentType<ShiftHeroProps>;

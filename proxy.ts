@@ -27,6 +27,11 @@ export default async function proxy(request: NextRequest) {
   const authError = authErrorRedirect(request);
   if (authError) return authError;
 
+  // Campaign redirects must work before sign-in and profile onboarding.
+  if (request.nextUrl.pathname.startsWith('/go/')) {
+    return NextResponse.next({ request });
+  }
+
   // Add caching headers for GET API requests
   if (request.method === 'GET' && request.nextUrl.pathname.startsWith('/api/')) {
     const { pathname } = request.nextUrl

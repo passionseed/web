@@ -5,6 +5,7 @@ import type { ShiftTheme } from "./types";
 
 /** SHIFT[2]: riso dawn from orbit, the look of the current posters. */
 export const RISO_THEME: ShiftTheme = {
+  kind: "riso",
   palette: RISO_PALETTE,
   Hero: RisoHero,
   Texture: RisoPageTexture,

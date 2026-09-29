@@ -6,7 +6,7 @@ import { CHART, QUESTION, SPARK } from "../pixel/pixelIcons";
  */
 
 /** Customer Discovery: a speech bubble, someone telling you their problem. */
-const CHAT = [
+export const CHAT = [
   ".CCCCCCCCC.",
   "CCCCCCCCCCC",
   "CCOCCOCCOCC",
@@ -17,7 +17,7 @@ const CHAT = [
 ];
 
 /** Tester Hunt: a magnifier, going out to find people. */
-const LENS = [
+export const LENS = [
   "..CCCC....",
   ".C....C...",
   "C..LL..C..",
@@ -31,7 +31,7 @@ const LENS = [
 ];
 
 /** Zero-Code Stack: blocks stacked into something that works. */
-const BLOCKS = [
+export const BLOCKS = [
   "....LLLL....",
   "....LLLL....",
   "....LLLL....",

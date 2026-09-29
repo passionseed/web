@@ -1,0 +1,109 @@
+/*
+ * SHIFT[1] testimonial Reel. Every motion is a CSS animation with an explicit
+ * delay, so the render script can pause them all and seek to any frame.
+ * Enter uses the tension curve from docs/ui-design-system.md; exit is short.
+ */
+
+.reel-in {
+  animation:
+    reel-in 0.8s cubic-bezier(0.05, 0.7, 0.35, 0.99) var(--in) both,
+    reel-out 0.35s ease-in var(--out) forwards;
+}
+
+.reel-in-last {
+  animation: reel-in 0.8s cubic-bezier(0.05, 0.7, 0.35, 0.99) var(--in) both;
+}
+
+.reel-chunk {
+  display: inline-block;
+  animation: reel-chunk 0.45s cubic-bezier(0.05, 0.7, 0.35, 0.99) var(--in) both;
+}
+
+.reel-phone {
+  animation:
+    reel-phone 1s cubic-bezier(0.05, 0.7, 0.35, 0.99) var(--in) both,
+    reel-out 0.35s ease-in var(--out) forwards;
+}
+
+.reel-swap {
+  animation: reel-fade 0.5s ease-out var(--in) both;
+}
+
+.reel-marker {
+  background-size: 0% 100%;
+  background-repeat: no-repeat;
+  animation: reel-marker 0.7s cubic-bezier(0.05, 0.7, 0.35, 0.99) var(--in) forwards;
+}
+
+/* The boat rides the swell in two-cell steps, pixel-art style. */
+.reel-bob {
+  animation: reel-bob 1.4s steps(1) infinite;
+}
+
+.reel-pulse {
+  animation: reel-pulse 1.3s ease-in-out var(--in) infinite;
+}
+
+@keyframes reel-in {
+  from {
+    opacity: 0;
+    transform: translateY(36px);
+    clip-path: inset(0 0 100% 0);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    clip-path: inset(-20% -20% -20% -20%);
+    filter: blur(0);
+  }
+}
+
+@keyframes reel-out {
+  to {
+    opacity: 0;
+    transform: translateY(-24px);
+    filter: blur(4px);
+  }
+}
+
+@keyframes reel-chunk {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes reel-phone {
+  from {
+    opacity: 0;
+    transform: translateY(260px) rotate(-4deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(-2deg);
+  }
+}
+
+@keyframes reel-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes reel-marker {
+  to { background-size: 100% 100%; }
+}
+
+@keyframes reel-bob {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(1px); }
+}
+
+@keyframes reel-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}

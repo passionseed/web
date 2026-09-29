@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { ShiftApplyForm } from "@/components/shift/ShiftApplyForm";
+import { ShiftPageViewTracker } from "@/components/shift/ShiftPageViewTracker";
 import { ShiftTopBar } from "@/components/shift/ShiftTopBar";
 import { RisoPageTexture } from "@/components/shift/ShiftRiso";
 import {
@@ -56,6 +57,7 @@ export default async function ShiftApplyPage({
       style={{ backgroundColor: INK.black, color: INK.paper }}
     >
       <RisoPageTexture />
+      <ShiftPageViewTracker pagePath="/shift/apply" />
 
       <header className="relative overflow-hidden">
         <ChromeBevelFilter />

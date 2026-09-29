@@ -3,6 +3,7 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { ArrowRight, Check } from "lucide-react";
 
+import { getShiftSource, normalizeShiftSource } from "@/lib/shift/attribution";
 import { INK, MISREG_TEXT } from "@/components/shift/poster/riso";
 import {
   formatThaiDateRange,
@@ -211,7 +212,8 @@ export function ShiftApplyForm({
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    const parsed = shiftApplicationSchema.safeParse(values);
+    const payload = { ...values, source: normalizeShiftSource(source) ?? getShiftSource() ?? "direct" };
+    const parsed = shiftApplicationSchema.safeParse(payload);
     if (!parsed.success) {
       setErrors(toFieldErrors(parsed.error));
       return;
@@ -222,7 +224,7 @@ export function ShiftApplyForm({
       const res = await fetch("/api/shift/apply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify(payload),
       });
       if (res.ok) {
         setStatus("done");

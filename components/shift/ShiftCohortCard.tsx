@@ -1,8 +1,10 @@
 import Image from "next/image";
-import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 import { ShiftApplyButton } from "@/components/shift/ShiftApplyButton";
+import { ShiftAttributedLink } from "@/components/shift/ShiftAttributedLink";
+import { ShiftSeatsRemaining } from "@/components/shift/ShiftSeatsRemaining";
+import { ShiftParentShare } from "@/components/shift/ShiftParentShare";
 import { HAIR, INK, paper } from "@/components/shift/ShiftRiso";
 import {
   cohortPath,
@@ -40,7 +42,7 @@ function StatusChip({ status }: { status: CohortStatus }) {
 function Banner({ cohort }: { cohort: ShiftCohort }) {
   if (!cohort.bannerSrc) return null;
   return (
-    <Link href={cohortPath(cohort)} className="block overflow-hidden">
+    <ShiftAttributedLink href={cohortPath(cohort)} className="block overflow-hidden">
       <Image
         src={cohort.bannerSrc}
         alt={`โปสเตอร์ ${cohort.name}`}
@@ -49,7 +51,7 @@ function Banner({ cohort }: { cohort: ShiftCohort }) {
         sizes="(min-width: 768px) 480px, 100vw"
         className="h-auto w-full transition-transform duration-300 hover:scale-[1.02]"
       />
-    </Link>
+    </ShiftAttributedLink>
   );
 }
 
@@ -62,17 +64,22 @@ export function ShiftCohortCard({ cohort }: { cohort: ShiftCohort }) {
       style={{ backgroundColor: "rgba(242,234,217,0.03)" }}
     >
       <Banner cohort={cohort} />
+      {status === "open" && (
+        <div className="px-5 pt-4">
+          <ShiftSeatsRemaining round={cohort.round} capacity={cohort.seats} />
+          <ShiftParentShare cohort={cohort} />
+        </div>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-4">
         <StatusChip status={status} />
         <div className="flex items-center gap-5">
-          <Link
+          <ShiftAttributedLink
             href={cohortPath(cohort)}
             className="inline-flex items-center gap-2 text-sm font-semibold underline-offset-4 hover:underline"
-            style={{ color: INK.paper }}
           >
             ดูรายละเอียด
             <ArrowRight className="h-4 w-4" />
-          </Link>
+          </ShiftAttributedLink>
           {status === "open" && (
             <ShiftApplyButton
               href={cohort.applyUrl}

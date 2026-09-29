@@ -1,64 +1,85 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
+import { ChevronDown, Search, X } from "lucide-react";
+import { ADMIN_NAV_GROUPS, getActiveAdminItem } from "./admin-navigation";
 
-const ADMIN_NAV_ITEMS = [
-  { href: "/admin", label: "Overview" },
-  { href: "/admin/analytics", label: "Analytics" },
-  { href: "/admin/users", label: "Users" },
-  { href: "/admin/maps", label: "Pathlabs" },
-  { href: "/admin/direction-finder", label: "Direction Finder" },
-  { href: "/admin/hackathon", label: "Hackathon" },
-  { href: "/admin/beta", label: "Beta" },
-  { href: "/admin/shift", label: "SHIFT" },
-  { href: "/admin/shift/applications", label: "SHIFT Apps" },
-  { href: "/admin/event-tracker", label: "Event Tracker" },
-  { href: "/admin/experts", label: "Experts" },
-  { href: "/admin/dm-leads", label: "DM Leads" },
-  { href: "/admin/dm-leads/insights", label: "Lead Insights" },
-  { href: "/admin/dm-leads/copilot", label: "DM Copilot" },
-  { href: "/admin/meta-webhooks", label: "Meta Webhooks" },
-  { href: "/admin/competitions", label: "Competitions" },
-  { href: "/admin/ig-comments", label: "IG Comments" },
-  { href: "/admin/talent", label: "Talent" },
-  { href: "/admin/trials", label: "Trials" },
-  { href: "/admin/radar", label: "Radar" },
-  { href: "/admin/radar-interview", label: "Radar Interview" },
-  { href: "/admin/archive", label: "Archive" },
-];
-
-export function AdminNav() {
+export function AdminNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const [query, setQuery] = useState("");
+  const active = getActiveAdminItem(pathname);
+  const search = query.trim().toLowerCase();
+  const groups = ADMIN_NAV_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter((item) =>
+      `${group.label} ${item.label} ${item.description}`
+        .toLowerCase()
+        .includes(search),
+    ),
+  })).filter((group) => group.items.length > 0);
 
   return (
-    <nav className="w-full overflow-x-auto pb-2">
-      <ul className="flex w-max min-w-full gap-2">
-        {ADMIN_NAV_ITEMS.map((item) => {
-          const isActive =
-            item.href === "/admin"
-              ? pathname === item.href
-              : pathname === item.href || pathname.startsWith(`${item.href}/`);
-
-          return (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                className={cn(
-                  "inline-flex h-9 items-center rounded-md border px-3 text-sm transition-colors",
-                  "hover:bg-muted",
-                  isActive
-                    ? "border-primary bg-primary/10 text-foreground"
-                    : "border-border text-muted-foreground"
-                )}
-              >
-                {item.label}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+    <nav aria-label="Admin navigation" className="admin-nav">
+      <div className="admin-search">
+        <Search size={16} aria-hidden="true" />
+        <input
+          type="search"
+          aria-label="Find an admin tool"
+          placeholder="Find a tool…"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+        />
+        {query && (
+          <button
+            type="button"
+            onClick={() => setQuery("")}
+            aria-label="Clear search"
+          >
+            <X size={14} />
+          </button>
+        )}
+      </div>
+      <div className="admin-nav-groups">
+        {groups.map((group) => (
+          <details
+            key={`${group.label}-${pathname}-${Boolean(search)}`}
+            open={
+              Boolean(search) ||
+              group.label === "Workspace" ||
+              group.items.some((item) => item.href === active?.href)
+            }
+            className="admin-nav-group"
+          >
+            <summary>
+              {group.label}
+              <ChevronDown size={14} aria-hidden="true" />
+            </summary>
+            <ul>
+              {group.items.map(({ href, label, icon: Icon }) => (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    prefetch={false}
+                    aria-current={active?.href === href ? "page" : undefined}
+                    onClick={onNavigate}
+                    className="admin-nav-link"
+                  >
+                    <Icon size={17} strokeWidth={1.6} aria-hidden="true" />
+                    <span>{label}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </details>
+        ))}
+        {groups.length === 0 && (
+          <p role="status" className="px-3 py-5 text-sm text-muted-foreground">
+            No tools found. Try “SHIFT”, “users”, or “maps”.
+          </p>
+        )}
+      </div>
     </nav>
   );
 }

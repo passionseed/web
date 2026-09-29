@@ -1,0 +1,274 @@
+/* ============================================================
+   SHIFT round page (/shift/[round]): light motion for the art.
+   Everything here is decoration. Content is fully visible without it:
+   reveals only run where scroll-driven animations exist, and every
+   animation stops under prefers-reduced-motion.
+   ============================================================ */
+
+/* Panel: a faint wash of the theme text colour on a hairline. Hover-in
+   builds the lift with a keyframe (tension ease), hover-out snaps back on
+   the short base transition. */
+.shift-tile {
+  background: color-mix(in srgb, var(--shift-text, #f2ead9) 4%, transparent);
+  border: 1px solid var(--shift-hair, rgba(242, 234, 217, 0.12));
+  border-radius: 6px;
+  transition: transform 140ms ease-out, border-color 140ms ease-out,
+    box-shadow 140ms ease-out;
+}
+
+@media (hover: hover) {
+  .shift-tile:hover {
+    animation: shift-tile-lift 420ms cubic-bezier(0.05, 0.7, 0.35, 0.99) forwards;
+  }
+}
+
+@keyframes shift-tile-lift {
+  to {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--shift-accent1, #ff6c2f) 55%, transparent);
+    box-shadow: 4px 4px 0 0 color-mix(in srgb, var(--shift-accent4, #0078bf) 35%, transparent);
+  }
+}
+
+/* Idle drift for icons and art. Prime durations so neighbours never sync. */
+.shift-float {
+  animation: shift-float 7s ease-in-out infinite;
+}
+.shift-float-b {
+  animation-duration: 11s;
+  animation-delay: -3s;
+}
+.shift-float-c {
+  animation-duration: 13s;
+  animation-delay: -5s;
+}
+
+@keyframes shift-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(-2deg);
+  }
+}
+
+/* Live-window chart bars breathing, and the typing cursor. */
+.shift-bar {
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: shift-bar 3s cubic-bezier(0.05, 0.7, 0.35, 0.99) infinite alternate;
+}
+.shift-bar:nth-of-type(2) {
+  animation-duration: 5s;
+}
+.shift-bar:nth-of-type(3) {
+  animation-duration: 7s;
+}
+.shift-bar:nth-of-type(4) {
+  animation-duration: 11s;
+}
+
+@keyframes shift-bar {
+  from {
+    transform: scaleY(0.55);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+.shift-blink {
+  animation: shift-blink 1.1s steps(2, jump-none) infinite;
+}
+
+@keyframes shift-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* The three SDT rings turning slowly around their shared centre. */
+.shift-orbit {
+  transform-box: view-box;
+  transform-origin: 50% 50%;
+  animation: shift-orbit 37s linear infinite;
+}
+.shift-orbit-rev {
+  animation-duration: 53s;
+  animation-direction: reverse;
+}
+
+@keyframes shift-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Soft glow pulse on the "live" dot: clip-path, opacity and filter move
+   together so the glow grows instead of just blinking. */
+.shift-pulse {
+  animation: shift-pulse 2.3s cubic-bezier(0.05, 0.7, 0.35, 0.99) infinite;
+}
+
+@keyframes shift-pulse {
+  0% {
+    opacity: 0.9;
+    filter: blur(0);
+    clip-path: circle(35% at 50% 50%);
+  }
+  100% {
+    opacity: 0;
+    filter: blur(2px);
+    clip-path: circle(50% at 50% 50%);
+  }
+}
+
+/* Scroll reveal and line draw, driven by the element's own view timeline.
+   Browsers without scroll timelines simply show everything. */
+@supports (animation-timeline: view()) {
+  .shift-reveal {
+    animation: shift-reveal linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 70%;
+  }
+  .shift-reveal-2 {
+    animation-range: entry 10% entry 80%;
+  }
+  .shift-reveal-3 {
+    animation-range: entry 20% entry 90%;
+  }
+
+  .shift-draw-x,
+  .shift-draw-y {
+    animation: shift-draw-x linear both;
+    animation-timeline: view();
+    animation-range: entry 30% cover 50%;
+  }
+  .shift-draw-y {
+    animation-name: shift-draw-y;
+  }
+}
+
+@keyframes shift-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes shift-draw-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes shift-draw-y {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shift-tile,
+  .shift-tile:hover,
+  .shift-float,
+  .shift-bar,
+  .shift-blink,
+  .shift-orbit,
+  .shift-pulse,
+  .shift-reveal,
+  .shift-draw-x,
+  .shift-draw-y {
+    animation: none !important;
+    transition: none;
+  }
+}
+
+/* SVG parts drift around their own centre, not the canvas origin. */
+svg .shift-float {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* ============================================================
+   Pixel rounds (SHIFT[1]): the IG grid's deck. Flat raised panels with
+   stepped corners, hard one-cell shadows, pixel type for Latin labels.
+   ============================================================ */
+[data-shift-kind="pixel"] .shift-tile {
+  border: none;
+  border-radius: 0;
+  background: color-mix(in srgb, var(--shift-text, #f8f5ec) 7%, transparent);
+  clip-path: polygon(
+    0 4px, 4px 4px, 4px 0,
+    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
+    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
+    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+  );
+}
+
+@keyframes shift-tile-lift-pixel {
+  to {
+    transform: translate(-2px, -2px);
+    background: color-mix(in srgb, var(--shift-text, #f8f5ec) 11%, transparent);
+  }
+}
+
+@media (hover: hover) {
+  [data-shift-kind="pixel"] .shift-tile:hover {
+    animation-name: shift-tile-lift-pixel;
+    /* Pixel motion moves in whole steps, never a smooth glide. */
+    animation-timing-function: steps(2, end);
+    animation-duration: 160ms;
+  }
+}
+
+[data-shift-kind="pixel"] .shift-badge {
+  border-radius: 0;
+  box-shadow: 3px 3px 0 0 var(--shift-accent4, #428690);
+}
+
+[data-shift-kind="pixel"] .font-mono {
+  font-family: var(--font-tiny5), ui-monospace, monospace;
+  letter-spacing: 0.08em;
+}
+
+/* Sprites bob in two-pixel steps instead of drifting smoothly. */
+[data-shift-kind="pixel"] .shift-float {
+  animation-name: shift-float-pixel;
+  animation-timing-function: steps(1, end);
+}
+
+@keyframes shift-float-pixel {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+[data-shift-kind="pixel"] .shift-bar {
+  animation-timing-function: steps(4, end);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-shift-kind="pixel"] .shift-tile:hover,
+  [data-shift-kind="pixel"] .shift-float,
+  [data-shift-kind="pixel"] .shift-bar {
+    animation: none !important;
+  }
+}

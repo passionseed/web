@@ -1,14 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
-import {
-  Users,
-  GraduationCap,
-  BookOpen,
-  Activity,
-} from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 interface AdminStats {
   total_users: number;
@@ -20,124 +13,87 @@ interface AdminStats {
   recent_activity_count: number;
 }
 
-interface AdminStatsOverviewProps {
-  onStatsLoaded?: (stats: AdminStats) => void;
-}
+const METRICS = [
+  { key: "total_users", label: "Registered users" },
+  { key: "total_instructors", label: "Instructors" },
+  { key: "total_classrooms", label: "Classrooms" },
+  { key: "total_maps", label: "Learning maps" },
+] as const;
 
-export function AdminStatsOverview({ onStatsLoaded }: AdminStatsOverviewProps) {
+export function AdminStatsOverview({
+  onStatsLoaded,
+}: {
+  onStatsLoaded?: (stats: AdminStats) => void;
+}) {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const [error, setError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    loadStats();
-  }, []);
-
-  const loadStats = async () => {
-    try {
+    const controller = new AbortController();
+    async function loadStats() {
       setLoading(true);
-      
-      const response = await fetch("/api/admin/stats");
-      
-      if (response.ok) {
-        const statsData = await response.json();
-        setStats(statsData);
-        onStatsLoaded?.(statsData);
-      } else {
-        throw new Error("Failed to fetch stats");
+      setError(false);
+      try {
+        const response = await fetch("/api/admin/stats", {
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error("Failed to fetch statistics");
+        const data: AdminStats = await response.json();
+        if (controller.signal.aborted) return;
+        setStats(data);
+        onStatsLoaded?.(data);
+      } catch {
+        if (!controller.signal.aborted) setError(true);
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
       }
-    } catch (error) {
-      console.error("Error loading admin stats:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load admin statistics",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
     }
-  };
+    void loadStats();
+    return () => controller.abort();
+  }, [attempt, onStatsLoaded]);
 
-  if (loading) {
+  if (error) {
     return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {[...Array(4)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <div className="h-4 bg-muted rounded w-24"></div>
-              <div className="h-4 w-4 bg-muted rounded"></div>
-            </CardHeader>
-            <CardContent>
-              <div className="h-8 bg-muted rounded w-16 mb-2"></div>
-              <div className="h-3 bg-muted rounded w-32"></div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  }
-
-  if (!stats) {
-    return (
-      <div className="text-center py-8 text-muted-foreground">
-        Failed to load statistics
+      <div className="admin-stats-error" role="status">
+        <p>Statistics are unavailable. You can still open any admin tool.</p>
+        <button
+          type="button"
+          onClick={() => setAttempt((value) => value + 1)}
+          className="admin-quiet-link"
+        >
+          <RefreshCw size={15} aria-hidden="true" /> Try again
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-          <Users className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{stats.total_users}</div>
-          <p className="text-xs text-muted-foreground">
-            Registered platform users
-          </p>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Instructors</CardTitle>
-          <GraduationCap className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{stats.total_instructors}</div>
-          <p className="text-xs text-muted-foreground">
-            Teaching staff
-          </p>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Classrooms</CardTitle>
-          <BookOpen className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{stats.total_classrooms}</div>
-          <p className="text-xs text-muted-foreground">
-            Active learning spaces
-          </p>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Learning Maps</CardTitle>
-          <Activity className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{stats.total_maps}</div>
-          <p className="text-xs text-muted-foreground">
-            Published content
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+    <section
+      aria-label="Platform statistics"
+      aria-busy={loading}
+      className="admin-stats"
+    >
+      {loading && (
+        <span className="sr-only" role="status">
+          Loading platform statistics
+        </span>
+      )}
+      <dl className="admin-stats-grid">
+        {METRICS.map(({ key, label }) => (
+          <div key={key} className="admin-stat">
+            <dt>{label}</dt>
+            <dd>
+              {loading ? (
+                <span className="admin-stat-skeleton" />
+              ) : (
+                stats?.[key].toLocaleString()
+              )}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </section>
   );
 }

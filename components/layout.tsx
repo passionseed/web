@@ -32,6 +32,8 @@ export function Layout({ children }: LayoutProps) {
     pathname?.startsWith("/faculty-radar/");
 
   const hideNavbar =
+    pathname === "/admin" ||
+    pathname?.startsWith("/admin/") ||
     pathname === "/" ||
     pathname === "/support" ||
     pathname === "/contact" ||
