@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const SHIFT_ADMIN_LINKS = [
+  { href: "/admin/shift/camp", label: "Interactive camp" },
   { href: "/admin/shift", label: "Tracker" },
   { href: "/admin/shift/applications", label: "Applications" },
 ];
