@@ -27,7 +27,7 @@ export function ShiftSeatsRemaining({ round, capacity }: { round: number; capaci
         ? `รับ ${capacity} คน · ยืนยันที่นั่งเมื่อชำระเงินแล้ว`
         : !availability.open ? "ปิดรับสมัครแล้ว"
         : availability.remaining === 0 ? "ที่นั่งเต็มแล้ว"
-        : `เหลือ ${availability.remaining} จาก ${capacity} ที่นั่ง · นับจากยอดชำระที่ยืนยันแล้ว`}
+        : `เหลือ ${availability.remaining} จาก ${capacity} ที่นั่ง`}
     </p>
   );
 }
