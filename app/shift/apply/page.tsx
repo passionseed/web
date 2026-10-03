@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { shiftSocialMetadata } from "@/lib/shift/socialMetadata";
 
 import { ShiftApplyForm } from "@/components/shift/ShiftApplyForm";
 import { ShiftPageViewTracker } from "@/components/shift/ShiftPageViewTracker";
@@ -34,10 +35,13 @@ export async function generateMetadata({
   searchParams: Promise<ApplySearchParams>;
 }): Promise<Metadata> {
   const cohort = cohortFor((await searchParams).round);
+  const title = `สมัคร ${cohort.name} | PassionSeed`;
+  const description = `สมัคร ${cohort.name} ใช้เวลา 2 นาที ไม่ต้องล็อกอิน`;
   return {
-    title: `สมัคร ${cohort.name} | PassionSeed`,
-    description: `สมัคร ${cohort.name} ใช้เวลา 2 นาที ไม่ต้องล็อกอิน`,
+    title,
+    description,
     alternates: { canonical: cohort.applyUrl },
+    ...shiftSocialMetadata(cohort, title, description, cohort.applyUrl),
   };
 }
 

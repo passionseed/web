@@ -44,6 +44,7 @@ import {
   type ShiftCohort,
 } from "@/lib/content/shift-cohort";
 import { SHIFT_TESTIMONIAL_GROUPS } from "@/lib/content/shift-testimonials";
+import { shiftSocialMetadata } from "@/lib/shift/socialMetadata";
 
 /** Status flips on Bangkok dates, so re-render at least hourly. */
 export const revalidate = 3600;
@@ -83,13 +84,12 @@ export async function generateMetadata({
       "PassionSeed",
     ],
     alternates: { canonical: path },
-    openGraph: {
+    ...shiftSocialMetadata(
+      cohort,
       title,
-      description:
-        "เลิกสะสมใบเซอร์ค่ายนั่งฟัง สร้างโปรเจกต์จริงที่คนนอกได้ลองใช้ใน 7 วัน พร้อมพอร์ต 1 หน้าสำหรับ TCAS",
-      url: `https://passionseed.org${path}`,
-      type: "website",
-    },
+      "เลิกสะสมใบเซอร์ค่ายนั่งฟัง สร้างโปรเจกต์จริงที่คนนอกได้ลองใช้ใน 7 วัน พร้อมพอร์ต 1 หน้าสำหรับ TCAS",
+      path,
+    ),
   };
 }
 
