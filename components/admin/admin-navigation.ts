@@ -26,6 +26,8 @@ interface AdminNavItem {
   label: string;
   description: string;
   icon: LucideIcon;
+  /** Highlight for every page under this path, when href is a sub-page. */
+  section?: string;
 }
 
 export const ADMIN_NAV_GROUPS: { label: string; items: AdminNavItem[] }[] = [
@@ -39,22 +41,12 @@ export const ADMIN_NAV_GROUPS: { label: string; items: AdminNavItem[] }[] = [
         icon: LayoutDashboard,
       },
       {
-        href: "/admin/shift",
-        label: "SHIFT",
-        description: "Cohorts and student progress",
-        icon: Sparkles,
-      },
-      {
-        href: "/admin/shift/companion",
-        label: "Companion",
-        description: "SHIFT app invites and daily updates",
-        icon: Sparkles,
-      },
-      {
+        // One entry: the SHIFT pages switch between each other with their own tabs.
         href: "/admin/shift/applications",
-        label: "Applications",
-        description: "SHIFT applications and enrollment",
-        icon: FileCheck2,
+        section: "/admin/shift",
+        label: "SHIFT",
+        description: "Applications, join links, tracker, camp",
+        icon: Sparkles,
       },
       {
         href: "/admin/dm-leads",
@@ -196,10 +188,9 @@ export const ADMIN_NAV_GROUPS: { label: string; items: AdminNavItem[] }[] = [
 
 export function getActiveAdminItem(pathname: string): AdminNavItem | undefined {
   return ADMIN_NAV_GROUPS.flatMap((group) => group.items)
-    .filter(
-      (item) =>
-        pathname === item.href ||
-        (item.href !== "/admin" && pathname.startsWith(`${item.href}/`)),
-    )
-    .sort((a, b) => b.href.length - a.href.length)[0];
+    .filter((item) => {
+      const base = item.section ?? item.href;
+      return pathname === item.href || pathname === base || (base !== "/admin" && pathname.startsWith(`${base}/`));
+    })
+    .sort((a, b) => (b.section ?? b.href).length - (a.section ?? a.href).length)[0];
 }
