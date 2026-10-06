@@ -60,18 +60,41 @@ export async function completeShiftJoin(input: {
       linked_at: app.linked_at ?? new Date().toISOString(),
     })
     .eq("id", app.id)
+    // Compare-and-set: two people opening the same link at once cannot both
+    // claim it, because only an unclaimed (or already theirs) row matches.
+    .or(`user_id.is.null,user_id.eq.${input.user.id}`)
     .select()
-    .single();
-  if (error || !data) {
-    console.error("[shift-join] failed to link application:", error?.message);
+    .maybeSingle();
+  if (error) {
+    console.error("[shift-join] failed to link application:", error.message);
     return "invalid";
   }
+  if (!data) return "taken";
   const linked = data as ShiftApplicationRow;
 
   await upsertTrackerMember(supabase, linked);
   await enrollCampCohort(supabase, linked);
-  await syncShiftDiscord(linked, input.providerToken, supabase);
+  const accessToken = (await discordTokenOwner(input.providerToken)) === discord.userId ? input.providerToken : null;
+  await syncShiftDiscord(linked, accessToken, supabase);
   return null;
+}
+
+/**
+ * The Discord user an OAuth token belongs to. The bot only acts on a token
+ * that provably belongs to the Discord account stored on the application.
+ */
+async function discordTokenOwner(token: string | null | undefined): Promise<string | null> {
+  if (!token) return null;
+  try {
+    const res = await fetch("https://discord.com/api/v10/users/@me", {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    return ((await res.json()) as { id?: string }).id ?? null;
+  } catch {
+    return null;
+  }
 }
 
 /** Adds the student to the server (or just grants roles) and records the
