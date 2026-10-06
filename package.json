@@ -44,7 +44,8 @@
     "bot:register": "dotenv -e .env.local -o -- tsx bot/src/index.ts --register-commands",
     "cleanup:self-comments": "dotenv -e .env.local -o -- tsx scripts/mark-self-comments-replied.ts",
     "build:extension": "tsc --noEmit -p extension/tsconfig.json && node scripts/build-extension.mjs",
-    "typecheck:extension": "tsc --noEmit -p extension/tsconfig.json"
+    "typecheck:extension": "tsc --noEmit -p extension/tsconfig.json",
+    "generate:og": "tsx scripts/generate-og-images.tsx"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.38",

@@ -45,6 +45,12 @@ export const ADMIN_NAV_GROUPS: { label: string; items: AdminNavItem[] }[] = [
         icon: Sparkles,
       },
       {
+        href: "/admin/shift/companion",
+        label: "Companion",
+        description: "SHIFT app invites and daily updates",
+        icon: Sparkles,
+      },
+      {
         href: "/admin/shift/applications",
         label: "Applications",
         description: "SHIFT applications and enrollment",

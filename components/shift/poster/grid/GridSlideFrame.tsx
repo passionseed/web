@@ -64,7 +64,8 @@ function deckWater(): Rect[] {
   ]);
 }
 
-function StripScene({ critters }: { critters: Rect[] }) {
+function StripScene({ critters, heightCells }: { critters: Rect[]; heightCells: number }) {
+  const foot = heightCells - 16;
   const above = skyline();
   const scene: Rect[] = [
     ...bands(0, TILE_W, [
@@ -89,8 +90,8 @@ function StripScene({ critters }: { critters: Rect[] }) {
     <svg
       className="absolute inset-0"
       width={TILE_W * CELL}
-      height={TILE_H * CELL}
-      viewBox={`0 0 ${TILE_W} ${TILE_H}`}
+      height={heightCells * CELL}
+      viewBox={`0 0 ${TILE_W} ${heightCells}`}
       shapeRendering="crispEdges"
       aria-hidden="true"
     >
@@ -98,7 +99,7 @@ function StripScene({ critters }: { critters: Rect[] }) {
       <Rects rects={waveBand(DECK, DECK_TOP, 12, TILE_W, TILE_H)} />
       <Rects rects={deckWater()} />
       <Rects rects={critters} />
-      <Rects rects={waveBand(FOOT, mix(PX.ink, "#000000", 0.35), 12, TILE_W, TILE_H)} />
+      <Rects rects={waveBand(foot, mix(PX.ink, "#000000", 0.35), 12, TILE_W, heightCells)} />
     </svg>
   );
 }
@@ -110,6 +111,7 @@ export function GridSlideFrame({
   page,
   critters = [],
   align = "start",
+  heightCells = TILE_H,
   children,
 }: {
   id: string;
@@ -122,15 +124,18 @@ export function GridSlideFrame({
   critters?: Rect[];
   /** Where content sits in the deck; "start" leaves the bottom free for critters. */
   align?: "start" | "center";
+  /** Export canvas height in pixel cells; defaults to the existing grid size. */
+  heightCells?: number;
   children: ReactNode;
 }) {
+  const foot = heightCells - 16;
   return (
     <div
       id={id}
       className="relative shrink-0 overflow-hidden font-bai-jamjuree antialiased"
-      style={{ width: TILE_W * CELL, height: TILE_H * CELL, backgroundColor: PX.sky }}
+      style={{ width: TILE_W * CELL, height: heightCells * CELL, backgroundColor: PX.sky }}
     >
-      <StripScene critters={critters} />
+      <StripScene critters={critters} heightCells={heightCells} />
       <div className="absolute inset-x-0 top-[44px] flex flex-col items-center text-center">
         <p className="text-[26px] leading-none tracking-[0.1em]" style={{ ...PIXEL_FONT, color: PX.ink }}>
           {tag}
@@ -144,13 +149,13 @@ export function GridSlideFrame({
       </div>
       <div
         className={`absolute inset-x-0 flex flex-col px-[64px] ${align === "center" ? "justify-center gap-14" : "justify-start"}`}
-        style={{ top: (DECK + 8) * CELL, height: (FOOT - DECK - 12) * CELL }}
+        style={{ top: (DECK + 8) * CELL, height: (foot - DECK - 12) * CELL }}
       >
         {children}
       </div>
       <div
         className="absolute inset-x-0 bottom-0 flex items-center justify-between px-[64px]"
-        style={{ top: (FOOT + 4) * CELL }}
+        style={{ top: (foot + 4) * CELL }}
       >
         <PassionSeedMark size={30} />
         <p className="text-[24px] tracking-[0.1em]" style={{ ...PIXEL_FONT, color: `${PX.cream}b3` }}>

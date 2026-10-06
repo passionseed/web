@@ -1,76 +1,121 @@
 /*
  * SHIFT[1] testimonial Reel. Every motion is a CSS animation with an explicit
- * delay, so the render script can pause them all and seek to any frame.
- * Enter uses the tension curve from docs/ui-design-system.md; exit is short.
+ * delay (--in, --out), so the render script can pause them all and seek to
+ * any frame. Slams overshoot on the tension curve from docs/ui-design-system.md;
+ * exits are short and fast so cuts land on the beat.
  */
 
-.reel-in {
+@property --reel-n {
+  syntax: "<integer>";
+  initial-value: 0;
+  inherits: false;
+}
+
+.reel-slam {
   animation:
-    reel-in 0.8s cubic-bezier(0.05, 0.7, 0.35, 0.99) var(--in) both,
-    reel-out 0.35s ease-in var(--out) forwards;
+    reel-slam 0.32s cubic-bezier(0.05, 0.7, 0.35, 0.99) var(--in) both,
+    reel-out 0.14s ease-in var(--out) forwards;
 }
 
-.reel-in-last {
-  animation: reel-in 0.8s cubic-bezier(0.05, 0.7, 0.35, 0.99) var(--in) both;
+.reel-slam-last {
+  animation: reel-slam 0.32s cubic-bezier(0.05, 0.7, 0.35, 0.99) var(--in) both;
 }
 
-.reel-chunk {
+.reel-rise {
+  animation:
+    reel-rise 0.4s cubic-bezier(0.05, 0.7, 0.35, 0.99) var(--in) both,
+    reel-out 0.14s ease-in var(--out) forwards;
+}
+
+.reel-rise-last {
+  animation: reel-rise 0.4s cubic-bezier(0.05, 0.7, 0.35, 0.99) var(--in) both;
+}
+
+.reel-pop {
   display: inline-block;
-  animation: reel-chunk 0.45s cubic-bezier(0.05, 0.7, 0.35, 0.99) var(--in) both;
+  animation: reel-pop 0.26s cubic-bezier(0.34, 1.56, 0.64, 1) var(--in) both;
 }
 
 .reel-phone {
   animation:
-    reel-phone 1s cubic-bezier(0.05, 0.7, 0.35, 0.99) var(--in) both,
-    reel-out 0.35s ease-in var(--out) forwards;
+    reel-phone 0.45s cubic-bezier(0.34, 1.4, 0.64, 1) var(--in) both,
+    reel-out 0.14s ease-in var(--out) forwards;
+}
+
+.reel-nudge {
+  animation: reel-nudge 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) var(--in) both;
 }
 
 .reel-swap {
-  animation: reel-fade 0.5s ease-out var(--in) both;
+  animation: reel-swap 0.18s steps(3) var(--in) both;
 }
 
 .reel-marker {
   background-size: 0% 100%;
   background-repeat: no-repeat;
-  animation: reel-marker 0.7s cubic-bezier(0.05, 0.7, 0.35, 0.99) var(--in) forwards;
+  animation: reel-marker 0.35s cubic-bezier(0.05, 0.7, 0.35, 0.99) var(--in) forwards;
 }
 
-/* The boat rides the swell in two-cell steps, pixel-art style. */
+.reel-strike {
+  background: linear-gradient(currentColor, currentColor) no-repeat 0 55% / 0% 6px;
+  animation: reel-strike 0.25s ease-out var(--in) forwards;
+}
+
+.reel-count {
+  counter-reset: reel-n var(--reel-n);
+}
+
+.reel-count::before {
+  content: counter(reel-n);
+}
+
+/* The boat rides the swell in one-cell steps, pixel-art style. */
 .reel-bob {
-  animation: reel-bob 1.4s steps(1) infinite;
+  animation: reel-bob 0.5s steps(1) infinite;
 }
 
 .reel-pulse {
-  animation: reel-pulse 1.3s ease-in-out var(--in) infinite;
+  animation: reel-pulse 0.5s ease-in-out var(--in) infinite;
 }
 
-@keyframes reel-in {
+@keyframes reel-slam {
   from {
     opacity: 0;
-    transform: translateY(36px);
-    clip-path: inset(0 0 100% 0);
-    filter: blur(6px);
+    transform: scale(1.45) rotate(-2deg);
+    filter: blur(8px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
-    clip-path: inset(-20% -20% -20% -20%);
+    transform: none;
     filter: blur(0);
+  }
+}
+
+@keyframes reel-rise {
+  from {
+    opacity: 0;
+    transform: translateY(60px);
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    clip-path: inset(-20% -20% -20% -20%);
   }
 }
 
 @keyframes reel-out {
   to {
     opacity: 0;
-    transform: translateY(-24px);
-    filter: blur(4px);
+    transform: scale(0.92);
+    filter: blur(6px);
   }
 }
 
-@keyframes reel-chunk {
+@keyframes reel-pop {
   from {
     opacity: 0;
-    transform: translateY(18px) scale(0.96);
+    transform: translateY(24px) scale(0.7);
   }
   to {
     opacity: 1;
@@ -81,21 +126,30 @@
 @keyframes reel-phone {
   from {
     opacity: 0;
-    transform: translateY(260px) rotate(-4deg);
+    transform: translateY(420px) scale(0.6) rotate(-14deg);
   }
   to {
     opacity: 1;
-    transform: translateY(0) rotate(-2deg);
+    transform: rotate(-3deg);
   }
 }
 
-@keyframes reel-fade {
+@keyframes reel-nudge {
+  from { transform: none; }
+  to { transform: translateY(40px) scale(0.9) rotate(5deg); }
+}
+
+@keyframes reel-swap {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
 @keyframes reel-marker {
   to { background-size: 100% 100%; }
+}
+
+@keyframes reel-strike {
+  to { background-size: 100% 6px; }
 }
 
 @keyframes reel-bob {
@@ -105,5 +159,60 @@
 
 @keyframes reel-pulse {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.04); }
+  50% { transform: scale(1.06); }
+}
+
+/* ---------- Story Reel props ---------- */
+
+/* Certificates blown off the wall by the hammer: each piece sets --dx --dy --rot. */
+.reel-shatter {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: reel-shatter 0.9s cubic-bezier(0.2, 0.6, 0.4, 1) var(--in) both;
+}
+
+.reel-hammer {
+  animation:
+    reel-hammer var(--flight) cubic-bezier(0.55, 0, 0.9, 0.6) var(--in) both,
+    reel-out 0.3s ease-in var(--out) forwards;
+}
+
+/* Walkers cross to the door and vanish inside. */
+.reel-walk {
+  animation: reel-walk var(--dur) linear var(--in) both;
+}
+
+.reel-fade-slow {
+  animation:
+    reel-swap 1.2s ease-out var(--in) both,
+    reel-out 0.2s ease-in var(--out) forwards;
+}
+
+/* Rain falls in a loop; the grade track sets how much of it shows. */
+.reel-rainfall {
+  animation: reel-rainfall 0.4s linear infinite;
+}
+
+@keyframes reel-shatter {
+  from { transform: none; opacity: 1; }
+  to {
+    transform: translate(var(--dx), var(--dy)) rotate(var(--rot));
+    opacity: 0;
+  }
+}
+
+@keyframes reel-hammer {
+  from { transform: translate(-620px, 900px) rotate(-340deg); opacity: 1; }
+  to { transform: translate(0, 0) rotate(25deg); opacity: 1; }
+}
+
+@keyframes reel-walk {
+  0% { transform: translateX(0); opacity: 1; }
+  92% { opacity: 1; }
+  100% { transform: translateX(var(--dx)); opacity: 0; }
+}
+
+@keyframes reel-rainfall {
+  from { background-position: 0 0; }
+  to { background-position: -24px 96px; }
 }

@@ -1,0 +1,55 @@
+{
+  "reviewDateBangkok": "2026-10-02",
+  "results": [
+    {
+      "id": "1-student",
+      "width": 1080,
+      "height": 1350,
+      "bytes": 204119,
+      "nonblank": true
+    },
+    {
+      "id": "1-parent",
+      "width": 1080,
+      "height": 1350,
+      "bytes": 206560,
+      "nonblank": true
+    },
+    {
+      "id": "2",
+      "width": 1080,
+      "height": 1350,
+      "bytes": 219508,
+      "nonblank": true
+    },
+    {
+      "id": "3",
+      "width": 1080,
+      "height": 1350,
+      "bytes": 153485,
+      "nonblank": true
+    },
+    {
+      "id": "4",
+      "width": 1080,
+      "height": 1350,
+      "bytes": 164274,
+      "nonblank": true
+    },
+    {
+      "id": "5",
+      "width": 1080,
+      "height": 1350,
+      "bytes": 200864,
+      "nonblank": true
+    }
+  ],
+  "panorama": [
+    5400,
+    1350
+  ],
+  "panoramaTilesMatch": true,
+  "trackedLinksMatch": true,
+  "prohibitedWordingAbsent": true,
+  "phonePreview": "360x450 per card, nearest-neighbor integer factor 3"
+}

@@ -27,7 +27,7 @@ test("LINE links use the configured account even if analytics fails", async () =
   (createClient as jest.Mock).mockRejectedValue(new Error("offline"));
   const log = jest.spyOn(console, "error").mockImplementation(() => {});
   const response = await GET(new NextRequest("https://passionseed.org/go/camphub?to=line"), { params: Promise.resolve({ source: "camphub" }) });
-  expect(response.headers.get("location")).toBe("https://line.me/R/ti/p/@161irjbq");
+  expect(response.headers.get("location")).toBe("https://line.me/R/ti/p/@passionseed");
   await expect(pending[0]()).resolves.toBeUndefined();
   log.mockRestore();
 });

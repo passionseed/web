@@ -1,0 +1,83 @@
+{
+  "checks": [
+    {
+      "file": "output/shift-ad/2026-10-02/shift-ad-1-student.png",
+      "width": 1080,
+      "height": 1350,
+      "format": "png",
+      "bytes": 204119
+    },
+    {
+      "file": "output/shift-ad/2026-10-02/shift-ad-1-parent.png",
+      "width": 1080,
+      "height": 1350,
+      "format": "png",
+      "bytes": 206560
+    },
+    {
+      "file": "output/shift-ad/2026-10-02/shift-ad-2.png",
+      "width": 1080,
+      "height": 1350,
+      "format": "png",
+      "bytes": 219508
+    },
+    {
+      "file": "output/shift-ad/2026-10-02/shift-ad-3.png",
+      "width": 1080,
+      "height": 1350,
+      "format": "png",
+      "bytes": 153485
+    },
+    {
+      "file": "output/shift-ad/2026-10-02/shift-ad-4.png",
+      "width": 1080,
+      "height": 1350,
+      "format": "png",
+      "bytes": 152721
+    },
+    {
+      "file": "output/shift-ad/2026-10-02/shift-ad-5.png",
+      "width": 1080,
+      "height": 1350,
+      "format": "png",
+      "bytes": 200864
+    }
+  ],
+  "fields": [
+    {
+      "headline": "คุยแล้วเปลี่ยนโจทย์",
+      "headlineCharacters": 19,
+      "descriptionCharacters": 12
+    },
+    {
+      "headline": "Lens: ฟีดแบ็ก 15+ คน",
+      "headlineCharacters": 20,
+      "descriptionCharacters": 16
+    },
+    {
+      "headline": "TradBid: v1 สู่ v2",
+      "headlineCharacters": 18,
+      "descriptionCharacters": 12
+    },
+    {
+      "headline": "SHIFT: ลงมือ 7 วัน",
+      "headlineCharacters": 18,
+      "descriptionCharacters": 18
+    },
+    {
+      "headline": "SHIFT[1] · ฿670",
+      "headlineCharacters": 15,
+      "descriptionCharacters": 18
+    },
+    {
+      "headline": "เห็นวิธีคิดลูก",
+      "headlineCharacters": 14,
+      "descriptionCharacters": 16
+    }
+  ],
+  "publicCopyScan": "pass",
+  "cohort": "SHIFT[1]",
+  "offer": "670, 5–11 Oct 2026, deadline 3 Oct 2026, capacity 15",
+  "pixelScale": 6,
+  "phoneScale": 2
+}

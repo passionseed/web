@@ -1,0 +1,93 @@
+{
+  "errors": [],
+  "results": [
+    {
+      "id": "shift-ad-1-student",
+      "fontsLoaded": "loaded",
+      "images": [
+        {
+          "src": "/shift/testimonial/kaspt70-countdown.png",
+          "loaded": true
+        },
+        {
+          "src": "/passion-seed-logo.png",
+          "loaded": true
+        }
+      ],
+      "horizontalTextOverflow": [],
+      "textCrossesFooter": []
+    },
+    {
+      "id": "shift-ad-1-parent",
+      "fontsLoaded": "loaded",
+      "images": [
+        {
+          "src": "/shift/testimonial/kaspt70-countdown.png",
+          "loaded": true
+        },
+        {
+          "src": "/passion-seed-logo.png",
+          "loaded": true
+        }
+      ],
+      "horizontalTextOverflow": [],
+      "textCrossesFooter": []
+    },
+    {
+      "id": "shift-ad-2",
+      "fontsLoaded": "loaded",
+      "images": [
+        {
+          "src": "/shift/testimonial/lens-zoom.png",
+          "loaded": true
+        },
+        {
+          "src": "/passion-seed-logo.png",
+          "loaded": true
+        }
+      ],
+      "horizontalTextOverflow": [],
+      "textCrossesFooter": []
+    },
+    {
+      "id": "shift-ad-3",
+      "fontsLoaded": "loaded",
+      "images": [
+        {
+          "src": "/shift/testimonial/tradbid-sim.png",
+          "loaded": true
+        },
+        {
+          "src": "/passion-seed-logo.png",
+          "loaded": true
+        }
+      ],
+      "horizontalTextOverflow": [],
+      "textCrossesFooter": []
+    },
+    {
+      "id": "shift-ad-4",
+      "fontsLoaded": "loaded",
+      "images": [
+        {
+          "src": "/passion-seed-logo.png",
+          "loaded": true
+        }
+      ],
+      "horizontalTextOverflow": [],
+      "textCrossesFooter": []
+    },
+    {
+      "id": "shift-ad-5",
+      "fontsLoaded": "loaded",
+      "images": [
+        {
+          "src": "/passion-seed-logo.png",
+          "loaded": true
+        }
+      ],
+      "horizontalTextOverflow": [],
+      "textCrossesFooter": []
+    }
+  ]
+}

@@ -131,6 +131,7 @@ async function callDeepSeek(
   systemPrompt: string,
   history: ChatMessage[],
   userMessage?: string,
+  outputFormat: "text" | "json" = "text",
 ): Promise<string> {
   if (!DEEPSEEK_API_KEY) {
     throw new Error("Missing DEEPSEEK_API_KEY");
@@ -138,29 +139,51 @@ async function callDeepSeek(
 
   const messages = toOpenAIMessages(systemPrompt, history, userMessage);
 
-  const response = await fetch(DEEPSEEK_BASE_URL + "/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer " + DEEPSEEK_API_KEY,
-    },
-    body: JSON.stringify({
-      model: DEEPSEEK_MODEL,
-      messages,
-      temperature: 0.7,
-      max_tokens: 1024,
-    }),
-  });
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    const response = await fetch(DEEPSEEK_BASE_URL + "/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + DEEPSEEK_API_KEY,
+      },
+      body: JSON.stringify({
+        model: DEEPSEEK_MODEL,
+        messages,
+        temperature: 0.7,
+        // V4 defaults to thinking mode; its reasoning can exhaust a short
+        // token budget before the user-visible answer is generated.
+        thinking: { type: "disabled" },
+        max_tokens: outputFormat === "json" ? 2048 : 512,
+        ...(outputFormat === "json"
+          ? { response_format: { type: "json_object" } }
+          : {}),
+      }),
+    });
 
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => "");
-    throw new Error(
-      `DeepSeek API error: status=${response.status} body=${errorText.substring(0, 300)}`,
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "");
+      throw new Error(
+        `DeepSeek API error: status=${response.status} body=${errorText.substring(0, 300)}`,
+      );
+    }
+
+    const data = await response.json();
+    const choice = data?.choices?.[0];
+    const content = choice?.message?.content;
+    if (
+      typeof content === "string" &&
+      content.trim() &&
+      choice?.finish_reason !== "length"
+    ) {
+      return content;
+    }
+
+    console.warn(
+      `[onboarding-chat] DeepSeek returned empty or truncated content (attempt ${attempt}, finish_reason=${choice?.finish_reason ?? "unknown"})`,
     );
   }
 
-  const data = await response.json();
-  return data?.choices?.[0]?.message?.content ?? "";
+  throw new Error("DeepSeek returned empty or truncated content twice");
 }
 
 function extractJsonObject(text: string): string | null {
@@ -258,6 +281,8 @@ Deno.serve(async (req) => {
       const text = await callDeepSeek(
         SYSTEM_PROMPTS.generate_interests,
         history,
+        undefined,
+        "json",
       );
       const parsed = parseJsonBlock(text);
       const categories = parsed.categories;
@@ -277,9 +302,12 @@ Deno.serve(async (req) => {
     } else {
       const interestContext = user_context.selected_interests?.join(", ") ?? "";
       const prompt = `User's selected interests: ${interestContext}`;
-      const text = await callDeepSeek(SYSTEM_PROMPTS.suggest_careers, [
-        { role: "user", parts: [{ text: prompt }] },
-      ]);
+      const text = await callDeepSeek(
+        SYSTEM_PROMPTS.suggest_careers,
+        [{ role: "user", parts: [{ text: prompt }] }],
+        undefined,
+        "json",
+      );
       const parsed = parseJsonBlock(text);
       const careers = parsed.careers;
 

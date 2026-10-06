@@ -36,14 +36,6 @@ export const metadata: Metadata = {
     title: "Workshops | PassionSeed",
     description:
       "Explore hands-on learning paths that inspire action — from tech to tea! Join our workshops to grow your passion.",
-    images: [
-      {
-        url: "/passionseed-logo.svg",
-        width: 1200,
-        height: 630,
-        alt: "PassionSeed Workshops",
-      },
-    ],
     type: "website",
   },
   twitter: {
@@ -51,7 +43,6 @@ export const metadata: Metadata = {
     title: "Workshops | PassionSeed",
     description:
       "Explore hands-on learning paths that inspire action — from tech to tea! Join our workshops to grow your passion.",
-    images: ["/passionseed-logo.svg"],
   },
 };
 

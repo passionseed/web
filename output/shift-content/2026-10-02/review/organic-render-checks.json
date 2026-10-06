@@ -1,0 +1,35 @@
+{
+  "cards": [
+    {
+      "card": 1,
+      "width": 1080,
+      "height": 1350
+    },
+    {
+      "card": 2,
+      "width": 1080,
+      "height": 1350
+    },
+    {
+      "card": 3,
+      "width": 1080,
+      "height": 1350
+    },
+    {
+      "card": 4,
+      "width": 1080,
+      "height": 1350
+    },
+    {
+      "card": 5,
+      "width": 1080,
+      "height": 1350
+    },
+    {
+      "card": 6,
+      "width": 1080,
+      "height": 1350
+    }
+  ],
+  "visualReview": "All six inspected; no clipped Thai text, screenshot or footer. Tiny5 header CSS scroll metrics alone are not glyph-clipping evidence."
+}

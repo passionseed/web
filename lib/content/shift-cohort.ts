@@ -262,8 +262,8 @@ export const SHIFT_PAYMENT = {
   qrSrc: "/shift/pay/promptpay-qr.jpg",
   /** Just the QR, cropped from the slip so it scans off a laptop screen. */
   qrCardSrc: "/shift/pay/promptpay-qr-card.jpg",
-  lineId: "@161irjbq",
-  lineUrl: "https://line.me/R/ti/p/@161irjbq",
+  lineId: "@passionseed",
+  lineUrl: "https://line.me/R/ti/p/@passionseed",
 } as const;
 
 /** "฿670", or "ฟรี" for a free round. */

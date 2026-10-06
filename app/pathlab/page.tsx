@@ -25,20 +25,11 @@ export const metadata: Metadata = {
     title: PATHLAB_TITLE,
     description: PATHLAB_DESCRIPTION,
     siteName: "Passion Seed",
-    images: [
-      {
-        url: "/og-pathlab.png",
-        width: 1200,
-        height: 630,
-        alt: "Pathlab by Passion Seed",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title: PATHLAB_TITLE,
     description: PATHLAB_DESCRIPTION,
-    images: ["/og-pathlab.png"],
   },
 };
 

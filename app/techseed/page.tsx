@@ -28,21 +28,12 @@ export const metadata: Metadata = {
       "รวมชิ้นงานจริงที่นักเรียนสร้างเองและปล่อยสู่โลกจริง ตั้งแต่ AI, Web Apps ไปจนถึง 3D Games พร้อมหลักฐานการทดสอบจริง",
     url: "https://passionseed.org/techseed",
     type: "website",
-    images: [
-      {
-        url: "/og-passionseed.jpg",
-        width: 1200,
-        height: 630,
-        alt: "TechSeed Proof of Work Gallery",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "TechSeed | คลังผลงานจริงจากนักเรียน ม.ปลาย (Proof of Work)",
     description:
       "รวม Final Projects จากนักเรียน TechSeed ปั้นเองจริงใน 5 วัน พร้อมหลักฐานการทดสอบจริง",
-    images: ["/og-passionseed.jpg"],
   },
 };
 

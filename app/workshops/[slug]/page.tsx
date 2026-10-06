@@ -70,21 +70,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title: `${workshop.title} | PassionSeed Workshop`,
       description: workshop.description || workshop.theme,
-      images: [
-        {
-          url: "/passionseed-logo.svg",
-          width: 1200,
-          height: 630,
-          alt: workshop.title,
-        },
-      ],
       type: "article",
     },
     twitter: {
       card: "summary_large_image",
       title: `${workshop.title} | PassionSeed Workshop`,
       description: workshop.description || workshop.theme,
-      images: ["/passionseed-logo.svg"],
     },
   };
 }

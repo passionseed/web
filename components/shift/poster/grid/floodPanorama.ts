@@ -77,7 +77,7 @@ function hash(x: number, y: number): number {
 }
 
 /** A certificate: cream sheet, text lines, a red seal. The thing we sink. */
-const CERT = [
+export const CERT = [
   "PPPPPPPPPPPP",
   "PLLLLLLLLLLP",
   "PPPPPPPPPPPP",
@@ -86,12 +86,12 @@ const CERT = [
   "PLLLLPPPPRRP",
   "PPPPPPPPPPPP",
 ];
-const CERT_PALETTE = { P: PX.cream, L: PX.cloudShade, R: PX.accentDark };
+export const CERT_PALETTE = { P: PX.cream, L: PX.cloudShade, R: PX.accentDark };
 
 /** A tester on the rooftop: head, body, legs. Kept cool so the student stays the only orange. */
-const PERSON = [".HH.", ".SS.", "BBBB", "BBBB", ".DD.", ".D.D"];
+export const PERSON = [".HH.", ".SS.", "BBBB", "BBBB", ".DD.", ".D.D"];
 
-function personPalette(body: string) {
+export function personPalette(body: string) {
   return { H: PX.ink, S: PX.skin, B: body, D: PX.ink };
 }
 

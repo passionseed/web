@@ -2,7 +2,7 @@
 
 Round 1 remains ฿670, 15 seats, applications close October 3, 2026 (Bangkok).
 Future-round prices are unchanged. SHIFT uses the existing payment account
-`@161irjbq`; this does not establish whether `@passionseed` is an alias.
+`@passionseed` (premium ID of the same account, formerly `@161irjbq`).
 
 ## Links to copy after deployment
 

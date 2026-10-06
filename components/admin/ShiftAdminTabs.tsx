@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const SHIFT_ADMIN_LINKS = [
+  { href: "/admin/shift/companion", label: "Companion" },
   { href: "/admin/shift/camp", label: "Interactive camp" },
   { href: "/admin/shift", label: "Tracker" },
   { href: "/admin/shift/applications", label: "Applications" },
@@ -16,7 +17,7 @@ export function ShiftAdminTabs() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex gap-1 rounded-lg border bg-muted/40 p-1 w-fit">
+    <nav className="flex max-w-full flex-wrap gap-1 rounded-lg border bg-muted/40 p-1 w-fit">
       {SHIFT_ADMIN_LINKS.map((link) => (
         <Link
           key={link.href}

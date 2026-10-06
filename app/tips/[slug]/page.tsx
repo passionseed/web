@@ -4,7 +4,6 @@ import { TIPS_FILES, getTipsFile } from "@/lib/content/tips-files";
 import { TipsRedirect } from "./tips-redirect";
 
 const SITE_URL = "https://www.passionseed.org";
-const OG_IMAGE = `${SITE_URL}/og-passionseed.jpg`;
 
 type PageProps = { params: Promise<{ slug: string }> };
 
@@ -30,13 +29,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       siteName: "Passion Seed",
       title: file.title,
       description: file.description,
-      images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: file.title }],
     },
     twitter: {
       card: "summary_large_image",
       title: file.title,
       description: file.description,
-      images: [OG_IMAGE],
     },
   };
 }

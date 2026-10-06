@@ -33,14 +33,6 @@ export const metadata: Metadata = {
     title: PARENTS_META.title,
     description: PARENTS_META.description,
     siteName: "Passion Seed",
-    images: [
-      {
-        url: "/og-pathlab.png",
-        width: 1200,
-        height: 630,
-        alt: "PathLab by Passion Seed",
-      },
-    ],
   },
 };
 

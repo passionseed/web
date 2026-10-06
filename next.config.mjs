@@ -44,6 +44,10 @@ const nextConfig = {
       },
     ],
   },
+  // Bundle licensed fonts for dynamic social-image handlers.
+  outputFileTracingIncludes: {
+    "/*": ["./lib/og/fonts/*.ttf"],
+  },
   // Production optimizations
   compress: true,
   productionBrowserSourceMaps: false,

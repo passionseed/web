@@ -1,18 +1,36 @@
 /**
- * SHIFT[1] testimonial Reels (1080x1920): one SHIFT[0] student each, in their
- * own words, over the same flooded city as the IG grid. Quotes are verbatim
- * excerpts, spelling included; the student's voice is the proof, so it is not
- * polished. Students are minors: no name, only the project they shipped.
+ * SHIFT[1] testimonial Reels (1080x1920, ~21s): one SHIFT[0] student each,
+ * over the same flooded city as the IG grid. Built for cold Meta traffic:
+ * the shipped app is the hook, the proof comes second, the student's own
+ * words third, and every text line sits above the bottom 35% ads UI.
  *
- * Every Reel runs the same six beats on the same clock, so the camera pan,
- * the render length and the layout are shared and a new kid is a data edit.
- * Captions split on "|" into chunks that pop in one after another.
+ * Quotes are verbatim excerpts, spelling included; the student's voice is the
+ * proof, so it is not polished. Students are minors: no name, no face, no
+ * synthetic voice, only the project they shipped.
+ *
+ * Everything runs on one beat grid so the generated soundtrack
+ * (scripts/shift-reel-audio.py) hits on every cut, word and price slam.
+ * Captions split on "|" into chunks that pop in on consecutive beats.
  */
 
-/** Total length in seconds. */
-export const REEL_SECONDS = 33;
+export const BPM = 120;
+/** Seconds per beat. */
+export const BEAT = 60 / BPM;
 
-export type SceneId = "before" | "turn" | "mentors" | "product" | "proud" | "cta";
+export type SceneId = "hook" | "proof" | "before" | "mentors" | "proud" | "cta";
+
+/** Scene starts in beats; the last entry is the end of the Reel. */
+const BEATS: [SceneId | "end", number][] = [
+  ["hook", 0],
+  ["proof", 6],
+  ["before", 10],
+  ["mentors", 18],
+  ["proud", 26],
+  ["cta", 32],
+  ["end", 42],
+];
+
+export const REEL_SECONDS = BEATS.at(-1)![1] * BEAT;
 
 export interface ReelScene {
   id: SceneId;
@@ -25,13 +43,17 @@ export interface ReelScene {
   headline: string;
   /** Verbatim quote, chunked with "|". */
   caption?: string;
-  /** Our line, not the student's: drawn without quote marks. */
-  narrator?: boolean;
+}
+
+export interface ReelProof {
+  /** The stamp. With `count`, it counts up from 0 and `big` is the suffix. */
+  big: string;
+  count?: number;
+  small: string;
 }
 
 export interface ReelProduct {
-  /** One short line of evidence, from the SHIFT[0] showcase. */
-  proof: string;
+  title: string;
   /** Screens captured from the live app, crossfaded in order. */
   shots: string[];
   /** Screens are bare app pages and need a phone bezel drawn around them. */
@@ -42,70 +64,52 @@ export interface TestimonialReel {
   slug: string;
   attribution: string;
   product: ReelProduct;
+  proof: ReelProof;
   scenes: ReelScene[];
 }
 
 type SceneCopy = Omit<ReelScene, "start" | "end">;
 
-/** The shared clock: when each beat starts. */
-const BEATS: [SceneId, number][] = [
-  ["before", 0],
-  ["turn", 5.5],
-  ["mentors", 10.5],
-  ["product", 16.5],
-  ["proud", 22.5],
-  ["cta", 27.5],
-];
-
 function timed(copy: SceneCopy[]): ReelScene[] {
   return copy.map((scene) => {
     const i = BEATS.findIndex(([id]) => id === scene.id);
-    const next = BEATS[i + 1];
-    return { ...scene, start: BEATS[i][1], end: next ? next[1] : REEL_SECONDS };
+    return { ...scene, start: BEATS[i][1] * BEAT, end: BEATS[i + 1][1] * BEAT };
   });
 }
 
+const HOOK: SceneCopy = { id: "hook", tag: "REAL PROJECT · SHIFT[0]", headline: "น้องทำเอง\nใน 7 วัน" };
+const PROOF: SceneCopy = { id: "proof", tag: "NOT A SLIDE DECK", headline: "" };
 const CTA: SceneCopy = { id: "cta", tag: "5-11 OCT · ONLINE", headline: "SHIFT[1]" };
 
 const LENS: TestimonialReel = {
   slug: "lens",
   attribution: "น้อง SHIFT[0] · คนทำ Magnified Lens",
   product: {
-    proof: "คนลองใช้จริง 15+ คน",
+    title: "Magnified Lens",
     shots: ["/shift/testimonial/lens-label.png", "/shift/testimonial/lens-zoom.png"],
     bezel: false,
   },
+  proof: { count: 15, big: "+", small: "คนลองใช้จริง" },
   scenes: timed([
+    HOOK,
+    PROOF,
     {
       id: "before",
-      tag: "REAL FEEDBACK · SHIFT[0]",
-      headline: "ตอนแรกผมคิดว่า...",
-      caption: "เข้ามาแล้วพวกพี่ๆ|น่าจะสอนทําโครงงาน|ทําportอะไรงี้ครับ|แบบบอกขั้นตอนวิธีทํา",
-    },
-    {
-      id: "turn",
-      tag: "REALITY",
+      tag: "EXPECTATION",
       headline: "คนละอย่าง\nเลยครับ",
-      caption: "แต่พอเข้ามาจิงจิงแล้ว|เลยรู้ว่ามัน|คนละอย่างเลยครับ",
+      caption: "ตอนแรกผมคิดว่า|พวกพี่ๆ จะพาทํา|แบบบอกขั้นตอน|แต่พอเข้ามาจิงจิง|มันคนละอย่างเลยครับ",
     },
     {
       id: "mentors",
       tag: "MENTORS: HANDS OFF",
       headline: "คิดเอง\nแก้ปัญหาเอง",
-      caption: "พี่ค่อยคอยดูอยู่ห่างๆ|ให้น้องคิดเอง|แก้ปัญหาเอง|ยกเว้นบางอย่างที่สําคัญจิงจิง|พี่เขาถึงจะสอนครับ",
-    },
-    {
-      id: "product",
-      tag: "WHAT THEY SHIPPED",
-      headline: "Magnified Lens",
-      caption: "แว่นขยายบนมือถือ|สำหรับคนที่อ่านตัวหนังสือเล็กไม่ถนัด",
-      narrator: true,
+      caption: "พี่ค่อยคอยดูอยู่ห่างๆ|ให้น้องคิดเอง|แก้ปัญหาเอง",
     },
     {
       id: "proud",
       tag: "OWN WORK",
       headline: "ไม่คิดว่าตัวเอง\nจะทําได้ขนาดนี้",
-      caption: "พอผลงานออกมาสุดท้ายแล้ว|ก็รู้สึกภูมิใจในตัวเองมากครับ|อันนี้คืองานที่เราได้ทําเอง|คิดเองจิงจิง",
+      caption: "รู้สึกภูมิใจ|ในตัวเองมากครับ",
     },
     CTA,
   ]),
@@ -115,41 +119,31 @@ const KASPT70: TestimonialReel = {
   slug: "kaspt70",
   attribution: "น้อง SHIFT[0] · คนทำปฏิทิน กสพท70",
   product: {
-    proof: "คุยกับคนใช้จริง แล้วเปลี่ยนโจทย์",
+    title: "ปฏิทิน กสพท70",
     shots: ["/shift/testimonial/kaspt70-countdown.png", "/shift/testimonial/kaspt70-timeline.png"],
     bezel: true,
   },
+  proof: { big: "เปลี่ยนโจทย์", small: "หลังคุยกับคนใช้จริง" },
   scenes: timed([
+    HOOK,
+    PROOF,
     {
       id: "before",
-      tag: "REAL FEEDBACK · SHIFT[0]",
+      tag: "BEFORE",
       headline: "มีไอเดียแล้ว\nแต่เริ่มไม่ถูก",
-      caption: "ก่อนเข้า ผมมีไอเดีย|ที่อยากทำใส่พอตอยู่แล้ว|แต่ปัญหาคือ|ไม่รู้เลยว่าถ้าจะทำโปรเจกต์จริง|ต้องเริ่มจากตรงไหน",
-    },
-    {
-      id: "turn",
-      tag: "SCOPE LOCK",
-      headline: "ให้เหลือ\n1 ฟังชั่น",
-      caption: "โปรเจกที่คิดไว้มันทำได้ยาก|ให้เหลือ 1 ฟังชั่น|ที่อยากให้มี",
+      caption: "ไม่รู้เลยว่า|ถ้าจะทำโปรเจกต์จริง|ต้องเริ่มจากตรงไหน",
     },
     {
       id: "mentors",
       tag: "MENTORS",
       headline: "ใจดีมาก\nไม่มีดุ",
-      caption: "ไม่มีคนมาคอยกดดัน|แต่ถ้าติดขัดอะไร|ถามพี่ในค่ายได้ตลอด|พี่ๆ มาคอยช่วยดูเป็นช่วงๆ|แบบเรียงคนเลยใส่ใจมาก",
-    },
-    {
-      id: "product",
-      tag: "WHAT THEY SHIPPED",
-      headline: "ปฏิทิน กสพท70",
-      caption: "ปฏิทินนับถอยหลัง|สำหรับเด็กสายหมอ",
-      narrator: true,
+      caption: "ไม่มีคนมาคอยกดดัน|พี่ๆ มาคอยช่วยดู|แบบเรียงคน|เลยใส่ใจมาก",
     },
     {
       id: "proud",
       tag: "OWN WORK",
       headline: "ทำได้โดยที่\nไม่ต้องพึ่งคนอื่น",
-      caption: "พี่ๆ จะให้แก้ปัญหาด้วยตัวเองก่อน|ตอนที่ทำโปรเจกเสร็จ|เลยรู้สึกภูมิใจมาก",
+      caption: "ตอนที่ทำโปรเจกเสร็จ|เลยรู้สึกภูมิใจมาก",
     },
     CTA,
   ]),
@@ -162,15 +156,19 @@ export function getTestimonialReel(slug: string | undefined): TestimonialReel {
 }
 
 /**
- * Camera pan over the 3-tile panorama, in px of translateX. Tile A (sinking
- * certificates) while they talk about what they expected, the boat while
- * they talk about doing it alone, tile C (the testers' roof) for the payoff.
+ * Camera per scene over the 3-tile panorama: translateX drifts from the first
+ * value to the second, then hard-cuts to the next scene. The boat for the
+ * product, tile A (sinking certificates) for "before", the testers' roof
+ * (tile C) for the payoff and the offer.
  */
-export const PAN_STOPS: [seconds: number, x: number][] = [
-  [0, 0],
-  [5.5, -280],
-  [10.5, -1032],
-  [16.5, -1032],
-  [22.5, -1180],
-  [27.5, -2160],
-];
+export const CAMERA: Record<SceneId, [from: number, to: number]> = {
+  hook: [-980, -1080],
+  proof: [-1120, -1180],
+  before: [-40, -260],
+  mentors: [-960, -1100],
+  proud: [-1700, -1860],
+  cta: [-2060, -2160],
+};
+
+/** CTA lines land on consecutive beats after the scene starts. */
+export const CTA_BEATS = { wordmark: 0, line: 1, marker: 2, seats: 4, price: 5, deadline: 6, url: 7 } as const;

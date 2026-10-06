@@ -25,17 +25,38 @@ export const GRID_APPLY_URL = `https://passionseed.org/shift/apply?round=${COHOR
 
 const baht = (n: number) => `฿${n.toLocaleString("en-US")}`;
 
-function Fact({ k, v }: { k: string; v: string }) {
+/**
+ * The questions people kept DMing after the first grid went up. Each answer
+ * is the whole answer, so nobody has to ask.
+ */
+function faqItems(pair: number | null) {
+  return [
+    {
+      q: "ต้องมีพื้นฐานอะไรไหม?",
+      a: "ไม่ต้องเลย ม.4-ม.6 สมัครได้ ใช้ AI ช่วยสร้าง",
+    },
+    {
+      q: "มาคนเดียว หรือมีแค่ 2 คน ได้ไหม?",
+      a: `ได้หมด ทำเดี่ยวหรือทีม ${teamSizeLabel(COHORT)} ไม่ต้องหาทีมเพิ่ม`,
+    },
+    {
+      q: "ยังไม่มีไอเดีย สมัครได้ไหม?",
+      a: "ได้ มีแค่ปัญหาที่เจอเองก็พอ วันแรกพี่ช่วยตั้งโจทย์",
+    },
+    ...(pair !== null
+      ? [{ q: "ชวนเพื่อนมาด้วย ลดไหม?", a: `มา 2 คน จ่ายคนละ ${baht(pair)} (ลดคนละ ${baht(PAIR_DISCOUNT_BAHT)})` }]
+      : []),
+  ];
+}
+
+function Faq({ q, a }: { q: string; a: string }) {
   return (
-    <div
-      className="flex items-baseline justify-between gap-6 border-b-2 border-dashed pb-4"
-      style={{ borderColor: `${PX.cream}26` }}
-    >
+    <div className="border-b-2 border-dashed pb-5" style={{ borderColor: `${PX.cream}26` }}>
       <p className="text-[28px]" style={{ color: MUTED }}>
-        {k}
+        {q}
       </p>
-      <p className="text-right font-kodchasan text-[32px] font-bold" style={{ color: PX.cream }}>
-        {v}
+      <p className="mt-1 font-kodchasan text-[36px] font-bold leading-[1.3]" style={{ color: PX.cream }}>
+        {a}
       </p>
     </div>
   );
@@ -49,9 +70,8 @@ const C2_CRITTERS = [
 ];
 
 export function SlideC2() {
-  const pair = pairPriceBaht(COHORT);
   return (
-    <GridSlideFrame id="shift1-grid-c-2" tag="PRICE · SEATS" title="ราคาและรายละเอียด" page="2/4" critters={C2_CRITTERS}>
+    <GridSlideFrame id="shift1-grid-c-2" tag="PRICE · FAQ" title="ราคาและคำถามที่เจอบ่อย" page="2/4" critters={C2_CRITTERS}>
       <DeckCard hot fill={HOT_GRADIENT} className="flex items-end justify-between">
         <div>
           <p className="font-kodchasan text-[30px] font-bold">ต่อคน ตลอด 7 วัน</p>
@@ -63,18 +83,12 @@ export function SlideC2() {
         </div>
         <p className="font-kodchasan text-[150px] font-bold leading-[0.9]">{priceLabel(COHORT)}</p>
       </DeckCard>
-      {pair !== null && (
-        <p className="mt-6 font-kodchasan text-[36px] font-bold" style={{ color: PX.accentLight }}>
-          ชวนเพื่อนมาเป็นคู่ ลดคนละ {baht(PAIR_DISCOUNT_BAHT)} เหลือ {baht(pair)}
-        </p>
-      )}
-      <div className="mt-10 space-y-5">
-        <Fact k="รับ" v={`${COHORT.seats} คน · เดี่ยวหรือทีม ${teamSizeLabel(COHORT)}`} />
-        <Fact k="ใครสมัครได้" v="ม.4-ม.6 ไม่ต้องมีพื้นฐาน" />
-        <Fact k="เรียนที่ไหน" v={`Discord ทุกเย็น ${COHORT.sessionTime}`} />
-        <Fact k="ปิดรับสมัคร" v={formatThaiDate(COHORT.applyDeadline)} />
+      <div className="mt-8 space-y-5">
+        {faqItems(pairPriceBaht(COHORT)).map((item) => (
+          <Faq key={item.q} {...item} />
+        ))}
       </div>
-      <p className="mt-10 text-[36px]">
+      <p className="mt-8 text-[34px]">
         <MarkerHighlight>{REFUND_PROMISE}</MarkerHighlight>
       </p>
     </GridSlideFrame>

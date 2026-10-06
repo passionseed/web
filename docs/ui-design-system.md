@@ -1976,3 +1976,27 @@ of `app/globals.css`:
 
 Typography follows the global scale: Kodchasan headlines, Bai Jamjuree body,
 Space Mono for lab-style micro-labels (`BATCH #00`, `VERIFIED FEEDBACK`).
+
+## Social preview posters
+
+Every `app/**/page.tsx` has a 1200 × 630 Open Graph poster. The shared artwork
+in `lib/og/poster.tsx` reuses SHIFT[1]'s pixel kit: dithered sky, layered city,
+water reflections, and the student builder in an orange boat. Tiny5 handles
+Latin display type; Kodchasan Bold handles Thai. Both fonts and their OFL
+licenses are bundled under `lib/og/fonts`, so rendering needs no font network
+request. Dusk uses a plum evening sky; Bloom uses warm peach; Dawn uses blue.
+
+Edit page copy in `lib/og/copy.ts`, then run `pnpm generate:og`. The generator
+finds every page, including nested and dynamic route families, and writes
+`opengraph-image.png` plus accessible alt text beside it. Identifiers and
+private records never become static poster copy. Unknown pages get a readable
+route title and a neutral caption; add an explicit copy entry for marketing
+pages. No price, seat count, or application deadline is baked into the general
+SHIFT poster. Round images use the canonical cohort record.
+
+SHIFT rounds, tips, workshops, and public gallery products have dynamic
+`opengraph-image.tsx` handlers for their own public titles. These use the same
+renderer and local fonts. Keep explicit `openGraph.images` and `twitter.images`
+out of page metadata: they override file-based images. Twitter inherits the
+resolved Open Graph image and uses `summary_large_image` from the root layout.
+Do not add an image handler and a static PNG in the same directory.

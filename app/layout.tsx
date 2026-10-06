@@ -156,22 +156,9 @@ export const metadata: Metadata = {
     description:
       "Break free from passive compliance. Build real things through authentic experimentation and unignorable proof of work.",
     siteName: "PassionSeed",
-    // Without an explicit image, scrapers guess and pick the first thing they
-    // find on the page, which is why shared links showed a random card image.
-    images: [
-      {
-        url: "/og-passionseed.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Passion Seed",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Passion Seed",
-    description: "Discover and nurture your passions",
-    images: ["/og-passionseed.jpg"],
   },
   appleWebApp: {
     capable: true,

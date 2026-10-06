@@ -1,0 +1,112 @@
+{
+  "cohort": {
+    "round": 1,
+    "name": "SHIFT[1]",
+    "seats": 15,
+    "priceBaht": 670,
+    "anchorPriceBaht": 1500,
+    "startDate": "2026-10-05",
+    "endDate": "2026-10-11",
+    "applyDeadline": "2026-10-03",
+    "applyUrl": "/shift/apply?round=1",
+    "bannerSrc": "/shift/banners/shift-1.png",
+    "teamSize": {
+      "min": 1,
+      "max": 3
+    },
+    "testerTarget": 15,
+    "sessionTime": "19:00–21:00",
+    "schedule": [
+      {
+        "date": "2026-10-05",
+        "day": 1,
+        "label": "Scope Lock",
+        "title": "ตัดให้เหลือโจทย์เดียว",
+        "detail": "ตัดฟีเจอร์ที่ไม่จำเป็นออก 80% แล้วล็อกสโคปลงใน 1 หน้า พร้อมสมมติฐานว่าอะไรจะเวิร์ก"
+      },
+      {
+        "date": "2026-10-06",
+        "day": 2,
+        "label": "Reality Check",
+        "title": "คุยกับคนที่เจอปัญหาจริง 3 คน",
+        "detail": "จดคำตอบเป็นคำพูดของเขา ไม่ใช่บทสรุปของเรา ถ้าไม่มีใครเจอปัญหานี้ เปลี่ยนโจทย์วันนี้เลย"
+      },
+      {
+        "date": "2026-10-07",
+        "day": 3,
+        "label": "Build Fast",
+        "title": "สร้างของที่ใช้ได้ ไม่ต้องสวย",
+        "detail": "zero-code, hardware, หรือกระดาษก็ได้ ขอแค่คนนอกกดใช้ได้จริงภายในวันพรุ่งนี้"
+      },
+      {
+        "date": "2026-10-08",
+        "day": 4,
+        "label": "Ship to Strangers",
+        "title": "ปล่อยให้คนนอกใช้",
+        "detail": "ปล่อยของจริงให้คนที่ไม่ใช่เพื่อนสนิทใช้ แล้วจดว่าเขาติดตรงไหน"
+      },
+      {
+        "date": "2026-10-09",
+        "day": 5,
+        "label": "Fix Check",
+        "title": "อะไรพัง และเราเปลี่ยนอะไร",
+        "detail": "จดทุกจุดที่พังพร้อมวันที่ ว่าเจออะไรแล้วแก้ยังไง ของที่พังคือหลักฐานที่ลอกกันไม่ได้"
+      },
+      {
+        "date": "2026-10-10",
+        "day": 6,
+        "label": "Measure",
+        "title": "ตัวเลขก่อนและหลัง 1 ตัว",
+        "detail": "เลือกตัวเลขเดียวที่วัดซ้ำได้ เช่น กี่คนใช้จนจบ หรือติดอยู่กี่วินาที"
+      },
+      {
+        "date": "2026-10-11",
+        "day": 7,
+        "label": "Demo Day",
+        "title": "โชว์ให้ทุกคนดู แล้วเล่าว่าเราเรียนรู้อะไร",
+        "detail": "เดโมของจริงต่อหน้าทั้งรุ่น เล่าจุดพัง สิ่งที่เปลี่ยน และสิ่งที่ได้เรียนรู้ แล้วสรุปเป็นพอร์ต 1 หน้า"
+      }
+    ]
+  },
+  "cta": "Learn more (ดูเพิ่มเติม)",
+  "primaryText": {
+    "student": "คุยกับคนใช้ แล้วเปลี่ยนโจทย์ได้\n\nปฏิทิน กสพท70 ใน SHIFT[0] เริ่มจากเว็บเกณฑ์พอร์ต หลังคุยกับคนใช้จึงเปลี่ยนมาช่วยดูวันสอบ นี่คือหลักฐานของการตัดสินใจจากข้อมูล\n\nSHIFT[1] เป็นพื้นที่ 7 วันให้เลือกปัญหา สร้างต้นแบบ ลองกับคนนอก แล้วสรุปเป็นพอร์ต 1 หน้า มีทีมและพี่เลี้ยงช่วยดูในห้อง Discord ของทีม\n\nSHIFT[1] · 5 ต.ค. ถึง 11 ต.ค. 2569 · ออนไลน์ Discord 19:00–21:00 น.\n฿670 ต่อคน · ความจุรุ่น 15 คน · ปิดรับ 3 ต.ค. 2569\n\nไม่ต้องมีพื้นฐาน ม.4-ม.6 สมัครได้ ใช้ AI ช่วยสร้าง\n\nทำคนเดียว 2 คน หรือ 3 คนก็ได้ ไม่ต้องหาทีมเพิ่ม\n\nยังไม่มีไอเดียก็สมัครได้ มีแค่ปัญหาที่เจอเองก็พอ\n\nมากับเพื่อน 2 คน จ่ายคนละ ฿570\n\nเงื่อนไขบนหน้าโครงการ: ถ้าจบวันที่ 7 แล้วไม่มีชิ้นงานในมือ คืนเงินเต็มจำนวน\n\nกดดูรายละเอียดและสมัคร SHIFT[1] ที่ลิงก์",
+    "parent": "เห็นวิธีคิดลูก ผ่านงานที่เขาสร้าง\n\nปฏิทิน กสพท70 เป็นผลงาน SHIFT[0] ที่เปลี่ยนจากเว็บเกณฑ์พอร์ต หลังคุยกับคนใช้แล้วพบว่าเขาอยากรู้วันสอบมากกว่า ชิ้นงานช่วยให้เห็นทั้งปัญหาที่เลือกและเหตุผลที่เปลี่ยน\n\nSHIFT[1] ให้ลูกฝึกเลือกโจทย์ สร้าง ทดลอง และอธิบายการตัดสินใจของตัวเอง มีพี่เลี้ยงและเพื่อนร่วมเรียนในห้อง Discord ของทีม เป้าหมายปลายสัปดาห์คือพอร์ต 1 หน้า\n\nSHIFT[1] · 5 ต.ค. ถึง 11 ต.ค. 2569 · ออนไลน์ Discord 19:00–21:00 น.\n฿670 ต่อคน · ความจุรุ่น 15 คน · ปิดรับ 3 ต.ค. 2569\n\nไม่ต้องมีพื้นฐาน ม.4-ม.6 สมัครได้ ใช้ AI ช่วยสร้าง\n\nทำคนเดียว 2 คน หรือ 3 คนก็ได้ ไม่ต้องหาทีมเพิ่ม\n\nยังไม่มีไอเดียก็สมัครได้ มีแค่ปัญหาที่เจอเองก็พอ\n\nมากับเพื่อน 2 คน จ่ายคนละ ฿570\n\nเงื่อนไขบนหน้าโครงการ: ถ้าจบวันที่ 7 แล้วไม่มีชิ้นงานในมือ คืนเงินเต็มจำนวน\n\nกดดูรายละเอียดและสมัคร SHIFT[1] ที่ลิงก์"
+  },
+  "cards": [
+    {
+      "headline": "คุยแล้วเปลี่ยนโจทย์",
+      "description": "งาน SHIFT[0]",
+      "studentUrl": "https://passionseed.org/shift/1?utm_source=meta_ads&utm_medium=paid_social&utm_campaign=shift1_carousel&utm_content=card1_student",
+      "parentUrl": "https://passionseed.org/shift/1?utm_source=meta_ads&utm_medium=paid_social&utm_campaign=shift1_carousel&utm_content=card1_parent"
+    },
+    {
+      "headline": "Lens: ฟีดแบ็ก 15+ คน",
+      "description": "เฉพาะโปรเจกต์นี้",
+      "studentUrl": "https://passionseed.org/shift/1?utm_source=meta_ads&utm_medium=paid_social&utm_campaign=shift1_carousel&utm_content=card2",
+      "parentUrl": "https://passionseed.org/shift/1?utm_source=meta_ads&utm_medium=paid_social&utm_campaign=shift1_carousel&utm_content=card2"
+    },
+    {
+      "headline": "TradBid: จาก v1 สู่ v2",
+      "description": "ใช้เงินจำลอง",
+      "studentUrl": "https://passionseed.org/shift/1?utm_source=meta_ads&utm_medium=paid_social&utm_campaign=shift1_carousel&utm_content=card3",
+      "parentUrl": "https://passionseed.org/shift/1?utm_source=meta_ads&utm_medium=paid_social&utm_campaign=shift1_carousel&utm_content=card3"
+    },
+    {
+      "headline": "SHIFT: ลงมือ 7 วัน",
+      "description": "เพื่อนและพี่เลี้ยง",
+      "studentUrl": "https://passionseed.org/shift/1?utm_source=meta_ads&utm_medium=paid_social&utm_campaign=shift1_carousel&utm_content=card4",
+      "parentUrl": "https://passionseed.org/shift/1?utm_source=meta_ads&utm_medium=paid_social&utm_campaign=shift1_carousel&utm_content=card4"
+    },
+    {
+      "headline": "SHIFT[1] · ฿670 ต่อคน",
+      "description": "ปิดรับ 3 ต.ค. 2569",
+      "studentUrl": "https://passionseed.org/shift/1?utm_source=meta_ads&utm_medium=paid_social&utm_campaign=shift1_carousel&utm_content=card5",
+      "parentUrl": "https://passionseed.org/shift/1?utm_source=meta_ads&utm_medium=paid_social&utm_campaign=shift1_carousel&utm_content=card5"
+    }
+  ],
+  "parentCard": {
+    "headline": "เห็นวิธีคิดลูก",
+    "description": "ผ่านงาน SHIFT[0]"
+  }
+}
