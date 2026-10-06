@@ -24,7 +24,7 @@ function StudentCount({ count }: { count: number }) {
 export function HomeProof({ studentCount }: { studentCount: number | null }) {
   return (
     <section className="py-16 sm:py-24">
-      <RisoHeading eyebrow="Proof of Execution">เสียงจริงจากรุ่นพี่ที่ลงมือสร้าง</RisoHeading>
+      <RisoHeading>เสียงจริงจากรุ่นพี่ที่ลงมือสร้าง</RisoHeading>
       {studentCount ? <StudentCount count={studentCount} /> : null}
 
       <div className="mt-14 grid gap-10 md:grid-cols-3">

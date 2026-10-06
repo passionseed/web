@@ -75,7 +75,6 @@ function CohortFacts({ cohort }: { cohort: ShiftCohort }) {
 export function HomeHero() {
   const cohort = getEffectiveCohort();
   const running = getRunningCohort();
-  const cohortNumber = String(cohort.round).padStart(2, "0");
 
   return (
     <section className="relative overflow-hidden">
@@ -88,18 +87,10 @@ export function HomeHero() {
           style={{ minHeight: HORIZON }}
         >
           {running && running.round !== cohort.round && (
-            <div className="mb-6">
-              <LiveRoundStrip cohort={running} />
-            </div>
+            <LiveRoundStrip cohort={running} />
           )}
-          <p
-            className="font-mono text-[11px] uppercase tracking-[0.3em] sm:text-xs"
-            style={{ color: paper("cc") }}
-          >
-            PassionSeed · {cohort.seats} seats · Cohort {cohortNumber}
-          </p>
           <h1
-            className="mt-8 font-kodchasan text-[clamp(38px,6.6vw,76px)] font-bold leading-[1.3] tracking-tight"
+            className="mt-6 font-kodchasan text-[clamp(38px,6.6vw,76px)] font-bold leading-[1.3] tracking-tight"
             style={MISREG_TEXT}
           >
             เลิกสะสมใบเซอร์

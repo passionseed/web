@@ -97,17 +97,20 @@ export function RisoHeading({
   children,
   align = "left",
 }: {
-  eyebrow: string;
+  /** Only when it tells the reader something the heading does not. */
+  eyebrow?: string;
   children: ReactNode;
   align?: "left" | "center";
 }) {
   return (
     <div className={align === "center" ? "text-center" : undefined}>
-      <p className={labelClass(eyebrow)} style={{ color: T.accent1 }}>
-        {eyebrow}
-      </p>
+      {eyebrow && (
+        <p className={`${labelClass(eyebrow)} mb-3`} style={{ color: T.accent1 }}>
+          {eyebrow}
+        </p>
+      )}
       <h2
-        className="mt-3 font-kodchasan text-3xl font-bold leading-[1.35] tracking-tight sm:text-[44px]"
+        className="font-kodchasan text-3xl font-bold leading-[1.35] tracking-tight sm:text-[44px]"
         style={HEADING}
       >
         {children}

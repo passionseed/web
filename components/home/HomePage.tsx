@@ -1,3 +1,6 @@
+import "@/components/shift/round/shiftRound.css";
+import "./home.css";
+
 import { INK, RisoPageTexture } from "@/components/shift/ShiftRiso";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteNav } from "@/components/site/SiteNav";
@@ -7,6 +10,7 @@ import { HomeHero } from "./HomeHero";
 import { HomeLadder } from "./HomeLadder";
 import { HomeParents } from "./HomeParents";
 import { HomeProof } from "./HomeProof";
+import { HomeShowcase } from "./HomeShowcase";
 import { HomeWeek } from "./HomeWeek";
 
 /** Public home page. SHIFT leads; everything else hangs off it. */
@@ -21,6 +25,7 @@ export function HomePage({ studentCount }: { studentCount: number | null }) {
       <HomeHero />
       <main className="relative mx-auto max-w-5xl px-5 pb-10 sm:px-8">
         <HomeContrast />
+        <HomeShowcase />
         <HomeWeek />
         <HomeProof studentCount={studentCount} />
         <HomeParents />

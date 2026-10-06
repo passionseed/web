@@ -5,6 +5,9 @@
  * round only edits lib/content/shift-cohort.ts.
  */
 
+import type { RisoIconName } from "@/components/shift/poster/RisoIcons";
+import { SHIFT_COHORT_0, type ShiftShowcaseProject } from "@/lib/content/shift-cohort";
+
 export interface HomeLink {
   href: string;
   label: string;
@@ -75,30 +78,27 @@ export const HOME_CONTRAST = {
   ],
 };
 
-export interface HomeWeekBeat {
-  days: string;
-  title: string;
-  body: string;
+/** Real screens from the apps SHIFT[0] shipped, two per app, keyed by title. */
+const SHOWCASE_SHOTS: Record<string, [string, string]> = {
+  "Magnified Lens": ["/shift/testimonial/lens-zoom.png", "/shift/testimonial/lens-label.png"],
+  TradBid: ["/shift/testimonial/tradbid.png", "/shift/testimonial/tradbid-sim.png"],
+  "ปฏิทิน กสพท70": ["/shift/testimonial/kaspt70-countdown.png", "/shift/testimonial/kaspt70-timeline.png"],
+};
+
+export interface HomeShowcaseProject extends ShiftShowcaseProject {
+  shots: [string, string];
 }
 
-/** The 7 days in three beats. The dated schedule lives on /shift. */
-export const HOME_WEEK: HomeWeekBeat[] = [
-  {
-    days: "Day 1-2",
-    title: "ล็อกโจทย์เดียว",
-    body: "ตัดฟีเจอร์ออก 80% แล้วไปคุยกับคนที่เจอปัญหาจริง 3 คน ก่อนสร้างอะไรเลย",
-  },
-  {
-    days: "Day 3-5",
-    title: "ปล่อยให้คนนอกใช้",
-    body: "สร้างของที่ใช้ได้ ไม่ต้องสวย ปล่อยให้คนแปลกหน้าลอง แล้วจดทุกจุดที่พัง",
-  },
-  {
-    days: "Day 6-7",
-    title: "Demo Day",
-    body: "โชว์ของจริงต่อหน้าทั้งรุ่น แล้วเรียบเรียงเป็นพอร์ต 1 หน้า ไว้ใช้ใน TCAS 1",
-  },
-];
+/** The pilot's featured apps that have screens to show. */
+export const HOME_SHOWCASE: HomeShowcaseProject[] = (SHIFT_COHORT_0.showcase ?? [])
+  .filter((p) => p.featured && SHOWCASE_SHOTS[p.title])
+  .map((p) => ({ ...p, shots: SHOWCASE_SHOTS[p.title] }));
+
+/** One icon per sprint day, in schedule order. */
+export const HOME_DAY_ICONS: RisoIconName[] = ["lock", "chat", "hammer", "send", "bug", "gauge", "mic"];
+
+/** What a parent's three worries get answered with, in HOME_PARENT_POINTS order. */
+export const HOME_PARENT_ICONS: RisoIconName[] = ["search", "lock", "target"];
 
 export const HOME_DELIVERABLES = [
   "ผลงานที่คนนอกใช้ได้จริง",
@@ -172,6 +172,7 @@ export const HOME_EXPLORE: (HomeLink & { body: string })[] = [
 export const HOME_NOTES = {
   hero: "เขียนโค้ดไม่เป็นก็มาได้",
   contrast: "ของพังก็ใส่พอร์ตได้นะ",
+  showcase: "กดลองใช้ได้จริงนะ ไม่ใช่ภาพม็อก",
   week: "วันละ 1-2 ชั่วโมง ไม่ต้องลาเรียน",
   proof: "รุ่นพี่เขียนเองทุกคน",
   parents: "พี่เลี้ยงไม่ทำงานแทนน้อง",

@@ -49,7 +49,7 @@ function ExploreLinks() {
 export function HomeLadder() {
   return (
     <section className="py-16 sm:py-24">
-      <RisoHeading eyebrow="The Ladder">จากคนใช้ สู่คนสร้าง</RisoHeading>
+      <RisoHeading>จากคนใช้ สู่คนสร้าง</RisoHeading>
       <div className={`mt-10 border-t ${HAIR}`}>
         {HOME_LADDER.map((step, i) => (
           <LadderStep key={step.name} step={step} index={i} />
