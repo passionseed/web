@@ -225,6 +225,7 @@ export function ShiftApplyForm({
   const cohortDates = formatThaiDateRange(cohort.startDate, cohort.endDate);
   const [errors, setErrors] = useState<ShiftApplicationErrors>({});
   const [status, setStatus] = useState<Status>("idle");
+  const [joinUrl, setJoinUrl] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
   useApplyDraft(values, (draft) => setValues((prev) => ({ ...prev, ...draft })));
@@ -263,6 +264,8 @@ export function ShiftApplyForm({
         body: JSON.stringify(payload),
       });
       if (res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { joinUrl?: string };
+        setJoinUrl(data.joinUrl ?? null);
         clearApplyDraft();
         setStatus("done");
         trackMetaEvent("Lead", { content_name: cohort.name, content_category: "shift" });
@@ -279,7 +282,7 @@ export function ShiftApplyForm({
     }
   }
 
-  if (status === "done") return <ShiftApplyDone cohort={cohort} values={values} />;
+  if (status === "done") return <ShiftApplyDone cohort={cohort} values={values} joinUrl={joinUrl} />;
 
   return (
     <form ref={formRef} onSubmit={submit} noValidate>

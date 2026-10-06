@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { z } from "zod";
 import { requireAdmin, safeServerError } from "@/lib/security/route-guards";
+import { enrollLinkedStudents } from "@/lib/shift/join";
 
 const input = z.object({
   action: z.enum([
@@ -62,5 +63,7 @@ export async function POST(request: NextRequest) {
       { error: error.message },
       { status: error.code === "42501" ? 403 : 400 },
     );
+  // Students who linked Discord before this camp existed join it now.
+  if (action === "create_cohort") after(() => enrollLinkedStudents().then(() => undefined));
   return NextResponse.json(data);
 }

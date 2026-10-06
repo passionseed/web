@@ -1,4 +1,4 @@
-import { paymentLineMessage } from "../paymentMessage";
+import { joinConfirmMessage, paymentLineMessage } from "../paymentMessage";
 
 const cohort = { name: "SHIFT[2]", priceBaht: 990 };
 
@@ -28,5 +28,20 @@ describe("paymentLineMessage", () => {
     const message = paymentLineMessage(cohort);
     expect(message).not.toContain("ชื่อเล่น:");
     expect(message).toContain("ยอดโอน: ฿990");
+  });
+});
+
+describe("join link in LINE messages", () => {
+  const joinUrl = "https://www.passionseed.org/shift/join/abcdefghijklmnopqrstuvwx";
+
+  it("payment message carries the applicant's personal link", () => {
+    const message = paymentLineMessage(cohort, { nickname: "มิว", joinUrl });
+    expect(message).toContain(`ลิงก์เข้า Discord: ${joinUrl}`);
+  });
+
+  it("confirmation names the round and ends with the link", () => {
+    const message = joinConfirmMessage({ cohortName: "SHIFT[2]", nickname: " มิว ", joinUrl });
+    expect(message).toContain("ยืนยันที่นั่ง SHIFT[2] แล้ว ยินดีต้อนรับ มิว");
+    expect(message.endsWith(joinUrl)).toBe(true);
   });
 });

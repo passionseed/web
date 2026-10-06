@@ -110,6 +110,22 @@ export function AdminShiftApplications() {
     [replace],
   );
 
+  const createJoinLink = useCallback(
+    async (id: string): Promise<string | null> => {
+      try {
+        const res = await fetch(`/api/admin/shift/applications/${id}/join-link`, { method: "POST" });
+        const body = (await res.json()) as { url?: string; application?: Application; error?: string };
+        if (!res.ok || !body.url || !body.application) throw new Error(body.error);
+        replace(body.application);
+        return body.url;
+      } catch (error) {
+        toast.error(error instanceof Error && error.message ? error.message : "Failed to create join link");
+        return null;
+      }
+    },
+    [replace],
+  );
+
   const addToTracker = useCallback(
     async (app: Application) => {
       try {
@@ -182,6 +198,7 @@ export function AdminShiftApplications() {
                   inTracker={trackerHandles.has(normalizeHandle(app.ig_handle))}
                   onPatch={patch}
                   onAddToTracker={addToTracker}
+                  onCreateJoinLink={createJoinLink}
                 />
               ))}
             </TableBody>

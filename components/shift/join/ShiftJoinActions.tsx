@@ -1,0 +1,129 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
+
+import { INK } from "@/components/shift/poster/riso";
+import { shiftJoinPath } from "@/lib/shift/joinLink";
+import { createClient } from "@/utils/supabase/client";
+
+/** `guilds.join` lets the bot add the student to the server on their behalf. */
+const DISCORD_SCOPES = "identify email guilds.join";
+
+function callbackUrl(token: string): string {
+  const origin = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+  const url = new URL("/auth/callback", origin);
+  url.searchParams.set("next", shiftJoinPath(token));
+  return url.toString();
+}
+
+const buttonClass =
+  "inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-4 font-kodchasan text-lg font-bold transition-transform active:scale-[0.98] disabled:opacity-60";
+
+/**
+ * Signed-out (or Discord-only) visitors sign in with Discord, which creates or
+ * reuses their PassionSeed account. A signed-in visitor without Discord links
+ * it onto the account they already have instead of making a second one.
+ */
+export function ConnectDiscordButton({
+  token,
+  linkOntoCurrentAccount,
+  label = "เข้าสู่ระบบด้วย Discord",
+}: {
+  token: string;
+  linkOntoCurrentAccount: boolean;
+  label?: string;
+}) {
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function connect() {
+    setPending(true);
+    setError(null);
+    const supabase = createClient();
+    const options = { redirectTo: callbackUrl(token), scopes: DISCORD_SCOPES };
+    const { error: authError } = linkOntoCurrentAccount
+      ? await supabase.auth.linkIdentity({ provider: "discord", options })
+      : await supabase.auth.signInWithOAuth({ provider: "discord", options });
+    if (authError) {
+      console.error("[shift-join] Discord auth failed:", authError.message);
+      setError("เชื่อม Discord ไม่สำเร็จ ลองใหม่อีกครั้ง หรือทักพี่ใน LINE");
+      setPending(false);
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <button
+        type="button"
+        onClick={connect}
+        disabled={pending}
+        className={buttonClass}
+        style={{ backgroundColor: "#5865F2", color: "#fff" }}
+      >
+        {pending && <Loader2 className="h-5 w-5 animate-spin" />}
+        {label}
+      </button>
+      {error && (
+        <p className="text-sm" style={{ color: INK.orange }}>
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+const SYNC_MESSAGES: Record<string, string> = {
+  not_member: "ยังไม่เจอในเซิร์ฟ กดลิงก์เชิญด้านบนก่อน แล้วค่อยกดปุ่มนี้อีกที",
+  not_configured: "ระบบ Discord ยังไม่พร้อม ทักพี่ใน LINE ได้เลย",
+  error: "รับ role ไม่สำเร็จ ลองอีกครั้ง หรือทักพี่ใน LINE",
+};
+
+/** For students who came in through the invite: grants roles now that the
+ *  bot can see them in the server. */
+export function SyncRolesButton({ token }: { token: string }) {
+  const router = useRouter();
+  const [pending, setPending] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  async function sync() {
+    setPending(true);
+    setMessage(null);
+    try {
+      const res = await fetch(`/api/shift/join/${token}/sync`, { method: "POST" });
+      const body = (await res.json().catch(() => ({}))) as { state?: string };
+      if (res.ok) {
+        router.refresh();
+        return;
+      }
+      setMessage(SYNC_MESSAGES[body.state ?? "error"] ?? SYNC_MESSAGES.error);
+    } catch {
+      setMessage(SYNC_MESSAGES.error);
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <button
+        type="button"
+        onClick={sync}
+        disabled={pending}
+        className={buttonClass}
+        style={{ backgroundColor: INK.yellow, color: INK.black }}
+      >
+        {pending && <Loader2 className="h-5 w-5 animate-spin" />}
+        เข้าเซิร์ฟแล้ว กดรับ role
+      </button>
+      {message && (
+        <p className="text-sm" style={{ color: INK.orange }}>
+          {message}
+        </p>
+      )}
+    </div>
+  );
+}
+
+export const shiftJoinButtonClass = buttonClass;

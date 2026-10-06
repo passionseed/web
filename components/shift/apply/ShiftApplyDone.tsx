@@ -56,7 +56,7 @@ function NextSteps({ cohort }: { cohort: ShiftCohort }) {
     ...(cohort.priceBaht > 0
       ? [`โอนแล้วส่งสลิปใน LINE ${SHIFT_PAYMENT.lineId} ด้านล่าง`]
       : []),
-    "พี่ยืนยันที่นั่ง แล้วส่งลิงก์เข้า Discord ของรุ่นให้",
+    "พี่ยืนยันที่นั่งในแชท แล้วกดลิงก์ส่วนตัวเพื่อเข้า Discord ของรุ่น",
     `เริ่ม Day 1 ${formatThaiDate(cohort.startDate)} ${cohort.sessionTime} น.`,
   ];
   return (
@@ -84,9 +84,11 @@ function NextSteps({ cohort }: { cohort: ShiftCohort }) {
 export function ShiftApplyDone({
   cohort,
   values,
+  joinUrl,
 }: {
   cohort: ShiftCohort;
   values: ShiftApplicationInput;
+  joinUrl: string | null;
 }) {
   // The form swaps for this screen in place; start reading from the top.
   useEffect(() => {
@@ -122,6 +124,7 @@ export function ShiftApplyDone({
               fullName: values.fullName,
               igHandle: values.igHandle,
               parentContact: values.parentContact,
+              joinUrl,
             }}
           />
         </div>

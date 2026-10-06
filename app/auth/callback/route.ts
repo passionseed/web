@@ -6,6 +6,8 @@ import {
   isProfileComplete,
   PROFILE_COMPLETION_SELECT,
 } from "@/lib/profile-completion";
+import { completeShiftJoin } from "@/lib/shift/join";
+import { shiftJoinPath, tokenFromShiftJoinPath } from "@/lib/shift/joinLink";
 
 type PendingCookie = {
   name: string;
@@ -87,6 +89,20 @@ export async function GET(request: Request) {
       if (isNewUser) {
         await trackAppRegister(userId);
         await assignUserToCohort(userId, "organic", "oauth_signup");
+      }
+
+      // Paid SHIFT students skip onboarding: linking Discord is the whole
+      // signup. The provider token only exists here, so the join runs now.
+      const shiftJoinToken = tokenFromShiftJoinPath(next);
+      if (shiftJoinToken) {
+        const joinError = await completeShiftJoin({
+          token: shiftJoinToken,
+          user: data.user,
+          providerToken: data.session.provider_token,
+        });
+        const target = new URL(shiftJoinPath(shiftJoinToken), origin);
+        if (joinError) target.searchParams.set("error", joinError);
+        return redirectWithCookies(target, pendingCookies);
       }
 
       let profileData = null;

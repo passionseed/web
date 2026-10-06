@@ -6,6 +6,8 @@ export interface ApplicantSummary {
   fullName?: string;
   igHandle?: string;
   parentContact?: string;
+  /** Their personal /shift/join link, so the admin can find the row from the chat. */
+  joinUrl?: string | null;
 }
 
 const baht = (amount: number) => `฿${amount.toLocaleString("en-US")}`;
@@ -31,5 +33,19 @@ export function paymentLineMessage(
   lines.push(`ยอดโอน: ${baht(cohort.priceBaht)}`);
   lines.push("มากับเพื่อนไหม: (ถ้ามา ใส่ชื่อเพื่อนตรงนี้)");
   lines.push("แนบสลิปไว้ด้านล่างแล้ว");
+  if (applicant?.joinUrl) lines.push(`ลิงก์เข้า Discord: ${applicant.joinUrl}`);
   return lines.join("\n");
+}
+
+/**
+ * The admin's reply (LINE or Discord) once the slip checks out. The same link the student
+ * already has, now active: one tap signs them in with Discord and drops them
+ * into the round's channels.
+ */
+export function joinConfirmMessage(input: { cohortName: string; nickname: string; joinUrl: string }): string {
+  return [
+    `ยืนยันที่นั่ง ${input.cohortName} แล้ว ยินดีต้อนรับ ${input.nickname.trim()}`,
+    "กดลิงก์นี้ เข้าสู่ระบบด้วย Discord ระบบจะพาเข้าห้องของรุ่นให้เลย ไม่ต้องสมัครบัญชีใหม่",
+    input.joinUrl,
+  ].join("\n");
 }

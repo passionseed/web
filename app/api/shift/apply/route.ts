@@ -3,6 +3,7 @@ import { NextResponse, after } from "next/server";
 import { safeServerError } from "@/lib/security/route-guards";
 import { SHIFT_COHORT, getShiftCohort } from "@/lib/content/shift-cohort";
 import { shiftApplicationSchema, toFieldErrors } from "@/lib/shift/application";
+import { newShiftJoinToken, shiftJoinPath } from "@/lib/shift/joinLink";
 import { notifyShiftApplication } from "@/lib/shift/notifyDiscord";
 import { createAdminClient } from "@/utils/supabase/admin";
 
@@ -42,6 +43,9 @@ export async function POST(request: Request) {
 
   try {
     const supabase = createAdminClient();
+    // Minted now so the applicant's LINE payment message already carries their
+    // personal Discord link. It stays inert until an admin marks them paid.
+    const joinToken = newShiftJoinToken();
     const { error } = await supabase.from("shift_applications").insert({
       cohort: cohort.name,
       full_name: application.fullName,
@@ -55,6 +59,7 @@ export async function POST(request: Request) {
       parent_contact: application.parentContact,
       consent: application.consent,
       source: application.source,
+      join_token: joinToken,
     });
     if (error) {
       return safeServerError("Failed to save SHIFT application", error);
@@ -82,7 +87,9 @@ export async function POST(request: Request) {
       });
     });
 
-    return NextResponse.json({ ok: true });
+    const origin = process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin;
+    const joinUrl = new URL(shiftJoinPath(joinToken), origin).toString();
+    return NextResponse.json({ ok: true, joinUrl });
   } catch (error) {
     return safeServerError("Failed to save SHIFT application", error);
   }

@@ -3,6 +3,9 @@ export interface ShiftStudent {
   full_name: string;
   ig_handle: string | null;
   discord_handle: string | null;
+  application_id: string | null;
+  user_id: string | null;
+  discord_user_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -52,6 +55,13 @@ export interface ShiftApplicationRow {
   status: ShiftApplicationStatus;
   paid_at: string | null;
   admin_note: string | null;
+  join_token: string | null;
+  user_id: string | null;
+  discord_user_id: string | null;
+  discord_username: string | null;
+  linked_at: string | null;
+  discord_joined_at: string | null;
+  discord_error: string | null;
   created_at: string;
   updated_at: string;
 }

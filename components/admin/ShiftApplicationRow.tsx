@@ -3,6 +3,12 @@
 import { Fragment, useState } from "react";
 import { Check, ChevronDown, ChevronRight, Loader2, UserPlus } from "lucide-react";
 
+import {
+  CopyJoinMessageButton,
+  discordStatus,
+  ShiftJoinLinkPanel,
+} from "@/components/admin/ShiftJoinLinkPanel";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -47,10 +53,13 @@ interface RowProps {
   inTracker: boolean;
   onPatch: (id: string, patch: ApplicationPatch) => Promise<boolean>;
   onAddToTracker: (application: Application) => Promise<void>;
+  onCreateJoinLink: (id: string) => Promise<string | null>;
 }
 
-export function ShiftApplicationRow({ application: app, inTracker, onPatch, onAddToTracker }: RowProps) {
+export function ShiftApplicationRow(props: RowProps) {
+  const { application: app, onPatch } = props;
   const [expanded, setExpanded] = useState(false);
+  const discord = discordStatus(app);
 
   return (
     <Fragment>
@@ -76,22 +85,27 @@ export function ShiftApplicationRow({ application: app, inTracker, onPatch, onAd
           />
         </TableCell>
         <TableCell onClick={(e) => e.stopPropagation()}>
-          <Switch
-            checked={app.paid_at !== null}
-            onCheckedChange={(paid) => onPatch(app.id, { paid })}
-            aria-label={`Mark ${app.nickname} paid`}
-          />
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={app.paid_at !== null}
+              onCheckedChange={(paid) => onPatch(app.id, { paid })}
+              aria-label={`Mark ${app.nickname} paid`}
+            />
+            {discord && (
+              <Badge variant={discord.variant} className="whitespace-nowrap text-[10px]">
+                {discord.label}
+              </Badge>
+            )}
+            {app.paid_at && !app.linked_at && (
+              <CopyJoinMessageButton application={app} onCreateLink={props.onCreateJoinLink} compact />
+            )}
+          </div>
         </TableCell>
       </TableRow>
       {expanded && (
         <TableRow className="bg-muted/20 hover:bg-muted/20">
           <TableCell colSpan={COLUMN_COUNT} className="p-4">
-            <ApplicationDetail
-              application={app}
-              inTracker={inTracker}
-              onPatch={onPatch}
-              onAddToTracker={onAddToTracker}
-            />
+            <ApplicationDetail {...props} />
           </TableCell>
         </TableRow>
       )}
@@ -132,7 +146,13 @@ function DetailField({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ApplicationDetail({ application: app, inTracker, onPatch, onAddToTracker }: RowProps) {
+function ApplicationDetail({
+  application: app,
+  inTracker,
+  onPatch,
+  onAddToTracker,
+  onCreateJoinLink,
+}: RowProps) {
   const [adding, setAdding] = useState(false);
 
   async function addToTracker() {
@@ -170,11 +190,14 @@ function ApplicationDetail({ application: app, inTracker, onPatch, onAddToTracke
           {inTracker ? "In tracker" : "Add to tracker"}
         </Button>
       </div>
-      <AdminNoteEditor
-        key={app.admin_note ?? ""}
-        initial={app.admin_note ?? ""}
-        onSave={(note) => onPatch(app.id, { admin_note: note || null })}
-      />
+      <div className="space-y-4">
+        <ShiftJoinLinkPanel application={app} onCreateLink={onCreateJoinLink} />
+        <AdminNoteEditor
+          key={app.admin_note ?? ""}
+          initial={app.admin_note ?? ""}
+          onSave={(note) => onPatch(app.id, { admin_note: note || null })}
+        />
+      </div>
     </div>
   );
 }

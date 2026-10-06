@@ -6,6 +6,7 @@ import {
   isProfileComplete,
   PROFILE_COMPLETION_SELECT,
 } from '@/lib/profile-completion'
+import { SHIFT_JOIN_PREFIX } from '@/lib/shift/joinLink'
 import { isPublicRoute } from './public-routes'
 
 function shouldSkipOnboardGate(pathname: string): boolean {
@@ -13,6 +14,8 @@ function shouldSkipOnboardGate(pathname: string): boolean {
     pathname === '/onboard' ||
     pathname.startsWith('/onboard/') ||
     pathname.startsWith('/auth/') ||
+    // Paid SHIFT students link Discord without the full PassionSeed onboard.
+    pathname.startsWith(SHIFT_JOIN_PREFIX) ||
     pathname.startsWith('/api/') ||
     pathname.startsWith('/_next/')
   )

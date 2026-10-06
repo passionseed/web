@@ -289,6 +289,14 @@ export function AdminShiftTracker() {
                           {student.discord_handle}
                         </span>
                       )}
+                      {student.discord_user_id && (
+                        <span
+                          className="text-xs font-medium text-emerald-600"
+                          title="Signed in with this Discord through the SHIFT join link"
+                        >
+                          verified
+                        </span>
+                      )}
                     </div>
                     <p className="truncate text-sm text-muted-foreground">
                       {student.latest_note ? student.latest_note.body : "No notes yet"}
