@@ -10,6 +10,9 @@ import {
   formatThaiDate,
   formatThaiDateRange,
   teamSizeLabel,
+  getEffectiveCohort,
+  getOpenCohorts,
+  getAvailableCohorts,
 } from "../shift-cohort";
 
 describe("shift cohort", () => {
@@ -79,5 +82,28 @@ describe("shift cohort", () => {
     expect(cohortStatus(SHIFT_COHORT, "2026-10-12")).toBe("done");
     // A round marked completed is done whatever the calendar says.
     expect(cohortStatus(getShiftCohort(0)!, "2026-09-01")).toBe("done");
+  });
+
+  it("resolves the effective cohort fallback gracefully", () => {
+    // When an explicit round is given, returns that cohort
+    expect(getEffectiveCohort(2).round).toBe(2);
+    expect(getEffectiveCohort("2").round).toBe(2);
+    expect(getEffectiveCohort(1).round).toBe(1);
+
+    // When round is invalid or omitted, returns an effective cohort (never undefined)
+    const effective = getEffectiveCohort();
+    expect(effective).toBeDefined();
+    expect([1, 2]).toContain(effective.round);
+
+    const effectiveInvalid = getEffectiveCohort("invalid");
+    expect(effectiveInvalid).toBeDefined();
+  });
+
+  it("filters available and open cohorts", () => {
+    const available = getAvailableCohorts();
+    expect(available.every((c) => !c.completed)).toBe(true);
+
+    const open = getOpenCohorts();
+    expect(Array.isArray(open)).toBe(true);
   });
 });

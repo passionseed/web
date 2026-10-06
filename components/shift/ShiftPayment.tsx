@@ -1,6 +1,8 @@
+"use client";
+
 import Image from "next/image";
-import type { ReactNode } from "react";
-import { Download, ExternalLink } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { Check, Copy, Download, ExternalLink } from "lucide-react";
 
 import {
   PAIR_DISCOUNT_BAHT,
@@ -8,6 +10,11 @@ import {
   pairPriceBaht,
   type ShiftCohort,
 } from "@/lib/content/shift-cohort";
+
+import {
+  paymentLineMessage,
+  type ApplicantSummary,
+} from "@/lib/shift/paymentMessage";
 
 import { T, tint } from "./theme/tokens";
 
@@ -33,7 +40,65 @@ function Step({ num, children }: { num: number; children: ReactNode }) {
   );
 }
 
-export function ShiftPayment({ cohort }: { cohort: ShiftCohort }) {
+type CopyState = "idle" | "copied" | "failed";
+
+/**
+ * One tap copies the slip message. Instagram's in-app browser sometimes
+ * blocks the clipboard, so a failed copy shows the text to long-press instead.
+ */
+function CopyLineMessage({ message }: { message: string }) {
+  const [state, setState] = useState<CopyState>("idle");
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(message);
+      setState("copied");
+      window.setTimeout(() => setState("idle"), 2500);
+    } catch {
+      setState("failed");
+    }
+  }
+
+  return (
+    <div className="mt-6">
+      <button
+        type="button"
+        onClick={copy}
+        className="inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold sm:w-auto"
+        style={{ color: T.text, boxShadow: `inset 0 0 0 1px ${tint("66")}` }}
+      >
+        {state === "copied" ? (
+          <Check className="h-4 w-4" style={{ color: T.accent3 }} />
+        ) : (
+          <Copy className="h-4 w-4" />
+        )}
+        {state === "copied" ? "คัดลอกแล้ว ไปวางใน LINE ได้เลย" : "คัดลอกข้อความแจ้งโอน"}
+      </button>
+      {state === "failed" && (
+        <>
+          <p className="mt-3 text-xs" style={{ color: tint("99") }}>
+            คัดลอกอัตโนมัติไม่ได้ กดค้างที่ข้อความแล้วเลือกคัดลอกนะ
+          </p>
+          <pre
+            className="mt-2 select-all whitespace-pre-wrap rounded-lg p-3 text-left font-bai-jamjuree text-xs leading-relaxed"
+            style={{ backgroundColor: tint("0f"), color: tint("d9") }}
+          >
+            {message}
+          </pre>
+        </>
+      )}
+    </div>
+  );
+}
+
+export function ShiftPayment({
+  cohort,
+  applicant,
+}: {
+  cohort: ShiftCohort;
+  /** Set after applying: unlocks the pre-filled LINE message. */
+  applicant?: ApplicantSummary;
+}) {
   const pair = pairPriceBaht(cohort);
   if (pair === null) return null;
 
@@ -77,16 +142,21 @@ export function ShiftPayment({ cohort }: { cohort: ShiftCohort }) {
         <ol className="mt-6 space-y-3 text-sm" style={{ color: tint("d9") }}>
           <Step num={1}>สแกน QR พร้อมเพย์ แล้วโอนตามยอด</Step>
           <Step num={2}>
-            ส่งสลิปใน LINE {SHIFT_PAYMENT.lineId} บอกชื่อเล่นกับรุ่น{" "}
-            {cohort.name} ถ้ามากับเพื่อน บอกชื่อเพื่อนด้วย
+            {applicant
+              ? `กดคัดลอกข้อความด้านล่าง แล้ววางพร้อมสลิปใน LINE ${SHIFT_PAYMENT.lineId}`
+              : `ส่งสลิปใน LINE ${SHIFT_PAYMENT.lineId} บอกชื่อเล่นกับรุ่น ${cohort.name} ถ้ามากับเพื่อน บอกชื่อเพื่อนด้วย`}
           </Step>
           <Step num={3}>รอพี่ยืนยันที่นั่งในแชท</Step>
         </ol>
+
+        {applicant && (
+          <CopyLineMessage message={paymentLineMessage(cohort, applicant)} />
+        )}
         <a
           href={SHIFT_PAYMENT.lineUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-6 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
+          className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold text-white sm:w-auto transition-opacity hover:opacity-90"
           style={{ backgroundColor: "#06C755" }}
         >
           ส่งสลิปทาง LINE

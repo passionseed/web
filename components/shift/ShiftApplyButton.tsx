@@ -3,11 +3,12 @@
 import React from "react";
 import { ArrowRight } from "lucide-react";
 
-import { SHIFT_COHORT } from "@/lib/content/shift-cohort";
 import { getShiftSource, withShiftSource } from "@/lib/shift/attribution";
 import { trackMetaEvent } from "@/components/shift/MetaPixel";
 
-export const SHIFT_APPLY_URL = SHIFT_COHORT.applyUrl;
+/** No round: the apply page resolves the next open round at request time,
+ *  so generic CTAs never point at a week that already closed. */
+export const SHIFT_APPLY_URL = "/shift/apply";
 
 interface ShiftApplyButtonProps {
   children: React.ReactNode;

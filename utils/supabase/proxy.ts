@@ -27,6 +27,25 @@ function copySessionCookies(
   return to
 }
 
+function isDeadRefreshToken(error: { code?: string }): boolean {
+  return error.code === 'refresh_token_not_found'
+}
+
+// Delete every Supabase auth cookie (base name and chunked `.0`, `.1`, ...
+// variants) on the response, so a browser holding a dead refresh token comes
+// back clean instead of re-triggering a failed refresh on every request.
+function clearSupabaseAuthCookies(
+  request: NextRequest,
+  response: NextResponse
+): NextResponse {
+  request.cookies.getAll().forEach(({ name }) => {
+    if (/^sb-.+-auth-token/.test(name)) {
+      response.cookies.set(name, '', { maxAge: 0, path: '/' })
+    }
+  })
+  return response
+}
+
 // Fail fast when Supabase is unreachable in local dev (Docker not running)
 const isLocal = process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('127.0.0.1') ||
   process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('localhost')
@@ -76,8 +95,15 @@ export async function updateSession(request: NextRequest) {
   // with the Supabase client, your users may be randomly logged out.
   let user = null
   try {
-    // getUser() refreshes the session if expired, preventing "Refresh Token Not Found" errors
-    const { data } = await supabase.auth.getUser()
+    // getUser() refreshes the session if expired.
+    const { data, error } = await supabase.auth.getUser()
+    if (error && isDeadRefreshToken(error)) {
+      // The browser holds a refresh token the auth server no longer knows
+      // (revoked or already rotated). auth-js drops the session server-side,
+      // but the stale cookie otherwise keeps coming back with every request,
+      // resurfacing as error noise downstream. Treat as signed out.
+      supabaseResponse = clearSupabaseAuthCookies(request, supabaseResponse)
+    }
     user = data.user
   } catch {
     // Supabase unreachable (e.g. Docker not running in dev).

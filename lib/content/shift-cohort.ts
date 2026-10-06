@@ -245,6 +245,35 @@ export function getShiftCohort(round: number): ShiftCohort | undefined {
   return SHIFT_COHORTS.find((c) => c.round === round);
 }
 
+/**
+ * Resolves the cohort to show on the apply form.
+ * If a valid round is requested, returns that cohort.
+ * If missing or invalid, automatically picks the next open cohort
+ * (or POSTER_COHORT / SHIFT_COHORT if none are open).
+ */
+export function getEffectiveCohort(round?: number | string | null): ShiftCohort {
+  if (round !== undefined && round !== null && round !== "") {
+    const num = Number(round);
+    if (!Number.isNaN(num)) {
+      const found = getShiftCohort(num);
+      if (found) return found;
+    }
+  }
+  const openCohort = SHIFT_COHORTS.find((c) => cohortStatus(c) === "open");
+  if (openCohort) return openCohort;
+  return POSTER_COHORT ?? SHIFT_COHORT;
+}
+
+/** Cohorts open for application today in Bangkok. */
+export function getOpenCohorts(): ShiftCohort[] {
+  return SHIFT_COHORTS.filter((c) => cohortStatus(c) === "open");
+}
+
+/** Cohorts available for browsing (open or upcoming, not completed). */
+export function getAvailableCohorts(): ShiftCohort[] {
+  return SHIFT_COHORTS.filter((c) => !c.completed && cohortStatus(c) !== "done");
+}
+
 /** Off each person's price when two friends apply together. */
 export const PAIR_DISCOUNT_BAHT = 100;
 

@@ -2,6 +2,12 @@ import type { Metadata } from "next";
 import { shiftSocialMetadata } from "@/lib/shift/socialMetadata";
 
 import { ShiftApplyForm } from "@/components/shift/ShiftApplyForm";
+import { ShiftSeatsRemaining } from "@/components/shift/ShiftSeatsRemaining";
+import {
+  ClosedRoundNotice,
+  ReadDetailsInline,
+  RoundSwitcher,
+} from "@/components/shift/apply/ApplyGuides";
 import { MetaPixel } from "@/components/shift/MetaPixel";
 import { ShiftTopBar } from "@/components/shift/ShiftTopBar";
 import { RisoPageTexture } from "@/components/shift/ShiftRiso";
@@ -12,11 +18,12 @@ import {
   OrbitSky,
 } from "@/components/shift/poster/riso";
 import {
-  SHIFT_COHORT,
   cohortPath,
+  cohortStatus,
   formatThaiDate,
   formatThaiDateRange,
-  getShiftCohort,
+  getEffectiveCohort,
+  getOpenCohorts,
 } from "@/lib/content/shift-cohort";
 
 interface ApplySearchParams {
@@ -24,17 +31,12 @@ interface ApplySearchParams {
   utm_source?: string;
 }
 
-/** `?round=2` picks the round; anything missing or unknown falls back to SHIFT[1]. */
-function cohortFor(round?: string) {
-  return getShiftCohort(Number(round)) ?? SHIFT_COHORT;
-}
-
 export async function generateMetadata({
   searchParams,
 }: {
   searchParams: Promise<ApplySearchParams>;
 }): Promise<Metadata> {
-  const cohort = cohortFor((await searchParams).round);
+  const cohort = getEffectiveCohort((await searchParams).round);
   const title = `สมัคร ${cohort.name} | PassionSeed`;
   const description = `สมัคร ${cohort.name} ใช้เวลา 2 นาที ไม่ต้องล็อกอิน`;
   return {
@@ -53,7 +55,10 @@ export default async function ShiftApplyPage({
   searchParams: Promise<ApplySearchParams>;
 }) {
   const { round, utm_source: source } = await searchParams;
-  const cohort = cohortFor(round);
+  // `?round=2` picks the round; missing or unknown means the next open one.
+  const cohort = getEffectiveCohort(round);
+  const openCohorts = getOpenCohorts();
+  const isOpen = cohortStatus(cohort) === "open";
 
   return (
     <div
@@ -82,22 +87,41 @@ export default async function ShiftApplyPage({
       </header>
 
       <main className="relative mx-auto max-w-2xl px-5 pb-24 pt-10 sm:px-8">
-        <p
-          className="text-center text-sm leading-relaxed sm:text-base"
-          style={{ color: paper("b3") }}
-        >
-          {formatThaiDateRange(cohort.startDate, cohort.endDate)} · ออนไลน์บน
-          Discord · รับ {cohort.seats} คน ดูแลทั่วถึง
-          <br />
-          ใช้เวลา 2 นาที ไม่ต้องล็อกอิน ·{" "}
-          <span className="font-semibold" style={{ color: INK.yellow }}>
-            ปิดรับ {formatThaiDate(cohort.applyDeadline)}
-          </span>
-        </p>
+        {isOpen ? (
+          <>
+            <div
+              className="text-center text-sm leading-relaxed sm:text-base"
+              style={{ color: paper("b3") }}
+            >
+              <p>
+                {formatThaiDateRange(cohort.startDate, cohort.endDate)} ·{" "}
+                {cohort.sessionTime} น. · ออนไลน์บน Discord
+              </p>
+              <div className="mt-1" style={{ color: INK.paper }}>
+                <ShiftSeatsRemaining round={cohort.round} capacity={cohort.seats} />
+              </div>
+              <p className="mt-1">
+                ใช้เวลา 2 นาที ไม่ต้องล็อกอิน ·{" "}
+                <span className="font-semibold" style={{ color: INK.yellow }}>
+                  ปิดรับ {formatThaiDate(cohort.applyDeadline)}
+                </span>
+                <ReadDetailsInline cohort={cohort} />
+              </p>
+            </div>
 
-        <div className="mt-10">
-          <ShiftApplyForm cohort={cohort} source={source} />
-        </div>
+            <RoundSwitcher current={cohort} open={openCohorts} />
+
+            <div className="mt-8">
+              <ShiftApplyForm
+                cohort={cohort}
+                source={source}
+                otherRounds={openCohorts.filter((c) => c.round !== cohort.round)}
+              />
+            </div>
+          </>
+        ) : (
+          <ClosedRoundNotice requested={cohort} open={openCohorts} />
+        )}
       </main>
     </div>
   );

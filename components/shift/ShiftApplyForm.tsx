@@ -1,17 +1,19 @@
 "use client";
 
-import { useState, type FormEvent, type ReactNode } from "react";
-import { ArrowRight, Check } from "lucide-react";
+import { useRef, useState, type FormEvent, type ReactNode } from "react";
+import { ArrowRight } from "lucide-react";
 
 import { getShiftSource, normalizeShiftSource } from "@/lib/shift/attribution";
 import { trackMetaEvent } from "@/components/shift/MetaPixel";
-import { INK, MISREG_TEXT } from "@/components/shift/poster/riso";
+import { INK } from "@/components/shift/poster/riso";
 import {
   formatThaiDateRange,
   type ShiftCohort,
 } from "@/lib/content/shift-cohort";
 
-import { ShiftPayment } from "./ShiftPayment";
+import { ReadDetailsFirst } from "./apply/ApplyGuides";
+import { ShiftApplyDone } from "./apply/ShiftApplyDone";
+import { clearApplyDraft, useApplyDraft } from "./apply/useApplyDraft";
 import {
   SHIFT_AVAILABILITY,
   SHIFT_GRADES,
@@ -46,6 +48,45 @@ const EMPTY: ShiftApplicationInput = {
 };
 
 const paper = (alpha: string) => `${INK.paper}${alpha}`;
+
+/** Mirrors the schema's limits for the problem field, for the live counter. */
+const PROBLEM_MIN = 20;
+const PROBLEM_MAX = 800;
+
+/** Brings the first invalid question into view, which on a phone is often
+ *  far above the submit button, and focuses its input. */
+function revealFirstError(form: HTMLFormElement | null) {
+  requestAnimationFrame(() => {
+    const alert = form?.querySelector<HTMLElement>("[role=alert]");
+    const fieldset = alert?.closest("fieldset") ?? alert?.parentElement;
+    if (!fieldset) return;
+    fieldset.scrollIntoView({ behavior: "smooth", block: "center" });
+    // Questions 1 and 6 hold two inputs; the empty one is the likely culprit.
+    const inputs = Array.from(
+      fieldset.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
+        "input:not([type=checkbox]), textarea",
+      ),
+    );
+    (inputs.find((input) => !input.value.trim()) ?? inputs[0])?.focus({
+      preventScroll: true,
+    });
+  });
+}
+
+function CharCount({ length }: { length: number }) {
+  const short = length < PROBLEM_MIN;
+  return (
+    <p
+      className="mt-2 text-right text-xs tabular-nums"
+      style={{ color: short ? paper("80") : INK.yellow }}
+      aria-live="polite"
+    >
+      {short
+        ? `อีก ${PROBLEM_MIN - length} ตัวอักษร`
+        : `${length}/${PROBLEM_MAX}`}
+    </p>
+  );
+}
 
 const INPUT =
   "w-full border-0 border-b bg-transparent px-0 py-3 text-base outline-none transition-colors placeholder:text-[rgba(242,234,217,0.3)] focus:border-[#ff6c2f] focus:ring-0";
@@ -142,49 +183,37 @@ function ChoiceChips<T extends string>({
   );
 }
 
-function Done({ nickname, cohort }: { nickname: string; cohort: ShiftCohort }) {
+/** "Some days" is fine, but a whole other week may fit better. */
+function SomeDaysNote({ otherRounds }: { otherRounds: ShiftCohort[] }) {
+  if (otherRounds.length === 0) return null;
   return (
-    <div className="py-16 text-center">
-      <p
-        className="mx-auto flex h-14 w-14 items-center justify-center rounded-full"
-        style={{ backgroundColor: INK.paper }}
-      >
-        <Check className="h-7 w-7" style={{ color: INK.black }} />
-      </p>
-      <h2
-        className="mt-8 font-kodchasan text-3xl font-bold sm:text-4xl"
-        style={MISREG_TEXT}
-      >
-        ได้รับใบสมัครแล้ว{nickname ? ` ${nickname}` : ""}
-      </h2>
-      <p
-        className="mx-auto mt-4 max-w-md leading-relaxed"
-        style={{ color: paper("b3") }}
-      >
-        เราจะทักกลับทาง IG ภายใน 24 ชม. ระหว่างนี้ลองคิดต่อว่าใครอีก 3
-        คนที่เจอปัญหาเดียวกับเรา
-      </p>
-      {cohort.priceBaht > 0 && (
-        <div
-          className="mx-auto mt-12 max-w-xl border-t pt-10"
-          style={{ borderColor: paper("1f") }}
-        >
-          <p className="mb-6 font-kodchasan text-xl font-semibold">
-            ยืนยันที่นั่ง: โอนแล้วส่งสลิป
-          </p>
-          <ShiftPayment cohort={cohort} />
-        </div>
-      )}
-    </div>
+    <p className="mt-3 text-sm leading-relaxed" style={{ color: paper("b3") }}>
+      ถ้าอีกสัปดาห์ว่างกว่า สมัครรอบนั้นแทนได้ คำตอบที่กรอกไว้ตามไปด้วย:{" "}
+      {otherRounds.map((other, i) => (
+        <span key={other.round}>
+          {i > 0 && " / "}
+          <a
+            href={other.applyUrl}
+            className="font-semibold underline underline-offset-4"
+            style={{ color: INK.yellow }}
+          >
+            {other.name} ({formatThaiDateRange(other.startDate, other.endDate)})
+          </a>
+        </span>
+      ))}
+    </p>
   );
 }
 
 export function ShiftApplyForm({
   cohort,
   source,
+  otherRounds = [],
 }: {
   cohort: ShiftCohort;
   source?: string;
+  /** Other open rounds, offered when this week only partly fits. */
+  otherRounds?: ShiftCohort[];
 }) {
   const [values, setValues] = useState<ShiftApplicationInput>({
     ...EMPTY,
@@ -194,6 +223,9 @@ export function ShiftApplyForm({
   const cohortDates = formatThaiDateRange(cohort.startDate, cohort.endDate);
   const [errors, setErrors] = useState<ShiftApplicationErrors>({});
   const [status, setStatus] = useState<Status>("idle");
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useApplyDraft(values, (draft) => setValues((prev) => ({ ...prev, ...draft })));
 
   const set = <K extends Field>(field: K, value: ShiftApplicationInput[K]) => {
     setValues((prev) => ({ ...prev, [field]: value }));
@@ -217,6 +249,7 @@ export function ShiftApplyForm({
     const parsed = shiftApplicationSchema.safeParse(payload);
     if (!parsed.success) {
       setErrors(toFieldErrors(parsed.error));
+      revealFirstError(formRef.current);
       return;
     }
 
@@ -228,23 +261,29 @@ export function ShiftApplyForm({
         body: JSON.stringify(payload),
       });
       if (res.ok) {
+        clearApplyDraft();
         setStatus("done");
         trackMetaEvent("Lead", { content_name: cohort.name, content_category: "shift" });
         return;
       }
       const data = await res.json().catch(() => ({}));
-      if (data.fields) setErrors(data.fields);
+      if (data.fields) {
+        setErrors(data.fields);
+        revealFirstError(formRef.current);
+      }
       setStatus("error");
     } catch {
       setStatus("error");
     }
   }
 
-  if (status === "done")
-    return <Done nickname={values.nickname.trim()} cohort={cohort} />;
+  if (status === "done") return <ShiftApplyDone cohort={cohort} values={values} />;
 
   return (
-    <form onSubmit={submit} noValidate>
+    <form ref={formRef} onSubmit={submit} noValidate>
+      <div className="mb-6 sm:hidden">
+        <ReadDetailsFirst cohort={cohort} />
+      </div>
       <Question
         num={1}
         label="ชื่อเล่น และชื่อจริง"
@@ -295,8 +334,10 @@ export function ShiftApplyForm({
           {...text("problem")}
           rows={4}
           placeholder="เช่น เพื่อนในห้องจำตารางสอบไม่ได้ เพราะครูประกาศคนละที่ เห็นเพื่อน 5 คนสอบพลาดเทอมนี้"
+          maxLength={PROBLEM_MAX}
           className={`${INPUT} resize-none leading-relaxed`}
         />
+        <CharCount length={values.problem.trim().length} />
       </Question>
 
       <Question
@@ -310,6 +351,9 @@ export function ShiftApplyForm({
           value={values.availability}
           onChange={(v) => set("availability", v)}
         />
+        {values.availability === "some_days" && (
+          <SomeDaysNote otherRounds={otherRounds} />
+        )}
       </Question>
 
       <Question
