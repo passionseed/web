@@ -4,7 +4,8 @@ import React from "react";
 import { ArrowRight } from "lucide-react";
 
 import { SHIFT_COHORT } from "@/lib/content/shift-cohort";
-import { getShiftSource, trackShiftEvent, withShiftSource } from "@/lib/shift/attribution";
+import { getShiftSource, withShiftSource } from "@/lib/shift/attribution";
+import { trackMetaEvent } from "@/components/shift/MetaPixel";
 
 export const SHIFT_APPLY_URL = SHIFT_COHORT.applyUrl;
 
@@ -24,7 +25,7 @@ export function ShiftApplyButton({
   const [source, setSource] = React.useState<string | null>(null);
   React.useEffect(() => { setSource(getShiftSource()); }, []);
   const handleClick = () => {
-    trackShiftEvent("shift_apply_click", { location });
+    trackMetaEvent("InitiateCheckout", { content_category: "shift", location });
   };
 
   return (

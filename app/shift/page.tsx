@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { ShiftCohortCard } from "@/components/shift/ShiftCohortCard";
-import { ShiftPageViewTracker } from "@/components/shift/ShiftPageViewTracker";
+import { MetaPixel } from "@/components/shift/MetaPixel";
 import { ShiftTopBar } from "@/components/shift/ShiftTopBar";
 import { INK, MISREG_TEXT, RisoPageTexture, paper } from "@/components/shift/ShiftRiso";
 import {
@@ -49,7 +49,7 @@ export default function ShiftGalleryPage() {
       className="relative min-h-screen font-bai-jamjuree antialiased"
       style={{ backgroundColor: INK.black, color: INK.paper }}
     >
-      <ShiftPageViewTracker />
+      <MetaPixel pagePath="/shift" />
       <RisoPageTexture />
 
       <header className="relative overflow-hidden">

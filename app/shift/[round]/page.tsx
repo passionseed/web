@@ -5,7 +5,7 @@ import { ArrowRight, ShieldCheck } from "lucide-react";
 import { ShiftApplyButton } from "@/components/shift/ShiftApplyButton";
 import { ShiftSeatsRemaining } from "@/components/shift/ShiftSeatsRemaining";
 import { ShiftParentShare } from "@/components/shift/ShiftParentShare";
-import { ShiftPageViewTracker } from "@/components/shift/ShiftPageViewTracker";
+import { MetaPixel } from "@/components/shift/MetaPixel";
 import { ShiftPayment } from "@/components/shift/ShiftPayment";
 import { ShiftTopBar } from "@/components/shift/ShiftTopBar";
 import type { RisoIconName } from "@/components/shift/poster/RisoIcons";
@@ -276,7 +276,7 @@ export default async function ShiftRoundPage({ params }: RoundParams) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(shiftJsonLd) }}
       />
-      <ShiftPageViewTracker pagePath={cohortPath(cohort)} />
+      <MetaPixel pagePath={cohortPath(cohort)} viewContent={{ content_name: cohort.name }} />
       {Texture && <Texture />}
 
       {/* ============ 1. HERO ============ */}

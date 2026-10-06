@@ -4,6 +4,7 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import { ArrowRight, Check } from "lucide-react";
 
 import { getShiftSource, normalizeShiftSource } from "@/lib/shift/attribution";
+import { trackMetaEvent } from "@/components/shift/MetaPixel";
 import { INK, MISREG_TEXT } from "@/components/shift/poster/riso";
 import {
   formatThaiDateRange,
@@ -228,6 +229,7 @@ export function ShiftApplyForm({
       });
       if (res.ok) {
         setStatus("done");
+        trackMetaEvent("Lead", { content_name: cohort.name, content_category: "shift" });
         return;
       }
       const data = await res.json().catch(() => ({}));

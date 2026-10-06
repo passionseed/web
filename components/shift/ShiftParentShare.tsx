@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { cohortPath, formatThaiDateRange, priceLabel, type ShiftCohort } from "@/lib/content/shift-cohort";
-import { getShiftSource, trackShiftEvent, withShiftSource } from "@/lib/shift/attribution";
+import { getShiftSource, withShiftSource } from "@/lib/shift/attribution";
+import { trackMetaCustom } from "@/components/shift/MetaPixel";
 
 export function ShiftParentShare({ cohort }: { cohort: ShiftCohort }) {
   const [source, setSource] = useState<string | null>(null);
@@ -15,7 +16,7 @@ export function ShiftParentShare({ cohort }: { cohort: ShiftCohort }) {
 
   return (
     <a href={share.toString()} target="_blank" rel="noopener noreferrer"
-      onClick={() => trackShiftEvent("shift_parent_share_click", { round: cohort.round })}
+      onClick={() => trackMetaCustom("ShiftParentShare", { round: cohort.round })}
       className="inline-flex min-h-12 items-center text-sm font-semibold underline underline-offset-4 focus-visible:outline focus-visible:outline-2">
       ส่งรายละเอียดให้ผู้ปกครองทาง LINE
     </a>

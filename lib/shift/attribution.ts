@@ -24,22 +24,3 @@ export function withShiftSource(href: string, source: string | null): string {
   url.searchParams.set("utm_source", source);
   return `${url.pathname}${url.search}${url.hash}`;
 }
-
-export function trackShiftEvent(eventType: string, data: Record<string, unknown> = {}) {
-  try {
-    const payload = JSON.stringify({
-      event_type: eventType,
-      event_data: { ...data, source: getShiftSource() ?? "direct" },
-      page_path: window.location.pathname,
-    });
-    if (navigator.sendBeacon?.("/api/hackathon/track-event", new Blob([payload], { type: "application/json" }))) return;
-    void fetch("/api/hackathon/track-event", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: payload,
-      keepalive: true,
-    }).catch(() => {});
-  } catch {
-    // Analytics must never prevent navigation or application submission.
-  }
-}
