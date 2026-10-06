@@ -2004,7 +2004,7 @@ hero copy readable over the printed dawn sky.
 
 ## Social preview posters
 
-Every `app/**/page.tsx` has a 1200 × 630 Open Graph poster. The shared artwork
+Every `app/**/page.tsx` uses a 1200 × 630 Open Graph poster. The shared artwork
 in `lib/og/poster.tsx` reuses SHIFT[1]'s pixel kit: dithered sky, layered city,
 water reflections, and the student builder in an orange boat. Tiny5 handles
 Latin display type; Kodchasan Bold handles Thai. Both fonts and their OFL
@@ -2012,8 +2012,12 @@ licenses are bundled under `lib/og/fonts`, so rendering needs no font network
 request. Dusk uses a plum evening sky; Bloom uses warm peach; Dawn uses blue.
 
 Edit page copy in `lib/og/copy.ts`, then run `pnpm generate:og`. The generator
-finds every page, including nested and dynamic route families, and writes
-`opengraph-image.png` plus accessible alt text beside it. Identifiers and
+finds pages in static route families and writes `opengraph-image.png` plus
+accessible alt text beside them. Pages beneath a dynamic segment (`[id]`,
+`[...slug]`, or `[[...slug]]`) inherit the nearest parent poster unless they
+have a dynamic image handler. The generator removes static PNGs and their alt
+text beneath dynamic segments because Next.js 16.2.1 cannot resolve those
+prerendered metadata routes in its build adapter. Identifiers and
 private records never become static poster copy. Unknown pages get a readable
 route title and a neutral caption; add an explicit copy entry for marketing
 pages. No price, seat count, or application deadline is baked into the general
