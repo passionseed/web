@@ -1,95 +1,119 @@
 import Image from "next/image";
-import { ArrowRight } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 
 import { ShiftApplyButton } from "@/components/shift/ShiftApplyButton";
 import { ShiftAttributedLink } from "@/components/shift/ShiftAttributedLink";
 import { ShiftSeatsRemaining } from "@/components/shift/ShiftSeatsRemaining";
 import { ShiftParentShare } from "@/components/shift/ShiftParentShare";
-import { HAIR, INK, paper } from "@/components/shift/ShiftRiso";
 import {
   cohortPath,
   cohortStatus,
+  formatThaiDate,
+  priceLabel,
   type CohortStatus,
   type ShiftCohort,
 } from "@/lib/content/shift-cohort";
 
-/**
- * One round in the /shift gallery. The banner already carries every fact
- * (dates, price, seats, deadline, shipped work), so the card adds only what
- * a picture cannot: live status and somewhere to click.
- */
+import styles from "./shiftGallery.module.css";
 
-const STATUS: Record<CohortStatus, { label: string; ink: string }> = {
-  open: { label: "เปิดรับสมัคร", ink: INK.orange },
-  closed: { label: "ปิดรับสมัครแล้ว", ink: INK.pink },
-  running: { label: "กำลังลุยอยู่", ink: INK.blue },
-  done: { label: "จบรุ่นแล้ว", ink: paper("73") },
+const STATUS: Record<CohortStatus, string> = {
+  open: "เปิดรับสมัคร",
+  closed: "ปิดรับสมัครแล้ว",
+  running: "กำลังลุยอยู่",
+  done: "จบรุ่นแล้ว",
 };
 
-function StatusChip({ status }: { status: CohortStatus }) {
-  const { label, ink } = STATUS[status];
-  return (
-    <span
-      className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold"
-      style={{ color: INK.paper, boxShadow: `inset 0 0 0 1.5px ${ink}` }}
-    >
-      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: ink }} />
-      {label}
-    </span>
-  );
-}
-
-function Banner({ cohort }: { cohort: ShiftCohort }) {
+function RoundBanner({ cohort, featured }: { cohort: ShiftCohort; featured: boolean }) {
   if (!cohort.bannerSrc) return null;
   return (
-    <ShiftAttributedLink href={cohortPath(cohort)} className="block overflow-hidden">
+    <ShiftAttributedLink href={cohortPath(cohort)} className={styles.artLink}>
       <Image
         src={cohort.bannerSrc}
-        alt={`โปสเตอร์ ${cohort.name}`}
+        alt={`โปสเตอร์ ${cohort.name}, ดูรายละเอียดรุ่น`}
         width={1200}
         height={630}
-        sizes="(min-width: 768px) 480px, 100vw"
-        className="h-auto w-full transition-transform duration-300 hover:scale-[1.02]"
+        sizes={featured ? "(min-width: 1280px) 740px, (min-width: 900px) 60vw, 100vw" : "(min-width: 1280px) 600px, (min-width: 640px) 50vw, 100vw"}
+        priority={featured}
+        className={styles.art}
       />
     </ShiftAttributedLink>
   );
 }
 
-export function ShiftCohortCard({ cohort }: { cohort: ShiftCohort }) {
-  const status = cohortStatus(cohort);
-
+function RoundFacts({ cohort }: { cohort: ShiftCohort }) {
   return (
-    <article
-      className={`flex flex-col overflow-hidden border ${HAIR}`}
-      style={{ backgroundColor: "rgba(242,234,217,0.03)" }}
-    >
-      <Banner cohort={cohort} />
-      {status === "open" && (
-        <div className="px-5 pt-4">
-          <ShiftSeatsRemaining round={cohort.round} capacity={cohort.seats} />
-          <ShiftParentShare cohort={cohort} />
+    <dl className={styles.facts}>
+      <div>
+        <dt>วันที่จัด</dt>
+        <dd>{formatThaiDate(cohort.startDate, false)} ถึง {formatThaiDate(cohort.endDate, false)}</dd>
+      </div>
+      <div>
+        <dt>เวลาทุกเย็น</dt>
+        <dd>{cohort.sessionTime} น.</dd>
+      </div>
+      <div>
+        <dt>ราคา / คน</dt>
+        <dd>{priceLabel(cohort)}</dd>
+      </div>
+      <div>
+        <dt>รับทั้งหมด</dt>
+        <dd>{cohort.seats} คน</dd>
+      </div>
+    </dl>
+  );
+}
+
+/** Open rounds get a landscape feature; earlier rounds stay easy to browse. */
+export function ShiftCohortCard({
+  cohort,
+  status = cohortStatus(cohort),
+  featured = false,
+}: {
+  cohort: ShiftCohort;
+  status?: CohortStatus;
+  featured?: boolean;
+}) {
+  return (
+    <article className={featured ? styles.featuredRound : styles.archiveRound} data-shift-reveal>
+      <RoundBanner cohort={cohort} featured={featured} />
+      <div className={styles.roundInfo}>
+        <div className={styles.roundHeader}>
+          <h3 className="font-kodchasan">{cohort.name}</h3>
+          <span className={styles.status} data-status={status}>
+            <span aria-hidden="true" />{STATUS[status]}
+          </span>
         </div>
-      )}
-      <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-4">
-        <StatusChip status={status} />
-        <div className="flex items-center gap-5">
-          <ShiftAttributedLink
-            href={cohortPath(cohort)}
-            className="inline-flex items-center gap-2 text-sm font-semibold underline-offset-4 hover:underline"
-          >
-            ดูรายละเอียด
-            <ArrowRight className="h-4 w-4" />
-          </ShiftAttributedLink>
+
+        {featured ? (
+          <>
+            <p className={styles.roundDescription}>จากไอเดียของเรา สู่ของที่คนใช้จริง<br />มีเพื่อนและรุ่นพี่ช่วยตลอด 7 วัน</p>
+            <RoundFacts cohort={cohort} />
+            {status === "open" && (
+              <div className={styles.availability}>
+                <p>สมัครภายใน {formatThaiDate(cohort.applyDeadline, false)}</p>
+                <ShiftSeatsRemaining round={cohort.round} capacity={cohort.seats} />
+              </div>
+            )}
+          </>
+        ) : (
+          <p className={styles.archiveSummary}>
+            {formatThaiDate(cohort.startDate, false)} ถึง {formatThaiDate(cohort.endDate, false)}
+            {cohort.showcase?.length ? ` · ${cohort.showcase.length} โปรเจกต์ที่ปล่อยจริง` : ` · ${cohort.seats} คน`}
+          </p>
+        )}
+
+        <div className={styles.roundActions}>
           {status === "open" && (
-            <ShiftApplyButton
-              href={cohort.applyUrl}
-              location={`gallery_${cohort.round}`}
-              className="!px-5 !py-2.5 !text-sm"
-            >
-              สมัครเลย
+            <ShiftApplyButton href={cohort.applyUrl} location={`gallery_${cohort.round}`} className={styles.apply}>
+              สมัครรุ่นนี้
             </ShiftApplyButton>
           )}
+          <ShiftAttributedLink href={cohortPath(cohort)} className={styles.details}>
+            {status === "done" && cohort.showcase?.length ? "ดูผลงานของรุ่นนี้" : "ดูรายละเอียด"}
+            <ArrowUpRight size={18} aria-hidden="true" />
+          </ShiftAttributedLink>
         </div>
+        {status === "open" && <div className={styles.parentShare}><ShiftParentShare cohort={cohort} /></div>}
       </div>
     </article>
   );

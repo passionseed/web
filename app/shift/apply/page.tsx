@@ -5,7 +5,7 @@ import { ShiftApplyForm } from "@/components/shift/ShiftApplyForm";
 import { ShiftSeatsRemaining } from "@/components/shift/ShiftSeatsRemaining";
 import {
   ClosedRoundNotice,
-  ReadDetailsInline,
+  CohortQuickFacts,
   RoundSwitcher,
 } from "@/components/shift/apply/ApplyGuides";
 import { MetaPixel } from "@/components/shift/MetaPixel";
@@ -21,7 +21,6 @@ import {
   cohortPath,
   cohortStatus,
   formatThaiDate,
-  formatThaiDateRange,
   getEffectiveCohort,
   getOpenCohorts,
 } from "@/lib/content/shift-cohort";
@@ -71,7 +70,9 @@ export default async function ShiftApplyPage({
       <header className="relative overflow-hidden">
         <ChromeBevelFilter />
         <OrbitSky horizon="clamp(260px, 38svh, 340px)" speckle={0} />
-        <ShiftTopBar back={{ href: cohortPath(cohort), label: cohort.name }} />
+        <ShiftTopBar
+          back={{ href: cohortPath(cohort), label: `รายละเอียด ${cohort.name}`, solid: true }}
+        />
         <div
           className="relative flex flex-col items-center justify-end pb-10 text-center"
           style={{ minHeight: "clamp(260px, 38svh, 340px)" }}
@@ -93,11 +94,7 @@ export default async function ShiftApplyPage({
               className="text-center text-sm leading-relaxed sm:text-base"
               style={{ color: paper("b3") }}
             >
-              <p>
-                {formatThaiDateRange(cohort.startDate, cohort.endDate)} ·{" "}
-                {cohort.sessionTime} น. · ออนไลน์บน Discord
-              </p>
-              <div className="mt-1" style={{ color: INK.paper }}>
+              <div style={{ color: INK.paper }}>
                 <ShiftSeatsRemaining round={cohort.round} capacity={cohort.seats} />
               </div>
               <p className="mt-1">
@@ -105,7 +102,6 @@ export default async function ShiftApplyPage({
                 <span className="font-semibold" style={{ color: INK.yellow }}>
                   ปิดรับ {formatThaiDate(cohort.applyDeadline)}
                 </span>
-                <ReadDetailsInline cohort={cohort} />
               </p>
             </div>
 
@@ -116,6 +112,7 @@ export default async function ShiftApplyPage({
                 cohort={cohort}
                 source={source}
                 otherRounds={openCohorts.filter((c) => c.round !== cohort.round)}
+                intro={<CohortQuickFacts cohort={cohort} />}
               />
             </div>
           </>

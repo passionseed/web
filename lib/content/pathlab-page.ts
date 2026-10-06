@@ -328,6 +328,7 @@ export const MOBILE_CTA = {
  * copy cannot say formally.
  */
 export const NOTES = {
+  shiftGallery: "ยังไม่ต้องมีไอเดียเป๊ะ ๆ แค่พร้อมลงมือก็เริ่มได้",
   hero: "ไม่ใช่คอร์สดูคลิปนะ ได้ลงมือทำจริง",
   stats: "คนที่เริ่ม ม.5 ไม่ได้เก่งกว่า แค่เริ่มก่อน",
   offer: "กลุ่มละ 4 คนเท่านั้น mentor อยู่ใกล้จริง",

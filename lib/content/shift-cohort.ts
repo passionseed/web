@@ -322,6 +322,16 @@ export function cohortStatus(cohort: ShiftCohort, today: string = bangkokToday()
   return "open";
 }
 
+/** The round building right now, if any. */
+export function getRunningCohort(today: string = bangkokToday()): ShiftCohort | undefined {
+  return SHIFT_COHORTS.find((c) => cohortStatus(c, today) === "running");
+}
+
+/** The schedule day a running round is on today, if any. */
+export function cohortToday(cohort: ShiftCohort, today: string = bangkokToday()): ShiftDay | undefined {
+  return cohort.schedule.find((d) => d.date === today);
+}
+
 /** Squads pick one card a day based on what their projects need, then teach
  *  it back to the room. The menu keeps quality up; the choice stays theirs. */
 export const SHIFT_SKILL_CARDS: ShiftSkillCard[] = [

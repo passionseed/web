@@ -1,15 +1,20 @@
 import type { Metadata } from "next";
+import { ArrowDown, ArrowUpRight } from "lucide-react";
 
 import { ShiftCohortCard } from "@/components/shift/ShiftCohortCard";
+import { ShiftGalleryMotion } from "@/components/shift/ShiftGalleryMotion";
 import { MetaPixel } from "@/components/shift/MetaPixel";
 import { ShiftTopBar } from "@/components/shift/ShiftTopBar";
-import { INK, MISREG_TEXT, RisoPageTexture, paper } from "@/components/shift/ShiftRiso";
+import { RisoPageTexture } from "@/components/shift/ShiftRiso";
 import {
   ChromeBevelFilter,
   ChromeWordmark,
   OrbitSky,
 } from "@/components/shift/poster/riso";
-import { SHIFT_COHORTS, cohortStatus } from "@/lib/content/shift-cohort";
+import { SHIFT_COHORTS, bangkokToday, cohortStatus } from "@/lib/content/shift-cohort";
+import { NOTES } from "@/lib/content/pathlab-page";
+
+import styles from "@/components/shift/shiftGallery.module.css";
 
 /**
  * /shift: every SHIFT round in one place. Each card links to its own page
@@ -33,54 +38,83 @@ export const metadata: Metadata = {
 /** Status flips on Bangkok dates, so re-render at least hourly. */
 export const revalidate = 3600;
 
-const HORIZON = "clamp(300px, 44svh, 400px)";
-
-function sortedCohorts() {
-  return [...SHIFT_COHORTS].sort((a, b) => {
-    const openA = cohortStatus(a) === "open" ? 0 : 1;
-    const openB = cohortStatus(b) === "open" ? 0 : 1;
-    return openA - openB || b.round - a.round;
-  });
-}
-
 export default function ShiftGalleryPage() {
+  const today = bangkokToday();
+  const cohorts = [...SHIFT_COHORTS].sort((a, b) => b.round - a.round);
+  const open = cohorts.filter((cohort) => cohortStatus(cohort, today) === "open");
+  const archive = cohorts.filter((cohort) => cohortStatus(cohort, today) !== "open");
+
   return (
-    <div
-      className="relative min-h-screen font-bai-jamjuree antialiased"
-      style={{ backgroundColor: INK.black, color: INK.paper }}
-    >
+    <div className={`${styles.page} font-bai-jamjuree antialiased`} lang="th">
       <MetaPixel pagePath="/shift" />
       <RisoPageTexture />
+      <ShiftGalleryMotion />
 
-      <header className="relative overflow-hidden">
+      <header className={styles.hero}>
         <ChromeBevelFilter />
-        <OrbitSky horizon={HORIZON} speckle={0} />
+        <OrbitSky horizon="320px" speckle={0} />
         <ShiftTopBar />
-        <div
-          className="relative flex flex-col items-center justify-end pb-12 text-center"
-          style={{ minHeight: HORIZON }}
-        >
-          <h1
-            className="font-kodchasan text-[clamp(28px,5vw,48px)] font-bold leading-[1.3]"
-            style={MISREG_TEXT}
-          >
-            7 วัน ปั้น 1 โปรเจกต์จริง
-          </h1>
-          <ChromeWordmark size="clamp(72px, 14vw, 150px)" name="SHIFT" />
+        <div className={`${styles.container} ${styles.heroInner}`}>
+          <div className={styles.heroBrand}>
+            <p className={styles.eyebrow}>PASSIONSEED / BUILDER SPRINT</p>
+            <div aria-hidden="true" className={styles.wordmark}>
+              <ChromeWordmark size="clamp(94px, 10vw, 136px)" name="SHIFT" />
+            </div>
+          </div>
+          <div className={styles.heroCopy}>
+            <h1 className="font-kodchasan">
+              <span className="sr-only">SHIFT: </span>7 วัน ปั้น 1 โปรเจกต์จริง
+            </h1>
+            <p>สร้างของที่คนนอกได้ลองใช้ พร้อม Pivot Log<br className="hidden sm:block" /> และพอร์ต 1 หน้าสำหรับ TCAS 1</p>
+            <a href="#rounds" className={styles.textLink}>
+              {open.length > 0 ? "เลือกรุ่นที่เปิดรับสมัคร" : "ดูทุกรุ่นของ SHIFT"}
+              <ArrowDown size={16} aria-hidden="true" />
+            </a>
+          </div>
         </div>
       </header>
 
-      <main className="relative mx-auto max-w-5xl px-5 pb-24 pt-12 sm:px-8">
-        <p className="mx-auto max-w-2xl text-center text-base leading-relaxed" style={{ color: paper("b3") }}>
-          ทุกรุ่นทำโปรเจกต์ของตัวเอง มีกลุ่มเพื่อนเล็กๆ คอยช่วย ปล่อยให้คนนอกลองใช้จริง
-          แล้วจบด้วยพอร์ต 1 หน้าสำหรับ TCAS 1 เลือกรุ่นที่ว่างได้เลย
-        </p>
-        <div className="mt-12 grid gap-6 md:grid-cols-2">
-          {sortedCohorts().map((cohort) => (
-            <ShiftCohortCard key={cohort.round} cohort={cohort} />
-          ))}
-        </div>
-      </main>
+      <div id="rounds" className={`${styles.container} ${styles.rounds}`}>
+        {open.length > 0 && (
+          <section aria-labelledby="open-rounds" className={styles.section} data-shift-reveal>
+            <div className={styles.sectionHeading}>
+              <div>
+                <p className={styles.eyebrow}>NEXT UP</p>
+                <h2 id="open-rounds" className="font-kodchasan">รอบต่อไป เริ่มที่นี่</h2>
+              </div>
+              <p className={styles.sectionAside}>ออนไลน์ทาง Discord<br />สร้างคนเดียวหรือชวนเพื่อนมาด้วยก็ได้</p>
+            </div>
+            <div className={styles.featuredList}>
+              {open.map((cohort) => (
+                <ShiftCohortCard key={cohort.round} cohort={cohort} status={cohortStatus(cohort, today)} featured />
+              ))}
+            </div>
+            <p className={styles.note}><span className="pathlab-note">{NOTES.shiftGallery}</span></p>
+          </section>
+        )}
+
+        {archive.length > 0 && (
+          <section aria-labelledby="past-rounds" className={styles.section} data-shift-reveal>
+            <div className={styles.sectionHeading}>
+              <div>
+                <p className={styles.eyebrow}>THE SHIFT COLLECTION</p>
+                <h2 id="past-rounds" className="font-kodchasan">{open.length > 0 ? "รุ่นก่อนหน้า" : "ทุกรุ่นของ SHIFT"}</h2>
+              </div>
+              <p className={styles.sectionAside}>แต่ละรุ่น คนละโจทย์<br />ลงมือสร้างของจริงเหมือนกัน</p>
+            </div>
+            <div className={styles.archiveGrid}>
+              {archive.map((cohort) => (
+                <ShiftCohortCard key={cohort.round} cohort={cohort} status={cohortStatus(cohort, today)} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        <footer className={styles.footer}>
+          <span>SHIFT by PassionSeed</span>
+          <a href="#rounds" className={styles.textLink}>กลับไปเลือกรุ่น <ArrowUpRight size={16} aria-hidden="true" /></a>
+        </footer>
+      </div>
     </div>
   );
 }

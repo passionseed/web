@@ -15,7 +15,7 @@ export default async function LoginPage({
   searchParams?: Promise<{ next?: string }>;
 }) {
   const params = await searchParams;
-  const next = params?.next?.startsWith("/") ? params.next : "/";
+  const next = params?.next?.startsWith("/") ? params.next : "/me";
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
   if (data.user && !isAnonymousUser(data.user)) {
@@ -37,7 +37,7 @@ export default async function LoginPage({
       !profileData.is_onboarded
     ) {
       redirect(
-        next === "/" ? "/onboard" : `/onboard?next=${encodeURIComponent(next)}`
+        next === "/me" ? "/onboard" : `/onboard?next=${encodeURIComponent(next)}`
       );
     }
 

@@ -1,18 +1,55 @@
 import Link from "next/link";
 
 import { ShiftApplyButton } from "@/components/shift/ShiftApplyButton";
+import { ShiftSeatsRemaining } from "@/components/shift/ShiftSeatsRemaining";
 import { MISREG_TEXT, paper } from "@/components/shift/ShiftRiso";
 import { ChromeBevelFilter, ChromeWordmark, INK, OrbitSky } from "@/components/shift/poster/riso";
 import { HOME_NOTES } from "@/lib/content/home";
-import { SHIFT_COHORT, formatThaiDate, formatThaiDateRange } from "@/lib/content/shift-cohort";
+import {
+  cohortPath,
+  cohortToday,
+  formatThaiDate,
+  formatThaiDateRange,
+  getEffectiveCohort,
+  getRunningCohort,
+  type ShiftCohort,
+} from "@/lib/content/shift-cohort";
 import { MarginNote } from "./MarginNote";
 
 const HORIZON = "clamp(600px, 78svh, 860px)";
 
 const baht = (n: number) => `฿${n.toLocaleString("en-US")}`;
 
-function CohortFacts() {
-  const { anchorPriceBaht, priceBaht, startDate, endDate, applyDeadline } = SHIFT_COHORT;
+/** While a round is building, say so: the next round is the one on sale. */
+function LiveRoundStrip({ cohort }: { cohort: ShiftCohort }) {
+  const day = cohortToday(cohort);
+  return (
+    <Link
+      href={cohortPath(cohort)}
+      className="inline-flex items-center gap-2.5 whitespace-nowrap rounded-full bg-[rgba(10,10,20,0.45)] px-4 py-1.5 text-xs font-semibold backdrop-blur-sm transition hover:bg-[rgba(10,10,20,0.6)] sm:text-sm"
+      style={{ color: INK.paper, boxShadow: `inset 0 0 0 1.5px ${INK.blue}` }}
+    >
+      <span className="relative flex h-2 w-2">
+        <span
+          className="absolute inline-flex h-full w-full rounded-full opacity-70 motion-safe:animate-ping"
+          style={{ backgroundColor: INK.blue }}
+        />
+        <span className="relative inline-flex h-2 w-2 rounded-full" style={{ backgroundColor: INK.blue }} />
+      </span>
+      <span className="font-mono tracking-[0.12em]">{cohort.name}</span>
+      กำลังลุยอยู่
+      {day && (
+        <span className="font-mono text-[11px] uppercase tracking-[0.14em] sm:text-xs" style={{ color: paper("b3") }}>
+          Day {day.day}/{cohort.schedule.length}
+          <span className="hidden sm:inline"> · {day.label}</span>
+        </span>
+      )}
+    </Link>
+  );
+}
+
+function CohortFacts({ cohort }: { cohort: ShiftCohort }) {
+  const { anchorPriceBaht, priceBaht, startDate, endDate, applyDeadline } = cohort;
   return (
     <div className="mt-8 flex flex-col items-center gap-2">
       <p className="font-kodchasan text-lg font-semibold sm:text-xl" style={MISREG_TEXT}>
@@ -27,12 +64,19 @@ function CohortFacts() {
       <p className="text-sm font-semibold sm:text-base" style={{ color: INK.yellow }}>
         ปิดรับสมัคร {formatThaiDate(applyDeadline)}
       </p>
+      <div style={{ color: paper("b3") }}>
+        <ShiftSeatsRemaining round={cohort.round} capacity={cohort.seats} />
+      </div>
     </div>
   );
 }
 
 /** Home hero: the SHIFT sky and chrome wordmark, pitched to first-time visitors. */
 export function HomeHero() {
+  const cohort = getEffectiveCohort();
+  const running = getRunningCohort();
+  const cohortNumber = String(cohort.round).padStart(2, "0");
+
   return (
     <section className="relative overflow-hidden">
       <ChromeBevelFilter />
@@ -43,11 +87,16 @@ export function HomeHero() {
           className="flex flex-col items-center justify-center pb-10 pt-28 text-center"
           style={{ minHeight: HORIZON }}
         >
+          {running && running.round !== cohort.round && (
+            <div className="mb-6">
+              <LiveRoundStrip cohort={running} />
+            </div>
+          )}
           <p
             className="font-mono text-[11px] uppercase tracking-[0.3em] sm:text-xs"
             style={{ color: paper("cc") }}
           >
-            PassionSeed · {SHIFT_COHORT.seats} seats · Cohort 01
+            PassionSeed · {cohort.seats} seats · Cohort {cohortNumber}
           </p>
           <h1
             className="mt-8 font-kodchasan text-[clamp(38px,6.6vw,76px)] font-bold leading-[1.3] tracking-tight"
@@ -58,18 +107,18 @@ export function HomeHero() {
             มาสร้างของจริง<span className="whitespace-nowrap">ใน 7 วัน</span>
           </h1>
           <div className="mt-4 sm:mt-6">
-            <ChromeWordmark size="clamp(76px, 15vw, 188px)" />
+            <ChromeWordmark size="clamp(76px, 15vw, 188px)" name={cohort.name} />
           </div>
         </div>
 
         <div className="flex flex-col items-center pb-24 pt-12 text-center sm:pt-16">
           <p className="max-w-2xl text-base leading-relaxed sm:text-lg" style={{ color: paper("b3") }}>
             สำหรับ ม.4-ม.6 ที่อยากได้พอร์ต TCAS 1 ที่เล่าได้จริง เลือกโจทย์เอง
-            ปล่อยให้คนนอกใช้ เก็บจุดพังเป็นข้อมูล แล้วจบด้วย Case Study 1 หน้า
+            ปล่อยให้คนนอกใช้ เก็บจุดพังเป็นข้อมูล แล้วจบด้วยพอร์ต 1 หน้า
           </p>
           <div className="mt-10 flex flex-col items-center gap-5 sm:flex-row">
             <ShiftApplyButton location="home_hero">
-              จองที่นั่ง {SHIFT_COHORT.name}
+              จองที่นั่ง {cohort.name}
             </ShiftApplyButton>
             <Link
               href="/shift"
@@ -79,7 +128,7 @@ export function HomeHero() {
               ดูว่า 7 วันทำอะไรบ้าง
             </Link>
           </div>
-          <CohortFacts />
+          <CohortFacts cohort={cohort} />
           <MarginNote className="mt-8">{HOME_NOTES.hero}</MarginNote>
         </div>
       </div>

@@ -11,7 +11,6 @@ import {
   type ShiftCohort,
 } from "@/lib/content/shift-cohort";
 
-import { ReadDetailsFirst } from "./apply/ApplyGuides";
 import { ShiftApplyDone } from "./apply/ShiftApplyDone";
 import { clearApplyDraft, useApplyDraft } from "./apply/useApplyDraft";
 import {
@@ -209,11 +208,14 @@ export function ShiftApplyForm({
   cohort,
   source,
   otherRounds = [],
+  intro,
 }: {
   cohort: ShiftCohort;
   source?: string;
   /** Other open rounds, offered when this week only partly fits. */
   otherRounds?: ShiftCohort[];
+  /** Shown above the questions, hidden once the application is in. */
+  intro?: ReactNode;
 }) {
   const [values, setValues] = useState<ShiftApplicationInput>({
     ...EMPTY,
@@ -281,9 +283,17 @@ export function ShiftApplyForm({
 
   return (
     <form ref={formRef} onSubmit={submit} noValidate>
-      <div className="mb-6 sm:hidden">
-        <ReadDetailsFirst cohort={cohort} />
-      </div>
+      {intro && (
+        <>
+          {intro}
+          <p
+            className="mt-10 text-center font-kodchasan text-sm font-semibold uppercase tracking-[0.2em]"
+            style={{ color: paper("80") }}
+          >
+            ใบสมัคร · 7 ข้อ · 2 นาที
+          </p>
+        </>
+      )}
       <Question
         num={1}
         label="ชื่อเล่น และชื่อจริง"

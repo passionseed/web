@@ -1,4 +1,5 @@
-import { ArrowRight, BookOpen } from "lucide-react";
+import type { ReactNode } from "react";
+import { ArrowRight, BookOpen, ChevronDown } from "lucide-react";
 
 import { ShiftAttributedLink } from "@/components/shift/ShiftAttributedLink";
 import { INK } from "@/components/shift/poster/riso";
@@ -6,6 +7,9 @@ import {
   cohortPath,
   formatThaiDate,
   formatThaiDateRange,
+  pairPriceBaht,
+  priceLabel,
+  teamSizeLabel,
   type ShiftCohort,
 } from "@/lib/content/shift-cohort";
 
@@ -17,47 +21,101 @@ import {
 
 const paper = (alpha: string) => `${INK.paper}${alpha}`;
 
-/**
- * Phone-first nudge to read the round page before applying. The back pill in
- * the top bar is easy to miss on a small screen, so this names it too.
- */
-export function ReadDetailsFirst({ cohort }: { cohort: ShiftCohort }) {
+function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div
-      className="rounded-xl p-5 sm:hidden"
-      style={{ backgroundColor: paper("0a"), boxShadow: `inset 0 0 0 1px ${paper("26")}` }}
-    >
-      <p className="flex items-center gap-2 font-kodchasan font-semibold">
-        <BookOpen className="h-4 w-4 shrink-0" style={{ color: INK.yellow }} />
-        เพิ่งเห็นจาก IG? อ่านรายละเอียดก่อน
-      </p>
-      <p className="mt-2 text-sm leading-relaxed" style={{ color: paper("b3") }}>
-        7 วันทำอะไร ราคา และเงื่อนไขคืนเงิน อยู่ในหน้า {cohort.name}{" "}
-        (หรือกดปุ่ม ← {cohort.name} มุมขวาบน) ที่กรอกไว้ไม่หาย
-      </p>
-      <ShiftAttributedLink
-        href={cohortPath(cohort)}
-        className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#f2ead9] px-5 py-2.5 text-sm font-bold text-[#17151c]"
-      >
-        อ่านรายละเอียด {cohort.name}
-        <ArrowRight className="h-4 w-4" />
-      </ShiftAttributedLink>
+    <div className="flex gap-3 py-2">
+      <dt className="w-20 shrink-0 text-sm" style={{ color: paper("80") }}>
+        {label}
+      </dt>
+      <dd className="min-w-0 flex-1 text-sm font-semibold leading-relaxed">{children}</dd>
     </div>
   );
 }
 
-/** Desktop counterpart: one quiet line, since the top bar is easy to see there. */
-export function ReadDetailsInline({ cohort }: { cohort: ShiftCohort }) {
+/**
+ * The round in 30 seconds, right above the form. Most applicants arrive from
+ * an Instagram ad and never saw the round page, and the back pill is too
+ * small to notice, so the facts that decide "should I apply" live here, with
+ * one big button to the full page.
+ */
+export function CohortQuickFacts({ cohort }: { cohort: ShiftCohort }) {
+  const pair = pairPriceBaht(cohort);
   return (
-    <span className="hidden sm:inline">
-      {" "}·{" "}
+    <section
+      aria-labelledby="quick-facts"
+      className="rounded-2xl p-5 sm:p-6"
+      style={{ backgroundColor: paper("0d"), boxShadow: `inset 0 0 0 1px ${paper("2e")}` }}
+    >
+      <h2 id="quick-facts" className="flex items-center gap-2 font-kodchasan text-lg font-bold">
+        <BookOpen className="h-5 w-5 shrink-0" style={{ color: INK.yellow }} />
+        {cohort.name} ใน 30 วินาที
+      </h2>
+      <p className="mt-1 text-sm" style={{ color: paper("99") }}>
+        เพิ่งเห็นจาก IG? อ่านตรงนี้ก่อนกรอก
+      </p>
+
+      <dl className="mt-4 divide-y divide-[rgba(242,234,217,0.1)]">
+        <Fact label="ทำอะไร">
+          สร้างของจริง 1 ชิ้นจากปัญหาที่เราเลือกเอง ให้คนนอกใช้จริง แล้วสรุปเป็นพอร์ต 1 หน้า
+        </Fact>
+        <Fact label="เมื่อไหร่">
+          {formatThaiDateRange(cohort.startDate, cohort.endDate)}
+          <br />
+          ทุกคืน {cohort.sessionTime} น. ออนไลน์บน Discord
+        </Fact>
+        <Fact label="ทีม">ทำคนเดียวหรือกับเพื่อน {teamSizeLabel(cohort)}</Fact>
+        <Fact label="ราคา">
+          {priceLabel(cohort)} ต่อคน
+          {pair !== null && (
+            <span className="block font-normal" style={{ color: INK.pink }}>
+              มากับเพื่อนเป็นคู่ เหลือคนละ ฿{pair.toLocaleString("en-US")}
+            </span>
+          )}
+        </Fact>
+        {cohort.priceBaht > 0 && (
+          <Fact label="คืนเงิน">ถ้าจบวันที่ 7 แล้วไม่มีชิ้นงานในมือ คืนเต็มจำนวน</Fact>
+        )}
+      </dl>
+
+      <details className="group mt-2 border-t pt-3" style={{ borderColor: paper("1a") }}>
+        <summary
+          className="flex cursor-pointer list-none items-center justify-between py-1 text-sm font-semibold [&::-webkit-details-marker]:hidden"
+          style={{ color: INK.yellow }}
+        >
+          ดู 7 วันทีละวัน
+          <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+        </summary>
+        <ol className="mt-3 space-y-2.5">
+          {cohort.schedule.map((day) => (
+            <li key={day.day} className="flex gap-3 text-sm leading-relaxed">
+              <span
+                className="w-12 shrink-0 font-kodchasan font-bold"
+                style={{ color: INK.orange }}
+              >
+                Day {day.day}
+              </span>
+              <span>
+                <span className="font-semibold">{day.title}</span>
+                <span className="block text-xs" style={{ color: paper("80") }}>
+                  {formatThaiDate(day.date)} · {day.label}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ol>
+      </details>
+
       <ShiftAttributedLink
         href={cohortPath(cohort)}
-        className="underline decoration-dotted underline-offset-4"
+        className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-[#f2ead9] px-5 py-3 text-sm font-bold text-[#17151c] shadow-[3px_3px_2px_0_rgba(255,72,176,0.75)]"
       >
-        อ่านรายละเอียดก่อน
+        อ่านรายละเอียดเต็มและ FAQ
+        <ArrowRight className="h-4 w-4 shrink-0" />
       </ShiftAttributedLink>
-    </span>
+      <p className="mt-2 text-center text-xs" style={{ color: paper("80") }}>
+        กลับมากรอกต่อได้ ที่พิมพ์ไว้ไม่หาย
+      </p>
+    </section>
   );
 }
 

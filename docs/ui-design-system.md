@@ -1977,6 +1977,31 @@ of `app/globals.css`:
 Typography follows the global scale: Kodchasan headlines, Bai Jamjuree body,
 Space Mono for lab-style micro-labels (`BATCH #00`, `VERIFIED FEEDBACK`).
 
+### SHIFT round gallery (`/shift`)
+
+The round gallery uses `components/shift/shiftGallery.module.css` for its layout
+and the existing riso palette, `OrbitSky`, chrome wordmark, and `.shift-button`
+for its material identity. The sky is full bleed; inner content uses a 1280px
+maximum width with 48px desktop and 20px mobile gutters. A dark scrim keeps
+hero copy readable over the printed dawn sky.
+
+- The compact hero pairs the SHIFT wordmark with the promise and a round-list
+  anchor. Avoid repeating a long introduction below it.
+- Open rounds use a landscape feature: intact banner artwork alongside live
+  dates, session time, price, capacity, deadline, and signup actions. Keep these
+  facts in HTML so students can read them without zooming into a poster.
+- Earlier rounds use a quieter two-column archive. Status is always written
+  out; never rely on a colored dot alone. Cohort dates determine grouping using
+  one Bangkok date snapshot per page render.
+- Below 900px, featured artwork and details stack; below 640px, the archive
+  becomes one column and facts use two columns. Actions have 48px touch targets.
+- `ShiftGalleryMotion` uses `IntersectionObserver` for section entrances and
+  touch artwork reveals. Content remains visible before JS. Hover artwork and
+  arrow motion uses tension keyframes and short exits; reduced motion disables
+  all gallery animation. Focus outlines remain visible.
+- The warm gallery aside reuses `.pathlab-note`; its copy lives in
+  `NOTES.shiftGallery` in `lib/content/pathlab-page.ts`.
+
 ## Social preview posters
 
 Every `app/**/page.tsx` has a 1200 × 630 Open Graph poster. The shared artwork

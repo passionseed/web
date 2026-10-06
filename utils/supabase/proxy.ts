@@ -1,4 +1,5 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import type { JwtPayload, User } from '@supabase/supabase-js'
 import { NextResponse, type NextRequest } from 'next/server'
 import { isAnonymousUser } from '@/lib/supabase/auth'
 import {
@@ -25,6 +26,47 @@ function copySessionCookies(
     to.cookies.set(name, value)
   })
   return to
+}
+
+// Remembers, per user, that the onboard gate already passed, so ordinary
+// navigation skips the two profile queries. Bound to the user id so a shared
+// browser re-checks after an account switch, and short-lived so a newly added
+// required profile field is still enforced within a day. It is a UX gate, not
+// an authorization boundary, so a client-side cookie is enough.
+const ONBOARDED_COOKIE = 'ps_onboarded'
+const ONBOARDED_COOKIE_MAX_AGE = 60 * 60 * 24
+
+async function needsOnboard(
+  supabase: ReturnType<typeof createServerClient>,
+  userId: string
+): Promise<boolean> {
+  const [{ data: profile }, { data: guardianConsent }] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select(`${PROFILE_COMPLETION_SELECT}, is_onboarded`)
+      .eq('id', userId)
+      .maybeSingle(),
+    supabase
+      .from('profile_guardian_consents')
+      .select('guardian_phone, guardian_relationship, consent_confirmed_at')
+      .eq('user_id', userId)
+      .maybeSingle(),
+  ])
+  return !isProfileComplete(profile, guardianConsent) || !profile?.is_onboarded
+}
+
+// The JWT carries every field the proxy reads (id, email, app_metadata,
+// is_anonymous, aud), so it stands in for the full User without a fetch.
+function userFromClaims(claims: JwtPayload): User {
+  return {
+    id: claims.sub,
+    email: claims.email,
+    aud: typeof claims.aud === 'string' ? claims.aud : '',
+    is_anonymous: claims.is_anonymous,
+    app_metadata: claims.app_metadata ?? {},
+    user_metadata: claims.user_metadata ?? {},
+    created_at: '',
+  }
 }
 
 function isDeadRefreshToken(error: { code?: string }): boolean {
@@ -93,10 +135,12 @@ export async function updateSession(request: NextRequest) {
 
   // IMPORTANT: If you remove getUser() and you use server-side rendering
   // with the Supabase client, your users may be randomly logged out.
-  let user = null
+  let user: User | null = null
   try {
-    // getUser() refreshes the session if expired.
-    const { data, error } = await supabase.auth.getUser()
+    // getClaims() refreshes the session if expired, then verifies the JWT
+    // locally against the cached JWKS instead of a round trip to the auth
+    // server on every navigation.
+    const { data, error } = await supabase.auth.getClaims()
     if (error && isDeadRefreshToken(error)) {
       // The browser holds a refresh token the auth server no longer knows
       // (revoked or already rotated). auth-js drops the session server-side,
@@ -104,7 +148,7 @@ export async function updateSession(request: NextRequest) {
       // resurfacing as error noise downstream. Treat as signed out.
       supabaseResponse = clearSupabaseAuthCookies(request, supabaseResponse)
     }
-    user = data.user
+    user = data?.claims ? userFromClaims(data.claims) : null
   } catch {
     // Supabase unreachable (e.g. Docker not running in dev).
     // Skip auth check and let the request through — pages will
@@ -125,28 +169,22 @@ export async function updateSession(request: NextRequest) {
   if (
     user &&
     !isAnonymousUser(user) &&
-    !shouldSkipOnboardGate(pathname)
+    !shouldSkipOnboardGate(pathname) &&
+    request.cookies.get(ONBOARDED_COOKIE)?.value !== user.id
   ) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select(`${PROFILE_COMPLETION_SELECT}, is_onboarded`)
-      .eq('id', user.id)
-      .maybeSingle()
-    const { data: guardianConsent } = await supabase
-      .from('profile_guardian_consents')
-      .select('guardian_phone, guardian_relationship, consent_confirmed_at')
-      .eq('user_id', user.id)
-      .maybeSingle()
-
-    const needsOnboard =
-      !isProfileComplete(profile, guardianConsent) || !profile?.is_onboarded
-
-    if (needsOnboard) {
+    if (await needsOnboard(supabase, user.id)) {
       const url = request.nextUrl.clone()
       url.pathname = '/onboard'
       url.search = ''
       return copySessionCookies(supabaseResponse, NextResponse.redirect(url))
     }
+    supabaseResponse.cookies.set(ONBOARDED_COOKIE, user.id, {
+      maxAge: ONBOARDED_COOKIE_MAX_AGE,
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    })
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is. If you're

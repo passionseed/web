@@ -1,7 +1,7 @@
 /**
  * Copy for the public home page, site nav, and site footer. SHIFT is the lead
  * offer, so every section here points back at /shift. Cohort facts (dates,
- * price, seats) are never written here: they come from SHIFT_COHORT so a new
+ * price, seats) are never written here: they come from the cohort data so a new
  * round only edits lib/content/shift-cohort.ts.
  */
 
@@ -71,7 +71,7 @@ export const HOME_CONTRAST = {
   shift: [
     "ลงมือสร้างตั้งแต่วันแรก ไม่มีสไลด์บรรยาย",
     "ของจริงที่คนนอกได้ลองใช้ พร้อมตัวเลขจริง",
-    "Pivot Log ที่บอกว่าอะไรพัง และเราแก้ยังไง",
+    "บันทึกจุดพัง ว่าอะไรพัง และเราแก้ยังไง",
   ],
 };
 
@@ -96,14 +96,14 @@ export const HOME_WEEK: HomeWeekBeat[] = [
   {
     days: "Day 6-7",
     title: "Demo Day",
-    body: "โชว์ของจริงต่อหน้าทั้งรุ่น แล้วเรียบเรียงเป็น Case Study 1 หน้า ไว้ใช้ในพอร์ต TCAS 1",
+    body: "โชว์ของจริงต่อหน้าทั้งรุ่น แล้วเรียบเรียงเป็นพอร์ต 1 หน้า ไว้ใช้ใน TCAS 1",
   },
 ];
 
 export const HOME_DELIVERABLES = [
   "ผลงานที่คนนอกใช้ได้จริง",
-  "Experiment & Pivot Log",
-  "1-Page TCAS Case Study",
+  "บันทึกการทดลองและจุดพัง",
+  "พอร์ต TCAS 1 หน้า",
 ];
 
 export interface HomeParentPoint {
@@ -115,7 +115,7 @@ export interface HomeParentPoint {
 export const HOME_PARENT_POINTS: HomeParentPoint[] = [
   {
     title: "หลักฐานที่ลอกกันไม่ได้",
-    body: "ลิงก์ผลงานจริง ตัวเลขผู้ใช้ และ Pivot Log ที่มีวันที่กำกับ กรรมการถามต่อได้ทุกบรรทัด",
+    body: "ลิงก์ผลงานจริง ตัวเลขผู้ใช้ และบันทึกจุดพังที่มีวันที่กำกับ กรรมการถามต่อได้ทุกบรรทัด",
   },
   {
     title: "ปลอดภัยทุกช่องทาง",
@@ -123,7 +123,7 @@ export const HOME_PARENT_POINTS: HomeParentPoint[] = [
   },
   {
     title: "ไม่ได้ของ คืนเงินเต็ม",
-    body: "ถ้าจบวันที่ 7 แล้วไม่มีชิ้นงานกับ Case Study ในมือ คืนเงินเต็มจำนวน",
+    body: "ถ้าจบวันที่ 7 แล้วไม่มีชิ้นงานกับพอร์ต 1 หน้าในมือ คืนเงินเต็มจำนวน",
   },
 ];
 
@@ -146,7 +146,7 @@ export const HOME_LADDER: HomeLadderStep[] = [
     step: "02",
     name: "SHIFT",
     href: "/shift",
-    body: "7 วัน 1 โปรเจกต์จริง ปล่อยให้คนนอกใช้ เก็บ failure data แล้วเล่าเป็น Case Study",
+    body: "7 วัน 1 โปรเจกต์จริง ปล่อยให้คนนอกใช้ เก็บ failure data แล้วเล่าเป็นพอร์ต 1 หน้า",
   },
 ];
 
