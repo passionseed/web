@@ -91,7 +91,7 @@ const HOUSE_RULES = [
 ];
 
 /** Mentor face: the student's build with glasses and a teal shirt. */
-const MENTOR = [
+export const MENTOR = [
   "...HHHHHH...",
   "..HHHHHHHH..",
   ".HHSSSSSSHH.",
@@ -103,14 +103,14 @@ const MENTOR = [
   "...SSSSSS...",
   "..TTTTTTTT..",
 ];
-const MENTOR_PALETTE = { H: PX.near, S: PX.skin, G: PX.ink, E: PX.foam, M: PX.accentDark, T: PX.waterLight };
+export const MENTOR_PALETTE = { H: PX.near, S: PX.skin, G: PX.ink, E: PX.foam, M: PX.accentDark, T: PX.waterLight };
 
 /** The student from the cover boat, head and shoulders, with a smile. */
-const STUDENT_FACE = [...STUDENT.slice(0, 6), "...SMMMMS...", ...STUDENT.slice(7, 10)];
-const STUDENT_FACE_PALETTE = { ...STUDENT_PALETTE, M: PX.accentDark };
+export const STUDENT_FACE = [...STUDENT.slice(0, 6), "...SMMMMS...", ...STUDENT.slice(7, 10)];
+export const STUDENT_FACE_PALETTE = { ...STUDENT_PALETTE, M: PX.accentDark };
 
 /** Stepped bubble tail, pointing down-left; mirrored for the right side. */
-const TAIL = ["XXXX", "XXX.", "XX..", "X..."];
+export const TAIL = ["XXXX", "XXX.", "XX..", "X..."];
 
 /** Crocodile cruising the flood, facing left with a toothy grin. */
 const CROC = [
