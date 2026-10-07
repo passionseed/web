@@ -5,34 +5,22 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
 import { INK } from "@/components/shift/poster/riso";
-import { shiftJoinPath } from "@/lib/shift/joinLink";
+import { SHIFT_DISCORD_SCOPES, shiftDiscordCallbackUrl } from "@/lib/shift/discordAuth";
 import { createClient } from "@/utils/supabase/client";
-
-/** `guilds.join` lets the bot add the student to the server on their behalf. */
-const DISCORD_SCOPES = "identify email guilds.join";
-
-function callbackUrl(token: string): string {
-  const origin = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
-  const url = new URL("/auth/callback", origin);
-  url.searchParams.set("next", shiftJoinPath(token));
-  return url.toString();
-}
 
 const buttonClass =
   "inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-4 font-kodchasan text-lg font-bold transition-transform active:scale-[0.98] disabled:opacity-60";
 
 /**
- * Signed-out (or Discord-only) visitors sign in with Discord, which creates or
- * reuses their PassionSeed account. A signed-in visitor without Discord links
- * it onto the account they already have instead of making a second one.
+ * Discord sign-in reuses the account that already owns the identity. Supabase
+ * also links matching verified emails automatically, avoiding linkIdentity's
+ * conflict when a visitor is currently signed into a different account.
  */
 export function ConnectDiscordButton({
   token,
-  linkOntoCurrentAccount,
   label = "เข้าสู่ระบบด้วย Discord",
 }: {
   token: string;
-  linkOntoCurrentAccount: boolean;
   label?: string;
 }) {
   const [pending, setPending] = useState(false);
@@ -42,10 +30,12 @@ export function ConnectDiscordButton({
     setPending(true);
     setError(null);
     const supabase = createClient();
-    const options = { redirectTo: callbackUrl(token), scopes: DISCORD_SCOPES };
-    const { error: authError } = linkOntoCurrentAccount
-      ? await supabase.auth.linkIdentity({ provider: "discord", options })
-      : await supabase.auth.signInWithOAuth({ provider: "discord", options });
+    const options = {
+      redirectTo: shiftDiscordCallbackUrl(token, window.location.origin),
+      scopes: SHIFT_DISCORD_SCOPES,
+      queryParams: { prompt: "consent" },
+    };
+    const { error: authError } = await supabase.auth.signInWithOAuth({ provider: "discord", options });
     if (authError) {
       console.error("[shift-join] Discord auth failed:", authError.message);
       setError("เชื่อม Discord ไม่สำเร็จ ลองใหม่อีกครั้ง หรือทักพี่ใน LINE");

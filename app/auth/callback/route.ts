@@ -8,6 +8,7 @@ import {
 } from "@/lib/profile-completion";
 import { completeShiftJoin } from "@/lib/shift/join";
 import { shiftJoinPath, tokenFromShiftJoinPath } from "@/lib/shift/joinLink";
+import { shiftDiscordAuthError } from "@/lib/shift/discordAuth";
 
 type PendingCookie = {
   name: string;
@@ -175,7 +176,17 @@ export async function GET(request: Request) {
     }
   }
 
+  // OAuth failures must preserve the paid student's destination and offer a
+  // Discord-specific retry, rather than sending them to generic onboarding.
+  const failedShiftJoinToken = tokenFromShiftJoinPath(next);
+  if (failedShiftJoinToken) {
+    const retry = new URL(shiftJoinPath(failedShiftJoinToken), origin);
+    retry.searchParams.set("error", shiftDiscordAuthError(searchParams));
+    return NextResponse.redirect(retry);
+  }
+
   const errorRedirect = new URL("/auth/auth-code-error", origin);
+  errorRedirect.searchParams.set("next", next);
   for (const key of ["error", "error_code", "error_description"]) {
     const value = searchParams.get(key);
     if (value) errorRedirect.searchParams.set(key, value);

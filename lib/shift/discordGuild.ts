@@ -125,8 +125,20 @@ export async function joinShiftGuild(input: {
   }
 
   try {
+    // Existing members only need the bot's role permissions. Do not send their
+    // OAuth token through Add Guild Member, which has extra scope requirements.
+    const member = await discordFetch(config, `/members/${input.discordUserId}`, { method: "GET" });
+    const isMember = member.ok;
+    if (!isMember) {
+      const body = await member.clone().json().catch(() => null) as { code?: unknown } | null;
+      const message = await describeFailure(member);
+      if (member.status !== 404 || body?.code !== 10007) {
+        return { ok: false, state: "error", message };
+      }
+      if (!input.accessToken) return { ok: false, state: "not_member", message };
+    }
     const roleIds = await shiftRoleIds(config, input.cohortName);
-    if (input.accessToken) {
+    if (!isMember && input.accessToken) {
       const res = await discordFetch(config, `/members/${input.discordUserId}`, {
         method: "PUT",
         body: JSON.stringify({

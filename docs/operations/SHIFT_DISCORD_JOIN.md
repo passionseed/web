@@ -2,8 +2,17 @@
 
 Paid students use their personal `/shift/join/{token}` link to connect Discord
 and receive the role matching their cohort. Supabase performs OAuth with the
-`identify email guilds.join` scopes. The callback links the application and
+`identify,email,guilds.join` scopes. The callback links the application and
 asks the bot to add the student to the server.
+
+Discord sign-in reuses an existing PassionSeed account, even if the student is
+currently signed into a different account. Supabase automatically links matching
+verified emails. The paid registration, tracker and camp enrollment attach to
+the account returned by Discord sign-in. Separate accounts with different emails
+retain their own learning histories; this flow does not merge those histories.
+
+The bot checks server membership first. Existing members receive their roles
+directly, without using the OAuth token or requiring another server join.
 
 ## Configuration
 
@@ -48,3 +57,25 @@ unexpected failures remain errors rather than being treated as successful joins.
 For a student with an older stored OAuth error, ask them to accept the server
 invite, reopen their personal join link, and click the receive-role button.
 A successful role sync clears the stored error and records the join timestamp.
+
+## Discord sign-in errors
+
+Supabase's Discord provider requires an email unless
+`external_discord_email_optional` is enabled in its Auth configuration. Enable
+that setting to allow Discord accounts without email. The profile email column
+is nullable, and the profile trigger supports a username from provider metadata
+or the user ID. No bot-token change can fix a missing provider email.
+
+When email is still required, the join page explains how to add and verify an
+email on Discord, and keeps the personal link intact after an OAuth failure.
+
+The join flow always uses direct Discord sign-in instead of `linkIdentity`, so
+an identity already owned by another PassionSeed account does not block joining.
+Previously started linking callbacks can retry direct sign-in on the join page.
+The application ownership check still prevents claiming someone else's linked
+registration.
+
+OAuth requests return to the browser's own origin so the PKCE verifier cookie
+stays available. Localhost tests return to localhost; production tests return
+to production. Each origin must be allowed in Supabase Auth's redirect settings.
+Discord consent is requested again to approve the email and guild-join scopes.

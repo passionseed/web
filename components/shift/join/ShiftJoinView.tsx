@@ -9,6 +9,7 @@ import {
 } from "@/components/shift/join/ShiftJoinActions";
 import { INK } from "@/components/shift/poster/riso";
 import { SHIFT_PAYMENT } from "@/lib/content/shift-cohort";
+import type { ShiftDiscordAuthError } from "@/lib/shift/discordAuth";
 
 /**
  * What a paid student sees at /shift/join/{token}. One job per state:
@@ -22,8 +23,7 @@ export type ShiftJoinState =
       kind: "connect";
       nickname: string;
       cohortName: string;
-      linkOntoCurrentAccount: boolean;
-      error: "no_discord" | "taken" | null;
+      error: "no_discord" | "taken" | ShiftDiscordAuthError | null;
     }
   | { kind: "needs_invite"; nickname: string; cohortName: string; inviteUrl: string | null }
   | { kind: "in_server"; nickname: string; cohortName: string; serverUrl: string | null };
@@ -33,6 +33,9 @@ const paper = (alpha: string) => `${INK.paper}${alpha}`;
 const CONNECT_ERRORS = {
   no_discord: "ยังไม่ได้เชื่อม Discord ลองกดอีกครั้งนะ",
   taken: "ลิงก์นี้ผูกกับ Discord อีกบัญชีไปแล้ว ถ้าไม่ใช่เรา ทักพี่ใน LINE ได้เลย",
+  discord_identity_exists: "Discord นี้มีบัญชี PassionSeed อยู่แล้ว กดปุ่มด้านล่างเพื่อเข้าสู่บัญชีนั้นและใช้ลิงก์นี้ต่อได้เลย",
+  discord_email: "Discord ยังส่งอีเมลให้ระบบไม่ได้ เปิด Discord > ตั้งค่าผู้ใช้ > บัญชีของฉัน เพิ่มอีเมลและยืนยันให้เรียบร้อย แล้วกลับมากดปุ่มด้านล่างอีกครั้ง",
+  discord_auth: "เข้าสู่ระบบด้วย Discord ไม่สำเร็จ ลองกดอีกครั้งได้เลย ลิงก์และที่นั่งยังอยู่",
 } as const;
 
 function Shell({ eyebrow, title, children }: { eyebrow: string; title: string; children: ReactNode }) {
@@ -124,7 +127,10 @@ export function ShiftJoinView({ token, state }: { token: string; state: ShiftJoi
               {CONNECT_ERRORS[state.error]}
             </p>
           )}
-          <ConnectDiscordButton token={token} linkOntoCurrentAccount={state.linkOntoCurrentAccount} />
+          <ConnectDiscordButton
+            token={token}
+            label={state.error === "discord_identity_exists" ? "เข้าสู่ระบบด้วย Discord บัญชีเดิม" : undefined}
+          />
           <LineHelp />
         </Shell>
       );

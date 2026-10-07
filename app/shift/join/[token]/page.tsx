@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import type { User } from "@supabase/supabase-js";
 
 import { ShiftJoinView, type ShiftJoinState } from "@/components/shift/join/ShiftJoinView";
-import { extractDiscordIdentity } from "@/lib/projectseed/discord";
 import { isAnonymousUser } from "@/lib/supabase/auth";
 import { shiftDiscordUrls } from "@/lib/shift/discordGuild";
+import { isShiftDiscordAuthError } from "@/lib/shift/discordAuth";
 import { findShiftApplicationByToken } from "@/lib/shift/join";
 import { isShiftJoinToken } from "@/lib/shift/joinLink";
 import { createClient } from "@/utils/supabase/server";
@@ -29,18 +29,17 @@ async function currentUser(): Promise<User | null> {
 }
 
 function connectError(raw: string | undefined) {
-  return raw === "no_discord" || raw === "taken" ? raw : null;
+  return raw === "no_discord" || raw === "taken" || isShiftDiscordAuthError(raw) ? raw : null;
 }
 
 function resolveState(app: ShiftApplicationRow, user: User | null, error?: string): ShiftJoinState {
   const who = { nickname: app.nickname, cohortName: app.cohort };
   const isStudent = Boolean(user && app.user_id === user.id);
 
-  if (!isStudent) {
+  if (!isStudent || isShiftDiscordAuthError(error)) {
     return {
       kind: "connect",
       ...who,
-      linkOntoCurrentAccount: Boolean(user && !extractDiscordIdentity(user)),
       error: connectError(error),
     };
   }
