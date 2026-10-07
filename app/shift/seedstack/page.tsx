@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
 import { Body, LineHelp, Shell } from "@/components/shift/join/ShiftJoinView";
-import { shiftJoinButtonClass } from "@/components/shift/join/ShiftJoinActions";
-import { INK } from "@/components/shift/poster/riso";
 import { SeedstackConnect } from "@/components/shift/seedstack/SeedstackConnect";
+import { SeedstackDiscordButton } from "@/components/shift/seedstack/SeedstackDiscordButton";
 import { SeedstackNotice } from "@/components/shift/seedstack/SeedstackNotice";
 import { isAnonymousUser } from "@/lib/supabase/auth";
 import { seedstackConsentState } from "@/lib/seedstack/consent";
-import { getSeedstackConsent } from "@/lib/seedstack/server";
+import { normalizeUserCode } from "@/lib/seedstack/link";
+import { findShiftStudent, getSeedstackConsent } from "@/lib/seedstack/server";
 import { createClient } from "@/utils/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -26,22 +25,40 @@ const TITLES = {
   active: "พร้อมเชื่อม OpenCode",
 } as const;
 
-export default async function SeedstackConnectPage() {
+interface PageProps {
+  searchParams: Promise<{ code?: string }>;
+}
+
+async function signedInUser() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
-  const user = data.user && !isAnonymousUser(data.user) ? data.user : null;
+  return data.user && !isAnonymousUser(data.user) ? data.user : null;
+}
+
+export default async function SeedstackConnectPage({ searchParams }: PageProps) {
+  const linkCode = normalizeUserCode((await searchParams).code);
+  const here = linkCode ? `/shift/seedstack?code=${linkCode}` : "/shift/seedstack";
+  const user = await signedInUser();
 
   if (!user) {
     return (
-      <Shell eyebrow="SeedStack" title="เข้าสู่ระบบก่อน">
-        <Body>ใช้บัญชี PassionSeed เดียวกับที่ผูก Discord ตอนเข้า SHIFT</Body>
-        <Link
-          href="/login?next=/shift/seedstack"
-          className={shiftJoinButtonClass}
-          style={{ backgroundColor: INK.yellow, color: INK.black }}
-        >
-          เข้าสู่ระบบ
-        </Link>
+      <Shell eyebrow="SeedStack" title="เข้าสู่ระบบด้วย Discord">
+        <Body>ใช้ Discord บัญชีเดียวกับที่เชื่อมตอนเข้าเซิร์ฟ SHIFT ระบบจะรู้เองว่าเป็นเรา</Body>
+        <SeedstackDiscordButton next={here} />
+        <LineHelp />
+      </Shell>
+    );
+  }
+
+  const student = await findShiftStudent(user.id);
+  if (!student) {
+    return (
+      <Shell eyebrow="SeedStack" title="บัญชีนี้ยังไม่ได้ผูกกับ SHIFT">
+        <Body>
+          SeedStack เชื่อมได้เฉพาะนักเรียน SHIFT ที่เชื่อม Discord ผ่านลิงก์ในข้อความยืนยันการจ่ายเงินแล้ว
+          ถ้าเคยเชื่อมด้วย Discord อีกบัญชี ลองเข้าใหม่ด้วยบัญชีนั้น
+        </Body>
+        <SeedstackDiscordButton next={here} label="เข้าด้วย Discord บัญชีอื่น" />
         <LineHelp />
       </Shell>
     );
@@ -50,13 +67,13 @@ export default async function SeedstackConnectPage() {
   const state = seedstackConsentState(await getSeedstackConsent(user.id));
 
   return (
-    <Shell eyebrow="SeedStack" title={TITLES[state]}>
+    <Shell eyebrow={`SeedStack · ${student.nickname}`} title={TITLES[state]}>
       <Body>
         SeedStack ทำงานได้เต็มที่โดยไม่ต้องเชื่อมอะไรเลย หน้านี้มีไว้ถ้าอยากให้พี่ mentor เห็นว่าเราอยู่ขั้นไหน
         จะได้เข้ามาช่วยตอนติด โดยไม่ต้องรอเราโพสต์
       </Body>
       <SeedstackNotice />
-      <SeedstackConnect state={state} />
+      <SeedstackConnect state={state} linkCode={linkCode} />
       <LineHelp />
     </Shell>
   );

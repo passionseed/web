@@ -1,6 +1,7 @@
 import { buildSeedstackBoard, type BoardEvent } from "@/lib/seedstack/board";
 import { SEEDSTACK_NOTICE_VERSION, seedstackConsentState } from "@/lib/seedstack/consent";
 import { parseSeedstackBatch, parseSeedstackEvent } from "@/lib/seedstack/events";
+import { generateDeviceCode, generateUserCode, normalizeUserCode } from "@/lib/seedstack/link";
 import { extractSeedstackBearer, generateSeedstackToken, sha256Hex } from "@/lib/seedstack/tokens";
 
 describe("parseSeedstackEvent", () => {
@@ -107,5 +108,26 @@ describe("buildSeedstackBoard", () => {
       ev({ event: "stuck", detail: "late", created_at: "2026-10-07T02:00:00Z" }),
     ]);
     expect(row.steps.install.status).toBe("done");
+  });
+});
+
+describe("link codes", () => {
+  it("generates readable user codes that normalise back to themselves", () => {
+    for (let i = 0; i < 50; i++) {
+      const code = generateUserCode();
+      expect(code).toMatch(/^[A-Z2-9]{4}-[A-Z2-9]{4}$/);
+      expect(code).not.toMatch(/[01OIL]/);
+      expect(normalizeUserCode(code.toLowerCase().replace("-", " "))).toBe(code);
+    }
+  });
+
+  it("rejects wrong length or ambiguous characters", () => {
+    expect(normalizeUserCode("ABCD-123")).toBeNull();
+    expect(normalizeUserCode("ABCD-1OIL")).toBeNull();
+    expect(normalizeUserCode(undefined)).toBeNull();
+  });
+
+  it("makes long url-safe device codes", () => {
+    expect(generateDeviceCode()).toMatch(/^[A-Za-z0-9_-]{43}$/);
   });
 });

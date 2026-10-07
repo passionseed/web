@@ -106,6 +106,11 @@ export async function GET(request: Request) {
         return redirectWithCookies(target, pendingCookies);
       }
 
+      // SeedStack links an existing SHIFT student's CLI; no onboarding detour.
+      if (next.startsWith("/shift/seedstack")) {
+        return redirectWithCookies(new URL(next, origin), pendingCookies);
+      }
+
       let profileData = null;
       let profileError = null;
       let retryCount = 0;

@@ -13,6 +13,7 @@ import {
   type SeedstackConsentState,
 } from "@/lib/seedstack/consent";
 import type { SeedstackEventInsert } from "@/lib/seedstack/events";
+import { LINK_TTL_MS, generateDeviceCode, generateUserCode } from "@/lib/seedstack/link";
 import {
   generateParentLinkToken,
   generateSeedstackToken,
@@ -208,5 +209,87 @@ export async function purgeOldSeedstackEvents(days: number, now = Date.now()): P
     .lt("created_at", cutoff)
     .select("id");
   if (error) throw new Error(`seedstack retention purge failed: ${error.message}`);
+
+  const stale = await createServiceRoleClient()
+    .from("seedstack_link_requests")
+    .delete()
+    .lt("expires_at", new Date(now - 24 * 60 * 60 * 1000).toISOString());
+  if (stale.error) console.warn("[seedstack] link request purge failed:", stale.error.message);
+
   return data?.length ?? 0;
+}
+
+/** A student is someone whose PassionSeed account is bound to a paid SHIFT seat (via Discord on /shift/join). */
+export async function findShiftStudent(userId: string): Promise<{ nickname: string } | null> {
+  const { data, error } = await createServiceRoleClient()
+    .from("shift_applications")
+    .select("nickname")
+    .eq("user_id", userId)
+    .not("paid_at", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(`seedstack student lookup failed: ${error.message}`);
+  return data;
+}
+
+export async function createLinkRequest(): Promise<{ deviceCode: string; userCode: string; expiresAt: string }> {
+  const supabase = createServiceRoleClient();
+  const expiresAt = new Date(Date.now() + LINK_TTL_MS).toISOString();
+
+  // Retry on the rare user-code collision with another open request.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const deviceCode = generateDeviceCode();
+    const userCode = generateUserCode();
+    const { error } = await supabase
+      .from("seedstack_link_requests")
+      .insert({ device_code_hash: sha256Hex(deviceCode), user_code: userCode, expires_at: expiresAt });
+    if (!error) return { deviceCode, userCode, expiresAt };
+    if (error.code !== "23505") throw new Error(`seedstack link start failed: ${error.message}`);
+  }
+  throw new Error("seedstack link start failed: code collisions");
+}
+
+/** Binds an open, unexpired request to the student. False if the code is unknown or stale. */
+export async function approveLinkRequest(userId: string, userCode: string): Promise<boolean> {
+  const { data, error } = await createServiceRoleClient()
+    .from("seedstack_link_requests")
+    .update({ user_id: userId, approved_at: new Date().toISOString() })
+    .eq("user_code", userCode)
+    .is("approved_at", null)
+    .is("consumed_at", null)
+    .gt("expires_at", new Date().toISOString())
+    .select("id");
+  if (error) throw new Error(`seedstack link approve failed: ${error.message}`);
+  return (data?.length ?? 0) > 0;
+}
+
+export type LinkPoll = { status: "pending" } | { status: "expired" } | { status: "approved"; token: string };
+
+/** Atomically consumes an approved request and mints the CLI token exactly once. */
+export async function pollLinkRequest(deviceCode: string): Promise<LinkPoll> {
+  const supabase = createServiceRoleClient();
+  const hash = sha256Hex(deviceCode);
+  const now = new Date().toISOString();
+
+  const { data: consumed, error } = await supabase
+    .from("seedstack_link_requests")
+    .update({ consumed_at: now })
+    .eq("device_code_hash", hash)
+    .not("approved_at", "is", null)
+    .is("consumed_at", null)
+    .gt("expires_at", now)
+    .select("user_id")
+    .maybeSingle();
+  if (error) throw new Error(`seedstack link poll failed: ${error.message}`);
+  if (consumed?.user_id) return { status: "approved", token: await mintSeedstackToken(consumed.user_id) };
+
+  const { data: open } = await supabase
+    .from("seedstack_link_requests")
+    .select("id")
+    .eq("device_code_hash", hash)
+    .is("consumed_at", null)
+    .gt("expires_at", now)
+    .maybeSingle();
+  return open ? { status: "pending" } : { status: "expired" };
 }

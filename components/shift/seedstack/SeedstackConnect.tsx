@@ -6,7 +6,7 @@ import { Check, Copy, Loader2 } from "lucide-react";
 import { shiftJoinButtonClass } from "@/components/shift/join/ShiftJoinActions";
 import { INK } from "@/components/shift/poster/riso";
 import {
-  createCliToken,
+  approveDeviceLink,
   giveStudentConsent,
   newParentLink,
   withdrawConsent,
@@ -149,21 +149,28 @@ function ParentLinkStep({ initialLink, declined }: { initialLink?: string; decli
   );
 }
 
-function TokenStep() {
+function LinkStep({ code }: { code: string | null }) {
   const action = useAction();
+
+  if (!code) {
+    return (
+      <Text>
+        ทั้งเราและผู้ปกครองยินยอมแล้ว ไปที่ OpenCode แล้วพิมพ์ <code>/seedstack-connect</code> มันจะเปิดหน้านี้พร้อมรหัสให้กดยืนยัน
+      </Text>
+    );
+  }
+  if (action.value) {
+    return <Text>เชื่อมแล้ว กลับไปที่ OpenCode ได้เลย มันจะรู้เองในไม่กี่วินาที</Text>;
+  }
   return (
     <>
-      <Text>
-        ทั้งเราและผู้ปกครองยินยอมแล้ว สร้างรหัสเชื่อมต่อ แล้วพิมพ์ <code>/seedstack-connect</code> ใน OpenCode
-        แล้ววางรหัสนี้เมื่อมันถาม
-      </Text>
-      {action.value ? (
-        <CopyBox label="รหัสเชื่อมต่อ (โชว์ครั้งเดียว หายแล้วสร้างใหม่ได้)" value={action.value} />
-      ) : (
-        <Button primary pending={action.pending} onClick={() => action.run(createCliToken)}>
-          สร้างรหัสเชื่อมต่อ
-        </Button>
-      )}
+      <Text>OpenCode ในเครื่องเรากำลังขอเชื่อม เช็กว่ารหัสตรงกับที่ขึ้นใน OpenCode ก่อนกด</Text>
+      <p className="text-center font-kodchasan text-4xl font-bold tracking-widest" style={{ color: INK.yellow }}>
+        {code}
+      </p>
+      <Button primary pending={action.pending} onClick={() => action.run(() => approveDeviceLink(code))}>
+        ใช่ เชื่อมเครื่องนี้
+      </Button>
       <ErrorText error={action.error} />
     </>
   );
@@ -194,7 +201,7 @@ function WithdrawButton() {
   );
 }
 
-export function SeedstackConnect({ state }: { state: SeedstackConsentState }) {
+export function SeedstackConnect({ state, linkCode }: { state: SeedstackConsentState; linkCode: string | null }) {
   switch (state) {
     case "none":
     case "withdrawn":
@@ -216,7 +223,7 @@ export function SeedstackConnect({ state }: { state: SeedstackConsentState }) {
     case "active":
       return (
         <>
-          <TokenStep />
+          <LinkStep code={linkCode} />
           <WithdrawButton />
         </>
       );
