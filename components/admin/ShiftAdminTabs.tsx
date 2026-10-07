@@ -10,6 +10,7 @@ const SHIFT_ADMIN_LINKS = [
   { href: "/admin/shift", label: "Tracker" },
   { href: "/admin/shift/camp", label: "Interactive camp" },
   { href: "/admin/shift/companion", label: "Companion" },
+  { href: "/admin/shift/seedstack", label: "SeedStack" },
 ];
 
 /** Switches between the SHIFT admin surfaces. */

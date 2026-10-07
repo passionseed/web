@@ -38,7 +38,7 @@ const CONNECT_ERRORS = {
   discord_auth: "เข้าสู่ระบบด้วย Discord ไม่สำเร็จ ลองกดอีกครั้งได้เลย ลิงก์และที่นั่งยังอยู่",
 } as const;
 
-function Shell({ eyebrow, title, children }: { eyebrow: string; title: string; children: ReactNode }) {
+export function Shell({ eyebrow, title, children }: { eyebrow: string; title: string; children: ReactNode }) {
   return (
     <div
       className="relative min-h-screen font-bai-jamjuree antialiased"
@@ -56,7 +56,7 @@ function Shell({ eyebrow, title, children }: { eyebrow: string; title: string; c
   );
 }
 
-function Body({ children }: { children: ReactNode }) {
+export function Body({ children }: { children: ReactNode }) {
   return (
     <p className="leading-relaxed" style={{ color: paper("cc") }}>
       {children}
@@ -64,7 +64,7 @@ function Body({ children }: { children: ReactNode }) {
   );
 }
 
-function LineHelp() {
+export function LineHelp() {
   return (
     <p className="text-sm" style={{ color: paper("80") }}>
       ติดตรงไหน ทักพี่ใน LINE{" "}
