@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatBangkokDateTime } from "@/lib/shift/applicationStats";
+import { isDiscordOAuthJoinError } from "@/lib/shift/discordErrors";
 import { joinConfirmMessage } from "@/lib/shift/paymentMessage";
 import type { ShiftApplicationRow as Application } from "@/types/shift";
 
@@ -22,6 +23,7 @@ export function discordStatus(app: Application): DiscordStatus | null {
   if (!app.linked_at) return { label: "Not linked", variant: "outline" };
   if (app.discord_joined_at && !app.discord_error) return { label: "In Discord", variant: "default" };
   if (app.discord_error === "not_in_server") return { label: "Linked, not in server", variant: "secondary" };
+  if (isDiscordOAuthJoinError(app.discord_error)) return { label: "Join via invite", variant: "secondary" };
   if (app.discord_error) return { label: "Discord error", variant: "destructive" };
   return { label: "Linked", variant: "secondary" };
 }
@@ -102,7 +104,11 @@ export function ShiftJoinLinkPanel({
             </p>
           )}
           {app.discord_error && app.discord_error !== "not_in_server" && (
-            <p className="break-words text-xs text-destructive">{app.discord_error}</p>
+            <p className="break-words text-xs text-destructive">
+              {isDiscordOAuthJoinError(app.discord_error)
+                ? "Discord is linked. Ask the student to join through the server invite, then reopen their join link and click receive role. For automatic joins, the bot token must belong to the same Discord app as Supabase OAuth."
+                : app.discord_error}
+            </p>
           )}
           <CopyJoinMessageButton application={app} onCreateLink={onCreateLink} />
         </>

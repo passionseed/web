@@ -8,6 +8,8 @@
  * is still set by hand in Discord.
  */
 
+import { isDiscordOAuthJoinError } from "@/lib/shift/discordErrors";
+
 const DISCORD_API = "https://discord.com/api/v10";
 
 export type GuildJoinResult =
@@ -20,7 +22,7 @@ interface GuildConfig {
 }
 
 function guildConfig(): GuildConfig | null {
-  const botToken = process.env.DISCORD_BOT_TOKEN;
+  const botToken = process.env.DISCORD_SHIFT_BOT_TOKEN || process.env.DISCORD_BOT_TOKEN;
   const guildId = process.env.DISCORD_SHIFT_GUILD_ID;
   return botToken && guildId ? { botToken, guildId } : null;
 }
@@ -107,8 +109,9 @@ async function addRoles(config: GuildConfig, discordUserId: string, roleIds: str
  * Puts a Discord user into the SHIFT server with roles.
  *
  * With an OAuth `accessToken` carrying the `guilds.join` scope, the bot adds
- * them directly (roles + nickname applied on join). Without one, it can only
- * assign roles to someone who already joined through the invite.
+ * them directly (roles + nickname applied on join). That token must come from
+ * the bot's own OAuth application. Without a usable token, it can still assign
+ * roles to someone who already joined through the invite.
  */
 export async function joinShiftGuild(input: {
   discordUserId: string;
@@ -118,7 +121,7 @@ export async function joinShiftGuild(input: {
 }): Promise<GuildJoinResult> {
   const config = guildConfig();
   if (!config) {
-    return { ok: false, state: "not_configured", message: "DISCORD_SHIFT_GUILD_ID or DISCORD_BOT_TOKEN missing" };
+    return { ok: false, state: "not_configured", message: "DISCORD_SHIFT_GUILD_ID or Discord bot token missing" };
   }
 
   try {
@@ -135,7 +138,13 @@ export async function joinShiftGuild(input: {
       if (res.status === 201) return { ok: true, state: "joined" };
       // 204: already in the server, and Discord ignores roles in that case.
       if (res.status !== 204) {
-        return { ok: false, state: "error", message: await describeFailure(res) };
+        const message = await describeFailure(res);
+        if (!isDiscordOAuthJoinError(message)) {
+          return { ok: false, state: "error", message };
+        }
+        // A rejected OAuth token does not prevent bot-only role assignment.
+        // If they are absent, addRoles returns not_member for the invite flow.
+        console.warn("[shift-join] Discord OAuth join rejected. Check that the bot and Supabase Discord provider use the same application and guilds.join scope.");
       }
     }
 
