@@ -149,27 +149,36 @@ function ParentLinkStep({ initialLink, declined }: { initialLink?: string; decli
   );
 }
 
-function LinkStep({ code }: { code: string | null }) {
+/**
+ * The student types the code from their own OpenCode screen. Never prefilled
+ * from a URL, so a link someone else sends cannot be approved in one click.
+ */
+function LinkStep() {
+  const [code, setCode] = useState("");
   const action = useAction();
 
-  if (!code) {
-    return (
-      <Text>
-        ทั้งเราและผู้ปกครองยินยอมแล้ว ไปที่ OpenCode แล้วพิมพ์ <code>/seedstack-connect</code> มันจะเปิดหน้านี้พร้อมรหัสให้กดยืนยัน
-      </Text>
-    );
-  }
   if (action.value) {
     return <Text>เชื่อมแล้ว กลับไปที่ OpenCode ได้เลย มันจะรู้เองในไม่กี่วินาที</Text>;
   }
   return (
     <>
-      <Text>OpenCode ในเครื่องเรากำลังขอเชื่อม เช็กว่ารหัสตรงกับที่ขึ้นใน OpenCode ก่อนกด</Text>
-      <p className="text-center font-kodchasan text-4xl font-bold tracking-widest" style={{ color: INK.yellow }}>
-        {code}
+      <Text>
+        ใน OpenCode พิมพ์ <code>/seedstack-connect</code> แล้วพิมพ์รหัส 8 ตัวที่ขึ้นบนจอเราเองลงตรงนี้
+      </Text>
+      <p className="text-sm font-semibold" style={{ color: INK.orange }}>
+        ใส่เฉพาะรหัสจาก OpenCode ในเครื่องเราเอง ถ้ามีใครส่งรหัสหรือลิงก์มาให้กด อย่ากด
       </p>
-      <Button primary pending={action.pending} onClick={() => action.run(() => approveDeviceLink(code))}>
-        ใช่ เชื่อมเครื่องนี้
+      <input
+        value={code}
+        onChange={(e) => setCode(e.target.value.toUpperCase())}
+        placeholder="ABCD-2345"
+        autoComplete="off"
+        maxLength={9}
+        className="w-full rounded-xl bg-transparent p-4 text-center font-kodchasan text-3xl font-bold tracking-widest outline-none"
+        style={{ color: INK.yellow, boxShadow: `inset 0 0 0 1px ${paper("33")}` }}
+      />
+      <Button primary pending={action.pending} disabled={code.trim().length < 8} onClick={() => action.run(() => approveDeviceLink(code))}>
+        เชื่อมเครื่องนี้
       </Button>
       <ErrorText error={action.error} />
     </>
@@ -201,7 +210,7 @@ function WithdrawButton() {
   );
 }
 
-export function SeedstackConnect({ state, linkCode }: { state: SeedstackConsentState; linkCode: string | null }) {
+export function SeedstackConnect({ state }: { state: SeedstackConsentState }) {
   switch (state) {
     case "none":
     case "withdrawn":
@@ -223,7 +232,7 @@ export function SeedstackConnect({ state, linkCode }: { state: SeedstackConsentS
     case "active":
       return (
         <>
-          <LinkStep code={linkCode} />
+          <LinkStep />
           <WithdrawButton />
         </>
       );

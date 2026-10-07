@@ -16,8 +16,8 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.passionseed.or
 export async function POST() {
   try {
     const { deviceCode, userCode } = await createLinkRequest();
+    // No code in the URL: the student types it, so a forwarded link cannot be approved in one click.
     const url = new URL("/shift/seedstack", SITE_URL);
-    url.searchParams.set("code", userCode);
     return NextResponse.json({
       ok: true,
       device_code: deviceCode,

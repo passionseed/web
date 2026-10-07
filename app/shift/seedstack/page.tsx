@@ -6,7 +6,6 @@ import { SeedstackDiscordButton } from "@/components/shift/seedstack/SeedstackDi
 import { SeedstackNotice } from "@/components/shift/seedstack/SeedstackNotice";
 import { isAnonymousUser } from "@/lib/supabase/auth";
 import { seedstackConsentState } from "@/lib/seedstack/consent";
-import { normalizeUserCode } from "@/lib/seedstack/link";
 import { findShiftStudent, getSeedstackConsent } from "@/lib/seedstack/server";
 import { createClient } from "@/utils/supabase/server";
 
@@ -25,19 +24,14 @@ const TITLES = {
   active: "พร้อมเชื่อม OpenCode",
 } as const;
 
-interface PageProps {
-  searchParams: Promise<{ code?: string }>;
-}
-
 async function signedInUser() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
   return data.user && !isAnonymousUser(data.user) ? data.user : null;
 }
 
-export default async function SeedstackConnectPage({ searchParams }: PageProps) {
-  const linkCode = normalizeUserCode((await searchParams).code);
-  const here = linkCode ? `/shift/seedstack?code=${linkCode}` : "/shift/seedstack";
+export default async function SeedstackConnectPage() {
+  const here = "/shift/seedstack";
   const user = await signedInUser();
 
   if (!user) {
@@ -73,7 +67,7 @@ export default async function SeedstackConnectPage({ searchParams }: PageProps) 
         จะได้เข้ามาช่วยตอนติด โดยไม่ต้องรอเราโพสต์
       </Body>
       <SeedstackNotice />
-      <SeedstackConnect state={state} linkCode={linkCode} />
+      <SeedstackConnect state={state} />
       <LineHelp />
     </Shell>
   );
