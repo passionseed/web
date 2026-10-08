@@ -8,6 +8,7 @@ import {
   pairPriceBaht,
   priceLabel,
   teamSizeLabel,
+  type ShiftCohort,
 } from "@/lib/content/shift-cohort";
 
 import { MarkerHighlight, REFUND_PROMISE } from "../riso";
@@ -21,7 +22,9 @@ import { DeckCard, GridSlideFrame, MUTED, Plate, notch } from "./GridSlideFrame"
 
 const COHORT = SHIFT_COHORT;
 /** Straight to the form: /shift/1 does not forward utm_source to it. */
-export const GRID_APPLY_URL = `https://passionseed.org/shift/apply?round=${COHORT.round}&utm_source=ig-grid`;
+export const gridApplyUrl = (cohort: ShiftCohort) =>
+  `https://passionseed.org/shift/apply?round=${cohort.round}&utm_source=ig-grid`;
+export const GRID_APPLY_URL = gridApplyUrl(COHORT);
 
 const baht = (n: number) => `฿${n.toLocaleString("en-US")}`;
 
@@ -29,7 +32,8 @@ const baht = (n: number) => `฿${n.toLocaleString("en-US")}`;
  * The questions people kept DMing after the first grid went up. Each answer
  * is the whole answer, so nobody has to ask.
  */
-function faqItems(pair: number | null) {
+export function faqItems(cohort: ShiftCohort = COHORT) {
+  const pair = pairPriceBaht(cohort);
   return [
     {
       q: "ต้องมีพื้นฐานอะไรไหม?",
@@ -37,11 +41,11 @@ function faqItems(pair: number | null) {
     },
     {
       q: "มาคนเดียว หรือมีแค่ 2 คน ได้ไหม?",
-      a: `ได้หมด ทำเดี่ยวหรือทีม ${teamSizeLabel(COHORT)} ไม่ต้องหาทีมเพิ่ม`,
+      a: `ได้หมด ทำเดี่ยวหรือทีม ${teamSizeLabel(cohort)} ไม่ต้องหาทีมเพิ่ม`,
     },
     {
       q: "ยังไม่มีไอเดีย สมัครได้ไหม?",
-      a: "ได้ มีแค่ปัญหาที่เจอเองก็พอ วันแรกพี่ช่วยตั้งโจทย์",
+      a: "ได้ มีแค่ปัญหาที่เจอเองก็พอ วันแรกช่วยกันล็อกโจทย์",
     },
     ...(pair !== null
       ? [{ q: "ชวนเพื่อนมาด้วย ลดไหม?", a: `มา 2 คน จ่ายคนละ ${baht(pair)} (ลดคนละ ${baht(PAIR_DISCOUNT_BAHT)})` }]
@@ -84,7 +88,7 @@ export function SlideC2() {
         <p className="font-kodchasan text-[150px] font-bold leading-[0.9]">{priceLabel(COHORT)}</p>
       </DeckCard>
       <div className="mt-8 space-y-5">
-        {faqItems(pairPriceBaht(COHORT)).map((item) => (
+        {faqItems().map((item) => (
           <Faq key={item.q} {...item} />
         ))}
       </div>
@@ -95,12 +99,12 @@ export function SlideC2() {
   );
 }
 
-const PARENT_POINTS = [
+export const parentPoints = (cohort: ShiftCohort = COHORT) => [
   {
     title: "มีพี่เลี้ยงดูแลทุกทีม",
     body: `พี่ๆ อยู่ในห้อง Discord ทุกเย็น ติดตรงไหนถามได้ทันที ผู้ปกครองทักทีมงานทาง LINE ${SHIFT_PAYMENT.lineId} ได้ตลอด`,
   },
-  { title: "เรียนจากบ้าน ทุกเย็น 1 ทุ่ม", body: `ออนไลน์ ${COHORT.sessionTime} น. ไม่ต้องเดินทาง ไม่ชนเวลาเรียน` },
+  { title: "เรียนจากบ้าน ทุกเย็น 1 ทุ่ม", body: `ออนไลน์ ${cohort.sessionTime} น. ไม่ต้องเดินทาง ไม่ชนเวลาเรียน` },
   { title: "เห็นผลงานได้จริง", body: "ลูกได้ชิ้นงานที่เปิดให้ดูได้ พร้อมพอร์ต 1 หน้า ไม่ใช่แค่ใบเซอร์" },
   { title: REFUND_PROMISE, body: "ถ้าจบวันที่ 7 แล้วไม่มีชิ้นงานในมือ คืนเงินเต็มจำนวน" },
 ];
@@ -117,7 +121,7 @@ export function SlideC3() {
   return (
     <GridSlideFrame id="shift1-grid-c-3" tag="FOR PARENTS" title="สำหรับผู้ปกครอง" page="3/4" critters={C3_CRITTERS}>
       <div className="max-w-[800px] space-y-9">
-        {PARENT_POINTS.map((point, i) => (
+        {parentPoints().map((point, i) => (
           <div key={point.title} className="flex items-start gap-7">
             <Plate label={String(i + 1)} size={54} hot={i === 0} />
             <div>
@@ -138,7 +142,7 @@ export function SlideC3() {
   );
 }
 
-const APPLY_STEPS = [
+export const APPLY_STEPS = [
   "คอมเมนต์ SHIFT หรือกดลิงก์ในไบโอ",
   "กรอกใบสมัคร 2 นาที",
   `โอน PromptPay แล้วส่งสลิปใน LINE ${SHIFT_PAYMENT.lineId}`,

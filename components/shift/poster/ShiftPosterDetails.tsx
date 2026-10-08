@@ -30,7 +30,7 @@ import {
  * sits at the top edge so a swipe reads as one continuous scene.
  */
 
-const OUTCOMES: { num: string; icon: RisoIconName; ink: string; title: string; body: string }[] = [
+export const OUTCOMES: { num: string; icon: RisoIconName; ink: string; title: string; body: string }[] = [
   {
     num: "1",
     icon: "live",
@@ -74,7 +74,7 @@ const WEEK = [
   },
 ];
 
-function GroundGlow() {
+export function GroundGlow() {
   return (
     <div className="pointer-events-none absolute inset-0" aria-hidden="true">
       {/* The same horizon, cresting the top edge */}
@@ -229,7 +229,7 @@ function MiniCert({ style }: { style: CSSProperties }) {
 }
 
 /** A pile of identical certificates: nothing in it says who you are. */
-function CertPile() {
+export function CertPile() {
   const offsets = [
     { left: 0, top: 26, rotate: "-8deg" },
     { left: 22, top: 16, rotate: "-3deg" },
@@ -246,7 +246,7 @@ function CertPile() {
 }
 
 /** The one thing only you made: a live project with real users on it. */
-function OwnProjectCard() {
+export function OwnProjectCard() {
   return (
     <div
       className="w-[118px] overflow-hidden rounded-[8px]"

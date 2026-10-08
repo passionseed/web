@@ -372,7 +372,7 @@ export const SHIFT_SDT: ShiftSdtPillar[] = [
   {
     pillar: "Autonomy",
     title: "เลือกเอง",
-    detail: "โจทย์ สกิลที่เรียน และจะเปลี่ยนทางเมื่อไหร่ เราเลือกเอง พี่เลี้ยงไม่คิดแทน",
+    detail: "โจทย์ สกิลที่เรียน และจะเปลี่ยนทางเมื่อไหร่ เราเลือกเอง mentor ไม่คิดแทน",
   },
   {
     pillar: "Competence",

@@ -181,17 +181,19 @@ function SlotRow({ time, court, open }: (typeof APP.slots)[number]) {
   );
 }
 
-function SlotList() {
+function SlotList({ showUsers }: { showUsers: boolean }) {
   return (
     <div className="mx-4 rounded-[14px] px-4 py-1" style={{ backgroundColor: IOS.fill }}>
       <div className="flex items-center justify-between pb-0.5 pt-2.5">
         <p className="text-[13px] font-semibold" style={{ color: IOS.label }}>
           คอร์ทวันนี้
         </p>
-        <p className="flex items-center gap-1 text-[12px]" style={{ color: IOS.green }}>
-          <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: IOS.green }} />
-          {APP.users} คนใช้แล้ว
-        </p>
+        {showUsers && (
+          <p className="flex items-center gap-1 text-[12px]" style={{ color: IOS.green }}>
+            <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: IOS.green }} />
+            {APP.users} คนใช้แล้ว
+          </p>
+        )}
       </div>
       {APP.slots.map((slot, i) => (
         <div key={slot.time} style={i > 0 ? { borderTop: `1px solid ${IOS.separator}` } : undefined}>
@@ -202,7 +204,7 @@ function SlotList() {
   );
 }
 
-function Screen() {
+function Screen({ showUsers }: { showUsers: boolean }) {
   return (
     <div
       className="relative h-full overflow-hidden rounded-[40px] bg-white antialiased"
@@ -213,7 +215,7 @@ function Screen() {
       <UrlBar />
       <div className="mt-5 space-y-4">
         <AppHeader />
-        <SlotList />
+        <SlotList showUsers={showUsers} />
       </div>
       {/* Glass: a faint diagonal reflection across the screen */}
       <div
@@ -237,7 +239,14 @@ function SideButton({ style }: { style: CSSProperties }) {
 }
 
 /** Positioned by the caller; `style` carries left/top. */
-export function PosterPhone({ style }: { style: CSSProperties }) {
+export function PosterPhone({
+  style,
+  showUsers = true,
+}: {
+  style: CSSProperties;
+  /** The mock user count. Off where a stranger could read it as a real result. */
+  showUsers?: boolean;
+}) {
   return (
     <div className="absolute" style={{ width: PHONE_W, height: PHONE_H, rotate: "7deg", ...style }}>
       {/* Pink plate still lands behind it, tying the photo to the print */}
@@ -256,7 +265,7 @@ export function PosterPhone({ style }: { style: CSSProperties }) {
             "inset 0 0 0 1.5px rgba(255,255,255,0.18), inset 0 0 0 5px #0b0b0d, 0 30px 60px rgba(8,4,20,0.55)",
         }}
       >
-        <Screen />
+        <Screen showUsers={showUsers} />
       </div>
     </div>
   );
@@ -295,11 +304,13 @@ export function StickerNote({
   style,
   size = 30,
   arrowStyle,
+  text = "แอปแบบนี้ ม.5 ทำเองได้",
 }: {
   style: CSSProperties;
   size?: number;
   /** Nudge where the arrow leaves the note so it lands on the phone. */
   arrowStyle?: CSSProperties;
+  text?: string;
 }) {
   return (
     <div className="absolute z-10" style={{ rotate: "5deg", ...style }}>
@@ -308,7 +319,7 @@ export function StickerNote({
         className="pathlab-note pathlab-note--tilt-r relative whitespace-nowrap"
         style={{ fontSize: size, boxShadow: "0 8px 18px rgba(8,4,20,0.35)" }}
       >
-        แอปแบบนี้ ม.5 ทำเองได้
+        {text}
       </p>
     </div>
   );

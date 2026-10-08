@@ -19,7 +19,8 @@ try {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  allowedDevOrigins: ["big.lion-yo.ts.net", "*.lion-yo.ts.net", "*.ts.net", "127.0.0.1"],
+  // Dev only: Tailscale hosts, plus this Mac on the home Wi-Fi for phone previews.
+  allowedDevOrigins: ["big.lion-yo.ts.net", "*.lion-yo.ts.net", "*.ts.net", "127.0.0.1", "192.168.1.137"],
   turbopack: {
     root: process.cwd(),
   },

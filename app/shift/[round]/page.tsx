@@ -14,6 +14,7 @@ import { RisoHeading } from "@/components/shift/ShiftRiso";
 import { ShiftGlance } from "@/components/shift/round/ShiftGlance";
 import { ShiftProblem } from "@/components/shift/round/ShiftProblem";
 import { ShiftSdt } from "@/components/shift/round/ShiftSdt";
+import { ShiftShowcase } from "@/components/shift/round/ShiftShowcase";
 import { ShiftSquads } from "@/components/shift/round/ShiftSquads";
 import {
   ShiftCadence,
@@ -44,6 +45,7 @@ import {
   type ShiftCohort,
 } from "@/lib/content/shift-cohort";
 import { SHIFT_TESTIMONIAL_GROUPS } from "@/lib/content/shift-testimonials";
+import { TestimonialQuote } from "@/components/shift/TestimonialQuote";
 import { shiftSocialMetadata } from "@/lib/shift/socialMetadata";
 
 /** Status flips on Bangkok dates, so re-render at least hourly. */
@@ -333,6 +335,9 @@ export default async function ShiftRoundPage({ params }: RoundParams) {
       <main className="relative mx-auto max-w-5xl px-5 pb-10 sm:px-8">
         <ShiftGlance cohort={cohort} kind={theme.kind} />
 
+        {/* ============ 1b. WHAT THIS ROUND SHIPPED (finished rounds) ============ */}
+        <ShiftShowcase cohort={cohort} kind={theme.kind} />
+
         {/* ============ 2. THE PROBLEM ============ */}
         <ShiftProblem kind={theme.kind} />
 
@@ -441,7 +446,7 @@ export default async function ShiftRoundPage({ params }: RoundParams) {
               className="mt-0.5 h-4 w-4 shrink-0"
               style={{ color: T.accent3 }}
             />
-            ข้อความและผลลัพธ์ทั้งหมดมาจากฟอร์มประเมินหลังจบกิจกรรม TechSeed #3,
+            จากคำบอกเล่าหลังจบ SHIFT, ฟอร์มประเมินหลังจบกิจกรรม TechSeed #3,
             #5 และบันทึกการวิเคราะห์พอร์ตรายบุคคลของ PassionSeed
           </p>
 
@@ -469,18 +474,15 @@ export default async function ShiftRoundPage({ params }: RoundParams) {
                     >
                       &ldquo;
                     </span>
-                    <blockquote
-                      className="relative flex-1 text-sm leading-relaxed"
-                      style={{ color: paper("d9") }}
-                    >
-                      &ldquo;{card.quote}&rdquo;
-                    </blockquote>
-                    <p
-                      className="mt-4 text-xs font-semibold leading-relaxed"
-                      style={{ color: T.accent3 }}
-                    >
-                      {card.shift}
-                    </p>
+                    <TestimonialQuote card={card} style={{ color: paper("d9") }} />
+                    {card.shift && (
+                      <p
+                        className="mt-4 text-xs font-semibold leading-relaxed"
+                        style={{ color: T.accent3 }}
+                      >
+                        {card.shift}
+                      </p>
+                    )}
                     <figcaption className="mt-3">
                       <p className="text-sm font-semibold">{card.name}</p>
                       <p
@@ -489,6 +491,11 @@ export default async function ShiftRoundPage({ params }: RoundParams) {
                       >
                         {card.meta}
                       </p>
+                      {card.project && (
+                        <a href={card.project.url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block py-3 text-sm underline underline-offset-4" style={{ color: T.accent3 }}>
+                          {card.project.title}
+                        </a>
+                      )}
                     </figcaption>
                   </figure>
                 ))}
