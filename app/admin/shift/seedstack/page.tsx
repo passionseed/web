@@ -33,7 +33,7 @@ async function loadBoard(): Promise<SeedstackBoardStudent[]> {
 
   return (consents.data as ConsentRow[]).map((c) => ({
     userId: c.user_id,
-    nickname: appByUser.get(c.user_id)?.nickname ?? null,
+    nickname: appByUser.get(c.user_id)?.nickname ?? "admin / test",
     cohort: appByUser.get(c.user_id)?.cohort ?? null,
     consent: seedstackConsentState(c),
     row: rows.get(c.user_id) ?? null,

@@ -219,9 +219,14 @@ export async function purgeOldSeedstackEvents(days: number, now = Date.now()): P
   return data?.length ?? 0;
 }
 
-/** A student is someone whose PassionSeed account is bound to a paid SHIFT seat (via Discord on /shift/join). */
+/**
+ * A student is someone whose PassionSeed account is bound to a paid SHIFT
+ * seat (via Discord on /shift/join). Admins also pass, so staff can test the
+ * full consent and linking flow with their own account.
+ */
 export async function findShiftStudent(userId: string): Promise<{ nickname: string } | null> {
-  const { data, error } = await createServiceRoleClient()
+  const supabase = createServiceRoleClient();
+  const { data, error } = await supabase
     .from("shift_applications")
     .select("nickname")
     .eq("user_id", userId)
@@ -230,7 +235,17 @@ export async function findShiftStudent(userId: string): Promise<{ nickname: stri
     .limit(1)
     .maybeSingle();
   if (error) throw new Error(`seedstack student lookup failed: ${error.message}`);
-  return data;
+  if (data) return data;
+
+  const { data: admin, error: roleError } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .limit(1)
+    .maybeSingle();
+  if (roleError) throw new Error(`seedstack admin lookup failed: ${roleError.message}`);
+  return admin ? { nickname: "admin (ทดสอบ)" } : null;
 }
 
 export async function createLinkRequest(): Promise<{ deviceCode: string; userCode: string; expiresAt: string }> {
