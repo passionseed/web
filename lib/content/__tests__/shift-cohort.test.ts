@@ -37,7 +37,7 @@ describe("shift cohort", () => {
 
   it("takes 100 off each person in a pair, and never on a free round", () => {
     expect(pairPriceBaht(SHIFT_COHORT)).toBe(570);
-    expect(pairPriceBaht(getShiftCohort(2)!)).toBe(890);
+    expect(pairPriceBaht(getShiftCohort(2)!)).toBe(590);
     expect(pairPriceBaht(getShiftCohort(0)!)).toBeNull();
   });
 

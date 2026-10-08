@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { formatThaiDate } from "@/lib/content/shift-cohort";
+import { formatThaiDate, pairPriceBaht } from "@/lib/content/shift-cohort";
 import { SHIFT_VOICES } from "@/lib/content/shift-voices";
 
 import { MissionPatch } from "../MissionPatch";
@@ -188,6 +188,20 @@ function CoverB() {
 
 const PHONE_RISE = 470;
 
+/** Bring-a-friend price pill, same look as the other SHIFT posters. */
+function CoverFriendDeal() {
+  const friend = pairPriceBaht(COHORT);
+  if (!friend) return null;
+  return (
+    <p
+      className="mt-4 inline-block whitespace-nowrap rounded-full px-6 py-1.5 font-kodchasan text-[34px] font-semibold"
+      style={{ color: INK.paper, boxShadow: `inset 0 0 0 2px ${INK.pink}`, backgroundColor: `${INK.pink}26` }}
+    >
+      มากับเพื่อน เหลือคนละ ฿{friend.toLocaleString("en-US")}
+    </p>
+  );
+}
+
 function CoverC() {
   return (
     <>
@@ -212,6 +226,7 @@ function CoverC() {
         <p className="font-kodchasan text-[52px] font-bold leading-[1.25]" style={MISREG_TEXT}>
           ฿{COHORT.priceBaht.toLocaleString("en-US")} · ปิดรับ {formatThaiDate(COHORT.applyDeadline)}
         </p>
+        <CoverFriendDeal />
         <div className="mt-5 flex items-center gap-5">
           <p className="font-kodchasan text-[36px] font-bold" style={{ color: INK.yellow }}>
             คอมเมนต์

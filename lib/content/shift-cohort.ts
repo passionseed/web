@@ -232,7 +232,7 @@ export const SHIFT_COHORT_0: ShiftCohort = {
 export const SHIFT_COHORT_2: ShiftCohort = {
   ...sibling(SHIFT_COHORT, 1, 7),
   seats: 21,
-  priceBaht: 990,
+  priceBaht: 690,
 };
 
 /** The round the printed posters are promoting right now. */
