@@ -6,7 +6,7 @@
  * does not fit the contract is dropped, never stored half-parsed.
  */
 
-export const SEEDSTACK_STEPS = ["install", "scope", "ship"] as const;
+export const SEEDSTACK_STEPS = ["install", "scope", "ship", "test"] as const;
 export const SEEDSTACK_EVENTS = ["start", "stuck", "changed", "ticket", "done"] as const;
 export const SEEDSTACK_MAX_BATCH = 100;
 

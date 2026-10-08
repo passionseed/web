@@ -7,7 +7,7 @@
  * sides are asked again.
  */
 
-export const SEEDSTACK_NOTICE_VERSION = "2026-10-07";
+export const SEEDSTACK_NOTICE_VERSION = "2026-10-08";
 export const SEEDSTACK_RETENTION_DAYS = 365;
 
 export interface SeedstackConsentRow {
@@ -38,7 +38,8 @@ export function seedstackConsentState(row: SeedstackConsentRow | null): Seedstac
 export const SEEDSTACK_NOTICE = {
   title: "SeedStack เก็บข้อมูลอะไรบ้าง",
   collect: [
-    "ขั้นที่ทำ (ติดตั้ง / ล็อก scope / ship) และสถานะ เช่น เริ่ม ติด เสร็จ",
+    "ขั้นที่ทำ (ติดตั้ง / ล็อก scope / ship / เทสต์กับคนจริง) และสถานะ เช่น เริ่ม ติด เสร็จ",
+    "จำนวนคนที่ทักไป ตอบกลับ และได้เทสต์ (เป็นตัวเลข ไม่มีชื่อ)",
     "ใช้เวลากี่นาทีในแต่ละขั้น",
     "เทสต์ถัดไปที่น้องเขียนเองสั้นๆ และลิงก์เว็บที่น้อง deploy",
     "ข้อความ error บรรทัดแรก ตอนติดตั้งไม่ผ่าน",

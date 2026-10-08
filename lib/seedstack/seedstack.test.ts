@@ -20,6 +20,10 @@ describe("parseSeedstackEvent", () => {
     });
   });
 
+  it("accepts the test step", () => {
+    expect(parseSeedstackEvent({ ...valid, step: "test", event: "changed", detail: "asked 14, tested 2" })?.step).toBe("test");
+  });
+
   it("rejects unknown steps, events and bad ids", () => {
     expect(parseSeedstackEvent({ ...valid, step: "deploy" })).toBeNull();
     expect(parseSeedstackEvent({ ...valid, event: "chat" })).toBeNull();
