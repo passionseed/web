@@ -19,8 +19,6 @@ export const metadata: Metadata = {
 const TITLES = {
   none: "ให้พี่ mentor เห็นความคืบหน้า",
   withdrawn: "ให้พี่ mentor เห็นความคืบหน้า",
-  awaiting_parent: "รอผู้ปกครองตอบ",
-  parent_declined: "ผู้ปกครองยังไม่ยินยอม",
   active: "พร้อมเชื่อม OpenCode",
 } as const;
 

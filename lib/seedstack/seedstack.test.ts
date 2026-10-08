@@ -55,15 +55,12 @@ describe("seedstackConsentState", () => {
   const base = {
     notice_version: SEEDSTACK_NOTICE_VERSION,
     student_consented_at: "2026-10-07T00:00:00Z",
-    parent_consented_at: "2026-10-07T01:00:00Z",
-    parent_declined_at: null,
     withdrawn_at: null,
   };
 
-  it("is active only with student and parent consent on the current notice", () => {
+  it("is active once the student agrees to the current notice", () => {
     expect(seedstackConsentState(base)).toBe("active");
-    expect(seedstackConsentState({ ...base, parent_consented_at: null })).toBe("awaiting_parent");
-    expect(seedstackConsentState({ ...base, parent_consented_at: null, parent_declined_at: "x" })).toBe("parent_declined");
+    expect(seedstackConsentState({ ...base, student_consented_at: null })).toBe("none");
     expect(seedstackConsentState({ ...base, withdrawn_at: "x" })).toBe("withdrawn");
     expect(seedstackConsentState({ ...base, notice_version: "old" })).toBe("none");
     expect(seedstackConsentState(null)).toBe("none");

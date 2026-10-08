@@ -22,7 +22,7 @@ async function loadBoard(): Promise<SeedstackBoardStudent[]> {
       .limit(5000),
     supabase
       .from("seedstack_consents")
-      .select("user_id, notice_version, student_consented_at, parent_consented_at, parent_declined_at, withdrawn_at"),
+      .select("user_id, notice_version, student_consented_at, withdrawn_at"),
     supabase.from("shift_applications").select("user_id, nickname, cohort").not("user_id", "is", null),
   ]);
   const failed = [events, consents, apps].find((r) => r.error);
@@ -48,7 +48,7 @@ export default async function AdminSeedstackPage() {
       <div className="space-y-2">
         <h2 className="text-2xl font-semibold">SeedStack</h2>
         <p className="text-sm text-muted-foreground">
-          Who finished install, scope and ship, without asking in Discord. Only students whose parent consented send data.
+          Who finished install, scope and ship, without asking in Discord. Only students who agreed on /shift/seedstack send data.
         </p>
       </div>
       <AdminSeedstackBoard students={students} />
