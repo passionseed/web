@@ -35,8 +35,8 @@ export function VoiceSelfTaught() {
 
 export function VoiceFishingRod() {
   return (
-    <RisoSlide {...sheet(4)} tag="AI เป็นเครื่องมือ" title="ให้เบ็ด ไม่ใช่ให้ปลา">
-      <QuoteCard voice={SHIFT_VOICES.parnFishingRod} size={44} hot />
+    <RisoSlide {...sheet(4)} tag="จากผู้ก่อตั้ง" title="ให้เบ็ด ไม่ใช่ให้ปลา">
+      <QuoteCard voice={SHIFT_VOICES.founderFishingRod} size={44} hot />
       <p className="mt-10 text-[30px] leading-[1.5]" style={{ color: DIM }}>
         OpenCode คือเครื่องมือ AI ที่ใช้สร้างต้นแบบ ไม่ต้องเขียนโค้ดเป็นมาก่อน แต่ต้องคิดและตัดสินใจเอง
       </p>

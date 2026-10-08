@@ -1,6 +1,6 @@
 import QRCode from "react-qr-code";
 
-import { SHIFT_PAYMENT, formatThaiDate, formatThaiDateRange, priceLabel } from "@/lib/content/shift-cohort";
+import { SHIFT_PAYMENT, formatThaiDate, formatThaiDateRange, pairPriceBaht, priceLabel } from "@/lib/content/shift-cohort";
 import { SHIFT_VOICES } from "@/lib/content/shift-voices";
 
 import { faqItems, gridApplyUrl } from "../grid/slidesJoin";
@@ -55,6 +55,7 @@ export function OfferOutcomes() {
 }
 
 export function OfferPrice() {
+  const pairPrice = pairPriceBaht(COHORT);
   return (
     <RisoSlide {...sheet(3)} tag="Price · FAQ" title="ราคาและคำถามที่เจอบ่อย">
       <InkCard hot className="flex items-end justify-between">
@@ -65,11 +66,17 @@ export function OfferPrice() {
         </p>
         <p className="font-kodchasan text-[124px] font-bold leading-[0.95]">{priceLabel(COHORT)}</p>
       </InkCard>
+      {pairPrice !== null && (
+        <p className="mt-4 font-kodchasan text-[34px] font-bold">
+          <MarkerHighlight>{`ชวนเพื่อนมาด้วย จ่ายคนละ ฿${pairPrice}`}</MarkerHighlight>
+        </p>
+      )}
       <div className="mt-6">
         <QuoteCard voice={SHIFT_VOICES.hanaPrice} size={30} />
       </div>
       <div className="mt-5 space-y-3">
-        {faqItems(COHORT).map((item) => (
+        {/* The pair price already sits under the price card, so skip its FAQ row. */}
+        {faqItems(COHORT).filter((item) => pairPrice === null || !item.q.includes("เพื่อน")).map((item) => (
           <div key={item.q} className="pb-4" style={{ borderBottom: `1px dashed ${INK.paper}33` }}>
             <p className="text-[26px]" style={{ color: DIM }}>
               {item.q}

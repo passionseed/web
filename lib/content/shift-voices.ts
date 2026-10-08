@@ -33,9 +33,10 @@ export const SHIFT_VOICES = {
     quote:
       "งานที่โรงเรียนครูคอยทำให้ … แต่ค่ายนี้เราต้องค้นเองหมด ทำให้รู้ว่าไม่ต้องมีครูก็ได้ เราหาความรู้เองได้",
   },
-  parnFishingRod: {
-    name: "ป่าน",
-    meta: "ปวช.1 · SHIFT",
+  /** The founder's words, not a student's: never label this as a student voice. */
+  founderFishingRod: {
+    name: "ผู้ก่อตั้ง PassionSeed",
+    meta: "ทำไมเราให้ใช้ AI",
     quote:
       "ที่พี่ให้ OpenCode ไป มันเหมือนการให้เบ็ดตกปลา ไม่ใช่ให้ปลา มันทำให้เด็กได้ฝึกคิดนอกกรอบและรับผิดชอบผลงานตัวเอง",
   },

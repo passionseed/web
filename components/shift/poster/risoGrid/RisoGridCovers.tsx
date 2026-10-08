@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { formatThaiDate } from "@/lib/content/shift-cohort";
+import { formatThaiDate, pairPriceBaht } from "@/lib/content/shift-cohort";
 import { SHIFT_VOICES } from "@/lib/content/shift-voices";
 
 import { MissionPatch } from "../MissionPatch";
@@ -210,7 +210,7 @@ function CoverC() {
       </div>
       <Ground total={COVER_TOTALS.c}>
         <p className="font-kodchasan text-[52px] font-bold leading-[1.25]" style={MISREG_TEXT}>
-          ฿{COHORT.priceBaht.toLocaleString("en-US")} · ปิดรับ {formatThaiDate(COHORT.applyDeadline)}
+          ฿{COHORT.priceBaht.toLocaleString("en-US")} · มากับเพื่อน ฿{pairPriceBaht(COHORT)}
         </p>
         <div className="mt-5 flex items-center gap-5">
           <p className="font-kodchasan text-[36px] font-bold" style={{ color: INK.yellow }}>
