@@ -8,6 +8,14 @@ const RAW = "https://raw.githubusercontent.com/passionseed/seedstack/main";
 export const SEEDSTACK_GUIDE = {
   eyebrow: "SeedStack · คู่มือหน้าเดียว",
   title: "AI ที่ถามเรา ไม่ทำแทนเรา",
+
+  nav: {
+    install: "ติดตั้ง",
+    start: "เริ่มใช้",
+    commands: "คำสั่ง",
+    rules: "กติกา",
+    privacy: "ข้อมูล",
+  },
   intro:
     "SeedStack คือชุดคำสั่งใน OpenCode สำหรับโปรเจกต์ SHIFT มันไม่คิดไอเดียให้ ไม่เลือกให้ว่าจะสร้างอะไร มันถามคำถาม ส่งเราไปคุยกับคนจริง แล้วช่วยเช็กว่าพร้อมไปขั้นต่อไปหรือยัง",
 
@@ -38,6 +46,7 @@ export const SEEDSTACK_GUIDE = {
       { cmd: "/seedstack-scope", when: "ไอเดียยังกว้าง อยากล็อกว่าจะสร้างอะไร", out: "scope-card.md" },
       { cmd: "/seedstack-ship", when: "ก่อนลงมือสร้าง เช็กว่าพร้อมเทสต์กับคนจริงไหม", out: "ship-ticket.md" },
       { cmd: "/seedstack-test", when: "หาคนเทสต์ เทสต์เสร็จ หรือได้ feedback มา", out: "test-log.md" },
+      { cmd: "/seedstack-build", when: "จะสร้างหรือแก้แอป ทำทีละขั้นกับ AI ในอีก session", out: "build-plan.md" },
       { cmd: "/seedstack-live", when: "ของในเครื่องเวิร์กแล้ว อยากได้ลิงก์ให้คนเปิด", out: "ลิงก์ live" },
       { cmd: "/seedstack-connect", when: "(ไม่บังคับ) ให้พี่ mentor เห็นว่าเราอยู่ขั้นไหน", out: "พี่เห็นตอนเราติด" },
     ],
