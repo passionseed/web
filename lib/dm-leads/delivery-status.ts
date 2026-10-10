@@ -1,5 +1,6 @@
 import type { DmMessage } from "@/types/dm-leads";
 import type { CampaignKey } from "@/lib/meta/comment-intent";
+import { shiftCommentDm, shiftCommentPublicReply } from "@/lib/dm-leads/shift-comment-copy";
 
 /**
  * Checks whether an outbound message failed to deliver specifically because
@@ -55,10 +56,17 @@ export function hasThreadDeliveryFailure(messages?: DmMessage[] | null): boolean
 }
 
 /**
- * Returns the default friendly public comment reply prompting the student
- * to initiate a DM since Instagram blocked our outbound message.
+ * Public reply under a comment.
+ *
+ * SHIFT posts the open cohort's apply link, or a closed note with no link
+ * once applications have ended. Every other campaign keeps the privacy note
+ * that asks the student to DM first.
  */
-export function getDefaultPublicCommentReply(username?: string | null): string {
+export function getDefaultPublicCommentReply(
+  username?: string | null,
+  campaign?: CampaignKey | null
+): string {
+  if (campaign === "shift") return shiftCommentPublicReply(username);
   const mention = username ? `@${username} ` : "";
   return `${mention}พอดีน้องตั้งค่า privacy ไม่เปิดรับ DM จากคนแปลกหน้า พี่เลยส่ง DM หาไม่ได้ 🥺 รบกวนน้องกดทัก DM พี่มาก่อนได้เลยน้า เดี๋ยวพี่ส่งข้อมูล/แนะนำให้ครับ! 📩✨`;
 }
@@ -66,32 +74,21 @@ export function getDefaultPublicCommentReply(username?: string | null): string {
 /**
  * The DM sent to someone who commented a campaign keyword.
  *
- * Mirrors the copy configured in Meta Business Suite for live comments, so a
- * commenter reached by the backfill gets the same message as one reached
- * automatically. The private-reply endpoint takes plain text only, which is
- * why the follow-up asks for a typed number rather than offering buttons.
+ * Port and uni keep the tips link. SHIFT uses the open cohort, so the apply
+ * link, deadline, and seat count move with `lib/content/shift-cohort.ts`.
+ * When no round is open the DM says applications have closed and leaves the
+ * apply link out. The private-reply endpoint takes plain text only.
+ *
+ * Grow, Where, and Prove keyword replies live in Meta Business Suite and are
+ * not this message.
  */
 export function getDefaultCommentDmMessage(campaign?: CampaignKey | null): string {
-  if (campaign === "shift") return getShiftCommentDmMessage();
+  if (campaign === "shift") return shiftCommentDm();
   return [
     "ลองดูในลิงค์นี้ได้เลยนะ✌️",
     "https://passionseed.org/tips/intro",
     "และพิมพ์มาว่าเราอยู่กลุ่มไหน 1, 2 หรือ 3",
     "เดี๋ยวพี่ส่ง tips เพิ่มเติมไปให้🫡",
-  ].join("\n");
-}
-
-/**
- * The DM for someone who commented SHIFT on the SHIFT[1] posts: the form link
- * straight away (source-tagged), and the deadline, so one message is enough
- * to apply. No numbered follow-up; the ask here is the form, not a reply.
- */
-function getShiftCommentDmMessage(): string {
-  return [
-    "ส่งลิงก์สมัคร SHIFT[1] ให้แล้วน้า 🌱",
-    "https://passionseed.org/shift/apply?round=1&utm_source=ig-comment",
-    "กรอก 2 นาที ปิดรับ ส. 3 ต.ค. รับแค่ 15 คน",
-    "สงสัยอะไรพิมพ์ถามในนี้ได้เลย",
   ].join("\n");
 }
 
@@ -122,16 +119,19 @@ export async function getPersonalizedPublicCommentReply(lead: {
   displayName?: string | null;
   gradeLevel?: string | null;
   interests?: string[];
+  campaign?: CampaignKey | null;
 }): Promise<string> {
   const { personalizeMessage } = await import("@/lib/dm-leads/personalize");
   return personalizeMessage({
-    template: getDefaultPublicCommentReply(lead.username),
+    template: getDefaultPublicCommentReply(lead.username, lead.campaign),
     lead: {
       displayName: lead.displayName,
       username: lead.username,
       gradeLevel: lead.gradeLevel,
       interests: lead.interests,
     },
-    kind: "public_comment",
+    // SHIFT already carries the apply link. The public_comment instruction
+    // tells the model to ask them to DM first, which drops that link.
+    kind: lead.campaign === "shift" ? "composed" : "public_comment",
   });
 }

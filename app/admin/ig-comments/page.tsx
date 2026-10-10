@@ -66,6 +66,7 @@ export default async function IgCommentsPage({
     getCommentsMissedByDm(30, undefined, true),
   ]);
   const neverContactedIds = new Set(neverContacted.map((c) => c.id));
+  const shiftDmMessage = getDefaultCommentDmMessage("shift");
 
   return (
     <div className="space-y-6">
@@ -103,6 +104,8 @@ export default async function IgCommentsPage({
         }))}
         defaultPublicMessage={getDefaultPublicCommentReply("username")}
         defaultDmMessage={getDefaultCommentDmMessage()}
+        shiftPublicMessage={getDefaultPublicCommentReply("username", "shift")}
+        shiftDmMessage={shiftDmMessage}
       />
 
       <Card>
@@ -151,7 +154,17 @@ export default async function IgCommentsPage({
                         )}
                       </TableCell>
                       <TableCell>
-                        <IgCommentReplyRow commentId={c.id} />
+                        <IgCommentReplyRow
+                          commentId={c.id}
+                          defaultPrivateMessage={
+                            getCampaign(c.text) === "shift" ? shiftDmMessage : undefined
+                          }
+                          defaultPublicMessage={
+                            getCampaign(c.text) === "shift"
+                              ? getDefaultPublicCommentReply(c.username, "shift")
+                              : undefined
+                          }
+                        />
                       </TableCell>
                     </TableRow>
                   );
