@@ -5,10 +5,7 @@ import {
   getDefaultCommentDmMessage,
   getDefaultPublicCommentReply,
 } from "@/lib/dm-leads/delivery-status";
-import {
-  buildShiftCommentDm,
-  buildShiftPublicCommentReply,
-} from "@/lib/dm-leads/shift-comment-copy";
+import { shiftCommentDm, shiftCommentPublicReply } from "@/lib/dm-leads/shift-comment-copy";
 import type { DmMessage } from "@/types/dm-leads";
 
 describe("delivery-status helpers", () => {
@@ -71,9 +68,9 @@ describe("delivery-status helpers", () => {
   });
 
   it("sends SHIFT comments to the current open cohort", () => {
-    expect(getDefaultCommentDmMessage("shift")).toBe(buildShiftCommentDm());
+    expect(getDefaultCommentDmMessage("shift")).toBe(shiftCommentDm());
     expect(getDefaultPublicCommentReply("mind.m5", "shift")).toBe(
-      buildShiftPublicCommentReply("mind.m5")
+      shiftCommentPublicReply("mind.m5")
     );
   });
 });

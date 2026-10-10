@@ -1,3 +1,5 @@
+import { SHIFT_COHORT_2 } from "@/lib/content/shift-cohort";
+import { buildShiftCommentDm } from "@/lib/dm-leads/shift-comment-copy";
 import {
   buildLeadFacts,
   buildPersonalizeMessages,
@@ -46,21 +48,21 @@ describe("personalize helpers", () => {
   });
 
   it("drops a SHIFT rewrite that changes the round or the apply link", () => {
-    const template = [
-      "ส่งลิงก์สมัคร SHIFT[2] ให้แล้วน้า 🌱",
-      "https://passionseed.org/shift/apply?round=2&utm_source=ig-comment-dm",
-      "กรอก 2 นาที ปิดรับ ส. 10 ต.ค. รับแค่ 21 คน",
-      "สงสัยอะไรพิมพ์ถามในนี้ได้เลย",
-    ].join("\n");
-    const swapped = template.replaceAll("SHIFT[2]", "SHIFT[1]").replaceAll("round=2", "round=1");
+    const template = buildShiftCommentDm(SHIFT_COHORT_2);
+    const swapped = template
+      .replaceAll(SHIFT_COHORT_2.name, "SHIFT[1]")
+      .replaceAll(`round=${SHIFT_COHORT_2.round}`, "round=1");
 
     expect(rewriteKeepsShiftFacts(template, swapped)).toBe(false);
     expect(sanitizePersonalizedMessage(template, swapped)).toBeNull();
     expect(sanitizePersonalizedMessage(template, "ส่งลิงก์ให้แล้วน้า")).toBeNull();
     expect(sanitizePersonalizedMessage(template, `${template}\nรุ่นก่อน ฿670`)).toBeNull();
-    expect(sanitizePersonalizedMessage(template, `น้องมายด์ครับ\n${template}`)).toContain("round=2");
+    expect(sanitizePersonalizedMessage(template, `น้องมายด์ครับ\n${template}`)).toContain(
+      `round=${SHIFT_COHORT_2.round}`
+    );
     expect(rewriteKeepsShiftFacts("น้องอยู่ ม.ไหนครับ", "SHIFT[1] ฿670 round=1")).toBe(true);
-    expect(rewriteKeepsShiftFacts(template.replaceAll("round=2", "round=12"), template.replaceAll("round=2", "round=12"))).toBe(true);
+    const laterRound = template.replaceAll(`round=${SHIFT_COHORT_2.round}`, "round=12");
+    expect(rewriteKeepsShiftFacts(laterRound, laterRound)).toBe(true);
   });
 
   it("lists known lead facts for the prompt", () => {

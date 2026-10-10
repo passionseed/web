@@ -1,9 +1,6 @@
 import type { DmMessage } from "@/types/dm-leads";
 import type { CampaignKey } from "@/lib/meta/comment-intent";
-import {
-  buildShiftCommentDm,
-  buildShiftPublicCommentReply,
-} from "@/lib/dm-leads/shift-comment-copy";
+import { shiftCommentDm, shiftCommentPublicReply } from "@/lib/dm-leads/shift-comment-copy";
 
 /**
  * Checks whether an outbound message failed to deliver specifically because
@@ -61,14 +58,15 @@ export function hasThreadDeliveryFailure(messages?: DmMessage[] | null): boolean
 /**
  * Public reply under a comment.
  *
- * SHIFT posts the open cohort's apply link. Every other campaign keeps the
- * privacy note that asks the student to DM first.
+ * SHIFT posts the open cohort's apply link, or a closed note with no link
+ * once applications have ended. Every other campaign keeps the privacy note
+ * that asks the student to DM first.
  */
 export function getDefaultPublicCommentReply(
   username?: string | null,
   campaign?: CampaignKey | null
 ): string {
-  if (campaign === "shift") return buildShiftPublicCommentReply(username);
+  if (campaign === "shift") return shiftCommentPublicReply(username);
   const mention = username ? `@${username} ` : "";
   return `${mention}พอดีน้องตั้งค่า privacy ไม่เปิดรับ DM จากคนแปลกหน้า พี่เลยส่ง DM หาไม่ได้ 🥺 รบกวนน้องกดทัก DM พี่มาก่อนได้เลยน้า เดี๋ยวพี่ส่งข้อมูล/แนะนำให้ครับ! 📩✨`;
 }
@@ -78,13 +76,14 @@ export function getDefaultPublicCommentReply(
  *
  * Port and uni keep the tips link. SHIFT uses the open cohort, so the apply
  * link, deadline, and seat count move with `lib/content/shift-cohort.ts`.
- * The private-reply endpoint takes plain text only.
+ * When no round is open the DM says applications have closed and leaves the
+ * apply link out. The private-reply endpoint takes plain text only.
  *
  * Grow, Where, and Prove keyword replies live in Meta Business Suite and are
  * not this message.
  */
 export function getDefaultCommentDmMessage(campaign?: CampaignKey | null): string {
-  if (campaign === "shift") return buildShiftCommentDm();
+  if (campaign === "shift") return shiftCommentDm();
   return [
     "ลองดูในลิงค์นี้ได้เลยนะ✌️",
     "https://passionseed.org/tips/intro",

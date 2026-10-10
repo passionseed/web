@@ -1,82 +1,108 @@
-import { SHIFT_COHORT, SHIFT_COHORT_2, type ShiftCohort } from "@/lib/content/shift-cohort";
+import {
+  SHIFT_COHORT,
+  SHIFT_COHORT_2,
+  cohortStatus,
+  formatThaiDate,
+  type ShiftCohort,
+} from "@/lib/content/shift-cohort";
 import {
   buildShiftCommentDm,
-  buildShiftPublicCommentReply,
-  currentShiftCommentCohort,
-  openCohortForComments,
+  closedShiftCommentLines,
+  openShiftCommentCohort,
   shiftApplyUrl,
+  shiftCommentDm,
+  shiftCommentPublicReply,
 } from "@/lib/dm-leads/shift-comment-copy";
 
-describe("SHIFT comment copy", () => {
-  it("points the open week of 8 Oct 2026 at SHIFT[2]", () => {
-    const cohort = currentShiftCommentCohort("2026-10-08");
-    expect(cohort.round).toBe(2);
-    expect(cohort.name).toBe("SHIFT[2]");
-    expect(cohort.priceBaht).toBe(990);
-    expect(cohort.seats).toBe(21);
+function expectApplyMessage(message: string, cohort: ShiftCohort, utmSource: string) {
+  expect(message).toContain(`ส่งลิงก์สมัคร ${cohort.name}`);
+  expect(message).toContain(`round=${cohort.round}&utm_source=${utmSource}`);
+  expect(message).toContain(
+    `ปิดรับ ${formatThaiDate(cohort.applyDeadline)} รับแค่ ${cohort.seats} คน`
+  );
+  expect(message).not.toMatch(/[—–]/);
+}
 
-    const dm = buildShiftCommentDm(cohort);
+describe("SHIFT comment copy", () => {
+  it.each(["2026-10-10", "2026-10-11", "2026-10-12"])(
+    "offers SHIFT[2] on %s, while applications are open",
+    (today) => {
+      expect(cohortStatus(SHIFT_COHORT_2, today)).toBe("open");
+      expect(openShiftCommentCohort(today)).toBe(SHIFT_COHORT_2);
+
+      const dm = shiftCommentDm(today);
+      expectApplyMessage(dm, SHIFT_COHORT_2, "ig-comment-dm");
+      expect(dm).not.toMatch(/SHIFT\[1\]|[?&]round=1(?:&|$)|฿670/);
+
+      const pub = shiftCommentPublicReply("mind.m5", today);
+      expect(pub.startsWith("@mind.m5 ")).toBe(true);
+      expectApplyMessage(pub, SHIFT_COHORT_2, "ig-comment-public");
+    }
+  );
+
+  it("on 13 Oct names the running round and does not send an apply link", () => {
+    const today = "2026-10-13";
+    expect(cohortStatus(SHIFT_COHORT_2, today)).toBe("running");
+    expect(openShiftCommentCohort(today)).toBeUndefined();
+
+    const dm = shiftCommentDm(today);
+    expect(dm).toBe(closedShiftCommentLines(today).join("\n"));
     expect(dm).toBe(
-      [
-        "ส่งลิงก์สมัคร SHIFT[2] ให้แล้วน้า 🌱",
-        "https://passionseed.org/shift/apply?round=2&utm_source=ig-comment-dm",
-        "กรอก 2 นาที ปิดรับ ส. 10 ต.ค. รับแค่ 21 คน",
-        "สงสัยอะไรพิมพ์ถามในนี้ได้เลย",
-      ].join("\n")
+      [`${SHIFT_COHORT_2.name} ปิดรับสมัครไปแล้วน้า 🌱`, "รุ่นนี้เริ่มไปแล้ว สงสัยอะไรพิมพ์ถามในนี้ได้เลย"].join(
+        "\n"
+      )
     );
-    expect(dm).not.toMatch(/SHIFT\[1\]|round=1|฿670|(?:^|\s)670(?:\s|$)|5–11|5-11/);
+    expect(dm).not.toContain("/shift/apply");
+    expect(dm).not.toContain("utm_source");
+    expect(dm).not.toContain("ส่งลิงก์สมัคร");
+    expect(dm).not.toContain("กรอก 2 นาที");
     expect(dm).not.toMatch(/[—–]/);
 
-    const pub = buildShiftPublicCommentReply("mind.m5", cohort);
-    expect(pub).toContain("@mind.m5 ส่งลิงก์สมัคร SHIFT[2]");
-    expect(pub).toContain(
-      "https://passionseed.org/shift/apply?round=2&utm_source=ig-comment-public"
-    );
-    expect(pub).toContain("ปิดรับ ส. 10 ต.ค. รับแค่ 21 คน");
-    expect(pub).not.toMatch(/[—–]/);
+    const pub = shiftCommentPublicReply("mind.m5", today);
+    expect(pub.startsWith(`@mind.m5 ${SHIFT_COHORT_2.name} ปิดรับสมัครไปแล้วน้า`)).toBe(true);
+    expect(pub).not.toContain("/shift/apply");
+    expect(pub).not.toContain("ส่งลิงก์สมัคร");
   });
 
-  it("still describes SHIFT[1] on a day that round was the open one", () => {
-    const cohort = currentShiftCommentCohort("2026-10-02");
+  it("describes an earlier open round from that round's own fields", () => {
+    const today = "2026-10-02";
+    const cohort = openShiftCommentCohort(today);
     expect(cohort).toBe(SHIFT_COHORT);
-    expect(buildShiftCommentDm(cohort)).toContain("utm_source=ig-comment-dm");
-    expect(buildShiftCommentDm(cohort)).toContain("round=1");
-    expect(buildShiftCommentDm(cohort)).toContain("ปิดรับ ส. 3 ต.ค. รับแค่ 15 คน");
+    expectApplyMessage(shiftCommentDm(today), SHIFT_COHORT, "ig-comment-dm");
   });
 
-  it("falls back to the poster cohort once applications have closed", () => {
-    expect(currentShiftCommentCohort("2026-10-11").round).toBe(SHIFT_COHORT_2.round);
-    expect(currentShiftCommentCohort("2026-10-20").round).toBe(SHIFT_COHORT_2.round);
-  });
-
-  it("follows a later open round instead of staying on the previous one", () => {
+  it("follows a later open round instead of a round that is already running", () => {
     const next: ShiftCohort = {
       ...SHIFT_COHORT_2,
       round: 3,
       name: "SHIFT[3]",
       seats: 18,
-      priceBaht: 990,
+      priceBaht: SHIFT_COHORT_2.priceBaht,
       applyDeadline: "2026-10-17",
       startDate: "2026-10-19",
       endDate: "2026-10-25",
       applyUrl: "/shift/apply?round=3",
     };
-    const picked = openCohortForComments([SHIFT_COHORT_2, next], "2026-10-16", SHIFT_COHORT);
-    expect(picked.name).toBe("SHIFT[3]");
+    const today = "2026-10-16";
+    const cohorts = [SHIFT_COHORT_2, next];
+    expect(cohortStatus(SHIFT_COHORT_2, today)).toBe("running");
+    expect(openShiftCommentCohort(today, cohorts)).toBe(next);
 
-    const dm = buildShiftCommentDm(picked);
-    expect(dm).toContain("ส่งลิงก์สมัคร SHIFT[3]");
-    expect(dm).toContain("round=3&utm_source=ig-comment-dm");
-    expect(dm).toContain("รับแค่ 18 คน");
-    expect(dm).not.toContain("SHIFT[1]");
-    expect(dm).not.toContain("SHIFT[2]");
-    expect(dm).not.toContain("round=1");
-    expect(dm).not.toContain("round=2");
+    const dm = shiftCommentDm(today, cohorts);
+    expectApplyMessage(dm, next, "ig-comment-dm");
+    expect(dm).not.toContain(SHIFT_COHORT_2.name);
+    expect(dm).not.toContain(`round=${SHIFT_COHORT_2.round}`);
   });
 
   it("keeps an existing round query when adding the channel utm", () => {
     expect(shiftApplyUrl(SHIFT_COHORT_2, "ig-comment-dm")).toBe(
-      "https://passionseed.org/shift/apply?round=2&utm_source=ig-comment-dm"
+      `https://passionseed.org/shift/apply?round=${SHIFT_COHORT_2.round}&utm_source=ig-comment-dm`
+    );
+  });
+
+  it("builds the open-round DM from the cohort record", () => {
+    expect(buildShiftCommentDm(SHIFT_COHORT_2)).toContain(
+      `ปิดรับ ${formatThaiDate(SHIFT_COHORT_2.applyDeadline)} รับแค่ ${SHIFT_COHORT_2.seats} คน`
     );
   });
 });
