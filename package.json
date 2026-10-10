@@ -120,7 +120,7 @@
     "diff": "^8.0.3",
     "discord.js": "^14.27.0",
     "dotenv": "^17.3.0",
-    "embla-carousel-react": "8.5.1",
+    "embla-carousel-react": "8.6.0",
     "esbuild": "^0.27.3",
     "fast-blurhash": "^1.1.4",
     "framer-motion": "^12.34.0",
