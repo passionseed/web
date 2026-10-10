@@ -10,6 +10,7 @@ import { SchoolFaq } from "@/components/shift/school/SchoolFaq";
 import { SchoolHero } from "@/components/shift/school/SchoolHero";
 import { SchoolLearning } from "@/components/shift/school/SchoolLearning";
 import { SchoolPartnership } from "@/components/shift/school/SchoolPartnership";
+import { SchoolPosters } from "@/components/shift/school/SchoolPosters";
 import { SchoolPromise } from "@/components/shift/school/SchoolPromise";
 import { SchoolData } from "@/components/shift/school/SchoolData";
 import { SchoolVoices } from "@/components/shift/school/SchoolVoices";
@@ -33,7 +34,8 @@ export const metadata: Metadata = {
 /**
  * /shift/school: the proposal a teacher reads to open a SHIFT cohort
  * for their students, and the link they forward to parents. Same riso print run as the
- * /shift gallery. Order follows the reader's questions: what students do,
+ * /shift gallery. The pixel poster set (/shift/poster/school) comes first
+ * for readers who skim; then the full brief follows the reader's questions: what students do,
  * how they learn, what we promise, how we use the data and what the family consents to,
  * what the school does, proof, who we are, FAQ, then the one door (an Instagram DM).
  * Copy lives in lib/content/shift-school.ts.
@@ -48,6 +50,7 @@ export default function ShiftSchoolPage() {
       <SchoolHero />
 
       <main className={`${gallery.container} ${styles.main}`}>
+        <SchoolPosters />
         <SchoolArc />
         <SchoolLearning />
         <SchoolPromise />

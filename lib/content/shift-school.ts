@@ -409,3 +409,117 @@ export const SCHOOL_META = {
   ogTitle: "SHIFT สำหรับโรงเรียน | 7 วัน สร้างของจริง",
   ogDescription: "นักเรียนสร้างของจริง แล้วเอาไปให้คนจริงใช้อย่างน้อย 5 คน ใน 7 วัน",
 } as const;
+
+/* ------------------------------------------------------------------ */
+/* Poster set (/shift/poster/school, IG carousel 1080x1350)            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The same offer cut down for images a teacher can drop into a LINE group
+ * or a parent can save. Shorter than the page copy because it is read at
+ * phone-feed size; every number still comes from SCHOOL_OFFER.
+ */
+export const SCHOOL_POSTER_URL = "https://passionseed.org/shift/school?utm_source=poster-school";
+
+export const SCHOOL_POSTERS = {
+  total: 5,
+  footerUrl: "passionseed.org/shift/school",
+  cover: {
+    kicker: "SHIFT FOR SCHOOLS · 7 DAYS · ONLINE",
+    lines: ["7 วัน สร้างของจริง", `ให้คนจริงใช้อย่างน้อย ${SCHOOL_OFFER.minOutsideUsers} คน`],
+    tagline: "SCOPE · BUILD · SHIP · PIVOT · DEMO",
+    priceLabel: "ราคารุ่นโรงเรียน",
+    facts: `รุ่นละ ${SCHOOL_OFFER.minStudents}-${SCHOOL_OFFER.maxStudents} คน · ผู้ปกครองจ่ายเองรายคน · ออนไลน์ทาง Discord`,
+    refund: `ไม่ครบ ${SCHOOL_OFFER.minStudents} คน คืนเงินเต็ม`,
+    deliverables: "ได้ Pivot Log + Case Study 1 หน้า ใช้ในพอร์ต TCAS ได้",
+    qr: "สแกนอ่านรายละเอียด",
+  },
+  arc: {
+    kicker: "THE 7-DAY ARC",
+    heading: "7 วัน ทำอะไรบ้าง",
+    steps: [
+      { day: "DAY 1", icon: "target", title: "ล็อกโจทย์", body: "ปัญหาเดียว 1 หน้า", with: "AI mentor + เซสชันกลุ่ม" },
+      { day: "DAY 2-4", icon: "spark", title: "ลงมือสร้าง", body: "OpenCode + skill ของ PassionSeed", with: "ถาม AI ก่อน ติดจริงเรียก mentor" },
+      { day: "DAY 3-5", icon: "users", title: "ให้คนจริงลอง", body: "คนนอกอย่างน้อย 5 คน จดทุกจุดที่พัง", with: "ข้อมูลตอนพังคือของมีค่า" },
+      { day: "DAY 5-6", icon: "signpost", title: "Pivot", body: "ปรับจากสิ่งที่คนทำจริง", with: "วงคุยกับเพื่อนและ mentor" },
+      { day: "DAY 7", icon: "flag", title: "Demo Day", body: "เล่าเรื่องการ Pivot ของตัวเอง", with: "ผู้ปกครองดูออนไลน์ได้" },
+    ],
+    shipLabel: "ได้อะไรกลับไป",
+    ship: [
+      { icon: "rocket", title: "Live Project", body: "งานที่คนนอกใช้ได้จริง" },
+      { icon: "chart", title: "Pivot Log", body: "ทุกจุดที่พังและวิธีแก้" },
+      { icon: "portfolio", title: "Case Study", body: "1 หน้า ใช้ในพอร์ต TCAS" },
+    ],
+  },
+  learn: {
+    kicker: "HOW STUDENTS LEARN",
+    heading: "เรียนแบบคนสร้างของ",
+    modes: [
+      { icon: "spark", tag: "AI BUILD", title: "สร้างคู่กับ AI", body: "OpenCode + skill ของเรา พาไปทีละขั้น" },
+      { icon: "bot", tag: "AI MENTOR", title: "เรียนเองกับ AI mentor", body: "ถามได้ทุกเวลา ถามกลับให้คิดต่อ" },
+      { icon: "crew", tag: "NEAR-PEER", title: "รุ่นพี่ mentor", body: "ศิษย์เก่าที่เคยติดตรงเดียวกันมาก่อน" },
+      { icon: "circle", tag: "COMMUNITY", title: "วงคุยและวงเล่าเรื่อง", body: "ทั้งรุ่นช่วยกันดูงาน" },
+    ],
+    principle: "นักเรียนตัดสินใจเองทุกเรื่อง mentor ช่วยถาม ไม่ทำแทน ไม่เขียนแทน",
+    promiseLabel: "OUR PROMISE",
+    promiseTitle: "ทุกคนได้เอางานไปให้คนนอกจริงลองใช้",
+    promiseCaption: "คนนอกขั้นต่ำ ต่อนักเรียน 1 คน",
+    guarantee: `ไม่ครบใน 7 วัน mentor ช่วยต่ออีก ${SCHOOL_OFFER.extraHelpDays} วัน ฟรี`,
+  },
+  parents: {
+    kicker: "FOR PARENTS",
+    heading: "ข้อมูลและความปลอดภัย",
+    consentLabel: "เซ็นยินยอมก่อนจ่ายเงิน",
+    layers: [
+      { tag: "REQUIRED", title: "ใช้ข้อมูลเพื่อ\nพัฒนาโปรแกรม", body: "ผู้ปกครองเซ็น และนักเรียนยินยอม" },
+      { tag: "OPTIONAL", title: "ติดตามผล\n3, 6, 12 เดือน", body: "ช่องติ๊กแยก ไม่ติ๊กก็เข้าได้" },
+      { tag: "OPTIONAL", title: "รีวิว รูป\nวิดีโอ", body: "เลือกระดับเอง ถอนได้ทุกเมื่อ" },
+    ],
+    collectLabel: "เก็บอะไรบ้าง",
+    collect: ["Pivot Log + ชิ้นงาน", "แชทกับ AI mentor", "แบบสอบถามก่อน/หลัง", "จำนวนคนนอกที่ได้ลอง"],
+    promisesLabel: "เราสัญญา",
+    promises: ["รายงานแบบไม่ระบุตัวตน", "เก็บเท่าที่จำเป็น ตาม PDPA", "ถอนได้ทุกเมื่อ ยังเรียนจนจบ", "ขอลบข้อมูลได้ทุกเมื่อ"],
+    safetyLabel: "ความปลอดภัย",
+    safety: ["ไม่มีแชทส่วนตัว 1 ต่อ 1 กับ mentor", "ทุกงานคุยในห้องกลุ่มที่ทุกคนเห็น", "มีคุณครูของโรงเรียนดูแลตลอดรุ่น"],
+  },
+  schools: {
+    kicker: "FOR SCHOOLS",
+    heading: "โรงเรียนได้อะไร ทำอะไร",
+    getsLabel: "โรงเรียนได้",
+    gets: [
+      { icon: "rocket", body: "โปรแกรม 7 วัน ทั้งรุ่น" },
+      { icon: "portfolio", body: "Case Study ของรุ่น\nแบบไม่ระบุชื่อ" },
+      { icon: "screen", body: "แกลเลอรีผลงานนักเรียน" },
+      { icon: "chart", body: "สรุปสิ่งที่เราเรียนรู้" },
+    ],
+    doesLabel: "โรงเรียนทำ",
+    does: ["ส่งต่อลิงก์ให้นักเรียนและผู้ปกครอง", "ตั้งคุณครู 1 ท่าน เป็นผู้ใหญ่ดูแล"],
+    doesNot: "ไม่ต้องเก็บเงิน ไม่ต้องเก็บใบยินยอม",
+    never: "ไม่ขายจดหมายรับรอง ไม่สัญญาผล TCAS",
+    whoLabel: "ใครทำ SHIFT",
+    /** "\n" marks a forced line break on the poster. */
+    who: "โปรเจกต์ของนักศึกษาปี 4\nBAScii จุฬาลงกรณ์มหาวิทยาลัย",
+    why: "อยากให้นักเรียนไทยเข้าถึงการศึกษาระดับท็อป\nที่สนุก และมีค่ากับชีวิตไปตลอด",
+    cta: "สนใจเปิดรุ่น\nที่โรงเรียน",
+    contact: ["IG @passion_seed.th", "LINE @passionseed"],
+  },
+} as const;
+
+/* ------------------------------------------------------------------ */
+/* Poster images on the page                                           */
+/* ------------------------------------------------------------------ */
+
+/** Exported PNGs of the poster set (scripts/render-shift-school-posters.mjs). */
+export const SCHOOL_POSTER_IMAGES = {
+  eyebrow: "SAVE & SHARE",
+  heading: "สรุปเป็นภาพ ส่งต่อได้เลย",
+  aside: "กดค้างที่ภาพเพื่อบันทึก\nหรือส่งต่อในกลุ่ม LINE",
+  save: "บันทึกภาพ",
+  images: [
+    { src: "/shift/school/poster-1.png", alt: "SHIFT สำหรับโรงเรียน: 7 วัน สร้างของจริง ให้คนจริงใช้อย่างน้อย 5 คน ราคารุ่นโรงเรียน ฿590" },
+    { src: "/shift/school/poster-2.png", alt: "7 วัน ทำอะไรบ้าง: ล็อกโจทย์ ลงมือสร้าง ให้คนจริงลอง Pivot และ Demo Day" },
+    { src: "/shift/school/poster-3.png", alt: "เรียนยังไง: สร้างคู่กับ AI, AI mentor, รุ่นพี่ mentor, วงคุย และสัญญาว่าทุกคนได้คนนอกลองใช้อย่างน้อย 5 คน" },
+    { src: "/shift/school/poster-4.png", alt: "สำหรับผู้ปกครอง: การยินยอม ข้อมูลที่เก็บ สิ่งที่เราสัญญา และความปลอดภัยของนักเรียน" },
+    { src: "/shift/school/poster-5.png", alt: "สำหรับโรงเรียน: โรงเรียนได้อะไร ทำอะไร ใครทำ SHIFT และช่องทางติดต่อ" },
+  ],
+} as const;

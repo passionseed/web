@@ -138,6 +138,70 @@
   line-height: 1.8;
 }
 
+/* ---------- poster strip ---------- */
+
+.posters {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(220px, 1fr);
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 8px;
+  scrollbar-width: thin;
+}
+
+.poster {
+  scroll-snap-align: start;
+  min-width: 0;
+}
+
+.posterLink {
+  display: block;
+  overflow: hidden;
+  border-radius: 6px;
+}
+
+.posterImage {
+  display: block;
+  width: 100%;
+  height: auto;
+  transition: transform 160ms var(--ease-snap, ease-out);
+}
+
+.posterSave {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  color: var(--gallery-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+@keyframes posterLift {
+  to {
+    transform: scale(1.02);
+  }
+}
+
+@media (hover: hover) {
+  .posterLink:hover .posterImage {
+    animation: posterLift 500ms var(--ease-tension) forwards;
+  }
+  .posterSave:hover {
+    color: var(--gallery-paper);
+  }
+}
+
+@media (max-width: 639px) {
+  .posters {
+    grid-auto-columns: 78%;
+    margin-right: -20px;
+    padding-right: 20px;
+  }
+}
+
 /* ---------- 7-day rail ---------- */
 
 .arc {
