@@ -28,6 +28,8 @@ export interface DayPlan {
   goal: string;
   schedule: ScheduleRow[];
   frames: ({ th: string; en: string; slug: string } & Spec)[];
+  /** The whole day on one frame, for students who only open one picture. */
+  poster?: { th: string; en: string } & Spec;
 }
 
 export const DAYS: DayPlan[] = [
@@ -353,6 +355,20 @@ export const DAYS: DayPlan[] = [
         mentor: "พรุ่งนี้ Demo Day! ไม่ต้องเพอร์เฟกต์ เล่าของจริงพอ 🎤",
       },
     ],
+    poster: {
+      th: "Day 6: ตัวเลขบอกอะไร",
+      en: "Measure",
+      kind: "steps",
+      items: [
+        ["เลือกตัวเลข 1 ตัว", "นับได้ วัดซ้ำได้"],
+        ["วัด ก่อน → หลัง", "เทสสดกับคนนอก"],
+        ["ปล่อยสู่โลก 🌏", "โพสต์ แคปคอมเมนต์"],
+        ["ร่างพอร์ต 1 หน้า", "ปัญหา · พัง → แก้ · ตัวเลข"],
+        ["ซ้อมเดโม 3 นาที", "ในกลุ่ม เพื่อนถาม 1 ข้อ"],
+        ["ก่อน Day 7", "พอร์ตเสร็จ โพสต์ในเธรด"],
+      ],
+      note: "ตัวเลขไม่ขึ้นก็เล่าได้ นั่นคือผลลัพธ์จริง 🙂",
+    },
   },
   {
     day: 7,
@@ -428,6 +444,20 @@ export const DAYS: DayPlan[] = [
         mentor: "ขอบคุณที่มาลุยด้วยกันนะ 🙏",
       },
     ],
+    poster: {
+      th: "Day 7: Demo Day 🎉",
+      en: "Show it",
+      kind: "steps",
+      items: [
+        ["เดโม 3 นาที", "แชร์จอใน Park ใช้ให้ดูสด"],
+        ["เล่าพัง → แก้", "+ คำพูดผู้ใช้ + ตัวเลข"],
+        ["ตอบ 1 คำถาม", "จากเพื่อนในรุ่น"],
+        ["เฉลยรูป Day 1", "รูปใต้ชื่อเราหมายถึงอะไร"],
+        ["มองย้อน 7 วัน", "เราเปลี่ยนไปยังไง · ตอบฟอร์ม"],
+        ["ต่อจากนี้", "Discord ไม่ปิด · project club"],
+      ],
+      note: "ส่งพอร์ต 1 หน้าในเธรด · ไม่ต้องเพอร์เฟกต์ เล่าของจริงพอ 🎤",
+    },
   },
 ];
 
@@ -574,6 +604,18 @@ export function ShiftPixelDayFrame({ day, n }: { day: number; n: number }) {
       tag={`DAY ${day} · ${n}/${plan.frames.length}`}
     >
       <Body plan={plan} spec={f} />
+    </TopicFrame>
+  );
+}
+
+/** One frame that sums up the whole day. */
+export function ShiftPixelDayPoster({ day }: { day: number }) {
+  const plan = DAYS.find((d) => d.day === day);
+  const poster = plan?.poster;
+  if (!plan || !poster) return null;
+  return (
+    <TopicFrame n={1} id={`day${day}-poster`} th={poster.th} en={poster.en} tag={`DAY ${day} · 1 PAGE`}>
+      <Body plan={plan} spec={poster} />
     </TopicFrame>
   );
 }

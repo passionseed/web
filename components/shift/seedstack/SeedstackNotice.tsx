@@ -24,9 +24,10 @@ export function SeedstackNotice() {
       <h2 className="font-kodchasan text-base font-bold" style={{ color: INK.paper }}>
         {n.title}
       </h2>
+      <p>{n.why}</p>
       <List items={n.collect} />
       <List items={n.notCollect} />
-      <p><strong style={{ color: INK.paper }}>เก็บไปทำไม:</strong> {n.purpose}</p>
+      <p><strong style={{ color: INK.paper }}>ต้องเชื่อมไหม:</strong> {n.basis}</p>
       <p><strong style={{ color: INK.paper }}>ใครเห็น:</strong> {n.who}</p>
       <p><strong style={{ color: INK.paper }}>เก็บนานแค่ไหน:</strong> {n.retention}</p>
       <p><strong style={{ color: INK.paper }}>สิทธิ์ของเรา:</strong> {n.rights}</p>

@@ -168,6 +168,12 @@ export function ShiftJoinView({ token, state }: { token: string; state: ShiftJoi
               เปิด Discord
             </LinkButton>
           )}
+          {/* Week 0, not mid-cohort: an under-20's parent link goes out while there is time. */}
+          <Body>
+            ขั้นต่อไป: ตั้งค่า SeedStack ไว้เลย ถ้ายังไม่ถึง 20 ปี จะได้ลิงก์ให้ผู้ปกครองกดยินยอม ส่งไปตั้งแต่ตอนนี้
+            จะได้ไม่ต้องรอตอนเริ่มทำโปรเจกต์
+          </Body>
+          <LinkButton href="/shift/seedstack">ตั้งค่า SeedStack</LinkButton>
           <LineHelp />
         </Shell>
       );

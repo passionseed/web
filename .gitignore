@@ -123,3 +123,6 @@ extension/dist/
 
 # SHIFT[2] grid PNG exports (34MB, regenerate with scripts/export-shift2-grid.mjs)
 public/shift/posters/shift2-grid/
+
+# Internal consent/ethics drafts, never public
+output/
