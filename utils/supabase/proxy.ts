@@ -18,6 +18,9 @@ function shouldSkipOnboardGate(pathname: string): boolean {
     pathname.startsWith(SHIFT_JOIN_PREFIX) ||
     // SeedStack links a SHIFT student's CLI; the auth callback skips onboard too.
     pathname.startsWith('/shift/seedstack') ||
+    // The school proposal is forwarded to teachers and parents, who may hold
+    // a half-finished account; a proposal page should never bounce to /onboard.
+    pathname.startsWith('/shift/school') ||
     pathname.startsWith('/api/') ||
     pathname.startsWith('/_next/')
   )

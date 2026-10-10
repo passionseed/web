@@ -348,6 +348,12 @@ export const NOTES = {
   partnerProof: "ทุกตัวอย่างเริ่มจากคนที่ทำงานจริง",
   partnerExchange: "งานของคุณ คุณคุมเองได้เสมอ",
   partnerContact: "คุยกันก่อนได้ ยังไม่ต้องตัดสินใจ",
+  /* /shift/school: read by teachers first, then forwarded to parents. */
+  schoolHero: "คุณครูส่งต่อลิงก์นี้ให้ผู้ปกครองได้เลย อ่านจบในหน้าเดียว",
+  schoolLearning: "เราไม่ทำแทน แต่ก็ไม่ปล่อยให้ติดอยู่คนเดียวนะ",
+  schoolData: "ข้อมูลของน้องเป็นของน้อง ขอลบเมื่อไหร่ก็ได้",
+  schoolPartnership: "ครูไม่ต้องเก็บเงิน ไม่ต้องตามเอกสารใครเลย",
+  schoolContact: "ถามก่อนได้ ยังไม่ต้องตัดสินใจ",
 } as const;
 
 /**

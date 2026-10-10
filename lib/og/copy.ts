@@ -4,6 +4,7 @@ import type { PosterCopy } from "./poster";
 const PAGES: Record<string, PosterCopy> = {
   "/": { title: "PASSIONSEED", subtitle: "เลือกทางของตัวเอง เริ่มจากลงมือทำ", label: "YOUR NEXT CHAPTER" },
   "/shift": { title: "SHIFT", subtitle: "7 วัน ปั้น 1 โปรเจกต์จริง", label: "7 DAYS / REAL PROJECTS", footer: "Live Project · Pivot Log · 1-Page Case Study" },
+  "/shift/school": { title: "SHIFT", subtitle: "7 วัน สร้างของจริง ให้คนจริงใช้", label: "FOR SCHOOLS", footer: "Live Project · Pivot Log · 1-Page Case Study" },
   "/techseed": { title: "TECHSEED", subtitle: "จากคนใช้เทคโนโลยี สู่คนสร้างผลงานจริง", label: "MADE BY STUDENTS" },
   "/pathlab": { title: "PATHLAB", subtitle: "ลองทำงานจริง แล้วค้นพบว่าทางนี้ใช่ไหม", label: "TRY A REAL PATH" },
   "/pathlab/for-parents": { title: "PATHLAB", subtitle: "ให้ลูกได้ลอง ก่อนตัดสินใจเลือกอนาคต", label: "FOR PARENTS" },
