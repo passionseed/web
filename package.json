@@ -123,7 +123,7 @@
     "embla-carousel-react": "8.5.1",
     "esbuild": "^0.27.3",
     "fast-blurhash": "^1.1.4",
-    "framer-motion": "^12.34.0",
+    "framer-motion": "^13.1.1",
     "git": "^0.1.5",
     "googleapis": "^172.0.0",
     "groq-sdk": "^1.1.1",
