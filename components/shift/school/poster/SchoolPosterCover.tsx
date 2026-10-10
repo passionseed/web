@@ -2,7 +2,7 @@ import QRCode from "react-qr-code";
 
 import { PIXEL_FONT } from "@/components/shift/poster/pixel/PixelRects";
 import { CELL, PX } from "@/components/shift/poster/pixel/pixelKit";
-import { MarkerHighlight, PassionSeedMark } from "@/components/shift/poster/riso";
+import { PassionSeedMark } from "@/components/shift/poster/riso";
 import { SCHOOL_OFFER, SCHOOL_POSTERS, SCHOOL_POSTER_URL, baht } from "@/lib/content/shift-school";
 
 import { Sheet } from "./SchoolPosterParts";
@@ -52,14 +52,11 @@ function Band() {
                 จาก <s>{baht(SCHOOL_OFFER.regularPriceBaht)}</s>
               </span>
             </p>
-            <p className="mt-2 text-[21px] leading-[1.5]" style={{ color: `${PX.cream}d9` }}>
+            <p className="mt-3 text-[24px] leading-[1.5]" style={{ color: PX.cream }}>
               {COPY.facts}
             </p>
-            <p className="mt-2 text-[21px] leading-[1.5]" style={{ color: `${PX.cream}d9` }}>
+            <p className="mt-1 text-[24px] leading-[1.5]" style={{ color: `${PX.cream}d9` }}>
               {COPY.deliverables}
-            </p>
-            <p className="mt-3 text-[22px]">
-              <MarkerHighlight>{COPY.refund}</MarkerHighlight>
             </p>
           </div>
           <div className="shrink-0 text-center">

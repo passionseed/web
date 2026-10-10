@@ -42,7 +42,7 @@ export function SchoolHero() {
           <p className={styles.badge}>{SCHOOL_HERO.badge}</p>
         </div>
 
-        <div className={gallery.heroCopy}>
+        <div className={`${gallery.heroCopy} ${styles.heroPanel}`}>
           <h1 className="font-kodchasan">
             <span className="sr-only">SHIFT สำหรับโรงเรียน: </span>
             {SCHOOL_HERO.headline}

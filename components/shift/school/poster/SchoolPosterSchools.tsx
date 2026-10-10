@@ -73,6 +73,9 @@ function WhoAndContact() {
         <p className="mt-[8px] text-[18px] leading-[1.5]" style={{ color: `${PX.cream}cc` }}>
           <Lines text={COPY.why} />
         </p>
+        <p className="mt-[8px] whitespace-nowrap font-kodchasan text-[18px] font-semibold" style={{ color: PX.accentLight }}>
+          {COPY.proof}
+        </p>
       </Card>
       <Card strong className="flex shrink-0 items-center gap-[16px] px-[18px] py-[16px]">
         <div className="p-2" style={{ backgroundColor: PX.cream }}>

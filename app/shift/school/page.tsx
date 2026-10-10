@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 
 import { MetaPixel } from "@/components/shift/MetaPixel";
 import { ShiftGalleryMotion } from "@/components/shift/ShiftGalleryMotion";
-import { RisoPageTexture } from "@/components/shift/ShiftRiso";
 import { SchoolArc } from "@/components/shift/school/SchoolArc";
-import { SCHOOL_CONTACT_ID, SchoolContact } from "@/components/shift/school/SchoolContact";
+import {
+  SCHOOL_CONTACT_ID,
+  SchoolContact,
+} from "@/components/shift/school/SchoolContact";
 import { SchoolDmFab } from "@/components/shift/school/SchoolDmFab";
 import { SchoolFaq } from "@/components/shift/school/SchoolFaq";
 import { SchoolHero } from "@/components/shift/school/SchoolHero";
@@ -13,6 +15,7 @@ import { SchoolPartnership } from "@/components/shift/school/SchoolPartnership";
 import { SchoolPosters } from "@/components/shift/school/SchoolPosters";
 import { SchoolPromise } from "@/components/shift/school/SchoolPromise";
 import { SchoolData } from "@/components/shift/school/SchoolData";
+import { SchoolTexture } from "@/components/shift/school/SchoolTexture";
 import { SchoolVoices } from "@/components/shift/school/SchoolVoices";
 import { SchoolWho } from "@/components/shift/school/SchoolWho";
 import gallery from "@/components/shift/shiftGallery.module.css";
@@ -42,27 +45,35 @@ export const metadata: Metadata = {
  */
 export default function ShiftSchoolPage() {
   return (
-    <div id="top" className={`${gallery.page} font-bai-jamjuree antialiased`} lang="th">
+    <div
+      id="top"
+      className={`${gallery.page} font-bai-jamjuree antialiased`}
+      lang="th"
+    >
       <MetaPixel pagePath="/shift/school" />
-      <RisoPageTexture />
+      <SchoolTexture />
       <ShiftGalleryMotion />
 
-      <SchoolHero />
+      {/* The ink layer: lifts every word above the grain and sets the
+          page's contrast scale (see .ink in shiftSchool.module.css). */}
+      <div className={styles.ink}>
+        <SchoolHero />
 
-      <main className={`${gallery.container} ${styles.main}`}>
-        <SchoolPosters />
-        <SchoolArc />
-        <SchoolLearning />
-        <SchoolPromise />
-        <SchoolData />
-        <SchoolPartnership />
-        <SchoolVoices />
-        <SchoolWho />
-        <SchoolFaq />
-        <SchoolContact />
-      </main>
+        <main className={`${gallery.container} ${styles.main}`}>
+          <SchoolPosters />
+          <SchoolArc />
+          <SchoolLearning />
+          <SchoolPromise />
+          <SchoolData />
+          <SchoolPartnership />
+          <SchoolVoices />
+          <SchoolWho />
+          <SchoolFaq />
+          <SchoolContact />
+        </main>
 
-      <SchoolDmFab contactId={SCHOOL_CONTACT_ID} />
+        <SchoolDmFab contactId={SCHOOL_CONTACT_ID} />
+      </div>
     </div>
   );
 }

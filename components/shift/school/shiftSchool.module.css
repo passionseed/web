@@ -6,6 +6,43 @@
  * Hairlines, not cards: the page reads like a printed brief.
  */
 
+/*
+ * Ink system. Contrast is carried by value, not hue, measured against the
+ * ground (#17151c):
+ *   paper           #f2ead9  15.1:1  headings, key lines
+ *   --gallery-muted paper 84% 10.9:1  body copy (was 72%, 8.2:1)
+ *   --ink-quiet     paper 68%  7.5:1  captions and meta only, 13px and up
+ *   --gallery-accent #ff8a4c   7.8:1  labels, checks, rules (AAA small text)
+ *   --ink-amber     #ffc84d   11.7:1  numbers that matter: price, the 5
+ * One warm family (orange to amber) on the cool violet ground; the riso
+ * pink stays in the button's print shadow only. Thai body copy is set at
+ * 16px and up because Bai Jamjuree's thin strokes read lighter than their
+ * colour measures.
+ */
+.ink {
+  --gallery-muted: color-mix(in srgb, var(--gallery-paper) 84%, var(--shift-bg, #17151c));
+  --ink-quiet: color-mix(in srgb, var(--gallery-paper) 68%, var(--shift-bg, #17151c));
+  --gallery-hair: color-mix(in srgb, var(--gallery-paper) 22%, transparent);
+  --gallery-accent: #ff8a4c;
+  --ink-amber: var(--shift-hazard, #ffc84d);
+  position: relative;
+  z-index: 1;
+}
+
+/* Hero copy sits on a solid panel, not on the halftone sky. */
+.heroPanel {
+  padding: 28px 28px 22px;
+  border: 1px solid var(--gallery-hair);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--shift-bg, #17151c) 88%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.heroPanel h1 {
+  color: var(--gallery-paper);
+}
+
 .heroInner {
   align-items: end;
   min-height: 460px;
@@ -35,12 +72,13 @@
 }
 
 .priceLabel {
-  color: var(--gallery-accent);
-  font-size: 14px;
-  font-weight: 700;
+  color: var(--gallery-paper);
+  font-size: 15px;
+  font-weight: 600;
 }
 
 .priceValue {
+  color: var(--ink-amber);
   font-size: clamp(34px, 4vw, 44px);
   font-weight: 700;
   line-height: 1.1;
@@ -54,7 +92,7 @@
 .priceUnit {
   flex-basis: 100%;
   color: var(--gallery-muted);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .heroFacts {
@@ -69,14 +107,15 @@
 
 .heroFacts dt,
 .factTerm {
-  color: var(--gallery-muted);
-  font-size: 12px;
+  color: var(--ink-quiet);
+  font-size: 13px;
   line-height: 1.6;
 }
 
 .heroFacts dd {
   margin-top: 2px;
-  font-size: 15px;
+  color: var(--gallery-paper);
+  font-size: 16px;
   font-weight: 600;
   line-height: 1.5;
 }
@@ -101,7 +140,7 @@
   align-items: center;
   gap: 4px 16px;
   color: var(--gallery-muted);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .readAs a {
@@ -134,7 +173,7 @@
 .lead {
   max-width: 720px;
   color: var(--gallery-muted);
-  font-size: 16px;
+  font-size: 17px;
   line-height: 1.8;
 }
 
@@ -175,7 +214,7 @@
   gap: 8px;
   min-height: 48px;
   color: var(--gallery-muted);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -249,14 +288,15 @@
 
 .arcBody {
   margin-top: 6px;
-  font-size: 14px;
+  color: var(--gallery-paper);
+  font-size: 16px;
   line-height: 1.75;
 }
 
 .arcWith {
   margin-top: 10px;
   color: var(--gallery-muted);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.6;
 }
 
@@ -307,7 +347,7 @@
 .listBody {
   margin-top: 4px;
   color: var(--gallery-muted);
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.75;
 }
 
@@ -327,7 +367,7 @@
   margin-top: 4px;
   max-width: 720px;
   color: var(--gallery-muted);
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.75;
 }
 
@@ -350,7 +390,7 @@
 .numeralCaption {
   margin-top: 4px;
   color: var(--gallery-muted);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .guarantee {
@@ -403,7 +443,7 @@
   border-radius: 999px;
   color: var(--gallery-muted);
   border: 1px solid var(--gallery-hair);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -431,7 +471,7 @@
   padding: 2px 10px;
   border: 1px dashed var(--gallery-hair);
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .columns {
@@ -461,7 +501,7 @@
   display: flex;
   gap: 10px;
   padding-block: 9px;
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.7;
 }
 
@@ -474,7 +514,7 @@
 .contactLine {
   margin-top: 20px;
   color: var(--gallery-muted);
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.7;
 }
 
@@ -494,14 +534,15 @@
   margin-top: 18px;
   padding: 16px;
   border-radius: 6px;
-  background: color-mix(in srgb, var(--gallery-accent) 12%, transparent);
+  border-left: 3px solid var(--gallery-accent);
+  background: color-mix(in srgb, var(--gallery-paper) 6%, transparent);
 }
 
 .never {
   margin-top: 32px;
   max-width: 760px;
   color: var(--gallery-muted);
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.75;
 }
 
@@ -520,7 +561,7 @@
 }
 
 .voice:nth-child(even) {
-  border-left-color: #ff48b0;
+  border-left-color: var(--ink-amber);
 }
 
 .voice figcaption {
@@ -529,10 +570,16 @@
   font-weight: 600;
 }
 
+.voice blockquote {
+  color: var(--gallery-paper);
+  font-size: 16px;
+  line-height: 1.75;
+}
+
 .voiceMeta {
   display: block;
-  color: var(--gallery-muted);
-  font-size: 12px;
+  color: var(--ink-quiet);
+  font-size: 13px;
   font-weight: 400;
 }
 
@@ -551,7 +598,7 @@
   gap: 8px;
   margin-bottom: 28px;
   color: var(--gallery-muted);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.6;
 }
 
@@ -559,6 +606,41 @@
   flex-shrink: 0;
   margin-top: 2px;
   color: var(--gallery-accent);
+}
+
+/* ---------- who we are: track record ---------- */
+
+.proof {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 32px;
+  margin-top: 28px;
+  max-width: 820px;
+}
+
+.proofItem {
+  padding-top: 14px;
+  border-top: 1px solid var(--gallery-hair);
+}
+
+.proofStat {
+  color: var(--ink-amber);
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.proofLabel {
+  margin-top: 4px;
+  color: var(--gallery-muted);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+@media (max-width: 639px) {
+  .proof {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* ---------- FAQ ---------- */
@@ -606,7 +688,7 @@
   max-width: 760px;
   padding-bottom: 20px;
   color: var(--gallery-muted);
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.8;
 }
 
@@ -692,7 +774,7 @@
 .parentLine {
   margin-top: 18px;
   color: var(--gallery-muted);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .contactNote {
@@ -785,6 +867,9 @@
   .heroInner {
     min-height: 0;
     padding-bottom: 24px;
+  }
+  .heroPanel {
+    padding: 20px 18px 16px;
   }
   .badge {
     margin-left: 0;

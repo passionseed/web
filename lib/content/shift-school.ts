@@ -15,6 +15,8 @@
  * - Margin-note copy lives in NOTES (lib/content/pathlab-page.ts), like
  *   every other marketing page.
  * - No em dashes in user-facing copy.
+ * - \u2060 (word joiner) glues Thai loanwords Chrome's line breaker would
+ *   split (โปรเจกต์); \u00a0 keeps short English terms (Case Study) whole.
  */
 
 import { SHIFT_PAYMENT } from "@/lib/content/shift-cohort";
@@ -62,14 +64,15 @@ export const SCHOOL_HERO = {
   badge: "SCHOOL COHORT",
   headline: "7 วัน สร้างของจริง แล้วเอาไปให้คนจริงใช้อย่างน้อย 5 คน",
   promise:
-    "โปรแกรม SHIFT สำหรับนักเรียนทั้งรุ่นของโรงเรียน ทุกคนจบด้วยโปรเจกต์ที่คนนอกได้ลองจริง พร้อม Pivot Log และ Case Study 1 หน้า ใช้ในพอร์ต TCAS ได้",
+    "โปรแกรม SHIFT สำหรับนักเรียนทั้งรุ่นของโรงเรียน ทุกคนจบด้วยโปรเจ\u2060กต์ที่คนนอกได้ลองจริง พร้อม Pivot\u00a0Log และ Case\u00a0Study 1 หน้า ใช้ในพอร์ต TCAS ได้",
   priceLabel: "ราคารุ่นโรงเรียน",
   priceUnit: "ต่อนักเรียน 1 คน",
+  /** First screen stays simple: who pays and refunds live in the FAQ. */
   facts: [
-    { term: "ใครจ่าย", value: "ผู้ปกครองจ่ายเองรายคน" },
-    { term: "รุ่นละ", value: `ไม่เกิน ${SCHOOL_OFFER.maxStudents} คน` },
-    { term: "เปิดรุ่นเมื่อ", value: `ครบ ${SCHOOL_OFFER.minStudents} คนขึ้นไป` },
+    { term: "ระยะเวลา", value: "7 วัน" },
+    { term: "รุ่นละ", value: `${SCHOOL_OFFER.minStudents}-${SCHOOL_OFFER.maxStudents} คน` },
     { term: "เรียนที่ไหน", value: "ออนไลน์ทาง Discord" },
+    { term: "ได้อะไร", value: "Pivot\u00a0Log + Case\u00a0Study" },
   ],
   primaryCta: "ทักคุยเรื่องเปิดรุ่นที่โรงเรียน",
   readAs: {
@@ -327,6 +330,11 @@ export const SCHOOL_WHO = {
   heading: "ใครทำ SHIFT",
   body: "PassionSeed เป็นโปรเจกต์ของนักศึกษาปี 4 หลักสูตร BAScii จุฬาลงกรณ์มหาวิทยาลัย",
   why: "เราอยากให้นักเรียนไทยได้เข้าถึงการศึกษาระดับท็อป ที่ทั้งสนุก และมีค่ากับชีวิตไปตลอด ไม่ใช่แค่ใช้สอบแล้วลืม",
+  /** Track record, as stated by the founders (2026-10-10). */
+  proof: [
+    { stat: "800+", label: "นักเรียนที่เราสอนและพาลงมือทำมาแล้ว" },
+    { stat: "ม.อ.", label: "จัด Open House ออนไลน์ให้มหาวิทยาลัยสงขลานครินทร์" },
+  ],
 } as const;
 
 /* ------------------------------------------------------------------ */
@@ -405,7 +413,7 @@ export const SCHOOL_CONTACT = {
 
 export const SCHOOL_META = {
   title: "SHIFT สำหรับโรงเรียน | 7 วัน สร้างของจริงให้คนจริงใช้",
-  description: `เปิด SHIFT ที่โรงเรียน: นักเรียนสร้างโปรเจกต์จริงและเอาไปให้คนนอกลองใช้อย่างน้อย 5 คนใน 7 วัน พร้อม Pivot Log และ Case Study 1 หน้า ราคารุ่นโรงเรียน ${baht(SCHOOL_OFFER.priceBaht)} ผู้ปกครองจ่ายเองรายคน`,
+  description: `เปิด SHIFT ที่โรงเรียน: นักเรียนสร้างโปรเจกต์จริงและเอาไปให้คนนอกลองใช้อย่างน้อย 5 คนใน 7 วัน พร้อม Pivot Log และ Case Study 1 หน้า ราคารุ่นโรงเรียน ${baht(SCHOOL_OFFER.priceBaht)}`,
   ogTitle: "SHIFT สำหรับโรงเรียน | 7 วัน สร้างของจริง",
   ogDescription: "นักเรียนสร้างของจริง แล้วเอาไปให้คนจริงใช้อย่างน้อย 5 คน ใน 7 วัน",
 } as const;
@@ -429,8 +437,8 @@ export const SCHOOL_POSTERS = {
     lines: ["7 วัน สร้างของจริง", `ให้คนจริงใช้อย่างน้อย ${SCHOOL_OFFER.minOutsideUsers} คน`],
     tagline: "SCOPE · BUILD · SHIP · PIVOT · DEMO",
     priceLabel: "ราคารุ่นโรงเรียน",
-    facts: `รุ่นละ ${SCHOOL_OFFER.minStudents}-${SCHOOL_OFFER.maxStudents} คน · ผู้ปกครองจ่ายเองรายคน · ออนไลน์ทาง Discord`,
-    refund: `ไม่ครบ ${SCHOOL_OFFER.minStudents} คน คืนเงินเต็ม`,
+    /** The cover stays simple: who pays and refunds live on the page and FAQ. */
+    facts: `รุ่นละ ${SCHOOL_OFFER.minStudents}-${SCHOOL_OFFER.maxStudents} คน · ออนไลน์ทาง Discord`,
     deliverables: "ได้ Pivot Log + Case Study 1 หน้า ใช้ในพอร์ต TCAS ได้",
     qr: "สแกนอ่านรายละเอียด",
   },
@@ -500,6 +508,7 @@ export const SCHOOL_POSTERS = {
     /** "\n" marks a forced line break on the poster. */
     who: "โปรเจกต์ของนักศึกษาปี 4\nBAScii จุฬาลงกรณ์มหาวิทยาลัย",
     why: "อยากให้นักเรียนไทยเข้าถึงการศึกษาระดับท็อป\nที่สนุก และมีค่ากับชีวิตไปตลอด",
+    proof: "สอนนักเรียนมาแล้ว 800+ คน · จัด Open House ออนไลน์ให้ ม.อ.",
     cta: "สนใจเปิดรุ่น\nที่โรงเรียน",
     contact: ["IG @passion_seed.th", "LINE @passionseed"],
   },
