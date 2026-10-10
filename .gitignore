@@ -125,4 +125,5 @@ extension/dist/
 public/shift/posters/shift2-grid/
 
 # Internal consent/ethics drafts, never public
-output/
+output/research-ethics/
+output/capstone-consent/
