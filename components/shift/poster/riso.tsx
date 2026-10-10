@@ -209,10 +209,14 @@ export function OrbitSky({
   horizon,
   speckle = 0.22,
   rising,
+  planetWidth = 7200,
 }: {
   horizon: number | string;
   speckle?: number;
   rising?: ReactNode;
+  /** Wider is flatter. Scenes spanning several sheets need a flatter curve,
+   *  or the planet drops below the sky at the outer edges. */
+  planetWidth?: number;
 }) {
   const h = typeof horizon === "number" ? `${horizon}px` : horizon;
   return (
@@ -263,7 +267,7 @@ export function OrbitSky({
         className="absolute left-1/2 -translate-x-1/2 rounded-[50%]"
         style={{
           top: `calc(${h} - 3px)`,
-          width: 7200,
+          width: planetWidth,
           height: 3000,
           boxShadow: `0 -2px 3px 0 ${INK.pink}`,
           opacity: 0.6,
@@ -274,7 +278,7 @@ export function OrbitSky({
         className="absolute left-1/2 -translate-x-1/2 rounded-[50%]"
         style={{
           top: h,
-          width: 7200,
+          width: planetWidth,
           height: 3000,
           background: `radial-gradient(ellipse 12% 8% at 50% 0%, #3a1a14 0%, #1d1419 45%, ${INK.black} 100%)`,
           boxShadow:

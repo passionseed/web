@@ -24,7 +24,7 @@ function ContrastColumn({
     <div className={revealClass(positive ? 1 : 0)}>
       <div
         className={`mb-8 flex h-44 items-center justify-center ${floatClass(positive ? 1 : 0)}`}
-        style={positive ? undefined : { opacity: 0.7, filter: "grayscale(1)" }}
+        style={positive ? undefined : { filter: "grayscale(1)" }}
       >
         {art}
       </div>

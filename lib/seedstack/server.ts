@@ -10,24 +10,19 @@ import {
   SEEDSTACK_NOTICE_VERSION,
   seedstackConsentState,
   type SeedstackConsentRow,
-  type SeedstackConsentState,
 } from "@/lib/seedstack/consent";
 import type { SeedstackEventInsert } from "@/lib/seedstack/events";
 import { LINK_TTL_MS, generateDeviceCode, generateUserCode } from "@/lib/seedstack/link";
 import {
-  generateParentLinkToken,
   generateSeedstackToken,
   sha256Hex,
   tokenExpiry,
 } from "@/lib/seedstack/tokens";
 
-const CONSENT_COLUMNS =
-  "user_id, notice_version, student_consented_at, parent_name, parent_relationship, parent_consented_at, parent_declined_at, withdrawn_at";
+const CONSENT_COLUMNS = "user_id, notice_version, student_consented_at, withdrawn_at";
 
 export interface SeedstackConsent extends SeedstackConsentRow {
   user_id: string;
-  parent_name: string | null;
-  parent_relationship: string | null;
 }
 
 export async function getSeedstackConsent(userId: string): Promise<SeedstackConsent | null> {
@@ -40,13 +35,8 @@ export async function getSeedstackConsent(userId: string): Promise<SeedstackCons
   return data as SeedstackConsent | null;
 }
 
-/**
- * Student agrees to the current notice. Resets any earlier parent answer, so
- * re-consenting after a withdrawal or a notice change asks the parent again.
- * Returns the raw parent link token (only its hash is stored).
- */
-export async function recordStudentConsent(userId: string): Promise<string> {
-  const parentToken = generateParentLinkToken();
+/** Student agrees to the current notice; collection can start right away. */
+export async function recordStudentConsent(userId: string): Promise<void> {
   const { error } = await createServiceRoleClient()
     .from("seedstack_consents")
     .upsert(
@@ -54,81 +44,11 @@ export async function recordStudentConsent(userId: string): Promise<string> {
         user_id: userId,
         notice_version: SEEDSTACK_NOTICE_VERSION,
         student_consented_at: new Date().toISOString(),
-        parent_token_hash: sha256Hex(parentToken),
-        parent_name: null,
-        parent_relationship: null,
-        parent_consented_at: null,
-        parent_declined_at: null,
         withdrawn_at: null,
       },
       { onConflict: "user_id" },
     );
   if (error) throw new Error(`seedstack student consent failed: ${error.message}`);
-  return parentToken;
-}
-
-/** New parent link for a student still waiting on (or declined by) a parent. */
-export async function rotateParentLink(userId: string): Promise<string> {
-  const parentToken = generateParentLinkToken();
-  const { error } = await createServiceRoleClient()
-    .from("seedstack_consents")
-    .update({ parent_token_hash: sha256Hex(parentToken), parent_declined_at: null })
-    .eq("user_id", userId)
-    .is("parent_consented_at", null);
-  if (error) throw new Error(`seedstack parent link rotate failed: ${error.message}`);
-  return parentToken;
-}
-
-export interface ParentLinkTarget {
-  userId: string;
-  state: SeedstackConsentState;
-  nickname: string | null;
-}
-
-export async function findParentLinkTarget(rawToken: string): Promise<ParentLinkTarget | null> {
-  const supabase = createServiceRoleClient();
-  const { data, error } = await supabase
-    .from("seedstack_consents")
-    .select(CONSENT_COLUMNS)
-    .eq("parent_token_hash", sha256Hex(rawToken))
-    .maybeSingle();
-  if (error) throw new Error(`seedstack parent link lookup failed: ${error.message}`);
-  if (!data) return null;
-
-  const row = data as SeedstackConsent;
-  const { data: app } = await supabase
-    .from("shift_applications")
-    .select("nickname")
-    .eq("user_id", row.user_id)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  return { userId: row.user_id, state: seedstackConsentState(row), nickname: app?.nickname ?? null };
-}
-
-export async function recordParentDecision(params: {
-  rawToken: string;
-  agree: boolean;
-  parentName: string;
-  relationship: string;
-}): Promise<boolean> {
-  const now = new Date().toISOString();
-  const { data, error } = await createServiceRoleClient()
-    .from("seedstack_consents")
-    .update({
-      parent_name: params.parentName,
-      parent_relationship: params.relationship,
-      parent_consented_at: params.agree ? now : null,
-      parent_declined_at: params.agree ? null : now,
-    })
-    .eq("parent_token_hash", sha256Hex(params.rawToken))
-    .eq("notice_version", SEEDSTACK_NOTICE_VERSION)
-    .is("withdrawn_at", null)
-    .not("student_consented_at", "is", null)
-    .select("user_id");
-  if (error) throw new Error(`seedstack parent decision failed: ${error.message}`);
-  return (data?.length ?? 0) > 0;
 }
 
 /** Mints a CLI token. Caller must have checked consent is active. */
@@ -146,7 +66,7 @@ export async function withdrawSeedstackConsent(userId: string): Promise<void> {
   const supabase = createServiceRoleClient();
   const now = new Date().toISOString();
   const results = await Promise.all([
-    supabase.from("seedstack_consents").update({ withdrawn_at: now, parent_token_hash: null }).eq("user_id", userId),
+    supabase.from("seedstack_consents").update({ withdrawn_at: now }).eq("user_id", userId),
     supabase.from("seedstack_tokens").update({ revoked_at: now }).eq("user_id", userId).is("revoked_at", null),
     supabase.from("seedstack_events").delete().eq("user_id", userId),
   ]);
@@ -219,9 +139,14 @@ export async function purgeOldSeedstackEvents(days: number, now = Date.now()): P
   return data?.length ?? 0;
 }
 
-/** A student is someone whose PassionSeed account is bound to a paid SHIFT seat (via Discord on /shift/join). */
+/**
+ * A student is someone whose PassionSeed account is bound to a paid SHIFT
+ * seat (via Discord on /shift/join). Admins also pass, so staff can test the
+ * full consent and linking flow with their own account.
+ */
 export async function findShiftStudent(userId: string): Promise<{ nickname: string } | null> {
-  const { data, error } = await createServiceRoleClient()
+  const supabase = createServiceRoleClient();
+  const { data, error } = await supabase
     .from("shift_applications")
     .select("nickname")
     .eq("user_id", userId)
@@ -230,7 +155,17 @@ export async function findShiftStudent(userId: string): Promise<{ nickname: stri
     .limit(1)
     .maybeSingle();
   if (error) throw new Error(`seedstack student lookup failed: ${error.message}`);
-  return data;
+  if (data) return data;
+
+  const { data: admin, error: roleError } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .limit(1)
+    .maybeSingle();
+  if (roleError) throw new Error(`seedstack admin lookup failed: ${roleError.message}`);
+  return admin ? { nickname: "admin (ทดสอบ)" } : null;
 }
 
 export async function createLinkRequest(): Promise<{ deviceCode: string; userCode: string; expiresAt: string }> {

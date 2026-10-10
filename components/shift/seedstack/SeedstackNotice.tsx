@@ -30,6 +30,7 @@ export function SeedstackNotice() {
       <p><strong style={{ color: INK.paper }}>ใครเห็น:</strong> {n.who}</p>
       <p><strong style={{ color: INK.paper }}>เก็บนานแค่ไหน:</strong> {n.retention}</p>
       <p><strong style={{ color: INK.paper }}>สิทธิ์ของเรา:</strong> {n.rights}</p>
+      <p><strong style={{ color: INK.paper }}>ผู้ปกครอง:</strong> {n.parents}</p>
       <p>{n.contact}</p>
     </section>
   );

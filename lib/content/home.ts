@@ -6,7 +6,7 @@
  */
 
 import type { RisoIconName } from "@/components/shift/poster/RisoIcons";
-import { SHIFT_COHORT_0, type ShiftShowcaseProject } from "@/lib/content/shift-cohort";
+import { SHIFT_COHORT_0, SHIFT_PAYMENT, type ShiftShowcaseProject } from "@/lib/content/shift-cohort";
 
 export interface HomeLink {
   href: string;
@@ -48,6 +48,7 @@ export const SITE_FOOTER_COLUMNS: FooterColumn[] = [
     links: [
       { href: "/about", label: "เกี่ยวกับเรา" },
       { href: "/contact", label: "ติดต่อเรา" },
+      { href: SHIFT_PAYMENT.lineUrl, label: `LINE OA: ${SHIFT_PAYMENT.lineId}` },
       { href: "/support", label: "ช่วยเหลือ" },
     ],
   },

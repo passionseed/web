@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, MessageCircle, Mail, Phone, MapPin } from "lucide-react";
+import { ArrowLeft, MessageCircle, Mail, MapPin } from "lucide-react";
 import Link from "next/link";
+import { SHIFT_PAYMENT } from "@/lib/content/shift-cohort";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -148,6 +149,20 @@ export default function ContactPage() {
                 <CardTitle>Get in Touch</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <MessageCircle className="h-5 w-5 text-blue-600" aria-hidden="true" />
+                  <div>
+                    <p className="font-medium">LINE OA</p>
+                    <Link
+                      href={SHIFT_PAYMENT.lineUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex min-h-11 items-center text-sm text-blue-600 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                    >
+                      {SHIFT_PAYMENT.lineId}
+                    </Link>
+                  </div>
+                </div>
                 <div className="flex items-center gap-3">
                   <Mail className="h-5 w-5 text-blue-600" />
                   <div>

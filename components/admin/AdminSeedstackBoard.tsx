@@ -27,8 +27,6 @@ const STATUS_VARIANT: Record<StepStatus, "outline" | "secondary" | "destructive"
 
 const CONSENT_LABEL: Record<SeedstackConsentState, string> = {
   none: "no consent",
-  awaiting_parent: "waiting parent",
-  parent_declined: "parent declined",
   active: "active",
   withdrawn: "withdrawn",
 };

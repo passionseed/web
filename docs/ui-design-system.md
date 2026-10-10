@@ -265,7 +265,14 @@ module.exports = {
 | **Libre Franklin** | Latin body text, UI labels | Latin (primary) |
 | **Space Mono** | Code, technical labels, IDs | Latin (mono) |
 
-**Rule:** Thai text always uses Bai Jamjuree or Kodchasan. Never default to system fonts.
+**Rule:** Thai text uses Bai Jamjuree or Kodchasan by default. Never default to system fonts.
+
+**Homepage handwritten notes (2026-10-07):** `.home-handwritten-notes` uses
+self-hosted Iannnnn-COW only for `.pathlab-note` (Regular / 400, 18px).
+Headings use Kodchasan. Keep note letter spacing at zero and line height at
+1.6 so Thai marks have room. Only the Regular OTF source is loaded with
+`next/font/local`, `display: swap`, and no global preload.
+Source and usage terms: [designer's release page](https://www.f0nt.com/release/iannnnn-cow/).
 
 ### Type Scale (Thai)
 

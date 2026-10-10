@@ -120,3 +120,6 @@ supabase/.temp/
 # scratch workspace
 scratch/
 extension/dist/
+
+# SHIFT[2] grid PNG exports (34MB, regenerate with scripts/export-shift2-grid.mjs)
+public/shift/posters/shift2-grid/

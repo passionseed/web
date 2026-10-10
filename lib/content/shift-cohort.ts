@@ -232,7 +232,9 @@ export const SHIFT_COHORT_0: ShiftCohort = {
 export const SHIFT_COHORT_2: ShiftCohort = {
   ...sibling(SHIFT_COHORT, 1, 7),
   seats: 21,
-  priceBaht: 990,
+  priceBaht: 690,
+  /** Late applications run through Day 1: the first session is 19:00. */
+  applyDeadline: "2026-10-12",
 };
 
 /** The round the printed posters are promoting right now. */
@@ -317,9 +319,10 @@ export function bangkokToday(now: Date = new Date()): string {
  */
 export function cohortStatus(cohort: ShiftCohort, today: string = bangkokToday()): CohortStatus {
   if (cohort.completed || today > cohort.endDate) return "done";
+  // A deadline on Day 1 keeps applications open that day, before the session.
+  if (today <= cohort.applyDeadline) return "open";
   if (today >= cohort.startDate) return "running";
-  if (today > cohort.applyDeadline) return "closed";
-  return "open";
+  return "closed";
 }
 
 /** The round building right now, if any. */
@@ -372,7 +375,7 @@ export const SHIFT_SDT: ShiftSdtPillar[] = [
   {
     pillar: "Autonomy",
     title: "เลือกเอง",
-    detail: "โจทย์ สกิลที่เรียน และจะเปลี่ยนทางเมื่อไหร่ เราเลือกเอง พี่เลี้ยงไม่คิดแทน",
+    detail: "โจทย์ สกิลที่เรียน และจะเปลี่ยนทางเมื่อไหร่ เราเลือกเอง mentor ไม่คิดแทน",
   },
   {
     pillar: "Competence",

@@ -1,6 +1,6 @@
 /**
- * Post-program quotes from TechSeed #3 and #5 feedback forms and PassionSeed
- * portfolio reviews. Shared by /shift and the home page so a quote is only
+ * Quotes from TechSeed feedback, portfolio reviews, and KK's SHIFT account
+ * supplied by the site owner. Shared by /shift and the home page so a quote is only
  * ever edited in one place.
  */
 
@@ -9,7 +9,9 @@ export interface ShiftTestimonial {
   meta: string;
   quote: string;
   /** The before/after line in the student's own terms. */
-  shift: string;
+  shift?: string;
+  excerpt?: string;
+  project?: { title: string; url: string };
 }
 
 export interface ShiftTestimonialGroup {
@@ -48,13 +50,6 @@ export const SHIFT_TESTIMONIAL_GROUPS: ShiftTestimonialGroup[] = [
     label: "BUSINESS & FINANCE",
     cards: [
       {
-        name: "Fifa F.***",
-        meta: "ม.4 สาย Finance / BBA Candidate",
-        quote:
-          "เล่นเทรดจำลอง IQ Option มา 2-3 ปี มั่นใจแค่ 3-4/10 พอมาคุยถึงรู้ว่าอาจารย์มหาวิทยาลัยมองว่านั่นคือการเก็งกำไร พอเปลี่ยนมาทำ 1-Page Equity Research Note & Valuation Model ทำให้เห็นภาพพอร์ต BBA ที่ตึงขึ้นเยอะ",
-        shift: "จาก Red-Flag Gambling App สู่ Institutional Equity Research Memo",
-      },
-      {
         name: "Pipat P.***",
         meta: "ม.4 สายผู้ประกอบการ / Business",
         quote:
@@ -79,6 +74,23 @@ export const SHIFT_TESTIMONIAL_GROUPS: ShiftTestimonialGroup[] = [
         quote:
           "ค่ายที่จ่ายตังค์เข้าไป ผมมองว่าน้ำหนักมันเบาหวิว ค่ายหลอกเอาตังค์ สู้เอาเวลามาปั้นนวัตกรรมบอร์ดวัดควันบุหรี่ (Smart Smoking Detector) ของจริงดีกว่า",
         shift: "จากค่ายพาณิชย์ไร้น้ำหนัก สู่ Hardware Prototype + Process Log",
+      },
+    ],
+  },
+  {
+    label: "SHIFT",
+    cards: [
+      {
+        name: "KK",
+        meta: "สวนกุหลาบ · SHIFT",
+        quote:
+          "ก็ตอนแรกผมคิดว่าแบบ เข้ามาแล้วพวกพี่ๆน่าจะสอนทําโครงงานทําportอะไรงี้ครับ แบบ อารมณ์ประมาณพาทําแบบบอกขั้นตอนวิธีทําอะไรงี้ครับ แต่พอเข้ามาจิงจิงแล้ว เลยรู้ว่ามันคนละอย่างเลยครับ แบบพวกพี่ๆเขาไม่ได้พาทําขนาดนั้นเหมือนเน้นเป็นให้ทําเองมากกว่าแล้ว พี่ค่อยคอยดูอยู่ห่างๆให้น้องคิดเองแก้ปัญหาเอง ยกเว้นบางอย่างที่ต้องสําคัญจิงจิงเท่านั้นพี่เขาถึงจะสอนครับ ซึ่งผมว่ามันดีมากๆเลยครับ มันแบบเหมือนได้ลงมือทําเองมีอะไรที่ไม่เคยทําก็ได้ลองทําแบบทําเองจิงจิงมีพี่ช่วยนิดหน่อย ซึ่งพอผลงานออกมาสุดท้ายแล้วก็รู้สึกภูมิใจในตัวเองมากครับแบบ อันนี้คืองานที่เราได้ทําเองคิดเองจิงจิงแบบไม่คิดว่าตัวเองจะทําได้ขนาดนี้ครับ ถึงแม้จะมีบางช่วงที่แบบเจอปัญหาไปต่อไม่ได้บ้างก็ตามแต่สุดท้ายก็ถ้าลองทําไรเองมันก็แก้ปัญหาได้จิงจิงครับ ถึงแม้บางอันจะต้องถามพี่ๆก็ตาม แต่ก็เป็นคอร์ส 7วันที่เจ๋งดีครับ",
+        excerpt:
+          "ซึ่งพอผลงานออกมาสุดท้ายแล้วก็รู้สึกภูมิใจในตัวเองมากครับแบบ อันนี้คืองานที่เราได้ทําเองคิดเองจิงจิงแบบไม่คิดว่าตัวเองจะทําได้ขนาดนี้ครับ",
+        project: {
+          title: "Magnified Lens",
+          url: "https://magnified-lens-2uoi.vercel.app/",
+        },
       },
     ],
   },

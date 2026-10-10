@@ -16,6 +16,8 @@ function shouldSkipOnboardGate(pathname: string): boolean {
     pathname.startsWith('/auth/') ||
     // Paid SHIFT students link Discord without the full PassionSeed onboard.
     pathname.startsWith(SHIFT_JOIN_PREFIX) ||
+    // SeedStack links a SHIFT student's CLI; the auth callback skips onboard too.
+    pathname.startsWith('/shift/seedstack') ||
     pathname.startsWith('/api/') ||
     pathname.startsWith('/_next/')
   )

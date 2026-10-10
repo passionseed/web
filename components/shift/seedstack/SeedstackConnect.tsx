@@ -1,14 +1,13 @@
 "use client";
 
 import { useState, useTransition, type ReactNode } from "react";
-import { Check, Copy, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 import { shiftJoinButtonClass } from "@/components/shift/join/ShiftJoinActions";
 import { INK } from "@/components/shift/poster/riso";
 import {
   approveDeviceLink,
   giveStudentConsent,
-  newParentLink,
   withdrawConsent,
 } from "@/app/shift/seedstack/actions";
 import type { SeedstackConsentState } from "@/lib/seedstack/consent";
@@ -63,27 +62,6 @@ function Button({
   );
 }
 
-function CopyBox({ label, value }: { label: string; value: string }) {
-  const [copied, setCopied] = useState(false);
-  async function copy() {
-    await navigator.clipboard.writeText(value);
-    setCopied(true);
-  }
-  return (
-    <div className="space-y-2">
-      <p className="text-sm" style={{ color: paper("b3") }}>
-        {label}
-      </p>
-      <div className="flex items-center gap-2 rounded-xl p-3" style={{ backgroundColor: paper("0d") }}>
-        <code className="min-w-0 flex-1 break-all text-sm">{value}</code>
-        <button type="button" onClick={copy} aria-label="คัดลอก" className="shrink-0 p-2">
-          {copied ? <Check className="h-5 w-5" style={{ color: INK.yellow }} /> : <Copy className="h-5 w-5" />}
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function ErrorText({ error }: { error: string | null }) {
   if (!error) return null;
   return (
@@ -105,8 +83,6 @@ function StudentConsent() {
   const [agreed, setAgreed] = useState(false);
   const action = useAction();
 
-  if (action.value) return <ParentLinkStep initialLink={action.value} />;
-
   return (
     <>
       <label className="flex cursor-pointer items-start gap-3 text-sm leading-relaxed" style={{ color: paper("cc") }}>
@@ -119,31 +95,8 @@ function StudentConsent() {
         อ่านแล้ว และยินยอมให้ SeedStack ส่งข้อมูลตามด้านบนให้ทีม mentor
       </label>
       <Button primary pending={action.pending} disabled={!agreed} onClick={() => action.run(giveStudentConsent)}>
-        ยินยอม แล้วไปขั้นผู้ปกครอง
+        ยินยอม แล้วเชื่อมเครื่อง
       </Button>
-      <ErrorText error={action.error} />
-    </>
-  );
-}
-
-function ParentLinkStep({ initialLink, declined }: { initialLink?: string; declined?: boolean }) {
-  const action = useAction();
-  const link = action.value ?? initialLink ?? null;
-
-  return (
-    <>
-      <Text>
-        {declined
-          ? "ผู้ปกครองยังไม่ยินยอม ไม่เป็นไรเลย SeedStack ใช้ได้ปกติ ข้อมูลแค่อยู่ในเครื่องเรา ถ้าคุยกันแล้วอยากลองใหม่ สร้างลิงก์ใหม่ส่งไปได้"
-          : "เพราะเรายังไม่ถึง 20 ต้องให้ผู้ปกครองยินยอมด้วย ส่งลิงก์นี้ให้พ่อแม่ทาง LINE เขาอ่านแล้วกดตอบได้เลย ไม่ต้องสมัครอะไร"}
-      </Text>
-      {link ? (
-        <CopyBox label="ลิงก์ส่วนตัวสำหรับผู้ปกครอง (อย่าโพสต์ในกลุ่ม)" value={link} />
-      ) : (
-        <Button primary pending={action.pending} onClick={() => action.run(newParentLink)}>
-          สร้างลิงก์ให้ผู้ปกครอง
-        </Button>
-      )}
       <ErrorText error={action.error} />
     </>
   );
@@ -215,20 +168,6 @@ export function SeedstackConnect({ state }: { state: SeedstackConsentState }) {
     case "none":
     case "withdrawn":
       return <StudentConsent />;
-    case "awaiting_parent":
-      return (
-        <>
-          <ParentLinkStep />
-          <WithdrawButton />
-        </>
-      );
-    case "parent_declined":
-      return (
-        <>
-          <ParentLinkStep declined />
-          <WithdrawButton />
-        </>
-      );
     case "active":
       return (
         <>

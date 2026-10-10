@@ -9,6 +9,10 @@ import { T } from "@/components/shift/theme/tokens";
 const mix = (color: string, pct: number) =>
   `color-mix(in srgb, ${color} ${pct}%, transparent)`;
 
+// Solid paper and ink keep each certificate legible where the sheets overlap.
+const CERTIFICATE_PAPER = `color-mix(in srgb, ${T.text} 80%, ${T.bg})`;
+const CERTIFICATE_INK = `color-mix(in srgb, ${T.bg} 80%, ${T.text})`;
+
 function Certificate({ rotate, x, y }: { rotate: number; x: number; y: number }) {
   return (
     <g transform={`translate(${x} ${y}) rotate(${rotate} 70 45)`}>
@@ -16,8 +20,8 @@ function Certificate({ rotate, x, y }: { rotate: number; x: number; y: number })
         width="140"
         height="92"
         rx="3"
-        fill={mix(T.text, 10)}
-        stroke={mix(T.text, 35)}
+        fill={CERTIFICATE_PAPER}
+        stroke={CERTIFICATE_INK}
         strokeWidth="2"
       />
       <rect
@@ -27,17 +31,17 @@ function Certificate({ rotate, x, y }: { rotate: number; x: number; y: number })
         height="78"
         rx="2"
         fill="none"
-        stroke={mix(T.text, 18)}
+        stroke={CERTIFICATE_INK}
         strokeWidth="1.5"
         strokeDasharray="3 3"
       />
       <path
         d="M30 30h80M42 44h56M48 56h44"
-        stroke={mix(T.text, 30)}
+        stroke={CERTIFICATE_INK}
         strokeWidth="3"
         strokeLinecap="round"
       />
-      <circle cx="112" cy="70" r="9" fill={mix(T.text, 22)} />
+      <circle cx="112" cy="70" r="9" fill={CERTIFICATE_INK} />
     </g>
   );
 }
@@ -56,8 +60,8 @@ export function CertStackArt() {
           width="60"
           height="28"
           rx="4"
-          fill="none"
-          stroke={mix(T.text, 45)}
+          fill={T.bg}
+          stroke={T.text}
           strokeWidth="2"
         />
         <text
@@ -66,7 +70,7 @@ export function CertStackArt() {
           fontSize="16"
           fontWeight="700"
           fontFamily="ui-monospace, monospace"
-          fill={mix(T.text, 55)}
+          fill={T.text}
         >
           ×1,000
         </text>

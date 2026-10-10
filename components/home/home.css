@@ -1,3 +1,12 @@
+/* Handwriting is reserved for the homepage's yellow margin notes. */
+.home-handwritten-notes .pathlab-note {
+  font-family: var(--font-iannnnn-cow), var(--font-bai-jamjuree), sans-serif;
+  letter-spacing: 0;
+  font-size: 1.125rem;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
 /* ============================================================
    Home page motion. Decoration only: every element reads fine with
    none of this, and it all stops under prefers-reduced-motion.

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
-import { ShiftPixelLineMenu } from "@/components/shift/poster/pixel/ShiftPixelLineMenu";
+import { ShiftLineMenu } from "@/components/shift/poster/ShiftLineMenu";
+import { ChromeBevelFilter } from "@/components/shift/poster/riso";
 
 /** LINE OA compact rich menu image, 2500x843. Screenshot #shift-line-menu. */
 
@@ -14,7 +15,8 @@ export default function ShiftLineMenuPage() {
     <div>
       {/* Keep the Next.js dev indicator out of exported screenshots. */}
       <style>{"nextjs-portal{display:none!important}"}</style>
-      <ShiftPixelLineMenu />
+      <ChromeBevelFilter />
+      <ShiftLineMenu />
     </div>
   );
 }
