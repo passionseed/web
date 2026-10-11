@@ -19,6 +19,7 @@ import {
   SquareTerminal,
   Terminal,
   Trash2,
+  UserCheck,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -62,7 +63,7 @@ const COMMAND_ICONS: Record<string, LucideIcon> = {
 };
 
 const RULE_ICONS: LucideIcon[] = [Keyboard, MessageCircleQuestion, Megaphone];
-const PRIVACY_ICONS: LucideIcon[] = [HardDrive, EyeOff, Trash2];
+const PRIVACY_ICONS: LucideIcon[] = [HardDrive, EyeOff, UserCheck, Trash2];
 
 /** Ink square with a pink offset shadow: the riso misregistration wink. */
 function InkChip({
@@ -185,7 +186,7 @@ function IconSteps({
   return (
     <ol className="space-y-3">
       {items.map(([head, detail], i) => {
-        const Icon = icons[i];
+        const Icon = icons[i] ?? icons[icons.length - 1];
         return (
           <li key={head} className="flex gap-3">
             <InkChip tint={tint} size="sm">
@@ -299,7 +300,7 @@ function PrivacySection() {
     <Section def={SECTIONS[4]}>
       <ul className="space-y-3">
         {G.privacy.items.map((item, i) => {
-          const Icon = PRIVACY_ICONS[i];
+          const Icon = PRIVACY_ICONS[i] ?? ShieldCheck;
           return (
             <li key={item} className="flex items-start gap-3">
               <InkChip tint={INK.blue} size="sm">
