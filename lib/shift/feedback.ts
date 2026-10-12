@@ -1,0 +1,108 @@
+import { z } from "zod";
+
+/**
+ * End-of-SHIFT feedback contract, shared by the /shift/feedback form and
+ * /api/shift/feedback. Part 1 is the day-7 SDT check, part 2 is value and
+ * price, part 3 is whether graduates want to come back and help run the next
+ * round. Messages are Thai because students see them as-is.
+ */
+
+export const FEEDBACK_MOTIVATIONS = [
+  { value: "had_to", label: "เพราะต้องทำ" },
+  { value: "portfolio", label: "เพื่อพอร์ต" },
+  { value: "wanted_to", label: "เพราะอยากทำเอง" },
+  { value: "care_for_users", label: "เพราะแคร์คนที่มันช่วย" },
+] as const;
+
+export const FEEDBACK_PRICE_FIT = [
+  { value: "too_cheap", label: "ถูกไป" },
+  { value: "about_right", label: "พอดี" },
+  { value: "too_expensive", label: "แพงไป" },
+] as const;
+
+export const FEEDBACK_PAYERS = [
+  { value: "self", label: "เราเอง" },
+  { value: "parents", label: "ผู้ปกครอง" },
+  { value: "both", label: "ช่วยกันจ่าย" },
+  { value: "other", label: "คนอื่น" },
+] as const;
+
+/** `not_now` is exclusive: the form clears the others when it is picked. */
+export const FEEDBACK_NEXT_STEPS = [
+  { value: "help_run", label: "ช่วยรัน SHIFT รอบหน้า แบบมีค่าตอบแทน" },
+  { value: "project_club", label: "ทำโปรเจกต์นี้ต่อใน project club" },
+  { value: "new_project", label: "เริ่มโปรเจกต์ใหม่" },
+  { value: "not_now", label: "ยังไม่ตอนนี้" },
+] as const;
+
+/** How a student lets us quote them. "named" credits them with a name they
+ *  type themselves, never the nickname they answered with. */
+export const FEEDBACK_QUOTE_MODES = [
+  { value: "named", label: "ได้ ใส่ชื่อที่เราเลือกเอง" },
+  { value: "anonymous", label: "ได้ แต่ไม่ใส่ชื่อ" },
+  { value: "no", label: "ไม่ได้" },
+] as const;
+
+/** PDPA notice shown above the consent box. Bump the version when the
+ *  substance changes, so stored rows say which text they agreed to. */
+export const FEEDBACK_NOTICE_VERSION = "2026-10-12";
+export const FEEDBACK_RETENTION_YEARS = 1;
+
+const values = <T extends readonly { value: string }[]>(options: T) =>
+  options.map((o) => o.value) as unknown as [T[number]["value"], ...T[number]["value"][]];
+
+const answer = (message: string) =>
+  z.string().trim().min(2, message).max(1000, "ยาวเกินไปนิด ลองย่อหน่อยนะ");
+
+const scale = (min: number, max: number) =>
+  z.number({ message: "เลือกคะแนนด้วยนะ" }).int().min(min).max(max);
+
+export const shiftFeedbackSchema = z.object({
+  round: z.number().int().nonnegative(),
+  nickname: z.string().trim().min(1, "ใส่ชื่อเล่นด้วยนะ").max(30, "ชื่อยาวเกินไป"),
+  satisfaction: scale(1, 5),
+  canDoNow: answer("เล่าสั้นๆ ก็ได้นะ"),
+  confidence: scale(1, 5),
+  ownership: scale(1, 5),
+  ownDecision: answer("นึกถึงสักครั้งก็ได้ เล็กๆ ก็นับ"),
+  motivation: z.enum(values(FEEDBACK_MOTIVATIONS), { message: "เลือกข้อที่ตรงที่สุดนะ" }),
+  mostValuable: answer("บอกหน่อยว่าส่วนไหน"),
+  changeNext: answer("ไม่มีก็พิมพ์ว่า ไม่มี ได้"),
+  priceFit: z.enum(values(FEEDBACK_PRICE_FIT), { message: "เลือกหนึ่งข้อนะ" }),
+  payer: z.enum(values(FEEDBACK_PAYERS), { message: "เลือกหนึ่งข้อนะ" }),
+  recommend: scale(0, 10),
+  nextSteps: z
+    .array(z.enum(values(FEEDBACK_NEXT_STEPS)))
+    .min(1, "เลือกอย่างน้อยหนึ่งข้อนะ")
+    .refine((steps) => !steps.includes("not_now") || steps.length === 1, {
+      message: "ยังไม่ตอนนี้ เลือกคู่กับข้ออื่นไม่ได้นะ",
+    }),
+  quoteMode: z.enum(values(FEEDBACK_QUOTE_MODES), { message: "บอกหน่อยว่าให้ยกไปใช้ได้ไหม" }),
+  quoteName: z
+    .string()
+    .trim()
+    .max(40, "ชื่อยาวเกินไป")
+    .optional()
+    .transform((value) => (value ? value : null)),
+  consent: z.literal(true, { errorMap: () => ({ message: "ติ๊กยินยอมก่อนส่งนะ" }) }),
+  /** Honeypot. Humans never see it; bots fill it. */
+  website: z.string().max(0).optional(),
+}).superRefine((feedback, ctx) => {
+  if (feedback.quoteMode === "named" && !feedback.quoteName) {
+    ctx.addIssue({ code: "custom", path: ["quoteName"], message: "ใส่ชื่อที่อยากให้ขึ้นด้วยนะ" });
+  }
+});
+
+export type ShiftFeedbackInput = z.input<typeof shiftFeedbackSchema>;
+export type ShiftFeedback = z.output<typeof shiftFeedbackSchema>;
+export type ShiftFeedbackErrors = Partial<Record<keyof ShiftFeedbackInput, string>>;
+
+/** First message per field, in the shape the form renders. */
+export function toFeedbackErrors(error: z.ZodError): ShiftFeedbackErrors {
+  const errors: ShiftFeedbackErrors = {};
+  for (const issue of error.issues) {
+    const field = issue.path[0] as keyof ShiftFeedbackInput | undefined;
+    if (field && !errors[field]) errors[field] = issue.message;
+  }
+  return errors;
+}
