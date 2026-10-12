@@ -1,6 +1,8 @@
 import {
+  dateOfBirthProblem,
   getAgeYears,
   isProfileComplete,
+  normalizeDateOfBirth,
   requiresGuardianConsent,
 } from "./profile-completion";
 
@@ -67,5 +69,41 @@ describe("isProfileComplete", () => {
         asOf
       )
     ).toBe(false);
+  });
+
+  it("rejects a date picker left on this year, even with consent", () => {
+    expect(
+      isProfileComplete(
+        { ...minorProfile, date_of_birth: "2026-06-10" },
+        guardianConsent,
+        asOf
+      )
+    ).toBe(false);
+  });
+});
+
+describe("normalizeDateOfBirth", () => {
+  it("converts a Buddhist Era year to Gregorian", () => {
+    expect(normalizeDateOfBirth("2552-09-18")).toBe("2009-09-18");
+  });
+
+  it("leaves Gregorian dates alone", () => {
+    expect(normalizeDateOfBirth("2009-09-18")).toBe("2009-09-18");
+  });
+});
+
+describe("dateOfBirthProblem", () => {
+  it("accepts a real learner's birthday", () => {
+    expect(dateOfBirthProblem("2009-09-18", asOf)).toBeNull();
+  });
+
+  it("flags today's date and future dates as too young", () => {
+    expect(dateOfBirthProblem("2026-08-11", asOf)).toBe("too_young");
+    expect(dateOfBirthProblem("2552-09-18", asOf)).toBe("too_young");
+  });
+
+  it("flags implausibly old dates and unparseable input", () => {
+    expect(dateOfBirthProblem("1900-01-01", asOf)).toBe("too_old");
+    expect(dateOfBirthProblem("not-a-date", asOf)).toBe("invalid");
   });
 });

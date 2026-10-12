@@ -1,6 +1,10 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { isAnonymousUser } from "@/lib/supabase/auth";
+import {
+  isProfileComplete,
+  PROFILE_COMPLETION_SELECT,
+} from "@/lib/profile-completion";
 import { OnboardClient } from "./onboard-client";
 import type { AccountPrefill } from "./phases/account";
 import type { OnboardingState } from "@/types/onboarding";
@@ -51,13 +55,20 @@ export default async function OnboardPage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select(
-      "is_onboarded, full_name, username, date_of_birth, education_level"
-    )
+    .select(`is_onboarded, ${PROFILE_COMPLETION_SELECT}, education_level`)
     .eq("id", user.id)
     .maybeSingle();
 
-  if (profile?.is_onboarded) {
+  const { data: guardianConsent } = await supabase
+    .from("profile_guardian_consents")
+    .select("guardian_phone, guardian_relationship, consent_confirmed_at")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  // Mirrors the proxy's onboard gate. Redirecting on is_onboarded alone would
+  // bounce an onboarded learner with a bad profile between here and the app.
+  const profileComplete = isProfileComplete(profile, guardianConsent);
+  if (profile?.is_onboarded && profileComplete) {
     redirect(nextAfterOnboarding ?? "/me");
   }
 
@@ -75,6 +86,8 @@ export default async function OnboardPage({
       isAnonymous={isAnonymousUser(user)}
       oauthName={oauthName}
       initialState={state as OnboardingState | null}
+      // Onboarded learners only return here to fix their account details.
+      initialStep={profile?.is_onboarded ? "account" : undefined}
       nextAfterOnboarding={nextAfterOnboarding}
       accountPrefill={{
         full_name: profile?.full_name ?? oauthName,
