@@ -35,10 +35,18 @@ export const FEEDBACK_NEXT_STEPS = [
   { value: "not_now", label: "ยังไม่ตอนนี้" },
 ] as const;
 
-export const FEEDBACK_QUOTE_OK = [
-  { value: "yes", label: "ได้" },
+/** How a student lets us quote them. "named" credits them with a name they
+ *  type themselves, never the nickname they answered with. */
+export const FEEDBACK_QUOTE_MODES = [
+  { value: "named", label: "ได้ ใส่ชื่อที่เราเลือกเอง" },
+  { value: "anonymous", label: "ได้ แต่ไม่ใส่ชื่อ" },
   { value: "no", label: "ไม่ได้" },
 ] as const;
+
+/** PDPA notice shown above the consent box. Bump the version when the
+ *  substance changes, so stored rows say which text they agreed to. */
+export const FEEDBACK_NOTICE_VERSION = "2026-10-12";
+export const FEEDBACK_RETENTION_YEARS = 1;
 
 const values = <T extends readonly { value: string }[]>(options: T) =>
   options.map((o) => o.value) as unknown as [T[number]["value"], ...T[number]["value"][]];
@@ -69,9 +77,20 @@ export const shiftFeedbackSchema = z.object({
     .refine((steps) => !steps.includes("not_now") || steps.length === 1, {
       message: "ยังไม่ตอนนี้ เลือกคู่กับข้ออื่นไม่ได้นะ",
     }),
-  quoteOk: z.enum(["yes", "no"], { message: "บอกหน่อยว่าให้ยกไปใช้ได้ไหม" }),
+  quoteMode: z.enum(values(FEEDBACK_QUOTE_MODES), { message: "บอกหน่อยว่าให้ยกไปใช้ได้ไหม" }),
+  quoteName: z
+    .string()
+    .trim()
+    .max(40, "ชื่อยาวเกินไป")
+    .optional()
+    .transform((value) => (value ? value : null)),
+  consent: z.literal(true, { errorMap: () => ({ message: "ติ๊กยินยอมก่อนส่งนะ" }) }),
   /** Honeypot. Humans never see it; bots fill it. */
   website: z.string().max(0).optional(),
+}).superRefine((feedback, ctx) => {
+  if (feedback.quoteMode === "named" && !feedback.quoteName) {
+    ctx.addIssue({ code: "custom", path: ["quoteName"], message: "ใส่ชื่อที่อยากให้ขึ้นด้วยนะ" });
+  }
 });
 
 export type ShiftFeedbackInput = z.input<typeof shiftFeedbackSchema>;

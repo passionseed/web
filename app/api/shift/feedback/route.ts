@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 
 import { safeServerError } from "@/lib/security/route-guards";
 import { getShiftCohort } from "@/lib/content/shift-cohort";
-import { shiftFeedbackSchema, toFeedbackErrors } from "@/lib/shift/feedback";
+import {
+  FEEDBACK_NOTICE_VERSION,
+  shiftFeedbackSchema,
+  toFeedbackErrors,
+} from "@/lib/shift/feedback";
 import { createAdminClient } from "@/utils/supabase/admin";
 
 /**
@@ -53,7 +57,12 @@ export async function POST(request: Request) {
       payer: feedback.payer,
       recommend: feedback.recommend,
       next_steps: feedback.nextSteps,
-      quote_ok: feedback.quoteOk === "yes",
+      quote_ok: feedback.quoteMode !== "no",
+      quote_mode: feedback.quoteMode,
+      // Only kept when they asked to be credited by name.
+      quote_name: feedback.quoteMode === "named" ? feedback.quoteName : null,
+      notice_version: FEEDBACK_NOTICE_VERSION,
+      consented_at: new Date().toISOString(),
     });
     if (error) {
       return safeServerError("Failed to save SHIFT feedback", error);

@@ -11,7 +11,7 @@ import {
   FEEDBACK_NEXT_STEPS,
   FEEDBACK_PAYERS,
   FEEDBACK_PRICE_FIT,
-  FEEDBACK_QUOTE_OK,
+  FEEDBACK_QUOTE_MODES,
   shiftFeedbackSchema,
   toFeedbackErrors,
   type ShiftFeedbackErrors,
@@ -19,6 +19,7 @@ import {
 } from "@/lib/shift/feedback";
 
 import { CheckChips, ScaleChips } from "./FeedbackChips";
+import { FeedbackConsent } from "./FeedbackConsent";
 
 /**
  * End-of-round SHIFT feedback: 12 questions, about 5 minutes, no login.
@@ -91,7 +92,9 @@ export function ShiftFeedbackForm({ cohort }: { cohort: ShiftCohort }) {
     priceFit: "" as Values["priceFit"],
     payer: "" as Values["payer"],
     nextSteps: [],
-    quoteOk: "" as Values["quoteOk"],
+    quoteMode: "" as Values["quoteMode"],
+    quoteName: "",
+    consent: false as unknown as true,
     website: "",
   });
   const [errors, setErrors] = useState<ShiftFeedbackErrors>({});
@@ -200,7 +203,7 @@ export function ShiftFeedbackForm({ cohort }: { cohort: ShiftCohort }) {
       </Question>
 
       <Question num={10} label="ใครจ่ายค่าที่นั่งให้เรา" error={errors.payer}>
-        <ChoiceChips name="คนจ่าย" options={FEEDBACK_PAYERS} value={values.payer} onChange={(v) => set("payer", v)} />
+        <ChoiceChips name="คนจ่าย" stacked options={FEEDBACK_PAYERS} value={values.payer} onChange={(v) => set("payer", v)} />
       </Question>
 
       <Question num={11} label="จะแนะนำ SHIFT ให้เพื่อนแค่ไหน" error={errors.recommend}>
@@ -213,8 +216,20 @@ export function ShiftFeedbackForm({ cohort }: { cohort: ShiftCohort }) {
         <CheckChips options={FEEDBACK_NEXT_STEPS} value={values.nextSteps} onChange={(v) => set("nextSteps", toggleNextStep(values.nextSteps, v))} />
       </Question>
 
-      <Question label="ขอยกคำตอบไปใช้ โดยไม่ใส่ชื่อได้ไหม" hint="เช่น เล่าให้น้องรุ่นหน้าฟังว่ารุ่นพี่ได้อะไร ไม่ได้ก็ไม่เป็นไรเลย" error={errors.quoteOk}>
-        <ChoiceChips name="ยกคำตอบไปใช้" options={FEEDBACK_QUOTE_OK} value={values.quoteOk} onChange={(v) => set("quoteOk", v)} />
+      <Question
+        label="ขอยกคำตอบไปใช้ได้ไหม"
+        hint="เช่น เล่าให้น้องรุ่นหน้าฟังว่ารุ่นพี่ได้อะไร ไม่ได้ก็ไม่เป็นไรเลย"
+        error={errors.quoteMode ?? errors.quoteName}
+      >
+        <ChoiceChips stacked name="ยกคำตอบไปใช้" options={FEEDBACK_QUOTE_MODES} value={values.quoteMode} onChange={(v) => set("quoteMode", v)} />
+        {values.quoteMode === "named" && (
+          <input
+            {...text("quoteName")}
+            maxLength={40}
+            placeholder="ชื่อที่อยากให้ขึ้น เช่น มิว ม.5"
+            className={`${INPUT} mt-4`}
+          />
+        )}
       </Question>
 
       {/* Honeypot: hidden from people, visible to naive bots */}
@@ -230,12 +245,17 @@ export function ShiftFeedbackForm({ cohort }: { cohort: ShiftCohort }) {
       />
 
       <div className="border-t pt-7" style={{ borderColor: paper("1f") }}>
+        <FeedbackConsent
+          checked={Boolean(values.consent)}
+          onChange={(checked) => set("consent", checked as true)}
+          error={errors.consent}
+        />
         {status === "error" && (
           <p className="mb-6 text-sm font-semibold" style={{ color: INK.pink }} role="alert">
             ส่งไม่สำเร็จ ลองกดส่งใหม่อีกครั้งนะ คำตอบที่กรอกยังอยู่ครบ
           </p>
         )}
-        <button type="submit" disabled={status === "sending"} className="shift-button w-full sm:w-auto">
+        <button type="submit" disabled={status === "sending"} className="shift-button mt-8 w-full sm:w-auto">
           <span>{status === "sending" ? "กำลังส่ง..." : "ส่งคำตอบ"}</span>
           <ArrowRight className="h-4 w-4" />
         </button>

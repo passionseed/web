@@ -15,7 +15,8 @@ const valid = {
   payer: "parents",
   recommend: 9,
   nextSteps: ["help_run", "project_club"],
-  quoteOk: "yes",
+  quoteMode: "anonymous",
+  consent: true,
 };
 
 describe("shiftFeedbackSchema", () => {
@@ -35,6 +36,16 @@ describe("shiftFeedbackSchema", () => {
   it("does not allow 'not now' with another next step", () => {
     const result = shiftFeedbackSchema.safeParse({ ...valid, nextSteps: ["not_now", "help_run"] });
     expect(result.success).toBe(false);
+  });
+
+  it("asks for a name only when the student wants to be credited", () => {
+    expect(shiftFeedbackSchema.safeParse({ ...valid, quoteMode: "named" }).success).toBe(false);
+    const named = shiftFeedbackSchema.safeParse({ ...valid, quoteMode: "named", quoteName: "มิว ม.5" });
+    expect(named.success && named.data.quoteName).toBe("มิว ม.5");
+  });
+
+  it("requires PDPA consent", () => {
+    expect(shiftFeedbackSchema.safeParse({ ...valid, consent: false }).success).toBe(false);
   });
 
   it("accepts 0 as a recommendation score", () => {
