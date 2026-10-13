@@ -39,6 +39,11 @@ const PUBLIC_ROUTE_PREFIXES = [
   "/slide",
   "/worksheet",
   "/tips",
+  // SHIFT rounds: public certificate verify page + share images, and two API
+  // routes that authenticate themselves (bearer token / health probe).
+  "/c",
+  "/api/shift/transcribe",
+  "/api/shift/cert-health",
 ] as const;
 
 export function isPublicRoute(pathname: string): boolean {

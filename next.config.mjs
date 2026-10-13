@@ -48,7 +48,12 @@ const nextConfig = {
   // Bundle licensed fonts for dynamic social-image handlers.
   outputFileTracingIncludes: {
     "/*": ["./lib/og/fonts/*.ttf"],
+    // SHIFT certificate images (@napi-rs/canvas reads these at runtime).
+    "/c/**": ["./lib/shift-round/certificate/fonts/*.ttf"],
+    "/api/shift/cert-health": ["./lib/shift-round/certificate/fonts/*.ttf"],
   },
+  // Native Skia binding for the SHIFT certificate renderer: load from node_modules, never bundle.
+  serverExternalPackages: ["@napi-rs/canvas"],
   // Production optimizations
   compress: true,
   productionBrowserSourceMaps: false,
