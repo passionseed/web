@@ -106,7 +106,7 @@ export const parentPoints = (cohort: ShiftCohort = COHORT) => [
   },
   { title: "เรียนจากบ้าน ทุกเย็น 1 ทุ่ม", body: `ออนไลน์ ${cohort.sessionTime} น. ไม่ต้องเดินทาง ไม่ชนเวลาเรียน` },
   { title: "เห็นผลงานได้จริง", body: "ลูกได้ชิ้นงานที่เปิดให้ดูได้ พร้อมพอร์ต 1 หน้า ไม่ใช่แค่ใบเซอร์" },
-  { title: REFUND_PROMISE, body: "ถ้าจบวันที่ 7 แล้วไม่มีชิ้นงานในมือ คืนเงินเต็มจำนวน" },
+  { title: REFUND_PROMISE, body: "ถ้าทำครบทุกขั้นตอนทั้ง 7 วันแล้วยังรู้สึกว่าไม่คุ้ม คืนเงินเต็มจำนวน" },
 ];
 
 /** Calm water for the parents: fish only, no croc on this one. */

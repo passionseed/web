@@ -166,7 +166,7 @@ export function ShiftPayment({
           className="mt-4 text-xs leading-relaxed"
           style={{ color: tint("80") }}
         >
-          ถ้าจบวันที่ 7 แล้วไม่มีชิ้นงานในมือ คืนเงินเต็มจำนวน
+          ถ้าทำครบทุกขั้นตอนทั้ง 7 วันแล้วยังรู้สึกว่าไม่คุ้ม คืนเงินเต็มจำนวน
         </p>
       </div>
     </div>

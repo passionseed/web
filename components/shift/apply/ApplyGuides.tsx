@@ -73,7 +73,7 @@ export function CohortQuickFacts({ cohort }: { cohort: ShiftCohort }) {
           )}
         </Fact>
         {cohort.priceBaht > 0 && (
-          <Fact label="คืนเงิน">ถ้าจบวันที่ 7 แล้วไม่มีชิ้นงานในมือ คืนเต็มจำนวน</Fact>
+          <Fact label="คืนเงิน">ถ้าทำครบทุกขั้นตอนทั้ง 7 วันแล้วยังรู้สึกว่าไม่คุ้ม คืนเต็มจำนวน</Fact>
         )}
       </dl>
 
