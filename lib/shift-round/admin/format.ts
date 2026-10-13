@@ -229,6 +229,8 @@ const ERROR_MESSAGE: Record<string, string> = {
   policy_locked: "This policy is locked because the round has started.",
   extend_after_issue: "Certificates have been issued in this round, so it can't be extended.",
   user_not_found: "No Passion Seed account uses that email.",
+  role_from_web_admin:
+    "This person is a web admin, so they are global SHIFT staff automatically. Remove the admin role on the Users page instead.",
   certificate_issued: "This entry already has a certificate, so it can't change.",
   mentor_not_in_round: "That person isn't a mentor or staff for this round. Add them in Settings first.",
   squad_full: "That squad is full.",

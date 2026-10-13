@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 
 import {
   AdminEmptyState,
@@ -115,7 +116,22 @@ export function AdminShiftCamp() {
       setSnapshot(next);
       if (action === "create_cohort") {
         setSelected(next.cohort.id);
-        setCohorts(await request<ShiftCohort[]>("/api/admin/shift/camp"));
+        toast.success(`Cohort "${next.cohort.name}" created`);
+        // The cohort exists now; keep it selectable even if the list reload fails.
+        setCohorts((prev) =>
+          prev.some((c) => c.id === next.cohort.id) ? prev : [...prev, next.cohort],
+        );
+        try {
+          setCohorts(await request<ShiftCohort[]>("/api/admin/shift/camp"));
+        } catch (e) {
+          // The create went through; only the refresh failed. Report it as a load problem.
+          setErrorKind("load");
+          setError(
+            `Cohort created, but the cohort list did not refresh: ${
+              e instanceof Error ? e.message : "unknown error"
+            }`,
+          );
+        }
       }
       return true;
     } catch (e) {

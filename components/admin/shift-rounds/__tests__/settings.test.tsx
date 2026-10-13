@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 import * as actions from "@/app/admin/shift/rounds/actions";
-import { RoundSettings } from "../RoundSettings";
+import { RolesSection, RoundSettings } from "../RoundSettings";
 import { ROUND_ID, makeRound } from "../__fixtures__/rounds";
 
 jest.mock("@/app/admin/shift/rounds/actions", () => ({
@@ -88,4 +88,21 @@ test("allowlist shows the current list and adds pasted emails after confirm", as
     fireEvent.click(within(dialog).getByRole("button", { name: "Add" }));
   });
   await waitFor(() => expect(m.updateAllowlistAction).toHaveBeenCalledWith(ROUND_ID, ["c@x.org", "d@x.org"], []));
+});
+
+test("global staff list shows web admins as not removable and keeps grants revocable", async () => {
+  m.listRolesAction.mockResolvedValue({
+    ok: true,
+    data: [
+      { user_id: "u-admin", round_id: null, role: "staff", email: "admin@x.org", display_name: "Admin", source: "web_admin" },
+      { user_id: "u-grant", round_id: null, role: "staff", email: "grant@x.org", display_name: "Granted", source: "shift_round_roles" },
+    ],
+  });
+  render(<RolesSection roundId={null} title="Global SHIFT staff" />);
+  const adminRow = (await screen.findByText("Admin")).closest("li")!;
+  expect(within(adminRow).getByText(/Web admin · not removable here/)).toBeInTheDocument();
+  expect(within(adminRow).queryByRole("button")).not.toBeInTheDocument();
+  const grantRow = screen.getByText("Granted").closest("li")!;
+  expect(within(grantRow).getByRole("button", { name: "Remove staff role from grant@x.org" })).toBeInTheDocument();
+  expect(screen.getByText(/Every web admin is global SHIFT staff automatically/)).toBeInTheDocument();
 });

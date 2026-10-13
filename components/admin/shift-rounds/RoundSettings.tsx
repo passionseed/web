@@ -346,6 +346,7 @@ export function RolesSection({ roundId, title }: { roundId: string | null; title
   };
 
   const revoke = async (r: RoleGrant) => {
+    if (r.source === "web_admin") return;
     const who = r.email ?? r.display_name ?? r.user_id;
     if (!r.email) return setInputError("This grant has no email on file; revoke it from the database runbook.");
     const ok = await confirm({
@@ -367,6 +368,8 @@ export function RolesSection({ roundId, title }: { roundId: string | null; title
       {confirmDialog}
       <p className="text-xs text-muted-foreground">
         Mentors and staff also need the web admin role (Users page) to open these tools.
+        {roundId === null &&
+          " Every web admin is global SHIFT staff automatically; those entries can only be removed on the Users page."}
       </p>
       <form onSubmit={grant} className="flex flex-wrap items-end gap-2">
         <Field label="Email" htmlFor={`role-email-${roundId ?? "global"}`} className="min-w-64 flex-1">
@@ -404,16 +407,25 @@ export function RolesSection({ roundId, title }: { roundId: string | null; title
           ) : (
             <ul className="divide-y rounded-md border">
               {rows.map((r) => (
-                <li key={`${r.user_id}-${r.role}`} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
+                <li key={`${r.user_id}-${r.role}-${r.source ?? "shift_round_roles"}`} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
                   <span>
                     {r.display_name ?? r.email ?? r.user_id}
                     {r.display_name && r.email && <span className="text-muted-foreground"> · {r.email}</span>}
                   </span>
                   <span className="flex items-center gap-2">
                     <Pill tone="info">{r.role}</Pill>
-                    <Button size="sm" variant="ghost" onClick={() => revoke(r)} disabled={busy} aria-label={`Remove ${r.role} role from ${r.email ?? r.user_id}`}>
-                      <X className="h-4 w-4" aria-hidden="true" />
-                    </Button>
+                    {r.source === "web_admin" ? (
+                      <span
+                        className="text-xs text-muted-foreground"
+                        title="Web admins are global SHIFT staff automatically. Remove the admin role on the Users page to take this away."
+                      >
+                        Web admin · not removable here
+                      </span>
+                    ) : (
+                      <Button size="sm" variant="ghost" onClick={() => revoke(r)} disabled={busy} aria-label={`Remove ${r.role} role from ${r.email ?? r.user_id}`}>
+                        <X className="h-4 w-4" aria-hidden="true" />
+                      </Button>
+                    )}
                   </span>
                 </li>
               ))}

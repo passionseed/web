@@ -235,10 +235,12 @@ export function AdminHackathonParticipants() {
   }
 
   async function handleBulkDelete() {
-    if (selectedIds.size === 0) return;
+    // Only rows the admin can currently see; never delete selections hidden by the search.
+    const ids = visibleSelectedIds;
+    if (ids.length === 0) return;
 
     const confirmed = confirm(
-      `Are you sure you want to delete ${selectedIds.size} participant(s)? This action cannot be undone.`
+      `Are you sure you want to delete ${ids.length} participant(s)? This action cannot be undone.`
     );
 
     if (!confirmed) return;
@@ -248,13 +250,14 @@ export function AdminHackathonParticipants() {
       const response = await fetch("/api/admin/hackathon/participants", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ participantIds: Array.from(selectedIds) }),
+        body: JSON.stringify({ participantIds: ids }),
       });
 
       if (response.ok) {
         // Remove deleted participants from state
+        const deleted = new Set(ids);
         setParticipants((prev) =>
-          prev.filter((p) => !selectedIds.has(p.id))
+          prev.filter((p) => !deleted.has(p.id))
         );
         setSelectedIds(new Set());
       } else {
@@ -281,7 +284,7 @@ export function AdminHackathonParticipants() {
   }
 
   function toggleSelectAll() {
-    if (selectedIds.size === filteredParticipants.length) {
+    if (visibleSelectedIds.length === filteredParticipants.length) {
       setSelectedIds(new Set());
     } else {
       setSelectedIds(new Set(filteredParticipants.map((p) => p.id)));
@@ -299,6 +302,7 @@ export function AdminHackathonParticipants() {
       ""
     );
   });
+  const visibleSelectedIds = filteredParticipants.filter((p) => selectedIds.has(p.id)).map((p) => p.id);
 
   const stats = {
     total: participants.length,
@@ -383,8 +387,8 @@ export function AdminHackathonParticipants() {
     );
   }
 
-  const allSelected = selectedIds.size === filteredParticipants.length && filteredParticipants.length > 0;
-  const someSelected = selectedIds.size > 0 && selectedIds.size < filteredParticipants.length;
+  const allSelected = visibleSelectedIds.length === filteredParticipants.length && filteredParticipants.length > 0;
+  const someSelected = visibleSelectedIds.length > 0 && visibleSelectedIds.length < filteredParticipants.length;
   const selectAllChecked = allSelected ? true : someSelected ? "indeterminate" : false;
 
   return (
@@ -640,7 +644,7 @@ export function AdminHackathonParticipants() {
                 View and manage all registered hackathon participants
               </CardDescription>
             </div>
-            {selectedIds.size > 0 && (
+            {visibleSelectedIds.length > 0 && (
               <Button
                 variant="destructive"
                 size="sm"
@@ -655,7 +659,7 @@ export function AdminHackathonParticipants() {
                 ) : (
                   <>
                     <Trash2 className="mr-2 h-4 w-4" />
-                    Delete ({selectedIds.size})
+                    Delete ({visibleSelectedIds.length})
                   </>
                 )}
               </Button>
@@ -666,7 +670,10 @@ export function AdminHackathonParticipants() {
             <Input
               placeholder="Search by name, email, university, referral source, or team..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setSelectedIds(new Set());
+              }}
               className="pl-10"
             />
           </div>

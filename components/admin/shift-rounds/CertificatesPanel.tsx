@@ -61,7 +61,7 @@ export function CertificatesPanel({ roundId }: { roundId: string }) {
     setNoteError(null);
     const ok = await confirm({
       title: `Revoke certificate ${c.public_id}?`,
-      description: "The verification page shows it as revoked straight away, and the student can no longer share it. You can reinstate it later.",
+      description: "The verification page shows it as revoked straight away, and the student can no longer share it. Images already shared may take up to a few minutes to update. You can reinstate it later.",
       confirmLabel: "Revoke",
       destructive: true,
     });

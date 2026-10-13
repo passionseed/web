@@ -335,6 +335,12 @@ export interface AdminDashboard {
   jobs?: JobHealth[];
 }
 
+/**
+ * Where a role comes from: a shift_round_roles grant (revocable here), or the web admin
+ * role (user_roles admin = global SHIFT staff, decision 2026-10-13; managed on Users).
+ */
+export type RoleSource = "shift_round_roles" | "web_admin";
+
 export interface RoleGrant {
   id?: string;
   user_id: string;
@@ -342,6 +348,7 @@ export interface RoleGrant {
   role: RoundRole;
   email?: string | null;
   display_name?: string | null;
+  source?: RoleSource;
 }
 
 export interface AppConfigRow {

@@ -54,12 +54,12 @@ describe("/c/[publicId]/image/[format]", () => {
     expect(res.headers.get("location")).toContain("v=4");
   });
 
-  it("serves the PNG with an immutable cache header when v matches", async () => {
+  it("serves the PNG with a short cache header when v matches", async () => {
     mockFetch.mockResolvedValue(valid(3));
     const res = await call("square", "?v=3");
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toBe("image/png");
-    expect(res.headers.get("cache-control")).toBe("public, max-age=31536000, immutable");
+    expect(res.headers.get("cache-control")).toBe("public, max-age=300, s-maxage=300, stale-while-revalidate=60");
     expect(Buffer.from(await res.arrayBuffer()).equals(PNG_BYTES)).toBe(true);
     expect(mockRender).toHaveBeenCalledWith(expect.objectContaining({ publicId: ID, holder: "ต้น" }), "square");
   });

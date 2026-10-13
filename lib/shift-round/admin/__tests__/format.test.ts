@@ -85,4 +85,7 @@ test("missing SHIFT round role gets its own message", () => {
 test("describeError keeps the code visible", () => {
   expect(describeError({ code: "squad_full", category: "validation" })).toMatch(/full.*\(squad_full\)/);
   expect(describeError({ code: "something_new", category: "validation" })).toMatch(/something_new/);
+  expect(describeError({ code: "role_from_web_admin", category: "validation", field: "email" })).toMatch(
+    /web admin.*Users page.*\(role_from_web_admin\)/,
+  );
 });

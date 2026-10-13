@@ -198,6 +198,34 @@ describe("handleTranscribe", () => {
     expect(whisper).not.toHaveBeenCalled();
   });
 
+  it("413 audio_too_long from the storage size, before downloading", async () => {
+    const whisper = jest.fn(whisperOk);
+    const { d, fake } = deps(
+      { check: { data: { ok: true, data: { max_seconds: 180, bytes: MAX_AUDIO_BYTES + 1 } }, error: null } },
+      whisper
+    );
+    const res = await handleTranscribe(req(), d);
+    expect(res.status).toBe(413);
+    expect(res.body).toMatchObject({ error: { code: "audio_too_long" } });
+    expect(fake.calls.download).toEqual([]);
+    expect(whisper).not.toHaveBeenCalled();
+  });
+
+  it("maps an audio_too_long check denial to 413", async () => {
+    const { d, fake } = deps({ check: { data: { ok: false, error: { code: "audio_too_long" } }, error: null } });
+    const res = await handleTranscribe(req(), d);
+    expect(res.status).toBe(413);
+    expect(fake.calls.download).toEqual([]);
+  });
+
+  it("one deadline covers the whole request, including a hanging download", async () => {
+    const { d, fake } = deps({}, whisperOk, { deadlineMs: 20 });
+    fake.client.storage.from = jest.fn(() => ({ download: () => new Promise(() => {}) })) as never;
+    const res = await handleTranscribe(req(), d);
+    expect(res.status).toBe(504);
+    expect(res.body).toMatchObject({ error: { code: "transcription_failed", category: "retryable" } });
+  });
+
   it("returns {text, segments(ms), language} on success", async () => {
     const whisper = jest.fn(whisperOk);
     const { d } = deps({}, whisper);

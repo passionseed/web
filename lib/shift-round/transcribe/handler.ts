@@ -75,10 +75,9 @@ const CHECK_ERRORS: Record<string, [number, ErrorCategory]> = {
   entry_not_found: [404, "validation"],
   media_missing: [404, "validation"],
   invalid_field: [400, "validation"],
+  audio_too_long: [413, "validation"],
   unavailable: [503, "unavailable"],
 };
-
-class DeadlineError extends Error {}
 
 export function extractBearer(header: string | null): string | null {
   if (!header) return null;
@@ -86,11 +85,38 @@ export function extractBearer(header: string | null): string | null {
   return match ? match[1] : null;
 }
 
+/**
+ * One deadline covers the whole request (auth, flag, check RPC, download and
+ * whisper), so the JSON error goes out before the platform kills the function
+ * (route maxDuration 30s). Work still in flight is abandoned; whisper is aborted.
+ */
 export async function handleTranscribe(
   input: { authorization: string | null; body: unknown },
   deps: TranscribeDeps
 ): Promise<HandlerResponse> {
   const log = deps.log ?? (() => {});
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<HandlerResponse>((resolve) => {
+    timer = setTimeout(() => {
+      controller.abort();
+      log("shift_transcribe_failed", { code: "timeout" });
+      resolve(fail(504, "transcription_failed", "retryable"));
+    }, deps.deadlineMs ?? DEADLINE_MS);
+  });
+  try {
+    return await Promise.race([transcribe(input, deps, log, controller.signal), deadline]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+async function transcribe(
+  input: { authorization: string | null; body: unknown },
+  deps: TranscribeDeps,
+  log: NonNullable<TranscribeDeps["log"]>,
+  signal: AbortSignal
+): Promise<HandlerResponse> {
   const token = extractBearer(input.authorization);
   if (!token) return fail(401, "unauthenticated", "unauthenticated");
 
@@ -140,6 +166,9 @@ export async function handleTranscribe(
       return fail(status, code, category, envelope.error?.retry_after ?? null);
     }
     if (typeof envelope.data?.max_seconds === "number") maxSeconds = envelope.data.max_seconds;
+    // Size comes from storage metadata, so oversized audio is refused before download.
+    const bytes = (envelope.data as { bytes?: unknown } | undefined)?.bytes;
+    if (typeof bytes === "number" && bytes > MAX_AUDIO_BYTES) return fail(413, "audio_too_long", "validation");
   } catch {
     return fail(503, "retryable", "retryable");
   }
@@ -154,22 +183,10 @@ export async function handleTranscribe(
   }
   if (audio.size > MAX_AUDIO_BYTES) return fail(413, "audio_too_long", "validation");
 
-  const controller = new AbortController();
-  const deadline = deps.deadlineMs ?? DEADLINE_MS;
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  let timedOut = false;
+  if (signal.aborted) return fail(504, "transcription_failed", "retryable");
   try {
     const file = new File([audio], "audio.m4a", { type: "audio/mp4" });
-    const result = await Promise.race([
-      deps.whisper({ file, language: lang, signal: controller.signal }),
-      new Promise<never>((_, reject) => {
-        timer = setTimeout(() => {
-          timedOut = true;
-          reject(new DeadlineError());
-          controller.abort();
-        }, deadline);
-      }),
-    ]);
+    const result = await deps.whisper({ file, language: lang, signal });
     if (typeof result.duration === "number" && result.duration > maxSeconds + 5) {
       return fail(422, "audio_too_long", "validation");
     }
@@ -185,15 +202,11 @@ export async function handleTranscribe(
       body: { text: (result.text ?? "").trim(), segments, language: normalizeLanguage(result.language, lang) },
       headers: {},
     };
-  } catch (error) {
-    if (timedOut || error instanceof DeadlineError) {
-      log("shift_transcribe_failed", { code: "timeout" });
-      return fail(504, "transcription_failed", "retryable");
-    }
+  } catch {
+    // After the deadline the outer race has already answered 504; nothing to log twice.
+    if (signal.aborted) return fail(504, "transcription_failed", "retryable");
     log("shift_transcribe_failed", { code: "provider_error" });
     return fail(502, "transcription_failed", "retryable");
-  } finally {
-    if (timer) clearTimeout(timer);
   }
 }
 
