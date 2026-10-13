@@ -1,5 +1,5 @@
 /**
- * SHIFT[2] curriculum for mentors (internal, shown at /admin/shift/curriculum).
+ * SHIFT[2] curriculum for mentors (internal, shown at /shift/curriculum).
  * Built from the SHIFT[1] run plan, the SHIFT[1] results and the decisions of
  * 2026-10-13 (refund steps, testers from day 2). Source of truth for the
  * reasoning: company-brain shift2.md. Contains no student data.
