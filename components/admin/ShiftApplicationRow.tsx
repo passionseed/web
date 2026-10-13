@@ -5,6 +5,7 @@ import { Check, ChevronDown, ChevronRight, Loader2, UserPlus } from "lucide-reac
 
 import {
   CopyJoinMessageButton,
+  CopyKickoffMessageButton,
   discordStatus,
   ShiftJoinLinkPanel,
 } from "@/components/admin/ShiftJoinLinkPanel";
@@ -129,6 +130,9 @@ export function ShiftApplicationRow(props: RowProps) {
             )}
             {app.paid_at && !app.linked_at && (
               <CopyJoinMessageButton application={app} onCreateLink={props.onCreateJoinLink} compact />
+            )}
+            {app.paid_at && (
+              <CopyKickoffMessageButton application={app} onCreateLink={props.onCreateJoinLink} compact />
             )}
           </div>
         </TableCell>

@@ -9,7 +9,6 @@ import {
   type ApplicationPatch,
 } from "@/components/admin/ShiftApplicationRow";
 import { ShiftSeatBar, ShiftSourceChips } from "@/components/admin/ShiftApplicationsSummary";
-import { ShiftViewsSummary } from "@/components/admin/ShiftViewsSummary";
 import {
   AdminEmptyState,
   AdminErrorState,
@@ -336,7 +335,6 @@ export function AdminShiftApplications() {
   return (
     <div className="space-y-5">
       {confirmDialog}
-      <ShiftViewsSummary />
       <Tabs value={cohortName} onValueChange={setCohortName}>
         <TabsList>
           {SHIFT_COHORTS.map((c) => (

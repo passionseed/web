@@ -111,6 +111,16 @@ Before creating or publishing a short Micro PathLab, read
 Micro PathLabs use the same map/node contract and render through
 `app/map/[id]/page.tsx`; do not route them through a new seed/day runtime.
 
+## Making Changes — REQUIRED
+
+`main` is protected and every merge to it deploys to production on Vercel.
+
+1. **Never push to `main`.** Create a branch (`fix/...`, `feat/...`, `docs/...`) and open a pull request.
+2. **CI must pass before merging.** The `build` check runs lint, tests, and `pnpm build`. Run `pnpm lint && pnpm test && pnpm build` locally before pushing.
+3. **Check the Vercel preview** linked on the pull request for any UI change.
+4. **Squash-merge.** The branch is deleted automatically after merging.
+5. **Admin bypass is for emergencies only** (production down). Open a follow-up pull request explaining the bypass.
+
 ## Development Commands
 
 ```bash

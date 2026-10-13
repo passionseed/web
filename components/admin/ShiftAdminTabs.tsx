@@ -12,6 +12,7 @@ const SHIFT_ADMIN_LINKS = [
   { href: "/admin/shift", label: "Tracker" },
   { href: "/admin/shift/camp", label: "Interactive camp (legacy)" },
   { href: "/admin/shift/seedstack", label: "SeedStack" },
+  { href: "/admin/shift/views", label: "Views" },
 ];
 
 /** Staff companion lives outside the admin shell (its own SHIFT layout). */
