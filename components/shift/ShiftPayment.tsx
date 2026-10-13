@@ -10,6 +10,7 @@ import {
   pairPriceBaht,
   type ShiftCohort,
 } from "@/lib/content/shift-cohort";
+import { REFUND_HOW, REFUND_STEPS } from "@/lib/content/shift-refund";
 
 import {
   paymentLineMessage,
@@ -162,12 +163,18 @@ export function ShiftPayment({
           ส่งสลิปทาง LINE
           <ExternalLink className="h-4 w-4" />
         </a>
-        <p
+        <div
           className="mt-4 text-xs leading-relaxed"
           style={{ color: tint("80") }}
         >
-          ถ้าทำครบทุกขั้นตอนทั้ง 7 วันแล้วยังรู้สึกว่าไม่คุ้ม คืนเงินเต็มจำนวน
-        </p>
+          <p>ถ้าทำครบทุกขั้นตอนทั้ง 7 วันแล้วยังรู้สึกว่าไม่คุ้ม คืนเงินเต็มจำนวน</p>
+          <ol className="mt-2 list-decimal space-y-0.5 pl-5">
+            {REFUND_STEPS.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
+          <p className="mt-2">{REFUND_HOW}</p>
+        </div>
       </div>
     </div>
   );
