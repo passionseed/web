@@ -1,5 +1,3 @@
-"use server";
-
 import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 import { createClient as createHackathonClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
@@ -25,6 +23,8 @@ async function checkAdminAccess() {
 
 async function syncHackathonToFunnel(_formData: FormData): Promise<void> {
   "use server";
+  // Server actions are callable directly, so the page guard is not enough.
+  await checkAdminAccess();
   
   const mainSupabase = createServiceRoleClient();
   
