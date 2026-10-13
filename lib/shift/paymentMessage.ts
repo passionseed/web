@@ -49,3 +49,30 @@ export function joinConfirmMessage(input: { cohortName: string; nickname: string
     input.joinUrl,
   ].join("\n");
 }
+
+/**
+ * The admin's kickoff message the day before a round starts: when it meets,
+ * the join link to connect Discord, and three questions the student answers
+ * in LINE to seed a Day 1 project idea.
+ */
+export function kickoffMessage(input: {
+  cohortName: string;
+  nickname: string;
+  joinUrl: string;
+  /** e.g. "พรุ่งนี้ วันพุธที่ 14 ตุลาคม"; null leaves the day out. */
+  meetLabel: string | null;
+  /** e.g. "19:00". */
+  startTime: string;
+}): string {
+  const when = input.meetLabel ? `${input.meetLabel} ` : "";
+  return [
+    `สวัสดีครับน้อง${input.nickname.trim()} ${input.cohortName} จะเริ่ม${when}เวลา ${input.startTime}`,
+    "แต่ก่อนเริ่มให้น้องลองเชื่อม Discord กับระบบของพี่ก่อน (และสำหรับใครที่ยังไม่ได้เข้า Discord ในลิงก์จะพาเข้าเอง)",
+    input.joinUrl,
+    "",
+    "และให้ตอบ 3 คำถามนี้ส่งมาใน LINE ได้เลยนะ ใช้ในการหาไอเดียโปรเจกต์ในวันแรก",
+    "1. What friction in your life? One thing in your daily life (school/people/hobby) that is annoying, inefficient, or badly designed?",
+    "2. What is your interest or obsession (guitar, อาหาร)? อะไรที่ทำให้คุยเรื่องนี้ได้เป็นชั่วโมง?",
+    "3. What group of people do you like to hang out with or understand well?",
+  ].join("\n");
+}
