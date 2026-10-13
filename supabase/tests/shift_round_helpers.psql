@@ -1,0 +1,127 @@
+-- Shared fixtures for supabase/tests/shift_round_*.test.sql.
+-- Included with \ir after BEGIN; everything here is rolled back with the test transaction.
+-- Not named *.sql so pg_prove never runs it as a test file.
+
+create extension if not exists pgtap with schema extensions;
+set local search_path = public, extensions;
+
+create schema shift_test;
+grant usage on schema shift_test to anon, authenticated, service_role;
+
+-- Fixed clock: honoured only because the allow flag is set in this transaction (X3).
+create function shift_test.clock(ts timestamptz) returns void language sql as $$
+  select set_config('shift_round.allow_clock_override', 'on', true), set_config('shift_round.now', ts::text, true);
+$$;
+
+create function shift_test.user(p_email text default null) returns uuid language plpgsql as $$
+declare v uuid := gen_random_uuid();
+begin
+  insert into auth.users (id, email, email_confirmed_at)
+  values (v, coalesce(p_email, 'u' || left(v::text, 8) || '@example.test'), now());
+  if not exists (select 1 from public.profiles where id = v) then
+    insert into public.profiles (id) values (v);
+  end if;
+  return v;
+end $$;
+
+create function shift_test.login(p_uid uuid) returns void language sql as $$
+  select set_config('request.jwt.claim.sub', coalesce(p_uid::text, ''), true),
+         set_config('request.jwt.claim.role', case when p_uid is null then 'anon' else 'authenticated' end, true),
+         set_config('request.jwt.claims',
+           case when p_uid is null then '{"role":"anon"}'
+                else json_build_object('sub', p_uid, 'role', 'authenticated')::text end, true);
+$$;
+
+create function shift_test.round(
+  p_number int, p_starts timestamptz, p_status text default 'published', p_join_mode text default 'open',
+  p_duration int default 14
+) returns uuid language plpgsql as $$
+declare v uuid;
+begin
+  insert into public.shift_rounds (number, title_th, title_en, brief_th, brief_en, starts_at, duration_days,
+    closes_at, review_ends_at, join_mode, status)
+  values (p_number, 'รอบทดสอบ ' || p_number, 'Test round ' || p_number, 'โจทย์', 'Brief', p_starts, p_duration,
+    p_starts + make_interval(days => p_duration), p_starts, p_join_mode, p_status)
+  returning id into v;
+  return v;
+end $$;
+
+create function shift_test.entry(p_round uuid, p_uid uuid, p_handle text default null, p_joined_day int default 1)
+returns uuid language plpgsql as $$
+declare v uuid;
+begin
+  insert into public.shift_round_entries (round_id, user_id, track, handle, birth_month, birth_year,
+    guardian_required, guardian_consent_at, joined_at, joined_day)
+  select p_round, p_uid, 'high_school', coalesce(p_handle, 'h' || left(p_uid::text, 6)), 1, 2008, true,
+         r.starts_at, r.starts_at, p_joined_day
+    from public.shift_rounds r where r.id = p_round
+  returning id into v;
+  return v;
+end $$;
+
+-- Direct evidence insert (bypasses the RPC) for mission/review/issue fixtures.
+create function shift_test.ev(
+  p_entry uuid, p_type text, p_who text default null, p_status text default 'submitted',
+  p_at timestamptz default null, p_source uuid default null, p_visibility text default 'public'
+) returns uuid language plpgsql as $$
+declare
+  en public.shift_round_entries;
+  v uuid;
+  v_at timestamptz;
+  v_payload jsonb;
+begin
+  select * into en from public.shift_round_entries where id = p_entry;
+  v_at := coalesce(p_at, shift_round_private.round_now());
+  v_payload := case p_type
+    when 'contact' then jsonb_build_object('who_label', p_who, 'channel', 'chat', 'occurred_on', '2026-11-10')
+    when 'interview' then jsonb_build_object('who_label', p_who, 'occurred_on', '2026-11-10', 'key_point', 'they said things')
+    when 'tester' then jsonb_build_object('who_label', p_who, 'occurred_on', '2026-11-10', 'key_point', 'it broke')
+    when 'problem_statement' then jsonb_build_object('text', 'A problem statement that is long enough')
+    when 'mvp' then jsonb_build_object('link', 'https://example.com/mvp')
+    when 'change' then jsonb_build_object('kind', 'changed', 'what', 'changed the onboarding', 'source_evidence_id', p_source)
+    when 'demo_post' then jsonb_build_object('url', 'https://example.com/demo', 'visibility', p_visibility) end;
+  insert into public.shift_round_evidence (entry_id, round_id, user_id, submission_id, type, payload, payload_hash,
+    who_key, source_evidence_id, client_created_at, submitted_at, local_date, status)
+  values (en.id, en.round_id, en.user_id, gen_random_uuid(), p_type, v_payload, md5(v_payload::text),
+    case when p_type in ('contact','interview','tester') then shift_round_private.who_key(p_who) end,
+    p_source, v_at, v_at, shift_round_private.local_date(v_at), p_status)
+  returning id into v;
+  return v;
+end $$;
+
+-- All six missions complete (returns the interview id used as change source).
+create function shift_test.complete_all(p_entry uuid, p_at timestamptz default null) returns uuid language plpgsql as $$
+declare v_src uuid;
+begin
+  perform shift_test.ev(p_entry, 'contact', 'Aunt May', 'submitted', p_at);
+  v_src := shift_test.ev(p_entry, 'interview', 'Ploy', 'submitted', p_at);
+  perform shift_test.ev(p_entry, 'interview', 'Nok', 'submitted', p_at);
+  perform shift_test.ev(p_entry, 'interview', 'Beam', 'submitted', p_at);
+  perform shift_test.ev(p_entry, 'problem_statement', null, 'submitted', p_at);
+  perform shift_test.ev(p_entry, 'mvp', null, 'submitted', p_at);
+  perform shift_test.ev(p_entry, 'tester', 'Tester One', 'submitted', p_at);
+  perform shift_test.ev(p_entry, 'tester', 'Tester Two', 'submitted', p_at);
+  perform shift_test.ev(p_entry, 'tester', 'Tester Three', 'submitted', p_at);
+  perform shift_test.ev(p_entry, 'change', null, 'submitted', p_at, v_src);
+  perform shift_test.ev(p_entry, 'demo_post', null, 'submitted', p_at);
+  return v_src;
+end $$;
+
+create function shift_test.grant_role(p_uid uuid, p_round uuid, p_role text default 'staff') returns void language sql as $$
+  insert into public.shift_round_roles (user_id, round_id, role) values (p_uid, p_round, p_role);
+$$;
+
+create function shift_test.obj(p_name text, p_owner uuid, p_created timestamptz default now()) returns void language sql as $$
+  insert into storage.objects (bucket_id, name, owner, owner_id, metadata, created_at)
+  values ('shift-round-media', p_name, p_owner, p_owner::text, '{"size": 1234}', p_created);
+$$;
+
+create function shift_test.code(j jsonb) returns text language sql immutable as $$
+  select case when (j->>'ok')::boolean then 'ok' else j->'error'->>'code' end
+$$;
+
+create function shift_test.missions_complete(p_entry uuid) returns int language sql as $$
+  select (shift_round_private.mission_counts(p_entry)->>'missions_complete')::int
+$$;
+
+grant execute on all functions in schema shift_test to anon, authenticated, service_role;
