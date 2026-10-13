@@ -22,6 +22,8 @@ interface OnboardClientProps {
   isAnonymous: boolean;
   oauthName: string | null;
   initialState: OnboardingState | null;
+  /** Overrides the saved step, e.g. to reopen the account form. */
+  initialStep?: OnboardingStep;
   accountPrefill?: AccountPrefill | null;
   /** Same-origin path to land on after onboarding, e.g. a lobby join link. */
   nextAfterOnboarding?: string | null;
@@ -45,11 +47,12 @@ export function OnboardClient({
   isAnonymous,
   oauthName,
   initialState,
+  initialStep,
   accountPrefill,
   nextAfterOnboarding,
 }: OnboardClientProps) {
   const [step, setStep] = useState<OnboardingStep>(() => {
-    const initial = initialState?.current_step ?? "welcome";
+    const initial = initialStep ?? initialState?.current_step ?? "welcome";
     // Influence step removed — send leftover sessions forward.
     return initial === "influence" ? "results" : initial;
   });
