@@ -1,7 +1,7 @@
 \set ON_ERROR_STOP on
 begin;
 \ir shift_round_helpers.psql
-select plan(33);
+select plan(41);
 
 select shift_test.clock('2026-11-20 10:00+07');
 create temp table f on commit drop as select
@@ -28,6 +28,10 @@ select is((select count(*)::int from public.shift_round_evidence where entry_id 
 
 select shift_test.login((select mentor from f));
 select ok((select count(*) from public.shift_round_evidence where entry_id = (select e from g)) > 0, 'round mentor can read logs (RLS)');
+select is((select count(*)::int from public.shift_round_entries where id = (select e from g)), 0,
+  'round mentor cannot select the entry row (birth data and legal name are owner-only)');
+select is(jsonb_array_length(public.shift_round_admin_entries((select r from f))->'data'->'entries'), 1,
+  'round mentor lists entrants through the admin RPC instead');
 select is(shift_test.code(public.shift_round_admin_reject_evidence((select t1 from ev), 'bogus', null, 1000)), 'invalid_field', 'reason code validated');
 select is(shift_test.code(public.shift_round_admin_accept_evidence((select t1 from ev), null, 1000)), 'invalid_transition',
   'accept only from rejected (E3)');
@@ -59,6 +63,7 @@ select is((select user_id from public.shift_round_events where name = 'evidence_
 -- student withdraw cascade (A24): dry run then apply
 select shift_test.login((select u from f));
 set local role authenticated;
+select is((select count(*)::int from public.shift_round_entries where id = (select e from g)), 1, 'student reads their own entry row');
 create temp table wd on commit drop as select public.shift_round_withdraw_evidence((select t2 from ev), true) as res;
 select is((select res->'data'->>'applied' from wd), 'false', 'dry run does not apply');
 select is((select res->'data'->'affected'->0->>'mission' from wd), 'testers', 'dry run shows testers dropping');
@@ -87,6 +92,8 @@ set local role authenticated;
 create temp table cr on commit drop as select public.shift_round_admin_create_round(
   '{"number":9599,"title_th":"รอบ","title_en":"Round","brief_th":"โจทย์","brief_en":"Brief","starts_at":"2026-12-01T00:00:00+07:00","status":"published"}') as res;
 select is(shift_test.code((select res from cr)), 'ok', 'global staff creates a round');
+select is((select count(*)::int from public.shift_round_entries where id = (select e from g)), 0,
+  'global staff cannot select entry rows directly either');
 select is(shift_test.code(public.shift_round_admin_create_round(
   '{"number":9599,"title_th":"x","title_en":"x","brief_th":"x","brief_en":"x","starts_at":"2026-12-01T00:00:00+07:00"}')), 'round_number_taken', 'number unique');
 select is(public.shift_round_admin_create_round(
@@ -101,6 +108,26 @@ select is(shift_test.code(public.shift_round_admin_update_round((select r from f
 select is(shift_test.code(public.shift_round_admin_update_round((select r from f), '{"title_en":"Renamed"}')), 'ok', 'titles stay editable');
 select shift_test.login((select mentor from f));
 select is(shift_test.code(public.shift_round_admin_update_round((select r from f), '{"title_en":"x"}')), 'forbidden', 'mentors cannot edit rounds');
+
+-- Web admins are global SHIFT staff (decision 2026-10-13): listed with source web_admin, not revocable here.
+reset role;
+create temp table wa on commit drop as select shift_test.user('webadmin-9501@example.test') as id;
+insert into public.user_roles (user_id, role) select id, 'admin' from wa;
+select shift_test.grant_role(id, null, 'staff') from wa;  -- a redundant grant row is folded in
+grant select on wa to authenticated;
+select shift_test.login((select staff from f));
+set local role authenticated;
+create temp table rl on commit drop as select public.shift_round_admin_roles(null) as res;
+select is((select array_agg((x->>'source') || ':' || (x->>'role') || ':' || coalesce(x->>'round_id', 'global'))
+             from rl, jsonb_array_elements(res->'data'->'roles') x where (x->>'user_id')::uuid = (select id from wa)),
+  array['web_admin:staff:global'], 'web admin listed once, as global staff from web_admin');
+select is((select x->>'source' from rl, jsonb_array_elements(res->'data'->'roles') x where (x->>'user_id')::uuid = (select staff from f)),
+  'shift_round_roles', 'granted global staff keeps source shift_round_roles');
+select ok(exists (select 1 from jsonb_array_elements(public.shift_round_admin_roles((select r from f))->'data'->'roles') x
+                   where (x->>'user_id')::uuid = (select id from wa) and x->>'source' = 'web_admin'),
+  'round listing includes web admins among global staff');
+select is(shift_test.code(public.shift_round_admin_set_role('webadmin-9501@example.test', 'staff', null, false)), 'role_from_web_admin',
+  'revoking a web admin''s global staff explains why instead of answering ok');
 
 select * from finish();
 rollback;

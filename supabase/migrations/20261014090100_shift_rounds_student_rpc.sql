@@ -666,6 +666,7 @@ declare
   v_new_id uuid;
   m jsonb;
   k text;
+  v_constraint text;
 begin
   if v_uid is null then return shift_round_private.fail('unauthenticated'); end if;
   select x.* into en from public.shift_round_entries x where x.id = p_entry_id and x.user_id = v_uid;
@@ -726,11 +727,20 @@ begin
   en := shift_round_private.lock_entry(en.id);
   if en.id is null then return shift_round_private.fail('entry_not_found'); end if;
   if v_now >= r.review_ends_at then return shift_round_private.fail('round_finished'); end if;
+  -- validate_media ran before the entry lock; a concurrent submit of the same object may
+  -- have committed while we waited (same path => same user => same entry lock).
+  if exists (select 1 from jsonb_array_elements(v_media->'items') i
+               join public.shift_round_evidence_media em on em.path = i->>'path') then
+    return shift_round_private.fail('media_in_use', 'media');
+  end if;
   v_before := shift_round_private.mission_counts(en.id);
 
   v_client := least(coalesce(p_client_created_at, v_now), v_now + interval '5 minutes');
   v_client := greatest(v_client, en.joined_at);
 
+  -- Subtransaction: a unique_violation on the media path (backstop for the re-check above)
+  -- rolls back the evidence row too and answers with the media_in_use envelope.
+  begin
   insert into public.shift_round_evidence (entry_id, round_id, user_id, submission_id, type, payload,
     payload_hash, who_key, source_evidence_id, replaces_evidence_id, client_created_at, submitted_at, local_date)
   values (en.id, r.id, v_uid, p_submission_id, p_type, v_payload, v_hash,
@@ -752,6 +762,13 @@ begin
     values (v_new_id, en.id, r.id, v_uid, m->>'kind', m->>'path', (m->>'bytes')::int,
       nullif(m->>'duration_ms', '')::int, true);
   end loop;
+  exception when unique_violation then
+    get stacked diagnostics v_constraint = constraint_name;
+    if v_constraint = 'shift_round_evidence_media_path_key' then
+      return shift_round_private.fail('media_in_use', 'media');
+    end if;
+    raise;
+  end;
 
   select x.* into e from public.shift_round_evidence x where x.id = v_new_id;
   v_after := shift_round_private.mission_counts(en.id);
@@ -1183,6 +1200,7 @@ declare
   v_oldest timestamptz;
   v_now timestamptz := shift_round_private.round_now();
   v_lang text;
+  v_bytes bigint;
 begin
   if v_uid is null then return shift_round_private.fail('unauthenticated'); end if;
   if not shift_round_private.flag_on('shift_round.transcription_enabled', false) then
@@ -1197,11 +1215,15 @@ begin
   if not found or not exists (select 1 from public.shift_round_entries e where e.round_id = v_round and e.user_id = v_uid) then
     return shift_round_private.fail('media_not_owned', 'path');
   end if;
-  select so.owner_id, so.owner into o from storage.objects so where so.bucket_id = 'shift-round-media' and so.name = p_path;
+  select so.owner_id, so.owner, so.metadata into o from storage.objects so where so.bucket_id = 'shift-round-media' and so.name = p_path;
   if not found then return shift_round_private.fail('media_missing', 'path'); end if;
   if coalesce(o.owner_id, o.owner::text) is distinct from v_uid::text then
     return shift_round_private.fail('media_not_owned', 'path');
   end if;
+  -- 6.3: 5 MB cap, enforced from storage metadata before the server downloads anything
+  -- (and before the hourly quota is spent).
+  v_bytes := case when (o.metadata->>'size') ~ '^[0-9]+$' then (o.metadata->>'size')::bigint end;
+  if v_bytes > 5242880 then return shift_round_private.fail('audio_too_long', 'path'); end if;
   if v_now >= r.review_ends_at then return shift_round_private.fail('round_finished'); end if;
   select count(*), min(ev.created_at) into v_count, v_oldest from (
     select x.created_at from public.shift_round_events x
@@ -1213,7 +1235,8 @@ begin
   end if;
   perform shift_round_private.emit('transcription_requested', r.id, null, v_uid, v_uid, '{}');
   select coalesce(p.shift_round_language, 'th') into v_lang from public.profiles p where p.id = v_uid;
-  return shift_round_private.ok(jsonb_build_object('max_seconds', 180, 'language_hint', coalesce(v_lang, 'th')));
+  return shift_round_private.ok(jsonb_build_object('max_seconds', 180, 'language_hint', coalesce(v_lang, 'th'),
+    'bytes', v_bytes));
 exception when invalid_text_representation then
   return shift_round_private.fail('media_not_owned', 'path');
 end $$;
@@ -1312,6 +1335,7 @@ grant execute on function
   shift_round_private.is_global_staff(uuid),
   shift_round_private.is_staff(uuid, uuid),
   shift_round_private.can_review(uuid, uuid),
+  shift_round_private.can_read_entry(uuid, boolean),
   shift_round_private.can_upload(text),
   shift_round_private.can_read_media(text),
   shift_round_private.can_delete_media(text)

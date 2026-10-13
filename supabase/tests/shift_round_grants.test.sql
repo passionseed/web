@@ -85,7 +85,7 @@ select is(
 select is(
   (select coalesce(array_agg(p.proname::text order by p.proname), '{}') from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'shift_round_private' and has_function_privilege('authenticated', p.oid, 'EXECUTE')),
-  array['can_delete_media','can_read_media','can_review','can_upload','is_global_staff','is_staff'],
+  array['can_delete_media','can_read_entry','can_read_media','can_review','can_upload','is_global_staff','is_staff'],
   'authenticated executes only the policy helpers in shift_round_private');
 
 select * from finish();

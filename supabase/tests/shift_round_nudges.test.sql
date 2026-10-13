@@ -1,7 +1,7 @@
 \set ON_ERROR_STOP on
 begin;
 \ir shift_round_helpers.psql
-select plan(18);
+select plan(21);
 
 create temp table f on commit drop as select shift_test.round(9941, '2026-11-10 00:00+07') as r,
   shift_test.user() as a, shift_test.user() as b, shift_test.user() as c, shift_test.user() as d, shift_test.user() as e,
@@ -80,6 +80,31 @@ reset role;
 select is((select count(*)::int from public.shift_round_waitlist), 0, 'waitlist cleared after round_published push');
 set local role service_role;
 select is(jsonb_array_length(pg_temp.cands('pushes')->'candidates'), 0, 'event pushes are not repeated');
+
+-- A log rejected again (after a reinstate) pushes again: dedupe is per rejection event.
+reset role;
+create temp table rj2 on commit drop as select gen_random_uuid() as evid;
+grant select on rj2 to service_role;
+select shift_round_private.emit('evidence_rejected', (select r from f), (select eb from g), (select b from f), null,
+  jsonb_build_object('evidence_id', (select evid from rj2), 'type', 'interview'));
+select shift_round_private.emit('evidence_rejected', (select r from f), (select eb from g), (select b from f), null,
+  jsonb_build_object('evidence_id', (select evid from rj2), 'type', 'interview'));
+set local role service_role;
+select is((select count(*)::int from jsonb_array_elements(pg_temp.cands('pushes')->'candidates') x
+            where x->>'kind' = 'evidence_rejected' and x->'params'->>'url' like '%' || (select evid from rj2)::text),
+  2, 'second rejection of the same log is pushed too');
+
+-- A row claimed as pending by a run that died is treated as failed after 10 minutes and retried.
+reset role;
+update public.shift_round_nudge_ledger set updated_at = now() - interval '11 minutes'
+ where status = 'pending' and kind = 'round_published';
+set local role service_role;
+create temp table p3 on commit drop as select pg_temp.cands('pushes') as j;
+select is((select array_agg(x->>'kind') from p3, jsonb_array_elements(j->'candidates') x), array['round_published'],
+  'stale pending push is retried (fresh pending rows are left alone)');
+reset role;
+select is((select attempts::int from public.shift_round_nudge_ledger where kind = 'round_published'), 1,
+  'the lost attempt is counted');
 
 select * from finish();
 rollback;

@@ -109,6 +109,7 @@ async function main() {
   const a = await connect();
   const b = await connect();
   const created: Array<{ roundId: string; student: string; staff: string }> = [];
+  const objects: string[] = [];
   try {
     // 1. Reject commits BEFORE issue: issue waits on the entry lock, then sees the rejection -> not_eligible.
     {
@@ -193,7 +194,68 @@ async function main() {
       await resetSession(a);
       await resetSession(b);
     }
+    // 5. Concurrent submits binding the same media object: the loser gets media_in_use, not a raw
+    //    unique violation.
+    {
+      const f = await fixture(admin, 5);
+      created.push(f);
+      const path = `${f.roundId}/${f.student}/${randomUUID()}/photo.jpg`;
+      await admin.query(
+        `insert into storage.objects (bucket_id, name, owner, owner_id, metadata)
+         values ('shift-round-media', $1, $2::uuid, $3, '{"size": 1234}')`,
+        [path, f.student, f.student],
+      );
+      objects.push(path);
+      await asUser(a, f.student, "2026-11-20 10:00+07");
+      await asUser(b, f.student, "2026-11-20 10:00+07");
+      const media = JSON.stringify([{ kind: "photo", path, bytes: 1234, consent: true }]);
+      const sql = `select public.shift_round_submit_evidence($1, $2, 'mvp', '{"note":"paper prototype"}'::jsonb, $3::jsonb, now(), null) as r`;
+      await a.query("begin");
+      const first = await a.query(sql, [f.entryId, randomUUID(), media]);
+      const second = b.query(sql, [f.entryId, randomUUID(), media]).then(
+        (res) => res.rows[0].r,
+        (err: Error) => ({ ok: false, raw: err.message }),
+      );
+      await new Promise((r) => setTimeout(r, 300));
+      await a.query("commit");
+      const r2 = await second;
+      check(first.rows[0].r.ok === true, "first submit binds the object", first.rows[0].r);
+      check(r2.ok === false && r2.error?.code === "media_in_use", "second submit of the same object gets media_in_use", r2);
+      const n = await admin.query(`select count(*)::int as n from public.shift_round_evidence where entry_id = $1 and type = 'mvp' and submitted_at > '2026-11-19'`, [f.entryId]);
+      check(n.rows[0].n === 1, "no evidence row left behind by the loser", n.rows[0]);
+      await resetSession(a);
+      await resetSession(b);
+    }
+    // 6. The test clock is ignored on API connections (session_user authenticator), even with the flag on.
+    {
+      const f = await fixture(admin, 6);
+      created.push(f);
+      const apiUrl = new URL(url);
+      apiUrl.username = "authenticator";
+      const api = new Client({ connectionString: apiUrl.toString() });
+      await api.connect();
+      try {
+        await asUser(api, f.staff, "2001-01-01 00:00+07");
+        const res = (await api.query(`select public.shift_round_admin_rounds() as r`)).rows[0].r;
+        const round = res.data?.rounds?.find((x: { id: string }) => x.id === f.roundId);
+        check(!!round && round.day > -1000, "clock override ignored for authenticator sessions", round?.day ?? res);
+      } finally {
+        await api.end();
+      }
+      await asUser(a, f.staff, "2001-01-01 00:00+07");
+      const res = (await a.query(`select public.shift_round_admin_rounds() as r`)).rows[0].r;
+      const round = res.data?.rounds?.find((x: { id: string }) => x.id === f.roundId);
+      check(!!round && round.day < -1000, "clock override honoured for postgres sessions", round?.day ?? res);
+      await resetSession(a);
+    }
   } finally {
+    if (objects.length) {
+      // Local storage blocks direct deletes unless storage.allow_delete_query is set.
+      await admin.query("begin");
+      await admin.query(`set local storage.allow_delete_query = 'true'`);
+      await admin.query(`delete from storage.objects where bucket_id = 'shift-round-media' and name = any($1::text[])`, [objects]);
+      await admin.query("commit");
+    }
     for (const f of created) {
       await admin.query(`delete from public.shift_round_entries where round_id = $1`, [f.roundId]);
       await admin.query(`delete from public.shift_round_certificates where round_id = $1`, [f.roundId]);

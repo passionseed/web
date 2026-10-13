@@ -345,10 +345,15 @@ revoke all on shift_round_private.rate_hits from public, anon, authenticated;
 -- Policy helpers are SECURITY DEFINER and only answer for the calling user.
 -- ---------------------------------------------------------------------------
 
+-- Test clock (X3). Honoured only on a connection opened as postgres (pgTAP, race tests,
+-- operator sessions): session_user stays postgres across SET ROLE, while API traffic
+-- (PostgREST connects as authenticator) can never move the clock even if the GUCs are
+-- somehow set. current_user is not used: inside SECURITY DEFINER RPCs it is the owner.
 create or replace function shift_round_private.round_now() returns timestamptz
 language sql stable set search_path = '' as $$
   select case
-    when current_setting('shift_round.allow_clock_override', true) = 'on'
+    when session_user = 'postgres'
+     and current_setting('shift_round.allow_clock_override', true) = 'on'
      and nullif(current_setting('shift_round.now', true), '') is not null
     then current_setting('shift_round.now', true)::timestamptz
     else now()
@@ -801,9 +806,11 @@ create policy shift_round_roles_read on public.shift_round_roles
   for select to authenticated
   using (user_id = auth.uid() or shift_round_private.is_global_staff(auth.uid()));
 
+-- Owner only: entries hold birth_month/birth_year/legal_name. Staff and mentors read
+-- entrants through the admin RPCs (shift_round_admin_entries etc.), which pick columns.
 create policy shift_round_entries_read on public.shift_round_entries
   for select to authenticated
-  using (user_id = auth.uid() or shift_round_private.can_review(round_id, auth.uid()));
+  using (user_id = auth.uid());
 
 create policy shift_round_icebreaker_read on public.shift_round_icebreaker_questions
   for select to authenticated using (true);
@@ -816,17 +823,25 @@ create policy shift_round_evidence_media_read on public.shift_round_evidence_med
   for select to authenticated
   using (user_id = auth.uid() or shift_round_private.can_review(round_id, auth.uid()));
 
+-- The entries table is owner-only under RLS, so policies on child tables resolve the
+-- entry through this definer helper (answers only for the calling user).
+create or replace function shift_round_private.can_read_entry(p_entry_id uuid, p_staff_only boolean) returns boolean
+language sql stable security definer set search_path = '' as $$
+  select exists (
+    select 1 from public.shift_round_entries e
+     where e.id = p_entry_id
+       and (e.user_id = auth.uid()
+            or (p_staff_only and shift_round_private.is_staff(e.round_id, auth.uid()))
+            or (not p_staff_only and shift_round_private.can_review(e.round_id, auth.uid()))))
+$$;
+
 create policy shift_round_checkins_read on public.shift_round_checkins
   for select to authenticated
-  using (exists (select 1 from public.shift_round_entries e
-                  where e.id = entry_id
-                    and (e.user_id = auth.uid() or shift_round_private.is_staff(e.round_id, auth.uid()))));
+  using (shift_round_private.can_read_entry(entry_id, true));
 
 create policy shift_round_summary_revisions_read on public.shift_round_summary_revisions
   for select to authenticated
-  using (exists (select 1 from public.shift_round_entries e
-                  where e.id = entry_id
-                    and (e.user_id = auth.uid() or shift_round_private.can_review(e.round_id, auth.uid()))));
+  using (shift_round_private.can_read_entry(entry_id, false));
 
 create policy shift_round_certificates_read on public.shift_round_certificates
   for select to authenticated
@@ -839,6 +854,7 @@ grant execute on function
   shift_round_private.is_global_staff(uuid),
   shift_round_private.is_staff(uuid, uuid),
   shift_round_private.can_review(uuid, uuid),
+  shift_round_private.can_read_entry(uuid, boolean),
   shift_round_private.can_upload(text),
   shift_round_private.can_read_media(text),
   shift_round_private.can_delete_media(text)

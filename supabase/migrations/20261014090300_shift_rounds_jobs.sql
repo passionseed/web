@@ -158,6 +158,12 @@ begin
     if not shift_round_private.flag_on('shift_round.nudges_enabled', false) then
       return shift_round_private.ok(jsonb_build_object('candidates', '[]'::jsonb, 'paused', true));
     end if;
+    -- A row left 'pending' for 10+ minutes was claimed by a run that died mid-send
+    -- (crash, timeout): treat it as failed, counting the lost attempt.
+    update public.shift_round_nudge_ledger l
+       set status = 'failed', attempts = l.attempts + 1, last_error = coalesce(l.last_error, 'stale pending'), updated_at = now()
+     where l.status = 'pending' and l.kind in ('no_evidence','closing_tomorrow')
+       and l.updated_at < now() - interval '10 minutes';
     update public.shift_round_nudge_ledger l set status = 'abandoned', updated_at = now()
      where l.status = 'failed' and l.kind in ('no_evidence','closing_tomorrow')
        and (l.attempts >= 3 or l.dedupe_key <> v_today::text);
@@ -215,6 +221,10 @@ begin
   end if;
 
   -- pushes: event-driven (no nudge opt-out, still requires token + push_enabled)
+  update public.shift_round_nudge_ledger l
+     set status = 'failed', attempts = l.attempts + 1, last_error = coalesce(l.last_error, 'stale pending'), updated_at = now()
+   where l.status = 'pending' and l.kind not in ('no_evidence','closing_tomorrow')
+     and l.updated_at < now() - interval '10 minutes';
   update public.shift_round_nudge_ledger l set status = 'abandoned', updated_at = now()
    where l.status = 'failed' and l.kind not in ('no_evidence','closing_tomorrow')
      and (l.attempts >= 3 or l.created_at < now() - interval '24 hours');
@@ -242,7 +252,10 @@ begin
     v_id := null;
     insert into public.shift_round_nudge_ledger (user_id, round_id, kind, dedupe_key, expo_token, params)
     values (c.user_id, c.round_id, v_kind,
-            coalesce(c.props->>'evidence_id', c.props->>'certificate_id', c.props->>'revision_id', 'event:' || c.id::text),
+            -- evidence_rejected: one push per rejection event (a log can be rejected again
+            -- after a reinstate); the others are unique per certificate/revision.
+            case when c.name = 'evidence_rejected' then 'event:' || c.id::text
+                 else coalesce(c.props->>'certificate_id', c.props->>'revision_id', 'event:' || c.id::text) end,
             t.token, v_params)
     on conflict (user_id, kind, dedupe_key) do nothing
     returning id into v_id;
@@ -530,6 +543,7 @@ grant execute on function
   shift_round_private.is_global_staff(uuid),
   shift_round_private.is_staff(uuid, uuid),
   shift_round_private.can_review(uuid, uuid),
+  shift_round_private.can_read_entry(uuid, boolean),
   shift_round_private.can_upload(text),
   shift_round_private.can_read_media(text),
   shift_round_private.can_delete_media(text)

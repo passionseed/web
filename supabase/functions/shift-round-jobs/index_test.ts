@@ -10,6 +10,8 @@ type RpcHandler = (args: Record<string, unknown>) => unknown;
 function fakeDb(rpcs: Record<string, RpcHandler>, opts: {
   config?: Record<string, unknown>;
   storage?: Map<string, Uint8Array>;
+  /** media ids whose shift_round_evidence_media row is live; undefined = all live */
+  liveMedia?: Set<string>;
 } = {}) {
   const calls: Array<{ fn: string; args: Record<string, unknown> }> = [];
   const storage = opts.storage ?? new Map<string, Uint8Array>();
@@ -20,19 +22,29 @@ function fakeDb(rpcs: Record<string, RpcHandler>, opts: {
     rpc(fn: string, args: Record<string, unknown> = {}) {
       calls.push({ fn, args });
       const h = rpcs[fn];
-      const data = h ? h(args) : {};
-      return Promise.resolve({ data: { ok: true, data }, error: null });
+      try {
+        const data = h ? h(args) : {};
+        return Promise.resolve({ data: { ok: true, data }, error: null });
+      } catch (err) {
+        return Promise.resolve({ data: null, error: { message: (err as Error).message } });
+      }
     },
-    from(_table: string) {
+    from(table: string) {
       let key = "";
       const q = {
         select: () => q,
+        is: () => q,
         eq: (_c: string, v: string) => {
           key = v;
           return q;
         },
-        maybeSingle: () =>
-          Promise.resolve({ data: key in (opts.config ?? {}) ? { value: opts.config![key] } : null, error: null }),
+        maybeSingle: () => {
+          if (table === "shift_round_evidence_media") {
+            const live = !opts.liveMedia || opts.liveMedia.has(key);
+            return Promise.resolve({ data: live ? { id: key } : null, error: null });
+          }
+          return Promise.resolve({ data: key in (opts.config ?? {}) ? { value: opts.config![key] } : null, error: null });
+        },
       };
       return q;
     },
@@ -231,6 +243,90 @@ Deno.test("EXIF segment is stripped and re-uploaded by media_scan", async () => 
   await handle(req("media_scan"), deps(db, () => new Response("{}")));
   assertEquals(stripExif(storage.get("r/u/d/photo.jpg")!).found, false);
   assertEquals(db.calls.find((c) => c.fn === "shift_round_job_media_scanned")?.args, { p_media_id: "m1", p_exif_found: true });
+});
+
+Deno.test("a network error on one push batch marks it failed and the run continues", async () => {
+  const candidates = Array.from({ length: 150 }, (_, i) => ({
+    ledger_id: `l${i}`, user_id: `u${i}`, token: `ExponentPushToken[${i}]`, lang: "th", kind: "squad_assigned",
+    params: { copy_key: "push.squad_assigned" },
+  }));
+  const db = fakeDb({
+    ...baseRpcs,
+    shift_round_job_push_candidates: () => ({ candidates }),
+    shift_round_job_receipts_pending: () => ({ receipts: [] }),
+  });
+  let sends = 0;
+  const d: Deps = {
+    ...deps(db, () => new Response("{}")),
+    fetch: (input: RequestInfo | URL, init?: RequestInit) => {
+      if (!String(input).includes("push/send")) return Promise.resolve(new Response("{}"));
+      if (sends++ === 0) return Promise.reject(new TypeError("connection reset"));
+      const msgs = JSON.parse(String(init?.body));
+      return Promise.resolve(new Response(JSON.stringify({ data: msgs.map((_: unknown, i: number) => ({ status: "ok", id: `t${i}` })) })));
+    },
+  };
+  const res = await handle(req("pushes"), d);
+  assertEquals(res.status, 200);
+  const results = db.calls.filter((c) => c.fn === "shift_round_job_push_result");
+  const failed = results.find((c) => c.args.p_status === "failed");
+  assertEquals((failed?.args.p_ledger_ids as string[]).length, 100);
+  assert(String(failed?.args.p_error).startsWith("expo network"));
+  assertEquals((results.find((c) => c.args.p_status === "sent")?.args.p_ledger_ids as string[]).length, 50);
+});
+
+Deno.test("job_start failure returns a JSON 500 and alerts", async () => {
+  const db = fakeDb({
+    shift_round_job_start: () => {
+      throw new Error("db down");
+    },
+  });
+  const d = deps(db, () => new Response("{}"), { SHIFT_ROUND_ALERT_WEBHOOK_URL: "https://discord.test/hook" });
+  const res = await handle(req("watchdog"), d);
+  assertEquals(res.status, 500);
+  assertEquals((await res.json()).ok, false);
+  assert(d.fetches.some((f) => f.url === "https://discord.test/hook"), "alert posted");
+  assert(!db.calls.some((c) => c.fn === "shift_round_job_finish"), "no finish without a run id");
+});
+
+Deno.test("media_scan does not re-upload a photo whose row is gone, and one error does not abort the run", async () => {
+  const exif = [0xff, 0xe1, 0x00, 0x0a, 0x45, 0x78, 0x69, 0x66, 0x00, 0x00, 0x11, 0x22];
+  const jpeg = new Uint8Array([0xff, 0xd8, ...exif, 0xff, 0xda, 0x00, 0x02, 0x99, 0xff, 0xd9]);
+  const storage = new Map([
+    ["r/u/gone/photo.jpg", jpeg],
+    ["r/u/bad/photo.jpg", jpeg],
+    ["r/u/ok/photo.jpg", jpeg],
+  ]);
+  const uploads: string[] = [];
+  const db = fakeDb({
+    ...baseRpcs,
+    shift_round_job_media_to_scan: () => ({
+      media: [
+        { media_id: "gone", path: "r/u/gone/photo.jpg", kind: "photo" },
+        { media_id: "bad", path: "r/u/bad/photo.jpg", kind: "photo" },
+        { media_id: "ok", path: "r/u/ok/photo.jpg", kind: "photo" },
+      ],
+    }),
+    shift_round_job_media_scanned: (args) => {
+      if (args.p_media_id === "bad") throw new Error("row deleted");
+      return {};
+    },
+  }, { storage, liveMedia: new Set(["bad", "ok"]) });
+  const upload = db.storage.from("x").upload;
+  db.storage.from = (_b: string) => ({
+    ...fakeDb({}, { storage }).storage.from(_b),
+    upload: (p: string, bytes: Uint8Array) => {
+      uploads.push(p);
+      return upload(p, bytes);
+    },
+  });
+  const res = await handle(req("media_scan"), deps(db, () => new Response("{}")));
+  assertEquals(res.status, 200);
+  const body = await res.json();
+  assertEquals(uploads, ["r/u/bad/photo.jpg", "r/u/ok/photo.jpg"]);
+  assertEquals(body.processed, 1);
+  assertEquals(body.details.skipped, 1);
+  assertEquals(body.details.errors.length, 1);
+  assertEquals(stripExif(storage.get("r/u/gone/photo.jpg")!).found, true, "deleted photo left untouched");
 });
 
 Deno.test("copy keys match Appendix C", () => {

@@ -1,8 +1,9 @@
 -- SHIFT rounds (beta), part 3: admin RPCs (3.4), web admin only.
--- Roles come from shift_round_roles: Global = staff with round_id null; Staff = global or
--- round staff; Reviewer = staff or mentor of the round. Mentors reach /admin through the
--- existing user_roles admin role (beta decision) but these checks still scope them to their rounds.
--- Every write emits shift_round_events with actor_id (X9).
+-- Roles: Global = staff with round_id null in shift_round_roles, OR any web admin
+-- (user_roles.role = 'admin'; decision 2026-10-13: every web admin is global SHIFT staff on
+-- all rounds, without a separate grant). Staff = global or round staff; Reviewer = staff or
+-- mentor of the round. Mentor scoping (a mentor only sees their own rounds) therefore applies
+-- only to users who are not web admins. Every write emits shift_round_events with actor_id (X9).
 
 create or replace function shift_round_private.round_json(r public.shift_rounds) returns jsonb
 language sql stable set search_path = '' as $$
@@ -292,6 +293,12 @@ begin
     if v_target = v_uid and p_role = 'staff' and p_round_id is null then
       return shift_round_private.fail('invalid_field', 'email', null, '{"rule":"cannot_remove_own_global_staff"}');
     end if;
+    -- Web admins are global staff by decision (2026-10-13); deleting a grant row would not
+    -- change their access, so say so instead of answering ok.
+    if p_role = 'staff' and p_round_id is null
+       and exists (select 1 from public.user_roles ur where ur.user_id = v_target and ur.role = 'admin') then
+      return shift_round_private.fail('role_from_web_admin', 'email');
+    end if;
     delete from public.shift_round_roles x
      where x.user_id = v_target and x.role = p_role and x.round_id is not distinct from p_round_id;
   end if;
@@ -383,6 +390,9 @@ begin
 end $$;
 
 -- Lane D request: list who holds SHIFT roles (global staff + this round's staff/mentors).
+-- source 'shift_round_roles' = a grant row (revocable); 'web_admin' = global staff because the
+-- user is a web admin (decision 2026-10-13; not revocable here, managed on the Users page).
+-- A web admin's own global-staff grant row is folded into their web_admin entry.
 create or replace function public.shift_round_admin_roles(p_round_id uuid default null) returns jsonb
 language plpgsql stable security definer set search_path = '' as $$
 declare v_uid uuid := auth.uid();
@@ -395,11 +405,21 @@ begin
   end if;
   return shift_round_private.ok(jsonb_build_object('roles', coalesce((
     select jsonb_agg(jsonb_build_object(
-             'user_id', x.user_id, 'email', (select u.email from auth.users u where u.id = x.user_id),
-             'display_name', shift_round_private.display_name(x.user_id),
-             'role', x.role, 'round_id', x.round_id) order by x.round_id nulls first, x.role, x.created_at)
-      from public.shift_round_roles x
-     where x.round_id is null or x.round_id = p_round_id), '[]'::jsonb)));
+             'user_id', t.user_id, 'email', (select u.email from auth.users u where u.id = t.user_id),
+             'display_name', shift_round_private.display_name(t.user_id),
+             'role', t.role, 'round_id', t.round_id, 'source', t.source)
+           order by t.round_id nulls first, t.role, t.source, t.created_at)
+      from (
+        select x.user_id, x.role, x.round_id, 'shift_round_roles'::text as source, x.created_at
+          from public.shift_round_roles x
+         where (x.round_id is null or x.round_id = p_round_id)
+           and not (x.round_id is null and x.role = 'staff'
+                    and exists (select 1 from public.user_roles ur where ur.user_id = x.user_id and ur.role = 'admin'))
+        union all
+        select distinct on (ur.user_id) ur.user_id, 'staff', null::uuid, 'web_admin', null::timestamptz
+          from public.user_roles ur
+         where ur.role = 'admin'
+      ) t), '[]'::jsonb)));
 end $$;
 
 create or replace function public.shift_round_admin_update_entry(p_entry_id uuid, p_patch jsonb) returns jsonb
@@ -972,6 +992,7 @@ grant execute on function
   shift_round_private.is_global_staff(uuid),
   shift_round_private.is_staff(uuid, uuid),
   shift_round_private.can_review(uuid, uuid),
+  shift_round_private.can_read_entry(uuid, boolean),
   shift_round_private.can_upload(text),
   shift_round_private.can_read_media(text),
   shift_round_private.can_delete_media(text)

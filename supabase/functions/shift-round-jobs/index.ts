@@ -66,9 +66,10 @@ export async function handle(req: Request, deps: Deps = defaultDeps): Promise<Re
   }
 
   const db = deps.makeClient(deps.env("SUPABASE_URL") ?? "", deps.env("SUPABASE_SERVICE_ROLE_KEY") ?? "");
-  const start = await rpc<{ run_id: string; last_ok_at: string | null }>(db, "shift_round_job_start", { p_job: job });
+  let start: { run_id: string; last_ok_at: string | null } | null = null;
   let outcome: Outcome = { due: 0, processed: 0, details: {} };
   try {
+    start = await rpc<{ run_id: string; last_ok_at: string | null }>(db, "shift_round_job_start", { p_job: job });
     outcome = await RUNNERS[job](db, deps);
     await rpc(db, "shift_round_job_finish", {
       p_run_id: start.run_id, p_status: "ok", p_due: outcome.due, p_processed: outcome.processed,
@@ -83,11 +84,13 @@ export async function handle(req: Request, deps: Deps = defaultDeps): Promise<Re
     return json(200, { ok: true, job, ...outcome });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    await rpc(db, "shift_round_job_finish", {
-      p_run_id: start.run_id, p_status: "failed", p_due: outcome.due, p_processed: outcome.processed,
-      p_error: message, p_details: outcome.details,
-    }).catch(() => undefined);
-    await alert(deps, job, message, start.last_ok_at, outcome.due);
+    if (start) {
+      await rpc(db, "shift_round_job_finish", {
+        p_run_id: start.run_id, p_status: "failed", p_due: outcome.due, p_processed: outcome.processed,
+        p_error: message, p_details: outcome.details,
+      }).catch(() => undefined);
+    }
+    await alert(deps, job, message, start?.last_ok_at ?? null, outcome.due);
     return json(500, { ok: false, job, error: message });
   }
 }
@@ -185,15 +188,30 @@ async function runPurge(db: SupabaseClient): Promise<Outcome> {
   };
 }
 
+/**
+ * Candidates arrive already claimed as 'pending'. Every batch must end in sent/failed/skipped:
+ * a network error marks the batch failed (retried next run) instead of aborting the run.
+ * Rows that still end up stuck in 'pending' (crash, timeout) are reclaimed as failed by
+ * shift_round_job_push_candidates after 10 minutes.
+ */
 export async function sendPushes(db: SupabaseClient, deps: Deps, candidates: Candidate[]) {
   let sent = 0;
   for (const batch of chunk(candidates, 100)) {
-    const messages = batch.map(renderPush);
-    const res = await deps.fetch(EXPO_SEND, {
-      method: "POST",
-      headers: { "content-type": "application/json", accept: "application/json" },
-      body: JSON.stringify(messages),
-    });
+    let res: Response;
+    try {
+      const messages = batch.map(renderPush);
+      res = await deps.fetch(EXPO_SEND, {
+        method: "POST",
+        headers: { "content-type": "application/json", accept: "application/json" },
+        body: JSON.stringify(messages),
+      });
+    } catch (err) {
+      await rpc(db, "shift_round_job_push_result", {
+        p_ledger_ids: batch.map((c) => c.ledger_id), p_status: "failed", p_ticket_ids: [],
+        p_error: `expo network: ${err instanceof Error ? err.message : String(err)}`,
+      });
+      continue;
+    }
     const payload = await res.json().catch(() => null);
     const tickets: Array<{ status: string; id?: string; message?: string; details?: { error?: string } }> =
       payload?.data ?? [];
@@ -275,24 +293,45 @@ async function runMediaScan(db: SupabaseClient): Promise<Outcome> {
   );
   let processed = 0;
   let stripped = 0;
+  let skipped = 0;
+  const errors: Array<{ media_id: string; error: string }> = [];
   for (const m of media) {
-    if (m.kind !== "photo") {
-      await rpc(db, "shift_round_job_media_scanned", { p_media_id: m.media_id, p_exif_found: false });
+    try {
+      if (m.kind !== "photo") {
+        await rpc(db, "shift_round_job_media_scanned", { p_media_id: m.media_id, p_exif_found: false });
+        processed++;
+        continue;
+      }
+      const { data, error } = await db.storage.from(BUCKET).download(m.path);
+      if (error || !data) continue; // retried next run
+      const { bytes, found } = stripExif(new Uint8Array(await data.arrayBuffer()));
+      if (found) {
+        // The upload upserts, so it would recreate a photo deleted (purge, account deletion)
+        // since the download. Re-check the media row right before writing.
+        if (!(await mediaLive(db, m.media_id))) {
+          skipped++;
+          continue;
+        }
+        const up = await db.storage.from(BUCKET).upload(m.path, bytes, { upsert: true, contentType: "image/jpeg" });
+        if (up.error) continue;
+        stripped++;
+      }
+      await rpc(db, "shift_round_job_media_scanned", { p_media_id: m.media_id, p_exif_found: found });
       processed++;
-      continue;
+    } catch (err) {
+      // One bad item (e.g. its row was deleted mid-run) must not abort the rest.
+      errors.push({ media_id: m.media_id, error: err instanceof Error ? err.message : String(err) });
     }
-    const { data, error } = await db.storage.from(BUCKET).download(m.path);
-    if (error || !data) continue; // retried next run
-    const { bytes, found } = stripExif(new Uint8Array(await data.arrayBuffer()));
-    if (found) {
-      const up = await db.storage.from(BUCKET).upload(m.path, bytes, { upsert: true, contentType: "image/jpeg" });
-      if (up.error) continue;
-      stripped++;
-    }
-    await rpc(db, "shift_round_job_media_scanned", { p_media_id: m.media_id, p_exif_found: found });
-    processed++;
   }
-  return { due: media.length, processed, details: { stripped } };
+  return { due: media.length, processed, details: { stripped, skipped, errors } };
+}
+
+/** True while the media row exists and has not been purged. */
+async function mediaLive(db: SupabaseClient, mediaId: string): Promise<boolean> {
+  const { data, error } = await db.from("shift_round_evidence_media")
+    .select("id").eq("id", mediaId).is("purged_at", null).maybeSingle();
+  if (error) throw new Error(`media ${mediaId}: ${error.message}`);
+  return !!data;
 }
 
 async function runWatchdog(db: SupabaseClient): Promise<Outcome> {

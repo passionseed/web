@@ -17,8 +17,9 @@ Job RPCs (service_role) use the same envelope.
 ## Decisions applied (user, 2026-10-13)
 
 - `app_config` `shift_round.transcription_enabled` is seeded **false** (spec said true).
-- Rounds default to 14 days; squads use the spec default; mentors get the web admin through
-  `user_roles` admin, and `shift_round_roles` still scopes them (see "Admin access").
+- Rounds default to 14 days; squads use the spec default.
+- Every web admin (`user_roles.role = 'admin'`) is global SHIFT staff on all rounds (see "Admin access").
+  Mentor scoping through `shift_round_roles` only applies to users who are not web admins.
 - Certificate URLs are built from `app_config` `shift_round.web_base_url` + `/c/<public_id>`; nothing hardcodes the domain in SQL.
 
 ## Deviations from the spec
@@ -52,6 +53,14 @@ Job RPCs (service_role) use the same envelope.
     `mission_counts` adds a `counts` object (raw totals) beside the spec fields.
 12. `profiles.preferred_language` defaults to `'en'` in the existing schema, so push `lang` is that value
     (the spec's "default th" applies only when it is null or empty).
+13. **`shift_round_entries` is owner-only under RLS** (`user_id = auth.uid()`): rows carry birth month/year and
+    legal name. Staff and mentors read entrants only through the admin RPCs. Check-ins and summary revisions
+    resolve their entry through the definer helper `shift_round_private.can_read_entry(entry_id, staff_only)`.
+14. **Test clock** (`round_now`) is honoured only when `session_user = 'postgres'` as well as the allow flag,
+    so API connections (`authenticator`) can never move the clock.
+15. **Push ledger**: rows left `pending` for 10+ minutes (a run died mid-send) are reclaimed as `failed`
+    (attempt counted) and retried. `evidence_rejected` pushes dedupe on the event id, so a second rejection
+    of the same log is pushed too.
 
 ## Contract confirmations and additions for other lanes
 
@@ -63,9 +72,10 @@ Job RPCs (service_role) use the same envelope.
   return `certificate_not_found`. Ids are upper-cased before lookup.
 - `shift_round_log_certificate_visit(p_public_id text, p_ref text default null)`: `p_ref` is normalized to
   `share|qr|link|other|null`. It silently stops logging after 500 visits per certificate per ICT day.
-- `shift_round_transcription_check(p_path text)` returns `{max_seconds:180, language_hint}`. Error codes, in check order:
+- `shift_round_transcription_check(p_path text)` returns `{max_seconds:180, language_hint, bytes}`. Error codes, in check order:
   `unauthenticated`, `transcription_paused`, `media_not_owned` (bad path, not your folder, or no entry in that round),
-  `media_missing` (no storage object), `round_finished`, `rate_limited` (20/hour, `retry_after`).
+  `media_missing` (no storage object), `audio_too_long` (storage size over 5 MB; checked before download and
+  before the quota is spent), `round_finished`, `rate_limited` (20/hour, `retry_after`).
 - `transcription_enabled` is seeded **false**.
 
 ### Lane C (app)
@@ -80,23 +90,27 @@ Job RPCs (service_role) use the same envelope.
   - `squads`: `[{id, name, mentor_user_id, mentor_display_name, discord_url, member_entry_ids}]`, including empty squads.
   - Each `entries[].squad` (and the review-queue `squad`): `{id, name, icebreaker_question:{id, th, en}, icebreaker_answer}` or null.
 - **New** `shift_round_admin_roles(p_round_id uuid default null)` returns
-  `{roles:[{user_id, email, display_name, role, round_id}]}`: global staff plus that round's staff/mentors.
+  `{roles:[{user_id, email, display_name, role, round_id, source}]}`: global staff plus that round's staff/mentors.
+  `source` is `shift_round_roles` (a grant row) or `web_admin` (global staff because the user is a web admin;
+  a web admin's own redundant global-staff grant is folded into that entry).
   It needs round staff (or global staff when `p_round_id` is null).
 - `shift_round_admin_allowlist(p_round_id, p_add, p_remove)` returns `{count, entries:[{email, user_id, source, created_at}], emails:[...]}`.
   Call it with empty arrays to read the list.
 - `shift_round_admin_set_role(p_email, p_role, p_round_id, p_grant)`: a global staff member cannot remove their own global staff role.
+  Revoking global staff from a web admin returns `role_from_web_admin` (their access comes from the web admin role).
 - `shift_round_admin_upsert_squad` returns `wrong_round` when `p_squad_id` is not in `p_round_id`.
 - `shift_round_admin_update_round`: status transitions are draft->published|archived, published<->archived.
   `join_cutoff_day` can change after start only while joining is still open, and never below today's day.
 
 ### Admin access (request 4)
-**Not changed.** Lane A did not make every `user_roles` admin act as global staff. The user decided that
-mentors get the `user_roles` admin role for the beta. If admins were global staff, every mentor would be
-global staff and round scoping would be lost. Instead:
-- The migration gives every *existing* web admin global SHIFT staff once (bootstrap).
-- Later admins get `forbidden` with `details.rule = "no_shift_round_role"` from `shift_round_admin_rounds`.
-  Lane D should show "Ask a SHIFT global staff member to grant you access".
-- A global staff member grants access with `shift_round_admin_set_role(email, 'staff', null, true)` (global staff),
+**Decision 2026-10-13 (user): web admins are global SHIFT staff.** `has_round_role` and `is_global_staff`
+treat every `user_roles` admin as staff on all rounds, without a `shift_round_roles` grant.
+- Mentor scoping only applies to users who are not web admins. A mentor who is also a web admin sees every round.
+- Users with no web admin role and no SHIFT grant get `forbidden` with `details.rule = "no_shift_round_role"`
+  from `shift_round_admin_rounds`; Lane D shows "Ask a SHIFT global staff member to grant you access".
+- `shift_round_admin_roles` lists web admins as global staff with `source = 'web_admin'`; Lane D shows them as
+  not removable. `shift_round_admin_set_role(email, 'staff', null, false)` for a web admin returns `role_from_web_admin`.
+- A global staff member grants access to non-admins with `shift_round_admin_set_role(email, 'staff', null, true)` (global staff),
   `(email, 'staff', round_id, true)` (round staff) or `(email, 'mentor', round_id, true)` (mentor).
   This is documented in `docs/shift-round-ops.md`.
 

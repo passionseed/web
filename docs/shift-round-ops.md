@@ -9,16 +9,17 @@ Spec: `ps_app/docs/plans/2026-10-13-shift-build-spec.md`. Contract deltas:
 
 | Role | Meaning | Granted by |
 |---|---|---|
-| Global staff | `shift_round_roles` row `role='staff', round_id=null`. Can do everything, in every round. | migration bootstrap, or another global staff |
+| Global staff | Any web admin (`user_roles.role='admin'`), or a `shift_round_roles` row `role='staff', round_id=null`. Can do everything, in every round. | Users page (web admin), or another global staff (grant) |
 | Round staff | `role='staff', round_id=<round>`. Can manage that round. | global staff |
 | Mentor | `role='mentor', round_id=<round>`. Can review logs, decide summaries and revoke certificates in that round only. | global staff |
 
-**Bootstrap.** Migration `20261014090000` made every web admin who existed then (`user_roles.role='admin'`)
-global staff. This happens once. People given the web admin role later have **no SHIFT access**
-until someone grants it. `/admin/shift/rounds` then shows "no_shift_round_role".
+**Web admins are global SHIFT staff** (decision 2026-10-13). Every user with the web admin role has full
+staff access on all rounds, with no separate grant. The ops page lists them under "Global SHIFT staff" marked
+"Web admin"; they cannot be removed there (`shift_round_admin_set_role` answers `role_from_web_admin`).
+To take their SHIFT access away, remove the web admin role on the Users page.
 
-**Beta mentors** need the web admin role (`user_roles` admin) to open `/admin`, plus a mentor role for
-their round. Do **not** make mentors global staff.
+**Mentor scoping only applies to users who are not web admins.** A mentor who also has the web admin role
+is global staff and sees every round. Give round-scoped mentors only a mentor role for their round.
 
 Grant or remove a role (as global staff, from the ops page or SQL editor with your own session):
 
@@ -55,7 +56,7 @@ The user must already have signed in once (an `auth.users` row must exist), othe
   logs become invalidated. A push goes to the student. Allowed only for `submitted` logs.
 - **Accept**: only for `rejected` logs (reverses a mistaken rejection). Accepted is final.
 - **Mark reviewed**: spot-check without changing status. Sample mode lists each entrant's oldest unreviewed interview and tester.
-- Mentors only see and act on rounds they are assigned to.
+- Mentors only see and act on rounds they are assigned to (unless they are web admins, who are global staff).
 
 ## 4. Summaries and certificates
 
@@ -145,5 +146,6 @@ SUPABASE_SERVICE_ROLE_KEY=<from supabase status> pnpm shift:seed --state=day7   
 deno test supabase/functions/shift-round-jobs/
 ```
 
-The test clock (`shift_round.now`) is honoured only where `shift_round.allow_clock_override = 'on'`.
-Production must never set it.
+The test clock (`shift_round.now`) is honoured only where `shift_round.allow_clock_override = 'on'`
+**and** the connection was opened as `postgres` (`session_user`; pgTAP, race tests, SQL sessions).
+API traffic (PostgREST connects as `authenticator`) always uses the real clock. Production must never set it.
