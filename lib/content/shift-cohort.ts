@@ -344,7 +344,7 @@ export const SHIFT_SKILL_CARDS: ShiftSkillCard[] = [
   },
   {
     title: "Tester Hunt",
-    detail: "หาคนนอกมาลองของ ทักตรงทีละคน ไม่ใช่โพสต์ลงสตอรี่เพื่อนสนิท",
+    detail: "หาคนนอกมาลองของ ทักตรงทีละคน และโพสต์ในกลุ่ม Facebook อย่างน้อย 10 กลุ่ม",
   },
   {
     title: "AI Tools (OpenCode)",
