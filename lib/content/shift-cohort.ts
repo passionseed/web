@@ -228,13 +228,13 @@ export const SHIFT_COHORT_0: ShiftCohort = {
   ],
 };
 
-/** SHIFT[2] starts the Monday after SHIFT[1] ends. */
+/** SHIFT[2] starts Wednesday 14 Oct, nine days after SHIFT[1] started. */
 export const SHIFT_COHORT_2: ShiftCohort = {
-  ...sibling(SHIFT_COHORT, 1, 7),
+  ...sibling(SHIFT_COHORT, 1, 9),
   seats: 21,
   priceBaht: 690,
   /** Late applications run through Day 1: the first session is 19:00. */
-  applyDeadline: "2026-10-12",
+  applyDeadline: "2026-10-14",
 };
 
 /** The round the printed posters are promoting right now. */
