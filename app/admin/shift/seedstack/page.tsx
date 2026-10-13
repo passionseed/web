@@ -1,4 +1,5 @@
 import { ShiftAdminTabs } from "@/components/admin/ShiftAdminTabs";
+import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
 import { AdminSeedstackBoard, type SeedstackBoardStudent } from "@/components/admin/AdminSeedstackBoard";
 import { requireAdmin } from "@/lib/admin/requireAdmin";
 import { seedstackConsentState, type SeedstackConsentRow } from "@/lib/seedstack/consent";
@@ -26,17 +27,22 @@ async function loadBoard(): Promise<SeedstackBoardStudent[]> {
       .select("user_id, notice_version, student_consented_at, birth_date, parent_consented_at, parent_declined_at, withdrawn_at"),
     supabase.from("shift_applications").select("user_id, nickname, cohort").not("user_id", "is", null),
   ]);
-  const consentRows = (consents.data ?? []) as ConsentRow[];
-  const profiles = await supabase
-    .from("profiles")
-    .select("id, username, full_name")
-    .in("id", consentRows.map((c) => c.user_id));
-  const failed = [events, consents, apps, profiles].find((r) => r.error);
-  if (failed?.error) throw new Error(`seedstack board load failed: ${failed.error.message}`);
+  // Fail before the profiles lookup, so a consent error is not hidden behind an empty board.
+  const firstFailed = [events, consents, apps].find((r) => r.error);
+  if (firstFailed?.error) throw new Error(`SeedStack board load failed: ${firstFailed.error.message}`);
 
-  const appByUser = new Map((apps.data as AppRow[]).map((a) => [a.user_id, a]));
-  const profileById = new Map((profiles.data as ProfileRow[]).map((p) => [p.id, p]));
-  const rows = new Map(buildSeedstackBoard(events.data as BoardEvent[]).map((r) => [r.userId, r]));
+  const consentRows = (consents.data ?? []) as ConsentRow[];
+  const userIds = consentRows.map((c) => c.user_id);
+  const profiles = userIds.length
+    ? await supabase.from("profiles").select("id, username, full_name").in("id", userIds)
+    : { data: [] as ProfileRow[], error: null };
+  if (profiles.error) throw new Error(`SeedStack board load failed: ${profiles.error.message}`);
+
+  const appByUser = new Map(((apps.data ?? []) as AppRow[]).map((a) => [a.user_id, a]));
+  const profileById = new Map(((profiles.data ?? []) as ProfileRow[]).map((p) => [p.id, p]));
+  const rows = new Map(
+    buildSeedstackBoard((events.data ?? []) as BoardEvent[]).map((r) => [r.userId, r]),
+  );
 
   return consentRows.map((c) => ({
     userId: c.user_id,
@@ -53,17 +59,18 @@ async function loadBoard(): Promise<SeedstackBoardStudent[]> {
 }
 
 export default async function AdminSeedstackPage() {
+  // A load error throws to app/admin/error.tsx, which shows it with a retry.
   const students = await loadBoard();
+  const now = Date.now();
   return (
     <div className="space-y-4">
       <ShiftAdminTabs />
-      <div className="space-y-2">
-        <h2 className="text-2xl font-semibold">SeedStack</h2>
-        <p className="text-sm text-muted-foreground">
-          Who finished install, scope and ship, without asking in Discord. Only students who agreed on /shift/seedstack send data. No cohort shown = linked without a SHIFT seat.
-        </p>
-      </div>
-      <AdminSeedstackBoard students={students} />
+      <AdminPageHeader
+        eyebrow="SHIFT"
+        title="SeedStack"
+        description="Who finished install, scope and ship, without asking in Discord. Only students who agreed on /shift/seedstack send data. No cohort shown = linked without a SHIFT seat."
+      />
+      <AdminSeedstackBoard students={students} now={now} />
     </div>
   );
 }

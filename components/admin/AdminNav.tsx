@@ -48,6 +48,7 @@ export function AdminNav({ onNavigate }: { onNavigate?: () => void }) {
             open={
               Boolean(search) ||
               group.label === "Workspace" ||
+              group.label === "SHIFT" ||
               group.items.some((item) => item.href === active?.href)
             }
             className="admin-nav-group"

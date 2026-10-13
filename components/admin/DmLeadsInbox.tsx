@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, Flame, Inbox, Keyboard, Maximize2, Minimize2, RefreshCw, Star } from "lucide-react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { isWithinMessagingWindow } from "@/lib/dm-leads/messaging-window";
@@ -139,14 +140,22 @@ export function DmLeadsInbox({ conversations }: { conversations: DmConversationW
           )
         );
       }
-    } catch {
-      // Ignore fast hydration error, proceed to Graph API sync
+    } catch (error) {
+      // Not fatal: the Graph API sync below reloads the thread anyway.
+      console.warn("Fast thread hydration failed:", error);
     }
 
     // Phase 2: Live Graph API Sync
+    const retry = { label: "Retry", onClick: () => void handleSyncChat(conversationId) };
     try {
       const res = await syncLeadMessages(conversationId);
-      if (res.ok && res.conversation) {
+      if (!res.ok) {
+        toast.error(res.error || "Could not sync this chat", { action: retry });
+      } else if (res.error) {
+        toast.warning(res.error);
+      }
+      // Even a partial sync can return the stored thread; show it either way.
+      if (res.conversation) {
         const updated = res.conversation;
         const lastInboundMessageAt = deriveSignalsFromMessages(
           updated.dm_messages
@@ -162,6 +171,7 @@ export function DmLeadsInbox({ conversations }: { conversations: DmConversationW
       }
     } catch (error) {
       console.error("Failed to sync chat:", error);
+      toast.error("Could not sync this chat. Check your connection.", { action: retry });
     } finally {
       setSyncingId(null);
     }

@@ -35,6 +35,8 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2, Search, Users, UserCheck, UserX, Trash2, PieChart as PieChartIcon, UsersRound, Mail, GraduationCap, Link2, Plus, Copy, Check, X } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
+import { AdminErrorState } from "@/components/admin/shared/AdminStates";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 
 interface Team {
@@ -106,6 +108,7 @@ const COLORS = [
 export function AdminHackathonParticipants() {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
@@ -113,10 +116,12 @@ export function AdminHackathonParticipants() {
   const [selectedTeam, setSelectedTeam] = useState<TeamDetail | null>(null);
   const [teamDialogOpen, setTeamDialogOpen] = useState(false);
   const [loadingTeam, setLoadingTeam] = useState(false);
+  const [teamError, setTeamError] = useState<string | null>(null);
 
   // Register links state
   const [registerLinks, setRegisterLinks] = useState<RegisterLink[]>([]);
   const [linksLoading, setLinksLoading] = useState(false);
+  const [linksError, setLinksError] = useState(false);
   const [linksExpanded, setLinksExpanded] = useState(false);
   const [newLinkNote, setNewLinkNote] = useState("");
   const [creatingLink, setCreatingLink] = useState(false);
@@ -127,15 +132,17 @@ export function AdminHackathonParticipants() {
   }, []);
 
   async function fetchParticipants() {
+    setLoading(true);
+    setLoadError(false);
     try {
       const response = await fetch("/api/admin/hackathon/participants");
       const data = await response.json();
 
-      if (response.ok && data.participants) {
-        setParticipants(data.participants);
-      }
+      if (!response.ok || !data.participants) throw new Error(data?.error ?? `HTTP ${response.status}`);
+      setParticipants(data.participants);
     } catch (error) {
       console.error("Error fetching participants:", error);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -143,12 +150,15 @@ export function AdminHackathonParticipants() {
 
   async function fetchRegisterLinks() {
     setLinksLoading(true);
+    setLinksError(false);
     try {
       const res = await fetch("/api/admin/hackathon/register-links");
       const data = await res.json();
-      if (res.ok) setRegisterLinks(data.links);
+      if (!res.ok) throw new Error(data?.error ?? `HTTP ${res.status}`);
+      setRegisterLinks(data.links ?? []);
     } catch (err) {
       console.error("Failed to fetch register links:", err);
+      setLinksError(true);
     } finally {
       setLinksLoading(false);
     }
@@ -163,12 +173,12 @@ export function AdminHackathonParticipants() {
         body: JSON.stringify({ note: newLinkNote.trim() || undefined }),
       });
       const data = await res.json();
-      if (res.ok) {
-        setRegisterLinks((prev) => [data.link, ...prev]);
-        setNewLinkNote("");
-      }
+      if (!res.ok) throw new Error(data?.error ?? "Failed to create link");
+      setRegisterLinks((prev) => [data.link, ...prev]);
+      setNewLinkNote("");
     } catch (err) {
       console.error("Failed to create register link:", err);
+      toast.error("Could not create the registration link");
     } finally {
       setCreatingLink(false);
     }
@@ -176,14 +186,16 @@ export function AdminHackathonParticipants() {
 
   async function deleteRegisterLink(id: string) {
     try {
-      await fetch("/api/admin/hackathon/register-links", {
+      const res = await fetch("/api/admin/hackathon/register-links", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
       });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setRegisterLinks((prev) => prev.filter((l) => l.id !== id));
     } catch (err) {
       console.error("Failed to delete register link:", err);
+      toast.error("Could not delete the registration link");
     }
   }
 
@@ -198,7 +210,7 @@ export function AdminHackathonParticipants() {
   }
 
   function handleToggleLinks() {
-    if (!linksExpanded && registerLinks.length === 0) {
+    if (!linksExpanded && (registerLinks.length === 0 || linksError)) {
       fetchRegisterLinks();
     }
     setLinksExpanded((v) => !v);
@@ -207,15 +219,16 @@ export function AdminHackathonParticipants() {
   async function openTeamDialog(teamId: string) {
     setTeamDialogOpen(true);
     setSelectedTeam(null);
+    setTeamError(null);
     setLoadingTeam(true);
     try {
       const response = await fetch(`/api/admin/hackathon/teams/${teamId}`);
       const data = await response.json();
-      if (response.ok && data.team) {
-        setSelectedTeam(data.team);
-      }
+      if (!response.ok || !data.team) throw new Error(data?.error ?? `HTTP ${response.status}`);
+      setSelectedTeam(data.team);
     } catch (error) {
       console.error("Error fetching team details:", error);
+      setTeamError(teamId);
     } finally {
       setLoadingTeam(false);
     }
@@ -245,11 +258,11 @@ export function AdminHackathonParticipants() {
         );
         setSelectedIds(new Set());
       } else {
-        alert("Failed to delete participants");
+        toast.error("Failed to delete participants");
       }
     } catch (error) {
       console.error("Error deleting participants:", error);
-      alert("An error occurred while deleting participants");
+      toast.error("An error occurred while deleting participants");
     } finally {
       setDeleting(false);
     }
@@ -360,6 +373,16 @@ export function AdminHackathonParticipants() {
     );
   }
 
+  if (loadError) {
+    return (
+      <AdminErrorState
+        title="Could not load participants"
+        message="The participant list did not load. This is not an empty list."
+        onRetry={() => void fetchParticipants()}
+      />
+    );
+  }
+
   const allSelected = selectedIds.size === filteredParticipants.length && filteredParticipants.length > 0;
   const someSelected = selectedIds.size > 0 && selectedIds.size < filteredParticipants.length;
   const selectAllChecked = allSelected ? true : someSelected ? "indeterminate" : false;
@@ -403,6 +426,11 @@ export function AdminHackathonParticipants() {
               <div className="flex justify-center py-4">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
+            ) : linksError ? (
+              <AdminErrorState
+                title="Could not load registration links"
+                onRetry={() => void fetchRegisterLinks()}
+              />
             ) : registerLinks.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">No links generated yet.</p>
             ) : (
@@ -806,9 +834,12 @@ export function AdminHackathonParticipants() {
                 ))}
               </div>
             </div>
-          ) : (
-            <p className="text-sm text-muted-foreground py-4 text-center">Failed to load team details.</p>
-          )}
+          ) : teamError ? (
+            <AdminErrorState
+              title="Could not load team details"
+              onRetry={() => void openTeamDialog(teamError)}
+            />
+          ) : null}
         </DialogContent>
       </Dialog>
     </div>
