@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { User } from "@supabase/supabase-js";
 
 import { ShiftJoinView, type ShiftJoinState } from "@/components/shift/join/ShiftJoinView";
+import { firstMeetLabel, getShiftCohortByName } from "@/lib/content/shift-cohort";
 import { isAnonymousUser } from "@/lib/supabase/auth";
 import { shiftDiscordUrls } from "@/lib/shift/discordGuild";
 import { isShiftDiscordAuthError } from "@/lib/shift/discordAuth";
@@ -46,7 +47,8 @@ function resolveState(app: ShiftApplicationRow, user: User | null, error?: strin
 
   const { server, invite } = shiftDiscordUrls();
   if (app.discord_joined_at && !app.discord_error) {
-    return { kind: "in_server", ...who, serverUrl: server };
+    const cohort = getShiftCohortByName(app.cohort);
+    return { kind: "in_server", ...who, serverUrl: server, meetLabel: cohort ? firstMeetLabel(cohort) : null };
   }
   return { kind: "needs_invite", ...who, inviteUrl: invite };
 }
