@@ -329,14 +329,56 @@ Deno.test("media_scan does not re-upload a photo whose row is gone, and one erro
   assertEquals(stripExif(storage.get("r/u/gone/photo.jpg")!).found, true, "deleted photo left untouched");
 });
 
-Deno.test("copy keys match Appendix C", () => {
+Deno.test("copy keys match Appendix C plus the v2 session reminder", () => {
   assertEquals(Object.keys(PUSH_COPY).sort(), [
     "push.certificate", "push.closing_tomorrow", "push.no_evidence", "push.no_evidence_last_day", "push.rejected",
-    "push.round_published", "push.squad_assigned", "push.summary_approved", "push.summary_rejected",
+    "push.round_published", "push.session", "push.squad_assigned", "push.summary_approved", "push.summary_rejected",
   ]);
   for (const v of Object.values(PUSH_COPY)) assert(v.th && v.en);
   assertEquals(
     renderPush({ ledger_id: "l", user_id: "u", token: "t", lang: "en", kind: "closing_tomorrow", params: { copy_key: "push.closing_tomorrow", n: 2 } }).body,
     "The round closes tomorrow at 23:59. 2 Missions to go",
   );
+});
+
+Deno.test("session reminder renders day and time and deep-links to the round (v2 2.7)", () => {
+  const c = {
+    ledger_id: "l", user_id: "u", token: "ExponentPushToken[s]", lang: "th", kind: "session",
+    params: { copy_key: "push.session", day: 4, time: "19:00", url: "passion-seed://round", session_starts_at: "2026-10-17T12:00:00Z" },
+  };
+  const th = renderPush(c);
+  assertEquals(th.body, "เซสชันวันที่ 4 เริ่ม 19:00 บน Discord");
+  assertEquals(th.data, { url: "passion-seed://round", kind: "session" });
+  assertEquals(renderPush({ ...c, lang: "en" }).body, "Day 4 session starts at 19:00 on Discord");
+  assertEquals(
+    renderPush({ ...c, kind: "evidence_rejected", params: { copy_key: "push.rejected", type: "daily" } }).body,
+    "บันทึกอัปเดตประจำวันถูกตีกลับ แตะเพื่อดูวิธีแก้",
+  );
+});
+
+Deno.test("nudges job sends session reminders with the other reminder candidates", async () => {
+  const db = fakeDb({
+    ...baseRpcs,
+    shift_round_job_push_candidates: () => ({
+      candidates: [
+        { ledger_id: "s1", user_id: "u1", token: "ExponentPushToken[1]", lang: "en", kind: "session",
+          params: { copy_key: "push.session", day: 2, time: "19:00", url: "passion-seed://round" } },
+        { ledger_id: "n1", user_id: "u2", token: "ExponentPushToken[2]", lang: "th", kind: "no_evidence",
+          params: { copy_key: "push.no_evidence", n: 7, url: "passion-seed://round" } },
+      ],
+    }),
+  });
+  const d = deps(db, (url, init) => {
+    if (!url.includes("push/send")) return new Response("{}");
+    const msgs = JSON.parse(String(init?.body));
+    return new Response(JSON.stringify({ data: msgs.map((_: unknown, i: number) => ({ status: "ok", id: `t${i}` })) }));
+  });
+  const res = await handle(req("nudges"), d);
+  assertEquals(res.status, 200);
+  const sent = JSON.parse(d.fetches.find((f) => f.url.includes("push/send"))!.body!);
+  assertEquals(sent.map((m: { body: string }) => m.body), [
+    "Day 2 session starts at 19:00 on Discord",
+    "วันนี้ยังไม่ได้บันทึกเลย คุยกับใครมาบ้างไหม?",
+  ]);
+  assertEquals(db.calls.find((c) => c.fn === "shift_round_job_push_result")?.args.p_ledger_ids, ["s1", "n1"]);
 });

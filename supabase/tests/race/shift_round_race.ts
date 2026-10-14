@@ -66,8 +66,9 @@ async function fixture(admin: Client, n: number) {
     [[student, staff]],
   );
   await admin.query(
-    `insert into public.shift_rounds (id, number, title_th, title_en, brief_th, brief_en, starts_at, closes_at, review_ends_at, status)
-     values ($1, $2, 'race', 'race', 'race', 'race', '2026-11-10 00:00+07', '2026-11-24 00:00+07', '2026-11-24 00:00+07', 'published')`,
+    `insert into public.shift_rounds (id, number, title_th, title_en, brief_th, brief_en, starts_at, duration_days, join_cutoff_day,
+       closes_at, review_ends_at, status)
+     values ($1, $2, 'race', 'race', 'race', 'race', '2026-11-10 00:00+07', 14, 7, '2026-11-24 00:00+07', '2026-11-24 00:00+07', 'published')`,
     [roundId, 990000 + n],
   );
   await admin.query(`insert into public.shift_round_roles (user_id, round_id, role) values ($1, null, 'staff')`, [staff]);
@@ -78,7 +79,7 @@ async function fixture(admin: Client, n: number) {
     [roundId, student],
   );
   const entryId = rows[0].id as string;
-  // all six missions, with exactly 3 testers so rejecting one drops eligibility
+  // all seven default missions (v2), with exactly 3 testers so rejecting one drops eligibility
   const ev = async (type: string, payload: object, who: string | null, source: string | null = null) => {
     const r = await admin.query(
       `insert into public.shift_round_evidence (entry_id, round_id, user_id, submission_id, type, payload, payload_hash, who_key,
@@ -90,10 +91,11 @@ async function fixture(admin: Client, n: number) {
     return r.rows[0].id as string;
   };
   await ev("contact", { who_label: "c" }, "c");
+  await ev("ideas", { ideas: [{ text: "queue", who: "friends" }, { text: "seats", who: "seniors" }, { text: "posters", who: "clubs" }], picked: 0 }, null);
   const src = await ev("interview", { who_label: "i1" }, "i1");
   await ev("interview", { who_label: "i2" }, "i2");
   await ev("interview", { who_label: "i3" }, "i3");
-  await ev("problem_statement", { text: "x" }, null);
+  await ev("problem_statement", { text: "x", user_group: "ม.4 students" }, null);
   await ev("mvp", { link: "https://example.com/x" }, null);
   const tester = await ev("tester", { who_label: "t1" }, "t1");
   await ev("tester", { who_label: "t2" }, "t2");
@@ -175,7 +177,7 @@ async function main() {
       await asUser(a, f.student, "2026-11-20 10:00+07");
       await asUser(b, f.student, "2026-11-20 10:00+07");
       const sid = randomUUID();
-      const payload = { text: "A long enough problem statement for the race" };
+      const payload = { text: "A long enough problem statement for the race", user_group: "ม.4 students" };
       const sql = `select public.shift_round_submit_evidence($1, $2, 'problem_statement', $3::jsonb, '[]'::jsonb, now(), null) as r`;
       await a.query("begin");
       const first = await a.query(sql, [f.entryId, sid, JSON.stringify(payload)]);
@@ -247,6 +249,45 @@ async function main() {
       const round = res.data?.rounds?.find((x: { id: string }) => x.id === f.roundId);
       check(!!round && round.day < -1000, "clock override honoured for postgres sessions", round?.day ?? res);
       await resetSession(a);
+    }
+    // 7. Two nudges runs at once claim a session reminder exactly once (v2 2.7, ledger unique key).
+    {
+      const f = await fixture(admin, 7);
+      created.push(f);
+      await admin.query(
+        `update public.profiles set expo_push_token = 'ExponentPushToken[race7]', mobile_settings = '{"push_enabled":true}' where id = $1`,
+        [f.student],
+      );
+      const flag = await admin.query(`select value from public.app_config where key = 'shift_round.nudges_enabled'`);
+      const previous = flag.rows[0]?.value ?? false;
+      await admin.query(`update public.app_config set value = 'true' where key = 'shift_round.nudges_enabled'`);
+      try {
+        // day 2 of the fixture round, inside the 18:30-19:00 reminder window
+        await asUser(a, null, "2026-11-11 18:35+07");
+        await asUser(b, null, "2026-11-11 18:35+07");
+        type Cand = { user_id: string; kind: string };
+        const mine = (r: { data?: { candidates?: Cand[] } }) =>
+          (r.data?.candidates ?? []).filter((c) => c.user_id === f.student && c.kind === "session");
+        await a.query("begin");
+        const first = (await a.query(`select public.shift_round_job_push_candidates('nudges', 1000) as r`)).rows[0].r;
+        const second = b.query(`select public.shift_round_job_push_candidates('nudges', 1000) as r`);
+        await new Promise((r) => setTimeout(r, 300));
+        await a.query("commit");
+        const r2 = (await second).rows[0].r;
+        check(mine(first).length === 1, "first nudges run claims the session reminder", first);
+        check(r2.ok === true && mine(r2).length === 0, "a concurrent run claims nothing for the same entry and day", r2);
+        const n = await admin.query(
+          `select count(*)::int as n from public.shift_round_nudge_ledger where user_id = $1 and kind = 'session'`,
+          [f.student],
+        );
+        check(n.rows[0].n === 1, "exactly one session ledger row", n.rows[0]);
+      } finally {
+        await admin.query(`update public.app_config set value = $1::jsonb where key = 'shift_round.nudges_enabled'`, [
+          JSON.stringify(previous),
+        ]);
+        await resetSession(a);
+        await resetSession(b);
+      }
     }
   } finally {
     if (objects.length) {

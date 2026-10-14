@@ -32,16 +32,24 @@ create function shift_test.login(p_uid uuid) returns void language sql as $$
                 else json_build_object('sub', p_uid, 'role', 'authenticated')::text end, true);
 $$;
 
+-- Test rounds keep the original 14-day fixture shape (cutoff day 7, nudges at 19:00) unless the
+-- caller asks otherwise; the v2 SHIFT template defaults (7 days, cutoff 2, 21:15) are asserted
+-- separately. Missions default to the column default (SHIFT steps 1-7).
 create function shift_test.round(
   p_number int, p_starts timestamptz, p_status text default 'published', p_join_mode text default 'open',
-  p_duration int default 14
+  p_duration int default 14, p_join_cutoff int default 7, p_nudge time default '19:00',
+  p_session_days int[] default '{1,2,4,6,7}', p_missions jsonb default null,
+  p_curriculum_key text default null, p_application_cohort text default null
 ) returns uuid language plpgsql as $$
 declare v uuid;
 begin
   insert into public.shift_rounds (number, title_th, title_en, brief_th, brief_en, starts_at, duration_days,
-    closes_at, review_ends_at, join_mode, status)
+    closes_at, review_ends_at, join_mode, status, join_cutoff_day, nudge_local_time, session_days, missions,
+    curriculum_key, application_cohort)
   values (p_number, 'รอบทดสอบ ' || p_number, 'Test round ' || p_number, 'โจทย์', 'Brief', p_starts, p_duration,
-    p_starts + make_interval(days => p_duration), p_starts, p_join_mode, p_status)
+    p_starts + make_interval(days => p_duration), p_starts, p_join_mode, p_status, least(p_join_cutoff, p_duration),
+    p_nudge, p_session_days, coalesce(p_missions, shift_round_private.default_missions()),
+    p_curriculum_key, p_application_cohort)
   returning id into v;
   return v;
 end $$;
@@ -74,12 +82,17 @@ begin
   v_at := coalesce(p_at, shift_round_private.round_now());
   v_payload := case p_type
     when 'contact' then jsonb_build_object('who_label', p_who, 'channel', 'chat', 'occurred_on', '2026-11-10')
+    when 'ideas' then jsonb_build_object('ideas', jsonb_build_array(
+        jsonb_build_object('text', 'Canteen queue is too long', 'who', 'ม.4 friends'),
+        jsonb_build_object('text', 'Library seats run out', 'who', 'ม.6 students'),
+        jsonb_build_object('text', 'Club posters get lost', 'who', 'club leaders')), 'picked', 0, 'reachable', true)
     when 'interview' then jsonb_build_object('who_label', p_who, 'occurred_on', '2026-11-10', 'key_point', 'they said things')
     when 'tester' then jsonb_build_object('who_label', p_who, 'occurred_on', '2026-11-10', 'key_point', 'it broke')
-    when 'problem_statement' then jsonb_build_object('text', 'A problem statement that is long enough')
+    when 'problem_statement' then jsonb_build_object('text', 'A problem statement that is long enough', 'user_group', 'ม.4 students')
     when 'mvp' then jsonb_build_object('link', 'https://example.com/mvp')
     when 'change' then jsonb_build_object('kind', 'changed', 'what', 'changed the onboarding', 'source_evidence_id', p_source)
-    when 'demo_post' then jsonb_build_object('url', 'https://example.com/demo', 'visibility', p_visibility) end;
+    when 'demo_post' then jsonb_build_object('url', 'https://example.com/demo', 'visibility', p_visibility)
+    when 'daily' then jsonb_build_object('built', 'a first screen', 'heard', 'they want it faster') end;
   insert into public.shift_round_evidence (entry_id, round_id, user_id, submission_id, type, payload, payload_hash,
     who_key, source_evidence_id, client_created_at, submitted_at, local_date, status)
   values (en.id, en.round_id, en.user_id, gen_random_uuid(), p_type, v_payload, md5(v_payload::text),
@@ -89,10 +102,12 @@ begin
   return v;
 end $$;
 
--- All six missions complete (returns the interview id used as change source).
+-- All seven default missions complete, plus a first contact (returns the interview id used as
+-- change source). people_talked_to = 7 (Aunt May, 3 interviewees, 3 testers).
 create function shift_test.complete_all(p_entry uuid, p_at timestamptz default null) returns uuid language plpgsql as $$
 declare v_src uuid;
 begin
+  perform shift_test.ev(p_entry, 'ideas', null, 'submitted', p_at);
   perform shift_test.ev(p_entry, 'contact', 'Aunt May', 'submitted', p_at);
   v_src := shift_test.ev(p_entry, 'interview', 'Ploy', 'submitted', p_at);
   perform shift_test.ev(p_entry, 'interview', 'Nok', 'submitted', p_at);
@@ -122,6 +137,16 @@ $$;
 
 create function shift_test.missions_complete(p_entry uuid) returns int language sql as $$
   select (shift_round_private.mission_counts(p_entry)->>'missions_complete')::int
+$$;
+
+-- One mission object from mission_counts by key.
+create function shift_test.mission(p_entry uuid, p_key text) returns jsonb language sql as $$
+  select x from jsonb_array_elements(shift_round_private.mission_counts(p_entry)->'missions') x where x->>'key' = p_key
+$$;
+
+-- "have" of the first part of a mission.
+create function shift_test.have(p_entry uuid, p_key text) returns int language sql as $$
+  select (shift_test.mission(p_entry, p_key)->'parts'->0->>'have')::int
 $$;
 
 grant execute on all functions in schema shift_test to anon, authenticated, service_role;

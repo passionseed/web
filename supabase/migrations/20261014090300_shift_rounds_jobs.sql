@@ -104,10 +104,12 @@ begin
     'holder', jsonb_build_object('handle', en.handle,
       'legal_name', case when en.name_display = 'legal' then en.legal_name end,
       'display', case when en.name_display = 'legal' and en.legal_name is not null then 'legal' else 'handle' end),
-    'missions', jsonb_build_array('first_contact','interviews_problem','mvp','testers','change','demo_post'),
-    'counts', jsonb_build_object('people_talked_to', (m->>'people_talked_to')::int,
-      'interviews', (m->'counts'->>'interviews')::int, 'testers', (m->'counts'->>'testers')::int,
-      'changes', (m->'counts'->>'changes')::int),
+    -- v2: the round's missions in config order (all complete at issue) as {key, title_th, title_en};
+    -- titles are null when the round uses the known-key copy.
+    'missions', (select coalesce(jsonb_agg(jsonb_build_object('key', t.x->>'key', 'title_th', t.x->'title_th',
+                                                              'title_en', t.x->'title_en') order by t.i), '[]'::jsonb)
+                   from jsonb_array_elements(r.missions) with ordinality as t(x, i)),
+    'counts', shift_round_private.snapshot_counts(en.id),
     'issued_at', shift_round_private.iso_ict(v_now));
 
   insert into public.shift_round_certificates (public_id, round_id, entry_id, user_id, status, snapshot,
@@ -141,7 +143,7 @@ language plpgsql volatile security definer set search_path = '' as $$
 declare
   v_now timestamptz := shift_round_private.round_now();
   v_today date := shift_round_private.local_date(shift_round_private.round_now());
-  v_hour int := extract(hour from (shift_round_private.round_now() at time zone 'Asia/Bangkok'))::int;
+  v_local_time time := (shift_round_private.round_now() at time zone 'Asia/Bangkok')::time;
   v_limit int := greatest(1, least(coalesce(p_limit, 500), 1000));
   v_out jsonb := '[]'::jsonb;
   c record;
@@ -149,12 +151,14 @@ declare
   v_id uuid;
   v_kind text;
   v_params jsonb;
+  v_counts jsonb;
   v_remaining int;
   v_day int;
 begin
   if p_job not in ('nudges','pushes') then return shift_round_private.fail('invalid_field', 'job'); end if;
 
   if p_job = 'nudges' then
+    -- One flag gates every reminder push (no-log nudge, closing tomorrow, session reminder).
     if not shift_round_private.flag_on('shift_round.nudges_enabled', false) then
       return shift_round_private.ok(jsonb_build_object('candidates', '[]'::jsonb, 'paused', true));
     end if;
@@ -162,21 +166,63 @@ begin
     -- (crash, timeout): treat it as failed, counting the lost attempt.
     update public.shift_round_nudge_ledger l
        set status = 'failed', attempts = l.attempts + 1, last_error = coalesce(l.last_error, 'stale pending'), updated_at = now()
-     where l.status = 'pending' and l.kind in ('no_evidence','closing_tomorrow')
+     where l.status = 'pending' and l.kind in ('no_evidence','closing_tomorrow','session')
        and l.updated_at < now() - interval '10 minutes';
     update public.shift_round_nudge_ledger l set status = 'abandoned', updated_at = now()
      where l.status = 'failed' and l.kind in ('no_evidence','closing_tomorrow')
        and (l.attempts >= 3 or l.dedupe_key <> v_today::text);
+    -- a session reminder is pointless once the session has started
+    update public.shift_round_nudge_ledger l set status = 'abandoned', updated_at = now()
+     where l.status = 'failed' and l.kind = 'session'
+       and (l.attempts >= 3 or coalesce((l.params->>'session_starts_at')::timestamptz, '-infinity') <= v_now);
+
+    -- v2 2.7 session reminders: on a session day, from session_start - 30 min until the start
+    -- (ICT), every active entry that has not opted out. One per (entry, day) via the ledger.
+    for c in
+      select e.id as entry_id, e.user_id, r.id as round_id, r.number, s.d, r.session_start, s.starts
+        from public.shift_round_entries e
+        join public.shift_rounds r on r.id = e.round_id
+        cross join lateral (
+          select shift_round_private.day_of(r, v_now) as d,
+                 ((shift_round_private.local_date(r.starts_at) + (shift_round_private.day_of(r, v_now) - 1))
+                   + r.session_start) at time zone 'Asia/Bangkok' as starts) s
+       where r.status = 'published' and shift_round_private.phase_of(r) = 'active'
+         and e.outcome = 'in_progress'
+         and s.d = any (r.session_days)
+         and v_now >= s.starts - interval '30 minutes' and v_now < s.starts
+       order by e.id
+    loop
+      exit when jsonb_array_length(v_out) >= v_limit;
+      select * into t from shift_round_private.push_target(c.user_id, true);
+      continue when t.token is null;
+      v_params := jsonb_build_object('copy_key', 'push.session', 'day', c.d,
+        'time', to_char(c.session_start, 'HH24:MI'), 'round_number', c.number,
+        'session_starts_at', c.starts, 'url', 'passion-seed://round');
+      v_id := null;
+      insert into public.shift_round_nudge_ledger (user_id, round_id, kind, dedupe_key, expo_token, params)
+      values (c.user_id, c.round_id, 'session', c.entry_id::text || ':' || c.d::text, t.token, v_params)
+      on conflict (user_id, kind, dedupe_key) do nothing
+      returning id into v_id;
+      if v_id is not null then
+        v_out := v_out || jsonb_build_array(jsonb_build_object('ledger_id', v_id, 'user_id', c.user_id, 'token', t.token,
+          'lang', t.lang, 'kind', 'session', 'params', v_params));
+      end if;
+    end loop;
+
+    -- No-log nudge / closing tomorrow: from the round's nudge_local_time (default 21:15, after the
+    -- session) for one hour, so a 5-minute cron sends it once per day (ledger dedupe per date).
     for c in
       select e.id as entry_id, e.user_id, r.id as round_id, r.number, r.closes_at,
              shift_round_private.day_of(r, v_now) as d, shift_round_private.effective_days(r) as last_day
         from public.shift_round_entries e join public.shift_rounds r on r.id = e.round_id
        where r.status = 'published' and shift_round_private.phase_of(r) = 'active'
-         and extract(hour from r.nudge_local_time)::int = v_hour
+         and v_local_time - r.nudge_local_time >= interval '0'
+         and v_local_time - r.nudge_local_time < interval '60 minutes'
        order by e.id
     loop
       exit when jsonb_array_length(v_out) >= v_limit;
-      v_remaining := 6 - (shift_round_private.mission_counts(c.entry_id)->>'missions_complete')::int;
+      v_counts := shift_round_private.mission_counts(c.entry_id);
+      v_remaining := (v_counts->>'missions_total')::int - (v_counts->>'missions_complete')::int;
       continue when v_remaining = 0;
       select * into t from shift_round_private.push_target(c.user_id, true);
       continue when t.token is null;
@@ -201,11 +247,13 @@ begin
           'lang', t.lang, 'kind', v_kind, 'params', v_params));
       end if;
     end loop;
-    -- same-day retries of failed nudges (max 3 attempts)
+    -- retries of failed reminders (max 3 attempts): nudges the same day, session reminders
+    -- until the session starts
     for c in
       update public.shift_round_nudge_ledger l set status = 'pending', updated_at = now()
-       where l.status = 'failed' and l.kind in ('no_evidence','closing_tomorrow') and l.attempts < 3
-         and l.dedupe_key = v_today::text
+       where l.status = 'failed' and l.attempts < 3
+         and ((l.kind in ('no_evidence','closing_tomorrow') and l.dedupe_key = v_today::text)
+              or (l.kind = 'session' and (l.params->>'session_starts_at')::timestamptz > v_now))
       returning l.*
     loop
       select * into t from shift_round_private.push_target(c.user_id, true);
@@ -223,10 +271,10 @@ begin
   -- pushes: event-driven (no nudge opt-out, still requires token + push_enabled)
   update public.shift_round_nudge_ledger l
      set status = 'failed', attempts = l.attempts + 1, last_error = coalesce(l.last_error, 'stale pending'), updated_at = now()
-   where l.status = 'pending' and l.kind not in ('no_evidence','closing_tomorrow')
+   where l.status = 'pending' and l.kind not in ('no_evidence','closing_tomorrow','session')
      and l.updated_at < now() - interval '10 minutes';
   update public.shift_round_nudge_ledger l set status = 'abandoned', updated_at = now()
-   where l.status = 'failed' and l.kind not in ('no_evidence','closing_tomorrow')
+   where l.status = 'failed' and l.kind not in ('no_evidence','closing_tomorrow','session')
      and (l.attempts >= 3 or l.created_at < now() - interval '24 hours');
 
   for c in
@@ -297,7 +345,7 @@ begin
 
   for c in
     update public.shift_round_nudge_ledger l set status = 'pending', updated_at = now()
-     where l.status = 'failed' and l.kind not in ('no_evidence','closing_tomorrow') and l.attempts < 3
+     where l.status = 'failed' and l.kind not in ('no_evidence','closing_tomorrow','session') and l.attempts < 3
        and l.created_at >= now() - interval '24 hours'
     returning l.*
   loop
@@ -382,6 +430,7 @@ begin
     delete from public.shift_round_cheers c where c.from_entry_id = en.id or c.to_entry_id = en.id;
     delete from public.shift_round_evidence x where x.entry_id = en.id;      -- cascades media rows
     delete from public.shift_round_checkins x where x.entry_id = en.id;
+    delete from public.shift_round_attendance x where x.entry_id = en.id;
     delete from public.shift_round_squad_members x where x.entry_id = en.id;
     delete from public.shift_round_summary_revisions x where x.entry_id = en.id and x.status <> 'approved';
     update public.shift_round_entries x
@@ -504,7 +553,7 @@ begin
     select jsonb_agg(jsonb_build_object('job', w.job, 'max_age_minutes', w.mins, 'last_ok_at', w.last_ok))
       from (select x.job, x.mins,
                    (select max(j.finished_at) from public.shift_round_job_runs j where j.job = x.job and j.status = 'ok') as last_ok
-              from (values ('issue', 120), ('pushes', 30), ('nudges', 120), ('media_scan', 60), ('purge', 1560)) x(job, mins)) w
+              from (values ('issue', 120), ('pushes', 30), ('nudges', 30), ('media_scan', 60), ('purge', 1560)) x(job, mins)) w
      where w.last_ok is null or w.last_ok < now() - make_interval(mins => w.mins)), '[]'::jsonb),
     'deletion_failures', (select count(*) from public.shift_round_deletion_requests d where d.status = 'failed' and d.attempts >= 5)));
 end $$;
@@ -589,7 +638,8 @@ begin
   for j in select * from (values
     ('shift-round-issue', '5 * * * *', 'issue'),
     ('shift-round-pushes', '*/5 * * * *', 'pushes'),
-    ('shift-round-nudges', '0 * * * *', 'nudges'),
+    -- every 5 minutes: session reminders fire at session_start - 30 min, nudges at nudge_local_time
+    ('shift-round-nudges', '*/5 * * * *', 'nudges'),
     ('shift-round-media-scan', '*/10 * * * *', 'media_scan'),
     ('shift-round-purge', '30 20 * * *', 'purge'),
     ('shift-round-watchdog', '15 1 * * *', 'watchdog')) x(name, schedule, job)

@@ -1,7 +1,7 @@
 \set ON_ERROR_STOP on
 begin;
 \ir shift_round_helpers.psql
-select plan(32);
+select plan(34);
 
 select shift_test.clock('2026-11-28 00:05+07');
 create temp table f on commit drop as select
@@ -20,6 +20,8 @@ insert into public.shift_round_evidence_media (evidence_id, entry_id, round_id, 
          'photo', r::text || '/' || u::text || '/aaaaaaaa-0000-4000-8000-000000000001/photo.jpg', 1234, true from f;
 select shift_round_private.emit('evidence_logged', (select r from f), (select e from g), (select u from f), (select u from f), '{}');
 insert into public.shift_round_waitlist (user_id) select u from f;
+insert into public.shift_round_attendance (entry_id, round_id, day, status)
+  select x.e, (select r from f), 1, 'present' from g, lateral (values (g.e), (g.ew)) x(e);
 grant select on f, g to authenticated, service_role;
 set local role service_role;
 select public.shift_round_job_issue_entry(e) from g;
@@ -45,6 +47,7 @@ select is((select count(*)::int from public.shift_round_checkins where entry_id 
 select is((select count(*)::int from public.shift_round_summary_revisions where entry_id = (select e from g)), 0, 'summaries gone');
 select is((select count(*)::int from public.shift_round_squad_members where entry_id = (select e from g)), 0, 'squad membership gone');
 select is((select count(*)::int from public.shift_round_waitlist where user_id = (select u from f)), 0, 'waitlist row gone');
+select is((select count(*)::int from public.shift_round_attendance where entry_id = (select e from g)), 0, 'attendance rows gone (v2 2.4)');
 select is((select (status, tombstoned_at is not null, snapshot is null, user_id is null, revoke_reason)::text
              from public.shift_round_certificates where id = (select id from cert)),
   '(revoked,t,t,t,holder_deleted)', 'certificate tombstoned (E10)');
@@ -87,6 +90,7 @@ create temp table rp on commit drop as select public.shift_round_job_enqueue_ret
 reset role;
 select is((select res->'data'->>'entries_purged' from rp), '1', 'one remaining entry purged');
 select is((select count(*)::int from public.shift_round_evidence where entry_id = (select ew from g)), 0, 'evidence removed by retention');
+select is((select count(*)::int from public.shift_round_attendance where entry_id = (select ew from g)), 0, 'attendance removed by retention');
 select is((select (birth_month, birth_year, guardian_consent_at)::text from public.shift_round_entries where id = (select ew from g)),
   '(,,)', 'birth data cleared');
 select is((select snapshot is not null and status = 'issued' from public.shift_round_certificates where entry_id = (select ew from g)),

@@ -1,7 +1,7 @@
 \set ON_ERROR_STOP on
 begin;
 \ir shift_round_helpers.psql
-select plan(33);
+select plan(35);
 
 select shift_test.clock('2026-11-20 10:00+07');
 create temp table f on commit drop as select
@@ -60,6 +60,10 @@ select is((select s->>'v' from snap), '1', 'snapshot v1');
 select is((select s->'holder' from snap), '{"handle":"ต้น","legal_name":null,"display":"handle"}'::jsonb, 'holder by handle');
 select is((select s->'round'->>'closes_on' from snap), '2026-11-25', 'closes_on is the last day (with extension)');
 select is((select s->'counts' from snap), '{"people_talked_to":7,"interviews":3,"testers":3,"changes":1}'::jsonb, 'counts captured');
+select is((select jsonb_agg(m->>'key') from snap, jsonb_array_elements(s->'missions') m),
+  '["ideas","interviews","problem","prototype","testers","change","demo"]'::jsonb, 'snapshot lists the round''s missions in config order');
+select is((select s->'missions'->0 from snap), '{"key":"ideas","title_th":null,"title_en":null}'::jsonb,
+  'each snapshot mission carries its config titles (null = use the known-key copy)');
 select is((select s->>'issued_at' from snap), '2026-11-28T00:05:00+07:00', 'issued_at in ICT');
 select is((select snapshot->'holder'->>'display' from public.shift_round_certificates where entry_id = (select ec from g)), 'legal',
   'legal name used when chosen (A38)');

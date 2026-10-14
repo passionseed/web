@@ -64,7 +64,7 @@ select is(
     where n.nspname = 'public' and c.relkind = 'r'
       and c.relname in ('shift_round_allowlist','shift_round_squads','shift_round_squad_members','shift_round_cheers',
                         'shift_round_events','shift_round_waitlist','shift_round_nudge_ledger',
-                        'shift_round_deletion_requests','shift_round_job_runs')
+                        'shift_round_deletion_requests','shift_round_job_runs','shift_round_attendance')
       and has_table_privilege('authenticated', c.oid, 'SELECT')),
   '{}'::text[], 'tables without client policies are not selectable by authenticated');
 
