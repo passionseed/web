@@ -1,7 +1,12 @@
 import {
+  DEFAULT_MISSIONS,
+  DEFAULT_POLICY,
   describeError,
+  hhmm,
   ictMidnightIso,
   isPolicyLocked,
+  missionLabel,
+  missionsTotal,
   parseEmails,
   roundDay,
   roundPhase,
@@ -88,4 +93,55 @@ test("describeError keeps the code visible", () => {
   expect(describeError({ code: "role_from_web_admin", category: "validation", field: "email" })).toMatch(
     /web admin.*Users page.*\(role_from_web_admin\)/,
   );
+});
+
+test("new rounds default to the SHIFT 7-day template (D2)", () => {
+  expect(DEFAULT_POLICY).toMatchObject({
+    duration_days: 7,
+    join_cutoff_day: 2,
+    nudge_local_time: "21:15",
+    review_window_hours: 48,
+    join_mode: "invite",
+    mentor_led: true,
+    session_days: [1, 2, 4, 6, 7],
+    session_start: "19:00",
+    session_end: "21:00",
+  });
+  expect(DEFAULT_MISSIONS.map((m) => m.key)).toEqual(["ideas", "interviews", "problem", "prototype", "testers", "change", "demo"]);
+  const titles = { title_th: "SHIFT[3]", title_en: "SHIFT[3]", brief_th: "โจทย์", brief_en: "Brief" };
+  expect(validatePolicy({ ...DEFAULT_POLICY, ...titles, number: 3 })).toEqual({});
+});
+
+test("validatePolicy checks session days against the length and the session times", () => {
+  expect(validatePolicy({ duration_days: 7, session_days: [1, 8] })).toHaveProperty("session_days");
+  expect(validatePolicy({ duration_days: 7, session_days: [2, 2] })).toHaveProperty("session_days");
+  expect(validatePolicy({ duration_days: 7, session_days: [] })).toEqual({});
+  expect(validatePolicy({ session_start: "21:00", session_end: "19:00" })).toHaveProperty("session_end");
+  expect(validatePolicy({ session_start: "7pm", session_end: "21:00" })).toHaveProperty("session_start");
+  expect(validatePolicy({ curriculum_key: "shift 3" })).toHaveProperty("curriculum_key");
+  expect(validatePolicy({ curriculum_key: "SHIFT[3]", application_cohort: "SHIFT[3]" })).toEqual({});
+});
+
+test("session schedule, curriculum key and application cohort stay editable after start (v2)", () => {
+  const day3 = new Date("2026-11-12T03:00:00Z");
+  for (const field of ["session_days", "session_start", "session_end", "curriculum_key", "application_cohort"] as const) {
+    expect(isPolicyLocked(field, round, day3)).toBe(false);
+  }
+  expect(isPolicyLocked("duration_days", round, day3)).toBe(true);
+});
+
+test("describeError explains rules the code alone doesn't", () => {
+  expect(describeError({ code: "invalid_field", category: "validation", field: "day", details: { rule: "not_session_day" } })).toBe(
+    "That day has no mentor session in this round. Field: day. (invalid_field)",
+  );
+});
+
+test("mission labels: round title, else known-key copy, else the key", () => {
+  expect(missionLabel({ key: "interviews", n: 2 })).toBe("2 · คุยกับคนที่เจอปัญหาจริง");
+  expect(missionLabel({ key: "interviews", n: 2, title_th: "สัมภาษณ์ 5 คน" })).toBe("2 · สัมภาษณ์ 5 คน");
+  expect(missionLabel({ key: "pitch_day" })).toBe("Pitch day");
+  expect(missionsTotal({ missions: [], missions_total: 7 })).toBe(7);
+  expect(missionsTotal(undefined)).toBe(7);
+  expect(hhmm("19:00:00")).toBe("19:00");
+  expect(hhmm("25:00")).toBeNull();
 });

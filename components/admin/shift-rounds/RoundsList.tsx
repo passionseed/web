@@ -17,11 +17,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { SHIFT_COHORTS } from "@/lib/content/shift-cohort";
 import {
+  DEFAULT_MISSIONS,
   DEFAULT_POLICY,
   PHASE_LABEL,
   formatClose,
   formatIct,
+  roundName,
   roundPhase,
   validatePolicy,
 } from "@/lib/shift-round/admin/format";
@@ -37,6 +40,36 @@ function nextMonday(): string {
   return d.toISOString().slice(0, 10);
 }
 
+/** `SHIFT[N]` when that cohort exists on the website (lib/content/shift-cohort.ts), else null. */
+function cohortFor(number: number): string | null {
+  return SHIFT_COHORTS.find((c) => c.round === number)?.name ?? null;
+}
+
+/**
+ * A new round starts from the SHIFT template (D2). Curriculum key and
+ * application cohort follow the round number until someone edits them.
+ */
+export function newRoundDraft(number: number, startsOn: string): PolicyDraft {
+  return {
+    ...DEFAULT_POLICY,
+    session_days: [...DEFAULT_POLICY.session_days],
+    number,
+    starts_on: startsOn,
+    curriculum_key: String(number),
+    application_cohort: cohortFor(number),
+  };
+}
+
+function followNumber(prev: PolicyDraft, next: PolicyDraft): PolicyDraft {
+  if (next.number === prev.number || !Number.isInteger(next.number)) return next;
+  return {
+    ...next,
+    curriculum_key: next.curriculum_key === String(prev.number) ? String(next.number) : next.curriculum_key,
+    application_cohort:
+      next.application_cohort === cohortFor(prev.number) ? cohortFor(next.number) : next.application_cohort,
+  };
+}
+
 function NewRoundForm({
   nextNumber,
   onCancel,
@@ -46,11 +79,7 @@ function NewRoundForm({
   onCancel: () => void;
   onCreated: (roundId: string) => void;
 }) {
-  const [draft, setDraft] = useState<PolicyDraft>({
-    ...DEFAULT_POLICY,
-    number: nextNumber,
-    starts_on: nextMonday(),
-  });
+  const [draft, setDraft] = useState<PolicyDraft>(() => newRoundDraft(nextNumber, nextMonday()));
   const [errors, setErrors] = useState<Partial<Record<keyof RoundPolicy | "starts_on", string>>>({});
   const { run, busy, message } = useAdminMutation();
 
@@ -83,7 +112,13 @@ function NewRoundForm({
       }
     >
       <form onSubmit={submit} className="space-y-4" noValidate>
-        <PolicyFields idPrefix="new-round" value={draft} onChange={setDraft} errors={errors} />
+        <PolicyFields
+          idPrefix="new-round"
+          value={draft}
+          onChange={(next) => setDraft((prev) => followNumber(prev, next))}
+          errors={errors}
+          missions={DEFAULT_MISSIONS}
+        />
         <ActionError message={message} />
         <div className="flex flex-wrap items-center gap-3">
           <Button type="submit" disabled={busy}>
@@ -154,7 +189,7 @@ export function RoundsList() {
       ) : rounds.length === 0 ? (
         <AdminEmptyState
           title="No SHIFT rounds yet"
-          description="Create the first round. Beta rounds default to 14 days, invite only, high school track."
+          description="สร้างรอบแรกจากแม่แบบ SHIFT: 7 วัน เซสชันวันที่ 1, 2, 4, 6, 7 เวลา 19:00–21:00 เข้าด้วยคำเชิญ"
           action={!creating && <Button onClick={() => setCreating(true)}>New round</Button>}
         />
       ) : filtered.length === 0 ? (
@@ -176,7 +211,7 @@ export function RoundsList() {
             <TableBody>
               {filtered.map((r) => (
                 <TableRow key={r.id}>
-                  <TableCell className="font-medium tabular-nums">{r.number}</TableCell>
+                  <TableCell className="whitespace-nowrap font-medium tabular-nums">{roundName(r)}</TableCell>
                   <TableCell>
                     <Link href={`/admin/shift/rounds/${r.id}`} className="font-medium hover:underline">
                       {r.title_en}

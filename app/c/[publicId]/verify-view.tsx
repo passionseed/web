@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import { MISSION_LABELS, t, type WebCopyKey } from "@/lib/shift-round/certificate/copy";
+import { t, type WebCopyKey } from "@/lib/shift-round/certificate/copy";
 import { buildCertificateContent, formatDate } from "@/lib/shift-round/certificate/content";
 import { verifyUrlText } from "@/lib/shift-round/certificate/config";
 import { TEXT_CAPS, truncateAtSegment } from "@/lib/shift-round/certificate/thai";
@@ -118,15 +118,24 @@ function StatusBanner({
   );
 }
 
+/** "SHIFT[N]" (v2 D2): one name in both languages. */
 function RoundTag({ n }: { n: number }) {
+  const th = t("th", "round.tag", { n });
+  const en = t("en", "round.tag", { n });
   return (
     <span
       className="inline-block rounded-lg px-2.5 py-1 text-sm font-bold"
       style={{ background: C.violet50, color: C.violet700 }}
     >
-      <span lang="th">{t("th", "round.tag", { n })}</span>
-      <span aria-hidden="true"> · </span>
-      <span lang="en">{t("en", "round.tag", { n }).replace("SHIFT · ", "")}</span>
+      {th === en ? (
+        th
+      ) : (
+        <>
+          <span lang="th">{th}</span>
+          <span aria-hidden="true"> · </span>
+          <span lang="en">{en}</span>
+        </>
+      )}
     </span>
   );
 }
@@ -151,7 +160,7 @@ function isHttpsUrl(value: string | null | undefined): value is string {
   }
 }
 
-function SummaryBlock({ summary }: { summary: PublicSummary }) {
+function SummaryBlock({ summary, missionsTotal }: { summary: PublicSummary; missionsTotal: number }) {
   const counts = summary.counts ?? {};
   const shown = SUMMARY_COUNT_KEYS.filter((key) => typeof counts[key] === "number");
   return (
@@ -167,9 +176,9 @@ function SummaryBlock({ summary }: { summary: PublicSummary }) {
         <ul className="mt-4 flex flex-wrap gap-2">
           {shown.map((key) => (
             <li key={key} className="rounded-lg bg-white px-3 py-1.5 text-sm font-medium">
-              <span lang="th">{t("th", `count.${key}` as WebCopyKey, { n: counts[key] })}</span>
+              <span lang="th">{t("th", `count.${key}` as WebCopyKey, { n: counts[key], total: missionsTotal })}</span>
               <span aria-hidden="true"> · </span>
-              <span lang="en">{t("en", `count.${key}` as WebCopyKey, { n: counts[key] })}</span>
+              <span lang="en">{t("en", `count.${key}` as WebCopyKey, { n: counts[key], total: missionsTotal })}</span>
             </li>
           ))}
         </ul>
@@ -282,8 +291,8 @@ export function VerifyView({ lookup, baseUrl }: { lookup: Lookup; baseUrl: strin
         </Field>
         <Field label={biCopy("web.missions")}>
           <ul className="mt-1 grid gap-2">
-            {content.missions.map((mission) => (
-              <li key={mission.key} className="flex items-start gap-3">
+            {content.missions.map((mission, index) => (
+              <li key={`${index}-${mission.key}`} className="flex items-start gap-3">
                 <span
                   aria-hidden="true"
                   className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
@@ -297,12 +306,16 @@ export function VerifyView({ lookup, baseUrl }: { lookup: Lookup; baseUrl: strin
                 </span>
                 <span>
                   <span lang="th" className="font-medium">
-                    {MISSION_LABELS[mission.key].th}
+                    {mission.label.th}
                   </span>
-                  <span aria-hidden="true"> · </span>
-                  <span lang="en" style={{ color: C.ink2 }}>
-                    {MISSION_LABELS[mission.key].en}
-                  </span>
+                  {mission.label.en !== mission.label.th && (
+                    <>
+                      <span aria-hidden="true"> · </span>
+                      <span lang="en" style={{ color: C.ink2 }}>
+                        {mission.label.en}
+                      </span>
+                    </>
+                  )}
                   <span className="sr-only">{mission.done ? " (done)" : " (not done)"}</span>
                 </span>
               </li>
@@ -324,7 +337,7 @@ export function VerifyView({ lookup, baseUrl }: { lookup: Lookup; baseUrl: strin
         </p>
       </div>
 
-      {lookup.data.summary ? <SummaryBlock summary={lookup.data.summary} /> : null}
+      {lookup.data.summary ? <SummaryBlock summary={lookup.data.summary} missionsTotal={content.missions.length} /> : null}
 
       <LiveLine publicId={lookup.publicId} baseUrl={baseUrl} />
     </Shell>

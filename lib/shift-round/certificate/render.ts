@@ -199,6 +199,50 @@ function drawTag(ctx: Ctx, text: string, style: TextStyle, x: number, y: number)
   return { right: x + w, bottom: y + height };
 }
 
+/** Columns, rows and row height for `count` missions within `room` px (statement room already kept). */
+export function missionGrid(
+  layout: FormatLayout,
+  count: number,
+  room: number
+): { columns: number; rows: number; rowHeight: number; scale: number } {
+  const columns = count > layout.missionDenseAfter ? layout.missionColumnsDense : layout.missionColumns;
+  const rows = Math.max(1, Math.ceil(count / columns));
+  const fit = Math.floor((room - layout.statementReserve) / rows);
+  const rowHeight = Math.max(layout.missionRowMin, Math.min(layout.missionRow, fit));
+  return { columns, rows, rowHeight, scale: rowHeight / layout.missionRow };
+}
+
+function scaleStyle(style: TextStyle, scale: number): TextStyle {
+  return scale >= 1 ? style : { ...style, size: Math.round(style.size * scale) };
+}
+
+/** One line: the text if it fits, else cut at a (Thai) word boundary with an ellipsis. */
+function fitLine(ctx: Ctx, text: string, maxWidth: number): string {
+  return width(ctx, text) <= maxWidth ? text : (wrapText(ctx, text, maxWidth, 1)[0] ?? "");
+}
+
+/** Thai title then the English one on the same line; English shortens (or drops) to fit. */
+function drawInlineLabel(
+  ctx: Ctx,
+  label: { th: string; en: string },
+  x: number,
+  cy: number,
+  maxWidth: number,
+  thStyle: TextStyle,
+  enStyle: TextStyle
+) {
+  setFont(ctx, thStyle);
+  const th = fitLine(ctx, label.th, maxWidth);
+  ctx.fillText(th, x, cy + thStyle.size * 0.36);
+  if (label.en === label.th) return;
+  const gap = Math.round(thStyle.size * 0.5);
+  const used = width(ctx, th) + gap;
+  const rest = maxWidth - used;
+  if (rest < enStyle.size * 3) return;
+  setFont(ctx, enStyle);
+  ctx.fillText(fitLine(ctx, label.en, rest), x + used, cy + enStyle.size * 0.36);
+}
+
 function drawRule(ctx: Ctx, x1: number, x2: number, y: number) {
   ctx.fillStyle = COLORS.line;
   ctx.fillRect(x1, Math.round(y), x2 - x1, 2);
@@ -215,7 +259,10 @@ export function drawCertificate(ctx: Ctx, content: CertificateContent, format: I
   setFont(ctx, text.issuer);
   const issuerLine = text.issuer.size * 1.7;
   ctx.fillText(content.issuer, safe.left, y + issuerLine / 2 + text.issuer.size * 0.36);
-  const tagText = `${content.roundTag.th}  ·  ${content.roundTag.en.replace("SHIFT · ", "")}`;
+  const tagText =
+    content.roundTag.th === content.roundTag.en
+      ? content.roundTag.th
+      : `${content.roundTag.th}  ·  ${content.roundTag.en.replace("SHIFT · ", "")}`;
   setFont(ctx, text.tag);
   const tagWidth = width(ctx, tagText) + text.tag.size * 1.2;
   drawTag(ctx, tagText, text.tag, safe.right - tagWidth, y + (issuerLine - text.tag.size * 1.7) / 2);
@@ -234,39 +281,42 @@ export function drawCertificate(ctx: Ctx, content: CertificateContent, format: I
   y = drawBlock(ctx, `${content.dates.en}  ·  ${content.track.en}`, text.meta, safe.left, y, maxWidth);
   y += gaps.section;
 
-  // Six missions with checks.
-  const columns = layout.missionColumns;
-  const colWidth = maxWidth / columns;
-  const rows = Math.ceil(content.missions.length / columns);
-  content.missions.forEach((mission, index) => {
-    const col = columns === 1 ? 0 : Math.floor(index / rows);
-    const row = columns === 1 ? index : index % rows;
-    const x = safe.left + col * colWidth;
-    const rowTop = y + row * layout.missionRow;
-    const cy = rowTop + layout.missionRow / 2;
-    drawCheck(ctx, x + layout.checkRadius, cy, layout.checkRadius, mission.done);
-    const labelX = x + layout.checkRadius * 2 + 16;
-    const labelWidth = colWidth - (labelX - x) - 12;
-    setFont(ctx, text.missionTh);
-    if (columns === 1) {
-      ctx.fillText(mission.label.th, labelX, cy + text.missionTh.size * 0.36);
-      const thWidth = width(ctx, mission.label.th);
-      setFont(ctx, text.missionEn);
-      ctx.fillText(mission.label.en, labelX + thWidth + 16, cy + text.missionEn.size * 0.36);
-    } else {
-      const th = wrapText(ctx, mission.label.th, labelWidth, 1)[0] ?? "";
-      ctx.fillText(th, labelX, cy - 2);
-      setFont(ctx, text.missionEn);
-      const en = wrapText(ctx, mission.label.en, labelWidth, 1)[0] ?? "";
-      ctx.fillText(en, labelX, cy + text.missionEn.size + 2);
-    }
-  });
-  y += rows * layout.missionRow + gaps.section;
-
   // Verify block pinned to the bottom of the safe area: QR + short URL.
-  // The statement may never run into it.
+  // Neither the missions nor the statement may run into it.
   const qrTop = safe.bottom - layout.qrSize;
   const limit = qrTop - gaps.section;
+
+  // Missions with checks, any count (per-round config). Rows shrink, text with
+  // them, so the statement keeps its room; the square goes to 3 columns when long.
+  const count = content.missions.length;
+  if (count > 0) {
+    const grid = missionGrid(layout, count, limit - y - gaps.section);
+    const colWidth = maxWidth / grid.columns;
+    const thStyle = scaleStyle(text.missionTh, grid.scale);
+    const enStyle = scaleStyle(text.missionEn, grid.scale);
+    const radius = Math.round(layout.checkRadius * grid.scale);
+    content.missions.forEach((mission, index) => {
+      const col = grid.columns === 1 ? 0 : Math.floor(index / grid.rows);
+      const row = grid.columns === 1 ? index : index % grid.rows;
+      const x = safe.left + col * colWidth;
+      const cy = y + row * grid.rowHeight + grid.rowHeight / 2;
+      drawCheck(ctx, x + radius, cy, radius, mission.done);
+      const labelX = x + radius * 2 + Math.round(16 * grid.scale);
+      const labelWidth = colWidth - (labelX - x) - 12;
+      if (grid.columns === 1) {
+        drawInlineLabel(ctx, mission.label, labelX, cy, labelWidth, thStyle, enStyle);
+      } else {
+        setFont(ctx, thStyle);
+        ctx.fillText(fitLine(ctx, mission.label.th, labelWidth), labelX, cy - 2 * grid.scale);
+        if (mission.label.en !== mission.label.th) {
+          setFont(ctx, enStyle);
+          ctx.fillText(fitLine(ctx, mission.label.en, labelWidth), labelX, cy + enStyle.size + 2 * grid.scale);
+        }
+      }
+    });
+    y += grid.rows * grid.rowHeight + gaps.section;
+  }
+
   y = drawBlock(ctx, content.statement.th, text.statementTh, safe.left, y, maxWidth, limit);
   drawBlock(ctx, content.statement.en, text.statementEn, safe.left, y + gaps.small, maxWidth, limit);
 

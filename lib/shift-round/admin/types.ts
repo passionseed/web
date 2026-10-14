@@ -16,12 +16,14 @@ export type RoundRole = "staff" | "mentor";
 
 export type EvidenceType =
   | "contact"
+  | "ideas"
   | "interview"
   | "problem_statement"
   | "mvp"
   | "tester"
   | "change"
-  | "demo_post";
+  | "demo_post"
+  | "daily";
 
 export type EvidenceStatus = "submitted" | "rejected" | "accepted" | "withdrawn";
 
@@ -34,13 +36,35 @@ export type RejectReasonCode =
   | "link_broken"
   | "other";
 
-export type MissionKey =
-  | "first_contact"
-  | "interviews_problem"
-  | "mvp"
-  | "testers"
-  | "change"
-  | "demo_post";
+/**
+ * Mission keys come from the round's `missions` config (v2 spec 2.1), so any
+ * string is possible. The SHIFT default keys have copy (KnownMissionKey).
+ */
+export type MissionKey = string;
+export type { KnownMissionKey } from "@/lib/shift-round/certificate/missions";
+
+/** One part of a mission in the round config (v2 spec 2.1 `valid_missions`). */
+export interface MissionPartConfig {
+  type: EvidenceType;
+  need: number;
+  /** Count distinct people (`who_key`); only for interview and tester. */
+  distinct?: boolean;
+}
+
+/** One mission of `shift_rounds.missions`. */
+export interface MissionConfig {
+  key: MissionKey;
+  parts: MissionPartConfig[];
+  title_th?: string | null;
+  title_en?: string | null;
+}
+
+export type AttendanceStatus = "present" | "makeup" | "absent";
+
+export interface AttendanceMark {
+  day: number;
+  status: AttendanceStatus;
+}
 
 export type ErrorCategory =
   | "validation"
@@ -85,6 +109,15 @@ export interface RoundPolicy {
   join_mode: JoinMode;
   mentor_led: boolean;
   discord_url: string | null;
+  /** Round days with a live mentor session (v2 spec 2.1), each 1..duration_days. */
+  session_days: number[];
+  /** Session start/end, Bangkok wall clock `HH:MM`. */
+  session_start: string;
+  session_end: string;
+  /** `shift_curriculum.round` this round's day plan is read from (soft reference). */
+  curriculum_key: string | null;
+  /** Accepted applications of this cohort (`shift_applications.cohort`) may join (D6). */
+  application_cohort: string | null;
 }
 
 export interface ShiftRound extends RoundPolicy {
@@ -93,6 +126,8 @@ export interface ShiftRound extends RoundPolicy {
   review_ends_at: string;
   status: RoundStatus;
   extended_days: number;
+  /** Read-only here; null/absent on databases before v2. */
+  missions?: MissionConfig[] | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -118,16 +153,63 @@ export interface MissionPart {
 
 export interface MissionProgress {
   key: MissionKey;
+  /** 1-based position in the round's missions config. */
   n: number;
   complete: boolean;
   parts: MissionPart[];
+  title_th?: string | null;
+  title_en?: string | null;
 }
 
+/** Step 8: days with at least one counted log (v2 spec 2.3). */
+export interface DailyHabit {
+  days: number;
+  /** = duration_days */
+  need: number;
+  today_logged: boolean;
+}
+
+/** Step 9: session attendance (v2 spec 2.3). */
+export interface SessionHabit {
+  /** Present or make-up on session days. */
+  attended: number;
+  /** Session days whose session_end (Bangkok) has passed. */
+  held: number;
+  /** Number of session days in the round. */
+  total: number;
+}
+
+/**
+ * `mission_counts(entry_id)` (v2 spec 2.3). The habit and total fields are
+ * optional so older payloads still parse; normalizeMissionCounts fills them.
+ */
 export interface MissionCounts {
   missions: MissionProgress[];
   missions_complete: number;
+  missions_total?: number;
   people_talked_to: number;
   eligible: boolean;
+  daily?: DailyHabit | null;
+  sessions?: SessionHabit | null;
+}
+
+/** Row of `shift_round_admin_steps` (v2 spec 2.8): one per entry. */
+export interface AdminStepsRow {
+  entry_id: string;
+  user_id: string;
+  handle: string;
+  /** Only when staff may see it. Never exported. */
+  display_name?: string | null;
+  squad_id: string | null;
+  squad_name: string | null;
+  joined_day: number;
+  last_log_at: string | null;
+  counts: MissionCounts;
+  attendance: AttendanceMark[];
+}
+
+export interface AdminStepsData {
+  rows: AdminStepsRow[];
 }
 
 /** Row of `shift_round_admin_entries`. */

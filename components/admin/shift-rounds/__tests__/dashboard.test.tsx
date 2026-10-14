@@ -7,6 +7,7 @@ import { ROUND_ID, makeRound } from "../__fixtures__/rounds";
 jest.mock("@/app/admin/shift/rounds/actions", () => ({
   listRoundsAction: jest.fn(),
   dashboardAction: jest.fn(),
+  roundStepsAction: jest.fn(),
 }));
 jest.mock("next/link", () => ({ __esModule: true, default: ({ children, href }: { children: React.ReactNode; href: string }) => <a href={href}>{children}</a> }));
 
@@ -14,6 +15,7 @@ const m = actions as jest.Mocked<typeof actions>;
 
 beforeEach(() => {
   m.listRoundsAction.mockResolvedValue({ ok: true, data: [makeRound()] });
+  m.roundStepsAction.mockResolvedValue({ ok: true, data: { rows: [] } });
 });
 
 test("renders the dashboard counts", async () => {
@@ -49,6 +51,9 @@ test("renders the dashboard counts", async () => {
   expect(screen.getByText("2 failures in 7 days")).toBeInTheDocument();
   expect(screen.getByText("2026-11-10")).toBeInTheDocument();
   expect(screen.getByText("Alumni")).toBeInTheDocument();
+  // Distribution follows the round's 7 missions, not a fixed 6.
+  expect(screen.getByText("7 of 7")).toBeInTheDocument();
+  expect(screen.queryByText(/of 6$/)).not.toBeInTheDocument();
 });
 
 test("shows an error with retry, then loads", async () => {

@@ -19,11 +19,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import {
   EVIDENCE_TYPES,
-  MISSION_LABEL,
   REASON_CODES,
   REASON_LABEL,
   TYPE_LABEL,
   formatIct,
+  missionLabel,
 } from "@/lib/shift-round/admin/format";
 import type {
   AdminEvidence,
@@ -42,10 +42,11 @@ type StatusFilter = "all" | EvidenceStatus;
 
 function missingMissions(missions: MissionCounts | undefined, dropped?: string[]): string {
   if (dropped?.length) {
-    return `Missions no longer complete: ${dropped.map((k) => MISSION_LABEL[k as keyof typeof MISSION_LABEL] ?? k).join(", ")}`;
+    const byKey = new Map((missions?.missions ?? []).map((m) => [m.key, m]));
+    return `Missions no longer complete: ${dropped.map((k) => missionLabel(byKey.get(k) ?? { key: k })).join(", ")}`;
   }
   if (!missions?.missions) return "";
-  const open = missions.missions.filter((m) => !m.complete).map((m) => MISSION_LABEL[m.key]);
+  const open = missions.missions.filter((m) => !m.complete).map((m) => missionLabel(m));
   return open.length ? `Incomplete now: ${open.join(", ")}` : "All Missions still complete";
 }
 

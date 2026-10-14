@@ -106,3 +106,69 @@ test("global staff list shows web admins as not removable and keeps grants revoc
   expect(within(grantRow).getByRole("button", { name: "Remove staff role from grant@x.org" })).toBeInTheDocument();
   expect(screen.getByText(/Every web admin is global SHIFT staff automatically/)).toBeInTheDocument();
 });
+
+describe("SHIFT format fields (v2)", () => {
+  test("session days, times, curriculum link, cohort picker and the missions list", async () => {
+    render(<RoundSettings roundId={ROUND_ID} now={BEFORE_START} />);
+    expect(await screen.findByRole("checkbox", { name: "วันที่ 1" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "วันที่ 3" })).not.toBeChecked();
+    expect(screen.getAllByRole("checkbox", { name: /^วันที่ \d+$/ })).toHaveLength(14);
+    expect(screen.getByLabelText("เริ่มเซสชัน (เวลาไทย)")).toHaveValue("19:00");
+    expect(screen.getByLabelText("จบเซสชัน (เวลาไทย)")).toHaveValue("21:00");
+    expect(screen.getByRole("link", { name: /เปิดหลักสูตร 4/ })).toHaveAttribute("href", "/shift/curriculum?round=4");
+    const cohort = screen.getByLabelText("รุ่นใบสมัคร");
+    expect(within(cohort).getAllByRole("option").map((o) => o.textContent)).toEqual([
+      "ไม่ผูกกับใบสมัคร",
+      "SHIFT[0]",
+      "SHIFT[1]",
+      "SHIFT[2]",
+    ]);
+    const missions = within(screen.getByRole("list", { name: "ภารกิจของรอบ" })).getAllByRole("listitem");
+    expect(missions).toHaveLength(9);
+    expect(missions[0]).toHaveTextContent("คิด 3 ไอเดีย แล้วเลือก 1");
+    expect(missions[1]).toHaveTextContent("Interview ×3 (คนไม่ซ้ำ)");
+    expect(missions[8]).toHaveTextContent("เข้าเซสชันทุกครั้ง");
+  });
+
+  test("before the start, session days and cohort save as a patch of just those fields", async () => {
+    m.updateRoundAction.mockResolvedValue({ ok: true, data: { round: makeRound() } });
+    render(<RoundSettings roundId={ROUND_ID} now={BEFORE_START} />);
+    fireEvent.click(await screen.findByRole("checkbox", { name: "วันที่ 3" }));
+    fireEvent.change(screen.getByLabelText("รุ่นใบสมัคร"), { target: { value: "SHIFT[2]" } });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    });
+    expect(m.updateRoundAction).toHaveBeenCalledWith(ROUND_ID, {
+      session_days: [1, 2, 3, 4, 6, 7],
+      application_cohort: "SHIFT[2]",
+    });
+  });
+
+  test("a session that ends before it starts is caught before saving", async () => {
+    render(<RoundSettings roundId={ROUND_ID} now={BEFORE_START} />);
+    fireEvent.change(await screen.findByLabelText("จบเซสชัน (เวลาไทย)"), { target: { value: "18:00" } });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    });
+    expect(screen.getByText("ต้องหลังเวลาเริ่ม")).toBeInTheDocument();
+    expect(m.updateRoundAction).not.toHaveBeenCalled();
+  });
+
+  test("after the start the session schedule and curriculum key still change (missions stay read-only)", async () => {
+    m.updateRoundAction.mockResolvedValue({ ok: true, data: { round: makeRound() } });
+    render(<RoundSettings roundId={ROUND_ID} now={DAY_3} />);
+    const day8 = await screen.findByRole("checkbox", { name: "วันที่ 8" });
+    expect(day8).not.toBeDisabled();
+    expect(screen.getByLabelText("Duration (days)")).toHaveAttribute("readonly");
+    fireEvent.click(day8);
+    fireEvent.change(screen.getByLabelText("คีย์หลักสูตร"), { target: { value: "shift4" } });
+    expect(screen.getByRole("link", { name: /เปิดหลักสูตร shift4/ })).toHaveAttribute("href", "/shift/curriculum?round=shift4");
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    });
+    expect(m.updateRoundAction).toHaveBeenCalledWith(ROUND_ID, {
+      session_days: [1, 2, 4, 6, 7, 8],
+      curriculum_key: "shift4",
+    });
+  });
+});

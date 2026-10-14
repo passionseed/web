@@ -85,9 +85,9 @@ describe("certificate renderer golden images", () => {
   it("states a factual record and never claims admissions endorsement (DS16)", () => {
     const content = buildCertificateContent(FIXTURE_SNAPSHOTS.handle, FIXTURE_PUBLIC_ID, BASE);
     expect(content.statement.en).toBe(
-      "This certificate records that ต้น completed all 6 Missions of SHIFT round 4 (10 – 23 Nov 2026) with Passion Seed"
+      "This certificate records that ต้น completed all 7 Missions of SHIFT[4] (10 – 23 Nov 2026) with Passion Seed"
     );
-    expect(content.statement.th).toContain("ใบรับรองนี้บันทึกว่า ต้น ทำภารกิจครบทั้ง 6 ใน SHIFT รอบที่ 4");
+    expect(content.statement.th).toContain("ใบรับรองนี้บันทึกว่า ต้น ทำภารกิจครบทั้ง 7 ใน SHIFT[4]");
     const all = `${content.statement.en} ${content.statement.th}`.toLowerCase();
     for (const word of ["admission", "endorse", "certif" + "ies that", "guarantee", "รับรองการรับเข้า"]) {
       expect(all).not.toContain(word);

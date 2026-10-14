@@ -15,8 +15,14 @@ const FIELD_LABEL: Record<string, string> = {
   who_label: "Who",
   channel: "Channel",
   occurred_on: "When",
+  ideas: "Ideas",
+  reachable: "Can reach them without an adult",
+  built: "Built today",
+  broke: "What broke",
+  heard: "What users said",
   key_point: "Key point",
   text: "Problem statement",
+  user_group: "User group",
   what_tried: "What they tried",
   planned_change: "Planned change",
   kind: "Kind",
@@ -28,14 +34,36 @@ const FIELD_LABEL: Record<string, string> = {
   input: "Input",
   source_evidence_id: "Source log",
 };
-const LONG_FIELDS = new Set(["transcript"]);
+/** Shown inside another field (`picked` marks one of the ideas). */
+const LONG_FIELDS = new Set(["transcript", "picked"]);
 
 function isHttps(value: unknown): value is string {
   return typeof value === "string" && /^https:\/\/[^\s]{4,490}$/.test(value);
 }
 
-function renderValue(key: string, value: unknown) {
+/** `ideas` log (step 1): 3 to 6 ideas with who has the problem; `picked` is 0-based. */
+function IdeasList({ ideas, picked }: { ideas: unknown[]; picked: unknown }) {
+  return (
+    <ol className="list-decimal space-y-0.5 pl-5" lang="th">
+      {ideas.map((idea, i) => {
+        const o = idea && typeof idea === "object" ? (idea as Record<string, unknown>) : {};
+        const chosen = picked === i;
+        return (
+          <li key={i} className={chosen ? "font-medium text-foreground" : undefined}>
+            {String(o.text ?? "")}
+            {o.who ? <span className="text-muted-foreground"> · {String(o.who)}</span> : null}
+            {chosen && <Pill tone="good">picked</Pill>}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function renderValue(key: string, value: unknown, payload: Record<string, unknown> = {}) {
   if (value === null || value === undefined || value === "") return <span className="text-muted-foreground">—</span>;
+  if (key === "ideas" && Array.isArray(value)) return <IdeasList ideas={value} picked={payload.picked} />;
+  if (typeof value === "boolean") return <span>{value ? "Yes" : "No"}</span>;
   if ((key === "link" || key === "url") && isHttps(value)) {
     return (
       <a href={value} target="_blank" rel="noopener noreferrer nofollow ugc" className="break-all text-sky-300 underline">
@@ -157,7 +185,7 @@ export function EvidenceView({ item, showMedia = true }: { item: AdminEvidence; 
         {ordered.map((key) => (
           <div key={key} className="contents">
             <dt className="text-muted-foreground">{FIELD_LABEL[key] ?? key}</dt>
-            <dd>{renderValue(key, payload[key])}</dd>
+            <dd>{renderValue(key, payload[key], payload)}</dd>
           </div>
         ))}
       </dl>

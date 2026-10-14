@@ -58,7 +58,22 @@ function PolicySection({
 
   const save = async (event: React.FormEvent) => {
     event.preventDefault();
-    const nextErrors: typeof errors = validatePolicy(patch);
+    // Cross-field rules need the unchanged side too (session days vs length, end after start).
+    let full: RoundPolicy | null = null;
+    try {
+      full = draftToPolicy(draft);
+    } catch {
+      full = null;
+    }
+    const nextErrors: typeof errors = validatePolicy({
+      ...patch,
+      ...(full && ("session_days" in patch || "duration_days" in patch)
+        ? { session_days: full.session_days, duration_days: full.duration_days }
+        : {}),
+      ...(full && ("session_start" in patch || "session_end" in patch)
+        ? { session_start: full.session_start, session_end: full.session_end }
+        : {}),
+    });
     for (const key of changed) if (locked(key)) nextErrors[key] = "Locked after the round started";
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length || changed.length === 0) return;
@@ -76,12 +91,22 @@ function PolicySection({
       title="Policy"
       aside={
         now >= new Date(round.starts_at) ? (
-          <span className="text-xs text-muted-foreground">Round has started: only titles, briefs, Discord and the cutoff (until it passes) can change.</span>
+          <span className="text-xs text-muted-foreground">
+            Round has started: only titles, briefs, Discord, the session schedule, curriculum key, application cohort and
+            the cutoff (until it passes) can change.
+          </span>
         ) : undefined
       }
     >
       <form onSubmit={save} className="space-y-4" noValidate>
-        <PolicyFields idPrefix="settings" value={draft} onChange={setDraft} errors={errors} isLocked={locked} />
+        <PolicyFields
+          idPrefix="settings"
+          value={draft}
+          onChange={setDraft}
+          errors={errors}
+          isLocked={locked}
+          missions={round.missions}
+        />
         <ActionError message={message} />
         <div className="flex items-center gap-2">
           <Button type="submit" disabled={busy || changed.length === 0}>

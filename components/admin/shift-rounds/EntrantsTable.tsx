@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatIct } from "@/lib/shift-round/admin/format";
+import { formatIct, missionsTotal } from "@/lib/shift-round/admin/format";
 import type { AdminEntry, BetaGroup, EntryOutcome, Track } from "@/lib/shift-round/admin/types";
 
 import { ActionError, LoadError, NativeSelect, Pill, SearchBox, statusTone } from "./shared";
@@ -133,7 +133,9 @@ export function EntrantsTable({ roundId }: { roundId: string }) {
                     </NativeSelect>
                   </TableCell>
                   <TableCell className="text-sm">{e.squad_name ?? <span className="text-muted-foreground">None</span>}</TableCell>
-                  <TableCell className="text-right tabular-nums">{e.missions_complete}/6</TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {e.missions_complete}/{missionsTotal(e.missions)}
+                  </TableCell>
                   <TableCell className="whitespace-nowrap text-sm">{formatIct(e.last_log_at)}</TableCell>
                   <TableCell>
                     <Pill tone={statusTone(e.outcome)}>{e.outcome.replace("_", " ")}</Pill>

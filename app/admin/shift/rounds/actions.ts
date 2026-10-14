@@ -7,6 +7,7 @@ import { isUuid } from "@/lib/shift-round/admin/format";
 import { fail } from "@/lib/shift-round/admin/rpc";
 import type {
   AdminResult,
+  AttendanceStatus,
   BetaGroup,
   EvidenceStatus,
   EvidenceType,
@@ -136,6 +137,31 @@ export async function assignSquadAction(entryId: string, squadId: string | null)
 export async function deleteSquadAction(squadId: string) {
   if (!isUuid(squadId)) return badId("squad_id");
   return withAdmin((c) => api.deleteSquad(c, squadId));
+}
+
+// ---- 9 steps and attendance ------------------------------------------------
+
+export async function roundStepsAction(roundId: string) {
+  if (!isUuid(roundId)) return badId("round_id");
+  return withAdmin((c) => api.roundSteps(c, roundId));
+}
+
+const ATTENDANCE = new Set<AttendanceStatus | null>(["present", "makeup", "absent", null]);
+
+export async function markAttendanceAction(
+  roundId: string,
+  day: number,
+  marks: { entry_id: string; status: AttendanceStatus | null }[],
+) {
+  if (!isUuid(roundId)) return badId("round_id");
+  if (!Number.isInteger(day) || day < 1 || day > 28) return badId("day");
+  if (!Array.isArray(marks) || marks.length === 0 || marks.length > 500) return badId("marks");
+  const clean: api.AttendanceWrite[] = [];
+  for (const mark of marks) {
+    if (!mark || !isUuid(mark.entry_id) || !ATTENDANCE.has(mark.status ?? null)) return badId("marks");
+    clean.push({ entry_id: mark.entry_id, status: mark.status ?? null });
+  }
+  return withAdmin((c) => api.markAttendance(c, roundId, day, clean));
 }
 
 // ---- Review -------------------------------------------------------------

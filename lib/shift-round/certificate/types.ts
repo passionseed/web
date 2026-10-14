@@ -6,15 +6,26 @@ import { z } from "zod";
  * other shape as a service failure (never as "not found" or "revoked").
  */
 
-export const MISSION_KEYS = [
-  "first_contact",
-  "interviews_problem",
-  "mvp",
-  "testers",
-  "change",
-  "demo_post",
-] as const;
-export type MissionKey = (typeof MISSION_KEYS)[number];
+/**
+ * Missions are per-round config (v2 spec 2.1), so a snapshot lists any keys,
+ * any count. Titles come from the snapshot when it carries them, else from the
+ * known-key copy (missions.ts).
+ */
+export type MissionKey = string;
+
+/** A snapshot mission: a key (`"ideas"`) or an object from the round config / counts. */
+export const snapshotMissionSchema = z.union([
+  z.string().min(1).max(64),
+  z
+    .object({
+      key: z.string().min(1).max(64),
+      title_th: z.string().max(200).nullable().optional(),
+      title_en: z.string().max(200).nullable().optional(),
+      complete: z.boolean().optional(),
+    })
+    .passthrough(),
+]);
+export type SnapshotMission = z.infer<typeof snapshotMissionSchema>;
 
 /** 80-bit Crockford base32, 16 chars (2.2 shift_round_certificates.public_id). */
 export const PUBLIC_ID_RE = /^[0-9A-HJKMNP-TV-Z]{16}$/;
@@ -42,7 +53,7 @@ export const snapshotV1Schema = z.object({
     legal_name: z.string().nullable(),
     display: z.enum(["handle", "legal"]),
   }),
-  missions: z.array(z.string()),
+  missions: z.array(snapshotMissionSchema).max(20),
   counts: z
     .object({
       people_talked_to: z.number().int().nonnegative().optional(),

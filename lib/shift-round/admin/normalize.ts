@@ -1,3 +1,4 @@
+import { DEFAULT_SESSION_DAYS, DEFAULT_SESSION_END, DEFAULT_SESSION_START, hhmm } from "./format";
 import { listFrom } from "./rpc";
 import type {
   AdminCertificate,
@@ -8,12 +9,21 @@ import type {
   AdminEntryDetail,
   AdminEvidence,
   AdminJobsData,
+  AdminRoundListItem,
   AdminSquad,
+  AdminStepsData,
+  AdminStepsRow,
   AdminSummaryRevision,
+  AttendanceMark,
+  AttendanceStatus,
   EvidenceMedia,
+  EvidenceType,
   JobHealth,
   JobRun,
+  MissionConfig,
   MissionCounts,
+  MissionPart,
+  MissionProgress,
 } from "./types";
 
 /**
@@ -28,7 +38,143 @@ const str = (v: unknown): string | null => (typeof v === "string" ? v : null);
 const num = (v: unknown): number | undefined =>
   typeof v === "number" ? v : typeof v === "string" && v.trim() !== "" && !Number.isNaN(Number(v)) ? Number(v) : undefined;
 
-const EMPTY_MISSIONS: MissionCounts = { missions: [], missions_complete: 0, people_talked_to: 0, eligible: false };
+const EMPTY_MISSIONS: MissionCounts = {
+  missions: [],
+  missions_complete: 0,
+  people_talked_to: 0,
+  eligible: false,
+  daily: null,
+  sessions: null,
+};
+
+function missionPart(raw: unknown): MissionPart {
+  const o = obj(raw);
+  return { type: String(o.type ?? "") as EvidenceType, have: num(o.have) ?? 0, need: num(o.need) ?? 0 };
+}
+
+function missionProgress(raw: unknown, index: number): MissionProgress {
+  const o = obj(raw);
+  return {
+    key: String(o.key ?? ""),
+    n: num(o.n) ?? index + 1,
+    complete: o.complete === true,
+    parts: Array.isArray(o.parts) ? o.parts.map(missionPart) : [],
+    title_th: str(o.title_th),
+    title_en: str(o.title_en),
+  };
+}
+
+/**
+ * `mission_counts` json (v2 spec 2.3). Older payloads (no `missions_total`,
+ * `daily`, `sessions`) still parse: totals come from the list, habits are null.
+ */
+export function normalizeMissionCounts(raw: unknown): MissionCounts {
+  if (!raw || typeof raw !== "object") return { ...EMPTY_MISSIONS };
+  const o = obj(raw);
+  const missions = (Array.isArray(o.missions) ? o.missions : []).map(missionProgress).sort((a, b) => a.n - b.n);
+  const daily = o.daily && typeof o.daily === "object" ? obj(o.daily) : null;
+  const sessions = o.sessions && typeof o.sessions === "object" ? obj(o.sessions) : null;
+  return {
+    missions,
+    missions_complete: num(o.missions_complete) ?? missions.filter((m) => m.complete).length,
+    missions_total: num(o.missions_total) ?? (missions.length || undefined),
+    people_talked_to: num(o.people_talked_to) ?? 0,
+    eligible: o.eligible === true,
+    daily: daily
+      ? { days: num(daily.days) ?? 0, need: num(daily.need) ?? 0, today_logged: daily.today_logged === true }
+      : null,
+    sessions: sessions
+      ? { attended: num(sessions.attended) ?? 0, held: num(sessions.held) ?? 0, total: num(sessions.total) ?? 0 }
+      : null,
+  };
+}
+
+/** `shift_rounds.missions` config, or null when absent or not a list. */
+export function normalizeMissionConfig(raw: unknown): MissionConfig[] | null {
+  if (!Array.isArray(raw)) return null;
+  return raw
+    .map((m) => obj(m))
+    .filter((m) => typeof m.key === "string" && m.key)
+    .map((m) => ({
+      key: m.key as string,
+      parts: (Array.isArray(m.parts) ? m.parts : []).map((p) => {
+        const part = obj(p);
+        return {
+          type: String(part.type ?? "") as EvidenceType,
+          need: num(part.need) ?? 1,
+          ...(part.distinct === true ? { distinct: true } : {}),
+        };
+      }),
+      title_th: str(m.title_th),
+      title_en: str(m.title_en),
+    }));
+}
+
+function sessionDays(raw: unknown): number[] {
+  if (!Array.isArray(raw)) return [...DEFAULT_SESSION_DAYS];
+  const days = raw.map((d) => num(d)).filter((d): d is number => d !== undefined && Number.isInteger(d));
+  return [...new Set(days)].sort((a, b) => a - b);
+}
+
+/**
+ * Round row from `shift_round_admin_rounds` (`to_jsonb(round)` + counts). The
+ * v2 columns fall back to the SHIFT template when a database predates them;
+ * times become `HH:MM`.
+ */
+export function normalizeRound(raw: unknown): AdminRoundListItem {
+  const o = obj(raw);
+  return {
+    ...(o as unknown as AdminRoundListItem),
+    nudge_local_time: hhmm(o.nudge_local_time) ?? String(o.nudge_local_time ?? ""),
+    session_days: sessionDays(o.session_days),
+    session_start: hhmm(o.session_start) ?? DEFAULT_SESSION_START,
+    session_end: hhmm(o.session_end) ?? DEFAULT_SESSION_END,
+    curriculum_key: str(o.curriculum_key),
+    application_cohort: str(o.application_cohort),
+    missions: normalizeMissionConfig(o.missions),
+  };
+}
+
+const ATTENDANCE_STATUSES = new Set<AttendanceStatus>(["present", "makeup", "absent"]);
+
+/** `[{day, status}]`; also accepts a `{ "2": "present" }` map. Unknown statuses are dropped. */
+export function normalizeAttendance(raw: unknown): AttendanceMark[] {
+  const pairs: [unknown, unknown][] = Array.isArray(raw)
+    ? raw.map((r) => [obj(r).day, obj(r).status])
+    : Object.entries(obj(raw));
+  const marks: AttendanceMark[] = [];
+  for (const [day, status] of pairs) {
+    const d = num(day);
+    if (d === undefined || !Number.isInteger(d) || !ATTENDANCE_STATUSES.has(status as AttendanceStatus)) continue;
+    marks.push({ day: d, status: status as AttendanceStatus });
+  }
+  return marks.sort((a, b) => a.day - b.day);
+}
+
+function stepsRow(raw: unknown): AdminStepsRow {
+  const o = obj(raw);
+  const squad = o.squad ? obj(o.squad) : null;
+  return {
+    entry_id: String(o.entry_id ?? o.id ?? ""),
+    user_id: String(o.user_id ?? ""),
+    handle: str(o.handle) ?? "",
+    display_name: str(o.display_name),
+    squad_id: str(o.squad_id) ?? (squad ? str(squad.id) : null),
+    squad_name: str(o.squad_name) ?? (squad ? str(squad.name) : null),
+    joined_day: num(o.joined_day) ?? 0,
+    last_log_at: str(o.last_log_at),
+    counts: normalizeMissionCounts(o.counts ?? o.missions),
+    attendance: normalizeAttendance(o.attendance),
+  };
+}
+
+/** `shift_round_admin_steps` (v2 spec 2.8): a bare list or `{entries|rows: [...]}`. */
+export function normalizeSteps(data: unknown): AdminStepsData {
+  const list = Array.isArray(data)
+    ? data
+    : (["entries", "rows", "steps", "students"].map((k) => listFrom<unknown>(data, k)).find((l) => l.length) ?? []);
+  return { rows: list.map(stepsRow).filter((r) => r.entry_id) };
+}
 
 function media(raw: unknown): EvidenceMedia[] {
   if (!Array.isArray(raw)) return [];
@@ -66,7 +212,7 @@ export function normalizeEntry(raw: unknown): AdminEntry {
   const o = obj(raw);
   const squad = o.squad ? obj(o.squad) : null;
   const question = squad ? obj(squad.icebreaker_question) : {};
-  const missions = o.missions ? (o.missions as MissionCounts) : undefined;
+  const missions = o.missions ? normalizeMissionCounts(o.missions) : undefined;
   return {
     ...(o as unknown as AdminEntry),
     squad_id: str(o.squad_id) ?? (squad ? str(squad.id) : null),
@@ -94,7 +240,7 @@ export function normalizeEntryDetail(data: unknown): AdminEntryDetail {
   const o = obj(data);
   return {
     entry: normalizeEntry(o.entry),
-    missions: (o.missions as MissionCounts) ?? EMPTY_MISSIONS,
+    missions: o.missions ? normalizeMissionCounts(o.missions) : { ...EMPTY_MISSIONS },
     evidence: (Array.isArray(o.evidence) ? o.evidence : []).map(normalizeEvidence),
     checkins: Array.isArray(o.checkins) ? (o.checkins as AdminEntryDetail["checkins"]) : [],
     events: Array.isArray(o.events) ? (o.events as AdminEntryDetail["events"]) : [],

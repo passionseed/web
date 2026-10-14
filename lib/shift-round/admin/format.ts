@@ -1,8 +1,11 @@
+import { missionTitle, type MissionTitleSource } from "@/lib/shift-round/certificate/missions";
+
 import type {
   AdminEntry,
   AdminError,
   EvidenceType,
-  MissionKey,
+  MissionConfig,
+  MissionCounts,
   RejectReasonCode,
   RoundPhase,
   RoundPolicy,
@@ -14,6 +17,35 @@ import type {
 
 export const ICT = "Asia/Bangkok";
 const DAY_MS = 86_400_000;
+
+/** `YYYY-MM-DD` plus `days` (calendar arithmetic, no time zone involved). */
+export function addDaysIso(date: string, days: number): string {
+  const [y, m, d] = date.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+}
+
+/** `"19:00:00"` / `"19:00"` -> `"19:00"`; null when it is not a wall-clock time. */
+export function hhmm(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const m = /^(\d{2}):(\d{2})(?::\d{2}(?:\.\d+)?)?$/.exec(value.trim());
+  if (!m || Number(m[1]) > 23 || Number(m[2]) > 59) return null;
+  return `${m[1]}:${m[2]}`;
+}
+
+/** ICT calendar date of round day `day` (day 1 = the `starts_at` date). */
+export function roundDate(round: Pick<ShiftRound, "starts_at">, day: number): string {
+  return addDaysIso(ictDate(round.starts_at), day - 1);
+}
+
+/** "19:00–21:00" */
+export function sessionTimeLabel(round: Pick<RoundPolicy, "session_start" | "session_end">): string {
+  return `${hhmm(round.session_start) ?? round.session_start}–${hhmm(round.session_end) ?? round.session_end}`;
+}
+
+/** Display name of a round (D2). */
+export function roundName(round: Pick<RoundPolicy, "number">): string {
+  return `SHIFT[${round.number}]`;
+}
 
 /** `YYYY-MM-DD` (picked in the form) -> ISO instant of 00:00 ICT that day. */
 export function ictMidnightIso(date: string): string {
@@ -78,16 +110,25 @@ export const PHASE_LABEL: Record<RoundPhase, string> = {
 
 // ---- Policy columns ---------------------------------------------------------
 
+/** SHIFT template (D2): sessions on days 1, 2, 4, 6, 7 at 19:00-21:00 Bangkok. */
+export const DEFAULT_SESSION_DAYS: readonly number[] = [1, 2, 4, 6, 7];
+export const DEFAULT_SESSION_START = "19:00";
+export const DEFAULT_SESSION_END = "21:00";
+
+/**
+ * Defaults for a new round: the SHIFT 7-day template (v2 spec D2, 2.1).
+ * Invite join, mentor-led, join until day 2, the no-log nudge after the session.
+ */
 export const DEFAULT_POLICY: Omit<RoundPolicy, "number" | "starts_at"> = {
   title_th: "",
   title_en: "",
   brief_th: "",
   brief_en: "",
   tracks_open: ["high_school"],
-  duration_days: 14,
+  duration_days: 7,
   review_window_hours: 48,
-  join_cutoff_day: 7,
-  nudge_local_time: "19:00",
+  join_cutoff_day: 2,
+  nudge_local_time: "21:15",
   rate_limit_per_hour: 30,
   grace_minutes: 30,
   squad_size: 3,
@@ -96,9 +137,32 @@ export const DEFAULT_POLICY: Omit<RoundPolicy, "number" | "starts_at"> = {
   join_mode: "invite",
   mentor_led: true,
   discord_url: null,
+  session_days: [...DEFAULT_SESSION_DAYS],
+  session_start: DEFAULT_SESSION_START,
+  session_end: DEFAULT_SESSION_END,
+  curriculum_key: null,
+  application_cohort: null,
 };
 
-/** Policy fields that stay editable after `starts_at` (spec 3.4 update_round). */
+/**
+ * SHIFT default missions = SHIFT steps 1 to 7 (v2 spec 2.1). The database
+ * column default; shown read-only when a round has no config yet.
+ */
+export const DEFAULT_MISSIONS: MissionConfig[] = [
+  { key: "ideas", parts: [{ type: "ideas", need: 1 }] },
+  { key: "interviews", parts: [{ type: "interview", need: 3, distinct: true }] },
+  { key: "problem", parts: [{ type: "problem_statement", need: 1 }] },
+  { key: "prototype", parts: [{ type: "mvp", need: 1 }] },
+  { key: "testers", parts: [{ type: "tester", need: 3, distinct: true }] },
+  { key: "change", parts: [{ type: "change", need: 1 }] },
+  { key: "demo", parts: [{ type: "demo_post", need: 1 }] },
+];
+
+/**
+ * Fields that stay editable after `starts_at` (spec 3.4 update_round; v2: the
+ * session schedule, curriculum key and application cohort don't affect
+ * eligibility, so lane A keeps them editable; the missions config locks).
+ */
 const ALWAYS_EDITABLE = new Set<keyof RoundPolicy | "status">([
   "discord_url",
   "brief_th",
@@ -106,6 +170,11 @@ const ALWAYS_EDITABLE = new Set<keyof RoundPolicy | "status">([
   "title_th",
   "title_en",
   "status",
+  "session_days",
+  "session_start",
+  "session_end",
+  "curriculum_key",
+  "application_cohort",
 ]);
 
 /**
@@ -125,6 +194,13 @@ export function isPolicyLocked(
 }
 
 const DISCORD = /^https:\/\/(discord\.gg|discord\.com)\//;
+
+/** `shift_curriculum.round` keys: "2", "default", "shift3"... URL-safe, 1-64 chars (the column allows 64). */
+export const CURRICULUM_KEY = /^[A-Za-z0-9_.\-[\]]{1,64}$/;
+
+export function isCurriculumKey(value: unknown): value is string {
+  return typeof value === "string" && CURRICULUM_KEY.test(value);
+}
 
 /** Client-side check before calling create/update; the RPC validates again. */
 export function validatePolicy(p: Partial<RoundPolicy>): Partial<Record<keyof RoundPolicy, string>> {
@@ -157,6 +233,22 @@ export function validatePolicy(p: Partial<RoundPolicy>): Partial<Record<keyof Ro
     errors.nudge_local_time = "HH:MM";
   if (p.discord_url && !DISCORD.test(p.discord_url))
     errors.discord_url = "Must start with https://discord.gg/ or https://discord.com/";
+  if (p.session_days !== undefined) {
+    const max = Number.isInteger(p.duration_days) ? (p.duration_days as number) : 28;
+    const days = p.session_days;
+    if (days.some((d) => !Number.isInteger(d) || d < 1 || d > max))
+      errors.session_days = `เลือกได้แค่วันที่ 1-${max}`;
+    else if (new Set(days).size !== days.length) errors.session_days = "วันซ้ำกัน";
+  }
+  const start = p.session_start === undefined ? undefined : hhmm(p.session_start);
+  const end = p.session_end === undefined ? undefined : hhmm(p.session_end);
+  if (start === null) errors.session_start = "HH:MM";
+  if (end === null) errors.session_end = "HH:MM";
+  if (start && end && end <= start) errors.session_end = "ต้องหลังเวลาเริ่ม";
+  if (p.curriculum_key && !isCurriculumKey(p.curriculum_key))
+    errors.curriculum_key = "1-64 ตัว: a-z, 0-9, _ - . [ ]";
+  if (p.application_cohort && p.application_cohort.trim().length > 40)
+    errors.application_cohort = "ไม่เกิน 40 ตัวอักษร";
   return errors;
 }
 
@@ -169,32 +261,46 @@ export const TRACK_LABEL: Record<Track, string> = {
 
 export const EVIDENCE_TYPES: EvidenceType[] = [
   "contact",
+  "ideas",
   "interview",
   "problem_statement",
   "mvp",
   "tester",
   "change",
   "demo_post",
+  "daily",
 ];
 
 export const TYPE_LABEL: Record<EvidenceType, string> = {
   contact: "Contact",
+  ideas: "Ideas",
   interview: "Interview",
   problem_statement: "Problem statement",
   mvp: "MVP",
   tester: "Tester",
   change: "Change",
   demo_post: "Demo post",
+  daily: "Daily update",
 };
 
-export const MISSION_LABEL: Record<MissionKey, string> = {
-  first_contact: "1 · First contact",
-  interviews_problem: "2 · Interviews + problem",
-  mvp: "3 · Build an MVP",
-  testers: "4 · Real people try it",
-  change: "5 · Change what you heard",
-  demo_post: "6 · Post your demo",
-};
+/** "2 · คุยกับคนที่เจอปัญหาจริง": position plus the round's (or the known) Thai title. */
+export function missionLabel(mission: MissionTitleSource & { n?: number }): string {
+  const title = missionTitle(mission).th;
+  return mission.n ? `${mission.n} · ${title}` : title;
+}
+
+/** `missions_total` with a fallback for payloads from before v2. */
+export function missionsTotal(counts: Pick<MissionCounts, "missions" | "missions_total"> | null | undefined): number {
+  if (!counts) return DEFAULT_MISSIONS.length;
+  return counts.missions_total ?? (counts.missions.length || DEFAULT_MISSIONS.length);
+}
+
+/** "interview ×3 คนไม่ซ้ำ" for the read-only missions config. */
+export function missionPartsLabel(mission: Pick<MissionConfig, "parts">): string {
+  return mission.parts
+    .map((p) => `${TYPE_LABEL[p.type] ?? p.type} ×${p.need}${p.distinct ? " (คนไม่ซ้ำ)" : ""}`)
+    .join(" + ");
+}
 
 export const REASON_CODES: RejectReasonCode[] = [
   "not_real_person",
@@ -253,9 +359,16 @@ export function isNoRoundRole(error: AdminError): boolean {
   return error.code === "forbidden" && error.details?.rule === "no_shift_round_role";
 }
 
+/** Messages for `details.rule` where it says more than the code (e.g. invalid_field). */
+const RULE_MESSAGE: Record<string, string> = {
+  not_session_day: "That day has no mentor session in this round.",
+  after_start: "The session has to end after it starts.",
+};
+
 export function describeError(error: AdminError): string {
   if (isNoRoundRole(error)) return NO_ROLE_MESSAGE;
-  const base = ERROR_MESSAGE[error.code] ?? "Something went wrong.";
+  const rule = typeof error.details?.rule === "string" ? RULE_MESSAGE[error.details.rule] : undefined;
+  const base = rule ?? ERROR_MESSAGE[error.code] ?? "Something went wrong.";
   const field = error.field ? ` Field: ${error.field}.` : "";
   const retry = error.retry_after ? ` Try again in ${Math.ceil(error.retry_after / 60)} min.` : "";
   return `${base}${field}${retry} (${error.code})`;

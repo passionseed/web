@@ -22,7 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatIct } from "@/lib/shift-round/admin/format";
+import { formatIct, missionsTotal } from "@/lib/shift-round/admin/format";
 import type { AdminCertificate } from "@/lib/shift-round/admin/types";
 
 import { ActionError, LoadError, NativeSelect, Pill, SearchBox, Section, statusTone } from "./shared";
@@ -223,7 +223,7 @@ export function CertificatesPanel({ roundId }: { roundId: string }) {
               <li key={o.id} className="flex items-center justify-between rounded-md border px-3 py-1.5">
                 <span>{o.handle}</span>
                 <span className="flex items-center gap-2">
-                  <span className="tabular-nums text-muted-foreground">{o.missions_complete}/6</span>
+                  <span className="tabular-nums text-muted-foreground">{o.missions_complete}/{missionsTotal(o.missions)}</span>
                   <Pill tone={statusTone(o.outcome)}>{o.outcome.replace("_", " ")}</Pill>
                 </span>
               </li>

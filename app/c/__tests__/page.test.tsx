@@ -54,20 +54,42 @@ beforeEach(() => {
 });
 
 describe("/c/[publicId] verification page", () => {
-  it("renders a valid certificate: status, handle, round, six missions, statement, disclaimer", async () => {
+  it("renders a valid certificate: status, handle, round, the round's missions, statement, disclaimer", async () => {
     mockFetch.mockResolvedValue(valid());
     const { container } = await renderPage(ID, { ref: "share" });
     expect(screen.getByRole("status")).toHaveTextContent("ใบรับรองนี้ใช้ได้");
     expect(screen.getByRole("status")).toHaveTextContent("This certificate is valid");
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("ต้น");
-    expect(container).toHaveTextContent("SHIFT · รอบที่ 4");
+    expect(container).toHaveTextContent("SHIFT[4]");
     expect(container).toHaveTextContent("ปั้นไอเดียจากปัญหาที่เจอจริง");
-    expect(container.querySelectorAll("li")).toHaveLength(6);
-    expect(container).toHaveTextContent("ใบรับรองนี้บันทึกว่า ต้น ทำภารกิจครบทั้ง 6 ใน SHIFT รอบที่ 4");
+    expect(container.querySelectorAll("li")).toHaveLength(7);
+    expect(container).toHaveTextContent("คิด 3 ไอเดีย แล้วเลือก 1 · Three ideas, pick one");
+    expect(container).toHaveTextContent("ใบรับรองนี้บันทึกว่า ต้น ทำภารกิจครบทั้ง 7 ใน SHIFT[4]");
     expect(container).toHaveTextContent("does not certify project outcomes or imply any admissions endorsement");
     expect(container).toHaveTextContent("สถานะปัจจุบันตรวจได้ที่หน้านี้เท่านั้น");
     expect(container).toHaveTextContent("www.passionseed.org/c/7K2M9QX4T8HBN3PD");
     expect(mockLogVisit).toHaveBeenCalledWith(ID, "share");
+  });
+
+  it("lists any number of missions from the snapshot, with the round's own titles", async () => {
+    mockFetch.mockResolvedValue(valid({}, FIXTURE_SNAPSHOTS.ten_missions));
+    const { container } = await renderPage();
+    const items = Array.from(container.querySelectorAll("li"));
+    expect(items).toHaveLength(10);
+    expect(items[1]).toHaveTextContent("สัมภาษณ์คนที่เจอปัญหา 5 คน · Interview 5 people who have the problem");
+    expect(items[7]).toHaveTextContent("ทดลองตั้งราคา · Test a price");
+    // A Thai-only title shows once, not "X · X".
+    expect(items[8].textContent).not.toContain(" · ");
+    expect(container).toHaveTextContent("completed all 10 Missions of SHIFT[7]");
+  });
+
+  it("the summary's mission count uses the round's total", async () => {
+    mockFetch.mockResolvedValue(
+      valid({ summary: { title: "t", description: "d", demo_url: null, counts: { missions: 7 } } })
+    );
+    const { container } = await renderPage();
+    expect(container).toHaveTextContent("ภารกิจ 7 จาก 7");
+    expect(container).toHaveTextContent("7 of 7 Missions");
   });
 
   it("shows the legal name only when the holder opted in", async () => {
@@ -96,7 +118,7 @@ describe("/c/[publicId] verification page", () => {
     const { container } = await renderPage();
     expect(screen.getByRole("status")).toHaveTextContent("ใบรับรองนี้ถูกเพิกถอนเมื่อ 1 ธ.ค. 2569");
     expect(screen.getByRole("status")).toHaveTextContent("This certificate was revoked on 1 Dec 2026");
-    expect(container).toHaveTextContent("SHIFT · รอบที่ 4");
+    expect(container).toHaveTextContent("SHIFT[4]");
     expect(container).toHaveTextContent("ปั้นไอเดียจากปัญหาที่เจอจริง");
     expect(container).not.toHaveTextContent("ธนกฤต");
     expect(container).not.toHaveTextContent("ต้น ");

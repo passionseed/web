@@ -7,17 +7,21 @@ import { dashboardAction } from "@/app/admin/shift/rounds/actions";
 import { AdminEmptyState, AdminLoading } from "@/components/admin/shared/AdminStates";
 import { Button } from "@/components/ui/button";
 import {
+  DEFAULT_MISSIONS,
   EVIDENCE_TYPES,
   PHASE_LABEL,
   TYPE_LABEL,
   formatClose,
   formatIct,
   roundDay,
+  roundName,
   roundPhase,
+  sessionTimeLabel,
 } from "@/lib/shift-round/admin/format";
 import type { AdminDashboard, JobHealth } from "@/lib/shift-round/admin/types";
 
 import { LoadError, Pill, Section, statusTone } from "./shared";
+import { StepsBoard } from "./StepsBoard";
 import { useAdminQuery } from "./useAdminData";
 import { useRound } from "./useRound";
 
@@ -57,9 +61,12 @@ function KeyCounts({ title, counts, labels }: { title: string; counts?: Record<s
   );
 }
 
-function distribution(d: AdminDashboard["mission_distribution"]): number[] {
-  if (Array.isArray(d)) return Array.from({ length: 7 }, (_, i) => d[i] ?? 0);
-  return Array.from({ length: 7 }, (_, i) => d?.[String(i)] ?? 0);
+/** Entrants per number of missions complete, 0..total (the round's mission count, any size). */
+function distribution(d: AdminDashboard["mission_distribution"], total: number): number[] {
+  const keys = Array.isArray(d) ? d.length - 1 : Math.max(-1, ...Object.keys(d ?? {}).map(Number).filter(Number.isInteger));
+  const length = Math.max(total, keys) + 1;
+  if (Array.isArray(d)) return Array.from({ length }, (_, i) => d[i] ?? 0);
+  return Array.from({ length }, (_, i) => d?.[String(i)] ?? 0);
 }
 
 /** Job health strip (A53): last success per job and recent failures. */
@@ -84,12 +91,13 @@ export function JobStrip({ jobs }: { jobs: JobHealth[] }) {
   );
 }
 
-export function RoundDashboard({ roundId }: { roundId: string }) {
+export function RoundDashboard({ roundId, now }: { roundId: string; now?: Date }) {
   const round = useRound(roundId);
   const { data, error, loading, reload } = useAdminQuery(() => dashboardAction(roundId), [roundId]);
 
   const r = round.data;
-  const phase = r ? r.phase ?? roundPhase(r) : null;
+  const phase = r ? r.phase ?? roundPhase(r, now) : null;
+  const missionCount = r?.missions?.length || DEFAULT_MISSIONS.length;
 
   const logsByDate = new Map<string, Record<string, number>>();
   for (const row of data?.logs_per_day ?? []) {
@@ -104,17 +112,27 @@ export function RoundDashboard({ roundId }: { roundId: string }) {
     <div className="space-y-4">
       {r && (
         <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">{roundName(r)}</span>
           <Pill tone={statusTone(r.status)}>{r.status}</Pill>
           {phase && <Pill tone={statusTone(phase)}>{PHASE_LABEL[phase]}</Pill>}
           {phase === "active" && (
             <span>
-              Day {r.day ?? roundDay(r)} of {r.effective_days ?? r.duration_days + (r.extended_days ?? 0)}
+              Day {now ? roundDay(r, now) : r.day ?? roundDay(r)} of {r.effective_days ?? r.duration_days + (r.extended_days ?? 0)}
             </span>
           )}
           <span>· Closes {formatClose(r.closes_at)}</span>
           <span>· Review ends {formatIct(r.review_ends_at)}</span>
+          <span>
+            · เซสชันวันที่ {r.session_days.length ? r.session_days.join(", ") : "—"} เวลา {sessionTimeLabel(r)}
+          </span>
         </div>
       )}
+
+      {round.error ? (
+        <LoadError error={round.error} onRetry={round.reload} retrying={round.loading} title="Could not load this round" />
+      ) : r ? (
+        <StepsBoard roundId={roundId} round={r} now={now} />
+      ) : null}
 
       {error ? (
         <LoadError error={error} onRetry={reload} retrying={loading} title="Could not load the dashboard" />
@@ -179,9 +197,11 @@ export function RoundDashboard({ roundId }: { roundId: string }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {distribution(data.mission_distribution).map((n, i) => (
+                  {distribution(data.mission_distribution, missionCount).map((n, i) => (
                     <tr key={i}>
-                      <td>{i} of 6</td>
+                      <td>
+                        {i} of {missionCount}
+                      </td>
                       <td className="text-right tabular-nums">{fmt(n)}</td>
                     </tr>
                   ))}
