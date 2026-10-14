@@ -39,6 +39,8 @@ const PUBLIC_ROUTE_PREFIXES = [
   "/slide",
   "/worksheet",
   "/tips",
+  // Admin link-preview cards: metadata and a poster only, no admin data.
+  "/link-preview",
 ] as const;
 
 export function isPublicRoute(pathname: string): boolean {
