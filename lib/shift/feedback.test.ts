@@ -1,4 +1,4 @@
-import { shiftFeedbackSchema } from "./feedback";
+import { alumniSessionHint, shiftFeedbackSchema } from "./feedback";
 
 const valid = {
   round: 1,
@@ -14,7 +14,9 @@ const valid = {
   priceFit: "about_right",
   payer: "parents",
   recommend: 9,
-  nextSteps: ["help_run", "project_club"],
+  continueProject: "own",
+  availableDays: ["fri", "sat"],
+  nextSteps: ["help_run", "co_host"],
   quoteMode: "anonymous",
   consent: true,
 };
@@ -38,6 +40,22 @@ describe("shiftFeedbackSchema", () => {
     expect(result.success).toBe(false);
   });
 
+  it("requires a project choice and at least one day", () => {
+    const { continueProject: _, ...noProject } = valid;
+    expect(shiftFeedbackSchema.safeParse(noProject).success).toBe(false);
+    expect(shiftFeedbackSchema.safeParse({ ...valid, availableDays: [] }).success).toBe(false);
+  });
+
+  it("does not allow 'none' with a day", () => {
+    expect(shiftFeedbackSchema.safeParse({ ...valid, availableDays: ["none"] }).success).toBe(true);
+    expect(shiftFeedbackSchema.safeParse({ ...valid, availableDays: ["none", "fri"] }).success).toBe(false);
+  });
+
+  it("keeps the project note optional", () => {
+    const parsed = shiftFeedbackSchema.safeParse({ ...valid, continueProject: "join", continueProjectNote: "  " });
+    expect(parsed.success && parsed.data.continueProjectNote).toBeNull();
+  });
+
   it("asks for a name only when the student wants to be credited", () => {
     expect(shiftFeedbackSchema.safeParse({ ...valid, quoteMode: "named" }).success).toBe(false);
     const named = shiftFeedbackSchema.safeParse({ ...valid, quoteMode: "named", quoteName: "มิว ม.5" });
@@ -50,5 +68,12 @@ describe("shiftFeedbackSchema", () => {
 
   it("accepts 0 as a recommendation score", () => {
     expect(shiftFeedbackSchema.safeParse({ ...valid, recommend: 0 }).success).toBe(true);
+  });
+});
+
+describe("alumniSessionHint", () => {
+  it("names the first Friday until it has passed", () => {
+    expect(alumniSessionHint(new Date("2026-10-14T12:00:00+07:00"))).toContain("16 ต.ค.");
+    expect(alumniSessionHint(new Date("2026-10-17T09:00:00+07:00"))).not.toContain("16 ต.ค.");
   });
 });

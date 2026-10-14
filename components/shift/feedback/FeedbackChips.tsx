@@ -105,3 +105,48 @@ export function CheckChips<T extends string>({
     </div>
   );
 }
+
+/** Day-of-week picker: a row of short day chips, with the "none" option
+ *  as a full-width chip underneath. */
+export function DayChips<T extends string>({
+  options,
+  none,
+  value,
+  onChange,
+}: {
+  options: readonly { value: T; label: string; name: string }[];
+  none: T;
+  value: T[];
+  onChange: (value: T) => void;
+}) {
+  const days = options.filter((option) => option.value !== none);
+  const noneOption = options.find((option) => option.value === none);
+  const chip = (option: (typeof options)[number], className: string) => {
+    const checked = value.includes(option.value);
+    return (
+      <button
+        key={option.value}
+        type="button"
+        role="checkbox"
+        aria-checked={checked}
+        aria-label={option.name}
+        onClick={() => onChange(option.value)}
+        className={`${CHIP} ${className}`}
+        style={checked ? SELECTED : IDLE}
+      >
+        {option.label}
+      </button>
+    );
+  };
+  return (
+    <div className="grid gap-2.5">
+      <div
+        className="grid gap-1.5"
+        style={{ gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }}
+      >
+        {days.map((day) => chip(day, ""))}
+      </div>
+      {noneOption && chip(noneOption, "px-4 text-left")}
+    </div>
+  );
+}
