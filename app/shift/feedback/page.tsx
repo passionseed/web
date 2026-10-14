@@ -15,6 +15,7 @@ import {
   getShiftCohort,
   type ShiftCohort,
 } from "@/lib/content/shift-cohort";
+import { alumniSessionHint } from "@/lib/shift/feedback";
 
 export const metadata: Metadata = {
   title: "SHIFT feedback",
@@ -69,12 +70,12 @@ export default async function ShiftFeedbackPage({
           className="text-center text-sm leading-relaxed sm:text-base"
           style={{ color: paper("b3") }}
         >
-          12 ข้อ ประมาณ 5 นาที ตอบตามจริงได้เลย
+          14 ข้อ ประมาณ 5 นาที ตอบตามจริงได้เลย
           <br />
           คำตอบนี้พี่ใช้ปรับ SHIFT รอบหน้า ไม่มีผลกับอะไรของเราทั้งนั้น
         </p>
         <div className="mt-8">
-          <ShiftFeedbackForm cohort={cohort} />
+          <ShiftFeedbackForm cohort={cohort} sessionHint={alumniSessionHint()} />
         </div>
       </main>
     </div>

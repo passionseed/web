@@ -7,6 +7,8 @@ import { ChoiceChips, INPUT, Question } from "@/components/shift/form/ShiftQuest
 import { INK } from "@/components/shift/poster/riso";
 import type { ShiftCohort } from "@/lib/content/shift-cohort";
 import {
+  FEEDBACK_CONTINUE_PROJECTS,
+  FEEDBACK_DAYS,
   FEEDBACK_MOTIVATIONS,
   FEEDBACK_NEXT_STEPS,
   FEEDBACK_PAYERS,
@@ -18,12 +20,13 @@ import {
   type ShiftFeedbackInput,
 } from "@/lib/shift/feedback";
 
-import { CheckChips, ScaleChips } from "./FeedbackChips";
+import { CheckChips, DayChips, ScaleChips } from "./FeedbackChips";
 import { FeedbackConsent } from "./FeedbackConsent";
 
 /**
- * End-of-round SHIFT feedback: 12 questions, about 5 minutes, no login.
- * Validates with the API's schema so errors show before submit.
+ * End-of-round SHIFT feedback: 14 questions, about 5 minutes, no login.
+ * Ends with the alumni ask (one project to keep going, days for the weekly
+ * session). Validates with the API's schema so errors show before submit.
  */
 
 type Values = Omit<ShiftFeedbackInput, "satisfaction" | "confidence" | "ownership" | "recommend"> & {
@@ -33,16 +36,16 @@ type Values = Omit<ShiftFeedbackInput, "satisfaction" | "confidence" | "ownershi
   recommend?: number;
 };
 type Field = keyof Values;
-type NextStep = ShiftFeedbackInput["nextSteps"][number];
 type Status = "idle" | "sending" | "done" | "error";
 
 const paper = (alpha: string) => `${INK.paper}${alpha}`;
 
-/** Picking "not now" clears the rest; picking anything else clears "not now". */
-function toggleNextStep(steps: NextStep[], step: NextStep): NextStep[] {
-  if (steps.includes(step)) return steps.filter((s) => s !== step);
-  if (step === "not_now") return ["not_now"];
-  return [...steps.filter((s) => s !== "not_now"), step];
+/** Picking the stand-alone option (e.g. "not now") clears the rest;
+ *  picking anything else clears it. */
+function toggleExclusive<T extends string>(picked: T[], item: T, alone: T): T[] {
+  if (picked.includes(item)) return picked.filter((p) => p !== item);
+  if (item === alone) return [alone];
+  return [...picked.filter((p) => p !== alone), item];
 }
 
 function revealFirstError(form: HTMLFormElement | null) {
@@ -63,7 +66,7 @@ function PartHeading({ children }: { children: string }) {
   );
 }
 
-function FeedbackDone() {
+function FeedbackDone({ comingBack }: { comingBack: boolean }) {
   return (
     <div className="py-16 text-center">
       <span
@@ -76,11 +79,23 @@ function FeedbackDone() {
       <p className="mx-auto mt-3 max-w-sm leading-relaxed" style={{ color: paper("b3") }}>
         ทุกคำตอบพี่อ่านเองหมด และจะเอาไปปรับ SHIFT รอบหน้า
       </p>
+      {comingBack && (
+        <p className="mx-auto mt-3 max-w-sm leading-relaxed" style={{ color: paper("b3") }}>
+          รายละเอียด session ศิษย์เก่า พี่จะส่งในกลุ่มนะ แล้วเจอกัน
+        </p>
+      )}
     </div>
   );
 }
 
-export function ShiftFeedbackForm({ cohort }: { cohort: ShiftCohort }) {
+export function ShiftFeedbackForm({
+  cohort,
+  sessionHint,
+}: {
+  cohort: ShiftCohort;
+  /** Day-picker hint, worked out on the server so it matches on hydration. */
+  sessionHint: string;
+}) {
   const [values, setValues] = useState<Values>({
     round: cohort.round,
     nickname: "",
@@ -91,6 +106,9 @@ export function ShiftFeedbackForm({ cohort }: { cohort: ShiftCohort }) {
     changeNext: "",
     priceFit: "" as Values["priceFit"],
     payer: "" as Values["payer"],
+    continueProject: "" as Values["continueProject"],
+    continueProjectNote: "",
+    availableDays: [],
     nextSteps: [],
     quoteMode: "" as Values["quoteMode"],
     quoteName: "",
@@ -154,7 +172,9 @@ export function ShiftFeedbackForm({ cohort }: { cohort: ShiftCohort }) {
     }
   }
 
-  if (status === "done") return <FeedbackDone />;
+  if (status === "done") {
+    return <FeedbackDone comingBack={values.availableDays.length > 0 && !values.availableDays.includes("none")} />;
+  }
 
   return (
     <form ref={formRef} onSubmit={submit} noValidate>
@@ -212,8 +232,24 @@ export function ShiftFeedbackForm({ cohort }: { cohort: ShiftCohort }) {
 
       <PartHeading>3 · ต่อจากนี้</PartHeading>
 
-      <Question num={12} label="อยากทำอะไรต่อ" hint="เลือกได้หลายข้อ" error={errors.nextSteps}>
-        <CheckChips options={FEEDBACK_NEXT_STEPS} value={values.nextSteps} onChange={(v) => set("nextSteps", toggleNextStep(values.nextSteps, v))} />
+      <Question num={12} label="เลือกโปรเจกต์ไว้ทำต่อหนึ่งอย่าง" hint="ไม่ต้องใหญ่ เลือกอันเดียวพอ" error={errors.continueProject ?? errors.continueProjectNote}>
+        <ChoiceChips stacked name="โปรเจกต์ที่จะทำต่อ" options={FEEDBACK_CONTINUE_PROJECTS} value={values.continueProject} onChange={(v) => set("continueProject", v)} />
+        {values.continueProject && values.continueProject !== "not_now" && (
+          <input
+            {...text("continueProjectNote")}
+            maxLength={200}
+            placeholder={values.continueProject === "join" ? "โปรเจกต์ของใคร (ไม่ใส่ก็ได้)" : "โปรเจกต์อะไร (ไม่ใส่ก็ได้)"}
+            className={`${INPUT} mt-4`}
+          />
+        )}
+      </Question>
+
+      <Question num={13} label="มา session ศิษย์เก่าทุกสัปดาห์กัน วันไหนสะดวกบ้าง" hint={sessionHint} error={errors.availableDays}>
+        <DayChips options={FEEDBACK_DAYS} none="none" value={values.availableDays} onChange={(v) => set("availableDays", toggleExclusive(values.availableDays, v, "none"))} />
+      </Question>
+
+      <Question num={14} label="อยากช่วยมากกว่านั้นไหม" hint="เลือกได้หลายข้อ" error={errors.nextSteps}>
+        <CheckChips options={FEEDBACK_NEXT_STEPS} value={values.nextSteps} onChange={(v) => set("nextSteps", toggleExclusive(values.nextSteps, v, "not_now"))} />
       </Question>
 
       <Question
