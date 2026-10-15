@@ -56,6 +56,12 @@ export const FEEDBACK_NEXT_STEPS = [
   { value: "not_now", label: "ยังไม่ตอนนี้" },
 ] as const;
 
+/** Next steps the form offered before 2026-10-14, for reading old rows. */
+export const FEEDBACK_NEXT_STEPS_RETIRED = [
+  { value: "project_club", label: "ทำโปรเจกต์ต่อใน project club (ตัวเลือกเก่า)" },
+  { value: "new_project", label: "เริ่มโปรเจกต์ใหม่ (ตัวเลือกเก่า)" },
+] as const;
+
 /** First weekly alumni session (Fridays). Ref: company-brain alumni.md. */
 export const ALUMNI_FIRST_SESSION = new Date("2026-10-16T23:59:59+07:00");
 

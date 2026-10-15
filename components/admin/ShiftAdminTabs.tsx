@@ -11,6 +11,7 @@ const SHIFT_ADMIN_LINKS = [
   { href: "/admin/shift/camp", label: "Interactive camp" },
   { href: "/admin/shift/companion", label: "Companion" },
   { href: "/admin/shift/seedstack", label: "SeedStack" },
+  { href: "/admin/shift/feedback", label: "Feedback" },
   { href: "/admin/shift/views", label: "Views" },
 ];
 
