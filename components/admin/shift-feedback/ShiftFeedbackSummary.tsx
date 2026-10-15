@@ -13,10 +13,11 @@ import { FeedbackCountBars } from "./FeedbackCountBars";
 
 /** Score tiles and per-question totals for /admin/shift/feedback. */
 
-const DAYS = FEEDBACK_DAYS.map((d) => ({
-  value: d.value,
-  label: d.value === "fri" ? `${d.name} (วัน session)` : d.name,
-}));
+const daysMarking = (sessionDay: string) =>
+  FEEDBACK_DAYS.map((d) => ({
+    value: d.value,
+    label: d.value === sessionDay ? `${d.name} (วัน session)` : d.name,
+  }));
 
 const fixed = (n: number | null) => (n === null ? "–" : n.toFixed(1));
 
@@ -32,7 +33,14 @@ function ScoreTile({ label, value, scale }: { label: string; value: string; scal
   );
 }
 
-export function ShiftFeedbackSummary({ summary }: { summary: FeedbackSummary }) {
+export function ShiftFeedbackSummary({
+  summary,
+  sessionDay,
+}: {
+  summary: FeedbackSummary;
+  /** Weekday key of the alumni session ("sat"), highlighted in the day chart. */
+  sessionDay: string;
+}) {
   const { averages, responses, alumniAnswered } = summary;
   // Retired options only get a row when an old answer used them.
   const nextSteps = [
@@ -60,11 +68,11 @@ export function ShiftFeedbackSummary({ summary }: { summary: FeedbackSummary }) 
       <div className="grid gap-3 lg:grid-cols-2">
         <FeedbackCountBars
           title="Days that suit the weekly session"
-          options={DAYS}
+          options={daysMarking(sessionDay)}
           counts={summary.availableDays}
           total={alumniAnswered}
-          highlight="fri"
-          note={alumniNote ?? "Session is on Friday"}
+          highlight={sessionDay}
+          note={alumniNote}
         />
         <div className="space-y-3">
           <FeedbackCountBars
