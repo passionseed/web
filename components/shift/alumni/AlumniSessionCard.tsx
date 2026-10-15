@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { CalendarPlus, X } from "lucide-react";
 
 import { INPUT } from "@/components/shift/form/ShiftQuestion";
@@ -175,6 +176,7 @@ export function AlumniSessionCard({
   editing,
   onChange,
   onRemove,
+  footer,
 }: {
   session: AlumniSession;
   defaults: AlumniDefaults;
@@ -184,6 +186,8 @@ export function AlumniSessionCard({
   editing: boolean;
   onChange: (patch: Patch) => void;
   onRemove: () => void;
+  /** Shown under the details when reading, e.g. the RSVP button. */
+  footer?: ReactNode;
 }) {
   const weekly = isWeeklySession(session.date, defaults.firstDate);
   return (
@@ -213,7 +217,10 @@ export function AlumniSessionCard({
       {editing ? (
         <SessionEdit session={session} defaults={defaults} onChange={onChange} />
       ) : (
-        <SessionView session={session} defaults={defaults} next={next} />
+        <>
+          <SessionView session={session} defaults={defaults} next={next} />
+          {footer}
+        </>
       )}
     </article>
   );

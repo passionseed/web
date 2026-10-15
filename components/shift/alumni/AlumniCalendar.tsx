@@ -15,6 +15,7 @@ import {
   type AlumniDefaults,
 } from "@/lib/content/shift-alumni";
 
+import { AlumniRsvp, AlumniRsvpNames } from "./AlumniRsvp";
 import { AlumniSessionCard, EditField } from "./AlumniSessionCard";
 
 /**
@@ -162,12 +163,17 @@ export function AlumniCalendar({
   updatedAt: initialUpdatedAt,
   canEdit,
   today,
+  rsvpCounts,
+  rsvpNames,
 }: {
   initial: AlumniCalendarDoc;
   updatedAt: string | null;
   canEdit: boolean;
   /** Bangkok date from the server, so the split matches on hydration. */
   today: string;
+  rsvpCounts: Record<string, number>;
+  /** Admins only: who said yes, per session date. */
+  rsvpNames?: Record<string, { nickname: string; cohort: string }[]>;
 }) {
   const [saved, setSaved] = useState(initial);
   const [doc, setDoc] = useState(initial);
@@ -205,6 +211,13 @@ export function AlumniCalendar({
     setEditing(false);
   };
 
+  const rsvpFooter = (date: string) => (
+    <>
+      <AlumniRsvp date={date} initialCount={rsvpCounts[date] ?? 0} />
+      {rsvpNames && <AlumniRsvpNames rsvps={rsvpNames[date] ?? []} />}
+    </>
+  );
+
   const card = (session: (typeof upcoming)[number], extra: { next?: boolean } = {}) => (
     <AlumniSessionCard
       key={session.date}
@@ -213,6 +226,7 @@ export function AlumniCalendar({
       editing={editing}
       onChange={(patch) => setDoc((d) => patchSession(d, session.date, patch))}
       onRemove={() => setDoc((d) => removeSession(d, session.date))}
+      footer={extra.next ? rsvpFooter(session.date) : undefined}
       {...extra}
     />
   );

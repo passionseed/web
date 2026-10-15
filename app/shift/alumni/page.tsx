@@ -11,10 +11,11 @@ import {
   INK,
   OrbitSky,
 } from "@/components/shift/poster/riso";
-import { ALUMNI_PAGE_URL, timeRangeLabel, weekdayName } from "@/lib/content/shift-alumni";
+import { ALUMNI_PAGE_URL, alumniCalendar, timeRangeLabel, weekdayName } from "@/lib/content/shift-alumni";
 import { bangkokToday } from "@/lib/content/shift-cohort";
 import { currentShiftAdmin } from "@/lib/shift/admin";
 import { loadAlumniCalendar } from "@/lib/supabase/shift-alumni-calendar";
+import { countAlumniRsvps, listAlumniRsvps, type AlumniRsvp } from "@/lib/supabase/shift-alumni-rsvps";
 
 /**
  * /shift/alumni: the weekly SHIFT alumni session, online on Discord.
@@ -40,8 +41,27 @@ export const dynamic = "force-dynamic";
 
 const paper = (alpha: string) => `${INK.paper}${alpha}`;
 
+/** Admins only: names never reach a public render. */
+async function rsvpNamesByDate(dates: string[]) {
+  const byDate: Record<string, Pick<AlumniRsvp, "nickname" | "cohort">[]> = {};
+  try {
+    for (const { session_date, nickname, cohort } of await listAlumniRsvps(dates)) {
+      (byDate[session_date] ??= []).push({ nickname, cohort });
+    }
+  } catch {
+    // Table missing: show none.
+  }
+  return byDate;
+}
+
 export default async function ShiftAlumniPage() {
   const [{ doc, updatedAt }, admin] = await Promise.all([loadAlumniCalendar(), currentShiftAdmin()]);
+  const today = bangkokToday();
+  const upcomingDates = alumniCalendar(doc, today).upcoming.map((s) => s.date);
+  const [rsvpCounts, rsvpNames] = await Promise.all([
+    countAlumniRsvps(upcomingDates),
+    admin ? rsvpNamesByDate(upcomingDates) : undefined,
+  ]);
   const { firstDate, startTime, endTime } = doc.defaults;
   const when = [`ทุก${weekdayName(firstDate)}`, timeRangeLabel(startTime, endTime)].filter(Boolean).join(" ");
 
@@ -85,7 +105,9 @@ export default async function ShiftAlumniPage() {
             initial={doc}
             updatedAt={updatedAt}
             canEdit={admin !== null}
-            today={bangkokToday()}
+            today={today}
+            rsvpCounts={rsvpCounts}
+            rsvpNames={rsvpNames}
           />
         </div>
 
