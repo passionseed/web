@@ -3,15 +3,21 @@ import type { Metadata } from "next";
 import { ShiftCrewCover } from "@/components/shift/poster/ShiftCrewCover";
 import { ChromeBevelFilter } from "@/components/shift/poster/riso";
 import { SHIFT_COHORT_2 } from "@/lib/content/shift-cohort";
+import { shiftSocialMetadata } from "@/lib/shift/socialMetadata";
 
 /**
  * SHIFT[2] poster (IG carousel, 1080x1350). Concept stage: cover only.
  * Export: screenshot #shift2-poster-1.
  */
 
+const title = `${SHIFT_COHORT_2.name} Poster`;
+const description = "ปกโพสต์ IG ของ SHIFT[2] ขนาด 1080 × 1350 สำหรับแคปไปลง";
+
 export const metadata: Metadata = {
-  title: `${SHIFT_COHORT_2.name} Poster`,
+  title,
+  description,
   robots: { index: false, follow: false },
+  ...shiftSocialMetadata(SHIFT_COHORT_2, title, description, "/shift/poster/2"),
 };
 
 export default function Shift2PosterPage() {

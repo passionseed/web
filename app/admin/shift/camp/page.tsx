@@ -1,6 +1,8 @@
 import { ShiftAdminTabs } from "@/components/admin/ShiftAdminTabs";
 import { AdminShiftCamp } from "@/components/admin/AdminShiftCamp";
+import { adminMetadata } from "@/lib/admin/metadata";
 export const dynamic = "force-dynamic";
+export const metadata = adminMetadata("/admin/shift/camp");
 export default function ShiftCampPage() {
   return (
     <div className="space-y-6">

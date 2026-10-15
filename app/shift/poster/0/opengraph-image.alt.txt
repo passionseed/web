@@ -1,1 +1,1 @@
-0 | PassionSeed
+SHIFT[0] | PassionSeed
