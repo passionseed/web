@@ -77,7 +77,7 @@ function SessionEdit({
 }) {
   return (
     <div className="mt-3 grid gap-3">
-      <EditField label="หัวข้อ" value={session.topic} onChange={(topic) => onChange({ topic })} placeholder={DEFAULT_TOPIC} maxLength={80} />
+      <EditField label="หัวข้อ (แยกช่วงด้วย · ใส่ป้ายอังกฤษได้ เช่น Icebreak: วาดโปรเจกต์ใน 60 วิ)" value={session.topic} onChange={(topic) => onChange({ topic })} placeholder={DEFAULT_TOPIC} maxLength={200} />
       <div className="grid grid-cols-2 gap-3">
         <EditField label={`เริ่ม (ว่าง = ${defaults.startTime || "ยังไม่ตั้ง"})`} type="time" value={session.startTime} onChange={(startTime) => onChange({ startTime })} />
         <EditField label={`เลิก (ว่าง = ${defaults.endTime || "ยังไม่ตั้ง"})`} type="time" value={session.endTime} onChange={(endTime) => onChange({ endTime })} />

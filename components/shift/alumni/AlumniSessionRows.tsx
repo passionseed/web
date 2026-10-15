@@ -2,7 +2,7 @@ import { INK } from "@/components/shift/poster/riso";
 import {
   isWeeklySession,
   longThaiDate,
-  sessionSteps,
+  stepsLine,
   timeRangeLabel,
   type AlumniDefaults,
   type AlumniSession,
@@ -17,7 +17,7 @@ import { Badge, DEFAULT_TOPIC } from "./AlumniSessionCard";
 
 const paper = (alpha: string) => `${INK.paper}${alpha}`;
 
-const topicLine = (session: AlumniSession) => sessionSteps(session.topic).join(", ") || DEFAULT_TOPIC;
+const topicLine = (session: AlumniSession) => stepsLine(session.topic) || DEFAULT_TOPIC;
 
 function SessionRow({ session, defaults }: { session: AlumniSession; defaults: AlumniDefaults }) {
   const ownTime = session.startTime ? timeRangeLabel(session.startTime, session.endTime) : null;

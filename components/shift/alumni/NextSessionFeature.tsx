@@ -11,6 +11,7 @@ import {
   timeRangeLabel,
   type AlumniDefaults,
   type AlumniSession,
+  type SessionStep,
 } from "@/lib/content/shift-alumni";
 
 import { DEFAULT_TOPIC, TIME_TBD } from "./AlumniSessionCard";
@@ -25,7 +26,25 @@ const paper = (alpha: string) => `${INK.paper}${alpha}`;
 
 /** Icons for the steps, in order; cycles for longer runs. */
 export const STEP_ICONS: RisoIconName[] = ["sparkle", "mic", "people", "hammer", "rocket"];
-const STEP_INKS = [INK.yellow, INK.orange, INK.pink, INK.paper, INK.yellow];
+export const STEP_INKS = [INK.yellow, INK.orange, INK.pink, INK.paper, INK.yellow];
+
+/** English label as a tilted print sticker, so each part reads at a glance. */
+export function StepLabel({ children, index, size = 13 }: { children: string; index: number; size?: number }) {
+  return (
+    <span
+      className="inline-block rounded-[4px] px-2 py-0.5 font-kodchasan font-bold uppercase leading-tight tracking-wide"
+      style={{
+        fontSize: size,
+        backgroundColor: STEP_INKS[index % STEP_INKS.length],
+        color: INK.black,
+        transform: `rotate(${index % 2 === 0 ? -2 : 1.5}deg)`,
+        boxShadow: `-2px 2px 0 ${INK.blue}`,
+      }}
+    >
+      {children}
+    </span>
+  );
+}
 
 /** Round step number with an off-register shadow, like the poster stamps. */
 function StepNumber({ n, hot }: { n: number; hot: boolean }) {
@@ -43,17 +62,20 @@ function StepNumber({ n, hot }: { n: number; hot: boolean }) {
   );
 }
 
-function Steps({ steps }: { steps: string[] }) {
+function Steps({ steps }: { steps: SessionStep[] }) {
   return (
     <ol className="mt-7 grid gap-3">
       {steps.map((step, i) => (
         <li
-          key={step}
+          key={`${step.label}-${step.text}`}
           className="flex items-center gap-4 rounded-xl px-4 py-3.5"
           style={{ backgroundColor: paper("0a"), boxShadow: `inset 0 0 0 1px ${paper("1f")}` }}
         >
           <StepNumber n={i + 1} hot={i === 0} />
-          <span className="font-kodchasan text-base font-semibold leading-snug sm:text-xl">{step}</span>
+          <span className="min-w-0">
+            {step.label && <StepLabel index={i}>{step.label}</StepLabel>}
+            <span className="mt-1 block font-kodchasan text-base font-semibold leading-snug sm:text-lg">{step.text}</span>
+          </span>
           <RisoIcon
             name={STEP_ICONS[i % STEP_ICONS.length]}
             ink={STEP_INKS[i % STEP_INKS.length]}
@@ -104,7 +126,7 @@ export function NextSessionFeature({
       {steps.length > 1 ? (
         <Steps steps={steps} />
       ) : (
-        <p className="mt-6 font-kodchasan text-xl font-semibold">{session.topic || DEFAULT_TOPIC}</p>
+        <p className="mt-6 font-kodchasan text-xl font-semibold">{steps[0]?.text || DEFAULT_TOPIC}</p>
       )}
 
       {session.note && (

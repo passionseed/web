@@ -13,6 +13,7 @@ import {
   removeSession,
   sessionDetails,
   sessionSteps,
+  stepsLine,
   timeRangeLabel,
   weekdayKey,
   weekdayName,
@@ -149,13 +150,21 @@ describe("page and poster copy", () => {
     expect(longThaiDate("2026-10-17")).toBe("เสาร์ 17 ต.ค.");
   });
 
-  it("reads a topic written with dots as the run of the night", () => {
-    expect(sessionSteps("วาดโปรเจกต์ใน 60 วิ · โชว์แอนด์เทล · หาบัดดี้")).toEqual([
-      "วาดโปรเจกต์ใน 60 วิ",
-      "โชว์แอนด์เทล",
-      "หาบัดดี้",
+  it("reads a topic written with dots as the run of the night, with English labels", () => {
+    expect(sessionSteps("Icebreak: วาดโปรเจกต์ใน 60 วิ · Show & Tell: 2 นาที โชว์ของ · หาบัดดี้")).toEqual([
+      { label: "Icebreak", text: "วาดโปรเจกต์ใน 60 วิ" },
+      { label: "Show & Tell", text: "2 นาที โชว์ของ" },
+      { label: null, text: "หาบัดดี้" },
     ]);
-    expect(sessionSteps("Build night")).toEqual(["Build night"]);
+    expect(sessionSteps("Build night")).toEqual([{ label: null, text: "Build night" }]);
     expect(sessionSteps("")).toEqual([]);
+  });
+
+  it("does not mistake a Thai phrase with a time for a label", () => {
+    expect(sessionSteps("เริ่ม 19:00 ตรง")).toEqual([{ label: null, text: "เริ่ม 19:00 ตรง" }]);
+  });
+
+  it("shortens the run to labels for the schedule", () => {
+    expect(stepsLine("Icebreak: วาด · Show & Tell: โชว์ · หาบัดดี้")).toBe("Icebreak · Show & Tell · หาบัดดี้");
   });
 });

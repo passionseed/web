@@ -4,6 +4,12 @@ import { ArrowRight } from "lucide-react";
 
 import { AlumniCalendar } from "@/components/shift/alumni/AlumniCalendar";
 import { AlumniShowcase } from "@/components/shift/alumni/AlumniShowcase";
+import { ScaledFrame } from "@/components/shift/alumni/ScaledFrame";
+import {
+  ALUMNI_POSTER_H,
+  ALUMNI_POSTER_W,
+  ShiftAlumniSessionPoster,
+} from "@/components/shift/poster/ShiftAlumniSessionPoster";
 import { ShiftTopBar } from "@/components/shift/ShiftTopBar";
 import { RisoPageTexture } from "@/components/shift/ShiftRiso";
 import {
@@ -58,7 +64,9 @@ async function rsvpNamesByDate(dates: string[]) {
 export default async function ShiftAlumniPage() {
   const [{ doc, updatedAt }, admin] = await Promise.all([loadAlumniCalendar(), currentShiftAdmin()]);
   const today = bangkokToday();
-  const upcomingDates = alumniCalendar(doc, today).upcoming.map((s) => s.date);
+  const { upcoming } = alumniCalendar(doc, today);
+  const upcomingDates = upcoming.map((s) => s.date);
+  const next = upcoming.find((s) => !s.cancelled);
   const [rsvpCounts, rsvpNames] = await Promise.all([
     countAlumniRsvps(upcomingDates),
     admin ? rsvpNamesByDate(upcomingDates) : undefined,
@@ -74,22 +82,38 @@ export default async function ShiftAlumniPage() {
     >
       <RisoPageTexture />
 
-      <header className="relative overflow-hidden">
-        <ChromeBevelFilter />
-        <OrbitSky horizon="clamp(240px, 34svh, 320px)" speckle={0} />
-        <ShiftTopBar />
-        <div
-          className="relative flex flex-col items-center justify-end pb-10 text-center"
-          style={{ minHeight: "clamp(240px, 34svh, 320px)" }}
-        >
-          <h1 className="font-kodchasan text-lg font-semibold">
-            <span className="sr-only">SHIFT Alumni: </span>จบ 7 วันแล้ว ยังสร้างต่อด้วยกัน
-          </h1>
-          <div aria-hidden="true">
-            <ChromeWordmark size="clamp(56px, 12vw, 112px)" name="ALUMNI" />
+      {next ? (
+        <header className="relative">
+          <ChromeBevelFilter />
+          <ShiftTopBar />
+          <h1 className="sr-only">SHIFT Alumni: จบ 7 วันแล้ว ยังสร้างต่อด้วยกัน</h1>
+          {/* The poster for the next session; the same details follow as text. */}
+          <div className="mx-auto max-w-6xl px-3 pt-20 sm:px-8 sm:pt-24" aria-hidden="true">
+            <div style={{ boxShadow: `-6px 5px 0 ${INK.pink}` }}>
+              <ScaledFrame width={ALUMNI_POSTER_W} height={ALUMNI_POSTER_H}>
+                <ShiftAlumniSessionPoster session={next} defaults={doc.defaults} />
+              </ScaledFrame>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      ) : (
+        <header className="relative overflow-hidden">
+          <ChromeBevelFilter />
+          <OrbitSky horizon="clamp(240px, 34svh, 320px)" speckle={0} />
+          <ShiftTopBar />
+          <div
+            className="relative flex flex-col items-center justify-end pb-10 text-center"
+            style={{ minHeight: "clamp(240px, 34svh, 320px)" }}
+          >
+            <h1 className="font-kodchasan text-lg font-semibold">
+              <span className="sr-only">SHIFT Alumni: </span>จบ 7 วันแล้ว ยังสร้างต่อด้วยกัน
+            </h1>
+            <div aria-hidden="true">
+              <ChromeWordmark size="clamp(56px, 12vw, 112px)" name="ALUMNI" />
+            </div>
+          </div>
+        </header>
+      )}
 
       <main className="relative mx-auto max-w-2xl px-5 pb-24 pt-10 sm:px-8">
         <p className="text-center leading-relaxed sm:text-lg" style={{ color: paper("cc") }}>
