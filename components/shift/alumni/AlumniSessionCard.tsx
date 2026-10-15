@@ -5,10 +5,10 @@ import { CalendarPlus, X } from "lucide-react";
 import { INPUT } from "@/components/shift/form/ShiftQuestion";
 import { INK } from "@/components/shift/poster/riso";
 import {
-  ALUMNI_FIRST_SESSION,
   googleCalendarUrl,
   isWeeklySession,
   sessionDetails,
+  timeRangeLabel,
   type AlumniDefaults,
   type AlumniSession,
 } from "@/lib/content/shift-alumni";
@@ -24,11 +24,6 @@ const TIME_TBD = "เวลาแจ้งในกลุ่ม";
 
 type Patch = Partial<Omit<AlumniSession, "date">>;
 
-function timeLabel(start: string, end: string) {
-  if (!start) return TIME_TBD;
-  return end ? `${start}–${end} น.` : `${start} น.`;
-}
-
 function Badge({ children, color }: { children: string; color: string }) {
   return (
     <span
@@ -40,9 +35,9 @@ function Badge({ children, color }: { children: string; color: string }) {
   );
 }
 
-function SessionBadge({ session, next }: { session: AlumniSession; next: boolean }) {
+function SessionBadge({ session, next, first }: { session: AlumniSession; next: boolean; first: boolean }) {
   if (session.cancelled) return <Badge color={paper("80")}>งดครั้งนี้</Badge>;
-  if (session.date === ALUMNI_FIRST_SESSION) return <Badge color={INK.yellow}>ครั้งแรก</Badge>;
+  if (first) return <Badge color={INK.yellow}>ครั้งแรก</Badge>;
   if (next) return <Badge color={INK.yellow}>ครั้งถัดไป</Badge>;
   return null;
 }
@@ -62,12 +57,10 @@ function SessionView({
   session,
   defaults,
   next,
-  past,
 }: {
   session: AlumniSession;
   defaults: AlumniDefaults;
   next: boolean;
-  past: boolean;
 }) {
   const { startTime, endTime, place } = sessionDetails(session, defaults);
   const calendarUrl = googleCalendarUrl(session, defaults);
@@ -84,7 +77,7 @@ function SessionView({
       </p>
       {!session.cancelled && (showTime || showPlace || session.host) && (
         <dl className="mt-3 grid gap-1.5 text-sm">
-          {showTime && <Detail label="เวลา" value={timeLabel(startTime, endTime)} />}
+          {showTime && <Detail label="เวลา" value={timeRangeLabel(startTime, endTime) ?? TIME_TBD} />}
           {showPlace && <Detail label="ที่ไหน" value={place} />}
           {session.host && <Detail label="co-host" value={session.host} />}
         </dl>
@@ -94,7 +87,7 @@ function SessionView({
           {session.note}
         </p>
       )}
-      {calendarUrl && !past && (
+      {calendarUrl && next && (
         <a
           href={calendarUrl}
           target="_blank"
@@ -179,21 +172,20 @@ export function AlumniSessionCard({
   session,
   defaults,
   next = false,
-  past = false,
   editing,
   onChange,
   onRemove,
 }: {
   session: AlumniSession;
   defaults: AlumniDefaults;
-  /** The first upcoming session: highlighted, with a badge. */
+  /** The first upcoming session that is on: highlighted, with full details
+   *  and the calendar link. */
   next?: boolean;
-  past?: boolean;
   editing: boolean;
   onChange: (patch: Patch) => void;
   onRemove: () => void;
 }) {
-  const weekly = isWeeklySession(session.date);
+  const weekly = isWeeklySession(session.date, defaults.firstDate);
   return (
     <article
       className={`rounded-xl ${next || editing ? "p-5" : "px-5 py-4"}`}
@@ -204,8 +196,8 @@ export function AlumniSessionCard({
     >
       <div className="flex items-center gap-3">
         <p className={`font-kodchasan font-bold ${next ? "text-xl" : "text-lg"}`}>{formatThaiDate(session.date)}</p>
-        <SessionBadge session={session} next={next} />
-        {!weekly && !editing && <Badge color={INK.orange}>นัดพิเศษ</Badge>}
+        <SessionBadge session={session} next={next} first={session.date === defaults.firstDate} />
+        {!weekly && !editing && !session.cancelled && <Badge color={INK.orange}>นัดพิเศษ</Badge>}
         {editing && (
           <button
             type="button"
@@ -221,7 +213,7 @@ export function AlumniSessionCard({
       {editing ? (
         <SessionEdit session={session} defaults={defaults} onChange={onChange} />
       ) : (
-        <SessionView session={session} defaults={defaults} next={next} past={past} />
+        <SessionView session={session} defaults={defaults} next={next} />
       )}
     </article>
   );

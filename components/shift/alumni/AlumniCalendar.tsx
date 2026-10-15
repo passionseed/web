@@ -10,6 +10,7 @@ import {
   alumniCalendar,
   patchSession,
   removeSession,
+  weekdayName,
   type AlumniCalendarDoc,
   type AlumniDefaults,
 } from "@/lib/content/shift-alumni";
@@ -102,8 +103,18 @@ function DefaultsEditor({
     <section className="rounded-xl p-5" style={{ boxShadow: `inset 0 0 0 1px ${INK.yellow}66` }}>
       <p className="font-kodchasan font-semibold">ค่าตั้งต้นของทุกครั้ง</p>
       <p className="mt-1 text-xs" style={{ color: paper("80") }}>
-        ใช้กับทุกวันศุกร์ที่ไม่ได้ตั้งเวลาหรือที่ของตัวเอง ยังไม่รู้เวลาก็เว้นว่าง หน้าเว็บจะขึ้นว่า เวลาแจ้งในกลุ่ม
+        นัดซ้ำทุกสัปดาห์ วันเดียวกับครั้งแรก เปลี่ยนวันครั้งแรกเพื่อย้ายวันนัดทั้งชุด เวลาใช้กับทุกครั้งที่ไม่ได้ตั้งเวลาเอง ว่างไว้ หน้าเว็บจะขึ้นว่า เวลาแจ้งในกลุ่ม
       </p>
+      <label className="mt-3 block text-xs" style={{ color: paper("80") }}>
+        ครั้งแรก ({weekdayName(defaults.firstDate)})
+        <input
+          type="date"
+          value={defaults.firstDate}
+          onChange={(e) => e.target.value && onChange({ firstDate: e.target.value })}
+          className="mt-1 block rounded border bg-transparent px-2 py-1.5 text-sm [color-scheme:dark]"
+          style={{ borderColor: paper("33"), color: INK.paper }}
+        />
+      </label>
       <div className="mt-3 grid grid-cols-2 gap-3">
         <EditField label="เริ่ม" type="time" value={defaults.startTime} onChange={(startTime) => onChange({ startTime })} />
         <EditField label="เลิก" type="time" value={defaults.endTime} onChange={(endTime) => onChange({ endTime })} />
@@ -173,6 +184,7 @@ export function AlumniCalendar({
   }, [dirty]);
 
   const { upcoming, past } = alumniCalendar(doc, today);
+  const next = upcoming.find((s) => !s.cancelled)?.date;
 
   const save = () =>
     startTransition(async () => {
@@ -193,7 +205,7 @@ export function AlumniCalendar({
     setEditing(false);
   };
 
-  const card = (session: (typeof upcoming)[number], extra: { next?: boolean; past?: boolean }) => (
+  const card = (session: (typeof upcoming)[number], extra: { next?: boolean } = {}) => (
     <AlumniSessionCard
       key={session.date}
       session={session}
@@ -227,7 +239,7 @@ export function AlumniCalendar({
       )}
 
       <SectionHeading>นัดต่อไป</SectionHeading>
-      <div className="grid gap-4">{upcoming.map((session, i) => card(session, { next: i === 0 }))}</div>
+      <div className="grid gap-4">{upcoming.map((session) => card(session, { next: session.date === next }))}</div>
       {editing && (
         <AddEvent
           today={today}
@@ -238,7 +250,7 @@ export function AlumniCalendar({
       {past.length > 0 && (
         <>
           <SectionHeading>ที่ผ่านมา</SectionHeading>
-          <div className="grid gap-4 opacity-70">{past.map((session) => card(session, { past: true }))}</div>
+          <div className="grid gap-4 opacity-70">{past.map((session) => card(session))}</div>
         </>
       )}
     </div>

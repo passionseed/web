@@ -11,30 +11,25 @@ import {
   INK,
   OrbitSky,
 } from "@/components/shift/poster/riso";
-import {
-  ALUMNI_DEFAULT_DOC,
-  ALUMNI_PAGE_URL,
-  parseAlumniCalendarDoc,
-  type AlumniCalendarDoc,
-} from "@/lib/content/shift-alumni";
+import { ALUMNI_PAGE_URL, timeRangeLabel, weekdayName } from "@/lib/content/shift-alumni";
 import { bangkokToday } from "@/lib/content/shift-cohort";
 import { currentShiftAdmin } from "@/lib/shift/admin";
-import { createAdminClient } from "@/utils/supabase/admin";
+import { loadAlumniCalendar } from "@/lib/supabase/shift-alumni-calendar";
 
 /**
- * /shift/alumni: the weekly SHIFT alumni session, every Friday on Discord.
+ * /shift/alumni: the weekly SHIFT alumni session, online on Discord.
  * Public, so parents and new students can see the community keeps going
  * after day 7. The Discord link itself stays in each round's group.
  */
 
 export const metadata: Metadata = {
-  title: "SHIFT Alumni | session ศิษย์เก่าทุกวันศุกร์",
+  title: "SHIFT Alumni | session ศิษย์เก่าทุกสัปดาห์",
   description:
-    "จบ SHIFT แล้วยังสร้างต่อด้วยกัน ศิษย์เก่า SHIFT นัดกันทุกวันศุกร์ ออนไลน์ใน Discord มาทำโปรเจกต์ต่อและอัปเดตกัน",
+    "จบ SHIFT แล้วยังสร้างต่อด้วยกัน ศิษย์เก่า SHIFT นัดกันทุกสัปดาห์ ออนไลน์ใน Discord มาทำโปรเจกต์ต่อและอัปเดตกัน",
   alternates: { canonical: "/shift/alumni" },
   openGraph: {
-    title: "SHIFT Alumni | session ศิษย์เก่าทุกวันศุกร์",
-    description: "จบ SHIFT แล้วยังสร้างต่อด้วยกัน นัดกันทุกวันศุกร์ ออนไลน์ใน Discord",
+    title: "SHIFT Alumni | session ศิษย์เก่าทุกสัปดาห์",
+    description: "จบ SHIFT แล้วยังสร้างต่อด้วยกัน นัดกันทุกสัปดาห์ ออนไลน์ใน Discord",
     url: ALUMNI_PAGE_URL,
     type: "website",
   },
@@ -45,23 +40,10 @@ export const dynamic = "force-dynamic";
 
 const paper = (alpha: string) => `${INK.paper}${alpha}`;
 
-async function loadCalendar(): Promise<{ doc: AlumniCalendarDoc; updatedAt: string | null }> {
-  try {
-    const { data } = await createAdminClient()
-      .from("shift_alumni_calendar")
-      .select("content, updated_at")
-      .eq("id", "main")
-      .maybeSingle();
-    const doc = parseAlumniCalendarDoc(data?.content);
-    if (doc) return { doc, updatedAt: data?.updated_at ?? null };
-  } catch {
-    // No table or no env: show the plain Friday series.
-  }
-  return { doc: ALUMNI_DEFAULT_DOC, updatedAt: null };
-}
-
 export default async function ShiftAlumniPage() {
-  const [{ doc, updatedAt }, admin] = await Promise.all([loadCalendar(), currentShiftAdmin()]);
+  const [{ doc, updatedAt }, admin] = await Promise.all([loadAlumniCalendar(), currentShiftAdmin()]);
+  const { firstDate, startTime, endTime } = doc.defaults;
+  const when = [`ทุก${weekdayName(firstDate)}`, timeRangeLabel(startTime, endTime)].filter(Boolean).join(" ");
 
   return (
     <div
@@ -90,7 +72,7 @@ export default async function ShiftAlumniPage() {
 
       <main className="relative mx-auto max-w-2xl px-5 pb-24 pt-10 sm:px-8">
         <p className="text-center leading-relaxed sm:text-lg" style={{ color: paper("cc") }}>
-          ศิษย์เก่า SHIFT นัดกันทุกวันศุกร์ ออนไลน์ใน Discord
+          ศิษย์เก่า SHIFT นัดกัน{when} ออนไลน์ใน Discord
           <br />
           มาทำโปรเจกต์ต่อ อัปเดตกัน แล้วช่วยกันไปต่อ
         </p>

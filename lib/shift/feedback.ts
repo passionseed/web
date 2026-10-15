@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-import { ALUMNI_FIRST_SESSION } from "@/lib/content/shift-alumni";
-import { bangkokToday } from "@/lib/content/shift-cohort";
+import { ALUMNI_DEFAULT_DOC, timeRangeLabel, weekdayName } from "@/lib/content/shift-alumni";
+import { bangkokToday, formatThaiDate } from "@/lib/content/shift-cohort";
 
 /**
  * End-of-SHIFT feedback contract, shared by the /shift/feedback form and
@@ -65,10 +65,13 @@ export const FEEDBACK_NEXT_STEPS_RETIRED = [
   { value: "new_project", label: "เริ่มโปรเจกต์ใหม่ (ตัวเลือกเก่า)" },
 ] as const;
 
-/** Hint for the day picker. Names the first session until it has passed. */
+/** Hint for the day picker, from the calendar defaults in code. Names the
+ *  first session until it has passed. */
 export function alumniSessionHint(now: Date = new Date()): string {
-  const first = bangkokToday(now) <= ALUMNI_FIRST_SESSION ? " รอบแรกศุกร์ 16 ต.ค." : "";
-  return `ตอนนี้นัดกันทุกวันศุกร์${first} มาทำโปรเจกต์ต่อและอัปเดตกัน เลือกวันที่สะดวกได้หลายวัน`;
+  const { firstDate, startTime, endTime } = ALUMNI_DEFAULT_DOC.defaults;
+  const when = [`ทุก${weekdayName(firstDate)}`, timeRangeLabel(startTime, endTime)].filter(Boolean).join(" ");
+  const first = bangkokToday(now) <= firstDate ? ` รอบแรก ${formatThaiDate(firstDate)}` : "";
+  return `ตอนนี้นัดกัน${when}${first} มาทำโปรเจกต์ต่อและอัปเดตกัน เลือกวันที่สะดวกได้หลายวัน`;
 }
 
 /** How a student lets us quote them. "named" credits them with a name they

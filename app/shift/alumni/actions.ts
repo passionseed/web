@@ -26,5 +26,6 @@ export async function saveAlumniCalendar(raw: unknown): Promise<SaveResult> {
   if (error) return { ok: false, error: error.message };
 
   revalidatePath("/shift/alumni");
+  revalidatePath("/shift");
   return { ok: true, updatedAt };
 }

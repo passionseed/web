@@ -72,8 +72,10 @@ describe("shiftFeedbackSchema", () => {
 });
 
 describe("alumniSessionHint", () => {
-  it("names the first Friday until it has passed", () => {
-    expect(alumniSessionHint(new Date("2026-10-14T12:00:00+07:00"))).toContain("16 ต.ค.");
-    expect(alumniSessionHint(new Date("2026-10-17T09:00:00+07:00"))).not.toContain("16 ต.ค.");
+  it("names the day, time and first session until it has passed", () => {
+    const before = alumniSessionHint(new Date("2026-10-15T12:00:00+07:00"));
+    expect(before).toContain("ทุกวันเสาร์ 19:00–21:00 น.");
+    expect(before).toContain("รอบแรก ส. 17 ต.ค.");
+    expect(alumniSessionHint(new Date("2026-10-18T09:00:00+07:00"))).not.toContain("รอบแรก");
   });
 });
