@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { bangkokToday } from "@/lib/content/shift-cohort";
+import { bangkokToday, formatThaiDate } from "@/lib/content/shift-cohort";
 
 /**
  * SHIFT alumni calendar (/shift/alumni). The weekly session repeats every 7
@@ -28,7 +28,9 @@ const timeRangeOk = ({ startTime, endTime }: { startTime: string; endTime: strin
 const sessionSchema = z
   .object({
     date: isoDate,
-    topic: text(80).default(""),
+    /** "a · b · c" lists the parts of the night; "Label: text" gives a part
+     *  an English label, e.g. "Icebreak: วาดโปรเจกต์ใน 60 วิ". */
+    topic: text(200).default(""),
     startTime: time.default(""),
     endTime: time.default(""),
     place: text(80).default(""),
@@ -189,4 +191,38 @@ export function patchSession(
 /** Clears a weekly session back to the defaults, or deletes a one-off event. */
 export function removeSession(doc: AlumniCalendarDoc, date: string): AlumniCalendarDoc {
   return { ...doc, sessions: doc.sessions.filter((s) => s.date !== date) };
+}
+
+/** "เสาร์ 17 ต.ค.": the headline date for a session. */
+export function longThaiDate(iso: string): string {
+  return `${weekdayName(iso).replace(/^วัน/, "")} ${formatThaiDate(iso, false)}`;
+}
+
+/** One part of the night. `label` is the English sticker ("Icebreak"). */
+export interface SessionStep {
+  label: string | null;
+  text: string;
+}
+
+/** English label before a colon. Latin only, so "เริ่ม 19:00" stays text. */
+const STEP_LABEL = /^([A-Za-z][A-Za-z0-9 &'!+-]{1,23}):\s*(.+)$/;
+
+/** A topic written as "a · b · c" is the session's run of parts; each part
+ *  may start with "Label:". One part, or none, means it is just a topic. */
+export function sessionSteps(topic: string): SessionStep[] {
+  return topic
+    .split("·")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => {
+      const match = STEP_LABEL.exec(part);
+      return match ? { label: match[1].trim(), text: match[2].trim() } : { label: null, text: part };
+    });
+}
+
+/** The parts as one short line for schedules: labels where given. */
+export function stepsLine(topic: string): string {
+  return sessionSteps(topic)
+    .map((step) => step.label ?? step.text)
+    .join(" · ");
 }
