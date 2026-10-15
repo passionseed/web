@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+import { ALUMNI_FIRST_SESSION } from "@/lib/content/shift-alumni";
+import { bangkokToday } from "@/lib/content/shift-cohort";
+
 /**
  * End-of-SHIFT feedback contract, shared by the /shift/feedback form and
  * /api/shift/feedback. Part 1 is the day-7 SDT check, part 2 is value and
@@ -62,12 +65,9 @@ export const FEEDBACK_NEXT_STEPS_RETIRED = [
   { value: "new_project", label: "เริ่มโปรเจกต์ใหม่ (ตัวเลือกเก่า)" },
 ] as const;
 
-/** First weekly alumni session (Fridays). Ref: company-brain alumni.md. */
-export const ALUMNI_FIRST_SESSION = new Date("2026-10-16T23:59:59+07:00");
-
 /** Hint for the day picker. Names the first session until it has passed. */
 export function alumniSessionHint(now: Date = new Date()): string {
-  const first = now <= ALUMNI_FIRST_SESSION ? " รอบแรกศุกร์ 16 ต.ค." : "";
+  const first = bangkokToday(now) <= ALUMNI_FIRST_SESSION ? " รอบแรกศุกร์ 16 ต.ค." : "";
   return `ตอนนี้นัดกันทุกวันศุกร์${first} มาทำโปรเจกต์ต่อและอัปเดตกัน เลือกวันที่สะดวกได้หลายวัน`;
 }
 
