@@ -3,8 +3,10 @@ import Link from "next/link";
 import { ShiftAdminTabs } from "@/components/admin/ShiftAdminTabs";
 import { ShiftFeedbackResponses } from "@/components/admin/shift-feedback/ShiftFeedbackResponses";
 import { ShiftFeedbackSummary } from "@/components/admin/shift-feedback/ShiftFeedbackSummary";
+import { weekdayKey } from "@/lib/content/shift-alumni";
 import { SHIFT_COHORTS, getShiftCohort } from "@/lib/content/shift-cohort";
 import { summarizeFeedback } from "@/lib/shift/feedbackSummary";
+import { loadAlumniCalendar } from "@/lib/supabase/shift-alumni-calendar";
 import { listShiftFeedback, type ShiftFeedbackRow } from "@/lib/supabase/shift-feedback";
 import { cn } from "@/lib/utils";
 
@@ -49,7 +51,7 @@ export default async function AdminShiftFeedbackPage({
 }) {
   const { round } = await searchParams;
   const cohort = round ? getShiftCohort(Number(round)) : undefined;
-  const rows = await loadRows(cohort?.name);
+  const [rows, { doc: calendar }] = await Promise.all([loadRows(cohort?.name), loadAlumniCalendar()]);
 
   return (
     <div className="space-y-4">
@@ -68,7 +70,10 @@ export default async function AdminShiftFeedbackPage({
         <p className="text-sm text-muted-foreground">No responses yet{cohort ? ` from ${cohort.name}` : ""}.</p>
       ) : (
         <>
-          <ShiftFeedbackSummary summary={summarizeFeedback(rows)} />
+          <ShiftFeedbackSummary
+            summary={summarizeFeedback(rows)}
+            sessionDay={weekdayKey(calendar.defaults.firstDate)}
+          />
           <h3 className="pt-4 text-base font-semibold">Responses</h3>
           <ShiftFeedbackResponses rows={rows} />
         </>
