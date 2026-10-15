@@ -5,6 +5,8 @@ import { format } from "date-fns";
 import { Check, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
+import { AdminErrorState } from "@/components/admin/shared/AdminStates";
+import { useConfirm } from "@/components/admin/shared/useConfirm";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,15 +31,18 @@ export function ShiftStudentNotesPanel({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editWeek, setEditWeek] = useState("");
   const [editBody, setEditBody] = useState("");
+  const [loadError, setLoadError] = useState(false);
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = useCallback(async () => {
+    setLoadError(false);
     try {
       const res = await fetch(`/api/admin/shift/students/${studentId}/notes`);
       if (!res.ok) throw new Error();
       const json = await res.json();
       setNotes(json.notes);
     } catch {
-      toast.error("Failed to load notes");
+      setLoadError(true);
     }
   }, [studentId]);
 
@@ -101,7 +106,13 @@ export function ShiftStudentNotesPanel({
   }
 
   async function removeNote(noteId: string) {
-    if (!window.confirm("Delete this note?")) return;
+    const ok = await confirm({
+      title: "Delete this note?",
+      description: "The note is removed for good.",
+      confirmLabel: "Delete note",
+      destructive: true,
+    });
+    if (!ok) return;
     try {
       const res = await fetch(`/api/admin/shift/notes/${noteId}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
@@ -115,6 +126,7 @@ export function ShiftStudentNotesPanel({
 
   return (
     <div className="space-y-4 rounded-md bg-muted/40 p-4">
+      {confirmDialog}
       <form onSubmit={addNote} className="space-y-2">
         <div className="flex gap-2">
           <Input
@@ -137,7 +149,13 @@ export function ShiftStudentNotesPanel({
         </Button>
       </form>
 
-      {notes === null ? (
+      {loadError ? (
+        <AdminErrorState
+          title="Could not load notes"
+          message="The notes for this kid did not load."
+          onRetry={() => void load()}
+        />
+      ) : notes === null ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" /> Loading notes...
         </div>

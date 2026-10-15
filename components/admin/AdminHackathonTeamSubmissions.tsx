@@ -17,6 +17,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { SubmissionClusterView } from "@/components/admin/SubmissionClusterView";
 import { ImageLightbox } from "@/components/admin/ImageLightbox";
+import { AdminErrorState } from "@/components/admin/shared/AdminStates";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -865,13 +866,19 @@ export function AdminHackathonTeamSubmissions() {
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [pagination, setPagination] = useState<Pagination>({ page: 1, page_size: 20, total_items: 0, total_pages: 1 });
+  const [loadError, setLoadError] = useState<{ page: number; message: string } | null>(null);
 
   const fetchTeams = useCallback((pg = 1) => {
     setLoading(true);
+    setLoadError(null);
     fetch(`/api/admin/hackathon/teams/submissions?page=${pg}`)
-      .then((r) => r.json())
+      .then(async (r) => {
+        const data = await r.json().catch(() => null);
+        if (!r.ok) throw new Error(data?.error ?? `HTTP ${r.status}`);
+        return data;
+      })
       .then((data) => {
-        if (!data.teams) return;
+        if (!data?.teams) throw new Error("Response did not include teams");
         if (data.pagination) setPagination(data.pagination);
 
         const assembled: TeamData[] = data.teams.map((team: {
@@ -992,7 +999,10 @@ export function AdminHackathonTeamSubmissions() {
         // Server already filters to teams with submissions
         setTeams(assembled);
       })
-      .catch((err) => console.error("Failed to load team submissions:", err))
+      .catch((err) => {
+        console.error("Failed to load team submissions:", err);
+        setLoadError({ page: pg, message: err instanceof Error ? err.message : "Network error" });
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -1032,6 +1042,16 @@ export function AdminHackathonTeamSubmissions() {
       <div className="flex items-center justify-center py-16">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <AdminErrorState
+        title="Could not load team submissions"
+        message={`Page ${loadError.page} did not load. ${loadError.message}`}
+        onRetry={() => fetchTeams(loadError.page)}
+      />
     );
   }
 

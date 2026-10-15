@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition, type CSSProperties } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { saveCurriculum } from "@/app/shift/curriculum/actions";
@@ -9,12 +10,23 @@ import type {
   CurriculumDoc,
   CurriculumRow,
 } from "@/lib/content/shift2-curriculum";
+import type { CurriculumOption } from "@/lib/shift-round/admin/curriculum";
 
 /**
  * The /shift/curriculum page. Everyone with the link can read it; admins get
  * an Edit button that turns every text into a field, and Save writes the whole
- * curriculum to the shift_curriculum table.
+ * curriculum to the shift_curriculum table. One round at a time: the picker
+ * switches ?round=<key>. A round without a saved curriculum starts from the
+ * default or from a copy of another round (re-dated by the page).
  */
+
+export interface CurriculumCopySource {
+  key: string;
+  label: string;
+  doc: CurriculumDoc;
+}
+
+const curriculumHref = (key: string) => `/shift/curriculum?round=${encodeURIComponent(key)}`;
 
 const dateLabel = (iso: string) =>
   new Date(`${iso}T00:00:00+07:00`).toLocaleDateString("th-TH", {
@@ -119,23 +131,138 @@ const parseSteps = (s: string) =>
     .map(Number)
     .filter((n) => Number.isInteger(n) && n >= 1);
 
+/** ?round=<key> picker: every curriculum key and every round's key, latest first. */
+function RoundPicker({
+  round,
+  options,
+  onChange,
+}: {
+  round: string;
+  options: CurriculumOption[];
+  onChange: (key: string) => void;
+}) {
+  if (options.length <= 1) return null;
+  return (
+    <select
+      aria-label="เลือกรอบ"
+      value={round}
+      onChange={(e) => onChange(e.target.value)}
+      className="rounded border border-white/20 bg-black/40 px-2 py-1 text-sm text-white"
+    >
+      {options.map((o) => (
+        <option key={o.key} value={o.key}>
+          {o.hasRow ? o.label : `${o.label} (ยังไม่มี)`}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+/** Shown when a round has no saved curriculum yet (v2 spec 3). */
+function StartPanel({
+  label,
+  canEdit,
+  unreadable,
+  defaultDoc,
+  copySources,
+  onStart,
+}: {
+  label: string;
+  canEdit: boolean;
+  unreadable: boolean;
+  defaultDoc: CurriculumDoc;
+  copySources: CurriculumCopySource[];
+  onStart: (doc: CurriculumDoc) => void;
+}) {
+  const [source, setSource] = useState(copySources[0]?.key ?? "");
+  const picked = copySources.find((c) => c.key === source);
+  return (
+    <section className="mx-auto mt-10 max-w-[640px] rounded-lg border border-white/10 bg-white/5 p-6" aria-label="เริ่มหลักสูตร">
+      <h2 className="text-lg font-bold">
+        {unreadable ? `หลักสูตรของ ${label} ที่บันทึกไว้อ่านไม่ได้` : `ยังไม่มีหลักสูตรของ ${label}`}
+      </h2>
+      <p className="mt-1 text-sm text-white/60">
+        จนกว่าจะบันทึก แอปจะใช้หลักสูตรแม่แบบ (default) เป็นแผนรายวันและวิธีคุยกับคน
+      </p>
+      {canEdit ? (
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <button
+            type="button"
+            onClick={() => onStart(defaultDoc)}
+            className="rounded bg-amber-300 px-3 py-1.5 text-sm font-bold text-black hover:bg-amber-200"
+          >
+            เริ่มจากแม่แบบ
+          </button>
+          {copySources.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <label htmlFor="curriculum-copy-from" className="text-sm text-white/60">
+                หรือคัดลอกจาก
+              </label>
+              <select
+                id="curriculum-copy-from"
+                value={source}
+                onChange={(e) => setSource(e.target.value)}
+                className="rounded border border-white/20 bg-black/40 px-2 py-1 text-sm text-white"
+              >
+                {copySources.map((c) => (
+                  <option key={c.key} value={c.key}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                disabled={!picked}
+                onClick={() => picked && onStart(picked.doc)}
+                className="rounded bg-white/10 px-3 py-1.5 text-sm font-semibold hover:bg-white/20 disabled:opacity-50"
+              >
+                คัดลอก
+              </button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <p className="mt-4 text-sm text-white/50">แอดมินล็อกอินเพื่อสร้างหลักสูตรของรอบนี้</p>
+      )}
+      <p className="mt-4 text-xs text-white/40">วันที่และวันที่มีเซสชันจะปรับตามรอบนี้ให้ ตรวจแล้วกดบันทึก</p>
+    </section>
+  );
+}
+
 export function CurriculumEditor({
   round,
+  label,
+  options,
   initial,
+  unreadable = false,
   updatedAt: initialUpdatedAt,
   canEdit,
+  defaultDoc,
+  copySources,
   refundSteps,
   refundHow,
 }: {
+  /** `shift_curriculum.round` key this page edits. */
   round: string;
-  initial: CurriculumDoc;
+  /** "SHIFT[3]" for the header and picker. */
+  label: string;
+  options: CurriculumOption[];
+  /** Null when the round has no saved curriculum yet. */
+  initial: CurriculumDoc | null;
+  /** A row exists but its content does not parse. */
+  unreadable?: boolean;
   updatedAt: string | null;
   canEdit: boolean;
+  /** "Start from default": the default row, else the code defaults, prepared for this round. */
+  defaultDoc: CurriculumDoc;
+  /** "Copy from round X": other saved curricula, prepared for this round. */
+  copySources: CurriculumCopySource[];
   refundSteps: string[];
   refundHow: string;
 }) {
-  const [saved, setSaved] = useState(initial);
-  const [doc, setDoc] = useState(initial);
+  const router = useRouter();
+  const [saved, setSaved] = useState<CurriculumDoc | null>(initial);
+  const [doc, setDoc] = useState<CurriculumDoc | null>(initial);
   const [editing, setEditing] = useState(false);
   const [updatedAt, setUpdatedAt] = useState(initialUpdatedAt);
   const [pending, startTransition] = useTransition();
@@ -148,13 +275,14 @@ export function CurriculumEditor({
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
 
-  const patch = (p: Partial<CurriculumDoc>) => setDoc((d) => ({ ...d, ...p }));
+  const edit = (fn: (d: CurriculumDoc) => CurriculumDoc) => setDoc((d) => (d ? fn(d) : d));
+  const patch = (p: Partial<CurriculumDoc>) => edit((d) => ({ ...d, ...p }));
   const patchInterview = (p: Partial<CurriculumDoc["interview"]>) =>
-    setDoc((d) => ({ ...d, interview: { ...d.interview, ...p } }));
+    edit((d) => ({ ...d, interview: { ...d.interview, ...p } }));
   const patchDay = (i: number, p: Partial<CurriculumDay>) =>
-    setDoc((d) => ({ ...d, days: d.days.map((day, j) => (j === i ? { ...day, ...p } : day)) }));
+    edit((d) => ({ ...d, days: d.days.map((day, j) => (j === i ? { ...day, ...p } : day)) }));
   const patchRow = (i: number, r: number, c: number, v: string) =>
-    setDoc((d) => ({
+    edit((d) => ({
       ...d,
       days: d.days.map((day, j) =>
         j === i
@@ -170,6 +298,7 @@ export function CurriculumEditor({
 
   const save = () =>
     startTransition(async () => {
+      if (!doc) return;
       const res = await saveCurriculum(round, doc);
       if (!res.ok) {
         toast.error(`บันทึกไม่ได้: ${res.error}`);
@@ -179,6 +308,7 @@ export function CurriculumEditor({
       setUpdatedAt(res.updatedAt);
       setEditing(false);
       toast.success("บันทึกแล้ว");
+      router.refresh();
     });
 
   const cancel = () => {
@@ -187,13 +317,49 @@ export function CurriculumEditor({
     setEditing(false);
   };
 
+  const start = (source: CurriculumDoc) => {
+    setDoc(source);
+    setEditing(true);
+  };
+
+  const switchRound = (key: string) => {
+    if (key === round) return;
+    if (dirty && !window.confirm("ทิ้งสิ่งที่แก้?")) return;
+    router.push(curriculumHref(key));
+  };
+
+  if (!doc) {
+    return (
+      <div className="min-h-screen bg-neutral-950 font-bai-jamjuree text-white">
+        <header className="sticky top-0 z-10 border-b border-white/10 bg-neutral-950/90 px-4 py-3 backdrop-blur">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-lg font-bold">{label} · Curriculum (internal)</h1>
+            <RoundPicker round={round} options={options} onChange={switchRound} />
+          </div>
+        </header>
+        <main className="px-4">
+          <StartPanel
+            label={label}
+            canEdit={canEdit}
+            unreadable={unreadable}
+            defaultDoc={defaultDoc}
+            copySources={copySources}
+            onStart={start}
+          />
+        </main>
+      </div>
+    );
+  }
+
   const iv = doc.interview;
 
   return (
     <div className="min-h-screen bg-neutral-950 font-bai-jamjuree text-white">
       <header className="sticky top-0 z-10 border-b border-white/10 bg-neutral-950/90 px-4 py-3 backdrop-blur">
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-lg font-bold">SHIFT[{round}] · Curriculum (internal)</h1>
+          <h1 className="text-lg font-bold">{label} · Curriculum (internal)</h1>
+          <RoundPicker round={round} options={options} onChange={switchRound} />
+          {!saved && <span className="rounded bg-amber-300/15 px-2 py-0.5 text-xs text-amber-200">ยังไม่ได้บันทึก</span>}
           {updatedAt && (
             <span className="text-xs text-white/40">
               แก้ล่าสุด {new Date(updatedAt).toLocaleString("th-TH", { timeZone: "Asia/Bangkok" })}

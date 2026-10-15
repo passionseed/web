@@ -3,12 +3,18 @@
 import { revalidatePath } from "next/cache";
 
 import { parseCurriculumDoc } from "@/lib/content/shift2-curriculum";
+import { isCurriculumKey } from "@/lib/shift-round/admin/format";
 import { createClient } from "@/utils/supabase/server";
 
 export type SaveResult = { ok: true; updatedAt: string } | { ok: false; error: string };
 
-/** Saves the whole curriculum. Admins only (checked here and by RLS). */
+/**
+ * Saves the whole curriculum of one round key (`shift_curriculum.round`,
+ * which rounds point at with `curriculum_key`). Admins only (checked here and
+ * by RLS).
+ */
 export async function saveCurriculum(round: string, raw: unknown): Promise<SaveResult> {
+  if (!isCurriculumKey(round)) return { ok: false, error: "คีย์หลักสูตรไม่ถูกต้อง" };
   const doc = parseCurriculumDoc(raw);
   if (!doc) return { ok: false, error: "ข้อมูลไม่ถูกต้อง" };
 

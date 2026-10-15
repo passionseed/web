@@ -1,16 +1,18 @@
 import { AdminShiftTracker } from "@/components/admin/AdminShiftTracker";
 import { ShiftAdminTabs } from "@/components/admin/ShiftAdminTabs";
+import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
 
 export const dynamic = "force-dynamic";
 
 export default function AdminShiftPage() {
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       <ShiftAdminTabs />
-      <h2 className="text-2xl font-semibold">SHIFT Tracker</h2>
-      <p className="text-sm text-muted-foreground">
-        Track cohort kids and log weekly notes.
-      </p>
+      <AdminPageHeader
+        eyebrow="SHIFT"
+        title="Tracker"
+        description="Track cohort kids and log weekly notes."
+      />
       <AdminShiftTracker />
     </div>
   );

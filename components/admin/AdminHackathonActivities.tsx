@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
 import { diffWords } from "diff";
+import { toast } from "sonner";
 import { ImageLightbox } from "@/components/admin/ImageLightbox";
 import {
   CheckCircle2,
@@ -1048,6 +1049,15 @@ export function AdminHackathonActivities() {
   async function rewriteFeedback(style: string) {
     if (!selectedSubmission || !gradeFeedback.trim() || rewritingStyle) return;
     setRewritingStyle(style);
+    const original = gradeFeedback;
+    const fail = (reason: string) => {
+      // Put back what the grader wrote; a half-streamed rewrite is worse than none.
+      setGradeFeedback(original);
+      toast.error(`Feedback rewrite failed: ${reason}`, {
+        action: { label: "Retry", onClick: () => void rewriteFeedback(style) },
+      });
+    };
+    let streamError: string | null = null;
     try {
       const res = await fetch(
         `/api/admin/hackathon/submissions/${selectedSubmission.scope}/${selectedSubmission.id}/rewrite-feedback`,
@@ -1058,7 +1068,8 @@ export function AdminHackathonActivities() {
         }
       );
       if (!res.ok || !res.body) {
-        setRewritingStyle(null);
+        const body = await res.json().catch(() => null);
+        fail(body?.error ?? `HTTP ${res.status}`);
         return;
       }
       const reader = res.body.getReader();
@@ -1081,11 +1092,18 @@ export function AdminHackathonActivities() {
               setGradeFeedback(rewritten);
             } else if (ev.type === "done") {
               setGradeFeedback(ev.feedback ?? rewritten);
+            } else if (ev.type === "error") {
+              streamError = ev.message ?? "Rewrite failed";
             }
-          } catch {}
+          } catch {
+            // Skip a malformed stream line; the rest of the stream still applies.
+          }
         }
       }
-    } catch {} finally {
+      if (streamError) fail(streamError);
+    } catch (error) {
+      fail(error instanceof Error ? error.message : "Network error");
+    } finally {
       setRewritingStyle(null);
     }
   }

@@ -322,3 +322,8 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 
 [functions.viability-webhook]
 verify_jwt = false
+
+# pg_cron calls this with x-shift-round-jobs-secret (checked in constant time in the
+# handler), not a user JWT.
+[functions.shift-round-jobs]
+verify_jwt = false

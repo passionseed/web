@@ -250,6 +250,14 @@ body:has(.admin-workspace),
   letter-spacing: -1.6px;
   font-weight: 500;
 }
+/* Tool pages: same heading, sized for dense work surfaces. */
+.admin-page-heading-compact {
+  margin-bottom: 24px;
+}
+.admin-page-heading-compact h1 {
+  font-size: clamp(24px, 2.2vw, 30px);
+  letter-spacing: -0.8px;
+}
 .admin-page-description {
   margin-top: 13px;
   color: hsl(var(--muted-foreground));

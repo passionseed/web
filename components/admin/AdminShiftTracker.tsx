@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import {
   Check,
@@ -11,6 +11,7 @@ import {
   MessageCircle,
   Pencil,
   Plus,
+  Search,
   Trash2,
   X,
 } from "lucide-react";
@@ -20,6 +21,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ShiftStudentNotesPanel } from "@/components/admin/ShiftStudentNotesPanel";
+import {
+  AdminEmptyState,
+  AdminErrorState,
+  AdminLoading,
+} from "@/components/admin/shared/AdminStates";
+import { useConfirm } from "@/components/admin/shared/useConfirm";
 import { SHIFT_COHORT } from "@/lib/content/shift-cohort";
 import { cn } from "@/lib/utils";
 import type { ShiftStudentSummary, ShiftStudentsResponse } from "@/types/shift";
@@ -29,6 +36,8 @@ const EMPTY_KID = { full_name: "", ig_handle: "", discord_handle: "" };
 export function AdminShiftTracker() {
   const [data, setData] = useState<ShiftStudentsResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [query, setQuery] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState(EMPTY_KID);
@@ -36,13 +45,17 @@ export function AdminShiftTracker() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const { confirm, confirmDialog } = useConfirm();
 
   const load = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/shift/students");
       if (!res.ok) throw new Error();
       setData(await res.json());
+      setLoadError(false);
     } catch {
+      // Keep any list already on screen; only a first load failure blocks the page.
+      setLoadError(true);
       toast.error("Failed to load SHIFT students");
     } finally {
       setLoading(false);
@@ -116,7 +129,13 @@ export function AdminShiftTracker() {
   }
 
   async function removeKid(student: ShiftStudentSummary) {
-    if (!window.confirm(`Remove ${student.full_name} and all their notes?`)) return;
+    const ok = await confirm({
+      title: `Remove ${student.full_name}?`,
+      description: "This deletes the kid from the tracker together with all their weekly notes.",
+      confirmLabel: "Remove",
+      destructive: true,
+    });
+    if (!ok) return;
     try {
       const res = await fetch(`/api/admin/shift/students/${student.id}`, {
         method: "DELETE",
@@ -130,13 +149,36 @@ export function AdminShiftTracker() {
     }
   }
 
+  const allStudents = useMemo(
+    () =>
+      [...(data?.students ?? [])].sort(
+        (a, b) => Number(a.has_note_this_week) - Number(b.has_note_this_week)
+      ),
+    [data]
+  );
+  const search = query.trim().toLowerCase().replace(/^@/, "");
+  const students = search
+    ? allStudents.filter((s) =>
+        [s.full_name, s.ig_handle, s.discord_handle]
+          .filter(Boolean)
+          .some((v) => v!.toLowerCase().includes(search))
+      )
+    : allStudents;
+
   if (loading) {
+    return <AdminLoading rows={4} rowClassName="h-16" label="Loading SHIFT kids" className="pt-2" />;
+  }
+
+  if (loadError && !data) {
     return (
-      <div className="space-y-2 pt-2">
-        {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="h-16 animate-pulse rounded-lg bg-muted" />
-        ))}
-      </div>
+      <AdminErrorState
+        title="Could not load the SHIFT tracker"
+        message="The kid list did not load, so nothing is shown. Your data is safe."
+        onRetry={() => {
+          setLoading(true);
+          void load();
+        }}
+      />
     );
   }
 
@@ -147,12 +189,17 @@ export function AdminShiftTracker() {
     currentWeekLabel: "Week 1",
   };
   const notedCount = stats.totalKids - stats.kidsMissingNoteThisWeek;
-  const students = [...(data?.students ?? [])].sort(
-    (a, b) => Number(a.has_note_this_week) - Number(b.has_note_this_week)
-  );
 
   return (
     <div className="space-y-4">
+      {confirmDialog}
+      {loadError && data && (
+        <AdminErrorState
+          title="Could not refresh the list"
+          message="Showing the last list that loaded."
+          onRetry={() => void load()}
+        />
+      )}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Badge variant="secondary">{stats.currentWeekLabel}</Badge>
@@ -184,14 +231,32 @@ export function AdminShiftTracker() {
             </>
           )}
         </div>
-        <Button
-          size="sm"
-          variant={showAddForm ? "secondary" : "outline"}
-          onClick={() => setShowAddForm((v) => !v)}
-        >
-          <Plus className="mr-1 h-4 w-4" />
-          Add kid
-        </Button>
+        <div className="flex items-center gap-2">
+          {allStudents.length > 0 && (
+            <div className="relative">
+              <Search
+                className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                aria-hidden="true"
+              />
+              <Input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search name or handle"
+                aria-label="Search kids by name or handle"
+                className="h-9 w-56 pl-8"
+              />
+            </div>
+          )}
+          <Button
+            size="sm"
+            variant={showAddForm ? "secondary" : "outline"}
+            onClick={() => setShowAddForm((v) => !v)}
+          >
+            <Plus className="mr-1 h-4 w-4" />
+            Add kid
+          </Button>
+        </div>
       </div>
 
       {showAddForm && (
@@ -231,21 +296,27 @@ export function AdminShiftTracker() {
         </form>
       )}
 
-      {students.length === 0 ? (
-        <div className="rounded-lg border border-dashed py-12 text-center">
-          <p className="font-medium">No kids yet</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Add the kids of {SHIFT_COHORT.name} to start logging weekly notes.
-          </p>
-          <Button
-            size="sm"
-            className="mt-4"
-            onClick={() => setShowAddForm(true)}
-          >
-            <Plus className="mr-1 h-4 w-4" />
-            Add the first kid
-          </Button>
-        </div>
+      {allStudents.length === 0 ? (
+        <AdminEmptyState
+          title="No kids yet"
+          description={`Add the kids of ${SHIFT_COHORT.name} to start logging weekly notes.`}
+          action={
+            <Button size="sm" onClick={() => setShowAddForm(true)}>
+              <Plus className="mr-1 h-4 w-4" />
+              Add the first kid
+            </Button>
+          }
+        />
+      ) : students.length === 0 ? (
+        <AdminEmptyState
+          title="No kids match your search"
+          description={`Nothing matches "${query.trim()}".`}
+          action={
+            <Button size="sm" variant="outline" onClick={() => setQuery("")}>
+              Clear search
+            </Button>
+          }
+        />
       ) : (
         <ul className="space-y-2">
           {students.map((student) => {
@@ -291,7 +362,7 @@ export function AdminShiftTracker() {
                       )}
                       {student.discord_user_id && (
                         <span
-                          className="text-xs font-medium text-emerald-600"
+                          className="text-xs font-medium text-emerald-600 dark:text-emerald-400"
                           title="Signed in with this Discord through the SHIFT join link"
                         >
                           verified
