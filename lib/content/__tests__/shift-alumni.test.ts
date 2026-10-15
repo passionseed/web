@@ -7,10 +7,12 @@ import {
   emptySession,
   googleCalendarUrl,
   isWeeklySession,
+  longThaiDate,
   parseAlumniCalendarDoc,
   patchSession,
   removeSession,
   sessionDetails,
+  sessionSteps,
   timeRangeLabel,
   weekdayKey,
   weekdayName,
@@ -139,5 +141,21 @@ describe("session details and calendar links", () => {
   it("formats a time range, or nothing before a time is set", () => {
     expect(timeRangeLabel("19:00", "21:00")).toBe("19:00–21:00 น.");
     expect(timeRangeLabel("", "")).toBeNull();
+  });
+});
+
+describe("page and poster copy", () => {
+  it("writes the headline date with the full weekday", () => {
+    expect(longThaiDate("2026-10-17")).toBe("เสาร์ 17 ต.ค.");
+  });
+
+  it("reads a topic written with dots as the run of the night", () => {
+    expect(sessionSteps("วาดโปรเจกต์ใน 60 วิ · โชว์แอนด์เทล · หาบัดดี้")).toEqual([
+      "วาดโปรเจกต์ใน 60 วิ",
+      "โชว์แอนด์เทล",
+      "หาบัดดี้",
+    ]);
+    expect(sessionSteps("Build night")).toEqual(["Build night"]);
+    expect(sessionSteps("")).toEqual([]);
   });
 });

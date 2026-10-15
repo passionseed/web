@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { bangkokToday } from "@/lib/content/shift-cohort";
+import { bangkokToday, formatThaiDate } from "@/lib/content/shift-cohort";
 
 /**
  * SHIFT alumni calendar (/shift/alumni). The weekly session repeats every 7
@@ -189,4 +189,18 @@ export function patchSession(
 /** Clears a weekly session back to the defaults, or deletes a one-off event. */
 export function removeSession(doc: AlumniCalendarDoc, date: string): AlumniCalendarDoc {
   return { ...doc, sessions: doc.sessions.filter((s) => s.date !== date) };
+}
+
+/** "เสาร์ 17 ต.ค.": the headline date for a session. */
+export function longThaiDate(iso: string): string {
+  return `${weekdayName(iso).replace(/^วัน/, "")} ${formatThaiDate(iso, false)}`;
+}
+
+/** A topic written as "a · b · c" is the session's run of parts. One part,
+ *  or none, means it is just a topic. */
+export function sessionSteps(topic: string): string[] {
+  return topic
+    .split("·")
+    .map((part) => part.trim())
+    .filter(Boolean);
 }

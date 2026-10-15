@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 import { AlumniCalendar } from "@/components/shift/alumni/AlumniCalendar";
+import { AlumniShowcase } from "@/components/shift/alumni/AlumniShowcase";
 import { ShiftTopBar } from "@/components/shift/ShiftTopBar";
 import { RisoPageTexture } from "@/components/shift/ShiftRiso";
 import {
@@ -110,6 +111,8 @@ export default async function ShiftAlumniPage() {
             rsvpNames={rsvpNames}
           />
         </div>
+
+        <AlumniShowcase />
 
         <Link
           href="/shift"

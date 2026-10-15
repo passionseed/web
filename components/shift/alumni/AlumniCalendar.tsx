@@ -4,6 +4,8 @@ import { useEffect, useState, useTransition } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
+import { NOTES } from "@/lib/content/pathlab-page";
+
 import { saveAlumniCalendar } from "@/app/shift/alumni/actions";
 import { INK } from "@/components/shift/poster/riso";
 import {
@@ -17,6 +19,8 @@ import {
 
 import { AlumniRsvp, AlumniRsvpNames } from "./AlumniRsvp";
 import { AlumniSessionCard, EditField } from "./AlumniSessionCard";
+import { AlumniSessionRows, CancelledNotice } from "./AlumniSessionRows";
+import { NextSessionFeature } from "./NextSessionFeature";
 
 /**
  * The calendar on /shift/alumni. Everyone sees upcoming and recent sessions;
@@ -190,7 +194,11 @@ export function AlumniCalendar({
   }, [dirty]);
 
   const { upcoming, past } = alumniCalendar(doc, today);
-  const next = upcoming.find((s) => !s.cancelled)?.date;
+  const nextIndex = upcoming.findIndex((s) => !s.cancelled);
+  const next = nextIndex >= 0 ? upcoming[nextIndex] : undefined;
+  // Called off before the next one (the Friday that moved), and after it.
+  const calledOff = nextIndex >= 0 ? upcoming.slice(0, nextIndex) : upcoming;
+  const later = nextIndex >= 0 ? upcoming.slice(nextIndex + 1) : [];
 
   const save = () =>
     startTransition(async () => {
@@ -218,16 +226,13 @@ export function AlumniCalendar({
     </>
   );
 
-  const card = (session: (typeof upcoming)[number], extra: { next?: boolean } = {}) => (
+  const card = (session: (typeof upcoming)[number]) => (
     <AlumniSessionCard
       key={session.date}
       session={session}
       defaults={doc.defaults}
-      editing={editing}
       onChange={(patch) => setDoc((d) => patchSession(d, session.date, patch))}
       onRemove={() => setDoc((d) => removeSession(d, session.date))}
-      footer={extra.next ? rsvpFooter(session.date) : undefined}
-      {...extra}
     />
   );
 
@@ -252,19 +257,46 @@ export function AlumniCalendar({
         />
       )}
 
-      <SectionHeading>นัดต่อไป</SectionHeading>
-      <div className="grid gap-4">{upcoming.map((session) => card(session, { next: session.date === next }))}</div>
-      {editing && (
-        <AddEvent
-          today={today}
-          onAdd={(date) => setDoc((d) => patchSession(d, date, { topic: "นัดพิเศษ" }))}
-        />
-      )}
-
-      {past.length > 0 && (
+      {editing ? (
         <>
-          <SectionHeading>ที่ผ่านมา</SectionHeading>
-          <div className="grid gap-4 opacity-70">{past.map((session) => card(session))}</div>
+          <SectionHeading>นัดต่อไป</SectionHeading>
+          <div className="grid gap-4">{upcoming.map(card)}</div>
+          <AddEvent
+            today={today}
+            onAdd={(date) => setDoc((d) => patchSession(d, date, { topic: "นัดพิเศษ" }))}
+          />
+          {past.length > 0 && (
+            <>
+              <SectionHeading>ที่ผ่านมา</SectionHeading>
+              <div className="grid gap-4 opacity-70">{past.map(card)}</div>
+            </>
+          )}
+        </>
+      ) : (
+        <>
+          {calledOff.map((session) => (
+            <CancelledNotice key={session.date} session={session} />
+          ))}
+          {next && (
+            <>
+              <NextSessionFeature session={next} defaults={doc.defaults} rsvp={rsvpFooter(next.date)} />
+              <p className="mt-5 text-right text-sm">
+                <span className="pathlab-note">{NOTES.shiftAlumni}</span>
+              </p>
+            </>
+          )}
+          {later.length > 0 && (
+            <>
+              <SectionHeading>ต่อจากนั้น</SectionHeading>
+              <AlumniSessionRows sessions={later} defaults={doc.defaults} />
+            </>
+          )}
+          {past.length > 0 && (
+            <>
+              <SectionHeading>ที่ผ่านมา</SectionHeading>
+              <AlumniSessionRows sessions={past} defaults={doc.defaults} faded />
+            </>
+          )}
         </>
       )}
     </div>
