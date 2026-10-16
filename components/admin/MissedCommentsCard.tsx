@@ -65,12 +65,18 @@ export function MissedCommentsCard({
   comments,
   defaultPublicMessage,
   defaultDmMessage,
+  shiftPublicMessage,
+  shiftDmMessage,
 }: {
   comments: MissedCommentItem[];
   /** Default public reply copy, rendered with a sample @mention. */
   defaultPublicMessage: string;
   /** Default DM copy. */
   defaultDmMessage: string;
+  /** SHIFT public reply for the open cohort, with a sample @mention. */
+  shiftPublicMessage: string;
+  /** SHIFT DM for the open cohort. */
+  shiftDmMessage: string;
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<TabKey>("all");
@@ -127,6 +133,8 @@ export function MissedCommentsCard({
       : Boolean(mode === "private" ? dmMessage.trim() : publicMessage.trim());
   const batchSize = Math.min(visible.length, getBatchCap(mode, verbatim));
   const campaign = tab === "all" ? undefined : tab;
+  const dmPlaceholder = tab === "shift" ? shiftDmMessage : defaultDmMessage;
+  const publicPlaceholder = tab === "shift" ? shiftPublicMessage : defaultPublicMessage;
 
   /**
    * One pass is capped so it finishes inside the platform's 60s function limit,
@@ -292,13 +300,19 @@ export function MissedCommentsCard({
               <Textarea
                 value={dmMessage}
                 onChange={(e) => setDmMessage(e.target.value)}
-                placeholder={defaultDmMessage}
+                placeholder={dmPlaceholder}
                 rows={6}
                 disabled={running}
                 className="text-sm"
               />
               <p className="text-xs text-muted-foreground">
-                {dmMessage.trim() ? "Sent exactly as written." : "Empty: uses the default, personalized."}
+                {dmMessage.trim()
+                  ? "Sent exactly as written."
+                  : tab === "shift"
+                    ? "Empty: current open SHIFT cohort, personalized."
+                    : tab === "all"
+                      ? "Empty: SHIFT comments get the open cohort link. Other campaigns keep their own default."
+                      : "Empty: uses the default, personalized."}
               </p>
             </div>
           )}
@@ -309,7 +323,7 @@ export function MissedCommentsCard({
               <Textarea
                 value={publicMessage}
                 onChange={(e) => setPublicMessage(e.target.value)}
-                placeholder={defaultPublicMessage}
+                placeholder={publicPlaceholder}
                 rows={6}
                 disabled={running}
                 className="text-sm"
@@ -317,7 +331,11 @@ export function MissedCommentsCard({
               <p className="text-xs text-muted-foreground">
                 {publicMessage.trim()
                   ? "Sent exactly as written."
-                  : "Empty: uses the default, personalized and @mentioning them."}
+                  : tab === "shift"
+                    ? "Empty: current open SHIFT cohort, personalized and @mentioning them."
+                    : tab === "all"
+                      ? "Empty: SHIFT comments get the open cohort link. Other campaigns get the privacy reply."
+                      : "Empty: uses the default, personalized and @mentioning them."}
               </p>
             </div>
           )}
