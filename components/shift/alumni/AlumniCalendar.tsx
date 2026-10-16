@@ -11,13 +11,17 @@ import { INK } from "@/components/shift/poster/riso";
 import {
   alumniCalendar,
   patchSession,
+  longThaiDate,
   removeSession,
+  sessionDetails,
+  timeRangeLabel,
   weekdayName,
   type AlumniCalendarDoc,
   type AlumniDefaults,
 } from "@/lib/content/shift-alumni";
 
-import { AlumniRsvp, AlumniRsvpNames } from "./AlumniRsvp";
+import { AlumniRsvp, AlumniRsvpNames, RSVP_ANCHOR } from "./AlumniRsvp";
+import { AlumniRsvpStickyBar } from "./AlumniRsvpStickyBar";
 import { AlumniSessionCard, EditField } from "./AlumniSessionCard";
 import { AlumniSessionRows, CancelledNotice } from "./AlumniSessionRows";
 import { NextSessionFeature } from "./NextSessionFeature";
@@ -219,12 +223,30 @@ export function AlumniCalendar({
     setEditing(false);
   };
 
-  const rsvpFooter = (date: string) => (
-    <>
-      <AlumniRsvp date={date} initialCount={rsvpCounts[date] ?? 0} />
-      {rsvpNames && <AlumniRsvpNames rsvps={rsvpNames[date] ?? []} />}
-    </>
-  );
+  /** The first thing on the page: are you coming? Open, not behind a tap. */
+  const rsvpBox = (session: (typeof upcoming)[number]) => {
+    const { startTime, endTime, place } = sessionDetails(session, doc.defaults);
+    const when = [longThaiDate(session.date), timeRangeLabel(startTime, endTime)].filter(Boolean).join(" ");
+    return (
+      <section
+        id={RSVP_ANCHOR}
+        aria-labelledby="rsvp-heading"
+        className="mb-8 scroll-mt-24 rounded-2xl p-5 sm:p-6"
+        style={{ backgroundColor: paper("12"), boxShadow: `inset 0 0 0 1.5px ${INK.yellow}88, -5px 4px 0 ${INK.pink}` }}
+      >
+        <h2 id="rsvp-heading" className="font-kodchasan text-2xl font-bold leading-snug sm:text-3xl">
+          มาไหม? <span style={{ color: INK.yellow }}>{when}</span>
+        </h2>
+        <p className="mt-1 text-sm" style={{ color: paper("99") }}>
+          {place ? `${place} · ` : ""}สำหรับทุกคนที่จบ SHIFT แล้ว ลิงก์เข้าห้องอยู่ในกลุ่มของรุ่น
+        </p>
+        <div className="mt-5">
+          <AlumniRsvp date={session.date} initialCount={rsvpCounts[session.date] ?? 0} />
+        </div>
+        {rsvpNames && <AlumniRsvpNames rsvps={rsvpNames[session.date] ?? []} />}
+      </section>
+    );
+  };
 
   const card = (session: (typeof upcoming)[number]) => (
     <AlumniSessionCard
@@ -274,12 +296,14 @@ export function AlumniCalendar({
         </>
       ) : (
         <>
+          {next && rsvpBox(next)}
+          {next && <AlumniRsvpStickyBar date={next.date} label={longThaiDate(next.date)} />}
           {calledOff.map((session) => (
             <CancelledNotice key={session.date} session={session} />
           ))}
           {next && (
             <>
-              <NextSessionFeature session={next} defaults={doc.defaults} rsvp={rsvpFooter(next.date)} />
+              <NextSessionFeature session={next} defaults={doc.defaults} />
               <p className="mt-5 text-right text-sm">
                 <span className="pathlab-note">{NOTES.shiftAlumni}</span>
               </p>

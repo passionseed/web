@@ -3,7 +3,9 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 import { AlumniCalendar } from "@/components/shift/alumni/AlumniCalendar";
+import { AlumniPageView } from "@/components/shift/alumni/AlumniPageView";
 import { AlumniShowcase } from "@/components/shift/alumni/AlumniShowcase";
+import { MetaPixel } from "@/components/shift/MetaPixel";
 import { ScaledFrame } from "@/components/shift/alumni/ScaledFrame";
 import {
   ALUMNI_POSTER_H,
@@ -18,7 +20,7 @@ import {
   INK,
   OrbitSky,
 } from "@/components/shift/poster/riso";
-import { ALUMNI_PAGE_URL, alumniCalendar, timeRangeLabel, weekdayName } from "@/lib/content/shift-alumni";
+import { ALUMNI_PAGE_URL, alumniCalendar } from "@/lib/content/shift-alumni";
 import { bangkokToday } from "@/lib/content/shift-cohort";
 import { currentShiftAdmin } from "@/lib/shift/admin";
 import { loadAlumniCalendar } from "@/lib/supabase/shift-alumni-calendar";
@@ -71,8 +73,6 @@ export default async function ShiftAlumniPage() {
     countAlumniRsvps(upcomingDates),
     admin ? rsvpNamesByDate(upcomingDates) : undefined,
   ]);
-  const { firstDate, startTime, endTime } = doc.defaults;
-  const when = [`ทุก${weekdayName(firstDate)}`, timeRangeLabel(startTime, endTime)].filter(Boolean).join(" ");
 
   return (
     <div
@@ -81,6 +81,8 @@ export default async function ShiftAlumniPage() {
       lang="th"
     >
       <RisoPageTexture />
+      <AlumniPageView />
+      <MetaPixel pagePath="/shift/alumni" />
 
       {next ? (
         <header className="relative">
@@ -115,17 +117,8 @@ export default async function ShiftAlumniPage() {
         </header>
       )}
 
-      <main className="relative mx-auto max-w-2xl px-5 pb-24 pt-10 sm:px-8">
-        <p className="text-center leading-relaxed sm:text-lg" style={{ color: paper("cc") }}>
-          ศิษย์เก่า SHIFT นัดกัน{when} ออนไลน์ใน Discord
-          <br />
-          มาทำโปรเจกต์ต่อ อัปเดตกัน แล้วช่วยกันไปต่อ
-        </p>
-        <p className="mt-3 text-center text-sm leading-relaxed" style={{ color: paper("80") }}>
-          สำหรับทุกคนที่จบ SHIFT แล้ว ลิงก์เข้าห้องอยู่ในกลุ่มของแต่ละรุ่น
-        </p>
-
-        <div className="mt-10">
+      <main className="relative mx-auto max-w-2xl px-5 pb-28 pt-8 sm:px-8 sm:pb-24">
+        <div>
           <AlumniCalendar
             initial={doc}
             updatedAt={updatedAt}

@@ -95,8 +95,8 @@ export function NextSessionFeature({
 }: {
   session: AlumniSession;
   defaults: AlumniDefaults;
-  /** The RSVP button (and, for admins, who said yes). */
-  rsvp: ReactNode;
+  /** Optional extra under the details. RSVP lives at the top of the page. */
+  rsvp?: ReactNode;
 }) {
   const { startTime, endTime, place } = sessionDetails(session, defaults);
   const steps = sessionSteps(session.topic);
@@ -113,10 +113,10 @@ export function NextSessionFeature({
       }}
     >
       <p className="font-kodchasan text-sm font-semibold" style={{ color: INK.yellow }}>
-        นัดต่อไป{first ? " · ครั้งแรก" : ""}
+        {longThaiDate(session.date)}{first ? " · ครั้งแรก" : ""}
       </p>
-      <h2 id="next-session" className="mt-1 font-kodchasan text-5xl font-bold leading-tight sm:text-6xl" style={MISREG_TEXT}>
-        {longThaiDate(session.date)}
+      <h2 id="next-session" className="mt-1 font-kodchasan text-3xl font-bold leading-tight sm:text-4xl" style={MISREG_TEXT}>
+        มีอะไรบ้าง
       </h2>
       <p className="mt-2 text-lg" style={{ color: paper("cc") }}>
         {timeRangeLabel(startTime, endTime) ?? TIME_TBD}
