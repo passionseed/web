@@ -16,7 +16,7 @@ function glanceStats(cohort: ShiftCohort): GlanceStat[] {
   return [
     { icon: "calendar", value: "7 วัน", label: "วันละ 1-2 ชั่วโมง ไม่ต้องลาเรียน" },
     { icon: "people", value: teamSizeLabel(cohort), label: "ทำคนเดียวหรือชวนเพื่อนเป็นทีม" },
-    { icon: "send", value: `${cohort.testerTarget} คน`, label: "คนนอกที่ทักตรงมาลองของ" },
+    { icon: "send", value: `${cohort.testerTarget} คน`, label: "คนนอกที่มาลองของ ทักตรง + กลุ่ม Facebook" },
     { icon: "caseStudy", value: "1 หน้า", label: "พอร์ตสรุปงานจริง ไว้ยื่น TCAS 1" },
   ];
 }

@@ -97,7 +97,7 @@ const PARENT_POINTS = [
     body: `mentor อยู่ในห้อง Discord ทุกเย็น ${COHORT.sessionTime} น. เรียนจากบ้าน ไม่ต้องเดินทาง`,
   },
   { title: "เห็นผลงานได้จริง", body: "ได้ต้นแบบที่เปิดให้ดูได้ พร้อมพอร์ต 1 หน้า ไม่ใช่แค่ใบเซอร์" },
-  { title: REFUND_PROMISE, body: "ถ้าจบวันที่ 7 แล้วไม่มีชิ้นงานในมือ คืนเงินเต็มจำนวน" },
+  { title: REFUND_PROMISE, body: "ถ้าทำครบทุกขั้นตอนทั้ง 7 วันแล้วยังรู้สึกว่าไม่คุ้ม คืนเงินเต็มจำนวน" },
 ];
 
 export function OfferParents() {
