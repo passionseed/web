@@ -122,7 +122,7 @@
     "dotenv": "^17.3.0",
     "embla-carousel-react": "8.5.1",
     "esbuild": "^0.27.3",
-    "fast-blurhash": "^1.1.4",
+    "fast-blurhash": "^1.2.0",
     "framer-motion": "^12.34.0",
     "git": "^0.1.5",
     "googleapis": "^172.0.0",
