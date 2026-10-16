@@ -53,6 +53,7 @@ export function ShiftViewsSummary() {
             <option key={cohort.round} value={cohortPath(cohort)}>{cohortPath(cohort)}</option>
           ))}
           <option value="/shift/apply">/shift/apply</option>
+          <option value="/shift/alumni">/shift/alumni</option>
         </select>
       </label>
       {error ? (

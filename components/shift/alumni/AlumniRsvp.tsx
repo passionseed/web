@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Check } from "lucide-react";
 
 import { ChoiceChips, INPUT } from "@/components/shift/form/ShiftQuestion";
@@ -8,37 +8,97 @@ import { INK } from "@/components/shift/poster/riso";
 import { RSVP_COHORTS, RSVP_NOTICE, rsvpCountLabel } from "@/lib/shift/alumniRsvp";
 
 /**
- * "ไปด้วย" on the next alumni session: nickname and round, no login. The
- * device remembers the RSVP so a reload shows it as done.
+ * "ไปด้วย" for the next alumni session: open from the start, no login, as
+ * few taps as possible. The round comes from the group's link (?round=1),
+ * and the device remembers who you are, so next week is one tap.
  */
 
 const paper = (alpha: string) => `${INK.paper}${alpha}`;
-const storageKey = (date: string) => `shift-alumni-rsvp:${date}`;
+export const doneKey = (date: string) => `shift-alumni-rsvp:${date}`;
+const ME_KEY = "shift-alumni-me";
+/** Fired on success so the sticky bar can step aside. */
+export const RSVP_DONE_EVENT = "shift-alumni-rsvp-done";
+export const RSVP_ANCHOR = "rsvp";
 
-type Status = "idle" | "open" | "sending" | "done" | "error";
+type Me = { nickname: string; cohort: string };
+/** "known": this device already knows the nickname and round. */
+type Mode = "form" | "known" | "done";
+
+const knownCohort = (value: string) => RSVP_COHORTS.some((c) => c.value === value);
+
+function readMe(): Me | null {
+  try {
+    const me = JSON.parse(window.localStorage.getItem(ME_KEY) ?? "null") as Me | null;
+    return me?.nickname && knownCohort(me.cohort) ? me : null;
+  } catch {
+    return null;
+  }
+}
+
+/** ?round=1 on the group's link picks SHIFT[1]. */
+function cohortFromLink(): string {
+  const round = new URLSearchParams(window.location.search).get("round");
+  const cohort = round !== null ? `SHIFT[${round}]` : "";
+  return knownCohort(cohort) ? cohort : "";
+}
+
+function Done({ nickname, count }: { nickname: string; count: number }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+        style={{ backgroundColor: INK.yellow, color: INK.black }}
+      >
+        <Check className="h-5 w-5" strokeWidth={3} />
+      </span>
+      <div>
+        <p className="font-kodchasan text-lg font-semibold">ลงชื่อแล้ว เจอกันนะ {nickname}</p>
+        {count > 0 && (
+          <p className="text-sm" style={{ color: paper("99") }}>
+            {rsvpCountLabel(count)}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export function AlumniRsvp({ date, initialCount }: { date: string; initialCount: number }) {
-  const [status, setStatus] = useState<Status>("idle");
+  const [mode, setMode] = useState<Mode>("form");
+  const [sending, setSending] = useState(false);
   const [count, setCount] = useState(initialCount);
   const [nickname, setNickname] = useState("");
   const [cohort, setCohort] = useState("");
   const [website, setWebsite] = useState("");
   const [error, setError] = useState("");
+  const nicknameInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem(storageKey(date));
-    if (saved) {
-      setNickname(saved);
-      setStatus("done");
+    const me = readMe();
+    const done = window.localStorage.getItem(doneKey(date));
+    if (done) {
+      setNickname(done);
+      setMode("done");
+      return;
     }
+    if (me) {
+      setNickname(me.nickname);
+      setCohort(me.cohort);
+      setMode("known");
+      return;
+    }
+    setCohort(cohortFromLink());
   }, [date]);
 
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    if (!nickname.trim()) return setError("ใส่ชื่อเล่นด้วยนะ");
+  async function send() {
+    if (!nickname.trim()) {
+      setError("ใส่ชื่อเล่นก่อนนะ");
+      nicknameInput.current?.focus();
+      return;
+    }
     if (!cohort) return setError("เลือกรุ่นด้วยนะ");
 
-    setStatus("sending");
+    setSending(true);
     setError("");
     try {
       const res = await fetch("/api/shift/alumni/rsvp", {
@@ -48,61 +108,61 @@ export function AlumniRsvp({ date, initialCount }: { date: string; initialCount:
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error ?? "ส่งไม่สำเร็จ ลองใหม่อีกครั้งนะ");
-        setStatus("open");
+        setError(data.error ?? "ส่งไม่สำเร็จ ลองอีกทีนะ");
         return;
       }
       if (data.result === "added") setCount((n) => n + 1);
-      window.localStorage.setItem(storageKey(date), nickname.trim());
-      setStatus("done");
+      window.localStorage.setItem(doneKey(date), nickname.trim());
+      window.localStorage.setItem(ME_KEY, JSON.stringify({ nickname: nickname.trim(), cohort }));
+      window.dispatchEvent(new Event(RSVP_DONE_EVENT));
+      setMode("done");
     } catch {
-      setError("ส่งไม่สำเร็จ ลองใหม่อีกครั้งนะ");
-      setStatus("open");
+      setError("ส่งไม่สำเร็จ ลองอีกทีนะ");
+    } finally {
+      setSending(false);
     }
   }
 
-  const countLine = (
-    <p className="text-sm" style={{ color: paper("99") }}>
-      {rsvpCountLabel(count)}
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    void send();
+  };
+
+  if (mode === "done") return <Done nickname={nickname} count={count} />;
+
+  const errorLine = error && (
+    <p className="text-sm font-semibold" style={{ color: INK.pink }} role="alert">
+      {error}
     </p>
   );
 
-  if (status === "done") {
+  if (mode === "known") {
     return (
-      <div className="mt-5 flex items-center gap-3">
-        <span
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
-          style={{ backgroundColor: INK.yellow, color: INK.black }}
-        >
-          <Check className="h-4 w-4" strokeWidth={3} />
-        </span>
-        <div>
-          <p className="font-kodchasan font-semibold">ลงชื่อแล้ว เจอกันนะ {nickname}</p>
-          {count > 0 && countLine}
-        </div>
-      </div>
-    );
-  }
-
-  if (status === "idle") {
-    return (
-      <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <button type="button" onClick={() => setStatus("open")} className="shift-button">
-          <span>ไปด้วย</span>
+      <div className="space-y-3">
+        <button type="button" onClick={() => void send()} disabled={sending} className="shift-button w-full sm:w-auto">
+          <span>{sending ? "กำลังส่ง..." : `ไปด้วย ในชื่อ ${nickname} · ${cohort}`}</span>
         </button>
-        {countLine}
+        {errorLine}
+        <p className="text-sm" style={{ color: paper("99") }}>
+          {rsvpCountLabel(count)} ·{" "}
+          <button type="button" onClick={() => setMode("form")} className="underline underline-offset-4">
+            ไม่ใช่เรา?
+          </button>
+        </p>
       </div>
     );
   }
 
   return (
-    <form onSubmit={submit} noValidate className="mt-5 space-y-4">
+    <form onSubmit={submit} noValidate className="space-y-4">
       <input
+        ref={nicknameInput}
         value={nickname}
         onChange={(e) => setNickname(e.target.value)}
         maxLength={30}
-        placeholder="ชื่อเล่น"
+        placeholder="ชื่อเล่นของเรา"
         autoComplete="nickname"
+        enterKeyHint="send"
         aria-label="ชื่อเล่น"
         className={INPUT}
         style={{ borderColor: paper("33"), color: INK.paper }}
@@ -119,18 +179,14 @@ export function AlumniRsvp({ date, initialCount }: { date: string; initialCount:
         className="absolute -left-[9999px] h-0 w-0 opacity-0"
         aria-hidden="true"
       />
-      {error && (
-        <p className="text-sm font-semibold" style={{ color: INK.pink }} role="alert">
-          {error}
-        </p>
-      )}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <button type="submit" disabled={status === "sending"} className="shift-button">
-          <span>{status === "sending" ? "กำลังส่ง..." : "ยืนยัน ไปด้วย"}</span>
-        </button>
-        {countLine}
-      </div>
-      <p className="text-xs leading-relaxed" style={{ color: paper("80") }}>
+      {errorLine}
+      <button type="submit" disabled={sending} className="shift-button w-full sm:w-auto">
+        <span>{sending ? "กำลังส่ง..." : "ไปด้วย 🙋"}</span>
+      </button>
+      <p className="text-sm" style={{ color: paper("99") }}>
+        {rsvpCountLabel(count)}
+      </p>
+      <p className="text-xs leading-relaxed" style={{ color: paper("66") }}>
         {RSVP_NOTICE}
       </p>
     </form>
