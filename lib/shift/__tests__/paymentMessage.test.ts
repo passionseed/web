@@ -1,4 +1,4 @@
-import { joinConfirmMessage, paymentLineMessage } from "../paymentMessage";
+import { joinConfirmMessage, kickoffMessage, paymentLineMessage } from "../paymentMessage";
 
 const cohort = { name: "SHIFT[2]", priceBaht: 990 };
 
@@ -43,5 +43,34 @@ describe("join link in LINE messages", () => {
     const message = joinConfirmMessage({ cohortName: "SHIFT[2]", nickname: " มิว ", joinUrl });
     expect(message).toContain("ยืนยันที่นั่ง SHIFT[2] แล้ว ยินดีต้อนรับ มิว");
     expect(message.endsWith(joinUrl)).toBe(true);
+  });
+});
+
+describe("kickoffMessage", () => {
+  const input = {
+    cohortName: "SHIFT[2]",
+    nickname: " sda ",
+    joinUrl: "https://www.passionseed.org/shift/join/abc",
+    meetLabel: "พรุ่งนี้ วันพุธที่ 14 ตุลาคม",
+    startTime: "19:00",
+  };
+
+  it("greets the student with when the round starts and their join link", () => {
+    const lines = kickoffMessage(input).split("\n");
+    expect(lines[0]).toBe("สวัสดีครับน้องsda SHIFT[2] จะเริ่มพรุ่งนี้ วันพุธที่ 14 ตุลาคม เวลา 19:00");
+    expect(lines).toContain(input.joinUrl);
+  });
+
+  it("asks the three Day 1 idea questions", () => {
+    const message = kickoffMessage(input);
+    expect(message).toMatch(/^1\. What friction/m);
+    expect(message).toMatch(/^2\. What is your interest/m);
+    expect(message).toMatch(/^3\. What group of people/m);
+  });
+
+  it("leaves the day out once the first meet has passed", () => {
+    expect(kickoffMessage({ ...input, meetLabel: null }).split("\n")[0]).toBe(
+      "สวัสดีครับน้องsda SHIFT[2] จะเริ่มเวลา 19:00",
+    );
   });
 });

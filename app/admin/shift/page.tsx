@@ -1,7 +1,9 @@
 import { AdminShiftTracker } from "@/components/admin/AdminShiftTracker";
 import { ShiftAdminTabs } from "@/components/admin/ShiftAdminTabs";
+import { adminMetadata } from "@/lib/admin/metadata";
 
 export const dynamic = "force-dynamic";
+export const metadata = adminMetadata("/admin/shift");
 
 export default function AdminShiftPage() {
   return (

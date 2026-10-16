@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/utils/supabase/proxy";
+import { adminPreviewPath } from "@/lib/og/linkPreviewBots";
 
 /**
  * Supabase Auth reports OAuth failures by redirecting to the project's Site URL
@@ -26,6 +27,10 @@ function authErrorRedirect(request: NextRequest): NextResponse | null {
 export default async function proxy(request: NextRequest) {
   const authError = authErrorRedirect(request);
   if (authError) return authError;
+
+  // Chat apps fetch admin links signed out; show them a preview, not /login.
+  const previewPath = adminPreviewPath(request.method, request.nextUrl.pathname, request.headers.get("user-agent"));
+  if (previewPath) return NextResponse.rewrite(new URL(previewPath, request.url));
 
   // Campaign redirects must work before sign-in and profile onboarding.
   if (request.nextUrl.pathname.startsWith('/go/')) {

@@ -34,6 +34,8 @@ export interface ShiftCohort {
   testerTarget: number;
   /** Nightly live session on Discord, Bangkok time. */
   sessionTime: string;
+  /** First live meet, when it is not startDate. Shown once a student joins. */
+  firstMeetDate?: string;
   schedule: ShiftDay[];
   /** Set once a round has actually wrapped, when the dates alone would say
    *  otherwise (e.g. approximate dates for a pilot). */
@@ -228,7 +230,7 @@ export const SHIFT_COHORT_0: ShiftCohort = {
   ],
 };
 
-/** SHIFT[2] starts Wednesday 14 Oct, nine days after SHIFT[1] started. */
+/** SHIFT[2] was planned for Mon 12 Oct and moved to Wed 14 Oct; still 7 days. */
 export const SHIFT_COHORT_2: ShiftCohort = {
   ...sibling(SHIFT_COHORT, 1, 9),
   seats: 21,
@@ -323,6 +325,29 @@ export function cohortStatus(cohort: ShiftCohort, today: string = bangkokToday()
   if (today <= cohort.applyDeadline) return "open";
   if (today >= cohort.startDate) return "running";
   return "closed";
+}
+
+export function getShiftCohortByName(name: string): ShiftCohort | undefined {
+  return SHIFT_COHORTS.find((c) => c.name === name);
+}
+
+/**
+ * When a joined student next meets the round, e.g. "พรุ่งนี้ วันพุธที่ 14
+ * ตุลาคม". Null once the first meet has passed.
+ */
+export function firstMeetLabel(cohort: ShiftCohort, today: string = bangkokToday()): string | null {
+  const meet = cohort.firstMeetDate ?? cohort.startDate;
+  if (today > meet) return null;
+
+  const date = new Date(`${meet}T12:00:00+07:00`).toLocaleDateString("th-TH", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone: "Asia/Bangkok",
+  });
+  if (meet === today) return `วันนี้ ${date}`;
+  if (meet === addDays(today, 1)) return `พรุ่งนี้ ${date}`;
+  return date;
 }
 
 /** The round building right now, if any. */

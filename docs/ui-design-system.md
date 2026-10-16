@@ -2029,6 +2029,16 @@ private records never become static poster copy. Unknown pages get a readable
 route title and a neutral caption; add an explicit copy entry for marketing
 pages. No price, seat count, or application deadline is baked into the general
 SHIFT poster. Round images use the canonical cohort record.
+Admin pages are login-gated, so chat crawlers would only ever see `/login`.
+`proxy.ts` rewrites GET requests from known link-preview bots on `/admin/*` to
+`app/link-preview/admin/[[...path]]`, which renders tags and a live poster and
+never imports admin pages or data (rendering the admin route and hiding it is
+not safe: Next still serializes the page into the RSC payload). Record IDs in
+the path are dropped. Admin posters use the Dusk sky, an `ADMIN / <SECTION>`
+label, and a team-only footer; give each admin tab copy in `ADMIN_PAGES` and a
+name in `ADMIN_TITLES` (`lib/admin/metadata.ts`), and set its page metadata with
+`adminMetadata(route)`. The generator writes no static admin PNGs. Round poster studios
+(`/shift/poster/<round>`) take their title and dates from the cohort record.
 
 SHIFT rounds, tips, workshops, and public gallery products have dynamic
 `opengraph-image.tsx` handlers for their own public titles. These use the same

@@ -1,5 +1,7 @@
 /**
  * SHIFT[2] curriculum for mentors (internal, shown at /shift/curriculum).
+ * These are the defaults. Admins edit the page and saves go to the
+ * shift_curriculum table, which wins over these values.
  * Built from the SHIFT[1] run plan, the SHIFT[1] results and the decisions of
  * 2026-10-13 (refund steps, testers from day 2). Source of truth for the
  * reasoning: company-brain shift2.md. Contains no student data.
@@ -34,6 +36,48 @@ export const SHIFT2_RULES = [
   "ขาดเซสชันได้ เข้าคลาสชดเชยแทน",
 ];
 
+export interface InterviewGuide {
+  intro: string;
+  /** DM to book a short talk */
+  dm: string;
+  questions: string[];
+  dos: string[];
+  donts: string[];
+}
+
+/** How to talk to users. Taught on Day 1 before First contact. */
+export const SHIFT2_INTERVIEW: InterviewGuide = {
+  intro:
+    "คุยสั้น ๆ 10 นาที เป้าหมายคือรู้ว่าเขาเจอปัญหานี้จริงไหม และตอนนี้แก้ยังไง ไม่ใช่ขายไอเดีย",
+  dm: "สวัสดีครับ/ค่ะ เราเป็นนักเรียน กำลังทำโปรเจกต์เรื่อง [ปัญหา] ขอคุยสั้น ๆ 10 นาทีพรุ่งนี้ได้ไหม อยากฟังว่าตอนนี้คุณจัดการเรื่องนี้ยังไง ไม่ได้ขายอะไร",
+  questions: [
+    "ครั้งล่าสุดที่เจอเรื่องนี้คือเมื่อไหร่ เล่าให้ฟังหน่อย",
+    "ตอนนั้นทำยังไง ใช้อะไรช่วย",
+    "ตรงไหนยากหรือเสียเวลาที่สุด",
+    "เคยลองวิธีอื่นไหม ทำไมไม่ใช้ต่อ",
+    "มีใครอีกที่เจอแบบนี้ แนะนำให้หน่อยได้ไหม",
+  ],
+  dos: [
+    "ถามเรื่องที่เกิดขึ้นแล้ว ไม่ใช่เรื่องสมมติ",
+    "ฟังมากกว่าพูด ถาม \"ทำไม\" ต่ออีกชั้น",
+    "จดคำพูดของเขาตรง ๆ ไม่สรุปเอง",
+    "จบด้วยขอบคุณ และขอคนต่อไป",
+  ],
+  donts: [
+    "อย่าเล่าไอเดียหรือแอปของเราก่อน",
+    "อย่าถาม \"ถ้ามีแอปแบบนี้จะใช้ไหม\" คนส่วนใหญ่ตอบว่าใช้ แต่ไม่ใช้จริง",
+    "อย่าถามนำ หรือเถียงเมื่อเขาไม่เห็นด้วย",
+  ],
+};
+
+/** Everything mentors can edit on /shift/curriculum. Saved as JSON in shift_curriculum. */
+export interface CurriculumDoc {
+  sessionTime: string;
+  rules: string[];
+  interview: InterviewGuide;
+  days: CurriculumDay[];
+}
+
 export const SHIFT2_CURRICULUM: CurriculumDay[] = [
   {
     day: 1,
@@ -47,7 +91,8 @@ export const SHIFT2_CURRICULUM: CurriculumDay[] = [
       ["19:45", "3 ไอเดีย", "เขียนปัญหาที่เห็นเองอย่างน้อย 3 ข้อ + ใครเจอบ้าง"],
       ["20:05", "Access check", "ทักคนกลุ่มนี้เองได้ไหม โดยไม่ต้องขอผู้ใหญ่"],
       ["20:15", "เลือก 1", "พี่เลี้ยงถาม น้องตัดเอง"],
-      ["20:35", "First contact", "ทักคนจริง 1 คน แคปลง #first-contact (เบลอชื่อและรูป)"],
+      ["20:30", "วิธีคุยกับคน", "ถามเรื่องที่เกิดขึ้นจริง ไม่ขายไอเดีย ซ้อมกับเพื่อน 1 รอบ (ดูวิธีคุยด้านบน)"],
+      ["20:45", "First contact", "DM คนจริง 1 คน นัดคุย 10 นาทีพรุ่งนี้ ใช้ข้อความตัวอย่าง แคปลง #first-contact (เบลอชื่อและรูป)"],
       ["20:50", "Mission ก่อน Day 2", ""],
     ],
     mission: "คุยกับคนที่เจอปัญหาจริงอย่างน้อย 3 คน จดเป็นคำพูดของเขา แล้วโพสต์ใน #progress",
@@ -173,3 +218,65 @@ export const SHIFT2_CURRICULUM: CurriculumDay[] = [
     ],
   },
 ];
+
+export const SHIFT2_DEFAULT_DOC: CurriculumDoc = {
+  sessionTime: SHIFT2_SESSION_TIME,
+  rules: SHIFT2_RULES,
+  interview: SHIFT2_INTERVIEW,
+  days: SHIFT2_CURRICULUM,
+};
+
+const isStr = (v: unknown, max = 2000): v is string =>
+  typeof v === "string" && v.length <= max;
+const isStrList = (v: unknown, max = 50): v is string[] =>
+  Array.isArray(v) && v.length <= max && v.every((x) => isStr(x));
+
+/** Checks a saved or submitted doc. Returns null if the shape is wrong. */
+export function parseCurriculumDoc(raw: unknown): CurriculumDoc | null {
+  if (!raw || typeof raw !== "object") return null;
+  const d = raw as Record<string, unknown>;
+  const iv = d.interview as Record<string, unknown> | undefined;
+  if (!isStr(d.sessionTime, 100) || !isStrList(d.rules)) return null;
+  if (
+    !iv ||
+    !isStr(iv.intro) ||
+    !isStr(iv.dm) ||
+    !isStrList(iv.questions) ||
+    !isStrList(iv.dos) ||
+    !isStrList(iv.donts)
+  )
+    return null;
+  if (!Array.isArray(d.days) || d.days.length > 14) return null;
+  const daysOk = d.days.every((day: Record<string, unknown>) => {
+    const sched = day?.schedule;
+    return (
+      typeof day?.day === "number" &&
+      isStr(day.date, 10) &&
+      /^\d{4}-\d{2}-\d{2}$/.test(day.date) &&
+      isStr(day.name, 200) &&
+      typeof day.mentorSession === "boolean" &&
+      isStr(day.goal) &&
+      isStr(day.mission) &&
+      Array.isArray(day.refundSteps) &&
+      day.refundSteps.every((n) => Number.isInteger(n) && n >= 1 && n <= 20) &&
+      isStrList(day.mentorChecks) &&
+      (sched === undefined ||
+        (Array.isArray(sched) &&
+          sched.length <= 30 &&
+          sched.every((r) => Array.isArray(r) && r.length === 3 && r.every((c) => isStr(c)))))
+    );
+  });
+  if (!daysOk) return null;
+  return {
+    sessionTime: d.sessionTime,
+    rules: d.rules,
+    interview: {
+      intro: iv.intro,
+      dm: iv.dm,
+      questions: iv.questions,
+      dos: iv.dos,
+      donts: iv.donts,
+    },
+    days: d.days as CurriculumDay[],
+  };
+}
