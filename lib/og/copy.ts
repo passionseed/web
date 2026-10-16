@@ -13,6 +13,8 @@ const ADMIN_PAGES: Record<string, PosterCopy> = {
   "/admin/shift/camp": admin("LIVE CAMP", "จัดกลุ่ม ดูงานจริง และตอบคำขอช่วยระหว่างแคมป์", "ADMIN / SHIFT"),
   "/admin/shift/companion": admin("COMPANION", "เครื่องมือของพี่เลี้ยงระหว่างแคมป์ SHIFT", "ADMIN / SHIFT"),
   "/admin/shift/seedstack": admin("SEEDSTACK", "ใครติดตั้ง ล็อกสโคป และ ship แล้ว ไม่ต้องไล่ถาม", "ADMIN / SHIFT"),
+  "/admin/shift/feedback": admin("FEEDBACK", "คำตอบหลังจบรุ่น คะแนน และวันที่น้องสะดวก", "ADMIN / SHIFT"),
+  "/admin/shift/alumni": admin("ALUMNI", "ใครกดไปด้วย ในแต่ละนัดศิษย์เก่า", "ADMIN / SHIFT"),
   "/admin/shift/views": admin("PAGE VIEWS", "คนที่เข้าหน้า SHIFT มาจากช่องทางไหน", "ADMIN / SHIFT"),
 };
 
