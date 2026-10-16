@@ -9,7 +9,9 @@ import { summarizeFeedback } from "@/lib/shift/feedbackSummary";
 import { loadAlumniCalendar } from "@/lib/supabase/shift-alumni-calendar";
 import { listShiftFeedback, type ShiftFeedbackRow } from "@/lib/supabase/shift-feedback";
 import { cn } from "@/lib/utils";
+import { adminMetadata } from "@/lib/admin/metadata";
 
+export const metadata = adminMetadata("/admin/shift/feedback");
 export const dynamic = "force-dynamic";
 
 /** `?round=1` keeps one round; no round shows every response. */
