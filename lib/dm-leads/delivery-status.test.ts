@@ -2,8 +2,10 @@ import {
   isDeliveryBlockedByPrivacy,
   isDeliveryFailed,
   hasThreadDeliveryFailure,
+  getDefaultCommentDmMessage,
   getDefaultPublicCommentReply,
 } from "@/lib/dm-leads/delivery-status";
+import { shiftCommentDm, shiftCommentPublicReply } from "@/lib/dm-leads/shift-comment-copy";
 import type { DmMessage } from "@/types/dm-leads";
 
 describe("delivery-status helpers", () => {
@@ -56,5 +58,19 @@ describe("delivery-status helpers", () => {
     expect(reply).toContain("@kiara.charis");
     expect(reply).toContain("privacy");
     expect(reply).toContain("ทัก DM");
+  });
+
+  it("keeps the tips DM for campaigns other than SHIFT", () => {
+    expect(getDefaultCommentDmMessage()).toContain("https://passionseed.org/tips/intro");
+    expect(getDefaultCommentDmMessage("port")).toContain("https://passionseed.org/tips/intro");
+    expect(getDefaultCommentDmMessage("uni")).toContain("https://passionseed.org/tips/intro");
+    expect(getDefaultPublicCommentReply("kiara.charis", "port")).toContain("privacy");
+  });
+
+  it("sends SHIFT comments to the current open cohort", () => {
+    expect(getDefaultCommentDmMessage("shift")).toBe(shiftCommentDm());
+    expect(getDefaultPublicCommentReply("mind.m5", "shift")).toBe(
+      shiftCommentPublicReply("mind.m5")
+    );
   });
 });

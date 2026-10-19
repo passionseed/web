@@ -165,6 +165,7 @@ const SYSTEM_PROMPT = `คุณคือพี่บุญ (PassionSeed) กำ
 - ห้ามลดราคาจาก 299 ห้ามขาย Community ห้ามเปิดด้วยลิงก์เปล่า ห้ามลงท้ายว่า "ยังไม่มีสายนั้น"
 - ถ้าเป็นสายที่ยังไม่มี seed ให้พูดว่ากำลังทำและจองรอบแรกได้
 - ถ้าเทมเพลตมีราคา/วันที่/คำถามอยู่แล้ว ต้องยังมีสิ่งนั้นในฉบับใหม่
+- ถ้าเทมเพลตมีชื่อรุ่น ราคา วันที่ปิดรับ จำนวนที่นั่ง หรือลิงก์ ให้คัดลอกค่าเหล่านั้นตรงๆ ห้ามเปลี่ยนเป็นรุ่นอื่น
 - รักษาหน้าที่ของเทมเพลต: ถ้าเป็นคำถาม ให้ยังเป็นคำถาม ถ้ายังไม่ปิดการขาย ห้ามกระโดดไปบอกราคาเอง`;
 
 function kindInstruction(kind: PersonalizeKind): string {
@@ -205,11 +206,70 @@ export function buildPersonalizeMessages(
   ];
 }
 
+function isShiftCommentTemplate(template: string): boolean {
+  return template.includes("/shift/apply") || /SHIFT\[\d+\]/.test(template);
+}
+
+/** URLs, round names, prices, deadline, seats, and @mentions the rewrite must keep. */
+function shiftLocks(template: string): string[] {
+  return [
+    ...(template.match(/https?:\/\/[^\s]+/g) ?? []).map((url) => url.replace(/[),.\]]+$/, "")),
+    ...(template.match(/SHIFT\[\d+\]/g) ?? []),
+    ...(template.match(/฿[\d,]+/g) ?? []),
+    ...(template.match(/ปิดรับ [^\n]+/g) ?? []),
+    ...(template.match(/รับแค่ \d+ คน/g) ?? []),
+    ...(template.match(/@[A-Za-z0-9._]+/g) ?? []),
+  ];
+}
+
+/** Round names, apply rounds, and prices. A rewrite may not introduce a new one. */
+function shiftCohortTokens(text: string): string[] {
+  return [
+    ...(text.match(/SHIFT\[\d+\]/g) ?? []),
+    ...(text.match(/[?&]round=\d+/g) ?? []),
+    ...(text.match(/\/shift\/\d+/g) ?? []),
+    ...(text.match(/฿[\d,]+/g) ?? []),
+  ];
+}
+
+/**
+ * Details from the closed SHIFT[1] round. Allowed only when the template
+ * itself uses them, so a later round (round=10, SHIFT[10]) is not treated
+ * as round 1 just because the digits overlap.
+ */
+const STALE_SHIFT_MARKERS: RegExp[] = [
+  /SHIFT\[1\]/,
+  /[?&]round=1(?:&|$)/,
+  /\/shift\/1(?!\d)/,
+  /฿670(?!\d)/,
+  /ส\. 3 ต\.ค\./,
+  /รับแค่ 15 คน/,
+  /(?<!\d)5–11(?!\d)/,
+  /(?<!\d)5-11(?!\d)/,
+];
+
+/**
+ * SHIFT comment rewrites have to keep the cohort the template named.
+ * Other templates are left alone so PathLab personalization is unchanged.
+ * Returns false when the rewrite should be discarded for the template.
+ */
+export function rewriteKeepsShiftFacts(template: string, rewritten: string): boolean {
+  if (!isShiftCommentTemplate(template)) return true;
+  if (!shiftLocks(template).every((fact) => rewritten.includes(fact))) return false;
+  if (STALE_SHIFT_MARKERS.some((pattern) => pattern.test(rewritten) && !pattern.test(template))) {
+    return false;
+  }
+  const allowed = new Set(shiftCohortTokens(template));
+  return shiftCohortTokens(rewritten).every((token) => allowed.has(token));
+}
+
 export function sanitizePersonalizedMessage(template: string, raw: string): string | null {
   const cleaned = stripModelWrapper(raw);
   if (!cleaned) return null;
   if (cleaned.length > Math.max(template.length * 3, 900)) return null;
-  return restorePlaceholders(template, cleaned);
+  const restored = restorePlaceholders(template, cleaned);
+  if (!rewriteKeepsShiftFacts(template, restored)) return null;
+  return restored;
 }
 
 /**

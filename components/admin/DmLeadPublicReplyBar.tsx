@@ -15,6 +15,7 @@ import {
   getDefaultPublicCommentReply,
   hasThreadDeliveryFailure,
 } from "@/lib/dm-leads/delivery-status";
+import { getCampaign } from "@/lib/meta/comment-intent";
 import type { DmConversation, DmConversationWithMessages, IgComment } from "@/types/dm-leads";
 
 interface DmLeadPublicReplyBarProps {
@@ -55,8 +56,7 @@ export function DmLeadPublicReplyBar({ conversation, thread }: DmLeadPublicReply
     setSentSuccess(false);
     setError(null);
     setCopied(false);
-    const template = getDefaultPublicCommentReply(conversation.username);
-    setMessage(template);
+    setMessage(getDefaultPublicCommentReply(conversation.username));
 
     let cancelled = false;
     setPersonalized(false);
@@ -65,6 +65,7 @@ export function DmLeadPublicReplyBar({ conversation, thread }: DmLeadPublicReply
       .then((data) => {
         if (cancelled) return;
         setComment(data);
+        setMessage(getDefaultPublicCommentReply(conversation.username, getCampaign(data?.text)));
         setLoadingComment(false);
       })
       .catch(() => {
@@ -84,14 +85,14 @@ export function DmLeadPublicReplyBar({ conversation, thread }: DmLeadPublicReply
    */
   useEffect(() => {
     const visible = isBlocked || isOpen;
-    if (!visible || personalized || !message.trim()) return;
+    if (!visible || personalized || loadingComment || !message.trim()) return;
 
     let cancelled = false;
     setPersonalized(true);
     void personalizeLeadCopyAction({
       conversationId: conversation.id,
       template: message,
-      kind: "public_comment",
+      kind: getCampaign(comment?.text) === "shift" ? "composed" : "public_comment",
     }).then((result) => {
       if (!cancelled && result.body) setMessage(result.body);
     });
@@ -99,8 +100,10 @@ export function DmLeadPublicReplyBar({ conversation, thread }: DmLeadPublicReply
       cancelled = true;
     };
     // `message` is intentionally omitted: this must not re-run on each edit.
+    // It does re-run when the comment load finishes, which is when the SHIFT
+    // template replaces the privacy one.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversation.id, isBlocked, isOpen, personalized]);
+  }, [conversation.id, isBlocked, isOpen, personalized, loadingComment, comment]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message);
