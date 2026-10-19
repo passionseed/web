@@ -64,7 +64,7 @@ export const SCHOOL_HERO = {
   badge: "SCHOOL COHORT",
   headline: "7 วัน สร้างของจริง แล้วเอาไปให้คนจริงใช้อย่างน้อย 5 คน",
   promise:
-    "โปรแกรม SHIFT สำหรับนักเรียนทั้งรุ่นของโรงเรียน ทุกคนจบด้วยโปรเจ\u2060กต์ที่คนนอกได้ลองจริง พร้อม Pivot\u00a0Log และ Case\u00a0Study 1 หน้า ใช้ในพอร์ต TCAS ได้",
+    "โปรแกรม SHIFT สำหรับนักเรียนทั้งรุ่นของโรงเรียน ทุกคนจบด้วยโปรเจ\u2060กต์ที่คนนอกได้ลองจริง พร้อมบันทึกจุดพัง และ Case\u00a0Study 1 หน้า ใช้ในพอร์ต TCAS ได้",
   priceLabel: "ราคารุ่นโรงเรียน",
   priceUnit: "ต่อนักเรียน 1 คน",
   /** First screen stays simple: who pays and refunds live in the FAQ. */
@@ -72,7 +72,7 @@ export const SCHOOL_HERO = {
     { term: "ระยะเวลา", value: "7 วัน" },
     { term: "รุ่นละ", value: `${SCHOOL_OFFER.minStudents}-${SCHOOL_OFFER.maxStudents} คน` },
     { term: "เรียนที่ไหน", value: "ออนไลน์ทาง Discord" },
-    { term: "ได้อะไร", value: "Pivot\u00a0Log + Case\u00a0Study" },
+    { term: "ได้อะไร", value: "บันทึกจุดพัง + Case\u00a0Study" },
   ],
   primaryCta: "ทักคุยเรื่องเปิดรุ่นที่โรงเรียน",
   readAs: {
@@ -119,14 +119,14 @@ export const SCHOOL_ARC = {
     },
     {
       day: "DAY 5-6",
-      title: "Pivot จากสิ่งที่คนทำจริง",
+      title: "ปรับจากสิ่งที่คนทำจริง",
       body: "ดูว่าผู้ใช้ทำอะไรจริง ไม่ใช่แค่พูดว่าอะไร แล้วตัดสินใจเองว่าจะปรับตรงไหน",
       with: "วงคุยกับเพื่อนในรุ่นและ mentor",
     },
     {
       day: "DAY 7",
       title: "Demo Day",
-      body: "เล่าเรื่องการ Pivot ของตัวเอง พร้อม Case Study 1 หน้าและ Pivot Log ที่ใช้ในพอร์ต TCAS ได้",
+      body: "เล่าว่าเปลี่ยนอะไรเพราะอะไร พร้อม Case Study 1 หน้าและบันทึกจุดพังที่ใช้ในพอร์ต TCAS ได้",
       with: "ผู้ปกครองดูออนไลน์ได้",
     },
   ] satisfies SchoolArcStep[],
@@ -172,7 +172,7 @@ export const SCHOOL_LEARNING = {
   ] satisfies SchoolLearningMode[],
   principle: {
     title: "นักเรียนเป็นคนตัดสินใจทุกเรื่อง",
-    body: "เลือกโจทย์เอง ตั้งสมมติฐานเอง และตัดสินใจเองว่าจะ Pivot ไหม mentor ช่วยถามและชี้ทาง แต่ไม่ทำแทน ไม่เขียนแทน",
+    body: "เลือกโจทย์เอง ตั้งสมมติฐานเอง และตัดสินใจเองว่าจะเปลี่ยนทางไหม mentor ช่วยถามและชี้ทาง แต่ไม่ทำแทน ไม่เขียนแทน",
   },
 } as const;
 
@@ -236,7 +236,7 @@ export const SCHOOL_DATA = {
   collect: {
     title: "ข้อมูลที่เราเก็บ",
     items: [
-      "Pivot Log และชิ้นงานต้นแบบ",
+      "บันทึกจุดพังและชิ้นงานต้นแบบ",
       "บทสนทนากับ AI mentor",
       "แบบสอบถามสั้น ๆ ก่อนและหลังโปรแกรม",
       "จำนวนคนนอกที่ได้ลองใช้งาน",
@@ -380,7 +380,7 @@ export const SCHOOL_FAQ = {
     },
     {
       q: "รับรองผล TCAS หรือออกจดหมายรับรองให้ไหม?",
-      a: "ไม่ เราไม่ขายจดหมายรับรองและไม่สัญญาผลสอบ สิ่งที่นักเรียนได้คือชิ้นงานจริง Pivot Log และ Case Study 1 หน้า ซึ่งเป็นหลักฐานที่นักเรียนเล่าได้เองในพอร์ต",
+      a: "ไม่ เราไม่ขายจดหมายรับรองและไม่สัญญาผลสอบ สิ่งที่นักเรียนได้คือชิ้นงานจริง บันทึกจุดพัง และ Case Study 1 หน้า ซึ่งเป็นหลักฐานที่นักเรียนเล่าได้เองในพอร์ต",
     },
   ] satisfies SchoolFaq[],
 } as const;
@@ -413,7 +413,7 @@ export const SCHOOL_CONTACT = {
 
 export const SCHOOL_META = {
   title: "SHIFT สำหรับโรงเรียน | 7 วัน สร้างของจริงให้คนจริงใช้",
-  description: `เปิด SHIFT ที่โรงเรียน: นักเรียนสร้างโปรเจกต์จริงและเอาไปให้คนนอกลองใช้อย่างน้อย 5 คนใน 7 วัน พร้อม Pivot Log และ Case Study 1 หน้า ราคารุ่นโรงเรียน ${baht(SCHOOL_OFFER.priceBaht)}`,
+  description: `เปิด SHIFT ที่โรงเรียน: นักเรียนสร้างโปรเจกต์จริงและเอาไปให้คนนอกลองใช้อย่างน้อย 5 คนใน 7 วัน พร้อมบันทึกจุดพัง และ Case Study 1 หน้า ราคารุ่นโรงเรียน ${baht(SCHOOL_OFFER.priceBaht)}`,
   ogTitle: "SHIFT สำหรับโรงเรียน | 7 วัน สร้างของจริง",
   ogDescription: "นักเรียนสร้างของจริง แล้วเอาไปให้คนจริงใช้อย่างน้อย 5 คน ใน 7 วัน",
 } as const;
@@ -435,11 +435,11 @@ export const SCHOOL_POSTERS = {
   cover: {
     kicker: "SHIFT FOR SCHOOLS · 7 DAYS · ONLINE",
     lines: ["7 วัน สร้างของจริง", `ให้คนจริงใช้อย่างน้อย ${SCHOOL_OFFER.minOutsideUsers} คน`],
-    tagline: "SCOPE · BUILD · SHIP · PIVOT · DEMO",
+    tagline: "SCOPE · BUILD · SHIP · FIX · DEMO",
     priceLabel: "ราคารุ่นโรงเรียน",
     /** The cover stays simple: who pays and refunds live on the page and FAQ. */
     facts: `รุ่นละ ${SCHOOL_OFFER.minStudents}-${SCHOOL_OFFER.maxStudents} คน · ออนไลน์ทาง Discord`,
-    deliverables: "ได้ Pivot Log + Case Study 1 หน้า ใช้ในพอร์ต TCAS ได้",
+    deliverables: "ได้บันทึกจุดพัง + Case Study 1 หน้า ใช้ในพอร์ต TCAS ได้",
     qr: "สแกนอ่านรายละเอียด",
   },
   arc: {
@@ -449,13 +449,13 @@ export const SCHOOL_POSTERS = {
       { day: "DAY 1", icon: "target", title: "ล็อกโจทย์", body: "ปัญหาเดียว 1 หน้า", with: "AI mentor + เซสชันกลุ่ม" },
       { day: "DAY 2-4", icon: "spark", title: "ลงมือสร้าง", body: "OpenCode + skill ของ PassionSeed", with: "ถาม AI ก่อน ติดจริงเรียก mentor" },
       { day: "DAY 3-5", icon: "users", title: "ให้คนจริงลอง", body: "คนนอกอย่างน้อย 5 คน จดทุกจุดที่พัง", with: "ข้อมูลตอนพังคือของมีค่า" },
-      { day: "DAY 5-6", icon: "signpost", title: "Pivot", body: "ปรับจากสิ่งที่คนทำจริง", with: "วงคุยกับเพื่อนและ mentor" },
-      { day: "DAY 7", icon: "flag", title: "Demo Day", body: "เล่าเรื่องการ Pivot ของตัวเอง", with: "ผู้ปกครองดูออนไลน์ได้" },
+      { day: "DAY 5-6", icon: "signpost", title: "ปรับ", body: "ปรับจากสิ่งที่คนทำจริง", with: "วงคุยกับเพื่อนและ mentor" },
+      { day: "DAY 7", icon: "flag", title: "Demo Day", body: "เล่าว่าเปลี่ยนอะไรเพราะอะไร", with: "ผู้ปกครองดูออนไลน์ได้" },
     ],
     shipLabel: "ได้อะไรกลับไป",
     ship: [
       { icon: "rocket", title: "Live Project", body: "งานที่คนนอกใช้ได้จริง" },
-      { icon: "chart", title: "Pivot Log", body: "ทุกจุดที่พังและวิธีแก้" },
+      { icon: "chart", title: "บันทึกจุดพัง", body: "ทุกจุดที่พังและวิธีแก้" },
       { icon: "portfolio", title: "Case Study", body: "1 หน้า ใช้ในพอร์ต TCAS" },
     ],
   },
@@ -484,7 +484,7 @@ export const SCHOOL_POSTERS = {
       { tag: "OPTIONAL", title: "รีวิว รูป\nวิดีโอ", body: "เลือกระดับเอง ถอนได้ทุกเมื่อ" },
     ],
     collectLabel: "เก็บอะไรบ้าง",
-    collect: ["Pivot Log + ชิ้นงาน", "แชทกับ AI mentor", "แบบสอบถามก่อน/หลัง", "จำนวนคนนอกที่ได้ลอง"],
+    collect: ["บันทึกจุดพัง + ชิ้นงาน", "แชทกับ AI mentor", "แบบสอบถามก่อน/หลัง", "จำนวนคนนอกที่ได้ลอง"],
     promisesLabel: "เราสัญญา",
     promises: ["รายงานแบบไม่ระบุตัวตน", "เก็บเท่าที่จำเป็น ตาม PDPA", "ถอนได้ทุกเมื่อ ยังเรียนจนจบ", "ขอลบข้อมูลได้ทุกเมื่อ"],
     safetyLabel: "ความปลอดภัย",
@@ -526,7 +526,7 @@ export const SCHOOL_POSTER_IMAGES = {
   save: "บันทึกภาพ",
   images: [
     { src: "/shift/school/poster-1.png", alt: "SHIFT สำหรับโรงเรียน: 7 วัน สร้างของจริง ให้คนจริงใช้อย่างน้อย 5 คน ราคารุ่นโรงเรียน ฿590" },
-    { src: "/shift/school/poster-2.png", alt: "7 วัน ทำอะไรบ้าง: ล็อกโจทย์ ลงมือสร้าง ให้คนจริงลอง Pivot และ Demo Day" },
+    { src: "/shift/school/poster-2.png", alt: "7 วัน ทำอะไรบ้าง: ล็อกโจทย์ ลงมือสร้าง ให้คนจริงลอง ปรับ และ Demo Day" },
     { src: "/shift/school/poster-3.png", alt: "เรียนยังไง: สร้างคู่กับ AI, AI mentor, รุ่นพี่ mentor, วงคุย และสัญญาว่าทุกคนได้คนนอกลองใช้อย่างน้อย 5 คน" },
     { src: "/shift/school/poster-4.png", alt: "สำหรับผู้ปกครอง: การยินยอม ข้อมูลที่เก็บ สิ่งที่เราสัญญา และความปลอดภัยของนักเรียน" },
     { src: "/shift/school/poster-5.png", alt: "สำหรับโรงเรียน: โรงเรียนได้อะไร ทำอะไร ใครทำ SHIFT และช่องทางติดต่อ" },

@@ -14,6 +14,7 @@ import {
   type SeedstackConsentRow,
   type SeedstackConsentState,
 } from "@/lib/seedstack/consent";
+import type { SeedstackEventRow } from "@/lib/seedstack/dashboard";
 import type { SeedstackEventInsert } from "@/lib/seedstack/events";
 import { LINK_TTL_MS, generateDeviceCode, generateUserCode } from "@/lib/seedstack/link";
 import {
@@ -319,6 +320,48 @@ export async function purgeOldSeedstackEvents(days: number, now = Date.now()): P
   if (stale.error) console.warn("[seedstack] link request purge failed:", stale.error.message);
 
   return data?.length ?? 0;
+}
+
+export interface SeedstackDashboard {
+  /** Linked computers whose token still works. */
+  devices: number;
+  /** Last time any of them synced, or null if none has yet. */
+  lastSeenAt: string | null;
+  /** Newest first, exactly what the mentors can see. */
+  events: SeedstackEventRow[];
+}
+
+const DASHBOARD_EVENT_LIMIT = 50;
+
+/** The student's own view of what SeedStack holds about them. */
+export async function getSeedstackDashboard(userId: string, now = Date.now()): Promise<SeedstackDashboard> {
+  const supabase = createServiceRoleClient();
+  const [tokens, events] = await Promise.all([
+    supabase
+      .from("seedstack_tokens")
+      .select("last_used_at")
+      .eq("user_id", userId)
+      .is("revoked_at", null)
+      .gt("expires_at", new Date(now).toISOString()),
+    supabase
+      .from("seedstack_events")
+      .select("step, event, minutes, next, detail, live_url, client_ts, created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(DASHBOARD_EVENT_LIMIT),
+  ]);
+  if (tokens.error) throw new Error(`seedstack device lookup failed: ${tokens.error.message}`);
+  if (events.error) throw new Error(`seedstack event lookup failed: ${events.error.message}`);
+
+  // Compare as times: Postgres may print a different number of fraction digits.
+  const lastSeenAt = (tokens.data ?? [])
+    .map((row) => row.last_used_at as string | null)
+    .reduce<string | null>((latest, at) => (at && (!latest || Date.parse(at) > Date.parse(latest)) ? at : latest), null);
+  return {
+    devices: tokens.data?.length ?? 0,
+    lastSeenAt,
+    events: (events.data ?? []) as SeedstackEventRow[],
+  };
 }
 
 /**

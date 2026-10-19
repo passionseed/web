@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ArrowDown, ArrowUpRight } from "lucide-react";
 
 import { ShiftCohortCard } from "@/components/shift/ShiftCohortCard";
@@ -13,6 +14,7 @@ import {
 } from "@/components/shift/poster/riso";
 import { SHIFT_COHORTS, bangkokToday, cohortStatus } from "@/lib/content/shift-cohort";
 import { NOTES } from "@/lib/content/pathlab-page";
+import { NEXT_ROUND_NAME } from "@/lib/content/shift-next";
 
 import styles from "@/components/shift/shiftGallery.module.css";
 
@@ -65,11 +67,18 @@ export default function ShiftGalleryPage() {
             <h1 className="font-kodchasan">
               <span className="sr-only">SHIFT: </span>7 วัน ปั้น 1 โปรเจกต์จริง
             </h1>
-            <p>สร้างของที่คนนอกได้ลองใช้ พร้อม Pivot Log<br className="hidden sm:block" /> และพอร์ต 1 หน้าสำหรับ TCAS 1</p>
-            <a href="#rounds" className={styles.textLink}>
-              {open.length > 0 ? "เลือกรุ่นที่เปิดรับสมัคร" : "ดูทุกรุ่นของ SHIFT"}
-              <ArrowDown size={16} aria-hidden="true" />
-            </a>
+            <p>สร้างของที่คนนอกได้ลองใช้ พร้อมบันทึกจุดพังและสิ่งที่แก้<br className="hidden sm:block" /> และพอร์ต 1 หน้าสำหรับ TCAS 1</p>
+            {open.length > 0 ? (
+              <a href="#rounds" className={styles.textLink}>
+                เลือกรุ่นที่เปิดรับสมัคร
+                <ArrowDown size={16} aria-hidden="true" />
+              </a>
+            ) : (
+              <Link href="/shift/next" className={styles.textLink}>
+                ลงชื่อ {NEXT_ROUND_NAME} เลือกช่วงที่ว่างเอง
+                <ArrowUpRight size={16} aria-hidden="true" />
+              </Link>
+            )}
           </div>
         </div>
       </header>

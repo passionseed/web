@@ -1,3 +1,9 @@
+allowBuilds:
+  core-js: set this to true or false
+  esbuild: set this to true or false
+  lazygit: set this to true or false
+  sharp: set this to true or false
+  unrs-resolver: set this to true or false
 ignoredBuiltDependencies:
   - core-js
   - esbuild

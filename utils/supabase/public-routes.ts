@@ -39,6 +39,8 @@ const PUBLIC_ROUTE_PREFIXES = [
   "/slide",
   "/worksheet",
   "/tips",
+  // Marketing Studio: noindex export pages for social posts, public copy only
+  "/studio",
   // SHIFT rounds: public certificate verify page + share images, and two API
   // routes that authenticate themselves (bearer token / health probe).
   "/c",
