@@ -15,6 +15,6 @@ export default async function Image({ params }: { params: Promise<{ round: strin
     title: cohort.name,
     subtitle: "7 วัน ปั้น 1 โปรเจกต์จริง",
     label: "7 DAYS / REAL PROJECTS",
-    footer: `${formatThaiDateRange(cohort.startDate, cohort.endDate)} · Live Project · Pivot Log`,
+    footer: `${formatThaiDateRange(cohort.startDate, cohort.endDate)} · Live Project · พอร์ต 1 หน้า`,
   });
 }

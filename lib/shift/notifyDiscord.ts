@@ -86,6 +86,11 @@ export function buildShiftApplicationPayload(notice: ShiftApplicationNotice) {
 }
 
 export async function notifyShiftApplication(notice: ShiftApplicationNotice): Promise<void> {
+  await postShiftWebhook(buildShiftApplicationPayload(notice));
+}
+
+/** Posts one payload to the team's SHIFT channel. Best effort, never throws. */
+export async function postShiftWebhook(payload: unknown): Promise<void> {
   const webhookUrl = process.env.DISCORD_SHIFT_WEBHOOK_URL;
   if (!webhookUrl) {
     if (!warnedMissingWebhook) {
@@ -101,7 +106,7 @@ export async function notifyShiftApplication(notice: ShiftApplicationNotice): Pr
     const res = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(buildShiftApplicationPayload(notice)),
+      body: JSON.stringify(payload),
       signal: controller.signal,
     });
     if (!res.ok) {

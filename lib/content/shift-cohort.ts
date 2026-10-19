@@ -40,6 +40,9 @@ export interface ShiftCohort {
   /** Set once a round has actually wrapped, when the dates alone would say
    *  otherwise (e.g. approximate dates for a pilot). */
   completed?: boolean;
+  /** The start date announced before a postponement, so posters can say
+   *  "moved from" instead of leaving people to spot the change. */
+  postponedFrom?: string;
   /** 1200x630 listing banner shown on the /shift gallery card. */
   bannerSrc?: string;
   /** Live projects the round shipped, shown once it is over. Titles only:
@@ -237,6 +240,8 @@ export const SHIFT_COHORT_2: ShiftCohort = {
   priceBaht: 690,
   /** Late applications run through Day 1: the first session is 19:00. */
   applyDeadline: "2026-10-14",
+  postponedFrom: "2026-10-12",
+  firstMeetDate: "2026-10-14",
 };
 
 /** The round the printed posters are promoting right now. */

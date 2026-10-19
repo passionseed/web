@@ -88,7 +88,7 @@ export function Enrollment({ busy, act }: CampCommandProps) {
         />
         <select
           aria-label="Enrollment role"
-          className="rounded-md border p-2"
+          className="rounded-md border border-input bg-background p-2 text-sm text-foreground"
           value={role}
           onChange={(e) => setRole(e.target.value)}
         >
@@ -128,7 +128,7 @@ export function PeerPlacement({ s, busy, act }: CohortProps) {
           />
           <select
             aria-label="First group member"
-            className="rounded-md border p-2"
+            className="rounded-md border border-input bg-background p-2 text-sm text-foreground"
             value={groupUser}
             onChange={(e) => setGroupUser(e.target.value)}
           >
@@ -169,7 +169,7 @@ export function PeerPlacement({ s, busy, act }: CohortProps) {
             <div className="flex flex-wrap gap-2">
               <select
                 aria-label={`Group for ${p.name}`}
-                className="rounded-md border p-2"
+                className="rounded-md border border-input bg-background p-2 text-sm text-foreground"
                 value={assignments[p.id] ?? p.group_id ?? ""}
                 onChange={(e) =>
                   setAssignments({

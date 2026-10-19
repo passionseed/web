@@ -1,0 +1,12 @@
+You are editing Instagram/Messenger automations for Passion Seed (passion_seed.th) in Meta Business Suite. Start at https://business.facebook.com/latest/inbox/automated_responses?business_id=952053926697425&asset_id=663636623489698 . Do ONLY these changes; do not delete or edit anything else.
+
+TASK 1. Edit the automation named 'Comment to message - shift'.
+ a) In the Private message, change ONLY the line 'กรอก 2 นาที ปิดรับ ส. 12 ต.ค. รับ 21 คน' to 'กรอก 2 นาที ปิดรับ พ. 14 ต.ค. ก่อนคลาสแรก รับ 21 คน'. Keep the other lines exactly as they are.
+ b) Replace the Comment reply with exactly: 'ส่งลิงก์สมัคร SHIFT[2] ใน DM แล้วน้า 🌱 ถ้าไม่เห็น กดลิงก์ในไบโอได้เลย'
+ c) Save changes.
+
+TASK 2. Edit the automation named 'Custom keywords - shift comment': in its Message, change the line containing 'ปิดรับ ส. 12 ต.ค.' to 'กรอก 2 นาที ปิดรับ พ. 14 ต.ค. ก่อนคลาสแรก รับ 21 คน'. Keep everything else. Save changes.
+
+TASK 3. For each of 'Custom keywords - Grow', 'Custom keywords - Prove', 'Custom keywords - Where': create a NEW automation of type 'Comment to message' (comment keyword trigger) named 'Comment to message - Grow' / '- Prove' / '- Where', channels Instagram and Messenger, with the same keywords as the existing one (e.g. Grow, grow, GROW), the Private message = the exact same message text as the existing Custom keywords automation, the same image attached as media (download it from the existing automation if needed and upload it), and Comment reply exactly: 'ส่งให้ใน DM แล้วน้า 🌱 ถ้าไม่เห็น กดลิงก์ในไบโอได้เลย'. Turn it on. Keep the existing Custom keywords automations unchanged.
+
+Text editors on this page may ignore programmatic input: type with real keyboard input, and confirm the 'Save changes' button becomes enabled before saving. After saving each one, reopen it and verify the saved text, keywords, image and On status. Do not post, comment, or message anyone. If anything blocks you (login, permission, missing option), stop and report. Finish with a short report per task: done or not, and what you verified.

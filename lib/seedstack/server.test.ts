@@ -3,6 +3,7 @@
 import { SEEDSTACK_NOTICE_VERSION } from "@/lib/seedstack/consent";
 import {
   findParentLinkTarget,
+  getSeedstackDashboard,
   parentNoLongerNeeded,
   pollLinkRequest,
   recordParentDecision,
@@ -313,5 +314,54 @@ describe("pollLinkRequest", () => {
     const revoke = callTo("seedstack_tokens", "update");
     expect(revoke.payload).toEqual({ revoked_at: expect.any(String) });
     expect(revoke.filters).toEqual([["eq", "token_hash", minted.token_hash]]);
+  });
+});
+
+describe("getSeedstackDashboard", () => {
+  const NOW = Date.parse("2026-10-10T00:00:00Z");
+
+  it("counts only working tokens, takes the latest use, and reads the student's newest events", async () => {
+    const event = { step: "scope", event: "done", created_at: "2026-10-09T00:00:00Z" };
+    mockReply = (call) =>
+      call.table === "seedstack_tokens"
+        ? {
+            data: [
+              { last_used_at: "2026-10-08T00:00:00.5+00:00" },
+              { last_used_at: null },
+              { last_used_at: "2026-10-09T00:00:00+00:00" },
+            ],
+            error: null,
+          }
+        : { data: [event], error: null };
+
+    await expect(getSeedstackDashboard("u1", NOW)).resolves.toEqual({
+      devices: 3,
+      lastSeenAt: "2026-10-09T00:00:00+00:00",
+      events: [event],
+    });
+    expect(callTo("seedstack_tokens", "select").filters).toEqual(
+      expect.arrayContaining([
+        ["eq", "user_id", "u1"],
+        ["is", "revoked_at", null],
+        ["gt", "expires_at", new Date(NOW).toISOString()],
+      ]),
+    );
+    expect(callTo("seedstack_events", "select").filters).toEqual(
+      expect.arrayContaining([
+        ["eq", "user_id", "u1"],
+        ["order", "created_at", { ascending: false }],
+        ["limit", 50],
+      ]),
+    );
+  });
+
+  it("reports no devices and no last use when nothing is linked", async () => {
+    mockReply = () => ({ data: [], error: null });
+    await expect(getSeedstackDashboard("u1", NOW)).resolves.toEqual({ devices: 0, lastSeenAt: null, events: [] });
+  });
+
+  it("throws on a database error", async () => {
+    mockReply = (call) => (call.table === "seedstack_events" ? { data: null, error: { message: "boom" } } : { data: [], error: null });
+    await expect(getSeedstackDashboard("u1", NOW)).rejects.toThrow("boom");
   });
 });

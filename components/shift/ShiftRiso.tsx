@@ -92,6 +92,29 @@ export function RisoHero({
   );
 }
 
+/**
+ * A short strip of the /shift sky for flow pages (join, SeedStack, guide):
+ * the same OrbitSky plates and burning horizon, cut to a band. Text never
+ * sits on the sky; children start on the black planet below the rim, so
+ * contrast is the page's, not the gradient's.
+ */
+export function RisoBand({
+  children,
+  horizon = "clamp(132px, 22svh, 220px)",
+}: {
+  children: ReactNode;
+  horizon?: string;
+}) {
+  return (
+    <header className="relative overflow-hidden">
+      <OrbitSky horizon={horizon} speckle={0} />
+      <div className="relative" style={{ paddingTop: `calc(${horizon} + 28px)` }}>
+        {children}
+      </div>
+    </header>
+  );
+}
+
 export function RisoHeading({
   eyebrow,
   children,

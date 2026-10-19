@@ -3,14 +3,12 @@
 import { useState, useTransition } from "react";
 import { Loader2 } from "lucide-react";
 
-import { shiftJoinButtonClass } from "@/components/shift/join/ShiftJoinActions";
+import { FLOW_TEXT, flowButtonClass, flowFieldClass, flowPanelClass } from "@/components/shift/join/shiftFlowInk";
 import { INK } from "@/components/shift/poster/riso";
 import { parentWithdraw, submitParentDecision } from "@/app/shift/seedstack/actions";
 import type { ParentDecision } from "@/lib/seedstack/server";
 
-const paper = (alpha: string) => `${INK.paper}${alpha}`;
-const inputClass =
-  "w-full border-0 border-b bg-transparent px-0 py-3 text-base outline-none placeholder:text-[rgba(242,234,217,0.3)] focus:ring-0";
+const linkButtonClass = "min-h-12 text-sm font-semibold underline underline-offset-4";
 const RELATIONSHIPS = ["พ่อ", "แม่", "ผู้ปกครอง"] as const;
 
 type Decision = "agreed" | "declined" | "withdrawn";
@@ -49,21 +47,21 @@ export function SeedstackParentForm({ token, parentDecision }: { token: string; 
 
   if (decision) {
     return (
-      <div className="space-y-4">
-        <p className="leading-relaxed" style={{ color: paper("cc") }}>
+      <div className={`${flowPanelClass} space-y-3 p-4`} role="status">
+        <p className="text-[17px] leading-relaxed" style={{ color: FLOW_TEXT.body }}>
           {DONE_TEXT[decision]}
         </p>
         {decision === "agreed" && (
-          <button type="button" onClick={withdraw} disabled={pending} className="text-sm underline" style={{ color: paper("80") }}>
+          <button type="button" onClick={withdraw} disabled={pending} className={linkButtonClass} style={{ color: FLOW_TEXT.muted }}>
             ถอนความยินยอมและลบข้อมูล
           </button>
         )}
         {decision === "declined" && (
-          <button type="button" onClick={() => setDecision(null)} className="text-sm underline" style={{ color: paper("80") }}>
+          <button type="button" onClick={() => setDecision(null)} className={linkButtonClass} style={{ color: FLOW_TEXT.muted }}>
             เปลี่ยนใจ ยินยอม
           </button>
         )}
-        {error && <p className="text-sm" style={{ color: INK.orange }}>{error}</p>}
+        {error && <p className="text-sm font-semibold" style={{ color: FLOW_TEXT.warn }} role="alert">{error}</p>}
       </div>
     );
   }
@@ -74,17 +72,22 @@ export function SeedstackParentForm({ token, parentDecision }: { token: string; 
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="ชื่อ-นามสกุลผู้ปกครอง"
-        className={inputClass}
-        style={{ borderColor: paper("33"), color: INK.paper }}
+        aria-label="ชื่อ-นามสกุลผู้ปกครอง"
+        className={`${flowFieldClass} min-h-12 px-4 py-3 text-base`}
       />
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2" role="group" aria-label="ความสัมพันธ์กับผู้เรียน">
         {RELATIONSHIPS.map((r) => (
           <button
             key={r}
             type="button"
             onClick={() => setRelationship(r)}
-            className="rounded-full px-4 py-2 text-sm"
-            style={relationship === r ? { backgroundColor: INK.yellow, color: INK.black } : { boxShadow: `inset 0 0 0 1px ${paper("33")}` }}
+            aria-pressed={relationship === r}
+            className="min-h-12 rounded-full px-5 text-[15px] font-semibold"
+            style={
+              relationship === r
+                ? { backgroundColor: INK.paper, color: INK.black, boxShadow: `2px 2px 0 0 ${INK.pink}` }
+                : { color: FLOW_TEXT.strong, boxShadow: "inset 0 0 0 1.5px rgba(242,234,217,0.5)" }
+            }
           >
             {r}
           </button>
@@ -94,22 +97,22 @@ export function SeedstackParentForm({ token, parentDecision }: { token: string; 
         type="button"
         onClick={() => decide(true)}
         disabled={pending}
-        className={shiftJoinButtonClass}
-        style={{ backgroundColor: INK.yellow, color: INK.black }}
+        aria-busy={pending}
+        className={flowButtonClass}
       >
-        {pending && <Loader2 className="h-5 w-5 animate-spin" />}
+        {pending && <Loader2 className="h-5 w-5 motion-safe:animate-spin" aria-hidden="true" />}
         ยินยอม
       </button>
       <button
         type="button"
         onClick={() => decide(false)}
         disabled={pending}
-        className={shiftJoinButtonClass}
-        style={{ backgroundColor: paper("14"), color: INK.paper }}
+        className={flowButtonClass}
+        data-variant="quiet"
       >
         ไม่ยินยอม
       </button>
-      {error && <p className="text-sm" style={{ color: INK.orange }} role="alert">{error}</p>}
+      {error && <p className="text-sm font-semibold" style={{ color: FLOW_TEXT.warn }} role="alert">{error}</p>}
     </div>
   );
 }

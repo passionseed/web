@@ -22,13 +22,13 @@ export const SEEDSTACK_GUIDE = {
   install: {
     title: "ติดตั้ง (ประมาณ 1 นาที)",
     lines: [
-      { label: "Mac: เปิด Terminal แล้ววาง", value: `curl -fsSL ${RAW}/install.sh | bash` },
-      { label: "Windows: เปิด PowerShell (ไม่ใช่ cmd) แล้ววาง", value: `irm ${RAW}/install.ps1 | iex` },
+      { os: "mac", label: "Mac: เปิด Terminal แล้ววาง", value: `curl -fsSL ${RAW}/install.sh | bash` },
+      { os: "windows", label: "Windows: เปิด PowerShell (ไม่ใช่ cmd) แล้ววาง", value: `irm ${RAW}/install.ps1 | iex` },
     ],
     steps: [
       ["ปิด OpenCode ให้สนิทก่อน", "Mac: Cmd+Q · Windows: ปิดจาก system tray ด้วย"],
       ["วางบรรทัดด้านบน แล้วพิมพ์ y", "ตัวติดตั้งบอกก่อนว่าจะทำอะไรในเครื่อง แล้วรอเราตอบ"],
-      ["เปิด OpenCode ใหม่ เปิดโฟลเดอร์โปรเจกต์", "เลือกโมเดลตามที่พี่บอกใน #อ่านก่อน แล้วพิมพ์ /seedstack"],
+      ["เปิด OpenCode ใหม่ เปิดโฟลเดอร์โปรเจกต์", "เลือกโมเดลตามที่พี่บอกใน #อ่านก่อน แล้วพิมพ์ /seedstack ครั้งแรกมันจะพาเชื่อมกับพี่ mentor ก่อน"],
     ],
     note: "ใช้ Codex? พิมพ์ $seedstack แทน /seedstack · ใช้ Claude Code ได้เหมือนกัน",
   },

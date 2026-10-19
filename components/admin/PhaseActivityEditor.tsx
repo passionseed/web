@@ -44,6 +44,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { AdminErrorState } from "@/components/admin/shared/AdminStates";
 import { Switch } from "@/components/ui/switch";
 
 interface ChatMessage {
@@ -123,6 +124,7 @@ const SENDER_OPTIONS = [
 export function PhaseActivityEditor() {
   const [phases, setPhases] = useState<Phase[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
   const [expandedPhases, setExpandedPhases] = useState<Set<string>>(new Set());
@@ -170,12 +172,14 @@ export function PhaseActivityEditor() {
 
   async function fetchData() {
     setLoading(true);
+    setLoadError(null);
     try {
       const response = await fetch("/api/admin/hackathon/activities/editor");
       const data = await response.json();
 
       if (!response.ok) {
         console.error("Failed to fetch data:", data.error);
+        setLoadError(data?.error ?? `HTTP ${response.status}`);
         return;
       }
 
@@ -187,6 +191,7 @@ export function PhaseActivityEditor() {
       }
     } catch (error) {
       console.error("Failed to fetch data:", error);
+      setLoadError(error instanceof Error ? error.message : "Network error");
     } finally {
       setLoading(false);
     }
@@ -529,8 +534,25 @@ export function PhaseActivityEditor() {
     );
   }
 
+  if (loadError && phases.length === 0) {
+    return (
+      <AdminErrorState
+        title="Could not load phases and activities"
+        message={loadError}
+        onRetry={() => void fetchData()}
+      />
+    );
+  }
+
   return (
     <div className="space-y-4">
+      {loadError && (
+        <AdminErrorState
+          title="Could not refresh phases"
+          message={`Showing the last loaded version. ${loadError}`}
+          onRetry={() => void fetchData()}
+        />
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-semibold">Phase Activity Editor</h2>

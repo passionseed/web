@@ -37,6 +37,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Search, Mail, X, Send, Eye, Users, FileText, LayoutTemplate, Code, LayoutList, UsersRound, Award, Upload, CheckCircle2, AlertCircle, FolderOpen } from "lucide-react";
+import { AdminErrorState } from "@/components/admin/shared/AdminStates";
 import { TEMPLATE_VARIABLES, type EmailTemplateVars } from "@/lib/hackathon/email";
 import { renderCustomEmail, type EmailTemplate } from "@/lib/hackathon/email-templates";
 
@@ -427,6 +428,7 @@ export function AdminHackathonEmailSender() {
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [counts, setCounts] = useState({ total: 0, filtered: 0 });
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -462,6 +464,7 @@ export function AdminHackathonEmailSender() {
 
   async function fetchData() {
     setLoading(true);
+    setLoadError(false);
     try {
       const params = new URLSearchParams();
       if (selectedTracks.length) params.set("track", selectedTracks.join(","));
@@ -472,14 +475,17 @@ export function AdminHackathonEmailSender() {
       const response = await fetch(`/api/admin/hackathon/email-sender?${params.toString()}`);
       const data = await response.json();
 
-      if (response.ok) {
-        setParticipants(data.participants || []);
-        if (data.filterOptions) setFilterOptions(data.filterOptions);
-        if (data.counts) setCounts(data.counts);
-        if (data.templates) setTemplates(data.templates);
-      }
+      if (!response.ok) throw new Error(data?.error ?? `HTTP ${response.status}`);
+      setParticipants(data.participants || []);
+      if (data.filterOptions) setFilterOptions(data.filterOptions);
+      if (data.counts) setCounts(data.counts);
+      if (data.templates) setTemplates(data.templates);
     } catch (error) {
       console.error("Error fetching data:", error);
+      // Do not keep a recipient list that no longer matches the filters on screen.
+      setParticipants([]);
+      setSelectedIds(new Set());
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -844,6 +850,12 @@ export function AdminHackathonEmailSender() {
                 <div className="flex justify-center py-8">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
+              ) : loadError ? (
+                <AdminErrorState
+                  title="Could not load recipients"
+                  message="The participant list for these filters did not load, so the selection was cleared."
+                  onRetry={() => void fetchData()}
+                />
               ) : (
                 <div className="rounded-md border max-h-[400px] overflow-auto">
                   <Table>

@@ -19,7 +19,7 @@ const SHIFT_POINTS: { lead: string; body: string }[] = [
   { lead: "Zero Theory, 100% Execution:", body: "ลงมือสร้างตั้งแต่วันแรก ไม่มีสไลด์บรรยาย" },
   { lead: "Live Project:", body: "ผลงานที่มีคนภายนอกใช้งานจริง พร้อมเมตริกจริง" },
   {
-    lead: "The Pivot Log:",
+    lead: "บันทึกจุดพัง:",
     body: "บันทึกจุดพังและการแก้ปัญหา ซึ่งคือสัญญาณที่แรงที่สุดในสายตาอาจารย์",
   },
 ];

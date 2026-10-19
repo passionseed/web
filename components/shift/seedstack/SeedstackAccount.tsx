@@ -1,16 +1,14 @@
-import { INK } from "@/components/shift/poster/riso";
+import { FLOW_TEXT, flowPanelClass } from "@/components/shift/join/shiftFlowInk";
 import { SeedstackDiscordButton } from "@/components/shift/seedstack/SeedstackDiscordButton";
 
 import type { SeedstackAccount as Account } from "./seedstackAccountInfo";
 
-const paper = (alpha: string) => `${INK.paper}${alpha}`;
-
 function SignedInAs({ account }: { account: Account }) {
   if (!account.label) return null;
   return (
-    <p className="text-sm" style={{ color: paper("99") }}>
+    <p className="text-sm" style={{ color: FLOW_TEXT.muted }}>
       {account.isDiscord ? "ตอนนี้ใช้ Discord " : "ตอนนี้ใช้บัญชี "}
-      <span className="font-semibold" style={{ color: INK.paper }}>
+      <span className="font-semibold" style={{ color: FLOW_TEXT.strong }}>
         {account.label}
       </span>
     </p>
@@ -19,14 +17,14 @@ function SignedInAs({ account }: { account: Account }) {
 
 function SwitchNote({ isDiscord, next }: { isDiscord: boolean; next: string }) {
   return (
-    <div className="space-y-3 rounded-2xl p-4" style={{ boxShadow: `inset 0 0 0 1px ${paper("33")}` }}>
-      <p className="text-sm leading-relaxed" style={{ color: paper("cc") }}>
+    <div className={`${flowPanelClass} space-y-4 p-4`}>
+      <p className="text-[15px] leading-relaxed" style={{ color: FLOW_TEXT.body }}>
         บัญชีนี้ยังไม่มีที่นั่ง SHIFT ถ้าอยู่ SHIFT เปลี่ยนเป็น Discord ที่ใช้เข้าเซิร์ฟ พี่ mentor จะได้รู้ว่าเป็นเรา
         ถ้าไม่ได้อยู่ SHIFT ใช้บัญชีนี้ต่อได้เลย
       </p>
       <SeedstackDiscordButton next={next} label="เปลี่ยนเป็น Discord ที่ใช้ใน SHIFT" />
       {isDiscord && (
-        <p className="text-xs" style={{ color: paper("80") }}>
+        <p className="text-sm leading-relaxed" style={{ color: FLOW_TEXT.muted }}>
           ถ้าหน้า Discord ขึ้นบัญชีเดิม กด Not you? เพื่อสลับบัญชีก่อน
         </p>
       )}

@@ -188,7 +188,7 @@ export default function TechseedPage() {
             พร้อมยกระดับไอเดียเป็น <span className="text-amber-300">1-Page TCAS Case Study</span> หรือยัง?
           </h3>
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-slate-300/90 sm:text-base">
-            หลังจากเห็นสิ่งที่รุ่นพี่สร้างใน TechSeed แล้ว หากคุณต้องการสร้างโปรเจกต์ที่มีผู้ใช้งานจริง 15–30 คน พร้อม Failure &amp; Pivot Log เพื่อยื่นพอร์ตมหาลัยชั้นนำใน 7 วัน
+            หลังจากเห็นสิ่งที่รุ่นพี่สร้างใน TechSeed แล้ว หากคุณต้องการสร้างโปรเจกต์ที่มีผู้ใช้งานจริง 15–30 คน พร้อมบันทึกจุดพังและสิ่งที่แก้ เพื่อยื่นพอร์ตมหาลัยชั้นนำใน 7 วัน
           </p>
           <div className="mt-8 flex justify-center">
             <ShiftApplyButton
