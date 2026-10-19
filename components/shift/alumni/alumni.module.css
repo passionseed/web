@@ -1,0 +1,123 @@
+/* Alumni shares the live globe and cosmos tokens with /shift/next. */
+.alumniLabel {
+  margin-top: 1rem;
+  font-family: var(--latin);
+  font-size: 0.875rem;
+  letter-spacing: 0.55em;
+  color: var(--aurora);
+}
+
+.sessionReadout {
+  display: flex;
+  flex-wrap: wrap;
+  max-width: 40rem;
+  margin-top: auto;
+  border-radius: 20px;
+}
+
+.sessionReadout > div {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 1rem 1.25rem;
+}
+
+.sessionReadout dt {
+  color: var(--faint);
+  font-size: 0.75rem;
+}
+
+.sessionReadout dd {
+  margin-top: 0.35rem;
+  font-size: 0.9375rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.content {
+  position: relative;
+  max-width: 52rem;
+  margin-inline: auto;
+  padding: 3rem 1.25rem 7rem;
+  scroll-margin-top: 2rem;
+}
+
+.rsvp {
+  margin-bottom: 2rem;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  scroll-margin-top: 2rem;
+}
+
+.rsvp h2 {
+  font-weight: 500;
+}
+
+.rsvp h2 span {
+  color: var(--aurora);
+}
+
+.session {
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  border-block: 1px solid var(--line);
+}
+
+.sessionDate {
+  color: var(--aurora);
+}
+
+.steps {
+  display: grid;
+  margin-top: 1.75rem;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-block: 1.25rem;
+  border-top: 1px solid var(--line);
+}
+
+.stepNumber {
+  flex-shrink: 0;
+  width: 2rem;
+  color: var(--aurora);
+  font-family: var(--latin);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.stepLabel {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-family: var(--latin);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+@media (min-aspect-ratio: 105/100) {
+  .sessionReadout {
+    margin-top: 1.5rem;
+  }
+}
+
+@media (min-width: 640px) {
+  .content {
+    padding: 4rem 2rem 6rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .sessionReadout > div {
+    padding: 0.85rem 0.65rem;
+  }
+
+  .sessionReadout dd {
+    font-size: 0.8125rem;
+    overflow-wrap: anywhere;
+  }
+}
+
+.wordmark {
+  font-size: clamp(76px, 12.5vw, 140px);
+}

@@ -1,128 +1,76 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { createClient } from "@/utils/supabase/client";
-import { SiDiscord, SiGoogle } from "@icons-pack/react-simple-icons";
-import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 import Link from "next/link";
+import { ArrowUpRight, Loader2 } from "lucide-react";
+import { SiDiscord, SiGoogle } from "@icons-pack/react-simple-icons";
+
+import { createClient } from "@/utils/supabase/client";
+import space from "@/components/shift/next/shiftNext.module.css";
+import styles from "@/components/auth/login.module.css";
+
+type Provider = "discord" | "google";
 
 export function LoginForm({ next = "/" }: { next?: string }) {
-  const { toast } = useToast();
-
+  const [pending, setPending] = useState<Provider | null>(null);
+  const [error, setError] = useState("");
   const supabase = createClient();
   const safeNext = next.startsWith("/") ? next : "/";
 
   function getRedirectTo() {
-    // Prefer the tab origin, but rewrite 0.0.0.0 (from `next dev -H 0.0.0.0`)
-    // to localhost so cookies + Supabase redirect allowlists still work.
-    let origin = window.location.origin;
-    if (origin.includes("://0.0.0.0") || origin.includes("://[::]")) {
-      origin = origin
-        .replace("://0.0.0.0", "://localhost")
-        .replace("://[::]", "://localhost");
-    }
+    // Keep development cookies and the existing OAuth allowlist compatible.
+    const origin = window.location.origin
+      .replace("://0.0.0.0", "://localhost")
+      .replace("://[::]", "://localhost");
     const callbackUrl = new URL("/auth/callback", origin);
     callbackUrl.searchParams.set("next", safeNext);
     return callbackUrl.toString();
   }
 
-  async function signInWithDiscord() {
-    const redirectTo = getRedirectTo();
-
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: "discord",
-      options: {
-        redirectTo,
-      },
-    });
-    console.log(data, "heyhey");
-
-    if (error) {
-      console.error("Auth error:", error);
-      toast({
-        title: "Authentication Error",
-        description: error.message,
-        variant: "destructive",
+  async function signIn(provider: Provider) {
+    if (pending) return;
+    setPending(provider);
+    setError("");
+    try {
+      const { error: authError } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: getRedirectTo() },
       });
+      if (authError) throw authError;
+    } catch {
+      setError("เข้าสู่ระบบไม่สำเร็จ ลองอีกครั้งได้เลย");
+      setPending(null);
     }
   }
-
-  async function signInWithGoogle() {
-    const redirectTo = getRedirectTo();
-
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo,
-      },
-    });
-
-    if (error) {
-      console.error("Auth error:", error);
-      toast({
-        title: "Authentication Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  }
-
 
   return (
-    <Card className="w-[350px] bg-gradient-to-br from-purple-950 to-purple-900 text-white border-none">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl">Sign in</CardTitle>
-        <CardDescription className="text-white/70">
-          Sign in with your preferred social account
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-4">
-        <div className="grid gap-2">
-          <Button
-            className="w-full bg-[#5865F2] hover:bg-[#4752c4] text-white"
-            onClick={signInWithDiscord}
-          >
-            <SiDiscord className="mr-2 h-4 w-4" />
-            Sign in with Discord
-          </Button>
-          
-          <Button
-            className="w-full bg-white hover:bg-gray-50 text-gray-900 border border-gray-300"
-            onClick={signInWithGoogle}
-          >
-            <SiGoogle className="mr-2 h-4 w-4" />
-            Sign in with Google
-          </Button>
-        </div>
+    <section className={styles.copy} aria-labelledby="login-title">
+      <p className={space.missionTag}>
+        <span className={space.liveDot} aria-hidden="true" />
+        Your next chapter
+      </p>
+      <p className={`${styles.brand} ${space.wordmarkText}`}>PassionSeed</p>
+      <h1 id="login-title" className={styles.title}>เข้าสู่ระบบ<br />แล้วไปสร้างต่อ</h1>
+      <p className={styles.description}>เลือกบัญชีที่ใช้ แล้วกลับไปที่โปรเจกต์ของเรา<br />เพิ่งมาครั้งแรก? เริ่มด้วยบัญชีเดียวกันได้เลย</p>
 
-        {/* Email/password login temporarily disabled */}
-
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-white/20" />
-          </div>
-        </div>
-
-        <Link
-          href="/forgot-password"
-          className="text-sm text-white/60 hover:text-white text-center block transition-colors"
-        >
-          Forgot your password?
-        </Link>
-      </CardContent>
-      <CardFooter>
-        <p className="text-xs text-white/70 text-center w-full">
-          By signing in, you agree to our Terms of Service and Privacy Policy.
-        </p>
-      </CardFooter>
-    </Card>
+      <div className={styles.providers} aria-busy={pending !== null}>
+        <button type="button" className={space.cta} onClick={() => void signIn("google")} disabled={pending !== null}>
+          {pending === "google" ? <Loader2 className="animate-spin" aria-hidden="true" /> : <SiGoogle aria-hidden="true" />}
+          <span>{pending === "google" ? "กำลังไปที่ Google…" : "เข้าสู่ระบบด้วย Google"}</span>
+          <ArrowUpRight className={styles.arrow} aria-hidden="true" />
+        </button>
+        <button type="button" className={space.ghost} onClick={() => void signIn("discord")} disabled={pending !== null}>
+          {pending === "discord" ? <Loader2 className="animate-spin" aria-hidden="true" /> : <SiDiscord aria-hidden="true" />}
+          <span>{pending === "discord" ? "กำลังไปที่ Discord…" : "เข้าสู่ระบบด้วย Discord"}</span>
+          <ArrowUpRight className={styles.arrow} aria-hidden="true" />
+        </button>
+      </div>
+      {error && <p className={styles.error} role="alert">{error}</p>}
+      <Link href="/forgot-password" className={styles.help}>ลืมรหัสผ่าน?</Link>
+      <p className={styles.terms}>
+        เมื่อเข้าสู่ระบบ ถือว่าคุณยอมรับ<br />
+        <Link href="/terms">ข้อกำหนดการใช้งาน</Link> และ <Link href="/privacy">นโยบายความเป็นส่วนตัว</Link>
+      </p>
+    </section>
   );
 }

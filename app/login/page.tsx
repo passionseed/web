@@ -1,3 +1,8 @@
+import type { Metadata } from "next";
+import { ShiftNextCosmos, ShiftNextHero } from "@/components/shift/next/ShiftNextHero";
+import { ShiftTopBar } from "@/components/shift/ShiftTopBar";
+import space from "@/components/shift/next/shiftNext.module.css";
+import styles from "@/components/auth/login.module.css";
 import { LoginForm } from "@/components/login-form";
 import { isAnonymousUser } from "@/lib/supabase/auth";
 import { createClient } from "@/utils/supabase/server";
@@ -6,6 +11,11 @@ import {
   isProfileComplete,
   PROFILE_COMPLETION_SELECT,
 } from "@/lib/profile-completion";
+
+export const metadata: Metadata = {
+  title: "เข้าสู่ระบบ | PassionSeed",
+  description: "เข้าสู่ PassionSeed ด้วยบัญชี Google หรือ Discord แล้วกลับไปสร้างโปรเจกต์และเรียนรู้ต่อ",
+};
 
 export const dynamic = "force-dynamic";
 
@@ -45,8 +55,15 @@ export default async function LoginPage({
   }
 
   return (
-    <div className="flex-1 flex items-center justify-center my-10">
-      <LoginForm next={next} />
+    <div className={`${space.page} ${styles.scene} font-bai-jamjuree antialiased`} lang="th">
+      <ShiftNextCosmos />
+      <ShiftNextHero>
+        <ShiftTopBar back={{ href: "/", label: "กลับหน้าแรก" }} />
+        <div className={styles.scrim} aria-hidden="true" />
+        <div className={`${space.container} ${styles.inner}`}>
+          <LoginForm next={next} />
+        </div>
+      </ShiftNextHero>
     </div>
   );
 }

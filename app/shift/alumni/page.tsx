@@ -1,26 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowDown, ArrowRight } from "lucide-react";
 
 import { AlumniCalendar } from "@/components/shift/alumni/AlumniCalendar";
 import { AlumniPageView } from "@/components/shift/alumni/AlumniPageView";
 import { AlumniShowcase } from "@/components/shift/alumni/AlumniShowcase";
 import { MetaPixel } from "@/components/shift/MetaPixel";
-import { ScaledFrame } from "@/components/shift/alumni/ScaledFrame";
-import {
-  ALUMNI_POSTER_H,
-  ALUMNI_POSTER_W,
-  ShiftAlumniSessionPoster,
-} from "@/components/shift/poster/ShiftAlumniSessionPoster";
 import { ShiftTopBar } from "@/components/shift/ShiftTopBar";
-import { RisoPageTexture } from "@/components/shift/ShiftRiso";
-import {
-  ChromeBevelFilter,
-  ChromeWordmark,
-  INK,
-  OrbitSky,
-} from "@/components/shift/poster/riso";
-import { ALUMNI_PAGE_URL, alumniCalendar } from "@/lib/content/shift-alumni";
+import { ShiftNextCosmos, ShiftNextHero } from "@/components/shift/next/ShiftNextHero";
+import { ShiftNextLight } from "@/components/shift/next/ShiftNextLight";
+import { ShiftGalleryMotion } from "@/components/shift/ShiftGalleryMotion";
+import space from "@/components/shift/next/shiftNext.module.css";
+import styles from "@/components/shift/alumni/alumni.module.css";
+import { ALUMNI_PAGE_URL, alumniCalendar, longThaiDate, sessionDetails, timeRangeLabel } from "@/lib/content/shift-alumni";
 import { bangkokToday } from "@/lib/content/shift-cohort";
 import { currentShiftAdmin } from "@/lib/shift/admin";
 import { loadAlumniCalendar } from "@/lib/supabase/shift-alumni-calendar";
@@ -48,8 +40,6 @@ export const metadata: Metadata = {
 /** Reads the admin's session cookie, so it renders per request. */
 export const dynamic = "force-dynamic";
 
-const paper = (alpha: string) => `${INK.paper}${alpha}`;
-
 /** Admins only: names never reach a public render. */
 async function rsvpNamesByDate(dates: string[]) {
   const byDate: Record<string, Pick<AlumniRsvp, "nickname" | "cohort">[]> = {};
@@ -74,50 +64,63 @@ export default async function ShiftAlumniPage() {
     admin ? rsvpNamesByDate(upcomingDates) : undefined,
   ]);
 
+  const details = next ? sessionDetails(next, doc.defaults) : null;
+
   return (
-    <div
-      className="relative min-h-screen font-bai-jamjuree antialiased"
-      style={{ backgroundColor: INK.black, color: INK.paper }}
-      lang="th"
-    >
-      <RisoPageTexture />
+    <div className={`${space.page} font-bai-jamjuree antialiased`} lang="th">
+      <ShiftNextCosmos />
+      <ShiftNextLight />
+      <ShiftGalleryMotion />
       <AlumniPageView />
       <MetaPixel pagePath="/shift/alumni" />
 
-      {next ? (
-        <header className="relative">
-          <ChromeBevelFilter />
-          <ShiftTopBar />
-          <h1 className="sr-only">SHIFT Alumni: จบ 7 วันแล้ว ยังสร้างต่อด้วยกัน</h1>
-          {/* The poster for the next session; the same details follow as text. */}
-          <div className="mx-auto max-w-6xl px-3 pt-20 sm:px-8 sm:pt-24" aria-hidden="true">
-            <div style={{ boxShadow: `-6px 5px 0 ${INK.pink}` }}>
-              <ScaledFrame width={ALUMNI_POSTER_W} height={ALUMNI_POSTER_H}>
-                <ShiftAlumniSessionPoster session={next} defaults={doc.defaults} />
-              </ScaledFrame>
+      <ShiftNextHero>
+        <ShiftTopBar back={{ href: "/shift", label: "SHIFT ทุกรุ่น" }} />
+        <div className={`${space.container} ${space.heroInner}`}>
+          <div className={space.heroCopy}>
+            <p className={space.missionTag}>
+              <span className={space.liveDot} aria-hidden="true" />
+              The builders keep building
+            </p>
+            <div className={`${space.wordmark} ${styles.wordmark}`} aria-hidden="true">
+              <span className={space.wordmarkText}>SHIFT</span>
             </div>
-          </div>
-        </header>
-      ) : (
-        <header className="relative overflow-hidden">
-          <ChromeBevelFilter />
-          <OrbitSky horizon="clamp(240px, 34svh, 320px)" speckle={0} />
-          <ShiftTopBar />
-          <div
-            className="relative flex flex-col items-center justify-end pb-10 text-center"
-            style={{ minHeight: "clamp(240px, 34svh, 320px)" }}
-          >
-            <h1 className="font-kodchasan text-lg font-semibold">
-              <span className="sr-only">SHIFT Alumni: </span>จบ 7 วันแล้ว ยังสร้างต่อด้วยกัน
+            <p className={styles.alumniLabel} aria-hidden="true">ALUMNI</p>
+            <h1 className={space.headline}>
+              <span className="sr-only">SHIFT Alumni: </span>
+              จบ 7 วันแล้ว
+              <br />
+              <span>ยังสร้างต่อด้วยกัน</span>
             </h1>
-            <div aria-hidden="true">
-              <ChromeWordmark size="clamp(56px, 12vw, 112px)" name="ALUMNI" />
+            <p className={space.lede}>
+              กลับมาอัปเดตโปรเจกต์ ลองของที่เพื่อนสร้าง แล้วลงมือทำต่อด้วยกัน ออนไลน์ใน Discord
+            </p>
+            <div className={space.ctaRow}>
+              <a href={next ? "#rsvp" : "#calendar"} className={space.cta}>
+                <span>{next ? "เจอกันนัดต่อไป" : "ดูตารางนัด"}</span>
+                <ArrowDown className="h-4 w-4" aria-hidden="true" />
+              </a>
+              <a href="#alumni-built" className={space.ghost}>ดูโปรเจกต์ของเพื่อน</a>
             </div>
+            <p className={space.preorder}>สำหรับทุกคนที่จบ SHIFT แล้ว ลิงก์เข้าห้องอยู่ในกลุ่มของรุ่น</p>
           </div>
-        </header>
-      )}
+          {next && details && (
+            <dl className={`${space.glass} ${styles.sessionReadout}`} data-glass>
+              <div>
+                <dt>นัดต่อไป</dt>
+                <dd>{longThaiDate(next.date)}</dd>
+              </div>
+              <div>
+                <dt>เวลา</dt>
+                <dd>{timeRangeLabel(details.startTime, details.endTime) ?? "แจ้งในกลุ่ม"}</dd>
+              </div>
+              {details.place && <div><dt>เจอกันที่</dt><dd>{details.place}</dd></div>}
+            </dl>
+          )}
+        </div>
+      </ShiftNextHero>
 
-      <main className="relative mx-auto max-w-2xl px-5 pb-28 pt-8 sm:px-8 sm:pb-24">
+      <main id="calendar" className={styles.content}>
         <div>
           <AlumniCalendar
             initial={doc}
@@ -134,7 +137,7 @@ export default async function ShiftAlumniPage() {
         <Link
           href="/shift"
           className="mt-14 flex items-center justify-center gap-2 text-sm font-semibold underline underline-offset-4"
-          style={{ color: paper("cc") }}
+          style={{ color: "var(--mist)" }}
         >
           ยังไม่เคยลง SHIFT? ดูรอบที่เปิดรับสมัคร
           <ArrowRight className="h-4 w-4" aria-hidden="true" />

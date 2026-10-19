@@ -63,7 +63,7 @@ export default function ShiftNextPage() {
       <ShiftGalleryMotion />
       <ShiftNextLight />
 
-      <ShiftNextHero>
+      <ShiftNextHero focusThailand>
         <ShiftTopBar back={{ href: "/shift", label: "SHIFT ทุกรุ่น" }} />
         <div className={`${styles.container} ${styles.heroInner}`}>
           <div className={styles.heroCopy}>
@@ -105,8 +105,8 @@ export default function ShiftNextPage() {
               <dd>7 เย็นติดกัน</dd>
             </div>
             <div>
-              <dt>Live</dt>
-              <dd>{SESSION_TIME}</dd>
+              <dt>Online</dt>
+              <dd>Discord<br /><span className={styles.onlineTime}>{SESSION_TIME}</span></dd>
             </div>
             <div>
               <dt>Opens at</dt>

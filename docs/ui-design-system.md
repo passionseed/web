@@ -1986,14 +1986,17 @@ Space Mono for lab-style micro-labels (`BATCH #00`, `VERIFIED FEEDBACK`).
 
 ### SHIFT round gallery (`/shift`)
 
-The round gallery uses `components/shift/shiftGallery.module.css` for its layout
-and the existing riso palette, `OrbitSky`, chrome wordmark, and `.shift-button`
-for its material identity. The sky is full bleed; inner content uses a 1280px
-maximum width with 48px desktop and 20px mobile gutters. A dark scrim keeps
-hero copy readable over the printed dawn sky.
+The round gallery uses the same full-bleed globe, fallback orb, cosmos,
+white CTA, and typography as `/shift/next`, through `ShiftNextHero` and
+`ShiftNextCosmos`. Round layouts live in
+`components/shift/shiftGallery.module.css`; `.cosmicGallery` maps gallery
+colors to the shared space tokens only on `/shift`, leaving `/shift/school`
+unchanged. Inner round content uses a 1280px maximum width with 48px desktop
+and 20px mobile gutters.
 
-- The compact hero pairs the SHIFT wordmark with the promise and a round-list
-  anchor. Avoid repeating a long introduction below it.
+- The hero leads with SHIFT, the project outcome, and a signup action. When
+  no round is open, the primary action links to `/shift/next`; the secondary
+  action always anchors to the round collection.
 - Open rounds use a landscape feature: intact banner artwork alongside live
   dates, session time, price, capacity, deadline, and signup actions. Keep these
   facts in HTML so students can read them without zooming into a poster.
@@ -2046,3 +2049,43 @@ renderer and local fonts. Keep explicit `openGraph.images` and `twitter.images`
 out of page metadata: they override file-based images. Twitter inherits the
 resolved Open Graph image and uses `summary_large_image` from the root layout.
 Do not add an image handler and a static PNG in the same directory.
+
+### SHIFT Alumni globe (`/shift/alumni`)
+
+The alumni page reuses the live `ShiftNextHero`, `ShiftNextCosmos`, and shared
+space tokens from `/shift/next`. Keep the full-bleed globe, fallback orb,
+reduced-motion handling, and deferred WebGL loading shared between both pages.
+Alumni typography and responsive session details live in
+`components/shift/alumni/alumni.module.css`. The next-session CTA anchors to the
+open RSVP form; the calendar, admin editor, and private attendee names retain
+their existing behavior. Use the shared glass surface for RSVP and the shared
+white CTA for both form submission and the mobile sticky action. The agenda
+uses divided rows rather than the print poster's offset shadows and stamps.
+
+### SHIFT[3] Thailand arrival (`/shift/next`)
+
+`ShiftGlobeScene` in `app/shift/layout.tsx` owns one persistent canvas across
+`/shift`, `/shift/next`, and `/shift/alumni`. The signup `ShiftJourneyLink`
+starts the flight on `/shift`, fades and lifts the outgoing copy for 240ms,
+then navigates to SHIFT[3] while the same globe continues the 4.5-second zoom.
+Incoming hero copy fades into place. A direct visit to SHIFT[3] starts at the
+Thailand destination. Reduced motion skips both text and flight transitions.
+
+Keep geographic north upright: the inner y rotation faces Bangkok's longitude
+and the outer x rotation centres its latitude. Do not use a shortest-arc
+quaternion from a single normal, which leaves map roll unconstrained.
+Perspective compensation keeps Thailand beside the desktop copy and below
+phone actions. The destination label explicitly says the session is online
+on Discord; the globe is a community visual, not an in-person venue.
+
+### Login (`/login`)
+
+Login reuses the SHIFT cosmos and rotating globe with an unboxed, Thai-first
+sign-in area on the calm side of the hero. The shared site navigation gives
+way to the page's logo and home link. Google uses the white CTA and Discord
+the glass secondary button. Keep both provider choices, callback destination,
+password recovery, and legal links accessible. Disable both choices during
+OAuth and show an inline retry message on failure. The globe retains its CSS
+fallback and pauses off screen; reduced motion disables the entrance and
+loading spinner. Login-specific layout lives in
+`components/auth/login.module.css`.
