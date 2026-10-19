@@ -1,7 +1,7 @@
 \set ON_ERROR_STOP on
 begin;
 \ir shift_round_helpers.psql
-select plan(23);
+select plan(26);
 
 select shift_test.clock('2026-11-12 10:00+07');
 create temp table f on commit drop as select
@@ -66,6 +66,24 @@ select is((select jsonb_array_length(res->'data'->'members') from sq), 3, 'three
 select is((select res->'data'->'squad'->'mentor'->>'display_name' is not null from sq), true, 'mentor display name');
 select is((select jsonb_array_length(res->'data'->'feed') from sq), 1, 'feed excludes rejected evidence');
 select ok((select (res->'data'->'feed')::text !~ 'Secret Person' from sq), 'feed carries no labels or free text');
+reset role;
+create temp table evs2 on commit drop as select shift_test.ev((select eb from g), 'ideas') as idea, shift_test.ev((select eb from g), 'daily') as daily;
+grant select on evs2 to authenticated;
+select shift_round_private.emit('evidence_logged', (select r from f), (select eb from g), (select b from f), (select b from f),
+  jsonb_build_object('evidence_id', idea, 'type', 'ideas')) from evs2;
+select shift_round_private.emit('mission_completed', (select r from f), (select eb from g), (select b from f), (select b from f),
+  jsonb_build_object('evidence_id', idea, 'mission', 'ideas')) from evs2;
+select shift_round_private.emit('evidence_logged', (select r from f), (select eb from g), (select b from f), (select b from f),
+  jsonb_build_object('evidence_id', daily, 'type', 'daily')) from evs2;
+set local role authenticated;
+create temp table sq2 on commit drop as select public.shift_round_squad((select ea from g)) as res;
+select is((select jsonb_agg(jsonb_build_object('kind', x->>'kind', 'type', x->>'type', 'n', x->'n', 'mission', x->'mission') order by x->>'kind', x->>'type')
+             from sq2, jsonb_array_elements(res->'data'->'feed') x where x->>'type' in ('ideas','daily')),
+  '[{"kind":"evidence_logged","type":"daily","n":1,"mission":null},{"kind":"evidence_logged","type":"ideas","n":1,"mission":"ideas"},{"kind":"mission_completed","type":"ideas","n":1,"mission":"ideas"}]'::jsonb,
+  'feed items for ideas and daily logs; mission_completed n = position in the config');
+select ok((select (res->'data'->'feed')::text !~ 'Canteen|a first screen' from sq2), 'ideas and daily text never reach the feed');
+select is((select (res->'data'->'members') @> '[{"handle":"Bee","missions_complete":1}]'::jsonb from sq2), true,
+  'members show missions completed under the round config');
 select is(public.shift_round_squad((select ed from g))->'error'->>'code', 'entry_not_found', 'cannot read another entry''s squad');
 
 -- cheers: same squad, unique per evidence, daily limit

@@ -155,6 +155,7 @@ export function Section({
 
 const ROUND_TABS = [
   { slug: "", label: "Dashboard" },
+  { slug: "attendance", label: "เช็กชื่อ" },
   { slug: "entrants", label: "Entrants" },
   { slug: "squads", label: "Squads" },
   { slug: "review", label: "Review" },

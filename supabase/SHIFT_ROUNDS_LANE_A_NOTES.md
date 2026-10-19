@@ -1,7 +1,8 @@
 # SHIFT rounds, Lane A notes (contract deltas and deviations)
 
-Source of truth: `ps_app/docs/plans/2026-10-13-shift-build-spec.md`. This file lists only where
-Lane A's database differs from or adds to that spec. Migrations: `supabase/migrations/20261014090000`
+Source of truth: `ps_app/docs/plans/2026-10-13-shift-build-spec.md`, extended by
+`ps_app/docs/plans/2026-10-14-shift-scale-spec.md` section 2 (see "v2" at the end). This file lists only
+where Lane A's database differs from or adds to those specs. Migrations: `supabase/migrations/20261014090000`
 through `20261014090400`.
 
 Status: the SQL has been applied and its pgTAP tests run only on a **local vanilla PostgreSQL 18
@@ -17,7 +18,7 @@ Job RPCs (service_role) use the same envelope.
 ## Decisions applied (user, 2026-10-13)
 
 - `app_config` `shift_round.transcription_enabled` is seeded **false** (spec said true).
-- Rounds default to 14 days; squads use the spec default.
+- Rounds default to the v2 SHIFT template (7 days, see "v2"); squads use the spec default.
 - Every web admin (`user_roles.role = 'admin'`) is global SHIFT staff on all rounds (see "Admin access").
   Mentor scoping through `shift_round_roles` only applies to users who are not web admins.
 - Certificate URLs are built from `app_config` `shift_round.web_base_url` + `/c/<public_id>`; nothing hardcodes the domain in SQL.
@@ -49,8 +50,9 @@ Job RPCs (service_role) use the same envelope.
 9. `withdraw_evidence` `affected` items are `{mission, type, have_before, have_after}` (adds `type`, because
    mission 2 has two parts).
 10. Admin `reject/accept` return `{missions, dropped:[mission keys], affected, invalidated_changes}`.
-11. **Mission keys, not numbers**: `mission` fields in evidence and feed items are mission keys (`first_contact`, ...).
-    `mission_counts` adds a `counts` object (raw totals) beside the spec fields.
+11. **Mission keys, not numbers**: `mission` fields in evidence and feed items are mission keys from the round's
+    missions config (`ideas`, `interviews`, ...; null for `contact`/`daily`). v2 dropped the extra raw `counts`
+    object from `mission_counts`, so it matches spec v2 2.3 exactly.
 12. `profiles.preferred_language` defaults to `'en'` in the existing schema, so push `lang` is that value
     (the spec's "default th" applies only when it is null or empty).
 13. **`shift_round_entries` is owner-only under RLS** (`user_id = auth.uid()`): rows carry birth month/year and
@@ -140,3 +142,43 @@ Known risks to check on the first real `supabase test db`:
 - `supabase/seed.sql` uses `alter database postgres set shift_round.allow_clock_override = 'on'`. The pgTAP files
   do not depend on it, because they set the flag per transaction.
 - Deploy `shift-round-jobs` with `--no-verify-jwt`. pg_net calls it with the secret header, not a JWT.
+
+## v2 (2026-10-14, scale spec section 2)
+
+Edited in place in `20261014090000`..`090400` (not applied to production); new `20261014090500` inserts the
+`shift_curriculum` row `default` (SHIFT2_DEFAULT_DOC, `on conflict do nothing`).
+
+- **Rounds**: `missions` (CHECK `valid_missions`, default `shift_round_private.default_missions()`),
+  `session_days` (default `{1,2,4,6,7}`, distinct, 1..duration, may be empty), `session_start`/`session_end`
+  (19:00/21:00 ICT), `curriculum_key` (1..64 chars), `application_cohort` (1..40). Defaults: 7 days, join
+  until day 2, nudge 21:15. Admin create fills the SHIFT template (default session days cut to the duration);
+  update keeps session fields, `curriculum_key` and `application_cohort` editable after the start, `missions`
+  locked. Field errors: `session_days` (`range`), `session_end` (`after_start`), `missions` (`missions_config`).
+- **Evidence**: types `ideas` and `daily`; `problem_statement.user_group` required. Problems inside the ideas
+  list report field `ideas` with `details {rule, index, key}`; unknown top-level keys report the key.
+  Fixtures in `tests/fixtures/shift_round_payloads.json` (v2) also pin the existing who-label rule
+  (fb.com, tiktok.com, inline `@handle` are personal data).
+- **Counts** (`mission_counts`): spec 2.3 shape. Mission objects always carry `title_th`/`title_en` (null when
+  not configured). `daily.need` and the day mapping use effective days (= `round.duration_days` in the home
+  bundle, which already includes extensions); a grace item sent after close counts for the last day.
+- **Attendance**: `shift_round_admin_mark_attendance` uses the reviewer gate (round staff or mentor, global
+  staff, web admins). Batch validated before writes; returns `{day, set, cleared, attendance:[{entry_id,
+  status, marked_at}]}`; one `attendance_marked` event per call (`props {day, set, cleared, marks}`).
+  Errors: `invalid_field` `day` (`not_session_day`) / `marks` (`shape|entry_id|status|duplicate`),
+  `wrong_round` (`entry_id`).
+- **Steps read model**: `shift_round_admin_steps` returns `{now, round:{id, number, phase, day, duration_days,
+  starts_at, closes_at, session_days, session_start, session_end, missions, curriculum_key}, rows:[...]}`;
+  `display_name` (profiles full_name/username, never email) only for round staff, null for mentors.
+- **Plan**: `shift_round_private.student_plan(round)`; missing day fields become `""`, `interview` is always an
+  object; days are filtered to 1..duration, deduped by day, then clamped to 20.
+- **Join**: invite rounds also admit an accepted, account-linked `shift_applications` row whose `cohort`
+  equals `application_cohort`. Home `round`/`joinable`/`next_round` break `starts_at` ties by `number`.
+- **Pushes**: session reminder kind `session` (dedupe `<entry_id>:<day>`) from `session_start - 30 min` until
+  the start, gated by `nudges_enabled` and the nudge opt-out, deep link `passion-seed://round`, copy key
+  `push.session`. No-log nudges now fire from `nudge_local_time` for 60 minutes (was: hour match); the nudges
+  cron runs every 5 minutes; watchdog threshold 30 minutes.
+- **Certificates**: snapshot `missions` lists the round's missions as `{key, title_th, title_en}` in config
+  order (was: six key strings).
+- **Check-ins**: windows scale with the round (mid = ceil(duration/2)): join until day mid-1, midpoint from
+  day mid for entries joined by day mid-2. 14-day rounds keep the original windows.
+- **Seed**: `pnpm shift:seed --state=day1|day2|day3|day7|review|issued|rejected` (see the script header).

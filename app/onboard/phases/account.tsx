@@ -4,7 +4,12 @@ import { useState } from "react";
 import { AlertCircle, Loader2 } from "lucide-react";
 
 import { PhaseShell } from "../components/phase-shell";
-import { requiresGuardianConsent } from "@/lib/profile-completion";
+import {
+  dateOfBirthProblem,
+  normalizeDateOfBirth,
+  requiresGuardianConsent,
+  type DateOfBirthProblem,
+} from "@/lib/profile-completion";
 import type { CollectedData, OnboardingStep } from "@/types/onboarding";
 
 export type AccountPrefill = {
@@ -37,6 +42,19 @@ const EDUCATION_COPY = {
   },
 } as const;
 
+const DOB_PROBLEM_COPY: Record<"en" | "th", Record<DateOfBirthProblem, string>> = {
+  en: {
+    invalid: "Please enter a valid date of birth.",
+    too_young: "That date looks too recent. Please check the year of your birth.",
+    too_old: "That date looks too far back. Please check the year of your birth.",
+  },
+  th: {
+    invalid: "กรุณาใส่วันเกิดให้ถูกต้อง",
+    too_young: "วันเกิดนี้ดูใหม่เกินไป ลองเช็กปีเกิดอีกครั้งนะ",
+    too_old: "วันเกิดนี้ดูเก่าเกินไป ลองเช็กปีเกิดอีกครั้งนะ",
+  },
+};
+
 const INPUT_CLASS =
   "min-h-12 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-base text-white placeholder:text-white/30 focus:border-blue-400/50 focus:outline-none transition";
 
@@ -68,7 +86,16 @@ export function AccountPhase({
 
   const isEn = (data.language || "th") === "en";
   const educationCopy = EDUCATION_COPY[isEn ? "en" : "th"];
-  const needsGuardian = Boolean(dob && requiresGuardianConsent(dob));
+  // Thai students often type the Buddhist Era year; store it as Gregorian.
+  const normalizedDob = dob ? normalizeDateOfBirth(dob) : "";
+  const dobProblem = normalizedDob ? dateOfBirthProblem(normalizedDob) : null;
+  const needsGuardian = Boolean(
+    normalizedDob && !dobProblem && requiresGuardianConsent(normalizedDob)
+  );
+  // Shown live, so a bad saved date is flagged before the learner submits.
+  const dobError =
+    fieldErrors.dob ||
+    (dobProblem ? DOB_PROBLEM_COPY[isEn ? "en" : "th"][dobProblem] : "");
 
   const validate = (): boolean => {
     const errors: Record<string, string> = {};
@@ -93,6 +120,8 @@ export function AccountPhase({
       errors.dob = isEn
         ? "Please select your date of birth."
         : "กรุณาใส่วันเกิดของคุณ";
+    } else if (dobProblem) {
+      errors.dob = DOB_PROBLEM_COPY[isEn ? "en" : "th"][dobProblem];
     }
 
     if (isAnonymous) {
@@ -159,7 +188,7 @@ export function AccountPhase({
     const body: Record<string, unknown> = {
       username: username.trim().toLowerCase(),
       full_name: fullName.trim(),
-      date_of_birth: dob,
+      date_of_birth: normalizedDob,
       education_level: education,
       preferred_language: data.language || "th",
       interests: data.interests || [],
@@ -397,12 +426,10 @@ export function AccountPhase({
               }
             }}
             className={`${INPUT_CLASS} [color-scheme:dark] ${
-              fieldErrors.dob ? "border-red-400/60 bg-red-500/5" : ""
+              dobError ? "border-red-400/60 bg-red-500/5" : ""
             }`}
           />
-          {fieldErrors.dob && (
-            <p className="text-xs text-red-400">{fieldErrors.dob}</p>
-          )}
+          {dobError && <p className="text-xs text-red-400">{dobError}</p>}
         </div>
 
         <div className="flex flex-col gap-2">

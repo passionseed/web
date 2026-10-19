@@ -5,6 +5,8 @@ import {
   normalizeEntryDetail,
   normalizeEvidence,
   normalizeJobs,
+  normalizeRound,
+  normalizeSteps,
   normalizeSummary,
 } from "../normalize";
 
@@ -102,4 +104,62 @@ test("jobs map last_runs, last_ok and failures_7d", () => {
   expect(j.jobs[0]).toMatchObject({ job: "issue", last_ok_at: "t1", failures_7d: 1, last_run: { status: "failed" } });
   expect(j.failures).toHaveLength(1);
   expect(j.deletion_queue).toEqual({ queued: 2, failed: 0 });
+});
+
+// ---- v2 counts json, round columns and the steps read model (scale spec 2.1, 2.3, 2.8) ----
+
+const countsV2 = {
+  missions: [
+    { key: "interviews", n: 2, complete: false, title_th: null, title_en: null, parts: [{ type: "interview", have: 2, need: 3 }] },
+    { key: "ideas", n: 1, complete: true, title_th: null, title_en: null, parts: [{ type: "ideas", have: 1, need: 1 }] },
+  ],
+  missions_complete: 1, missions_total: 7, people_talked_to: 5, eligible: false,
+  daily: { days: 2, need: 7, today_logged: true },
+  sessions: { attended: 1, held: 1, total: 5 },
+};
+
+test("counts json v2 keeps totals and habits, orders missions by n", () => {
+  const entry = normalizeEntries({ entries: [{ id: "e1", handle: "ต้น", missions: countsV2 }] }).entries[0];
+  expect(entry.missions).toMatchObject({
+    missions_total: 7,
+    daily: { days: 2, need: 7, today_logged: true },
+    sessions: { attended: 1, held: 1, total: 5 },
+  });
+  expect(entry.missions?.missions.map((m) => m.key)).toEqual(["ideas", "interviews"]);
+  // A pre-v2 payload: totals from the list, habits null.
+  expect(normalizeEntryDetail({ entry: {}, missions }).missions).toMatchObject({ missions_complete: 4, daily: null, sessions: null });
+});
+
+test("rounds: v2 columns pass through; times become HH:MM; missing columns fall back to the SHIFT template", () => {
+  const v2 = normalizeRound({
+    id: "r", number: 3, nudge_local_time: "21:15:00", session_days: [7, 1, 2, 4, 6], session_start: "19:00:00", session_end: "21:00:00",
+    curriculum_key: "3", application_cohort: "SHIFT[3]",
+    missions: [{ key: "ideas", parts: [{ type: "ideas", need: 1 }] }, { key: "interviews", parts: [{ type: "interview", need: 3, distinct: true }], title_th: "คุย" }],
+  });
+  expect(v2).toMatchObject({
+    nudge_local_time: "21:15", session_days: [1, 2, 4, 6, 7], session_start: "19:00", session_end: "21:00",
+    curriculum_key: "3", application_cohort: "SHIFT[3]",
+  });
+  expect(v2.missions).toEqual([
+    { key: "ideas", parts: [{ type: "ideas", need: 1 }], title_th: null, title_en: null },
+    { key: "interviews", parts: [{ type: "interview", need: 3, distinct: true }], title_th: "คุย", title_en: null },
+  ]);
+  expect(normalizeRound({ id: "r", number: 1, nudge_local_time: "19:00:00" })).toMatchObject({
+    session_days: [1, 2, 4, 6, 7], session_start: "19:00", session_end: "21:00", curriculum_key: null, application_cohort: null, missions: null,
+  });
+});
+
+test("steps rows: counts, attendance list or map, squad flattening; bare list or {entries}", () => {
+  const row = {
+    entry_id: "e1", user_id: "u1", handle: "ต้น", display_name: "Ton", squad_id: "s1", squad_name: "Squad 1",
+    joined_day: 1, last_log_at: "2026-10-15T12:00:00Z", counts: countsV2,
+    attendance: [{ day: 2, status: "makeup" }, { day: 1, status: "present" }, { day: 4, status: "late" }],
+  };
+  const fromList = normalizeSteps([row]);
+  expect(fromList.rows[0]).toMatchObject({ entry_id: "e1", handle: "ต้น", squad_name: "Squad 1", counts: { missions_total: 7 } });
+  expect(fromList.rows[0].attendance).toEqual([{ day: 1, status: "present" }, { day: 2, status: "makeup" }]);
+  const fromObject = normalizeSteps({ entries: [{ ...row, squad_id: undefined, squad_name: undefined, squad: { id: "s9", name: "Squad 9" }, attendance: { "1": "absent" } }] });
+  expect(fromObject.rows[0]).toMatchObject({ squad_id: "s9", squad_name: "Squad 9", attendance: [{ day: 1, status: "absent" }] });
+  expect(normalizeSteps({ rows: [row] }).rows).toHaveLength(1);
+  expect(normalizeSteps(null).rows).toEqual([]);
 });

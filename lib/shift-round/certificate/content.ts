@@ -1,7 +1,8 @@
-import { MISSION_LABELS, TRACK_LABELS, t, type Lang } from "./copy";
+import { TRACK_LABELS, t, type Lang } from "./copy";
 import { verifyUrl, verifyUrlText } from "./config";
+import { missionTitle, toMissionSource } from "./missions";
 import { TEXT_CAPS, truncateAtSegment } from "./thai";
-import { MISSION_KEYS, type CertificateSnapshotV1, type MissionKey } from "./types";
+import type { CertificateSnapshotV1, MissionKey } from "./types";
 
 /**
  * One content model shared by the verify page and the image renderer, so the
@@ -52,6 +53,44 @@ export function holderName(snapshot: CertificateSnapshotV1): string {
   return truncateAtSegment(holder.handle, TEXT_CAPS.handle);
 }
 
+export interface CertificateMission {
+  key: MissionKey;
+  done: boolean;
+  label: Bilingual;
+}
+
+/** Mission title cap on the certificate (titles can come from round config). */
+const MISSION_TITLE_CAP = 60;
+
+/**
+ * The snapshot's missions, in order, any count (v2: per-round config). Each is
+ * a key or `{key, title_th?, title_en?, complete?}`; titles from the snapshot
+ * win over the known-key copy. A certificate is issued only when every mission
+ * is complete, so a mission is done unless the snapshot says otherwise.
+ */
+export function certificateMissions(snapshot: Pick<CertificateSnapshotV1, "missions">): CertificateMission[] {
+  const out: CertificateMission[] = [];
+  for (const raw of snapshot.missions) {
+    const source = toMissionSource(raw);
+    if (!source) continue;
+    const title = missionTitle(source);
+    const complete = typeof raw === "object" && raw !== null && "complete" in raw ? raw.complete : undefined;
+    out.push({
+      key: source.key,
+      done: complete !== false,
+      label: {
+        th: truncateAtSegment(title.th, MISSION_TITLE_CAP),
+        en: truncateAtSegment(title.en, MISSION_TITLE_CAP),
+      },
+    });
+  }
+  return out;
+}
+
+function statementKey(count: number) {
+  return count === 1 ? "web.statement_one" : count > 1 ? "web.statement" : "web.statement_any";
+}
+
 export interface CertificateContent {
   publicId: string;
   issuer: string;
@@ -61,7 +100,7 @@ export interface CertificateContent {
   title: Bilingual;
   dates: Bilingual;
   track: Bilingual;
-  missions: { key: MissionKey; done: boolean; label: Bilingual }[];
+  missions: CertificateMission[];
   statement: Bilingual;
   disclaimer: Bilingual;
   issuedOn: Bilingual;
@@ -80,7 +119,9 @@ export function buildCertificateContent(
     th: formatDateRange(snapshot.round.starts_on, snapshot.round.closes_on, "th"),
     en: formatDateRange(snapshot.round.starts_on, snapshot.round.closes_on, "en"),
   };
-  const done = new Set(snapshot.missions);
+  const missions = certificateMissions(snapshot);
+  const count = missions.length;
+  const statement = statementKey(count);
   return {
     publicId,
     issuer: "Passion Seed",
@@ -93,10 +134,10 @@ export function buildCertificateContent(
     },
     dates,
     track: TRACK_LABELS[snapshot.track],
-    missions: MISSION_KEYS.map((key) => ({ key, done: done.has(key), label: MISSION_LABELS[key] })),
+    missions,
     statement: {
-      th: t("th", "web.statement", { name: holder, n, dates: dates.th }),
-      en: t("en", "web.statement", { name: holder, n, dates: dates.en }),
+      th: t("th", statement, { name: holder, n, count, dates: dates.th }),
+      en: t("en", statement, { name: holder, n, count, dates: dates.en }),
     },
     disclaimer: { th: t("th", "web.disclaimer"), en: t("en", "web.disclaimer") },
     issuedOn: {

@@ -1,5 +1,7 @@
 -- SHIFT rounds (beta), part 1: schema, helpers, storage, policies, seeds.
--- Contract: ps_app/docs/plans/2026-10-13-shift-build-spec.md sections 2.1-2.5, 2.7.
+-- Contract: ps_app/docs/plans/2026-10-13-shift-build-spec.md sections 2.1-2.5, 2.7, extended by
+-- ps_app/docs/plans/2026-10-14-shift-scale-spec.md section 2 (missions config, session schedule,
+-- attendance, ideas/daily logs, student plan from shift_curriculum).
 -- Additive only. Nothing here touches hackathon_*, user_roles (read-only bootstrap),
 -- or the legacy shift_camp_* / companion objects (see 20261014090400).
 -- Clients never write these tables: every write goes through a SECURITY DEFINER RPC.
@@ -8,6 +10,101 @@ create schema if not exists shift_round_private;
 revoke all on schema shift_round_private from public, anon, authenticated;
 grant usage on schema shift_round_private to authenticated;   -- policy helpers only
 -- shift_round_private is never added to PostgREST exposed schemas.
+
+-- ---------------------------------------------------------------------------
+-- Round config validators (v2 2.1). Defined before shift_rounds because its column
+-- default and CHECK constraints call them.
+-- ---------------------------------------------------------------------------
+
+-- SHIFT default missions: refund steps 1 to 7. Steps 8 (daily progress) and 9 (sessions) are
+-- computed habits, not missions.
+create or replace function shift_round_private.default_missions() returns jsonb
+language sql immutable set search_path = '' as $$
+  select '[
+    {"key":"ideas","parts":[{"type":"ideas","need":1}]},
+    {"key":"interviews","parts":[{"type":"interview","need":3,"distinct":true}]},
+    {"key":"problem","parts":[{"type":"problem_statement","need":1}]},
+    {"key":"prototype","parts":[{"type":"mvp","need":1}]},
+    {"key":"testers","parts":[{"type":"tester","need":3,"distinct":true}]},
+    {"key":"change","parts":[{"type":"change","need":1}]},
+    {"key":"demo","parts":[{"type":"demo_post","need":1}]}
+  ]'::jsonb
+$$;
+
+-- 1 to 10 missions {key, parts, title_th?, title_en?}; key ^[a-z_]{2,32}$ and unique; parts are
+-- 1 to 3 {type, need, distinct?}; type is an evidence type other than contact/daily and appears
+-- in at most one mission (the app maps type -> mission); need 1..20; distinct only for
+-- interview/tester; titles null or 1..80 chars. Unknown keys are rejected.
+create or replace function shift_round_private.valid_missions(m jsonb) returns boolean
+language plpgsql immutable set search_path = '' as $$
+declare
+  v_mission jsonb;
+  v_part jsonb;
+  v_keys text[] := '{}';
+  v_types text[] := '{}';
+  v_title text;
+  v_need numeric;
+begin
+  if m is null or jsonb_typeof(m) <> 'array' or jsonb_array_length(m) not between 1 and 10 then
+    return false;
+  end if;
+  for v_mission in select * from jsonb_array_elements(m) loop
+    if jsonb_typeof(v_mission) <> 'object'
+       or exists (select 1 from jsonb_object_keys(v_mission) k where k not in ('key','parts','title_th','title_en')) then
+      return false;
+    end if;
+    if jsonb_typeof(v_mission->'key') is distinct from 'string'
+       or (v_mission->>'key') !~ '^[a-z_]{2,32}$' or (v_mission->>'key') = any (v_keys) then
+      return false;
+    end if;
+    v_keys := v_keys || (v_mission->>'key');
+    foreach v_title in array array['title_th','title_en'] loop
+      if jsonb_typeof(v_mission->v_title) is not null and jsonb_typeof(v_mission->v_title) <> 'null'
+         and (jsonb_typeof(v_mission->v_title) <> 'string' or char_length(v_mission->>v_title) not between 1 and 80) then
+        return false;
+      end if;
+    end loop;
+    if jsonb_typeof(v_mission->'parts') is distinct from 'array'
+       or jsonb_array_length(v_mission->'parts') not between 1 and 3 then
+      return false;
+    end if;
+    for v_part in select * from jsonb_array_elements(v_mission->'parts') loop
+      if jsonb_typeof(v_part) <> 'object'
+         or exists (select 1 from jsonb_object_keys(v_part) k where k not in ('type','need','distinct')) then
+        return false;
+      end if;
+      if jsonb_typeof(v_part->'type') is distinct from 'string'
+         or (v_part->>'type') not in ('ideas','interview','problem_statement','mvp','tester','change','demo_post')
+         or (v_part->>'type') = any (v_types) then
+        return false;
+      end if;
+      v_types := v_types || (v_part->>'type');
+      -- A plain integer literal only: jsonb keeps "3.0" as text '3.0', which ::int can't read later.
+      if jsonb_typeof(v_part->'need') is distinct from 'number'
+         or (v_part->>'need') !~ '^[0-9]{1,2}$' then
+        return false;
+      end if;
+      v_need := (v_part->>'need')::int;
+      if v_need not between 1 and 20 then return false; end if;
+      if v_part ? 'distinct' and (jsonb_typeof(v_part->'distinct') <> 'boolean'
+                                 or (v_part->>'type') not in ('interview','tester')) then
+        return false;
+      end if;
+    end loop;
+  end loop;
+  return true;
+end $$;
+
+-- Session days: distinct days 1..duration_days (an empty list = no live sessions).
+create or replace function shift_round_private.valid_session_days(p_days int[], p_duration int) returns boolean
+language sql immutable set search_path = '' as $$
+  select p_days is not null
+     and coalesce(array_ndims(p_days), 1) = 1
+     and cardinality(p_days) <= 28
+     and array_position(p_days, null) is null
+     and coalesce((select bool_and(d between 1 and p_duration) and count(distinct d) = count(*)
+                     from unnest(p_days) d), true)
+$$;
 
 -- ---------------------------------------------------------------------------
 -- 2.2 Tables
@@ -39,12 +136,12 @@ create table public.shift_rounds (
   tracks_open text[] not null default '{high_school}'
     check (cardinality(tracks_open) > 0 and tracks_open <@ array['high_school','university']),
   starts_at timestamptz not null,
-  duration_days int not null default 14 check (duration_days between 5 and 28),
+  duration_days int not null default 7 check (duration_days between 5 and 28),
   closes_at timestamptz not null,
   review_window_hours int not null default 48 check (review_window_hours between 0 and 336),
   review_ends_at timestamptz not null,
-  join_cutoff_day int not null default 7,
-  nudge_local_time time not null default '19:00',
+  join_cutoff_day int not null default 2,
+  nudge_local_time time not null default '21:15',     -- after the 19:00-21:00 session
   rate_limit_per_hour int not null default 30 check (rate_limit_per_hour between 1 and 120),
   grace_minutes int not null default 30 check (grace_minutes between 0 and 120),
   squad_size int not null default 3 check (squad_size between 2 and 6),
@@ -55,11 +152,23 @@ create table public.shift_rounds (
   discord_url text check (discord_url ~ '^https://(discord\.gg|discord\.com)/'),
   status text not null default 'draft' check (status in ('draft','published','archived')),
   extended_days int not null default 0 check (extended_days >= 0),
+  -- v2 2.1: per-round missions config (default = SHIFT steps 1-7) and the live session schedule
+  -- (Asia/Bangkok wall clock). curriculum_key is a soft reference to shift_curriculum.round;
+  -- application_cohort admits accepted shift_applications of that cohort to an invite round.
+  missions jsonb not null default shift_round_private.default_missions(),
+  session_days int[] not null default '{1,2,4,6,7}',
+  session_start time not null default '19:00',
+  session_end time not null default '21:00',
+  curriculum_key text check (curriculum_key is null or char_length(curriculum_key) between 1 and 64),
+  application_cohort text check (application_cohort is null or char_length(application_cohort) between 1 and 40),
   created_by uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint shift_rounds_close_after_start check (closes_at > starts_at),
-  constraint shift_rounds_cutoff_in_range check (join_cutoff_day between 1 and duration_days)
+  constraint shift_rounds_cutoff_in_range check (join_cutoff_day between 1 and duration_days),
+  constraint shift_rounds_missions_valid check (shift_round_private.valid_missions(missions)),
+  constraint shift_rounds_session_days_valid check (shift_round_private.valid_session_days(session_days, duration_days)),
+  constraint shift_rounds_session_window check (session_end > session_start)
 );
 create index shift_rounds_status_starts_idx on public.shift_rounds (status, starts_at);
 
@@ -148,7 +257,8 @@ create table public.shift_round_evidence (
   round_id uuid not null,
   user_id uuid not null,
   submission_id uuid not null,
-  type text not null check (type in ('contact','interview','problem_statement','mvp','tester','change','demo_post')),
+  -- v2 2.2: ideas (step 1) and daily (step 8, the Daily Show) join the original seven types.
+  type text not null check (type in ('contact','ideas','interview','problem_statement','mvp','tester','change','demo_post','daily')),
   payload jsonb not null,
   payload_version smallint not null default 1,
   payload_hash text not null,
@@ -219,6 +329,19 @@ create table public.shift_round_checkins (
   primary key (entry_id, checkpoint)
 );
 
+-- v2 2.4: live session attendance, marked by staff/mentors (step 9). No client access: students
+-- see their counts through shift_round_home, staff through the admin RPCs.
+create table public.shift_round_attendance (
+  entry_id uuid not null references public.shift_round_entries(id) on delete cascade,
+  round_id uuid not null references public.shift_rounds(id) on delete cascade,
+  day int not null check (day between 1 and 28),
+  status text not null check (status in ('present','makeup','absent')),
+  marked_by uuid references auth.users(id) on delete set null,
+  marked_at timestamptz not null default now(),
+  primary key (entry_id, day)
+);
+create index shift_round_attendance_round_day_idx on public.shift_round_attendance (round_id, day);
+
 create table public.shift_round_summary_revisions (
   id uuid primary key default gen_random_uuid(),
   entry_id uuid not null references public.shift_round_entries(id) on delete cascade,
@@ -273,7 +396,7 @@ create table public.shift_round_events (
     'summary_submitted','summary_approved','summary_rejected','summary_taken_down',
     'certificate_issued','certificate_not_eligible','certificate_revoked','certificate_reinstated',
     'certificate_name_changed','certificate_shared','certificate_visit',
-    'transcription_requested','rate_limited','data_deleted')),
+    'transcription_requested','rate_limited','data_deleted','attendance_marked')),
   props jsonb not null default '{}',
   created_at timestamptz not null default now()
 );
@@ -291,8 +414,9 @@ create table public.shift_round_nudge_ledger (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   round_id uuid,
+  -- 'session' (v2 2.7): reminder before a live session, dedupe_key '<entry_id>:<day>'.
   kind text not null check (kind in ('no_evidence','closing_tomorrow','evidence_rejected',
-    'certificate_issued','summary_decided','squad_assigned','round_published')),
+    'certificate_issued','summary_decided','squad_assigned','round_published','session')),
   dedupe_key text not null,
   status text not null default 'pending' check (status in ('pending','sent','failed','skipped','abandoned')),
   attempts smallint not null default 0,
@@ -528,16 +652,23 @@ language sql immutable set search_path = '' as $$
     else null end
 $$;
 
-create or replace function shift_round_private.type_mission(t text) returns text
+-- Mission key of an evidence type in a round's missions config (null: contact, daily, or a type
+-- the round does not use). valid_missions guarantees a type is in at most one mission.
+create or replace function shift_round_private.mission_of(p_missions jsonb, p_type text) returns text
 language sql immutable set search_path = '' as $$
-  select case t
-    when 'contact' then 'first_contact'
-    when 'interview' then 'interviews_problem'
-    when 'problem_statement' then 'interviews_problem'
-    when 'mvp' then 'mvp'
-    when 'tester' then 'testers'
-    when 'change' then 'change'
-    when 'demo_post' then 'demo_post' end
+  select m->>'key'
+    from jsonb_array_elements(coalesce(p_missions, '[]'::jsonb)) m
+   where exists (select 1 from jsonb_array_elements(m->'parts') p where p->>'type' = p_type)
+   limit 1
+$$;
+
+-- 1-based position of a mission key in a round's config (null when absent).
+create or replace function shift_round_private.mission_n(p_missions jsonb, p_key text) returns int
+language sql immutable set search_path = '' as $$
+  select t.n::int
+    from jsonb_array_elements(coalesce(p_missions, '[]'::jsonb)) with ordinality as t(m, n)
+   where t.m->>'key' = p_key
+   limit 1
 $$;
 
 -- E17 time window part of the counting predicate.
@@ -567,60 +698,109 @@ begin
   return true;
 end $$;
 
--- E2 derived missions (no cache table).
+-- E2 derived missions (no cache table), v2 2.3: driven by the round's missions config.
+-- {"missions":[{"key","n","complete","title_th","title_en","parts":[{"type","have","need"}]}],
+--  "missions_complete","missions_total","people_talked_to","eligible",
+--  "daily":{"days","need","today_logged"},"sessions":{"attended","held","total"}}
+-- n = 1-based position in the config; distinct parts count distinct who_key, others count rows.
+-- daily: distinct round days (ICT date of submitted_at -> day 1..effective days; a grace item
+-- sent just after close lands on the last day) with at least one counted log of any type.
+-- sessions: held = session days whose session_end (ICT) has passed; attended = present/makeup
+-- attendance rows on session days. p_exclude simulates a withdrawal/rejection (dry runs, cascades).
 create or replace function shift_round_private.mission_counts(entry_id uuid, p_exclude uuid default null) returns jsonb
 language plpgsql stable set search_path = '' as $$
 declare
   r public.shift_rounds;
-  c record;
-  missions jsonb;
-  done int;
+  v_now timestamptz := shift_round_private.round_now();
+  v_start date;
+  v_last int;
+  v_missions jsonb;
+  v_done int;
+  v_total int;
+  v_people int;
+  v_days int;
+  v_today boolean;
+  v_held int;
+  v_attended int;
 begin
   select ro.* into r from public.shift_round_entries en join public.shift_rounds ro on ro.id = en.round_id
    where en.id = mission_counts.entry_id;
   if not found then return null; end if;
+  v_start := shift_round_private.local_date(r.starts_at);
+  v_last := shift_round_private.effective_days(r);
 
-  select
-    count(*) filter (where e.type = 'contact') as contacts,
-    count(distinct e.who_key) filter (where e.type = 'interview') as interviews,
-    count(*) filter (where e.type = 'problem_statement') as problems,
-    count(*) filter (where e.type = 'mvp') as mvps,
-    count(distinct e.who_key) filter (where e.type = 'tester') as testers,
-    count(*) filter (where e.type = 'change') as changes,
-    count(*) filter (where e.type = 'demo_post') as demos,
-    count(distinct e.who_key) filter (where e.type in ('contact','interview','tester')) as people
-  into c
-  from public.shift_round_evidence e
-  where e.entry_id = mission_counts.entry_id
-    and shift_round_private.evidence_counts(e, r, p_exclude);
+  with ev as materialized (
+    select e.type, e.who_key, e.local_date
+      from public.shift_round_evidence e
+     where e.entry_id = mission_counts.entry_id
+       and shift_round_private.evidence_counts(e, r, p_exclude)
+  ), parts as (
+    select mt.n, mt.m->>'key' as key, mt.m->'title_th' as title_th, mt.m->'title_en' as title_en,
+           pt.pn, pt.p->>'type' as type, (pt.p->>'need')::int as need,
+           coalesce((pt.p->>'distinct')::boolean, false) as is_distinct
+      from jsonb_array_elements(r.missions) with ordinality as mt(m, n),
+           jsonb_array_elements(mt.m->'parts') with ordinality as pt(p, pn)
+  ), have as (
+    select pa.*,
+           case when pa.is_distinct
+                then (select count(distinct c.who_key) from ev c where c.type = pa.type)
+                else (select count(*) from ev c where c.type = pa.type) end::int as have
+      from parts pa
+  ), ms as (
+    select h.n, h.key, h.title_th, h.title_en, bool_and(h.have >= h.need) as complete,
+           jsonb_agg(jsonb_build_object('type', h.type, 'have', h.have, 'need', h.need) order by h.pn) as parts
+      from have h
+     group by h.n, h.key, h.title_th, h.title_en
+  ), agg as (
+    select coalesce(jsonb_agg(jsonb_build_object('key', ms.key, 'n', ms.n::int, 'complete', ms.complete,
+                                                 'title_th', ms.title_th, 'title_en', ms.title_en,
+                                                 'parts', ms.parts) order by ms.n), '[]'::jsonb) as missions,
+           count(*) filter (where ms.complete)::int as done,
+           count(*)::int as total
+      from ms
+  )
+  select agg.missions, agg.done, agg.total,
+         (select count(distinct c.who_key)::int from ev c where c.type in ('contact','interview','tester')),
+         (select count(distinct least(c.local_date - v_start + 1, v_last))::int from ev c
+           where c.local_date - v_start + 1 >= 1),
+         exists (select 1 from ev c where c.local_date = shift_round_private.local_date(v_now))
+    into v_missions, v_done, v_total, v_people, v_days, v_today
+    from agg;
 
-  missions := jsonb_build_array(
-    jsonb_build_object('key','first_contact','n',c.contacts,'complete',c.contacts >= 1,
-      'parts', jsonb_build_array(jsonb_build_object('type','contact','have',c.contacts,'need',1))),
-    jsonb_build_object('key','interviews_problem','n',c.interviews,'complete',c.interviews >= 3 and c.problems >= 1,
-      'parts', jsonb_build_array(jsonb_build_object('type','interview','have',c.interviews,'need',3),
-                                 jsonb_build_object('type','problem_statement','have',c.problems,'need',1))),
-    jsonb_build_object('key','mvp','n',c.mvps,'complete',c.mvps >= 1,
-      'parts', jsonb_build_array(jsonb_build_object('type','mvp','have',c.mvps,'need',1))),
-    jsonb_build_object('key','testers','n',c.testers,'complete',c.testers >= 3,
-      'parts', jsonb_build_array(jsonb_build_object('type','tester','have',c.testers,'need',3))),
-    jsonb_build_object('key','change','n',c.changes,'complete',c.changes >= 1,
-      'parts', jsonb_build_array(jsonb_build_object('type','change','have',c.changes,'need',1))),
-    jsonb_build_object('key','demo_post','n',c.demos,'complete',c.demos >= 1,
-      'parts', jsonb_build_array(jsonb_build_object('type','demo_post','have',c.demos,'need',1))));
-
-  select count(*) into done from jsonb_array_elements(missions) m where (m->>'complete')::boolean;
+  select count(*) into v_held
+    from unnest(r.session_days) d
+   where ((v_start + (d - 1)) + r.session_end) at time zone 'Asia/Bangkok' <= v_now;
+  -- Only sessions that have ended count, the same set as v_held, so a mark made during a live
+  -- session (or ahead of time) can't stand in for a missed earlier one.
+  select count(*) into v_attended
+    from public.shift_round_attendance a
+   where a.entry_id = mission_counts.entry_id and a.status in ('present','makeup') and a.day = any (r.session_days)
+     and ((v_start + (a.day - 1)) + r.session_end) at time zone 'Asia/Bangkok' <= v_now;
 
   return jsonb_build_object(
-    'missions', missions,
-    'missions_complete', done,
-    'people_talked_to', c.people,
-    'eligible', done = 6,
-    -- additive: raw counted totals (used by the certificate snapshot)
-    'counts', jsonb_build_object('contacts', c.contacts, 'interviews', c.interviews,
-      'problem_statements', c.problems, 'mvps', c.mvps, 'testers', c.testers,
-      'changes', c.changes, 'demo_posts', c.demos));
+    'missions', v_missions,
+    'missions_complete', v_done,
+    'missions_total', v_total,
+    'people_talked_to', v_people,
+    'eligible', v_total > 0 and v_done = v_total,
+    'daily', jsonb_build_object('days', v_days, 'need', v_last, 'today_logged', v_today),
+    'sessions', jsonb_build_object('attended', v_attended, 'held', v_held,
+                                   'total', cardinality(r.session_days)));
 end $$;
+
+-- Raw counted totals for the certificate snapshot (2.7): people, distinct interviewees/testers, changes.
+create or replace function shift_round_private.snapshot_counts(entry_id uuid) returns jsonb
+language sql stable set search_path = '' as $$
+  select jsonb_build_object(
+           'people_talked_to', count(distinct e.who_key) filter (where e.type in ('contact','interview','tester')),
+           'interviews', count(distinct e.who_key) filter (where e.type = 'interview'),
+           'testers', count(distinct e.who_key) filter (where e.type = 'tester'),
+           'changes', count(*) filter (where e.type = 'change'))
+    from public.shift_round_evidence e
+    join public.shift_rounds r on r.id = e.round_id
+   where e.entry_id = snapshot_counts.entry_id
+     and shift_round_private.evidence_counts(e, r)
+$$;
 
 create or replace function shift_round_private.completed_keys(m jsonb) returns text[]
 language sql immutable set search_path = '' as $$
@@ -782,7 +962,8 @@ begin
     'shift_round_icebreaker_questions','shift_round_squads','shift_round_squad_members',
     'shift_round_evidence','shift_round_evidence_media','shift_round_cheers','shift_round_checkins',
     'shift_round_summary_revisions','shift_round_certificates','shift_round_events',
-    'shift_round_waitlist','shift_round_nudge_ledger','shift_round_deletion_requests','shift_round_job_runs']
+    'shift_round_waitlist','shift_round_nudge_ledger','shift_round_deletion_requests','shift_round_job_runs',
+    'shift_round_attendance']
   loop
     execute format('alter table public.%I enable row level security', t);
     execute format('revoke all on public.%I from anon, authenticated', t);
@@ -859,6 +1040,13 @@ grant execute on function
   shift_round_private.can_read_media(text),
   shift_round_private.can_delete_media(text)
   to authenticated;
+-- shift_rounds' column default and CHECK constraints run with the writer's privileges: keep
+-- direct writes by service_role (ops scripts, local seed) working. Clients never write the table.
+grant execute on function
+  shift_round_private.default_missions(),
+  shift_round_private.valid_missions(jsonb),
+  shift_round_private.valid_session_days(int[], int)
+  to service_role;
 
 -- ---------------------------------------------------------------------------
 -- 2.5 Storage bucket and policies

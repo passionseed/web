@@ -1,12 +1,21 @@
 "use client";
 
-import { Lock } from "lucide-react";
+import { ExternalLink, Lock } from "lucide-react";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ictDate, ictMidnightIso } from "@/lib/shift-round/admin/format";
-import type { RoundPolicy, Track } from "@/lib/shift-round/admin/types";
+import { SHIFT_COHORTS } from "@/lib/content/shift-cohort";
+import { HABIT_TITLES, missionTitle } from "@/lib/shift-round/certificate/missions";
+import {
+  DEFAULT_MISSIONS,
+  hhmm,
+  ictDate,
+  ictMidnightIso,
+  isCurriculumKey,
+  missionPartsLabel,
+} from "@/lib/shift-round/admin/format";
+import type { MissionConfig, RoundPolicy, Track } from "@/lib/shift-round/admin/types";
 
 import { Field, NativeSelect } from "./shared";
 
@@ -35,6 +44,41 @@ const NUMBER_FIELDS: { key: NumberKey; label: string; hint: string }[] = [
   { key: "audio_retention_days", label: "Audio retention (days)", hint: "After review ends." },
 ];
 
+/** Curriculum page for a key (v2 spec 3: link to /shift/curriculum?round=<key>). */
+export function curriculumHref(key: string): string {
+  return `/shift/curriculum?round=${encodeURIComponent(key)}`;
+}
+
+/** Missions config, read-only (v2 spec 3), followed by the two computed habits. */
+export function MissionsReadOnly({ missions }: { missions?: MissionConfig[] | null }) {
+  const config = missions?.length ? missions : DEFAULT_MISSIONS;
+  return (
+    <div className="space-y-1">
+      <p className="text-sm font-medium">ภารกิจของรอบ (อ่านอย่างเดียว)</p>
+      <ol className="space-y-0.5 text-sm" aria-label="ภารกิจของรอบ">
+        {config.map((m, i) => (
+          <li key={m.key}>
+            <span className="tabular-nums">{i + 1}</span> · {missionTitle(m).th}{" "}
+            <span className="text-xs text-muted-foreground">
+              ({missionPartsLabel(m)} · <code>{m.key}</code>)
+            </span>
+          </li>
+        ))}
+        <li className="text-muted-foreground">
+          <span className="tabular-nums">{config.length + 1}</span> · {HABIT_TITLES.daily.th} (นับจากบันทึกทุกชนิด)
+        </li>
+        <li className="text-muted-foreground">
+          <span className="tabular-nums">{config.length + 2}</span> · {HABIT_TITLES.sessions.th} (นับจากหน้าเช็กชื่อ)
+        </li>
+      </ol>
+      <p className="text-xs text-muted-foreground">
+        {missions?.length ? "ตั้งในฐานข้อมูล (shift_rounds.missions)" : "ค่าเริ่มต้นของ SHIFT"} · ใบรับรองต้องทำภารกิจครบ
+        ขั้นโพสต์ทุกวันกับเข้าเซสชันไม่บังคับ
+      </p>
+    </div>
+  );
+}
+
 export function PolicyFields({
   idPrefix,
   value,
@@ -42,6 +86,7 @@ export function PolicyFields({
   errors = {},
   isLocked = () => false,
   showNumber = true,
+  missions,
 }: {
   idPrefix: string;
   value: PolicyDraft;
@@ -49,6 +94,8 @@ export function PolicyFields({
   errors?: Partial<Record<keyof RoundPolicy | "starts_on", string>>;
   isLocked?: (field: keyof RoundPolicy) => boolean;
   showNumber?: boolean;
+  /** Read-only list; the SHIFT default when absent. */
+  missions?: MissionConfig[] | null;
 }) {
   const set = <K extends keyof PolicyDraft>(key: K, v: PolicyDraft[K]) => onChange({ ...value, [key]: v });
   const id = (key: string) => `${idPrefix}-${key}`;
@@ -75,6 +122,19 @@ export function PolicyFields({
       "tracks_open",
       on ? [...new Set([...value.tracks_open, track])] : value.tracks_open.filter((t) => t !== track),
     );
+  const toggleSessionDay = (day: number, on: boolean) =>
+    set(
+      "session_days",
+      (on ? [...new Set([...value.session_days, day])] : value.session_days.filter((d) => d !== day)).sort((a, b) => a - b),
+    );
+  const length =
+    Number.isInteger(value.duration_days) && value.duration_days >= 1 && value.duration_days <= 28 ? value.duration_days : 7;
+  const dayChoices = Array.from(
+    { length: Math.min(28, Math.max(length, ...value.session_days.filter(Number.isInteger))) },
+    (_, i) => i + 1,
+  );
+  const cohortNames = SHIFT_COHORTS.map((c) => c.name);
+  const curriculumKey = value.curriculum_key?.trim() ?? "";
 
   return (
     <div className="space-y-5">
@@ -186,6 +246,114 @@ export function PolicyFields({
           </Field>
         </div>
       </div>
+
+      <fieldset className="space-y-4 rounded-md border p-3">
+        <legend className="px-1 text-sm font-medium">รูปแบบ SHIFT</legend>
+        <div className="grid gap-4 lg:grid-cols-[2fr_1fr_1fr]">
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium">วันที่มีเซสชันกับพี่เลี้ยง</legend>
+            <div className="flex flex-wrap gap-3">
+              {dayChoices.map((day) => (
+                <label key={day} className="flex items-center gap-1.5 text-sm">
+                  <Checkbox
+                    aria-label={`วันที่ ${day}`}
+                    checked={value.session_days.includes(day)}
+                    disabled={isLocked("session_days")}
+                    onCheckedChange={(on) => toggleSessionDay(day, on === true)}
+                  />
+                  {day}
+                </label>
+              ))}
+            </div>
+            {errors.session_days ? (
+              <p className="text-xs text-red-300">{errors.session_days}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                {lockNote("session_days") ?? "แม่แบบ SHIFT: วันที่ 1, 2, 4, 6, 7 · ขั้น 9 นับจากวันเหล่านี้ และแอปเตือนก่อนเริ่ม 30 นาที"}
+              </p>
+            )}
+          </fieldset>
+          <Field label="เริ่มเซสชัน (เวลาไทย)" htmlFor={id("session_start")} error={errors.session_start} hint={lockNote("session_start")}>
+            <Input
+              id={id("session_start")}
+              type="time"
+              value={hhmm(value.session_start) ?? value.session_start}
+              readOnly={isLocked("session_start")}
+              aria-readonly={isLocked("session_start") || undefined}
+              onChange={(e) => set("session_start", e.target.value)}
+            />
+          </Field>
+          <Field label="จบเซสชัน (เวลาไทย)" htmlFor={id("session_end")} error={errors.session_end} hint={lockNote("session_end")}>
+            <Input
+              id={id("session_end")}
+              type="time"
+              value={hhmm(value.session_end) ?? value.session_end}
+              readOnly={isLocked("session_end")}
+              aria-readonly={isLocked("session_end") || undefined}
+              onChange={(e) => set("session_end", e.target.value)}
+            />
+          </Field>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field
+            label="คีย์หลักสูตร"
+            htmlFor={id("curriculum_key")}
+            error={errors.curriculum_key}
+            hint={
+              <span>
+                แผนรายวันและวิธีคุยกับคนในแอปมาจากหลักสูตรนี้
+                {isCurriculumKey(curriculumKey) ? (
+                  <>
+                    {" · "}
+                    <a
+                      href={curriculumHref(curriculumKey)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-sky-300 underline"
+                    >
+                      เปิดหลักสูตร {curriculumKey} <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                    </a>
+                  </>
+                ) : (
+                  " · ว่างไว้ = ใช้แม่แบบ default"
+                )}
+              </span>
+            }
+          >
+            <Input
+              id={id("curriculum_key")}
+              maxLength={40}
+              placeholder="เช่น 3"
+              value={value.curriculum_key ?? ""}
+              onChange={(e) => set("curriculum_key", e.target.value.trim() || null)}
+            />
+          </Field>
+          <Field
+            label="รุ่นใบสมัคร"
+            htmlFor={id("application_cohort")}
+            error={errors.application_cohort}
+            hint="ผู้สมัครที่ได้รับเลือกในรุ่นนี้และมีบัญชี เข้าร่วมรอบได้เลยโดยไม่ต้องอยู่ใน allowlist"
+          >
+            <NativeSelect
+              id={id("application_cohort")}
+              className="w-full"
+              value={value.application_cohort ?? ""}
+              onChange={(e) => set("application_cohort", e.target.value || null)}
+            >
+              <option value="">ไม่ผูกกับใบสมัคร</option>
+              {cohortNames.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+              {value.application_cohort && !cohortNames.includes(value.application_cohort) && (
+                <option value={value.application_cohort}>{value.application_cohort}</option>
+              )}
+            </NativeSelect>
+          </Field>
+        </div>
+        <MissionsReadOnly missions={missions} />
+      </fieldset>
     </div>
   );
 }
@@ -210,7 +378,14 @@ const POLICY_KEYS: (keyof RoundPolicy)[] = [
   "join_mode",
   "mentor_led",
   "discord_url",
+  "session_days",
+  "session_start",
+  "session_end",
+  "curriculum_key",
+  "application_cohort",
 ];
+
+const sortedDays = (days: number[]) => [...new Set(days)].sort((a, b) => a - b);
 
 export function draftToPolicy(draft: PolicyDraft): RoundPolicy {
   const { starts_on, ...rest } = draft;
@@ -221,6 +396,11 @@ export function draftToPolicy(draft: PolicyDraft): RoundPolicy {
     brief_th: rest.brief_th.trim(),
     brief_en: rest.brief_en.trim(),
     starts_at: starts_on ? ictMidnightIso(starts_on) : "",
+    session_days: sortedDays(rest.session_days ?? []),
+    session_start: hhmm(rest.session_start) ?? rest.session_start,
+    session_end: hhmm(rest.session_end) ?? rest.session_end,
+    curriculum_key: rest.curriculum_key?.trim() || null,
+    application_cohort: rest.application_cohort?.trim() || null,
   };
 }
 
@@ -228,7 +408,15 @@ export function policyToDraft(round: RoundPolicy): PolicyDraft {
   const draft = {} as Record<string, unknown>;
   for (const key of POLICY_KEYS) draft[key] = round[key];
   const { starts_at: _startsAt, ...rest } = draft as unknown as RoundPolicy;
-  return { ...rest, starts_on: round.starts_at ? ictDate(round.starts_at) : "" };
+  return {
+    ...rest,
+    session_days: sortedDays(round.session_days ?? []),
+    session_start: hhmm(round.session_start) ?? round.session_start,
+    session_end: hhmm(round.session_end) ?? round.session_end,
+    curriculum_key: round.curriculum_key ?? null,
+    application_cohort: round.application_cohort ?? null,
+    starts_on: round.starts_at ? ictDate(round.starts_at) : "",
+  };
 }
 
 /** Changed policy fields only, for update_round's patch. */
@@ -238,8 +426,10 @@ export function policyPatch(before: RoundPolicy, after: RoundPolicy): Partial<Ro
     const a = before[key];
     const b = after[key];
     if (key === "starts_at") return Date.parse(String(a)) === Date.parse(String(b));
-    if (key === "nudge_local_time") return String(a).slice(0, 5) === String(b).slice(0, 5);
-    if (key === "discord_url") return (a || null) === (b || null);
+    if (key === "nudge_local_time" || key === "session_start" || key === "session_end")
+      return String(a).slice(0, 5) === String(b).slice(0, 5);
+    if (key === "discord_url" || key === "curriculum_key" || key === "application_cohort") return (a || null) === (b || null);
+    if (key === "session_days") return JSON.stringify(sortedDays((a as number[]) ?? [])) === JSON.stringify(sortedDays((b as number[]) ?? []));
     return JSON.stringify(a) === JSON.stringify(b);
   };
   for (const key of POLICY_KEYS) {

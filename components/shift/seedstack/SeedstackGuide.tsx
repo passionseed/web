@@ -193,7 +193,7 @@ function IconSteps({
   return (
     <ol className="space-y-3">
       {items.map(([head, detail], i) => {
-        const Icon = icons[i];
+        const Icon = icons[i] ?? icons[icons.length - 1];
         return (
           <li key={head} className="flex gap-3">
             <InkChip tint={tint} size="sm">

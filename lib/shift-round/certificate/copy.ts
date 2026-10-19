@@ -1,15 +1,20 @@
-import type { MissionKey } from "./types";
+import { KNOWN_MISSION_TITLES } from "./missions";
 
 /**
- * Public certificate copy (spec 6.1 web keys, 5.9 mission/track labels).
- * Wording is a factual record of completed activities and never implies an
- * admissions endorsement (DS16).
+ * Public certificate copy (spec 6.1 web keys, 5.9 track labels). Wording is a
+ * factual record of completed activities and never implies an admissions
+ * endorsement (DS16). The round is named SHIFT[N] (v2 D2); the mission count
+ * comes from the snapshot (missions are per-round config).
  */
 export const WEB_COPY = {
   th: {
     "web.valid": "ใบรับรองนี้ใช้ได้",
     "web.statement":
-      "ใบรับรองนี้บันทึกว่า {name} ทำภารกิจครบทั้ง 6 ใน SHIFT รอบที่ {n} ({dates}) กับ Passion Seed",
+      "ใบรับรองนี้บันทึกว่า {name} ทำภารกิจครบทั้ง {count} ใน SHIFT[{n}] ({dates}) กับ Passion Seed",
+    "web.statement_one":
+      "ใบรับรองนี้บันทึกว่า {name} ทำภารกิจของ SHIFT[{n}] ({dates}) สำเร็จ กับ Passion Seed",
+    "web.statement_any":
+      "ใบรับรองนี้บันทึกว่า {name} ทำภารกิจของ SHIFT[{n}] ({dates}) ครบ กับ Passion Seed",
     "web.disclaimer":
       "ใบรับรองนี้บันทึกกิจกรรมที่ทำครบ ไม่ได้รับรองผลลัพธ์ของโปรเจกต์หรือการรับเข้าศึกษา",
     "web.live": "สถานะปัจจุบันตรวจได้ที่หน้านี้เท่านั้น",
@@ -27,16 +32,20 @@ export const WEB_COPY = {
     "web.issued_on": "ออกเมื่อ {date}",
     "web.demo": "ดูเดโม",
     "web.retry": "ลองอีกครั้ง",
-    "round.tag": "SHIFT · รอบที่ {n}",
+    "round.tag": "SHIFT[{n}]",
     "cert.verify_url": "ตรวจสอบได้ที่ {url}",
     "count.people_talked_to": "คุยกับคนจริง {n} คน",
     "count.testers": "ผู้ทดสอบ {n} คน",
-    "count.missions": "ภารกิจ {n} จาก 6",
+    "count.missions": "ภารกิจ {n} จาก {total}",
   },
   en: {
     "web.valid": "This certificate is valid",
     "web.statement":
-      "This certificate records that {name} completed all 6 Missions of SHIFT round {n} ({dates}) with Passion Seed",
+      "This certificate records that {name} completed all {count} Missions of SHIFT[{n}] ({dates}) with Passion Seed",
+    "web.statement_one":
+      "This certificate records that {name} completed the Mission of SHIFT[{n}] ({dates}) with Passion Seed",
+    "web.statement_any":
+      "This certificate records that {name} completed the Missions of SHIFT[{n}] ({dates}) with Passion Seed",
     "web.disclaimer":
       "This records completed activities. It does not certify project outcomes or imply any admissions endorsement",
     "web.live": "Current status is confirmed only on this page",
@@ -54,25 +63,19 @@ export const WEB_COPY = {
     "web.issued_on": "Issued {date}",
     "web.demo": "View demo",
     "web.retry": "Try again",
-    "round.tag": "SHIFT · Round {n}",
+    "round.tag": "SHIFT[{n}]",
     "cert.verify_url": "Verify at {url}",
     "count.people_talked_to": "Talked to {n} real people",
     "count.testers": "{n} testers",
-    "count.missions": "{n} of 6 Missions",
+    "count.missions": "{n} of {total} Missions",
   },
 } as const;
 
 export type WebCopyKey = keyof (typeof WEB_COPY)["th"];
 export type Lang = keyof typeof WEB_COPY;
 
-export const MISSION_LABELS: Record<MissionKey, { th: string; en: string }> = {
-  first_contact: { th: "ติดต่อคนแรก", en: "First contact" },
-  interviews_problem: { th: "สัมภาษณ์ + โจทย์", en: "Interviews + problem" },
-  mvp: { th: "สร้าง MVP", en: "Build an MVP" },
-  testers: { th: "ให้คนจริงลองใช้", en: "Real people try it" },
-  change: { th: "เปลี่ยนตามที่ได้ยิน", en: "Change what you heard" },
-  demo_post: { th: "โพสต์เดโม", en: "Post your demo" },
-};
+/** Known-key mission titles (TH and EN); any other key uses the snapshot's own titles. */
+export const MISSION_LABELS = KNOWN_MISSION_TITLES;
 
 export const TRACK_LABELS = {
   high_school: { th: "ม.ปลาย", en: "High school" },

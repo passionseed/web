@@ -1,7 +1,7 @@
 \set ON_ERROR_STOP on
 begin;
 \ir shift_round_helpers.psql
-select plan(21);
+select plan(36);
 
 create temp table f on commit drop as select shift_test.round(9941, '2026-11-10 00:00+07') as r,
   shift_test.user() as a, shift_test.user() as b, shift_test.user() as c, shift_test.user() as d, shift_test.user() as e,
@@ -35,7 +35,7 @@ set local role service_role;
 create temp table n1 on commit drop as select pg_temp.cands('nudges') as j;
 select is(pg_temp.users((select j from n1)), array[(select a from f)], 'only the eligible student is nudged');
 select is((select j->'candidates'->0->>'kind' from n1), 'no_evidence', 'no_evidence kind');
-select is((select j->'candidates'->0->'params'->>'n' from n1), '6', 'missions remaining in params');
+select is((select j->'candidates'->0->'params'->>'n' from n1), '7', 'missions remaining in params (of the 7 configured)');
 select is((select j->'candidates'->0->>'lang' from n1), 'th', 'language from profile');
 select is(jsonb_array_length(pg_temp.cands('nudges')->'candidates'), 0, 'rerun claims nothing (ledger dedupe)');
 
@@ -105,6 +105,72 @@ select is((select array_agg(x->>'kind') from p3, jsonb_array_elements(j->'candid
 reset role;
 select is((select attempts::int from public.shift_round_nudge_ledger where kind = 'round_published'), 1,
   'the lost attempt is counted');
+
+-- ---------------------------------------------------------------------------
+-- v2 2.7 session reminders: session_start - 30 min (ICT) on session days, one per entry per day.
+-- 7-day round from 2026-12-01, sessions 1,2,4,6,7 at 19:00, nudge at the new 21:15 default.
+-- ---------------------------------------------------------------------------
+reset role;
+create temp table sf on commit drop as select
+  shift_test.round(9942, '2026-12-01 00:00+07', p_duration => 7, p_nudge => '21:15') as r,
+  shift_test.user() as s1, shift_test.user() as s2, shift_test.user() as s3, shift_test.user() as s4;
+update public.profiles set expo_push_token = 'ExponentPushToken[' || id || ']', mobile_settings = '{"push_enabled":true}'
+ where id in (select unnest(array[s1, s2, s3]) from sf);
+update public.profiles set shift_round_nudges = false where id = (select s2 from sf);
+update public.profiles set mobile_settings = '{"push_enabled":false}' where id = (select s3 from sf);
+create temp table sg on commit drop as select shift_test.entry(r, s1) as e1, shift_test.entry(r, s2) as e2,
+  shift_test.entry(r, s3) as e3, shift_test.entry(r, s4) as e4 from sf;
+grant select on sf, sg to service_role;
+create function pg_temp.sessions(p_at timestamptz) returns jsonb language plpgsql as $$
+begin
+  perform shift_test.clock(p_at);
+  return coalesce((select jsonb_agg(x) from jsonb_array_elements(public.shift_round_job_push_candidates('nudges', 500)->'data'->'candidates') x
+                    where x->>'kind' = 'session'), '[]'::jsonb);
+end $$;
+grant execute on function pg_temp.sessions(timestamptz) to service_role;
+
+set local role service_role;
+select is(jsonb_array_length(pg_temp.sessions('2026-12-01 18:29+07')), 0, 'nothing before session_start - 30 min');
+create temp table sr1 on commit drop as select pg_temp.sessions('2026-12-01 18:30+07') as j;
+select is((select array_agg((x->>'user_id')::uuid) from sr1, jsonb_array_elements(j) x), array[(select s1 from sf)],
+  'reminder at 18:30 to the entry with push on (opted-out, push-disabled and token-less skipped)');
+select is((select (j->0->'params') - 'session_starts_at' from sr1),
+  '{"copy_key":"push.session","day":1,"time":"19:00","round_number":9942,"url":"passion-seed://round"}'::jsonb,
+  'session push params: copy key, day, time, deep link');
+select is((select (j->0->'params'->>'session_starts_at')::timestamptz from sr1), '2026-12-01 19:00+07'::timestamptz, 'session start carried for retries');
+select is(jsonb_array_length(pg_temp.sessions('2026-12-01 18:40+07')), 0, 'rerun in the window sends nothing (idempotent)');
+reset role;
+select is((select dedupe_key from public.shift_round_nudge_ledger where kind = 'session'), (select e1::text || ':1' from sg),
+  'ledger dedupe key is entry:day');
+set local role service_role;
+select is(jsonb_array_length(pg_temp.sessions('2026-12-01 19:00+07')), 0, 'nothing once the session has started');
+select is(jsonb_array_length(pg_temp.sessions('2026-12-03 18:35+07')), 0, 'day 3 has no session');
+select is(jsonb_array_length(pg_temp.sessions('2026-12-02 18:45+07')), 1, 'day 2: a new reminder (one per entry per day)');
+
+-- retry a failed reminder until the session starts, then abandon it
+reset role;
+update public.shift_round_nudge_ledger set status = 'failed', attempts = 1
+ where kind = 'session' and dedupe_key = (select e1::text || ':2' from sg);
+set local role service_role;
+select is(jsonb_array_length(pg_temp.sessions('2026-12-02 18:50+07')), 1, 'a failed reminder is retried before the start');
+reset role;
+update public.shift_round_nudge_ledger set status = 'failed', attempts = 2
+ where kind = 'session' and dedupe_key = (select e1::text || ':2' from sg);
+set local role service_role;
+select is(jsonb_array_length(pg_temp.sessions('2026-12-02 19:01+07')), 0, 'no retry after the session started');
+reset role;
+select is((select status from public.shift_round_nudge_ledger where kind = 'session' and dedupe_key = (select e1::text || ':2' from sg)),
+  'abandoned', 'and the late reminder is abandoned');
+select is((select count(*)::int from public.shift_round_nudge_ledger where kind = 'session'), 2, 'two session reminders in the ledger');
+
+-- no-log nudge at the round's nudge_local_time (21:15 default) for one hour, once per day
+set local role service_role;
+select shift_test.clock('2026-12-02 21:10+07');
+select is((select count(*)::int from jsonb_array_elements(public.shift_round_job_push_candidates('nudges', 500)->'data'->'candidates') x
+            where x->>'kind' = 'no_evidence'), 0, 'no-log nudge not before 21:15');
+select shift_test.clock('2026-12-02 21:20+07');
+select is((select array_agg((x->>'user_id')::uuid) from jsonb_array_elements(public.shift_round_job_push_candidates('nudges', 500)->'data'->'candidates') x
+            where x->>'kind' = 'no_evidence'), array[(select s1 from sf)], 'no-log nudge from 21:15');
 
 select * from finish();
 rollback;

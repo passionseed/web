@@ -47,7 +47,7 @@ update public.shift_round_entries set summary_public = true where id = (select e
 set local role anon;
 create temp table v2 on commit drop as select public.shift_round_certificate_public((select pid from c)) as res;
 select is((select res->'data'->'summary'->>'title' from v2), 'Pre-order', 'opted-in approved summary shown');
-select is((select res->'data'->'summary'->'counts' from v2), '{"people_talked_to":7,"missions":6}'::jsonb, 'only opted-in counts');
+select is((select res->'data'->'summary'->'counts' from v2), '{"people_talked_to":7,"missions":7}'::jsonb, 'only opted-in counts (7 SHIFT missions)');
 
 -- config-driven base url
 reset role;

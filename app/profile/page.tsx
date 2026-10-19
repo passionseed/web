@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { type ReactNode, useEffect, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { isAbortError } from '@/lib/supabase/errors'
+import { dateOfBirthProblem, normalizeDateOfBirth } from '@/lib/profile-completion'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -302,6 +303,13 @@ export default function ProfilePage() {
       return
     }
 
+    // Thai students often type the Buddhist Era year; store it as Gregorian.
+    const nextDateOfBirth = dateOfBirth ? normalizeDateOfBirth(dateOfBirth) : null
+    if (nextDateOfBirth && dateOfBirthProblem(nextDateOfBirth)) {
+      toast.error('Please check your date of birth. The year looks wrong.')
+      return
+    }
+
     setSaving(true)
     try {
       const nextUpdatedAt = new Date().toISOString()
@@ -311,7 +319,7 @@ export default function ProfilePage() {
         .update({
           full_name: fullName || null,
           username,
-          date_of_birth: dateOfBirth || null,
+          date_of_birth: nextDateOfBirth,
           discord_uid: discordId || null,
           education_level: educationLevel,
           updated_at: nextUpdatedAt,
@@ -328,7 +336,7 @@ export default function ProfilePage() {
               ...current,
               full_name: fullName || null,
               username,
-              date_of_birth: dateOfBirth || null,
+              date_of_birth: nextDateOfBirth,
               discord_uid: discordId || null,
               education_level: educationLevel,
               updated_at: nextUpdatedAt,

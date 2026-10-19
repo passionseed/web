@@ -1,7 +1,7 @@
 \set ON_ERROR_STOP on
 begin;
 \ir shift_round_helpers.psql
-select plan(47);
+select plan(61);
 
 -- tables exist
 select has_table('public', t, t || ' exists') from unnest(array[
@@ -9,7 +9,7 @@ select has_table('public', t, t || ' exists') from unnest(array[
   'shift_round_icebreaker_questions','shift_round_squads','shift_round_squad_members','shift_round_evidence',
   'shift_round_evidence_media','shift_round_cheers','shift_round_checkins','shift_round_summary_revisions',
   'shift_round_certificates','shift_round_events','shift_round_waitlist','shift_round_nudge_ledger',
-  'shift_round_deletion_requests','shift_round_job_runs']) t;
+  'shift_round_deletion_requests','shift_round_job_runs','shift_round_attendance']) t;
 
 -- RLS on every new table
 select is(
@@ -18,6 +18,17 @@ select is(
       and (c.relname = 'app_config' or c.relname like 'shift\_round%')
       and not c.relrowsecurity),
   0, 'RLS enabled on all new tables');
+
+-- v2 2.1 round config columns and SHIFT template defaults
+select has_column('public', 'shift_rounds', c, 'shift_rounds.' || c) from unnest(array[
+  'missions','session_days','session_start','session_end','curriculum_key','application_cohort']) c;
+select col_default_is('public', 'shift_rounds', 'duration_days', '7', 'duration defaults to 7 days (D2)');
+select col_default_is('public', 'shift_rounds', 'join_cutoff_day', '2', 'join until day 2 by default');
+select col_default_is('public', 'shift_rounds', 'session_days', '{1,2,4,6,7}', 'sessions on days 1,2,4,6,7 by default');
+select ok(exists (select 1 from pg_constraint where conrelid = 'public.shift_rounds'::regclass and conname = 'shift_rounds_missions_valid'),
+  'missions config is CHECKed by valid_missions');
+select col_is_pk('public', 'shift_round_attendance', array['entry_id','day'], 'one attendance mark per entry per day');
+select has_index('public', 'shift_round_attendance', 'shift_round_attendance_round_day_idx', 'attendance (round, day) index');
 
 -- A49 indexes
 select has_index('public', 'shift_round_evidence', 'shift_round_evidence_entry_type_status_idx', 'evidence (entry, type, status) index');
@@ -84,6 +95,8 @@ select throws_ok(
 select lives_ok(
   $$update public.shift_round_evidence set status = 'rejected', status_reason_code = 'other' where id = (select v from evi)$$,
   'evidence status may change');
+select lives_ok($$select shift_test.ev((select e from ent), 'ideas'), shift_test.ev((select e from ent), 'daily')$$,
+  'ideas and daily are evidence types (v2 2.2)');
 
 select * from finish();
 rollback;

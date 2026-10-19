@@ -6,6 +6,122 @@
 -- Internal helpers (SECURITY INVOKER, execute revoked at the end of this file)
 -- ---------------------------------------------------------------------------
 
+-- v2 2.2 `ideas` payload: {ideas:[{text 3..120, who 2..60 (personal-data rule)}] (3 to 6),
+-- picked int (0-based, < len), reachable boolean?, note <=280?}. Unknown keys (also inside an
+-- idea) are rejected; strings are trimmed. Problems inside the list report field 'ideas'
+-- (details carry rule, index and key) so the app can point at the composer field.
+create or replace function shift_round_private.validate_ideas(p_payload jsonb) returns jsonb
+language plpgsql stable set search_path = '' as $$
+declare
+  k text;
+  v jsonb;
+  v_items jsonb;
+  v_item jsonb;
+  v_out_items jsonb := '[]'::jsonb;
+  v_text text;
+  v_who text;
+  v_picked numeric;
+  v_note text;
+  v_out jsonb;
+  i int := 0;
+begin
+  for k in select jsonb_object_keys(p_payload) loop
+    if k not in ('ideas','picked','reachable','note') then
+      return jsonb_build_object('ok', false, 'error_envelope',
+        shift_round_private.fail('invalid_field', k, null, '{"rule":"unknown_key"}'));
+    end if;
+  end loop;
+
+  v_items := p_payload->'ideas';
+  if v_items is null or jsonb_typeof(v_items) = 'null' then
+    return jsonb_build_object('ok', false, 'error_envelope', shift_round_private.fail('missing_field', 'ideas'));
+  end if;
+  if jsonb_typeof(v_items) <> 'array' then
+    return jsonb_build_object('ok', false, 'error_envelope',
+      shift_round_private.fail('invalid_field', 'ideas', null, '{"rule":"type"}'));
+  end if;
+  if jsonb_array_length(v_items) not between 3 and 6 then
+    return jsonb_build_object('ok', false, 'error_envelope',
+      shift_round_private.fail('invalid_field', 'ideas', null, '{"rule":"count","min":3,"max":6}'));
+  end if;
+  for v_item in select * from jsonb_array_elements(v_items) loop
+    if jsonb_typeof(v_item) <> 'object' then
+      return jsonb_build_object('ok', false, 'error_envelope',
+        shift_round_private.fail('invalid_field', 'ideas', null, jsonb_build_object('rule', 'type', 'index', i)));
+    end if;
+    for k in select jsonb_object_keys(v_item) loop
+      if k not in ('text','who') then
+        return jsonb_build_object('ok', false, 'error_envelope',
+          shift_round_private.fail('invalid_field', 'ideas', null, jsonb_build_object('rule', 'unknown_key', 'index', i, 'key', k)));
+      end if;
+    end loop;
+    foreach k in array array['text','who'] loop
+      if jsonb_typeof(v_item->k) is distinct from 'string' then
+        return jsonb_build_object('ok', false, 'error_envelope',
+          shift_round_private.fail('invalid_field', 'ideas', null,
+            jsonb_build_object('rule', case when jsonb_typeof(v_item->k) is null or jsonb_typeof(v_item->k) = 'null'
+                                            then 'required' else 'type' end, 'index', i, 'key', k)));
+      end if;
+    end loop;
+    v_text := btrim(v_item->>'text');
+    v_who := btrim(v_item->>'who');
+    if char_length(v_text) not between 3 and 120 then
+      return jsonb_build_object('ok', false, 'error_envelope', shift_round_private.fail('invalid_field', 'ideas', null,
+        jsonb_build_object('rule', 'length', 'index', i, 'key', 'text', 'min', 3, 'max', 120)));
+    end if;
+    if char_length(v_who) not between 2 and 60 then
+      return jsonb_build_object('ok', false, 'error_envelope', shift_round_private.fail('invalid_field', 'ideas', null,
+        jsonb_build_object('rule', 'length', 'index', i, 'key', 'who', 'min', 2, 'max', 60)));
+    end if;
+    if shift_round_private.has_personal_data(v_who) then
+      return jsonb_build_object('ok', false, 'error_envelope', shift_round_private.fail('invalid_field', 'ideas', null,
+        jsonb_build_object('rule', 'personal_data', 'index', i, 'key', 'who')));
+    end if;
+    v_out_items := v_out_items || jsonb_build_array(jsonb_build_object('text', v_text, 'who', v_who));
+    i := i + 1;
+  end loop;
+
+  v := p_payload->'picked';
+  if v is null or jsonb_typeof(v) = 'null' then
+    return jsonb_build_object('ok', false, 'error_envelope', shift_round_private.fail('missing_field', 'picked'));
+  end if;
+  if jsonb_typeof(v) <> 'number' then
+    return jsonb_build_object('ok', false, 'error_envelope',
+      shift_round_private.fail('invalid_field', 'picked', null, '{"rule":"type"}'));
+  end if;
+  v_picked := (v #>> '{}')::numeric;
+  if v_picked <> trunc(v_picked) or v_picked < 0 or v_picked >= jsonb_array_length(v_out_items) then
+    return jsonb_build_object('ok', false, 'error_envelope',
+      shift_round_private.fail('invalid_field', 'picked', null, '{"rule":"range"}'));
+  end if;
+  v_out := jsonb_build_object('ideas', v_out_items, 'picked', v_picked::int);
+
+  v := p_payload->'reachable';
+  if v is not null and jsonb_typeof(v) <> 'null' then
+    if jsonb_typeof(v) <> 'boolean' then
+      return jsonb_build_object('ok', false, 'error_envelope',
+        shift_round_private.fail('invalid_field', 'reachable', null, '{"rule":"type"}'));
+    end if;
+    v_out := v_out || jsonb_build_object('reachable', v);
+  end if;
+
+  v := p_payload->'note';
+  if v is not null and jsonb_typeof(v) <> 'null' then
+    if jsonb_typeof(v) <> 'string' then
+      return jsonb_build_object('ok', false, 'error_envelope',
+        shift_round_private.fail('invalid_field', 'note', null, '{"rule":"type"}'));
+    end if;
+    v_note := btrim(v #>> '{}');
+    if char_length(v_note) > 280 then
+      return jsonb_build_object('ok', false, 'error_envelope',
+        shift_round_private.fail('invalid_field', 'note', null, '{"rule":"length","min":0,"max":280}'));
+    end if;
+    if v_note <> '' then v_out := v_out || jsonb_build_object('note', v_note); end if;
+  end if;
+
+  return jsonb_build_object('ok', true, 'payload', v_out, 'who_label', null);
+end $$;
+
 -- 2.3 payload validation. Returns {"ok":true,"payload":{...},"who_label":text|null}
 -- or {"ok":false,"error_envelope":{...}}.
 create or replace function shift_round_private.validate_payload(
@@ -22,18 +138,21 @@ declare
   d date;
   today date := shift_round_private.local_date(shift_round_private.round_now());
   lens jsonb := '{"who_label":[2,60],"key_point":[1,500],"transcript":[0,5000],"planned_change":[0,280],
-                  "text":[20,500],"note":[0,280],"what_tried":[0,200],"what":[5,500]}';
+                  "text":[20,500],"note":[0,280],"what_tried":[0,200],"what":[5,500],"user_group":[2,60],
+                  "built":[1,500],"broke":[0,500],"heard":[0,500]}';
   enums jsonb := '{"channel":["in_person","chat","call","social","other"],"input":["voice","text"],
                    "kind":["changed","decided_not_to"],"visibility":["public","reviewer_only"]}';
 begin
   allowed := case p_type
     when 'contact' then array['who_label','channel','occurred_on','link']
+    when 'ideas' then array['ideas','picked','reachable','note']
     when 'interview' then array['who_label','occurred_on','key_point','transcript','planned_change','input','link']
-    when 'problem_statement' then array['text','link']
+    when 'problem_statement' then array['text','user_group','link']
     when 'mvp' then array['link','note']
     when 'tester' then array['who_label','occurred_on','key_point','what_tried','transcript','planned_change','input','link']
     when 'change' then array['kind','what','source_evidence_id','link']
     when 'demo_post' then array['url','visibility','note']
+    when 'daily' then array['built','broke','heard','link']
     else null end;
   if allowed is null then
     return jsonb_build_object('ok', false, 'error_envelope', shift_round_private.fail('invalid_field', 'type'));
@@ -41,11 +160,13 @@ begin
   required := case p_type
     when 'contact' then array['who_label','channel','occurred_on']
     when 'interview' then array['who_label','occurred_on','key_point']
-    when 'problem_statement' then array['text']
+    when 'problem_statement' then array['text','user_group']   -- v2: user_group required for new logs
     when 'mvp' then array[]::text[]
     when 'tester' then array['who_label','occurred_on','key_point']
     when 'change' then array['kind','what','source_evidence_id']
-    when 'demo_post' then array['url','visibility'] end;
+    when 'demo_post' then array['url','visibility']
+    when 'daily' then array['built']
+    else array[]::text[] end;
 
   if p_payload is null or jsonb_typeof(p_payload) <> 'object' then
     return jsonb_build_object('ok', false, 'error_envelope',
@@ -54,6 +175,9 @@ begin
   if octet_length(p_payload::text) > 20000 then
     return jsonb_build_object('ok', false, 'error_envelope',
       shift_round_private.fail('invalid_field', 'payload', null, '{"rule":"too_large"}'));
+  end if;
+  if p_type = 'ideas' then
+    return shift_round_private.validate_ideas(p_payload);
   end if;
 
   -- unknown keys, then type + trim
@@ -94,9 +218,9 @@ begin
     if k in ('link','url') and not shift_round_private.is_https_url(s) then
       return jsonb_build_object('ok', false, 'error_envelope', shift_round_private.fail('link_not_https', k));
     end if;
-    if k = 'who_label' and shift_round_private.has_personal_data(s) then
+    if k in ('who_label','user_group') and shift_round_private.has_personal_data(s) then
       return jsonb_build_object('ok', false, 'error_envelope',
-        shift_round_private.fail('invalid_field', 'who_label', null, '{"rule":"personal_data"}'));
+        shift_round_private.fail('invalid_field', k, null, '{"rule":"personal_data"}'));
     end if;
     if k = 'occurred_on' then
       begin
@@ -265,22 +389,26 @@ language sql immutable set search_path = '' as $$
    where a.have <> b.have
 $$;
 
--- Check-in due rules (3.2).
+-- Check-in due rules (3.2), scaled to the round length (v2: 7-day default). mid = ceil(duration/2):
+-- join after the first counted log until day mid-1; midpoint from day mid to the last day if the
+-- entry joined by day mid-2; close from the last day until review end. 14-day rounds keep the
+-- original windows (join until day 6, midpoint from day 7 for joined_day <= 5).
 create or replace function shift_round_private.checkin_due(en public.shift_round_entries, r public.shift_rounds, p_checkpoint text) returns boolean
 language plpgsql stable set search_path = '' as $$
 declare
   d int := shift_round_private.day_of(r, shift_round_private.round_now());
   last_day int := shift_round_private.effective_days(r);
+  mid int := ceil(r.duration_days / 2.0)::int;
 begin
   if exists (select 1 from public.shift_round_checkins c where c.entry_id = en.id and c.checkpoint = p_checkpoint) then
     return false;
   end if;
   if shift_round_private.round_now() >= r.review_ends_at then return false; end if;
   if p_checkpoint = 'join' then
-    return d <= 6 and exists (select 1 from public.shift_round_evidence e
-                               where e.entry_id = en.id and shift_round_private.evidence_counts(e, r));
+    return d <= mid - 1 and exists (select 1 from public.shift_round_evidence e
+                                     where e.entry_id = en.id and shift_round_private.evidence_counts(e, r));
   elsif p_checkpoint = 'midpoint' then
-    return en.joined_day <= 5 and d between 7 and last_day;
+    return en.joined_day <= mid - 2 and d between mid and last_day;
   elsif p_checkpoint = 'close' then
     return d >= last_day;
   end if;
@@ -294,7 +422,7 @@ language sql stable set search_path = '' as $$
     'counted', shift_round_private.evidence_counts(e, r),
     'after_close', shift_round_private.after_close(e, r),
     'invalidated', shift_round_private.change_invalidated(e, r),
-    'mission', shift_round_private.type_mission(e.type),
+    'mission', shift_round_private.mission_of(r.missions, e.type),
     'submitted_at', e.submitted_at, 'local_date', e.local_date,
     'payload', e.payload,
     'media', coalesce((select jsonb_agg(jsonb_build_object('kind', m.kind, 'path', m.path) order by m.kind)
@@ -306,7 +434,9 @@ language sql stable set search_path = '' as $$
                      where x.replaces_evidence_id = e.id order by x.submitted_at desc limit 1))
 $$;
 
--- Squad feed (2.8): generated items only, no free text.
+-- Squad feed (2.8): generated items only, no free text. kind evidence_logged: n = how many logs of
+-- that type so far (ideas and daily included; the app words them "picked an idea" / "posted
+-- today's update"); kind mission_completed: n = the mission's position in the round config.
 create or replace function shift_round_private.squad_feed(p_squad_id uuid, p_me uuid, p_limit int default 30) returns jsonb
 language sql stable set search_path = '' as $$
   select coalesce(jsonb_agg(item order by at desc), '[]'::jsonb) from (
@@ -314,11 +444,11 @@ language sql stable set search_path = '' as $$
       'evidence_id', e.id, 'entry_id', en.id, 'handle', en.handle,
       'kind', ev.name, 'type', e.type,
       'n', case when ev.name = 'mission_completed'
-                then array_position(array['first_contact','interviews_problem','mvp','testers','change','demo_post'], ev.props->>'mission')
+                then shift_round_private.mission_n(r.missions, ev.props->>'mission')
                 else (select count(*) from public.shift_round_evidence x
                        where x.entry_id = e.entry_id and x.type = e.type
                          and x.status in ('submitted','accepted') and x.submitted_at <= e.submitted_at) end,
-      'mission', coalesce(ev.props->>'mission', shift_round_private.type_mission(e.type)),
+      'mission', coalesce(ev.props->>'mission', shift_round_private.mission_of(r.missions, e.type)),
       'at', ev.created_at,
       'cheers', (select count(*) from public.shift_round_cheers c where c.evidence_id = e.id),
       'cheered_by_me', exists (select 1 from public.shift_round_cheers c where c.evidence_id = e.id and c.from_entry_id = p_me)
@@ -414,11 +544,101 @@ begin
   if r.join_mode = 'invite' then
     select lower(u.email) into v_email from auth.users u where u.id = p_uid;
     if not exists (select 1 from public.shift_round_allowlist a
-                    where a.round_id = r.id and (a.user_id = p_uid or (v_email is not null and a.email = v_email))) then
+                    where a.round_id = r.id and (a.user_id = p_uid or (v_email is not null and a.email = v_email)))
+       -- v2 2.6 (D6): an accepted, account-linked application for the round's cohort admits too.
+       and not (r.application_cohort is not null and exists (
+                  select 1 from public.shift_applications a
+                   where a.user_id = p_uid and a.status = 'accepted' and a.cohort = r.application_cohort)) then
       return 'invite_only';
     end if;
   end if;
   return null;
+end $$;
+
+-- v2 2.5: the student-safe day plan from the mentors' shift_curriculum (one source of truth).
+-- Row round = r.curriculum_key, else the 'default' row, else null. Copies only rules, the
+-- interview guide and per day {day, name, goal, mission, refundSteps -> steps}; never
+-- schedule, mentorChecks, date, sessionTime or mentorSession (session days come from the round).
+-- Strings are clamped to 2000 chars, lists to 20 items; days outside 1..duration are dropped.
+create or replace function shift_round_private.clamp_text(v jsonb, p_max int default 2000) returns text
+language sql immutable set search_path = '' as $$
+  select case when jsonb_typeof(v) = 'string' then left(v #>> '{}', p_max) else '' end
+$$;
+
+create or replace function shift_round_private.clamp_text_list(v jsonb, p_max_items int default 20, p_max int default 2000)
+returns jsonb
+language sql immutable set search_path = '' as $$
+  select coalesce(jsonb_agg(q.s order by q.i), '[]'::jsonb)
+    from (select left(t.x #>> '{}', p_max) as s, t.i
+            from jsonb_array_elements(case when jsonb_typeof(v) = 'array' then v else '[]'::jsonb end)
+                 with ordinality as t(x, i)
+           where jsonb_typeof(t.x) = 'string'
+           order by t.i
+           limit p_max_items) q
+$$;
+
+create or replace function shift_round_private.student_plan(r public.shift_rounds) returns jsonb
+language plpgsql stable set search_path = '' as $$
+declare
+  v_content jsonb;
+  v_source text;
+  v_iv jsonb;
+  v_last int;
+begin
+  if r.id is null then return null; end if;
+  v_last := shift_round_private.effective_days(r);
+  if r.curriculum_key is not null then
+    select c.content into v_content from public.shift_curriculum c
+     where c.round = r.curriculum_key and jsonb_typeof(c.content) = 'object';
+    if found then v_source := 'curriculum'; end if;
+  end if;
+  if v_source is null then
+    select c.content into v_content from public.shift_curriculum c
+     where c.round = 'default' and jsonb_typeof(c.content) = 'object';
+    if found then v_source := 'default'; end if;
+  end if;
+  if v_source is null then return null; end if;
+
+  v_iv := case when jsonb_typeof(v_content->'interview') = 'object' then v_content->'interview' else '{}'::jsonb end;
+  return jsonb_build_object(
+    'source', v_source,
+    'rules', shift_round_private.clamp_text_list(v_content->'rules'),
+    'interview', jsonb_build_object(
+      'intro', shift_round_private.clamp_text(v_iv->'intro'),
+      'dm', shift_round_private.clamp_text(v_iv->'dm'),
+      'questions', shift_round_private.clamp_text_list(v_iv->'questions'),
+      'dos', shift_round_private.clamp_text_list(v_iv->'dos'),
+      'donts', shift_round_private.clamp_text_list(v_iv->'donts')),
+    'days', coalesce((
+      select jsonb_agg(jsonb_build_object('day', d.day, 'name', d.name, 'goal', d.goal,
+                                          'mission', d.mission, 'steps', d.steps) order by d.day)
+        from (
+          select distinct on (x.day) x.day, x.name, x.goal, x.mission, x.steps
+            from (
+              select (t.dj->>'day')::int as day, t.i,
+                     shift_round_private.clamp_text(t.dj->'name') as name,
+                     shift_round_private.clamp_text(t.dj->'goal') as goal,
+                     shift_round_private.clamp_text(t.dj->'mission') as mission,
+                     coalesce((
+                       select jsonb_agg(st.n order by st.si)
+                         from (select (s.sv #>> '{}')::int as n, s.si
+                                 from jsonb_array_elements(case when jsonb_typeof(t.dj->'refundSteps') = 'array'
+                                                                then t.dj->'refundSteps' else '[]'::jsonb end)
+                                      with ordinality as s(sv, si)
+                                where jsonb_typeof(s.sv) = 'number' and (s.sv #>> '{}') ~ '^[0-9]{1,2}$'
+                                  and (s.sv #>> '{}')::int between 1 and 20
+                                order by s.si
+                                limit 20) st), '[]'::jsonb) as steps
+                from jsonb_array_elements(case when jsonb_typeof(v_content->'days') = 'array'
+                                               then v_content->'days' else '[]'::jsonb end)
+                     with ordinality as t(dj, i)
+               where jsonb_typeof(t.dj) = 'object' and jsonb_typeof(t.dj->'day') = 'number'
+                 and (t.dj->>'day') ~ '^[0-9]{1,2}$'
+            ) x
+           where x.day between 1 and v_last
+           order by x.day, x.i
+           limit 20
+        ) d), '[]'::jsonb));
 end $$;
 
 -- ---------------------------------------------------------------------------
@@ -453,7 +673,7 @@ begin
     select x.* into r from public.shift_rounds x
      where x.status = 'published' and shift_round_private.phase_of(x) in ('upcoming','active')
        and shift_round_private.day_of(x, v_now) <= x.join_cutoff_day
-     order by x.starts_at asc limit 1;
+     order by x.starts_at asc, x.number asc limit 1;
   end if;
 
   v_flags := jsonb_build_object(
@@ -504,7 +724,12 @@ begin
       'review_ends_at', r.review_ends_at, 'duration_days', shift_round_private.effective_days(r),
       'join_cutoff_day', r.join_cutoff_day, 'day', shift_round_private.day_of(r, v_now),
       'phase', shift_round_private.phase_of(r), 'discord_url', r.discord_url, 'join_mode', r.join_mode,
-      'mentor_led', r.mentor_led, 'grace_minutes', r.grace_minutes) end,
+      'mentor_led', r.mentor_led, 'grace_minutes', r.grace_minutes,
+      'session_days', to_jsonb(r.session_days),
+      'session_start', to_char(r.session_start, 'HH24:MI'),
+      'session_end', to_char(r.session_end, 'HH24:MI'),
+      'application_cohort', r.application_cohort) end,
+    'plan', case when r.id is null then null else shift_round_private.student_plan(r) end,
     'joinable', coalesce((
       select jsonb_agg(jsonb_build_object(
                'round_id', x.id, 'number', x.number, 'title_th', x.title_th, 'title_en', x.title_en,
@@ -512,7 +737,11 @@ begin
                'join_by', x.starts_at + make_interval(days => x.join_cutoff_day),
                'join_mode', x.join_mode,
                'can_join', shift_round_private.join_block_reason(x, v_uid) is null,
-               'reason', shift_round_private.join_block_reason(x, v_uid)) order by x.starts_at)
+               'reason', shift_round_private.join_block_reason(x, v_uid),
+               'session_days', to_jsonb(x.session_days),
+               'session_start', to_char(x.session_start, 'HH24:MI'),
+               'session_end', to_char(x.session_end, 'HH24:MI'),
+               'duration_days', shift_round_private.effective_days(x)) order by x.starts_at, x.number)
         from public.shift_rounds x
        where x.status = 'published' and shift_round_private.phase_of(x) in ('upcoming','active')
          and not exists (select 1 from public.shift_round_entries e where e.round_id = x.id and e.user_id = v_uid)),
@@ -520,7 +749,7 @@ begin
     'next_round', (select jsonb_build_object('number', x.number, 'starts_at', x.starts_at)
                      from public.shift_rounds x
                     where x.status = 'published' and x.starts_at > v_now and x.id is distinct from r.id
-                    order by x.starts_at limit 1),
+                    order by x.starts_at, x.number limit 1),
     'on_waitlist', exists (select 1 from public.shift_round_waitlist w where w.user_id = v_uid),
     'missions', case when en.id is null then null else shift_round_private.mission_counts(en.id) end,
     'evidence', case when en.id is null then '[]'::jsonb else coalesce((

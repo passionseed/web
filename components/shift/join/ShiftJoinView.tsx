@@ -24,7 +24,14 @@ export type ShiftJoinState =
       error: "no_discord" | "taken" | ShiftDiscordAuthError | null;
     }
   | { kind: "needs_invite"; nickname: string; cohortName: string; inviteUrl: string | null }
-  | { kind: "in_server"; nickname: string; cohortName: string; serverUrl: string | null };
+  | {
+      kind: "in_server";
+      nickname: string;
+      cohortName: string;
+      serverUrl: string | null;
+      /** e.g. "พรุ่งนี้ วันพุธที่ 14 ตุลาคม"; null once the round has met. */
+      meetLabel: string | null;
+    };
 
 const CONNECT_ERRORS = {
   no_discord: "ยังไม่ได้เชื่อม Discord ลองกดอีกครั้งนะ",
@@ -155,7 +162,7 @@ export function ShiftJoinView({ token, state }: { token: string; state: ShiftJoi
 
     case "in_server":
       return (
-        <Shell eyebrow={state.cohortName} title={`เข้าเซิร์ฟแล้ว ${state.nickname}`}>
+        <Shell eyebrow={state.cohortName} title={`เรียบร้อย ${state.nickname}`}>
           <div className="flex items-center gap-3" style={{ color: FLOW_TEXT.body }}>
             <span
               className="flex h-8 w-8 items-center justify-center rounded-full"
@@ -163,19 +170,15 @@ export function ShiftJoinView({ token, state }: { token: string; state: ShiftJoi
             >
               <Check className="h-5 w-5" />
             </span>
-            <span>ได้ role {state.cohortName} แล้ว เจอกันในห้องของรุ่น</span>
+            <span>
+              {state.meetLabel ? `เจอกัน${state.meetLabel} ใน Discord` : "เจอกันในห้องของรุ่น"}
+            </span>
           </div>
           {state.serverUrl && (
             <LinkButton href={state.serverUrl} primary>
               เปิด Discord
             </LinkButton>
           )}
-          {/* Week 0, not mid-cohort: an under-20's parent link goes out while there is time. */}
-          <Body>
-            ขั้นต่อไป: ตั้งค่า SeedStack ไว้เลย ถ้ายังไม่ถึง 20 ปี จะได้ลิงก์ให้ผู้ปกครองกดยินยอม ส่งไปตั้งแต่ตอนนี้
-            จะได้ไม่ต้องรอตอนเริ่มทำโปรเจกต์
-          </Body>
-          <LinkButton href="/shift/seedstack">ตั้งค่า SeedStack</LinkButton>
           <LineHelp />
         </Shell>
       );

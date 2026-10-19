@@ -38,7 +38,7 @@ language sql stable set search_path = '' as $$
     'after_close', shift_round_private.after_close(e, r),
     'invalidated', shift_round_private.change_invalidated(e, r),
     'duplicate_label', shift_round_private.duplicate_label(e),
-    'mission', shift_round_private.type_mission(e.type),
+    'mission', shift_round_private.mission_of(r.missions, e.type),
     'media', coalesce((select jsonb_agg(jsonb_build_object('id', m.id, 'kind', m.kind, 'path', m.path, 'bytes', m.bytes,
                                                          'duration_ms', m.duration_ms, 'purged', m.purged_at is not null,
                                                          'exif_found', m.exif_found) order by m.kind)
@@ -84,7 +84,9 @@ declare
   allowed text[] := array['number','title_th','title_en','brief_th','brief_en','tracks_open','starts_at',
     'duration_days','review_window_hours','join_cutoff_day','nudge_local_time','rate_limit_per_hour',
     'grace_minutes','squad_size','retention_months','audio_retention_days','join_mode','mentor_led',
-    'discord_url','status'];
+    'discord_url','status',
+    -- v2 2.1
+    'missions','session_days','session_start','session_end','curriculum_key','application_cohort'];
   v_start timestamptz;
 begin
   if p is null or jsonb_typeof(p) <> 'object' then return shift_round_private.fail('invalid_field', 'round'); end if;
@@ -113,6 +115,48 @@ begin
   if p ? 'tracks_open' and (jsonb_typeof(p->'tracks_open') <> 'array' or jsonb_array_length(p->'tracks_open') = 0) then
     return shift_round_private.fail('invalid_field', 'tracks_open');
   end if;
+  if p ? 'missions' and not shift_round_private.valid_missions(p->'missions') then
+    return shift_round_private.fail('invalid_field', 'missions', null, '{"rule":"missions_config"}');
+  end if;
+  if p ? 'session_days' and (jsonb_typeof(p->'session_days') <> 'array'
+       or exists (select 1 from jsonb_array_elements(p->'session_days') d
+                   where jsonb_typeof(d) <> 'number' or (d #>> '{}') !~ '^[0-9]{1,2}$')) then
+    return shift_round_private.fail('invalid_field', 'session_days');
+  end if;
+  foreach k in array array['session_start','session_end'] loop
+    if p ? k then
+      if jsonb_typeof(p->k) <> 'string' then return shift_round_private.fail('invalid_field', k); end if;
+      begin
+        perform (p->>k)::time;
+      exception when others then
+        return shift_round_private.fail('invalid_field', k);
+      end;
+    end if;
+  end loop;
+  foreach k in array array['curriculum_key','application_cohort'] loop
+    if p ? k and jsonb_typeof(p->k) not in ('string','null') then
+      return shift_round_private.fail('invalid_field', k);
+    end if;
+  end loop;
+  return null;
+end $$;
+
+-- Final-row checks with field-specific errors (CHECK constraints stay the backstop).
+create or replace function shift_round_private.round_row_problem(n public.shift_rounds) returns jsonb
+language plpgsql stable set search_path = '' as $$
+begin
+  if n.duration_days is null or n.duration_days not between 5 and 28 then
+    return shift_round_private.fail('invalid_field', 'duration_days');
+  end if;
+  if n.join_cutoff_day is null or n.join_cutoff_day not between 1 and n.duration_days then
+    return shift_round_private.fail('invalid_field', 'join_cutoff_day');
+  end if;
+  if not shift_round_private.valid_session_days(n.session_days, n.duration_days) then
+    return shift_round_private.fail('invalid_field', 'session_days', null, '{"rule":"range"}');
+  end if;
+  if n.session_start is null or n.session_end is null or n.session_end <= n.session_start then
+    return shift_round_private.fail('invalid_field', 'session_end', null, '{"rule":"after_start"}');
+  end if;
   return null;
 end $$;
 
@@ -122,6 +166,7 @@ declare
   v_uid uuid := auth.uid();
   v_problem jsonb;
   r public.shift_rounds;
+  v_row public.shift_rounds;
   v_start timestamptz;
   v_days int;
 begin
@@ -133,24 +178,43 @@ begin
     return shift_round_private.fail('round_number_taken', 'number');
   end if;
   v_start := (p_round->>'starts_at')::timestamptz;
-  v_days := coalesce((p_round->>'duration_days')::int, 14);
   begin
+    -- v2 D2 SHIFT template defaults: 7 days, sessions on days 1,2,4,6,7 at 19:00-21:00 ICT,
+    -- join until day 2, nudge 21:15, invite join, mentor-led, SHIFT steps 1-7 as missions.
+    v_days := coalesce((p_round->>'duration_days')::int, 7);
+    v_row.duration_days := v_days;
+    v_row.join_cutoff_day := coalesce((p_round->>'join_cutoff_day')::int, least(2, v_days));
+    v_row.session_days := case when p_round ? 'session_days'
+                               then array(select (x #>> '{}')::int from jsonb_array_elements(p_round->'session_days') x)
+                               else array(select d from unnest('{1,2,4,6,7}'::int[]) d where d <= v_days) end;
+    v_row.session_start := coalesce((p_round->>'session_start')::time, time '19:00');
+    v_row.session_end := coalesce((p_round->>'session_end')::time, time '21:00');
+    v_problem := shift_round_private.round_row_problem(v_row);
+    if v_problem is not null then return v_problem; end if;
+
     insert into public.shift_rounds (number, title_th, title_en, brief_th, brief_en, tracks_open, starts_at,
       duration_days, closes_at, review_window_hours, review_ends_at, join_cutoff_day, nudge_local_time,
       rate_limit_per_hour, grace_minutes, squad_size, retention_months, audio_retention_days, join_mode,
-      mentor_led, discord_url, status, created_by)
+      mentor_led, discord_url, status, missions, session_days, session_start, session_end, curriculum_key,
+      application_cohort, created_by)
     values ((p_round->>'number')::int, btrim(p_round->>'title_th'), btrim(p_round->>'title_en'),
       btrim(p_round->>'brief_th'), btrim(p_round->>'brief_en'),
       case when p_round ? 'tracks_open' then array(select jsonb_array_elements_text(p_round->'tracks_open')) else array['high_school'] end,
       v_start, v_days, v_start + make_interval(days => v_days),
       coalesce((p_round->>'review_window_hours')::int, 48), v_start,   -- review_ends_at recomputed by trigger
-      coalesce((p_round->>'join_cutoff_day')::int, 7),
-      coalesce((p_round->>'nudge_local_time')::time, time '19:00'),
+      v_row.join_cutoff_day,
+      coalesce((p_round->>'nudge_local_time')::time, time '21:15'),
       coalesce((p_round->>'rate_limit_per_hour')::int, 30), coalesce((p_round->>'grace_minutes')::int, 30),
       coalesce((p_round->>'squad_size')::int, 3), coalesce((p_round->>'retention_months')::int, 12),
       coalesce((p_round->>'audio_retention_days')::int, 30), coalesce(p_round->>'join_mode', 'invite'),
       coalesce((p_round->>'mentor_led')::boolean, true), nullif(p_round->>'discord_url', ''),
-      coalesce(p_round->>'status', 'draft'), v_uid)
+      coalesce(p_round->>'status', 'draft'),
+      coalesce(case when jsonb_typeof(p_round->'missions') = 'array' then p_round->'missions' end,
+               shift_round_private.default_missions()),
+      v_row.session_days, v_row.session_start, v_row.session_end,
+      nullif(btrim(coalesce(p_round->>'curriculum_key', '')), ''),
+      nullif(btrim(coalesce(p_round->>'application_cohort', '')), ''),
+      v_uid)
     returning * into r;
   exception
     when check_violation or not_null_violation or invalid_text_representation or datetime_field_overflow
@@ -174,7 +238,10 @@ declare
   v_problem jsonb;
   k text;
   v_started boolean;
-  v_unlocked text[] := array['discord_url','brief_th','brief_en','title_th','title_en','status'];
+  -- Session schedule, curriculum and application cohort do not affect eligibility, so they stay
+  -- editable after the start (moving a session, switching the plan). missions stays locked.
+  v_unlocked text[] := array['discord_url','brief_th','brief_en','title_th','title_en','status',
+    'session_days','session_start','session_end','curriculum_key','application_cohort'];
 begin
   if v_uid is null then return shift_round_private.fail('unauthenticated'); end if;
   if not shift_round_private.is_staff(p_round_id, v_uid) then return shift_round_private.fail('forbidden'); end if;
@@ -210,10 +277,18 @@ begin
   end if;
 
   begin
-    n := jsonb_populate_record(r, p_patch - 'tracks_open');
+    n := jsonb_populate_record(r, p_patch - 'tracks_open' - 'session_days' - 'missions');
     if p_patch ? 'tracks_open' then
       n.tracks_open := array(select jsonb_array_elements_text(p_patch->'tracks_open'));
     end if;
+    if p_patch ? 'session_days' then
+      n.session_days := array(select (x #>> '{}')::int from jsonb_array_elements(p_patch->'session_days') x);
+    end if;
+    if p_patch ? 'missions' then
+      n.missions := p_patch->'missions';
+    end if;
+    v_problem := shift_round_private.round_row_problem(n);
+    if v_problem is not null then return v_problem; end if;
     n.closes_at := n.starts_at + make_interval(days => n.duration_days + n.extended_days);
     update public.shift_rounds x set
       number = n.number, title_th = btrim(n.title_th), title_en = btrim(n.title_en),
@@ -223,7 +298,10 @@ begin
       nudge_local_time = n.nudge_local_time, rate_limit_per_hour = n.rate_limit_per_hour,
       grace_minutes = n.grace_minutes, squad_size = n.squad_size, retention_months = n.retention_months,
       audio_retention_days = n.audio_retention_days, join_mode = n.join_mode, mentor_led = n.mentor_led,
-      discord_url = nullif(n.discord_url, ''), status = n.status
+      discord_url = nullif(n.discord_url, ''), status = n.status,
+      missions = n.missions, session_days = n.session_days, session_start = n.session_start,
+      session_end = n.session_end, curriculum_key = nullif(btrim(n.curriculum_key), ''),
+      application_cohort = nullif(btrim(n.application_cohort), '')
     where x.id = r.id
     returning * into n;
   exception
@@ -904,7 +982,8 @@ begin
     'rejection_rate', (select case when count(*) = 0 then 0
                               else round(count(*) filter (where e.status = 'rejected')::numeric / count(*), 4) end
                          from public.shift_round_evidence e where e.round_id = r.id and e.status <> 'withdrawn'),
-    'mission_distribution', (select jsonb_object_agg(k::text, coalesce(n, 0)) from generate_series(0, 6) k
+    'mission_distribution', (select jsonb_object_agg(k::text, coalesce(n, 0))
+                               from generate_series(0, jsonb_array_length(r.missions)) k
                                left join (select (shift_round_private.mission_counts(e.id)->>'missions_complete')::int as m, count(*) as n
                                             from public.shift_round_entries e where e.round_id = r.id group by 1) x on x.m = k),
     'entrants_4_active_days', (select count(*) from (
@@ -986,6 +1065,133 @@ begin
                          from public.shift_round_deletion_requests d)));
 end $$;
 
+-- v2 2.4: mark live-session attendance for one session day. p_marks:
+-- [{"entry_id": uuid, "status": "present"|"makeup"|"absent"|null}] (null clears the mark).
+-- Reviewer gate (round staff/mentors, global staff, web admins): mentors run the sessions.
+-- The whole batch is validated before any write; one attendance_marked audit event per call.
+create or replace function public.shift_round_admin_mark_attendance(p_round_id uuid, p_day int, p_marks jsonb) returns jsonb
+language plpgsql volatile security definer set search_path = '' as $$
+declare
+  v_uid uuid := auth.uid();
+  r public.shift_rounds;
+  m jsonb;
+  v_entry uuid;
+  v_status text;
+  v_seen uuid[] := '{}';
+  v_set int := 0;
+  v_cleared int := 0;
+  v_log jsonb := '[]'::jsonb;
+  v_now timestamptz := shift_round_private.round_now();
+begin
+  if v_uid is null then return shift_round_private.fail('unauthenticated'); end if;
+  if not shift_round_private.can_review(p_round_id, v_uid) then return shift_round_private.fail('forbidden'); end if;
+  select x.* into r from public.shift_rounds x where x.id = p_round_id;
+  if not found then return shift_round_private.fail('round_not_found'); end if;
+  if p_day is null or not (p_day = any (r.session_days)) then
+    return shift_round_private.fail('invalid_field', 'day', null, '{"rule":"not_session_day"}');
+  end if;
+  -- Marks open when the session starts (mentors mark during it); never ahead of time.
+  if ((shift_round_private.local_date(r.starts_at) + (p_day - 1)) + r.session_start) at time zone 'Asia/Bangkok' > v_now then
+    return shift_round_private.fail('invalid_field', 'day', null, '{"rule":"not_started"}');
+  end if;
+  if p_marks is null or jsonb_typeof(p_marks) <> 'array' or jsonb_array_length(p_marks) not between 1 and 500 then
+    return shift_round_private.fail('invalid_field', 'marks', null, '{"rule":"shape"}');
+  end if;
+
+  for m in select * from jsonb_array_elements(p_marks) loop
+    if jsonb_typeof(m) <> 'object' or not (m ? 'entry_id') or not (m ? 'status')
+       or exists (select 1 from jsonb_object_keys(m) k where k not in ('entry_id','status'))
+       or jsonb_typeof(m->'entry_id') <> 'string' then
+      return shift_round_private.fail('invalid_field', 'marks', null, '{"rule":"shape"}');
+    end if;
+    begin
+      v_entry := (m->>'entry_id')::uuid;
+    exception when others then
+      return shift_round_private.fail('invalid_field', 'marks', null, '{"rule":"entry_id"}');
+    end;
+    if jsonb_typeof(m->'status') <> 'null'
+       and (jsonb_typeof(m->'status') <> 'string' or (m->>'status') not in ('present','makeup','absent')) then
+      return shift_round_private.fail('invalid_field', 'marks', null, '{"rule":"status"}');
+    end if;
+    if v_entry = any (v_seen) then
+      return shift_round_private.fail('invalid_field', 'marks', null, jsonb_build_object('rule', 'duplicate', 'entry_id', v_entry));
+    end if;
+    v_seen := v_seen || v_entry;
+    if not exists (select 1 from public.shift_round_entries e where e.id = v_entry and e.round_id = r.id) then
+      return shift_round_private.fail('wrong_round', 'entry_id', null, jsonb_build_object('entry_id', v_entry));
+    end if;
+  end loop;
+
+  for m in select * from jsonb_array_elements(p_marks) loop
+    v_entry := (m->>'entry_id')::uuid;
+    v_status := m->>'status';
+    if v_status is null then
+      delete from public.shift_round_attendance a where a.entry_id = v_entry and a.day = p_day;
+      if found then v_cleared := v_cleared + 1; end if;
+    else
+      insert into public.shift_round_attendance (entry_id, round_id, day, status, marked_by, marked_at)
+      values (v_entry, r.id, p_day, v_status, v_uid, v_now)
+      on conflict (entry_id, day) do update
+        set status = excluded.status, marked_by = excluded.marked_by, marked_at = excluded.marked_at;
+      v_set := v_set + 1;
+    end if;
+    v_log := v_log || jsonb_build_array(jsonb_build_object('entry_id', v_entry, 'status', v_status));
+  end loop;
+
+  perform shift_round_private.emit('attendance_marked', r.id, null, null, v_uid,
+    jsonb_build_object('day', p_day, 'set', v_set, 'cleared', v_cleared, 'marks', v_log));
+  return shift_round_private.ok(jsonb_build_object(
+    'day', p_day, 'set', v_set, 'cleared', v_cleared,
+    'attendance', coalesce((select jsonb_agg(jsonb_build_object('entry_id', a.entry_id, 'status', a.status,
+                                                                'marked_at', a.marked_at) order by a.entry_id)
+                              from public.shift_round_attendance a where a.round_id = r.id and a.day = p_day),
+                           '[]'::jsonb)));
+end $$;
+
+-- v2 2.8: the 9-step read model, one row per entry: {entry_id, user_id, handle, display_name,
+-- squad_id, squad_name, joined_day, last_log_at, counts (mission_counts json), attendance:[{day,status}]}.
+-- display_name (profiles full_name/username) only for round staff; mentors get null.
+create or replace function public.shift_round_admin_steps(p_round_id uuid) returns jsonb
+language plpgsql stable security definer set search_path = '' as $$
+declare
+  v_uid uuid := auth.uid();
+  r public.shift_rounds;
+  v_staff boolean;
+  v_now timestamptz := shift_round_private.round_now();
+begin
+  if v_uid is null then return shift_round_private.fail('unauthenticated'); end if;
+  if not shift_round_private.can_review(p_round_id, v_uid) then return shift_round_private.fail('forbidden'); end if;
+  select x.* into r from public.shift_rounds x where x.id = p_round_id;
+  if not found then return shift_round_private.fail('round_not_found'); end if;
+  v_staff := shift_round_private.is_staff(p_round_id, v_uid);
+  return shift_round_private.ok(jsonb_build_object(
+    'now', v_now,
+    'round', jsonb_build_object(
+      'id', r.id, 'number', r.number, 'phase', shift_round_private.phase_of(r),
+      'day', shift_round_private.day_of(r, v_now), 'duration_days', shift_round_private.effective_days(r),
+      'starts_at', r.starts_at, 'closes_at', r.closes_at,
+      'session_days', to_jsonb(r.session_days),
+      'session_start', to_char(r.session_start, 'HH24:MI'), 'session_end', to_char(r.session_end, 'HH24:MI'),
+      'missions', r.missions, 'curriculum_key', r.curriculum_key),
+    'rows', coalesce((
+      select jsonb_agg(jsonb_build_object(
+               'entry_id', e.id, 'user_id', e.user_id, 'handle', e.handle,
+               'display_name', case when v_staff then (
+                   select coalesce(nullif(btrim(p.full_name), ''), nullif(btrim(p.username), ''))
+                     from public.profiles p where p.id = e.user_id) end,
+               'squad_id', sm.squad_id, 'squad_name', s.name,
+               'joined_day', e.joined_day,
+               'last_log_at', (select max(x.submitted_at) from public.shift_round_evidence x where x.entry_id = e.id),
+               'counts', shift_round_private.mission_counts(e.id),
+               'attendance', coalesce((select jsonb_agg(jsonb_build_object('day', a.day, 'status', a.status) order by a.day)
+                                         from public.shift_round_attendance a where a.entry_id = e.id), '[]'::jsonb))
+             order by e.handle, e.id)
+        from public.shift_round_entries e
+        left join public.shift_round_squad_members sm on sm.entry_id = e.id
+        left join public.shift_round_squads s on s.id = sm.squad_id
+       where e.round_id = r.id), '[]'::jsonb)));
+end $$;
+
 -- Privileges
 revoke all on all functions in schema shift_round_private from public, anon, authenticated;
 grant execute on function
@@ -1028,7 +1234,9 @@ begin
     'public.shift_round_admin_reinstate_certificate(uuid,text)',
     'public.shift_round_admin_dashboard(uuid)',
     'public.shift_round_admin_set_config(text,jsonb)',
-    'public.shift_round_admin_jobs()']
+    'public.shift_round_admin_jobs()',
+    'public.shift_round_admin_mark_attendance(uuid,int,jsonb)',
+    'public.shift_round_admin_steps(uuid)']
   loop
     execute format('revoke all on function %s from public, anon', f);
     execute format('grant execute on function %s to authenticated', f);

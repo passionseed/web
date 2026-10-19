@@ -1,14 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Copy, Loader2 } from "lucide-react";
+import { Check, Copy, Loader2, MessageSquare, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatBangkokDateTime } from "@/lib/shift/applicationStats";
 import { isDiscordOAuthJoinError } from "@/lib/shift/discordErrors";
-import { joinConfirmMessage } from "@/lib/shift/paymentMessage";
+import { firstMeetLabel, getShiftCohortByName } from "@/lib/content/shift-cohort";
+import { joinConfirmMessage, kickoffMessage } from "@/lib/shift/paymentMessage";
 import type { ShiftApplicationRow as Application } from "@/types/shift";
 
 /**
@@ -30,17 +31,22 @@ export function discordStatus(app: Application): DiscordStatus | null {
 
 type CreateLink = (id: string) => Promise<string | null>;
 
-/** Copies the welcome message with the student's personal join link, ready
- *  to paste into LINE or Discord. */
-export function CopyJoinMessageButton({
-  application: app,
-  onCreateLink,
-  compact = false,
-}: {
+type MessageButtonProps = {
   application: Application;
   onCreateLink: CreateLink;
   compact?: boolean;
-}) {
+};
+
+/** Fetches the student's personal join link, builds a message around it, and
+ *  copies it, ready to paste into LINE or Discord. */
+function CopyMessageButton({
+  application: app,
+  onCreateLink,
+  compact = false,
+  label,
+  icon: IdleIcon,
+  build,
+}: MessageButtonProps & { label: string; icon: LucideIcon; build: (joinUrl: string) => string }) {
   const [pending, setPending] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -49,17 +55,17 @@ export function CopyJoinMessageButton({
     const url = await onCreateLink(app.id);
     setPending(false);
     if (!url) return;
-    const message = joinConfirmMessage({ cohortName: app.cohort, nickname: app.nickname, joinUrl: url });
+    const message = build(url);
     try {
       await navigator.clipboard.writeText(message);
       setCopied(true);
-      toast.success(`Copied ${app.nickname}'s join message. Paste it in their chat.`);
+      toast.success(`Copied ${app.nickname}'s ${label.toLowerCase()}. Paste it in their chat.`);
     } catch {
       toast.message(message);
     }
   }
 
-  const Icon = pending ? Loader2 : copied ? Check : Copy;
+  const Icon = pending ? Loader2 : copied ? Check : IdleIcon;
   return (
     <Button
       size="sm"
@@ -67,11 +73,48 @@ export function CopyJoinMessageButton({
       onClick={copy}
       disabled={pending}
       className={compact ? "h-7 px-2" : undefined}
-      aria-label={`Copy join message for ${app.nickname}`}
+      aria-label={`Copy ${label.toLowerCase()} for ${app.nickname}`}
+      title={label}
     >
       <Icon className={`h-4 w-4 ${pending ? "animate-spin" : ""} ${compact ? "" : "mr-2"}`} />
-      {!compact && "Copy join message"}
+      {!compact && `Copy ${label.toLowerCase()}`}
     </Button>
+  );
+}
+
+/** The welcome message sent once the slip checks out. */
+export function CopyJoinMessageButton(props: MessageButtonProps) {
+  const app = props.application;
+  return (
+    <CopyMessageButton
+      {...props}
+      label="Join message"
+      icon={Copy}
+      build={(joinUrl) => joinConfirmMessage({ cohortName: app.cohort, nickname: app.nickname, joinUrl })}
+    />
+  );
+}
+
+/** The day-before message: when the round meets, the join link, and the
+ *  three Day 1 idea questions. */
+export function CopyKickoffMessageButton(props: MessageButtonProps) {
+  const app = props.application;
+  const cohort = getShiftCohortByName(app.cohort);
+  return (
+    <CopyMessageButton
+      {...props}
+      label="Kickoff message"
+      icon={MessageSquare}
+      build={(joinUrl) =>
+        kickoffMessage({
+          cohortName: app.cohort,
+          nickname: app.nickname,
+          joinUrl,
+          meetLabel: cohort ? firstMeetLabel(cohort) : null,
+          startTime: cohort?.sessionTime.split("–")[0] ?? "19:00",
+        })
+      }
+    />
   );
 }
 
@@ -110,7 +153,10 @@ export function ShiftJoinLinkPanel({
                 : app.discord_error}
             </p>
           )}
-          <CopyJoinMessageButton application={app} onCreateLink={onCreateLink} />
+          <div className="flex flex-wrap gap-2">
+            <CopyJoinMessageButton application={app} onCreateLink={onCreateLink} />
+            <CopyKickoffMessageButton application={app} onCreateLink={onCreateLink} />
+          </div>
         </>
       )}
     </div>

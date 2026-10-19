@@ -7,6 +7,8 @@ import {
   normalizeEntryDetail,
   normalizeEvidence,
   normalizeJobs,
+  normalizeRound,
+  normalizeSteps,
   normalizeSummary,
 } from "./normalize";
 import { callRpc, fail, listFrom, mapResult, type RpcClient } from "./rpc";
@@ -20,8 +22,10 @@ import type {
   AdminJobsData,
   AdminResult,
   AdminRoundListItem,
+  AdminStepsData,
   AdminSummaryRevision,
   AppConfigRow,
+  AttendanceStatus,
   BetaGroup,
   MissionCounts,
   RejectReasonCode,
@@ -53,7 +57,7 @@ export function isMediaPath(path: string): boolean {
 
 export function listRounds(client: RpcClient): Promise<AdminResult<AdminRoundListItem[]>> {
   return callRpc<unknown>(client, "shift_round_admin_rounds").then((r) =>
-    mapResult(r, (data) => listFrom<AdminRoundListItem>(data, "rounds")),
+    mapResult(r, (data) => listFrom<unknown>(data, "rounds").map(normalizeRound)),
   );
 }
 
@@ -182,6 +186,35 @@ export function assignSquad(
 
 export function deleteSquad(client: RpcClient, squadId: string): Promise<AdminResult<object>> {
   return callRpc(client, "shift_round_admin_delete_squad", { p_squad_id: squadId });
+}
+
+// ---- 9 steps and attendance (v2 spec 2.4, 2.8) -----------------------------
+
+/** One row per entry: counts json, attendance, squad, last log. */
+export function roundSteps(client: RpcClient, roundId: string): Promise<AdminResult<AdminStepsData>> {
+  return callRpc<unknown>(client, "shift_round_admin_steps", { p_round_id: roundId }).then((r) =>
+    mapResult(r, normalizeSteps),
+  );
+}
+
+export interface AttendanceWrite {
+  entry_id: string;
+  /** null deletes the mark. */
+  status: AttendanceStatus | null;
+}
+
+/** Marks one session day; `p_day` must be a session day of the round (checked by the RPC). */
+export function markAttendance(
+  client: RpcClient,
+  roundId: string,
+  day: number,
+  marks: AttendanceWrite[],
+): Promise<AdminResult<Record<string, unknown>>> {
+  return callRpc(client, "shift_round_admin_mark_attendance", {
+    p_round_id: roundId,
+    p_day: day,
+    p_marks: marks,
+  });
 }
 
 // ---- Review -------------------------------------------------------------

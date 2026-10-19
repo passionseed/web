@@ -75,16 +75,20 @@ export const PUSH_COPY: Record<string, { th: string; en: string }> = {
   "push.summary_rejected": { th: "สรุปโปรเจกต์ยังไม่ผ่าน แตะเพื่อดูเหตุผล", en: "Your project summary wasn't approved. Tap to see why" },
   "push.squad_assigned": { th: "เจอสควอดของคุณแล้ว มาทำความรู้จักกัน", en: "You have a squad. Come say hi" },
   "push.round_published": { th: "SHIFT รอบที่ {n} เปิดรับแล้ว", en: "SHIFT round {n} is open" },
+  // v2 2.7: session reminder, 30 minutes before the live session
+  "push.session": { th: "เซสชันวันที่ {day} เริ่ม {time} บน Discord", en: "Day {day} session starts at {time} on Discord" },
 };
 
 export const TYPE_LABEL: Record<string, { th: string; en: string }> = {
   contact: { th: "ติดต่อ", en: "contact" },
+  ideas: { th: "ไอเดีย", en: "ideas" },
   interview: { th: "สัมภาษณ์", en: "interview" },
   problem_statement: { th: "โจทย์", en: "problem" },
   mvp: { th: "MVP", en: "MVP" },
   tester: { th: "คนลองใช้", en: "tester" },
   change: { th: "สิ่งที่เปลี่ยน", en: "change" },
   demo_post: { th: "เดโม", en: "demo" },
+  daily: { th: "อัปเดตประจำวัน", en: "daily update" },
 };
 
 export interface Candidate {
@@ -111,7 +115,11 @@ export function renderPush(c: Candidate): ExpoMessage {
   if (!copy) throw new Error(`unknown copy key ${key}`);
   const n = c.params.n ?? c.params.round_number ?? "";
   const type = TYPE_LABEL[String(c.params.type ?? "")]?.[lang] ?? "";
-  const body = copy[lang].replaceAll("{n}", String(n)).replaceAll("{type}", type);
+  const body = copy[lang]
+    .replaceAll("{n}", String(n))
+    .replaceAll("{type}", type)
+    .replaceAll("{day}", String(c.params.day ?? ""))
+    .replaceAll("{time}", String(c.params.time ?? ""));
   return {
     to: c.token,
     body,

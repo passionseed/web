@@ -33,15 +33,26 @@ The user must already have signed in once (an `auth.users` row must exist), othe
 
 ## 2. Round lifecycle
 
-1. **Create** (global staff): New round form. `starts_at` must be 00:00 Asia/Bangkok. Defaults: 14 days,
-   48 h review, join cutoff day 7, nudge 19:00, invite-only, high_school track only (beta).
-2. **Allowlist**: paste emails (lower-cased automatically) or import accepted `shift_applications` of a cohort
+1. **Create** (global staff): New round form, pre-filled from the SHIFT template. `starts_at` must be 00:00
+   Asia/Bangkok. Defaults: 7 days, sessions on days 1, 2, 4, 6, 7 from 19:00 to 21:00, 48 h review, join
+   cutoff day 2, nudge 21:15 (after the session), invite-only, mentor-led, high_school track only. Set
+   `curriculum_key` (the `/shift/curriculum?round=<key>` the app reads its day plan and interview guide
+   from; missing rows fall back to the `default` row) and `application_cohort` (e.g. `SHIFT[3]`).
+   Missions come from the round's `missions` config (default: the SHIFT steps 1 to 7).
+2. **Who can join**: students whose `shift_applications` row for `application_cohort` is `accepted` and linked
+   to their account (they opened their join link and signed in) can join without any allowlist entry. Others:
+   paste emails (lower-cased automatically) or import accepted applications of a cohort
    (`shift_round_admin_allowlist_import`). Students match by user id or by sign-in email.
 3. **Publish**: set status `published`. This emits `round_published`, which pushes the waitlist.
 4. **Squads** (before day 1): create squads (name, mentor, optional Discord link), assign 3 entrants each.
    Each member gets a distinct ice-break question automatically. A 4th member is refused (`squad_full`).
-5. **Policy lock**: after `starts_at` only titles, briefs, Discord URL, status and (while joining is open)
-   `join_cutoff_day` can change. Everything else returns `policy_locked`.
+5. **Policy lock**: after `starts_at` only titles, briefs, Discord URL, status, session days and times,
+   `curriculum_key`, `application_cohort` and (while joining is open) `join_cutoff_day` can change. The
+   missions config and everything else return `policy_locked`.
+5a. **Every session day**: mark attendance on the round's เช็กชื่อ tab (มา / ชดเชย / ขาด; a make-up class
+   counts). Students get a push 30 minutes before each session. The dashboard's "ต้องดูแล" list runs the
+   mentor checks (no idea picked after day 1, no interview or tester by day 3, quiet for 2 days, missing
+   steps from day 6) and the "9 ขั้น" table counts every student's steps; export it as CSV on day 7.
 6. **Extend** (staff, 1-7 days, reason required): moves `closes_at` and `review_ends_at` and resets
    `not_eligible` outcomes. It is refused once any certificate in the round has been issued (`extend_after_issue`).
 7. **Close**: at 00:00 ICT on day `duration_days + 1`. Offline items created before close count if they
@@ -69,7 +80,7 @@ The user must already have signed in once (an `auth.users` row must exist), othe
 
 | Key | Default | Effect |
 |---|---|---|
-| `shift_round.tab_enabled` | false | Shows the SHIFT tabs to users without an entry |
+| `shift_round.tab_enabled` | false | In-app SHIFT features (join, rounds). Off: Home shows the landing and the apply link only |
 | `shift_round.enrollment_enabled` | true | New joins (`enrollment_paused`) |
 | `shift_round.submissions_enabled` | true | **Kill switch**: new logs and uploads refused (`submissions_paused`); replays still answered |
 | `shift_round.transcription_enabled` | **false** | Voice transcription (Groq). Text entry always works |
@@ -87,7 +98,7 @@ Edge function `shift-round-jobs` (`supabase/functions/shift-round-jobs`), driven
 |---|---|---|
 | shift-round-issue | `5 * * * *` | issue certificates (gated by `/api/shift/cert-health`) |
 | shift-round-pushes | `*/5 * * * *` | event pushes + Expo receipts |
-| shift-round-nudges | `0 * * * *` | nudges for rounds whose nudge hour (ICT) is now |
+| shift-round-nudges | `*/5 * * * *` | session reminders (30 min before each session) and the no-log nudge (from `nudge_local_time` for 60 min) |
 | shift-round-media-scan | `*/10 * * * *` | strip EXIF from uploaded photos |
 | shift-round-purge | `30 20 * * *` | retention, orphans, storage deletion queue |
 | shift-round-watchdog | `15 1 * * *` | alert on stale jobs |

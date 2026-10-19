@@ -36,8 +36,15 @@ export interface FormatLayout {
   safe: { left: number; top: number; right: number; bottom: number };
   /** White credential card behind the safe area. */
   card: { left: number; top: number; right: number; bottom: number; radius: number };
-  missionColumns: 1 | 2;
+  /** Columns for the missions list; above `missionDenseAfter` missions, `missionColumnsDense`. */
+  missionColumns: 1 | 2 | 3;
+  missionDenseAfter: number;
+  missionColumnsDense: 1 | 2 | 3;
+  /** Preferred row height; rows shrink to `missionRowMin` (text scales with them) to keep the statement's room. */
   missionRow: number;
+  missionRowMin: number;
+  /** Height kept free for the bilingual statement below the missions. */
+  statementReserve: number;
   checkRadius: number;
   qrSize: number;
   gaps: { section: number; small: number };
@@ -73,7 +80,11 @@ export const LAYOUTS: Record<ImageFormat, FormatLayout> = {
     safe: { left: 120, top: 270, right: 960, bottom: 1580 },
     card: { left: 72, top: 214, right: 1008, bottom: 1626, radius: 44 },
     missionColumns: 1,
+    missionDenseAfter: 10,
+    missionColumnsDense: 1,
     missionRow: 56,
+    missionRowMin: 40,
+    statementReserve: 160,
     checkRadius: 19,
     qrSize: 160,
     gaps: { section: 28, small: 8 },
@@ -99,7 +110,11 @@ export const LAYOUTS: Record<ImageFormat, FormatLayout> = {
     safe: { left: 120, top: 120, right: 960, bottom: 960 },
     card: { left: 64, top: 64, right: 1016, bottom: 1016, radius: 40 },
     missionColumns: 2,
+    missionDenseAfter: 8,
+    missionColumnsDense: 3,
     missionRow: 54,
+    missionRowMin: 38,
+    statementReserve: 120,
     checkRadius: 15,
     qrSize: 120,
     gaps: { section: 20, small: 6 },

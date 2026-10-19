@@ -1,7 +1,7 @@
 \set ON_ERROR_STOP on
 begin;
 \ir shift_round_helpers.psql
-select plan(41);
+select plan(52);
 
 select shift_test.clock('2026-11-20 10:00+07');
 create temp table f on commit drop as select
@@ -101,7 +101,41 @@ select is(public.shift_round_admin_create_round(
   'midnight_ict', 'starts_at must be 00:00 ICT');
 reset role;
 select is((select (tracks_open, duration_days, closes_at)::text from public.shift_rounds where number = 9599),
-  (select (array['high_school'], 14, '2026-12-15 00:00+07'::timestamptz)::text), '14-day high_school default, closes_at derived');
+  (select (array['high_school'], 7, '2026-12-08 00:00+07'::timestamptz)::text), 'SHIFT template: 7-day high_school default, closes_at derived');
+select is((select (join_cutoff_day, nudge_local_time, session_days, session_start, session_end, join_mode, mentor_led)::text
+             from public.shift_rounds where number = 9599),
+  '(2,21:15:00,"{1,2,4,6,7}",19:00:00,21:00:00,invite,t)', 'SHIFT template defaults: join by day 2, nudge 21:15, sessions 1,2,4,6,7 19:00-21:00');
+select is((select missions from public.shift_rounds where number = 9599), shift_round_private.default_missions(),
+  'missions default to SHIFT steps 1-7');
+set local role authenticated;
+create temp table cr2 on commit drop as select public.shift_round_admin_create_round(
+  '{"number":9597,"title_th":"รอบ","title_en":"Round","brief_th":"โจทย์","brief_en":"Brief","starts_at":"2026-12-01T00:00:00+07:00",
+    "duration_days":5,"curriculum_key":"9597","application_cohort":"SHIFT[9597]","session_start":"18:30","session_end":"20:00",
+    "missions":[{"key":"talk","title_th":"คุยกับคน","title_en":"Talk to people","parts":[{"type":"interview","need":2,"distinct":true},{"type":"problem_statement","need":1}]}]}') as res;
+select is(shift_test.code((select res from cr2)), 'ok', 'create with schedule, curriculum key, cohort and a custom missions config');
+reset role;
+select is((select (session_days, session_start, curriculum_key, application_cohort, join_cutoff_day)::text from public.shift_rounds where number = 9597),
+  '("{1,2,4}",18:30:00,9597,SHIFT[9597],2)', 'default session days are cut to the duration');
+set local role authenticated;
+select is(public.shift_round_admin_create_round(
+  '{"number":9596,"title_th":"x","title_en":"x","brief_th":"x","brief_en":"x","starts_at":"2026-12-01T00:00:00+07:00","session_days":[1,9]}')->'error'->>'field',
+  'session_days', 'session days must fall inside the round');
+select is(public.shift_round_admin_create_round(
+  '{"number":9596,"title_th":"x","title_en":"x","brief_th":"x","brief_en":"x","starts_at":"2026-12-01T00:00:00+07:00","session_start":"21:00","session_end":"19:00"}')->'error'->>'field',
+  'session_end', 'session must end after it starts');
+select is(public.shift_round_admin_create_round(
+  '{"number":9596,"title_th":"x","title_en":"x","brief_th":"x","brief_en":"x","starts_at":"2026-12-01T00:00:00+07:00","missions":[{"key":"contact","parts":[{"type":"contact","need":1}]}]}')->'error'->>'field',
+  'missions', 'missions config is validated (contact cannot be a mission)');
+select is(shift_test.code(public.shift_round_admin_update_round((select r from f),
+  '{"session_days":[1,3,5],"session_start":"18:00","curriculum_key":"next","application_cohort":"SHIFT[9]"}')), 'ok',
+  'schedule, curriculum key and cohort stay editable after the start');
+select is(shift_test.code(public.shift_round_admin_update_round((select r from f), jsonb_build_object('missions', (select missions from public.shift_rounds where number = 9599)))),
+  'policy_locked', 'missions are locked after the start');
+select is(public.shift_round_admin_update_round((select r from f), '{"session_days":[2,2]}')->'error'->>'field', 'session_days',
+  'duplicate session days refused');
+reset role;
+select is((select (session_days, session_start, curriculum_key, application_cohort)::text from public.shift_rounds where id = (select r from f)),
+  '("{1,3,5}",18:00:00,next,SHIFT[9])', 'update stored the new schedule');
 select is((select count(*)::int from public.shift_round_events where name = 'round_published' and props->>'number' = '9599'), 1, 'round_published event');
 set local role authenticated;
 select is(shift_test.code(public.shift_round_admin_update_round((select r from f), '{"duration_days":10}')), 'policy_locked', 'policy locked after start');

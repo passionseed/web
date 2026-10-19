@@ -6,7 +6,7 @@ import { Check, Circle } from "lucide-react";
 import { entryDetailAction } from "@/app/admin/shift/rounds/actions";
 import { AdminEmptyState, AdminLoading } from "@/components/admin/shared/AdminStates";
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
-import { MISSION_LABEL, TRACK_LABEL, TYPE_LABEL, formatIct } from "@/lib/shift-round/admin/format";
+import { TRACK_LABEL, TYPE_LABEL, formatIct, missionLabel, missionsTotal } from "@/lib/shift-round/admin/format";
 import type { AdminCheckin, AdminEvent, AdminEvidence } from "@/lib/shift-round/admin/types";
 
 import { EvidenceView } from "./EvidenceView";
@@ -67,7 +67,18 @@ export function EntryDetail({ entryId }: { entryId: string }) {
         }
       />
 
-      <Section title={`Missions · ${missions.missions_complete} of 6 · talked to ${missions.people_talked_to} people`}>
+      <Section
+        title={`Missions · ${missions.missions_complete} of ${missionsTotal(missions)} · talked to ${missions.people_talked_to} people`}
+        aside={
+          missions.daily || missions.sessions ? (
+            <span className="text-xs text-muted-foreground">
+              {missions.daily && `โพสต์ ${missions.daily.days}/${missions.daily.need} วัน`}
+              {missions.daily && missions.sessions && " · "}
+              {missions.sessions && `เซสชัน ${missions.sessions.attended}/${missions.sessions.held} (ทั้งหมด ${missions.sessions.total})`}
+            </span>
+          ) : undefined
+        }
+      >
         <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {missions.missions.map((m) => (
             <li key={m.key} className="flex items-start gap-2 rounded-md border p-2 text-sm">
@@ -77,7 +88,7 @@ export function EntryDetail({ entryId }: { entryId: string }) {
                 <Circle className="mt-0.5 h-4 w-4 text-muted-foreground" aria-label="Not complete" />
               )}
               <div>
-                <p className="font-medium">{MISSION_LABEL[m.key]}</p>
+                <p className="font-medium">{missionLabel(m)}</p>
                 <p className="text-xs text-muted-foreground">
                   {m.parts.map((p) => `${TYPE_LABEL[p.type]} ${p.have}/${p.need}`).join(" · ")}
                 </p>
