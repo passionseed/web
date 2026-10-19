@@ -1,8 +1,10 @@
 import { AdminShiftApplications } from "@/components/admin/AdminShiftApplications";
 import { ShiftAdminTabs } from "@/components/admin/ShiftAdminTabs";
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
+import { adminMetadata } from "@/lib/admin/metadata";
 
 export const dynamic = "force-dynamic";
+export const metadata = adminMetadata("/admin/shift/applications");
 
 export default function AdminShiftApplicationsPage() {
   return (

@@ -127,3 +127,6 @@ public/shift/posters/shift2-grid/
 # Internal consent/ethics drafts, never public
 output/research-ethics/
 output/capstone-consent/
+
+# Local SeedStack test scripts
+.tmp-seedstack-test/

@@ -19,7 +19,9 @@ async function main() {
     const segments = path.relative(app, dir).split(path.sep);
     // Next's build adapter cannot resolve prerendered static metadata under
     // dynamic segments. Inherit the nearest parent poster, or keep a live handler.
-    if (segments.some((segment) => segment.startsWith("["))) {
+    // Admin pages are login-gated; preview bots get a live poster from
+    // app/link-preview/admin instead, so static admin posters would never be read.
+    if (segments.some((segment) => segment.startsWith("[")) || segments[0] === "admin") {
       await rm(path.join(dir, "opengraph-image.png"), { force: true });
       await rm(path.join(dir, "opengraph-image.alt.txt"), { force: true });
       continue;

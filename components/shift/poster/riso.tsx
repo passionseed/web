@@ -503,4 +503,4 @@ export function MarkerHighlight({ children }: { children: ReactNode }) {
 }
 
 /** Refund promise, shared by every poster so the wording never drifts. */
-export const REFUND_PROMISE = "ไม่ได้ชิ้นงาน คืนเงินเต็ม";
+export const REFUND_PROMISE = "ทำครบแล้วไม่คุ้ม คืนเงินเต็ม";

@@ -5,8 +5,10 @@ import { requireAdmin } from "@/lib/admin/requireAdmin";
 import { seedstackConsentState, type SeedstackConsentRow } from "@/lib/seedstack/consent";
 import { buildSeedstackBoard, type BoardEvent } from "@/lib/seedstack/board";
 import { createServiceRoleClient } from "@/utils/supabase/server";
+import { adminMetadata } from "@/lib/admin/metadata";
 
 export const dynamic = "force-dynamic";
+export const metadata = adminMetadata("/admin/shift/seedstack");
 
 type ConsentRow = SeedstackConsentRow & { user_id: string };
 type AppRow = { user_id: string; nickname: string; cohort: string };

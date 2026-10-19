@@ -11,8 +11,12 @@ const SHIFT_ADMIN_LINKS = [
   { href: "/admin/shift/applications", label: "Applications" },
   { href: "/admin/shift/interest", label: "Pre-orders" },
   { href: "/admin/shift", label: "Tracker" },
+  { href: "/admin/shift/curriculum", label: "Curriculum" },
   { href: "/admin/shift/camp", label: "Interactive camp (legacy)" },
+  { href: "/admin/shift/companion", label: "Companion" },
   { href: "/admin/shift/seedstack", label: "SeedStack" },
+  { href: "/admin/shift/feedback", label: "Feedback" },
+  { href: "/admin/shift/alumni", label: "Alumni" },
   { href: "/admin/shift/views", label: "Views" },
 ];
 

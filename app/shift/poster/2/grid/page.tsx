@@ -10,6 +10,7 @@ import { OFFER_SLIDES } from "@/components/shift/poster/risoGrid/slidesOffer";
 import { VOICE_SLIDES } from "@/components/shift/poster/risoGrid/slidesVoices";
 import { WHY_SLIDES } from "@/components/shift/poster/risoGrid/slidesWhy";
 import { SHIFT_COHORT_2 } from "@/lib/content/shift-cohort";
+import { shiftSocialMetadata } from "@/lib/shift/socialMetadata";
 
 /**
  * SHIFT[2] IG grid, in the riso print of the CampHub poster: three carousels
@@ -22,9 +23,14 @@ import { SHIFT_COHORT_2 } from "@/lib/content/shift-cohort";
  * Post C first, then B, then A.
  */
 
+const title = `${SHIFT_COHORT_2.name} IG Grid`;
+const description = "IG grid สามโพสต์ของ SHIFT[2] ที่ปกต่อกันเป็นภาพเดียว กดดาวน์โหลดใต้แต่ละสไลด์";
+
 export const metadata: Metadata = {
-  title: `${SHIFT_COHORT_2.name} IG Grid`,
+  title,
+  description,
   robots: { index: false, follow: false },
+  ...shiftSocialMetadata(SHIFT_COHORT_2, title, description, "/shift/poster/2/grid"),
 };
 
 const POSTS: Record<TileLetter, (() => React.ReactNode)[]> = {

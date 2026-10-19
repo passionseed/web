@@ -8,8 +8,10 @@ import {
   Sparkles,
 } from "lucide-react";
 import { AdminStatsOverview } from "@/components/admin/AdminStatsOverview";
+import { adminMetadata } from "@/lib/admin/metadata";
 
 export const dynamic = "force-dynamic";
+export const metadata = adminMetadata("/admin");
 
 const workspaces = [
   {
