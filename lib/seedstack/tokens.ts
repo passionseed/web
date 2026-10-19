@@ -16,6 +16,11 @@ export function generateSeedstackToken(): string {
   return `${SEEDSTACK_TOKEN_PREFIX}${randomBytes(TOKEN_BYTES).toString("base64url")}`;
 }
 
+/** Parent consent links use the same entropy but no prefix (they live in URLs). */
+export function generateParentLinkToken(): string {
+  return randomBytes(TOKEN_BYTES).toString("base64url");
+}
+
 export function sha256Hex(raw: string): string {
   return createHash("sha256").update(raw).digest("hex");
 }

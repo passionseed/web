@@ -33,9 +33,13 @@ function oneOf<T extends string>(list: readonly T[], value: unknown): value is T
   return typeof value === "string" && (list as readonly string[]).includes(value);
 }
 
+// C0 controls except tab and newline. Postgres text rejects NUL, and one such
+// event would fail its whole batch on every retry.
+const CONTROL_CHARS = /[\u0000-\u0008\u000B-\u001F]/g;
+
 function shortText(value: unknown, max = MAX_TEXT): string | null {
   if (typeof value !== "string") return null;
-  const trimmed = value.trim();
+  const trimmed = value.replace(CONTROL_CHARS, "").trim();
   return trimmed ? trimmed.slice(0, max) : null;
 }
 

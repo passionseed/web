@@ -5,11 +5,13 @@ import { Check, ChevronDown, ChevronRight, Loader2, UserPlus } from "lucide-reac
 
 import {
   CopyJoinMessageButton,
+  CopyKickoffMessageButton,
   discordStatus,
   ShiftJoinLinkPanel,
 } from "@/components/admin/ShiftJoinLinkPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -36,13 +38,13 @@ export interface ApplicationPatch {
 }
 
 const STATUS_OPTIONS: { value: ShiftApplicationStatus; label: string; className: string }[] = [
-  { value: "new", label: "New", className: "text-sky-600" },
-  { value: "accepted", label: "Accepted", className: "text-emerald-600" },
-  { value: "waitlist", label: "Waitlist", className: "text-amber-600" },
+  { value: "new", label: "New", className: "text-sky-600 dark:text-sky-400" },
+  { value: "accepted", label: "Accepted", className: "text-emerald-600 dark:text-emerald-400" },
+  { value: "waitlist", label: "Waitlist", className: "text-amber-600 dark:text-amber-400" },
   { value: "declined", label: "Declined", className: "text-muted-foreground" },
 ];
 
-const COLUMN_COUNT = 9;
+const COLUMN_COUNT = 10;
 
 function optionLabel(options: readonly { value: string; label: string }[], value: string) {
   return options.find((o) => o.value === value)?.label ?? value;
@@ -50,6 +52,8 @@ function optionLabel(options: readonly { value: string; label: string }[], value
 
 interface RowProps {
   application: Application;
+  selected?: boolean;
+  onSelectedChange?: (id: string, selected: boolean) => void;
   inTracker: boolean;
   onPatch: (id: string, patch: ApplicationPatch) => Promise<boolean>;
   onAddToTracker: (application: Application) => Promise<void>;
@@ -57,18 +61,46 @@ interface RowProps {
 }
 
 export function ShiftApplicationRow(props: RowProps) {
-  const { application: app, onPatch } = props;
+  const { application: app, onPatch, selected = false, onSelectedChange } = props;
   const [expanded, setExpanded] = useState(false);
   const discord = discordStatus(app);
+  const detailId = `shift-application-${app.id}`;
 
   return (
     <Fragment>
       <TableRow
         className={cn("cursor-pointer", expanded && "bg-muted/40")}
+        data-state={selected ? "selected" : undefined}
+        // Mouse shortcut; keyboard users use the expand button in the first cell.
         onClick={() => setExpanded((v) => !v)}
       >
+        <TableCell className="w-8 pr-0" onClick={(e) => e.stopPropagation()}>
+          {onSelectedChange && (
+            <Checkbox
+              checked={selected}
+              onCheckedChange={(v) => onSelectedChange(app.id, v === true)}
+              aria-label={`Select ${app.nickname}`}
+            />
+          )}
+        </TableCell>
         <TableCell className="w-6 pr-0">
-          {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          <button
+            type="button"
+            aria-expanded={expanded}
+            aria-controls={expanded ? detailId : undefined}
+            aria-label={`${expanded ? "Hide" : "Show"} details for ${app.nickname}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              setExpanded((v) => !v);
+            }}
+            className="rounded-sm p-0.5 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {expanded ? (
+              <ChevronDown className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
+            )}
+          </button>
         </TableCell>
         <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
           {formatBangkokDateTime(app.created_at)}
@@ -99,11 +131,14 @@ export function ShiftApplicationRow(props: RowProps) {
             {app.paid_at && !app.linked_at && (
               <CopyJoinMessageButton application={app} onCreateLink={props.onCreateJoinLink} compact />
             )}
+            {app.paid_at && (
+              <CopyKickoffMessageButton application={app} onCreateLink={props.onCreateJoinLink} compact />
+            )}
           </div>
         </TableCell>
       </TableRow>
       {expanded && (
-        <TableRow className="bg-muted/20 hover:bg-muted/20">
+        <TableRow id={detailId} className="bg-muted/20 hover:bg-muted/20">
           <TableCell colSpan={COLUMN_COUNT} className="p-4">
             <ApplicationDetail {...props} />
           </TableCell>

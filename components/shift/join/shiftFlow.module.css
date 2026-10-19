@@ -1,0 +1,109 @@
+/*
+ * Buttons, panels, and fields for the SHIFT flow pages (/shift/join,
+ * /shift/seedstack, the parent link, the guide). Buttons extend the global
+ * .shift-button (paper face, pink + blue offset plates) so every primary here
+ * matches the /shift primary; variants only swap its CSS variables.
+ */
+
+.button {
+  width: 100%;
+  min-height: 52px;
+  padding: 0.875rem 1.5rem;
+  border-radius: 6px;
+  font-family: var(--font-kodchasan), var(--font-bai-jamjuree), sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.button[data-variant="discord"] {
+  --shift-button-bg: #5865f2;
+  --shift-button-fg: #ffffff;
+}
+
+/* Quiet: no fill, a paper rule strong enough to read as a button. */
+.button[data-variant="quiet"] {
+  --shift-button-bg: rgba(242, 234, 217, 0.06);
+  --shift-button-fg: #f2ead9;
+  --shift-button-shadow: inset 0 0 0 1.5px rgba(242, 234, 217, 0.7);
+  --shift-button-shadow-hover: inset 0 0 0 1.5px #f2ead9, 3px 3px 0 0 rgba(255, 72, 176, 0.55);
+}
+
+.button:focus-visible {
+  outline: 3px solid #ffe800;
+  outline-offset: 3px;
+}
+
+.button:active {
+  transform: translate(1px, 1px);
+}
+
+/* Disabled: plates gone, dashed rule, text still readable. */
+.button:disabled,
+.button:disabled:hover {
+  cursor: not-allowed;
+  animation: none;
+  transform: none;
+  background: transparent;
+  color: rgba(242, 234, 217, 0.76);
+  box-shadow: none;
+  outline: 1.5px dashed rgba(242, 234, 217, 0.5);
+  outline-offset: -1.5px;
+}
+
+/* Pending is disabled too, but it should still look like the button you pressed. */
+.button[aria-busy="true"],
+.button[aria-busy="true"]:hover {
+  cursor: progress;
+  background: var(--shift-button-bg, #f2ead9);
+  color: var(--shift-button-fg, #17151c);
+  box-shadow: var(--shift-button-shadow, 3px 3px 2px 0 rgba(255, 72, 176, 0.75));
+  outline: none;
+  opacity: 0.85;
+}
+
+/* Touch: no sticky hover lift. */
+@media (hover: none) {
+  .button:hover {
+    animation: none;
+  }
+}
+
+/* Paper-tint sheet with a full rule and a blue plate offset behind it. */
+.panel {
+  border-radius: 10px;
+  background: rgba(242, 234, 217, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(242, 234, 217, 0.4), 4px 4px 0 0 rgba(0, 120, 191, 0.5);
+}
+
+/* Same sheet, orange rule and plate: something here cannot be undone. */
+.panelWarn {
+  border-radius: 10px;
+  background: rgba(255, 108, 47, 0.07);
+  box-shadow: inset 0 0 0 1.5px #ff6c2f, 4px 4px 0 0 rgba(255, 72, 176, 0.45);
+}
+
+/* Inputs: a rule at 3:1 or better so the field reads as a field. */
+.field {
+  width: 100%;
+  border-radius: 8px;
+  background: rgba(242, 234, 217, 0.04);
+  color: #f2ead9;
+  outline: none;
+  box-shadow: inset 0 0 0 1.5px rgba(242, 234, 217, 0.5);
+  transition: box-shadow 120ms ease-out;
+}
+
+.field::placeholder {
+  color: rgba(242, 234, 217, 0.45);
+}
+
+.field:focus-visible {
+  box-shadow: inset 0 0 0 2px #ffe800, 3px 3px 0 0 rgba(255, 72, 176, 0.55);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .field {
+    transition: none;
+  }
+}

@@ -1,5 +1,11 @@
 import { buildSeedstackBoard, type BoardEvent } from "@/lib/seedstack/board";
-import { SEEDSTACK_NOTICE_VERSION, seedstackConsentState } from "@/lib/seedstack/consent";
+import {
+  SEEDSTACK_NOTICE_VERSION,
+  ageOn,
+  canLinkDevice,
+  parseBirthDate,
+  seedstackConsentState,
+} from "@/lib/seedstack/consent";
 import { parseSeedstackBatch, parseSeedstackEvent } from "@/lib/seedstack/events";
 import { generateDeviceCode, generateUserCode, normalizeUserCode } from "@/lib/seedstack/link";
 import { extractSeedstackBearer, generateSeedstackToken, sha256Hex } from "@/lib/seedstack/tokens";
@@ -30,6 +36,12 @@ describe("parseSeedstackEvent", () => {
     expect(parseSeedstackEvent({ ...valid, id: "short" })).toBeNull();
   });
 
+  it("strips NUL and other control characters but keeps tabs and newlines", () => {
+    const parsed = parseSeedstackEvent({ ...valid, next: "\u0000\u0007 scope\u0000 lock\tnow\nok\u001f ", detail: "\u0000\u0001" });
+    expect(parsed?.next).toBe("scope lock\tnow\nok");
+    expect(parsed?.detail).toBeNull();
+  });
+
   it("drops non-http urls and clamps text", () => {
     const parsed = parseSeedstackEvent({ ...valid, live_url: "javascript:alert(1)", detail: "x".repeat(500) });
     expect(parsed?.live_url).toBeNull();
@@ -52,18 +64,59 @@ describe("parseSeedstackBatch", () => {
 });
 
 describe("seedstackConsentState", () => {
-  const base = {
+  // 2026-10-09 noon in Bangkok.
+  const now = Date.parse("2026-10-09T05:00:00Z");
+  const adult = {
     notice_version: SEEDSTACK_NOTICE_VERSION,
     student_consented_at: "2026-10-07T00:00:00Z",
+    birth_date: "2000-01-01",
+    parent_consented_at: null,
+    parent_declined_at: null,
     withdrawn_at: null,
   };
+  const minor = { ...adult, birth_date: "2009-05-01" };
 
-  it("is active once the student agrees to the current notice", () => {
-    expect(seedstackConsentState(base)).toBe("active");
-    expect(seedstackConsentState({ ...base, student_consented_at: null })).toBe("none");
-    expect(seedstackConsentState({ ...base, withdrawn_at: "x" })).toBe("withdrawn");
-    expect(seedstackConsentState({ ...base, notice_version: "old" })).toBe("none");
-    expect(seedstackConsentState(null)).toBe("none");
+  it("is active once a student aged 20+ agrees to the current notice", () => {
+    expect(seedstackConsentState(adult, now)).toBe("active");
+    expect(seedstackConsentState({ ...adult, student_consented_at: null }, now)).toBe("none");
+    expect(seedstackConsentState({ ...adult, withdrawn_at: "x" }, now)).toBe("withdrawn");
+    expect(seedstackConsentState({ ...adult, notice_version: "old" }, now)).toBe("none");
+    expect(seedstackConsentState(null, now)).toBe("none");
+  });
+
+  it("waits for a parent when the student is under 20, including 18 and 19", () => {
+    expect(seedstackConsentState(minor, now)).toBe("awaiting_parent");
+    expect(seedstackConsentState({ ...adult, birth_date: "2007-10-09" }, now)).toBe("awaiting_parent");
+    expect(seedstackConsentState({ ...minor, parent_consented_at: "x" }, now)).toBe("active");
+    expect(seedstackConsentState({ ...minor, parent_declined_at: "x" }, now)).toBe("parent_declined");
+  });
+
+  it("treats a missing birth date as a minor", () => {
+    expect(seedstackConsentState({ ...adult, birth_date: null }, now)).toBe("awaiting_parent");
+  });
+
+  it("lets a device link while the parent has not answered", () => {
+    expect(canLinkDevice("awaiting_parent")).toBe(true);
+    expect(canLinkDevice("parent_declined")).toBe(true);
+    expect(canLinkDevice("none")).toBe(false);
+    expect(canLinkDevice("withdrawn")).toBe(false);
+  });
+});
+
+describe("ages", () => {
+  it("turns 20 on the birthday in Thai time", () => {
+    // 2026-10-08 17:30 UTC is already 2026-10-09 in Bangkok.
+    expect(ageOn("2006-10-09", Date.parse("2026-10-08T17:30:00Z"))).toBe(20);
+    expect(ageOn("2006-10-09", Date.parse("2026-10-08T16:30:00Z"))).toBe(19);
+  });
+
+  it("accepts only real dates for ages 10 to 100", () => {
+    const now = Date.parse("2026-10-09T05:00:00Z");
+    expect(parseBirthDate("2009-05-01", now)).toBe("2009-05-01");
+    expect(parseBirthDate("2009-02-30", now)).toBeNull();
+    expect(parseBirthDate("2020-01-01", now)).toBeNull();
+    expect(parseBirthDate("01/05/2009", now)).toBeNull();
+    expect(parseBirthDate(undefined, now)).toBeNull();
   });
 });
 

@@ -22,13 +22,13 @@ export const SEEDSTACK_GUIDE = {
   install: {
     title: "ติดตั้ง (ประมาณ 1 นาที)",
     lines: [
-      { label: "Mac: เปิด Terminal แล้ววาง", value: `curl -fsSL ${RAW}/install.sh | bash` },
-      { label: "Windows: เปิด PowerShell (ไม่ใช่ cmd) แล้ววาง", value: `irm ${RAW}/install.ps1 | iex` },
+      { os: "mac", label: "Mac: เปิด Terminal แล้ววาง", value: `curl -fsSL ${RAW}/install.sh | bash` },
+      { os: "windows", label: "Windows: เปิด PowerShell (ไม่ใช่ cmd) แล้ววาง", value: `irm ${RAW}/install.ps1 | iex` },
     ],
     steps: [
       ["ปิด OpenCode ให้สนิทก่อน", "Mac: Cmd+Q · Windows: ปิดจาก system tray ด้วย"],
       ["วางบรรทัดด้านบน แล้วพิมพ์ y", "ตัวติดตั้งบอกก่อนว่าจะทำอะไรในเครื่อง แล้วรอเราตอบ"],
-      ["เปิด OpenCode ใหม่ เปิดโฟลเดอร์โปรเจกต์", "เลือกโมเดลตามที่พี่บอกใน #อ่านก่อน แล้วพิมพ์ /seedstack"],
+      ["เปิด OpenCode ใหม่ เปิดโฟลเดอร์โปรเจกต์", "เลือกโมเดลตามที่พี่บอกใน #อ่านก่อน แล้วพิมพ์ /seedstack ครั้งแรกมันจะพาเชื่อมกับพี่ mentor ก่อน"],
     ],
     note: "ใช้ Codex? พิมพ์ $seedstack แทน /seedstack · ใช้ Claude Code ได้เหมือนกัน",
   },
@@ -48,7 +48,7 @@ export const SEEDSTACK_GUIDE = {
       { cmd: "/seedstack-test", when: "หาคนเทสต์ เทสต์เสร็จ หรือได้ feedback มา", out: "test-log.md" },
       { cmd: "/seedstack-build", when: "จะสร้างหรือแก้แอป ทำทีละขั้นกับ AI ในอีก session", out: "build-plan.md" },
       { cmd: "/seedstack-live", when: "ของในเครื่องเวิร์กแล้ว อยากได้ลิงก์ให้คนเปิด", out: "ลิงก์ live" },
-      { cmd: "/seedstack-connect", when: "(ไม่บังคับ) ให้พี่ mentor เห็นว่าเราอยู่ขั้นไหน", out: "พี่เห็นตอนเราติด" },
+      { cmd: "/seedstack-connect", when: "เชื่อมครั้งเดียวก่อนเริ่ม ทุกคำสั่งพามาเองถ้ายังไม่เชื่อม", out: "พี่ mentor เห็นตอนเราติด" },
     ],
     note: "ไม่ต้องเรียงตามนี้ เทสต์กับคนจริงได้ตั้งแต่ยังเป็นกระดาษ",
   },
@@ -67,6 +67,7 @@ export const SEEDSTACK_GUIDE = {
     items: [
       "SeedStack จดแค่ขั้นที่ทำและเวลาไว้ในเครื่องเรา ไม่เก็บบทสนทนา ไฟล์ หรือโค้ด",
       "ไม่มีอะไรออกจากเครื่อง จนกว่าเราจะ /seedstack-connect และกดยินยอมบนเว็บ",
+      "ถ้ายังไม่ถึง 20 ปี ผู้ปกครองต้องกดยินยอมด้วย ระหว่างรอใช้ได้ปกติ ข้อมูลรอในเครื่องก่อน",
       "ถอนความยินยอมได้ทุกเมื่อ ระบบลบข้อมูลที่ส่งไปแล้วทั้งหมด",
     ],
     link: { href: "/shift/seedstack", label: "ดูรายละเอียด / เชื่อมกับพี่ mentor" },

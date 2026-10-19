@@ -3,6 +3,7 @@ import { ArrowRight, BookOpen, ChevronDown } from "lucide-react";
 
 import { ShiftAttributedLink } from "@/components/shift/ShiftAttributedLink";
 import { INK } from "@/components/shift/poster/riso";
+import { REFUND_HOW, REFUND_STEPS } from "@/lib/content/shift-refund";
 import {
   cohortPath,
   formatThaiDate,
@@ -73,7 +74,17 @@ export function CohortQuickFacts({ cohort }: { cohort: ShiftCohort }) {
           )}
         </Fact>
         {cohort.priceBaht > 0 && (
-          <Fact label="คืนเงิน">ถ้าจบวันที่ 7 แล้วไม่มีชิ้นงานในมือ คืนเต็มจำนวน</Fact>
+          <Fact label="คืนเงิน">
+            ถ้าทำครบทุกขั้นตอนทั้ง 7 วันแล้วยังรู้สึกว่าไม่คุ้ม คืนเต็มจำนวน
+            <ol className="mt-1 list-decimal space-y-0.5 pl-5 font-normal" style={{ color: paper("cc") }}>
+              {REFUND_STEPS.map((step) => (
+                <li key={step}>{step}</li>
+              ))}
+            </ol>
+            <span className="mt-1 block font-normal" style={{ color: paper("cc") }}>
+              {REFUND_HOW}
+            </span>
+          </Fact>
         )}
       </dl>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { AdminErrorState } from "@/components/admin/shared/AdminStates";
 import {
   Card, CardContent, CardDescription, CardHeader, CardTitle,
 } from "@/components/ui/card";
@@ -64,32 +65,58 @@ export function LearningAnalyticsDashboard() {
   const [funnel, setFunnel] = useState<Record<string, FunnelStage[]> | null>(null);
   const [expTeams, setExpTeams] = useState<ExpTeam[] | null>(null);
   const [scoreRound, setScoreRound] = useState<"semifinal" | "round1">("semifinal");
+  const [detailError, setDetailError] = useState(false);
+  const [funnelError, setFunnelError] = useState(false);
+  const [expError, setExpError] = useState(false);
 
   async function openTeam(t: TeamRow) {
-    setSelected(t); setDetail(null); setDetailLoading(true);
+    setSelected(t); setDetail(null); setDetailError(false); setDetailLoading(true);
     try {
       const res = await fetch(`/api/admin/hackathon/learning/${t.teamId}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setDetail(await res.json());
+    } catch {
+      setDetailError(true);
     } finally { setDetailLoading(false); }
   }
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch("/api/admin/hackathon/learning");
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        setData(await res.json());
-      } catch (e) { setError((e as Error).message); }
-      finally { setLoading(false); }
-    })();
+  async function loadMain() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/hackathon/learning");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setData(await res.json());
+    } catch (e) { setError((e as Error).message); }
+    finally { setLoading(false); }
+  }
+
+  function loadFunnel() {
+    setFunnelError(false);
     fetch("/api/admin/hackathon/learning/funnel")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => d && setFunnel(d.divisions))
-      .catch(() => {});
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then((d) => setFunnel(d.divisions ?? null))
+      .catch(() => setFunnelError(true));
+  }
+
+  function loadExperience() {
+    setExpError(false);
     fetch("/api/admin/hackathon/learning/experience")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => d && setExpTeams(d.teams))
-      .catch(() => {});
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then((d) => setExpTeams(d.teams ?? null))
+      .catch(() => setExpError(true));
+  }
+
+  useEffect(() => {
+    void loadMain();
+    loadFunnel();
+    loadExperience();
   }, []);
 
   const teams = useMemo(() => {
@@ -115,7 +142,14 @@ export function LearningAnalyticsDashboard() {
   );
 
   if (loading) return <Card><CardContent className="py-12 text-center text-muted-foreground">Loading learning analytics…</CardContent></Card>;
-  if (error) return <Card><CardContent className="py-12 text-center text-red-500">Error: {error}</CardContent></Card>;
+  if (error)
+    return (
+      <AdminErrorState
+        title="Could not load learning analytics"
+        message={error}
+        onRetry={() => void loadMain()}
+      />
+    );
   if (!data) return null;
 
   return (
@@ -163,7 +197,11 @@ export function LearningAnalyticsDashboard() {
         </div>
       </div>
 
-      {funnel && <FunnelCard divisions={funnel} />}
+      {funnelError ? (
+        <AdminErrorState title="Could not load the drop-off funnel" onRetry={loadFunnel} />
+      ) : (
+        funnel && <FunnelCard divisions={funnel} />
+      )}
 
       {/* scatter */}
       <Card>
@@ -243,7 +281,11 @@ export function LearningAnalyticsDashboard() {
         </CardContent>
       </Card>
 
-      {expTeams && expTeams.length > 0 && <ExperienceChart teams={expTeams} />}
+      {expError ? (
+        <AdminErrorState title="Could not load the experience chart" onRetry={loadExperience} />
+      ) : (
+        expTeams && expTeams.length > 0 && <ExperienceChart teams={expTeams} />
+      )}
 
 
       {/* ranked table */}
@@ -303,14 +345,21 @@ export function LearningAnalyticsDashboard() {
       </Card>
 
       {selected && (
-        <TeamDrawer team={selected} detail={detail} loading={detailLoading} onClose={() => setSelected(null)} />
+        <TeamDrawer
+          team={selected}
+          detail={detail}
+          loading={detailLoading}
+          error={detailError}
+          onRetry={() => void openTeam(selected)}
+          onClose={() => setSelected(null)}
+        />
       )}
     </div>
   );
 }
 
-function TeamDrawer({ team, detail, loading, onClose }: {
-  team: TeamRow; detail: TeamDetail | null; loading: boolean; onClose: () => void;
+function TeamDrawer({ team, detail, loading, error, onRetry, onClose }: {
+  team: TeamRow; detail: TeamDetail | null; loading: boolean; error: boolean; onRetry: () => void; onClose: () => void;
 }) {
   const q = QUADRANT[team.quadrant as keyof typeof QUADRANT];
   const fidComp = detail?.summary.avgFidelity ?? team.fidelity ?? 0;
@@ -341,6 +390,7 @@ function TeamDrawer({ team, detail, loading, onClose }: {
         </div>
 
         {loading && <div className="py-8 text-center text-muted-foreground">Loading evidence…</div>}
+        {error && <AdminErrorState title="Could not load this team's evidence" onRetry={onRetry} />}
 
         {detail && (
           <>

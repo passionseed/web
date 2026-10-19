@@ -28,6 +28,8 @@ export interface DayPlan {
   goal: string;
   schedule: ScheduleRow[];
   frames: ({ th: string; en: string; slug: string } & Spec)[];
+  /** The whole day on one frame, for students who only open one picture. */
+  poster?: { th: string; en: string } & Spec;
 }
 
 export const DAYS: DayPlan[] = [
@@ -40,7 +42,7 @@ export const DAYS: DayPlan[] = [
       ["19:05", "เช็กอิน", "3 ตัวเลขในเธรด แล้วแยกกลุ่ม A B C"],
       ["19:15", "ติด SeedStack", "1 นาที สำหรับคนที่มี OpenCode"],
       ["19:20", "เขาทำ หรือเขาพูด?", "คุยในกลุ่ม 10 นาที → แชร์ 5 นาที"],
-      ["19:35", "ทัก + เทสต์", "ทักตรง 10 คน แล้วเทสต์สดในเวลา"],
+      ["19:35", "ทัก + เทสต์", "ทักตรง + โพสต์กลุ่ม แล้วเทสต์สดในเวลา"],
       ["20:35", "Daily Show", "คนละ 30 วิ"],
       ["20:55", "Mission ก่อน Day 5", "เทสต์จริงให้ครบ 3 คน"],
     ],
@@ -98,15 +100,16 @@ export const DAYS: DayPlan[] = [
       {
         slug: "ask",
         th: "ทักยังไงให้เขาตอบ?",
-        en: "Direct asks",
+        en: "Direct asks + group posts",
         kind: "steps",
         items: [
-          ["ทักตรงทีละคน", "บอกว่าทำไมเลือกเขา ไม่ใช่โพสต์ลอย ๆ"],
+          ["ทักตรงทีละคน", "บอกว่าทำไมเลือกเขา"],
+          ["โพสต์ 10 กลุ่ม FB", "กลุ่มที่เขาอยู่ ใช้คำของเขา + ขอเล็ก ๆ"],
           ["ขอเล็ก + บอกเวลา", "\"ขอ 10 นาที คืนนี้ 2 ทุ่มได้ไหม\""],
           ["ทัก 15 ได้ 3–5", "ไม่ตอบ ทักซ้ำ 1 ครั้งพรุ่งนี้"],
         ],
         mentor: "บอกตรง ๆ ว่ายังไม่เสร็จ ติได้เต็มที่ คนจะช่วยมากขึ้น 🙏",
-        note: "โพสต์สาธารณะในกลุ่มที่เขาอยู่ = ตัวเสริม ไม่ใช่ตัวหลัก",
+        note: "ทำคู่กัน ทักตรง + โพสต์กลุ่ม FB อย่างน้อย 10 กลุ่ม เริ่ม Day 2",
       },
       {
         slug: "run-test",
@@ -346,13 +349,28 @@ export const DAYS: DayPlan[] = [
         en: "Before Day 7",
         kind: "steps",
         items: [
-          ["พอร์ต 1 หน้า", "ทำให้เสร็จ โพสต์ในเธรด"],
-          ["ซ้อมเดโม", "จับเวลา 3 นาที"],
-          ["เตรียมของ", "ลิงก์ · แคปคอมเมนต์ · ตัวเลข"],
+          ["โพสต์ที่สาธารณะ", "FB · IG · TikTok · กลุ่มที่เกี่ยวข้อง แปะลิงก์ ขอให้ลอง"],
+          ["นับคนใช้", "กี่คนกดเข้าไปลองจริง"],
+          ["นับฟีดแบ็กดี ๆ", "บอกว่าเจออะไร ติดตรงไหน อยากให้เปลี่ยนอะไร"],
         ],
-        mentor: "พรุ่งนี้ Demo Day! ไม่ต้องเพอร์เฟกต์ เล่าของจริงพอ 🎤",
+        mentor: "หยุดสร้างวันนี้ พรุ่งนี้หาฟีดแบ็กอย่างเดียว 🔍",
+        note: "ไลก์ไม่นับ · \"เจ๋งมาก\" ไม่นับ · แคปฟีดแบ็กไว้ใช้ตอนเดโม",
       },
     ],
+    poster: {
+      th: "Day 6: ตัวเลขบอกอะไร",
+      en: "Measure",
+      kind: "steps",
+      items: [
+        ["เลือกตัวเลข 1 ตัว", "นับได้ วัดซ้ำได้"],
+        ["วัด ก่อน → หลัง", "เทสสดกับคนนอก"],
+        ["ร่างพอร์ต 1 หน้า", "ปัญหา · พัง → แก้ · ตัวเลข"],
+        ["ซ้อมเดโม 3 นาที", "ในกลุ่ม เพื่อนถาม 1 ข้อ"],
+        ["Mission: โพสต์ 🌏", "FB · IG · TikTok · ที่สาธารณะ"],
+        ["Mission: นับ", "คนใช้ · ฟีดแบ็กที่มีประโยชน์"],
+      ],
+      note: "ไลก์ไม่นับ · หยุดสร้างวันนี้ พรุ่งนี้หาฟีดแบ็กอย่างเดียว 🔍",
+    },
   },
   {
     day: 7,
@@ -428,6 +446,20 @@ export const DAYS: DayPlan[] = [
         mentor: "ขอบคุณที่มาลุยด้วยกันนะ 🙏",
       },
     ],
+    poster: {
+      th: "Day 7: Demo Day 🎉",
+      en: "Show it",
+      kind: "steps",
+      items: [
+        ["เดโม 3 นาที", "แชร์จอใน Park ใช้ให้ดูสด"],
+        ["เล่าพัง → แก้", "+ คำพูดผู้ใช้ + ตัวเลข"],
+        ["ตอบ 1 คำถาม", "จากเพื่อนในรุ่น"],
+        ["เฉลยรูป Day 1", "รูปใต้ชื่อเราหมายถึงอะไร"],
+        ["มองย้อน 7 วัน", "เราเปลี่ยนไปยังไง · ตอบฟอร์ม"],
+        ["ต่อจากนี้", "Discord ไม่ปิด · project club"],
+      ],
+      note: "ส่งพอร์ต 1 หน้าในเธรด · ไม่ต้องเพอร์เฟกต์ เล่าของจริงพอ 🎤",
+    },
   },
 ];
 
@@ -574,6 +606,18 @@ export function ShiftPixelDayFrame({ day, n }: { day: number; n: number }) {
       tag={`DAY ${day} · ${n}/${plan.frames.length}`}
     >
       <Body plan={plan} spec={f} />
+    </TopicFrame>
+  );
+}
+
+/** One frame that sums up the whole day. */
+export function ShiftPixelDayPoster({ day }: { day: number }) {
+  const plan = DAYS.find((d) => d.day === day);
+  const poster = plan?.poster;
+  if (!plan || !poster) return null;
+  return (
+    <TopicFrame n={1} id={`day${day}-poster`} th={poster.th} en={poster.en} tag={`DAY ${day} · 1 PAGE`}>
+      <Body plan={plan} spec={poster} />
     </TopicFrame>
   );
 }

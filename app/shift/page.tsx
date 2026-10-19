@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ArrowDown, ArrowUpRight } from "lucide-react";
 
 import { ShiftCohortCard } from "@/components/shift/ShiftCohortCard";
@@ -13,6 +14,9 @@ import {
 } from "@/components/shift/poster/riso";
 import { SHIFT_COHORTS, bangkokToday, cohortStatus } from "@/lib/content/shift-cohort";
 import { NOTES } from "@/lib/content/pathlab-page";
+import { NEXT_ROUND_NAME } from "@/lib/content/shift-next";
+import { weekdayName } from "@/lib/content/shift-alumni";
+import { loadAlumniCalendar } from "@/lib/supabase/shift-alumni-calendar";
 
 import styles from "@/components/shift/shiftGallery.module.css";
 
@@ -38,8 +42,9 @@ export const metadata: Metadata = {
 /** Status flips on Bangkok dates, so re-render at least hourly. */
 export const revalidate = 3600;
 
-export default function ShiftGalleryPage() {
+export default async function ShiftGalleryPage() {
   const today = bangkokToday();
+  const { doc: alumni } = await loadAlumniCalendar();
   const cohorts = [...SHIFT_COHORTS].sort((a, b) => b.round - a.round);
   const open = cohorts.filter((cohort) => cohortStatus(cohort, today) === "open");
   const archive = cohorts.filter((cohort) => cohortStatus(cohort, today) !== "open");
@@ -65,11 +70,18 @@ export default function ShiftGalleryPage() {
             <h1 className="font-kodchasan">
               <span className="sr-only">SHIFT: </span>7 วัน ปั้น 1 โปรเจกต์จริง
             </h1>
-            <p>สร้างของที่คนนอกได้ลองใช้ พร้อม Pivot Log<br className="hidden sm:block" /> และพอร์ต 1 หน้าสำหรับ TCAS 1</p>
-            <a href="#rounds" className={styles.textLink}>
-              {open.length > 0 ? "เลือกรุ่นที่เปิดรับสมัคร" : "ดูทุกรุ่นของ SHIFT"}
-              <ArrowDown size={16} aria-hidden="true" />
-            </a>
+            <p>สร้างของที่คนนอกได้ลองใช้ พร้อมบันทึกจุดพังและสิ่งที่แก้<br className="hidden sm:block" /> และพอร์ต 1 หน้าสำหรับ TCAS 1</p>
+            {open.length > 0 ? (
+              <a href="#rounds" className={styles.textLink}>
+                เลือกรุ่นที่เปิดรับสมัคร
+                <ArrowDown size={16} aria-hidden="true" />
+              </a>
+            ) : (
+              <Link href="/shift/next" className={styles.textLink}>
+                ลงชื่อ {NEXT_ROUND_NAME} เลือกช่วงที่ว่างเอง
+                <ArrowUpRight size={16} aria-hidden="true" />
+              </Link>
+            )}
           </div>
         </div>
       </header>
@@ -109,6 +121,19 @@ export default function ShiftGalleryPage() {
             </div>
           </section>
         )}
+
+        <section aria-labelledby="alumni" className={styles.section} data-shift-reveal>
+          <div className={styles.sectionHeading}>
+            <div>
+              <p className={styles.eyebrow}>SHIFT ALUMNI</p>
+              <h2 id="alumni" className="font-kodchasan">จบ 7 วันแล้ว ยังสร้างต่อด้วยกัน</h2>
+            </div>
+            <p className={styles.sectionAside}>ศิษย์เก่านัดกันทุก{weekdayName(alumni.defaults.firstDate)}<br />ออนไลน์ใน Discord</p>
+          </div>
+          <Link href="/shift/alumni" className={styles.textLink}>
+            ดูตาราง session ศิษย์เก่า <ArrowUpRight size={16} aria-hidden="true" />
+          </Link>
+        </section>
 
         <footer className={styles.footer}>
           <span>SHIFT by PassionSeed</span>

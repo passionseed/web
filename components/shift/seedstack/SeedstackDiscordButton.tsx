@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 
-import { shiftJoinButtonClass } from "@/components/shift/join/ShiftJoinActions";
-import { INK } from "@/components/shift/poster/riso";
+import { FLOW_TEXT, flowButtonClass } from "@/components/shift/join/shiftFlowInk";
 import { createClient } from "@/utils/supabase/client";
 
 /**
@@ -37,14 +36,15 @@ export function SeedstackDiscordButton({ next, label = "เข้าสู่ร
         type="button"
         onClick={signIn}
         disabled={pending}
-        className={shiftJoinButtonClass}
-        style={{ backgroundColor: "#5865F2", color: "#fff" }}
+        aria-busy={pending}
+        className={flowButtonClass}
+        data-variant="discord"
       >
-        {pending && <Loader2 className="h-5 w-5 animate-spin" />}
+        {pending && <Loader2 className="h-5 w-5 motion-safe:animate-spin" aria-hidden="true" />}
         {label}
       </button>
       {error && (
-        <p className="text-sm" style={{ color: INK.orange }}>
+        <p className="text-sm font-semibold leading-relaxed" style={{ color: FLOW_TEXT.warn }} role="alert">
           {error}
         </p>
       )}

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
+import { requireAdmin } from '@/lib/security/route-guards';
 
 interface ImportNode {
   id: string;
@@ -36,16 +36,10 @@ export async function POST(
 ) {
   try {
     const { id: conversationId } = await context.params;
-    const supabase = await createClient();
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Admin-only: importing rewrites a conversation's node graph.
+    const admin = await requireAdmin();
+    if (!admin.ok) return admin.response;
+    const { supabase } = admin.value;
 
     // Get conversation and verify ownership
     const { data: conversation, error: convError } = await supabase

@@ -94,6 +94,6 @@ The public safeguarding policy is at
 
 These files stay in the repository root because they are read by AI coding tools that look for them at the project root:
 
-- `AGENTS.md` — Codex AI guidance
-- `CLAUDE.md` — Claude Code AI guidance
+- `AGENTS.md` — rules for AI agents and contributors (the single source)
+- `CLAUDE.md` — one line that points Claude Code at `AGENTS.md`
 - `README.md` — Project overview & getting started

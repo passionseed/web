@@ -4,12 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
-import { INK } from "@/components/shift/poster/riso";
+import { FLOW_TEXT, flowButtonClass } from "@/components/shift/join/shiftFlowInk";
 import { SHIFT_DISCORD_SCOPES, shiftDiscordCallbackUrl } from "@/lib/shift/discordAuth";
 import { createClient } from "@/utils/supabase/client";
-
-const buttonClass =
-  "inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-4 font-kodchasan text-lg font-bold transition-transform active:scale-[0.98] disabled:opacity-60";
 
 /**
  * Discord sign-in reuses the account that already owns the identity. Supabase
@@ -49,14 +46,15 @@ export function ConnectDiscordButton({
         type="button"
         onClick={connect}
         disabled={pending}
-        className={buttonClass}
-        style={{ backgroundColor: "#5865F2", color: "#fff" }}
+        aria-busy={pending}
+        className={flowButtonClass}
+        data-variant="discord"
       >
-        {pending && <Loader2 className="h-5 w-5 animate-spin" />}
+        {pending && <Loader2 className="h-5 w-5 motion-safe:animate-spin" aria-hidden="true" />}
         {label}
       </button>
       {error && (
-        <p className="text-sm" style={{ color: INK.orange }}>
+        <p className="text-sm font-semibold leading-relaxed" style={{ color: FLOW_TEXT.warn }} role="alert">
           {error}
         </p>
       )}
@@ -101,14 +99,14 @@ export function SyncRolesButton({ token }: { token: string }) {
         type="button"
         onClick={sync}
         disabled={pending}
-        className={buttonClass}
-        style={{ backgroundColor: INK.yellow, color: INK.black }}
+        aria-busy={pending}
+        className={flowButtonClass}
       >
-        {pending && <Loader2 className="h-5 w-5 animate-spin" />}
+        {pending && <Loader2 className="h-5 w-5 motion-safe:animate-spin" aria-hidden="true" />}
         เข้าเซิร์ฟแล้ว กดรับ role
       </button>
       {message && (
-        <p className="text-sm" style={{ color: INK.orange }}>
+        <p className="text-sm font-semibold leading-relaxed" style={{ color: FLOW_TEXT.warn }} role="alert">
           {message}
         </p>
       )}
@@ -116,4 +114,5 @@ export function SyncRolesButton({ token }: { token: string }) {
   );
 }
 
-export const shiftJoinButtonClass = buttonClass;
+/** Kept for callers outside the flow kit; same class as flowButtonClass. */
+export const shiftJoinButtonClass = flowButtonClass;

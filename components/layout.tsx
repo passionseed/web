@@ -43,6 +43,8 @@ export function Layout({ children }: LayoutProps) {
     pathname === "/business-model-canvas" ||
     // SHIFT landing is a standalone shareable page with its own sticky CTA
     pathname?.startsWith("/shift") ||
+    // Certificate verification is a standalone public credential page
+    pathname?.startsWith("/c/") ||
     pathname?.startsWith("/slide") ||
     pathname?.startsWith("/worksheet") ||
     // Tips links are a pass-through to a PDF: spinner only, no site chrome

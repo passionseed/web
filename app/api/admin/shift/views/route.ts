@@ -16,7 +16,7 @@ export async function GET(request: Request) {
   if (!admin.ok) return admin.response;
 
   const pagePath = new URL(request.url).searchParams.get("page");
-  if (pagePath && !/^\/shift(?:\/(?:apply|0|[1-9]\d*))?$/.test(pagePath)) {
+  if (pagePath && !/^\/shift(?:\/(?:apply|alumni|0|[1-9]\d*))?$/.test(pagePath)) {
     return NextResponse.json({ error: "Invalid SHIFT page" }, { status: 400 });
   }
 

@@ -71,7 +71,7 @@ A few house rules that will save you a code review round-trip:
 - **Auth:** we use `@supabase/ssr` with `getAll()`/`setAll()` cookie methods only. See `utils/supabase/server.ts` for the pattern — please copy it exactly.
 - **Queries:** all database access goes through `lib/supabase/`. Don't query Supabase from components directly.
 - **Migrations:** additive and idempotent only (`ADD COLUMN IF NOT EXISTS`, nullable columns). They apply straight to production.
-- **Design:** Dawn is for students, Dusk is for experts, and glow animations animate `clip-path` + `opacity` + `filter` together. The rules live in `docs/ui-design-system.md` and `CLAUDE.md`.
+- **Design:** Dawn is for students, Dusk is for experts, and glow animations animate `clip-path` + `opacity` + `filter` together. The rules live in `docs/ui-design-system.md` and `AGENTS.md`.
 
 ## Security
 

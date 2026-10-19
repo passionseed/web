@@ -12,7 +12,7 @@ export function ShiftParentShare({ cohort }: { cohort: ShiftCohort }) {
   page.searchParams.set("utm_medium", "line_share");
   const share = new URL("https://social-plugins.line.me/lineit/share");
   share.searchParams.set("url", page.toString());
-  share.searchParams.set("text", `${cohort.name}: ${formatThaiDateRange(cohort.startDate, cohort.endDate)} เวลา ${cohort.sessionTime} น. ออนไลน์ ราคา ${priceLabel(cohort)} สร้างโปรเจกต์จริง พร้อม Pivot Log และพอร์ต TCAS 1 หน้า`);
+  share.searchParams.set("text", `${cohort.name}: ${formatThaiDateRange(cohort.startDate, cohort.endDate)} เวลา ${cohort.sessionTime} น. ออนไลน์ ราคา ${priceLabel(cohort)} สร้างโปรเจกต์จริง พร้อมบันทึกจุดพังและพอร์ต TCAS 1 หน้า`);
 
   return (
     <a href={share.toString()} target="_blank" rel="noopener noreferrer"

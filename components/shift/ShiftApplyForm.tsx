@@ -12,6 +12,7 @@ import {
 } from "@/lib/content/shift-cohort";
 
 import { ShiftApplyDone } from "./apply/ShiftApplyDone";
+import { ChoiceChips, INPUT, Question } from "./form/ShiftQuestion";
 import { clearApplyDraft, useApplyDraft } from "./apply/useApplyDraft";
 import {
   SHIFT_AVAILABILITY,
@@ -84,101 +85,6 @@ function CharCount({ length }: { length: number }) {
         ? `อีก ${PROBLEM_MIN - length} ตัวอักษร`
         : `${length}/${PROBLEM_MAX}`}
     </p>
-  );
-}
-
-const INPUT =
-  "w-full border-0 border-b bg-transparent px-0 py-3 text-base outline-none transition-colors placeholder:text-[rgba(242,234,217,0.3)] focus:border-[#ff6c2f] focus:ring-0";
-
-function Question({
-  num,
-  label,
-  hint,
-  error,
-  children,
-}: {
-  num: number;
-  label: string;
-  hint?: string;
-  error?: string;
-  children: ReactNode;
-}) {
-  return (
-    <fieldset className="border-t py-7" style={{ borderColor: paper("1f") }}>
-      <legend className="sr-only">{label}</legend>
-      <div className="flex items-baseline gap-4">
-        <span
-          className="font-kodchasan text-2xl font-bold"
-          style={{ color: INK.orange }}
-        >
-          {num}
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="font-kodchasan text-lg font-semibold leading-snug">
-            {label}
-          </p>
-          {hint && (
-            <p
-              className="mt-1 text-sm leading-relaxed"
-              style={{ color: paper("80") }}
-            >
-              {hint}
-            </p>
-          )}
-          <div className="mt-3">{children}</div>
-          {error && (
-            <p
-              className="mt-2 text-sm font-semibold"
-              style={{ color: INK.pink }}
-              role="alert"
-            >
-              {error}
-            </p>
-          )}
-        </div>
-      </div>
-    </fieldset>
-  );
-}
-
-function ChoiceChips<T extends string>({
-  name,
-  options,
-  value,
-  onChange,
-}: {
-  name: string;
-  options: readonly { value: T; label: string }[];
-  value: string;
-  onChange: (value: T) => void;
-}) {
-  return (
-    <div className="flex flex-wrap gap-2.5" role="radiogroup" aria-label={name}>
-      {options.map((option) => {
-        const selected = value === option.value;
-        return (
-          <button
-            key={option.value}
-            type="button"
-            role="radio"
-            aria-checked={selected}
-            onClick={() => onChange(option.value)}
-            className="min-w-[4rem] flex-1 rounded-[4px] px-3 py-2.5 text-base font-semibold sm:flex-none sm:px-5 transition-[background-color,box-shadow,color] duration-150"
-            style={
-              selected
-                ? {
-                    backgroundColor: INK.paper,
-                    color: INK.black,
-                    boxShadow: `3px 3px 2px 0 rgba(255,72,176,0.75)`,
-                  }
-                : { backgroundColor: paper("0f"), color: paper("cc") }
-            }
-          >
-            {option.label}
-          </button>
-        );
-      })}
-    </div>
   );
 }
 

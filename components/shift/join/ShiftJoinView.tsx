@@ -1,13 +1,11 @@
 import type { ReactNode } from "react";
 import { Check } from "lucide-react";
 
-import { RisoPageTexture } from "@/components/shift/ShiftRiso";
-import {
-  ConnectDiscordButton,
-  SyncRolesButton,
-  shiftJoinButtonClass,
-} from "@/components/shift/join/ShiftJoinActions";
-import { INK } from "@/components/shift/poster/riso";
+import { RisoBand, RisoPageTexture, labelClass } from "@/components/shift/ShiftRiso";
+import { ShiftTopBar } from "@/components/shift/ShiftTopBar";
+import { ConnectDiscordButton, SyncRolesButton } from "@/components/shift/join/ShiftJoinActions";
+import { FLOW_TEXT, flowButtonClass, paper } from "@/components/shift/join/shiftFlowInk";
+import { INK, MISREG_TEXT } from "@/components/shift/poster/riso";
 import { SHIFT_PAYMENT } from "@/lib/content/shift-cohort";
 import type { ShiftDiscordAuthError } from "@/lib/shift/discordAuth";
 
@@ -26,9 +24,14 @@ export type ShiftJoinState =
       error: "no_discord" | "taken" | ShiftDiscordAuthError | null;
     }
   | { kind: "needs_invite"; nickname: string; cohortName: string; inviteUrl: string | null }
-  | { kind: "in_server"; nickname: string; cohortName: string; serverUrl: string | null };
-
-const paper = (alpha: string) => `${INK.paper}${alpha}`;
+  | {
+      kind: "in_server";
+      nickname: string;
+      cohortName: string;
+      serverUrl: string | null;
+      /** e.g. "พรุ่งนี้ วันพุธที่ 14 ตุลาคม"; null once the round has met. */
+      meetLabel: string | null;
+    };
 
 const CONNECT_ERRORS = {
   no_discord: "ยังไม่ได้เชื่อม Discord ลองกดอีกครั้งนะ",
@@ -43,22 +46,28 @@ export function Shell({ eyebrow, title, children }: { eyebrow: string; title: st
     <div
       className="relative min-h-screen font-bai-jamjuree antialiased"
       style={{ backgroundColor: INK.black, color: INK.paper }}
+      lang="th"
     >
       <RisoPageTexture />
-      <main className="relative mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-16">
-        <p className="font-kodchasan text-sm font-bold tracking-wide" style={{ color: INK.yellow }}>
-          {eyebrow}
-        </p>
-        <h1 className="mt-3 font-kodchasan text-3xl font-bold leading-tight">{title}</h1>
-        <div className="mt-8 space-y-6">{children}</div>
-      </main>
+      <ShiftTopBar />
+      <RisoBand>
+        <div className="mx-auto max-w-md px-6">
+          <p className={labelClass(eyebrow)} style={{ color: INK.yellow }}>
+            {eyebrow}
+          </p>
+          <h1 className="mt-3 text-balance font-kodchasan text-[28px] font-bold leading-snug sm:text-[32px]" style={MISREG_TEXT}>
+            {title}
+          </h1>
+        </div>
+      </RisoBand>
+      <main className="relative mx-auto max-w-md space-y-6 px-6 pb-20 pt-7">{children}</main>
     </div>
   );
 }
 
 export function Body({ children }: { children: ReactNode }) {
   return (
-    <p className="leading-relaxed" style={{ color: paper("cc") }}>
+    <p className="text-[17px] leading-relaxed" style={{ color: FLOW_TEXT.body }}>
       {children}
     </p>
   );
@@ -66,9 +75,13 @@ export function Body({ children }: { children: ReactNode }) {
 
 export function LineHelp() {
   return (
-    <p className="text-sm" style={{ color: paper("80") }}>
+    <p className="border-t pt-5 text-sm leading-relaxed" style={{ color: FLOW_TEXT.muted, borderColor: paper("33") }}>
       ติดตรงไหน ทักพี่ใน LINE{" "}
-      <a href={SHIFT_PAYMENT.lineUrl} className="underline" style={{ color: INK.paper }}>
+      <a
+        href={SHIFT_PAYMENT.lineUrl}
+        className="inline-flex min-h-12 items-center font-semibold underline underline-offset-4"
+        style={{ color: INK.paper }}
+      >
         {SHIFT_PAYMENT.lineId}
       </a>
     </p>
@@ -81,12 +94,8 @@ function LinkButton({ href, children, primary }: { href: string; children: React
       href={href}
       target="_blank"
       rel="noreferrer"
-      className={shiftJoinButtonClass}
-      style={
-        primary
-          ? { backgroundColor: "#5865F2", color: "#fff" }
-          : { backgroundColor: paper("14"), color: INK.paper, boxShadow: `inset 0 0 0 1px ${paper("33")}` }
-      }
+      className={flowButtonClass}
+      data-variant={primary ? "discord" : "quiet"}
     >
       {children}
     </a>
@@ -123,7 +132,7 @@ export function ShiftJoinView({ token, state }: { token: string; state: ShiftJoi
             พร้อมห้องของรุ่นให้เลย ไม่ต้องสมัครบัญชีใหม่ ไม่ต้องกรอกโปรไฟล์
           </Body>
           {state.error && (
-            <p className="text-sm" style={{ color: INK.orange }}>
+            <p className="text-sm font-semibold leading-relaxed" style={{ color: FLOW_TEXT.warn }} role="alert">
               {CONNECT_ERRORS[state.error]}
             </p>
           )}
@@ -153,15 +162,17 @@ export function ShiftJoinView({ token, state }: { token: string; state: ShiftJoi
 
     case "in_server":
       return (
-        <Shell eyebrow={state.cohortName} title={`เข้าเซิร์ฟแล้ว ${state.nickname}`}>
-          <div className="flex items-center gap-3" style={{ color: paper("cc") }}>
+        <Shell eyebrow={state.cohortName} title={`เรียบร้อย ${state.nickname}`}>
+          <div className="flex items-center gap-3" style={{ color: FLOW_TEXT.body }}>
             <span
               className="flex h-8 w-8 items-center justify-center rounded-full"
               style={{ backgroundColor: INK.yellow, color: INK.black }}
             >
               <Check className="h-5 w-5" />
             </span>
-            <span>ได้ role {state.cohortName} แล้ว เจอกันในห้องของรุ่น</span>
+            <span>
+              {state.meetLabel ? `เจอกัน${state.meetLabel} ใน Discord` : "เจอกันในห้องของรุ่น"}
+            </span>
           </div>
           {state.serverUrl && (
             <LinkButton href={state.serverUrl} primary>

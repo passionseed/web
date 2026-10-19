@@ -34,10 +34,15 @@ export interface ShiftCohort {
   testerTarget: number;
   /** Nightly live session on Discord, Bangkok time. */
   sessionTime: string;
+  /** First live meet, when it is not startDate. Shown once a student joins. */
+  firstMeetDate?: string;
   schedule: ShiftDay[];
   /** Set once a round has actually wrapped, when the dates alone would say
    *  otherwise (e.g. approximate dates for a pilot). */
   completed?: boolean;
+  /** The start date announced before a postponement, so posters can say
+   *  "moved from" instead of leaving people to spot the change. */
+  postponedFrom?: string;
   /** 1200x630 listing banner shown on the /shift gallery card. */
   bannerSrc?: string;
   /** Live projects the round shipped, shown once it is over. Titles only:
@@ -228,13 +233,15 @@ export const SHIFT_COHORT_0: ShiftCohort = {
   ],
 };
 
-/** SHIFT[2] starts the Monday after SHIFT[1] ends. */
+/** SHIFT[2] was planned for Mon 12 Oct and moved to Wed 14 Oct; still 7 days. */
 export const SHIFT_COHORT_2: ShiftCohort = {
-  ...sibling(SHIFT_COHORT, 1, 7),
+  ...sibling(SHIFT_COHORT, 1, 9),
   seats: 21,
   priceBaht: 690,
   /** Late applications run through Day 1: the first session is 19:00. */
-  applyDeadline: "2026-10-12",
+  applyDeadline: "2026-10-14",
+  postponedFrom: "2026-10-12",
+  firstMeetDate: "2026-10-14",
 };
 
 /** The round the printed posters are promoting right now. */
@@ -325,6 +332,29 @@ export function cohortStatus(cohort: ShiftCohort, today: string = bangkokToday()
   return "closed";
 }
 
+export function getShiftCohortByName(name: string): ShiftCohort | undefined {
+  return SHIFT_COHORTS.find((c) => c.name === name);
+}
+
+/**
+ * When a joined student next meets the round, e.g. "พรุ่งนี้ วันพุธที่ 14
+ * ตุลาคม". Null once the first meet has passed.
+ */
+export function firstMeetLabel(cohort: ShiftCohort, today: string = bangkokToday()): string | null {
+  const meet = cohort.firstMeetDate ?? cohort.startDate;
+  if (today > meet) return null;
+
+  const date = new Date(`${meet}T12:00:00+07:00`).toLocaleDateString("th-TH", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone: "Asia/Bangkok",
+  });
+  if (meet === today) return `วันนี้ ${date}`;
+  if (meet === addDays(today, 1)) return `พรุ่งนี้ ${date}`;
+  return date;
+}
+
 /** The round building right now, if any. */
 export function getRunningCohort(today: string = bangkokToday()): ShiftCohort | undefined {
   return SHIFT_COHORTS.find((c) => cohortStatus(c, today) === "running");
@@ -344,7 +374,7 @@ export const SHIFT_SKILL_CARDS: ShiftSkillCard[] = [
   },
   {
     title: "Tester Hunt",
-    detail: "หาคนนอกมาลองของ ทักตรงทีละคน ไม่ใช่โพสต์ลงสตอรี่เพื่อนสนิท",
+    detail: "หาคนนอกมาลองของ ทักตรงทีละคน และโพสต์ในกลุ่ม Facebook อย่างน้อย 10 กลุ่ม",
   },
   {
     title: "AI Tools (OpenCode)",

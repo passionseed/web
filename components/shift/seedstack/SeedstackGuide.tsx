@@ -19,19 +19,22 @@ import {
   SquareTerminal,
   Terminal,
   Trash2,
+  UserCheck,
   Users,
   type LucideIcon,
 } from "lucide-react";
 
-import { RisoPageTexture } from "@/components/shift/ShiftRiso";
+import { RisoBand, RisoPageTexture } from "@/components/shift/ShiftRiso";
+import { ShiftTopBar } from "@/components/shift/ShiftTopBar";
+import { FLOW_TEXT, flowPanelClass, paper } from "@/components/shift/join/shiftFlowInk";
 import { INK, MISREG_TEXT } from "@/components/shift/poster/riso";
 import { CopyBox } from "@/components/shift/seedstack/SeedstackCopyBox";
 import { SEEDSTACK_GUIDE as G } from "@/lib/content/seedstack-guide";
 
 /** The one-page SeedStack guide: install, start, commands, rules, privacy. */
 
-const paper = (alpha: string) => `${INK.paper}${alpha}`;
-const cardStyle = { backgroundColor: paper("0d"), boxShadow: `inset 0 0 0 1px ${paper("26")}` };
+/** Section numbers are text, so blue sections print the sky's lighter blue (INK.blue is 3.8:1). */
+const textTint = (tint: string) => (tint === INK.blue ? FLOW_TEXT.sky : tint);
 
 type SectionId = keyof typeof G.nav;
 
@@ -62,7 +65,8 @@ const COMMAND_ICONS: Record<string, LucideIcon> = {
 };
 
 const RULE_ICONS: LucideIcon[] = [Keyboard, MessageCircleQuestion, Megaphone];
-const PRIVACY_ICONS: LucideIcon[] = [HardDrive, EyeOff, Trash2];
+// One per G.privacy.items, in order: local only, nothing leaves, parent consent, withdraw.
+const PRIVACY_ICONS: LucideIcon[] = [HardDrive, EyeOff, UserCheck, Trash2];
 
 /** Ink square with a pink offset shadow: the riso misregistration wink. */
 function InkChip({
@@ -95,13 +99,13 @@ function InkChip({
 function Section({ def, children }: { def: SectionDef; children: ReactNode }) {
   const Icon = def.icon;
   return (
-    <section id={def.id} className="scroll-mt-20 space-y-4">
+    <section id={def.id} className="scroll-mt-28 space-y-4">
       <h2 className="flex items-center gap-3 font-kodchasan text-xl font-bold">
         <InkChip tint={def.tint}>
           <Icon className="h-5 w-5" />
         </InkChip>
         <span className="flex items-baseline gap-2.5">
-          <span className="text-sm" style={{ color: def.tint }}>
+          <span className="text-sm" style={{ color: textTint(def.tint) }}>
             0{def.n}
           </span>
           {def.title}
@@ -112,14 +116,18 @@ function Section({ def, children }: { def: SectionDef; children: ReactNode }) {
   );
 }
 
+/**
+ * One row that scrolls sideways on narrow screens instead of wrapping, so its
+ * height stays fixed and sections can clear it with a matching scroll margin.
+ */
 function Nav() {
   return (
-    <nav aria-label="สารบัญ" className="sticky top-3 z-20">
+    <nav aria-label="สารบัญ" className="sticky top-2 z-30 -mx-2">
       <ol
-        className="flex flex-wrap gap-1 rounded-2xl p-1.5"
+        className="flex justify-between overflow-x-auto rounded-xl p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         style={{
-          backgroundColor: `${INK.black}e6`,
-          boxShadow: `inset 0 0 0 1px ${paper("26")}`,
+          backgroundColor: `${INK.black}f2`,
+          boxShadow: `inset 0 0 0 1px ${paper("66")}, 3px 3px 0 0 rgba(0, 120, 191, 0.5)`,
           backdropFilter: "blur(8px)",
         }}
       >
@@ -127,10 +135,10 @@ function Nav() {
           <li key={s.id} className="shrink-0">
             <a
               href={`#${s.id}`}
-              className="flex items-center gap-1.5 rounded-full px-3 py-2 text-sm transition-colors"
-              style={{ color: paper("cc") }}
+              className="flex min-h-12 items-center gap-1 whitespace-nowrap rounded-lg px-2 text-sm font-semibold sm:gap-1.5 sm:px-3 transition-colors hover:bg-[rgba(242,234,217,0.1)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#ffe800]"
+              style={{ color: FLOW_TEXT.body }}
             >
-              <span className="text-xs font-bold" style={{ color: s.tint }}>
+              <span className="text-xs font-bold" style={{ color: textTint(s.tint) }}>
                 0{s.n}
               </span>
               {G.nav[s.id]}
@@ -144,7 +152,7 @@ function Nav() {
 
 function Note({ children }: { children: ReactNode }) {
   return (
-    <p className="text-sm" style={{ color: paper("99") }}>
+    <p className="text-sm leading-relaxed" style={{ color: FLOW_TEXT.muted }}>
       {children}
     </p>
   );
@@ -163,7 +171,7 @@ function Steps({ items }: { items: readonly (readonly [string, string])[] }) {
           </span>
           <div>
             <p className="font-semibold">{head}</p>
-            <p className="text-sm" style={{ color: paper("b3") }}>
+            <p className="text-sm leading-relaxed" style={{ color: FLOW_TEXT.muted }}>
               {detail}
             </p>
           </div>
@@ -185,7 +193,7 @@ function IconSteps({
   return (
     <ol className="space-y-3">
       {items.map(([head, detail], i) => {
-        const Icon = icons[i];
+        const Icon = icons[i] ?? icons[icons.length - 1];
         return (
           <li key={head} className="flex gap-3">
             <InkChip tint={tint} size="sm">
@@ -193,7 +201,7 @@ function IconSteps({
             </InkChip>
             <div>
               <p className="font-semibold">{head}</p>
-              <p className="text-sm" style={{ color: paper("b3") }}>
+              <p className="text-sm leading-relaxed" style={{ color: FLOW_TEXT.muted }}>
                 {detail}
               </p>
             </div>
@@ -207,22 +215,22 @@ function IconSteps({
 /** The /seedstack progress board, dressed as the terminal it prints in. */
 function TerminalBoard({ lines }: { lines: readonly string[] }) {
   return (
-    <div className="overflow-hidden rounded-xl" style={{ boxShadow: `inset 0 0 0 1px ${paper("26")}` }}>
+    <div className={`${flowPanelClass} overflow-hidden`}>
       <div
         className="flex items-center gap-1.5 px-4 py-2.5"
-        style={{ backgroundColor: paper("14") }}
+        style={{ backgroundColor: paper("14"), borderBottom: `1px solid ${paper("40")}` }}
         aria-hidden="true"
       >
         {[INK.pink, INK.yellow, INK.blue].map((c) => (
           <span key={c} className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: c }} />
         ))}
-        <span className="ml-2 font-mono text-xs" style={{ color: paper("80") }}>
+        <span className="ml-2 font-mono text-xs" style={{ color: FLOW_TEXT.muted }}>
           /seedstack
         </span>
       </div>
       <pre
-        className="p-4 font-mono text-sm leading-relaxed"
-        style={{ backgroundColor: paper("0d"), color: INK.paper }}
+        className="overflow-x-auto p-4 font-mono text-sm leading-relaxed"
+        style={{ color: FLOW_TEXT.strong }}
       >
         {lines.join("\n")}
       </pre>
@@ -245,7 +253,7 @@ function InstallSection() {
 function StartSection() {
   return (
     <Section def={SECTIONS[1]}>
-      <p className="leading-relaxed" style={{ color: paper("cc") }}>
+      <p className="leading-relaxed" style={{ color: FLOW_TEXT.body }}>
         {G.start.body}
       </p>
       <TerminalBoard lines={G.start.board} />
@@ -256,11 +264,11 @@ function StartSection() {
 function CommandsSection() {
   return (
     <Section def={SECTIONS[2]}>
-      <ul className="divide-y rounded-xl" style={{ ...cardStyle, borderColor: paper("1a") }}>
+      <ul className={`${flowPanelClass} divide-y divide-[rgba(242,234,217,0.2)]`}>
         {G.commands.rows.map((row) => {
           const Icon = COMMAND_ICONS[row.cmd] ?? SquareTerminal;
           return (
-            <li key={row.cmd} className="flex items-start gap-3 p-4" style={{ borderColor: paper("1a") }}>
+            <li key={row.cmd} className="flex items-start gap-3 p-4">
               <InkChip tint={INK.pink} size="sm">
                 <Icon className="h-4 w-4" />
               </InkChip>
@@ -269,11 +277,11 @@ function CommandsSection() {
                   <code className="font-semibold" style={{ color: INK.yellow }}>
                     {row.cmd}
                   </code>
-                  <span className="text-xs" style={{ color: paper("99") }}>
+                  <span className="text-[13px]" style={{ color: FLOW_TEXT.muted }}>
                     → {row.out}
                   </span>
                 </div>
-                <p className="text-sm" style={{ color: paper("cc") }}>
+                <p className="text-sm leading-relaxed" style={{ color: FLOW_TEXT.body }}>
                   {row.when}
                 </p>
               </div>
@@ -299,20 +307,24 @@ function PrivacySection() {
     <Section def={SECTIONS[4]}>
       <ul className="space-y-3">
         {G.privacy.items.map((item, i) => {
-          const Icon = PRIVACY_ICONS[i];
+          const Icon = PRIVACY_ICONS[i] ?? ShieldCheck;
           return (
             <li key={item} className="flex items-start gap-3">
               <InkChip tint={INK.blue} size="sm">
                 <Icon className="h-4 w-4" />
               </InkChip>
-              <p className="pt-1 text-sm leading-relaxed" style={{ color: paper("cc") }}>
+              <p className="pt-1 text-sm leading-relaxed" style={{ color: FLOW_TEXT.body }}>
                 {item}
               </p>
             </li>
           );
         })}
       </ul>
-      <Link href={G.privacy.link.href} className="inline-block text-sm underline" style={{ color: INK.paper }}>
+      <Link
+        href={G.privacy.link.href}
+        className="inline-flex min-h-12 items-center text-sm font-semibold underline underline-offset-4"
+        style={{ color: FLOW_TEXT.strong }}
+      >
         {G.privacy.link.label}
       </Link>
     </Section>
@@ -324,27 +336,28 @@ export function SeedstackGuide() {
     <div
       className="relative min-h-screen font-bai-jamjuree antialiased"
       style={{ backgroundColor: INK.black, color: INK.paper }}
+      lang="th"
     >
       <RisoPageTexture />
-      <main className="relative mx-auto max-w-xl space-y-12 px-6 py-16">
-        <header className="space-y-4">
+      <ShiftTopBar />
+      <RisoBand>
+        <div className="mx-auto max-w-xl space-y-4 px-6">
           <p
             className="inline-flex items-center gap-2 rounded-full px-3 py-1 font-kodchasan text-sm font-bold"
-            style={{ color: INK.yellow, boxShadow: `inset 0 0 0 1px ${paper("33")}` }}
+            style={{ color: INK.yellow, boxShadow: `inset 0 0 0 1px ${paper("66")}` }}
           >
             <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: INK.yellow }} aria-hidden="true" />
             {G.eyebrow}
           </p>
-          <h1
-            className="font-kodchasan text-3xl font-bold leading-tight sm:text-4xl"
-            style={MISREG_TEXT}
-          >
+          <h1 className="text-balance font-kodchasan text-3xl font-bold leading-snug sm:text-4xl" style={MISREG_TEXT}>
             {G.title}
           </h1>
-          <p className="leading-relaxed" style={{ color: paper("cc") }}>
+          <p className="text-[17px] leading-relaxed" style={{ color: FLOW_TEXT.body }}>
             {G.intro}
           </p>
-        </header>
+        </div>
+      </RisoBand>
+      <main className="relative mx-auto max-w-xl space-y-12 px-6 pb-20 pt-8">
         <Nav />
         <InstallSection />
         <StartSection />

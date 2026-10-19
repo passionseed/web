@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { isAnonymousUser } from "@/lib/supabase/auth";
-import { requiresGuardianConsent } from "@/lib/profile-completion";
+import {
+  dateOfBirthProblem,
+  normalizeDateOfBirth,
+  requiresGuardianConsent,
+} from "@/lib/profile-completion";
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 
@@ -108,6 +112,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = (await request.json()) as CompleteBody;
+    if (typeof body.date_of_birth === "string") {
+      body.date_of_birth = normalizeDateOfBirth(body.date_of_birth);
+    }
     const {
       username,
       date_of_birth,
@@ -126,6 +133,13 @@ export async function POST(request: NextRequest) {
     ) {
       return NextResponse.json(
         { error: "Missing required fields" },
+        { status: 422 }
+      );
+    }
+
+    if (dateOfBirthProblem(date_of_birth)) {
+      return NextResponse.json(
+        { error: "Invalid date of birth" },
         { status: 422 }
       );
     }

@@ -3,14 +3,15 @@
  *
  * Progress events from the SeedStack OpenCode skills. Body is one event or
  * `{ events: [...] }` (local backlog sync). Bearer is the student's `psss_`
- * token from /shift/seedstack. Returns 403 `consent_required` until both the
- * student and a parent have agreed; the skill keeps events local meanwhile.
+ * token from /shift/seedstack. Returns 403 `consent_required` until the
+ * student agrees, and `parent_required` while an under-20's parent has not;
+ * the skill keeps events local meanwhile.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 
 import { parseSeedstackBatch } from "@/lib/seedstack/events";
-import { checkSeedstackToken, storeSeedstackEvents } from "@/lib/seedstack/server";
+import { storeSeedstackEvents } from "@/lib/seedstack/server";
 import { extractSeedstackBearer } from "@/lib/seedstack/tokens";
 
 export async function POST(request: NextRequest) {
@@ -32,14 +33,11 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const check = await checkSeedstackToken(bearer);
-    if (!check.ok) {
-      return NextResponse.json({ ok: false, error: check.error }, { status: check.status });
+    const result = await storeSeedstackEvents(bearer, batch.events);
+    if (!result.ok) {
+      return NextResponse.json({ ok: false, error: result.error }, { status: result.status });
     }
-    const stored = batch.events.length
-      ? await storeSeedstackEvents(check.userId, check.tokenId, batch.events)
-      : 0;
-    return NextResponse.json({ ok: true, stored, rejected: batch.rejected });
+    return NextResponse.json({ ok: true, stored: result.stored, rejected: batch.rejected });
   } catch (error) {
     console.error("[seedstack events] failed:", error);
     return NextResponse.json({ ok: false, error: "server_error" }, { status: 500 });
