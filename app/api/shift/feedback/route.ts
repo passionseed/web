@@ -69,28 +69,29 @@ export async function POST(request: Request) {
     available_days: feedback.availableDays,
   };
 
-  const community = { community_signup: feedback.communitySignup };
+  const reflection = { hardest_moment: feedback.hardestMoment };
 
   try {
     const table = createAdminClient().from("shift_feedback");
-    // Newest columns first. If a migration is not applied yet (PGRST204 for
-    // a missing column, 23514 for an older CHECK), drop the newest answers
-    // and retry rather than losing the submission.
+    const insert = (values: Record<string, unknown>) => table.insert(values).select("id").single();
+    // Newest columns first. If a migration is not applied yet (PGRST204),
+    // drop the newest answers and retry rather than losing the submission.
     const attempts = [
-      { ...row, ...alumniAsk, ...community },
+      { ...row, ...alumniAsk, ...reflection },
       { ...row, ...alumniAsk },
       row,
     ];
-    let { error } = await table.insert(attempts[0]);
+    let { data, error } = await insert(attempts[0]);
     for (const attempt of attempts.slice(1)) {
-      if (error?.code !== "PGRST204" && error?.code !== "23514") break;
+      if (error?.code !== "PGRST204") break;
       console.warn("shift_feedback columns missing; retrying with fewer", error.message);
-      ({ error } = await table.insert(attempt));
+      ({ data, error } = await insert(attempt));
     }
     if (error) {
       return safeServerError("Failed to save SHIFT feedback", error);
     }
-    return NextResponse.json({ ok: true });
+    // The id lets this browser add the community choice in step 2.
+    return NextResponse.json({ ok: true, id: data?.id ?? null });
   } catch (error) {
     return safeServerError("Failed to save SHIFT feedback", error);
   }

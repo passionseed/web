@@ -2081,6 +2081,12 @@ line fills as questions are answered. Choice chips are re-lit on glass as
 reflective pills with a 600ms settle. Nothing blinks or bounces, content is
 visible without JS, and reduced motion turns every animation off.
 
+The form is two steps. Submitting saves the answers first; the panel then
+shows the project community step (`FeedbackCommunityStep`): a saved badge,
+four icon cards for what the community is, and two large glass cards for
+the ways in, with "ask parents first" and "not now" as quiet pills. Keep the
+community explained in cards, never one long paragraph; students skip it.
+
 ### SHIFT[3] Thailand arrival (`/shift/next`)
 
 `ShiftGlobeScene` in `app/shift/layout.tsx` owns one persistent canvas across
