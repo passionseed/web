@@ -17,6 +17,9 @@
     "app/api/cron/meta-backfill/route.ts": {
       "maxDuration": 60
     },
+    "app/api/cron/brain-sync/route.ts": {
+      "maxDuration": 60
+    },
     "app/api/**/*.ts": {
       "maxDuration": 10
     }
@@ -29,6 +32,10 @@
     {
       "path": "/api/cron/seedstack-retention",
       "schedule": "30 3 * * *"
+    },
+    {
+      "path": "/api/cron/brain-sync",
+      "schedule": "0 4 * * *"
     }
   ]
 }
