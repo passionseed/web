@@ -7,6 +7,8 @@ import { ChoiceChips, INPUT, Question } from "@/components/shift/form/ShiftQuest
 import { INK } from "@/components/shift/poster/riso";
 import type { ShiftCohort } from "@/lib/content/shift-cohort";
 import {
+  FEEDBACK_QUESTION_COUNT,
+  COMMUNITY_JOIN_VALUES,
   COMMUNITY_SIGNUP_HINT,
   FEEDBACK_COMMUNITY_SIGNUP,
   FEEDBACK_CONTINUE_PROJECTS,
@@ -68,6 +70,43 @@ function PartHeading({ index, children }: { index: number; children: string }) {
   );
 }
 
+/** How many numbered questions have an answer, for the progress line. */
+function answeredCount(v: Values): number {
+  const filled = (text?: string | null) => (text ?? "").trim().length >= 2;
+  return [
+    v.satisfaction !== undefined,
+    filled(v.canDoNow),
+    v.confidence !== undefined,
+    v.ownership !== undefined,
+    filled(v.ownDecision),
+    Boolean(v.motivation),
+    filled(v.mostValuable),
+    filled(v.changeNext),
+    Boolean(v.priceFit),
+    Boolean(v.payer),
+    v.recommend !== undefined,
+    Boolean(v.continueProject),
+    v.availableDays.length > 0,
+    v.nextSteps.length > 0,
+    Boolean(v.communitySignup),
+  ].filter(Boolean).length;
+}
+
+/** A slow line that fills as questions are answered; sticks while scrolling. */
+function FeedbackProgress({ answered }: { answered: number }) {
+  const total = FEEDBACK_QUESTION_COUNT;
+  return (
+    <div className={styles.progress} aria-live="polite">
+      <span className={styles.progressTrack} aria-hidden="true">
+        <span className={styles.progressFill} style={{ transform: `scaleX(${answered / total})` }} />
+      </span>
+      <span className={styles.progressCount}>
+        ตอบแล้ว {answered}/{total}
+      </span>
+    </div>
+  );
+}
+
 function FeedbackDone({ comingBack, joining }: { comingBack: boolean; joining: boolean }) {
   return (
     <div className={styles.done} role="status">
@@ -77,7 +116,7 @@ function FeedbackDone({ comingBack, joining }: { comingBack: boolean; joining: b
       <p className={styles.doneTitle}>ได้รับแล้ว ขอบคุณนะ</p>
       <p className={styles.doneNote}>ทุกคำตอบพี่อ่านเองหมด และจะเอาไปปรับ SHIFT รอบหน้า</p>
       {comingBack && <p className={styles.doneNote}>รายละเอียด session ศิษย์เก่า พี่จะส่งในกลุ่มนะ แล้วเจอกัน</p>}
-      {joining && <p className={styles.doneNote}>ขอบคุณที่สมัครคอมมูนิตี้นะ รายละเอียดกับวิธีจ่าย พี่จะส่งในกลุ่ม</p>}
+      {joining && <p className={styles.doneNote}>ขอบคุณที่สมัครคอมมูนิตี้นะ รายละเอียด พี่จะส่งในกลุ่ม</p>}
     </div>
   );
 }
@@ -171,13 +210,14 @@ export function ShiftFeedbackForm({
     return (
       <FeedbackDone
         comingBack={values.availableDays.length > 0 && !values.availableDays.includes("none")}
-        joining={values.communitySignup === "join"}
+        joining={COMMUNITY_JOIN_VALUES.includes(values.communitySignup)}
       />
     );
   }
 
   return (
     <form ref={formRef} onSubmit={submit} noValidate>
+      <FeedbackProgress answered={answeredCount(values)} />
       <Question label="ชื่อเล่น" hint="พี่อ่านคู่กับสิ่งที่เห็นตลอด 7 วัน ไม่เอาชื่อไปเผยแพร่" error={errors.nickname}>
         <input {...text("nickname")} placeholder="ชื่อเล่น" autoComplete="nickname" />
       </Question>

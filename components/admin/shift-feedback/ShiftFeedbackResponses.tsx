@@ -1,6 +1,8 @@
 import { Badge } from "@/components/ui/badge";
 import {
+  COMMUNITY_JOIN_VALUES,
   FEEDBACK_COMMUNITY_SIGNUP,
+  FEEDBACK_COMMUNITY_SIGNUP_RETIRED,
   FEEDBACK_CONTINUE_PROJECTS,
   FEEDBACK_DAYS,
   FEEDBACK_MOTIVATIONS,
@@ -20,6 +22,7 @@ import { optionLabel } from "./FeedbackCountBars";
 
 const DAYS = FEEDBACK_DAYS.map((d) => ({ value: d.value, label: d.label }));
 const NEXT_STEPS = [...FEEDBACK_NEXT_STEPS, ...FEEDBACK_NEXT_STEPS_RETIRED];
+const COMMUNITY = [...FEEDBACK_COMMUNITY_SIGNUP, ...FEEDBACK_COMMUNITY_SIGNUP_RETIRED];
 
 const submittedAt = (iso: string) =>
   new Date(iso).toLocaleString("th-TH", {
@@ -73,8 +76,8 @@ function AlumniAnswers({ row }: { row: ShiftFeedbackRow }) {
       {row.continue_project_note && <span className="text-muted-foreground">({row.continue_project_note})</span>}
       <Badge variant="outline">วัน: {days || "–"}</Badge>
       {row.community_signup && (
-        <Badge variant={row.community_signup === "join" ? "default" : "outline"}>
-          คอมมูนิตี้: {optionLabel(FEEDBACK_COMMUNITY_SIGNUP, row.community_signup)}
+        <Badge variant={COMMUNITY_JOIN_VALUES.includes(row.community_signup) ? "default" : "outline"}>
+          คอมมูนิตี้: {optionLabel(COMMUNITY, row.community_signup)}
         </Badge>
       )}
     </div>
