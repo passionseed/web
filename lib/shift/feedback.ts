@@ -7,8 +7,9 @@ import { bangkokToday, formatThaiDate } from "@/lib/content/shift-cohort";
  * End-of-SHIFT feedback contract, shared by the /shift/feedback form and
  * /api/shift/feedback. Part 1 is the day-7 SDT check, part 2 is value and
  * price, part 3 is the alumni ask: pick one project to keep going, say which
- * days suit the weekly alumni session, whether to help run things, and a
- * real sign-up for the community at this batch's research price.
+ * days suit the weekly alumni session, and whether to help run things.
+ * The community sign-up is a second step, saved onto the same row after
+ * the feedback itself is safe.
  * Messages are Thai because students see them as-is.
  */
 
@@ -66,11 +67,17 @@ export const FEEDBACK_NEXT_STEPS_RETIRED = [
   { value: "new_project", label: "เริ่มโปรเจกต์ใหม่ (ตัวเลือกเก่า)" },
 ] as const;
 
+/** "ทุกวันเสาร์ 19:00–21:00 น.", from the calendar defaults in code. */
+export function alumniSessionWhen(): string {
+  const { firstDate, startTime, endTime } = ALUMNI_DEFAULT_DOC.defaults;
+  return [`ทุก${weekdayName(firstDate)}`, timeRangeLabel(startTime, endTime)].filter(Boolean).join(" ");
+}
+
 /** Hint for the day picker, from the calendar defaults in code. Names the
  *  first session until it has passed. */
 export function alumniSessionHint(now: Date = new Date()): string {
-  const { firstDate, startTime, endTime } = ALUMNI_DEFAULT_DOC.defaults;
-  const when = [`ทุก${weekdayName(firstDate)}`, timeRangeLabel(startTime, endTime)].filter(Boolean).join(" ");
+  const { firstDate } = ALUMNI_DEFAULT_DOC.defaults;
+  const when = alumniSessionWhen();
   const first = bangkokToday(now) <= firstDate ? ` รอบแรก ${formatThaiDate(firstDate)}` : "";
   return `ตอนนี้นัดกัน${when}${first} มาทำโปรเจกต์ต่อและอัปเดตกัน เลือกวันที่สะดวกได้หลายวัน`;
 }
@@ -97,10 +104,6 @@ export const FEEDBACK_COMMUNITY_SIGNUP_RETIRED = [
 /** Answers that sign the student up, for the done screen and admin badge. */
 export const COMMUNITY_JOIN_VALUES: readonly string[] = ["free_video", "pay_250", "join"];
 
-export const COMMUNITY_SIGNUP_HINT =
-  `ราคาที่วางไว้คือเดือนละ ${COMMUNITY_PLANNED_PRICE.toLocaleString("en-US")} บาท ` +
-  "แต่รุ่นนี้เป็นรุ่นทดลอง เลยเลือกได้ 2 แบบ คลิปพี่ใช้เป็นรีวิวเมื่อผู้ปกครองโอเคแล้วเท่านั้น " +
-  "สมัครแล้วพี่จะส่งรายละเอียดในกลุ่ม ยังไม่ต้องจ่ายตอนนี้";
 
 /** How a student lets us quote them. "named" credits them with a name they
  *  type themselves, never the nickname they answered with. */
@@ -139,6 +142,7 @@ export const shiftFeedbackSchema = z.object({
   nickname: z.string().trim().min(1, "ใส่ชื่อเล่นด้วยนะ").max(30, "ชื่อยาวเกินไป"),
   satisfaction: scale(1, 5),
   canDoNow: answer("เล่าสั้นๆ ก็ได้นะ"),
+  hardestMoment: answer("เล่าสั้นๆ ก็ได้นะ"),
   confidence: scale(1, 5),
   ownership: scale(1, 5),
   ownDecision: answer("นึกถึงสักครั้งก็ได้ เล็กๆ ก็นับ"),
@@ -157,7 +161,6 @@ export const shiftFeedbackSchema = z.object({
     .transform((value) => (value ? value : null)),
   availableDays: exclusiveList(values(FEEDBACK_DAYS), "none", "ยังไม่สะดวก เลือกคู่กับวันอื่นไม่ได้นะ"),
   nextSteps: exclusiveList(values(FEEDBACK_NEXT_STEPS), "not_now", "ยังไม่ตอนนี้ เลือกคู่กับข้ออื่นไม่ได้นะ"),
-  communitySignup: z.enum(values(FEEDBACK_COMMUNITY_SIGNUP), { message: "เลือกหนึ่งข้อนะ" }),
   quoteMode: z.enum(values(FEEDBACK_QUOTE_MODES), { message: "บอกหน่อยว่าให้ยกไปใช้ได้ไหม" }),
   quoteName: z
     .string()
@@ -173,6 +176,17 @@ export const shiftFeedbackSchema = z.object({
     ctx.addIssue({ code: "custom", path: ["quoteName"], message: "ใส่ชื่อที่อยากให้ขึ้นด้วยนะ" });
   }
 });
+
+/** Step 2: the sign-up, written onto the row step 1 created. The row id is
+ *  a random UUID only the submitter's browser receives. */
+export const communitySignupSchema = z.object({
+  id: z.string().uuid(),
+  communitySignup: z.enum(values(FEEDBACK_COMMUNITY_SIGNUP), { message: "เลือกหนึ่งข้อนะ" }),
+});
+export type CommunitySignup = z.infer<typeof communitySignupSchema>["communitySignup"];
+
+/** How long after submitting a student can still pick (or change) a way in. */
+export const COMMUNITY_SIGNUP_WINDOW_HOURS = 24;
 
 export type ShiftFeedbackInput = z.input<typeof shiftFeedbackSchema>;
 export type ShiftFeedback = z.output<typeof shiftFeedbackSchema>;

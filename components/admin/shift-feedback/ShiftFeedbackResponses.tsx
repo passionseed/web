@@ -108,6 +108,7 @@ function ResponseCard({ row }: { row: ShiftFeedbackRow }) {
       </div>
       <dl className="grid gap-3 md:grid-cols-2">
         <Answer label="ตอนนี้ทำอะไรได้ ที่วันแรกทำไม่ได้" value={row.can_do_now} />
+        {row.hardest_moment && <Answer label="ช่วงที่ยากที่สุด และผ่านมาได้ยังไง" value={row.hardest_moment} />}
         <Answer label="ตอนที่ตัดสินใจเอง" value={row.own_decision} />
         <Answer label="ส่วนที่มีค่าที่สุด" value={row.most_valuable} />
         <Answer label="รอบหน้าควรเปลี่ยน" value={row.change_next} />

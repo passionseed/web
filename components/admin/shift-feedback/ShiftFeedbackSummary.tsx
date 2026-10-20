@@ -99,7 +99,7 @@ export function ShiftFeedbackSummary({
             ]}
             counts={summary.communitySignup}
             total={communityAnswered}
-            note={communityAnswered < responses ? `${communityAnswered} of ${responses} were asked` : undefined}
+            note={communityAnswered < responses ? `${communityAnswered} of ${responses} answered` : undefined}
           />
         </div>
       </div>

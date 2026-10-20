@@ -14,7 +14,7 @@ import {
   getShiftCohort,
   type ShiftCohort,
 } from "@/lib/content/shift-cohort";
-import { FEEDBACK_QUESTION_COUNT, alumniSessionHint } from "@/lib/shift/feedback";
+import { FEEDBACK_QUESTION_COUNT, alumniSessionHint, alumniSessionWhen } from "@/lib/shift/feedback";
 
 export const metadata: Metadata = {
   title: "SHIFT feedback",
@@ -99,7 +99,7 @@ export default async function ShiftFeedbackPage({
       <main id="feedback" className={styles.content}>
         <div className={`${space.glass} ${styles.panel}`} data-glass data-feedback-panel>
           <span className={styles.sheen} aria-hidden="true" />
-          <ShiftFeedbackForm cohort={cohort} sessionHint={alumniSessionHint()} />
+          <ShiftFeedbackForm cohort={cohort} sessionHint={alumniSessionHint()} sessionWhen={alumniSessionWhen()} />
         </div>
       </main>
     </div>

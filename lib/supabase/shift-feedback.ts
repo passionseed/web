@@ -27,16 +27,19 @@ export interface ShiftFeedbackRow {
   continue_project: string | null;
   continue_project_note: string | null;
   available_days: string[] | null;
-  /** Null on rows from before the community sign-up (2026-10-20). */
+  /** Null on rows from before the community sign-up (2026-10-20), or when step 2 was skipped. */
   community_signup: string | null;
+  /** Null on rows from before the reflection question (2026-10-20). */
+  hardest_moment: string | null;
   quote_mode: string | null;
   quote_name: string | null;
 }
 
 const COLUMNS =
   "id, cohort, created_at, nickname, satisfaction, confidence, ownership, recommend, can_do_now, own_decision, motivation, most_valuable, change_next, price_fit, payer, next_steps, continue_project, continue_project_note, available_days, quote_mode, quote_name";
-/** Added by 20261020130000; read separately so the page still loads before it is applied. */
-const COMMUNITY_COLUMN = "community_signup";
+/** Added by 20261020130000 and 20261020170000; read separately so the page
+ *  still loads before they are applied. */
+const NEWER_COLUMNS = "community_signup, hardest_moment";
 
 /** Newest first. Pass a cohort name ("SHIFT[1]") to keep one round. */
 export async function listShiftFeedback(cohort?: string): Promise<ShiftFeedbackRow[]> {
@@ -48,12 +51,13 @@ export async function listShiftFeedback(cohort?: string): Promise<ShiftFeedbackR
     return cohort ? query.eq("cohort", cohort) : query;
   };
 
-  let { data, error } = await select(`${COLUMNS}, ${COMMUNITY_COLUMN}`);
+  let { data, error } = await select(`${COLUMNS}, ${NEWER_COLUMNS}`);
   // 42703: column missing because the migration is not applied yet.
   if (error?.code === "42703") ({ data, error } = await select(COLUMNS));
   if (error) throw error;
   return ((data ?? []) as unknown as ShiftFeedbackRow[]).map((row) => ({
     ...row,
     community_signup: row.community_signup ?? null,
+    hardest_moment: row.hardest_moment ?? null,
   }));
 }
