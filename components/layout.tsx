@@ -54,6 +54,7 @@ export function Layout({ children }: LayoutProps) {
     pathname?.startsWith("/plan") ||
     pathname?.includes("finish-profile") ||
     pathname?.includes("complete-profile") ||
+    pathname === "/login" ||
     pathname === "/onboard" ||
     pathname?.startsWith("/onboard/") ||
     isPublicHackathonRoute ||

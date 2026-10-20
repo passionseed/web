@@ -4,6 +4,9 @@ import { useEffect, useState, useTransition } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
+import space from "../next/shiftNext.module.css";
+import styles from "./alumni.module.css";
+
 import { NOTES } from "@/lib/content/pathlab-page";
 
 import { saveAlumniCalendar } from "@/app/shift/alumni/actions";
@@ -231,11 +234,11 @@ export function AlumniCalendar({
       <section
         id={RSVP_ANCHOR}
         aria-labelledby="rsvp-heading"
-        className="mb-8 scroll-mt-24 rounded-2xl p-5 sm:p-6"
-        style={{ backgroundColor: paper("12"), boxShadow: `inset 0 0 0 1.5px ${INK.yellow}88, -5px 4px 0 ${INK.pink}` }}
+        className={`${space.glass} ${styles.rsvp}`}
+        data-glass
       >
         <h2 id="rsvp-heading" className="font-kodchasan text-2xl font-bold leading-snug sm:text-3xl">
-          มาไหม? <span style={{ color: INK.yellow }}>{when}</span>
+          มาไหม? <span>{when}</span>
         </h2>
         <p className="mt-1 text-sm" style={{ color: paper("99") }}>
           {place ? `${place} · ` : ""}สำหรับทุกคนที่จบ SHIFT แล้ว ลิงก์เข้าห้องอยู่ในกลุ่มของรุ่น

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { INK } from "@/components/shift/poster/riso";
+import space from "../next/shiftNext.module.css";
 
 import { RSVP_ANCHOR, RSVP_DONE_EVENT, doneKey } from "./AlumniRsvp";
 
@@ -35,12 +35,12 @@ export function AlumniRsvpStickyBar({ date, label }: { date: string; label: stri
   return (
     <div
       className="fixed inset-x-0 bottom-0 z-40 px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-6 sm:hidden"
-      style={{ background: `linear-gradient(to top, ${INK.black} 55%, transparent)` }}
+      style={{ background: "linear-gradient(to top, var(--void) 55%, transparent)" }}
     >
       <button
         type="button"
-        onClick={() => document.getElementById(RSVP_ANCHOR)?.scrollIntoView({ behavior: "smooth", block: "center" })}
-        className="shift-button w-full"
+        onClick={() => document.getElementById(RSVP_ANCHOR)?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "center" })}
+        className={`${space.cta} w-full`}
       >
         <span>ไปด้วย 🙋 · {label}</span>
       </button>

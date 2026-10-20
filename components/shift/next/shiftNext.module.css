@@ -2537,3 +2537,126 @@ textarea.input {
     transition: none;
   }
 }
+
+/* SHIFT[3]'s Thailand arrival keeps bright geography clear of the copy. */
+.focusShade {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(90deg, var(--void), rgba(3, 4, 11, 0.96) 42%, rgba(3, 4, 11, 0.7) 50%, transparent 65%);
+}
+
+.destination {
+  position: absolute;
+  left: 70%;
+  top: 50%;
+  translate: -50% 1.75rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(3, 4, 11, 0.8);
+  color: var(--sol);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 600ms ease-out;
+}
+
+.destination[data-arrived="true"] {
+  opacity: 1;
+}
+
+@media (max-aspect-ratio: 105/100) {
+  .focusShade {
+    background: linear-gradient(180deg, var(--void), rgba(3, 4, 11, 0.96) 58%, transparent 75%);
+  }
+
+  .destination {
+    left: 50%;
+    top: 75%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .destination {
+    transition: none;
+  }
+}
+
+/* One layout-owned canvas survives /shift → /shift/next navigation. */
+.persistentHost {
+  isolation: isolate;
+}
+
+.persistentHost .page {
+  background: transparent;
+  isolation: auto;
+}
+
+.persistentStage {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 100svh;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.persistentStage .globe {
+  z-index: 0;
+}
+
+.persistentHost .hero {
+  isolation: auto;
+}
+
+.persistentHost .heroInner {
+  z-index: 1;
+}
+
+.persistentHost .sky {
+  z-index: -1;
+}
+
+.persistentHost .focusShade,
+.persistentHost .heroFade {
+  z-index: 0;
+}
+
+.persistentHost .destination {
+  z-index: 1;
+}
+
+/* Copy leaves with the flight and settles in after the destination route loads. */
+.persistentHost .heroCopy {
+  animation: journey-copy-in 650ms var(--glide) 120ms both;
+}
+
+.persistentHost[data-departing="true"] .heroCopy,
+.persistentHost[data-departing="true"] .hud {
+  animation: journey-copy-out 240ms ease-in both;
+}
+
+@keyframes journey-copy-in {
+  from { opacity: 0; transform: translateY(16px); filter: blur(5px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+@keyframes journey-copy-out {
+  from { opacity: 1; transform: translateY(0); filter: blur(0); }
+  to { opacity: 0; transform: translateY(-12px); filter: blur(5px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .persistentHost .heroCopy,
+  .persistentHost[data-departing="true"] .heroCopy,
+  .persistentHost[data-departing="true"] .hud {
+    animation: none;
+  }
+}
+
+.onlineTime {
+  font-size: 0.75rem;
+  color: var(--mist);
+}

@@ -6,12 +6,10 @@ import { ShiftCohortCard } from "@/components/shift/ShiftCohortCard";
 import { ShiftGalleryMotion } from "@/components/shift/ShiftGalleryMotion";
 import { MetaPixel } from "@/components/shift/MetaPixel";
 import { ShiftTopBar } from "@/components/shift/ShiftTopBar";
-import { RisoPageTexture } from "@/components/shift/ShiftRiso";
-import {
-  ChromeBevelFilter,
-  ChromeWordmark,
-  OrbitSky,
-} from "@/components/shift/poster/riso";
+import { ShiftNextCosmos, ShiftNextHero } from "@/components/shift/next/ShiftNextHero";
+import { ShiftJourneyLink } from "@/components/shift/next/ShiftGlobeScene";
+import { ShiftNextLight } from "@/components/shift/next/ShiftNextLight";
+import space from "@/components/shift/next/shiftNext.module.css";
 import { SHIFT_COHORTS, bangkokToday, cohortStatus } from "@/lib/content/shift-cohort";
 import { NOTES } from "@/lib/content/pathlab-page";
 import { NEXT_ROUND_NAME } from "@/lib/content/shift-next";
@@ -50,41 +48,50 @@ export default async function ShiftGalleryPage() {
   const archive = cohorts.filter((cohort) => cohortStatus(cohort, today) !== "open");
 
   return (
-    <div className={`${styles.page} font-bai-jamjuree antialiased`} lang="th">
+    <div className={`${space.page} ${styles.cosmicGallery} font-bai-jamjuree antialiased`} lang="th">
       <MetaPixel pagePath="/shift" />
-      <RisoPageTexture />
+      <ShiftNextCosmos />
+      <ShiftNextLight />
       <ShiftGalleryMotion />
 
-      <header className={styles.hero}>
-        <ChromeBevelFilter />
-        <OrbitSky horizon="320px" speckle={0} />
+      <ShiftNextHero>
         <ShiftTopBar />
-        <div className={`${styles.container} ${styles.heroInner}`}>
-          <div className={styles.heroBrand}>
-            <p className={styles.eyebrow}>PASSIONSEED / BUILDER SPRINT</p>
-            <div aria-hidden="true" className={styles.wordmark}>
-              <ChromeWordmark size="clamp(94px, 10vw, 136px)" name="SHIFT" />
+        <div className={`${space.container} ${space.heroInner}`}>
+          <div className={space.heroCopy}>
+            <p className={space.missionTag}>
+              <span className={space.liveDot} aria-hidden="true" />
+              PassionSeed / Builder Sprint
+            </p>
+            <div aria-hidden="true" className={space.wordmark}>
+              <span className={space.wordmarkText}>SHIFT</span>
             </div>
-          </div>
-          <div className={styles.heroCopy}>
-            <h1 className="font-kodchasan">
-              <span className="sr-only">SHIFT: </span>7 วัน ปั้น 1 โปรเจกต์จริง
+            <h1 className={space.headline}>
+              <span className="sr-only">SHIFT: </span>7 วัน
+              <br /><span>ปั้น 1 โปรเจกต์จริง</span>
             </h1>
-            <p>สร้างของที่คนนอกได้ลองใช้ พร้อมบันทึกจุดพังและสิ่งที่แก้<br className="hidden sm:block" /> และพอร์ต 1 หน้าสำหรับ TCAS 1</p>
-            {open.length > 0 ? (
-              <a href="#rounds" className={styles.textLink}>
-                เลือกรุ่นที่เปิดรับสมัคร
-                <ArrowDown size={16} aria-hidden="true" />
-              </a>
-            ) : (
-              <Link href="/shift/next" className={styles.textLink}>
-                ลงชื่อ {NEXT_ROUND_NAME} เลือกช่วงที่ว่างเอง
-                <ArrowUpRight size={16} aria-hidden="true" />
-              </Link>
-            )}
+            <p className={space.lede}>
+              สร้างของที่คนนอกได้ลองใช้ พร้อมบันทึกจุดพังและสิ่งที่แก้ และพอร์ต 1 หน้าสำหรับ TCAS 1
+            </p>
+            <div className={space.ctaRow}>
+              {open.length > 0 ? (
+                <a href="#rounds" className={space.cta}>
+                  <span>เลือกรุ่นที่เปิดรับสมัคร</span>
+                  <ArrowDown size={16} aria-hidden="true" />
+                </a>
+              ) : (
+                <ShiftJourneyLink className={space.cta}>
+                  <span>ลงชื่อ {NEXT_ROUND_NAME}</span>
+                  <ArrowUpRight size={16} aria-hidden="true" />
+                </ShiftJourneyLink>
+              )}
+              <a href="#rounds" className={space.ghost}>ดูทุกรุ่น</a>
+            </div>
+            <p className={space.preorder}>
+              {open.length > 0 ? "เลือกรุ่นที่ว่าง แล้วเริ่มสร้างด้วยกัน" : "เลือกช่วงที่ว่างเอง ลงชื่อรอบถัดไปได้เลย"}
+            </p>
           </div>
         </div>
-      </header>
+      </ShiftNextHero>
 
       <div id="rounds" className={`${styles.container} ${styles.rounds}`}>
         {open.length > 0 && (

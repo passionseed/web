@@ -28,6 +28,8 @@ const MASK_SRC = "/shift/globe/land-mask.png";
 const BANGKOK = { lat: 13.75, lon: 100.5 };
 const SPIN_PER_SECOND = 0.045;
 const TILT = 0.32;
+const CAMERA_DISTANCE = 4.4;
+const JOURNEY_SECONDS = 4.5;
 
 const color = (hex: string) => new THREE.Color(hex);
 
@@ -75,7 +77,13 @@ function usePointer() {
   return pointer;
 }
 
-function Planet({ still, onReady }: { still: boolean; onReady?: () => void }) {
+function Planet({ still, onReady, onArrive, focusThailand, animateFocus }: {
+  still: boolean;
+  onReady?: () => void;
+  onArrive?: () => void;
+  focusThailand: boolean;
+  animateFocus: boolean;
+}) {
   const mask = useTexture(MASK_SRC);
   // Runs once the mask has loaded, so the placeholder hands over to a lit planet.
   useEffect(() => onReady?.(), [onReady]);
@@ -83,6 +91,18 @@ function Planet({ still, onReady }: { still: boolean; onReady?: () => void }) {
   const spin = useRef<THREE.Group>(null);
   const pointer = usePointer();
   const layout = useLayout();
+  const { viewport } = useThree();
+  const initialLayout = useRef(layout);
+  const arrived = useRef(false);
+  const journey = useRef({
+    focused: focusThailand,
+    elapsed: 0,
+    from: focusThailand && !animateFocus ? 1 : 0,
+    focus: focusThailand && !animateFocus ? 1 : 0,
+    longitude: faceLongitude(BANGKOK.lon) + 0.35,
+    destination: faceLongitude(BANGKOK.lon),
+    position: new THREE.Vector3(),
+  });
   const sun = useMemo(
     () => new THREE.Vector3(-0.85, 0.45, 0.55).normalize(),
     []
@@ -108,30 +128,68 @@ function Planet({ still, onReady }: { still: boolean; onReady?: () => void }) {
   useFrame((state, delta) => {
     const t = still ? 0 : state.clock.elapsedTime;
     earthUniforms.uTime.value = t;
-    if (spin.current)
-      spin.current.rotation.y =
-        faceLongitude(BANGKOK.lon) + 0.35 + t * SPIN_PER_SECOND;
+    const flight = journey.current;
+    if (flight.focused !== focusThailand) {
+      flight.focused = focusThailand;
+      flight.elapsed = 0;
+      flight.from = flight.focus;
+      flight.longitude = spin.current?.rotation.y ?? flight.longitude;
+      // Choose the shortest turn without introducing any roll. Latitude
+      // belongs to the outer x axis, longitude to the inner y axis.
+      const turn = faceLongitude(BANGKOK.lon) - flight.longitude;
+      flight.destination = flight.longitude + Math.atan2(Math.sin(turn), Math.cos(turn));
+      arrived.current = false;
+    }
+    const duration = focusThailand ? JOURNEY_SECONDS : 1.4;
+    flight.elapsed += Math.min(delta, 0.05);
+    const progress = still || (focusThailand && !animateFocus)
+      ? 1 : THREE.MathUtils.clamp(flight.elapsed / duration, 0, 1);
+    const eased = progress * progress * (3 - 2 * progress);
+    const focus = THREE.MathUtils.lerp(flight.from, focusThailand ? 1 : 0, eased);
+    flight.focus = focus;
+    earthUniforms.uRows.value = THREE.MathUtils.lerp(150, 260, focus);
+    if (focusThailand && progress === 1 && !arrived.current) {
+      arrived.current = true;
+      onArrive?.();
+    }
+    if (spin.current) {
+      if (focusThailand) {
+        spin.current.rotation.y = THREE.MathUtils.lerp(flight.longitude, flight.destination, eased);
+      } else if (!still) {
+        spin.current.rotation.y += Math.min(delta, 0.05) * SPIN_PER_SECOND;
+      }
+    }
     if (group.current) {
-      const ease = 1 - Math.exp(-delta * 2.5);
+      const ease = still || (focusThailand && !animateFocus) ? 1 : 1 - Math.exp(-delta * 2.5);
+      // Settle the tilt and parallax as we arrive, keeping Thailand fixed.
       group.current.rotation.x +=
-        (TILT + pointer.current.y * 0.08 - group.current.rotation.x) * ease;
+        (THREE.MathUtils.lerp(TILT + (still ? 0 : pointer.current.y * 0.08), THREE.MathUtils.degToRad(BANGKOK.lat), focus) - group.current.rotation.x) * ease;
       group.current.rotation.z +=
-        (-0.12 + pointer.current.x * -0.05 - group.current.rotation.z) * ease;
-      group.current.position.lerp(layout.position, ease);
-      const s =
-        group.current.scale.x + (layout.scale - group.current.scale.x) * ease;
-      group.current.scale.setScalar(s);
+        ((-0.12 + (still ? 0 : pointer.current.x * -0.05)) * (1 - focus) - group.current.rotation.z) * ease;
+      const targetScale = 2.25;
+      // Compensate for perspective at the near surface so Bangkok lands
+      // beside the desktop copy, and below the phone's signup actions.
+      const perspective = (CAMERA_DISTANCE - targetScale) / CAMERA_DISTANCE;
+      flight.position.set(
+        viewport.aspect > 1.05 ? viewport.width * 0.2 * perspective : 0,
+        viewport.aspect > 1.05 ? 0 : -viewport.height * 0.25 * perspective,
+        0
+      ).lerpVectors(layout.position, flight.position, focus);
+      group.current.position.lerp(flight.position, ease);
+      const target = THREE.MathUtils.lerp(layout.scale, targetScale, focus);
+      const scale = group.current.scale.x + (target - group.current.scale.x) * ease;
+      group.current.scale.setScalar(scale);
     }
   });
 
   return (
     <group
       ref={group}
-      position={layout.position}
-      scale={layout.scale}
+      position={initialLayout.current.position}
+      scale={initialLayout.current.scale}
       rotation={[TILT, 0, -0.12]}
     >
-      <group ref={spin}>
+      <group ref={spin} rotation={[0, faceLongitude(BANGKOK.lon) + 0.35, 0]}>
         <mesh>
           <sphereGeometry args={[1, 128, 128]} />
           <shaderMaterial
@@ -447,7 +505,12 @@ function useOnScreen<T extends Element>() {
   return { ref, visible };
 }
 
-export function ShiftGlobe({ onReady }: { onReady?: () => void }) {
+export function ShiftGlobe({ onReady, onArrive, focusThailand = false, animateFocus = false }: {
+  onReady?: () => void;
+  onArrive?: () => void;
+  focusThailand?: boolean;
+  animateFocus?: boolean;
+}) {
   const reduced = usePrefersReducedMotion();
   const { ref, visible } = useOnScreen<HTMLDivElement>();
 
@@ -455,7 +518,7 @@ export function ShiftGlobe({ onReady }: { onReady?: () => void }) {
     <div ref={ref} className="absolute inset-0" aria-hidden="true">
       <Canvas
         dpr={[1, 1.75]}
-        camera={{ position: [0, 0, 4.4], fov: 38 }}
+        camera={{ position: [0, 0, CAMERA_DISTANCE], fov: 38 }}
         gl={{
           antialias: true,
           alpha: true,
@@ -466,7 +529,7 @@ export function ShiftGlobe({ onReady }: { onReady?: () => void }) {
       >
         <Suspense fallback={null}>
           <Stars still={reduced} />
-          <Planet still={reduced} onReady={onReady} />
+          <Planet still={reduced} onReady={onReady} onArrive={onArrive} focusThailand={focusThailand} animateFocus={animateFocus} />
         </Suspense>
       </Canvas>
     </div>

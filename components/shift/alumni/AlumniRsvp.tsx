@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Check } from "lucide-react";
 
+import space from "../next/shiftNext.module.css";
+
 import { ChoiceChips, INPUT } from "@/components/shift/form/ShiftQuestion";
 import { INK } from "@/components/shift/poster/riso";
 import { RSVP_COHORTS, RSVP_NOTICE, rsvpCountLabel } from "@/lib/shift/alumniRsvp";
@@ -139,7 +141,7 @@ export function AlumniRsvp({ date, initialCount }: { date: string; initialCount:
   if (mode === "known") {
     return (
       <div className="space-y-3">
-        <button type="button" onClick={() => void send()} disabled={sending} className="shift-button w-full sm:w-auto">
+        <button type="button" onClick={() => void send()} disabled={sending} className={`${space.cta} w-full disabled:opacity-50 sm:w-auto`}>
           <span>{sending ? "กำลังส่ง..." : `ไปด้วย ในชื่อ ${nickname} · ${cohort}`}</span>
         </button>
         {errorLine}
@@ -180,7 +182,7 @@ export function AlumniRsvp({ date, initialCount }: { date: string; initialCount:
         aria-hidden="true"
       />
       {errorLine}
-      <button type="submit" disabled={sending} className="shift-button w-full sm:w-auto">
+      <button type="submit" disabled={sending} className={`${space.cta} w-full disabled:opacity-50 sm:w-auto`}>
         <span>{sending ? "กำลังส่ง..." : "ไปด้วย 🙋"}</span>
       </button>
       <p className="text-sm" style={{ color: paper("99") }}>

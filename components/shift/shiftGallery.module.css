@@ -505,3 +505,42 @@
     transition: none !important;
   }
 }
+
+/* The round gallery shares /shift/next's globe and cosmos. Scope these
+   tokens to /shift so the school page keeps its own material identity. */
+.cosmicGallery {
+  --gallery-paper: var(--star);
+  --gallery-muted: var(--mist);
+  --gallery-hair: var(--line);
+  --gallery-accent: var(--aurora);
+}
+
+.cosmicGallery .rounds {
+  padding-top: 4rem;
+}
+
+.cosmicGallery .sectionHeading h2 {
+  font-weight: 500;
+}
+
+.cosmicGallery .artLink {
+  border-radius: 0;
+}
+
+.cosmicGallery a:focus-visible {
+  outline: 3px solid var(--aurora);
+  outline-offset: 5px;
+}
+
+@media (hover: none) {
+  .cosmicGallery a:active {
+    opacity: 0.8;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cosmicGallery *, .cosmicGallery *::before, .cosmicGallery *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
