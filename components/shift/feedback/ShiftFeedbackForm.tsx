@@ -8,8 +8,7 @@ import { ChoiceChips, INPUT, Question } from "@/components/shift/form/ShiftQuest
 import { INK } from "@/components/shift/poster/riso";
 import type { ShiftCohort } from "@/lib/content/shift-cohort";
 import {
-  COMMUNITY_SIGNUP_HINT,
-  FEEDBACK_COMMUNITY_SIGNUP,
+  communitySignupOffer,
   FEEDBACK_CONTINUE_PROJECTS,
   FEEDBACK_DAYS,
   FEEDBACK_MOTIVATIONS,
@@ -94,6 +93,7 @@ export function ShiftFeedbackForm({
   /** Day-picker hint, worked out on the server so it matches on hydration. */
   sessionHint: string;
 }) {
+  const communityOffer = communitySignupOffer(cohort.round);
   const [values, setValues] = useState<Values>({
     round: cohort.round,
     nickname: "",
@@ -256,9 +256,9 @@ export function ShiftFeedbackForm({
         <CheckChips options={FEEDBACK_NEXT_STEPS} value={values.nextSteps} onChange={(v) => set("nextSteps", toggleExclusive(values.nextSteps, v, "not_now"))} />
       </Question>
 
-      <Question num={15} label="อยากทำโปรเจกต์ต่อกับ AfterSHIFT ไหม" hint={COMMUNITY_SIGNUP_HINT} error={errors.communitySignup}>
+      <Question num={15} label="อยากทำโปรเจกต์ต่อกับ AfterSHIFT ไหม" hint={communityOffer.hint} error={errors.communitySignup}>
         <p className="mb-4 text-sm leading-relaxed"><Link href="/shift/alumni" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">ดูว่า AfterSHIFT ทำอะไรกัน (เปิดแท็บใหม่)</Link></p>
-        <ChoiceChips stacked name="AfterSHIFT" options={FEEDBACK_COMMUNITY_SIGNUP} value={values.communitySignup} onChange={(v) => set("communitySignup", v)} />
+        <ChoiceChips stacked name="AfterSHIFT" options={communityOffer.options} value={values.communitySignup} onChange={(v) => set("communitySignup", v)} />
       </Question>
 
       <Question

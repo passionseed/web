@@ -1,5 +1,4 @@
 import {
-  COMMUNITY_RESEARCH_PRICE,
   FEEDBACK_COMMUNITY_SIGNUP,
   FEEDBACK_CONTINUE_PROJECTS,
   FEEDBACK_DAYS,
@@ -91,7 +90,7 @@ export function ShiftFeedbackSummary({
             total={responses}
           />
           <FeedbackCountBars
-            title={`Community sign-up at ฿${COMMUNITY_RESEARCH_PRICE} (payment confirmed separately)`}
+            title="AfterSHIFT sign-up (test price varies by cohort; payment confirmed separately)"
             options={FEEDBACK_COMMUNITY_SIGNUP}
             counts={summary.communitySignup}
             total={communityAnswered}
