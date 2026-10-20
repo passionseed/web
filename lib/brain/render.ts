@@ -13,6 +13,7 @@ export const SOURCE = "passionseed.org admin";
 export const PAGES = {
   log: "product-log.md",
   shift: "shift.md",
+  alumni: "alumni.md",
   numbers: "numbers.md",
 } as const;
 
@@ -82,6 +83,19 @@ function thb(value: number): string {
   return value === 0 ? "Free" : `฿${value.toLocaleString("en-US")}`;
 }
 
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+/** "Saturday" for "2026-10-17". */
+function weekday(isoDate: string): string {
+  return WEEKDAYS[new Date(`${isoDate}T00:00:00Z`).getUTCDay()];
+}
+
+/** "19:00 to 21:00", "from 19:00", or undefined before a time is set. */
+function timeRange(start?: string, end?: string): string | undefined {
+  if (!start) return undefined;
+  return end ? `${start} to ${end}` : `from ${start}`;
+}
+
 // ---- product-log.md -----------------------------------------------------
 
 /** Adds one dated line under the month heading, newest first. Idempotent per event. */
@@ -114,13 +128,63 @@ export function addLogLine(content: string, date: string, line: string, eventId:
   return lines.join("\n").replace(/\n*$/, "\n");
 }
 
+// ---- Bot-owned section tables (shift.md, alumni.md) -----------------------
+
+interface SectionTable {
+  heading: string;
+  intro: string;
+  header: string[];
+  /** The bot adds its section above this heading when the page has it. */
+  before: string;
+}
+
+/**
+ * Upserts the row keyed by `key` in a bot-owned table, creating the section
+ * if needed. `merge` gets the existing cells, or `(fill in)` for a new row.
+ */
+function upsertSectionRow(
+  content: string,
+  table: SectionTable,
+  key: string,
+  merge: (old: string[]) => string[],
+): string {
+  const headerRow = joinRow(table.header);
+  const separator = `|${table.header.map(() => "---").join("|")}|`;
+  let lines = content.replace(/\n*$/, "").split("\n");
+  let heading = lines.findIndex((l) => l.trim() === table.heading);
+  if (heading < 0) {
+    const section = [table.heading, "", table.intro, "", headerRow, separator, ""];
+    const before = lines.findIndex((l) => l.trim() === table.before);
+    if (before >= 0) {
+      lines.splice(before, 0, ...section);
+      heading = before;
+    } else {
+      lines.push("", ...section);
+      heading = lines.length - section.length;
+    }
+  }
+  const firstCell = `| ${table.header[0]} |`;
+  let header = lines.findIndex((l, i) => i > heading && l.trim().startsWith(firstCell));
+  if (header < 0) {
+    lines.splice(heading + 1, 0, "", headerRow, separator);
+    header = heading + 2;
+  }
+  lines = upsertTableRow(lines, header, key, (existing) =>
+    merge(existing ?? table.header.map(() => FILL_IN)),
+  );
+  return lines.join("\n") + "\n";
+}
+
 // ---- shift.md -----------------------------------------------------------
 
 export const ROUNDS_HEADING = "## Rounds in the web app";
-const ROUNDS_INTRO =
-  "Written automatically by the `web-sync` bot from admin actions on passionseed.org. Prices and counts are in [numbers.md](numbers.md).";
-const ROUNDS_HEADER = ["Round", "Status", "Starts", "Days", "Closes", "Source", "As of"];
-const ROUNDS_SEPARATOR = `|${ROUNDS_HEADER.map(() => "---").join("|")}|`;
+const ROUNDS_TABLE: SectionTable = {
+  heading: ROUNDS_HEADING,
+  intro:
+    "Written automatically by the `web-sync` bot from admin actions on passionseed.org. Prices and counts are in [numbers.md](numbers.md).",
+  header: ["Round", "Status", "Starts", "Days", "Closes", "Source", "As of"],
+  before: "## Open questions",
+};
 
 export interface RoundFacts {
   status?: string;
@@ -137,45 +201,53 @@ export function upsertRoundRow(
   source: string,
   asOf: string,
 ): string {
-  let lines = content.replace(/\n*$/, "").split("\n");
-  let heading = lines.findIndex((l) => l.trim() === ROUNDS_HEADING);
-  if (heading < 0) {
-    const section = [
-      ROUNDS_HEADING,
-      "",
-      ROUNDS_INTRO,
-      "",
-      joinRow(ROUNDS_HEADER),
-      ROUNDS_SEPARATOR,
-      "",
-    ];
-    const before = lines.findIndex((l) => l.trim() === "## Open questions");
-    if (before >= 0) {
-      lines.splice(before, 0, ...section);
-      heading = before;
-    } else {
-      lines.push("", ...section);
-      heading = lines.length - section.length;
-    }
-  }
-  let header = lines.findIndex((l, i) => i > heading && l.trim().startsWith("| Round |"));
-  if (header < 0) {
-    lines.splice(heading + 1, 0, "", joinRow(ROUNDS_HEADER), ROUNDS_SEPARATOR);
-    header = heading + 2;
-  }
-  lines = upsertTableRow(lines, header, roundLabel, (existing) => {
-    const old = existing ?? ROUNDS_HEADER.map(() => FILL_IN);
-    return [
-      roundLabel,
-      facts.status ?? old[1] ?? FILL_IN,
-      facts.starts_on ?? old[2] ?? FILL_IN,
-      facts.days !== undefined ? String(facts.days) : (old[3] ?? FILL_IN),
-      facts.closes_on ?? old[4] ?? FILL_IN,
-      source,
-      asOf,
-    ];
-  });
-  return lines.join("\n") + "\n";
+  return upsertSectionRow(content, ROUNDS_TABLE, roundLabel, (old) => [
+    roundLabel,
+    facts.status ?? old[1] ?? FILL_IN,
+    facts.starts_on ?? old[2] ?? FILL_IN,
+    facts.days !== undefined ? String(facts.days) : (old[3] ?? FILL_IN),
+    facts.closes_on ?? old[4] ?? FILL_IN,
+    source,
+    asOf,
+  ]);
+}
+
+// ---- alumni.md ----------------------------------------------------------
+
+export const SESSIONS_HEADING = "## Sessions in the web app";
+const SESSIONS_TABLE: SectionTable = {
+  heading: SESSIONS_HEADING,
+  intro:
+    "Written automatically by the `web-sync` bot from the alumni calendar admin on passionseed.org (passionseed.org/shift/alumni). Times are Bangkok time. RSVP counts are in [numbers.md](numbers.md).",
+  header: ["Session", "Title", "Time", "Status", "Source", "As of"],
+  before: "## Open questions",
+};
+
+/** The weekly series row's key in the sessions table. */
+export const WEEKLY_SERIES = "Weekly series";
+
+export interface SessionFacts {
+  title?: string;
+  time?: string;
+  status?: string;
+}
+
+/** Upserts a row (a session date, or the weekly series) in the alumni.md sessions table. */
+export function upsertSessionRow(
+  content: string,
+  key: string,
+  facts: SessionFacts,
+  source: string,
+  asOf: string,
+): string {
+  return upsertSectionRow(content, SESSIONS_TABLE, key, (old) => [
+    key,
+    facts.title ?? old[1] ?? FILL_IN,
+    facts.time ?? old[2] ?? FILL_IN,
+    facts.status ?? old[3] ?? FILL_IN,
+    source,
+    asOf,
+  ]);
 }
 
 // ---- numbers.md ---------------------------------------------------------
@@ -210,6 +282,7 @@ const METRIC_LABELS: Record<string, string> = {
   certificates: "certificates issued",
   members: "members",
   enrollments: "enrollments",
+  gallery_products: "products published in the gallery",
 };
 
 const PROGRAM_LABELS: Record<string, string> = {
@@ -248,12 +321,23 @@ export function renderEvent(event: StoredBrainEvent, today: string): RenderedEve
       apply: (c) => setUpdated(upsertRoundRow(c, label, facts, source, date), today),
     });
   };
+  const session = (key: string, facts: SessionFacts) => {
+    const values = Object.values(facts).filter((v): v is string => v !== undefined);
+    edits.push({
+      path: PAGES.alumni,
+      text: [key, source, ...values],
+      apply: (c) => setUpdated(upsertSessionRow(c, key, facts, source, date), today),
+    });
+  };
   const number = (label: string, value: string) => {
     edits.push({
       path: PAGES.numbers,
       text: [label, value, source],
       apply: (c) => setUpdated(upsertNumber(c, label, value, source, date), today),
     });
+  };
+  const rsvps = (sessionDate: string, value: number | undefined) => {
+    if (value !== undefined) number(`Alumni session ${sessionDate} RSVPs`, value.toLocaleString("en-US"));
   };
 
   switch (event.type) {
@@ -314,6 +398,38 @@ export function renderEvent(event: StoredBrainEvent, today: string): RenderedEve
       const when = p.starts_on ? `, starts ${p.starts_on}` : "";
       return log(`SHIFT camp cohort "${p.name}" created in the web app${when}`);
     }
+    case "hackathon_team_invites_opened":
+      return log("Hackathon team invite links turned on in the admin");
+    case "hackathon_team_invites_closed":
+      return log("Hackathon team invite links turned off in the admin");
+    case "alumni_schedule_changed": {
+      const p = event.payload;
+      const every = `${weekday(p.first_date)} from ${p.first_date}`;
+      const time = timeRange(p.start_time, p.end_time);
+      session(WEEKLY_SERIES, { title: `Every ${every}`, time, status: "Scheduled" });
+      return log(`Alumni weekly session set to every ${every}${time ? `, ${time}` : ""}`);
+    }
+    case "alumni_session_created": {
+      const p = event.payload;
+      const time = timeRange(p.start_time, p.end_time);
+      session(p.date, { title: p.title, time, status: "One-off event" });
+      const what = p.title ? `: ${p.title}` : "";
+      return log(`Alumni event added on ${weekday(p.date)} ${p.date}${what}`);
+    }
+    case "alumni_session_changed": {
+      const p = event.payload;
+      const time = timeRange(p.start_time, p.end_time);
+      session(p.date, { title: p.title, time, status: "Scheduled" });
+      rsvps(p.date, p.rsvps);
+      const parts = [p.title, time].filter(Boolean);
+      return log(`Alumni session on ${weekday(p.date)} ${p.date} updated${parts.length ? `: ${parts.join(", ")}` : ""}`);
+    }
+    case "alumni_session_cancelled": {
+      const p = event.payload;
+      session(p.date, { title: p.title, status: "Cancelled" });
+      rsvps(p.date, p.rsvps);
+      return log(`Alumni session on ${weekday(p.date)} ${p.date} cancelled`);
+    }
     case "program_count_snapshot": {
       const p = event.payload;
       const scope =
@@ -333,6 +449,7 @@ export function renderEvent(event: StoredBrainEvent, today: string): RenderedEve
 const PAGE_TITLES: Record<string, string> = {
   [PAGES.log]: "Product log",
   [PAGES.shift]: "Shift",
+  [PAGES.alumni]: "Alumni community",
   [PAGES.numbers]: "Key numbers",
 };
 
