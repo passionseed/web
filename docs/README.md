@@ -19,6 +19,7 @@ Documentation index. Files are organized by purpose, not by date.
 | [npc-conversation-json-format.md](npc-conversation-json-format.md) | NPC conversation content format |
 | [google-oauth-setup-guide.md](google-oauth-setup-guide.md) | Google OAuth setup |
 | [setup-gemini-api.md](setup-gemini-api.md) | Gemini API setup |
+| [brain-sync.md](brain-sync.md) | Brain sync: how merges to `main` update the company brain automatically |
 
 ## 📁 `architecture/` — Design, Schema & System Architecture
 
