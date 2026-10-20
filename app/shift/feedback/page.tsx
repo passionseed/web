@@ -70,7 +70,7 @@ export default async function ShiftFeedbackPage({
           className="text-center text-sm leading-relaxed sm:text-base"
           style={{ color: paper("b3") }}
         >
-          14 ข้อ ประมาณ 5 นาที ตอบตามจริงได้เลย
+          15 ข้อ ประมาณ 5 นาที ตอบตามจริงได้เลย
           <br />
           คำตอบนี้พี่ใช้ปรับ SHIFT รอบหน้า ไม่มีผลกับอะไรของเราทั้งนั้น
         </p>

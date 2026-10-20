@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import {
+  FEEDBACK_COMMUNITY_SIGNUP,
   FEEDBACK_CONTINUE_PROJECTS,
   FEEDBACK_DAYS,
   FEEDBACK_MOTIVATIONS,
@@ -71,6 +72,11 @@ function AlumniAnswers({ row }: { row: ShiftFeedbackRow }) {
       <Badge variant="secondary">{optionLabel(FEEDBACK_CONTINUE_PROJECTS, row.continue_project)}</Badge>
       {row.continue_project_note && <span className="text-muted-foreground">({row.continue_project_note})</span>}
       <Badge variant="outline">วัน: {days || "–"}</Badge>
+      {row.community_signup && (
+        <Badge variant={row.community_signup === "join" ? "default" : "outline"}>
+          คอมมูนิตี้: {optionLabel(FEEDBACK_COMMUNITY_SIGNUP, row.community_signup)}
+        </Badge>
+      )}
     </div>
   );
 }
