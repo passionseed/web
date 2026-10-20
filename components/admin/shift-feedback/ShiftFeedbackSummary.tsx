@@ -1,4 +1,6 @@
 import {
+  COMMUNITY_RESEARCH_PRICE,
+  FEEDBACK_COMMUNITY_SIGNUP,
   FEEDBACK_CONTINUE_PROJECTS,
   FEEDBACK_DAYS,
   FEEDBACK_MOTIVATIONS,
@@ -41,7 +43,7 @@ export function ShiftFeedbackSummary({
   /** Weekday key of the alumni session ("sat"), highlighted in the day chart. */
   sessionDay: string;
 }) {
-  const { averages, responses, alumniAnswered } = summary;
+  const { averages, responses, alumniAnswered, communityAnswered } = summary;
   // Retired options only get a row when an old answer used them.
   const nextSteps = [
     ...FEEDBACK_NEXT_STEPS,
@@ -87,6 +89,13 @@ export function ShiftFeedbackSummary({
             options={nextSteps}
             counts={summary.nextSteps}
             total={responses}
+          />
+          <FeedbackCountBars
+            title={`Community sign-up at ฿${COMMUNITY_RESEARCH_PRICE} (payment confirmed separately)`}
+            options={FEEDBACK_COMMUNITY_SIGNUP}
+            counts={summary.communitySignup}
+            total={communityAnswered}
+            note={communityAnswered < responses ? `${communityAnswered} of ${responses} were asked` : undefined}
           />
         </div>
       </div>

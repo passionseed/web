@@ -1,21 +1,19 @@
 import type { Metadata } from "next";
+import { ArrowDown } from "lucide-react";
 
 import { ShiftFeedbackForm } from "@/components/shift/feedback/ShiftFeedbackForm";
+import styles from "@/components/shift/feedback/feedback.module.css";
 import { ShiftTopBar } from "@/components/shift/ShiftTopBar";
-import { RisoPageTexture } from "@/components/shift/ShiftRiso";
-import {
-  ChromeBevelFilter,
-  ChromeWordmark,
-  INK,
-  OrbitSky,
-} from "@/components/shift/poster/riso";
+import { ShiftNextCosmos, ShiftNextHero } from "@/components/shift/next/ShiftNextHero";
+import { ShiftNextLight } from "@/components/shift/next/ShiftNextLight";
+import space from "@/components/shift/next/shiftNext.module.css";
 import {
   SHIFT_COHORTS,
   cohortStatus,
   getShiftCohort,
   type ShiftCohort,
 } from "@/lib/content/shift-cohort";
-import { alumniSessionHint } from "@/lib/shift/feedback";
+import { FEEDBACK_QUESTION_COUNT, alumniSessionHint } from "@/lib/shift/feedback";
 
 export const metadata: Metadata = {
   title: "SHIFT feedback",
@@ -36,8 +34,7 @@ function feedbackCohort(round?: string): ShiftCohort {
   return started.at(-1) ?? SHIFT_COHORTS[0];
 }
 
-const paper = (alpha: string) => `${INK.paper}${alpha}`;
-
+/** /shift/feedback: end-of-round feedback under the shared SHIFT globe. */
 export default async function ShiftFeedbackPage({
   searchParams,
 }: {
@@ -46,35 +43,59 @@ export default async function ShiftFeedbackPage({
   const cohort = feedbackCohort((await searchParams).round);
 
   return (
-    <div
-      className="relative min-h-screen font-bai-jamjuree antialiased"
-      style={{ backgroundColor: INK.black, color: INK.paper }}
-    >
-      <RisoPageTexture />
+    <div className={`${space.page} font-bai-jamjuree antialiased`} lang="th">
+      <ShiftNextCosmos />
+      <ShiftNextLight />
 
-      <header className="relative overflow-hidden">
-        <ChromeBevelFilter />
-        <OrbitSky horizon="clamp(240px, 34svh, 320px)" speckle={0} />
+      <ShiftNextHero>
         <ShiftTopBar />
-        <div
-          className="relative flex flex-col items-center justify-end pb-10 text-center"
-          style={{ minHeight: "clamp(240px, 34svh, 320px)" }}
-        >
-          <p className="font-kodchasan text-lg font-semibold">จบแล้ว</p>
-          <ChromeWordmark size="clamp(64px, 13vw, 120px)" name={cohort.name} />
+        <div className={`${space.container} ${space.heroInner}`}>
+          <div className={space.heroCopy}>
+            <p className={space.missionTag}>
+              <span className={space.liveDot} aria-hidden="true" />
+              Mission complete · Round {String(cohort.round).padStart(2, "0")}
+            </p>
+            <div className={space.wordmark} aria-hidden="true">
+              <span className={space.wordmarkText}>SHIFT</span>
+              <span className={space.lens}>
+                <span>{cohort.round}</span>
+              </span>
+            </div>
+            <h1 className={space.headline}>
+              <span className="sr-only">{cohort.name} feedback: </span>
+              จบ 7 วันแล้ว
+              <br />
+              <span>เล่าให้พี่ฟังหน่อย ว่าเป็นยังไง</span>
+            </h1>
+            <p className={space.lede}>
+              ตอบตามจริงได้เลย คำตอบนี้พี่ใช้ปรับ SHIFT รอบหน้า ไม่มีผลกับอะไรของเราทั้งนั้น
+            </p>
+            <div className={space.ctaRow}>
+              <a href="#feedback" className={space.cta} style={{ ["--nudge" as string]: "0 2px" }}>
+                <span>เริ่มตอบ</span>
+                <ArrowDown className="h-4 w-4" aria-hidden="true" />
+              </a>
+            </div>
+          </div>
+          <dl className={`${space.glass} ${space.hud}`} data-glass>
+            <div>
+              <dt>Questions</dt>
+              <dd>{FEEDBACK_QUESTION_COUNT} ข้อ</dd>
+            </div>
+            <div>
+              <dt>Time</dt>
+              <dd>ประมาณ 5 นาที</dd>
+            </div>
+            <div>
+              <dt>Login</dt>
+              <dd>ไม่ต้อง</dd>
+            </div>
+          </dl>
         </div>
-      </header>
+      </ShiftNextHero>
 
-      <main className="relative mx-auto max-w-2xl px-5 pb-24 pt-10 sm:px-8">
-        <p
-          className="text-center text-sm leading-relaxed sm:text-base"
-          style={{ color: paper("b3") }}
-        >
-          14 ข้อ ประมาณ 5 นาที ตอบตามจริงได้เลย
-          <br />
-          คำตอบนี้พี่ใช้ปรับ SHIFT รอบหน้า ไม่มีผลกับอะไรของเราทั้งนั้น
-        </p>
-        <div className="mt-8">
+      <main id="feedback" className={styles.content}>
+        <div className={`${space.glass} ${styles.panel}`} data-glass>
           <ShiftFeedbackForm cohort={cohort} sessionHint={alumniSessionHint()} />
         </div>
       </main>

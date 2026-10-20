@@ -17,6 +17,7 @@ const valid = {
   continueProject: "own",
   availableDays: ["fri", "sat"],
   nextSteps: ["help_run", "co_host"],
+  communitySignup: "join",
   quoteMode: "anonymous",
   consent: true,
 };
@@ -60,6 +61,13 @@ describe("shiftFeedbackSchema", () => {
     expect(shiftFeedbackSchema.safeParse({ ...valid, quoteMode: "named" }).success).toBe(false);
     const named = shiftFeedbackSchema.safeParse({ ...valid, quoteMode: "named", quoteName: "มิว ม.5" });
     expect(named.success && named.data.quoteName).toBe("มิว ม.5");
+  });
+
+  it("requires a community sign-up answer", () => {
+    const { communitySignup: _, ...noAnswer } = valid;
+    expect(shiftFeedbackSchema.safeParse(noAnswer).success).toBe(false);
+    expect(shiftFeedbackSchema.safeParse({ ...valid, communitySignup: "maybe" }).success).toBe(false);
+    expect(shiftFeedbackSchema.safeParse({ ...valid, communitySignup: "ask_parents" }).success).toBe(true);
   });
 
   it("requires PDPA consent", () => {

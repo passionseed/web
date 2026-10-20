@@ -2062,6 +2062,17 @@ their existing behavior. Use the shared glass surface for RSVP and the shared
 white CTA for both form submission and the mobile sticky action. The agenda
 uses divided rows rather than the print poster's offset shadows and stamps.
 
+### SHIFT feedback globe (`/shift/feedback`)
+
+The end-of-round feedback page joins the persistent globe scene with
+`ShiftNextHero`, `ShiftNextCosmos`, and the shared space tokens. The hero
+names the round in the wordmark lens and leads to the form with the white
+CTA; the readout under it gives the question count, time, and no-login note.
+Questions keep the shared SHIFT form blocks (`ShiftQuestion`, feedback chips)
+on one glass panel. Part headings use the aurora index and hairline of the
+section eyebrow, and the submit and done mark use the white CTA. Layout lives
+in `components/shift/feedback/feedback.module.css`.
+
 ### SHIFT[3] Thailand arrival (`/shift/next`)
 
 `ShiftGlobeScene` in `app/shift/layout.tsx` owns one persistent canvas across

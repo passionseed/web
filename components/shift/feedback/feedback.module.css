@@ -1,0 +1,104 @@
+/* /shift/feedback shares the live globe, cosmos and glass with /shift/next.
+   The questions keep the shared SHIFT form blocks; this file only places
+   them on glass and re-lights the part headings and done state. */
+
+.content {
+  position: relative;
+  max-width: 46rem;
+  margin-inline: auto;
+  padding: 2rem 1rem 7rem;
+  scroll-margin-top: 1.5rem;
+}
+
+.panel {
+  padding: 0.5rem 1.25rem 2rem;
+}
+
+/* The first question sits on the glass edge, so it needs no divider. */
+.panel form > fieldset:first-child {
+  border-top: 0;
+}
+
+.part {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 3rem;
+  padding-bottom: 0.5rem;
+  font-family: var(--latin);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.part::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  max-width: 3rem;
+  background: linear-gradient(90deg, rgba(127, 227, 255, 0.5), transparent);
+}
+
+.partIndex {
+  color: var(--aurora);
+  font-variant-numeric: tabular-nums;
+}
+
+.partTitle {
+  font-family: var(--font-kodchasan), var(--latin);
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--star);
+}
+
+.submit {
+  margin-top: 2rem;
+  width: 100%;
+}
+
+.done {
+  padding: 4rem 0.5rem;
+  text-align: center;
+}
+
+.doneMark {
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  margin-inline: auto;
+  border-radius: 50%;
+  color: #070815;
+  background: linear-gradient(180deg, #ffffff 0%, #e2e7fa 100%);
+  box-shadow: 0 14px 40px -14px rgba(150, 175, 255, 0.8);
+}
+
+.doneTitle {
+  margin-top: 1.5rem;
+  font-size: 1.6rem;
+  font-weight: 500;
+}
+
+.doneNote {
+  max-width: 24rem;
+  margin: 0.75rem auto 0;
+  line-height: 1.75;
+  color: var(--mist);
+}
+
+@media (min-width: 640px) {
+  .content {
+    padding: 4rem 2rem 6rem;
+  }
+
+  .panel {
+    padding: 1rem 2.5rem 2.5rem;
+  }
+
+  .submit {
+    width: auto;
+  }
+}
