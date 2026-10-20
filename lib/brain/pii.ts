@@ -30,7 +30,8 @@ export function findPii(text: string): PiiKind | null {
   if (EMAIL.test(clean)) return "email";
   if (THAI_ID.test(clean)) return "thai_id";
   if (CARD.test(clean)) return "card";
-  if (PHONE.test(clean)) return "phone";
+  // Before the phone check: digit runs inside a token can look like a phone number.
   if (TOKENS.some((pattern) => pattern.test(clean))) return "token";
+  if (PHONE.test(clean)) return "phone";
   return null;
 }
