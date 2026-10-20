@@ -3,7 +3,7 @@
   margin-top: 1rem;
   font-family: var(--latin);
   font-size: 0.875rem;
-  letter-spacing: 0.55em;
+  letter-spacing: 0.02em;
   color: var(--aurora);
 }
 
@@ -119,5 +119,80 @@
 }
 
 .wordmark {
-  font-size: clamp(76px, 12.5vw, 140px);
+  font-size: clamp(44px, 9vw, 104px);
 }
+
+.after {
+  color: var(--aurora);
+  font-weight: 300;
+  }
+.intro {
+  padding-block: 1rem 4rem;
+  scroll-margin-top: 2rem;
+  }
+.eyebrow {
+  color: var(--aurora);
+  font-family: var(--latin);
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  }
+.sectionTitle {
+  margin-top: 1rem;
+  font-family: var(--font-kodchasan);
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  line-height: 1.5;
+  font-weight: 500;
+  }
+.introCopy {
+  max-width: 34rem;
+  margin-top: 1rem;
+  color: var(--mist);
+  line-height: 1.8;
+  }
+.buildLoop {
+  margin-top: 2rem;
+  }
+.buildLoop li {
+  display: flex;
+  gap: 1.25rem;
+  padding-block: 1.5rem;
+  border-top: 1px solid var(--line);
+  }
+.loopIndex {
+  color: var(--aurora);
+  font-family: var(--latin);
+  font-size: 0.75rem;
+  padding-top: 0.4rem;
+  }
+.buildLoop h3 {
+  font-family: var(--font-kodchasan);
+  font-size: 1.125rem;
+  font-weight: 500;
+  }
+.buildLoop p {
+  margin-top: 0.5rem;
+  color: var(--mist);
+  line-height: 1.8;
+  }
+.boardLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 44px;
+  margin-top: 1rem;
+  color: var(--aurora);
+  text-decoration: underline;
+  text-underline-offset: 5px;
+  }
+.boardLink:focus-visible {
+  outline: 2px solid var(--aurora);
+  outline-offset: 4px;
+  }
+.accessNote {
+  margin-top: 0.5rem;
+  color: var(--faint);
+  font-size: 0.8125rem;
+  }
+.calendar {
+  scroll-margin-top: 2rem;
+  }

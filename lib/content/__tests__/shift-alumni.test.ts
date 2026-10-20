@@ -130,7 +130,7 @@ describe("session details and calendar links", () => {
     const params = new URL(url!).searchParams;
     expect(params.get("dates")).toBe("20261017T190000/20261017T203000");
     expect(params.get("ctz")).toBe("Asia/Bangkok");
-    expect(params.get("text")).toBe("SHIFT Alumni: Build night");
+    expect(params.get("text")).toBe("AfterSHIFT: Build night");
   });
 
   it("has no link without a time or when cancelled", () => {

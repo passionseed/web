@@ -1,4 +1,4 @@
-import { alumniSessionHint, shiftFeedbackSchema } from "./feedback";
+import { alumniSessionHint, communitySignupOffer, shiftFeedbackSchema } from "./feedback";
 
 const valid = {
   round: 1,
@@ -85,5 +85,24 @@ describe("alumniSessionHint", () => {
     expect(before).toContain("ทุกวันเสาร์ 19:00–21:00 น.");
     expect(before).toContain("รอบแรก ส. 17 ต.ค.");
     expect(alumniSessionHint(new Date("2026-10-18T09:00:00+07:00"))).not.toContain("รอบแรก");
+  });
+});
+
+describe("AfterSHIFT monthly test offer", () => {
+  it("quotes the SHIFT[2] alumni test in both the explanation and signup", () => {
+    const offer = communitySignupOffer(2);
+    expect(offer.price).toBe(300);
+    expect(offer.hint).toContain("SHIFT[2]");
+    expect(offer.hint).toContain("เดือนละ 300 บาท");
+    expect(offer.hint).toContain("ทดสอบรูปแบบและราคา");
+    expect(offer.options.find((option) => option.value === "join")?.label).toContain("เดือนละ 300 บาท");
+    expect(offer.hint).not.toContain("690");
+  });
+
+  it("preserves the offer for other cohorts and the stored answer values", () => {
+    for (const round of [0, 1, 3]) {
+      expect(communitySignupOffer(round).price).toBe(690);
+    }
+    expect(communitySignupOffer(2).options.map((option) => option.value)).toEqual(["join", "ask_parents", "not_now"]);
   });
 });

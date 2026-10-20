@@ -2062,6 +2062,16 @@ their existing behavior. Use the shared glass surface for RSVP and the shared
 white CTA for both form submission and the mobile sticky action. The agenda
 uses divided rows rather than the print poster's offset shadows and stamps.
 
+### AfterSHIFT (`/shift/alumni`)
+
+The alumni community is named **AfterSHIFT**. Keep the existing URL, shared
+Dawn globe scene, and calendar/RSVP behavior. The wordmark uses a small enough
+fluid scale for the full name to fit on phones. The introduction uses divided,
+numbered rows to explain weekly goals, small teams, and the weekly session,
+then links to the invite-only board. Feedback questions and calendar exports
+use the same name. Membership pricing remains in the feedback offer's shared
+constants; the calendar RSVP is separate from paid membership.
+
 ### SHIFT feedback globe (`/shift/feedback`)
 
 The end-of-round feedback page joins the persistent globe scene with

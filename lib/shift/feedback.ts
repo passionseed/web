@@ -56,7 +56,7 @@ export const FEEDBACK_DAYS = [
  *  Rows from before 2026-10-14 may also hold `project_club` or `new_project`. */
 export const FEEDBACK_NEXT_STEPS = [
   { value: "help_run", label: "ช่วยรัน SHIFT รอบหน้า แบบมีค่าตอบแทน" },
-  { value: "co_host", label: "ช่วย co-host session ศิษย์เก่า" },
+  { value: "co_host", label: "ช่วย co-host AfterSHIFT" },
   { value: "not_now", label: "ยังไม่ตอนนี้" },
 ] as const;
 
@@ -75,23 +75,34 @@ export function alumniSessionHint(now: Date = new Date()): string {
   return `ตอนนี้นัดกัน${when}${first} มาทำโปรเจกต์ต่อและอัปเดตกัน เลือกวันที่สะดวกได้หลายวัน`;
 }
 
-/** Community membership: a real sign-up, not a poll. This batch tests a
- *  research price under the planned one. Ref: company-brain numbers.md
- *  "Community membership proposal". */
-export const COMMUNITY_PLANNED_PRICE = 1500;
+/** Existing cohort offer, with a SHIFT[2]-only test approved on 2026-10-20.
+ *  Prices are monthly; this changes no SHIFT course fees. */
 export const COMMUNITY_RESEARCH_PRICE = 690;
+export const SHIFT_2_ALUMNI_TEST_PRICE = 300;
 
+/** Stored answers do not record the quoted price, so admin labels must not
+ *  assign today's offer to historical sign-ups. */
 export const FEEDBACK_COMMUNITY_SIGNUP = [
-  { value: "join", label: `สมัคร ราคาวิจัยเดือนละ ${COMMUNITY_RESEARCH_PRICE} บาท` },
+  { value: "join", label: "สมัคร AfterSHIFT" },
   { value: "ask_parents", label: "ขอคุยกับผู้ปกครองก่อน" },
   { value: "not_now", label: "ยังไม่ตอนนี้" },
 ] as const;
 
-export const COMMUNITY_SIGNUP_HINT =
-  `ราคาที่วางไว้คือเดือนละ ${COMMUNITY_PLANNED_PRICE.toLocaleString("en-US")} บาท ` +
-  `แต่รุ่นนี้เป็นรุ่นทดลอง เลยเป็นราคาวิจัยเดือนละ ${COMMUNITY_RESEARCH_PRICE} บาท ` +
-  "เพราะเรายังหาราคาที่ทุกบ้านเข้าถึงได้อยู่ " +
-  "สมัครแล้วพี่จะส่งรายละเอียดกับวิธีจ่ายในกลุ่ม ยังไม่ต้องจ่ายตอนนี้";
+export function communitySignupOffer(round: number) {
+  const price = round === 2 ? SHIFT_2_ALUMNI_TEST_PRICE : COMMUNITY_RESEARCH_PRICE;
+  const audience = round === 2 ? "ราคาทดลองสำหรับศิษย์เก่า SHIFT[2]" : "ราคาทดลอง";
+  return {
+    price,
+    options: FEEDBACK_COMMUNITY_SIGNUP.map((option) => ({
+      ...option,
+      label: option.value === "join" ? `สมัคร AfterSHIFT ${audience} เดือนละ ${price} บาท` : option.label,
+    })),
+    hint:
+      "AfterSHIFT ช่วยต่อยอดโปรเจกต์หลังจบ 7 วัน ผ่านการลงมือทำกับเพื่อนและพี่เมนเทอร์ " +
+      `${audience} เดือนละ ${price} บาท เป็นการทดสอบรูปแบบและราคา ` +
+      "สมัครไว้ก่อนได้ พี่จะส่งรายละเอียดกับวิธีจ่ายในกลุ่ม ยังไม่ต้องจ่ายตอนนี้ และตอบฟีดแบ็กได้เหมือนเดิมแม้ไม่เข้าร่วม",
+  };
+}
 
 /** How a student lets us quote them. "named" credits them with a name they
  *  type themselves, never the nickname they answered with. */
