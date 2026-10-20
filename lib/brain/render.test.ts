@@ -6,7 +6,9 @@ import {
   setUpdated,
   upsertNumber,
   upsertRoundRow,
+  upsertSessionRow,
 } from "./render";
+import { findPii } from "./pii";
 import { parseBrainEvent, type StoredBrainEvent } from "./schema";
 
 const TODAY = "2026-10-21";
@@ -44,6 +46,22 @@ Intro.
 - One.
 `;
 
+const ALUMNI = `---
+title: Alumni community
+updated: 2026-10-20
+---
+
+# Alumni community
+
+## Weekly session
+
+- **When:** (fill in)
+
+## Open questions
+
+- Time. (fill in)
+`;
+
 const NUMBERS = `---
 title: Key numbers
 updated: 2026-10-20
@@ -76,6 +94,38 @@ describe("schema", () => {
       payload: { round: 3, student_name: "Somchai", email: "a@b.co" },
     });
     expect(parsed).toEqual({ type: "shift_round_published", payload: { round: 3 } });
+  });
+
+  it("drops an unsafe session title but keeps the event", () => {
+    const parsed = parseBrainEvent({
+      type: "alumni_session_created",
+      payload: { date: "2026-10-24", title: "Call 081 234 5678 | @someone", host: "Nong A" },
+    });
+    expect(parsed).toEqual({ type: "alumni_session_created", payload: { date: "2026-10-24" } });
+  });
+
+  it("accepts Thai titles and rejects bad times and negative totals", () => {
+    expect(
+      parseBrainEvent({
+        type: "alumni_session_changed",
+        payload: { date: "2026-10-24", title: "Icebreak: วาดโปรเจกต์ใน 60 วิ · Build", start_time: "19:00", rsvps: 4 },
+      }),
+    ).toEqual({
+      type: "alumni_session_changed",
+      payload: { date: "2026-10-24", title: "Icebreak: วาดโปรเจกต์ใน 60 วิ · Build", start_time: "19:00", rsvps: 4 },
+    });
+    expect(
+      parseBrainEvent({ type: "alumni_session_changed", payload: { date: "2026-10-24", start_time: "7pm" } }),
+    ).toBeNull();
+    expect(
+      parseBrainEvent({ type: "alumni_session_cancelled", payload: { date: "2026-10-24", rsvps: -1 } }),
+    ).toBeNull();
+  });
+
+  it("keeps hackathon invite events empty", () => {
+    expect(
+      parseBrainEvent({ type: "hackathon_team_invites_opened", payload: { team: "x", token: "abc" } }),
+    ).toEqual({ type: "hackathon_team_invites_opened", payload: {} });
   });
 
   it("rejects unknown types and bad labels", () => {
@@ -135,6 +185,17 @@ describe("upsertRoundRow", () => {
   });
 });
 
+describe("upsertSessionRow", () => {
+  it("creates the alumni section before Open questions and merges later facts", () => {
+    const first = upsertSessionRow(ALUMNI, "2026-10-24", { title: "Build night", status: "Scheduled" }, "a", TODAY);
+    expect(first.indexOf("## Sessions in the web app")).toBeLessThan(first.indexOf("## Open questions"));
+    expect(first).toContain("| 2026-10-24 | Build night | (fill in) | Scheduled | a | 2026-10-21 |");
+    const out = upsertSessionRow(first, "2026-10-24", { status: "Cancelled" }, "b", "2026-10-22");
+    expect(out).toContain("| 2026-10-24 | Build night | (fill in) | Cancelled | b | 2026-10-22 |");
+    expect(out.match(/\| 2026-10-24 \|/g)).toHaveLength(1);
+  });
+});
+
 describe("upsertNumber", () => {
   it("updates an existing row in the main table", () => {
     const out = upsertNumber(NUMBERS, "shift[2] price per person", "฿750", "admin", TODAY);
@@ -153,6 +214,7 @@ describe("renderEvent", () => {
   const pages: Record<string, string> = {
     "product-log.md": LOG,
     "shift.md": SHIFT,
+    "alumni.md": ALUMNI,
     "numbers.md": NUMBERS,
   };
   const run = (event: StoredBrainEvent) => {
@@ -203,15 +265,93 @@ describe("renderEvent", () => {
     expect(log).toContain("- 2026-10-21 · shift[2] round archived in the web app");
   });
 
+  it("renders hackathon invite toggles into the log only", () => {
+    const { summary, out } = run(stored({ type: "hackathon_team_invites_opened", payload: {} }));
+    expect(summary).toBe("Hackathon team invite links turned on in the admin");
+    expect(Object.keys(out)).toEqual(["product-log.md"]);
+    expect(run(stored({ type: "hackathon_team_invites_closed", payload: {} })).summary).toBe(
+      "Hackathon team invite links turned off in the admin",
+    );
+  });
+
+  it("keeps the hackathon gallery total in numbers.md", () => {
+    const { summary, out } = run(
+      stored({ type: "program_count_snapshot", payload: { program: "hackathon", metric: "gallery_products", value: 12 } }),
+    );
+    expect(summary).toBe("Hackathon products published in the gallery: 12 (total)");
+    expect(out["numbers.md"]).toContain("| Hackathon products published in the gallery | 12 |");
+  });
+
+  it("renders the alumni weekly schedule", () => {
+    const { summary, out } = run(
+      stored({ type: "alumni_schedule_changed", payload: { first_date: "2026-10-17", start_time: "19:00", end_time: "21:00" } }),
+    );
+    expect(summary).toBe("Alumni weekly session set to every Saturday from 2026-10-17, 19:00 to 21:00");
+    expect(out["alumni.md"]).toContain(
+      "| Weekly series | Every Saturday from 2026-10-17 | 19:00 to 21:00 | Scheduled | passionseed.org admin, event 12345678 | 2026-10-21 |",
+    );
+    expect(out["alumni.md"]).toContain(`updated: ${TODAY}`);
+    expect(out["product-log.md"]).toContain(summary);
+  });
+
+  it("renders an added one-off alumni event", () => {
+    const { summary, out } = run(
+      stored({ type: "alumni_session_created", payload: { date: "2026-10-28", title: "TCAS talk", start_time: "18:00", end_time: "19:30" } }),
+    );
+    expect(summary).toBe("Alumni event added on Wednesday 2026-10-28: TCAS talk");
+    expect(out["alumni.md"]).toContain("| 2026-10-28 | TCAS talk | 18:00 to 19:30 | One-off event |");
+    expect(out["numbers.md"]).toBeUndefined();
+  });
+
+  it("keeps alumni RSVP totals in numbers.md, not alumni.md", () => {
+    const changed = run(
+      stored({ type: "alumni_session_changed", payload: { date: "2026-10-24", title: "Build night", start_time: "19:00", rsvps: 7 } }),
+    );
+    expect(changed.summary).toBe("Alumni session on Saturday 2026-10-24 updated: Build night, from 19:00");
+    expect(changed.out["alumni.md"]).toContain("| 2026-10-24 | Build night | from 19:00 | Scheduled |");
+    expect(changed.out["alumni.md"]).not.toContain("| 7 |");
+    expect(changed.out["numbers.md"]).toContain("| Alumni session 2026-10-24 RSVPs | 7 |");
+
+    const cancelled = run(stored({ type: "alumni_session_cancelled", payload: { date: "2026-10-24", rsvps: 3 } }));
+    expect(cancelled.summary).toBe("Alumni session on Saturday 2026-10-24 cancelled");
+    expect(cancelled.out["alumni.md"]).toContain("| 2026-10-24 | (fill in) | (fill in) | Cancelled |");
+    expect(cancelled.out["numbers.md"]).toContain("| Alumni session 2026-10-24 RSVPs | 3 |");
+
+    const noCount = run(stored({ type: "alumni_session_cancelled", payload: { date: "2026-10-24" } }));
+    expect(noCount.out["numbers.md"]).toBeUndefined();
+  });
+
+  it("seeds a missing alumni page with a header", () => {
+    const { edits } = renderEvent(stored({ type: "alumni_session_cancelled", payload: { date: "2026-10-24" } }), TODAY);
+    const page = applyEdits("", "alumni.md", edits.filter((e) => e.path === "alumni.md"), TODAY);
+    expect(page.startsWith(`---\ntitle: Alumni community\nupdated: ${TODAY}\n---`)).toBe(true);
+    expect(page).toContain("## Sessions in the web app");
+  });
+
   it("never writes em dashes", () => {
     const events = [
       stored({ type: "shift_round_created", payload: { round: 3 } }),
       stored({ type: "shift_round_dates_changed", payload: { round: 3, closes_on: "2026-11-09" } }),
       stored({ type: "shift_camp_cohort_created", payload: { name: "SHIFT[3]" } }),
       stored({ type: "shift_registration_opened", payload: { round: 3 } }),
+      stored({ type: "alumni_schedule_changed", payload: { first_date: "2026-10-17", start_time: "19:00" } }),
+      stored({ type: "alumni_session_changed", payload: { date: "2026-10-24", rsvps: 2 } }),
+      stored({ type: "hackathon_team_invites_closed", payload: {} }),
     ];
     for (const event of events) {
       for (const page of Object.values(run(event).out)) expect(page).not.toContain("—");
+    }
+  });
+
+  it("passes the PII guard with dates, times and totals", () => {
+    const events = [
+      stored({ type: "alumni_schedule_changed", payload: { first_date: "2026-10-17", start_time: "19:00", end_time: "21:00" } }),
+      stored({ type: "alumni_session_changed", payload: { date: "2026-10-24", title: "Build night", start_time: "19:00", end_time: "21:00", rsvps: 12 } }),
+      stored({ type: "program_count_snapshot", payload: { program: "hackathon", metric: "gallery_products", value: 40 } }),
+    ];
+    for (const event of events) {
+      const { summary, edits } = renderEvent(event, TODAY);
+      expect(findPii([summary, ...edits.flatMap((e) => e.text)].join("\n"))).toBeNull();
     }
   });
 });

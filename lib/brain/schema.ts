@@ -18,6 +18,24 @@ const label = z
   .min(1)
   .max(60)
   .regex(/^[\p{L}\p{M}\p{N} [\]().#_-]+$/u);
+/** Admin-typed session titles. No `|`, `@`, quotes or Markdown marks; an
+ *  unsafe title is dropped rather than failing the whole event. */
+const title = z
+  .string()
+  .trim()
+  .min(1)
+  .max(120)
+  .regex(/^[\p{L}\p{M}\p{N} [\]().#_:,'&!?+/·-]+$/u)
+  .optional()
+  .catch(undefined);
+const clock = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
+const total = z.number().int().min(0).max(10_000_000);
+const alumniSession = {
+  date: isoDate,
+  title,
+  start_time: clock.optional(),
+  end_time: clock.optional(),
+};
 
 export const brainEventSchema = z.discriminatedUnion("type", [
   z.object({
@@ -73,6 +91,34 @@ export const brainEventSchema = z.discriminatedUnion("type", [
     }),
   }),
   z.object({
+    type: z.literal("hackathon_team_invites_opened"),
+    payload: z.object({}),
+  }),
+  z.object({
+    type: z.literal("hackathon_team_invites_closed"),
+    payload: z.object({}),
+  }),
+  z.object({
+    type: z.literal("alumni_schedule_changed"),
+    payload: z.object({
+      first_date: isoDate,
+      start_time: clock.optional(),
+      end_time: clock.optional(),
+    }),
+  }),
+  z.object({
+    type: z.literal("alumni_session_created"),
+    payload: z.object(alumniSession),
+  }),
+  z.object({
+    type: z.literal("alumni_session_changed"),
+    payload: z.object({ ...alumniSession, rsvps: total.optional() }),
+  }),
+  z.object({
+    type: z.literal("alumni_session_cancelled"),
+    payload: z.object({ date: isoDate, title, rsvps: total.optional() }),
+  }),
+  z.object({
     type: z.literal("program_count_snapshot"),
     payload: z.object({
       program: z.enum(["shift", "pathlab", "hackathon", "alumni"]),
@@ -87,8 +133,9 @@ export const brainEventSchema = z.discriminatedUnion("type", [
         "certificates",
         "members",
         "enrollments",
+        "gallery_products",
       ]),
-      value: z.number().int().min(0).max(10_000_000),
+      value: total,
     }),
   }),
 ]);
