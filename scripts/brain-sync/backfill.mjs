@@ -20,7 +20,7 @@ const bangkokDate = (iso) =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Bangkok" }).format(new Date(iso));
 
 // No em or en dashes on brain pages (company-brain copy rule).
-const noDashes = (s) => s.replace(/\s*[—–]\s*/g, ", ");
+const noDashes = (s) => s.replace(/\s*[\u2014\u2013]\s*/g, ", ");
 
 function cleanTitle(title) {
   return noDashes(title)
