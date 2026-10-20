@@ -11,6 +11,14 @@ import { SHIFT_COHORTS } from "@/lib/content/shift-cohort";
 
 export const RSVP_COHORTS = SHIFT_COHORTS.map((c) => ({ value: c.name, label: c.name }));
 
+/** Nickname and round for an alumni account (the alumni board's one-step join). */
+export const alumniProfileSchema = z.object({
+  nickname: z.string().trim().min(1, "ใส่ชื่อเล่นด้วยนะ").max(30, "ชื่อยาวเกินไป"),
+  cohort: z.enum(RSVP_COHORTS.map((c) => c.value) as [string, ...string[]], {
+    message: "เลือกรุ่นด้วยนะ",
+  }),
+});
+
 export const alumniRsvpSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   nickname: z.string().trim().min(1, "ใส่ชื่อเล่นด้วยนะ").max(30, "ชื่อยาวเกินไป"),

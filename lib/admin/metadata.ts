@@ -11,6 +11,7 @@ const ADMIN_TITLES: Record<string, string> = {
   "/admin/shift/seedstack": "SHIFT SeedStack",
   "/admin/shift/feedback": "SHIFT Feedback",
   "/admin/shift/alumni": "SHIFT Alumni",
+  "/admin/shift/alumni/board": "SHIFT Alumni Board",
   "/admin/shift/views": "SHIFT Page Views",
 };
 

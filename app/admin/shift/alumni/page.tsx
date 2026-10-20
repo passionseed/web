@@ -54,6 +54,9 @@ export default async function AdminShiftAlumniPage() {
           <Link href="/shift/poster/alumni-session" className="underline underline-offset-4">
             Poster for the next session
           </Link>
+          <Link href="/admin/shift/alumni/board" className="underline underline-offset-4">
+            Alumni board (goals, teams, standups)
+          </Link>
         </div>
       </div>
 

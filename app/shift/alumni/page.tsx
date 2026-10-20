@@ -15,6 +15,7 @@ import styles from "@/components/shift/alumni/alumni.module.css";
 import { ALUMNI_PAGE_URL, alumniCalendar, longThaiDate, sessionDetails, timeRangeLabel } from "@/lib/content/shift-alumni";
 import { bangkokToday } from "@/lib/content/shift-cohort";
 import { currentShiftAdmin } from "@/lib/shift/admin";
+import { BOARD_PATH } from "@/lib/shift/alumniBoard";
 import { loadAlumniCalendar } from "@/lib/supabase/shift-alumni-calendar";
 import { countAlumniRsvps, listAlumniRsvps, type AlumniRsvp } from "@/lib/supabase/shift-alumni-rsvps";
 
@@ -135,8 +136,16 @@ export default async function ShiftAlumniPage() {
         <AlumniShowcase />
 
         <Link
+          href={BOARD_PATH}
+          className="mt-14 flex items-center justify-center gap-2 text-base font-semibold underline underline-offset-4"
+        >
+          ศิษย์เก่า: เปิดการ์ดเป้าหมาย ทีม และฟีดความคืบหน้า
+          <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </Link>
+
+        <Link
           href="/shift"
-          className="mt-14 flex items-center justify-center gap-2 text-sm font-semibold underline underline-offset-4"
+          className="mt-4 flex items-center justify-center gap-2 text-sm font-semibold underline underline-offset-4"
           style={{ color: "var(--mist)" }}
         >
           ยังไม่เคยลง SHIFT? ดูรอบที่เปิดรับสมัคร
