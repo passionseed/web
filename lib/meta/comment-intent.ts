@@ -42,7 +42,7 @@ export function isUniRequest(text: string | null | undefined): boolean {
 
 /**
  * Latin "shift" as a whole word, so "shifting" and "shifted" in ordinary
- * sentences do not qualify. The SHIFT[1] posts ask people to comment SHIFT.
+ * sentences do not qualify. SHIFT posts ask people to comment SHIFT.
  */
 const LATIN_SHIFT = /(?:^|[^a-z])shift(?![a-z])/i;
 
