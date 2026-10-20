@@ -6,6 +6,7 @@ import { ArrowRight, Check } from "lucide-react";
 
 import { ChoiceChips, INPUT, Question } from "@/components/shift/form/ShiftQuestion";
 import { INK } from "@/components/shift/poster/riso";
+import { AFTERSHIFT_SUPPORT } from "@/lib/content/aftershift";
 import type { ShiftCohort } from "@/lib/content/shift-cohort";
 import {
   communitySignupOffer,
@@ -256,7 +257,16 @@ export function ShiftFeedbackForm({
         <CheckChips options={FEEDBACK_NEXT_STEPS} value={values.nextSteps} onChange={(v) => set("nextSteps", toggleExclusive(values.nextSteps, v, "not_now"))} />
       </Question>
 
-      <Question num={15} label="อยากทำโปรเจกต์ต่อกับ AfterSHIFT ไหม" hint={communityOffer.hint} error={errors.communitySignup}>
+      <Question num={15} label="อยากทำโปรเจกต์ต่อกับ AfterSHIFT ไหม" hint="มีโปรเจกต์แล้ว เราช่วยต่อยอดได้ 3 เรื่อง" error={errors.communitySignup}>
+        <ul className="mb-5 space-y-4 text-sm leading-relaxed">
+          {AFTERSHIFT_SUPPORT.map((support) => (
+            <li key={support.title}>
+              <p className="font-semibold">{support.title}</p>
+              <p className="mt-1 text-white/70">{support.detail}</p>
+            </li>
+          ))}
+        </ul>
+        <p className="mb-4 text-sm leading-relaxed text-white/70">{communityOffer.hint}</p>
         <p className="mb-4 text-sm leading-relaxed"><Link href="/shift/alumni" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">ดูว่า AfterSHIFT ทำอะไรกัน (เปิดแท็บใหม่)</Link></p>
         <ChoiceChips stacked name="AfterSHIFT" options={communityOffer.options} value={values.communitySignup} onChange={(v) => set("communitySignup", v)} />
       </Question>

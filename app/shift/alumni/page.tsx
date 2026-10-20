@@ -13,6 +13,7 @@ import { ShiftGalleryMotion } from "@/components/shift/ShiftGalleryMotion";
 import space from "@/components/shift/next/shiftNext.module.css";
 import styles from "@/components/shift/alumni/alumni.module.css";
 import { ALUMNI_PAGE_URL, alumniCalendar, longThaiDate, sessionDetails, timeRangeLabel } from "@/lib/content/shift-alumni";
+import { AFTERSHIFT_PROMISE, AFTERSHIFT_SUPPORT } from "@/lib/content/aftershift";
 import { bangkokToday } from "@/lib/content/shift-cohort";
 import { currentShiftAdmin } from "@/lib/shift/admin";
 import { BOARD_PATH } from "@/lib/shift/alumniBoard";
@@ -28,11 +29,11 @@ import { countAlumniRsvps, listAlumniRsvps, type AlumniRsvp } from "@/lib/supaba
 export const metadata: Metadata = {
   title: "AfterSHIFT | สร้างโปรเจกต์ต่อหลังจบ SHIFT",
   description:
-    "AfterSHIFT คอมมูนิตี้ทำโปรเจกต์ต่อหลังจบ SHIFT ตั้งเป้าหมายของสัปดาห์ อัปเดตกับทีม และเจอเพื่อนกับพี่เมนเทอร์ใน Discord",
+    "AfterSHIFT ช่วยพาโปรเจกต์ไปลองตลาดจริง หาผู้ใช้เพิ่ม และพัฒนาโปรดักต์แบบมืออาชีพหลังจบ SHIFT",
   alternates: { canonical: "/shift/alumni" },
   openGraph: {
     title: "AfterSHIFT | สร้างโปรเจกต์ต่อหลังจบ SHIFT",
-    description: "AfterSHIFT: ตั้งเป้าหมายรายสัปดาห์ ทำโปรเจกต์ต่อกับทีม และเจอกันใน Discord",
+    description: "AfterSHIFT: ลองตลาดจริง หาผู้ใช้เพิ่ม พัฒนาโปรดักต์แบบมืออาชีพ",
     url: ALUMNI_PAGE_URL,
     type: "website",
   },
@@ -89,12 +90,12 @@ export default async function ShiftAlumniPage() {
             <p className={styles.alumniLabel}>คอมมูนิตี้สำหรับคนที่จบ SHIFT</p>
             <h1 className={space.headline}>
               <span className="sr-only">AfterSHIFT: </span>
-              จบ 7 วันแล้ว
+              พาโปรเจกต์ออกไป
               <br />
-              <span>ยังสร้างต่อด้วยกัน</span>
+              <span>เจอผู้ใช้จริง</span>
             </h1>
             <p className={space.lede}>
-              เลือกเป้าหมายของสัปดาห์ ลงมือทำกับเพื่อน และเอาสิ่งที่ติดมาคุยกันใน Discord
+              {AFTERSHIFT_PROMISE}
             </p>
             <div className={space.ctaRow}>
               <a href={next ? "#rsvp" : "#calendar"} className={space.cta}>
@@ -124,13 +125,17 @@ export default async function ShiftAlumniPage() {
       <main className={styles.content}>
         <section id="aftershift" aria-labelledby="aftershift-heading" className={styles.intro}>
           <p className={styles.eyebrow}>AFTER THE SEVEN DAYS</p>
-          <h2 id="aftershift-heading" className={styles.sectionTitle}>ให้โปรเจกต์ไปต่อ<br />ทีละก้าว ทุกสัปดาห์</h2>
-          <p className={styles.introCopy}>ทำโปรเจกต์เดิม เริ่มสิ่งใหม่ หรือช่วยของเพื่อน เลือกทางที่อยากทำต่อได้เอง</p>
+          <h2 id="aftershift-heading" className={styles.sectionTitle}>AfterSHIFT ช่วยอะไรเราได้บ้าง</h2>
+          <p className={styles.introCopy}>มีโปรเจกต์แล้ว ก้าวต่อไปคือทำให้คนใช้จริง เราช่วยคิด ทดลอง และพัฒนาต่อไปด้วยกัน</p>
           <ol className={styles.buildLoop}>
-            <li><span className={styles.loopIndex}>01</span><div><h3>ตั้งเป้าหมายที่ทำได้จริง</h3><p>เลือกหนึ่งอย่างที่จะทำให้เสร็จสัปดาห์นี้ พร้อมก้าวแรกที่เริ่มได้ใน 10 นาที</p></div></li>
-            <li><span className={styles.loopIndex}>02</span><div><h3>มีทีมให้กลับมาอัปเดต</h3><p>นัดเวลาทำงานกับทีมเล็กๆ แชร์ว่าทำอะไรแล้ว จะทำอะไรต่อ และติดตรงไหน</p></div></li>
-            <li><span className={styles.loopIndex}>03</span><div><h3>เอาสิ่งที่ติดมาคุยกัน</h3><p>กลับมาเจอเพื่อนและพี่เมนเทอร์ในนัดประจำสัปดาห์ ลองของกัน แล้วเลือกก้าวต่อไป</p></div></li>
+            {AFTERSHIFT_SUPPORT.map((support, index) => (
+              <li key={support.title}>
+                <span className={styles.loopIndex}>{String(index + 1).padStart(2, "0")}</span>
+                <div><h3>{support.title}</h3><p>{support.detail}</p></div>
+              </li>
+            ))}
           </ol>
+          <p className={styles.introCopy}>ลงมือทำผ่านเป้าหมายรายสัปดาห์ อัปเดตกับทีมเล็กๆ และเอาสิ่งที่ติดมาคุยกับเพื่อนและพี่เมนเทอร์ใน Discord</p>
           <Link href={BOARD_PATH} className={styles.boardLink}>
             เปิดบอร์ดเป้าหมายและทีมของเรา <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
