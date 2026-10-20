@@ -103,6 +103,9 @@ export const FEEDBACK_QUOTE_MODES = [
 
 /** PDPA notice shown above the consent box. Bump the version when the
  *  substance changes, so stored rows say which text they agreed to. */
+/** Numbered questions on the form, shown in the page header. */
+export const FEEDBACK_QUESTION_COUNT = 15;
+
 export const FEEDBACK_NOTICE_VERSION = "2026-10-20";
 export const FEEDBACK_RETENTION_YEARS = 1;
 

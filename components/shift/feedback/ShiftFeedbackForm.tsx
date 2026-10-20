@@ -24,6 +24,8 @@ import {
 
 import { CheckChips, DayChips, ScaleChips } from "./FeedbackChips";
 import { FeedbackConsent } from "./FeedbackConsent";
+import styles from "./feedback.module.css";
+import space from "../next/shiftNext.module.css";
 
 /**
  * End-of-round SHIFT feedback: 15 questions, about 5 minutes, no login.
@@ -57,40 +59,25 @@ function revealFirstError(form: HTMLFormElement | null) {
   });
 }
 
-function PartHeading({ children }: { children: string }) {
+function PartHeading({ index, children }: { index: number; children: string }) {
   return (
-    <p
-      className="mt-12 pb-2 font-kodchasan text-sm font-semibold uppercase tracking-[0.2em]"
-      style={{ color: INK.yellow }}
-    >
-      {children}
+    <p className={styles.part}>
+      <span className={styles.partIndex}>{String(index).padStart(2, "0")}</span>
+      <span className={styles.partTitle}>{children}</span>
     </p>
   );
 }
 
 function FeedbackDone({ comingBack, joining }: { comingBack: boolean; joining: boolean }) {
   return (
-    <div className="py-16 text-center">
-      <span
-        className="mx-auto flex h-14 w-14 items-center justify-center rounded-full"
-        style={{ backgroundColor: INK.paper, color: INK.black }}
-      >
+    <div className={styles.done} role="status">
+      <span className={styles.doneMark}>
         <Check className="h-7 w-7" strokeWidth={3} />
       </span>
-      <p className="mt-6 font-kodchasan text-2xl font-bold">ได้รับแล้ว ขอบคุณนะ</p>
-      <p className="mx-auto mt-3 max-w-sm leading-relaxed" style={{ color: paper("b3") }}>
-        ทุกคำตอบพี่อ่านเองหมด และจะเอาไปปรับ SHIFT รอบหน้า
-      </p>
-      {comingBack && (
-        <p className="mx-auto mt-3 max-w-sm leading-relaxed" style={{ color: paper("b3") }}>
-          รายละเอียด session ศิษย์เก่า พี่จะส่งในกลุ่มนะ แล้วเจอกัน
-        </p>
-      )}
-      {joining && (
-        <p className="mx-auto mt-3 max-w-sm leading-relaxed" style={{ color: paper("b3") }}>
-          ขอบคุณที่สมัครคอมมูนิตี้นะ รายละเอียดกับวิธีจ่าย พี่จะส่งในกลุ่ม
-        </p>
-      )}
+      <p className={styles.doneTitle}>ได้รับแล้ว ขอบคุณนะ</p>
+      <p className={styles.doneNote}>ทุกคำตอบพี่อ่านเองหมด และจะเอาไปปรับ SHIFT รอบหน้า</p>
+      {comingBack && <p className={styles.doneNote}>รายละเอียด session ศิษย์เก่า พี่จะส่งในกลุ่มนะ แล้วเจอกัน</p>}
+      {joining && <p className={styles.doneNote}>ขอบคุณที่สมัครคอมมูนิตี้นะ รายละเอียดกับวิธีจ่าย พี่จะส่งในกลุ่ม</p>}
     </div>
   );
 }
@@ -195,7 +182,7 @@ export function ShiftFeedbackForm({
         <input {...text("nickname")} placeholder="ชื่อเล่น" autoComplete="nickname" />
       </Question>
 
-      <PartHeading>1 · 7 วันที่ผ่านมา</PartHeading>
+      <PartHeading index={1}>7 วันที่ผ่านมา</PartHeading>
 
       <Question num={1} label="พอใจกับสิ่งที่ทำได้ใน 7 วันแค่ไหน" error={errors.satisfaction}>
         <ScaleChips name="ความพอใจ" min={1} max={5} low="ไม่พอใจเลย" high="พอใจมาก" value={values.satisfaction} onChange={(v) => set("satisfaction", v)} />
@@ -221,7 +208,7 @@ export function ShiftFeedbackForm({
         <ChoiceChips name="เหตุผล" stacked options={FEEDBACK_MOTIVATIONS} value={values.motivation} onChange={(v) => set("motivation", v)} />
       </Question>
 
-      <PartHeading>2 · คุ้มไหม</PartHeading>
+      <PartHeading index={2}>คุ้มไหม</PartHeading>
 
       <Question num={7} label="ส่วนไหนของ SHIFT มีค่ากับเรามากที่สุด" error={errors.mostValuable}>
         {longText("mostValuable", "พิมพ์แบบที่เล่าให้เพื่อนฟังได้เลย")}
@@ -243,7 +230,7 @@ export function ShiftFeedbackForm({
         <ScaleChips name="แนะนำเพื่อน" min={0} max={10} low="ไม่แนะนำเลย" high="แนะนำแน่นอน" value={values.recommend} onChange={(v) => set("recommend", v)} />
       </Question>
 
-      <PartHeading>3 · ต่อจากนี้</PartHeading>
+      <PartHeading index={3}>ต่อจากนี้</PartHeading>
 
       <Question num={12} label="เลือกโปรเจกต์ไว้ทำต่อหนึ่งอย่าง" hint="ไม่ต้องใหญ่ เลือกอันเดียวพอ" error={errors.continueProject ?? errors.continueProjectNote}>
         <ChoiceChips stacked name="โปรเจกต์ที่จะทำต่อ" options={FEEDBACK_CONTINUE_PROJECTS} value={values.continueProject} onChange={(v) => set("continueProject", v)} />
@@ -308,7 +295,7 @@ export function ShiftFeedbackForm({
             ส่งไม่สำเร็จ ลองกดส่งใหม่อีกครั้งนะ คำตอบที่กรอกยังอยู่ครบ
           </p>
         )}
-        <button type="submit" disabled={status === "sending"} className="shift-button mt-8 w-full sm:w-auto">
+        <button type="submit" disabled={status === "sending"} className={`${space.cta} ${styles.submit}`}>
           <span>{status === "sending" ? "กำลังส่ง..." : "ส่งคำตอบ"}</span>
           <ArrowRight className="h-4 w-4" />
         </button>
