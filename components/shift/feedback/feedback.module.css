@@ -14,8 +14,8 @@
   padding: 0.5rem 1.25rem 2rem;
 }
 
-/* The first question sits on the glass edge, so it needs no divider. */
-.panel form > fieldset:first-child {
+/* The first question sits under the progress line, so it needs no divider. */
+.panel form > fieldset:first-of-type {
   border-top: 0;
 }
 
@@ -100,5 +100,244 @@
 
   .submit {
     width: auto;
+  }
+}
+
+/* ---------- Calm motion and reflections ----------
+   Everything here moves slowly and once, or drifts on a long loop. Nothing
+   blinks or bounces. Reduced motion turns all of it off at the end. Easing is the shared
+   --glide curve from the space page. */
+
+/* Hero copy rises in one line at a time, then stays still. */
+.heroCalm > * {
+  animation: calm-rise 1400ms var(--glide) both;
+}
+
+.heroCalm > *:nth-child(2) { animation-delay: 120ms; }
+.heroCalm > *:nth-child(3) { animation-delay: 240ms; }
+.heroCalm > *:nth-child(4) { animation-delay: 380ms; }
+.heroCalm > *:nth-child(5) { animation-delay: 520ms; }
+
+.hudCalm {
+  animation: calm-rise 1600ms var(--glide) 640ms both;
+}
+
+@keyframes calm-rise {
+  from {
+    opacity: 0;
+    translate: 0 14px;
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    filter: blur(0);
+  }
+}
+
+/* A soft band of light drifts across the glass, like a slow reflection.
+   Two selectors so it wins over `.glass > *` from the shared sheet. */
+.panel > .sheen {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.panel > .sheen::before {
+  content: "";
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: -60%;
+  width: 55%;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    rgba(180, 220, 255, 0.05) 40%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(157, 140, 255, 0.05) 60%,
+    transparent 100%
+  );
+  filter: blur(18px);
+  animation: sheen-drift 22s ease-in-out infinite alternate;
+}
+
+/* The top edge holds a faint mirror of the sky above it. */
+.panel > .sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 9rem;
+  background: linear-gradient(180deg, rgba(127, 227, 255, 0.07), transparent);
+  opacity: 0.8;
+  animation: sky-breathe 9s ease-in-out infinite alternate;
+}
+
+@keyframes sheen-drift {
+  to {
+    translate: 290% 0;
+  }
+}
+
+@keyframes sky-breathe {
+  to {
+    opacity: 0.35;
+  }
+}
+
+/* Questions drift up as they scroll in (FeedbackMotion sets the attributes;
+   without JS nothing is hidden). */
+.panel[data-motion] form > fieldset,
+.panel[data-motion] form > p {
+  opacity: 0;
+  translate: 0 18px;
+  filter: blur(4px);
+  transition:
+    opacity 1100ms var(--glide),
+    translate 1100ms var(--glide),
+    filter 1100ms var(--glide);
+}
+
+.panel[data-motion] form > fieldset[data-in-view],
+.panel[data-motion] form > p[data-in-view] {
+  opacity: 1;
+  translate: 0 0;
+  filter: blur(0);
+}
+
+/* Progress: a thin aurora line that fills slowly and stays in reach. */
+.progress {
+  position: sticky;
+  top: 0.75rem;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin: 0.75rem -0.25rem 0;
+  padding: 0.6rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(10, 12, 32, 0.86);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 12px 30px -16px rgba(0, 0, 0, 0.9);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  backdrop-filter: blur(22px) saturate(150%);
+}
+
+.progressTrack {
+  position: relative;
+  flex: 1;
+  height: 2px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.progressFill {
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+  background: linear-gradient(90deg, var(--aurora), var(--nebula));
+  box-shadow: 0 0 12px rgba(127, 227, 255, 0.6);
+  transition: transform 900ms var(--glide);
+}
+
+.progressCount {
+  flex-shrink: 0;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--mist);
+}
+
+/* The shared chips paint riso colours inline; on glass they are re-lit as
+   soft reflective pills, so these overrides need !important. */
+.panel [role="radio"],
+.panel [role="checkbox"] {
+  border-radius: 14px !important;
+  background: rgba(255, 255, 255, 0.045) !important;
+  color: var(--mist) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+  transition:
+    background-color 600ms var(--glide),
+    color 600ms var(--glide),
+    box-shadow 600ms var(--glide),
+    translate 600ms var(--glide) !important;
+}
+
+.panel [role="radio"][aria-checked="true"],
+.panel [role="checkbox"][aria-checked="true"] {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(214, 224, 255, 0.92)) !important;
+  color: #070815 !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 12px 32px -14px rgba(127, 227, 255, 0.75) !important;
+}
+
+@media (hover: hover) {
+  .panel [role="radio"]:hover:not([aria-checked="true"]),
+  .panel [role="checkbox"]:hover:not([aria-checked="true"]) {
+    animation: chip-warm 900ms var(--glide) forwards;
+  }
+}
+
+@keyframes chip-warm {
+  to {
+    color: var(--star);
+    box-shadow: inset 0 0 0 1px rgba(127, 227, 255, 0.35);
+  }
+}
+
+/* Question numbers take the aurora instead of the riso orange. */
+.panel fieldset > div > span:first-child {
+  color: var(--aurora) !important;
+  font-weight: 500 !important;
+  text-shadow: 0 0 18px rgba(127, 227, 255, 0.35);
+}
+
+.panel input,
+.panel textarea {
+  transition: border-color 700ms var(--glide), box-shadow 700ms var(--glide);
+}
+
+.panel input:focus,
+.panel textarea:focus {
+  border-color: var(--aurora) !important;
+  box-shadow: 0 1px 0 0 rgba(127, 227, 255, 0.55);
+}
+
+/* The done mark breathes once, slowly. */
+.doneMark {
+  animation: calm-rise 1200ms var(--glide) both, mark-glow 4s ease-in-out 1200ms infinite alternate;
+}
+
+@keyframes mark-glow {
+  to {
+    box-shadow: 0 18px 50px -12px rgba(127, 227, 255, 0.9);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heroCalm > *,
+  .hudCalm,
+  .doneMark,
+  .panel > .sheen::before,
+  .panel > .sheen::after {
+    animation: none !important;
+  }
+
+  .panel[data-motion] form > fieldset,
+  .panel[data-motion] form > p {
+    opacity: 1;
+    translate: none;
+    filter: none;
+    transition: none;
+  }
+
+  .progressFill,
+  .panel [role="radio"],
+  .panel [role="checkbox"] {
+    transition: none !important;
   }
 }

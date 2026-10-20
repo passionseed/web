@@ -73,8 +73,9 @@ export async function POST(request: Request) {
 
   try {
     const table = createAdminClient().from("shift_feedback");
-    // Newest columns first. If a migration is not applied yet (PGRST204),
-    // drop the newest answers and retry rather than losing the submission.
+    // Newest columns first. If a migration is not applied yet (PGRST204 for
+    // a missing column, 23514 for an older CHECK), drop the newest answers
+    // and retry rather than losing the submission.
     const attempts = [
       { ...row, ...alumniAsk, ...community },
       { ...row, ...alumniAsk },
@@ -82,7 +83,7 @@ export async function POST(request: Request) {
     ];
     let { error } = await table.insert(attempts[0]);
     for (const attempt of attempts.slice(1)) {
-      if (error?.code !== "PGRST204") break;
+      if (error?.code !== "PGRST204" && error?.code !== "23514") break;
       console.warn("shift_feedback columns missing; retrying with fewer", error.message);
       ({ error } = await table.insert(attempt));
     }

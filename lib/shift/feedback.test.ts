@@ -17,7 +17,7 @@ const valid = {
   continueProject: "own",
   availableDays: ["fri", "sat"],
   nextSteps: ["help_run", "co_host"],
-  communitySignup: "join",
+  communitySignup: "free_video",
   quoteMode: "anonymous",
   consent: true,
 };
@@ -67,7 +67,9 @@ describe("shiftFeedbackSchema", () => {
     const { communitySignup: _, ...noAnswer } = valid;
     expect(shiftFeedbackSchema.safeParse(noAnswer).success).toBe(false);
     expect(shiftFeedbackSchema.safeParse({ ...valid, communitySignup: "maybe" }).success).toBe(false);
-    expect(shiftFeedbackSchema.safeParse({ ...valid, communitySignup: "ask_parents" }).success).toBe(true);
+    expect(shiftFeedbackSchema.safeParse({ ...valid, communitySignup: "pay_250" }).success).toBe(true);
+    // The retired ฿690 answer is not offered any more.
+    expect(shiftFeedbackSchema.safeParse({ ...valid, communitySignup: "join" }).success).toBe(false);
   });
 
   it("requires PDPA consent", () => {

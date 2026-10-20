@@ -75,23 +75,32 @@ export function alumniSessionHint(now: Date = new Date()): string {
   return `ตอนนี้นัดกัน${when}${first} มาทำโปรเจกต์ต่อและอัปเดตกัน เลือกวันที่สะดวกได้หลายวัน`;
 }
 
-/** Community membership: a real sign-up, not a poll. This batch tests a
- *  research price under the planned one. Ref: company-brain numbers.md
- *  "Community membership proposal". */
+/** Community membership: a real sign-up, not a poll. This test batch picks
+ *  one of two ways in, both under the planned price: free in exchange for a
+ *  short testimonial clip, or a small monthly fee. Ref: company-brain
+ *  numbers.md "Community membership proposal". */
 export const COMMUNITY_PLANNED_PRICE = 1500;
-export const COMMUNITY_RESEARCH_PRICE = 690;
+export const COMMUNITY_TEST_PRICE = 250;
 
 export const FEEDBACK_COMMUNITY_SIGNUP = [
-  { value: "join", label: `สมัคร ราคาวิจัยเดือนละ ${COMMUNITY_RESEARCH_PRICE} บาท` },
+  { value: "free_video", label: "เข้าฟรี แลกกับคลิปสั้นๆ ที่เราเล่าให้ผู้ปกครองฟังว่าได้อะไรจาก SHIFT" },
+  { value: "pay_250", label: `จ่ายเดือนละ ${COMMUNITY_TEST_PRICE} บาท` },
   { value: "ask_parents", label: "ขอคุยกับผู้ปกครองก่อน" },
   { value: "not_now", label: "ยังไม่ตอนนี้" },
 ] as const;
 
+/** Offered on 2026-10-20 before the two-way offer replaced it; for old rows. */
+export const FEEDBACK_COMMUNITY_SIGNUP_RETIRED = [
+  { value: "join", label: "สมัคร 690 บาท (ตัวเลือกเก่า)" },
+] as const;
+
+/** Answers that sign the student up, for the done screen and admin badge. */
+export const COMMUNITY_JOIN_VALUES: readonly string[] = ["free_video", "pay_250", "join"];
+
 export const COMMUNITY_SIGNUP_HINT =
   `ราคาที่วางไว้คือเดือนละ ${COMMUNITY_PLANNED_PRICE.toLocaleString("en-US")} บาท ` +
-  `แต่รุ่นนี้เป็นรุ่นทดลอง เลยเป็นราคาวิจัยเดือนละ ${COMMUNITY_RESEARCH_PRICE} บาท ` +
-  "เพราะเรายังหาราคาที่ทุกบ้านเข้าถึงได้อยู่ " +
-  "สมัครแล้วพี่จะส่งรายละเอียดกับวิธีจ่ายในกลุ่ม ยังไม่ต้องจ่ายตอนนี้";
+  "แต่รุ่นนี้เป็นรุ่นทดลอง เลยเลือกได้ 2 แบบ คลิปพี่ใช้เป็นรีวิวเมื่อผู้ปกครองโอเคแล้วเท่านั้น " +
+  "สมัครแล้วพี่จะส่งรายละเอียดในกลุ่ม ยังไม่ต้องจ่ายตอนนี้";
 
 /** How a student lets us quote them. "named" credits them with a name they
  *  type themselves, never the nickname they answered with. */

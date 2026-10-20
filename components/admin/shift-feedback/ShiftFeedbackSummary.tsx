@@ -1,6 +1,7 @@
 import {
-  COMMUNITY_RESEARCH_PRICE,
+  COMMUNITY_TEST_PRICE,
   FEEDBACK_COMMUNITY_SIGNUP,
+  FEEDBACK_COMMUNITY_SIGNUP_RETIRED,
   FEEDBACK_CONTINUE_PROJECTS,
   FEEDBACK_DAYS,
   FEEDBACK_MOTIVATIONS,
@@ -91,8 +92,11 @@ export function ShiftFeedbackSummary({
             total={responses}
           />
           <FeedbackCountBars
-            title={`Community sign-up at ฿${COMMUNITY_RESEARCH_PRICE} (payment confirmed separately)`}
-            options={FEEDBACK_COMMUNITY_SIGNUP}
+            title={`Community sign-up: free for a clip, or ฿${COMMUNITY_TEST_PRICE} a month (payment confirmed separately)`}
+            options={[
+              ...FEEDBACK_COMMUNITY_SIGNUP,
+              ...FEEDBACK_COMMUNITY_SIGNUP_RETIRED.filter((o) => summary.communitySignup[o.value]),
+            ]}
             counts={summary.communitySignup}
             total={communityAnswered}
             note={communityAnswered < responses ? `${communityAnswered} of ${responses} were asked` : undefined}
