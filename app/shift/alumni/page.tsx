@@ -26,13 +26,13 @@ import { countAlumniRsvps, listAlumniRsvps, type AlumniRsvp } from "@/lib/supaba
  */
 
 export const metadata: Metadata = {
-  title: "SHIFT Alumni | session ศิษย์เก่าทุกสัปดาห์",
+  title: "AfterSHIFT | สร้างโปรเจกต์ต่อหลังจบ SHIFT",
   description:
-    "จบ SHIFT แล้วยังสร้างต่อด้วยกัน ศิษย์เก่า SHIFT นัดกันทุกสัปดาห์ ออนไลน์ใน Discord มาทำโปรเจกต์ต่อและอัปเดตกัน",
+    "AfterSHIFT คอมมูนิตี้ทำโปรเจกต์ต่อหลังจบ SHIFT ตั้งเป้าหมายของสัปดาห์ อัปเดตกับทีม และเจอเพื่อนกับพี่เมนเทอร์ใน Discord",
   alternates: { canonical: "/shift/alumni" },
   openGraph: {
-    title: "SHIFT Alumni | session ศิษย์เก่าทุกสัปดาห์",
-    description: "จบ SHIFT แล้วยังสร้างต่อด้วยกัน นัดกันทุกสัปดาห์ ออนไลน์ใน Discord",
+    title: "AfterSHIFT | สร้างโปรเจกต์ต่อหลังจบ SHIFT",
+    description: "AfterSHIFT: ตั้งเป้าหมายรายสัปดาห์ ทำโปรเจกต์ต่อกับทีม และเจอกันใน Discord",
     url: ALUMNI_PAGE_URL,
     type: "website",
   },
@@ -81,27 +81,27 @@ export default async function ShiftAlumniPage() {
           <div className={space.heroCopy}>
             <p className={space.missionTag}>
               <span className={space.liveDot} aria-hidden="true" />
-              The builders keep building
+              Your next chapter starts here
             </p>
             <div className={`${space.wordmark} ${styles.wordmark}`} aria-hidden="true">
-              <span className={space.wordmarkText}>SHIFT</span>
+              <span className={styles.after}>After</span><span className={space.wordmarkText}>SHIFT</span>
             </div>
-            <p className={styles.alumniLabel} aria-hidden="true">ALUMNI</p>
+            <p className={styles.alumniLabel}>คอมมูนิตี้สำหรับคนที่จบ SHIFT</p>
             <h1 className={space.headline}>
-              <span className="sr-only">SHIFT Alumni: </span>
+              <span className="sr-only">AfterSHIFT: </span>
               จบ 7 วันแล้ว
               <br />
               <span>ยังสร้างต่อด้วยกัน</span>
             </h1>
             <p className={space.lede}>
-              กลับมาอัปเดตโปรเจกต์ ลองของที่เพื่อนสร้าง แล้วลงมือทำต่อด้วยกัน ออนไลน์ใน Discord
+              เลือกเป้าหมายของสัปดาห์ ลงมือทำกับเพื่อน และเอาสิ่งที่ติดมาคุยกันใน Discord
             </p>
             <div className={space.ctaRow}>
               <a href={next ? "#rsvp" : "#calendar"} className={space.cta}>
                 <span>{next ? "เจอกันนัดต่อไป" : "ดูตารางนัด"}</span>
                 <ArrowDown className="h-4 w-4" aria-hidden="true" />
               </a>
-              <a href="#alumni-built" className={space.ghost}>ดูโปรเจกต์ของเพื่อน</a>
+              <a href="#aftershift" className={space.ghost}>รู้จัก AfterSHIFT</a>
             </div>
             <p className={space.preorder}>สำหรับทุกคนที่จบ SHIFT แล้ว ลิงก์เข้าห้องอยู่ในกลุ่มของรุ่น</p>
           </div>
@@ -121,8 +121,22 @@ export default async function ShiftAlumniPage() {
         </div>
       </ShiftNextHero>
 
-      <main id="calendar" className={styles.content}>
-        <div>
+      <main className={styles.content}>
+        <section id="aftershift" aria-labelledby="aftershift-heading" className={styles.intro}>
+          <p className={styles.eyebrow}>AFTER THE SEVEN DAYS</p>
+          <h2 id="aftershift-heading" className={styles.sectionTitle}>ให้โปรเจกต์ไปต่อ<br />ทีละก้าว ทุกสัปดาห์</h2>
+          <p className={styles.introCopy}>ทำโปรเจกต์เดิม เริ่มสิ่งใหม่ หรือช่วยของเพื่อน เลือกทางที่อยากทำต่อได้เอง</p>
+          <ol className={styles.buildLoop}>
+            <li><span className={styles.loopIndex}>01</span><div><h3>ตั้งเป้าหมายที่ทำได้จริง</h3><p>เลือกหนึ่งอย่างที่จะทำให้เสร็จสัปดาห์นี้ พร้อมก้าวแรกที่เริ่มได้ใน 10 นาที</p></div></li>
+            <li><span className={styles.loopIndex}>02</span><div><h3>มีทีมให้กลับมาอัปเดต</h3><p>นัดเวลาทำงานกับทีมเล็กๆ แชร์ว่าทำอะไรแล้ว จะทำอะไรต่อ และติดตรงไหน</p></div></li>
+            <li><span className={styles.loopIndex}>03</span><div><h3>เอาสิ่งที่ติดมาคุยกัน</h3><p>กลับมาเจอเพื่อนและพี่เมนเทอร์ในนัดประจำสัปดาห์ ลองของกัน แล้วเลือกก้าวต่อไป</p></div></li>
+          </ol>
+          <Link href={BOARD_PATH} className={styles.boardLink}>
+            เปิดบอร์ดเป้าหมายและทีมของเรา <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+          <p className={styles.accessNote}>เข้าบอร์ดด้วยบัญชีที่ได้รับเชิญจากทีม PassionSeed</p>
+        </section>
+        <div id="calendar" className={styles.calendar}>
           <AlumniCalendar
             initial={doc}
             updatedAt={updatedAt}

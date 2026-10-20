@@ -56,7 +56,7 @@ export const FEEDBACK_DAYS = [
  *  Rows from before 2026-10-14 may also hold `project_club` or `new_project`. */
 export const FEEDBACK_NEXT_STEPS = [
   { value: "help_run", label: "ช่วยรัน SHIFT รอบหน้า แบบมีค่าตอบแทน" },
-  { value: "co_host", label: "ช่วย co-host session ศิษย์เก่า" },
+  { value: "co_host", label: "ช่วย co-host AfterSHIFT" },
   { value: "not_now", label: "ยังไม่ตอนนี้" },
 ] as const;
 
@@ -88,10 +88,9 @@ export const FEEDBACK_COMMUNITY_SIGNUP = [
 ] as const;
 
 export const COMMUNITY_SIGNUP_HINT =
-  `ราคาที่วางไว้คือเดือนละ ${COMMUNITY_PLANNED_PRICE.toLocaleString("en-US")} บาท ` +
-  `แต่รุ่นนี้เป็นรุ่นทดลอง เลยเป็นราคาวิจัยเดือนละ ${COMMUNITY_RESEARCH_PRICE} บาท ` +
-  "เพราะเรายังหาราคาที่ทุกบ้านเข้าถึงได้อยู่ " +
-  "สมัครแล้วพี่จะส่งรายละเอียดกับวิธีจ่ายในกลุ่ม ยังไม่ต้องจ่ายตอนนี้";
+  "AfterSHIFT คือคอมมูนิตี้ทำโปรเจกต์ต่อหลังจบ 7 วัน: ตั้งเป้าหมายรายสัปดาห์ อัปเดตกับทีม และคุยสิ่งที่ติดกับเพื่อนและพี่เมนเทอร์ " +
+  `รุ่นทดลองเดือนละ ${COMMUNITY_RESEARCH_PRICE} บาท ` +
+  "สมัครไว้ก่อนได้ พี่จะส่งรายละเอียดกับวิธีจ่ายในกลุ่ม ยังไม่ต้องจ่ายตอนนี้ และตอบฟีดแบ็กได้เหมือนเดิมแม้ไม่เข้าร่วม";
 
 /** How a student lets us quote them. "named" credits them with a name they
  *  type themselves, never the nickname they answered with. */
