@@ -22,6 +22,7 @@ const row = (patch: Partial<ShiftFeedbackRow>): ShiftFeedbackRow => ({
   continue_project: "own",
   continue_project_note: null,
   available_days: ["sat"],
+  community_signup: "join",
   quote_mode: "anonymous",
   quote_name: null,
   ...patch,
@@ -51,6 +52,16 @@ describe("summarizeFeedback", () => {
     expect(summary.continueProject).toEqual({ own: 1 });
     expect(summary.availableDays).toEqual({ sat: 1 });
     expect(summary.nextSteps).toEqual({ help_run: 1, project_club: 1 });
+  });
+
+  it("counts community sign-ups only from rows that were offered it", () => {
+    const summary = summarizeFeedback([
+      row({}),
+      row({ community_signup: "ask_parents" }),
+      row({ community_signup: null }),
+    ]);
+    expect(summary.communityAnswered).toBe(2);
+    expect(summary.communitySignup).toEqual({ join: 1, ask_parents: 1 });
   });
 
   it("has no averages without responses", () => {

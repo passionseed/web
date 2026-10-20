@@ -22,6 +22,9 @@ export interface FeedbackSummary {
   availableDays: Counts;
   /** Responses that answered the alumni ask (rows after 2026-10-14). */
   alumniAnswered: number;
+  communitySignup: Counts;
+  /** Responses that were offered the community sign-up (rows after 2026-10-20). */
+  communityAnswered: number;
 }
 
 function count(values: (string | null | undefined)[]): Counts {
@@ -55,5 +58,7 @@ export function summarizeFeedback(rows: ShiftFeedbackRow[]): FeedbackSummary {
     continueProject: count(rows.map((r) => r.continue_project)),
     availableDays: count(rows.flatMap((r) => r.available_days ?? [])),
     alumniAnswered: rows.filter((r) => r.continue_project !== null).length,
+    communitySignup: count(rows.map((r) => r.community_signup)),
+    communityAnswered: rows.filter((r) => r.community_signup !== null).length,
   };
 }

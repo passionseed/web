@@ -69,14 +69,22 @@ export async function POST(request: Request) {
     available_days: feedback.availableDays,
   };
 
+  const community = { community_signup: feedback.communitySignup };
+
   try {
     const table = createAdminClient().from("shift_feedback");
-    let { error } = await table.insert({ ...row, ...alumniAsk });
-    // Columns from 20261014090000 not applied yet: keep the core answers
-    // rather than losing the whole submission.
-    if (error?.code === "PGRST204") {
-      console.warn("shift_feedback alumni columns missing; saving without them", error.message);
-      ({ error } = await table.insert(row));
+    // Newest columns first. If a migration is not applied yet (PGRST204),
+    // drop the newest answers and retry rather than losing the submission.
+    const attempts = [
+      { ...row, ...alumniAsk, ...community },
+      { ...row, ...alumniAsk },
+      row,
+    ];
+    let { error } = await table.insert(attempts[0]);
+    for (const attempt of attempts.slice(1)) {
+      if (error?.code !== "PGRST204") break;
+      console.warn("shift_feedback columns missing; retrying with fewer", error.message);
+      ({ error } = await table.insert(attempt));
     }
     if (error) {
       return safeServerError("Failed to save SHIFT feedback", error);

@@ -7,7 +7,8 @@ import { bangkokToday, formatThaiDate } from "@/lib/content/shift-cohort";
  * End-of-SHIFT feedback contract, shared by the /shift/feedback form and
  * /api/shift/feedback. Part 1 is the day-7 SDT check, part 2 is value and
  * price, part 3 is the alumni ask: pick one project to keep going, say which
- * days suit the weekly alumni session, and whether to help run things.
+ * days suit the weekly alumni session, whether to help run things, and a
+ * real sign-up for the community at this batch's research price.
  * Messages are Thai because students see them as-is.
  */
 
@@ -74,6 +75,24 @@ export function alumniSessionHint(now: Date = new Date()): string {
   return `ตอนนี้นัดกัน${when}${first} มาทำโปรเจกต์ต่อและอัปเดตกัน เลือกวันที่สะดวกได้หลายวัน`;
 }
 
+/** Community membership: a real sign-up, not a poll. This batch tests a
+ *  research price under the planned one. Ref: company-brain numbers.md
+ *  "Community membership proposal". */
+export const COMMUNITY_PLANNED_PRICE = 1500;
+export const COMMUNITY_RESEARCH_PRICE = 690;
+
+export const FEEDBACK_COMMUNITY_SIGNUP = [
+  { value: "join", label: `สมัคร ราคาวิจัยเดือนละ ${COMMUNITY_RESEARCH_PRICE} บาท` },
+  { value: "ask_parents", label: "ขอคุยกับผู้ปกครองก่อน" },
+  { value: "not_now", label: "ยังไม่ตอนนี้" },
+] as const;
+
+export const COMMUNITY_SIGNUP_HINT =
+  `ราคาที่วางไว้คือเดือนละ ${COMMUNITY_PLANNED_PRICE.toLocaleString("en-US")} บาท ` +
+  `แต่รุ่นนี้เป็นรุ่นทดลอง เลยเป็นราคาวิจัยเดือนละ ${COMMUNITY_RESEARCH_PRICE} บาท ` +
+  "เพราะเรายังหาราคาที่ทุกบ้านเข้าถึงได้อยู่ " +
+  "สมัครแล้วพี่จะส่งรายละเอียดกับวิธีจ่ายในกลุ่ม ยังไม่ต้องจ่ายตอนนี้";
+
 /** How a student lets us quote them. "named" credits them with a name they
  *  type themselves, never the nickname they answered with. */
 export const FEEDBACK_QUOTE_MODES = [
@@ -84,7 +103,10 @@ export const FEEDBACK_QUOTE_MODES = [
 
 /** PDPA notice shown above the consent box. Bump the version when the
  *  substance changes, so stored rows say which text they agreed to. */
-export const FEEDBACK_NOTICE_VERSION = "2026-10-14";
+/** Numbered questions on the form, shown in the page header. */
+export const FEEDBACK_QUESTION_COUNT = 15;
+
+export const FEEDBACK_NOTICE_VERSION = "2026-10-20";
 export const FEEDBACK_RETENTION_YEARS = 1;
 
 const values = <T extends readonly { value: string }[]>(options: T) =>
@@ -126,6 +148,7 @@ export const shiftFeedbackSchema = z.object({
     .transform((value) => (value ? value : null)),
   availableDays: exclusiveList(values(FEEDBACK_DAYS), "none", "ยังไม่สะดวก เลือกคู่กับวันอื่นไม่ได้นะ"),
   nextSteps: exclusiveList(values(FEEDBACK_NEXT_STEPS), "not_now", "ยังไม่ตอนนี้ เลือกคู่กับข้ออื่นไม่ได้นะ"),
+  communitySignup: z.enum(values(FEEDBACK_COMMUNITY_SIGNUP), { message: "เลือกหนึ่งข้อนะ" }),
   quoteMode: z.enum(values(FEEDBACK_QUOTE_MODES), { message: "บอกหน่อยว่าให้ยกไปใช้ได้ไหม" }),
   quoteName: z
     .string()

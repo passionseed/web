@@ -1,0 +1,320 @@
+/* /shift/alumni/board: the alumni workspace, in a deep-space palette next to
+   /shift/alumni. Quiet glass cards, one cool accent, warm only for "stuck". */
+
+.page {
+  --text: #e6edff;
+  --muted: rgba(230, 237, 255, 0.66);
+  --faint: rgba(230, 237, 255, 0.45);
+  --cyan: #7cc4ff;
+  --space: #03050c;
+  --deep: #060a17;
+  --line: rgba(124, 160, 255, 0.14);
+
+  position: relative;
+  min-height: 100vh;
+  overflow-x: clip;
+  background:
+    radial-gradient(120% 60% at 50% 0%, #0b1433 0%, transparent 60%),
+    radial-gradient(80% 40% at 50% 100%, rgba(58, 160, 255, 0.08), transparent 70%),
+    linear-gradient(180deg, var(--space) 0%, var(--deep) 40%, var(--space) 100%);
+  color: var(--text);
+}
+
+.shell {
+  position: relative;
+  z-index: 1;
+  margin: 0 auto;
+  max-width: 46rem;
+  padding: 5.5rem 1.25rem 4rem;
+}
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 1.5rem;
+}
+
+.navLink {
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--muted);
+  transition: color 160ms ease-out, background 160ms ease-out, border-color 160ms ease-out;
+}
+
+.navLink:hover {
+  color: var(--text);
+  border-color: rgba(124, 196, 255, 0.4);
+}
+
+.navLink[aria-current="page"] {
+  color: var(--space);
+  background: var(--text);
+  border-color: var(--text);
+}
+
+.card {
+  margin-bottom: 1rem;
+  padding: 1.25rem;
+  border-radius: 10px;
+  background: rgba(3, 5, 12, 0.6);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(10px);
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 640px) {
+  .card {
+    padding: 1.5rem 1.75rem;
+  }
+}
+
+/* The first step: the one thing to do right now. */
+.step {
+  border-color: rgba(124, 196, 255, 0.35);
+  border-left: 3px solid var(--cyan);
+  box-shadow: 0 30px 80px -40px rgba(58, 160, 255, 0.6);
+}
+
+.stepText {
+  margin-top: 0.35rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.subtitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.muted {
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.label {
+  display: block;
+  margin: 1rem 0 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.hint {
+  font-weight: 400;
+  color: var(--faint);
+}
+
+.input {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: rgba(124, 160, 255, 0.04);
+  color: var(--text);
+  font: inherit;
+  transition: border-color 160ms ease-out, box-shadow 160ms ease-out;
+}
+
+.input::placeholder {
+  color: var(--faint);
+}
+
+.input:focus {
+  outline: none;
+  border-color: rgba(124, 196, 255, 0.6);
+  box-shadow: 0 0 0 3px rgba(124, 196, 255, 0.15);
+}
+
+textarea.input {
+  min-height: 4.5rem;
+  resize: vertical;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.actions {
+  margin-top: 1rem;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.75rem;
+  padding: 0.55rem 1.2rem;
+  border-radius: 6px;
+  font-weight: 700;
+  color: var(--space);
+  background: var(--text);
+  box-shadow: 0 0 0 1px rgba(124, 196, 255, 0.55), 0 10px 34px -14px rgba(58, 160, 255, 0.8);
+  transition: transform 140ms ease-out, opacity 140ms ease-out;
+}
+
+.button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.button:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+.button:focus-visible,
+.ghost:focus-visible,
+.chip:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.75rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: 6px;
+  font-weight: 600;
+  color: var(--text);
+  border: 1px solid rgba(230, 237, 255, 0.2);
+  transition: border-color 140ms ease-out, background 140ms ease-out;
+}
+
+.ghost:hover:not(:disabled) {
+  border-color: rgba(124, 196, 255, 0.5);
+  background: rgba(124, 196, 255, 0.06);
+}
+
+.ghost[aria-pressed="true"] {
+  color: var(--space);
+  background: var(--text);
+  border-color: var(--text);
+}
+
+.small {
+  min-height: 2.25rem;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.85rem;
+}
+
+.wide {
+  width: 100%;
+  min-height: 3.5rem;
+  font-size: 1.1rem;
+}
+
+.chip {
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  font-size: 0.85rem;
+  color: var(--muted);
+  transition: color 140ms ease-out, border-color 140ms ease-out;
+}
+
+.chip:hover {
+  color: var(--text);
+  border-color: rgba(124, 196, 255, 0.45);
+}
+
+.clock {
+  margin: 0.9rem 0 0.15rem;
+  font-size: 2.75rem;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.cheer {
+  margin-top: 0.5rem;
+  font-weight: 600;
+  color: #7ef0c1;
+}
+
+.list {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.divider {
+  border-top: 1px solid var(--line);
+  padding-top: 0.9rem;
+  margin-top: 0.9rem;
+}
+
+.history {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.4rem 0 0.6rem;
+  font-size: 1.4rem;
+}
+
+/* Help on stuck: the thread sits under the note, in the team space. */
+.thread {
+  margin-top: 0.5rem;
+  padding-left: 0.85rem;
+  border-left: 2px solid rgba(255, 170, 120, 0.4);
+  scroll-margin-top: 6rem;
+}
+
+.stuck {
+  color: #ffc4a3;
+}
+
+.solved {
+  color: #7ef0c1;
+  font-weight: 600;
+}
+
+.pre {
+  white-space: pre-line;
+}
+
+.link {
+  font-weight: 600;
+  color: var(--cyan);
+  text-decoration: underline;
+  text-decoration-color: rgba(124, 196, 255, 0.4);
+  text-underline-offset: 4px;
+}
+
+.details > summary {
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--cyan);
+  padding: 0.25rem 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button,
+  .ghost,
+  .chip,
+  .navLink,
+  .input {
+    transition: none;
+  }
+
+  .button:hover:not(:disabled) {
+    transform: none;
+  }
+}

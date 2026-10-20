@@ -17,6 +17,7 @@ const SHIFT_ADMIN_LINKS = [
   { href: "/admin/shift/seedstack", label: "SeedStack" },
   { href: "/admin/shift/feedback", label: "Feedback" },
   { href: "/admin/shift/alumni", label: "Alumni" },
+  { href: "/admin/shift/alumni/board", label: "Alumni board" },
   { href: "/admin/shift/views", label: "Views" },
 ];
 
