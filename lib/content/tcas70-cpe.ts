@@ -110,13 +110,23 @@ export const TCAS_CPE_UNIVERSITIES: TcasCpeUniversity[] = [
       },
       {
         name: "K-Engineering Pathway",
-        seats: KMITL_SEATS,
+        seats: "ไม่เกิน 5 คน อยู่ใน 40 คนของรอบ 1 (ปี 69)",
         gpax: "ไม่ระบุในแหล่งข้อมูล",
-        requirement: "เรียนโครงการ Pre-Engineering School ของ สจล.",
-        gated: false,
-        portfolio: "เกรดจาก Pre-Engineering School",
+        requirement: "เรียน Pre-Engineering School ของ สจล. เกรดรวม 6 วิชา 3.50 ขึ้นไป แต่ละวิชาไม่ต่ำกว่า C",
+        gated: true,
+        portfolio: "ส่งเกรดจาก Pre-Engineering School",
         scoring: "เกรด Pre-Engineering 100%",
         apply: KMITL_APPLY,
+      },
+      {
+        name: "K-Engineering Pathway 3.0",
+        seats: "5 คน แยกจาก 40 คน (mytcas ปี 70)",
+        gpax: "ไม่ระบุในแหล่งข้อมูล",
+        requirement: "เรียน Pre-Engineering School ของ สจล. เกรดรวม 6 วิชา 3.00 ขึ้นไป + ต้องมีคะแนน TGAT และ TPAT3",
+        gated: true,
+        portfolio: "ส่งเกรดจาก Pre-Engineering School",
+        scoring: "เกรด Pre-Engineering 70 + TPAT3 20 + TGAT 10",
+        apply: "ปี 70 ยังไม่ประกาศ (ปี 69 ปิด 20 ม.ค. 69 และยังไม่รวมวิศวะคอมฯ)",
       },
     ],
   },
@@ -390,9 +400,9 @@ export const TCAS_CPE_UNIVERSITIES: TcasCpeUniversity[] = [
 
 /** Which universities go on which table sheet. */
 export const TCAS_CPE_SHEETS = [
-  ["cu", "kmitl", "ku"],
-  ["kmutt", "tu", "psu", "cmu"],
-  ["mu", "kmutnb", "kku", "sut", "swu"],
+  ["cu", "kmitl"],
+  ["ku", "kmutt", "tu", "psu"],
+  ["cmu", "mu", "kmutnb", "kku", "sut", "swu"],
 ];
 
 /** What they have in common, for a student building a portfolio project. */
