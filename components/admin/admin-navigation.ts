@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   Map,
   MessageCircle,
+  MessageSquareText,
   MessagesSquare,
   Radar,
   Repeat,
@@ -49,6 +50,12 @@ export const ADMIN_NAV_GROUPS: { label: string; items: AdminNavItem[] }[] = [
         label: "DM leads",
         description: "Conversations and follow-ups",
         icon: MessagesSquare,
+      },
+      {
+        href: "/admin/line",
+        label: "LINE inbox",
+        description: "Read and reply to @passionseed LINE chats",
+        icon: MessageSquareText,
       },
       {
         href: "/admin/ig-comments",
