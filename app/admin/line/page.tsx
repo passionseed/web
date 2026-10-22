@@ -5,6 +5,7 @@ import { LineContactList } from "@/components/admin/line/LineContactList";
 import { LineReplyForm } from "@/components/admin/line/LineReplyForm";
 import { LineThread } from "@/components/admin/line/LineThread";
 import { Input } from "@/components/ui/input";
+import { requireAdmin } from "@/lib/admin/requireAdmin";
 import {
   getLineContact,
   getLineMessages,
@@ -19,6 +20,8 @@ export default async function LineInboxPage({
 }: {
   searchParams: Promise<{ c?: string; q?: string }>;
 }) {
+  // The admin layout also checks, but this page reads with the service-role client.
+  await requireAdmin();
   const { c, q } = await searchParams;
   const search = q?.trim() ?? "";
   const [allContacts, active, messages] = await Promise.all([
