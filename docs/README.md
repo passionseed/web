@@ -20,6 +20,7 @@ Documentation index. Files are organized by purpose, not by date.
 | [google-oauth-setup-guide.md](google-oauth-setup-guide.md) | Google OAuth setup |
 | [setup-gemini-api.md](setup-gemini-api.md) | Gemini API setup |
 | [brain-sync.md](brain-sync.md) | Brain sync: how merges to `main` update the company brain automatically |
+| [meta-marketing-sync.md](meta-marketing-sync.md) | Meta marketing sync: daily Instagram insights and Meta Ads results, setup and backfill |
 
 ## 📁 `architecture/` — Design, Schema & System Architecture
 
