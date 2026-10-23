@@ -7,7 +7,9 @@
  *        --out output/marketing/2026-10-23/shift3-launch [--base http://localhost:3010]
  *
  * Writes <id>.png per sheet at the element's own size, plus contact.png when
- * there is more than one. Uses the same Playwright lookup as
+ * there is more than one. Loads the route with ?render=1 so SheetGallery pages
+ * show their live sheets. --publish <dir> also writes <id>.webp there: the
+ * images those pages show visitors (public/shift/poster/3/sheets). Uses the same Playwright lookup as
  * render-marketing.mjs (project, SHIFT_PLAYWRIGHT_MODULE, gstack's copy).
  */
 import { mkdirSync } from "node:fs";
@@ -17,13 +19,14 @@ import { pathToFileURL } from "node:url";
 import sharp from "sharp";
 
 function parseArgs(argv) {
-  const args = { base: "http://localhost:3010", route: null, ids: [], out: null };
+  const args = { base: "http://localhost:3010", route: null, ids: [], out: null, publish: null };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--base") args.base = argv[++i];
     else if (a === "--route") args.route = argv[++i];
     else if (a === "--ids") args.ids.push(...argv[++i].split(",").filter(Boolean));
     else if (a === "--out") args.out = argv[++i];
+    else if (a === "--publish") args.publish = argv[++i];
     else throw new Error(`Unknown argument ${a}`);
   }
   if (!args.route || !args.ids.length || !args.out) {
@@ -54,6 +57,7 @@ async function loadChromium() {
 const args = parseArgs(process.argv.slice(2));
 const outDir = resolve(args.out);
 mkdirSync(outDir, { recursive: true });
+if (args.publish) mkdirSync(resolve(args.publish), { recursive: true });
 
 const chromium = await loadChromium();
 const browser = await chromium.launch(
@@ -64,7 +68,9 @@ try {
   // Leave the dev server's HMR socket unanswered: a Turbopack HMR panic
   // otherwise reloads the page in a loop mid-screenshot.
   await page.routeWebSocket(/hmr|turbopack/, () => {});
-  await page.goto(`${args.base}${args.route}`, { waitUntil: "load", timeout: 180000 });
+  // ?render=1 makes SheetGallery pages show the live sheets, not the images.
+  const sep = args.route.includes("?") ? "&" : "?";
+  await page.goto(`${args.base}${args.route}${sep}render=1`, { waitUntil: "load", timeout: 180000 });
   await page.waitForSelector(`#${args.ids[0]}`, { timeout: 60000 });
   await page.evaluate(() => document.fonts.ready);
   await page.evaluate(async () => {
@@ -85,6 +91,11 @@ try {
     const { width, height } = await sharp(file).metadata();
     console.log(`✅ ${file} (${width}x${height})`);
     files.push({ file, width, height });
+    if (args.publish) {
+      const web = join(resolve(args.publish), `${id}.webp`);
+      await sharp(file).webp({ quality: 90 }).toFile(web);
+      console.log(`🌐 ${web}`);
+    }
   }
   if (files.length > 1) {
     const thumbH = 720;
