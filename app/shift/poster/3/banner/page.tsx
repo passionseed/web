@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 
+import { SheetGallery, type SheetSearchParams, isRenderMode } from "@/components/shift/poster/SheetGallery";
 import { SHIFT3 } from "@/components/shift/poster/shift3/facts";
 import {
+  SHIFT3_BANNER_LI_ID,
+  SHIFT3_BANNER_SQUARE_ID,
+  SHIFT3_BANNER_X_ID,
   Shift3BannerLinkedIn,
   Shift3BannerSquare,
   Shift3BannerX,
@@ -10,9 +14,11 @@ import {
 /**
  * SHIFT[3] listing banners, cosmos style: X header (1500x500), LinkedIn cover
  * (1584x396) and LINE OA rich message (1040x1040). Facts come from
- * SHIFT_COHORT_3.
+ * SHIFT_COHORT_3. Visitors see the exported images; ?render=1 shows the live
+ * sheets.
  * Export: node scripts/render-poster.mjs --route /shift/poster/3/banner
  *         --ids shift3-banner-x,shift3-banner-li,shift3-banner-square --out <dir>
+ *         --publish public/shift/poster/3/sheets
  */
 
 export const metadata: Metadata = {
@@ -21,16 +27,28 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function Shift3BannerPage() {
+export default async function Shift3BannerPage({ searchParams }: { searchParams: SheetSearchParams }) {
   return (
-    <div className="min-h-screen overflow-auto bg-neutral-950 p-10">
-      {/* Keep the Next.js dev indicator out of exported screenshots. */}
-      <style>{"nextjs-portal{display:none!important}"}</style>
-      <div className="flex flex-col items-start gap-10">
-        <Shift3BannerX />
-        <Shift3BannerLinkedIn />
-        <Shift3BannerSquare />
-      </div>
-    </div>
+    <SheetGallery
+      dir="/shift/poster/3/sheets"
+      render={await isRenderMode(searchParams)}
+      sheets={[
+        { id: SHIFT3_BANNER_X_ID, width: 1500, height: 500, alt: `${SHIFT3.name} X header`, live: <Shift3BannerX /> },
+        {
+          id: SHIFT3_BANNER_LI_ID,
+          width: 1584,
+          height: 396,
+          alt: `${SHIFT3.name} LinkedIn cover`,
+          live: <Shift3BannerLinkedIn />,
+        },
+        {
+          id: SHIFT3_BANNER_SQUARE_ID,
+          width: 1040,
+          height: 1040,
+          alt: `${SHIFT3.name} LINE square banner`,
+          live: <Shift3BannerSquare />,
+        },
+      ]}
+    />
   );
 }
