@@ -15,8 +15,9 @@ import type { SHIFT_VOICES } from "@/lib/content/shift-voices";
 export type StudioFormat = "ig-tall" | "ig-portrait" | "story" | "linkedin" | "square";
 
 /** night: black ink on paper with the dawn horizon (SHIFT print).
+ *  cosmos: glass over deep space, the SHIFT[3] look (components/shift/next/cosmos.ts).
  *  paper: cream sheet, black ink, riso accents (guides, LinkedIn). */
-export type StudioTheme = "night" | "paper";
+export type StudioTheme = "night" | "paper" | "cosmos";
 
 export type StudioChannel = "instagram" | "story" | "linkedin";
 

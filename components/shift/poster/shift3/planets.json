@@ -1,0 +1,44 @@
+{
+  "_doc": "SHIFT[3] poster planets. scripts/render-shift3-planet.mjs renders each to public/shift/poster/shift3/planet-<name>.png (cropped to the disc plus its halo, see planetBox in planet.ts); the posters read the same numbers to place the image, the orbit and the rocket.",
+  "pad": 0.6,
+  "scale": 2,
+  "feed": {
+    "canvas": [
+      1080,
+      1350
+    ],
+    "cx": 870,
+    "cy": 520,
+    "r": 240,
+    "bangkok": [
+      925,
+      372
+    ]
+  },
+  "story": {
+    "canvas": [
+      1080,
+      1920
+    ],
+    "cx": 690,
+    "cy": 340,
+    "r": 330,
+    "bangkok": [
+      575,
+      262
+    ]
+  },
+  "banner": {
+    "canvas": [
+      1200,
+      630
+    ],
+    "cx": 990,
+    "cy": 300,
+    "r": 230,
+    "bangkok": [
+      915,
+      245
+    ]
+  }
+}

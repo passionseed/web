@@ -37,7 +37,7 @@ import {
 
 export const metadata: Metadata = {
   title: `${NEXT_ROUND_NAME} | ลงชื่อช่วงที่ว่าง เปิดรอบเมื่อคนครบ`,
-  description: `เลือกช่วงที่ว่าง 7 เย็นติดกัน ช่วงไหนมีคนครบ ${MIN_BUILDERS} คน เราเปิด ${NEXT_ROUND_NAME} รอบนั้น สร้างต้นแบบที่คนนอกได้ลองใช้จริง พร้อมพอร์ต 1 หน้า ลงชื่อฟรี ยังไม่ต้องจ่าย`,
+  description: `เลือกช่วงที่ว่าง 7 เย็นติดกัน ช่วงไหนมีคนครบ ${MIN_BUILDERS} คน เราเปิด ${NEXT_ROUND_NAME} รอบนั้น ลงมือสร้างของจริง แล้วชวนคนนอกมาลองใช้ พร้อมพอร์ต 1 หน้า ลงชื่อฟรี ยังไม่ต้องจ่าย`,
   alternates: { canonical: "/shift/next" },
   openGraph: {
     title: `${NEXT_ROUND_NAME} | เปิดเมื่อคนพร้อม`,
