@@ -4,8 +4,8 @@ import { APPLY_KEYWORD } from "@/components/shift/poster/grid/ApplyCta";
 import { SHIFT_VOICES } from "@/lib/content/shift-voices";
 import type { ChatSlide, CtaSlide, QuoteSlide } from "@/lib/marketing/types";
 
-import { RichText } from "./RichText";
-import { Body, Footnote, Panel, Tag, Title } from "./SlideParts";
+import { CosmosCta, CosmosQuote, cosmosBubble } from "./slidesCosmos";
+import { ACTION_LINE, Body, Footnote, Panel, Rich, Tag, Title, isCosmos } from "./SlideParts";
 import type { StudioInks } from "./studioTheme";
 
 /** Slides that talk: a DM script, a student's own words, and the ask. */
@@ -15,7 +15,16 @@ interface Props<S> {
   inks: StudioInks;
 }
 
+function risoBubble(mine: boolean, inks: StudioInks) {
+  return {
+    backgroundColor: mine ? INK.orange : inks.panel,
+    color: mine ? INK.black : inks.text,
+    boxShadow: mine ? `-3px 2px 0 ${INK.pink}` : `inset 0 0 0 1.5px ${inks.panelLine}`,
+  };
+}
+
 export function ChatView({ slide, inks }: Props<ChatSlide>) {
+  const cosmos = isCosmos(inks);
   return (
     <>
       <Tag inks={inks}>{slide.tag}</Tag>
@@ -29,12 +38,10 @@ export function ChatView({ slide, inks }: Props<ChatSlide>) {
                 className="max-w-[800px] px-9 py-6 text-[34px] leading-[1.5]"
                 style={{
                   borderRadius: mine ? "28px 28px 6px 28px" : "28px 28px 28px 6px",
-                  backgroundColor: mine ? INK.orange : inks.panel,
-                  color: mine ? INK.black : inks.text,
-                  boxShadow: mine ? `-3px 2px 0 ${INK.pink}` : `inset 0 0 0 1.5px ${inks.panelLine}`,
+                  ...(cosmos ? cosmosBubble(mine, inks) : risoBubble(mine, inks)),
                 }}
               >
-                <RichText text={line.text} accent={mine ? INK.black : inks.kicker} />
+                <Rich inks={inks} text={line.text} accent={mine ? (cosmos ? inks.hot : INK.black) : inks.kicker} />
               </p>
             </div>
           );
@@ -46,6 +53,7 @@ export function ChatView({ slide, inks }: Props<ChatSlide>) {
 }
 
 export function QuoteView({ slide, inks }: Props<QuoteSlide>) {
+  if (isCosmos(inks)) return <CosmosQuote slide={slide} inks={inks} />;
   const voice = SHIFT_VOICES[slide.voice];
   return (
     <>
@@ -92,14 +100,8 @@ function KeywordBubble() {
   );
 }
 
-const ACTION_LINE: Record<CtaSlide["action"], string> = {
-  comment: "คอมเมนต์",
-  save: "กดเซฟไว้",
-  share: "ส่งต่อให้",
-  link: "อ่านต่อ",
-};
-
 export function CtaView({ slide, inks }: Props<CtaSlide>) {
+  if (isCosmos(inks)) return <CosmosCta slide={slide} inks={inks} />;
   return (
     <>
       <Tag inks={inks}>{slide.tag}</Tag>
@@ -123,7 +125,7 @@ export function CtaView({ slide, inks }: Props<CtaSlide>) {
           )}
           {slide.body && (
             <p className="mt-6 font-kodchasan text-[36px] font-bold leading-[1.4]">
-              <RichText text={slide.body} accent={INK.black} />
+              <Rich inks={inks} text={slide.body} accent={INK.black} />
             </p>
           )}
         </Panel>

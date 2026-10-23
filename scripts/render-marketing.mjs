@@ -107,10 +107,18 @@ async function linkedinPdf(browser, files, size, out) {
   console.log(`📄 ${out}`);
 }
 
+/** A page with the dev server's HMR socket left unanswered: a Turbopack HMR
+ *  panic otherwise reloads the page in a loop mid-screenshot. */
+async function renderPage(browser, viewport) {
+  const page = await browser.newPage({ viewport });
+  await page.routeWebSocket(/hmr|turbopack/, () => {});
+  return page;
+}
+
 async function exportSet(browser, base, set, outDir) {
   const dir = join(outDir, set.slug);
   mkdirSync(dir, { recursive: true });
-  const page = await browser.newPage({ viewport: { width: 1400, height: 2200 } });
+  const page = await renderPage(browser, { width: 1400, height: 2200 });
   await page.goto(`${base}/studio/${set.slug}`, { waitUntil: "load", timeout: 180000 });
   await page.waitForSelector(`#studio-${set.slug}-1`, { timeout: 60000 });
   await settle(page);
@@ -131,7 +139,7 @@ async function exportSet(browser, base, set, outDir) {
 async function exportPosters(browser, base, outDir) {
   const dir = join(outDir, "shift2-new-date");
   mkdirSync(dir, { recursive: true });
-  const page = await browser.newPage({ viewport: { width: 3600, height: 2200 } });
+  const page = await renderPage(browser, { width: 3600, height: 2200 });
   await page.goto(`${base}/shift/poster/2/moved`, { waitUntil: "load", timeout: 180000 });
   await page.waitForSelector("#shift-moved-feed", { timeout: 60000 });
   await settle(page);

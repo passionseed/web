@@ -244,11 +244,26 @@ export const SHIFT_COHORT_2: ShiftCohort = {
   firstMeetDate: "2026-10-14",
 };
 
+/** SHIFT[3]: Mon 9 to Sun 15 Nov, 7 days. Applications close Sat 7 Nov so
+ *  everyone is onboarded before Day 1. No anchor price: ฿690 is the price. */
+export const SHIFT_COHORT_3: ShiftCohort = {
+  ...sibling(SHIFT_COHORT, 2, 35),
+  seats: 30,
+  priceBaht: 690,
+  anchorPriceBaht: null,
+  firstMeetDate: "2026-11-09",
+};
+
 /** The round the printed posters are promoting right now. */
-export const POSTER_COHORT = SHIFT_COHORT_2;
+export const POSTER_COHORT = SHIFT_COHORT_3;
 
 /** Every round, oldest first. /shift lists these; /shift/[round] renders one. */
-export const SHIFT_COHORTS: ShiftCohort[] = [SHIFT_COHORT_0, SHIFT_COHORT, SHIFT_COHORT_2];
+export const SHIFT_COHORTS: ShiftCohort[] = [
+  SHIFT_COHORT_0,
+  SHIFT_COHORT,
+  SHIFT_COHORT_2,
+  SHIFT_COHORT_3,
+];
 
 export function getShiftCohort(round: number): ShiftCohort | undefined {
   return SHIFT_COHORTS.find((c) => c.round === round);
