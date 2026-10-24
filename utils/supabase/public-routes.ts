@@ -29,6 +29,7 @@ const PUBLIC_ROUTE_PREFIXES = [
   "/faculty-radar",
   "/api/cron/parent-pathlab-updates",
   "/api/cron/brain-sync",
+  "/api/cron/meta-marketing-sync",
   "/fireball",
   "/techseed",
   "/api/techseed",

@@ -12,6 +12,7 @@ import {
   GraduationCap,
   LayoutDashboard,
   Map,
+  Megaphone,
   MessageCircle,
   MessageSquareText,
   MessagesSquare,
@@ -161,6 +162,12 @@ export const ADMIN_NAV_GROUPS: { label: string; items: AdminNavItem[] }[] = [
         label: "Product analytics",
         description: "Retention and activation",
         icon: BarChart3,
+      },
+      {
+        href: "/admin/marketing",
+        label: "Meta marketing",
+        description: "Instagram reach, ad spend, paid seats",
+        icon: Megaphone,
       },
       {
         href: "/admin/dm-leads/insights",

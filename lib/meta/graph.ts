@@ -2,14 +2,14 @@ import crypto from "crypto";
 import type { MessagingWindowMode } from "@/lib/dm-leads/messaging-window";
 import type { DmPlatform } from "@/types/dm-leads";
 
-const GRAPH_API_VERSION = "v21.0";
+export const GRAPH_API_VERSION = "v21.0";
 
 // META_PAGE_ACCESS_TOKEN here is an Instagram-Login token (prefix "IGAA"),
 // issued via the Instagram API with Instagram Login flow — NOT a Facebook
 // Page token (prefix "EAA"). Those two token types are only valid against
 // their matching host; an IGAA token against graph.facebook.com fails with
 // "Cannot parse access token" (code 190).
-const IG_GRAPH_HOST = "https://graph.instagram.com";
+export const IG_GRAPH_HOST = "https://graph.instagram.com";
 
 /**
  * Verifies Meta's X-Hub-Signature-256 header against the raw request body.
@@ -357,7 +357,7 @@ export class MetaGraphApiError extends Error {
   }
 }
 
-function parseMetaErrorBody(errBody: string, status: number): MetaGraphApiError {
+export function parseMetaErrorBody(errBody: string, status: number): MetaGraphApiError {
   try {
     const parsed = JSON.parse(errBody) as { error?: { message?: string; code?: number; error_subcode?: number; type?: string } };
     const err = parsed.error;
