@@ -2,14 +2,10 @@ import { ShieldCheck } from "lucide-react";
 
 import { INK, MISREG_TEXT, RisoHeading, inkFor, paper } from "@/components/shift/ShiftRiso";
 import { HOME_NOTES } from "@/lib/content/home";
-import { SHIFT_TESTIMONIAL_GROUPS } from "@/lib/content/shift-testimonials";
+import { SHIFT_FEATURED_TESTIMONIALS, SHIFT_TESTIMONIAL_REELS } from "@/lib/content/shift-testimonials";
 import { TestimonialQuote } from "@/components/shift/TestimonialQuote";
+import { TestimonialReels } from "@/components/shift/TestimonialReels";
 import { MarginNote } from "./MarginNote";
-
-/** TechSeed voices alongside KK's firsthand SHIFT account. */
-const FEATURED = SHIFT_TESTIMONIAL_GROUPS
-  .filter((group) => group.label !== "BUSINESS & FINANCE")
-  .map((group) => group.cards[0]);
 
 function StudentCount({ count }: { count: number }) {
   return (
@@ -30,9 +26,15 @@ export function HomeProof({ studentCount }: { studentCount: number | null }) {
       <RisoHeading>เสียงจริงจากรุ่นพี่ที่ลงมือสร้าง</RisoHeading>
       {studentCount ? <StudentCount count={studentCount} /> : null}
 
-      <div className="mt-14 grid gap-10 md:grid-cols-3">
-        {FEATURED.map((card, i) => (
-          <figure key={card.name} className="flex flex-col border-l-2 pl-5" style={{ borderColor: inkFor(i) }}>
+      <TestimonialReels
+        reels={SHIFT_TESTIMONIAL_REELS}
+        colors={{ inks: [inkFor(0), inkFor(1)], caption: INK.yellow }}
+        className="mt-14"
+      />
+
+      <div className="mt-14 grid gap-10 md:grid-cols-2">
+        {SHIFT_FEATURED_TESTIMONIALS.map((card, i) => (
+          <figure key={card.id ?? card.name} className="flex flex-col border-l-2 pl-5" style={{ borderColor: inkFor(i) }}>
             <TestimonialQuote card={card} style={{ color: paper("d9") }} />
             {card.shift && (
               <p className="mt-4 text-xs font-semibold leading-relaxed" style={{ color: INK.yellow }}>
@@ -57,7 +59,7 @@ export function HomeProof({ studentCount }: { studentCount: number | null }) {
       <div className="mt-10 flex flex-wrap items-center gap-6">
         <p className="flex items-start gap-2 text-xs leading-relaxed" style={{ color: paper("80") }}>
           <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" style={{ color: INK.yellow }} />
-          จากคำบอกเล่าหลังจบ SHIFT, ฟอร์มประเมิน TechSeed #3, #5 และบันทึกวิเคราะห์พอร์ตรายบุคคล
+          จากคำบอกเล่าหลังจบ SHIFT
         </p>
         <MarginNote>{HOME_NOTES.proof}</MarginNote>
       </div>

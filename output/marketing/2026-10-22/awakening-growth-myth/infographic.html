@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8" />
+<title>ตื่นรู้ vs เติบโต: ความเชื่อที่ต้องแก้</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0e1020;
+    --panel: #161a30;
+    --line: #2a2f4d;
+    --ink: #f3f1ea;
+    --muted: #9aa0bf;
+    --gold: #f5b84a;
+    --violet: #9b8cff;
+    --coral: #ff7a66;
+    --grey: #6b7090;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #05060c; font-family: "Anuphan", system-ui, sans-serif; color: var(--ink); }
+  #card {
+    width: 1080px; height: 1350px; margin: 0 auto; position: relative; overflow: hidden;
+    padding: 64px 68px 52px;
+    background:
+      radial-gradient(900px 600px at 85% 8%, rgba(245,184,74,.10), transparent 60%),
+      radial-gradient(800px 600px at 0% 100%, rgba(155,140,255,.10), transparent 60%),
+      var(--bg);
+    display: flex; flex-direction: column;
+  }
+
+  /* Header */
+  .tag {
+    display: inline-flex; gap: 10px; align-items: center; align-self: flex-start;
+    font-size: 18px; font-weight: 600; letter-spacing: .08em;
+    color: var(--coral); border: 1.5px solid rgba(255,122,102,.5); border-radius: 999px; padding: 6px 16px;
+  }
+  .myth { position: relative; margin-top: 22px; }
+  .myth p { font-size: 50px; font-weight: 700; line-height: 1.28; color: #c9c6d8; }
+  .myth p span { position: relative; display: inline-block; }
+  .myth p span::after {
+    content: ""; position: absolute; left: -6px; right: -6px; top: 56%; height: 4px;
+    background: var(--coral); opacity: .75; border-radius: 3px; transform: rotate(-1.2deg);
+  }
+  .stamp {
+    position: absolute; right: 0; top: 4px; transform: rotate(8deg);
+    border: 3px solid var(--coral); color: var(--coral); border-radius: 10px;
+    padding: 8px 16px; font-size: 26px; font-weight: 700; letter-spacing: .06em; text-align: center; line-height: 1.1;
+  }
+  .stamp small { display: block; font-size: 14px; letter-spacing: .2em; font-weight: 600; }
+  .thesis { margin-top: 20px; font-size: 27px; line-height: 1.45; font-weight: 500; }
+  .thesis b { color: var(--gold); font-weight: 700; }
+  .thesis em { display: block; font-style: normal; font-size: 19px; color: var(--muted); font-weight: 400; margin-top: 4px; }
+
+  /* Matrix */
+  .matrix-wrap { position: relative; margin-top: 30px; padding-left: 46px; padding-bottom: 40px; }
+  .matrix {
+    position: relative; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
+    gap: 12px; height: 560px;
+  }
+  .q {
+    position: relative; border-radius: 18px; padding: 24px 24px 20px; background: var(--panel);
+    border: 1.5px solid var(--line); display: flex; flex-direction: column;
+  }
+  .q .num { font-size: 15px; font-weight: 600; letter-spacing: .14em; color: var(--muted); }
+  .q h3 { font-size: 31px; font-weight: 700; line-height: 1.2; margin-top: 6px; }
+  .q .en { font-size: 16px; color: var(--muted); font-weight: 500; margin-top: 2px; letter-spacing: .02em; }
+  .q .desc { font-size: 19px; line-height: 1.5; margin-top: 12px; color: #d9d7e6; }
+  .q .limit { margin-top: auto; font-size: 16.5px; line-height: 1.45; color: var(--muted); padding-top: 10px; border-top: 1px dashed var(--line); }
+  .q .limit b { color: var(--ink); font-weight: 600; }
+
+  .q2 { border-color: rgba(155,140,255,.55); }
+  .q2 h3 { color: var(--violet); }
+  .q4 { border-color: rgba(255,122,102,.55); }
+  .q4 h3 { color: var(--coral); }
+  .q3 h3 { color: #b4b8d0; }
+  .q1 {
+    border: 2px solid var(--gold);
+    background: linear-gradient(160deg, rgba(245,184,74,.18), rgba(245,184,74,.04) 60%), var(--panel);
+    box-shadow: 0 0 60px rgba(245,184,74,.18);
+  }
+  .q1 h3 { color: var(--gold); }
+  .q1 .badge {
+    position: absolute; top: 18px; right: 18px; background: var(--gold); color: #1b1407;
+    font-size: 14px; font-weight: 700; padding: 4px 12px; border-radius: 999px;
+  }
+  .q2 .badge, .q4 .badge {
+    position: absolute; top: 18px; right: 18px; font-size: 13px; font-weight: 600; padding: 3px 10px;
+    border-radius: 999px; border: 1.5px dashed var(--coral); color: var(--coral);
+  }
+
+  /* Axes */
+  .axis-y {
+    position: absolute; left: 0; top: 0; bottom: 40px; width: 30px;
+    display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+  }
+  .axis-y .bar { flex: 1; width: 3px; margin: 8px 0; background: linear-gradient(to top, var(--line), var(--gold)); border-radius: 2px; position: relative; }
+  .axis-y .bar::before { content: ""; position: absolute; top: -8px; left: -6px; border: 7.5px solid transparent; border-bottom: 10px solid var(--gold); border-top: 0; }
+  .axis-y .lbl { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 17px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+  .axis-y .lbl.top { color: var(--gold); }
+  .axis-x {
+    position: absolute; left: 46px; right: 0; bottom: 0; height: 30px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .axis-x .bar { flex: 1; height: 3px; background: linear-gradient(to right, var(--line), var(--gold)); border-radius: 2px; position: relative; }
+  .axis-x .bar::after { content: ""; position: absolute; right: -8px; top: -6px; border: 7.5px solid transparent; border-left: 10px solid var(--gold); border-right: 0; }
+  .axis-x .lbl { font-size: 17px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+  .axis-x .lbl.right { color: var(--gold); margin-left: 6px; }
+
+  /* False-choice note */
+  .falsenote {
+    margin-top: 18px; display: flex; align-items: center; gap: 16px;
+    border: 2px dashed rgba(255,122,102,.7); border-radius: 14px; padding: 14px 20px;
+  }
+  .falsenote .chip { flex: none; background: var(--coral); color: #1d0b07; font-weight: 700; font-size: 18px; padding: 6px 14px; border-radius: 999px; }
+  .falsenote p { font-size: 20px; line-height: 1.45; font-weight: 500; }
+  .falsenote .v { color: var(--violet); } .falsenote .c { color: var(--coral); } .falsenote .g { color: var(--gold); }
+
+  /* Reframes */
+  .reframes { margin-top: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .rf {
+    border-left: 4px solid var(--gold); padding: 6px 0 6px 18px;
+    font-size: 21px; line-height: 1.5; font-weight: 500;
+  }
+  .rf.alt { border-left-color: var(--violet); }
+  .rf small { display: block; font-size: 15px; color: var(--muted); font-weight: 400; margin-top: 4px; line-height: 1.4; }
+
+  .footer {
+    margin-top: auto; display: flex; align-items: flex-end; justify-content: space-between;
+    padding-top: 18px; border-top: 1px solid var(--line);
+  }
+  .footer .punch { font-size: 30px; font-weight: 700; }
+  .footer .punch span { color: var(--gold); }
+  .footer .brand { font-size: 16px; color: var(--muted); font-weight: 500; letter-spacing: .04em; }
+</style>
+</head>
+<body>
+<div id="card">
+  <div class="tag">MYTH CHECK · ความเชื่อที่ต้องแก้</div>
+
+  <div class="myth">
+    <p><span>“คนตื่นรู้มักไม่เติบโต</span><br /><span>คนเติบโตมักไม่ตื่นรู้”</span></p>
+    <div class="stamp">ไม่จริง<small>FALSE CHOICE</small></div>
+  </div>
+
+  <div class="thesis">
+    <b>ตื่นรู้</b> กับ <b>เติบโต</b> ไม่ใช่สองปลายของเส้นเดียวกัน แต่เป็น <b>สองแกนที่แยกกัน</b>
+    <em>Awareness and Growth are two independent axes, not two ends of one spectrum.</em>
+  </div>
+
+  <div class="matrix-wrap">
+    <div class="axis-y">
+      <span class="lbl top">ตื่นรู้มาก</span>
+      <span class="bar"></span>
+      <span class="lbl">หลับอยู่</span>
+    </div>
+
+    <div class="matrix">
+      <div class="q q2">
+        <span class="badge">ประโยคเดิมเห็นแค่ช่องนี้</span>
+        <span class="num">II</span>
+        <h3>นักวิจารณ์ข้างสนาม</h3>
+        <span class="en">The Cynic · ตื่นรู้ แต่ไม่ลงมือ</span>
+        <p class="desc">เห็นทะลุเกม แต่ไม่ยอมเล่น ใช้ความเข้าใจเป็นข้ออ้างเลี่ยงความพยายามและความเสี่ยง</p>
+        <p class="limit"><b>ราคาที่จ่าย:</b> “พอใจ” กลายเป็นความสิ้นหวังที่เรียนรู้มา ไม่สร้างอะไรเลยจึงต้องพึ่งคนอื่นตลอด</p>
+      </div>
+
+      <div class="q q1">
+        <span class="badge">เป้าหมายจริง</span>
+        <span class="num">I</span>
+        <h3>ผู้ตื่นรู้ที่ลงมือทำ</h3>
+        <span class="en">The Integrated Operator · ตื่นรู้ และ เติบโต</span>
+        <p class="desc">เห็นเกมชัด และเล่นเป็น ใช้ความตื่นรู้เพื่อเดินในโลกจริงอย่างชัดเจน ไม่ใช่เพื่อหนีมัน</p>
+        <p class="limit"><b>ผลลัพธ์:</b> โตเพราะอยากได้อิสระและความมั่นคง ไม่ใช่การยอมรับ ลงมือเต็มที่ แต่ถือผลลัพธ์อย่างเบามือ</p>
+      </div>
+
+      <div class="q q3">
+        <span class="num">III</span>
+        <h3>คนติดหล่ม</h3>
+        <span class="en">The Inert · ไม่ตื่นรู้ ไม่เติบโต</span>
+        <p class="desc">หลับอยู่ ติดอยู่กับที่ ใช้ชีวิตแบบตอบสนองไปเรื่อยๆ</p>
+        <p class="limit"><b>จุดเริ่มต้นของทุกคน</b> ไม่ใช่ปลายทาง</p>
+      </div>
+
+      <div class="q q4">
+        <span class="badge">ประโยคเดิมเห็นแค่ช่องนี้</span>
+        <span class="num">IV</span>
+        <h3>คนวิ่งหลับตา</h3>
+        <span class="en">The Blind Grinder · เติบโต แต่ไม่ตื่นรู้</span>
+        <p class="desc">ขับเคลื่อนด้วยบทที่สังคมเขียนให้ อีโก้ และความกลัวตกขบวน เร็ว สถานะสูง แต่ข้างในไม่สงบ</p>
+        <p class="limit"><b>ราคาที่จ่าย:</b> หมดไฟ เปราะบาง ปีนบันไดได้เร็ว แต่บันไดพิงผิดกำแพง</p>
+      </div>
+    </div>
+
+
+    <div class="axis-x">
+      <span class="lbl">ไม่ลงมือ</span>
+      <span class="bar"></span>
+      <span class="lbl right">เติบโต / ลงมือทำ</span>
+    </div>
+  </div>
+
+  <div class="falsenote">
+    <span class="chip">ทางเลือกปลอม</span>
+    <p>ประโยคเดิมเทียบแค่ช่อง <b class="v">II</b> กับ <b class="c">IV</b> แล้วคิดว่าต้องเลือกอย่างใดอย่างหนึ่ง ทั้งที่ช่อง <b class="g">I</b> มีอยู่จริง</p>
+  </div>
+
+  <div class="reframes">
+    <div class="rf">
+      การตื่นรู้บอกว่าเกมคืออะไร การเติบโตให้เครื่องมือที่ใช้เล่นมัน
+      <small>Awakening tells you what the game is. Growth gives you the tools to survive it.</small>
+    </div>
+    <div class="rf alt">
+      เติบโตโดยไม่ตื่นรู้ คือละเมอด้วยความเร็วสูง ตื่นรู้โดยไม่เติบโต คือคิดจนขยับไม่ได้
+      <small>Growth without awareness is high-speed sleepwalking. Awareness without growth is paralysis.</small>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="punch">ไม่ต้องเลือก <span>ต้องมีทั้งสองอย่าง</span></div>
+    <div class="brand">passionseed.org</div>
+  </div>
+</div>
+</body>
+</html>

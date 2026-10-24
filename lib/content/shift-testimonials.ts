@@ -1,10 +1,12 @@
 /**
- * Quotes from TechSeed feedback, portfolio reviews, and KK's SHIFT account
+ * Quotes from SHIFT and TechSeed feedback, portfolio reviews, and KK's SHIFT account
  * supplied by the site owner. Shared by /shift and the home page so a quote is only
  * ever edited in one place.
  */
 
 export interface ShiftTestimonial {
+  /** Stable key for quotes with the same anonymous credit. */
+  id?: string;
   name: string;
   meta: string;
   quote: string;
@@ -12,12 +14,98 @@ export interface ShiftTestimonial {
   shift?: string;
   excerpt?: string;
   project?: { title: string; url: string };
+  featured?: boolean;
 }
 
 export interface ShiftTestimonialGroup {
   label: string;
   cards: ShiftTestimonial[];
 }
+
+/**
+ * Selected shift_feedback quotes supplied by the site owner on 2026-10-23.
+ * Named credits reproduce quote_name; anonymous entries reveal no identity.
+ * Wording is supplied verbatim, including the owner's spelling-only fixes.
+ * One selection per student: the duplicate, Test, and Andy are excluded.
+ * Round labels preserve the stored SHIFT[0] indexing. Scores stay private.
+ * Reel permissions are separate from these feedback selections.
+ */
+export const SHIFT_FEEDBACK_TESTIMONIALS: ShiftTestimonial[] = [
+  {
+    id: "shift-2-new-to-ai",
+    name: "แบงค์ ม.4",
+    meta: "SHIFT[2]",
+    quote: "วันแรกเราไม่รู้จักแอป AI อะไรเลยและไม่เคยทำมาก่อน",
+    featured: true,
+  },
+  {
+    id: "shift-2-talking-to-strangers",
+    name: "ไม่ระบุชื่อ",
+    meta: "SHIFT[2]",
+    quote: "วันแรกไม่ค่อยกล้าคุยกับคนแปลกหน้า แต่ตอนนี้กล้าคุยกับคนแปลกหน้ามากขึ้น",
+    featured: true,
+  },
+  {
+    id: "shift-0-build-path",
+    name: "โฟร์ธ ปวช.2",
+    meta: "SHIFT[0]",
+    quote: "ถามปัญหา การสัมภาษณ์คน การสั่งเอไอทำงาน การทำเว็ปจนให้คนใช้ได้",
+    featured: true,
+  },
+  {
+    id: "shift-2-questioning-ideas",
+    name: "ไม่ระบุชื่อ",
+    meta: "SHIFT[2]",
+    quote: "การยอมรับว่าทุกไอเดียของเราไม่ได้ดีเสมอไป",
+    featured: true,
+  },
+  {
+    id: "shift-0-mentor-guidance",
+    name: "โต้ ม.6",
+    meta: "SHIFT[0]",
+    quote: "พี่ๆ mentor คอยชี้แนะแนวทางการสอบถาม หรือในการทำโปรเจค",
+  },
+  {
+    id: "shift-0-new-connections",
+    name: "ยันจัง ม.5",
+    meta: "SHIFT[0]",
+    quote: "รู้จักคนใหม่ๆ ที่ตอนแรกไม่คิดว่าจะคุยต่อด้วย",
+  },
+  {
+    id: "shift-1-interviews-and-websites",
+    name: "ไนท์ม.6",
+    meta: "SHIFT[1]",
+    quote: "คุยกับคนที่มีปัญหาได้ และการพัฒนาเว็บไซต์",
+  },
+  {
+    id: "shift-1-player-testing",
+    name: "ชิ ม.6",
+    meta: "SHIFT[1]",
+    quote: "ลองให้คนเล่น",
+  },
+  {
+    id: "shift-2-unreal-pivot",
+    name: "คีตะ",
+    meta: "SHIFT[2]",
+    quote: "เปลี่ยน problem ย้ายไปทำใน Unreal Engine",
+  },
+  {
+    id: "shift-2-app-testing",
+    name: "ไม่ระบุชื่อ",
+    meta: "SHIFT[2]",
+    quote: "กล้าให้คนมาลองใช้แอปของเรา",
+  },
+  {
+    id: "shift-1-real-use",
+    name: "ไม่ระบุชื่อ",
+    meta: "SHIFT[1]",
+    quote: "การเอาโปรเจคออกไปใช้จริง",
+  },
+];
+
+export const SHIFT_FEATURED_TESTIMONIALS = SHIFT_FEEDBACK_TESTIMONIALS.filter(
+  (card) => card.featured,
+);
 
 export const SHIFT_TESTIMONIAL_GROUPS: ShiftTestimonialGroup[] = [
   {
@@ -80,6 +168,7 @@ export const SHIFT_TESTIMONIAL_GROUPS: ShiftTestimonialGroup[] = [
   {
     label: "SHIFT",
     cards: [
+      ...SHIFT_FEEDBACK_TESTIMONIALS,
       {
         name: "KK",
         meta: "สวนกุหลาบ · SHIFT",
@@ -93,5 +182,30 @@ export const SHIFT_TESTIMONIAL_GROUPS: ShiftTestimonialGroup[] = [
         },
       },
     ],
+  },
+];
+
+export interface ShiftTestimonialReel {
+  /** Shipped app shown in the Reel; matches a SHIFT[0] showcase title. */
+  project: { title: string; url: string };
+  src: string;
+  poster: string;
+}
+
+/**
+ * The SHIFT[1] testimonial Reels (components/shift/poster/testimonial),
+ * trimmed before the dated SHIFT[1] price card and cropped above the ads UI.
+ * No faces or names: only the app and the student's own words.
+ */
+export const SHIFT_TESTIMONIAL_REELS: ShiftTestimonialReel[] = [
+  {
+    project: { title: "Magnified Lens", url: "https://magnified-lens-2uoi.vercel.app/" },
+    src: "/shift/testimonial/reel-lens.mp4",
+    poster: "/shift/testimonial/reel-lens.jpg",
+  },
+  {
+    project: { title: "ปฏิทิน กสพท70", url: "https://potter-wine.vercel.app/" },
+    src: "/shift/testimonial/reel-kaspt70.mp4",
+    poster: "/shift/testimonial/reel-kaspt70.jpg",
   },
 ];

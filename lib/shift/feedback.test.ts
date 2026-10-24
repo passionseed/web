@@ -91,11 +91,11 @@ describe("alumniSessionHint", () => {
 describe("AfterSHIFT monthly test offer", () => {
   it("quotes the SHIFT[2] alumni test in both the explanation and signup", () => {
     const offer = communitySignupOffer(2);
-    expect(offer.price).toBe(300);
+    expect(offer.price).toBe(250);
     expect(offer.hint).toContain("SHIFT[2]");
-    expect(offer.hint).toContain("เดือนละ 300 บาท");
+    expect(offer.hint).toContain("เดือนละ 250 บาท");
     expect(offer.hint).toContain("ทดสอบรูปแบบและราคา");
-    expect(offer.options.find((option) => option.value === "join")?.label).toContain("เดือนละ 300 บาท");
+    expect(offer.options.find((option) => option.value === "join")?.label).toContain("เดือนละ 250 บาท");
     expect(offer.hint).not.toContain("690");
   });
 

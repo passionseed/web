@@ -75,10 +75,11 @@ export function alumniSessionHint(now: Date = new Date()): string {
   return `ตอนนี้นัดกัน${when}${first} มาทำโปรเจกต์ต่อและอัปเดตกัน เลือกวันที่สะดวกได้หลายวัน`;
 }
 
-/** Existing cohort offer, with a SHIFT[2]-only test approved on 2026-10-20.
+/** Existing cohort offer, with a SHIFT[2]-only test approved on 2026-10-20
+ *  (฿300, lowered to ฿250 on 2026-10-21).
  *  Prices are monthly; this changes no SHIFT course fees. */
 export const COMMUNITY_RESEARCH_PRICE = 690;
-export const SHIFT_2_ALUMNI_TEST_PRICE = 300;
+export const SHIFT_2_ALUMNI_TEST_PRICE = 250;
 
 /** Stored answers do not record the quoted price, so admin labels must not
  *  assign today's offer to historical sign-ups. */
