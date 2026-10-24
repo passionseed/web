@@ -229,6 +229,31 @@ export async function rotateShareToken(boardId: string): Promise<string> {
   return token;
 }
 
+export type SharePreview = { title: string; ownerName: string; memberCount: number; thumbnail: string | null };
+
+/**
+ * What a share link shows before anyone signs in (link previews in chats).
+ * Only for live links: anyone holding one could open the board anyway.
+ */
+export async function previewByToken(token: string): Promise<SharePreview | null> {
+  if (!/^[0-9a-f]{32}$/.test(token)) return null;
+  const { data: board, error } = await db()
+    .from("whiteboards")
+    .select("title, owner_id, link_access, thumbnail, whiteboard_members(count)")
+    .eq("share_token", token)
+    .maybeSingle();
+  if (error) throw error;
+  if (!board || board.link_access === "none") return null;
+  const owner = (await profilesById([board.owner_id as string]))[board.owner_id as string];
+  return {
+    title: board.title as string,
+    ownerName: owner?.name ?? "Someone",
+    // The owner is not stored as a member row.
+    memberCount: ((board.whiteboard_members as { count: number }[] | null)?.[0]?.count ?? 0) + 1,
+    thumbnail: (board.thumbnail as string | null) ?? null,
+  };
+}
+
 export type JoinResult = { kind: "joined"; boardId: string } | { kind: "invalid" };
 
 /** Joins a board from its share link with the role the link grants. */

@@ -2,14 +2,25 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { getViewer, joinByToken } from "@/lib/supabase/whiteboards";
+import { getViewer, joinByToken, previewByToken } from "@/lib/supabase/whiteboards";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Join whiteboard | PassionSeed",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata({ params }: { params: Promise<{ token: string }> }): Promise<Metadata> {
+  const { token } = await params;
+  const board = await previewByToken(token).catch(() => null);
+  const title = board ? `${board.title} · ไวท์บอร์ด` : "ไวท์บอร์ด";
+  const description = board
+    ? `${board.ownerName} ชวนมาวาดด้วยกันบน PassionSeed`
+    : "คิด วาด ระดมไอเดียไปด้วยกันแบบเรียลไทม์บน PassionSeed";
+  return {
+    title: `${title} | PassionSeed`,
+    description,
+    openGraph: { title, description },
+    twitter: { card: "summary_large_image", title, description },
+    robots: { index: false, follow: false },
+  };
+}
 
 /** A share link: sign in, join with the link's access, open the board. */
 export default async function JoinWhiteboardPage({ params }: { params: Promise<{ token: string }> }) {
