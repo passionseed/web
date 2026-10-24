@@ -170,6 +170,10 @@ export async function updateSession(request: NextRequest) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone()
     url.pathname = '/login'
+    // Whiteboards: come back to the board after signing in.
+    if (pathname === '/whiteboard' || pathname.startsWith('/whiteboard/')) {
+      url.search = `?next=${encodeURIComponent(pathname + request.nextUrl.search)}`
+    }
     return copySessionCookies(supabaseResponse, NextResponse.redirect(url))
   }
 

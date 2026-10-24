@@ -89,8 +89,9 @@ export default function WhiteboardCanvas({
   // People who opened the board since this page loaded also show up in the list.
   const people = useMemo(() => {
     const known = new Set(members.map((m) => m.userId));
+    // One entry per person, even with several tabs open.
     const newcomers = sync.present
-      .filter((p) => !known.has(p.userId))
+      .filter((p) => !known.has(p.userId) && Boolean(known.add(p.userId)))
       .map((p) => ({ userId: p.userId, name: p.name, avatarUrl: p.avatarUrl, role: p.role }));
     return [...members, ...newcomers];
   }, [members, sync.present]);
@@ -176,8 +177,6 @@ export default function WhiteboardCanvas({
         initialData={initialData}
         onChange={onChange}
         onPointerUpdate={onPointerUpdate}
-        onScrollChange={sync.onScrollChange}
-        onUserFollow={sync.onUserFollow}
         isCollaborating
         viewModeEnabled={!editable}
         name={title}

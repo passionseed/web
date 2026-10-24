@@ -35,7 +35,16 @@ import { createClient } from "@/utils/supabase/client";
 
 export type SaveState = "saved" | "saving" | "unsaved" | "offline" | "error";
 
-export type PresentUser = { userId: string; name: string; avatarUrl: string | null; role: WhiteboardRole };
+export type PresentUser = {
+  userId: string;
+  /** One per open tab, so the same person on two devices shows up twice. */
+  socketId: string;
+  name: string;
+  avatarUrl: string | null;
+  role: WhiteboardRole;
+  /** socketId of the tab this one is following. */
+  following: string | null;
+};
 
 /** Extra channel events that components can send and listen to. */
 export type BoardEvent = "emote" | "comments" | "timer" | "versions";
@@ -45,11 +54,19 @@ type Elements = readonly OrderedExcalidrawElement[];
 type Bounds = readonly [number, number, number, number];
 
 type CursorPayload = {
+  kind?: "cursor";
+  socketId: string;
   userId: string;
   pointer: { x: number; y: number; tool: "pointer" | "laser" };
   button: "up" | "down";
   selectedElementIds?: Record<string, true>;
 };
+type ViewportPayload = { kind: "viewport"; socketId: string; bounds: Bounds };
+/**
+ * Cursors and the follow-mode viewport share the "cursor" event: it is the
+ * one event viewers may send (see the realtime policy in the migration).
+ */
+type AwarenessPayload = CursorPayload | ViewportPayload;
 
 const BROADCAST_MS = 60;
 const CURSOR_MS = 40;
@@ -123,6 +140,7 @@ export function useWhiteboardSync({
   initialElements: Elements;
 }) {
   const { id: myId, name: myName, avatarUrl: myAvatar } = me;
+  const [mySocket] = useState(() => `${myId}:${crypto.randomUUID().slice(0, 8)}`);
   const editable = canEdit(role);
   const [excalidrawAPI, setExcalidrawAPI] = useState<ExcalidrawImperativeAPI | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("saved");
@@ -136,6 +154,7 @@ export function useWhiteboardSync({
   const requestedFiles = useRef(new Set<string>());
   const collaborators = useRef(new Map<SocketId, Collaborator>());
   const followers = useRef(new Set<string>());
+  const following = useRef<string | null>(null);
   const listeners = useRef(new Map<BoardEvent, Set<(payload: unknown) => void>>());
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saving = useRef<Promise<void> | null>(null);
@@ -310,18 +329,23 @@ export function useWhiteboardSync({
     (update: { pointer: CursorPayload["pointer"]; button: "up" | "down" }) => {
       if (!channelRef.current) return;
       sendCursor.current({
+        socketId: mySocket,
         userId: myId,
         pointer: update.pointer,
         button: update.button,
         selectedElementIds: excalidrawAPI?.getAppState().selectedElementIds as Record<string, true> | undefined,
       });
     },
-    [excalidrawAPI, myId],
+    [excalidrawAPI, mySocket, myId],
   );
 
-  // Follow mode: clicking someone's avatar follows their view.
+  // Follow mode: clicking someone's avatar follows their view. Who follows
+  // whom lives in presence; the leader streams its view while anyone follows.
   const sendViewport = useRef(
-    throttle((bounds: Bounds) => send("viewport", { userId: myId, bounds }), VIEWPORT_MS),
+    throttle(
+      (bounds: Bounds) => send("cursor", { kind: "viewport", socketId: mySocket, bounds } satisfies ViewportPayload),
+      VIEWPORT_MS,
+    ),
   );
   const broadcastViewport = useCallback(() => {
     if (!excalidrawAPI || followers.current.size === 0) return;
@@ -330,12 +354,35 @@ export function useWhiteboardSync({
 
   const onScrollChange = useCallback(() => broadcastViewport(), [broadcastViewport]);
 
+  const trackMe = useCallback(async () => {
+    await channelRef.current?.track({
+      userId: myId,
+      socketId: mySocket,
+      name: myName,
+      avatarUrl: myAvatar,
+      role,
+      following: following.current,
+    } satisfies PresentUser);
+  }, [myAvatar, myId, myName, mySocket, role]);
+
   const onUserFollow = useCallback(
     (payload: OnUserFollowedPayload) => {
-      send("follow", { target: payload.userToFollow.socketId, follower: myId, action: payload.action });
+      following.current = payload.action === "FOLLOW" ? payload.userToFollow.socketId : null;
+      void trackMe();
     },
-    [myId, send],
+    [trackMe],
   );
+
+  // Excalidraw 0.18 reports these through its API, not as props.
+  useEffect(() => {
+    if (!excalidrawAPI) return;
+    const offScroll = excalidrawAPI.onScrollChange(onScrollChange);
+    const offFollow = excalidrawAPI.onUserFollow(onUserFollow);
+    return () => {
+      offScroll();
+      offFollow();
+    };
+  }, [excalidrawAPI, onScrollChange, onUserFollow]);
 
   const pushCollaborators = useCallback(() => {
     excalidrawAPI?.updateScene({
@@ -392,7 +439,7 @@ export function useWhiteboardSync({
       await supabase.realtime.setAuth();
       if (cancelled) return;
       const channel = supabase.channel(boardTopic(boardId), {
-        config: { private: true, broadcast: { self: false }, presence: { key: myId } },
+        config: { private: true, broadcast: { self: false }, presence: { key: mySocket } },
       });
       channelRef.current = channel;
 
@@ -409,24 +456,17 @@ export function useWhiteboardSync({
           const unsaved = changedSince(allElements(), savedSeen.current);
           if (unsaved.length) send("scene", { elements: unsaved });
         })
-        .on("broadcast", { event: "follow" }, ({ payload }) => {
-          const p = payload as { target: string; follower: string; action: "FOLLOW" | "UNFOLLOW" };
-          if (p.target !== myId) return;
-          if (p.action === "FOLLOW") followers.current.add(p.follower);
-          else followers.current.delete(p.follower);
-          broadcastViewport();
-        })
-        .on("broadcast", { event: "viewport" }, ({ payload }) => {
-          const p = payload as { userId: string; bounds: Bounds };
-          const appState = excalidrawAPI.getAppState();
-          if (appState.userToFollow?.socketId !== p.userId) return;
-          const next = zoomToFitBounds({ bounds: p.bounds as never, appState, fitToViewport: true, viewportZoomFactor: 1 });
-          excalidrawAPI.updateScene({ appState: next.appState, captureUpdate: CaptureUpdateAction.NEVER });
-        })
         .on("broadcast", { event: "cursor" }, ({ payload }) => {
-          const p = payload as CursorPayload;
-          if (p.userId === myId) return;
-          const key = p.userId as SocketId;
+          const p = payload as AwarenessPayload;
+          if (p.socketId === mySocket) return;
+          if (p.kind === "viewport") {
+            const appState = excalidrawAPI.getAppState();
+            if (appState.userToFollow?.socketId !== p.socketId) return;
+            const next = zoomToFitBounds({ bounds: p.bounds as never, appState, fitToViewport: true, viewportZoomFactor: 1 });
+            excalidrawAPI.updateScene({ appState: next.appState, captureUpdate: CaptureUpdateAction.NEVER });
+            return;
+          }
+          const key = p.socketId as SocketId;
           collaborators.current.set(key, {
             ...collaborators.current.get(key),
             id: p.userId,
@@ -443,11 +483,25 @@ export function useWhiteboardSync({
             .map((metas) => metas[0])
             .filter(Boolean) as PresentUser[];
           setPresent(users);
-          const online = new Set(users.map((u) => u.userId));
-          for (const id of followers.current) if (!online.has(id)) followers.current.delete(id);
+
+          // Followers come from presence; a new one gets the current view straight away.
+          const nextFollowers = new Set(users.filter((u) => u.following === mySocket).map((u) => u.socketId));
+          const gained = [...nextFollowers].some((id) => !followers.current.has(id));
+          followers.current = nextFollowers;
+          if (gained) sendViewport.current(getVisibleSceneBounds(excalidrawAPI.getAppState()) as Bounds);
+
+          // Stop following someone who left.
+          const online = new Set(users.map((u) => u.socketId));
+          const leader = excalidrawAPI.getAppState().userToFollow;
+          if (leader && !online.has(leader.socketId)) {
+            following.current = null;
+            excalidrawAPI.updateScene({ appState: { userToFollow: null }, captureUpdate: CaptureUpdateAction.NEVER });
+            void trackMe();
+          }
+
           const next = new Map<SocketId, Collaborator>();
           for (const u of users) {
-            const key = u.userId as SocketId;
+            const key = u.socketId as SocketId;
             next.set(key, {
               ...collaborators.current.get(key),
               id: u.userId,
@@ -455,7 +509,7 @@ export function useWhiteboardSync({
               username: u.name,
               avatarUrl: u.avatarUrl ?? undefined,
               color: colorFor(u.userId),
-              isCurrentUser: u.userId === myId,
+              isCurrentUser: u.socketId === mySocket,
             });
           }
           collaborators.current = next;
@@ -464,7 +518,7 @@ export function useWhiteboardSync({
         .subscribe(async (status, error) => {
           if (status === "SUBSCRIBED") {
             setConnected(true);
-            await channel.track({ userId: myId, name: myName, avatarUrl: myAvatar, role } satisfies PresentUser);
+            await trackMe();
             send("hello", {});
           } else if (status === "CLOSED" || status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
             if (status !== "CLOSED") console.warn(`Whiteboard realtime ${status}`, error?.message);
@@ -480,20 +534,7 @@ export function useWhiteboardSync({
       channelRef.current = null;
       if (channel) void supabase.removeChannel(channel);
     };
-  }, [
-    allElements,
-    boardId,
-    broadcastViewport,
-    editable,
-    excalidrawAPI,
-    fetchMissingFiles,
-    myAvatar,
-    myId,
-    myName,
-    pushCollaborators,
-    role,
-    send,
-  ]);
+  }, [allElements, boardId, editable, excalidrawAPI, fetchMissingFiles, mySocket, pushCollaborators, send, trackMe]);
 
   // Small preview for the board list.
   useEffect(() => {
@@ -546,8 +587,6 @@ export function useWhiteboardSync({
     setExcalidrawAPI,
     onChange,
     onPointerUpdate,
-    onScrollChange,
-    onUserFollow,
     saveNow,
     refreshFiles: () => void fetchMissingFiles(allElements()),
     send,
