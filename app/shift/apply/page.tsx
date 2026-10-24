@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { shiftSocialMetadata } from "@/lib/shift/socialMetadata";
 
 import { ShiftApplyForm } from "@/components/shift/ShiftApplyForm";
-import { ShiftSeatsRemaining } from "@/components/shift/ShiftSeatsRemaining";
 import {
   ClosedRoundNotice,
   CohortQuickFacts,
@@ -119,10 +118,8 @@ export default async function ShiftApplyPage({
               className="text-center text-sm leading-relaxed sm:text-base"
               style={{ color: paper("b3") }}
             >
-              <div style={{ color: INK.paper }}>
-                <ShiftSeatsRemaining round={cohort.round} capacity={cohort.seats} />
-              </div>
-              <p className="mt-1">
+              {/* No seat count here: the register page only asks, it doesn't count down. */}
+              <p>
                 ใช้เวลา 2 นาที ไม่ต้องล็อกอิน ·{" "}
                 <span className="font-semibold" style={{ color: INK.yellow }}>
                   ปิดรับ {formatThaiDate(cohort.applyDeadline)}
