@@ -235,19 +235,35 @@ export function waveBand(y: number, fill: string, period = 12, width = GRID_W, h
   return out;
 }
 
-/** Half-sunk street sign: one board per step, arrows alternating sides. */
-export function streetSign(x: number, top: number, bottom: number, boards: number, w = 34): Rect[] {
+export interface SignColors {
+  post: string;
+  edge: string;
+  board: string;
+}
+
+/**
+ * Half-sunk street sign: one board per step, arrows alternating sides.
+ * `colors` lets other scenes repaint it (the Halloween cover uses a wooden post).
+ */
+export function streetSign(
+  x: number,
+  top: number,
+  bottom: number,
+  boards: number,
+  w = 34,
+  colors: SignColors = { post: PX.ink, edge: PX.ink, board: PX.cream },
+): Rect[] {
   const post = x + Math.round(w / 2) - 1;
-  const out: Rect[] = [r(post, top, 3, bottom - top, PX.ink)];
+  const out: Rect[] = [r(post, top, 3, bottom - top, colors.post)];
   for (let i = 0; i < boards; i++) {
     const y = top + 2 + i * 9;
     const right = i % 2 === 0;
-    out.push(r(x, y, w, 7, PX.ink), r(x + 1, y + 1, w - 2, 5, PX.cream));
+    out.push(r(x, y, w, 7, colors.edge), r(x + 1, y + 1, w - 2, 5, colors.board));
     const tipX = right ? x + w : x - 3;
     out.push(
-      r(right ? tipX : tipX + 2, y + 1, 1, 5, PX.ink),
-      r(tipX + 1, y + 2, 1, 3, PX.ink),
-      r(right ? tipX + 2 : tipX, y + 3, 1, 1, PX.ink),
+      r(right ? tipX : tipX + 2, y + 1, 1, 5, colors.edge),
+      r(tipX + 1, y + 2, 1, 3, colors.edge),
+      r(right ? tipX + 2 : tipX, y + 3, 1, 1, colors.edge),
     );
   }
   return out;
