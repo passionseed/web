@@ -18,6 +18,14 @@ export const SHIFT_AVAILABILITY = [
   { value: "some_days", label: "ว่างบางวัน" },
 ] as const;
 
+/** "Where did you find us", self-reported. `source` is the tracked link instead. */
+export const SHIFT_FOUND_VIA = [
+  { value: "friend", label: "เพื่อนแนะนำ" },
+  { value: "camphub", label: "Camphub" },
+  { value: "instagram", label: "Instagram" },
+  { value: "facebook", label: "Facebook" },
+] as const;
+
 const trimmed = (min: number, max: number, message: string) =>
   z.string().trim().min(min, message).max(max, "ยาวเกินไปนิด ลองย่อหน่อยนะ");
 
@@ -52,6 +60,9 @@ export const shiftApplicationSchema = z.object({
   discordHandle: optionalTrimmed(40),
   parentContact: trimmed(5, 120, "ใส่ช่องทางติดต่อผู้ปกครองด้วยนะ"),
   consent: z.literal(true, { errorMap: () => ({ message: "ติ๊กยินยอมก่อนส่งนะ" }) }),
+  foundVia: z.enum(["friend", "camphub", "instagram", "facebook"], {
+    message: "บอกหน่อยว่ารู้จักเราจากไหน",
+  }),
   source: optionalTrimmed(80),
   /** Which SHIFT round this is for. Missing means the first round, which is
    *  what every form sent before rounds existed. */
