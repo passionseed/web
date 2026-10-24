@@ -74,6 +74,7 @@ between adults and students; work happens in visible group spaces.
 - `utils/supabase/`: Supabase client setup. `proxy.ts` at the root (Next.js 16's middleware) refreshes sessions and guards routes through `utils/supabase/proxy.ts`.
 - `supabase/migrations/`: schema migrations.
 - `lib/supabase/__tests__/` and colocated `*.test.ts`: Jest tests.
+- `components/whiteboard/` and `app/whiteboard/`: the multiplayer whiteboard. Read [`docs/features/whiteboard.md`](docs/features/whiteboard.md) first; `pnpm whiteboard:read <id>` prints a board as Markdown.
 
 Keep code modular: split large components and functions into small, named
 pieces, and follow the patterns already in the neighbouring files.

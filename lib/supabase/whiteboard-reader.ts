@@ -1,4 +1,4 @@
-import { boardToMarkdown, summarizeElements, type SummaryComment } from "@/lib/whiteboard/summary";
+import { authorIds, boardToMarkdown, summarizeElements, type SummaryComment } from "@/lib/whiteboard/summary";
 import { createAdminClient } from "@/utils/supabase/admin";
 
 /**
@@ -60,8 +60,10 @@ export async function readBoardMarkdown(boardId: string): Promise<string | null>
   if (error) throw error;
   if (!board) return null;
 
+  const summary = summarizeElements((board.elements as unknown[]) ?? []);
   const people = await names([
     ...new Set([
+      ...authorIds(summary),
       board.owner_id as string,
       ...(members ?? []).map((m) => m.user_id as string),
       ...(comments ?? []).map((c) => c.author_id as string),
@@ -88,7 +90,8 @@ export async function readBoardMarkdown(boardId: string): Promise<string | null>
       updatedAt: (board.updated_at as string).slice(0, 16).replace("T", " "),
       members: (members ?? []).map((m) => who(m.user_id as string)),
     },
-    summarizeElements((board.elements as unknown[]) ?? []),
+    summary,
     threads,
+    people,
   );
 }

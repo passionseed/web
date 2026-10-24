@@ -1,4 +1,4 @@
-import { boardToMarkdown, summarizeElements } from "./summary";
+import { authorIds, boardToMarkdown, summarizeElements } from "./summary";
 
 const base = { width: 100, height: 40 };
 const text = (id: string, x: number, y: number, t: string, extra = {}) => ({ id, type: "text", x, y, ...base, text: t, ...extra });
@@ -72,5 +72,27 @@ describe("boardToMarkdown", () => {
     expect(md).toContain("## Went well\n- [Green sticky] Demo day");
     expect(md).toContain("- A → B");
     expect(md).toContain("- Mint (2026-10-24) [resolved]: เห็นด้วย\n  - Fang: ok");
+  });
+});
+
+describe("who wrote what", () => {
+  it("credits a note to whoever typed its text, and shows later editors", () => {
+    const summary = summarizeElements([
+      box("s", 0, 0, 200, 200, { backgroundColor: "#ffe680", customData: { createdBy: "fang", updatedBy: "fang" } }),
+      text("s-label", 10, 10, "ทำแบบสอบถาม", { containerId: "s", customData: { createdBy: "mint", updatedBy: "beam" } }),
+      text("t", 0, 400, "old text from before tracking"),
+    ]);
+    expect(authorIds(summary).sort()).toEqual(["beam", "mint"]);
+    const md = boardToMarkdown(
+      { title: "B", owner: "Fang", updatedAt: "", members: [] },
+      summary,
+      [],
+      new Map([
+        ["mint", "Mint"],
+        ["beam", "Beam"],
+      ]),
+    );
+    expect(md).toContain("- [Yellow sticky] ทำแบบสอบถาม (by Mint, edited by Beam)");
+    expect(md).toContain("- old text from before tracking\n");
   });
 });

@@ -22,9 +22,18 @@ type El = {
   boundElements?: { id: string; type: string }[] | null;
   startBinding?: { elementId: string } | null;
   endBinding?: { elementId: string } | null;
+  customData?: { createdBy?: unknown; updatedBy?: unknown } | null;
 };
 
-export type SummaryItem = { id: string; kind: "sticky" | "shape" | "text" | "image"; text: string; color?: string };
+export type SummaryItem = {
+  id: string;
+  kind: "sticky" | "shape" | "text" | "image";
+  text: string;
+  color?: string;
+  /** User ids from customData (see stampAuthor); absent on elements from before it existed. */
+  createdBy?: string;
+  updatedBy?: string;
+};
 export type SummaryArea = { id: string; title: string; items: SummaryItem[] };
 export type SummaryLink = { from: string; to: string; label?: string };
 export type BoardSummary = { areas: SummaryArea[]; loose: SummaryItem[]; links: SummaryLink[]; counts: Record<string, number> };
@@ -56,9 +65,21 @@ export function summarizeElements(raw: unknown[]): BoardSummary {
   const all = (raw as El[]).filter((e) => e && !e.isDeleted);
   const byId = new Map(all.map((e) => [e.id, e]));
   const labelOf = new Map<string, string>();
+  const labelEl = new Map<string, El>();
   for (const e of all) {
-    if (e.type === "text" && e.containerId && e.text) labelOf.set(e.containerId, oneLine(e.text));
+    if (e.type === "text" && e.containerId && e.text) {
+      labelOf.set(e.containerId, oneLine(e.text));
+      labelEl.set(e.containerId, e);
+    }
   }
+  // Who wrote it: for a note, whoever typed its text, else whoever drew the shape.
+  const authors = (e: El) => {
+    const source = labelEl.get(e.id)?.customData ?? e.customData;
+    const pick = (v: unknown) => (typeof v === "string" ? v : undefined);
+    const createdBy = pick(source?.createdBy);
+    const updatedBy = pick(source?.updatedBy);
+    return { ...(createdBy ? { createdBy } : {}), ...(updatedBy ? { updatedBy } : {}) };
+  };
 
   // Areas: frames, plus big unlabelled rectangles with something inside.
   const frames = all.filter((e) => e.type === "frame" || e.type === "magicframe");
@@ -97,13 +118,14 @@ export function summarizeElements(raw: unknown[]): BoardSummary {
     .sort((a, b) => readingOrder(a.el, b.el));
 
   const toItem = (e: El): SummaryItem | null => {
-    if (e.type === "text") return e.text ? { id: e.id, kind: "text", text: oneLine(e.text) } : null;
-    if (e.type === "image") return { id: e.id, kind: "image", text: labelOf.get(e.id) ?? "(image)" };
+    const by = authors(e);
+    if (e.type === "text") return e.text ? { id: e.id, kind: "text", text: oneLine(e.text), ...by } : null;
+    if (e.type === "image") return { id: e.id, kind: "image", text: labelOf.get(e.id) ?? "(image)", ...by };
     if (!SHAPES.has(e.type)) return null;
     const color = STICKY_BY_FILL.get((e.backgroundColor ?? "").toLowerCase());
     const text = labelOf.get(e.id) ?? "";
-    if (color && e.type === "rectangle") return { id: e.id, kind: "sticky", text, color };
-    return text ? { id: e.id, kind: "shape", text } : null;
+    if (color && e.type === "rectangle") return { id: e.id, kind: "sticky", text, color, ...by };
+    return text ? { id: e.id, kind: "shape", text, ...by } : null;
   };
 
   const placed: SummaryArea[] = areas.map((a) => ({ id: a.el.id, title: a.title, items: [] }));
@@ -148,11 +170,30 @@ export function summarizeElements(raw: unknown[]): BoardSummary {
   return { areas: placed.filter((a) => a.items.length > 0 || a.title), loose, links, counts };
 }
 
-function itemLine(i: SummaryItem) {
-  if (i.kind === "sticky") return `- [${i.color} sticky] ${i.text || "(empty)"}`;
-  if (i.kind === "image") return `- [image] ${i.text}`;
-  if (i.kind === "shape") return `- [box] ${i.text}`;
-  return `- ${i.text}`;
+/** Every author id in a summary, to look up names. */
+export function authorIds(summary: BoardSummary): string[] {
+  const ids = new Set<string>();
+  for (const i of [...summary.areas.flatMap((a) => a.items), ...summary.loose]) {
+    if (i.createdBy) ids.add(i.createdBy);
+    if (i.updatedBy) ids.add(i.updatedBy);
+  }
+  return [...ids];
+}
+
+function itemLine(i: SummaryItem, names: Map<string, string>) {
+  const body =
+    i.kind === "sticky"
+      ? `[${i.color} sticky] ${i.text || "(empty)"}`
+      : i.kind === "image"
+        ? `[image] ${i.text}`
+        : i.kind === "shape"
+          ? `[box] ${i.text}`
+          : i.text;
+  const name = (id?: string) => (id ? (names.get(id) ?? "someone") : undefined);
+  const by = name(i.createdBy);
+  const edited = i.updatedBy && i.updatedBy !== i.createdBy ? name(i.updatedBy) : undefined;
+  const credit = by ? ` (by ${by}${edited ? `, edited by ${edited}` : ""})` : "";
+  return `- ${body}${credit}`;
 }
 
 /** Markdown for one board. */
@@ -160,7 +201,10 @@ export function boardToMarkdown(
   board: { title: string; owner: string; updatedAt: string; members: string[] },
   summary: BoardSummary,
   comments: SummaryComment[] = [],
+  /** User id to display name, for "who wrote what". */
+  names: Map<string, string> = new Map(),
 ): string {
+  const line = (i: SummaryItem) => itemLine(i, names);
   const out = [`# ${board.title}`, "", `Owner: ${board.owner} · Updated: ${board.updatedAt}`];
   if (board.members.length) out.push(`Members: ${board.members.join(", ")}`);
   const counts = Object.entries(summary.counts)
@@ -170,9 +214,9 @@ export function boardToMarkdown(
 
   for (const a of summary.areas) {
     out.push("", `## ${a.title || "Untitled area"}`);
-    out.push(...(a.items.length ? a.items.map(itemLine) : ["(empty)"]));
+    out.push(...(a.items.length ? a.items.map(line) : ["(empty)"]));
   }
-  if (summary.loose.length) out.push("", summary.areas.length ? "## Elsewhere on the board" : "## Board", ...summary.loose.map(itemLine));
+  if (summary.loose.length) out.push("", summary.areas.length ? "## Elsewhere on the board" : "## Board", ...summary.loose.map(line));
   if (summary.links.length) {
     out.push("", "## Arrows");
     out.push(...summary.links.map((l) => `- ${l.from} → ${l.to}${l.label ? ` (${l.label})` : ""}`));
