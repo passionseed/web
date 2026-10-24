@@ -1,0 +1,298 @@
+/*
+ * Whiteboard skin: PassionSeed fonts and the warm Dawn/Dusk feel on top of
+ * Excalidraw. Board colours stay Excalidraw's; this only touches the chrome.
+ */
+
+/*
+ * Thai glyphs on the canvas. Excalidraw draws with its own families
+ * (Excalifont, Nunito, Comic Shanns, ...), none of which has Thai, so Thai
+ * text fell back to a system font. Adding a Thai-only face under the same
+ * family name fills the gap without touching Latin rendering:
+ * hand-drawn -> Sriracha, normal and code -> Bai Jamjuree. Weights must
+ * match Excalidraw's own faces (Nunito is 500), or the browser picks the
+ * Thai-only face for Latin text too and falls back to a system font.
+ */
+@font-face {
+  font-family: "Excalifont";
+  src: url("./fonts/sriracha-thai.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+  unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC;
+}
+@font-face {
+  font-family: "Virgil";
+  src: url("./fonts/sriracha-thai.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+  unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC;
+}
+@font-face {
+  font-family: "Nunito";
+  src: url("./fonts/bai-jamjuree-thai-400.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+  unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC;
+}
+@font-face {
+  font-family: "Comic Shanns";
+  src: url("./fonts/bai-jamjuree-thai-400.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+  unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC;
+}
+@font-face {
+  font-family: "Lilita One";
+  src: url("./fonts/bai-jamjuree-thai-400.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+  unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC;
+}
+
+/* ---------- Tokens ---------- */
+
+.whiteboard-room {
+  --wb-font: var(--font-libre-franklin), var(--font-bai-jamjuree), "Bai Jamjuree", system-ui, sans-serif;
+  --wb-ease-in: cubic-bezier(0.05, 0.7, 0.35, 0.99);
+
+  /* Dawn paper: warm glass, gold hairlines */
+  --wb-glass: linear-gradient(165deg, rgba(255, 253, 249, 0.94) 0%, rgba(255, 250, 243, 0.9) 100%);
+  --wb-hairline: rgba(186, 128, 62, 0.16);
+  --wb-hairline-strong: rgba(217, 119, 6, 0.38);
+  --wb-text: #2a2118;
+  --wb-text-soft: rgba(42, 33, 24, 0.62);
+  --wb-shadow: 0 0 0 1px rgba(186, 128, 62, 0.06), 0 1px 2px rgba(60, 35, 10, 0.06),
+    0 6px 22px -6px rgba(120, 70, 20, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --wb-shadow-hover: 0 0 0 1px rgba(251, 146, 60, 0.2), 0 2px 4px rgba(60, 35, 10, 0.06),
+    0 10px 30px -8px rgba(234, 120, 30, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  --wb-horizon: linear-gradient(90deg, rgba(254, 217, 92, 0) 0%, rgba(251, 170, 60, 0.75) 50%, rgba(254, 217, 92, 0) 100%);
+  --wb-active: linear-gradient(180deg, rgba(254, 237, 200, 0.9) 0%, rgba(253, 214, 160, 0.85) 100%);
+
+  font-family: var(--wb-font);
+}
+
+.whiteboard-room:has(.excalidraw.theme--dark) {
+  /* Dusk: charcoal-amber glass, like .dawn-panel */
+  --wb-glass: linear-gradient(165deg, rgba(34, 26, 20, 0.9) 0%, rgba(20, 16, 20, 0.94) 100%);
+  --wb-hairline: rgba(254, 217, 92, 0.13);
+  --wb-hairline-strong: rgba(254, 217, 92, 0.4);
+  --wb-text: #f1ebe2;
+  --wb-text-soft: rgba(241, 235, 226, 0.62);
+  --wb-shadow: 0 0 0 1px rgba(139, 26, 90, 0.14), 0 1px 3px -1px rgba(0, 0, 0, 0.55),
+    0 6px 22px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --wb-shadow-hover: 0 0 0 1px rgba(251, 146, 60, 0.22), 0 4px 20px rgba(0, 0, 0, 0.42),
+    0 0 26px -6px rgba(251, 146, 60, 0.3), inset 0 1px 0 rgba(255, 200, 100, 0.09);
+  --wb-active: linear-gradient(180deg, rgba(251, 146, 60, 0.32) 0%, rgba(217, 119, 6, 0.22) 100%);
+}
+
+/* ---------- Excalidraw variables ---------- */
+
+.whiteboard-room .excalidraw {
+  --ui-font: var(--wb-font);
+  --border-radius-lg: 0.85rem;
+  --border-radius-md: 0.6rem;
+  --island-bg-color: rgba(255, 252, 247, 0.94);
+  --shadow-island: var(--wb-shadow);
+  --default-border-color: var(--wb-hairline);
+  --color-primary: #e2711d;
+  --color-primary-darker: #c75f12;
+  --color-primary-darkest: #a64d0c;
+  --color-primary-hover: #c75f12;
+  --color-primary-light: #fdebd3;
+  --color-primary-light-darker: #fbdcb4;
+  --color-brand-hover: #c75f12;
+  --color-brand-active: #a64d0c;
+  --color-surface-high: #fbefdf;
+  --color-surface-low: #f7f1e8;
+  --color-surface-mid: #faf6f0;
+  --color-surface-primary-container: #fde4c3;
+  --color-on-primary-container: #7a3a07;
+  --color-on-surface: #2a2118;
+}
+
+.whiteboard-room .excalidraw.theme--dark {
+  --island-bg-color: rgba(28, 22, 20, 0.94);
+  --color-primary: #fbb35c;
+  --color-primary-darker: #fcc27c;
+  --color-primary-darkest: #fdd29d;
+  --color-primary-hover: #fcc27c;
+  --color-primary-light: #4a3320;
+  --color-primary-light-darker: #3e2b1b;
+  --color-surface-high: hsl(30, 16%, 20%);
+  --color-surface-low: hsl(28, 14%, 14%);
+  --color-surface-mid: hsl(28, 14%, 10%);
+  --color-surface-lowest: hsl(26, 18%, 7%);
+  --color-surface-primary-container: #4a3320;
+  --color-on-primary-container: #fed98f;
+  --color-on-surface: #f1ebe2;
+}
+
+/* ---------- Floating islands (toolbar, menus, panels) ---------- */
+
+.whiteboard-room .excalidraw .Island {
+  background: var(--wb-glass);
+  border: 1px solid var(--wb-hairline);
+  backdrop-filter: blur(18px) saturate(1.08);
+  -webkit-backdrop-filter: blur(18px) saturate(1.08);
+}
+
+/* The main toolbar gets the horizon line: gold, fading out at both ends. */
+.whiteboard-room .excalidraw .App-toolbar.Island,
+.whiteboard-room .excalidraw .App-toolbar .Island {
+  overflow: visible;
+}
+.whiteboard-room .excalidraw .App-toolbar::after {
+  content: "";
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  bottom: -1px;
+  height: 1px;
+  background: var(--wb-horizon);
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+/* Tool buttons: slow warm charge-in, quick snap-out. */
+.whiteboard-room .excalidraw .ToolIcon__icon {
+  border-radius: 0.6rem;
+  transition: background-color 160ms ease-out, box-shadow 160ms ease-out;
+}
+.whiteboard-room .excalidraw .ToolIcon:hover .ToolIcon__icon {
+  box-shadow: inset 0 0 0 1px var(--wb-hairline-strong), 0 0 14px -4px rgba(251, 146, 60, 0.45);
+  transition: background-color 1200ms var(--wb-ease-in), box-shadow 1800ms var(--wb-ease-in);
+}
+.whiteboard-room .excalidraw .ToolIcon .ToolIcon_type_radio:checked + .ToolIcon__icon,
+.whiteboard-room .excalidraw .ToolIcon .ToolIcon_type_checkbox:checked + .ToolIcon__icon {
+  background: var(--wb-active);
+  box-shadow: inset 0 0 0 1px var(--wb-hairline-strong), inset 0 -6px 12px -8px rgba(234, 120, 30, 0.45),
+    0 2px 10px -4px rgba(234, 120, 30, 0.45);
+}
+
+/* Menus */
+.whiteboard-room .excalidraw .dropdown-menu-container {
+  border-radius: 0.9rem;
+  padding: 0.4rem;
+}
+.whiteboard-room .excalidraw .dropdown-menu-item {
+  border-radius: 0.55rem;
+  font-family: var(--wb-font);
+  line-height: 1.5;
+  transition: background-color 160ms ease-out;
+}
+.whiteboard-room .excalidraw .dropdown-menu-item:hover {
+  background: var(--color-surface-high);
+  transition: background-color 900ms var(--wb-ease-in);
+}
+
+/* Sidebar */
+.whiteboard-room .excalidraw .sidebar {
+  background: var(--wb-glass);
+  border-left: 1px solid var(--wb-hairline);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+.whiteboard-room .excalidraw .sidebar .sidebar__header {
+  background: linear-gradient(to bottom, rgba(254, 217, 92, 0.1), rgba(254, 217, 92, 0.02));
+  border-bottom: 1px solid var(--wb-hairline);
+}
+
+/* Share button and the sidebar trigger read as our primary actions. */
+.whiteboard-room .excalidraw .collab-button {
+  background: linear-gradient(180deg, #f08a2c 0%, #d9631a 100%);
+  border: none;
+  border-radius: 0.75rem;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5), inset 0 1px 0 rgba(255, 220, 170, 0.6),
+    0 6px 16px -6px rgba(217, 99, 26, 0.6);
+  transition: box-shadow 160ms ease-out, transform 160ms ease-out;
+}
+.whiteboard-room .excalidraw .collab-button:hover {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5), inset 0 1px 0 rgba(255, 220, 170, 0.7),
+    0 10px 26px -6px rgba(217, 99, 26, 0.75);
+  transform: translateY(-1px);
+  transition: box-shadow 2400ms var(--wb-ease-in), transform 1600ms var(--wb-ease-in);
+}
+.whiteboard-room .excalidraw .sidebar-trigger {
+  background: var(--wb-glass);
+  box-shadow: var(--wb-shadow);
+  border: 1px solid var(--wb-hairline);
+  border-radius: 0.75rem;
+}
+
+/* Welcome screen: our headline type, softer hints */
+.whiteboard-room .excalidraw .welcome-screen-center__heading {
+  font-family: var(--font-kodchasan), var(--wb-font);
+  font-weight: 600;
+  font-size: 1.5rem;
+  letter-spacing: -0.01em;
+  color: var(--wb-text);
+}
+.whiteboard-room .excalidraw .welcome-screen-menu-item {
+  border-radius: 0.75rem;
+  transition: background-color 160ms ease-out, box-shadow 160ms ease-out;
+}
+.whiteboard-room .excalidraw .welcome-screen-menu-item:hover {
+  box-shadow: inset 0 0 0 1px var(--wb-hairline-strong);
+  transition: background-color 1200ms var(--wb-ease-in), box-shadow 1800ms var(--wb-ease-in);
+}
+
+/* ---------- Our own chrome (title, save, timer, footer buttons) ---------- */
+
+.wb-pill {
+  position: relative;
+  display: flex;
+  height: 2.25rem;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--wb-hairline);
+  background: var(--wb-glass);
+  backdrop-filter: blur(18px) saturate(1.08);
+  -webkit-backdrop-filter: blur(18px) saturate(1.08);
+  box-shadow: var(--wb-shadow);
+  padding: 0 0.75rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--wb-text-soft);
+  transition: box-shadow 160ms ease-out, border-color 160ms ease-out;
+}
+button.wb-pill:enabled:hover,
+.wb-pill--interactive:hover {
+  border-color: var(--wb-hairline-strong);
+  box-shadow: var(--wb-shadow-hover);
+  transition: box-shadow 2400ms var(--wb-ease-in), border-color 1800ms var(--wb-ease-in);
+}
+.wb-pill--title {
+  max-width: 15rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--wb-text);
+}
+.wb-pill--on {
+  border-color: transparent;
+  background: linear-gradient(180deg, #f08a2c 0%, #d9631a 100%);
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 220, 170, 0.6), 0 6px 16px -6px rgba(217, 99, 26, 0.6);
+}
+
+/* Sidebar content */
+.whiteboard-kit {
+  font-family: var(--wb-font);
+  line-height: 1.5;
+}
+.whiteboard-kit .wb-tile {
+  border: 1px solid var(--wb-hairline);
+  border-radius: 0.8rem;
+  transition: border-color 160ms ease-out, box-shadow 160ms ease-out;
+}
+.whiteboard-kit .wb-tile:hover {
+  border-color: var(--wb-hairline-strong);
+  box-shadow: var(--wb-shadow-hover);
+  transition: border-color 1800ms var(--wb-ease-in), box-shadow 2400ms var(--wb-ease-in);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .whiteboard-room *,
+  .whiteboard-room *::after {
+    transition-duration: 0ms !important;
+  }
+}
