@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { safeServerError } from "@/lib/security/route-guards";
 import { deleteBoard, patchBoard, removeMember } from "@/lib/supabase/whiteboards";
-import { patchBoardSchema } from "@/lib/whiteboard/core";
+import { patchBoardSchema, stampAuthor } from "@/lib/whiteboard/core";
 import { guardBoard, readJson } from "@/lib/whiteboard/route-guard";
 
 type Params = { params: Promise<{ id: string }> };
@@ -23,7 +23,8 @@ export async function PATCH(request: Request, { params }: Params) {
   if (!guard.ok) return guard.response;
 
   try {
-    await patchBoard(id, patch);
+    // The server, not the client, says who last changed each element.
+    await patchBoard(id, patch.elements ? { ...patch, elements: stampAuthor(patch.elements, guard.viewer.id) } : patch);
     return NextResponse.json({ ok: true });
   } catch (error) {
     return safeServerError("Failed to save board", error);

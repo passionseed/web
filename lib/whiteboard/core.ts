@@ -204,3 +204,19 @@ export function remapIds<T extends Linkable>(elements: readonly T[], makeId: () 
     ...(el.endBinding ? { endBinding: { ...el.endBinding, elementId: map(el.endBinding.elementId)! } } : {}),
   }));
 }
+
+type CustomData = Record<string, unknown> | null | undefined;
+
+/**
+ * Records who made and last changed each element, in Excalidraw's customData.
+ * createdBy is kept from the first person who sent it; updatedBy is whoever
+ * sends it now. Elements from before this existed get the next editor as creator.
+ */
+export function stampAuthor<T extends object>(elements: readonly T[], userId: string): T[] {
+  return elements.map((el) => {
+    const data = (el as { customData?: CustomData }).customData;
+    const createdBy = typeof data?.createdBy === "string" ? data.createdBy : userId;
+    if (data?.createdBy === createdBy && data?.updatedBy === userId) return el;
+    return { ...el, customData: { ...data, createdBy, updatedBy: userId } };
+  });
+}

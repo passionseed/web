@@ -13,6 +13,7 @@ import {
   mergeElements,
   patchBoardSchema,
   shareUrl,
+  stampAuthor,
 } from "./core";
 
 describe("whiteboard roles", () => {
@@ -120,4 +121,23 @@ it("remaps ids and every reference between imported elements", () => {
   expect(out[1].containerId).toBe("n1");
   expect(out[2].startBinding).toEqual({ elementId: "n1" });
   expect(out[2].endBinding).toEqual({ elementId: "outside" });
+});
+
+describe("stampAuthor", () => {
+  it("keeps the creator and records the latest editor", () => {
+    const [fresh, theirs] = stampAuthor(
+      [
+        { id: "a", version: 1 },
+        { id: "b", version: 4, customData: { createdBy: "mint", updatedBy: "mint", tag: "x" } },
+      ],
+      "fang",
+    );
+    expect(fresh.customData).toEqual({ createdBy: "fang", updatedBy: "fang" });
+    expect(theirs.customData).toEqual({ createdBy: "mint", updatedBy: "fang", tag: "x" });
+  });
+
+  it("returns the same object when nothing changes", () => {
+    const el = { id: "a", version: 1, customData: { createdBy: "fang", updatedBy: "fang" } };
+    expect(stampAuthor([el], "fang")[0]).toBe(el);
+  });
 });

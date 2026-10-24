@@ -47,6 +47,7 @@ Documentation index. Files are organized by purpose, not by date.
 | [DIRECTION_FINDER_SETUP.md](features/DIRECTION_FINDER_SETUP.md) | Direction Finder background jobs *(deprecated)* |
 | [walkthrough_floating_north_star.md](features/walkthrough_floating_north_star.md) | Floating North Star UI implementation |
 | [PERFORMANCE.md](features/PERFORMANCE.md) | Performance optimizations: bundle, images, caching |
+| [whiteboard.md](features/whiteboard.md) | Multiplayer whiteboard: sync, saving, sharing, authorship, reading boards for AI |
 
 ## 📁 `hackathon/` — Hackathon Documentation
 

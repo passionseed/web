@@ -19,7 +19,7 @@ import type {
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { boardTopic, canEdit, changedSince, colorFor, markSeen, type WhiteboardRole } from "@/lib/whiteboard/core";
+import { boardTopic, canEdit, changedSince, colorFor, markSeen, stampAuthor, type WhiteboardRole } from "@/lib/whiteboard/core";
 import { createClient } from "@/utils/supabase/client";
 
 /**
@@ -243,7 +243,7 @@ export function useWhiteboardSync({
         try {
           await boardApi(`/api/whiteboards/${boardId}`, {
             method: "PATCH",
-            body: JSON.stringify({ elements: changed }),
+            body: JSON.stringify({ elements: stampAuthor(changed, myId) }),
             keepalive: opts?.keepalive && JSON.stringify(changed).length < 60_000,
           });
           markSeen(savedSeen.current, changed);
@@ -260,7 +260,7 @@ export function useWhiteboardSync({
       })();
       return saving.current;
     },
-    [allElements, boardId, editable, scheduleSave, writeBackup],
+    [allElements, boardId, editable, myId, scheduleSave, writeBackup],
   );
   useEffect(() => {
     saveRef.current = save;
@@ -281,7 +281,7 @@ export function useWhiteboardSync({
       const changed = changedSince(elements, broadcastSeen.current);
       if (changed.length === 0) return;
       markSeen(broadcastSeen.current, changed);
-      send("scene", { elements: changed });
+      send("scene", { elements: stampAuthor(changed, myId) });
     }, BROADCAST_MS),
   );
 
@@ -454,7 +454,7 @@ export function useWhiteboardSync({
           // A newcomer loaded the saved board; send them anything not saved yet.
           if (!editable) return;
           const unsaved = changedSince(allElements(), savedSeen.current);
-          if (unsaved.length) send("scene", { elements: unsaved });
+          if (unsaved.length) send("scene", { elements: stampAuthor(unsaved, myId) });
         })
         .on("broadcast", { event: "cursor" }, ({ payload }) => {
           const p = payload as AwarenessPayload;
@@ -534,7 +534,7 @@ export function useWhiteboardSync({
       channelRef.current = null;
       if (channel) void supabase.removeChannel(channel);
     };
-  }, [allElements, boardId, editable, excalidrawAPI, fetchMissingFiles, mySocket, pushCollaborators, send, trackMe]);
+  }, [allElements, boardId, editable, excalidrawAPI, fetchMissingFiles, myId, mySocket, pushCollaborators, send, trackMe]);
 
   // Small preview for the board list.
   useEffect(() => {
