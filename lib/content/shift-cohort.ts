@@ -45,6 +45,11 @@ export interface ShiftCohort {
   postponedFrom?: string;
   /** 1200x630 listing banner shown on the /shift gallery card. */
   bannerSrc?: string;
+  /** 1200x630 link preview for this round's register link only
+   *  (/shift/apply?round=N). Falls back to bannerSrc. */
+  applyPreviewSrc?: string;
+  /** Seasonal look for this round's register page. Unset keeps the riso look. */
+  applyTheme?: "halloween";
   /** Live projects the round shipped, shown once it is over. Titles only:
    *  students are minors, so no names or handles go on the public page. */
   showcase?: ShiftShowcaseProject[];
@@ -252,6 +257,10 @@ export const SHIFT_COHORT_3: ShiftCohort = {
   priceBaht: 690,
   anchorPriceBaht: null,
   firstMeetDate: "2026-11-09",
+  // Register link and page match the Halloween pixel poster
+  // (components/shift/poster/pixel/halloween).
+  applyPreviewSrc: "/shift/banners/shift-3-apply-halloween.png",
+  applyTheme: "halloween",
 };
 
 /** The round the printed posters are promoting right now. */

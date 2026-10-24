@@ -9,8 +9,6 @@ import {
   CELL,
   GRID_H,
   GRID_W,
-  STUDENT,
-  STUDENT_PALETTE,
   bands,
   building,
   disc,
@@ -26,8 +24,6 @@ import {
   CAT_PALETTE,
   GHOST,
   GHOST_DIM_PALETTE,
-  HAT,
-  HAT_PALETTE,
   HX,
   PUMPKIN,
   PUMPKIN_PALETTE,
@@ -38,7 +34,9 @@ import {
   lanternGlow,
   spire,
   stars,
+  latinDateRange,
   tombstone,
+  witchStudent,
 } from "./halloweenKit";
 
 /**
@@ -66,23 +64,8 @@ const SIGN = { x: 9, top: 112, w: 34, bottom: 166 };
 const SIGN_COLORS = { post: HX.wood, edge: HX.woodDark, board: HX.bone };
 /** The student is the focal point: 3x, centred, lit by the laptop screen. */
 const HERO = { x: 72, bottom: 168, scale: 3 };
-const HERO_PALETTE = { ...STUDENT_PALETTE, L: HX.screen };
 
 const STEPS = ["DAY 1-2 PICK", "DAY 3-5 SHIP", "DAY 6-7 DEMO"];
-
-/** "9-15 NOV", or "30 NOV-6 DEC" when the round crosses a month. */
-function dateLine(startIso: string, endIso: string): string {
-  const fmt = (iso: string) => {
-    const [y, m, d] = iso.split("-").map(Number);
-    const month = new Date(Date.UTC(y, m - 1, d))
-      .toLocaleDateString("en-US", { month: "short", timeZone: "UTC" })
-      .toUpperCase();
-    return { day: d, month };
-  };
-  const s = fmt(startIso);
-  const e = fmt(endIso);
-  return s.month === e.month ? `${s.day}-${e.day} ${e.month}` : `${s.day} ${s.month}-${e.day} ${e.month}`;
-}
 
 function sky(): Rect[] {
   return [
@@ -159,16 +142,6 @@ function graveyard(): Rect[] {
   ];
 }
 
-/** SHIFT[1]'s student with a witch hat on, at 2x, sitting on the ground. */
-function hero(): Rect[] {
-  const top = HERO.bottom - STUDENT.length * HERO.scale;
-  const hatTop = top + (2 - (HAT.length - 1)) * HERO.scale;
-  return [
-    ...bigSprite(STUDENT, HERO_PALETTE, HERO.x, top, HERO.scale),
-    ...bigSprite(HAT, HAT_PALETTE, HERO.x, hatTop, HERO.scale),
-  ];
-}
-
 function PixelScene() {
   return (
     <svg
@@ -182,7 +155,7 @@ function PixelScene() {
       <Rects rects={sky()} />
       <Rects rects={[...farCity(), ...midCity(), ...nearCity()]} />
       <Rects rects={graveyard()} />
-      <Rects rects={hero()} />
+      <Rects rects={witchStudent(HERO.x, HERO.bottom, HERO.scale)} />
       <Rects rects={waveBand(BAND, HX.ink)} />
       {STEPS.map((step, i) => (
         <text
@@ -206,7 +179,7 @@ function Title() {
     <div className="absolute inset-x-0 top-[70px] flex flex-col items-center text-center">
       {/* Not the pixel font: Tiny5 turns "9-15 NOV" into "3-15 HOY". */}
       <p className="text-[32px] font-semibold leading-none tracking-[0.12em]" style={{ fontFamily: LATIN, color: HX.cream }}>
-        {dateLine(COHORT.startDate, COHORT.endDate)} · ONLINE
+        {latinDateRange(COHORT.startDate, COHORT.endDate)} · ONLINE
       </p>
       <span className="mt-2 h-[4px] w-[330px]" style={{ backgroundColor: HX.lavender }} />
       <h1

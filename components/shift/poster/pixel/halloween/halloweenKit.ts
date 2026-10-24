@@ -1,4 +1,4 @@
-import { mix, sprite, type Rect } from "../pixelKit";
+import { STUDENT, STUDENT_PALETTE, mix, sprite, type Rect } from "../pixelKit";
 
 /**
  * Halloween add-ons for the pixel kit: a night palette and the sprites the
@@ -231,3 +231,27 @@ export const BAT = [
   "...K.K...",
 ];
 export const BAT_PALETTE = { K: HX.ink };
+
+/** SHIFT[1]'s student, laptop lit as a screen: the one cool light, so the eye lands here. */
+export const LIT_STUDENT_PALETTE = { ...STUDENT_PALETTE, L: HX.screen };
+
+/** The student in a witch hat at `scale`x, sitting with their feet on `bottom`. */
+export function witchStudent(x: number, bottom: number, scale: number): Rect[] {
+  const top = bottom - STUDENT.length * scale;
+  const hatTop = top + (2 - (HAT.length - 1)) * scale;
+  return [...bigSprite(STUDENT, LIT_STUDENT_PALETTE, x, top, scale), ...bigSprite(HAT, HAT_PALETTE, x, hatTop, scale)];
+}
+
+/** "9-15 NOV", or "30 NOV-6 DEC" when the round crosses a month. */
+export function latinDateRange(startIso: string, endIso: string): string {
+  const fmt = (iso: string) => {
+    const [y, m, d] = iso.split("-").map(Number);
+    const month = new Date(Date.UTC(y, m - 1, d))
+      .toLocaleDateString("en-US", { month: "short", timeZone: "UTC" })
+      .toUpperCase();
+    return { day: d, month };
+  };
+  const s = fmt(startIso);
+  const e = fmt(endIso);
+  return s.month === e.month ? `${s.day}-${e.day} ${e.month}` : `${s.day} ${s.month}-${e.day} ${e.month}`;
+}
