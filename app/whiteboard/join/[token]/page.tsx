@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
-import { getViewer, joinByToken, previewByToken } from "@/lib/supabase/whiteboards";
+import { EnterBoard } from "@/components/whiteboard/EnterBoard";
+import { previewByToken } from "@/lib/supabase/whiteboards";
 
 export const dynamic = "force-dynamic";
 
@@ -22,14 +22,21 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
   };
 }
 
-/** A share link: sign in, join with the link's access, open the board. */
-export default async function JoinWhiteboardPage({ params }: { params: Promise<{ token: string }> }) {
-  const { token } = await params;
-  const viewer = await getViewer();
-  if (!viewer) redirect(`/login?next=${encodeURIComponent(`/whiteboard/join/${token}`)}`);
-
-  const result = await joinByToken(token, viewer);
-  if (result.kind === "joined") redirect(`/whiteboard/${result.boardId}`);
+/**
+ * A share link. The page itself never redirects: a redirect thrown mid-stream
+ * crashes Next's client router ("This page couldn't load") before the meta
+ * refresh fires. It renders (so chat apps can read the preview tags), then
+ * hands off to ./enter, which signs in, joins and redirects with a real 307.
+ */
+export default async function JoinWhiteboardPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ token: string }>;
+  searchParams: Promise<{ invalid?: string }>;
+}) {
+  const [{ token }, { invalid }] = await Promise.all([params, searchParams]);
+  if (invalid === undefined) return <EnterBoard href={`/whiteboard/join/${token}/enter`} />;
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#0f0d1a] px-6 text-center text-white">

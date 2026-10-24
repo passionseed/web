@@ -49,8 +49,8 @@ const PUBLIC_ROUTE_PREFIXES = [
   "/api/shift/cert-health",
   // Admin link-preview cards: metadata and a poster only, no admin data.
   "/link-preview",
-  // Whiteboards check sign-in themselves so share links survive the login redirect.
-  "/whiteboard",
+  // Share links must render for chat link previews; signing in happens on the way in.
+  "/whiteboard/join",
 ] as const;
 
 export function isPublicRoute(pathname: string): boolean {
