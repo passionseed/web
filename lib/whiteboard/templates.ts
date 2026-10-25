@@ -9,6 +9,7 @@ import { STICKY_COLORS } from "./core";
  */
 
 export type TemplateId =
+  | "checkin"
   | "brainstorm"
   | "retro"
   | "kanban"
@@ -84,7 +85,93 @@ function columns(titles: string[], tints: string[], width = 520, height = 760): 
   });
 }
 
+
+/** "Get to know you" questions for the team check-in; one is picked per board. */
+export const CHECKIN_QUESTIONS = [
+  "ถ้ามีวันว่างหนึ่งวันเต็ม ๆ จะทำอะไร?",
+  "เพลงที่ฟังวนอยู่ช่วงนี้คือเพลงอะไร?",
+  "อะไรที่เราทำได้ดี แต่ยังไม่ค่อยมีใครรู้?",
+  "ถ้าสอนอะไรให้เพื่อนได้ 10 นาที จะสอนอะไร?",
+  "ช่วงนี้อะไรทำให้ยิ้มได้?",
+  "เรื่องที่อยากรู้มากที่สุดตอนนี้คืออะไร?",
+  "ถ้าได้ไปตามติดการทำงานของใครก็ได้หนึ่งวัน อยากไปกับใคร?",
+  "ของกินที่กินได้ทุกวันไม่เบื่อ?",
+];
+
+const LANES = 6;
+const LANE_HEIGHT = 240;
+
+/**
+ * Team check-in: a short stand-up the group runs by itself. Built around what
+ * keeps people coming back: a personal question and a mood check to know each
+ * other (relatedness), wins since last time (competence), a next step each
+ * person picks (autonomy), then helping with blockers, thanking friends, and
+ * choosing one thing to post on the feed.
+ */
+function checkin(question: string): ExcalidrawElementSkeleton[] {
+  const top = 640;
+  const laneTop = top + 80;
+  const boardBottom = laneTop + LANES * LANE_HEIGHT;
+  const cols = [
+    { x: 240, title: "✅ ทำอะไรไปแล้ว", tint: "#b2f2bb" },
+    { x: 760, title: "🧱 ติดอะไรอยู่", tint: "#ffc9c9" },
+    { x: 1280, title: "👣 ก้าวต่อไป (เลือกเอง)", tint: "#a5d8ff" },
+  ];
+  return [
+    heading(0, 0, "เช็คอินทีม · Team check-in", 44),
+    ...zone(0, 80, 2300, 180, "วิธีเล่น 30 นาที · ผลัดกันเป็นคนคุมวง", "#e9ecef"),
+    heading(
+      24,
+      150,
+      "1 รู้จักกัน + เช็คอารมณ์ 5'  →  2 รอบวง คนละ 1 นาที 10'  →  3 ช่วยกันแก้ติด 10'  →  4 ขอบคุณเพื่อน + เลือกโพสต์ 5'",
+      24,
+    ),
+    heading(24, 200, "แปะโน้ตของตัวเองให้ครบก่อนเริ่ม แล้วผลัดกันเล่า ใครฟังแล้วช่วยได้ แปะ 🙋 ไว้ที่ช่อง 'ติด' ของเพื่อน", 20),
+
+    ...zone(0, 300, 760, 300, "🎲 คำถามรู้จักกันวันนี้", "#d0bfff"),
+    {
+      ...sticky(24, 370, fill("Purple"), "", 200),
+      width: 712,
+      height: 130,
+      label: { text: question, fontSize: 28, fontFamily: FONT, strokeColor: INK },
+    } as ExcalidrawElementSkeleton,
+    heading(24, 530, "ตอบสั้น ๆ คนละประโยค แปะคำตอบไว้รอบ ๆ ได้เลย", 20),
+    ...zone(800, 300, 1500, 300, "🌤️ วันนี้เป็นยังไง (แปะชื่อไว้ใกล้ ๆ)", "#ffec99"),
+    ...["☀️ สดใส", "⛅ โอเค", "🌧️ เหนื่อย ๆ", "⛈️ หนักอยู่"].map((w, i) => heading(840 + i * 360, 420, w, 40)),
+
+    heading(24, top + 10, "ชื่อ", 28),
+    ...cols.flatMap((c) => zone(c.x, top, 480, boardBottom - top, c.title, c.tint)),
+    ...Array.from({ length: LANES }, (_, i) => sticky(0, laneTop + i * LANE_HEIGHT, fill("Yellow"), "", 200)),
+
+    ...zone(1800, top, 500, boardBottom - top, "🙋 ช่วยกันแก้ติด", "#ffd8a8"),
+    heading(
+      1824,
+      top + 70,
+      "ลากลูกศรจากชื่อเรา\nไปที่ 'ติด' ของเพื่อน\nที่เราช่วยได้\n\nจบวงแล้วจับคู่คุยต่อ\n5 นาที",
+      22,
+    ),
+
+    ...zone(0, boardBottom + 40, 1120, 420, "💛 ขอบคุณเพื่อน", "#ffc9c9"),
+    sticky(24, boardBottom + 110, fill("Pink"), "ขอบคุณ ... ที่ ...", 200),
+    ...zone(1160, boardBottom + 40, 1140, 420, "📣 เลือก 1 อย่างไปโพสต์ในฟีด", "#a5d8ff"),
+    heading(
+      1184,
+      boardBottom + 110,
+      "เรื่องที่ภูมิใจจากวันนี้ เขียนสั้น ๆ\nแปะไว้ตรงนี้ แล้วโพสต์ในฟีด\npassionseed.org/shift/alumni/board/feed",
+      22,
+    ),
+    sticky(1184, boardBottom + 230, fill("Blue"), "", 160),
+  ];
+}
+
 export const TEMPLATES: Template[] = [
+  {
+    id: "checkin",
+    name: "เช็คอินทีม · Team check-in",
+    description: "รู้จักกัน รอบวง ช่วยกันแก้ติด ขอบคุณ แล้วโพสต์",
+    emoji: "👋",
+    build: () => checkin(CHECKIN_QUESTIONS[Math.floor(Math.random() * CHECKIN_QUESTIONS.length)]),
+  },
   {
     id: "brainstorm",
     name: "ระดมไอเดีย · Brainstorm",

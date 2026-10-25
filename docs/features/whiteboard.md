@@ -7,7 +7,7 @@ Excalidraw. First used for the SHIFT High community session on 2026-10-24.
 
 - Draw together live: cursors, edits, presence, and follow mode (click someone in the
   top-right list, or open "+N" when it is collapsed).
-- Stickies, stamps, 8 templates, pinned comment threads, emoji reactions, a shared timer,
+- Stickies, stamps, 9 templates (including a team check-in), pinned comment threads, emoji reactions, a shared timer,
   import, duplicate, and export.
 - Saving is automatic. Ctrl/Cmd+S saves at once. Edits that could not be saved are kept in
   localStorage and replayed on the next visit.
