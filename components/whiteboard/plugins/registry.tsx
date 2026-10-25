@@ -12,6 +12,7 @@ export const PLUGINS: BoardPlugin[] = [
     icon: <CalendarDays size={16} />,
     width: 360,
     height: 520,
+    widget: { width: 380, height: 540 },
     Component: CalendarPlugin,
   },
 ];

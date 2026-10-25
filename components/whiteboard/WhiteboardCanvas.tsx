@@ -22,14 +22,16 @@ import { toast } from "sonner";
 import type { WhiteboardDetail } from "@/lib/supabase/whiteboards";
 import { canEdit, type LinkAccess } from "@/lib/whiteboard/core";
 import { templateById } from "@/lib/whiteboard/templates";
+import { widgetIdOf, widgetLink } from "@/lib/whiteboard/widgets";
 
 import { ActivityPanel } from "./ActivityPanel";
 import { AuthorsLayer } from "./AuthorsLayer";
 import { BoardTitle, SaveBadge } from "./BoardChrome";
 import { CommentsLayer } from "./CommentsLayer";
 import { EmoteLayer, EmotePicker, useEmotes } from "./EmoteLayer";
-import { insertElements, insertSkeletons } from "./insert";
+import { insertElements, insertSkeletons, insertWidget } from "./insert";
 import { KIT_SIDEBAR, KitSidebar } from "./KitSidebar";
+import { BoardWidget } from "./plugins/BoardWidget";
 import { PluginHost, usePluginWindows } from "./plugins/PluginHost";
 import { PluginMenu } from "./plugins/PluginMenu";
 import { ShareDialog } from "./ShareDialog";
@@ -192,6 +194,20 @@ export default function WhiteboardCanvas({
         viewModeEnabled={!editable}
         name={title}
         UIOptions={{ canvasActions: { loadScene: false, saveToActiveFile: false } }}
+        validateEmbeddable={(link) => (widgetIdOf(link) ? true : undefined)}
+        renderEmbeddable={(element) => {
+          const widget = widgetIdOf(element.link);
+          if (!widget || !api) return null;
+          return (
+            <BoardWidget
+              pluginId={widget}
+              api={api}
+              board={{ id: board.id, title, role: board.role }}
+              editable={editable}
+              channel={channel}
+            />
+          );
+        }}
         renderTopRightUI={(isMobile) => (
           <div className="flex items-center gap-2">
             {!isMobile && (
@@ -199,7 +215,15 @@ export default function WhiteboardCanvas({
             )}
             <TimerWidget boardId={board.id} initial={board.timer} canControl={editable} channel={channel} />
             <SaveBadge state={sync.saveState} connected={sync.connected} readOnly={!editable} />
-            <PluginMenu open={windows.open} onToggle={windows.toggle} />
+            <PluginMenu
+              open={windows.open}
+              onToggle={windows.toggle}
+              onPlace={
+                editable && api
+                  ? (plugin) => plugin.widget && insertWidget(api, widgetLink(plugin.id), plugin.widget)
+                  : undefined
+              }
+            />
             <Sidebar.Trigger name={KIT_SIDEBAR} tab={editable ? "create" : "comments"} icon={<PanelRight size={16} />} title="Board kit" />
             <LiveCollaborationTrigger isCollaborating={sync.connected} onSelect={() => setShareOpen(true)} />
           </div>

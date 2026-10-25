@@ -9,10 +9,22 @@ import type { BoardEvent } from "../useWhiteboardSync";
 import { PluginWindow, type WindowPos } from "./PluginWindow";
 import { pluginById } from "./registry";
 
-type Channel = { send: (event: string, payload: unknown) => void; on: (event: BoardEvent, fn: (payload: unknown) => void) => () => void };
+export type Channel = { send: (event: string, payload: unknown) => void; on: (event: BoardEvent, fn: (payload: unknown) => void) => () => void };
 type OpenWindows = Record<string, WindowPos>;
 
 const storageKey = (boardId: string) => `whiteboard-plugins:${boardId}`;
+
+/** A plugin's own slice of the board channel: it only hears its own broadcasts. */
+export function pluginBridge(channel: Channel, id: string) {
+  return {
+    broadcast: (payload?: unknown) => channel.send("plugin", { id, payload: payload ?? null }),
+    onBroadcast: (handler: (payload: unknown) => void) =>
+      channel.on("plugin", (msg) => {
+        const m = msg as { id?: string; payload?: unknown };
+        if (m?.id === id) handler(m.payload);
+      }),
+  };
+}
 
 /** Which windows are open on a board and where, remembered in this browser. */
 export function usePluginWindows(boardId: string) {
@@ -78,22 +90,12 @@ export function PluginHost({
   windows: ReturnType<typeof usePluginWindows>;
 }) {
   const { open, order, save, toggle, focus } = windows;
-  const { send, on } = channel;
-
-  // Each plugin hears only its own broadcasts.
-  const bridges = useMemo(() => {
-    const make = (id: string) => ({
-      broadcast: (payload?: unknown) => send("plugin", { id, payload: payload ?? null }),
-      onBroadcast: (handler: (payload: unknown) => void) =>
-        on("plugin", (msg) => {
-          const m = msg as { id?: string; payload?: unknown };
-          if (m?.id === id) handler(m.payload);
-        }),
-    });
-    return new Map(Object.keys(open).map((id) => [id, make(id)]));
-    // Bridges only change when the set of open windows does.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [Object.keys(open).join(","), send, on]);
+  const openIds = Object.keys(open).join(",");
+  // Bridges only change when the set of open windows does.
+  const bridges = useMemo(
+    () => new Map(openIds.split(",").filter(Boolean).map((id) => [id, pluginBridge(channel, id)])),
+    [openIds, channel],
+  );
 
   return (
     <>
