@@ -15,16 +15,16 @@ const { startTime, endTime } = ALUMNI_DEFAULT_DOC.defaults;
 
 const RUN = [
   { at: "19:00", title: "เช็กอิน", line: "โปรเจกต์อะไร ทำให้ใคร คนละ 1 ประโยค", color: COSMOS.star },
-  { at: "19:10", title: "ตั้งเป้า 3 ระยะ", line: "Vision · ของถึงมือผู้ใช้จริง · สัปดาห์หน้า คนเก่าเช็ก ✅ ❌ เป้าที่แล้ว", color: COSMOS.nebula },
+  { at: "19:10", title: "ตั้งเป้า 3 ระยะ", line: "Vision · ของถึงมือผู้ใช้จริง · สัปดาห์หน้า (ใครเคยมาแล้ว เช็กเป้าครั้งก่อน ✅ ❌)", color: COSMOS.nebula },
   { at: "19:30", title: "ล้อมวง คนละ 7 นาที", line: "ความคืบหน้า ไอเดีย ปัญหาที่ติด เพื่อนคอมเมนต์ พี่เมนเทอร์ให้ insight", color: COSMOS.aurora },
-  { at: "20:30", title: "Real-users clinic", line: "ทุกคนได้ชื่อคนนอก 1 คน ที่จะให้ลองใช้สัปดาห์นี้", color: COSMOS.flare },
+  { at: "20:30", title: "Real-users clinic", line: "ทุกคนได้ชื่อคนนอก 1 คน ที่จะชวนมาลองใช้สัปดาห์นี้", color: COSMOS.flare },
   { at: "20:50", title: "ล็อกเป้าสัปดาห์หน้า", line: "เลือกวันอัปเดตกลางสัปดาห์ แล้วไปลุยกัน", color: COSMOS.sol },
 ];
 
 const MONTH = [
   { week: "W1", line: "ตั้งเป้า + หาคนนอก", now: true },
   { week: "W2", line: "คนนอกได้ลองใช้จริง" },
-  { week: "W3", line: "ปล่อยให้คนที่ไม่รู้จัก" },
+  { week: "W3", line: "คนแปลกหน้าลองใช้" },
   { week: "W4", line: "Demo night" },
 ];
 
@@ -110,7 +110,7 @@ function Month() {
         ))}
       </ol>
       <p className="mt-4 text-[20px]" style={{ color: starlight("b3") }}>
-        กลางสัปดาห์: อัปเดตในเธรดโปรเจกต์ใน Discord <span style={{ color: starlight("ee") }}>ทำแล้ว · ต่อไป · ติดตรงไหน</span>
+        กลางสัปดาห์: อัปเดตในเธรดโปรเจกต์บน Discord <span style={{ color: starlight("ee") }}>ทำอะไรแล้ว · ทำอะไรต่อ · ติดตรงไหน</span>
       </p>
     </Glass>
   );

@@ -52,7 +52,7 @@ function Reel({ reel, ink, caption }: { reel: ShiftTestimonialReel; ink: string;
           loop
           playsInline
           preload="none"
-          aria-label={`วิดีโอผลงาน ${reel.project.title} พร้อมคำบอกเล่าของน้องที่สร้าง`}
+          aria-label={`วิดีโอผลงาน ${reel.project.title} พร้อมคำบอกเล่าของคนที่สร้าง`}
           className="block h-auto w-full"
         />
         <button

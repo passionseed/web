@@ -94,7 +94,7 @@ describe("AfterSHIFT monthly test offer", () => {
     expect(offer.price).toBe(250);
     expect(offer.hint).toContain("SHIFT[2]");
     expect(offer.hint).toContain("เดือนละ 250 บาท");
-    expect(offer.hint).toContain("ทดสอบรูปแบบและราคา");
+    expect(offer.hint).toContain("ทดลองรูปแบบและราคา");
     expect(offer.options.find((option) => option.value === "join")?.label).toContain("เดือนละ 250 บาท");
     expect(offer.hint).not.toContain("690");
   });

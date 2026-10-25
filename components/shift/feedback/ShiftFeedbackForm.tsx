@@ -78,7 +78,7 @@ function FeedbackDone({ comingBack, joining }: { comingBack: boolean; joining: b
       <p className={styles.doneTitle}>ได้รับแล้ว ขอบคุณนะ</p>
       <p className={styles.doneNote}>ทุกคำตอบพี่อ่านเองหมด และจะเอาไปปรับ SHIFT รอบหน้า</p>
       {comingBack && <p className={styles.doneNote}>รายละเอียด AfterSHIFT พี่จะส่งในกลุ่มนะ แล้วเจอกัน</p>}
-      {joining && <p className={styles.doneNote}>ขอบคุณที่สนใจ AfterSHIFT นะ รายละเอียดกับวิธีจ่าย พี่จะส่งในกลุ่ม</p>}
+      {joining && <p className={styles.doneNote}>ขอบคุณที่สมัคร AfterSHIFT นะ รายละเอียดกับวิธีจ่าย พี่จะส่งในกลุ่ม</p>}
       <Link href="/shift/alumni" className={`${space.cta} mt-6`}>
         <span>รู้จัก AfterSHIFT และดูนัดต่อไป</span><ArrowRight className="h-4 w-4" aria-hidden="true" />
       </Link>
@@ -257,7 +257,7 @@ export function ShiftFeedbackForm({
         <CheckChips options={FEEDBACK_NEXT_STEPS} value={values.nextSteps} onChange={(v) => set("nextSteps", toggleExclusive(values.nextSteps, v, "not_now"))} />
       </Question>
 
-      <Question num={15} label="อยากทำโปรเจกต์ต่อกับ AfterSHIFT ไหม" hint="มีโปรเจกต์แล้ว เราช่วยต่อยอดได้ 3 เรื่อง" error={errors.communitySignup}>
+      <Question num={15} label="อยากทำโปรเจกต์ต่อกับ AfterSHIFT ไหม" hint="มีโปรเจกต์แล้ว พี่ช่วยต่อยอดได้ 3 เรื่อง" error={errors.communitySignup}>
         <ul className="mb-5 space-y-4 text-sm leading-relaxed">
           {AFTERSHIFT_SUPPORT.map((support) => (
             <li key={support.title}>

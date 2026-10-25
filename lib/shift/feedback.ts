@@ -91,7 +91,7 @@ export const FEEDBACK_COMMUNITY_SIGNUP = [
 
 export function communitySignupOffer(round: number) {
   const price = round === 2 ? SHIFT_2_ALUMNI_TEST_PRICE : COMMUNITY_RESEARCH_PRICE;
-  const audience = round === 2 ? "ราคาทดลองสำหรับศิษย์เก่า SHIFT[2]" : "ราคาทดลอง";
+  const audience = round === 2 ? "ราคาทดลองสำหรับคนที่จบ SHIFT[2]" : "ราคาทดลอง";
   return {
     price,
     options: FEEDBACK_COMMUNITY_SIGNUP.map((option) => ({
@@ -99,9 +99,9 @@ export function communitySignupOffer(round: number) {
       label: option.value === "join" ? `สมัคร AfterSHIFT ${audience} เดือนละ ${price} บาท` : option.label,
     })),
     hint:
-      "AfterSHIFT ช่วยต่อยอดโปรเจกต์หลังจบ 7 วัน ผ่านการลงมือทำกับเพื่อนและพี่เมนเทอร์ " +
-      `${audience} เดือนละ ${price} บาท เป็นการทดสอบรูปแบบและราคา ` +
-      "สมัครไว้ก่อนได้ พี่จะส่งรายละเอียดกับวิธีจ่ายในกลุ่ม ยังไม่ต้องจ่ายตอนนี้ และตอบฟีดแบ็กได้เหมือนเดิมแม้ไม่เข้าร่วม",
+      "AfterSHIFT ช่วยต่อยอดโปรเจกต์หลังจบ SHIFT ผ่านการลงมือทำกับเพื่อนและพี่เมนเทอร์ " +
+      `${audience} เดือนละ ${price} บาท รอบนี้ยังทดลองรูปแบบและราคากันอยู่ ` +
+      "สมัครไว้ก่อนได้ พี่จะส่งรายละเอียดกับวิธีจ่ายในกลุ่ม ยังไม่ต้องจ่ายตอนนี้ และถึงไม่เข้าร่วมก็ตอบฟีดแบ็กได้เหมือนเดิม",
   };
 }
 

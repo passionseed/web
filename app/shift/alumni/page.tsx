@@ -29,11 +29,11 @@ import { countAlumniRsvps, listAlumniRsvps, type AlumniRsvp } from "@/lib/supaba
 export const metadata: Metadata = {
   title: "AfterSHIFT | สร้างโปรเจกต์ต่อหลังจบ SHIFT",
   description:
-    "AfterSHIFT ช่วยพาโปรเจกต์ไปลองตลาดจริง หาผู้ใช้เพิ่ม และพัฒนาโปรดักต์แบบมืออาชีพหลังจบ SHIFT",
+    "AfterSHIFT ช่วยให้เราทำโปรเจกต์ต่อหลังจบ SHIFT พาไปให้คนลองใช้ หาผู้ใช้จริงเพิ่ม และปั้นต่อจนพร้อมใช้งานจริง",
   alternates: { canonical: "/shift/alumni" },
   openGraph: {
     title: "AfterSHIFT | สร้างโปรเจกต์ต่อหลังจบ SHIFT",
-    description: "AfterSHIFT: ลองตลาดจริง หาผู้ใช้เพิ่ม พัฒนาโปรดักต์แบบมืออาชีพ",
+    description: "AfterSHIFT: ให้คนลองใช้ หาผู้ใช้จริงเพิ่ม ปั้นต่อจนพร้อมใช้งานจริง",
     url: ALUMNI_PAGE_URL,
     type: "website",
   },
@@ -126,7 +126,7 @@ export default async function ShiftAlumniPage() {
         <section id="aftershift" aria-labelledby="aftershift-heading" className={styles.intro}>
           <p className={styles.eyebrow}>AFTER THE SEVEN DAYS</p>
           <h2 id="aftershift-heading" className={styles.sectionTitle}>AfterSHIFT ช่วยอะไรเราได้บ้าง</h2>
-          <p className={styles.introCopy}>มีโปรเจกต์แล้ว ก้าวต่อไปคือทำให้คนใช้จริง เราช่วยคิด ทดลอง และพัฒนาต่อไปด้วยกัน</p>
+          <p className={styles.introCopy}>มีโปรเจกต์แล้ว ก้าวต่อไปคือทำให้คนใช้จริง มาคิด ทดลอง และพัฒนาต่อไปด้วยกัน</p>
           <ol className={styles.buildLoop}>
             {AFTERSHIFT_SUPPORT.map((support, index) => (
               <li key={support.title}>
@@ -135,7 +135,7 @@ export default async function ShiftAlumniPage() {
               </li>
             ))}
           </ol>
-          <p className={styles.introCopy}>ลงมือทำผ่านเป้าหมายรายสัปดาห์ อัปเดตกับทีมเล็กๆ และเอาสิ่งที่ติดมาคุยกับเพื่อนและพี่เมนเทอร์ใน Discord</p>
+          <p className={styles.introCopy}>ลงมือทำผ่านเป้าหมายรายสัปดาห์ อัปเดตกับทีมเล็ก ๆ และเอาสิ่งที่ติดมาคุยกับเพื่อนและพี่เมนเทอร์ใน Discord</p>
           <Link href={BOARD_PATH} className={styles.boardLink}>
             เปิดบอร์ดเป้าหมายและทีมของเรา <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>

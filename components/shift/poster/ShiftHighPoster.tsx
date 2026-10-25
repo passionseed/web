@@ -26,7 +26,7 @@ export const LATIN = "var(--font-libre-franklin), ui-sans-serif, system-ui, sans
 
 const GOALS = [
   { term: "ระยะยาว", label: "Vision", text: "โปรเจกต์นี้อยากไปถึงไหน", ring: COSMOS.nebula },
-  { term: "ระยะกลาง", label: "Product", text: "ของถึงมือผู้ใช้จริง คนที่ไม่รู้จักเรา", ring: COSMOS.aurora },
+  { term: "ระยะกลาง", label: "Product", text: "ของถึงมือผู้ใช้จริงที่ไม่รู้จักเรา", ring: COSMOS.aurora },
   { term: "ระยะสั้น", label: "Next week", text: "สัปดาห์หน้าทำอะไรให้เสร็จ", ring: COSMOS.sol },
 ];
 

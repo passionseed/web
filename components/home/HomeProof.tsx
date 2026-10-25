@@ -14,7 +14,7 @@ function StudentCount({ count }: { count: number }) {
         {count.toLocaleString("en-US")}
       </span>
       <span className="text-base" style={{ color: paper("99") }}>
-        น้องๆ ที่เคยลงมือกับ PassionSeed
+        คนที่เคยมาลุยกับ PassionSeed
       </span>
     </div>
   );
