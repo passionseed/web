@@ -22,6 +22,7 @@ export function CalendarPlugin({ api, board, editable, broadcast, onBroadcast }:
   const today = bangkokToday();
   const calendar = useCalendar(today, addDays(today, DAYS_SHOWN - 1), broadcast);
   const [adding, setAdding] = useState(false);
+  const [added, setAdded] = useState<string | null>(null);
   const { reload } = calendar;
 
   // Someone else on the board changed the calendar.
@@ -44,7 +45,11 @@ export function CalendarPlugin({ api, board, editable, broadcast, onBroadcast }:
       {adding ? (
         <BlockForm
           attachBoard={board.role === "owner" ? { id: board.id, title: board.title } : undefined}
-          onSubmit={calendar.create}
+          onSubmit={async (input) => {
+            const id = await calendar.create(input);
+            if (id) setAdded(id);
+            return Boolean(id);
+          }}
           onCancel={() => setAdding(false)}
         />
       ) : (
@@ -65,6 +70,8 @@ export function CalendarPlugin({ api, board, editable, broadcast, onBroadcast }:
         ))}
       </div>
       <AgendaList
+        key={added ?? "list"}
+        initialOpen={added}
         calendar={calendar}
         onPlace={editable ? place : undefined}
         attachBoard={board.role === "owner" ? { id: board.id, title: board.title } : undefined}

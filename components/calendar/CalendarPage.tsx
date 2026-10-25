@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
-import { KIND_STYLE, addDays, shortThaiDay, type CalendarBlock } from "@/lib/calendar/core";
+import { KIND_STYLE, addDays, shortThaiDay, weekStart, type CalendarBlock } from "@/lib/calendar/core";
 
 import { AgendaList } from "./AgendaList";
 import { BlockDetails } from "./BlockDetails";
@@ -12,13 +12,13 @@ import { BlockForm } from "./BlockForm";
 import { useCalendar } from "./useCalendar";
 import { WeekView } from "./WeekView";
 
-type Panel = { kind: "add"; date: string; hour?: number } | { kind: "open"; id: string } | { kind: "edit"; id: string } | null;
+type Panel = { kind: "add"; date: string; hour?: number } | { kind: "open"; id: string; fresh?: boolean } | { kind: "edit"; id: string } | null;
 
 /** /calendar: the community's week of time blocks. */
-export function CalendarPage({ monday }: { monday: string }) {
+export function CalendarPage({ monday, initialBlock }: { monday: string; initialBlock?: string | null }) {
   const [week, setWeek] = useState(monday);
   const calendar = useCalendar(week, addDays(week, 6));
-  const [panel, setPanel] = useState<Panel>(null);
+  const [panel, setPanel] = useState<Panel>(initialBlock ? { kind: "open", id: initialBlock } : null);
   const blocks = calendar.blocks ?? [];
   const current = panel && panel.kind !== "add" ? blocks.find((b) => b.id === panel.id) : undefined;
 
@@ -80,7 +80,7 @@ export function CalendarPage({ monday }: { monday: string }) {
             />
           </div>
           <div className="md:hidden">
-            <AgendaList calendar={calendar} />
+            <AgendaList calendar={calendar} initialOpen={initialBlock} />
           </div>
 
           <aside className={`order-first md:order-none ${panel ? "" : "hidden"} md:block`}>
@@ -90,7 +90,16 @@ export function CalendarPage({ monday }: { monday: string }) {
                   key={`${panel.date}-${panel.hour}`}
                   date={panel.date}
                   hour={panel.hour}
-                  onSubmit={calendar.create}
+                  onSubmit={async (input) => {
+                    const id = await calendar.create(input);
+                    if (id) {
+                      // Show the week the new block is in, opened, with the share nudge.
+                      if (weekStart(input.date) !== week) show(weekStart(input.date));
+                      setPanel({ kind: "open", id, fresh: true });
+                    }
+                    // The new block opens in place of the form.
+                    return false;
+                  }}
                   onCancel={() => setPanel(null)}
                 />
               ) : panel?.kind === "edit" && current ? (
@@ -98,6 +107,8 @@ export function CalendarPage({ monday }: { monday: string }) {
               ) : current ? (
                 <BlockDetails
                   block={current}
+                  share={calendar.share}
+                  fresh={panel?.kind === "open" && panel.fresh}
                   onJoin={(joined) => void calendar.join(current.id, joined)}
                   onEdit={() => setPanel({ kind: "edit", id: current.id })}
                   onDelete={async () => (await calendar.remove(current.id)) && setPanel(null)}

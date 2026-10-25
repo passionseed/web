@@ -69,6 +69,18 @@ Excalidraw. First used for the SHIFT High community session on 2026-10-24.
   are merged in read-only. Times are Bangkok. Code: `lib/calendar/core.ts` (schema, Bangkok
   time, week layout), `lib/supabase/calendar.ts`, `app/api/calendar/`, `components/calendar/`.
 
+- **Announcing blocks** (`/admin/calendar`, `lib/calendar/notify.ts`,
+  `lib/supabase/calendar-notify.ts`, migration `20261025160000_calendar_notify.sql`):
+  - *Instagram group:* Instagram's API has no group chats (only 1:1 business DMs inside a
+    24-hour window), so nothing posts automatically. Each block has **แชร์ลงกลุ่ม IG**: the
+    phone share sheet, or on a computer copy the filled-in message and open the group's
+    `instagram.com/direct/t/…` link from settings (that link only opens for members; join
+    links are rejected). Links point to `/calendar?block=<id>`.
+  - *Discord:* a channel webhook (kept server-side only) gets a post when a block is added and
+    reminders before it starts. Reminders run in Postgres: pg_cron job `calendar-reminders`
+    every 5 minutes calls `calendar_send_reminders()`, which posts through pg_net and logs each
+    notice in `calendar_block_notices` so it is sent once. Mentions are always off.
+
 ## Excalidraw gotchas (0.18)
 
 - `onUserFollow` and `onScrollChange` are API subscriptions

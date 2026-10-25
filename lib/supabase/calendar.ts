@@ -193,3 +193,9 @@ export async function setJoined(blockId: string, userId: string, joined: boolean
   if (error) throw error;
 }
 
+
+/** When a block starts, for opening /calendar?block=<id> on the right week. */
+export async function blockStartsAt(blockId: string): Promise<string | null> {
+  const { data } = await db().from("calendar_blocks").select("starts_at").eq("id", blockId).maybeSingle();
+  return (data?.starts_at as string | undefined) ?? null;
+}

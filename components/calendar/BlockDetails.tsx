@@ -3,16 +3,24 @@
 import { ExternalLink, MapPin, Pencil, StickyNote, Trash2 } from "lucide-react";
 
 import { KIND_STYLE, bangkokParts, shortThaiDay, timeRange, type CalendarBlock } from "@/lib/calendar/core";
+import type { ShareSettings } from "@/lib/calendar/notify";
+
+import { ShareButton } from "./ShareButton";
 
 /** Everything about one block, with join / edit / delete and optional extra actions. */
 export function BlockDetails({
   block,
+  share,
+  fresh,
   onJoin,
   onEdit,
   onDelete,
   onPlace,
 }: {
   block: CalendarBlock;
+  share: ShareSettings;
+  /** Just added: nudge the creator to tell the group. */
+  fresh?: boolean;
   onJoin: (joined: boolean) => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -32,6 +40,12 @@ export function BlockDetails({
           </p>
         </div>
       </div>
+      {fresh && (
+        <div className="rounded-lg bg-pink-500/10 p-2.5 text-xs">
+          <p className="mb-1.5 font-medium">เพิ่มแล้ว! บอกเพื่อนในกลุ่มเลยไหม</p>
+          <ShareButton block={block} share={share} prominent />
+        </div>
+      )}
       {block.place && (
         <p className="flex items-center gap-1.5 text-xs opacity-80">
           <MapPin className="h-3.5 w-3.5" /> {block.place}
@@ -60,6 +74,7 @@ export function BlockDetails({
             <ExternalLink className="h-3.5 w-3.5" /> {block.source === "team" ? "บอร์ดทีม" : "เปิดบอร์ด"}
           </a>
         )}
+        {block.source !== "team" && !fresh && <ShareButton block={block} share={share} />}
         {onPlace && (
           <button type="button" onClick={onPlace} className="inline-flex items-center gap-1 rounded-lg border cal-line px-2.5 py-1 text-xs">
             <StickyNote className="h-3.5 w-3.5" /> วางบนบอร์ด

@@ -5,6 +5,7 @@ import { calendarViewer, mayAttachBoard } from "@/lib/calendar/route-guard";
 import { bangkokToday } from "@/lib/content/shift-cohort";
 import { safeServerError } from "@/lib/security/route-guards";
 import { blockColumns, createBlock, listBlocks } from "@/lib/supabase/calendar";
+import { announceBlock, shareSettings } from "@/lib/supabase/calendar-notify";
 import { readJson } from "@/lib/whiteboard/route-guard";
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -21,7 +22,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Pick a shorter date range" }, { status: 422 });
   }
   try {
-    return NextResponse.json({ blocks: await listBlocks(guard.viewer, from, to) });
+    const [blocks, share] = await Promise.all([listBlocks(guard.viewer, from, to), shareSettings()]);
+    return NextResponse.json({ blocks, share });
   } catch (error) {
     return safeServerError("Failed to load calendar", error);
   }
@@ -36,7 +38,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Only the board owner can attach this board" }, { status: 403 });
   }
   try {
-    return NextResponse.json({ id: await createBlock(guard.viewer, parsed.columns) }, { status: 201 });
+    const id = await createBlock(guard.viewer, parsed.columns);
+    const c = parsed.columns as { title: string; starts_at: string; ends_at: string; place: string | null };
+    await announceBlock({ id, title: c.title, startsAt: c.starts_at, endsAt: c.ends_at, place: c.place }, guard.viewer.name);
+    return NextResponse.json({ id }, { status: 201 });
   } catch (error) {
     return safeServerError("Failed to add block", error);
   }
