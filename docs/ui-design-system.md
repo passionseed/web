@@ -2062,9 +2062,9 @@ their existing behavior. Use the shared glass surface for RSVP and the shared
 white CTA for both form submission and the mobile sticky action. The agenda
 uses divided rows rather than the print poster's offset shadows and stamps.
 
-### AfterSHIFT (`/shift/alumni`)
+### SHIFT High (`/shift/alumni`)
 
-The alumni community is named **AfterSHIFT**. Keep the existing URL, shared
+The alumni community is named **SHIFT High**. Keep the existing URL, shared
 Dawn globe scene, and calendar/RSVP behavior. The wordmark uses a small enough
 fluid scale for the full name to fit on phones. The introduction uses divided,
 numbered rows to explain weekly goals, small teams, and the weekly session,

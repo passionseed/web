@@ -116,10 +116,10 @@ function FeedbackDone({ comingBack, joining }: { comingBack: boolean; joining: b
       </span>
       <p className={styles.doneTitle}>ได้รับแล้ว ขอบคุณนะ</p>
       <p className={styles.doneNote}>ทุกคำตอบพี่อ่านเองหมด และจะเอาไปปรับ SHIFT รอบหน้า</p>
-      {comingBack && <p className={styles.doneNote}>รายละเอียด AfterSHIFT พี่จะส่งในกลุ่มนะ แล้วเจอกัน</p>}
-      {joining && <p className={styles.doneNote}>ขอบคุณที่สมัคร AfterSHIFT นะ รายละเอียดกับวิธีจ่าย พี่จะส่งในกลุ่ม</p>}
+      {comingBack && <p className={styles.doneNote}>รายละเอียด SHIFT High พี่จะส่งในกลุ่มนะ แล้วเจอกัน</p>}
+      {joining && <p className={styles.doneNote}>ขอบคุณที่สมัคร SHIFT High นะ รายละเอียดกับวิธีจ่าย พี่จะส่งในกลุ่ม</p>}
       <Link href="/shift/alumni" className={`${space.cta} mt-6`}>
-        <span>รู้จัก AfterSHIFT และดูนัดต่อไป</span><ArrowRight className="h-4 w-4" aria-hidden="true" />
+        <span>รู้จัก SHIFT High และดูนัดต่อไป</span><ArrowRight className="h-4 w-4" aria-hidden="true" />
       </Link>
     </div>
   );
@@ -315,7 +315,7 @@ export function ShiftFeedbackForm({
         )}
       </Question>
 
-      <Question num={14} label="มาเจอกันที่ AfterSHIFT ทุกสัปดาห์ วันไหนสะดวกบ้าง" hint={sessionHint} error={errors.availableDays}>
+      <Question num={14} label="มาเจอกันที่ SHIFT High ทุกสัปดาห์ วันไหนสะดวกบ้าง" hint={sessionHint} error={errors.availableDays}>
         <DayChips options={FEEDBACK_DAYS} none="none" value={values.availableDays} onChange={(v) => set("availableDays", toggleExclusive(values.availableDays, v, "none"))} />
       </Question>
 

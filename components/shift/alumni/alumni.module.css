@@ -122,8 +122,9 @@
   font-size: clamp(44px, 9vw, 104px);
 }
 
-.after {
+.high {
   color: var(--aurora);
+  font-style: italic;
   font-weight: 300;
   }
 .intro {
