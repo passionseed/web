@@ -1,6 +1,8 @@
 import {
   SHIFT_COHORT,
+  SHIFT_COHORT_0,
   SHIFT_COHORT_2,
+  SHIFT_COHORT_3,
   bangkokToday,
   cohortStatus,
   formatThaiDate,
@@ -34,15 +36,19 @@ function openCommentDays(cohort: ShiftCohort): string[] {
   return [addDays(cohort.applyDeadline, -1), cohort.applyDeadline];
 }
 
-function expectClosedRunningNote(today: string) {
+/** The rounds as they stood before SHIFT[3] was announced, so the
+ *  closed-while-running note can be checked against SHIFT[2] alone. */
+const BEFORE_SHIFT_3: readonly ShiftCohort[] = [SHIFT_COHORT_0, SHIFT_COHORT, SHIFT_COHORT_2];
+
+function expectClosedRunningNote(today: string, cohorts: readonly ShiftCohort[] = BEFORE_SHIFT_3) {
   expect(today > SHIFT_COHORT_2.applyDeadline).toBe(true);
   expect(today >= SHIFT_COHORT_2.startDate).toBe(true);
   expect(today <= SHIFT_COHORT_2.endDate).toBe(true);
   expect(cohortStatus(SHIFT_COHORT_2, today)).toBe("running");
-  expect(openShiftCommentCohort(today)).toBeUndefined();
+  expect(openShiftCommentCohort(today, cohorts)).toBeUndefined();
 
-  const dm = shiftCommentDm(today);
-  expect(dm).toBe(closedShiftCommentLines(today).join("\n"));
+  const dm = shiftCommentDm(today, cohorts);
+  expect(dm).toBe(closedShiftCommentLines(today, cohorts).join("\n"));
   expect(dm).toBe(
     [`${SHIFT_COHORT_2.name} ปิดรับสมัครไปแล้วน้า 🌱`, "รุ่นนี้เริ่มไปแล้ว สงสัยอะไรพิมพ์ถามในนี้ได้เลย"].join(
       "\n"
@@ -54,7 +60,7 @@ function expectClosedRunningNote(today: string) {
   expect(dm).not.toContain("กรอก 2 นาที");
   expect(dm).not.toMatch(/[—–]/);
 
-  const pub = shiftCommentPublicReply("mind.m5", today);
+  const pub = shiftCommentPublicReply("mind.m5", today, cohorts);
   expect(pub.startsWith(`@mind.m5 ${SHIFT_COHORT_2.name} ปิดรับสมัครไปแล้วน้า`)).toBe(true);
   expect(pub).not.toContain("/shift/apply");
   expect(pub).not.toContain("ส่งลิงก์สมัคร");
@@ -81,17 +87,46 @@ describe("SHIFT comment copy", () => {
     expectClosedRunningNote(addDays(SHIFT_COHORT_2.applyDeadline, 1));
   });
 
-  it("on 19 Oct 2026 the DM and public reply are the closed note, with no apply link", () => {
+  it("with no later round open, 19 Oct 2026 gets the closed note and no apply link", () => {
     const today = "2026-10-19";
     expect(bangkokToday(new Date(`${today}T00:30:00+07:00`))).toBe(today);
     expect(bangkokToday(new Date(`${today}T23:30:00+07:00`))).toBe(today);
     expectClosedRunningNote(today);
-    expect(shiftCommentDm(bangkokToday(new Date(`${today}T12:00:00+07:00`)))).not.toContain(
-      "/shift/apply"
+    const noon = bangkokToday(new Date(`${today}T12:00:00+07:00`));
+    expect(shiftCommentDm(noon, BEFORE_SHIFT_3)).not.toContain("/shift/apply");
+    expect(shiftCommentPublicReply("mind.m5", noon, BEFORE_SHIFT_3)).not.toContain("/shift/apply");
+  });
+
+  it.each(["2026-10-19", "2026-10-23", SHIFT_COHORT_3.applyDeadline])(
+    "on %s, with SHIFT[2] running or done, the live list sends the SHIFT[3] apply link",
+    (today) => {
+      expect(cohortStatus(SHIFT_COHORT_2, today)).not.toBe("open");
+      expect(cohortStatus(SHIFT_COHORT_3, today)).toBe("open");
+      expect(openShiftCommentCohort(today)).toBe(SHIFT_COHORT_3);
+
+      const dm = shiftCommentDm(today);
+      expectApplyMessage(dm, SHIFT_COHORT_3, "ig-comment-dm");
+      expect(dm).toContain("ปิดรับ ส. 7 พ.ย. รับแค่ 30 คน");
+      expect(dm).not.toContain(SHIFT_COHORT_2.name);
+      expect(dm).not.toMatch(/[?&]round=2(?:&|$)/);
+
+      const pub = shiftCommentPublicReply("mind.m5", today);
+      expect(pub.startsWith("@mind.m5 ")).toBe(true);
+      expectApplyMessage(pub, SHIFT_COHORT_3, "ig-comment-public");
+    }
+  );
+
+  it("after the SHIFT[3] deadline the live list sends no apply link", () => {
+    const beforeStart = addDays(SHIFT_COHORT_3.applyDeadline, 1);
+    expect(cohortStatus(SHIFT_COHORT_3, beforeStart)).toBe("closed");
+    expect(openShiftCommentCohort(beforeStart)).toBeUndefined();
+    expect(shiftCommentDm(beforeStart)).toBe(closedShiftCommentLines(beforeStart).join("\n"));
+    expect(shiftCommentDm(beforeStart)).not.toContain("/shift/apply");
+
+    const running = SHIFT_COHORT_3.startDate;
+    expect(shiftCommentDm(running)).toBe(
+      [`${SHIFT_COHORT_3.name} ปิดรับสมัครไปแล้วน้า 🌱`, "รุ่นนี้เริ่มไปแล้ว สงสัยอะไรพิมพ์ถามในนี้ได้เลย"].join("\n")
     );
-    expect(
-      shiftCommentPublicReply("mind.m5", bangkokToday(new Date(`${today}T12:00:00+07:00`)))
-    ).not.toContain("/shift/apply");
   });
 
   it("describes an earlier open round from that round's own fields", () => {

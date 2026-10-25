@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, type FormEvent, type ReactNode } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronDown } from "lucide-react";
 
 import { getShiftSource, normalizeShiftSource } from "@/lib/shift/attribution";
 import { trackMetaEvent } from "@/components/shift/MetaPixel";
@@ -16,6 +16,7 @@ import { ChoiceChips, INPUT, Question } from "./form/ShiftQuestion";
 import { clearApplyDraft, useApplyDraft } from "./apply/useApplyDraft";
 import {
   SHIFT_AVAILABILITY,
+  SHIFT_FOUND_VIA,
   SHIFT_GRADES,
   shiftApplicationSchema,
   toFieldErrors,
@@ -42,6 +43,7 @@ const EMPTY: ShiftApplicationInput = {
   igHandle: "",
   discordHandle: "",
   parentContact: "",
+  foundVia: "" as ShiftApplicationInput["foundVia"],
   consent: false as unknown as true,
   source: "",
   website: "",
@@ -199,7 +201,7 @@ export function ShiftApplyForm({
             className="mt-10 text-center font-kodchasan text-sm font-semibold uppercase tracking-[0.2em]"
             style={{ color: paper("80") }}
           >
-            ใบสมัคร · 7 ข้อ · 2 นาที
+            ใบสมัคร · 8 ข้อ · 2 นาที
           </p>
         </>
       )}
@@ -307,6 +309,33 @@ export function ShiftApplyForm({
           {...text("parentContact")}
           placeholder="เช่น 08x-xxx-xxxx หรือ LINE ID"
         />
+      </Question>
+
+      <Question num={8} label="รู้จัก SHIFT จากไหน" error={errors.foundVia}>
+        <div className="relative">
+          <select
+            name="foundVia"
+            value={values.foundVia}
+            onChange={(e) => set("foundVia", e.target.value as ShiftApplicationInput["foundVia"])}
+            aria-invalid={errors.foundVia ? true : undefined}
+            className={`${INPUT} appearance-none pr-10`}
+            style={{ ...text("foundVia").style, colorScheme: "dark" }}
+          >
+            <option value="" disabled>
+              เลือกช่องทาง
+            </option>
+            {SHIFT_FOUND_VIA.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+          <ChevronDown
+            className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2"
+            style={{ color: paper("99") }}
+            aria-hidden="true"
+          />
+        </div>
       </Question>
 
       {/* Honeypot: hidden from people, visible to naive bots */}

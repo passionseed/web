@@ -2,13 +2,16 @@ import type { Metadata } from "next";
 import { shiftSocialMetadata } from "@/lib/shift/socialMetadata";
 
 import { ShiftApplyForm } from "@/components/shift/ShiftApplyForm";
-import { ShiftSeatsRemaining } from "@/components/shift/ShiftSeatsRemaining";
 import {
   ClosedRoundNotice,
   CohortQuickFacts,
   RoundSwitcher,
 } from "@/components/shift/apply/ApplyGuides";
 import { MetaPixel } from "@/components/shift/MetaPixel";
+import {
+  HALLOWEEN_PAGE_BG,
+  HalloweenApplyHeader,
+} from "@/components/shift/poster/pixel/halloween/HalloweenApplyHeader";
 import { ShiftTopBar } from "@/components/shift/ShiftTopBar";
 import { RisoPageTexture } from "@/components/shift/ShiftRiso";
 import {
@@ -23,6 +26,7 @@ import {
   formatThaiDate,
   getEffectiveCohort,
   getOpenCohorts,
+  type ShiftCohort,
 } from "@/lib/content/shift-cohort";
 
 interface ApplySearchParams {
@@ -42,11 +46,36 @@ export async function generateMetadata({
     title,
     description,
     alternates: { canonical: cohort.applyUrl },
-    ...shiftSocialMetadata(cohort, title, description, cohort.applyUrl),
+    ...shiftSocialMetadata(cohort, title, description, cohort.applyUrl, cohort.applyPreviewSrc),
   };
 }
 
 const paper = (alpha: string) => `${INK.paper}${alpha}`;
+
+/** The default register header: orbit sky and chrome wordmark. */
+function RisoApplyHeader({ cohort }: { cohort: ShiftCohort }) {
+  return (
+    <>
+      <ChromeBevelFilter />
+      <OrbitSky horizon="clamp(260px, 38svh, 340px)" speckle={0} />
+      <ShiftTopBar
+        back={{ href: cohortPath(cohort), label: `รายละเอียด ${cohort.name}`, solid: true }}
+      />
+      <div
+        className="relative flex flex-col items-center justify-end pb-10 text-center"
+        style={{ minHeight: "clamp(260px, 38svh, 340px)" }}
+      >
+        <p
+          className="font-kodchasan text-lg font-semibold"
+          style={{ color: INK.paper }}
+        >
+          สมัคร
+        </p>
+        <ChromeWordmark size="clamp(64px, 13vw, 120px)" name={cohort.name} />
+      </div>
+    </>
+  );
+}
 
 export default async function ShiftApplyPage({
   searchParams,
@@ -58,33 +87,28 @@ export default async function ShiftApplyPage({
   const cohort = getEffectiveCohort(round);
   const openCohorts = getOpenCohorts();
   const isOpen = cohortStatus(cohort) === "open";
+  // A round can opt into a seasonal register page (SHIFT[3]: Halloween pixel).
+  const halloween = cohort.applyTheme === "halloween";
 
   return (
     <div
       className="relative min-h-screen font-bai-jamjuree antialiased"
-      style={{ backgroundColor: INK.black, color: INK.paper }}
+      style={{ backgroundColor: halloween ? HALLOWEEN_PAGE_BG : INK.black, color: INK.paper }}
     >
-      <RisoPageTexture />
+      {!halloween && <RisoPageTexture />}
       <MetaPixel pagePath="/shift/apply" />
 
       <header className="relative overflow-hidden">
-        <ChromeBevelFilter />
-        <OrbitSky horizon="clamp(260px, 38svh, 340px)" speckle={0} />
-        <ShiftTopBar
-          back={{ href: cohortPath(cohort), label: `รายละเอียด ${cohort.name}`, solid: true }}
-        />
-        <div
-          className="relative flex flex-col items-center justify-end pb-10 text-center"
-          style={{ minHeight: "clamp(260px, 38svh, 340px)" }}
-        >
-          <p
-            className="font-kodchasan text-lg font-semibold"
-            style={{ color: INK.paper }}
-          >
-            สมัคร
-          </p>
-          <ChromeWordmark size="clamp(64px, 13vw, 120px)" name={cohort.name} />
-        </div>
+        {halloween ? (
+          <>
+            <ShiftTopBar
+              back={{ href: cohortPath(cohort), label: `รายละเอียด ${cohort.name}`, solid: true }}
+            />
+            <HalloweenApplyHeader cohort={cohort} />
+          </>
+        ) : (
+          <RisoApplyHeader cohort={cohort} />
+        )}
       </header>
 
       <main className="relative mx-auto max-w-2xl px-5 pb-24 pt-10 sm:px-8">
@@ -94,10 +118,8 @@ export default async function ShiftApplyPage({
               className="text-center text-sm leading-relaxed sm:text-base"
               style={{ color: paper("b3") }}
             >
-              <div style={{ color: INK.paper }}>
-                <ShiftSeatsRemaining round={cohort.round} capacity={cohort.seats} />
-              </div>
-              <p className="mt-1">
+              {/* No seat count here: the register page only asks, it doesn't count down. */}
+              <p>
                 ใช้เวลา 2 นาที ไม่ต้องล็อกอิน ·{" "}
                 <span className="font-semibold" style={{ color: INK.yellow }}>
                   ปิดรับ {formatThaiDate(cohort.applyDeadline)}

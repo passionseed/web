@@ -19,6 +19,7 @@ Documentation index. Files are organized by purpose, not by date.
 | [npc-conversation-json-format.md](npc-conversation-json-format.md) | NPC conversation content format |
 | [google-oauth-setup-guide.md](google-oauth-setup-guide.md) | Google OAuth setup |
 | [setup-gemini-api.md](setup-gemini-api.md) | Gemini API setup |
+| [brain-sync.md](brain-sync.md) | Brain sync: how merges to `main` update the company brain automatically |
 
 ## 📁 `architecture/` — Design, Schema & System Architecture
 
@@ -46,6 +47,7 @@ Documentation index. Files are organized by purpose, not by date.
 | [DIRECTION_FINDER_SETUP.md](features/DIRECTION_FINDER_SETUP.md) | Direction Finder background jobs *(deprecated)* |
 | [walkthrough_floating_north_star.md](features/walkthrough_floating_north_star.md) | Floating North Star UI implementation |
 | [PERFORMANCE.md](features/PERFORMANCE.md) | Performance optimizations: bundle, images, caching |
+| [whiteboard.md](features/whiteboard.md) | Multiplayer whiteboard: sync, saving, sharing, authorship, reading boards for AI |
 
 ## 📁 `hackathon/` — Hackathon Documentation
 

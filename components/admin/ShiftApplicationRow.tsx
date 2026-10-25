@@ -27,7 +27,7 @@ import {
   formatBangkokDateTime,
   truncateText,
 } from "@/lib/shift/applicationStats";
-import { SHIFT_AVAILABILITY, SHIFT_GRADES } from "@/lib/shift/application";
+import { SHIFT_AVAILABILITY, SHIFT_FOUND_VIA, SHIFT_GRADES } from "@/lib/shift/application";
 import { cn } from "@/lib/utils";
 import type { ShiftApplicationRow as Application, ShiftApplicationStatus } from "@/types/shift";
 
@@ -109,7 +109,14 @@ export function ShiftApplicationRow(props: RowProps) {
         <TableCell>{optionLabel(SHIFT_GRADES, app.grade)}</TableCell>
         <TableCell className="max-w-[140px] truncate">{app.target_track ?? "-"}</TableCell>
         <TableCell className="max-w-[280px] text-sm">{truncateText(app.problem, 80)}</TableCell>
-        <TableCell className="text-xs">{app.source ?? DIRECT_SOURCE}</TableCell>
+        <TableCell className="text-xs">
+          {app.found_via && (
+            <span className="block font-medium">{optionLabel(SHIFT_FOUND_VIA, app.found_via)}</span>
+          )}
+          <span className={app.found_via ? "text-muted-foreground" : undefined}>
+            {app.source ?? DIRECT_SOURCE}
+          </span>
+        </TableCell>
         <TableCell onClick={(e) => e.stopPropagation()}>
           <StatusSelect
             value={app.status}

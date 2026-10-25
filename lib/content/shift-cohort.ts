@@ -45,6 +45,11 @@ export interface ShiftCohort {
   postponedFrom?: string;
   /** 1200x630 listing banner shown on the /shift gallery card. */
   bannerSrc?: string;
+  /** 1200x630 link preview for this round's register link only
+   *  (/shift/apply?round=N). Falls back to bannerSrc. */
+  applyPreviewSrc?: string;
+  /** Seasonal look for this round's register page. Unset keeps the riso look. */
+  applyTheme?: "halloween";
   /** Live projects the round shipped, shown once it is over. Titles only:
    *  students are minors, so no names or handles go on the public page. */
   showcase?: ShiftShowcaseProject[];
@@ -286,11 +291,30 @@ export const SHIFT_COHORT_2: ShiftCohort = {
   firstMeetDate: "2026-10-14",
 };
 
+/** SHIFT[3]: Mon 9 to Sun 15 Nov, 7 days. Applications close Sat 7 Nov so
+ *  everyone is onboarded before Day 1. No anchor price: ฿690 is the price. */
+export const SHIFT_COHORT_3: ShiftCohort = {
+  ...sibling(SHIFT_COHORT, 2, 35),
+  seats: 30,
+  priceBaht: 690,
+  anchorPriceBaht: null,
+  firstMeetDate: "2026-11-09",
+  // Register link and page match the Halloween pixel poster
+  // (components/shift/poster/pixel/halloween).
+  applyPreviewSrc: "/shift/banners/shift-3-apply-halloween.png",
+  applyTheme: "halloween",
+};
+
 /** The round the printed posters are promoting right now. */
-export const POSTER_COHORT = SHIFT_COHORT_2;
+export const POSTER_COHORT = SHIFT_COHORT_3;
 
 /** Every round, oldest first. /shift lists these; /shift/[round] renders one. */
-export const SHIFT_COHORTS: ShiftCohort[] = [SHIFT_COHORT_0, SHIFT_COHORT, SHIFT_COHORT_2];
+export const SHIFT_COHORTS: ShiftCohort[] = [
+  SHIFT_COHORT_0,
+  SHIFT_COHORT,
+  SHIFT_COHORT_2,
+  SHIFT_COHORT_3,
+];
 
 export function getShiftCohort(round: number): ShiftCohort | undefined {
   return SHIFT_COHORTS.find((c) => c.round === round);

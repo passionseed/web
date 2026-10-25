@@ -397,3 +397,12 @@ export async function adminSetPublished(productId: string, published: boolean): 
 
   if (error) throw error;
 }
+
+/** Admin: how many products are published in the gallery, or null on error. */
+export async function countPublishedProducts(): Promise<number | null> {
+  const { count, error } = await getAdminClient()
+    .from("hackathon_gallery_products")
+    .select("id", { count: "exact", head: true })
+    .eq("is_published", true);
+  return error ? null : (count ?? 0);
+}

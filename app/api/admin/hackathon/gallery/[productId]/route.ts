@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import { adminSetPublished } from "@/lib/hackathon/gallery";
+import { adminSetPublished, countPublishedProducts } from "@/lib/hackathon/gallery";
+import { recordBrainEvent } from "@/lib/brain/events";
 
 async function requireAdmin() {
   const supabase = await createClient();
@@ -37,9 +38,20 @@ export async function PATCH(
 
   try {
     await adminSetPublished(productId, body.is_published);
+    after(recordPublishedTotal);
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("[admin/gallery PATCH]", err);
     return NextResponse.json({ error: "Failed to update product" }, { status: 500 });
   }
+}
+
+/** Company brain: the total of published products only, never which team. */
+async function recordPublishedTotal() {
+  const value = await countPublishedProducts();
+  if (value === null) return;
+  await recordBrainEvent(
+    { type: "program_count_snapshot", payload: { program: "hackathon", metric: "gallery_products", value } },
+    "admin/hackathon/gallery",
+  );
 }

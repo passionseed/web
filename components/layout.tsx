@@ -46,6 +46,8 @@ export function Layout({ children }: LayoutProps) {
     // Certificate verification is a standalone public credential page
     pathname?.startsWith("/c/") ||
     pathname?.startsWith("/slide") ||
+    // Whiteboards are a full-screen canvas; the board list keeps the site chrome
+    pathname?.startsWith("/whiteboard/") ||
     pathname?.startsWith("/worksheet") ||
     // Tips links are a pass-through to a PDF: spinner only, no site chrome
     pathname?.startsWith("/tips") ||

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ArrowDown } from "lucide-react";
 
+import { FeedbackMotion } from "@/components/shift/feedback/FeedbackMotion";
 import { ShiftFeedbackForm } from "@/components/shift/feedback/ShiftFeedbackForm";
 import styles from "@/components/shift/feedback/feedback.module.css";
 import { ShiftTopBar } from "@/components/shift/ShiftTopBar";
@@ -13,7 +14,7 @@ import {
   getShiftCohort,
   type ShiftCohort,
 } from "@/lib/content/shift-cohort";
-import { FEEDBACK_QUESTION_COUNT, alumniSessionHint } from "@/lib/shift/feedback";
+import { FEEDBACK_QUESTION_COUNT, alumniSessionHint, alumniSessionWhen } from "@/lib/shift/feedback";
 
 export const metadata: Metadata = {
   title: "SHIFT feedback",
@@ -46,11 +47,12 @@ export default async function ShiftFeedbackPage({
     <div className={`${space.page} font-bai-jamjuree antialiased`} lang="th">
       <ShiftNextCosmos />
       <ShiftNextLight />
+      <FeedbackMotion />
 
       <ShiftNextHero>
         <ShiftTopBar />
         <div className={`${space.container} ${space.heroInner}`}>
-          <div className={space.heroCopy}>
+          <div className={`${space.heroCopy} ${styles.heroCalm}`}>
             <p className={space.missionTag}>
               <span className={space.liveDot} aria-hidden="true" />
               Mission complete · Round {String(cohort.round).padStart(2, "0")}
@@ -77,7 +79,7 @@ export default async function ShiftFeedbackPage({
               </a>
             </div>
           </div>
-          <dl className={`${space.glass} ${space.hud}`} data-glass>
+          <dl className={`${space.glass} ${space.hud} ${styles.hudCalm}`} data-glass>
             <div>
               <dt>Questions</dt>
               <dd>{FEEDBACK_QUESTION_COUNT} ข้อ</dd>
@@ -95,8 +97,9 @@ export default async function ShiftFeedbackPage({
       </ShiftNextHero>
 
       <main id="feedback" className={styles.content}>
-        <div className={`${space.glass} ${styles.panel}`} data-glass>
-          <ShiftFeedbackForm cohort={cohort} sessionHint={alumniSessionHint()} />
+        <div className={`${space.glass} ${styles.panel}`} data-glass data-feedback-panel>
+          <span className={styles.sheen} aria-hidden="true" />
+          <ShiftFeedbackForm cohort={cohort} sessionHint={alumniSessionHint()} sessionWhen={alumniSessionWhen()} />
         </div>
       </main>
     </div>

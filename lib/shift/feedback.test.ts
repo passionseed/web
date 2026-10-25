@@ -1,10 +1,11 @@
-import { alumniSessionHint, communitySignupOffer, shiftFeedbackSchema } from "./feedback";
+import { alumniSessionHint, communitySignupSchema, shiftFeedbackSchema } from "./feedback";
 
 const valid = {
   round: 1,
   nickname: "มิว",
   satisfaction: 4,
   canDoNow: "ปล่อยเว็บขึ้นจริงได้",
+  hardestMoment: "วันที่ 4 ไม่มีใครใช้ เลยไปถามคนใช้ใหม่",
   confidence: 3,
   ownership: 5,
   ownDecision: "ตัดหน้า login ทิ้ง",
@@ -17,7 +18,6 @@ const valid = {
   continueProject: "own",
   availableDays: ["fri", "sat"],
   nextSteps: ["help_run", "co_host"],
-  communitySignup: "join",
   quoteMode: "anonymous",
   consent: true,
 };
@@ -63,11 +63,28 @@ describe("shiftFeedbackSchema", () => {
     expect(named.success && named.data.quoteName).toBe("มิว ม.5");
   });
 
-  it("requires a community sign-up answer", () => {
-    const { communitySignup: _, ...noAnswer } = valid;
-    expect(shiftFeedbackSchema.safeParse(noAnswer).success).toBe(false);
-    expect(shiftFeedbackSchema.safeParse({ ...valid, communitySignup: "maybe" }).success).toBe(false);
-    expect(shiftFeedbackSchema.safeParse({ ...valid, communitySignup: "ask_parents" }).success).toBe(true);
+  it("asks for the hardest moment", () => {
+    expect(shiftFeedbackSchema.safeParse({ ...valid, hardestMoment: "" }).success).toBe(false);
+  });
+
+  it("leaves the community sign-up to step 2", () => {
+    const parsed = shiftFeedbackSchema.safeParse({ ...valid, communitySignup: "pay_250" });
+    expect(parsed.success && "communitySignup" in parsed.data).toBe(false);
+  });
+});
+
+describe("communitySignupSchema", () => {
+  const id = "3f1c2a4e-8b7d-4c2a-9e1f-5a6b7c8d9e0f";
+
+  it("accepts a way in for a saved row", () => {
+    expect(communitySignupSchema.safeParse({ id, communitySignup: "free_video" }).success).toBe(true);
+    expect(communitySignupSchema.safeParse({ id, communitySignup: "pay_250" }).success).toBe(true);
+  });
+
+  it("rejects unknown choices, the retired ฿690 answer, and bad ids", () => {
+    expect(communitySignupSchema.safeParse({ id, communitySignup: "maybe" }).success).toBe(false);
+    expect(communitySignupSchema.safeParse({ id, communitySignup: "join" }).success).toBe(false);
+    expect(communitySignupSchema.safeParse({ id: "1", communitySignup: "pay_250" }).success).toBe(false);
   });
 
   it("requires PDPA consent", () => {
@@ -85,24 +102,5 @@ describe("alumniSessionHint", () => {
     expect(before).toContain("ทุกวันเสาร์ 19:00–21:00 น.");
     expect(before).toContain("รอบแรก ส. 17 ต.ค.");
     expect(alumniSessionHint(new Date("2026-10-18T09:00:00+07:00"))).not.toContain("รอบแรก");
-  });
-});
-
-describe("AfterSHIFT monthly test offer", () => {
-  it("quotes the SHIFT[2] alumni test in both the explanation and signup", () => {
-    const offer = communitySignupOffer(2);
-    expect(offer.price).toBe(250);
-    expect(offer.hint).toContain("SHIFT[2]");
-    expect(offer.hint).toContain("เดือนละ 250 บาท");
-    expect(offer.hint).toContain("ทดลองรูปแบบและราคา");
-    expect(offer.options.find((option) => option.value === "join")?.label).toContain("เดือนละ 250 บาท");
-    expect(offer.hint).not.toContain("690");
-  });
-
-  it("preserves the offer for other cohorts and the stored answer values", () => {
-    for (const round of [0, 1, 3]) {
-      expect(communitySignupOffer(round).price).toBe(690);
-    }
-    expect(communitySignupOffer(2).options.map((option) => option.value)).toEqual(["join", "ask_parents", "not_now"]);
   });
 });

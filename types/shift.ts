@@ -52,6 +52,8 @@ export interface ShiftApplicationRow {
   parent_contact: string;
   consent: boolean;
   source: string | null;
+  /** Self-reported "where did you find us". Null on rows before 2026-10-24. */
+  found_via: "friend" | "camphub" | "instagram" | "facebook" | null;
   status: ShiftApplicationStatus;
   paid_at: string | null;
   admin_note: string | null;

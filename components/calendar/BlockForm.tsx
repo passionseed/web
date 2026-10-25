@@ -1,0 +1,130 @@
+"use client";
+
+import "./calendar.css";
+
+import { Loader2 } from "lucide-react";
+import { useState } from "react";
+
+import { BLOCK_KINDS, KIND_STYLE, bangkokParts, type BlockInput, type CalendarBlock } from "@/lib/calendar/core";
+import type { VoiceRoom } from "@/lib/calendar/notify";
+
+import type { BlockFormValue } from "./useCalendar";
+import { bangkokToday } from "@/lib/content/shift-cohort";
+
+const field =
+  "w-full rounded-lg border cal-line bg-transparent px-2.5 py-1.5 text-sm outline-none focus:border-orange-400/70";
+
+const clockOf = (hour: number, endOfDay = false) => (endOfDay ? "23:59" : `${String(hour).padStart(2, "0")}:00`);
+
+/** Add or edit a block. Times are Bangkok time. */
+export function BlockForm({
+  block,
+  date,
+  hour,
+  attachBoard,
+  rooms = [],
+  onSubmit,
+  onCancel,
+}: {
+  block?: CalendarBlock;
+  /** Default date for a new block. */
+  date?: string;
+  /** Default start hour for a new block (clicked on the week grid). */
+  hour?: number;
+  /** Offer "attach this board" (only to the board owner). */
+  attachBoard?: { id: string; title: string };
+  /** Community voice rooms to meet in (from /admin/calendar). */
+  rooms?: VoiceRoom[];
+  /** Resolves true to close the form. */
+  onSubmit: (input: BlockFormValue) => Promise<boolean>;
+  onCancel: () => void;
+}) {
+  const start = block ? bangkokParts(block.startsAt) : null;
+  const [form, setForm] = useState({
+    title: block?.title ?? "",
+    kind: (block?.kind ?? "meetup") as BlockInput["kind"],
+    date: start?.date ?? date ?? bangkokToday(),
+    start: start?.time ?? (hour !== undefined ? clockOf(hour) : "19:00"),
+    end: block ? bangkokParts(block.endsAt).time : hour !== undefined ? clockOf(Math.min(hour + 1, 23), hour >= 23) : "20:00",
+    place: block?.place ?? "",
+    note: block?.note ?? "",
+  });
+  const [attach, setAttach] = useState(Boolean(attachBoard && !block));
+  const [roomId, setRoomId] = useState(block?.room?.channelId ?? "");
+  // A new block gets its own room board unless it is tied to the board it was made on.
+  const [roomBoard, setRoomBoard] = useState(!block);
+  const [busy, setBusy] = useState(false);
+  const set = (key: keyof typeof form) => (e: { target: { value: string } }) => setForm((f) => ({ ...f, [key]: e.target.value }));
+
+  return (
+    <form
+      className="space-y-2"
+      onKeyDown={(e) => e.stopPropagation()}
+      onSubmit={async (e) => {
+        e.preventDefault();
+        setBusy(true);
+        const ok = await onSubmit({
+          ...form,
+          ...(attachBoard ? { whiteboardId: attach ? attachBoard.id : null } : {}),
+          ...(rooms.length ? { roomChannelId: roomId || null } : {}),
+          wantsRoomBoard: !block && roomBoard && !(attachBoard && attach),
+        });
+        setBusy(false);
+        if (ok) onCancel();
+      }}
+    >
+      <input autoFocus required maxLength={120} value={form.title} onChange={set("title")} placeholder="ชื่อ เช่น นั่งทำโปรเจกต์ด้วยกัน" className={field} />
+      <div className="flex flex-wrap gap-1">
+        {BLOCK_KINDS.map((k) => (
+          <button
+            key={k}
+            type="button"
+            onClick={() => setForm((f) => ({ ...f, kind: k }))}
+            className={`rounded-full border px-2.5 py-0.5 text-xs ${form.kind === k ? "border-transparent text-white" : "cal-line opacity-70"}`}
+            style={form.kind === k ? { background: KIND_STYLE[k].color } : undefined}
+          >
+            {KIND_STYLE[k].label}
+          </button>
+        ))}
+      </div>
+      <div className="grid grid-cols-[1fr_auto_auto] gap-1.5">
+        <input type="date" required value={form.date} onChange={set("date")} className={field} />
+        <input type="time" required value={form.start} onChange={set("start")} className={field} />
+        <input type="time" required value={form.end} onChange={set("end")} className={field} />
+      </div>
+      <input maxLength={200} value={form.place} onChange={set("place")} placeholder="ที่ไหน เช่น Discord ห้อง 2" className={field} />
+      <textarea maxLength={1000} rows={2} value={form.note} onChange={set("note")} placeholder="รายละเอียด (ไม่ใส่ก็ได้)" className={field} />
+      {rooms.length > 0 && (
+        <select value={roomId} onChange={(e) => setRoomId(e.target.value)} className={field}>
+          <option value="">ไม่ใช้ห้อง Discord</option>
+          {rooms.map((r) => (
+            <option key={r.channelId} value={r.channelId}>
+              🔊 {r.name}
+            </option>
+          ))}
+        </select>
+      )}
+      {!block && !(attachBoard && attach) && (
+        <label className="flex items-start gap-2 text-xs opacity-80">
+          <input type="checkbox" className="mt-0.5" checked={roomBoard} onChange={(e) => setRoomBoard(e.target.checked)} />
+          <span>สร้างบอร์ดห้อง: มาถึง · ช่วยกัน · ปิดท้าย พร้อมการ์ดคำถาม</span>
+        </label>
+      )}
+      {attachBoard && (
+        <label className="flex items-center gap-2 text-xs opacity-80">
+          <input type="checkbox" checked={attach} onChange={(e) => setAttach(e.target.checked)} />
+          แนบลิงก์บอร์ด &quot;{attachBoard.title}&quot; ให้ทุกคนกดเข้ามาได้
+        </label>
+      )}
+      <p className="text-xs opacity-60">ทุกคนที่ล็อกอินเห็นนัดนี้และเห็นว่าใครจะมา</p>
+      <div className="flex justify-end gap-2">
+        <button type="button" onClick={onCancel} className="rounded-lg px-3 py-1.5 text-sm opacity-70 hover:opacity-100">
+          ยกเลิก
+        </button>
+        <button type="submit" disabled={busy} className="rounded-lg bg-orange-500 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50">
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : block ? "บันทึก" : "เพิ่ม"}
+        </button>
+      </div>
+    </form>
+  );
+}

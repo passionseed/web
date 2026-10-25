@@ -1,6 +1,9 @@
 "use server";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { after } from "next/server";
+
+import { bangkokDate, recordBrainEvent, shiftRoundNumber } from "@/lib/brain/events";
 
 import * as api from "@/lib/shift-round/admin/api";
 import { isUuid } from "@/lib/shift-round/admin/format";
@@ -54,7 +57,24 @@ export async function listRoundsAction() {
 }
 
 export async function createRoundAction(round: RoundPolicy) {
-  return withAdmin((c) => api.createRound(c, round));
+  const result = await withAdmin((c) => api.createRound(c, round));
+  if (result.ok) {
+    after(() =>
+      recordBrainEvent(
+        {
+          type: "shift_round_created",
+          payload: {
+            round: round.number,
+            starts_on: bangkokDate(round.starts_at),
+            duration_days: round.duration_days,
+            status: "draft",
+          },
+        },
+        BRAIN_SOURCE,
+      ),
+    );
+  }
+  return result;
 }
 
 export async function updateRoundAction(
@@ -62,14 +82,62 @@ export async function updateRoundAction(
   patch: Partial<RoundPolicy> & { status?: ShiftRound["status"] },
 ) {
   if (!isUuid(roundId)) return badId("round_id");
-  return withAdmin((c) => api.updateRound(c, roundId, patch));
+  const result = await withAdmin((c) => api.updateRound(c, roundId, patch));
+  if (result.ok && result.data?.round) after(() => recordRoundUpdate(result.data.round, patch));
+  return result;
 }
 
 export async function extendRoundAction(roundId: string, days: number, reason: string) {
   if (!isUuid(roundId)) return badId("round_id");
   if (!Number.isInteger(days) || days < 1 || days > 7) return badId("days");
   if (!SHORT_TEXT(reason, 300)) return badId("reason");
-  return withAdmin((c) => api.extendRound(c, roundId, days, reason.trim()));
+  const result = await withAdmin((c) => api.extendRound(c, roundId, days, reason.trim()));
+  if (result.ok) {
+    const closesAt = result.data?.closes_at;
+    after(async () => {
+      const round = await shiftRoundNumber(roundId);
+      const closesOn = closesAt ? bangkokDate(closesAt) : undefined;
+      if (round === null || !closesOn) return;
+      await recordBrainEvent(
+        { type: "shift_round_dates_changed", payload: { round, closes_on: closesOn } },
+        BRAIN_SOURCE,
+      );
+    });
+  }
+  return result;
+}
+
+// ---- Company brain ------------------------------------------------------
+
+const BRAIN_SOURCE = "admin/shift/rounds";
+
+/** Records status and date changes only; titles, briefs and links stay out. */
+async function recordRoundUpdate(
+  round: ShiftRound,
+  patch: Partial<RoundPolicy> & { status?: ShiftRound["status"] },
+) {
+  if (typeof round.number !== "number") return;
+  if (patch.status === "published") {
+    await recordBrainEvent({ type: "shift_round_published", payload: { round: round.number } }, BRAIN_SOURCE);
+  } else if (patch.status === "draft") {
+    await recordBrainEvent({ type: "shift_round_unpublished", payload: { round: round.number } }, BRAIN_SOURCE);
+  } else if (patch.status === "archived") {
+    await recordBrainEvent({ type: "shift_round_finished", payload: { round: round.number } }, BRAIN_SOURCE);
+  }
+  if (patch.starts_at !== undefined || patch.duration_days !== undefined) {
+    await recordBrainEvent(
+      {
+        type: "shift_round_dates_changed",
+        payload: {
+          round: round.number,
+          starts_on: round.starts_at ? bangkokDate(round.starts_at) : undefined,
+          duration_days: round.duration_days,
+          closes_on: round.closes_at ? bangkokDate(round.closes_at) : undefined,
+        },
+      },
+      BRAIN_SOURCE,
+    );
+  }
 }
 
 // ---- Roles and allowlist ------------------------------------------------

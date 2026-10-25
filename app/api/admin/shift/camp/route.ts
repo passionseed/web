@@ -2,6 +2,7 @@ import { NextRequest, NextResponse, after } from "next/server";
 import { z } from "zod";
 import { requireAdmin, safeServerError } from "@/lib/security/route-guards";
 import { enrollLinkedStudents } from "@/lib/shift/join";
+import { recordBrainEvent } from "@/lib/brain/events";
 
 const input = z.object({
   action: z.enum([
@@ -64,6 +65,24 @@ export async function POST(request: NextRequest) {
       { status: error.code === "42501" ? 403 : 400 },
     );
   // Students who linked Discord before this camp existed join it now.
-  if (action === "create_cohort") after(() => enrollLinkedStudents().then(() => undefined));
+  if (action === "create_cohort") {
+    after(() => enrollLinkedStudents().then(() => undefined));
+    after(() => recordCohortCreated(payload));
+  }
   return NextResponse.json(data);
+}
+
+/** Company brain: the cohort name and start date only. */
+function recordCohortCreated(payload: Record<string, unknown>) {
+  const startsOn = typeof payload.starts_on === "string" ? payload.starts_on.slice(0, 10) : "";
+  return recordBrainEvent(
+    {
+      type: "shift_camp_cohort_created",
+      payload: {
+        name: typeof payload.name === "string" ? payload.name.trim() : "",
+        ...(/^\d{4}-\d{2}-\d{2}$/.test(startsOn) ? { starts_on: startsOn } : {}),
+      },
+    },
+    "admin/shift/camp",
+  );
 }

@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     // Minted now so the applicant's LINE payment message already carries their
     // personal Discord link. It stays inert until an admin marks them paid.
     const joinToken = newShiftJoinToken();
-    const { error } = await supabase.from("shift_applications").insert({
+    const row = {
       cohort: cohort.name,
       full_name: application.fullName,
       nickname: application.nickname,
@@ -60,7 +60,15 @@ export async function POST(request: Request) {
       consent: application.consent,
       source: application.source,
       join_token: joinToken,
-    });
+    };
+    const table = supabase.from("shift_applications");
+    let { error } = await table.insert({ ...row, found_via: application.foundVia });
+    // found_via (20261024130000) not applied yet: keep the application
+    // rather than losing it over the new question.
+    if (error?.code === "PGRST204") {
+      console.warn("shift_applications.found_via missing; saving without it", error.message);
+      ({ error } = await table.insert(row));
+    }
     if (error) {
       return safeServerError("Failed to save SHIFT application", error);
     }

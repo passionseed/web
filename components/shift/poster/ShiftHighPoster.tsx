@@ -4,7 +4,7 @@ import Image from "next/image";
 import { COSMOS, starlight } from "@/components/shift/next/cosmos";
 import { ALUMNI_DEFAULT_DOC, timeRangeLabel, weekdayName } from "@/lib/content/shift-alumni";
 import { SHIFT_COHORT_2 } from "@/lib/content/shift-cohort";
-import { SHIFT_2_ALUMNI_TEST_PRICE } from "@/lib/shift/feedback";
+import { COMMUNITY_TEST_PRICE } from "@/lib/shift/feedback";
 
 import { PassionSeedMark } from "./riso";
 
@@ -19,7 +19,7 @@ import { PassionSeedMark } from "./riso";
 
 export const SHIFT_HIGH_POSTER_ID = "shift-high";
 const C = SHIFT_COHORT_2;
-const PRICE = SHIFT_2_ALUMNI_TEST_PRICE;
+const PRICE = COMMUNITY_TEST_PRICE;
 const { firstDate, startTime, endTime } = ALUMNI_DEFAULT_DOC.defaults;
 const DAY = weekdayName(firstDate).replace(/^วัน/, "");
 export const LATIN = "var(--font-libre-franklin), ui-sans-serif, system-ui, sans-serif";

@@ -13,7 +13,7 @@ import {
   VisuallyHidden,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Menu, Globe, X, Compass, Beaker, User, Wrench, Target } from "lucide-react";
+import { Menu, Globe, X, Compass, Beaker, User, Wrench, Target, PenTool } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/language-context";
 
 const navItems = [
@@ -21,6 +21,7 @@ const navItems = [
   { href: "/map", label: { en: "Pathlab", th: "Pathlab" }, icon: Beaker },
   { href: "/me", label: { en: "My Path", th: "เส้นทางของฉัน" }, icon: User },
   { href: "/radar", label: { en: "Radar", th: "เรดาร์" }, icon: Target },
+  { href: "/whiteboard", label: { en: "Whiteboard", th: "ไวท์บอร์ด" }, icon: PenTool },
 ];
 
 // Easing curves from design system
@@ -270,6 +271,12 @@ export function MainNav({ isAuthenticated = false }: { isAuthenticated?: boolean
               className="text-sm font-medium transition-colors hover:text-white whitespace-nowrap px-3 py-2 text-gray-400"
             >
               Radar
+            </Link>
+            <Link
+              href="/whiteboard"
+              className="text-sm font-medium transition-colors hover:text-white whitespace-nowrap px-3 py-2 text-gray-400"
+            >
+              Whiteboard
             </Link>
             {hasBuildAccess && (
               <Link

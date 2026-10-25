@@ -28,6 +28,7 @@ const PUBLIC_ROUTE_PREFIXES = [
   "/api/trials",
   "/faculty-radar",
   "/api/cron/parent-pathlab-updates",
+  "/api/cron/brain-sync",
   "/fireball",
   "/techseed",
   "/api/techseed",
@@ -48,6 +49,8 @@ const PUBLIC_ROUTE_PREFIXES = [
   "/api/shift/cert-health",
   // Admin link-preview cards: metadata and a poster only, no admin data.
   "/link-preview",
+  // Share links must render for chat link previews; signing in happens on the way in.
+  "/whiteboard/join",
 ] as const;
 
 export function isPublicRoute(pathname: string): boolean {

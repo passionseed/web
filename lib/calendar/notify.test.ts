@@ -1,0 +1,66 @@
+import { bangkokInstant } from "./core";
+import { DEFAULT_SHARE_TEMPLATE, discordCreatedBody, fillTemplate, notifySettingsSchema } from "./notify";
+
+const block = {
+  title: "นั่งทำโปรเจกต์ด้วยกัน",
+  startsAt: bangkokInstant("2026-10-25", "19:00"),
+  endsAt: bangkokInstant("2026-10-25", "20:00"),
+  place: "Discord ห้อง 2",
+};
+
+describe("calendar share message", () => {
+  it("fills the default template", () => {
+    expect(fillTemplate(DEFAULT_SHARE_TEMPLATE, block, "https://x/calendar?block=1")).toBe(
+      "📅 นั่งทำโปรเจกต์ด้วยกัน\n🕖 อา. 25 ต.ค. 19:00–20:00\n📍 Discord ห้อง 2\nใครไปด้วยกดตรงนี้ 👉 https://x/calendar?block=1",
+    );
+  });
+
+  it("adds the voice room when the block has one", () => {
+    const room = { name: "ห้อง 1", url: "https://discord.com/channels/1/2", channelId: "2" };
+    expect(fillTemplate(DEFAULT_SHARE_TEMPLATE, { ...block, room }, "L")).toContain("🔊 ห้อง 1 https://discord.com/channels/1/2");
+  });
+
+  it("drops a line whose placeholder is empty and leaves unknown ones alone", () => {
+    expect(fillTemplate("{title}\n📍 {place}\n{link} {who}", { ...block, place: null }, "L")).toBe(
+      "นั่งทำโปรเจกต์ด้วยกัน\nL {who}",
+    );
+  });
+
+  it("builds a Discord post with mentions off", () => {
+    const body = discordCreatedBody({ ...block, title: "@everyone party" }, "Mint", "L");
+    expect(body.content).toContain("**@everyone party**");
+    expect(body.allowed_mentions.parse).toEqual([]);
+  });
+});
+
+describe("notify settings", () => {
+  const base = { igGroupUrl: "", template: "{title} {link}", discordOnCreate: true, remindMinutes: [60, 0], guildId: "", voiceRooms: [] };
+
+  it("accepts an IG thread link and a Discord webhook", () => {
+    const parsed = notifySettingsSchema.safeParse({
+      ...base,
+      igGroupUrl: "https://www.instagram.com/direct/t/1234567890/",
+      discordWebhookUrl: "https://discord.com/api/webhooks/123/abc_DEF-1",
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("stores canary and PTB webhooks as discord.com", () => {
+    const parsed = notifySettingsSchema.safeParse({
+      ...base,
+      discordWebhookUrl: "https://canary.discord.com/api/webhooks/123/abc",
+    });
+    expect(parsed.success && parsed.data.discordWebhookUrl).toBe("https://discord.com/api/webhooks/123/abc");
+  });
+
+  it("checks Discord server and voice room ids", () => {
+    expect(notifySettingsSchema.safeParse({ ...base, guildId: "123456789", voiceRooms: [{ name: "ห้อง 1", channelId: "987654321" }] }).success).toBe(true);
+    expect(notifySettingsSchema.safeParse({ ...base, voiceRooms: [{ name: "ห้อง 1", channelId: "abc" }] }).success).toBe(false);
+  });
+
+  it("rejects invite links, other URLs, and templates without a link", () => {
+    expect(notifySettingsSchema.safeParse({ ...base, igGroupUrl: "https://ig.me/j/abc" }).success).toBe(false);
+    expect(notifySettingsSchema.safeParse({ ...base, discordWebhookUrl: "https://evil.example/hook" }).success).toBe(false);
+    expect(notifySettingsSchema.safeParse({ ...base, template: "{title}" }).success).toBe(false);
+  });
+});

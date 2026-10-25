@@ -23,6 +23,7 @@ const row = (patch: Partial<ShiftFeedbackRow>): ShiftFeedbackRow => ({
   continue_project_note: null,
   available_days: ["sat"],
   community_signup: "join",
+  hardest_moment: null,
   quote_mode: "anonymous",
   quote_name: null,
   ...patch,

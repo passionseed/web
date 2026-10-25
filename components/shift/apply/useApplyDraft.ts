@@ -25,6 +25,7 @@ const DRAFT_FIELDS: readonly (keyof ShiftApplicationInput)[] = [
   "igHandle",
   "discordHandle",
   "parentContact",
+  "foundVia",
 ];
 
 type Draft = Partial<ShiftApplicationInput>;

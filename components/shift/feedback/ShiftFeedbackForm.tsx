@@ -6,10 +6,10 @@ import { ArrowRight, Check } from "lucide-react";
 
 import { ChoiceChips, INPUT, Question } from "@/components/shift/form/ShiftQuestion";
 import { INK } from "@/components/shift/poster/riso";
-import { AFTERSHIFT_SUPPORT } from "@/lib/content/aftershift";
 import type { ShiftCohort } from "@/lib/content/shift-cohort";
 import {
-  communitySignupOffer,
+  FEEDBACK_QUESTION_COUNT,
+  COMMUNITY_JOIN_VALUES,
   FEEDBACK_CONTINUE_PROJECTS,
   FEEDBACK_DAYS,
   FEEDBACK_MOTIVATIONS,
@@ -24,14 +24,16 @@ import {
 } from "@/lib/shift/feedback";
 
 import { CheckChips, DayChips, ScaleChips } from "./FeedbackChips";
+import { FeedbackCommunityStep } from "./FeedbackCommunityStep";
 import { FeedbackConsent } from "./FeedbackConsent";
 import styles from "./feedback.module.css";
 import space from "../next/shiftNext.module.css";
 
 /**
- * End-of-round SHIFT feedback: 15 questions, about 5 minutes, no login.
- * Ends with the alumni ask (one project to keep going, days for the weekly
- * session) and a real community sign-up. Validates with the API's schema so errors show before submit.
+ * End-of-round SHIFT feedback: 15 reflective questions, about 5 minutes, no
+ * login. Ends with the alumni ask (one project to keep going, days for the
+ * weekly session). Submitting saves the answers; step 2 then explains the
+ * project community and saves the sign-up onto the same row. Validates with the API's schema so errors show before submit.
  */
 
 type Values = Omit<ShiftFeedbackInput, "satisfaction" | "confidence" | "ownership" | "recommend"> & {
@@ -41,7 +43,7 @@ type Values = Omit<ShiftFeedbackInput, "satisfaction" | "confidence" | "ownershi
   recommend?: number;
 };
 type Field = keyof Values;
-type Status = "idle" | "sending" | "done" | "error";
+type Status = "idle" | "sending" | "community" | "done" | "error";
 
 const paper = (alpha: string) => `${INK.paper}${alpha}`;
 
@@ -69,6 +71,43 @@ function PartHeading({ index, children }: { index: number; children: string }) {
   );
 }
 
+/** How many numbered questions have an answer, for the progress line. */
+function answeredCount(v: Values): number {
+  const filled = (text?: string | null) => (text ?? "").trim().length >= 2;
+  return [
+    v.satisfaction !== undefined,
+    filled(v.canDoNow),
+    filled(v.hardestMoment),
+    v.confidence !== undefined,
+    v.ownership !== undefined,
+    filled(v.ownDecision),
+    Boolean(v.motivation),
+    filled(v.mostValuable),
+    filled(v.changeNext),
+    Boolean(v.priceFit),
+    Boolean(v.payer),
+    v.recommend !== undefined,
+    Boolean(v.continueProject),
+    v.availableDays.length > 0,
+    v.nextSteps.length > 0,
+  ].filter(Boolean).length;
+}
+
+/** A slow line that fills as questions are answered; sticks while scrolling. */
+function FeedbackProgress({ answered }: { answered: number }) {
+  const total = FEEDBACK_QUESTION_COUNT;
+  return (
+    <div className={styles.progress} aria-live="polite">
+      <span className={styles.progressTrack} aria-hidden="true">
+        <span className={styles.progressFill} style={{ transform: `scaleX(${answered / total})` }} />
+      </span>
+      <span className={styles.progressCount}>
+        ตอบแล้ว {answered}/{total}
+      </span>
+    </div>
+  );
+}
+
 function FeedbackDone({ comingBack, joining }: { comingBack: boolean; joining: boolean }) {
   return (
     <div className={styles.done} role="status">
@@ -89,16 +128,19 @@ function FeedbackDone({ comingBack, joining }: { comingBack: boolean; joining: b
 export function ShiftFeedbackForm({
   cohort,
   sessionHint,
+  sessionWhen,
 }: {
   cohort: ShiftCohort;
   /** Day-picker hint, worked out on the server so it matches on hydration. */
   sessionHint: string;
+  /** "ทุกวันเสาร์ 19:00–21:00 น.", for the community step. */
+  sessionWhen: string;
 }) {
-  const communityOffer = communitySignupOffer(cohort.round);
   const [values, setValues] = useState<Values>({
     round: cohort.round,
     nickname: "",
     canDoNow: "",
+    hardestMoment: "",
     ownDecision: "",
     motivation: "" as Values["motivation"],
     mostValuable: "",
@@ -109,7 +151,6 @@ export function ShiftFeedbackForm({
     continueProjectNote: "",
     availableDays: [],
     nextSteps: [],
-    communitySignup: "" as Values["communitySignup"],
     quoteMode: "" as Values["quoteMode"],
     quoteName: "",
     consent: false as unknown as true,
@@ -117,6 +158,8 @@ export function ShiftFeedbackForm({
   });
   const [errors, setErrors] = useState<ShiftFeedbackErrors>({});
   const [status, setStatus] = useState<Status>("idle");
+  const [feedbackId, setFeedbackId] = useState<string | null>(null);
+  const [joining, setJoining] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   const set = <K extends Field>(field: K, value: Values[K]) => {
@@ -158,7 +201,12 @@ export function ShiftFeedbackForm({
         body: JSON.stringify(values),
       });
       if (res.ok) {
-        setStatus("done");
+        // Answers are saved. Step 2 (the community) needs the row id; without
+        // one, skip straight to the thank-you.
+        const data = await res.json().catch(() => ({}));
+        setFeedbackId(typeof data.id === "string" ? data.id : null);
+        setStatus(typeof data.id === "string" ? "community" : "done");
+        formRef.current?.closest("[data-feedback-panel]")?.scrollIntoView({ behavior: "smooth", block: "start" });
         return;
       }
       const data = await res.json().catch(() => ({}));
@@ -172,72 +220,90 @@ export function ShiftFeedbackForm({
     }
   }
 
+  if (status === "community" && feedbackId) {
+    return (
+      <FeedbackCommunityStep
+        feedbackId={feedbackId}
+        sessionWhen={sessionWhen}
+        onDone={(choice) => {
+          setJoining(choice !== null && COMMUNITY_JOIN_VALUES.includes(choice));
+          setStatus("done");
+        }}
+      />
+    );
+  }
+
   if (status === "done") {
     return (
       <FeedbackDone
         comingBack={values.availableDays.length > 0 && !values.availableDays.includes("none")}
-        joining={values.communitySignup === "join"}
+        joining={joining}
       />
     );
   }
 
   return (
     <form ref={formRef} onSubmit={submit} noValidate>
+      <FeedbackProgress answered={answeredCount(values)} />
       <Question label="ชื่อเล่น" hint="พี่อ่านคู่กับสิ่งที่เห็นตลอด 7 วัน ไม่เอาชื่อไปเผยแพร่" error={errors.nickname}>
         <input {...text("nickname")} placeholder="ชื่อเล่น" autoComplete="nickname" />
       </Question>
 
-      <PartHeading index={1}>7 วันที่ผ่านมา</PartHeading>
+      <PartHeading index={1}>ย้อนดู 7 วันที่ผ่านมา</PartHeading>
 
       <Question num={1} label="พอใจกับสิ่งที่ทำได้ใน 7 วันแค่ไหน" error={errors.satisfaction}>
         <ScaleChips name="ความพอใจ" min={1} max={5} low="ไม่พอใจเลย" high="พอใจมาก" value={values.satisfaction} onChange={(v) => set("satisfaction", v)} />
       </Question>
 
-      <Question num={2} label="ตอนนี้ทำอะไรได้ ที่วันแรกยังทำไม่ได้" error={errors.canDoNow}>
-        {longText("canDoNow", "เช่น คุยกับคนแปลกหน้าเพื่อถามปัญหาได้, ปล่อยเว็บขึ้นจริงได้")}
+      <Question num={2} label="นึกถึงตัวเองวันแรก ตอนนี้เราทำอะไรได้ที่วันนั้นยังทำไม่ได้" hint="เล่าเป็นเรื่องที่เกิดขึ้นจริง ไม่ต้องสวย" error={errors.canDoNow}>
+        {longText("canDoNow", "เช่น วันแรกไม่กล้าทักคนแปลกหน้า ตอนนี้ไปถามปัญหาคนใช้จริงได้แล้ว")}
       </Question>
 
-      <Question num={3} label="มั่นใจแค่ไหนว่าจะเริ่มโปรเจกต์ใหม่ได้เอง โดยไม่มีพี่ mentor" error={errors.confidence}>
+      <Question num={3} label="ช่วงไหนยากที่สุด แล้วเราผ่านมาได้ยังไง" hint="ตอนที่อยากเลิก ตอนที่ติด หรือตอนที่ทำพัง ก็เล่าได้" error={errors.hardestMoment}>
+        {longText("hardestMoment", "ตอนที่... แล้วเราก็...")}
+      </Question>
+
+      <Question num={4} label="มั่นใจแค่ไหนว่าจะเริ่มโปรเจกต์ใหม่ได้เอง โดยไม่มีพี่ mentor" error={errors.confidence}>
         <ScaleChips name="ความมั่นใจ" min={1} max={5} low="ไม่มั่นใจเลย" high="มั่นใจมาก" value={values.confidence} onChange={(v) => set("confidence", v)} />
       </Question>
 
-      <Question num={4} label="โปรเจกต์นี้รู้สึกเป็นของเราแค่ไหน" error={errors.ownership}>
+      <Question num={5} label="โปรเจกต์นี้รู้สึกเป็นของเราแค่ไหน" error={errors.ownership}>
         <ScaleChips name="ความเป็นเจ้าของ" min={1} max={5} low="ไม่ใช่ของเราเลย" high="ของเราเต็มๆ" value={values.ownership} onChange={(v) => set("ownership", v)} />
       </Question>
 
-      <Question num={5} label="มีตอนไหนที่เราตัดสินใจเอง" hint="เล็กๆ ก็นับ เช่น ตัดฟีเจอร์ทิ้ง หรือเปลี่ยนโจทย์" error={errors.ownDecision}>
-        {longText("ownDecision", "ตอนที่...")}
+      <Question num={6} label="มีตอนไหนที่เราตัดสินใจเอง แล้วอะไรทำให้รู้ว่าควรไปทางนั้น" hint="เล็กๆ ก็นับ เช่น ตัดฟีเจอร์ทิ้งหลังคุยกับคนใช้ หรือเปลี่ยนโจทย์" error={errors.ownDecision}>
+        {longText("ownDecision", "ตอนที่... เพราะ...")}
       </Question>
 
-      <Question num={6} label="ทำไมถึงทำโปรเจกต์ต่อจนจบ" hint="เลือกข้อที่ตรงที่สุด" error={errors.motivation}>
+      <Question num={7} label="อะไรทำให้เราทำต่อจนจบ" hint="เลือกข้อที่ตรงที่สุด" error={errors.motivation}>
         <ChoiceChips name="เหตุผล" stacked options={FEEDBACK_MOTIVATIONS} value={values.motivation} onChange={(v) => set("motivation", v)} />
       </Question>
 
       <PartHeading index={2}>คุ้มไหม</PartHeading>
 
-      <Question num={7} label="ส่วนไหนของ SHIFT มีค่ากับเรามากที่สุด" error={errors.mostValuable}>
+      <Question num={8} label="ถ้าเล่าให้เพื่อนฟังได้เรื่องเดียว จะเล่าเรื่องไหนของ SHIFT" error={errors.mostValuable}>
         {longText("mostValuable", "พิมพ์แบบที่เล่าให้เพื่อนฟังได้เลย")}
       </Question>
 
-      <Question num={8} label="SHIFT รอบหน้าควรเปลี่ยนอะไร" hint="ติตรงๆ ได้เต็มที่" error={errors.changeNext}>
+      <Question num={9} label="SHIFT รอบหน้าควรเปลี่ยนอะไร" hint="ติตรงๆ ได้เต็มที่" error={errors.changeNext}>
         {longText("changeNext", "อยากให้...")}
       </Question>
 
-      <Question num={9} label="เทียบกับสิ่งที่ได้ ราคาถือว่า" hint={`ข้อนี้ถามถึงค่าเข้าร่วม ${cohort.name} จำนวน ${cohort.priceBaht.toLocaleString("th-TH")} บาท`} error={errors.priceFit}>
+      <Question num={10} label="เทียบกับสิ่งที่ได้ ราคาถือว่า" hint={`ข้อนี้ถามถึงค่าเข้าร่วม ${cohort.name} จำนวน ${cohort.priceBaht.toLocaleString("th-TH")} บาท`} error={errors.priceFit}>
         <ChoiceChips name="ราคา" options={FEEDBACK_PRICE_FIT} value={values.priceFit} onChange={(v) => set("priceFit", v)} />
       </Question>
 
-      <Question num={10} label="ใครจ่ายค่าที่นั่งให้เรา" error={errors.payer}>
+      <Question num={11} label="ใครจ่ายค่าที่นั่งให้เรา" error={errors.payer}>
         <ChoiceChips name="คนจ่าย" stacked options={FEEDBACK_PAYERS} value={values.payer} onChange={(v) => set("payer", v)} />
       </Question>
 
-      <Question num={11} label="จะแนะนำ SHIFT ให้เพื่อนแค่ไหน" error={errors.recommend}>
+      <Question num={12} label="จะแนะนำ SHIFT ให้เพื่อนแค่ไหน" error={errors.recommend}>
         <ScaleChips name="แนะนำเพื่อน" min={0} max={10} low="ไม่แนะนำเลย" high="แนะนำแน่นอน" value={values.recommend} onChange={(v) => set("recommend", v)} />
       </Question>
 
       <PartHeading index={3}>ต่อจากนี้</PartHeading>
 
-      <Question num={12} label="เลือกโปรเจกต์ไว้ทำต่อหนึ่งอย่าง" hint="ไม่ต้องใหญ่ เลือกอันเดียวพอ" error={errors.continueProject ?? errors.continueProjectNote}>
+      <Question num={13} label="เลือกโปรเจกต์ไว้ทำต่อหนึ่งอย่าง" hint="ไม่ต้องใหญ่ เลือกอันเดียวพอ" error={errors.continueProject ?? errors.continueProjectNote}>
         <ChoiceChips stacked name="โปรเจกต์ที่จะทำต่อ" options={FEEDBACK_CONTINUE_PROJECTS} value={values.continueProject} onChange={(v) => set("continueProject", v)} />
         {values.continueProject && values.continueProject !== "not_now" && (
           <input
@@ -249,26 +315,12 @@ export function ShiftFeedbackForm({
         )}
       </Question>
 
-      <Question num={13} label="มาเจอกันที่ AfterSHIFT ทุกสัปดาห์ วันไหนสะดวกบ้าง" hint={sessionHint} error={errors.availableDays}>
+      <Question num={14} label="มาเจอกันที่ AfterSHIFT ทุกสัปดาห์ วันไหนสะดวกบ้าง" hint={sessionHint} error={errors.availableDays}>
         <DayChips options={FEEDBACK_DAYS} none="none" value={values.availableDays} onChange={(v) => set("availableDays", toggleExclusive(values.availableDays, v, "none"))} />
       </Question>
 
-      <Question num={14} label="อยากช่วยมากกว่านั้นไหม" hint="เลือกได้หลายข้อ" error={errors.nextSteps}>
+      <Question num={15} label="อยากช่วยมากกว่านั้นไหม" hint="เลือกได้หลายข้อ" error={errors.nextSteps}>
         <CheckChips options={FEEDBACK_NEXT_STEPS} value={values.nextSteps} onChange={(v) => set("nextSteps", toggleExclusive(values.nextSteps, v, "not_now"))} />
-      </Question>
-
-      <Question num={15} label="อยากทำโปรเจกต์ต่อกับ AfterSHIFT ไหม" hint="มีโปรเจกต์แล้ว พี่ช่วยต่อยอดได้ 3 เรื่อง" error={errors.communitySignup}>
-        <ul className="mb-5 space-y-4 text-sm leading-relaxed">
-          {AFTERSHIFT_SUPPORT.map((support) => (
-            <li key={support.title}>
-              <p className="font-semibold">{support.title}</p>
-              <p className="mt-1 text-white/70">{support.detail}</p>
-            </li>
-          ))}
-        </ul>
-        <p className="mb-4 text-sm leading-relaxed text-white/70">{communityOffer.hint}</p>
-        <p className="mb-4 text-sm leading-relaxed"><Link href="/shift/alumni" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">ดูว่า AfterSHIFT ทำอะไรกัน (เปิดแท็บใหม่)</Link></p>
-        <ChoiceChips stacked name="AfterSHIFT" options={communityOffer.options} value={values.communitySignup} onChange={(v) => set("communitySignup", v)} />
       </Question>
 
       <Question

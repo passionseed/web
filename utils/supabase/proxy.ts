@@ -170,6 +170,10 @@ export async function updateSession(request: NextRequest) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone()
     url.pathname = '/login'
+    // Whiteboards and the calendar: come back to the page after signing in.
+    if (/^\/(whiteboard|calendar)(\/|$)/.test(pathname)) {
+      url.search = `?next=${encodeURIComponent(pathname + request.nextUrl.search)}`
+    }
     return copySessionCookies(supabaseResponse, NextResponse.redirect(url))
   }
 

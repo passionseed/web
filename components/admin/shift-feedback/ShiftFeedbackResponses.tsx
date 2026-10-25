@@ -1,6 +1,8 @@
 import { Badge } from "@/components/ui/badge";
 import {
+  COMMUNITY_JOIN_VALUES,
   FEEDBACK_COMMUNITY_SIGNUP,
+  FEEDBACK_COMMUNITY_SIGNUP_RETIRED,
   FEEDBACK_CONTINUE_PROJECTS,
   FEEDBACK_DAYS,
   FEEDBACK_MOTIVATIONS,
@@ -20,6 +22,7 @@ import { optionLabel } from "./FeedbackCountBars";
 
 const DAYS = FEEDBACK_DAYS.map((d) => ({ value: d.value, label: d.label }));
 const NEXT_STEPS = [...FEEDBACK_NEXT_STEPS, ...FEEDBACK_NEXT_STEPS_RETIRED];
+const COMMUNITY = [...FEEDBACK_COMMUNITY_SIGNUP, ...FEEDBACK_COMMUNITY_SIGNUP_RETIRED];
 
 const submittedAt = (iso: string) =>
   new Date(iso).toLocaleString("th-TH", {
@@ -73,8 +76,8 @@ function AlumniAnswers({ row }: { row: ShiftFeedbackRow }) {
       {row.continue_project_note && <span className="text-muted-foreground">({row.continue_project_note})</span>}
       <Badge variant="outline">วัน: {days || "–"}</Badge>
       {row.community_signup && (
-        <Badge variant={row.community_signup === "join" ? "default" : "outline"}>
-          คอมมูนิตี้: {optionLabel(FEEDBACK_COMMUNITY_SIGNUP, row.community_signup)}
+        <Badge variant={COMMUNITY_JOIN_VALUES.includes(row.community_signup) ? "default" : "outline"}>
+          คอมมูนิตี้: {optionLabel(COMMUNITY, row.community_signup)}
         </Badge>
       )}
     </div>
@@ -105,6 +108,7 @@ function ResponseCard({ row }: { row: ShiftFeedbackRow }) {
       </div>
       <dl className="grid gap-3 md:grid-cols-2">
         <Answer label="ตอนนี้ทำอะไรได้ ที่วันแรกทำไม่ได้" value={row.can_do_now} />
+        {row.hardest_moment && <Answer label="ช่วงที่ยากที่สุด และผ่านมาได้ยังไง" value={row.hardest_moment} />}
         <Answer label="ตอนที่ตัดสินใจเอง" value={row.own_decision} />
         <Answer label="ส่วนที่มีค่าที่สุด" value={row.most_valuable} />
         <Answer label="รอบหน้าควรเปลี่ยน" value={row.change_next} />

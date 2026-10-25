@@ -2,7 +2,7 @@
 
 Source of truth: `ps_app/docs/plans/2026-10-13-shift-build-spec.md`, extended by
 `ps_app/docs/plans/2026-10-14-shift-scale-spec.md` section 2 (see "v2" at the end). This file lists only
-where Lane A's database differs from or adds to those specs. Migrations: `supabase/migrations/20261014090000`
+where Lane A's database differs from or adds to those specs. Migrations: `supabase/migrations/20261014090001` (renamed from 20261014090000, which clashed with shift_feedback_alumni_ask)
 through `20261014090400`.
 
 Status: the SQL has been applied and its pgTAP tests run only on a **local vanilla PostgreSQL 18

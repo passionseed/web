@@ -14,8 +14,8 @@
   padding: 0.5rem 1.25rem 2rem;
 }
 
-/* The first question sits on the glass edge, so it needs no divider. */
-.panel form > fieldset:first-child {
+/* The first question sits under the progress line, so it needs no divider. */
+.panel form > fieldset:first-of-type {
   border-top: 0;
 }
 
@@ -100,5 +100,486 @@
 
   .submit {
     width: auto;
+  }
+}
+
+/* ---------- Calm motion and reflections ----------
+   Everything here moves slowly and once, or drifts on a long loop. Nothing
+   blinks or bounces. Reduced motion turns all of it off at the end. Easing is the shared
+   --glide curve from the space page. */
+
+/* Hero copy rises in one line at a time, then stays still. */
+.heroCalm > * {
+  animation: calm-rise 1400ms var(--glide) both;
+}
+
+.heroCalm > *:nth-child(2) { animation-delay: 120ms; }
+.heroCalm > *:nth-child(3) { animation-delay: 240ms; }
+.heroCalm > *:nth-child(4) { animation-delay: 380ms; }
+.heroCalm > *:nth-child(5) { animation-delay: 520ms; }
+
+.hudCalm {
+  animation: calm-rise 1600ms var(--glide) 640ms both;
+}
+
+@keyframes calm-rise {
+  from {
+    opacity: 0;
+    translate: 0 14px;
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    filter: blur(0);
+  }
+}
+
+/* A soft band of light drifts across the glass, like a slow reflection.
+   Two selectors so it wins over `.glass > *` from the shared sheet. */
+.panel > .sheen {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.panel > .sheen::before {
+  content: "";
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: -60%;
+  width: 55%;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    rgba(180, 220, 255, 0.05) 40%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(157, 140, 255, 0.05) 60%,
+    transparent 100%
+  );
+  filter: blur(18px);
+  animation: sheen-drift 22s ease-in-out infinite alternate;
+}
+
+/* The top edge holds a faint mirror of the sky above it. */
+.panel > .sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 9rem;
+  background: linear-gradient(180deg, rgba(127, 227, 255, 0.07), transparent);
+  opacity: 0.8;
+  animation: sky-breathe 9s ease-in-out infinite alternate;
+}
+
+@keyframes sheen-drift {
+  to {
+    translate: 290% 0;
+  }
+}
+
+@keyframes sky-breathe {
+  to {
+    opacity: 0.35;
+  }
+}
+
+/* Questions drift up as they scroll in (FeedbackMotion sets the attributes;
+   without JS nothing is hidden). */
+.panel[data-motion] form > fieldset,
+.panel[data-motion] form > p {
+  opacity: 0;
+  translate: 0 18px;
+  filter: blur(4px);
+  transition:
+    opacity 1100ms var(--glide),
+    translate 1100ms var(--glide),
+    filter 1100ms var(--glide);
+}
+
+.panel[data-motion] form > fieldset[data-in-view],
+.panel[data-motion] form > p[data-in-view] {
+  opacity: 1;
+  translate: 0 0;
+  filter: blur(0);
+}
+
+/* Progress: a thin aurora line that fills slowly and stays in reach. */
+.progress {
+  position: sticky;
+  top: 0.75rem;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin: 0.75rem -0.25rem 0;
+  padding: 0.6rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(10, 12, 32, 0.86);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 12px 30px -16px rgba(0, 0, 0, 0.9);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  backdrop-filter: blur(22px) saturate(150%);
+}
+
+.progressTrack {
+  position: relative;
+  flex: 1;
+  height: 2px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.progressFill {
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+  background: linear-gradient(90deg, var(--aurora), var(--nebula));
+  box-shadow: 0 0 12px rgba(127, 227, 255, 0.6);
+  transition: transform 900ms var(--glide);
+}
+
+.progressCount {
+  flex-shrink: 0;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--mist);
+}
+
+/* The shared chips paint riso colours inline; on glass they are re-lit as
+   soft reflective pills, so these overrides need !important. */
+.panel form [role="radio"],
+.panel form [role="checkbox"] {
+  border-radius: 14px !important;
+  background: rgba(255, 255, 255, 0.045) !important;
+  color: var(--mist) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+  transition:
+    background-color 600ms var(--glide),
+    color 600ms var(--glide),
+    box-shadow 600ms var(--glide),
+    translate 600ms var(--glide) !important;
+}
+
+.panel form [role="radio"][aria-checked="true"],
+.panel form [role="checkbox"][aria-checked="true"] {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(214, 224, 255, 0.92)) !important;
+  color: #070815 !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 12px 32px -14px rgba(127, 227, 255, 0.75) !important;
+}
+
+@media (hover: hover) {
+  .panel form [role="radio"]:hover:not([aria-checked="true"]),
+  .panel form [role="checkbox"]:hover:not([aria-checked="true"]) {
+    animation: chip-warm 900ms var(--glide) forwards;
+  }
+}
+
+@keyframes chip-warm {
+  to {
+    color: var(--star);
+    box-shadow: inset 0 0 0 1px rgba(127, 227, 255, 0.35);
+  }
+}
+
+/* Question numbers take the aurora instead of the riso orange. */
+.panel fieldset > div > span:first-child {
+  color: var(--aurora) !important;
+  font-weight: 500 !important;
+  text-shadow: 0 0 18px rgba(127, 227, 255, 0.35);
+}
+
+.panel input,
+.panel textarea {
+  transition: border-color 700ms var(--glide), box-shadow 700ms var(--glide);
+}
+
+.panel input:focus,
+.panel textarea:focus {
+  border-color: var(--aurora) !important;
+  box-shadow: 0 1px 0 0 rgba(127, 227, 255, 0.55);
+}
+
+/* The done mark breathes once, slowly. */
+.doneMark {
+  animation: calm-rise 1200ms var(--glide) both, mark-glow 4s ease-in-out 1200ms infinite alternate;
+}
+
+@keyframes mark-glow {
+  to {
+    box-shadow: 0 18px 50px -12px rgba(127, 227, 255, 0.9);
+  }
+}
+
+/* ---------- Step 2: the project community ----------
+   Shown once the answers are saved. Four cards say what the community is;
+   two large glass cards are the ways in. Everything settles in slowly. */
+
+.community {
+  padding: 1.5rem 0 0.5rem;
+}
+
+.community > * {
+  animation: calm-rise 1200ms var(--glide) both;
+}
+
+.community > *:nth-child(2) { animation-delay: 150ms; }
+.community > *:nth-child(3) { animation-delay: 250ms; }
+.community > *:nth-child(4) { animation-delay: 350ms; }
+.community > *:nth-child(n + 5) { animation-delay: 450ms; }
+
+.saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  color: var(--aurora);
+  background: rgba(127, 227, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(127, 227, 255, 0.25);
+}
+
+.community .part {
+  margin-top: 2.25rem;
+}
+
+.communityTitle {
+  margin-top: 0.75rem;
+  font-size: clamp(28px, 5vw, 40px);
+  font-weight: 500;
+  line-height: 1.3;
+  background: linear-gradient(180deg, #ffffff 35%, #b4bfe4 110%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.communityLede {
+  margin-top: 0.4rem;
+  font-size: 1.05rem;
+  color: var(--mist);
+}
+
+.inside {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+}
+
+.insideCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  padding: 1rem 1.1rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+  animation: calm-rise 1200ms var(--glide) both;
+}
+
+.insideCard:nth-child(2) { animation-delay: 520ms; }
+.insideCard:nth-child(3) { animation-delay: 640ms; }
+.insideCard:nth-child(4) { animation-delay: 760ms; }
+.insideCard:nth-child(1) { animation-delay: 400ms; }
+
+.insideIcon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  color: var(--aurora);
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.35), transparent 55%),
+    rgba(127, 227, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(127, 227, 255, 0.25);
+}
+
+.insideTitle {
+  display: block;
+  font-weight: 600;
+}
+
+.insideLine {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--mist);
+}
+
+.peek {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: var(--aurora);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.waysTitle {
+  margin-top: 2.75rem;
+  font-size: 1.35rem;
+  font-weight: 500;
+}
+
+.waysAnchor {
+  margin-top: 0.35rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--faint);
+}
+
+.ways {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 1.25rem;
+}
+
+.way {
+  display: grid;
+  justify-items: start;
+  padding: 1.25rem 1.35rem;
+  border-radius: 22px;
+  text-align: left;
+  color: var(--star);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  transition:
+    background-color 700ms var(--glide),
+    box-shadow 700ms var(--glide),
+    translate 700ms var(--glide);
+}
+
+.way[aria-checked="true"] {
+  translate: 0 -2px;
+  background: linear-gradient(180deg, rgba(127, 227, 255, 0.16), rgba(157, 140, 255, 0.08));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 0 0 1.5px rgba(127, 227, 255, 0.7),
+    0 18px 44px -20px rgba(127, 227, 255, 0.8);
+}
+
+.wayPrice {
+  font-family: var(--latin), var(--font-kodchasan);
+  font-size: 2.25rem;
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.wayUnit {
+  margin-top: 0.15rem;
+  font-size: 0.95rem;
+  color: var(--aurora);
+}
+
+.wayLine {
+  margin-top: 0.75rem;
+  line-height: 1.6;
+}
+
+.wayNote {
+  margin-top: 0.35rem;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--faint);
+}
+
+.notYet {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.notYetChip {
+  min-height: 2.75rem;
+  padding: 0 1.1rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  color: var(--mist);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  transition:
+    color 600ms var(--glide),
+    box-shadow 600ms var(--glide);
+}
+
+.notYetChip[aria-checked="true"] {
+  color: var(--star);
+  box-shadow: inset 0 0 0 1.5px rgba(127, 227, 255, 0.7);
+}
+
+.way:focus-visible,
+.notYetChip:focus-visible,
+.skip:focus-visible {
+  outline: 2px solid var(--aurora);
+  outline-offset: 3px;
+}
+
+.retry {
+  margin-top: 1.25rem;
+  font-size: 0.875rem;
+  color: var(--flare);
+}
+
+.skip {
+  display: block;
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  color: var(--faint);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+@media (min-width: 640px) {
+  .inside {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ways {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heroCalm > *,
+  .hudCalm,
+  .doneMark,
+  .community > *,
+  .insideCard,
+  .panel > .sheen::before,
+  .panel > .sheen::after {
+    animation: none !important;
+  }
+
+  .panel[data-motion] form > fieldset,
+  .panel[data-motion] form > p {
+    opacity: 1;
+    translate: none;
+    filter: none;
+    transition: none;
+  }
+
+  .progressFill,
+  .panel form [role="radio"],
+  .panel form [role="checkbox"],
+  .way,
+  .notYetChip {
+    transition: none !important;
   }
 }

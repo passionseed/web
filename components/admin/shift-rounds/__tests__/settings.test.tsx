@@ -122,6 +122,7 @@ describe("SHIFT format fields (v2)", () => {
       "SHIFT[0]",
       "SHIFT[1]",
       "SHIFT[2]",
+      "SHIFT[3]",
     ]);
     const missions = within(screen.getByRole("list", { name: "ภารกิจของรอบ" })).getAllByRole("listitem");
     expect(missions).toHaveLength(9);
