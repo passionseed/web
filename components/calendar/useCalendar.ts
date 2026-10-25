@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import type { BlockInput, CalendarBlock } from "@/lib/calendar/core";
+import { DEFAULT_SHARE_TEMPLATE, type ShareSettings } from "@/lib/calendar/notify";
 
 async function call<T = unknown>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, { ...init, headers: { "Content-Type": "application/json", ...init?.headers } });
@@ -13,8 +14,10 @@ async function call<T = unknown>(path: string, init?: RequestInit): Promise<T> {
 
 export type CalendarApi = {
   blocks: CalendarBlock[] | null;
+  share: ShareSettings;
   reload: () => Promise<void>;
-  create: (input: BlockInput) => Promise<boolean>;
+  /** Resolves to the new block id, or null. */
+  create: (input: BlockInput) => Promise<string | null>;
   update: (id: string, input: BlockInput) => Promise<boolean>;
   remove: (id: string) => Promise<boolean>;
   join: (id: string, joined: boolean) => Promise<void>;
@@ -26,11 +29,13 @@ export type CalendarApi = {
  */
 export function useCalendar(from: string, to: string, onChanged?: () => void): CalendarApi {
   const [blocks, setBlocks] = useState<CalendarBlock[] | null>(null);
+  const [share, setShare] = useState<ShareSettings>({ igGroupUrl: null, template: DEFAULT_SHARE_TEMPLATE });
 
   const reload = useCallback(async () => {
     try {
-      const data = await call<{ blocks: CalendarBlock[] }>(`/api/calendar?from=${from}&to=${to}`);
+      const data = await call<{ blocks: CalendarBlock[]; share: ShareSettings }>(`/api/calendar?from=${from}&to=${to}`);
       setBlocks(data.blocks);
+      setShare(data.share);
     } catch (error) {
       setBlocks((b) => b ?? []);
       toast.error(error instanceof Error ? error.message : "Could not load the calendar");
@@ -57,8 +62,15 @@ export function useCalendar(from: string, to: string, onChanged?: () => void): C
 
   return {
     blocks,
+    share,
     reload,
-    create: (input) => run(() => call("/api/calendar", { method: "POST", body: JSON.stringify(input) }), "เพิ่มลงปฏิทินแล้ว"),
+    create: async (input) => {
+      let id: string | null = null;
+      const ok = await run(async () => {
+        id = (await call<{ id: string }>("/api/calendar", { method: "POST", body: JSON.stringify(input) })).id;
+      }, "เพิ่มลงปฏิทินแล้ว");
+      return ok ? id : null;
+    },
     update: (id, input) => run(() => call(`/api/calendar/${id}`, { method: "PATCH", body: JSON.stringify(input) }), "บันทึกแล้ว"),
     remove: (id) => run(() => call(`/api/calendar/${id}`, { method: "DELETE" }), "ลบแล้ว"),
     join: async (id, joined) => {

@@ -17,12 +17,15 @@ export function AgendaList({
   calendar,
   onPlace,
   attachBoard,
+  initialOpen,
 }: {
   calendar: CalendarApi;
   onPlace?: (block: CalendarBlock) => void;
   attachBoard?: { id: string; title: string };
+  /** A block to show opened, e.g. the one just added (shown with the share nudge). */
+  initialOpen?: string | null;
 }) {
-  const [open, setOpen] = useState<string | null>(null);
+  const [open, setOpen] = useState<string | null>(initialOpen ?? null);
   const [editing, setEditing] = useState<string | null>(null);
   const today = bangkokToday();
   const blocks = calendar.blocks ?? [];
@@ -56,6 +59,8 @@ export function AgendaList({
                       </button>
                       <BlockDetails
                         block={b}
+                        share={calendar.share}
+                        fresh={b.id === initialOpen}
                         onJoin={(joined) => void calendar.join(b.id, joined)}
                         onEdit={() => setEditing(b.id)}
                         onDelete={() => void calendar.remove(b.id)}

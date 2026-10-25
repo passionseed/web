@@ -22,6 +22,13 @@ export const dynamic = "force-dynamic";
 
 /** Whiteboard links land here when signed out; say so, and show the board for share links. */
 async function loginContext(next: string): Promise<LoginContext | undefined> {
+  if (next === "/calendar" || next.startsWith("/calendar?")) {
+    return {
+      tag: "Community calendar",
+      title: ["เข้าสู่ระบบ", "แล้วดูนัดของเพื่อน"],
+      description: "เข้าสู่ระบบแล้วจะพากลับไปที่นัดนี้ทันที กด \"ไปด้วย\" ให้เพื่อนรู้ว่าเราจะมา ครั้งแรกก็ใช้ปุ่มเดียวกันได้เลย",
+    };
+  }
   if (next !== "/whiteboard" && !next.startsWith("/whiteboard/")) return undefined;
   const token = next.match(/^\/whiteboard\/join\/([0-9a-f]{32})/)?.[1];
   const board = token ? await previewByToken(token).catch(() => null) : null;

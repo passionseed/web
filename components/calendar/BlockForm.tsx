@@ -29,6 +29,7 @@ export function BlockForm({
   hour?: number;
   /** Offer "attach this board" (only to the board owner). */
   attachBoard?: { id: string; title: string };
+  /** Resolves true to close the form. */
   onSubmit: (input: BlockInput) => Promise<boolean>;
   onCancel: () => void;
 }) {
