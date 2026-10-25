@@ -40,6 +40,14 @@ describe("notify settings", () => {
     expect(parsed.success).toBe(true);
   });
 
+  it("stores canary and PTB webhooks as discord.com", () => {
+    const parsed = notifySettingsSchema.safeParse({
+      ...base,
+      discordWebhookUrl: "https://canary.discord.com/api/webhooks/123/abc",
+    });
+    expect(parsed.success && parsed.data.discordWebhookUrl).toBe("https://discord.com/api/webhooks/123/abc");
+  });
+
   it("rejects invite links, other URLs, and templates without a link", () => {
     expect(notifySettingsSchema.safeParse({ ...base, igGroupUrl: "https://ig.me/j/abc" }).success).toBe(false);
     expect(notifySettingsSchema.safeParse({ ...base, discordWebhookUrl: "https://evil.example/hook" }).success).toBe(false);

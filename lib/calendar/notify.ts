@@ -22,7 +22,10 @@ export const REMIND_CHOICES = [
 ] as const;
 
 export const IG_THREAD = /^https:\/\/(www\.)?instagram\.com\/direct\/t\/\d+\/?$/;
-export const DISCORD_WEBHOOK = /^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\/\d+\/[A-Za-z0-9_-]+$/;
+export const DISCORD_WEBHOOK = /^https:\/\/((canary|ptb)\.)?(discord\.com|discordapp\.com)\/api\/webhooks\/\d+\/[A-Za-z0-9_-]+$/;
+
+/** Canary and PTB copy the same webhook on their own host; store the plain discord.com one. */
+export const normalizeDiscordWebhook = (url: string) => url.replace(/^https:\/\/(canary|ptb)\./, "https://");
 
 /** What the browser may know: no webhook URL, only whether one is set. */
 export type ShareSettings = { igGroupUrl: string | null; template: string };
@@ -53,6 +56,7 @@ export const notifySettingsSchema = z.object({
     .string()
     .trim()
     .refine((v) => v === "" || DISCORD_WEBHOOK.test(v), "That isn't a Discord webhook URL")
+    .transform(normalizeDiscordWebhook)
     .optional(),
   discordOnCreate: z.boolean(),
   remindMinutes: z.array(z.number().int().min(0).max(10080)).max(5),
