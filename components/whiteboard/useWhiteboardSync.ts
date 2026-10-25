@@ -47,7 +47,7 @@ export type PresentUser = {
 };
 
 /** Extra channel events that components can send and listen to. */
-export type BoardEvent = "emote" | "comments" | "timer" | "versions";
+export type BoardEvent = "emote" | "comments" | "timer" | "versions" | "plugin";
 
 type Me = { id: string; name: string; avatarUrl: string | null };
 type Elements = readonly OrderedExcalidrawElement[];
@@ -73,7 +73,7 @@ const CURSOR_MS = 40;
 const VIEWPORT_MS = 80;
 const SAVE_DEBOUNCE_MS = 1200;
 const THUMBNAIL_MS = 20_000;
-const EXTRA_EVENTS: BoardEvent[] = ["emote", "comments", "timer", "versions"];
+const EXTRA_EVENTS: BoardEvent[] = ["emote", "comments", "timer", "versions", "plugin"];
 
 const backupKey = (boardId: string) => `whiteboard-backup:${boardId}`;
 

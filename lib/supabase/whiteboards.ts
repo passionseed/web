@@ -75,7 +75,7 @@ function fallbackName(user: User): string {
   return (user.user_metadata?.full_name as string | undefined) ?? user.email?.split("@")[0] ?? "Someone";
 }
 
-async function profilesById(ids: string[]): Promise<Record<string, { name: string; avatarUrl: string | null }>> {
+export async function profilesById(ids: string[]): Promise<Record<string, { name: string; avatarUrl: string | null }>> {
   if (ids.length === 0) return {};
   const { data, error } = await db().from("profiles").select("id, full_name, username, avatar_url").in("id", ids);
   if (error) throw error;

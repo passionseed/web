@@ -296,3 +296,28 @@ button.wb-pill:enabled:hover,
     transition-duration: 0ms !important;
   }
 }
+
+/* Plugin windows (components/whiteboard/plugins): the same warm glass as the pills. */
+.wb-window {
+  border-radius: 1rem;
+  border: 1px solid var(--wb-hairline);
+  background: var(--wb-glass);
+  backdrop-filter: blur(22px) saturate(1.08);
+  -webkit-backdrop-filter: blur(22px) saturate(1.08);
+  box-shadow: var(--wb-shadow), 0 24px 48px -24px rgba(60, 35, 10, 0.35);
+  color: var(--wb-text);
+  font-family: var(--wb-font);
+  line-height: 1.5;
+}
+.wb-window__bar {
+  border-bottom: 1px solid var(--wb-hairline);
+}
+.wb-window input,
+.wb-window textarea,
+.wb-window select {
+  color: inherit;
+  color-scheme: light;
+}
+.whiteboard-room:has(.excalidraw.theme--dark) .wb-window :is(input, textarea, select) {
+  color-scheme: dark;
+}
