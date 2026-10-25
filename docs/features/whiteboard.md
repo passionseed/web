@@ -53,6 +53,22 @@ Excalidraw. First used for the SHIFT High community session on 2026-10-24.
   couldn't load"). Signed-out visits redirect in `utils/supabase/proxy.ts`, keeping `?next=`.
   `/login` shows the board being joined when `next` is a whiteboard path.
 
+## Board apps (plugins) and the community calendar
+
+- **Apps menu (แอป):** board windows like FigJam plugins, in `components/whiteboard/plugins/`.
+  A plugin is one entry in `registry.tsx` (`BoardPlugin`: id, name, icon, size, Component).
+  `PluginHost` renders the open ones as draggable windows; which are open and where is kept
+  in localStorage per board. A plugin gets the Excalidraw API, the board, and
+  `broadcast` / `onBroadcast` over the board's realtime channel (event `plugin`, filtered by
+  plugin id), so it can tell everyone's copy to refresh. Viewers can't broadcast (RLS).
+- **Calendar plugin and `/calendar`:** community time blocks (`calendar_blocks`,
+  `calendar_block_people`, migration `20261025140000_calendar_blocks.sql`). Anyone signed in
+  adds blocks and says "ไปด้วย"; everyone signed in sees every block and who joined (a group
+  space). Only the creator or an admin edits. Only a board's owner can attach their board's
+  share link to a block. The weekly SHIFT alumni session and the viewer's alumni team meetings
+  are merged in read-only. Times are Bangkok. Code: `lib/calendar/core.ts` (schema, Bangkok
+  time, week layout), `lib/supabase/calendar.ts`, `app/api/calendar/`, `components/calendar/`.
+
 ## Excalidraw gotchas (0.18)
 
 - `onUserFollow` and `onScrollChange` are API subscriptions

@@ -1,7 +1,7 @@
 "use client";
 
 import { formatDistanceToNow } from "date-fns";
-import { Copy, Loader2, MoreHorizontal, Pencil, PenLine, Plus, Search, Trash2, Users } from "lucide-react";
+import { CalendarDays, Copy, Loader2, MoreHorizontal, Pencil, PenLine, Plus, Search, Trash2, Users } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -112,6 +112,12 @@ export function WhiteboardList({ boards: initial }: { boards: WhiteboardSummary[
             <p className="mt-1 text-sm text-white/60">วาด คิด วางแผนกับเพื่อนแบบเรียลไทม์ บันทึกให้อัตโนมัติ</p>
           </div>
           <div className="flex gap-2">
+            <Link
+              href="/calendar"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 text-sm text-white/80 hover:border-white/30 hover:text-white"
+            >
+              <CalendarDays className="h-4 w-4" /> ปฏิทิน
+            </Link>
             <button
               type="button"
               onClick={() => setGalleryOpen(true)}

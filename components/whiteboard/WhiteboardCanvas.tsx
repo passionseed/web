@@ -30,6 +30,8 @@ import { CommentsLayer } from "./CommentsLayer";
 import { EmoteLayer, EmotePicker, useEmotes } from "./EmoteLayer";
 import { insertElements, insertSkeletons } from "./insert";
 import { KIT_SIDEBAR, KitSidebar } from "./KitSidebar";
+import { PluginHost, usePluginWindows } from "./plugins/PluginHost";
+import { PluginMenu } from "./plugins/PluginMenu";
 import { ShareDialog } from "./ShareDialog";
 import { TimerWidget } from "./TimerWidget";
 import { useComments } from "./useComments";
@@ -84,6 +86,7 @@ export default function WhiteboardCanvas({
   const [openThread, setOpenThread] = useState<string | null>(null);
   const [showResolved, setShowResolved] = useState(false);
   const [showAuthors, setShowAuthors] = useState(false);
+  const windows = usePluginWindows(board.id);
   const [authorNames, setAuthorNames] = useState<Record<string, string>>({});
   const importInput = useRef<HTMLInputElement>(null);
   const theme = useRef<Theme>(initialData.appState.theme);
@@ -196,6 +199,7 @@ export default function WhiteboardCanvas({
             )}
             <TimerWidget boardId={board.id} initial={board.timer} canControl={editable} channel={channel} />
             <SaveBadge state={sync.saveState} connected={sync.connected} readOnly={!editable} />
+            <PluginMenu open={windows.open} onToggle={windows.toggle} />
             <Sidebar.Trigger name={KIT_SIDEBAR} tab={editable ? "create" : "comments"} icon={<PanelRight size={16} />} title="Board kit" />
             <LiveCollaborationTrigger isCollaborating={sync.connected} onSelect={() => setShareOpen(true)} />
           </div>
@@ -312,6 +316,13 @@ export default function WhiteboardCanvas({
           />
           <EmoteLayer api={api} bursts={emotes.bursts} />
           {me.isAdmin && showAuthors && <AuthorsLayer api={api} nameOf={nameOf} />}
+          <PluginHost
+            api={api}
+            board={{ id: board.id, title, role: board.role }}
+            editable={editable}
+            channel={channel}
+            windows={windows}
+          />
         </>
       )}
 
