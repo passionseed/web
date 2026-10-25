@@ -321,3 +321,25 @@ button.wb-pill:enabled:hover,
 .whiteboard-room:has(.excalidraw.theme--dark) .wb-window :is(input, textarea, select) {
   color-scheme: dark;
 }
+
+/* Apps placed on the canvas (plugins/BoardWidget.tsx). */
+.wb-widget {
+  border-radius: 1rem;
+  border: 1px solid var(--wb-hairline);
+  background: var(--wb-glass);
+  box-shadow: var(--wb-shadow);
+  color: var(--wb-text);
+  font-family: var(--wb-font);
+  line-height: 1.5;
+}
+.wb-widget :is(input, textarea, select) {
+  color: inherit;
+  color-scheme: light;
+}
+.whiteboard-room:has(.excalidraw.theme--dark) .wb-widget :is(input, textarea, select) {
+  color-scheme: dark;
+}
+/* Our widgets draw their own card: drop Excalidraw's embed frame around them. */
+.whiteboard-room .excalidraw__embeddable__outer:has(> .wb-widget) {
+  padding: 0 !important;
+}

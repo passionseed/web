@@ -48,3 +48,22 @@ export function insertSkeletons(
 ): ExcalidrawElement[] {
   return insertElements(api, convertToExcalidrawElements(skeletons), at);
 }
+
+/** Places a board widget (an embeddable element that renders one of our apps) in the middle of the screen. */
+export function insertWidget(api: ExcalidrawImperativeAPI, link: string, size: { width: number; height: number }) {
+  const [frame] = convertToExcalidrawElements([
+    {
+      type: "rectangle",
+      x: 0,
+      y: 0,
+      width: size.width,
+      height: size.height,
+      strokeColor: "transparent",
+      backgroundColor: "transparent",
+      roughness: 0,
+      roundness: { type: 3 },
+    },
+  ]);
+  // Excalidraw doesn't export newEmbeddableElement; an embeddable is a rectangle with a link.
+  return insertElements(api, [{ ...frame, type: "embeddable", link } as unknown as ExcalidrawElement]);
+}

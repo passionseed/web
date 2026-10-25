@@ -16,8 +16,10 @@ export type BoardPluginProps = {
 };
 
 /**
- * A board window, like a FigJam plugin: opened from the Apps menu, floats
- * over the canvas, can be dragged, and is remembered per board in this browser.
+ * A board app, like a FigJam plugin: opened from the Apps menu as a window that
+ * floats over the canvas (dragged, remembered per board in this browser), and,
+ * when it has a widget size, placed on the canvas itself as a widget that
+ * everyone sees and that moves and zooms with the board.
  */
 export type BoardPlugin = {
   id: string;
@@ -27,5 +29,7 @@ export type BoardPlugin = {
   /** Window size in px. */
   width: number;
   height: number;
+  /** Size on the canvas when placed as a widget; leave out for window-only apps. */
+  widget?: { width: number; height: number };
   Component: ComponentType<BoardPluginProps>;
 };

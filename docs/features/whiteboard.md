@@ -61,6 +61,13 @@ Excalidraw. First used for the SHIFT High community session on 2026-10-24.
   in localStorage per board. A plugin gets the Excalidraw API, the board, and
   `broadcast` / `onBroadcast` over the board's realtime channel (event `plugin`, filtered by
   plugin id), so it can tell everyone's copy to refresh. Viewers can't broadcast (RLS).
+- **Widgets on the canvas:** an app with a `widget` size can also be placed on the board,
+  where everyone sees it and it moves and zooms with the canvas (like a FigJam widget). It is
+  an Excalidraw `embeddable` element whose link is `lib/whiteboard/widgets.ts`'s
+  `https://www.passionseed.org/whiteboard/widget/<id>`; `validateEmbeddable` allows that link
+  and `renderEmbeddable` draws `plugins/BoardWidget.tsx` instead of an iframe. Click its middle
+  to use it (Excalidraw's embed activation). Editors place widgets from the Apps menu; the
+  window icon next to an app opens it as a private window instead.
 - **Calendar plugin and `/calendar`:** community time blocks (`calendar_blocks`,
   `calendar_block_people`, migration `20261025140000_calendar_blocks.sql`). Anyone signed in
   adds blocks and says "ไปด้วย"; everyone signed in sees every block and who joined (a group
