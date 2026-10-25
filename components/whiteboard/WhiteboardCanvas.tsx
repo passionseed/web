@@ -4,6 +4,7 @@ import "@excalidraw/excalidraw/index.css";
 import "./whiteboard.css";
 
 import {
+  convertToExcalidrawElements,
   Excalidraw,
   Footer,
   LiveCollaborationTrigger,
@@ -21,6 +22,7 @@ import { toast } from "sonner";
 
 import type { WhiteboardDetail } from "@/lib/supabase/whiteboards";
 import { canEdit, type LinkAccess } from "@/lib/whiteboard/core";
+import { CARD_KINDS, CARDS, cardSkeleton } from "@/lib/whiteboard/cards";
 import { templateById } from "@/lib/whiteboard/templates";
 import { widgetIdOf, widgetLink } from "@/lib/whiteboard/widgets";
 
@@ -52,6 +54,17 @@ function preloadThaiFonts() {
   for (const family of THAI_FONTS) void document.fonts.load(`20px "${family}"`, "ก").catch(() => undefined);
 }
 
+/** Room cards in the Library panel, so people can drag them onto any board. */
+function cardLibrary() {
+  return CARD_KINDS.map((kind) => ({
+    id: `passionseed-card-${kind}`,
+    status: "published" as const,
+    name: CARDS[kind].title,
+    created: 0,
+    elements: convertToExcalidrawElements([cardSkeleton(kind)]),
+  }));
+}
+
 /** The live editor: Excalidraw plus sync, stickies, comments, reactions, timer, history and sharing. */
 export default function WhiteboardCanvas({
   board,
@@ -69,7 +82,7 @@ export default function WhiteboardCanvas({
   );
   const initialData = useMemo(() => {
     const theme = (typeof window !== "undefined" && (localStorage.getItem(THEME_KEY) as Theme | null)) || "light";
-    return { elements: initialElements, appState: { theme }, scrollToContent: true };
+    return { elements: initialElements, appState: { theme }, scrollToContent: true, libraryItems: cardLibrary() };
   }, [initialElements]);
 
   const sync = useWhiteboardSync({ boardId: board.id, role: board.role, me, initialElements });

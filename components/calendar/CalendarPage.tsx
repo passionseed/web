@@ -89,6 +89,7 @@ export function CalendarPage({ monday, initialBlock }: { monday: string; initial
                 <BlockForm
                   key={`${panel.date}-${panel.hour}`}
                   date={panel.date}
+                  rooms={calendar.share.rooms}
                   hour={panel.hour}
                   onSubmit={async (input) => {
                     const id = await calendar.create(input);
@@ -103,7 +104,7 @@ export function CalendarPage({ monday, initialBlock }: { monday: string; initial
                   onCancel={() => setPanel(null)}
                 />
               ) : panel?.kind === "edit" && current ? (
-                <BlockForm key={current.id} block={current} onSubmit={(input) => calendar.update(current.id, input)} onCancel={() => setPanel(null)} />
+                <BlockForm key={current.id} block={current} rooms={calendar.share.rooms} onSubmit={(input) => calendar.update(current.id, input)} onCancel={() => setPanel(null)} />
               ) : current ? (
                 <BlockDetails
                   block={current}

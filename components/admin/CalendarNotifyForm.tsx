@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { bangkokInstant } from "@/lib/calendar/core";
-import { REMIND_CHOICES, fillTemplate, type NotifySettingsView } from "@/lib/calendar/notify";
+import { REMIND_CHOICES, fillTemplate, type NotifySettingsView, type VoiceRoom } from "@/lib/calendar/notify";
 
 const SAMPLE = {
   title: "นั่งทำโปรเจกต์ด้วยกัน",
@@ -25,6 +25,8 @@ export function CalendarNotifyForm({ initial }: { initial: NotifySettingsView })
   const [webhook, setWebhook] = useState<string | undefined>(undefined);
   const [onCreate, setOnCreate] = useState(initial.discordOnCreate);
   const [remind, setRemind] = useState<number[]>(initial.remindMinutes);
+  const [guildId, setGuildId] = useState(initial.guildId ?? "");
+  const [rooms, setRooms] = useState<VoiceRoom[]>(initial.rooms);
   const [configured, setConfigured] = useState(initial.discordConfigured);
   const [saving, startSave] = useTransition();
   const [testing, startTest] = useTransition();
@@ -37,6 +39,8 @@ export function CalendarNotifyForm({ initial }: { initial: NotifySettingsView })
         discordWebhookUrl: webhook,
         discordOnCreate: onCreate,
         remindMinutes: remind,
+        guildId,
+        voiceRooms: rooms,
       });
       if (!result.ok) return void toast.error(result.error);
       if (webhook !== undefined) setConfigured(webhook !== "");
@@ -143,6 +147,49 @@ export function CalendarNotifyForm({ initial }: { initial: NotifySettingsView })
             ))}
           </div>
           <p className="text-xs text-muted-foreground">Checked every 5 minutes, so a reminder can be up to 5 minutes late.</p>
+        </div>
+      </section>
+
+      <section className="space-y-3 rounded-lg border p-4">
+        <div>
+          <h3 className="font-medium">Voice rooms</h3>
+          <p className="text-xs text-muted-foreground">
+            People pick one when they add a block. The block, its reminders and the IG message then link straight into that
+            Discord voice channel, next to the block&apos;s room board. Turn on Developer Mode in Discord (Settings →
+            Advanced), then right-click the server or channel → Copy ID.
+          </p>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="guild">Server ID</Label>
+          <Input id="guild" value={guildId} onChange={(e) => setGuildId(e.target.value)} placeholder="123456789012345678" />
+        </div>
+        <div className="space-y-2">
+          {rooms.map((room, i) => (
+            <div key={i} className="flex gap-2">
+              <Input
+                value={room.name}
+                onChange={(e) => setRooms((r) => r.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))}
+                placeholder="ห้อง 1"
+                className="w-40"
+              />
+              <Input
+                value={room.channelId}
+                onChange={(e) => setRooms((r) => r.map((x, j) => (j === i ? { ...x, channelId: e.target.value } : x)))}
+                placeholder="Voice channel ID"
+              />
+              <Button type="button" variant="outline" onClick={() => setRooms((r) => r.filter((_, j) => j !== i))}>
+                Remove
+              </Button>
+            </div>
+          ))}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setRooms((r) => [...r, { name: `ห้อง ${r.length + 1}`, channelId: "" }])}
+          >
+            Add a voice room
+          </Button>
         </div>
       </section>
 

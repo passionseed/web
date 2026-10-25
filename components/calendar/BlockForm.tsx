@@ -6,6 +6,9 @@ import { Loader2 } from "lucide-react";
 import { useState } from "react";
 
 import { BLOCK_KINDS, KIND_STYLE, bangkokParts, type BlockInput, type CalendarBlock } from "@/lib/calendar/core";
+import type { VoiceRoom } from "@/lib/calendar/notify";
+
+import type { BlockFormValue } from "./useCalendar";
 import { bangkokToday } from "@/lib/content/shift-cohort";
 
 const field =
@@ -19,6 +22,7 @@ export function BlockForm({
   date,
   hour,
   attachBoard,
+  rooms = [],
   onSubmit,
   onCancel,
 }: {
@@ -29,8 +33,10 @@ export function BlockForm({
   hour?: number;
   /** Offer "attach this board" (only to the board owner). */
   attachBoard?: { id: string; title: string };
+  /** Community voice rooms to meet in (from /admin/calendar). */
+  rooms?: VoiceRoom[];
   /** Resolves true to close the form. */
-  onSubmit: (input: BlockInput) => Promise<boolean>;
+  onSubmit: (input: BlockFormValue) => Promise<boolean>;
   onCancel: () => void;
 }) {
   const start = block ? bangkokParts(block.startsAt) : null;
@@ -44,6 +50,9 @@ export function BlockForm({
     note: block?.note ?? "",
   });
   const [attach, setAttach] = useState(Boolean(attachBoard && !block));
+  const [roomId, setRoomId] = useState(block?.room?.channelId ?? "");
+  // A new block gets its own room board unless it is tied to the board it was made on.
+  const [roomBoard, setRoomBoard] = useState(!block);
   const [busy, setBusy] = useState(false);
   const set = (key: keyof typeof form) => (e: { target: { value: string } }) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
@@ -54,7 +63,12 @@ export function BlockForm({
       onSubmit={async (e) => {
         e.preventDefault();
         setBusy(true);
-        const ok = await onSubmit({ ...form, ...(attachBoard ? { whiteboardId: attach ? attachBoard.id : null } : {}) });
+        const ok = await onSubmit({
+          ...form,
+          ...(attachBoard ? { whiteboardId: attach ? attachBoard.id : null } : {}),
+          ...(rooms.length ? { roomChannelId: roomId || null } : {}),
+          wantsRoomBoard: !block && roomBoard && !(attachBoard && attach),
+        });
         setBusy(false);
         if (ok) onCancel();
       }}
@@ -80,6 +94,22 @@ export function BlockForm({
       </div>
       <input maxLength={200} value={form.place} onChange={set("place")} placeholder="ที่ไหน เช่น Discord ห้อง 2" className={field} />
       <textarea maxLength={1000} rows={2} value={form.note} onChange={set("note")} placeholder="รายละเอียด (ไม่ใส่ก็ได้)" className={field} />
+      {rooms.length > 0 && (
+        <select value={roomId} onChange={(e) => setRoomId(e.target.value)} className={field}>
+          <option value="">ไม่ใช้ห้อง Discord</option>
+          {rooms.map((r) => (
+            <option key={r.channelId} value={r.channelId}>
+              🔊 {r.name}
+            </option>
+          ))}
+        </select>
+      )}
+      {!block && !(attachBoard && attach) && (
+        <label className="flex items-start gap-2 text-xs opacity-80">
+          <input type="checkbox" className="mt-0.5" checked={roomBoard} onChange={(e) => setRoomBoard(e.target.checked)} />
+          <span>สร้างบอร์ดห้อง: มาถึง · ช่วยกัน · ปิดท้าย พร้อมการ์ดคำถาม</span>
+        </label>
+      )}
       {attachBoard && (
         <label className="flex items-center gap-2 text-xs opacity-80">
           <input type="checkbox" checked={attach} onChange={(e) => setAttach(e.target.checked)} />

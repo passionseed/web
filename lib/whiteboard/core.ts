@@ -34,7 +34,7 @@ export const titleSchema = z
   .max(120, "Keep the name under 120 characters");
 
 /** An Excalidraw element as far as the server cares: an id and a version. */
-const elementSchema = z
+export const elementSchema = z
   .object({ id: z.string().min(1).max(100), version: z.number().int().nonnegative() })
   .passthrough();
 

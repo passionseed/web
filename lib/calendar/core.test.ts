@@ -18,6 +18,7 @@ const block = (id: string, date: string, start: string, end: string): CalendarBl
   place: null,
   note: null,
   boardUrl: null,
+  room: null,
   createdBy: null,
   people: [],
   joined: false,

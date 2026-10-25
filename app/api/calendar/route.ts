@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { addDays, weekStart } from "@/lib/calendar/core";
-import { calendarViewer, mayAttachBoard } from "@/lib/calendar/route-guard";
+import { calendarViewer, knownRoom, mayAttachBoard } from "@/lib/calendar/route-guard";
 import { bangkokToday } from "@/lib/content/shift-cohort";
 import { safeServerError } from "@/lib/security/route-guards";
 import { blockColumns, createBlock, listBlocks } from "@/lib/supabase/calendar";
@@ -37,8 +37,11 @@ export async function POST(request: Request) {
   if (!(await mayAttachBoard(guard.viewer, parsed.columns))) {
     return NextResponse.json({ error: "Only the board owner can attach this board" }, { status: 403 });
   }
+  if (!(await knownRoom(parsed.columns.room_channel_id))) {
+    return NextResponse.json({ error: "Pick one of the community voice rooms" }, { status: 422 });
+  }
   try {
-    const id = await createBlock(guard.viewer, parsed.columns);
+    const id = await createBlock(guard.viewer, parsed.columns, parsed.roomBoard);
     const c = parsed.columns as { title: string; starts_at: string; ends_at: string; place: string | null };
     await announceBlock({ id, title: c.title, startsAt: c.starts_at, endsAt: c.ends_at, place: c.place }, guard.viewer.name);
     return NextResponse.json({ id }, { status: 201 });

@@ -11,7 +11,7 @@ import { bangkokParts, shortThaiDay, timeRange, type CalendarBlock } from "./cor
 
 export const SITE_ORIGIN = "https://www.passionseed.org";
 
-export const DEFAULT_SHARE_TEMPLATE = "📅 {title}\n🕖 {when}\n📍 {place}\nใครไปด้วยกดตรงนี้ 👉 {link}";
+export const DEFAULT_SHARE_TEMPLATE = "📅 {title}\n🕖 {when}\n📍 {place}\n🔊 {room}\nใครไปด้วยกดตรงนี้ 👉 {link}";
 
 /** Reminder choices offered in settings, in minutes before the start. */
 export const REMIND_CHOICES = [
@@ -27,10 +27,16 @@ export const DISCORD_WEBHOOK = /^https:\/\/((canary|ptb)\.)?(discord\.com|discor
 /** Canary and PTB copy the same webhook on their own host; store the plain discord.com one. */
 export const normalizeDiscordWebhook = (url: string) => url.replace(/^https:\/\/(canary|ptb)\./, "https://");
 
+export type VoiceRoom = { name: string; channelId: string };
+
 /** What the browser may know: no webhook URL, only whether one is set. */
-export type ShareSettings = { igGroupUrl: string | null; template: string };
+export type ShareSettings = { igGroupUrl: string | null; template: string; rooms: VoiceRoom[] };
+
+/** Opens a Discord voice channel in the app or browser. */
+export const discordChannelUrl = (guildId: string, channelId: string) => `https://discord.com/channels/${guildId}/${channelId}`;
 
 export type NotifySettingsView = ShareSettings & {
+  guildId: string | null;
   discordConfigured: boolean;
   /** Last 4 characters, so admins can tell which webhook is set. */
   discordHint: string | null;
@@ -59,6 +65,19 @@ export const notifySettingsSchema = z.object({
     .transform(normalizeDiscordWebhook)
     .optional(),
   discordOnCreate: z.boolean(),
+  guildId: z
+    .string()
+    .trim()
+    .refine((v) => v === "" || /^\d{5,25}$/.test(v), "Server ID is a long number (right-click the server → Copy Server ID)")
+    .transform((v) => v || null),
+  voiceRooms: z
+    .array(
+      z.object({
+        name: z.string().trim().min(1, "Name each room").max(40),
+        channelId: z.string().trim().regex(/^\d{5,25}$/, "Channel ID is a long number (right-click the voice channel → Copy Channel ID)"),
+      }),
+    )
+    .max(20),
   remindMinutes: z.array(z.number().int().min(0).max(10080)).max(5),
 });
 
@@ -74,13 +93,14 @@ export function blockWhen(block: Pick<CalendarBlock, "startsAt" | "endsAt">): st
 /** The share message for one block. Lines whose only content was an empty placeholder are dropped. */
 export function fillTemplate(
   template: string,
-  block: Pick<CalendarBlock, "title" | "startsAt" | "endsAt" | "place">,
+  block: Pick<CalendarBlock, "title" | "startsAt" | "endsAt" | "place"> & { room?: CalendarBlock["room"] },
   link: string,
 ): string {
   const values: Record<string, string> = {
     title: block.title,
     when: blockWhen(block),
     place: block.place ?? "",
+    room: block.room ? `${block.room.name} ${block.room.url}` : "",
     link,
   };
   return template

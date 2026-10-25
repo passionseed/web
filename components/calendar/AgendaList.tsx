@@ -50,7 +50,7 @@ export function AgendaList({
                 <li key={b.id} className="rounded-lg border cal-line">
                   {editing === b.id ? (
                     <div className="p-2">
-                      <BlockForm block={b} attachBoard={attachBoard} onSubmit={(input) => calendar.update(b.id, input)} onCancel={() => setEditing(null)} />
+                      <BlockForm block={b} attachBoard={attachBoard} rooms={calendar.share.rooms} onSubmit={(input) => calendar.update(b.id, input)} onCancel={() => setEditing(null)} />
                     </div>
                   ) : open === b.id ? (
                     <div className="p-2">
