@@ -23,7 +23,7 @@ type Props = {
 };
 
 /** Hook that re-renders whenever the canvas scrolls or zooms. */
-function useViewportTick(api: ExcalidrawImperativeAPI) {
+export function useViewportTick(api: ExcalidrawImperativeAPI) {
   const [, setTick] = useState(0);
   useEffect(() => api.onScrollChange(() => setTick((t) => t + 1)), [api]);
   useEffect(() => api.onChange(() => setTick((t) => t + 1)), [api]);

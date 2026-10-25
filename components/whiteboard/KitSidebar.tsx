@@ -4,6 +4,7 @@ import { Sidebar } from "@excalidraw/excalidraw";
 import type { ExcalidrawElementSkeleton } from "@excalidraw/excalidraw/data/transform";
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import { formatDistanceToNow } from "date-fns";
+import type { ReactNode } from "react";
 
 import { STAMPS, STICKY_COLORS } from "@/lib/whiteboard/core";
 import { sticky, TEMPLATES } from "@/lib/whiteboard/templates";
@@ -26,6 +27,8 @@ type Props = {
   refreshFiles: () => void;
   onVersionSaved: () => void;
   onVersionsChanged: (fn: () => void) => () => void;
+  /** Admin-only Activity tab. */
+  activity?: ReactNode;
 };
 
 const STICKY_TEXT_SIZE = 200;
@@ -59,6 +62,7 @@ export function KitSidebar(props: Props) {
           {editable && <Sidebar.TabTrigger tab="templates">เทมเพลต</Sidebar.TabTrigger>}
           <Sidebar.TabTrigger tab="comments">คอมเมนต์</Sidebar.TabTrigger>
           <Sidebar.TabTrigger tab="history">ประวัติ</Sidebar.TabTrigger>
+          {props.activity && <Sidebar.TabTrigger tab="activity">ใครทำอะไร</Sidebar.TabTrigger>}
         </Sidebar.TabTriggers>
 
         {editable && (
@@ -169,6 +173,12 @@ export function KitSidebar(props: Props) {
             onVersionsChanged={props.onVersionsChanged}
           />
         </Sidebar.Tab>
+
+        {props.activity && (
+          <Sidebar.Tab tab="activity" className="p-3">
+            {props.activity}
+          </Sidebar.Tab>
+        )}
       </Sidebar.Tabs>
     </Sidebar>
   );
