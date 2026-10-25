@@ -97,7 +97,7 @@ export function FeedbackCommunityStep({
         <span className={styles.partTitle}>ต่อจากนี้</span>
       </p>
       <h2 id="community-title" className={styles.communityTitle}>
-        คอมมูนิตี้ทำโปรเจกต์ต่อ
+        AfterSHIFT: ทำโปรเจกต์ต่อด้วยกัน
       </h2>
       <p className={styles.communityLede}>จบ 7 วันแล้ว ไม่ต้องสร้างต่อคนเดียว</p>
 
@@ -115,7 +115,7 @@ export function FeedbackCommunityStep({
         ))}
       </ul>
       <a href="/shift/alumni" target="_blank" rel="noopener noreferrer" className={styles.peek}>
-        ดูหน้าคอมมูนิตี้กับโปรเจกต์ที่รุ่นพี่สร้าง
+        ดูว่า AfterSHIFT ทำอะไรกัน และโปรเจกต์ที่รุ่นพี่สร้าง
         <ArrowRight className="h-4 w-4" aria-hidden="true" />
       </a>
 
@@ -124,7 +124,7 @@ export function FeedbackCommunityStep({
         ราคาที่วางไว้คือเดือนละ ฿{COMMUNITY_PLANNED_PRICE.toLocaleString("en-US")} รุ่นนี้เป็นรุ่นทดลอง เลยเลือกได้แบบนี้
       </p>
 
-      <div className={styles.ways} role="radiogroup" aria-label="เข้าคอมมูนิตี้แบบไหน">
+      <div className={styles.ways} role="radiogroup" aria-label="เข้า AfterSHIFT แบบไหน">
         {WAYS_IN.map((way) => (
           <button
             key={way.value}

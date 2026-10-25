@@ -13,6 +13,7 @@ import { ShiftGalleryMotion } from "@/components/shift/ShiftGalleryMotion";
 import space from "@/components/shift/next/shiftNext.module.css";
 import styles from "@/components/shift/alumni/alumni.module.css";
 import { ALUMNI_PAGE_URL, alumniCalendar, longThaiDate, sessionDetails, timeRangeLabel } from "@/lib/content/shift-alumni";
+import { AFTERSHIFT_PROMISE, AFTERSHIFT_SUPPORT } from "@/lib/content/aftershift";
 import { bangkokToday } from "@/lib/content/shift-cohort";
 import { currentShiftAdmin } from "@/lib/shift/admin";
 import { BOARD_PATH } from "@/lib/shift/alumniBoard";
@@ -26,13 +27,13 @@ import { countAlumniRsvps, listAlumniRsvps, type AlumniRsvp } from "@/lib/supaba
  */
 
 export const metadata: Metadata = {
-  title: "SHIFT Alumni | session ศิษย์เก่าทุกสัปดาห์",
+  title: "AfterSHIFT | สร้างโปรเจกต์ต่อหลังจบ SHIFT",
   description:
-    "จบ SHIFT แล้วยังสร้างต่อด้วยกัน ศิษย์เก่า SHIFT นัดกันทุกสัปดาห์ ออนไลน์ใน Discord มาทำโปรเจกต์ต่อและอัปเดตกัน",
+    "AfterSHIFT ช่วยให้เราทำโปรเจกต์ต่อหลังจบ SHIFT พาไปให้คนลองใช้ หาผู้ใช้จริงเพิ่ม และปั้นต่อจนพร้อมใช้งานจริง",
   alternates: { canonical: "/shift/alumni" },
   openGraph: {
-    title: "SHIFT Alumni | session ศิษย์เก่าทุกสัปดาห์",
-    description: "จบ SHIFT แล้วยังสร้างต่อด้วยกัน นัดกันทุกสัปดาห์ ออนไลน์ใน Discord",
+    title: "AfterSHIFT | สร้างโปรเจกต์ต่อหลังจบ SHIFT",
+    description: "AfterSHIFT: ให้คนลองใช้ หาผู้ใช้จริงเพิ่ม ปั้นต่อจนพร้อมใช้งานจริง",
     url: ALUMNI_PAGE_URL,
     type: "website",
   },
@@ -81,27 +82,27 @@ export default async function ShiftAlumniPage() {
           <div className={space.heroCopy}>
             <p className={space.missionTag}>
               <span className={space.liveDot} aria-hidden="true" />
-              The builders keep building
+              Your next chapter starts here
             </p>
             <div className={`${space.wordmark} ${styles.wordmark}`} aria-hidden="true">
-              <span className={space.wordmarkText}>SHIFT</span>
+              <span className={styles.after}>After</span><span className={space.wordmarkText}>SHIFT</span>
             </div>
-            <p className={styles.alumniLabel} aria-hidden="true">ALUMNI</p>
+            <p className={styles.alumniLabel}>คอมมูนิตี้สำหรับคนที่จบ SHIFT</p>
             <h1 className={space.headline}>
-              <span className="sr-only">SHIFT Alumni: </span>
-              จบ 7 วันแล้ว
+              <span className="sr-only">AfterSHIFT: </span>
+              พาโปรเจกต์ออกไป
               <br />
-              <span>ยังสร้างต่อด้วยกัน</span>
+              <span>เจอผู้ใช้จริง</span>
             </h1>
             <p className={space.lede}>
-              กลับมาอัปเดตโปรเจกต์ ลองของที่เพื่อนสร้าง แล้วลงมือทำต่อด้วยกัน ออนไลน์ใน Discord
+              {AFTERSHIFT_PROMISE}
             </p>
             <div className={space.ctaRow}>
               <a href={next ? "#rsvp" : "#calendar"} className={space.cta}>
                 <span>{next ? "เจอกันนัดต่อไป" : "ดูตารางนัด"}</span>
                 <ArrowDown className="h-4 w-4" aria-hidden="true" />
               </a>
-              <a href="#alumni-built" className={space.ghost}>ดูโปรเจกต์ของเพื่อน</a>
+              <a href="#aftershift" className={space.ghost}>รู้จัก AfterSHIFT</a>
             </div>
             <p className={space.preorder}>สำหรับทุกคนที่จบ SHIFT แล้ว ลิงก์เข้าห้องอยู่ในกลุ่มของรุ่น</p>
           </div>
@@ -121,8 +122,26 @@ export default async function ShiftAlumniPage() {
         </div>
       </ShiftNextHero>
 
-      <main id="calendar" className={styles.content}>
-        <div>
+      <main className={styles.content}>
+        <section id="aftershift" aria-labelledby="aftershift-heading" className={styles.intro}>
+          <p className={styles.eyebrow}>AFTER THE SEVEN DAYS</p>
+          <h2 id="aftershift-heading" className={styles.sectionTitle}>AfterSHIFT ช่วยอะไรเราได้บ้าง</h2>
+          <p className={styles.introCopy}>มีโปรเจกต์แล้ว ก้าวต่อไปคือทำให้คนใช้จริง มาคิด ทดลอง และพัฒนาต่อไปด้วยกัน</p>
+          <ol className={styles.buildLoop}>
+            {AFTERSHIFT_SUPPORT.map((support, index) => (
+              <li key={support.title}>
+                <span className={styles.loopIndex}>{String(index + 1).padStart(2, "0")}</span>
+                <div><h3>{support.title}</h3><p>{support.detail}</p></div>
+              </li>
+            ))}
+          </ol>
+          <p className={styles.introCopy}>ลงมือทำผ่านเป้าหมายรายสัปดาห์ อัปเดตกับทีมเล็ก ๆ และเอาสิ่งที่ติดมาคุยกับเพื่อนและพี่เมนเทอร์ใน Discord</p>
+          <Link href={BOARD_PATH} className={styles.boardLink}>
+            เปิดบอร์ดเป้าหมายและทีมของเรา <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+          <p className={styles.accessNote}>เข้าบอร์ดด้วยบัญชีที่ได้รับเชิญจากทีม PassionSeed</p>
+        </section>
+        <div id="calendar" className={styles.calendar}>
           <AlumniCalendar
             initial={doc}
             updatedAt={updatedAt}

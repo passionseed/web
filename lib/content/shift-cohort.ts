@@ -116,6 +116,48 @@ export const SHIFT_COHORT: ShiftCohort = {
   teamSize: { min: 1, max: 3 },
   testerTarget: 15,
   sessionTime: "19:00–21:00",
+  /** From the Demo Day recording on 11 Oct; proof lines are what each team showed. */
+  showcase: [
+    {
+      title: "USE NEXT",
+      url: "https://use-next-beige.vercel.app/",
+      pitch: "บอกวัตถุดิบที่เหลือในตู้เย็น แล้วได้เมนูที่ทำได้จริง",
+      detail: "แอปจำวัตถุดิบที่เหลือจากครั้งก่อน แนะนำเมนูพร้อมบอกว่ามีอะไรแล้ว ต้องซื้ออะไรเพิ่ม กดทำเมนูแล้ววัตถุดิบอัปเดตเอง",
+      proof: "โพสต์ให้คนนอกลองใช้ ได้ฟีดแบ็กจริง 2 คน แล้วแปลงเป็นสิ่งที่ต้องแก้ 3 ข้อ พร้อมวิธีทดสอบแต่ละข้อ",
+      featured: true,
+    },
+    {
+      title: "HabitPerk",
+      url: "https://oonprojtest1.vercel.app/",
+      pitch: "แอปติดตามนิสัยแบบเกม ทำครบได้เหรียญ",
+      detail: "ตั้งนิสัยที่อยากสร้างหรืออยากเลิก ทำต่อเนื่องได้โบนัส แล้วเอาเหรียญไปซื้อสิทธิ์พัก เช่น หยุดอ่านหนังสือ 1 วัน",
+      proof: "ให้เพื่อนลองใช้ เพื่อนบอกว่าระบบใช้เหรียญซื้อสิทธิ์พักแบบนี้ไม่ค่อยเห็นใครทำ และช่วยให้พักได้โดยไม่ต้องโทษตัวเอง",
+      featured: true,
+    },
+    {
+      title: "TCAS Command Center",
+      url: "https://tcas-test.vercel.app/",
+      pitch: "รวมมหาลัย สาขา และกำหนดการ TCAS ไว้ในหน้าเดียว",
+      detail: "ค้นสาขาที่สนใจ แล้ววางแผนในปฏิทินว่ารอบไหนปิดเมื่อไหร่ พร้อมรายการสิ่งที่ต้องทำ ไม่ต้องเปิดหลายแท็บ",
+      proof: "ให้คนลองใช้บนมือถือ ได้ฟีดแบ็ก 4 จุด เช่น ขยายฟอนต์แล้วหน้าเว็บพัง และปุ่มตั้งค่าควรเป็นไอคอน",
+      featured: true,
+    },
+    {
+      title: "TAX",
+      url: "https://tax-nyl7.vercel.app/",
+      pitch: "คำนวณภาษีเงินได้ ภ.ง.ด.91 แยกกรอกทีละขั้น",
+    },
+    {
+      title: "ฟอร์มแจ้งของหาย",
+      url: "https://default-project-gray.vercel.app/",
+      pitch: "แจ้งของหายในโรงเรียนจากมือถือ ไม่ต้องเดินไปห้องปกครอง",
+    },
+    {
+      title: "TPN PropSpace",
+      url: "https://tpn-propspace.vercel.app/",
+      pitch: "จองพื้นที่ทำพร็อพกีฬาสี พร้อมปฏิทินการจอง",
+    },
+  ],
   schedule: [
     {
       date: "2026-10-05",

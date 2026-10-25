@@ -26,3 +26,7 @@ brief as the main story, 3 interview questions from shift-guide.ts, the
 | 2026-10-11 | li-post-grandpa | LinkedIn | Best project idea was in the living room |
 | 2026-10-11 | li-post-trojan-horse | LinkedIn | They come for the portfolio, leave having taught themselves (SDT) |
 | 2026-10-11 | li-post-cert-vs-proof | LinkedIn | A certificate proves attendance |
+| 2026-10-20 | aftershift-poster (/shift/poster/aftershift) | IG/LINE | AfterSHIFT ฿300/mo for SHIFT[2] alumni; answers: I can do it alone, cash grab, monthly, empty community |
+| 2026-10-21 | shift-high (/shift/poster/shift-high) | IG/LINE | SHIFT High (ชิบหาย wordplay) for SHIFT[2] alumni: go public beyond friends, 3-level goals, Saturday work day + circle, ฿250 or 1 testimonial video |
+| 2026-10-22 | shift-high-week-1 (/shift/poster/shift-high-week-1) | LINE | SHIFT High week 1 run of show (Sat 24 Oct 19:00–21:00, Discord) and the 4-week month plan, for students |
+| 2026-10-22 | awaken-grow (/shift/poster/awaken-grow) | IG | Debunks คนตื่นรู้มักไม่เติบโต คนเติบโตมักไม่ตื่นรู้: 2 axes, 4 quadrants, which one are you (comment I-IV), SHIFT[3] cosmos style |

@@ -44,8 +44,9 @@ import {
   teamSizeLabel,
   type ShiftCohort,
 } from "@/lib/content/shift-cohort";
-import { SHIFT_TESTIMONIAL_GROUPS } from "@/lib/content/shift-testimonials";
+import { SHIFT_TESTIMONIAL_GROUPS, SHIFT_TESTIMONIAL_REELS } from "@/lib/content/shift-testimonials";
 import { TestimonialQuote } from "@/components/shift/TestimonialQuote";
+import { TestimonialReels } from "@/components/shift/TestimonialReels";
 import { shiftSocialMetadata } from "@/lib/shift/socialMetadata";
 
 /** Status flips on Bangkok dates, so re-render at least hourly. */
@@ -450,6 +451,12 @@ export default async function ShiftRoundPage({ params }: RoundParams) {
             #5 และบันทึกการวิเคราะห์พอร์ตรายบุคคลของ PassionSeed
           </p>
 
+          <TestimonialReels
+            reels={SHIFT_TESTIMONIAL_REELS}
+            colors={{ inks: [inkFor(0), inkFor(1)], caption: T.accent3 }}
+            className="mt-12"
+          />
+
           {SHIFT_TESTIMONIAL_GROUPS.map((group, gi) => (
             <div key={group.label} className="mt-14">
               <p
@@ -461,7 +468,7 @@ export default async function ShiftRoundPage({ params }: RoundParams) {
               <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-3">
                 {group.cards.map((card, ci) => (
                   <figure
-                    key={card.name}
+                    key={card.id ?? card.name}
                     className={`${revealClass(ci)} relative flex flex-col border-l-2 pl-5`}
                     style={{ borderColor: inkFor(gi) }}
                   >

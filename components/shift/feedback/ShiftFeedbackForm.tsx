@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState, type FormEvent } from "react";
 import { ArrowRight, Check } from "lucide-react";
 
@@ -115,8 +116,11 @@ function FeedbackDone({ comingBack, joining }: { comingBack: boolean; joining: b
       </span>
       <p className={styles.doneTitle}>ได้รับแล้ว ขอบคุณนะ</p>
       <p className={styles.doneNote}>ทุกคำตอบพี่อ่านเองหมด และจะเอาไปปรับ SHIFT รอบหน้า</p>
-      {comingBack && <p className={styles.doneNote}>รายละเอียด session ศิษย์เก่า พี่จะส่งในกลุ่มนะ แล้วเจอกัน</p>}
-      {joining && <p className={styles.doneNote}>ขอบคุณที่สมัครคอมมูนิตี้นะ รายละเอียด พี่จะส่งในกลุ่ม</p>}
+      {comingBack && <p className={styles.doneNote}>รายละเอียด AfterSHIFT พี่จะส่งในกลุ่มนะ แล้วเจอกัน</p>}
+      {joining && <p className={styles.doneNote}>ขอบคุณที่สมัคร AfterSHIFT นะ รายละเอียดกับวิธีจ่าย พี่จะส่งในกลุ่ม</p>}
+      <Link href="/shift/alumni" className={`${space.cta} mt-6`}>
+        <span>รู้จัก AfterSHIFT และดูนัดต่อไป</span><ArrowRight className="h-4 w-4" aria-hidden="true" />
+      </Link>
     </div>
   );
 }
@@ -285,7 +289,7 @@ export function ShiftFeedbackForm({
         {longText("changeNext", "อยากให้...")}
       </Question>
 
-      <Question num={10} label="เทียบกับสิ่งที่ได้ ราคาถือว่า" error={errors.priceFit}>
+      <Question num={10} label="เทียบกับสิ่งที่ได้ ราคาถือว่า" hint={`ข้อนี้ถามถึงค่าเข้าร่วม ${cohort.name} จำนวน ${cohort.priceBaht.toLocaleString("th-TH")} บาท`} error={errors.priceFit}>
         <ChoiceChips name="ราคา" options={FEEDBACK_PRICE_FIT} value={values.priceFit} onChange={(v) => set("priceFit", v)} />
       </Question>
 
@@ -311,7 +315,7 @@ export function ShiftFeedbackForm({
         )}
       </Question>
 
-      <Question num={14} label="มา session ศิษย์เก่าทุกสัปดาห์กัน วันไหนสะดวกบ้าง" hint={sessionHint} error={errors.availableDays}>
+      <Question num={14} label="มาเจอกันที่ AfterSHIFT ทุกสัปดาห์ วันไหนสะดวกบ้าง" hint={sessionHint} error={errors.availableDays}>
         <DayChips options={FEEDBACK_DAYS} none="none" value={values.availableDays} onChange={(v) => set("availableDays", toggleExclusive(values.availableDays, v, "none"))} />
       </Question>
 

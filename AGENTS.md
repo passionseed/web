@@ -119,6 +119,19 @@ Copy rules (details in [`PRODUCT.md`](PRODUCT.md)):
 - Students are autonomous builders: never talk down, lecture, or use ed-tech jargon.
 - Sell the outcome parents and students want (a real project and portfolio evidence), not the philosophy behind it.
 
+Thai copy review: before shipping Thai marketing copy, have it checked by
+several models, because each catches different problems. From a three-way
+review of the awaken-grow carousel (October 2026):
+
+| Reviewer | Use it for | Watch out for |
+|---|---|---|
+| Antigravity (Gemini) | Drafting and rewriting: the most natural, punchy Thai | Misses grammar slips; breaks house rules (wrote น้องๆ) |
+| Cursor | Proofreading: the only one to catch missing particles and made-up words | Light on logic; stray non-Thai characters can leak into its output |
+| Codex | Logic: ambiguous lines, terms that shift meaning, overclaims | Stiff, academic Thai; over-hedges until the hook is gone |
+
+Lines that two or more reviewers flag are almost always real. Check every
+suggestion against the copy rules above before applying it.
+
 ## Gotchas
 
 - `@/components/map/MapViewer` resolves to `components/map/MapViewer.tsx`. `MapViewer.original.tsx`, `MapViewer.refactored.tsx`, and the `MapViewer/` folder are not what the pages import.

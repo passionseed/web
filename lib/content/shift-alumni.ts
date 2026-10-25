@@ -161,10 +161,10 @@ export function googleCalendarUrl(session: AlumniSession, defaults: AlumniDefaul
   const stamp = (t: string) => `${session.date.replaceAll("-", "")}T${t.replace(":", "")}00`;
   const params = new URLSearchParams({
     action: "TEMPLATE",
-    text: `SHIFT Alumni${session.topic ? `: ${session.topic}` : ""}`,
+    text: `AfterSHIFT${session.topic ? `: ${session.topic}` : ""}`,
     dates: `${stamp(startTime)}/${stamp(endTime)}`,
     ctz: "Asia/Bangkok",
-    details: `session ศิษย์เก่า SHIFT ลิงก์เข้าห้องอยู่ในกลุ่มของรุ่น\n${ALUMNI_PAGE_URL}`,
+    details: `AfterSHIFT: วงทำโปรเจกต์ต่อของคนที่จบ SHIFT ลิงก์เข้าห้องอยู่ในกลุ่มของรุ่น\n${ALUMNI_PAGE_URL}`,
     location: place,
   });
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
