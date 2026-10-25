@@ -23,6 +23,8 @@ import type { WhiteboardDetail } from "@/lib/supabase/whiteboards";
 import { canEdit, type LinkAccess } from "@/lib/whiteboard/core";
 import { templateById } from "@/lib/whiteboard/templates";
 
+import { ActivityPanel } from "./ActivityPanel";
+import { AuthorsLayer } from "./AuthorsLayer";
 import { BoardTitle, SaveBadge } from "./BoardChrome";
 import { CommentsLayer } from "./CommentsLayer";
 import { EmoteLayer, EmotePicker, useEmotes } from "./EmoteLayer";
@@ -33,7 +35,7 @@ import { TimerWidget } from "./TimerWidget";
 import { useComments } from "./useComments";
 import { boardApi, useWhiteboardSync } from "./useWhiteboardSync";
 
-type Me = { id: string; name: string; avatarUrl: string | null };
+type Me = { id: string; name: string; avatarUrl: string | null; isAdmin?: boolean };
 type Theme = "light" | "dark";
 
 const THEME_KEY = "whiteboard-theme";
@@ -81,6 +83,8 @@ export default function WhiteboardCanvas({
   const [placingComment, setPlacingComment] = useState(false);
   const [openThread, setOpenThread] = useState<string | null>(null);
   const [showResolved, setShowResolved] = useState(false);
+  const [showAuthors, setShowAuthors] = useState(false);
+  const [authorNames, setAuthorNames] = useState<Record<string, string>>({});
   const importInput = useRef<HTMLInputElement>(null);
   const theme = useRef<Theme>(initialData.appState.theme);
   // Excalidraw hands over its API before the initial scene loads; wait for the first change.
@@ -95,6 +99,10 @@ export default function WhiteboardCanvas({
       .map((p) => ({ userId: p.userId, name: p.name, avatarUrl: p.avatarUrl, role: p.role }));
     return [...members, ...newcomers];
   }, [members, sync.present]);
+  const nameOf = useCallback(
+    (id: string) => people.find((p) => p.userId === id)?.name ?? authorNames[id] ?? "Someone",
+    [people, authorNames],
+  );
   const onlineIds = useMemo(() => new Set(sync.present.map((p) => p.userId)), [sync.present]);
 
   const onChange = useCallback(
@@ -273,6 +281,17 @@ export default function WhiteboardCanvas({
             refreshFiles={sync.refreshFiles}
             onVersionSaved={() => sync.send("versions", {})}
             onVersionsChanged={onVersionsChanged}
+            activity={
+              me.isAdmin ? (
+                <ActivityPanel
+                  api={api}
+                  boardId={board.id}
+                  showAuthors={showAuthors}
+                  onShowAuthors={setShowAuthors}
+                  onPeople={setAuthorNames}
+                />
+              ) : undefined
+            }
           />
         )}
       </Excalidraw>
@@ -292,6 +311,7 @@ export default function WhiteboardCanvas({
             showResolved={showResolved}
           />
           <EmoteLayer api={api} bursts={emotes.bursts} />
+          {me.isAdmin && showAuthors && <AuthorsLayer api={api} nameOf={nameOf} />}
         </>
       )}
 

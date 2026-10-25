@@ -34,7 +34,7 @@ export default async function WhiteboardPage({
   return (
     <WhiteboardRoom
       board={board}
-      me={{ id: viewer.id, name: viewer.name, avatarUrl: viewer.avatarUrl }}
+      me={{ id: viewer.id, name: viewer.name, avatarUrl: viewer.avatarUrl, isAdmin: viewer.isAdmin }}
       templateId={template ?? null}
     />
   );

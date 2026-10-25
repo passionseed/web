@@ -25,7 +25,7 @@ Excalidraw. First used for the SHIFT High community session on 2026-10-24.
 | Database access | `lib/supabase/whiteboards.ts` (role check, then service role) |
 | Pure logic and schemas | `lib/whiteboard/core.ts`, `lib/whiteboard/templates.ts` |
 | Editor and sync | `components/whiteboard/` (`useWhiteboardSync.ts` is the core) |
-| Schema | `supabase/migrations/20261023120000_whiteboards.sql` |
+| Schema | `supabase/migrations/20261023120000_whiteboards.sql`, `20261025120000_whiteboard_changes.sql` |
 | Link previews | `lib/og/whiteboard.tsx`, `app/whiteboard/**/opengraph-image.tsx` |
 
 - **Tables** (`whiteboards`, `whiteboard_members`, `whiteboard_files`, `whiteboard_versions`,
@@ -40,6 +40,12 @@ Excalidraw. First used for the SHIFT High community session on 2026-10-24.
 - **Authorship:** every element carries `customData.createdBy` and `customData.updatedBy`
   (user ids), recorded from 2026-10-24. The server sets `updatedBy` on save. Elements from
   before then have no author.
+- **Change history:** `whiteboard_merge_elements` also writes one `whiteboard_changes` row per
+  save (from 2026-10-25): which elements the saver added, edited (with the old text), moved or
+  restyled, or deleted. The saver is the `customData.updatedBy` the API stamps. Admins see it in
+  the board's **ใครทำอะไร** (Activity) tab, grouped into sessions per person
+  (`lib/whiteboard/activity.ts`), and can turn on name tags over every note
+  (`AuthorsLayer.tsx`). `GET /api/whiteboards/<id>/activity` is admin-only.
 - **Share links:** `/whiteboard/join/<token>` renders (so chat apps read the preview tags) and
   hands off to `/whiteboard/join/<token>/enter`, which signs in, joins, and redirects with a
   real 307. Don't call `redirect()` from a whiteboard page: every page streams because of

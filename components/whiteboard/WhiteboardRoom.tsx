@@ -16,7 +16,7 @@ const WhiteboardCanvas = dynamic(() => import("./WhiteboardCanvas"), {
 
 export function WhiteboardRoom(props: {
   board: WhiteboardDetail;
-  me: { id: string; name: string; avatarUrl: string | null };
+  me: { id: string; name: string; avatarUrl: string | null; isAdmin?: boolean };
   templateId?: string | null;
 }) {
   return <WhiteboardCanvas {...props} />;

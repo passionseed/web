@@ -1,6 +1,7 @@
 import type { User } from "@supabase/supabase-js";
 
 import { isAnonymousUser } from "@/lib/supabase/auth";
+import { elementAuthorIds, groupChanges, type ActivitySession, type ChangeItem } from "@/lib/whiteboard/activity";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 import {
@@ -510,4 +511,41 @@ export async function resolveComment(commentId: string, resolved: boolean): Prom
 export async function deleteComment(commentId: string): Promise<void> {
   const { error } = await db().from("whiteboard_comments").delete().eq("id", commentId);
   if (error) throw error;
+}
+
+export type BoardActivity = {
+  sessions: ActivitySession[];
+  /** Names for everyone in the sessions and everyone who wrote something on the board. */
+  people: Record<string, string>;
+};
+
+/** Who changed what and when, plus names for element authors. Admins only; the route checks. */
+export async function loadActivity(boardId: string): Promise<BoardActivity> {
+  const [{ data: rows, error }, { data: board, error: boardError }] = await Promise.all([
+    db()
+      .from("whiteboard_changes")
+      .select("user_id, items, created_at")
+      .eq("whiteboard_id", boardId)
+      .order("created_at", { ascending: false })
+      .limit(5000),
+    db().from("whiteboards").select("elements").eq("id", boardId).maybeSingle(),
+  ]);
+  if (error) throw error;
+  if (boardError) throw boardError;
+  const sessions = groupChanges(
+    (rows ?? []).map((r) => ({
+      userId: (r.user_id as string | null) ?? null,
+      createdAt: r.created_at as string,
+      items: r.items as ChangeItem[],
+    })),
+  );
+  const ids = new Set([
+    ...sessions.flatMap((s) => (s.userId ? [s.userId] : [])),
+    ...elementAuthorIds((board?.elements as { id: string }[] | null) ?? []),
+  ]);
+  const profiles = await profilesById([...ids]);
+  return {
+    sessions,
+    people: Object.fromEntries([...ids].map((id) => [id, profiles[id]?.name ?? "Someone"])),
+  };
 }
