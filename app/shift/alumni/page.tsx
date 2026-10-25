@@ -27,13 +27,13 @@ import { countAlumniRsvps, listAlumniRsvps, type AlumniRsvp } from "@/lib/supaba
  */
 
 export const metadata: Metadata = {
-  title: "AfterSHIFT | สร้างโปรเจกต์ต่อหลังจบ SHIFT",
+  title: "SHIFT High | สร้างโปรเจกต์ต่อหลังจบ SHIFT",
   description:
-    "AfterSHIFT ช่วยให้เราทำโปรเจกต์ต่อหลังจบ SHIFT พาไปให้คนลองใช้ หาผู้ใช้จริงเพิ่ม และปั้นต่อจนพร้อมใช้งานจริง",
+    "SHIFT High ช่วยให้เราทำโปรเจกต์ต่อหลังจบ SHIFT พาไปให้คนลองใช้ หาผู้ใช้จริงเพิ่ม และปั้นต่อจนพร้อมใช้งานจริง",
   alternates: { canonical: "/shift/alumni" },
   openGraph: {
-    title: "AfterSHIFT | สร้างโปรเจกต์ต่อหลังจบ SHIFT",
-    description: "AfterSHIFT: ให้คนลองใช้ หาผู้ใช้จริงเพิ่ม ปั้นต่อจนพร้อมใช้งานจริง",
+    title: "SHIFT High | สร้างโปรเจกต์ต่อหลังจบ SHIFT",
+    description: "SHIFT High: ให้คนลองใช้ หาผู้ใช้จริงเพิ่ม ปั้นต่อจนพร้อมใช้งานจริง",
     url: ALUMNI_PAGE_URL,
     type: "website",
   },
@@ -85,11 +85,11 @@ export default async function ShiftAlumniPage() {
               Your next chapter starts here
             </p>
             <div className={`${space.wordmark} ${styles.wordmark}`} aria-hidden="true">
-              <span className={styles.after}>After</span><span className={space.wordmarkText}>SHIFT</span>
+              <span className={space.wordmarkText}>SHIFT</span> <span className={styles.high}>High</span>
             </div>
             <p className={styles.alumniLabel}>คอมมูนิตี้สำหรับคนที่จบ SHIFT</p>
             <h1 className={space.headline}>
-              <span className="sr-only">AfterSHIFT: </span>
+              <span className="sr-only">SHIFT High: </span>
               พาโปรเจกต์ออกไป
               <br />
               <span>เจอผู้ใช้จริง</span>
@@ -102,7 +102,7 @@ export default async function ShiftAlumniPage() {
                 <span>{next ? "เจอกันนัดต่อไป" : "ดูตารางนัด"}</span>
                 <ArrowDown className="h-4 w-4" aria-hidden="true" />
               </a>
-              <a href="#aftershift" className={space.ghost}>รู้จัก AfterSHIFT</a>
+              <a href="#aftershift" className={space.ghost}>รู้จัก SHIFT High</a>
             </div>
             <p className={space.preorder}>สำหรับทุกคนที่จบ SHIFT แล้ว ลิงก์เข้าห้องอยู่ในกลุ่มของรุ่น</p>
           </div>
@@ -125,7 +125,7 @@ export default async function ShiftAlumniPage() {
       <main className={styles.content}>
         <section id="aftershift" aria-labelledby="aftershift-heading" className={styles.intro}>
           <p className={styles.eyebrow}>AFTER THE SEVEN DAYS</p>
-          <h2 id="aftershift-heading" className={styles.sectionTitle}>AfterSHIFT ช่วยอะไรเราได้บ้าง</h2>
+          <h2 id="aftershift-heading" className={styles.sectionTitle}>SHIFT High ช่วยอะไรเราได้บ้าง</h2>
           <p className={styles.introCopy}>มีโปรเจกต์แล้ว ก้าวต่อไปคือทำให้คนใช้จริง มาคิด ทดลอง และพัฒนาต่อไปด้วยกัน</p>
           <ol className={styles.buildLoop}>
             {AFTERSHIFT_SUPPORT.map((support, index) => (

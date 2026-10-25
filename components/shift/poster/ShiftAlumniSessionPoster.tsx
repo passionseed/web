@@ -109,7 +109,7 @@ function WhenAndRsvp({ session, defaults }: { session: AlumniSession; defaults: 
     <div className="flex w-[700px] shrink-0 flex-col">
       <div className="relative">
         <p className="text-[30px] font-semibold uppercase tracking-[0.18em]" style={{ color: INK.orange }}>
-          AfterSHIFT
+          SHIFT High
         </p>
         <p
           className="mt-1 whitespace-nowrap font-kodchasan text-[116px] font-bold leading-[1.02]"
