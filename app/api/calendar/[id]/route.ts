@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { calendarViewer, isUuid, mayAttachBoard } from "@/lib/calendar/route-guard";
+import { calendarViewer, isUuid, knownRoom, mayAttachBoard } from "@/lib/calendar/route-guard";
 import { safeServerError } from "@/lib/security/route-guards";
 import { blockColumns, blockOwner, deleteBlock, updateBlock } from "@/lib/supabase/calendar";
 import { readJson } from "@/lib/whiteboard/route-guard";
@@ -28,6 +28,9 @@ export async function PATCH(request: Request, { params }: Params) {
     if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 422 });
     if (!(await mayAttachBoard(guard.viewer, parsed.columns))) {
       return NextResponse.json({ error: "Only the board owner can attach this board" }, { status: 403 });
+    }
+    if (!(await knownRoom(parsed.columns.room_channel_id))) {
+      return NextResponse.json({ error: "Pick one of the community voice rooms" }, { status: 422 });
     }
     await updateBlock(id, parsed.columns);
     return NextResponse.json({ ok: true });

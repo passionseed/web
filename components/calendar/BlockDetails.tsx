@@ -1,8 +1,10 @@
 "use client";
 
-import { ExternalLink, MapPin, Pencil, StickyNote, Trash2 } from "lucide-react";
+import { ClipboardList, ExternalLink, MapPin, Pencil, StickyNote, Trash2, Volume2 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { KIND_STYLE, bangkokParts, shortThaiDay, timeRange, type CalendarBlock } from "@/lib/calendar/core";
+import type { Attendance } from "@/lib/calendar/attendance";
 import type { ShareSettings } from "@/lib/calendar/notify";
 
 import { ShareButton } from "./ShareButton";
@@ -46,6 +48,7 @@ export function BlockDetails({
           <ShareButton block={block} share={share} prominent />
         </div>
       )}
+      {(block.room || (block.boardUrl && block.source === "block")) && <RoomLinks block={block} />}
       {block.place && (
         <p className="flex items-center gap-1.5 text-xs opacity-80">
           <MapPin className="h-3.5 w-3.5" /> {block.place}
@@ -69,9 +72,9 @@ export function BlockDetails({
             {block.joined ? "✓ ไปด้วย (กดเพื่อยกเลิก)" : "ไปด้วย"}
           </button>
         )}
-        {block.boardUrl && (
+        {block.boardUrl && block.source === "team" && (
           <a href={block.boardUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg border cal-line px-2.5 py-1 text-xs">
-            <ExternalLink className="h-3.5 w-3.5" /> {block.source === "team" ? "บอร์ดทีม" : "เปิดบอร์ด"}
+            <ExternalLink className="h-3.5 w-3.5" /> บอร์ดทีม
           </a>
         )}
         {block.source !== "team" && !fresh && <ShareButton block={block} share={share} />}
@@ -96,6 +99,61 @@ export function BlockDetails({
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+/** Opens 15 minutes before the start, until the end. */
+const ROOM_OPENS_MS = 15 * 60_000;
+
+/**
+ * The room: the Discord voice channel and the room board, side by side, and
+ * once it has started, how many who booked have arrived (counts only).
+ */
+function RoomLinks({ block }: { block: CalendarBlock }) {
+  const now = Date.now();
+  const live = now >= Date.parse(block.startsAt) - ROOM_OPENS_MS && now <= Date.parse(block.endsAt);
+  const started = now >= Date.parse(block.startsAt);
+  const [attendance, setAttendance] = useState<Attendance | null>(null);
+
+  useEffect(() => {
+    if (!started || !block.boardUrl || block.source !== "block") return;
+    let cancelled = false;
+    fetch(`/api/calendar/${block.id}/attendance`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { attendance: Attendance | null } | null) => !cancelled && setAttendance(data?.attendance ?? null))
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [block.id, block.boardUrl, block.source, started]);
+
+  const link = (live: boolean) =>
+    `inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium ${live ? "bg-indigo-500 text-white" : "border cal-line"}`;
+
+  return (
+    <div className="space-y-1.5 rounded-lg border cal-line p-2">
+      <p className="text-xs font-medium">{live ? "ห้องเปิดแล้ว เข้ามาเลย" : "ห้องของนัดนี้"}</p>
+      <div className="flex flex-wrap gap-1.5">
+        {block.room && (
+          <a href={block.room.url} target="_blank" rel="noreferrer" className={link(live)}>
+            <Volume2 className="h-3.5 w-3.5" /> เข้าห้อง {block.room.name}
+          </a>
+        )}
+        {block.boardUrl && (
+          <a href={block.boardUrl} target="_blank" rel="noreferrer" className={link(live && !block.room)}>
+            <ClipboardList className="h-3.5 w-3.5" /> บอร์ดห้อง
+          </a>
+        )}
+      </div>
+      <p className="text-[11px] opacity-60">มาถึงแปะการ์ด 👋 · ติดตรงไหนแปะ 🙏 · ช่วยได้แปะ 🙋 · ก่อนออกแปะ ✅ สิ่งที่จะทำต่อ</p>
+      {attendance && (
+        <p className="text-xs">
+          มาแล้ว {attendance.bookedArrived}/{attendance.booked} คนที่จอง
+          {attendance.walkIns > 0 ? ` · มาเพิ่ม ${attendance.walkIns}` : ""} · ขอความเห็น {attendance.askedHelp} · ช่วยเพื่อน{" "}
+          {attendance.gaveHelp} · ปิดท้าย {attendance.closed}
+        </p>
+      )}
     </div>
   );
 }

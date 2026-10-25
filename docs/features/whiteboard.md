@@ -88,6 +88,18 @@ Excalidraw. First used for the SHIFT High community session on 2026-10-24.
     every 5 minutes calls `calendar_send_reminders()`, which posts through pg_net and logs each
     notice in `calendar_block_notices` so it is sent once. Mentions are always off.
 
+- **Rooms for booked sessions** (migration `20261025180000_calendar_rooms.sql`): a block can
+  name one of the Discord voice rooms admins list at `/admin/calendar`, and new blocks get a
+  room board made from the `room` template (Arrive, Help, Close). The block, its reminders and
+  the IG message link the voice room next to the board. There is no voice bot: attendance is
+  read from **room cards** (`lib/whiteboard/cards.ts`: Arrive 👋, Help 🙏, I can help 🙋,
+  Close ✅), which are in the board kit and the Library and are tagged in `customData.card`.
+  A card counts for whoever placed it (`createdBy`); the template's example cards count only
+  once someone writes on them. `lib/calendar/attendance.ts` turns that into counts (booked vs
+  arrived, walk-ins, help asked and given, closed with a next step), shown on the block once
+  it starts and at `/admin/calendar` for the last 90 days. Nothing per person is stored, and it
+  shows who used the board, not who spoke in voice.
+
 ## Excalidraw gotchas (0.18)
 
 - `onUserFollow` and `onScrollChange` are API subscriptions

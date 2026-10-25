@@ -45,6 +45,7 @@ export function CalendarPlugin({ api, board, editable, broadcast, onBroadcast }:
       {adding ? (
         <BlockForm
           attachBoard={board.role === "owner" ? { id: board.id, title: board.title } : undefined}
+          rooms={calendar.share.rooms}
           onSubmit={async (input) => {
             const id = await calendar.create(input);
             if (id) setAdded(id);

@@ -6,6 +6,7 @@ import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import { formatDistanceToNow } from "date-fns";
 import type { ReactNode } from "react";
 
+import { CARD_KINDS, CARDS, cardSkeleton } from "@/lib/whiteboard/cards";
 import { STAMPS, STICKY_COLORS } from "@/lib/whiteboard/core";
 import { sticky, TEMPLATES } from "@/lib/whiteboard/templates";
 
@@ -82,6 +83,29 @@ export function KitSidebar(props: Props) {
                 ))}
               </div>
               <p className="mt-2 text-xs opacity-60">ดับเบิลคลิกที่โน้ตเพื่อพิมพ์</p>
+            </section>
+            <section>
+              <h3 className="mb-2 text-xs font-medium uppercase tracking-wide opacity-60">การ์ดห้อง · Room cards</h3>
+              <div className="grid grid-cols-2 gap-2">
+                {CARD_KINDS.map((kind) => (
+                  <button
+                    key={kind}
+                    type="button"
+                    onClick={() => {
+                      const c = viewportCenter(api);
+                      insertSkeletons(api, [cardSkeleton(kind)], { x: c.x + Math.random() * 40 - 20, y: c.y + Math.random() * 40 - 20 });
+                    }}
+                    className="rounded-md p-2 text-left text-xs shadow-sm ring-1 ring-black/10 transition-transform hover:-rotate-1 hover:scale-[1.03]"
+                    style={{ background: CARDS[kind].color, color: "#1e1e1e" }}
+                  >
+                    <span className="block font-semibold">
+                      {CARDS[kind].emoji} {CARDS[kind].title.split(" · ")[0]}
+                    </span>
+                    <span className="block opacity-70">{CARDS[kind].prompt.split("\n")[0]}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-xs opacity-60">บอร์ดจำว่าใครแปะการ์ดไหน ใช้นับว่ามากี่คน ใครช่วยใคร · มีใน 📚 Library ด้วย</p>
             </section>
             <section>
               <h3 className="mb-2 text-xs font-medium uppercase tracking-wide opacity-60">Stamps · โหวต</h3>

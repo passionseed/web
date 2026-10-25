@@ -5,6 +5,7 @@ import {
   discordCreatedBody,
   type NotifySettingsView,
   type ShareSettings,
+  type VoiceRoom,
   notifySettingsSchema,
 } from "@/lib/calendar/notify";
 import { createAdminClient } from "@/utils/supabase/admin";
@@ -22,26 +23,42 @@ type SettingsRow = {
   discord_webhook_url: string | null;
   discord_on_create: boolean;
   discord_remind_minutes: number[];
+  discord_guild_id: string | null;
+  voice_rooms: VoiceRoom[] | null;
   updated_at: string | null;
 };
 
 async function row(): Promise<SettingsRow | null> {
   const { data, error } = await db()
     .from("calendar_notify_settings")
-    .select("ig_group_url, share_template, discord_webhook_url, discord_on_create, discord_remind_minutes, updated_at")
+    .select("ig_group_url, share_template, discord_webhook_url, discord_on_create, discord_remind_minutes, discord_guild_id, voice_rooms, updated_at")
     .eq("id", "main")
     .maybeSingle();
   if (error) throw error;
   return data as SettingsRow | null;
 }
 
-/** For everyone signed in: where to share and what to say. Never throws. */
+/** For everyone signed in: where to share, what to say, and the voice rooms. Never throws. */
 export async function shareSettings(): Promise<ShareSettings> {
   try {
     const r = await row();
-    return { igGroupUrl: r?.ig_group_url ?? null, template: r?.share_template ?? DEFAULT_SHARE_TEMPLATE };
+    return {
+      igGroupUrl: r?.ig_group_url ?? null,
+      template: r?.share_template ?? DEFAULT_SHARE_TEMPLATE,
+      rooms: r?.discord_guild_id ? (r.voice_rooms ?? []) : [],
+    };
   } catch {
-    return { igGroupUrl: null, template: DEFAULT_SHARE_TEMPLATE };
+    return { igGroupUrl: null, template: DEFAULT_SHARE_TEMPLATE, rooms: [] };
+  }
+}
+
+/** The Discord server and voice rooms, for turning a block's room into a link. Never throws. */
+export async function voiceRooms(): Promise<{ guildId: string | null; rooms: VoiceRoom[] }> {
+  try {
+    const r = await row();
+    return { guildId: r?.discord_guild_id ?? null, rooms: r?.voice_rooms ?? [] };
+  } catch {
+    return { guildId: null, rooms: [] };
   }
 }
 
@@ -51,6 +68,8 @@ export async function notifySettingsView(): Promise<NotifySettingsView> {
   return {
     igGroupUrl: r?.ig_group_url ?? null,
     template: r?.share_template ?? DEFAULT_SHARE_TEMPLATE,
+    rooms: r?.voice_rooms ?? [],
+    guildId: r?.discord_guild_id ?? null,
     discordConfigured: Boolean(r?.discord_webhook_url),
     discordHint: r?.discord_webhook_url ? r.discord_webhook_url.slice(-4) : null,
     discordOnCreate: r?.discord_on_create ?? true,
@@ -71,6 +90,8 @@ export async function saveNotifySettings(input: unknown, adminId: string): Promi
       share_template: s.template,
       ...(s.discordWebhookUrl !== undefined ? { discord_webhook_url: s.discordWebhookUrl || null } : {}),
       discord_on_create: s.discordOnCreate,
+      discord_guild_id: s.guildId,
+      voice_rooms: s.voiceRooms,
       discord_remind_minutes: [...new Set(s.remindMinutes)].sort((a, b) => b - a),
       updated_by: adminId,
       updated_at: new Date().toISOString(),

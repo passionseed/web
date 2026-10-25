@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { voiceRooms } from "@/lib/supabase/calendar-notify";
 import { getViewer, roleFor, type Viewer } from "@/lib/supabase/whiteboards";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -19,4 +20,11 @@ export async function mayAttachBoard(viewer: Viewer, columns: Record<string, unk
   const boardId = columns.whiteboard_id;
   if (boardId === undefined || boardId === null) return true;
   return typeof boardId === "string" && isUuid(boardId) && (await roleFor(boardId, viewer)) === "owner";
+}
+
+/** Only voice rooms admins listed at /admin/calendar can be used. */
+export async function knownRoom(channelId: unknown): Promise<boolean> {
+  if (channelId === undefined || channelId === null) return true;
+  const { rooms } = await voiceRooms();
+  return rooms.some((r) => r.channelId === channelId);
 }

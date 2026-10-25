@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { elementSchema } from "@/lib/whiteboard/core";
+
 /**
  * Community calendar: time blocks anyone signed in can add (meetups, work
  * sessions, deadlines) and join. Shown at /calendar and as a window on every
@@ -33,8 +35,10 @@ export type CalendarBlock = {
   endsAt: string;
   place: string | null;
   note: string | null;
-  /** Share link of the board the block was made on, when that board has one. */
+  /** Share link of the block's board (its room board, or the board it was made on). */
   boardUrl: string | null;
+  /** The Discord voice room people meet in. */
+  room: { name: string; url: string; channelId: string } | null;
   createdBy: BlockPerson | null;
   people: BlockPerson[];
   joined: boolean;
@@ -63,6 +67,10 @@ export const blockInputSchema = z
     note: optionalText(1000),
     /** Attach the board this block was made on. */
     whiteboardId: z.string().uuid().nullable().optional(),
+    /** A Discord voice room from the admin list. */
+    roomChannelId: z.string().regex(/^\d{5,25}$/).nullable().optional(),
+    /** New blocks only: make a room board from these elements (the room template, built in the browser). */
+    roomBoard: z.array(elementSchema).max(400).optional(),
   })
   .refine((b) => b.end > b.start, { message: "End after it starts", path: ["end"] });
 

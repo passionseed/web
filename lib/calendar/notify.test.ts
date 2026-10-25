@@ -15,6 +15,11 @@ describe("calendar share message", () => {
     );
   });
 
+  it("adds the voice room when the block has one", () => {
+    const room = { name: "ห้อง 1", url: "https://discord.com/channels/1/2", channelId: "2" };
+    expect(fillTemplate(DEFAULT_SHARE_TEMPLATE, { ...block, room }, "L")).toContain("🔊 ห้อง 1 https://discord.com/channels/1/2");
+  });
+
   it("drops a line whose placeholder is empty and leaves unknown ones alone", () => {
     expect(fillTemplate("{title}\n📍 {place}\n{link} {who}", { ...block, place: null }, "L")).toBe(
       "นั่งทำโปรเจกต์ด้วยกัน\nL {who}",
@@ -29,7 +34,7 @@ describe("calendar share message", () => {
 });
 
 describe("notify settings", () => {
-  const base = { igGroupUrl: "", template: "{title} {link}", discordOnCreate: true, remindMinutes: [60, 0] };
+  const base = { igGroupUrl: "", template: "{title} {link}", discordOnCreate: true, remindMinutes: [60, 0], guildId: "", voiceRooms: [] };
 
   it("accepts an IG thread link and a Discord webhook", () => {
     const parsed = notifySettingsSchema.safeParse({
@@ -46,6 +51,11 @@ describe("notify settings", () => {
       discordWebhookUrl: "https://canary.discord.com/api/webhooks/123/abc",
     });
     expect(parsed.success && parsed.data.discordWebhookUrl).toBe("https://discord.com/api/webhooks/123/abc");
+  });
+
+  it("checks Discord server and voice room ids", () => {
+    expect(notifySettingsSchema.safeParse({ ...base, guildId: "123456789", voiceRooms: [{ name: "ห้อง 1", channelId: "987654321" }] }).success).toBe(true);
+    expect(notifySettingsSchema.safeParse({ ...base, voiceRooms: [{ name: "ห้อง 1", channelId: "abc" }] }).success).toBe(false);
   });
 
   it("rejects invite links, other URLs, and templates without a link", () => {

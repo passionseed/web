@@ -1,5 +1,6 @@
 import type { ExcalidrawElementSkeleton } from "@excalidraw/excalidraw/data/transform";
 
+import { cardSkeleton } from "./cards";
 import { STICKY_COLORS } from "./core";
 
 /**
@@ -9,6 +10,7 @@ import { STICKY_COLORS } from "./core";
  */
 
 export type TemplateId =
+  | "room"
   | "checkin"
   | "brainstorm"
   | "retro"
@@ -164,7 +166,40 @@ function checkin(question: string): ExcalidrawElementSkeleton[] {
   ];
 }
 
+/**
+ * A room for people who booked the same session: arrive, get or give help,
+ * close with a next step. One example card in each zone; more come from the
+ * board kit or the Library.
+ */
+function room(): ExcalidrawElementSkeleton[] {
+  const zones = [
+    { title: "1 มาถึง · Arrive", hint: "วันนี้อยากทำอะไรให้เสร็จ?", tint: "#ffec99", card: "arrive" as const },
+    { title: "2 ช่วยกัน · Help", hint: "อยากให้เพื่อนช่วยดูตรงไหน? ใครช่วยได้แปะการ์ด 🙋 ข้าง ๆ", tint: "#ffc9c9", card: "help" as const },
+    { title: "3 ปิดท้าย · Close", hint: "อะไรเดินหน้าไปแล้ว แล้วจะทำอะไรต่อ?", tint: "#a5d8ff", card: "close" as const },
+  ];
+  return [
+    heading(0, 0, "ห้องทำงานด้วยกัน", 44),
+    heading(0, 64, "เริ่มด้วยการ์ดมาถึง ทำงานด้วยกัน แล้วปิดท้ายด้วยสิ่งที่จะทำต่อ · การ์ดอยู่ใน 📚 Library และแถบเครื่องมือขวามือ", 20),
+    ...zones.flatMap((z, i) => {
+      const x = i * 760;
+      return [
+        ...zone(x, 120, 720, 900, z.title, z.tint),
+        heading(x + 24, 175, z.hint, 20),
+        cardSkeleton(z.card, x + 32, 230, true),
+        ...(z.card === "help" ? [cardSkeleton("helped", x + 280, 230, true)] : []),
+      ];
+    }),
+  ];
+}
+
 export const TEMPLATES: Template[] = [
+  {
+    id: "room",
+    name: "ห้องทำงานด้วยกัน · Work room",
+    description: "มาถึง ช่วยกัน ปิดท้าย ด้วยการ์ดคำถาม",
+    emoji: "🔊",
+    build: room,
+  },
   {
     id: "checkin",
     name: "เช็คอินทีม · Team check-in",
