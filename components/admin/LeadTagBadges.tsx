@@ -18,7 +18,14 @@ const TAG_CONFIG: { key: keyof LeadTags; label: string; variant: "default" | "se
 
 export function LeadTagBadges({ tags }: { tags: LeadTags }) {
   const active = TAG_CONFIG.filter((t) => tags[t.key]);
-  if (active.length === 0) return <span className="text-sm text-muted-foreground">—</span>;
+  if (active.length === 0) {
+    return (
+      <span className="text-sm text-muted-foreground">
+        <span aria-hidden="true">–</span>
+        <span className="sr-only">No tags</span>
+      </span>
+    );
+  }
 
   return (
     <div className="flex flex-wrap gap-1">

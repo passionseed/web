@@ -5,7 +5,10 @@ import {
   CircleDashed,
   ExternalLink,
 } from "lucide-react";
+import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
+import { AdminEmptyState } from "@/components/admin/shared/AdminStates";
 import { Badge } from "@/components/ui/badge";
+import { requireAdmin } from "@/lib/admin/requireAdmin";
 import {
   type CompetitionOpsFilters,
   type EligibilityStatus,
@@ -39,7 +42,7 @@ function parseFilters(raw: RawSearchParams): CompetitionOpsFilters {
 }
 
 function formatTimestamp(value: string | null): string {
-  if (!value) return "—";
+  if (!value) return "–";
   return new Date(value).toLocaleString("en-GB", {
     timeZone: "Asia/Bangkok",
     day: "2-digit",
@@ -72,6 +75,19 @@ function runVariant(status: string) {
   return "secondary" as const;
 }
 
+function LastRunStatus({ completedAt, complete }: { completedAt: string | null | undefined; complete: boolean }) {
+  return (
+    <div className="flex items-center gap-2 text-sm">
+      {complete ? (
+        <CheckCircle2 className="h-4 w-4 text-emerald-500" aria-hidden="true" />
+      ) : (
+        <CircleDashed className="h-4 w-4 text-amber-500" aria-hidden="true" />
+      )}
+      <span>{completedAt === undefined ? "No run yet" : `Last run ${formatTimestamp(completedAt)}`}</span>
+    </div>
+  );
+}
+
 function pageHref(filters: CompetitionOpsFilters, page: number): string {
   const params = new URLSearchParams();
   if (filters.source) params.set("source", filters.source);
@@ -87,6 +103,8 @@ export default async function AdminCompetitionsPage({
 }: {
   searchParams: Promise<RawSearchParams>;
 }) {
+  // The admin layout also checks, but this page reads with the service-role client.
+  await requireAdmin();
   const filters = parseFilters(await searchParams);
   const data = await getCompetitionOpsData(filters);
   const latestRun = data.runs[0];
@@ -95,31 +113,15 @@ export default async function AdminCompetitionsPage({
 
   return (
     <div className="space-y-8">
-      <header className="flex flex-col gap-3 border-b pb-5 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-600 dark:text-amber-300">
-            Opportunity operations
-          </p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight">
-            Competition coverage
-          </h2>
-          <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-            Source completeness, eligibility evidence, publication state, and the human-review
-            backlog. Times use Bangkok time.
-          </p>
-        </div>
-        <div className="flex items-center gap-2 text-sm">
-          {sourceComplete ? (
-            <CheckCircle2 className="h-4 w-4 text-emerald-500" aria-hidden="true" />
-          ) : (
-            <CircleDashed className="h-4 w-4 text-amber-500" aria-hidden="true" />
-          )}
-          <span>{latestRun ? `Last run ${formatTimestamp(latestRun.completed_at)}` : "No run yet"}</span>
-        </div>
-      </header>
+      <AdminPageHeader
+        eyebrow="Opportunity operations"
+        title="Competition coverage"
+        description="Source completeness, eligibility evidence, publication state, and the human-review backlog. Times use Bangkok time."
+        actions={<LastRunStatus completedAt={latestRun ? latestRun.completed_at : undefined} complete={Boolean(sourceComplete)} />}
+      />
 
       <section aria-labelledby="coverage-summary">
-        <h3 id="coverage-summary" className="sr-only">Coverage summary</h3>
+        <h2 id="coverage-summary" className="sr-only">Coverage summary</h2>
         <dl className="grid border-y sm:grid-cols-2 lg:grid-cols-5">
           {[
             ["Source records", data.metrics.totalSources.toLocaleString()],
@@ -149,7 +151,7 @@ export default async function AdminCompetitionsPage({
         <section className="rounded-lg border bg-muted/15" aria-labelledby="latest-sync">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
             <div>
-              <h3 id="latest-sync" className="font-semibold">Latest source sync</h3>
+              <h2 id="latest-sync" className="font-semibold">Latest source sync</h2>
               <p className="text-xs text-muted-foreground">
                 Started {formatTimestamp(latestRun.started_at)} · {latestRun.devpost_pages + latestRun.contester_pages} pages
               </p>
@@ -174,7 +176,7 @@ export default async function AdminCompetitionsPage({
               <div key={source.name} className="bg-background px-4 py-4">
                 <div className="flex items-center justify-between gap-3">
                   <p className="font-medium">{source.name}</p>
-                  <span className={source.complete ? "text-emerald-600" : "text-amber-600"}>
+                  <span className={source.complete ? "text-emerald-400" : "text-amber-400"}>
                     {source.complete ? "Complete" : "Partial"}
                   </span>
                 </div>
@@ -192,7 +194,7 @@ export default async function AdminCompetitionsPage({
 
       <section className="space-y-4" aria-labelledby="source-records">
         <div>
-          <h3 id="source-records" className="text-lg font-semibold">Source records</h3>
+          <h2 id="source-records" className="text-lg font-semibold">Source records</h2>
           <p className="text-sm text-muted-foreground">
             Review-first records stay out of student plans until eligibility is evidenced.
           </p>
@@ -201,7 +203,7 @@ export default async function AdminCompetitionsPage({
         <form className="flex flex-wrap items-end gap-3 border-y bg-muted/10 py-3">
           <label className="space-y-1 text-xs font-medium">
             <span>Source</span>
-            <select name="source" defaultValue={filters.source ?? ""} className="h-9 rounded-md border bg-background px-2 text-sm">
+            <select name="source" defaultValue={filters.source ?? ""} className="h-11 rounded-md border bg-background px-2 text-sm">
               <option value="">All sources</option>
               <option value="contester">Contester</option>
               <option value="devpost">Devpost</option>
@@ -209,7 +211,7 @@ export default async function AdminCompetitionsPage({
           </label>
           <label className="space-y-1 text-xs font-medium">
             <span>Eligibility</span>
-            <select name="eligibility" defaultValue={filters.eligibility ?? ""} className="h-9 rounded-md border bg-background px-2 text-sm">
+            <select name="eligibility" defaultValue={filters.eligibility ?? ""} className="h-11 rounded-md border bg-background px-2 text-sm">
               <option value="">All states</option>
               <option value="eligible">Eligible</option>
               <option value="needs_review">Needs review</option>
@@ -218,7 +220,7 @@ export default async function AdminCompetitionsPage({
           </label>
           <label className="space-y-1 text-xs font-medium">
             <span>Listing state</span>
-            <select name="state" defaultValue={filters.state ?? ""} className="h-9 rounded-md border bg-background px-2 text-sm">
+            <select name="state" defaultValue={filters.state ?? ""} className="h-11 rounded-md border bg-background px-2 text-sm">
               <option value="">Open and closed</option>
               <option value="open">Open</option>
               <option value="closed">Closed</option>
@@ -226,13 +228,13 @@ export default async function AdminCompetitionsPage({
           </label>
           <label className="min-w-56 flex-1 space-y-1 text-xs font-medium">
             <span>Title</span>
-            <input name="q" defaultValue={filters.query ?? ""} placeholder="Search opportunity title" className="h-9 w-full rounded-md border bg-background px-3 text-sm" />
+            <input name="q" defaultValue={filters.query ?? ""} placeholder="Search opportunity title" className="h-11 w-full rounded-md border bg-background px-3 text-sm" />
           </label>
-          <button type="submit" className="h-9 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground">
+          <button type="submit" className="h-11 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90 active:bg-primary/90">
             Apply
           </button>
           {(filters.source || filters.eligibility || filters.state || filters.query) && (
-            <Link href="/admin/competitions" className="inline-flex h-9 items-center text-xs underline underline-offset-4">
+            <Link href="/admin/competitions" className="inline-flex h-11 items-center px-2 text-xs underline underline-offset-4">
               Clear
             </Link>
           )}
@@ -301,12 +303,12 @@ export default async function AdminCompetitionsPage({
           </p>
           <div className="flex gap-2">
             {data.page > 1 && (
-              <Link href={pageHref(filters, data.page - 1)} className="rounded-md border px-3 py-1.5 hover:bg-muted">
+              <Link href={pageHref(filters, data.page - 1)} className="inline-flex min-h-11 items-center rounded-md border px-3 hover:bg-muted active:bg-muted">
                 Previous
               </Link>
             )}
             {data.page < totalPages && (
-              <Link href={pageHref(filters, data.page + 1)} className="rounded-md border px-3 py-1.5 hover:bg-muted">
+              <Link href={pageHref(filters, data.page + 1)} className="inline-flex min-h-11 items-center rounded-md border px-3 hover:bg-muted active:bg-muted">
                 Next
               </Link>
             )}
@@ -317,7 +319,7 @@ export default async function AdminCompetitionsPage({
       <section className="grid gap-8 xl:grid-cols-[1.2fr_1fr]">
         <div className="space-y-3">
           <div>
-            <h3 className="text-lg font-semibold">Run history</h3>
+            <h2 className="text-lg font-semibold">Run history</h2>
             <p className="text-sm text-muted-foreground">Durable proof from the last ten source refreshes.</p>
           </div>
           <div className="overflow-x-auto rounded-lg border">
@@ -348,7 +350,7 @@ export default async function AdminCompetitionsPage({
 
         <div className="space-y-3">
           <div>
-            <h3 className="text-lg font-semibold">Human review queue</h3>
+            <h2 className="text-lg font-semibold">Human review queue</h2>
             <p className="text-sm text-muted-foreground">Oldest pending work first.</p>
           </div>
           <div className="divide-y rounded-lg border">
@@ -366,7 +368,7 @@ export default async function AdminCompetitionsPage({
               </details>
             ))}
             {data.reviews.length === 0 && (
-              <p className="px-4 py-8 text-center text-sm text-muted-foreground">No pending reviews.</p>
+              <AdminEmptyState title="No pending reviews" className="border-0" />
             )}
           </div>
         </div>

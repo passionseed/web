@@ -1,8 +1,9 @@
-import { SubmissionClusterView } from "@/components/admin/SubmissionClusterView";
-import { requireAdmin } from "@/lib/admin/requireAdmin";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+
+import { SubmissionClusterView } from "@/components/admin/SubmissionClusterView";
+import { Button } from "@/components/ui/button";
+import { requireAdmin } from "@/lib/admin/requireAdmin";
 
 export const dynamic = "force-dynamic";
 
@@ -15,21 +16,23 @@ export default async function ActivityClustersPage({
   const { activityId } = await params;
 
   return (
-    <div className="container mx-auto space-y-4 py-8">
-      <div>
-        <Button asChild variant="ghost" className="-ml-4 w-fit text-muted-foreground">
+    <section className="space-y-4" aria-labelledby="hackathon-clusters">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 id="hackathon-clusters" className="text-lg font-semibold">Submission clusters</h2>
+          <p className="text-sm text-muted-foreground">
+            Semantic clusters of participant submissions for this activity, from BGE-M3 embeddings.
+          </p>
+        </div>
+        <Button asChild variant="outline" className="min-h-11">
           <Link href="/admin/hackathon/activities">
-            <ArrowLeft className="mr-2 h-4 w-4" />
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             Back to activities
           </Link>
         </Button>
-        <h1 className="mt-2 text-2xl font-bold">Submission clusters</h1>
-        <p className="text-sm text-muted-foreground">
-          Semantic clusters of participant submissions for this activity, powered by BGE-M3 embeddings.
-        </p>
       </div>
 
       <SubmissionClusterView activityId={activityId} />
-    </div>
+    </section>
   );
 }

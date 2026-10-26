@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { AdminErrorState, AdminLoading } from "@/components/admin/shared/AdminStates";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -57,14 +57,13 @@ export function ShiftViewsSummary() {
         </select>
       </label>
       {error ? (
-        <div className="flex flex-wrap items-center gap-3">
-          <p role="alert" className="text-sm text-muted-foreground">Failed to load page views.</p>
-          <Button variant="outline" className="min-h-11" onClick={() => setAttempt((value) => value + 1)}>
-            Retry
-          </Button>
-        </div>
+        <AdminErrorState
+          title="Could not load page views"
+          message="A failed load is not the same as zero views. Try again in a moment."
+          onRetry={() => setAttempt((value) => value + 1)}
+        />
       ) : stats === null ? (
-        <p role="status" className="text-sm text-muted-foreground">Loading page views…</p>
+        <AdminLoading rows={3} rowClassName="h-10" label="Loading page views" />
       ) : (
         <>
           <p className="text-sm">

@@ -5,8 +5,10 @@ import {
   type MessagingWindowMode,
 } from "@/lib/dm-leads/messaging-window";
 import {
+  CLOSED_LEAD_STATUSES,
   classifyBucket,
   getFieldCoverage,
+  isClosedLeadStatus,
   type DmLeadBucket,
   type DmLeadSignals,
   type FunnelScoreboard,
@@ -335,6 +337,11 @@ export interface DmLeadFilters {
   grade?: string;
   platform?: DmPlatform;
   intent?: DmLeadIntentFilter;
+  /**
+   * The lead wrote last and the conversation is still open. Converted, lost
+   * and spam conversations are never waiting on us (the same rule as
+   * needsReply, the done bucket and the overview's dm_awaiting_reply queue).
+   */
   myTurnOnly?: boolean;
   /** Case-insensitive match on username / display name. */
   search?: string;
@@ -346,6 +353,8 @@ export interface DmLeadFilters {
   /** Only conversations whose follow-up time has arrived (or passed). */
   followUpDue?: boolean;
   leadStatus?: DmLeadStatus;
+  /** Hide finished conversations: lead_status converted, lost or spam. */
+  openOnly?: boolean;
   /** Exact match on an admin tag. */
   tag?: string;
   /**
@@ -369,6 +378,9 @@ function escapeIlike(term: string): string {
 
 /** Matches the value written by scripts/tag-internal-lead.ts. */
 const INTERNAL_TAG = "internal";
+
+/** PostgREST list for `.not("lead_status", "in", ...)`: "(converted,lost,spam)". */
+const CLOSED_LEAD_STATUS_LIST = `(${CLOSED_LEAD_STATUSES.join(",")})`;
 
 /** Shared filter application so list + facet counts stay in sync. */
 function applyDmLeadFilters<T>(
@@ -399,6 +411,9 @@ function applyDmLeadFilters<T>(
   if (filters.starredOnly) q = q.eq("starred", true);
   if (filters.followUpDue) q = q.lte("follow_up_at", new Date().toISOString());
   if (filters.leadStatus) q = q.eq("lead_status", filters.leadStatus);
+  if (filters.openOnly || filters.myTurnOnly) {
+    q = q.not("lead_status", "in", CLOSED_LEAD_STATUS_LIST);
+  }
   if (filters.tag) q = q.contains("admin_tags", [filters.tag]);
   if (filters.search) {
     const term = escapeIlike(filters.search);
@@ -590,6 +605,7 @@ export interface DmLeadFacets {
   /** Funnel health for the WHOLE inbox — never scoped to the current view. */
   scoreboard: FunnelScoreboard;
   total: number;
+  /** Lead wrote last and the conversation is still open (not converted, lost or spam). */
   needsReply: number;
   payReady: number;
   /** Conversations we already sent a /pathlab link to. */
@@ -756,7 +772,11 @@ export async function getDmLeadFacets(
     if (row.lead_status in leadStatusCounts) {
       leadStatusCounts[row.lead_status as DmLeadStatus] += 1;
     }
-    if (row.last_message_direction === "inbound") needsReply += 1;
+    // Same rule as the `done` bucket and the overview's dm_awaiting_reply count:
+    // a finished conversation is never waiting on us, whoever wrote last.
+    if (row.last_message_direction === "inbound" && !isClosedLeadStatus(row.lead_status)) {
+      needsReply += 1;
+    }
     if (row.pathlab_pay_ready) payReady += 1;
     if (pathlabIds.has(row.id)) pathlabSent += 1;
     if (row.starred) starred += 1;

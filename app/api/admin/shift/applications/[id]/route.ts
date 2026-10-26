@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import {
+  ADMIN_SHIFT_APPLICATION_SELECT,
+  type AdminShiftApplication,
+} from "@/lib/admin/queue-tools/shift-applications";
+import { expireAdminOverviewKpis } from "@/lib/admin/overview/cache";
+import { isUuid } from "@/lib/admin/queue-tools/url";
 import { requireAdmin, safeServerError } from "@/lib/security/route-guards";
 import { createAdminClient } from "@/utils/supabase/admin";
 import type { ShiftApplicationRow } from "@/types/shift";
@@ -36,6 +42,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
   try {
     const { id } = await params;
+    if (!isUuid(id)) {
+      return NextResponse.json({ error: "Application not found" }, { status: 404 });
+    }
 
     let body: unknown;
     try {
@@ -59,13 +68,16 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       .from("shift_applications")
       .update(update)
       .eq("id", id)
-      .select()
+      .select(ADMIN_SHIFT_APPLICATION_SELECT)
       .single();
     if (error) {
       return NextResponse.json({ error: "Failed to update application" }, { status: 500 });
     }
 
-    return NextResponse.json({ application: data as ShiftApplicationRow });
+    // paid_at feeds the revenue and paid-seats KPIs on the overview.
+    if ("paid_at" in update) expireAdminOverviewKpis();
+
+    return NextResponse.json({ application: data as unknown as AdminShiftApplication });
   } catch (error) {
     return safeServerError("Failed to update SHIFT application", error);
   }

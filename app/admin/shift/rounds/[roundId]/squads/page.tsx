@@ -4,7 +4,7 @@ import { requireAdmin } from "@/lib/admin/requireAdmin";
 
 export const dynamic = "force-dynamic";
 
-export default async function RoundSquadsBoardPage({ params }: { params: Promise<{ roundId: string }> }) {
+export default async function RoundSquadsPage({ params }: { params: Promise<{ roundId: string }> }) {
   await requireAdmin();
   const { roundId } = await params;
   return (

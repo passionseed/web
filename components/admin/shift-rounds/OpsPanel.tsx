@@ -164,7 +164,7 @@ export function OpsPanel() {
         ) : config.loading && !config.data ? (
           <AdminLoading rows={4} rowClassName="h-12" label="Loading flags" />
         ) : (config.data ?? []).length === 0 ? (
-          <AdminEmptyState title="No SHIFT flags found" description="The app_config rows are seeded by the SHIFT rounds migration." />
+          <AdminEmptyState title="No SHIFT flags found" description="Flags show here once SHIFT rounds are set up. If this stays empty, tell the tech team." />
         ) : flagsShown.length === 0 ? (
           <p className="text-sm text-muted-foreground">No flags match.</p>
         ) : (

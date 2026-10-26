@@ -16,9 +16,14 @@ async function requireAdminUser() {
   return roles?.length ? user : null;
 }
 
+/** Admin-only results: never let a CDN or the browser cache keep them. */
+function json(body: unknown, status = 200) {
+  return NextResponse.json(body, { status, headers: { "Cache-Control": "private, no-store" } });
+}
+
 export async function GET(request: NextRequest) {
   const admin = await requireAdminUser();
-  if (!admin) return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+  if (!admin) return json({ error: "Not authorized" }, 403);
 
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q");
@@ -27,7 +32,7 @@ export async function GET(request: NextRequest) {
   const limit = parseInt(searchParams.get("limit") ?? "10");
 
   if (!query && !teamId) {
-    return NextResponse.json({ error: "q or teamId required" }, { status: 400 });
+    return json({ error: "q or teamId required" }, 400);
   }
 
   try {
@@ -38,9 +43,9 @@ export async function GET(request: NextRequest) {
       results = await searchTeamDirections(query!, { aspect, limit });
     }
 
-    return NextResponse.json({ results });
+    return json({ results });
   } catch (error) {
     console.error("Search error:", error);
-    return NextResponse.json({ error: "Search failed" }, { status: 500 });
+    return json({ error: "Search failed" }, 500);
   }
 }

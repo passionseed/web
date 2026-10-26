@@ -6,17 +6,22 @@ import { Bell, Flame, Inbox, Keyboard, Maximize2, Minimize2, RefreshCw, Star } f
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { isEditable } from "@/lib/dom/is-editable";
 import { isWithinMessagingWindow } from "@/lib/dm-leads/messaging-window";
 import { contextFromConversation, getQuickReplies } from "@/lib/dm-leads/quick-replies";
 import { deriveSignalsFromMessages } from "@/lib/dm-leads/signals";
 import { COHORT_META } from "@/lib/dm-leads/scoring";
 import { getThread, syncLeadMessages, updateLead, type LeadMetaPatch } from "@/app/admin/dm-leads/actions";
+import { refreshAdminCounts } from "@/components/admin/console/live-counts";
+import { Kbd } from "@/components/admin/shared/Kbd";
+import { pageShortcutsPaused } from "@/components/admin/shared/page-shortcuts";
 import { DmLeadDetailPane } from "@/components/admin/DmLeadDetailPane";
 import { DM_REPLY_TEXTAREA_ID } from "@/components/admin/DmLeadReplyForm";
 import { DM_LEAD_SEARCH_INPUT_ID } from "@/components/admin/DmLeadFilters";
 import {
   followUpTomorrow,
   isFollowUpDue,
+  leadPatchMovesQueues,
 } from "@/components/admin/DmLeadManageBar";
 import type {
   DmConversationWithBucket,
@@ -53,22 +58,6 @@ function timeAgo(iso: string): string {
 function instagramHandle(username: string | null): string | null {
   const handle = username?.trim().replace(/^@+/, "");
   return handle ? `@${handle}` : null;
-}
-
-function isTypingTarget(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false;
-  return (
-    target.tagName === "INPUT" ||
-    target.tagName === "TEXTAREA" ||
-    target.tagName === "SELECT" ||
-    target.isContentEditable
-  );
-}
-
-function Kbd({ children }: { children: React.ReactNode }) {
-  return (
-    <kbd className="rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px]">{children}</kbd>
-  );
 }
 
 function MessagingWindowBadge({ lastInboundMessageAt }: { lastInboundMessageAt: string | null }) {
@@ -198,7 +187,7 @@ export function DmLeadsInbox({ conversations }: { conversations: DmConversationW
   useEffect(() => {
     if (!vimMode) return;
     const onFocusIn = (e: FocusEvent) =>
-      setEditorMode(isTypingTarget(e.target) ? "insert" : "normal");
+      setEditorMode(isEditable(e.target) ? "insert" : "normal");
     const onFocusOut = () => setEditorMode("normal");
     window.addEventListener("focusin", onFocusIn);
     window.addEventListener("focusout", onFocusOut);
@@ -261,9 +250,12 @@ export function DmLeadsInbox({ conversations }: { conversations: DmConversationW
     const focusReply = () => document.getElementById(DM_REPLY_TEXTAREA_ID)?.focus();
 
     const handler = (e: KeyboardEvent) => {
+      // A dialog or popover owns the keyboard (its Escape must not also leave
+      // fullscreen, and "s" or "f" must not change the lead underneath).
+      if (pageShortcutsPaused(e)) return;
       if (e.key === "Escape") {
-        if (isTypingTarget(e.target)) {
-          (e.target as HTMLElement).blur();
+        if (e.target instanceof HTMLElement && isEditable(e.target)) {
+          e.target.blur();
           return;
         }
         if (fullscreen) {
@@ -271,7 +263,7 @@ export function DmLeadsInbox({ conversations }: { conversations: DmConversationW
           return;
         }
       }
-      if (isTypingTarget(e.target)) return;
+      if (isEditable(e.target)) return;
 
       // Vim half-page jumps — must run before the modifier bail-out.
       if (vimMode && e.ctrlKey && (e.key === "d" || e.key === "u")) {
@@ -391,6 +383,7 @@ export function DmLeadsInbox({ conversations }: { conversations: DmConversationW
   // one lead too late.
   const handleSent = (hadAttachment: boolean) => {
     if (!selected) return;
+    refreshAdminCounts();
     setItems((prev) =>
       prev.map((c) =>
         c.id === selected.id ? { ...c, last_message_direction: "outbound" as const } : c
@@ -401,7 +394,10 @@ export function DmLeadsInbox({ conversations }: { conversations: DmConversationW
     if (next && next.id !== selected.id) setSelectedId(next.id);
   };
 
-  /** Optimistic local sync for manage-bar patches (star, status, tags, …). */
+  /**
+   * Optimistic local sync for manage-bar patches (star, status, tags, …).
+   * The bar saves and refreshes the queue counts itself.
+   */
   const syncMeta = (patch: LeadMetaPatch) => {
     if (!selected) return;
     setItems((prev) => prev.map((c) => (c.id === selected.id ? { ...c, ...patch } : c)));
@@ -413,6 +409,7 @@ export function DmLeadsInbox({ conversations }: { conversations: DmConversationW
     syncMeta(patch);
     updateLead(selected.id, patch).then((r) => {
       if (!r.ok) router.refresh();
+      else if (leadPatchMovesQueues(patch)) refreshAdminCounts();
     });
   };
 

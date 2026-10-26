@@ -1,3 +1,4 @@
+import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
 import { listCopilotTokensAction } from "./actions";
 import { CopilotTokenList } from "./CopilotTokenList";
 import { CopilotSetupGuide } from "./CopilotSetupGuide";
@@ -10,12 +11,11 @@ export default async function DmCopilotPage() {
     process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "https://www.passionseed.org";
   return (
     <div className="space-y-4">
-      <header className="space-y-1">
-        <h2 className="text-xl font-semibold">DM Copilot · Tokens</h2>
-        <p className="text-xs text-muted-foreground">
-          สร้าง bearer token ให้ Chrome extension ที่อยู่ในเครื่องของทีม ไม่ต้องใช้ session cookie ของ admin
-        </p>
-      </header>
+      <AdminPageHeader
+        eyebrow="DM leads"
+        title="DM copilot tokens"
+        description="สร้าง bearer token ให้ Chrome extension ที่อยู่ในเครื่องของทีม ไม่ต้องใช้ session cookie ของ admin"
+      />
       <CopilotSetupGuide apiBase={apiBase} />
       <CopilotTokenList initialTokens={tokens} />
     </div>

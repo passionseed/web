@@ -211,7 +211,7 @@ export function LearningAnalyticsDashboard() {
               <CardTitle>
                 {chartView === "finalists"
                   ? `Learning × ${scoreRound === "round1" ? "Round 1" : "Semifinal"}`
-                  : "Learning × Completion — all teams"}
+                  : "Learning × Completion, all teams"}
               </CardTitle>
               <CardDescription>
                 {chartView === "finalists"
@@ -322,7 +322,7 @@ export function LearningAnalyticsDashboard() {
                     <td className="px-2 py-1.5 font-medium">
                       {t.label}
                       {t.honestWrongness && <span title="Admitted being wrong (genuine learning)"> 💡</span>}
-                      {lowN && <span title="Low data volume — interpret with caution" className="ml-1 text-amber-500">⚠</span>}
+                      {lowN && <span title="Low data volume: interpret with caution" className="ml-1 text-amber-500">⚠</span>}
                     </td>
                     <td className="px-2 py-1.5 font-semibold">{t.learningIndex?.toFixed(1) ?? "–"}</td>
                     <td className="px-2 py-1.5">{t.fidelity?.toFixed(0) ?? "–"}</td>
@@ -385,7 +385,7 @@ function TeamDrawer({ team, detail, loading, error, onRetry, onClose }: {
           <Bar label="Iteration (normalized)" weight="×0.18" value={team.iteration} />
           <Bar label="Engagement (normalized)" weight="×0.12" value={team.engagement} />
           <div className="mt-2 text-xs text-muted-foreground">
-            AI-likelihood ({team.aiLikelihood?.toFixed(0)}%) is independent — never folded into the index.
+            AI-likelihood ({team.aiLikelihood?.toFixed(0)}%) is independent and never folded into the index.
           </div>
         </div>
 
@@ -433,7 +433,7 @@ function TeamDrawer({ team, detail, loading, error, onRetry, onClose }: {
             )}
 
             <div className="mb-2 text-sm font-semibold">
-              Phase 1–2 submissions ({detail.summary.scoredSubmissions}) — avg fidelity {detail.summary.avgFidelity?.toFixed(1)}
+              Phase 1–2 submissions ({detail.summary.scoredSubmissions}), avg fidelity {detail.summary.avgFidelity?.toFixed(1)}
             </div>
             <div className="space-y-2">
               {detail.submissions.map((s, i) => (
@@ -465,7 +465,7 @@ function TeamDrawer({ team, detail, loading, error, onRetry, onClose }: {
             {detail.cycles.length > 0 && (
               <>
                 <div className="mb-2 mt-5 text-sm font-semibold">
-                  Phase 3 cycles ({detail.summary.scoredCycles}) — avg rigor {detail.summary.avgCycleRigor?.toFixed(1)}/100
+                  Phase 3 cycles ({detail.summary.scoredCycles}), avg rigor {detail.summary.avgCycleRigor?.toFixed(1)}/100
                 </div>
                 <div className="space-y-2">
                   {detail.cycles.map((c, i) => (

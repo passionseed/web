@@ -1,4 +1,8 @@
 import { createAdminClient } from "@/utils/supabase/admin";
+import {
+  LINE_CONTACT_LIST_LIMIT,
+  type LineContactFilter,
+} from "@/lib/admin/queue-tools/line";
 import type { LineOaProfile } from "@/lib/line-oa/client";
 import type { LineFollowChange, LineInboundMessage } from "@/lib/line-oa/webhook-events";
 
@@ -133,18 +137,42 @@ export async function recordLineFollowChange(
   return outcome;
 }
 
-export async function listLineContacts(search?: string): Promise<LineContact[]> {
+export interface LineContactListResult {
+  contacts: LineContact[];
+  /** More contacts match than the list shows. */
+  truncated: boolean;
+  limit: number;
+}
+
+/**
+ * Newest chats first, at most LINE_CONTACT_LIST_LIMIT. "unanswered" is the
+ * work queue: the contact wrote last and still follows the account, so a
+ * reply can reach them.
+ */
+export async function listLineContacts({
+  search,
+  filter = "all",
+}: { search?: string; filter?: LineContactFilter } = {}): Promise<LineContactListResult> {
   const supabase = createAdminClient();
   let query = supabase
     .from("line_contacts")
     .select(CONTACT_COLUMNS)
     .order("last_message_at", { ascending: false, nullsFirst: false })
-    .limit(300);
+    // One extra row tells us whether the list was cut off.
+    .limit(LINE_CONTACT_LIST_LIMIT + 1);
   if (search) query = query.ilike("display_name", `%${search.replace(/[%_]/g, "\\$&")}%`);
+  if (filter === "unanswered") {
+    query = query.eq("last_message_direction", "inbound").eq("is_following", true);
+  }
 
   const { data, error } = await query;
   if (error) throw new Error(`line_contacts list failed: ${error.message}`);
-  return (data ?? []) as LineContact[];
+  const rows = (data ?? []) as LineContact[];
+  return {
+    contacts: rows.slice(0, LINE_CONTACT_LIST_LIMIT),
+    truncated: rows.length > LINE_CONTACT_LIST_LIMIT,
+    limit: LINE_CONTACT_LIST_LIMIT,
+  };
 }
 
 export async function getLineContact(contactId: string): Promise<LineContact | null> {

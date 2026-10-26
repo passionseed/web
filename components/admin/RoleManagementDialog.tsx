@@ -1,6 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState, type ComponentType } from "react";
+import { toast } from "sonner";
+import {
+  BookOpen,
+  FlaskConical,
+  GraduationCap,
+  Loader2,
+  Save,
+  ShieldAlert,
+  Sprout,
+  Users,
+} from "lucide-react";
+
 import {
   Dialog,
   DialogContent,
@@ -9,8 +21,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -20,640 +32,437 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { useToast } from "@/components/ui/use-toast";
-import { UserRole } from "@/lib/supabase/auth-client";
+import { useConfirm } from "@/components/admin/shared/useConfirm";
 import {
-  Loader2,
-  Shield,
-  GraduationCap,
-  Users,
-  BookOpen,
-  Save,
-  X,
-  FlaskConical,
-  Sprout,
-  ShieldAlert,
-} from "lucide-react";
-
-interface UserWithRoles {
-  id: string;
-  email: string;
-  profiles?: {
-    username: string;
-    full_name: string;
-    avatar_url: string;
-    discord_uid?: string;
-  };
-  user_roles: {
-    role: UserRole;
-  }[];
-}
+  PRIMARY_ROLES,
+  ROLE_LABELS,
+  canRemoveAdminRole,
+  userDisplayName,
+  type AdminUserRole,
+  type AdminUserRow,
+  type PrimaryRole,
+  type RoleChangeAction,
+} from "@/lib/supabase/admin-users";
 
 interface RoleManagementDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  user: UserWithRoles | null;
-  onRoleUpdated: () => void;
+  /** Null while the user behind `?id=` is still loading. */
+  user: AdminUserRow | null;
+  /** The signed-in admin, so they cannot remove their own admin role. */
+  currentUserId: string;
+  /** Called after any successful (or partly successful) change. */
+  onChanged: () => void;
 }
 
-// Only show roles that admins can assign to others (exclude admin role)
-const ASSIGNABLE_ROLES: {
-  role: UserRole;
-  label: string;
-  description: string;
-  icon: any;
-}[] = [
-    {
-      role: "student",
-      label: "Student",
-      description: "Can access learning maps and participate in classrooms",
-      icon: BookOpen,
-    },
-    {
-      role: "TA",
-      label: "Moderator",
-      description: "Can assist in classrooms and help with grading",
-      icon: Users,
-    },
-    {
-      role: "instructor",
-      label: "Instructor",
-      description: "Can create and manage classrooms and assignments",
-      icon: GraduationCap,
-    },
-  ];
+const PRIMARY_ROLE_INFO: Record<PrimaryRole, { description: string; icon: ComponentType<{ className?: string }> }> = {
+  student: { description: "Can open learning maps and join classrooms.", icon: BookOpen },
+  TA: { description: "Can help in classrooms and with grading.", icon: Users },
+  instructor: { description: "Can create and run classrooms and assignments.", icon: GraduationCap },
+};
 
-export function RoleManagementDialog({
-  open,
-  onOpenChange,
-  user,
-  onRoleUpdated,
-}: RoleManagementDialogProps) {
-  const [loading, setLoading] = useState(false);
-  const [editingProfile, setEditingProfile] = useState(false);
-  const [profileData, setProfileData] = useState({
-    username: "",
-    full_name: "",
-    discord_uid: "",
-  });
-  const [selectedRole, setSelectedRole] = useState<UserRole | "">("");
-  const { toast } = useToast();
+type Pending = "primary" | "beta-tester" | "admin" | "passion-seed-team" | "profile" | null;
 
-  // Reset form data when user changes - always call this hook
-  useEffect(() => {
-    if (user) {
-      setProfileData({
-        username: user.profiles?.username || "",
-        full_name: user.profiles?.full_name || "",
-        discord_uid: user.profiles?.discord_uid || "",
-      });
-      setSelectedRole("");
-      setEditingProfile(false);
-    } else {
-      setProfileData({
-        username: "",
-        full_name: "",
-        discord_uid: "",
-      });
-      setSelectedRole("");
-      setEditingProfile(false);
-    }
-  }, [user]);
-
-  if (!user) {
-    return null;
+export function RoleBadges({ roles }: { roles: AdminUserRole[] }) {
+  if (roles.length === 0) {
+    return (
+      <Badge variant="outline" className="text-xs font-normal text-muted-foreground">
+        No roles
+      </Badge>
+    );
   }
-
-  const currentRoles = new Set(user.user_roles.map((r) => r.role));
-  const assignableRoles = user.user_roles.filter((r) =>
-    ASSIGNABLE_ROLES.some((ar) => ar.role === r.role)
+  return (
+    <div className="flex flex-wrap gap-1">
+      {roles.map((role) => (
+        <Badge
+          key={role}
+          variant={role === "admin" ? "destructive" : role === "instructor" || role === "TA" ? "secondary" : "outline"}
+          className="text-xs"
+        >
+          {ROLE_LABELS[role]}
+        </Badge>
+      ))}
+    </div>
   );
-  const primaryRole = assignableRoles.length > 0 ? assignableRoles[0].role : "";
-  const isBetaTester = user.user_roles.some((r) => r.role === "beta-tester");
-  const isPassionSeedMember = user.user_roles.some((r) => r.role === "passion-seed-team");
-  const isAdmin = currentRoles.has("admin");
+}
 
-  const handleRoleChange = async (newRole: UserRole) => {
-    if (loading || !newRole) return;
-
-    setLoading(true);
-
-    try {
-      // Remove all current assignable roles
-      for (const roleData of assignableRoles) {
-        await fetch("/api/admin/users/roles", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: user.id,
-            role: roleData.role,
-            action: "remove",
-          }),
-        });
-      }
-
-      // Add the new role
-      const response = await fetch("/api/admin/users/roles", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user.id,
-          role: newRole,
-          action: "add",
-        }),
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: `Role updated to ${newRole} successfully`,
-        });
-        onRoleUpdated();
-      } else {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to update role");
-      }
-    } catch (error) {
-      console.error("Error updating role:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to update role",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+async function postRoleChange(userId: string, role: AdminUserRole, action: RoleChangeAction) {
+  const response = await fetch("/api/admin/users/roles", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId, role, action }),
+  });
+  const body = (await response.json().catch(() => null)) as
+    | { message?: string; error?: string; partial?: boolean }
+    | null;
+  return {
+    ok: response.ok,
+    partial: Boolean(body?.partial),
+    message: body?.message ?? body?.error ?? (response.ok ? "Role updated" : "Could not update the role"),
   };
+}
 
-  const handleBetaStatusChange = async (enabled: boolean) => {
-    if (loading) return;
-    setLoading(true);
+function ProfileSection({
+  user,
+  disabled,
+  onSaved,
+  setPending,
+}: {
+  user: AdminUserRow;
+  disabled: boolean;
+  onSaved: () => void;
+  setPending: (pending: Pending) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({ username: "", full_name: "", discord_uid: "" });
 
-    try {
-      const response = await fetch("/api/admin/users/roles", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user.id,
-          role: "beta-tester",
-          action: enabled ? "add" : "remove",
-        }),
-      });
+  useEffect(() => {
+    setForm({
+      username: user.username ?? "",
+      full_name: user.full_name ?? "",
+      discord_uid: user.discord_uid ?? "",
+    });
+    setEditing(false);
+  }, [user.id, user.username, user.full_name, user.discord_uid]);
 
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: `Beta tester status ${enabled ? "enabled" : "disabled"} successfully`,
-        });
-        onRoleUpdated();
-      } else {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to update beta status");
-      }
-    } catch (error) {
-      console.error("Error updating beta status:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Failed to update beta status",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handlePassionSeedStatusChange = async (enabled: boolean) => {
-    if (loading) return;
-    setLoading(true);
-
-    try {
-      const response = await fetch("/api/admin/users/roles", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user.id,
-          role: "passion-seed-team",
-          action: enabled ? "add" : "remove",
-        }),
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: `Passion Seed Team status ${enabled ? "enabled" : "disabled"} successfully`,
-        });
-        onRoleUpdated();
-      } else {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to update Passion Seed Team status");
-      }
-    } catch (error) {
-      console.error("Error updating Passion Seed Team status:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Failed to update Passion Seed Team status",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAdminStatusChange = async (enabled: boolean) => {
-    if (loading) return;
-    setLoading(true);
-
-    try {
-      const response = await fetch("/api/admin/users/roles", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user.id,
-          role: "admin",
-          action: enabled ? "add" : "remove",
-        }),
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: `Admin access ${enabled ? "granted" : "revoked"} successfully`,
-        });
-        onRoleUpdated();
-      } else {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to update admin status");
-      }
-    } catch (error) {
-      console.error("Error updating admin status:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to update admin status",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleProfileUpdate = async () => {
-    if (loading) return;
-
-    setLoading(true);
-
+  const save = async () => {
+    setPending("profile");
     try {
       const response = await fetch("/api/admin/users", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: user.id,
-          username: profileData.username.trim(),
-          full_name: profileData.full_name.trim(),
-          discord_uid: profileData.discord_uid.trim(),
+          username: form.username.trim(),
+          full_name: form.full_name.trim(),
+          discord_uid: form.discord_uid.trim(),
         }),
       });
-
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: "User profile updated successfully",
-        });
-        setEditingProfile(false);
-        onRoleUpdated();
-      } else {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to update profile");
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.error || "Could not update the profile");
       }
+      toast.success("Profile updated");
+      setEditing(false);
+      onSaved();
     } catch (error) {
-      console.error("Error updating profile:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to update profile",
-        variant: "destructive",
-      });
+      toast.error(error instanceof Error ? error.message : "Could not update the profile");
     } finally {
-      setLoading(false);
+      setPending(null);
     }
   };
 
-  const getRoleBadgeVariant = (role: UserRole) => {
-    switch (role) {
-      case "admin":
-        return "destructive";
-      case "instructor":
-        return "default";
-      case "TA":
-        return "secondary";
-      case "student":
-        return "outline";
-      case "beta-tester":
-        return "default";
-      default:
-        return "outline";
-    }
-  };
+  const fields = [
+    { key: "username", label: "Username", placeholder: "username" },
+    { key: "full_name", label: "Full name", placeholder: "Full name" },
+    { key: "discord_uid", label: "Discord user ID", placeholder: "Numeric Discord ID" },
+  ] as const;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Edit User Profile & Role</DialogTitle>
-          <DialogDescription>
-            Update profile information and role for{" "}
-            {user.profiles?.full_name || user.email}
-          </DialogDescription>
-        </DialogHeader>
+    <section className="space-y-3" aria-labelledby="role-dialog-profile">
+      <div className="flex items-center justify-between">
+        <h3 id="role-dialog-profile" className="text-sm font-medium">
+          Profile
+        </h3>
+        {!editing && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="min-h-11 active:bg-accent"
+            onClick={() => setEditing(true)}
+            disabled={disabled}
+          >
+            Edit profile
+          </Button>
+        )}
+      </div>
 
-        <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
-          {/* Current User Info */}
-          <div className="p-4 border rounded-lg bg-muted/50">
-            <div className="font-medium">
-              {user.profiles?.full_name ||
-                user.profiles?.username ||
-                "Unknown User"}
+      {editing ? (
+        <div className="space-y-3">
+          {fields.map((field) => (
+            <div key={field.key} className="space-y-1">
+              <Label htmlFor={`profile-${field.key}`}>{field.label}</Label>
+              <Input
+                id={`profile-${field.key}`}
+                value={form[field.key]}
+                onChange={(e) => setForm((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                placeholder={field.placeholder}
+                disabled={disabled}
+                className="h-11"
+              />
             </div>
-            <div className="text-sm text-muted-foreground">{user.email}</div>
-            <div className="flex gap-1 mt-2 flex-wrap">
-              {user.user_roles.map((roleData, index) => (
-                <Badge
-                  key={index}
-                  variant={getRoleBadgeVariant(roleData.role)}
-                  className={`text-xs ${roleData.role === "beta-tester" ? "bg-purple-500 hover:bg-purple-600 border-none text-white" : ""}`}
-                >
-                  {roleData.role === "TA" ? "moderator" : roleData.role}
-                  {roleData.role === "passion-seed-team" && " (Team)"}
-                </Badge>
-              ))}
-              {user.user_roles.length === 0 && (
-                <Badge variant="outline">No roles assigned</Badge>
+          ))}
+          <div className="flex gap-2">
+            <Button className="min-h-11" onClick={save} disabled={disabled}>
+              {disabled ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <Save className="h-4 w-4" aria-hidden="true" />
               )}
-            </div>
+              Save
+            </Button>
+            <Button
+              variant="outline"
+              className="min-h-11 active:bg-accent"
+              onClick={() => setEditing(false)}
+              disabled={disabled}
+            >
+              Cancel
+            </Button>
           </div>
-
-          {/* Profile Editing */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h4 className="font-medium">Profile Information</h4>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setEditingProfile(!editingProfile)}
-                disabled={loading}
-              >
-                {editingProfile ? <X className="h-4 w-4" /> : "Edit"}
-              </Button>
+        </div>
+      ) : (
+        <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
+          {fields.map((field) => (
+            <div key={field.key} className="contents">
+              <dt className="text-muted-foreground">{field.label}</dt>
+              <dd className="min-w-0 truncate">{user[field.key] || "Not set"}</dd>
             </div>
+          ))}
+        </dl>
+      )}
+    </section>
+  );
+}
 
-            {editingProfile ? (
-              <div className="space-y-3">
-                <div>
-                  <Label htmlFor="username">Username</Label>
-                  <Input
-                    id="username"
-                    value={profileData.username}
-                    onChange={(e) =>
-                      setProfileData((prev) => ({
-                        ...prev,
-                        username: e.target.value,
-                      }))
-                    }
-                    placeholder="Enter username"
-                    disabled={loading}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="full_name">Full Name</Label>
-                  <Input
-                    id="full_name"
-                    value={profileData.full_name}
-                    onChange={(e) =>
-                      setProfileData((prev) => ({
-                        ...prev,
-                        full_name: e.target.value,
-                      }))
-                    }
-                    placeholder="Enter full name"
-                    disabled={loading}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="discord_uid">Discord UID</Label>
-                  <Input
-                    id="discord_uid"
-                    value={profileData.discord_uid}
-                    onChange={(e) =>
-                      setProfileData((prev) => ({
-                        ...prev,
-                        discord_uid: e.target.value,
-                      }))
-                    }
-                    placeholder="Enter Discord UID"
-                    disabled={loading}
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={handleProfileUpdate}
-                    disabled={loading}
-                    size="sm"
-                  >
-                    {loading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Save className="h-4 w-4" />
-                    )}
-                    Save
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setEditingProfile(false);
-                      setProfileData({
-                        username: user?.profiles?.username || "",
-                        full_name: user?.profiles?.full_name || "",
-                        discord_uid: user?.profiles?.discord_uid || "",
-                      });
-                    }}
-                    disabled={loading}
-                  >
-                    Cancel
-                  </Button>
-                </div>
+function AccessSwitch({
+  id,
+  icon: Icon,
+  label,
+  description,
+  checked,
+  disabled,
+  note,
+  onCheckedChange,
+  danger,
+}: {
+  id: string;
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+  description: string;
+  checked: boolean;
+  disabled: boolean;
+  note?: string;
+  onCheckedChange: (checked: boolean) => void;
+  danger?: boolean;
+}) {
+  return (
+    <div className="flex min-h-11 items-center justify-between gap-4 rounded-lg border p-3">
+      <div className="space-y-1">
+        <div className="flex items-center gap-2">
+          <Icon className={danger ? "h-4 w-4 text-destructive" : "h-4 w-4 text-muted-foreground"} aria-hidden="true" />
+          <Label htmlFor={id} className="font-medium">
+            {label}
+          </Label>
+        </div>
+        <p className="text-sm text-muted-foreground">{description}</p>
+        {note && <p className="text-xs text-muted-foreground">{note}</p>}
+      </div>
+      <Switch id={id} checked={checked} onCheckedChange={onCheckedChange} disabled={disabled} />
+    </div>
+  );
+}
+
+export function RoleManagementDialog({
+  open,
+  onOpenChange,
+  user,
+  currentUserId,
+  onChanged,
+}: RoleManagementDialogProps) {
+  const [pending, setPending] = useState<Pending>(null);
+  const { confirm, confirmDialog } = useConfirm();
+
+  const runChange = async (key: Exclude<Pending, null>, role: AdminUserRole, action: RoleChangeAction) => {
+    if (!user || pending) return;
+    setPending(key);
+    try {
+      const result = await postRoleChange(user.id, role, action);
+      if (result.ok) toast.success(result.message);
+      else if (result.partial) toast.warning(result.message);
+      else toast.error(result.message);
+      if (result.ok || result.partial) onChanged();
+    } catch {
+      toast.error("Could not reach the server. Check your connection and try again.");
+    } finally {
+      setPending(null);
+    }
+  };
+
+  const roles = user?.roles ?? [];
+  const primaryRoles = PRIMARY_ROLES.filter((r) => roles.includes(r));
+  const primaryRole = primaryRoles[0] ?? "";
+  const isAdmin = roles.includes("admin");
+  const isSelf = user ? !canRemoveAdminRole(currentUserId, user.id) : false;
+  const name = user ? userDisplayName(user) : "";
+
+  const handleAdminChange = async (enable: boolean) => {
+    if (!user) return;
+    if (!enable && isSelf) {
+      toast.error("You cannot remove your own admin role. Ask another admin to do it.");
+      return;
+    }
+    const ok = await confirm(
+      enable
+        ? {
+            title: `Give ${name} admin access?`,
+            description:
+              "Admins can see every student's data, change anyone's roles and delete content. Only give this to PassionSeed staff.",
+            confirmLabel: "Give admin access",
+            destructive: true,
+          }
+        : {
+            title: `Remove admin access from ${name}?`,
+            description: "They lose access to the admin workspace straight away.",
+            confirmLabel: "Remove admin access",
+            destructive: true,
+          },
+    );
+    if (!ok) return;
+    await runChange("admin", "admin", enable ? "add" : "remove");
+  };
+
+  const handleTeamChange = async (enable: boolean) => {
+    if (!user) return;
+    if (enable) {
+      const ok = await confirm({
+        title: `Add ${name} to the PassionSeed team?`,
+        description:
+          "Team members can open internal tools such as the ProjectSeed roster, which shows student details. Only add PassionSeed staff.",
+        confirmLabel: "Add to team",
+      });
+      if (!ok) return;
+    }
+    await runChange("passion-seed-team", "passion-seed-team", enable ? "add" : "remove");
+  };
+
+  const busy = pending !== null;
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{user ? name : "Loading user"}</DialogTitle>
+            <DialogDescription>
+              {user ? user.email ?? "No email on file" : "Fetching the latest profile and roles."}
+            </DialogDescription>
+          </DialogHeader>
+
+          {!user ? (
+            <div className="space-y-3" aria-busy="true">
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-28 w-full" />
+              <Skeleton className="h-40 w-full" />
+            </div>
+          ) : (
+            <div className="max-h-[65vh] space-y-6 overflow-y-auto pr-1">
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">Current roles</p>
+                <RoleBadges roles={roles} />
+                <p className="text-xs text-muted-foreground">
+                  User ID <span className="select-all font-mono text-foreground">{user.id}</span>
+                </p>
               </div>
-            ) : (
-              <div className="space-y-2 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Username:</span>{" "}
-                  {user.profiles?.username || "Not set"}
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Full Name:</span>{" "}
-                  {user.profiles?.full_name || "Not set"}
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Discord UID:</span>{" "}
-                  {user.profiles?.discord_uid || "Not set"}
-                </div>
-              </div>
-            )}
-          </div>
 
-          {/* Role Management */}
-          <div className="space-y-4">
-            <h4 className="font-medium">Role Assignment</h4>
+              <ProfileSection user={user} disabled={busy} onSaved={onChanged} setPending={setPending} />
 
-            {/* Primary Role Selector */}
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="role-select">Primary Role</Label>
+              <section className="space-y-3" aria-labelledby="role-dialog-primary">
+                <h3 id="role-dialog-primary" className="text-sm font-medium">
+                  Primary role
+                </h3>
                 <Select
-                  value={selectedRole || primaryRole}
-                  onValueChange={(value) => {
-                    setSelectedRole(value as UserRole);
-                    handleRoleChange(value as UserRole);
-                  }}
-                  disabled={loading}
+                  value={primaryRole}
+                  onValueChange={(value) => runChange("primary", value as PrimaryRole, "set_primary")}
+                  disabled={busy}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a role" />
+                  <SelectTrigger className="h-11" aria-label="Primary role">
+                    <SelectValue placeholder="No primary role" />
                   </SelectTrigger>
                   <SelectContent>
-                    {ASSIGNABLE_ROLES.map((roleInfo) => {
-                      const Icon = roleInfo.icon;
+                    {PRIMARY_ROLES.map((role) => {
+                      const Icon = PRIMARY_ROLE_INFO[role].icon;
                       return (
-                        <SelectItem key={roleInfo.role} value={roleInfo.role}>
-                          <div className="flex items-center gap-2">
+                        <SelectItem key={role} value={role}>
+                          <span className="flex items-center gap-2">
                             <Icon className="h-4 w-4" />
-                            <span>{roleInfo.label}</span>
-                          </div>
+                            {ROLE_LABELS[role]}
+                          </span>
                         </SelectItem>
                       );
                     })}
                   </SelectContent>
                 </Select>
-              </div>
-
-              {/* Role descriptions */}
-              <div className="grid gap-2">
-                {ASSIGNABLE_ROLES.map((roleInfo) => {
-                  const Icon = roleInfo.icon;
-                  const isSelected =
-                    (selectedRole || primaryRole) === roleInfo.role;
-
-                  return (
-                    <div
-                      key={roleInfo.role}
-                      className={`p-3 border rounded-lg transition-colors ${isSelected
-                        ? "bg-primary/5 border-primary"
-                        : "bg-muted/20"
-                        }`}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <Icon className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{roleInfo.label}</span>
-                        {isSelected && (
-                          <Badge variant="outline" className="text-xs">
-                            Current
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {roleInfo.description}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Special Access Sections */}
-            <div className="space-y-3 pt-2 border-t">
-              <h5 className="text-sm font-medium">Special Access</h5>
-
-              <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/20">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <FlaskConical className="h-4 w-4 text-purple-500" />
-                    <Label htmlFor="beta-access" className="font-medium">
-                      Beta Tester Access
-                    </Label>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Grants access to experimental features and beta versions
+                <p className="text-sm text-muted-foreground">
+                  {primaryRole
+                    ? PRIMARY_ROLE_INFO[primaryRole].description
+                    : "Pick a role to give this person access to learning tools."}
+                </p>
+                {primaryRoles.length > 1 && (
+                  <p className="text-xs text-muted-foreground">
+                    This user has more than one primary role. Picking one removes the others.
                   </p>
-                </div>
-                <Switch
+                )}
+                {pending === "primary" && (
+                  <p className="flex items-center gap-2 text-xs text-muted-foreground" role="status">
+                    <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+                    Updating role
+                  </p>
+                )}
+              </section>
+
+              <section className="space-y-3 border-t pt-4" aria-labelledby="role-dialog-access">
+                <h3 id="role-dialog-access" className="text-sm font-medium">
+                  Special access
+                </h3>
+                <AccessSwitch
                   id="beta-access"
-                  checked={isBetaTester}
-                  onCheckedChange={handleBetaStatusChange}
-                  disabled={loading}
+                  icon={FlaskConical}
+                  label="Beta tester"
+                  description="Sees experimental features before everyone else."
+                  checked={roles.includes("beta-tester")}
+                  disabled={busy}
+                  onCheckedChange={(checked) => runChange("beta-tester", "beta-tester", checked ? "add" : "remove")}
                 />
-              </div>
-
-              <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/20">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <ShieldAlert className="h-4 w-4 text-red-500" />
-                    <Label htmlFor="admin-access" className="font-medium">
-                      Admin Access
-                    </Label>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Full access to the admin dashboard and all management tools
-                  </p>
-                </div>
-                <Switch
+                <AccessSwitch
+                  id="passion-seed-team"
+                  icon={Sprout}
+                  label="PassionSeed team"
+                  description="Internal team tools, including student rosters. Does not open the admin workspace."
+                  checked={roles.includes("passion-seed-team")}
+                  disabled={busy}
+                  onCheckedChange={handleTeamChange}
+                />
+                <AccessSwitch
                   id="admin-access"
+                  icon={ShieldAlert}
+                  danger
+                  label="Admin access"
+                  description="Full access to the admin workspace, including student data. Asks you to confirm."
                   checked={isAdmin}
-                  onCheckedChange={handleAdminStatusChange}
-                  disabled={loading}
+                  disabled={busy || (isAdmin && isSelf)}
+                  note={isAdmin && isSelf ? "This is you. Another admin has to remove your admin role." : undefined}
+                  onCheckedChange={handleAdminChange}
                 />
-              </div>
-
-              <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/20">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Sprout className="h-4 w-4 text-rose-500" />
-                    <Label htmlFor="passion-seed" className="font-medium">
-                      Passion Seed Team
-                    </Label>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Grants access to internal team features and administrative tools
-                  </p>
-                </div>
-                <Switch
-                  id="passion-seed"
-                  checked={isPassionSeedMember}
-                  onCheckedChange={handlePassionSeedStatusChange}
-                  disabled={loading}
-                />
-              </div>
+              </section>
             </div>
-          </div>
-        </div>
+          )}
 
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={loading}
-          >
-            Close
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              className="min-h-11 active:bg-accent"
+              onClick={() => onOpenChange(false)}
+              disabled={busy}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {confirmDialog}
+    </>
   );
 }

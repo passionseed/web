@@ -272,7 +272,7 @@ export function AdminHackathonGallery() {
           >
             <div className="flex items-center justify-between px-4 h-12 border-b border-white/10 bg-[#0a0f16] shrink-0">
               <span className="text-xs font-semibold text-white/50 uppercase tracking-wider">
-                Preview — {previewing.product_name}
+                Preview: {previewing.product_name}
               </span>
               <Button size="sm" variant="ghost" className="gap-1.5 text-xs text-white/60 hover:text-white" onClick={() => setPreviewing(null)}>
                 <X className="h-3 w-3" /> Close

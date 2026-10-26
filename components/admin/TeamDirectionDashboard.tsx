@@ -1,34 +1,44 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { TeamDirectionClusterView } from "./TeamDirectionClusterView";
 import { TeamDirectionSearch } from "./TeamDirectionSearch";
 import { TeamDirectionRagPanel } from "./TeamDirectionRagPanel";
+import { useConfirm } from "@/components/admin/shared/useConfirm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Zap, RefreshCw, Play, Eye } from "lucide-react";
+
+const errorText = (err: unknown) => (err instanceof Error ? err.message : String(err));
 
 export function TeamDirectionDashboard() {
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [embeddingLoading, setEmbeddingLoading] = useState(false);
   const [reclusterLoading, setReclusterLoading] = useState(false);
   const [processLoading, setProcessLoading] = useState(false);
-  const [lastAction, setLastAction] = useState<string | null>(null);
   const [testTeamId, setTestTeamId] = useState("");
   const [previewText, setPreviewText] = useState<string | null>(null);
   const [previewDebug, setPreviewDebug] = useState<Record<string, unknown> | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const { confirm, confirmDialog } = useConfirm();
 
   const handleEmbedAll = async () => {
-    if (!confirm("This will enqueue embedding jobs for ALL teams. Continue?")) return;
+    const ok = await confirm({
+      title: "Embed every team?",
+      description: "This queues embedding jobs for all teams. It can take a while and uses the embedding API.",
+      confirmLabel: "Embed all",
+    });
+    if (!ok) return;
     setEmbeddingLoading(true);
     try {
       const res = await fetch("/api/admin/hackathon/team-directions/embed-all", { method: "POST" });
       const data = await res.json();
-      setLastAction(`Enqueued ${data.enqueued ?? 0} teams for embedding`);
+      if (!res.ok) throw new Error(data.error ?? `Request failed (${res.status})`);
+      toast.success(`Queued ${data.enqueued ?? 0} teams for embedding`);
     } catch (err) {
-      setLastAction("Failed to enqueue embeddings");
+      toast.error(`Could not queue embeddings: ${errorText(err)}`);
     } finally {
       setEmbeddingLoading(false);
     }
@@ -37,7 +47,6 @@ export function TeamDirectionDashboard() {
   const handleEmbedSingle = async () => {
     if (!testTeamId.trim()) return;
     setEmbeddingLoading(true);
-    setLastAction(null);
     try {
       const res = await fetch("/api/admin/hackathon/team-directions/embed-team", {
         method: "POST",
@@ -46,13 +55,13 @@ export function TeamDirectionDashboard() {
       });
       const data = await res.json();
       if (data.success) {
-        setLastAction(`✓ Embedded team ${data.teamId} → snapshot ${data.snapshotId}`);
+        toast.success(`Embedded team ${data.teamId}, snapshot ${data.snapshotId}`);
         setTestTeamId("");
       } else {
-        setLastAction(`✗ ${data.error ?? "Failed"}`);
+        toast.error(data.error ?? "Could not embed this team");
       }
     } catch (err) {
-      setLastAction(`✗ ${err instanceof Error ? err.message : String(err)}`);
+      toast.error(`Could not embed this team: ${errorText(err)}`);
     } finally {
       setEmbeddingLoading(false);
     }
@@ -69,13 +78,13 @@ export function TeamDirectionDashboard() {
         body: JSON.stringify({ teamId: testTeamId.trim(), dryRun: true }),
       });
       const data = await res.json();
-      if (data.error) setLastAction(`✗ ${data.error}`);
+      if (data.error) toast.error(data.error);
       else {
-        setPreviewText(data.text || "(empty — no text submissions found)");
+        setPreviewText(data.text || "(empty: no text submissions found)");
         setPreviewDebug(data.debug ?? null);
       }
     } catch (err) {
-      setLastAction(`✗ ${err instanceof Error ? err.message : String(err)}`);
+      toast.error(`Could not load the preview: ${errorText(err)}`);
     } finally {
       setPreviewLoading(false);
     }
@@ -83,29 +92,37 @@ export function TeamDirectionDashboard() {
 
   const handleProcessPending = async () => {
     setProcessLoading(true);
-    setLastAction(null);
     try {
       const res = await fetch("/api/admin/hackathon/team-directions/process-pending", { method: "POST" });
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? `Request failed (${res.status})`);
       const completed = data.results?.filter((r: { status: string }) => r.status === "completed").length ?? 0;
       const failed = data.results?.filter((r: { status: string }) => r.status === "failed").length ?? 0;
-      setLastAction(`Processed ${data.processed ?? 0} jobs: ${completed} OK, ${failed} failed`);
+      const summary = `Processed ${data.processed ?? 0} jobs: ${completed} OK, ${failed} failed`;
+      if (failed > 0) toast.warning(summary);
+      else toast.success(summary);
     } catch (err) {
-      setLastAction("Failed to process pending jobs");
+      toast.error(`Could not process pending jobs: ${errorText(err)}`);
     } finally {
       setProcessLoading(false);
     }
   };
 
   const handleRecluster = async () => {
-    if (!confirm("This will recluster all team directions. Continue?")) return;
+    const ok = await confirm({
+      title: "Recluster all team directions?",
+      description: "This replaces the current cluster map with a new run.",
+      confirmLabel: "Recluster",
+    });
+    if (!ok) return;
     setReclusterLoading(true);
     try {
       const res = await fetch("/api/admin/hackathon/team-directions/recluster", { method: "POST" });
       const data = await res.json();
-      setLastAction(`Reclustered: ${data.clusteringId ?? "done"}`);
+      if (!res.ok) throw new Error(data.error ?? `Request failed (${res.status})`);
+      toast.success(`Reclustered: ${data.clusteringId ?? "done"}`);
     } catch (err) {
-      setLastAction("Failed to recluster");
+      toast.error(`Could not recluster: ${errorText(err)}`);
     } finally {
       setReclusterLoading(false);
     }
@@ -113,6 +130,7 @@ export function TeamDirectionDashboard() {
 
   return (
     <div className="space-y-6">
+      {confirmDialog}
       <div className="flex flex-wrap gap-2 items-center">
         <Button
           onClick={handleEmbedAll}
@@ -168,9 +186,6 @@ export function TeamDirectionDashboard() {
           {reclusterLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
           Recluster
         </Button>
-        {lastAction && (
-          <span className="text-sm text-muted-foreground">{lastAction}</span>
-        )}
       </div>
 
       <Tabs defaultValue="clusters" className="w-full">

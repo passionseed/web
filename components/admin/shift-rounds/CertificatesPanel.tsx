@@ -25,7 +25,7 @@ import {
 import { formatIct, missionsTotal } from "@/lib/shift-round/admin/format";
 import type { AdminCertificate } from "@/lib/shift-round/admin/types";
 
-import { ActionError, LoadError, NativeSelect, Pill, SearchBox, Section, statusTone } from "./shared";
+import { ActionError, EmptyValue, LoadError, NativeSelect, Pill, SearchBox, Section, statusTone } from "./shared";
 import { useAdminMutation, useAdminQuery } from "./useAdminData";
 
 type Filter = "all" | "issued" | "revoked";
@@ -147,7 +147,7 @@ export function CertificatesPanel({ roundId }: { roundId: string }) {
                   const tombstoned = Boolean(c.tombstone || c.tombstoned_at);
                   return (
                     <TableRow key={c.id}>
-                      <TableCell className="font-medium">{tombstoned ? <span className="text-muted-foreground">Deleted by holder</span> : c.handle ?? "—"}</TableCell>
+                      <TableCell className="font-medium">{tombstoned ? <span className="text-muted-foreground">Deleted by holder</span> : c.handle ?? <EmptyValue />}</TableCell>
                       <TableCell>
                         <a href={c.verify_url ?? `/c/${c.public_id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-mono text-xs hover:underline">
                           {c.public_id} <ExternalLink className="h-3 w-3" aria-hidden="true" />

@@ -10,16 +10,20 @@ import { formatBangkokDateTime } from "@/lib/shift/applicationStats";
 import { isDiscordOAuthJoinError } from "@/lib/shift/discordErrors";
 import { firstMeetLabel, getShiftCohortByName } from "@/lib/content/shift-cohort";
 import { joinConfirmMessage, kickoffMessage } from "@/lib/shift/paymentMessage";
-import type { ShiftApplicationRow as Application } from "@/types/shift";
+import type { AdminShiftApplication as Application } from "@/lib/admin/queue-tools/shift-applications";
 
 /**
  * Post-payment step: copy the welcome message (with the student's personal
  * /shift/join link), then watch them link Discord and land in the server.
+ * The join token is never in the list data; the link is fetched only when an
+ * admin copies a message.
  */
 
 type DiscordStatus = { label: string; variant: "default" | "secondary" | "destructive" | "outline" };
 
-export function discordStatus(app: Application): DiscordStatus | null {
+export function discordStatus(
+  app: Pick<Application, "paid_at" | "linked_at" | "discord_joined_at" | "discord_error">,
+): DiscordStatus | null {
   if (!app.paid_at) return null;
   if (!app.linked_at) return { label: "Not linked", variant: "outline" };
   if (app.discord_joined_at && !app.discord_error) return { label: "In Discord", variant: "default" };

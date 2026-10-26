@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import type { LobbyAccessTier, MapLobbyWithCount } from "@/types/lobby";
 import { Copy, Check, Users, Plus, Lock } from "lucide-react";
 
@@ -58,7 +58,6 @@ export function LobbyList({ mapId, onSelect }: LobbyListProps) {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [togglingLobbyId, setTogglingLobbyId] = useState<string | null>(null);
   const [tierLobbyId, setTierLobbyId] = useState<string | null>(null);
-  const { toast } = useToast();
 
   const loadLobbies = useCallback(async () => {
     try {
@@ -74,16 +73,14 @@ export function LobbyList({ mapId, onSelect }: LobbyListProps) {
       setLobbies(data.lobbies ?? []);
     } catch (error) {
       console.error("Error loading lobbies:", error);
-      toast({
-        title: "Failed to load lobbies",
-        description: error instanceof Error ? error.message : "Unknown error",
-        variant: "destructive",
+      toast.error("Could not load lobbies", {
+        description: error instanceof Error ? error.message : undefined,
       });
       setLobbies([]);
     } finally {
       setLoading(false);
     }
-  }, [mapId, toast]);
+  }, [mapId]);
 
   useEffect(() => {
     loadLobbies();
@@ -92,11 +89,7 @@ export function LobbyList({ mapId, onSelect }: LobbyListProps) {
   const handleCreateLobby = async () => {
     const name = newLobbyName.trim();
     if (!name) {
-      toast({
-        title: "Name required",
-        description: "Please enter a name for the new lobby.",
-        variant: "destructive",
-      });
+      toast.error("Name the lobby first");
       return;
     }
 
@@ -115,18 +108,15 @@ export function LobbyList({ mapId, onSelect }: LobbyListProps) {
 
       const data = await response.json();
       setNewLobbyName("");
-      toast({
-        title: "Lobby created",
-        description: `Join code: ${data.lobby?.join_code ?? "—"}`,
+      toast.success("Lobby created", {
+        description: data.lobby?.join_code ? `Join code: ${data.lobby.join_code}` : undefined,
       });
       // Refresh the list so the new lobby appears immediately
       await loadLobbies();
     } catch (error) {
       console.error("Error creating lobby:", error);
-      toast({
-        title: "Failed to create lobby",
-        description: error instanceof Error ? error.message : "Unknown error",
-        variant: "destructive",
+      toast.error("Could not create the lobby", {
+        description: error instanceof Error ? error.message : undefined,
       });
     } finally {
       setCreating(false);
@@ -153,8 +143,7 @@ export function LobbyList({ mapId, onSelect }: LobbyListProps) {
       setLobbies((prev) =>
         prev.map((l) => (l.id === lobbyId ? { ...l, access_tier: accessTier } : l))
       );
-      toast({
-        title: accessTier === "micro" ? "Switched to Micro" : "Switched to Full",
+      toast.success(accessTier === "micro" ? "Switched to Micro" : "Switched to Full", {
         description:
           accessTier === "micro"
             ? "Members now see the first island only."
@@ -162,10 +151,8 @@ export function LobbyList({ mapId, onSelect }: LobbyListProps) {
       });
     } catch (error) {
       console.error("Error updating lobby tier:", error);
-      toast({
-        title: "Failed to update tier",
-        description: error instanceof Error ? error.message : "Unknown error",
-        variant: "destructive",
+      toast.error("Could not change the tier", {
+        description: error instanceof Error ? error.message : undefined,
       });
     } finally {
       setTierLobbyId(null);
@@ -192,10 +179,8 @@ export function LobbyList({ mapId, onSelect }: LobbyListProps) {
       );
     } catch (error) {
       console.error("Error updating lobby:", error);
-      toast({
-        title: "Failed to update lobby",
-        description: error instanceof Error ? error.message : "Unknown error",
-        variant: "destructive",
+      toast.error("Could not update the lobby", {
+        description: error instanceof Error ? error.message : undefined,
       });
     } finally {
       setTogglingLobbyId(null);
@@ -214,16 +199,11 @@ export function LobbyList({ mapId, onSelect }: LobbyListProps) {
       await navigator.clipboard.writeText(buildJoinLink(code));
       setCopiedCode(code);
       setTimeout(() => setCopiedCode(null), 2000);
-      toast({
-        title: "Join link copied",
+      toast.success("Join link copied", {
         description: "Paste it to invite students straight into this room.",
       });
     } catch {
-      toast({
-        title: "Copy failed",
-        description: "Could not copy to clipboard.",
-        variant: "destructive",
-      });
+      toast.error("Could not copy the link");
     }
   };
 
