@@ -12,6 +12,7 @@ import type { RisoIconName } from "@/components/shift/poster/RisoIcons";
 import { ShiftIcon } from "@/components/shift/round/ShiftIcon";
 import { RisoHeading } from "@/components/shift/ShiftRiso";
 import { ShiftGlance } from "@/components/shift/round/ShiftGlance";
+import { ShiftHouseRules } from "@/components/shift/round/ShiftHouseRules";
 import { ShiftProblem } from "@/components/shift/round/ShiftProblem";
 import { ShiftSdt } from "@/components/shift/round/ShiftSdt";
 import { ShiftShowcase } from "@/components/shift/round/ShiftShowcase";
@@ -22,7 +23,7 @@ import {
 } from "@/components/shift/round/ShiftTimeline";
 import { floatClass, revealClass } from "@/components/shift/round/motion";
 import "@/components/shift/round/shiftRound.css";
-import { themeForRound } from "@/components/shift/theme";
+import { themeForCohort } from "@/components/shift/theme";
 import {
   HEADING,
   T,
@@ -266,7 +267,7 @@ export default async function ShiftRoundPage({ params }: RoundParams) {
   const showPrice = cohort.priceBaht > 0;
   const faqs = buildFaqs(cohort);
   const shiftJsonLd = buildJsonLd(cohort, faqs);
-  const theme = themeForRound(cohort.round);
+  const theme = themeForCohort(cohort);
   const { Hero, Texture, Bookend } = theme;
 
   return (
@@ -336,7 +337,7 @@ export default async function ShiftRoundPage({ params }: RoundParams) {
       <main className="relative mx-auto max-w-5xl px-5 pb-10 sm:px-8">
         <ShiftGlance cohort={cohort} kind={theme.kind} />
 
-        {/* ============ 1b. WHAT THIS ROUND SHIPPED (finished rounds) ============ */}
+        {/* ============ 1b. WHAT THIS ROUND (or the one before it) SHIPPED ============ */}
         <ShiftShowcase cohort={cohort} kind={theme.kind} />
 
         {/* ============ 2. THE PROBLEM ============ */}
@@ -349,7 +350,10 @@ export default async function ShiftRoundPage({ params }: RoundParams) {
         {/* ============ 3c. SQUADS & DAILY SHOW ============ */}
         <ShiftSquads cohort={cohort} kind={theme.kind} />
 
-        {/* ============ 3d. WHY IT WORKS (SDT) ============ */}
+        {/* ============ 3d. HOUSE RULES (SHIFT[1] Day 1 boards) ============ */}
+        <ShiftHouseRules kind={theme.kind} />
+
+        {/* ============ 3e. WHY IT WORKS (SDT) ============ */}
         <ShiftSdt kind={theme.kind} />
 
         {/* ============ 4. TRACKS ============ */}

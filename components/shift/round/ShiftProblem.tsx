@@ -1,13 +1,21 @@
-import type { ReactNode } from "react";
+import type { ComponentType, ReactNode } from "react";
 import { Check, X } from "lucide-react";
 
 import { RisoHeading } from "@/components/shift/ShiftRiso";
 import type { ShiftArtKind } from "@/components/shift/theme";
 import { T, tint } from "@/components/shift/theme/tokens";
 
+import { HalloweenCertArt, HalloweenLiveArt } from "./HalloweenArt";
 import { PixelCertArt, PixelLiveArt } from "./PixelArt";
 import { CertStackArt, LiveWindowArt } from "./ShiftArt";
 import { revealClass } from "./motion";
+
+/** The two compare-panel drawings, in each art family's own hand. */
+const ART: Record<ShiftArtKind, { Cert: ComponentType; Live: ComponentType }> = {
+  riso: { Cert: CertStackArt, Live: LiveWindowArt },
+  pixel: { Cert: PixelCertArt, Live: PixelLiveArt },
+  halloween: { Cert: HalloweenCertArt, Live: HalloweenLiveArt },
+};
 
 const CAMP_POINTS = [
   "นั่งฟังบรรยาย 6 ชั่วโมง และเล่นเกมกลุ่ม",
@@ -74,7 +82,7 @@ function Point({ icon, children, muted }: { icon: ReactNode; children: ReactNode
 
 /** Cert camp vs SHIFT, drawn: a grey pile of the same paper vs a live window. */
 export function ShiftProblem({ kind }: { kind: ShiftArtKind }) {
-  const pixel = kind === "pixel";
+  const { Cert, Live } = ART[kind];
   return (
     <section className="py-16 sm:py-24">
       <RisoHeading eyebrow="The Problem">
@@ -85,7 +93,7 @@ export function ShiftProblem({ kind }: { kind: ShiftArtKind }) {
         <ComparePanel
           index={0}
           tone="muted"
-          art={pixel ? <PixelCertArt /> : <CertStackArt />}
+          art={<Cert />}
           label={
             <>
               <X className="h-4 w-4" /> ใบเซอร์ค่ายทั่วไป
@@ -102,7 +110,7 @@ export function ShiftProblem({ kind }: { kind: ShiftArtKind }) {
         <ComparePanel
           index={1}
           tone="bright"
-          art={pixel ? <PixelLiveArt /> : <LiveWindowArt />}
+          art={<Live />}
           label={
             <>
               <Check className="h-4 w-4" /> SHIFT Sandbox

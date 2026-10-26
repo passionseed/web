@@ -109,7 +109,7 @@ export function ShiftSchedule({
   kind: ShiftArtKind;
 }) {
   return (
-    <section className="py-16 sm:py-24">
+    <section id="schedule" className="scroll-mt-20 py-16 sm:py-24">
       <RisoHeading eyebrow="ตารางรอบนี้">7 วัน วันละหนึ่งงาน</RisoHeading>
       <p className="mt-4 max-w-2xl text-base leading-relaxed" style={{ color: tint("99") }}>
         {dates} ทำวันละ 1 ถึง 2 ชั่วโมง ไม่ต้องลาเรียน ทุกวันมีของต้องส่ง ถ้าวันไหนหาย

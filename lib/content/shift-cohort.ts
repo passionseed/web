@@ -48,8 +48,9 @@ export interface ShiftCohort {
   /** 1200x630 link preview for this round's register link only
    *  (/shift/apply?round=N). Falls back to bannerSrc. */
   applyPreviewSrc?: string;
-  /** Seasonal look for this round's register page. Unset keeps the riso look. */
-  applyTheme?: "halloween";
+  /** Seasonal look for this round: its page, its register page, and the home
+   *  hero while it is the round on sale. Unset keeps the round's own look. */
+  season?: "halloween";
   /** Live projects the round shipped, shown once it is over. Titles only:
    *  students are minors, so no names or handles go on the public page. */
   showcase?: ShiftShowcaseProject[];
@@ -66,6 +67,10 @@ export interface ShiftShowcaseProject {
   proof?: string;
   /** Shown on the marketing slides. Keep it to the strongest three. */
   featured?: boolean;
+  /** Silent screen recording of the app, about 12s, played on loop. Screens
+   *  only: no voices, faces, names, or school crests, and only with the
+   *  team's consent to show app clips. */
+  loop?: { src: string; poster: string };
 }
 
 export interface ShiftSkillCard {
@@ -102,6 +107,11 @@ export function formatThaiDateRange(startIso: string, endIso: string): string {
   return `${formatThaiDate(startIso)} ถึง ${formatThaiDate(endIso)}`;
 }
 
+/** A SHIFT[1] Demo Day app loop in public/shift/proof/shift-1. */
+function shiftOneLoop(slug: string): ShiftShowcaseProject["loop"] {
+  return { src: `/shift/proof/shift-1/${slug}.mp4`, poster: `/shift/proof/shift-1/${slug}.jpg` };
+}
+
 export const SHIFT_COHORT: ShiftCohort = {
   round: 1,
   name: "SHIFT[1]",
@@ -120,6 +130,7 @@ export const SHIFT_COHORT: ShiftCohort = {
   showcase: [
     {
       title: "USE NEXT",
+      loop: shiftOneLoop("use-next"),
       url: "https://use-next-beige.vercel.app/",
       pitch: "บอกวัตถุดิบที่เหลือในตู้เย็น แล้วได้เมนูที่ทำได้จริง",
       detail: "แอปจำวัตถุดิบที่เหลือจากครั้งก่อน แนะนำเมนูพร้อมบอกว่ามีอะไรแล้ว ต้องซื้ออะไรเพิ่ม กดทำเมนูแล้ววัตถุดิบอัปเดตเอง",
@@ -128,6 +139,7 @@ export const SHIFT_COHORT: ShiftCohort = {
     },
     {
       title: "HabitPerk",
+      loop: shiftOneLoop("habitperk"),
       url: "https://oonprojtest1.vercel.app/",
       pitch: "แอปติดตามนิสัยแบบเกม ทำครบได้เหรียญ",
       detail: "ตั้งนิสัยที่อยากสร้างหรืออยากเลิก ทำต่อเนื่องได้โบนัส แล้วเอาเหรียญไปซื้อสิทธิ์พัก เช่น หยุดอ่านหนังสือ 1 วัน",
@@ -140,7 +152,6 @@ export const SHIFT_COHORT: ShiftCohort = {
       pitch: "รวมมหาลัย สาขา และกำหนดการ TCAS ไว้ในหน้าเดียว",
       detail: "ค้นสาขาที่สนใจ แล้ววางแผนในปฏิทินว่ารอบไหนปิดเมื่อไหร่ พร้อมรายการสิ่งที่ต้องทำ ไม่ต้องเปิดหลายแท็บ",
       proof: "ให้คนลองใช้บนมือถือ ได้ฟีดแบ็ก 4 จุด เช่น ขยายฟอนต์แล้วหน้าเว็บพัง และปุ่มตั้งค่าควรเป็นไอคอน",
-      featured: true,
     },
     {
       title: "TAX",
@@ -299,10 +310,10 @@ export const SHIFT_COHORT_3: ShiftCohort = {
   priceBaht: 690,
   anchorPriceBaht: null,
   firstMeetDate: "2026-11-09",
-  // Register link and page match the Halloween pixel poster
-  // (components/shift/poster/pixel/halloween).
+  // Round page, register link and page, and the home hero match the
+  // Halloween pixel poster (components/shift/poster/pixel/halloween).
   applyPreviewSrc: "/shift/banners/shift-3-apply-halloween.png",
-  applyTheme: "halloween",
+  season: "halloween",
 };
 
 /** The round the printed posters are promoting right now. */
@@ -347,6 +358,22 @@ export function getOpenCohorts(): ShiftCohort[] {
 /** Cohorts available for browsing (open or upcoming, not completed). */
 export function getAvailableCohorts(): ShiftCohort[] {
   return SHIFT_COHORTS.filter((c) => !c.completed && cohortStatus(c) !== "done");
+}
+
+/**
+ * The latest round before `cohort` with shipped projects to show, so a round
+ * that has not run yet can point at real work from the one before it.
+ */
+export function previousShowcaseCohort(cohort: ShiftCohort): ShiftCohort | undefined {
+  return SHIFT_COHORTS.filter((c) => c.round < cohort.round && c.showcase?.length).at(-1);
+}
+
+/**
+ * The season to dress the home hero in: the round's own, until that round
+ * has finished. After that the home page is plain PassionSeed again.
+ */
+export function homeSeason(cohort: ShiftCohort, today: string = bangkokToday()): ShiftCohort["season"] {
+  return today <= cohort.endDate ? cohort.season : undefined;
 }
 
 /** Off each person's price when two friends apply together. */
@@ -491,6 +518,43 @@ export const SHIFT_DAILY_SHOW: ShiftShowBeat[] = [
   { label: "Broke", detail: "อะไรพัง ใครติดตรงไหน จดไว้แล้วแก้" },
   { label: "Learned", detail: "สกิลที่ทีมเรียนวันนี้ สอนเพื่อนอีก 2 ทีมใน 1 นาที" },
 ];
+
+export interface ShiftHouseRules {
+  /** "SHIFT ไม่ใช่ห้องเรียน": the three rules read out on Day 1. */
+  rules: { title: string; detail?: string }[];
+  /** School words the room swaps for SHIFT words: [old, new]. */
+  words: [string, string][];
+  /** The one exchange mentors repeat all week. */
+  ask: { student: string; mentor: string; moral: string };
+  /** What counts as progress, instead of a grade. */
+  score: { title: string; items: string[]; note: string };
+}
+
+/** From SHIFT[1]'s Day 1 boards. The secret-mission boards stay private:
+ *  they are a game, and posting them would spoil it for the next round. */
+export const SHIFT_HOUSE_RULES: ShiftHouseRules = {
+  rules: [
+    { title: "ไม่มีเกรด ไม่มีใครบอกว่าถูกหรือผิด" },
+    { title: "กรรมการตัวจริงคือ “ผู้ใช้จริง”", detail: "มีคนใช้ = ดี · ไม่มีคนใช้ = ได้เรียนรู้" },
+    { title: "พี่ๆ คือเพื่อนร่วมทีม ไม่ใช่ครู", detail: "ถามได้ทุกเรื่อง ทุกเวลา ในห้องรวมบน Discord" },
+  ],
+  words: [
+    ["การบ้าน", "Mission"],
+    ["พรีเซนต์งาน", "เล่าสิ่งที่ค้นพบ"],
+    ["คำตอบที่ถูก", "สิ่งที่ผู้ใช้บอก"],
+    ["ส่งงานยัง?", "วันนี้ทดสอบอะไรไปบ้าง?"],
+  ],
+  ask: {
+    student: "แบบนี้ถูกไหม?",
+    mentor: "ลองไปเทสกับผู้ใช้ดูนะ",
+    moral: "คำตอบไม่ได้อยู่ที่พี่ คำตอบอยู่ที่ผู้ใช้",
+  },
+  score: {
+    title: "คะแนน = หลักฐานจากโลกจริง",
+    items: ["คุยกับคนจริงไปแล้วกี่คน", "มีคนลองใช้ MVP ของเรากี่คน", "เราเปลี่ยนอะไร เพราะสิ่งที่ผู้ใช้บอก"],
+    note: "ไม่ได้วัดจากความสวยของงาน หรือความพอใจของพี่ๆ",
+  },
+};
 
 export function cohortDayCount(cohort: ShiftCohort = SHIFT_COHORT): number {
   return cohort.schedule.length;

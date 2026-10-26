@@ -4,6 +4,7 @@ import "./home.css";
 import localFont from "next/font/local";
 
 import { INK, RisoPageTexture } from "@/components/shift/ShiftRiso";
+import { ShiftHouseRules } from "@/components/shift/round/ShiftHouseRules";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteNav } from "@/components/site/SiteNav";
 import { HomeContrast } from "./HomeContrast";
@@ -37,6 +38,7 @@ export function HomePage({ studentCount }: { studentCount: number | null }) {
         <HomeContrast />
         <HomeShowcase />
         <HomeWeek />
+        <ShiftHouseRules kind="riso" />
         <HomeProof studentCount={studentCount} />
         <HomeParents />
         <HomeLadder />

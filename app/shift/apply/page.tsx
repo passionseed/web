@@ -88,7 +88,7 @@ export default async function ShiftApplyPage({
   const openCohorts = getOpenCohorts();
   const isOpen = cohortStatus(cohort) === "open";
   // A round can opt into a seasonal register page (SHIFT[3]: Halloween pixel).
-  const halloween = cohort.applyTheme === "halloween";
+  const halloween = cohort.season === "halloween";
 
   return (
     <div

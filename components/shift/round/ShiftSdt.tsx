@@ -1,9 +1,12 @@
+import type { ComponentType } from "react";
+
 import type { RisoIconName } from "@/components/shift/poster/RisoIcons";
 import type { ShiftArtKind } from "@/components/shift/theme";
 import { RisoHeading } from "@/components/shift/ShiftRiso";
 import { accentFor, tint } from "@/components/shift/theme/tokens";
 import { SHIFT_SDT } from "@/lib/content/shift-cohort";
 
+import { HalloweenSdtArt } from "./HalloweenArt";
 import { PixelSdtArt } from "./PixelArt";
 import { SdtRingsArt } from "./ShiftArt";
 import { ShiftIcon } from "./ShiftIcon";
@@ -11,9 +14,17 @@ import { revealClass } from "./motion";
 
 const PILLAR_ICONS: RisoIconName[] = ["compass", "trophy", "people"];
 
+/** The pillars drawing, in each art family's own hand. */
+const SDT_ART: Record<ShiftArtKind, ComponentType<{ labels: [string, string, string] }>> = {
+  riso: SdtRingsArt,
+  pixel: PixelSdtArt,
+  halloween: HalloweenSdtArt,
+};
+
 /** Why the week works: three overlapping rings beside the three pillars. */
 export function ShiftSdt({ kind }: { kind: ShiftArtKind }) {
   const labels = SHIFT_SDT.map((item) => item.pillar) as [string, string, string];
+  const SdtArt = SDT_ART[kind];
   return (
     <section className="py-16 sm:py-24">
       <RisoHeading eyebrow="Self-Determination">ทำไมถึงเวิร์ก</RisoHeading>
@@ -23,7 +34,7 @@ export function ShiftSdt({ kind }: { kind: ShiftArtKind }) {
 
       <div className="mt-10 grid items-center gap-10 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <div className={`${revealClass(0)} flex justify-center`}>
-          {kind === "pixel" ? <PixelSdtArt labels={labels} /> : <SdtRingsArt labels={labels} />}
+          <SdtArt labels={labels} />
         </div>
         <ul className="space-y-6">
           {SHIFT_SDT.map((item, i) => (

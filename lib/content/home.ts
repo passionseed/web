@@ -6,7 +6,13 @@
  */
 
 import type { RisoIconName } from "@/components/shift/poster/RisoIcons";
-import { SHIFT_COHORT_0, SHIFT_PAYMENT, type ShiftShowcaseProject } from "@/lib/content/shift-cohort";
+import {
+  SHIFT_COHORTS,
+  SHIFT_COHORT_0,
+  SHIFT_PAYMENT,
+  type ShiftCohort,
+  type ShiftShowcaseProject,
+} from "@/lib/content/shift-cohort";
 
 export interface HomeLink {
   href: string;
@@ -94,6 +100,14 @@ export interface HomeShowcaseProject extends ShiftShowcaseProject {
 export const HOME_SHOWCASE: HomeShowcaseProject[] = (SHIFT_COHORT_0.showcase ?? [])
   .filter((p) => p.featured && SHOWCASE_SHOTS[p.title])
   .map((p) => ({ ...p, shots: SHOWCASE_SHOTS[p.title] }));
+
+/**
+ * The newest round after the pilot with featured projects: its Demo Day apps
+ * sit beside the pilot's phones, so the proof stays current.
+ */
+export const HOME_LATEST_SHOWCASE: ShiftCohort | undefined = SHIFT_COHORTS.filter(
+  (c) => c.round > SHIFT_COHORT_0.round && c.showcase?.some((p) => p.featured),
+).at(-1);
 
 /** One icon per sprint day, in schedule order. */
 export const HOME_DAY_ICONS: RisoIconName[] = ["lock", "chat", "hammer", "send", "bug", "gauge", "mic"];
