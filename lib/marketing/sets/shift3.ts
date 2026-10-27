@@ -186,6 +186,22 @@ const TCAS_CC: ShippedProject = {
 /** Featured projects, oldest round first. */
 const SHIPPED: ShippedProject[] = [LENS, TRADBID, KSPT70, USE_NEXT, HABITPERK, TCAS_CC];
 
+/** The four projects the launch carousel features, as one-line points. Also on the Halloween carousel. */
+export const SHIFT3_FEATURED_SHORTS: StudioPoint[] = [LENS.short, TRADBID.short, KSPT70.short, TCAS_CC.short];
+
+/** What a student holds on Demo Day. Shared by the launch and Halloween carousels. */
+export const SHIFT3_LEAVE_WITH: StudioPoint[] = [
+  { title: "==ของจริงที่ชวนคนนอกมาลองใช้==", body: "ใช้ AI ช่วยสร้าง ไม่ต้องเขียนโค้ดเป็น แต่เราเป็นคนตัดสินใจทุกขั้น" },
+  { title: "บันทึกว่าอะไรพัง แล้วแก้ยังไง", body: "จดพร้อมวันที่ ทุกจุดที่คนลองแล้วติด และสิ่งที่แก้" },
+  { title: "พอร์ต 1 หน้า สำหรับ TCAS รอบ 1", body: "ปัญหา คนที่ไปคุยด้วย จุดที่พัง และสิ่งที่แก้ ในหน้าเดียว" },
+  { title: "ใบรับรองที่ตรวจสอบได้", body: "มีลิงก์ให้กรรมการกดดูว่าทำจริง ออกให้เฉพาะคนที่ส่งหลักฐานครบ" },
+];
+
+/** Footnotes the launch carousel uses under those two lists. */
+export const SHIFT3_LEAVE_WITH_NOTE =
+  "รุ่นก่อนบอกว่ากลัวรอบสัมภาษณ์พอร์ตที่สุด พอร์ต 1 หน้า เลยเรียงเป็นเรื่องเดียวที่เล่าเองได้";
+export const SHIFT3_FEATURED_NOTE = "ตัวเลขเป็นของแต่ละโปรเจกต์ ไม่ใช่ของทั้งรุ่น";
+
 /**
  * Latin-only so the eyebrow face draws the square brackets of the cohort
  * name; the Thai face turns "[0]" into what reads as "(0)".
@@ -266,13 +282,8 @@ export const SHIFT3_LAUNCH: StudioSet = {
       tag: "What you leave with",
       title: `Demo Day ${end}\nในมือมีอะไรบ้าง`,
       numbered: true,
-      points: [
-        { title: "==ของจริงที่ชวนคนนอกมาลองใช้==", body: "ใช้ AI ช่วยสร้าง ไม่ต้องเขียนโค้ดเป็น แต่เราเป็นคนตัดสินใจทุกขั้น" },
-        { title: "บันทึกว่าอะไรพัง แล้วแก้ยังไง", body: "จดพร้อมวันที่ ทุกจุดที่คนลองแล้วติด และสิ่งที่แก้" },
-        { title: "พอร์ต 1 หน้า สำหรับ TCAS รอบ 1", body: "ปัญหา คนที่ไปคุยด้วย จุดที่พัง และสิ่งที่แก้ ในหน้าเดียว" },
-        { title: "ใบรับรองที่ตรวจสอบได้", body: "มีลิงก์ให้กรรมการกดดูว่าทำจริง ออกให้เฉพาะคนที่ส่งหลักฐานครบ" },
-      ],
-      footnote: "รุ่นก่อนบอกว่ากลัวรอบสัมภาษณ์พอร์ตที่สุด พอร์ต 1 หน้า เลยเรียงเป็นเรื่องเดียวที่เล่าเองได้",
+      points: SHIFT3_LEAVE_WITH,
+      footnote: SHIFT3_LEAVE_WITH_NOTE,
     },
     { kind: "schedule", tag: SHIFT3.dates, title: `${SHIFT3.days} เย็น จากโจทย์เดียว\nถึง Demo Day`, round: C.round },
     {
@@ -289,8 +300,8 @@ export const SHIFT3_LAUNCH: StudioSet = {
       kind: "points",
       tag: `From ${SHIFT_COHORT_0.name} + ${SHIFT_COHORT.name}`,
       title: "รุ่นก่อน\n==ปล่อยของจริง==ไปแล้ว",
-      points: [LENS.short, TRADBID.short, KSPT70.short, TCAS_CC.short],
-      footnote: "ตัวเลขเป็นของแต่ละโปรเจกต์ ไม่ใช่ของทั้งรุ่น",
+      points: SHIFT3_FEATURED_SHORTS,
+      footnote: SHIFT3_FEATURED_NOTE,
     },
     { kind: "offer", tag: "Price", title: "ราคาและวิธีสมัคร", round: C.round },
     {
