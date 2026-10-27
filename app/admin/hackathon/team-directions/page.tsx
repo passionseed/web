@@ -6,14 +6,14 @@ export const dynamic = "force-dynamic";
 export default async function TeamDirectionsPage() {
   await requireAdmin();
   return (
-    <div className="container mx-auto space-y-4 py-8">
+    <section className="space-y-4" aria-labelledby="hackathon-team-directions">
       <div>
-        <h1 className="text-2xl font-bold">Team Directions</h1>
+        <h2 id="hackathon-team-directions" className="text-lg font-semibold">Team directions</h2>
         <p className="text-sm text-muted-foreground">
           Explore team trajectories, search semantically, and ask AI for insights.
         </p>
       </div>
       <TeamDirectionDashboard />
-    </div>
+    </section>
   );
 }

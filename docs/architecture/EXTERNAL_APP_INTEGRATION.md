@@ -400,8 +400,6 @@ All API routes require authentication via Supabase session cookies or Authorizat
 
 ### Admin
 
-**GET** `/api/admin/stats` - Get system statistics (admin only)
-
 **GET** `/api/admin/users` - List all users (admin only)
 
 **POST** `/api/admin/users/roles` - Update user role (admin only)

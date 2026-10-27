@@ -1005,7 +1005,12 @@ export function AdminHackathonPhase3Grading() {
                                     >
                                       {stepLabel[st]}
                                       {isSubmitted && <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />}
-                                      {!step && <span className="ml-1 text-slate-600">—</span>}
+                                      {!step && (
+                                        <span className="ml-1 text-slate-600">
+                                          <span aria-hidden="true">–</span>
+                                          <span className="sr-only">not started</span>
+                                        </span>
+                                      )}
                                     </TabsTrigger>
                                   );
                                 })}

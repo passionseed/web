@@ -84,7 +84,7 @@ export function AdminHackathonTeams() {
       const response = await fetch(`/api/admin/hackathon/teams/${teamId}`, { method: "POST" });
       const data = await response.json();
       if (!response.ok) { setQuotaResetMessage({ teamId, message: data.error || "Failed to reset quota" }); return; }
-      setQuotaResetMessage({ teamId, message: data.reset === 0 ? "No bookings to reset" : `Reset ${data.reset} booking(s) — quota restored` });
+      setQuotaResetMessage({ teamId, message: data.reset === 0 ? "No bookings to reset" : `Reset ${data.reset} booking(s). Quota restored.` });
     } catch {
       setQuotaResetMessage({ teamId, message: "Failed to reset quota" });
     } finally {

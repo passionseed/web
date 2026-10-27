@@ -11,6 +11,10 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
+import { useConfirm } from "@/components/admin/shared/useConfirm";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
 // ── persona / consent option sets ────────────────────────────────────────────
 
 const PERSONAS = [
@@ -86,7 +90,7 @@ function buildPrompt(n: Notes): string {
 
   return `You are turning raw interview notes into ONE database-ready person object for PassionSeed's Career Radar.
 
-## Editorial spine — HARD RULES (violating these breaks the product)
+## Editorial spine: HARD RULES (violating these breaks the product)
 1. NEVER fabricate a salary, number, quote, year, or fact. If a value wasn't captured, OMIT the key. Empty > fake.
 2. Salary appears ONLY if the interviewee shared it. Salary consent = "${salaryConsent}".
    - "skip"            → omit "salary" entirely.
@@ -98,13 +102,13 @@ function buildPrompt(n: Notes): string {
    - "full name + links"  → full name + role + publisher/url allowed.
    - SAFETY: never pair a full name with an EXACT salary unless BOTH consents explicitly allow it.
 4. Snapshot→trajectory: every snapshot needs a "where this is heading" signal (whereHeading).
-5. Durable-skill anchor: advice/notes anchor on judgment, framing, decisions under uncertainty — NOT tool mastery.
-6. Output VALID JSON only, no prose outside it. Quotes must be the interviewee's own words — never invented.
+5. Durable-skill anchor: advice/notes anchor on judgment, framing, decisions under uncertainty, NOT tool mastery.
+6. Output VALID JSON only, no prose outside it. Quotes must be the interviewee's own words, never invented.
 
 ## Target
 radar_fields.slug = "${slug}"   (persona lens: ${persona})
 
-## Output shape — matches RealPeopleContent.people[] in components/radar/RadarCards.tsx
+## Output shape: matches RealPeopleContent.people[] in components/radar/RadarCards.tsx
 {
   "realPerson": {
     "name": "<omit per identity consent>",
@@ -163,12 +167,12 @@ function Field({
   return (
     <label className="block">
       <span className="mb-1.5 flex items-center justify-between">
-        <span className="text-label-md text-slate-300">
+        <span className="text-label-md text-foreground">
           {label}
-          {hint ? <span className="ml-1 font-normal text-slate-500">{hint}</span> : null}
+          {hint ? <span className="ml-1 font-normal text-muted-foreground">{hint}</span> : null}
         </span>
         {map ? (
-          <code className="rounded bg-black/40 px-1.5 py-0.5 font-mono text-[10px] text-orange-300">
+          <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
             {map}
           </code>
         ) : null}
@@ -182,18 +186,11 @@ function Segmented({
   options,
   value,
   onChange,
-  accent,
 }: {
   options: ReadonlyArray<{ v: string; label: string }>;
   value: string;
   onChange: (v: string) => void;
-  accent: "amber" | "purple" | "emerald";
 }) {
-  const on: Record<typeof accent, string> = {
-    amber: "border-transparent bg-amber-500 text-black",
-    purple: "border-transparent bg-violet-500 text-black",
-    emerald: "border-transparent bg-emerald-500 text-black",
-  };
   return (
     <div className="flex flex-wrap gap-1.5">
       {options.map((o) => {
@@ -202,12 +199,14 @@ function Segmented({
           <button
             key={o.v}
             type="button"
+            aria-pressed={active}
             onClick={() => onChange(active ? "" : o.v)}
-            className={`flex-1 rounded-lg border px-2 py-1.5 text-xs font-semibold transition-colors ${
+            className={cn(
+              "min-h-11 flex-1 rounded-lg border px-2 text-xs font-semibold transition-colors",
               active
-                ? on[accent]
-                : "border-white/10 bg-white/[0.03] text-slate-400 hover:border-white/20"
-            }`}
+                ? "border-transparent bg-primary text-primary-foreground"
+                : "border-border bg-muted/30 text-muted-foreground hover:border-foreground/30 hover:text-foreground active:border-foreground/30 active:text-foreground",
+            )}
           >
             {o.label}
           </button>
@@ -230,6 +229,7 @@ export function RadarInterviewClient() {
   const [running, setRunning] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const tick = useRef<ReturnType<typeof setInterval> | null>(null);
+  const { confirm, confirmDialog } = useConfirm();
 
   const set = (k: keyof Notes) => (v: string) => setN((p) => ({ ...p, [k]: v }));
 
@@ -279,8 +279,14 @@ export function RadarInterviewClient() {
     }
   };
 
-  const clearAll = () => {
-    if (!confirm("Clear all notes and start a new interview?")) return;
+  const clearAll = async () => {
+    const ok = await confirm({
+      title: "Start a new interview?",
+      description: "This clears every note and the timer. The notes are only saved in this browser, so they cannot be restored.",
+      confirmLabel: "Clear notes",
+      destructive: true,
+    });
+    if (!ok) return;
     localStorage.removeItem(STORAGE_KEY);
     setN(EMPTY);
     setOut("");
@@ -305,55 +311,41 @@ export function RadarInterviewClient() {
   const riskyConsent =
     n.identity === "full name + links" && n.salaryConsent === "exact, attributed";
 
-  const inputCls = "ei-input";
+  const inputCls =
+    "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
   return (
-    <div className="dusk-theme relative mt-4 overflow-hidden rounded-2xl border border-white/[0.06] p-4 sm:p-6">
-      {/* dusk atmosphere */}
-      <div
-        className="pointer-events-none absolute inset-0 -z-10 opacity-90"
-        style={{ background: "var(--dusk-bg-gradient)" }}
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-64"
-        style={{ background: "var(--dusk-horizon-glow)" }}
-        aria-hidden
-      />
+    <div>
 
       {/* toolbar */}
       <div className="mb-5 flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          onClick={toggleTimer}
-          className="ei-button-dusk !px-4 !py-2 !text-sm"
-        >
-          {running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+        <Button type="button" onClick={toggleTimer} className="min-h-11">
+          {running ? <Pause className="h-4 w-4" aria-hidden="true" /> : <Play className="h-4 w-4" aria-hidden="true" />}
           {running ? "Running" : startedAt ? "Resume" : "Start timer"}
-        </button>
-        <span className="rounded-lg border border-white/10 bg-black/30 px-3 py-1.5 font-mono text-sm text-emerald-300">
+        </Button>
+        <span className="rounded-lg border bg-muted/40 px-3 py-1.5 font-mono text-sm text-emerald-300">
+          <span className="sr-only">Elapsed time </span>
           {fmt(elapsed)}
         </span>
-        <span className="ei-badge ei-badge--dusk">
-          <span className="ei-badge--dot" />
+        <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs text-muted-foreground">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
           autosaved
         </span>
-        <button
+        <Button
           type="button"
-          onClick={clearAll}
-          className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-sm text-slate-400 transition-colors hover:border-rose-500/40 hover:text-rose-300"
+          variant="outline"
+          onClick={() => void clearAll()}
+          className="ml-auto min-h-11 text-muted-foreground hover:border-destructive/40 hover:text-destructive active:border-destructive/40 active:text-destructive"
         >
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className="h-4 w-4" aria-hidden="true" />
           New interview
-        </button>
+        </Button>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        {/* LEFT — notes */}
-        <div className="ei-card ei-card--static space-y-4 p-5">
-          <p className="text-label-sm uppercase tracking-widest text-amber-400">
-            Interview notes
-          </p>
+        {/* Left: notes */}
+        <div className="space-y-4 rounded-lg border bg-card p-5">
+          <p className="admin-eyebrow">INTERVIEW NOTES</p>
 
           <div className="grid grid-cols-2 gap-3">
             <Field label="Field slug" map="field">
@@ -395,7 +387,6 @@ export function RadarInterviewClient() {
               options={PERSONAS}
               value={n.persona}
               onChange={set("persona")}
-              accent="emerald"
             />
           </Field>
 
@@ -405,7 +396,6 @@ export function RadarInterviewClient() {
                 options={IDENTITY}
                 value={n.identity}
                 onChange={set("identity")}
-                accent="purple"
               />
             </Field>
             <Field label="Salary consent">
@@ -413,7 +403,6 @@ export function RadarInterviewClient() {
                 options={SALARY}
                 value={n.salaryConsent}
                 onChange={set("salaryConsent")}
-                accent="amber"
               />
             </Field>
           </div>
@@ -421,16 +410,16 @@ export function RadarInterviewClient() {
           {riskyConsent ? (
             <div
               role="alert"
-              className="flex items-start gap-2 rounded-lg border border-rose-500/40 bg-rose-500/10 p-3 text-xs text-rose-200"
+              className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-foreground"
             >
-              <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+              <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-destructive" aria-hidden="true" />
               Full identity + exact salary selected. Spine rule: never auto-pair
               full name with an exact salary unless the person OK&apos;d both
               together. Confirm verbally.
             </div>
           ) : null}
 
-          <Field label="Path — first step → now, pivots + years" map="path[]">
+          <Field label="Path: first step → now, pivots + years" map="path[]">
             <textarea
               className={`${inputCls} min-h-[64px]`}
               placeholder="2018 analyst · 2020 → PM · 2023 → AI products…"
@@ -480,7 +469,7 @@ export function RadarInterviewClient() {
           <Field label="Raw scratchpad" hint="(anything else, quotes verbatim)">
             <textarea
               className={`${inputCls} min-h-[80px]`}
-              placeholder="Dump messy notes here — AI mines quotes from it."
+              placeholder="Dump messy notes here; AI mines quotes from it."
               value={n.raw}
               onChange={(e) => set("raw")(e.target.value)}
             />
@@ -495,36 +484,34 @@ export function RadarInterviewClient() {
           </Field>
         </div>
 
-        {/* RIGHT — output */}
-        <div className="ei-card ei-card--static space-y-3 p-5">
-          <p className="text-label-sm uppercase tracking-widest text-amber-400">
-            Generated AI prompt
-          </p>
+        {/* Right: output */}
+        <div className="space-y-3 rounded-lg border bg-card p-5">
+          <p className="admin-eyebrow">GENERATED AI PROMPT</p>
           <div className="flex flex-wrap items-center gap-2">
-            <button type="button" onClick={generate} className="ei-button-dusk !px-4 !py-2 !text-sm">
-              <Wand2 className="h-4 w-4" />
+            <Button type="button" onClick={generate} className="min-h-11">
+              <Wand2 className="h-4 w-4" aria-hidden="true" />
               Generate prompt
-            </button>
-            <button
-              type="button"
-              onClick={copy}
-              disabled={!out}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-slate-200 transition-colors hover:border-amber-500/40 disabled:opacity-40"
-            >
-              {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+            </Button>
+            <Button type="button" variant="outline" onClick={() => void copy()} disabled={!out} className="min-h-11">
+              {copied ? (
+                <Check className="h-4 w-4 text-emerald-400" aria-hidden="true" />
+              ) : (
+                <Copy className="h-4 w-4" aria-hidden="true" />
+              )}
               {copied ? "Copied" : "Copy"}
-            </button>
+            </Button>
           </div>
-          <p className="text-body-sm text-slate-400">
+          <p className="text-body-sm text-muted-foreground">
             Paste into Claude or any LLM. Returns DB-ready JSON (<code>realPerson</code>,
             salary-progression notes, AI-impact verdict, source row) in TH + EN,
             shaped for <code>radar_cards.content</code>. Empty &gt; fake.
           </p>
-          <pre className="max-h-[620px] overflow-auto whitespace-pre-wrap break-words rounded-xl border border-white/10 bg-black/40 p-4 font-mono text-[12px] leading-relaxed text-slate-300">
+          <pre className="max-h-[620px] overflow-auto whitespace-pre-wrap break-words rounded-lg border bg-muted/40 p-4 font-mono text-[12px] leading-relaxed text-foreground">
             {out || "Fill notes on the left, then hit Generate."}
           </pre>
         </div>
       </div>
+      {confirmDialog}
     </div>
   );
 }

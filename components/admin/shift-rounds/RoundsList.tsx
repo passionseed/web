@@ -31,7 +31,7 @@ import {
 import type { AdminRoundListItem, RoundPolicy } from "@/lib/shift-round/admin/types";
 
 import { PolicyFields, draftToPolicy, type PolicyDraft } from "./PolicyFields";
-import { ActionError, LoadError, Pill, SearchBox, Section, statusTone } from "./shared";
+import { ActionError, EmptyValue, LoadError, Pill, SearchBox, Section, statusTone } from "./shared";
 import { useAdminMutation, useAdminQuery } from "./useAdminData";
 
 function nextMonday(): string {
@@ -228,14 +228,14 @@ export function RoundsList() {
                   </TableCell>
                   <TableCell className="whitespace-nowrap text-sm">{formatIct(r.starts_at, false)}</TableCell>
                   <TableCell className="whitespace-nowrap text-sm">{formatClose(r.closes_at)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{r.entrants ?? "—"}</TableCell>
+                  <TableCell className="text-right tabular-nums">{r.entrants ?? <EmptyValue />}</TableCell>
                   <TableCell className="text-right tabular-nums">
                     {r.pending_review ? (
                       <Link href={`/admin/shift/rounds/${r.id}/review`} className="hover:underline">
                         {r.pending_review}
                       </Link>
                     ) : (
-                      r.pending_review ?? "—"
+                      r.pending_review ?? <EmptyValue />
                     )}
                   </TableCell>
                 </TableRow>

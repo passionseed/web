@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RadarAnalyticsCharts } from "@/components/admin/RadarAnalyticsCharts";
+import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
+import { AdminEmptyState, AdminErrorState } from "@/components/admin/shared/AdminStates";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +44,41 @@ function formatActivityDate(value: string | null) {
   return new Intl.DateTimeFormat("en", {
     dateStyle: "medium",
     timeStyle: "short",
+    timeZone: "Asia/Bangkok",
   }).format(new Date(value));
+}
+
+const VIEW_TAB =
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium transition-colors";
+
+function ViewTabs({ activeView }: { activeView: "content" | "analytics" }) {
+  const tabs = [
+    { view: "content", href: "/admin/radar", label: "Content", icon: FileText },
+    { view: "analytics", href: "/admin/radar?view=analytics", label: "Analytics", icon: BarChart3 },
+  ] as const;
+  return (
+    <nav
+      className="grid w-full grid-cols-2 rounded-lg border bg-muted/40 p-1 lg:w-auto"
+      aria-label="Radar workspace views"
+    >
+      {tabs.map(({ view, href, label, icon: Icon }) => (
+        <Link
+          key={view}
+          href={href}
+          aria-current={activeView === view ? "page" : undefined}
+          className={cn(
+            VIEW_TAB,
+            activeView === view
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground active:text-foreground"
+          )}
+        >
+          <Icon className="h-4 w-4" aria-hidden="true" />
+          {label}
+        </Link>
+      ))}
+    </nav>
+  );
 }
 
 export default async function AdminRadarPage({
@@ -53,28 +89,33 @@ export default async function AdminRadarPage({
   const searchQuery = params?.q?.trim() || "";
   const supabase = await createClient();
 
-  const { data: engagement, error: engagementError } = await supabase
-    .from("analytics_radar_engagement")
-    .select("*")
-    .order("views", { ascending: false });
-
-  const { data: recentIntents, error: intentsError } = await supabase
-    .from("radar_path_intents")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(100);
-
-  const { data: radarFields, error: fieldsError } = await supabase
-    .from("radar_fields")
-    .select("id, slug, name_th, name_en")
-    .order("sort_order", { ascending: true });
-
-  // Global uniques must be computed in SQL (do not sum per-field uniques, and
-  // do not page through radar_field_views which can exceed the API row limit).
-  const { data: totals, error: totalsError } = await supabase
-    .from("analytics_radar_totals")
-    .select("total_views, unique_viewers, total_intents")
-    .maybeSingle();
+  // Independent reads run together; profiles wait for the intent user ids.
+  const [
+    { data: engagement, error: engagementError },
+    { data: recentIntents, error: intentsError },
+    { data: radarFields, error: fieldsError },
+    // Global uniques must be computed in SQL (do not sum per-field uniques, and
+    // do not page through radar_field_views which can exceed the API row limit).
+    { data: totals, error: totalsError },
+  ] = await Promise.all([
+    supabase
+      .from("analytics_radar_engagement")
+      .select("*")
+      .order("views", { ascending: false }),
+    supabase
+      .from("radar_path_intents")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(100),
+    supabase
+      .from("radar_fields")
+      .select("id, slug, name_th, name_en")
+      .order("sort_order", { ascending: true }),
+    supabase
+      .from("analytics_radar_totals")
+      .select("total_views, unique_viewers, total_intents")
+      .maybeSingle(),
+  ]);
 
   const intentUserIds = (recentIntents || [])
     .map((i) => i.user_id)
@@ -136,68 +177,27 @@ export default async function AdminRadarPage({
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-5 border-b pb-6 lg:flex-row lg:items-end lg:justify-between">
-        <div className="max-w-2xl space-y-2">
-          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-            <span>Admin</span>
-            <span aria-hidden="true">/</span>
-            <span>Career Radar</span>
-          </div>
-          <h2 className="text-3xl font-semibold tracking-tight">Radar workspace</h2>
-          <p className="text-sm leading-6 text-muted-foreground">
-            Maintain the career stories students see, then review which fields
-            and paths are earning attention.
-          </p>
-        </div>
-        <div
-          className="grid w-full grid-cols-2 rounded-lg border bg-muted/40 p-1 lg:w-auto"
-          aria-label="Radar workspace views"
-        >
-          <Link
-            href="/admin/radar"
-            aria-current={activeView === "content" ? "page" : undefined}
-            className={cn(
-              "inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium transition-colors",
-              activeView === "content"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <FileText className="h-4 w-4" />
-            Content
-          </Link>
-          <Link
-            href="/admin/radar?view=analytics"
-            aria-current={activeView === "analytics" ? "page" : undefined}
-            className={cn(
-              "inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium transition-colors",
-              activeView === "analytics"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <BarChart3 className="h-4 w-4" />
-            Analytics
-          </Link>
-        </div>
-      </div>
+      <AdminPageHeader
+        eyebrow="Career Radar"
+        title="Radar workspace"
+        description="Maintain the career stories students see, then review which fields and paths are earning attention."
+        actions={<ViewTabs activeView={activeView} />}
+      />
 
       {error && (
-        <div
-          role="alert"
-          className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive"
-        >
-          Failed to load radar engagement data: {error.message}
-        </div>
+        <AdminErrorState
+          title="Could not load all Radar data"
+          message={`Some numbers below may be missing. ${error.message}`}
+        />
       )}
 
       {activeView === "content" ? (
         <section className="space-y-4" aria-labelledby="radar-content-heading">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 id="radar-content-heading" className="text-xl font-semibold">
+              <h2 id="radar-content-heading" className="text-xl font-semibold">
                 Career fields
-              </h3>
+              </h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 {radarFields?.length || 0} published field
                 {(radarFields?.length || 0) === 1 ? "" : "s"}, ranked by unique
@@ -222,26 +222,24 @@ export default async function AdminRadarPage({
 
           <div>
             {filteredFields.length === 0 ? (
-              <div className="rounded-xl border px-6 py-14 text-center">
-                <p className="font-medium">
-                  {searchQuery ? "No matching fields" : "No Radar fields available"}
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {searchQuery
+              <AdminEmptyState
+                title={searchQuery ? "No matching fields" : "No Radar fields available"}
+                description={
+                  searchQuery
                     ? `Try a different search than “${searchQuery}”.`
-                    : "Fields will appear here after they are added."}
-                </p>
-              </div>
+                    : "Fields will appear here after they are added."
+                }
+              />
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
                 {filteredFields.map((field) => (
                   <Link
                     key={field.id}
                     href={`/admin/radar/${field.id}`}
-                    className="group relative min-h-48 overflow-hidden rounded-lg border bg-card p-4 transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className="group relative min-h-48 overflow-hidden rounded-lg border bg-card p-4 transition-colors duration-200 hover:border-primary/40 active:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     <div
-                      className="pointer-events-none absolute -right-6 -top-7 h-28 w-28 rounded-full border border-primary/15 transition-transform duration-500 group-hover:scale-105"
+                      className="pointer-events-none absolute -right-6 -top-7 h-28 w-28 rounded-full border border-primary/15"
                       aria-hidden="true"
                     >
                       <span className="absolute inset-4 rounded-full border border-primary/15" />
@@ -262,9 +260,9 @@ export default async function AdminRadarPage({
                       </div>
 
                       <div className="mt-6 min-w-0">
-                        <h4 className="truncate font-semibold leading-snug">
+                        <h3 className="truncate font-semibold leading-snug">
                           {field.name_th || field.name_en || field.slug}
-                        </h4>
+                        </h3>
                         {field.name_th && field.name_en && (
                           <p className="mt-0.5 truncate text-xs text-muted-foreground">
                             {field.name_en}
@@ -295,7 +293,10 @@ export default async function AdminRadarPage({
                         </span>
                         <span className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary">
                           Edit
-                          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                          <ArrowRight
+                            className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1 motion-reduce:transition-none"
+                            aria-hidden="true"
+                          />
                         </span>
                       </div>
                     </div>
@@ -309,9 +310,9 @@ export default async function AdminRadarPage({
         <div className="space-y-10">
           <section aria-labelledby="radar-overview-heading">
             <div className="mb-4">
-              <h3 id="radar-overview-heading" className="text-xl font-semibold">
+              <h2 id="radar-overview-heading" className="text-xl font-semibold">
                 Engagement overview
-              </h3>
+              </h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 How visitors move from exploring a career to choosing a next step.
               </p>
@@ -366,9 +367,9 @@ export default async function AdminRadarPage({
 
           <section className="space-y-4" aria-labelledby="field-performance-heading">
             <div>
-              <h3 id="field-performance-heading" className="text-xl font-semibold">
+              <h2 id="field-performance-heading" className="text-xl font-semibold">
                 Field performance
-              </h3>
+              </h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 Published fields ranked by total views.
               </p>
@@ -441,9 +442,9 @@ export default async function AdminRadarPage({
 
           <section className="space-y-4" aria-labelledby="recent-intents-heading">
             <div>
-              <h3 id="recent-intents-heading" className="text-xl font-semibold">
+              <h2 id="recent-intents-heading" className="text-xl font-semibold">
                 Recent path intents
-              </h3>
+              </h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 The latest visitors who chose to try a recommended next step.
               </p>
@@ -484,7 +485,7 @@ export default async function AdminRadarPage({
                         </Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {intent.button_label || "—"}
+                        {intent.button_label || "–"}
                       </TableCell>
                       <TableCell>
                         {intent.user_id ? (

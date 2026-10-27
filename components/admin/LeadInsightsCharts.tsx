@@ -183,16 +183,23 @@ function StageDonut({ audience }: { audience: LeadAudienceStats }) {
   );
 }
 
+/** The loader buckets leads with no grade under an em dash; show it as a word. */
+const UNGRADED_BUCKET = "\u2014";
+const UNGRADED_LABEL = "Unclassified";
+
 function GradeChart({ audience }: { audience: LeadAudienceStats }) {
+  const gradeCounts = audience.gradeCounts.map((row) =>
+    row.grade === UNGRADED_BUCKET ? { ...row, grade: UNGRADED_LABEL } : row,
+  );
   return (
     <Card>
       <CardHeader>
         <CardTitle>Grade distribution</CardTitle>
-        <CardDescription>“—” means we have not classified a grade yet</CardDescription>
+        <CardDescription>“{UNGRADED_LABEL}” means we have not classified a grade yet</CardDescription>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={260}>
-          <BarChart data={audience.gradeCounts} margin={{ left: 0, right: 10, top: 10, bottom: 0 }}>
+          <BarChart data={gradeCounts} margin={{ left: 0, right: 10, top: 10, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="grade" tick={{ fontSize: 12 }} />
             <YAxis allowDecimals={false} />

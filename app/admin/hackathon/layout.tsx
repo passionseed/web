@@ -1,19 +1,16 @@
-import { ReactNode } from "react";
-import { HackathonNav } from "@/components/admin/HackathonNav";
+import type { ReactNode } from "react";
 
-export default function AdminHackathonLayout({
-  children,
-}: {
-  children: ReactNode;
-}) {
+import { HackathonNav } from "@/components/admin/HackathonNav";
+import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
+
+export default function AdminHackathonLayout({ children }: { children: ReactNode }) {
   return (
     <div className="space-y-4">
-      <header className="space-y-1">
-        <h2 className="text-2xl font-semibold">Hackathon</h2>
-        <p className="text-sm text-muted-foreground">
-          Navigate hackathon workflows by dedicated pages.
-        </p>
-      </header>
+      <AdminPageHeader
+        eyebrow="The Next Decade Hackathon"
+        title="Hackathon"
+        description="Grade activity and team submissions, manage participants, teams and mentors, and email or push everyone who registered. Pick a tool below."
+      />
       <HackathonNav />
       {children}
     </div>

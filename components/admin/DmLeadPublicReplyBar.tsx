@@ -11,6 +11,7 @@ import {
   personalizeLeadCopyAction,
   replyPubliclyToLeadComment,
 } from "@/app/admin/dm-leads/actions";
+import { refreshAdminCounts } from "@/components/admin/console/live-counts";
 import {
   getDefaultPublicCommentReply,
   hasThreadDeliveryFailure,
@@ -121,6 +122,7 @@ export function DmLeadPublicReplyBar({ conversation, thread }: DmLeadPublicReply
         return;
       }
       setSentSuccess(true);
+      refreshAdminCounts();
     });
   };
 

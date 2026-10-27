@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { SeatStats, SourceCount } from "@/lib/shift/applicationStats";
 
 function pct(value: number, total: number): string {
@@ -23,7 +24,11 @@ export function ShiftSeatBar({ stats, total }: { stats: SeatStats; total: number
         </span>
         <span className="text-muted-foreground">{total} applications</span>
       </div>
-      <div className="relative h-3 w-full overflow-hidden rounded-full bg-muted">
+      <div
+        className="relative h-3 w-full overflow-hidden rounded-full bg-muted"
+        role="img"
+        aria-label={`${stats.paid} of ${stats.seats} seats paid, ${stats.accepted} accepted`}
+      >
         <div
           className="absolute inset-y-0 left-0 bg-primary/30"
           style={{ width: pct(stats.accepted, stats.seats) }}
@@ -32,6 +37,23 @@ export function ShiftSeatBar({ stats, total }: { stats: SeatStats; total: number
           className="absolute inset-y-0 left-0 bg-primary"
           style={{ width: pct(stats.paid, stats.seats) }}
         />
+      </div>
+    </div>
+  );
+}
+
+/** Same footprint as the seat bar and source chips, so the page does not jump. */
+export function ShiftSeatBarSkeleton() {
+  return (
+    <div className="space-y-3" aria-hidden="true">
+      <div className="flex items-baseline justify-between gap-2">
+        <Skeleton className="h-8 w-56" />
+        <Skeleton className="h-4 w-24" />
+      </div>
+      <Skeleton className="h-3 w-full rounded-full" />
+      <div className="flex gap-2">
+        <Skeleton className="h-6 w-20 rounded-full" />
+        <Skeleton className="h-6 w-16 rounded-full" />
       </div>
     </div>
   );
