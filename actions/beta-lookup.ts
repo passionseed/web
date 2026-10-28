@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@/utils/supabase/server";
 
 export type BetaLookupField = {
   label: string;
@@ -9,13 +10,33 @@ export type BetaLookupField = {
 
 export type BetaLookupResult =
   | { found: true; fields: BetaLookupField[] }
-  | { found: false; debug?: unknown };
+  | { found: false; reason?: "unauthorized" };
 
 const BETA_FORM_TOKEN = "2d1a7a73-e3dd-4c5a-b0d5-1b7f5a5c2e11";
+const STAFF_ROLES = ["admin", "passion-seed-team"];
+
+// A 4-character code is only 65,536 guesses, so this lookup returns minors'
+// contact details to staff only.
+async function isStaff(): Promise<boolean> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  const { data: roles } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", user.id)
+    .in("role", STAFF_ROLES);
+  return (roles?.length ?? 0) > 0;
+}
 
 export async function lookupBetaSubmission(code: string): Promise<BetaLookupResult> {
+  if (!(await isStaff())) return { found: false, reason: "unauthorized" };
+
   const normalised = code.trim().toUpperCase();
-  if (normalised.length !== 4) return { found: false, debug: { error: "code not 4 chars", code } };
+  if (normalised.length !== 4) return { found: false };
 
   const supabase = createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,7 +51,7 @@ export async function lookupBetaSubmission(code: string): Promise<BetaLookupResu
     .single();
 
   if (formError || !form) {
-    return { found: false, debug: { step: "form", error: JSON.stringify(formError) } };
+    return { found: false };
   }
 
   // Step 2: get all submissions for this form, find one whose UUID ends with the code
@@ -40,7 +61,7 @@ export async function lookupBetaSubmission(code: string): Promise<BetaLookupResu
     .eq("form_id", form.id);
 
   if (subError || !submissions) {
-    return { found: false, debug: { step: "submissions", error: JSON.stringify(subError) } };
+    return { found: false };
   }
 
   const matched = submissions.find(
@@ -48,7 +69,7 @@ export async function lookupBetaSubmission(code: string): Promise<BetaLookupResu
   );
 
   if (!matched) {
-    return { found: false, debug: { step: "match", code: normalised, totalSubmissions: submissions.length } };
+    return { found: false };
   }
 
   // Step 3: get answers with field labels
@@ -60,7 +81,7 @@ export async function lookupBetaSubmission(code: string): Promise<BetaLookupResu
     .neq("answer_text", "");
 
   if (ansError || !answers) {
-    return { found: false, debug: { step: "answers", error: JSON.stringify(ansError) } };
+    return { found: false };
   }
 
   type AnswerRow = { answer_text: string; ps_form_fields: { label: string; order_index: number } | null };
@@ -73,5 +94,5 @@ export async function lookupBetaSubmission(code: string): Promise<BetaLookupResu
       answer: r.answer_text,
     }));
 
-  return { found: true, fields, debug: { step: "ok", submissionId: matched.id } } as BetaLookupResult;
+  return { found: true, fields };
 }

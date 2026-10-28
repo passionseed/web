@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin, safeServerError } from "@/lib/security/route-guards";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 async function logAdminActivity(
   supabase: any,
@@ -51,8 +52,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Action must be 'add' or 'remove'" }, { status: 400 });
     }
 
+    // authenticated has SELECT only on user_roles; write with the service role
+    // now that requireAdmin() has passed.
+    const serviceClient = createAdminClient();
+
     if (action === "add") {
-      const { error } = await supabase.from("user_roles").insert({ user_id: userId, role });
+      const { error } = await serviceClient.from("user_roles").insert({ user_id: userId, role });
       if (error?.code === "23505") {
         return NextResponse.json({ error: "User already has this role" }, { status: 400 });
       }
@@ -62,7 +67,7 @@ export async function POST(request: Request) {
 
       await logAdminActivity(supabase, adminUserId, `add_role_${role}`, userId, { role, action });
     } else {
-      const { error } = await supabase
+      const { error } = await serviceClient
         .from("user_roles")
         .delete()
         .eq("user_id", userId)

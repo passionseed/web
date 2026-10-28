@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateObject, generateText } from 'ai';
 import { z } from 'zod';
+import { verifyEnrollmentActivity } from '@/lib/pathlab/authorization';
 import { createClient } from '@/utils/supabase/server';
 import { getModel } from '@/lib/ai/modelRegistry';
 import { resolveAIChatConfig } from '@/lib/pathlab/content-block';
@@ -62,6 +63,18 @@ export async function POST(
       );
     }
 
+    const { data: progress, error: progressError } = await supabase
+      .from('path_activity_progress').select('enrollment_id, activity_id')
+      .eq('id', progressId).maybeSingle();
+    if (progressError || !progress || progress.activity_id !== activityId) {
+      return NextResponse.json({ error: 'Progress not found' }, { status: 404 });
+    }
+    try {
+      await verifyEnrollmentActivity(progress.enrollment_id, activityId, user.id);
+    } catch {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     // Fetch activity with content metadata
     const { data: activity } = await supabase
       .from('path_activities')
@@ -102,6 +115,8 @@ export async function POST(
       .from('path_ai_chat_sessions')
       .select('*')
       .eq('progress_id', progressId)
+      .eq('activity_id', activityId)
+      .eq('user_id', user.id)
       .maybeSingle();
 
     if (!session) {
@@ -344,6 +359,7 @@ export async function GET(
       .select('*')
       .eq('progress_id', progressId)
       .eq('user_id', user.id)
+      .eq('activity_id', activityId)
       .maybeSingle();
 
     if (!session) {

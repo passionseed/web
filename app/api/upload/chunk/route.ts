@@ -1,8 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { ALLOWED_UPLOAD_TYPES, MAX_FILE_SIZE, validateFile } from "@/lib/constants/upload";
 import { b2 } from "@/lib/backblaze";
 import { requireUploadAccess } from "@/lib/security/upload-access";
 import { safeServerError } from "@/lib/security/route-guards";
+
+const MAX_CHUNK_SIZE = 3 * 1024 * 1024;
+const MAX_CHUNKS = Math.ceil(MAX_FILE_SIZE / MAX_CHUNK_SIZE);
+const MAX_SESSIONS = 20;
+const MAX_USER_SESSIONS = 3;
+const busySessions = new Set<string>();
+
+function isValidChunkHeader(sessionId: string, chunkIndex: number, totalChunks: number): boolean {
+  if (!/^[a-zA-Z0-9_-]{1,100}$/.test(sessionId)) return false;
+  if (!Number.isSafeInteger(chunkIndex) || !Number.isSafeInteger(totalChunks)) return false;
+  if (totalChunks < 1 || totalChunks > MAX_CHUNKS) return false;
+  return chunkIndex >= 0 && chunkIndex < totalChunks;
+}
 
 const uploadSessions = new Map<
   string,
@@ -55,77 +69,75 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required headers" }, { status: 400 });
     }
 
-    const chunkIndex = parseInt(chunkIndexStr, 10);
-    const totalChunks = parseInt(totalChunksStr, 10);
-    if (isNaN(chunkIndex) || isNaN(totalChunks) || chunkIndex < 0 || chunkIndex >= totalChunks) {
+    const chunkIndex = Number(chunkIndexStr);
+    const totalChunks = Number(totalChunksStr);
+    if (!isValidChunkHeader(sessionId, chunkIndex, totalChunks)) {
       return NextResponse.json({ error: "Invalid chunk metadata" }, { status: 400 });
     }
 
-    const body = request.body;
-    if (!body) {
-      return NextResponse.json({ error: "No chunk data received" }, { status: 400 });
+    let session = uploadSessions.get(sessionId);
+    if (!session) {
+      if (chunkIndex !== 0 || !fileName || !fileType || !fileSizeStr || !nodeId) {
+        return NextResponse.json({ error: "Missing file metadata for first chunk" }, { status: 400 });
+      }
+      const totalSize = Number(fileSizeStr);
+      const validation = validateFile(fileName, totalSize, fileType, ALLOWED_UPLOAD_TYPES, MAX_FILE_SIZE);
+      if (!Number.isSafeInteger(totalSize) || totalSize <= 0 || !validation.valid ||
+          totalChunks !== Math.ceil(totalSize / MAX_CHUNK_SIZE) ||
+          !["submission", "map-content"].includes(uploadType)) {
+        return NextResponse.json({ error: validation.error || "Invalid file metadata" }, { status: 400 });
+      }
+      const access = await requireUploadAccess(nodeId);
+      if (!access.ok || access.userId !== user.id) {
+        return NextResponse.json({ error: access.ok ? "Access denied" : access.error }, { status: access.ok ? 403 : access.status });
+      }
+      // Recheck after the asynchronous access check to avoid duplicate sessions.
+      session = uploadSessions.get(sessionId);
+      if (!session) {
+        const userSessions = [...uploadSessions.values()].filter((item) => item.metadata.userId === user.id).length;
+        if (uploadSessions.size >= MAX_SESSIONS || userSessions >= MAX_USER_SESSIONS) {
+          return NextResponse.json({ error: "Too many uploads in progress" }, { status: 429 });
+        }
+        session = { chunks: new Map(), metadata: { fileName, fileType, totalChunks, totalSize, nodeId, userId: user.id, uploadType }, createdAt: Date.now() };
+        uploadSessions.set(sessionId, session);
+      }
     }
 
+    if (session.metadata.userId !== user.id || session.metadata.totalChunks !== totalChunks ||
+        session.metadata.nodeId !== nodeId || session.metadata.uploadType !== uploadType) {
+      return NextResponse.json({ error: "Access denied" }, { status: 403 });
+    }
+    if (busySessions.has(sessionId)) {
+      return NextResponse.json({ error: "Upload already in progress" }, { status: 409 });
+    }
+    const body = request.body;
+    if (!body) return NextResponse.json({ error: "No chunk data received" }, { status: 400 });
+    const expectedSize = Math.min(MAX_CHUNK_SIZE, session.metadata.totalSize - chunkIndex * MAX_CHUNK_SIZE);
+    busySessions.add(sessionId);
     const parts: Uint8Array[] = [];
+    let totalLength = 0;
     const reader = body.getReader();
     try {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
+        totalLength += value.length;
+        if (totalLength > expectedSize) {
+          await reader.cancel();
+          return NextResponse.json({ error: "Chunk too large" }, { status: 400 });
+        }
         parts.push(value);
       }
     } finally {
-      try {
-        reader.releaseLock();
-      } catch {
-        // ignore
-      }
+      reader.releaseLock();
+      busySessions.delete(sessionId);
     }
-
-    const totalLength = parts.reduce((acc, p) => acc + p.length, 0);
+    if (totalLength !== expectedSize) return NextResponse.json({ error: "Invalid chunk size" }, { status: 400 });
     const chunkBuffer = new Uint8Array(totalLength);
     let offset = 0;
-    for (const p of parts) {
-      chunkBuffer.set(p, offset);
-      offset += p.length;
-    }
-
-    let session = uploadSessions.get(sessionId);
-
-    if (!session) {
-      if (!fileName || !fileType || !fileSizeStr || !nodeId) {
-        return NextResponse.json({ error: "Missing file metadata for first chunk" }, { status: 400 });
-      }
-
-      const access = await requireUploadAccess(nodeId);
-      if (!access.ok || access.userId !== user.id) {
-        return NextResponse.json({ error: access.ok ? "Access denied" : access.error }, { status: access.ok ? 403 : access.status });
-      }
-
-      const totalSize = parseInt(fileSizeStr, 10);
-      if (isNaN(totalSize) || totalSize <= 0) {
-        return NextResponse.json({ error: "Invalid file size" }, { status: 400 });
-      }
-
-      session = {
-        chunks: new Map(),
-        metadata: {
-          fileName,
-          fileType,
-          totalChunks,
-          totalSize,
-          nodeId,
-          userId: user.id,
-          uploadType,
-        },
-        createdAt: Date.now(),
-      };
-
-      uploadSessions.set(sessionId, session);
-    }
-
-    if (session.metadata.userId !== user.id) {
-      return NextResponse.json({ error: "Access denied" }, { status: 403 });
+    for (const part of parts) {
+      chunkBuffer.set(part, offset);
+      offset += part.length;
     }
 
     session.chunks.set(chunkIndex, chunkBuffer);

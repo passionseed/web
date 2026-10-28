@@ -21,7 +21,7 @@ export async function POST(request: Request) {
 
         // Parse request body
         const body = await request.json();
-        console.log("Request body received:", body);
+
         const { roomId, scheduledDate, scheduledTime, notes } = body;
 
         if (!roomId || !scheduledDate || !scheduledTime) {
@@ -54,6 +54,13 @@ export async function POST(request: Request) {
                 { error: "Room not found" },
                 { status: 404 }
             );
+        }
+
+        const { data: membership, error: membershipError } = await supabase
+            .from("seed_room_members").select("room_id")
+            .eq("room_id", roomId).eq("user_id", user.id).maybeSingle();
+        if (membershipError || !membership) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 
         console.log("✅ Room found:", room.id);
@@ -106,7 +113,7 @@ export async function POST(request: Request) {
                     mentorProfile.discord_uid,
                     {
                         studentName: studentProfile?.full_name || studentProfile?.username || "Unknown Student",
-                        studentEmail: user.email || "No email",
+                        studentEmail: "Not shared",
                         seedTitle: (room.seed as any)?.title || "Unknown Seed",
                         roomCode: room.join_code,
                         scheduledDate: formatDate(scheduledDate),
