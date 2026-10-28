@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useCallback, useState, type ReactNode } from "react";
 
+import { ShiftHalloweenScene } from "./halloween/ShiftHalloween";
 import { useShiftGlobeScene } from "./ShiftGlobeScene";
 
 import styles from "./shiftNext.module.css";
@@ -10,14 +11,16 @@ import styles from "./shiftNext.module.css";
 /**
  * Full-bleed hero: the WebGL planet behind server-rendered copy. three.js
  * loads after the page is usable; until then (or with no WebGL) a CSS orb
- * holds the planet's place so the layout never jumps.
+ * holds the planet's place so the layout never jumps. `art="halloween"`
+ * swaps the planet for the pixel haunted-house scene and skips three.js.
  */
 
 const ShiftGlobe = dynamic(() => import("./ShiftGlobe"), { ssr: false });
 
-export function ShiftNextHero({ children, focusThailand = false }: {
+export function ShiftNextHero({ children, focusThailand = false, art = "globe" }: {
   children: ReactNode;
   focusThailand?: boolean;
+  art?: "globe" | "halloween";
 }) {
   const scene = useShiftGlobeScene();
   const [ready, setReady] = useState(false);
@@ -28,7 +31,8 @@ export function ShiftNextHero({ children, focusThailand = false }: {
   return (
     <header className={styles.hero}>
       <div className={styles.sky} aria-hidden="true" />
-      {!scene && (
+      {art === "halloween" && <ShiftHalloweenScene />}
+      {art === "globe" && !scene && (
         <>
           <div className={styles.orb} data-ready={ready} aria-hidden="true" />
           <div className={styles.globe} data-ready={ready}>
@@ -36,8 +40,8 @@ export function ShiftNextHero({ children, focusThailand = false }: {
           </div>
         </>
       )}
-      {focusThailand && <div className={styles.focusShade} aria-hidden="true" />}
-      {focusThailand && (
+      {art === "globe" && focusThailand && <div className={styles.focusShade} aria-hidden="true" />}
+      {art === "globe" && focusThailand && (
         <div className={styles.destination} data-arrived={scene ? scene.arrived : arrived} aria-hidden="true">
           ประเทศไทย · ออนไลน์บน Discord
         </div>

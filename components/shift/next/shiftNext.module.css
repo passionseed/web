@@ -2660,3 +2660,140 @@ textarea.input {
   font-size: 0.75rem;
   color: var(--mist);
 }
+
+/* ---------- Halloween: the SHIFT[3] pixel skin for the /shift gallery ------
+   The SHIFT[3] night (palette HX in poster/pixel/halloween/halloweenKit.ts).
+   Same layout and copy as the glass gallery; this block only swaps the
+   material: square pixel panels with hard one-step drops, Tiny5 for Latin
+   labels, pumpkin as the one loud colour, lavender for quiet lines.
+   Contrast on ink (#0d0919): cream 18.6:1, mist 9.6:1, pumpkin 6.4:1. */
+
+.halloween {
+  --void: #0d0919;
+  --star: #f8f5ec;
+  --mist: rgba(248, 245, 236, 0.72);
+  --faint: rgba(248, 245, 236, 0.5);
+  --line: rgba(248, 245, 236, 0.12);
+  --aurora: #ef7926;
+  --nebula: #b9a8d9;
+  --sol: #ffd56a;
+  --latin: var(--font-tiny5), ui-monospace, monospace;
+  --hx-edge: #47335f;
+  --hx-drop: #05030b;
+  --hx-ember: #b64c1b;
+  --hx-hat: #5a3a8c;
+  --shift-button-bg: #ef7926;
+  --shift-button-fg: #0d0919;
+  --shift-button-shadow: 4px 4px 0 0 #b64c1b;
+  --shift-button-shadow-hover: 6px 6px 0 0 #b64c1b;
+}
+
+.halloween ::selection {
+  background: rgba(239, 121, 38, 0.4);
+}
+
+/* Pixels have no curves: every corner on the page is a square step. */
+.halloween *,
+.halloween *::before,
+.halloween *::after {
+  border-radius: 0 !important;
+}
+
+/* Buttons: a pumpkin block that lifts a cell on hover. */
+.halloween .cta {
+  color: var(--void);
+  background: var(--aurora);
+  box-shadow: 4px 4px 0 0 var(--hx-ember);
+}
+
+.halloween .cta::after {
+  background: radial-gradient(closest-side, rgba(239, 121, 38, 0.55), rgba(185, 168, 217, 0.3) 60%, transparent);
+}
+
+@media (hover: hover) {
+  .halloween .cta:hover {
+    animation: hx-lift 360ms var(--tension) forwards;
+  }
+}
+
+.halloween .cta:active {
+  translate: 2px 2px;
+  box-shadow: 2px 2px 0 0 var(--hx-ember);
+}
+
+@keyframes hx-lift {
+  to {
+    translate: -2px -2px;
+    box-shadow: 6px 6px 0 0 var(--hx-ember);
+  }
+}
+
+.halloween .ghost,
+.halloween .missionTag {
+  background: rgba(13, 9, 25, 0.6);
+  box-shadow: inset 0 0 0 2px rgba(248, 245, 236, 0.22);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+@media (hover: hover) {
+  .halloween .ghost:hover {
+    background: rgba(185, 168, 217, 0.14);
+    box-shadow: inset 0 0 0 2px var(--nebula);
+  }
+}
+
+/* Hero: the pixel night replaces the planet light. */
+.halloween .sky {
+  display: none;
+}
+
+.halloween .heroFade {
+  height: 14svh;
+  background: linear-gradient(180deg, transparent, var(--void));
+}
+
+.halloween .missionTag {
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  color: var(--star);
+}
+
+.halloween .liveDot {
+  background: var(--aurora);
+  box-shadow: none;
+}
+
+.halloween .liveDot::after {
+  border-color: var(--aurora);
+}
+
+/* Wordmark in Tiny5 with a hard witch-hat drop, as on the SHIFT[3] cover. */
+.halloween .wordmark {
+  letter-spacing: 0.02em;
+  font-weight: 400;
+}
+
+.halloween .wordmarkText {
+  background: none;
+  color: var(--star);
+  filter: none;
+  text-shadow: 0.06em 0.06em 0 var(--hx-hat);
+}
+
+.halloween .headline {
+  text-shadow: 3px 3px 0 var(--hx-drop);
+}
+
+.halloween .headline span {
+  color: var(--aurora);
+}
+
+.halloween .lede,
+.halloween .preorder {
+  text-shadow: 2px 2px 0 var(--hx-drop);
+}
+
+.halloween .note :global(.pathlab-note) {
+  box-shadow: 3px 3px 0 0 var(--hx-ember);
+}

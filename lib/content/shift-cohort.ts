@@ -299,6 +299,9 @@ export const SHIFT_COHORT_3: ShiftCohort = {
   priceBaht: 690,
   anchorPriceBaht: null,
   firstMeetDate: "2026-11-09",
+  // The gallery card, /shift/3 link preview and round page wear the same
+  // Halloween night as the poster (components/shift/theme/halloween.tsx).
+  bannerSrc: "/shift/banners/shift-3-apply-halloween.png",
   // Register link and page match the Halloween pixel poster
   // (components/shift/poster/pixel/halloween).
   applyPreviewSrc: "/shift/banners/shift-3-apply-halloween.png",

@@ -1,0 +1,72 @@
+/* SHIFT[3] Halloween night on the /shift gallery. The stars twinkle on hard
+   steps(), the way a sprite animates, never a smooth tween. */
+
+.scene,
+.phoneOnly {
+  z-index: -1;
+}
+
+.phoneOnly {
+  display: block;
+}
+
+/* Phones stack the copy over the moon, so night settles over the top of the
+   scene and leaves the builder and the pumpkin bright at the foot. */
+.scrim {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    180deg,
+    rgba(29, 20, 56, 0.9) 0%,
+    rgba(29, 20, 56, 0.8) 55%,
+    rgba(29, 20, 56, 0) 78%
+  );
+}
+
+@media (min-aspect-ratio: 105/100) {
+  .phoneOnly {
+    display: none;
+  }
+}
+
+/* Fixed night behind the page, under every section. */
+.night {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  pointer-events: none;
+  background: linear-gradient(180deg, #1d1438 0%, #0d0919 45%, #0d0919 100%);
+}
+
+.night svg {
+  width: 100%;
+  height: 100%;
+  opacity: 0.55;
+}
+
+/* Graveyard strip above the footer, full bleed even inside a container
+   (the page root clips the overflow). */
+.ground {
+  height: clamp(120px, 16vw, 200px);
+  margin-top: 3rem;
+  margin-inline: calc(50% - 50vw);
+}
+
+.ground svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .twinkle {
+    animation: twinkle 2.6s steps(1, end) infinite;
+  }
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 1; }
+  40% { opacity: 0.25; }
+  70% { opacity: 0.6; }
+}

@@ -1,3 +1,4 @@
+import { HALLOWEEN_THEME } from "./halloween";
 import { HOLO_THEME } from "./holo";
 import { PIXEL_THEME } from "./pixel";
 import { RISO_THEME } from "./riso";
@@ -11,6 +12,7 @@ const THEMES: Record<number, ShiftTheme> = {
   0: HOLO_THEME,
   1: PIXEL_THEME,
   2: RISO_THEME,
+  3: HALLOWEEN_THEME,
 };
 
 export function themeForRound(round: number): ShiftTheme {

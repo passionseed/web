@@ -33,7 +33,8 @@ export function ShiftGlobeScene({ children }: { children: ReactNode }) {
   }
   const onReady = useCallback(() => setReady(true), []);
   const onArrive = useCallback(() => setRoute((current) => ({ ...current, arrived: true })), []);
-  const active = ["/shift", "/shift/next", "/shift/alumni", "/shift/feedback"].includes(pathname);
+  // /shift wears the SHIFT[3] Halloween night instead of the globe.
+  const active = ["/shift/next", "/shift/alumni", "/shift/feedback"].includes(pathname);
   const focusThailand = pathname === "/shift/next" || departing;
   const animateFocus = route.from === "/shift" || departing;
   const navigateToNext = useCallback(() => {

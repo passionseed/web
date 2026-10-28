@@ -6,7 +6,11 @@ import { ShiftCohortCard } from "@/components/shift/ShiftCohortCard";
 import { ShiftGalleryMotion } from "@/components/shift/ShiftGalleryMotion";
 import { MetaPixel } from "@/components/shift/MetaPixel";
 import { ShiftTopBar } from "@/components/shift/ShiftTopBar";
-import { ShiftNextCosmos, ShiftNextHero } from "@/components/shift/next/ShiftNextHero";
+import { ShiftNextHero } from "@/components/shift/next/ShiftNextHero";
+import {
+  ShiftHalloweenGround,
+  ShiftHalloweenNight,
+} from "@/components/shift/next/halloween/ShiftHalloween";
 import { ShiftJourneyLink } from "@/components/shift/next/ShiftGlobeScene";
 import { ShiftNextLight } from "@/components/shift/next/ShiftNextLight";
 import space from "@/components/shift/next/shiftNext.module.css";
@@ -48,13 +52,13 @@ export default async function ShiftGalleryPage() {
   const archive = cohorts.filter((cohort) => cohortStatus(cohort, today) !== "open");
 
   return (
-    <div className={`${space.page} ${styles.cosmicGallery} font-bai-jamjuree antialiased`} lang="th">
+    <div className={`${space.page} ${space.halloween} ${styles.cosmicGallery} ${styles.halloween} font-bai-jamjuree antialiased`} lang="th">
       <MetaPixel pagePath="/shift" />
-      <ShiftNextCosmos />
+      <ShiftHalloweenNight />
       <ShiftNextLight />
       <ShiftGalleryMotion />
 
-      <ShiftNextHero>
+      <ShiftNextHero art="halloween">
         <ShiftTopBar />
         <div className={`${space.container} ${space.heroInner}`}>
           <div className={space.heroCopy}>
@@ -142,6 +146,7 @@ export default async function ShiftGalleryPage() {
           </Link>
         </section>
 
+        <ShiftHalloweenGround />
         <footer className={styles.footer}>
           <span>SHIFT by PassionSeed</span>
           <a href="#rounds" className={styles.textLink}>กลับไปเลือกรุ่น <ArrowUpRight size={16} aria-hidden="true" /></a>

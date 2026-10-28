@@ -544,3 +544,25 @@
     transition: none !important;
   }
 }
+
+/* Halloween skin (/shift): the round cards join the pixel world. Colours
+   come from shiftNext's .halloween tokens on the same root. */
+.halloween .artLink {
+  box-shadow:
+    0 0 0 2px var(--hx-edge, #47335f),
+    6px 6px 0 2px var(--hx-drop, #05030b);
+}
+
+.halloween .eyebrow {
+  font-family: var(--font-tiny5), ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+}
+
+.halloween .roundHeader h3 {
+  font-family: var(--font-tiny5), ui-monospace, monospace;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-shadow: 3px 3px 0 #5a3a8c;
+}
