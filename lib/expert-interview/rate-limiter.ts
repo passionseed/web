@@ -9,7 +9,10 @@ export interface RateLimitResult {
   resetAt: Date;
 }
 
-export async function checkRateLimit(ipAddress: string): Promise<RateLimitResult> {
+export async function checkRateLimit(
+  ipAddress: string,
+  maxAttempts = MAX_ATTEMPTS_PER_HOUR
+): Promise<RateLimitResult> {
   console.log("[rate-limiter] Checking rate limit for IP:", ipAddress);
 
   try {
@@ -45,7 +48,7 @@ export async function checkRateLimit(ipAddress: string): Promise<RateLimitResult
     console.log("[rate-limiter] Existing record:", existing);
     const currentCount = existing?.attempt_count || 0;
 
-    if (currentCount >= MAX_ATTEMPTS_PER_HOUR) {
+    if (currentCount >= maxAttempts) {
       console.log("[rate-limiter] Rate limit exceeded:", currentCount);
       return { allowed: false, remaining: 0, resetAt };
     }
@@ -80,7 +83,7 @@ export async function checkRateLimit(ipAddress: string): Promise<RateLimitResult
 
     const result = {
       allowed: true,
-      remaining: MAX_ATTEMPTS_PER_HOUR - currentCount - 1,
+      remaining: maxAttempts - currentCount - 1,
       resetAt,
     };
     console.log("[rate-limiter] Rate limit check passed:", result);

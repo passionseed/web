@@ -4,18 +4,20 @@
 // =====================================================
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
+import { requireAdmin } from "@/lib/security/route-guards";
 import type { MigrationResult, MigrationStatus } from "@/types/pathlab";
 
 // =====================================================
 // GET - Check migration status
 // =====================================================
 export async function GET(request: NextRequest) {
+  const admin = await requireAdmin();
+  if (!admin.ok) return admin.response;
   try {
     const { searchParams } = new URL(request.url);
     const pathId = searchParams.get("pathId");
 
-    const supabase = await createClient();
+    const { supabase } = admin.value;
 
     if (pathId) {
       // Get detailed migration status for specific path
@@ -55,21 +57,14 @@ export async function GET(request: NextRequest) {
 //   - dryRun (optional): Preview migration without executing
 // =====================================================
 export async function POST(request: NextRequest) {
+  const admin = await requireAdmin();
+  if (!admin.ok) return admin.response;
   try {
     const body = await request.json();
     const pathId = body.pathId;
     const dryRun = body.dryRun || false;
 
-    const supabase = await createClient();
-
-    // Check user authorization (only path creators or admins can migrate)
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { supabase } = admin.value;
 
     if (dryRun) {
       // For dry run, just return what would be migrated
@@ -156,21 +151,14 @@ export async function POST(request: NextRequest) {
 //   - dayId (optional): Rollback specific day only
 // =====================================================
 export async function DELETE(request: NextRequest) {
+  const admin = await requireAdmin();
+  if (!admin.ok) return admin.response;
   try {
     const body = await request.json();
     const pathId = body.pathId;
     const dayId = body.dayId;
 
-    const supabase = await createClient();
-
-    // Check user authorization
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { supabase } = admin.value;
 
     let results;
 

@@ -3,6 +3,8 @@
 // CRUD operations for path_content
 // =====================================================
 
+import { requireUser, safeServerError } from "@/lib/security/route-guards";
+import { verifyActivityOwnership, verifyBuilderRecordOwnership, UnauthorizedError, NotFoundError } from "@/lib/pathlab/authorization";
 import { NextRequest, NextResponse } from "next/server";
 import {
   createPathContent,
@@ -20,6 +22,8 @@ import type {
 // Body: CreatePathContentInput
 // =====================================================
 export async function POST(request: NextRequest) {
+  const auth = await requireUser();
+  if (!auth.ok) return auth.response;
   try {
     const body: CreatePathContentInput = await request.json();
 
@@ -31,19 +35,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    await verifyActivityOwnership(body.activity_id, auth.value.userId);
     const content = await createPathContent(body);
     return NextResponse.json({ content }, { status: 201 });
   } catch (error) {
-    console.error("Error creating content:", error);
-    const detail = error instanceof Error
-      ? error.message
-      : (error as any)?.message ?? JSON.stringify(error);
-    const hint = (error as any)?.hint;
-    const code = (error as any)?.code;
-    return NextResponse.json(
-      { error: "Failed to create content", detail, hint, code },
-      { status: 500 }
-    );
+    if (error instanceof UnauthorizedError || error instanceof NotFoundError) {
+      return NextResponse.json({ error: "Forbidden" }, { status: error.statusCode });
+    }
+    return safeServerError("PathLab operation failed", error);
   }
 }
 
@@ -54,17 +53,22 @@ export async function POST(request: NextRequest) {
 //   - For reorder: { activityId, contentIds: string[] }
 // =====================================================
 export async function PATCH(request: NextRequest) {
+  const auth = await requireUser();
+  if (!auth.ok) return auth.response;
   try {
     const body = await request.json();
 
     // Handle reordering
     if (body.activityId && body.contentIds) {
+      await verifyActivityOwnership(body.activityId, auth.value.userId);
       await reorderPathContent(body.activityId, body.contentIds);
       return NextResponse.json({ success: true });
     }
 
     // Handle single content update
     if (body.contentId && body.updates) {
+      await verifyBuilderRecordOwnership("content", body.contentId, auth.value.userId);
+      if ("activity_id" in body.updates || "id" in body.updates) throw new UnauthorizedError("Invalid update");
       const content = await updatePathContent(
         body.contentId,
         body.updates as UpdatePathContentInput
@@ -80,11 +84,10 @@ export async function PATCH(request: NextRequest) {
       { status: 400 }
     );
   } catch (error) {
-    console.error("Error updating content:", error);
-    return NextResponse.json(
-      { error: "Failed to update content" },
-      { status: 500 }
-    );
+    if (error instanceof UnauthorizedError || error instanceof NotFoundError) {
+      return NextResponse.json({ error: "Forbidden" }, { status: error.statusCode });
+    }
+    return safeServerError("PathLab operation failed", error);
   }
 }
 
@@ -94,6 +97,8 @@ export async function PATCH(request: NextRequest) {
 //   - contentId: ID of content to delete
 // =====================================================
 export async function DELETE(request: NextRequest) {
+  const auth = await requireUser();
+  if (!auth.ok) return auth.response;
   try {
     const { searchParams } = new URL(request.url);
     const contentId = searchParams.get("contentId");
@@ -105,13 +110,13 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    await verifyBuilderRecordOwnership("content", contentId, auth.value.userId);
     await deletePathContent(contentId);
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting content:", error);
-    return NextResponse.json(
-      { error: "Failed to delete content" },
-      { status: 500 }
-    );
+    if (error instanceof UnauthorizedError || error instanceof NotFoundError) {
+      return NextResponse.json({ error: "Forbidden" }, { status: error.statusCode });
+    }
+    return safeServerError("PathLab operation failed", error);
   }
 }

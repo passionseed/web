@@ -1,3 +1,4 @@
+import { checkHackathonAuthRateLimit } from "@/lib/hackathon/auth-rate-limit";
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { generateSessionToken } from "@/lib/hackathon/auth";
@@ -18,6 +19,11 @@ export async function POST(req: NextRequest) {
 
     if (!email) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
+    }
+
+    if (typeof email !== "string") return NextResponse.json({ error: "Invalid email" }, { status: 400 });
+    if (!await checkHackathonAuthRateLimit(req, email, "forgot-password")) {
+      return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
     }
 
     const participant = await findParticipantByEmail(email);
@@ -68,7 +74,7 @@ export async function POST(req: NextRequest) {
             </div>
           `,
         });
-        console.log(`Password reset email sent to ${email}`);
+
       } catch (emailError) {
         console.error("Failed to send email:", emailError);
         // Continue even if email fails - show link in development

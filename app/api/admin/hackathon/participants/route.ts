@@ -82,8 +82,10 @@ export async function GET() {
       const activeWaitlist = waitlistEntries.find((w: any) => w.status === "waiting");
       const isInWaitlist = !!activeWaitlist;
 
+      const { password_hash, ...safeParticipant } = p;
       return {
-        ...p,
+        ...safeParticipant,
+        has_password: Boolean(password_hash),
         team: teamData ? {
           id: teamData.id,
           name: teamData.name,
@@ -102,9 +104,9 @@ export async function GET() {
 
     return NextResponse.json({ participants: transformedData });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Internal server error";
+
     console.error("Error in hackathon participants API:", err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -160,8 +162,8 @@ export async function DELETE(request: Request) {
       deletedCount: participantIds.length,
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Internal server error";
+
     console.error("Error in delete participants API:", err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

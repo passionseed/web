@@ -37,20 +37,19 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
-  // Add caching headers for GET API requests
+  // Add CDN caching headers for GET API requests that return the same data to
+  // everyone. Never add a path here whose response depends on the signed-in
+  // user (maps progress, assignments, admin): the CDN would serve one user's
+  // data to the next.
   if (request.method === 'GET' && request.nextUrl.pathname.startsWith('/api/')) {
     const { pathname } = request.nextUrl
     const response = NextResponse.next({ request })
-    
-    if (pathname.startsWith('/api/maps')) {
-      response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')
-    } else if (pathname.startsWith('/api/assignments')) {
-      response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=120')
-    } else if (pathname.startsWith('/api/hero-galaxy')) {
+
+    if (pathname.startsWith('/api/hero-galaxy')) {
       response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
     } else if (pathname.startsWith('/api/tcas')) {
       response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
-    } else if (pathname.endsWith('/search') || pathname.endsWith('/list')) {
+    } else if (!pathname.startsWith('/api/admin/') && pathname.endsWith('/search')) {
       response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
     }
     

@@ -30,7 +30,7 @@ export interface Participant {
   instagram_handle?: string | null;
   grade_level?: string | null;
   track?: string | null;
-  password_hash?: string | null;
+  has_password?: boolean;
 }
 
 // Submissions
