@@ -13,7 +13,10 @@ const LIMITS: Record<HackathonAuthFlow, { ip: number; email: number }> = {
   "forgot-password": { ip: 30, email: 3 },
 };
 
-/** The shared limiter persists across instances. Hash identifiers before passing them to its logs. */
+/**
+ * The shared limiter persists across instances. On Vercel, x-forwarded-for is
+ * set by the platform, not the client.
+ */
 export async function checkHackathonAuthRateLimit(
   request: NextRequest,
   email: string,
@@ -21,17 +24,14 @@ export async function checkHackathonAuthRateLimit(
 ): Promise<boolean> {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
     || request.headers.get("x-real-ip") || "unknown";
-  const key = (kind: string, value: string) => createHash("sha256")
-    .update(`hackathon-auth:${flow}:${kind}:${value}`).digest("hex");
-  try {
-    const [ipLimit, emailLimit] = await Promise.all([
-      checkRateLimit(key("ip", ip), LIMITS[flow].ip),
-      checkRateLimit(key("email", email.trim().toLowerCase()), LIMITS[flow].email),
-    ]);
-    return ipLimit.allowed && emailLimit.allowed;
-  } catch (error) {
-    // A limiter outage must not lock every student out mid-event.
-    console.error("[hackathon-auth-rate-limit] limiter unavailable", error instanceof Error ? error.message : error);
-    return true;
+  function key(kind: "ip" | "email", value: string): string {
+    return createHash("sha256").update(`hackathon-auth:${flow}:${kind}:${value}`).digest("hex");
   }
+  // Limiter errors propagate so the route fails closed; login needs the same
+  // database, so an outage here already blocks sign-in.
+  const [ipLimit, emailLimit] = await Promise.all([
+    checkRateLimit(key("ip", ip), LIMITS[flow].ip),
+    checkRateLimit(key("email", email.trim().toLowerCase()), LIMITS[flow].email),
+  ]);
+  return ipLimit.allowed && emailLimit.allowed;
 }

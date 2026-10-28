@@ -32,9 +32,9 @@ test("keeps a shared school IP usable for login but tight for reset emails", asy
   expect(resetIpKey).not.toBe(loginIpKey);
 });
 
-test("rejects if either limit is exceeded and fails open when the limiter is down", async () => {
+test("rejects if either limit is exceeded and fails closed when the limiter is down", async () => {
   limit.mockResolvedValueOnce(allowed).mockResolvedValueOnce({ ...allowed, allowed: false });
   expect(await checkHackathonAuthRateLimit(request("192.0.2.1"), "user@example.com", "login")).toBe(false);
   limit.mockRejectedValueOnce(new Error("unavailable"));
-  expect(await checkHackathonAuthRateLimit(request("192.0.2.1"), "user@example.com", "login")).toBe(true);
+  await expect(checkHackathonAuthRateLimit(request("192.0.2.1"), "user@example.com", "login")).rejects.toThrow("unavailable");
 });
