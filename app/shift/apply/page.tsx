@@ -8,6 +8,7 @@ import {
   RoundSwitcher,
 } from "@/components/shift/apply/ApplyGuides";
 import { MetaPixel } from "@/components/shift/MetaPixel";
+import { ShiftPageView } from "@/components/shift/ShiftPageView";
 import {
   HALLOWEEN_PAGE_BG,
   HalloweenApplyHeader,
@@ -96,6 +97,7 @@ export default async function ShiftApplyPage({
       style={{ backgroundColor: halloween ? HALLOWEEN_PAGE_BG : INK.black, color: INK.paper }}
     >
       {!halloween && <RisoPageTexture />}
+      <ShiftPageView pagePath="/shift/apply" />
       <MetaPixel pagePath="/shift/apply" />
 
       <header className="relative overflow-hidden">

@@ -6,6 +6,7 @@ import { ShiftApplyButton } from "@/components/shift/ShiftApplyButton";
 import { ShiftSeatsRemaining } from "@/components/shift/ShiftSeatsRemaining";
 import { ShiftParentShare } from "@/components/shift/ShiftParentShare";
 import { MetaPixel } from "@/components/shift/MetaPixel";
+import { ShiftPageView } from "@/components/shift/ShiftPageView";
 import { ShiftPayment } from "@/components/shift/ShiftPayment";
 import { ShiftTopBar } from "@/components/shift/ShiftTopBar";
 import type { RisoIconName } from "@/components/shift/poster/RisoIcons";
@@ -279,6 +280,7 @@ export default async function ShiftRoundPage({ params }: RoundParams) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(shiftJsonLd) }}
       />
+      <ShiftPageView pagePath={cohortPath(cohort)} />
       <MetaPixel pagePath={cohortPath(cohort)} viewContent={{ content_name: cohort.name }} />
       {Texture && <Texture />}
 
