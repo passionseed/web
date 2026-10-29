@@ -6,7 +6,7 @@ import {
   isProfileComplete,
   PROFILE_COMPLETION_SELECT,
 } from '@/lib/profile-completion'
-import { SHIFT_JOIN_PREFIX } from '@/lib/shift/joinLink'
+import { isShiftPath } from '@/lib/shift/joinLink'
 import { isPublicRoute } from './public-routes'
 
 function shouldSkipOnboardGate(pathname: string): boolean {
@@ -14,13 +14,11 @@ function shouldSkipOnboardGate(pathname: string): boolean {
     pathname === '/onboard' ||
     pathname.startsWith('/onboard/') ||
     pathname.startsWith('/auth/') ||
-    // Paid SHIFT students link Discord without the full PassionSeed onboard.
-    pathname.startsWith(SHIFT_JOIN_PREFIX) ||
-    // SeedStack links a SHIFT student's CLI; the auth callback skips onboard too.
-    pathname.startsWith('/shift/seedstack') ||
-    // The school proposal is forwarded to teachers and parents, who may hold
-    // a half-finished account; a proposal page should never bounce to /onboard.
-    pathname.startsWith('/shift/school') ||
+    // SHIFT applicants never do the full onboard, so no /shift page may
+    // bounce them (or a friend applying on the same phone) to /onboard. This
+    // also covers the school proposal forwarded to teachers and parents who
+    // may hold a half-finished account.
+    isShiftPath(pathname) ||
     pathname.startsWith('/api/') ||
     pathname.startsWith('/_next/')
   )

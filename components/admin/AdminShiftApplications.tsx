@@ -73,6 +73,7 @@ function matchesSearch(app: Application, search: string): boolean {
     app.discord_handle,
     app.discord_username,
     app.parent_contact,
+    app.parent_email,
     app.target_track,
   ].some((v) => v?.toLowerCase().includes(needle));
 }
@@ -213,9 +214,9 @@ export function AdminShiftApplications() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error();
-      const { application } = (await res.json()) as { application: Application };
-      return application;
+      const result = (await res.json().catch(() => ({}))) as { application?: Application; error?: string };
+      if (!res.ok || !result.application) throw new Error(result.error);
+      return result.application;
     },
     [],
   );
@@ -225,8 +226,8 @@ export function AdminShiftApplications() {
       try {
         replace(await sendPatch(id, body));
         return true;
-      } catch {
-        toast.error("Failed to update application");
+      } catch (error) {
+        toast.error(error instanceof Error && error.message ? error.message : "Failed to update application");
         return false;
       }
     },
@@ -293,6 +294,27 @@ export function AdminShiftApplications() {
       setSelected(new Set(failed.map((a) => a.id)));
     }
   }
+
+  /** Resends (email) or returns (copy) a fresh parent consent link. "" on an emailed success, null on failure. */
+  const sendParentLink = useCallback(
+    async (id: string, send: "email" | "copy"): Promise<string | null> => {
+      try {
+        const res = await fetch(`/api/admin/shift/applications/${id}/parent-link`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ send }),
+        });
+        const body = (await res.json()) as { url?: string; application?: Application; error?: string };
+        if (!res.ok || !body.application) throw new Error(body.error);
+        replace(body.application);
+        return body.url ?? "";
+      } catch (error) {
+        toast.error(error instanceof Error && error.message ? error.message : "Failed to send parent link");
+        return null;
+      }
+    },
+    [replace],
+  );
 
   const createJoinLink = useCallback(
     async (id: string): Promise<string | null> => {
@@ -497,6 +519,7 @@ export function AdminShiftApplications() {
                   onPatch={patch}
                   onAddToTracker={addToTracker}
                   onCreateJoinLink={createJoinLink}
+                  onSendParentLink={sendParentLink}
                 />
               ))}
             </TableBody>

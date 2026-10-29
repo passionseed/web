@@ -1,18 +1,25 @@
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 
+import { cohortStatus, getShiftCohortByName } from "@/lib/content/shift-cohort";
 import { extractDiscordIdentity } from "@/lib/projectseed/discord";
-import { joinShiftGuild, type GuildJoinResult } from "@/lib/shift/discordGuild";
+import {
+  joinShiftGuild,
+  removeShiftCohortRole,
+  type GuildJoinResult,
+  type RoleRemovalResult,
+} from "@/lib/shift/discordGuild";
 import { cleanHandle } from "@/lib/shift/handles";
 import { createAdminClient } from "@/utils/supabase/admin";
 import type { ShiftApplicationRow } from "@/types/shift";
 
 /**
- * Server side of the /shift/join link. A paid applicant signs in with Discord
- * and, in one pass, gets bound to:
+ * Server side of the /shift/join link. Right after applying, the applicant
+ * signs in with Discord and, in one pass, gets:
  *   1. their PassionSeed account (shift_applications.user_id)
- *   2. the admin tracker (shift_students), so admins know who is who
- *   3. the camp cohort with the same name, when one exists
- *   4. the SHIFT Discord server, with roles
+ *   2. the SHIFT Discord server, with their round's role ("SHIFT[3]")
+ * Once an admin marks them paid (before or after linking) they also join:
+ *   3. the admin tracker (shift_students), so admins know who is who
+ *   4. the camp cohort with the same name, when one exists
  * Every step is idempotent so reopening the link is always safe.
  */
 
@@ -32,9 +39,19 @@ export async function findShiftApplicationByToken(
   return (data as ShiftApplicationRow | null) ?? null;
 }
 
-/** A link only works for a row an admin has marked paid. */
-export function isJoinable(app: ShiftApplicationRow | null): app is ShiftApplicationRow {
-  return Boolean(app?.paid_at);
+/**
+ * A link works from the moment someone applies, until an admin declines
+ * them. Unpaid links stop once their round is over, so an old payment
+ * message cannot hand out a finished round's role.
+ */
+export function isJoinable(
+  app: ShiftApplicationRow | null,
+  today?: string,
+): app is ShiftApplicationRow {
+  if (!app || app.status === "declined") return false;
+  if (app.paid_at) return true;
+  const cohort = getShiftCohortByName(app.cohort);
+  return Boolean(cohort) && cohortStatus(cohort!, today) !== "done";
 }
 
 /** Called from /auth/callback right after the Discord OAuth exchange. */
@@ -72,8 +89,7 @@ export async function completeShiftJoin(input: {
   if (!data) return "taken";
   const linked = data as ShiftApplicationRow;
 
-  await upsertTrackerMember(supabase, linked);
-  await enrollCampCohort(supabase, linked);
+  if (linked.paid_at) await admitPaidStudent(linked, supabase);
   const accessToken = (await discordTokenOwner(input.providerToken)) === discord.userId ? input.providerToken : null;
   await syncShiftDiscord(linked, accessToken, supabase);
   return null;
@@ -121,6 +137,63 @@ export async function syncShiftDiscord(
   const { error } = await supabase.from("shift_applications").update(update).eq("id", app.id);
   if (error) console.error("[shift-join] failed to record Discord state:", error.message);
 
+  return result;
+}
+
+/**
+ * What payment unlocks for a linked student: the admin tracker and the camp
+ * cohort. Runs when they link after paying, and when an admin marks an
+ * already-linked applicant paid.
+ */
+export async function admitPaidStudent(
+  app: ShiftApplicationRow,
+  supabase: Admin = createAdminClient(),
+): Promise<void> {
+  if (!app.user_id || !app.paid_at || app.status === "declined") return;
+  await upsertTrackerMember(supabase, app);
+  await enrollCampCohort(supabase, app);
+}
+
+/**
+ * Takes the round's Discord role back from a declined applicant and records
+ * it, so the admin page stops showing them as in the server. The account and
+ * any learning history stay.
+ */
+export async function revokeShiftDiscord(
+  app: ShiftApplicationRow,
+  supabase: Admin = createAdminClient(),
+): Promise<RoleRemovalResult | null> {
+  if (!app.discord_user_id) return null;
+
+  // Declining a duplicate must not take the role from the same person's
+  // other, still active application for this round.
+  const { data: sibling, error: siblingError } = await supabase
+    .from("shift_applications")
+    .select("id")
+    .eq("cohort", app.cohort)
+    .eq("discord_user_id", app.discord_user_id)
+    .neq("status", "declined")
+    .neq("id", app.id)
+    .limit(1)
+    .maybeSingle();
+  if (siblingError) {
+    console.error("[shift-join] failed to check other applications:", siblingError.message);
+    return { ok: false, state: "error", message: siblingError.message };
+  }
+
+  const result: RoleRemovalResult = sibling
+    ? { ok: true, state: "nothing_to_remove" }
+    : await removeShiftCohortRole({ discordUserId: app.discord_user_id, cohortName: app.cohort });
+  if (!result.ok) {
+    console.error("[shift-join] failed to remove Discord role:", result.message);
+    return result;
+  }
+
+  const { error } = await supabase
+    .from("shift_applications")
+    .update({ discord_joined_at: null, discord_error: null })
+    .eq("id", app.id);
+  if (error) console.error("[shift-join] failed to record Discord removal:", error.message);
   return result;
 }
 
@@ -195,7 +268,12 @@ async function loadCampCohorts(supabase: Admin): Promise<CampCohort[]> {
 export async function enrollLinkedStudents(supabase: Admin = createAdminClient()): Promise<number> {
   const [cohorts, { data: apps }] = await Promise.all([
     loadCampCohorts(supabase),
-    supabase.from("shift_applications").select("*").not("user_id", "is", null).not("paid_at", "is", null),
+    supabase
+      .from("shift_applications")
+      .select("*")
+      .not("user_id", "is", null)
+      .not("paid_at", "is", null)
+      .neq("status", "declined"),
   ]);
   let enrolled = 0;
   for (const app of (apps ?? []) as ShiftApplicationRow[]) {

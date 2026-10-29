@@ -8,6 +8,7 @@ import {
   cohortPath,
   formatThaiDate,
   formatThaiDateRange,
+  PAIR_TOTAL_DISCOUNT_BAHT,
   pairPriceBaht,
   priceLabel,
   teamSizeLabel,
@@ -69,7 +70,7 @@ export function CohortQuickFacts({ cohort }: { cohort: ShiftCohort }) {
           {priceLabel(cohort)} ต่อคน
           {pair !== null && (
             <span className="block font-normal" style={{ color: INK.pink }}>
-              มากับเพื่อนเป็นคู่ เหลือคนละ ฿{pair.toLocaleString("en-US")}
+              {`มากับเพื่อนเป็นคู่ ลดรวม ฿${PAIR_TOTAL_DISCOUNT_BAHT.toLocaleString("en-US")} เหลือคนละ ฿${pair.toLocaleString("en-US")}`}
             </span>
           )}
         </Fact>

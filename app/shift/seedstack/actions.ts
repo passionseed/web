@@ -16,6 +16,7 @@ import {
   withdrawSeedstackConsent,
   type ParentLinkTarget,
 } from "@/lib/seedstack/server";
+import { applyShiftParentAiConsent, clearShiftParentAiConsent } from "@/lib/shift/parentConsentServer";
 import { createClient } from "@/utils/supabase/server";
 
 type Result<T> = { ok: true; value: T } | { ok: false; error: string };
@@ -53,7 +54,13 @@ export async function giveStudentConsent(rawBirthDate: string): Promise<Result<s
     const birthDate = parseBirthDate(rawBirthDate);
     if (!birthDate) throw new StudentError("ใส่วันเกิดให้ถูกก่อนนะ");
     const token = await recordStudentConsent(userId, birthDate);
-    return token ? parentUrl(token) : null;
+    if (!token) return null;
+    // Their parent may already have agreed to AI tracking on the SHIFT parent page.
+    const covered = await applyShiftParentAiConsent(userId).catch((error) => {
+      console.error("[seedstack] SHIFT parent consent lookup failed:", error);
+      return false;
+    });
+    return covered ? null : parentUrl(token);
   });
 }
 
@@ -135,6 +142,7 @@ export async function parentWithdraw(token: string): Promise<Result<null>> {
     const target = await findParentLinkTarget(token);
     if (!target) return { ok: false, error: "ลิงก์นี้ใช้ไม่ได้แล้วค่ะ" };
     await withdrawSeedstackConsent(target.userId);
+    await clearShiftParentAiConsent(target.userId);
     return { ok: true, value: null };
   } catch (error) {
     console.error("[seedstack] parent withdraw failed:", error);

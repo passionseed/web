@@ -352,6 +352,9 @@ export function getAvailableCohorts(): ShiftCohort[] {
 /** Off each person's price when two friends apply together. */
 export const PAIR_DISCOUNT_BAHT = 100;
 
+/** What a pair saves together (฿200): the number the bring-a-friend offer leads with. */
+export const PAIR_TOTAL_DISCOUNT_BAHT = PAIR_DISCOUNT_BAHT * 2;
+
 /** Per-person price for a pair of friends, or null for a free round. */
 export function pairPriceBaht(cohort: ShiftCohort): number | null {
   return cohort.priceBaht > 0 ? cohort.priceBaht - PAIR_DISCOUNT_BAHT : null;

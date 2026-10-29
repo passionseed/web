@@ -27,7 +27,14 @@ async function loadBoard(): Promise<SeedstackBoardStudent[]> {
     supabase
       .from("seedstack_consents")
       .select("user_id, notice_version, student_consented_at, birth_date, parent_consented_at, parent_declined_at, withdrawn_at"),
-    supabase.from("shift_applications").select("user_id, nickname, cohort").not("user_id", "is", null),
+    // Paid seats only: applicants now link an account before paying.
+    supabase
+      .from("shift_applications")
+      .select("user_id, nickname, cohort")
+      .not("user_id", "is", null)
+      .not("paid_at", "is", null)
+      .neq("status", "declined")
+      .order("created_at", { ascending: true }),
   ]);
   // Fail before the profiles lookup, so a consent error is not hidden behind an empty board.
   const firstFailed = [events, consents, apps].find((r) => r.error);
