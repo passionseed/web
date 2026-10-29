@@ -9,6 +9,15 @@ import { escapeHtml } from "@/lib/trials/parent-email";
 
 type EmailCohort = Pick<ShiftCohort, "name" | "startDate" | "endDate" | "sessionTime" | "priceBaht">;
 
+/**
+ * The public form lets anyone type a name and a parent email, so names are
+ * cut to letters, marks, spaces, hyphens and apostrophes: no URL or address
+ * an email client would turn into a link.
+ */
+export function plainName(raw: string): string {
+  return raw.replace(/[^\p{L}\p{M}\s'-]/gu, "").replace(/\s+/g, " ").trim().slice(0, 80);
+}
+
 export function buildShiftParentEmail(input: {
   nickname: string;
   fullName: string;
@@ -16,14 +25,16 @@ export function buildShiftParentEmail(input: {
   url: string;
 }): { subject: string; html: string } {
   const { cohort } = input;
-  const who = `${escapeHtml(input.fullName)} (${escapeHtml(input.nickname)})`;
+  const nickname = plainName(input.nickname) || "ผู้สมัคร";
+  const who = `${escapeHtml(plainName(input.fullName))} (${escapeHtml(nickname)})`;
   const dates = formatThaiDateRange(cohort.startDate, cohort.endDate);
   const price =
     cohort.priceBaht > 0 ? `ค่าเข้าร่วม ฿${cohort.priceBaht.toLocaleString("en-US")}` : "ไม่มีค่าใช้จ่าย";
   const href = escapeHtml(input.url);
 
   return {
-    subject: `ขอความยินยอมจากผู้ปกครอง: ${input.nickname} สมัคร ${cohort.name}`,
+    // No applicant-typed text in the subject.
+    subject: `ขอความยินยอมจากผู้ปกครอง: ใบสมัคร ${cohort.name}`,
     html: `
       <div style="font-family:Arial,sans-serif;line-height:1.7;color:#17324d;max-width:560px">
         <p>สวัสดีค่ะ</p>
@@ -35,7 +46,7 @@ export function buildShiftParentEmail(input: {
           <a href="${href}" style="background:#17324d;color:#ffffff;padding:12px 20px;border-radius:999px;text-decoration:none;font-weight:bold">อ่านรายละเอียดและยืนยัน</a>
         </p>
         <p style="font-size:13px;color:#4a6378">ลิงก์นี้เป็นของผู้ปกครองเท่านั้น กรุณาอย่าส่งต่อ
-        ถ้าไม่ใช่ผู้ปกครองของ ${escapeHtml(input.nickname)} ไม่ต้องทำอะไรค่ะ
+        ถ้าไม่ใช่ผู้ปกครองของ ${escapeHtml(nickname)} ไม่ต้องทำอะไรค่ะ
         สงสัยอะไร ทัก LINE ${escapeHtml(SHIFT_PAYMENT.lineId)}</p>
         <p style="font-size:13px;color:#4a6378;word-break:break-all">${href}</p>
       </div>

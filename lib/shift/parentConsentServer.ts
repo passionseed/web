@@ -17,6 +17,20 @@ import type { ShiftApplicationRow } from "@/types/shift";
 
 export const SHIFT_PARENT_PREFIX = "/shift/parent/";
 
+/** The apply form is public, so cap how often one address can be emailed. */
+const MAX_EMAILS_PER_ADDRESS_PER_DAY = 3;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+async function recentEmailsTo(address: string): Promise<number> {
+  const { count, error } = await createAdminClient()
+    .from("shift_applications")
+    .select("id", { count: "exact", head: true })
+    .eq("parent_email", address)
+    .gte("parent_email_sent_at", new Date(Date.now() - DAY_MS).toISOString());
+  if (error) throw new Error(`shift parent email count failed: ${error.message}`);
+  return count ?? 0;
+}
+
 export function shiftParentUrl(token: string): string {
   return `${siteUrl()}${SHIFT_PARENT_PREFIX}${token}`;
 }
@@ -40,8 +54,9 @@ export async function findShiftParentTarget(rawToken: string): Promise<ShiftAppl
 
 /**
  * Emails the parent link and stamps parent_email_sent_at. Best effort:
- * false when Resend is not configured or refuses, so the admin page shows
- * "not sent" and the admin can copy the link to LINE instead.
+ * false when Resend is not configured or refuses, or the address already got
+ * MAX_EMAILS_PER_ADDRESS_PER_DAY today, so the admin page shows "not sent"
+ * and the admin can copy the link to LINE instead.
  */
 export async function sendShiftParentEmail(
   app: Pick<ShiftApplicationRow, "cohort" | "nickname" | "full_name" | "parent_email">,
@@ -49,6 +64,10 @@ export async function sendShiftParentEmail(
 ): Promise<boolean> {
   const cohort = getShiftCohortByName(app.cohort);
   if (!app.parent_email || !cohort) return false;
+  if ((await recentEmailsTo(app.parent_email)) >= MAX_EMAILS_PER_ADDRESS_PER_DAY) {
+    console.warn("[shift-parent] email skipped: daily cap reached for this address");
+    return false;
+  }
 
   const email = buildShiftParentEmail({
     nickname: app.nickname,

@@ -5,7 +5,7 @@ import {
   parentConsentState,
   type ParentConsentRow,
 } from "@/lib/shift/parentConsent";
-import { buildShiftParentEmail } from "@/lib/shift/parentEmail";
+import { buildShiftParentEmail, plainName } from "@/lib/shift/parentEmail";
 
 // 29 Oct 2026, noon in Bangkok.
 const NOW = Date.parse("2026-10-29T05:00:00Z");
@@ -96,7 +96,7 @@ describe("shiftApplicationSchema parent fields", () => {
 });
 
 describe("buildShiftParentEmail", () => {
-  test("escapes what the applicant typed and carries the parent link", () => {
+  test("strips markup from what the applicant typed and carries the parent link", () => {
     const email = buildShiftParentEmail({
       nickname: "<b>Test</b>",
       fullName: "Test Applicant",
@@ -104,8 +104,15 @@ describe("buildShiftParentEmail", () => {
       url: "https://example.invalid/shift/parent/test-token",
     });
     expect(email.html).not.toContain("<b>Test</b>");
-    expect(email.html).toContain("&lt;b&gt;Test&lt;/b&gt;");
+    expect(email.html).toContain("Test Applicant (bTestb)");
     expect(email.html).toContain("https://example.invalid/shift/parent/test-token");
     expect(email.subject).toContain("SHIFT[3]");
+    expect(email.subject).not.toContain("Test");
+  });
+
+  test("names lose anything an email client could turn into a link", () => {
+    expect(plainName("แพร visit evil.example/login")).toBe("แพร visit evilexamplelogin");
+    expect(plainName("Mary-Jane O'Neil")).toBe("Mary-Jane O'Neil");
+    expect(plainName("น้ำใส")).toBe("น้ำใส");
   });
 });
