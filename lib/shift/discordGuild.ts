@@ -45,13 +45,18 @@ export function shiftDiscordUrls(): { server: string | null; invite: string | nu
   };
 }
 
-async function discordFetch(config: GuildConfig, path: string, init: RequestInit) {
+async function discordFetch(
+  config: GuildConfig,
+  path: string,
+  init: RequestInit,
+  reason = "SHIFT join link",
+) {
   return fetch(`${DISCORD_API}/guilds/${config.guildId}${path}`, {
     ...init,
     headers: {
       Authorization: `Bot ${config.botToken}`,
       "Content-Type": "application/json",
-      "X-Audit-Log-Reason": "SHIFT join link",
+      "X-Audit-Log-Reason": reason,
     },
     cache: "no-store",
   });
@@ -65,15 +70,22 @@ async function describeFailure(res: Response): Promise<string> {
 /** Role IDs by name, so one lookup per warm instance instead of per join. */
 const roleIdCache = new Map<string, string>();
 
-/** The round's role, created on first use. */
-async function cohortRoleId(config: GuildConfig, cohortName: string): Promise<string> {
+/** The round's existing role, or null when the server has none yet. */
+async function findCohortRoleId(config: GuildConfig, cohortName: string): Promise<string | null> {
   const cached = roleIdCache.get(cohortName);
   if (cached) return cached;
 
   const list = await discordFetch(config, "/roles", { method: "GET" });
   if (!list.ok) throw new Error(await describeFailure(list));
   const roles = (await list.json()) as { id: string; name: string }[];
-  let roleId = roles.find((r) => r.name === cohortName)?.id;
+  const roleId = roles.find((r) => r.name === cohortName)?.id ?? null;
+  if (roleId) roleIdCache.set(cohortName, roleId);
+  return roleId;
+}
+
+/** The round's role, created on first use. */
+async function cohortRoleId(config: GuildConfig, cohortName: string): Promise<string> {
+  let roleId = await findCohortRoleId(config, cohortName);
 
   if (!roleId) {
     const created = await discordFetch(config, "/roles", {
@@ -163,6 +175,43 @@ export async function joinShiftGuild(input: {
     const roles = await addRoles(config, input.discordUserId, roleIds);
     if (roles.ok) return { ok: true, state: "already_member" };
     return { ok: false, state: roles.notMember ? "not_member" : "error", message: roles.message };
+  } catch (error) {
+    return { ok: false, state: "error", message: error instanceof Error ? error.message : "Discord request failed" };
+  }
+}
+
+export type RoleRemovalResult =
+  | { ok: true; state: "removed" | "nothing_to_remove" }
+  | { ok: false; state: "not_configured" | "error"; message: string };
+
+/**
+ * Takes the round's role back, e.g. when an admin declines an applicant who
+ * joined the server straight from the apply page. Server-wide extras from
+ * DISCORD_SHIFT_ROLE_IDS stay: other rounds may have granted them too.
+ */
+export async function removeShiftCohortRole(input: {
+  discordUserId: string;
+  cohortName: string;
+}): Promise<RoleRemovalResult> {
+  const config = guildConfig();
+  if (!config) {
+    return { ok: false, state: "not_configured", message: "DISCORD_SHIFT_GUILD_ID or Discord bot token missing" };
+  }
+
+  try {
+    const roleId = await findCohortRoleId(config, input.cohortName);
+    if (!roleId) return { ok: true, state: "nothing_to_remove" };
+
+    const res = await discordFetch(
+      config,
+      `/members/${input.discordUserId}/roles/${roleId}`,
+      { method: "DELETE" },
+      "SHIFT application declined",
+    );
+    if (res.ok) return { ok: true, state: "removed" };
+    // Unknown member (left the server) or unknown role: nothing to take back.
+    if (res.status === 404) return { ok: true, state: "nothing_to_remove" };
+    return { ok: false, state: "error", message: await describeFailure(res) };
   } catch (error) {
     return { ok: false, state: "error", message: error instanceof Error ? error.message : "Discord request failed" };
   }

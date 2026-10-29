@@ -2,28 +2,48 @@ import type { ReactNode } from "react";
 import { Check } from "lucide-react";
 
 import { RisoBand, RisoPageTexture, labelClass } from "@/components/shift/ShiftRiso";
+import { ShiftPayment } from "@/components/shift/ShiftPayment";
 import { ShiftTopBar } from "@/components/shift/ShiftTopBar";
 import { ConnectDiscordButton, SyncRolesButton } from "@/components/shift/join/ShiftJoinActions";
 import { FLOW_TEXT, flowButtonClass, paper } from "@/components/shift/join/shiftFlowInk";
 import { INK, MISREG_TEXT } from "@/components/shift/poster/riso";
-import { SHIFT_PAYMENT } from "@/lib/content/shift-cohort";
+import { SHIFT_PAYMENT, type ShiftCohort } from "@/lib/content/shift-cohort";
 import type { ShiftDiscordAuthError } from "@/lib/shift/discordAuth";
+import type { ApplicantSummary } from "@/lib/shift/paymentMessage";
 
 /**
- * What a paid student sees at /shift/join/{token}. One job per state:
- * connect Discord, get into the server, or open it.
+ * What an applicant sees at /shift/join/{token}, opened straight from the
+ * apply page. One job per state: connect Discord, get into the server, or
+ * open it. Until the slip is checked, every state also carries the payment
+ * step, since leaving for Discord sign-in (or failing it) drops the apply page.
  */
+
+/** Present only while the applicant still owes the fee. */
+export interface ShiftJoinPayment {
+  cohort: ShiftCohort;
+  /** Pre-fills the slip message. Only for the signed-in applicant: it
+   *  echoes their parent contact, and the connect state is open to anyone
+   *  holding the link. */
+  applicant?: ApplicantSummary;
+}
 
 export type ShiftJoinState =
   | { kind: "invalid" }
-  | { kind: "pending"; nickname: string; cohortName: string }
   | {
       kind: "connect";
       nickname: string;
       cohortName: string;
+      paid: boolean;
       error: "no_discord" | "taken" | ShiftDiscordAuthError | null;
+      payment: ShiftJoinPayment | null;
     }
-  | { kind: "needs_invite"; nickname: string; cohortName: string; inviteUrl: string | null }
+  | {
+      kind: "needs_invite";
+      nickname: string;
+      cohortName: string;
+      inviteUrl: string | null;
+      payment: ShiftJoinPayment | null;
+    }
   | {
       kind: "in_server";
       nickname: string;
@@ -31,6 +51,7 @@ export type ShiftJoinState =
       serverUrl: string | null;
       /** e.g. "พรุ่งนี้ วันพุธที่ 14 ตุลาคม"; null once the round has met. */
       meetLabel: string | null;
+      payment: ShiftJoinPayment | null;
     };
 
 const CONNECT_ERRORS = {
@@ -38,7 +59,7 @@ const CONNECT_ERRORS = {
   taken: "ลิงก์นี้ผูกกับ Discord อีกบัญชีไปแล้ว ถ้าไม่ใช่เรา ทักพี่ใน LINE ได้เลย",
   discord_identity_exists: "Discord นี้มีบัญชี PassionSeed อยู่แล้ว กดปุ่มด้านล่างเพื่อเข้าสู่บัญชีนั้นและใช้ลิงก์นี้ต่อได้เลย",
   discord_email: "Discord ยังส่งอีเมลให้ระบบไม่ได้ เปิด Discord > ตั้งค่าผู้ใช้ > บัญชีของฉัน เพิ่มอีเมลและยืนยันให้เรียบร้อย แล้วกลับมากดปุ่มด้านล่างอีกครั้ง",
-  discord_auth: "เข้าสู่ระบบด้วย Discord ไม่สำเร็จ ลองกดอีกครั้งได้เลย ลิงก์และที่นั่งยังอยู่",
+  discord_auth: "เข้าสู่ระบบด้วย Discord ไม่สำเร็จ ลองกดอีกครั้งได้เลย ใบสมัครกับลิงก์นี้ยังอยู่ครบ",
 } as const;
 
 export function Shell({ eyebrow, title, children }: { eyebrow: string; title: string; children: ReactNode }) {
@@ -88,6 +109,17 @@ export function LineHelp() {
   );
 }
 
+/** The seat is held by the slip, not by joining Discord. */
+function PaymentStep({ payment }: { payment: ShiftJoinPayment | null }) {
+  if (!payment) return null;
+  return (
+    <section className="border-t pt-6" style={{ borderColor: paper("33") }}>
+      <p className="mb-5 font-kodchasan text-xl font-semibold">ยืนยันที่นั่ง: โอนแล้วส่งสลิป</p>
+      <ShiftPayment cohort={payment.cohort} applicant={payment.applicant} stacked />
+    </section>
+  );
+}
+
 function LinkButton({ href, children, primary }: { href: string; children: ReactNode; primary?: boolean }) {
   return (
     <a
@@ -107,30 +139,28 @@ export function ShiftJoinView({ token, state }: { token: string; state: ShiftJoi
     case "invalid":
       return (
         <Shell eyebrow="SHIFT" title="ลิงก์นี้ใช้ไม่ได้">
-          <Body>ลิงก์อาจคัดลอกมาไม่ครบ ส่งลิงก์นี้ให้พี่ดูใน LINE ได้เลย</Body>
-          <LineHelp />
-        </Shell>
-      );
-
-    case "pending":
-      return (
-        <Shell eyebrow={state.cohortName} title={`รอพี่ยืนยันสลิปอยู่นะ ${state.nickname}`}>
-          <Body>
-            ลิงก์นี้เป็นของเราคนเดียว เก็บไว้ได้เลย พอพี่เช็กสลิปใน LINE เสร็จ กลับมากดลิงก์เดิมนี้ แล้วเชื่อม Discord
-            เพื่อเข้าห้องของรุ่น
-          </Body>
-          <LinkButton href={SHIFT_PAYMENT.lineUrl}>ยังไม่ได้ส่งสลิป? ส่งใน LINE</LinkButton>
+          <Body>ลิงก์อาจคัดลอกมาไม่ครบ หรือปิดไปแล้ว ส่งลิงก์นี้ให้พี่ดูใน LINE ได้เลย</Body>
           <LineHelp />
         </Shell>
       );
 
     case "connect":
       return (
-        <Shell eyebrow={state.cohortName} title={`${state.nickname} เหลืออีกขั้นเดียว`}>
-          <Body>
-            ได้รับเงินแล้ว ที่นั่งเป็นของเรา กดเชื่อม Discord ทีเดียว ระบบพาเข้าเซิร์ฟ {state.cohortName}{" "}
-            พร้อมห้องของรุ่นให้เลย ไม่ต้องสมัครบัญชีใหม่ ไม่ต้องกรอกโปรไฟล์
-          </Body>
+        <Shell
+          eyebrow={state.cohortName}
+          title={state.paid ? `${state.nickname} เหลืออีกขั้นเดียว` : `${state.nickname} เชื่อม Discord เข้าห้องของรุ่นได้เลย`}
+        >
+          {state.paid ? (
+            <Body>
+              ได้รับเงินแล้ว ที่นั่งเป็นของเรา กดเชื่อม Discord ทีเดียว ระบบพาเข้าเซิร์ฟ SHIFT พร้อมห้องของ{" "}
+              {state.cohortName} ให้เลย ไม่ต้องสมัคร PassionSeed แยก ไม่ต้องกรอกโปรไฟล์
+            </Body>
+          ) : (
+            <Body>
+              กดเชื่อม Discord ทีเดียว ได้บัญชี PassionSeed และเข้าเซิร์ฟ SHIFT พร้อมห้องของ {state.cohortName} เลย
+              ไม่ต้องสมัคร PassionSeed แยก ไม่ต้องกรอกโปรไฟล์
+            </Body>
+          )}
           {state.error && (
             <p className="text-sm font-semibold leading-relaxed" style={{ color: FLOW_TEXT.warn }} role="alert">
               {CONNECT_ERRORS[state.error]}
@@ -140,6 +170,7 @@ export function ShiftJoinView({ token, state }: { token: string; state: ShiftJoi
             token={token}
             label={state.error === "discord_identity_exists" ? "เข้าสู่ระบบด้วย Discord บัญชีเดิม" : undefined}
           />
+          <PaymentStep payment={state.payment} />
           <LineHelp />
         </Shell>
       );
@@ -148,7 +179,8 @@ export function ShiftJoinView({ token, state }: { token: string; state: ShiftJoi
       return (
         <Shell eyebrow={state.cohortName} title="เชื่อม Discord แล้ว">
           <Body>
-            เหลือแค่เข้าเซิร์ฟ กดลิงก์เชิญ เข้าให้เรียบร้อย แล้วกลับมากดรับ role ที่หน้านี้ ห้องของรุ่นจะโผล่ขึ้นมาเอง
+            {state.payment ? "เข้าเซิร์ฟก่อน" : "เหลือแค่เข้าเซิร์ฟ"} กดลิงก์เชิญ เข้าให้เรียบร้อย แล้วกลับมากดรับ role
+            ที่หน้านี้ ห้องของรุ่นจะโผล่ขึ้นมาเอง
           </Body>
           {state.inviteUrl && (
             <LinkButton href={state.inviteUrl} primary>
@@ -156,31 +188,51 @@ export function ShiftJoinView({ token, state }: { token: string; state: ShiftJoi
             </LinkButton>
           )}
           <SyncRolesButton token={token} />
+          <PaymentStep payment={state.payment} />
           <LineHelp />
         </Shell>
       );
 
-    case "in_server":
+    case "in_server": {
+      // Unpaid: in the server, but the seat waits on the slip, so paying
+      // comes before the way out to Discord.
+      const owes = state.payment !== null;
+      const openDiscord = state.serverUrl && (
+        <LinkButton href={state.serverUrl} primary={!owes}>
+          เปิด Discord
+        </LinkButton>
+      );
       return (
-        <Shell eyebrow={state.cohortName} title={`เรียบร้อย ${state.nickname}`}>
+        <Shell
+          eyebrow={state.cohortName}
+          title={owes ? `เข้าเซิร์ฟแล้ว ${state.nickname}` : `เรียบร้อย ${state.nickname}`}
+        >
           <div className="flex items-center gap-3" style={{ color: FLOW_TEXT.body }}>
             <span
-              className="flex h-8 w-8 items-center justify-center rounded-full"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
               style={{ backgroundColor: INK.yellow, color: INK.black }}
             >
               <Check className="h-5 w-5" />
             </span>
             <span>
-              {state.meetLabel ? `เจอกัน${state.meetLabel} ใน Discord` : "เจอกันในห้องของรุ่น"}
+              {owes
+                ? "เข้าห้องของรุ่นแล้ว เหลือโอนค่าสมัครแล้วส่งสลิป รอพี่ยืนยันที่นั่งในแชท"
+                : state.meetLabel
+                  ? `เจอกัน${state.meetLabel} ใน Discord`
+                  : "เจอกันในห้องของรุ่น"}
             </span>
           </div>
-          {state.serverUrl && (
-            <LinkButton href={state.serverUrl} primary>
-              เปิด Discord
-            </LinkButton>
+          {owes ? (
+            <>
+              <PaymentStep payment={state.payment} />
+              {openDiscord}
+            </>
+          ) : (
+            openDiscord
           )}
           <LineHelp />
         </Shell>
       );
+    }
   }
 }

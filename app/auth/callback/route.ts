@@ -7,7 +7,7 @@ import {
   PROFILE_COMPLETION_SELECT,
 } from "@/lib/profile-completion";
 import { completeShiftJoin } from "@/lib/shift/join";
-import { shiftJoinPath, tokenFromShiftJoinPath } from "@/lib/shift/joinLink";
+import { isShiftPath, shiftJoinPath, tokenFromShiftJoinPath } from "@/lib/shift/joinLink";
 import { shiftDiscordAuthError } from "@/lib/shift/discordAuth";
 
 type PendingCookie = {
@@ -92,8 +92,9 @@ export async function GET(request: Request) {
         await assignUserToCohort(userId, "organic", "oauth_signup");
       }
 
-      // Paid SHIFT students skip onboarding: linking Discord is the whole
-      // signup. The provider token only exists here, so the join runs now.
+      // SHIFT applicants skip onboarding: linking Discord right after applying
+      // is the whole signup. The provider token only exists here, so the join
+      // runs now.
       const shiftJoinToken = tokenFromShiftJoinPath(next);
       if (shiftJoinToken) {
         const joinError = await completeShiftJoin({
@@ -106,8 +107,9 @@ export async function GET(request: Request) {
         return redirectWithCookies(target, pendingCookies);
       }
 
-      // SeedStack links an existing SHIFT student's CLI; no onboarding detour.
-      if (next.startsWith("/shift/seedstack")) {
+      // Any other /shift page (SeedStack, the alumni board): SHIFT students
+      // never onboard, so no detour through /onboard either.
+      if (isShiftPath(next)) {
         return redirectWithCookies(new URL(next, origin), pendingCookies);
       }
 
@@ -181,7 +183,7 @@ export async function GET(request: Request) {
     }
   }
 
-  // OAuth failures must preserve the paid student's destination and offer a
+  // OAuth failures must preserve the applicant's destination and offer a
   // Discord-specific retry, rather than sending them to generic onboarding.
   const failedShiftJoinToken = tokenFromShiftJoinPath(next);
   if (failedShiftJoinToken) {

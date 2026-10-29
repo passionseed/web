@@ -12,6 +12,7 @@ import {
   isProfileComplete,
   PROFILE_COMPLETION_SELECT,
 } from "@/lib/profile-completion";
+import { isShiftPath } from "@/lib/shift/joinLink";
 
 export const metadata: Metadata = {
   title: "เข้าสู่ระบบ | PassionSeed",
@@ -57,6 +58,8 @@ export default async function LoginPage({
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
   if (data.user && !isAnonymousUser(data.user)) {
+    // SHIFT students sign up through Discord and never onboard.
+    if (isShiftPath(next)) redirect(next);
     // Check if profile is complete before redirecting
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")

@@ -332,7 +332,7 @@ export function PolicyFields({
             label="รุ่นใบสมัคร"
             htmlFor={id("application_cohort")}
             error={errors.application_cohort}
-            hint="ผู้สมัครที่ได้รับเลือกในรุ่นนี้และมีบัญชี เข้าร่วมรอบได้เลยโดยไม่ต้องอยู่ใน allowlist"
+            hint="ผู้สมัครที่ได้รับเลือกในรุ่นนี้ จ่ายแล้ว และมีบัญชี เข้าร่วมรอบได้เลยโดยไม่ต้องอยู่ใน allowlist"
           >
             <NativeSelect
               id={id("application_cohort")}

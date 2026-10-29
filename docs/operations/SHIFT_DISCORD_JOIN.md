@@ -1,14 +1,45 @@
 # SHIFT Discord join
 
-Paid students use their personal `/shift/join/{token}` link to connect Discord
-and receive the role matching their cohort. Supabase performs OAuth with the
-`identify,email,guilds.join` scopes. The callback links the application and
-asks the bot to add the student to the server.
+Every application gets a personal `/shift/join/{token}` link. Right after
+submitting, the apply page asks the applicant to connect Discord through it:
+one sign-in creates (or reuses) their PassionSeed account and the bot adds them
+to the SHIFT server with the role named after their round (`SHIFT[3]`).
+Supabase performs OAuth with the `identify,email,guilds.join` scopes. The
+callback links the application and asks the bot to add the student.
+
+Payment no longer gates the link. What it still gates:
+
+- **Tracker and camp.** The `shift_students` row and the camp cohort
+  enrollment (classroom, community, map) are created once the application is
+  both linked and marked paid, whichever happens last. Marking a linked
+  applicant paid on `/admin/shift` runs this immediately.
+- **Messages.** The welcome and kickoff messages on the admin page stay
+  paid-only; they are for students who have not linked yet.
+
+Guards that replace the old payment gate:
+
+- `/api/shift/apply` only accepts rounds that are open, so a hand-made request
+  cannot get a finished round's role.
+- An unpaid link stops working once its round is over (paid links keep working).
+- In-app SHIFT rounds (`join_block_reason`, "Import from applications") require
+  `paid_at`, since a linked application no longer implies payment
+  (migration `20261027090000_shift_rounds_paid_applications.sql`). Push it
+  before deploying the apply-time link; it is safe under the old code too,
+  where every linked application was already paid.
+
+Declining an application closes its link and removes the round's role from
+their Discord account (extra roles from `DISCORD_SHIFT_ROLE_IDS` stay). The
+role stays if the same Discord account holds another active application for
+that round, so declining a duplicate is safe. Their PassionSeed account and the
+server membership remain; kick or ban them in Discord if needed. If the admin
+page shows "Declined, role still on", the bot could not remove the role: check
+its permissions, then remove the role by hand. Changing the status back from
+declined re-grants the role (and the tracker and camp, when paid).
 
 Discord sign-in reuses an existing PassionSeed account, even if the student is
 currently signed into a different account. Supabase automatically links matching
-verified emails. The paid registration, tracker and camp enrollment attach to
-the account returned by Discord sign-in. Separate accounts with different emails
+verified emails. The registration, tracker and camp enrollment attach to the
+account returned by Discord sign-in. Separate accounts with different emails
 retain their own learning histories; this flow does not merge those histories.
 
 The bot checks server membership first. Existing members receive their roles
