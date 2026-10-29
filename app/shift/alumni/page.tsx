@@ -3,9 +3,9 @@ import Link from "next/link";
 import { ArrowDown, ArrowRight } from "lucide-react";
 
 import { AlumniCalendar } from "@/components/shift/alumni/AlumniCalendar";
-import { AlumniPageView } from "@/components/shift/alumni/AlumniPageView";
 import { AlumniShowcase } from "@/components/shift/alumni/AlumniShowcase";
 import { MetaPixel } from "@/components/shift/MetaPixel";
+import { ShiftPageView } from "@/components/shift/ShiftPageView";
 import { ShiftTopBar } from "@/components/shift/ShiftTopBar";
 import { ShiftNextCosmos, ShiftNextHero } from "@/components/shift/next/ShiftNextHero";
 import { ShiftNextLight } from "@/components/shift/next/ShiftNextLight";
@@ -73,7 +73,7 @@ export default async function ShiftAlumniPage() {
       <ShiftNextCosmos />
       <ShiftNextLight />
       <ShiftGalleryMotion />
-      <AlumniPageView />
+      <ShiftPageView pagePath="/shift/alumni" />
       <MetaPixel pagePath="/shift/alumni" />
 
       <ShiftNextHero>
