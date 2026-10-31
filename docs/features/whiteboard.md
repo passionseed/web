@@ -16,11 +16,14 @@ Excalidraw. First used for the SHIFT High community session on 2026-10-24.
 - Sharing: a link with access off, view, or edit (rotatable), and member roles. Everyone
   needs a PassionSeed account.
 - Speaker script (**สคริปต์**, spike): a private timeline of keywords ("5:00 keyword, keyword"
-  per line) with a running clock, in its own window (Document Picture-in-Picture, or a popup
-  on shift-click or where that is missing). Sharing the tab or browser window in Discord shows
-  only the board; sharing the entire screen shows the script too. Kept in localStorage per
-  board, so it is only on that browser. Code: `components/whiteboard/script/`,
-  `lib/whiteboard/script.ts`.
+  per line) with a running clock. The board button opens `/whiteboard/<id>/script` in its own
+  tab, and **Float** there opens a Document Picture-in-Picture window (or a popup on shift-click
+  or where that is missing). The floating window belongs to the script tab, not the board tab,
+  so it stays on top while you present, like Google Meet: Arc closes a floating window when you
+  return to the tab that opened it, so one opened from the board vanished on the first click.
+  Sharing the board tab or browser window in Discord shows only the board; sharing the entire
+  screen shows the script too. Kept in localStorage per board, so it is only on that browser.
+  Code: `components/whiteboard/script/`, `lib/whiteboard/script.ts`.
 
 ## How it works
 
