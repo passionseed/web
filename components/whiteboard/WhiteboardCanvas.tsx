@@ -36,6 +36,7 @@ import { KIT_SIDEBAR, KitSidebar } from "./KitSidebar";
 import { BoardWidget } from "./plugins/BoardWidget";
 import { PluginHost, usePluginWindows } from "./plugins/PluginHost";
 import { PluginMenu } from "./plugins/PluginMenu";
+import { ScriptButton } from "./script/ScriptButton";
 import { ShareDialog } from "./ShareDialog";
 import { TimerWidget } from "./TimerWidget";
 import { useComments } from "./useComments";
@@ -227,6 +228,7 @@ export default function WhiteboardCanvas({
               <BoardTitle boardId={board.id} title={title} canRename={board.role === "owner"} onRenamed={setTitle} />
             )}
             <TimerWidget boardId={board.id} initial={board.timer} canControl={editable} channel={channel} />
+            {!isMobile && <ScriptButton boardId={board.id} />}
             <SaveBadge state={sync.saveState} connected={sync.connected} readOnly={!editable} />
             <PluginMenu
               open={windows.open}
