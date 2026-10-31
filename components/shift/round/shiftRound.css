@@ -204,10 +204,10 @@ svg .shift-float {
 }
 
 /* ============================================================
-   Pixel rounds (SHIFT[1]): the IG grid's deck. Flat raised panels with
+   Pixel rounds (SHIFT[1], and SHIFT[3]'s Halloween night): the IG grid's deck. Flat raised panels with
    stepped corners, hard one-cell shadows, pixel type for Latin labels.
    ============================================================ */
-[data-shift-kind="pixel"] .shift-tile {
+:is([data-shift-kind="pixel"], [data-shift-kind="halloween"]) .shift-tile {
   border: none;
   border-radius: 0;
   background: color-mix(in srgb, var(--shift-text, #f8f5ec) 7%, transparent);
@@ -227,7 +227,7 @@ svg .shift-float {
 }
 
 @media (hover: hover) {
-  [data-shift-kind="pixel"] .shift-tile:hover {
+  :is([data-shift-kind="pixel"], [data-shift-kind="halloween"]) .shift-tile:hover {
     animation-name: shift-tile-lift-pixel;
     /* Pixel motion moves in whole steps, never a smooth glide. */
     animation-timing-function: steps(2, end);
@@ -235,18 +235,18 @@ svg .shift-float {
   }
 }
 
-[data-shift-kind="pixel"] .shift-badge {
+:is([data-shift-kind="pixel"], [data-shift-kind="halloween"]) .shift-badge {
   border-radius: 0;
   box-shadow: 3px 3px 0 0 var(--shift-accent4, #428690);
 }
 
-[data-shift-kind="pixel"] .font-mono {
+:is([data-shift-kind="pixel"], [data-shift-kind="halloween"]) .font-mono {
   font-family: var(--font-tiny5), ui-monospace, monospace;
   letter-spacing: 0.08em;
 }
 
 /* Sprites bob in two-pixel steps instead of drifting smoothly. */
-[data-shift-kind="pixel"] .shift-float {
+:is([data-shift-kind="pixel"], [data-shift-kind="halloween"]) .shift-float {
   animation-name: shift-float-pixel;
   animation-timing-function: steps(1, end);
 }
@@ -261,14 +261,80 @@ svg .shift-float {
   }
 }
 
-[data-shift-kind="pixel"] .shift-bar {
+:is([data-shift-kind="pixel"], [data-shift-kind="halloween"]) .shift-bar {
   animation-timing-function: steps(4, end);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  [data-shift-kind="pixel"] .shift-tile:hover,
-  [data-shift-kind="pixel"] .shift-float,
-  [data-shift-kind="pixel"] .shift-bar {
+  :is([data-shift-kind="pixel"], [data-shift-kind="halloween"]) .shift-tile:hover,
+  :is([data-shift-kind="pixel"], [data-shift-kind="halloween"]) .shift-float,
+  :is([data-shift-kind="pixel"], [data-shift-kind="halloween"]) .shift-bar {
+    animation: none !important;
+  }
+}
+
+/* ============================================================
+   Halloween night (SHIFT[3] and the home hero while it is on sale).
+   Lantern light flickers and stars twinkle in hard steps, never a fade;
+   the dawn bookend's seedlings grow up out of the hill as it scrolls in.
+   ============================================================ */
+.hx-flicker {
+  animation: hx-flicker 2.9s steps(1, end) infinite;
+}
+
+@keyframes hx-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  31% {
+    opacity: 0.7;
+  }
+  37% {
+    opacity: 1;
+  }
+  71% {
+    opacity: 0.85;
+  }
+}
+
+.hx-twinkle {
+  animation: hx-twinkle 4.3s steps(1, end) infinite;
+}
+
+@keyframes hx-twinkle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@supports (animation-timeline: view()) {
+  .hx-grow {
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    animation: hx-grow steps(4, end) both;
+    animation-timeline: view();
+    animation-range: entry 10% cover 40%;
+  }
+}
+
+@keyframes hx-grow {
+  from {
+    transform: scaleY(0.25);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hx-flicker,
+  .hx-twinkle,
+  .hx-grow {
     animation: none !important;
   }
 }

@@ -2050,6 +2050,31 @@ out of page metadata: they override file-based images. Twitter inherits the
 resolved Open Graph image and uses `summary_large_image` from the root layout.
 Do not add an image handler and a static PNG in the same directory.
 
+### SHIFT[3] Halloween night (`/shift/3`, register page, home hero)
+
+A round can set `season: "halloween"` on its cohort record. `themeForCohort`
+then gives its round page `HALLOWEEN_THEME` (`components/shift/theme/halloween.tsx`):
+SHIFT[1]'s pixel kit at night, from `components/shift/poster/pixel/halloween`.
+
+- Palette: the poster's footer ink `#0d0919` as the page, cream text, pumpkin
+  `#ef7926` as the one loud colour (buttons, eyebrows), witch-hat purple for
+  hard one-cell shadows, lavender and flame as the other accents.
+- `HalloweenNight` stacks the hero copy on a flat starry sky above the scene
+  band (moon, haunted skyline, graveyard, the student in a witch hat), so copy
+  never lands on the moon at any width. The band is pinned bottom-right, so
+  phones keep the moon and student.
+- The art kind is `"halloween"`: the pixel CSS applies (stepped corners, hard
+  shadows, Tiny5 for Latin mono labels, stepped motion), and icons, the
+  problem art and the SDT sprites use the night palette (`HalloweenArt.tsx`).
+- The page ends at dawn (`HalloweenDawn`): the bookend lifts the night into
+  the Dawn theme's colours, warmth only at the horizon, seedlings on the hill.
+  Halloween is the costume; PassionSeed is what is left in the morning.
+- The home hero wears the season only while that round is on sale and not yet
+  finished (`homeSeason`); everything below the hero stays riso.
+- Lantern flicker, star twinkle and seedling growth move in hard steps and
+  stop under reduced motion. Showcase app loops play only on screen and have
+  a pause button.
+
 ### SHIFT Alumni globe (`/shift/alumni`)
 
 The alumni page reuses the live `ShiftNextHero`, `ShiftNextCosmos`, and shared

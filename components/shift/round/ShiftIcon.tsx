@@ -1,14 +1,16 @@
 import { PixelIcon } from "@/components/shift/poster/pixel/PixelRects";
+import { HALLOWEEN_ICON_PALETTE } from "@/components/shift/poster/pixel/halloween/halloweenKit";
 import { ICON_PALETTE } from "@/components/shift/poster/pixel/pixelIcons";
 import { RisoIcon, type RisoIconName } from "@/components/shift/poster/RisoIcons";
-import type { ShiftArtKind } from "@/components/shift/theme";
+import { isPixelKind, type ShiftArtKind } from "@/components/shift/theme/types";
 
 import { PIXEL_GLYPHS } from "./pixelGlyphs";
 
 /**
  * One icon, drawn in the round's own hand: a pixel sprite on pixel rounds,
  * two riso plates everywhere else. `ink` only tints the riso plate; sprites
- * keep their fixed palette so they match the posters.
+ * keep their round's fixed palette (day or Halloween night) so they match
+ * the posters.
  */
 export function ShiftIcon({
   kind,
@@ -23,7 +25,7 @@ export function ShiftIcon({
   size?: number;
   className?: string;
 }) {
-  if (kind === "pixel") {
+  if (isPixelKind(kind)) {
     const grid = PIXEL_GLYPHS[name];
     const cells = Math.max(grid.length, ...grid.map((row) => row.length));
     // Whole pixels only, so every sprite edge lands on the device grid.
@@ -33,7 +35,11 @@ export function ShiftIcon({
         className={`flex shrink-0 items-center justify-center ${className}`}
         style={{ width: size, height: size }}
       >
-        <PixelIcon grid={grid} palette={ICON_PALETTE} scale={scale} />
+        <PixelIcon
+          grid={grid}
+          palette={kind === "halloween" ? HALLOWEEN_ICON_PALETTE : ICON_PALETTE}
+          scale={scale}
+        />
       </span>
     );
   }

@@ -93,8 +93,30 @@ export function PixelLiveArt() {
   );
 }
 
+export interface SdtColors {
+  palette: Record<string, string>;
+  /** Label colour per pillar. */
+  inks: [string, string, string];
+  dot: string;
+  center: string;
+}
+
+/** Day colours for the SDT sprites; the Halloween page passes its night ones. */
+const SDT_DAY: SdtColors = {
+  palette: ICON_PALETTE,
+  inks: [PX.accent, PX.waterLight, PX.accentLight],
+  dot: PX.mid,
+  center: PX.cream,
+};
+
 /** Autonomy, competence, relatedness as three sprites joined by a dotted loop. */
-export function PixelSdtArt({ labels }: { labels: [string, string, string] }) {
+export function PixelSdtArt({
+  labels,
+  colors = SDT_DAY,
+}: {
+  labels: [string, string, string];
+  colors?: SdtColors;
+}) {
   const spots = [
     { grid: SIGNPOST, x: 34, y: 4, lx: 45, ly: 38 },
     { grid: TROPHY, x: 8, y: 50, lx: 19, ly: 82 },
@@ -105,7 +127,7 @@ export function PixelSdtArt({ labels }: { labels: [string, string, string] }) {
     const steps = Math.round(Math.hypot(x1 - x0, y1 - y0) / 4);
     for (let i = 1; i < steps; i++) {
       const t = i / steps;
-      dots.push([Math.round(x0 + (x1 - x0) * t), Math.round(y0 + (y1 - y0) * t), 1, 1, PX.mid]);
+      dots.push([Math.round(x0 + (x1 - x0) * t), Math.round(y0 + (y1 - y0) * t), 1, 1, colors.dot]);
     }
   };
   line(38, 42, 22, 50);
@@ -119,10 +141,10 @@ export function PixelSdtArt({ labels }: { labels: [string, string, string] }) {
       aria-hidden="true"
     >
       <Rects rects={dots} />
-      <rect x={44} y={56} width={2} height={2} fill={PX.cream} />
+      <rect x={44} y={56} width={2} height={2} fill={colors.center} />
       {spots.map((spot, i) => (
         <g key={i} className={["shift-float", "shift-float shift-float-b", "shift-float shift-float-c"][i]}>
-          <Rects rects={scaled(sprite(spot.grid, ICON_PALETTE, 0, 0), spot.x, spot.y, 2)} />
+          <Rects rects={scaled(sprite(spot.grid, colors.palette, 0, 0), spot.x, spot.y, 2)} />
         </g>
       ))}
       {spots.map((spot, i) => (
@@ -132,7 +154,7 @@ export function PixelSdtArt({ labels }: { labels: [string, string, string] }) {
           y={spot.ly}
           textAnchor="middle"
           fontSize="5"
-          fill={[PX.accent, PX.waterLight, PX.accentLight][i]}
+          fill={colors.inks[i]}
           style={PIXEL_FONT}
         >
           {labels[i].toUpperCase()}
