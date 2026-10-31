@@ -9,6 +9,7 @@
 
 import { getFieldCoverage, type FieldCoverage } from "@/lib/dm-leads/playbook";
 import { completeQwenChat } from "@/lib/dm-leads/qwen-client";
+import { INSTAGRAM_MESSAGE_MAX_BYTES, utf8Bytes } from "@/lib/meta/message-limits";
 import type { DmConversation, DmMessage } from "@/types/dm-leads";
 
 export type PersonalizeKind =
@@ -269,6 +270,13 @@ export function sanitizePersonalizedMessage(template: string, raw: string): stri
   if (cleaned.length > Math.max(template.length * 3, 900)) return null;
   const restored = restorePlaceholders(template, cleaned);
   if (!rewriteKeepsShiftFacts(template, restored)) return null;
+  // A rewrite that Instagram would refuse falls back to a template that fits.
+  if (
+    utf8Bytes(template) <= INSTAGRAM_MESSAGE_MAX_BYTES &&
+    utf8Bytes(restored) > INSTAGRAM_MESSAGE_MAX_BYTES
+  ) {
+    return null;
+  }
   return restored;
 }
 
