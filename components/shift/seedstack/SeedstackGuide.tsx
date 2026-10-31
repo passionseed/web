@@ -21,6 +21,7 @@ import {
   Trash2,
   UserCheck,
   Users,
+  Zap,
   type LucideIcon,
 } from "lucide-react";
 
@@ -60,6 +61,7 @@ const COMMAND_ICONS: Record<string, LucideIcon> = {
   "/seedstack-ship": ClipboardCheck,
   "/seedstack-test": Users,
   "/seedstack-build": Blocks,
+  "/seedstack-autobuild": Zap,
   "/seedstack-live": Globe,
   "/seedstack-connect": Cable,
 };
@@ -257,6 +259,9 @@ function StartSection() {
         {G.start.body}
       </p>
       <TerminalBoard lines={G.start.board} />
+      <p className="leading-relaxed" style={{ color: FLOW_TEXT.body }}>
+        {G.start.create}
+      </p>
     </Section>
   );
 }
