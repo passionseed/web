@@ -11,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import type { LobbyRosterEntry } from "@/types/lobby";
 import { ArrowLeft, Users } from "lucide-react";
 
@@ -23,7 +23,6 @@ interface LobbyRosterProps {
 export function LobbyRoster({ lobbyId, onBack }: LobbyRosterProps) {
   const [roster, setRoster] = useState<LobbyRosterEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
 
   const loadRoster = useCallback(async () => {
     try {
@@ -39,16 +38,14 @@ export function LobbyRoster({ lobbyId, onBack }: LobbyRosterProps) {
       setRoster(data.roster ?? []);
     } catch (error) {
       console.error("Error loading roster:", error);
-      toast({
-        title: "Failed to load roster",
-        description: error instanceof Error ? error.message : "Unknown error",
-        variant: "destructive",
+      toast.error("Could not load the roster", {
+        description: error instanceof Error ? error.message : undefined,
       });
       setRoster([]);
     } finally {
       setLoading(false);
     }
-  }, [lobbyId, toast]);
+  }, [lobbyId]);
 
   useEffect(() => {
     loadRoster();

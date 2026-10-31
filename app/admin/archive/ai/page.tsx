@@ -1,46 +1,21 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
 import { AIAgentManagement } from "@/components/admin/AIAgentManagement";
+import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
+import { requireAdmin } from "@/lib/admin/requireAdmin";
 
-async function checkAdminAccess() {
-  const supabase = await createClient();
-  
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error || !user) {
-    redirect("/login");
-  }
-
-  const { data: roles, error: roleError } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", user.id)
-    .eq("role", "admin");
-
-  if (roleError || !roles || roles.length === 0) {
-    redirect("/me");
-  }
-
-  return user;
-}
+export const dynamic = "force-dynamic";
 
 export default async function AIArchivePage() {
-  const user = await checkAdminAccess();
+  const user = await requireAdmin();
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">AI Agent Archive</h1>
-          <p className="text-muted-foreground">
-            Manage AI agents and prompts used throughout the platform
-          </p>
-        </div>
-        <AIAgentManagement user={user} />
-      </div>
+    <div className="space-y-4">
+      <AdminPageHeader
+        eyebrow="Archive"
+        title="AI agents"
+        description="Manage the AI agents and prompts used throughout the platform."
+      />
+      {/* Only the id is passed; the full auth user stays on the server. */}
+      <AIAgentManagement user={{ id: user.id }} />
     </div>
   );
 }

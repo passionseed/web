@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { DmMessageBubble } from "@/components/admin/DmMessageBubble";
 import { DmLeadReplyForm } from "@/components/admin/DmLeadReplyForm";
 import { replyToLead } from "@/app/admin/dm-leads/actions";
+import { refreshAdminCounts } from "@/components/admin/console/live-counts";
 import { uploadDmAttachment } from "@/lib/dm-leads/upload-image-client";
 import type { MetaAttachmentType } from "@/lib/meta/graph";
 import type { DmConversation, DmMessage } from "@/types/dm-leads";
@@ -92,6 +93,8 @@ export function DmLeadConversation({ conversation }: { conversation: DmConversat
         setError(result.error);
         setBody(text);
         setAttachedFile(pendingFile);
+      } else {
+        refreshAdminCounts();
       }
     });
   };

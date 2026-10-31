@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Check, ChevronDown, ChevronRight, Loader2, UserPlus } from "lucide-react";
 
 import {
@@ -33,9 +33,10 @@ import {
   truncateText,
 } from "@/lib/shift/applicationStats";
 import { SHIFT_AVAILABILITY, SHIFT_FOUND_VIA, SHIFT_GRADES } from "@/lib/shift/application";
+import type { AdminShiftApplication as Application } from "@/lib/admin/queue-tools/shift-applications";
 import { blocksPaidAdmission, parentConsentState } from "@/lib/shift/parentConsent";
 import { cn } from "@/lib/utils";
-import type { ShiftApplicationRow as Application, ShiftApplicationStatus } from "@/types/shift";
+import type { ShiftApplicationStatus } from "@/types/shift";
 
 export interface ApplicationPatch {
   status?: ShiftApplicationStatus;
@@ -52,6 +53,11 @@ const STATUS_OPTIONS: { value: ShiftApplicationStatus; label: string; className:
 
 const COLUMN_COUNT = 10;
 
+/** DOM id of an application's main row, for deep-link scrolling. */
+export function applicationRowId(id: string): string {
+  return `shift-application-row-${id}`;
+}
+
 function optionLabel(options: readonly { value: string; label: string }[], value: string) {
   return options.find((o) => o.value === value)?.label ?? value;
 }
@@ -61,6 +67,8 @@ interface RowProps {
   selected?: boolean;
   onSelectedChange?: (id: string, selected: boolean) => void;
   inTracker: boolean;
+  /** Opened from a deep link (?id=): starts expanded and stays marked. */
+  highlighted?: boolean;
   onPatch: (id: string, patch: ApplicationPatch) => Promise<boolean>;
   onAddToTracker: (application: Application) => Promise<void>;
   onCreateJoinLink: (id: string) => Promise<string | null>;
@@ -68,8 +76,12 @@ interface RowProps {
 }
 
 export function ShiftApplicationRow(props: RowProps) {
-  const { application: app, onPatch, selected = false, onSelectedChange } = props;
-  const [expanded, setExpanded] = useState(false);
+  const { application: app, onPatch, selected = false, onSelectedChange, highlighted = false } = props;
+  const [expanded, setExpanded] = useState(highlighted);
+  // A new deep link to a row that is already on screen opens it too.
+  useEffect(() => {
+    if (highlighted) setExpanded(true);
+  }, [highlighted]);
   const discord = discordStatus(app);
   // Under 20 the seat waits on the parent (PDPA); unmarking paid is always allowed.
   const paidLocked = app.paid_at === null && blocksPaidAdmission(parentConsentState(app));
@@ -78,8 +90,14 @@ export function ShiftApplicationRow(props: RowProps) {
   return (
     <Fragment>
       <TableRow
-        className={cn("cursor-pointer", expanded && "bg-muted/40")}
+        id={applicationRowId(app.id)}
+        className={cn(
+          "cursor-pointer",
+          expanded && "bg-muted/40",
+          highlighted && "bg-primary/10 shadow-[inset_3px_0_0_hsl(var(--primary))] hover:bg-primary/15",
+        )}
         data-state={selected ? "selected" : undefined}
+        data-highlighted={highlighted || undefined}
         // Mouse shortcut; keyboard users use the expand button in the first cell.
         onClick={() => setExpanded((v) => !v)}
       >
@@ -102,7 +120,7 @@ export function ShiftApplicationRow(props: RowProps) {
               e.stopPropagation();
               setExpanded((v) => !v);
             }}
-            className="rounded-sm p-0.5 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="rounded-sm p-0.5 text-muted-foreground hover:text-foreground active:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {expanded ? (
               <ChevronDown className="h-4 w-4" aria-hidden="true" />
@@ -157,7 +175,10 @@ export function ShiftApplicationRow(props: RowProps) {
         </TableCell>
       </TableRow>
       {expanded && (
-        <TableRow id={detailId} className="bg-muted/20 hover:bg-muted/20">
+        <TableRow
+          id={detailId}
+          className={cn("bg-muted/20 hover:bg-muted/20", highlighted && "bg-primary/5 hover:bg-primary/5")}
+        >
           <TableCell colSpan={COLUMN_COUNT} className="p-4">
             <ApplicationDetail {...props} />
           </TableCell>

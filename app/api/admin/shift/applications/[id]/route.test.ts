@@ -25,7 +25,7 @@ jest.mock("@/lib/shift/join", () => ({
 jest.mock("@/utils/supabase/admin", () => ({ createAdminClient: jest.fn() }));
 
 const linked = {
-  id: "test-application",
+  id: "0b7c6f5e-1d2a-4c3b-9e8f-7a6b5c4d3e2f",
   cohort: "SHIFT[3]",
   status: "accepted",
   user_id: "test-user",
@@ -47,11 +47,11 @@ function savedRow(row: Record<string, unknown>) {
 
 async function patch(body: unknown) {
   const res = await PATCH(
-    new Request("https://example.invalid/api/admin/shift/applications/test-application", {
+    new Request("https://example.invalid/api/admin/shift/applications/0b7c6f5e-1d2a-4c3b-9e8f-7a6b5c4d3e2f", {
       method: "PATCH",
       body: JSON.stringify(body),
     }),
-    { params: Promise.resolve({ id: "test-application" }) },
+    { params: Promise.resolve({ id: "0b7c6f5e-1d2a-4c3b-9e8f-7a6b5c4d3e2f" }) },
   );
   await Promise.all(pending.splice(0));
   return res;
@@ -67,7 +67,7 @@ test("declining takes the round role back before answering, so the row shows it"
   savedRow({ ...linked, status: "declined" });
   (revokeShiftDiscord as jest.Mock).mockResolvedValue({ ok: true, state: "removed" });
   const res = await patch({ status: "declined" });
-  expect(revokeShiftDiscord).toHaveBeenCalledWith(expect.objectContaining({ id: "test-application" }), expect.anything());
+  expect(revokeShiftDiscord).toHaveBeenCalledWith(expect.objectContaining({ id: "0b7c6f5e-1d2a-4c3b-9e8f-7a6b5c4d3e2f" }), expect.anything());
   expect((await res.json()).application).toEqual(
     expect.objectContaining({ status: "declined", discord_joined_at: null }),
   );
@@ -92,7 +92,7 @@ test("un-declining gives the role back and answers with them back in Discord", a
   savedRow({ ...linked, status: "accepted", discord_joined_at: null });
   (syncShiftDiscord as jest.Mock).mockResolvedValue({ ok: true, state: "already_member" });
   const res = await patch({ status: "accepted" });
-  expect(syncShiftDiscord).toHaveBeenCalledWith(expect.objectContaining({ id: "test-application" }), null, expect.anything());
+  expect(syncShiftDiscord).toHaveBeenCalledWith(expect.objectContaining({ id: "0b7c6f5e-1d2a-4c3b-9e8f-7a6b5c4d3e2f" }), null, expect.anything());
   expect((await res.json()).application.discord_joined_at).toEqual(expect.any(String));
   expect(admitPaidStudent).toHaveBeenCalled();
 });

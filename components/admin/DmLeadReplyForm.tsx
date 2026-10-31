@@ -362,7 +362,7 @@ export function DmLeadReplyForm({
               handleSend();
             }
           }}
-          placeholder="Type a reply… (⌘/Ctrl + Enter to send) — paste an image, or attach a file"
+          placeholder="Type a reply, paste an image, or attach a file (⌘/Ctrl + Enter to send)"
           rows={3}
           disabled={isPending}
           className="pr-9"

@@ -1,14 +1,16 @@
 import { AdminBetaRegistrations } from "@/components/admin/AdminBetaRegistrations";
+import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
 
 export const dynamic = "force-dynamic";
 
 export default function AdminBetaPage() {
   return (
-    <div className="space-y-2">
-      <h2 className="text-2xl font-semibold">Beta Registrations</h2>
-      <p className="text-sm text-muted-foreground">
-        Track registration funnel and applicant details.
-      </p>
+    <div className="space-y-4">
+      <AdminPageHeader
+        eyebrow="People"
+        title="Beta registrations"
+        description="Track the registration funnel and applicant details."
+      />
       <AdminBetaRegistrations />
     </div>
   );

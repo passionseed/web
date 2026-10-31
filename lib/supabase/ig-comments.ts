@@ -40,26 +40,75 @@ export async function upsertComment(params: {
   return data;
 }
 
-export async function getCommentsForAdmin(stage?: string): Promise<IgComment[]> {
+/** Rows per page of the admin table; each row carries its own reply form. */
+export const ADMIN_COMMENTS_DEFAULT_LIMIT = 300;
+/** PostgREST's own row ceiling, so asking for more would be silently cut anyway. */
+const ADMIN_COMMENTS_MAX_LIMIT = 1000;
+
+export interface AdminCommentsQuery {
+  /** Auto-labelled stage; leave out for every stage. */
+  stage?: string;
+  /** Only comments nobody has replied to (`replied_at` is null). */
+  unrepliedOnly?: boolean;
+  /** Newest first, capped at 1,000. Defaults to ADMIN_COMMENTS_DEFAULT_LIMIT. */
+  limit?: number;
+  /** Rows to skip, for paging. Defaults to 0. */
+  offset?: number;
+}
+
+function clampCommentLimit(limit: number | undefined): number {
+  if (limit === undefined || !Number.isFinite(limit)) return ADMIN_COMMENTS_DEFAULT_LIMIT;
+  return Math.min(Math.max(Math.floor(limit), 1), ADMIN_COMMENTS_MAX_LIMIT);
+}
+
+/** One page of the newest comments for the admin table, filtered in SQL. */
+export async function getCommentsForAdmin({
+  stage,
+  unrepliedOnly = false,
+  limit,
+  offset = 0,
+}: AdminCommentsQuery = {}): Promise<IgComment[]> {
   const supabase = createAdminClient();
 
-  let query = supabase
-    .from("ig_comments")
-    .select("*")
-    .order("commented_at", { ascending: false });
+  let query = supabase.from("ig_comments").select("*");
+  if (stage) query = query.eq("stage", stage);
+  if (unrepliedOnly) query = query.is("replied_at", null);
 
-  if (stage) {
-    query = query.eq("stage", stage);
-  }
+  const from = Number.isFinite(offset) ? Math.max(0, Math.floor(offset)) : 0;
+  const { data, error } = await query
+    .order("commented_at", { ascending: false })
+    .order("id", { ascending: true })
+    .range(from, from + clampCommentLimit(limit) - 1);
 
-  const { data, error } = await query;
-
+  // PGRST103: the page is past the end (a stale link, or replies shrank the list).
+  if (error?.code === "PGRST103") return [];
   if (error) {
     console.error("Error fetching ig_comments:", error);
     throw new Error("Failed to fetch comments");
   }
 
   return data ?? [];
+}
+
+/** How many comments match, without reading them: the filter link counts. */
+export async function countCommentsForAdmin({
+  stage,
+  unrepliedOnly = false,
+}: Omit<AdminCommentsQuery, "limit"> = {}): Promise<number> {
+  const supabase = createAdminClient();
+
+  let query = supabase.from("ig_comments").select("id", { count: "exact", head: true });
+  if (stage) query = query.eq("stage", stage);
+  if (unrepliedOnly) query = query.is("replied_at", null);
+
+  const { count, error } = await query;
+
+  if (error) {
+    console.error("Error counting ig_comments:", error);
+    throw new Error("Failed to count comments");
+  }
+
+  return count ?? 0;
 }
 
 export async function applyCommentClassification(

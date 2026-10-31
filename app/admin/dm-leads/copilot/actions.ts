@@ -2,8 +2,11 @@
  * Token mint/revoke server actions for /admin/dm-leads/copilot.
  *
  * The raw token is returned to the client exactly once and never persisted;
- * we keep sha256(raw) in `token_hash`. `listCopilotTokens` reads back only the
- * metadata columns the admin UI needs (no hashes).
+ * we keep sha256(raw) in `token_hash`. Every read selects only the metadata
+ * columns the admin UI needs, so the hash never reaches the browser.
+ *
+ * Mint and revoke return a result instead of throwing: Next.js hides thrown
+ * server-action messages in production, so the UI could not say what failed.
  */
 
 "use server";
@@ -15,8 +18,17 @@ import {
   hashCopilotToken,
   DEFAULT_TOKEN_TTL_DAYS,
   type CopilotTokenRow,
-  type MintedToken,
 } from "@/lib/supabase/dm-copilot-tokens";
+
+/** A token row without its hash: the only shape sent to the browser. */
+export type CopilotTokenSummary = Omit<CopilotTokenRow, "token_hash">;
+
+export type CopilotActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
+
+/** Raw bearer (shown once) plus the new row. */
+export type MintedTokenSummary = { raw: string; row: CopilotTokenSummary };
+
+const SUMMARY_COLUMNS = "id, user_id, name, last_used_at, expires_at, revoked_at, created_at";
 
 /**
  * Minimum Supabase surface we reach for. Kept structural so the action layer
@@ -27,7 +39,7 @@ type SupabaseQueryResult<T> = Promise<{ data: T | null; error: unknown | null }>
 interface AdminClient {
   from(table: "dm_copilot_tokens"): {
     insert(row: Record<string, unknown>): {
-      select(cols: string): { single(): SupabaseQueryResult<CopilotTokenRow> };
+      select(cols: string): { single(): SupabaseQueryResult<CopilotTokenSummary> };
     };
     update(patch: { revoked_at: string }): {
       eq(col: "id", value: string): {
@@ -36,7 +48,7 @@ interface AdminClient {
     };
     select(cols: string): {
       eq(col: "user_id", value: string): {
-        order(col: "created_at", opts: { ascending: boolean }): SupabaseQueryResult<CopilotTokenRow[]>;
+        order(col: "created_at", opts: { ascending: boolean }): SupabaseQueryResult<CopilotTokenSummary[]>;
       };
     };
   };
@@ -48,18 +60,13 @@ async function adminDb(): Promise<{ userId: string; admin: AdminClient }> {
   return { userId: user.id, admin: createAdminClient() as unknown as AdminClient };
 }
 
-function trimName(name: string): string {
-  const cleaned = name.trim().slice(0, 80);
-  if (!cleaned) throw new Error("ตั้งชื่อ token ก่อน (e.g. 'boon macbook')");
-  return cleaned;
-}
-
 export async function createCopilotTokenAction(input: {
   name: string;
   ttlDays?: number;
-}): Promise<MintedToken> {
+}): Promise<CopilotActionResult<MintedTokenSummary>> {
   const { userId, admin } = await adminDb();
-  const name = trimName(input.name);
+  const name = input.name.trim().slice(0, 80);
+  if (!name) return { ok: false, error: "ตั้งชื่อ token ก่อน (e.g. 'boon macbook')" };
   const ttl = Math.max(1, Math.min(input.ttlDays ?? DEFAULT_TOKEN_TTL_DAYS, 365));
   const raw = generateCopilotToken();
   const tokenHash = hashCopilotToken(raw);
@@ -73,21 +80,21 @@ export async function createCopilotTokenAction(input: {
       token_hash: tokenHash,
       expires_at: expiresAt,
     })
-    .select("*")
+    .select(SUMMARY_COLUMNS)
     .single();
 
   if (error || !data) {
     console.error("[copilot actions] mint failed:", error);
-    throw new Error("สร้าง token ไม่สำเร็จ");
+    return { ok: false, error: "สร้าง token ไม่สำเร็จ ลองอีกครั้ง" };
   }
 
   revalidatePath("/admin/dm-leads/copilot");
-  return { raw, row: data as CopilotTokenRow };
+  return { ok: true, data: { raw, row: data } };
 }
 
-export async function revokeCopilotTokenAction(tokenId: string): Promise<void> {
+export async function revokeCopilotTokenAction(tokenId: string): Promise<CopilotActionResult> {
   const { userId, admin } = await adminDb();
-  if (!tokenId) throw new Error("Missing token id");
+  if (!tokenId) return { ok: false, error: "ไม่พบ token นี้" };
 
   const { error } = await admin
     .from("dm_copilot_tokens")
@@ -98,16 +105,17 @@ export async function revokeCopilotTokenAction(tokenId: string): Promise<void> {
 
   if (error) {
     console.error("[copilot actions] revoke failed:", error);
-    throw new Error(" revoke token ไม่สำเร็จ");
+    return { ok: false, error: "revoke token ไม่สำเร็จ ลองอีกครั้ง" };
   }
   revalidatePath("/admin/dm-leads/copilot");
+  return { ok: true, data: undefined };
 }
 
-export async function listCopilotTokensAction(): Promise<CopilotTokenRow[]> {
+export async function listCopilotTokensAction(): Promise<CopilotTokenSummary[]> {
   const { userId, admin } = await adminDb();
   const { data, error } = await admin
     .from("dm_copilot_tokens")
-    .select("*")
+    .select(SUMMARY_COLUMNS)
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
@@ -115,5 +123,5 @@ export async function listCopilotTokensAction(): Promise<CopilotTokenRow[]> {
     console.error("[copilot actions] list failed:", error);
     throw new Error("โหลดรายการ token ไม่สำเร็จ");
   }
-  return (data ?? []) as CopilotTokenRow[];
+  return data ?? [];
 }

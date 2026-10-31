@@ -13,7 +13,10 @@ export interface SourceCount {
 
 export const DIRECT_SOURCE = "direct";
 
-export function seatStats(rows: ShiftApplicationRow[], seats: number): SeatStats {
+export function seatStats(
+  rows: readonly Pick<ShiftApplicationRow, "status" | "paid_at">[],
+  seats: number,
+): SeatStats {
   return {
     paid: rows.filter((r) => r.paid_at !== null).length,
     accepted: rows.filter((r) => r.status === "accepted").length,
@@ -22,7 +25,7 @@ export function seatStats(rows: ShiftApplicationRow[], seats: number): SeatStats
 }
 
 /** Count per source, most common first. Missing source counts as "direct". */
-export function sourceBreakdown(rows: ShiftApplicationRow[]): SourceCount[] {
+export function sourceBreakdown(rows: readonly Pick<ShiftApplicationRow, "source">[]): SourceCount[] {
   const counts = new Map<string, number>();
   for (const row of rows) {
     const source = row.source?.trim() || DIRECT_SOURCE;

@@ -52,7 +52,8 @@ const CAMP_SECTIONS = [
   { id: "camp-observations", label: "Observations", needsCohort: true },
 ] as const;
 
-// Clears the sticky admin topbar (72px) plus the sticky section nav.
+// Clears the sticky admin topbar (--admin-topbar-height, set on
+// .admin-workspace in app/admin/admin.css) plus the sticky section nav.
 const SECTION_CLASS = "scroll-mt-40";
 export function AdminShiftCamp() {
   const [cohorts, setCohorts] = useState<ShiftCohort[]>([]);
@@ -199,7 +200,7 @@ export function AdminShiftCamp() {
       </div>
       <nav
         aria-label="Camp sections"
-        className="sticky top-[76px] z-10 -mx-1 flex flex-wrap gap-1 rounded-lg border bg-background/90 p-1 backdrop-blur"
+        className="sticky top-[calc(var(--admin-topbar-height)+12px)] z-10 -mx-1 flex flex-wrap gap-1 rounded-lg border bg-background/90 p-1 backdrop-blur"
       >
         {sections.map((section) => (
           <a

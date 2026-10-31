@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 import * as actions from "@/app/admin/shift/rounds/actions";
+import { ADMIN_COUNTS_REFRESH_EVENT } from "@/lib/admin/console";
 import { ReviewQueue } from "../ReviewQueue";
 import { ROUND_ID, makeEvidence } from "../__fixtures__/rounds";
 
@@ -99,12 +100,27 @@ test("accept is offered only for rejected logs and calls the accept RPC", async 
 
 test("mark reviewed calls its RPC and the keyboard shortcut works", async () => {
   m.markReviewedAction.mockResolvedValue({ ok: true, data: {} });
+  const onRefresh = jest.fn();
+  window.addEventListener(ADMIN_COUNTS_REFRESH_EVENT, onRefresh);
   render(<ReviewQueue roundId={ROUND_ID} />);
   await screen.findByRole("heading", { name: "ต้น" });
   await act(async () => {
     fireEvent.keyDown(window, { key: "m" });
   });
   await waitFor(() => expect(m.markReviewedAction).toHaveBeenCalledWith(submitted.id, expect.any(Number)));
+  // The sidebar badge and overview counts refetch once the log is reviewed.
+  await waitFor(() => expect(onRefresh).toHaveBeenCalledTimes(1));
+  window.removeEventListener(ADMIN_COUNTS_REFRESH_EVENT, onRefresh);
+});
+
+test("shortcuts stay quiet while typing in the note", async () => {
+  render(<ReviewQueue roundId={ROUND_ID} />);
+  await screen.findByRole("heading", { name: "ต้น" });
+  const note = screen.getByLabelText(/Note to student/);
+  await act(async () => {
+    fireEvent.keyDown(note, { key: "m" });
+  });
+  expect(m.markReviewedAction).not.toHaveBeenCalled();
 });
 
 test("load failure shows the error with retry", async () => {

@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { updateSession } from "@/utils/supabase/proxy";
+import { routingPathname, updateSession } from "@/utils/supabase/proxy";
 import { adminPreviewPath } from "@/lib/og/linkPreviewBots";
 
 /**
@@ -24,6 +24,40 @@ function authErrorRedirect(request: NextRequest): NextResponse | null {
   return NextResponse.redirect(target);
 }
 
+/**
+ * Public music-catalogue searches. Listed by name: a suffix rule such as
+ * "ends in /search" would also hand a public cache header to any new or
+ * percent-encoded route that happens to end the same way.
+ */
+const PUBLIC_SEARCH_ROUTES = new Set([
+  '/api/apple-music/search',
+  '/api/deezer/search',
+  '/api/soundcloud/search',
+  '/api/spotify/search',
+])
+
+/**
+ * Cache-Control for GET /api/* responses, or null to leave the route's own.
+ * `pathname` is the decoded routing path (routingPathname), so an encoded
+ * admin URL such as /api/%61dmin/search is still recognised as admin.
+ *
+ * Admin APIs answer per signed-in admin and carry student data, so they are
+ * never cached by the CDN, whatever their path ends in. A public s-maxage on
+ * an admin path (e.g. /api/admin/search) would let a CDN serve one admin's
+ * results to anyone requesting the same URL, because the cache key ignores
+ * cookies. Checked before the public rules below.
+ *
+ * Never publicly cache a path whose response depends on the signed-in user
+ * (maps progress, assignments): the CDN would serve one user's data to the next.
+ */
+function apiCacheControl(pathname: string): string | null {
+  if (pathname === '/api/admin' || pathname.startsWith('/api/admin/')) return 'private, no-store'
+  if (pathname.startsWith('/api/hero-galaxy')) return 'public, s-maxage=300, stale-while-revalidate=600'
+  if (pathname.startsWith('/api/tcas')) return 'public, s-maxage=300, stale-while-revalidate=600'
+  if (PUBLIC_SEARCH_ROUTES.has(pathname)) return 'public, s-maxage=300, stale-while-revalidate=600'
+  return null
+}
+
 export default async function proxy(request: NextRequest) {
   const authError = authErrorRedirect(request);
   if (authError) return authError;
@@ -37,27 +71,19 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
-  // Add CDN caching headers for GET API requests that return the same data to
-  // everyone. Never add a path here whose response depends on the signed-in
-  // user (maps progress, assignments, admin): the CDN would serve one user's
-  // data to the next.
-  if (request.method === 'GET' && request.nextUrl.pathname.startsWith('/api/')) {
-    const { pathname } = request.nextUrl
-    const response = NextResponse.next({ request })
+  // Route checks below use the decoded path, the one Next's router matches.
+  const routePath = routingPathname(request.nextUrl.pathname)
 
-    if (pathname.startsWith('/api/hero-galaxy')) {
-      response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
-    } else if (pathname.startsWith('/api/tcas')) {
-      response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
-    } else if (!pathname.startsWith('/api/admin/') && pathname.endsWith('/search')) {
-      response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
-    }
-    
+  // Add caching headers for GET API requests
+  if (request.method === 'GET' && routePath.startsWith('/api/')) {
+    const response = NextResponse.next({ request })
+    const cacheControl = apiCacheControl(routePath)
+    if (cacheControl) response.headers.set('Cache-Control', cacheControl)
     return response
   }
 
   // Skip session refresh for API routes — they handle auth themselves
-  if (request.nextUrl.pathname.startsWith('/api/')) {
+  if (routePath.startsWith('/api/')) {
     return NextResponse.next({ request });
   }
 

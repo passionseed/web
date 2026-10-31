@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ageOn } from "@/lib/seedstack/consent";
 import { formatBangkokDateTime } from "@/lib/shift/applicationStats";
 import { parentConsentState, type ParentConsentState } from "@/lib/shift/parentConsent";
-import type { ShiftApplicationRow as Application } from "@/types/shift";
+import type { AdminShiftApplication as Application } from "@/lib/admin/queue-tools/shift-applications";
 
 /**
  * PDPA parent consent on the admin page: a badge beside the paid switch and

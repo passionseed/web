@@ -10,17 +10,21 @@ import { formatBangkokDateTime } from "@/lib/shift/applicationStats";
 import { isDiscordOAuthJoinError } from "@/lib/shift/discordErrors";
 import { firstMeetLabel, getShiftCohortByName } from "@/lib/content/shift-cohort";
 import { joinConfirmMessage, kickoffMessage } from "@/lib/shift/paymentMessage";
-import type { ShiftApplicationRow as Application } from "@/types/shift";
+import type { AdminShiftApplication as Application } from "@/lib/admin/queue-tools/shift-applications";
 
 /**
  * Applicants link Discord from the apply page. After payment: copy the
  * welcome message (with the student's personal /shift/join link) for anyone
  * who has not linked yet, then watch them land in the server.
+ * The join token is never in the list data; the link is fetched only when an
+ * admin copies a message.
  */
 
 type DiscordStatus = { label: string; variant: "default" | "secondary" | "destructive" | "outline" };
 
-export function discordStatus(app: Application): DiscordStatus | null {
+export function discordStatus(
+  app: Pick<Application, "status" | "paid_at" | "linked_at" | "discord_joined_at" | "discord_error">,
+): DiscordStatus | null {
   // Unpaid and unlinked is the normal state of a fresh application: no badge.
   if (!app.linked_at) return app.paid_at ? { label: "Not linked", variant: "outline" } : null;
   if (app.status === "declined") {

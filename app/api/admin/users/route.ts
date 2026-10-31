@@ -1,62 +1,40 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { requireAdmin, safeServerError } from "@/lib/security/route-guards";
+import {
+  getAdminUser,
+  isUuid,
+  listAdminUsers,
+  parseAdminUsersQuery,
+  parseProfileUpdate,
+  profileEditDetails,
+  type ProfileSnapshot,
+} from "@/lib/supabase/admin-users";
 
-export async function GET() {
+/**
+ * GET /api/admin/users?q=&role=&page=&pageSize=&sort=   one page of users
+ * GET /api/admin/users?id=<uuid>                        a single user
+ */
+export async function GET(request: NextRequest) {
   const admin = await requireAdmin();
   if (!admin.ok) return admin.response;
 
   try {
-    const { supabase } = admin.value;
-    const adminSupabase = createAdminClient();
+    const service = createAdminClient();
+    const rawId = request.nextUrl.searchParams.get("id");
 
-    const { data: authUsers, error: authError } = await adminSupabase.auth.admin.listUsers({
-      page: 1,
-      perPage: 1000,
-    });
-
-    if (authError) {
-      return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
+    if (rawId !== null) {
+      if (!isUuid(rawId)) {
+        return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
+      }
+      const user = await getAdminUser(service, rawId);
+      if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return NextResponse.json({ user });
     }
 
-    const userIds = authUsers.users.map((u) => u.id);
-
-    const [profilesResult, rolesResult] = await Promise.all([
-      supabase
-        .from("profiles")
-        .select("id, username, full_name, avatar_url, discord_uid")
-        .in("id", userIds),
-      supabase
-        .from("user_roles")
-        .select("user_id, role")
-        .in("user_id", userIds),
-    ]);
-
-    if (profilesResult.error) {
-      console.error("Error fetching profiles:", profilesResult.error);
-    }
-
-    if (rolesResult.error) {
-      console.error("Error fetching roles:", rolesResult.error);
-    }
-
-    const profiles = profilesResult.data || [];
-    const roles = rolesResult.data || [];
-
-    const users = authUsers.users.map((authUser) => {
-      const profile = profiles.find((p) => p.id === authUser.id);
-      const userRoles = roles.filter((r) => r.user_id === authUser.id) || [];
-
-      return {
-        id: authUser.id,
-        email: authUser.email,
-        created_at: authUser.created_at,
-        profiles: profile || null,
-        user_roles: userRoles,
-      };
-    });
-
-    return NextResponse.json(users);
+    const query = parseAdminUsersQuery(request.nextUrl.searchParams);
+    const page = await listAdminUsers(service, { ...query, id: null });
+    return NextResponse.json(page);
   } catch (error) {
     return safeServerError("Failed to fetch users", error);
   }
@@ -67,41 +45,75 @@ export async function PUT(request: Request) {
   if (!admin.ok) return admin.response;
 
   try {
-    const { supabase } = admin.value;
-    const { userId, username, full_name, discord_uid } = await request.json();
-
-    if (!userId) {
-      return NextResponse.json({ error: "User ID is required" }, { status: 400 });
+    const parsed = parseProfileUpdate(await request.json().catch(() => null));
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
 
-    // Check for username uniqueness if being updated
-    if (username && username.trim()) {
-      const { data: existingUser } = await supabase
+    const { userId, update } = parsed;
+    if (Object.keys(update).length === 0) {
+      return NextResponse.json({ success: true });
+    }
+
+    // Profiles RLS only lets people edit their own row, so admin edits use
+    // the service-role client, after the admin check above. Every change is
+    // written to admin_activity_log, like role changes.
+    const service = createAdminClient();
+
+    const { data: before, error: beforeError } = await service
+      .from("profiles")
+      .select("username, full_name, discord_uid")
+      .eq("id", userId)
+      .maybeSingle();
+    if (beforeError) {
+      return NextResponse.json({ error: "Failed to load profile" }, { status: 500 });
+    }
+    if (!before) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    if (update.username) {
+      const { data: existingUser, error: lookupError } = await service
         .from("profiles")
         .select("id")
-        .eq("username", username.trim())
+        .eq("username", update.username)
         .neq("id", userId)
-        .single();
+        .limit(1)
+        .maybeSingle();
 
+      if (lookupError) {
+        return NextResponse.json({ error: "Failed to check username" }, { status: 500 });
+      }
       if (existingUser) {
         return NextResponse.json({ error: "Username is already taken" }, { status: 409 });
       }
     }
 
-    const updateData: Record<string, string | null> = {};
-    if (username !== undefined) updateData.username = username.trim() || null;
-    if (full_name !== undefined) updateData.full_name = full_name.trim() || null;
-    if (discord_uid !== undefined) updateData.discord_uid = discord_uid.trim() || null;
+    const { data: updated, error: updateError } = await service
+      .from("profiles")
+      .update(update)
+      .eq("id", userId)
+      .select("id");
 
-    if (Object.keys(updateData).length > 0) {
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update(updateData)
-        .eq("id", userId);
+    if (updateError) {
+      return NextResponse.json({ error: "Failed to update profile" }, { status: 500 });
+    }
+    if (!updated || updated.length === 0) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
 
-      if (updateError) {
-        return NextResponse.json({ error: "Failed to update profile" }, { status: 500 });
-      }
+    const details = profileEditDetails(before as Partial<ProfileSnapshot>, update);
+    if (details) {
+      const { error: logError } = await service.from("admin_activity_log").insert({
+        admin_user_id: admin.value.userId,
+        action: "update_profile",
+        target_user_id: userId,
+        target_resource_type: "profile",
+        target_resource_id: userId,
+        details,
+      });
+      // The edit already happened, so a failed log write is reported, not undone.
+      if (logError) console.error("[admin/users] profile edit was not logged:", logError.message);
     }
 
     return NextResponse.json({ success: true });

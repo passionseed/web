@@ -75,6 +75,72 @@ function userFromClaims(claims: JwtPayload): User {
   }
 }
 
+/** decodeURIComponent that keeps any escape it cannot decode, instead of throwing. */
+function decodeLeniently(path: string): string {
+  try {
+    return decodeURIComponent(path)
+  } catch {
+    // One bad escape (e.g. "%zz") must not hide the rest of the path.
+    return path.replace(/%[0-9a-f]{2}/gi, (escape) => {
+      try {
+        return decodeURIComponent(escape)
+      } catch {
+        return escape
+      }
+    })
+  }
+}
+
+/**
+ * The path as Next's router matches it. Next decodes percent-escapes before
+ * it picks a route, so /%61dmin/users and /admin%2Fusers both render
+ * app/admin/users, while request.nextUrl.pathname keeps the escapes. Route
+ * checks that guard something (the admin gate, the admin no-store rule) must
+ * use this. Decoding repeats (at most three passes) and repeated slashes
+ * collapse: either can only make a path look more like a guarded one, so the
+ * checks fail closed.
+ */
+export function routingPathname(pathname: string): string {
+  let path = pathname
+  for (let pass = 0; pass < 3; pass += 1) {
+    const decoded = decodeLeniently(path)
+    if (decoded === path) break
+    path = decoded
+  }
+  return path.replace(/\/{2,}/g, '/')
+}
+
+/**
+ * /admin and everything under it, but not look-alikes such as /administrator.
+ * Also /admin.rsc and similar suffixes, which Next's router can map back to
+ * /admin. Matches the decoded routing path (see routingPathname).
+ */
+export function isAdminPagePath(pathname: string): boolean {
+  return /^\/admin(?:$|[/.])/.test(routingPathname(pathname))
+}
+
+/**
+ * Whether the signed-in user holds the web admin role. Uses the request's own
+ * client, so RLS (users_read_own_roles) applies. Any error counts as "no":
+ * the admin gate fails closed.
+ */
+async function hasAdminRole(
+  supabase: ReturnType<typeof createServerClient>,
+  userId: string
+): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .eq('role', 'admin')
+      .limit(1)
+    return !error && Array.isArray(data) && data.length > 0
+  } catch {
+    return false
+  }
+}
+
 function isDeadRefreshToken(error: { code?: string }): boolean {
   return error.code === 'refresh_token_not_found'
 }
@@ -158,13 +224,21 @@ export async function updateSession(request: NextRequest) {
   } catch {
     // Supabase unreachable (e.g. Docker not running in dev).
     // Skip auth check and let the request through — pages will
-    // handle their own auth state gracefully.
+    // handle their own auth state gracefully. Admin pages fail closed.
+    if (isAdminPagePath(request.nextUrl.pathname)) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
+      url.search = ''
+      return NextResponse.redirect(url)
+    }
     return supabaseResponse
   }
 
   const pathname = request.nextUrl.pathname
 
-  if (!user && !isPublicRoute(pathname)) {
+  // Admin pages are never public, even when a public rule (such as the .md
+  // suffix) would otherwise match the path.
+  if (!user && (isAdminPagePath(pathname) || !isPublicRoute(pathname))) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone()
     url.pathname = '/login'
@@ -172,6 +246,19 @@ export async function updateSession(request: NextRequest) {
     if (/^\/(whiteboard|calendar)(\/|$)/.test(pathname)) {
       url.search = `?next=${encodeURIComponent(pathname + request.nextUrl.search)}`
     }
+    return copySessionCookies(supabaseResponse, NextResponse.redirect(url))
+  }
+
+  // Admin pages are checked here as well as in app/admin/layout.tsx. An RSC
+  // request carrying a forged Next-Router-State-Tree header can make Next
+  // render an admin page without its layout, so the layout alone is not a
+  // boundary (docs/features/admin-console.md, S1). Non-admins go to /me, like
+  // lib/admin/requireAdmin.ts. Link-preview bots never reach this: proxy.ts
+  // rewrites them to /link-preview first.
+  if (user && isAdminPagePath(pathname) && !(await hasAdminRole(supabase, user.id))) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/me'
+    url.search = ''
     return copySessionCookies(supabaseResponse, NextResponse.redirect(url))
   }
 

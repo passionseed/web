@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { expireAdminOverviewKpis } from "@/lib/admin/overview/cache";
+import { isUuid } from "@/lib/admin/queue-tools/url";
 import { requireAdmin, safeServerError } from "@/lib/security/route-guards";
 import { createServiceRoleClient } from "@/utils/supabase/server";
 
@@ -18,6 +20,9 @@ export async function POST(
   try {
     const { userId } = admin.value;
     const { id } = await params;
+    if (!isUuid(id)) {
+      return NextResponse.json({ error: "Trial not found" }, { status: 404 });
+    }
 
     const body = await request.json().catch(() => ({}));
     const parsed = reviewSchema.safeParse(body);
@@ -66,6 +71,10 @@ export async function POST(
     if (updateError) {
       return safeServerError("Failed to update trial", updateError);
     }
+
+    // Approving adds the trial to revenue; rejecting a trial that was already
+    // paid takes it out again. Either way the overview KPIs must recompute.
+    expireAdminOverviewKpis();
 
     return NextResponse.json({ success: true, status: update.status });
   } catch (error) {

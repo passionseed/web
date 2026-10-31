@@ -1,6 +1,9 @@
 import { NextResponse, after } from "next/server";
 import { z } from "zod";
 
+import { toAdminShiftApplication } from "@/lib/admin/queue-tools/shift-applications";
+import { expireAdminOverviewKpis } from "@/lib/admin/overview/cache";
+import { isUuid } from "@/lib/admin/queue-tools/url";
 import { requireAdmin, safeServerError } from "@/lib/security/route-guards";
 import { admitPaidStudent, isJoinable, revokeShiftDiscord, syncShiftDiscord } from "@/lib/shift/join";
 import {
@@ -50,6 +53,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
   try {
     const { id } = await params;
+    if (!isUuid(id)) {
+      return NextResponse.json({ error: "Application not found" }, { status: 404 });
+    }
 
     let body: unknown;
     try {
@@ -96,6 +102,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       return NextResponse.json({ error: "Failed to update application" }, { status: 500 });
     }
 
+    // paid_at feeds the revenue and paid-seats KPIs on the overview.
+    if ("paid_at" in update) expireAdminOverviewKpis();
+
     const saved = data as ShiftApplicationRow;
     // Applicants link Discord (and get their round's role) straight from the
     // apply page, so admin decisions follow through: paying unlocks the
@@ -121,7 +130,8 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       if (removal?.ok) application = { ...application, discord_joined_at: null, discord_error: null };
     }
 
-    return NextResponse.json({ application });
+    // The full row (with join_token) stays on the server; the browser gets the admin columns.
+    return NextResponse.json({ application: toAdminShiftApplication(application) });
   } catch (error) {
     return safeServerError("Failed to update SHIFT application", error);
   }

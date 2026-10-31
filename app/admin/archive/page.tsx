@@ -1,100 +1,62 @@
-import { createClient } from '@/utils/supabase/server'
-import { redirect } from 'next/navigation'
-import Link from 'next/link'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { University, Database, Archive } from 'lucide-react'
+import Link from "next/link";
+import { Bot, ChevronRight, University, type LucideIcon } from "lucide-react";
+
+import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
+import { requireAdmin } from "@/lib/admin/requireAdmin";
+
+export const dynamic = "force-dynamic";
+
+const ARCHIVE_SECTIONS: { href: string; title: string; description: string; icon: LucideIcon }[] = [
+  {
+    href: "/admin/archive/universities",
+    title: "Universities",
+    description: "Add, edit, and organize the universities students can pick as targets, and their example journey maps.",
+    icon: University,
+  },
+  {
+    href: "/admin/archive/ai",
+    title: "AI agents",
+    description: "The AI agents and prompts used across the platform.",
+    icon: Bot,
+  },
+];
+
+function ArchiveRow({ href, title, description, icon: Icon }: (typeof ARCHIVE_SECTIONS)[number]) {
+  return (
+    <li>
+      <Link
+        href={href}
+        className="group flex min-h-11 items-center gap-4 rounded-lg border p-4 transition-colors hover:bg-muted/50 active:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <Icon className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+        <span className="min-w-0 flex-1">
+          <span className="block font-medium">{title}</span>
+          <span className="block text-sm text-muted-foreground">{description}</span>
+        </span>
+        <ChevronRight
+          className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
+          aria-hidden="true"
+        />
+      </Link>
+    </li>
+  );
+}
 
 export default async function ArchivePage() {
-  const supabase = await createClient()
-  
-  // Check authentication
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
-    redirect('/login')
-  }
-
-  // Get user profile to check admin status (simplified check for now)
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-
-  // For now, allow all authenticated users (in real app, check admin role)
-  // TODO: Add proper admin role checking when admin system is implemented
+  await requireAdmin();
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">
-          Admin Archive
-        </h1>
-        <p className="text-slate-400">
-          Manage archived data and system resources
-        </p>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Link href="/admin/archive/universities">
-          <Card className="cursor-pointer hover:bg-slate-800/50 transition-colors">
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <University className="w-8 h-8 text-blue-500" />
-                <div>
-                  <CardTitle>Universities</CardTitle>
-                  <CardDescription>
-                    Manage university archive for educational pathways
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-slate-400">
-                Add, edit, and organize universities that students can select as their target institutions.
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        {/* Placeholder for future archive sections */}
-        <Card className="opacity-50 cursor-not-allowed">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <Database className="w-8 h-8 text-slate-500" />
-              <div>
-                <CardTitle className="text-slate-500">Learning Resources</CardTitle>
-                <CardDescription>
-                  Coming soon - Manage learning resources archive
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-slate-500">
-              Future archive for learning materials, courses, and educational content.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="opacity-50 cursor-not-allowed">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <Archive className="w-8 h-8 text-slate-500" />
-              <div>
-                <CardTitle className="text-slate-500">System Data</CardTitle>
-                <CardDescription>
-                  Coming soon - System configuration archive
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-slate-500">
-              Archive for system settings, templates, and configuration data.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+    <div className="max-w-3xl space-y-4">
+      <AdminPageHeader
+        eyebrow="Tools & archive"
+        title="Archive"
+        description="Reference data and older tools that still back parts of the platform."
+      />
+      <ul className="space-y-2">
+        {ARCHIVE_SECTIONS.map((section) => (
+          <ArchiveRow key={section.href} {...section} />
+        ))}
+      </ul>
     </div>
-  )
+  );
 }

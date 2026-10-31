@@ -1,20 +1,32 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getRecentMetaWebhookReceipts } from "@/lib/supabase/meta-webhook-events";
+import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
+import { AdminEmptyState, AdminErrorState } from "@/components/admin/shared/AdminStates";
+import { formatBangkokDateTime } from "@/lib/admin/queue-tools/format";
+import {
+  META_WEBHOOK_SINCE_FILTERS,
+  META_WEBHOOK_SINCE_LABEL,
+  META_WEBHOOK_STATUS_FILTERS,
+  META_WEBHOOK_STATUS_LABEL,
+  META_WEBHOOKS_PATH,
+  parseMetaWebhooksView,
+  receivedSinceIso,
+  receiptStatusesFor,
+} from "@/lib/admin/queue-tools/meta-webhooks";
+import { requireAdmin } from "@/lib/admin/requireAdmin";
+import {
+  getRecentMetaWebhookReceipts,
+  type MetaWebhookReceiptWithEvents,
+} from "@/lib/supabase/meta-webhook-events";
 
 export const dynamic = "force-dynamic";
 
+const RECEIPT_LIMIT = 100;
+
 function formatTimestamp(value: string | null): string {
-  if (!value) return "—";
-  return new Date(value).toLocaleString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
+  return formatBangkokDateTime(value, { year: true, seconds: true });
 }
 
 function statusVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
@@ -24,80 +36,138 @@ function statusVariant(status: string): "default" | "secondary" | "destructive" 
   return "outline";
 }
 
+async function loadReceipts(
+  view: ReturnType<typeof parseMetaWebhooksView>,
+): Promise<MetaWebhookReceiptWithEvents[] | null> {
+  try {
+    return await getRecentMetaWebhookReceipts(RECEIPT_LIMIT, {
+      statuses: receiptStatusesFor(view.status),
+      eventKind: view.kind || null,
+      receivedSince: receivedSinceIso(view.since),
+    });
+  } catch (error) {
+    console.error("[admin/meta-webhooks] failed to load receipts", error);
+    return null;
+  }
+}
+
+/**
+ * Deliveries per body hash. Retries of one body count across every status and
+ * kind, so under a filter (say, failed only) the latest unfiltered receipts are
+ * counted too: a failed row then still shows that Meta retried it.
+ */
+async function loadBodyAttempts(
+  receipts: MetaWebhookReceiptWithEvents[] | null,
+  filtered: boolean,
+): Promise<Record<string, number>> {
+  const shown = receipts ?? [];
+  let recent: MetaWebhookReceiptWithEvents[] = [];
+  if (filtered && shown.length > 0) {
+    try {
+      recent = await getRecentMetaWebhookReceipts(RECEIPT_LIMIT);
+    } catch (error) {
+      console.error("[admin/meta-webhooks] failed to load retry counts", error);
+    }
+  }
+  const byId = new Map<string, MetaWebhookReceiptWithEvents>();
+  for (const receipt of [...shown, ...recent]) byId.set(receipt.id, receipt);
+  const counts: Record<string, number> = {};
+  for (const receipt of byId.values()) {
+    counts[receipt.body_sha256] = (counts[receipt.body_sha256] ?? 0) + 1;
+  }
+  return counts;
+}
+
 export default async function MetaWebhooksPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; kind?: string }>;
+  searchParams: Promise<{ status?: string; kind?: string; since?: string }>;
 }) {
-  const filters = await searchParams;
-  const allReceipts = await getRecentMetaWebhookReceipts(100);
-  const receipts = allReceipts.filter((receipt) => {
-    if (filters.status && receipt.status !== filters.status) return false;
-    if (
-      filters.kind &&
-      !receipt.meta_webhook_events.some((event) => event.event_kind === filters.kind)
-    ) {
-      return false;
-    }
-    return true;
-  });
-  const bodyAttempts = allReceipts.reduce<Record<string, number>>((counts, receipt) => {
-    counts[receipt.body_sha256] = (counts[receipt.body_sha256] ?? 0) + 1;
-    return counts;
-  }, {});
+  // The admin layout also checks, but this page reads with the service-role client.
+  await requireAdmin();
+  const view = parseMetaWebhooksView(await searchParams);
+  const filtered = view.status !== "all" || view.kind !== "" || view.since !== "all";
+  const receipts = await loadReceipts(view);
+  const bodyAttempts = await loadBodyAttempts(receipts, filtered);
 
   return (
     <div className="space-y-5">
-      <div>
-        <h2 className="text-2xl font-semibold">Meta webhook diagnostics</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Durable evidence for the latest signed webhook deliveries. Raw payloads are retained only
-          for failed or unknown events and cleared after 30 days.
-        </p>
-      </div>
+      <AdminPageHeader
+        eyebrow="Diagnostics"
+        title="Meta webhooks"
+        description={`Evidence for the latest ${RECEIPT_LIMIT} signed webhook deliveries that match the filters. Raw payloads are kept only for failed or unknown events and cleared after 30 days.`}
+      />
 
-      <form className="flex flex-wrap items-end gap-3 rounded-lg border bg-muted/20 p-3">
+      <form
+        action={META_WEBHOOKS_PATH}
+        className="flex flex-wrap items-end gap-3 rounded-lg border bg-muted/20 p-3"
+      >
         <label className="space-y-1 text-xs font-medium">
           <span>Status</span>
           <select
             name="status"
-            defaultValue={filters.status ?? ""}
-            className="block h-9 rounded-md border bg-background px-2 text-sm"
+            defaultValue={view.status === "all" ? "" : view.status}
+            className="block h-11 rounded-md border border-input bg-background px-2 text-sm lg:[@media(pointer:fine)]:h-9"
           >
-            <option value="">All statuses</option>
-            <option value="processed">Processed</option>
-            <option value="partial">Partial</option>
-            <option value="failed">Failed</option>
-            <option value="received">Still processing</option>
+            {META_WEBHOOK_STATUS_FILTERS.map((status) => (
+              <option key={status} value={status === "all" ? "" : status}>
+                {META_WEBHOOK_STATUS_LABEL[status]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="space-y-1 text-xs font-medium">
+          <span>Received</span>
+          <select
+            name="since"
+            defaultValue={view.since === "all" ? "" : view.since}
+            className="block h-11 rounded-md border border-input bg-background px-2 text-sm lg:[@media(pointer:fine)]:h-9"
+          >
+            {META_WEBHOOK_SINCE_FILTERS.map((since) => (
+              <option key={since} value={since === "all" ? "" : since}>
+                {META_WEBHOOK_SINCE_LABEL[since]}
+              </option>
+            ))}
           </select>
         </label>
         <label className="space-y-1 text-xs font-medium">
           <span>Exact event kind</span>
           <input
             name="kind"
-            defaultValue={filters.kind ?? ""}
+            defaultValue={view.kind}
             placeholder="message.attachment"
-            className="block h-9 w-56 rounded-md border bg-background px-2 text-sm"
+            className="block h-11 w-56 rounded-md border border-input bg-background px-2 text-sm lg:[@media(pointer:fine)]:h-9"
           />
         </label>
-        <button type="submit" className="h-9 rounded-md bg-primary px-3 text-sm text-primary-foreground">
+        <Button type="submit" className="h-11 lg:[@media(pointer:fine)]:h-9">
           Filter
-        </button>
-        {(filters.status || filters.kind) && (
-          <Link href="/admin/meta-webhooks" className="pb-2 text-xs underline underline-offset-2">
+        </Button>
+        {filtered && (
+          <Link
+            href={META_WEBHOOKS_PATH}
+            className="inline-flex min-h-11 items-center text-xs underline underline-offset-2 lg:[@media(pointer:fine)]:min-h-9"
+          >
             Clear
           </Link>
         )}
       </form>
 
-      {receipts.length === 0 ? (
-        <Card>
-          <CardContent className="py-10 text-center text-sm text-muted-foreground">
-            {allReceipts.length === 0
-              ? "No webhook receipts recorded yet."
-              : "No webhook receipts match these filters."}
-          </CardContent>
-        </Card>
+      {receipts === null ? (
+        <AdminErrorState
+          title="Could not load webhook receipts"
+          message="The diagnostics did not load. This is not an empty list. Refresh the page to try again."
+        />
+      ) : receipts.length === 0 ? (
+        <AdminEmptyState
+          title={filtered ? "No webhook receipts match these filters" : "No webhook receipts recorded yet"}
+          action={
+            filtered ? (
+              <Link href={META_WEBHOOKS_PATH} className="text-sm underline underline-offset-2">
+                Clear filters
+              </Link>
+            ) : undefined
+          }
+        />
       ) : (
         <div className="space-y-3">
           {receipts.map((receipt) => (

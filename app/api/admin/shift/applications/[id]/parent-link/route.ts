@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { toAdminShiftApplication } from "@/lib/admin/queue-tools/shift-applications";
 import { requireAdmin, safeServerError } from "@/lib/security/route-guards";
 import { parentConsentState } from "@/lib/shift/parentConsent";
 import { rotateShiftParentLink, sendShiftParentEmail, shiftParentUrl } from "@/lib/shift/parentConsentServer";
@@ -50,9 +51,10 @@ export async function POST(request: Request, { params }: RouteContext) {
         .select("*")
         .eq("id", id)
         .maybeSingle();
-      return NextResponse.json({ application: refreshed ?? app });
+      return NextResponse.json({ application: toAdminShiftApplication((refreshed as ShiftApplicationRow | null) ?? app) });
     }
-    return NextResponse.json({ url: shiftParentUrl(token), application: app });
+    // The browser gets the admin columns only: no join_token or parent_token_hash.
+    return NextResponse.json({ url: shiftParentUrl(token), application: toAdminShiftApplication(app) });
   } catch (error) {
     return safeServerError("Failed to create SHIFT parent link", error);
   }

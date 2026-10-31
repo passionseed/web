@@ -1,8 +1,13 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { EditExampleMapFlow } from "@/components/admin/EditExampleMapFlow";
+import { requireAdmin } from "@/lib/admin/requireAdmin";
 
-async function getUniversity(supabase: any, universityId: string) {
+export const dynamic = "force-dynamic";
+
+type ServerClient = Awaited<ReturnType<typeof createClient>>;
+
+async function getUniversity(supabase: ServerClient, universityId: string) {
   const { data: university, error } = await supabase
     .from("universities")
     .select("*")
@@ -16,7 +21,7 @@ async function getUniversity(supabase: any, universityId: string) {
   return university;
 }
 
-async function getExampleMap(supabase: any, mapId: string) {
+async function getExampleMap(supabase: ServerClient, mapId: string) {
   const { data: exampleMap, error } = await supabase
     .from("university_example_maps")
     .select("*")
@@ -30,43 +35,24 @@ async function getExampleMap(supabase: any, mapId: string) {
   return exampleMap;
 }
 
+/** The flow renders its own full-screen title, so this page adds no header. */
 export default async function EditExampleMapPage({
   params,
 }: {
   params: Promise<{ universityId: string; mapId: string }>;
 }) {
+  const user = await requireAdmin();
+  const { universityId, mapId } = await params;
   const supabase = await createClient();
-  const resolvedParams = await params;
-  
-  // Check authentication
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    redirect("/login");
-  }
-
-  // Get user profile (simplified check - in real app would check admin role)
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single();
-
-  if (!profile) {
-    redirect("/me");
-  }
-
-  const university = await getUniversity(supabase, resolvedParams.universityId);
-  const exampleMap = await getExampleMap(supabase, resolvedParams.mapId);
+  const [university, exampleMap] = await Promise.all([
+    getUniversity(supabase, universityId),
+    getExampleMap(supabase, mapId),
+  ]);
 
   if (!exampleMap) {
-    redirect(`/admin/archive/universities/${resolvedParams.universityId}`);
+    redirect("/admin/archive/universities");
   }
 
-  return (
-    <EditExampleMapFlow 
-      university={university}
-      exampleMap={exampleMap}
-      user={user}
-    />
-  );
+  // Only the id is used; the full auth user stays on the server.
+  return <EditExampleMapFlow university={university} exampleMap={exampleMap} user={{ id: user.id }} />;
 }

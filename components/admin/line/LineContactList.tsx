@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { lineInboxHref, type LineContactFilter } from "@/lib/admin/queue-tools/line";
 import type { LineContact } from "@/lib/supabase/line-oa";
 import { LineAvatar } from "@/components/admin/line/LineAvatar";
 
@@ -19,15 +20,21 @@ export function LineContactList({
   contacts,
   activeId,
   search,
+  filter = "all",
 }: {
   contacts: LineContact[];
   activeId: string | null;
   search: string;
+  filter?: LineContactFilter;
 }) {
   if (contacts.length === 0) {
     return (
       <p className="p-4 text-sm text-muted-foreground">
-        {search ? "No one matches that name." : "No LINE messages yet. New chats appear here."}
+        {search
+          ? "No one matches that name."
+          : filter === "unanswered"
+            ? "No chats are waiting on a reply."
+            : "No LINE messages yet. New chats appear here."}
       </p>
     );
   }
@@ -35,17 +42,16 @@ export function LineContactList({
   return (
     <ul className="divide-y">
       {contacts.map((contact) => {
-        const params = new URLSearchParams({ c: contact.id });
-        if (search) params.set("q", search);
+        const href = lineInboxHref({ contactId: contact.id, q: search, filter });
         const active = contact.id === activeId;
         const unread = contact.unread_count > 0;
         return (
           <li key={contact.id}>
             <Link
-              href={`/admin/line?${params}`}
+              href={href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 hover:bg-muted/60",
+                "flex items-center gap-3 px-3 py-2.5 hover:bg-muted/60 active:bg-muted/60",
                 active && "bg-muted"
               )}
             >

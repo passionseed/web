@@ -93,6 +93,19 @@ const TONE: Record<string, string> = {
   muted: "border-border bg-muted/40 text-muted-foreground",
 };
 
+/** Plain-text placeholder for an empty value: an en dash, never an em dash. */
+export const EMPTY_VALUE = "–";
+
+/** Muted en dash for an empty table cell or field. Screen readers hear "none". */
+export function EmptyValue() {
+  return (
+    <span className="text-muted-foreground">
+      <span aria-hidden="true">{EMPTY_VALUE}</span>
+      <span className="sr-only">none</span>
+    </span>
+  );
+}
+
 export function Pill({ tone = "muted", children }: { tone?: keyof typeof TONE; children: ReactNode }) {
   return (
     <span className={cn("inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium", TONE[tone])}>

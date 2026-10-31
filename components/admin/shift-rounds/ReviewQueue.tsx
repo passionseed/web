@@ -12,11 +12,15 @@ import {
   rejectEvidenceAction,
   reviewQueueAction,
 } from "@/app/admin/shift/rounds/actions";
+import { refreshAdminCounts } from "@/components/admin/console/live-counts";
 import { AdminEmptyState, AdminLoading } from "@/components/admin/shared/AdminStates";
+import { Kbd } from "@/components/admin/shared/Kbd";
+import { pageShortcutsPaused } from "@/components/admin/shared/page-shortcuts";
 import { useConfirm } from "@/components/admin/shared/useConfirm";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import { isEditable } from "@/lib/dom/is-editable";
 import {
   EVIDENCE_TYPES,
   REASON_CODES,
@@ -35,7 +39,7 @@ import type {
 import { cn } from "@/lib/utils";
 
 import { EvidenceView } from "./EvidenceView";
-import { ActionError, LoadError, NativeSelect, Pill, SearchBox, statusTone } from "./shared";
+import { ActionError, EmptyValue, LoadError, NativeSelect, Pill, SearchBox, statusTone } from "./shared";
 import { useAdminMutation, useAdminQuery } from "./useAdminData";
 
 type StatusFilter = "all" | EvidenceStatus;
@@ -49,10 +53,6 @@ function missingMissions(missions: MissionCounts | undefined, dropped?: string[]
   const open = missions.missions.filter((m) => !m.complete).map((m) => missionLabel(m));
   return open.length ? `Incomplete now: ${open.join(", ")}` : "All Missions still complete";
 }
-
-const isTyping = (target: EventTarget | null) =>
-  target instanceof HTMLElement &&
-  (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
 
 export function ReviewQueue({ roundId }: { roundId: string }) {
   const [status, setStatus] = useState<StatusFilter>("submitted");
@@ -136,6 +136,7 @@ export function ReviewQueue({ roundId }: { roundId: string }) {
     const result = await run(() => acceptEvidenceAction(current.id, note.trim() || null, ms));
     if (result?.ok) {
       replaceItem(current.id, { status: "accepted" });
+      refreshAdminCounts();
       setLastCascade(missingMissions(result.data.missions));
       toast.success(`Accepted ${current.handle ?? "log"}`);
       move(1);
@@ -164,6 +165,7 @@ export function ReviewQueue({ roundId }: { roundId: string }) {
     const result = await run(() => rejectEvidenceAction(current.id, reason, note.trim() || null, ms));
     if (result?.ok) {
       replaceItem(current.id, { status: "rejected", status_reason_code: reason, status_note: note.trim() || null });
+      refreshAdminCounts();
       const invalidated = result.data.invalidated_changes?.length ?? 0;
       setLastCascade(
         [missingMissions(result.data.missions, result.data.dropped), invalidated ? `${invalidated} linked change log(s) no longer count` : ""]
@@ -181,14 +183,15 @@ export function ReviewQueue({ roundId }: { roundId: string }) {
     const result = await run(() => markReviewedAction(current.id, ms));
     if (result?.ok) {
       replaceItem(current.id, { reviewed_at: new Date().toISOString() });
+      refreshAdminCounts();
       move(1);
     }
   };
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.metaKey || event.ctrlKey || event.altKey || isTyping(event.target)) return;
-      if (document.querySelector("[role=alertdialog]")) return;
+      if (event.metaKey || event.ctrlKey || event.altKey || isEditable(event.target)) return;
+      if (pageShortcutsPaused(event)) return;
       switch (event.key) {
         case "j":
           move(1);
@@ -282,7 +285,7 @@ export function ReviewQueue({ roundId }: { roundId: string }) {
                   )}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium">{e.handle ?? "—"}</span>
+                    <span className="font-medium">{e.handle ?? <EmptyValue />}</span>
                     <Pill tone={statusTone(e.status)}>{e.status}</Pill>
                   </div>
                   <div className="text-xs text-muted-foreground">
@@ -298,7 +301,7 @@ export function ReviewQueue({ roundId }: { roundId: string }) {
             <article className="space-y-4 rounded-lg border bg-card/40 p-4" aria-label={`Log by ${current.handle ?? "student"}`}>
               <header className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <h2 className="text-lg font-medium">{current.handle ?? "—"}</h2>
+                  <h2 className="text-lg font-medium">{current.handle ?? "No handle"}</h2>
                   <p className="text-xs text-muted-foreground">
                     {current.squad_name ?? "No squad"} ·{" "}
                     <Link className="underline" href={`/admin/shift/rounds/${roundId}/entrants/${current.entry_id}`}>
@@ -306,8 +309,9 @@ export function ReviewQueue({ roundId }: { roundId: string }) {
                     </Link>
                   </p>
                 </div>
-                <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Keyboard className="h-3.5 w-3.5" aria-hidden="true" /> j/k move · r reason · a accept · m reviewed
+                <p className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+                  <Keyboard className="h-3.5 w-3.5" aria-hidden="true" />
+                  <Kbd>j</Kbd>/<Kbd>k</Kbd> move · <Kbd>r</Kbd> reason · <Kbd>a</Kbd> accept · <Kbd>m</Kbd> reviewed
                 </p>
               </header>
 
