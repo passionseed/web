@@ -1,6 +1,7 @@
 "use client";
 
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
+import { GripHorizontal } from "lucide-react";
 import { useMemo } from "react";
 
 import type { WhiteboardRole } from "@/lib/whiteboard/core";
@@ -10,8 +11,10 @@ import { pluginById } from "./registry";
 
 /**
  * An app placed on the canvas (rendered by Excalidraw inside an embeddable
- * element). Excalidraw makes it clickable once someone clicks its middle;
- * until then it is a picture that can be moved, resized and deleted.
+ * element). Its body takes clicks straight away (see `.wb-widget__body` in
+ * whiteboard.css), so nobody has to find Excalidraw's activation spot; the
+ * title bar is left to the canvas, so dragging it moves, selects and resizes
+ * the widget.
  */
 export function BoardWidget({
   pluginId,
@@ -37,8 +40,9 @@ export function BoardWidget({
       <div className="wb-window__bar flex items-center gap-2 px-3 py-2">
         {plugin.icon}
         <span className="min-w-0 flex-1 truncate text-sm font-semibold">{plugin.name}</span>
+        <GripHorizontal size={16} className="opacity-50" aria-hidden />
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="wb-widget__body min-h-0 flex-1 overflow-y-auto">
         <Component api={api} board={board} editable={editable} close={() => undefined} {...bridge} />
       </div>
     </div>

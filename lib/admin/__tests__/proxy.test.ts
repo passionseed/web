@@ -77,12 +77,19 @@ describe("S3: API cache headers", () => {
   });
 
   test.each([
-    ["/api/maps/abc", "public, s-maxage=60, stale-while-revalidate=300"],
+    ["/api/tcas/programs", "public, s-maxage=300, stale-while-revalidate=600"],
     ["/api/spotify/search", "public, s-maxage=300, stale-while-revalidate=600"],
     ["/api/deezer/search", "public, s-maxage=300, stale-while-revalidate=600"],
   ])("GET %s keeps its public cache rule", async (path, header) => {
     const response = await proxy(request(path));
     expect(response.headers.get("cache-control")).toBe(header);
+  });
+
+  // These answer per signed-in user: a public CDN copy would hand one
+  // student's progress or assignments to the next request.
+  test.each(["/api/maps/abc", "/api/assignments/xyz"])("GET %s is never publicly cached", async (path) => {
+    const response = await proxy(request(path));
+    expect(response.headers.get("cache-control")).toBeNull();
   });
 
   test("other API GETs are left to the route", async () => {

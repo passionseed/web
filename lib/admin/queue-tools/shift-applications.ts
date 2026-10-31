@@ -36,7 +36,20 @@ export const ADMIN_SHIFT_APPLICATION_COLUMNS = [
   "ig_handle",
   "discord_handle",
   "parent_contact",
+  "parent_email",
   "consent",
+  // PDPA parent consent: the "mark paid" lock and the consent record admins
+  // review. parent_token_hash is left out: it guards the parent's link.
+  "birth_date",
+  "consent_notice_version",
+  "parent_email_sent_at",
+  "parent_name",
+  "parent_relationship",
+  "parent_consented_at",
+  "parent_declined_at",
+  "parent_withdrawn_at",
+  "parent_consent_ip",
+  "parent_ai_consented_at",
   "source",
   "found_via",
   "status",
@@ -196,6 +209,7 @@ const SEARCH_FIELDS = [
   "discord_handle",
   "discord_username",
   "parent_contact",
+  "parent_email",
   "target_track",
 ] as const satisfies readonly AdminShiftApplicationColumn[];
 

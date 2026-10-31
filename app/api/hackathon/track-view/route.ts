@@ -1,7 +1,8 @@
+import { getSessionParticipant } from "@/lib/hackathon/db";
+import { extractHackathonToken } from "@/lib/hackathon/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
-export const runtime = "edge";
 
 /**
  * Track hackathon page views for analytics
@@ -15,8 +16,10 @@ export async function POST(request: NextRequest) {
     const {
       page_path = "/hackathon",
       referrer,
-      participant_id
     } = body;
+
+    const token = extractHackathonToken(request);
+    const participant = token ? await getSessionParticipant(token) : null;
 
     // Get client information from headers
     const userAgent = request.headers.get("user-agent") || "unknown";
@@ -42,7 +45,7 @@ export async function POST(request: NextRequest) {
       .insert({
         visitor_fingerprint: visitorFingerprint,
         session_id: sessionId,
-        participant_id: participant_id || null,
+        participant_id: participant?.id ?? null,
         page_path,
         referrer: referrer || null,
         user_agent: userAgent,

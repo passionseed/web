@@ -3,6 +3,7 @@ import QRCode from "react-qr-code";
 import { SHIFT_COHORT_3, formatThaiDate, formatThaiDateRange } from "@/lib/content/shift-cohort";
 
 import { MarkerHighlight, PassionSeedMark, REFUND_PROMISE } from "../../riso";
+import { SHIFT3 } from "../../shift3/facts";
 import { LATIN } from "../../shift3/parts";
 import { PIXEL_FONT, Rects } from "../PixelRects";
 import {
@@ -38,6 +39,7 @@ import {
   tombstone,
   witchStudent,
 } from "./halloweenKit";
+import { CommentBubble } from "./CommentBubble";
 
 /**
  * SHIFT[3] cover in SHIFT[1]'s pixel style, Halloween night. Same elements
@@ -203,7 +205,34 @@ function Title() {
   );
 }
 
-function Band() {
+/** How the cover asks people to apply: a QR code (print, screens) or "comment SHIFT" (Instagram). */
+export type CoverCta = "qr" | "comment";
+
+function ApplyQr() {
+  return (
+    <div className="shrink-0 text-center">
+      <div className="p-2.5" style={{ backgroundColor: HX.cream }}>
+        <QRCode value={POSTER_URL} size={150} fgColor={HX.ink} bgColor={HX.cream} />
+      </div>
+      <p className="mt-2 font-kodchasan text-[22px] font-bold" style={{ color: HX.cream }}>
+        สแกนสมัคร
+      </p>
+    </div>
+  );
+}
+
+function ApplyComment() {
+  return (
+    <div className="shrink-0 text-center">
+      <CommentBubble keyword={SHIFT3.keyword} />
+      <p className="font-kodchasan text-[20px] font-bold" style={{ color: HX.cream }}>
+        รับลิงก์สมัครทาง DM
+      </p>
+    </div>
+  );
+}
+
+function Band({ cta }: { cta: CoverCta }) {
   const price = `฿${COHORT.priceBaht.toLocaleString("en-US")}`;
   return (
     <div className="absolute inset-x-0 bottom-0 px-[56px] pb-[34px]" style={{ top: (BAND + 5) * CELL }}>
@@ -229,14 +258,7 @@ function Band() {
               ม.4–ม.6 · โปรเจกต์ของตัวเอง มีกลุ่มเพื่อนเล็กๆ คอยช่วย · ใช้ AI ไม่ต้องมีพื้นฐาน
             </p>
           </div>
-          <div className="shrink-0 text-center">
-            <div className="p-2.5" style={{ backgroundColor: HX.cream }}>
-              <QRCode value={POSTER_URL} size={150} fgColor={HX.ink} bgColor={HX.cream} />
-            </div>
-            <p className="mt-2 font-kodchasan text-[22px] font-bold" style={{ color: HX.cream }}>
-              สแกนสมัคร
-            </p>
-          </div>
+          {cta === "qr" ? <ApplyQr /> : <ApplyComment />}
         </div>
         <div className="mt-auto flex items-center justify-between">
           <PassionSeedMark size={34} />
@@ -249,17 +271,23 @@ function Band() {
   );
 }
 
-export function ShiftPixelHalloweenCover() {
+export function ShiftPixelHalloweenCover({
+  id = SHIFT3_HALLOWEEN_POSTER_ID,
+  cta = "qr",
+}: {
+  id?: string;
+  cta?: CoverCta;
+}) {
   return (
     <div
-      id={SHIFT3_HALLOWEEN_POSTER_ID}
+      id={id}
       lang="th"
       className="relative shrink-0 overflow-hidden font-bai-jamjuree antialiased"
       style={{ width: GRID_W * CELL, height: GRID_H * CELL, backgroundColor: HX.sky }}
     >
       <PixelScene />
       <Title />
-      <Band />
+      <Band cta={cta} />
     </div>
   );
 }

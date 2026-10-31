@@ -63,11 +63,11 @@ export async function getRegisterLinkByToken(token: string): Promise<RegisterLin
 }
 
 /** Atomically claims the link. Returns false if already used (race guard). */
-export async function claimRegisterLink(token: string, participantId: string): Promise<boolean> {
+export async function claimRegisterLink(token: string): Promise<boolean> {
   const now = new Date().toISOString();
   const { data } = await getClient()
     .from("hackathon_register_links")
-    .update({ used: true, used_by: participantId })
+    .update({ used: true })
     .eq("token", token)
     .eq("used", false)
     .or(`expires_at.is.null,expires_at.gt.${now}`)

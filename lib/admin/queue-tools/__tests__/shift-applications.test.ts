@@ -29,7 +29,18 @@ function app(overrides: Partial<AdminShiftApplication>): AdminShiftApplication {
     ig_handle: "chai",
     discord_handle: null,
     parent_contact: "081",
+    parent_email: null,
     consent: true,
+    birth_date: null,
+    consent_notice_version: null,
+    parent_email_sent_at: null,
+    parent_name: null,
+    parent_relationship: null,
+    parent_consented_at: null,
+    parent_declined_at: null,
+    parent_withdrawn_at: null,
+    parent_consent_ip: null,
+    parent_ai_consented_at: null,
     source: null,
     found_via: null,
     status: "new",
@@ -163,12 +174,16 @@ describe("browser-safe row", () => {
     const full = {
       ...app({}),
       join_token: "secret-token",
+      parent_token_hash: "secret-hash",
+      parent_consent_user_agent: null,
+      parent_ai_notice_version: null,
       user_id: "u",
       discord_user_id: "d",
       updated_at: "2026-10-20T10:00:00Z",
     } satisfies ShiftApplicationRow;
     const safe = toAdminShiftApplication(full);
     expect(safe).not.toHaveProperty("join_token");
+    expect(safe).not.toHaveProperty("parent_token_hash");
     expect(Object.keys(safe).sort()).toEqual([...ADMIN_SHIFT_APPLICATION_COLUMNS].sort());
   });
 });

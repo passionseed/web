@@ -27,6 +27,21 @@ export async function requireUploadAccess(
   }
 
   if (isTempNodeId(nodeId)) {
+    if (user.is_anonymous) {
+      return { ok: false, status: 403, error: "Map editor access required" };
+    }
+    const [{ data: roles }, { data: ownedMaps }, { data: editorMaps }] = await Promise.all([
+      supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").limit(1),
+      supabase.from("learning_maps").select("id, map_type").eq("creator_id", user.id),
+      supabase.from("map_editors").select("map_id, learning_maps!inner(map_type)").eq("user_id", user.id),
+    ]);
+    const canEdit = (roles?.length ?? 0) > 0 ||
+      (ownedMaps ?? []).some((map) => map.map_type !== "seed") ||
+      (editorMaps ?? []).some((entry) => {
+        const map = entry.learning_maps as unknown as { map_type: string | null } | null;
+        return map && map.map_type !== "seed";
+      });
+    if (!canEdit) return { ok: false, status: 403, error: "Map editor access required" };
     return { ok: true, supabase, userId: user.id };
   }
 

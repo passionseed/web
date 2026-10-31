@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { processInterviewMessage } from "@/lib/expert-interview/chat-service";
+import { checkRateLimit } from "@/lib/expert-interview/rate-limiter";
+import { hasValidSession } from "@/lib/expert-interview/session-token";
 import { z } from "zod";
 import type { ChatMessage, InterviewType } from "@/types/expert-interview";
+
+// An 8-question interview with follow-ups needs far fewer turns than this.
+const MAX_MESSAGES_PER_SESSION_HOUR = 60;
 
 const requestSchema = z.object({
   sessionId: z.string().min(1),
@@ -33,7 +38,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { message, currentQuestionId, conversationHistory, language, interviewType } = parsed.data;
+    const { sessionId, message, currentQuestionId, conversationHistory, language, interviewType } = parsed.data;
+
+    if (!hasValidSession(request, sessionId)) {
+      return NextResponse.json({ error: "Interview session expired. Please start again." }, { status: 401 });
+    }
+    const limit = await checkRateLimit(`chat:${sessionId}`, MAX_MESSAGES_PER_SESSION_HOUR);
+    if (!limit.allowed) {
+      return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
+    }
 
     const result = await processInterviewMessage(
       message,

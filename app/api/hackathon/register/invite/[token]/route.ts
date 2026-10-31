@@ -18,18 +18,14 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tok
 // POST — register and auto-join the team
 export async function POST(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  console.log(`[invite-register] POST token=${token}`);
 
   const enabled = await isInviteEnabled();
-  console.log(`[invite-register] isInviteEnabled=${enabled}`);
   if (!enabled) return NextResponse.json({ error: "ฟีเจอร์นี้ปิดอยู่" }, { status: 403 });
 
   const invite = await getInviteByToken(token);
-  console.log(`[invite-register] getInviteByToken result=${JSON.stringify(invite)}`);
   if (!invite) return NextResponse.json({ error: "ลิงก์ไม่ถูกต้องหรือถูกใช้แล้ว" }, { status: 404 });
 
   if (invite.team.member_count >= 5) {
-    console.log(`[invite-register] team full member_count=${invite.team.member_count}`);
     return NextResponse.json({ error: "ทีมเต็มแล้ว (5 คน)" }, { status: 400 });
   }
 
@@ -37,20 +33,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
   const { name, email, phone, password, university, track, grade_level, experience_level, referral_source, bio } = body;
 
   if (!name || !email || !phone || !password || !university || !track || !grade_level || !experience_level || !referral_source || !bio) {
-    console.log(`[invite-register] missing fields`);
     return NextResponse.json({ error: "All required fields must be filled" }, { status: 400 });
   }
   if (password.length < 6) return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
 
   const existing = await findParticipantByEmail(email);
   if (existing) {
-    console.log(`[invite-register] email already registered: ${email}`);
     return NextResponse.json({ error: "This email is already registered for the hackathon" }, { status: 409 });
   }
 
   // Atomically claim the invite before creating the account
   const claimed = await claimInvite(token);
-  console.log(`[invite-register] claimInvite result=${claimed}`);
   if (!claimed) return NextResponse.json({ error: "ลิงก์ไม่ถูกต้องหรือถูกใช้แล้ว" }, { status: 404 });
 
   const password_hash = hashPassword(password);

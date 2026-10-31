@@ -46,6 +46,9 @@ export const ALLOWED_GENERAL_TYPES = new Set([
   "text/csv",
 ]);
 
+// Everything a student or map editor may upload as a file attachment.
+export const ALLOWED_UPLOAD_TYPES = new Set([...ALLOWED_GENERAL_TYPES, ...ALLOWED_IMAGE_TYPES]);
+
 // Dangerous file extensions to block
 export const DANGEROUS_EXTENSIONS = [
   ".exe",

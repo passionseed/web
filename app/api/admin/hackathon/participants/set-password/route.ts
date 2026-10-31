@@ -18,11 +18,10 @@ export async function POST(req: NextRequest) {
   const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin");
   if (!roles?.length) return NextResponse.json({ error: "Not authorized" }, { status: 403 });
 
-  const { participantId, password, rawHash } = await req.json();
-  if (!participantId || (!password && !rawHash)) return NextResponse.json({ error: "Missing participantId or password" }, { status: 400 });
+  const { participantId, password } = await req.json();
+  if (!participantId || typeof password !== "string" || !password) return NextResponse.json({ error: "Missing participantId or password" }, { status: 400 });
 
-  // rawHash = restore original hash directly; password = set new plaintext password
-  const password_hash = rawHash ?? hashPassword(password);
+  const password_hash = hashPassword(password);
   const serviceClient = getHackathonServiceClient();
 
   const { error } = await serviceClient
@@ -31,7 +30,7 @@ export async function POST(req: NextRequest) {
     .eq("id", participantId);
 
   if (error) {
-    console.error("[admin] set-password error:", error);
+    console.error("[admin] set-password error:", error.code);
     return NextResponse.json({ error: "Failed to update password" }, { status: 500 });
   }
 

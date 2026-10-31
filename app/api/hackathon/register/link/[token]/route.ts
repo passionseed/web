@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hashPassword, generateSessionToken, SESSION_COOKIE, SESSION_EXPIRY_DAYS } from "@/lib/hackathon/auth";
-import { findParticipantByEmail, createParticipant, createSession } from "@/lib/hackathon/db";
+import { findParticipantByEmail, createParticipant, createSession, getHackathonAdminClient } from "@/lib/hackathon/db";
 import { getRegisterLinkByToken, claimRegisterLink } from "@/lib/hackathon/register-links";
 
 // GET — validate token
@@ -33,6 +33,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     return NextResponse.json({ error: "This email is already registered for the hackathon" }, { status: 409 });
   }
 
+  // Claim before creating an account so concurrent requests cannot both register.
+  const claimed = await claimRegisterLink(token);
+  if (!claimed) return NextResponse.json({ error: "ลิงก์ไม่ถูกต้องหรือถูกใช้แล้ว" }, { status: 404 });
+
   const password_hash = hashPassword(password);
   const participant = await createParticipant({
     name, email, phone, password_hash, university,
@@ -40,14 +44,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     referral_source, bio,
     special_invite: true,
   });
-
-  // Atomically claim link (race condition guard)
-  const claimed = await claimRegisterLink(token, participant.id);
-  if (!claimed) {
-    // Another request beat us — participant was created but link was already used
-    // This is unlikely but handle gracefully: just continue, participant is registered
-    console.warn(`[link-register] link already claimed for token=${token} participant=${participant.id}`);
-  }
+  const { error: attributionError } = await getHackathonAdminClient()
+    .from("hackathon_register_links").update({ used_by: participant.id }).eq("id", link.id);
+  if (attributionError) console.error("Failed to record registration link attribution");
 
   const sessionToken = generateSessionToken();
   await createSession(participant.id, sessionToken);

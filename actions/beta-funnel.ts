@@ -21,7 +21,7 @@ export async function trackBetaRegistrationStarted(data: {
         },
         {
           onConflict: "email",
-          ignoreDuplicates: false, // Update existing
+          ignoreDuplicates: true, // Preserve existing identity and status
         }
       );
 
@@ -44,7 +44,8 @@ export async function trackBetaRegistrationCompleted(email: string) {
         completed_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
-      .eq("email", email);
+      .eq("email", email)
+      .eq("status", "started");
 
     if (error) {
       console.error("Failed to track beta registration completion:", error);

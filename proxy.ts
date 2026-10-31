@@ -46,11 +46,12 @@ const PUBLIC_SEARCH_ROUTES = new Set([
  * an admin path (e.g. /api/admin/search) would let a CDN serve one admin's
  * results to anyone requesting the same URL, because the cache key ignores
  * cookies. Checked before the public rules below.
+ *
+ * Never publicly cache a path whose response depends on the signed-in user
+ * (maps progress, assignments): the CDN would serve one user's data to the next.
  */
 function apiCacheControl(pathname: string): string | null {
   if (pathname === '/api/admin' || pathname.startsWith('/api/admin/')) return 'private, no-store'
-  if (pathname.startsWith('/api/maps')) return 'public, s-maxage=60, stale-while-revalidate=300'
-  if (pathname.startsWith('/api/assignments')) return 'public, s-maxage=30, stale-while-revalidate=120'
   if (pathname.startsWith('/api/hero-galaxy')) return 'public, s-maxage=300, stale-while-revalidate=600'
   if (pathname.startsWith('/api/tcas')) return 'public, s-maxage=300, stale-while-revalidate=600'
   if (PUBLIC_SEARCH_ROUTES.has(pathname)) return 'public, s-maxage=300, stale-while-revalidate=600'

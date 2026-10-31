@@ -1,3 +1,4 @@
+import { checkHackathonAuthRateLimit } from "@/lib/hackathon/auth-rate-limit";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyPassword, generateSessionToken, SESSION_COOKIE, SESSION_EXPIRY_DAYS, getCorsHeaders } from "@/lib/hackathon/auth";
 import { findParticipantByEmail, createSession } from "@/lib/hackathon/db";
@@ -13,6 +14,11 @@ export async function POST(req: NextRequest) {
         { error: "Email and password are required" },
         { status: 400, headers: corsHeaders }
       );
+    }
+
+    if (typeof email !== "string") return NextResponse.json({ error: "Invalid email" }, { status: 400, headers: corsHeaders });
+    if (!await checkHackathonAuthRateLimit(req, email, "login")) {
+      return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429, headers: corsHeaders });
     }
 
     const participant = await findParticipantByEmail(email);

@@ -1154,9 +1154,14 @@ export const deleteClassroomExclusiveMap = async (
 
   try {
     // Use RPC function for proper cascade delete if available
-    const { error: rpcError } = await supabase.rpc('delete_learning_map_cascade', {
+    const { data: rpcResult, error: rpcError } = await supabase.rpc('delete_learning_map_cascade', {
       map_uuid: mapId
     });
+
+    // The function reports refusals and failures in its JSON result, not as an error.
+    if (!rpcError && rpcResult && rpcResult.success === false) {
+      throw new Error(rpcResult.error || "Map deletion was refused");
+    }
 
     if (rpcError) {
       console.log("RPC cascade delete not available, using manual cascade delete");

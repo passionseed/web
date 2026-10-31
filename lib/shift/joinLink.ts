@@ -22,6 +22,15 @@ export function shiftJoinPath(token: string): string {
   return `${SHIFT_JOIN_PREFIX}${token}`;
 }
 
+/**
+ * Any /shift page. SHIFT applicants sign up by linking Discord right after
+ * applying and never do the full PassionSeed onboard, so the proxy, the
+ * auth callback and /login all let these through without an /onboard detour.
+ */
+export function isShiftPath(path: string): boolean {
+  return path === "/shift" || path.startsWith("/shift/") || path.startsWith("/shift?");
+}
+
 /** The token when `path` is exactly a join link, else null. */
 export function tokenFromShiftJoinPath(path: string): string | null {
   if (!path.startsWith(SHIFT_JOIN_PREFIX)) return null;

@@ -13,8 +13,9 @@ import { joinConfirmMessage, kickoffMessage } from "@/lib/shift/paymentMessage";
 import type { AdminShiftApplication as Application } from "@/lib/admin/queue-tools/shift-applications";
 
 /**
- * Post-payment step: copy the welcome message (with the student's personal
- * /shift/join link), then watch them link Discord and land in the server.
+ * Applicants link Discord from the apply page. After payment: copy the
+ * welcome message (with the student's personal /shift/join link) for anyone
+ * who has not linked yet, then watch them land in the server.
  * The join token is never in the list data; the link is fetched only when an
  * admin copies a message.
  */
@@ -22,10 +23,15 @@ import type { AdminShiftApplication as Application } from "@/lib/admin/queue-too
 type DiscordStatus = { label: string; variant: "default" | "secondary" | "destructive" | "outline" };
 
 export function discordStatus(
-  app: Pick<Application, "paid_at" | "linked_at" | "discord_joined_at" | "discord_error">,
+  app: Pick<Application, "status" | "paid_at" | "linked_at" | "discord_joined_at" | "discord_error">,
 ): DiscordStatus | null {
-  if (!app.paid_at) return null;
-  if (!app.linked_at) return { label: "Not linked", variant: "outline" };
+  // Unpaid and unlinked is the normal state of a fresh application: no badge.
+  if (!app.linked_at) return app.paid_at ? { label: "Not linked", variant: "outline" } : null;
+  if (app.status === "declined") {
+    return app.discord_joined_at
+      ? { label: "Declined, role still on", variant: "destructive" }
+      : { label: "Role removed", variant: "outline" };
+  }
   if (app.discord_joined_at && !app.discord_error) return { label: "In Discord", variant: "default" };
   if (app.discord_error === "not_in_server") return { label: "Linked, not in server", variant: "secondary" };
   if (isDiscordOAuthJoinError(app.discord_error)) return { label: "Join via invite", variant: "secondary" };
@@ -138,8 +144,10 @@ export function ShiftJoinLinkPanel({
         {status && <Badge variant={status.variant}>{status.label}</Badge>}
       </div>
 
-      {!app.paid_at ? (
-        <p className="text-sm text-muted-foreground">Mark paid to get the join link.</p>
+      {!app.paid_at && !app.linked_at ? (
+        <p className="text-sm text-muted-foreground">
+          Not linked yet. Applicants link Discord right after applying; mark paid to copy the welcome message.
+        </p>
       ) : (
         <>
           {app.discord_username && (
@@ -157,10 +165,14 @@ export function ShiftJoinLinkPanel({
                 : app.discord_error}
             </p>
           )}
-          <div className="flex flex-wrap gap-2">
-            <CopyJoinMessageButton application={app} onCreateLink={onCreateLink} />
-            <CopyKickoffMessageButton application={app} onCreateLink={onCreateLink} />
-          </div>
+          {app.paid_at ? (
+            <div className="flex flex-wrap gap-2">
+              <CopyJoinMessageButton application={app} onCreateLink={onCreateLink} />
+              <CopyKickoffMessageButton application={app} onCreateLink={onCreateLink} />
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Mark paid to copy the welcome and kickoff messages.</p>
+          )}
         </>
       )}
     </div>

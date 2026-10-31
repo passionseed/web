@@ -9,6 +9,11 @@ import {
   discordStatus,
   ShiftJoinLinkPanel,
 } from "@/components/admin/ShiftJoinLinkPanel";
+import {
+  ParentConsentBadge,
+  ShiftParentConsentPanel,
+  type SendParentLink,
+} from "@/components/admin/ShiftParentConsentPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -29,6 +34,7 @@ import {
 } from "@/lib/shift/applicationStats";
 import { SHIFT_AVAILABILITY, SHIFT_FOUND_VIA, SHIFT_GRADES } from "@/lib/shift/application";
 import type { AdminShiftApplication as Application } from "@/lib/admin/queue-tools/shift-applications";
+import { blocksPaidAdmission, parentConsentState } from "@/lib/shift/parentConsent";
 import { cn } from "@/lib/utils";
 import type { ShiftApplicationStatus } from "@/types/shift";
 
@@ -66,6 +72,7 @@ interface RowProps {
   onPatch: (id: string, patch: ApplicationPatch) => Promise<boolean>;
   onAddToTracker: (application: Application) => Promise<void>;
   onCreateJoinLink: (id: string) => Promise<string | null>;
+  onSendParentLink: SendParentLink;
 }
 
 export function ShiftApplicationRow(props: RowProps) {
@@ -76,6 +83,8 @@ export function ShiftApplicationRow(props: RowProps) {
     if (highlighted) setExpanded(true);
   }, [highlighted]);
   const discord = discordStatus(app);
+  // Under 20 the seat waits on the parent (PDPA); unmarking paid is always allowed.
+  const paidLocked = app.paid_at === null && blocksPaidAdmission(parentConsentState(app));
   const detailId = `shift-application-${app.id}`;
 
   return (
@@ -146,8 +155,11 @@ export function ShiftApplicationRow(props: RowProps) {
             <Switch
               checked={app.paid_at !== null}
               onCheckedChange={(paid) => onPatch(app.id, { paid })}
+              disabled={paidLocked}
+              title={paidLocked ? "Needs the parent's consent first" : undefined}
               aria-label={`Mark ${app.nickname} paid`}
             />
+            <ParentConsentBadge application={app} />
             {discord && (
               <Badge variant={discord.variant} className="whitespace-nowrap text-[10px]">
                 {discord.label}
@@ -215,6 +227,7 @@ function ApplicationDetail({
   onPatch,
   onAddToTracker,
   onCreateJoinLink,
+  onSendParentLink,
 }: RowProps) {
   const [adding, setAdding] = useState(false);
 
@@ -231,7 +244,7 @@ function ApplicationDetail({
           <DetailField label="Full name" value={app.full_name} />
           <DetailField label="Instagram" value={`@${app.ig_handle}`} />
           <DetailField label="Discord" value={app.discord_handle ?? "-"} />
-          <DetailField label="Parent contact" value={app.parent_contact} />
+          <DetailField label="Parent contact" value={app.parent_contact ?? "-"} />
           <DetailField
             label="Availability"
             value={optionLabel(SHIFT_AVAILABILITY, app.availability)}
@@ -254,6 +267,7 @@ function ApplicationDetail({
         </Button>
       </div>
       <div className="space-y-4">
+        <ShiftParentConsentPanel application={app} onSendLink={onSendParentLink} />
         <ShiftJoinLinkPanel application={app} onCreateLink={onCreateJoinLink} />
         <AdminNoteEditor
           key={app.admin_note ?? ""}

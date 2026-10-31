@@ -1,3 +1,5 @@
+import { getSessionParticipant } from "@/lib/hackathon/db";
+import { extractHackathonToken } from "@/lib/hackathon/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { createHash } from "crypto";
@@ -15,7 +17,6 @@ export async function POST(request: NextRequest) {
       event_type,
       event_data = {},
       page_path = "/hackathon",
-      participant_id,
     } = body;
 
     if (!event_type) {
@@ -24,6 +25,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    const token = extractHackathonToken(request);
+    const participant = token ? await getSessionParticipant(token) : null;
 
     // Get client information from headers
     const userAgent = request.headers.get("user-agent") || "unknown";
@@ -42,7 +46,7 @@ export async function POST(request: NextRequest) {
       .from("hackathon_events")
       .insert({
         visitor_fingerprint: visitorFingerprint,
-        participant_id: participant_id || null,
+        participant_id: participant?.id ?? null,
         event_type,
         event_data,
         page_path,

@@ -68,48 +68,6 @@ export function ParticipantDetailModal({
               <span className="w-24 shrink-0 text-slate-500 text-xs uppercase tracking-wider pt-0.5">Email</span>
               <span className="font-mono text-slate-300 break-all">{participant.email}</span>
             </div>
-            {participant.password_hash && (
-              <div className="flex gap-2 items-start">
-                <span className="w-24 shrink-0 text-slate-500 text-xs uppercase tracking-wider pt-0.5">Orig. hash</span>
-                <div className="flex-1 flex flex-col gap-1">
-                  <span
-                    className="font-mono text-slate-500 break-all text-[10px] leading-relaxed cursor-pointer hover:text-slate-300 transition-colors select-all"
-                    title="Click to copy"
-                    onClick={() => navigator.clipboard.writeText(participant.password_hash!)}
-                  >
-                    {participant.password_hash}
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-[10px] h-6 px-2 border-slate-700 text-slate-400 hover:text-slate-200 w-fit"
-                    onClick={async () => {
-                      setSettingPassword(true);
-                      setPasswordMsg(null);
-                      try {
-                        const res = await fetch("/api/admin/hackathon/participants/set-password", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ participantId: participant.id, rawHash: participant.password_hash }),
-                        });
-                        setPasswordMsg(res.ok
-                          ? { ok: true, text: "Original password restored" }
-                          : { ok: false, text: "Failed to restore" }
-                        );
-                      } catch {
-                        setPasswordMsg({ ok: false, text: "Network error" });
-                      } finally {
-                        setSettingPassword(false);
-                      }
-                    }}
-                    disabled={settingPassword}
-                  >
-                    {settingPassword ? <Loader2 className="h-2.5 w-2.5 animate-spin mr-1" /> : null}
-                    Restore original
-                  </Button>
-                </div>
-              </div>
-            )}
             <div className="flex gap-2 items-start">
               <span className="w-24 shrink-0 text-slate-500 text-xs uppercase tracking-wider pt-2">Password</span>
               <div className="flex-1 flex flex-col gap-1">

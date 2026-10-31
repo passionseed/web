@@ -14,6 +14,8 @@ export async function GET(req: NextRequest) {
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const mentor = await getMentorBySessionToken(token);
   if (!mentor) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Mentor sign-up is public; only admin-approved mentors may see or act on student work.
+  if (!mentor.is_approved) return NextResponse.json({ error: "Mentor not approved" }, { status: 403 });
 
   const db = getClient();
 

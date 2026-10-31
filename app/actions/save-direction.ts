@@ -2,6 +2,8 @@
 
 import { createHash } from "crypto";
 import { createClient } from "@/utils/supabase/server";
+import { requireUser } from "@/lib/security/route-guards";
+import { createAdminClient } from "@/utils/supabase/admin";
 import { AssessmentAnswers, DirectionFinderResult, Message } from "@/types/direction-finder";
 import { summarizeConversation } from "@/lib/ai/conversationEngine";
 
@@ -255,7 +257,6 @@ export async function findCachedResult(
   modelName: string = 'gemini-2.5-flash'
 ): Promise<{
   id: string;
-  user_id: string;
   answers: AssessmentAnswers;
   result: DirectionFinderResult;
   created_at: string;
@@ -265,7 +266,10 @@ export async function findCachedResult(
   cache_hit_count: number;
   original_result_id: string | null;
 } | null> {
-  const supabase = await createClient();
+  const auth = await requireUser();
+  if (!auth.ok) throw new Error("Unauthorized");
+  // The cache spans all users' results, so the RPC is service-role only.
+  const supabase = createAdminClient();
 
   // Call the PostgreSQL function to find cached result
   const { data, error } = await supabase.rpc('find_cached_direction_result', {
@@ -283,9 +287,10 @@ export async function findCachedResult(
     return null;
   }
 
-  return data[0] as {
+  const { user_id: _userId, ...cached } = data[0];
+  void _userId;
+  return cached as {
     id: string;
-    user_id: string;
     answers: AssessmentAnswers;
     result: DirectionFinderResult;
     created_at: string;
@@ -304,7 +309,9 @@ export async function findCachedResult(
  * @param resultId - The ID of the cached result being reused
  */
 export async function incrementCacheHitCount(resultId: string): Promise<void> {
-  const supabase = await createClient();
+  const auth = await requireUser();
+  if (!auth.ok) throw new Error("Unauthorized");
+  const supabase = createAdminClient();
 
   const { error } = await supabase.rpc('increment_cache_hit_count', {
     p_result_id: resultId
