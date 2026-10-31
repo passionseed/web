@@ -339,6 +339,12 @@ button.wb-pill:enabled:hover,
 .whiteboard-room:has(.excalidraw.theme--dark) .wb-widget :is(input, textarea, select) {
   color-scheme: dark;
 }
+/* Excalidraw turns pointer events off on embeds until someone clicks their middle third.
+   Turn them back on for the body so the app is usable on the first click; the title bar
+   keeps them off, so the canvas still gets it to move and select the widget. */
+.whiteboard-room .wb-widget__body {
+  pointer-events: auto;
+}
 /* Our widgets draw their own card: drop Excalidraw's embed frame around them. */
 .whiteboard-room .excalidraw__embeddable__outer:has(> .wb-widget) {
   padding: 0 !important;
