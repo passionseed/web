@@ -14,7 +14,7 @@ const MAX_CHIPS = 400;
  * saying who made it (and who last edited it, when that is someone else).
  */
 export function AuthorsLayer({ api, nameOf }: { api: ExcalidrawImperativeAPI; nameOf: (id: string) => string }) {
-  useViewportTick(api);
+  useViewportTick(api, { elements: true });
   const appState = api.getAppState();
   const elements = api.getSceneElements();
   const byId = new Map(elements.map((el) => [el.id, el]));

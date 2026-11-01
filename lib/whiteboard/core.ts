@@ -74,6 +74,19 @@ export function changedSince<T extends Versioned>(elements: readonly T[], seen: 
   return elements.filter((el) => seen.get(el.id) !== el.version);
 }
 
+/** Whether any element differs from the last version we sent or saved. Stops at the first. */
+export function hasChangedSince(elements: readonly Versioned[], seen: ReadonlyMap<string, number>): boolean {
+  return elements.some((el) => seen.get(el.id) !== el.version);
+}
+
+/** Adds elements to a queue keyed by id, keeping the highest version of each. */
+export function queueLatest<T extends Versioned>(queue: Map<string, T>, elements: readonly T[]): void {
+  for (const el of elements) {
+    const queued = queue.get(el.id);
+    if (!queued || el.version >= queued.version) queue.set(el.id, el);
+  }
+}
+
 /** Records the versions of elements that were sent or saved. */
 export function markSeen(seen: Map<string, number>, elements: readonly Versioned[]): void {
   for (const el of elements) seen.set(el.id, el.version);
