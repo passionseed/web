@@ -99,9 +99,14 @@ export async function getPersonalizedDmMessage(lead: {
   interests?: string[];
   campaign?: CampaignKey | null;
 }): Promise<string> {
+  const template = getDefaultCommentDmMessage(lead.campaign);
+  // SHIFT's DM is the full offer, and every line is a fact (dates, price,
+  // seats, the parent step). A rewrite can drop or change one and still pass
+  // the checks, so it goes out exactly as written.
+  if (lead.campaign === "shift") return template;
   const { personalizeMessage } = await import("@/lib/dm-leads/personalize");
   return personalizeMessage({
-    template: getDefaultCommentDmMessage(lead.campaign),
+    template,
     lead: {
       displayName: lead.displayName,
       username: lead.username,
@@ -121,17 +126,19 @@ export async function getPersonalizedPublicCommentReply(lead: {
   interests?: string[];
   campaign?: CampaignKey | null;
 }): Promise<string> {
+  const template = getDefaultPublicCommentReply(lead.username, lead.campaign);
+  // Same as the DM: SHIFT's public reply is all facts, posted under a
+  // student's comment, so it is never rewritten.
+  if (lead.campaign === "shift") return template;
   const { personalizeMessage } = await import("@/lib/dm-leads/personalize");
   return personalizeMessage({
-    template: getDefaultPublicCommentReply(lead.username, lead.campaign),
+    template,
     lead: {
       displayName: lead.displayName,
       username: lead.username,
       gradeLevel: lead.gradeLevel,
       interests: lead.interests,
     },
-    // SHIFT already carries the apply link. The public_comment instruction
-    // tells the model to ask them to DM first, which drops that link.
-    kind: lead.campaign === "shift" ? "composed" : "public_comment",
+    kind: "public_comment",
   });
 }

@@ -4,7 +4,8 @@
  * An open round (applications still accepted in Bangkok) gets the apply link.
  * When nothing is open, the message says so and does not include an apply
  * link, so a running or finished round is never offered as if people can
- * still sign up. A new round is a data change in `lib/content/shift-cohort.ts`.
+ * still sign up; it links the /shift/next pre-order instead. A new round is
+ * a data change in `lib/content/shift-cohort.ts`.
  */
 
 import {
@@ -89,9 +90,9 @@ export function buildShiftCommentDm(cohort: ShiftCohort): string {
 export function buildShiftPublicCommentReply(username: string | null | undefined, cohort: ShiftCohort): string {
   const mention = username ? `@${username} ` : "";
   return [
-    `${mention}รายละเอียดและลิงก์สมัคร ${cohort.name} อยู่ในโปรไฟล์นะ 🌱 ถ้ารับ DM ได้ เราส่งให้ทาง DM ด้วย`,
+    `${mention}รายละเอียดและลิงก์สมัคร ${cohort.name} อยู่ที่ลิงก์ในไบโอนะ 🌱 สงสัยอะไร ทัก DM มาได้เลย`,
     shiftApplyUrl(cohort, SHIFT_COMMENT_PUBLIC_UTM),
-    `${formatThaiDateRange(cohort.startDate, cohort.endDate)} ${baht(cohort.priceBaht)} ปิดรับ ${formatThaiDate(cohort.applyDeadline)}`,
+    `${formatThaiDateRange(cohort.startDate, cohort.endDate)} ค่าสมัคร ${baht(cohort.priceBaht)} ปิดรับ ${formatThaiDate(cohort.applyDeadline)}`,
   ].join("\n");
 }
 
@@ -99,19 +100,41 @@ function runningCohort(today: string, cohorts: readonly ShiftCohort[]): ShiftCoh
   return cohorts.find((cohort) => cohortStatus(cohort, today) === "running");
 }
 
-/** No apply link. A running round is named so the note is specific. */
+/** /shift/next with a channel utm: the pre-order for the round after the newest one. */
+export function shiftNextUrl(utmSource: string): string {
+  const url = new URL("/shift/next", APPLY_ORIGIN);
+  url.searchParams.set("utm_source", utmSource);
+  return url.toString();
+}
+
+/** Same rule as NEXT_ROUND in lib/content/shift-next.ts, over the cohorts passed in. */
+function nextRoundName(cohorts: readonly ShiftCohort[]): string {
+  return `SHIFT[${cohorts.reduce((max, cohort) => Math.max(max, cohort.round), 0) + 1}]`;
+}
+
+/**
+ * No apply link: nothing is open. It points to /shift/next instead, so a
+ * comment after the deadline still leaves the person a next step rather than
+ * a dead end. A running round is named so the note is specific.
+ */
 export function closedShiftCommentLines(
   today: string = bangkokToday(),
-  cohorts: readonly ShiftCohort[] = SHIFT_COHORTS
+  cohorts: readonly ShiftCohort[] = SHIFT_COHORTS,
+  utmSource: string = SHIFT_COMMENT_DM_UTM
 ): string[] {
   const running = runningCohort(today, cohorts);
-  if (running) {
-    return [
-      `${running.name} ปิดรับสมัครไปแล้วน้า 🌱`,
-      "รุ่นนี้เริ่มไปแล้ว สงสัยอะไรพิมพ์ถามในนี้ได้เลย",
-    ];
-  }
-  return ["ปิดรับสมัครไปแล้วน้า 🌱", "สงสัยอะไรพิมพ์ถามในนี้ได้เลย"];
+  const closed = cohorts.find((cohort) => cohortStatus(cohort, today) === "closed");
+  const lead = running
+    ? `${running.name} ปิดรับสมัครแล้ว ตอนนี้กำลังทำโปรเจกต์กันอยู่นะ 🌱`
+    : closed
+      ? `${closed.name} ปิดรับสมัครแล้วนะ 🌱`
+      : "ปิดรับสมัครแล้วนะ 🌱";
+  return [
+    lead,
+    // "ยังไม่ต้องจ่าย": signing up on /shift/next is free, the round is not.
+    `รอบถัดไป ${nextRoundName(cohorts)} ยังไม่กำหนดวัน บอกช่วงที่ว่างไว้ก่อนได้ ยังไม่ต้องจ่าย: ${shiftNextUrl(utmSource)}`,
+    "สงสัยอะไร พิมพ์ถามในนี้ได้เลย",
+  ];
 }
 
 /** What a SHIFT comment DM should say on `today`. */
@@ -120,7 +143,7 @@ export function shiftCommentDm(
   cohorts: readonly ShiftCohort[] = SHIFT_COHORTS
 ): string {
   const open = openShiftCommentCohort(today, cohorts);
-  if (!open) return closedShiftCommentLines(today, cohorts).join("\n");
+  if (!open) return closedShiftCommentLines(today, cohorts, SHIFT_COMMENT_DM_UTM).join("\n");
   return buildShiftCommentDm(open);
 }
 
@@ -132,7 +155,7 @@ export function shiftCommentPublicReply(
 ): string {
   const open = openShiftCommentCohort(today, cohorts);
   if (!open) {
-    const [lead, ...rest] = closedShiftCommentLines(today, cohorts);
+    const [lead, ...rest] = closedShiftCommentLines(today, cohorts, SHIFT_COMMENT_PUBLIC_UTM);
     const mention = username ? `@${username} ` : "";
     return [`${mention}${lead}`, ...rest].join("\n");
   }

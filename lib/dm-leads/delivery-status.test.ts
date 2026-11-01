@@ -4,6 +4,8 @@ import {
   hasThreadDeliveryFailure,
   getDefaultCommentDmMessage,
   getDefaultPublicCommentReply,
+  getPersonalizedDmMessage,
+  getPersonalizedPublicCommentReply,
 } from "@/lib/dm-leads/delivery-status";
 import { shiftCommentDm, shiftCommentPublicReply } from "@/lib/dm-leads/shift-comment-copy";
 import type { DmMessage } from "@/types/dm-leads";
@@ -72,5 +74,11 @@ describe("delivery-status helpers", () => {
     expect(getDefaultPublicCommentReply("mind.m5", "shift")).toBe(
       shiftCommentPublicReply("mind.m5")
     );
+  });
+
+  it("never rewrites SHIFT copy: an empty bulk-reply box sends the facts as written", async () => {
+    const lead = { username: "mind.m5", gradeLevel: "ม.5", campaign: "shift" as const };
+    await expect(getPersonalizedDmMessage(lead)).resolves.toBe(shiftCommentDm());
+    await expect(getPersonalizedPublicCommentReply(lead)).resolves.toBe(shiftCommentPublicReply("mind.m5"));
   });
 });

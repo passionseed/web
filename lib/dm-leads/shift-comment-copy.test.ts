@@ -19,6 +19,7 @@ import {
   shiftCommentDm,
   shiftCommentPublicReply,
 } from "@/lib/dm-leads/shift-comment-copy";
+import { NEXT_ROUND_NAME } from "@/lib/content/shift-next";
 import { INSTAGRAM_MESSAGE_MAX_BYTES, utf8Bytes } from "@/lib/meta/message-limits";
 
 /** The full offer: round, tracked link, dates, price and deadline, in a
@@ -57,20 +58,23 @@ function expectClosedRunningNote(today: string, cohorts: readonly ShiftCohort[] 
   const dm = shiftCommentDm(today, cohorts);
   expect(dm).toBe(closedShiftCommentLines(today, cohorts).join("\n"));
   expect(dm).toBe(
-    [`${SHIFT_COHORT_2.name} ปิดรับสมัครไปแล้วน้า 🌱`, "รุ่นนี้เริ่มไปแล้ว สงสัยอะไรพิมพ์ถามในนี้ได้เลย"].join(
-      "\n"
-    )
+    [
+      `${SHIFT_COHORT_2.name} ปิดรับสมัครแล้ว ตอนนี้กำลังทำโปรเจกต์กันอยู่นะ 🌱`,
+      "รอบถัดไป SHIFT[3] ยังไม่กำหนดวัน บอกช่วงที่ว่างไว้ก่อนได้ ยังไม่ต้องจ่าย: https://passionseed.org/shift/next?utm_source=ig-comment-dm",
+      "สงสัยอะไร พิมพ์ถามในนี้ได้เลย",
+    ].join("\n")
   );
   expect(dm).not.toContain("/shift/apply");
-  expect(dm).not.toContain("utm_source");
+  expect(utf8Bytes(dm)).toBeLessThanOrEqual(INSTAGRAM_MESSAGE_MAX_BYTES);
   expect(dm).not.toContain("ส่งรายละเอียด");
   expect(dm).not.toContain("สมัคร 2 นาที");
   expect(dm).not.toContain("ต่อคน");
   expect(dm).not.toMatch(/[—–]/);
 
   const pub = shiftCommentPublicReply("mind.m5", today, cohorts);
-  expect(pub.startsWith(`@mind.m5 ${SHIFT_COHORT_2.name} ปิดรับสมัครไปแล้วน้า`)).toBe(true);
+  expect(pub.startsWith(`@mind.m5 ${SHIFT_COHORT_2.name} ปิดรับสมัครแล้ว`)).toBe(true);
   expect(pub).not.toContain("/shift/apply");
+  expect(pub).toContain("https://passionseed.org/shift/next?utm_source=ig-comment-public");
   expect(pub).not.toContain("อยู่ในโปรไฟล์");
 }
 
@@ -135,10 +139,41 @@ describe("SHIFT comment copy", () => {
     expect(shiftCommentDm(beforeStart)).toBe(closedShiftCommentLines(beforeStart).join("\n"));
     expect(shiftCommentDm(beforeStart)).not.toContain("/shift/apply");
 
+    // Between the deadline and Day 1 the closed round is named, and the note
+    // points to the pre-order for the round after SHIFT[3].
+    expect(shiftCommentDm(beforeStart)).toBe(
+      [
+        `${SHIFT_COHORT_3.name} ปิดรับสมัครแล้วนะ 🌱`,
+        `รอบถัดไป ${NEXT_ROUND_NAME} ยังไม่กำหนดวัน บอกช่วงที่ว่างไว้ก่อนได้ ยังไม่ต้องจ่าย: https://passionseed.org/shift/next?utm_source=ig-comment-dm`,
+        "สงสัยอะไร พิมพ์ถามในนี้ได้เลย",
+      ].join("\n")
+    );
+
     const running = SHIFT_COHORT_3.startDate;
     expect(shiftCommentDm(running)).toBe(
-      [`${SHIFT_COHORT_3.name} ปิดรับสมัครไปแล้วน้า 🌱`, "รุ่นนี้เริ่มไปแล้ว สงสัยอะไรพิมพ์ถามในนี้ได้เลย"].join("\n")
+      [
+        `${SHIFT_COHORT_3.name} ปิดรับสมัครแล้ว ตอนนี้กำลังทำโปรเจกต์กันอยู่นะ 🌱`,
+        `รอบถัดไป ${NEXT_ROUND_NAME} ยังไม่กำหนดวัน บอกช่วงที่ว่างไว้ก่อนได้ ยังไม่ต้องจ่าย: https://passionseed.org/shift/next?utm_source=ig-comment-dm`,
+        "สงสัยอะไร พิมพ์ถามในนี้ได้เลย",
+      ].join("\n")
     );
+    expect(shiftCommentPublicReply("mind.m5", running)).toContain("/shift/next?utm_source=ig-comment-public");
+  });
+
+  it("after SHIFT[3] ends, names no round and still points to /shift/next", () => {
+    const done = addDays(SHIFT_COHORT_3.endDate, 1);
+    expect(cohortStatus(SHIFT_COHORT_3, done)).toBe("done");
+    expect(shiftCommentDm(done)).toBe(
+      [
+        "ปิดรับสมัครแล้วนะ 🌱",
+        `รอบถัดไป ${NEXT_ROUND_NAME} ยังไม่กำหนดวัน บอกช่วงที่ว่างไว้ก่อนได้ ยังไม่ต้องจ่าย: https://passionseed.org/shift/next?utm_source=ig-comment-dm`,
+        "สงสัยอะไร พิมพ์ถามในนี้ได้เลย",
+      ].join("\n")
+    );
+    const pub = shiftCommentPublicReply("mind.m5", addDays(SHIFT_COHORT_3.applyDeadline, 1));
+    expect(pub.startsWith(`@mind.m5 ${SHIFT_COHORT_3.name} ปิดรับสมัครแล้วนะ`)).toBe(true);
+    expect(pub).toContain("/shift/next?utm_source=ig-comment-public");
+    expect(utf8Bytes(pub)).toBeLessThanOrEqual(INSTAGRAM_MESSAGE_MAX_BYTES);
   });
 
   it("describes an earlier open round from that round's own fields", () => {
