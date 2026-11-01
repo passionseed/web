@@ -15,7 +15,7 @@ import {
   WelcomeScreen,
 } from "@excalidraw/excalidraw";
 import type { OrderedExcalidrawElement } from "@excalidraw/excalidraw/element/types";
-import type { AppState, BinaryFiles } from "@excalidraw/excalidraw/types";
+import type { AppState, BinaryFiles, ExcalidrawProps } from "@excalidraw/excalidraw/types";
 import { ArrowLeft, Copy, FileUp, LayoutTemplate, MessageCircle, PanelRight, Save } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -54,6 +54,10 @@ function preloadThaiFonts() {
   if (typeof document === "undefined" || !document.fonts) return;
   for (const family of THAI_FONTS) void document.fonts.load(`20px "${family}"`, "ก").catch(() => undefined);
 }
+
+// Excalidraw skips re-rendering when its props are unchanged, so these live outside the component.
+const UI_OPTIONS = { canvasActions: { loadScene: false, saveToActiveFile: false } };
+const validateEmbeddable = (link: string) => (widgetIdOf(link) ? true : undefined);
 
 /** Room cards in the Library panel, so people can drag them onto any board. */
 function cardLibrary() {
@@ -124,6 +128,8 @@ export default function WhiteboardCanvas({
   );
   const onlineIds = useMemo(() => new Set(sync.present.map((p) => p.userId)), [sync.present]);
 
+  const { onChange: syncOnChange, onPointerUpdate: syncPointerUpdate, saveNow, refreshFiles, send: syncSend } = sync;
+
   const onChange = useCallback(
     (elements: readonly OrderedExcalidrawElement[], appState: AppState, files: BinaryFiles) => {
       if (appState.theme !== theme.current) {
@@ -131,17 +137,17 @@ export default function WhiteboardCanvas({
         localStorage.setItem(THEME_KEY, appState.theme);
       }
       if (!sceneReady) setSceneReady(true);
-      sync.onChange(elements, appState, files);
+      syncOnChange(elements, appState, files);
     },
-    [sceneReady, sync],
+    [sceneReady, syncOnChange],
   );
 
   const onPointerUpdate = useCallback(
-    (update: Parameters<typeof sync.onPointerUpdate>[0]) => {
+    (update: Parameters<typeof syncPointerUpdate>[0]) => {
       pointer.current = { x: update.pointer.x, y: update.pointer.y };
-      sync.onPointerUpdate(update);
+      syncPointerUpdate(update);
     },
-    [sync],
+    [syncPointerUpdate],
   );
 
   useEffect(preloadThaiFonts, []);
@@ -163,14 +169,14 @@ export default function WhiteboardCanvas({
       e.preventDefault();
       e.stopPropagation();
       if (!editable) return;
-      const ok = await sync.saveNow();
+      const ok = await saveNow();
       api?.setToast({ message: ok ? "บันทึกแล้ว · Saved" : "ยังบันทึกไม่ได้ จะลองใหม่ให้", duration: 1500 });
     };
     window.addEventListener("keydown", onKey, { capture: true });
     return () => window.removeEventListener("keydown", onKey, { capture: true });
-  }, [api, editable, sync]);
+  }, [api, editable, saveNow]);
 
-  const importFile = async (file: File) => {
+  const importFile = useCallback(async (file: File) => {
     if (!api) return;
     try {
       const scene = await loadFromBlob(file, null, null);
@@ -181,76 +187,75 @@ export default function WhiteboardCanvas({
     } catch {
       toast.error("เปิดไฟล์นี้ไม่ได้ ใช้ไฟล์ .excalidraw หรือ PNG ที่ส่งออกจากบอร์ด");
     }
-  };
+  }, [api]);
 
-  const duplicate = async () => {
+  const duplicate = useCallback(async () => {
     try {
       const { id } = await boardApi<{ id: string }>(`/api/whiteboards/${board.id}/duplicate`, { method: "POST", body: "{}" });
       window.open(`/whiteboard/${id}`, "_blank");
     } catch {
       toast.error("คัดลอกไม่สำเร็จ · Could not copy");
     }
-  };
+  }, [board.id]);
 
   const syncOn = sync.on;
   const onVersionsChanged = useCallback((fn: () => void) => syncOn("versions", fn), [syncOn]);
 
-  const openKit = (tab: string) => api?.toggleSidebar({ name: KIT_SIDEBAR, tab, force: true });
+  const openKit = useCallback((tab: string) => api?.toggleSidebar({ name: KIT_SIDEBAR, tab, force: true }), [api]);
 
-  return (
-    <div className="whiteboard-root whiteboard-room fixed inset-0">
-      <Excalidraw
-        excalidrawAPI={sync.setExcalidrawAPI}
-        initialData={initialData}
-        onChange={onChange}
-        onPointerUpdate={onPointerUpdate}
-        isCollaborating
-        viewModeEnabled={!editable}
-        name={title}
-        UIOptions={{ canvasActions: { loadScene: false, saveToActiveFile: false } }}
-        validateEmbeddable={(link) => (widgetIdOf(link) ? true : undefined)}
-        renderEmbeddable={(element) => {
-          const widget = widgetIdOf(element.link);
-          if (!widget || !api) return null;
-          return (
-            <BoardWidget
-              pluginId={widget}
-              api={api}
-              board={{ id: board.id, title, role: board.role }}
-              editable={editable}
-              channel={channel}
-            />
-          );
-        }}
-        renderTopRightUI={(isMobile) => (
-          <div className="flex items-center gap-2">
-            {!isMobile && (
-              <BoardTitle boardId={board.id} title={title} canRename={board.role === "owner"} onRenamed={setTitle} />
-            )}
-            <TimerWidget boardId={board.id} initial={board.timer} canControl={editable} channel={channel} />
-            {!isMobile && <ScriptButton boardId={board.id} />}
-            <SaveBadge state={sync.saveState} connected={sync.connected} readOnly={!editable} />
-            <PluginMenu
-              open={windows.open}
-              onToggle={windows.toggle}
-              onPlace={
-                editable && api
-                  ? (plugin) => plugin.widget && insertWidget(api, widgetLink(plugin.id), plugin.widget)
-                  : undefined
-              }
-            />
-            <Sidebar.Trigger name={KIT_SIDEBAR} tab={editable ? "create" : "comments"} icon={<PanelRight size={16} />} title="Board kit" />
-            <LiveCollaborationTrigger isCollaborating={sync.connected} onSelect={() => setShareOpen(true)} />
-          </div>
+  const renderEmbeddable = useCallback<NonNullable<ExcalidrawProps["renderEmbeddable"]>>(
+    (element) => {
+      const widget = widgetIdOf(element.link);
+      if (!widget || !api) return null;
+      return (
+        <BoardWidget
+          pluginId={widget}
+          api={api}
+          board={{ id: board.id, title, role: board.role }}
+          editable={editable}
+          channel={channel}
+        />
+      );
+    },
+    [api, board.id, board.role, channel, editable, title],
+  );
+
+  const renderTopRightUI = useCallback(
+    (isMobile: boolean) => (
+      <div className="flex items-center gap-2">
+        {!isMobile && (
+          <BoardTitle boardId={board.id} title={title} canRename={board.role === "owner"} onRenamed={setTitle} />
         )}
-      >
+        <TimerWidget boardId={board.id} initial={board.timer} canControl={editable} channel={channel} />
+        {!isMobile && <ScriptButton boardId={board.id} />}
+        <SaveBadge state={sync.saveState} connected={sync.connected} readOnly={!editable} />
+        <PluginMenu
+          open={windows.open}
+          onToggle={windows.toggle}
+          onPlace={
+            editable && api
+              ? (plugin) => plugin.widget && insertWidget(api, widgetLink(plugin.id), plugin.widget)
+              : undefined
+          }
+        />
+        <Sidebar.Trigger name={KIT_SIDEBAR} tab={editable ? "create" : "comments"} icon={<PanelRight size={16} />} title="Board kit" />
+        <LiveCollaborationTrigger isCollaborating={sync.connected} onSelect={() => setShareOpen(true)} />
+      </div>
+    ),
+    [api, board.id, board.role, board.timer, channel, editable, sync.connected, sync.saveState, title, windows.open, windows.toggle],
+  );
+
+  // Excalidraw re-renders whenever its children change, so they are built only when their inputs do.
+  const editorChildren = useMemo(
+    () => (
+      <>
         <MainMenu>
           <MainMenu.Item icon={<ArrowLeft size={16} />} onSelect={() => (window.location.href = "/whiteboard")}>
             บอร์ดทั้งหมด · All boards
           </MainMenu.Item>
           <MainMenu.Separator />
           {editable && (
-            <MainMenu.Item icon={<Save size={16} />} shortcut="Ctrl+S" onSelect={() => void sync.saveNow()}>
+            <MainMenu.Item icon={<Save size={16} />} shortcut="Ctrl+S" onSelect={() => void saveNow()}>
               บันทึกตอนนี้ · Save now
             </MainMenu.Item>
           )}
@@ -320,9 +325,9 @@ export default function WhiteboardCanvas({
             showResolved={showResolved}
             onShowResolved={setShowResolved}
             onOpenThread={setOpenThread}
-            saveNow={sync.saveNow}
-            refreshFiles={sync.refreshFiles}
-            onVersionSaved={() => sync.send("versions", {})}
+            saveNow={saveNow}
+            refreshFiles={refreshFiles}
+            onVersionSaved={() => syncSend("versions", {})}
             onVersionsChanged={onVersionsChanged}
             activity={
               me.isAdmin ? (
@@ -337,6 +342,27 @@ export default function WhiteboardCanvas({
             }
           />
         )}
+      </>
+    ),
+    [api, board.id, comments, duplicate, editable, emotes.react, me.isAdmin, onVersionsChanged, openKit, placingComment, refreshFiles, saveNow, showAuthors, showResolved, syncSend, title],
+  );
+
+  return (
+    <div className="whiteboard-root whiteboard-room fixed inset-0">
+      <Excalidraw
+        excalidrawAPI={sync.setExcalidrawAPI}
+        initialData={initialData}
+        onChange={onChange}
+        onPointerUpdate={onPointerUpdate}
+        isCollaborating
+        viewModeEnabled={!editable}
+        name={title}
+        UIOptions={UI_OPTIONS}
+        validateEmbeddable={validateEmbeddable}
+        renderEmbeddable={renderEmbeddable}
+        renderTopRightUI={renderTopRightUI}
+      >
+        {editorChildren}
       </Excalidraw>
 
       {api && (

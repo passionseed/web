@@ -56,16 +56,19 @@ export function useComments(boardId: string, channel: Channel) {
     [refresh, send],
   );
 
-  const base = `/api/whiteboards/${boardId}/comments`;
-  return {
-    threads,
-    addThread: (x: number, y: number, body: string) =>
-      mutate(base, { method: "POST", body: JSON.stringify({ x, y, body }) }),
-    reply: (parentId: string, body: string) => mutate(base, { method: "POST", body: JSON.stringify({ parentId, body }) }),
-    resolve: (id: string, resolved: boolean) =>
-      mutate(`${base}/${id}`, { method: "PATCH", body: JSON.stringify({ resolved }) }),
-    remove: (id: string) => mutate(`${base}/${id}`, { method: "DELETE" }),
-  };
+  // Stable between renders, so the editor only re-renders when comments change.
+  return useMemo(() => {
+    const base = `/api/whiteboards/${boardId}/comments`;
+    return {
+      threads,
+      addThread: (x: number, y: number, body: string) =>
+        mutate(base, { method: "POST", body: JSON.stringify({ x, y, body }) }),
+      reply: (parentId: string, body: string) => mutate(base, { method: "POST", body: JSON.stringify({ parentId, body }) }),
+      resolve: (id: string, resolved: boolean) =>
+        mutate(`${base}/${id}`, { method: "PATCH", body: JSON.stringify({ resolved }) }),
+      remove: (id: string) => mutate(`${base}/${id}`, { method: "DELETE" }),
+    };
+  }, [boardId, mutate, threads]);
 }
 
 export type CommentsApi = ReturnType<typeof useComments>;
