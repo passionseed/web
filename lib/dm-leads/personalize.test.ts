@@ -1,5 +1,6 @@
 import { SHIFT_COHORT_2 } from "@/lib/content/shift-cohort";
 import { buildShiftCommentDm } from "@/lib/dm-leads/shift-comment-copy";
+import { INSTAGRAM_MESSAGE_MAX_BYTES, utf8Bytes } from "@/lib/meta/message-limits";
 import {
   buildLeadFacts,
   buildPersonalizeMessages,
@@ -63,6 +64,15 @@ describe("personalize helpers", () => {
     expect(rewriteKeepsShiftFacts("น้องอยู่ ม.ไหนครับ", "SHIFT[1] ฿670 round=1")).toBe(true);
     const laterRound = template.replaceAll(`round=${SHIFT_COHORT_2.round}`, "round=12");
     expect(rewriteKeepsShiftFacts(laterRound, laterRound)).toBe(true);
+  });
+
+  it("drops a rewrite Instagram would refuse when the template fits", () => {
+    const template = buildShiftCommentDm(SHIFT_COHORT_2);
+    expect(utf8Bytes(template)).toBeLessThanOrEqual(INSTAGRAM_MESSAGE_MAX_BYTES);
+    const tooLong = `${template}\n${"ก".repeat(120)}`;
+    expect(tooLong.length).toBeLessThan(template.length * 3);
+    expect(utf8Bytes(tooLong)).toBeGreaterThan(INSTAGRAM_MESSAGE_MAX_BYTES);
+    expect(sanitizePersonalizedMessage(template, tooLong)).toBeNull();
   });
 
   it("lists known lead facts for the prompt", () => {
