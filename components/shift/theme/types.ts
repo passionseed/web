@@ -12,8 +12,15 @@ export interface ShiftHeroProps {
   children: ReactNode;
 }
 
-/** Pixel rounds draw sprites; everything else uses the riso line plates. */
-export type ShiftArtKind = "riso" | "pixel";
+/**
+ * Pixel rounds draw sprites; everything else uses the riso line plates.
+ * Halloween is the pixel kit at night: same sprites, night palette.
+ */
+export type ShiftArtKind = "riso" | "pixel" | "halloween";
+
+export function isPixelKind(kind: ShiftArtKind): boolean {
+  return kind !== "riso";
+}
 
 /**
  * Everything that makes a round page look like that round's poster. The

@@ -5,7 +5,7 @@ import { RisoIcon, type RisoIconName } from "@/components/shift/poster/RisoIcons
 import { INK, RisoHeading, inkFor } from "@/components/shift/ShiftRiso";
 import { floatClass } from "@/components/shift/round/motion";
 import { HOME_DELIVERABLES, HOME_NOTES } from "@/lib/content/home";
-import { getEffectiveCohort } from "@/lib/content/shift-cohort";
+import { cohortPath, getEffectiveCohort } from "@/lib/content/shift-cohort";
 import { MarginNote } from "./MarginNote";
 import { WeekStepper } from "./WeekStepper";
 
@@ -25,11 +25,12 @@ function Deliverables() {
 }
 
 export function HomeWeek() {
+  const cohort = getEffectiveCohort();
   return (
     <section className="py-16 sm:py-24">
       <RisoHeading>7 วัน วันละหนึ่งงาน ทุกวันมีของต้องส่ง</RisoHeading>
       <div className="mt-10">
-        <WeekStepper schedule={getEffectiveCohort().schedule} />
+        <WeekStepper schedule={cohort.schedule} />
       </div>
 
       <p className="mt-16 font-kodchasan text-lg font-semibold" style={{ color: INK.pink }}>
@@ -39,11 +40,11 @@ export function HomeWeek() {
 
       <div className="mt-12 flex flex-wrap items-center gap-6">
         <Link
-          href="/shift"
-          className="inline-flex items-center gap-2 font-mono text-xs font-semibold uppercase tracking-[0.16em] underline decoration-[rgba(255,72,176,0.6)] decoration-2 underline-offset-8 transition hover:decoration-[rgba(255,72,176,1)]"
+          href={`${cohortPath(cohort)}#schedule`}
+          className="inline-flex items-center gap-2 py-2 text-sm font-semibold underline decoration-[rgba(255,72,176,0.6)] decoration-2 underline-offset-8 transition hover:decoration-[rgba(255,72,176,1)]"
           style={{ color: INK.yellow }}
         >
-          ดูตารางเต็มทั้ง 7 วัน <ArrowRight className="h-4 w-4" />
+          ดูตารางเต็ม {cohort.name} <ArrowRight className="h-4 w-4" />
         </Link>
         <MarginNote>{HOME_NOTES.week}</MarginNote>
       </div>

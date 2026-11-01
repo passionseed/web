@@ -13,6 +13,8 @@ import {
   getEffectiveCohort,
   getOpenCohorts,
   getAvailableCohorts,
+  homeSeason,
+  previousShowcaseCohort,
 } from "../shift-cohort";
 
 describe("shift cohort", () => {
@@ -105,5 +107,27 @@ describe("shift cohort", () => {
 
     const open = getOpenCohorts();
     expect(Array.isArray(open)).toBe(true);
+  });
+
+  it("points a round with nothing shipped yet at the last round that shipped", () => {
+    const round3 = getShiftCohort(3)!;
+    expect(round3.showcase).toBeUndefined();
+    expect(previousShowcaseCohort(round3)?.round).toBe(1);
+    expect(previousShowcaseCohort(getShiftCohort(0)!)).toBeUndefined();
+  });
+
+  it("dresses the home hero for a round's season only until the round ends", () => {
+    const round3 = getShiftCohort(3)!;
+    expect(homeSeason(round3, "2026-10-26")).toBe("halloween");
+    expect(homeSeason(round3, round3.endDate)).toBe("halloween");
+    expect(homeSeason(round3, "2026-11-16")).toBeUndefined();
+    expect(homeSeason(SHIFT_COHORT, "2026-10-01")).toBeUndefined();
+  });
+
+  it("only shows app loops that exist as files", () => {
+    const fs = jest.requireActual<typeof import("fs")>("fs");
+    const loops = SHIFT_COHORTS.flatMap((c) => c.showcase ?? []).flatMap((p) => (p.loop ? [p.loop.src, p.loop.poster] : []));
+    expect(loops.length).toBeGreaterThan(0);
+    for (const file of loops) expect(fs.existsSync(`public${file}`)).toBe(true);
   });
 });

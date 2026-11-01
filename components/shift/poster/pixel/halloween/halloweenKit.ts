@@ -232,6 +232,47 @@ export const BAT = [
 ];
 export const BAT_PALETTE = { K: HX.ink };
 
+/** The pixel icon palette (pixelIcons ICON_PALETTE keys) at night: flood teal turns lavender. */
+export const HALLOWEEN_ICON_PALETTE = {
+  C: HX.ghost,
+  S: HX.ghostShade,
+  M: HX.stone,
+  B: HX.lavender,
+  O: HX.pumpkin,
+  L: HX.flame,
+  D: HX.pumpkinDark,
+  G: HX.stem,
+};
+
+/**
+ * Morning after Halloween, in PassionSeed's Dawn colours (docs/ui-design-system.md):
+ * near-black overhead, indigo held back, and the warmth only in a narrow
+ * band at the horizon, ending in Dawn's pale gold.
+ */
+export const DAWN = {
+  night: HX.ink,
+  deep: "#0d1136",
+  indigo: "#1d2559",
+  haze: "#3b3a78",
+  rose: "#8a5a86",
+  ember: "#d98a6a",
+  glow: "#fec46a",
+  gold: "#fed95c",
+  sun: "#fff2bd",
+  hill: "#140f26",
+  leaf: "#7fb069",
+  leafDark: "#4f7d3e",
+} as const;
+
+/** A seedling: what the graveyard grows by morning. */
+export const SPROUT = [
+  "LL.LL",
+  ".LDL.",
+  "..D..",
+  "..D..",
+];
+export const SPROUT_PALETTE = { L: DAWN.leaf, D: DAWN.leafDark };
+
 /** SHIFT[1]'s student, laptop lit as a screen: the one cool light, so the eye lands here. */
 export const LIT_STUDENT_PALETTE = { ...STUDENT_PALETTE, L: HX.screen };
 

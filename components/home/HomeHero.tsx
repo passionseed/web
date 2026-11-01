@@ -3,6 +3,9 @@ import Link from "next/link";
 import { ShiftApplyButton } from "@/components/shift/ShiftApplyButton";
 import { ShiftSeatsRemaining } from "@/components/shift/ShiftSeatsRemaining";
 import { MISREG_TEXT, paper } from "@/components/shift/ShiftRiso";
+import { PIXEL_FONT } from "@/components/shift/poster/pixel/PixelRects";
+import { HalloweenNight } from "@/components/shift/poster/pixel/halloween/HalloweenNight";
+import { HX } from "@/components/shift/poster/pixel/halloween/halloweenKit";
 import { ChromeBevelFilter, ChromeWordmark, INK, OrbitSky } from "@/components/shift/poster/riso";
 import { HOME_NOTES } from "@/lib/content/home";
 import {
@@ -12,6 +15,7 @@ import {
   formatThaiDateRange,
   getEffectiveCohort,
   getRunningCohort,
+  homeSeason,
   type ShiftCohort,
 } from "@/lib/content/shift-cohort";
 import { MarginNote } from "./MarginNote";
@@ -71,37 +75,79 @@ function CohortFacts({ cohort }: { cohort: ShiftCohort }) {
   );
 }
 
-/** Home hero: the SHIFT sky and chrome wordmark, pitched to first-time visitors. */
-export function HomeHero() {
-  const cohort = getEffectiveCohort();
-  const running = getRunningCohort();
+const HEADLINE = (
+  <>
+    เลิกสะสมใบเซอร์
+    <br />
+    มาสร้างของจริง<span className="whitespace-nowrap">ใน 7 วัน</span>
+  </>
+);
 
+const HEADLINE_CLASS =
+  "mt-6 font-kodchasan text-[clamp(38px,6.6vw,76px)] font-bold leading-[1.3] tracking-tight";
+
+/** The house look: the SHIFT sky from orbit and the chrome wordmark. */
+function RisoSky({ cohort, running }: { cohort: ShiftCohort; running?: ShiftCohort }) {
   return (
-    <section className="relative overflow-hidden">
+    <>
       <ChromeBevelFilter />
       <OrbitSky horizon={HORIZON} speckle={0} />
-
       <div className="relative mx-auto max-w-5xl px-5 sm:px-8">
         <div
           className="flex flex-col items-center justify-center pb-10 pt-28 text-center"
           style={{ minHeight: HORIZON }}
         >
-          {running && running.round !== cohort.round && (
-            <LiveRoundStrip cohort={running} />
-          )}
-          <h1
-            className="mt-6 font-kodchasan text-[clamp(38px,6.6vw,76px)] font-bold leading-[1.3] tracking-tight"
-            style={MISREG_TEXT}
-          >
-            เลิกสะสมใบเซอร์
-            <br />
-            มาสร้างของจริง<span className="whitespace-nowrap">ใน 7 วัน</span>
+          {running && <LiveRoundStrip cohort={running} />}
+          <h1 className={HEADLINE_CLASS} style={MISREG_TEXT}>
+            {HEADLINE}
           </h1>
           <div className="mt-4 sm:mt-6">
             <ChromeWordmark size="clamp(76px, 15vw, 188px)" name={cohort.name} />
           </div>
         </div>
+      </div>
+    </>
+  );
+}
 
+/**
+ * Halloween season (SHIFT[3]): the register page's pixel night as the hero,
+ * the copy on the flat night sky, the scene ending in the page's riso black.
+ * Only the hero dresses up; everything below stays PassionSeed.
+ */
+function HalloweenSky({ cohort, running }: { cohort: ShiftCohort; running?: ShiftCohort }) {
+  return (
+    <div data-shift-kind="halloween">
+      <HalloweenNight floor={INK.black}>
+        <div className="mx-auto flex max-w-5xl flex-col items-center px-5 pt-24 text-center sm:px-8 sm:pt-28">
+          {running && <LiveRoundStrip cohort={running} />}
+          <h1 className={HEADLINE_CLASS} style={{ color: HX.cream, textShadow: `4px 4px 0 ${HX.hat}` }}>
+            {HEADLINE}
+          </h1>
+          <p
+            className="mt-2 text-[clamp(64px,13vw,152px)] leading-[0.95]"
+            style={{ ...PIXEL_FONT, color: HX.pumpkin, textShadow: `6px 6px 0 ${HX.hat}` }}
+          >
+            {cohort.name}
+          </p>
+        </div>
+      </HalloweenNight>
+    </div>
+  );
+}
+
+/** Home hero: the SHIFT sky and wordmark, pitched to first-time visitors. */
+export function HomeHero() {
+  const cohort = getEffectiveCohort();
+  const live = getRunningCohort();
+  const running = live && live.round !== cohort.round ? live : undefined;
+  const Sky = homeSeason(cohort) === "halloween" ? HalloweenSky : RisoSky;
+
+  return (
+    <section className="relative overflow-hidden">
+      <Sky cohort={cohort} running={running} />
+
+      <div className="relative mx-auto max-w-5xl px-5 sm:px-8">
         <div className="flex flex-col items-center pb-24 pt-12 text-center sm:pt-16">
           <p className="max-w-2xl text-base leading-relaxed sm:text-lg" style={{ color: paper("b3") }}>
             สำหรับ ม.4-ม.6 ที่อยากได้พอร์ต TCAS 1 ที่เล่าได้จริง เลือกโจทย์เอง
@@ -112,8 +158,8 @@ export function HomeHero() {
               จองที่นั่ง {cohort.name}
             </ShiftApplyButton>
             <Link
-              href="/shift"
-              className="font-mono text-xs font-semibold uppercase tracking-[0.16em] underline decoration-[rgba(255,72,176,0.6)] decoration-2 underline-offset-8 transition hover:decoration-[rgba(255,72,176,1)]"
+              href={cohortPath(cohort)}
+              className="py-2 text-sm font-semibold underline decoration-[rgba(255,72,176,0.6)] decoration-2 underline-offset-8 transition hover:decoration-[rgba(255,72,176,1)]"
               style={{ color: INK.yellow }}
             >
               ดูว่า 7 วันทำอะไรบ้าง

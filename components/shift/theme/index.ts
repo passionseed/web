@@ -1,3 +1,6 @@
+import type { ShiftCohort } from "@/lib/content/shift-cohort";
+
+import { HALLOWEEN_THEME } from "./halloween";
 import { HOLO_THEME } from "./holo";
 import { PIXEL_THEME } from "./pixel";
 import { RISO_THEME } from "./riso";
@@ -13,8 +16,11 @@ const THEMES: Record<number, ShiftTheme> = {
   2: RISO_THEME,
 };
 
-export function themeForRound(round: number): ShiftTheme {
-  return THEMES[round] ?? RISO_THEME;
+/** Seasonal rounds (SHIFT[3]: Halloween) wear their season; the rest their round's theme. */
+export function themeForCohort(cohort: ShiftCohort): ShiftTheme {
+  if (cohort.season === "halloween") return HALLOWEEN_THEME;
+  return THEMES[cohort.round] ?? RISO_THEME;
 }
 
+export { isPixelKind } from "./types";
 export type { ShiftArtKind, ShiftHeroProps, ShiftTheme } from "./types";
