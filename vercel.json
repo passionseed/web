@@ -20,6 +20,9 @@
     "app/api/cron/brain-sync/route.ts": {
       "maxDuration": 60
     },
+    "app/api/cron/meta-marketing-sync/route.ts": {
+      "maxDuration": 60
+    },
     "app/api/**/*.ts": {
       "maxDuration": 10
     }
@@ -36,6 +39,10 @@
     {
       "path": "/api/cron/brain-sync",
       "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/meta-marketing-sync",
+      "schedule": "15 1 * * *"
     }
   ]
 }

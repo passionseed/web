@@ -17,6 +17,7 @@ import {
   LayoutDashboard,
   LineChart,
   Map,
+  Megaphone,
   MessageCircle,
   MessageSquareQuote,
   MessageSquareText,
@@ -213,6 +214,12 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         description: "Manual payment ledger behind the revenue numbers",
         icon: Banknote,
         keywords: ["revenue", "ledger", "money", "baht", "ceo"],
+      },
+      {
+        href: "/admin/marketing",
+        label: "Meta marketing",
+        description: "Instagram reach, ad spend, paid seats",
+        icon: Megaphone,
       },
       {
         href: "/admin/dm-leads/insights",
