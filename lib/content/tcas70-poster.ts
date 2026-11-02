@@ -73,6 +73,8 @@ export interface TcasPosterData {
   sources: string[];
   /** What admitted students actually had, where published. Shown on the sources sheet. */
   reality?: TcasReality[];
+  /** Heading over `reality`, when the data is applicant counts rather than scores. */
+  realityTitle?: string;
   /** Which projects have no published outcome data. */
   realityGap?: string;
   /** Exact documents each university's rows came from. Shown on the sources sheet. */
