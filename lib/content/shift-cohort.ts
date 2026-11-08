@@ -291,13 +291,15 @@ export const SHIFT_COHORT_2: ShiftCohort = {
   firstMeetDate: "2026-10-14",
 };
 
-/** SHIFT[3]: Mon 9 to Sun 15 Nov, 7 days. Applications close Sat 7 Nov so
- *  everyone is onboarded before Day 1. No anchor price: ฿690 is the price. */
+/** SHIFT[3]: Mon 9 to Sun 15 Nov, 7 days. No anchor price: ฿690 is the price. */
 export const SHIFT_COHORT_3: ShiftCohort = {
   ...sibling(SHIFT_COHORT, 2, 35),
   seats: 30,
   priceBaht: 690,
   anchorPriceBaht: null,
+  /** Was Sat 7 Nov. Late applications now run through Day 1, like SHIFT[2]:
+   *  the first session is 19:00. */
+  applyDeadline: "2026-11-09",
   firstMeetDate: "2026-11-09",
   // Register link and page match the Halloween pixel poster
   // (components/shift/poster/pixel/halloween).

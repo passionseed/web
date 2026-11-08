@@ -95,7 +95,7 @@ function fakeSupabase(rows: Record<string, unknown> = {}) {
 
 const CAMP = { id: "camp", name: "SHIFT[3]", classroom_id: "class", community_id: "community", map_id: "map" };
 
-// SHIFT[3] takes applications until 7 Nov 2026 and ends 15 Nov 2026. Only
+// SHIFT[3] takes applications until 9 Nov 2026 and ends 15 Nov 2026. Only
 // Date is faked, so promises and fetch mocks run normally.
 beforeAll(() => {
   jest.useFakeTimers({
