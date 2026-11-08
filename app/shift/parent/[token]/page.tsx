@@ -62,8 +62,7 @@ export default async function ShiftParentPage({ params }: PageProps) {
       </Body>
       {cohort.priceBaht > 0 && <Body>{REFUND_HOW}</Body>}
       <Body>
-        {who} อายุยังไม่ถึง 20 ปี กฎหมาย PDPA จึงกำหนดให้ผู้ปกครองยินยอมด้วย
-        ทีมงานยืนยันที่นั่งได้หลังผู้ปกครองยินยอมแล้วเท่านั้นค่ะ
+        {who} อายุยังไม่ถึง 20 ปี กฎหมาย PDPA จึงกำหนดให้ผู้ปกครองยินยอมด้วยค่ะ
       </Body>
       <PdpaNotice notice={SHIFT_NOTICE} variant="full" />
       <PdpaNotice

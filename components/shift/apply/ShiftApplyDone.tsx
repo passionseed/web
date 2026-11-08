@@ -92,12 +92,12 @@ function NextSteps({
 }: {
   cohort: ShiftCohort;
   canConnect: boolean;
-  /** Set when the applicant is under 20: the parent must agree before the seat is confirmed. */
+  /** Set when the applicant is under 20: the parent agrees from an emailed link, before or after joining. */
   parentEmail: string | null;
 }) {
   const hasFee = cohort.priceBaht > 0;
   const parentStep = parentEmail
-    ? [`ผู้ปกครองกดยินยอมในอีเมลที่ส่งไป ${parentEmail} (ไม่เจอ ลองดูในถังขยะหรือ Promotions) พี่ยืนยันที่นั่งได้หลังผู้ปกครองยินยอมแล้ว`]
+    ? [`ผู้ปกครองกดยินยอมในอีเมลที่ส่งไป ${parentEmail} (ไม่เจอ ลองดูในถังขยะหรือ Promotions)`]
     : [];
   const steps = canConnect
     ? [
@@ -153,7 +153,7 @@ export function ShiftApplyDone({
 
   const nickname = values.nickname.trim();
   const token = joinTokenFrom(joinUrl);
-  // Under 20 the seat waits on the parent's emailed consent (PDPA).
+  // Under 20 the parent also agrees from an emailed link (PDPA).
   const parentEmail = applicantNeedsParent(values.birthDate) ? values.parentEmail?.trim() || null : null;
   return (
     <div className="py-16 text-center">

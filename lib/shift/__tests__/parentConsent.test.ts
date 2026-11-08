@@ -34,7 +34,7 @@ describe("applicantNeedsParent", () => {
 
 describe("parentConsentState", () => {
   test.each<[string, Partial<ParentConsentRow>, string, boolean]>([
-    ["a minor still waiting", {}, "waiting", true],
+    ["a minor still waiting", {}, "waiting", false],
     ["an agreed parent", { parent_consented_at: "2026-10-28T00:00:00Z" }, "agreed", false],
     ["a declined parent", { parent_declined_at: "2026-10-28T00:00:00Z" }, "declined", true],
     [

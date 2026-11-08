@@ -111,7 +111,7 @@ test("a status change for a student already in the server does not call Discord"
   expect(revokeShiftDiscord).not.toHaveBeenCalled();
 });
 
-test("under 20 without a parent's consent cannot be marked paid", async () => {
+test("under 20 can be marked paid before the parent answers, so they sign after joining", async () => {
   const query = savedRow({
     ...linked,
     birth_date: "2010-05-01",
@@ -121,8 +121,23 @@ test("under 20 without a parent's consent cannot be marked paid", async () => {
     parent_withdrawn_at: null,
   });
   const res = await patch({ paid: true });
+  expect(res.status).toBe(200);
+  expect(query.update).toHaveBeenCalledWith(expect.objectContaining({ paid_at: expect.any(String) }));
+  expect(admitPaidStudent).toHaveBeenCalled();
+});
+
+test("a parent who declined blocks marking paid", async () => {
+  const query = savedRow({
+    ...linked,
+    birth_date: "2010-05-01",
+    consent_notice_version: "2026-10-29",
+    parent_consented_at: null,
+    parent_declined_at: "2026-10-28T01:00:00.000Z",
+    parent_withdrawn_at: null,
+  });
+  const res = await patch({ paid: true });
   expect(res.status).toBe(409);
-  expect((await res.json()).parentConsent).toBe("waiting");
+  expect((await res.json()).parentConsent).toBe("declined");
   expect(query.update).not.toHaveBeenCalled();
   expect(admitPaidStudent).not.toHaveBeenCalled();
 });

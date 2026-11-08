@@ -8,14 +8,15 @@ import type { ShiftApplicationRow } from "@/types/shift";
 
 /**
  * PDPA parent consent for SHIFT applicants. Under 20 (Thai age of majority,
- * PDPA s.20) a parent must agree before the paid seat is confirmed. The
- * student still applies alone and may join Discord meanwhile: applying is a
- * step taken at their own request (s.24(3)), the paid contract is not.
+ * PDPA s.20) a parent must agree too. The student applies alone, and an
+ * admin may confirm the paid seat before the parent answers so the parent
+ * can sign after the student joins. Only a parent's no (declined or
+ * withdrawn) stops the seat.
  *
  * Bump SHIFT_NOTICE_VERSION whenever SHIFT_NOTICE changes in substance.
  */
 
-export const SHIFT_NOTICE_VERSION = "2026-10-29";
+export const SHIFT_NOTICE_VERSION = "2026-11-08";
 export const SHIFT_ADULT_AGE = SEEDSTACK_ADULT_AGE;
 export const PARENT_RELATIONSHIPS = ["พ่อ", "แม่", "ผู้ปกครอง"] as const;
 
@@ -59,9 +60,13 @@ export function parentConsentState(row: ParentConsentRow, now = Date.now()): Par
   return "waiting";
 }
 
-/** Whether an admin may mark the applicant paid, which admits them to the round. */
+/**
+ * Whether an admin is stopped from marking the applicant paid, which admits
+ * them to the round. A parent who has not answered yet can sign after the
+ * student joins; one who said no cannot be overridden.
+ */
 export function blocksPaidAdmission(state: ParentConsentState): boolean {
-  return state === "waiting" || state === "declined" || state === "withdrawn";
+  return state === "declined" || state === "withdrawn";
 }
 
 export const SHIFT_NOTICE: { title: string; rows: readonly SeedstackNoticeRow[] } = {
@@ -113,8 +118,8 @@ export const SHIFT_NOTICE: { title: string; rows: readonly SeedstackNoticeRow[] 
     {
       emoji: "👪",
       lead: `อายุยังไม่ถึง ${SHIFT_ADULT_AGE} ปี`,
-      short: "ผู้ปกครองกดยินยอมผ่านลิงก์ในอีเมล ก่อนยืนยันที่นั่ง",
-      text: "ตามกฎหมาย PDPA ผู้ปกครองต้องยินยอมด้วย เราส่งลิงก์ไปที่อีเมลผู้ปกครอง ให้อ่านรายละเอียดแล้วพิมพ์ชื่อเพื่อยืนยัน ระหว่างรอ สมัครและเข้า Discord ได้ตามปกติ แต่ยืนยันที่นั่งได้หลังผู้ปกครองยินยอมแล้ว",
+      short: "ผู้ปกครองกดยินยอมผ่านลิงก์ในอีเมล",
+      text: "ตามกฎหมาย PDPA ผู้ปกครองต้องยินยอมด้วย เราส่งลิงก์ไปที่อีเมลผู้ปกครอง ให้อ่านรายละเอียดแล้วพิมพ์ชื่อเพื่อยืนยัน ระหว่างรอ สมัคร ยืนยันที่นั่ง และเข้าร่วมได้ตามปกติ ผู้ปกครองกดยินยอมตามมาทีหลังได้",
     },
     {
       emoji: "🤖",
