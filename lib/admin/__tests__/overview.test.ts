@@ -18,6 +18,7 @@ import { readAllPages, withTimeout } from "@/lib/admin/overview/query";
 import { buildQueueSnapshot, createQueueContext, getAdminQueueSnapshot } from "@/lib/admin/overview/queues";
 import { pickLiveRound, type OverviewRound } from "@/lib/admin/overview/rounds";
 import { cohortFacts, getAdminShiftSnapshot } from "@/lib/admin/overview/shift";
+import { addDays } from "@/lib/admin/overview/time";
 
 jest.mock("server-only", () => ({}));
 jest.mock("next/cache", () => ({ unstable_cache: (fn: unknown) => fn }));
@@ -508,8 +509,10 @@ describe("SHIFT snapshot", () => {
       daysToDeadline: daysToDeadline(open, "2026-10-26"),
     });
     expect(daysToDeadline(open, open.applyDeadline)).toBe(0);
-    const running = focusCohort(open.startDate);
-    expect(cohortFacts(running, open.startDate)).toMatchObject({ status: "running", daysToDeadline: null });
+    // SHIFT[3] takes applications through Day 1, so it runs from the day after.
+    const afterDeadline = addDays(open.applyDeadline, 1);
+    const running = focusCohort(afterDeadline);
+    expect(cohortFacts(running, afterDeadline)).toMatchObject({ status: "running", daysToDeadline: null });
   });
 
   test("the live round is a published round running or in review, preferring the cohort's", () => {
