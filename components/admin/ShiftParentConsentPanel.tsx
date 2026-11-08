@@ -13,8 +13,9 @@ import type { AdminShiftApplication as Application } from "@/lib/admin/queue-too
 
 /**
  * PDPA parent consent on the admin page: a badge beside the paid switch and
- * a detail panel to resend or copy the parent's link. Under 20, "mark paid"
- * stays locked until the parent agrees.
+ * a detail panel to resend or copy the parent's link. A paid student whose
+ * parent has not answered stays "Waiting parent" until they sign; "mark paid"
+ * locks only once a parent declines or withdraws.
  */
 
 export type SendParentLink = (id: string, send: "email" | "copy") => Promise<string | null>;

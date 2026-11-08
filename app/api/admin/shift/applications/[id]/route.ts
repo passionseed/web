@@ -32,7 +32,6 @@ const patchSchema = z
 
 /** Why "mark paid" is refused, shown to the admin as-is. */
 const PARENT_BLOCK: Partial<Record<ParentConsentState, string>> = {
-  waiting: "Parent has not agreed yet (applicant is under 20). Resend or copy the parent link first.",
   declined: "Parent declined. The seat cannot be confirmed.",
   withdrawn: "Parent withdrew consent. The seat cannot be confirmed.",
 };
@@ -75,8 +74,8 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     }
 
     const supabase = createAdminClient();
-    // Paying admits the student to the round: under 20 that needs a parent's
-    // consent first (PDPA s.20). Rows from before the consent flow pass.
+    // Paying admits the student to the round. Under 20 a parent who has not
+    // answered yet can sign after the student joins; a parent's no stops it.
     if (parsed.data.paid === true) {
       const { data: current, error: readError } = await supabase
         .from("shift_applications")

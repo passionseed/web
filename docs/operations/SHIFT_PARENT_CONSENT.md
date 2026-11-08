@@ -23,8 +23,10 @@ are mostly ม.4 to ม.6, so nearly every applicant needs a parent.
    never depends on it (PDPA s.19). If ticked, the student's SeedStack consent
    needs no second parent link: `applyShiftParentAiConsent` fills it in,
    whether the student or the parent goes first.
-6. **"Mark paid" is locked** on `/admin/shift` until the parent agrees. Paying
-   admits the student to the round, and the paid contract needs the parent.
+6. **"Mark paid" works before the parent answers.** The student can pay and
+   join, and the parent signs afterwards from the same link. Keep chasing
+   "Waiting parent" rows after they join. Only a parent who declined or
+   withdrew locks "mark paid".
 
 ## Admin page
 
@@ -39,13 +41,14 @@ Open the row for the details and two buttons:
 Both make a new link, and the old one stops working.
 
 Applications from before the consent flow (`consent_notice_version` is null)
-are not locked. Send their parents a link when you can.
+show no badge. Send their parents a link when you can.
 
-## When a parent withdraws
+## When a parent says no after the student joined
 
-Withdrawing is recorded, not acted on automatically. SeedStack data is deleted
-right away. The seat, the refund and the Discord role are the team's call:
-decide them and contact the family.
+Declining or withdrawing is recorded, not acted on automatically. On a
+withdrawal, SeedStack data is deleted right away. A student who was already
+marked paid stays paid: the seat, the refund and the Discord role are the
+team's call. Decide them and contact the family.
 
 ## Changing the notice
 

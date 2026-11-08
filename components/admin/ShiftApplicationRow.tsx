@@ -83,7 +83,7 @@ export function ShiftApplicationRow(props: RowProps) {
     if (highlighted) setExpanded(true);
   }, [highlighted]);
   const discord = discordStatus(app);
-  // Under 20 the seat waits on the parent (PDPA); unmarking paid is always allowed.
+  // A parent's no (PDPA) locks the seat; unmarking paid is always allowed.
   const paidLocked = app.paid_at === null && blocksPaidAdmission(parentConsentState(app));
   const detailId = `shift-application-${app.id}`;
 
@@ -156,7 +156,7 @@ export function ShiftApplicationRow(props: RowProps) {
               checked={app.paid_at !== null}
               onCheckedChange={(paid) => onPatch(app.id, { paid })}
               disabled={paidLocked}
-              title={paidLocked ? "Needs the parent's consent first" : undefined}
+              title={paidLocked ? "The parent declined or withdrew consent" : undefined}
               aria-label={`Mark ${app.nickname} paid`}
             />
             <ParentConsentBadge application={app} />
