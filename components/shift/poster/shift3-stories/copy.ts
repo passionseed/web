@@ -195,7 +195,7 @@ export function shift3StoryCopy(c: ShiftCohort = SHIFT_COHORT_3) {
       note: {
         postOn: `${start}, before ${startTime}`,
         sticker: "slider",
-        setup: "Emoji slider (rocket) or a question sticker, prompt ส่งกำลังใจให้ทุกทีม. No apply link: applications are closed.",
+        setup: "Emoji slider (rocket) or a question sticker, prompt ส่งกำลังใจให้ทุกทีม. No apply link: this one cheers on the teams starting tonight.",
       } satisfies StoryNote,
     },
 

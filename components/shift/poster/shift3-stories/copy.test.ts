@@ -43,7 +43,7 @@ describe("SHIFT[3] story copy", () => {
     expect(copy.answer.rows.map((r) => r.block)).toEqual([...POLL_OPTIONS]);
   });
 
-  it("keeps the apply link off the Day 1 sheet (applications are closed)", () => {
+  it("keeps the apply link off the Day 1 sheet (it cheers on the teams)", () => {
     expect(JSON.stringify(copy.day1)).not.toMatch(/shift\/apply|สมัคร/);
   });
 });
