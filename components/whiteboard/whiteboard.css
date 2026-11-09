@@ -367,3 +367,49 @@ button.wb-pill:enabled:hover,
 .whiteboard-room .excalidraw__embeddable__outer:has(> .wb-widget) {
   padding: 0 !important;
 }
+
+/* SHIFT card versions (components/whiteboard/shift/CardVersionsLayer.tsx): the board's own
+   glass and hairlines, so the chip and panel follow Dawn and Dusk like the rest of the chrome. */
+.wb-version-chip {
+  border: 1px solid var(--wb-hairline-strong);
+  background: var(--wb-glass);
+  box-shadow: var(--wb-shadow);
+  color: var(--wb-text);
+}
+.wb-version-chip[aria-expanded="true"],
+.wb-version-chip--on {
+  background: var(--wb-active);
+}
+.wb-version-chip:focus-visible,
+.wb-version-panel :is(button, textarea):focus-visible {
+  outline: 2px solid rgba(251, 146, 60, 0.7);
+  outline-offset: 2px;
+}
+.wb-version-panel .wb-soft {
+  color: var(--wb-text-soft);
+}
+.wb-version-panel .wb-rule {
+  border-color: var(--wb-hairline);
+}
+.wb-version-panel .wb-quote {
+  background: var(--wb-hairline);
+}
+.wb-version-panel .wb-why {
+  color: #b45309;
+}
+.whiteboard-room:has(.excalidraw.theme--dark) .wb-version-panel .wb-why {
+  color: #fdba74;
+}
+.wb-version-panel textarea {
+  border: 1px solid var(--wb-hairline-strong);
+  background: transparent;
+}
+/* White on orange-700 is 5.2:1, where orange-500 was 2.8:1. */
+.wb-version-panel .wb-save {
+  background: #c2410c;
+  color: #fff;
+  transition: background-color 160ms ease-out;
+}
+.wb-version-panel .wb-save:hover {
+  background: #9a3412;
+}

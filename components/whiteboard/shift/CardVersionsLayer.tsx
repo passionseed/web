@@ -138,8 +138,8 @@ export function CardVersionsLayer({ api, meId, editable, nameOf }: Props) {
             aria-expanded={openId === card.id}
             aria-label={`เวอร์ชันของการ์ด${shortTitle(kind)}: ${label}`}
             title="ประวัติเวอร์ชัน · Versions"
-            className={`pointer-events-auto absolute flex -translate-x-full -translate-y-full items-center gap-1 rounded-full rounded-br-none px-2 py-0.5 text-[11px] font-semibold shadow transition-transform hover:scale-105 ${
-              selected ? "bg-neutral-900 text-white" : "bg-white/90 text-neutral-800 ring-1 ring-black/10"
+            className={`wb-version-chip pointer-events-auto absolute flex -translate-x-full -translate-y-full items-center gap-1 rounded-full rounded-br-none px-2 py-0.5 text-[11px] font-semibold ${
+              selected ? "wb-version-chip--on" : ""
             }`}
             style={{ left: pos.x, top: pos.y - 2 }}
           >
@@ -231,24 +231,24 @@ function VersionPanel(props: {
       ref={panel}
       role="dialog"
       aria-label={`ประวัติเวอร์ชัน: ${shortTitle(kind)}`}
-      className="pointer-events-auto absolute flex flex-col rounded-xl border border-black/10 bg-white text-neutral-900 shadow-2xl"
+      className="wb-window wb-version-panel pointer-events-auto absolute flex flex-col"
       style={{ left, top, width, maxHeight: viewH - top - EDGE }}
       onPointerDown={(e) => e.stopPropagation()}
       onKeyDown={(e) => e.stopPropagation()}
     >
-      <div className="flex items-center justify-between border-b border-black/5 px-3 py-2">
+      <div className="flex items-center justify-between wb-rule border-b px-3 py-2">
         <p className="text-sm font-semibold">
           {SHIFT_CARDS[kind].emoji} {shortTitle(kind)}
-          {latest && <span className="ml-1 font-normal opacity-60">· v{latest.v}</span>}
+          {latest && <span className="wb-soft ml-1 font-normal">· v{latest.v}</span>}
         </p>
-        <button type="button" onClick={onClose} aria-label="ปิด · Close" className="rounded p-1 hover:bg-black/5">
+        <button type="button" onClick={onClose} aria-label="ปิด · Close" className="wb-soft rounded p-1 hover:bg-black/5">
           <X className="h-4 w-4" />
         </button>
       </div>
 
-      {editable && idle && <p className="border-b border-black/5 px-3 py-2.5 text-xs opacity-70">{idle}</p>}
+      {editable && idle && <p className="wb-rule wb-soft border-b px-3 py-2.5 text-xs">{idle}</p>}
       {editable && !idle && (
-        <div className="space-y-2 border-b border-black/5 p-3">
+        <div className="space-y-2 wb-rule border-b p-3">
           {latest && (
             <label className="block space-y-1">
               <span className="text-xs font-medium">เปลี่ยนเพราะอะไร (ไม่ใส่ก็ได้)</span>
@@ -258,7 +258,7 @@ function VersionPanel(props: {
                 maxLength={MAX_WHY}
                 placeholder="เช่น คุยกับพี่เภสัชแล้วเจอว่า…"
                 onChange={(e) => setWhy(e.target.value)}
-                className="w-full resize-none rounded-lg border border-black/10 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-orange-400"
+                className="w-full resize-none rounded-lg px-3 py-2 text-sm"
               />
             </label>
           )}
@@ -266,7 +266,7 @@ function VersionPanel(props: {
             type="button"
             data-save
             onClick={() => props.onSave(why) && setWhy("")}
-            className="w-full rounded-lg bg-orange-500 px-3 py-2 text-sm font-medium text-white"
+            className="wb-save w-full rounded-lg px-3 py-2 text-sm font-medium"
           >
             เก็บเป็น v{next} · Save version
           </button>
@@ -274,7 +274,7 @@ function VersionPanel(props: {
       )}
 
       {versions.length === 0 ? (
-        <p className="p-3 text-xs opacity-60">
+        <p className="wb-soft p-3 text-xs">
           ยังไม่มีเวอร์ชัน เก็บไว้ทุกครั้งที่ความคิดเปลี่ยน จะได้เห็นว่าโปรเจกต์คมขึ้นยังไง
         </p>
       ) : (
@@ -282,10 +282,10 @@ function VersionPanel(props: {
           {[...versions].reverse().map((v) => (
             <li key={v.v} className="text-xs">
               <p className="font-semibold">
-                v{v.v} <span className="font-normal opacity-60">· {when(v.at)} · {nameOf(v.by)}</span>
+                v{v.v} <span className="wb-soft font-normal">· {when(v.at)} · {nameOf(v.by)}</span>
               </p>
-              {v.why && <p className="mt-0.5 text-orange-700">เพราะ: {v.why}</p>}
-              <p className="mt-1 whitespace-pre-wrap rounded-md bg-neutral-50 p-2 opacity-80">{v.text}</p>
+              {v.why && <p className="wb-why mt-0.5">เพราะ: {v.why}</p>}
+              <p className="wb-quote mt-1 whitespace-pre-wrap rounded-md p-2">{v.text}</p>
             </li>
           ))}
         </ol>
