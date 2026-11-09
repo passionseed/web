@@ -30,6 +30,7 @@ import {
   stampAuthor,
   type WhiteboardRole,
 } from "@/lib/whiteboard/core";
+import { createCanvasGuard } from "@/lib/whiteboard/canvas-guard";
 import { createClient } from "@/utils/supabase/client";
 
 /**
@@ -150,11 +151,17 @@ export function useWhiteboardSync({
   role,
   me,
   initialElements,
+  managerIds = [],
+  onCanvasBlocked,
 }: {
   boardId: string;
   role: WhiteboardRole;
   me: Me;
   initialElements: Elements;
+  /** People who may change any SHIFT canvas on this board (its owner). */
+  managerIds?: readonly string[];
+  /** Called when an edit inside someone else's SHIFT canvas was undone. */
+  onCanvasBlocked?: () => void;
 }) {
   const { id: myId, name: myName, avatarUrl: myAvatar } = me;
   const [mySocket] = useState(() => `${myId}:${crypto.randomUUID().slice(0, 8)}`);
@@ -178,6 +185,12 @@ export function useWhiteboardSync({
   const backupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const collaboratorsFrame = useRef<number | null>(null);
   const lastSceneVersion = useRef(-1);
+  // Who may change each SHIFT canvas; Postgres enforces the same rule on save (canvas-access.ts).
+  const [guard] = useState(() => createCanvasGuard<OrderedExcalidrawElement>(initialElements));
+  const managers = useRef<ReadonlySet<string>>(new Set());
+  managers.current = new Set(managerIds);
+  const onBlocked = useRef(onCanvasBlocked);
+  onBlocked.current = onCanvasBlocked;
   const lastEditAt = useRef(0);
   const thumbVersion = useRef(-1);
 
@@ -341,6 +354,18 @@ export function useWhiteboardSync({
       const version = getSceneVersion(elements);
       if (version === lastSceneVersion.current) return;
       lastSceneVersion.current = version;
+      // Undo edits inside SHIFT canvases this person may not change, and give new canvases
+      // their owner; the corrected scene comes back through onChange and syncs from there.
+      const { fixes, blocked } = guard.checkLocal(elements, myId, managers.current.has(myId));
+      if (blocked) onBlocked.current?.();
+      if (fixes.length) {
+        const fixed = new Map(fixes.map((el) => [el.id, el]));
+        excalidrawAPI.updateScene({
+          elements: elements.map((el) => fixed.get(el.id) ?? el),
+          captureUpdate: CaptureUpdateAction.NEVER,
+        });
+        return;
+      }
       lastEditAt.current = Date.now();
       broadcastChanges.current(elements);
       if (hasChangedSince(elements, savedSeen.current)) {
@@ -350,7 +375,7 @@ export function useWhiteboardSync({
       }
       void uploadFiles(files);
     },
-    [allElements, editable, excalidrawAPI, scheduleBackup, scheduleSave, uploadFiles],
+    [allElements, editable, excalidrawAPI, guard, myId, scheduleBackup, scheduleSave, uploadFiles],
   );
 
   const sendCursor = useRef(throttle((payload: CursorPayload) => send("cursor", payload), CURSOR_MS));
@@ -465,7 +490,8 @@ export function useWhiteboardSync({
 
     const applyRemote = () => {
       remoteFrame = null;
-      const remote = [...remoteQueue.values()];
+      // Only edits their sender may make: a change inside someone else's SHIFT canvas is ignored.
+      const remote = guard.filterRemote([...remoteQueue.values()], managers.current);
       remoteQueue.clear();
       if (remote.length === 0) return;
       const merged = reconcileElements(
@@ -588,7 +614,7 @@ export function useWhiteboardSync({
       channelRef.current = null;
       if (channel) void supabase.removeChannel(channel);
     };
-  }, [allElements, boardId, editable, excalidrawAPI, fetchMissingFiles, myId, mySocket, pushCollaborators, send, trackMe]);
+  }, [allElements, boardId, editable, excalidrawAPI, fetchMissingFiles, guard, myId, mySocket, pushCollaborators, send, trackMe]);
 
   // Small preview for the board list.
   useEffect(() => {

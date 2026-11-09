@@ -195,6 +195,24 @@
   background: linear-gradient(to bottom, rgba(254, 217, 92, 0.1), rgba(254, 217, 92, 0.02));
   border-bottom: 1px solid var(--wb-hairline);
 }
+/* Kit tabs: Excalidraw splits the row into equal columns, which wraps Thai labels once there
+   are five tabs (six for admins). Keep one row of whole labels that scrolls sideways instead. */
+.whiteboard-room .excalidraw .sidebar-tabs-root [role="tablist"] {
+  display: flex;
+  gap: 0.125rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+.whiteboard-room .excalidraw .sidebar-tabs-root [role="tablist"]::-webkit-scrollbar {
+  display: none;
+}
+.whiteboard-room .excalidraw .sidebar-tabs-root .sidebar-tab-trigger {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  padding-inline: 0.4rem;
+  font-size: 0.8125rem;
+}
 
 /* Share button and the sidebar trigger read as our primary actions. */
 .whiteboard-room .excalidraw .collab-button {
@@ -348,4 +366,78 @@ button.wb-pill:enabled:hover,
 /* Our widgets draw their own card: drop Excalidraw's embed frame around them. */
 .whiteboard-room .excalidraw__embeddable__outer:has(> .wb-widget) {
   padding: 0 !important;
+}
+
+/* SHIFT card versions (components/whiteboard/shift/CardVersionsLayer.tsx): the board's own
+   glass and hairlines, so the chip and panel follow Dawn and Dusk like the rest of the chrome. */
+.wb-version-chip {
+  border: 1px solid var(--wb-hairline-strong);
+  background: var(--wb-glass);
+  box-shadow: var(--wb-shadow);
+  color: var(--wb-text);
+}
+.wb-version-chip {
+  min-height: 1.75rem;
+}
+/* Fingers need 44px: the chip grows its hit area, panel buttons grow outright. */
+@media (pointer: coarse) {
+  .wb-version-chip::before {
+    content: "";
+    position: absolute;
+    inset: -0.5rem;
+  }
+  .wb-version-panel button {
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+  }
+}
+.wb-version-chip[aria-expanded="true"],
+.wb-version-chip--on {
+  background: var(--wb-active);
+}
+.wb-version-chip:focus-visible,
+.wb-version-panel :is(button, textarea):focus-visible {
+  outline: 2px solid rgba(251, 146, 60, 0.7);
+  outline-offset: 2px;
+}
+.wb-version-panel .wb-soft {
+  color: var(--wb-text-soft);
+}
+.wb-version-panel .wb-rule {
+  border-color: var(--wb-hairline);
+}
+.wb-version-panel .wb-quote {
+  background: var(--wb-hairline);
+}
+.wb-version-panel .wb-why {
+  color: #b45309;
+}
+.whiteboard-room:has(.excalidraw.theme--dark) .wb-version-panel .wb-why {
+  color: #fdba74;
+}
+.wb-version-panel textarea {
+  border: 1px solid var(--wb-hairline-strong);
+  background: transparent;
+}
+/* Lines new since the version before, in the history. */
+.wb-version-panel .wb-new {
+  background: rgba(251, 146, 60, 0.2);
+  border-radius: 0.2rem;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+/* White on orange-700 is 5.2:1, where orange-500 was 2.8:1. */
+.wb-version-panel .wb-save {
+  background: #c2410c;
+  color: #fff;
+  transition: background-color 160ms ease-out;
+}
+.wb-version-panel .wb-save:hover {
+  background: #9a3412;
+}
+
+/* The kit's first action (ShiftKit's project frame): the board's active warmth, not a plain tile. */
+.whiteboard-kit .wb-tile--primary {
+  background: var(--wb-active);
+  border-color: var(--wb-hairline-strong);
 }

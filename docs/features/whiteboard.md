@@ -61,6 +61,12 @@ again afterwards.
   once a second, the thumbnail waits until nobody has edited for 3 seconds, and overlays
   (`useViewportTick`) re-render only when the view or elements actually change. Keep props
   passed to `<Excalidraw>` stable: it skips re-rendering only when they are unchanged.
+- **SHIFT canvases stay smooth** (measured on a 2,200-element board with 16 canvases: 120 fps
+  dragging, typing and panning, including zoomed right out). The SHIFT overlays recompute only
+  when the scene changes (`useSceneMemo`, keyed by scene version, not on pan frames) and step
+  aside while something is dragged, resized or drawn (`isBusy`). The browser guard keeps its
+  lookup tables up to date one element at a time, so checking an edit costs the size of the
+  edit. Each zone's title and question are one label, half the elements per canvas.
 - **Authorship:** every element carries `customData.createdBy` and `customData.updatedBy`
   (user ids), recorded from 2026-10-24. The server sets `updatedBy` on save. Elements from
   before then have no author.
@@ -79,7 +85,7 @@ again afterwards.
 
 ## Board apps (plugins) and the community calendar
 
-- **Apps menu (แอป):** board windows like FigJam plugins, in `components/whiteboard/plugins/`.
+- **Apps menu (แอป, in the bottom toolbar next to comments):** board windows like FigJam plugins, in `components/whiteboard/plugins/`.
   A plugin is one entry in `registry.tsx` (`BoardPlugin`: id, name, icon, size, Component).
   `PluginHost` renders the open ones as draggable windows; which are open and where is kept
   in localStorage per board. A plugin gets the Excalidraw API, the board, and
@@ -124,6 +130,71 @@ again afterwards.
   arrived, walk-ins, help asked and given, closed with a next step), shown on the block once
   it starts and at `/admin/calendar` for the last 90 days. Nothing per person is stored, and it
   shows who used the board, not who spoke in voice.
+
+## SHIFT project canvas and note versions
+
+SHIFT and SHIFT High students log their project on a canvas laid out like a Business Model
+Canvas, so mentors (and an AI reading the board) can follow each student without forms. Code:
+`lib/whiteboard/shift-cards.ts`, `components/whiteboard/shift/`.
+
+- **Adding a canvas:** the board kit's **SHIFT** tab has one button, **+ แคนวาสโปรเจกต์**, with a
+  small map of the layout; the **แคนวาสโปรเจกต์ SHIFT** template does the same. A new canvas
+  goes to the right of everything already on the board, so it never covers someone's work.
+- **Layout** (`canvasZones`): a frame tagged `customData.project` holding one locked, tinted zone
+  per kind (`customData.zone`), each with its title and question (`customData.zoneLabel`):
+
+  | Row | Zones |
+  |---|---|
+  | What we believe (each starts with one note that keeps versions) | 🎯 ปัญหา, 👥 กลุ่มเป้าหมาย, 💡 ไอเดีย, 🚀 ปล่อยงาน |
+  | Evidence | 🎤 สัมภาษณ์, 🔍 ตัวอย่าง/คู่แข่ง |
+  | What we tried and changed | 🧪 ทดสอบ, 🔀 เปลี่ยนแผน |
+  | Daily | 📅 วันที่ 1 to 7 (`customData.day`) |
+
+  Each kind's matching `shift_round_evidence` type is in `SHIFT_CARDS[kind].evidence`, for a
+  later export.
+- **+ เพิ่ม** (`ZoneAddLayer`, editors only, hidden below 20% zoom) at each zone's top-right
+  adds a note of that kind (`customData.card`) in the zone's next free slot, joins it to the
+  project frame, and starts typing on it straight away. The zone a note sits in says what it
+  is, so plain stickies dragged into a zone count too. A note starts with one space so its
+  label keeps the board's note font; `useShiftCardCaret` selects that space (or, on a written
+  note, puts the caret at the end, since Excalidraw otherwise selects all text on a laptop).
+- **Pivot arrows:** an arrow from an interview or test to a pivot note is the "why" of the
+  pivot log.
+- **Versions** on Problem, Target, Idea and Ship notes: select the note, click its chip, and
+  **เก็บเป็น vN** saves the note's text (up to 5,000 characters), time, author and an optional
+  reason (**เปลี่ยนเพราะ**) into `customData.versions` (newest 20 kept, numbers never reused). It
+  syncs, undoes, and travels with the note like any edit, with no extra table. The history
+  panel (a `.wb-window` dialog on the board's `--wb-*` tokens) marks lines new since the
+  version before. Every save is also in `whiteboard_changes`, but that is cut to 200
+  characters and records half-typed text, so it is an audit trail rather than versions.
+- **Who may change a canvas** (`lib/whiteboard/canvas-access.ts`): a canvas belongs to whoever
+  made it (`customData.owner`). They pick teammates from the board's editors with the
+  **ทีม** tag above the canvas (`customData.editors`, `CanvasTeamLayer`); the board's owner (staff)
+  may change any canvas, to moderate. Everyone else sees **ดูอย่างเดียว · ของ <name>** (view only)
+  and no **+ เพิ่ม** buttons. The rule runs in three places:
+  - **Postgres** (`whiteboard_merge_elements`, migration `20261109120000_whiteboard_canvas_access.sql`):
+    the one that counts. Changes the saver may not make (moving, editing, deleting, or adding
+    anything in the canvas, including stripping a note's frame first) are left out of the merge.
+    A new canvas belongs to whoever saves it. Teammates may rename, move and resize its frame,
+    but only its owner or the board's owner can change its team, delete it, bring it back,
+    change its type or its project tag. A deleted canvas keeps its owner.
+  - **This browser** (`lib/whiteboard/canvas-guard.ts` in `useWhiteboardSync`): an edit you may not
+    make is undone at once with a short notice, and a new canvas gets its owner.
+  - **Live edits from others**: changes from outside a canvas's team (or a forged owner or team)
+    are ignored. A determined student could still forge their name on a live edit; it shows only
+    until the next reload, because the save is checked by Postgres.
+  Canvases from before owners existed fall back to their creator. Things lying on top of a
+  canvas without being in it are not read as part of the project.
+- **Projects across boards:** the project id survives copying a canvas to another board, so a
+  project can continue from a SHIFT board onto the SHIFT High board. Two frames with the same
+  id on one board (a copy-paste) are separate projects.
+- **Reading:** `pnpm whiteboard:read <id>` prints each canvas as `## [SHIFT project] <name>`
+  with a `###` section per zone, notes as `[🎤 สัมภาษณ์] ...`, and each version with its
+  reason. Zone labels and the canvas hint are left out.
+
+Next: a per-project log and a mentor progress page (`/admin/shift/progress`) that joins the
+canvases with SeedStack events by user id, then a student "my log" export for the TCAS case
+study. No AI appears in the student UI; analysis runs on the Markdown and JSON reads.
 
 ## Excalidraw gotchas (0.18)
 

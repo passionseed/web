@@ -105,9 +105,11 @@ export function SaveBadge({ state, connected, readOnly }: { state: SaveState; co
       </span>
     );
   }
+  // Saved is the normal state, so it is only an icon; words appear when something needs attention.
   return (
-    <span className={pill}>
-      <Cloud className="h-3.5 w-3.5 text-emerald-500" /> Saved
+    <span className={pill} title="บันทึกแล้ว · Saved">
+      <Cloud className="h-3.5 w-3.5 text-emerald-500" />
+      <span className="sr-only">บันทึกแล้ว · Saved</span>
     </span>
   );
 }

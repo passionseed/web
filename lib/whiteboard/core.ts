@@ -33,9 +33,30 @@ export const titleSchema = z
   .min(1, "Give the board a name")
   .max(120, "Keep the name under 120 characters");
 
-/** An Excalidraw element as far as the server cares: an id and a version. */
+/**
+ * An Excalidraw element as far as the server cares: an id and a version, plus
+ * the fields SHIFT canvas access reads, typed so Postgres and browsers read
+ * them the same way (a string "false" for isDeleted would be false in SQL but
+ * true in JavaScript).
+ */
 export const elementSchema = z
-  .object({ id: z.string().min(1).max(100), version: z.number().int().nonnegative() })
+  .object({
+    id: z.string().min(1).max(100),
+    version: z.number().int().nonnegative(),
+    type: z.string().max(40).optional(),
+    isDeleted: z.boolean().optional(),
+    frameId: z.string().max(100).nullable().optional(),
+    containerId: z.string().max(100).nullable().optional(),
+    customData: z
+      .object({
+        project: z.string().max(100).optional(),
+        owner: z.string().max(100).optional(),
+        editors: z.array(z.string().max(100)).max(100).optional(),
+      })
+      .passthrough()
+      .nullable()
+      .optional(),
+  })
   .passthrough();
 
 export const patchBoardSchema = z
