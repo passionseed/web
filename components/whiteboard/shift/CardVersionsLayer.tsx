@@ -4,7 +4,7 @@ import { CaptureUpdateAction, newElementWith, sceneCoordsToViewportCoords } from
 import type { ExcalidrawElement, ExcalidrawTextElement } from "@excalidraw/excalidraw/element/types";
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import { History, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   addVersion,
@@ -29,6 +29,11 @@ type Props = {
 };
 
 const MAX_CHIPS = 300;
+const PANEL_WIDTH = 320;
+/** The panel keeps at least this much of itself on screen; the history list scrolls inside it. */
+const PANEL_MIN_HEIGHT = 240;
+/** Space between the panel and the card, and the screen's edges. */
+const EDGE = 12;
 
 const when = (iso: string) =>
   new Date(iso).toLocaleString("th-TH", {
@@ -71,7 +76,17 @@ function saveVersion(api: ExcalidrawImperativeAPI, cardId: string, meId: string,
 export function CardVersionsLayer({ api, meId, editable, nameOf }: Props) {
   useViewportTick(api, { elements: true, selection: true });
   const [openId, setOpenId] = useState<string | null>(null);
+  const chipRefs = useRef(new Map<string, HTMLButtonElement>());
 
+  // Closing hands focus back to the chip that opened the panel.
+  const close = useCallback(() => {
+    setOpenId((id) => {
+      if (id) requestAnimationFrame(() => chipRefs.current.get(id)?.focus());
+      return null;
+    });
+  }, []);
+
+  // Escape while focus is on the canvas; the panel handles its own Escape.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpenId(null);
     window.addEventListener("keydown", onKey);
@@ -105,15 +120,23 @@ export function CardVersionsLayer({ api, meId, editable, nameOf }: Props) {
     <>
     {/* Chips sit under Excalidraw's own menus, like the other overlays. */}
     <div className="pointer-events-none absolute inset-0 z-[2] overflow-hidden">
-      {chips.map(({ card, versions, text, selected, pos }) => {
+      {chips.map(({ card, kind, versions, text, selected, pos }) => {
         const latest = versions.at(-1);
         const edited = hasUnsavedEdit(card.customData, text);
+        const label = latest ? `v${latest.v}${edited ? " · แก้อยู่" : ""}` : "เก็บเวอร์ชัน";
         return (
           <button
             key={card.id}
+            ref={(el) => {
+              if (el) chipRefs.current.set(card.id, el);
+              else chipRefs.current.delete(card.id);
+            }}
             type="button"
             onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => setOpenId(openId === card.id ? null : card.id)}
+            onClick={() => (openId === card.id ? close() : setOpenId(card.id))}
+            aria-haspopup="dialog"
+            aria-expanded={openId === card.id}
+            aria-label={`เวอร์ชันของการ์ด${shortTitle(kind)}: ${label}`}
             title="ประวัติเวอร์ชัน · Versions"
             className={`pointer-events-auto absolute flex -translate-x-full -translate-y-full items-center gap-1 rounded-full rounded-br-none px-2 py-0.5 text-[11px] font-semibold shadow transition-transform hover:scale-105 ${
               selected ? "bg-neutral-900 text-white" : "bg-white/90 text-neutral-800 ring-1 ring-black/10"
@@ -121,7 +144,7 @@ export function CardVersionsLayer({ api, meId, editable, nameOf }: Props) {
             style={{ left: pos.x, top: pos.y - 2 }}
           >
             <History className="h-3 w-3" />
-            {latest ? `v${latest.v}${edited ? " · แก้อยู่" : ""}` : "เก็บเวอร์ชัน"}
+            {label}
           </button>
         );
       })}
@@ -138,7 +161,7 @@ export function CardVersionsLayer({ api, meId, editable, nameOf }: Props) {
           text={open.text}
           editable={editable}
           nameOf={nameOf}
-          onClose={() => setOpenId(null)}
+          onClose={close}
           onSave={(why) => {
             const v = saveVersion(api, open.card.id, meId, why);
             if (v) api.setToast({ message: `เก็บ v${v} แล้ว · Saved v${v}`, duration: 1500 });
@@ -161,8 +184,29 @@ function VersionPanel(props: {
   onClose: () => void;
   onSave: (why: string) => boolean;
 }) {
-  const { at, kind, versions, text, editable, nameOf } = props;
+  const { at, kind, versions, text, editable, nameOf, onClose } = props;
   const [why, setWhy] = useState("");
+  const panel = useRef<HTMLDivElement>(null);
+
+  // Focus moves into the panel when it opens: the reason field, else the save button, else close.
+  useEffect(() => {
+    const root = panel.current;
+    const target =
+      root?.querySelector<HTMLElement>("textarea") ??
+      root?.querySelector<HTMLElement>("[data-save]:not(:disabled)") ??
+      root?.querySelector<HTMLElement>("button");
+    target?.focus();
+  }, []);
+
+  // Excalidraw catches Escape in text fields before React sees it (it only blurs the field),
+  // so listen on the window in the capture phase for an Escape from inside this panel.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && panel.current?.contains(e.target as Node)) onClose();
+    };
+    window.addEventListener("keydown", onKey, { capture: true });
+    return () => window.removeEventListener("keydown", onKey, { capture: true });
+  }, [onClose]);
   const latest = versions.at(-1);
   const written = isWritten(kind, text);
   const unchanged = Boolean(latest) && !hasUnsavedEdit({ versions }, text);
@@ -172,15 +216,21 @@ function VersionPanel(props: {
       ? `ยังเหมือน v${latest!.v} อยู่ แก้ข้อความบนการ์ดก่อน`
       : null;
 
-  // Opens to the right of the card, so the card's text stays visible next to its history.
-  const width = 320;
-  const left = Math.min(Math.max(at.x + 8, 8), (typeof window !== "undefined" ? window.innerWidth : 1200) - width - 8);
-  const top = Math.min(Math.max(at.y - 10, 70), (typeof window !== "undefined" ? window.innerHeight : 800) - 420);
+  // Opens to the right of the card, so the card's text stays visible next to its history,
+  // and never runs off the screen: it is at most as tall as the space below it, and the list scrolls.
+  const viewW = typeof window !== "undefined" ? window.innerWidth : 1200;
+  const viewH = typeof window !== "undefined" ? window.innerHeight : 800;
+  const width = Math.min(PANEL_WIDTH, viewW - 2 * EDGE);
+  const left = Math.min(Math.max(at.x + EDGE, EDGE), viewW - width - EDGE);
+  const top = Math.min(Math.max(at.y - EDGE, EDGE), viewH - PANEL_MIN_HEIGHT - EDGE);
 
   return (
     <div
-      className="pointer-events-auto absolute rounded-xl border border-black/10 bg-white text-neutral-900 shadow-2xl"
-      style={{ left, top, width }}
+      ref={panel}
+      role="dialog"
+      aria-label={`ประวัติเวอร์ชัน: ${shortTitle(kind)}`}
+      className="pointer-events-auto absolute flex flex-col rounded-xl border border-black/10 bg-white text-neutral-900 shadow-2xl"
+      style={{ left, top, width, maxHeight: viewH - top - EDGE }}
       onPointerDown={(e) => e.stopPropagation()}
       onKeyDown={(e) => e.stopPropagation()}
     >
@@ -189,7 +239,7 @@ function VersionPanel(props: {
           {SHIFT_CARDS[kind].emoji} {shortTitle(kind)}
           {latest && <span className="ml-1 font-normal opacity-60">· v{latest.v}</span>}
         </p>
-        <button type="button" onClick={props.onClose} aria-label="Close" className="rounded p-1 hover:bg-black/5">
+        <button type="button" onClick={onClose} aria-label="ปิด · Close" className="rounded p-1 hover:bg-black/5">
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -208,6 +258,7 @@ function VersionPanel(props: {
           )}
           <button
             type="button"
+            data-save
             disabled={Boolean(hint)}
             onClick={() => props.onSave(why) && setWhy("")}
             className="w-full rounded-lg bg-orange-500 px-3 py-2 text-sm font-medium text-white disabled:opacity-40"
@@ -223,7 +274,7 @@ function VersionPanel(props: {
           ยังไม่มีเวอร์ชัน เก็บไว้ทุกครั้งที่ความคิดเปลี่ยน จะได้เห็นว่าโปรเจกต์คมขึ้นยังไง
         </p>
       ) : (
-        <ol className="max-h-72 space-y-3 overflow-y-auto p-3">
+        <ol className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
           {[...versions].reverse().map((v) => (
             <li key={v.v} className="text-xs">
               <p className="font-semibold">
