@@ -210,10 +210,12 @@ function VersionPanel(props: {
   const latest = versions.at(-1);
   const written = isWritten(kind, text);
   const unchanged = Boolean(latest) && !hasUnsavedEdit({ versions }, text);
-  const hint = !written
-    ? "เขียนบนการ์ดก่อน แล้วค่อยเก็บเวอร์ชัน"
+  const next = (latest?.v ?? 0) + 1;
+  // Nothing to save: one quiet line instead of a disabled form.
+  const idle = !written
+    ? "เขียนคำตอบบนการ์ดก่อน แล้วค่อยเก็บเวอร์ชัน"
     : unchanged
-      ? `ยังเหมือน v${latest!.v} อยู่ แก้ข้อความบนการ์ดก่อน`
+      ? `ตรงกับ v${latest!.v} แล้ว แก้การ์ดเมื่อความคิดเปลี่ยน แล้วค่อยเก็บ v${next}`
       : null;
 
   // Opens to the right of the card, so the card's text stays visible next to its history,
@@ -244,28 +246,30 @@ function VersionPanel(props: {
         </button>
       </div>
 
-      {editable && (
+      {editable && idle && <p className="border-b border-black/5 px-3 py-2.5 text-xs opacity-70">{idle}</p>}
+      {editable && !idle && (
         <div className="space-y-2 border-b border-black/5 p-3">
           {latest && (
-            <textarea
-              value={why}
-              rows={2}
-              maxLength={MAX_WHY}
-              placeholder="เปลี่ยนเพราะอะไร? เช่น คุยกับพี่เภสัชแล้วเจอว่า... (ไม่ใส่ก็ได้)"
-              onChange={(e) => setWhy(e.target.value)}
-              className="w-full resize-none rounded-lg border border-black/10 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-orange-400"
-            />
+            <label className="block space-y-1">
+              <span className="text-xs font-medium">เปลี่ยนเพราะอะไร (ไม่ใส่ก็ได้)</span>
+              <textarea
+                value={why}
+                rows={2}
+                maxLength={MAX_WHY}
+                placeholder="เช่น คุยกับพี่เภสัชแล้วเจอว่า…"
+                onChange={(e) => setWhy(e.target.value)}
+                className="w-full resize-none rounded-lg border border-black/10 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-orange-400"
+              />
+            </label>
           )}
           <button
             type="button"
             data-save
-            disabled={Boolean(hint)}
             onClick={() => props.onSave(why) && setWhy("")}
-            className="w-full rounded-lg bg-orange-500 px-3 py-2 text-sm font-medium text-white disabled:opacity-40"
+            className="w-full rounded-lg bg-orange-500 px-3 py-2 text-sm font-medium text-white"
           >
-            เก็บเป็น v{(latest?.v ?? 0) + 1} · Save version
+            เก็บเป็น v{next} · Save version
           </button>
-          {hint && <p className="text-xs opacity-60">{hint}</p>}
         </div>
       )}
 
