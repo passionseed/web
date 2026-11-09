@@ -138,7 +138,7 @@ export function CardVersionsLayer({ api, meId, editable, nameOf }: Props) {
             aria-expanded={openId === card.id}
             aria-label={`เวอร์ชันของการ์ด${shortTitle(kind)}: ${label}`}
             title="ประวัติเวอร์ชัน · Versions"
-            className={`wb-version-chip pointer-events-auto absolute flex -translate-x-full -translate-y-full items-center gap-1 rounded-full rounded-br-none px-2 py-0.5 text-[11px] font-semibold ${
+            className={`wb-version-chip pointer-events-auto absolute flex -translate-x-full -translate-y-full items-center gap-1 rounded-full rounded-br-none px-2.5 text-xs font-semibold ${
               selected ? "wb-version-chip--on" : ""
             }`}
             style={{ left: pos.x, top: pos.y - 2 }}
@@ -241,7 +241,7 @@ function VersionPanel(props: {
           {SHIFT_CARDS[kind].emoji} {shortTitle(kind)}
           {latest && <span className="wb-soft ml-1 font-normal">· v{latest.v}</span>}
         </p>
-        <button type="button" onClick={onClose} aria-label="ปิด · Close" className="wb-soft rounded p-1 hover:bg-black/5">
+        <button type="button" onClick={onClose} aria-label="ปิด · Close" className="wb-soft rounded-md p-1.5 hover:bg-black/5">
           <X className="h-4 w-4" />
         </button>
       </div>

@@ -376,6 +376,21 @@ button.wb-pill:enabled:hover,
   box-shadow: var(--wb-shadow);
   color: var(--wb-text);
 }
+.wb-version-chip {
+  min-height: 1.75rem;
+}
+/* Fingers need 44px: the chip grows its hit area, panel buttons grow outright. */
+@media (pointer: coarse) {
+  .wb-version-chip::before {
+    content: "";
+    position: absolute;
+    inset: -0.5rem;
+  }
+  .wb-version-panel button {
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+  }
+}
 .wb-version-chip[aria-expanded="true"],
 .wb-version-chip--on {
   background: var(--wb-active);
