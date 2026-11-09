@@ -32,6 +32,12 @@ describe("SHIFT cards", () => {
     }
   });
 
+  it("starts each card with its header and one question, then room to write", () => {
+    expect(shiftCardStartText("interview")).toBe("🎤 สัมภาษณ์\nคุยกับใคร (ไม่ใส่ชื่อจริง) เขาพูดอะไรที่ทำให้แปลกใจ?");
+    const label = (shiftCardSkeleton("interview") as { label: { text: string } }).label.text;
+    expect(label.endsWith("\n\n")).toBe(true);
+  });
+
   it("tags each card with its kind, and examples as examples", () => {
     expect(shiftCardSkeleton("interview").customData).toEqual({ card: "interview" });
     expect(shiftCardSkeleton("problem", 0, 0, { example: true }).customData).toEqual({ card: "problem", example: true });
@@ -42,7 +48,7 @@ describe("SHIFT cards", () => {
     expect(isWritten("problem", start)).toBe(false);
     expect(isWritten("problem", `${start}\n\n  `)).toBe(false);
     expect(isWritten("problem", "")).toBe(false);
-    expect(isWritten("problem", start.replace("ใคร:", "ใคร: นักเรียน ม.5"))).toBe(true);
+    expect(isWritten("problem", `${start}\nนักเรียน ม.5 ลืมส่งงาน`)).toBe(true);
   });
 });
 
@@ -74,7 +80,7 @@ describe("project frames", () => {
 });
 
 describe("card versions", () => {
-  const written = (s: string) => shiftCardStartText("problem").replace("ใคร:", `ใคร: ${s}`);
+  const written = (s: string) => `${shiftCardStartText("problem")}\n${s}`;
 
   it("saves the first version and numbers the next", () => {
     const v1 = addVersion("problem", { card: "problem", createdBy: "u1" }, { text: written("ม.5"), by: "u1", at })!;
@@ -103,7 +109,7 @@ describe("card versions", () => {
   it("keeps the newest versions without reusing numbers", () => {
     let data: Record<string, unknown> = { card: "idea" };
     for (let i = 1; i <= MAX_VERSIONS + 3; i++) {
-      data = addVersion("idea", data, { text: `💡 ไอเดีย\nไอเดีย: ${i}`, by: "u1", at })!;
+      data = addVersion("idea", data, { text: `${shiftCardStartText("idea")}\n${i}`, by: "u1", at })!;
     }
     const versions = readVersions(data);
     expect(versions).toHaveLength(MAX_VERSIONS);

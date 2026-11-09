@@ -39,6 +39,7 @@ import { PluginHost, usePluginWindows } from "./plugins/PluginHost";
 import { PluginMenu } from "./plugins/PluginMenu";
 import { ScriptButton } from "./script/ScriptButton";
 import { CardVersionsLayer } from "./shift/CardVersionsLayer";
+import { useShiftCardCaret } from "./shift/useShiftCardCaret";
 import { ShareDialog } from "./ShareDialog";
 import { TimerWidget } from "./TimerWidget";
 import { useComments } from "./useComments";
@@ -106,6 +107,7 @@ export default function WhiteboardCanvas({
   const comments = useComments(board.id, channel);
   const pointer = useRef<{ x: number; y: number } | null>(null);
   const emotes = useEmotes(api, channel, pointer);
+  useShiftCardCaret(api);
 
   const [title, setTitle] = useState(board.title);
   const [shareOpen, setShareOpen] = useState(false);

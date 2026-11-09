@@ -30,8 +30,8 @@ export type ShiftCardKind = (typeof SHIFT_CARD_KINDS)[number];
 export type ShiftCard = {
   title: string;
   emoji: string;
-  /** Prompt lines printed on a fresh card; students write after each colon. */
-  lines: string[];
+  /** The question printed on a fresh card; students write in the space below it. */
+  prompt: string;
   color: string;
   /** Beliefs that change over time keep versions; events get a new card. */
   versioned: boolean;
@@ -45,7 +45,7 @@ export const SHIFT_CARDS: Record<ShiftCardKind, ShiftCard> = {
   problem: {
     title: "ปัญหา · Problem",
     emoji: "🎯",
-    lines: ["ใคร:", "ลำบากเรื่อง:", "ตอนไหน:", "เพราะ:"],
+    prompt: "ใครลำบากเรื่องอะไร ตอนไหน เพราะอะไร?",
     color: fill("Pink"),
     versioned: true,
     evidence: "problem_statement",
@@ -53,7 +53,7 @@ export const SHIFT_CARDS: Record<ShiftCardKind, ShiftCard> = {
   target: {
     title: "กลุ่มเป้าหมาย · Target user",
     emoji: "👥",
-    lines: ["ใคร:", "หาเจอที่ไหน:", "ติดต่อได้กี่คน:"],
+    prompt: "ใคร หาเจอได้ที่ไหน ติดต่อได้กี่คน?",
     color: fill("Purple"),
     versioned: true,
     evidence: "problem_statement",
@@ -61,7 +61,7 @@ export const SHIFT_CARDS: Record<ShiftCardKind, ShiftCard> = {
   interview: {
     title: "สัมภาษณ์ · Interview",
     emoji: "🎤",
-    lines: ["คุยกับ (ไม่ต้องใส่ชื่อจริง):", "เขาพูดว่า:", "เซอร์ไพรส์ตรงไหน:"],
+    prompt: "คุยกับใคร (ไม่ใส่ชื่อจริง) เขาพูดอะไรที่ทำให้แปลกใจ?",
     color: fill("Yellow"),
     versioned: false,
     evidence: "interview",
@@ -69,7 +69,7 @@ export const SHIFT_CARDS: Record<ShiftCardKind, ShiftCard> = {
   reference: {
     title: "ตัวอย่าง/คู่แข่ง · Reference",
     emoji: "🔍",
-    lines: ["ชื่อ/ลิงก์:", "ผู้ใช้บ่นว่า:", "ขโมยอะไรมาใช้ได้:"],
+    prompt: "ชื่อหรือลิงก์ คนใช้บ่นเรื่องอะไร เราหยิบอะไรมาใช้ได้?",
     color: fill("Gray"),
     versioned: false,
     evidence: null,
@@ -77,7 +77,7 @@ export const SHIFT_CARDS: Record<ShiftCardKind, ShiftCard> = {
   idea: {
     title: "ไอเดีย · Idea",
     emoji: "💡",
-    lines: ["ไอเดีย:", "แก้ปัญหาข้อไหน:"],
+    prompt: "ไอเดียคืออะไร แก้ปัญหาข้อไหน?",
     color: fill("Orange"),
     versioned: true,
     evidence: "ideas",
@@ -85,7 +85,7 @@ export const SHIFT_CARDS: Record<ShiftCardKind, ShiftCard> = {
   test: {
     title: "ทดสอบ · Test",
     emoji: "🧪",
-    lines: ["อยากรู้ว่า:", "ให้ใครลอง:", "ผลคือ:", "พังตรงไหน:"],
+    prompt: "อยากรู้อะไร ให้ใครลอง ผลเป็นยังไง?",
     color: fill("Blue"),
     versioned: false,
     evidence: "tester",
@@ -93,7 +93,7 @@ export const SHIFT_CARDS: Record<ShiftCardKind, ShiftCard> = {
   pivot: {
     title: "เปลี่ยนแผน · Pivot",
     emoji: "🔀",
-    lines: ["จาก:", "เป็น:", "เพราะ (ลากลูกศรจากการ์ดที่ทำให้เปลี่ยน):"],
+    prompt: "เปลี่ยนจากอะไร เป็นอะไร เพราะอะไร?",
     color: "#99e9f2",
     versioned: false,
     evidence: "change",
@@ -101,7 +101,7 @@ export const SHIFT_CARDS: Record<ShiftCardKind, ShiftCard> = {
   ship: {
     title: "ปล่อยงาน · Ship",
     emoji: "🚀",
-    lines: ["ลิงก์:", "ทำอะไรได้:"],
+    prompt: "ลิงก์ และตอนนี้ใช้ทำอะไรได้แล้ว?",
     color: fill("Green"),
     versioned: true,
     evidence: "mvp",
@@ -109,7 +109,7 @@ export const SHIFT_CARDS: Record<ShiftCardKind, ShiftCard> = {
   daily: {
     title: "วันนี้ · Daily",
     emoji: "📅",
-    lines: ["ทำเสร็จ:", "พัง:", "ได้เรียนรู้:"],
+    prompt: "วันนี้ทำอะไรเสร็จ อะไรพัง ได้เรียนรู้อะไร?",
     color: "#fff3bf",
     versioned: false,
     evidence: "daily",
@@ -125,9 +125,9 @@ export const isVersionedCard = (value: unknown): value is ShiftCardKind =>
 /** The Thai half of a bilingual title. */
 export const shortTitle = (kind: ShiftCardKind) => SHIFT_CARDS[kind].title.split(" · ")[0];
 
-/** The text a fresh card starts with: a header, then the prompt lines. */
+/** The text a fresh card starts with: a header and the question. Answers go below. */
 export const shiftCardStartText = (kind: ShiftCardKind) =>
-  [`${SHIFT_CARDS[kind].emoji} ${shortTitle(kind)}`, ...SHIFT_CARDS[kind].lines].join("\n");
+  `${SHIFT_CARDS[kind].emoji} ${shortTitle(kind)}\n${SHIFT_CARDS[kind].prompt}`;
 
 const squash = (s: string) => s.replace(/\s+/g, "");
 
@@ -139,9 +139,10 @@ export const SHIFT_CARD_WIDTH = 300;
 const SHIFT_CARD_HEIGHT = 260;
 
 /**
- * One card as a sticky with its prompts as the starting text, left-aligned so
- * it reads like a short form. `example` cards come with a project frame and
- * only count once someone writes on them.
+ * One card as a sticky: the header and question, then an empty line where the
+ * answer goes (useShiftCardCaret puts the caret there). Left-aligned, top
+ * first, so long answers read down the card. `example` cards come with a
+ * project frame and only count once someone writes on them.
  */
 export function shiftCardSkeleton(
   kind: ShiftCardKind,
@@ -165,7 +166,7 @@ export function shiftCardSkeleton(
     roundness: { type: 3 },
     customData: example ? { card: kind, example: true } : { card: kind },
     label: {
-      text: `${shiftCardStartText(kind)}\n`,
+      text: `${shiftCardStartText(kind)}\n\n`,
       fontSize: 18,
       fontFamily: 6,
       strokeColor: "#1e1e1e",

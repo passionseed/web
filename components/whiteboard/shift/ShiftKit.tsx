@@ -22,7 +22,7 @@ function CardButton({ api, kind }: { api: ExcalidrawImperativeAPI; kind: ShiftCa
       <span className="block font-semibold">
         {card.emoji} {shortTitle(kind)}
       </span>
-      <span className="block truncate opacity-70">{card.lines.join(" ")}</span>
+      <span className="block truncate opacity-70">{card.prompt}</span>
     </button>
   );
 }

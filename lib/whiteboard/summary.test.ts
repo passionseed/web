@@ -99,7 +99,7 @@ describe("who wrote what", () => {
 });
 
 describe("SHIFT cards and project frames", () => {
-  const written = shiftCardStartText("problem").replace("ใคร:", "ใคร: นักเรียน ม.5");
+  const written = `${shiftCardStartText("problem")}\nนักเรียน ม.5`;
 
   it("reads typed cards in a project frame, with versions, and leaves unwritten ones empty", () => {
     const summary = summarizeElements([
@@ -126,7 +126,7 @@ describe("SHIFT cards and project frames", () => {
 
     const md = boardToMarkdown({ title: "SHIFT", owner: "Fang", updatedAt: "", members: [] }, summary, [], new Map([["mint", "Mint"]]));
     expect(md).toContain("## [SHIFT project] โปรเจกต์ · growa");
-    expect(md).toContain("- [🎯 ปัญหา v1] 🎯 ปัญหา ใคร: นักเรียน ม.5");
+    expect(md).toContain("- [🎯 ปัญหา v1] 🎯 ปัญหา ใครลำบากเรื่องอะไร ตอนไหน เพราะอะไร? นักเรียน ม.5");
     expect(md).toContain("  - v1 2026-11-09 by Mint: old problem (why: คุยกับพี่เภสัชแล้ว)");
     expect(md).toContain("- [👥 กลุ่มเป้าหมาย] (empty)");
   });
