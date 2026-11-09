@@ -3,65 +3,55 @@
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import { Frame } from "lucide-react";
 
-import { SHIFT_CARD_KINDS, SHIFT_CARDS, shortTitle, type ShiftCardKind } from "@/lib/whiteboard/shift-cards";
+import { canvasZones, SHIFT_CARDS, shortTitle } from "@/lib/whiteboard/shift-cards";
 
-import { insertProjectFrame, insertShiftCard } from "./insertShift";
+import { insertProjectCanvas } from "./insertShift";
 
-const BELIEFS = SHIFT_CARD_KINDS.filter((k) => SHIFT_CARDS[k].versioned);
-const EVENTS = SHIFT_CARD_KINDS.filter((k) => !SHIFT_CARDS[k].versioned);
+const ZONES = canvasZones();
+const MAP_W = Math.max(...ZONES.map((z) => z.x + z.width));
+const MAP_H = Math.max(...ZONES.map((z) => z.y + z.height));
 
-function CardButton({ api, kind }: { api: ExcalidrawImperativeAPI; kind: ShiftCardKind }) {
-  const card = SHIFT_CARDS[kind];
+/** A small, true-to-scale map of the project canvas, so students see which box is which before adding it. */
+function CanvasMap() {
   return (
-    <button
-      type="button"
-      onClick={() => insertShiftCard(api, kind)}
-      className="rounded-md p-2 text-left text-xs shadow-sm ring-1 ring-black/10 transition-transform hover:-rotate-1 hover:scale-[1.03]"
-      style={{ background: card.color, color: "#1e1e1e" }}
-    >
-      <span className="block font-semibold">
-        {card.emoji} {shortTitle(kind)}
-      </span>
-      <span className="mt-0.5 line-clamp-2 block opacity-75">{card.prompt}</span>
-    </button>
+    <div className="relative mt-2.5 w-full" style={{ aspectRatio: `${MAP_W} / ${MAP_H}` }} aria-hidden>
+      {ZONES.map((z, i) => (
+        <span
+          key={i}
+          className="absolute flex items-start overflow-hidden rounded-[3px] px-1 py-0.5 text-[10px] leading-tight"
+          style={{
+            left: `${(z.x / MAP_W) * 100}%`,
+            top: `${(z.y / MAP_H) * 100}%`,
+            width: `${(z.width / MAP_W) * 100}%`,
+            height: `${(z.height / MAP_H) * 100}%`,
+            background: SHIFT_CARDS[z.kind].color,
+            color: "#1e1e1e",
+          }}
+        >
+          {z.day ? z.day : `${SHIFT_CARDS[z.kind].emoji} ${shortTitle(z.kind)}`}
+        </span>
+      ))}
+    </div>
   );
 }
 
-function CardGroup({ api, title, kinds }: { api: ExcalidrawImperativeAPI; title: string; kinds: ShiftCardKind[] }) {
-  return (
-    <section>
-      <h3 className="mb-2 text-xs font-medium uppercase tracking-wide opacity-60">{title}</h3>
-      <div className="grid grid-cols-2 gap-2">
-        {kinds.map((kind) => (
-          <CardButton key={kind} api={api} kind={kind} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-/** The SHIFT tab of the board kit: a project frame and the typed cards students log their project with. */
+/** The SHIFT tab of the board kit: one button that adds a project canvas. */
 export function ShiftKit({ api, myName }: { api: ExcalidrawImperativeAPI; myName: string }) {
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       <button
         type="button"
-        onClick={() => insertProjectFrame(api, myName)}
-        className="wb-tile wb-tile--primary flex w-full items-start gap-3 p-3 text-left"
+        onClick={() => insertProjectCanvas(api, myName)}
+        className="wb-tile wb-tile--primary w-full p-3 text-left"
       >
-        <Frame className="mt-0.5 h-5 w-5 shrink-0" />
-        <span>
-          <span className="block text-sm font-semibold">+ โปรเจกต์ · Project frame</span>
-          <span className="block text-xs opacity-70">การ์ดที่อยู่ในกรอบ คืองานของโปรเจกต์นี้</span>
+        <span className="flex items-center gap-2 text-sm font-semibold">
+          <Frame className="h-4 w-4 shrink-0" />+ แคนวาสโปรเจกต์ · Project canvas
         </span>
+        <CanvasMap />
       </button>
-
-      <CardGroup api={api} title="ความคิดของเรา · เก็บเวอร์ชันได้" kinds={BELIEFS} />
-      <CardGroup api={api} title="สิ่งที่เกิดขึ้น · การ์ดใหม่ทุกครั้ง" kinds={EVENTS} />
-
-      <div className="space-y-1 text-xs opacity-60">
-        <p>ลากลูกศรจากการ์ดที่ทำให้เปลี่ยน ไปที่การ์ดเปลี่ยนแผน</p>
-        <p>ทุกการ์ดบันทึกว่าใครเขียน เมื่อไหร่ · มีใน 📚 Library ด้วย</p>
+      <div className="space-y-1 text-xs opacity-70">
+        <p>กด + เพิ่ม ในช่องไหน ก็ได้โน้ตเรื่องนั้น</p>
+        <p>ลากลูกศรจากสัมภาษณ์หรือทดสอบ ไปที่เปลี่ยนแผน เพื่อบอกว่าเปลี่ยนเพราะอะไร</p>
       </div>
     </div>
   );

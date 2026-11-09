@@ -12,6 +12,7 @@ import {
   MainMenu,
   restoreElements,
   Sidebar,
+  useHandleLibrary,
   WelcomeScreen,
 } from "@excalidraw/excalidraw";
 import type { OrderedExcalidrawElement } from "@excalidraw/excalidraw/element/types";
@@ -22,8 +23,7 @@ import { toast } from "sonner";
 
 import type { WhiteboardDetail } from "@/lib/supabase/whiteboards";
 import { canEdit, type LinkAccess } from "@/lib/whiteboard/core";
-import { CARD_KINDS, CARDS, cardSkeleton } from "@/lib/whiteboard/cards";
-import { SHIFT_CARD_KINDS, SHIFT_CARDS, shiftCardSkeleton } from "@/lib/whiteboard/shift-cards";
+import { CARD_KINDS, CARDS, cardLibrarySkeleton } from "@/lib/whiteboard/cards";
 import { templateById } from "@/lib/whiteboard/templates";
 import { widgetIdOf, widgetLink } from "@/lib/whiteboard/widgets";
 
@@ -34,12 +34,14 @@ import { CommentsLayer } from "./CommentsLayer";
 import { EmoteLayer, EmotePicker, useEmotes } from "./EmoteLayer";
 import { insertElements, insertSkeletons, insertWidget } from "./insert";
 import { KIT_SIDEBAR, KitSidebar } from "./KitSidebar";
+import { boardLibraryAdapter } from "./libraryAdapter";
 import { BoardWidget } from "./plugins/BoardWidget";
 import { PluginHost, usePluginWindows } from "./plugins/PluginHost";
 import { PluginMenu } from "./plugins/PluginMenu";
 import { ScriptButton } from "./script/ScriptButton";
 import { CardVersionsLayer } from "./shift/CardVersionsLayer";
 import { useShiftCardCaret } from "./shift/useShiftCardCaret";
+import { ZoneAddLayer } from "./shift/ZoneAddLayer";
 import { ShareDialog } from "./ShareDialog";
 import { TimerWidget } from "./TimerWidget";
 import { useComments } from "./useComments";
@@ -62,24 +64,19 @@ function preloadThaiFonts() {
 const UI_OPTIONS = { canvasActions: { loadScene: false, saveToActiveFile: false } };
 const validateEmbeddable = (link: string) => (widgetIdOf(link) ? true : undefined);
 
-/** Room cards and SHIFT cards in the Library panel, so people can drag them onto any board. */
+/** Room cards in the Library panel, each with its name on top, so people can tell them apart and drag them onto any board. */
 function cardLibrary() {
-  const room = CARD_KINDS.map((kind) => ({
+  return CARD_KINDS.map((kind) => ({
     id: `passionseed-card-${kind}`,
     status: "published" as const,
     name: CARDS[kind].title,
     created: 0,
-    elements: convertToExcalidrawElements([cardSkeleton(kind)]),
+    elements: convertToExcalidrawElements(cardLibrarySkeleton(kind)),
   }));
-  const shift = SHIFT_CARD_KINDS.map((kind) => ({
-    id: `passionseed-shift-${kind}`,
-    status: "published" as const,
-    name: `SHIFT ${SHIFT_CARDS[kind].title}`,
-    created: 0,
-    elements: convertToExcalidrawElements([shiftCardSkeleton(kind)]),
-  }));
-  return [...shift, ...room];
 }
+
+/** The Library: our cards, plus what each person adds or installs from libraries.excalidraw.com, kept in their browser. */
+const LIBRARY_ADAPTER = boardLibraryAdapter(cardLibrary);
 
 /** The live editor: Excalidraw plus sync, stickies, comments, reactions, timer, history and sharing. */
 export default function WhiteboardCanvas({
@@ -98,11 +95,13 @@ export default function WhiteboardCanvas({
   );
   const initialData = useMemo(() => {
     const theme = (typeof window !== "undefined" && (localStorage.getItem(THEME_KEY) as Theme | null)) || "light";
-    return { elements: initialElements, appState: { theme }, scrollToContent: true, libraryItems: cardLibrary() };
+    return { elements: initialElements, appState: { theme }, scrollToContent: true };
   }, [initialElements]);
 
   const sync = useWhiteboardSync({ boardId: board.id, role: board.role, me, initialElements });
   const api = sync.excalidrawAPI;
+  // Loads and saves the Library, and installs libraries from libraries.excalidraw.com (#addLibrary links).
+  useHandleLibrary({ excalidrawAPI: api, adapter: LIBRARY_ADAPTER });
   const channel = useMemo(() => ({ send: sync.send, on: sync.on }), [sync.send, sync.on]);
   const comments = useComments(board.id, channel);
   const pointer = useRef<{ x: number; y: number } | null>(null);
@@ -241,20 +240,11 @@ export default function WhiteboardCanvas({
         <TimerWidget boardId={board.id} initial={board.timer} canControl={editable} channel={channel} />
         {!isMobile && <ScriptButton boardId={board.id} />}
         <SaveBadge state={sync.saveState} connected={sync.connected} readOnly={!editable} />
-        <PluginMenu
-          open={windows.open}
-          onToggle={windows.toggle}
-          onPlace={
-            editable && api
-              ? (plugin) => plugin.widget && insertWidget(api, widgetLink(plugin.id), plugin.widget)
-              : undefined
-          }
-        />
         <Sidebar.Trigger name={KIT_SIDEBAR} tab={editable ? "create" : "comments"} icon={<PanelRight size={16} />} title="Board kit" />
         <LiveCollaborationTrigger isCollaborating={sync.connected} onSelect={() => setShareOpen(true)} />
       </div>
     ),
-    [api, board.id, board.role, board.timer, channel, editable, sync.connected, sync.saveState, title, windows.open, windows.toggle],
+    [board.id, board.role, board.timer, channel, editable, sync.connected, sync.saveState, title],
   );
 
   // Excalidraw re-renders whenever its children change, so they are built only when their inputs do.
@@ -325,6 +315,16 @@ export default function WhiteboardCanvas({
               {placingComment ? "คลิกบนบอร์ด" : "คอมเมนต์"}
             </button>
             <EmotePicker onPick={emotes.react} />
+            <PluginMenu
+              placement="up"
+              open={windows.open}
+              onToggle={windows.toggle}
+              onPlace={
+                editable && api
+                  ? (plugin) => plugin.widget && insertWidget(api, widgetLink(plugin.id), plugin.widget)
+                  : undefined
+              }
+            />
           </div>
         </Footer>
 
@@ -357,7 +357,7 @@ export default function WhiteboardCanvas({
         )}
       </>
     ),
-    [api, board.id, comments, duplicate, editable, emotes.react, me.isAdmin, me.name, onVersionsChanged, openKit, placingComment, refreshFiles, saveNow, showAuthors, showResolved, syncSend, title],
+    [api, board.id, comments, duplicate, editable, emotes.react, me.isAdmin, me.name, onVersionsChanged, openKit, placingComment, refreshFiles, saveNow, showAuthors, showResolved, syncSend, title, windows.open, windows.toggle],
   );
 
   return (
@@ -393,6 +393,7 @@ export default function WhiteboardCanvas({
             showResolved={showResolved}
           />
           <EmoteLayer api={api} bursts={emotes.bursts} />
+          {editable && <ZoneAddLayer api={api} />}
           <CardVersionsLayer api={api} meId={me.id} editable={editable} nameOf={nameOf} />
           {me.isAdmin && showAuthors && <AuthorsLayer api={api} nameOf={nameOf} />}
           <PluginHost

@@ -1,24 +1,18 @@
 "use client";
 
-import { convertToExcalidrawElements } from "@excalidraw/excalidraw";
+import { convertToExcalidrawElements, getCommonBounds } from "@excalidraw/excalidraw";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 
 import {
-  freeSlot,
   isPlacementObstacle,
-  projectFrameAt,
-  projectFrameSkeleton,
-  SHIFT_CARD_HEIGHT,
-  SHIFT_CARD_WIDTH,
+  isShiftCardKind,
+  projectCanvasSkeleton,
   shiftCardSkeleton,
-  type ShiftCardKind,
+  zoneSlot,
 } from "@/lib/whiteboard/shift-cards";
 
-import { insertElements, insertSkeletons, viewportCenter } from "../insert";
-
-/** Keeps new cards clear of a project frame's edge and its name. */
-const FRAME_INSET = 24;
+import { insertElements, insertSkeletons } from "../insert";
 
 const reducedMotion = () =>
   typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -32,30 +26,61 @@ function onScreen(api: ExcalidrawImperativeAPI, box: { x: number; y: number; wid
 }
 
 /**
- * Adds a SHIFT card at the first free spot near the middle of the screen, so
- * several clicks lay cards out side by side. When the middle of the screen is
- * inside a project frame, the card joins that frame and stays inside it.
+ * Puts the selected note straight into typing. The + button that added it sits
+ * outside Excalidraw, so keyboard focus is outside the board: hand focus back
+ * to the board and send the Enter that Excalidraw uses to start editing a
+ * selected note's text.
  */
-export function insertShiftCard(api: ExcalidrawImperativeAPI, kind: ShiftCardKind) {
-  const center = viewportCenter(api);
-  const scene = api.getSceneElements();
-  const frame = projectFrameAt(scene, center);
-  const within = frame
-    ? { x: frame.x + FRAME_INSET, y: frame.y + FRAME_INSET, width: frame.width - 2 * FRAME_INSET, height: frame.height - 2 * FRAME_INSET }
-    : null;
-  const at = freeSlot(scene.filter(isPlacementObstacle), center, { width: SHIFT_CARD_WIDTH, height: SHIFT_CARD_HEIGHT }, within);
-  const elements = convertToExcalidrawElements([shiftCardSkeleton(kind)]);
-  const placed = insertElements(
-    api,
-    frame ? elements.map((el) => ({ ...el, frameId: frame.id }) as ExcalidrawElement) : elements,
-    at,
-  );
-  const card = placed.find((el) => el.type === "rectangle");
-  if (card && !onScreen(api, card)) api.scrollToContent(card, { animate: !reducedMotion() });
+function startTyping() {
+  requestAnimationFrame(() => {
+    const board = document.querySelector<HTMLElement>(".excalidraw-container") ?? document.querySelector<HTMLElement>(".excalidraw");
+    if (!board) return;
+    board.focus();
+    board.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", code: "Enter", bubbles: true, cancelable: true }));
+  });
 }
 
-/** Adds an empty project frame where the viewer is looking and zooms to it. */
-export function insertProjectFrame(api: ExcalidrawImperativeAPI, ownerName: string) {
-  const placed = insertSkeletons(api, projectFrameSkeleton(`โปรเจกต์ · ${ownerName}`));
-  api.scrollToContent(placed, { fitToViewport: true, viewportZoomFactor: 0.85, animate: !reducedMotion() });
+/**
+ * Adds an empty note to a canvas zone, in the zone's next free slot, as part of
+ * the zone's project frame, and starts typing on it.
+ */
+export function insertZoneNote(api: ExcalidrawImperativeAPI, zoneId: string) {
+  const scene = api.getSceneElements();
+  const zone = scene.find((el) => el.id === zoneId);
+  const kind = zone?.customData?.zone;
+  if (!zone || !isShiftCardKind(kind)) return;
+  const inZone = scene.filter(
+    (el) => el.customData?.card && el.x >= zone.x && el.y >= zone.y && el.x < zone.x + zone.width && el.y < zone.y + zone.height,
+  ).length;
+  const at = zoneSlot(zone, scene.filter(isPlacementObstacle), inZone);
+  const elements = convertToExcalidrawElements([shiftCardSkeleton(kind)]).map(
+    (el) => ({ ...el, frameId: zone.frameId ?? null }) as ExcalidrawElement,
+  );
+  const placed = insertElements(api, elements, at);
+  const note = placed.find((el) => el.type === "rectangle");
+  if (note && !onScreen(api, note)) api.scrollToContent(note, { animate: false });
+  startTyping();
+}
+
+/** Space between a new canvas and what is already on the board. */
+const CANVAS_GAP = 240;
+
+/**
+ * Adds an empty project canvas to the right of everything already on the
+ * board (or where the viewer is looking on an empty board), so it never lands
+ * on someone else's work, then zooms to it with nothing selected.
+ */
+export function insertProjectCanvas(api: ExcalidrawImperativeAPI, ownerName: string) {
+  const skeletons = projectCanvasSkeleton(`โปรเจกต์ · ${ownerName}`);
+  const frame = skeletons.at(-1) as { width: number; height: number };
+  const existing = api.getSceneElements();
+  let at: { x: number; y: number } | undefined;
+  if (existing.length) {
+    const [, minY, maxX] = getCommonBounds(existing);
+    at = { x: maxX + CANVAS_GAP + frame.width / 2, y: minY + frame.height / 2 };
+  }
+  const placed = insertSkeletons(api, skeletons, at);
+  api.updateScene({ appState: { selectedElementIds: {} } });
+  const canvas = placed.find((el) => el.type === "frame");
+  api.scrollToContent(canvas ?? placed, { fitToViewport: true, viewportZoomFactor: 0.9, animate: !reducedMotion() });
 }

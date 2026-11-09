@@ -9,8 +9,9 @@ import {
   isWritten,
   MAX_VERSION_TEXT,
   MAX_VERSIONS,
-  projectFrameAt,
-  projectFrameSkeleton,
+  canvasZones,
+  projectCanvasSkeleton,
+  zoneSlot,
   readVersions,
   SHIFT_CARD_KINDS,
   SHIFT_CARDS,
@@ -37,10 +38,13 @@ describe("SHIFT cards", () => {
     }
   });
 
-  it("starts each card with its header and one question, then room to write", () => {
-    expect(shiftCardStartText("interview")).toBe("🎤 สัมภาษณ์\nคุยกับใคร (ไม่ใส่ชื่อจริง) เขาพูดอะไรที่ทำให้แปลกใจ?");
-    const label = (shiftCardSkeleton("interview") as { label: { text: string } }).label.text;
-    expect(label.endsWith("\n\n")).toBe(true);
+  it("starts a note empty: its zone says what it is for", () => {
+    const blank = (shiftCardSkeleton("interview") as { label: { text: string } }).label.text;
+    expect(blank.trim()).toBe("");
+    expect(isWritten("interview", blank)).toBe(false);
+    expect(isWritten("interview", "พี่เภสัชบอกว่า…")).toBe(true);
+    // Cards from before the canvas carried a header and question; those alone are still unwritten.
+    expect(isWritten("interview", shiftCardStartText("interview"))).toBe(false);
   });
 
   it("tags each card with its kind, and examples as examples", () => {
@@ -57,30 +61,55 @@ describe("SHIFT cards", () => {
   });
 });
 
-describe("project frames", () => {
-  it("builds a tagged frame holding a problem and a target card", () => {
-    const skeletons = projectFrameSkeleton("โปรเจกต์ · Mint", "p1");
-    const frame = skeletons.at(-1) as { type: string; name: string; children: string[]; customData: unknown };
-    expect(frame.type).toBe("frame");
-    expect(frame.name).toBe("โปรเจกต์ · Mint");
-    expect(frame.customData).toEqual({ project: "p1" });
-    const ids = skeletons.slice(0, -1).map((s) => (s as { id?: string }).id);
-    expect(frame.children).toEqual(ids);
+describe("project canvas", () => {
+  const els = projectCanvasSkeleton("โปรเจกต์ · Mint", "p1") as unknown as {
+    id: string;
+    type: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    locked?: boolean;
+    name?: string;
+    children?: string[];
+    customData?: Record<string, unknown>;
+  }[];
+  const frame = els.at(-1)!;
+  const zones = els.filter((e) => e.customData?.zone);
+
+  it("is a tagged frame holding every other element", () => {
+    expect(frame).toMatchObject({ type: "frame", name: "โปรเจกต์ · Mint", customData: { project: "p1" } });
+    expect(frame.children).toEqual(els.slice(0, -1).map((e) => e.id));
   });
 
-  it("gives each new frame its own project id", () => {
-    const id = (s: ReturnType<typeof projectFrameSkeleton>) => s.at(-1)?.customData?.project;
-    expect(id(projectFrameSkeleton("a"))).not.toBe(id(projectFrameSkeleton("b")));
+  it("has one locked zone per kind, a Daily cell per day, all inside the frame", () => {
+    expect(zones).toHaveLength(8 + 7);
+    expect(new Set(zones.map((z) => z.customData!.zone))).toEqual(new Set(SHIFT_CARD_KINDS));
+    expect(zones.filter((z) => z.customData!.zone === "daily").map((z) => z.customData!.day)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    for (const z of zones) {
+      expect(z.locked).toBe(true);
+      expect(z.x).toBeGreaterThan(frame.x);
+      expect(z.x + z.width).toBeLessThan(frame.x + frame.width);
+      expect(z.y + z.height).toBeLessThan(frame.y + frame.height);
+    }
   });
 
-  it("finds the smallest project frame under a point", () => {
-    const outer = { type: "frame", x: 0, y: 0, width: 1000, height: 1000, customData: { project: "outer" } };
-    const inner = { type: "frame", x: 100, y: 100, width: 300, height: 300, customData: { project: "inner" } };
-    const plain = { type: "frame", x: 120, y: 120, width: 50, height: 50, customData: null };
-    const deleted = { ...inner, width: 200, height: 200, isDeleted: true };
-    expect(projectFrameAt([outer, inner, plain, deleted], { x: 150, y: 150 })).toBe(inner);
-    expect(projectFrameAt([outer, inner], { x: 900, y: 900 })).toBe(outer);
-    expect(projectFrameAt([outer], { x: 2000, y: 0 })).toBeNull();
+  it("starts each belief zone with one example note, and no zones overlap", () => {
+    const notes = els.filter((e) => e.customData?.card);
+    expect(notes.map((n) => n.customData!.card)).toEqual(["problem", "target", "idea", "ship"]);
+    expect(notes.every((n) => n.customData!.example)).toBe(true);
+    const specs = canvasZones();
+    for (let i = 0; i < specs.length; i++)
+      for (let j = i + 1; j < specs.length; j++) {
+        const a = specs[i];
+        const b = specs[j];
+        expect(a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height).toBe(false);
+      }
+  });
+
+  it("gives each new canvas its own project id", () => {
+    const id = (s: ReturnType<typeof projectCanvasSkeleton>) => s.at(-1)?.customData?.project;
+    expect(id(projectCanvasSkeleton("a"))).not.toBe(id(projectCanvasSkeleton("b")));
   });
 });
 
@@ -143,16 +172,28 @@ describe("card placement", () => {
   const size = { width: 300, height: 260 };
   const at = (x: number, y: number) => ({ x: x - 150, y: y - 130, ...size });
 
-  it("uses the middle when it is free, then fills the row to the right", () => {
+  it("uses the middle when it is free, then fills the row to the right, and says when nothing is free", () => {
     expect(freeSlot([], { x: 0, y: 0 }, size)).toEqual({ x: 0, y: 0 });
     expect(freeSlot([at(0, 0)], { x: 0, y: 0 }, size)).toEqual({ x: 324, y: 0 });
     expect(freeSlot([at(0, 0), at(324, 0)], { x: 0, y: 0 }, size)).toEqual({ x: 648, y: 0 });
+    expect(freeSlot([at(0, 0)], { x: 0, y: 0 }, size, at(0, 0))).toBeNull();
   });
 
   it("stays inside a project frame", () => {
     const frame = { x: -200, y: -200, width: 600, height: 1000 };
     // Right of the middle is outside the frame, so the next slot is the row below.
     expect(freeSlot([at(0, 0)], { x: 0, y: 0 }, size, frame)).toEqual({ x: 0, y: 284 });
+  });
+
+  it("fills a zone from its top-left, below its title, and cascades when it is full", () => {
+    const zone = { x: 0, y: 0, width: 600, height: 340 };
+    expect(zoneSlot(zone, [])).toEqual({ x: 24 + 120, y: 96 + 100 });
+    expect(zoneSlot(zone, [{ x: 24, y: 96, width: 240, height: 200 }])).toEqual({ x: 24 + 240 + 24 + 120, y: 196 });
+    const full = [
+      { x: 24, y: 96, width: 240, height: 200 },
+      { x: 288, y: 96, width: 240, height: 200 },
+    ];
+    expect(zoneSlot(zone, full, 2)).toEqual({ x: 144 + 60, y: 196 + 60 });
   });
 
   it("ignores zones, frames, card labels and deleted elements", () => {
@@ -162,6 +203,8 @@ describe("card placement", () => {
     expect(isPlacementObstacle({ type: "frame", x: 0, y: 0, width: 300, height: 300 })).toBe(false);
     expect(isPlacementObstacle({ type: "text", x: 0, y: 0, width: 100, height: 40, containerId: "c" })).toBe(false);
     expect(isPlacementObstacle({ type: "rectangle", x: 0, y: 0, width: 300, height: 260, isDeleted: true })).toBe(false);
+    expect(isPlacementObstacle({ type: "rectangle", x: 0, y: 0, width: 300, height: 300, customData: { zone: "daily" } })).toBe(false);
+    expect(isPlacementObstacle({ type: "text", x: 0, y: 0, width: 200, height: 30, customData: { zoneLabel: "test" } })).toBe(false);
   });
 });
 

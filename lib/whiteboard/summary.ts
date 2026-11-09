@@ -1,6 +1,6 @@
 import { CARDS, cardStartText, isCardKind } from "./cards";
 import { STICKY_COLORS } from "./core";
-import { type CardVersion, isShiftCardKind, isWritten, readVersions, SHIFT_CARDS, shortTitle } from "./shift-cards";
+import { type CardVersion, isShiftCardKind, isWritten, readVersions, SHIFT_CARDS, shortTitle, zoneTitle as shiftZoneTitle } from "./shift-cards";
 
 /**
  * Turns a board's raw Excalidraw elements into something a person or an AI can
@@ -24,7 +24,18 @@ type El = {
   boundElements?: { id: string; type: string }[] | null;
   startBinding?: { elementId: string } | null;
   endBinding?: { elementId: string } | null;
-  customData?: { createdBy?: unknown; updatedBy?: unknown; card?: unknown; versions?: unknown; project?: unknown } | null;
+  customData?: {
+    createdBy?: unknown;
+    updatedBy?: unknown;
+    card?: unknown;
+    versions?: unknown;
+    project?: unknown;
+    zone?: unknown;
+    day?: unknown;
+    zoneLabel?: unknown;
+    canvasHint?: unknown;
+    cardTitle?: unknown;
+  } | null;
 };
 
 export type SummaryItem = {
@@ -41,8 +52,11 @@ export type SummaryItem = {
   /** Saved versions of a SHIFT card, oldest first. */
   history?: CardVersion[];
 };
-/** `project` is the SHIFT project id of a project frame. */
-export type SummaryArea = { id: string; title: string; items: SummaryItem[]; project?: string };
+/**
+ * `project` is the SHIFT project id of a project frame. `zone` is the kind of a
+ * SHIFT canvas zone, and `parent` the id of the project frame it belongs to.
+ */
+export type SummaryArea = { id: string; title: string; items: SummaryItem[]; project?: string; zone?: string; parent?: string };
 export type SummaryLink = { from: string; to: string; label?: string };
 export type BoardSummary = { areas: SummaryArea[]; loose: SummaryItem[]; links: SummaryLink[]; counts: Record<string, number> };
 
@@ -105,15 +119,17 @@ export function summarizeElements(raw: unknown[]): BoardSummary {
     return { ...(createdBy ? { createdBy } : {}), ...(updatedBy ? { updatedBy } : {}) };
   };
 
-  // Areas: frames, plus big unlabelled rectangles with something inside.
+  // Areas: frames, SHIFT canvas zones, plus big unlabelled rectangles with something inside.
   const frames = all.filter((e) => e.type === "frame" || e.type === "magicframe");
+  const shiftZone = (e: El) => (e.type === "rectangle" && isShiftCardKind(e.customData?.zone) ? e.customData!.zone : null);
   const zones = all.filter(
     (e) =>
-      e.type === "rectangle" &&
-      !labelOf.has(e.id) &&
-      e.width >= MIN_AREA &&
-      e.height >= MIN_AREA &&
-      all.some((o) => o !== e && o.type !== "arrow" && o.type !== "line" && !o.containerId && inside(e, o) && o.width < e.width),
+      shiftZone(e) ||
+      (e.type === "rectangle" &&
+        !labelOf.has(e.id) &&
+        e.width >= MIN_AREA &&
+        e.height >= MIN_AREA &&
+        all.some((o) => o !== e && o.type !== "arrow" && o.type !== "line" && !o.containerId && inside(e, o) && o.width < e.width)),
   );
   const zoneIds = new Set(zones.map((z) => z.id));
 
@@ -137,9 +153,12 @@ export function summarizeElements(raw: unknown[]): BoardSummary {
     return oneLine(t.text!);
   };
 
-  const areas = [...frames, ...zones]
-    .map((a) => ({ el: a, title: a.type === "rectangle" ? zoneTitle(a) : oneLine(a.name ?? "Frame") }))
-    .sort((a, b) => readingOrder(a.el, b.el));
+  const titleOf = (a: El) => {
+    const kind = shiftZone(a);
+    if (kind) return shiftZoneTitle(kind, typeof a.customData?.day === "number" ? a.customData.day : undefined);
+    return a.type === "rectangle" ? zoneTitle(a) : oneLine(a.name ?? "Frame");
+  };
+  const areas = [...frames, ...zones].map((a) => ({ el: a, title: titleOf(a) })).sort((a, b) => readingOrder(a.el, b.el));
 
   const toItem = (e: El): SummaryItem | null => {
     const by = authors(e);
@@ -164,19 +183,32 @@ export function summarizeElements(raw: unknown[]): BoardSummary {
     return text ? { id: e.id, kind: "shape", text, ...by } : null;
   };
 
+  const projectFrames = new Set(frames.filter((f) => typeof f.customData?.project === "string").map((f) => f.id));
   const placed: SummaryArea[] = areas.map((a) => {
     const project = a.el.type === "frame" ? a.el.customData?.project : undefined;
-    return { id: a.el.id, title: a.title, items: [], ...(typeof project === "string" ? { project } : {}) };
+    const zone = shiftZone(a.el);
+    const parent = zone && a.el.frameId && projectFrames.has(a.el.frameId) ? a.el.frameId : undefined;
+    return {
+      id: a.el.id,
+      title: a.title,
+      items: [],
+      ...(typeof project === "string" ? { project } : {}),
+      ...(zone ? { zone } : {}),
+      ...(parent ? { parent } : {}),
+    };
   });
   const loose: SummaryItem[] = [];
+  // A canvas's zone titles, questions and hint, and a Library card's name tag, are layout, not anyone's writing.
+  const layout = (e: El) => Boolean(e.customData?.zoneLabel || e.customData?.canvasHint || e.customData?.cardTitle);
   const items = all
-    .filter((e) => !e.containerId && !zoneIds.has(e.id) && !frames.includes(e) && !titleTexts.has(e.id))
+    .filter((e) => !e.containerId && !zoneIds.has(e.id) && !frames.includes(e) && !titleTexts.has(e.id) && !layout(e))
     .sort(readingOrder);
   for (const e of items) {
     const item = toItem(e);
     if (!item) continue;
-    // Smallest area that holds it; a frame claims its children directly.
-    let home = e.frameId ? areas.findIndex((a) => a.el.id === e.frameId) : -1;
+    // Smallest area that holds it; a frame claims its children directly, unless a zone in it holds them.
+    let home = -1;
+    if (e.frameId && !projectFrames.has(e.frameId)) home = areas.findIndex((a) => a.el.id === e.frameId);
     if (home < 0) {
       let best = Infinity;
       areas.forEach((a, i) => {
@@ -259,9 +291,17 @@ export function boardToMarkdown(
     .join(", ");
   out.push(`Elements: ${counts || "none"}`);
 
+  // A SHIFT canvas reads as one project with a section per zone.
+  const zonesOf = (id: string) => summary.areas.filter((z) => z.parent === id);
   for (const a of summary.areas) {
+    if (a.parent) continue;
     out.push("", `## ${a.project ? "[SHIFT project] " : ""}${a.title || "Untitled area"}`);
-    out.push(...(a.items.length ? a.items.map(line) : ["(empty)"]));
+    const zones = zonesOf(a.id);
+    if (a.items.length || !zones.length) out.push(...(a.items.length ? a.items.map(line) : ["(empty)"]));
+    for (const z of zones) {
+      out.push("", `### ${z.title}`);
+      out.push(...(z.items.length ? z.items.map(line) : ["(empty)"]));
+    }
   }
   if (summary.loose.length) out.push("", summary.areas.length ? "## Elsewhere on the board" : "## Board", ...summary.loose.map(line));
   if (summary.links.length) {

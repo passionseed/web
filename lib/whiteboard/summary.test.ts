@@ -131,12 +131,40 @@ describe("SHIFT cards and project frames", () => {
     expect(md).toContain("- [👥 กลุ่มเป้าหมาย] (empty)");
   });
 
-  it("names room cards too", () => {
+  it("names room cards too, and skips the name tag a Library card brings", () => {
     const summary = summarizeElements([
+      text("tag", 0, -76, "👋 มาถึงแล้ว", { customData: { cardTitle: "arrive" } }),
       box("r", 0, 0, 220, 220, { backgroundColor: "#ffe680", customData: { card: "arrive" } }),
       text("r-label", 10, 10, "👋 วันนี้อยากทำอะไรให้เสร็จ? ทำหน้าแรก", { containerId: "r" }),
     ]);
     const md = boardToMarkdown({ title: "Room", owner: "Fang", updatedAt: "", members: [] }, summary);
     expect(md).toContain("- [👋 มาถึงแล้ว] 👋 วันนี้อยากทำอะไรให้เสร็จ? ทำหน้าแรก");
+    expect(md).not.toContain("\n- 👋 มาถึงแล้ว");
+  });
+});
+
+describe("SHIFT project canvas", () => {
+  it("reads a canvas as one project with a section per zone, without its layout text", () => {
+    const summary = summarizeElements([
+      { id: "f", type: "frame", x: 0, y: 0, width: 2000, height: 2000, name: "โปรเจกต์ · growa", customData: { project: "p1" } },
+      text("hint", 40, 20, "กด + ในช่องเพื่อเพิ่มโน้ต", { frameId: "f", customData: { canvasHint: true } }),
+      box("z1", 40, 80, 600, 400, { frameId: "f", customData: { zone: "interview" } }),
+      text("z1-t", 60, 100, "🎤 สัมภาษณ์", { frameId: "f", customData: { zoneLabel: "interview" } }),
+      box("z2", 700, 80, 300, 400, { frameId: "f", customData: { zone: "daily", day: 2 } }),
+      box("n1", 60, 180, 240, 200, { frameId: "f", customData: { card: "interview", createdBy: "mint" } }),
+      text("n1-l", 70, 190, "พี่เภสัชบอกว่าคนแก่ถามซ้ำ", { containerId: "n1", frameId: "f" }),
+      box("s1", 320, 180, 200, 200, { frameId: "f", backgroundColor: "#ffe680" }),
+      text("s1-l", 330, 190, "โน้ตธรรมดาในช่องสัมภาษณ์", { containerId: "s1", frameId: "f" }),
+    ]);
+    const zones = summary.areas.filter((a) => a.parent === "f");
+    expect(zones.map((z) => [z.title, z.zone, z.items.length])).toEqual([
+      ["🎤 สัมภาษณ์", "interview", 2],
+      ["📅 วันที่ 2", "daily", 0],
+    ]);
+    const md = boardToMarkdown({ title: "SHIFT", owner: "Fang", updatedAt: "", members: [] }, summary);
+    expect(md).toContain("## [SHIFT project] โปรเจกต์ · growa\n\n### 🎤 สัมภาษณ์\n- [🎤 สัมภาษณ์] พี่เภสัชบอกว่าคนแก่ถามซ้ำ");
+    expect(md).toContain("- [Yellow sticky] โน้ตธรรมดาในช่องสัมภาษณ์");
+    expect(md).toContain("### 📅 วันที่ 2\n(empty)");
+    expect(md).not.toContain("กด + ในช่อง");
   });
 });

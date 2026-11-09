@@ -9,18 +9,22 @@ import { PLUGINS } from "./registry";
 import type { BoardPlugin } from "./types";
 
 /**
- * The Apps button in the top bar. Editors place an app on the board as a
- * widget everyone sees; anyone can open it as a window just for themselves.
+ * The Apps button (in the bottom toolbar, like FigJam's plugins). Editors
+ * place an app on the board as a widget everyone sees; anyone can open it as
+ * a window just for themselves.
  */
 export function PluginMenu({
   open,
   onToggle,
   onPlace,
+  placement = "down",
 }: {
   open: Record<string, unknown>;
   onToggle: (id: string) => void;
   /** Set when the viewer may edit the board. */
   onPlace?: (plugin: BoardPlugin) => void;
+  /** Which way the menu opens from its button. */
+  placement?: "down" | "up";
 }) {
   const [shown, setShown] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -46,10 +50,14 @@ export function PluginMenu({
         className={`wb-pill ${Object.keys(open).length ? "wb-pill--on" : ""}`}
       >
         <Blocks className="h-4 w-4" />
-        <span className="hidden sm:inline">แอป</span>
+        <span>แอป</span>
       </button>
       {shown && (
-        <div className="wb-window absolute right-0 top-11 z-30 w-80 p-1.5">
+        <div
+          className={`wb-window absolute z-30 w-80 p-1.5 ${
+            placement === "up" ? "bottom-11 left-1/2 -translate-x-1/2" : "right-0 top-11"
+          }`}
+        >
           {PLUGINS.map((p) => {
             const placeable = Boolean(onPlace && p.widget);
             return (

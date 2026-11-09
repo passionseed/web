@@ -2,7 +2,7 @@ import type { ExcalidrawElementSkeleton } from "@excalidraw/excalidraw/data/tran
 
 import { cardSkeleton } from "./cards";
 import { STICKY_COLORS } from "./core";
-import { projectFrameSkeleton } from "./shift-cards";
+import { projectCanvasSkeleton } from "./shift-cards";
 
 /**
  * Board templates as Excalidraw element skeletons, laid out from (0, 0).
@@ -197,10 +197,10 @@ function room(): ExcalidrawElementSkeleton[] {
 export const TEMPLATES: Template[] = [
   {
     id: "shiftproject",
-    name: "โปรเจกต์ SHIFT · SHIFT project",
-    description: "กรอบโปรเจกต์ พร้อมการ์ดปัญหาและกลุ่มเป้าหมาย การ์ดอื่นอยู่ในแถบ SHIFT",
+    name: "แคนวาสโปรเจกต์ SHIFT · SHIFT canvas",
+    description: "ช่องละเรื่อง: ปัญหา กลุ่มเป้าหมาย สัมภาษณ์ ทดสอบ เปลี่ยนแผน และวันละช่อง",
     emoji: "🧭",
-    build: () => projectFrameSkeleton("โปรเจกต์ · ตั้งชื่อโปรเจกต์"),
+    build: () => projectCanvasSkeleton("โปรเจกต์ · ตั้งชื่อโปรเจกต์"),
   },
   {
     id: "room",

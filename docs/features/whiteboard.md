@@ -79,7 +79,7 @@ again afterwards.
 
 ## Board apps (plugins) and the community calendar
 
-- **Apps menu (แอป):** board windows like FigJam plugins, in `components/whiteboard/plugins/`.
+- **Apps menu (แอป, in the bottom toolbar next to comments):** board windows like FigJam plugins, in `components/whiteboard/plugins/`.
   A plugin is one entry in `registry.tsx` (`BoardPlugin`: id, name, icon, size, Component).
   `PluginHost` renders the open ones as draggable windows; which are open and where is kept
   in localStorage per board. A plugin gets the Excalidraw API, the board, and
@@ -125,58 +125,52 @@ again afterwards.
   it starts and at `/admin/calendar` for the last 90 days. Nothing per person is stored, and it
   shows who used the board, not who spoke in voice.
 
-## SHIFT cards, project frames and versions
+## SHIFT project canvas and note versions
 
-SHIFT and SHIFT High students log their project on the board itself, so mentors (and an AI
-reading the board) can follow each student without forms. Code: `lib/whiteboard/shift-cards.ts`,
-`components/whiteboard/shift/`.
+SHIFT and SHIFT High students log their project on a canvas laid out like a Business Model
+Canvas, so mentors (and an AI reading the board) can follow each student without forms. Code:
+`lib/whiteboard/shift-cards.ts`, `components/whiteboard/shift/`.
 
-- **SHIFT tab in the board kit** (also in the 📚 Library): nine typed cards. Each is a sticky
-  with its name and one question printed on it, then room to write, tagged `customData.card`;
-  the author is stamped like every element. Students write freely under the question.
-  Excalidraw selects all of a text when editing starts on a laptop, so `useShiftCardCaret`
-  moves the caret to the end on SHIFT cards (otherwise the first key wipes the question).
-  New cards take the first free card-sized slot near the middle of the screen
-  (`freeSlot`), so several clicks lay cards out side by side.
+- **Adding a canvas:** the board kit's **SHIFT** tab has one button, **+ แคนวาสโปรเจกต์**, with a
+  small map of the layout; the **แคนวาสโปรเจกต์ SHIFT** template does the same. A new canvas
+  goes to the right of everything already on the board, so it never covers someone's work.
+- **Layout** (`canvasZones`): a frame tagged `customData.project` holding one locked, tinted zone
+  per kind (`customData.zone`), each with its title and question (`customData.zoneLabel`):
 
-  | Card | Kind | Versions | Matching `shift_round_evidence` type |
-  |---|---|---|---|
-  | 🎯 ปัญหา · Problem | `problem` | yes | `problem_statement` |
-  | 👥 กลุ่มเป้าหมาย · Target user | `target` | yes | `problem_statement` (`user_group`) |
-  | 💡 ไอเดีย · Idea | `idea` | yes | `ideas` |
-  | 🚀 ปล่อยงาน · Ship | `ship` | yes | `mvp` |
-  | 🎤 สัมภาษณ์ · Interview | `interview` | no | `interview` |
-  | 🔍 ตัวอย่าง/คู่แข่ง · Reference | `reference` | no | none yet |
-  | 🧪 ทดสอบ · Test | `test` | no | `tester` |
-  | 🔀 เปลี่ยนแผน · Pivot | `pivot` | no | `change` |
-  | 📅 วันนี้ · Daily | `daily` | no | `daily` |
+  | Row | Zones |
+  |---|---|
+  | What we believe (each starts with one note that keeps versions) | 🎯 ปัญหา, 👥 กลุ่มเป้าหมาย, 💡 ไอเดีย, 🚀 ปล่อยงาน |
+  | Evidence | 🎤 สัมภาษณ์, 🔍 ตัวอย่าง/คู่แข่ง |
+  | What we tried and changed | 🧪 ทดสอบ, 🔀 เปลี่ยนแผน |
+  | Daily | 📅 วันที่ 1 to 7 (`customData.day`) |
 
-  Rule of thumb: things you believe get versions; things that happened (an interview, a
-  test) get a new card each time. A Pivot card's arrows from the interview or test that caused
-  it are the "why" of the pivot log.
-- **Project frame** (**+ โปรเจกต์**, or the **โปรเจกต์ SHIFT** template): an Excalidraw frame
-  tagged `customData.project` with a random id, starting with an empty Problem and Target
-  card. A card added from the kit while the screen's centre is inside a project frame joins it.
-  The id survives copying the frame to another board, so one project can continue from a SHIFT
-  board onto the SHIFT High board. Two frames with the same id on one board (a copy-paste) are
-  separate projects. Staff can pre-place one frame per student before a session.
-- **Versions** on Problem, Target, Idea and Ship: select the card, click its chip, and
-  **เก็บเป็น vN** saves the card's text (up to 5,000 characters), time, author and an optional
-  reason (**เปลี่ยนเพราะ**) into `customData.versions` (newest 20 kept, numbers never reused).
-  The history shows each version's answer without the question, with lines new since the
-  version before marked. The panel is a `.wb-window` dialog on the board's `--wb-*` tokens. It
-  syncs, undoes, and travels with the card like any edit, with no extra table. Cards with
-  versions show a `v2` chip, plus "แก้อยู่" when the text changed since the last version.
-  Every save is also in `whiteboard_changes`, but that is cut to 200 characters and records
-  half-typed text, so it is an audit trail rather than versions.
-- **Example cards** (the ones a project frame starts with) count only once someone writes on
-  them, like the room template's cards.
-- **Reading:** `pnpm whiteboard:read <id>` marks project frames as `[SHIFT project]` and
-  prints each card as `[🎯 ปัญหา v2] ...` followed by its versions and reasons.
+  Each kind's matching `shift_round_evidence` type is in `SHIFT_CARDS[kind].evidence`, for a
+  later export.
+- **+ เพิ่ม** (`ZoneAddLayer`, editors only, hidden below 20% zoom) at each zone's top-right
+  adds a note of that kind (`customData.card`) in the zone's next free slot, joins it to the
+  project frame, and starts typing on it straight away. The zone a note sits in says what it
+  is, so plain stickies dragged into a zone count too. A note starts with one space so its
+  label keeps the board's note font; `useShiftCardCaret` selects that space (or, on a written
+  note, puts the caret at the end, since Excalidraw otherwise selects all text on a laptop).
+- **Pivot arrows:** an arrow from an interview or test to a pivot note is the "why" of the
+  pivot log.
+- **Versions** on Problem, Target, Idea and Ship notes: select the note, click its chip, and
+  **เก็บเป็น vN** saves the note's text (up to 5,000 characters), time, author and an optional
+  reason (**เปลี่ยนเพราะ**) into `customData.versions` (newest 20 kept, numbers never reused). It
+  syncs, undoes, and travels with the note like any edit, with no extra table. The history
+  panel (a `.wb-window` dialog on the board's `--wb-*` tokens) marks lines new since the
+  version before. Every save is also in `whiteboard_changes`, but that is cut to 200
+  characters and records half-typed text, so it is an audit trail rather than versions.
+- **Projects across boards:** the project id survives copying a canvas to another board, so a
+  project can continue from a SHIFT board onto the SHIFT High board. Two frames with the same
+  id on one board (a copy-paste) are separate projects.
+- **Reading:** `pnpm whiteboard:read <id>` prints each canvas as `## [SHIFT project] <name>`
+  with a `###` section per zone, notes as `[🎤 สัมภาษณ์] ...`, and each version with its
+  reason. Zone labels and the canvas hint are left out.
 
-Next: a per-project log and a mentor progress page (`/admin/shift/progress`) that joins these
-cards with SeedStack events by user id, then a student "my log" export for the TCAS case study.
-No AI appears in the student UI; analysis runs on the Markdown and JSON reads.
+Next: a per-project log and a mentor progress page (`/admin/shift/progress`) that joins the
+canvases with SeedStack events by user id, then a student "my log" export for the TCAS case
+study. No AI appears in the student UI; analysis runs on the Markdown and JSON reads.
 
 ## Excalidraw gotchas (0.18)
 

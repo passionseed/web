@@ -8,8 +8,8 @@ import { isShiftCardKind } from "@/lib/whiteboard/shift-cards";
 /**
  * On a laptop, Excalidraw selects all of a text when editing starts, so the
  * first key a student types would replace a SHIFT card's header and question.
- * When editing starts on a SHIFT card, this moves the caret to the end instead:
- * below the question, where the answer goes, and after any earlier answer.
+ * When editing starts on a SHIFT note, this moves the caret to the end instead,
+ * after what is already written (or, on a blank note, selects its one space).
  */
 export function useShiftCardCaret(api: ExcalidrawImperativeAPI | null) {
   useEffect(() => {
@@ -29,7 +29,8 @@ export function useShiftCardCaret(api: ExcalidrawImperativeAPI | null) {
         const area = document.querySelector<HTMLTextAreaElement>("textarea.excalidraw-wysiwyg");
         if (!area || document.activeElement !== area) return;
         const end = area.value.length;
-        area.setSelectionRange(end, end);
+        // A blank note holds one space (see shiftCardSkeleton): select it so the first key replaces it.
+        area.setSelectionRange(area.value.trim() ? end : 0, end);
         area.scrollTop = area.scrollHeight;
       });
     });

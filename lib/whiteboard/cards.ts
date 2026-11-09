@@ -70,3 +70,26 @@ export function cardSkeleton(kind: CardKind, x = 0, y = 0, example = false): Exc
 
 export const isCardKind = (value: unknown): value is CardKind =>
   typeof value === "string" && (CARD_KINDS as readonly string[]).includes(value);
+
+/**
+ * A card as a Library item: its name in large type above it, grouped with it,
+ * because Library thumbnails are too small to read the card's own text. The
+ * name is tagged customData.cardTitle so board readers skip it.
+ */
+export function cardLibrarySkeleton(kind: CardKind): ExcalidrawElementSkeleton[] {
+  const group = [`library-${kind}`];
+  return [
+    {
+      type: "text",
+      x: 0,
+      y: -76,
+      text: `${CARDS[kind].emoji} ${CARDS[kind].title.split(" · ")[0]}`,
+      fontSize: 48,
+      fontFamily: 6,
+      strokeColor: "#1e1e1e",
+      groupIds: group,
+      customData: { cardTitle: kind },
+    } as ExcalidrawElementSkeleton,
+    { ...cardSkeleton(kind), groupIds: group } as ExcalidrawElementSkeleton,
+  ];
+}
