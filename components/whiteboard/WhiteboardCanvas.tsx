@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import type { WhiteboardDetail } from "@/lib/supabase/whiteboards";
 import { canEdit, type LinkAccess } from "@/lib/whiteboard/core";
 import { CARD_KINDS, CARDS, cardSkeleton } from "@/lib/whiteboard/cards";
+import { SHIFT_CARD_KINDS, SHIFT_CARDS, shiftCardSkeleton } from "@/lib/whiteboard/shift-cards";
 import { templateById } from "@/lib/whiteboard/templates";
 import { widgetIdOf, widgetLink } from "@/lib/whiteboard/widgets";
 
@@ -37,6 +38,7 @@ import { BoardWidget } from "./plugins/BoardWidget";
 import { PluginHost, usePluginWindows } from "./plugins/PluginHost";
 import { PluginMenu } from "./plugins/PluginMenu";
 import { ScriptButton } from "./script/ScriptButton";
+import { CardVersionsLayer } from "./shift/CardVersionsLayer";
 import { ShareDialog } from "./ShareDialog";
 import { TimerWidget } from "./TimerWidget";
 import { useComments } from "./useComments";
@@ -59,15 +61,23 @@ function preloadThaiFonts() {
 const UI_OPTIONS = { canvasActions: { loadScene: false, saveToActiveFile: false } };
 const validateEmbeddable = (link: string) => (widgetIdOf(link) ? true : undefined);
 
-/** Room cards in the Library panel, so people can drag them onto any board. */
+/** Room cards and SHIFT cards in the Library panel, so people can drag them onto any board. */
 function cardLibrary() {
-  return CARD_KINDS.map((kind) => ({
+  const room = CARD_KINDS.map((kind) => ({
     id: `passionseed-card-${kind}`,
     status: "published" as const,
     name: CARDS[kind].title,
     created: 0,
     elements: convertToExcalidrawElements([cardSkeleton(kind)]),
   }));
+  const shift = SHIFT_CARD_KINDS.map((kind) => ({
+    id: `passionseed-shift-${kind}`,
+    status: "published" as const,
+    name: `SHIFT ${SHIFT_CARDS[kind].title}`,
+    created: 0,
+    elements: convertToExcalidrawElements([shiftCardSkeleton(kind)]),
+  }));
+  return [...shift, ...room];
 }
 
 /** The live editor: Excalidraw plus sync, stickies, comments, reactions, timer, history and sharing. */
@@ -321,6 +331,7 @@ export default function WhiteboardCanvas({
             api={api}
             boardId={board.id}
             editable={editable}
+            myName={me.name}
             comments={comments}
             showResolved={showResolved}
             onShowResolved={setShowResolved}
@@ -344,7 +355,7 @@ export default function WhiteboardCanvas({
         )}
       </>
     ),
-    [api, board.id, comments, duplicate, editable, emotes.react, me.isAdmin, onVersionsChanged, openKit, placingComment, refreshFiles, saveNow, showAuthors, showResolved, syncSend, title],
+    [api, board.id, comments, duplicate, editable, emotes.react, me.isAdmin, me.name, onVersionsChanged, openKit, placingComment, refreshFiles, saveNow, showAuthors, showResolved, syncSend, title],
   );
 
   return (
@@ -380,6 +391,7 @@ export default function WhiteboardCanvas({
             showResolved={showResolved}
           />
           <EmoteLayer api={api} bursts={emotes.bursts} />
+          <CardVersionsLayer api={api} meId={me.id} editable={editable} nameOf={nameOf} />
           {me.isAdmin && showAuthors && <AuthorsLayer api={api} nameOf={nameOf} />}
           <PluginHost
             api={api}

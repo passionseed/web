@@ -1,4 +1,6 @@
+import { CARDS, cardStartText, isCardKind } from "./cards";
 import { STICKY_COLORS } from "./core";
+import { type CardVersion, isShiftCardKind, isWritten, readVersions, SHIFT_CARDS, shortTitle } from "./shift-cards";
 
 /**
  * Turns a board's raw Excalidraw elements into something a person or an AI can
@@ -22,19 +24,25 @@ type El = {
   boundElements?: { id: string; type: string }[] | null;
   startBinding?: { elementId: string } | null;
   endBinding?: { elementId: string } | null;
-  customData?: { createdBy?: unknown; updatedBy?: unknown } | null;
+  customData?: { createdBy?: unknown; updatedBy?: unknown; card?: unknown; versions?: unknown; project?: unknown } | null;
 };
 
 export type SummaryItem = {
   id: string;
-  kind: "sticky" | "shape" | "text" | "image";
+  kind: "sticky" | "shape" | "text" | "image" | "card";
+  /** Empty for a card nobody has written on yet. */
   text: string;
   color?: string;
   /** User ids from customData (see stampAuthor); absent on elements from before it existed. */
   createdBy?: string;
   updatedBy?: string;
+  /** A room card or SHIFT card kind (customData.card). */
+  card?: string;
+  /** Saved versions of a SHIFT card, oldest first. */
+  history?: CardVersion[];
 };
-export type SummaryArea = { id: string; title: string; items: SummaryItem[] };
+/** `project` is the SHIFT project id of a project frame. */
+export type SummaryArea = { id: string; title: string; items: SummaryItem[]; project?: string };
 export type SummaryLink = { from: string; to: string; label?: string };
 export type BoardSummary = { areas: SummaryArea[]; loose: SummaryItem[]; links: SummaryLink[]; counts: Record<string, number> };
 
@@ -58,6 +66,22 @@ const inside = (outer: El, e: El) => {
   return c.x > outer.x && c.x < outer.x + outer.width && c.y > outer.y && c.y < outer.y + outer.height;
 };
 const oneLine = (s: string) => s.replace(/\s+/g, " ").trim();
+const squash = (s: string) => s.replace(/\s+/g, "");
+
+/** A tagged card's kind and whether anyone wrote on it, or null for anything else. */
+function cardOf(e: El, text: string): { card: string; written: boolean } | null {
+  const kind = e.customData?.card;
+  if (isShiftCardKind(kind)) return { card: kind, written: isWritten(kind, text) };
+  if (isCardKind(kind)) return { card: kind, written: squash(text) !== squash(cardStartText(kind)) };
+  return null;
+}
+
+/** How a card is named in Markdown, e.g. "🎤 สัมภาษณ์". */
+export function cardName(kind: string): string {
+  if (isShiftCardKind(kind)) return `${SHIFT_CARDS[kind].emoji} ${shortTitle(kind)}`;
+  if (isCardKind(kind)) return `${CARDS[kind].emoji} ${CARDS[kind].title.split(" · ")[0]}`;
+  return kind;
+}
 /** Rows top to bottom, left to right within a row. */
 const readingOrder = (a: El, b: El) => Math.round(a.y / ROW) - Math.round(b.y / ROW) || a.x - b.x;
 
@@ -122,13 +146,28 @@ export function summarizeElements(raw: unknown[]): BoardSummary {
     if (e.type === "text") return e.text ? { id: e.id, kind: "text", text: oneLine(e.text), ...by } : null;
     if (e.type === "image") return { id: e.id, kind: "image", text: labelOf.get(e.id) ?? "(image)", ...by };
     if (!SHAPES.has(e.type)) return null;
+    const tagged = cardOf(e, labelOf.get(e.id) ?? "");
+    if (tagged) {
+      const history = readVersions(e.customData);
+      return {
+        id: e.id,
+        kind: "card",
+        card: tagged.card,
+        text: tagged.written ? (labelOf.get(e.id) ?? "") : "",
+        ...(history.length ? { history } : {}),
+        ...by,
+      };
+    }
     const color = STICKY_BY_FILL.get((e.backgroundColor ?? "").toLowerCase());
     const text = labelOf.get(e.id) ?? "";
     if (color && e.type === "rectangle") return { id: e.id, kind: "sticky", text, color, ...by };
     return text ? { id: e.id, kind: "shape", text, ...by } : null;
   };
 
-  const placed: SummaryArea[] = areas.map((a) => ({ id: a.el.id, title: a.title, items: [] }));
+  const placed: SummaryArea[] = areas.map((a) => {
+    const project = a.el.type === "frame" ? a.el.customData?.project : undefined;
+    return { id: a.el.id, title: a.title, items: [], ...(typeof project === "string" ? { project } : {}) };
+  });
   const loose: SummaryItem[] = [];
   const items = all
     .filter((e) => !e.containerId && !zoneIds.has(e.id) && !frames.includes(e) && !titleTexts.has(e.id))
@@ -176,13 +215,17 @@ export function authorIds(summary: BoardSummary): string[] {
   for (const i of [...summary.areas.flatMap((a) => a.items), ...summary.loose]) {
     if (i.createdBy) ids.add(i.createdBy);
     if (i.updatedBy) ids.add(i.updatedBy);
+    for (const v of i.history ?? []) ids.add(v.by);
   }
   return [...ids];
 }
 
 function itemLine(i: SummaryItem, names: Map<string, string>) {
+  const version = i.history?.length ? ` v${i.history.at(-1)!.v}` : "";
   const body =
-    i.kind === "sticky"
+    i.kind === "card"
+      ? `[${cardName(i.card ?? "")}${version}] ${i.text || "(empty)"}`
+      : i.kind === "sticky"
       ? `[${i.color} sticky] ${i.text || "(empty)"}`
       : i.kind === "image"
         ? `[image] ${i.text}`
@@ -193,7 +236,11 @@ function itemLine(i: SummaryItem, names: Map<string, string>) {
   const by = name(i.createdBy);
   const edited = i.updatedBy && i.updatedBy !== i.createdBy ? name(i.updatedBy) : undefined;
   const credit = by ? ` (by ${by}${edited ? `, edited by ${edited}` : ""})` : "";
-  return `- ${body}${credit}`;
+  const history = (i.history ?? []).map(
+    (v) =>
+      `  - v${v.v} ${v.at.slice(0, 10)}${name(v.by) ? ` by ${name(v.by)}` : ""}: ${oneLine(v.text)}${v.why ? ` (why: ${oneLine(v.why)})` : ""}`,
+  );
+  return [`- ${body}${credit}`, ...history].join("\n");
 }
 
 /** Markdown for one board. */
@@ -213,7 +260,7 @@ export function boardToMarkdown(
   out.push(`Elements: ${counts || "none"}`);
 
   for (const a of summary.areas) {
-    out.push("", `## ${a.title || "Untitled area"}`);
+    out.push("", `## ${a.project ? "[SHIFT project] " : ""}${a.title || "Untitled area"}`);
     out.push(...(a.items.length ? a.items.map(line) : ["(empty)"]));
   }
   if (summary.loose.length) out.push("", summary.areas.length ? "## Elsewhere on the board" : "## Board", ...summary.loose.map(line));

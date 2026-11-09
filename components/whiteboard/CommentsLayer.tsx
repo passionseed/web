@@ -26,22 +26,25 @@ type Props = {
 const viewportKey = (a: AppState) => `${a.scrollX},${a.scrollY},${a.zoom.value},${a.width},${a.height},${a.offsetLeft},${a.offsetTop}`;
 
 /**
- * Hook that re-renders when the canvas scrolls, zooms or resizes, and with
- * `elements` also when elements change. Excalidraw's onChange fires on every
- * update (cursors, hovers, each frame of a drag), so it only ticks when
- * something the overlay draws from actually changed.
+ * Hook that re-renders when the canvas scrolls, zooms or resizes, with
+ * `elements` also when elements change, and with `selection` also when the
+ * selection changes. Excalidraw's onChange fires on every update (cursors,
+ * hovers, each frame of a drag), so it only ticks when something the overlay
+ * draws from actually changed.
  */
-export function useViewportTick(api: ExcalidrawImperativeAPI, { elements = false } = {}) {
+export function useViewportTick(api: ExcalidrawImperativeAPI, { elements = false, selection = false } = {}) {
   const [, setTick] = useState(0);
   useEffect(() => {
     let last = "";
     return api.onChange((sceneElements, appState) => {
-      const key = elements ? `${viewportKey(appState)}|${getSceneVersion(sceneElements)}` : viewportKey(appState);
+      let key = viewportKey(appState);
+      if (elements) key += `|${getSceneVersion(sceneElements)}`;
+      if (selection) key += `|${Object.keys(appState.selectedElementIds).join(",")}`;
       if (key === last) return;
       last = key;
       setTick((t) => t + 1);
     });
-  }, [api, elements]);
+  }, [api, elements, selection]);
 }
 
 /** Comment pins on the canvas, the new-comment composer and the open thread. */

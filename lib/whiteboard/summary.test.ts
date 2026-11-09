@@ -1,3 +1,4 @@
+import { shiftCardStartText } from "./shift-cards";
 import { authorIds, boardToMarkdown, summarizeElements } from "./summary";
 
 const base = { width: 100, height: 40 };
@@ -94,5 +95,48 @@ describe("who wrote what", () => {
     );
     expect(md).toContain("- [Yellow sticky] ทำแบบสอบถาม (by Mint, edited by Beam)");
     expect(md).toContain("- old text from before tracking\n");
+  });
+});
+
+describe("SHIFT cards and project frames", () => {
+  const written = shiftCardStartText("problem").replace("ใคร:", "ใคร: นักเรียน ม.5");
+
+  it("reads typed cards in a project frame, with versions, and leaves unwritten ones empty", () => {
+    const summary = summarizeElements([
+      { id: "f", type: "frame", x: 0, y: 0, width: 1000, height: 1000, name: "โปรเจกต์ · growa", customData: { project: "p1" } },
+      box("c1", 50, 50, 300, 260, {
+        frameId: "f",
+        customData: {
+          card: "problem",
+          createdBy: "mint",
+          versions: [{ v: 1, text: "old problem", at: "2026-11-09T12:00:00Z", by: "mint", why: "คุยกับพี่เภสัชแล้ว" }],
+        },
+      }),
+      text("c1-label", 60, 60, written, { containerId: "c1", frameId: "f", customData: { createdBy: "mint" } }),
+      box("c2", 400, 50, 300, 260, { frameId: "f", customData: { card: "target", example: true } }),
+      text("c2-label", 410, 60, shiftCardStartText("target"), { containerId: "c2", frameId: "f" }),
+    ]);
+    const [area] = summary.areas;
+    expect(area).toMatchObject({ title: "โปรเจกต์ · growa", project: "p1" });
+    expect(area.items.map((i) => [i.kind, i.card, Boolean(i.text)])).toEqual([
+      ["card", "problem", true],
+      ["card", "target", false],
+    ]);
+    expect(authorIds(summary)).toEqual(["mint"]);
+
+    const md = boardToMarkdown({ title: "SHIFT", owner: "Fang", updatedAt: "", members: [] }, summary, [], new Map([["mint", "Mint"]]));
+    expect(md).toContain("## [SHIFT project] โปรเจกต์ · growa");
+    expect(md).toContain("- [🎯 ปัญหา v1] 🎯 ปัญหา ใคร: นักเรียน ม.5");
+    expect(md).toContain("  - v1 2026-11-09 by Mint: old problem (why: คุยกับพี่เภสัชแล้ว)");
+    expect(md).toContain("- [👥 กลุ่มเป้าหมาย] (empty)");
+  });
+
+  it("names room cards too", () => {
+    const summary = summarizeElements([
+      box("r", 0, 0, 220, 220, { backgroundColor: "#ffe680", customData: { card: "arrive" } }),
+      text("r-label", 10, 10, "👋 วันนี้อยากทำอะไรให้เสร็จ? ทำหน้าแรก", { containerId: "r" }),
+    ]);
+    const md = boardToMarkdown({ title: "Room", owner: "Fang", updatedAt: "", members: [] }, summary);
+    expect(md).toContain("- [👋 มาถึงแล้ว] 👋 วันนี้อยากทำอะไรให้เสร็จ? ทำหน้าแรก");
   });
 });

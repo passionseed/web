@@ -1,0 +1,305 @@
+import type { ExcalidrawElementSkeleton } from "@excalidraw/excalidraw/data/transform";
+
+import { STICKY_COLORS } from "./core";
+
+/**
+ * SHIFT cards: typed stickies students log their project with (problem,
+ * interviews, tests, pivots...), and project frames that group one project's
+ * cards. Each card is tagged in customData.card, like the room cards, and the
+ * author is already stamped on every element, so the board can be read per
+ * student and per project without forms.
+ *
+ * Rule of thumb: things you believe (problem, target user, idea, what you
+ * shipped) get versions; things that happened (an interview, a test) get a new
+ * card each time.
+ */
+
+export const SHIFT_CARD_KINDS = [
+  "problem",
+  "target",
+  "interview",
+  "reference",
+  "idea",
+  "test",
+  "pivot",
+  "ship",
+  "daily",
+] as const;
+export type ShiftCardKind = (typeof SHIFT_CARD_KINDS)[number];
+
+export type ShiftCard = {
+  title: string;
+  emoji: string;
+  /** Prompt lines printed on a fresh card; students write after each colon. */
+  lines: string[];
+  color: string;
+  /** Beliefs that change over time keep versions; events get a new card. */
+  versioned: boolean;
+  /** The matching shift_round_evidence type, for a later export. Null when there is none yet. */
+  evidence: string | null;
+};
+
+const fill = (name: (typeof STICKY_COLORS)[number]["name"]) => STICKY_COLORS.find((c) => c.name === name)!.fill;
+
+export const SHIFT_CARDS: Record<ShiftCardKind, ShiftCard> = {
+  problem: {
+    title: "ปัญหา · Problem",
+    emoji: "🎯",
+    lines: ["ใคร:", "ลำบากเรื่อง:", "ตอนไหน:", "เพราะ:"],
+    color: fill("Pink"),
+    versioned: true,
+    evidence: "problem_statement",
+  },
+  target: {
+    title: "กลุ่มเป้าหมาย · Target user",
+    emoji: "👥",
+    lines: ["ใคร:", "หาเจอที่ไหน:", "ติดต่อได้กี่คน:"],
+    color: fill("Purple"),
+    versioned: true,
+    evidence: "problem_statement",
+  },
+  interview: {
+    title: "สัมภาษณ์ · Interview",
+    emoji: "🎤",
+    lines: ["คุยกับ (ไม่ต้องใส่ชื่อจริง):", "เขาพูดว่า:", "เซอร์ไพรส์ตรงไหน:"],
+    color: fill("Yellow"),
+    versioned: false,
+    evidence: "interview",
+  },
+  reference: {
+    title: "ตัวอย่าง/คู่แข่ง · Reference",
+    emoji: "🔍",
+    lines: ["ชื่อ/ลิงก์:", "ผู้ใช้บ่นว่า:", "ขโมยอะไรมาใช้ได้:"],
+    color: fill("Gray"),
+    versioned: false,
+    evidence: null,
+  },
+  idea: {
+    title: "ไอเดีย · Idea",
+    emoji: "💡",
+    lines: ["ไอเดีย:", "แก้ปัญหาข้อไหน:"],
+    color: fill("Orange"),
+    versioned: true,
+    evidence: "ideas",
+  },
+  test: {
+    title: "ทดสอบ · Test",
+    emoji: "🧪",
+    lines: ["อยากรู้ว่า:", "ให้ใครลอง:", "ผลคือ:", "พังตรงไหน:"],
+    color: fill("Blue"),
+    versioned: false,
+    evidence: "tester",
+  },
+  pivot: {
+    title: "เปลี่ยนแผน · Pivot",
+    emoji: "🔀",
+    lines: ["จาก:", "เป็น:", "เพราะ (ลากลูกศรจากการ์ดที่ทำให้เปลี่ยน):"],
+    color: "#99e9f2",
+    versioned: false,
+    evidence: "change",
+  },
+  ship: {
+    title: "ปล่อยงาน · Ship",
+    emoji: "🚀",
+    lines: ["ลิงก์:", "ทำอะไรได้:"],
+    color: fill("Green"),
+    versioned: true,
+    evidence: "mvp",
+  },
+  daily: {
+    title: "วันนี้ · Daily",
+    emoji: "📅",
+    lines: ["ทำเสร็จ:", "พัง:", "ได้เรียนรู้:"],
+    color: "#fff3bf",
+    versioned: false,
+    evidence: "daily",
+  },
+};
+
+export const isShiftCardKind = (value: unknown): value is ShiftCardKind =>
+  typeof value === "string" && (SHIFT_CARD_KINDS as readonly string[]).includes(value);
+
+export const isVersionedCard = (value: unknown): value is ShiftCardKind =>
+  isShiftCardKind(value) && SHIFT_CARDS[value].versioned;
+
+/** The Thai half of a bilingual title. */
+export const shortTitle = (kind: ShiftCardKind) => SHIFT_CARDS[kind].title.split(" · ")[0];
+
+/** The text a fresh card starts with: a header, then the prompt lines. */
+export const shiftCardStartText = (kind: ShiftCardKind) =>
+  [`${SHIFT_CARDS[kind].emoji} ${shortTitle(kind)}`, ...SHIFT_CARDS[kind].lines].join("\n");
+
+const squash = (s: string) => s.replace(/\s+/g, "");
+
+/** Whether someone wrote on the card, beyond the prompts it starts with. */
+export const isWritten = (kind: ShiftCardKind, text: string | null | undefined) =>
+  Boolean(text && squash(text) && squash(text) !== squash(shiftCardStartText(kind)));
+
+export const SHIFT_CARD_WIDTH = 300;
+const SHIFT_CARD_HEIGHT = 260;
+
+/**
+ * One card as a sticky with its prompts as the starting text, left-aligned so
+ * it reads like a short form. `example` cards come with a project frame and
+ * only count once someone writes on them.
+ */
+export function shiftCardSkeleton(
+  kind: ShiftCardKind,
+  x = 0,
+  y = 0,
+  { example = false, id }: { example?: boolean; id?: string } = {},
+): ExcalidrawElementSkeleton {
+  const card = SHIFT_CARDS[kind];
+  return {
+    type: "rectangle",
+    ...(id ? { id } : {}),
+    x,
+    y,
+    width: SHIFT_CARD_WIDTH,
+    height: SHIFT_CARD_HEIGHT,
+    backgroundColor: card.color,
+    strokeColor: card.color,
+    fillStyle: "solid",
+    strokeWidth: 1,
+    roughness: 0,
+    roundness: { type: 3 },
+    customData: example ? { card: kind, example: true } : { card: kind },
+    label: {
+      text: `${shiftCardStartText(kind)}\n`,
+      fontSize: 18,
+      fontFamily: 6,
+      strokeColor: "#1e1e1e",
+      textAlign: "left",
+      verticalAlign: "top",
+    },
+  } as ExcalidrawElementSkeleton;
+}
+
+// ---------------------------------------------------------------------------
+// Project frames
+
+export const PROJECT_FRAME = { width: 1900, height: 1150 };
+
+const newProjectId = () =>
+  globalThis.crypto?.randomUUID?.() ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+
+/**
+ * A frame (artboard) for one project, tagged customData.project with an id
+ * that survives copying the frame to another board, so one project's log can
+ * span the SHIFT board and the SHIFT High board. Starts with an empty Problem
+ * and Target user card. Readers treat two frames with the same id on one
+ * board (a copy-paste) as separate projects.
+ */
+export function projectFrameSkeleton(name: string, projectId = newProjectId()): ExcalidrawElementSkeleton[] {
+  // Excalidraw sizes a frame from its children when x or y is 0, so start away from the origin.
+  const x = 100;
+  const y = 100;
+  const hint = {
+    type: "text",
+    id: "project-hint",
+    x: x + 40,
+    y: y + 32,
+    text: "ลากการ์ดจากแถบ SHIFT มาวางในกรอบนี้ · ทุกอย่างในกรอบนับเป็นของโปรเจกต์นี้\nดับเบิลคลิกชื่อกรอบเพื่อเปลี่ยนชื่อโปรเจกต์",
+    fontSize: 20,
+    fontFamily: 6,
+    strokeColor: "#1e1e1e",
+    opacity: 60,
+  } as ExcalidrawElementSkeleton;
+  return [
+    hint,
+    shiftCardSkeleton("problem", x + 40, y + 120, { example: true, id: "project-problem" }),
+    shiftCardSkeleton("target", x + 40 + SHIFT_CARD_WIDTH + 40, y + 120, { example: true, id: "project-target" }),
+    {
+      type: "frame",
+      x,
+      y,
+      width: PROJECT_FRAME.width,
+      height: PROJECT_FRAME.height,
+      name,
+      children: ["project-hint", "project-problem", "project-target"],
+      customData: { project: projectId },
+    } as ExcalidrawElementSkeleton,
+  ];
+}
+
+type FrameLike = {
+  type: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  isDeleted?: boolean;
+  customData?: Record<string, unknown> | null;
+};
+
+export const isProjectFrame = (el: FrameLike) =>
+  el.type === "frame" && !el.isDeleted && typeof el.customData?.project === "string";
+
+/** The smallest project frame holding a point, so a card dropped there joins it. */
+export function projectFrameAt<T extends FrameLike>(elements: readonly T[], point: { x: number; y: number }): T | null {
+  let best: T | null = null;
+  for (const el of elements) {
+    if (!isProjectFrame(el)) continue;
+    const inside = point.x > el.x && point.x < el.x + el.width && point.y > el.y && point.y < el.y + el.height;
+    if (inside && (!best || el.width * el.height < best.width * best.height)) best = el;
+  }
+  return best;
+}
+
+// ---------------------------------------------------------------------------
+// Versions
+
+export type CardVersion = { v: number; text: string; at: string; by: string; why?: string };
+
+export const MAX_VERSIONS = 20;
+const MAX_VERSION_TEXT = 2000;
+export const MAX_WHY = 280;
+
+const isVersion = (x: unknown): x is CardVersion => {
+  const v = x as CardVersion;
+  return (
+    !!v &&
+    typeof v === "object" &&
+    Number.isInteger(v.v) &&
+    v.v > 0 &&
+    typeof v.text === "string" &&
+    typeof v.at === "string" &&
+    typeof v.by === "string" &&
+    (v.why === undefined || typeof v.why === "string")
+  );
+};
+
+/** The saved versions on a card, oldest first. Ignores anything malformed. */
+export function readVersions(customData: unknown): CardVersion[] {
+  const list = (customData as { versions?: unknown } | null | undefined)?.versions;
+  return Array.isArray(list) ? list.filter(isVersion) : [];
+}
+
+/** Whether the card's text differs from its last saved version. */
+export function hasUnsavedEdit(customData: unknown, text: string): boolean {
+  const last = readVersions(customData).at(-1);
+  return Boolean(last) && squash(last!.text) !== squash(text);
+}
+
+/**
+ * The card's customData with the current text saved as the next version, or
+ * null when there is nothing new to save (an unwritten card, or the same text
+ * as the last version). Keeps the newest MAX_VERSIONS; numbers never repeat.
+ */
+export function addVersion(
+  kind: ShiftCardKind,
+  customData: Record<string, unknown> | null | undefined,
+  entry: { text: string; by: string; at: string; why?: string },
+): Record<string, unknown> | null {
+  const text = entry.text.trim().slice(0, MAX_VERSION_TEXT);
+  if (!isWritten(kind, text)) return null;
+  const versions = readVersions(customData);
+  const last = versions.at(-1);
+  if (last && squash(last.text) === squash(text)) return null;
+  const why = entry.why?.trim().slice(0, MAX_WHY);
+  const next: CardVersion = { v: (last?.v ?? 0) + 1, text, at: entry.at, by: entry.by, ...(why ? { why } : {}) };
+  const data: Record<string, unknown> = { ...customData, versions: [...versions, next].slice(-MAX_VERSIONS) };
+  // A card with a saved version is real work now, not an example from a project frame.
+  delete data.example;
+  return data;
+}

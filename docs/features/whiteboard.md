@@ -125,6 +125,53 @@ again afterwards.
   it starts and at `/admin/calendar` for the last 90 days. Nothing per person is stored, and it
   shows who used the board, not who spoke in voice.
 
+## SHIFT cards, project frames and versions
+
+SHIFT and SHIFT High students log their project on the board itself, so mentors (and an AI
+reading the board) can follow each student without forms. Code: `lib/whiteboard/shift-cards.ts`,
+`components/whiteboard/shift/`.
+
+- **SHIFT tab in the board kit** (also in the 📚 Library): nine typed cards. Each is a sticky
+  with prompt lines printed on it, tagged `customData.card`, and the author is stamped like
+  every element. Students write freely; the prompts are a nudge, not required fields.
+
+  | Card | Kind | Versions | Matching `shift_round_evidence` type |
+  |---|---|---|---|
+  | 🎯 ปัญหา · Problem | `problem` | yes | `problem_statement` |
+  | 👥 กลุ่มเป้าหมาย · Target user | `target` | yes | `problem_statement` (`user_group`) |
+  | 💡 ไอเดีย · Idea | `idea` | yes | `ideas` |
+  | 🚀 ปล่อยงาน · Ship | `ship` | yes | `mvp` |
+  | 🎤 สัมภาษณ์ · Interview | `interview` | no | `interview` |
+  | 🔍 ตัวอย่าง/คู่แข่ง · Reference | `reference` | no | none yet |
+  | 🧪 ทดสอบ · Test | `test` | no | `tester` |
+  | 🔀 เปลี่ยนแผน · Pivot | `pivot` | no | `change` |
+  | 📅 วันนี้ · Daily | `daily` | no | `daily` |
+
+  Rule of thumb: things you believe get versions; things that happened (an interview, a
+  test) get a new card each time. A Pivot card's arrows from the interview or test that caused
+  it are the "why" of the pivot log.
+- **Project frame** (**+ โปรเจกต์**, or the **โปรเจกต์ SHIFT** template): an Excalidraw frame
+  tagged `customData.project` with a random id, starting with an empty Problem and Target
+  card. A card added from the kit while the screen's centre is inside a project frame joins it.
+  The id survives copying the frame to another board, so one project can continue from a SHIFT
+  board onto the SHIFT High board. Two frames with the same id on one board (a copy-paste) are
+  separate projects. Staff can pre-place one frame per student before a session.
+- **Versions** on Problem, Target, Idea and Ship: select the card, click its chip, and
+  **เก็บเป็น vN** saves the card's full text, time, author and an optional reason
+  (**เปลี่ยนเพราะ**) into `customData.versions` (newest 20 kept, numbers never reused). It
+  syncs, undoes, and travels with the card like any edit, with no extra table. Cards with
+  versions show a `v2` chip, plus "แก้อยู่" when the text changed since the last version.
+  Every save is also in `whiteboard_changes`, but that is cut to 200 characters and records
+  half-typed text, so it is an audit trail rather than versions.
+- **Example cards** (the ones a project frame starts with) count only once someone writes on
+  them, like the room template's cards.
+- **Reading:** `pnpm whiteboard:read <id>` marks project frames as `[SHIFT project]` and
+  prints each card as `[🎯 ปัญหา v2] ...` followed by its versions and reasons.
+
+Next: a per-project log and a mentor progress page (`/admin/shift/progress`) that joins these
+cards with SeedStack events by user id, then a student "my log" export for the TCAS case study.
+No AI appears in the student UI; analysis runs on the Markdown and JSON reads.
+
 ## Excalidraw gotchas (0.18)
 
 - `onUserFollow` and `onScrollChange` are API subscriptions

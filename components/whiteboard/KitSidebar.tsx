@@ -11,6 +11,7 @@ import { STAMPS, STICKY_COLORS } from "@/lib/whiteboard/core";
 import { sticky, TEMPLATES } from "@/lib/whiteboard/templates";
 
 import { insertSkeletons, viewportCenter } from "./insert";
+import { ShiftKit } from "./shift/ShiftKit";
 import type { CommentsApi } from "./useComments";
 import { VersionHistory } from "./VersionHistory";
 
@@ -20,6 +21,8 @@ type Props = {
   api: ExcalidrawImperativeAPI;
   boardId: string;
   editable: boolean;
+  /** Names a new SHIFT project frame. */
+  myName: string;
   comments: CommentsApi;
   showResolved: boolean;
   onShowResolved: (show: boolean) => void;
@@ -60,6 +63,7 @@ export function KitSidebar(props: Props) {
       <Sidebar.Tabs>
         <Sidebar.TabTriggers>
           {editable && <Sidebar.TabTrigger tab="create">สร้าง</Sidebar.TabTrigger>}
+          {editable && <Sidebar.TabTrigger tab="shift">SHIFT</Sidebar.TabTrigger>}
           {editable && <Sidebar.TabTrigger tab="templates">เทมเพลต</Sidebar.TabTrigger>}
           <Sidebar.TabTrigger tab="comments">คอมเมนต์</Sidebar.TabTrigger>
           <Sidebar.TabTrigger tab="history">ประวัติ</Sidebar.TabTrigger>
@@ -122,6 +126,12 @@ export function KitSidebar(props: Props) {
                 ))}
               </div>
             </section>
+          </Sidebar.Tab>
+        )}
+
+        {editable && (
+          <Sidebar.Tab tab="shift" className="p-3">
+            <ShiftKit api={api} myName={props.myName} />
           </Sidebar.Tab>
         )}
 
