@@ -132,8 +132,12 @@ reading the board) can follow each student without forms. Code: `lib/whiteboard/
 `components/whiteboard/shift/`.
 
 - **SHIFT tab in the board kit** (also in the 📚 Library): nine typed cards. Each is a sticky
-  with prompt lines printed on it, tagged `customData.card`, and the author is stamped like
-  every element. Students write freely; the prompts are a nudge, not required fields.
+  with its name and one question printed on it, then room to write, tagged `customData.card`;
+  the author is stamped like every element. Students write freely under the question.
+  Excalidraw selects all of a text when editing starts on a laptop, so `useShiftCardCaret`
+  moves the caret to the end on SHIFT cards (otherwise the first key wipes the question).
+  New cards take the first free card-sized slot near the middle of the screen
+  (`freeSlot`), so several clicks lay cards out side by side.
 
   | Card | Kind | Versions | Matching `shift_round_evidence` type |
   |---|---|---|---|
@@ -157,8 +161,10 @@ reading the board) can follow each student without forms. Code: `lib/whiteboard/
   board onto the SHIFT High board. Two frames with the same id on one board (a copy-paste) are
   separate projects. Staff can pre-place one frame per student before a session.
 - **Versions** on Problem, Target, Idea and Ship: select the card, click its chip, and
-  **เก็บเป็น vN** saves the card's full text, time, author and an optional reason
-  (**เปลี่ยนเพราะ**) into `customData.versions` (newest 20 kept, numbers never reused). It
+  **เก็บเป็น vN** saves the card's text (up to 5,000 characters), time, author and an optional
+  reason (**เปลี่ยนเพราะ**) into `customData.versions` (newest 20 kept, numbers never reused).
+  The history shows each version's answer without the question, with lines new since the
+  version before marked. The panel is a `.wb-window` dialog on the board's `--wb-*` tokens. It
   syncs, undoes, and travels with the card like any edit, with no extra table. Cards with
   versions show a `v2` chip, plus "แก้อยู่" when the text changed since the last version.
   Every save is also in `whiteboard_changes`, but that is cut to 200 characters and records
