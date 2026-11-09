@@ -9,6 +9,7 @@ import {
 import { completeShiftJoin } from "@/lib/shift/join";
 import { isShiftPath, shiftJoinPath, tokenFromShiftJoinPath } from "@/lib/shift/joinLink";
 import { shiftDiscordAuthError } from "@/lib/shift/discordAuth";
+import { safeRedirectPath } from "@/lib/security/redirects";
 
 type PendingCookie = {
   name: string;
@@ -47,10 +48,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const origin = resolveAppOrigin(request);
   const code = searchParams.get("code");
-  let next = searchParams.get("next") ?? "/me";
-  if (!next.startsWith("/") || next.startsWith("//")) {
-    next = "/me";
-  }
+  const next = safeRedirectPath(searchParams.get("next"), "/me");
 
   if (code) {
     const cookieStore = await cookies();

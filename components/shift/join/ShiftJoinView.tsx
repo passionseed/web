@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Check } from "lucide-react";
+import { ArrowRight, Check, CircleCheck, MessageCircle } from "lucide-react";
 
 import { RisoBand, RisoPageTexture, labelClass } from "@/components/shift/ShiftRiso";
 import { ShiftPayment } from "@/components/shift/ShiftPayment";
@@ -10,6 +10,8 @@ import { INK, MISREG_TEXT } from "@/components/shift/poster/riso";
 import { SHIFT_PAYMENT, type ShiftCohort } from "@/lib/content/shift-cohort";
 import type { ShiftDiscordAuthError } from "@/lib/shift/discordAuth";
 import type { ApplicantSummary } from "@/lib/shift/paymentMessage";
+import { DiscordIcon } from "./DiscordIcon";
+import { DiscordSteps } from "./DiscordSteps";
 
 /**
  * What an applicant sees at /shift/join/{token}, opened straight from the
@@ -100,9 +102,10 @@ export function LineHelp() {
       ติดตรงไหน ทักพี่ใน LINE{" "}
       <a
         href={SHIFT_PAYMENT.lineUrl}
-        className="inline-flex min-h-12 items-center font-semibold underline underline-offset-4"
+        className="inline-flex min-h-12 items-center gap-2 font-semibold underline underline-offset-4"
         style={{ color: INK.paper }}
       >
+        <MessageCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
         {SHIFT_PAYMENT.lineId}
       </a>
     </p>
@@ -148,19 +151,17 @@ export function ShiftJoinView({ token, state }: { token: string; state: ShiftJoi
       return (
         <Shell
           eyebrow={state.cohortName}
-          title={state.paid ? `${state.nickname} เหลืออีกขั้นเดียว` : `${state.nickname} เชื่อม Discord เข้าห้องของรุ่นได้เลย`}
+          title="เข้าห้องเรียน SHIFT"
         >
-          {state.paid ? (
-            <Body>
-              ได้รับเงินแล้ว ที่นั่งเป็นของเรา กดเชื่อม Discord ทีเดียว ระบบพาเข้าเซิร์ฟ SHIFT พร้อมห้องของ{" "}
-              {state.cohortName} ให้เลย ไม่ต้องสมัคร PassionSeed แยก ไม่ต้องกรอกโปรไฟล์
-            </Body>
-          ) : (
-            <Body>
-              กดเชื่อม Discord ทีเดียว ได้บัญชี PassionSeed และเข้าเซิร์ฟ SHIFT พร้อมห้องของ {state.cohortName} เลย
-              ไม่ต้องสมัคร PassionSeed แยก ไม่ต้องกรอกโปรไฟล์
-            </Body>
+          {state.paid && (
+            <p className="flex items-center gap-3 font-semibold" style={{ color: FLOW_TEXT.body }}>
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: INK.yellow, color: INK.black }}>
+                <CircleCheck className="h-6 w-6" aria-hidden="true" />
+              </span>
+              {state.nickname} ชำระเงินแล้ว
+            </p>
           )}
+          <Body>เราเรียนและคุยกันใน Discord กดปุ่มนี้เพื่อเข้าห้องของ {state.cohortName}</Body>
           {state.error && (
             <p className="text-sm font-semibold leading-relaxed" style={{ color: FLOW_TEXT.warn }} role="alert">
               {CONNECT_ERRORS[state.error]}
@@ -168,8 +169,9 @@ export function ShiftJoinView({ token, state }: { token: string; state: ShiftJoi
           )}
           <ConnectDiscordButton
             token={token}
-            label={state.error === "discord_identity_exists" ? "เข้าสู่ระบบด้วย Discord บัญชีเดิม" : undefined}
+            label={state.error === "discord_identity_exists" ? "ใช้ Discord บัญชีเดิมเข้าห้องเรียน" : "เข้าห้องเรียนด้วย Discord"}
           />
+          <DiscordSteps />
           <PaymentStep payment={state.payment} />
           <LineHelp />
         </Shell>
@@ -177,16 +179,17 @@ export function ShiftJoinView({ token, state }: { token: string; state: ShiftJoi
 
     case "needs_invite":
       return (
-        <Shell eyebrow={state.cohortName} title="เชื่อม Discord แล้ว">
-          <Body>
-            {state.payment ? "เข้าเซิร์ฟก่อน" : "เหลือแค่เข้าเซิร์ฟ"} กดลิงก์เชิญ เข้าให้เรียบร้อย แล้วกลับมากดรับ role
-            ที่หน้านี้ ห้องของรุ่นจะโผล่ขึ้นมาเอง
-          </Body>
+        <Shell eyebrow={state.cohortName} title="ต่อไป: เข้ากลุ่ม SHIFT">
+          <Body>กดปุ่มที่ 1 แล้วเลือก Accept Invite / รับคำเชิญ ใน Discord</Body>
           {state.inviteUrl && (
             <LinkButton href={state.inviteUrl} primary>
-              1. เข้าเซิร์ฟ Discord
+              <DiscordIcon className="h-5 w-5 shrink-0" />
+              1. เข้ากลุ่ม SHIFT ใน Discord
             </LinkButton>
           )}
+          <p className="text-sm leading-relaxed" style={{ color: FLOW_TEXT.muted }}>
+            เข้ากลุ่มแล้ว กลับมาหน้านี้ กดปุ่มที่ 2 เพื่อเปิดห้องของ {state.cohortName}
+          </p>
           <SyncRolesButton token={token} />
           <PaymentStep payment={state.payment} />
           <LineHelp />
@@ -199,7 +202,9 @@ export function ShiftJoinView({ token, state }: { token: string; state: ShiftJoi
       const owes = state.payment !== null;
       const openDiscord = state.serverUrl && (
         <LinkButton href={state.serverUrl} primary={!owes}>
-          เปิด Discord
+          <DiscordIcon className="h-5 w-5 shrink-0" />
+          เปิดห้องเรียนใน Discord
+          <ArrowRight className="h-5 w-5 shrink-0" aria-hidden="true" />
         </LinkButton>
       );
       return (
