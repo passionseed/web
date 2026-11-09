@@ -1,5 +1,7 @@
 import {
   addVersion,
+  freeSlot,
+  isPlacementObstacle,
   hasUnsavedEdit,
   isVersionedCard,
   isWritten,
@@ -124,5 +126,31 @@ describe("card versions", () => {
     expect(hasUnsavedEdit(data, "a")).toBe(false);
     expect(hasUnsavedEdit(data, "b")).toBe(true);
     expect(hasUnsavedEdit({}, "b")).toBe(false);
+  });
+});
+
+describe("card placement", () => {
+  const size = { width: 300, height: 260 };
+  const at = (x: number, y: number) => ({ x: x - 150, y: y - 130, ...size });
+
+  it("uses the middle when it is free, then fills the row to the right", () => {
+    expect(freeSlot([], { x: 0, y: 0 }, size)).toEqual({ x: 0, y: 0 });
+    expect(freeSlot([at(0, 0)], { x: 0, y: 0 }, size)).toEqual({ x: 324, y: 0 });
+    expect(freeSlot([at(0, 0), at(324, 0)], { x: 0, y: 0 }, size)).toEqual({ x: 648, y: 0 });
+  });
+
+  it("stays inside a project frame", () => {
+    const frame = { x: -200, y: -200, width: 600, height: 1000 };
+    // Right of the middle is outside the frame, so the next slot is the row below.
+    expect(freeSlot([at(0, 0)], { x: 0, y: 0 }, size, frame)).toEqual({ x: 0, y: 284 });
+  });
+
+  it("ignores zones, frames, card labels and deleted elements", () => {
+    expect(isPlacementObstacle({ type: "rectangle", x: 0, y: 0, width: 300, height: 260 })).toBe(true);
+    expect(isPlacementObstacle({ type: "text", x: 0, y: 0, width: 600, height: 50 })).toBe(true);
+    expect(isPlacementObstacle({ type: "rectangle", x: 0, y: 0, width: 900, height: 900 })).toBe(false);
+    expect(isPlacementObstacle({ type: "frame", x: 0, y: 0, width: 300, height: 300 })).toBe(false);
+    expect(isPlacementObstacle({ type: "text", x: 0, y: 0, width: 100, height: 40, containerId: "c" })).toBe(false);
+    expect(isPlacementObstacle({ type: "rectangle", x: 0, y: 0, width: 300, height: 260, isDeleted: true })).toBe(false);
   });
 });

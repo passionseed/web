@@ -136,7 +136,7 @@ export const isWritten = (kind: ShiftCardKind, text: string | null | undefined) 
   Boolean(text && squash(text) && squash(text) !== squash(shiftCardStartText(kind)));
 
 export const SHIFT_CARD_WIDTH = 300;
-const SHIFT_CARD_HEIGHT = 260;
+export const SHIFT_CARD_HEIGHT = 260;
 
 /**
  * One card as a sticky: the header and question, then an empty line where the
@@ -245,6 +245,51 @@ export function projectFrameAt<T extends FrameLike>(elements: readonly T[], poin
     if (inside && (!best || el.width * el.height < best.width * best.height)) best = el;
   }
   return best;
+}
+
+// ---------------------------------------------------------------------------
+// Placement
+
+type Box = { x: number; y: number; width: number; height: number };
+type Placed = Box & { type: string; isDeleted?: boolean; containerId?: string | null };
+
+const SLOT_GAP = 24;
+/** Bigger than this is a background zone or a frame, which cards may sit on. */
+const MAX_OBSTACLE_AREA = 500 * 500;
+const OBSTACLE_TYPES = new Set(["rectangle", "ellipse", "diamond", "image", "embeddable", "text"]);
+
+/** Whether a new card should avoid this element: notes, cards, images and loose text, not zones or frames. */
+export const isPlacementObstacle = (el: Placed) =>
+  !el.isDeleted && OBSTACLE_TYPES.has(el.type) && !el.containerId && el.width * el.height <= MAX_OBSTACLE_AREA;
+
+const overlaps = (a: Box, b: Box) =>
+  a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+const contains = (outer: Box, inner: Box) =>
+  inner.x >= outer.x && inner.y >= outer.y && inner.x + inner.width <= outer.x + outer.width && inner.y + inner.height <= outer.y + outer.height;
+
+/** Slot offsets in the order a person would fill them: along the row to the right, then the next row down. */
+const SLOT_ORDER: [number, number][] = [0, 1, 2, -1, -2].flatMap((row) => [0, 1, 2, 3, -1, -2, -3].map((col) => [col, row] as [number, number]));
+
+/**
+ * Where a new card's centre goes: the first free card-sized slot around
+ * `center`, so clicking several cards in a row lays them out side by side
+ * instead of piling them up. `within` (a project frame) keeps every slot
+ * inside it. Falls back to `center` when every slot is taken.
+ */
+export function freeSlot(
+  obstacles: readonly Box[],
+  center: { x: number; y: number },
+  size: { width: number; height: number } = { width: SHIFT_CARD_WIDTH, height: SHIFT_CARD_HEIGHT },
+  within?: Box | null,
+): { x: number; y: number } {
+  for (const [col, row] of SLOT_ORDER) {
+    const x = center.x + col * (size.width + SLOT_GAP);
+    const y = center.y + row * (size.height + SLOT_GAP);
+    const box = { x: x - size.width / 2, y: y - size.height / 2, ...size };
+    if (within && !contains(within, box)) continue;
+    if (!obstacles.some((o) => overlaps(o, box))) return { x, y };
+  }
+  return center;
 }
 
 // ---------------------------------------------------------------------------
