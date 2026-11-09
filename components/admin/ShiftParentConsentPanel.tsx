@@ -9,12 +9,13 @@ import { Button } from "@/components/ui/button";
 import { ageOn } from "@/lib/seedstack/consent";
 import { formatBangkokDateTime } from "@/lib/shift/applicationStats";
 import { parentConsentState, type ParentConsentState } from "@/lib/shift/parentConsent";
-import type { ShiftApplicationRow as Application } from "@/types/shift";
+import type { AdminShiftApplication as Application } from "@/lib/admin/queue-tools/shift-applications";
 
 /**
  * PDPA parent consent on the admin page: a badge beside the paid switch and
- * a detail panel to resend or copy the parent's link. Under 20, "mark paid"
- * stays locked until the parent agrees.
+ * a detail panel to resend or copy the parent's link. A paid student whose
+ * parent has not answered stays "Waiting parent" until they sign; "mark paid"
+ * locks only once a parent declines or withdraws.
  */
 
 export type SendParentLink = (id: string, send: "email" | "copy") => Promise<string | null>;

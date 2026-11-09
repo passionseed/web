@@ -2,7 +2,10 @@ import Link from "next/link";
 
 import { ShiftAdminTabs } from "@/components/admin/ShiftAdminTabs";
 import { AlumniRsvpSessions } from "@/components/admin/shift-alumni/AlumniRsvpSessions";
+import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
+import { AdminErrorState } from "@/components/admin/shared/AdminStates";
 import { adminMetadata } from "@/lib/admin/metadata";
+import { requireAdmin } from "@/lib/admin/requireAdmin";
 import { alumniCalendar } from "@/lib/content/shift-alumni";
 import { groupRsvps, personKey } from "@/lib/shift/alumniRsvpSummary";
 import { loadAlumniCalendar } from "@/lib/supabase/shift-alumni-calendar";
@@ -31,7 +34,31 @@ async function loadRsvps(dates: string[]): Promise<AlumniRsvp[] | null> {
   }
 }
 
+const ALUMNI_LINKS = [
+  { href: "/shift/alumni", label: "Edit sessions on /shift/alumni" },
+  { href: "/shift/poster/alumni-session", label: "Poster for the next session" },
+  { href: "/admin/shift/alumni/board", label: "Alumni board (goals, teams, standups)" },
+];
+
+function AlumniLinks() {
+  return (
+    <nav aria-label="Alumni tools" className="flex flex-wrap gap-x-4 text-sm">
+      {ALUMNI_LINKS.map((link) => (
+        <Link
+          key={link.href}
+          href={link.href}
+          className="inline-flex min-h-11 items-center underline decoration-muted-foreground underline-offset-4 hover:decoration-foreground active:decoration-foreground"
+        >
+          {link.label}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
 export default async function AdminShiftAlumniPage() {
+  // The admin layout also checks, but this page reads with the service-role client.
+  await requireAdmin();
   const { doc } = await loadAlumniCalendar();
   const { upcoming, past } = alumniCalendar(doc);
   const sessions = [...upcoming, ...past];
@@ -41,27 +68,18 @@ export default async function AdminShiftAlumniPage() {
   return (
     <div className="space-y-4">
       <ShiftAdminTabs />
-      <div className="space-y-2">
-        <h2 className="text-2xl font-semibold">SHIFT Alumni</h2>
-        <p className="text-sm text-muted-foreground">
-          Who tapped ไปด้วย for each alumni session. Anyone with the link can RSVP, so names are as typed and not
-          verified.
-        </p>
-        <div className="flex flex-wrap gap-4 text-sm">
-          <Link href="/shift/alumni" className="underline underline-offset-4">
-            Edit sessions on /shift/alumni
-          </Link>
-          <Link href="/shift/poster/alumni-session" className="underline underline-offset-4">
-            Poster for the next session
-          </Link>
-          <Link href="/admin/shift/alumni/board" className="underline underline-offset-4">
-            Alumni board (goals, teams, standups)
-          </Link>
-        </div>
-      </div>
+      <AdminPageHeader
+        eyebrow="SHIFT"
+        title="Alumni sessions"
+        description="Who tapped ไปด้วย for each alumni session. Anyone with the link can RSVP, so names are as typed and not verified."
+      />
+      <AlumniLinks />
 
       {rsvps === null ? (
-        <p role="alert" className="text-sm text-muted-foreground">Failed to load RSVPs.</p>
+        <AdminErrorState
+          title="Could not load RSVPs"
+          message="The alumni session RSVPs did not load. Reload the page to try again."
+        />
       ) : (
         <AlumniRsvpSessions groups={groupRsvps(sessions, rsvps, answered)} nextDate={nextDate} />
       )}

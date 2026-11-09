@@ -106,7 +106,7 @@ describe("SHIFT comment copy", () => {
 
       const dm = shiftCommentDm(today);
       expectApplyMessage(dm, SHIFT_COHORT_3, "ig-comment-dm");
-      expect(dm).toContain("ปิดรับ ส. 7 พ.ย. รับแค่ 30 คน");
+      expect(dm).toContain("ปิดรับ จ. 9 พ.ย. รับแค่ 30 คน");
       expect(dm).not.toContain(SHIFT_COHORT_2.name);
       expect(dm).not.toMatch(/[?&]round=2(?:&|$)/);
 
@@ -117,13 +117,12 @@ describe("SHIFT comment copy", () => {
   );
 
   it("after the SHIFT[3] deadline the live list sends no apply link", () => {
-    const beforeStart = addDays(SHIFT_COHORT_3.applyDeadline, 1);
-    expect(cohortStatus(SHIFT_COHORT_3, beforeStart)).toBe("closed");
-    expect(openShiftCommentCohort(beforeStart)).toBeUndefined();
-    expect(shiftCommentDm(beforeStart)).toBe(closedShiftCommentLines(beforeStart).join("\n"));
-    expect(shiftCommentDm(beforeStart)).not.toContain("/shift/apply");
-
-    const running = SHIFT_COHORT_3.startDate;
+    // Applications run through Day 1, so the day after the deadline the round is running.
+    const running = addDays(SHIFT_COHORT_3.applyDeadline, 1);
+    expect(cohortStatus(SHIFT_COHORT_3, running)).toBe("running");
+    expect(openShiftCommentCohort(running)).toBeUndefined();
+    expect(shiftCommentDm(running)).toBe(closedShiftCommentLines(running).join("\n"));
+    expect(shiftCommentDm(running)).not.toContain("/shift/apply");
     expect(shiftCommentDm(running)).toBe(
       [`${SHIFT_COHORT_3.name} ปิดรับสมัครไปแล้วน้า 🌱`, "รุ่นนี้เริ่มไปแล้ว สงสัยอะไรพิมพ์ถามในนี้ได้เลย"].join("\n")
     );

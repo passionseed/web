@@ -98,7 +98,14 @@ export function ParticipantDetailModal({
             </div>
             <div className="flex gap-2 text-slate-400">
               <span className="w-24 shrink-0 text-slate-500 text-xs uppercase tracking-wider pt-0.5">University</span>
-              <span className="text-slate-300">{participant.university || "—"}</span>
+              <span className="text-slate-300">
+                {participant.university || (
+                  <span className="text-slate-500">
+                    <span aria-hidden="true">–</span>
+                    <span className="sr-only">none</span>
+                  </span>
+                )}
+              </span>
             </div>
             {participant.grade_level && (
               <div className="flex gap-2 text-slate-400">

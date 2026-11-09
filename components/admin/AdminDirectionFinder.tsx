@@ -19,8 +19,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search, Trash2, Eye, MessageSquare, RefreshCw } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { Search, Trash2, Eye, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
+import { useConfirm } from "@/components/admin/shared/useConfirm";
 import {
   getAllDirectionFinderResults,
   deleteDirectionFinderResult,
@@ -33,9 +34,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 
 export function AdminDirectionFinder() {
   const [results, setResults] = useState<DirectionFinderResultRow[]>([]);
@@ -44,7 +43,7 @@ export function AdminDirectionFinder() {
   const [selectedResult, setSelectedResult] =
     useState<DirectionFinderResultRow | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const { toast } = useToast();
+  const { confirm, confirmDialog } = useConfirm();
 
   const loadData = async () => {
     try {
@@ -53,11 +52,7 @@ export function AdminDirectionFinder() {
       setResults(data);
     } catch (error) {
       console.error("Error loading results:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load direction finder results",
-        variant: "destructive",
-      });
+      toast.error("Could not load Direction Finder results");
     } finally {
       setLoading(false);
     }
@@ -68,30 +63,24 @@ export function AdminDirectionFinder() {
   }, []);
 
   const handleDelete = async (id: string) => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this result? This action cannot be undone."
-      )
-    )
-      return;
+    const ok = await confirm({
+      title: "Delete this result?",
+      description: "The assessment result and its chat history are removed for good. This cannot be undone.",
+      confirmLabel: "Delete result",
+      destructive: true,
+    });
+    if (!ok) return;
 
     try {
       await deleteDirectionFinderResult(id);
-      toast({
-        title: "Success",
-        description: "Result deleted successfully",
-      });
+      toast.success("Result deleted");
       loadData();
       if (selectedResult?.id === id) {
         setIsSheetOpen(false);
         setSelectedResult(null);
       }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete result",
-        variant: "destructive",
-      });
+    } catch {
+      toast.error("Could not delete the result");
     }
   };
 
@@ -413,7 +402,7 @@ export function AdminDirectionFinder() {
                   value="chat"
                   className="flex-1 px-6 pb-6 overflow-hidden flex flex-col"
                 >
-                  <div className="mt-4 flex-1 border rounded-lg p-4 overflow-y-auto bg-slate-950/50">
+                  <div className="mt-4 flex-1 border rounded-lg p-4 overflow-y-auto bg-muted/40">
                     <div className="space-y-4">
                       {selectedResult.chat_history?.map((msg) => (
                         <div
@@ -445,7 +434,7 @@ export function AdminDirectionFinder() {
                   value="full-data"
                   className="flex-1 px-6 pb-6 overflow-auto"
                 >
-                  <pre className="mt-4 p-4 rounded-lg bg-slate-950 text-xs overflow-auto font-mono text-slate-300">
+                  <pre className="mt-4 p-4 rounded-lg bg-muted text-xs overflow-auto font-mono text-muted-foreground">
                     {JSON.stringify(selectedResult, null, 2)}
                   </pre>
                 </TabsContent>
@@ -454,6 +443,7 @@ export function AdminDirectionFinder() {
           </div>
         </SheetContent>
       </Sheet>
+      {confirmDialog}
     </div>
   );
 }

@@ -19,7 +19,17 @@ import type {
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { boardTopic, canEdit, changedSince, colorFor, markSeen, stampAuthor, type WhiteboardRole } from "@/lib/whiteboard/core";
+import {
+  boardTopic,
+  canEdit,
+  changedSince,
+  colorFor,
+  hasChangedSince,
+  markSeen,
+  queueLatest,
+  stampAuthor,
+  type WhiteboardRole,
+} from "@/lib/whiteboard/core";
 import { createClient } from "@/utils/supabase/client";
 
 /**
@@ -31,6 +41,10 @@ import { createClient } from "@/utils/supabase/client";
  *
  * Other features (emotes, comments, timer) ride the same channel through
  * `send` and `on`.
+ *
+ * Every Excalidraw update re-renders the whole editor, so incoming cursors and
+ * edits are applied at most once per animation frame, and the localStorage
+ * backup and thumbnail stay off the drawing hot path.
  */
 
 export type SaveState = "saved" | "saving" | "unsaved" | "offline" | "error";
@@ -72,7 +86,10 @@ const BROADCAST_MS = 60;
 const CURSOR_MS = 40;
 const VIEWPORT_MS = 80;
 const SAVE_DEBOUNCE_MS = 1200;
+const BACKUP_MS = 1000;
 const THUMBNAIL_MS = 20_000;
+/** Thumbnails wait until nobody here has edited for this long, so export never stalls a stroke. */
+const THUMBNAIL_QUIET_MS = 3000;
 const EXTRA_EVENTS: BoardEvent[] = ["emote", "comments", "timer", "versions", "plugin"];
 
 const backupKey = (boardId: string) => `whiteboard-backup:${boardId}`;
@@ -158,7 +175,10 @@ export function useWhiteboardSync({
   const listeners = useRef(new Map<BoardEvent, Set<(payload: unknown) => void>>());
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saving = useRef<Promise<void> | null>(null);
+  const backupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const collaboratorsFrame = useRef<number | null>(null);
   const lastSceneVersion = useRef(-1);
+  const lastEditAt = useRef(0);
   const thumbVersion = useRef(-1);
 
   // Everything already on the board counts as sent and saved.
@@ -195,6 +215,15 @@ export function useWhiteboardSync({
       // Storage full or blocked: the server save still runs.
     }
   }, [allElements, boardId]);
+
+  /** Backs up at most once a second while someone draws, instead of on every frame. */
+  const scheduleBackup = useCallback(() => {
+    if (backupTimer.current) return;
+    backupTimer.current = setTimeout(() => {
+      backupTimer.current = null;
+      writeBackup();
+    }, BACKUP_MS);
+  }, [writeBackup]);
 
   /** Fetches images that elements point to but this browser does not have yet. */
   const fetchMissingFiles = useCallback(
@@ -312,15 +341,16 @@ export function useWhiteboardSync({
       const version = getSceneVersion(elements);
       if (version === lastSceneVersion.current) return;
       lastSceneVersion.current = version;
+      lastEditAt.current = Date.now();
       broadcastChanges.current(elements);
-      if (changedSince(elements, savedSeen.current).length > 0) {
+      if (hasChangedSince(elements, savedSeen.current)) {
         setSaveState((s) => (s === "saving" ? s : "unsaved"));
         scheduleSave();
-        writeBackup();
+        scheduleBackup();
       }
       void uploadFiles(files);
     },
-    [allElements, editable, excalidrawAPI, scheduleSave, uploadFiles, writeBackup],
+    [allElements, editable, excalidrawAPI, scheduleBackup, scheduleSave, uploadFiles],
   );
 
   const sendCursor = useRef(throttle((payload: CursorPayload) => send("cursor", payload), CURSOR_MS));
@@ -384,10 +414,18 @@ export function useWhiteboardSync({
     };
   }, [excalidrawAPI, onScrollChange, onUserFollow]);
 
+  /**
+   * Hands cursors and presence to Excalidraw once per frame. Each update re-renders
+   * the editor, and a busy board sends dozens of cursor messages a second.
+   */
   const pushCollaborators = useCallback(() => {
-    excalidrawAPI?.updateScene({
-      collaborators: new Map(collaborators.current),
-      captureUpdate: CaptureUpdateAction.NEVER,
+    if (!excalidrawAPI || collaboratorsFrame.current !== null) return;
+    collaboratorsFrame.current = requestAnimationFrame(() => {
+      collaboratorsFrame.current = null;
+      excalidrawAPI.updateScene({
+        collaborators: new Map(collaborators.current),
+        captureUpdate: CaptureUpdateAction.NEVER,
+      });
     });
   }, [excalidrawAPI]);
 
@@ -421,7 +459,15 @@ export function useWhiteboardSync({
     const supabase = createClient();
     let cancelled = false;
 
-    const applyRemote = (remote: Elements) => {
+    // Edits from others are merged once per frame, however many messages arrive.
+    const remoteQueue = new Map<string, OrderedExcalidrawElement>();
+    let remoteFrame: number | null = null;
+
+    const applyRemote = () => {
+      remoteFrame = null;
+      const remote = [...remoteQueue.values()];
+      remoteQueue.clear();
+      if (remote.length === 0) return;
       const merged = reconcileElements(
         allElements(),
         remote as unknown as Parameters<typeof reconcileElements>[1],
@@ -433,6 +479,11 @@ export function useWhiteboardSync({
       excalidrawAPI.updateScene({ elements: merged, captureUpdate: CaptureUpdateAction.NEVER });
       lastSceneVersion.current = getSceneVersion(excalidrawAPI.getSceneElementsIncludingDeleted());
       void fetchMissingFiles(remote);
+    };
+
+    const queueRemote = (remote: Elements) => {
+      queueLatest(remoteQueue, remote);
+      remoteFrame ??= requestAnimationFrame(applyRemote);
     };
 
     (async () => {
@@ -448,7 +499,7 @@ export function useWhiteboardSync({
       }
 
       channel
-        .on("broadcast", { event: "scene" }, ({ payload }) => applyRemote((payload as { elements: Elements }).elements))
+        .on("broadcast", { event: "scene" }, ({ payload }) => queueRemote((payload as { elements: Elements }).elements))
         .on("broadcast", { event: "files" }, () => void fetchMissingFiles(allElements()))
         .on("broadcast", { event: "hello" }, () => {
           // A newcomer loaded the saved board; send them anything not saved yet.
@@ -529,6 +580,9 @@ export function useWhiteboardSync({
 
     return () => {
       cancelled = true;
+      if (remoteFrame !== null) cancelAnimationFrame(remoteFrame);
+      if (collaboratorsFrame.current !== null) cancelAnimationFrame(collaboratorsFrame.current);
+      collaboratorsFrame.current = null;
       setConnected(false);
       const channel = channelRef.current;
       channelRef.current = null;
@@ -539,7 +593,9 @@ export function useWhiteboardSync({
   // Small preview for the board list.
   useEffect(() => {
     if (!editable || !excalidrawAPI) return;
-    const timer = setInterval(async () => {
+    let idle: number | null = null;
+    const update = async () => {
+      idle = null;
       const version = getSceneVersion(excalidrawAPI.getSceneElements());
       if (version === thumbVersion.current) return;
       thumbVersion.current = version;
@@ -552,14 +608,28 @@ export function useWhiteboardSync({
         // A missing preview is fine; the next tick tries again.
         thumbVersion.current = -1;
       }
+    };
+    const timer = setInterval(() => {
+      // Exporting blocks the page, so skip ticks while someone is drawing.
+      if (idle !== null || Date.now() - lastEditAt.current < THUMBNAIL_QUIET_MS) return;
+      if (typeof requestIdleCallback === "function") idle = requestIdleCallback(() => void update(), { timeout: 5000 });
+      else void update();
     }, THUMBNAIL_MS);
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      if (idle !== null) cancelIdleCallback(idle);
+    };
   }, [boardId, editable, excalidrawAPI]);
 
   // Save what is left when the tab goes away.
   useEffect(() => {
     if (!editable) return;
-    const flush = () => void save({ keepalive: true });
+    const flush = () => {
+      if (backupTimer.current) clearTimeout(backupTimer.current);
+      backupTimer.current = null;
+      writeBackup();
+      void save({ keepalive: true });
+    };
     const onHide = () => document.visibilityState === "hidden" && flush();
     const onOnline = () => scheduleSave(200);
     window.addEventListener("pagehide", flush);
@@ -572,7 +642,7 @@ export function useWhiteboardSync({
       if (saveTimer.current) clearTimeout(saveTimer.current);
       flush();
     };
-  }, [editable, save, scheduleSave]);
+  }, [editable, save, scheduleSave, writeBackup]);
 
   // Warn before closing with unsaved work.
   useEffect(() => {
@@ -582,13 +652,15 @@ export function useWhiteboardSync({
     return () => window.removeEventListener("beforeunload", warn);
   }, [saveState]);
 
+  const refreshFiles = useCallback(() => void fetchMissingFiles(allElements()), [allElements, fetchMissingFiles]);
+
   return {
     excalidrawAPI,
     setExcalidrawAPI,
     onChange,
     onPointerUpdate,
     saveNow,
-    refreshFiles: () => void fetchMissingFiles(allElements()),
+    refreshFiles,
     send,
     on,
     saveState,

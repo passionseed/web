@@ -34,7 +34,7 @@ import {
   Loader2,
   AlertCircle
 } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
 interface RetentionSummary {
   current_dau: number;
@@ -121,7 +121,6 @@ interface AnalyticsResponse {
 export function AdminProductAnalytics() {
   const [analytics, setAnalytics] = useState<AnalyticsResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
 
   useEffect(() => {
     fetchAnalytics();
@@ -140,11 +139,7 @@ export function AdminProductAnalytics() {
       setAnalytics(data);
     } catch (error) {
       console.error("Error fetching analytics:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load product analytics",
-        variant: "destructive",
-      });
+      toast.error("Could not load product analytics");
     } finally {
       setLoading(false);
     }
@@ -237,14 +232,6 @@ export function AdminProductAnalytics() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold">Product Analytics</h2>
-        <p className="text-muted-foreground">
-          Retention, engagement, and user journey metrics
-        </p>
-      </div>
-
       {/* Key Metrics Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>

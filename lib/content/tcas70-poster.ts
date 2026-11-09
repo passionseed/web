@@ -71,7 +71,25 @@ export interface TcasPosterData {
   takeaways: TcasTakeaway[];
   dates: TcasDate[];
   sources: string[];
+  /** What admitted students actually had, where published. Shown on the sources sheet. */
+  reality?: TcasReality[];
+  /** Which projects have no published outcome data. */
+  realityGap?: string;
+  /** Exact documents each university's rows came from. Shown on the sources sheet. */
+  sourceLinks?: TcasSourceLink[];
 }
+
+/** A published outcome for one project: the minimum next to what admitted students had. */
+export type TcasReality = {
+  uni: string;
+  project: string;
+  min: string;
+  actual: string;
+  note?: string;
+  source: string;
+};
+
+export type TcasSourceLink = { uni: string; links: string[] };
 
 /** Table columns after the university label, in reading order. */
 export const TCAS_COLUMNS: { key: "project" | keyof TcasProject; th: string; en: string; fr: number }[] = [

@@ -1,7 +1,7 @@
 "use client";
 
-import { sceneCoordsToViewportCoords, viewportCoordsToSceneCoords } from "@excalidraw/excalidraw";
-import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
+import { getSceneVersion, sceneCoordsToViewportCoords, viewportCoordsToSceneCoords } from "@excalidraw/excalidraw";
+import type { AppState, ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import { formatDistanceToNow } from "date-fns";
 import { Check, RotateCcw, Send, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -22,11 +22,26 @@ type Props = {
   showResolved: boolean;
 };
 
-/** Hook that re-renders whenever the canvas scrolls or zooms. */
-export function useViewportTick(api: ExcalidrawImperativeAPI) {
+/** What scene-to-screen positions depend on. */
+const viewportKey = (a: AppState) => `${a.scrollX},${a.scrollY},${a.zoom.value},${a.width},${a.height},${a.offsetLeft},${a.offsetTop}`;
+
+/**
+ * Hook that re-renders when the canvas scrolls, zooms or resizes, and with
+ * `elements` also when elements change. Excalidraw's onChange fires on every
+ * update (cursors, hovers, each frame of a drag), so it only ticks when
+ * something the overlay draws from actually changed.
+ */
+export function useViewportTick(api: ExcalidrawImperativeAPI, { elements = false } = {}) {
   const [, setTick] = useState(0);
-  useEffect(() => api.onScrollChange(() => setTick((t) => t + 1)), [api]);
-  useEffect(() => api.onChange(() => setTick((t) => t + 1)), [api]);
+  useEffect(() => {
+    let last = "";
+    return api.onChange((sceneElements, appState) => {
+      const key = elements ? `${viewportKey(appState)}|${getSceneVersion(sceneElements)}` : viewportKey(appState);
+      if (key === last) return;
+      last = key;
+      setTick((t) => t + 1);
+    });
+  }, [api, elements]);
 }
 
 /** Comment pins on the canvas, the new-comment composer and the open thread. */

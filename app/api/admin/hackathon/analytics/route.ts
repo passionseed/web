@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
 import { requireAdmin } from "@/lib/security/route-guards";
+import { latestDaysAscending, parseAnalyticsDays } from "@/lib/supabase/admin-hackathon-analytics";
 
 /**
  * Get hackathon page analytics for admin dashboard
@@ -11,17 +11,15 @@ export async function GET(request: NextRequest) {
     const admin = await requireAdmin();
     if (!admin.ok) return admin.response;
 
-    const supabase = await createClient();
+    const { supabase } = admin.value;
+    const days = parseAnalyticsDays(request.nextUrl.searchParams.get("days"));
 
-    // Get query parameters
-    const searchParams = request.nextUrl.searchParams;
-    const days = parseInt(searchParams.get("days") || "30", 10);
-
-    // Fetch daily unique visitors data
-    const { data: dailyStats, error: dailyError } = await supabase
+    // Newest first so the limit keeps the latest N days; the chart wants them
+    // oldest first, so flip them back below.
+    const { data: latestDaily, error: dailyError } = await supabase
       .from("hackathon_daily_unique_visitors")
       .select("*")
-      .order("date", { ascending: true })
+      .order("date", { ascending: false })
       .limit(days);
 
     if (dailyError) {
@@ -52,6 +50,8 @@ export async function GET(request: NextRequest) {
     if (hourlyError) {
       console.error("Error fetching hourly stats:", hourlyError);
     }
+
+    const dailyStats = latestDaysAscending(latestDaily ?? [], days);
 
     // Calculate summary statistics
     const totalUniqueVisitors = dailyStats?.reduce(

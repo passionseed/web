@@ -5,11 +5,13 @@ import {
   colorFor,
   commentSchema,
   formatClock,
+  hasChangedSince,
   remapIds,
   restoreVersion,
   secondsLeft,
   joinRole,
   markSeen,
+  queueLatest,
   mergeElements,
   patchBoardSchema,
   shareUrl,
@@ -46,6 +48,21 @@ describe("element sync", () => {
     expect(changedSince([a1, b1], seen)).toEqual([a1, b1]);
     markSeen(seen, [a1, b1]);
     expect(changedSince([a2, b1], seen)).toEqual([a2]);
+  });
+
+  it("tells whether anything changed since it was seen", () => {
+    const seen = new Map<string, number>();
+    expect(hasChangedSince([a1], seen)).toBe(true);
+    markSeen(seen, [a1, b1]);
+    expect(hasChangedSince([a1, b1], seen)).toBe(false);
+    expect(hasChangedSince([a2, b1], seen)).toBe(true);
+  });
+
+  it("queues the highest version of each element", () => {
+    const queue = new Map<string, typeof a1>();
+    queueLatest(queue, [a2, b1]);
+    queueLatest(queue, [a1]);
+    expect([...queue.values()]).toEqual([a2, b1]);
   });
 
   it("keeps the higher version per element and adds new ones", () => {

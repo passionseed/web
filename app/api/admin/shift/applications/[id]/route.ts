@@ -1,6 +1,9 @@
 import { NextResponse, after } from "next/server";
 import { z } from "zod";
 
+import { toAdminShiftApplication } from "@/lib/admin/queue-tools/shift-applications";
+import { expireAdminOverviewKpis } from "@/lib/admin/overview/cache";
+import { isUuid } from "@/lib/admin/queue-tools/url";
 import { requireAdmin, safeServerError } from "@/lib/security/route-guards";
 import { admitPaidStudent, isJoinable, revokeShiftDiscord, syncShiftDiscord } from "@/lib/shift/join";
 import {
@@ -29,7 +32,6 @@ const patchSchema = z
 
 /** Why "mark paid" is refused, shown to the admin as-is. */
 const PARENT_BLOCK: Partial<Record<ParentConsentState, string>> = {
-  waiting: "Parent has not agreed yet (applicant is under 20). Resend or copy the parent link first.",
   declined: "Parent declined. The seat cannot be confirmed.",
   withdrawn: "Parent withdrew consent. The seat cannot be confirmed.",
 };
@@ -50,6 +52,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
   try {
     const { id } = await params;
+    if (!isUuid(id)) {
+      return NextResponse.json({ error: "Application not found" }, { status: 404 });
+    }
 
     let body: unknown;
     try {
@@ -69,8 +74,8 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     }
 
     const supabase = createAdminClient();
-    // Paying admits the student to the round: under 20 that needs a parent's
-    // consent first (PDPA s.20). Rows from before the consent flow pass.
+    // Paying admits the student to the round. Under 20 a parent who has not
+    // answered yet can sign after the student joins; a parent's no stops it.
     if (parsed.data.paid === true) {
       const { data: current, error: readError } = await supabase
         .from("shift_applications")
@@ -95,6 +100,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     if (error) {
       return NextResponse.json({ error: "Failed to update application" }, { status: 500 });
     }
+
+    // paid_at feeds the revenue and paid-seats KPIs on the overview.
+    if ("paid_at" in update) expireAdminOverviewKpis();
 
     const saved = data as ShiftApplicationRow;
     // Applicants link Discord (and get their round's role) straight from the
@@ -121,7 +129,8 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       if (removal?.ok) application = { ...application, discord_joined_at: null, discord_error: null };
     }
 
-    return NextResponse.json({ application });
+    // The full row (with join_token) stays on the server; the browser gets the admin columns.
+    return NextResponse.json({ application: toAdminShiftApplication(application) });
   } catch (error) {
     return safeServerError("Failed to update SHIFT application", error);
   }

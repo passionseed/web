@@ -8,6 +8,7 @@ import {
   listSummariesAction,
   takeDownSummaryAction,
 } from "@/app/admin/shift/rounds/actions";
+import { refreshAdminCounts } from "@/components/admin/console/live-counts";
 import { AdminEmptyState, AdminLoading } from "@/components/admin/shared/AdminStates";
 import { useConfirm } from "@/components/admin/shared/useConfirm";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,7 @@ import { formatIct } from "@/lib/shift-round/admin/format";
 import type { AdminSummaryRevision, SummaryContent, SummaryStatus } from "@/lib/shift-round/admin/types";
 import { cn } from "@/lib/utils";
 
-import { ActionError, LoadError, NativeSelect, Pill, SearchBox, statusTone } from "./shared";
+import { ActionError, EMPTY_VALUE, LoadError, NativeSelect, Pill, SearchBox, statusTone } from "./shared";
 import { useAdminMutation, useAdminQuery } from "./useAdminData";
 
 type Filter = "pending" | "approved" | "rejected" | "taken_down" | "all";
@@ -29,7 +30,7 @@ const FIELDS: { key: keyof SummaryContent; label: string }[] = [
 ];
 
 function show(value: unknown): string {
-  if (value === null || value === undefined || value === "") return "—";
+  if (value === null || value === undefined || value === "") return EMPTY_VALUE;
   if (typeof value === "object") {
     return Object.entries(value as Record<string, boolean>)
       .filter(([, on]) => on)
@@ -111,7 +112,7 @@ function RevisionCard({
     <article className="space-y-3 rounded-lg border bg-card/40 p-4" aria-label={`Summary by ${revision.handle ?? "student"}`}>
       <header className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h3 className="font-medium">{revision.handle ?? "—"}</h3>
+          <h3 className="font-medium">{revision.handle ?? "No handle"}</h3>
           <p className="text-xs text-muted-foreground">
             Revision {revision.revision} · sent {formatIct(revision.created_at)}
           </p>
@@ -181,6 +182,7 @@ export function SummariesQueue({ roundId }: { roundId: string }) {
     const result = await run(() => decideSummaryAction(r.id, "approve", null));
     if (result?.ok) {
       toast.success("Summary approved");
+      refreshAdminCounts();
       await reload();
     }
   };
@@ -188,6 +190,7 @@ export function SummariesQueue({ roundId }: { roundId: string }) {
     const result = await run(() => decideSummaryAction(r.id, "reject", reason));
     if (result?.ok) {
       toast.success("Summary rejected");
+      refreshAdminCounts();
       await reload();
     }
   };

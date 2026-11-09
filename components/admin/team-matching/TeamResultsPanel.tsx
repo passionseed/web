@@ -8,7 +8,7 @@ export function TeamResultsPanel({ teams }: Props) {
   return (
     <div className="mt-8 border border-[#2a2a2a] rounded-lg p-6 bg-[#0f0f0f]">
       <h2 className="text-sm font-semibold text-muted-foreground mb-4 uppercase tracking-wider">
-        Simulation Results — {teams.length} team{teams.length !== 1 ? "s" : ""}
+        Simulation Results: {teams.length} team{teams.length !== 1 ? "s" : ""}
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {teams.map((team, i) => (

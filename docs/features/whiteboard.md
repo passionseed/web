@@ -15,6 +15,24 @@ Excalidraw. First used for the SHIFT High community session on 2026-10-24.
   editing (the newest 100). Restoring is undoable; any version can be copied to a new board.
 - Sharing: a link with access off, view, or edit (rotatable), and member roles. Everyone
   needs a PassionSeed account.
+- Speaker script (**สคริปต์**, spike): a private timeline of keywords ("5:00 keyword, keyword"
+  per line) with a running clock, in its own window (Document Picture-in-Picture, or a popup
+  on shift-click or where that is missing). Sharing the tab or browser window in Discord shows
+  only the board; sharing the entire screen shows the script too. Kept in localStorage per
+  board, so it is only on that browser. Code: `components/whiteboard/script/`,
+  `lib/whiteboard/script.ts`.
+
+## Running a session
+
+1. Sign in and open **Whiteboard** in the top menu.
+2. Create a board, or start from a template.
+3. Click **Share**, leave link access on "edit", and send the link to the group.
+4. Everyone needs a PassionSeed account. The link asks them to sign in, shows which board
+   they are joining, and then opens it. First-timers use the same Google or Discord button.
+
+People who have not finished onboarding are sent to `/onboard` first and lose the board link
+(the onboard gate in `utils/supabase/proxy.ts` drops the path and query). Send them the link
+again afterwards.
 
 ## How it works
 
@@ -37,6 +55,12 @@ Excalidraw. First used for the SHIFT High community session on 2026-10-24.
   `realtime.messages`. Viewers may only send `cursor` events and presence, so cursors and the
   follow-mode viewport share the `cursor` event. Follow state lives in presence, one entry per
   browser tab.
+- **Keeping it smooth:** every Excalidraw update re-renders the whole editor, and its
+  `onChange` fires on every one (each cursor, each frame of a drag). So incoming cursors and
+  edits are applied at most once per animation frame, the localStorage backup runs at most
+  once a second, the thumbnail waits until nobody has edited for 3 seconds, and overlays
+  (`useViewportTick`) re-render only when the view or elements actually change. Keep props
+  passed to `<Excalidraw>` stable: it skips re-rendering only when they are unchanged.
 - **Authorship:** every element carries `customData.createdBy` and `customData.updatedBy`
   (user ids), recorded from 2026-10-24. The server sets `updatedBy` on save. Elements from
   before then have no author.
@@ -65,8 +89,9 @@ Excalidraw. First used for the SHIFT High community session on 2026-10-24.
   where everyone sees it and it moves and zooms with the canvas (like a FigJam widget). It is
   an Excalidraw `embeddable` element whose link is `lib/whiteboard/widgets.ts`'s
   `https://www.passionseed.org/whiteboard/widget/<id>`; `validateEmbeddable` allows that link
-  and `renderEmbeddable` draws `plugins/BoardWidget.tsx` instead of an iframe. Click its middle
-  to use it (Excalidraw's embed activation). Editors place widgets from the Apps menu; the
+  and `renderEmbeddable` draws `plugins/BoardWidget.tsx` instead of an iframe. Its body takes
+  clicks right away (it overrides Excalidraw's "click the middle to activate"); drag its title
+  bar to move it. Editors place widgets from the Apps menu; the
   window icon next to an app opens it as a private window instead.
 - **Calendar plugin and `/calendar`:** community time blocks (`calendar_blocks`,
   `calendar_block_people`, migration `20261025140000_calendar_blocks.sql`). Anyone signed in
