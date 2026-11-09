@@ -36,6 +36,24 @@ describe("canvas access", () => {
     expect(ids(check([{ id: "F", type: "frame", customData: { owner: OTHER } }], OTHER).dropped)).toEqual(["F"]);
   });
 
+  it("lets a teammate rename and move a canvas, but only its owner delete, retype or untag it", () => {
+    expect(ids(check([{ ...frame, name: "ใหม่", x: 40 }], MATE).allowed)).toEqual(["F"]);
+    expect(ids(check([{ ...frame, isDeleted: true }], MATE).dropped)).toEqual(["F"]);
+    expect(ids(check([{ ...frame, type: "rectangle" }], MATE).dropped)).toEqual(["F"]);
+    expect(ids(check([{ ...frame, customData: { owner: OWNER, editors: [MATE] } }], MATE).dropped)).toEqual(["F"]);
+    expect(ids(check([{ ...frame, isDeleted: true }], OWNER).allowed)).toEqual(["F"]);
+    expect(ids(check([{ ...frame, isDeleted: true }], STAFF, true).allowed)).toEqual(["F"]);
+  });
+
+  it("keeps a deleted canvas its owner's: no one else can bring it back as theirs", () => {
+    const gone = [{ ...frame, isDeleted: true }, note];
+    const back = { ...frame, isDeleted: false, customData: { project: "p1", owner: MATE, editors: [] } };
+    expect(ids(enforceCanvasAccess(gone, [back], MATE, false).dropped)).toEqual(["F"]);
+    expect(ids(enforceCanvasAccess(gone, [back], OTHER, false).dropped)).toEqual(["F"]);
+    const [restored] = enforceCanvasAccess(gone, [back], OWNER, false).allowed;
+    expect(restored.customData).toMatchObject({ owner: OWNER });
+  });
+
   it("stops outsiders putting things into a canvas, but not changing the rest of the board", () => {
     expect(ids(check([{ id: "new", type: "rectangle", frameId: "F" }], OTHER).dropped)).toEqual(["new"]);
     expect(ids(check([{ ...loose, x: 5 }], OTHER).allowed)).toEqual(["L"]);
@@ -71,7 +89,7 @@ describe("canvas access", () => {
   it("falls back to the creator for canvases from before owners, and leaves ownerless ones open", () => {
     expect(accessOf({ id: "H", type: "frame", customData: { project: "p3", createdBy: OWNER } })).toEqual({ owner: OWNER, editors: [] });
     expect(accessOf({ id: "J", type: "frame", customData: { project: "p4" } })).toBeNull();
-    expect(accessOf({ ...frame, isDeleted: true })).toBeNull();
+    expect(accessOf({ ...frame, isDeleted: true })).toEqual({ owner: OWNER, editors: [MATE] });
     expect([...canvasAccessMap(current).keys()]).toEqual(["F"]);
   });
 

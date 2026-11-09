@@ -57,14 +57,16 @@ BEGIN
   is_manager := saver_id IS NOT NULL AND saver_id = board_owner::TEXT;
 
   -- Canvas access: drop what the saver may not change, and fix canvas owners and teams.
+  -- Deleted canvases count too, so no one but the owner can bring one back, and then as theirs.
   WITH canvases AS (
     SELECT el->>'id' AS id,
            COALESCE(el->'customData'->>'owner', el->'customData'->>'createdBy') AS owner,
-           el->'customData'->'editors' AS editors
+           el->'customData'->'editors' AS editors,
+           el->'customData'->>'project' AS project,
+           COALESCE((el->>'isDeleted')::BOOLEAN, false) AS deleted
     FROM jsonb_array_elements(current_elements) el
     WHERE el->>'type' = 'frame'
       AND jsonb_typeof(el->'customData'->'project') = 'string'
-      AND NOT COALESCE((el->>'isDeleted')::BOOLEAN, false)
       AND COALESCE(el->'customData'->>'owner', el->'customData'->>'createdBy') <> ''
   ),
   saved AS (
@@ -97,7 +99,7 @@ BEGIN
     WHERE f.canvas_id IS NOT NULL
   ),
   denied AS (
-    SELECT DISTINCT t.ord
+    SELECT t.ord
     FROM touched t
     JOIN canvases c ON c.id = t.canvas_id
     -- COALESCE: an unknown (no team list, no saver) must deny, never let through.
@@ -107,6 +109,19 @@ BEGIN
       OR (jsonb_typeof(c.editors) = 'array' AND c.editors ? saver_id),
       false
     )
+    UNION
+    -- Teammates may rename, move and resize a canvas's frame, but only its owner (or the
+    -- board's owner) may delete it, bring it back, change its type, or change its project
+    -- tag; otherwise a teammate could remove the canvas and make it again as their own.
+    SELECT i.ord
+    FROM incoming i
+    JOIN canvases c ON c.id = i.id
+    WHERE NOT COALESCE(is_manager OR saver_id = c.owner, false)
+      AND (
+        i.el->>'type' IS DISTINCT FROM 'frame'
+        OR i.el->'customData'->>'project' IS DISTINCT FROM c.project
+        OR COALESCE((i.el->>'isDeleted')::BOOLEAN, false) IS DISTINCT FROM c.deleted
+      )
   )
   SELECT COALESCE(jsonb_agg(
            CASE

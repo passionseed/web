@@ -169,8 +169,9 @@ Canvas, so mentors (and an AI reading the board) can follow each student without
   - **Postgres** (`whiteboard_merge_elements`, migration `20261109120000_whiteboard_canvas_access.sql`):
     the one that counts. Changes the saver may not make (moving, editing, deleting, or adding
     anything in the canvas, including stripping a note's frame first) are left out of the merge.
-    A new canvas belongs to whoever saves it, and only its owner or the board's owner can change
-    its team.
+    A new canvas belongs to whoever saves it. Teammates may rename, move and resize its frame,
+    but only its owner or the board's owner can change its team, delete it, bring it back,
+    change its type or its project tag. A deleted canvas keeps its owner.
   - **This browser** (`lib/whiteboard/canvas-guard.ts` in `useWhiteboardSync`): an edit you may not
     make is undone at once with a short notice, and a new canvas gets its owner.
   - **Live edits from others**: changes from outside a canvas's team (or a forged owner or team)

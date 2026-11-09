@@ -106,7 +106,7 @@ export default function WhiteboardCanvas({
   const onCanvasBlocked = useCallback(() => {
     if (Date.now() - lastBlockedToast.current < 4000) return;
     lastBlockedToast.current = Date.now();
-    toast.info("แคนวาสนี้แก้ได้เฉพาะทีมของโปรเจกต์ · ขอให้เจ้าของเพิ่มคุณในทีม");
+    toast.info("เปลี่ยนตรงนี้ไม่ได้: แคนวาสนี้แก้ได้เฉพาะทีม และลบได้เฉพาะเจ้าของ");
   }, []);
   const sync = useWhiteboardSync({ boardId: board.id, role: board.role, me, initialElements, managerIds, onCanvasBlocked });
   const api = sync.excalidrawAPI;

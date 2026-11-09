@@ -35,9 +35,13 @@ export function cleanEditors(value: unknown, owner: string): string[] {
   return [...new Set(ids)].slice(0, MAX_EDITORS);
 }
 
-/** Who may change a project frame's canvas, or null when it is not a protected canvas. */
+/**
+ * Who may change a project frame's canvas, or null when it is not a protected
+ * canvas. A deleted canvas stays protected, so no one but its owner can bring
+ * it back, and then still as theirs.
+ */
 export function accessOf(frame: El): CanvasAccess | null {
-  if (!isProjectFrame(frame) || frame.isDeleted) return null;
+  if (!isProjectFrame(frame)) return null;
   const owner = frame.customData?.owner ?? frame.customData?.createdBy;
   if (typeof owner !== "string" || !owner) return null;
   return { owner, editors: cleanEditors(frame.customData?.editors, owner) };
@@ -91,14 +95,37 @@ export function enforceCanvasAccess<T extends El>(
       const box = el.containerId ? (incoming.get(el.containerId) ?? saved.get(el.containerId)) : undefined;
       if (box?.frameId) canvases.add(box.frameId);
     }
-    const ok = [...canvases].every((id) => {
-      const a = access.get(id);
-      return !a || canEditCanvas(a, userId, manager);
-    });
+    const ok =
+      [...canvases].every((id) => {
+        const a = access.get(id);
+        return !a || canEditCanvas(a, userId, manager);
+      }) && !teammateReshapes(before, change, access, userId, manager);
     if (ok) allowed.push(withOwner(change, access.get(change.id), userId, manager));
     else dropped.push(change);
   }
   return { allowed, dropped };
+}
+
+/**
+ * Teammates may rename, move and resize a canvas's frame, but only its owner
+ * (or a manager) may delete it, bring it back, change its type, or change or
+ * remove its project tag: otherwise a teammate could remove the canvas and
+ * make it again as their own.
+ */
+function teammateReshapes(
+  before: El | undefined,
+  change: El,
+  access: ReadonlyMap<string, CanvasAccess>,
+  userId: string,
+  manager: boolean,
+): boolean {
+  const canvas = before ? access.get(before.id) : undefined;
+  if (!before || !canvas || manager || canvas.owner === userId) return false;
+  return (
+    change.type !== "frame" ||
+    change.customData?.project !== before.customData?.project ||
+    Boolean(change.isDeleted) !== Boolean(before.isDeleted)
+  );
 }
 
 function withOwner<T extends El>(change: T, prior: CanvasAccess | undefined, userId: string, manager: boolean): T {
