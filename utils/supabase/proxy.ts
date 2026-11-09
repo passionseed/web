@@ -1,5 +1,5 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import type { JwtPayload, User } from '@supabase/supabase-js'
+import type { User } from '@supabase/supabase-js'
 import { NextResponse, type NextRequest } from 'next/server'
 import { isAnonymousUser } from '@/lib/supabase/auth'
 import {
@@ -28,8 +28,8 @@ function copySessionCookies(
   from: NextResponse,
   to: NextResponse
 ): NextResponse {
-  from.cookies.getAll().forEach(({ name, value }) => {
-    to.cookies.set(name, value)
+  from.cookies.getAll().forEach((cookie) => {
+    to.cookies.set(cookie)
   })
   return to
 }
@@ -59,20 +59,6 @@ async function needsOnboard(
       .maybeSingle(),
   ])
   return !isProfileComplete(profile, guardianConsent) || !profile?.is_onboarded
-}
-
-// The JWT carries every field the proxy reads (id, email, app_metadata,
-// is_anonymous, aud), so it stands in for the full User without a fetch.
-function userFromClaims(claims: JwtPayload): User {
-  return {
-    id: claims.sub,
-    email: claims.email,
-    aud: typeof claims.aud === 'string' ? claims.aud : '',
-    is_anonymous: claims.is_anonymous,
-    app_metadata: claims.app_metadata ?? {},
-    user_metadata: claims.user_metadata ?? {},
-    created_at: '',
-  }
 }
 
 /** decodeURIComponent that keeps any escape it cannot decode, instead of throwing. */
@@ -209,10 +195,7 @@ export async function updateSession(request: NextRequest) {
   // with the Supabase client, your users may be randomly logged out.
   let user: User | null = null
   try {
-    // getClaims() refreshes the session if expired, then verifies the JWT
-    // locally against the cached JWKS instead of a round trip to the auth
-    // server on every navigation.
-    const { data, error } = await supabase.auth.getClaims()
+    const { data, error } = await supabase.auth.getUser()
     if (error && isDeadRefreshToken(error)) {
       // The browser holds a refresh token the auth server no longer knows
       // (revoked or already rotated). auth-js drops the session server-side,
@@ -220,18 +203,15 @@ export async function updateSession(request: NextRequest) {
       // resurfacing as error noise downstream. Treat as signed out.
       supabaseResponse = clearSupabaseAuthCookies(request, supabaseResponse)
     }
-    user = data?.claims ? userFromClaims(data.claims) : null
+    user = error ? null : data.user
   } catch {
-    // Supabase unreachable (e.g. Docker not running in dev).
-    // Skip auth check and let the request through — pages will
-    // handle their own auth state gracefully. Admin pages fail closed.
-    if (isAdminPagePath(request.nextUrl.pathname)) {
-      const url = request.nextUrl.clone()
-      url.pathname = '/login'
-      url.search = ''
-      return NextResponse.redirect(url)
-    }
-    return supabaseResponse
+    // Public pages remain available during an auth outage. Protected pages
+    // must not render when the identity check cannot complete.
+    if (!isAdminPagePath(request.nextUrl.pathname) && isPublicRoute(request.nextUrl.pathname)) return supabaseResponse
+    return copySessionCookies(supabaseResponse, new NextResponse(
+      'Authentication temporarily unavailable',
+      { status: 503, headers: { 'Cache-Control': 'no-store', 'Retry-After': '30' } }
+    ))
   }
 
   const pathname = request.nextUrl.pathname

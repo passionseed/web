@@ -15,7 +15,7 @@ jest.mock("@supabase/ssr", () => ({ createServerClient: jest.fn() }));
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
 let roleReply: { data: unknown; error: unknown } = { data: [], error: null };
-let claims: { data: unknown; error: unknown } | Error = { data: null, error: null };
+let authReply: { data: unknown; error: unknown } | Error = { data: null, error: null };
 interface RoleQuery {
   select: jest.Mock<RoleQuery>;
   eq: jest.Mock<RoleQuery>;
@@ -41,7 +41,7 @@ function request(path: string, { userAgent, method = "GET" }: { userAgent?: stri
 }
 
 function signedInAs(isAdmin: boolean) {
-  claims = { data: { claims: { sub: USER_ID, aud: "authenticated", app_metadata: { provider: "email" } } }, error: null };
+  authReply = { data: { user: { id: USER_ID, aud: "authenticated", app_metadata: { provider: "email" } } }, error: null };
   roleReply = { data: isAdmin ? [{ role: "admin" }] : [], error: null };
 }
 
@@ -51,9 +51,9 @@ beforeEach(() => {
     () =>
       ({
         auth: {
-          getClaims: jest.fn(async () => {
-            if (claims instanceof Error) throw claims;
-            return claims;
+          getUser: jest.fn(async () => {
+            if (authReply instanceof Error) throw authReply;
+            return authReply;
           }),
         },
         from,
@@ -136,7 +136,7 @@ describe("S1: admin page gate", () => {
   });
 
   test("a signed-out admin path ending in .md is not treated as public", async () => {
-    claims = { data: null, error: null };
+    authReply = { data: { user: null }, error: null };
     const response = await updateSession(request("/admin/dm-leads/x.md"));
     expect(new URL(response.headers.get("location")!).pathname).toBe("/login");
     const encoded = await updateSession(request("/%61dmin/dm-leads/x.md"));
@@ -169,18 +169,18 @@ describe("S1: admin page gate", () => {
   });
 
   test("signed-out visitors still go to /login", async () => {
-    claims = { data: null, error: null };
+    authReply = { data: { user: null }, error: null };
     const response = await updateSession(request("/admin/talent"));
     expect(new URL(response.headers.get("location")!).pathname).toBe("/login");
     expect(from).not.toHaveBeenCalled();
   });
 
-  test("an unreachable auth server fails closed for admin pages only", async () => {
-    claims = new Error("fetch failed");
+  test("an unreachable auth server returns 503 for protected pages", async () => {
+    authReply = new Error("fetch failed");
     const admin = await updateSession(request("/admin/trials"));
-    expect(new URL(admin.headers.get("location")!).pathname).toBe("/login");
+    expect(admin.status).toBe(503);
     const other = await updateSession(request("/me"));
-    expect(other.headers.get("location")).toBeNull();
+    expect(other.status).toBe(503);
   });
 
   test("non-admin pages never query roles", async () => {

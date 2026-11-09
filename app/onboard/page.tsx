@@ -8,6 +8,7 @@ import {
 import { OnboardClient } from "./onboard-client";
 import type { AccountPrefill } from "./phases/account";
 import type { OnboardingState } from "@/types/onboarding";
+import { safeRedirectPath } from "@/lib/security/redirects";
 
 export const dynamic = "force-dynamic";
 
@@ -32,11 +33,7 @@ export default async function OnboardPage({
   // Where to land once onboarding finishes. Same-origin paths only, so the
   // param cannot be used as an open redirect.
   const params = await searchParams;
-  const rawNext = params?.next;
-  const nextAfterOnboarding =
-    rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//")
-      ? rawNext
-      : null;
+  const nextAfterOnboarding = safeRedirectPath(params?.next, "") || null;
 
   const supabase = await createClient();
   const {

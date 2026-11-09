@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { routingPathname, updateSession } from "@/utils/supabase/proxy";
 import { adminPreviewPath } from "@/lib/og/linkPreviewBots";
+import { isTrustedAdminRequest } from "@/lib/security/request-origin";
 
 /**
  * Supabase Auth reports OAuth failures by redirecting to the project's Site URL
@@ -59,6 +60,11 @@ function apiCacheControl(pathname: string): string | null {
 }
 
 export default async function proxy(request: NextRequest) {
+  // Cookie-authenticated admin mutations must reject cross-origin requests.
+  if (request.nextUrl.pathname.startsWith("/api/admin/") && !isTrustedAdminRequest(request)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const authError = authErrorRedirect(request);
   if (authError) return authError;
 
@@ -93,6 +99,8 @@ export default async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    // API security checks must also cover dynamic IDs ending in an asset suffix.
+    "/api/:path*",
     /*
      * Match all request paths except for the ones starting with:
      * - _next/static (static files)

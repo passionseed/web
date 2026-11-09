@@ -13,6 +13,7 @@ import {
   PROFILE_COMPLETION_SELECT,
 } from "@/lib/profile-completion";
 import { isShiftPath } from "@/lib/shift/joinLink";
+import { safeRedirectPath } from "@/lib/security/redirects";
 
 export const metadata: Metadata = {
   title: "เข้าสู่ระบบ | PassionSeed",
@@ -54,7 +55,7 @@ export default async function LoginPage({
   searchParams?: Promise<{ next?: string }>;
 }) {
   const params = await searchParams;
-  const next = params?.next?.startsWith("/") ? params.next : "/me";
+  const next = safeRedirectPath(params?.next, "/me");
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
   if (data.user && !isAnonymousUser(data.user)) {

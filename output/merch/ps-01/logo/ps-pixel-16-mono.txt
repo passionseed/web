@@ -1,0 +1,16 @@
+............C...
+......C....CC.C.
+.....CC...CCC.C.
+.....CCC.CCCCCC.
+....CCCCCCCCCCC.
+...CCCCCCCCCCCC.
+...CCCCCCCCCCC..
+..CCCCC....CCC..
+..CCCC......CC..
+..CCCCC..CC.CC..
+..CCCC...C..CC..
+..CCC.......CC..
+...CCC.....CC...
+...CCCCCCCCCC...
+.....CCCCCC.....
+................
