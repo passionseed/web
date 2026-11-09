@@ -79,6 +79,12 @@ describe("patchBoardSchema", () => {
 
   it("rejects unknown fields and non-image thumbnails", () => {
     expect(patchBoardSchema.safeParse({ ownerId: "me" }).success).toBe(false);
+    // Fields canvas access reads must be typed, so Postgres and browsers agree on them.
+    const el = { id: "x", version: 1, type: "frame" };
+    expect(patchBoardSchema.safeParse({ elements: [{ ...el, isDeleted: "false" }] }).success).toBe(false);
+    expect(patchBoardSchema.safeParse({ elements: [{ ...el, frameId: 7 }] }).success).toBe(false);
+    expect(patchBoardSchema.safeParse({ elements: [{ ...el, customData: { project: 1 } }] }).success).toBe(false);
+    expect(patchBoardSchema.safeParse({ elements: [{ ...el, isDeleted: false, frameId: null, customData: { project: "p", card: "x" } }] }).success).toBe(true);
     expect(patchBoardSchema.safeParse({ thumbnail: "javascript:alert(1)" }).success).toBe(false);
   });
 });

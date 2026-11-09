@@ -69,6 +69,12 @@ describe("canvas guard: live edits from others", () => {
     expect(guard.filterRemote([from(OTHER, { ...note, version: 4 })], new Set())).toHaveLength(1);
   });
 
+  it("ignores badly typed live edits, like a string isDeleted that browsers read as true", () => {
+    const guard = createCanvasGuard(scene);
+    const sneaky = from(MATE, { ...frame, version: 2, isDeleted: "false" as unknown as boolean });
+    expect(guard.filterRemote([sneaky], new Set())).toEqual([]);
+  });
+
   it("trusts the board owner", () => {
     const guard = createCanvasGuard(scene);
     expect(guard.filterRemote([from(STAFF, { ...note, version: 2 })], new Set([STAFF]))).toHaveLength(1);

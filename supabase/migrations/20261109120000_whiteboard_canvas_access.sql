@@ -62,7 +62,7 @@ BEGIN
     SELECT el->>'id' AS id,
            COALESCE(el->'customData'->>'owner', el->'customData'->>'createdBy') AS owner,
            el->'customData'->'editors' AS editors,
-           el->'customData'->>'project' AS project,
+           el->'customData'->'project' AS project,
            COALESCE((el->>'isDeleted')::BOOLEAN, false) AS deleted
     FROM jsonb_array_elements(current_elements) el
     WHERE el->>'type' = 'frame'
@@ -72,10 +72,18 @@ BEGIN
   saved AS (
     SELECT el->>'id' AS id, el FROM jsonb_array_elements(current_elements) el
   ),
+  -- Only well-typed elements (the API checks this too): a string "false" for isDeleted reads as
+  -- false here but as true in browsers, which would let a teammate hide a canvas from everyone.
   incoming AS (
     SELECT t.el->>'id' AS id, t.el, t.ord
     FROM jsonb_array_elements(p_elements) WITH ORDINALITY AS t(el, ord)
-    WHERE t.el ? 'id'
+    WHERE jsonb_typeof(t.el->'id') = 'string'
+      AND COALESCE(jsonb_typeof(t.el->'type'), 'string') = 'string'
+      AND COALESCE(jsonb_typeof(t.el->'isDeleted'), 'null') IN ('boolean', 'null')
+      AND COALESCE(jsonb_typeof(t.el->'frameId'), 'null') IN ('string', 'null')
+      AND COALESCE(jsonb_typeof(t.el->'containerId'), 'null') IN ('string', 'null')
+      AND COALESCE(jsonb_typeof(t.el->'customData'), 'null') IN ('object', 'null')
+      AND COALESCE(jsonb_typeof(t.el->'customData'->'project'), 'null') IN ('string', 'null')
   ),
   -- Every canvas each incoming element was in or is going into: its saved and new frame,
   -- itself if it is (or was saved as) a canvas, so a change claiming another type cannot
@@ -119,7 +127,7 @@ BEGIN
     WHERE NOT COALESCE(is_manager OR saver_id = c.owner, false)
       AND (
         i.el->>'type' IS DISTINCT FROM 'frame'
-        OR i.el->'customData'->>'project' IS DISTINCT FROM c.project
+        OR i.el->'customData'->'project' IS DISTINCT FROM c.project
         OR COALESCE((i.el->>'isDeleted')::BOOLEAN, false) IS DISTINCT FROM c.deleted
       )
   )

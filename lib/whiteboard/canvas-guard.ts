@@ -31,6 +31,20 @@ function bump<T extends Versioned>(el: T, updates: Partial<T>): T {
   };
 }
 
+const optional = (value: unknown, type: string) => value === undefined || value === null || typeof value === type;
+
+/**
+ * Whether the fields canvas access reads have the types browsers and Postgres agree on.
+ * The server rejects anything else; a live edit from a tampered client gets the same treatment.
+ */
+export const wellFormed = (el: Versioned): boolean =>
+  typeof el.id === "string" &&
+  typeof el.type === "string" &&
+  optional(el.isDeleted, "boolean") &&
+  optional(el.frameId, "string") &&
+  optional(el.containerId, "string") &&
+  optional(el.customData?.project, "string");
+
 export type CanvasGuard<T extends Versioned> = {
   /**
    * Checks this browser's edits since the last check. `fixes` are elements to
@@ -76,6 +90,7 @@ export function createCanvasGuard<T extends Versioned>(initial: readonly T[]): C
     filterRemote(remote, managers) {
       const bySender = new Map<string, T[]>();
       for (const el of remote) {
+        if (!wellFormed(el)) continue;
         const sender = typeof el.customData?.updatedBy === "string" ? el.customData.updatedBy : "";
         bySender.set(sender, [...(bySender.get(sender) ?? []), el]);
       }
