@@ -213,6 +213,9 @@ export function summarizeElements(raw: unknown[]): BoardSummary {
       let best = Infinity;
       areas.forEach((a, i) => {
         const size = a.el.width * a.el.height;
+        // A SHIFT canvas and its zones only hold what is in the canvas, not things lying on top of it.
+        const canvas = projectFrames.has(a.el.id) ? a.el.id : placed[i].parent;
+        if (canvas && e.frameId !== canvas) return;
         if (a.el.id !== e.id && inside(a.el, e) && size < best) {
           best = size;
           home = i;

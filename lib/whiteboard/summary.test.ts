@@ -167,4 +167,15 @@ describe("SHIFT project canvas", () => {
     expect(md).toContain("### 📅 วันที่ 2\n(empty)");
     expect(md).not.toContain("กด + ในช่อง");
   });
+
+  it("does not count something lying on a canvas, outside it, as part of the project", () => {
+    const summary = summarizeElements([
+      { id: "f", type: "frame", x: 0, y: 0, width: 2000, height: 2000, name: "โปรเจกต์", customData: { project: "p1" } },
+      box("z1", 40, 80, 600, 400, { frameId: "f", customData: { zone: "interview" } }),
+      box("o", 60, 180, 200, 200, { backgroundColor: "#ffe680" }),
+      text("o-l", 70, 190, "แปะทับจากข้างนอก", { containerId: "o" }),
+    ]);
+    expect(summary.areas.find((a) => a.zone === "interview")!.items).toEqual([]);
+    expect(summary.loose.map((i) => i.text)).toEqual(["แปะทับจากข้างนอก"]);
+  });
 });

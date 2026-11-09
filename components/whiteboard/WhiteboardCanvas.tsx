@@ -39,6 +39,7 @@ import { BoardWidget } from "./plugins/BoardWidget";
 import { PluginHost, usePluginWindows } from "./plugins/PluginHost";
 import { PluginMenu } from "./plugins/PluginMenu";
 import { ScriptButton } from "./script/ScriptButton";
+import { CanvasTeamLayer } from "./shift/CanvasTeamLayer";
 import { CardVersionsLayer } from "./shift/CardVersionsLayer";
 import { useShiftCardCaret } from "./shift/useShiftCardCaret";
 import { ZoneAddLayer } from "./shift/ZoneAddLayer";
@@ -98,7 +99,16 @@ export default function WhiteboardCanvas({
     return { elements: initialElements, appState: { theme }, scrollToContent: true };
   }, [initialElements]);
 
-  const sync = useWhiteboardSync({ boardId: board.id, role: board.role, me, initialElements });
+  // The board's owner (staff) may change any SHIFT canvas; everyone else only their own team's.
+  const managerIds = useMemo(() => board.members.filter((m) => m.role === "owner").map((m) => m.userId), [board.members]);
+  const isManager = managerIds.includes(me.id);
+  const lastBlockedToast = useRef(0);
+  const onCanvasBlocked = useCallback(() => {
+    if (Date.now() - lastBlockedToast.current < 4000) return;
+    lastBlockedToast.current = Date.now();
+    toast.info("แคนวาสนี้แก้ได้เฉพาะทีมของโปรเจกต์ · ขอให้เจ้าของเพิ่มคุณในทีม");
+  }, []);
+  const sync = useWhiteboardSync({ boardId: board.id, role: board.role, me, initialElements, managerIds, onCanvasBlocked });
   const api = sync.excalidrawAPI;
   // Loads and saves the Library, and installs libraries from libraries.excalidraw.com (#addLibrary links).
   useHandleLibrary({ excalidrawAPI: api, adapter: LIBRARY_ADAPTER });
@@ -393,8 +403,9 @@ export default function WhiteboardCanvas({
             showResolved={showResolved}
           />
           <EmoteLayer api={api} bursts={emotes.bursts} />
-          {editable && <ZoneAddLayer api={api} />}
-          <CardVersionsLayer api={api} meId={me.id} editable={editable} nameOf={nameOf} />
+          {editable && <ZoneAddLayer api={api} meId={me.id} manager={isManager} />}
+          <CardVersionsLayer api={api} meId={me.id} editable={editable} manager={isManager} nameOf={nameOf} />
+          <CanvasTeamLayer api={api} meId={me.id} manager={isManager} people={people} nameOf={nameOf} />
           {me.isAdmin && showAuthors && <AuthorsLayer api={api} nameOf={nameOf} />}
           <PluginHost
             api={api}

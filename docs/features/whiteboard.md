@@ -161,6 +161,23 @@ Canvas, so mentors (and an AI reading the board) can follow each student without
   panel (a `.wb-window` dialog on the board's `--wb-*` tokens) marks lines new since the
   version before. Every save is also in `whiteboard_changes`, but that is cut to 200
   characters and records half-typed text, so it is an audit trail rather than versions.
+- **Who may change a canvas** (`lib/whiteboard/canvas-access.ts`): a canvas belongs to whoever
+  made it (`customData.owner`). They pick teammates from the board's editors with the
+  **ทีม** tag above the canvas (`customData.editors`, `CanvasTeamLayer`); the board's owner (staff)
+  may change any canvas, to moderate. Everyone else sees **ดูอย่างเดียว · ของ <name>** (view only)
+  and no **+ เพิ่ม** buttons. The rule runs in three places:
+  - **Postgres** (`whiteboard_merge_elements`, migration `20261109120000_whiteboard_canvas_access.sql`):
+    the one that counts. Changes the saver may not make (moving, editing, deleting, or adding
+    anything in the canvas, including stripping a note's frame first) are left out of the merge.
+    A new canvas belongs to whoever saves it, and only its owner or the board's owner can change
+    its team.
+  - **This browser** (`lib/whiteboard/canvas-guard.ts` in `useWhiteboardSync`): an edit you may not
+    make is undone at once with a short notice, and a new canvas gets its owner.
+  - **Live edits from others**: changes from outside a canvas's team (or a forged owner or team)
+    are ignored. A determined student could still forge their name on a live edit; it shows only
+    until the next reload, because the save is checked by Postgres.
+  Canvases from before owners existed fall back to their creator. Things lying on top of a
+  canvas without being in it are not read as part of the project.
 - **Projects across boards:** the project id survives copying a canvas to another board, so a
   project can continue from a SHIFT board onto the SHIFT High board. Two frames with the same
   id on one board (a copy-paste) are separate projects.

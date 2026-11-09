@@ -4,6 +4,7 @@ import { sceneCoordsToViewportCoords } from "@excalidraw/excalidraw";
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import { Plus } from "lucide-react";
 
+import { canvasAccessMap, mayEditFrame } from "@/lib/whiteboard/canvas-access";
 import { isShiftCardKind, isZone, zoneTitle } from "@/lib/whiteboard/shift-cards";
 
 import { useViewportTick } from "../CommentsLayer";
@@ -21,14 +22,16 @@ const COMPACT_BELOW = 240;
  * editors. It adds an empty note of that zone's kind in the zone's next free
  * slot, so students never have to pick the right card type themselves.
  */
-export function ZoneAddLayer({ api }: { api: ExcalidrawImperativeAPI }) {
+export function ZoneAddLayer({ api, meId, manager }: { api: ExcalidrawImperativeAPI; meId: string; manager: boolean }) {
   useViewportTick(api, { elements: true });
   const appState = api.getAppState();
   if (appState.zoom.value < MIN_ZOOM || appState.viewModeEnabled) return null;
 
-  const buttons = api
-    .getSceneElements()
-    .filter(isZone)
+  const elements = api.getSceneElements();
+  // Only on canvases this person may change (theirs, their team's, or any for the board's owner).
+  const access = canvasAccessMap(elements);
+  const buttons = elements
+    .filter((el) => isZone(el) && mayEditFrame(access, el.frameId, meId, manager))
     .flatMap((zone) => {
       const kind = zone.customData?.zone;
       if (!isShiftCardKind(kind)) return [];

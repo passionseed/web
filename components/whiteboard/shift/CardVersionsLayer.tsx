@@ -21,12 +21,16 @@ import {
   type ShiftCardKind,
 } from "@/lib/whiteboard/shift-cards";
 
+import { canvasAccessMap, mayEditFrame } from "@/lib/whiteboard/canvas-access";
+
 import { useViewportTick } from "../CommentsLayer";
 
 type Props = {
   api: ExcalidrawImperativeAPI;
   meId: string;
   editable: boolean;
+  /** The board's owner may change notes in any SHIFT canvas. */
+  manager: boolean;
   nameOf: (id: string) => string;
 };
 
@@ -75,7 +79,7 @@ function saveVersion(api: ExcalidrawImperativeAPI, cardId: string, meId: string,
  * ship): a "v2" tag on each card with saved versions, a save button on the
  * selected card, and a panel with the card's history.
  */
-export function CardVersionsLayer({ api, meId, editable, nameOf }: Props) {
+export function CardVersionsLayer({ api, meId, editable, manager, nameOf }: Props) {
   useViewportTick(api, { elements: true, selection: true });
   const [openId, setOpenId] = useState<string | null>(null);
   const chipRefs = useRef(new Map<string, HTMLButtonElement>());
@@ -97,6 +101,7 @@ export function CardVersionsLayer({ api, meId, editable, nameOf }: Props) {
 
   const appState = api.getAppState();
   const elements = api.getSceneElements();
+  const access = canvasAccessMap(elements);
   const labels = new Map<string, ExcalidrawTextElement>();
   for (const el of elements) if (el.type === "text" && el.containerId) labels.set(el.containerId, el);
 
@@ -109,10 +114,12 @@ export function CardVersionsLayer({ api, meId, editable, nameOf }: Props) {
       const versions = readVersions(card.customData);
       const label = labels.get(card.id);
       const selected = selectedId !== null && (card.id === selectedId || label?.id === selectedId);
-      if (versions.length === 0 && !(selected && editable)) return [];
+      // Saving a version is an edit: only for people who may change the canvas the note is in.
+      const canSave = editable && mayEditFrame(access, card.frameId, meId, manager);
+      if (versions.length === 0 && !(selected && canSave)) return [];
       const pos = sceneCoordsToViewportCoords({ sceneX: card.x + card.width, sceneY: card.y }, appState);
       const text = labelText(label);
-      return [{ card, kind: card.customData!.card as ShiftCardKind, versions, text, selected, pos }];
+      return [{ card, kind: card.customData!.card as ShiftCardKind, versions, text, selected, pos, canSave }];
     })
     .slice(0, MAX_CHIPS);
 
@@ -161,7 +168,7 @@ export function CardVersionsLayer({ api, meId, editable, nameOf }: Props) {
           kind={open.kind}
           versions={open.versions}
           text={open.text}
-          editable={editable}
+          editable={open.canSave}
           nameOf={nameOf}
           onClose={close}
           onSave={(why) => {
