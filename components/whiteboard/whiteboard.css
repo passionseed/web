@@ -195,6 +195,24 @@
   background: linear-gradient(to bottom, rgba(254, 217, 92, 0.1), rgba(254, 217, 92, 0.02));
   border-bottom: 1px solid var(--wb-hairline);
 }
+/* Kit tabs: Excalidraw splits the row into equal columns, which wraps Thai labels once there
+   are five tabs (six for admins). Keep one row of whole labels that scrolls sideways instead. */
+.whiteboard-room .excalidraw .sidebar-tabs-root [role="tablist"] {
+  display: flex;
+  gap: 0.125rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+.whiteboard-room .excalidraw .sidebar-tabs-root [role="tablist"]::-webkit-scrollbar {
+  display: none;
+}
+.whiteboard-room .excalidraw .sidebar-tabs-root .sidebar-tab-trigger {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  padding-inline: 0.4rem;
+  font-size: 0.8125rem;
+}
 
 /* Share button and the sidebar trigger read as our primary actions. */
 .whiteboard-room .excalidraw .collab-button {
