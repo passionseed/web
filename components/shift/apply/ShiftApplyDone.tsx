@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
-import { Check } from "lucide-react";
+import { CalendarDays, Check, CreditCard, Mail } from "lucide-react";
 
 import { INK, MISREG_TEXT } from "@/components/shift/poster/riso";
 import { ShiftPayment } from "@/components/shift/ShiftPayment";
+import { DiscordIcon } from "@/components/shift/join/DiscordIcon";
+import { DiscordSteps } from "@/components/shift/join/DiscordSteps";
 import { ConnectDiscordButton } from "@/components/shift/join/ShiftJoinActions";
 import { BringAFriendInvite } from "./BringAFriend";
 import {
@@ -73,14 +75,14 @@ function DiscordStep({ cohort, token }: { cohort: ShiftCohort; token: string }) 
       className="mx-auto mt-10 max-w-md rounded-xl px-5 py-6 text-left"
       style={{ backgroundColor: paper("0a"), boxShadow: `inset 0 0 0 1px ${paper("1f")}` }}
     >
-      <p className="font-kodchasan text-xl font-semibold">ต่อเลย: เชื่อม Discord</p>
+      <p className="flex items-center gap-3 font-kodchasan text-xl font-semibold"><DiscordIcon className="h-7 w-7 shrink-0" />เข้าห้องเรียน SHIFT</p>
       <p className="mt-2 text-sm leading-relaxed" style={{ color: paper("b3") }}>
-        กดทีเดียว ได้บัญชี PassionSeed และเข้าเซิร์ฟ SHIFT พร้อมห้องของ {cohort.name} ทันที ยังไม่มี Discord
-        ก็สร้างบัญชีในขั้นนี้ได้เลย
+        เราเรียนและคุยกันใน Discord กดปุ่มนี้เพื่อเข้าห้องของ {cohort.name}
       </p>
       <div className="mt-5">
-        <ConnectDiscordButton token={token} label={`เชื่อม Discord เข้า ${cohort.name}`} />
+        <ConnectDiscordButton token={token} label="เข้าห้องเรียนด้วย Discord" />
       </div>
+      <div className="mt-6"><DiscordSteps /></div>
     </div>
   );
 }
@@ -96,37 +98,20 @@ function NextSteps({
   parentEmail: string | null;
 }) {
   const hasFee = cohort.priceBaht > 0;
-  const parentStep = parentEmail
-    ? [`ผู้ปกครองกดยินยอมในอีเมลที่ส่งไป ${parentEmail} (ไม่เจอ ลองดูในถังขยะหรือ Promotions)`]
-    : [];
-  const steps = canConnect
-    ? [
-        `เชื่อม Discord ด้านบน เข้าห้องของ ${cohort.name} ได้เลย`,
-        ...parentStep,
-        ...(hasFee ? [`โอนแล้วส่งสลิปใน LINE ${SHIFT_PAYMENT.lineId} ด้านล่าง พี่ยืนยันที่นั่งในแชท`] : []),
-        `เริ่ม Day 1 ${formatThaiDate(cohort.startDate)} ${cohort.sessionTime} น.`,
-      ]
-    : [
-        ...parentStep,
-        ...(hasFee ? [`โอนแล้วส่งสลิปใน LINE ${SHIFT_PAYMENT.lineId} ด้านล่าง`] : []),
-        "พี่ยืนยันที่นั่งในแชท แล้วกดลิงก์ส่วนตัวเพื่อเข้า Discord ของรุ่น",
-        `เริ่ม Day 1 ${formatThaiDate(cohort.startDate)} ${cohort.sessionTime} น.`,
-      ];
+  const steps = [
+    ...(parentEmail ? [{ icon: Mail, title: "ให้ผู้ปกครองกดยินยอม", detail: `เปิดอีเมลที่ส่งไป ${parentEmail} ถ้าไม่เจอ ลองดู Spam หรือ Promotions` }] : []),
+    ...(hasFee ? [{ icon: CreditCard, title: "โอนแล้วส่งสลิป", detail: `QR อยู่ด้านล่าง ส่งสลิปใน LINE ${SHIFT_PAYMENT.lineId} แล้วรอทีมงานยืนยันที่นั่ง` }] : []),
+    ...(!canConnect ? [{ icon: DiscordIcon, title: "เข้าห้องเรียนใน Discord", detail: "ใช้ลิงก์ส่วนตัวที่ทีมงานส่งให้" }] : []),
+    { icon: CalendarDays, title: "วันเริ่มเรียน", detail: `${formatThaiDate(cohort.startDate)} ${cohort.sessionTime} น.` },
+  ];
   return (
     <ol className="mx-auto mt-10 max-w-md space-y-4 text-left">
-      {steps.map((step, i) => (
-        <li key={step} className="flex items-start gap-3">
-          <span
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-kodchasan text-sm font-bold"
-            style={{
-              backgroundColor: i === 0 ? INK.yellow : paper("1a"),
-              color: i === 0 ? INK.black : INK.paper,
-            }}
-          >
-            {i + 1}
-          </span>
-          <span className="pt-0.5 leading-relaxed" style={{ color: paper(i === 0 ? "f2" : "b3") }}>
-            {step}
+      {steps.map(({ icon: Icon, title, detail }) => (
+        <li key={title} className="flex items-start gap-3">
+          <Icon className="mt-1 h-6 w-6 shrink-0" aria-hidden="true" style={{ color: INK.yellow }} />
+          <span className="leading-relaxed">
+            <strong className="block">{title}</strong>
+            <span style={{ color: paper("c2") }}>{detail}</span>
           </span>
         </li>
       ))}
@@ -167,17 +152,15 @@ export function ShiftApplyDone({
         ได้รับใบสมัครแล้ว{nickname ? ` ${nickname}` : ""}
       </h2>
       <p className="mx-auto mt-4 max-w-md leading-relaxed" style={{ color: paper("b3") }}>
-        แคปหน้านี้เก็บไว้ได้เลย ระหว่างรอ ลองคิดต่อว่าใครอีก 3 คนที่เจอปัญหาเดียวกับเรา
+        แคปหน้านี้เก็บไว้ แล้วทำตามขั้นตอนด้านล่างได้เลย
       </p>
 
       {token && <DiscordStep cohort={cohort} token={token} />}
-      <Receipt cohort={cohort} values={values} />
       <NextSteps
         cohort={cohort}
         canConnect={token !== null}
         parentEmail={parentEmail}
       />
-      <BringAFriendInvite cohort={cohort} onApplyHere={onApplyAgain} />
 
       {cohort.priceBaht > 0 && (
         <div className="mx-auto mt-12 max-w-xl border-t pt-10" style={{ borderColor: paper("1f") }}>
@@ -194,6 +177,12 @@ export function ShiftApplyDone({
           />
         </div>
       )}
+
+      <details className="mx-auto mt-10 max-w-md text-left">
+        <summary className="min-h-12 cursor-pointer py-3 font-semibold">รายละเอียดใบสมัคร</summary>
+        <Receipt cohort={cohort} values={values} />
+      </details>
+      <BringAFriendInvite cohort={cohort} onApplyHere={onApplyAgain} />
 
       {/* Free rounds have no pair offer, so the same-phone reset stands alone. */}
       {onApplyAgain && cohort.priceBaht === 0 && (

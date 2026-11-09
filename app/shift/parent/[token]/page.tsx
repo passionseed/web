@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
+import { CircleCheck, CreditCard } from "lucide-react";
 
 import { PdpaNotice } from "@/components/shift/consent/PdpaNotice";
 import { Body, LineHelp, Shell } from "@/components/shift/join/ShiftJoinView";
 import { ShiftParentForm, type ShiftParentDecision } from "@/components/shift/parent/ShiftParentForm";
+import { DiscordIcon } from "@/components/shift/join/DiscordIcon";
+import { flowButtonClass, FLOW_TEXT } from "@/components/shift/join/shiftFlowInk";
+import { ShiftPayment } from "@/components/shift/ShiftPayment";
+import { shiftJoinPath } from "@/lib/shift/joinLink";
 import { formatThaiDateRange, getShiftCohortByName, priceLabel } from "@/lib/content/shift-cohort";
 import { REFUND_HOW } from "@/lib/content/shift-refund";
 import { SEEDSTACK_NOTICE } from "@/lib/seedstack/consent";
@@ -55,28 +60,44 @@ export default async function ShiftParentPage({ params }: PageProps) {
 
   return (
     <Shell eyebrow={cohort.name} title={`ขอความยินยอมจากผู้ปกครองของ ${who}`}>
-      <Body>
-        {app.full_name} ({who}) สมัครเข้าร่วม {cohort.name} ของ PassionSeed
-        วันที่ {formatThaiDateRange(cohort.startDate, cohort.endDate)} เวลา {cohort.sessionTime} น. ทางออนไลน์
-        ค่าเข้าร่วม {priceLabel(cohort)}
-      </Body>
-      {cohort.priceBaht > 0 && <Body>{REFUND_HOW}</Body>}
-      <Body>
-        {who} อายุยังไม่ถึง 20 ปี กฎหมาย PDPA จึงกำหนดให้ผู้ปกครองยินยอมด้วยค่ะ
-      </Body>
-      <PdpaNotice notice={SHIFT_NOTICE} variant="full" />
-      <PdpaNotice
-        notice={SEEDSTACK_NOTICE}
-        variant="collapsed"
-        collapsedLabel="AI ติดตามความคืบหน้า (SeedStack) เก็บอะไรบ้าง"
-      />
       <ShiftParentForm
         token={token}
         decision={parentDecision(state)}
         nickname={who}
         fullName={app.full_name}
         cohortName={cohort.name}
-      />
+        nextStep={
+          app.paid_at || cohort.priceBaht === 0 ? (
+            <section className="space-y-4">
+              {app.paid_at && <p className="flex items-center gap-2 font-semibold" style={{ color: FLOW_TEXT.body }}><CircleCheck className="h-5 w-5 shrink-0" aria-hidden="true" />ชำระเงินแล้ว</p>}
+              <Body>ต่อไป: ให้ {who} เข้าห้องเรียนด้วยบัญชี Discord ของตัวเองค่ะ</Body>
+              {app.join_token && <a href={shiftJoinPath(app.join_token)} className={flowButtonClass} data-variant="discord"><DiscordIcon className="h-6 w-6 shrink-0" />ลิงก์เข้าห้องเรียนของ {who}</a>}
+            </section>
+          ) : (
+            <section className="space-y-5" aria-label="ชำระเงินหลังผู้ปกครองยินยอม">
+              <h2 className="flex items-center gap-3 font-kodchasan text-xl font-semibold"><CreditCard className="h-6 w-6 shrink-0" aria-hidden="true" />ต่อไป: ชำระเงิน</h2>
+              <Body>โอนแล้วส่งสลิป พร้อมชื่อ {who} และรุ่น {cohort.name} ทาง LINE ค่ะ ถ้าโอนแล้ว ส่งสลิปให้ทีมงานตรวจสอบได้เลย</Body>
+              <ShiftPayment cohort={cohort} stacked />
+            </section>
+          )
+        }
+      >
+        <Body>
+          {app.full_name} ({who}) สมัครเข้าร่วม {cohort.name} ของ PassionSeed
+          วันที่ {formatThaiDateRange(cohort.startDate, cohort.endDate)} เวลา {cohort.sessionTime} น. ทางออนไลน์
+          ค่าเข้าร่วม {priceLabel(cohort)}
+        </Body>
+        {cohort.priceBaht > 0 && <Body>{REFUND_HOW}</Body>}
+        <Body>
+          {who} อายุยังไม่ถึง 20 ปี กฎหมาย PDPA จึงกำหนดให้ผู้ปกครองยินยอมด้วยค่ะ
+        </Body>
+        <PdpaNotice notice={SHIFT_NOTICE} variant="full" />
+        <PdpaNotice
+          notice={SEEDSTACK_NOTICE}
+          variant="collapsed"
+          collapsedLabel="AI ติดตามความคืบหน้า (SeedStack) เก็บอะไรบ้าง"
+        />
+      </ShiftParentForm>
       <LineHelp />
     </Shell>
   );
