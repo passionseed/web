@@ -413,3 +413,9 @@ button.wb-pill:enabled:hover,
 .wb-version-panel .wb-save:hover {
   background: #9a3412;
 }
+
+/* The kit's first action (ShiftKit's project frame): the board's active warmth, not a plain tile. */
+.whiteboard-kit .wb-tile--primary {
+  background: var(--wb-active);
+  border-color: var(--wb-hairline-strong);
+}

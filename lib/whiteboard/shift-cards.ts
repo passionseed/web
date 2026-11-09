@@ -200,7 +200,7 @@ export function projectFrameSkeleton(name: string, projectId = newProjectId()): 
     id: "project-hint",
     x: x + 40,
     y: y + 32,
-    text: "ลากการ์ดจากแถบ SHIFT มาวางในกรอบนี้ · ทุกอย่างในกรอบนับเป็นของโปรเจกต์นี้\nดับเบิลคลิกชื่อกรอบเพื่อเปลี่ยนชื่อโปรเจกต์",
+    text: "การ์ดที่อยู่ในกรอบนี้คืองานของโปรเจกต์นี้ · ดับเบิลคลิกชื่อกรอบเพื่อเปลี่ยนชื่อ",
     fontSize: 20,
     fontFamily: 6,
     strokeColor: "#1e1e1e",
@@ -208,8 +208,9 @@ export function projectFrameSkeleton(name: string, projectId = newProjectId()): 
   } as ExcalidrawElementSkeleton;
   return [
     hint,
-    shiftCardSkeleton("problem", x + 40, y + 120, { example: true, id: "project-problem" }),
-    shiftCardSkeleton("target", x + 40 + SHIFT_CARD_WIDTH + 40, y + 120, { example: true, id: "project-target" }),
+    // Cards start below the hint with room for their version chips.
+    shiftCardSkeleton("problem", x + 40, y + 110, { example: true, id: "project-problem" }),
+    shiftCardSkeleton("target", x + 40 + SHIFT_CARD_WIDTH + 40, y + 110, { example: true, id: "project-target" }),
     {
       type: "frame",
       x,
