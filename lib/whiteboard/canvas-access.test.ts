@@ -31,6 +31,11 @@ describe("canvas access", () => {
     expect(ids(check([{ ...label, text: "hacked" }], OTHER).dropped)).toEqual(["T"]);
   });
 
+  it("stops outsiders overwriting a canvas by sending its id as another type", () => {
+    expect(ids(check([{ id: "F", type: "rectangle", isDeleted: true }], OTHER).dropped)).toEqual(["F"]);
+    expect(ids(check([{ id: "F", type: "frame", customData: { owner: OTHER } }], OTHER).dropped)).toEqual(["F"]);
+  });
+
   it("stops outsiders putting things into a canvas, but not changing the rest of the board", () => {
     expect(ids(check([{ id: "new", type: "rectangle", frameId: "F" }], OTHER).dropped)).toEqual(["new"]);
     expect(ids(check([{ ...loose, x: 5 }], OTHER).allowed)).toEqual(["L"]);

@@ -76,7 +76,8 @@ BEGIN
     WHERE t.el ? 'id'
   ),
   -- Every canvas each incoming element was in or is going into: its saved and new frame,
-  -- itself if it is a canvas, and the frame of the note its text belongs to.
+  -- itself if it is (or was saved as) a canvas, so a change claiming another type cannot
+  -- overwrite or delete a canvas, and the frame of the note its text belongs to.
   touched AS (
     SELECT i.ord, f.canvas_id
     FROM incoming i
@@ -85,6 +86,7 @@ BEGIN
       (s.el->>'frameId'),
       (i.el->>'frameId'),
       (CASE WHEN i.el->>'type' = 'frame' THEN i.id END),
+      (CASE WHEN s.el->>'type' = 'frame' THEN s.id END),
       ((SELECT COALESCE(ic.el->>'frameId', sc.el->>'frameId')
         FROM (SELECT COALESCE(i.el->>'containerId', s.el->>'containerId') AS cid) c
         LEFT JOIN incoming ic ON ic.id = c.cid
