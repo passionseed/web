@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Loader2 } from "lucide-react";
+import { useState, useTransition, type ReactNode } from "react";
+import { CircleCheck, Loader2 } from "lucide-react";
 
 import { FLOW_TEXT, flowButtonClass, flowFieldClass, flowPanelClass } from "@/components/shift/join/shiftFlowInk";
 import { INK } from "@/components/shift/poster/riso";
@@ -23,12 +23,16 @@ export function ShiftParentForm({
   nickname,
   fullName,
   cohortName,
+  children,
+  nextStep,
 }: {
   token: string;
   decision: ShiftParentDecision | null;
   nickname: string;
   fullName: string;
   cohortName: string;
+  children?: ReactNode;
+  nextStep?: ReactNode;
 }) {
   const [decision, setDecision] = useState<ShiftParentDecision | null>(initialDecision);
   const [name, setName] = useState("");
@@ -71,19 +75,28 @@ export function ShiftParentForm({
 
   if (decision) {
     const done: Record<ShiftParentDecision, string> = {
-      agreed: `ขอบคุณค่ะ บันทึกความยินยอมแล้ว ${nickname} ยืนยันที่นั่งได้เลย ถอนความยินยอมได้ทุกเมื่อที่ลิงก์นี้ (ถอนแล้วจะหยุดการติดตามด้วย AI ด้วย)`,
+      agreed: "บันทึกความยินยอมแล้วค่ะ",
       declined: `บันทึกแล้วค่ะ ${nickname} จะยังไม่ได้รับการยืนยันที่นั่ง ถ้าเปลี่ยนใจ กลับมาที่ลิงก์นี้ได้`,
       withdrawn: "ถอนความยินยอมแล้วค่ะ ทีมงานจะติดต่อกลับเรื่องที่นั่งและการคืนเงิน",
     };
     return (
-      <div className={`${flowPanelClass} space-y-3 p-4`} role="status">
-        <p className="text-[17px] leading-relaxed" style={{ color: FLOW_TEXT.body }}>
+      <div className="space-y-6">
+        <p className="flex items-center gap-3 text-[17px] font-semibold leading-relaxed" style={{ color: FLOW_TEXT.body }} role="status">
+          {decision === "agreed" && <CircleCheck className="h-6 w-6 shrink-0" style={{ color: INK.yellow }} aria-hidden="true" />}
           {done[decision]}
         </p>
+        {decision === "agreed" && nextStep}
+        {children && <details className="text-sm leading-relaxed" style={{ color: FLOW_TEXT.muted }}>
+          <summary className="min-h-12 cursor-pointer py-3 font-semibold">อ่านรายละเอียดความยินยอมอีกครั้ง</summary>
+          <div className="space-y-6 pt-3">{children}</div>
+        </details>}
         {decision === "agreed" && (
-          <button type="button" onClick={withdraw} disabled={pending} className={linkButtonClass} style={{ color: FLOW_TEXT.muted }}>
-            ถอนความยินยอม
-          </button>
+          <div>
+            <p className="text-sm leading-relaxed" style={{ color: FLOW_TEXT.muted }}>ถอนความยินยอมได้ทุกเมื่อที่ลิงก์นี้ การถอนจะหยุดการติดตามด้วย AI ด้วยค่ะ</p>
+            <button type="button" onClick={withdraw} disabled={pending} className={linkButtonClass} style={{ color: FLOW_TEXT.muted }}>
+              ถอนความยินยอม
+            </button>
+          </div>
         )}
         {decision === "declined" && (
           <button type="button" onClick={() => setDecision(null)} className={linkButtonClass} style={{ color: FLOW_TEXT.muted }}>
@@ -97,6 +110,7 @@ export function ShiftParentForm({
 
   return (
     <div className="space-y-5">
+      {children}
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}

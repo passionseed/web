@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { ArrowRight, DoorOpen, Loader2 } from "lucide-react";
+import { DiscordIcon } from "./DiscordIcon";
 
 import { FLOW_TEXT, flowButtonClass } from "@/components/shift/join/shiftFlowInk";
 import { SHIFT_DISCORD_SCOPES, shiftDiscordCallbackUrl } from "@/lib/shift/discordAuth";
@@ -60,8 +61,9 @@ export function ConnectDiscordButton({
         className={flowButtonClass}
         data-variant="discord"
       >
-        {pending && <Loader2 className="h-5 w-5 motion-safe:animate-spin" aria-hidden="true" />}
-        {label}
+        {pending ? <Loader2 className="h-5 w-5 shrink-0 motion-safe:animate-spin" aria-hidden="true" /> : <DiscordIcon className="h-6 w-6 shrink-0" />}
+        {pending ? "กำลังเปิด Discord…" : label}
+        {!pending && <ArrowRight className="h-5 w-5 shrink-0" aria-hidden="true" />}
       </button>
       {error && (
         <p className="text-sm font-semibold leading-relaxed" style={{ color: FLOW_TEXT.warn }} role="alert">
@@ -73,9 +75,9 @@ export function ConnectDiscordButton({
 }
 
 const SYNC_MESSAGES: Record<string, string> = {
-  not_member: "ยังไม่เจอในเซิร์ฟ กดลิงก์เชิญด้านบนก่อน แล้วค่อยกดปุ่มนี้อีกที",
+  not_member: "ยังไม่ได้เข้ากลุ่ม SHIFT กดปุ่มที่ 1 แล้วรับคำเชิญก่อน จากนั้นกลับมากดปุ่มนี้อีกครั้ง",
   not_configured: "ระบบ Discord ยังไม่พร้อม ทักพี่ใน LINE ได้เลย",
-  error: "รับ role ไม่สำเร็จ ลองอีกครั้ง หรือทักพี่ใน LINE",
+  error: "เปิดห้องเรียนไม่สำเร็จ ลองอีกครั้ง หรือทักพี่ใน LINE",
 };
 
 /** For students who came in through the invite: grants roles now that the
@@ -112,8 +114,8 @@ export function SyncRolesButton({ token }: { token: string }) {
         aria-busy={pending}
         className={flowButtonClass}
       >
-        {pending && <Loader2 className="h-5 w-5 motion-safe:animate-spin" aria-hidden="true" />}
-        เข้าเซิร์ฟแล้ว กดรับ role
+        {pending ? <Loader2 className="h-5 w-5 shrink-0 motion-safe:animate-spin" aria-hidden="true" /> : <DoorOpen className="h-5 w-5 shrink-0" aria-hidden="true" />}
+        {pending ? "กำลังเปิดห้องเรียน…" : "2. เปิดห้องเรียนของรุ่น"}
       </button>
       {message && (
         <p className="text-sm font-semibold leading-relaxed" style={{ color: FLOW_TEXT.warn }} role="alert">
