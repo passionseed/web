@@ -79,9 +79,22 @@ export function enforceCanvasAccess<T extends El>(
   userId: string,
   manager: boolean,
 ): { allowed: T[]; dropped: T[] } {
-  const saved = new Map(current.map((el) => [el.id, el]));
+  return enforceCanvasAccessIn(new Map(current.map((el) => [el.id, el])), canvasAccessMap(current), changes, userId, manager);
+}
+
+/**
+ * enforceCanvasAccess for callers that keep the trusted state as maps (the
+ * browser guard, on every edit), so a check costs the size of the change, not
+ * of the board.
+ */
+export function enforceCanvasAccessIn<T extends El>(
+  saved: ReadonlyMap<string, El>,
+  access: ReadonlyMap<string, CanvasAccess>,
+  changes: readonly T[],
+  userId: string,
+  manager: boolean,
+): { allowed: T[]; dropped: T[] } {
   const incoming = new Map(changes.map((el) => [el.id, el]));
-  const access = canvasAccessMap(current);
   const allowed: T[] = [];
   const dropped: T[] = [];
 

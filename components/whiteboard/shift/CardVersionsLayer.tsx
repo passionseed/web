@@ -24,6 +24,7 @@ import {
 import { canvasAccessMap, mayEditFrame } from "@/lib/whiteboard/canvas-access";
 
 import { useViewportTick } from "../CommentsLayer";
+import { isBusy, useSceneMemo } from "./sceneMemo";
 
 type Props = {
   api: ExcalidrawImperativeAPI;
@@ -99,27 +100,40 @@ export function CardVersionsLayer({ api, meId, editable, manager, nameOf }: Prop
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const appState = api.getAppState();
-  const elements = api.getSceneElements();
-  const access = canvasAccessMap(elements);
-  const labels = new Map<string, ExcalidrawTextElement>();
-  for (const el of elements) if (el.type === "text" && el.containerId) labels.set(el.containerId, el);
+  // Everything that depends only on the notes, worked out when they change, not on every pan frame.
+  const cards = useSceneMemo(api, (elements) => {
+    const access = canvasAccessMap(elements);
+    const labels = new Map<string, ExcalidrawTextElement>();
+    for (const el of elements) if (el.type === "text" && el.containerId) labels.set(el.containerId, el);
+    return elements
+      .filter((el) => el.type === "rectangle" && isVersionedCard(el.customData?.card))
+      .map((card) => {
+        const label = labels.get(card.id);
+        const text = labelText(label);
+        return {
+          card,
+          labelId: label?.id,
+          kind: card.customData!.card as ShiftCardKind,
+          versions: readVersions(card.customData),
+          text,
+          edited: hasUnsavedEdit(card.customData, text),
+          // Saving a version is an edit: only for people who may change the canvas the note is in.
+          canSave: editable && mayEditFrame(access, card.frameId, meId, manager),
+        };
+      });
+  }, [editable, meId, manager]);
 
+  const appState = api.getAppState();
+  if (isBusy(appState) || cards.length === 0) return null;
   const selectedIds = Object.keys(appState.selectedElementIds);
   const selectedId = selectedIds.length === 1 ? selectedIds[0] : null;
 
-  const chips = elements
-    .filter((el) => el.type === "rectangle" && isVersionedCard(el.customData?.card))
-    .flatMap((card) => {
-      const versions = readVersions(card.customData);
-      const label = labels.get(card.id);
-      const selected = selectedId !== null && (card.id === selectedId || label?.id === selectedId);
-      // Saving a version is an edit: only for people who may change the canvas the note is in.
-      const canSave = editable && mayEditFrame(access, card.frameId, meId, manager);
-      if (versions.length === 0 && !(selected && canSave)) return [];
-      const pos = sceneCoordsToViewportCoords({ sceneX: card.x + card.width, sceneY: card.y }, appState);
-      const text = labelText(label);
-      return [{ card, kind: card.customData!.card as ShiftCardKind, versions, text, selected, pos, canSave }];
+  const chips = cards
+    .flatMap((c) => {
+      const selected = selectedId !== null && (c.card.id === selectedId || c.labelId === selectedId);
+      if (c.versions.length === 0 && !(selected && c.canSave)) return [];
+      const pos = sceneCoordsToViewportCoords({ sceneX: c.card.x + c.card.width, sceneY: c.card.y }, appState);
+      return [{ ...c, selected, pos }];
     })
     .slice(0, MAX_CHIPS);
 
@@ -129,9 +143,8 @@ export function CardVersionsLayer({ api, meId, editable, manager, nameOf }: Prop
     <>
     {/* Chips sit under Excalidraw's own menus, like the other overlays. */}
     <div className="pointer-events-none absolute inset-0 z-[2] overflow-hidden">
-      {chips.map(({ card, kind, versions, text, selected, pos }) => {
+      {chips.map(({ card, kind, versions, edited, selected, pos }) => {
         const latest = versions.at(-1);
-        const edited = hasUnsavedEdit(card.customData, text);
         const label = latest ? `v${latest.v}${edited ? " · แก้อยู่" : ""}` : "เก็บเวอร์ชัน";
         return (
           <button

@@ -280,11 +280,9 @@ export function projectCanvasSkeleton(name: string, projectId = newProjectId()):
         locked: true,
         customData: { zone: z.kind, ...(z.day ? { day: z.day } : {}) },
       } as ExcalidrawElementSkeleton,
-      text(`zone-${i}-title`, ox + z.x + ZONE_PAD, oy + z.y + 20, zoneTitle(z.kind, z.day), z.day ? 20 : 26, {
-        customData: { zoneLabel: z.kind },
-      }),
-      text(`zone-${i}-prompt`, ox + z.x + ZONE_PAD, oy + z.y + 58, z.day ? DAILY_PROMPT : card.prompt, z.day ? 16 : 18, {
-        opacity: 65,
+      // Title and question in one label: half the elements per canvas, which keeps a board of
+      // many canvases smooth to pan when zoomed out.
+      text(`zone-${i}-label`, ox + z.x + ZONE_PAD, oy + z.y + 20, `${zoneTitle(z.kind, z.day)}\n${z.day ? DAILY_PROMPT : card.prompt}`, z.day ? 18 : 22, {
         customData: { zoneLabel: z.kind },
       }),
     );

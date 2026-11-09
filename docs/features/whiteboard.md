@@ -61,6 +61,12 @@ again afterwards.
   once a second, the thumbnail waits until nobody has edited for 3 seconds, and overlays
   (`useViewportTick`) re-render only when the view or elements actually change. Keep props
   passed to `<Excalidraw>` stable: it skips re-rendering only when they are unchanged.
+- **SHIFT canvases stay smooth** (measured on a 2,200-element board with 16 canvases: 120 fps
+  dragging, typing and panning, including zoomed right out). The SHIFT overlays recompute only
+  when the scene changes (`useSceneMemo`, keyed by scene version, not on pan frames) and step
+  aside while something is dragged, resized or drawn (`isBusy`). The browser guard keeps its
+  lookup tables up to date one element at a time, so checking an edit costs the size of the
+  edit. Each zone's title and question are one label, half the elements per canvas.
 - **Authorship:** every element carries `customData.createdBy` and `customData.updatedBy`
   (user ids), recorded from 2026-10-24. The server sets `updatedBy` on save. Elements from
   before then have no author.

@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { accessOf, canEditCanvas, cleanEditors, type CanvasAccess } from "@/lib/whiteboard/canvas-access";
 
 import { useViewportTick } from "../CommentsLayer";
+import { isBusy, useSceneMemo } from "./sceneMemo";
 
 type Person = { userId: string; name: string; role: string };
 
@@ -46,15 +47,20 @@ function setTeam(api: ExcalidrawImperativeAPI, frameId: string, editors: string[
 export function CanvasTeamLayer({ api, meId, manager, people, nameOf }: Props) {
   useViewportTick(api, { elements: true });
   const [openId, setOpenId] = useState<string | null>(null);
+  const frames = useSceneMemo(api, (elements) =>
+    elements.flatMap((frame) => {
+      const access = accessOf(frame);
+      return access ? [{ frame, access, mine: canEditCanvas(access, meId, manager) }] : [];
+    }),
+    [meId, manager],
+  );
   const appState = api.getAppState();
-  if (appState.zoom.value < MIN_ZOOM) return null;
+  if (appState.zoom.value < MIN_ZOOM || frames.length === 0 || (isBusy(appState) && !openId)) return null;
 
-  const canvases = api.getSceneElements().flatMap((frame) => {
-    const access = accessOf(frame);
-    if (!access) return [];
-    const pos = sceneCoordsToViewportCoords({ sceneX: frame.x + frame.width, sceneY: frame.y }, appState);
-    return [{ frame, access, pos, mine: canEditCanvas(access, meId, manager) }];
-  });
+  const canvases = frames.map((c) => ({
+    ...c,
+    pos: sceneCoordsToViewportCoords({ sceneX: c.frame.x + c.frame.width, sceneY: c.frame.y }, appState),
+  }));
   const open = canvases.find((c) => c.frame.id === openId);
 
   return (

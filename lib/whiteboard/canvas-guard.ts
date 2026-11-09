@@ -1,4 +1,4 @@
-import { enforceCanvasAccess } from "./canvas-access";
+import { accessOf, canvasAccessMap, enforceCanvasAccessIn } from "./canvas-access";
 
 /**
  * The browser side of canvas access (see canvas-access.ts). It keeps the last
@@ -58,30 +58,38 @@ export type CanvasGuard<T extends Versioned> = {
 };
 
 export function createCanvasGuard<T extends Versioned>(initial: readonly T[]): CanvasGuard<T> {
+  // Kept up to date one element at a time, so checking an edit costs the size of the edit.
   const trusted = new Map<string, T>(initial.map((el) => [el.id, el]));
+  const access = canvasAccessMap(initial);
+  const remember = (el: T) => {
+    trusted.set(el.id, el);
+    const canvas = accessOf(el);
+    if (canvas) access.set(el.id, canvas);
+    else access.delete(el.id);
+  };
 
   return {
     checkLocal(elements, me, manager) {
       const changed = elements.filter((el) => trusted.get(el.id)?.version !== el.version);
       if (changed.length === 0) return { fixes: [], blocked: 0 };
       const originals = new Map(changed.map((el) => [el.id, el]));
-      const { allowed, dropped } = enforceCanvasAccess([...trusted.values()], changed, me, manager);
+      const { allowed, dropped } = enforceCanvasAccessIn(trusted, access, changed, me, manager);
       const fixes: T[] = [];
 
       for (const el of allowed) {
         const original = originals.get(el.id)!;
         if (el === original) {
-          trusted.set(el.id, el);
+          remember(el);
           continue;
         }
         const fixed = bump(original, { customData: el.customData } as Partial<T>);
-        trusted.set(el.id, fixed);
+        remember(fixed);
         fixes.push(fixed);
       }
       for (const el of dropped) {
         const before = trusted.get(el.id);
         const fixed = before ?? bump(el, { isDeleted: true } as Partial<T>);
-        trusted.set(el.id, fixed);
+        remember(fixed);
         fixes.push(fixed);
       }
       return { fixes, blocked: dropped.length };
@@ -96,12 +104,12 @@ export function createCanvasGuard<T extends Versioned>(initial: readonly T[]): C
       }
       const accepted: T[] = [];
       for (const [sender, batch] of bySender) {
-        const { allowed } = enforceCanvasAccess([...trusted.values()], batch, sender, managers.has(sender));
+        const { allowed } = enforceCanvasAccessIn(trusted, access, batch, sender, managers.has(sender));
         // A corrected element (a forged owner or team) is a new object: never apply it.
         accepted.push(...allowed.filter((el) => batch.includes(el)));
       }
       for (const el of accepted) {
-        if ((trusted.get(el.id)?.version ?? -1) < el.version) trusted.set(el.id, el);
+        if ((trusted.get(el.id)?.version ?? -1) < el.version) remember(el);
       }
       return accepted;
     },

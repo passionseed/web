@@ -9,6 +9,7 @@ import { isShiftCardKind, isZone, zoneTitle } from "@/lib/whiteboard/shift-cards
 
 import { useViewportTick } from "../CommentsLayer";
 import { insertZoneNote } from "./insertShift";
+import { isBusy, useSceneMemo } from "./sceneMemo";
 
 /** Zoomed out further than this (a mentor's overview of several canvases), the buttons would crowd them. */
 const MIN_ZOOM = 0.2;
@@ -24,14 +25,15 @@ const COMPACT_BELOW = 240;
  */
 export function ZoneAddLayer({ api, meId, manager }: { api: ExcalidrawImperativeAPI; meId: string; manager: boolean }) {
   useViewportTick(api, { elements: true });
-  const appState = api.getAppState();
-  if (appState.zoom.value < MIN_ZOOM || appState.viewModeEnabled) return null;
-
-  const elements = api.getSceneElements();
   // Only on canvases this person may change (theirs, their team's, or any for the board's owner).
-  const access = canvasAccessMap(elements);
-  const buttons = elements
-    .filter((el) => isZone(el) && mayEditFrame(access, el.frameId, meId, manager))
+  const zones = useSceneMemo(api, (elements) => {
+    const access = canvasAccessMap(elements);
+    return elements.filter((el) => isZone(el) && mayEditFrame(access, el.frameId, meId, manager));
+  }, [meId, manager]);
+  const appState = api.getAppState();
+  if (appState.zoom.value < MIN_ZOOM || appState.viewModeEnabled || isBusy(appState)) return null;
+
+  const buttons = zones
     .flatMap((zone) => {
       const kind = zone.customData?.zone;
       if (!isShiftCardKind(kind)) return [];
