@@ -1,5 +1,7 @@
 import {
   addVersion,
+  answerOf,
+  newLines,
   freeSlot,
   isPlacementObstacle,
   hasUnsavedEdit,
@@ -160,5 +162,19 @@ describe("card placement", () => {
     expect(isPlacementObstacle({ type: "frame", x: 0, y: 0, width: 300, height: 300 })).toBe(false);
     expect(isPlacementObstacle({ type: "text", x: 0, y: 0, width: 100, height: 40, containerId: "c" })).toBe(false);
     expect(isPlacementObstacle({ type: "rectangle", x: 0, y: 0, width: 300, height: 260, isDeleted: true })).toBe(false);
+  });
+});
+
+describe("version history display", () => {
+  it("shows only what the student wrote under the question", () => {
+    expect(answerOf("problem", `${shiftCardStartText("problem")}\n\nคนป่วย ซื้อยาไม่สะดวก\n`)).toBe("คนป่วย ซื้อยาไม่สะดวก");
+    expect(answerOf("problem", shiftCardStartText("problem"))).toBe("");
+    // A student who rewrote the question keeps their whole text.
+    expect(answerOf("problem", "ปัญหาของเรา\nคนป่วย")).toBe("ปัญหาของเรา\nคนป่วย");
+  });
+
+  it("marks lines that are new since the previous version", () => {
+    expect([...newLines("คนป่วย\nซื้อยาไม่สะดวก", "ผู้สูงอายุ\nซื้อยาไม่สะดวก\n\nลืมกินยา")]).toEqual([0, 3]);
+    expect(newLines("a", "a").size).toBe(0);
   });
 });

@@ -419,6 +419,13 @@ button.wb-pill:enabled:hover,
   border: 1px solid var(--wb-hairline-strong);
   background: transparent;
 }
+/* Lines new since the version before, in the history. */
+.wb-version-panel .wb-new {
+  background: rgba(251, 146, 60, 0.2);
+  border-radius: 0.2rem;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
 /* White on orange-700 is 5.2:1, where orange-500 was 2.8:1. */
 .wb-version-panel .wb-save {
   background: #c2410c;

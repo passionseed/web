@@ -332,6 +332,23 @@ export function hasUnsavedEdit(customData: unknown, text: string): boolean {
   return Boolean(last) && squash(last!.text) !== squash(versionText(text));
 }
 
+/** What the student wrote: the card's text without its header and question, when those are unchanged. */
+export function answerOf(kind: ShiftCardKind, text: string): string {
+  const start = shiftCardStartText(kind);
+  const normal = text.replace(/\r\n/g, "\n");
+  return (normal.startsWith(start) ? normal.slice(start.length) : normal).trim();
+}
+
+/** Which lines of `current` are new since `previous` (indices into current's lines), ignoring blank lines. */
+export function newLines(previous: string, current: string): Set<number> {
+  const before = new Set(previous.split("\n").map((l) => l.trim()).filter(Boolean));
+  const added = new Set<number>();
+  current.split("\n").forEach((line, i) => {
+    if (line.trim() && !before.has(line.trim())) added.add(i);
+  });
+  return added;
+}
+
 /**
  * The card's customData with the current text saved as the next version, or
  * null when there is nothing new to save (an unwritten card, or the same text

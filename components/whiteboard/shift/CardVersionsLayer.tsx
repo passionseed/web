@@ -8,11 +8,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   addVersion,
+  answerOf,
   type CardVersion,
   hasUnsavedEdit,
   isVersionedCard,
   isWritten,
   MAX_WHY,
+  newLines,
   readVersions,
   SHIFT_CARDS,
   shortTitle,
@@ -279,17 +281,38 @@ function VersionPanel(props: {
         </p>
       ) : (
         <ol className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
-          {[...versions].reverse().map((v) => (
+          {[...versions].reverse().map((v, i, list) => (
             <li key={v.v} className="text-xs">
               <p className="font-semibold">
                 v{v.v} <span className="wb-soft font-normal">· {when(v.at)} · {nameOf(v.by)}</span>
               </p>
               {v.why && <p className="wb-why mt-0.5">เพราะ: {v.why}</p>}
-              <p className="wb-quote mt-1 whitespace-pre-wrap rounded-md p-2">{v.text}</p>
+              <VersionAnswer kind={kind} text={v.text} previous={list[i + 1]?.text} />
             </li>
           ))}
         </ol>
       )}
     </div>
+  );
+}
+
+/**
+ * One version's answer, without the card's header and question, with the lines
+ * that are new since the version before it marked, so a student sees how their
+ * thinking changed.
+ */
+function VersionAnswer({ kind, text, previous }: { kind: ShiftCardKind; text: string; previous?: string }) {
+  const answer = answerOf(kind, text);
+  if (!answer) return <p className="wb-quote wb-soft mt-1 rounded-md p-2">(ยังไม่มีคำตอบ)</p>;
+  const added = previous === undefined ? new Set<number>() : newLines(answerOf(kind, previous), answer);
+  return (
+    <p className="wb-quote mt-1 whitespace-pre-wrap rounded-md p-2">
+      {answer.split("\n").map((line, i) => (
+        <span key={i} className={added.has(i) ? "wb-new" : undefined}>
+          {line}
+          {"\n"}
+        </span>
+      ))}
+    </p>
   );
 }
