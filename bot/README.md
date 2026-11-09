@@ -1,48 +1,122 @@
-# ProjectSeed Discord bot
+# PassionSeed Discord bot
 
-Records who was actually in voice, reminds people about the hours they declared,
-and answers `/stats`. Linear: PS-213.
+One long-running process with two modules, chosen by `BOT_MODULES`:
 
-It is a long-running gateway client, not a serverless function — Discord voice
-state arrives over a persistent WebSocket, so it needs a process that stays up
-(Railway, Fly, or any small VM). Everything it writes goes through
-`service_role`-only functions; see
-`supabase/migrations/20260801000000_projectseed_bot_rpcs.sql`.
+- **`shift-voice`** (default): records SHIFT students' voice participation in
+  the SHIFT server (time in voice, mic open, screen share, camera, joins) and
+  feeds `/admin/shift/voice`.
+- **`projectseed`**: records who was in voice, reminds people about the hours
+  they declared, and answers `/stats`. Linear: PS-213.
+
+It is a gateway client, not a webhook or a serverless function. Discord sends
+voice state only over the gateway, a WebSocket the bot keeps open, so it needs
+a process that stays up (Railway, Fly, or any small VM). Vercel cannot host it.
+shift-voice connects as `shift_voice_bot`, a database login that can call four
+functions and read no table (`supabase/migrations/20261109200000_shift_voice_bot_role.sql`),
+so the host never holds the service role key. projectseed still uses
+`service_role`-only functions (`supabase/migrations/20260801000000_projectseed_bot_rpcs.sql`).
 
 ## Running
 
 ```bash
-pnpm bot:register   # once, and after changing any slash command
 pnpm bot:dev        # local, reads .env.local
 pnpm bot:start      # production
+pnpm bot:register   # projectseed only: once, and after changing any slash command
 ```
+
+Run one instance at a time. Two would both write rows for the same people.
+
+## Deploying
+
+Any host with Docker works. `bot/deploy.sh <ssh-host>` ships the committed bot
+(not the whole web app), builds `bot/Dockerfile` on the host, replaces the
+`passionseed-discord-bot` container (`--restart unless-stopped`, so it comes
+back after a crash or reboot) and installs `bot/watchdog.py` in the host's
+crontab. The previous image is kept for a rollback.
+
+On the host, in `~/passionseed/discord-bot/` (`chmod 600`, never in the repo):
+
+- `bot.env`: plain `KEY=value` lines without quotes, for the modules you run
+  (see Environment).
+- `alert-webhook`: a post-only Discord webhook URL for a staff channel. The
+  watchdog posts once when the container has been stopped or unhealthy for 10
+  minutes, and once when it is back.
+
+```bash
+bot/deploy.sh <ssh-host>                              # deploy or update
+ssh <ssh-host> docker logs -f passionseed-discord-bot  # logs
+ssh <ssh-host> docker stop passionseed-discord-bot     # stop
+```
+
+**Health.** The container is healthy while heartbeats reach the database
+(Docker `HEALTHCHECK`). After 15 minutes without one the bot exits and Docker
+starts it fresh.
+
+**The database login.** The migration creates `shift_voice_bot` without a
+password. To set or rotate one, generate a random password, run
+`ALTER ROLE shift_voice_bot WITH LOGIN PASSWORD '<SCRAM-SHA-256 verifier>'`
+with `supabase db query --linked` (a verifier, so the plain password never
+reaches Postgres logs), and put
+`postgresql://shift_voice_bot.<project ref>:<password>@<pooler host>:5432/postgres`
+in `bot.env` as `SHIFT_VOICE_DATABASE_URL`. TLS is verified against
+`bot/supabase-ca.pem`, Supabase's root CA: the pooler's certificate does not
+chain to a public one.
 
 ## Environment
 
-| Variable | Required | Notes |
+| Variable | Module | Notes |
 |---|---|---|
-| `DISCORD_BOT_TOKEN` | yes | Regenerate in the Discord developer portal if it 401s |
-| `DISCORD_GUILD_ID` | yes | |
-| `DISCORD_REMINDER_CHANNEL_ID` | yes | Text channel the reminders post to |
-| `NEXT_PUBLIC_SUPABASE_URL` | yes | |
-| `SUPABASE_SERVICE_ROLE_KEY` | yes | |
-| `PSEED_COHORT_SLUG` | no | Defaults to `alumni-mvp` |
-| `PSEED_VOICE_CHANNEL_IDS` | no | Comma-separated. Empty means every voice channel |
-| `PSEED_REMINDER_INTERVAL_MS` | no | Defaults to 60000 |
+| `BOT_MODULES` | all | Comma-separated: `shift-voice`, `projectseed`. Default `shift-voice` |
+| `DISCORD_SHIFT_BOT_TOKEN` | shift-voice | Falls back to `DISCORD_BOT_TOKEN`, like the web app, so the bot that hands out SHIFT roles is the one watching voice |
+| `DISCORD_SHIFT_GUILD_ID` | shift-voice | The SHIFT server |
+| `SHIFT_VOICE_DATABASE_URL` | shift-voice | The `shift_voice_bot` login through the pooler (see Deploying) |
+| `NEXT_PUBLIC_SUPABASE_URL` | projectseed | |
+| `SUPABASE_SERVICE_ROLE_KEY` | projectseed | |
+| `DISCORD_BOT_TOKEN` | projectseed | Regenerate in the Discord developer portal if it 401s |
+| `DISCORD_GUILD_ID` | projectseed | |
+| `DISCORD_REMINDER_CHANNEL_ID` | projectseed | Text channel the reminders post to |
+| `PSEED_COHORT_SLUG` | projectseed | Defaults to `alumni-mvp` |
+| `PSEED_VOICE_CHANNEL_IDS` | projectseed | Comma-separated. Empty means every voice channel |
+| `PSEED_REMINDER_INTERVAL_MS` | projectseed | Defaults to 60000 |
+
+Both modules in one process need the same token; with two different bots,
+run two processes.
 
 ## Discord setup
 
-Intents — enable **Server Members** is *not* required; the bot needs:
+Intents: `Guilds` and `Guild Voice States`, plus `Direct Messages` for
+projectseed. None of them is privileged, so nothing needs switching on in the
+developer portal.
 
-- `Guilds`
-- `Guild Voice States`
-- `Direct Messages`
+Permissions: `View Channel` on the voice channels it should observe. It never
+connects to voice. projectseed also needs `Send Messages` and
+`Use Slash Commands` on the reminder channel.
 
-Permissions in the guild: `View Channels`, `Send Messages`, `Use Slash Commands`
-on the reminder channel, and `View Channel` + `Connect` on the voice channels it
-should observe. It never speaks in voice and never needs `Connect` to transmit.
+## SHIFT voice participation
 
-## What it does
+**Who is recorded.** Only students of a round in session (its 7 days include
+today, Bangkok time): a non-declined application with a linked Discord
+account, or a member holding the round's `SHIFT[n]` role who never linked.
+Everyone else in the shared server is dropped before anything is written. The
+roster refreshes every 5 minutes, so a student who links mid-session is picked
+up, and a declined student's open row is closed.
+
+**What is recorded.** `shift_voice_spans` gets one row per stretch of unchanged
+state: channel, mic open (not self-muted, deafened or server-muted), screen
+share (Go Live), camera, and whether the row began with entering voice. The
+server's AFK channel counts as not in voice. No audio is received: "mic on"
+means unmuted, not talking.
+
+**Restarts.** A heartbeat moves `seen_at` forward on open rows once a minute,
+only while the gateway is connected. On startup and on every fresh gateway
+session the bot closes all open rows at their last heartbeat, then reopens rows
+for whoever is in voice now. Time the bot did not see is never counted, and the
+admin page ends every row at `seen_at`.
+
+**Reading it.** `/admin/shift/voice`: per student, for a session, a day or the
+whole round. Admins only.
+
+## ProjectSeed: what it does
 
 **Voice presence.** `voiceStateUpdate` opens and closes rows in
 `pseed_voice_sessions`. Mute, deafen, stream and camera all fire the same event
@@ -84,4 +158,8 @@ learn ProjectSeed sometimes DMs them, they lose the clean signal that a private
 message claiming to be from us is always wrong.
 
 Voice presence is behavioural data about minors. Retention and what parents are
-told must be decided before this runs against a cohort containing any.
+told must be decided before this runs against a cohort containing any. For
+SHIFT, `shift_voice_spans` is admin-only, never shown to students, and is
+deleted with the application it belongs to. Retention: kept indefinitely for
+now (decided 9 Nov 2026); revisit before the data is used for anything beyond
+checking in on a student. What parents are told is still open.

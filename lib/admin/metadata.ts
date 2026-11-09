@@ -13,6 +13,7 @@ const ADMIN_TITLES: Record<string, string> = {
   "/admin/shift/alumni": "SHIFT Alumni",
   "/admin/shift/alumni/board": "SHIFT Alumni Board",
   "/admin/shift/views": "SHIFT Page Views",
+  "/admin/shift/voice": "SHIFT Voice",
 };
 
 function titleCase(text: string): string {
