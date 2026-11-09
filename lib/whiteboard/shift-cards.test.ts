@@ -5,6 +5,7 @@ import {
   hasUnsavedEdit,
   isVersionedCard,
   isWritten,
+  MAX_VERSION_TEXT,
   MAX_VERSIONS,
   projectFrameAt,
   projectFrameSkeleton,
@@ -117,6 +118,13 @@ describe("card versions", () => {
     expect(versions).toHaveLength(MAX_VERSIONS);
     expect(versions[0].v).toBe(4);
     expect(versions.at(-1)!.v).toBe(MAX_VERSIONS + 3);
+  });
+
+  it("treats a card longer than the limit as saved once its kept part is saved", () => {
+    const long = `${shiftCardStartText("problem")}\n${"ก".repeat(MAX_VERSION_TEXT)}`;
+    const v1 = addVersion("problem", { card: "problem" }, { text: long, by: "u1", at })!;
+    expect(readVersions(v1)[0].text).toHaveLength(MAX_VERSION_TEXT);
+    expect(hasUnsavedEdit(v1, long)).toBe(false);
   });
 
   it("ignores malformed versions and flags unsaved edits", () => {

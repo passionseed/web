@@ -298,7 +298,8 @@ export function freeSlot(
 export type CardVersion = { v: number; text: string; at: string; by: string; why?: string };
 
 export const MAX_VERSIONS = 20;
-const MAX_VERSION_TEXT = 2000;
+/** Longer than any card a person writes by hand; anything past it is not kept in a version. */
+export const MAX_VERSION_TEXT = 5000;
 export const MAX_WHY = 280;
 
 const isVersion = (x: unknown): x is CardVersion => {
@@ -321,10 +322,13 @@ export function readVersions(customData: unknown): CardVersion[] {
   return Array.isArray(list) ? list.filter(isVersion) : [];
 }
 
-/** Whether the card's text differs from its last saved version. */
+/** The text a version keeps: trimmed and cut to MAX_VERSION_TEXT. */
+const versionText = (text: string) => text.trim().slice(0, MAX_VERSION_TEXT);
+
+/** Whether the card's text differs from its last saved version, compared as a version would keep it. */
 export function hasUnsavedEdit(customData: unknown, text: string): boolean {
   const last = readVersions(customData).at(-1);
-  return Boolean(last) && squash(last!.text) !== squash(text);
+  return Boolean(last) && squash(last!.text) !== squash(versionText(text));
 }
 
 /**
@@ -337,7 +341,7 @@ export function addVersion(
   customData: Record<string, unknown> | null | undefined,
   entry: { text: string; by: string; at: string; why?: string },
 ): Record<string, unknown> | null {
-  const text = entry.text.trim().slice(0, MAX_VERSION_TEXT);
+  const text = versionText(entry.text);
   if (!isWritten(kind, text)) return null;
   const versions = readVersions(customData);
   const last = versions.at(-1);
