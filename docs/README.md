@@ -67,6 +67,7 @@ Documentation index. Files are organized by purpose, not by date.
 | [DEPLOYMENT_SETUP.md](operations/DEPLOYMENT_SETUP.md) | Vercel deployment optimization & resource limits |
 | [B2_CORS_SETUP.md](operations/B2_CORS_SETUP.md) | Backblaze B2 CORS configuration |
 | [DISCORD_BOT_SETUP.md](operations/DISCORD_BOT_SETUP.md) | Discord bot setup for mentor notifications |
+| [../ops/integration-watch/README.md](../ops/integration-watch/README.md) | Instagram and LINE health alerts and the scheduled Meta backfill, run from the team server |
 | [SHIFT_PARENT_CONSENT.md](operations/SHIFT_PARENT_CONSENT.md) | SHIFT PDPA parent consent: birth date, parent email link, paid lock, AI tracking tick |
 | [CLEANUP_SUMMARY.md](operations/CLEANUP_SUMMARY.md) | Post-cleanup migration guide (test mode & cron removal) |
 | [FIXES.md](operations/FIXES.md) | Direction Finder schema validation fixes |

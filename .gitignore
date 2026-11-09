@@ -130,3 +130,7 @@ output/capstone-consent/
 
 # Local SeedStack test scripts
 .tmp-seedstack-test/
+
+# Python bytecode (ops scripts)
+__pycache__/
+*.pyc
