@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { updateLead, type LeadMetaPatch } from "@/app/admin/dm-leads/actions";
+import { refreshAdminCounts } from "@/components/admin/console/live-counts";
 import type { DmConversation, DmLeadStatus } from "@/types/dm-leads";
 
 export const LEAD_STATUS_OPTIONS: { value: DmLeadStatus; label: string }[] = [
@@ -59,6 +60,11 @@ export function isFollowUpDue(iso: string): boolean {
   return new Date(iso).getTime() <= Date.now();
 }
 
+/** Status and follow-up changes move the "awaiting reply" and "follow-ups due" queues. */
+export function leadPatchMovesQueues(patch: LeadMetaPatch): boolean {
+  return "lead_status" in patch || "follow_up_at" in patch;
+}
+
 /**
  * Shared optimistic-update path for lead meta (star, status, follow-up,
  * tags): syncs local list state immediately, persists via server action,
@@ -76,6 +82,7 @@ export function useLeadMetaUpdater(
     startTransition(async () => {
       const result = await updateLead(conversationId, patch);
       if (!result.ok) console.error(result.error);
+      else if (leadPatchMovesQueues(patch)) refreshAdminCounts();
       router.refresh();
     });
   };

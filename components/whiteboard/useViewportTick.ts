@@ -44,7 +44,12 @@ const sameViewport = (a: Viewport, b: Viewport) =>
  * Subscribes to every Excalidraw update but re-renders at most once per frame,
  * and only when the value `read` returns has moved (by `same`).
  */
-function useFilteredTick<T>(api: ExcalidrawImperativeAPI, read: () => T, same: (a: T, b: T) => boolean): number {
+function useFilteredTick<T>(
+  api: ExcalidrawImperativeAPI,
+  read: () => T,
+  same: (a: T, b: T) => boolean,
+  deps: unknown[] = [],
+): number {
   const [tick, setTick] = useState(0);
   useEffect(() => {
     let last = read();
@@ -66,15 +71,40 @@ function useFilteredTick<T>(api: ExcalidrawImperativeAPI, read: () => T, same: (
       offChange();
       cancel?.();
     };
-    // `read` and `same` are module-level or stable per api in this file.
+    // `read` and `same` only change with `api` and the caller's options, both in `deps`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [api]);
+  }, [api, ...deps]);
   return tick;
 }
 
-/** Re-renders when the canvas scrolls, zooms or resizes. Returns a counter that changes each time. */
-export function useViewportTick(api: ExcalidrawImperativeAPI): number {
-  return useFilteredTick(api, () => viewportOf(api.getAppState()), sameViewport);
+type TickOptions = {
+  /** Also re-render when any element changes. */
+  elements?: boolean;
+  /** Also re-render when the selection changes. */
+  selection?: boolean;
+};
+
+const selectionKey = (s: AppState) => Object.keys(s.selectedElementIds).join(",");
+
+/**
+ * Re-renders when the canvas scrolls, zooms or resizes, with `elements` also
+ * when elements change, and with `selection` also when the selection changes.
+ * Returns a counter that changes each time.
+ */
+export function useViewportTick(api: ExcalidrawImperativeAPI, { elements = false, selection = false }: TickOptions = {}): number {
+  return useFilteredTick(
+    api,
+    () => {
+      const appState = api.getAppState();
+      return {
+        viewport: viewportOf(appState),
+        scene: elements ? getSceneVersion(api.getSceneElementsIncludingDeleted()) : 0,
+        selection: selection ? selectionKey(appState) : "",
+      };
+    },
+    (a, b) => sameViewport(a.viewport, b.viewport) && a.scene === b.scene && a.selection === b.selection,
+    [elements, selection],
+  );
 }
 
 /** Re-renders when any element changes. Returns a counter that changes with the scene. */

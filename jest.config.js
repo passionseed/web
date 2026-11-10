@@ -37,6 +37,7 @@ const customJestConfig = {
   testPathIgnorePatterns: [
     "/node_modules/",
     "<rootDir>/.worktrees/",
+    "<rootDir>/.claude/worktrees/",
     // Written against node:test, not Jest. Run with: node --test
     "<rootDir>/lib/projectseed/__tests__/me-summary.test.ts",
     // Live-Postgres RLS integration suite. It is designed to FAIL (not skip)
@@ -45,6 +46,8 @@ const customJestConfig = {
     //   SUPABASE_DB_URL=... npx jest lib/supabase/__tests__/lobby-rls.test.ts
     "<rootDir>/lib/supabase/__tests__/lobby-rls.test.ts",
   ],
+  // Do not discover package names or tests from independent nested checkouts.
+  modulePathIgnorePatterns: ["<rootDir>/.claude/worktrees/"],
 };
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async

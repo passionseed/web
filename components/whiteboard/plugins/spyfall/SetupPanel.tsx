@@ -10,11 +10,11 @@ import { normalizeName } from "@/lib/whiteboard/games";
 
 import type { BoardPluginPlayer } from "../types";
 import { MAX_LOCATIONS, MAX_PLAYERS, MIN_PLAYERS, TIMER_CHOICES, draftDeck, parseCustomLocation, toGameStart, type SetupDraft } from "./setup";
-import { Avatar, PrimaryButton, Section, Segmented, SoftButton } from "./ui";
+import { Avatar, Num, PrimaryButton, Section, Segmented, SoftButton } from "./ui";
 
 function HowToPlay() {
   return (
-    <ol className="list-decimal space-y-0.5 rounded-xl bg-orange-500/10 p-3 pl-7 text-xs leading-relaxed">
+    <ol className="wb-howto wb-box wb-box--dashed list-decimal space-y-0.5 p-3 pl-7 text-xs leading-relaxed">
       <li>ทุกคนได้การ์ดสถานที่เดียวกันพร้อมบทบาท ยกเว้นสายลับที่ไม่รู้ว่าอยู่ที่ไหน</li>
       <li>ผลัดกันถามคำถามเกี่ยวกับสถานที่ ตอบให้พอรู้ว่าเรารู้ แต่อย่าให้สายลับเดาได้</li>
       <li>โหวตจับสายลับให้ได้ ส่วนสายลับชนะถ้ารอดหรือทายสถานที่ถูก</li>
@@ -31,7 +31,7 @@ function PlayerChecklist({
   excluded: Set<string>;
   onToggle: (id: string) => void;
 }) {
-  if (players.length === 0) return <p className="text-xs opacity-60">ยังไม่มีใครออนไลน์ในบอร์ดนี้</p>;
+  if (players.length === 0) return <p className="wb-soft text-xs">ยังไม่มีใครออนไลน์ในบอร์ดนี้</p>;
   return (
     <ul className="space-y-1">
       {players.map((p) => {
@@ -43,16 +43,10 @@ function PlayerChecklist({
               role="checkbox"
               aria-checked={on}
               onClick={() => onToggle(p.userId)}
-              className="cal-hover flex min-h-11 w-full items-center gap-2.5 rounded-xl px-2 text-left text-sm"
+              className="wb-hover-row flex min-h-11 w-full items-center gap-2.5 rounded-lg px-2 text-left text-sm"
             >
-              <span
-                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
-                  on ? "border-orange-500 bg-orange-500 text-white" : "border-[color:var(--wb-hairline-strong)]"
-                }`}
-              >
-                {on && <Check className="h-3.5 w-3.5" />}
-              </span>
-              <Avatar name={p.name} url={p.avatarUrl} />
+              <span className={`wb-check ${on ? "wb-check--on" : ""}`}>{on && <Check className="h-3.5 w-3.5" aria-hidden />}</span>
+              <Avatar name={p.name} url={p.avatarUrl} userId={p.userId} />
               <span className="min-w-0 flex-1 truncate">{p.name}</span>
             </button>
           </li>
@@ -65,7 +59,7 @@ function PlayerChecklist({
 function CustomLocationForm({ onAdd }: { onAdd: (name: string, roles: string) => boolean }) {
   const [name, setName] = useState("");
   const [roles, setRoles] = useState("");
-  const input = "min-h-11 w-full rounded-xl border border-[color:var(--wb-hairline)] bg-transparent px-3 text-sm";
+  const input = "wb-input min-h-11 w-full px-3 text-sm";
   return (
     <form
       className="space-y-1.5"
@@ -79,7 +73,7 @@ function CustomLocationForm({ onAdd }: { onAdd: (name: string, roles: string) =>
     >
       <input className={input} value={name} maxLength={80} onChange={(e) => setName(e.target.value)} placeholder="ชื่อสถานที่ เช่น ห้องชมรม · Club room" />
       <input className={input} value={roles} onChange={(e) => setRoles(e.target.value)} placeholder="บทบาท คั่นด้วยจุลภาค เช่น ประธาน, เหรัญญิก, สมาชิกใหม่" />
-      <SoftButton type="submit" className="w-full">
+      <SoftButton type="submit" className="wb-btn--quiet w-full">
         <Plus className="h-4 w-4" /> เพิ่มสถานที่ · Add location
       </SoftButton>
     </form>
@@ -95,7 +89,7 @@ function DeckPicker({ draft, onChange }: { draft: SetupDraft; onChange: (next: S
   const addCustom = (name: string, roles: string) => {
     const loc = parseCustomLocation(name, roles);
     if (!loc) {
-      toast.error("ใส่ชื่อสถานที่และบทบาทอย่างน้อย 1 อย่าง");
+      toast.error("ใส่ชื่อสถานที่และบทบาทอย่างน้อย 1 บทบาท");
       return false;
     }
     if (draftDeck({ ...draft, presetOff: [] }).some((l) => normalizeName(l.name) === normalizeName(loc.name))) {
@@ -112,9 +106,10 @@ function DeckPicker({ draft, onChange }: { draft: SetupDraft; onChange: (next: S
 
   return (
     <Section
-      title={`สถานที่ · Deck (${draftDeck(draft).length})`}
+      title="สถานที่ · Deck"
+      count={<Num>{draftDeck(draft).length}</Num>}
       aside={
-        <SoftButton className="min-h-9 px-2 text-xs" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+        <SoftButton className="wb-btn--quiet min-h-9 px-2 text-xs" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
           {open ? "ซ่อน" : "เลือก"}
         </SoftButton>
       }
@@ -122,10 +117,10 @@ function DeckPicker({ draft, onChange }: { draft: SetupDraft; onChange: (next: S
       {open && (
         <div className="space-y-2">
           <div className="flex gap-1.5">
-            <SoftButton className="flex-1 text-xs" onClick={() => onChange({ ...draft, presetOff: [] })}>
+            <SoftButton className="wb-btn--quiet flex-1 text-xs" onClick={() => onChange({ ...draft, presetOff: [] })}>
               เลือกทั้งหมด
             </SoftButton>
-            <SoftButton className="flex-1 text-xs" onClick={() => onChange({ ...draft, presetOff: SPYFALL_LOCATIONS.map((l) => l.name) })}>
+            <SoftButton className="wb-btn--quiet flex-1 text-xs" onClick={() => onChange({ ...draft, presetOff: SPYFALL_LOCATIONS.map((l) => l.name) })}>
               ไม่เลือกเลย
             </SoftButton>
           </div>
@@ -138,9 +133,7 @@ function DeckPicker({ draft, onChange }: { draft: SetupDraft; onChange: (next: S
                   type="button"
                   aria-pressed={on}
                   onClick={() => togglePreset(l.name)}
-                  className={`min-h-11 rounded-xl border px-2.5 text-xs ${
-                    on ? "border-orange-500 bg-orange-500/15" : "border-[color:var(--wb-hairline)] opacity-50 line-through"
-                  }`}
+                  className={`wb-pick min-h-11 px-2.5 text-xs ${on ? "" : "wb-pick--off"}`}
                 >
                   {l.name}
                 </button>
@@ -150,15 +143,15 @@ function DeckPicker({ draft, onChange }: { draft: SetupDraft; onChange: (next: S
           {draft.custom.length > 0 && (
             <ul className="space-y-1">
               {draft.custom.map((l) => (
-                <li key={l.name} className="flex items-center gap-2 rounded-xl border border-[color:var(--wb-hairline)] pl-3 text-xs">
+                <li key={l.name} className="wb-box flex items-center gap-2 pl-3 text-xs">
                   <span className="min-w-0 flex-1 truncate">
-                    <b>{l.name}</b> <span className="opacity-60">{l.roles.join(", ")}</span>
+                    <b className="font-semibold">{l.name}</b> <span className="wb-soft">{l.roles.join(", ")}</span>
                   </span>
                   <button
                     type="button"
                     aria-label={`ลบ ${l.name}`}
                     onClick={() => onChange({ ...draft, custom: draft.custom.filter((c) => c.name !== l.name) })}
-                    className="flex h-11 w-11 items-center justify-center opacity-60"
+                    className="wb-soft flex h-11 w-11 items-center justify-center"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -200,33 +193,38 @@ export function SetupPanel({
   );
 
   return (
-    <div className="space-y-4 p-3">
+    <div className="wb-spy space-y-4 p-3">
       <HowToPlay />
-      <Section title={`ผู้เล่น · Players (${playing})`}>
+      <Section title="ผู้เล่น · Players" count={<Num>{playing}</Num>}>
         <PlayerChecklist players={players} excluded={excluded} onToggle={toggle} />
-        <p className="text-[11px] opacity-60">
-          เลือกได้ {MIN_PLAYERS} ถึง {MAX_PLAYERS} คน เฉพาะคนที่เปิดบอร์ดนี้อยู่
+        <p className="wb-soft text-[11px]">
+          เลือกได้ <Num>{MIN_PLAYERS}</Num> ถึง <Num>{MAX_PLAYERS}</Num> คน เฉพาะคนที่เปิดบอร์ดนี้อยู่
         </p>
       </Section>
       <Section title="สายลับ · Spies">
         <Segmented
           value={draft.spyCount}
           onChange={(spyCount) => onDraft({ ...draft, spyCount })}
-          options={[1, 2, 3].map((n) => ({ label: `${n} คน`, value: n, disabled: n >= Math.max(playing, MIN_PLAYERS) }))}
+          options={[1, 2, 3].map((n) => ({ num: n, label: "คน", value: n, disabled: n >= Math.max(playing, MIN_PLAYERS) }))}
         />
       </Section>
       <Section title="เวลา · Timer">
         <Segmented
           value={draft.seconds}
           onChange={(seconds) => onDraft({ ...draft, seconds })}
-          options={TIMER_CHOICES.map((t) => ({ label: t.label, value: t.seconds }))}
+          // "5 นาที": the minutes in the mono face, the unit in the sans.
+          options={TIMER_CHOICES.map((t) => (t.seconds ? { num: t.seconds / 60, label: "นาที", value: t.seconds } : { label: t.label, value: t.seconds }))}
         />
       </Section>
       <DeckPicker draft={draft} onChange={onDraft} />
-      <div className="sticky bottom-0 -mx-3 space-y-1.5 border-t border-[color:var(--wb-hairline)] bg-[color:var(--wb-glass)] p-3 backdrop-blur">
-        {!ready.ok && <p className="text-center text-xs font-medium text-orange-600">{ready.error}</p>}
+      <div className="wb-sticky-foot sticky bottom-0 -mx-3 space-y-1.5 p-3">
+        {!ready.ok && <p className="wb-alert text-center text-xs font-medium">{ready.error}</p>}
         <div className="flex gap-1.5">
-          {onCancel && <SoftButton onClick={onCancel}>กลับ</SoftButton>}
+          {onCancel && (
+            <SoftButton className="wb-btn--quiet" onClick={onCancel}>
+              กลับ
+            </SoftButton>
+          )}
           <PrimaryButton className="flex-1" disabled={busy || !ready.ok} onClick={() => ready.ok && onDeal(ready.body)}>
             แจกการ์ด · Deal cards
           </PrimaryButton>

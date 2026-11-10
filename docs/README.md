@@ -48,6 +48,7 @@ Documentation index. Files are organized by purpose, not by date.
 | [walkthrough_floating_north_star.md](features/walkthrough_floating_north_star.md) | Floating North Star UI implementation |
 | [PERFORMANCE.md](features/PERFORMANCE.md) | Performance optimizations: bundle, images, caching |
 | [whiteboard.md](features/whiteboard.md) | Multiplayer whiteboard: sync, saving, sharing, authorship, reading boards for AI |
+| [admin-console.md](features/admin-console.md) | Admin console: work queues, KPIs, activity, live counts, Cmd+K search, admin gates; recipes to add a queue, KPI or search entity |
 
 ## 📁 `hackathon/` — Hackathon Documentation
 
@@ -57,6 +58,7 @@ Documentation index. Files are organized by purpose, not by date.
 | [TNDH-AI-Context.md](hackathon/TNDH-AI-Context.md) | The Next Decade Hackathon 2026 — comprehensive context |
 | [hackathon-support-email-thai.md](hackathon/hackathon-support-email-thai.md) | Thai support email template for participants |
 | [EPIC_SPRINT_README.md](hackathon/EPIC_SPRINT_README.md) | Epic Sprint report documentation |
+| [GCP_AI_GUIDE.md](hackathon/GCP_AI_GUIDE.md) | How GCP AI (Vertex AI, Gemini) powers hackathon learning analytics and other AI features |
 
 ## 📁 `operations/` — Setup, Deployment & Maintenance
 
@@ -65,6 +67,8 @@ Documentation index. Files are organized by purpose, not by date.
 | [DEPLOYMENT_SETUP.md](operations/DEPLOYMENT_SETUP.md) | Vercel deployment optimization & resource limits |
 | [B2_CORS_SETUP.md](operations/B2_CORS_SETUP.md) | Backblaze B2 CORS configuration |
 | [DISCORD_BOT_SETUP.md](operations/DISCORD_BOT_SETUP.md) | Discord bot setup for mentor notifications |
+| [../ops/integration-watch/README.md](../ops/integration-watch/README.md) | Instagram and LINE health alerts and the scheduled Meta backfill, run from the team server |
+| [SHIFT_PARENT_CONSENT.md](operations/SHIFT_PARENT_CONSENT.md) | SHIFT PDPA parent consent: birth date, parent email link, paid lock, AI tracking tick |
 | [CLEANUP_SUMMARY.md](operations/CLEANUP_SUMMARY.md) | Post-cleanup migration guide (test mode & cron removal) |
 | [FIXES.md](operations/FIXES.md) | Direction Finder schema validation fixes |
 | [DREAM_STATE_ANALYSIS.md](operations/DREAM_STATE_ANALYSIS.md) | 12-month roadmap gap analysis |

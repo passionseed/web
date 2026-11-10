@@ -11,6 +11,7 @@ import {
   startRoundAction,
   type MentorActionResult,
 } from "@/app/admin/shift/alumni/board/actions";
+import { useConfirm } from "@/components/admin/shared/useConfirm";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -205,16 +206,23 @@ export function MentorTeams({ teams }: { teams: Team[] }) {
 
 export function StartRoundButton() {
   const { busy, run } = useMentorAction();
+  const { confirm, confirmDialog } = useConfirm();
+
+  async function startRound() {
+    const ok = await confirm({
+      title: "Start a new round?",
+      description: "Do this at each alumni session. Stats on this page count from the new round; long-term and 1-month goals carry over.",
+      confirmLabel: "Start new round",
+    });
+    if (ok) await run(() => startRoundAction(), "New round started");
+  }
+
   return (
-    <Button
-      variant="outline"
-      disabled={busy}
-      onClick={() => {
-        if (!window.confirm("Start a new round? Do this at each alumni session.")) return;
-        void run(() => startRoundAction(), "New round started");
-      }}
-    >
-      Start new round
-    </Button>
+    <>
+      <Button variant="outline" disabled={busy} onClick={() => void startRound()}>
+        Start new round
+      </Button>
+      {confirmDialog}
+    </>
   );
 }

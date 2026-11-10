@@ -19,7 +19,19 @@ import type {
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { boardTopic, canEdit, changedSince, colorFor, markSeen, stampAuthor, type WhiteboardRole } from "@/lib/whiteboard/core";
+import {
+  boardTopic,
+  canEdit,
+  changedSince,
+  colorFor,
+  hasChangedSince,
+  markSeen,
+  queueLatest,
+  stampAuthor,
+  type WhiteboardRole,
+} from "@/lib/whiteboard/core";
+import { createCanvasGuard } from "@/lib/whiteboard/canvas-guard";
+import { exportBackgroundFor, loadBoardSettings } from "@/lib/whiteboard/settings";
 import { createClient } from "@/utils/supabase/client";
 
 import { nextFrame } from "./useViewportTick";
@@ -33,6 +45,10 @@ import { nextFrame } from "./useViewportTick";
  *
  * Other features (emotes, comments, timer) ride the same channel through
  * `send` and `on`.
+ *
+ * Every Excalidraw update re-renders the whole editor, so incoming cursors and
+ * edits are applied at most once per animation frame, and the localStorage
+ * backup and thumbnail stay off the drawing hot path.
  */
 
 export type SaveState = "saved" | "saving" | "unsaved" | "offline" | "error";
@@ -77,11 +93,28 @@ const CURSOR_MS = 40;
 const VIEWPORT_MS = 80;
 const SAVE_DEBOUNCE_MS = 1200;
 const THUMBNAIL_MS = 20_000;
+/** Thumbnails wait until nobody here has edited for this long, so export never stalls a stroke. */
+const THUMBNAIL_QUIET_MS = 3000;
 /** The crash backup is written at most this often while editing, and right away when the tab hides. */
 const BACKUP_MS = 800;
 /** A cursor carries the selection only when it changed, or this often so newcomers see it too. */
 const SELECTION_RESEND_MS = 2000;
 const EXTRA_EVENTS: BoardEvent[] = ["emote", "comments", "timer", "versions", "plugin"];
+/**
+ * Live edits to a SHIFT canvas are shown from the database once their sender's save is through
+ * (see canvas-guard.ts). The sender announces each save; without that notice, fetch after this long.
+ */
+const VERIFY_FALLBACK_MS = 6000;
+/** While some are still not saved, check again after this long, doubling up to VERIFY_RETRY_MAX_MS... */
+const VERIFY_RETRY_MS = 4000;
+const VERIFY_RETRY_MAX_MS = 16_000;
+/** ...and stop waiting this long after the last live edit to it (the save was refused or never came). */
+const VERIFY_GIVE_UP_MS = 30_000;
+/** At most one fetch per this long, however many notices arrive. */
+const VERIFY_MIN_GAP_MS = 1000;
+
+/** Postgres's answer to a save: elements it kept differently from how they were sent, and ids it left out. */
+type SaveResult = { corrected?: Elements; dropped?: string[] };
 
 const backupKey = (boardId: string) => `whiteboard-backup:${boardId}`;
 
@@ -130,8 +163,11 @@ export async function blobToDataUrl(blob: Blob): Promise<string> {
   });
 }
 
-/** A small WebP of the board for lists and version history. */
-export async function boardThumbnail(api: ExcalidrawImperativeAPI): Promise<string | undefined> {
+/**
+ * A small WebP of the board for lists and version history. The live canvas is see-through (the
+ * colour and the dots are our own layer under it), so the board's colour is passed in here.
+ */
+export async function boardThumbnail(api: ExcalidrawImperativeAPI, boardId: string): Promise<string | undefined> {
   const elements = api.getSceneElements();
   if (elements.length === 0) return undefined;
   const { exportToBlob } = await import("@excalidraw/excalidraw");
@@ -141,7 +177,7 @@ export async function boardThumbnail(api: ExcalidrawImperativeAPI): Promise<stri
     mimeType: "image/webp",
     quality: 0.7,
     maxWidthOrHeight: 480,
-    appState: { ...api.getAppState(), exportBackground: true },
+    appState: { ...api.getAppState(), exportBackground: true, viewBackgroundColor: exportBackgroundFor(loadBoardSettings(boardId)) },
   });
   return blobToDataUrl(blob);
 }
@@ -151,11 +187,17 @@ export function useWhiteboardSync({
   role,
   me,
   initialElements,
+  managerIds = [],
+  onCanvasBlocked,
 }: {
   boardId: string;
   role: WhiteboardRole;
   me: Me;
   initialElements: Elements;
+  /** Moderators, who may change any SHIFT canvas on this board: its owner and site admins on it. */
+  managerIds?: readonly string[];
+  /** Called when an edit inside someone else's SHIFT canvas was undone. */
+  onCanvasBlocked?: () => void;
 }) {
   const { id: myId, name: myName, avatarUrl: myAvatar } = me;
   const [mySocket] = useState(() => `${myId}:${crypto.randomUUID().slice(0, 8)}`);
@@ -177,6 +219,13 @@ export function useWhiteboardSync({
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saving = useRef<Promise<void> | null>(null);
   const lastSceneVersion = useRef(-1);
+  // Who may change each SHIFT canvas; Postgres enforces the same rule on save (canvas-access.ts).
+  const [guard] = useState(() => createCanvasGuard<OrderedExcalidrawElement>(initialElements));
+  const managers = useRef<ReadonlySet<string>>(new Set());
+  managers.current = new Set(managerIds);
+  const onBlocked = useRef(onCanvasBlocked);
+  onBlocked.current = onCanvasBlocked;
+  const lastEditAt = useRef(0);
   const thumbVersion = useRef(-1);
   const apiRef = useRef<ExcalidrawImperativeAPI | null>(null);
   const presentRef = useRef<PresentUser[]>([]);
@@ -270,6 +319,42 @@ export function useWhiteboardSync({
 
   const saveRef = useRef<(opts?: { keepalive?: boolean }) => Promise<void>>(async () => {});
 
+  /**
+   * Puts this browser's copy right after a save, from Postgres's answer: elements it settled
+   * differently (owners, authors, note versions) or left out (an edit this person may not make).
+   * Only where nothing has changed here since the save was sent.
+   */
+  const applyCorrections = useCallback(
+    (result: SaveResult | undefined, sent: Elements) => {
+      if (!excalidrawAPI) return;
+      const corrected = result?.corrected ?? [];
+      const dropped = result?.dropped ?? [];
+      if (corrected.length === 0 && dropped.length === 0) return;
+      const sentById = new Map(sent.map((el) => [el.id, el]));
+      const fix = new Map(corrected.map((el) => [el.id, el]));
+      // Left out and never saved before: remove it here too, without saving or sending it again.
+      for (const id of dropped) {
+        const el = sentById.get(id);
+        if (el && !fix.has(id)) fix.set(id, { ...el, isDeleted: true });
+      }
+      const applied: OrderedExcalidrawElement[] = [];
+      const next = allElements().map((el) => {
+        const replacement = fix.get(el.id);
+        if (!replacement || el.version !== sentById.get(el.id)?.version) return el;
+        applied.push(replacement);
+        return replacement;
+      });
+      if (applied.length === 0) return;
+      guard.trust(applied);
+      markSeen(savedSeen.current, applied);
+      markSeen(broadcastSeen.current, applied);
+      excalidrawAPI.updateScene({ elements: next, captureUpdate: CaptureUpdateAction.NEVER });
+      lastSceneVersion.current = getSceneVersion(excalidrawAPI.getSceneElementsIncludingDeleted());
+      if (dropped.length) onBlocked.current?.();
+    },
+    [allElements, excalidrawAPI, guard],
+  );
+
   const scheduleSave = useCallback((delay = SAVE_DEBOUNCE_MS) => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => void saveRef.current(), delay);
@@ -287,12 +372,15 @@ export function useWhiteboardSync({
       setSaveState("saving");
       saving.current = (async () => {
         try {
-          await boardApi(`/api/whiteboards/${boardId}`, {
+          const result = await boardApi<SaveResult>(`/api/whiteboards/${boardId}`, {
             method: "PATCH",
             body: JSON.stringify({ elements: stampAuthor(changed, myId) }),
             keepalive: opts?.keepalive && JSON.stringify(changed).length < 60_000,
           });
           markSeen(savedSeen.current, changed);
+          applyCorrections(result, changed);
+          // Others show canvas edits from the database: tell them this save is through.
+          send("saved", changed.length <= 1000 ? { ids: changed.map((el) => el.id) } : {});
           writeBackup();
           const more = changedSince(allElements(), savedSeen.current).length > 0;
           setSaveState(more ? "unsaved" : "saved");
@@ -307,7 +395,7 @@ export function useWhiteboardSync({
       })();
       return saving.current;
     },
-    [allElements, boardId, editable, myId, scheduleSave, writeBackup],
+    [allElements, applyCorrections, boardId, editable, myId, scheduleSave, send, writeBackup],
   );
   useEffect(() => {
     saveRef.current = save;
@@ -359,15 +447,28 @@ export function useWhiteboardSync({
       const version = getSceneVersion(elements);
       if (version === lastSceneVersion.current) return;
       lastSceneVersion.current = version;
+      // Undo edits inside SHIFT canvases this person may not change, and give new canvases
+      // their owner; the corrected scene comes back through onChange and syncs from there.
+      const { fixes, blocked } = guard.checkLocal(elements, myId, managers.current.has(myId));
+      if (blocked) onBlocked.current?.();
+      if (fixes.length) {
+        const fixed = new Map(fixes.map((el) => [el.id, el]));
+        excalidrawAPI.updateScene({
+          elements: elements.map((el) => fixed.get(el.id) ?? el),
+          captureUpdate: CaptureUpdateAction.NEVER,
+        });
+        return;
+      }
+      lastEditAt.current = Date.now();
       broadcastChanges.current(elements);
-      if (changedSince(elements, savedSeen.current).length > 0) {
+      if (hasChangedSince(elements, savedSeen.current)) {
         setSaveState((s) => (s === "saving" ? s : "unsaved"));
         scheduleSave();
         scheduleBackup();
       }
       void uploadFiles(files);
     },
-    [allElements, editable, excalidrawAPI, scheduleBackup, scheduleSave, uploadFiles],
+    [allElements, editable, excalidrawAPI, guard, myId, scheduleBackup, scheduleSave, uploadFiles],
   );
 
   // The selection is read when the throttled message actually goes out, so a
@@ -448,7 +549,10 @@ export function useWhiteboardSync({
     };
   }, [excalidrawAPI, onScrollChange, onUserFollow]);
 
-  /** Shows the latest cursors and presence, at most once per frame however many messages arrive. */
+  /**
+   * Hands cursors and presence to Excalidraw at most once per frame. Each update
+   * re-renders the editor, and a busy board sends dozens of cursor messages a second.
+   */
   const pushCollaborators = useCallback(() => {
     if (!excalidrawAPI || cancelCollaborators.current) return;
     cancelCollaborators.current = nextFrame(() => {
@@ -490,16 +594,120 @@ export function useWhiteboardSync({
     const supabase = createClient();
     let cancelled = false;
 
-    // Remote scene messages are buffered and applied once per frame: highest
-    // version per id wins, like the server merge.
-    const pendingRemote = new Map<string, Elements[number]>();
+    // Edits from others are merged once per frame, however many messages arrive:
+    // highest version per id wins, like the server merge.
+    const remoteQueue = new Map<string, OrderedExcalidrawElement>();
     let cancelRemote: (() => void) | null = null;
 
-    const flushRemote = () => {
+    // Live edits that touch a SHIFT canvas, waiting for their saved copy: the version announced,
+    // when the last live edit came, and when it was last fetched.
+    const pending = new Map<string, { version: number; since: number; tried: number }>();
+    let verifyTimer: ReturnType<typeof setTimeout> | null = null;
+    let verifyAt = Infinity;
+    let verifying = false;
+    // A notice that came in during a fetch: fetch again straight after.
+    let verifyAgain = false;
+    let lastVerify = 0;
+    let retryDelay = VERIFY_RETRY_MS;
+
+    /**
+     * Shows saved copies from the database, unless this browser has something newer, and trusts
+     * what it shows. Returns the ids this browser is now caught up on (showing that copy or newer).
+     */
+    const applySaved = (saved: Elements): Set<string> => {
+      const local = new Map(allElements().map((el) => [el.id, el]));
+      const candidates = saved.filter((el) => (local.get(el.id)?.version ?? -1) <= el.version);
+      if (candidates.length) {
+        const merged = reconcileElements(
+          allElements(),
+          candidates as unknown as Parameters<typeof reconcileElements>[1],
+          excalidrawAPI.getAppState(),
+        );
+        excalidrawAPI.updateScene({ elements: merged, captureUpdate: CaptureUpdateAction.NEVER });
+        lastSceneVersion.current = getSceneVersion(excalidrawAPI.getSceneElementsIncludingDeleted());
+        void fetchMissingFiles(candidates);
+      }
+      const shown = new Map(allElements().map((el) => [el.id, el]));
+      const confirmed = saved.filter(
+        (el) => shown.get(el.id)?.version === el.version && shown.get(el.id)?.versionNonce === el.versionNonce,
+      );
+      guard.trust(confirmed);
+      markSeen(broadcastSeen.current, confirmed);
+      markSeen(savedSeen.current, confirmed);
+      return new Set(saved.filter((el) => (shown.get(el.id)?.version ?? -1) >= el.version).map((el) => el.id));
+    };
+
+    const verifyPending = async () => {
+      verifyTimer = null;
+      verifyAt = Infinity;
+      if (verifying) {
+        verifyAgain = true;
+        return;
+      }
+      if (pending.size === 0) return;
+      verifying = true;
+      lastVerify = Date.now();
+      // The ones asked about longest ago first, so a flood of made-up ids cannot starve real ones.
+      const ids = [...pending.entries()]
+        .sort((a, b) => a[1].tried - b[1].tried)
+        .slice(0, 500)
+        .map(([id]) => id);
+      for (const id of ids) pending.get(id)!.tried = lastVerify;
+      const saved = new Map<string, number>();
+      let caughtUp = new Set<string>();
+      try {
+        const { elements } = await boardApi<{ elements: Elements }>(`/api/whiteboards/${boardId}/elements`, {
+          method: "POST",
+          body: JSON.stringify({ ids }),
+        });
+        if (cancelled) return;
+        caughtUp = applySaved(elements);
+        for (const el of elements) saved.set(el.id, el.version);
+      } catch {
+        // Tried again below.
+      } finally {
+        verifying = false;
+      }
+      let settled = false;
+      const now = Date.now();
+      for (const [id, wait] of pending) {
+        // Done once the saved copy is as new as the live edit and on screen (not set aside because
+        // someone here was typing in it).
+        const done = caughtUp.has(id) && (saved.get(id) ?? -1) >= wait.version;
+        settled ||= done;
+        if (done || now - wait.since > VERIFY_GIVE_UP_MS) pending.delete(id);
+      }
+      // Nothing saved yet: the writer is still typing (their save waits for a pause), so ask less often.
+      retryDelay = settled ? VERIFY_RETRY_MS : Math.min(retryDelay * 2, VERIFY_RETRY_MAX_MS);
+      scheduleVerify(verifyAgain ? 0 : retryDelay);
+      verifyAgain = false;
+    };
+
+    /** Fetches pending canvas edits after `delay`, or sooner if already planned; never more than once a second. */
+    const scheduleVerify = (delay: number) => {
+      if (cancelled || pending.size === 0) return;
+      const at = Math.max(Date.now() + delay, lastVerify + VERIFY_MIN_GAP_MS);
+      if (verifyTimer && verifyAt <= at) return;
+      if (verifyTimer) clearTimeout(verifyTimer);
+      verifyAt = at;
+      verifyTimer = setTimeout(() => void verifyPending(), at - Date.now());
+    };
+
+    const applyRemote = () => {
       cancelRemote = null;
-      if (pendingRemote.size === 0) return;
-      const remote: Elements = [...pendingRemote.values()];
-      pendingRemote.clear();
+      if (remoteQueue.size === 0) return;
+      // Edits that touch a SHIFT canvas wait for the copy Postgres saved; the rest show now.
+      const { apply: remote, verify } = guard.filterRemote([...remoteQueue.values()]);
+      remoteQueue.clear();
+      if (verify.size) {
+        const now = Date.now();
+        for (const [id, version] of verify) {
+          const wait = pending.get(id);
+          pending.set(id, { version: Math.max(version, wait?.version ?? 0), since: now, tried: wait?.tried ?? 0 });
+        }
+        scheduleVerify(VERIFY_FALLBACK_MS);
+      }
+      if (remote.length === 0) return;
       const merged = reconcileElements(
         allElements(),
         remote as unknown as Parameters<typeof reconcileElements>[1],
@@ -514,12 +722,9 @@ export function useWhiteboardSync({
       void fetchMissingFiles(remote);
     };
 
-    const applyRemote = (remote: Elements) => {
-      for (const el of remote) {
-        const existing = pendingRemote.get(el.id);
-        if (!existing || el.version >= existing.version) pendingRemote.set(el.id, el);
-      }
-      if (!cancelRemote) cancelRemote = nextFrame(flushRemote);
+    const queueRemote = (remote: Elements) => {
+      queueLatest(remoteQueue, remote);
+      cancelRemote ??= nextFrame(applyRemote);
     };
 
     (async () => {
@@ -535,7 +740,21 @@ export function useWhiteboardSync({
       }
 
       channel
-        .on("broadcast", { event: "scene" }, ({ payload }) => applyRemote((payload as { elements: Elements }).elements))
+        .on("broadcast", { event: "scene" }, ({ payload }) => queueRemote((payload as { elements: Elements }).elements))
+        .on("broadcast", { event: "saved" }, ({ payload }) => {
+          // Someone's save is through: fetch their canvas edits, including ones this browser
+          // stopped waiting for (a save that came late) as long as they touched a canvas.
+          const ids = (payload as { ids?: unknown } | null)?.ids;
+          if (!Array.isArray(ids)) return scheduleVerify(0);
+          const now = Date.now();
+          let wanted = false;
+          for (const id of ids.slice(0, 1000)) {
+            if (typeof id !== "string" || !(pending.has(id) || guard.isHeld(id))) continue;
+            wanted = true;
+            if (!pending.has(id)) pending.set(id, { version: 0, since: now, tried: 0 });
+          }
+          if (wanted) scheduleVerify(0);
+        })
         .on("broadcast", { event: "files" }, () => void fetchMissingFiles(allElements()))
         .on("broadcast", { event: "hello" }, () => {
           // A newcomer loaded the saved board; send them anything not saved yet.
@@ -626,14 +845,16 @@ export function useWhiteboardSync({
 
     return () => {
       cancelled = true;
+      // Apply what already arrived, so no remote edit is lost on a re-subscribe.
       if (cancelRemote) {
         cancelRemote();
         try {
-          flushRemote();
+          applyRemote();
         } catch {
           // The canvas is already gone.
         }
       }
+      if (verifyTimer) clearTimeout(verifyTimer);
       cancelCollaborators.current?.();
       cancelCollaborators.current = null;
       setConnected(false);
@@ -641,7 +862,7 @@ export function useWhiteboardSync({
       channelRef.current = null;
       if (channel) void supabase.removeChannel(channel);
     };
-  }, [allElements, boardId, editable, excalidrawAPI, fetchMissingFiles, myId, mySocket, pushCollaborators, send, trackMe]);
+  }, [allElements, boardId, editable, excalidrawAPI, fetchMissingFiles, guard, myId, mySocket, pushCollaborators, send, trackMe]);
 
   // Small preview for the board list. Only one editor makes it: the one with
   // the visible editor with the lowest socketId (a tie is harmless), in idle time.
@@ -655,7 +876,7 @@ export function useWhiteboardSync({
       if (version === thumbVersion.current) return;
       thumbVersion.current = version;
       try {
-        const thumbnail = await boardThumbnail(excalidrawAPI);
+        const thumbnail = await boardThumbnail(excalidrawAPI, boardId);
         if (thumbnail) {
           await boardApi(`/api/whiteboards/${boardId}`, { method: "PATCH", body: JSON.stringify({ thumbnail }) });
         }
@@ -666,6 +887,8 @@ export function useWhiteboardSync({
     };
     const timer = setInterval(() => {
       if (document.hidden || cancelIdle) return;
+      // Exporting blocks the page, so skip ticks while someone here is drawing.
+      if (Date.now() - lastEditAt.current < THUMBNAIL_QUIET_MS) return;
       const editors = presentRef.current
         .filter((u) => canEdit(u.role) && u.visible !== false)
         .map((u) => u.socketId);
@@ -682,7 +905,7 @@ export function useWhiteboardSync({
   // Save what is left when the tab goes away.
   useEffect(() => {
     if (!editable) return;
-    // The backup is written synchronously first; the keepalive save is async.
+    // The backup is written synchronously first (replacing any scheduled write); the keepalive save is async.
     const flush = () => {
       writeBackup();
       void save({ keepalive: true });

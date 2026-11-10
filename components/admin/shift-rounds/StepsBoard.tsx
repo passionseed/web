@@ -22,7 +22,7 @@ import {
 import type { AdminRoundListItem, AdminStepsRow } from "@/lib/shift-round/admin/types";
 import { cn } from "@/lib/utils";
 
-import { LoadError, NativeSelect, Pill, Section } from "./shared";
+import { EmptyValue, LoadError, NativeSelect, Pill, Section } from "./shared";
 import { useAdminQuery } from "./useAdminData";
 
 /**
@@ -351,7 +351,7 @@ export function StepsBoard({
                     <td className="px-3 py-1.5">
                       <StudentLink roundId={roundId} row={s.row} />
                     </td>
-                    <td className="px-3 py-1.5 text-xs text-muted-foreground">{s.row.squad_name ?? "—"}</td>
+                    <td className="px-3 py-1.5 text-xs text-muted-foreground">{s.row.squad_name ?? <EmptyValue />}</td>
                     {s.steps.map((cell) => (
                       <StepTd key={cell.n} cell={cell} />
                     ))}

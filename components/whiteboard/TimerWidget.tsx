@@ -8,6 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import type { BoardTimer } from "@/lib/supabase/whiteboards";
 import { formatClock, secondsLeft } from "@/lib/whiteboard/core";
 
+import { WB_FONT_VARS } from "./fonts";
 import { boardApi, type BoardEvent } from "./useWhiteboardSync";
 
 const PRESETS = [1, 3, 5, 10, 15, 25];
@@ -95,23 +96,27 @@ export const TimerWidget = memo(function TimerWidget({
           data-tip-side="bottom"
           className={`wb-timer ${running ? "wb-timer--running" : ""} ${running && left <= 10 ? "wb-timer--ending" : ""}`}
         >
-          {running && <span className="wb-timer__fill" style={{ width: `${progress * 100}%` }} aria-hidden />}
-          <Timer className="relative h-4 w-4" aria-hidden />
-          {running && <span className="relative font-semibold tabular-nums">{formatClock(left)}</span>}
+          <Timer className="h-4 w-4" aria-hidden />
+          {running && <span className="wb-timer__clock">{formatClock(left)}</span>}
+          {running && (
+            <span className="wb-strip" aria-hidden>
+              {progress > 0 && <span className="wb-strip__fill" style={{ width: `${progress * 100}%` }} />}
+            </span>
+          )}
         </button>
       </PopoverTrigger>
       {canControl && (
-        <PopoverContent align="end" className="w-60 p-3">
-          <p className="mb-2 text-xs font-medium text-muted-foreground">จับเวลาให้ทุกคน · Timer for everyone</p>
+        <PopoverContent align="end" className={`wb-theme wb-popcard w-60 p-3 ${WB_FONT_VARS}`}>
+          <p className="wb-label mb-2">จับเวลาให้ทุกคน · Timer for everyone</p>
           <div className="grid grid-cols-3 gap-1.5">
             {PRESETS.map((m) => (
               <button
                 key={m}
                 type="button"
                 onClick={() => void set(m * 60)}
-                className="rounded-md border px-2 py-1.5 text-sm hover:border-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10"
+                className="wb-btn wb-btn--quiet min-h-9 px-2 py-1.5 text-sm"
               >
-                {m} นาที
+                <span className="wb-num">{m}</span> นาที
               </button>
             ))}
           </div>
@@ -129,9 +134,9 @@ export const TimerWidget = memo(function TimerWidget({
               onChange={(e) => setCustom(e.target.value.replace(/[^\d.]/g, ""))}
               placeholder="นาที · minutes"
               inputMode="decimal"
-              className="min-w-0 flex-1 rounded-md border px-2 py-1.5 text-sm"
+              className="wb-input wb-num min-w-0 flex-1 px-2 py-1.5 text-sm"
             />
-            <button type="submit" className="rounded-md bg-orange-500 px-3 text-sm text-white">
+            <button type="submit" className="wb-btn min-h-9 shrink-0 px-3 text-sm font-medium">
               เริ่ม · Start
             </button>
           </form>
@@ -139,7 +144,7 @@ export const TimerWidget = memo(function TimerWidget({
             <button
               type="button"
               onClick={() => void set(null)}
-              className="mt-2 flex w-full items-center justify-center gap-1 rounded-md border px-2 py-1.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
+              className="wb-btn wb-btn--armed mt-2 flex w-full items-center justify-center gap-1 px-2 py-1.5 text-sm"
             >
               <X className="h-4 w-4" /> หยุด · Stop
             </button>

@@ -72,11 +72,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "full_name is required" }, { status: 400 });
     }
 
+    // Marking a linked applicant paid already adds them to the tracker, so
+    // a second "Add to tracker" for the same IG returns that row instead.
+    const igHandle = cleanHandle(body.ig_handle);
+    if (igHandle) {
+      const { data: rows, error: lookupError } = await supabase.from("shift_students").select("*");
+      if (lookupError) {
+        return NextResponse.json({ error: "Failed to add student" }, { status: 500 });
+      }
+      const wanted = igHandle.toLowerCase();
+      const existing = (rows ?? []).find((row) => cleanHandle(row.ig_handle)?.toLowerCase() === wanted);
+      if (existing) return NextResponse.json({ student: existing });
+    }
+
     const { data, error } = await supabase
       .from("shift_students")
       .insert({
         full_name: fullName,
-        ig_handle: cleanHandle(body.ig_handle),
+        ig_handle: igHandle,
         discord_handle: cleanHandle(body.discord_handle),
       })
       .select()

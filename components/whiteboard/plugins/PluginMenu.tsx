@@ -2,6 +2,7 @@
 
 import { AppWindow } from "lucide-react";
 
+import { grainTile } from "../chrome/Grain";
 import { PLUGINS } from "./registry";
 import type { BoardPlugin } from "./types";
 
@@ -54,10 +55,10 @@ export function PluginRows({
               onClick={() => pick(() => (placeable ? onPlace!(p) : onToggle(p.id)))}
               className={`wb-row min-w-0 flex-1 ${!placeable && isOpen ? "wb-row--on" : ""}`}
             >
-              <span className="wb-row__icon">{p.icon}</span>
+              <span className={grainTile(p.tile)}>{p.icon}</span>
               <span className="min-w-0 flex-1">
-                <span className="block text-sm font-medium">{p.name}</span>
-                <span className="block text-xs opacity-60">
+                <span className="wb-row__name">{p.name}</span>
+                <span className="wb-row__hint">
                   {placeable ? "วางบนบอร์ดให้ทุกคนเห็น · " : !placeable && isOpen ? "เปิดอยู่ กดเพื่อปิด · " : ""}
                   {p.description}
                 </span>

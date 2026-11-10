@@ -19,7 +19,7 @@ export function EndButton({ busy, act }: { busy: boolean; act: (action: GameActi
   return (
     <SoftButton
       disabled={busy}
-      className={armed ? "border-orange-500 font-semibold text-orange-600" : ""}
+      className={armed ? "wb-btn--armed" : "wb-btn--quiet"}
       onBlur={() => setArmed(false)}
       onClick={() => {
         if (!armed) return setArmed(true);
@@ -52,12 +52,18 @@ export function HostControls({
             เริ่มโหวต · Vote
           </PrimaryButton>
         )}
-        {phase !== "revealed" && (
+        {/* One bloom at a time: the next step is the primary, the other stays an ink button. */}
+        {phase === "playing" && (
+          <SoftButton disabled={busy} onClick={() => void act({ action: "phase", phase: "revealed" })}>
+            เปิดเฉลย · Reveal
+          </SoftButton>
+        )}
+        {phase === "voting" && (
           <PrimaryButton disabled={busy} onClick={() => void act({ action: "phase", phase: "revealed" })}>
             เปิดเฉลย · Reveal
           </PrimaryButton>
         )}
-        <SoftButton disabled={busy} onClick={onNewRound}>
+        <SoftButton className="wb-btn--quiet" disabled={busy} onClick={onNewRound}>
           รอบใหม่ · New round
         </SoftButton>
         <EndButton busy={busy} act={act} />

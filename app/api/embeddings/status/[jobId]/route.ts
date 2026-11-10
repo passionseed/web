@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { getJob } from "@/lib/embeddings/jobs";
-import { requireUser } from "@/lib/security/route-guards";
+import { requireAdmin } from "@/lib/security/route-guards";
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ jobId: string }> }
 ) {
   try {
-    const user = await requireUser();
-    if (!user.ok) return user.response;
+    const admin = await requireAdmin();
+    if (!admin.ok) return admin.response;
 
     const { jobId } = await params;
     const job = await getJob(jobId);
@@ -22,7 +22,7 @@ export async function GET(
       status: job.status,
       attempts: job.attempts,
       error: job.error,
-      createdAt: job.created_at,
+      createdAt: (job as typeof job & { created_at: string }).created_at,
       completedAt: job.completed_at,
     });
   } catch (error) {

@@ -44,7 +44,6 @@ export async function POST(req: NextRequest) {
   if (!signature) return NextResponse.json({ error: "Missing signature" }, { status: 400 });
 
   const body = await req.text();
-  console.log("[line-webhook] body:", body.slice(0, 200));
 
   let signatureValid = false;
   try {
@@ -66,14 +65,13 @@ export async function POST(req: NextRequest) {
     if (event.type === "follow" && event.source?.userId) {
       const lineUserId: string = event.source.userId;
       const code = generateConnectCode();
-      console.log("[line-webhook] follow event, userId:", lineUserId, "code:", code);
 
       try {
         await storeLineConnectCode(lineUserId, code);
         await sendLineConnectCode(lineUserId, code);
         console.log("[line-webhook] code sent successfully");
-      } catch (err) {
-        console.error("[line-webhook] connect code error:", err);
+      } catch {
+        console.error("[line-webhook] connect code delivery failed");
       }
     }
 

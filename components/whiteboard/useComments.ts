@@ -59,6 +59,7 @@ export function useComments(boardId: string, channel: Channel) {
     [refresh, send],
   );
 
+  // Stable between renders, so the editor only re-renders when comments change.
   return useMemo(() => {
     const base = `/api/whiteboards/${boardId}/comments`;
     return {

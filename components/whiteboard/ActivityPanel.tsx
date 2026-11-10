@@ -20,11 +20,14 @@ type Props = {
   onPeople: (people: Record<string, string>) => void;
 };
 
+/** One neutral chip, told apart by its word. Only a delete is marked, in vermilion. */
+const CHIP = "shrink-0 rounded-[3px] border px-1.5 text-[10px] font-medium leading-4";
+const NEUTRAL = "border-[color:var(--wb-hairline-strong)] text-[color:var(--wb-text-mid)]";
 const ACTION: Record<ChangeAction, { label: string; className: string }> = {
-  added: { label: "เพิ่ม", className: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" },
-  edited: { label: "แก้", className: "bg-amber-500/20 text-amber-800 dark:text-amber-200" },
-  changed: { label: "ปรับ", className: "bg-sky-500/15 text-sky-700 dark:text-sky-300" },
-  deleted: { label: "ลบ", className: "bg-red-500/15 text-red-700 dark:text-red-300" },
+  added: { label: "เพิ่ม", className: NEUTRAL },
+  edited: { label: "แก้", className: NEUTRAL },
+  changed: { label: "ปรับ", className: NEUTRAL },
+  deleted: { label: "ลบ", className: "border-[color:var(--wb-verm)] text-[color:var(--wb-verm-ink)]" },
 };
 
 const TYPE: Record<string, string> = {
@@ -109,23 +112,24 @@ export function ActivityPanel({ api, boardId, showAuthors, onShowAuthors, onPeop
         </select>
         <button
           type="button"
-          title="Refresh"
+          title="โหลดใหม่ · Refresh"
+          aria-label="โหลดใหม่ · Refresh"
           onClick={() => void load()}
-          className="rounded-md p-1.5 opacity-70 hover:bg-black/5 hover:opacity-100 dark:hover:bg-white/10"
+          className="wb-window__btn"
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
         </button>
       </div>
-      <label className="flex items-center gap-2 text-xs opacity-70">
+      <label className="wb-soft flex items-center gap-2 text-xs">
         <input type="checkbox" checked={showMoves} onChange={(e) => setShowMoves(e.target.checked)} />
         รวมการย้าย/ปรับขนาด · Include moves
       </label>
-      <p className="text-xs opacity-60">เห็นเฉพาะแอดมิน บันทึกตั้งแต่ 25 ต.ค. 2026</p>
+      <p className="wb-soft text-xs">เห็นเฉพาะแอดมิน บันทึกตั้งแต่ 25 ต.ค. 2026</p>
 
       {activity === null ? (
-        <Loader2 className="mx-auto h-5 w-5 animate-spin opacity-50" />
+        <Loader2 className="wb-soft mx-auto h-5 w-5 animate-spin" />
       ) : sessions.length === 0 ? (
-        <p className="py-6 text-center text-sm opacity-60">ยังไม่มีการเปลี่ยนแปลง</p>
+        <p className="wb-soft py-6 text-center text-sm">ยังไม่มีการเปลี่ยนแปลง</p>
       ) : (
         <ul className="space-y-2">
           {sessions.map((s, i) => (
@@ -133,26 +137,26 @@ export function ActivityPanel({ api, boardId, showAuthors, onShowAuthors, onPeop
               <button type="button" onClick={() => setOpen(open === i ? null : i)} className="w-full p-2.5 text-left">
                 <p className="text-xs">
                   <span className="font-semibold">{name(s.userId)}</span>{" "}
-                  <span className="opacity-60" title={`${format(new Date(s.from), "PPp")} to ${format(new Date(s.to), "p")}`}>
+                  <span className="wb-soft" title={`${format(new Date(s.from), "PPp")} to ${format(new Date(s.to), "p")}`}>
                     {formatDistanceToNow(new Date(s.to), { addSuffix: true })}
                   </span>
                 </p>
-                <p className="text-xs opacity-70">{describeCounts(s.counts)}</p>
+                <p className="wb-soft text-xs">{describeCounts(s.counts)}</p>
               </button>
               {open === i && (
-                <ul className="space-y-0.5 border-t border-black/5 p-1.5 dark:border-white/10">
+                <ul className="wb-dialog__rule space-y-0.5 p-1.5">
                   {s.shown.slice(0, 200).map((item) => (
                     <li key={item.id}>
                       <button
                         type="button"
                         onClick={() => reveal(item)}
-                        className="flex w-full items-start gap-1.5 rounded px-1 py-0.5 text-left text-xs hover:bg-black/5 dark:hover:bg-white/10"
+                        className="wb-hover-row flex w-full items-start gap-1.5 rounded px-1 py-1 text-left text-xs"
                       >
-                        <span className={`shrink-0 rounded px-1 ${ACTION[item.action].className}`}>{ACTION[item.action].label}</span>
+                        <span className={`${CHIP} ${ACTION[item.action].className}`}>{ACTION[item.action].label}</span>
                         <span className="min-w-0 break-words">
                           {item.action === "edited" && item.before ? (
                             <>
-                              <span className="line-through opacity-50">{item.before}</span> → {itemLabel(item)}
+                              <span className="wb-soft line-through">{item.before}</span> → {itemLabel(item)}
                             </>
                           ) : (
                             itemLabel(item)
@@ -161,7 +165,7 @@ export function ActivityPanel({ api, boardId, showAuthors, onShowAuthors, onPeop
                       </button>
                     </li>
                   ))}
-                  {s.shown.length > 200 && <li className="px-1 text-xs opacity-60">และอีก {s.shown.length - 200} ชิ้น</li>}
+                  {s.shown.length > 200 && <li className="wb-soft px-1 text-xs">และอีก {s.shown.length - 200} ชิ้น</li>}
                 </ul>
               )}
             </li>

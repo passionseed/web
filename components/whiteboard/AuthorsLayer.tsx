@@ -74,7 +74,8 @@ export function AuthorsLayer({ api, nameOf }: { api: ExcalidrawImperativeAPI; na
             className="absolute h-0 w-0 origin-top-left"
             style={{ left: chip.x, top: chip.y, transform: "scale(var(--wb-unzoom))" }}
           >
-            <span className="absolute bottom-[2px] left-0 w-max max-w-48 truncate rounded-full rounded-bl-none bg-orange-600/90 px-2 py-0.5 text-[11px] font-medium text-white shadow">
+            {/* Like the reference's cursor tag: paper, an indigo hairline, ink text. No filled pill. */}
+            <span className="absolute bottom-[2px] left-0 w-max max-w-48 truncate rounded-[3px] border border-[color:var(--wb-indigo)] bg-[color:var(--wb-card)] px-[7px] text-[11px] font-medium leading-4 text-[color:var(--wb-text)]">
               {chip.label}
             </span>
           </span>

@@ -34,6 +34,7 @@ import {
 
 import {
   PAIR_DISCOUNT_BAHT,
+  PAIR_TOTAL_DISCOUNT_BAHT,
   SHIFT_COHORTS,
   formatThaiDate,
   cohortPath,
@@ -560,7 +561,7 @@ export default async function ShiftRoundPage({ params }: RoundParams) {
                     className="mt-2 text-sm font-semibold"
                     style={{ color: T.accent2 }}
                   >
-                    มากับเพื่อนเป็นคู่ ลดคนละ {baht(PAIR_DISCOUNT_BAHT)}
+                    มากับเพื่อนเป็นคู่ ลดรวม {baht(PAIR_TOTAL_DISCOUNT_BAHT)} (คนละ {baht(PAIR_DISCOUNT_BAHT)})
                   </p>
                   <p
                     className="mt-3 text-sm leading-relaxed"

@@ -7,6 +7,7 @@
 "use server";
 
 import { GoogleGenAI } from "@google/genai";
+import { requireUser } from "@/lib/security/route-guards";
 
 
 const AI_PROMPTS = {
@@ -82,6 +83,9 @@ export async function enhanceVision(
   visionText: string,
   language: "en" | "th" = "en"
 ): Promise<EnhancementResult> {
+  const auth = await requireUser();
+  if (!auth.ok) return { success: false, error: "Authentication required" };
+
   if (!visionText.trim()) {
     return { success: false, error: "Vision text is required" };
   }
@@ -123,6 +127,9 @@ export async function generateMilestones(
   visionText: string,
   language: "en" | "th" = "en"
 ): Promise<EnhancementResult> {
+  const auth = await requireUser();
+  if (!auth.ok) return { success: false, error: "Authentication required" };
+
   if (!visionText.trim()) {
     return { success: false, error: "Vision text is required" };
   }

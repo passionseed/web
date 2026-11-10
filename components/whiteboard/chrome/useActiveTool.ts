@@ -1,6 +1,6 @@
 "use client";
 
-import type { ExcalidrawImperativeAPI, ToolType } from "@excalidraw/excalidraw/types";
+import type { AppState, ExcalidrawImperativeAPI, ToolType } from "@excalidraw/excalidraw/types";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
@@ -13,23 +13,31 @@ export function focusCanvas() {
   document.querySelector<HTMLElement>(".whiteboard-room .excalidraw-container")?.focus({ preventScroll: true });
 }
 
+const hasKeys = (o: object) => {
+  for (const _ in o) return true;
+  return false;
+};
+
 /**
- * The current Excalidraw tool. Excalidraw's onChange fires on every update
- * (each remote cursor too), so this only sets state when the tool type changes.
+ * The current Excalidraw tool, and whether anything is selected or being typed into.
+ * Excalidraw's onChange fires on every update (each remote cursor too), so this only sets state
+ * when one of the two changes.
  */
 export function useActiveTool(api: ExcalidrawImperativeAPI | null) {
-  const [tool, setToolState] = useState<ToolType>("selection");
-  const current = useRef<ToolType>("selection");
+  const [state, setState] = useState<{ tool: ToolType; selected: boolean }>({ tool: "selection", selected: false });
+  const current = useRef(state);
 
   useEffect(() => {
     if (!api) return;
-    const read = (type: ToolType) => {
-      if (type === current.current) return;
-      current.current = type;
-      setToolState(type);
+    const read = (appState: Pick<AppState, "activeTool" | "selectedElementIds" | "editingTextElement">) => {
+      const tool = appState.activeTool.type as ToolType;
+      const selected = hasKeys(appState.selectedElementIds) || appState.editingTextElement !== null;
+      if (tool === current.current.tool && selected === current.current.selected) return;
+      current.current = { tool, selected };
+      setState(current.current);
     };
-    read(api.getAppState().activeTool.type as ToolType);
-    return api.onChange((_elements, appState) => read(appState.activeTool.type as ToolType));
+    read(api.getAppState());
+    return api.onChange((_elements, appState) => read(appState));
   }, [api]);
 
   const setTool = useCallback(
@@ -41,5 +49,5 @@ export function useActiveTool(api: ExcalidrawImperativeAPI | null) {
     [api],
   );
 
-  return { tool, setTool };
+  return { tool: state.tool, selected: state.selected, setTool };
 }

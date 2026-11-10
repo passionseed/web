@@ -20,14 +20,14 @@ import {
 } from "@/lib/shift-round/admin/format";
 import type { AdminDashboard, JobHealth } from "@/lib/shift-round/admin/types";
 
-import { LoadError, Pill, Section, statusTone } from "./shared";
+import { EMPTY_VALUE, LoadError, Pill, Section, statusTone } from "./shared";
 import { StepsBoard } from "./StepsBoard";
 import { useAdminQuery } from "./useAdminData";
 import { useRound } from "./useRound";
 
 const fmt = (n: number | null | undefined, digits = 0) =>
   n === null || n === undefined || Number.isNaN(n)
-    ? "—"
+    ? EMPTY_VALUE
     : n.toLocaleString("en-US", { maximumFractionDigits: digits });
 
 function Stat({ label, value, hint }: { label: string; value: ReactNode; hint?: string }) {
@@ -123,7 +123,7 @@ export function RoundDashboard({ roundId, now }: { roundId: string; now?: Date }
           <span>· Closes {formatClose(r.closes_at)}</span>
           <span>· Review ends {formatIct(r.review_ends_at)}</span>
           <span>
-            · เซสชันวันที่ {r.session_days.length ? r.session_days.join(", ") : "—"} เวลา {sessionTimeLabel(r)}
+            · เซสชันวันที่ {r.session_days.length ? r.session_days.join(", ") : EMPTY_VALUE} เวลา {sessionTimeLabel(r)}
           </span>
         </div>
       )}
@@ -157,7 +157,7 @@ export function RoundDashboard({ roundId, now }: { roundId: string; now?: Date }
             />
             <Stat
               label="Rejection rate"
-              value={data.rejection_rate == null ? "—" : `${fmt(data.rejection_rate * 100, 1)}%`}
+              value={data.rejection_rate == null ? EMPTY_VALUE : `${fmt(data.rejection_rate * 100, 1)}%`}
             />
             <Stat label="Active 4+ days" value={fmt(data.active4_entrants)} hint="Beta success metric" />
             <Stat label="Certificates issued" value={fmt(data.certificates?.issued)} />

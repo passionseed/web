@@ -232,7 +232,7 @@ export function TeamDirectionClusterView({
     return (
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>Team Directions — Submission clusters</CardTitle>
+          <CardTitle>Team directions: submission clusters</CardTitle>
         </CardHeader>
         <CardContent>
           <Skeleton className="w-full" style={{ height }} />
@@ -245,7 +245,7 @@ export function TeamDirectionClusterView({
     return (
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>Team Directions — Submission clusters</CardTitle>
+          <CardTitle>Team directions: submission clusters</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-destructive">{error ?? "Failed to load."}</p>
@@ -262,14 +262,14 @@ export function TeamDirectionClusterView({
         <CardTitle className="flex flex-col md:flex-row gap-2 md:items-center md:justify-between">
           <div className="flex flex-col">
             <span className="text-base">
-              Team Directions — Submission clusters
+              Team directions: submission clusters
             </span>
             <span className="text-xs font-normal text-muted-foreground">
               {data.clustering
                 ? `${data.clustering.k} clusters · ${data.clustering.sample_count} teams · run ${new Date(
                     data.clustering.created_at
                   ).toLocaleString()}`
-                : "No clustering yet — click Recluster to generate."}
+                : "No clustering yet. Click Recluster to generate."}
             </span>
           </div>
           <div className="flex gap-2">

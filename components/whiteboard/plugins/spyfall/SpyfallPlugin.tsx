@@ -52,7 +52,7 @@ export function SpyfallPlugin({ board, me, players, onBroadcast }: BoardPluginPr
     [start],
   );
 
-  if (!view) return <p className="p-4 text-sm opacity-60">กำลังโหลด...</p>;
+  if (!view) return <p className="wb-soft p-4 text-sm">กำลังโหลด...</p>;
 
   if (!round || setupOpen) {
     return (

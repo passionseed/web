@@ -124,7 +124,7 @@ export function AdminBetaRegistrations() {
       }
     } catch (error) {
       console.error("Error fetching registrations:", error);
-      setError("Network error — could not reach the API.");
+      setError("Network error: could not reach the API.");
     } finally {
       setLoading(false);
     }

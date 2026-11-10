@@ -13,6 +13,12 @@ export const LINK_ACCESS: readonly LinkAccess[] = ["none", "view", "edit"];
 export const MAX_ELEMENTS = 20000;
 export const MAX_FILE_DATA_URL = 4_000_000;
 export const MAX_THUMBNAIL = 400_000;
+/**
+ * How far one save may raise an element's version past the saved copy. Excalidraw adds one per
+ * change, so real edits never come close; without a limit, one person could push an element out
+ * of reach of everyone's later edits. Postgres applies the same limit (whiteboard_merge_elements).
+ */
+export const MAX_VERSION_JUMP = 1_000_000;
 
 export const canEdit = (role: WhiteboardRole | null): boolean => role === "owner" || role === "editor";
 export const canManage = (role: WhiteboardRole | null): boolean => role === "owner";
@@ -33,9 +39,30 @@ export const titleSchema = z
   .min(1, "Give the board a name")
   .max(120, "Keep the name under 120 characters");
 
-/** An Excalidraw element as far as the server cares: an id and a version. */
+/**
+ * An Excalidraw element as far as the server cares: an id and a version, plus
+ * the fields SHIFT canvas access reads, typed so Postgres and browsers read
+ * them the same way (a string "false" for isDeleted would be false in SQL but
+ * true in JavaScript).
+ */
 export const elementSchema = z
-  .object({ id: z.string().min(1).max(100), version: z.number().int().nonnegative() })
+  .object({
+    id: z.string().min(1).max(100),
+    version: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
+    type: z.string().max(40).optional(),
+    isDeleted: z.boolean().optional(),
+    frameId: z.string().max(100).nullable().optional(),
+    containerId: z.string().max(100).nullable().optional(),
+    customData: z
+      .object({
+        project: z.string().max(100).optional(),
+        owner: z.string().max(100).optional(),
+        editors: z.array(z.string().max(100)).max(100).optional(),
+      })
+      .passthrough()
+      .nullable()
+      .optional(),
+  })
   .passthrough();
 
 export const patchBoardSchema = z
@@ -51,6 +78,9 @@ export const patchBoardSchema = z
   })
   .strict();
 export type PatchBoard = z.infer<typeof patchBoardSchema>;
+
+/** Saved copies of some elements, to check live edits to SHIFT canvases against the database. */
+export const elementIdsSchema = z.object({ ids: z.array(z.string().min(1).max(100)).min(1).max(500) }).strict();
 
 export const createBoardSchema = z.object({ title: titleSchema.optional() }).strict();
 
@@ -72,6 +102,19 @@ type Versioned = { id: string; version: number };
 /** Elements whose version differs from the last one we sent or saved. */
 export function changedSince<T extends Versioned>(elements: readonly T[], seen: ReadonlyMap<string, number>): T[] {
   return elements.filter((el) => seen.get(el.id) !== el.version);
+}
+
+/** Whether any element differs from the last version we sent or saved. Stops at the first. */
+export function hasChangedSince(elements: readonly Versioned[], seen: ReadonlyMap<string, number>): boolean {
+  return elements.some((el) => seen.get(el.id) !== el.version);
+}
+
+/** Adds elements to a queue keyed by id, keeping the highest version of each. */
+export function queueLatest<T extends Versioned>(queue: Map<string, T>, elements: readonly T[]): void {
+  for (const el of elements) {
+    const queued = queue.get(el.id);
+    if (!queued || el.version >= queued.version) queue.set(el.id, el);
+  }
 }
 
 /** Records the versions of elements that were sent or saved. */

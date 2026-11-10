@@ -14,6 +14,8 @@ export async function POST(req: NextRequest) {
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const mentor = await getMentorBySessionToken(token);
   if (!mentor) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Mentor sign-up is public; only admin-approved mentors may see or act on student work.
+  if (!mentor.is_approved) return NextResponse.json({ error: "Mentor not approved" }, { status: 403 });
 
   const body = await req.json();
   const { team_id } = body;
@@ -39,8 +41,8 @@ export async function POST(req: NextRequest) {
   });
 
   if (error) {
-    console.error("[mentor/teams/assign] insert error:", JSON.stringify(error));
-    return NextResponse.json({ error: error.message, details: error }, { status: 500 });
+    console.error("[mentor/teams/assign] insert error:", error.code);
+    return NextResponse.json({ error: "Failed to assign team" }, { status: 500 });
   }
 
   return NextResponse.json({ success: true, already_assigned: false });

@@ -26,6 +26,7 @@ export default function BetaLookupPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ fields: BetaLookupField[] } | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [unauthorized, setUnauthorized] = useState(false);
 
   const handleDigitChange = (idx: number, value: string) => {
     const char = value.replace(/[^a-zA-Z0-9]/g, "").slice(-1).toUpperCase();
@@ -61,11 +62,13 @@ export default function BetaLookupPage() {
     setLoading(true);
     setResult(null);
     setNotFound(false);
+    setUnauthorized(false);
     const res = await lookupBetaSubmission(code);
-    console.log("[beta-lookup] result:", JSON.stringify(res, null, 2));
     setLoading(false);
     if (res.found) {
       setResult({ fields: res.fields });
+    } else if (res.reason === "unauthorized") {
+      setUnauthorized(true);
     } else {
       setNotFound(true);
     }
@@ -170,6 +173,16 @@ export default function BetaLookupPage() {
               className="mt-8 p-5 rounded-2xl bg-red-500/10 border border-red-500/20 text-center text-red-400 font-medium"
             >
               ไม่พบรหัสนี้ กรุณาตรวจสอบและลองใหม่อีกครั้ง
+            </motion.div>
+          )}
+          {unauthorized && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="mt-8 p-5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-center text-amber-300 font-medium"
+            >
+              หน้านี้สำหรับทีม PassionSeed เท่านั้น กรุณาเข้าสู่ระบบด้วยบัญชีทีม
             </motion.div>
           )}
         </AnimatePresence>

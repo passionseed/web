@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hashPassword } from "@/lib/hackathon/auth";
-import { getPasswordResetToken, markPasswordResetTokenAsUsed, updateParticipantPassword } from "@/lib/hackathon/db";
+import { getPasswordResetToken, markPasswordResetTokenAsUsed, updateParticipantPassword, revokeParticipantSessions } from "@/lib/hackathon/db";
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,6 +20,7 @@ export async function POST(req: NextRequest) {
     }
 
     const passwordHash = hashPassword(password);
+    await revokeParticipantSessions(resetToken.participant_id);
     await updateParticipantPassword(resetToken.participant_id, passwordHash);
     await markPasswordResetTokenAsUsed(token);
 

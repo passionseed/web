@@ -1,40 +1,31 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import Link from "next/link";
+
 import { CEODashboard } from "@/components/admin/ceo/CEODashboard";
-
-async function checkAdminAccess() {
-  const supabase = await createClient();
-  
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error || !user) {
-    redirect("/login");
-  }
-
-  const { data: roles, error: roleError } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", user.id)
-    .in("role", ["admin", "team"]);
-
-  if (roleError || !roles || roles.length === 0) {
-    redirect("/me");
-  }
-
-  return user;
-}
+import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
+import { requireAdmin } from "@/lib/admin/requireAdmin";
 
 export const dynamic = "force-dynamic";
 
+/** /admin/ceo: product-market-fit metrics from funnel events. */
 export default async function CEODashboardPage() {
-  const user = await checkAdminAccess();
+  await requireAdmin();
 
   return (
-    <div className="min-h-screen bg-background">
-      <CEODashboard userId={user.id} />
+    <div className="space-y-4">
+      <AdminPageHeader
+        eyebrow="CEO"
+        title="CEO dashboard"
+        description={
+          <>
+            Funnel, retention and retro from recorded funnel events. Revenue counts{" "}
+            <Link href="/admin/ceo/payments" className="underline underline-offset-4">
+              payments entered by hand
+            </Link>
+            .
+          </>
+        }
+      />
+      <CEODashboard />
     </div>
   );
 }

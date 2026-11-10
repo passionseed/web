@@ -5,7 +5,10 @@ import { toast } from "sonner";
 
 import type { GameAction, GameStart, GameView } from "@/lib/whiteboard/games";
 
+/** While a round is live. */
 const POLL_MS = 5000;
+/** While there is no round: slower, just so a newly dealt one is noticed without the ping. */
+const IDLE_POLL_MS = 10000;
 
 async function readError(res: Response): Promise<string> {
   try {
@@ -26,8 +29,9 @@ function pingOf(payload: unknown): { round: string; v: number } | null {
 /**
  * The board's Spyfall round as this viewer may see it. Refetches when the
  * server pings the plugin channel after a write (skipping versions it already
- * has, and folding a burst of pings into one request), and polls every 5 s
- * while a round is live and the tab is visible, in case a ping was missed.
+ * has, and folding a burst of pings into one request), and polls while the tab
+ * is visible in case a ping was missed: every 5 s during a round, every 10 s
+ * when there is none, so an open window still notices a newly dealt round.
  */
 export function useSpyfall(boardId: string, onBroadcast: (handler: (payload: unknown) => void) => () => void) {
   const [view, setView] = useState<GameView | null>(null);
@@ -92,9 +96,9 @@ export function useSpyfall(boardId: string, onBroadcast: (handler: (payload: unk
 
   const live = Boolean(view?.round);
   useEffect(() => {
-    if (!live) return;
+    // reload() folds overlapping requests into one, so a poll never stacks on a ping.
     const tick = () => document.visibilityState === "visible" && void reload();
-    const timer = window.setInterval(tick, POLL_MS);
+    const timer = window.setInterval(tick, live ? POLL_MS : IDLE_POLL_MS);
     document.addEventListener("visibilitychange", tick);
     return () => {
       window.clearInterval(timer);

@@ -86,22 +86,23 @@ export const BoardTitle = memo(function BoardTitle({
 /** Lucide's cloud with a check inside (this lucide version has no CloudCheck). */
 function CloudCheck({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
       <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
       <path d="m9.5 13.5 2 2 3.5-3.5" />
     </svg>
   );
 }
 
-const SAVE_STATUS: Record<"saved" | "saving" | "offline" | "connecting" | "error", { label: string; icon: React.ReactNode }> = {
-  saved: { label: "บันทึกแล้ว · Saved", icon: <CloudCheck className="h-4 w-4 text-emerald-600" /> },
-  saving: { label: "กำลังบันทึก · Saving", icon: <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" /> },
+const SAVE_STATUS: Record<"saved" | "saving" | "offline" | "connecting" | "error", { label: string; icon: React.ReactNode; tone?: "quiet" | "error" }> = {
+  saved: { label: "บันทึกแล้ว · Saved", icon: <CloudCheck className="h-[18px] w-[18px]" /> },
+  saving: { label: "กำลังบันทึก · Saving", icon: <Loader2 className="h-[18px] w-[18px] animate-spin motion-reduce:animate-none" /> },
   offline: {
     label: "ออฟไลน์ บันทึกให้เมื่อกลับมาออนไลน์ · Offline, saves when you are back",
-    icon: <CloudOff className="h-4 w-4 text-amber-600" />,
+    icon: <CloudOff className="h-[18px] w-[18px]" />,
+    tone: "quiet",
   },
-  connecting: { label: "กำลังเชื่อมต่อ · Connecting", icon: <CloudOff className="h-4 w-4 text-amber-600" /> },
-  error: { label: "บันทึกไม่ได้ กำลังลองใหม่ · Retrying", icon: <TriangleAlert className="h-4 w-4 text-red-500" /> },
+  connecting: { label: "กำลังเชื่อมต่อ · Connecting", icon: <CloudOff className="h-[18px] w-[18px]" />, tone: "quiet" },
+  error: { label: "บันทึกไม่ได้ กำลังลองใหม่ · Retrying", icon: <TriangleAlert className="h-[18px] w-[18px]" />, tone: "error" },
 };
 
 /** A small save-state icon with a tooltip; viewers see a "view only" chip instead. */
@@ -131,9 +132,9 @@ export const SaveStatus = memo(function SaveStatus({
           : state === "saving" || state === "unsaved"
             ? "saving"
             : "saved";
-  const { label, icon } = SAVE_STATUS[key];
+  const { label, icon, tone } = SAVE_STATUS[key];
   return (
-    <span className="wb-status" role="status" aria-label={label} data-tip={label} data-tip-side="bottom" tabIndex={0}>
+    <span className={`wb-status ${tone ? `wb-status--${tone}` : ""}`} role="status" aria-label={label} data-tip={label} data-tip-side="bottom" tabIndex={0}>
       {icon}
     </span>
   );

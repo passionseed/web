@@ -270,14 +270,14 @@ export function SubmissionClusterView({ activityId, compact = false }: Props) {
         <CardTitle className="flex flex-col md:flex-row gap-2 md:items-center md:justify-between">
           <div className="flex flex-col">
             <span className="text-base">
-              {data.activity.title ?? "Activity"} — Submission clusters
+              {data.activity.title ?? "Activity"}: submission clusters
             </span>
             <span className="text-xs font-normal text-muted-foreground">
               {data.clustering
                 ? `${data.clustering.k} clusters · ${totalSamples} submissions · run ${new Date(
                     data.clustering.created_at
                   ).toLocaleString()}`
-                : "No clustering yet — click Recluster to generate."}
+                : "No clustering yet. Click Recluster to generate."}
             </span>
           </div>
           <div className="flex gap-2">

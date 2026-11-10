@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runDmConversationBackfillBatch, runIgCommentsBackfillBatch } from "@/lib/meta/backfill-runner";
+import { hasBearerSecret } from "@/lib/ops/opsAuth";
 
 export const maxDuration = 60;
 
@@ -21,9 +22,10 @@ function failedBatch(errorCode: string) {
  * no manual retry/cooldown babysitting needed.
  */
 export async function GET(request: NextRequest) {
-  const cronSecret = process.env.CRON_SECRET;
-  const authorization = request.headers.get("authorization");
-  if (!cronSecret || authorization !== `Bearer ${cronSecret}`) {
+  // OPS_CRON_SECRET lets the ops watcher (ops/integration-watch) run this
+  // every 30 minutes from outside Vercel without holding CRON_SECRET, which
+  // also triggers parent emails and data retention.
+  if (!hasBearerSecret(request.headers.get("authorization"), "CRON_SECRET", "OPS_CRON_SECRET")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

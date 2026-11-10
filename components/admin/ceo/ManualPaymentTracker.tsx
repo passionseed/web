@@ -1,16 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { CheckCircle, Loader2 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
-import { DollarSign, CheckCircle, Loader2 } from "lucide-react";
-import type { FormEvent } from "react";
+import { isUuid } from "@/lib/supabase/admin-list-params";
 
+const SELECT_CLASS =
+  "flex h-11 w-full rounded-md border border-input bg-background px-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
+
+const PAYMENT_METHODS = [
+  { value: "family_round", label: "Family round" },
+  { value: "camp", label: "Camp payment" },
+  { value: "bank_transfer", label: "Bank transfer" },
+  { value: "promptpay", label: "PromptPay" },
+  { value: "credit_card", label: "Credit card" },
+];
+
+function RequiredMark() {
+  return (
+    <span className="text-destructive" aria-hidden="true">
+      {" "}
+      *
+    </span>
+  );
+}
+
+/** Records a manual payment as a `payment_convert` funnel event. */
 export function ManualPaymentTracker() {
+  const router = useRouter();
   const [userId, setUserId] = useState("");
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState("THB");
@@ -18,38 +41,35 @@ export function ManualPaymentTracker() {
   const [productName, setProductName] = useState("Portfolio Review");
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    
-    if (!userId.trim() || !amount.trim()) {
-      toast({
-        title: "Missing required fields",
-        description: "User ID and amount are required",
-        variant: "destructive",
+
+    const trimmedUserId = userId.trim();
+    if (!trimmedUserId || !amount.trim()) {
+      toast.error("User ID and amount are required");
+      return;
+    }
+    if (!isUuid(trimmedUserId)) {
+      toast.error("User ID should be the account's UUID", {
+        description: "Open the person in Users to copy their ID.",
       });
       return;
     }
 
-    const amountNum = parseFloat(amount);
-    if (isNaN(amountNum) || amountNum <= 0) {
-      toast({
-        title: "Invalid amount",
-        description: "Amount must be a positive number",
-        variant: "destructive",
-      });
+    const amountNum = Number.parseFloat(amount);
+    if (!Number.isFinite(amountNum) || amountNum <= 0) {
+      toast.error("Amount must be a positive number");
       return;
     }
 
     setIsSubmitting(true);
-    
     try {
       const response = await fetch("/api/admin/track-payment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          user_id: userId.trim(),
+          user_id: trimmedUserId,
           amount: amountNum,
           currency,
           payment_method: paymentMethod,
@@ -59,83 +79,76 @@ export function ManualPaymentTracker() {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to track payment");
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.error || "Could not record the payment");
       }
 
-      await response.json();
-      
-      toast({
-        title: "Payment tracked successfully",
-        description: `Recorded ${currency === "THB" ? "฿" : "$"}${amountNum} payment`,
+      toast.success("Payment recorded", {
+        description: `${currency === "THB" ? "฿" : "$"}${amountNum.toLocaleString("en-US")} for ${productName || "a payment"}`,
       });
-
       setUserId("");
       setAmount("");
       setNotes("");
-      
+      // Refresh the server-rendered totals next to the form.
+      router.refresh();
     } catch (error) {
-      console.error("Error tracking payment:", error);
-      toast({
-        title: "Failed to track payment",
-        description: error instanceof Error ? error.message : "Unknown error",
-        variant: "destructive",
-      });
+      toast.error(error instanceof Error ? error.message : "Could not record the payment");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <Card className="ei-card">
+    <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-white">
-          <DollarSign className="h-5 w-5 text-amber-400" />
-          Manual Payment Entry
-        </CardTitle>
+        <CardTitle className="text-base">Record a payment</CardTitle>
+        <CardDescription>For payments made outside an online checkout.</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div className="space-y-2">
-            <Label htmlFor="userId" className="text-slate-300">
-              User ID <span className="text-red-400">*</span>
+            <Label htmlFor="payment-user-id">
+              User ID
+              <RequiredMark />
             </Label>
             <Input
-              id="userId"
+              id="payment-user-id"
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
-              placeholder="Enter user UUID"
-              className="ei-input"
+              placeholder="Account UUID"
+              autoComplete="off"
+              spellCheck={false}
+              className="h-11 font-mono"
               required
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="amount" className="text-slate-300">
-                Amount <span className="text-red-400">*</span>
+              <Label htmlFor="payment-amount">
+                Amount
+                <RequiredMark />
               </Label>
               <Input
-                id="amount"
+                id="payment-amount"
                 type="number"
+                inputMode="decimal"
                 min="0"
                 step="0.01"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="500"
-                className="ei-input"
+                className="h-11"
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="currency" className="text-slate-300">
-                Currency
-              </Label>
+              <Label htmlFor="payment-currency">Currency</Label>
               <select
-                id="currency"
+                id="payment-currency"
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
-                className="ei-select"
+                className={SELECT_CLASS}
               >
                 <option value="THB">THB (฿)</option>
                 <option value="USD">USD ($)</option>
@@ -144,75 +157,51 @@ export function ManualPaymentTracker() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="paymentMethod" className="text-slate-300">
-              Payment Method
-            </Label>
+            <Label htmlFor="payment-method">Payment method</Label>
             <select
-              id="paymentMethod"
+              id="payment-method"
               value={paymentMethod}
               onChange={(e) => setPaymentMethod(e.target.value)}
-              className="ei-select"
+              className={SELECT_CLASS}
             >
-              <option value="family_round">Family Round</option>
-              <option value="camp">Camp Payment</option>
-              <option value="bank_transfer">Bank Transfer</option>
-              <option value="promptpay">PromptPay</option>
-              <option value="credit_card">Credit Card</option>
+              {PAYMENT_METHODS.map((method) => (
+                <option key={method.value} value={method.value}>
+                  {method.label}
+                </option>
+              ))}
             </select>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="productName" className="text-slate-300">
-              Product/Service
-            </Label>
+            <Label htmlFor="payment-product">Product or service</Label>
             <Input
-              id="productName"
+              id="payment-product"
               value={productName}
               onChange={(e) => setProductName(e.target.value)}
               placeholder="Portfolio Review"
-              className="ei-input"
+              className="h-11"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="notes" className="text-slate-300">
-              Notes
-            </Label>
+            <Label htmlFor="payment-notes">Notes</Label>
             <Input
-              id="notes"
+              id="payment-notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Optional notes about this payment"
-              className="ei-input"
+              placeholder="Optional, for example the slip reference"
+              className="h-11"
             />
           </div>
 
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full ei-button-dusk"
-          >
+          <Button type="submit" disabled={isSubmitting} className="min-h-11 w-full">
             {isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Recording...
-              </>
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
             ) : (
-              <>
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Record Payment
-              </>
+              <CheckCircle className="h-4 w-4" aria-hidden="true" />
             )}
+            {isSubmitting ? "Recording" : "Record payment"}
           </Button>
-
-          <div className="flex flex-wrap gap-2 pt-2">
-            <Badge variant="outline" className="border-white/10 text-slate-400 text-xs">
-              Ready for Stripe integration
-            </Badge>
-            <Badge variant="outline" className="border-white/10 text-slate-400 text-xs">
-              Ready for OMISE integration
-            </Badge>
-          </div>
         </form>
       </CardContent>
     </Card>

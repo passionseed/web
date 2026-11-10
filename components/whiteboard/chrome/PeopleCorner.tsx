@@ -2,11 +2,11 @@
 
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import type { ExcalidrawImperativeAPI, SocketId } from "@excalidraw/excalidraw/types";
+import { Share2 } from "lucide-react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
-import { colorFor } from "@/lib/whiteboard/core";
-
 import type { PresentUser } from "../useWhiteboardSync";
+import { FACE_RING, ringOf } from "./ring";
 import { focusCanvas } from "./useActiveTool";
 import { useDismiss } from "./useDismiss";
 
@@ -28,15 +28,15 @@ function useNarrow() {
 
 type Person = { userId: string; socketId: string; name: string; avatarUrl: string | null };
 
-function Face({ person, size = 32 }: { person: Person; size?: number }) {
-  const color = colorFor(person.userId).background;
+/** A face with a thin ring: indigo, vermilion or ultramarine, always the same one for a person. */
+function Face({ person, size = 28 }: { person: Person; size?: number }) {
   return (
-    <span className="wb-face" style={{ width: size, height: size, ["--wb-face-ring" as string]: color }}>
+    <span className={`wb-face ${FACE_RING[ringOf(person.userId)]}`} style={{ width: size, height: size }}>
       {person.avatarUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={person.avatarUrl} alt="" className="h-full w-full rounded-full object-cover" />
       ) : (
-        <span className="wb-face__initial" style={{ background: color }}>
+        <span className="wb-face__initial">
           {person.name.slice(0, 1).toUpperCase()}
         </span>
       )}
@@ -142,7 +142,7 @@ export const PeopleCorner = memo(function PeopleCorner({
     <div className="wb-corner wb-corner--right">
       {people.length > 0 && (
         <div className="wb-faces" ref={moreRef}>
-          {faces.map(faceButton)}
+          {faces.map((p) => faceButton(p))}
           {extra > 0 && (
             <button
               type="button"
@@ -173,9 +173,9 @@ export const PeopleCorner = memo(function PeopleCorner({
                         }}
                         className="wb-row"
                       >
-                        <Face person={p} size={28} />
+                        <Face person={p} size={26} />
                         <span className="min-w-0 flex-1 truncate text-sm">{p.name}</span>
-                        <span className="text-xs opacity-60">{on ? "กำลังติดตาม · Following" : "ติดตาม · Follow"}</span>
+                        <span className="wb-soft text-xs">{on ? "กำลังติดตาม · Following" : "ติดตาม · Follow"}</span>
                       </button>
                     </li>
                   );
@@ -187,6 +187,7 @@ export const PeopleCorner = memo(function PeopleCorner({
       )}
       {timer}
       <button type="button" onClick={onShare} aria-label="แชร์บอร์ด · Share board" className="wb-share">
+        {!narrow && <Share2 className="h-4 w-4" aria-hidden />}
         {narrow ? "แชร์" : "แชร์ · Share"}
       </button>
     </div>

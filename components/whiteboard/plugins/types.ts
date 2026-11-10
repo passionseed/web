@@ -3,6 +3,8 @@ import type { ComponentType, ReactNode } from "react";
 
 import type { WhiteboardRole } from "@/lib/whiteboard/core";
 
+import type { GrainTile } from "../chrome/Grain";
+
 /** The signed-in person looking at the board. */
 export type BoardPluginMe = { id: string; name: string; avatarUrl: string | null };
 
@@ -34,6 +36,8 @@ export type BoardPlugin = {
   name: string;
   description: string;
   icon: ReactNode;
+  /** Which crop of the grain bloom sits behind the icon in menus and title bars (default "a"). */
+  tile?: GrainTile;
   /** Window size in px. */
   width: number;
   height: number;

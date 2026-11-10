@@ -6,7 +6,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { WhiteboardRole } from "@/lib/whiteboard/core";
 
 import type { BoardEvent } from "../useWhiteboardSync";
-import { PluginWindow, type WindowPos } from "./PluginWindow";
+import { fitToViewport, PluginWindow, type WindowPos } from "./PluginWindow";
 import { pluginById } from "./registry";
 import type { BoardPlugin, BoardPluginMe, BoardPluginPlayer, BoardPluginProps } from "./types";
 
@@ -31,11 +31,16 @@ export function pluginBridge(channel: Channel, id: string) {
 export function usePluginWindows(boardId: string) {
   const [open, setOpen] = useState<OpenWindows>({});
   const [order, setOrder] = useState<string[]>([]);
+  // The newest set of windows, updated as soon as it is written. Two windows can move in the
+  // same frame (both pushed back on screen by one resize); each write builds on the one before
+  // it, not on the last render.
+  const current = useRef<OpenWindows>({});
 
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(storageKey(boardId)) ?? "{}") as OpenWindows;
       const known = Object.fromEntries(Object.entries(saved).filter(([id]) => pluginById(id)));
+      current.current = known;
       setOpen(known);
       setOrder(Object.keys(known));
     } catch {
@@ -45,6 +50,7 @@ export function usePluginWindows(boardId: string) {
 
   const save = useCallback(
     (next: OpenWindows) => {
+      current.current = next;
       setOpen(next);
       try {
         localStorage.setItem(storageKey(boardId), JSON.stringify(next));
@@ -57,23 +63,33 @@ export function usePluginWindows(boardId: string) {
 
   const focus = useCallback((id: string) => setOrder((o) => [...o.filter((x) => x !== id), id]), []);
 
+  /** Moves (or minimizes) one open window. */
+  const move = useCallback(
+    (id: string, pos: WindowPos) => {
+      if (current.current[id]) save({ ...current.current, [id]: pos });
+    },
+    [save],
+  );
+
   const toggle = useCallback(
     (id: string) => {
-      if (open[id]) {
-        const { [id]: _closed, ...rest } = open;
+      const now = current.current;
+      if (now[id]) {
+        const { [id]: _closed, ...rest } = now;
         return save(rest);
       }
       const plugin = pluginById(id);
       if (!plugin) return;
       // Open near the top right, below the toolbar, stepping each new window a little.
-      const step = Object.keys(open).length * 28;
-      save({ ...open, [id]: { x: Math.max(16, window.innerWidth - plugin.width - 80 - step), y: 72 + step } });
+      const step = Object.keys(now).length * 28;
+      const at = { x: Math.max(16, window.innerWidth - plugin.width - 80 - step), y: 72 + step };
+      save({ ...now, [id]: fitToViewport(at, plugin.width, plugin.height) });
       focus(id);
     },
-    [open, save, focus],
+    [save, focus],
   );
 
-  return { open, order, save, toggle, focus };
+  return { open, order, save, move, toggle, focus };
 }
 
 /**
@@ -131,6 +147,7 @@ function OpenWindow({
     <PluginWindow
       title={plugin.name}
       icon={plugin.icon}
+      tile={plugin.tile}
       width={plugin.width}
       height={plugin.height}
       pos={pos}
@@ -162,7 +179,7 @@ export function PluginHost({
   channel: Channel;
   windows: ReturnType<typeof usePluginWindows>;
 }) {
-  const { open, order, save, toggle, focus } = windows;
+  const { open, order, move, toggle, focus } = windows;
   const stable = useStablePluginProps(board, me, players);
   const openIds = Object.keys(open).join(",");
   // Bridges only change when the set of open windows does.
@@ -171,14 +188,10 @@ export function PluginHost({
     [openIds, channel],
   );
 
-  // toggle and save change whenever any window moves; read them through refs
-  // so the callbacks handed to plugins never change.
-  const latest = useRef({ open, save, toggle });
-  useEffect(() => {
-    latest.current = { open, save, toggle };
-  });
-  const onClose = useCallback((id: string) => latest.current.toggle(id), []);
-  const onMove = useCallback((id: string, next: WindowPos) => latest.current.save({ ...latest.current.open, [id]: next }), []);
+  // toggle and move are stable (they read the newest windows themselves), so the callbacks
+  // handed to plugins never change.
+  const onClose = toggle;
+  const onMove = move;
 
   return (
     <>

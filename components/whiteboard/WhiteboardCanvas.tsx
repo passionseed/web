@@ -3,16 +3,25 @@
 import "@excalidraw/excalidraw/index.css";
 import "./whiteboard.css";
 
-import { convertToExcalidrawElements, Excalidraw, loadFromBlob, MainMenu, restoreElements, WelcomeScreen } from "@excalidraw/excalidraw";
+import {
+  convertToExcalidrawElements,
+  Excalidraw,
+  loadFromBlob,
+  MainMenu,
+  restoreElements,
+  useHandleLibrary,
+  WelcomeScreen,
+} from "@excalidraw/excalidraw";
 import type { NonDeleted, OrderedExcalidrawElement, ExcalidrawEmbeddableElement } from "@excalidraw/excalidraw/element/types";
 import type { AppState, BinaryFiles, ExcalidrawProps } from "@excalidraw/excalidraw/types";
-import { ArrowLeft, Copy, FileUp, LayoutTemplate, Save } from "lucide-react";
+import { ArrowLeft, Copy, FileUp, LayoutTemplate, Save, Settings } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import type { WhiteboardDetail } from "@/lib/supabase/whiteboards";
 import { canEdit, type LinkAccess } from "@/lib/whiteboard/core";
-import { CARD_KINDS, CARDS, cardSkeleton } from "@/lib/whiteboard/cards";
+import { exportBackgroundFor } from "@/lib/whiteboard/settings";
+import { CARD_KINDS, CARDS, cardLibrarySkeleton } from "@/lib/whiteboard/cards";
 import { templateById } from "@/lib/whiteboard/templates";
 import { widgetIdOf, widgetLink } from "@/lib/whiteboard/widgets";
 
@@ -20,14 +29,25 @@ import { ActivityPanel } from "./ActivityPanel";
 import { AuthorsLayer } from "./AuthorsLayer";
 import { BoardCorner } from "./chrome/BoardCorner";
 import { BottomBar } from "./chrome/BottomBar";
+import { GrainDefs } from "./chrome/Grain";
 import { PeopleCorner } from "./chrome/PeopleCorner";
 import { CommentsLayer } from "./CommentsLayer";
 import { EmoteLayer, useEmotes } from "./EmoteLayer";
+import { WB_FONT_VARS } from "./fonts";
 import { insertElements, insertSkeletons, insertWidget } from "./insert";
 import { KitSidebar, openKit } from "./KitSidebar";
+import { boardLibraryAdapter } from "./libraryAdapter";
 import { BoardWidget } from "./plugins/BoardWidget";
 import { PluginHost, usePluginWindows } from "./plugins/PluginHost";
 import type { BoardPlugin } from "./plugins/types";
+import { BoardBackdrop } from "./settings/BoardBackdrop";
+import { BoardSettingsDialog } from "./settings/BoardSettingsDialog";
+import { useBoardSettings } from "./settings/useBoardSettings";
+import { useCanvasBackground } from "./settings/useCanvasBackground";
+import { CanvasTeamLayer } from "./shift/CanvasTeamLayer";
+import { CardVersionsLayer } from "./shift/CardVersionsLayer";
+import { useShiftCardCaret } from "./shift/useShiftCardCaret";
+import { ZoneAddLayer } from "./shift/ZoneAddLayer";
 import { ShareDialog } from "./ShareDialog";
 import { TimerWidget } from "./TimerWidget";
 import { useComments } from "./useComments";
@@ -52,16 +72,19 @@ function preloadThaiFonts() {
   for (const family of THAI_FONTS) void document.fonts.load(`20px "${family}"`, "ก").catch(() => undefined);
 }
 
-/** Room cards in the Library panel, so people can drag them onto any board. */
+/** Room cards in the Library panel, each with its name on top, so people can tell them apart and drag them onto any board. */
 function cardLibrary() {
   return CARD_KINDS.map((kind) => ({
     id: `passionseed-card-${kind}`,
     status: "published" as const,
     name: CARDS[kind].title,
     created: 0,
-    elements: convertToExcalidrawElements([cardSkeleton(kind)]),
+    elements: convertToExcalidrawElements(cardLibrarySkeleton(kind)),
   }));
 }
+
+/** The Library: our cards, plus what each person adds or installs from libraries.excalidraw.com, kept in their browser. */
+const LIBRARY_ADAPTER = boardLibraryAdapter(cardLibrary);
 
 /** The live editor: Excalidraw plus sync, stickies, comments, reactions, timer, history and sharing. */
 export default function WhiteboardCanvas({
@@ -81,19 +104,35 @@ export default function WhiteboardCanvas({
   );
   const initialData = useMemo(() => {
     const theme = (typeof window !== "undefined" && (localStorage.getItem(THEME_KEY) as Theme | null)) || "light";
-    return { elements: initialElements, appState: { theme }, scrollToContent: true, libraryItems: cardLibrary() };
+    // See-through from the first paint: the paper and the dots are our own layer (BoardBackdrop).
+    return { elements: initialElements, appState: { theme, viewBackgroundColor: "transparent" }, scrollToContent: true };
   }, [initialElements]);
 
-  const sync = useWhiteboardSync({ boardId: board.id, role: board.role, me, initialElements });
+  // Moderators (the board's owner and site admins on it) may change any SHIFT canvas; everyone else only their own team's.
+  const managerIds = board.managerIds;
+  const isManager = managerIds.includes(me.id);
+  const lastBlockedToast = useRef(0);
+  const onCanvasBlocked = useCallback(() => {
+    if (Date.now() - lastBlockedToast.current < 4000) return;
+    lastBlockedToast.current = Date.now();
+    toast.info("เปลี่ยนตรงนี้ไม่ได้: แคนวาสนี้แก้ได้เฉพาะทีม และลบได้เฉพาะเจ้าของ");
+  }, []);
+  const sync = useWhiteboardSync({ boardId: board.id, role: board.role, me, initialElements, managerIds, onCanvasBlocked });
   const api = sync.excalidrawAPI;
+  // Loads and saves the Library, and installs libraries from libraries.excalidraw.com (#addLibrary links).
+  useHandleLibrary({ excalidrawAPI: api, adapter: LIBRARY_ADAPTER });
   const { send: syncSend, on: syncOn, onChange: syncOnChange, onPointerUpdate: syncOnPointer, saveNow, refreshFiles } = sync;
   const channel = useMemo(() => ({ send: syncSend, on: syncOn }), [syncSend, syncOn]);
   const comments = useComments(board.id, channel);
   const pointer = useRef<{ x: number; y: number } | null>(null);
   const emotes = useEmotes(api, channel, pointer);
+  useShiftCardCaret(api);
+  const { settings, update: updateSettings } = useBoardSettings(board.id);
+  useCanvasBackground(api, exportBackgroundFor(settings));
 
   const [title, setTitle] = useState(board.title);
   const [shareOpen, setShareOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [linkAccess, setLinkAccess] = useState<LinkAccess>(board.linkAccess);
   const [shareToken, setShareToken] = useState(board.shareToken);
   const [members, setMembers] = useState(board.members);
@@ -215,6 +254,7 @@ export default function WhiteboardCanvas({
   const onVersionsChanged = useCallback((fn: () => void) => syncOn("versions", fn), [syncOn]);
   const onVersionSaved = useCallback(() => syncSend("versions", {}), [syncSend]);
   const openShare = useCallback(() => setShareOpen(true), []);
+  const openSettings = useCallback(() => setSettingsOpen(true), []);
   const onPlace = useMemo(
     () =>
       editable && api
@@ -274,10 +314,13 @@ export default function WhiteboardCanvas({
         {editable && <MainMenu.DefaultItems.ClearCanvas />}
         <MainMenu.Separator />
         <MainMenu.DefaultItems.ToggleTheme />
-        <MainMenu.DefaultItems.ChangeCanvasBackground />
+        {/* The canvas colour and the dot grid: the one place for them (Excalidraw's own picker is left out). */}
+        <MainMenu.Item icon={<Settings size={16} />} onSelect={openSettings}>
+          ตั้งค่าบอร์ด · Board settings
+        </MainMenu.Item>
       </MainMenu>
     ),
-    [duplicate, editable, saveAndTell],
+    [duplicate, editable, openSettings, saveAndTell],
   );
 
   const welcomeScreen = useMemo(
@@ -319,6 +362,7 @@ export default function WhiteboardCanvas({
           api={api}
           boardId={board.id}
           editable={editable}
+          myName={me.name}
           comments={comments}
           showResolved={showResolved}
           onShowResolved={setShowResolved}
@@ -330,7 +374,7 @@ export default function WhiteboardCanvas({
           activity={activity}
         />
       ) : null,
-    [api, board.id, editable, comments, showResolved, saveNow, refreshFiles, onVersionSaved, onVersionsChanged, activity],
+    [api, board.id, editable, me.name, comments, showResolved, saveNow, refreshFiles, onVersionSaved, onVersionsChanged, activity],
   );
 
   const timer = useMemo(
@@ -343,7 +387,10 @@ export default function WhiteboardCanvas({
   const closePlacing = useCallback(() => setPlacingComment(false), []);
 
   return (
-    <div className="whiteboard-root whiteboard-room fixed inset-0">
+    <div className={`whiteboard-root whiteboard-room fixed inset-0 ${WB_FONT_VARS}`}>
+      {/* The grain filters, once for the whole board. */}
+      <GrainDefs />
+      <BoardBackdrop api={api} settings={settings} />
       <Excalidraw
         excalidrawAPI={sync.setExcalidrawAPI}
         initialData={initialData}
@@ -376,6 +423,9 @@ export default function WhiteboardCanvas({
             showResolved={showResolved}
           />
           <EmoteLayer api={api} bursts={emotes.bursts} />
+          {editable && <ZoneAddLayer api={api} meId={me.id} manager={isManager} />}
+          <CardVersionsLayer api={api} meId={me.id} editable={editable} manager={isManager} nameOf={nameOf} />
+          <CanvasTeamLayer api={api} meId={me.id} manager={isManager} people={people} nameOf={nameOf} />
           {isAdmin && showAuthors && <AuthorsLayer api={api} nameOf={nameOf} />}
         </>
       )}
@@ -402,6 +452,7 @@ export default function WhiteboardCanvas({
         openWindows={windows.open}
         onToggleWindow={windows.toggle}
         onPlace={onPlace}
+        onSettings={openSettings}
       />
 
       {api && (
@@ -427,6 +478,8 @@ export default function WhiteboardCanvas({
           e.target.value = "";
         }}
       />
+
+      <BoardSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} settings={settings} update={updateSettings} />
 
       <ShareDialog
         open={shareOpen}

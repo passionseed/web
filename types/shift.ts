@@ -49,8 +49,25 @@ export interface ShiftApplicationRow {
   availability: "all_days" | "some_days";
   ig_handle: string;
   discord_handle: string | null;
-  parent_contact: string;
+  /** Phone or LINE. Null for applicants aged 20+ (2026-10-29 on). */
+  parent_contact: string | null;
   consent: boolean;
+  /** PDPA parent consent (2026-10-29 on). Null on older rows. */
+  birth_date: string | null;
+  consent_notice_version: string | null;
+  parent_email: string | null;
+  parent_token_hash: string | null;
+  parent_email_sent_at: string | null;
+  parent_name: string | null;
+  parent_relationship: string | null;
+  parent_consented_at: string | null;
+  parent_declined_at: string | null;
+  parent_withdrawn_at: string | null;
+  parent_consent_ip: string | null;
+  parent_consent_user_agent: string | null;
+  /** Optional, separate tick for AI progress tracking (SeedStack). */
+  parent_ai_consented_at: string | null;
+  parent_ai_notice_version: string | null;
   source: string | null;
   /** Self-reported "where did you find us". Null on rows before 2026-10-24. */
   found_via: "friend" | "camphub" | "instagram" | "facebook" | null;

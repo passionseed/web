@@ -40,12 +40,12 @@ const COVERAGE_BADGE: Record<FieldCoverage, { label: string; className: string }
       "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300",
   },
   uncovered: {
-    label: "ยังไม่มี seed — pre-sell",
+    label: "ยังไม่มี seed: pre-sell",
     className:
       "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-300",
   },
   unknown: {
-    label: "ยังไม่รู้สาย — ถามก่อน",
+    label: "ยังไม่รู้สาย: ถามก่อน",
     className: "border-border bg-muted text-muted-foreground",
   },
 };
@@ -338,7 +338,7 @@ export function DmLeadDetailPane({
       <div className="border-t px-3 py-2">
         {!loading && !messagingWindowOpen && (
           <p className="mb-1.5 rounded border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[11px] font-medium text-amber-700 dark:text-amber-400">
-            ⚠️ เกิน 24 ชม. จากข้อความล่าสุดที่น้องทักมา — Instagram อาจปฏิเสธการส่งข้อความนี้
+            ⚠️ เกิน 24 ชม. จากข้อความล่าสุดที่น้องทักมา Instagram อาจปฏิเสธการส่งข้อความนี้
           </p>
         )}
         <DmLeadReplyForm

@@ -94,7 +94,7 @@ function CertificateSender() {
   const [resolving, setResolving] = useState(false);
   const [resolved, setResolved] = useState(false);
 
-  const [certSubject, setCertSubject] = useState("Your Certificate — The Next Decade Hackathon 2026");
+  const [certSubject, setCertSubject] = useState("Your Certificate: The Next Decade Hackathon 2026");
   const [certBody, setCertBody] = useState(
     `<p>Hi {{name}},</p>\n<p>Congratulations on being part of <strong>The Next Decade Hackathon 2026</strong>! Please find your participation certificate(s) attached.</p>\n<p>Thank you for being part of this journey.</p>\n<p>Best regards,<br/>PassionSeed Team</p>`
   );
@@ -239,7 +239,7 @@ function CertificateSender() {
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
             <FolderOpen className="h-5 w-5" />
-            Step 1 — Upload Certificate Folder
+            Step 1: Upload Certificate Folder
           </CardTitle>
           <CardDescription>
             Select the folder containing certificate PNGs. Filenames must follow the pattern:<br />
@@ -276,7 +276,7 @@ function CertificateSender() {
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5" />
-              Step 2 — Preview Matches
+              Step 2: Preview Matches
             </CardTitle>
             <CardDescription>
               {matched.length} teams matched · {totalRecipients} recipients · {unmatched.length} unmatched file group{unmatched.length !== 1 ? "s" : ""}
@@ -287,13 +287,13 @@ function CertificateSender() {
               <div className="rounded-lg border border-orange-500/30 bg-orange-500/5 p-3 space-y-2">
                 <p className="text-sm font-semibold text-orange-500 flex items-center gap-2">
                   <AlertCircle className="h-4 w-4" />
-                  {unmatched.length} unmatched team name{unmatched.length !== 1 ? "s" : ""} — these will NOT be sent
+                  {unmatched.length} unmatched team name{unmatched.length !== 1 ? "s" : ""}: these will NOT be sent
                 </p>
                 <div className="space-y-1">
                   {unmatched.map((u) => (
                     <div key={u.rawTeamName} className="text-xs text-muted-foreground">
                       <span className="font-medium text-orange-400">{u.rawTeamName}</span>
-                      {" "}— {u.files.length} file{u.files.length !== 1 ? "s" : ""}: {u.files.slice(0, 3).join(", ")}{u.files.length > 3 ? ` +${u.files.length - 3} more` : ""}
+                      {" "}({u.files.length} file{u.files.length !== 1 ? "s" : ""}): {u.files.slice(0, 3).join(", ")}{u.files.length > 3 ? ` +${u.files.length - 3} more` : ""}
                     </div>
                   ))}
                 </div>
@@ -342,7 +342,7 @@ function CertificateSender() {
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <Mail className="h-5 w-5" />
-              Step 3 — Email Message
+              Step 3: Email Message
             </CardTitle>
             <CardDescription>
               Supports <code className="text-xs bg-muted px-1 rounded">{"{{name}}"}</code> and <code className="text-xs bg-muted px-1 rounded">{"{{team_name}}"}</code>
@@ -416,6 +416,9 @@ function CertificateSender() {
 }
 
 // ─────────────────────────────────────────────
+
+/** Group label for participants without a team. Parentheses keep it apart from real team names. */
+const NO_TEAM_GROUP = "(No team)";
 
 export function AdminHackathonEmailSender() {
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -596,18 +599,18 @@ export function AdminHackathonEmailSender() {
   if (groupByTeam) {
     const map = new Map<string, typeof participants>();
     for (const p of participants) {
-      const key = p.team_status === "has_team" ? p.team_name || "Unknown Team" : "— No Team —";
+      const key = p.team_status === "has_team" ? p.team_name || "Unknown Team" : NO_TEAM_GROUP;
       const group = map.get(key) ?? [];
       group.push(p);
       map.set(key, group);
     }
     // Teams first, then no-team group last
     for (const [name, members] of map.entries()) {
-      if (name !== "— No Team —") teamGroups.push({ teamName: name, members });
+      if (name !== NO_TEAM_GROUP) teamGroups.push({ teamName: name, members });
     }
     teamGroups.sort((a, b) => a.teamName.localeCompare(b.teamName));
-    if (map.has("— No Team —")) {
-      teamGroups.push({ teamName: "— No Team —", members: map.get("— No Team —")! });
+    if (map.has(NO_TEAM_GROUP)) {
+      teamGroups.push({ teamName: NO_TEAM_GROUP, members: map.get(NO_TEAM_GROUP)! });
     }
   }
 
@@ -970,7 +973,7 @@ export function AdminHackathonEmailSender() {
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2">
                     <LayoutTemplate className="h-4 w-4" />
-                    Quick Start — Choose a Template
+                    Quick Start: Choose a Template
                   </Label>
                   <Select onValueChange={(val) => {
                     const t = templates.find((t) => t.id === val);
@@ -1091,7 +1094,7 @@ PassionSeed Team"
                     </div>
                   </div>
                   <div className="bg-gray-50 px-4 py-3 border-t text-xs text-muted-foreground text-center">
-                    PassionSeed — Empowering the next generation of innovators
+                    PassionSeed, empowering the next generation of innovators
                   </div>
                 </div>
               </TabsContent>

@@ -5,17 +5,17 @@ import type { ComponentType } from "react";
 import type { BoardPlugin, BoardPluginProps } from "./types";
 
 function PluginLoading() {
-  return <div className="p-4 text-sm opacity-60">กำลังเปิด...</div>;
+  return <div className="wb-soft p-4 text-sm">กำลังเปิด...</div>;
 }
 
 /** Shown when an app's code fails to download (say, after a deploy), instead of taking the whole board down. */
 function PluginLoadFailed() {
   return (
     <div className="space-y-2 p-4 text-sm">
-      <p className="opacity-70">เปิดแอปนี้ไม่ได้ ลองโหลดหน้าใหม่ · Could not load this app</p>
+      <p className="wb-soft">เปิดแอปนี้ไม่ได้ ลองโหลดหน้าใหม่ · Could not load this app</p>
       <button
         type="button"
-        className="min-h-11 rounded-xl border border-[color:var(--wb-hairline)] px-3"
+        className="wb-btn min-h-11 px-3"
         onClick={() => window.location.reload()}
       >
         โหลดใหม่ · Reload
@@ -46,6 +46,7 @@ export const PLUGINS: BoardPlugin[] = [
     name: "ปฏิทินชุมชน · Calendar",
     description: "นัดเจอ นั่งทำงานด้วยกัน เดดไลน์ แล้วกดไปด้วย",
     icon: <CalendarDays size={16} />,
+    tile: "b",
     width: 360,
     height: 520,
     widget: { width: 380, height: 540 },
@@ -57,6 +58,7 @@ export const PLUGINS: BoardPlugin[] = [
     name: "สายลับ · Spyfall",
     description: "เกมละลายพฤติกรรม ทุกคนรู้สถานที่ ยกเว้นสายลับ ถามกันให้จับได้",
     icon: <VenetianMask size={16} />,
+    tile: "a",
     width: 380,
     height: 600,
     Component: SpyfallPlugin,

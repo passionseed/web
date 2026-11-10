@@ -1,97 +1,130 @@
-import Link from "next/link";
+import { Suspense } from "react";
+
+import { KpiRowSkeleton } from "@/components/admin/overview/KpiRow";
+import { OverviewRefreshButton } from "@/components/admin/overview/OverviewRefreshButton";
+import { OverviewSummarySkeleton } from "@/components/admin/overview/OverviewSummary";
+import { formatBangkokLongDate } from "@/components/admin/overview/format";
 import {
-  ArrowRight,
-  ArrowUpRight,
-  GraduationCap,
-  Map,
-  MessagesSquare,
-  Sparkles,
-} from "lucide-react";
-import { AdminStatsOverview } from "@/components/admin/AdminStatsOverview";
+  ActivitySection,
+  AttentionSection,
+  KpiSection,
+  ShiftSection,
+  SummarySection,
+} from "@/components/admin/overview/sections";
+import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
+import { AdminLoading } from "@/components/admin/shared/AdminStates";
+import { ScrollToHash } from "@/components/admin/shared/ScrollToHash";
+import type { AdminQueueSnapshot, AdminShiftSnapshot } from "@/lib/admin/console";
 import { adminMetadata } from "@/lib/admin/metadata";
+import {
+  getAdminActivity,
+  getAdminKpis,
+  getAdminQueueSnapshot,
+  getAdminShiftSnapshot,
+} from "@/lib/admin/overview";
+import { requireAdmin } from "@/lib/admin/requireAdmin";
+
+import "./overview.css";
 
 export const dynamic = "force-dynamic";
 export const metadata = adminMetadata("/admin");
 
-const workspaces = [
-  {
-    href: "/admin/shift/applications",
-    title: "SHIFT applications",
-    description: "Review applicants and manage enrollment.",
-    icon: Sparkles,
-  },
-  {
-    href: "/admin/dm-leads",
-    title: "Lead inbox",
-    description: "Pick up conversations and follow up with leads.",
-    icon: MessagesSquare,
-  },
-  {
-    href: "/admin/experts",
-    title: "Expert reviews",
-    description: "Review interviews and expert contributions.",
-    icon: GraduationCap,
-  },
-  {
-    href: "/admin/maps",
-    title: "PathLabs",
-    description: "Manage learning maps and student activities.",
-    icon: Map,
-  },
-];
+const ACTIVITY_LIMIT = 25;
 
-export default function AdminPage() {
+/** Loaders resolve by contract; this keeps a surprise rejection from blanking a section. */
+function settle<T>(promise: Promise<T>, fallback: T): Promise<T> {
+  return promise.catch((error: unknown) => {
+    console.error("[admin overview] loader failed", error);
+    return fallback;
+  });
+}
+
+/**
+ * Mission control: what needs the team now, the numbers that matter, the
+ * live SHIFT round, and what just happened. Each section streams on its own.
+ */
+export default async function AdminOverviewPage() {
+  // The layout's check can be skipped by a forged router-state header, so
+  // the page checks too before any service-role loader starts.
+  await requireAdmin();
+
+  const now = new Date();
+  const queues = settle<AdminQueueSnapshot | null>(getAdminQueueSnapshot(), null);
+  const kpis = settle(getAdminKpis(), []);
+  const shift = settle<AdminShiftSnapshot | null>(getAdminShiftSnapshot(), null);
+  const activity = settle(getAdminActivity(ACTIVITY_LIMIT), []);
+
   return (
-    <div className="admin-overview">
-      <header className="admin-page-heading">
-        <div>
-          <p className="admin-eyebrow">YOUR WORKSPACE</p>
-          <h1>Overview</h1>
-          <p className="admin-page-description">
-            Manage programs, people, and the work in between.
-          </p>
-        </div>
-        <Link href="/admin/analytics" className="admin-quiet-link">
-          View analytics <ArrowUpRight size={16} />
-        </Link>
-      </header>
-      <AdminStatsOverview />
-      <section
-        className="admin-work-section"
-        aria-labelledby="admin-work-title"
-      >
-        <div className="admin-section-heading">
-          <h2 id="admin-work-title">Jump into work</h2>
-          <span>Everyday tools</span>
-        </div>
-        <div className="admin-work-list">
-          {workspaces.map(({ href, title, description, icon: Icon }, index) => (
-            <Link key={href} href={href} className="admin-work-link">
-              <span className="admin-work-icon">
-                <Icon size={23} strokeWidth={1.5} aria-hidden="true" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <h3>{title}</h3>
-                <p>{description}</p>
-              </div>
-              <span className="admin-work-number" aria-hidden="true">
-                0{index + 1}
-              </span>
-              <ArrowRight
-                size={19}
-                className="admin-work-arrow"
-                aria-hidden="true"
-              />
-            </Link>
-          ))}
-        </div>
+    <div className="admin-overview overview">
+      <AdminPageHeader
+        eyebrow={formatBangkokLongDate(now)}
+        title="Overview"
+        description={
+          <Suspense fallback={<OverviewSummarySkeleton />}>
+            <SummarySection queues={queues} shift={shift} now={now} />
+          </Suspense>
+        }
+        actions={<OverviewRefreshButton />}
+      />
+
+      <section className="overview-kpis" aria-labelledby="overview-kpis-title">
+        <h2 id="overview-kpis-title" className="sr-only">
+          Key numbers
+        </h2>
+        <Suspense fallback={<KpiRowSkeleton />}>
+          <KpiSection kpis={kpis} />
+        </Suspense>
       </section>
-      <footer className="admin-overview-footer">
-        <p>Looking for another tool? Find it in the navigation.</p>
-        <Link href="/admin/users" className="admin-quiet-link">
-          Manage users <ArrowUpRight size={15} />
-        </Link>
-      </footer>
+
+      <div className="overview-columns">
+        <section
+          id="attention"
+          className="overview-section overview-area-attention"
+          aria-labelledby="overview-attention-title"
+        >
+          <div className="admin-section-heading">
+            <h2 id="overview-attention-title">Needs attention</h2>
+            <span>Most urgent first</span>
+          </div>
+          <Suspense
+            fallback={<AdminLoading rows={3} rowClassName="h-20" label="Loading work queues" />}
+          >
+            <AttentionSection queues={queues} />
+          </Suspense>
+        </section>
+        {/* The topbar "Needs you" link lands here after the loading skeleton. */}
+        <ScrollToHash id="attention" />
+
+        <section
+          className="overview-section overview-area-shift"
+          aria-labelledby="overview-shift-title"
+        >
+          <div className="admin-section-heading">
+            <h2 id="overview-shift-title">SHIFT</h2>
+            <span>Current round</span>
+          </div>
+          <Suspense
+            fallback={<AdminLoading rows={4} rowClassName="h-16" label="Loading SHIFT numbers" />}
+          >
+            <ShiftSection shift={shift} now={now} />
+          </Suspense>
+        </section>
+
+        <section
+          className="overview-section overview-area-activity"
+          aria-labelledby="overview-activity-title"
+        >
+          <div className="admin-section-heading">
+            <h2 id="overview-activity-title">Recent activity</h2>
+            <span>Bangkok time</span>
+          </div>
+          <Suspense
+            fallback={<AdminLoading rows={5} rowClassName="h-12" label="Loading recent activity" />}
+          >
+            <ActivitySection activity={activity} now={now} />
+          </Suspense>
+        </section>
+      </div>
     </div>
   );
 }

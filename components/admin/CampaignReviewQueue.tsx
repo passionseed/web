@@ -9,6 +9,7 @@ import {
   skipCampaignTargetAction,
 } from "@/app/admin/dm-leads/campaign/actions";
 import { ChatAppLink } from "@/components/admin/ChatAppLink";
+import { pageShortcutsPaused } from "@/components/admin/shared/page-shortcuts";
 import { GATE_REASON_LABELS, type GateReason } from "@/lib/dm-leads/send-gate";
 import type { CampaignQueueItem } from "@/lib/supabase/dm-campaigns";
 
@@ -76,6 +77,7 @@ export function CampaignReviewQueue({
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      if (pageShortcutsPaused(event)) return;
       const target = event.target as HTMLElement | null;
       const typing =
         target?.tagName === "TEXTAREA" || target?.tagName === "INPUT";

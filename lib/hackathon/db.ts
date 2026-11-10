@@ -83,7 +83,7 @@ export async function createSession(participantId: string, token: string) {
   if (error) throw error;
 }
 
-export async function getSessionParticipant(token: string, client?: ReturnType<typeof createClient>): Promise<HackathonParticipant | null> {
+export async function getSessionParticipant(token: string, client?: ReturnType<typeof getClient>): Promise<HackathonParticipant | null> {
   const now = new Date().toISOString();
   const { data } = await (client ?? getClient())
     .from("hackathon_sessions")
@@ -196,6 +196,14 @@ export async function joinTeam(lobbyCode: string, participantId: string): Promis
     .eq("lobby_code", lobbyCode.toUpperCase())
     .single();
   if (findError || !team) throw new Error("Invalid lobby code");
+
+  const [{ data: membership, error: membershipError }, { count, error: countError }] = await Promise.all([
+    supabase.from("hackathon_team_members").select("team_id").eq("participant_id", participantId).limit(1),
+    supabase.from("hackathon_team_members").select("participant_id", { count: "exact", head: true }).eq("team_id", team.id),
+  ]);
+  if (membershipError || countError || count === null) throw new Error("Could not verify team membership");
+  if (membership?.length) throw new Error("Already in a team");
+  if (count >= 5) throw new Error("ทีมเต็มแล้ว (5 คน)");
 
   // Fetch leader and joiner tracks to enforce same-track rule
   const [{ data: leader }, { data: joiner }] = await Promise.all([
@@ -636,6 +644,11 @@ export async function updateParticipantPassword(participantId: string, passwordH
     .from("hackathon_participants")
     .update({ password_hash: passwordHash })
     .eq("id", participantId);
+  if (error) throw error;
+}
+
+export async function revokeParticipantSessions(participantId: string) {
+  const { error } = await getClient().from("hackathon_sessions").delete().eq("participant_id", participantId);
   if (error) throw error;
 }
 

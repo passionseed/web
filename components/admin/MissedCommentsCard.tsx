@@ -11,6 +11,7 @@ import {
   type BulkRunResult,
 } from "@/app/admin/ig-comments/actions";
 import { getBatchCap } from "@/app/admin/ig-comments/constants";
+import { refreshAdminCounts } from "@/components/admin/console/live-counts";
 import { CAMPAIGN_KEYS, type CampaignKey } from "@/lib/meta/comment-intent";
 
 export interface MissedCommentItem {
@@ -218,14 +219,17 @@ export function MissedCommentsCard({
       }
     } finally {
       setRunning(false);
-      if (!dryRun) router.refresh();
+      if (!dryRun) {
+        router.refresh();
+        refreshAdminCounts();
+      }
     }
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Missed by DM — {counts.all} unreplied</CardTitle>
+        <CardTitle>Missed by DM: {counts.all} unreplied</CardTitle>
         <CardDescription>
           Commenters who asked for something and never got a reply. Pick a campaign, choose how
           to reach them, and edit the message if you want. Sends {batchSize} at a time until the
@@ -344,7 +348,7 @@ export function MissedCommentsCard({
         <ul className="max-h-60 divide-y overflow-y-auto rounded-md border text-sm">
           {visible.map((comment) => (
             <li key={comment.id} className="flex items-baseline justify-between gap-3 px-3 py-2">
-              <span className="shrink-0 font-medium">{comment.username ?? "—"}</span>
+              <span className="shrink-0 font-medium">{comment.username ?? <span className="text-muted-foreground">–</span>}</span>
               <span className="flex-1 truncate text-muted-foreground">{comment.text}</span>
               <span className="shrink-0 text-xs text-muted-foreground">
                 {daysAgo(comment.commented_at)}d ago
@@ -451,7 +455,7 @@ export function MissedCommentsCard({
         ) : confirming ? (
           <div className="flex items-center gap-2">
             <Button onClick={() => run(false)}>
-              Confirm — {MODE_LABEL[mode].toLowerCase()} to {visible.length}
+              Confirm: {MODE_LABEL[mode].toLowerCase()} to {visible.length}
             </Button>
             <Button variant="outline" onClick={() => setConfirming(false)}>
               Cancel
