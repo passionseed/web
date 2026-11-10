@@ -1,4 +1,5 @@
 {
+  "fluid": true,
   "headers": [
     {
       "source": "/data/hackathon/problems/(.*)",

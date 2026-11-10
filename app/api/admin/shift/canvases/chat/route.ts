@@ -5,8 +5,8 @@ import { canvasChatRequestSchema, MAX_CONTEXT_CHARS } from "@/lib/shift/canvas-c
 import { streamCanvasAnswer } from "@/lib/shift/canvas-claude";
 import { canvasContext } from "@/lib/supabase/shift-canvases";
 
-// Vercel Hobby without fluid compute stops a function at 60 seconds; answers are sized to fit.
-export const maxDuration = 60;
+// Fluid compute (vercel.json) gives Hobby up to 300 seconds; a long answer at medium effort fits well inside.
+export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
 /**

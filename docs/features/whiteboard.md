@@ -275,9 +275,10 @@ Both pages have **Ask Claude**: a summary button and a chat about one canvas or 
   the database (`lib/supabase/shift-canvases.ts`, service role), so a request cannot add text
   of its own.
 - **Model:** `lib/shift/canvas-claude.ts` calls `claude-opus-5-5` with the official SDK
-  (`@anthropic-ai/sdk`, `ANTHROPIC_API_KEY`) and streams plain text. Effort is low and answers are
-  capped at 4,000 tokens: the project is on Vercel Hobby without fluid compute, so the route
-  stops at 60 seconds. Turning on fluid compute would allow 300.
+  (`@anthropic-ai/sdk`, `ANTHROPIC_API_KEY`, stored as Sensitive in Vercel for Production and
+  Preview) and streams plain text, at medium effort with answers capped at 8,000 tokens. The
+  project is on Vercel Hobby, and `"fluid": true` in `vercel.json` turns on fluid compute, which
+  allows the route its 300 seconds (without it, Hobby stops functions at 60).
 - **Refusals:** the server-side fallback (`fallbacks: "default"`) retries a refusal on the model
   Anthropic recommends.
 - **Caching:** the canvases sit in a cached system block, so follow-up questions cost a fraction

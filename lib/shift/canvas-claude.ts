@@ -10,10 +10,11 @@ import type { ChatMessage } from "./canvas-chat";
 export const CANVAS_MODEL = "claude-opus-5-5";
 
 /**
- * Keeps each answer inside the route's 60-second limit (Vercel Hobby without
- * fluid compute): low effort, and a cap on length that the prompt also asks for.
+ * A cap well above what the prompt asks for (about 250 words), so answers end
+ * on their own; at medium effort even the cap finishes inside the route's
+ * 300 seconds.
  */
-const MAX_TOKENS = 4000;
+const MAX_TOKENS = 8000;
 
 const INSTRUCTIONS = `You help PassionSeed staff (SHIFT mentors and admins) understand students' project canvases. SHIFT is a 7-day program where teenagers build a real project. Each student or team keeps one canvas on a shared whiteboard, laid out like a Business Model Canvas:
 
@@ -76,7 +77,7 @@ export function streamCanvasAnswer(context: string, messages: ChatMessage[]): Re
         stream = client.beta.messages.stream({
           model: CANVAS_MODEL,
           max_tokens: MAX_TOKENS,
-          output_config: { effort: "low" },
+          output_config: { effort: "medium" },
           // When a safety classifier declines, the API retries on the model Anthropic recommends.
           betas: ["server-side-fallback-2026-07-01"],
           fallbacks: "default",
