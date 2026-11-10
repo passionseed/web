@@ -13,6 +13,7 @@ import {
   projectCanvasSkeleton,
   zoneSlot,
   readVersions,
+  settleVersions,
   SHIFT_CARD_KINDS,
   SHIFT_CARDS,
   shiftCardSkeleton,
@@ -165,6 +166,35 @@ describe("card versions", () => {
     expect(hasUnsavedEdit(data, "a")).toBe(false);
     expect(hasUnsavedEdit(data, "b")).toBe(true);
     expect(hasUnsavedEdit({}, "b")).toBe(false);
+  });
+});
+
+describe("settling versions (as Postgres keeps them)", () => {
+  const ME = "00000000-0000-4000-8000-000000000001";
+  const YOU = "00000000-0000-4000-8000-000000000002";
+  const now = Date.parse("2026-11-10T12:00:00.000Z");
+  const entry = (v: number, extra: Record<string, unknown> = {}) => ({ v, text: `v${v}`, at: "2026-11-10T11:59:00.000Z", by: ME, ...extra });
+
+  it("leaves elements without versions alone", () => {
+    expect(settleVersions({ card: "idea" }, { card: "idea" }, false, ME, now)).toBeUndefined();
+    expect(settleVersions(null, undefined, true, ME, now)).toBeUndefined();
+  });
+
+  it("adds each number once, in order, and keeps the newest 20", () => {
+    const saved = { versions: Array.from({ length: 19 }, (_, i) => entry(i + 1)) };
+    const incoming = { versions: [...saved.versions, entry(21), entry(20), entry(20, { text: "again" }), { v: "x" }] };
+    const out = settleVersions(saved, incoming, false, ME, now)!;
+    expect(out.map((v) => v.v)).toEqual(Array.from({ length: 20 }, (_, i) => i + 2));
+    expect(out.find((v) => v.v === 20)?.text).toBe("v20");
+  });
+
+  it("stamps new entries on an existing note with the person saving", () => {
+    const [, added] = settleVersions({ versions: [entry(1)] }, { versions: [entry(1), entry(2, { by: YOU })] }, false, ME, now)!;
+    expect(added).toEqual(entry(2));
+  });
+
+  it("ignores version numbers out of range", () => {
+    expect(readVersions({ versions: [entry(1_000_001), entry(0), entry(1.5)] })).toEqual([]);
   });
 });
 

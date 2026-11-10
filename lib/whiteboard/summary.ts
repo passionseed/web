@@ -27,6 +27,7 @@ type El = {
   customData?: {
     createdBy?: unknown;
     updatedBy?: unknown;
+    originalBy?: unknown;
     card?: unknown;
     versions?: unknown;
     project?: unknown;
@@ -47,6 +48,8 @@ export type SummaryItem = {
   /** User ids from customData (see stampAuthor); absent on elements from before it existed. */
   createdBy?: string;
   updatedBy?: string;
+  /** Who a pasted element said wrote it (customData.originalBy). Not checked: createdBy is whoever pasted it. */
+  originalBy?: string;
   /** A room card or SHIFT card kind (customData.card). */
   card?: string;
   /** Saved versions of a SHIFT card, oldest first. */
@@ -116,7 +119,12 @@ export function summarizeElements(raw: unknown[]): BoardSummary {
     const pick = (v: unknown) => (typeof v === "string" ? v : undefined);
     const createdBy = pick(source?.createdBy);
     const updatedBy = pick(source?.updatedBy);
-    return { ...(createdBy ? { createdBy } : {}), ...(updatedBy ? { updatedBy } : {}) };
+    const originalBy = pick(source?.originalBy);
+    return {
+      ...(createdBy ? { createdBy } : {}),
+      ...(updatedBy ? { updatedBy } : {}),
+      ...(originalBy ? { originalBy } : {}),
+    };
   };
 
   // Areas: frames, SHIFT canvas zones, plus big unlabelled rectangles with something inside.
@@ -250,6 +258,7 @@ export function authorIds(summary: BoardSummary): string[] {
   for (const i of [...summary.areas.flatMap((a) => a.items), ...summary.loose]) {
     if (i.createdBy) ids.add(i.createdBy);
     if (i.updatedBy) ids.add(i.updatedBy);
+    if (i.originalBy) ids.add(i.originalBy);
     for (const v of i.history ?? []) ids.add(v.by);
   }
   return [...ids];
@@ -270,10 +279,11 @@ function itemLine(i: SummaryItem, names: Map<string, string>) {
   const name = (id?: string) => (id ? (names.get(id) ?? "someone") : undefined);
   const by = name(i.createdBy);
   const edited = i.updatedBy && i.updatedBy !== i.createdBy ? name(i.updatedBy) : undefined;
-  const credit = by ? ` (by ${by}${edited ? `, edited by ${edited}` : ""})` : "";
+  const original = i.originalBy && i.originalBy !== i.createdBy ? name(i.originalBy) : undefined;
+  const credit = by ? ` (by ${by}${original ? `, copied from ${original}` : ""}${edited ? `, edited by ${edited}` : ""})` : "";
   const history = (i.history ?? []).map(
     (v) =>
-      `  - v${v.v} ${v.at.slice(0, 10)}${name(v.by) ? ` by ${name(v.by)}` : ""}: ${oneLine(v.text)}${v.why ? ` (why: ${oneLine(v.why)})` : ""}`,
+      `  - v${v.v} ${v.at.slice(0, 10)}${name(v.by) ? ` by ${name(v.by)}` : ""}${v.copied ? " (copied)" : ""}: ${oneLine(v.text)}${v.why ? ` (why: ${oneLine(v.why)})` : ""}`,
   );
   return [`- ${body}${credit}`, ...history].join("\n");
 }

@@ -13,6 +13,12 @@ export const LINK_ACCESS: readonly LinkAccess[] = ["none", "view", "edit"];
 export const MAX_ELEMENTS = 20000;
 export const MAX_FILE_DATA_URL = 4_000_000;
 export const MAX_THUMBNAIL = 400_000;
+/**
+ * How far one save may raise an element's version past the saved copy. Excalidraw adds one per
+ * change, so real edits never come close; without a limit, one person could push an element out
+ * of reach of everyone's later edits. Postgres applies the same limit (whiteboard_merge_elements).
+ */
+export const MAX_VERSION_JUMP = 1_000_000;
 
 export const canEdit = (role: WhiteboardRole | null): boolean => role === "owner" || role === "editor";
 export const canManage = (role: WhiteboardRole | null): boolean => role === "owner";
@@ -42,7 +48,7 @@ export const titleSchema = z
 export const elementSchema = z
   .object({
     id: z.string().min(1).max(100),
-    version: z.number().int().nonnegative(),
+    version: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
     type: z.string().max(40).optional(),
     isDeleted: z.boolean().optional(),
     frameId: z.string().max(100).nullable().optional(),
@@ -72,6 +78,9 @@ export const patchBoardSchema = z
   })
   .strict();
 export type PatchBoard = z.infer<typeof patchBoardSchema>;
+
+/** Saved copies of some elements, to check live edits to SHIFT canvases against the database. */
+export const elementIdsSchema = z.object({ ids: z.array(z.string().min(1).max(100)).min(1).max(500) }).strict();
 
 export const createBoardSchema = z.object({ title: titleSchema.optional() }).strict();
 

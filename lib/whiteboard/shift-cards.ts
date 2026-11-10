@@ -387,12 +387,20 @@ export function zoneSlot(zone: Box, obstacles: readonly Box[], count = 0): { x: 
 // ---------------------------------------------------------------------------
 // Versions
 
-export type CardVersion = { v: number; text: string; at: string; by: string; why?: string };
+/**
+ * One saved version of a note. `copied` marks versions that came with a note pasted from
+ * elsewhere: their author and time are what the copy said, not checked by the database.
+ */
+export type CardVersion = { v: number; text: string; at: string; by: string; why?: string; copied?: true };
 
 export const MAX_VERSIONS = 20;
 /** Longer than any card a person writes by hand; anything past it is not kept in a version. */
 export const MAX_VERSION_TEXT = 5000;
 export const MAX_WHY = 280;
+/** Version numbers stay at or below this; anything higher is malformed. */
+export const MAX_VERSION_NUMBER = 1_000_000;
+/** A version written within this long of now counts as written just now (whiteboard_card_versions). */
+export const FRESH_VERSION_MS = 10 * 60 * 1000;
 
 const isVersion = (x: unknown): x is CardVersion => {
   const v = x as CardVersion;
@@ -401,6 +409,7 @@ const isVersion = (x: unknown): x is CardVersion => {
     typeof v === "object" &&
     Number.isInteger(v.v) &&
     v.v > 0 &&
+    v.v <= MAX_VERSION_NUMBER &&
     typeof v.text === "string" &&
     typeof v.at === "string" &&
     typeof v.by === "string" &&
@@ -412,6 +421,49 @@ const isVersion = (x: unknown): x is CardVersion => {
 export function readVersions(customData: unknown): CardVersion[] {
   const list = (customData as { versions?: unknown } | null | undefined)?.versions;
   return Array.isArray(list) ? list.filter(isVersion) : [];
+}
+
+/** Cuts text to `max` characters, counted the way Postgres counts them (code points). */
+const cut = (text: string, max: number) => (text.length <= max ? text : Array.from(text).slice(0, max).join(""));
+
+/** An ISO time as browsers write it (Date.toISOString), within FRESH_VERSION_MS of `now`. */
+const ISO_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,6})?)?(Z|[+-]\d{2}:\d{2})$/;
+const isFresh = (at: string, now: number) => ISO_TIME.test(at) && Math.abs(Date.parse(at) - now) <= FRESH_VERSION_MS;
+
+/**
+ * A note's versions after a change, as the database keeps them (whiteboard_card_versions in
+ * Postgres runs the same rule on every save), or undefined when neither copy has any.
+ *
+ * Versions only grow: the saved entries stay exactly as they are, and incoming entries numbered
+ * above the newest saved one are added. On an existing note a new entry is by `userId`, at its
+ * own time when that is within FRESH_VERSION_MS of `now` (at `now` otherwise). On a new note (a
+ * paste from elsewhere) entries keep their author and time and are marked copied, unless
+ * `userId` wrote them just now. The newest MAX_VERSIONS are kept.
+ */
+export function settleVersions(
+  saved: unknown,
+  incoming: unknown,
+  isNew: boolean,
+  userId: string,
+  now = Date.now(),
+): CardVersion[] | undefined {
+  const listOf = (data: unknown) => (data as { versions?: unknown } | null | undefined)?.versions;
+  if (!Array.isArray(listOf(saved)) && !Array.isArray(listOf(incoming))) return undefined;
+  const kept = isNew ? [] : readVersions(saved);
+  const newest = kept.reduce((max, v) => Math.max(max, v.v), 0);
+  const numbers = new Set<number>();
+  const added = readVersions(incoming)
+    .map((version, order) => ({ version, order }))
+    .filter(({ version }) => version.v > newest)
+    .sort((a, b) => a.version.v - b.version.v || a.order - b.order)
+    .filter(({ version }) => !numbers.has(version.v) && Boolean(numbers.add(version.v)))
+    .map(({ version: v }): CardVersion => {
+      const fresh = isFresh(v.at, now);
+      const base = { v: v.v, text: cut(v.text, MAX_VERSION_TEXT), ...(v.why === undefined ? {} : { why: cut(v.why, MAX_WHY) }) };
+      if (isNew) return { ...base, at: v.at, by: v.by, ...(fresh && v.by === userId ? {} : { copied: true as const }) };
+      return { ...base, at: fresh ? v.at : new Date(now).toISOString(), by: userId };
+    });
+  return [...kept, ...added].slice(-MAX_VERSIONS);
 }
 
 /** The text a version keeps: trimmed and cut to MAX_VERSION_TEXT. */

@@ -39,18 +39,23 @@ again afterwards.
 | Piece | Where |
 |---|---|
 | Pages | `app/whiteboard/` (list, board, share link) |
-| API | `app/api/whiteboards/` |
+| API | `app/api/whiteboards/` (`[id]/elements` returns saved copies of elements, for SHIFT canvas live edits) |
 | Database access | `lib/supabase/whiteboards.ts` (role check, then service role) |
 | Pure logic and schemas | `lib/whiteboard/core.ts`, `lib/whiteboard/templates.ts` |
 | Editor and sync | `components/whiteboard/` (`useWhiteboardSync.ts` is the core) |
-| Schema | `supabase/migrations/20261023120000_whiteboards.sql`, `20261025120000_whiteboard_changes.sql` |
+| Schema | `supabase/migrations/*whiteboard*.sql` (`20261023120000_whiteboards.sql` first) |
+| SQL checks | `pnpm test:whiteboard-sql` (`scripts/whiteboard-sql-check.ts`): every whiteboard migration in a throwaway Docker Postgres, run against the cases in `lib/whiteboard/canvas-trust.cases.ts`; also a CI job |
 | Link previews | `lib/og/whiteboard.tsx`, `app/whiteboard/**/opengraph-image.tsx` |
 
 - **Tables** (`whiteboards`, `whiteboard_members`, `whiteboard_files`, `whiteboard_versions`,
   `whiteboard_comments`) are admin-only under RLS. Routes check the caller's role with
   `guardBoard`, then use the service role, like the alumni board.
 - **Saving:** clients send only changed elements. `whiteboard_merge_elements` merges them
-  atomically (highest element version wins) and takes the automatic snapshots.
+  atomically (highest element version wins) and takes the automatic snapshots. One save may
+  raise an element's version by at most 1,000,000 (`MAX_VERSION_JUMP`), so no one can push an
+  element out of reach of later edits. The merge answers with `{ corrected, dropped }`: elements
+  it kept differently from how they were sent (owners, authors, note versions) and ids it left
+  out. The saver's browser puts its copy right from that answer, where nothing changed since.
 - **Realtime:** a private Supabase channel `whiteboard:<id>`, authorised by RLS on
   `realtime.messages`. Viewers may only send `cursor` events and presence, so cursors and the
   follow-mode viewport share the `cursor` event. Follow state lives in presence, one entry per
@@ -68,8 +73,12 @@ again afterwards.
   lookup tables up to date one element at a time, so checking an edit costs the size of the
   edit. Each zone's title and question are one label, half the elements per canvas.
 - **Authorship:** every element carries `customData.createdBy` and `customData.updatedBy`
-  (user ids), recorded from 2026-10-24. The server sets `updatedBy` on save. Elements from
-  before then have no author.
+  (user ids), recorded from 2026-10-24. The server sets `updatedBy` on save, and Postgres keeps
+  `createdBy` from the saved copy (from 2026-11-10; before that a client could rewrite it).
+  Something new is created by whoever saves it; if it claims another author (a paste, or a sticky
+  someone nudged before its maker's save arrived) that name is kept as `customData.originalBy`,
+  shown as "copied from" and never checked, and that person's own next save takes the element
+  back. Elements from before 2026-10-24 have no author until someone edits them.
 - **Change history:** `whiteboard_merge_elements` also writes one `whiteboard_changes` row per
   save (from 2026-10-25): which elements the saver added, edited (with the old text), moved or
   restyled, or deleted. The saver is the `customData.updatedBy` the API stamps. Admins see it in
@@ -163,31 +172,56 @@ Canvas, so mentors (and an AI reading the board) can follow each student without
 - **Versions** on Problem, Target, Idea and Ship notes: select the note, click its chip, and
   **เก็บเป็น vN** saves the note's text (up to 5,000 characters), time, author and an optional
   reason (**เปลี่ยนเพราะ**) into `customData.versions` (newest 20 kept, numbers never reused). It
-  syncs, undoes, and travels with the note like any edit, with no extra table. The history
-  panel (a `.wb-window` dialog on the board's `--wb-*` tokens) marks lines new since the
-  version before. Every save is also in `whiteboard_changes`, but that is cut to 200
-  characters and records half-typed text, so it is an audit trail rather than versions.
+  syncs and travels with the note like any edit, with no extra table. Versions only grow, so
+  they can serve as evidence: Postgres (`whiteboard_card_versions`) keeps saved entries exactly
+  as they were, and stamps each new one with the person saving and a checked time (theirs if
+  within 10 minutes of the server's, else the server's). Undo cannot remove a version. A pasted
+  note keeps its versions, marked `copied` (**คัดลอกมา**, "(copied)" in reads) unless the paster
+  just wrote them. The history panel (a `.wb-window` dialog on the board's `--wb-*` tokens)
+  marks lines new since the version before. Every save is also in `whiteboard_changes`, but that
+  is cut to 200 characters and records half-typed text, so it is an audit trail rather than
+  versions.
 - **Who may change a canvas** (`lib/whiteboard/canvas-access.ts`): a canvas belongs to whoever
   made it (`customData.owner`). They pick teammates from the board's editors with the
-  **ทีม** tag above the canvas (`customData.editors`, `CanvasTeamLayer`); the board's owner (staff)
-  may change any canvas, to moderate. Everyone else sees **ดูอย่างเดียว · ของ <name>** (view only)
-  and no **+ เพิ่ม** buttons. The rule runs in three places:
-  - **Postgres** (`whiteboard_merge_elements`, migration `20261109120000_whiteboard_canvas_access.sql`):
-    the one that counts. Changes the saver may not make (moving, editing, deleting, or adding
-    anything in the canvas, including stripping a note's frame first) are left out of the merge.
-    A new canvas belongs to whoever saves it. Teammates may rename, move and resize its frame,
-    but only its owner or the board's owner can change its team, delete it, bring it back,
-    change its type or its project tag. A deleted canvas keeps its owner.
+  **ทีม** tag above the canvas (`customData.editors`, `CanvasTeamLayer`), and can hand the canvas
+  to one of them (**ให้เป็นเจ้าของ**, two clicks; the old owner stays on the team). Moderators
+  (the board's owner and site admins who are on the board, `managerIds` from `loadBoard`) may
+  change any canvas and hand it over. Owners and teammates must be people on the board.
+  Everyone else sees **ดูอย่างเดียว · ของ <name>** (view only) and no **+ เพิ่ม** buttons. The rule
+  runs in three places:
+  - **Postgres** (`whiteboard_merge_elements`, migrations `20261109120000_whiteboard_canvas_access.sql`
+    and `20261110120000_whiteboard_canvas_trust.sql`): the one that counts. Changes the saver may
+    not make (moving, editing, deleting, or adding anything in the canvas, including stripping a
+    note's frame first or moving its text to another note) are left out of the merge. A new canvas
+    belongs to whoever saves it. Teammates may rename, move and resize its frame, but only its
+    owner or a moderator can change its team or owner, delete it, bring it back, change its type
+    or its project tag. A deleted canvas keeps its owner. An existing plain frame becomes a canvas
+    only by a moderator, or by its creator when nothing of anyone else's is inside (a canvas locks
+    others out of what is in it).
   - **This browser** (`lib/whiteboard/canvas-guard.ts` in `useWhiteboardSync`): an edit you may not
-    make is undone at once with a short notice, and a new canvas gets its owner.
-  - **Live edits from others**: changes from outside a canvas's team (or a forged owner or team)
-    are ignored. A determined student could still forge their name on a live edit; it shows only
-    until the next reload, because the save is checked by Postgres.
+    make is undone at once with a short notice, a new canvas gets its owner, and a removed note
+    version comes back. What only Postgres knows (who is on the board, who started a project)
+    arrives in its answer to the save.
+  - **Live edits from others**: a live edit says who sent it, but the sender writes that, so it
+    proves nothing. Live edits that touch a canvas are not shown as they arrive: the browser waits
+    for the sender's `saved` notice (or 6 seconds) and then shows the copy Postgres saved
+    (`POST /api/whiteboards/<id>/elements`). An element that has touched a canvas stays on this
+    path for the session, so a fake live edit cannot move it out first. So teammates see each
+    other's canvas edits a moment after the writer pauses (the save waits 1.2 seconds for typing to
+    stop), not keystroke by keystroke. Cursors and everything outside canvases stay live. The cost:
+    two teammates changing the same element within those seconds (one drags the canvas while the
+    other types in a note on it) are more likely to overwrite each other, since the element with
+    more changes wins.
   Canvases from before owners existed fall back to their creator. Things lying on top of a
   canvas without being in it are not read as part of the project.
-- **Projects across boards:** the project id survives copying a canvas to another board, so a
-  project can continue from a SHIFT board onto the SHIFT High board. Two frames with the same
-  id on one board (a copy-paste) are separate projects.
+- **Projects across boards:** `whiteboard_projects` records who started each project id. The id
+  survives copying a canvas to another board when its starter (or a site admin) saves the copy,
+  so a project can continue from a SHIFT board onto the SHIFT High board; a site admin's copy
+  stays the starter's. Anyone else's copy becomes a new project with a new id, so a project id
+  always means one student's work. A board's owner moderates canvases on that board only: anyone
+  owns the boards they make or duplicate, so owning a board gives no power over projects. When the
+  starter (or a site admin) hands a canvas over, its project goes too. Two frames with the same id
+  on one board (a copy-paste) are separate canvases of one project.
 - **Reading:** `pnpm whiteboard:read <id>` prints each canvas as `## [SHIFT project] <name>`
   with a `###` section per zone, notes as `[🎤 สัมภาษณ์] ...`, and each version with its
   reason. Zone labels and the canvas hint are left out.
