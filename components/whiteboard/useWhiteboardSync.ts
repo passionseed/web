@@ -95,7 +95,14 @@ const IMAGE_CONCURRENCY = 5;
 const BROADCAST_MS = 60;
 const CURSOR_MS = 40;
 const VIEWPORT_MS = 80;
-const SAVE_DEBOUNCE_MS = 1200;
+/**
+ * Saves wait for this much quiet. Everyone sees edits live over realtime anyway, and unsaved
+ * edits are backed up in localStorage, so a save only needs to land eventually. Each save
+ * locks and rewrites the whole board row, and saves on one board run one at a time, so on a
+ * big board with a full class drawing, saving every 1.2s queued them into statement timeouts
+ * (Shift[3], 2026-11-10: 5.8 MB of elements, about 18 people).
+ */
+const SAVE_DEBOUNCE_MS = 3000;
 const THUMBNAIL_MS = 20_000;
 /** Thumbnails wait until nobody here has edited for this long, so export never stalls a stroke. */
 const THUMBNAIL_QUIET_MS = 3000;
