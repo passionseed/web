@@ -3,15 +3,15 @@
 import { CaptureUpdateAction, newElementWith, sceneCoordsToViewportCoords } from "@excalidraw/excalidraw";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
-import { Lock, Users, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Lock, Users } from "lucide-react";
+import { useState } from "react";
 
 import { accessOf, canEditCanvas, cleanEditors, type CanvasAccess } from "@/lib/whiteboard/canvas-access";
 
 import { useViewportTick } from "../CommentsLayer";
+import { WHEEL_THROUGH } from "../wheelBridge";
 import { isBusy, useSceneMemo } from "./sceneMemo";
-
-type Person = { userId: string; name: string; role: string };
+import { type Person, TeamPanel } from "./TeamPanel";
 
 type Props = {
   api: ExcalidrawImperativeAPI;
@@ -21,6 +21,8 @@ type Props = {
   /** Everyone on the board, to pick teammates from. */
   people: Person[];
   nameOf: (id: string) => string;
+  /** Opens the share dialog to invite people to the board (its owner only). */
+  onInvite?: () => void;
 };
 
 /** Zoomed out further than this, the tags would crowd an overview of many canvases. */
@@ -45,7 +47,7 @@ function setAccess(api: ExcalidrawImperativeAPI, frameId: string, access: Partia
  * can hand the canvas to one of them; everyone else sees it is view-only and
  * whom to ask.
  */
-export function CanvasTeamLayer({ api, meId, manager, people, nameOf }: Props) {
+export function CanvasTeamLayer({ api, meId, manager, people, nameOf, onInvite }: Props) {
   useViewportTick(api, { elements: true });
   const [openId, setOpenId] = useState<string | null>(null);
   const frames = useSceneMemo(api, (elements) =>
@@ -66,7 +68,7 @@ export function CanvasTeamLayer({ api, meId, manager, people, nameOf }: Props) {
 
   return (
     <>
-      <div className="pointer-events-none absolute inset-0 z-[2] overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 z-[2] overflow-hidden" {...WHEEL_THROUGH}>
         {canvases.map(({ frame, access, pos, mine }) => (
           <button
             key={frame.id}
@@ -107,106 +109,16 @@ export function CanvasTeamLayer({ api, meId, manager, people, nameOf }: Props) {
               setAccess(api, open.frame.id, { owner, editors: cleanEditors([...open.access.editors, open.access.owner], owner) })
             }
             onClose={() => setOpenId(null)}
+            onInvite={
+              onInvite &&
+              (() => {
+                setOpenId(null);
+                onInvite();
+              })
+            }
           />
         )}
       </div>
     </>
-  );
-}
-
-function TeamPanel(props: {
-  access: CanvasAccess;
-  at: { x: number; y: number };
-  canManage: boolean;
-  people: Person[];
-  nameOf: (id: string) => string;
-  onChange: (editors: string[]) => void;
-  onTransfer: (owner: string) => void;
-  onClose: () => void;
-}) {
-  const { access, at, canManage, people, nameOf, onChange, onTransfer, onClose } = props;
-  const panel = useRef<HTMLDivElement>(null);
-  // Handing a canvas over takes two clicks: the first asks, the second does it.
-  const [handingTo, setHandingTo] = useState<string | null>(null);
-
-  useEffect(() => {
-    panel.current?.querySelector<HTMLElement>("input, button")?.focus();
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && panel.current?.contains(e.target as Node)) onClose();
-    };
-    window.addEventListener("keydown", onKey, { capture: true });
-    return () => window.removeEventListener("keydown", onKey, { capture: true });
-  }, [onClose]);
-
-  // Teammates come from the board's editors; its owner can already change every canvas.
-  const candidates = people.filter((p) => p.role === "editor" && p.userId !== access.owner);
-  const width = Math.min(300, (typeof window !== "undefined" ? window.innerWidth : 1200) - 24);
-  const left = Math.min(Math.max(at.x - width, 12), (typeof window !== "undefined" ? window.innerWidth : 1200) - width - 12);
-  const top = Math.max(at.y + 8, 12);
-
-  return (
-    <div
-      ref={panel}
-      role="dialog"
-      aria-label="ทีมของแคนวาสนี้"
-      className="wb-window wb-version-panel pointer-events-auto absolute flex flex-col"
-      style={{ left, top, width, maxHeight: `calc(100vh - ${top + 12}px)` }}
-      onPointerDown={(e) => e.stopPropagation()}
-      onKeyDown={(e) => e.stopPropagation()}
-    >
-      <div className="wb-rule flex items-center justify-between border-b px-3 py-2">
-        <p className="text-sm font-semibold">ทีมของแคนวาสนี้</p>
-        <button type="button" onClick={onClose} aria-label="ปิด · Close" className="wb-soft rounded-md p-1.5 hover:bg-black/5">
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-      <div className="min-h-0 flex-1 space-y-1 overflow-y-auto p-3 text-sm">
-        <p className="flex items-center justify-between">
-          <span className="font-medium">{nameOf(access.owner)}</span>
-          <span className="wb-soft text-xs">เจ้าของ</span>
-        </p>
-        {canManage ? (
-          candidates.length === 0 ? (
-            <p className="wb-soft pt-1 text-xs">ยังไม่มีเพื่อนบนบอร์ดนี้ ชวนเพื่อนเข้าบอร์ดก่อน แล้วค่อยเลือกเข้าทีม</p>
-          ) : (
-            candidates.map((p) => (
-              <div key={p.userId} className="flex items-center justify-between gap-2 py-0.5">
-                <label className="flex min-w-0 flex-1 cursor-pointer items-center justify-between gap-2">
-                  <span className="truncate">{p.name}</span>
-                  <input
-                    type="checkbox"
-                    checked={access.editors.includes(p.userId)}
-                    onChange={(e) =>
-                      onChange(
-                        e.target.checked ? [...access.editors, p.userId] : access.editors.filter((id) => id !== p.userId),
-                      )
-                    }
-                    className="h-4 w-4 accent-orange-700"
-                  />
-                </label>
-                <button
-                  type="button"
-                  onClick={() => (handingTo === p.userId ? onTransfer(p.userId) : setHandingTo(p.userId))}
-                  onBlur={() => setHandingTo((id) => (id === p.userId ? null : id))}
-                  className="wb-soft shrink-0 rounded-md px-1.5 py-0.5 text-xs hover:bg-black/5"
-                >
-                  {handingTo === p.userId ? "กดอีกครั้งเพื่อยืนยัน" : "ให้เป็นเจ้าของ"}
-                </button>
-              </div>
-            ))
-          )
-        ) : (
-          <>
-            {access.editors.map((id) => (
-              <p key={id}>{nameOf(id)}</p>
-            ))}
-            <p className="wb-soft pt-1 text-xs">อยากช่วยแก้ ขอให้ {nameOf(access.owner)} เพิ่มคุณในทีม</p>
-          </>
-        )}
-      </div>
-      <p className="wb-rule wb-soft border-t px-3 py-2 text-xs">
-        คนในทีมแก้แคนวาสนี้ได้ คนอื่นบนบอร์ดดูได้อย่างเดียว เจ้าของส่งต่อแคนวาสให้เพื่อนในบอร์ดได้
-      </p>
-    </div>
   );
 }

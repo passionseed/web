@@ -8,6 +8,7 @@ import { canvasAccessMap, mayEditFrame } from "@/lib/whiteboard/canvas-access";
 import { isShiftCardKind, isZone, zoneTitle } from "@/lib/whiteboard/shift-cards";
 
 import { useViewportTick } from "../CommentsLayer";
+import { WHEEL_THROUGH } from "../wheelBridge";
 import { insertZoneNote } from "./insertShift";
 import { isBusy, useSceneMemo } from "./sceneMemo";
 
@@ -45,7 +46,7 @@ export function ZoneAddLayer({ api, meId, manager }: { api: ExcalidrawImperative
     });
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-[2] overflow-hidden">
+    <div className="pointer-events-none absolute inset-0 z-[2] overflow-hidden" {...WHEEL_THROUGH}>
       {buttons.map(({ id, title, pos, compact }) => (
         <button
           key={id}

@@ -46,6 +46,7 @@ import { ZoneAddLayer } from "./shift/ZoneAddLayer";
 import { ShareDialog } from "./ShareDialog";
 import { TimerWidget } from "./TimerWidget";
 import { useComments } from "./useComments";
+import { bridgeWheel } from "./wheelBridge";
 import { boardApi, useWhiteboardSync } from "./useWhiteboardSync";
 
 type Me = { id: string; name: string; avatarUrl: string | null; isAdmin?: boolean };
@@ -130,9 +131,13 @@ export default function WhiteboardCanvas({
   const windows = usePluginWindows(board.id);
   const [authorNames, setAuthorNames] = useState<Record<string, string>>({});
   const importInput = useRef<HTMLInputElement>(null);
+  const root = useRef<HTMLDivElement>(null);
   const theme = useRef<Theme>(initialData.appState.theme);
   // Excalidraw hands over its API before the initial scene loads; wait for the first change.
   const [sceneReady, setSceneReady] = useState(false);
+
+  // Wheel and pinch over chips and canvas names move the board, not the page.
+  useEffect(() => (root.current ? bridgeWheel(root.current) : undefined), []);
 
   // People who opened the board since this page loaded also show up in the list.
   const people = useMemo(() => {
@@ -371,7 +376,7 @@ export default function WhiteboardCanvas({
   );
 
   return (
-    <div className="whiteboard-root whiteboard-room fixed inset-0">
+    <div ref={root} className="whiteboard-root whiteboard-room fixed inset-0">
       <Excalidraw
         excalidrawAPI={sync.setExcalidrawAPI}
         initialData={initialData}
@@ -405,7 +410,14 @@ export default function WhiteboardCanvas({
           <EmoteLayer api={api} bursts={emotes.bursts} />
           {editable && <ZoneAddLayer api={api} meId={me.id} manager={isManager} />}
           <CardVersionsLayer api={api} meId={me.id} editable={editable} manager={isManager} nameOf={nameOf} />
-          <CanvasTeamLayer api={api} meId={me.id} manager={isManager} people={people} nameOf={nameOf} />
+          <CanvasTeamLayer
+            api={api}
+            meId={me.id}
+            manager={isManager}
+            people={people}
+            nameOf={nameOf}
+            onInvite={board.role === "owner" ? () => setShareOpen(true) : undefined}
+          />
           {me.isAdmin && showAuthors && <AuthorsLayer api={api} nameOf={nameOf} />}
           <PluginHost
             api={api}

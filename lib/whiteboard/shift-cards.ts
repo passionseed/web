@@ -138,6 +138,11 @@ export const isWritten = (kind: ShiftCardKind, text: string | null | undefined) 
 /** A note on the project canvas: sticky-sized, so a zone holds several side by side. */
 export const SHIFT_CARD_WIDTH = 240;
 export const SHIFT_CARD_HEIGHT = 200;
+/**
+ * A note's corner radius. Excalidraw sets text only 5px in from the edge, and its default 32px
+ * corner would curve over the first letters of a note that reads from the top-left.
+ */
+const NOTE_RADIUS = 10;
 
 /**
  * One note as a sticky in its kind's colour, tagged customData.card. It starts
@@ -164,7 +169,7 @@ export function shiftCardSkeleton(
     fillStyle: "solid",
     strokeWidth: 1,
     roughness: 0,
-    roundness: { type: 3 },
+    roundness: { type: 3, value: NOTE_RADIUS },
     customData: example ? { card: kind, example: true } : { card: kind },
     // A single space, not "": Excalidraw only creates the label (with this font and alignment) for non-empty text,
     // and a note without one gets the board's current font, often the hand-drawn one, when typing starts.

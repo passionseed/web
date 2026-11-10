@@ -24,6 +24,7 @@ import {
 import { canvasAccessMap, mayEditFrame } from "@/lib/whiteboard/canvas-access";
 
 import { useViewportTick } from "../CommentsLayer";
+import { WHEEL_THROUGH } from "../wheelBridge";
 import { isBusy, useSceneMemo } from "./sceneMemo";
 
 type Props = {
@@ -142,7 +143,7 @@ export function CardVersionsLayer({ api, meId, editable, manager, nameOf }: Prop
   return (
     <>
     {/* Chips sit under Excalidraw's own menus, like the other overlays. */}
-    <div className="pointer-events-none absolute inset-0 z-[2] overflow-hidden">
+    <div className="pointer-events-none absolute inset-0 z-[2] overflow-hidden" {...WHEEL_THROUGH}>
       {chips.map(({ card, kind, versions, edited, selected, pos }) => {
         const latest = versions.at(-1);
         const label = latest ? `v${latest.v}${edited ? " · แก้อยู่" : ""}` : "เก็บเวอร์ชัน";

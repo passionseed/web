@@ -48,6 +48,19 @@ describe("SHIFT cards", () => {
     expect(isWritten("interview", shiftCardStartText("interview"))).toBe(false);
   });
 
+  it("keeps a note's rounded corner clear of its text", () => {
+    // Excalidraw sets a note's text 5px in from the top-left, and rounds an adaptive
+    // corner by `roundness.value` (32px when unset) once the note is big enough.
+    const PADDING = 5;
+    const note = shiftCardSkeleton("interview") as { roundness: { type: number; value?: number }; width: number; height: number };
+    const side = Math.min(note.width, note.height);
+    const value = note.roundness.value ?? 32;
+    const r = side <= value / 0.25 ? side * 0.25 : value;
+    // How far the curve reaches in from the left edge at the text's top line.
+    const curveInset = r - Math.sqrt(r * r - Math.max(r - PADDING, 0) ** 2);
+    expect(PADDING - curveInset).toBeGreaterThanOrEqual(2);
+  });
+
   it("tags each card with its kind, and examples as examples", () => {
     expect(shiftCardSkeleton("interview").customData).toEqual({ card: "interview" });
     expect(shiftCardSkeleton("problem", 0, 0, { example: true }).customData).toEqual({ card: "problem", example: true });

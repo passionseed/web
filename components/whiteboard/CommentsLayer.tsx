@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 
 import { Avatar } from "./ShareDialog";
 import type { CommentsApi, Thread } from "./useComments";
+import { WHEEL_THROUGH } from "./wheelBridge";
 
 type Props = {
   api: ExcalidrawImperativeAPI;
@@ -73,6 +74,7 @@ export function CommentsLayer(props: Props) {
     <div className="pointer-events-none absolute inset-0 z-[3] overflow-hidden">
       {placing && (
         <div
+          {...WHEEL_THROUGH}
           className="pointer-events-auto absolute inset-0 cursor-crosshair"
           onClick={(e) => {
             const { x, y } = viewportCoordsToSceneCoords({ clientX: e.clientX, clientY: e.clientY }, appState);
@@ -89,6 +91,7 @@ export function CommentsLayer(props: Props) {
             key={thread.id}
             type="button"
             onClick={() => onOpen(openId === thread.id ? null : thread.id)}
+            {...WHEEL_THROUGH}
             className={`pointer-events-auto absolute flex -translate-y-full items-center gap-1 rounded-full rounded-bl-none border-2 bg-white p-0.5 pr-2 shadow-lg transition-transform hover:scale-110 ${
               thread.resolvedAt ? "border-emerald-400 opacity-60" : "border-orange-400"
             }`}

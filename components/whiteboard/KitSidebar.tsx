@@ -45,6 +45,15 @@ function addSticky(api: ExcalidrawImperativeAPI, color: string) {
   insertSkeletons(api, [sticky(0, 0, color, "", STICKY_TEXT_SIZE)], { x: c.x + jitter(), y: c.y + jitter() });
 }
 
+/**
+ * Opens Excalidraw's Library. Its own button is hidden (whiteboard.css) so the board has one panel
+ * button, this kit; the Library opens from here instead. ("default" and "library" are Excalidraw's
+ * names for its sidebar and that tab, which it does not export.)
+ */
+function openLibrary(api: ExcalidrawImperativeAPI) {
+  api.toggleSidebar({ name: "default", tab: "library", force: true });
+}
+
 function addStamp(api: ExcalidrawImperativeAPI, stamp: string) {
   const skeleton = { type: "text", x: 0, y: 0, text: stamp, fontSize: 56, fontFamily: 6 } as ExcalidrawElementSkeleton;
   const c = viewportCenter(api);
@@ -109,7 +118,7 @@ export function KitSidebar(props: Props) {
                   </button>
                 ))}
               </div>
-              <p className="mt-2 text-xs opacity-60">บอร์ดจำว่าใครแปะการ์ดไหน ใช้นับว่ามากี่คน ใครช่วยใคร · มีใน 📚 Library ด้วย</p>
+              <p className="mt-2 text-xs opacity-60">บอร์ดจำว่าใครแปะการ์ดไหน ใช้นับว่ามากี่คน ใครช่วยใคร</p>
             </section>
             <section>
               <h3 className="mb-2 text-xs font-medium uppercase tracking-wide opacity-60">Stamps · โหวต</h3>
@@ -125,6 +134,15 @@ export function KitSidebar(props: Props) {
                   </button>
                 ))}
               </div>
+            </section>
+            <section>
+              <button type="button" onClick={() => openLibrary(api)} className="wb-tile flex w-full items-start gap-3 p-3 text-left">
+                <span className="text-2xl">📚</span>
+                <span>
+                  <span className="block text-sm font-medium">Library · คลัง</span>
+                  <span className="block text-xs opacity-60">ของที่คุณเก็บไว้ใช้ซ้ำ และไลบรารีจาก libraries.excalidraw.com</span>
+                </span>
+              </button>
             </section>
           </Sidebar.Tab>
         )}
