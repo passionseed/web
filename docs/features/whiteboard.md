@@ -261,6 +261,11 @@ is public): summarise without names.
 
 ### SHIFT canvases for staff, with Claude
 
+How to use all of this, for students, mentors and admins, in Thai: `/shift/canvas-guide`
+(public; `components/shift/canvas-guide/`). It names buttons exactly as they appear, so update it
+when a label changes. The board kit's SHIFT tab, the staff and admin canvases pages, and the
+no-access page link to it.
+
 Every SHIFT project canvas across boards, in two places with the same content:
 
 - `/shift/canvases`, for **SHIFT staff and mentors**: anyone with a `shift_round_roles` grant (staff,

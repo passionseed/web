@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 /** The staff workspace look (as the SHIFT Companion's staff page), for the staff canvas pages. */
@@ -23,6 +24,11 @@ export function NoCanvasAccess() {
       <p className="max-w-xl text-sm">
         SHIFT canvases are for SHIFT staff and mentors. Ask a SHIFT admin to add you as staff or as a round&apos;s mentor in
         Admin, SHIFT, Rounds, Settings.
+      </p>
+      <p className="text-sm">
+        <Link href="/shift/canvas-guide" className="text-amber-200 underline underline-offset-4">
+          คู่มือแคนวาส SHIFT
+        </Link>
       </p>
     </StaffShell>
   );

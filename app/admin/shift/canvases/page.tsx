@@ -26,7 +26,10 @@ export default async function AdminShiftCanvasesPage() {
         description={
           <>
             Every SHIFT project canvas across whiteboards, with its team, nicknames and Discord. Open one to read it, or ask
-            Claude about all of them. SHIFT staff and mentors see the same at <Link href="/shift/canvases" className="underline">/shift/canvases</Link>.
+            Claude about all of them. SHIFT staff and mentors see the same at <Link href="/shift/canvases" className="underline">/shift/canvases</Link>.{" "}
+            <Link href="/shift/canvas-guide#admins" className="underline">
+              Guide
+            </Link>
           </>
         }
       />

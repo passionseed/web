@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { ShiftCanvasesView } from "@/components/shift/canvases/ShiftCanvasesView";
 import { NoCanvasAccess, StaffShell } from "@/components/shift/canvases/StaffShell";
@@ -16,7 +17,14 @@ export default async function ShiftCanvasesPage() {
   return (
     <StaffShell
       title="SHIFT canvases"
-      description="Every student's project canvas, with their team, nickname and Discord. Open one to read it, or ask Claude about all of them."
+      description={
+        <>
+          Every student&apos;s project canvas, with their team, nickname and Discord. Open one to read it, or ask Claude about all of them.{" "}
+          <Link href="/shift/canvas-guide#mentors" className="text-amber-200 underline underline-offset-4">
+            How to use this page
+          </Link>
+        </>
+      }
     >
       <ShiftCanvasesView canvases={canvases} base="/shift/canvases" changes={Object.fromEntries(changes)} />
     </StaffShell>
