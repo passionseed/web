@@ -25,6 +25,8 @@ export function registerVoiceTracking(
   cohortId: string
 ): void {
   client.on("voiceStateUpdate", async (oldState: VoiceState, newState: VoiceState) => {
+    // The same bot can sit in the SHIFT server too; only this guild is ProjectSeed.
+    if (newState.guild.id !== env.guildId) return;
     const userId = newState.id ?? oldState.id;
     if (!userId) return;
     if (newState.member?.user.bot) return;
