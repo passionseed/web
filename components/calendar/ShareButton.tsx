@@ -4,6 +4,8 @@ import { Instagram } from "lucide-react";
 import { toast } from "sonner";
 
 import type { CalendarBlock } from "@/lib/calendar/core";
+
+import type { CalendarTone } from "./AgendaList";
 import { blockLink, fillTemplate, type ShareSettings } from "@/lib/calendar/notify";
 
 /** Where a block's link goes: its own page, or the alumni page for the weekly session. */
@@ -17,7 +19,18 @@ function linkFor(block: CalendarBlock): string {
  * it over: the phone's share sheet (pick Instagram, then the group), or on a
  * computer it copies the text and opens the group chat to paste into.
  */
-export function ShareButton({ block, share, prominent }: { block: CalendarBlock; share: ShareSettings; prominent?: boolean }) {
+export function ShareButton({
+  block,
+  share,
+  prominent,
+  tone = "default",
+}: {
+  block: CalendarBlock;
+  share: ShareSettings;
+  prominent?: boolean;
+  /** "grain" on a whiteboard: ink outlines, no Instagram gradient. */
+  tone?: CalendarTone;
+}) {
   const onShare = async () => {
     const text = fillTemplate(share.template, block, linkFor(block));
     const touch = window.matchMedia("(pointer: coarse)").matches;
@@ -43,7 +56,9 @@ export function ShareButton({ block, share, prominent }: { block: CalendarBlock;
       type="button"
       onClick={() => void onShare()}
       className={
-        prominent
+        tone === "grain"
+          ? `wb-btn inline-flex min-h-8 items-center gap-1 px-2.5 text-xs ${prominent ? "font-semibold" : "wb-btn--quiet"}`
+          : prominent
           ? "inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-fuchsia-500 via-pink-500 to-orange-400 px-3 py-1.5 text-xs font-semibold text-white"
           : "cal-line inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs"
       }

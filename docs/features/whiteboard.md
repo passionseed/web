@@ -230,8 +230,115 @@ Next: a per-project log and a mentor progress page (`/admin/shift/progress`) tha
 canvases with SeedStack events by user id, then a student "my log" export for the TCAS case
 study. No AI appears in the student UI; analysis runs on the Markdown and JSON reads.
 
+## Chrome look: Grain
+
+The board chrome (`components/whiteboard/chrome/`, `whiteboard.css`) is quiet paper: off-white
+cards, 1px periwinkle hairlines, dashed dividers, ink text, IBM Plex Sans Thai with IBM Plex
+Mono numerals (`components/whiteboard/fonts.ts`, loaded on whiteboard routes only). Dark mode is
+the same on near-neutral ink paper (the cards lean neutral to sit on Excalidraw's dark canvas,
+#121212 unless a colour is chosen in Board settings). Everything reads the `--wb-*` tokens;
+things portalled out of the board (Share dialog, timer popover) take the `wb-theme` class to get
+them. The speaker script window has none of the page's CSS: `SCRIPT_CSS` repeats the look and
+copies the two typefaces over.
+
+- **The only colour is the grain bloom** (`chrome/Grain.tsx`): indigo and ultramarine with a navy
+  core into vermilion and cream, breaking into dots at its edges. It is for focal things only:
+  the active tool, Share, progress strips, app tiles, a screen's one primary button
+  (`.wb-btn--primary`) and Spyfall's card back. One bloom on the bottom bar at a time: a button
+  that only has a menu open gets an ink outline (`.wb-tool--menu`), and so does the option in
+  use in the options bar. Selected rows get a thin
+  vermilion marker, not a fill. Small solid actions (send, save) are ink (`.wb-btn--solid`),
+  never a flat indigo. No glass, glows, big shadows or extra accent colours: categories are
+  told apart by a word, not a colour (the calendar's `tone="grain"`, the activity chips).
+- **Two things float, and only they have a shadow:** the bottom bar and its options bar
+  (`--wb-shadow-float`, 16px corners, a solid `--wb-rule` edge), so they stand clear of whatever
+  is drawn under them. A sticky being dragged out has one too, because it is in the air.
+- **It never runs a filter while you work.** Each bloom is drawn once off screen (SVG
+  feTurbulence, thresholded into a mask), saved as a PNG, and used as an image from then on:
+  `<GrainDefs />` publishes the small ones as CSS variables (`--wb-grain-chip`,
+  `--wb-grain-tile-a`...) and `<GrainBloom variant />` fills its parent with one. Keep blooms
+  static and off anything that moves with the canvas.
+- **A bloom is cropped, never scaled.** Resampling turns the dots into blur. Bitmaps are made at
+  whole device pixels (1x, 2x or 3x) and shown at their own size: fixed `background-size`, or
+  `<GrainBloom fixed />`. A new size needs its own recipe. Before drawing, `Grain.tsx` checks
+  once that the browser keeps SVG filters on a canvas; if not, the SVG itself is the image.
+- A progress strip (`.wb-strip`) is a solid body, navy to ultramarine, with a short bloom cap
+  on its leading end, so a nearly empty strip is still a solid mark.
+- Icons on tiles need 3:1: a cream or ultramarine corner that would fail against the icon
+  stays outside the middle 18px (`TILE_BR_OUT`, `TILE_TL_OUT`).
+- **The bottom bar** (`chrome/BottomBar.tsx`) is FigJam's layout in three groups split by solid
+  hairlines: Select and Hand; the pen, the sticky pad and the shapes, drawn as objects
+  (`chrome/ObjectTools.tsx`); then Text, Frame, Comment, Reactions and the round "+" Apps
+  button. It is 78px tall (64px at 900px and under, 56px on phones). Icon tools are 24px icons
+  with 1.75px strokes in full ink inside 48px buttons, and keep the bloom chip. The objects are
+  about 1.5x that: the pen and the pad stand on the bar's bottom edge and are cut off by it. An
+  object shows it is active by rising, with a short bloom on the ground under it (stickies get
+  an ink line: Select is still the tool and has the bloom). Every object size is multiplied by
+  `--wb-obj-scale`. Viewers get Hand, Comment, Reactions and Apps.
+- **The shapes are three buttons, not one:** a square on the left, a circle bottom right and a
+  curved arrow top right (`ShapeCluster`, `ShapeObject`). The one you press is the one you get:
+  a click makes it the tool (rectangle, ellipse, arrow) and opens the shapes options with it
+  selected; a drag drops that shape. The circle's hit area is round. Diamond and line are in
+  the options bar, where every shape drags out too.
+- **Tool options live in one place: the options bar** (`chrome/OptionsBar.tsx`), a second card
+  above the bar for the active tool, 56px tall. Pen: marker, highlighter or eraser, thin or
+  thick, colour. Sticky: the colour of the next sticky. Shapes: the shape, stroke colour, fill,
+  then image, laser, web embed and text to diagram. Text: size and colour. Colour dots are 28px
+  at full strength; the one in use has a 2px ink ring with a gap. The option in use has a tinted
+  ground and an accent line. `chrome/toolOptions.ts` keeps each tool's values and writes them to
+  Excalidraw (`currentItem...`) when the tool becomes active, from the bar or a shortcut. While
+  a drawing tool is active and nothing is selected, the room carries `data-tool-options="1"`
+  and Excalidraw's own panel is hidden (the left island, and on phones the sheet and its palette
+  button); with a selection it is back, to edit the selected elements. Escape closes the options
+  and returns to Select.
+- **Stickies and shapes drag out of the bar** (`chrome/useDragOut.ts`): press, drag past 6px,
+  and a preview at the size it will have follows the pointer; letting go over the canvas
+  places it centred there and selects it, letting go over the bar or pressing Escape cancels.
+  A press that does not move is a click: a sticky lands mid-screen, a shape becomes the tool.
+- **A sticky peels off the pad.** The pad is three sheets in the next sticky's colour, the top
+  one (`.wb-pad__top`) with a curled corner; it lifts a little on hover. On a drag the top sheet
+  leaves the bar (the button gets `data-peeled`, the next sheet shows) and becomes the preview:
+  the real colour, a soft shadow, tilted 4 degrees, growing from its size on the pad to its size
+  on the canvas in 120ms. Dropped, it straightens (100ms) and the real sticky takes its place;
+  cancelled, it shrinks back onto the pad. Under `prefers-reduced-motion` it only follows the
+  pointer.
+- **Board settings** (`settings/BoardSettingsDialog.tsx`, opened from the main menu and from
+  Apps, under Board) is a list of rows from `SETTING_ROWS` in `settings/rows.tsx`: a new
+  setting is one field in `lib/whiteboard/settings.ts` (type, default, parser) and one row.
+  Today: the background colour and the dot grid (on by default). Settings are per board and
+  per browser, in localStorage under `whiteboard-settings:<boardId>`; only `loadBoardSettings`
+  and `saveBoardSettings` know that, so moving them to the database is those two functions.
+  Excalidraw's own "Canvas background" menu item is left out: this is the one place.
+- **The paper is our layer, not Excalidraw's** (`settings/BoardBackdrop.tsx`): the canvas is
+  kept see-through (`viewBackgroundColor: "transparent"`) and the colour and the dots are a
+  `div` under it, so the dots sit behind everything drawn. The dots are one CSS
+  radial-gradient, 24 scene units apart; an `api.onScrollChange` subscription writes the
+  tile's size and position straight to the element once a frame (`dotLattice`), so they pan and
+  zoom with the canvas without a render. Zoomed out, every 2nd, 4th, 8th dot is kept so they
+  never sit closer than 14px. The dot colour comes from the paper (`dotColorFor`).
+- **A background colour is a light-theme colour**, like every colour on the board. The dark
+  theme shows its dark counterpart (`darkCounterpart`, the same sum as Excalidraw's
+  `invert(93%) hue-rotate(180deg)` filter), so paper and drawing turn dark together; the custom
+  picker in the dark theme converts back (`lightCounterpart`). No colour chosen means the
+  theme's own paper: #f5f5f3, or #121212 in the dark theme.
+- **Exports get the real colour** (`settings/useCanvasBackground.ts`): it is handed to
+  Excalidraw while the "Export image" or "Save to" dialog is open and while "Copy as PNG/SVG"
+  runs, and taken back after. The image dialog copies the app state as it opens, so it is
+  closed and reopened once with the colour in place. Thumbnails pass it in themselves
+  (`boardThumbnail`). The same hook puts the canvas back after "Reset the canvas".
+- A person's avatar ring (indigo, vermilion or ultramarine) comes from their id
+  (`chrome/ring.ts`), so it is the same in the people card and in games.
+- Hover styles sit inside `@media (hover: hover)`; touch gets `:active`. Controls are 44px
+  under `@media (pointer: coarse)`, or keep their size and grow an invisible hit area.
+- A new app picks its tile with `tile: "a"` to `"g"` in `plugins/registry.tsx`.
+
 ## Excalidraw gotchas (0.18)
 
+- The canvas is see-through on purpose (see "The paper is our layer" above). Do not read
+  `appState.viewBackgroundColor` for the board's colour: use `backgroundFor` or
+  `exportBackgroundFor` from `lib/whiteboard/settings.ts`. Outline arrowheads (circle,
+  triangle and diamond outlines) are filled with that colour, so on the board they show the
+  line through them; exports are right.
 - `onUserFollow` and `onScrollChange` are API subscriptions
   (`excalidrawAPI.onUserFollow(cb)`), not props. Passing them as props silently does nothing.
 - Thai on the canvas comes from Thai-only `@font-face` rules registered under Excalidraw's
