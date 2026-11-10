@@ -1,21 +1,24 @@
 import type { CanvasScope } from "@/lib/shift/canvas-chat";
+import { nameWithNickname, type ShiftPerson } from "@/lib/shift/canvas-people";
 import { shiftCanvasesOf, type ShiftCanvasStats } from "@/lib/whiteboard/shift-overview";
 import { authorIds, canvasToMarkdown, summarizeElements, type SummaryComment } from "@/lib/whiteboard/summary";
 import { createAdminClient } from "@/utils/supabase/admin";
 
+import { shiftPeople } from "./shift-people";
 import { displayNames } from "./whiteboard-reader";
 
 /**
- * Every SHIFT project canvas across boards, for the admin overview and for
- * Claude (/admin/shift/canvases). Uses the service role: callers must check
- * that the viewer is a site admin first.
+ * Every SHIFT project canvas across boards, for staff and for Claude
+ * (/shift/canvases, /admin/shift/canvases). Uses the service role: callers must
+ * check canViewShiftCanvases first.
  */
 
 export type ShiftCanvasRow = ShiftCanvasStats & {
   boardId: string;
   boardTitle: string;
-  ownerName: string;
-  teamNames: string[];
+  /** Null for a canvas from before owners existed whose creator is unknown. */
+  ownerPerson: ShiftPerson | null;
+  team: ShiftPerson[];
 };
 
 
@@ -93,6 +96,11 @@ async function readCanvases(boards: Board[]): Promise<{ row: ShiftCanvasRow; mar
     ]),
   ]);
   const who = (id: string) => people.get(id) ?? "Someone";
+  const members = await shiftPeople(
+    [...new Set(read.flatMap(({ canvases }) => canvases.flatMap((c) => [...(c.owner ? [c.owner] : []), ...c.editors])))],
+    people,
+  );
+  const person = (id: string) => members.get(id)!;
 
   const out = read.flatMap(({ board, summary, canvases }) => {
     const frames = new Map(
@@ -104,8 +112,8 @@ async function readCanvases(boards: Board[]): Promise<{ row: ShiftCanvasRow; mar
         ...canvas,
         boardId: board.id,
         boardTitle: board.title,
-        ownerName: canvas.owner ? who(canvas.owner) : "Unknown",
-        teamNames: canvas.editors.map(who),
+        ownerPerson: canvas.owner ? person(canvas.owner) : null,
+        team: canvas.editors.map(person),
       };
       const frame = frames.get(canvas.frameId);
       const markdown =
@@ -114,8 +122,8 @@ async function readCanvases(boards: Board[]): Promise<{ row: ShiftCanvasRow; mar
           canvas.frameId,
           {
             board: board.title,
-            owner: row.ownerName,
-            team: row.teamNames,
+            owner: row.ownerPerson ? nameWithNickname(row.ownerPerson) : "Unknown",
+            team: row.team.map(nameWithNickname),
             ...(canvas.lastEdited ? { updatedAt: new Date(canvas.lastEdited).toISOString().slice(0, 16).replace("T", " ") } : {}),
           },
           frame ? commentsOn(frame, boardComments, who) : [],

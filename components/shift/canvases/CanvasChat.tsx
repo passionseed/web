@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { markdownToSafeHtml } from "@/lib/security/sanitize-html";
 import { type CanvasScope, type ChatMessage, MAX_MESSAGE_CHARS, SUMMARY_PROMPT } from "@/lib/shift/canvas-chat";
 
+import "./canvas-markdown.css";
+
 /**
  * Ask Claude about one SHIFT canvas or all of them. The conversation lives in
  * this page only: nothing is saved, and reloading starts over.
@@ -34,7 +36,7 @@ export function CanvasChat({ scope, subject }: { scope: CanvasScope; subject: st
 
     let answer = "";
     try {
-      const res = await fetch("/api/admin/shift/canvases/chat", {
+      const res = await fetch("/api/shift/canvases/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ scope, messages: asked }),
@@ -103,7 +105,7 @@ export function CanvasChat({ scope, subject }: { scope: CanvasScope; subject: st
             ) : m.content ? (
               <div
                 key={i}
-                className="admin-markdown text-sm"
+                className="canvas-markdown text-sm"
                 // Claude's Markdown, sanitised: it can quote students' text.
                 dangerouslySetInnerHTML={{ __html: markdownToSafeHtml(m.content) }}
               />

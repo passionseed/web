@@ -7,8 +7,13 @@ import { SHIFT_CARDS, shortTitle } from "@/lib/whiteboard/shift-cards";
 import { type CanvasProgress, progressOf } from "@/lib/whiteboard/shift-overview";
 import type { ShiftCanvasRow } from "@/lib/supabase/shift-canvases";
 
-export const canvasHref = (row: Pick<ShiftCanvasRow, "boardId" | "frameId">) =>
-  `/admin/shift/canvases/${row.boardId}/${encodeURIComponent(row.frameId)}`;
+import { PersonLine } from "./PersonLine";
+
+/** Where the canvas pages live: in the admin console, or the staff pages. */
+export type CanvasBase = "/admin/shift/canvases" | "/shift/canvases";
+
+export const canvasHref = (base: CanvasBase, row: Pick<ShiftCanvasRow, "boardId" | "frameId">) =>
+  `${base}/${row.boardId}/${encodeURIComponent(row.frameId)}`;
 
 /** Problem, Target, Idea and Ship, lit when written. */
 export function BeliefMarks({ progress }: { progress: CanvasProgress }) {
@@ -51,14 +56,14 @@ export function EvidenceCounts({ progress }: { progress: CanvasProgress }) {
 }
 
 /** Every SHIFT canvas, newest activity first. */
-export function ShiftCanvasTable({ canvases }: { canvases: ShiftCanvasRow[] }) {
+export function ShiftCanvasTable({ canvases, base }: { canvases: ShiftCanvasRow[]; base: CanvasBase }) {
   return (
     <div className="overflow-x-auto rounded-lg border">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Canvas</TableHead>
-            <TableHead>Owner and team</TableHead>
+            <TableHead>Student and team</TableHead>
             <TableHead>Beliefs</TableHead>
             <TableHead>Evidence and changes</TableHead>
             <TableHead className="text-right">Days</TableHead>
@@ -72,16 +77,24 @@ export function ShiftCanvasTable({ canvases }: { canvases: ShiftCanvasRow[] }) {
             return (
               <TableRow key={`${row.boardId}:${row.frameId}`}>
                 <TableCell className="min-w-48">
-                  <Link href={canvasHref(row)} className="font-medium hover:underline">
+                  <Link href={canvasHref(base, row)} className="font-medium hover:underline">
                     {row.title || "Untitled canvas"}
                   </Link>
                   <p className="text-xs text-muted-foreground">{row.boardTitle}</p>
                 </TableCell>
-                <TableCell className="min-w-40 text-sm">
-                  {row.ownerName}
-                  <p className="text-xs text-muted-foreground">
-                    {row.teamNames.length ? `+ ${row.teamNames.join(", ")}` : "No teammates"}
-                  </p>
+                <TableCell className="min-w-56">
+                  {row.ownerPerson ? <PersonLine person={row.ownerPerson} /> : <span className="text-sm">Unknown</span>}
+                  {row.team.length > 0 ? (
+                    <ul className="mt-2 space-y-1.5 border-l pl-3" aria-label="Teammates">
+                      {row.team.map((p) => (
+                        <li key={p.userId}>
+                          <PersonLine person={p} compact />
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-1 text-xs text-muted-foreground">No teammates</p>
+                  )}
                 </TableCell>
                 <TableCell>
                   <BeliefMarks progress={progress} />

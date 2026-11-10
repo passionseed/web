@@ -49,3 +49,15 @@ export const SUMMARY_PROMPT = {
     "Summarize this canvas for a mentor: where the project stands, how strong the evidence is, what changed and why, and the one most useful next nudge.",
   all: "Give me an overview of every canvas: who is moving, who is stuck or thin on evidence, and whom a mentor should check on first.",
 } as const;
+
+/** The board and canvas ids from a canvas page's URL, or null when they are not valid. */
+export function canvasRouteParams(params: { boardId: string; frameId: string }): { boardId: string; frameId: string } | null {
+  let frameId: string;
+  try {
+    frameId = decodeURIComponent(params.frameId);
+  } catch {
+    return null;
+  }
+  const parsed = canvasScopeSchema.safeParse({ boardId: params.boardId, frameId });
+  return parsed.success && "boardId" in parsed.data ? parsed.data : null;
+}

@@ -1,4 +1,4 @@
-import { canvasChatRequestSchema, MAX_MESSAGE_CHARS, SUMMARY_PROMPT } from "./canvas-chat";
+import { canvasChatRequestSchema, canvasRouteParams, MAX_MESSAGE_CHARS, SUMMARY_PROMPT } from "./canvas-chat";
 
 const BOARD = "a7a510a6-1f7d-4228-b23f-5e15a57acb2e";
 const ask = (content: string) => ({ role: "user" as const, content });
@@ -36,5 +36,17 @@ describe("canvasChatRequestSchema", () => {
 
   it("uses no em dashes in the one-click questions", () => {
     for (const prompt of Object.values(SUMMARY_PROMPT)) expect(prompt).not.toContain("—");
+  });
+});
+
+describe("canvasRouteParams", () => {
+  it("reads a board id and a percent-encoded canvas id", () => {
+    expect(canvasRouteParams({ boardId: BOARD, frameId: "Ab%2DC_1" })).toEqual({ boardId: BOARD, frameId: "Ab-C_1" });
+  });
+
+  it("is null for a bad board id or broken encoding, instead of throwing", () => {
+    expect(canvasRouteParams({ boardId: "nope", frameId: "f" })).toBeNull();
+    expect(canvasRouteParams({ boardId: BOARD, frameId: "%E0%A4%A" })).toBeNull();
+    expect(canvasRouteParams({ boardId: BOARD, frameId: "x".repeat(101) })).toBeNull();
   });
 });

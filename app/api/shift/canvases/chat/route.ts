@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { requireAdmin, safeServerError } from "@/lib/security/route-guards";
+import { requireUser, safeServerError } from "@/lib/security/route-guards";
 import { canvasChatRequestSchema, MAX_CONTEXT_CHARS } from "@/lib/shift/canvas-chat";
 import { streamCanvasAnswer } from "@/lib/shift/canvas-claude";
+import { canViewShiftCanvases } from "@/lib/supabase/shift-canvas-access";
 import { canvasContext } from "@/lib/supabase/shift-canvases";
 
 // Fluid compute (vercel.json) gives Hobby up to 300 seconds; a long answer at medium effort fits well inside.
@@ -10,13 +11,21 @@ export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
 /**
- * POST /api/admin/shift/canvases/chat: asks Claude about one SHIFT canvas or
- * all of them. Site admins only. The canvases come from the database, never
- * from the request, and the answer streams back as plain text.
+ * POST /api/shift/canvases/chat: asks Claude about one SHIFT canvas or all of
+ * them. Site admins and SHIFT staff and mentors only (canViewShiftCanvases).
+ * The canvases come from the database, never from the request, and the answer
+ * streams back as plain text.
  */
 export async function POST(request: Request) {
-  const admin = await requireAdmin();
-  if (!admin.ok) return admin.response;
+  const viewer = await requireUser();
+  if (!viewer.ok) return viewer.response;
+  try {
+    if (!(await canViewShiftCanvases(viewer.value.userId))) {
+      return NextResponse.json({ error: "Only SHIFT staff and mentors can read SHIFT canvases." }, { status: 403 });
+    }
+  } catch (error) {
+    return safeServerError("Could not check your SHIFT access", error);
+  }
 
   const parsed = canvasChatRequestSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {

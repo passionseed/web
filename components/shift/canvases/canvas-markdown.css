@@ -1,0 +1,40 @@
+/* Markdown from SHIFT canvas reads and Claude's answers (/shift/canvases, /admin/shift/canvases). */
+.canvas-markdown {
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.canvas-markdown h1 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+}
+.canvas-markdown h2,
+.canvas-markdown h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 1rem 0 0.35rem;
+}
+.canvas-markdown p {
+  margin: 0.4rem 0;
+}
+.canvas-markdown ul,
+.canvas-markdown ol {
+  margin: 0.3rem 0;
+  padding-left: 1.25rem;
+}
+.canvas-markdown ul {
+  list-style: disc;
+}
+.canvas-markdown ol {
+  list-style: decimal;
+}
+.canvas-markdown li + li {
+  margin-top: 0.15rem;
+}
+.canvas-markdown hr {
+  margin: 1rem 0;
+  border-color: hsl(var(--border));
+}
+.canvas-markdown code {
+  font-size: 0.85em;
+}

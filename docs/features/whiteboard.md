@@ -259,21 +259,35 @@ each one (`(by Mint, edited by Beam)`), arrows, and comment threads. Code:
 Boards hold students' words. Don't paste board content into public places (the company brain
 is public): summarise without names.
 
-### SHIFT canvases for admins, with Claude
+### SHIFT canvases for staff, with Claude
 
-`/admin/shift/canvases` (site admins only, **Canvases** in the SHIFT admin tabs) lists every
-SHIFT project canvas across boards: owner and team, which beliefs are written (Problem, Target,
-Idea, Ship), counts of interviews, examples, tests and pivots, days logged, saved versions, and
-the last edit. Each canvas opens at `/admin/shift/canvases/<board>/<frame>` with its contents
-read the same way as `pnpm whiteboard:read` (only that canvas, its own arrows, and the comments
-pinned on it), and a link to the board.
+Every SHIFT project canvas across boards, in two places with the same content:
+
+- `/shift/canvases`, for **SHIFT staff and mentors**: anyone with a `shift_round_roles` grant (staff,
+  or a round's mentor, given in Admin > SHIFT > Rounds > Settings), plus site admins
+  (`canViewShiftCanvases` in `lib/supabase/shift-canvas-access.ts`). Removing the grant removes the
+  access. It uses the staff workspace look of the SHIFT Companion.
+- `/admin/shift/canvases` (**Canvases** in the SHIFT admin tabs), for site admins in the admin console.
+
+Each row shows the student and teammates with their PassionSeed name, their nickname (ชื่อเล่น,
+from their SHIFT application), and the Discord account they verified when they joined: picture,
+`@username` linking to their Discord profile, and Discord display name
+(`lib/shift/canvas-people.ts`, `lib/supabase/shift-people.ts`). Then:
+
+- which beliefs are written (Problem, Target, Idea, Ship);
+- counts of interviews, examples, tests and pivots;
+- days logged, saved versions, and the last edit.
+
+Each canvas opens at `<base>/<board>/<frame>` with its contents read the same way as
+`pnpm whiteboard:read`: only that canvas, its own arrows, and the comments pinned on it. It also
+links to the board.
 
 Both pages have **Ask Claude**: a summary button and a chat about one canvas or all of them.
 
-- **Request:** `POST /api/admin/shift/canvases/chat` (`requireAdmin`). The browser sends only the
-  scope and the conversation (`lib/shift/canvas-chat.ts`). The server reads the canvases from
-  the database (`lib/supabase/shift-canvases.ts`, service role), so a request cannot add text
-  of its own.
+- **Request:** `POST /api/shift/canvases/chat`, guarded by the same access check. The browser
+  sends only the scope and the conversation (`lib/shift/canvas-chat.ts`). The server reads the
+  canvases from the database (`lib/supabase/shift-canvases.ts`, service role), so a request
+  cannot add text of its own.
 - **Model:** `lib/shift/canvas-claude.ts` calls `claude-opus-5-5` with the official SDK
   (`@anthropic-ai/sdk`, `ANTHROPIC_API_KEY`, stored as Sensitive in Vercel for Production and
   Preview) and streams plain text, at medium effort with answers capped at 8,000 tokens. The
@@ -283,14 +297,15 @@ Both pages have **Ask Claude**: a summary button and a chat about one canvas or 
   Anthropic recommends.
 - **Caching:** the canvases sit in a cached system block, so follow-up questions cost a fraction
   of the first.
-- **Prompt injection:** students' text is marked as material to read, not instructions.
+- **What Claude reads:** students' text is marked as material to read, not instructions. Claude
+  sees names and nicknames but not Discord accounts.
 - **Saving:** nothing is saved. A conversation lasts until the page reloads.
 - **Size:** more than 400,000 characters of canvases is refused with a request to open one
   canvas, never cut short.
 
 Sending canvases to Claude sends students' words to Anthropic. Commercial API data is not used
 for training and is deleted within 30 days (longer only when flagged for a policy violation);
-see Anthropic's privacy center. Keep this page admin-only.
+see Anthropic's privacy center. Keep these pages to SHIFT staff, mentors and admins.
 
 ## Safeguarding
 

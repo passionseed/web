@@ -1,8 +1,8 @@
-import { AdminEmptyState } from "@/components/admin/shared/AdminStates";
+import Link from "next/link";
+
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
-import { CanvasChat } from "@/components/admin/shift-canvases/CanvasChat";
-import { ShiftCanvasTable } from "@/components/admin/shift-canvases/ShiftCanvasTable";
 import { ShiftAdminTabs } from "@/components/admin/ShiftAdminTabs";
+import { ShiftCanvasesView } from "@/components/shift/canvases/ShiftCanvasesView";
 import { adminMetadata } from "@/lib/admin/metadata";
 import { requireAdmin } from "@/lib/admin/requireAdmin";
 import { listShiftCanvases } from "@/lib/supabase/shift-canvases";
@@ -20,19 +20,14 @@ export default async function AdminShiftCanvasesPage() {
       <AdminPageHeader
         eyebrow="SHIFT"
         title="Canvases"
-        description="Every SHIFT project canvas across whiteboards, with its team and progress. Open one to read it, or ask Claude about all of them."
+        description={
+          <>
+            Every SHIFT project canvas across whiteboards, with its team, nicknames and Discord. Open one to read it, or ask
+            Claude about all of them. SHIFT staff and mentors see the same at <Link href="/shift/canvases" className="underline">/shift/canvases</Link>.
+          </>
+        }
       />
-      {canvases.length === 0 ? (
-        <AdminEmptyState
-          title="No SHIFT canvases yet"
-          description="Canvases appear here once a student adds one from the SHIFT tab of a whiteboard's kit."
-        />
-      ) : (
-        <>
-          <ShiftCanvasTable canvases={canvases} />
-          <CanvasChat scope={{ all: true }} subject={`all ${canvases.length} canvases`} />
-        </>
-      )}
+      <ShiftCanvasesView canvases={canvases} base="/admin/shift/canvases" />
     </div>
   );
 }
