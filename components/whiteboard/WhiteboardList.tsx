@@ -4,7 +4,7 @@ import { formatDistanceToNow } from "date-fns";
 import { CalendarDays, Copy, Loader2, MoreHorizontal, Pencil, PenLine, Plus, Search, Trash2, Users } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -37,6 +37,13 @@ async function call<T>(path: string, init: RequestInit): Promise<T> {
 /** The signed-in person's boards: their own and ones friends shared. */
 export function WhiteboardList({ boards: initial }: { boards: WhiteboardSummary[] }) {
   const router = useRouter();
+  // The editor is a big chunk; fetch it while the person picks a board so opening one starts warm.
+  useEffect(() => {
+    const warm = () => void import("./WhiteboardCanvas");
+    const idle = (window as { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback;
+    if (idle) idle(warm);
+    else setTimeout(warm, 500);
+  }, []);
   const [boards, setBoards] = useState(initial);
   const [creating, setCreating] = useState<string | null>(null);
   const [galleryOpen, setGalleryOpen] = useState(false);

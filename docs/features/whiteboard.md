@@ -56,6 +56,17 @@ again afterwards.
   element out of reach of later edits. The merge answers with `{ corrected, dropped }`: elements
   it kept differently from how they were sent (owners, authors, note versions) and ids it left
   out. The saver's browser puts its copy right from that answer, where nothing changed since.
+- **Opening a board** (`openBoard` in `lib/supabase/whiteboards.ts`) takes two rounds of queries:
+  the sign-in check with the board's rows, then everyone's profiles and admin flags. Deleted
+  elements stay in the database but are not sent to the editor (on the SHIFT High board they were
+  60% of the data). The board list fetches the editor's code in idle time, so opening a board
+  from it starts warm.
+- **Images** are still stored as data URLs in `whiteboard_files`, but each one is served on its own
+  as plain bytes from `GET /api/whiteboards/<id>/files/<fileId>`, cached by the browser for a year
+  (a file id's bytes never change; saving ignores duplicates). The editor fetches five at a time,
+  nearest the middle of the view first, and shows each as it arrives. Big PNG and JPEG images go out
+  as WebP (`sharp`, same pixel size), and new uploads over 200 KB are re-encoded as WebP in the
+  browser first (`compressImage.ts`). Helpers and tests: `lib/whiteboard/images.ts`.
 - **Realtime:** a private Supabase channel `whiteboard:<id>`, authorised by RLS on
   `realtime.messages`. Viewers may only send `cursor` events and presence, so cursors and the
   follow-mode viewport share the `cursor` event. Follow state lives in presence, one entry per

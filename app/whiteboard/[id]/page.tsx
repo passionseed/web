@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
 import { WhiteboardRoom } from "@/components/whiteboard/WhiteboardRoom";
-import { getViewer, loadBoard, roleFor } from "@/lib/supabase/whiteboards";
+import { getViewer, openBoard } from "@/lib/supabase/whiteboards";
 
 export const dynamic = "force-dynamic";
 
@@ -22,14 +22,15 @@ export default async function WhiteboardPage({
 }) {
   const { id } = await params;
   const { template } = await searchParams;
-  const viewer = await getViewer();
-  if (!viewer) redirect(`/login?next=${encodeURIComponent(`/whiteboard/${id}`)}`);
-  if (!UUID.test(id)) notFound();
-
-  const role = await roleFor(id, viewer);
-  if (!role) notFound();
-  const board = await loadBoard(id, viewer, role);
-  if (!board) notFound();
+  if (!UUID.test(id)) {
+    // Same order as before: signed-out visitors are sent to sign in first.
+    if (!(await getViewer())) redirect(`/login?next=${encodeURIComponent(`/whiteboard/${id}`)}`);
+    notFound();
+  }
+  const opened = await openBoard(id);
+  if (opened === "signin") redirect(`/login?next=${encodeURIComponent(`/whiteboard/${id}`)}`);
+  if (!opened) notFound();
+  const { viewer, board } = opened;
 
   return (
     <WhiteboardRoom
