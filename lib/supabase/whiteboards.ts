@@ -1,4 +1,5 @@
 import type { User } from "@supabase/supabase-js";
+import { after } from "next/server";
 
 import { isAnonymousUser } from "@/lib/supabase/auth";
 import { elementAuthorIds, groupChanges, type ActivitySession, type ChangeItem } from "@/lib/whiteboard/activity";
