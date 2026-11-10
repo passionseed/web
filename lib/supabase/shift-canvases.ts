@@ -136,7 +136,12 @@ async function readCanvases(boards: Board[]): Promise<{ row: ShiftCanvasRow; mar
 }
 
 export async function listShiftCanvases(): Promise<ShiftCanvasRow[]> {
-  return (await readCanvases(await loadBoards())).map((c) => c.row);
+  return (await readAllCanvases()).map((c) => c.row);
+}
+
+/** Every canvas with its Markdown (for Claude and the daily snapshots). */
+export async function readAllCanvases(): Promise<{ row: ShiftCanvasRow; markdown: string }[]> {
+  return readCanvases(await loadBoards());
 }
 
 /** One canvas with its Markdown, or null when that board has no such canvas. */
@@ -148,7 +153,7 @@ export async function readShiftCanvas(boardId: string, frameId: string): Promise
 /** The Markdown Claude reads for a scope, or null when the canvas does not exist. */
 export async function canvasContext(scope: CanvasScope): Promise<{ label: string; markdown: string; count: number } | null> {
   if ("all" in scope) {
-    const canvases = await readCanvases(await loadBoards());
+    const canvases = await readAllCanvases();
     return {
       label: "every SHIFT canvas",
       markdown: canvases.map((c) => c.markdown).join("\n---\n\n"),

@@ -299,9 +299,32 @@ Both pages have **Ask Claude**: a summary button and a chat about one canvas or 
   of the first.
 - **What Claude reads:** students' text is marked as material to read, not instructions. Claude
   sees names and nicknames but not Discord accounts.
-- **Saving:** nothing is saved. A conversation lasts until the page reloads.
+- **Saving:** a conversation lasts until the page reloads. Under each answer about one canvas,
+  **Save to Tracker** (`POST /api/shift/canvases/tracker-note`) saves it as a SHIFT Tracker note
+  (`shift_student_notes`, current week) for everyone on the canvas who is a Tracker student.
+  - The people come from the canvas, not the request.
+  - The note says it is a Claude summary and records who saved it.
+  - Mentors can save notes but cannot read the Tracker, which stays admin-only.
 - **Size:** more than 400,000 characters of canvases is refused with a request to open one
   canvas, never cut short.
+
+**Progress by day** (`shift_canvas_snapshots`, migration
+`20261110150000_shift_canvas_snapshots.sql`, admin-only RLS):
+
+- **What is saved:** every night around 23:45 Bangkok time (Vercel cron
+  `/api/cron/shift-canvas-snapshots`), one row per canvas per Bangkok day with its progress
+  numbers, the canvas as Markdown, and a short note on what changed since its last snapshot.
+- **The note:** **Claude Haiku 5.5** (`claude-haiku-5-5`, low effort) writes it (`describeCanvasChange` in
+  `lib/shift/canvas-claude.ts`). A canvas whose Markdown has not changed gets "No change." without
+  a model call, and a failed note leaves the numbers saved.
+- **Where it shows:** each canvas page has a table by day with what grew, and the list shows each
+  canvas's latest note.
+- **Snapshot now:** admins can take today's snapshot from the admin list (`POST
+  /api/shift/canvases/snapshot`), which replaces the day's row.
+- **Code:** `lib/shift/canvas-snapshots.ts` (pure) and `lib/supabase/shift-canvas-snapshots.ts`.
+
+Opus 5.5 answers staff in the chat; Haiku 5.5 writes the nightly notes, a short task run for every
+canvas.
 
 Sending canvases to Claude sends students' words to Anthropic. Commercial API data is not used
 for training and is deleted within 30 days (longer only when flagged for a policy violation);

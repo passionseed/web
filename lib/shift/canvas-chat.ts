@@ -61,3 +61,16 @@ export function canvasRouteParams(params: { boardId: string; frameId: string }):
   const parsed = canvasScopeSchema.safeParse({ boardId: params.boardId, frameId });
   return parsed.success && "boardId" in parsed.data ? parsed.data : null;
 }
+
+/** Saving one of Claude's answers about a canvas to the SHIFT Tracker. */
+export const trackerNoteSchema = z
+  .object({
+    boardId: z.string().regex(UUID),
+    frameId: z.string().min(1).max(100),
+    answer: z.string().trim().min(1).max(MAX_ANSWER_CHARS),
+  })
+  .strict();
+
+/** The Tracker note for an answer, saying where it came from. */
+export const trackerNoteBody = (canvasTitle: string, answer: string) =>
+  `Claude summary of the SHIFT canvas "${canvasTitle || "Untitled canvas"}", saved from the canvases page:\n\n${answer.trim()}`;

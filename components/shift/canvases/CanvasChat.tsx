@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Send, Sparkles, Square } from "lucide-react";
+import { Check, Loader2, NotebookPen, Send, Sparkles, Square } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -10,17 +10,39 @@ import { type CanvasScope, type ChatMessage, MAX_MESSAGE_CHARS, SUMMARY_PROMPT }
 
 import "./canvas-markdown.css";
 
+/** Where saving an answer to the Tracker stands, per answer. */
+type SaveState = { status: "saving" } | { status: "saved"; names: string[] } | { status: "failed"; message: string };
+
 /**
  * Ask Claude about one SHIFT canvas or all of them. The conversation lives in
- * this page only: nothing is saved, and reloading starts over.
+ * this page only: nothing is saved unless someone saves an answer about one
+ * canvas to the SHIFT Tracker, and reloading starts over.
  */
 export function CanvasChat({ scope, subject }: { scope: CanvasScope; subject: string }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [saves, setSaves] = useState<Record<number, SaveState>>({});
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abort = useRef<AbortController | null>(null);
   const summary = "all" in scope ? SUMMARY_PROMPT.all : SUMMARY_PROMPT.canvas;
+
+  async function saveToTracker(index: number, answer: string) {
+    if ("all" in scope) return;
+    setSaves((s) => ({ ...s, [index]: { status: "saving" } }));
+    try {
+      const res = await fetch("/api/shift/canvases/tracker-note", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ boardId: scope.boardId, frameId: scope.frameId, answer }),
+      });
+      const body = (await res.json().catch(() => null)) as { saved?: string[]; error?: string } | null;
+      if (!res.ok || !body?.saved) throw new Error(body?.error ?? `Could not save (error ${res.status}).`);
+      setSaves((s) => ({ ...s, [index]: { status: "saved", names: body.saved! } }));
+    } catch (e) {
+      setSaves((s) => ({ ...s, [index]: { status: "failed", message: e instanceof Error ? e.message : "Could not save." } }));
+    }
+  }
 
   async function ask(question: string) {
     const text = question.trim();
@@ -81,7 +103,15 @@ export function CanvasChat({ scope, subject }: { scope: CanvasScope; subject: st
           </p>
         </div>
         {messages.length > 0 && !busy && (
-          <Button size="sm" variant="ghost" onClick={() => setMessages([])} className="shrink-0">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setMessages([]);
+              setSaves({});
+            }}
+            className="shrink-0"
+          >
             Clear
           </Button>
         )}
@@ -103,12 +133,16 @@ export function CanvasChat({ scope, subject }: { scope: CanvasScope; subject: st
                 {m.content}
               </p>
             ) : m.content ? (
-              <div
-                key={i}
-                className="canvas-markdown text-sm"
-                // Claude's Markdown, sanitised: it can quote students' text.
-                dangerouslySetInnerHTML={{ __html: markdownToSafeHtml(m.content) }}
-              />
+              <div key={i} className="space-y-2">
+                <div
+                  className="canvas-markdown text-sm"
+                  // Claude's Markdown, sanitised: it can quote students' text.
+                  dangerouslySetInnerHTML={{ __html: markdownToSafeHtml(m.content) }}
+                />
+                {!("all" in scope) && !(busy && i === messages.length - 1) && (
+                  <TrackerSave state={saves[i]} onSave={() => void saveToTracker(i, m.content)} />
+                )}
+              </div>
             ) : (
               <p key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -157,5 +191,34 @@ export function CanvasChat({ scope, subject }: { scope: CanvasScope; subject: st
         )}
       </form>
     </section>
+  );
+}
+
+/** Saves an answer as a SHIFT Tracker note for the students on the canvas. */
+function TrackerSave({ state, onSave }: { state: SaveState | undefined; onSave: () => void }) {
+  if (state?.status === "saved") {
+    return (
+      <p className="flex items-center gap-1.5 text-xs text-muted-foreground" role="status">
+        <Check className="h-3.5 w-3.5" aria-hidden="true" />
+        Saved to the Tracker for {state.names.join(", ")}
+      </p>
+    );
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <Button size="sm" variant="outline" onClick={onSave} disabled={state?.status === "saving"}>
+        {state?.status === "saving" ? (
+          <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+        ) : (
+          <NotebookPen className="mr-2 h-3.5 w-3.5" aria-hidden="true" />
+        )}
+        Save to Tracker
+      </Button>
+      {state?.status === "failed" && (
+        <span role="alert" className="text-xs text-destructive">
+          {state.message}
+        </span>
+      )}
+    </div>
   );
 }

@@ -7,6 +7,8 @@ import { SHIFT_CARDS, shortTitle } from "@/lib/whiteboard/shift-cards";
 import { type CanvasProgress, progressOf } from "@/lib/whiteboard/shift-overview";
 import type { ShiftCanvasRow } from "@/lib/supabase/shift-canvases";
 
+import { canvasKey } from "@/lib/shift/canvas-snapshots";
+
 import { PersonLine } from "./PersonLine";
 
 /** Where the canvas pages live: in the admin console, or the staff pages. */
@@ -55,8 +57,11 @@ export function EvidenceCounts({ progress }: { progress: CanvasProgress }) {
   );
 }
 
+/** A canvas's latest daily note from Claude Haiku, keyed by canvasKey. */
+export type LatestChanges = Record<string, { day: string; changeNote: string | null }>;
+
 /** Every SHIFT canvas, newest activity first. */
-export function ShiftCanvasTable({ canvases, base }: { canvases: ShiftCanvasRow[]; base: CanvasBase }) {
+export function ShiftCanvasTable({ canvases, base, changes = {} }: { canvases: ShiftCanvasRow[]; base: CanvasBase; changes?: LatestChanges }) {
   return (
     <div className="overflow-x-auto rounded-lg border">
       <Table>
@@ -81,6 +86,7 @@ export function ShiftCanvasTable({ canvases, base }: { canvases: ShiftCanvasRow[
                     {row.title || "Untitled canvas"}
                   </Link>
                   <p className="text-xs text-muted-foreground">{row.boardTitle}</p>
+                  <LatestChange change={changes[canvasKey(row)]} />
                 </TableCell>
                 <TableCell className="min-w-56">
                   {row.ownerPerson ? <PersonLine person={row.ownerPerson} /> : <span className="text-sm">Unknown</span>}
@@ -115,5 +121,16 @@ export function ShiftCanvasTable({ canvases, base }: { canvases: ShiftCanvasRow[
         </TableBody>
       </Table>
     </div>
+  );
+}
+
+/** The last night's note on what changed, when there is one. */
+function LatestChange({ change }: { change: LatestChanges[string] | undefined }) {
+  if (!change?.changeNote) return null;
+  const day = new Date(`${change.day}T12:00:00+07:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "Asia/Bangkok" });
+  return (
+    <p className="mt-1 max-w-sm text-xs text-muted-foreground">
+      <span className="font-medium text-foreground/80">{day}:</span> {change.changeNote}
+    </p>
   );
 }

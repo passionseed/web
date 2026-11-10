@@ -2,10 +2,10 @@ import { AdminEmptyState } from "@/components/admin/shared/AdminStates";
 import type { ShiftCanvasRow } from "@/lib/supabase/shift-canvases";
 
 import { CanvasChat } from "./CanvasChat";
-import { type CanvasBase, ShiftCanvasTable } from "./ShiftCanvasTable";
+import { type CanvasBase, type LatestChanges, ShiftCanvasTable } from "./ShiftCanvasTable";
 
 /** Every SHIFT canvas with Claude for all of them; the admin and staff pages wrap it in their own header. */
-export function ShiftCanvasesView({ canvases, base }: { canvases: ShiftCanvasRow[]; base: CanvasBase }) {
+export function ShiftCanvasesView({ canvases, base, changes }: { canvases: ShiftCanvasRow[]; base: CanvasBase; changes: LatestChanges }) {
   if (canvases.length === 0) {
     return (
       <AdminEmptyState
@@ -16,7 +16,7 @@ export function ShiftCanvasesView({ canvases, base }: { canvases: ShiftCanvasRow
   }
   return (
     <div className="space-y-4">
-      <ShiftCanvasTable canvases={canvases} base={base} />
+      <ShiftCanvasTable canvases={canvases} base={base} changes={changes} />
       <CanvasChat scope={{ all: true }} subject={`all ${canvases.length} canvases`} />
     </div>
   );

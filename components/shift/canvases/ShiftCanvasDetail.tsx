@@ -2,17 +2,29 @@ import { ArrowLeft, ExternalLink } from "lucide-react";
 import Link from "next/link";
 
 import { markdownToSafeHtml } from "@/lib/security/sanitize-html";
+import type { TrendRow } from "@/lib/shift/canvas-snapshots";
 import type { ShiftCanvasRow } from "@/lib/supabase/shift-canvases";
 import { progressOf } from "@/lib/whiteboard/shift-overview";
 
 import { CanvasChat } from "./CanvasChat";
+import { CanvasTrend } from "./CanvasTrend";
 import { PersonLine } from "./PersonLine";
 import { BeliefMarks, type CanvasBase, EvidenceCounts } from "./ShiftCanvasTable";
 
 import "./canvas-markdown.css";
 
-/** One SHIFT canvas: who it belongs to, its progress and contents, and Claude about it. */
-export function ShiftCanvasDetail({ row, markdown, base }: { row: ShiftCanvasRow; markdown: string; base: CanvasBase }) {
+/** One SHIFT canvas: who it belongs to, its progress by day and contents, and Claude about it. */
+export function ShiftCanvasDetail({
+  row,
+  markdown,
+  trend,
+  base,
+}: {
+  row: ShiftCanvasRow;
+  markdown: string;
+  trend: TrendRow[];
+  base: CanvasBase;
+}) {
   const progress = progressOf(row.zones);
   return (
     <div className="space-y-4">
@@ -38,6 +50,8 @@ export function ShiftCanvasDetail({ row, markdown, base }: { row: ShiftCanvasRow
           <PersonLine key={p.userId} person={p} />
         ))}
       </section>
+
+      <CanvasTrend rows={trend} />
 
       <div className="grid items-start gap-4 lg:grid-cols-2">
         <section aria-label="Canvas contents" className="space-y-3 rounded-lg border bg-card p-4">
