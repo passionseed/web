@@ -1,4 +1,5 @@
 {
+  "fluid": true,
   "headers": [
     {
       "source": "/data/hackathon/problems/(.*)",
@@ -36,6 +37,10 @@
     {
       "path": "/api/cron/brain-sync",
       "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/shift-canvas-snapshots",
+      "schedule": "45 16 * * *"
     }
   ]
 }

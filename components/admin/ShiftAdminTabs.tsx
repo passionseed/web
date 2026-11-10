@@ -12,6 +12,8 @@ const SHIFT_ADMIN_LINKS: { href: string; label: string; exact?: boolean }[] = [
   { href: "/admin/shift/interest", label: "Pre-orders" },
   // Exact: every SHIFT admin path starts with /admin/shift/.
   { href: "/admin/shift", label: "Tracker", exact: true },
+  // Every SHIFT project canvas on the whiteboards, with Claude to summarise and answer questions.
+  { href: "/admin/shift/canvases", label: "Canvases" },
   // Who was in the Discord voice sessions, with mic, screen share and camera.
   { href: "/admin/shift/voice", label: "Voice" },
   // The default 7-day plan with Day 1 rules and refund steps, for mentors.
