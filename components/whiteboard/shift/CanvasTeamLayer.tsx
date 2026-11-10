@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { accessOf, canEditCanvas, cleanEditors, type CanvasAccess } from "@/lib/whiteboard/canvas-access";
 
-import { useViewportTick } from "../CommentsLayer";
+import { useViewportTick } from "../useViewportTick";
 import { isBusy, useSceneMemo } from "./sceneMemo";
 
 type Person = { userId: string; name: string; role: string };
@@ -75,7 +75,7 @@ export function CanvasTeamLayer({ api, meId, manager, people, nameOf }: Props) {
             onClick={() => setOpenId(openId === frame.id ? null : frame.id)}
             aria-haspopup="dialog"
             aria-expanded={openId === frame.id}
-            className="wb-version-chip pointer-events-auto absolute flex -translate-x-full -translate-y-[calc(100%+6px)] items-center gap-1.5 rounded-full px-3 text-xs font-semibold"
+            className="wb-version-chip pointer-events-auto absolute flex -translate-x-full -translate-y-[calc(100%+6px)] items-center gap-1.5 rounded-md px-3 text-xs font-semibold"
             style={{ left: pos.x, top: pos.y }}
           >
             {mine ? (
@@ -181,7 +181,7 @@ function TeamPanel(props: {
                         e.target.checked ? [...access.editors, p.userId] : access.editors.filter((id) => id !== p.userId),
                       )
                     }
-                    className="h-4 w-4 accent-orange-700"
+                    className="h-4 w-4 accent-[#3d4bd8]"
                   />
                 </label>
                 <button

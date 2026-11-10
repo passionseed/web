@@ -49,7 +49,7 @@ export function ShiftKit({ api, myName }: { api: ExcalidrawImperativeAPI; myName
         </span>
         <CanvasMap />
       </button>
-      <div className="space-y-1 text-xs opacity-70">
+      <div className="wb-soft space-y-1 text-xs">
         <p>กด + เพิ่ม ในช่องไหน ก็ได้โน้ตเรื่องนั้น</p>
         <p>ลากลูกศรจากสัมภาษณ์หรือทดสอบ ไปที่เปลี่ยนแผน เพื่อบอกว่าเปลี่ยนเพราะอะไร</p>
         <p>

@@ -17,7 +17,7 @@ import type {
   SocketId,
 } from "@excalidraw/excalidraw/types";
 import type { RealtimeChannel } from "@supabase/supabase-js";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   boardTopic,
@@ -31,7 +31,10 @@ import {
   type WhiteboardRole,
 } from "@/lib/whiteboard/core";
 import { createCanvasGuard } from "@/lib/whiteboard/canvas-guard";
+import { exportBackgroundFor, loadBoardSettings } from "@/lib/whiteboard/settings";
 import { createClient } from "@/utils/supabase/client";
+
+import { nextFrame } from "./useViewportTick";
 
 /**
  * Live sync for one board. Editors broadcast the elements they change over a
@@ -59,6 +62,8 @@ export type PresentUser = {
   role: WhiteboardRole;
   /** socketId of the tab this one is following. */
   following: string | null;
+  /** Whether the tab is in view. Missing (older tabs) counts as visible. */
+  visible?: boolean;
 };
 
 /** Extra channel events that components can send and listen to. */
@@ -87,10 +92,13 @@ const BROADCAST_MS = 60;
 const CURSOR_MS = 40;
 const VIEWPORT_MS = 80;
 const SAVE_DEBOUNCE_MS = 1200;
-const BACKUP_MS = 1000;
 const THUMBNAIL_MS = 20_000;
 /** Thumbnails wait until nobody here has edited for this long, so export never stalls a stroke. */
 const THUMBNAIL_QUIET_MS = 3000;
+/** The crash backup is written at most this often while editing, and right away when the tab hides. */
+const BACKUP_MS = 800;
+/** A cursor carries the selection only when it changed, or this often so newcomers see it too. */
+const SELECTION_RESEND_MS = 2000;
 const EXTRA_EVENTS: BoardEvent[] = ["emote", "comments", "timer", "versions", "plugin"];
 /**
  * Live edits to a SHIFT canvas are shown from the database once their sender's save is through
@@ -127,6 +135,16 @@ function throttle<A extends unknown[]>(fn: (...args: A) => void, ms: number) {
   };
 }
 
+/** Runs `cb` when the browser is idle (or soon, where requestIdleCallback is missing). Returns a cancel function. */
+function whenIdle(cb: () => void, timeout: number): () => void {
+  if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+    const id = window.requestIdleCallback(cb, { timeout });
+    return () => window.cancelIdleCallback(id);
+  }
+  const t = setTimeout(cb, 0);
+  return () => clearTimeout(t);
+}
+
 export async function boardApi<T = unknown>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, { ...init, headers: { "Content-Type": "application/json", ...init?.headers } });
   if (!res.ok) throw new Error((await res.json().catch(() => null))?.error ?? `Request failed (${res.status})`);
@@ -145,8 +163,11 @@ export async function blobToDataUrl(blob: Blob): Promise<string> {
   });
 }
 
-/** A small WebP of the board for lists and version history. */
-export async function boardThumbnail(api: ExcalidrawImperativeAPI): Promise<string | undefined> {
+/**
+ * A small WebP of the board for lists and version history. The live canvas is see-through (the
+ * colour and the dots are our own layer under it), so the board's colour is passed in here.
+ */
+export async function boardThumbnail(api: ExcalidrawImperativeAPI, boardId: string): Promise<string | undefined> {
   const elements = api.getSceneElements();
   if (elements.length === 0) return undefined;
   const { exportToBlob } = await import("@excalidraw/excalidraw");
@@ -156,7 +177,7 @@ export async function boardThumbnail(api: ExcalidrawImperativeAPI): Promise<stri
     mimeType: "image/webp",
     quality: 0.7,
     maxWidthOrHeight: 480,
-    appState: { ...api.getAppState(), exportBackground: true },
+    appState: { ...api.getAppState(), exportBackground: true, viewBackgroundColor: exportBackgroundFor(loadBoardSettings(boardId)) },
   });
   return blobToDataUrl(blob);
 }
@@ -197,8 +218,6 @@ export function useWhiteboardSync({
   const listeners = useRef(new Map<BoardEvent, Set<(payload: unknown) => void>>());
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saving = useRef<Promise<void> | null>(null);
-  const backupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const collaboratorsFrame = useRef<number | null>(null);
   const lastSceneVersion = useRef(-1);
   // Who may change each SHIFT canvas; Postgres enforces the same rule on save (canvas-access.ts).
   const [guard] = useState(() => createCanvasGuard<OrderedExcalidrawElement>(initialElements));
@@ -208,6 +227,16 @@ export function useWhiteboardSync({
   onBlocked.current = onCanvasBlocked;
   const lastEditAt = useRef(0);
   const thumbVersion = useRef(-1);
+  const apiRef = useRef<ExcalidrawImperativeAPI | null>(null);
+  const presentRef = useRef<PresentUser[]>([]);
+  const cancelBackup = useRef<(() => void) | null>(null);
+  const cancelCollaborators = useRef<(() => void) | null>(null);
+  const lastSelection = useRef<unknown>(null);
+  const lastSelectionAt = useRef(0);
+
+  useEffect(() => {
+    apiRef.current = excalidrawAPI;
+  }, [excalidrawAPI]);
 
   // Everything already on the board counts as sent and saved.
   useEffect(() => {
@@ -234,7 +263,12 @@ export function useWhiteboardSync({
     return () => void set.delete(handler);
   }, []);
 
+  /** Writes the crash backup now, replacing any write still scheduled. */
   const writeBackup = useCallback(() => {
+    cancelBackup.current?.();
+    cancelBackup.current = null;
+    // No canvas yet means no scene to compare: leave any backup for the restore effect to replay.
+    if (!excalidrawAPI) return;
     try {
       const unsaved = changedSince(allElements(), savedSeen.current);
       if (unsaved.length) localStorage.setItem(backupKey(boardId), JSON.stringify(unsaved));
@@ -242,15 +276,19 @@ export function useWhiteboardSync({
     } catch {
       // Storage full or blocked: the server save still runs.
     }
-  }, [allElements, boardId]);
+  }, [allElements, boardId, excalidrawAPI]);
 
-  /** Backs up at most once a second while someone draws, instead of on every frame. */
+  /** Writes the crash backup soon, off the hot path, so drags and typing do not stringify the scene every frame. */
   const scheduleBackup = useCallback(() => {
-    if (backupTimer.current) return;
-    backupTimer.current = setTimeout(() => {
-      backupTimer.current = null;
-      writeBackup();
+    if (cancelBackup.current) return;
+    let cancelIdle: (() => void) | null = null;
+    const timer = setTimeout(() => {
+      cancelIdle = whenIdle(writeBackup, 1000);
     }, BACKUP_MS);
+    cancelBackup.current = () => {
+      clearTimeout(timer);
+      cancelIdle?.();
+    };
   }, [writeBackup]);
 
   /** Fetches images that elements point to but this browser does not have yet. */
@@ -348,6 +386,7 @@ export function useWhiteboardSync({
           setSaveState(more ? "unsaved" : "saved");
           if (more) scheduleSave();
         } catch {
+          writeBackup();
           setSaveState(navigator.onLine ? "error" : "offline");
           scheduleSave(5000);
         } finally {
@@ -432,20 +471,27 @@ export function useWhiteboardSync({
     [allElements, editable, excalidrawAPI, guard, myId, scheduleBackup, scheduleSave, uploadFiles],
   );
 
-  const sendCursor = useRef(throttle((payload: CursorPayload) => send("cursor", payload), CURSOR_MS));
+  // The selection is read when the throttled message actually goes out, so a
+  // payload that carries it is never dropped in favour of a later one without it.
+  const sendCursor = useRef(
+    throttle((payload: CursorPayload) => {
+      const selection = apiRef.current?.getAppState().selectedElementIds;
+      const now = Date.now();
+      if (selection && (selection !== lastSelection.current || now - lastSelectionAt.current > SELECTION_RESEND_MS)) {
+        lastSelection.current = selection;
+        lastSelectionAt.current = now;
+        payload = { ...payload, selectedElementIds: selection as Record<string, true> };
+      }
+      send("cursor", payload);
+    }, CURSOR_MS),
+  );
 
   const onPointerUpdate = useCallback(
     (update: { pointer: CursorPayload["pointer"]; button: "up" | "down" }) => {
       if (!channelRef.current) return;
-      sendCursor.current({
-        socketId: mySocket,
-        userId: myId,
-        pointer: update.pointer,
-        button: update.button,
-        selectedElementIds: excalidrawAPI?.getAppState().selectedElementIds as Record<string, true> | undefined,
-      });
+      sendCursor.current({ socketId: mySocket, userId: myId, pointer: update.pointer, button: update.button });
     },
-    [excalidrawAPI, mySocket, myId],
+    [mySocket, myId],
   );
 
   // Follow mode: clicking someone's avatar follows their view. Who follows
@@ -471,8 +517,18 @@ export function useWhiteboardSync({
       avatarUrl: myAvatar,
       role,
       following: following.current,
+      visible: typeof document === "undefined" || document.visibilityState === "visible",
     } satisfies PresentUser);
   }, [myAvatar, myId, myName, mySocket, role]);
+
+  // Tell the others when this tab is hidden, so a background tab never holds the thumbnail job.
+  useEffect(() => {
+    const onVisibility = () => {
+      if (channelRef.current?.state === "joined") void trackMe();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [trackMe]);
 
   const onUserFollow = useCallback(
     (payload: OnUserFollowedPayload) => {
@@ -494,13 +550,13 @@ export function useWhiteboardSync({
   }, [excalidrawAPI, onScrollChange, onUserFollow]);
 
   /**
-   * Hands cursors and presence to Excalidraw once per frame. Each update re-renders
-   * the editor, and a busy board sends dozens of cursor messages a second.
+   * Hands cursors and presence to Excalidraw at most once per frame. Each update
+   * re-renders the editor, and a busy board sends dozens of cursor messages a second.
    */
   const pushCollaborators = useCallback(() => {
-    if (!excalidrawAPI || collaboratorsFrame.current !== null) return;
-    collaboratorsFrame.current = requestAnimationFrame(() => {
-      collaboratorsFrame.current = null;
+    if (!excalidrawAPI || cancelCollaborators.current) return;
+    cancelCollaborators.current = nextFrame(() => {
+      cancelCollaborators.current = null;
       excalidrawAPI.updateScene({
         collaborators: new Map(collaborators.current),
         captureUpdate: CaptureUpdateAction.NEVER,
@@ -538,9 +594,10 @@ export function useWhiteboardSync({
     const supabase = createClient();
     let cancelled = false;
 
-    // Edits from others are merged once per frame, however many messages arrive.
+    // Edits from others are merged once per frame, however many messages arrive:
+    // highest version per id wins, like the server merge.
     const remoteQueue = new Map<string, OrderedExcalidrawElement>();
-    let remoteFrame: number | null = null;
+    let cancelRemote: (() => void) | null = null;
 
     // Live edits that touch a SHIFT canvas, waiting for their saved copy: the version announced,
     // when the last live edit came, and when it was last fetched.
@@ -637,7 +694,8 @@ export function useWhiteboardSync({
     };
 
     const applyRemote = () => {
-      remoteFrame = null;
+      cancelRemote = null;
+      if (remoteQueue.size === 0) return;
       // Edits that touch a SHIFT canvas wait for the copy Postgres saved; the rest show now.
       const { apply: remote, verify } = guard.filterRemote([...remoteQueue.values()]);
       remoteQueue.clear();
@@ -655,7 +713,8 @@ export function useWhiteboardSync({
         remote as unknown as Parameters<typeof reconcileElements>[1],
         excalidrawAPI.getAppState(),
       );
-      // Remote changes are already broadcast and saved by their author.
+      // Remote changes are already broadcast and saved by their author. Mark
+      // them before updateScene, whose onChange must not echo or re-save them.
       markSeen(broadcastSeen.current, remote);
       markSeen(savedSeen.current, remote);
       excalidrawAPI.updateScene({ elements: merged, captureUpdate: CaptureUpdateAction.NEVER });
@@ -665,7 +724,7 @@ export function useWhiteboardSync({
 
     const queueRemote = (remote: Elements) => {
       queueLatest(remoteQueue, remote);
-      remoteFrame ??= requestAnimationFrame(applyRemote);
+      cancelRemote ??= nextFrame(applyRemote);
     };
 
     (async () => {
@@ -714,13 +773,22 @@ export function useWhiteboardSync({
             return;
           }
           const key = p.socketId as SocketId;
+          const prev = collaborators.current.get(key);
+          const unchanged =
+            !p.selectedElementIds &&
+            prev?.pointer?.x === p.pointer.x &&
+            prev.pointer.y === p.pointer.y &&
+            prev.pointer.tool === p.pointer.tool &&
+            prev.button === p.button;
+          if (unchanged) return;
           collaborators.current.set(key, {
-            ...collaborators.current.get(key),
+            ...prev,
             id: p.userId,
             socketId: key,
             pointer: p.pointer,
             button: p.button,
-            selectedElementIds: p.selectedElementIds,
+            // Senders omit the selection when it has not changed.
+            selectedElementIds: p.selectedElementIds ?? prev?.selectedElementIds,
             color: colorFor(p.userId),
           });
           pushCollaborators();
@@ -729,6 +797,7 @@ export function useWhiteboardSync({
           const users = Object.values(channel.presenceState<PresentUser>())
             .map((metas) => metas[0])
             .filter(Boolean) as PresentUser[];
+          presentRef.current = users;
           setPresent(users);
 
           // Followers come from presence; a new one gets the current view straight away.
@@ -776,10 +845,18 @@ export function useWhiteboardSync({
 
     return () => {
       cancelled = true;
-      if (remoteFrame !== null) cancelAnimationFrame(remoteFrame);
+      // Apply what already arrived, so no remote edit is lost on a re-subscribe.
+      if (cancelRemote) {
+        cancelRemote();
+        try {
+          applyRemote();
+        } catch {
+          // The canvas is already gone.
+        }
+      }
       if (verifyTimer) clearTimeout(verifyTimer);
-      if (collaboratorsFrame.current !== null) cancelAnimationFrame(collaboratorsFrame.current);
-      collaboratorsFrame.current = null;
+      cancelCollaborators.current?.();
+      cancelCollaborators.current = null;
       setConnected(false);
       const channel = channelRef.current;
       channelRef.current = null;
@@ -787,17 +864,19 @@ export function useWhiteboardSync({
     };
   }, [allElements, boardId, editable, excalidrawAPI, fetchMissingFiles, guard, myId, mySocket, pushCollaborators, send, trackMe]);
 
-  // Small preview for the board list.
+  // Small preview for the board list. Only one editor makes it: the one with
+  // the visible editor with the lowest socketId (a tie is harmless), in idle time.
   useEffect(() => {
     if (!editable || !excalidrawAPI) return;
-    let idle: number | null = null;
-    const update = async () => {
-      idle = null;
+    let cancelIdle: (() => void) | null = null;
+    const run = async () => {
+      cancelIdle = null;
+      if (document.hidden) return;
       const version = getSceneVersion(excalidrawAPI.getSceneElements());
       if (version === thumbVersion.current) return;
       thumbVersion.current = version;
       try {
-        const thumbnail = await boardThumbnail(excalidrawAPI);
+        const thumbnail = await boardThumbnail(excalidrawAPI, boardId);
         if (thumbnail) {
           await boardApi(`/api/whiteboards/${boardId}`, { method: "PATCH", body: JSON.stringify({ thumbnail }) });
         }
@@ -807,23 +886,27 @@ export function useWhiteboardSync({
       }
     };
     const timer = setInterval(() => {
-      // Exporting blocks the page, so skip ticks while someone is drawing.
-      if (idle !== null || Date.now() - lastEditAt.current < THUMBNAIL_QUIET_MS) return;
-      if (typeof requestIdleCallback === "function") idle = requestIdleCallback(() => void update(), { timeout: 5000 });
-      else void update();
+      if (document.hidden || cancelIdle) return;
+      // Exporting blocks the page, so skip ticks while someone here is drawing.
+      if (Date.now() - lastEditAt.current < THUMBNAIL_QUIET_MS) return;
+      const editors = presentRef.current
+        .filter((u) => canEdit(u.role) && u.visible !== false)
+        .map((u) => u.socketId);
+      const leader = editors.length ? editors.reduce((a, b) => (b < a ? b : a)) : mySocket;
+      if (leader !== mySocket) return;
+      cancelIdle = whenIdle(() => void run(), 5000);
     }, THUMBNAIL_MS);
     return () => {
       clearInterval(timer);
-      if (idle !== null) cancelIdleCallback(idle);
+      cancelIdle?.();
     };
-  }, [boardId, editable, excalidrawAPI]);
+  }, [boardId, editable, excalidrawAPI, mySocket]);
 
   // Save what is left when the tab goes away.
   useEffect(() => {
     if (!editable) return;
+    // The backup is written synchronously first (replacing any scheduled write); the keepalive save is async.
     const flush = () => {
-      if (backupTimer.current) clearTimeout(backupTimer.current);
-      backupTimer.current = null;
       writeBackup();
       void save({ keepalive: true });
     };
@@ -851,17 +934,20 @@ export function useWhiteboardSync({
 
   const refreshFiles = useCallback(() => void fetchMissingFiles(allElements()), [allElements, fetchMissingFiles]);
 
-  return {
-    excalidrawAPI,
-    setExcalidrawAPI,
-    onChange,
-    onPointerUpdate,
-    saveNow,
-    refreshFiles,
-    send,
-    on,
-    saveState,
-    present,
-    connected,
-  };
+  return useMemo(
+    () => ({
+      excalidrawAPI,
+      setExcalidrawAPI,
+      onChange,
+      onPointerUpdate,
+      saveNow,
+      refreshFiles,
+      send,
+      on,
+      saveState,
+      present,
+      connected,
+    }),
+    [excalidrawAPI, onChange, onPointerUpdate, saveNow, refreshFiles, send, on, saveState, present, connected],
+  );
 }
