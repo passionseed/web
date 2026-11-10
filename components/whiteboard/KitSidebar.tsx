@@ -4,7 +4,7 @@ import { Sidebar } from "@excalidraw/excalidraw";
 import type { ExcalidrawElementSkeleton } from "@excalidraw/excalidraw/data/transform";
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import { formatDistanceToNow } from "date-fns";
-import type { ReactNode } from "react";
+import { memo, type ReactNode } from "react";
 
 import { CARD_KINDS, CARDS, cardSkeleton } from "@/lib/whiteboard/cards";
 import { STAMPS, STICKY_COLORS } from "@/lib/whiteboard/core";
@@ -15,6 +15,18 @@ import type { CommentsApi } from "./useComments";
 import { VersionHistory } from "./VersionHistory";
 
 export const KIT_SIDEBAR = "board-kit";
+/** The kit's tabs, opened from the Apps menu. */
+export type KitTab = "create" | "templates" | "comments" | "history" | "activity";
+/** Id of the room cards section in the "create" tab, so the Apps menu can scroll to it. */
+export const KIT_CARDS_ID = "wb-kit-cards";
+
+/** Opens the kit on a tab, optionally scrolling to a section in it. */
+export function openKit(api: ExcalidrawImperativeAPI, tab: KitTab, sectionId?: string) {
+  api.toggleSidebar({ name: KIT_SIDEBAR, tab, force: true });
+  if (sectionId) {
+    requestAnimationFrame(() => document.getElementById(sectionId)?.scrollIntoView({ block: "start", behavior: "smooth" }));
+  }
+}
 
 type Props = {
   api: ExcalidrawImperativeAPI;
@@ -35,20 +47,24 @@ type Props = {
 const STICKY_TEXT_SIZE = 200;
 
 /** Drops a sticky near the middle of the screen; double-click it to type. */
-function addSticky(api: ExcalidrawImperativeAPI, color: string) {
+export function addSticky(api: ExcalidrawImperativeAPI, color: string) {
   // Offset each new sticky a little so a row of clicks fans out instead of stacking.
   const c = viewportCenter(api);
   const jitter = () => Math.round(Math.random() * 40 - 20);
   insertSkeletons(api, [sticky(0, 0, color, "", STICKY_TEXT_SIZE)], { x: c.x + jitter(), y: c.y + jitter() });
 }
 
-function addStamp(api: ExcalidrawImperativeAPI, stamp: string) {
+export function addStamp(api: ExcalidrawImperativeAPI, stamp: string) {
   const skeleton = { type: "text", x: 0, y: 0, text: stamp, fontSize: 56, fontFamily: 6 } as ExcalidrawElementSkeleton;
   const c = viewportCenter(api);
   insertSkeletons(api, [skeleton], { x: c.x + Math.random() * 60 - 30, y: c.y + Math.random() * 60 - 30 });
 }
 
-export function KitSidebar(props: Props) {
+/**
+ * The board kit on the right: stickies, stamps and room cards, templates, all
+ * comments, version history and (admins) activity. Opened from the Apps menu.
+ */
+export const KitSidebar = memo(function KitSidebar(props: Props) {
   const { api, editable, comments } = props;
   const openThreads = comments.threads.filter((t) => props.showResolved || !t.resolvedAt);
 
@@ -69,22 +85,22 @@ export function KitSidebar(props: Props) {
         {editable && (
           <Sidebar.Tab tab="create" className="space-y-5 p-3">
             <section>
-              <h3 className="mb-2 text-xs font-medium uppercase tracking-wide opacity-60">Sticky notes</h3>
+              <h3 className="mb-2 text-xs font-medium uppercase tracking-wide opacity-60">โน้ต · Sticky notes</h3>
               <div className="grid grid-cols-4 gap-2">
                 {STICKY_COLORS.map((c) => (
                   <button
                     key={c.name}
                     type="button"
-                    title={`${c.name} sticky`}
+                    aria-label={`โน้ต${c.name} · ${c.name} sticky`}
                     onClick={() => addSticky(api, c.fill)}
-                    className="aspect-square rounded-md shadow-sm ring-1 ring-black/10 transition-transform hover:-rotate-3 hover:scale-105"
+                    className="aspect-square rounded-md shadow-sm ring-1 ring-black/10 transition-transform hover:-rotate-3 hover:scale-105 active:scale-95"
                     style={{ background: c.fill }}
                   />
                 ))}
               </div>
               <p className="mt-2 text-xs opacity-60">ดับเบิลคลิกที่โน้ตเพื่อพิมพ์</p>
             </section>
-            <section>
+            <section id={KIT_CARDS_ID} className="scroll-mt-3">
               <h3 className="mb-2 text-xs font-medium uppercase tracking-wide opacity-60">การ์ดห้อง · Room cards</h3>
               <div className="grid grid-cols-2 gap-2">
                 {CARD_KINDS.map((kind) => (
@@ -95,7 +111,7 @@ export function KitSidebar(props: Props) {
                       const c = viewportCenter(api);
                       insertSkeletons(api, [cardSkeleton(kind)], { x: c.x + Math.random() * 40 - 20, y: c.y + Math.random() * 40 - 20 });
                     }}
-                    className="rounded-md p-2 text-left text-xs shadow-sm ring-1 ring-black/10 transition-transform hover:-rotate-1 hover:scale-[1.03]"
+                    className="rounded-md p-2 text-left text-xs shadow-sm ring-1 ring-black/10 transition-transform hover:-rotate-1 hover:scale-[1.03] active:scale-[0.98]"
                     style={{ background: CARDS[kind].color, color: "#1e1e1e" }}
                   >
                     <span className="block font-semibold">
@@ -105,17 +121,17 @@ export function KitSidebar(props: Props) {
                   </button>
                 ))}
               </div>
-              <p className="mt-2 text-xs opacity-60">บอร์ดจำว่าใครแปะการ์ดไหน ใช้นับว่ามากี่คน ใครช่วยใคร · มีใน 📚 Library ด้วย</p>
+              <p className="mt-2 text-xs opacity-60">บอร์ดจำว่าใครแปะการ์ดไหน ใช้นับว่ามากี่คน ใครช่วยใคร</p>
             </section>
             <section>
-              <h3 className="mb-2 text-xs font-medium uppercase tracking-wide opacity-60">Stamps · โหวต</h3>
+              <h3 className="mb-2 text-xs font-medium uppercase tracking-wide opacity-60">แสตมป์ · Stamps</h3>
               <div className="grid grid-cols-5 gap-1">
                 {STAMPS.map((s) => (
                   <button
                     key={s}
                     type="button"
                     onClick={() => addStamp(api, s)}
-                    className="rounded-md py-1.5 text-2xl transition-transform hover:scale-125"
+                    className="rounded-md py-1.5 text-2xl transition-transform hover:scale-125 active:scale-95"
                   >
                     {s}
                   </button>
@@ -153,7 +169,7 @@ export function KitSidebar(props: Props) {
             แสดงที่ปิดแล้ว · Show resolved
           </label>
           {openThreads.length === 0 ? (
-            <p className="py-8 text-center text-sm opacity-60">ยังไม่มีคอมเมนต์ กด 💬 แล้วคลิกบนบอร์ด</p>
+            <p className="py-8 text-center text-sm opacity-60">ยังไม่มีคอมเมนต์ กดปุ่มคอมเมนต์ที่แถบด้านล่าง แล้วคลิกบนบอร์ด</p>
           ) : (
             <ul className="space-y-2">
               {openThreads.map((t) => (
@@ -178,7 +194,7 @@ export function KitSidebar(props: Props) {
                       <span className="opacity-60">{formatDistanceToNow(new Date(t.createdAt), { addSuffix: true })}</span>
                     </p>
                     <p className="line-clamp-2 text-sm">{t.body}</p>
-                    {t.replies.length > 0 && <p className="mt-1 text-xs opacity-60">{t.replies.length} replies</p>}
+                    {t.replies.length > 0 && <p className="mt-1 text-xs opacity-60">{t.replies.length} คำตอบ · replies</p>}
                   </button>
                 </li>
               ))}
@@ -206,4 +222,4 @@ export function KitSidebar(props: Props) {
       </Sidebar.Tabs>
     </Sidebar>
   );
-}
+});

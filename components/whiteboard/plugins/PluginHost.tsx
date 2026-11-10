@@ -1,13 +1,14 @@
 "use client";
 
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { WhiteboardRole } from "@/lib/whiteboard/core";
 
 import type { BoardEvent } from "../useWhiteboardSync";
 import { PluginWindow, type WindowPos } from "./PluginWindow";
 import { pluginById } from "./registry";
+import type { BoardPlugin, BoardPluginMe, BoardPluginPlayer, BoardPluginProps } from "./types";
 
 export type Channel = { send: (event: string, payload: unknown) => void; on: (event: BoardEvent, fn: (payload: unknown) => void) => () => void };
 type OpenWindows = Record<string, WindowPos>;
@@ -75,21 +76,94 @@ export function usePluginWindows(boardId: string) {
   return { open, order, save, toggle, focus };
 }
 
+/**
+ * Keeps `board`, `me` and `players` the same objects while their contents are,
+ * so memoized plugins skip the board's frequent re-renders.
+ */
+export function useStablePluginProps(
+  board: BoardPluginProps["board"],
+  me: BoardPluginMe,
+  players: BoardPluginPlayer[],
+) {
+  const stableBoard = useMemo(() => ({ id: board.id, title: board.title, role: board.role }), [board.id, board.title, board.role]);
+  const stableMe = useMemo(() => ({ id: me.id, name: me.name, avatarUrl: me.avatarUrl }), [me.id, me.name, me.avatarUrl]);
+  const playersKey = JSON.stringify(players.map((p) => [p.userId, p.name, p.avatarUrl]));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const stablePlayers = useMemo(() => players, [playersKey]);
+  return { board: stableBoard, me: stableMe, players: stablePlayers };
+}
+
+/** The plugin itself, re-rendered only when its own props change. */
+export const PluginBody = memo(function PluginBody({
+  Component,
+  ...props
+}: BoardPluginProps & { Component: BoardPlugin["Component"] }) {
+  return <Component {...props} />;
+});
+
+type Bridge = ReturnType<typeof pluginBridge>;
+
+/** One open window, with callbacks that stay stable across board re-renders. */
+function OpenWindow({
+  id,
+  plugin,
+  pos,
+  z,
+  bridge,
+  onFocus,
+  onMove,
+  onClose,
+  ...props
+}: Omit<BoardPluginProps, "close" | "broadcast" | "onBroadcast"> & {
+  id: string;
+  plugin: BoardPlugin;
+  pos: WindowPos;
+  z: number;
+  bridge: Bridge;
+  onFocus: (id: string) => void;
+  onMove: (id: string, pos: WindowPos) => void;
+  onClose: (id: string) => void;
+}) {
+  const close = useCallback(() => onClose(id), [onClose, id]);
+  const move = useCallback((next: WindowPos) => onMove(id, next), [onMove, id]);
+  const focus = useCallback(() => onFocus(id), [onFocus, id]);
+  return (
+    <PluginWindow
+      title={plugin.name}
+      icon={plugin.icon}
+      width={plugin.width}
+      height={plugin.height}
+      pos={pos}
+      z={z}
+      onFocus={focus}
+      onMove={move}
+      onClose={close}
+    >
+      <PluginBody Component={plugin.Component} {...props} {...bridge} close={close} />
+    </PluginWindow>
+  );
+}
+
 /** Renders the open plugin windows for a board. */
 export function PluginHost({
   api,
   board,
   editable,
+  me,
+  players,
   channel,
   windows,
 }: {
   api: ExcalidrawImperativeAPI;
   board: { id: string; title: string; role: WhiteboardRole };
   editable: boolean;
+  me: BoardPluginMe;
+  players: BoardPluginPlayer[];
   channel: Channel;
   windows: ReturnType<typeof usePluginWindows>;
 }) {
   const { open, order, save, toggle, focus } = windows;
+  const stable = useStablePluginProps(board, me, players);
   const openIds = Object.keys(open).join(",");
   // Bridges only change when the set of open windows does.
   const bridges = useMemo(
@@ -97,28 +171,36 @@ export function PluginHost({
     [openIds, channel],
   );
 
+  // toggle and save change whenever any window moves; read them through refs
+  // so the callbacks handed to plugins never change.
+  const latest = useRef({ open, save, toggle });
+  useEffect(() => {
+    latest.current = { open, save, toggle };
+  });
+  const onClose = useCallback((id: string) => latest.current.toggle(id), []);
+  const onMove = useCallback((id: string, next: WindowPos) => latest.current.save({ ...latest.current.open, [id]: next }), []);
+
   return (
     <>
       {Object.entries(open).map(([id, pos]) => {
         const plugin = pluginById(id);
         const bridge = bridges.get(id);
         if (!plugin || !bridge) return null;
-        const { Component } = plugin;
         return (
-          <PluginWindow
+          <OpenWindow
             key={id}
-            title={plugin.name}
-            icon={plugin.icon}
-            width={plugin.width}
-            height={plugin.height}
+            id={id}
+            plugin={plugin}
             pos={pos}
             z={20 + order.indexOf(id)}
-            onFocus={() => focus(id)}
-            onMove={(next) => save({ ...open, [id]: next })}
-            onClose={() => toggle(id)}
-          >
-            <Component api={api} board={board} editable={editable} close={() => toggle(id)} {...bridge} />
-          </PluginWindow>
+            bridge={bridge}
+            onFocus={focus}
+            onMove={onMove}
+            onClose={onClose}
+            api={api}
+            editable={editable}
+            {...stable}
+          />
         );
       })}
     </>

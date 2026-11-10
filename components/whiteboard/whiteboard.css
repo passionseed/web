@@ -135,37 +135,15 @@
   -webkit-backdrop-filter: blur(18px) saturate(1.08);
 }
 
-/* The main toolbar gets the horizon line: gold, fading out at both ends. */
-.whiteboard-room .excalidraw .App-toolbar.Island,
-.whiteboard-room .excalidraw .App-toolbar .Island {
-  overflow: visible;
-}
-.whiteboard-room .excalidraw .App-toolbar::after {
-  content: "";
-  position: absolute;
-  left: 14%;
-  right: 14%;
-  bottom: -1px;
-  height: 1px;
-  background: var(--wb-horizon);
-  pointer-events: none;
-  opacity: 0.85;
-}
-
-/* Tool buttons: slow warm charge-in, quick snap-out. */
+/* Tool buttons that Excalidraw still draws (properties panel, mobile bar): quiet hover, no glow. */
 .whiteboard-room .excalidraw .ToolIcon__icon {
   border-radius: 0.6rem;
-  transition: background-color 160ms ease-out, box-shadow 160ms ease-out;
-}
-.whiteboard-room .excalidraw .ToolIcon:hover .ToolIcon__icon {
-  box-shadow: inset 0 0 0 1px var(--wb-hairline-strong), 0 0 14px -4px rgba(251, 146, 60, 0.45);
-  transition: background-color 1200ms var(--wb-ease-in), box-shadow 1800ms var(--wb-ease-in);
+  transition: background-color 120ms ease-out, box-shadow 120ms ease-out;
 }
 .whiteboard-room .excalidraw .ToolIcon .ToolIcon_type_radio:checked + .ToolIcon__icon,
 .whiteboard-room .excalidraw .ToolIcon .ToolIcon_type_checkbox:checked + .ToolIcon__icon {
   background: var(--wb-active);
-  box-shadow: inset 0 0 0 1px var(--wb-hairline-strong), inset 0 -6px 12px -8px rgba(234, 120, 30, 0.45),
-    0 2px 10px -4px rgba(234, 120, 30, 0.45);
+  box-shadow: inset 0 0 0 1px var(--wb-hairline-strong);
 }
 
 /* Menus */
@@ -181,7 +159,6 @@
 }
 .whiteboard-room .excalidraw .dropdown-menu-item:hover {
   background: var(--color-surface-high);
-  transition: background-color 900ms var(--wb-ease-in);
 }
 
 /* Sidebar */
@@ -194,28 +171,6 @@
 .whiteboard-room .excalidraw .sidebar .sidebar__header {
   background: linear-gradient(to bottom, rgba(254, 217, 92, 0.1), rgba(254, 217, 92, 0.02));
   border-bottom: 1px solid var(--wb-hairline);
-}
-
-/* Share button and the sidebar trigger read as our primary actions. */
-.whiteboard-room .excalidraw .collab-button {
-  background: linear-gradient(180deg, #f08a2c 0%, #d9631a 100%);
-  border: none;
-  border-radius: 0.75rem;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5), inset 0 1px 0 rgba(255, 220, 170, 0.6),
-    0 6px 16px -6px rgba(217, 99, 26, 0.6);
-  transition: box-shadow 160ms ease-out, transform 160ms ease-out;
-}
-.whiteboard-room .excalidraw .collab-button:hover {
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5), inset 0 1px 0 rgba(255, 220, 170, 0.7),
-    0 10px 26px -6px rgba(217, 99, 26, 0.75);
-  transform: translateY(-1px);
-  transition: box-shadow 2400ms var(--wb-ease-in), transform 1600ms var(--wb-ease-in);
-}
-.whiteboard-room .excalidraw .sidebar-trigger {
-  background: var(--wb-glass);
-  box-shadow: var(--wb-shadow);
-  border: 1px solid var(--wb-hairline);
-  border-radius: 0.75rem;
 }
 
 /* Welcome screen: our headline type, softer hints */
@@ -232,7 +187,6 @@
 }
 .whiteboard-room .excalidraw .welcome-screen-menu-item:hover {
   box-shadow: inset 0 0 0 1px var(--wb-hairline-strong);
-  transition: background-color 1200ms var(--wb-ease-in), box-shadow 1800ms var(--wb-ease-in);
 }
 
 /* ---------- Our own chrome (title, save, timer, footer buttons) ---------- */
@@ -342,4 +296,648 @@ button.wb-pill:enabled:hover,
 /* Our widgets draw their own card: drop Excalidraw's embed frame around them. */
 .whiteboard-room .excalidraw__embeddable__outer:has(> .wb-widget) {
   padding: 0 !important;
+}
+
+/* ==========================================================================
+   Board chrome, FigJam style (components/whiteboard/chrome)
+   Top left: menu + title + save state. Top right: people, timer, Share.
+   Bottom middle: the tool bar. Bottom right: undo/redo and zoom.
+   Our chrome sits at z-index 3: above the canvas (1-2), under Excalidraw's
+   layer UI (4), so its menus and panels open over our cards.
+   ========================================================================== */
+
+.whiteboard-room {
+  --wb-card-radius: 16px;
+  --wb-card-pad: 4px;
+  --wb-hover: rgba(186, 128, 62, 0.1);
+  --wb-press: rgba(186, 128, 62, 0.18);
+  --wb-on-bg: #e2711d;
+  --wb-on-text: #fff;
+  --wb-focus: #d97706;
+  /* Room for Excalidraw's mobile bottom bar under ours. */
+  --wb-bottom: 16px;
+}
+.whiteboard-room:has(.excalidraw.theme--dark) {
+  --wb-hover: rgba(254, 217, 92, 0.09);
+  --wb-press: rgba(254, 217, 92, 0.16);
+  --wb-on-bg: #fbb35c;
+  --wb-on-text: #2a1a0c;
+  --wb-focus: #fbbf24;
+}
+.whiteboard-room:has(.excalidraw--mobile) {
+  --wb-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+}
+
+/* ---------- Excalidraw's own chrome that ours replaces ---------- */
+
+/* The tool bar moves to the bottom. Hidden, not removed: its hints still show, shortcuts still work. */
+.whiteboard-room .excalidraw .App-menu_top .shapes-section {
+  visibility: hidden;
+}
+.whiteboard-room .excalidraw .App-menu_top .shapes-section .HintViewer {
+  visibility: visible;
+}
+.whiteboard-room .excalidraw .welcome-screen-decor-hint--toolbar {
+  display: none;
+}
+/* Phones: Excalidraw's top tool row (shapes, pen mode, lock, hand, Library). */
+.whiteboard-room .excalidraw--mobile .App-top-bar .App-toolbar-container {
+  display: none;
+}
+/* Our people card replaces the avatar list; room cards are in the kit, so no Library button. */
+.whiteboard-room .excalidraw .layer-ui__wrapper__top-right .UserList,
+.whiteboard-room .excalidraw .default-sidebar-trigger {
+  display: none;
+}
+/* Help is in the menu (and on "?"). Undo/redo and zoom go bottom right, like FigJam. */
+.whiteboard-room .excalidraw .layer-ui__wrapper__footer-right {
+  display: none;
+}
+.whiteboard-room .excalidraw .layer-ui__wrapper__footer-left {
+  margin-left: auto;
+}
+.whiteboard-room .excalidraw .layer-ui__wrapper__footer-left section {
+  flex-direction: row-reverse;
+  align-items: center;
+  gap: 0.5rem;
+}
+.whiteboard-room .excalidraw .layer-ui__wrapper__footer-left .undo-redo-buttons {
+  margin-inline-start: 0;
+}
+.whiteboard-room .excalidraw .zoom-actions,
+.whiteboard-room .excalidraw .undo-redo-buttons {
+  background: var(--wb-glass);
+  border: 1px solid var(--wb-hairline);
+  border-radius: 14px;
+  box-shadow: var(--wb-shadow);
+  overflow: hidden;
+}
+/* Narrow desktops: stack them so the tool bar has room. */
+@media (max-width: 1100px) {
+  .whiteboard-room .excalidraw .layer-ui__wrapper__footer-left section {
+    flex-direction: column-reverse;
+    align-items: flex-end;
+  }
+}
+/* Keep Excalidraw's bottom-centre bits clear of our bar. */
+.whiteboard-room .excalidraw .scroll-back-to-content {
+  bottom: calc(var(--wb-bottom) + 68px);
+}
+.whiteboard-room .excalidraw .follow-mode__badge {
+  margin-bottom: calc(var(--wb-bottom) + 64px);
+}
+/* The menu button sits in the left slot of our top-left card. */
+.whiteboard-room .excalidraw:not(.excalidraw--mobile) .App-menu_top__left .main-menu-trigger {
+  background: transparent;
+  box-shadow: none;
+  border: none;
+  border-radius: 12px;
+}
+.whiteboard-room .excalidraw:not(.excalidraw--mobile) .App-menu_top__left .main-menu-trigger:hover {
+  background: var(--wb-hover);
+}
+
+/* ---------- Cards ---------- */
+
+.wb-corner,
+.wb-bar {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 44px;
+  padding: var(--wb-card-pad);
+  border-radius: var(--wb-card-radius);
+  border: 1px solid var(--wb-hairline);
+  background: var(--wb-glass);
+  backdrop-filter: blur(18px) saturate(1.08);
+  -webkit-backdrop-filter: blur(18px) saturate(1.08);
+  box-shadow: var(--wb-shadow);
+  color: var(--wb-text);
+  font-family: var(--wb-font);
+  line-height: 1.4;
+}
+
+/* Lines up with Excalidraw's menu button (top/left 1rem, 2.25rem square). */
+.wb-corner--left {
+  top: calc(1rem - var(--wb-card-pad) - 1px);
+  left: calc(1rem - var(--wb-card-pad) - 1px);
+  height: calc(2.25rem + 2 * var(--wb-card-pad) + 2px);
+  max-width: min(22rem, calc(100vw - 2rem));
+  padding-left: calc(2.25rem + var(--wb-card-pad) + 4px);
+  padding-right: 6px;
+}
+.whiteboard-room:has(.excalidraw--mobile) .wb-corner--left {
+  top: max(12px, env(safe-area-inset-top, 0px));
+  left: 12px;
+  padding-left: 6px;
+  max-width: calc(100vw - 14rem);
+}
+/* A running timer widens the right card; keep the title clear of it. */
+.whiteboard-room:has(.excalidraw--mobile):has(.wb-corner--right .wb-timer--running) .wb-corner--left {
+  max-width: calc(100vw - 17.5rem);
+}
+.wb-corner--right {
+  top: calc(1rem - var(--wb-card-pad) - 1px);
+  right: 1rem;
+  gap: 6px;
+}
+.whiteboard-room:has(.excalidraw--mobile) .wb-corner--right {
+  top: max(12px, env(safe-area-inset-top, 0px));
+  right: 12px;
+}
+/* The board kit opens over the right edge; keep Share and the people next to it. */
+.whiteboard-room:not(:has(.excalidraw--mobile)):has(.excalidraw .sidebar) .wb-corner--right {
+  right: calc(302px + 1rem);
+}
+
+.wb-title {
+  display: block;
+  min-width: 0;
+  max-width: 15rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 8px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 36px;
+  color: var(--wb-text);
+  background: transparent;
+  border: 1px solid transparent;
+  text-align: left;
+}
+.wb-title--button:hover {
+  background: var(--wb-hover);
+}
+.wb-title--editing {
+  width: 14rem;
+  border-color: var(--wb-hairline-strong);
+  background: transparent;
+  outline: none;
+}
+.wb-status {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  color: var(--wb-text-soft);
+}
+.wb-chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--wb-hover);
+  font-size: 0.75rem;
+  color: var(--wb-text-soft);
+  white-space: nowrap;
+}
+
+/* People */
+.wb-faces {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.wb-face-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 44px;
+  margin-left: -6px;
+  border-radius: 999px;
+  background: transparent;
+}
+.wb-face-button:first-child {
+  margin-left: 0;
+}
+.wb-face {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  border-radius: 999px;
+  box-shadow: 0 0 0 2px var(--wb-face-ring, transparent), 0 0 0 4px var(--wb-surface, #fffdf9);
+}
+.whiteboard-room:has(.excalidraw.theme--dark) .wb-face {
+  --wb-surface: #1c1614;
+}
+.wb-face__initial {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1e1e1e;
+}
+.wb-face--more {
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  background: var(--wb-hover);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--wb-text);
+}
+.wb-face-button--on .wb-face {
+  box-shadow: 0 0 0 2px var(--wb-face-ring, #e2711d), 0 0 0 4px var(--wb-on-bg);
+}
+
+/* Timer */
+.wb-timer {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  min-width: 36px;
+  justify-content: center;
+  padding: 0 10px;
+  overflow: hidden;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  color: var(--wb-text-soft);
+  background: transparent;
+}
+button.wb-timer:enabled:hover {
+  background: var(--wb-hover);
+}
+.wb-timer--running {
+  color: #c2410c;
+  background: rgba(251, 146, 60, 0.12);
+}
+.wb-timer--ending {
+  color: #dc2626;
+  background: rgba(248, 113, 113, 0.14);
+}
+.whiteboard-room:has(.excalidraw.theme--dark) .wb-timer--running {
+  color: #fdba74;
+}
+.whiteboard-room:has(.excalidraw.theme--dark) .wb-timer--ending {
+  color: #fca5a5;
+}
+.wb-timer__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: rgba(251, 146, 60, 0.18);
+}
+
+/* Share */
+.wb-share {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 10px;
+  background: #e2711d;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color 120ms ease-out;
+}
+.wb-share:hover {
+  background: #c75f12;
+}
+.wb-share:active {
+  background: #a64d0c;
+}
+
+/* ---------- Bottom bar ---------- */
+
+/* Centred with auto margins (not left: 50%), so the bar can use the full width before it scrolls. */
+.wb-bar-wrap {
+  position: absolute;
+  z-index: 3;
+  left: 1rem;
+  right: 1rem;
+  bottom: var(--wb-bottom);
+  width: fit-content;
+  max-width: calc(100vw - 2rem);
+  margin-inline: auto;
+}
+/* Narrow desktops: leave the bottom right to undo/redo and zoom. */
+@media (max-width: 1100px) {
+  .whiteboard-room:not(:has(.excalidraw--mobile)) .wb-bar-wrap {
+    right: auto;
+    margin-inline: 0;
+    max-width: calc(100vw - 10rem);
+  }
+}
+/* An open popover lifts the bar or card above Excalidraw's layer UI (4), so the properties panel never covers it. */
+.wb-bar-wrap:has(.wb-popover),
+.wb-corner:has(.wb-popover) {
+  z-index: 5;
+}
+.wb-bar {
+  position: relative;
+  max-width: 100%;
+}
+.wb-bar__tools {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+.wb-bar__end {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+}
+/*
+ * Phones: only the drawing tools scroll sideways, behind a fade that shows
+ * there is more. Comment, Reactions and + Apps always stay in view.
+ */
+.whiteboard-room:has(.excalidraw--mobile) .wb-bar__tools {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 20px;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+}
+.whiteboard-room:has(.excalidraw--mobile) .wb-bar__tools::-webkit-scrollbar {
+  display: none;
+}
+.wb-bar__divider {
+  flex: none;
+  width: 1px;
+  height: 24px;
+  margin: 0 4px;
+  background: var(--wb-hairline);
+}
+
+.wb-tool {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  color: var(--wb-text);
+  background: transparent;
+  transition: background-color 120ms ease-out, color 120ms ease-out;
+}
+.wb-tool:hover {
+  background: var(--wb-hover);
+}
+.wb-tool:active {
+  background: var(--wb-press);
+}
+.wb-tool--on,
+.wb-tool--on:hover {
+  background: var(--wb-on-bg);
+  color: var(--wb-on-text);
+}
+.wb-tool--apps:not(.wb-tool--on) {
+  color: #c2410c;
+}
+.whiteboard-room:has(.excalidraw.theme--dark) .wb-tool--apps:not(.wb-tool--on) {
+  color: #fdba74;
+}
+
+/* ---------- Popovers (bar pickers, Apps menu, people list) ---------- */
+
+.wb-popover {
+  position: absolute;
+  z-index: 5;
+  border-radius: var(--wb-card-radius);
+  border: 1px solid var(--wb-hairline);
+  background: var(--wb-glass);
+  backdrop-filter: blur(22px) saturate(1.08);
+  -webkit-backdrop-filter: blur(22px) saturate(1.08);
+  box-shadow: var(--wb-shadow), 0 18px 40px -20px rgba(60, 35, 10, 0.35);
+  color: var(--wb-text);
+  font-family: var(--wb-font);
+  line-height: 1.45;
+  animation: wb-pop-in 140ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.wb-popover--up {
+  bottom: calc(100% + 8px);
+  left: 50%;
+  width: max-content;
+  max-width: calc(100vw - 2rem);
+  transform: translateX(-50%);
+}
+.wb-popover--down {
+  top: calc(100% + 8px);
+}
+.wb-popover--apps {
+  width: 22rem;
+}
+@keyframes wb-pop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.wb-popover__label {
+  padding: 4px 8px 2px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--wb-text-soft);
+}
+.wb-apps {
+  max-height: min(70vh, 34rem);
+  overflow-y: auto;
+  padding: 6px;
+  overscroll-behavior: contain;
+}
+.wb-menu-section + .wb-menu-section {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--wb-hairline);
+}
+.wb-row {
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  text-align: left;
+  color: inherit;
+  background: transparent;
+  transition: background-color 120ms ease-out;
+}
+.wb-row:hover {
+  background: var(--wb-hover);
+}
+.wb-row:active {
+  background: var(--wb-press);
+}
+.wb-row--on .wb-row__icon {
+  color: var(--wb-on-bg);
+}
+.wb-row__icon {
+  display: inline-flex;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--wb-hover);
+}
+.wb-row__side {
+  display: inline-flex;
+  flex: none;
+  width: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  color: var(--wb-text-soft);
+}
+.wb-row__side:hover {
+  background: var(--wb-hover);
+  color: var(--wb-text);
+}
+.wb-row__side--on {
+  color: var(--wb-on-bg);
+}
+
+.wb-swatch {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.08);
+  transition: transform 120ms ease-out;
+}
+.wb-swatch:active {
+  transform: scale(0.94);
+}
+.wb-emoji {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  font-size: 1.5rem;
+  transition: background-color 120ms ease-out, transform 120ms ease-out;
+}
+.wb-emoji:hover {
+  background: var(--wb-hover);
+}
+.wb-emoji:active {
+  transform: scale(0.9);
+}
+@media (hover: hover) {
+  .wb-swatch:hover {
+    transform: translateY(-2px) rotate(-3deg);
+  }
+  .wb-emoji:hover {
+    transform: scale(1.15);
+  }
+}
+/* Touch: no sticky hover tints, the pressed state is the feedback. */
+@media (hover: none) {
+  .wb-tool:hover:not(.wb-tool--on),
+  .wb-row:hover,
+  .wb-row__side:hover,
+  .wb-emoji:hover,
+  .wb-title--button:hover,
+  button.wb-timer:enabled:hover {
+    background: transparent;
+  }
+  .wb-tool:active:not(.wb-tool--on),
+  .wb-row:active,
+  .wb-emoji:active {
+    background: var(--wb-press);
+  }
+}
+
+/* ---------- Tooltips: data-tip="ไทย · English  V" ---------- */
+
+@media (hover: hover) {
+  .whiteboard-room [data-tip] {
+    position: relative;
+  }
+  .whiteboard-room [data-tip]::after {
+    content: attr(data-tip);
+    position: absolute;
+    left: 50%;
+    z-index: 10;
+    transform: translateX(-50%);
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #2a2118;
+    color: #fbf6ee;
+    font-size: 0.72rem;
+    font-weight: 500;
+    line-height: 1.4;
+    white-space: pre;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 80ms ease-out;
+  }
+  .whiteboard-room [data-tip][data-tip-side="top"]::after {
+    bottom: calc(100% + 8px);
+  }
+  .whiteboard-room [data-tip][data-tip-side="bottom"]::after {
+    top: calc(100% + 8px);
+  }
+  .whiteboard-room [data-tip]:hover::after {
+    opacity: 1;
+    transition: opacity 120ms ease-out 400ms;
+  }
+  .whiteboard-room [data-tip][aria-expanded="true"]::after {
+    display: none;
+  }
+}
+/* Cards at the screen edges keep their tooltips on screen. */
+.whiteboard-room .wb-corner--right [data-tip]::after {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+.whiteboard-room .wb-corner--left [data-tip]::after {
+  left: 0;
+  transform: none;
+}
+.whiteboard-room [data-tip]:focus-visible::after {
+  opacity: 1;
+}
+
+/* ---------- Focus ---------- */
+
+.wb-tool:focus-visible,
+.wb-row:focus-visible,
+.wb-row__side:focus-visible,
+.wb-swatch:focus-visible,
+.wb-emoji:focus-visible,
+.wb-title:focus-visible,
+.wb-status:focus-visible,
+.wb-chip:focus-visible,
+.wb-face-button:focus-visible,
+.wb-timer:focus-visible,
+.wb-share:focus-visible {
+  outline: 2px solid var(--wb-focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wb-popover {
+    animation: none;
+  }
+  .wb-swatch:hover,
+  .wb-emoji:hover {
+    transform: none;
+  }
 }

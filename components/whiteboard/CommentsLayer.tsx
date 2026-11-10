@@ -4,10 +4,13 @@ import { sceneCoordsToViewportCoords, viewportCoordsToSceneCoords } from "@excal
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import { formatDistanceToNow } from "date-fns";
 import { Check, RotateCcw, Send, Trash2, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Avatar } from "./ShareDialog";
 import type { CommentsApi, Thread } from "./useComments";
+import { useViewportTick } from "./useViewportTick";
+
+export { useViewportTick };
 
 type Props = {
   api: ExcalidrawImperativeAPI;
@@ -22,13 +25,6 @@ type Props = {
   showResolved: boolean;
 };
 
-/** Hook that re-renders whenever the canvas scrolls or zooms. */
-export function useViewportTick(api: ExcalidrawImperativeAPI) {
-  const [, setTick] = useState(0);
-  useEffect(() => api.onScrollChange(() => setTick((t) => t + 1)), [api]);
-  useEffect(() => api.onChange(() => setTick((t) => t + 1)), [api]);
-}
-
 /** Comment pins on the canvas, the new-comment composer and the open thread. */
 export function CommentsLayer(props: Props) {
   const { api, comments, placing, openId, onOpen, showResolved } = props;
@@ -37,16 +33,22 @@ export function CommentsLayer(props: Props) {
   const appState = api.getAppState();
   const toScreen = (x: number, y: number) => sceneCoordsToViewportCoords({ sceneX: x, sceneY: y }, appState);
 
+  // The listener lives for the whole mount and reads the latest props from a ref.
+  const latest = useRef({ placing, onOpen, onPlaced: props.onPlaced });
+  useEffect(() => {
+    latest.current = { placing, onOpen, onPlaced: props.onPlaced };
+  });
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
+      const { placing: isPlacing, onOpen: open, onPlaced } = latest.current;
       setDraft(null);
-      onOpen(null);
-      if (placing) props.onPlaced();
+      open(null);
+      if (isPlacing) onPlaced();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  });
+  }, []);
 
   const visible = comments.threads.filter((t) => showResolved || !t.resolvedAt || t.id === openId);
   const open = comments.threads.find((t) => t.id === openId) ?? null;
@@ -57,7 +59,7 @@ export function CommentsLayer(props: Props) {
         <div
           className="pointer-events-auto absolute inset-0 cursor-crosshair"
           onClick={(e) => {
-            const { x, y } = viewportCoordsToSceneCoords({ clientX: e.clientX, clientY: e.clientY }, appState);
+            const { x, y } = viewportCoordsToSceneCoords({ clientX: e.clientX, clientY: e.clientY }, api.getAppState());
             setDraft({ x, y });
             props.onPlaced();
           }}

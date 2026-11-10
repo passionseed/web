@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import type { WhiteboardMember } from "@/lib/supabase/whiteboards";
 import { shareUrl, type LinkAccess, type MemberRole, type WhiteboardRole } from "@/lib/whiteboard/core";
 
+import { focusCanvas } from "./chrome/useActiveTool";
+
 const ACCESS_LABEL: Record<LinkAccess, string> = {
   edit: "แก้ไขได้ · Can edit",
   view: "ดูอย่างเดียว · Can view",
@@ -89,7 +91,14 @@ export function ShareDialog(props: Props) {
 
   return (
     <Dialog open={props.open} onOpenChange={props.onOpenChange}>
-      <DialogContent className="max-w-md border-white/10 bg-[#141120] text-white">
+      <DialogContent
+        className="max-w-md border-white/10 bg-[#141120] text-white"
+        // Back to the canvas, not the Share button (outside Excalidraw), so shortcuts and paste work again.
+        onCloseAutoFocus={(e) => {
+          e.preventDefault();
+          focusCanvas();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>แชร์บอร์ด · Share board</DialogTitle>
           <DialogDescription className="text-white/60">

@@ -36,7 +36,10 @@ export function useComments(boardId: string, channel: Channel) {
   const threads = useMemo<Thread[]>(() => {
     const replies = new Map<string, WhiteboardComment[]>();
     for (const c of comments) {
-      if (c.parentId) replies.set(c.parentId, [...(replies.get(c.parentId) ?? []), c]);
+      if (!c.parentId) continue;
+      const list = replies.get(c.parentId);
+      if (list) list.push(c);
+      else replies.set(c.parentId, [c]);
     }
     return comments.filter((c) => !c.parentId).map((c) => ({ ...c, replies: replies.get(c.id) ?? [] }));
   }, [comments]);
@@ -56,16 +59,19 @@ export function useComments(boardId: string, channel: Channel) {
     [refresh, send],
   );
 
-  const base = `/api/whiteboards/${boardId}/comments`;
-  return {
-    threads,
-    addThread: (x: number, y: number, body: string) =>
-      mutate(base, { method: "POST", body: JSON.stringify({ x, y, body }) }),
-    reply: (parentId: string, body: string) => mutate(base, { method: "POST", body: JSON.stringify({ parentId, body }) }),
-    resolve: (id: string, resolved: boolean) =>
-      mutate(`${base}/${id}`, { method: "PATCH", body: JSON.stringify({ resolved }) }),
-    remove: (id: string) => mutate(`${base}/${id}`, { method: "DELETE" }),
-  };
+  return useMemo(() => {
+    const base = `/api/whiteboards/${boardId}/comments`;
+    return {
+      threads,
+      addThread: (x: number, y: number, body: string) =>
+        mutate(base, { method: "POST", body: JSON.stringify({ x, y, body }) }),
+      reply: (parentId: string, body: string) =>
+        mutate(base, { method: "POST", body: JSON.stringify({ parentId, body }) }),
+      resolve: (id: string, resolved: boolean) =>
+        mutate(`${base}/${id}`, { method: "PATCH", body: JSON.stringify({ resolved }) }),
+      remove: (id: string) => mutate(`${base}/${id}`, { method: "DELETE" }),
+    };
+  }, [boardId, mutate, threads]);
 }
 
 export type CommentsApi = ReturnType<typeof useComments>;

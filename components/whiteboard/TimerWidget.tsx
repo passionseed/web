@@ -1,7 +1,7 @@
 "use client";
 
 import { Timer, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -32,7 +32,7 @@ function chime() {
 }
 
 /** Shared countdown for workshops: editors start and stop it, everyone sees it. */
-export function TimerWidget({
+export const TimerWidget = memo(function TimerWidget({
   boardId,
   initial,
   canControl,
@@ -62,6 +62,7 @@ export function TimerWidget({
       }
     };
     tick();
+    if (!timer.endsAt) return;
     const id = setInterval(tick, 250);
     return () => clearInterval(id);
   }, [timer.endsAt]);
@@ -89,16 +90,14 @@ export function TimerWidget({
       <PopoverTrigger asChild disabled={!canControl}>
         <button
           type="button"
-          title="Timer"
-          className={`wb-pill overflow-hidden px-2.5 text-sm tabular-nums ${
-            running ? (left <= 10 ? "!border-red-400 !text-red-600" : "!border-orange-300 !text-orange-700") : ""
-          }`}
+          aria-label={running ? `จับเวลา เหลือ ${formatClock(left)} · Timer` : "จับเวลา · Timer"}
+          data-tip={canControl ? "จับเวลาให้ทุกคน · Timer for everyone" : "เวลาที่เหลือ · Time left"}
+          data-tip-side="bottom"
+          className={`wb-timer ${running ? "wb-timer--running" : ""} ${running && left <= 10 ? "wb-timer--ending" : ""}`}
         >
-          {running && (
-            <span className="absolute inset-y-0 left-0 bg-orange-200/50" style={{ width: `${progress * 100}%` }} />
-          )}
-          <Timer className="relative h-4 w-4" />
-          {running && <span className="relative font-semibold">{formatClock(left)}</span>}
+          {running && <span className="wb-timer__fill" style={{ width: `${progress * 100}%` }} aria-hidden />}
+          <Timer className="relative h-4 w-4" aria-hidden />
+          {running && <span className="relative font-semibold tabular-nums">{formatClock(left)}</span>}
         </button>
       </PopoverTrigger>
       {canControl && (
@@ -112,7 +111,7 @@ export function TimerWidget({
                 onClick={() => void set(m * 60)}
                 className="rounded-md border px-2 py-1.5 text-sm hover:border-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10"
               >
-                {m} min
+                {m} นาที
               </button>
             ))}
           </div>
@@ -133,7 +132,7 @@ export function TimerWidget({
               className="min-w-0 flex-1 rounded-md border px-2 py-1.5 text-sm"
             />
             <button type="submit" className="rounded-md bg-orange-500 px-3 text-sm text-white">
-              Start
+              เริ่ม · Start
             </button>
           </form>
           {running && (
@@ -149,4 +148,4 @@ export function TimerWidget({
       )}
     </Popover>
   );
-}
+});
