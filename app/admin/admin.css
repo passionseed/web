@@ -883,3 +883,44 @@ body:has(.admin-workspace),
     transition: none !important;
   }
 }
+
+/* Markdown from the SHIFT canvas reads and Claude's answers (/admin/shift/canvases). */
+.admin-markdown {
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.admin-markdown h1 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+}
+.admin-markdown h2,
+.admin-markdown h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 1rem 0 0.35rem;
+}
+.admin-markdown p {
+  margin: 0.4rem 0;
+}
+.admin-markdown ul,
+.admin-markdown ol {
+  margin: 0.3rem 0;
+  padding-left: 1.25rem;
+}
+.admin-markdown ul {
+  list-style: disc;
+}
+.admin-markdown ol {
+  list-style: decimal;
+}
+.admin-markdown li + li {
+  margin-top: 0.15rem;
+}
+.admin-markdown hr {
+  margin: 1rem 0;
+  border-color: hsl(var(--border));
+}
+.admin-markdown code {
+  font-size: 0.85em;
+}

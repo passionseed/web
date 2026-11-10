@@ -259,6 +259,38 @@ each one (`(by Mint, edited by Beam)`), arrows, and comment threads. Code:
 Boards hold students' words. Don't paste board content into public places (the company brain
 is public): summarise without names.
 
+### SHIFT canvases for admins, with Claude
+
+`/admin/shift/canvases` (site admins only, **Canvases** in the SHIFT admin tabs) lists every
+SHIFT project canvas across boards: owner and team, which beliefs are written (Problem, Target,
+Idea, Ship), counts of interviews, examples, tests and pivots, days logged, saved versions, and
+the last edit. Each canvas opens at `/admin/shift/canvases/<board>/<frame>` with its contents
+read the same way as `pnpm whiteboard:read` (only that canvas, its own arrows, and the comments
+pinned on it), and a link to the board.
+
+Both pages have **Ask Claude**: a summary button and a chat about one canvas or all of them.
+
+- **Request:** `POST /api/admin/shift/canvases/chat` (`requireAdmin`). The browser sends only the
+  scope and the conversation (`lib/shift/canvas-chat.ts`). The server reads the canvases from
+  the database (`lib/supabase/shift-canvases.ts`, service role), so a request cannot add text
+  of its own.
+- **Model:** `lib/shift/canvas-claude.ts` calls `claude-opus-5-5` with the official SDK
+  (`@anthropic-ai/sdk`, `ANTHROPIC_API_KEY`) and streams plain text. Effort is low and answers are
+  capped at 4,000 tokens: the project is on Vercel Hobby without fluid compute, so the route
+  stops at 60 seconds. Turning on fluid compute would allow 300.
+- **Refusals:** the server-side fallback (`fallbacks: "default"`) retries a refusal on the model
+  Anthropic recommends.
+- **Caching:** the canvases sit in a cached system block, so follow-up questions cost a fraction
+  of the first.
+- **Prompt injection:** students' text is marked as material to read, not instructions.
+- **Saving:** nothing is saved. A conversation lasts until the page reloads.
+- **Size:** more than 400,000 characters of canvases is refused with a request to open one
+  canvas, never cut short.
+
+Sending canvases to Claude sends students' words to Anthropic. Commercial API data is not used
+for training and is deleted within 30 days (longer only when flagged for a policy violation);
+see Anthropic's privacy center. Keep this page admin-only.
+
 ## Safeguarding
 
 Boards are group spaces. Every member sees the full member list, comments are visible to

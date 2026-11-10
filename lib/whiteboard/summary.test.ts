@@ -52,7 +52,7 @@ describe("summarizeElements", () => {
       text("arr-label", 200, 0, "leads to", { containerId: "arr" }),
       text("gone", 0, 300, "deleted", { isDeleted: true }),
     ]);
-    expect(summary.links).toEqual([{ from: "Problem", to: "Idea", label: "leads to" }]);
+    expect(summary.links).toEqual([{ from: "Problem", to: "Idea", label: "leads to", fromId: "a", toId: "b" }]);
     expect(summary.loose.map((i) => i.text)).toEqual(["Problem", "Idea"]);
     expect(summary.counts).toEqual({ text: 3, arrow: 1 });
   });

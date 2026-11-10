@@ -16,7 +16,8 @@ export type BoardListing = {
   memberCount: number;
 };
 
-async function names(ids: string[]): Promise<Map<string, string>> {
+/** Display names for user ids, for reads that show who wrote what. */
+export async function displayNames(ids: string[]): Promise<Map<string, string>> {
   if (ids.length === 0) return new Map();
   const { data, error } = await createAdminClient().from("profiles").select("id, full_name, username").in("id", ids);
   if (error) throw error;
@@ -34,7 +35,7 @@ export async function listAllBoards(search?: string): Promise<BoardListing[]> {
   if (search) query = query.ilike("title", `%${search}%`);
   const { data, error } = await query;
   if (error) throw error;
-  const owners = await names([...new Set((data ?? []).map((b) => b.owner_id as string))]);
+  const owners = await displayNames([...new Set((data ?? []).map((b) => b.owner_id as string))]);
   return (data ?? []).map((b) => ({
     id: b.id as string,
     title: b.title as string,
@@ -61,7 +62,7 @@ export async function readBoardMarkdown(boardId: string): Promise<string | null>
   if (!board) return null;
 
   const summary = summarizeElements((board.elements as unknown[]) ?? []);
-  const people = await names([
+  const people = await displayNames([
     ...new Set([
       ...authorIds(summary),
       board.owner_id as string,
