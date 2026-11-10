@@ -87,6 +87,11 @@ describe("patchBoardSchema", () => {
     expect(patchBoardSchema.safeParse({ elements: [{ ...el, isDeleted: false, frameId: null, customData: { project: "p", card: "x" } }] }).success).toBe(true);
     expect(patchBoardSchema.safeParse({ thumbnail: "javascript:alert(1)" }).success).toBe(false);
   });
+
+  it("rejects versions past what JavaScript counts exactly", () => {
+    expect(patchBoardSchema.safeParse({ elements: [{ id: "x", version: 3_000_000_000 }] }).success).toBe(true);
+    expect(patchBoardSchema.safeParse({ elements: [{ id: "x", version: 2 ** 53 }] }).success).toBe(false);
+  });
 });
 
 it("builds share links and stable colours", () => {

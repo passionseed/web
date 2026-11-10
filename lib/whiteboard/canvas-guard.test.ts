@@ -48,35 +48,99 @@ describe("canvas guard: this browser's edits", () => {
   });
 });
 
+describe("canvas guard: note versions", () => {
+  const v1 = { v: 1, text: "แรก", at: "2026-11-01T03:00:00.000Z", by: OWNER };
+  const card: El = { id: "C", type: "rectangle", version: 1, frameId: "F", customData: { card: "problem", versions: [v1] } };
+
+  it("puts back a version someone removed (an undo, or a tampered client)", () => {
+    const guard = createCanvasGuard([...scene, card]);
+    const { fixes, blocked } = guard.checkLocal([{ ...card, version: 2, customData: { card: "problem", versions: [] } }], MATE, false);
+    expect(blocked).toBe(0);
+    expect(fixes).toHaveLength(1);
+    expect(fixes[0]).toMatchObject({ id: "C", version: 3, customData: { versions: [v1] } });
+  });
+
+  it("keeps a new version as written by this person", () => {
+    const guard = createCanvasGuard([...scene, card]);
+    const v2 = { v: 2, text: "ใหม่", at: new Date().toISOString(), by: MATE };
+    expect(guard.checkLocal([{ ...card, version: 2, customData: { card: "problem", versions: [v1, v2] } }], MATE, false)).toEqual({
+      fixes: [],
+      blocked: 0,
+    });
+  });
+});
+
 describe("canvas guard: live edits from others", () => {
   const from = (user: string, el: El): El => ({ ...el, customData: { ...el.customData, updatedBy: user } });
 
-  it("applies edits only from people allowed to make them", () => {
+  it("shows edits outside canvases at once", () => {
     const guard = createCanvasGuard(scene);
-    const ok = from(MATE, { ...note, version: 2, x: 1 });
-    const bad = from(OTHER, { ...note, version: 3, x: 2 });
-    const free = from(OTHER, { ...loose, version: 2 });
-    expect(guard.filterRemote([ok, bad, free], new Set()).map((e) => e.customData?.updatedBy)).toEqual([MATE, OTHER]);
+    const free = from(OTHER, { ...loose, version: 2, x: 4 });
+    expect(guard.filterRemote([free])).toEqual({ apply: [free], verify: new Map() });
+    // Now trusted: the same element arriving again is no change of this browser's.
+    expect(guard.checkLocal([frame, note, free], OTHER, false)).toEqual({ fixes: [], blocked: 0 });
   });
 
-  it("ignores a forged owner or team change", () => {
+  it("holds every edit touching a canvas for its saved copy, whoever it claims to be from", () => {
     const guard = createCanvasGuard(scene);
-    const forged = from(MATE, { ...frame, version: 2, customData: { project: "p1", owner: MATE, editors: [MATE] } });
-    expect(guard.filterRemote([forged], new Set())).toEqual([]);
-    const ownersChange = from(OWNER, { ...frame, version: 2, customData: { project: "p1", owner: OWNER, editors: [MATE, OTHER] } });
-    expect(guard.filterRemote([ownersChange], new Set())).toEqual([ownersChange]);
+    const forged = from(STAFF, { ...note, version: 5, x: 99 });
+    const intoCanvas = from(MATE, { ...loose, version: 2, frameId: "F" });
+    const frameEdit = from(OWNER, { ...frame, version: 2, customData: { project: "p1", owner: OWNER, editors: [MATE, OTHER] } });
+    const { apply, verify } = guard.filterRemote([forged, intoCanvas, frameEdit]);
+    expect(apply).toEqual([]);
+    expect(verify).toEqual(
+      new Map([
+        ["N", 5],
+        ["L", 2],
+        ["F", 2],
+      ]),
+    );
+  });
+
+  it("holds new canvases and what is in them until saved", () => {
+    const guard = createCanvasGuard(scene);
+    const made = from(OTHER, { id: "G", type: "frame", version: 1, customData: { project: "p2", owner: OWNER } });
+    const inside = from(OTHER, { id: "Y", type: "rectangle", version: 1, frameId: "G" });
+    expect([...guard.filterRemote([made, inside]).verify.keys()]).toEqual(["G", "Y"]);
+  });
+
+  it("holds text for a note on a canvas, before or after", () => {
+    const guard = createCanvasGuard([...scene, { id: "T", type: "text", version: 1, containerId: "N" }]);
+    const retyped = from(MATE, { id: "T", type: "text", version: 2, containerId: "N" });
+    const moved = from(MATE, { id: "T", type: "text", version: 3, containerId: "L" });
+    expect([...guard.filterRemote([retyped]).verify.keys()]).toEqual(["T"]);
+    expect([...guard.filterRemote([moved]).verify.keys()]).toEqual(["T"]);
+  });
+
+  it("keeps holding an element once it touched a canvas, so a later fake cannot move it out first", () => {
+    const guard = createCanvasGuard(scene);
+    // A teammate's new note in the canvas: not saved yet, so not in the trusted copy.
+    const real = from(MATE, { id: "N2", type: "rectangle", version: 1, frameId: "F" });
+    expect([...guard.filterRemote([real]).verify.keys()]).toEqual(["N2"]);
+    // Someone else re-sends it outside the canvas with a higher version.
+    const fake = from(OTHER, { id: "N2", type: "rectangle", version: 50, frameId: null });
+    expect(guard.filterRemote([fake])).toEqual({ apply: [], verify: new Map([["N2", 50]]) });
+    expect(guard.isHeld("N2")).toBe(true);
+    expect(guard.isHeld("L")).toBe(false);
+  });
+
+  it("trusts saved copies from the database, so later edits are judged against them", () => {
+    const guard = createCanvasGuard(scene);
+    const savedFrame = { ...frame, version: 2, customData: { project: "p1", owner: OWNER, editors: [MATE, OTHER] } };
+    guard.trust([savedFrame]);
     // OTHER is on the team now.
-    expect(guard.filterRemote([from(OTHER, { ...note, version: 4 })], new Set())).toHaveLength(1);
+    expect(guard.checkLocal([savedFrame, { ...note, version: 2, x: 3 }], OTHER, false).blocked).toBe(0);
   });
 
   it("ignores badly typed live edits, like a string isDeleted that browsers read as true", () => {
     const guard = createCanvasGuard(scene);
-    const sneaky = from(MATE, { ...frame, version: 2, isDeleted: "false" as unknown as boolean });
-    expect(guard.filterRemote([sneaky], new Set())).toEqual([]);
+    const sneaky = from(MATE, { ...loose, version: 2, isDeleted: "false" as unknown as boolean });
+    expect(guard.filterRemote([sneaky])).toEqual({ apply: [], verify: new Map() });
   });
 
-  it("trusts the board owner", () => {
+  it("ignores live edits that push a version out of reach of later edits", () => {
     const guard = createCanvasGuard(scene);
-    expect(guard.filterRemote([from(STAFF, { ...note, version: 2 })], new Set([STAFF]))).toHaveLength(1);
+    expect(guard.filterRemote([from(OTHER, { ...loose, version: 2_000_000 })]).apply).toEqual([]);
+    expect(guard.filterRemote([from(OTHER, { ...loose, version: 2 ** 60 })]).apply).toEqual([]);
   });
 });

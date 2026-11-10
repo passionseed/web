@@ -26,13 +26,13 @@ type Props = {
 /** Zoomed out further than this, the tags would crowd an overview of many canvases. */
 const MIN_ZOOM = 0.15;
 
-/** Saves a canvas's new team on its frame, so it syncs, saves and is checked like any edit. */
-function setTeam(api: ExcalidrawImperativeAPI, frameId: string, editors: string[]) {
+/** Saves a canvas's new team (and owner) on its frame, so it syncs, saves and is checked like any edit. */
+function setAccess(api: ExcalidrawImperativeAPI, frameId: string, access: Partial<CanvasAccess>) {
   const all = api.getSceneElementsIncludingDeleted();
   api.updateScene({
     elements: all.map((el) =>
       el.id === frameId
-        ? newElementWith(el as ExcalidrawElement, { customData: { ...el.customData, editors } })
+        ? newElementWith(el as ExcalidrawElement, { customData: { ...el.customData, ...access } })
         : el,
     ),
     captureUpdate: CaptureUpdateAction.IMMEDIATELY,
@@ -41,8 +41,9 @@ function setTeam(api: ExcalidrawImperativeAPI, frameId: string, editors: string[
 
 /**
  * A tag above every SHIFT canvas saying whose it is and who may change it.
- * Its owner (and the board's owner) pick teammates from the people on the
- * board; everyone else sees it is view-only and whom to ask.
+ * Its owner (and moderators) pick teammates from the people on the board, and
+ * can hand the canvas to one of them; everyone else sees it is view-only and
+ * whom to ask.
  */
 export function CanvasTeamLayer({ api, meId, manager, people, nameOf }: Props) {
   useViewportTick(api, { elements: true });
@@ -100,7 +101,11 @@ export function CanvasTeamLayer({ api, meId, manager, people, nameOf }: Props) {
             canManage={manager || open.access.owner === meId}
             people={people}
             nameOf={nameOf}
-            onChange={(editors) => setTeam(api, open.frame.id, cleanEditors(editors, open.access.owner))}
+            onChange={(editors) => setAccess(api, open.frame.id, { editors: cleanEditors(editors, open.access.owner) })}
+            onTransfer={(owner) =>
+              // The old owner stays on the team. Postgres checks the new owner is on the board.
+              setAccess(api, open.frame.id, { owner, editors: cleanEditors([...open.access.editors, open.access.owner], owner) })
+            }
             onClose={() => setOpenId(null)}
           />
         )}
@@ -116,10 +121,13 @@ function TeamPanel(props: {
   people: Person[];
   nameOf: (id: string) => string;
   onChange: (editors: string[]) => void;
+  onTransfer: (owner: string) => void;
   onClose: () => void;
 }) {
-  const { access, at, canManage, people, nameOf, onChange, onClose } = props;
+  const { access, at, canManage, people, nameOf, onChange, onTransfer, onClose } = props;
   const panel = useRef<HTMLDivElement>(null);
+  // Handing a canvas over takes two clicks: the first asks, the second does it.
+  const [handingTo, setHandingTo] = useState<string | null>(null);
 
   useEffect(() => {
     panel.current?.querySelector<HTMLElement>("input, button")?.focus();
@@ -162,19 +170,29 @@ function TeamPanel(props: {
             <p className="wb-soft pt-1 text-xs">ยังไม่มีเพื่อนบนบอร์ดนี้ ชวนเพื่อนเข้าบอร์ดก่อน แล้วค่อยเลือกเข้าทีม</p>
           ) : (
             candidates.map((p) => (
-              <label key={p.userId} className="flex cursor-pointer items-center justify-between gap-2 py-0.5">
-                <span>{p.name}</span>
-                <input
-                  type="checkbox"
-                  checked={access.editors.includes(p.userId)}
-                  onChange={(e) =>
-                    onChange(
-                      e.target.checked ? [...access.editors, p.userId] : access.editors.filter((id) => id !== p.userId),
-                    )
-                  }
-                  className="h-4 w-4 accent-orange-700"
-                />
-              </label>
+              <div key={p.userId} className="flex items-center justify-between gap-2 py-0.5">
+                <label className="flex min-w-0 flex-1 cursor-pointer items-center justify-between gap-2">
+                  <span className="truncate">{p.name}</span>
+                  <input
+                    type="checkbox"
+                    checked={access.editors.includes(p.userId)}
+                    onChange={(e) =>
+                      onChange(
+                        e.target.checked ? [...access.editors, p.userId] : access.editors.filter((id) => id !== p.userId),
+                      )
+                    }
+                    className="h-4 w-4 accent-orange-700"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => (handingTo === p.userId ? onTransfer(p.userId) : setHandingTo(p.userId))}
+                  onBlur={() => setHandingTo((id) => (id === p.userId ? null : id))}
+                  className="wb-soft shrink-0 rounded-md px-1.5 py-0.5 text-xs hover:bg-black/5"
+                >
+                  {handingTo === p.userId ? "กดอีกครั้งเพื่อยืนยัน" : "ให้เป็นเจ้าของ"}
+                </button>
+              </div>
             ))
           )
         ) : (
@@ -186,7 +204,9 @@ function TeamPanel(props: {
           </>
         )}
       </div>
-      <p className="wb-rule wb-soft border-t px-3 py-2 text-xs">คนในทีมแก้แคนวาสนี้ได้ คนอื่นบนบอร์ดดูได้อย่างเดียว</p>
+      <p className="wb-rule wb-soft border-t px-3 py-2 text-xs">
+        คนในทีมแก้แคนวาสนี้ได้ คนอื่นบนบอร์ดดูได้อย่างเดียว เจ้าของส่งต่อแคนวาสให้เพื่อนในบอร์ดได้
+      </p>
     </div>
   );
 }

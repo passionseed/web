@@ -35,6 +35,7 @@
     "test:watch": "jest --watch",
     "test:db": "supabase test db",
     "test:db:race": "tsx supabase/tests/race/shift_round_race.ts",
+    "test:whiteboard-sql": "tsx scripts/whiteboard-sql-check.ts",
     "shift:seed": "tsx scripts/shift-round-seed.ts",
     "test:load": "tsx scripts/test-concurrent-jobs.ts",
     "test:load:20": "tsx scripts/test-concurrent-jobs.ts --users=20",

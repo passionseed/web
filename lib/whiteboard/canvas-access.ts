@@ -1,23 +1,29 @@
+import { MAX_VERSION_JUMP } from "./core";
+import { settleVersions } from "./shift-cards";
+
 /**
  * Who may change a SHIFT project canvas. A canvas (a frame tagged
- * customData.project) belongs to whoever made it, and they choose teammates
- * (customData.editors) who may change it too. Everyone else on the board can
- * see it but not change it, so one student cannot rewrite or wipe another's
- * project. The board's owner (staff) may change any canvas, to moderate.
+ * customData.project) belongs to one person (customData.owner), who chooses
+ * teammates (customData.editors) who may change it too. Everyone else on the
+ * board can see it but not change it, so one student cannot rewrite or wipe
+ * another's project. Moderators (the board's owner and site admins) may change
+ * any canvas, and the owner or a moderator may hand a canvas to someone else.
  *
- * The same rule runs in three places: in Postgres, where every save is merged
- * (whiteboard_merge_elements, the one that counts); in each browser before it
- * keeps an edit (an edit you may not make is undone at once); and on live
- * edits arriving from others (edits from outside a canvas's team are ignored).
+ * Postgres enforces this on every save (whiteboard_merge_elements, the one that
+ * counts) and also decides what only it can know: who is on the board, who
+ * started a project, and who wrote what. This copy runs in each browser before
+ * it keeps an edit (an edit you may not make is undone at once), and the
+ * database's answer to each save puts right anything this copy could not know.
  * Canvases from before owners existed fall back to their creator.
  */
 
 export const MAX_EDITORS = 30;
-const USER_ID = /^[0-9a-f-]{36}$/;
+export const USER_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 type El = {
   id: string;
   type: string;
+  version?: number;
   frameId?: string | null;
   containerId?: string | null;
   isDeleted?: boolean;
@@ -26,13 +32,14 @@ type El = {
 
 export type CanvasAccess = { owner: string; editors: string[] };
 
-const isProjectFrame = (el: El) => el.type === "frame" && typeof el.customData?.project === "string";
+export const isProjectFrame = (el: El | undefined): boolean =>
+  el?.type === "frame" && typeof el.customData?.project === "string";
 
-/** A clean team list: user ids, no repeats, not the owner, at most MAX_EDITORS. */
+/** A clean team list: user ids, no repeats, not the owner, sorted, at most MAX_EDITORS (as in Postgres). */
 export function cleanEditors(value: unknown, owner: string): string[] {
   if (!Array.isArray(value)) return [];
   const ids = value.filter((v): v is string => typeof v === "string" && USER_ID.test(v) && v !== owner);
-  return [...new Set(ids)].slice(0, MAX_EDITORS);
+  return [...new Set(ids)].sort().slice(0, MAX_EDITORS);
 }
 
 /**
@@ -63,23 +70,23 @@ export const canEditCanvas = (access: CanvasAccess, userId: string, manager: boo
 /**
  * Splits a batch of element changes into those `userId` may make and those
  * they may not, judged against `current`, the trusted state before the batch.
- * An element belongs to every canvas it was in or is going into (a frame is
- * its own canvas; a note's text goes with its note), and the user must be
- * allowed on each.
+ * `manager` is whether `userId` moderates the board.
  *
- * Allowed project frames come back with their owner fixed: a new canvas
- * belongs to whoever saves it, an existing one keeps its owner, and only the
- * owner or a manager can change its team. A corrected frame is a new object,
- * so callers that must not alter elements (live edits from others) can tell
- * a correction apart from an untouched change.
+ * An element belongs to every canvas it was in or is going into (a frame is
+ * its own canvas; a note's text goes with its note, before and after), and the
+ * user must be allowed on each. Allowed elements come back settled the way
+ * Postgres keeps them: project frames with their owner and team fixed, and
+ * note versions that only grow. A settled element is a new object, so callers
+ * can tell a correction apart from an untouched change.
  */
 export function enforceCanvasAccess<T extends El>(
   current: readonly El[],
   changes: readonly T[],
   userId: string,
   manager: boolean,
+  now = Date.now(),
 ): { allowed: T[]; dropped: T[] } {
-  return enforceCanvasAccessIn(new Map(current.map((el) => [el.id, el])), canvasAccessMap(current), changes, userId, manager);
+  return enforceCanvasAccessIn(new Map(current.map((el) => [el.id, el])), canvasAccessMap(current), changes, userId, manager, now);
 }
 
 /**
@@ -93,6 +100,7 @@ export function enforceCanvasAccessIn<T extends El>(
   changes: readonly T[],
   userId: string,
   manager: boolean,
+  now = Date.now(),
 ): { allowed: T[]; dropped: T[] } {
   const incoming = new Map(changes.map((el) => [el.id, el]));
   const allowed: T[] = [];
@@ -100,28 +108,34 @@ export function enforceCanvasAccessIn<T extends El>(
 
   for (const change of changes) {
     const before = saved.get(change.id);
-    const canvases = new Set<string>();
-    for (const el of [before, change]) {
-      if (!el) continue;
-      if (el.frameId) canvases.add(el.frameId);
-      if (isProjectFrame(el)) canvases.add(el.id);
-      const box = el.containerId ? (incoming.get(el.containerId) ?? saved.get(el.containerId)) : undefined;
-      if (box?.frameId) canvases.add(box.frameId);
-    }
     const ok =
-      [...canvases].every((id) => {
+      canvasesOf(change, before, incoming, saved).every((id) => {
         const a = access.get(id);
         return !a || canEditCanvas(a, userId, manager);
-      }) && !teammateReshapes(before, change, access, userId, manager);
-    if (ok) allowed.push(withOwner(change, access.get(change.id), userId, manager));
+      }) &&
+      !teammateReshapes(before, change, access, userId, manager) &&
+      !tagsSomeoneElsesFrame(before, change, saved, userId, manager) &&
+      !jumpsVersion(before, change);
+    if (ok) allowed.push(settle(change, before, access.get(change.id), userId, manager, now));
     else dropped.push(change);
   }
   return { allowed, dropped };
 }
 
+/** Every frame an element was in or is going into, itself, and the frames of the note its text belongs to. */
+function canvasesOf(change: El, before: El | undefined, incoming: ReadonlyMap<string, El>, saved: ReadonlyMap<string, El>): string[] {
+  const ids = new Set<string>([change.id]);
+  for (const el of [before, change]) if (el?.frameId) ids.add(el.frameId);
+  for (const containerId of [before?.containerId, change.containerId]) {
+    if (!containerId) continue;
+    for (const box of [incoming.get(containerId), saved.get(containerId)]) if (box?.frameId) ids.add(box.frameId);
+  }
+  return [...ids];
+}
+
 /**
  * Teammates may rename, move and resize a canvas's frame, but only its owner
- * (or a manager) may delete it, bring it back, change its type, or change or
+ * (or a moderator) may delete it, bring it back, change its type, or change or
  * remove its project tag: otherwise a teammate could remove the canvas and
  * make it again as their own.
  */
@@ -141,15 +155,66 @@ function teammateReshapes(
   );
 }
 
-function withOwner<T extends El>(change: T, prior: CanvasAccess | undefined, userId: string, manager: boolean): T {
-  if (!isProjectFrame(change)) return change;
-  const owner = prior?.owner ?? userId;
-  const editors =
-    !prior || manager || prior.owner === userId ? cleanEditors(change.customData?.editors, owner) : prior.editors;
-  const unchanged =
-    change.customData?.owner === owner && JSON.stringify(change.customData?.editors) === JSON.stringify(editors);
-  if (unchanged) return change;
-  return { ...change, customData: { ...change.customData, owner, editors } };
+/**
+ * Making an existing plain frame a canvas locks everyone else out of what is in it: only a
+ * moderator may, or its creator when nothing of anyone else's is inside. An unknown author counts
+ * as this person here, because this browser never stamps what it made itself; Postgres knows, and
+ * its answer to the save undoes the change if it was not theirs.
+ */
+function tagsSomeoneElsesFrame(
+  before: El | undefined,
+  change: El,
+  saved: ReadonlyMap<string, El>,
+  userId: string,
+  manager: boolean,
+): boolean {
+  if (!before || before.type !== "frame" || isProjectFrame(before) || !isProjectFrame(change) || manager) return false;
+  const mine = (el: El) => el.customData?.createdBy === undefined || el.customData.createdBy === userId;
+  if (!mine(before)) return true;
+  for (const el of saved.values()) if (el.frameId === before.id && !el.isDeleted && !mine(el)) return true;
+  return false;
+}
+
+/** One save may not push an element's version far past the trusted copy (see MAX_VERSION_JUMP). */
+function jumpsVersion(before: El | undefined, change: El): boolean {
+  return typeof change.version === "number" && change.version > (before?.version ?? 0) + MAX_VERSION_JUMP;
+}
+
+/**
+ * An allowed change as Postgres will keep it. Note versions only grow. A
+ * project frame keeps its owner unless its owner or a moderator hands it to
+ * someone else, and only they change its team; a new canvas belongs to
+ * whoever makes it. (Postgres also checks that owners and teammates are on
+ * the board, and who started the project; its answer to the save corrects
+ * this copy where they differ.)
+ */
+function settle<T extends El>(change: T, before: El | undefined, prior: CanvasAccess | undefined, userId: string, manager: boolean, now: number): T {
+  let data = change.customData;
+  const versions = settleVersions(before?.customData, change.customData, !before, userId, now);
+  if (versions && !sameJson(versions, change.customData?.versions)) data = { ...data, versions };
+
+  if (isProjectFrame(change)) {
+    const mayManage = !prior || manager || prior.owner === userId;
+    const asked = change.customData?.owner;
+    const owner = !prior
+      ? userId
+      : mayManage && typeof asked === "string" && USER_ID.test(asked)
+        ? asked
+        : prior.owner;
+    const editors = mayManage ? cleanEditors(change.customData?.editors, owner) : prior.editors;
+    if (change.customData?.owner !== owner || !sameJson(change.customData?.editors, editors)) data = { ...data, owner, editors };
+  }
+  return data === change.customData ? change : { ...change, customData: data };
+}
+
+/** Whether two JSON values are equal, whatever order their keys are in (Postgres reorders them). */
+export function sameJson(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
+  const ka = Object.keys(a).filter((k) => (a as Record<string, unknown>)[k] !== undefined);
+  const kb = Object.keys(b).filter((k) => (b as Record<string, unknown>)[k] !== undefined);
+  return ka.length === kb.length && ka.every((k) => sameJson((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k]));
 }
 
 /** Whether `userId` may change things in a frame: true unless it is a protected canvas they are not on. */

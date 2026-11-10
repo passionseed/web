@@ -44,6 +44,8 @@ export type WhiteboardDetail = {
   /** Only sent to the owner. */
   shareToken: string | null;
   members: WhiteboardMember[];
+  /** Moderators, who may change any SHIFT canvas: the owner and site admins on the board (as in Postgres). */
+  managerIds: string[];
   timer: BoardTimer;
 };
 
@@ -165,7 +167,11 @@ export async function loadBoard(boardId: string, viewer: Viewer, role: Whiteboar
     { userId: board.owner_id as string, role: "owner" as WhiteboardRole },
     ...(members ?? []).map((m) => ({ userId: m.user_id as string, role: m.role as WhiteboardRole })),
   ];
-  const profiles = await profilesById(people.map((p) => p.userId));
+  const [profiles, { data: admins, error: adminsError }] = await Promise.all([
+    profilesById(people.map((p) => p.userId)),
+    db().from("user_roles").select("user_id").eq("role", "admin").in("user_id", people.map((p) => p.userId)),
+  ]);
+  if (adminsError) throw adminsError;
 
   return {
     id: board.id as string,
@@ -179,6 +185,7 @@ export async function loadBoard(boardId: string, viewer: Viewer, role: Whiteboar
       name: profiles[p.userId]?.name ?? "Someone",
       avatarUrl: profiles[p.userId]?.avatarUrl ?? null,
     })),
+    managerIds: [...new Set([board.owner_id as string, ...(admins ?? []).map((a) => a.user_id as string)])],
     timer: {
       endsAt: (board.timer_ends_at as string | null) ?? null,
       seconds: (board.timer_seconds as number | null) ?? null,
@@ -186,21 +193,40 @@ export async function loadBoard(boardId: string, viewer: Viewer, role: Whiteboar
   };
 }
 
+/**
+ * What Postgres did with a save beyond merging it: elements it kept differently
+ * from how they were sent (owners, authors, note versions), as saved, and ids it
+ * left out because the saver may not make that change (see whiteboard_merge_elements).
+ */
+export type SaveResult = { corrected: unknown[]; dropped: string[] };
+
 /** Applies a patch the caller is already allowed to make. */
-export async function patchBoard(boardId: string, patch: PatchBoard): Promise<void> {
+export async function patchBoard(boardId: string, patch: PatchBoard): Promise<SaveResult> {
+  const result: SaveResult = { corrected: [], dropped: [] };
   if (patch.elements?.length) {
-    const { error } = await db().rpc("whiteboard_merge_elements", { p_board: boardId, p_elements: patch.elements });
+    const { data, error } = await db().rpc("whiteboard_merge_elements", { p_board: boardId, p_elements: patch.elements });
     if (error) throw error;
+    const answer = data as Partial<SaveResult> | null;
+    if (Array.isArray(answer?.corrected)) result.corrected = answer.corrected;
+    if (Array.isArray(answer?.dropped)) result.dropped = answer.dropped;
   }
   const fields: Record<string, unknown> = {};
   if (patch.title !== undefined) fields.title = patch.title;
   if (patch.linkAccess !== undefined) fields.link_access = patch.linkAccess;
   if (patch.thumbnail !== undefined) fields.thumbnail = patch.thumbnail;
-  if (Object.keys(fields).length === 0) return;
+  if (Object.keys(fields).length === 0) return result;
   // Title and link changes count as edits; a fresh thumbnail alone does not reorder the list.
   if (patch.title !== undefined || patch.linkAccess !== undefined) fields.updated_at = new Date().toISOString();
   const { error } = await db().from("whiteboards").update(fields).eq("id", boardId);
   if (error) throw error;
+  return result;
+}
+
+/** The saved copy of some elements; ids not on the board are left out. The caller checked access. */
+export async function loadElements(boardId: string, ids: string[]): Promise<unknown[]> {
+  const { data, error } = await db().rpc("whiteboard_elements_by_id", { p_board: boardId, p_ids: ids });
+  if (error) throw error;
+  return Array.isArray(data) ? data : [];
 }
 
 export async function deleteBoard(boardId: string): Promise<void> {

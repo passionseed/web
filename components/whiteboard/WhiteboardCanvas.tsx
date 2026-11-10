@@ -99,8 +99,8 @@ export default function WhiteboardCanvas({
     return { elements: initialElements, appState: { theme }, scrollToContent: true };
   }, [initialElements]);
 
-  // The board's owner (staff) may change any SHIFT canvas; everyone else only their own team's.
-  const managerIds = useMemo(() => board.members.filter((m) => m.role === "owner").map((m) => m.userId), [board.members]);
+  // Moderators (the board's owner and site admins on it) may change any SHIFT canvas; everyone else only their own team's.
+  const managerIds = board.managerIds;
   const isManager = managerIds.includes(me.id);
   const lastBlockedToast = useRef(0);
   const onCanvasBlocked = useCallback(() => {

@@ -50,7 +50,7 @@ describe("canvas access", () => {
     const back = { ...frame, isDeleted: false, customData: { project: "p1", owner: MATE, editors: [] } };
     expect(ids(enforceCanvasAccess(gone, [back], MATE, false).dropped)).toEqual(["F"]);
     expect(ids(enforceCanvasAccess(gone, [back], OTHER, false).dropped)).toEqual(["F"]);
-    const [restored] = enforceCanvasAccess(gone, [back], OWNER, false).allowed;
+    const [restored] = enforceCanvasAccess(gone, [{ ...back, customData: { project: "p1" } }], OWNER, false).allowed;
     expect(restored.customData).toMatchObject({ owner: OWNER });
   });
 
@@ -59,7 +59,7 @@ describe("canvas access", () => {
     expect(ids(check([{ ...loose, x: 5 }], OTHER).allowed)).toEqual(["L"]);
   });
 
-  it("lets only the owner (or board owner) change the team, and never the owner", () => {
+  it("lets only the owner or a moderator change the team or hand the canvas over", () => {
     const outsider = check([{ ...frame, name: "x" }], OTHER);
     expect(ids(outsider.dropped)).toEqual(["F"]);
 
@@ -69,8 +69,15 @@ describe("canvas access", () => {
     const [byOwner] = check([{ ...frame, customData: { project: "p1", owner: OWNER, editors: [MATE, OTHER, OTHER, OWNER, "nope"] } }], OWNER).allowed;
     expect(byOwner.customData).toEqual({ project: "p1", owner: OWNER, editors: [MATE, OTHER] });
 
-    const [byStaff] = check([{ ...frame, customData: { project: "p1", owner: STAFF, editors: [] } }], STAFF, true).allowed;
-    expect(byStaff.customData).toEqual({ project: "p1", owner: OWNER, editors: [] });
+    const [handed] = check([{ ...frame, customData: { project: "p1", owner: MATE, editors: [OWNER] } }], OWNER).allowed;
+    expect(handed.customData).toEqual({ project: "p1", owner: MATE, editors: [OWNER] });
+
+    const [byStaff] = check([{ ...frame, customData: { project: "p1", owner: OTHER, editors: [] } }], STAFF, true).allowed;
+    expect(byStaff.customData).toEqual({ project: "p1", owner: OTHER, editors: [] });
+
+    // Not a user id: the owner stays.
+    const [garbled] = check([{ ...frame, customData: { project: "p1", owner: "nope", editors: [MATE] } }], OWNER).allowed;
+    expect(garbled.customData).toMatchObject({ owner: OWNER });
   });
 
   it("gives a new canvas to whoever saves it, whatever owner it claims", () => {
@@ -93,9 +100,20 @@ describe("canvas access", () => {
     expect([...canvasAccessMap(current).keys()]).toEqual(["F"]);
   });
 
-  it("caps and cleans the team list", () => {
-    const many = Array.from({ length: MAX_EDITORS + 5 }, (_, i) => id(100 + i));
-    expect(cleanEditors(many, OWNER)).toHaveLength(MAX_EDITORS);
+  it("caps, cleans and sorts the team list the way Postgres does", () => {
+    const many = Array.from({ length: MAX_EDITORS + 5 }, (_, i) => id(100 + i)).reverse();
+    const kept = cleanEditors(many, OWNER);
+    expect(kept).toHaveLength(MAX_EDITORS);
+    // Postgres keeps the first 30 in byte order, so both copies keep the same people.
+    expect(kept).toEqual([...many].sort().slice(0, MAX_EDITORS));
     expect(cleanEditors("x", OWNER)).toEqual([]);
+    expect(cleanEditors(["0000000-0000-4000-8000-0000000000099", "------------------------------------"], OWNER)).toEqual([]);
+  });
+
+  it("treats a note's text as part of every canvas its note was in or is going into", () => {
+    // Text moving to a note outside the canvas still came from one inside it.
+    const outside = { id: "M", type: "rectangle", frameId: null };
+    const moved = enforceCanvasAccess([...current, outside], [{ ...label, containerId: "M" }], OTHER, false);
+    expect(ids(moved.dropped)).toEqual(["T"]);
   });
 });

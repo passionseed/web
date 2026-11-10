@@ -23,9 +23,10 @@ export async function PATCH(request: Request, { params }: Params) {
   if (!guard.ok) return guard.response;
 
   try {
-    // The server, not the client, says who last changed each element.
-    await patchBoard(id, patch.elements ? { ...patch, elements: stampAuthor(patch.elements, guard.viewer.id) } : patch);
-    return NextResponse.json({ ok: true });
+    // The server, not the client, says who last changed each element. Postgres answers with
+    // what it kept differently or left out, so the saver's browser can put its copy right.
+    const result = await patchBoard(id, patch.elements ? { ...patch, elements: stampAuthor(patch.elements, guard.viewer.id) } : patch);
+    return NextResponse.json({ ok: true, ...result });
   } catch (error) {
     return safeServerError("Failed to save board", error);
   }

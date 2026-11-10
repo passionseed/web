@@ -1,11 +1,18 @@
-import { accessOf, canvasAccessMap, enforceCanvasAccessIn } from "./canvas-access";
+import { accessOf, canvasAccessMap, enforceCanvasAccessIn, isProjectFrame } from "./canvas-access";
+import { MAX_VERSION_JUMP } from "./core";
 
 /**
  * The browser side of canvas access (see canvas-access.ts). It keeps the last
- * trusted copy of every element, checks this browser's own edits against it
- * (undoing the ones the person may not make, and giving new canvases their
- * owner), and filters live edits from others by who sent them. Postgres
- * enforces the same rule on save; this keeps every screen in step with it.
+ * trusted copy of every element: what the database sent, plus this browser's
+ * own allowed edits. It checks this browser's edits against that copy
+ * (undoing the ones the person may not make, and settling owners and note
+ * versions the way Postgres will), and sorts live edits from others.
+ *
+ * A live edit says who sent it, but the sender writes that themselves, so it
+ * proves nothing. Live edits that touch a SHIFT canvas are therefore never
+ * shown as they arrive: the browser fetches the saved copy once the sender's
+ * save has gone through Postgres, which checked it. Everything else on the
+ * board stays live.
  */
 
 type Versioned = {
@@ -40,6 +47,8 @@ const optional = (value: unknown, type: string) => value === undefined || value 
 export const wellFormed = (el: Versioned): boolean =>
   typeof el.id === "string" &&
   typeof el.type === "string" &&
+  Number.isSafeInteger(el.version) &&
+  el.version >= 0 &&
   optional(el.isDeleted, "boolean") &&
   optional(el.frameId, "string") &&
   optional(el.containerId, "string") &&
@@ -49,23 +58,48 @@ export type CanvasGuard<T extends Versioned> = {
   /**
    * Checks this browser's edits since the last check. `fixes` are elements to
    * put back into the scene: edits undone (something new put into someone
-   * else's canvas is removed) and canvas owners set. `blocked` counts the
-   * edits that were not allowed.
+   * else's canvas is removed), canvas owners set, and note versions restored.
+   * `blocked` counts the edits that were not allowed.
    */
   checkLocal(elements: readonly T[], me: string, manager: boolean): { fixes: T[]; blocked: number };
-  /** Live edits from others that this browser should apply: only those their sender may make. */
-  filterRemote(remote: readonly T[], managers: ReadonlySet<string>): T[];
+  /**
+   * Sorts live edits from others: `apply` can be shown now; `verify` touch a
+   * SHIFT canvas and must come from the database instead (id to the version
+   * the sender announced).
+   */
+  filterRemote(remote: readonly T[]): { apply: T[]; verify: Map<string, number> };
+  /** Whether live edits to this element always wait for the saved copy (it has touched a canvas). */
+  isHeld(id: string): boolean;
+  /** Copies from the database (fetched, or the answer to a save): trusted as they are. */
+  trust(saved: readonly T[]): void;
 };
 
 export function createCanvasGuard<T extends Versioned>(initial: readonly T[]): CanvasGuard<T> {
   // Kept up to date one element at a time, so checking an edit costs the size of the edit.
   const trusted = new Map<string, T>(initial.map((el) => [el.id, el]));
   const access = canvasAccessMap(initial);
+  // Elements whose live edits have touched a canvas. They keep waiting for the saved copy: before
+  // that arrives this browser cannot tell whether a later live edit (say, one that moves the
+  // element out of the canvas first) is real.
+  const held = new Set<string>();
   const remember = (el: T) => {
     trusted.set(el.id, el);
     const canvas = accessOf(el);
     if (canvas) access.set(el.id, canvas);
     else access.delete(el.id);
+  };
+
+  /** Whether a live edit touches a canvas: one it was in or is going into, itself, or its note's. */
+  const touchesCanvas = (el: T, batch: ReadonlyMap<string, T>): boolean => {
+    const known = trusted.get(el.id);
+    const isCanvas = (id: string | null | undefined) => Boolean(id) && (access.has(id!) || isProjectFrame(batch.get(id!)));
+    if (isProjectFrame(el) || isProjectFrame(known) || access.has(el.id)) return true;
+    if (isCanvas(known?.frameId) || isCanvas(el.frameId)) return true;
+    for (const containerId of [known?.containerId, el.containerId]) {
+      if (!containerId) continue;
+      if (isCanvas(batch.get(containerId)?.frameId) || isCanvas(trusted.get(containerId)?.frameId)) return true;
+    }
+    return false;
   };
 
   return {
@@ -95,23 +129,33 @@ export function createCanvasGuard<T extends Versioned>(initial: readonly T[]): C
       return { fixes, blocked: dropped.length };
     },
 
-    filterRemote(remote, managers) {
-      const bySender = new Map<string, T[]>();
+    filterRemote(remote) {
+      const batch = new Map<string, T>();
       for (const el of remote) {
         if (!wellFormed(el)) continue;
-        const sender = typeof el.customData?.updatedBy === "string" ? el.customData.updatedBy : "";
-        bySender.set(sender, [...(bySender.get(sender) ?? []), el]);
+        // Nobody's edit raises a version this far; an element pushed out of reach would block everyone's later edits.
+        if (el.version > (trusted.get(el.id)?.version ?? 0) + MAX_VERSION_JUMP) continue;
+        const queued = batch.get(el.id);
+        if (!queued || el.version >= queued.version) batch.set(el.id, el);
       }
-      const accepted: T[] = [];
-      for (const [sender, batch] of bySender) {
-        const { allowed } = enforceCanvasAccessIn(trusted, access, batch, sender, managers.has(sender));
-        // A corrected element (a forged owner or team) is a new object: never apply it.
-        accepted.push(...allowed.filter((el) => batch.includes(el)));
+      const apply: T[] = [];
+      const verify = new Map<string, number>();
+      for (const el of batch.values()) {
+        if (held.has(el.id) || touchesCanvas(el, batch)) {
+          held.add(el.id);
+          verify.set(el.id, el.version);
+        } else apply.push(el);
       }
-      for (const el of accepted) {
+      for (const el of apply) {
         if ((trusted.get(el.id)?.version ?? -1) < el.version) remember(el);
       }
-      return accepted;
+      return { apply, verify };
+    },
+
+    isHeld: (id) => held.has(id),
+
+    trust(saved) {
+      for (const el of saved) remember(el);
     },
   };
 }

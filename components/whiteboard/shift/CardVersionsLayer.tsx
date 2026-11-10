@@ -304,7 +304,11 @@ function VersionPanel(props: {
           {[...versions].reverse().map((v, i, list) => (
             <li key={v.v} className="text-xs">
               <p className="font-semibold">
-                v{v.v} <span className="wb-soft font-normal">· {when(v.at)} · {nameOf(v.by)}</span>
+                v{v.v}{" "}
+                <span className="wb-soft font-normal">
+                  · {when(v.at)} · {nameOf(v.by)}
+                  {v.copied && " · คัดลอกมา"}
+                </span>
               </p>
               {v.why && <p className="wb-why mt-0.5">เพราะ: {v.why}</p>}
               <VersionAnswer kind={kind} text={v.text} previous={list[i + 1]?.text} />
