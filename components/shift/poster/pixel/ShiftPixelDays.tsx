@@ -162,7 +162,7 @@ export const DAYS: DayPlan[] = [
       ["19:05", "เทสต์บอกอะไร + SDT", "คุยในกลุ่ม 10 นาที → แชร์ 5 นาที"],
       ["19:20", "เชื่อม SeedStack", "/seedstack-update แล้ว /seedstack-connect"],
       ["19:25", "ล็อกสโคปใหม่", "/seedstack-scope จากสิ่งที่เจอซ้ำ"],
-      ["19:40", "สร้างทีละขั้น", "/seedstack-build + อีก session"],
+      ["19:40", "สร้างทีละขั้น", "/seedstack-guidance-build + อีก session"],
       ["20:20", "ขึ้นลิงก์จริง", "/seedstack-live"],
       ["20:40", "Daily Show", "เปิดลิงก์สดบนมือถือ"],
       ["20:55", "Mission ก่อน Day 6", "ส่งลิงก์ให้ 3 คนลอง"],
@@ -214,7 +214,7 @@ export const DAYS: DayPlan[] = [
         kind: "steps",
         cols: 2,
         items: [
-          ["พิมพ์ /seedstack-build", "ตั้งเป้ารอบนี้ แล้วแบ่งเป็น 3–5 ขั้น"],
+          ["พิมพ์ /seedstack-guidance-build", "ตั้งเป้ารอบนี้ แล้วแบ่งเป็น 3–5 ขั้น"],
           ["เปิดอีก session", "โค้ชอยู่ตรงนี้ AI สร้างในอีกหน้าต่าง"],
           ["ส่งทีละขั้น", "1 ขั้น = 1 prompt แล้วเปิดดูว่าเวิร์ก"],
           ["เวิร์กแล้ว git commit", "จุดเซฟ พังเมื่อไหร่ย้อนกลับได้"],

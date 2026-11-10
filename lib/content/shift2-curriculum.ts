@@ -168,7 +168,7 @@ export const SHIFT2_CURRICULUM: CurriculumDay[] = [
     name: "Fix",
     mentorSession: false,
     goal: "เปลี่ยนอย่างน้อย 1 อย่างจากสิ่งที่คนลองบอก แล้วขึ้นลิงก์จริง",
-    mission: "โพสต์ก่อน → หลังของสิ่งที่เปลี่ยนใน #progress (/seedstack-build, /seedstack-live)",
+    mission: "โพสต์ก่อน → หลังของสิ่งที่เปลี่ยนใน #progress (/seedstack-guidance-build, /seedstack-live)",
     refundSteps: [6, 8],
     mentorChecks: [
       "ใครเงียบ DM",
