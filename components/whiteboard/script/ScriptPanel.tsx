@@ -24,13 +24,20 @@ function load(key: string): Saved {
   }
 }
 
-/** Styles for the floating window, which has none of the page's CSS. */
+/** Styles for the script tab and its floating window, which has none of the page's CSS. */
 export const SCRIPT_CSS = `
 :root { color-scheme: dark; }
 * { box-sizing: border-box; }
+html, body { height: 100%; }
 body { margin: 0; background: #15110e; color: #f6efe6;
   font: 15px/1.45 system-ui, -apple-system, "Segoe UI", "Sukhumvit Set", "Noto Sans Thai", sans-serif; }
-.sp { display: flex; flex-direction: column; height: 100vh; }
+.sp-page { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; background: #15110e; color: #f6efe6;
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", "Sukhumvit Set", "Noto Sans Thai", sans-serif; }
+.sp-pagebar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px;
+  border-bottom: 1px solid #ffffff1a; }
+.sp-pagebody { flex: 1; min-height: 0; width: 100%; max-width: 760px; margin: 0 auto; }
+.sp-floating { margin: 18vh 16px 0; text-align: center; font-size: 20px; font-weight: 600; line-height: 1.6; }
+.sp { display: flex; flex-direction: column; height: 100%; }
 .sp-bar { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #ffffff1a; }
 .sp-clock { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1.1; }
 .sp-left { font-size: 12px; color: #c8bdb0; font-variant-numeric: tabular-nums; }
