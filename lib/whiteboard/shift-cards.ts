@@ -370,23 +370,42 @@ export function freeSlot(
   return null;
 }
 
+/** The part of a zone notes go in: below its title, inside its padding. */
+const zoneInner = (zone: Box): Box => ({
+  x: zone.x + ZONE_PAD,
+  y: zone.y + ZONE_HEADER,
+  width: zone.width - 2 * ZONE_PAD,
+  height: zone.height - ZONE_HEADER - ZONE_PAD / 2,
+});
+
 /**
- * Where a new note goes in a zone: the first free slot reading from the zone's
- * top-left, below its title. A full zone gets the note cascaded over its first
- * slot, so the click still does something visible.
+ * The centre of the first free note-sized slot in a zone, reading from its
+ * top-left below the title, line by line however tall the zone has grown.
+ * Null when the zone is full.
+ */
+export function zoneFreeSlot(zone: Box, obstacles: readonly Box[]): { x: number; y: number } | null {
+  const inner = zoneInner(zone);
+  const size = { width: SHIFT_CARD_WIDTH, height: SHIFT_CARD_HEIGHT };
+  for (let top = inner.y; top + size.height <= inner.y + inner.height; top += size.height + SLOT_GAP) {
+    for (let left = inner.x; left + size.width <= inner.x + inner.width; left += size.width + SLOT_GAP) {
+      const box = { x: left, y: top, ...size };
+      if (!obstacles.some((o) => overlaps(o, box))) return { x: left + size.width / 2, y: top + size.height / 2 };
+    }
+  }
+  return null;
+}
+
+/**
+ * Where a new note goes in a zone: its first free slot. A zone still full
+ * (one that could not grow) gets the note cascaded over its first slot, so the
+ * click still does something visible.
  */
 export function zoneSlot(zone: Box, obstacles: readonly Box[], count = 0): { x: number; y: number } {
-  const inner = {
-    x: zone.x + ZONE_PAD,
-    y: zone.y + ZONE_HEADER,
-    width: zone.width - 2 * ZONE_PAD,
-    height: zone.height - ZONE_HEADER - ZONE_PAD / 2,
-  };
-  const first = { x: inner.x + SHIFT_CARD_WIDTH / 2, y: inner.y + SHIFT_CARD_HEIGHT / 2 };
-  const free = freeSlot(obstacles, first, undefined, inner);
+  const free = zoneFreeSlot(zone, obstacles);
   if (free) return free;
+  const inner = zoneInner(zone);
   const step = 20 * ((count % 5) + 1);
-  return { x: first.x + step, y: first.y + step };
+  return { x: inner.x + SHIFT_CARD_WIDTH / 2 + step, y: inner.y + SHIFT_CARD_HEIGHT / 2 + step };
 }
 
 // ---------------------------------------------------------------------------

@@ -59,9 +59,10 @@ export type CanvasGuard<T extends Versioned> = {
    * Checks this browser's edits since the last check. `fixes` are elements to
    * put back into the scene: edits undone (something new put into someone
    * else's canvas is removed), canvas owners set, and note versions restored.
-   * `blocked` counts the edits that were not allowed.
+   * `blocked` counts the edits that were not allowed, and `changed` lists
+   * every element this browser changed since the last check.
    */
-  checkLocal(elements: readonly T[], me: string, manager: boolean): { fixes: T[]; blocked: number };
+  checkLocal(elements: readonly T[], me: string, manager: boolean): { fixes: T[]; blocked: number; changed: T[] };
   /**
    * Sorts live edits from others: `apply` can be shown now; `verify` touch a
    * SHIFT canvas and must come from the database instead (id to the version
@@ -105,7 +106,7 @@ export function createCanvasGuard<T extends Versioned>(initial: readonly T[]): C
   return {
     checkLocal(elements, me, manager) {
       const changed = elements.filter((el) => trusted.get(el.id)?.version !== el.version);
-      if (changed.length === 0) return { fixes: [], blocked: 0 };
+      if (changed.length === 0) return { fixes: [], blocked: 0, changed };
       const originals = new Map(changed.map((el) => [el.id, el]));
       const { allowed, dropped } = enforceCanvasAccessIn(trusted, access, changed, me, manager);
       const fixes: T[] = [];
@@ -126,7 +127,7 @@ export function createCanvasGuard<T extends Versioned>(initial: readonly T[]): C
         remember(fixed);
         fixes.push(fixed);
       }
-      return { fixes, blocked: dropped.length };
+      return { fixes, blocked: dropped.length, changed };
     },
 
     filterRemote(remote) {

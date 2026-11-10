@@ -28,7 +28,16 @@ describe("canvas guard: this browser's edits", () => {
     expect(blocked).toBe(1);
     expect(fixes).toEqual([note]);
     // The undone note and the kept edit now count as seen.
-    expect(guard.checkLocal([frame, note, { ...loose, version: 2, x: 9 }], OTHER, false)).toEqual({ fixes: [], blocked: 0 });
+    expect(guard.checkLocal([frame, note, { ...loose, version: 2, x: 9 }], OTHER, false)).toEqual({ fixes: [], blocked: 0, changed: [] });
+  });
+
+  it("lists only this browser's own changes, not live edits it showed from others", () => {
+    const guard = createCanvasGuard(scene);
+    const fromOthers = { ...loose, version: 2, x: 30 };
+    expect(guard.filterRemote([fromOthers]).apply).toEqual([fromOthers]);
+    expect(guard.checkLocal([frame, note, fromOthers], MATE, false).changed).toEqual([]);
+    const mine = { ...note, version: 2, x: 70 };
+    expect(guard.checkLocal([frame, mine, fromOthers], MATE, false).changed).toEqual([mine]);
   });
 
   it("lets the team and the board owner edit", () => {
@@ -63,7 +72,7 @@ describe("canvas guard: note versions", () => {
   it("keeps a new version as written by this person", () => {
     const guard = createCanvasGuard([...scene, card]);
     const v2 = { v: 2, text: "ใหม่", at: new Date().toISOString(), by: MATE };
-    expect(guard.checkLocal([{ ...card, version: 2, customData: { card: "problem", versions: [v1, v2] } }], MATE, false)).toEqual({
+    expect(guard.checkLocal([{ ...card, version: 2, customData: { card: "problem", versions: [v1, v2] } }], MATE, false)).toMatchObject({
       fixes: [],
       blocked: 0,
     });
@@ -78,7 +87,7 @@ describe("canvas guard: live edits from others", () => {
     const free = from(OTHER, { ...loose, version: 2, x: 4 });
     expect(guard.filterRemote([free])).toEqual({ apply: [free], verify: new Map() });
     // Now trusted: the same element arriving again is no change of this browser's.
-    expect(guard.checkLocal([frame, note, free], OTHER, false)).toEqual({ fixes: [], blocked: 0 });
+    expect(guard.checkLocal([frame, note, free], OTHER, false)).toEqual({ fixes: [], blocked: 0, changed: [] });
   });
 
   it("holds every edit touching a canvas for its saved copy, whoever it claims to be from", () => {

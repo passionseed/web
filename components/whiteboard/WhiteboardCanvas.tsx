@@ -42,6 +42,7 @@ import { ScriptButton } from "./script/ScriptButton";
 import { CanvasTeamLayer } from "./shift/CanvasTeamLayer";
 import { CardVersionsLayer } from "./shift/CardVersionsLayer";
 import { useShiftCardCaret } from "./shift/useShiftCardCaret";
+import { useCanvasFit } from "./shift/useCanvasFit";
 import { ZoneAddLayer } from "./shift/ZoneAddLayer";
 import { ShareDialog } from "./ShareDialog";
 import { TimerWidget } from "./TimerWidget";
@@ -109,8 +110,19 @@ export default function WhiteboardCanvas({
     lastBlockedToast.current = Date.now();
     toast.info("เปลี่ยนตรงนี้ไม่ได้: แคนวาสนี้แก้ได้เฉพาะทีม และลบได้เฉพาะเจ้าของ");
   }, []);
-  const sync = useWhiteboardSync({ boardId: board.id, role: board.role, me, initialElements, managerIds, onCanvasBlocked });
+  // SHIFT canvas rows grow and shrink with this person's notes; the sync hook says when they edited.
+  const localEdit = useRef<(changed: readonly OrderedExcalidrawElement[]) => void>(undefined);
+  const sync = useWhiteboardSync({
+    boardId: board.id,
+    role: board.role,
+    me,
+    initialElements,
+    managerIds,
+    onCanvasBlocked,
+    onLocalEdit: (changed) => localEdit.current?.(changed),
+  });
   const api = sync.excalidrawAPI;
+  localEdit.current = useCanvasFit(api, me.id, isManager);
   // Loads and saves the Library, and installs libraries from libraries.excalidraw.com (#addLibrary links).
   useHandleLibrary({ excalidrawAPI: api, adapter: LIBRARY_ADAPTER });
   const channel = useMemo(() => ({ send: sync.send, on: sync.on }), [sync.send, sync.on]);

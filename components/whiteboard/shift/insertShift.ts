@@ -4,15 +4,18 @@ import { convertToExcalidrawElements, getCommonBounds } from "@excalidraw/excali
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 
+import { NOTE_LINE } from "@/lib/whiteboard/canvas-fit";
 import {
   isPlacementObstacle,
   isShiftCardKind,
   projectCanvasSkeleton,
   shiftCardSkeleton,
+  zoneFreeSlot,
   zoneSlot,
 } from "@/lib/whiteboard/shift-cards";
 
 import { insertElements, insertSkeletons } from "../insert";
+import { fitCanvases } from "./useCanvasFit";
 
 const reducedMotion = () =>
   typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -40,21 +43,39 @@ function startTyping() {
   });
 }
 
+/** Most new lines a full zone grows by for one note (notes dragged off the grid can need two). */
+const MAX_GROW = 3;
+
 /**
  * Adds an empty note to a canvas zone, in the zone's next free slot, as part of
- * the zone's project frame, and starts typing on it.
+ * the zone's project frame, and starts typing on it. A full zone grows by a
+ * line first, and the rows below it move down.
  */
 export function insertZoneNote(api: ExcalidrawImperativeAPI, zoneId: string) {
-  const scene = api.getSceneElements();
-  const zone = scene.find((el) => el.id === zoneId);
+  const find = () => {
+    const scene = api.getSceneElements();
+    return { scene, zone: scene.find((el) => el.id === zoneId) };
+  };
+  let { scene, zone } = find();
   const kind = zone?.customData?.zone;
   if (!zone || !isShiftCardKind(kind)) return;
+  for (let i = 0; i < MAX_GROW && zone && zone.frameId && !zoneFreeSlot(zone, scene.filter(isPlacementObstacle)); i++) {
+    if (!fitCanvases(api, [zone.frameId], { zoneId, height: NOTE_LINE })) break;
+    ({ scene, zone } = find());
+  }
+  if (!zone) return;
+  const placedZone = zone;
   const inZone = scene.filter(
-    (el) => el.customData?.card && el.x >= zone.x && el.y >= zone.y && el.x < zone.x + zone.width && el.y < zone.y + zone.height,
+    (el) =>
+      el.customData?.card &&
+      el.x >= placedZone.x &&
+      el.y >= placedZone.y &&
+      el.x < placedZone.x + placedZone.width &&
+      el.y < placedZone.y + placedZone.height,
   ).length;
   const at = zoneSlot(zone, scene.filter(isPlacementObstacle), inZone);
   const elements = convertToExcalidrawElements([shiftCardSkeleton(kind)]).map(
-    (el) => ({ ...el, frameId: zone.frameId ?? null }) as ExcalidrawElement,
+    (el) => ({ ...el, frameId: placedZone.frameId ?? null }) as ExcalidrawElement,
   );
   const placed = insertElements(api, elements, at);
   const note = placed.find((el) => el.type === "rectangle");

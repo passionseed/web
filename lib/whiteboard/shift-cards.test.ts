@@ -11,6 +11,7 @@ import {
   MAX_VERSIONS,
   canvasZones,
   projectCanvasSkeleton,
+  zoneFreeSlot,
   zoneSlot,
   readVersions,
   settleVersions,
@@ -262,5 +263,26 @@ describe("version history display", () => {
   it("marks lines that are new since the previous version", () => {
     expect([...newLines("คนป่วย\nซื้อยาไม่สะดวก", "ผู้สูงอายุ\nซื้อยาไม่สะดวก\n\nลืมกินยา")]).toEqual([0, 3]);
     expect(newLines("a", "a").size).toBe(0);
+  });
+});
+
+describe("zoneFreeSlot", () => {
+  // A zone two notes wide and three lines tall: 96 of title, then lines of 200 with 24 between.
+  const zone = { x: 0, y: 0, width: 24 + 240 + 24 + 240 + 24, height: 96 + 3 * 200 + 2 * 24 + 12 };
+  const at = (x: number, y: number) => ({ x, y, width: 240, height: 200 });
+
+  it("fills a zone line by line, reading from its top-left", () => {
+    expect(zoneFreeSlot(zone, [])).toEqual({ x: 24 + 120, y: 96 + 100 });
+    expect(zoneFreeSlot(zone, [at(24, 96)])).toEqual({ x: 24 + 264 + 120, y: 96 + 100 });
+  });
+
+  it("reaches every line of a zone that has grown, however tall", () => {
+    const full = [at(24, 96), at(288, 96), at(24, 320), at(288, 320)];
+    expect(zoneFreeSlot(zone, full)).toEqual({ x: 24 + 120, y: 544 + 100 });
+  });
+
+  it("says when a zone is full", () => {
+    const full = [96, 320, 544].flatMap((y) => [at(24, y), at(288, y)]);
+    expect(zoneFreeSlot(zone, full)).toBeNull();
   });
 });

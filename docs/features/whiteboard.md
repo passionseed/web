@@ -171,6 +171,17 @@ Canvas, so mentors (and an AI reading the board) can follow each student without
   default 32px corner curved over the first letters of a note that reads from the top-left.
 - **Pivot arrows:** an arrow from an interview or test to a pivot note is the "why" of the
   pivot log.
+- **Rows fit their notes** (`lib/whiteboard/canvas-fit.ts`, `components/whiteboard/shift/useCanvasFit.ts`):
+  - A row of zones is as tall as its fullest zone needs: the lowest note's bottom plus 24.
+  - It is never shorter than the template made it, so it grows when a note gets taller as someone
+    types and shrinks back when notes are removed.
+  - The rows below move with everything in them (labels, notes and their text, loose stickies),
+    arrows bend to keep meeting their notes, and the frame grows or shrinks to match.
+  - **+ เพิ่ม** in a full zone first grows it by a line of notes.
+  - Only the browser that made the edit refits, after the drag or resize ends and only on canvases
+    that person may change, so two people never move the same rows. The moves sync and save like
+    any edit, and running the fit again changes nothing.
+  - A note belongs to the zone its top-left corner is in.
 - **Versions** on Problem, Target, Idea and Ship notes: select the note, click its chip, and
   **เก็บเป็น vN** saves the note's text (up to 5,000 characters), time, author and an optional
   reason (**เปลี่ยนเพราะ**) into `customData.versions` (newest 20 kept, numbers never reused). It
