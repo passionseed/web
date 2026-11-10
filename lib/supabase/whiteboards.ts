@@ -104,6 +104,88 @@ export async function roleFor(boardId: string, viewer: Viewer): Promise<Whiteboa
   return viewer.isAdmin ? "viewer" : null;
 }
 
+export type OpenedBoard = { viewer: Viewer; board: WhiteboardDetail };
+
+/**
+ * Everything the board page needs in two rounds of queries instead of five in
+ * a row: the sign-in check and the board's rows together, then the people's
+ * profiles and admin flags (the viewer's included) together. Same answer as
+ * getViewer + roleFor + loadBoard. Returns "signin" when nobody is signed in,
+ * null when there is no board or the viewer has no access.
+ */
+export async function openBoard(boardId: string): Promise<OpenedBoard | "signin" | null> {
+  const [auth, boardRes, membersRes] = await Promise.all([
+    createClient().then((supabase) => supabase.auth.getUser()),
+    db()
+      .from("whiteboards")
+      .select("id, title, elements, owner_id, link_access, share_token, timer_ends_at, timer_seconds")
+      .eq("id", boardId)
+      .maybeSingle(),
+    db().from("whiteboard_members").select("user_id, role").eq("whiteboard_id", boardId),
+  ]);
+  const user = auth.data.user;
+  if (!user || isAnonymousUser(user)) return "signin";
+  if (boardRes.error) throw boardRes.error;
+  if (membersRes.error) throw membersRes.error;
+  const board = boardRes.data;
+  if (!board) return null;
+  const members = membersRes.data ?? [];
+
+  const people = [
+    { userId: board.owner_id as string, role: "owner" as WhiteboardRole },
+    ...members.map((m) => ({ userId: m.user_id as string, role: m.role as WhiteboardRole })),
+  ];
+  const ids = [...new Set([...people.map((p) => p.userId), user.id])];
+  const [profiles, { data: admins, error: adminsError }] = await Promise.all([
+    profilesById(ids),
+    db().from("user_roles").select("user_id").eq("role", "admin").in("user_id", ids),
+  ]);
+  if (adminsError) throw adminsError;
+  const adminIds = new Set((admins ?? []).map((a) => a.user_id as string));
+
+  const isAdmin = adminIds.has(user.id);
+  const mine = members.find((m) => m.user_id === user.id);
+  const role: WhiteboardRole | null =
+    board.owner_id === user.id ? "owner" : mine ? (mine.role as MemberRole) : isAdmin ? "viewer" : null;
+  if (!role) return null;
+
+  if (mine) {
+    // Bookkeeping only: do it after the page is sent.
+    after(async () => {
+      await db()
+        .from("whiteboard_members")
+        .update({ last_opened_at: new Date().toISOString() })
+        .eq("whiteboard_id", boardId)
+        .eq("user_id", user.id);
+    });
+  }
+
+  const profile = profiles[user.id];
+  return {
+    viewer: { id: user.id, name: profile?.name ?? fallbackName(user), avatarUrl: profile?.avatarUrl ?? null, isAdmin },
+    board: {
+      id: board.id as string,
+      title: board.title as string,
+      // Deleted elements are kept in the database (a save never brings back something with a
+      // lower version), but the editor has no use for them: on busy boards they are most of the data.
+      elements: live(board.elements),
+      role,
+      linkAccess: board.link_access as LinkAccess,
+      shareToken: role === "owner" ? (board.share_token as string) : null,
+      members: people.map((p) => ({
+        ...p,
+        name: profiles[p.userId]?.name ?? "Someone",
+        avatarUrl: profiles[p.userId]?.avatarUrl ?? null,
+      })),
+      managerIds: [...new Set([board.owner_id as string, ...people.map((p) => p.userId).filter((id) => adminIds.has(id))])],
+      timer: {
+        endsAt: (board.timer_ends_at as string | null) ?? null,
+        seconds: (board.timer_seconds as number | null) ?? null,
+      },
+    },
+  };
+}
+
 export async function listBoards(viewer: Viewer): Promise<WhiteboardSummary[]> {
   const { data: memberships, error: memberError } = await db()
     .from("whiteboard_members")
@@ -331,6 +413,41 @@ export async function saveFiles(boardId: string, userId: string, files: BoardFil
       { onConflict: "whiteboard_id,file_id", ignoreDuplicates: true },
     );
   if (error) throw error;
+}
+
+/**
+ * The signed-in caller's role on a board, for hot read paths such as images:
+ * the sign-in check, then the owner, membership and admin lookups at once.
+ * Returns "signin" when nobody is signed in, null when they have no access.
+ */
+export async function callerRole(boardId: string): Promise<WhiteboardRole | "signin" | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user || isAnonymousUser(user)) return "signin";
+  const [{ data: board, error }, { data: member }, { data: admin }] = await Promise.all([
+    db().from("whiteboards").select("owner_id").eq("id", boardId).maybeSingle(),
+    db().from("whiteboard_members").select("role").eq("whiteboard_id", boardId).eq("user_id", user.id).maybeSingle(),
+    db().from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").limit(1),
+  ]);
+  if (error) throw error;
+  if (!board) return null;
+  if (board.owner_id === user.id) return "owner";
+  if (member) return member.role as MemberRole;
+  return admin?.length ? "viewer" : null;
+}
+
+export async function loadFile(boardId: string, fileId: string): Promise<BoardFile | null> {
+  const { data, error } = await db()
+    .from("whiteboard_files")
+    .select("file_id, mime_type, data_url")
+    .eq("whiteboard_id", boardId)
+    .eq("file_id", fileId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return { id: data.file_id as string, mimeType: data.mime_type as string, dataURL: data.data_url as string };
 }
 
 export async function loadFiles(boardId: string, ids: string[]): Promise<BoardFile[]> {

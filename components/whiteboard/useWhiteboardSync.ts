@@ -31,9 +31,11 @@ import {
   type WhiteboardRole,
 } from "@/lib/whiteboard/core";
 import { createCanvasGuard } from "@/lib/whiteboard/canvas-guard";
+import { fetchOrder, imageUrl } from "@/lib/whiteboard/images";
 import { exportBackgroundFor, loadBoardSettings } from "@/lib/whiteboard/settings";
 import { createClient } from "@/utils/supabase/client";
 
+import { compressForUpload } from "./compressImage";
 import { nextFrame } from "./useViewportTick";
 
 /**
@@ -88,6 +90,8 @@ type ViewportPayload = { kind: "viewport"; socketId: string; bounds: Bounds };
  */
 type AwarenessPayload = CursorPayload | ViewportPayload;
 
+/** Images fetched at once: the browser's own per-host limit, leaving room for saves. */
+const IMAGE_CONCURRENCY = 5;
 const BROADCAST_MS = 60;
 const CURSOR_MS = 40;
 const VIEWPORT_MS = 80;
@@ -299,20 +303,50 @@ export function useWhiteboardSync({
       const missing = imageFileIds(elements).filter((id) => !have[id] && !requestedFiles.current.has(id));
       if (missing.length === 0) return;
       missing.forEach((id) => requestedFiles.current.add(id));
-      for (let i = 0; i < missing.length; i += 50) {
-        const ids = missing.slice(i, i + 50);
+
+      // Nearest the middle of the view first, so what the person is looking at shows first.
+      const appState = excalidrawAPI.getAppState();
+      const view = {
+        x: appState.width / 2 / appState.zoom.value - appState.scrollX,
+        y: appState.height / 2 / appState.zoom.value - appState.scrollY,
+      };
+      const wanted = new Set(missing);
+      const placed = elements.flatMap((el) =>
+        el.type === "image" && el.fileId && wanted.has(el.fileId)
+          ? [{ fileId: el.fileId, x: el.x, y: el.y, width: el.width, height: el.height }]
+          : [],
+      );
+      const queue = fetchOrder(placed, view);
+
+      // Each image is its own request (cached by the browser for good), a few at a time,
+      // and shown as soon as it arrives instead of after the whole board's worth.
+      let ready: BinaryFileData[] = [];
+      let cancelFlush: (() => void) | null = null;
+      const flush = () => {
+        cancelFlush = null;
+        if (ready.length) excalidrawAPI.addFiles(ready);
+        ready = [];
+      };
+      const fetchOne = async (id: string) => {
         try {
-          const { files } = await boardApi<{ files: { id: string; mimeType: string; dataURL: string }[] }>(
-            `/api/whiteboards/${boardId}/files?ids=${ids.join(",")}`,
-          );
-          files.forEach((f) => knownFiles.current.add(f.id));
-          excalidrawAPI.addFiles(files.map((f) => ({ ...f, created: Date.now() }) as unknown as BinaryFileData));
-          // Ids not returned yet (still uploading) may be retried later.
-          ids.filter((id) => !files.some((f) => f.id === id)).forEach((id) => requestedFiles.current.delete(id));
+          const res = await fetch(imageUrl(boardId, id), { credentials: "same-origin" });
+          // Not there yet (its maker's upload is still on the way): may be retried later.
+          if (!res.ok) throw new Error(String(res.status));
+          const blob = await res.blob();
+          const dataURL = await blobToDataUrl(blob);
+          knownFiles.current.add(id);
+          ready.push({ id, mimeType: blob.type, dataURL, created: Date.now() } as unknown as BinaryFileData);
+          if (!cancelFlush) cancelFlush = nextFrame(flush);
         } catch {
-          ids.forEach((id) => requestedFiles.current.delete(id));
+          requestedFiles.current.delete(id);
         }
-      }
+      };
+      const worker = async () => {
+        for (let id = queue.shift(); id !== undefined; id = queue.shift()) await fetchOne(id);
+      };
+      await Promise.all(Array.from({ length: Math.min(IMAGE_CONCURRENCY, queue.length) }, worker));
+      cancelFlush?.();
+      flush();
     },
     [boardId, excalidrawAPI],
   );
@@ -426,9 +460,11 @@ export function useWhiteboardSync({
       for (const file of fresh) {
         knownFiles.current.add(file.id);
         try {
+          // Everyone else downloads what is uploaded here, so big photos go up as WebP.
+          const upload = await compressForUpload({ mimeType: file.mimeType, dataURL: file.dataURL });
           await boardApi(`/api/whiteboards/${boardId}/files`, {
             method: "POST",
-            body: JSON.stringify([{ id: file.id, mimeType: file.mimeType, dataURL: file.dataURL }]),
+            body: JSON.stringify([{ id: file.id, mimeType: upload.mimeType, dataURL: upload.dataURL }]),
           });
           send("files", { ids: [file.id] });
         } catch {
