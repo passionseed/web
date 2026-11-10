@@ -61,6 +61,15 @@ again afterwards.
   elements stay in the database but are not sent to the editor (on the SHIFT High board they were
   60% of the data). The board list fetches the editor's code in idle time, so opening a board
   from it starts warm.
+- **Board size:** every save rewrites the whole board row, so its size is what makes saves slow.
+  The save route slims strokes and lines first (`lib/whiteboard/compact.ts`): coordinates and
+  pressures keep 2 decimals, and lines and stylus strokes drop points within half a pixel of the
+  line through their neighbours. Mouse and finger strokes keep every point (their thickness comes
+  from point spacing), and arrows are untouched. The stored copy changes, not the version. A
+  trigger (`whiteboard_drop_old_tombstones`) drops deleted elements older than 24 hours on every
+  write, as Excalidraw's own app does. `pnpm tsx scripts/whiteboard-slim.ts` reports what slimming
+  would save on stored boards and, with `--board <id> --apply`, writes it (only if nobody saved
+  since it read). On 2026-11-10 it showed Shift[3] going from 5.5 MB to 2.3 MB.
 - **Images** are still stored as data URLs in `whiteboard_files`, but each one is served on its own
   as plain bytes from `GET /api/whiteboards/<id>/files/<fileId>`, cached by the browser for a year
   (a file id's bytes never change; saving ignores duplicates). The editor fetches five at a time,
