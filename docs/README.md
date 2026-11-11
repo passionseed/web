@@ -66,6 +66,7 @@ Documentation index. Files are organized by purpose, not by date.
 | File | Purpose |
 |------|---------|
 | [DEPLOYMENT_SETUP.md](operations/DEPLOYMENT_SETUP.md) | Vercel deployment optimization & resource limits |
+| [shift-high-island-rollout.md](runbooks/shift-high-island-rollout.md) | SHIFT High island production rollout checklist: migrations, checks, role passwords, Vercel and bot env, Discord setup, smoke test, rollback |
 | [B2_CORS_SETUP.md](operations/B2_CORS_SETUP.md) | Backblaze B2 CORS configuration |
 | [DISCORD_BOT_SETUP.md](operations/DISCORD_BOT_SETUP.md) | Discord bot setup for mentor notifications |
 | [../ops/integration-watch/README.md](../ops/integration-watch/README.md) | Instagram and LINE health alerts and the scheduled Meta backfill, run from the team server |

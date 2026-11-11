@@ -15,8 +15,14 @@ jest.mock("pg", () => {
   return { __esModule: true, default: { Pool }, Pool };
 });
 
+jest.mock("@vercel/functions", () => ({ attachDatabasePool: jest.fn() }));
+
+import { attachDatabasePool } from "@vercel/functions";
+
 import { SUPABASE_CA } from "../ca";
-import { ensureSchema, questApi, REQUIRED_SCHEMA } from "../db";
+import { ensureSchema, IDLE_TIMEOUT_MS, questApi, REQUIRED_SCHEMA } from "../db";
+
+const attach = attachDatabasePool as jest.Mock;
 
 const ENV = { ...process.env };
 const LOCAL = "postgresql://shift_quest_web:sandbox@127.0.0.1:55451/postgres";
@@ -32,6 +38,8 @@ beforeEach(() => {
   process.env = { ...ENV };
   delete process.env.SHIFT_QUEST_DATABASE_URL;
   jest.spyOn(console, "error").mockImplementation(() => undefined);
+  jest.spyOn(console, "warn").mockImplementation(() => undefined);
+  attach.mockReset();
 });
 
 afterEach(() => {
@@ -42,11 +50,13 @@ afterEach(() => {
 describe("questApi", () => {
   it("creates no pool on import", () => {
     expect(poolInstances).toHaveLength(0);
+    expect(attach).not.toHaveBeenCalled();
   });
 
   it("throws shift_quest_db_not_configured when the URL is missing", () => {
     expect(() => questApi()).toThrow("shift_quest_db_not_configured");
     expect(poolInstances).toHaveLength(0);
+    expect(attach).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -79,7 +89,7 @@ describe("questApi", () => {
         database: "postgres",
         ssl: false,
         max: 2,
-        idleTimeoutMillis: 10_000,
+        idleTimeoutMillis: 5_000,
         connectionTimeoutMillis: 5_000,
         application_name: "shift-island-web",
       })
@@ -119,6 +129,86 @@ describe("questApi", () => {
     expect(questApi()).not.toBe(first);
     expect(poolInstances).toHaveLength(2);
     expect(poolInstances[0].end).toHaveBeenCalled();
+  });
+});
+
+describe("serverless pool lifecycle", () => {
+  it("keeps idle connections short-lived for Fluid Compute", () => {
+    expect(IDLE_TIMEOUT_MS).toBe(5_000);
+  });
+
+  it("attaches each new pool to the function lifecycle exactly once", () => {
+    process.env.SHIFT_QUEST_DATABASE_URL = LOCAL;
+    questApi();
+    questApi();
+    expect(attach).toHaveBeenCalledTimes(1);
+    expect(attach).toHaveBeenCalledWith(poolInstances[0]);
+
+    process.env.SHIFT_QUEST_DATABASE_URL = LOCAL.replace("55451", "55452");
+    questApi();
+    expect(attach).toHaveBeenCalledTimes(2);
+    expect(attach).toHaveBeenLastCalledWith(poolInstances[1]);
+  });
+
+  it("does not attach a pool it refused to make", () => {
+    process.env.SHIFT_QUEST_DATABASE_URL = "postgresql://postgres:pw@127.0.0.1:5432/postgres";
+    expect(() => questApi()).toThrow("shift_quest_db_not_configured");
+    expect(attach).not.toHaveBeenCalled();
+  });
+
+  it("still serves requests when the lifecycle hook refuses the pool", () => {
+    attach.mockImplementationOnce(() => {
+      throw new Error("Unsupported database pool type");
+    });
+    process.env.SHIFT_QUEST_DATABASE_URL = LOCAL;
+    expect(() => questApi()).not.toThrow();
+    expect(poolInstances).toHaveLength(1);
+    expect(console.error).toHaveBeenCalledWith(
+      "[shift-island] could not attach the database pool:",
+      "Unsupported database pool type"
+    );
+  });
+
+  it("warns when production points at the session-mode pooler port", () => {
+    process.env.SHIFT_QUEST_DATABASE_URL = REMOTE.replace(":6543/", ":5432/");
+    questApi();
+    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining("use 6543 (transaction mode)"));
+    for (const [line] of (console.warn as jest.Mock).mock.calls) {
+      expect(String(line)).not.toContain("secret");
+    }
+  });
+
+  it("does not warn on the transaction-mode port or a local sandbox", () => {
+    process.env.SHIFT_QUEST_DATABASE_URL = REMOTE;
+    questApi();
+    process.env.SHIFT_QUEST_DATABASE_URL = "postgresql://shift_quest_web:pw@127.0.0.1:5432/postgres";
+    questApi();
+    expect(console.warn).not.toHaveBeenCalled();
+  });
+
+  it("sends every call as one unnamed, parameterized statement (Supavisor transaction mode)", async () => {
+    process.env.SHIFT_QUEST_DATABASE_URL = LOCAL;
+    const api = questApi();
+    poolInstances[0].query.mockResolvedValue({ rows: [{ r: 1 }] });
+    await api.call("shift_quest_session", "100000000000000001");
+    const [sql, params] = poolInstances[0].query.mock.calls[0];
+    expect(typeof sql).toBe("string");
+    expect(sql).toBe("select public.shift_quest_session($1) as r");
+    expect(params).toEqual(["100000000000000001"]);
+    expect(sql).not.toMatch(/\b(set|listen|begin|prepare)\b/i);
+  });
+
+  it("is a pool shape the real attachDatabasePool accepts", () => {
+    const real = jest.requireActual<typeof import("@vercel/functions")>("@vercel/functions");
+    const realPg = jest.requireActual<typeof import("pg")>("pg");
+    process.env.SHIFT_QUEST_DATABASE_URL = LOCAL;
+    questApi();
+    // Same settings, real pg.Pool: no connection is opened until a query.
+    const pool = new realPg.Pool(poolInstances[0].config as import("pg").PoolConfig);
+    const on = jest.spyOn(pool, "on");
+    expect(() => real.attachDatabasePool(pool)).not.toThrow();
+    expect(on).toHaveBeenCalledWith("release", expect.any(Function));
+    expect(pool.totalCount).toBe(0);
   });
 });
 
