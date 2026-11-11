@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { Globe } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/language-context";
+import { GUIDE_SLUGS } from "@/lib/radar-guides";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -30,6 +31,12 @@ export function Layout({ children }: LayoutProps) {
     pathname?.startsWith("/radar/") ||
     pathname === "/faculty-radar" ||
     pathname?.startsWith("/faculty-radar/");
+
+  // A code guide's levels (/radar/<guide>/<level>) are a full-screen game with
+  // their own header and sticky nav. Not /radar/skills/x or /radar/territory/x.
+  const pathParts = pathname?.split("/") ?? [];
+  const isRadarGuideLevel =
+    pathParts.length === 4 && pathParts[1] === "radar" && GUIDE_SLUGS.includes(pathParts[2]) && pathParts[3] !== "";
 
   const hideNavbar =
     pathname === "/admin" ||
@@ -63,7 +70,8 @@ export function Layout({ children }: LayoutProps) {
     pathname?.includes("/app/beta") ||
     pathname?.startsWith("/expert-interview") ||
     // Map editor is a fixed full-page workspace
-    (pathname?.startsWith("/map/") && pathname?.endsWith("/edit"));
+    (pathname?.startsWith("/map/") && pathname?.endsWith("/edit")) ||
+    isRadarGuideLevel;
 
   useEffect(() => {
     async function getUser() {
@@ -87,8 +95,10 @@ export function Layout({ children }: LayoutProps) {
   return (
     <div className="flex min-h-screen flex-col bg-[#0d0d0d]">
       {!hideNavbar && (
+        // `site-header`: a guide cover hides it with CSS (shell.css), so the
+        // same URL with ?view=deck keeps the header without reading the query here.
         <header
-          className={`z-50 w-full border-b border-white/[0.06] bg-[#0d0d0d]/95 backdrop-blur supports-[backdrop-filter]:bg-[#0d0d0d]/60 ${
+          className={`site-header z-50 w-full border-b border-white/[0.06] bg-[#0d0d0d]/95 backdrop-blur supports-[backdrop-filter]:bg-[#0d0d0d]/60 ${
             isRadarRoute ? "relative" : "sticky top-0"
           }`}
         >

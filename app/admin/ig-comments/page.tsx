@@ -15,6 +15,8 @@ import {
   countCommentsForAdmin,
   getCommentsForAdmin,
   getCommentsMissedByDm,
+  getRadarCommentQueue,
+  type RadarQueueItem,
 } from "@/lib/supabase/ig-comments";
 import {
   getDefaultCommentDmMessage,
@@ -37,6 +39,10 @@ import { requireAdmin } from "@/lib/admin/requireAdmin";
 import { IgCommentReplyRow } from "@/components/admin/IgCommentReplyRow";
 import { LeadTagBadges } from "@/components/admin/LeadTagBadges";
 import { MissedCommentsCard } from "@/components/admin/MissedCommentsCard";
+import { RadarCommentQueue, type RadarQueueRow } from "@/components/admin/RadarCommentQueue";
+import type { RadarRowInfo } from "@/components/admin/IgCommentReplyRow";
+import { isRadarAutoDmEnabled, RADAR_DM_WINDOW_MS } from "@/lib/radar-guide/comment-dm";
+import { isAutoSendableTarget } from "@/lib/radar-guide/comment-target";
 import { RefreshButton } from "@/components/admin/RefreshButton";
 import { FilterLinks } from "@/components/admin/queue-tools/FilterLinks";
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
@@ -74,6 +80,33 @@ const EMPTY_TITLE: Record<IgReplyFilter, string> = {
 };
 
 const PAGE_SIZE = ADMIN_COMMENTS_DEFAULT_LIMIT;
+
+/** Row info for a Radar comment, from its resolved target and DM log row. */
+function radarRowInfo(item: RadarQueueItem, now: number): RadarRowInfo {
+  const { target, dm, comment } = item;
+  const label = target.reel?.careerLabelTh
+    ? `สาย ${target.reel.careerLabelTh}`
+    : target.fieldSlug ?? "Hub";
+  const insideWindow = now - Date.parse(comment.commented_at) <= RADAR_DM_WINDOW_MS;
+  const reelAllows = !target.reel || target.reel.dmEnabled;
+  return {
+    label,
+    status: dm?.status ?? null,
+    errorCode: dm?.errorCode ?? null,
+    needsReview: Boolean(target.needsReview),
+    canSend: insideWindow && reelAllows,
+  };
+}
+
+/** The queue, or an error note so a Radar failure never takes the comments page down. */
+async function loadRadarQueue(): Promise<{ items: RadarQueueItem[]; error: string | null }> {
+  try {
+    return { items: await getRadarCommentQueue(), error: null };
+  } catch (error) {
+    console.error("Radar comment queue failed to load:", error);
+    return { items: [], error: "The Radar queue could not be loaded. The other comment tools still work." };
+  }
+}
 const PAGER_LINK = "min-h-11 lg:[@media(pointer:fine)]:min-h-9";
 
 /** "Comments 301 to 600 of 1,234" with Newer and Older links. Server-rendered. */
@@ -150,6 +183,7 @@ export default async function IgCommentsPage({
     // "skip anyone already messaged" without a second round trip.
     getCommentsMissedByDm(30, undefined, true),
   ]);
+  const radarQueue = await loadRadarQueue();
   const now = Date.now();
   // The overview's "IG comments to answer" queue: getCommentsMissedByDm(7).
   const missedInWindow = insidePrivateReplyWindow(missedComments, now).filter(
@@ -166,6 +200,20 @@ export default async function IgCommentsPage({
   const pastTheEnd = paged && comments.length === 0 && view.page > 1 && matchingCount > 0;
   const neverContactedIds = new Set(neverContacted.map((c) => c.id));
   const shiftDmMessage = getDefaultCommentDmMessage("shift");
+  const radarById = new Map(radarQueue.items.map((item) => [item.comment.id, radarRowInfo(item, now)]));
+  const radarRows: RadarQueueRow[] = radarQueue.items.map((item) => ({
+    id: item.comment.id,
+    username: item.comment.username,
+    text: item.comment.text,
+    commented_at: item.comment.commented_at,
+    autoSendable: isAutoSendableTarget(item.target),
+    info: radarById.get(item.comment.id)!,
+  }));
+  /** Radar keyword comments older than the queue window: shown as Radar, no send. */
+  const radarFallback = (text: string): RadarRowInfo | undefined =>
+    getCampaign(text) === "radar"
+      ? { label: "Radar", status: null, needsReview: false, canSend: false }
+      : undefined;
 
   return (
     <div className="space-y-6">
@@ -197,6 +245,12 @@ export default async function IgCommentsPage({
           }))}
         />
       </div>
+
+      <RadarCommentQueue
+        rows={radarRows}
+        autoOn={isRadarAutoDmEnabled()}
+        loadError={radarQueue.error}
+      />
 
       <MissedCommentsCard
         comments={missedComments.map((c) => ({
@@ -290,6 +344,7 @@ export default async function IgCommentsPage({
                           defaultPublicMessage={
                             isShift ? getDefaultPublicCommentReply(c.username, "shift") : undefined
                           }
+                          radar={radarById.get(c.id) ?? radarFallback(c.text)}
                         />
                       </TableCell>
                     </TableRow>

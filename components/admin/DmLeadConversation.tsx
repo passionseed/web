@@ -4,6 +4,7 @@ import { useEffect, useOptimistic, useState, useTransition } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { DmMessageBubble } from "@/components/admin/DmMessageBubble";
 import { DmLeadReplyForm } from "@/components/admin/DmLeadReplyForm";
+import { RadarThreadNotice } from "@/components/admin/RadarThreadNotice";
 import { replyToLead } from "@/app/admin/dm-leads/actions";
 import { refreshAdminCounts } from "@/components/admin/console/live-counts";
 import { uploadDmAttachment } from "@/lib/dm-leads/upload-image-client";
@@ -109,16 +110,20 @@ export function DmLeadConversation({ conversation }: { conversation: DmConversat
         </CardContent>
       </Card>
 
-      <DmLeadReplyForm
-        conversation={conversation}
-        body={body}
-        onBodyChange={setBody}
-        attachedFile={attachedFile}
-        onAttachedFileChange={setAttachedFile}
-        onSend={handleSend}
-        isPending={isPending}
-        error={error}
-      />
+      {conversation.origin === "radar" ? (
+        <RadarThreadNotice />
+      ) : (
+        <DmLeadReplyForm
+          conversation={conversation}
+          body={body}
+          onBodyChange={setBody}
+          attachedFile={attachedFile}
+          onAttachedFileChange={setAttachedFile}
+          onSend={handleSend}
+          isPending={isPending}
+          error={error}
+        />
+      )}
     </>
   );
 }

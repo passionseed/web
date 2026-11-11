@@ -73,8 +73,30 @@ test("the final field CTA records analytics and canonical field intent", () => {
     />
   );
 
-  fireEvent.click(screen.getByRole("button", { name: "นัดคุยกับรุ่นพี่" }));
+  fireEvent.click(screen.getByRole("button", { name: "สนใจสายนี้" }));
 
   expect(wiring.analytics).toHaveBeenCalledWith("interested", "interested");
   expect(wiring.canonical).toHaveBeenCalledWith("interested");
+  // Recording interest never opens the old LINE QR dialog.
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(screen.queryByText(/นัดคุยกับรุ่นพี่/)).not.toBeInTheDocument();
+});
+
+test("the intent button records once, then shows it is saved", () => {
+  const wiring = intentWiring();
+  render(
+    <RadarCardView
+      kind="cta"
+      accent="#60a5fa"
+      content={{ title: "ทางนี้เหมาะกับเราหรือไม่" }}
+      squadUrl="https://passionseed.org/paths/cyber-squad"
+      onIntent={wiring.onIntent}
+    />
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: "สนใจสายนี้" }));
+  fireEvent.click(screen.getByRole("button", { name: /บันทึกแล้ว/ }));
+
+  expect(wiring.analytics).toHaveBeenCalledTimes(1);
+  expect(wiring.analytics).toHaveBeenCalledWith("cyber-squad", "interested");
 });

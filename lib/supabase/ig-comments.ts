@@ -1,5 +1,13 @@
 import { createAdminClient } from "@/utils/supabase/admin";
-import { isCampaignRequest } from "@/lib/meta/comment-intent";
+import { getCampaign, isCampaignRequest } from "@/lib/meta/comment-intent";
+import { isRadarTarget, resolveCommentTarget } from "@/lib/radar-guide/comment-target";
+import type { CommentTarget, RadarReel } from "@/lib/radar-guide/types";
+import {
+  listRadarCommentDms,
+  listReels,
+  rowToReel,
+  type RadarCommentDmSummary,
+} from "@/lib/supabase/radar-reels";
 import { isExcludedFromAutoReply } from "@/lib/meta/reply-exclusions";
 import { isSelfAuthored } from "@/lib/meta/self-account";
 import type { DmLeadClassification, IgComment } from "@/types/dm-leads";
@@ -248,6 +256,9 @@ export async function getCommentsMissedByDm(
       // Only people who commented a live campaign's keyword asked to hear
       // from us ("port" and "uni" run alongside each other).
       isCampaignRequest(c.text) &&
+      // Radar comments get only the fixed Radar DM, through the claim, from
+      // their own Radar queue (spec 5.5); never the generic bulk copy.
+      getCampaign(c.text) !== "radar" &&
       // Hand-maintained skip list: handled off the automation, or asked us to stop.
       !isExcludedFromAutoReply(c.username)
   );
@@ -298,3 +309,89 @@ export async function getLatestCommentForUser(params: {
   return data ?? null;
 }
 
+
+/** One row of the admin Radar queue. */
+export interface RadarQueueItem {
+  comment: IgComment;
+  /** Resolved on the server with `resolveCommentTarget`. */
+  target: CommentTarget;
+  /** The `radar_comment_dms` row, when a send was claimed. */
+  dm: RadarCommentDmSummary | null;
+}
+
+/** Private replies are only possible inside 7 days, so the queue looks no further. */
+const RADAR_QUEUE_DAYS = 7;
+const RADAR_QUEUE_LIMIT = 300;
+
+/**
+ * Comments for the admin Radar tab (spec 5.5): the RADAR keyword on any post,
+ * and link requests or vaguer asks on a mapped Radar reel, from the last 7
+ * days, newest first, each with its resolved career and DM status.
+ */
+export async function getRadarCommentQueue(): Promise<RadarQueueItem[]> {
+  const supabase = createAdminClient();
+  const cutoff = new Date(Date.now() - RADAR_QUEUE_DAYS * 24 * 60 * 60 * 1000).toISOString();
+
+  const reelRows = await listReels({ platform: "instagram" }, supabase);
+  const reelsByMedia = new Map<string, RadarReel>();
+  for (const row of reelRows) if (row.media_id) reelsByMedia.set(row.media_id, rowToReel(row));
+  const mappedMedia = [...reelsByMedia.keys()];
+
+  const keywordQuery = supabase
+    .from("ig_comments")
+    .select("*")
+    .gte("commented_at", cutoff)
+    .or("text.ilike.%radar%,text.ilike.%เรด%")
+    .order("commented_at", { ascending: false })
+    .limit(RADAR_QUEUE_LIMIT);
+  const reelQuery =
+    mappedMedia.length > 0
+      ? supabase
+          .from("ig_comments")
+          .select("*")
+          .gte("commented_at", cutoff)
+          .in("media_id", mappedMedia)
+          .order("commented_at", { ascending: false })
+          .limit(RADAR_QUEUE_LIMIT)
+      : null;
+
+  const [keywordResult, reelResult] = await Promise.all([keywordQuery, reelQuery]);
+  for (const result of [keywordResult, reelResult]) {
+    if (result?.error) {
+      console.error("Error fetching Radar comment queue:", result.error);
+      throw new Error("Failed to fetch Radar comments");
+    }
+  }
+
+  const byId = new Map<string, IgComment>();
+  for (const c of [...(keywordResult.data ?? []), ...(reelResult?.data ?? [])] as IgComment[]) {
+    byId.set(c.id, c);
+  }
+  const candidates = [...byId.values()].filter(
+    (c) => !isSelfAuthored({ igUserId: c.ig_user_id, username: c.username })
+  );
+
+  const lookup = async (mediaId: string) => reelsByMedia.get(mediaId) ?? null;
+  const resolved: { comment: IgComment; target: CommentTarget }[] = [];
+  for (const comment of candidates) {
+    const target = await resolveCommentTarget({ text: comment.text, mediaId: comment.media_id }, lookup);
+    if (isRadarTarget(target)) resolved.push({ comment, target });
+  }
+
+  const dms = await listRadarCommentDms(resolved.map((r) => r.comment.id), supabase);
+  return resolved
+    .sort((a, b) => b.comment.commented_at.localeCompare(a.comment.commented_at))
+    .slice(0, RADAR_QUEUE_LIMIT)
+    .map((r) => ({ ...r, dm: dms.get(r.comment.id) ?? null }));
+}
+
+/** One comment by id, for the Radar send action. */
+export async function getCommentById(commentId: string): Promise<IgComment | null> {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase.from("ig_comments").select("*").eq("id", commentId).maybeSingle();
+  if (error) {
+    console.error("Error fetching ig_comment:", error);
+    throw new Error("Failed to fetch comment");
+  }
+  return (data as IgComment | null) ?? null;
+}

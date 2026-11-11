@@ -1,0 +1,333 @@
+/*
+ * Cybersecurity guide bespoke pieces (U3): same pixel game-story look as the
+ * engines (components/radar/guide/games/games.css): Dusk City night palette,
+ * chunky box-shadow pixel borders, no radius, Tiny5 for pixel digits.
+ * Tap only, targets at least 48px, no hover-only effects. Reduced motion
+ * (media query or data-still) shows final states with no transitions.
+ */
+
+.cy-piece {
+  --px: 3px;
+  --c-bg: #1a0e14;
+  --c-panel: #24121c;
+  --c-line: #4e2c42;
+  --c-ink: #fff1e6;
+  --c-dim: rgb(255 241 230 / 68%);
+  --c-faint: rgb(255 241 230 / 46%);
+  --c-accent: var(--radar-accent, #5cff5c);
+  --c-hot: #ff8a4c;
+  --c-violet: #8f5bff;
+  --c-magenta: #ff3fb4;
+  --c-bad: #f45d48;
+  --c-thai: var(--font-athiti), var(--font-noto-sans-thai), sans-serif;
+  --c-display: var(--font-kodchasan), var(--font-athiti), sans-serif;
+  --c-pixel: var(--font-tiny5), var(--font-space-mono), monospace;
+
+  position: relative;
+  margin: calc(var(--px) * 2) var(--px);
+  padding: 0.9rem 0.9rem 1rem;
+  background: var(--c-panel);
+  color: var(--c-ink);
+  font-family: var(--c-thai);
+  font-size: 1rem;
+  line-height: 1.55;
+  box-shadow:
+    0 calc(var(--px) * -1) 0 0 var(--c-line),
+    0 var(--px) 0 0 var(--c-line),
+    calc(var(--px) * -1) 0 0 0 var(--c-line),
+    var(--px) 0 0 0 var(--c-line),
+    0 calc(var(--px) * 3) 0 0 rgb(0 0 0 / 45%);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cy-piece *,
+.cy-piece *::before,
+.cy-piece *::after {
+  box-sizing: border-box;
+}
+
+.cy-piece__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.cy-piece__prompt,
+.cy-piece__title {
+  margin: 0 0 0.75rem;
+  font-family: var(--c-display);
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.cy-piece__head .cy-piece__title {
+  margin: 0;
+}
+
+.cy-piece__result {
+  margin: 0.9rem 0 0.25rem;
+  min-height: 1.6em;
+  font-family: var(--c-display);
+  font-weight: 600;
+  color: var(--c-accent);
+}
+
+.cy-piece__fine {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--c-faint);
+}
+
+.cy-badge,
+.cy-label {
+  display: inline-block;
+  padding: 0.05rem 0.45rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--c-bg);
+  background: var(--c-hot);
+  box-shadow: 0 0 0 2px var(--c-bg);
+}
+
+.cy-label {
+  background: var(--c-violet);
+  color: var(--c-ink);
+}
+
+/* ── Chips ───────────────────────────────────────────────────────────── */
+
+.cy-chip {
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0 0.7rem;
+  border: 0;
+  background: var(--c-bg);
+  color: var(--c-ink);
+  font-family: var(--c-pixel);
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow:
+    0 calc(var(--px) * -1) 0 0 var(--c-line),
+    0 var(--px) 0 0 var(--c-line),
+    calc(var(--px) * -1) 0 0 0 var(--c-line),
+    var(--px) 0 0 0 var(--c-line);
+  transition: transform 80ms steps(2);
+}
+
+.cy-chip--ghost {
+  font-family: var(--c-thai);
+  font-size: 0.95rem;
+  color: var(--c-dim);
+}
+
+.cy-chip:active {
+  transform: translateY(2px);
+}
+
+.cy-chip[aria-pressed="true"] {
+  background: var(--c-accent);
+  color: var(--c-bg);
+}
+
+.cy-chip:focus-visible {
+  outline: 3px solid var(--c-magenta);
+  outline-offset: 3px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cy-chip:hover:not([aria-pressed="true"]) {
+    background: #311a28;
+  }
+}
+
+/* ── Birth-year timeline ─────────────────────────────────────────────── */
+
+.cy-birth__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--px) * 3);
+}
+
+.cy-birth__line {
+  padding: 2.6rem 2.2rem 3.2rem;
+}
+
+.cy-birth__track {
+  position: relative;
+  height: 12px;
+  background: var(--c-bg);
+  box-shadow: 0 0 0 var(--px) var(--c-line);
+}
+
+.cy-birth__fill {
+  height: 100%;
+  background: repeating-linear-gradient(90deg, var(--c-bad) 0 6px, #c43a2a 6px 12px);
+  transition: width 900ms steps(18);
+}
+
+.cy-birth__mark {
+  position: absolute;
+  top: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translate(-50%, -50%);
+}
+
+.cy-birth__label {
+  position: absolute;
+  top: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 5.5rem;
+  font-size: 0.75rem;
+  line-height: 1.3;
+  text-align: center;
+  color: var(--c-dim);
+}
+
+.cy-birth__label b {
+  font-family: var(--c-pixel);
+  font-weight: 400;
+  font-size: 0.95rem;
+  color: var(--c-ink);
+}
+
+.cy-birth__mark--you .cy-birth__label {
+  top: auto;
+  bottom: 22px;
+}
+
+.cy-birth__mark--you .cy-birth__label b {
+  color: var(--c-accent);
+}
+
+/* Pixel bug: an 8x8 sprite drawn with box-shadows. */
+.cy-bug {
+  position: relative;
+  width: 4px;
+  height: 4px;
+  margin: -14px 0 0 -14px;
+  background: transparent;
+  box-shadow:
+    8px 0 var(--c-bad), 20px 0 var(--c-bad),
+    12px 4px var(--c-bad), 16px 4px var(--c-bad),
+    8px 8px var(--c-bad), 12px 8px var(--c-ink), 16px 8px var(--c-ink), 20px 8px var(--c-bad),
+    4px 12px var(--c-bad), 8px 12px var(--c-bad), 12px 12px var(--c-bad), 16px 12px var(--c-bad), 20px 12px var(--c-bad), 24px 12px var(--c-bad),
+    8px 16px var(--c-bad), 12px 16px var(--c-bad), 16px 16px var(--c-bad), 20px 16px var(--c-bad),
+    4px 20px var(--c-bad), 12px 20px var(--c-bad), 16px 20px var(--c-bad), 24px 20px var(--c-bad),
+    8px 24px var(--c-bad), 20px 24px var(--c-bad);
+}
+
+.cy-pin {
+  width: 12px;
+  height: 20px;
+  background: var(--c-accent);
+  box-shadow: 0 0 0 var(--px) var(--c-bg);
+}
+
+.cy-pin--now {
+  background: var(--c-magenta);
+}
+
+/* ── Bucket vs pipe ──────────────────────────────────────────────────── */
+
+.cy-bucket__stage {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2.5rem;
+  padding: 0.5rem 0 0;
+}
+
+.cy-bucket__col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+}
+
+.cy-bucket__col figcaption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.cy-bucket__tank,
+.cy-bucket__pipe {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  background: var(--c-bg);
+  box-shadow:
+    0 var(--px) 0 0 var(--c-ink),
+    calc(var(--px) * -1) 0 0 0 var(--c-ink),
+    var(--px) 0 0 0 var(--c-ink);
+}
+
+.cy-bucket__tank {
+  width: 112px;
+  height: 160px;
+}
+
+.cy-bucket__pipe {
+  width: 18px;
+  height: 160px;
+}
+
+.cy-bucket__water,
+.cy-bucket__flow {
+  width: 100%;
+  transition: height 1200ms steps(16);
+}
+
+.cy-bucket__water {
+  background: repeating-linear-gradient(0deg, var(--c-violet) 0 8px, #6f43d6 8px 16px);
+}
+
+.cy-bucket__flow {
+  background: repeating-linear-gradient(0deg, var(--c-accent) 0 8px, #3dcc3d 8px 16px);
+  transition-delay: 400ms;
+}
+
+.cy-bucket__num {
+  font-family: var(--c-pixel);
+  font-size: 1.6rem;
+  line-height: 1.1;
+  color: var(--c-ink);
+}
+
+.cy-bucket__num--pipe {
+  color: var(--c-accent);
+}
+
+.cy-bucket__cap {
+  font-size: 0.85rem;
+  color: var(--c-dim);
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────────── */
+
+.cy-piece[data-still] *,
+.cy-piece[data-still] *::before,
+.cy-piece[data-still] *::after {
+  transition: none !important;
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cy-piece *,
+  .cy-piece *::before,
+  .cy-piece *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}

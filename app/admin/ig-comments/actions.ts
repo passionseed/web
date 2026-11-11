@@ -3,8 +3,17 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin/requireAdmin";
 import { replyToComment, privateReplyToComment } from "@/lib/meta/graph";
-import { getCommentsMissedByDm, markCommentReplied } from "@/lib/supabase/ig-comments";
+import {
+  getCommentById,
+  getCommentsMissedByDm,
+  getRadarCommentQueue,
+  markCommentReplied,
+} from "@/lib/supabase/ig-comments";
 import { getCampaign, type CampaignKey } from "@/lib/meta/comment-intent";
+import { sendRadarDmFromAdmin, type RadarDmOutcome } from "@/lib/radar-guide/comment-dm";
+import { isAutoSendableTarget, isRadarTarget, resolveCommentTarget } from "@/lib/radar-guide/comment-target";
+import { getReelByMediaId } from "@/lib/supabase/radar-reels";
+import type { IgComment } from "@/types/dm-leads";
 import {
   getPersonalizedDmMessage,
   getPersonalizedPublicCommentReply,
@@ -44,6 +53,32 @@ export async function replyPublicly(commentId: string, message: string) {
 }
 
 /**
+ * Whether a comment belongs to the Radar flow: the keyword, a claimed Radar
+ * DM row, or anything the Radar queue would hold (a link request or a vaguer
+ * ask on a mapped Radar reel, via resolveCommentTarget). Those only ever get
+ * the fixed Radar DM (spec 5.5), so the thread is tagged Radar-origin and
+ * stays out of the sales inbox.
+ */
+async function isRadarComment(commentId: string): Promise<boolean> {
+  const supabase = createAdminClient();
+  const [{ data: comment }, { data: dm }] = await Promise.all([
+    supabase.from("ig_comments").select("text, media_id").eq("id", commentId).maybeSingle(),
+    supabase.from("radar_comment_dms").select("id").eq("comment_id", commentId).maybeSingle(),
+  ]);
+  if (dm || getCampaign(comment?.text) === "radar") return true;
+  if (!comment?.media_id) return false;
+  // A failed reel lookup is treated as unmapped inside resolveCommentTarget.
+  const target = await resolveCommentTarget(
+    { text: comment.text, mediaId: comment.media_id },
+    (mediaId) => getReelByMediaId(mediaId)
+  );
+  return isRadarTarget(target);
+}
+
+const RADAR_FREE_TEXT_ERROR =
+  "This is a Career Radar comment. Use the Radar send button, which sends the fixed Radar DM.";
+
+/**
  * DM triggered by the comment. Works even when the commenter never opened a
  * DM thread with us — that's the whole point — but only within 7 days of the
  * comment and only once per comment.
@@ -53,6 +88,7 @@ export async function replyPrivately(commentId: string, message: string) {
   if (!message.trim()) return { ok: false, error: "Message is empty" };
 
   try {
+    if (await isRadarComment(commentId)) return { ok: false, error: RADAR_FREE_TEXT_ERROR };
     const igCommentId = await getIgCommentId(commentId);
     await privateReplyToComment(igCommentId, message.trim());
     await markCommentReplied(commentId);
@@ -63,6 +99,51 @@ export async function replyPrivately(commentId: string, message: string) {
 
   revalidatePath("/admin/ig-comments");
   return { ok: true, error: null };
+}
+
+function toRadarDmComment(comment: IgComment) {
+  return {
+    id: comment.id,
+    ig_comment_id: comment.ig_comment_id,
+    media_id: comment.media_id,
+    text: comment.text,
+    username: comment.username,
+    ig_user_id: comment.ig_user_id,
+    commented_at: comment.commented_at,
+  };
+}
+
+const RADAR_SKIP_MESSAGE: Partial<Record<RadarDmOutcome["reason"], string>> = {
+  not_radar: "This comment is not a Radar request.",
+  dm_disabled: "DMs are turned off for this reel.",
+  self: "This is our own comment.",
+  excluded: "This handle is on the do-not-reply list.",
+  too_old: "Older than 7 days: Instagram no longer allows a private reply.",
+  claim_lost: "Already sent, or being sent right now.",
+};
+
+/**
+ * One-click Radar DM from the admin queue (spec 5.5): the fixed template and
+ * the claim RPC, `mode 'admin'`, with the admin recorded as `sent_by`. Also
+ * the retry for a failed send, and the send for `needsReview` comments.
+ */
+export async function sendRadarDm(commentId: string) {
+  const user = await requireAdmin();
+  try {
+    const comment = await getCommentById(commentId);
+    if (!comment) return { ok: false, error: "Comment not found", outcome: null };
+    const outcome = await sendRadarDmFromAdmin(toRadarDmComment(comment), user.id);
+    revalidatePath("/admin/ig-comments");
+    if (outcome.status === "sent") return { ok: true, error: null, outcome };
+    const error =
+      outcome.status === "skipped"
+        ? (RADAR_SKIP_MESSAGE[outcome.reason] ?? `Skipped: ${outcome.reason}`)
+        : `DM failed (${outcome.errorCode ?? outcome.reason}). The comment is back in the queue.`;
+    return { ok: false, error, outcome };
+  } catch (error) {
+    console.error("sendRadarDm failed:", error);
+    return { ok: false, error: "Failed to send the Radar DM", outcome: null };
+  }
 }
 
 /**
@@ -202,8 +283,9 @@ export interface BulkRunOptions {
  * be retried on the next pass.
  */
 export async function runBulkReply(options: BulkRunOptions): Promise<BulkRunResult> {
-  await requireAdmin();
+  const user = await requireAdmin();
   const { mode, campaign, dryRun = false, onlyNeverContacted = false } = options;
+  if (campaign === "radar") return runRadarBulk(user.id, dryRun);
   const customDm = options.dmMessage?.trim();
   const customPublic = options.publicMessage?.trim();
 
@@ -269,6 +351,16 @@ export async function runBulkReply(options: BulkRunOptions): Promise<BulkRunResu
     }
 
     processed += 1;
+
+    // Radar comments never get custom or Qwen copy, on any tab: only the
+    // fixed Radar DM through the claim (spec 5.5). getCommentsMissedByDm
+    // already leaves them out; this is the backstop.
+    if (getCampaign(comment.text) === "radar") {
+      const outcome = await sendRadarDmFromAdmin(toRadarDmComment(comment), user.id);
+      tallyRadarOutcome(result, outcome, who);
+      continue;
+    }
+
     attempted += 1;
     const lead = {
       username: comment.username,
@@ -354,5 +446,80 @@ export async function runBulkReply(options: BulkRunOptions): Promise<BulkRunResu
   }
 
   if (!dryRun) revalidatePath("/admin/ig-comments");
+  return result;
+}
+
+/** Adds one Radar send to a bulk result. */
+function tallyRadarOutcome(result: BulkRunResult, outcome: RadarDmOutcome, who: string): void {
+  if (outcome.status === "sent") {
+    result.sent += 1;
+    result.dmsDelivered += 1;
+    result.sentTo.push(who);
+  } else if (outcome.status === "failed") {
+    if (outcome.errorCode === "privacy_blocked") result.privacyBlocked += 1;
+    else {
+      result.failed += 1;
+      result.errors.push(`${who}: Radar DM ${outcome.errorCode ?? outcome.reason}`);
+    }
+  }
+  if (outcome.publicReply === "posted") result.publicReplies += 1;
+}
+
+/** Sends per Radar pass: one claim, one DM and one public reply each, no Qwen. */
+const RADAR_BULK_CAP = 15;
+
+/**
+ * The Radar tab's bulk send: keyword and explicit-request comments from the
+ * last 7 days that have no Radar DM yet, or whose DM failed. `needsReview`
+ * comments are left for a person to read and send one by one. Fixed copy
+ * only; the claim makes a double send impossible even if two runs overlap.
+ */
+async function runRadarBulk(sentBy: string, dryRun: boolean): Promise<BulkRunResult> {
+  const queue = await getRadarCommentQueue();
+  const pending = queue.filter(
+    (item) =>
+      isAutoSendableTarget(item.target) &&
+      !(item.target.reel && !item.target.reel.dmEnabled) &&
+      // A failed send is retried, except one Instagram refused for privacy:
+      // retrying that only fails again.
+      (item.dm === null || (item.dm.status === "failed" && item.dm.errorCode !== "privacy_blocked"))
+  );
+  const batch = dryRun ? pending : pending.slice(0, RADAR_BULK_CAP);
+  const deadline = Date.now() + 45_000;
+  const result: BulkRunResult = {
+    sent: 0,
+    failed: 0,
+    skipped: pending.length - batch.length,
+    errors: [],
+    sentTo: [],
+    unreachable: 0,
+    privacyBlocked: 0,
+    dmsDelivered: 0,
+    publicReplies: 0,
+    dryRun,
+  };
+
+  let processed = 0;
+  for (const { comment } of batch) {
+    const who = comment.username ?? comment.ig_comment_id;
+    if (dryRun) {
+      result.sent += 1;
+      result.sentTo.push(who);
+      continue;
+    }
+    if (Date.now() > deadline) {
+      result.timedOut = true;
+      break;
+    }
+    processed += 1;
+    const outcome = await sendRadarDmFromAdmin(toRadarDmComment(comment), sentBy);
+    tallyRadarOutcome(result, outcome, who);
+    await new Promise((resolve) => setTimeout(resolve, BULK_REPLY_DELAY_MS));
+  }
+
+  if (!dryRun) {
+    result.skipped = pending.length - processed;
+    revalidatePath("/admin/ig-comments");
+  }
   return result;
 }

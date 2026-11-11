@@ -96,3 +96,71 @@ test("needsReply counts only open conversations where the lead wrote last", asyn
   // The closed ones sit in the done bucket instead, the same rule as the overview count.
   expect(facets.bucketCounts.done).toBe(2);
 });
+
+describe("Radar-origin threads (spec 5.6)", () => {
+  it("are excluded from the lead list and its buckets by default", async () => {
+    const query = useRows([]);
+    await getConversationsForAdmin({}, NO_SIGNALS);
+    expect(query.is).toHaveBeenCalledWith("origin", null);
+    expect(query.eq).not.toHaveBeenCalledWith("origin", "radar");
+  });
+
+  it("are excluded from the facets and bucket counts, so counts match the list", async () => {
+    const query = useRows([]);
+    await getDmLeadFacets({ bucket: "hot" }, NO_SIGNALS);
+    expect(query.is).toHaveBeenCalledWith("origin", null);
+  });
+
+  it("show only under the separate Radar filter", async () => {
+    const query = useRows([]);
+    await getConversationsForAdmin({ origin: "radar" }, NO_SIGNALS);
+    expect(query.eq).toHaveBeenCalledWith("origin", "radar");
+    expect(query.is).not.toHaveBeenCalledWith("origin", null);
+  });
+});
+
+describe("before the origin migration is applied", () => {
+  const MISSING = { code: "42703", message: "column dm_conversations.origin does not exist" };
+
+  /** Rejects any read that filtered on origin, like PostgREST without the column. */
+  function useRowsWithoutOrigin(rows: unknown[]) {
+    const queries: Array<Record<string, jest.Mock>> = [];
+    jest.mocked(createAdminClient).mockReturnValue({
+      from: jest.fn(() => {
+        let named = false;
+        const query: Record<string, jest.Mock> & { then?: unknown } = {};
+        for (const method of ["select", "eq", "is", "or", "lte", "contains", "not", "in", "order", "range"]) {
+          query[method] = jest.fn((...args: unknown[]) => {
+            if (args.some((a) => typeof a === "string" && a.includes("origin"))) named = true;
+            return query;
+          });
+        }
+        query.then = (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) =>
+          Promise.resolve(named ? { data: null, error: MISSING } : { data: rows, error: null }).then(resolve, reject);
+        queries.push(query);
+        return query;
+      }),
+    } as never);
+    return queries;
+  }
+
+  beforeEach(() => jest.spyOn(console, "warn").mockImplementation(() => {}));
+  afterEach(() => jest.restoreAllMocks());
+
+  it("lists the inbox without the origin filter instead of throwing", async () => {
+    useRowsWithoutOrigin([lead("a", "new", "inbound")]);
+    const rows = await getConversationsForAdmin({}, NO_SIGNALS);
+    expect(rows.map((r) => r.id)).toEqual(["a"]);
+  });
+
+  it("shows an empty Radar filter (no Radar threads exist yet)", async () => {
+    useRowsWithoutOrigin([lead("a", "new", "inbound")]);
+    expect(await getConversationsForAdmin({ origin: "radar" }, NO_SIGNALS)).toEqual([]);
+  });
+
+  it("still computes facets and the scoreboard", async () => {
+    useRowsWithoutOrigin([lead("a", "new", "inbound"), lead("b", "new", "outbound")]);
+    const facets = await getDmLeadFacets({}, NO_SIGNALS);
+    expect(facets.needsReply).toBe(1);
+  });
+});

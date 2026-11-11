@@ -1,39 +1,83 @@
+import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { RadarFieldPageClient } from "@/components/radar/RadarFieldPageClient";
-import type { RadarSkillSummary } from "@/components/radar/RadarSkillExperience";
+import { RadarFieldPageClient, type FieldSource } from "@/components/radar/RadarFieldPageClient";
 import type { Database } from "@/lib/supabase/database.types";
-import { getCachedPublishedRadarField } from "@/lib/radar/server";
+import { getCachedFieldSkills, getCachedPublishedRadarField } from "@/lib/radar/server";
+import { radarFieldDescription, radarFieldTitle } from "@/lib/radar/field-meta";
+import { isTerritoryIndex, territoryKeyOf } from "@/lib/radar/territory";
+import { GuideCover } from "@/components/radar/guide/shell/GuideCover";
 import {
-  isTerritoryIndex,
-  loadSkillsByField,
-  loadStartOptionsBySkill,
-  territoryKeyOf,
-} from "@/lib/radar/territory";
+  guideCoverMetadata,
+  guideHookTh,
+  shouldShowGuideCover,
+} from "@/components/radar/guide/shell/guide-routes";
+import { guideVisible } from "@/lib/radar-guides";
+import { guideIndexFor, loadGuide } from "@/lib/radar-guides/registry.server";
 
 type RadarField = Database["public"]["Tables"]["radar_fields"]["Row"];
 type RadarCard = Database["public"]["Tables"]["radar_cards"]["Row"];
+type RadarSourceRow = {
+  ref: number | string | null;
+  title: string | null;
+  publisher: string | null;
+  url: string | null;
+  published_at?: string | null;
+  accessed_at?: string | null;
+};
 
 export const revalidate = 300;
 
+/** The code guide for this slug when it is visible on this deployment (no database). */
+function visibleGuide(slug: string) {
+  const guide = loadGuide(slug);
+  return guide && guideVisible(guide.meta) ? guide : null;
+}
+
 /**
- * Skill rail for a legacy field page. Both loads fail soft, so a field whose
- * skills are unmapped renders exactly as it did before.
+ * Link previews (spec 2.9). The title is absolute so the root layout's
+ * "%s | PassionSeed" template does not add a second suffix. Utm parameters
+ * and the hash never reach the server, so this reads only the slug.
  */
-async function loadFieldSkills(fieldId: string): Promise<RadarSkillSummary[]> {
-  const skills = (await loadSkillsByField([fieldId])).get(fieldId) ?? [];
-  if (skills.length === 0) return [];
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  // Code-guide careers: metadata from code, never the database.
+  const guide = visibleGuide(slug);
+  if (guide) return guideCoverMetadata(guide.meta, guideHookTh(guide));
 
-  const startOptions = await loadStartOptionsBySkill(skills.map((skill) => skill.id));
+  const field = await getCachedPublishedRadarField(slug).catch(() => null);
+  if (!field) return { title: { absolute: "Career Radar | PassionSeed" } };
 
-  return skills.map((skill) => ({
-    id: skill.id,
-    slug: skill.slug,
-    name_th: skill.name_th,
-    name_en: skill.name_en,
-    description_th: skill.description_th,
-    is_primary: skill.is_primary,
-    start_options: startOptions.get(skill.id) ?? [],
-  }));
+  const title = radarFieldTitle(field);
+  const description = radarFieldDescription({ ...field, cards: field.radar_cards });
+  const canonical = `/radar/${field.slug ?? slug}`;
+  return {
+    title: { absolute: title },
+    description,
+    alternates: { canonical },
+    openGraph: { title, description, url: canonical, type: "article", locale: "th_TH" },
+    twitter: { card: "summary_large_image", title, description },
+  };
+}
+
+/** Sources as the chips and the chapter sources sheet read them. */
+function toFieldSources(rows: readonly RadarSourceRow[] | null | undefined): FieldSource[] {
+  return (rows ?? []).flatMap((row) => {
+    const ref = Number(row.ref);
+    if (!Number.isFinite(ref) || !row.url) return [];
+    return [
+      {
+        ref,
+        title: row.title ?? row.url,
+        publisher: row.publisher,
+        url: row.url,
+        asOf: row.accessed_at ?? row.published_at ?? null,
+      },
+    ];
+  });
 }
 
 export default async function RadarFieldPage({
@@ -41,20 +85,24 @@ export default async function RadarFieldPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ from?: string }>;
+  searchParams: Promise<{ from?: string | string[]; view?: string | string[] }>;
 }) {
-  const [{ slug }, { from }] = await Promise.all([params, searchParams]);
+  const [{ slug }, { from, view }] = await Promise.all([params, searchParams]);
+
+  // Careers with a code guide open on its cover (title screen). The DB deck
+  // stays one tap away at ?view=deck, and the plan flow (?from=plan) keeps it.
+  const guide = visibleGuide(slug);
+  if (guide && shouldShowGuideCover({ hasGuide: true, from, view })) {
+    return <GuideCover index={guideIndexFor(guide)} hookTh={guideHookTh(guide)} />;
+  }
+
   const fieldResult = await getCachedPublishedRadarField(slug);
 
   if (!fieldResult) {
     notFound();
   }
 
-  const {
-    radar_cards: cards,
-    radar_sources: sources,
-    ...field
-  } = fieldResult;
+  const { radar_cards: cards, radar_sources: sources, ...field } = fieldResult;
 
   // Two routes into a territory: its grid tile, and any profession deep-linked
   // from outside. Professions are 30-second discovery units with no cards of
@@ -64,12 +112,14 @@ export default async function RadarFieldPage({
     redirect(`/radar/territory/${territoryKey}`);
   }
 
-  const initialSkills = await loadFieldSkills(field.id);
+  const initialSkills = await getCachedFieldSkills(field.id);
 
   // Inject score card at position 2 from field-level score/tier + research metrics
   const allCards = [...(cards || [])] as RadarCard[];
   const research = field.research as Record<string, unknown> | null;
-  if (field.score != null && research?.metrics) {
+  // `score` and `tier` are newer than the generated radar_fields types.
+  const { score, tier } = field as typeof field & { score?: number | null; tier?: string | null };
+  if (score != null && research?.metrics) {
     const scoreCard = {
       id: "__score__",
       field_id: field.id,
@@ -81,7 +131,7 @@ export default async function RadarFieldPage({
         global_metrics: research.global_metrics,
         metric_details: research.metric_details,
         global_metric_details: research.global_metric_details,
-        tier: field.tier,
+        tier,
         reasoning: research.reasoning,
       },
       content_en: null,
@@ -102,9 +152,9 @@ export default async function RadarFieldPage({
     <RadarFieldPageClient
       initialField={field as RadarField}
       initialCards={allCards}
-      fieldSources={sources ?? []}
+      fieldSources={toFieldSources(sources as RadarSourceRow[] | null)}
       initialSkills={initialSkills}
-      fromPlan={from === "plan"}
+      fromPlan={(Array.isArray(from) ? from[0] : from) === "plan"}
     />
   );
 }

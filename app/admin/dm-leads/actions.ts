@@ -6,10 +6,11 @@ import {
   sendAdminReply,
   sendLeadQuickReplies,
   getConversationWithMessages,
+  isRadarOriginConversation,
   updateLeadMeta,
 } from "@/lib/supabase/dm-leads";
 import type { MetaAttachmentType, MetaQuickReplyOption } from "@/lib/meta/graph";
-import type { DmLeadStatus } from "@/types/dm-leads";
+import type { DmLeadStage, DmLeadStatus } from "@/types/dm-leads";
 import type { PersonalizeKind } from "@/lib/dm-leads/personalize";
 
 async function personalizeOutboundText(
@@ -23,6 +24,8 @@ async function personalizeOutboundText(
   );
   const thread = await getConversationWithMessages(conversationId);
   if (!thread) return body.trim();
+  // Radar-origin threads never go through Qwen (spec 5.6).
+  if (isRadarOriginConversation(thread)) return body.trim();
   return personalizeMessage({
     template: body.trim(),
     lead: leadFromConversation(thread, {

@@ -25,6 +25,7 @@ import { DmLeadTagsEditor } from "@/components/admin/DmLeadTagsEditor";
 import { LeadTagBadges } from "@/components/admin/LeadTagBadges";
 import { DmMessageBubble } from "@/components/admin/DmMessageBubble";
 import { DmLeadPublicReplyBar } from "@/components/admin/DmLeadPublicReplyBar";
+import { RadarThreadNotice } from "@/components/admin/RadarThreadNotice";
 import { ChatAppLink } from "@/components/admin/ChatAppLink";
 import type { DmConversationWithBucket, DmConversationWithMessages } from "@/types/dm-leads";
 
@@ -341,14 +342,18 @@ export function DmLeadDetailPane({
             ⚠️ เกิน 24 ชม. จากข้อความล่าสุดที่น้องทักมา Instagram อาจปฏิเสธการส่งข้อความนี้
           </p>
         )}
-        <DmLeadReplyForm
-          conversation={conversation}
-          bucket={bucket}
-          coverage={coverage}
-          body={body}
-          onBodyChange={onBodyChange}
-          onSent={handleSent}
-        />
+        {thread?.origin === "radar" ? (
+          <RadarThreadNotice />
+        ) : (
+          <DmLeadReplyForm
+            conversation={conversation}
+            bucket={bucket}
+            coverage={coverage}
+            body={body}
+            onBodyChange={onBodyChange}
+            onSent={handleSent}
+          />
+        )}
       </div>
     </div>
   );

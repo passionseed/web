@@ -24,7 +24,16 @@ export interface MissedCommentItem {
   neverContacted: boolean;
 }
 
-type TabKey = "all" | CampaignKey;
+/**
+ * Radar comments have their own queue (`RadarCommentQueue`): they only ever
+ * get the fixed Radar DM, so they never appear in this custom-copy card.
+ */
+type MissedCampaignKey = Exclude<CampaignKey, "radar">;
+const MISSED_CAMPAIGN_KEYS = CAMPAIGN_KEYS.filter(
+  (key): key is MissedCampaignKey => key !== "radar",
+);
+
+type TabKey = "all" | MissedCampaignKey;
 
 const MODE_LABEL: Record<BulkReplyMode, string> = {
   public: "Public reply only",
@@ -103,8 +112,8 @@ export function MissedCommentsCard({
   const counts = useMemo(() => {
     const pool = onlyNeverContacted ? comments.filter((c) => c.neverContacted) : comments;
     const byCampaign = Object.fromEntries(
-      CAMPAIGN_KEYS.map((key) => [key, pool.filter((c) => c.campaign === key).length]),
-    ) as Record<CampaignKey, number>;
+      MISSED_CAMPAIGN_KEYS.map((key) => [key, pool.filter((c) => c.campaign === key).length]),
+    ) as Record<MissedCampaignKey, number>;
     return { all: pool.length, ...byCampaign };
   }, [comments, onlyNeverContacted]);
 
@@ -239,7 +248,7 @@ export function MissedCommentsCard({
       <CardContent className="space-y-4">
         {/* Campaign tabs */}
         <div className="flex gap-2">
-          {(["all", ...CAMPAIGN_KEYS] as const).map((key) => (
+          {(["all", ...MISSED_CAMPAIGN_KEYS] as const).map((key) => (
             <button
               key={key}
               onClick={() => setTab(key)}

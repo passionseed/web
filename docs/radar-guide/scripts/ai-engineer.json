@@ -1,0 +1,513 @@
+{
+  "slug": "ai-engineer",
+  "version": 1,
+  "as_of": "2026-11-11",
+  "chapters": [
+    {
+      "key": "hook",
+      "title_th": "อาชีพนี้คืออะไร ทำไมต้องรู้ตอนนี้",
+      "duration_target_s": 20,
+      "hook": {
+        "say_th": "งานวิศวกร AI ในไทย 85 เป็น 321 ในปีเดียว",
+        "on_screen_th": "ประกาศงาน 85 เป็น 321 ในปีเดียว"
+      },
+      "beats": [
+        {
+          "say_th": "ทีดีอาร์ไอเทียบประกาศงานออนไลน์ ไตรมาสสอง 67 กับ 68 ตำแหน่งวิศวกร AI/ML พุ่งจาก 85 เป็น 321 บริษัทที่เปิดรับก็เพิ่มจาก 54 เป็น 180 บริษัท",
+          "on_screen_th": "ประกาศงานวิศวกร AI/ML 85 เป็น 321, บริษัท 54 เป็น 180 (TDRI ไตรมาส 2 ปี 67 เทียบ 68)",
+          "visual": "motion:bars 85 to 321",
+          "broll": "two bars jumping, then a row of company dots multiplying",
+          "safety": false,
+          "claims": [
+            {
+              "text": "TDRI table: online job postings in Thailand for AI/ML Engineer were 85 in Q2 2024 and 321 in Q2 2025 (+277.6% year on year). Counts are per quarter (Q2 vs Q2), not annual, and are postings, not people employed; AI/ML engineer is still about 3% of the 9,470 AI postings in Q2 2025.",
+              "url": "https://tdri.or.th/2025/08/ai-job-market-2tracked-growth/",
+              "grade": "A",
+              "as_of": "2025-08-25",
+              "topic": "jobs"
+            },
+            {
+              "text": "TDRI: companies posting AI/ML engineer jobs in Thailand rose from 54 to 180 (Q2 2024 vs Q2 2025).",
+              "url": "https://tdri.or.th/2025/08/ai-job-market-2tracked-growth/",
+              "grade": "A",
+              "as_of": "2025-08-25",
+              "topic": "jobs"
+            }
+          ]
+        },
+        {
+          "say_th": "แต่งานนี้ไม่ใช่แค่คนเล่น ChatGPT เก่ง มันคือคนที่เอา AI ไปต่อกับข้อมูลจริง ระบบจริง แล้วทำให้มันไม่พังตอนคนใช้จริง",
+          "on_screen_th": "ไม่ใช่แค่ใช้ AI แต่ทำให้ AI ใช้งานได้จริง",
+          "visual": "card:hook",
+          "broll": "chat window plugged into documents, a database and an app",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "demo สวยๆ ใครก็ทำได้ ของที่คนใช้ได้ทุกวัน นั่นแหละที่บริษัทจ้าง",
+          "on_screen_th": "demo ใครก็ทำได้ ของที่ใช้ได้จริงคือที่บริษัทจ้าง",
+          "visual": "motion:demo vs production split",
+          "broll": "shiny demo screen cracks when real messy data arrives",
+          "safety": false,
+          "claims": []
+        }
+      ],
+      "cta_th": "ดูต่อในลิงก์ ว่างานจริงหน้าตาเป็นยังไง",
+      "reel": {
+        "angle": "overview",
+        "hook_variants_th": [
+          "ประกาศงานวิศวกร AI ไทย 85 เป็น 321",
+          "วิศวกร AI ไม่ใช่แค่คนเล่น ChatGPT เก่ง",
+          "สาย AI ในไทยโตจริงไหม ดูตัวเลขนี้"
+        ],
+        "send_to_friend_th": "ส่งให้เพื่อนที่บอกว่าอยากทำงานสาย AI",
+        "end_card": "comment_radar",
+        "pinned_comment_th": "คอมเมนต์ RADAR รับลิงก์ข้อมูลเต็มสายวิศวกร AI ทาง DM",
+        "tiktok_alias": "ai"
+      }
+    },
+    {
+      "key": "reality",
+      "title_th": "ภาพในหัว กับ งานจริง",
+      "duration_target_s": 25,
+      "hook": {
+        "say_th": "นึกว่าวิศวกร AI นั่งเทรนโมเดลเทพทั้งวัน?",
+        "on_screen_th": "ภาพในหัว กับ งานจริง"
+      },
+      "beats": [
+        {
+          "say_th": "ภาพในหัวคือ นั่งอ่าน paper แล้วปั้นโมเดลใหม่ให้ฉลาดขึ้นทุกอาทิตย์",
+          "on_screen_th": "ภาพในหัว: สร้างโมเดลใหม่ทุกสัปดาห์",
+          "visual": "card:fantasyReality",
+          "broll": "movie-style genius at a glowing screen",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "งานจริงคือเอา AI ที่มีอยู่แล้ว ไปต่อกับข้อมูลและระบบของบริษัท แล้ววัดว่ามันตอบถูกไหม ช้าไหม แพงไหม",
+          "on_screen_th": "งานจริง: ต่อระบบ วัดผล คุมความเร็วกับค่าใช้จ่าย",
+          "visual": "card:fantasyReality",
+          "broll": "checklist ticking: ถูกไหม, ช้าไหม, แพงไหม",
+          "safety": false,
+          "claims": [
+            {
+              "text": "Google Cloud describes the ML Engineer as someone who builds, evaluates, productionizes and optimizes AI solutions, collaborates with other roles, and trains, deploys, monitors and improves models; the exam covers serving and scaling models and monitoring AI solutions.",
+              "source_ref": 5,
+              "url": "https://cloud.google.com/learn/certification/machine-learning-engineer",
+              "grade": "B",
+              "as_of": "2026-11-11",
+              "topic": "other"
+            }
+          ]
+        },
+        {
+          "say_th": "อีกเรื่องที่คนไม่ค่อยพูด ประกาศงานสาย AI ขอทักษะสื่อสารและภาษาอังกฤษบ่อยสุด เกินสามในสี่ของตำแหน่ง เพราะคู่มือกับ paper เกือบทั้งหมดเป็นภาษาอังกฤษ",
+          "on_screen_th": "ทักษะที่ขอบ่อยสุด: สื่อสารและอังกฤษ เกิน 3 ใน 4 ของตำแหน่งงานสาย AI (TDRI ส.ค. 2568)",
+          "visual": "motion:3 of 4 icons lit",
+          "broll": "meeting room whiteboard, engineer explaining a chart",
+          "safety": false,
+          "claims": [
+            {
+              "text": "TDRI: the skills employers most often request in Thai AI job postings are communication and English, \"ระบุไว้เกิน 3 ใน 4 ของตำแหน่งงานทั้งหมด\" (listed in more than 3 of 4 positions). TDRI adds that English is a requirement because research papers, API/SDK, cloud and library docs are almost all in English. The article does not state the exact period or whether the 3-in-4 applies to each skill separately; the article compares Q2 2024 with Q2 2025.",
+              "url": "https://tdri.or.th/2025/08/ai-job-market-2tracked-growth/",
+              "grade": "B",
+              "as_of": "2025-08-25",
+              "topic": "jobs"
+            }
+          ]
+        }
+      ],
+      "cta_th": "ดูเทียบภาพในหัวกับงานจริงแบบเต็มได้ในลิงก์",
+      "reel": {
+        "angle": "myth_busted",
+        "hook_variants_th": [
+          "วิศวกร AI ไม่ได้เทรนโมเดลทั้งวัน",
+          "ทำ demo ง่าย แต่ทำให้ใช้ได้จริงยาก",
+          "สาย AI ต้องเก่งอังกฤษไหม"
+        ],
+        "send_to_friend_th": "ส่งให้เพื่อนที่คิดว่าสาย AI คือนั่งเขียนโค้ดเงียบๆ คนเดียว",
+        "end_card": "comment_radar",
+        "pinned_comment_th": "คอมเมนต์ RADAR รับลิงก์ข้อมูลเต็มสายวิศวกร AI ทาง DM",
+        "tiktok_alias": "ai"
+      }
+    },
+    {
+      "key": "money",
+      "title_th": "เงินเดือนจริงในไทย",
+      "duration_target_s": 30,
+      "hook": {
+        "say_th": "วิศวกร AI ในไทย ได้เงินเดือนเท่าไหร่",
+        "on_screen_th": "ได้เท่าไหร่จริงๆ?"
+      },
+      "beats": [
+        {
+          "say_th": "ถ้าเพิ่งจบใหม่ เริ่มราว 25,000 ถึง 35,000 บาทต่อเดือน แล้วแต่บริษัท",
+          "on_screen_th": "จบใหม่ ~25k-35k บาท/เดือน (JobsDB ธ.ค. 2568)",
+          "visual": "card:salaryProgression",
+          "broll": "salary ladder, step 1",
+          "safety": false,
+          "claims": [
+            {
+              "text": "JobsDB career-advice article (updated 12 Dec 2025): Junior AI Engineer (0-2 years) in Thailand starts at about 25,000-35,000 THB/month depending on company, citing JobsDB data on new-graduate AI Engineer job seekers (example role: Technical Consultant - AI). No sample size or method given.",
+              "url": "https://th.jobsdb.com/th/career-advice/article/ai-engineer-job",
+              "grade": "B",
+              "level": "entry",
+              "as_of": "2025-12-12",
+              "topic": "salary"
+            }
+          ]
+        },
+        {
+          "say_th": "ทำไปสามถึงเจ็ดปี ขึ้นระดับกลางถึงซีเนียร์ บางที่ให้ 70,000 ถึง 130,000 ต่อเดือน",
+          "on_screen_th": "3-7 ปี กลางถึงซีเนียร์ ~70k-130k บาท/เดือน (บางกรณี, JobsDB ธ.ค. 2568)",
+          "visual": "card:salaryProgression",
+          "broll": "salary ladder, steps 2 and 3",
+          "safety": false,
+          "claims": [
+            {
+              "text": "JobsDB career-advice article (updated 12 Dec 2025): Mid-Senior AI Engineer (about 3-7 years of experience) in Thailand \"เฉลี่ยอยู่ที่ 70,000-130,000 บาท/เดือน ในบางกรณี\", attributed to JobsDB data with no sample size or method.",
+              "url": "https://th.jobsdb.com/th/career-advice/article/ai-engineer-job",
+              "grade": "B",
+              "level": "mid",
+              "as_of": "2025-12-12",
+              "topic": "salary"
+            }
+          ]
+        },
+        {
+          "say_th": "ระดับ Lead หรือ AI Architect ที่ทำมาเกินเจ็ดแปดปี หรือคุมทีมเทคนิค บางที่ให้แสนถึงแสนห้าขึ้นไป",
+          "on_screen_th": "Lead / AI Architect (7-8 ปีขึ้นไป) ~100k-150k+ บาท/เดือน (บางกรณี, JobsDB ธ.ค. 2568)",
+          "visual": "card:salaryProgression",
+          "broll": "salary ladder, top step",
+          "safety": false,
+          "claims": [
+            {
+              "text": "JobsDB career-advice article (updated 12 Dec 2025): Lead AI Engineer / AI Architect (more than 7-8 years or a technical lead role) in Thailand \"เฉลี่ย 100,000-150,000 บาท/เดือน ขึ้นไป\", hedged as \"ในบางรุ่น รายได้บางช่วง\"; JobsDB data, no sample size or method.",
+              "url": "https://th.jobsdb.com/th/career-advice/article/ai-engineer-job",
+              "grade": "B",
+              "level": "lead",
+              "as_of": "2025-12-12",
+              "topic": "salary"
+            }
+          ]
+        },
+        {
+          "say_th": "ตัวเลขพวกนี้มาจากเว็บหางาน ไม่ใช่สลิปจริงของใคร บางที่ให้มากกว่า บางที่น้อยกว่า ส่วนที่เธอคุมได้คือ มีระบบที่คนใช้ได้จริงไว้โชว์หรือยัง",
+          "on_screen_th": "ข้อมูลจาก JobsDB ไม่ใช่สถิติเงินเดือนทางการ",
+          "visual": "card:salaryProgression",
+          "broll": "job ad cards fanning out",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "ตลาดก็โตจริง ประกาศงานวิศวกร AI ในไทย จาก 85 เป็น 321 ในปีเดียว",
+          "on_screen_th": "ประกาศงาน 85 เป็น 321 (TDRI ไตรมาส 2 ปี 67 เทียบ 68)",
+          "visual": "card:marketThailand",
+          "broll": "two bars jumping",
+          "safety": false,
+          "claims": [
+            {
+              "text": "TDRI table: online job postings in Thailand for AI/ML Engineer were 85 in Q2 2024 and 321 in Q2 2025 (per-quarter counts of postings, not people employed).",
+              "url": "https://tdri.or.th/2025/08/ai-job-market-2tracked-growth/",
+              "grade": "A",
+              "as_of": "2025-08-25",
+              "topic": "jobs"
+            }
+          ]
+        }
+      ],
+      "cta_th": "ดูเงินเดือนแต่ละระดับ กับบริษัทที่เปิดรับจริง ได้ในลิงก์",
+      "reel": {
+        "angle": "salary_reveal",
+        "hook_variants_th": [
+          "วิศวกร AI ได้เงินเดือนเท่าไหร่จริงๆ",
+          "จบใหม่สาย AI ได้เดือนละเท่าไหร่",
+          "สาย AI เงินดีจริง หรือแค่กระแส"
+        ],
+        "send_to_friend_th": "ส่งให้เพื่อนที่กำลังชั่งใจว่าจะไปสาย AI ดีไหม",
+        "end_card": "comment_radar",
+        "pinned_comment_th": "คอมเมนต์ RADAR รับลิงก์เงินเดือนแต่ละระดับทาง DM",
+        "tiktok_alias": "ai"
+      }
+    },
+    {
+      "key": "ai",
+      "title_th": "AI จะมาแทนไหม",
+      "duration_target_s": 25,
+      "hook": {
+        "say_th": "AI จะมาแทนคนที่สร้าง AI เองไหม",
+        "on_screen_th": "AI แทนวิศวกร AI ได้ไหม?"
+      },
+      "beats": [
+        {
+          "say_th": "ตอบตรงๆ งานง่ายโดนก่อน พวกแชตบอทเล่นๆ โค้ดซ้ำๆ ตอนนี้ AI ช่วยทำได้ไวมากแล้ว",
+          "on_screen_th": "โดนก่อน: demo ง่ายๆ โค้ดซ้ำๆ",
+          "visual": "card:aiImpact",
+          "broll": "AI autocompleting boilerplate code",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "แต่ใครตัดสินว่าคำตอบไหนผิด ใครรับผิดชอบตอนระบบล่ม ตรงนี้แหละที่ยังต้องเป็นคน",
+          "on_screen_th": "ยังต้องคน: ตั้งโจทย์ วัดผล รับผิดชอบ",
+          "visual": "card:aiImpact",
+          "broll": "red error alert, a person stepping in",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "ทีดีอาร์ไอเจอว่า สัดส่วนประกาศงานที่ขอทักษะการใช้ AI อย่างรับผิดชอบ เพิ่มจาก 9% เป็น 15% ในปีเดียว",
+          "on_screen_th": "ประกาศที่ขอทักษะ Responsible AI: 9% เป็น 15% (TDRI ไตรมาส 2 ปี 67 เทียบ 68)",
+          "visual": "motion:bar 9 to 15 percent",
+          "broll": "percentage bar filling",
+          "safety": false,
+          "claims": [
+            {
+              "text": "TDRI: the share of postings that list Responsible AI skills rose from 9% to 15% (about +6 percentage points). The article compares Q2 2024 with Q2 2025 online AI job postings in Thailand; it does not say whether the base is all AI postings or AI/ML engineer postings only.",
+              "url": "https://tdri.or.th/2025/08/ai-job-market-2tracked-growth/",
+              "grade": "B",
+              "as_of": "2025-08-25",
+              "topic": "ai"
+            }
+          ]
+        },
+        {
+          "say_th": "แปลว่าตลาดไม่ได้อยากได้แค่คนสร้าง AI แต่อยากได้คนที่วัดผลเป็นและคุมความเสี่ยงได้มากขึ้น",
+          "on_screen_th": "คนที่วัดผลเป็น ตลาดอยากได้มากขึ้น",
+          "visual": "card:aiImpact",
+          "broll": "scoreboard of test cases turning green",
+          "safety": false,
+          "claims": []
+        }
+      ],
+      "cta_th": "ดูว่างานส่วนไหน AI ทำแทนได้ ส่วนไหนยังต้องคน ในลิงก์",
+      "reel": {
+        "angle": "ai_replace",
+        "hook_variants_th": [
+          "AI จะมาแทนคนสร้าง AI เองไหม",
+          "งานไหนของวิศวกร AI ที่ AI ทำเองได้แล้ว",
+          "เรียนสาย AI แล้ว AI จะแย่งงานไหม"
+        ],
+        "send_to_friend_th": "ส่งให้เพื่อนที่กลัวว่าเรียนไปแล้ว AI จะแย่งงาน",
+        "end_card": "comment_radar",
+        "pinned_comment_th": "คอมเมนต์ RADAR รับลิงก์ข้อมูลเต็มสายวิศวกร AI ทาง DM",
+        "tiktok_alias": "ai"
+      }
+    },
+    {
+      "key": "day",
+      "title_th": "หนึ่งวันทำอะไรบ้าง",
+      "duration_target_s": 25,
+      "hook": {
+        "say_th": "วิศวกร AI ทำอะไรทั้งวัน",
+        "on_screen_th": "หนึ่งวันทำอะไรบ้าง"
+      },
+      "beats": [
+        {
+          "say_th": "เช้า เปิดจอดูว่า AI ที่คนใช้อยู่ ตอบช้าไหม ค่าใช้จ่ายพุ่งไหม ตอบพลาดตรงไหน",
+          "on_screen_th": "เช้า: เช็กความเร็ว ค่าใช้จ่าย จุดที่ตอบพลาด",
+          "visual": "card:dayInLife",
+          "broll": "dashboard tiles: latency, cost, error rate",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "ก่อนเที่ยง คุยกับทีมว่าจะวัดยังไงว่า AI ตัวนี้ดีจริง ไม่ใช่แค่ดู demo แล้วคิดไปเองว่าฉลาด",
+          "on_screen_th": "ตกลงกันก่อนว่า ดีจริง วัดจากอะไร",
+          "visual": "card:dayInLife",
+          "broll": "sticky notes: ถูกไหม, ทำงานเสร็จไหม",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "บ่าย ลองวิธีใหม่ แล้วเอามาเทสต์กับชุดทดสอบ เทียบกับของเดิม ก่อนปล่อยให้คนใช้",
+          "on_screen_th": "บ่าย: ลองของใหม่ แล้วเทสต์เทียบกับของเดิม",
+          "visual": "card:dayInLife",
+          "broll": "two columns of test results, old vs new",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "ตกเย็น อัปเดตฉลากของโมเดล เหมือนฉลากข้างกล่องยา ว่ามันทำอะไรได้ ทำอะไรไม่ได้บ้าง",
+          "on_screen_th": "model card = ฉลากข้างกล่องยา",
+          "visual": "card:dayInLife",
+          "broll": "medicine-box label morphing into a model card",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "ข้อเสียคือเครื่องมือเปลี่ยนไวมาก ต้องตามเรียนรู้เองตลอด",
+          "on_screen_th": "ข้อเสีย: เครื่องมือเปลี่ยนไว ต้องตามเรียนรู้ตลอด",
+          "visual": "card:risks",
+          "broll": "tool logos swapping fast",
+          "safety": false,
+          "claims": []
+        }
+      ],
+      "cta_th": "ดูตารางวันทำงานเต็ม กับข้อเสียที่ต้องรู้ ได้ในลิงก์",
+      "reel": {
+        "angle": "day_in_life",
+        "hook_variants_th": [
+          "วิศวกร AI ทำอะไรทั้งวัน",
+          "วิศวกร AI ไม่ได้นั่งเขียน prompt ทั้งวัน",
+          "AI ก็ต้องมีฉลากข้างกล่องยา"
+        ],
+        "send_to_friend_th": "ส่งให้เพื่อนที่อยากรู้ว่าวันๆ คนทำ AI ทำอะไรบ้าง",
+        "end_card": "comment_radar",
+        "pinned_comment_th": "คอมเมนต์ RADAR รับลิงก์ข้อมูลเต็มสายวิศวกร AI ทาง DM",
+        "tiktok_alias": "ai"
+      }
+    },
+    {
+      "key": "study",
+      "title_th": "เรียนอะไร เข้าคณะไหน",
+      "duration_target_s": 25,
+      "hook": {
+        "say_th": "อยากเป็นวิศวกร AI ต้องเข้าคณะไหน",
+        "on_screen_th": "เข้าคณะไหนดี?"
+      },
+      "beats": [
+        {
+          "say_th": "ทางตรงมีวิทย์คอม วิศวะคอมพ์ วิศวะซอฟต์แวร์ ตอนนี้หลายมหาลัยก็เปิดหลักสูตร AI ตรงๆ แล้ว",
+          "on_screen_th": "ทางตรง: วิทย์คอม, วิศวะคอมพ์, ซอฟต์แวร์, AI",
+          "visual": "card:entryRoutes",
+          "broll": "faculty cards sliding in",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "สาย Data Science หรือหุ่นยนต์ก็มาได้ แค่อาจต้องฝึกเขียนระบบเพิ่มเอง",
+          "on_screen_th": "อีกทาง: วิทยาศาสตร์ข้อมูล, หุ่นยนต์",
+          "visual": "card:entryRoutes",
+          "broll": "side paths joining the main road",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "แต่ชื่อคณะไม่การันตีงาน ทีดีอาร์ไอเจอว่า วิทย์คอมจบในปีเดียวราว 8,000 คน แต่ประกาศงานที่รับจบใหม่มีราว 3,000",
+          "on_screen_th": "วิทยาการคอมพิวเตอร์: จบ ~8,200 คน (ปี 65) ประกาศรับจบใหม่ 3,088 (ก.ค. 67 ถึง มิ.ย. 68, TDRI)",
+          "visual": "motion:people vs seats",
+          "broll": "crowd of graduate icons vs a smaller row of chairs",
+          "safety": false,
+          "claims": [
+            {
+              "text": "TDRI Table 1: Computer Science (วิทยาการคอมพิวเตอร์) had 8,242 bachelor's graduates in 2022 (the body text says 8,246) vs 3,088 online postings open to new graduates (0-2 years of experience) from Jul 2024 to Jun 2025. Different periods, and TDRI notes postings often list several fields, so counts are double-counted. Computer Engineering is a separate row (3,554 graduates vs 3,004 new-grad postings).",
+              "url": "https://tdri.or.th/2025/08/bigdata-report-labourmarket-q2-2025/",
+              "grade": "A",
+              "as_of": "2025-08-28",
+              "topic": "jobs"
+            }
+          ]
+        },
+        {
+          "say_th": "คนที่มีของจริงให้ดูได้เปรียบ เลือกคณะที่ชอบ แล้วเริ่มปั้นพอร์ตตั้งแต่ตอนนี้เลย",
+          "on_screen_th": "เลือกคณะที่ชอบ แล้วเริ่มทำพอร์ตตอนนี้",
+          "visual": "card:entryRoutes",
+          "broll": "portfolio page filling up",
+          "safety": false,
+          "claims": []
+        }
+      ],
+      "cta_th": "ดูรายชื่อคณะและทางเข้าอื่นทั้งหมด ได้ในลิงก์",
+      "reel": {
+        "angle": "which_faculty",
+        "hook_variants_th": [
+          "อยากเป็นวิศวกร AI ต้องเข้าคณะไหน",
+          "ไม่เข้าคณะ AI จะทำงาน AI ได้ไหม",
+          "จบคอมแล้วได้งานเลยไหม"
+        ],
+        "send_to_friend_th": "ส่งให้เพื่อนที่ยังเลือกคณะไม่ได้",
+        "end_card": "comment_radar",
+        "pinned_comment_th": "คอมเมนต์ RADAR รับลิงก์รายชื่อคณะทาง DM",
+        "tiktok_alias": "ai"
+      }
+    },
+    {
+      "key": "start",
+      "title_th": "เริ่มลองได้เลยสัปดาห์นี้",
+      "duration_target_s": 30,
+      "hook": {
+        "say_th": "พอร์ตสาย AI ต้องมีอะไร",
+        "on_screen_th": "พอร์ตสาย AI ต้องมีอะไร?"
+      },
+      "beats": [
+        {
+          "say_th": "ประกาศงานวิทย์คอมที่ไม่ขอประสบการณ์เลย ทั้งปีมีแค่ 376 จากหมื่นกว่าประกาศ พอร์ตคือหลักฐานที่เธอสร้างเองได้",
+          "on_screen_th": "ไม่ต้องมีประสบการณ์: 376 จาก 10,486 ประกาศ สายวิทยาการคอมพิวเตอร์ (TDRI ก.ค. 67 ถึง มิ.ย. 68)",
+          "visual": "motion:376 counter",
+          "broll": "a tiny door among many locked doors",
+          "safety": false,
+          "claims": [
+            {
+              "text": "TDRI Table 1: of 10,486 Computer Science job postings in Thailand (Jul 2024 to Jun 2025), 3,088 were open to new graduates (0-2 years) and 376 required no experience at all. Online postings from 23 Thai job sites.",
+              "url": "https://tdri.or.th/2025/08/bigdata-report-labourmarket-q2-2025/",
+              "grade": "A",
+              "as_of": "2025-08-28",
+              "topic": "jobs"
+            }
+          ]
+        },
+        {
+          "say_th": "ข้อแรก ของที่ใช้ได้จริง ไม่ใช่แค่แคปจอแชตบอทมาแปะ",
+          "on_screen_th": "ข้อแรก: ของที่ใช้ได้จริง",
+          "visual": "card:text",
+          "broll": "screenshot crossed out, live link opening",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "ข้อสอง ชุดทดสอบที่บอกว่า AI ของเธอพลาดตรงไหน คนสัมภาษณ์จะเห็นเลยว่าเธอวัดผลเป็น",
+          "on_screen_th": "ข้อสอง: ชุดทดสอบ บอกว่าพลาดตรงไหน",
+          "visual": "card:text",
+          "broll": "test sheet with ticks and crosses",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "ข้อสาม สรุปสั้นๆ ว่ามันทำอะไรไม่ได้บ้าง เกียรติบัตรเอาไว้ท้ายสุด",
+          "on_screen_th": "ข้อสาม: บอกข้อจำกัดเอง เกียรติบัตรไว้ท้ายสุด",
+          "visual": "card:text",
+          "broll": "README page, certificate pushed to the bottom",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "เริ่มคืนนี้ฟรี เปิด Teachable Machine สอนให้แยกของสองอย่าง แล้วเอารูปที่มันไม่เคยเห็นมาเทสต์ จดว่ามันพลาดตรงไหน แค่นี้ก็ได้พอร์ตชิ้นแรกแล้ว",
+          "on_screen_th": "Teachable Machine: ฟรี ไม่ต้องเขียนโค้ด ใช้รูปสิ่งของ ไม่ต้องใช้หน้าตัวเอง",
+          "visual": "screen:teachablemachine.withgoogle.com",
+          "broll": "phone camera on a mug and a bottle, then a results table",
+          "safety": false,
+          "claims": [
+            {
+              "text": "Google: Teachable Machine lets you train a machine learning model in the browser \"with the click of a button, no coding required\"; examples \"stay on-device, never leaving your computer unless you choose to save your project to Google Drive\".",
+              "url": "https://blog.google/technology/ai/teachable-machine/",
+              "grade": "B",
+              "as_of": "2019-11-07",
+              "topic": "other"
+            }
+          ]
+        }
+      ],
+      "cta_th": "ดูขั้นต่อไปที่ลองได้ฟรี ได้ในลิงก์",
+      "first_step": {
+        "title_th": "สอนโมเดลแยกของสองอย่างใน Teachable Machine แล้วเทสต์ด้วยรูปที่ไม่ได้ใช้สอน",
+        "url": "https://teachablemachine.withgoogle.com/",
+        "free": true,
+        "minutes": 60,
+        "makes_th": "โมเดลแยกรูปหนึ่งตัว ตารางที่จดว่ามันตอบถูกหรือพลาดตอนเจอรูปที่ไม่เคยเห็น และโน้ตสั้นๆ ว่ามันทำอะไรไม่ได้"
+      },
+      "reel": {
+        "angle": "portfolio_for_this_career",
+        "hook_variants_th": [
+          "พอร์ตสาย AI ต้องมีอะไร",
+          "แคปแชตบอทใส่พอร์ต ไม่พอแล้วนะ",
+          "ทำพอร์ต AI ชิ้นแรกคืนนี้ ฟรี"
+        ],
+        "send_to_friend_th": "ส่งให้เพื่อนที่กำลังทำพอร์ตยื่นคอม",
+        "end_card": "comment_radar",
+        "pinned_comment_th": "คอมเมนต์ RADAR รับลิงก์ขั้นต่อไปทาง DM",
+        "tiktok_alias": "ai"
+      }
+    }
+  ]
+}

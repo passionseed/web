@@ -13,6 +13,7 @@
 
 import { createAdminClient } from "@/utils/supabase/admin";
 import { getDmLeadSignals } from "@/lib/supabase/dm-leads";
+import { isMissingOriginColumn, warnMissingOriginColumn } from "@/lib/supabase/dm-origin";
 import { classifyBucket, EMPTY_SIGNALS, type DmLeadBucket } from "@/lib/dm-leads/playbook";
 import {
   buildQueue,
@@ -56,7 +57,13 @@ const CANDIDATE_COLUMNS = [
 ] as const;
 
 type CandidateColumn = (typeof CANDIDATE_COLUMNS)[number];
-type CandidateRow = Pick<DmConversation, CandidateColumn>;
+/**
+ * `origin` is read alongside the typed columns so Radar-origin threads are
+ * counted as skipped rather than silently missing (spec 5.6). It is not in
+ * `DmConversation` until the types are regenerated after the migration.
+ */
+type CandidateRow = Pick<DmConversation, CandidateColumn> & { origin?: string | null };
+const CANDIDATE_SELECT = [...CANDIDATE_COLUMNS, "origin"].join(", ");
 
 export interface CampaignTargetRow {
   id: string;
@@ -114,12 +121,22 @@ async function fetchCandidates(
   supabase: ReturnType<typeof createAdminClient>
 ): Promise<CandidateRow[]> {
   const rows: CandidateRow[] = [];
+  // Before migration 20261111100300 there is no `origin` column: read without
+  // it, so every thread counts as a sales thread (none can be Radar yet).
+  let select = CANDIDATE_SELECT;
   for (let offset = 0; ; offset += CONVERSATION_PAGE_SIZE) {
-    const { data, error } = await supabase
-      .from("dm_conversations")
-      .select(CANDIDATE_COLUMNS.join(", "))
-      .order("id", { ascending: true })
-      .range(offset, offset + CONVERSATION_PAGE_SIZE - 1);
+    const read = (columns: string) =>
+      supabase
+        .from("dm_conversations")
+        .select(columns)
+        .order("id", { ascending: true })
+        .range(offset, offset + CONVERSATION_PAGE_SIZE - 1);
+    let { data, error } = await read(select);
+    if (error && select === CANDIDATE_SELECT && isMissingOriginColumn(error)) {
+      warnMissingOriginColumn("fetchCandidates");
+      select = CANDIDATE_COLUMNS.join(", ");
+      ({ data, error } = await read(select));
+    }
 
     if (error) {
       console.error("Error loading campaign candidates:", error);
@@ -206,6 +223,7 @@ export async function buildCampaign(
       interests: row.interests ?? [],
       adminTags: row.admin_tags ?? [],
       signals: signal,
+      origin: row.origin ?? null,
     };
   });
 

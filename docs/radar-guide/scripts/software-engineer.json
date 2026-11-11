@@ -1,0 +1,543 @@
+{
+  "slug": "software-engineer",
+  "version": 1,
+  "as_of": "2026-11-11",
+  "chapters": [
+    {
+      "key": "hook",
+      "title_th": "อาชีพนี้คืออะไร ทำไมต้องรู้ตอนนี้",
+      "duration_target_s": 22,
+      "hook": {
+        "say_th": "อยากเป็นโปรแกรมเมอร์ ฟังนี่ก่อนเลือกคณะ",
+        "on_screen_th": "สายโค้ด ยังน่าไปไหม?"
+      },
+      "beats": [
+        {
+          "say_th": "งานนี้จริงๆ คือเอาปัญหาของคน มาทำเป็นซอฟต์แวร์ที่ใช้ได้จริง ไม่ใช่แค่นั่งพิมพ์โค้ด",
+          "on_screen_th": "แก้ปัญหาให้คน ไม่ใช่แค่พิมพ์โค้ด",
+          "visual": "card:hook",
+          "broll": "phone app in use, then the code behind it",
+          "safety": false,
+          "claims": [
+            {
+              "text": "O*NET lists analysing user needs and requirements as a top task of software developers",
+              "source_ref": 7,
+              "url": "https://www.onetonline.org/link/summary/15-1252.00",
+              "grade": "A",
+              "as_of": "2026-11",
+              "topic": "other"
+            }
+          ]
+        },
+        {
+          "say_th": "ข่าวดีคือ ในสหรัฐฯ คาดว่างานนี้จะโตขึ้น 10% ใน 10 ปี เร็วกว่าอาชีพทั่วไปเยอะ",
+          "on_screen_th": "+10% ใน 10 ปี (สหรัฐฯ, BLS 2025 ถึง 2035)",
+          "visual": "card:hook",
+          "broll": "upward line, US flag tag",
+          "safety": false,
+          "claims": [
+            {
+              "text": "BLS: employment of software developers projected to grow 10% from 2025 to 2035 (US only), much faster than the average for all occupations",
+              "source_ref": 1,
+              "url": "https://www.bls.gov/ooh/computer-and-information-technology/software-developers.htm",
+              "grade": "A",
+              "as_of": "2026-11",
+              "topic": "jobs"
+            }
+          ]
+        },
+        {
+          "say_th": "แต่ที่ต้องรู้คือ บริษัทเทคยักษ์ใหญ่ 15 แห่ง รับเด็กจบใหม่แค่ราว 7% ของการจ้างทั้งหมด",
+          "on_screen_th": "จบใหม่ = 7% ของการจ้างใน Big Tech 15 แห่ง (รายงาน SignalFire, พ.ค. 2568)",
+          "visual": "motion: 100 seats, 7 lit",
+          "broll": "office lobby badges",
+          "safety": false,
+          "claims": [
+            {
+              "text": "SignalFire State of Tech Talent 2025 (published 2025-05-20): at Big Tech (the top 15 technology companies by market cap), new grads account for just 7% of hires; new-grad hires down 25% from 2023 and over 50% from 2019. The page does not state the year of the hiring data (the surrounding text discusses 2024) or a geographic scope",
+              "url": "https://www.signalfire.com/blog/signalfire-state-of-talent-report-2025",
+              "grade": "B",
+              "as_of": "2025-05",
+              "topic": "jobs"
+            }
+          ]
+        },
+        {
+          "say_th": "สรุปคือที่นั่งยังมี แต่น้อยลง คนที่มีงานจริงให้ดูจะได้เปรียบ",
+          "on_screen_th": "ที่นั่งยังมี แต่มีงานจริงให้ดูได้เปรียบ",
+          "visual": "founder to camera",
+          "broll": "",
+          "safety": false,
+          "claims": []
+        }
+      ],
+      "cta_th": "ดูเงินเดือน ตลาดงาน และวิธีเริ่มเต็มๆ ได้ที่ลิงก์",
+      "reel": {
+        "angle": "overview",
+        "hook_variants_th": [
+          "อยากเป็นโปรแกรมเมอร์ ฟังนี่ก่อนเลือกคณะ",
+          "สายโค้ดยังน่าไปไหม ในยุค AI",
+          "Big Tech จ้างจบใหม่แค่ 7% ของทั้งหมด"
+        ],
+        "send_to_friend_th": "ส่งให้เพื่อนที่อยากเป็นโปรแกรมเมอร์",
+        "end_card": "comment_radar",
+        "pinned_comment_th": "คอมเมนต์ RADAR รับลิงก์ข้อมูลเต็มทาง DM",
+        "tiktok_alias": "dev"
+      }
+    },
+    {
+      "key": "reality",
+      "title_th": "ภาพในหัวกับงานจริง",
+      "duration_target_s": 25,
+      "hook": {
+        "say_th": "คิดว่าโปรแกรมเมอร์โค้ดคนเดียวทั้งวัน?",
+        "on_screen_th": "ภาพในหัว vs งานจริง"
+      },
+      "beats": [
+        {
+          "say_th": "ภาพในหัวคือใส่หูฟัง เปิดเพลงชิลๆ สร้างแอปเท่ๆ คนเดียว ไม่ต้องคุยกับใคร",
+          "on_screen_th": "ภาพในหัว: โค้ดคนเดียวทั้งวัน",
+          "visual": "card:fantasyReality",
+          "broll": "headphones, lo-fi desk, night lights",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "งานจริงคืออ่านโค้ดคนอื่น รีวิวโค้ดเพื่อน แล้วไล่หาบั๊กที่ยังไม่รู้ว่ามาจากไหน",
+          "on_screen_th": "งานจริง: อ่านโค้ด รีวิว ไล่บั๊ก",
+          "visual": "card:fantasyReality",
+          "broll": "screen recording of a pull request review",
+          "safety": false,
+          "claims": [
+            {
+              "text": "O*NET top task: modify existing software to correct errors, adapt it to new hardware, or upgrade interfaces and improve performance",
+              "source_ref": 7,
+              "url": "https://www.onetonline.org/link/summary/15-1252.00",
+              "grade": "A",
+              "as_of": "2026-11",
+              "topic": "other"
+            }
+          ]
+        },
+        {
+          "say_th": "แถมเป็นงานทีมเต็มๆ คนทำสายนี้ในสหรัฐฯ 71% บอกว่าการทำงานเป็นทีม สำคัญอย่างยิ่ง",
+          "on_screen_th": "71%: งานทีมสำคัญอย่างยิ่ง (O*NET สหรัฐฯ)",
+          "visual": "motion: 71% bar",
+          "broll": "whiteboard huddle",
+          "safety": false,
+          "claims": [
+            {
+              "text": "O*NET work context for Software Developers (15-1252.00): 71% responded \"Extremely important\" to \"Work With or Contribute to a Work Group or Team\" (the top point of the scale, US respondents). Spoken as สำคัญอย่างยิ่ง, not สำคัญมากที่สุด, so it does not sound like teamwork ranks above everything else",
+              "source_ref": 7,
+              "url": "https://www.onetonline.org/link/summary/15-1252.00",
+              "grade": "A",
+              "as_of": "2026-11",
+              "topic": "other"
+            }
+          ]
+        },
+        {
+          "say_th": "แต่วินาทีที่ระบบรันผ่าน แล้วมีคนใช้ของที่เราทำจริงๆ อันนั้นฟินสุด",
+          "on_screen_th": "มีคนใช้ของที่เราทำ = ฟินสุด",
+          "visual": "founder to camera",
+          "broll": "green CI checks",
+          "safety": false,
+          "claims": []
+        }
+      ],
+      "cta_th": "ดูเทียบภาพในหัวกับงานจริงเต็มๆ ได้ที่ลิงก์",
+      "reel": {
+        "angle": "myth_busted",
+        "hook_variants_th": [
+          "คิดว่าโปรแกรมเมอร์โค้ดคนเดียวทั้งวัน?",
+          "งานจริงของ dev ที่ไม่มีใครเล่า",
+          "ชอบอยู่คนเดียว เหมาะกับสายโค้ดไหม"
+        ],
+        "send_to_friend_th": "ส่งให้เพื่อนที่คิดว่าโปรแกรมเมอร์ไม่ต้องคุยกับใคร",
+        "end_card": "comment_radar",
+        "pinned_comment_th": "คอมเมนต์ RADAR รับลิงก์ข้อมูลเต็มทาง DM",
+        "tiktok_alias": "dev"
+      }
+    },
+    {
+      "key": "money",
+      "title_th": "เงินเดือนจริงในไทย",
+      "duration_target_s": 30,
+      "hook": {
+        "say_th": "สายโค้ดในไทย เงินเดือนจริงเท่าไหร่",
+        "on_screen_th": "เงินเดือนจริงเท่าไหร่?"
+      },
+      "beats": [
+        {
+          "say_th": "ถ้าเปิดดูประกาศงาน Software Engineer บน JobsDB ตอนนี้ ค่าเฉลี่ยในกรุงเทพฯ อยู่ที่ราว 38,000 บาทต่อเดือน",
+          "on_screen_th": "เฉลี่ย ฿38,000/เดือน กรุงเทพฯ (JobsDB พ.ย. 2569)",
+          "visual": "card:salaryProgression",
+          "broll": "JobsDB salary page, scrolled",
+          "safety": false,
+          "claims": [
+            {
+              "text": "JobsDB Software Engineer salary page (November 2026): Bangkok average THB 38,000 per month, based on full-time salary ranges disclosed by employers in JobsDB job ads",
+              "source_ref": 2,
+              "url": "https://th.jobsdb.com/career-advice/role/software-engineer/salary",
+              "grade": "B",
+              "level": "average",
+              "as_of": "2026-11",
+              "topic": "salary"
+            }
+          ]
+        },
+        {
+          "say_th": "แต่นี่คือค่าเฉลี่ยจากเงินเดือนที่บริษัทลงไว้ในประกาศ รวมทุกระดับ ไม่ใช่ตัวเลขเฉพาะเด็กจบใหม่",
+          "on_screen_th": "ค่าเฉลี่ยจากประกาศ รวมทุกระดับ ไม่ใช่เฉพาะจบใหม่",
+          "visual": "card:salaryProgression",
+          "broll": "",
+          "safety": false,
+          "claims": [
+            {
+              "text": "JobsDB states its salary insights are based on full-time salary ranges disclosed by employers on JobsDB job ads, all levels combined",
+              "source_ref": 2,
+              "url": "https://th.jobsdb.com/career-advice/role/software-engineer/salary",
+              "grade": "B",
+              "level": "average",
+              "as_of": "2026-11",
+              "topic": "salary"
+            }
+          ]
+        },
+        {
+          "say_th": "ตัวเลขที่สำคัญกว่าคือ ประกาศสายวิทย์คอมที่รับจบใหม่ มีราว 3,100 ประกาศ แต่ในนั้นที่ไม่ขอประสบการณ์เลย มีแค่ 376",
+          "on_screen_th": "วิทย์คอม: รับจบใหม่ 3,088 ประกาศ ในนี้ไม่ขอประสบการณ์ 376 (TDRI, ก.ค. 67 ถึง มิ.ย. 68)",
+          "visual": "card:marketThailand",
+          "broll": "motion: 3,088 tiles shrinking to 376",
+          "safety": false,
+          "claims": [
+            {
+              "text": "TDRI Big Data labour market report Q2/2568: Computer Science field, 3,088 postings open to new graduates, of which 376 require no experience (postings July 2024 to June 2025, 23 job sites)",
+              "url": "https://tdri.or.th/2025/08/bigdata-report-labourmarket-q2-2025/",
+              "grade": "A",
+              "as_of": "2025-08",
+              "topic": "jobs"
+            }
+          ]
+        },
+        {
+          "say_th": "แปลว่าด่านแรกไม่ใช่เงินเดือน แต่คือเรามีงานจริงให้เขาดูหรือยัง และอันนี้เริ่มทำได้ตั้งแต่ ม.ปลาย",
+          "on_screen_th": "ด่านแรก = มีงานจริงให้ดูหรือยัง",
+          "visual": "founder to camera",
+          "broll": "student laptop with a live site",
+          "safety": false,
+          "claims": []
+        }
+      ],
+      "cta_th": "ดูเงินเดือนและตลาดงานไทยเต็มๆ ได้ที่ลิงก์",
+      "reel": {
+        "angle": "salary_reveal",
+        "hook_variants_th": [
+          "สายโค้ดในไทย เงินเดือนจริงเท่าไหร่",
+          "Software Engineer กรุงเทพฯ ได้เท่าไหร่",
+          "วิทย์คอม ประกาศไม่ขอประสบการณ์ แค่ 376"
+        ],
+        "send_to_friend_th": "ส่งให้เพื่อนที่จะยื่นวิศวะคอมหรือวิทย์คอม",
+        "end_card": "comment_radar",
+        "pinned_comment_th": "คอมเมนต์ RADAR รับลิงก์ข้อมูลเต็มทาง DM",
+        "tiktok_alias": "dev"
+      }
+    },
+    {
+      "key": "ai",
+      "title_th": "AI จะมาแทนไหม",
+      "duration_target_s": 28,
+      "hook": {
+        "say_th": "AI เขียนโค้ดได้ ยังต้องมีโปรแกรมเมอร์ไหม",
+        "on_screen_th": "AI แทนโปรแกรมเมอร์?"
+      },
+      "beats": [
+        {
+          "say_th": "จากแบบสำรวจ Stack Overflow ปีนี้ คนตอบถึง 73% ใช้ AI ช่วยเขียนโค้ดทุกวันแล้ว",
+          "on_screen_th": "73% ของคนตอบ ใช้ AI ช่วยโค้ดทุกวัน (Stack Overflow Survey 2026)",
+          "visual": "card:aiImpact",
+          "broll": "AI assistant suggesting code in an editor",
+          "safety": false,
+          "claims": [
+            {
+              "text": "Stack Overflow Developer Survey 2026 (30,903 responses, 169 countries): \"The overwhelming majority of respondents now use coding assistants and agents daily (73%)\". The base is all respondents, not only professional developers, and the page does not state the denominator",
+              "source_ref": 4,
+              "url": "https://survey.stackoverflow.co/2026/ai",
+              "grade": "A",
+              "as_of": "2026-11",
+              "topic": "ai"
+            }
+          ]
+        },
+        {
+          "say_th": "แต่เกือบครึ่งบอกว่า ไว้ใจ AI เมื่อเช็กคำตอบเองได้ง่ายๆ",
+          "on_screen_th": "48% ไว้ใจ AI เมื่อเช็กคำตอบได้ง่าย (Stack Overflow Survey 2026)",
+          "visual": "card:aiImpact",
+          "broll": "",
+          "safety": false,
+          "claims": [
+            {
+              "text": "Stack Overflow Developer Survey 2026: \"When asked when it's acceptable to trust AI, 48% indicate they trust AI when they can easily validate the answers and only 16% extend that trust to most tasks that are not important work decisions.\" One condition among several, so the line says เมื่อ, not ก็ต่อเมื่อ",
+              "source_ref": 4,
+              "url": "https://survey.stackoverflow.co/2026/ai",
+              "grade": "A",
+              "as_of": "2026-11",
+              "topic": "ai"
+            }
+          ]
+        },
+        {
+          "say_th": "AI เขียนเร็วก็จริง แต่คนยังต้องตรวจ logic เช็กความปลอดภัย และหาจุดที่โค้ดอาจพัง",
+          "on_screen_th": "AI เขียน คนตรวจ",
+          "visual": "card:dayInLife",
+          "broll": "code review comments on an AI-written diff",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "งานซ้ำๆ ระดับเริ่มต้นเสี่ยงโดนก่อน ส่วนการออกแบบระบบกับการตัดสินใจ ยังต้องพึ่งคน",
+          "on_screen_th": "งานซ้ำ: เสี่ยงโดนก่อน / ออกแบบระบบ: ยังต้องพึ่งคน",
+          "visual": "card:aiImpact",
+          "broll": "whiteboard architecture sketch",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "คนที่ใช้ AI เป็น และอธิบายโค้ดตัวเองได้ทุกบรรทัด คือคนที่ยังมีที่ยืน",
+          "on_screen_th": "ใช้ AI เป็น + อธิบายโค้ดตัวเองได้",
+          "visual": "founder to camera",
+          "broll": "",
+          "safety": false,
+          "claims": []
+        }
+      ],
+      "cta_th": "ดูว่างานส่วนไหน AI ช่วยได้ ส่วนไหนยังต้องใช้คน ได้ที่ลิงก์",
+      "reel": {
+        "angle": "ai_replace",
+        "hook_variants_th": [
+          "AI เขียนโค้ดได้ ยังต้องมีโปรแกรมเมอร์ไหม",
+          "dev ใช้ AI ทุกวัน แต่ไม่ไว้ใจทุกเรื่อง",
+          "AI จะแทนโปรแกรมเมอร์จริงไหม"
+        ],
+        "send_to_friend_th": "ส่งให้เพื่อนที่กลัวว่า AI จะแย่งงานสายโค้ด",
+        "end_card": "comment_radar",
+        "pinned_comment_th": "คอมเมนต์ RADAR รับลิงก์ข้อมูลเต็มทาง DM",
+        "tiktok_alias": "dev"
+      }
+    },
+    {
+      "key": "day",
+      "title_th": "หนึ่งวันทำอะไรบ้าง",
+      "duration_target_s": 25,
+      "hook": {
+        "say_th": "หนึ่งวันของ dev ไม่ได้โค้ดทั้งวัน",
+        "on_screen_th": "หนึ่งวันของ dev"
+      },
+      "beats": [
+        {
+          "say_th": "เช้ามาอ่านโจทย์จากทีม ใช้ AI ช่วยเขียนฟีเจอร์ใหม่ แล้วนั่งตรวจกับเทสต์เอง",
+          "on_screen_th": "เช้า: เขียนฟีเจอร์ + ตรวจเอง",
+          "visual": "card:dayInLife",
+          "broll": "task board, editor with AI suggestions",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "บ่ายรีวิวโค้ดเพื่อน แล้วไล่แก้บั๊กจากระบบที่คนใช้อยู่จริง",
+          "on_screen_th": "บ่าย: รีวิวโค้ด + แก้บั๊ก",
+          "visual": "card:dayInLife",
+          "broll": "error log, pull request comments",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "บางวันยืนหน้าไวท์บอร์ดกับทีม ออกแบบว่าระบบจะรับคนใช้เยอะๆ ได้ยังไง งานแบบนี้ AI ยังทำแทนคนได้ยาก",
+          "on_screen_th": "ออกแบบระบบ: ยังต้องพึ่งคน",
+          "visual": "card:dayInLife",
+          "broll": "whiteboard boxes and arrows",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "ข้อเสียที่ต้องรู้คือ เทคเปลี่ยนเร็ว เลยต้องเรียนตลอด และคืนไหนระบบล่ม อาจต้องเฝ้ายันดึก",
+          "on_screen_th": "ข้อเสีย: เรียนตลอด + บางคืนต้องเฝ้าระบบ",
+          "visual": "card:risks",
+          "broll": "late-night monitor glow",
+          "safety": false,
+          "claims": []
+        }
+      ],
+      "cta_th": "ดูชีวิตหนึ่งวันเต็มๆ และข้อเสียที่ควรรู้ได้ที่ลิงก์",
+      "reel": {
+        "angle": "day_in_life",
+        "hook_variants_th": [
+          "หนึ่งวันของ dev ไม่ได้โค้ดทั้งวัน",
+          "โปรแกรมเมอร์ทำอะไรทั้งวัน",
+          "ข้อเสียสายโค้ดที่ไม่มีใครบอก"
+        ],
+        "send_to_friend_th": "ส่งให้เพื่อนที่อยากรู้ว่าโปรแกรมเมอร์ทำอะไรทั้งวัน",
+        "end_card": "comment_radar",
+        "pinned_comment_th": "คอมเมนต์ RADAR รับลิงก์ข้อมูลเต็มทาง DM",
+        "tiktok_alias": "dev"
+      }
+    },
+    {
+      "key": "study",
+      "title_th": "เรียนอะไร เข้าคณะไหน",
+      "duration_target_s": 28,
+      "hook": {
+        "say_th": "อยากเขียนโค้ด เข้าคณะไหนดี",
+        "on_screen_th": "วิศวะคอม วิทย์คอม หรือไอที?"
+      },
+      "beats": [
+        {
+          "say_th": "ทางตรงคือวิศวะคอม วิทย์คอม และไอที วิศวะคอมได้ทั้งฮาร์ดแวร์และซอฟต์แวร์ วิทย์คอมลึกเรื่องอัลกอริทึม ไอทีเน้นเอาไปใช้จริง",
+          "on_screen_th": "วิศวะคอม / วิทย์คอม / ไอที",
+          "visual": "card:entryRoutes",
+          "broll": "faculty building signs",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "ข้อมูลจาก TDRI คนจบปี 2565 วิทย์คอมราว 8,200 คน วิศวะคอมราว 3,600 คน แต่ประกาศรับจบใหม่ของแต่ละสาย กลับใกล้กันที่ราว 3,000",
+          "on_screen_th": "จบปี 65: วิทย์คอม 8,242 / วิศวะคอม 3,554 คน, ประกาศรับจบใหม่ ก.ค.67 ถึง มิ.ย.68: วิทย์คอม 3,088 / วิศวะคอม 3,004 (TDRI)",
+          "visual": "motion: two bars, graduates vs postings",
+          "broll": "",
+          "safety": false,
+          "claims": [
+            {
+              "text": "TDRI Big Data labour market Q2/2568 Table 1: Computer Science 8,242 graduates (text says 8,246) and 3,088 postings open to new graduates; Computer Engineering 3,554 graduates and 3,004 postings open to new graduates. Graduates are the 2022 (B.E. 2565) cohort; postings July 2024 to June 2025",
+              "url": "https://tdri.or.th/2025/08/bigdata-report-labourmarket-q2-2025/",
+              "grade": "A",
+              "as_of": "2025-08",
+              "topic": "study"
+            }
+          ]
+        },
+        {
+          "say_th": "แต่ประกาศเดียวรับได้หลายคณะ แถมข้อมูลคนละช่วง เลยอย่าเพิ่งใช้ตัวเลขนี้เลือกคณะอย่างเดียวนะ",
+          "on_screen_th": "ข้อมูลคนละช่วง ใช้ดูภาพรวมเท่านั้น",
+          "visual": "founder to camera",
+          "broll": "",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "สายอื่นก็มาทำงานนี้ได้ถ้าพอร์ตแน่น ก่อนยื่น ลองทำโปรเจกต์เล็กๆ ดูก่อน จะรู้เลยว่าชอบจริงไหม",
+          "on_screen_th": "ลองทำก่อนยื่น จะรู้ว่าชอบจริงไหม",
+          "visual": "card:entryRoutes",
+          "broll": "student building a small site",
+          "safety": false,
+          "claims": []
+        }
+      ],
+      "cta_th": "ดูเส้นทางเข้าสายนี้เต็มๆ ได้ที่ลิงก์",
+      "reel": {
+        "angle": "which_faculty",
+        "hook_variants_th": [
+          "อยากเขียนโค้ด เข้าคณะไหนดี",
+          "วิศวะคอม vs วิทย์คอม ต่างกันยังไง",
+          "ไม่ได้เข้าคณะคอม ยังเป็น dev ได้ไหม"
+        ],
+        "send_to_friend_th": "ส่งให้เพื่อนที่ยังเลือกไม่ได้ระหว่างวิศวะคอมกับวิทย์คอม",
+        "end_card": "comment_radar",
+        "pinned_comment_th": "คอมเมนต์ RADAR รับลิงก์ข้อมูลเต็มทาง DM",
+        "tiktok_alias": "dev"
+      }
+    },
+    {
+      "key": "start",
+      "title_th": "เริ่มลองได้เลยสัปดาห์นี้",
+      "duration_target_s": 30,
+      "hook": {
+        "say_th": "พอร์ตสายโค้ด ต้องมีอะไร",
+        "on_screen_th": "พอร์ตสายโค้ดต้องมีอะไร?"
+      },
+      "beats": [
+        {
+          "say_th": "ไม่ใช่ใบเซอร์ แต่คือของที่คนกดเข้าไปใช้ได้จริง พร้อมโค้ดให้ดูบน GitHub",
+          "on_screen_th": "ลิงก์ที่ใช้ได้จริง + โค้ดบน GitHub",
+          "visual": "founder to camera",
+          "broll": "GitHub repo page next to the live site",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "ชิ้นแรกทำเย็นนี้ได้เลย เว็บหน้าเดียวเล่าว่าเราเป็นใคร ชอบอะไร แล้วเอาขึ้น GitHub Pages ฟรี",
+          "on_screen_th": "ชิ้นแรก: เว็บหน้าเดียวของตัวเอง ขึ้น GitHub Pages ฟรี",
+          "visual": "screen recording: HTML file to live GitHub Pages URL",
+          "broll": "",
+          "safety": false,
+          "claims": [
+            {
+              "text": "GitHub Pages is available in public repositories with GitHub Free and hosts a site directly from a repository",
+              "url": "https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages",
+              "grade": "A",
+              "as_of": "2026-11",
+              "topic": "other"
+            }
+          ]
+        },
+        {
+          "say_th": "ได้ลิงก์ของตัวเอง ส่งให้เพื่อนเปิดดูได้ทันที นี่แหละพอร์ตชิ้นแรก",
+          "on_screen_th": "ได้ลิงก์ของตัวเอง = พอร์ตชิ้นแรก",
+          "visual": "phone opening the student's link",
+          "broll": "",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "ชิ้นต่อไป ทำเว็บแก้ปัญหาเล็กๆ ของคนรอบตัว เช่น ตารางเวรห้อง หรือเมนูร้านแถวบ้าน",
+          "on_screen_th": "ชิ้นต่อไป: แก้ปัญหาจริงของคนรอบตัว",
+          "visual": "card:text (skills)",
+          "broll": "classroom duty roster on a phone",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "ใช้ AI ช่วยได้ แต่ต้องอธิบายโค้ดได้ทุกบรรทัด ถ้าอยากเรียนเป็นระบบ ไปต่อที่ The Odin Project หรือ freeCodeCamp ฟรีทั้งคู่ ใบเซอร์ค่อยว่ากันทีหลัง",
+          "on_screen_th": "The Odin Project / freeCodeCamp ฟรี, ใบเซอร์ไว้ทีหลัง",
+          "visual": "card:cta resources",
+          "broll": "",
+          "safety": false,
+          "claims": [
+            {
+              "text": "The Odin Project: 'Our full stack curriculum is free' and learners build portfolio projects including deployed websites",
+              "url": "https://www.theodinproject.com/",
+              "grade": "A",
+              "as_of": "2026-11",
+              "topic": "other"
+            },
+            {
+              "text": "freeCodeCamp FAQ: \"Every aspect of freeCodeCamp is 100% free. The courses, the projects, even the certifications.\" It is a 501(c)(3) public charity",
+              "url": "https://www.freecodecamp.org/news/about/",
+              "grade": "A",
+              "as_of": "2026-11",
+              "topic": "other"
+            }
+          ]
+        }
+      ],
+      "cta_th": "ดูวิธีทำพอร์ตชิ้นแรกได้ที่ลิงก์",
+      "first_step": {
+        "title_th": "เว็บหน้าเดียวแนะนำตัวเอง ขึ้น GitHub Pages",
+        "url": "https://pages.github.com/",
+        "free": true,
+        "minutes": 90,
+        "makes_th": "ลิงก์เว็บของตัวเอง ที่ส่งให้เพื่อนเปิดดูได้ทันที"
+      },
+      "reel": {
+        "angle": "portfolio_for_this_career",
+        "hook_variants_th": [
+          "พอร์ตสายโค้ด ต้องมีอะไร",
+          "อยากเข้าวิศวะคอม ทำพอร์ตอะไรดี",
+          "เย็นนี้ทำพอร์ตชิ้นแรกสายโค้ดได้เลย"
+        ],
+        "send_to_friend_th": "ส่งให้เพื่อนที่กำลังทำพอร์ตเพื่อยื่นคณะคอม",
+        "end_card": "comment_radar",
+        "pinned_comment_th": "คอมเมนต์ RADAR รับลิงก์ข้อมูลเต็มทาง DM",
+        "tiktok_alias": "dev"
+      }
+    }
+  ]
+}
