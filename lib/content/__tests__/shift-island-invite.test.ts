@@ -2,6 +2,7 @@ import { formatThaiDate } from "@/lib/content/shift-cohort";
 import {
   LETTER_CHAPTERS,
   PROLOGUE,
+  PROLOGUE_SAMPLE_TAG,
   SEAL,
   SHORE,
   TICKET,
@@ -29,6 +30,7 @@ describe("shift island invite copy", () => {
   it("no em dashes or น้องๆ anywhere", () => {
     const all = [
       ...strings(PROLOGUE),
+      PROLOGUE_SAMPLE_TAG,
       ...strings(SHORE),
       ...strings(LETTER_CHAPTERS),
       ...strings(SEAL),

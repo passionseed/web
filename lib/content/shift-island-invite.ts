@@ -19,6 +19,9 @@ export const PROLOGUE = [
   "ซีซันนี้ เกาะเปิดด้วยเทศกาล และมีขวดใบหนึ่งลอยมาเกยฝั่งถึงเรา",
 ] as const;
 
+/** Tag on the prologue's island picture: a sample, never a real island map. */
+export const PROLOGUE_SAMPLE_TAG = "ภาพตัวอย่าง";
+
 export const SHORE = {
   hint: "แตะขวดเพื่อเปิด",
   skip: "ข้าม",
