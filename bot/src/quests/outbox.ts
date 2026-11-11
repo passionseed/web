@@ -66,6 +66,26 @@ export interface IslandPost {
 }
 
 /**
+ * "#slot name" for every plot that carries a name, in slot order. The plots
+ * must already be the outsider view (shift_quest_island_post_map or
+ * shift_quest_live_post), where only fully consented plots have a name.
+ */
+export function islandSigns(plots: IslandPlot[]): string[] {
+  return plots
+    .filter((p) => p.name)
+    .sort((a, b) => a.slot - b.slot)
+    .map((p) => `#${p.slot} ${safePost(p.name, 40)}`);
+}
+
+/** The signs as one fine-print line: the first SIGNS_SHOWN, then how many more. Empty without signs. */
+export function signsLine(signs: string[]): string {
+  if (!signs.length) return "";
+  const rest = signs.length - SIGNS_SHOWN;
+  const shown = signs.slice(0, SIGNS_SHOWN).join(" · ");
+  return `${I.signs} ${shown}${rest > 0 ? ` · ${I.more(rest)}` : ""}`;
+}
+
+/**
  * The weekly island post: the picture plus the names teams chose to show.
  * Drawn at send time from shift_quest_island_post_map(): every plot as an
  * outsider sees it, so a plot shows its real stage and name only once every
@@ -73,10 +93,7 @@ export interface IslandPost {
  */
 async function islandPost(api: QuestApi): Promise<IslandPost> {
   const map = await api.call<{ plots: IslandPlot[]; season: unknown }>("shift_quest_island_post_map");
-  const signs = map.plots
-    .filter((p) => p.name)
-    .sort((a, b) => a.slot - b.slot)
-    .map((p) => `#${p.slot} ${safePost(p.name, 40)}`);
+  const signs = islandSigns(map.plots);
   try {
     // No pin: in a channel post no plot is "mine".
     const image = renderIsland(map.plots, { scale: 2, festival: Boolean(map.season) });
@@ -96,11 +113,7 @@ export function outboxView(kind: string, post: OutboxRender, island: IslandPost 
   const blocks: Block[] = [];
   if (island?.files.length) blocks.push({ kind: "image", name: ISLAND_PNG, alt: "เกาะ SHIFT" });
   if (post.body) blocks.push({ kind: "text", text: post.body });
-  if (island?.signs.length) {
-    const rest = island.signs.length - SIGNS_SHOWN;
-    const shown = island.signs.slice(0, SIGNS_SHOWN).join(" · ");
-    blocks.push({ kind: "subtext", text: `${I.signs} ${shown}${rest > 0 ? ` · ${I.more(rest)}` : ""}` });
-  }
+  if (island?.signs.length) blocks.push({ kind: "subtext", text: signsLine(island.signs) });
   if (post.note) blocks.push({ kind: "subtext", text: post.note });
   return { tone: OUTBOX_TONE[kind] ?? "neutral", title: post.title, blocks, files: island?.files ?? [] };
 }

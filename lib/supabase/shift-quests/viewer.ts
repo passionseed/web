@@ -77,7 +77,9 @@ async function eligibleViewer(discord: DiscordActor, session: Session, userId: s
     return { state: "not_eligible", me, reason: "discord_unavailable" };
   }
 
-  const card: ViewerCard = { ...me, name: member.nick ?? me.name };
+  // The picture the SHIFT server shows (server avatar, then the account's), else the
+  // Supabase identity's, both checked on the server; never anyone else's.
+  const card: ViewerCard = { ...me, name: member.nick ?? me.name, avatarUrl: member.avatar ?? me.avatarUrl ?? null };
   // Staff are exempt from the student-role and pilot checks only, as in the bot.
   if (me.staff) return ready(card);
   if (!isEligible({ sessionRoles: session.roles, studentRoleIds, memberRoleIds: member.roles })) {

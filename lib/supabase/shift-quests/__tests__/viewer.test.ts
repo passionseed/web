@@ -21,6 +21,12 @@ jest.mock("../db", () => ({
 import { resolveIslandViewer } from "../viewer";
 
 const ACTOR = "123456789012345678";
+const HASH = "0123456789abcdef0123456789abcdef";
+/** The Supabase identity's avatar as Discord sends it (an animated one), and as the island shows it. */
+const IDENTITY_AVATAR = `https://cdn.discordapp.com/avatars/${ACTOR}/a_${HASH}.gif`;
+const IDENTITY_SHOWN = `https://cdn.discordapp.com/avatars/${ACTOR}/a_${HASH}.png?size=64`;
+/** The picture the SHIFT server shows (from the guild member lookup). */
+const GUILD_AVATAR = `https://cdn.discordapp.com/guilds/111111111111111111/users/${ACTOR}/avatars/${HASH}.png?size=64`;
 
 function discordUser(over: Record<string, unknown> = {}) {
   return {
@@ -33,7 +39,7 @@ function discordUser(over: Record<string, unknown> = {}) {
       {
         id: ACTOR,
         provider: "discord",
-        identity_data: { user_name: "mint#0", avatar_url: "https://cdn.discordapp.com/a.png" },
+        identity_data: { user_name: "mint#0", avatar_url: IDENTITY_AVATAR },
       },
     ],
     ...over,
@@ -78,7 +84,7 @@ describe("resolveIslandViewer", () => {
     const viewer = await resolveIslandViewer();
     expect(viewer).toEqual({
       state: "ready",
-      me: { name: "mint", avatarUrl: "https://cdn.discordapp.com/a.png", staff: false },
+      me: { name: "mint", avatarUrl: IDENTITY_SHOWN, staff: false },
       actor: ACTOR,
       userId: "user-1",
       session: expect.objectContaining({ onboarded: true, unread: 2 }),
@@ -92,6 +98,34 @@ describe("resolveIslandViewer", () => {
     fetchShiftGuildMember.mockResolvedValue({ ok: true, roles: ["student-role"], nick: "Mint ม.5" });
     const viewer = await resolveIslandViewer();
     expect(viewer.state === "ready" && viewer.me.name).toBe("Mint ม.5");
+  });
+
+  describe("the viewer's picture", () => {
+    it("prefers the picture the SHIFT server shows", async () => {
+      fetchShiftGuildMember.mockResolvedValue({ ok: true, roles: ["student-role"], nick: null, avatar: GUILD_AVATAR });
+      const viewer = await resolveIslandViewer();
+      expect(viewer.state === "ready" && viewer.me.avatarUrl).toBe(GUILD_AVATAR);
+    });
+
+    it("falls back to the Supabase identity's avatar, as a 64px still PNG", async () => {
+      fetchShiftGuildMember.mockResolvedValue({ ok: true, roles: ["student-role"], nick: null, avatar: null });
+      const viewer = await resolveIslandViewer();
+      expect(viewer.state === "ready" && viewer.me.avatarUrl).toBe(IDENTITY_SHOWN);
+    });
+
+    it.each([
+      ["another host", "https://evil.example/avatars/123456789012345678/0123456789abcdef0123456789abcdef.png"],
+      ["plain http", `http://cdn.discordapp.com/avatars/${ACTOR}/${HASH}.png`],
+      ["a path outside the avatars", `https://cdn.discordapp.com/attachments/1/2/${HASH}.png`],
+      ["nothing", undefined],
+    ])("has no picture when the identity's avatar is %s and the server has none", async (_label, avatarUrl) => {
+      getUser.mockResolvedValue({
+        data: { user: discordUser({ identities: [{ id: ACTOR, provider: "discord", identity_data: { user_name: "mint#0", avatar_url: avatarUrl } }] }) },
+        error: null,
+      });
+      const viewer = await resolveIslandViewer();
+      expect(viewer.state === "ready" && viewer.me.avatarUrl).toBeNull();
+    });
   });
 
   it("is not_started for an eligible student who has not started", async () => {
@@ -211,7 +245,7 @@ describe("resolveIslandViewer", () => {
     fetchShiftGuildMember.mockResolvedValue({ ok: true, roles: ["other"], nick: "Mint" });
     await expect(resolveIslandViewer()).resolves.toEqual({
       state: "not_eligible",
-      me: { name: "Mint", avatarUrl: "https://cdn.discordapp.com/a.png", staff: false },
+      me: { name: "Mint", avatarUrl: IDENTITY_SHOWN, staff: false },
       reason: "no_role",
     });
   });
@@ -232,7 +266,10 @@ describe("resolveIslandViewer", () => {
   it("never puts the actor or the user id on a state that is not not_started or ready", async () => {
     fetchShiftGuildMember.mockResolvedValue({ ok: true, roles: [], nick: null });
     const viewer = await resolveIslandViewer();
-    expect(JSON.stringify(viewer)).not.toContain(ACTOR);
+    // The viewer's own avatar URL embeds their own Discord id (ViewerCard); nothing else may.
+    const { me, ...rest } = viewer as Extract<typeof viewer, { state: "not_eligible" }>;
+    expect(me.avatarUrl).toBe(IDENTITY_SHOWN);
+    expect(JSON.stringify({ ...rest, me: { ...me, avatarUrl: null } })).not.toContain(ACTOR);
     expect(JSON.stringify(viewer)).not.toContain("user-1");
   });
 });

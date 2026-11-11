@@ -17,13 +17,14 @@ import { pxPerNativeFor, type Rect } from "@/lib/shift-island/live/geometry";
 import { PHASE_TINT, waterColor } from "@/lib/shift-island/live/lighting";
 import { NO_PLAZA, plazaWorld, type PlazaInput, type PlazaLabelId, type PlazaSpotId } from "@/lib/shift-island/live/plaza";
 import type { LightPhase } from "@/lib/shift-island/live/types";
-import { scrollToCentre, worldLayout, type Insets } from "@/lib/shift-island/live/world";
+import { HUD_RESERVE, scrollToCentre, worldLayout, type Insets } from "@/lib/shift-island/live/world";
 
 import { COMMON, HUD, ISLAND, stageName } from "./copy";
 import islandStyles from "./island.module.css";
 import { IslandLive } from "./live/IslandLive";
 import liveStyles from "./live/live.module.css";
 import { PlazaLayer } from "./live/PlazaLayer";
+import { PlotMarker } from "./player/PlotMarker";
 import styles from "./world.module.css";
 
 interface IslandViewportProps {
@@ -60,10 +61,16 @@ interface IslandViewportProps {
    * can it stand in for the bottom board button.
    */
   onNoticeVisible?: (visible: boolean) => void;
+  /**
+   * The viewer, for their own picture over their own plot's pin. Passed only
+   * by the island of a student with a plot (IslandHome); the picture data
+   * itself never carries identity, and no other plot ever gets a picture.
+   */
+  me?: { name: string; avatarUrl: string | null };
 }
 
-/** The HUD's reserve over the world (top bar, bottom bar): the notice board under it does not count as seen. */
-const HUD_RESERVE = "-64px 0px -96px 0px";
+/** The HUD's reserve over the world (top bar with the coin pill, bottom bar): the notice board under it does not count as seen. */
+const HUD_MARGIN = `-${HUD_RESERVE.top}px 0px -${HUD_RESERVE.bottom}px 0px`;
 /** How much of the notice board's tap target must be in that area to count. */
 const NOTICE_SEEN = 0.6;
 
@@ -246,6 +253,7 @@ export function IslandViewport({
   plaza,
   onLiveChange,
   onNoticeVisible,
+  me,
 }: IslandViewportProps) {
   const world = useRef<HTMLDivElement>(null);
   const probe = useRef<HTMLDivElement>(null);
@@ -322,7 +330,7 @@ export function IslandViewport({
         const entry = entries.at(-1);
         if (entry) report(entry.isIntersecting && entry.intersectionRatio >= NOTICE_SEEN);
       },
-      { root, rootMargin: HUD_RESERVE, threshold: [0, NOTICE_SEEN, 1] }
+      { root, rootMargin: HUD_MARGIN, threshold: [0, NOTICE_SEEN, 1] }
     );
     observer.observe(spot);
     return () => {
@@ -453,6 +461,8 @@ export function IslandViewport({
           ) : null}
           <div className={styles.islandBox} style={islandRect}>
             {live ? <span role="img" aria-label={ISLAND.pictureAlt} className={liveStyles.label} /> : null}
+            {/* Your own picture over your own pin: decorative, never takes a tap. */}
+            {me && mine ? <PlotMarker picture={picture} me={me} /> : null}
             {interactive ? (
               // One tab stop for every plot (the student's own, at first); arrow keys move between them.
               <div role="group" aria-label={HUD.plots} className={styles.hotspots} onKeyDown={onPlotKey}>

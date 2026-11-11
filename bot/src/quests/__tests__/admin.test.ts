@@ -1,10 +1,11 @@
 /**
  * @jest-environment node
  */
-import { ChannelType, MessageFlags } from "discord.js";
+import { ChannelType, MessageFlags, PermissionFlagsBits } from "discord.js";
 
 import { ACTION_HANDLERS, COMMAND_HANDLERS } from "..";
 import type { QuestApi, Session } from "../api";
+import { questCommands } from "../commands";
 import type { Ctx } from "../context";
 import { BLOCKER, T } from "../copy";
 import { reportView, seasonView, statusView } from "../handlers/admin";
@@ -244,6 +245,131 @@ describe("admin status card", () => {
       c.session.settings.student_role_ids = [];
       await COMMAND_HANDLERS.get("admin channel")!(set("coworking", voice([GUILD])).i, c);
       expect((c.api.call as jest.Mock).mock.calls.at(-1)?.[3]).toBe("804");
+    });
+  });
+
+  describe("/admin channel for the live post and the suggestions forum", () => {
+    const GUILD = "900000000000000000";
+    const LIVE = "805";
+    const run = (kind: string, channel: unknown, guild?: unknown) =>
+      COMMAND_HANDLERS.get("admin channel")!(interaction("command", { guildId: GUILD, guild, options: options({ kind, channel }) }).i, c);
+    let c: Ctx;
+    const last = () => (c.api.call as jest.Mock).mock.calls.at(-1);
+    /** A guild whose cache has the channel, with the bot allowed the given permissions there. */
+    const guildWith = (allowed: bigint[]) => ({
+      members: { me: { id: "bot" } },
+      channels: {
+        cache: new Map([[LIVE, { permissionsFor: () => ({ has: (wanted: bigint[]) => wanted.every((p) => allowed.includes(p)) }) }]]),
+      },
+    });
+    const ALL = [
+      PermissionFlagsBits.ViewChannel,
+      PermissionFlagsBits.SendMessages,
+      PermissionFlagsBits.AttachFiles,
+      PermissionFlagsBits.ReadMessageHistory,
+    ];
+
+    beforeEach(() => {
+      c = ctx(() => status());
+    });
+
+    /** A channel whose permissions give the listed roles the listed permissions only. */
+    const room = (id: string, type: ChannelType, openTo: string[] = ["555"], allowed: bigint[] = SEE_AND_POST) => ({
+      id,
+      type,
+      permissionsFor: (role: string) => ({
+        has: (wanted: bigint[]) => openTo.includes(role) && wanted.every((p) => allowed.includes(p)),
+      }),
+    });
+    const SEE_AND_POST = [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages];
+
+    it("takes a forum only for suggest, before any database call", async () => {
+      for (const kind of ["help", "staff", "celebrate", "coworking", "live"]) {
+        await expect(run(kind, { id: "806", type: ChannelType.GuildForum })).rejects.toThrow(T.adminForumSuggestOnly);
+      }
+      expect(c.api.call).not.toHaveBeenCalled();
+      await run("suggest", room("806", ChannelType.GuildForum));
+      expect(last()).toEqual(["shift_quest_admin_set", "1111111111", "suggest_channel", "806"]);
+      await run("suggest", room("807", ChannelType.GuildText));
+      expect(last()).toEqual(["shift_quest_admin_set", "1111111111", "suggest_channel", "807"]);
+      await run("suggest", null);
+      expect(last()).toEqual(["shift_quest_admin_set", "1111111111", "suggest_channel", ""]);
+    });
+
+    it("refuses a suggestions forum or text channel students cannot see or post in, before any database call", async () => {
+      for (const type of [ChannelType.GuildForum, ChannelType.GuildText]) {
+        // Staff only: no student role can see it.
+        await expect(run("suggest", room("806", type, ["999"]))).rejects.toThrow(T.adminSuggestPrivate);
+        // Students can read but not post.
+        await expect(run("suggest", room("806", type, ["555"], [PermissionFlagsBits.ViewChannel]))).rejects.toThrow(T.adminSuggestPrivate);
+        // Nothing to read the permissions from counts as private.
+        await expect(run("suggest", { id: "806", type })).rejects.toThrow(T.adminSuggestPrivate);
+      }
+      expect(c.api.call).not.toHaveBeenCalled();
+      // The guild's cached channel is the one checked, as for coworking.
+      const cached = { channels: { cache: new Map([["806", room("806", ChannelType.GuildForum)]]) } };
+      await run("suggest", { id: "806", type: ChannelType.GuildForum }, cached);
+      expect(last()).toEqual(["shift_quest_admin_set", "1111111111", "suggest_channel", "806"]);
+    });
+
+    it("checks @everyone for the suggestions channel while no student role is set", async () => {
+      c.session.settings.student_role_ids = [];
+      await expect(run("suggest", room("806", ChannelType.GuildForum, ["555"]))).rejects.toThrow(T.adminSuggestPrivate);
+      await run("suggest", room("806", ChannelType.GuildForum, [GUILD]));
+      expect(last()).toEqual(["shift_quest_admin_set", "1111111111", "suggest_channel", "806"]);
+    });
+
+    it("refuses a voice channel for live or suggest, and any other type", async () => {
+      for (const kind of ["live", "suggest"]) {
+        await expect(run(kind, { id: "804", type: ChannelType.GuildVoice })).rejects.toThrow(T.adminVoiceCoworkingOnly);
+      }
+      await expect(run("live", { id: "808", type: ChannelType.GuildAnnouncement })).rejects.toThrow(T.adminLiveText);
+      await expect(run("suggest", { id: "808", type: ChannelType.GuildAnnouncement })).rejects.toThrow(T.adminSuggestType);
+      expect(c.api.call).not.toHaveBeenCalled();
+    });
+
+    it("takes a text channel for live only when the bot can post, attach and read history there", async () => {
+      for (const missing of ALL) {
+        await expect(run("live", { id: LIVE, type: ChannelType.GuildText }, guildWith(ALL.filter((p) => p !== missing)))).rejects.toThrow(
+          T.adminLiveBotPerms
+        );
+      }
+      expect(c.api.call).not.toHaveBeenCalled();
+      // Pin Messages is not required: without it the post works, only unpinned.
+      await run("live", { id: LIVE, type: ChannelType.GuildText }, guildWith(ALL));
+      expect(last()).toEqual(["shift_quest_admin_set", "1111111111", "live_channel", LIVE]);
+      // Nothing cached to tell: not refused (the live post logs and retries if it really cannot post).
+      await run("live", { id: "809", type: ChannelType.GuildText });
+      expect(last()).toEqual(["shift_quest_admin_set", "1111111111", "live_channel", "809"]);
+      await run("live", null);
+      expect(last()).toEqual(["shift_quest_admin_set", "1111111111", "live_channel", ""]);
+    });
+
+    it("offers both kinds and a forum in /admin channel", () => {
+      const sub = questCommands()
+        .find((x) => x.name === "admin")
+        ?.options?.find((o) => o.name === "channel") as { options?: { name: string; choices?: { value: string }[]; channel_types?: number[] }[] };
+      expect(sub.options?.find((o) => o.name === "kind")?.choices?.map((x) => x.value)).toEqual([
+        "help",
+        "staff",
+        "celebrate",
+        "coworking",
+        "live",
+        "suggest",
+      ]);
+      expect(sub.options?.find((o) => o.name === "channel")?.channel_types).toContain(ChannelType.GuildForum);
+    });
+
+    it("shows both on the status card once the database has them: set, unset, or not at all", () => {
+      const s = status();
+      Object.assign(s.settings, { live_channel_id: LIVE, suggest_channel_id: null });
+      const body = bodyText(renderView(statusView(s as never)));
+      expect(body).toContain(`✅ ห้องเกาะสด: <#${LIVE}> (บอทแก้โพสต์เดียวในห้องนี้ ไม่โพสต์ซ้ำ)`);
+      expect(body).toContain("⚪ ห้องเสนอไอเดีย: ยังไม่ตั้ง (ฟอรัมได้ ลิงก์อยู่ในเมนู ⋯ บนเว็บ)");
+      expect(body).toContain("-# ตั้งห้อง: /admin channel");
+      const older = bodyText(renderView(statusView(status() as never)));
+      expect(older).not.toContain("ห้องเกาะสด");
+      expect(older).not.toContain("ห้องเสนอไอเดีย");
     });
   });
 
@@ -595,5 +721,222 @@ describe("admin templates and roles", () => {
       await expect(COMMAND_HANDLERS.get(key)!(interaction("command").i, c)).rejects.toThrow();
       expect(c.api.call).not.toHaveBeenCalled();
     }
+  });
+});
+
+describe("admin island, staff awards and shop gates (schema 9)", () => {
+  const islandStatus = (over: { consent?: Record<string, unknown>; digest?: Record<string, unknown> } = {}) => ({
+    consent: { required: true, adult_age: 20, granted: 4, waiting: 2, none: 9, ...over.consent },
+    digest: { enabled: true, channel: "live", last_day: "2026-11-11", hidden: [{ slot: 3, name: "**ทีมสาม**" }], ...over.digest },
+  });
+  const subcommand = (name: string) =>
+    questCommands()
+      .find((x) => x.name === "admin")
+      ?.options?.find((o) => o.name === name) as { options?: { name: string; required?: boolean; choices?: { value: string }[] }[] };
+
+  it("registers /admin island, /admin award and the catalog gates", () => {
+    expect(subcommand("island").options?.find((o) => o.name === "action")?.choices?.map((x) => x.value)).toEqual([
+      "status",
+      "consent-on",
+      "consent-off",
+      "digest-on",
+      "digest-off",
+      "digest-hide",
+      "digest-show",
+      "consent-reset",
+    ]);
+    expect(subcommand("island").options?.map((o) => o.name)).toEqual(["action", "plot", "reason", "user"]);
+    expect(subcommand("award").options?.find((o) => o.name === "kind")?.choices?.map((x) => x.value)).toEqual(["taught", "helped"]);
+    expect(subcommand("award").options?.find((o) => o.name === "user")?.required).toBe(true);
+    expect(subcommand("catalog").options?.map((o) => o.name)).toEqual(
+      expect.arrayContaining(["min_stage", "requires_community"])
+    );
+    const admin = questCommands().find((x) => x.name === "admin");
+    expect(admin?.options?.length).toBeLessThanOrEqual(25);
+  });
+
+  it("shows consent counts and the island news, escaping team names, counts only", async () => {
+    const c = ctx(() => islandStatus());
+    const cmd = interaction("command", { options: options({ action: "status" }) });
+    await COMMAND_HANDLERS.get("admin island")!(cmd.i, c);
+    expect((c.api.call as jest.Mock).mock.calls).toEqual([["shift_quest_admin_island_status", "1111111111"]]);
+    expectCard(cmd.sent[0]);
+    const body = bodyText(cmd.sent[0]);
+    expect(body).toContain(`### ${T.adminIslandTitle}`);
+    expect(body).toContain("✅ ต้องมีความยินยอมผู้ปกครอง: **เปิด** · ยืนยันอายุเองได้ตั้งแต่ 20 ปี");
+    expect(body).toContain("ยินยอมแล้ว **4** · รอผู้ปกครอง 2 · ยังไม่มี 9");
+    expect(body).toContain("✅ ข่าวเกาะ AI: **เปิด** · โพสต์วันละครั้งที่ห้องเกาะสด");
+    expect(body).toContain("แปลง 3 \\*\\*ทีมสาม\\*\\*");
+    expect(body).not.toContain(T.adminConsentOffWarn);
+  });
+
+  it("flips a switch through admin_island_set and warns while consent is off", async () => {
+    const c = ctx(() => islandStatus({ consent: { required: false }, digest: { enabled: false, channel: null, hidden: [] } }));
+    const cmd = interaction("command", { options: options({ action: "consent-off" }) });
+    await COMMAND_HANDLERS.get("admin island")!(cmd.i, c);
+    expect((c.api.call as jest.Mock).mock.calls).toEqual([["shift_quest_admin_island_set", "1111111111", "consent_required", "off"]]);
+    const body = bodyText(cmd.sent[0]);
+    expect(body).toContain("### ✅ บันทึกแล้ว");
+    expect(body).toContain(T.adminConsentOffWarn);
+    expect(body).toContain("⚪ ข่าวเกาะ AI: **ปิด**");
+    expect(body).toContain("ซ่อนสรุปอยู่: ไม่มี");
+    for (const [action, key, value] of [
+      ["consent-on", "consent_required", "on"],
+      ["digest-on", "digest_enabled", "on"],
+      ["digest-off", "digest_enabled", "off"],
+    ]) {
+      const c2 = ctx(() => islandStatus());
+      await COMMAND_HANDLERS.get("admin island")!(interaction("command", { options: options({ action }) }).i, c2);
+      expect((c2.api.call as jest.Mock).mock.calls[0]).toEqual(["shift_quest_admin_island_set", "1111111111", key, value]);
+    }
+  });
+
+  it("hides and shows a team's summaries by plot, and needs the plot first", async () => {
+    const none = ctx(() => islandStatus());
+    await expect(
+      COMMAND_HANDLERS.get("admin island")!(interaction("command", { options: options({ action: "digest-hide" }) }).i, none)
+    ).rejects.toThrow(T.adminIslandPlot);
+    expect(none.api.call).not.toHaveBeenCalled();
+
+    const c = ctx((fn) => (fn === "shift_quest_digest_hide" ? { slot: 3, hidden: true } : islandStatus()));
+    const cmd = interaction("command", { options: options({ action: "digest-hide", plot: 3, reason: "นอกเรื่อง" }) });
+    await COMMAND_HANDLERS.get("admin island")!(cmd.i, c);
+    expect((c.api.call as jest.Mock).mock.calls).toEqual([
+      ["shift_quest_digest_hide", "1111111111", 3, true, "นอกเรื่อง"],
+      ["shift_quest_admin_island_status", "1111111111"],
+    ]);
+    const show = ctx((fn) => (fn === "shift_quest_digest_hide" ? { slot: 3, hidden: false } : islandStatus()));
+    await COMMAND_HANDLERS.get("admin island")!(interaction("command", { options: options({ action: "digest-show", plot: 3 }) }).i, show);
+    expect((show.api.call as jest.Mock).mock.calls[0]).toEqual(["shift_quest_digest_hide", "1111111111", 3, false, null]);
+  });
+
+  it("resets a student's consent only with the user named, then shows the status", async () => {
+    const none = ctx(() => islandStatus());
+    await expect(
+      COMMAND_HANDLERS.get("admin island")!(interaction("command", { options: options({ action: "consent-reset" }) }).i, none)
+    ).rejects.toThrow(T.adminIslandUser);
+    expect(none.api.call).not.toHaveBeenCalled();
+
+    const c = ctx((fn) => (fn === "shift_quest_admin_consent_reset" ? { state: "none" } : islandStatus()));
+    const cmd = interaction("command", { options: options({ action: "consent-reset", user: { id: "4444444444" } }) });
+    await COMMAND_HANDLERS.get("admin island")!(cmd.i, c);
+    expect((c.api.call as jest.Mock).mock.calls).toEqual([
+      ["shift_quest_admin_consent_reset", "1111111111", "4444444444"],
+      ["shift_quest_admin_island_status", "1111111111"],
+    ]);
+    expect(bodyText(cmd.sent[0])).toContain(T.adminConsentReset("4444444444"));
+  });
+
+  it("says the database needs schema 9 instead of the generic error", async () => {
+    const { QuestDbError } = await import("../api");
+    const c = ctx(() => {
+      throw new QuestDbError("shift_quest_admin_island_status", "42883");
+    });
+    await expect(
+      COMMAND_HANDLERS.get("admin island")!(interaction("command", { options: options({ action: "status" }) }).i, c)
+    ).rejects.toThrow(T.adminNeedsPlayer);
+  });
+
+  it("opens a reason modal for a staff award, then gives it once with the command as the request key", async () => {
+    const cmd = interaction("command", { options: options({ kind: "taught", user: { id: "4444444444" } }) });
+    const none = ctx(() => null);
+    await COMMAND_HANDLERS.get("admin award")!(cmd.i, none);
+    expect(none.api.call).not.toHaveBeenCalled();
+    expect(cmd.modals.map((m) => m.custom_id)).toEqual(["sq|ad_award|taught|4444444444|222222222222222222"]);
+
+    const c = ctx(() => ({ amount: 3000, balance: 3300, duplicate: false }));
+    const m = interaction("modal", { fields: fields({ reason: "สอนเรื่องทดสอบกับผู้ใช้ใน SHIFT รอบถัดไป" }) });
+    await ACTION_HANDLERS.get("ad_award")!(m.i, c, ["taught", "4444444444", "222222222222222222"]);
+    expect((c.api.call as jest.Mock).mock.calls[0]).toEqual([
+      "shift_quest_admin_staff_award",
+      "1111111111",
+      "4444444444",
+      "taught-next-shift",
+      "สอนเรื่องทดสอบกับผู้ใช้ใน SHIFT รอบถัดไป",
+      "award:222222222222222222",
+    ]);
+    expect(m.via).toEqual(["editReply"]);
+    expectCard(m.sent[0], false);
+    expect(bodyText(m.sent[0])).toBe(
+      "### ✅ ให้รางวัลแล้ว\n<@4444444444> ได้ **3000** Passioncoin · ยอดใหม่ 3300 · นักเรียนได้รับแจ้งเหตุผลใน /inbox"
+    );
+
+    const again = ctx(() => ({ amount: 1000, balance: 1000, duplicate: true }));
+    const m2 = interaction("modal", { fields: fields({ reason: "r" }) });
+    await ACTION_HANDLERS.get("ad_award")!(m2.i, again, ["helped", "4444444444", "222222222222222222"]);
+    expect((again.api.call as jest.Mock).mock.calls[0][3]).toBe("helped-most");
+    expect(bodyText(m2.sent[0])).toBe(`### ✅ ${T.adminAwardDuplicate}`);
+
+    const forged = ctx(() => null);
+    await ACTION_HANDLERS.get("ad_award")!(interaction("modal", { fields: fields({ reason: "r" }) }).i, forged, [
+      "everything",
+      "4444444444",
+      "222222222222222222",
+    ]);
+    expect(forged.api.call).not.toHaveBeenCalled();
+  });
+
+  it("refuses staff awards and the island switches to non-admins before any database call", async () => {
+    for (const key of ["admin island", "admin award"]) {
+      const c = ctx(() => null, ["reviewer"]);
+      await expect(COMMAND_HANDLERS.get(key)!(interaction("command").i, c)).rejects.toThrow();
+      expect(c.api.call).not.toHaveBeenCalled();
+    }
+  });
+
+  it("sets a catalog item's gates after saving it, and lists them", async () => {
+    const c = ctx((fn) =>
+      fn === "shift_quest_admin_catalog"
+        ? { id: UUID, name: "มัทฉะ", cost: 8000, stock_available: 5, active: true }
+        : fn === "shift_quest_admin_catalog_gate"
+          ? { id: UUID, min_stage: 5, requires_community: true }
+          : [
+              { name: "สติกเกอร์ SHIFT High", cost: 300, stock_available: 50, active: true, reserved: 0, min_stage: 0, requires_community: false },
+              { name: "มัทฉะ", cost: 8000, stock_available: 5, active: true, reserved: 0, min_stage: 5, requires_community: true },
+            ]
+    );
+    const cmd = interaction("command", { options: options({ name: "มัทฉะ", cost: 8000, min_stage: 5, requires_community: true }) });
+    await COMMAND_HANDLERS.get("admin catalog")!(cmd.i, c);
+    const calls = (c.api.call as jest.Mock).mock.calls;
+    expect(calls[0][0]).toBe("shift_quest_admin_catalog");
+    expect(calls[1]).toEqual(["shift_quest_admin_catalog_gate", "1111111111", UUID, 5, true]);
+
+    // "active: true" with gates waits for the gates: created off, gated, then switched on.
+    const order: unknown[][] = [];
+    const held = ctx((fn, ...args) => {
+      order.push([fn, ...args]);
+      if (fn === "shift_quest_admin_catalog") return { id: UUID, name: "มัทฉะ", cost: 8000, stock_available: 5, active: args[6] === true };
+      return fn === "shift_quest_admin_catalog_gate" ? { id: UUID } : [];
+    });
+    await COMMAND_HANDLERS.get("admin catalog")!(
+      interaction("command", { options: options({ name: "มัทฉะ", cost: 8000, active: true, min_stage: 5, requires_community: true }) }).i,
+      held
+    );
+    expect(order.map((x) => [x[0], x[7]])).toEqual([
+      ["shift_quest_admin_catalog", null],
+      ["shift_quest_admin_catalog_gate", undefined],
+      ["shift_quest_admin_catalog", true],
+      ["shift_quest_admin_catalog_list", undefined],
+    ]);
+
+    // The gate call fails: the item was never switched on.
+    const failing = ctx((fn) => {
+      if (fn === "shift_quest_admin_catalog_gate") throw new Error("db down");
+      return { id: UUID, name: "มัทฉะ", cost: 8000, stock_available: 5, active: false };
+    });
+    await expect(
+      COMMAND_HANDLERS.get("admin catalog")!(
+        interaction("command", { options: options({ name: "มัทฉะ", cost: 8000, active: true, min_stage: 5 }) }).i,
+        failing
+      )
+    ).rejects.toThrow("db down");
+    expect((failing.api.call as jest.Mock).mock.calls.filter((x) => x[0] === "shift_quest_admin_catalog").map((x) => x[7])).toEqual([null]);
+    const body = bodyText(cmd.sent[0]);
+    expect(body).toContain("- สติกเกอร์ SHIFT High **300** เหรียญ · เหลือ 50 · จองอยู่ 0 · เปิด\n");
+    expect(body).toContain("- มัทฉะ **8000** เหรียญ · เหลือ 5 · จองอยู่ 0 · เปิด · ต้นไม้ขั้น 5 ขึ้นไป · ต้องผ่านเควสต์ชุมชน");
+
+    const plain = ctx((fn) => (fn === "shift_quest_admin_catalog" ? { id: UUID, name: "x", cost: 1, stock_available: 1, active: true } : []));
+    await COMMAND_HANDLERS.get("admin catalog")!(interaction("command", { options: options({ name: "x" }) }).i, plain);
+    expect((plain.api.call as jest.Mock).mock.calls.map((x) => x[0])).toEqual(["shift_quest_admin_catalog", "shift_quest_admin_catalog_list"]);
   });
 });

@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 
 import { buildScene } from "@/bot/src/quests/island/scene";
 import type { IslandCanvasProps } from "@/components/shift/island/live/IslandCanvas";
@@ -196,9 +196,10 @@ describe("IslandViewport", () => {
       const { container } = render(<IslandViewport picture={live} onPlot={jest.fn()} />);
       const sizer = container.querySelector("[data-measured]") as HTMLElement;
       expect(sizer).toHaveAttribute("data-measured", "true");
-      // 960 px of island plus a 12 px strip of sea each side; the screen's full height.
+      // 960 px of island plus a 12 px strip of sea each side; 576 px of island plus the HUD's
+      // reserves (104 px for the chip and the coin pill, 96 px for the bottom bar), past the screen's 740.
       expect(sizer.style.width).toBe("984px");
-      expect(sizer.style.height).toBe("740px");
+      expect(sizer.style.height).toBe("776px");
       expect(screen.getByRole("img")).toHaveAttribute("width", "960");
       // The canvas draws past the picture: open sea on every side, in whole native pixels.
       const crop = mockLive.props.at(-1)?.crop;
@@ -297,6 +298,44 @@ describe("IslandViewport", () => {
     expect(container.querySelector(".tint")).toBeNull();
   });
 
+  describe("the viewer's own marker", () => {
+    const me = { name: "พลอย", avatarUrl: "https://cdn.discordapp.com/avatars/123456789012345678/0123456789abcdef0123456789abcdef.png?size=64" };
+
+    it("puts the viewer's picture over their own pin, hidden from assistive tech and never a tap target", () => {
+      render(<IslandViewport picture={live} onPlot={jest.fn()} me={me} />);
+      const marker = screen.getByTestId("plot-marker");
+      expect(marker).toHaveAttribute("aria-hidden", "true");
+      expect(marker).toHaveAttribute("data-anchor", "pin");
+      const pin = live.scene?.marker;
+      expect(pin).toBeTruthy();
+      expect(parseFloat(marker.style.left)).toBeCloseTo((pin!.x / live.width) * 100, 3);
+      expect(parseFloat(marker.style.top)).toBeCloseTo((pin!.y / live.height) * 100, 3);
+      // The pin sprite is 9 native pixels wide, at the scene's glyph scale.
+      expect(parseFloat(marker.style.width)).toBeCloseTo(((9 * pin!.scale) / live.width) * 100, 3);
+      expect(screen.getByRole("group", { name: "แปลงบนเกาะ" })).not.toContainElement(marker);
+      expect(within(marker).queryByRole("img")).toBeNull();
+      // Still exactly one button per plot.
+      expect(screen.getAllByRole("button", { name: /^แปลง/ })).toHaveLength(picture.hotspots.length);
+    });
+
+    it("sits above the top centre of the viewer's plot when there is no scene", () => {
+      render(<IslandViewport picture={picture} onPlot={jest.fn()} me={me} />);
+      const marker = screen.getByTestId("plot-marker");
+      const mine = picture.mine!;
+      expect(marker).toHaveAttribute("data-anchor", "top");
+      expect(parseFloat(marker.style.left)).toBeCloseTo(mine.x + mine.w / 2, 3);
+      expect(parseFloat(marker.style.top)).toBeCloseTo(mine.y, 3);
+    });
+
+    it("draws no marker without a plot of one's own, or when the island is not the viewer's", () => {
+      const { rerender } = render(<IslandViewport picture={{ ...picture, mine: null }} onPlot={jest.fn()} me={me} />);
+      expect(screen.queryByTestId("plot-marker")).toBeNull();
+      // Only IslandHome passes `me`: no picture of anyone on any plot otherwise.
+      rerender(<IslandViewport picture={live} onPlot={jest.fn()} />);
+      expect(screen.queryByTestId("plot-marker")).toBeNull();
+    });
+  });
+
   describe("plaza", () => {
     const input: PlazaInput = {
       festival: {
@@ -310,9 +349,15 @@ describe("IslandViewport", () => {
       },
       pins: ["active", "main"],
       campfire: { count: 11 },
+      prizes: true,
     };
     const labels = { sign: "Demo Day 28 พ.ย.\nอีก 17 วัน", campfireCount: "11 คนกำลังทำงานอยู่", campfireMore: "+3" };
-    const names = { notice: "กระดานเควสต์: ตั้งชื่อปัญหา", stage: "Demo Day 28 พ.ย. อีก 17 วัน", campfire: "ห้อง coworking, 11 คน" };
+    const names: Record<PlazaSpotId, string> = {
+      notice: "กระดานเควสต์: ตั้งชื่อปัญหา",
+      stage: "Demo Day 28 พ.ย. อีก 17 วัน",
+      campfire: "ห้อง coworking, 11 คน",
+      prizes: "ป้ายรางวัล Demo Day",
+    };
     const plaza = (onSpot?: (id: PlazaSpotId) => void) => ({ input, labels, names, onSpot });
 
     it("hands the living island the plaza's sprites, and the same empty list without a plaza", () => {
@@ -451,7 +496,8 @@ describe("IslandViewport", () => {
         const o = noticeObserver();
         expect(o).toBeDefined();
         expect(o?.options?.root).toBe(container.querySelector("[data-live='true']"));
-        expect(o?.options?.rootMargin).toBe("-64px 0px -96px 0px");
+        // The top bar is the chip with the coin pill under it.
+        expect(o?.options?.rootMargin).toBe("-104px 0px -96px 0px");
         see(1);
         expect(onNoticeVisible).toHaveBeenLastCalledWith(true);
         // The plot centred far from the plaza: the board is off screen, or only a sliver shows.

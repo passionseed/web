@@ -14,7 +14,7 @@ export type MotionSpriteName =
   | "stage_2_b" | "stage_3_b" | "stage_4_b" | "stage_5_b" | "stage_6_b" | "stage_7_b"
   | "lantern_glow_0" | "lantern_glow_1" | "lamp_post" | "festoon"
   | "builder_0" | "builder_1" | "tester_0" | "tester_1"
-  | "notice_board" | "notice_note_active" | "notice_note_main" | "notice_note_side"
+  | "notice_board" | "notice_note_active" | "notice_note_main" | "notice_note_side" | "prize_board"
   | "fest_stage_0" | "fest_stage_1" | "fest_stage_2" | "fest_stage_3" | "fest_sign"
   | "goal_string" | "goal_bulb" | "booth_flag" | "star_flag"
   | "campfire_pit" | "campfire_pit_cold" | "campfire_flame_0" | "campfire_flame_1" | "campfire_flame_2"
@@ -38,7 +38,7 @@ export const MOTION_SIZES: Record<MotionSpriteName, [number, number]> = {
   stage_2_b: TREE, stage_3_b: TREE, stage_4_b: TREE, stage_5_b: TREE, stage_6_b: TREE, stage_7_b: TREE,
   lantern_glow_0: TILE, lantern_glow_1: TILE, lamp_post: [6, 16], festoon: [48, 8],
   builder_0: PERSON, builder_1: PERSON, tester_0: PERSON, tester_1: PERSON,
-  notice_board: [24, 22], notice_note_active: NOTE, notice_note_main: NOTE, notice_note_side: NOTE,
+  notice_board: [24, 22], notice_note_active: NOTE, notice_note_main: NOTE, notice_note_side: NOTE, prize_board: [18, 20],
   fest_stage_0: FEST_STAGE, fest_stage_1: FEST_STAGE, fest_stage_2: FEST_STAGE, fest_stage_3: FEST_STAGE,
   fest_sign: [14, 12], goal_string: [48, 8], goal_bulb: [3, 3], booth_flag: FLAG, star_flag: FLAG,
   campfire_pit: [14, 10], campfire_pit_cold: [14, 10], campfire_flame_0: FLAME, campfire_flame_1: FLAME, campfire_flame_2: FLAME,
@@ -763,6 +763,29 @@ export const MOTION_SPRITES: Record<MotionSpriteName, string[]> = {
     "uuuuu",
     "uvvuu",
     "vvvvv",
+  ],
+  // Plaza prize board (the Demo Day prizes): a flat blue board with a small gold cup, on two posts.
+  prize_board: [
+    ".oooooooooooooooo.",
+    "oeeeeeeeeeeeeeeeeo",
+    "occcccccccccccccco",
+    ".obwwwwwwwwwwwwbo.",
+    ".obwwyyyyyyyywwbo.",
+    ".obwwywiyyywywwbo.",
+    ".obwwwyiyyyywwwbo.",
+    ".obwwwwyyyywwwwbo.",
+    ".obwwwwwyywwwwwbo.",
+    ".obwwwwwyywwwwwbo.",
+    ".obwwwwccccwwwwbo.",
+    ".obwwwbbbbbbwwwbo.",
+    ".obwwwwwwwwwwwwbo.",
+    ".obbbbbbbbbbbbbbo.",
+    ".oooooooooooooooo.",
+    "....oco....oco....",
+    "....oco....oco....",
+    "....oco....oco....",
+    "...obbbo..obbbo...",
+    "...ooooo..ooooo...",
   ],
   // Demo Day stage in four build steps on one footprint (ground row 31, legs at x2-4 and x39-41, back posts
   // at x3-5 and x38-40): stakes, rope, lumber and a toolbox; the deck; backdrop and bunting; then the roof

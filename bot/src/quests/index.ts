@@ -15,6 +15,8 @@ import { review } from "./handlers/review";
 import { student } from "./handlers/student";
 import type { ActionHandler, AutocompleteHandler, CommandHandler, HandlerSet } from "./handlers/types";
 import { parseCid } from "./ids";
+import { digestFor, startDigestPost } from "./digest";
+import { liveFor, startLivePost } from "./live";
 import { commandIdMap, setCommandIds, showError } from "./ui";
 import { startOutbox } from "./outbox";
 
@@ -101,6 +103,11 @@ export async function handleInteraction(api: QuestApi, guildId: string, i: Inter
  * so it still needs only 2. Raise it with every migration whose contract the
  * bot starts to depend on. 7 (20261111093000_shift_quest_campfire) adds the
  * campfire; it is optional: below 7 the bot runs without it (CAMPFIRE_SCHEMA).
+ * 8 (20261111094000_shift_quest_live) adds the live island post and the live
+ * and suggest channel settings; also optional: below 8 the bot runs without
+ * the live post (LIVE_SCHEMA).
+ * 9 (20261111095000_shift_quest_player) adds the daily island news post;
+ * also optional: below 9 the bot runs without it (DIGEST_SCHEMA).
  */
 export const REQUIRED_SCHEMA = 2;
 
@@ -152,9 +159,10 @@ export async function loadCommandIds(client: Client<true>, guildId: string): Pro
 
 /**
  * SHIFT High quests: slash commands, buttons and modals over the
- * shift_quest_* database functions, plus the delivery loop and, from schema
- * 7, the island campfire. The bot never reads message content and never joins
- * voice. The one thing it notices on its own is who is in the coworking voice
+ * shift_quest_* database functions, plus the delivery loop, from schema 7 the
+ * island campfire, and from schema 8 the live island post (live.ts: one
+ * message the bot keeps editing). The bot never reads message content and
+ * never joins voice. The one thing it notices on its own is who is in the coworking voice
  * channel right now (campfire.ts): never audio, deleted on leave, no history.
  * Checks the database schema first and throws (starting nothing) when the
  * database is older than this bot.
@@ -194,10 +202,18 @@ export async function registerShiftQuests(client: Client, env: ShiftQuestsEnv): 
   const outbox = startOutbox(client, api, () => connected);
   // Started only on a database that has the campfire functions (schema 7).
   const campfire = campfireFor(version, () => startCampfire(client, api, env.guildId, () => connected));
+  // Started only on a database that has the live post functions (schema 8).
+  const live = liveFor(version, () => startLivePost(client, api, env.guildId, () => connected));
+  // Started only on a database that has the island news functions (schema 9): one post a day, no pings.
+  const digest = digestFor(version, () => startDigestPost(client, api, { guildId: env.guildId, connected: () => connected }));
 
   return {
     async stop() {
-      // First: it still needs the pool to clear the campfire.
+      // The island news post: it waits for a running check, then posts nothing more.
+      await digest?.stop();
+      // The live post: it leaves its message as it is, so it only waits for a running edit.
+      await live?.stop();
+      // Then the campfire: it still needs the pool to clear the campfire.
       await campfire?.stop();
       await outbox.stop();
       await pool.end();

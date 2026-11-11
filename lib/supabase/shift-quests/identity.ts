@@ -4,6 +4,8 @@ import type { User } from "@supabase/supabase-js";
 
 import { extractDiscordIdentity } from "@/lib/projectseed/discord";
 
+import { normalizeAvatarUrl } from "./avatar";
+
 /** A Discord user id (snowflake). The quest database keys every member on it. */
 const SNOWFLAKE = /^\d{17,20}$/;
 const NAME_MAX = 40;
@@ -31,10 +33,6 @@ function cleanName(value: unknown): string | null {
   return Array.from(name).slice(0, NAME_MAX).join("").trim();
 }
 
-function httpsUrl(value: string | null): string | null {
-  return value && value.startsWith("https://") ? value : null;
-}
-
 /**
  * The Discord account on this Supabase user (signed in with Discord, or
  * linked later with linkIdentity), or null when there is none or its id is
@@ -53,7 +51,8 @@ export function discordActor(user: User | null): DiscordActor | null {
     cleanName(identity.username) ??
     FALLBACK_NAME;
 
-  return { actor: identity.userId, name, avatarUrl: httpsUrl(identity.avatarUrl) };
+  // Only Discord's own avatar URLs, as a 64px still PNG (avatar.ts); anything else is no picture.
+  return { actor: identity.userId, name, avatarUrl: normalizeAvatarUrl(identity.avatarUrl) };
 }
 
 /** How the account is known when it has no Discord: its email, or null. */

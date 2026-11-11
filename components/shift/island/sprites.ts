@@ -31,7 +31,11 @@ export type WebIcon =
   | "link"
   | "mail"
   | "menu"
-  | "note";
+  | "note"
+  | "coin"
+  | "trophy"
+  | "news"
+  | "letter";
 
 export const WEB_SPRITES: Record<WebIcon, string[]> = {
   compass: [
@@ -416,6 +420,82 @@ export const WEB_SPRITES: Record<WebIcon, string[]> = {
     "..ofzzzzzffffo..",
     "..offffffffffo..",
     "..oooooooooooo..",
+    "................",
+    "................",
+  ],
+  // A gold Passioncoin, lit from the top left (the HUD's coin pill and the wallet).
+  coin: [
+    "................",
+    ".....oooooo.....",
+    "...ooyyyyyyoo...",
+    "..oyffyyyyyyyo..",
+    ".oyfyyyeeyyyyeo.",
+    ".ofyyyyeeyyyyeo.",
+    ".ofyyyyeeyyyyeo.",
+    ".oyyyyyeeyyyyeo.",
+    ".oyyyyyeeyyyyeo.",
+    ".oyyyyyeeyyyyeo.",
+    ".oyyyyyyyyyyeeo.",
+    "..oyyyyyyyyeeo..",
+    "...ooeeeeeeoo...",
+    ".....oooooo.....",
+    "................",
+    "................",
+  ],
+  // A cup on a wooden base (Demo Day prizes).
+  trophy: [
+    "................",
+    "..oooooooooooo..",
+    "oooyyfyyyyyyeooo",
+    "o.oyfyyyyyyyeo.o",
+    "o.oyfyyyyyyyeo.o",
+    "oooyfyyyyyyyeooo",
+    "...oyyyyyyyeo...",
+    "....oyyyyyeo....",
+    ".....oyyyeo.....",
+    "......oyeo......",
+    "......oyeo......",
+    ".....oyyyeo.....",
+    "....oooooooo....",
+    "...obbbbbbbbo...",
+    "...oooooooooo...",
+    "................",
+  ],
+  // A news sheet: a headline bar, a picture and lines (ข่าวเกาะ).
+  news: [
+    "................",
+    "................",
+    ".oooooooooooooo.",
+    ".offffffffffffo.",
+    ".ofzzzzzzzzzzfo.",
+    ".offffffffffffo.",
+    ".ofrrrfzzzzzzfo.",
+    ".ofrrrffffffffo.",
+    ".ofrrrfzzzzzzfo.",
+    ".offffffffffffo.",
+    ".ofzzzzzfzzzzfo.",
+    ".offffffffffffo.",
+    ".ofzzzzzfzzzzfo.",
+    ".oooooooooooooo.",
+    "................",
+    "................",
+  ],
+  // A sealed letter (the consent letter for a parent).
+  letter: [
+    "................",
+    "................",
+    "................",
+    ".oooooooooooooo.",
+    ".oiiiiiiiiiiiio.",
+    ".ooiiiiiiiiiioo.",
+    ".oiooiiiiiiooio.",
+    ".oiiiooiiooiiio.",
+    ".oiiiiorroiiiio.",
+    ".oiiiiirriiiiio.",
+    ".oiiiiiiiiiiiio.",
+    ".oiiiiiiiiiiiio.",
+    ".oooooooooooooo.",
+    "................",
     "................",
     "................",
   ],

@@ -2,7 +2,7 @@
  * SHIFT Island words. Thai first, one place, same house rules as ../copy.ts:
  * no em dashes, never talk down, never promise rewards that are not live.
  */
-import { bkkDate, safe } from "../copy";
+import { bkkDate, meter, safe } from "../copy";
 
 /** Tree stage = number of milestones a mentor has confirmed (0..7). */
 export const STAGE_NAMES = ["ที่ดินว่าง", "เมล็ด", "ต้นกล้า", "ต้นอ่อน", "ต้นไม้", "ต้นใหญ่", "ออกผล", "ผลิดอก"];
@@ -109,6 +109,32 @@ export const I = {
   /** The season details card: the island card shows only the season's headline. */
   noSeason: "ตอนนี้ไม่มีซีซันที่เปิดอยู่",
   seasonFine: "ไม่มีการจัดอันดับ ทุกคนที่ถึงเกณฑ์ได้เท่ากัน",
+};
+
+/**
+ * The live island post (../live.ts): one message in the live channel that the
+ * bot keeps editing. Counts only: the campfire is a number, never who sits
+ * there, and the only names are the signs every teammate opted in to show.
+ */
+export const LIVE = {
+  title: "🏝️ เกาะ SHIFT High ตอนนี้",
+  /**
+   * Trees on the island, plus the milestones mentors confirmed on the trees
+   * shown by name (quiet projects never count; left out while none is shown).
+   * DRAFT copy.
+   */
+  trees: (n: number, approved: number | null) =>
+    `🌳 ต้นไม้บนเกาะ **${n}** ต้น${approved ? ` · ต้นที่โชว์บนเกาะผ่านแล้วรวม **${approved}** ขั้น` : ""}`,
+  goal: (count: number, target: number, reached: boolean) =>
+    `🎯 เป้าของเกาะ ${meter(count, target)} **${count}**/${target} โปรเจกต์${reached ? " ถึงเป้าแล้ว!" : ""}`,
+  /** The database's own day count (Bangkok); only called while Demo Day is today or ahead. */
+  demo: (day: string, days: number) => `🎤 Demo Day ${bkkDate(day)} · ${days > 0 ? `อีก **${days}** วัน` : "วันนี้!"}`,
+  campfire: (n: number) => (n > 0 ? `🔥 กองไฟตอนนี้ **${n}** คน` : "🔥 กองไฟยังว่าง มานั่งเป็นคนแรกได้"),
+  join: "🔥 เข้าห้อง",
+  updated: (unix: number) => `อัปเดตล่าสุด <t:${unix}:R>`,
+  /** Also how the bot finds its own pinned post again: keep it unique to this post. */
+  marker: "🏝️ โพสต์นี้อัปเดตเองทุก 10 นาที",
+  pictureFailed: "🖼️ รูปเกาะวาดไม่ขึ้นรอบนี้ ตัวเลขด้านบนยังเป็นปัจจุบัน",
 };
 
 /**

@@ -53,13 +53,19 @@ export interface Permissioned {
  * Students can see and join the voice channel: any configured student role,
  * or @everyone (whose role id is the guild id) while none is configured. Only
  * then is who sits in it something the island may show to students. Unknown
- * (no permissions to read) counts as closed.
+ * (no permissions to read) counts as closed. /admin channel kind:suggest
+ * passes other permissions (see and post) for the suggestions channel.
  */
-export function openToStudents(channel: Permissioned | null | undefined, studentRoleIds: string[], everyoneId: string): boolean {
+export function openToStudents(
+  channel: Permissioned | null | undefined,
+  studentRoleIds: string[],
+  everyoneId: string,
+  permissions: bigint[] = [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.Connect]
+): boolean {
   const permissionsFor = channel?.permissionsFor?.bind(channel);
   if (!permissionsFor) return false;
   const roles = studentRoleIds.length > 0 ? studentRoleIds : [everyoneId];
-  return roles.some((role) => permissionsFor(role)?.has([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.Connect]) ?? false);
+  return roles.some((role) => permissionsFor(role)?.has(permissions) ?? false);
 }
 
 export interface Campfire {

@@ -91,9 +91,18 @@ export const T = {
   pilotClosed: "ตอนนี้ SHIFT High quests ยังไม่เปิดให้ใช้",
   notStarted: "เริ่มด้วย /start ก่อนนะ ใช้เวลาไม่ถึงนาที",
   staffOnly: "คำสั่งนี้สำหรับทีมพี่เลี้ยงที่ได้รับสิทธิ์เท่านั้น",
-  adminVoiceCoworkingOnly: "ห้องเสียงใช้ได้กับ coworking เท่านั้น ห้อง help, staff และ celebrate ต้องเป็นห้องข้อความ",
+  adminVoiceCoworkingOnly:
+    "ห้องเสียงใช้ได้กับ coworking เท่านั้น ห้อง help, staff, celebrate และ live ต้องเป็นห้องข้อความ ห้อง suggest เป็นฟอรัมหรือห้องข้อความ",
   adminCoworkingPrivate:
     "นักเรียนยังมองไม่เห็นหรือเข้าห้องเสียงนี้ไม่ได้ เลือกห้องที่นักเรียนเข้าได้ กองไฟบนเกาะจะได้ไม่โชว์คนในห้องส่วนตัว",
+  /** /admin channel kind:live: the bot keeps one post there, so it must be a plain text channel. */
+  adminLiveText: "ห้องเกาะสดต้องเป็นห้องข้อความ",
+  adminSuggestType: "ห้องเสนอไอเดียต้องเป็นฟอรัมหรือห้องข้อความ",
+  /** /admin channel kind:suggest: the website links every student there. DRAFT copy. */
+  adminSuggestPrivate: "นักเรียนยังมองไม่เห็นหรือโพสต์ในห้องนี้ไม่ได้ เลือกห้องที่นักเรียนเข้าไปเสนอไอเดียได้",
+  adminForumSuggestOnly: "ฟอรัมใช้ได้กับ suggest เท่านั้น ห้องอื่นเลือกห้องข้อความ (coworking เป็นห้องเสียงได้)",
+  adminLiveBotPerms:
+    "บอทยังโพสต์ในห้องนี้ไม่ได้ ให้บอทมีสิทธิ์ดูห้อง ส่งข้อความ แนบไฟล์ และอ่านประวัติข้อความในห้องนี้ก่อน (ปักหมุดข้อความได้ด้วยจะดีที่สุด)",
   done: "เรียบร้อย",
   cancelled: "ยกเลิกแล้ว ไม่มีอะไรถูกบันทึกหรือโพสต์",
 
@@ -444,6 +453,44 @@ export const T = {
     `${open ? `มีเควสต์เปิดอยู่ **${open}** อัน\n` : ""}เริ่มด้วย /work start ในเซิร์ฟเวอร์ได้เลย`,
   dmReminderOff: "ปิดการเตือนได้ที่ /settings",
   dmNoReplies: "บอทนี้ไม่อ่านหรือตอบข้อความส่วนตัว",
+
+  // /admin island, /admin award and the shop gates (schema 9, 20261111095000). DRAFT copy.
+  adminNeedsPlayer: "ฐานข้อมูลยังไม่มีส่วนนี้ (ต้องใช้ schema 9) ให้ทีมเทคนิคอัปเดตฐานข้อมูลก่อน",
+  adminIslandPlot: "ใส่ plot (เลขแปลงของทีม) ด้วย สำหรับ digest-hide และ digest-show",
+  adminIslandUser: "ใส่ user (นักเรียน) ด้วย สำหรับ consent-reset",
+  adminConsentReset: (user: string) =>
+    `เปิดให้ <@${user}> ขอความยินยอมใหม่แล้ว คำตอบเดิมของผู้ปกครองยังอยู่ในบันทึกการตรวจสอบ ใช้หลังคุยกับครอบครัวแล้วเท่านั้น`,
+  adminIslandTitle: "🏝️ ความยินยอมและข่าวเกาะ",
+  adminConsentLine: (on: boolean, age: number) =>
+    `${on ? "✅" : "⚪"} ต้องมีความยินยอมผู้ปกครอง: **${on ? "เปิด" : "ปิด"}** · ยืนยันอายุเองได้ตั้งแต่ ${age} ปี`,
+  adminConsentCounts: (granted: number, waiting: number, none: number) =>
+    `ยินยอมแล้ว **${granted}** · รอผู้ปกครอง ${waiting} · ยังไม่มี ${none}`,
+  adminConsentOffWarn:
+    "ความยินยอมปิดอยู่: ทุกคนนับว่ายินยอมแล้ว ชื่อทีม คำชมในห้อง และการแลกของขึ้นได้โดยไม่มีผู้ปกครองยินยอม ใช้เฉพาะตอนทดสอบ (ข่าวเกาะ AI ยังต้องมีการยินยอมเรื่อง AI ของทุกคนเสมอ)",
+  adminDigestLine: (on: boolean, channel: string | null) =>
+    `${on ? "✅" : "⚪"} ข่าวเกาะ AI: **${on ? "เปิด" : "ปิด"}** · โพสต์วันละครั้งที่${
+      channel === "live" ? "ห้องเกาะสด" : channel === "celebrate" ? "ห้องโพสต์ความสำเร็จ" : "ห้องที่ยังไม่ตั้ง (/admin channel live)"
+    }`,
+  adminDigestLast: (day: string | null) => `โพสต์ล่าสุด: ${day ?? "ยังไม่เคย"}`,
+  adminDigestHidden: (teams: string) => `ซ่อนสรุปอยู่: ${teams || "ไม่มี"}`,
+  adminIslandFine:
+    "ตัวเลขรวมเท่านั้น ไม่ระบุตัวบุคคล · สรุป AI มีเฉพาะทีมที่ทุกคนเลือกโชว์ชื่อและยินยอมเรื่อง AI · ซ่อนสรุปของทีม: /admin island digest-hide plot",
+  adminAwardModal: (label: string) => `รางวัล: ${label}`,
+  adminAwardReason: "ทำอะไรถึงได้รางวัลนี้ (นักเรียนเห็น)",
+  adminAwardReasonHint: "บันทึกถาวร ห้ามใส่ชื่อหรือข้อมูลส่วนตัว เล่าสิ่งที่เขาทำได้จริงแบบเจาะจง",
+  adminAwarded: (user: string, amount: number, balance: number) =>
+    `<@${user}> ได้ **${amount}** Passioncoin · ยอดใหม่ ${balance} · นักเรียนได้รับแจ้งเหตุผลใน /inbox`,
+  adminAwardDuplicate: "บันทึกไปแล้ว",
+  catalogGates: (minStage: number, community: boolean) =>
+    `${minStage > 0 ? ` · ต้นไม้ขั้น ${minStage} ขึ้นไป` : ""}${community ? " · ต้องผ่านเควสต์ชุมชน" : ""}`,
+
+  // /rewards: why an item cannot be redeemed yet (shift_quest_catalog_list, schema 9). DRAFT copy.
+  rewardsLock: {
+    consent: "แลกได้เมื่อผู้ปกครองยินยอม หรือยืนยันอายุเองบนเว็บเกาะ",
+    stage: (stage: number) => `แลกได้เมื่อต้นไม้ของทีมถึงขั้น ${stage}`,
+    community: "แลกได้หลังผ่านเควสต์ชุมชนอย่างน้อยหนึ่งเควสต์",
+  },
+  rewardsLocked: "🔒 ยังแลกไม่ได้",
 };
 
 export const DAY_NAMES = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์"];
@@ -518,6 +565,21 @@ const ERRORS: Record<string, string> = {
   squad_closed: "สควอดนี้จบรอบไปแล้ว",
   staff_no_squad: "สควอดเป็นของนักเรียนเท่านั้น ทีมพี่เลี้ยงตั้ง เข้าร่วม หรือถูกชวนเข้าสควอดไม่ได้",
   squads_off: "สควอดยังไม่เปิดให้ใช้ตอนนี้ ระหว่างนี้ลงมือกับโปรเจกต์ของคุณบน /island ได้ตามปกติ",
+  // The player round (20261111095000): the shop gates, staff awards and island consent.
+  stage_required: "ต้นไม้ของทีมยังไม่ถึงขั้นที่ของชิ้นนี้ต้องการ ทำเควสต์หลักต่อแล้วกลับมาแลกได้ ยังไม่ได้หักเหรียญ",
+  community_required:
+    "ของชิ้นนี้แลกได้หลังผ่านเควสต์ชุมชนอย่างน้อยหนึ่งเควสต์ (ช่วยผู้สร้างคนอื่น หรือทำให้ชุมชนดีขึ้น) ยังไม่ได้หักเหรียญ",
+  cap_reached: "คนนี้ได้รางวัลนี้ครบจำนวนครั้งสูงสุดแล้ว ยังไม่ได้ให้เหรียญ",
+  consent_required:
+    "ยังทำไม่ได้จนกว่าผู้ปกครองจะยินยอม หรือยืนยันอายุเองบนเว็บเกาะ ไม่มีอะไรถูกโพสต์หรือหักเหรียญ ระหว่างนี้เล่นบนเกาะได้ตามปกติ",
+  consent_too_young: "ยืนยันอายุเองได้เมื่ออายุถึงเกณฑ์ ถ้ายังไม่ถึง ส่งลิงก์ให้ผู้ปกครองกดยินยอมแทนได้",
+  consent_rate_limited: "ขอลิงก์สำหรับผู้ปกครองครบ 3 ครั้งใน 24 ชั่วโมงแล้ว ลิงก์ล่าสุดยังใช้ได้ หรือลองขอใหม่พรุ่งนี้",
+  consent_not_needed: "ได้รับความยินยอมเรียบร้อยแล้ว ไม่ต้องขอลิงก์ใหม่",
+  consent_link_dead: "ลิงก์นี้ใช้ไม่ได้แล้ว อาจหมดอายุ มีลิงก์ใหม่มาแทน หรือตอบไปแล้ว",
+  consent_parent_said_no:
+    "ผู้ปกครองตอบว่ายังไม่ยินยอม เราเคารพคำตอบนั้น ถ้าคุยกันที่บ้านแล้วอยากเริ่มใหม่ ส่งเรื่องถึงพี่เลี้ยงผ่านปุ่มขอความช่วยเหลือ ทีมงานจะเปิดให้ขอใหม่ ระหว่างนี้เล่นบนเกาะได้ตามปกติ",
+  help_consent:
+    "ห้องช่วยเหลือของชุมชนเปิดเมื่อผู้ปกครองยินยอมแล้ว หรือยืนยันอายุเองแล้ว ระหว่างนี้เลือกส่งถึงพี่เลี้ยงได้เลย ยังไม่มีอะไรถูกโพสต์",
 };
 
 export function errorText(code: string): string {
@@ -578,7 +640,7 @@ function quoted(text: string | null | undefined, max: number): string {
 }
 
 /** ▰▰▰▱▱ for 3 of 5; at most 10 marks, so a big target still fits one line. Full only once reached. */
-function meter(count: number, target: number): string {
+export function meter(count: number, target: number): string {
   const width = Math.max(1, Math.min(target, 10));
   const done = count >= target ? width : Math.max(0, Math.min(width - 1, Math.floor((count / target) * width)));
   return `${"▰".repeat(done)}${"▱".repeat(width - done)}`;
@@ -699,6 +761,19 @@ export function awardReason(code: string | null | undefined): string {
   return code ? AWARD_REASON[code] ?? code : "";
 }
 
+/** The staff awards' names (rule keys from 20261111095000, STAFF_AWARD_KEYS on the website). DRAFT copy. */
+export const STAFF_AWARD_LABEL: Record<string, string> = {
+  "taught-next-shift": "สอนใน SHIFT รอบถัดไป",
+  "helped-most": "ช่วยเพื่อนมากที่สุด",
+};
+
+/** What a parent's answer on the island means for the student. DRAFT copy. */
+const CONSENT_NOTICE: Record<string, string> = {
+  granted: "✅ ผู้ปกครองยินยอมแล้ว ชื่อทีมขึ้นบนเกาะได้ (ถ้าทีมเลือกไว้) และแลกของในร้านได้",
+  declined: "ผู้ปกครองยังไม่ยินยอม คุณยังเล่นบนเกาะแบบส่วนตัวได้ตามปกติ",
+  withdrawn: "ผู้ปกครองถอนความยินยอมแล้ว คุณยังเล่นบนเกาะแบบส่วนตัวได้ตามปกติ",
+};
+
 /** The non-empty parts of a notice, one per line. */
 function noticeLines(...parts: (string | false | null | undefined)[]): string {
   return parts.filter(Boolean).join("\n");
@@ -767,6 +842,16 @@ export function renderInbox(kind: string, p: Record<string, any>): string {
       return `🌟 ทีมพี่เลี้ยงชื่นชมงานของคุณ${p.category ? ` (${safe(p.category, 80)})` : ""}${p.reason ? `: ${safe(p.reason, 500)}` : ""}${p.amount ? ` พร้อม ${p.amount} Passioncoin` : ""}`;
     case "squad_invite":
       return `🤝 ${p.from ? safe(p.from, 60) : "เพื่อน"} ชวนคุณเข้าสควอด **${safe(p.name, 80)}** ตอบรับหรือปฏิเสธได้`;
+    case "staff_award":
+      return noticeLines(
+        `🏅 ทีมพี่เลี้ยงมอบรางวัล${STAFF_AWARD_LABEL[p.rule_key] ? ` **${STAFF_AWARD_LABEL[p.rule_key]}**` : ""} ให้คุณ · ได้ **${Number(p.amount ?? 0)}** Passioncoin`,
+        p.reason && quoted(`เหตุผล: ${p.reason}`, 510)
+      );
+    case "consent_recorded":
+      return noticeLines(
+        CONSENT_NOTICE[p.state] ?? "มีการบันทึกความยินยอมของผู้ปกครองแล้ว",
+        "-# ดูรายละเอียดได้บนเว็บเกาะ"
+      );
     default:
       return "มีอัปเดตใหม่";
   }

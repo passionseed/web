@@ -74,7 +74,7 @@ describe("fetchShiftGuildMember", () => {
   it("returns roles and nick, and caches them for 60 s", async () => {
     const fetchMember = await load();
     fetchMock.mockResolvedValue(json(200, { roles: ["r1", 5, "r2"], nick: " Mint " }));
-    await expect(fetchMember(ID)).resolves.toEqual({ ok: true, roles: ["r1", "r2"], nick: "Mint" });
+    await expect(fetchMember(ID)).resolves.toEqual({ ok: true, roles: ["r1", "r2"], nick: "Mint", avatar: null });
     expect(fetchMock).toHaveBeenCalledWith(
       `https://discord.com/api/v10/guilds/999999999999999999/members/${ID}`,
       expect.objectContaining({ method: "GET", headers: expect.objectContaining({ Authorization: "Bot bot-token" }) })
@@ -115,9 +115,9 @@ describe("fetchShiftGuildMember", () => {
     await fetchMember(ID);
     now += 61_000;
     fetchMock.mockResolvedValueOnce(json(429, {}));
-    await expect(fetchMember(ID)).resolves.toEqual({ ok: true, roles: ["r1"], nick: null });
+    await expect(fetchMember(ID)).resolves.toEqual({ ok: true, roles: ["r1"], nick: null, avatar: null });
     fetchMock.mockResolvedValueOnce(json(500, {}));
-    await expect(fetchMember(ID)).resolves.toEqual({ ok: true, roles: ["r1"], nick: null });
+    await expect(fetchMember(ID)).resolves.toEqual({ ok: true, roles: ["r1"], nick: null, avatar: null });
     // Too old to stand in.
     now += 11 * 60_000;
     fetchMock.mockResolvedValueOnce(json(500, {}));

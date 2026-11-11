@@ -21,6 +21,9 @@
     "app/api/cron/brain-sync/route.ts": {
       "maxDuration": 60
     },
+    "app/api/cron/shift-island-digest/route.ts": {
+      "maxDuration": 300
+    },
     "app/api/**/*.ts": {
       "maxDuration": 10
     }
@@ -41,6 +44,10 @@
     {
       "path": "/api/cron/shift-canvas-snapshots",
       "schedule": "45 16 * * *"
+    },
+    {
+      "path": "/api/cron/shift-island-digest",
+      "schedule": "0 13 * * *"
     }
   ]
 }

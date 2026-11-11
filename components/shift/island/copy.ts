@@ -127,7 +127,7 @@ export const START = {
     "1 โปรเจกต์ = ต้นไม้ 1 ต้น โตได้ 7 ขั้น ทำขั้นไหนก่อนก็ได้",
     "ถึงขั้นไหนแล้ว ส่งหลักฐานสั้นๆ กับคำตอบหนึ่งข้อ พี่เลี้ยงจะดูแล้วยืนยัน",
     "ต้นไม้โตจากงานที่พี่เลี้ยงยืนยันเท่านั้น ไม่ได้โตจากจำนวนครั้งที่กด",
-    "พักนานแค่ไหนก็ได้ ต้นไม้ไม่เหี่ยว ไม่มีการนับวันต่อเนื่อง",
+    "พักนานแค่ไหนก็ได้ ต้นไม้ไม่เหี่ยว ไม่มีอะไรถูกหัก กดพักไว้ จังหวะการลงมือก็หยุดรอ",
   ],
   action: "เริ่มเลย",
   pending: "กำลังเปิดเกาะ",
@@ -186,6 +186,8 @@ export const HUD = {
   meter: (stage: number) => `ต้นไม้ขั้น ${stage} จาก 7`,
   board: "กระดานเควสต์",
   menu: "เมนู",
+  /** The menu button's name while a consent step waits in the menu. */
+  menuConsent: "เมนู, มีขั้นตอนความยินยอมรออยู่",
   inbox: (count: number) => `ข้อความใหม่ ${count} ข้อความ`,
   inboxHeading: "ข้อความใหม่",
   /** The claim button, with pending team invites. */
@@ -194,6 +196,10 @@ export const HUD = {
   viewHeading: "มุมมองเกาะ",
   /** The roving group of plot buttons over the island. */
   plots: "แปลงบนเกาะ",
+  /** DRAFT: the ⋯ menu's link to the suggestions channel on Discord (the 💡 is drawn beside it, aria-hidden). */
+  suggest: "เสนอไอเดีย / แจ้งบั๊ก",
+  /** DRAFT: a group space, so say who sees the post. */
+  suggestHint: "เปิดห้องใน Discord ทีมงานและเพื่อนเห็นทุกโพสต์",
 };
 
 export const PLOT = {
@@ -240,13 +246,23 @@ export const BOARD = {
   mainSub: "7 ขั้นของต้นไม้ ทำขั้นไหนก่อนก็ได้",
   sideHeading: "เควสต์เสริม",
   sideSub: "แตกกิ่งจากเควสต์หลัก",
-  /** DRAFT: the list of main quest names under the ring. */
-  legend: "ชื่อเควสต์หลัก",
+  /** DRAFT: the board's lane buttons (a group of toggles, not tabs) and their short labels. */
+  lanes: "หมวดบนกระดานเควสต์",
+  laneMine: "ของฉัน",
+  /** DRAFT: under เควสต์หลัก in the lane buttons: main quests the team has passed. */
+  passed: (done: number) => `ผ่าน ${done}/7`,
+  /** DRAFT: the tree cell after the seven main quest cards. */
+  tree: (stage: number) => `ต้นไม้ขั้น ${stage} จาก 7`,
+  /** DRAFT: read as the description of main quests 6 and 7 (a small heart on the card). */
+  community: "เควสต์ชุมชน: ช่วยเพื่อน หรือพัฒนาชุมชน",
+  /** DRAFT: from the empty side lane back to the main quests. */
+  toMain: "ไปที่เควสต์หลัก",
   branchOf: (title: string) => `ต่อจาก ${title}`,
   branchFree: "เควสต์เสริมอื่นๆ",
   routeFilter: "เลือกเส้นทางของเควสต์เสริม",
   sideEmpty: "ยังไม่มีเควสต์เสริมในเส้นทางนี้ ลองดูทุกเส้นทาง",
-  sideNone: "ยังไม่มีเควสต์เสริมเปิดให้ทำ",
+  /** DRAFT: side quests may not be published yet. */
+  sideNone: "เควสต์เสริมยังไม่เปิด ระหว่างนี้ทำเควสต์หลักต่อได้เลย",
   unlockWhen: (titles: string[]) => `ปลดล็อกเมื่อผ่าน ${titles.join(", ")}`,
   proposedHeading: "เควสต์ที่ฉันเสนอ",
   proposedEmpty: "มีเรื่องที่อยากทำเองไหม เสนอเป็นเควสต์ของคุณได้",
@@ -458,7 +474,7 @@ export const FESTIVAL = {
   /** Appended to the table and stage legend lines: other teams' flags show only when they show their name. */
   shownOnly: "เห็นเฉพาะทีมที่โชว์ชื่อบนเกาะ",
   /** To the project sheet, where the season's meter and unlocks live. */
-  unlocks: "ดูของปลดล็อกในหน้าโปรเจกต์",
+  unlocks: "ดูของปลดล็อกในหน้าตัวละครของฉัน",
 };
 
 /**

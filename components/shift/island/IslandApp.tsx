@@ -13,9 +13,16 @@ import type { CampfireSummary, IslandPageData } from "@/lib/supabase/shift-quest
 
 import { CampfireSheet } from "./CampfireSheet";
 import { CanvasLinkSheet } from "./canvas";
+import { ConsentSheet } from "./consent/ConsentSheet";
 import { CAMPFIRE, CANVAS, FESTIVAL, GATE, HUD, NOTICE, NO_PROJECT, SEASON, thaiShortDate } from "./copy";
 import { FestivalSheet } from "./FestivalSheet";
-import { BoardSheet, InboxSheet, MenuSheet, ProjectSheet } from "./HudSheets";
+import { BoardSheet, InboxSheet, MenuSheet } from "./HudSheets";
+import { NewsSheet } from "./news/NewsSheet";
+import { CharacterSheet } from "./player/CharacterSheet";
+import { CoinPill, showCoinPill } from "./player/CoinPill";
+import { WalletSheet } from "./player/WalletSheet";
+import { PRIZES_UI } from "./prizes/copy";
+import { PrizeSheet } from "./prizes/PrizeSheet";
 import { GateCard } from "./IslandGate";
 import { BoardButton, Hud, HudChip, HudLabel, HudLinkRound, HudRound, hudRoundClass } from "./IslandHud";
 import styles from "./island.module.css";
@@ -47,8 +54,26 @@ interface IslandAppProps {
 /** About as long as a sheet takes to slide away (vaul's drawer is the slower one). */
 const SHEET_CLOSE_MS = 450;
 
-/** The sheets opened from the HUD itself or the plaza; at most one at a time. */
-type Panel = "board" | "project" | "menu" | "inbox" | "festival" | "campfire" | null;
+/**
+ * The sheets opened from the HUD itself, the menu or the plaza; at most one
+ * at a time. The chip opens "character" (which holds the old project sheet).
+ */
+type Panel =
+  | "board"
+  | "project"
+  | "menu"
+  | "inbox"
+  | "festival"
+  | "campfire"
+  | "character"
+  | "wallet"
+  | "prizes"
+  | "news"
+  | "consent"
+  | null;
+
+/** The sheets a student without a plot can open: the menu and what it leads to, and the wallet. */
+type UnclaimedPanel = Extract<Panel, "menu" | "wallet" | "prizes" | "news" | "consent"> | null;
 
 /** The plaza in the world: what it draws, its labels and its tap targets (IslandViewport's `plaza`). */
 interface PlazaProps {
@@ -81,13 +106,72 @@ function plazaProps(
     if (pins) names.notice = pins.length > 0 ? NOTICE.pinned(pins.map((pin) => pin.title)) : NOTICE.board;
     if (festival) names.stage = FESTIVAL.stage(`${date} · ${SEASON.daysLeft(festival.daysToDemo)}`);
     if (campfire) names.campfire = CAMPFIRE.spot(count);
+    names.prizes = PRIZES_UI.spot;
   }
   return {
-    input: { festival, pins: pins ? pins.map((pin) => pin.kind) : null, campfire: campfire ? { count } : null },
+    // The Demo Day prize board always stands in the plaza.
+    input: { festival, pins: pins ? pins.map((pin) => pin.kind) : null, campfire: campfire ? { count } : null, prizes: true },
     labels,
     names,
     onSpot,
   };
+}
+
+/**
+ * A consent step waits: consent is not on file, or it is but the AI news line
+ * is not (the consent sheet asks a parent for it, or the student confirms
+ * their own age). Not while consent is off and nothing is on file.
+ */
+function consentStep(page: IslandPageData): boolean {
+  const consent = page.consent;
+  if (!consent) return false;
+  if (!consent.ok) return true;
+  return consent.state === "granted" && !consent.ai && consent.basis !== "adult";
+}
+
+/** The menu's rows for the player round: news while the digest is on, the prizes always, consent while a step waits. */
+function menuRows(page: IslandPageData, onPanel: (panel: Panel) => void) {
+  return {
+    onNews: page.news?.enabled ? () => onPanel("news") : undefined,
+    onPrizes: () => onPanel("prizes"),
+    onConsent: consentStep(page) ? () => onPanel("consent") : undefined,
+    consentAiOnly: page.consent?.ok === true,
+  };
+}
+
+/** The menu button, with a lamp dot while consent itself (not only the AI line) still waits. */
+function MenuRound({ page, onOpen }: { page: IslandPageData; onOpen: () => void }) {
+  const pending = page.consent != null && !page.consent.ok;
+  return <HudRound icon="menu" label={pending ? HUD.menuConsent : HUD.menu} dot={pending} onClick={onOpen} />;
+}
+
+/** The coin pill under the chip, when coins are live or the wallet has any. */
+function coinPill(page: IslandPageData, onOpen: () => void) {
+  return showCoinPill(page.character) ? <CoinPill balance={page.character.coins.balance} onOpen={onOpen} /> : null;
+}
+
+/**
+ * The sheets both islands share: the wallet and shop, the Demo Day prizes,
+ * the island news (only with news on the page) and consent (only when the
+ * page knows the viewer's consent).
+ */
+function PlayerSheets({ page, panel, onPanel }: { page: IslandPageData; panel: Panel; onPanel: (panel: Panel) => void }) {
+  const close = () => onPanel(null);
+  const openConsent = page.consent ? () => onPanel("consent") : undefined;
+  return (
+    <>
+      <WalletSheet open={panel === "wallet"} onClose={close} consent={page.consent} onOpenConsent={() => onPanel("consent")} />
+      <PrizeSheet
+        open={panel === "prizes"}
+        onClose={close}
+        consent={page.consent}
+        onOpenConsent={openConsent}
+        coinsLive={page.character ? page.character.coins.live : undefined}
+      />
+      {page.news ? <NewsSheet open={panel === "news"} onClose={close} news={page.news} staff={page.me.staff} /> : null}
+      {page.consent ? <ConsentSheet open={panel === "consent"} onClose={close} consent={page.consent} /> : null}
+    </>
+  );
 }
 
 /**
@@ -121,12 +205,13 @@ export function IslandApp({ page, picture, initialPhase, discordUrl }: IslandApp
 function Unclaimed({ page, picture, initialPhase, demoDay }: IslandAppProps & { demoDay: string | null }) {
   const [storyOpen, setStoryOpen] = useState(false);
   const [claiming, setClaiming] = useState(false);
-  const [menu, setMenu] = useState(false);
+  const [panel, setPanel] = useState<UnclaimedPanel>(null);
   const [whole, setWhole] = useState(false);
   const nameInput = useRef<HTMLInputElement>(null);
   const invitesHeading = useRef<HTMLHeadingElement>(null);
   const invites = page.invites.length;
-  const paused = storyOpen || claiming || menu;
+  const paused = storyOpen || claiming || panel != null;
+  const onPanel = (next: Panel) => setPanel(next as UnclaimedPanel);
   // The plaza to look at: the festival and the campfire, no notice board and nothing to tap.
   const today = useBangkokDay();
   const festival = useMemo(
@@ -140,7 +225,8 @@ function Unclaimed({ page, picture, initialPhase, demoDay }: IslandAppProps & { 
     <>
       {/* The HUD first: keyboards and screen readers reach its controls before the island. */}
       <Hud
-        chip={<HudLabel text={HUD.noPlot} />}
+        chip={<HudLabel me={page.me} text={HUD.noPlot} />}
+        pill={coinPill(page, () => setPanel("wallet"))}
         buttons={
           <>
             <StoryLauncher
@@ -150,7 +236,7 @@ function Unclaimed({ page, picture, initialPhase, demoDay }: IslandAppProps & { 
               onOpenChange={setStoryOpen}
               className={hudRoundClass}
             />
-            <HudRound icon="menu" label={HUD.menu} onClick={() => setMenu(true)} />
+            <MenuRound page={page} onOpen={() => setPanel("menu")} />
           </>
         }
         bottom={
@@ -182,16 +268,19 @@ function Unclaimed({ page, picture, initialPhase, demoDay }: IslandAppProps & { 
         <NoProject invites={page.invites} nameInput={nameInput} invitesHeading={invitesHeading} />
       </IslandSheet>
       <MenuSheet
-        open={menu}
-        onClose={() => setMenu(false)}
+        open={panel === "menu"}
+        onClose={() => setPanel(null)}
         me={page.me}
         project={null}
         whole={whole}
         onToggleWhole={() => {
           setWhole((current) => !current);
-          setMenu(false);
+          setPanel(null);
         }}
+        suggestUrl={page.suggestUrl ?? null}
+        {...menuRows(page, onPanel)}
       />
+      <PlayerSheets page={page} panel={panel} onPanel={onPanel} />
     </>
   );
 }
@@ -219,6 +308,10 @@ function IslandHome({
   });
   const [proposing, setProposing] = useState(false);
   const [plot, setPlot] = useState<IslandHotspot | null>(null);
+  // The plot sheet keeps its last plot while it slides closed; its team card stays with it.
+  const [lastPlot, setLastPlot] = useState<IslandHotspot | null>(null);
+  if (plot && plot !== lastPlot) setLastPlot(plot);
+  const shownPlot = plot ?? lastPlot;
   const [puffKey, setPuffKey] = useState(0);
   const puffTimer = useRef<number | undefined>(undefined);
   useEffect(() => () => window.clearTimeout(puffTimer.current), []);
@@ -249,6 +342,7 @@ function IslandHome({
     (id: PlazaSpotId) => {
       if (id === "notice") setPanel("board");
       else if (id === "stage") setPanel("festival");
+      else if (id === "prizes") setPanel("prizes");
       else {
         setPanel("campfire");
         loadNames();
@@ -259,11 +353,11 @@ function IslandHome({
   const plaza = useMemo(() => plazaProps(festival, pins, campfire.summary, openSpot), [festival, pins, campfire.summary, openSpot]);
 
   /**
-   * The check-in is saved: the project sheet steps aside, then the dust puff
-   * plays at the tree once the island is in view again.
+   * The check-in is saved: the character sheet steps aside, then the dust
+   * puff plays at the tree once the island is in view again.
    */
   function checkedIn() {
-    setPanel((current) => (current === "project" ? null : current));
+    setPanel((current) => (current === "character" || current === "project" ? null : current));
     window.clearTimeout(puffTimer.current);
     puffTimer.current = window.setTimeout(() => setPuffKey((key) => key + 1), SHEET_CLOSE_MS);
   }
@@ -324,7 +418,8 @@ function IslandHome({
     <>
       {/* The HUD first: keyboards and screen readers reach its controls before the plots. Both are fixed layers. */}
       <Hud
-        chip={<HudChip name={project.name} stage={project.stage} todayOpen={todayOpen} onOpen={() => setPanel("project")} />}
+        chip={<HudChip me={page.me} name={project.name} stage={project.stage} todayOpen={todayOpen} onOpen={() => setPanel("character")} />}
+        pill={coinPill(page, () => setPanel("wallet"))}
         buttons={
           <>
             <StoryLauncher demoDay={season?.demo_day ?? null} cta="island" onOpenChange={setStoryOpen} className={hudRoundClass} />
@@ -337,7 +432,7 @@ function IslandHome({
             {page.unread > 0 ? (
               <HudRound icon="mail" label={HUD.inbox(page.unread)} badge={page.unread} onClick={() => setPanel("inbox")} />
             ) : null}
-            <HudRound icon="menu" label={HUD.menu} onClick={() => setPanel("menu")} />
+            <MenuRound page={page} onOpen={() => setPanel("menu")} />
           </>
         }
         bottom={
@@ -358,6 +453,7 @@ function IslandHome({
         initialPhase={initialPhase}
         plaza={plaza}
         onNoticeVisible={setNoticeSeen}
+        me={page.me}
       />
 
       <BoardSheet open={panel === "board"} onClose={() => setPanel(null)}>
@@ -370,11 +466,17 @@ function IslandHome({
           onPropose={openPropose}
         />
       </BoardSheet>
-      <ProjectSheet
-        open={panel === "project"}
+      {/* From the chip: who you are, your stats and coins, then the project sheet as before (tree, today, season). */}
+      <CharacterSheet
+        open={panel === "character" || panel === "project"}
         onClose={() => setPanel(null)}
+        me={page.me}
+        stats={page.character ?? null}
         project={project}
         season={season}
+        consent={page.consent}
+        onOpenWallet={() => setPanel("wallet")}
+        onOpenConsent={() => setPanel("consent")}
         today={
           <TodayCard
             tapsToday={page.island.taps_today}
@@ -394,7 +496,10 @@ function IslandHome({
           setWhole((current) => !current);
           setPanel(null);
         }}
+        suggestUrl={page.suggestUrl ?? null}
+        {...menuRows(page, setPanel)}
       />
+      <PlayerSheets page={page} panel={panel} onPanel={setPanel} />
       <InboxSheet open={panel === "inbox"} onClose={() => setPanel(null)} unread={page.unread} discordUrl={discordUrl} />
       {season && festival ? (
         <FestivalSheet
@@ -403,7 +508,7 @@ function IslandHome({
           season={season}
           festival={festival}
           goal={goal}
-          onOpenProject={() => setPanel("project")}
+          onOpenProject={() => setPanel("character")}
         />
       ) : null}
       {campfire.summary ? (
@@ -430,7 +535,14 @@ function IslandHome({
         onClose={() => setStuck((current) => ({ ...current, open: false }))}
       />
       <ProposeSheet open={proposing} onClose={() => setProposing(false)} />
-      <PlotSheet hotspot={plot} onClose={() => setPlot(null)} onBoard={showBoard} />
+      <PlotSheet
+        hotspot={plot}
+        onClose={() => setPlot(null)}
+        onBoard={showBoard}
+        // The team's AI news card, only for a team on the news (opted in, consent on file, not hidden).
+        team={shownPlot ? (page.news?.teams.find((team) => team.slot === shownPlot.slot) ?? null) : null}
+        staff={page.me.staff}
+      />
       <CanvasLinkSheet open={linking} link={page.canvasLink} onClose={closeLinking} onLinked={closeLinking} />
     </>
   );

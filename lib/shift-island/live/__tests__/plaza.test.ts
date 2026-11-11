@@ -58,10 +58,10 @@ function festival(over: Partial<Festival> = {}): Festival {
   };
 }
 
-/** Everything at once: every booth, a full board, more people than seats. */
+/** Everything at once: every booth, a full board, more people than seats, the prize board. */
 function fullInput(scene: IslandScene): PlazaInput {
   const booths = scene.trees.map((t) => ({ slot: t.slot, kind: t.slot % 2 ? ("stage" as const) : ("table" as const) }));
-  return { festival: festival({ booths }), pins: ["active", "main", "side"], campfire: { count: 12 } };
+  return { festival: festival({ booths }), pins: ["active", "main", "side"], campfire: { count: 12 }, prizes: true };
 }
 
 function actorRect(actor: LiveActor): Rect {
@@ -220,6 +220,24 @@ describe("plazaWorld placement", () => {
     expect(problems).toEqual([]);
   });
 
+  it.each(cases)("keeps the prize board's 48px tap target off every other tap target ($n plots, mine $mine)", ({ n, mine, shift, decorated }) => {
+    const scene = buildScene(plots(n, mine, shift, decorated), { markMine: true, festival: true });
+    const world = plazaWorld(scene, fullInput(scene));
+    const prize = world.spots.find((s) => s.id === "prizes")!;
+    expect(prize).toBeDefined();
+    // At the usual 2x, the 48px floor is 24 native px each way.
+    const tap = grow(nativeSpot(scene, prize), TAP);
+    const others = [
+      ...world.spots.filter((s) => s.id !== "prizes").map((s) => ({ what: `spot ${s.id}`, rect: nativeSpot(scene, s) })),
+      ...obstacles(scene).filter((o) => o.what.startsWith("hotspot ") || o.what === "pin"),
+    ];
+    expect(others.filter((o) => overlaps(tap, o.rect)).map((o) => o.what)).toEqual([]);
+    // The board itself never covers another plaza sprite (notice board, stage, sign, flags, campfire, seats).
+    const board = world.actors.find((a) => a.frames[0] === "prize_board")!;
+    const covered = world.actors.filter((a) => a !== board && overlaps(actorRect(board), actorRect(a))).map((a) => a.frames[0]);
+    expect(covered).toEqual([]);
+  });
+
   it("draws every frame it names, in whole native pixels", () => {
     const sprites = allSprites();
     const scene = buildScene(plots(12, 1), { markMine: true, festival: true });
@@ -310,6 +328,61 @@ describe("plazaWorld content", () => {
     expect(more).toEqual({ id: "campfireMore", x: pct(c.x - 24, scene.width), y: pct(c.y + 46, scene.height), anchor: "left" });
     // An empty board still stands and can be tapped.
     expect(names(world)).toContain("notice_board");
+  });
+
+  describe("prize board", () => {
+    it("draws no prize board and no prizes spot unless asked", () => {
+      for (const prizes of [undefined, false]) {
+        const world = plazaWorld(scene, { ...fullInput(scene), prizes });
+        expect(names(world)).not.toContain("prize_board");
+        expect(world.spots.map((s) => s.id)).not.toContain("prizes");
+      }
+      expect(plazaWorld(scene, { festival: null, pins: null, campfire: null, prizes: false })).toBe(NO_PLAZA);
+    });
+
+    it("stands alone on an otherwise empty plaza, with its spot and no label", () => {
+      const world = plazaWorld(scene, { festival: null, pins: null, campfire: null, prizes: true });
+      expect(world).not.toBe(NO_PLAZA);
+      expect(world.actors).toEqual([{ frames: ["prize_board"], x: c.x + 15, y: c.y + 10 }]);
+      expect(world.spots.map((s) => s.id)).toEqual(["prizes"]);
+      expect(world.labels).toEqual([]);
+    });
+
+    it("draws after the booth flags and before the campfire, and its spot comes between the stage and the campfire", () => {
+      const world = plazaWorld(scene, {
+        festival: festival({ booths: [{ slot: 2, kind: "table" }] }),
+        pins: ["main"],
+        campfire: { count: 1 },
+        prizes: true,
+      });
+      const order = names(world);
+      expect(order.indexOf("prize_board")).toBe(order.indexOf("booth_flag") + 1);
+      expect(order.indexOf("campfire_pit")).toBe(order.indexOf("prize_board") + 1);
+      expect(world.spots.map((s) => s.id)).toEqual(["notice", "stage", "prizes", "campfire"]);
+      expect(world.labels.map((l) => l.id)).not.toContain("prizes");
+    });
+
+    it("puts the board inside its spot, at its offset, on whole native pixels", () => {
+      const world = plazaWorld(scene, { festival: null, pins: null, campfire: null, prizes: true });
+      const board = world.actors[0];
+      expect([board.x - c.x, board.y - c.y]).toEqual([...PLAZA_LAYOUT.prizeBoard]);
+      const spot = nativeSpot(scene, world.spots[0]);
+      const rect = actorRect(board);
+      expect(rect.x).toBeGreaterThanOrEqual(spot.x);
+      expect(rect.y).toBeGreaterThanOrEqual(spot.y);
+      expect(rect.x + rect.w).toBeLessThanOrEqual(spot.x + spot.w + 0.02);
+      expect(rect.y + rect.h).toBeLessThanOrEqual(spot.y + spot.h + 0.02);
+      const box = PLAZA_LAYOUT.prizeSpot;
+      // About 48 CSS px at the usual 2x before the floor applies.
+      expect(Math.min(box.w, box.h)).toBeGreaterThanOrEqual(TAP - 1);
+    });
+
+    it("draws the board from palette keys, still (one frame)", () => {
+      const world = plazaWorld(scene, { festival: null, pins: null, campfire: null, prizes: true });
+      expect(world.actors[0].frames).toEqual(["prize_board"]);
+      expect(world.actors[0].frameMs).toBeUndefined();
+      expect(allSprites().prize_board).toHaveLength(MOTION_SIZES.prize_board[1]);
+    });
   });
 
   describe("campfire", () => {

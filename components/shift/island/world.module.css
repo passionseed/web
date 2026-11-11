@@ -28,8 +28,8 @@
   /* Native panning, and pinch-zoom stays on for anyone who needs bigger text or art. */
   touch-action: pan-x pan-y pinch-zoom;
   scrollbar-width: none;
-  /* Focus and scrollIntoView keep a plot clear of the HUD bars. */
-  scroll-padding: calc(env(safe-area-inset-top) + 64px) 12px calc(env(safe-area-inset-bottom) + 96px);
+  /* Focus and scrollIntoView keep a plot clear of the HUD bars (the chip and the coin pill under it). */
+  scroll-padding: calc(env(safe-area-inset-top) + 104px) 12px calc(env(safe-area-inset-bottom) + 96px);
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -315,6 +315,23 @@
   justify-content: space-between;
 }
 
+/* Top left: the chip, and the coin pill under it. Only the two controls take taps. */
+.hudLeft {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.hudTop > .hudLeft {
+  pointer-events: none;
+}
+
+.hudLeft > * {
+  pointer-events: auto;
+}
+
 .hudButtons {
   flex: none;
   display: flex;
@@ -368,29 +385,21 @@
   cursor: default;
 }
 
-.chipTree {
+/*
+ * The student's Discord picture in the chip (PixelAvatar). Today's check-in
+ * still open: one lamp-gold pixel over its corner.
+ */
+.chipFace {
+  position: relative;
   flex: none;
   display: grid;
-  place-items: center;
   width: 40px;
   height: 40px;
-  overflow: hidden;
-  background: var(--isl-sand);
-  box-shadow: inset 0 0 0 2px var(--isl-ink);
-  clip-path: var(--notch);
-}
-
-.chipTree svg {
-  display: block;
-}
-
-/* Today's check-in is still open: one lamp-gold pixel in the tree's corner. */
-.chipTree {
-  position: relative;
 }
 
 .chipDot {
   position: absolute;
+  z-index: 2;
   top: 4px;
   right: 4px;
   width: 8px;
@@ -617,6 +626,17 @@
 .menuList {
   display: grid;
   gap: 12px;
+}
+
+/* A menu row that opens another sheet: its pixel icon, then the words. */
+.menuRow {
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+.menuRow svg {
+  display: block;
+  flex: none;
 }
 
 .account {

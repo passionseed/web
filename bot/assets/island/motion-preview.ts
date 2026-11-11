@@ -340,7 +340,7 @@ const STRIPS: Record<string, string[]> = {
   plaza_night: ["lamp_post", "festoon"],
   builder: [...ACTOR_FRAMES.builder],
   tester: [...ACTOR_FRAMES.tester],
-  notice: ["notice_board", "notice_note_active", "notice_note_main", "notice_note_side"],
+  notice: ["notice_board", "notice_note_active", "notice_note_main", "notice_note_side", "prize_board"],
   fest_stage: ["fest_stage_0", "fest_stage_1", "fest_stage_2", "fest_stage_3", "fest_sign"],
   goal: ["goal_string", "goal_bulb", "festoon"],
   flags: ["booth_flag", "star_flag", "key_flag", "visitor"],
@@ -447,6 +447,7 @@ const PLAZA_PREVIEW = {
   notes: [[-35, -21], [-29, -22], [-22, -21]] as readonly Offset[],
   sign: [36, -12] as Offset,
   stage: [50, -16] as Offset,
+  prizeBoard: [15, 10] as Offset,
   pit: [-63, 46] as Offset,
   flame: [-61, 38] as Offset,
   seats: [[-73, 54], [-47, 54], [-71, 34], [-49, 34], [-87, 52], [-33, 52], [-85, 36], [-35, 36]] as readonly Offset[],
@@ -539,6 +540,7 @@ function drawPlaza(layer: Layer, scene: IslandScene, origin: { x: number; y: num
     if (tree.stage < 4) continue;
     put(tree.visitor ? "star_flag" : "booth_flag", tree.left + 4, tree.top + 22);
   }
+  put("prize_board", ...at(PLAZA_PREVIEW.prizeBoard));
   put(panel.people > 0 ? "campfire_pit" : "campfire_pit_cold", ...at(PLAZA_PREVIEW.pit));
   const seated = Math.min(panel.people, PLAZA_PREVIEW.seats.length);
   const seat = (i: number) => {

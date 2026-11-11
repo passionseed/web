@@ -84,7 +84,7 @@ describe("FestivalSheet", () => {
     if (!festival) throw new Error("no festival");
     const onOpenProject = jest.fn();
     render(<FestivalSheet open onClose={jest.fn()} season={view} festival={festival} goal={view.goal} onOpenProject={onOpenProject} />);
-    fireEvent.click(screen.getByRole("button", { name: "ดูของปลดล็อกในหน้าโปรเจกต์" }));
+    fireEvent.click(screen.getByRole("button", { name: "ดูของปลดล็อกในหน้าตัวละครของฉัน" }));
     expect(onOpenProject).toHaveBeenCalledTimes(1);
   });
 

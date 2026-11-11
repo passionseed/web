@@ -4,12 +4,12 @@
  * one compact card (see ../view): what it is, the facts that matter, then the
  * fine print in small grey text.
  */
-import { ChannelType, MessageFlags } from "discord.js";
+import { ChannelType, MessageFlags, PermissionFlagsBits, type ChatInputCommandInteraction } from "discord.js";
 
-import { QuestError } from "../api";
+import { QuestDbError, QuestError } from "../api";
 import { openToStudents } from "../campfire";
-import { requireStaff } from "../context";
-import { BLOCKER, T, bkkDate, safe } from "../copy";
+import { requireStaff, type Ctx } from "../context";
+import { BLOCKER, STAFF_AWARD_LABEL, T, bkkDate, safe } from "../copy";
 import { cid, isUuid } from "../ids";
 import { I, stageBar } from "../island/copy";
 import { ButtonStyle, GateError, button, buttonRows, modal, parseDate, selectRow, show, textValue, type Block, type View } from "../ui";
@@ -119,14 +119,44 @@ function check(ok: unknown): string {
   return ok ? "✅" : "⚠️";
 }
 
-/** `hint` follows the line, set or not: what an admin should know when choosing the channel. */
-const CHANNELS: { key: string; label: string; hint?: string }[] = [
+/**
+ * `hint` follows the line, set or not: what an admin should know when choosing
+ * the channel. An optional channel is ⚪ while unset (nothing is held back by
+ * it), and its line is left out on a database too old to have it.
+ */
+const CHANNELS: { key: string; label: string; hint?: string; optional?: boolean }[] = [
   { key: "help_channel_id", label: "ห้อง help" },
   { key: "staff_channel_id", label: "ห้องทีมพี่เลี้ยง" },
   { key: "celebrate_channel_id", label: "ห้องโพสต์ความสำเร็จ" },
   // A voice channel works too: intention posts land in its text chat, and the campfire (schema 7) shows who is in it.
   { key: "coworking_channel_id", label: "ห้อง coworking", hint: "ห้องเสียงได้: คนในห้องจะนั่งรอบกองไฟบนเกาะ" },
+  // Schema 8: the live island post (../live.ts) and the suggestions forum the web island links to.
+  { key: "live_channel_id", label: "ห้องเกาะสด", hint: "บอทแก้โพสต์เดียวในห้องนี้ ไม่โพสต์ซ้ำ", optional: true },
+  { key: "suggest_channel_id", label: "ห้องเสนอไอเดีย", hint: "ฟอรัมได้ ลิงก์อยู่ในเมนู ⋯ บนเว็บ", optional: true },
 ];
+
+/** What the bot needs in the live channel to keep its one post there: see it, post, attach the picture, find it again. */
+const LIVE_PERMISSIONS = [
+  PermissionFlagsBits.ViewChannel,
+  PermissionFlagsBits.SendMessages,
+  PermissionFlagsBits.AttachFiles,
+  PermissionFlagsBits.ReadMessageHistory,
+];
+
+/**
+ * Whether the bot can keep the live post in this channel, as far as the
+ * gateway cache tells. Unknown (no cached channel or bot member) is not
+ * refused: the live post then logs once and retries every minute. Pinning is
+ * left out on purpose: without it the post still works, only unpinned.
+ */
+function botCanKeepLivePost(i: ChatInputCommandInteraction, channelId: string): boolean {
+  const me = i.guild?.members.me;
+  const channel = i.guild?.channels.cache.get(channelId) as
+    | { permissionsFor?: (member: NonNullable<typeof me>) => { has: (permissions: bigint[]) => boolean } | null }
+    | undefined;
+  if (!me || typeof channel?.permissionsFor !== "function") return true;
+  return channel.permissionsFor(me)?.has(LIVE_PERMISSIONS) ?? false;
+}
 
 /** The switches /admin feature turns on and off, with the blocker list each one has. */
 const FEATURES: { key: string; label: string; setting: string }[] = [
@@ -163,12 +193,14 @@ export function statusView(s: Status, saved = false): View {
   ];
   let channelMissing = false;
   for (const c of CHANNELS) {
+    // A database older than the setting has no key for it: say nothing about it.
+    if (c.optional && !(c.key in st)) continue;
     const id = st[c.key];
     const hint = c.hint ? ` (${c.hint})` : "";
     if (typeof id === "string") setup.push(`✅ ${c.label}: <#${id}>${hint}`);
     else {
       channelMissing = true;
-      setup.push(`⚠️ ${c.label}: ยังไม่ตั้ง${hint}`);
+      setup.push(`${c.optional ? "⚪" : "⚠️"} ${c.label}: ยังไม่ตั้ง${hint}`);
     }
   }
   const owner = safe(st.fulfillment_owner as string | null, 60);
@@ -314,6 +346,64 @@ export function reportView(r: Record<string, any>): View {
   };
 }
 
+/** shift_quest_admin_island_status (schema 9): counts and switches only, never a name of a person. */
+export interface IslandStatus {
+  consent: { required: boolean; adult_age: number; granted: number; waiting: number; none: number };
+  digest: { enabled: boolean; channel: "live" | "celebrate" | null; last_day: string | null; hidden: { slot: number; name: string }[] };
+}
+
+/** /admin island: the consent switch and counts, then the AI island news switch, channel and hidden teams. */
+export function islandStatusView(s: IslandStatus, saved = false): View {
+  const hidden = s.digest.hidden.map((t) => `แปลง ${t.slot} ${safe(t.name, 40)}`).join(" · ");
+  return {
+    tone: "staff",
+    title: saved ? "✅ บันทึกแล้ว" : T.adminIslandTitle,
+    blocks: [
+      {
+        kind: "text",
+        text: [
+          T.adminConsentLine(s.consent.required, s.consent.adult_age),
+          T.adminConsentCounts(s.consent.granted, s.consent.waiting, s.consent.none),
+        ].join("\n"),
+      },
+      ...(s.consent.required ? [] : [{ kind: "subtext" as const, text: T.adminConsentOffWarn }]),
+      { kind: "divider" },
+      {
+        kind: "text",
+        text: [T.adminDigestLine(s.digest.enabled, s.digest.channel), T.adminDigestLast(s.digest.last_day), T.adminDigestHidden(hidden)].join(
+          "\n"
+        ),
+      },
+      { kind: "divider", line: false },
+      { kind: "subtext", text: T.adminIslandFine },
+    ],
+  };
+}
+
+/** /admin island actions that flip a switch: the setting key and its value. */
+const ISLAND_SWITCH: Record<string, [string, string]> = {
+  "consent-on": ["consent_required", "on"],
+  "consent-off": ["consent_required", "off"],
+  "digest-on": ["digest_enabled", "on"],
+  "digest-off": ["digest_enabled", "off"],
+};
+
+/** /admin award kinds: the staff award rule keys (STAFF_AWARD_KEYS on the website). */
+const AWARD_KIND: Record<string, string> = { taught: "taught-next-shift", helped: "helped-most" };
+
+/**
+ * Calls a schema 9 function (20261111095000_shift_quest_player). On an older
+ * database the function does not exist (42883): say so instead of the generic error.
+ */
+async function callPlayer<R>(ctx: Ctx, fn: string, ...args: unknown[]): Promise<R> {
+  try {
+    return await ctx.api.call<R>(fn, ...args);
+  } catch (error) {
+    if (error instanceof QuestDbError && error.sqlstate === "42883") throw new GateError(T.adminNeedsPlayer);
+    throw error;
+  }
+}
+
 export const admin: HandlerSet = {
   commands: {
     async "admin status"(i, ctx) {
@@ -336,6 +426,10 @@ export const admin: HandlerSet = {
       requireStaff(ctx, ADMIN);
       const kind = i.options.getString("kind", true);
       const chosen = i.options.getChannel("channel");
+      if (chosen && chosen.type === ChannelType.GuildForum && kind !== "suggest") {
+        // Only suggest may be a forum: the bot never posts there, the web only links to it.
+        throw new GateError(T.adminForumSuggestOnly);
+      }
       if (chosen && chosen.type === ChannelType.GuildVoice) {
         // Only coworking may be voice: its people sit at the island's campfire.
         if (kind !== "coworking") throw new GateError(T.adminVoiceCoworkingOnly);
@@ -344,6 +438,20 @@ export const admin: HandlerSet = {
         if (!openToStudents(full as never, ctx.session.settings.student_role_ids, i.guildId ?? "")) {
           throw new GateError(T.adminCoworkingPrivate);
         }
+      }
+      if (chosen && kind === "suggest") {
+        if (chosen.type !== ChannelType.GuildForum && chosen.type !== ChannelType.GuildText) throw new GateError(T.adminSuggestType);
+        // The website links every student here: a channel they cannot see or post in would be a dead link.
+        const full = i.guild?.channels.cache.get(chosen.id) ?? chosen;
+        const seeAndPost = [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages];
+        if (!openToStudents(full as never, ctx.session.settings.student_role_ids, i.guildId ?? "", seeAndPost)) {
+          throw new GateError(T.adminSuggestPrivate);
+        }
+      }
+      if (chosen && kind === "live") {
+        // The bot keeps one post there and edits it: a plain text channel only.
+        if (chosen.type !== ChannelType.GuildText) throw new GateError(T.adminLiveText);
+        if (!botCanKeepLivePost(i, chosen.id)) throw new GateError(T.adminLiveBotPerms);
       }
       const status = await ctx.api.call<Status>("shift_quest_admin_set", ctx.userId, `${kind}_channel`, chosen?.id ?? "");
       await show(i, statusView(status, true));
@@ -468,7 +576,15 @@ export const admin: HandlerSet = {
     async "admin catalog"(i, ctx) {
       requireStaff(ctx, ADMIN);
       const item = i.options.getString("item");
-      const result = await ctx.api.call<{ name: string; cost: number; stock_available: number; active: boolean }>(
+      // The progress gates (schema 9): a left-out option keeps its stored value.
+      const minStage = i.options.getInteger("min_stage");
+      const community = i.options.getBoolean("requires_community");
+      const gated = minStage !== null || community !== null;
+      const active = i.options.getBoolean("active");
+      // With gates, an item is switched on only after its gates are stored: a
+      // new item is created off, and "active: true" waits for the gate call.
+      // If the gate call fails, the item never went live without its gates.
+      let result = await ctx.api.call<{ id: string; name: string; cost: number; stock_available: number; active: boolean }>(
         "shift_quest_admin_catalog",
         ctx.userId,
         item && isUuid(item) ? item : null,
@@ -476,12 +592,17 @@ export const admin: HandlerSet = {
         i.options.getString("description"),
         i.options.getInteger("cost"),
         i.options.getInteger("stock_change"),
-        i.options.getBoolean("active")
+        gated && active === true ? null : active
       );
-      const list = await ctx.api.call<{ name: string; cost: number; stock_available: number; active: boolean; reserved: number }[]>(
-        "shift_quest_admin_catalog_list",
-        ctx.userId
-      );
+      if (gated) {
+        await callPlayer(ctx, "shift_quest_admin_catalog_gate", ctx.userId, result.id, minStage, community);
+        if (active === true && !result.active) {
+          result = await ctx.api.call("shift_quest_admin_catalog", ctx.userId, result.id, null, null, null, null, true);
+        }
+      }
+      const list = await ctx.api.call<
+        { name: string; cost: number; stock_available: number; active: boolean; reserved: number; min_stage?: number; requires_community?: boolean }[]
+      >("shift_quest_admin_catalog_list", ctx.userId);
       await show(i, {
         tone: "coins",
         title: `✅ บันทึก ${safe(result.name, 80)} แล้ว`,
@@ -490,7 +611,13 @@ export const admin: HandlerSet = {
             kind: "text",
             text: [
               `**ของทั้งหมด ${list.length} อย่าง**`,
-              ...list.map((x) => `- ${safe(x.name, 60)} **${x.cost}** เหรียญ · เหลือ ${x.stock_available} · จองอยู่ ${x.reserved} · ${x.active ? "เปิด" : "ปิด"}`),
+              ...list.map(
+                (x) =>
+                  `- ${safe(x.name, 60)} **${x.cost}** เหรียญ · เหลือ ${x.stock_available} · จองอยู่ ${x.reserved} · ${x.active ? "เปิด" : "ปิด"}${T.catalogGates(
+                    x.min_stage ?? 0,
+                    Boolean(x.requires_community)
+                  )}`
+              ),
             ].join("\n"),
           },
           { kind: "subtext", text: "แสดงให้นักเรียนเห็นเฉพาะตอนที่การแลกเปิดและตั้งค่าครบแล้ว" },
@@ -598,6 +725,55 @@ export const admin: HandlerSet = {
             description: "บันทึกถาวร ห้ามใส่ชื่อหรือข้อมูลส่วนตัว",
             max: 80,
             value: i.options.getString("category"),
+          },
+        ])
+      );
+    },
+
+    async "admin island"(i, ctx) {
+      requireStaff(ctx, ADMIN);
+      const action = i.options.getString("action", true);
+      let status: IslandStatus;
+      if (action === "consent-reset") {
+        const user = i.options.getUser("user");
+        if (!user) throw new GateError(T.adminIslandUser);
+        await callPlayer(ctx, "shift_quest_admin_consent_reset", ctx.userId, user.id);
+        status = await callPlayer<IslandStatus>(ctx, "shift_quest_admin_island_status", ctx.userId);
+        const view = islandStatusView(status, true);
+        await show(i, { ...view, blocks: [{ kind: "text", text: T.adminConsentReset(user.id) }, ...(view.blocks ?? [])] });
+        return;
+      }
+      if (action === "digest-hide" || action === "digest-show") {
+        const plot = i.options.getInteger("plot");
+        if (plot === null) throw new GateError(T.adminIslandPlot);
+        await callPlayer(ctx, "shift_quest_digest_hide", ctx.userId, plot, action === "digest-hide", i.options.getString("reason"));
+        status = await callPlayer<IslandStatus>(ctx, "shift_quest_admin_island_status", ctx.userId);
+      } else if (ISLAND_SWITCH[action]) {
+        const [key, value] = ISLAND_SWITCH[action];
+        status = await callPlayer<IslandStatus>(ctx, "shift_quest_admin_island_set", ctx.userId, key, value);
+      } else {
+        status = await callPlayer<IslandStatus>(ctx, "shift_quest_admin_island_status", ctx.userId);
+      }
+      await show(i, islandStatusView(status, action !== "status"));
+    },
+
+    async "admin award"(i, ctx) {
+      requireStaff(ctx, ADMIN);
+      const kind = i.options.getString("kind", true);
+      const user = i.options.getUser("user", true);
+      if (!AWARD_KIND[kind]) return;
+      // As /admin recognize: this command's interaction ID is the request key,
+      // so a resubmit of the same modal (a retry after a slow reply) is one award.
+      await i.showModal(
+        modal(cid("ad_award", kind, user.id, i.id), T.adminAwardModal(STAFF_AWARD_LABEL[AWARD_KIND[kind]]), [
+          {
+            kind: "text",
+            id: "reason",
+            label: T.adminAwardReason,
+            description: T.adminAwardReasonHint,
+            long: true,
+            required: true,
+            max: 500,
           },
         ])
       );
@@ -726,6 +902,27 @@ export const admin: HandlerSet = {
         result.duplicate
           ? { tone: "success", title: "✅ บันทึกไปแล้ว" }
           : { tone: "success", title: "✅ บันทึกแล้ว", blocks: [{ kind: "text", text: `<@${userId}> ได้รับแจ้งใน /inbox` }] }
+      );
+    },
+
+    async ad_award(i, ctx, [kind, userId, requestId]) {
+      requireStaff(ctx, ADMIN);
+      if (!i.isModalSubmit() || !AWARD_KIND[kind] || !SNOWFLAKE.test(userId ?? "") || !SNOWFLAKE.test(requestId ?? "")) return;
+      await i.deferReply({ flags: MessageFlags.Ephemeral });
+      const result = await callPlayer<{ amount: number; balance: number; duplicate: boolean }>(
+        ctx,
+        "shift_quest_admin_staff_award",
+        ctx.userId,
+        userId,
+        AWARD_KIND[kind],
+        textValue(i, "reason"),
+        `award:${requestId}`
+      );
+      await show(
+        i,
+        result.duplicate
+          ? { tone: "success", title: `✅ ${T.adminAwardDuplicate}` }
+          : { tone: "success", title: "✅ ให้รางวัลแล้ว", blocks: [{ kind: "text", text: T.adminAwarded(userId, result.amount, result.balance) }] }
       );
     },
 

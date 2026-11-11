@@ -525,6 +525,42 @@ reads and writes through `20261111090900_shift_quests_board.sql` and
   **Any later migration that repeats the bot's grant loop must keep excluding
   `shift_quest_canvas_*` and `shift_quest_ownership_get`**, or end with the
   same explicit `REVOKE ... FROM shift_quest_bot`.
+- **Live island post and suggestions link, schema 8**
+  (`20261111094000_shift_quest_live.sql`, apply after `093000`; the website
+  still needs 6, the bot still 2, and the live post starts only from 8):
+  - Settings gain two nullable channels, set with `/admin channel`:
+    `live_channel_id` (`kind:live`, a text channel) and `suggest_channel_id`
+    (`kind:suggest`, a forum or text channel students can see and post in;
+    the command refuses a staff-only one). Below schema 8 `admin_set`
+    refuses both keys with `bad_input`.
+  - **The live post** (`bot/src/quests/live.ts`): one message in the live
+    channel that the bot edits in place, about 5 seconds after every gateway
+    ready, then when something shown changes (checked once a minute) or
+    every 10 minutes. It shows the same outsider view of the island as the
+    weekly post (names and stages only for fully consented plots), tree and
+    goal counts, the Demo Day countdown, and the campfire as a count only.
+    When Discord refuses the picture (no Attach Files, 50013, or too large,
+    40005) the card goes out once more without it.
+  - **Stored**: `shift_quest_live_state`, one row with the channel id and
+    message id of the post (no text, no people; RLS on, `service_role`
+    only). `shift_quest_live_post()` reads it with the island data and
+    `shift_quest_live_mark(channel, message, previous)` writes it as a
+    compare-and-set, so two overlapping bot processes never leave two posts.
+    When nothing usable is stored, the bot reuses its own pinned post with
+    the marker line before posting and pinning a new one. Both functions are
+    bot-only, never the website.
+  - `approved` adds up the confirmed milestones of the trees every member
+    agreed to show, so it is always the sum of the stages on the picture.
+    Quiet projects never count: students watch every edit, and a total that
+    included them would give a quiet project's stage away as teams opt in
+    one by one (compare two edits, or subtract your own team's stage).
+  - **The website** reads the suggestions channel with
+    `shift_quest_island_links(actor)` (website-only, same gate as
+    `_island_map`) and shows "เสนอไอเดีย / แจ้งบั๊ก" in the island's ⋯ menu as
+    `https://discord.com/channels/<DISCORD_SHIFT_GUILD_ID>/<channel>`, hidden
+    while unset.
+  - After deploying the bot, run `pnpm bot:register` once so the new
+    `/admin channel` choices appear.
 
 **The web role.** `shift_quest_web` is a login like `shift_quest_bot`:
 `NOINHERIT`, `statement_timeout` 8s, 20 connections, `USAGE` on `public`, no
@@ -534,7 +570,8 @@ exactly this allowlist: `shift_quest_schema_version`, `_session`, `_start`,
 `_island_optin`, `_milestone_start`, `_milestone_submit`, `_side_choose`,
 `_side_submit`, `_propose`, `_submit`, `_help_create`, `_project_create`,
 `_project_list`, `_project_respond`, `_canvas_get`, `_canvas_link`,
-`_canvas_unlink`, `_ownership_get`. No review, staff, admin, outbox or data
+`_canvas_unlink`, `_ownership_get`, `_campfire` (schema 7) and
+`_island_links` (schema 8). No review, staff, admin, outbox or data
 function. The migrations revoke every `shift_quest_*` function from it, then
 grant the list by full signature and stop if one is missing. `run-local.sh`
 (`check_privileges`), `web_board.ts` and `web_canvas.ts` hold the same list

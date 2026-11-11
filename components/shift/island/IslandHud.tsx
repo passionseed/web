@@ -3,10 +3,13 @@
 import type { ReactNode } from "react";
 
 import { PixelIcon } from "@/components/shift/poster/pixel/PixelRects";
+import type { ViewerCard } from "@/lib/supabase/shift-quests/types";
 
-import { HUD, ISLAND, stageName } from "./copy";
+import { HUD, ISLAND } from "./copy";
 import island from "./island.module.css";
-import { PALETTE, WEB_SPRITES, iconScale, treeGrid, type WebIcon } from "./sprites";
+import { PLAYER } from "./player/copy";
+import { PixelAvatar } from "./player/PixelAvatar";
+import { PALETTE, WEB_SPRITES, type WebIcon } from "./sprites";
 import styles from "./world.module.css";
 
 /** Tree stages counted on the chip's meter. */
@@ -17,12 +20,26 @@ const STAGES = 7;
  * buttons on the right) and one bottom row. Only the controls take taps;
  * everything between them reaches the island.
  */
-export function Hud({ chip, buttons, bottom }: { chip: ReactNode; buttons: ReactNode; bottom: ReactNode }) {
+export function Hud({
+  chip,
+  pill,
+  buttons,
+  bottom,
+}: {
+  chip: ReactNode;
+  /** Under the chip, in the same left column (the coin pill). */
+  pill?: ReactNode;
+  buttons: ReactNode;
+  bottom: ReactNode;
+}) {
   return (
     <div className={styles.hud}>
       <header className={styles.hudTop}>
         <h1 className="sr-only">{ISLAND.title}</h1>
-        {chip}
+        <div className={styles.hudLeft}>
+          {chip}
+          {pill}
+        </div>
         <div className={`${styles.hudButtons} ${island.hudButtonsTight}`}>{buttons}</div>
       </header>
       <div className={styles.hudBottom}>{bottom}</div>
@@ -30,22 +47,29 @@ export function Hud({ chip, buttons, bottom }: { chip: ReactNode; buttons: React
   );
 }
 
-/** Top left: the project's name and its tree's stage as a 7-cell meter. Opens the project sheet. */
+/**
+ * Top left: who you are on the island (your Discord picture as a pixel
+ * sprite), the project's name and its tree's stage as a 7-cell meter, your
+ * level. Opens the character sheet.
+ */
 export function HudChip({
+  me,
   name,
   stage,
   todayOpen = false,
   onOpen,
 }: {
+  /** The viewer's own card: their name and their own avatar URL only. */
+  me: Pick<ViewerCard, "name" | "avatarUrl">;
+  /** The project's name. */
   name: string;
   stage: number;
-  /** Today's check-in is still open (lives in the project sheet): a small lamp dot says so. */
+  /** Today's check-in is still open (lives in the character sheet): a small lamp dot says so. */
   todayOpen?: boolean;
   onOpen: () => void;
 }) {
-  const grid = treeGrid(stage);
   const filled = Math.min(Math.max(Math.trunc(stage) || 0, 0), STAGES);
-  const label = HUD.chip(name, stageName(stage));
+  const label = PLAYER.chip(me.name, name, filled);
   return (
     <button
       type="button"
@@ -54,8 +78,8 @@ export function HudChip({
       aria-haspopup="dialog"
       onClick={onOpen}
     >
-      <span className={styles.chipTree} aria-hidden="true">
-        <PixelIcon grid={grid} palette={PALETTE} scale={iconScale(grid, 40)} />
+      <span className={styles.chipFace} aria-hidden="true">
+        <PixelAvatar name={me.name} url={me.avatarUrl} size={40} decorative />
         {todayOpen ? <span className={styles.chipDot} data-testid="chip-today-open" /> : null}
       </span>
       <span className={styles.chipText} aria-hidden="true">
@@ -70,13 +94,12 @@ export function HudChip({
   );
 }
 
-/** Top left before a plot is claimed: the island's name, nothing to open. */
-export function HudLabel({ text }: { text: string }) {
-  const grid = treeGrid(0);
+/** Top left before a plot is claimed: your picture and the island's line, nothing to open. */
+export function HudLabel({ me, text }: { me: Pick<ViewerCard, "name" | "avatarUrl">; text: string }) {
   return (
     <div className={`${styles.chip} ${styles.glass}`} data-static="true">
-      <span className={styles.chipTree} aria-hidden="true">
-        <PixelIcon grid={grid} palette={PALETTE} scale={iconScale(grid, 40)} />
+      <span className={styles.chipFace} aria-hidden="true">
+        <PixelAvatar name={me.name} url={me.avatarUrl} size={40} decorative />
       </span>
       <span className={styles.chipText}>
         <span className={styles.chipName}>{text}</span>
@@ -86,7 +109,20 @@ export function HudLabel({ text }: { text: string }) {
 }
 
 /** A round pixel button for the top right, with an optional count. */
-export function HudRound({ icon, label, badge, onClick }: { icon: WebIcon; label: string; badge?: number; onClick: () => void }) {
+/** `dot`: a small lamp dot, as on the chip, for a next step waiting behind this button (the menu's consent row). */
+export function HudRound({
+  icon,
+  label,
+  badge,
+  dot = false,
+  onClick,
+}: {
+  icon: WebIcon;
+  label: string;
+  badge?: number;
+  dot?: boolean;
+  onClick: () => void;
+}) {
   return (
     <button type="button" className={`${styles.round} ${styles.glass} ${styles.press}`} aria-label={label} aria-haspopup="dialog" onClick={onClick}>
       <PixelIcon grid={WEB_SPRITES[icon]} palette={PALETTE} scale={2} />
@@ -94,6 +130,8 @@ export function HudRound({ icon, label, badge, onClick }: { icon: WebIcon; label
         <span className={styles.badge} aria-hidden="true">
           {badge > 9 ? "9+" : badge}
         </span>
+      ) : dot ? (
+        <span className={styles.chipDot} aria-hidden="true" data-testid="round-dot" />
       ) : null}
     </button>
   );

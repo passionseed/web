@@ -11,12 +11,17 @@
 #             equal the twice-applied one below
 #   wave1     only the files up to 20261111090700, when later ones exist: wave 1
 #             applies alone, has the island core and no season tables
-#   rules, island, flows, islandflows, board, canvas, campfire
+#   rules, island, flows, islandflows, board, canvas, campfire, live
 #             every migration applied twice (each must be re-runnable), then
 #             db_rules.ts, island_rules.ts, bot_flows.ts, island_flows.ts,
 #             web_board.ts (the web quest board, side quests, shift_quest_web),
-#             web_canvas.ts (the SHIFT canvas link) and campfire.ts (the
-#             coworking voice campfire)
+#             web_canvas.ts (the SHIFT canvas link), campfire.ts (the
+#             coworking voice campfire) and live.ts (the live island post and
+#             the suggestions channel), each with consent_required switched off
+#             (20261111095000) so their expectations hold
+#   player    every migration applied twice, then player.ts (consent, the shop
+#             gates, staff awards, the character and wallet reads, AI island
+#             news), with consent on and off
 #
 #   supabase/tests/shift_quests/run-local.sh       # or: pnpm test:db:quests
 #   PG_BIN=/usr/lib/postgresql/15/bin supabase/tests/shift_quests/run-local.sh
@@ -49,7 +54,10 @@ cleanup() {
 trap cleanup EXIT
 
 initdb -D "$DATA/db" -U postgres --auth=trust >/dev/null
-if ! pg_ctl -D "$DATA/db" -o "-p $PORT -k $DATA -c listen_addresses=127.0.0.1" -l "$LOG" -w start >/dev/null; then
+# A throwaway cluster: small WAL, no full-page images, no fsync, so ten
+# databases fit in a few hundred megabytes of disk.
+PG_OPTS="-c wal_level=minimal -c max_wal_senders=0 -c max_wal_size=64MB -c min_wal_size=32MB -c full_page_writes=off -c fsync=off"
+if ! pg_ctl -D "$DATA/db" -o "-p $PORT -k $DATA -c listen_addresses=127.0.0.1 $PG_OPTS" -l "$LOG" -w start >/dev/null; then
   echo "Postgres did not start on port $PORT (in use? set SHIFT_QUESTS_TEST_PORT). Its log:" >&2
   tail -n 20 "$LOG" >&2
   exit 1
@@ -155,9 +163,10 @@ SQL
 # bot can execute every shift_quest_* entry point and no helper, the Data API
 # can execute none and touch no table, and every table has row level security.
 # The website-only functions (the canvas link, 091100, the ownership read,
-# 091200, and the campfire read, 093000) are never the bot's; the campfire
-# writers (093000) are the bot's like every other entry point.
-# And the web allowlist (20261111090900, 091000, 091100, 091200, 093000): shift_quest_web executes exactly the
+# 091200, the campfire read, 093000, and the menu links read, 094000) are
+# never the bot's; the campfire writers (093000) and the live post's reader
+# and writer (094000) are the bot's like every other entry point.
+# And the web allowlist (20261111090900, 091000, 091100, 091200, 093000, 094000): shift_quest_web executes exactly the
 # functions listed below (nothing before that file is applied), never a
 # helper, and holds no privilege on any table or sequence. The list repeats
 # the migration's on purpose: a new grant must change both.
@@ -167,8 +176,14 @@ check_privileges() {
 WITH fns0 AS (
   SELECT p.oid, p.oid::regprocedure::text AS sig,
     p.proname LIKE 'shift\_quest\_\_%' OR p.proname = 'shift_quest_bootstrap_admin' AS helper,
-    -- Website-only entry points (091100, 091200, 093000): the bot never runs them.
-    p.proname LIKE 'shift\_quest\_canvas\_%' OR p.proname IN ('shift_quest_ownership_get', 'shift_quest_campfire') AS web_only
+    -- Website-only entry points (091100, 091200, 093000, 094000, 095000): the bot never runs them.
+    p.proname LIKE 'shift\_quest\_canvas\_%'
+      OR p.proname IN ('shift_quest_ownership_get', 'shift_quest_campfire', 'shift_quest_island_links')
+      OR p.proname IN ('shift_quest_character', 'shift_quest_wallet', 'shift_quest_consent_get',
+        'shift_quest_consent_adult', 'shift_quest_consent_link', 'shift_quest_consent_import',
+        'shift_quest_consent_parent_view', 'shift_quest_consent_parent_answer',
+        'shift_quest_consent_parent_withdraw', 'shift_quest_island_news', 'shift_quest_digest_inputs',
+        'shift_quest_digest_save') AS web_only
   FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
   WHERE n.nspname = 'public' AND p.proname LIKE 'shift\_quest\_%'
 ), fns AS (
@@ -203,7 +218,24 @@ web_allow(sig) AS (VALUES
   ('shift_quest_canvas_link(text,uuid,text,text)'),
   ('shift_quest_canvas_unlink(text)'),
   ('shift_quest_ownership_get(text)'),
-  ('shift_quest_campfire(text,boolean)')
+  ('shift_quest_campfire(text,boolean)'),
+  ('shift_quest_island_links(text)'),
+  -- 20261111095000_shift_quest_player.
+  ('shift_quest_character(text)'),
+  ('shift_quest_wallet(text)'),
+  ('shift_quest_redeem(text,uuid,text,integer)'),
+  ('shift_quest_redeem_cancel(text,uuid)'),
+  ('shift_quest_consent_get(text)'),
+  ('shift_quest_consent_adult(text,date,text)'),
+  ('shift_quest_consent_link(text,text,text,text)'),
+  ('shift_quest_consent_import(text,text,timestamp with time zone,boolean,boolean)'),
+  ('shift_quest_consent_parent_view(text)'),
+  ('shift_quest_consent_parent_answer(text,boolean,boolean,text,text,text,text,text)'),
+  ('shift_quest_consent_parent_withdraw(text)'),
+  ('shift_quest_island_news(text)'),
+  ('shift_quest_digest_inputs(date,text)'),
+  ('shift_quest_digest_save(date,text,jsonb)'),
+  ('shift_quest_digest_hide(text,integer,boolean,text)')
 ), web_applied AS (
   SELECT to_regprocedure('public.shift_quest_board(text)') IS NOT NULL AS yes
 )
@@ -266,10 +298,15 @@ echo "# migrations"
 for f in "${MIGRATIONS[@]}"; do echo "apply $(basename "$f")"; done
 new_db once
 apply once "single pass" "${MIGRATIONS[@]}"
-for DB in rules island flows islandflows board canvas campfire; do
+for DB in rules island flows islandflows board canvas campfire live player; do
   new_db "$DB"
   apply "$DB" "first pass" "${MIGRATIONS[@]}"
   apply "$DB" "second pass" "${MIGRATIONS[@]}"
+done
+# The suites written before consent (20261111095000) expect names and shares
+# without it: they run with consent_required off. player.ts tests both.
+for DB in rules island flows islandflows board canvas campfire live; do
+  "${PSQL[@]}" -d "$DB" -c "UPDATE public.shift_quest_settings SET consent_required = false WHERE id" >/dev/null
 done
 if [ "${#WAVE1[@]}" -lt "${#MIGRATIONS[@]}" ]; then
   new_db wave1
@@ -331,6 +368,8 @@ suite "island flows" islandflows island_flows.ts
 suite "web board" board web_board.ts
 suite "web canvas link" canvas web_canvas.ts
 suite "campfire" campfire campfire.ts
+suite "live post" live live.ts
+suite "player, economy, news and consent" player player.ts
 # island_rules.ts runs against wave 1 alone once it knows to skip season cases.
 if [ "${#WAVE1[@]}" -lt "${#MIGRATIONS[@]}" ] && grep -q SHIFT_QUESTS_WAVE "$HERE/island_rules.ts"; then
   export SHIFT_QUESTS_WAVE=1

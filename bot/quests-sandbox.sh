@@ -4,7 +4,7 @@
 #   QUEST_SANDBOX_TOKEN=<test bot token> \
 #   QUEST_SANDBOX_GUILD_ID=<test server id> \
 #   QUEST_SANDBOX_ADMIN_ID=<your Discord user id> \
-#   bot/quests-sandbox.sh [--rewards]
+#   bot/quests-sandbox.sh
 #
 #   bot/quests-sandbox.sh --db-only    # the database alone: no Discord, no token
 #   bot/quests-sandbox.sh --reset      # wipe the sandbox database and build it again
@@ -18,15 +18,21 @@
 #
 # First run: makes a Postgres cluster in ~/.cache/shift-quests-sandbox (or
 # QUEST_SANDBOX_DIR), applies the shift_quest migrations and seeds it like a
-# Season 1 pilot: you are admin, no reward rule (milestones earn no coins), a
-# demo student with a quest waiting in /review queue, five neighbours with
-# trees, a stand-in reviewer (100000000000000701) who can approve your own
-# work (you cannot: conflict of interest), every draft side quest published
-# for the web board and, once the season migration exists, a season with a
-# Demo Day, an island goal and an unlock. --rewards adds a sandbox reward
-# rule on every published template and switches coins on. Both login roles
-# get the password 'sandbox': shift_quest_bot (the bot) and shift_quest_web
-# (the website).
+# Season 1 pilot: you are admin, a demo student with a quest waiting in
+# /review queue, five neighbours with trees, a stand-in reviewer
+# (100000000000000701) who can approve your own work (you cannot: conflict of
+# interest) and hand out redemptions, every draft side quest published for the
+# web board and, once the season migration exists, a season with a Demo Day,
+# an island goal and the free sticker unlock. Coins are ON: the DRAFT economy
+# in lib/content/shift-island-economy.ts (rules pinned on the main, community
+# and side quests, the shop ladder with its gates, the terms) is applied by
+# bot/scripts/economy-seed.ts before any quest is chosen. With the player
+# migration (schema 9): parent consent stays required, neighbours A, B and D
+# confirmed their own age (so their names show), you have no consent yet (to
+# try the flow), and AI island news is on with sample summaries for A, B and
+# D. --rewards is kept for old commands and does nothing more. Both login
+# roles get the password 'sandbox': shift_quest_bot (the bot) and
+# shift_quest_web (the website).
 #
 # Every run checks the sandbox still matches the migrations (a hash of the
 # shift_quest files): after you pull new ones it stops and tells you to reset.
@@ -40,17 +46,17 @@
 set -euo pipefail
 
 usage() {
-  echo "usage: bot/quests-sandbox.sh [--db-only] [--reset] [--rewards]" >&2
+  echo "usage: bot/quests-sandbox.sh [--db-only] [--reset]" >&2
   exit 2
 }
 DB_ONLY="${QUEST_SANDBOX_DRY_RUN:-0}"
 RESET="${QUEST_SANDBOX_RESET:-0}"
-REWARDS=""
 for arg in "$@"; do
   case "$arg" in
     --db-only) DB_ONLY=1 ;;
     --reset) RESET=1 ;;
-    --rewards) REWARDS=1 ;;
+    # Coins are on in every sandbox now (the DRAFT economy seed); kept so old commands still run.
+    --rewards) echo "Note: --rewards is the default now; the DRAFT economy is seeded on every build." ;;
     *) usage ;;
   esac
 done
@@ -74,9 +80,24 @@ DEMO_STUDENT="100000000000000777"
 ADMIN="${QUEST_SANDBOX_ADMIN_ID:-100000000000000700}"
 
 MIGRATIONS=("$ROOT"/supabase/migrations/*shift_quest*.sql)
-HASH="$(for f in "${MIGRATIONS[@]}"; do basename "$f"; cat "$f"; done |
-  if command -v sha256sum >/dev/null; then sha256sum; else shasum -a 256; fi | cut -c1-12)"
+sha12() { if command -v sha256sum >/dev/null; then sha256sum; else shasum -a 256; fi | cut -c1-12; }
+HASH="$(for f in "${MIGRATIONS[@]}"; do basename "$f"; cat "$f"; done | sha12)"
 echo "Migrations: ${#MIGRATIONS[@]} shift_quest files, hash $HASH. Postgres $PG_MAJOR from $PG_BIN"
+# The DRAFT economy (rules, shop, terms) the seed applies; a change after the build only warns.
+ECONOMY_FILE="$ROOT/lib/content/shift-island-economy.ts"
+ECONOMY_SEED="$ROOT/bot/scripts/economy-seed.ts"
+TSX="$ROOT/node_modules/.bin/tsx"
+ECONOMY_HASH="$(cat "$ECONOMY_FILE" "$ECONOMY_SEED" | sha12)"
+# The notice version the website records with consent (ISLAND_CONSENT_VERSION in
+# lib/supabase/shift-quests/playerTypes.ts).
+CONSENT_VERSION="island-2026-11-11"
+economy_seed() {
+  if [ ! -x "$TSX" ]; then
+    echo "The economy seed needs tsx: run pnpm install in $ROOT first." >&2
+    exit 1
+  fi
+  "$TSX" "$ECONOMY_SEED" "$1" | "${PSQL[@]}" -o /dev/null -v admin="$ADMIN"
+}
 
 stop_db() { pg_ctl -D "$DIR/db" -m fast stop >/dev/null 2>&1 || true; }
 rebuild() {
@@ -105,9 +126,10 @@ if [ -d "$DIR/db" ]; then
     echo "The sandbox admin is $(built admin), not QUEST_SANDBOX_ADMIN_ID=$QUEST_SANDBOX_ADMIN_ID." >&2
     rebuild
   fi
-  if [ -n "$REWARDS" ] && [ "$(built rewards)" != 1 ]; then
-    echo "The sandbox was built without --rewards." >&2
-    rebuild
+  if [ "$(built economy)" != "$ECONOMY_HASH" ]; then
+    echo "Note: the DRAFT economy changed since this sandbox was built. Apply it with:" >&2
+    echo "  $TSX $ECONOMY_SEED | psql -h 127.0.0.1 -p $PORT -U postgres -d postgres -v ON_ERROR_STOP=1 -v admin=$(built admin)" >&2
+    echo "  (or rebuild: bot/quests-sandbox.sh --reset)" >&2
   fi
   FRESH=0
 else
@@ -149,10 +171,19 @@ SQL
     "${PSQL[@]}" -c "ALTER ROLE shift_quest_web WITH LOGIN PASSWORD 'sandbox'"
   fi
 
-  # Season 1 defaults: you are admin, coins stay off and no rule pays for milestones.
-  "${PSQL[@]}" -o /dev/null -v admin="$ADMIN" -v demo="$DEMO_STUDENT" <<'SQL'
+  # You are admin. A stand-in reviewer on no project, so your own submissions
+  # can be approved (the approve-all command printed by --db-only uses this
+  # ID); the economy seed makes them the fulfillment person too.
+  "${PSQL[@]}" -o /dev/null -v admin="$ADMIN" <<'SQL'
 SELECT public.shift_quest_bootstrap_admin(:'admin', 'Sandbox admin');
+SELECT public.shift_quest_admin_role(:'admin', '100000000000000701', 'Sandbox reviewer', 'reviewer', true);
+SQL
 
+  # Season 1 coins ON: the DRAFT rules, template pins, shop and terms, before
+  # any quest is chosen so every quest below pins its rule.
+  economy_seed core
+
+  "${PSQL[@]}" -o /dev/null -v admin="$ADMIN" -v demo="$DEMO_STUDENT" <<'SQL'
 -- A demo student with a submitted quest, so /review queue has work at once.
 SELECT public.shift_quest_start(:'demo', 'Demo Student', false);
 SELECT public.shift_quest_project_create(:'demo', 'Demo Trip Splitter', 'software', 'Split trip costs between friends');
@@ -202,12 +233,8 @@ BEGIN
   END LOOP;
 END;
 $$;
-
--- A stand-in reviewer on no project, so your own submissions can be approved
--- (the approve-all command printed by --db-only uses this ID).
-SELECT public.shift_quest_admin_role(:'admin', '100000000000000701', 'Sandbox reviewer', 'reviewer', true);
 SQL
-  SEEDED="you are admin, coins are off (Season 1 default), five neighbours have trees, a demo submission waits in /review queue and a stand-in reviewer (100000000000000701) can approve your work"
+  SEEDED="you are admin, coins are on with the DRAFT economy (rules, shop ladder with gates, terms), five neighbours have trees, a demo submission waits in /review queue and a stand-in reviewer (100000000000000701) can approve your work and hand out redemptions"
 
   # Side quests for the web board are seeded as drafts; publish them all here.
   if [ "$("${PSQL[@]}" -Atc "SELECT EXISTS (SELECT 1 FROM information_schema.columns
@@ -218,18 +245,44 @@ FROM (SELECT DISTINCT slug FROM public.shift_quest_templates WHERE side) s
 ORDER BY slug;
 SQL
     SEEDED="$SEEDED; every side quest is published for the web board"
+    # Side quests pin the side rule once they are published.
+    economy_seed side
   fi
 
-  if [ -n "$REWARDS" ]; then
-    "${PSQL[@]}" -o /dev/null -v admin="$ADMIN" <<'SQL'
-SELECT public.shift_quest_admin_set(:'admin', 'reward_terms', 'Sandbox only: 10 Passioncoin for each reviewed quest.');
-SELECT public.shift_quest_admin_rule(:'admin', 'sandbox', 10, 5, 'each_confirmed',
-  'Sandbox: a reviewed quest', 'Sandbox: one mentor reviews', 'Sandbox: an admin can reverse with a reason');
-SELECT public.shift_quest_admin_template_rule(:'admin', slug, 'sandbox')
-FROM public.shift_quest_templates WHERE status = 'published';
-SELECT public.shift_quest_admin_set(:'admin', 'awards', 'on');
+  # The player round (20261111095000, schema 9): parent consent and AI island news.
+  if [ "$("${PSQL[@]}" -Atc "SELECT to_regclass('public.shift_quest_consents') IS NOT NULL")" = t ]; then
+    "${PSQL[@]}" -o /dev/null -v admin="$ADMIN" -v version="$CONSENT_VERSION" <<'SQL'
+-- Consent stays required (the default). Neighbours A, B and D confirmed their
+-- own age, so their names show; C, E, the demo student and you have none (you
+-- can try the parent flow on the website).
+SELECT public.shift_quest_consent_adult(d, (public.shift_quest__bkk_today() - interval '25 years')::date, :'version')
+FROM unnest(ARRAY['100000000000000781', '100000000000000782', '100000000000000784']) d;
+
+-- AI island news on, with SANDBOX SAMPLE summaries (model 'sandbox-sample'), not model output.
+SELECT public.shift_quest_admin_island_set(:'admin', 'digest_enabled', 'on');
+CREATE TEMP TABLE news (discord text, day_summary text, week_summary text);
+INSERT INTO news VALUES
+  ('100000000000000781',
+   'ตัวอย่างข่าวเกาะ: วันนี้ทีมให้ลูกค้าจริง 3 คนลองสั่งขนมผ่านหน้าร้านออนไลน์ แล้วปรับตะกร้าให้เห็นราคารวมก่อนจ่าย',
+   'ตัวอย่างข่าวเกาะ: สัปดาห์นี้ต้นไม้ของทีมถึงขั้น 4 ทีมทดสอบการสั่งกับลูกค้าจริงและแก้จุดที่คนสะดุดไปสองจุด'),
+  ('100000000000000782',
+   'ตัวอย่างข่าวเกาะ: วันนี้ทีมช่วยอีกทีมตั้งการทดสอบกับผู้เล่นจริง และเพิ่มด่านใหม่เรื่องแรงเสียดทาน',
+   'ตัวอย่างข่าวเกาะ: สัปดาห์นี้ต้นไม้ของทีมถึงขั้น 6 ผู้เล่นที่ลองบอกว่าด่านแรงโน้มถ่วงยากไป ทีมจึงทำด่านฝึกเพิ่ม'),
+  ('100000000000000784',
+   NULL,
+   'ตัวอย่างข่าวเกาะ: สัปดาห์นี้ทีมคุยกับร้านตัดผม 2 ร้านเพื่อดูว่าคิวจริงเป็นยังไง ยังไม่มีงานส่งตรวจใหม่');
+SELECT public.shift_quest_digest_save(public.shift_quest__bkk_today(), k.kind, jsonb_agg(jsonb_build_object(
+         'project_id', pm.project_id,
+         'summary', CASE WHEN k.kind = 'day' THEN n.day_summary ELSE n.week_summary END,
+         'no_update', (CASE WHEN k.kind = 'day' THEN n.day_summary ELSE n.week_summary END) IS NULL,
+         'model', 'sandbox-sample')))
+FROM news n
+JOIN public.shift_quest_members m ON m.discord_user_id = n.discord
+JOIN public.shift_quest_project_members pm ON pm.member_id = m.id AND pm.status = 'active'
+CROSS JOIN (VALUES ('day'), ('week')) k(kind)
+GROUP BY k.kind;
 SQL
-    SEEDED="${SEEDED/coins are off (Season 1 default)/coins are on with a sandbox rule on every published template}"
+    SEEDED="$SEEDED; parent consent is required (neighbours A, B and D confirmed their age, you have none yet) and AI island news is on with sample summaries"
   fi
 
   # Season 1 lives in a later migration than wave 1; seed it only once that exists.
@@ -255,11 +308,11 @@ SQL
     SEEDED="$SEEDED; no season yet (wave 1 migrations only)"
   fi
 
-  printf 'migrations=%s\nadmin=%s\nrewards=%s\n' "$HASH" "$ADMIN" "${REWARDS:-0}" >"$BUILT"
+  printf 'migrations=%s\nadmin=%s\nrewards=1\neconomy=%s\n' "$HASH" "$ADMIN" "$ECONOMY_HASH" >"$BUILT"
   BUILDING=0
   echo "Sandbox ready: $SEEDED."
 else
-  echo "Sandbox up to date (admin $(built admin), rewards $(built rewards))."
+  echo "Sandbox up to date (admin $(built admin), DRAFT economy $(built economy))."
 fi
 
 if [ "${QUEST_SANDBOX_DRY_RUN:-0}" = 1 ]; then

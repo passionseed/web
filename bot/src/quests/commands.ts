@@ -134,11 +134,16 @@ export function questCommands(): RESTPostAPIChatInputApplicationCommandsJSONBody
               { name: "help (ชุมชน)", value: "help" },
               { name: "staff (ทีมพี่เลี้ยง)", value: "staff" },
               { name: "celebrate (โพสต์ความสำเร็จ)", value: "celebrate" },
-              { name: "coworking (ห้องข้อความหรือห้องเสียง)", value: "coworking" }
+              { name: "coworking (ห้องข้อความหรือห้องเสียง)", value: "coworking" },
+              { name: "live (โพสต์เกาะสด บอทแก้โพสต์เดียว)", value: "live" },
+              { name: "suggest (ฟอรัมเสนอไอเดีย แจ้งบั๊ก)", value: "suggest" }
             )
         )
         // coworking may be a voice channel: its people sit at the island's campfire, and intention posts land in its text chat.
-        .addChannelOption((o) => o.setName("channel").setDescription("ห้อง").addChannelTypes(ChannelType.GuildText, ChannelType.GuildVoice))
+        // suggest may be a forum: the web island's ⋯ menu links to it. The handler checks each kind's type.
+        .addChannelOption((o) =>
+          o.setName("channel").setDescription("ห้อง").addChannelTypes(ChannelType.GuildText, ChannelType.GuildVoice, ChannelType.GuildForum)
+        )
     )
     .addSubcommand((s) =>
       s
@@ -224,6 +229,9 @@ export function questCommands(): RESTPostAPIChatInputApplicationCommandsJSONBody
         .addIntegerOption((o) => o.setName("stock_change").setDescription("เพิ่ม/ลดสต็อก เช่น 10 หรือ -2"))
         .addBooleanOption((o) => o.setName("active").setDescription("เปิดให้แลก"))
         .addStringOption((o) => o.setName("description").setDescription("รายละเอียด").setMaxLength(1000))
+        // Progress gates (20261111095000): a tree stage and an approved community quest.
+        .addIntegerOption((o) => o.setName("min_stage").setDescription("ต้นไม้ต้องถึงขั้นที่ (0 = ไม่จำกัด)").setMinValue(0).setMaxValue(7))
+        .addBooleanOption((o) => o.setName("requires_community").setDescription("ต้องผ่านเควสต์ชุมชน (ขั้น 6 หรือ 7) ก่อน"))
     )
     .addSubcommand((s) =>
       s
@@ -266,6 +274,46 @@ export function questCommands(): RESTPostAPIChatInputApplicationCommandsJSONBody
         .addUserOption((o) => o.setName("user").setDescription("คน").setRequired(true))
         .addIntegerOption((o) => o.setName("amount").setDescription("เหรียญ 0 ถึง 200 (0 = คำชมอย่างเดียว)").setRequired(true).setMinValue(0).setMaxValue(200))
         .addStringOption((o) => o.setName("category").setDescription("หมวด เช่น บทเรียนดีที่สุดจากการทดสอบที่ล้ม").setMaxLength(80))
+    )
+    .addSubcommand((s) =>
+      s
+        .setName("island")
+        .setDescription("ความยินยอมผู้ปกครอง และข่าวเกาะ AI (สถานะ เปิด ปิด ซ่อนทีม)")
+        .addStringOption((o) =>
+          o
+            .setName("action")
+            .setDescription("ทำอะไร")
+            .setRequired(true)
+            .addChoices(
+              { name: "status (สถานะ)", value: "status" },
+              { name: "consent-on (ต้องมีความยินยอม)", value: "consent-on" },
+              { name: "consent-off (ไม่ต้องมีความยินยอม)", value: "consent-off" },
+              { name: "digest-on (เปิดข่าวเกาะ AI)", value: "digest-on" },
+              { name: "digest-off (ปิดข่าวเกาะ AI)", value: "digest-off" },
+              { name: "digest-hide (ซ่อนสรุปของทีม)", value: "digest-hide" },
+              { name: "digest-show (แสดงสรุปของทีมอีกครั้ง)", value: "digest-show" },
+              { name: "consent-reset (เปิดให้นักเรียนขอความยินยอมใหม่)", value: "consent-reset" }
+            )
+        )
+        .addIntegerOption((o) => o.setName("plot").setDescription("เลขแปลงของทีม (สำหรับ digest-hide และ digest-show)").setMinValue(1))
+        .addStringOption((o) => o.setName("reason").setDescription("เหตุผลที่ซ่อน (ไม่บังคับ)").setMaxLength(300))
+        .addUserOption((o) => o.setName("user").setDescription("นักเรียน (สำหรับ consent-reset หลังคุยกับครอบครัวแล้ว)"))
+    )
+    .addSubcommand((s) =>
+      s
+        .setName("award")
+        .setDescription("รางวัลจากทีมงาน (มีเหตุผลที่นักเรียนเห็น)")
+        .addStringOption((o) =>
+          o
+            .setName("kind")
+            .setDescription("รางวัลอะไร")
+            .setRequired(true)
+            .addChoices(
+              { name: "taught (สอนใน SHIFT รอบถัดไป)", value: "taught" },
+              { name: "helped (ช่วยเพื่อนมากที่สุด)", value: "helped" }
+            )
+        )
+        .addUserOption((o) => o.setName("user").setDescription("คน").setRequired(true))
     );
 
   return [start, island, project, squad, work, help, celebrate, inbox, coins, rewards, settings, data, review, fulfill, admin].map(

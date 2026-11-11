@@ -129,13 +129,6 @@
   color: var(--text-hi);
 }
 
-.sectionSub {
-  margin: 0;
-  font-size: 14px;
-  line-height: 1.55;
-  color: var(--text-dim);
-}
-
 .quiet {
   margin: 0;
   font-size: 14px;
@@ -477,175 +470,307 @@
 
 /* ---------------------------------------------------------------- board */
 
+/*
+ * The quest board as a notice board that fits a phone: lane buttons over a
+ * wooden board, and a strip of four lanes (each one board wide, snapped) that
+ * the student swipes between. Each lane scrolls down on its own. Cards are
+ * notes pinned flat on the wood: no rotation, no extrusion, no labels above
+ * headings.
+ */
 .board {
   display: grid;
-  gap: 16px;
+  gap: 8px;
 }
 
-.laneList {
+/* The lane buttons: a group of toggles (aria-pressed), not tabs. */
+.laneNav {
   display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 4px;
+}
+
+.laneButton {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 2px;
+  min-width: 0;
+  min-height: 56px;
+  padding: 6px 2px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--isl-sand-hi);
+  background: transparent;
+  border: 0;
+  box-shadow: inset 0 0 0 1px rgba(246, 228, 181, 0.3);
+  clip-path: var(--notch);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--snap) var(--ease-snap), transform var(--press) var(--ease-snap);
+}
+
+.laneButton:focus-visible {
+  /* The notch clips anything outside the box: the ring goes inside. */
+  outline: 2px solid var(--action-soft);
+  outline-offset: -4px;
+}
+
+.laneButton:hover {
+  background: rgba(246, 228, 181, 0.08);
+}
+
+.laneButton:active {
+  transform: translateY(1px);
+}
+
+.laneButton[aria-pressed="true"] {
+  color: var(--isl-ink);
+  background: var(--isl-cream);
+  box-shadow: inset 0 0 0 2px var(--isl-ink);
+}
+
+.laneButton[aria-pressed="true"]:focus-visible {
+  outline-color: #1d4ed8;
+}
+
+.laneIcon {
+  flex: none;
+  display: block;
+  image-rendering: pixelated;
+}
+
+.laneName,
+.laneCount {
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.laneCount {
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+/* The board: wood with a faint 2px dither, in a 2px ink frame. */
+.cork {
+  min-width: 0;
+  padding: 2px;
+  background-color: var(--isl-wood);
+  background-image: conic-gradient(
+    rgba(52, 68, 71, 0.18) 25%,
+    transparent 0 50%,
+    rgba(52, 68, 71, 0.18) 0 75%,
+    transparent 0
+  );
+  background-size: 4px 4px;
+  box-shadow: inset 0 0 0 2px var(--isl-ink);
+  clip-path: var(--notch);
+}
+
+/*
+ * The strip: one lane per board width, snapped, one lane per swipe. A fixed
+ * height keeps the sheet still while lanes of different lengths pass by.
+ * data-vaul-no-drag on it: the sheet drags from its head, not from a swipe here.
+ * The budget (230px) is the sheet's head plus the lane bar as it really is
+ * (about 64px: icon, name and the main lane's count), so the sheet body never
+ * scrolls on a 360x640 phone and only the lane does. The floor stays under
+ * what small phones have left.
+ */
+.lanes {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 100%;
+  grid-template-rows: minmax(0, 1fr);
+  height: clamp(260px, calc(92svh - 230px), 560px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.lanes::-webkit-scrollbar {
+  display: none;
+}
+
+.lane {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px 6px 16px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+/* A lane's one line of context, on the wood. */
+.laneSub {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--isl-cream);
+}
+
+/* Pinned cards: two columns on a phone, three in the desktop dialog. */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
+.cards > li {
+  display: grid;
+  min-width: 0;
+}
+
+/* The main lane's eighth cell: the tree the seven quests grow, set into the board rather than pinned on it. */
+.treeCell {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: end;
+  gap: 6px;
+  min-height: 84px;
+  padding: 2px 6px 6px 2px;
+  color: var(--isl-cream);
+  background: rgba(52, 68, 71, 0.4);
+  box-shadow: inset 0 0 0 2px rgba(52, 68, 71, 0.8);
+  clip-path: var(--notch);
+}
+
+.treeSprite {
+  display: block;
+  image-rendering: pixelated;
+}
+
+.treeText {
+  display: grid;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  text-wrap: balance;
+}
+
+.treeName {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* A dashed slot where a new note can go: propose a quest, or back to the main quests. */
+.laneAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--isl-cream);
+  background: rgba(52, 68, 71, 0.35);
+  border: 2px dashed rgba(255, 241, 214, 0.6);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--snap) var(--ease-snap), transform var(--press) var(--ease-snap);
+}
+
+.laneAction:hover {
+  background: rgba(52, 68, 71, 0.55);
+}
+
+.laneAction:active {
+  transform: translateY(1px);
+}
+
+.laneAction:focus-visible {
+  outline: 2px solid var(--action-soft);
+  outline-offset: 2px;
+}
+
+.laneEmpty {
+  display: grid;
+  gap: 10px;
+}
+
+/* The island's shared goal: a notice pinned across the lane. */
 .goal {
   display: grid;
   gap: 8px;
+  padding: 10px;
+  color: var(--isl-ink);
+  background: var(--isl-cream);
+  box-shadow: inset 0 0 0 2px var(--isl-ink);
+  clip-path: var(--notch);
 }
 
 .goalLine {
   margin: 0;
-  color: var(--text-hi);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
 }
 
 .goalMeter {
   height: 10px;
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 0 0 1px var(--isl-stone);
+  background: var(--isl-sand-hi);
+  box-shadow: inset 0 0 0 2px var(--isl-ink);
 }
 
 .goalMeterFill {
   display: block;
   height: 100%;
-  background: var(--isl-leaf-hi);
+  background: var(--isl-leaf);
+  box-shadow: inset 0 0 0 2px var(--isl-ink);
 }
 
-/* The ring: seven main quests around the tree, no first or last. */
-.ring {
-  position: relative;
-  width: min(100%, 340px);
-  aspect-ratio: 1;
-  margin: 4px auto 28px;
-  /* The tree scales with the ring, so the top tile's chip never covers a tall tree. */
-  container-type: inline-size;
-}
-
-.ringTree {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  transform: translate(-50%, -56%);
-}
-
-.ringTree svg {
-  display: block;
-  width: min(96px, 26cqw);
-  height: auto;
-  image-rendering: pixelated;
-}
-
-/* The main quests' names under the ring: two columns, each opening its quest. */
-.legend {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 4px 12px;
+.goalUnlock {
   margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.legendItem {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-height: 44px;
-  padding: 4px 6px;
-  font: inherit;
-  font-size: 14px;
-  line-height: 1.35;
-  text-align: left;
-  color: var(--text);
-  background: transparent;
-  border: 0;
-  clip-path: var(--notch);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transition: background var(--snap) var(--ease-snap);
-}
-
-.legendItem:hover {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.legendItem:active {
-  transform: translateY(1px);
-}
-
-.legendItem:focus-visible {
-  outline: 2px solid var(--action-soft);
-  outline-offset: 2px;
-}
-
-.legendItem[data-status="done"] {
-  color: var(--text-dim);
-}
-
-.legendIcon {
-  flex: none;
-  image-rendering: pixelated;
-}
-
-.legendTitle {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-  min-width: 0;
-}
-
-.ringStage {
   font-size: 13px;
-  color: var(--text-dim);
+  line-height: 1.5;
+  color: #4f5a5d;
 }
 
-.ringList {
-  position: absolute;
-  inset: 0;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.ringItem {
-  position: absolute;
-  /* Centre the 60px tile (not the chip below it) on the ring point. */
-  transform: translate(-50%, -30px);
-}
-
-/* Side branches. */
+/* Side lane: route chips, then one group per main quest the side quests branch from. */
 .sideBranches {
   display: grid;
-  gap: 16px;
+  gap: 12px;
   min-width: 0;
 }
 
-.routeChips {
+/*
+ * Tight and wrapping: never a second horizontal scroller inside the strip.
+ * Two classes: wins over the ToggleGroup's own utilities in any load order.
+ */
+.sideBranches .routeChips {
   width: 100%;
   min-width: 0;
   justify-content: flex-start;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .routeChips .routeChip {
   flex: none;
   height: auto;
-  min-height: 44px;
-  padding: 8px 14px;
-  font-size: 14px;
+  min-height: 36px;
+  padding: 4px 10px;
+  font-size: 13px;
   font-weight: 600;
-  color: var(--text);
-  background: transparent;
+  color: var(--isl-cream);
+  background: rgba(52, 68, 71, 0.35);
   border: 0;
   border-radius: 0;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(255, 241, 214, 0.45);
   clip-path: var(--notch);
 }
 
@@ -655,8 +780,8 @@
 }
 
 .routeChips .routeChip:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--isl-cream);
+  background: rgba(52, 68, 71, 0.55);
 }
 
 .routeChips .routeChip:active {
@@ -664,88 +789,69 @@
 }
 
 .routeChips .routeChip[data-state="on"] {
-  color: #fff;
-  background: rgba(59, 130, 246, 0.2);
-  box-shadow: inset 0 0 0 2px rgba(59, 130, 246, 0.8);
+  color: var(--isl-ink);
+  background: var(--isl-cream);
+  box-shadow: inset 0 0 0 2px var(--isl-ink);
+}
+
+.routeChips .routeChip[data-state="on"]:focus-visible {
+  outline-color: #1d4ed8;
 }
 
 .branch {
-  position: relative;
   display: grid;
-  gap: 4px;
-  padding-left: 20px;
+  gap: 6px;
+  min-width: 0;
 }
 
-/* A stepped 2px line: down from the main quest, then across to each side quest. */
-.branch::before {
-  content: "";
-  position: absolute;
-  left: 4px;
-  top: 14px;
-  bottom: 32px;
-  width: 2px;
-  background: var(--isl-stone-hi);
-  opacity: 0.55;
-}
-
+/* A compact label across the lane: the main quest the group branches from, with its icon. */
 .branchHeading {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 0 0 0 -20px;
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--isl-sand-hi);
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  padding: 2px 8px 2px 4px;
+  font-family: var(--font-bai-jamjuree), "Bai Jamjuree", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: 0;
+  color: var(--isl-cream);
+  background: rgba(52, 68, 71, 0.55);
 }
 
 .branchIcon {
   flex: none;
+  display: block;
   image-rendering: pixelated;
 }
 
 /* The free group has no main quest: a plain sand square instead of its icon. */
-.branchHeading[data-free="true"]::before {
-  content: "";
+.branchFree {
   flex: none;
   width: 10px;
   height: 10px;
+  margin: 3px;
   background: var(--isl-sand);
   box-shadow: inset 0 0 0 2px var(--isl-ink);
 }
 
-.branchList {
-  display: grid;
-  gap: 4px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+.branchText {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
-.branchRow {
-  position: relative;
-}
+@media (min-width: 1024px) {
+  .lanes {
+    height: clamp(320px, calc(86svh - 170px), 640px);
+  }
 
-.branchRow::before,
-.branchRow::after {
-  content: "";
-  position: absolute;
-  background: var(--isl-stone-hi);
-  opacity: 0.55;
-}
-
-.branchRow::before {
-  left: -16px;
-  top: calc(50% - 4px);
-  width: 6px;
-  height: 2px;
-}
-
-.branchRow::after {
-  left: -12px;
-  top: calc(50% - 4px);
-  width: 2px;
-  height: 6px;
-  box-shadow: 2px 4px 0 0 var(--isl-stone-hi), 4px 4px 0 0 var(--isl-stone-hi);
+  .cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 /* ---------------------------------------------------------------- tiles */
@@ -767,11 +873,6 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-.tile[data-layout="ring"] {
-  --tile: 60px;
-  width: 96px;
-}
-
 .tile[data-layout="row"] {
   flex-direction: row;
   gap: 14px;
@@ -781,9 +882,112 @@
   text-align: left;
 }
 
+/*
+ * A card: a note pinned flat on the board (about 148x84 at 360px). Icon and
+ * a two-line title on top, the stamp along the bottom. The paper is a
+ * pseudo-element, so its notch never clips the focus ring.
+ */
+.tile[data-layout="card"] {
+  --tile: 40px;
+  display: grid;
+  grid-template-columns: var(--tile) minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  align-items: start;
+  gap: 6px 8px;
+  width: 100%;
+  /* 76px: four rows of cards and the tree fit the main lane on a 360x640 phone. */
+  min-height: 76px;
+  padding: 8px 8px 8px;
+  text-align: left;
+  color: var(--isl-ink);
+  isolation: isolate;
+}
+
+.tile[data-layout="card"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--isl-cream);
+  box-shadow: inset 0 0 0 2px var(--isl-ink);
+  clip-path: var(--notch);
+}
+
+.tile[data-layout="card"][data-status="locked"]::before {
+  background: var(--isl-sand);
+  box-shadow: inset 0 0 0 2px var(--isl-stone);
+}
+
+/* The pin, coloured as the notes on the plaza's notice board: in progress gold, main cream, side teal. */
+.cardPin {
+  position: absolute;
+  top: -2px;
+  left: calc(50% - 3px);
+  z-index: 1;
+  width: 6px;
+  height: 6px;
+  background: var(--pin, var(--isl-cream));
+  box-shadow: 0 0 0 1px var(--isl-ink);
+}
+
+.tile[data-pin="active"] {
+  --pin: var(--isl-lamp);
+}
+
+.tile[data-pin="main"] {
+  --pin: var(--isl-cream);
+}
+
+.tile[data-pin="side"] {
+  --pin: #8acbd0;
+}
+
+.cardTitle {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  min-width: 0;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  font-size: 14px;
+  font-weight: 600;
+  /* Thai needs 1.5: tone marks and lower vowels stay inside the two-line clamp. */
+  line-height: 1.5;
+  color: var(--isl-ink);
+}
+
+.tile[data-status="locked"] .cardTitle {
+  color: #3f4a4d;
+}
+
+.cardFoot {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  align-self: end;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  min-width: 0;
+}
+
+.cardHeart {
+  flex: none;
+  display: block;
+  image-rendering: pixelated;
+}
+
 .tile:focus-visible {
   outline: 2px solid var(--action-soft);
   outline-offset: 4px;
+}
+
+/* Inside a lane: the ring stays within the lane's padding, so its scroll box never cuts it. */
+.tile[data-layout="card"]:focus-visible {
+  outline-offset: 2px;
 }
 
 .tile[data-status="locked"] {
@@ -987,13 +1191,9 @@
 .tileText {
   display: grid;
   gap: 2px;
-  justify-items: center;
+  justify-items: start;
   min-width: 0;
   max-width: 100%;
-}
-
-.tile[data-layout="row"] .tileText {
-  justify-items: start;
 }
 
 .tileTitle {
@@ -1014,15 +1214,6 @@
   font-weight: 600;
   line-height: 1.4;
   color: var(--isl-lamp);
-}
-
-.tile[data-layout="ring"] .helpText {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
 }
 
 .chip {
@@ -1079,6 +1270,61 @@
   color: #c4e8c9;
   background: rgba(80, 151, 107, 0.2);
   box-shadow: inset 0 0 0 1px rgba(120, 184, 128, 0.5);
+}
+
+/*
+ * The card's state stamp: flat, never rotated, on light paper. Each pair
+ * keeps WCAG AA for 12px text (6.4:1 or better).
+ */
+.stamp {
+  display: inline-block;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #5c3d1e;
+  background: var(--isl-sand-hi);
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+.stamp[data-status="active"],
+.stamp[data-status="clarification"] {
+  color: #1e40af;
+  background: #dbeafe;
+}
+
+.stamp[data-status="submitted"],
+.stamp[data-status="appealed"] {
+  color: #1f5568;
+  background: #d8edf1;
+}
+
+.stamp[data-status="paused"],
+.stamp[data-status="held"],
+.stamp[data-status="locked"] {
+  color: #3f4a4d;
+  background: #e3e9e6;
+}
+
+.stamp[data-status="declined"] {
+  color: #8f2f24;
+  background: #fbe0dc;
+}
+
+.stamp[data-status="done"] {
+  color: #24573a;
+  background: #d6eedb;
+}
+
+/* The keynote's stamp: the one gold element. */
+.tile[data-keynote="true"] .stamp {
+  color: var(--isl-ink);
+  background: var(--gold);
 }
 
 /* ---------------------------------------------------------------- forms */

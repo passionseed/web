@@ -174,3 +174,8 @@ export function makeBoard(): QuestBoard {
     ],
   };
 }
+
+/** The same board before any side quest is published (production may start this way). */
+export function withoutSideQuests(board: QuestBoard): QuestBoard {
+  return { ...board, side: [] };
+}

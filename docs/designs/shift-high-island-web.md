@@ -389,11 +389,11 @@ review**; it lives in `components/shift/island/copy.ts` and must pass
 3. **Island viewport** (about 45svh): the PNG at 2x (`image-rendering: pixelated`), horizontally pannable, scrolled so the student's plot is centred. Transparent button hotspots at least 48px: own plot aria-label "แปลงของคุณ #{n}, {stage name}"; others "แปลง #{n}". Tapping another plot opens a small sheet with only what the database returned: แปลง #{n}, stage name unless plain, ป้าย: {name} when named. Never a member, a profile or a contact path. Toggle "ดูทั้งเกาะ" fits to width.
 4. **Today card** (below the keynote card): before the tap, a quiet button เช็กอินวันนี้ (min-h-12) and quiet buttons ติด and ขอพัก. After the tap (optimistic): วันนี้คุณลงมือแล้ว and a link เพิ่มโน้ตสั้นๆ (เห็นแค่คุณ, max 300). Resting: กำลังพัก ต้นไม้ไม่เหี่ยว ไม่มีอะไรหาย with button กลับมาแล้ว. No counts of days, no streaks, no heatmap.
 5. **Keynote card** (the one gold element, above the Today card): the caller's open quest that needs them most (clarification first, then active, then paused, then submitted), "ทำต่อ: {title}" and its state chip ("รอพี่เลี้ยงดู: {title}" for a submitted one). With none open, the lowest available main quest: "เริ่มที่: {title}".
-6. **Quest board**.
-   - เควสต์หลัก, "7 ขั้นของต้นไม้ ทำขั้นไหนก่อนก็ได้": a ring of 7 pixel tiles (56 to 64px) around the student's tree sprite (stage n at 3x). No numbers on the ring, no first or last. Icons: m1 compass, m2 hammer, m3 visitor, m4 door, m5 key, m6 path, m7 lantern.
-   - เควสต์เสริม, "แตกกิ่งจากเควสต์หลัก": groups by `branch_of`, each headed "ต่อจาก {main title}" with a stepped 2px connector line. Route chips (ทุกเส้นทาง, ซอฟต์แวร์, งานสร้างสรรค์, บริการ, อื่นๆ) default to the project's route; quests with `route_match` false show under ทุกเส้นทาง.
-   - เควสต์ที่ฉันเสนอ: the student's proposed quests, plus button เสนอเควสต์ของฉัน (sheet: ชื่อเควสต์ 80, อยากให้เกิดอะไร 1000, ทำเสร็จแล้วดูจากอะไร 1000, ก้าวแรก 500, ทำไมสำคัญ ไม่บังคับ 1000).
-   - ทั้งเกาะ: the island goal from the season ("ทั้งเกาะช่วยกัน: {main title} {count}/{target} ภายใน {deadline}", unlock text when set) and the side quest ช่วยดูงานเพื่อนหนึ่งชิ้น when published.
+6. **Quest board**: a notice board that fits a phone, not a long scroll. A row of four lane buttons (a plain `role=group` of `aria-pressed` toggles, not tabs: เควสต์หลัก with "ผ่าน x/7", เควสต์เสริม, ของฉัน, ทั้งเกาะ) over a wooden board whose lanes the student swipes between with scroll snap, one lane per swipe. Each lane scrolls down on its own and is a 2-column grid of flat pinned cards (icon, two-line title, state stamp; 3 columns in the desktop dialog). Every lane stays in the DOM and the accessibility tree. The board opens on the keynote's lane, and the lane and route chip survive closing the sheet.
+   - เควสต์หลัก, "7 ขั้นของต้นไม้ ทำขั้นไหนก่อนก็ได้": 7 cards in any order, then an eighth cell with the tree sprite and "ต้นไม้ขั้น {n} จาก 7". No numbers on the cards, no first or last. Main quests 6 and 7 carry a small heart, read as "เควสต์ชุมชน" in the card's description. Icons: m1 compass, m2 hammer, m3 visitor, m4 door, m5 key, m6 path, m7 lantern.
+   - เควสต์เสริม, "แตกกิ่งจากเควสต์หลัก": groups by `branch_of`, each under a compact full-width label "ต่อจาก {main title}" with that main quest's icon. Route chips (ทุกเส้นทาง, ซอฟต์แวร์, งานสร้างสรรค์, บริการ, อื่นๆ) wrap (never a second sideways scroller) and default to the project's route; quests with `route_match` false show under ทุกเส้นทาง. With no side quest published: one line and a button back to the main quests.
+   - ของฉัน (region เควสต์ที่ฉันเสนอ): the student's proposed quests, plus button เสนอเควสต์ของฉัน (sheet: ชื่อเควสต์ 80, อยากให้เกิดอะไร 1000, ทำเสร็จแล้วดูจากอะไร 1000, ก้าวแรก 500, ทำไมสำคัญ ไม่บังคับ 1000).
+   - ทั้งเกาะ: the island goal from the season ("ทั้งเกาะช่วยกัน: {main title} {count}/{target} ภายใน {deadline}", unlock text when set) and the community side quests (ช่วยดูงานเพื่อนหนึ่งชิ้น) when published.
 7. **Footer**: show-name switch โชว์ชื่อโปรเจกต์บนเกาะ (fine print: ชื่อจะขึ้นบนเกาะเมื่อทุกคนในทีมเปิด), the growth rule ต้นไม้โตเมื่อพี่เลี้ยงยืนยันงาน ไม่ได้โตจากจำนวนครั้งที่กดหรือเวลาออนไลน์, and the signed-in Discord name with สลับบัญชี.
 
 Desktop and landscape at 1024px or wider: two columns, island sticky on the
@@ -416,6 +416,13 @@ left, board on the right. Handle heights under 600px.
 
 A tile with an open help request also gets a small lamp-gold flag:
 ขอความช่วยเหลือแล้ว.
+
+On the board each tile is the 40px icon cell of a cream card (sand for a
+locked one) with a 6px pin in the plaza notice colours (gold for the caller's
+open quests, cream for main and proposed, teal for side). The chip becomes a
+flat stamp on the paper in light colours that keep AA contrast; the keynote's
+stamp is the one gold element. A locked card's unlock rule is read as its
+description and shown in the quest sheet on tap.
 
 ### Quest detail sheet
 
@@ -558,9 +565,10 @@ Applied after the first review, before merge:
 - **A submitted quest** shows "ส่งแล้ว รอพี่เลี้ยงดูอยู่" with the form behind
   a quiet "ส่งฉบับใหม่". **A paused quest** shows a resume button
   (`shift_quest_resume`) instead of a form that would fail.
-- **Legend under the ring**: icon and name of each main quest, two columns;
-  branch headings carry their main quest's icon; side quests never reuse a
-  main quest icon (new sprites bubble, eye, star).
+- **Cards carry the names** (the ring and its legend are gone): every main
+  quest card shows its icon and title; branch labels in the side lane carry
+  their main quest's icon; side quests never reuse a main quest icon (new
+  sprites bubble, eye, star).
 - **Drafts survive a swipe**: proof, propose and stuck text live in a
   tab-memory store (`drafts.ts`) until sent.
 - **Phones**: vertical swipes on the island scroll the page
@@ -1248,3 +1256,323 @@ on Demo Day; the server's `days_to_demo` stands until then and when
   migration to the sandbox and sets `/admin channel kind:coworking` to a voice
   channel): 360px and desktop, night and day, reduced motion (still world),
   whole mode, join and leave the channel and watch the count within 90 s.
+
+## Player, economy, prizes, AI digests, parent consent
+
+Status: plan, 2026-11-11. Founder asks 1 to 9 of the "player and economy"
+round. Six builders with disjoint files (see "Builders and file ownership"),
+one migration `20261111095000_shift_quest_player.sql` (schema version 9).
+Every number and prize below is DRAFT and lives in one content file the
+founder edits: `lib/content/shift-island-economy.ts`.
+
+### What changes for a student (at 360px)
+
+1. **You are your Discord picture.** The HUD chip shows your Discord avatar,
+   pixelated to 16x16 and drawn at 40px, with the check-in lamp dot and the
+   7-cell tree meter as your level bar. Your own plot gets a small pixel
+   avatar marker over the yellow pin. Only you see it: other students'
+   avatars are never put on plots, and plot ownership stays private unless the
+   team opted in (and consented, below).
+2. **Character sheet.** Tapping the chip opens "ตัวละครของฉัน": avatar, name,
+   level (tree stage x/7), progress bars for main quests, side quests,
+   community value, days active and the rest-tolerant run, and a coin row that
+   opens the wallet. TodayCard and SeasonPanel stay under it (the old project
+   sheet becomes the bottom half). No ranking, no percentiles, no "better
+   than" wording, ever.
+3. **Coins on the HUD.** A small glass pill under the chip: pixel coin and
+   the balance. Shown only when coins are live or the balance is above 0.
+   Tap: the wallet sheet (balance, how to earn, recent earnings, shop).
+4. **Quest board as a cork board.** Four lanes the student swipes between
+   with snap (เควสต์หลัก, เควสต์เสริม, ของฉัน, ทั้งเกาะ), each a 2-column grid
+   of pinned pixel cards with icon, two-line title and a flat state stamp. A
+   locked card shows the reason in the quest sheet on tap. The ring and the
+   legend go away.
+5. **Economy by progress, not hours.** Coins come only from approved quests,
+   community quests and staff awards with a written reason. Shop items that
+   cost real money are gated by tree stage and community value, enforced in
+   the database.
+6. **Prizes on the island.** A prize board in the plaza (and a "รางวัล" row in
+   the menu) opens the prize sheet with the 18+ Claude-credit note.
+7. **Island news.** "ข่าวเกาะ": AI summaries in Thai of opted-in teams, made
+   once a day (plus a weekly recap) and stored. Each opted-in plot's sheet
+   shows its team card. One Discord message a day, no pings.
+8. **Parent consent.** Students without consent on file can explore and play
+   privately; they cannot appear on the public island, in AI news or in
+   Discord posts, redeem shop items or win money prizes until a parent agrees
+   (or, at the adult age, they confirm their own age). A friendly banner shows
+   the next step.
+
+### Privacy and minors model
+
+- **Identity stays server-side.** The avatar URL is built on the server from
+  the Supabase Discord identity or the guild member object we already fetch
+  (host allowlist `cdn.discordapp.com`, `media.discordapp.net`; rewritten to
+  `.png?size=64`, so animated avatars become a still frame). The client never
+  sends an avatar or a name. The URL contains the viewer's own snowflake; it
+  goes only to that viewer (the `ViewerCard` comment is updated to say so).
+- **Only your own marker.** The plot marker uses `page.me` and `picture.mine`
+  only. `IslandMapPlot`, the scene and the map route never gain identity data.
+- **Public appearance needs consent.** A team's name, real stage on other
+  students' islands, the live post, the weekly post, AI news and the Discord
+  digest all need every active member to have `show_name` on AND consent ok.
+  Implemented once in the database: `shift_quest__name_visible` (and any
+  helper with its own `show_name` check) also requires
+  `shift_quest__consent_ok` for every active member. Shares (celebrations,
+  recognitions) to Discord need consent for the author and the named peer.
+- **AI news needs AI consent.** A team is summarised only when every active
+  member has `ai_ok` (adult basis, or a parent who ticked the AI line). The
+  model sees only the team's own project fields, approved quest titles,
+  submitted quest-card evidence from the window and check-in counts, scrubbed
+  first. Never names, never testers, never contacts.
+- **Coins and prizes need consent.** Redeem refuses `consent_required`.
+  Staff awards (taught at SHIFT, helped the most) refuse a target without
+  consent. Money prizes are listed as needing consent and 18+ in the prize
+  sheet; staff decide winners by written criteria.
+- **No private adult-student channel.** The parent page is token-scoped
+  (sha256 stored, raw token only in the email or the copied link), expires
+  after 14 days for answering, and only shows the student's chosen nickname
+  and the notice. Nothing opens a DM. The digest posts to a group channel.
+- **Kill switches.** `consent_required` (default on) and `digest_enabled`
+  (default off) are settings the founder flips with `/admin island`.
+
+### Parent consent (item 8)
+
+Flow:
+
+1. Page load (server): `consentOf()` reads `shift_quest_consent_get`. When the
+   state is not granted, or the basis is `shift_parent` / `shift_adult`, it
+   also looks up the student's own SHIFT application (service-role Supabase
+   client, `shift_applications.user_id = getUser().id`, newest first) and
+   calls `shift_quest_consent_import`: `agreed` imports `shift_parent` (with
+   `ai = parent_ai_consented_at is not null`), `not_needed` imports
+   `shift_adult`, `withdrawn` withdraws an imported consent. Any failure is
+   logged as a code and the island keeps working.
+2. Not granted: a banner in the character sheet, wallet shop, prize sheet and
+   the menu opens the consent sheet. Two paths:
+   - "อายุ 20 ปีขึ้นไป": birth date, then `shift_quest_consent_adult`. The
+     database checks the age against `settings.consent_adult_age` (default 20,
+     the repo's PDPA age; founder decision pending, see open questions).
+   - "ให้ผู้ปกครองกดยินยอม": the student types a nickname for the parent to
+     recognise them and, optionally, the parent's email. The server makes a
+     token (`generateParentLinkToken`), stores its sha256 through
+     `shift_quest_consent_link` (3 links per member per day, a new link
+     replaces the old), emails it with the existing Resend transport when an
+     email was given (never stored), and always returns the link to copy for
+     LINE.
+3. Parent opens `/shift/island/parent/[token]`: the island notice
+   (`ISLAND_NOTICE`, version `island-2026-11-11`), typed full name,
+   relationship (พ่อ, แม่, ผู้ปกครอง), "agree" plus a separate optional tick
+   for AI news. Recorded with time, notice version, IP and user agent through
+   `shift_quest_consent_parent_answer`. The same link withdraws later.
+4. Staff see consent state only as counts in `/admin island status`.
+
+Thai DRAFT copy (consent builder, `components/shift/island/consent/copy.ts`):
+
+- Banner: "อีกขั้นเดียว: ให้ผู้ปกครองกดยินยอม แล้วทีมจะขึ้นบนเกาะ แลกของในร้าน และลุ้นรางวัลได้"
+- Adult path: "อายุ 20 ปีขึ้นไป ยืนยันอายุเองได้เลย"
+- Parent path: "ส่งลิงก์ให้ผู้ปกครอง" / "คัดลอกลิงก์ไปส่งทาง LINE" / "ส่งทางอีเมล (ไม่บังคับ)"
+- Waiting: "ส่งลิงก์แล้ว รอผู้ปกครองกดยินยอม ลิงก์ใช้ได้ถึง {date}"
+- Recognised: "ผู้ปกครองยินยอมไว้แล้วตอนสมัคร SHIFT"
+- AI add-on: "ข่าวเกาะใช้ AI สรุปงานของทีม ถ้าอยากให้ทีมขึ้นข่าว ขอให้ผู้ปกครองติ๊กยินยอมเรื่องนี้เพิ่ม"
+- Meanwhile: "ระหว่างรอ เล่นและทำเควสต์ได้ตามปกติ แค่ยังไม่ขึ้นที่สาธารณะ"
+- Parent page title: "ขอความยินยอมจากผู้ปกครองของ {nickname}"
+
+### Economy (item 5)
+
+DRAFT numbers (content file, applied by `/admin` or the sandbox seed, never by
+the migration):
+
+| Rule key | Amount | Cap per member | Pays for |
+|---|---|---|---|
+| `main-quest` | 300 | 5 | milestones 1 to 5, `each_confirmed` |
+| `community-quest` | 500 | 4 | milestones 6 (help another builder) and 7 (improve our community) |
+| `side-quest` | 100 | 11 | every published side template |
+| `taught-next-shift` | 3,000 | 1 | staff award with a written reason |
+| `helped-most` | 1,000 | 1 | staff award, the "ช่วยเพื่อนมากที่สุด" prize |
+
+Shop DRAFT (founder's price ladder, cheapest first): "สติกเกอร์ SHIFT High"
+300 (no gate, about one approved main quest), "มัทฉะ" 8,000 (tree stage 5+
+and at least one community quest), "เสื้อ PassionSeed" 12,000 (tree stage 6+
+and at least one community quest). The season's free sticker unlock stays
+as well. Gates are new catalog columns
+`min_stage` and `requires_community`, checked in `shift_quest_redeem` after
+the price check and before stock: consent, then stage, then community. A
+duplicate request key still returns early first. Redeeming creates the
+existing redemption and fulfillment request (`redemption_requested` to staff).
+
+Staff awards: one bot-only function for the fixed staff rule keys, kind
+`award` in the ledger (so caps, `/admin ledger` and `admin_reverse` work),
+reason required. `admin_template_rule` refuses those keys so they can never
+pay for a quest. The recognition 200 cap is unchanged.
+
+Wallet copy (player builder, Thai DRAFT): "กระเป๋า Passioncoin",
+"ได้ coin จากอะไร", "เควสต์หลักที่พี่เลี้ยงตรวจผ่าน {n}",
+"เควสต์เสริมที่ผ่าน {n}", "เควสต์ชุมชน: ช่วยเพื่อน หรือพัฒนาชุมชน {n}",
+"ไปสอนใน SHIFT รุ่นถัดไป {n}", "coin มาจากงานที่ผ่านการตรวจและการช่วยชุมชน ไม่ได้นับจากเวลาที่ใช้",
+"ซีซันนี้ยังไม่เปิดแจก coin", "ร้านค้า", lock reasons "ต้องถึงต้นไม้ขั้น {n}",
+"ต้องผ่านเควสต์ชุมชนอย่างน้อย 1 เควสต์", "รอผู้ปกครองยินยอมก่อน",
+"coin ยังขาดอีก {n}", confirm "แลก {item} ใช้ {cost} coin ทีมงานจะแจ้งขั้นตอนรับของในกล่องข้อความบนเกาะ".
+
+Character copy: "ตัวละครของฉัน", "ต้นไม้ขั้น {n} จาก 7",
+"เควสต์หลักที่ทีมผ่าน {n}/7", "ส่วนที่เราลงมือเอง {n}",
+"เควสต์เสริมที่ผ่าน {n}", "ช่วยชุมชน {n}", "คำขอบคุณจากเพื่อน {n}",
+"ลงมือ {n} จาก 7 วันในสัปดาห์นี้", "ลงมือมาแล้วทั้งหมด {n} วัน",
+"จังหวะต่อเนื่อง {n} วัน (พักได้ 1 วันจังหวะไม่หลุด)". The founder asked for a
+streak; this run tolerates one empty Bangkok day so resting is never
+punished, and the copy avoids the banned "สตรีค / streak / ติดต่อกัน N วัน"
+words, so `copy.test.ts` stays as it is. This updates "no streaks" above
+(Screens: Island) for the character sheet only; TodayCard keeps its rule.
+
+Reachability (for the founder, open decision): one student earns at most
+1,500 (main, cap 5) + 2,000 (community, cap 4) + 1,100 (side, cap 11) + 200
+(recognitions) = 4,800, or 8,800 with both staff awards. The sticker (300)
+comes with the first approved main quest. The matcha (8,000) needs nearly
+every cap plus both staff awards, and the shirt (12,000) is out of reach
+under these caps. Raise the caps or amounts in
+`lib/content/shift-island-economy.ts` (then `/admin rule`), or lower the
+prices, before Season 1 coins go live.
+
+### Prizes (item 6)
+
+Prize sheet copy comes from `ISLAND_PRIZES_DRAFT` in the content file:
+🥇 ไปได้ไกลที่สุด มีหลักฐานจริง: $100 · 🧪 บทเรียนที่ดีที่สุดจากการทดสอบที่ล้ม: $50 ·
+🤝 ช่วยเพื่อนมากที่สุด: Passioncoin พิเศษ · 🌱 ทุกคน: Passioncoin ทุกเควสต์ที่ผ่าน แลกของในร้าน.
+Required note: "รางวัลเงินเป็นเครดิต Claude สำหรับผู้มีอายุ 18 ปีขึ้นไป ถ้ายังไม่ถึง 18 เลือกรางวัลอื่นมูลค่าเท่ากันได้".
+Judging line: "Demo Day ตัดสินตามเกณฑ์ที่เขียนไว้ ไม่มีกระดานจัดอันดับ". Consent
+line: "รับรางวัลได้เมื่อผู้ปกครองยินยอมแล้ว (หรือยืนยันอายุเองแล้ว)". Emoji are
+rendered aria-hidden in JSX from the content file, never from `copy.ts`.
+
+Entry points: a pixel prize board sprite in the plaza (new spot `prizes`,
+kept clear of the pin, notice board, stage and campfire), and a "รางวัล" row
+in the menu. No new HUD round button (no room at 360px).
+
+### AI island news (item 7)
+
+Data flow:
+
+```
+Vercel cron 20:00 Bangkok  ->  app/api/cron/shift-island-digest (CRON_SECRET)
+  -> shift_quest_digest_inputs(day, 'day')       (web role; only eligible teams)
+  -> scrub (names from `redact`, emails, phones, URLs, @handles, LINE ids)
+  -> no facts in the window: store no_update, no model call
+  -> Claude (claude-haiku-5-5, @anthropic-ai/sdk, effort low, JSON out)
+  -> validate (length, no redacted string, no contact pattern, no em dash,
+     no emoji; one retry, then no_update)
+  -> shift_quest_digest_save(day, 'day', entries)  (re-checks eligibility)
+  Sundays (Bangkok) also run kind 'week' over the last 7 days.
+Web: shift_quest_island_news(actor) -> news sheet and plot team cards
+Bot: every 5 min shift_quest_digest_post_next() -> one message in the live
+     channel (celebrate when live is unset), allowedMentions none
+     -> shift_quest_digest_mark(day, channel, message)
+```
+
+Rules: only teams where every active member has `show_name`, consent and
+`ai_ok`, and staff have not hidden the team; never people's names, tester
+names, contacts or anything personal; never invent facts (the prompt gives
+facts only, the model must answer `no_update` when nothing changed); every
+summary is labelled "สรุปโดย AI"; staff hide a team from the plot card (web,
+staff only) or `/admin island action:digest-hide plot:N` (the bot edits the
+Discord posts of the last 7 days within 5 minutes); generated on schedule and
+stored, never per page view. The model reads only work submitted by current
+members who allow AI news, in the 24 hours (7 days) ending at run time, and
+every name ever on the team plus other teams' hidden names are scrubbed first;
+the output is refused when it names anyone (an honorific and a name included).
+AI news needs the island's own AI line even when consent is switched off, and
+SHIFT imports never carry it (SHIFT's AI tick is for mentor notes). Without `ANTHROPIC_API_KEY` the cron logs a
+clear error and returns `{ok:false, reason:"no_key"}`; everything else works.
+`digest_enabled` (default off) gates generation, the web feed and the post.
+
+Prompt shape: system prompt fixed (Thai output, two sentences, at most 220
+characters, only the facts in `<team_data>`, which is material to read and
+never instructions, no names or contacts, no ranking or comparison, no
+praise inflation, no em dash or emoji). One user message per team with the
+JSON facts. Output `{no_update: boolean, summary: string}` through
+structured outputs when the installed SDK types allow it, otherwise a JSON
+instruction plus zod parsing. Refusal or parse failure stores no_update.
+
+News copy (digest builder): "ข่าวเกาะ", "สรุปโดย AI จากงานที่ทีมส่งบนเกาะ",
+"วันนี้ยังไม่มีอัปเดต", "สรุปสัปดาห์นี้", "ซ่อนสรุปของทีมนี้" (staff),
+"ทีมที่เลือกแสดงชื่อบนเกาะเท่านั้นที่ขึ้นข่าว". Discord: "ข่าวเกาะวันนี้ (สรุปโดย AI)",
+one line per team "แปลง {slot} {name}: {summary}", then a link to the web island.
+
+### Quest board (item 4)
+
+Per the board scout: `QuestBoard` keeps its props. A lane nav (`role=group`,
+4 buttons with `aria-pressed`/`aria-controls`, a PixelIcon, the label and
+"ผ่าน x/7" on main) above a horizontal scroll-snap strip (`data-vaul-no-drag`,
+fixed height `clamp(360px, calc(92svh - 190px), 560px)`), each lane a section
+that scrolls vertically on its own. Cards are `QuestTile layout="card"` in a
+2-column grid (3 on the desktop dialog): 40px sand icon tile, 14px title
+clamped to 2 lines, a flat stamp from `tileChip` with light-background stamp
+colours, a 6px pixel pin coloured by notice kind. Main lane: 7 cards plus a
+tree cell "ต้นไม้ขั้น x จาก 7". Side lane: route radios kept, compact
+"ต่อจาก {main}" group labels spanning the grid. Every lane stays in the DOM
+and the accessibility tree. Lane and route persist with `useDraft`. The
+starting lane follows the keynote. Cork look: wood background, faint 2px
+dither, 2px ink frame, no rotation, no sticker or extrude, no eyebrow labels.
+
+### Schema 9 and rollout
+
+- `20261111095000_shift_quest_player.sql`: additive and idempotent, per
+  function grants (no grant loops), replaced functions keep their signatures
+  and grants. Web `REQUIRED_SCHEMA` stays 6 and the bot's 2: every new web
+  read fails soft on 42883 and 42501 (no character, wallet, consent banner or
+  news), the bot starts digest posting only from schema 9.
+- Production: the lead agent applies the migration. Coins stay off and no
+  rules or items are published by it. After it lands, the founder sets the
+  numbers with `/admin rule`, `/admin template-rule`, `/admin catalog`
+  (with `min_stage` and `requires_community`) and turns on
+  `/admin island action:digest-on` when ready. `consent_required` is on
+  from the start: names stay hidden until students consent.
+
+### Test plan
+
+- DB (`pnpm test:db:quests`, new suite `supabase/tests/shift_quests/player.ts`
+  in a new run-local step `player`): gates (stage_required,
+  community_required, consent_required, a duplicate key after a gate change,
+  order of checks), staff award (cap 1, self refused, consent refused,
+  reversible, awards paused, template-rule refuses staff keys), wallet and
+  character readers as the web role (no ids, no names, counts right,
+  Bangkok-day run with one-day grace, this week Monday start), consent
+  (adult age boundary, link rate limit 3/day, expiry 14 days, a new link
+  replaces the old, parent answer records time, version, IP and agent,
+  withdraw, import from SHIFT, `consent_required` off means ok),
+  `__name_visible` false without consent (map, live post, weekly post),
+  shares refused without consent, digest (inputs only for eligible teams,
+  redact list never in news output, save re-checks eligibility, hide, post
+  next once a day, mark compare-and-set, disabled means nothing), privileges
+  (web allowlist, web-only functions revoked from the bot, bot-only from the
+  web, anon and authenticated nothing), applying twice is identical. Legacy
+  steps run with `consent_required = false` so their expectations hold.
+- Jest: avatar URL normalisation (host allowlist, gif to png, size, guild
+  avatar preferred, null), PixelAvatar fallback (no canvas in jsdom, onError),
+  HUD chip label, plot marker only with `mine` and only in IslandHome,
+  character sheet bars and copy rules, wallet sheet (coins off, locks, redeem
+  success and each refusal), board lanes (nav, scrollTo stub, starting lane,
+  useDraft persistence, 7 cards plus tree cell, regions, radios), prize
+  content (lintText, no em dash, 18+ note present, DRAFT marker), plaza spot
+  `prizes` clear of everything at glyph 1 to 3, digest scrub and validation
+  (names, emails, phones, URLs, em dash, length), generator with an injected
+  `describe` (no network), no_update without facts, cron auth, bot digest post
+  (no mentions, live then celebrate, mark race), consent sheet paths, parent
+  page states (expired, answered, withdrawn), SHIFT import mapping, page.ts
+  soft readers (42883 once, null on error), copy tests per new copy file.
+- By hand on the founder's dev server after the integrator applies the
+  migration to the sandbox: 360x640 and 360x780, desktop dialog, reduced
+  motion, swipe lanes and drag the sheet from its head, avatar on HUD and
+  plot, wallet redeem with the stand-in fulfillment member, parent link round
+  trip, news sheet and a team card, digest post in the test server.
+
+### Builders and file ownership
+
+Six builders, disjoint files. Foundations are written first: `db` writes
+`lib/supabase/shift-quests/playerTypes.ts` (every new TS contract) and
+`app/shift/island/gate.ts` (the shared server-action gate moved out of
+`actions.ts`); `prizes` writes `lib/content/shift-island-economy.ts`.
+`player` owns the shell (`IslandApp`, `IslandHud`, `HudSheets`, `page.ts`,
+`types.ts`, `page.tsx`, `IslandViewport`, `world.module.css`, `sprites.ts`)
+and wires in the other builders' exported components and readers by their
+contract names. `board` owns the quest board files and `island.module.css`.
+New components live in `components/shift/island/{player,prizes,news,consent}/`
+with their own CSS module and copy file. The full list is in the workflow's
+builder briefs.

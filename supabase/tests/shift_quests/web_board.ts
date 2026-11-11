@@ -41,7 +41,9 @@ const NAMES: Record<string, string> = { [A]: "Board Aye", [B]: "Board Bee", [C]:
 
 /**
  * Mirrors the allowlist at the end of 20261111091200_shift_quest_ownership_web.sql plus the
- * campfire read of 20261111093000_shift_quest_campfire.sql (regprocedure text).
+ * campfire read of 20261111093000_shift_quest_campfire.sql, the menu links read of
+ * 20261111094000_shift_quest_live.sql and the player, shop, consent and news functions of
+ * 20261111095000_shift_quest_player.sql (regprocedure text).
  */
 const WEB_ALLOWLIST = [
   "shift_quest_board(text)",
@@ -49,10 +51,23 @@ const WEB_ALLOWLIST = [
   "shift_quest_canvas_get(text)",
   "shift_quest_canvas_link(text,uuid,text,text)",
   "shift_quest_canvas_unlink(text)",
+  "shift_quest_character(text)",
   "shift_quest_checkin(text,text)",
+  "shift_quest_consent_adult(text,date,text)",
+  "shift_quest_consent_get(text)",
+  "shift_quest_consent_import(text,text,timestamp with time zone,boolean,boolean)",
+  "shift_quest_consent_link(text,text,text,text)",
+  "shift_quest_consent_parent_answer(text,boolean,boolean,text,text,text,text,text)",
+  "shift_quest_consent_parent_view(text)",
+  "shift_quest_consent_parent_withdraw(text)",
+  "shift_quest_digest_hide(text,integer,boolean,text)",
+  "shift_quest_digest_inputs(date,text)",
+  "shift_quest_digest_save(date,text,jsonb)",
   "shift_quest_help_create(text,text,text,text,uuid)",
   "shift_quest_island(text)",
+  "shift_quest_island_links(text)",
   "shift_quest_island_map(text)",
+  "shift_quest_island_news(text)",
   "shift_quest_island_optin(text,uuid,boolean)",
   "shift_quest_milestone_start(text,smallint)",
   "shift_quest_milestone_submit(text,smallint,text,text,text)",
@@ -61,6 +76,8 @@ const WEB_ALLOWLIST = [
   "shift_quest_project_list(text)",
   "shift_quest_project_respond(text,uuid,boolean)",
   "shift_quest_propose(text,text,text,text,text,text)",
+  "shift_quest_redeem(text,uuid,text,integer)",
+  "shift_quest_redeem_cancel(text,uuid)",
   "shift_quest_rest(text,boolean)",
   "shift_quest_resume(text,uuid)",
   "shift_quest_schema_version()",
@@ -69,6 +86,7 @@ const WEB_ALLOWLIST = [
   "shift_quest_side_submit(text,uuid,text,text,text)",
   "shift_quest_start(text,text,boolean)",
   "shift_quest_submit(text,uuid,integer,text,text,text,text,text,text[])",
+  "shift_quest_wallet(text)",
 ];
 
 /** The draft side quests, in sort order. */
@@ -159,8 +177,8 @@ async function main(): Promise<void> {
   check(role && role.rolinherit === false && role.rolconnlimit === 20 && (role.rolconfig ?? []).includes("statement_timeout=8s"),
     "shift_quest_web: NOINHERIT, 20 connections, statement_timeout 8s", role);
   check((await scalar<string>(web, "show statement_timeout")) === "8s", "a web session runs with the 8s statement timeout");
-  check(Number(await call(web, "shift_quest_schema_version")) === 7, "the website reads schema version 7 (it needs 6 or more)");
-  check(Number(await call(bot, "shift_quest_schema_version")) === 7, "the bot reads schema version 7 (it needs 2 or more)");
+  check(Number(await call(web, "shift_quest_schema_version")) === 9, "the website reads schema version 9 (it needs 6 or more)");
+  check(Number(await call(bot, "shift_quest_schema_version")) === 9, "the bot reads schema version 9 (it needs 2 or more)");
 
   const executable: string[] = (await db.query(`
     select p.oid::regprocedure::text as sig
@@ -216,6 +234,30 @@ async function main(): Promise<void> {
     ["canvas_unlink", "select public.shift_quest_canvas_unlink($1::text)", [NOBODY], "not_started"],
     ["ownership_get", "select public.shift_quest_ownership_get($1::text)", [NOBODY], "not_started"],
     ["campfire", "select public.shift_quest_campfire($1::text, $2::boolean)", [NOBODY, true], "not_started"],
+    ["island_links", "select public.shift_quest_island_links($1::text)", [NOBODY], "not_started"],
+    // 20261111095000_shift_quest_player: an unknown caller or an unknown link stores nothing.
+    ["character", "select public.shift_quest_character($1::text)", [NOBODY], "not_started"],
+    ["wallet", "select public.shift_quest_wallet($1::text)", [NOBODY], "not_started"],
+    ["redeem", "select public.shift_quest_redeem($1::text, $2::uuid, $3::text, $4::integer)",
+      [NOBODY, randomUUID(), randomUUID(), 1], "not_started"],
+    ["redeem_cancel", "select public.shift_quest_redeem_cancel($1::text, $2::uuid)", [NOBODY, randomUUID()], "not_started"],
+    ["consent_get", "select public.shift_quest_consent_get($1::text)", [NOBODY], "not_started"],
+    ["consent_adult", "select public.shift_quest_consent_adult($1::text, $2::date, $3::text)",
+      [NOBODY, "1990-01-01", "v"], "not_started"],
+    ["consent_link", "select public.shift_quest_consent_link($1::text, $2::text, $3::text, $4::text)",
+      [NOBODY, "a".repeat(64), "n", "v"], "not_started"],
+    ["consent_import", "select public.shift_quest_consent_import($1::text, $2::text, $3::timestamptz, $4::boolean, $5::boolean)",
+      [NOBODY, "shift_parent", null, false, false], "not_started"],
+    ["consent_parent_view", "select public.shift_quest_consent_parent_view($1::text)", ["a".repeat(64)], "ok"],
+    ["consent_parent_answer",
+      "select public.shift_quest_consent_parent_answer($1::text, $2::boolean, $3::boolean, $4::text, $5::text, $6::text, $7::text, $8::text)",
+      ["a".repeat(64), true, false, "Parent Name", "แม่", null, null, "v"], "consent_link_dead"],
+    ["consent_parent_withdraw", "select public.shift_quest_consent_parent_withdraw($1::text)", ["a".repeat(64)], "consent_link_dead"],
+    ["island_news", "select public.shift_quest_island_news($1::text)", [NOBODY], "not_started"],
+    ["digest_inputs", "select public.shift_quest_digest_inputs($1::date, $2::text)", ["2026-11-11", "day"], "ok"],
+    ["digest_save", "select public.shift_quest_digest_save($1::date, $2::text, $3::jsonb)", ["2026-11-11", "day", "[]"], "ok"],
+    ["digest_hide", "select public.shift_quest_digest_hide($1::text, $2::integer, $3::boolean, $4::text)",
+      [NOBODY, 1, true, null], "not_authorized"],
   ];
   check(allowCalls.length === WEB_ALLOWLIST.length, "every allowlisted function is called below");
   for (const [name, sql, args, expected] of allowCalls) {
@@ -240,6 +282,22 @@ async function main(): Promise<void> {
     ["the campfire's voice update", "select public.shift_quest_voice_set($1, $2, $3, 'x')", [null, A, null]],
     ["the campfire's voice sync", "select public.shift_quest_voice_sync($1, $2, $3::text[], $4::text[])", [null, null, [], []]],
     ["the campfire's heartbeat", "select public.shift_quest_voice_beat($1)", [null]],
+    ["the live post's reader", "select public.shift_quest_live_post()", []],
+    ["the live post's writer", "select public.shift_quest_live_mark($1, $2, $3)", ["700000000000000001", null, null]],
+    ["the digest post's reader", "select public.shift_quest_digest_post_next()", []],
+    ["the digest post's writer", "select public.shift_quest_digest_mark($1::date, $2, $3)", ["2026-11-11", "700000000000000001", "700000000000000002"]],
+    ["the digest post's claim", "select public.shift_quest_digest_claim($1::date, $2, 'day')", ["2026-11-11", "700000000000000001"]],
+    ["the digest post's re-render", "select public.shift_quest_digest_post_current()", []],
+    ["consent resets", "select public.shift_quest_admin_consent_reset($1, $2)", [ADMIN, A]],
+    ["staff awards", "select public.shift_quest_admin_staff_award($1, $2, 'helped-most', 'x', 'request-key-1')", [ADMIN, A]],
+    ["the island admin switches", "select public.shift_quest_admin_island_set($1, 'digest_enabled', 'on')", [ADMIN]],
+    ["shop gates", "select public.shift_quest_admin_catalog_gate($1, $2, 1::smallint, true)", [ADMIN, randomUUID()]],
+    ["coin history", "select public.shift_quest_coins($1)", [A]],
+    ["reading shift_quest_consents", "select * from public.shift_quest_consents", []],
+    ["reading shift_quest_digests", "select * from public.shift_quest_digests", []],
+    ["helper shift_quest__consent_ok", "select public.shift_quest__consent_ok($1)", [randomUUID()]],
+    ["helper shift_quest__digest_eligible", "select public.shift_quest__digest_eligible($1)", [randomUUID()]],
+    ["reading shift_quest_live_state", "select * from public.shift_quest_live_state", []],
     ["reading shift_quest_voice_presence", "select * from public.shift_quest_voice_presence", []],
     ["reading shift_quest_voice_state", "select * from public.shift_quest_voice_state", []],
     ["helper shift_quest__fail", "select public.shift_quest__fail('x')", []],

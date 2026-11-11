@@ -35,17 +35,30 @@ const D = "640000000000000004"; // no project; invited to project one but has no
 const NOBODY = "649999999999999999";
 const NAMES: Record<string, string> = { [A]: "Canvas Aye", [B]: "Canvas Bee", [C]: "Canvas Cee", [D]: "Canvas Dee" };
 
-/** The full web allowlist after 20261111093000 (regprocedure text), as in web_board.ts. */
+/** The full web allowlist after 20261111095000 (regprocedure text), as in web_board.ts. */
 const WEB_ALLOWLIST = [
   "shift_quest_board(text)",
   "shift_quest_campfire(text,boolean)",
   "shift_quest_canvas_get(text)",
   "shift_quest_canvas_link(text,uuid,text,text)",
   "shift_quest_canvas_unlink(text)",
+  "shift_quest_character(text)",
   "shift_quest_checkin(text,text)",
+  "shift_quest_consent_adult(text,date,text)",
+  "shift_quest_consent_get(text)",
+  "shift_quest_consent_import(text,text,timestamp with time zone,boolean,boolean)",
+  "shift_quest_consent_link(text,text,text,text)",
+  "shift_quest_consent_parent_answer(text,boolean,boolean,text,text,text,text,text)",
+  "shift_quest_consent_parent_view(text)",
+  "shift_quest_consent_parent_withdraw(text)",
+  "shift_quest_digest_hide(text,integer,boolean,text)",
+  "shift_quest_digest_inputs(date,text)",
+  "shift_quest_digest_save(date,text,jsonb)",
   "shift_quest_help_create(text,text,text,text,uuid)",
   "shift_quest_island(text)",
+  "shift_quest_island_links(text)",
   "shift_quest_island_map(text)",
+  "shift_quest_island_news(text)",
   "shift_quest_island_optin(text,uuid,boolean)",
   "shift_quest_milestone_start(text,smallint)",
   "shift_quest_milestone_submit(text,smallint,text,text,text)",
@@ -54,6 +67,8 @@ const WEB_ALLOWLIST = [
   "shift_quest_project_list(text)",
   "shift_quest_project_respond(text,uuid,boolean)",
   "shift_quest_propose(text,text,text,text,text,text)",
+  "shift_quest_redeem(text,uuid,text,integer)",
+  "shift_quest_redeem_cancel(text,uuid)",
   "shift_quest_rest(text,boolean)",
   "shift_quest_resume(text,uuid)",
   "shift_quest_schema_version()",
@@ -62,6 +77,7 @@ const WEB_ALLOWLIST = [
   "shift_quest_side_submit(text,uuid,text,text,text)",
   "shift_quest_start(text,text,boolean)",
   "shift_quest_submit(text,uuid,integer,text,text,text,text,text,text[])",
+  "shift_quest_wallet(text)",
 ];
 
 let failures = 0;
@@ -127,7 +143,7 @@ async function main(): Promise<void> {
   const count = async (sql: string, args: unknown[] = []) => Number(await scalar(db, sql, args));
 
   // --- Schema, privileges, row security ------------------------------------------------
-  check(Number(await call(web, "shift_quest_schema_version")) === 7, "the website reads schema version 7 (it needs 6 or more)");
+  check(Number(await call(web, "shift_quest_schema_version")) === 9, "the website reads schema version 9 (it needs 6 or more)");
 
   const executable: string[] = (await db.query(`
     select p.oid::regprocedure::text as sig

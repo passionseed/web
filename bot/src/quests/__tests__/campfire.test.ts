@@ -720,11 +720,11 @@ describe("startCampfire", () => {
 // ---------------------------------------------------------------------------
 
 describe("/admin channel", () => {
-  it("accepts a text or a voice channel", () => {
+  it("accepts a text or a voice channel (and a forum, for suggest only)", () => {
     const adminCommand = questCommands().find((c) => c.name === "admin");
     const sub = adminCommand?.options?.find((o) => o.name === "channel") as { options?: { name: string; channel_types?: number[] }[] } | undefined;
     const option = sub?.options?.find((o) => o.name === "channel");
-    expect(option?.channel_types).toEqual([ChannelType.GuildText, ChannelType.GuildVoice]);
+    expect(option?.channel_types).toEqual([ChannelType.GuildText, ChannelType.GuildVoice, ChannelType.GuildForum]);
   });
 
   it("tells an admin a voice channel lights the campfire, set or not", () => {

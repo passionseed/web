@@ -4,7 +4,11 @@ import { QuestDbError, QuestError, type QuestApi } from "@/bot/src/quests/api";
 import type { CanvasLinkState } from "@/lib/shift-island/quest-canvas";
 
 import { campfireOf } from "./campfire";
+import { characterOf } from "./character";
+import { consentOf } from "./consent";
 import { questApi } from "./db";
+import { suggestUrlOf } from "./links";
+import { newsOf } from "./news";
 import type {
   CampfireNames,
   IslandMapData,
@@ -127,16 +131,24 @@ async function canvasLinkOf(api: QuestApi, actor: string): Promise<CanvasLinkSta
 /**
  * Everything /shift/island shows for a ready student: the island, the picture
  * data, and either the quest board and the canvas link (with a project) or
- * pending invites (without one), plus the voice campfire's count in both
- * cases. Throws QuestError / QuestDbError from the calls, except the canvas
- * link, which falls back to unlinked, and the campfire, which falls back to
- * null (no campfire drawn).
+ * pending invites (without one), plus the voice campfire's count and the
+ * suggestions link in both cases. Throws QuestError / QuestDbError from the
+ * calls, except the canvas link, which falls back to unlinked, and the
+ * campfire and the suggestions link, which fall back to null (no campfire
+ * drawn, no link in the menu), and the character sheet, consent and island
+ * news, which fall back to null too (no stats or coin pill, nothing gated,
+ * no news).
  */
 export async function getIslandPage(viewer: ReadyViewer): Promise<IslandPageData> {
   const api = questApi();
-  const [islandRaw, mapRaw] = await Promise.all([
+  const [islandRaw, mapRaw, suggestUrl, character, consent, news] = await Promise.all([
     api.call<IslandView>("shift_quest_island", viewer.actor),
     api.call<IslandMapData>("shift_quest_island_map", viewer.actor),
+    suggestUrlOf(api, viewer.actor),
+    // The player round's reads (schema 9) fail soft to null: the island works without them.
+    soft(characterOf(api, viewer.actor)),
+    soft(consentOf(api, { actor: viewer.actor, userId: viewer.userId })),
+    soft(newsOf(api, viewer.actor)),
   ]);
   const island = normalizeIsland(islandRaw);
 
@@ -172,7 +184,22 @@ export async function getIslandPage(viewer: ReadyViewer): Promise<IslandPageData
     canvasLink,
     // The count and the join link only: names load on tap (loadCampfire).
     campfire: fire ? { count: fire.count, joinUrl: fire.joinUrl } : null,
+    suggestUrl,
+    character,
+    consent,
+    news,
   };
+}
+
+/**
+ * The soft readers never throw by contract; this keeps the page loading even
+ * if one ever did (logged as a class name only, never a message).
+ */
+function soft<T>(read: Promise<T | null>): Promise<T | null> {
+  return read.catch((error: unknown) => {
+    console.error(`[shift-island] soft read threw: ${error instanceof Error ? error.name : "unknown"}`);
+    return null;
+  });
 }
 
 /** shift_quest_island_map for the picture route. Throws QuestError / QuestDbError. */

@@ -15,8 +15,13 @@
  */
 import { pxPerNativeFor, type Rect } from "./geometry";
 
-/** Room kept clear for the HUD, in CSS px, on top of the safe-area insets. */
-export const HUD_RESERVE = { top: 64, bottom: 96, side: 12 } as const;
+/**
+ * Room kept clear for the HUD, in CSS px, on top of the safe-area insets. The
+ * top is the chip (48px) plus the coin pill's 44px tap area under it, with
+ * the HUD's 10px padding: always reserved, pill or not, so the island never
+ * jumps when coins switch on.
+ */
+export const HUD_RESERVE = { top: 104, bottom: 96, side: 12 } as const;
 
 /** The most CSS px per native pixel in near mode: past this the art turns into big blocks. */
 const MAX_SCALE = 6;

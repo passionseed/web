@@ -7,7 +7,7 @@ import type { ButtonBuilder } from "discord.js";
 
 import type { Session } from "../api";
 import { isEligible, requireEligible, requireMember, requireStudent, type Ctx } from "../context";
-import { DAY_NAMES, T, bkkDate, renderInbox, safe } from "../copy";
+import { DAY_NAMES, STAFF_AWARD_LABEL, T, bkkDate, renderInbox, safe } from "../copy";
 import { cid, isUuid } from "../ids";
 import { I, SQ } from "../island/copy";
 import {
@@ -39,17 +39,53 @@ interface Inbox {
 interface Coins {
   balance: number;
   reserved: number;
-  /** category: a recognition's category, when the database returns it. */
-  entries: { amount: number; kind: string; reason: string; created_at: string; title: string | null; category?: string | null }[];
+  /** category: a recognition's category; rule_key: the coin rule (schema 9); each when the database returns it. */
+  entries: {
+    amount: number;
+    kind: string;
+    reason: string;
+    created_at: string;
+    title: string | null;
+    category?: string | null;
+    rule_key?: string | null;
+  }[];
   awards_live: boolean;
 }
+
+/** Why the member cannot redeem an item yet (shift_quest__item_lock, schema 9). */
+type ItemLock = "consent" | "stage" | "community" | null;
 
 interface Catalog {
   live: boolean;
   terms: string | null;
   balance: number;
-  items: { id: string; name: string; description: string | null; cost: number; in_stock: boolean }[];
+  /** The gates and this member's lock arrive from schema 9; older databases leave them out. */
+  items: {
+    id: string;
+    name: string;
+    description: string | null;
+    cost: number;
+    in_stock: boolean;
+    min_stage?: number;
+    requires_community?: boolean;
+    locked?: ItemLock;
+    affordable?: boolean;
+  }[];
   mine: { id: string; item: string; cost: number; status: string; created_at: string }[];
+}
+
+/** An item's lock reason in Thai, or null when nothing holds it back. */
+export function lockText(item: { locked?: ItemLock; min_stage?: number }): string | null {
+  switch (item.locked) {
+    case "consent":
+      return T.rewardsLock.consent;
+    case "stage":
+      return T.rewardsLock.stage(item.min_stage ?? 0);
+    case "community":
+      return T.rewardsLock.community;
+    default:
+      return null;
+  }
 }
 
 const LEDGER_KIND: Record<string, string> = {
@@ -61,6 +97,7 @@ const LEDGER_KIND: Record<string, string> = {
 };
 
 const SEASON_UNLOCK = "ปลดล็อกของซีซัน";
+const STAFF_AWARD = "🏅 รางวัลจากทีมงาน";
 
 /** Notices already read: one small line each (with the team's words when they fit), up to OLDER_SHOWN. */
 const OLDER_SHOWN = 5;
@@ -82,12 +119,28 @@ const EXPORT_FILE = "shift-high-quests-my-data.json";
 /**
  * Awards carry the quest title from the quest itself (the append-only ledger
  * stores no student text); reversals carry the admin's stated reason;
- * recognitions carry their category when there is one. Never a raw key.
+ * recognitions carry their category when there is one. Staff awards
+ * (20261111095000) carry the admin's reason, written for the student, and no
+ * quest title; ruleKey names which one when the read returns it (/admin ledger
+ * does not: there an award with no title that is not a quest award is a staff
+ * award). Never a raw key.
  */
-export function ledgerReason(kind: string, reason: string, title: string | null, category?: string | null): string {
+export function ledgerReason(
+  kind: string,
+  reason: string,
+  title: string | null,
+  category?: string | null,
+  ruleKey?: string | null
+): string {
   const label = LEDGER_KIND[kind] ?? "รายการเหรียญ";
   if (kind === "award" && reason === "season_unlock") return SEASON_UNLOCK;
-  if (kind === "award") return title ? `${label}: ${safe(title, 80)}` : label;
+  if (kind === "award") {
+    const staff = ruleKey ? STAFF_AWARD_LABEL[ruleKey] : undefined;
+    if (staff || (!ruleKey && !title && reason !== "quest_award")) {
+      return `${STAFF_AWARD}${staff ? ` ${staff}` : ""}: ${safe(reason, 120)}`;
+    }
+    return title ? `${label}: ${safe(title, 80)}` : label;
+  }
   if (kind === "recognition") return category ? `${label}: ${safe(category, 80)}` : label;
   if (kind === "reversal") return `${label}: ${safe(reason, 120)}`;
   const text = reason.replace(/^redeem:/, "");
@@ -379,7 +432,7 @@ function dataView(): View {
 }
 
 function ledgerLine(e: Coins["entries"][number]): string {
-  return `\`${e.amount > 0 ? "+" : ""}${e.amount}\` ${ledgerReason(e.kind, e.reason, e.title, e.category)} · ${bkkDate(e.created_at)}`;
+  return `\`${e.amount > 0 ? "+" : ""}${e.amount}\` ${ledgerReason(e.kind, e.reason, e.title, e.category, e.rule_key)} · ${bkkDate(e.created_at)}`;
 }
 
 function settingsView(prefs: Session["prefs"], remindersLive: boolean): View {
@@ -561,7 +614,9 @@ export const student: HandlerSet = {
         return;
       }
       // The interaction ID is this preview's request key: every click on its
-      // confirm button is the same request.
+      // confirm button is the same request. A locked item (schema 9) shows why,
+      // and its confirm button stays off; the database refuses it anyway.
+      const lock = lockText(item);
       await show(
         i,
         {
@@ -570,9 +625,15 @@ export const student: HandlerSet = {
           blocks: [
             { kind: "text", text: T.rewardsPreview(item.name, item.cost, catalog.balance, item.description) },
             ...(item.in_stock ? [] : [{ kind: "subtext", text: T.rewardsGone } as Block]),
+            ...(lock ? [{ kind: "subtext", text: `${T.rewardsLocked}: ${lock}` } as Block] : []),
           ],
           rows: buttonRows([
-            button(cid("rw_go", item.id, i.id, item.cost), T.btnRedeem, ButtonStyle.Primary, catalog.balance < item.cost || !item.in_stock),
+            button(
+              cid("rw_go", item.id, i.id, item.cost),
+              T.btnRedeem,
+              ButtonStyle.Primary,
+              catalog.balance < item.cost || !item.in_stock || Boolean(lock)
+            ),
             // Cancel goes back to the rewards card (read only), not to a card with no buttons.
             button(cid("rw_view"), T.btnCancel),
           ]),
@@ -731,7 +792,10 @@ export async function rewardsView(ctx: Ctx): Promise<View> {
         kind: "text",
         text: catalog.items
           .slice(0, ITEMS_SHOWN)
-          .map((item) => `• **${safe(item.name, 80)}** · ${item.cost} เหรียญ${item.in_stock ? "" : ` · ${T.rewardsSoldOut}`}`)
+          .map((item) => {
+            const lock = lockText(item);
+            return `• **${safe(item.name, 80)}** · ${item.cost} เหรียญ${item.in_stock ? "" : ` · ${T.rewardsSoldOut}`}${lock ? `\n-# 🔒 ${lock}` : ""}`;
+          })
           .join("\n"),
       });
       blocks.push(...moreLine(catalog.items.length - ITEMS_SHOWN, T.rewardsMore));
@@ -742,7 +806,10 @@ export async function rewardsView(ctx: Ctx): Promise<View> {
         selectRow(
           cid("rw_pick"),
           T.rewardsPick,
-          available.map((x) => ({ label: `${x.name} (${x.cost})`, value: x.id, description: x.description ?? undefined }))
+          available.map((x) => {
+            const lock = lockText(x);
+            return { label: `${x.name} (${x.cost})`, value: x.id, description: lock ? `🔒 ${lock}` : x.description ?? undefined };
+          })
         )
       );
     }

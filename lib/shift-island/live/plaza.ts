@@ -1,7 +1,7 @@
 /**
  * The plaza as a place to gather: the quest notice board, the Demo Day
- * festival (sign, stage, lantern string, booth flags and stars) and the voice
- * campfire, as LiveActors the existing engine draws above the trees, plus
+ * festival (sign, stage, lantern string, booth flags and stars), the Demo
+ * Day prize board and the voice campfire, as LiveActors the existing engine draws above the trees, plus
  * where the DOM tap targets and labels go. Pure and client-safe.
  *
  * Opt-in: with nothing to show it returns NO_PLAZA, so the canvas stays the
@@ -32,9 +32,11 @@ export interface PlazaInput {
   pins: NoticeKind[] | null;
   /** null = no campfire (no coworking channel, or no data). */
   campfire: { count: number } | null;
+  /** true draws the Demo Day prize board and its tap target; it carries no data. */
+  prizes?: boolean;
 }
 
-export type PlazaSpotId = "notice" | "stage" | "campfire";
+export type PlazaSpotId = "notice" | "stage" | "campfire" | "prizes";
 
 /**
  * A tap target, percent (0..100) of the picture: x and y are its top-left
@@ -93,6 +95,9 @@ export const PLAZA_LAYOUT = {
   campfireSpot: { x: -92, y: 32, w: 72, h: 32 },
   campfireCount: [-56, 32] as Point,
   campfireMore: [-24, 46] as Point,
+  /** Lower right of the plaza: right of the well, left of the sign and stage, above the plaza's bottom edge. */
+  prizeBoard: [15, 10] as Point,
+  prizeSpot: { x: 12, y: 8, w: 23, h: 24 },
 } as const;
 
 /** Seats right of this (native px from the plaza centre) face left, towards the fire. */
@@ -168,12 +173,13 @@ export function boothFlagAt(tree: Pick<SceneTree, "left" | "top" | "mine">, scen
 /**
  * The plaza's actors, tap targets and label points for this scene. Actors are
  * in draw order: goal string, lit bulbs, stage, sign, notice board, notes,
- * booth flags, campfire pit, the seats behind the fire, the flame, the seats
- * in front.
+ * booth flags, prize board, campfire pit, the seats behind the fire, the
+ * flame, the seats in front. Spots: notice, stage, prizes, campfire.
  */
 export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
   const { festival, pins, campfire } = input;
-  if (!festival && !pins && !campfire) return NO_PLAZA;
+  const prizes = input.prizes === true;
+  if (!festival && !pins && !campfire && !prizes) return NO_PLAZA;
 
   const c = plazaCentre(scene);
   const at = ([dx, dy]: Point) => ({ x: c.x + dx, y: c.y + dy });
@@ -222,6 +228,11 @@ export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
     }
     spots.push(spotOf("stage", box(L.stageSpot), scene));
     labels.push(labelOf("sign", at(L.signLabel), "bottom", scene));
+  }
+
+  if (prizes) {
+    actors.push(still("prize_board", at(L.prizeBoard)));
+    spots.push(spotOf("prizes", box(L.prizeSpot), scene));
   }
 
   if (campfire) {

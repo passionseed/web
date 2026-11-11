@@ -278,9 +278,79 @@ The short version for whoever runs the bot:
 - Once a week (Monday 18:00 Bangkok, while sharing is on) the bot posts the
   island to the celebrate channel with only the project names every teammate
   opted in to show.
+- Live island post (schema 8, `20261111094000_shift_quest_live`;
+  `bot/src/quests/live.ts`): `/admin channel kind:live` picks a text channel
+  (the bot needs View Channel, Send Messages, Attach Files and Read Message
+  History there; Pin Messages too, or the post works unpinned). The bot keeps
+  one message there and edits it in place: the island picture (the same
+  consent-shaped view as the weekly post), trees and the mentor-confirmed
+  milestones of the trees shown by name (quiet projects never count), the island goal, the Demo Day
+  countdown, how many people sit at the campfire (a number, never names), a
+  "🔥 เข้าห้อง" link to the coworking voice channel and the "🌐 เปิดเกาะบนเว็บ"
+  link. It edits about 5 seconds after every gateway ready, then within a
+  minute of anything shown changing, and at least every 10 minutes; at most
+  one edit a minute. It is not gated on sharing: setting the channel turns it
+  on, clearing it stops the edits and leaves the last message as it is.
+  - Finding its message after a restart: the message id is stored in the
+    database (`shift_quest_live_state`) with its channel, written with a
+    compare-and-set (`shift_quest_live_mark`), so two overlapping processes
+    during a deploy never leave two posts (the loser deletes its own). When
+    the stored message is gone (staff deleted it; noticed at the next edit,
+    within 10 minutes) or no id was stored, the bot first adopts its own
+    pinned message carrying the "🏝️ โพสต์นี้อัปเดตเองทุก 10 นาที" line, and only
+    then posts and pins a new one. Moving the live channel posts once in the
+    new channel and leaves the old message alone. A send or edit refused
+    because of the picture (the bot lost Attach Files, Discord 50013, or the
+    file is too large, 40005) goes out once more without it, with the "รูปเกาะ
+    วาดไม่ขึ้น" line, and logs once. Any other Discord error posts nothing and
+    is logged once.
+  - Below schema 8 the bot runs without it and logs `live post off`.
+- `/admin channel kind:suggest` picks the suggestions forum (a text channel
+  works too). It is refused unless a student role (or @everyone while no
+  student role is set) can see the channel and post in it, so the website's
+  link never opens a staff-only room. The bot never posts there; the website's island ⋯ menu links to
+  it (schema 8). Both kinds are new command choices: run `pnpm bot:register`
+  once after deploying them.
+- Player, economy, island news and consent (schema 9,
+  `20261111095000_shift_quest_player`). New and changed admin commands, so run
+  `pnpm bot:register` once after deploying:
+  - `/admin island action:status|consent-on|consent-off|digest-on|digest-off|digest-hide|digest-show|consent-reset`
+    (`plot:` and an optional `reason:` for hide and show; `user:` for
+    consent-reset). Parent consent is
+    required by default: until a student's parent agrees (or a student 20 or
+    older confirms their own age, or the website imports their SHIFT consent),
+    their team's name stays off other students' maps, the weekly and live
+    posts and the AI news, shares and community help posts are refused, and
+    they cannot redeem. AI news always needs the island's own AI line (a
+    parent's tick, or the student's own age confirmation), even with
+    consent-off; SHIFT imports never carry it. A parent's no (declined or
+    withdrawn) stays until an admin runs `consent-reset user:@student` after
+    talking with the family; the audit log keeps the earlier answer.
+  - The daily island news post is claimed before it is sent (no double post
+    after a restart) and re-rendered for 7 days: when staff hide a team, a
+    parent withdraws or a member stops showing the name, the bot edits the
+    message within 5 minutes (a post with no team left says it was taken down).
+  - `/admin catalog` takes `min_stage:` (0 to 7) and `requires_community:`;
+    the redeem function enforces both and the shop shows them as lock reasons.
+  - `/admin award kind:taught|helped user:` opens a reason form and gives the
+    published `taught-next-shift` or `helped-most` staff award (capped, never
+    to yourself, only to a student with consent).
+  - The daily island news post (`bot/src/quests/digest.ts`): once a day, in
+    the live channel or the celebrate channel when live is unset, no pings,
+    only teams that opted in and have consent, while `digest-on`. The
+    summaries come from the website's cron (`/api/cron/shift-island-digest`,
+    20:00 Bangkok), which needs `CRON_SECRET`, `SHIFT_QUEST_DATABASE_URL` and
+    `ANTHROPIC_API_KEY` on Vercel. Below schema 9 the bot runs without it.
 - Try it locally: `bot/quests-sandbox.sh` (a test Discord server and a test bot
-  token; never the SHIFT server). It seeds Season 1 defaults (no reward rule on
-  milestones); `--rewards` adds a sandbox reward rule and switches coins on.
+  token; never the SHIFT server). Coins are on: `bot/scripts/economy-seed.ts`
+  applies the DRAFT economy from `lib/content/shift-island-economy.ts` (reward
+  rules pinned on the main, community and side quests, the shop ladder with its
+  stage and community gates, the terms) on every build; `--rewards` is kept for
+  old commands and does nothing more. With schema 9 it also keeps parent
+  consent required, gives neighbours A, B and D adult consent (so their names
+  show), leaves your admin account without consent (to try the flow), and
+  turns island news on with fixed sample summaries (model `sandbox-sample`,
+  not AI output).
   `--db-only` needs no Discord credentials and keeps the database up until
   Ctrl-C. It prints a hash of the shift_quest migrations and refuses a sandbox
   built from other ones, an unfinished build or another admin;

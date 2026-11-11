@@ -256,3 +256,89 @@ describe("dates", () => {
     expect(() => parseDate("1/12/2026")).toThrow(QuestError);
   });
 });
+
+describe("the player round (schema 9)", () => {
+  // Loaded lazily so this file's other suites keep their import order.
+  const student = () => import("../handlers/student");
+
+  it("tells a student about a staff award and a parent's answer, privately and without a name", () => {
+    const award = renderInbox("staff_award", { amount: 3000, rule_key: "taught-next-shift", reason: "สอนเรื่อง **ทดสอบ**" });
+    expect(award.split("\n")[0]).toBe("🏅 ทีมพี่เลี้ยงมอบรางวัล **สอนใน SHIFT รอบถัดไป** ให้คุณ · ได้ **3000** Passioncoin");
+    expect(award).toContain("> เหตุผล: สอนเรื่อง \\*\\*ทดสอบ\\*\\*");
+    expect(renderInbox("staff_award", { amount: 1000, rule_key: "helped-most" })).toContain("**ช่วยเพื่อนมากที่สุด**");
+    expect(renderInbox("staff_award", { amount: 5, rule_key: "mystery" })).not.toContain("mystery");
+    for (const state of ["granted", "declined", "withdrawn", undefined]) {
+      const notice = renderInbox("consent_recorded", { state });
+      expect(notice).not.toBe("มีอัปเดตใหม่");
+      expect(notice).not.toMatch(/ลูก(?!ค้า)|น้อง|—/);
+    }
+    expect(renderInbox("consent_recorded", { state: "granted" })).toContain("ผู้ปกครองยินยอมแล้ว");
+  });
+
+  it("names staff awards in the coin history by rule key, or by being an award with no title on /admin ledger", async () => {
+    const { ledgerReason } = await student();
+    expect(ledgerReason("award", "สอนใน SHIFT", null, null, "taught-next-shift")).toBe("🏅 รางวัลจากทีมงาน สอนใน SHIFT รอบถัดไป: สอนใน SHIFT");
+    expect(ledgerReason("award", "ช่วยสามทีม", null, null, "helped-most")).toBe("🏅 รางวัลจากทีมงาน ช่วยเพื่อนมากที่สุด: ช่วยสามทีม");
+    expect(ledgerReason("award", "ช่วยสามทีม", null)).toBe("🏅 รางวัลจากทีมงาน: ช่วยสามทีม");
+    expect(ledgerReason("award", "quest_award", "แอป", null, "main-quest")).toBe("ได้จากเควสต์: แอป");
+    expect(ledgerReason("award", "quest_award", null)).toBe("ได้จากเควสต์");
+    expect(ledgerReason("award", "season_unlock", null, null, "main-quest")).toBe("ปลดล็อกของซีซัน");
+  });
+
+  it("shows why a shop item is locked and keeps its confirm button off", async () => {
+    const { lockText } = await student();
+    expect(lockText({ locked: "consent" })).toBe(T.rewardsLock.consent);
+    expect(lockText({ locked: "stage", min_stage: 5 })).toBe("แลกได้เมื่อต้นไม้ของทีมถึงขั้น 5");
+    expect(lockText({ locked: "community", min_stage: 5 })).toBe(T.rewardsLock.community);
+    expect(lockText({ locked: null })).toBeNull();
+    expect(lockText({})).toBeNull();
+    for (const text of [T.rewardsLock.consent, T.rewardsLock.stage(6), T.rewardsLock.community]) {
+      expect(text).not.toMatch(/—|น้อง|ลูก(?!ค้า)/);
+    }
+
+    const item = { id: "3f1c2a64-1d2b-4c3d-9e8f-0a1b2c3d4e5f", name: "มัทฉะ", description: "ชาเขียว", cost: 8000, in_stock: true };
+    const catalog = (locked: string | null) => ({
+      live: true,
+      terms: null,
+      balance: 9000,
+      items: [{ ...item, min_stage: 5, requires_community: true, locked, affordable: true }],
+      mine: [],
+    });
+    const sentFor = async (locked: string | null) => {
+      const sent: { components?: unknown[] }[] = [];
+      const api = { call: jest.fn(async () => catalog(locked)), rows: jest.fn() } as unknown as QuestApi;
+      const ctx = {
+        api,
+        userId: "1111111111",
+        name: "x",
+        memberRoleIds: ["555"],
+        session: session({}, { student_role_ids: ["555"], redemption: true }),
+      } as unknown as Ctx;
+      const i = {
+        id: "222222222222222222",
+        isButton: () => false,
+        isStringSelectMenu: () => true,
+        isModalSubmit: () => false,
+        isChatInputCommand: () => false,
+        isMessageComponent: () => true,
+        values: [item.id],
+        customId: "sq|rw_pick",
+        update: async (p: { components?: unknown[] }) => sent.push(p),
+        reply: async (p: { components?: unknown[] }) => sent.push(p),
+      };
+      await ACTION_HANDLERS.get("rw_pick")!(i as never, ctx, []);
+      const text = JSON.stringify(sent[0]);
+      const go = (JSON.parse(text).components as unknown[]).flatMap(function walk(c: unknown): { custom_id?: string; disabled?: boolean }[] {
+        const node = c as { custom_id?: string; components?: unknown[] };
+        return [node, ...(node.components ?? []).flatMap(walk)];
+      }).find((c) => c.custom_id?.startsWith("sq|rw_go|"));
+      return { text, disabled: go?.disabled };
+    };
+    const locked = await sentFor("stage");
+    expect(locked.text).toContain(`${T.rewardsLocked}: แลกได้เมื่อต้นไม้ของทีมถึงขั้น 5`);
+    expect(locked.disabled).toBe(true);
+    const open = await sentFor(null);
+    expect(open.text).not.toContain(T.rewardsLocked);
+    expect(open.disabled).toBe(false);
+  });
+});

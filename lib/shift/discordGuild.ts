@@ -9,6 +9,7 @@
  */
 
 import { isDiscordOAuthJoinError } from "@/lib/shift/discordErrors";
+import { guildAvatarUrl, userAvatarUrl } from "@/lib/supabase/shift-quests/avatar";
 
 const DISCORD_API = "https://discord.com/api/v10";
 
@@ -181,7 +182,17 @@ export async function joinShiftGuild(input: {
 }
 
 export type ShiftGuildMemberResult =
-  | { ok: true; roles: string[]; nick: string | null }
+  | {
+      ok: true;
+      roles: string[];
+      nick: string | null;
+      /**
+       * The member's picture as Discord shows it in the SHIFT server: the
+       * server avatar when they set one, else their own avatar, as a checked
+       * 64px PNG URL (lib/supabase/shift-quests/avatar.ts); null when neither.
+       */
+      avatar: string | null;
+    }
   | { ok: false; reason: "not_member" | "not_configured" | "rate_limited" | "error" };
 
 const MEMBER_TTL_MS = 60_000;
@@ -211,10 +222,13 @@ async function lookupShiftGuildMember(config: GuildConfig, discordUserId: string
   try {
     const res = await discordFetch(config, `/members/${discordUserId}`, { method: "GET" }, "SHIFT island access check");
     if (res.ok) {
-      const body = (await res.json()) as { roles?: unknown; nick?: unknown };
+      const body = (await res.json()) as { roles?: unknown; nick?: unknown; avatar?: unknown; user?: { avatar?: unknown } | null };
       const roles = Array.isArray(body.roles) ? body.roles.filter((r): r is string => typeof r === "string") : [];
       const nick = typeof body.nick === "string" && body.nick.trim() ? body.nick.trim() : null;
-      return { ok: true, roles, nick };
+      const avatar =
+        guildAvatarUrl(config.guildId, discordUserId, body.avatar) ??
+        userAvatarUrl(discordUserId, body.user && typeof body.user === "object" ? body.user.avatar : null);
+      return { ok: true, roles, nick, avatar };
     }
     if (res.status === 404) {
       const body = (await res.json().catch(() => null)) as { code?: unknown } | null;
@@ -227,7 +241,7 @@ async function lookupShiftGuildMember(config: GuildConfig, discordUserId: string
 }
 
 /**
- * The person's roles and server nickname in the SHIFT server right now, for
+ * The person's roles, server nickname and picture in the SHIFT server right now, for
  * pages that have no Discord interaction to read them from (the web island).
  * Cached per Discord id: 60 s for a member, 15 s for "not in the server". When
  * Discord is rate limiting or failing, a recent answer stands in; otherwise

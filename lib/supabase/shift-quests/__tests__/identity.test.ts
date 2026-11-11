@@ -30,14 +30,15 @@ describe("discordActor", () => {
     const u = user(
       [
         { id: "google-1", provider: "google", identity_data: { email: "a@example.com" } },
-        discord({ user_name: "mintty#0", avatar_url: "https://cdn.discordapp.com/avatars/1/a.png" }),
+        discord({ user_name: "mintty#0", avatar_url: `https://cdn.discordapp.com/avatars/${SNOWFLAKE}/a_0123456789abcdef0123456789abcdef.gif` }),
       ],
       { email: "a@example.com" }
     );
     expect(discordActor(u)).toEqual({
       actor: SNOWFLAKE,
       name: "mintty",
-      avatarUrl: "https://cdn.discordapp.com/avatars/1/a.png",
+      // Normalized on the server: Discord's CDN only, a 64px still PNG (avatar.ts).
+      avatarUrl: `https://cdn.discordapp.com/avatars/${SNOWFLAKE}/a_0123456789abcdef0123456789abcdef.png?size=64`,
     });
   });
 
@@ -58,6 +59,10 @@ describe("discordActor", () => {
 
   it("drops a non-https avatar", () => {
     expect(discordActor(user([discord({ user_name: "a", avatar_url: "http://x/a.png" })]))?.avatarUrl).toBeNull();
+  });
+
+  it("drops an avatar that is not on Discord's CDN", () => {
+    expect(discordActor(user([discord({ user_name: "a", avatar_url: "https://evil.example/avatars/1/a.png" })]))?.avatarUrl).toBeNull();
   });
 
   it("refuses an id that is not a snowflake", () => {

@@ -2,15 +2,20 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import type { ComponentProps } from "react";
 
 import { checkIn, loadCampfire } from "@/app/shift/island/actions";
+import { loadWallet } from "@/app/shift/island/wallet-actions";
 
 import type { PlazaSpotId } from "@/lib/shift-island/live/plaza";
+import type { CharacterStats, IslandConsent, IslandNews, WalletDetail } from "@/lib/supabase/shift-quests/playerTypes";
 import { noticePins } from "@/lib/shift-island/notice";
 import type { BoardRef } from "@/lib/supabase/shift-quests/board";
 import type { IslandPageData } from "@/lib/supabase/shift-quests/types";
 
 import { makeBoard } from "../__fixtures__/board";
+import { HUD } from "../copy";
 import { IslandApp } from "../IslandApp";
 import type { IslandViewport } from "../IslandViewport";
+import { CHARACTER as CHARACTER_COPY, PLAYER, PLAYER_MENU, WALLET } from "../player/copy";
+import { PRIZES_UI } from "../prizes/copy";
 
 type ViewportProps = ComponentProps<typeof IslandViewport>;
 
@@ -24,6 +29,17 @@ jest.mock("@/app/shift/island/actions", () => ({
   respondInvite: jest.fn(),
   loadCampfire: jest.fn(),
 }));
+jest.mock("@/app/shift/island/wallet-actions", () => ({
+  loadWallet: jest.fn(),
+  redeemItem: jest.fn(),
+  cancelRedemption: jest.fn(),
+}));
+jest.mock("@/app/shift/island/consent-actions", () => ({
+  loadConsent: jest.fn(),
+  confirmAdult: jest.fn(),
+  requestParentLink: jest.fn(),
+}));
+jest.mock("@/app/shift/island/news-actions", () => ({ hideTeamNews: jest.fn() }));
 jest.mock("sonner", () => ({ toast: { success: jest.fn(), error: jest.fn() } }));
 // The client's Bangkok date: null keeps the page's own days_to_demo, a day number overrides it.
 const mockToday: { day: number | null } = { day: null };
@@ -167,6 +183,7 @@ jest.mock("../story/StoryLauncher", () => {
 });
 
 const LINK = { linked: true as const, linkedAt: "2026-11-11T08:00:00Z" };
+const SUGGEST_URL = "https://discord.com/channels/444444444444444444/555555555555555555";
 const KEYNOTE = "ทำต่อ: ฟังเสียงจริงอีก 5 คน";
 
 function page(overrides: Partial<IslandPageData> = {}): IslandPageData {
@@ -371,6 +388,26 @@ describe("IslandApp HUD", () => {
     expect(screen.getByText("โชว์ชื่อโปรเจกต์บนเกาะ")).toBeInTheDocument();
   });
 
+  it.each([
+    ["with a project", () => page({ suggestUrl: SUGGEST_URL })],
+    ["before a plot is claimed", () => unclaimed({ suggestUrl: SUGGEST_URL })],
+  ])("links the suggestions channel from the menu %s", (_label, data) => {
+    render(<IslandApp page={data()} picture={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "เมนู" }));
+    const sheet = screen.getByRole("dialog", { name: "เมนู" });
+    expect(within(sheet).getByRole("link", { name: "เสนอไอเดีย / แจ้งบั๊ก" })).toHaveAttribute("href", SUGGEST_URL);
+  });
+
+  it.each([
+    ["with a project", () => page()],
+    ["before a plot is claimed", () => unclaimed({ suggestUrl: null })],
+  ])("leaves the suggestions link out of the menu %s when no channel is set", (_label, data) => {
+    render(<IslandApp page={data()} picture={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "เมนู" }));
+    const sheet = screen.getByRole("dialog", { name: "เมนู" });
+    expect(within(sheet).queryByRole("link", { name: /เสนอไอเดีย/ })).toBeNull();
+  });
+
   it("shows the envelope only when the bot has new messages", () => {
     const { unmount } = render(<IslandApp page={page()} picture={null} />);
     expect(screen.queryByRole("button", { name: /ข้อความใหม่/ })).toBeNull();
@@ -434,11 +471,13 @@ describe("IslandApp: the plaza", () => {
     expect(input.festival).toMatchObject({ demoDay: "2026-11-28", daysToDemo: 17, tableBar: 3, stageBar: 5 });
     expect(input.pins).toEqual(pins.map((pin) => pin.kind));
     expect(input.campfire).toEqual({ count: 3 });
+    expect(input.prizes).toBe(true);
     expect(labels).toEqual({ sign: "Demo Day 28 พ.ย.\nอีก 17 วัน", campfireCount: "3 คนกำลังทำงานอยู่" });
     expect(names).toEqual({
       notice: `กระดานเควสต์: ${pins.map((pin) => pin.title).join(" · ")}`,
       stage: "เวที Demo Day: 28 พ.ย. · อีก 17 วัน",
       campfire: "กองไฟ: ห้อง coworking มี 3 คน",
+      prizes: PRIZES_UI.spot,
     });
   });
 
@@ -464,7 +503,16 @@ describe("IslandApp: the plaza", () => {
     expect(input.festival).toBeNull();
     expect(input.campfire).toBeNull();
     expect(labels).toEqual({});
-    expect(Object.keys(names)).toEqual(["notice"]);
+    // The Demo Day prize board always stands in the plaza.
+    expect(Object.keys(names)).toEqual(["notice", "prizes"]);
+    expect(input.prizes).toBe(true);
+  });
+
+  it("opens the prizes from the prize board", () => {
+    render(<IslandApp page={festive()} picture={null} />);
+    fireEvent.click(screen.getByRole("button", { name: PRIZES_UI.spot }));
+    expect(screen.getByRole("dialog", { name: PRIZES_UI.title })).toBeInTheDocument();
+    expect(viewport()).toHaveAttribute("data-paused", "true");
   });
 
   it("opens the quest board from the notice board", () => {
@@ -517,9 +565,202 @@ describe("IslandApp: the plaza", () => {
     expect(props.input.pins).toBeNull();
     expect(props.input.festival).not.toBeNull();
     expect(props.input.campfire).toEqual({ count: 3 });
+    expect(props.input.prizes).toBe(true);
     expect(props.names).toEqual({});
     expect(mockViewport.props?.onNoticeVisible).toBeUndefined();
     expect(screen.queryByRole("button", { name: /^กองไฟ/ })).toBeNull();
+  });
+});
+
+describe("IslandApp: the player", () => {
+  const AVATAR = "https://cdn.discordapp.com/avatars/123456789012345678/0123456789abcdef0123456789abcdef.png?size=64";
+  const ME = { name: "พลอย", avatarUrl: AVATAR, staff: false };
+  const stats = (coins: Partial<CharacterStats["coins"]> = {}): CharacterStats => ({
+    stage: 1,
+    main: { team: 1, mine: 1 },
+    side: { team: 2, mine: 1 },
+    community: { milestones: 0, mine: 0, thanks: 1 },
+    checkins: { daysActive: 6, thisWeek: 2, run: 3 },
+    coins: { live: true, shopLive: true, balance: 2300, reserved: 0, ...coins },
+  });
+  const waiting: IslandConsent = {
+    required: true,
+    state: "waiting",
+    basis: null,
+    ok: false,
+    ai: false,
+    linkExpiresAt: "2026-11-25T08:00:00Z",
+    adultAge: 20,
+    parentSaidNo: false,
+  };
+  const granted: IslandConsent = { ...waiting, state: "granted", basis: "parent", ok: true, ai: true, linkExpiresAt: null };
+  const SUMMARY = "ทีมคุยกับผู้ใช้จริง 3 คนแล้ว";
+  const news: IslandNews = {
+    enabled: true,
+    day: "2026-11-11",
+    weekOf: null,
+    teams: [{ slot: 4, name: "สวนผักดาดฟ้า", day: { summary: SUMMARY, noUpdate: false, at: "2026-11-11T13:00:00Z", day: null }, week: null }],
+  };
+  const wallet: WalletDetail = {
+    live: true,
+    shopLive: true,
+    balance: 2300,
+    reserved: 0,
+    terms: null,
+    earn: { main: { amount: 300, cap: 5 }, side: null, community: null, taught: null, helped: null },
+    entries: [],
+    stage: 1,
+    communityDone: false,
+    consentOk: true,
+    shop: { live: true, terms: null, items: [], mine: [] },
+  };
+  const mockedLoadWallet = loadWallet as jest.MockedFunction<typeof loadWallet>;
+  const pillName = (balance: number) => PLAYER.coinPill(balance.toLocaleString("th-TH"));
+
+  beforeEach(() => {
+    mockedLoadWallet.mockReset().mockResolvedValue({ ok: true, data: wallet });
+  });
+
+  /** The menu button: "เมนู", or with the consent step named while consent waits. */
+  function openMenu() {
+    fireEvent.click(screen.getByRole("button", { name: (name) => name === HUD.menu || name === HUD.menuConsent }));
+    return screen.getByRole("dialog", { name: "เมนู" });
+  }
+
+  it("names the chip after the student, the project and its tree as the level, and opens the character sheet", () => {
+    render(<IslandApp page={page({ me: ME, character: stats() })} picture={null} />);
+    const label = PLAYER.chip("พลอย", "แอปจองห้องสมุด", 1);
+    const chip = screen.getByRole("button", { name: (name) => name.startsWith(label) });
+    expect(chip.closest("header")).not.toBeNull();
+    fireEvent.click(chip);
+    const sheet = screen.getByRole("dialog", { name: CHARACTER_COPY.title });
+    expect(within(sheet).getByText("พลอย")).toBeInTheDocument();
+    expect(within(sheet).getByText(CHARACTER_COPY.level(1))).toBeInTheDocument();
+    // The project sheet stays underneath, check-in included.
+    expect(within(sheet).getByRole("button", { name: "เช็กอินวันนี้" })).toBeInTheDocument();
+    expect(viewport()).toHaveAttribute("data-paused", "true");
+  });
+
+  it("keeps the project sheet as it was when the stats cannot be read", () => {
+    render(<IslandApp page={page({ character: null })} picture={null} />);
+    fireEvent.click(screen.getByRole("button", { name: /ดูตัวละคร/ }));
+    expect(screen.getByRole("dialog", { name: "แอปจองห้องสมุด" })).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: CHARACTER_COPY.title })).toBeNull();
+  });
+
+  it.each([
+    ["no stats", null],
+    ["coins off and an empty wallet", stats({ live: false, balance: 0 })],
+  ])("shows no coin pill with %s", (_label, character) => {
+    render(<IslandApp page={page({ character })} picture={null} />);
+    expect(screen.queryByRole("button", { name: /Passioncoin/ })).toBeNull();
+  });
+
+  it("keeps the coin pill for coins already earned while coins are off", () => {
+    render(<IslandApp page={page({ character: stats({ live: false, balance: 400 }) })} picture={null} />);
+    expect(screen.getByRole("button", { name: pillName(400) })).toBeInTheDocument();
+  });
+
+  it("puts the coin pill under the chip and opens the wallet, read only then", async () => {
+    render(<IslandApp page={page({ character: stats() })} picture={null} />);
+    const pill = screen.getByRole("button", { name: pillName(2300) });
+    expect(pill.closest("header")).not.toBeNull();
+    expect(mockedLoadWallet).not.toHaveBeenCalled();
+    fireEvent.click(pill);
+    const sheet = screen.getByRole("dialog", { name: WALLET.title });
+    expect(mockedLoadWallet).toHaveBeenCalledTimes(1);
+    expect(await within(sheet).findByText(WALLET.notHours)).toBeInTheDocument();
+    expect(viewport()).toHaveAttribute("data-paused", "true");
+  });
+
+  it("opens the wallet from the character sheet's coin row", () => {
+    render(<IslandApp page={page({ character: stats() })} picture={null} />);
+    fireEvent.click(screen.getByRole("button", { name: /ดูตัวละคร/ }));
+    const sheet = screen.getByRole("dialog", { name: CHARACTER_COPY.title });
+    fireEvent.click(within(sheet).getByRole("button", { name: /ดูกระเป๋า/ }));
+    expect(screen.queryByRole("dialog", { name: CHARACTER_COPY.title })).toBeNull();
+    expect(screen.getByRole("dialog", { name: WALLET.title })).toBeInTheDocument();
+  });
+
+  it("shows the consent step in the character sheet and opens the consent sheet from it", () => {
+    render(<IslandApp page={page({ character: stats(), consent: waiting })} picture={null} />);
+    fireEvent.click(screen.getByRole("button", { name: /ดูตัวละคร/ }));
+    const sheet = screen.getByRole("dialog", { name: CHARACTER_COPY.title });
+    fireEvent.click(within(sheet).getByRole("button", { name: "ดูขั้นตอน" }));
+    expect(screen.getByRole("dialog", { name: "ก่อนทีมขึ้นบนเกาะ" })).toBeInTheDocument();
+  });
+
+  it("lists the island news, the prizes and the consent step in the menu, each opening its sheet", () => {
+    render(<IslandApp page={page({ news, consent: waiting })} picture={null} />);
+    fireEvent.click(within(openMenu()).getByRole("button", { name: "ข่าวเกาะ" }));
+    expect(screen.queryByRole("dialog", { name: "เมนู" })).toBeNull();
+    expect(screen.getByRole("dialog", { name: "ข่าวเกาะ" })).toHaveTextContent(SUMMARY);
+
+    fireEvent.click(within(openMenu()).getByRole("button", { name: PRIZES_UI.menu }));
+    expect(screen.getByRole("dialog", { name: PRIZES_UI.title })).toBeInTheDocument();
+
+    const consentRow = within(openMenu()).getByRole("button", { name: PLAYER_MENU.consent });
+    expect(consentRow).toHaveAccessibleDescription(PLAYER_MENU.consentHint);
+    fireEvent.click(consentRow);
+    expect(screen.getByRole("dialog", { name: "ก่อนทีมขึ้นบนเกาะ" })).toBeInTheDocument();
+  });
+
+  it("puts a lamp dot on the menu button while consent waits, and none once it is on file", () => {
+    const { unmount } = render(<IslandApp page={page({ consent: waiting })} picture={null} />);
+    const menu = screen.getByRole("button", { name: HUD.menuConsent });
+    expect(within(menu).getByTestId("round-dot")).toBeInTheDocument();
+    unmount();
+    render(<IslandApp page={page({ consent: granted })} picture={null} />);
+    expect(within(screen.getByRole("button", { name: HUD.menu })).queryByTestId("round-dot")).toBeNull();
+  });
+
+  it("keeps a menu row for the AI news line while consent is on file without it", () => {
+    render(<IslandApp page={page({ consent: { ...granted, basis: "shift_parent", ai: false } })} picture={null} />);
+    const row = within(openMenu()).getByRole("button", { name: PLAYER_MENU.aiNews });
+    expect(row).toHaveAccessibleDescription(PLAYER_MENU.aiNewsHint);
+    fireEvent.click(row);
+    expect(screen.getByRole("dialog", { name: "ก่อนทีมขึ้นบนเกาะ" })).toHaveTextContent("ข่าวเกาะใช้ AI สรุปงานของทีม");
+  });
+
+  it.each([
+    ["the digest off and consent on file", { news: null, consent: granted }],
+    ["neither known (before the migration)", { news: null, consent: null }],
+    ["the news switched off", { news: { ...news, enabled: false }, consent: granted }],
+  ])("keeps only the prizes in the menu with %s", (_label, data) => {
+    render(<IslandApp page={page(data)} picture={null} />);
+    const menu = openMenu();
+    expect(within(menu).getByRole("button", { name: PRIZES_UI.menu })).toBeInTheDocument();
+    expect(within(menu).queryByRole("button", { name: "ข่าวเกาะ" })).toBeNull();
+    expect(within(menu).queryByRole("button", { name: PLAYER_MENU.consent })).toBeNull();
+  });
+
+  it("gives a student without a plot the same rows, their picture and the coin pill", () => {
+    render(<IslandApp page={unclaimed({ me: ME, news, consent: waiting, character: stats() })} picture={null} />);
+    const menu = openMenu();
+    expect(within(menu).getByRole("button", { name: "ข่าวเกาะ" })).toBeInTheDocument();
+    expect(within(menu).getByRole("button", { name: PLAYER_MENU.consent })).toBeInTheDocument();
+    fireEvent.click(within(menu).getByRole("button", { name: PRIZES_UI.menu }));
+    expect(screen.getByRole("dialog", { name: PRIZES_UI.title })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: pillName(2300) }));
+    expect(screen.getByRole("dialog", { name: WALLET.title })).toBeInTheDocument();
+  });
+
+  it("puts an opted-in team's AI news on its plot, and nothing on a plot without news", () => {
+    const { unmount } = render(<IslandApp page={page({ news })} picture={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "plot-4" }));
+    expect(within(screen.getByRole("dialog", { name: "แปลง #4" })).getByText(SUMMARY)).toBeInTheDocument();
+    unmount();
+    render(<IslandApp page={page({ news: { ...news, teams: [{ ...news.teams[0], slot: 9 }] } })} picture={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "plot-4" }));
+    expect(within(screen.getByRole("dialog", { name: "แปลง #4" })).queryByText(SUMMARY)).toBeNull();
+  });
+
+  it("hands the island the viewer's own picture only on their own island", () => {
+    const { unmount } = render(<IslandApp page={page({ me: ME })} picture={null} />);
+    expect(mockViewport.props?.me).toMatchObject({ name: "พลอย", avatarUrl: AVATAR });
+    unmount();
+    render(<IslandApp page={unclaimed({ me: ME })} picture={null} />);
+    expect(mockViewport.props?.me).toBeUndefined();
   });
 });
 

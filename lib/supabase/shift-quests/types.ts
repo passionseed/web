@@ -8,6 +8,8 @@
 import type { Session } from "@/bot/src/quests/api";
 import type { CanvasLinkState } from "@/lib/shift-island/quest-canvas";
 
+import type { CharacterStats, IslandConsent, IslandNews } from "./playerTypes";
+
 export type { Session as QuestSession } from "@/bot/src/quests/api";
 
 export type ProjectRoute = "software" | "creative" | "service" | "other";
@@ -203,9 +205,14 @@ export interface ProjectInvite {
   inviter: string | null;
 }
 
-/** Safe to pass to client components. Never contains the Discord id. */
+/**
+ * Safe to pass to client components, and only to the viewer it describes.
+ * Contains only the viewer's own avatar URL (which embeds their own Discord
+ * id); never anyone else's. Never contains the Discord id as a field.
+ */
 export interface ViewerCard {
   name: string;
+  /** Normalized on the server (avatar.ts): a Discord CDN avatar as a 64px PNG, or null. */
   avatarUrl: string | null;
   staff: boolean;
 }
@@ -251,6 +258,32 @@ export interface IslandPageData {
    * read failed; the world then draws no campfire.
    */
   campfire?: CampfireSummary | null;
+  /**
+   * The ⋯ menu's "เสนอไอเดีย / แจ้งบั๊ก" link,
+   * https://discord.com/channels/<guild>/<suggest channel>
+   * (shift_quest_island_links). Optional so older fixtures keep compiling.
+   * null: no suggestions channel set, no guild configured, or the read failed;
+   * the menu then hides the link.
+   */
+  suggestUrl?: string | null;
+  /**
+   * The viewer's own character sheet numbers and coin summary
+   * (shift_quest_character). Optional so older fixtures keep compiling.
+   * null: the function is missing or the read failed; no character stats
+   * and no coin pill.
+   */
+  character?: CharacterStats | null;
+  /**
+   * Parent consent (or the adult's own) for appearing in public, redeeming
+   * and money prizes (shift_quest_consent_get plus the SHIFT import).
+   * null: the function is missing or the read failed; nothing is gated in the UI.
+   */
+  consent?: IslandConsent | null;
+  /**
+   * The AI island news of opted-in teams (shift_quest_island_news). null:
+   * missing, failed, or the digest is off; no news menu row, no team cards.
+   */
+  news?: IslandNews | null;
 }
 
 /** Page payload for the voice campfire: no names, no ids. */
