@@ -19,16 +19,18 @@ interface NoProjectProps {
   invites: ProjectInvite[];
   /** The project name field, so the sheet can focus it when it opens. */
   nameInput?: Ref<HTMLInputElement>;
+  /** The invites' heading, focusable so the claim sheet can open on the invites without a keyboard. */
+  invitesHeading?: Ref<HTMLHeadingElement>;
 }
 
 /**
  * No plot yet, inside the claim sheet over the island: pending invites first,
  * then claiming a plot with a new project.
  */
-export function NoProject({ invites, nameInput }: NoProjectProps) {
+export function NoProject({ invites, nameInput, invitesHeading }: NoProjectProps) {
   return (
     <div className={styles.noProject}>
-      {invites.length > 0 ? <Invites invites={invites} /> : null}
+      {invites.length > 0 ? <Invites invites={invites} heading={invitesHeading} /> : null}
       <CreateProject nameInput={nameInput} />
       <p className={styles.hint}>{NO_PROJECT.joinFriend}</p>
       <IslandDiscordButton label={NO_PROJECT.switchAccount} switchAccount variant="quiet" />
@@ -36,10 +38,10 @@ export function NoProject({ invites, nameInput }: NoProjectProps) {
   );
 }
 
-function Invites({ invites }: { invites: ProjectInvite[] }) {
+function Invites({ invites, heading }: { invites: ProjectInvite[]; heading?: Ref<HTMLHeadingElement> }) {
   return (
     <section className={`ei-card ei-card--static ${styles.card}`} aria-labelledby="island-invites-heading">
-      <h2 id="island-invites-heading" className={styles.sectionHeading}>
+      <h2 id="island-invites-heading" ref={heading} tabIndex={-1} className={styles.sectionHeading}>
         {NO_PROJECT.invitesHeading}
       </h2>
       <ul className={styles.invites}>

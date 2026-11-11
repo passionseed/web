@@ -90,7 +90,9 @@ describe("QuestCardComposer", () => {
     expect(within(pivots).getByText("v2")).toBeInTheDocument();
     expect(within(pivots).getByText("แก้หลัง v2")).toBeInTheDocument();
     expect(within(pivots).getByText("เปลี่ยนเพราะ เพื่อนไม่อยากลงแอป")).toBeInTheDocument();
-    expect(within(tests).getByText("โน้ตจากคนนอกทีม")).toBeInTheDocument();
+    expect(within(tests).getByText("โน้ตจากคนนอกทีม ส่งเป็นของคุณไม่ได้")).toBeInTheDocument();
+    // Someone else's note is shown but cannot become the student's evidence.
+    expect(box("โทรถามเขาที่ 081-234-5678")).toBeDisabled();
     expect(screen.getAllByText("โน้ตนี้อาจมีเบอร์โทร อีเมล หรือไอดีของใครบางคน แก้ในแคนวาสก่อนส่งดีกว่า")).toHaveLength(1);
     expect(screen.getByLabelText("อะไรทำให้คุณเปลี่ยนความคิด")).toHaveAttribute("placeholder", "ตอบสั้นๆ หนึ่งบรรทัด (ไม่บังคับ)");
     expect(screen.getByLabelText("ลิงก์งาน (ไม่บังคับ ขึ้นต้นด้วย https://)")).toBeInTheDocument();
@@ -107,8 +109,31 @@ describe("QuestCardComposer", () => {
     expect(sendButton()).toBeEnabled();
     const expected = buildSnapshot("Lamp project", [NOTES[0], NOTES[2]]);
     expect(screen.getByTestId("quest-card-text").textContent).toBe(expected.text);
+    // The exact text is folded away; the student sees the notes as stickies, versions and reasons included.
+    expect(screen.getByTestId("quest-card-text").closest("details")).not.toHaveAttribute("open");
+    expect(screen.getByText("ดูข้อความที่พี่เลี้ยงจะได้")).toBeInTheDocument();
+    const preview = screen.getByRole("heading", { name: "หน้าตาที่พี่เลี้ยงจะเห็น" }).closest("section") as HTMLElement;
+    const tiles = within(preview).getAllByRole("listitem");
+    expect(tiles.map((tile) => tile.querySelector("p")?.textContent)).toEqual(expected.blocks.map((b) => b.header));
+    expect(within(preview).getByText("v1 → v2 เปลี่ยนเพราะ: เพื่อนไม่อยากลงแอป")).toBeInTheDocument();
     expect(screen.getByText(`${expected.length}/2000`)).toBeInTheDocument();
     expect(screen.getByText("เลือกแล้ว 2/8")).toBeInTheDocument();
+  });
+
+  it("warns, without changing anything, when the student's own line holds a contact", () => {
+    setup();
+    const line = screen.getByLabelText("อะไรทำให้คุณเปลี่ยนความคิด");
+    expect(screen.queryByText("ข้อความนี้อาจมีเบอร์โทร อีเมล หรือไอดีของใครบางคน ลบออกก่อนส่งดีกว่า")).toBeNull();
+    fireEvent.change(line, { target: { value: "น้องมิ้นท์ ไอจี mint.k ช่วยลอง" } });
+    expect(screen.getByText("ข้อความนี้อาจมีเบอร์โทร อีเมล หรือไอดีของใครบางคน ลบออกก่อนส่งดีกว่า")).toBeInTheDocument();
+    expect(line).toHaveValue("น้องมิ้นท์ ไอจี mint.k ช่วยลอง");
+  });
+
+  it("does not send while the canvas is being read again", () => {
+    setup({ loading: true });
+    fireEvent.click(box("ให้เพื่อน 3 คนลองแอป"));
+    expect(sendButton()).toBeDisabled();
+    expect(screen.getByText("กำลังอ่านแคนวาสใหม่ รอสักครู่แล้วค่อยส่ง")).toBeInTheDocument();
   });
 
   it("caps the card at 8 notes", () => {

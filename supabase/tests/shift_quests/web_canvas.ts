@@ -35,7 +35,7 @@ const D = "640000000000000004"; // no project; invited to project one but has no
 const NOBODY = "649999999999999999";
 const NAMES: Record<string, string> = { [A]: "Canvas Aye", [B]: "Canvas Bee", [C]: "Canvas Cee", [D]: "Canvas Dee" };
 
-/** The full web allowlist after 20261111091100 (regprocedure text), as in web_board.ts. */
+/** The full web allowlist after 20261111091200 (regprocedure text), as in web_board.ts. */
 const WEB_ALLOWLIST = [
   "shift_quest_board(text)",
   "shift_quest_canvas_get(text)",
@@ -48,6 +48,7 @@ const WEB_ALLOWLIST = [
   "shift_quest_island_optin(text,uuid,boolean)",
   "shift_quest_milestone_start(text,smallint)",
   "shift_quest_milestone_submit(text,smallint,text,text,text)",
+  "shift_quest_ownership_get(text)",
   "shift_quest_project_create(text,text,text,text)",
   "shift_quest_project_list(text)",
   "shift_quest_project_respond(text,uuid,boolean)",
@@ -125,7 +126,7 @@ async function main(): Promise<void> {
   const count = async (sql: string, args: unknown[] = []) => Number(await scalar(db, sql, args));
 
   // --- Schema, privileges, row security ------------------------------------------------
-  check(Number(await call(web, "shift_quest_schema_version")) === 5, "the website reads schema version 5");
+  check(Number(await call(web, "shift_quest_schema_version")) === 6, "the website reads schema version 6");
 
   const executable: string[] = (await db.query(`
     select p.oid::regprocedure::text as sig
@@ -134,11 +135,16 @@ async function main(): Promise<void> {
       and has_function_privilege('shift_quest_web', p.oid, 'EXECUTE')
     order by 1`)).rows.map((r) => r.sig);
   check(JSON.stringify(executable) === JSON.stringify([...WEB_ALLOWLIST].sort()),
-    "the website executes exactly the allowlist, the three canvas functions included", {
+    "the website executes exactly the allowlist, the canvas and ownership functions included", {
       extra: executable.filter((s) => !WEB_ALLOWLIST.includes(s)),
       missing: WEB_ALLOWLIST.filter((s) => !executable.includes(s)),
     });
-  for (const fn of ["shift_quest_canvas_get(text)", "shift_quest_canvas_link(text,uuid,text,text)", "shift_quest_canvas_unlink(text)"]) {
+  for (const fn of [
+    "shift_quest_canvas_get(text)",
+    "shift_quest_canvas_link(text,uuid,text,text)",
+    "shift_quest_canvas_unlink(text)",
+    "shift_quest_ownership_get(text)",
+  ]) {
     const grants: Json = (await db.query(
       `select has_function_privilege('shift_quest_bot', $1::regprocedure, 'EXECUTE') as bot,
               has_function_privilege('anon', $1::regprocedure, 'EXECUTE') as anon,
@@ -146,8 +152,9 @@ async function main(): Promise<void> {
               (select prosecdef from pg_proc where oid = $1::regprocedure) as definer`,
       [`public.${fn}`],
     )).rows[0];
-    check(grants.bot === true && grants.anon === false && grants.authenticated === false && grants.definer === true,
-      `${fn}: security definer, the bot may run it, the Data API may not`, grants);
+    // Website-only: only the website can check a canvas before linking it, and the bot reads project_view.
+    check(grants.bot === false && grants.anon === false && grants.authenticated === false && grants.definer === true,
+      `${fn}: security definer, website-only (neither the bot nor the Data API may run it)`, grants);
   }
 
   const table: Json = (await db.query(
@@ -270,6 +277,26 @@ async function main(): Promise<void> {
   check((await call<Json>(web, "shift_quest_canvas_get", A)).frame_id === "frame-one", "the link stays for the project");
   check(await count("select count(*) from public.shift_quest_canvas_links where linked_by is not null and project_id = $1", [p1]) === 1,
     "linked_by stays set");
+
+  // --- Ownership checklist (091200) ---------------------------------------------------------------
+  check(await code(call(web, "shift_quest_ownership_get", NOBODY)) === "not_started", "ownership_get needs /start");
+  check(await call(web, "shift_quest_ownership_get", D) === null, "without a project the checklist reads null");
+  const fresh: Json[] = await call(web, "shift_quest_ownership_get", A);
+  check(JSON.stringify(fresh.map((o) => o.item)) === JSON.stringify(["access", "export", "team", "costs", "portability"]) &&
+      fresh.every((o) => o.state === "not_checked" && o.mentor_held === false && typeof o.updated_at === "string"),
+    "a new project's checklist: five items, in the bot's order, none checked", fresh);
+  check(fresh.every((o) => keys(o) === "item,mentor_held,state,updated_at"),
+    "the website gets states only: no notes, continuation paths or help ids", fresh.map(keys));
+  await call(bot, "shift_quest_ownership_set", A, p1, "access", "demonstrated", null, false, null);
+  await call(bot, "shift_quest_ownership_set", A, p1, "costs", "not_applicable", "no costs", false, null);
+  const ticked: Json[] = await call(web, "shift_quest_ownership_get", A);
+  check(ticked.find((o) => o.item === "access")?.state === "demonstrated" &&
+      ticked.find((o) => o.item === "costs")?.state === "not_applicable",
+    "the website reads what was ticked in Discord", ticked);
+  check(await call(web, "shift_quest_ownership_get", C) === null || (await call<Json[]>(web, "shift_quest_ownership_get", C))
+      .every((o) => o.state === "not_checked"),
+    "another project's student reads their own checklist, not this one");
+  check(await call(web, "shift_quest_ownership_get", B) === null, "a student who left reads no checklist");
 
   // --- Cascade -------------------------------------------------------------------------------------
   check(await count("select count(*) from public.shift_quest_canvas_links where project_id = $1", [p2]) === 1,

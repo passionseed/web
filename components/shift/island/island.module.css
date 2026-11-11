@@ -177,6 +177,12 @@
   transition: background-color var(--snap) var(--ease-snap), transform var(--press) var(--ease-snap);
 }
 
+.quietButton:focus-visible {
+  /* The notch clips anything outside the box: the ring goes inside. */
+  outline: 2px solid var(--action-soft);
+  outline-offset: -4px;
+}
+
 .quietButton:hover:not(:disabled) {
   background: rgba(59, 130, 246, 0.16);
 }
@@ -450,6 +456,11 @@
 }
 
 .keynoteTitle {
+  /* Two lines at most: the HUD reserves its height, and the full title is in the quest sheet. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
   font-family: var(--font-kodchasan), var(--font-bai-jamjuree), sans-serif;
   font-weight: 600;
   font-size: 17px;
@@ -636,6 +647,11 @@
   border-radius: 0;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
   clip-path: var(--notch);
+}
+
+.routeChips .routeChip:focus-visible {
+  outline: 2px solid var(--action-soft);
+  outline-offset: -4px;
 }
 
 .routeChips .routeChip:hover {
@@ -1369,6 +1385,14 @@
   color: var(--text-hi);
 }
 
+/* A proposed quest's goal is the student's own: shown whole. */
+.detailWhy[data-full="true"] {
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+  white-space: pre-line;
+}
+
 .context,
 .doneWhen {
   display: grid;
@@ -1602,7 +1626,13 @@
   clip-path: inset(0 0 0 0);
   opacity: 0.55;
   filter: blur(5px);
-  animation: checkLight 640ms var(--ease-tension) both;
+}
+
+/* Pointer devices: the light builds up once as the check appears. Touch gets the in-view pass below only. */
+@media (hover: hover) {
+  .doneGlow {
+    animation: checkLight 640ms var(--ease-tension) both;
+  }
 }
 
 /* Touch: one more charge when the lit check scrolls into view. */

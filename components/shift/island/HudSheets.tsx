@@ -90,11 +90,23 @@ export function MenuSheet({
   );
 }
 
-/** From the envelope: new messages wait in the bot's inbox on Discord. */
-export function InboxSheet({ open, onClose, unread }: SheetProps & { unread: number }) {
+/** From the envelope: new messages wait in the bot's inbox on Discord, one tap away when the server is known. */
+export function InboxSheet({
+  open,
+  onClose,
+  unread,
+  discordUrl,
+}: SheetProps & { unread: number; discordUrl?: string | null }) {
   return (
     <IslandSheet open={open} onOpenChange={closer(onClose)} title={HUD.inboxHeading}>
-      <p className={styles.quiet}>{ISLAND.unread(unread)}</p>
+      <div className={world.sheetStack}>
+        <p className={styles.quiet}>{ISLAND.unread(unread)}</p>
+        {discordUrl ? (
+          <a className={styles.quietButton} href={discordUrl} target="_blank" rel="noopener noreferrer">
+            {ISLAND.openDiscord}
+          </a>
+        ) : null}
+      </div>
     </IslandSheet>
   );
 }

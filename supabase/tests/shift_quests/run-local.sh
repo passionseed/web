@@ -153,18 +153,24 @@ SQL
 # The rules of 20261111090600's grant loop, checked after a single pass: the
 # bot can execute every shift_quest_* entry point and no helper, the Data API
 # can execute none and touch no table, and every table has row level security.
-# And the web allowlist (20261111090900, 091000, 091100): shift_quest_web executes exactly the
+# The website-only functions (the canvas link, 091100, and the ownership read,
+# 091200) are never the bot's.
+# And the web allowlist (20261111090900, 091000, 091100, 091200): shift_quest_web executes exactly the
 # functions listed below (nothing before that file is applied), never a
 # helper, and holds no privilege on any table or sequence. The list repeats
 # the migration's on purpose: a new grant must change both.
 check_privileges() {
   local problems
   problems="$("${PSQL[@]}" -d "$1" -At <<'SQL'
-WITH fns AS (
+WITH fns0 AS (
   SELECT p.oid, p.oid::regprocedure::text AS sig,
-    p.proname NOT LIKE 'shift\_quest\_\_%' AND p.proname <> 'shift_quest_bootstrap_admin' AS for_bot
+    p.proname LIKE 'shift\_quest\_\_%' OR p.proname = 'shift_quest_bootstrap_admin' AS helper,
+    -- Website-only entry points (091100, 091200): the bot never runs them.
+    p.proname LIKE 'shift\_quest\_canvas\_%' OR p.proname = 'shift_quest_ownership_get' AS web_only
   FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
   WHERE n.nspname = 'public' AND p.proname LIKE 'shift\_quest\_%'
+), fns AS (
+  SELECT oid, sig, helper, NOT helper AND NOT web_only AS for_bot FROM fns0
 ), rels AS (
   SELECT c.oid, c.relname, c.relkind, c.relrowsecurity
   FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -193,7 +199,8 @@ web_allow(sig) AS (VALUES
   ('shift_quest_project_respond(text,uuid,boolean)'),
   ('shift_quest_canvas_get(text)'),
   ('shift_quest_canvas_link(text,uuid,text,text)'),
-  ('shift_quest_canvas_unlink(text)')
+  ('shift_quest_canvas_unlink(text)'),
+  ('shift_quest_ownership_get(text)')
 ), web_applied AS (
   SELECT to_regprocedure('public.shift_quest_board(text)') IS NOT NULL AS yes
 )
@@ -203,14 +210,14 @@ UNION ALL
 SELECT 'function ' || sig || ': shift_quest_bot cannot execute it' FROM fns
 WHERE for_bot AND NOT has_function_privilege('shift_quest_bot', oid, 'EXECUTE')
 UNION ALL
-SELECT 'function ' || sig || ': a helper shift_quest_bot can execute' FROM fns
+SELECT 'function ' || sig || ': a helper or website-only function shift_quest_bot can execute' FROM fns
 WHERE NOT for_bot AND has_function_privilege('shift_quest_bot', oid, 'EXECUTE')
 UNION ALL
 SELECT 'function ' || sig || ': a helper shift_quest_web can execute' FROM fns
-WHERE NOT for_bot AND has_function_privilege('shift_quest_web', oid, 'EXECUTE')
+WHERE helper AND has_function_privilege('shift_quest_web', oid, 'EXECUTE')
 UNION ALL
 SELECT 'function ' || sig || ': shift_quest_web can execute it but it is not on the web allowlist' FROM fns
-WHERE for_bot AND has_function_privilege('shift_quest_web', oid, 'EXECUTE')
+WHERE NOT helper AND has_function_privilege('shift_quest_web', oid, 'EXECUTE')
   AND sig NOT IN (SELECT sig FROM web_allow)
 UNION ALL
 SELECT 'function ' || w.sig || ': on the web allowlist but shift_quest_web cannot execute it'

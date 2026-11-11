@@ -28,6 +28,11 @@ export function bangkokPhase(nowMs: number): LightPhase {
   return "night";
 }
 
+/** The light in Bangkok right now (the island page reads it once on the server). */
+export function bangkokPhaseNow(): LightPhase {
+  return bangkokPhase(Date.now());
+}
+
 /** Per-phase multiply on R, G and B. Lanterns, lamps, tags and the pin are drawn untinted. */
 export const PHASE_TINT: Readonly<Record<LightPhase, readonly [number, number, number]>> = {
   dawn: [0.97, 0.85, 0.82],

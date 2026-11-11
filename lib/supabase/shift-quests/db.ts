@@ -17,8 +17,8 @@ import { SUPABASE_CA } from "./ca";
  * on globalThis so dev hot reload does not leak pools.
  */
 
-/** 5: 20261111091100_shift_quest_canvas_links (the SHIFT canvas link). The bot still needs 2. */
-export const REQUIRED_SCHEMA = 5;
+/** 6: 20261111091200_shift_quest_ownership_web (quest 5 reads the ownership checklist). The bot still needs 2. */
+export const REQUIRED_SCHEMA = 6;
 
 const ENV_KEY = "SHIFT_QUEST_DATABASE_URL";
 const NOT_CONFIGURED = "shift_quest_db_not_configured";

@@ -65,7 +65,11 @@ export function boatAt(tick: number, scene: Pick<IslandScene, "width" | "lanes" 
   const left = p < leg;
   // Each turn holds the boat one step in place, so it never drifts the wrong way while turning.
   const x = left ? end - p : start + (p - leg);
-  return { name: BOAT_FRAMES[Math.floor(tick / 4) % 2], x, y: scene.lanes.boatY, flip: !left };
+  // It starts on the PNG's own row (boatStill.y), so nothing jumps when the canvas replaces the
+  // picture, and eases into its lane 1 px every 4 ticks while it heads out to the open sea.
+  const dy = scene.lanes.boatY - scene.boatStill.y;
+  const y = scene.boatStill.y + Math.sign(dy) * Math.min(Math.abs(dy), Math.floor(tick / 4));
+  return { name: BOAT_FRAMES[Math.floor(tick / 4) % 2], x, y, flip: !left };
 }
 
 /** Gull sprite size. */

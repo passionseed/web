@@ -14,8 +14,11 @@ interface TodayCardProps {
   /** From shift_quest_island; only "any today" matters, the count is never shown. */
   tapsToday: number;
   resting: boolean;
-  /** Fired the moment the student taps, for the dust puff at the tree. */
-  onTapped?: () => void;
+  /**
+   * Fired once the database has saved the check-in (after the card has flipped),
+   * so the page can close the sheet and play the dust puff where it can be seen.
+   */
+  onSaved?: () => void;
   /** Opens the stuck sheet with no quest attached. */
   onStuck: () => void;
 }
@@ -24,7 +27,7 @@ interface TodayCardProps {
  * The daily check-in. One tap that flips at once (useOptimistic) and reverts
  * if the database refuses. No day counts, streaks or heatmaps, ever.
  */
-export function TodayCard({ tapsToday, resting, onTapped, onStuck }: TodayCardProps) {
+export function TodayCard({ tapsToday, resting, onSaved, onStuck }: TodayCardProps) {
   // Set when the action succeeds, so the flip holds even before the refreshed props arrive.
   const [confirmed, setConfirmed] = useState(false);
   const [tapped, setOptimisticTapped] = useOptimistic(tapsToday > 0 || confirmed, (_current, next: boolean) => next);
@@ -35,12 +38,15 @@ export function TodayCard({ tapsToday, resting, onTapped, onStuck }: TodayCardPr
 
   function tap() {
     if (tapped || tapPending) return;
-    onTapped?.();
     startTap(async () => {
       setOptimisticTapped(true);
       const result = await checkIn();
-      if (result.ok) setConfirmed(true);
-      else toast.error(result.error || COMMON.failed);
+      if (result.ok) {
+        setConfirmed(true);
+        onSaved?.();
+      } else {
+        toast.error(result.error || COMMON.failed);
+      }
     });
   }
 

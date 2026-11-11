@@ -74,8 +74,15 @@ describe("StartCard on a first visit", () => {
   beforeEach(() => jest.useFakeTimers());
   afterEach(() => jest.useRealTimers());
 
-  it("opens the story by itself, with the undated festival line, and its button lands on เริ่มเลย", () => {
+  it("leaves the story's first run to the island, where its date and claim are real", () => {
     render(<StartCard me={me} />);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(window.localStorage.getItem(STORY_SEEN_KEY)).toBeNull();
+  });
+
+  it("opens the story from the book, and its ไปที่เกาะ starts the island", async () => {
+    render(<StartCard me={me} />);
+    fireEvent.click(screen.getByRole("button", { name: "ดูเรื่องเล่าของเกาะอีกครั้ง" }));
     expect(screen.getByRole("dialog", { name: "เรื่องเล่าของเกาะ" })).toBeInTheDocument();
     const stage = () => screen.getByRole("group", { name: /^ภาพ \d จาก 4$/ });
     fireEvent.click(stage());
@@ -86,8 +93,8 @@ describe("StartCard on a first visit", () => {
     fireEvent.click(screen.getByRole("button", { name: "ไปที่เกาะ" }));
     expect(screen.queryByRole("dialog")).toBeNull();
     act(() => void jest.runOnlyPendingTimers());
-    expect(screen.getByRole("button", { name: START.action })).toHaveFocus();
     expect(window.localStorage.getItem(STORY_SEEN_KEY)).toBe("seen");
-    expect(mockedStart).not.toHaveBeenCalled();
+    await act(async () => {});
+    expect(mockedStart).toHaveBeenCalledTimes(1);
   });
 });

@@ -38,7 +38,7 @@ describe("story scenes", () => {
 
   it("2 and 3: one tree framed at about 160 x 112, a seedling then a stage 5 tree", () => {
     const [, second, third] = panels;
-    expect(second.scene!.trees.map((t) => t.stage)).toEqual([1]);
+    expect(second.scene!.trees.map((t) => t.stage)).toEqual([2]);
     expect(third.scene!.trees.map((t) => t.stage)).toEqual([5]);
     for (const panel of [second, third]) {
       const tree = panel.scene!.trees[0];
@@ -98,7 +98,7 @@ describe("story scenes", () => {
   });
 
   it("falls back to the matching tree sprite for each panel", () => {
-    expect(panels.map((p) => p.fallback)).toEqual([0, 1, 5, 7]);
+    expect(panels.map((p) => p.fallback)).toEqual([0, 2, 5, 7]);
     for (const panel of panels) expect(SPRITES[`stage_${panel.fallback}`]).toBeDefined();
   });
 });

@@ -16,7 +16,10 @@
 --   * shift_quest_canvas_get(actor), shift_quest_canvas_link(actor, board,
 --     frame, canvas_project) and shift_quest_canvas_unlink(actor), for the
 --     caller's current project, behind the same student gate as
---     shift_quest_board. On the web allowlist.
+--     shift_quest_board. On the web allowlist, and website-only: the bot never
+--     calls them, and only the website can check a canvas before linking it,
+--     so shift_quest_bot does not get them (any later file that repeats the
+--     bot's grant loop must keep the same exclusion).
 --   * shift_quest_schema_version() = 5. The website needs 5, the bot 2.
 --
 -- This file never references the whiteboard tables or auth.users: the quest
@@ -176,9 +179,9 @@ AS $$
 $$;
 
 -- ---------------------------------------------------------------------------
--- Privileges: the loop of 20261111090600_shift_quest_bot_role, then the web
--- allowlist of 20261111091000_shift_quests_board_fixes plus the three new
--- functions.
+-- Privileges: the loop of 20261111090600_shift_quest_bot_role (minus the
+-- website-only canvas functions), then the web allowlist of
+-- 20261111091000_shift_quests_board_fixes plus the three new functions.
 -- ---------------------------------------------------------------------------
 
 DO $$
@@ -195,12 +198,22 @@ BEGIN
     EXECUTE format('REVOKE ALL ON FUNCTION %s FROM anon', fn.sig);
     EXECUTE format('REVOKE ALL ON FUNCTION %s FROM authenticated', fn.sig);
     EXECUTE format('GRANT EXECUTE ON FUNCTION %s TO service_role', fn.sig);
-    IF fn.proname NOT LIKE 'shift\_quest\_\_%' AND fn.proname <> 'shift_quest_bootstrap_admin' THEN
+    IF fn.proname NOT LIKE 'shift\_quest\_\_%' AND fn.proname <> 'shift_quest_bootstrap_admin'
+       AND fn.proname NOT LIKE 'shift\_quest\_canvas\_%' THEN
       EXECUTE format('GRANT EXECUTE ON FUNCTION %s TO shift_quest_bot', fn.sig);
     END IF;
   END LOOP;
 END;
 $$;
+
+-- Earlier files' loops (090600, 091000) granted every shift_quest_* entry
+-- point to the bot; a second pass of them grants these again, so take them
+-- back explicitly. The bot never links canvases: only the website can check one.
+REVOKE EXECUTE ON FUNCTION
+  public.shift_quest_canvas_get(text),
+  public.shift_quest_canvas_link(text, uuid, text, text),
+  public.shift_quest_canvas_unlink(text)
+FROM shift_quest_bot;
 
 -- The website executes exactly this allowlist among the shift_quest_*
 -- functions. Mirrored in supabase/tests/shift_quests/run-local.sh

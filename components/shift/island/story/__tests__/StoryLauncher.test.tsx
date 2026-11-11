@@ -7,7 +7,7 @@ import { PANEL_MS } from "../StoryOverlay";
 import { STORY_SEEN_KEY } from "../useStorySeen";
 
 /** What the mocked canvas was last given, per panel phase, and whether it should fail. */
-const mockCanvas: { props: IslandCanvasProps[]; fail: boolean } = { props: [], fail: false };
+const mockCanvas: { props: IslandCanvasProps[]; fail: boolean; throws: boolean } = { props: [], fail: false, throws: false };
 
 jest.mock("@/components/shift/island/live/IslandCanvas", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -15,6 +15,8 @@ jest.mock("@/components/shift/island/live/IslandCanvas", () => {
   return {
     __esModule: true,
     default: function MockIslandCanvas(props: IslandCanvasProps) {
+      // A chunk that failed to load throws while rendering.
+      if (mockCanvas.throws) throw new Error("ChunkLoadError");
       mockCanvas.props.push(props);
       React.useEffect(() => {
         if (mockCanvas.fail) props.onFail?.();
@@ -72,6 +74,7 @@ beforeEach(() => {
   window.localStorage.clear();
   mockCanvas.props = [];
   mockCanvas.fail = false;
+  mockCanvas.throws = false;
 });
 
 afterEach(() => {
@@ -189,9 +192,15 @@ describe("StoryLauncher", () => {
     expect(panel(4)).toBeInTheDocument();
   });
 
-  it("goes to the next panel with the right arrow key", () => {
+  it("goes to the next panel with the right arrow key from where focus starts, and back with the left", () => {
     renderLauncher();
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveFocus();
+    fireEvent.keyDown(dialog, { key: "ArrowRight" });
+    expect(panel(2)).toBeInTheDocument();
     fireEvent.keyDown(screen.getByRole("button", { name: "ข้าม" }), { key: "ArrowRight" });
+    expect(panel(3)).toBeInTheDocument();
+    fireEvent.keyDown(dialog, { key: "ArrowLeft" });
     expect(panel(2)).toBeInTheDocument();
   });
 
@@ -258,6 +267,15 @@ describe("StoryLauncher", () => {
     expect(panel(1).querySelector('[data-phase="dawn"] svg')).not.toBeNull();
     fireEvent.click(panel(1));
     expect(panel(2).querySelector('[data-phase="day"] svg')).not.toBeNull();
+  });
+
+  it("shows the tree, not a crashed page, when the canvas code fails to load", () => {
+    mockCanvas.throws = true;
+    const error = jest.spyOn(console, "error").mockImplementation(() => {});
+    renderLauncher();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(panel(1).querySelector('[data-phase="dawn"] svg')).not.toBeNull();
+    error.mockRestore();
   });
 
   it.each([

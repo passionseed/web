@@ -30,19 +30,32 @@ export function Hud({ chip, buttons, bottom }: { chip: ReactNode; buttons: React
 }
 
 /** Top left: the project's name and its tree's stage as a 7-cell meter. Opens the project sheet. */
-export function HudChip({ name, stage, onOpen }: { name: string; stage: number; onOpen: () => void }) {
+export function HudChip({
+  name,
+  stage,
+  todayOpen = false,
+  onOpen,
+}: {
+  name: string;
+  stage: number;
+  /** Today's check-in is still open (lives in the project sheet): a small lamp dot says so. */
+  todayOpen?: boolean;
+  onOpen: () => void;
+}) {
   const grid = treeGrid(stage);
   const filled = Math.min(Math.max(Math.trunc(stage) || 0, 0), STAGES);
+  const label = HUD.chip(name, stageName(stage));
   return (
     <button
       type="button"
       className={`${styles.chip} ${styles.glass} ${styles.press}`}
-      aria-label={HUD.chip(name, stageName(stage))}
+      aria-label={todayOpen ? `${label}, ${HUD.chipTodayOpen}` : label}
       aria-haspopup="dialog"
       onClick={onOpen}
     >
       <span className={styles.chipTree} aria-hidden="true">
         <PixelIcon grid={grid} palette={PALETTE} scale={iconScale(grid, 40)} />
+        {todayOpen ? <span className={styles.chipDot} data-testid="chip-today-open" /> : null}
       </span>
       <span className={styles.chipText} aria-hidden="true">
         <span className={styles.chipName}>{name}</span>

@@ -21,6 +21,12 @@ export interface StoryLauncherProps {
   onOpenChange?: (open: boolean) => void;
   /** Replaces the book button's own look (the island HUD draws its round buttons). */
   className?: string;
+  /**
+   * Opens by itself on a browser that has not seen the story (the default).
+   * False keeps only the book, for a screen where the story's date and last
+   * button cannot be real yet: the first run then waits for the island.
+   */
+  autoOpen?: boolean;
 }
 
 /**
@@ -28,14 +34,14 @@ export interface StoryLauncherProps {
  * not seen the story it opens the story by itself, decided after mount; skip,
  * Escape and the last button all mark it seen. Mount one per screen.
  */
-export function StoryLauncher({ demoDay, cta, onCta, onOpenChange, className }: StoryLauncherProps): JSX.Element {
+export function StoryLauncher({ demoDay, cta, onCta, onOpenChange, className, autoOpen = true }: StoryLauncherProps): JSX.Element {
   const seen = useStorySeen();
   const [reopened, setReopened] = useState(false);
   // Remembered for this page too, so storage that throws (private mode) does not reopen it at once.
   const [dismissed, setDismissed] = useState(false);
   const button = useRef<HTMLButtonElement>(null);
   const closedVia = useRef<StoryCloseVia | null>(null);
-  const open = reopened || (!seen && !dismissed);
+  const open = reopened || (autoOpen && !seen && !dismissed);
 
   // Repeating the same value is harmless: the parent's setState bails out.
   useEffect(() => {

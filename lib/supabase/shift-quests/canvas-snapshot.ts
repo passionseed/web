@@ -230,7 +230,8 @@ function evaluate(rule: HintRule, notes: TimedNote[]): { hinted: boolean; detail
   switch (rule.rule) {
     case "written": {
       const n = notes.filter((x) => x.kind === rule.zone).length;
-      return n > 0 ? { hinted: true, detail: HINT_DETAIL.written(shortTitle(rule.zone)) } : { hinted: false, detail: null };
+      // No detail: the lit check and the context row above already say the note is there.
+      return { hinted: n > 0, detail: null };
     }
     case "count": {
       const n = notes.filter((x) => x.kind === rule.zone).length;
@@ -355,27 +356,58 @@ const PII_PATTERNS: readonly RegExp[] = [
   /\bid\s*[:：=]\s*@?[a-z0-9][a-z0-9._-]{2,}/i,
   // @handles (an email's @ is caught above).
   /(?:^|[^a-z0-9_.@])@[a-z0-9_][a-z0-9_.]{2,}/i,
+  // Thai landlines: 02 to 07 and 7 more digits ("เบอร์ 02-123-4567").
+  /(?:^|\D)0[2-7](?:[ .-]?\d){7}(?!\d)/,
+  // Labelled social handles, the way students write a tester down: "ig mint.k", "fb: Mint", "tiktok: mintk".
+  // No bare "x" or "tt": ordinary words would trip them.
+  /(?:^|[^a-z])(?:ig|insta(?:gram)?|fb|facebook|tiktok|twitter)\s*[:：=]?\s*@?[a-z0-9_.]{3,}/i,
+  /(?:ไอจี|อินสตา(?:แกรม)?|เฟส(?:บุ๊ก|บุ๊ค)?|ติ๊กต็อก|ติ๊กต๊อก|ทวิต(?:เตอร์)?)\s*[:：=]?\s*@?[a-z0-9_.]{3,}/i,
 ];
 
-/** True when the text may hold a phone number, an email, a LINE id or an @handle. */
+/** Thai digits as Arabic ones, so "๐๘๑ ๒๓๔ ๕๖๗๘" is read as a phone number. */
+function arabicDigits(text: string): string {
+  return text.replace(/[๐-๙]/g, (d) => String(d.charCodeAt(0) - 0x0e50));
+}
+
+/**
+ * True when the text may hold a phone number (Thai digits too), an email, a
+ * LINE id, a labelled IG, Facebook, TikTok or Twitter handle, or an @handle.
+ * A warning only: nothing is ever stripped.
+ */
 export function piiFlags(text: string): boolean {
-  return PII_PATTERNS.some((pattern) => pattern.test(text));
+  const normal = arabicDigits(text);
+  return PII_PATTERNS.some((pattern) => pattern.test(normal));
 }
 
 // ---------------------------------------------------------------------------
 // The quest card text
 // ---------------------------------------------------------------------------
 
-export type SnapshotNote = Pick<PickableNote, "kind" | "day" | "text" | "version" | "history" | "byTeam">;
+export type SnapshotNote = Pick<PickableNote, "kind" | "day" | "text" | "version" | "history" | "byTeam"> &
+  Partial<Pick<PickableNote, "editedSinceVersion">>;
+
+/** One note of the quest card, as stored: the header, its words (cut to the budget) and its reason lines. */
+export interface SnapshotBlock {
+  kind: ShiftCardKind;
+  day: number | null;
+  header: string;
+  body: string;
+  whys: string[];
+}
 
 const CUT_MARK = "…(ตัด)";
 /** Below this many characters per note, version lines give way to the notes' own words. */
 const MIN_BODY = 60;
 const ZONE_ORDER: readonly ShiftCardKind[] = SHIFT_CARD_KINDS;
 
-/** "💡 ไอเดีย v3", "📅 วันที่ 2", "🧪 ทดสอบ (โน้ตจากคนนอกทีม)": the zone's title as on the whiteboard. */
+/**
+ * "💡 ไอเดีย v3", "📅 วันที่ 2", "🧪 ทดสอบ (โน้ตจากคนนอกทีม)": the zone's title
+ * as on the whiteboard. Text edited after its newest saved version says so
+ * ("💡 ไอเดีย v3 (แก้หลัง v3)"): the words stored are the edited ones.
+ */
 function noteHeader(n: SnapshotNote): string {
-  return zoneTitle(n.kind, n.day ?? undefined) + (n.version ? ` v${n.version}` : "") + (n.byTeam ? "" : " (โน้ตจากคนนอกทีม)");
+  const edited = n.version && n.editedSinceVersion ? ` (แก้หลัง v${n.version})` : "";
+  return zoneTitle(n.kind, n.day ?? undefined) + (n.version ? ` v${n.version}` : "") + edited + (n.byTeam ? "" : " (โน้ตจากคนนอกทีม)");
 }
 
 /** At most `limit` "v1 → v2 เปลี่ยนเพราะ: ..." lines, oldest first, from the newest versions with a reason. */
@@ -409,7 +441,7 @@ function cutBody(text: string, budget: number): { body: string; cut: boolean } {
 export function buildSnapshot(
   canvasTitle: string,
   notes: readonly SnapshotNote[],
-): { text: string; cut: boolean; length: number } {
+): { text: string; cut: boolean; length: number; blocks: SnapshotBlock[] } {
   const max = CARD_LIMITS.evidence;
   const title = cutChars(oneLine(canvasTitle) || "ไม่มีชื่อ", 80);
   const first = `การ์ดเควสต์จากแคนวาส: ${title}`;
@@ -423,13 +455,19 @@ export function buildSnapshot(
     )
     .map(({ note }) => note);
 
-  if (sorted.length === 0) return { text: first, cut: false, length: chars(first) };
+  if (sorted.length === 0) return { text: first, cut: false, length: chars(first), blocks: [] };
 
   let whyLimit = 2;
   let budget = 0;
-  let blocks: { header: string; whys: string[]; text: string }[] = [];
+  let blocks: { kind: ShiftCardKind; day: number | null; header: string; whys: string[]; text: string }[] = [];
   for (;;) {
-    blocks = sorted.map((n) => ({ header: noteHeader(n), whys: whyLines(n, whyLimit), text: n.text.trim() }));
+    blocks = sorted.map((n) => ({
+      kind: n.kind,
+      day: n.day ?? null,
+      header: noteHeader(n),
+      whys: whyLines(n, whyLimit),
+      text: n.text.trim(),
+    }));
     // Everything but the notes' words: line 1, each header and reason line, the line breaks.
     const overhead =
       chars(first) +
@@ -441,10 +479,12 @@ export function buildSnapshot(
 
   let cut = whyLimit < 2 && sorted.some((n) => whyLines(n, 2).length > whyLines(n, whyLimit).length);
   const parts = [first];
+  const out: SnapshotBlock[] = [];
   for (const b of blocks) {
     const body = cutBody(b.text, Math.max(budget, 0));
     cut ||= body.cut;
     parts.push([b.header, body.body, ...b.whys].join("\n"));
+    out.push({ kind: b.kind, day: b.day, header: b.header, body: body.body, whys: b.whys });
   }
   let text = parts.join("\n\n");
   if (chars(text) > max) {
@@ -452,5 +492,5 @@ export function buildSnapshot(
     text = `${cutChars(text, max - chars(CUT_MARK))}${CUT_MARK}`;
     cut = true;
   }
-  return { text, cut, length: chars(text) };
+  return { text, cut, length: chars(text), blocks: out };
 }

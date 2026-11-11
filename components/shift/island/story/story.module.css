@@ -161,6 +161,11 @@
   outline-offset: 2px;
 }
 
+/* The notched button clips anything outside its box: the ring goes inside. */
+.next:focus-visible {
+  outline-offset: -4px;
+}
+
 /* The picture's box: as tall as the tallest panel (set inline), so cuts never move the line. */
 .stage {
   position: relative;

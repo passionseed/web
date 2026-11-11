@@ -773,7 +773,8 @@ Story (`components/shift/island/story/StoryLauncher.tsx`):
 
 ```ts
 export function StoryLauncher(props: { demoDay: string | null; cta: "start" | "claim" | "island"; onCta?: () => void }): JSX.Element;
-// Renders the small book button; opens the overlay by itself on the first visit (localStorage "shift-island-story-v1").
+// Renders the small book button; opens the overlay by itself on the first visit (localStorage "shift-island-story-v1"),
+// except where autoOpen={false} (the start card: the first run waits for the island, where the date and claim are real).
 ```
 
 ### Story (first visit, about 15 s, skippable)
@@ -793,11 +794,11 @@ from the start card.
 | # | Scene | Line (draft) |
 |---|---|---|
 | 1 | `buildScene([])`, phase dawn, sea moving, gulls, no boat | เกาะนี้ยังว่าง |
-| 2 | one plot, stage 1, crop around it, builder actor beside it, day | ทุกโปรเจกต์คือต้นไม้หนึ่งต้น |
+| 2 | one plot, stage 2 (seedling), crop around it, builder actor beside it, day | ทุกโปรเจกต์คือต้นไม้หนึ่งต้น |
 | 3 | one plot, stage 5, builder plus tester actor trying something, day | ต้นไม้โตจากงานจริง |
 | 4 | 8 plots of mixed stages, 3 lanterns, festival banner and festoon, night | `{d MMM}` เทศกาล Demo Day (no date known: คืนเทศกาล Demo Day) |
 
-CTA on panel 4: not started "ไปที่เกาะ" (closes, focuses เริ่มเลย); no project
+CTA on panel 4: not started "ไปที่เกาะ" (closes and starts the island; the start card never opens the story by itself, only from its book); no project
 "จับจองที่ดิน" (closes, scrolls to the create form); with a project
 "ไปที่เกาะ". Skip: "ข้าม". The date comes from `island.season.demo_day` via
 `thaiShortDate`, never hardcoded; the not-started screen has no season, so it
@@ -882,7 +883,8 @@ buttons use pixel icons; `copy.ts` stays emoji-free.
 | m2 ทำให้มันมีอยู่จริง | idea, ship | ปัญหาที่แก้ (problem) · ไอเดีย (idea vN) · ปล่อยแล้ว (ship) | มีไอเดียที่บอกว่าแก้ปัญหาข้อไหน (idea written) · มีชิ้นงานที่คนอื่นลองได้ (ship written) · บอกเหตุผลของการตัดสินใจหลัก (no hint) |
 | m3 ให้ความจริงทำให้คุณแปลกใจ | test, pivot | ลองกับ (target) · สิ่งที่จะให้ลอง (idea vN) · ลองแล้ว (test count) | มีคนจริงลองงานของคุณ (test ≥ 1) · จดสิ่งที่ไม่ตรงกับที่คิด (no hint) · บอกว่าจะเปลี่ยนอะไร (pivot ≥ 1 or idea has v2+) |
 | m4 ทำให้เขาอยากกลับมา | test, pivot | งานตอนนี้ (ship vN) · ผลทดสอบล่าสุด (latest test) · เปลี่ยนแผนแล้ว (pivot count) | ลองปรับหนึ่งอย่าง (pivot ≥ 1 or ship v2+) · ดูว่าใครกลับมา (test ≥ 1) · บอกสิ่งที่เรียนรู้ ถึงไม่มีใครกลับมาก็นับ (no hint) |
-| m5, m6, m7 | none (line + link; quest 5's ownership checklist is not on the web allowlist) | none | 3 items from the evidence criteria, no hints |
+| m5 ถือกุญแจเอง | none (line + link) | the ownership checklist from Discord, read-only (`shift_quest_ownership_get`, migration 091200) | ผลเช็กลิสต์ /project ownership ทีละข้อ (lit when every item is done and none sits on a mentor's account) · 2 more items, no hints. The submit snapshots the states under the proof. |
+| m6, m7 | none (line + link) | none | 3 items, no hints |
 | side-five-voices | interview, target | | |
 | side-outside-circle | test | | |
 | side-fix-one-thing | test, pivot | | |
@@ -952,8 +954,11 @@ because the database requires one. Never author ids, Discord ids or comments.
   service_role. No canvas title or text stored. Functions
   `shift_quest_canvas_get(text)`, `shift_quest_canvas_link(text, uuid, text, text)`,
   `shift_quest_canvas_unlink(text)`; on the web allowlist (migration,
-  `run-local.sh` `web_allow`, `web_board.ts`); `shift_quest_schema_version()`
-  returns 5; web `REQUIRED_SCHEMA = 5`; bot stays 2.
+  `run-local.sh` `web_allow`, `web_board.ts`) and website-only (never granted
+  to `shift_quest_bot`). Migration `20261111091200_shift_quest_ownership_web.sql`
+  adds `shift_quest_ownership_get(text)` (quest 5's checklist, states only,
+  website-only) and `shift_quest_schema_version()` returns 6; web
+  `REQUIRED_SCHEMA = 6`; bot stays 2.
 - Reads of whiteboards use `createAdminClient()` only after
   `resolveIslandViewer()` returned ready, and never `loadBoard`, `openBoard`
   or `roleFor` (they write `last_opened_at` or let site admins in).
@@ -970,8 +975,12 @@ because the database requires one. Never author ids, Discord ids or comments.
   re-reads the canvas and builds the text, checks each note is live, inside a
   zone of the linked frame, of a zone kind mapped to that quest, and that its
   hash matches (`noteHash`, see above).
-- Tester privacy: the regex pass flags phones (Thai 0x and +66), emails,
-  LINE ids and @handles; warn only.
+- Tester privacy: the regex pass flags phones (Thai 0x, +66, landlines, Thai
+  digits), emails, LINE ids, labelled IG, Facebook, TikTok and Twitter handles
+  (ไอจี, เฟส, ig, fb...) and @handles, on notes and on the student's own line;
+  warn only.
+- Notes written by someone outside the canvas team show in the picker but
+  cannot be ticked, and the server refuses them (`note_not_allowed`).
 - Logs: codes only, never note text, ids of boards are fine.
 - Safeguarding: no new channel; the card goes to mentor review in the group
   queue as today.
@@ -996,13 +1005,14 @@ Automated, from the worktree:
    validation, refusals and that reads do not refresh.
 2. `pnpm test:db:quests`: new `web_canvas.ts` (link, relink, unlink, project
    member gate, teammate shares the link, cascade on project delete, web role
-   can execute exactly the allowlist, schema 5, RLS on).
+   can execute exactly the allowlist, schema 6, RLS on, the canvas and
+  ownership functions website-only, the ownership read).
 3. `pnpm exec tsc --noEmit -p tsconfig.json` filtered to touched files;
    `pnpm exec tsc --noEmit -p bot/tsconfig.json`.
 4. `rtk proxy pnpm lint`.
 5. Placeholder-env build (no DB, no Discord, no Supabase at import).
 
-Manual (founder, after the integrator applies 091100 to the sandbox on
+Manual (founder, after 091100 and 091200 are applied to the sandbox on
 55451; the dev server keeps running): phone-sized window at
 http://localhost:3000/shift/island. Story shows once, book re-opens it. The
 sea moves, the boat crosses, trees sway; switch the clock to 20:00 Bangkok and

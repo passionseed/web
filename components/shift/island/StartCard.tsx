@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useTransition } from "react";
+import { useTransition } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -18,12 +18,13 @@ import story from "./story/story.module.css";
 import { StoryLauncher } from "./story/StoryLauncher";
 
 /**
- * First visit: the island story opens by itself (the book re-opens it), then
- * one line and one button. The four rules stay one tap away under a fold.
+ * Before the island: one line and one button, the story one tap away on the
+ * book. The story first opens by itself on the island, where the season's
+ * Demo Day date and the claim button are real. The four rules stay one tap
+ * away under a fold.
  */
 export function StartCard({ me }: { me: ViewerCard }) {
   const [pending, startTransition] = useTransition();
-  const startButton = useRef<HTMLButtonElement>(null);
 
   function start() {
     if (pending) return;
@@ -42,7 +43,8 @@ export function StartCard({ me }: { me: ViewerCard }) {
             {START.heading}
           </h1>
           {/* No season is loaded before the island starts, so the festival panel is undated. */}
-          <StoryLauncher demoDay={null} cta="start" onCta={() => startButton.current?.focus()} />
+          {/* The story's "ไปที่เกาะ" does what it says: it starts the island. */}
+          <StoryLauncher demoDay={null} cta="start" autoOpen={false} onCta={start} />
         </div>
         <p className={styles.gateBody}>{GATE.signedOut.body}</p>
         <details className={story.rulesFold}>
@@ -58,7 +60,6 @@ export function StartCard({ me }: { me: ViewerCard }) {
         </details>
         <div className={styles.gateActions}>
           <button
-            ref={startButton}
             type="button"
             className={`ei-button-dawn ${styles.primary}`}
             onClick={start}

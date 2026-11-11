@@ -13,6 +13,7 @@ import { refresh } from "next/cache";
 import { z } from "zod";
 
 import { QuestDbError, QuestError, type QuestApi } from "@/bot/src/quests/api";
+import { MAIN_MILESTONE_TAKE_THE_KEYS, ownershipRows, proofWithOwnership, type OwnershipRow } from "@/lib/shift-island/ownership";
 import {
   CARD_REFLECTION_FALLBACK,
   MAIN_SLUGS,
@@ -25,11 +26,12 @@ import * as canvas from "@/lib/supabase/shift-quests/canvas";
 import { buildContext, buildSnapshot, canvasNotes, pickNotes, type CanvasLinkRow } from "@/lib/supabase/shift-quests/canvas-snapshot";
 import { questApi } from "@/lib/supabase/shift-quests/db";
 import { questErrorText } from "@/lib/supabase/shift-quests/errors";
-import type {
-  IslandActionResult,
-  ProjectRoute,
-  QuestBoard,
-  QuestSubmitResult,
+import {
+  TEXT_LIMITS,
+  type IslandActionResult,
+  type ProjectRoute,
+  type QuestBoard,
+  type QuestSubmitResult,
 } from "@/lib/supabase/shift-quests/types";
 import {
   askForHelpSchema,
@@ -255,7 +257,18 @@ export async function setShowName(input: {
   });
 }
 
-/** One of the seven main quests: proof plus one reflection, for a mentor to confirm. */
+/** shift_quest_ownership_get: the current project's ownership checklist, or null without a project. */
+async function ownershipOf(api: QuestApi, actor: string): Promise<OwnershipRow[] | null> {
+  return ownershipRows(await api.call<unknown>("shift_quest_ownership_get", actor));
+}
+
+/**
+ * One of the seven main quests: proof plus one reflection, for a mentor to
+ * confirm. Quest 5 (ถือกุญแจเอง) carries the ownership checklist as it is at
+ * this moment, read here on the server and added under the student's proof,
+ * so the evidence cannot change after review. Too long together: text_too_long,
+ * never a cut.
+ */
 export async function submitMainQuest(input: {
   milestone: number;
   proof: string;
@@ -263,16 +276,29 @@ export async function submitMainQuest(input: {
   artifactUrl?: string | null;
 }): Promise<IslandActionResult<QuestSubmitResult>> {
   return withReadyViewer("submitMainQuest", submitMainQuestSchema, input, async ({ actor }, v) => {
-    const row = await questApi().call<SubmitRow>(
+    const api = questApi();
+    let proof = v.proof;
+    if (v.milestone === MAIN_MILESTONE_TAKE_THE_KEYS) {
+      const rows = await ownershipOf(api, actor);
+      const withChecklist = proofWithOwnership(v.proof, rows ?? [], TEXT_LIMITS.proof);
+      if (withChecklist == null) throw new QuestError("text_too_long");
+      proof = withChecklist;
+    }
+    const row = await api.call<SubmitRow>(
       "shift_quest_milestone_submit",
       actor,
       v.milestone,
-      v.proof,
+      proof,
       v.reflection,
       v.artifactUrl
     );
     return submitted(row);
   });
+}
+
+/** Quest 5's checklist for the quest page, read-only (it is ticked in Discord). Null without a project. */
+export async function loadOwnership(): Promise<IslandActionResult<OwnershipRow[] | null>> {
+  return withReader("loadOwnership", noInput, undefined, async ({ actor }) => ownershipOf(questApi(), actor));
 }
 
 /** Start a main quest without sending anything yet, so it shows as the student's active quest. */
@@ -504,7 +530,8 @@ export async function loadQuestCanvas(input: {
  * snapshotted into the submission (so it cannot change after review), plus an
  * optional line and link, through the existing submit functions. Refuses
  * canvas_unlinked, canvas_gone, canvas_not_yours, note_not_allowed (a note
- * from a zone this quest does not use, or a quest without zones) and
+ * from a zone this quest does not use, a note by someone outside the canvas
+ * team, or a quest without zones) and
  * notes_changed (a note edited, re-versioned or removed since the card was
  * built). `version` is accepted for the contract; the main and side submit
  * functions take none.
@@ -538,6 +565,8 @@ export async function submitQuestCard(input: {
       const note = byId.get(asked.id);
       if (!note) throw new QuestError("notes_changed");
       if (!guide.zones.includes(note.kind)) throw new QuestError("note_not_allowed");
+      // Someone else's words (outside the canvas team) are never the student's evidence.
+      if (!note.byTeam) throw new QuestError("note_not_allowed");
     }
     if (v.notes.some((asked) => byId.get(asked.id)!.hash !== asked.hash)) throw new QuestError("notes_changed");
 

@@ -149,7 +149,7 @@ const MAIN_GUIDES: Readonly<Record<string, GuideSpec>> = {
     context: [
       { zone: "problem", label: "ปัญหาตอนนี้", show: "note" },
       { zone: "target", label: "คนที่เจอ", show: "note" },
-      { zone: "interview", label: "คุยแล้ว", show: "count" },
+      { zone: "interview", label: "สัมภาษณ์", show: "count" },
     ],
     checklist: [
       { id: "m1-problem", label: "เขียนปัญหาที่เลือก", hint: written("problem") },
@@ -184,7 +184,7 @@ const MAIN_GUIDES: Readonly<Record<string, GuideSpec>> = {
     context: [
       { zone: "target", label: "ลองกับ", show: "note" },
       { zone: "idea", label: "สิ่งที่จะให้ลอง", show: "note" },
-      { zone: "test", label: "ลองแล้ว", show: "count" },
+      { zone: "test", label: "ทดสอบ", show: "count" },
     ],
     checklist: [
       { id: "m3-tested", label: "มีคนจริงลองงานของคุณ", hint: atLeast("test", 1) },
@@ -201,7 +201,7 @@ const MAIN_GUIDES: Readonly<Record<string, GuideSpec>> = {
     context: [
       { zone: "ship", label: "งานตอนนี้", show: "note" },
       { zone: "test", label: "ผลทดสอบล่าสุด", show: "note" },
-      { zone: "pivot", label: "เปลี่ยนแผนแล้ว", show: "count" },
+      { zone: "pivot", label: "เปลี่ยนแผน", show: "count" },
     ],
     checklist: [
       { id: "m4-tweak", label: "ลองปรับหนึ่งอย่าง", hint: anyOf(atLeast("pivot", 1), versionAtLeast("ship", 2)) },
@@ -213,13 +213,15 @@ const MAIN_GUIDES: Readonly<Record<string, GuideSpec>> = {
       "ทำด่านใหม่ แล้วชวนคนที่เคยเล่นกลับมาลอง",
     ],
   },
-  // Quests 5 to 7: line and link only. Quest 5's ownership checklist lives in
-  // the bot (/project ownership) and is not on the web allowlist.
+  // Quests 5 to 7: line and link only, no canvas zones. Quest 5's checklist is
+  // the ownership checklist ticked in Discord (/project ownership): the quest
+  // page shows it read-only and lights m5-checked from it, and the submit
+  // snapshots it (lib/shift-island/ownership.ts), so its hint here is null.
   "take-the-keys": {
     zones: [],
     context: [],
     checklist: [
-      { id: "m5-checked", label: "ผลเช็กแต่ละข้อ ว่าเข้าถึงและสำรองงานได้เอง", hint: null },
+      { id: "m5-checked", label: "ผลเช็กลิสต์ /project ownership ทีละข้อ", hint: null },
       { id: "m5-open", label: "เรื่องที่ยังแก้ไม่ได้", hint: null },
       { id: "m5-secrets", label: "ไม่มีรหัสผ่าน โทเคน หรือภาพหน้าจอบัญชีส่วนตัว", hint: null },
     ],
@@ -302,9 +304,11 @@ export function questGuide(q: { kind: BoardRef["kind"]; slug: string | null }): 
   };
 }
 
-/** The checklist hint's one-line detail (DRAFT copy). `title` is the zone's Thai short title. */
+/**
+ * The checklist hint's one-line detail (DRAFT copy), only where it adds a
+ * number: a "written" hint has none. `title` is the zone's Thai short title.
+ */
 export const HINT_DETAIL = {
-  written: (title: string) => `มีโน้ต${title}ในแคนวาสแล้ว`,
   count: (title: string, n: number) => `${title} ${n} ใบ`,
   version: (title: string, v: number) => `${title} v${v}`,
 };

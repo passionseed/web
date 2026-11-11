@@ -17,6 +17,10 @@ interface SubmitFormProps {
   /** ส่งฉบับใหม่ instead of ส่งให้พี่เลี้ยงดู (submitted or clarification). */
   resubmit: boolean;
   onSubmitted: () => void;
+  /** One line above the form (quest 5: the checklist is attached by the server). */
+  note?: string;
+  /** A lower cap for the proof, when the server adds text under it (quest 5's checklist). */
+  proofMax?: number;
 }
 
 interface Draft {
@@ -30,13 +34,13 @@ type FieldErrors = Partial<Record<keyof Draft, string>>;
 const EMPTY: Draft = { proof: "", url: "", reflection: "" };
 
 /** Same rules as the database (__check_len / __check_url): required text, caps, https only. */
-export function validateSubmission(draft: Draft): FieldErrors {
+export function validateSubmission(draft: Draft, proofMax: number = TEXT_LIMITS.proof): FieldErrors {
   const errors: FieldErrors = {};
   const proof = draft.proof.trim();
   const reflection = draft.reflection.trim();
   const url = draft.url.trim();
   if (!proof) errors.proof = DETAIL.errors.proofRequired;
-  else if (proof.length > TEXT_LIMITS.proof) errors.proof = DETAIL.errors.tooLong(TEXT_LIMITS.proof);
+  else if (proof.length > proofMax) errors.proof = DETAIL.errors.tooLong(proofMax);
   if (!reflection) errors.reflection = DETAIL.errors.reflectionRequired;
   else if (reflection.length > TEXT_LIMITS.reflection) errors.reflection = DETAIL.errors.tooLong(TEXT_LIMITS.reflection);
   if (url) {
@@ -69,7 +73,7 @@ function send(quest: QuestView, proof: string, reflection: string, artifactUrl: 
 }
 
 /** Proof, an optional https link, and one reflection, sent for a mentor's review. */
-export function SubmitForm({ quest, resubmit, onSubmitted }: SubmitFormProps) {
+export function SubmitForm({ quest, resubmit, onSubmitted, note, proofMax = TEXT_LIMITS.proof }: SubmitFormProps) {
   const ids = { proof: useId(), url: useId(), reflection: useId() };
   // Kept per quest across the sheet closing, so a stray swipe never loses the text.
   const [draft, setDraft, clearDraft] = useDraft<Draft>(`submit:${refKey(quest.ref)}`, EMPTY);
@@ -85,7 +89,7 @@ export function SubmitForm({ quest, resubmit, onSubmitted }: SubmitFormProps) {
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (pending) return;
-    const found = validateSubmission(draft);
+    const found = validateSubmission(draft, proofMax);
     setErrors(found);
     if (Object.values(found).some(Boolean)) return;
     const url = draft.url.trim();
@@ -103,12 +107,13 @@ export function SubmitForm({ quest, resubmit, onSubmitted }: SubmitFormProps) {
 
   return (
     <form className={styles.form} onSubmit={onSubmit} noValidate>
+      {note ? <p className={styles.hint}>{note}</p> : null}
       <Field
         id={ids.proof}
         label={DETAIL.proofLabel}
         hint={DETAIL.proofHint}
         value={draft.proof}
-        max={TEXT_LIMITS.proof}
+        max={proofMax}
         error={errors.proof}
         rows={4}
         onChange={(value) => update("proof", value)}

@@ -168,7 +168,6 @@ function strings(): [string, string][] {
     questGuideSpec({ kind: "side", slug }).context.forEach((r, i) => out.push([`${slug}.context[${i}]`, r.label]));
   }
   for (const kind of SHIFT_CARD_KINDS) {
-    out.push([`HINT_DETAIL.written(${kind})`, HINT_DETAIL.written(shortTitle(kind))]);
     out.push([`HINT_DETAIL.count(${kind})`, HINT_DETAIL.count(shortTitle(kind), 2)]);
     out.push([`HINT_DETAIL.version(${kind})`, HINT_DETAIL.version(shortTitle(kind), 2)]);
   }

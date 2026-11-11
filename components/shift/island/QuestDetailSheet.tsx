@@ -25,8 +25,16 @@ import {
   type QuestCanvasContext,
   type QuestGuide,
 } from "@/lib/shift-island/quest-canvas";
+import {
+  OWNERSHIP_LABEL,
+  OWNERSHIP_STATE_LABEL,
+  TAKE_THE_KEYS,
+  ownershipAllLit,
+  ownershipLit,
+  ownershipSnapshot,
+} from "@/lib/shift-island/ownership";
 import type { BoardRef } from "@/lib/supabase/shift-quests/board";
-import type { QuestBoard } from "@/lib/supabase/shift-quests/types";
+import { TEXT_LIMITS, type QuestBoard } from "@/lib/supabase/shift-quests/types";
 import { SHIFT_CARDS } from "@/lib/whiteboard/shift-cards";
 
 import { QuestCardComposer, useQuestCanvas } from "./canvas";
@@ -36,6 +44,7 @@ import { IslandSheet } from "./IslandSheet";
 import { canStart, detailAction, mentorFeedback, questView, refKey, sameRef, type DetailAction, type QuestView } from "./model";
 import { PALETTE, iconGrid, iconScale, type IconKey } from "./sprites";
 import { SubmitForm } from "./SubmitForm";
+import { useOwnership, type OwnershipState } from "./useOwnership";
 
 interface QuestDetailSheetProps {
   board: QuestBoard;
@@ -89,6 +98,9 @@ export function QuestDetailSheet({ board, target, keynote, canvasLink, onClose, 
   const hasZones = guide.zones.length > 0 && action?.kind !== "locked";
   const canvasTarget = useMemo(() => (open && hasZones && ref ? { ref, slug } : null), [open, hasZones, ref, slug]);
   const canvas = useQuestCanvas(canvasTarget, canvasLink);
+  // Quest 5 reads the ownership checklist (ticked in Discord) instead of the canvas.
+  const keys = kind === "main" && slug === TAKE_THE_KEYS && action?.kind !== "locked";
+  const ownership = useOwnership(open && keys);
 
   // A new quest state (after a submit, or another quest) ends compose mode for good.
   const bodyKey = quest ? `${refKey(quest.ref)}:${quest.instanceId ?? ""}:${quest.status}` : "";
@@ -134,6 +146,7 @@ export function QuestDetailSheet({ board, target, keynote, canvasLink, onClose, 
             form={composing}
             hasZones={hasZones}
             canvas={canvas}
+            ownership={ownership}
             onForm={(form) => setCompose({ key: bodyKey, form })}
             onBack={() => setCompose(null)}
             onClose={onClose}
@@ -148,6 +161,7 @@ export function QuestDetailSheet({ board, target, keynote, canvasLink, onClose, 
             guide={guide}
             hasZones={hasZones}
             canvas={canvas}
+            ownership={ownership}
             onLinkCanvas={() => onLinkCanvas(quest.ref)}
           />
         )
@@ -168,9 +182,13 @@ export function badgeText(quest: QuestView, total: number): string {
   }
 }
 
-/** The bar shows ติด on every quest but a locked one (which has no form either), so locked means no bar. */
+/**
+ * The sticky bar while there is something to send or to be stuck on: none on
+ * a locked quest (no form yet), a finished one or a closed one. A quest held
+ * by a teammate or in appeal keeps a lone ติด: help may still be needed there.
+ */
 function hasBar(action: DetailAction): boolean {
-  return action.kind !== "locked";
+  return action.kind !== "locked" && action.kind !== "done" && action.kind !== "closed";
 }
 
 function Icon({ name, size = 16 }: { name: IconKey; size?: number }) {
@@ -188,6 +206,7 @@ function QuestDetailBody({
   guide,
   hasZones,
   canvas,
+  ownership,
   onLinkCanvas,
 }: {
   quest: QuestView;
@@ -198,12 +217,20 @@ function QuestDetailBody({
   /** The quest reads the canvas (it has zones and is not locked). */
   hasZones: boolean;
   canvas: CanvasState;
+  /** Quest 5's ownership checklist; null on every other quest. */
+  ownership: OwnershipState | null;
   onLinkCanvas: () => void;
 }) {
   const feedback = mentorFeedback(quest);
   const chip = tileChip(quest.status, quest.owner);
   const ready = canvas.context?.state === "ready" ? canvas.context : null;
   const why = quest.purpose.trim();
+  const ownRows = ownership?.state === "ready" ? ownership.rows : null;
+  const hints = ownership
+    ? ownRows
+      ? [{ id: "m5-checked", hinted: ownershipAllLit(ownRows), detail: null }]
+      : []
+    : (ready?.hints ?? []);
 
   return (
     <div className={styles.detail}>
@@ -218,7 +245,12 @@ function QuestDetailBody({
         {quest.help ? <span className={styles.helpText}>{BOARD.help}</span> : null}
       </div>
 
-      {why ? <p className={styles.detailWhy}>{why}</p> : null}
+      {/* A proposed quest's goal is the student's own words: never cut. */}
+      {why ? (
+        <p className={styles.detailWhy} data-full={quest.kind === "proposed" ? "true" : undefined}>
+          {why}
+        </p>
+      ) : null}
 
       {feedback ? (
         <blockquote className={styles.feedback}>
@@ -232,7 +264,9 @@ function QuestDetailBody({
         </CanvasBoundary>
       ) : null}
 
-      <DoneWhen guide={guide} hints={ready?.hints ?? []} evidence={quest.evidence} hinting={hasZones} />
+      {ownership ? <OwnershipBox ownership={ownership} /> : null}
+
+      <DoneWhen guide={guide} hints={hints} evidence={quest.evidence} hinting={hasZones || !!ownRows} />
 
       <MoreDetails quest={quest} guide={guide} />
 
@@ -357,11 +391,11 @@ function ContextRowItem({ row }: { row: ContextRow }) {
   );
 }
 
-/** Three pixel rows while the notes load. */
-function ContextSkeleton() {
+/** Three pixel rows while the notes (or the checklist) load. */
+function ContextSkeleton({ label = QUEST.context.loading }: { label?: string }) {
   return (
     <div className={styles.contextStrip} role="status" aria-busy="true">
-      <span className="sr-only">{QUEST.context.loading}</span>
+      <span className="sr-only">{label}</span>
       <ul className={styles.contextRows} aria-hidden="true">
         {[72, 54, 38].map((width) => (
           <li key={width} className={styles.contextRow} data-skeleton="true">
@@ -370,6 +404,48 @@ function ContextSkeleton() {
         ))}
       </ul>
     </div>
+  );
+}
+
+/**
+ * Quest 5's "สำหรับโปรเจกต์คุณ": the ownership checklist as ticked in Discord,
+ * read-only, and where to change it.
+ */
+function OwnershipBox({ ownership }: { ownership: OwnershipState }) {
+  const headingId = useId();
+  const rows = ownership.state === "ready" ? ownership.rows : null;
+  return (
+    <section className={styles.context} aria-labelledby={headingId}>
+      <h3 id={headingId} className={styles.detailHeading}>
+        {QUEST.context.heading}
+      </h3>
+      {ownership.state === "loading" ? (
+        <ContextSkeleton label={QUEST.ownership.loading} />
+      ) : rows && rows.length > 0 ? (
+        <div className={styles.contextStrip}>
+          <ul className={styles.contextRows}>
+            {rows.map((row) => (
+              <li key={row.item} className={styles.contextRow} data-empty={ownershipLit(row) ? undefined : "true"}>
+                <span className={styles.contextText}>
+                  <span className={styles.contextLabel}>{`${OWNERSHIP_LABEL[row.item]}: `}</span>
+                  {OWNERSHIP_STATE_LABEL[row.state]}
+                </span>
+                {row.mentorHeld ? (
+                  <span className={styles.contextTags}>
+                    <span className={styles.contextTag}>{QUEST.ownership.mentorHeld}</span>
+                  </span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+          <p className={styles.contextFoot}>
+            <span className={styles.contextFrom}>{QUEST.ownership.where}</span>
+          </p>
+        </div>
+      ) : (
+        <p className={styles.hint}>{QUEST.ownership.fallback}</p>
+      )}
+    </section>
   );
 }
 
@@ -429,7 +505,14 @@ function PixelCheck({ lit }: { lit: boolean }) {
   );
 }
 
-/** Collapsed rows: passing examples, and the full criteria and question. */
+/** A template quest's purpose longer than this is cut to two lines above, and shown whole under the details. */
+const LONG_PURPOSE = 120;
+
+/**
+ * Collapsed rows: passing examples, and the details not already on the page
+ * (the criteria when เสร็จเมื่อ has its own checklist, a long purpose in full,
+ * the question).
+ */
 function MoreDetails({ quest, guide }: { quest: QuestView; guide: QuestGuide }) {
   const examples =
     quest.kind === "main"
@@ -437,9 +520,12 @@ function MoreDetails({ quest, guide }: { quest: QuestView; guide: QuestGuide }) 
       : quest.kind === "side" && quest.examples
         ? quest.examples.split("\n").map((line) => line.trim()).filter(Boolean)
         : [];
-  const evidence = quest.evidence.trim();
+  // Without a guide checklist, เสร็จเมื่อ already shows the criteria as its one item.
+  const evidence = guide.checklist.length > 0 ? quest.evidence.trim() : "";
+  const purpose = quest.purpose.trim();
+  const goal = quest.kind !== "proposed" && purpose.length > LONG_PURPOSE ? purpose : "";
   const prompt = quest.reflectionPrompt.trim();
-  if (examples.length === 0 && !evidence && !prompt) return null;
+  if (examples.length === 0 && !evidence && !goal && !prompt) return null;
   return (
     <div className={styles.moreRows}>
       {examples.length > 0 ? (
@@ -455,13 +541,19 @@ function MoreDetails({ quest, guide }: { quest: QuestView; guide: QuestGuide }) 
           </ul>
         </details>
       ) : null}
-      {evidence || prompt ? (
+      {evidence || goal || prompt ? (
         <details className={styles.more}>
           <summary className={styles.moreSummary}>
             <span>{QUEST.details}</span>
             <ChevronDown className={styles.moreCaret} aria-hidden="true" />
           </summary>
           <div className={styles.moreBody}>
+            {goal ? (
+              <div className={styles.detailBlock}>
+                <h4 className={styles.detailSubheading}>{QUEST.why}</h4>
+                <p>{goal}</p>
+              </div>
+            ) : null}
             {evidence ? (
               <div className={styles.detailBlock}>
                 <h4 className={styles.detailSubheading}>{DETAIL.evidence}</h4>
@@ -587,6 +679,7 @@ function QuestCompose({
   form,
   hasZones,
   canvas,
+  ownership,
   onForm,
   onBack,
   onClose,
@@ -596,6 +689,7 @@ function QuestCompose({
   form: ComposeForm;
   hasZones: boolean;
   canvas: CanvasState;
+  ownership: OwnershipState | null;
   onForm: (form: ComposeForm) => void;
   onBack: () => void;
   onClose: () => void;
@@ -610,7 +704,23 @@ function QuestCompose({
   const resubmit = action.kind === "form" ? action.resubmit : false;
   const card = form === "card" && hasZones && ready ? ready : null;
   const cardLoading = form === "card" && hasZones && !ready && (canvas.loading || !canvas.context);
-  const textForm = <SubmitForm quest={quest} resubmit={resubmit} onSubmitted={onClose} />;
+  // Quest 5: the server adds the checklist under the proof, so the proof leaves room for it.
+  const ownRows = ownership?.state === "ready" ? (ownership.rows ?? []) : [];
+  const attach = ownership
+    ? {
+        note: QUEST.ownership.attached,
+        proofMax: ownRows.length > 0 ? TEXT_LIMITS.proof - ownershipSnapshot(ownRows).length - 2 : TEXT_LIMITS.proof,
+      }
+    : null;
+  const textForm = (
+    <SubmitForm
+      quest={quest}
+      resubmit={resubmit}
+      onSubmitted={onClose}
+      note={attach?.note}
+      proofMax={attach?.proofMax}
+    />
+  );
 
   return (
     <div ref={box} tabIndex={-1} className={styles.compose}>
@@ -643,6 +753,7 @@ function QuestCompose({
               resubmit,
             }}
             context={card}
+            loading={canvas.loading}
             onReload={canvas.reload}
             onSubmitted={onClose}
             onCancel={onBack}

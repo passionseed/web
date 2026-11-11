@@ -45,7 +45,13 @@ describe("sea and foam", () => {
 describe("the boat", () => {
   it("starts where the PNG anchors it, bow first (left, unmirrored), and moves 1 px every 2 ticks", () => {
     const at0 = boatAt(0, scene);
-    expect(at0).toMatchObject({ x: scene.boatStill.x, y: scene.lanes.boatY, flip: false });
+    // Exactly where the still picture has it: no jump when the canvas takes over from the PNG.
+    expect(at0).toMatchObject({ x: scene.boatStill.x, y: scene.boatStill.y, flip: false });
+    // Then it eases into its lane, 1 px at a time, and stays there.
+    const dy = scene.lanes.boatY - scene.boatStill.y;
+    expect(Math.abs(boatAt(4, scene).y - scene.boatStill.y)).toBe(Math.min(1, Math.abs(dy)));
+    expect(boatAt(4 * Math.abs(dy), scene).y).toBe(scene.lanes.boatY);
+    expect(boatAt(10_000, scene).y).toBe(scene.lanes.boatY);
     expect(boatAt(1, scene).x).toBe(at0.x);
     expect(boatAt(2, scene).x).toBe(at0.x - 1);
     expect(boatAt(60, scene).x).toBe(at0.x - 30);
@@ -81,7 +87,8 @@ describe("the boat", () => {
     // Both turns happen fully off the island.
     expect(maxX).toBeGreaterThanOrEqual(scene.width);
     expect(minX + BOAT_W).toBeLessThanOrEqual(0);
-    expect(boatAt(loop, scene)).toEqual(boatAt(0, scene));
+    // Back where it started, in its lane (only the very first pass starts on the PNG's row).
+    expect(boatAt(loop, scene)).toEqual({ ...boatAt(0, scene), y: scene.lanes.boatY });
   });
 });
 

@@ -25,7 +25,8 @@
   overscroll-behavior: none;
   background: var(--isl-water);
   -webkit-overflow-scrolling: touch;
-  touch-action: pan-x pan-y;
+  /* Native panning, and pinch-zoom stays on for anyone who needs bigger text or art. */
+  touch-action: pan-x pan-y pinch-zoom;
   scrollbar-width: none;
   /* Focus and scrollIntoView keep a plot clear of the HUD bars. */
   scroll-padding: calc(env(safe-area-inset-top) + 64px) 12px calc(env(safe-area-inset-bottom) + 96px);
@@ -96,6 +97,14 @@
   pointer-events: none;
 }
 
+/* The hour's light over the daytime PNG until the canvas takes over: a multiply, like the canvas's tint. */
+.tint {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
 .hotspots {
   position: absolute;
   inset: 0;
@@ -117,11 +126,7 @@
   outline-offset: 0;
 }
 
-/* The student's own tree stands out without a tap. */
-.hotspot[data-mine="true"] {
-  outline: 2px dashed rgba(255, 241, 214, 0.55);
-  outline-offset: 2px;
-}
+/* The student's own plot needs no box of its own: the island already draws its pin. */
 
 /* Check-in: a 400ms puff of pixel dust at the tree's base. The tree does not change. */
 .puff {
@@ -211,7 +216,7 @@
   max-width: calc(100vw - 32px);
   margin: 0;
   padding: 4px 10px;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.4;
   color: var(--isl-cream);
   background: rgba(52, 68, 71, 0.8);
@@ -330,6 +335,21 @@
   display: block;
 }
 
+/* Today's check-in is still open: one lamp-gold pixel in the tree's corner. */
+.chipTree {
+  position: relative;
+}
+
+.chipDot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  background: var(--isl-lamp);
+  box-shadow: 0 0 0 2px var(--isl-ink);
+}
+
 .chipText {
   display: grid;
   gap: 3px;
@@ -412,6 +432,17 @@
   display: block;
 }
 
+/*
+ * Every HUD control clips itself to its notch, which would clip an outline
+ * drawn outside the box: the focus ring goes inside, clear of the corners.
+ */
+.chip:focus-visible,
+.round:focus-visible,
+.boardButton:focus-visible {
+  outline: 2px solid var(--isl-cream);
+  outline-offset: -4px;
+}
+
 @media (hover: hover) {
   .round:hover,
   .chip:not([data-static="true"]):hover,
@@ -459,7 +490,7 @@
   min-height: 64px;
   padding: 6px 4px;
   font: inherit;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   line-height: 1.25;
   text-align: center;

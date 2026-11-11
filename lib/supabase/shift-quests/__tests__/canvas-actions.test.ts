@@ -421,6 +421,17 @@ describe("submitQuestCard", () => {
     expect(refresh).not.toHaveBeenCalled();
   });
 
+  it("refuses a note written by someone outside the canvas team (note_not_allowed)", async () => {
+    const withOutsider = [...NOTES, { id: "n-out", kind: "problem" as const, text: "โน้ตของคนนอกทีม", by: OUTSIDER }];
+    tables.whiteboards[0].elements = boardA({ notes: withOutsider });
+    const outsider = picked(["n-out"], boardA({ notes: withOutsider }));
+    expect(outsider.map((n) => n.byTeam)).toEqual([false]);
+    await expect(
+      actions.submitQuestCard({ ref: main1, slug: null, notes: outsider.map((n) => ({ id: n.id, hash: n.hash })) })
+    ).resolves.toMatchObject({ ok: false, code: "note_not_allowed" });
+    expect(fnCalls()).not.toContain("shift_quest_milestone_submit");
+  });
+
   it("refuses notes_changed when a note was edited since the card was built, without a page refresh", async () => {
     const notes = picked(["n-problem"]).map((n) => ({ id: n.id, hash: n.hash }));
     const edited = NOTES.map((n) => (n.id === "n-problem" ? { ...n, text: "ไม่มีเวลาอ่านหนังสือเลย" } : n));

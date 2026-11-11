@@ -177,7 +177,7 @@ async function main(): Promise<void> {
     "bot cannot call island helpers");
   check((await code(bot.query("select public.shift_quest__plot_json($1, null)", [randomUUID()]))).includes("permission denied"),
     "bot cannot call the privacy helper");
-  check(Number(await call(bot, "shift_quest_schema_version")) === (WAVE1 ? 1 : 5),
+  check(Number(await call(bot, "shift_quest_schema_version")) === (WAVE1 ? 1 : 6),
     `the bot reads the island schema version (${WAVE1 ? 1 : 5})`);
 
   // --- Fixtures --------------------------------------------------------------------

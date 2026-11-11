@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { toast } from "sonner";
 
 import {
+  loadOwnership,
   chooseSideQuest,
   resumeQuest,
   startMainQuest,
@@ -24,6 +25,7 @@ jest.mock("@/app/shift/island/actions", () => ({
   chooseSideQuest: jest.fn(),
   startMainQuest: jest.fn(),
   resumeQuest: jest.fn(),
+  loadOwnership: jest.fn(() => Promise.resolve({ ok: true, data: null })),
 }));
 
 jest.mock("sonner", () => ({ toast: { success: jest.fn(), error: jest.fn() } }));
@@ -85,6 +87,7 @@ const mocked = {
   startMainQuest: startMainQuest as jest.MockedFunction<typeof startMainQuest>,
   resumeQuest: resumeQuest as jest.MockedFunction<typeof resumeQuest>,
   useQuestCanvas: useQuestCanvas as jest.MockedFunction<typeof useQuestCanvas>,
+  loadOwnership: loadOwnership as jest.MockedFunction<typeof loadOwnership>,
   QuestCardComposer: QuestCardComposer as unknown as jest.Mock,
 };
 
@@ -97,10 +100,10 @@ const READY: Extract<QuestCanvasContext, { state: "ready" }> = {
   context: [
     { kind: "problem", label: "ปัญหาตอนนี้", text: "ห้องสมุดเต็มตอนพักเที่ยง", version: 2, count: null },
     { kind: "target", label: "คนที่เจอ", text: null, version: null, count: null },
-    { kind: "interview", label: "คุยแล้ว", text: null, version: null, count: 3 },
+    { kind: "interview", label: "สัมภาษณ์", text: null, version: null, count: 3 },
   ],
   hints: [
-    { id: "m1-problem", hinted: true, detail: "มีโน้ตปัญหาในแคนวาสแล้ว" },
+    { id: "m1-problem", hinted: true, detail: null },
     { id: "m1-target", hinted: false, detail: null },
     { id: "m1-talked", hinted: true, detail: "สัมภาษณ์ 3 ใบ" },
   ],
@@ -123,6 +126,7 @@ beforeEach(() => {
   mocked.submitSideQuest.mockResolvedValue(ok);
   mocked.submitProposedQuest.mockResolvedValue(ok);
   mocked.chooseSideQuest.mockResolvedValue({ ok: true, data: { instanceId: "i", version: 1, created: true } });
+  mocked.loadOwnership.mockResolvedValue({ ok: true, data: null });
 });
 
 function open(target: BoardRef, link: CanvasLinkState = UNLINKED) {
@@ -184,8 +188,10 @@ describe("QuestDetailSheet: the quest page", () => {
   it("asks to link a canvas when none is linked, and hands the quest up to open the picker", () => {
     const { onLinkCanvas } = open({ kind: "main", milestone: 1 });
     expect(mocked.useQuestCanvas).toHaveBeenLastCalledWith({ ref: { kind: "main", milestone: 1 }, slug: MAIN_SLUGS[0] }, UNLINKED);
-    expect(within(body()).getByRole("heading", { name: "เชื่อมแคนวาส" })).toBeInTheDocument();
+    expect(within(body()).getByRole("heading", { name: "สำหรับโปรเจกต์คุณ" })).toBeInTheDocument();
     expect(within(body()).getByText("เลือกแคนวาสโปรเจกต์ของคุณบนไวท์บอร์ด แล้วเควสต์จะดึงโน้ตของคุณมาให้")).toBeInTheDocument();
+    // The button is the one "เชื่อมแคนวาส" on the page.
+    expect(within(body()).getAllByText("เชื่อมแคนวาส")).toHaveLength(1);
     fireEvent.click(within(body()).getByRole("button", { name: "เชื่อมแคนวาส" }));
     expect(onLinkCanvas).toHaveBeenCalledWith({ kind: "main", milestone: 1 });
   });
@@ -205,7 +211,7 @@ describe("QuestDetailSheet: the quest page", () => {
     expect(rows).toHaveLength(3);
     expect(rows[0]).toHaveTextContent("🎯 ปัญหาตอนนี้: ห้องสมุดเต็มตอนพักเที่ยงv2");
     expect(rows[1]).toHaveTextContent("👥 คนที่เจอ: ยังไม่มีโน้ต");
-    expect(rows[2]).toHaveTextContent("🎤 คุยแล้ว3 ใบ");
+    expect(rows[2]).toHaveTextContent("🎤 สัมภาษณ์3 ใบ");
     expect(within(box).getByText("จากแคนวาส แอปจองห้องสมุด")).toBeInTheDocument();
     fireEvent.click(within(box).getByRole("button", { name: "เปลี่ยน" }));
     expect(onLinkCanvas).toHaveBeenCalledWith({ kind: "main", milestone: 1 });
@@ -249,7 +255,9 @@ describe("QuestDetailSheet: the quest page", () => {
     expect(items).toHaveLength(3);
     expect(items[0]).toHaveTextContent(guide.checklist[0].label);
     expect(items[0]).toHaveAttribute("data-hinted", "true");
-    expect(items[0]).toHaveTextContent("มีโน้ตปัญหาในแคนวาสแล้ว");
+    // A written note needs no extra line: the lit check and the context row say it.
+    expect(items[0].querySelector(".doneDetail")).toBeNull();
+    expect(items[2]).toHaveTextContent("สัมภาษณ์ 3 ใบ");
     expect(items[1]).not.toHaveAttribute("data-hinted");
     expect(items[2]).toHaveAttribute("data-hinted", "true");
     expect(within(list).getByText("ติ๊กให้จากโน้ตในแคนวาส พี่เลี้ยงเป็นคนดูและตัดสิน")).toBeInTheDocument();
@@ -294,7 +302,118 @@ describe("QuestDetailSheet: the quest page", () => {
   });
 });
 
+describe("QuestDetailSheet: less repeated text", () => {
+  it("shows a criteria-only quest's criteria once, in เสร็จเมื่อ, not again under the details", () => {
+    open({ kind: "proposed", instanceId: IDS.proposed });
+    expect(within(body()).getAllByText("มีแผนที่ที่เพื่อนสามคนใช้ได้")).toHaveLength(1);
+    expect(within(body()).queryByRole("heading", { name: "ส่งอะไร" })).toBeNull();
+  });
+
+  it("never cuts a proposed quest's goal, the student's own words", () => {
+    open({ kind: "proposed", instanceId: IDS.proposed });
+    expect(within(body()).getByText("ให้เพื่อนหาร้านใกล้โรงเรียนได้")).toHaveAttribute("data-full", "true");
+  });
+
+  it("shows a long template purpose whole under the details", () => {
+    const board = makeBoard();
+    const long = "ก".repeat(130);
+    board.main[0] = { ...board.main[0], purpose: long };
+    render(
+      <QuestDetailSheet
+        board={board}
+        target={{ kind: "main", milestone: 1 }}
+        keynote={null}
+        canvasLink={UNLINKED}
+        onClose={jest.fn()}
+        onStuck={jest.fn()}
+        onLinkCanvas={jest.fn()}
+      />,
+    );
+    const details = within(body()).getByText("รายละเอียดทั้งหมด").closest("details") as HTMLElement;
+    expect(within(details).getByRole("heading", { name: "ทำไมเควสต์นี้" })).toBeInTheDocument();
+    expect(within(details).getByText(long)).toBeInTheDocument();
+  });
+});
+
+describe("QuestDetailSheet: quest 5 and the ownership checklist", () => {
+  const ROWS = [
+    { item: "access" as const, state: "demonstrated" as const, mentorHeld: false },
+    { item: "export" as const, state: "not_checked" as const, mentorHeld: false },
+    { item: "team" as const, state: "not_applicable" as const, mentorHeld: false },
+    { item: "costs" as const, state: "demonstrated" as const, mentorHeld: true },
+    { item: "portability" as const, state: "needs_help" as const, mentorHeld: false },
+  ];
+
+  it("shows the checklist from Discord, read-only, and where to change it", async () => {
+    mocked.loadOwnership.mockResolvedValue({ ok: true, data: ROWS });
+    open({ kind: "main", milestone: 5 });
+    const box = within(body()).getByRole("heading", { name: "สำหรับโปรเจกต์คุณ" }).closest("section") as HTMLElement;
+    await waitFor(() => expect(within(box).getByText("เข้าถึงงานได้เอง:")).toBeInTheDocument());
+    const rows = within(box).getAllByRole("listitem");
+    expect(rows).toHaveLength(5);
+    expect(rows[0]).toHaveTextContent("ทำได้แล้ว");
+    expect(rows[3]).toHaveTextContent("บัญชีพี่เลี้ยง");
+    expect(within(box).getByText("อัปเดตใน Discord: พิมพ์ /project ownership")).toBeInTheDocument();
+    expect(mocked.useQuestCanvas).toHaveBeenLastCalledWith(null, UNLINKED);
+    // Not every item is done: the first เสร็จเมื่อ item stays unlit.
+    const list = within(body()).getByRole("heading", { name: "เสร็จเมื่อ" }).closest("section") as HTMLElement;
+    expect(within(list).getAllByRole("listitem")[0]).not.toHaveAttribute("data-hinted");
+    expect(within(list).getAllByRole("listitem")[0]).toHaveTextContent("/project ownership");
+  });
+
+  it("lights its first item once every check is done, still as a hint", async () => {
+    mocked.loadOwnership.mockResolvedValue({
+      ok: true,
+      data: ROWS.map((row) => ({ ...row, state: "demonstrated" as const, mentorHeld: false })),
+    });
+    open({ kind: "main", milestone: 5 });
+    const list = within(body()).getByRole("heading", { name: "เสร็จเมื่อ" }).closest("section") as HTMLElement;
+    await waitFor(() => expect(within(list).getAllByRole("listitem")[0]).toHaveAttribute("data-hinted", "true"));
+  });
+
+  it("points to Discord when the checklist cannot load", async () => {
+    mocked.loadOwnership.mockResolvedValue({ ok: false, code: "unknown", error: "x" });
+    open({ kind: "main", milestone: 5 });
+    await waitFor(() =>
+      expect(within(body()).getByText("เช็กลิสต์อยู่ใน Discord: พิมพ์ /project ownership แล้วเช็กทีละข้อ")).toBeInTheDocument(),
+    );
+  });
+
+  it("says the checklist goes with the work, and leaves room for it in the proof", async () => {
+    mocked.loadOwnership.mockResolvedValue({ ok: true, data: ROWS });
+    open({ kind: "main", milestone: 5 });
+    await waitFor(() => expect(within(body()).getByText("เข้าถึงงานได้เอง:")).toBeInTheDocument());
+    fireEvent.click(within(footer()).getByRole("button", { name: "ส่งฉบับใหม่" }));
+    expect(screen.getByText("ตอนกดส่ง เช็กลิสต์ /project ownership จะแนบไปกับงานนี้ให้เอง")).toBeInTheDocument();
+    const max = Number(screen.getByLabelText("หลักฐาน (ลิงก์หรือเล่าสั้นๆ)").getAttribute("maxLength"));
+    expect(max).toBeLessThan(2000);
+    expect(max).toBeGreaterThan(1500);
+  });
+
+  it("reads no checklist on any other quest", () => {
+    open({ kind: "main", milestone: 1 });
+    expect(mocked.loadOwnership).not.toHaveBeenCalled();
+  });
+});
+
 describe("QuestDetailSheet: the action bar", () => {
+  it("has no bar on a closed quest: nothing to send or be stuck on", () => {
+    const board = makeBoard();
+    board.proposed[0] = { ...board.proposed[0], state: "declined" };
+    render(
+      <QuestDetailSheet
+        board={board}
+        target={{ kind: "proposed", instanceId: IDS.proposed }}
+        keynote={null}
+        canvasLink={UNLINKED}
+        onClose={jest.fn()}
+        onStuck={jest.fn()}
+        onLinkCanvas={jest.fn()}
+      />,
+    );
+    expect(screen.queryByTestId("sheet-footer")).toBeNull();
+  });
+
   it("offers ส่งเควสต์ and ติด on an open quest", () => {
     open({ kind: "main", milestone: 1 });
     const bar = footer();

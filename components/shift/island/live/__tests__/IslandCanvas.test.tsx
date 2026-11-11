@@ -204,7 +204,8 @@ describe("IslandCanvas", () => {
     render(<IslandCanvas scene={scene} onReady={onReady} />);
     firstFrame();
     expect(onReady).toHaveBeenCalledTimes(1);
-    expect(jest.getTimerCount()).toBe(0);
+    // No loop: only the one slow check of Bangkok's light.
+    expect(jest.getTimerCount()).toBe(1);
     const ctx = contexts[0];
     const drawn = ctx.drawImage.mock.calls.length;
     expect(drawn).toBeGreaterThan(0);
@@ -218,6 +219,40 @@ describe("IslandCanvas", () => {
       for (const fn of motionListeners) fn();
     });
     expect(jest.getTimerCount()).toBeGreaterThan(0);
+  });
+
+  it("turns a still island to the new light when the hour changes, and holds no timer while paused or hidden", () => {
+    reduced = true;
+    // Bangkok 05:29 the next morning (the clock only moves forward): one minute of night left.
+    jest.setSystemTime(Date.UTC(2026, 10, 11, 22, 29));
+    const onPhase = jest.fn();
+    const { rerender } = render(<IslandCanvas scene={scene} onPhase={onPhase} />);
+    firstFrame();
+    expect(onPhase).toHaveBeenLastCalledWith("night", waterColor("night"));
+    const ctx = contexts[0];
+    const drawn = ctx.drawImage.mock.calls.length;
+    act(() => {
+      jest.advanceTimersByTime(61_000);
+    });
+    expect(onPhase).toHaveBeenLastCalledWith("dawn", waterColor("dawn"));
+    expect(ctx.drawImage.mock.calls.length).toBeGreaterThan(drawn);
+    expect(jest.getTimerCount()).toBe(1);
+
+    rerender(<IslandCanvas scene={scene} onPhase={onPhase} paused />);
+    expect(jest.getTimerCount()).toBe(0);
+    rerender(<IslandCanvas scene={scene} onPhase={onPhase} />);
+    expect(jest.getTimerCount()).toBe(1);
+    act(() => {
+      Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    expect(jest.getTimerCount()).toBe(0);
+  });
+
+  it("keeps no light timer on a still island with a fixed light", () => {
+    render(<IslandCanvas scene={scene} phase="dusk" still />);
+    firstFrame();
+    expect(jest.getTimerCount()).toBe(0);
   });
 
   it("shows only its crop, and keeps going when the scene changes", () => {

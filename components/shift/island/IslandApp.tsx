@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { IslandHotspot, IslandPicture } from "@/lib/shift-island/picture";
 import { keynoteQuest, starterQuest, type BoardRef } from "@/lib/supabase/shift-quests/board";
+import type { LightPhase } from "@/lib/shift-island/live/types";
 import type { IslandPageData } from "@/lib/supabase/shift-quests/types";
 
 import { CanvasLinkSheet } from "./canvas";
@@ -29,7 +30,14 @@ interface IslandAppProps {
   /** Shaped by getIslandPage: never the Discord id or the session. */
   page: IslandPageData;
   picture: IslandPicture | null;
+  /** Bangkok's light when the server rendered the page: the island is in it from the first paint. */
+  initialPhase?: LightPhase;
+  /** The SHIFT Discord server's URL (from the server's env), for the inbox's "open Discord". */
+  discordUrl?: string | null;
 }
+
+/** About as long as a sheet takes to slide away (vaul's drawer is the slower one). */
+const SHEET_CLOSE_MS = 450;
 
 /** The sheets opened from the HUD itself; at most one at a time. */
 type Panel = "board" | "project" | "menu" | "inbox" | null;
@@ -40,30 +48,40 @@ type Panel = "board" | "project" | "menu" | "inbox" | null;
  * (board, quest, stuck, propose, canvas link, claim) as a sheet over the
  * island, which stays in view, dimmed and still, behind it.
  */
-export function IslandApp({ page, picture }: IslandAppProps) {
+export function IslandApp({ page, picture, initialPhase, discordUrl }: IslandAppProps) {
   const project = page.island.project;
   const demoDay = page.island.season?.demo_day ?? null;
   if (!project) {
-    return <Unclaimed page={page} picture={picture} demoDay={demoDay} />;
+    return <Unclaimed page={page} picture={picture} initialPhase={initialPhase} demoDay={demoDay} />;
   }
   if (!page.board) {
     return <GateCard heading={GATE.unavailable.heading} body={GATE.unavailable.body} />;
   }
-  return <IslandHome page={page} board={page.board} project={project} picture={picture} />;
+  return (
+    <IslandHome
+      page={page}
+      board={page.board}
+      project={project}
+      picture={picture}
+      initialPhase={initialPhase}
+      discordUrl={discordUrl}
+    />
+  );
 }
 
 /** No project yet: the island to look at, and one action, claiming a plot (or answering an invite). */
-function Unclaimed({ page, picture, demoDay }: IslandAppProps & { demoDay: string | null }) {
+function Unclaimed({ page, picture, initialPhase, demoDay }: IslandAppProps & { demoDay: string | null }) {
   const [storyOpen, setStoryOpen] = useState(false);
   const [claiming, setClaiming] = useState(false);
   const [menu, setMenu] = useState(false);
   const [whole, setWhole] = useState(false);
   const nameInput = useRef<HTMLInputElement>(null);
+  const invitesHeading = useRef<HTMLHeadingElement>(null);
   const invites = page.invites.length;
 
   return (
     <>
-      <IslandViewport picture={picture} interactive={false} paused={storyOpen || claiming || menu} whole={whole} />
+      {/* The HUD first: keyboards and screen readers reach its controls before the island. */}
       <Hud
         chip={<HudLabel text={HUD.noPlot} />}
         buttons={
@@ -84,17 +102,26 @@ function Unclaimed({ page, picture, demoDay }: IslandAppProps & { demoDay: strin
           </button>
         }
       />
+      <IslandViewport
+        picture={picture}
+        interactive={false}
+        paused={storyOpen || claiming || menu}
+        whole={whole}
+        initialPhase={initialPhase}
+      />
       <IslandSheet
         open={claiming}
         onOpenChange={setClaiming}
         title={NO_PROJECT.heading}
         onOpenAutoFocus={(event) => {
-          // Straight to the name field: the story's "จับจองที่ดิน" and the button both mean "start typing".
           event.preventDefault();
-          nameInput.current?.focus({ preventScroll: true });
+          // With invites waiting, the student came to answer one: focus their heading, no keyboard pops up.
+          if (invites > 0) invitesHeading.current?.focus({ preventScroll: true });
+          // Otherwise straight to the name field: the story's "จับจองที่ดิน" and the button both mean "start typing".
+          else nameInput.current?.focus({ preventScroll: true });
         }}
       >
-        <NoProject invites={page.invites} nameInput={nameInput} />
+        <NoProject invites={page.invites} nameInput={nameInput} invitesHeading={invitesHeading} />
       </IslandSheet>
       <MenuSheet
         open={menu}
@@ -116,6 +143,8 @@ function IslandHome({
   board,
   project,
   picture,
+  initialPhase,
+  discordUrl,
 }: IslandAppProps & {
   board: NonNullable<IslandPageData["board"]>;
   project: NonNullable<IslandPageData["island"]["project"]>;
@@ -133,15 +162,28 @@ function IslandHome({
   const [proposing, setProposing] = useState(false);
   const [plot, setPlot] = useState<IslandHotspot | null>(null);
   const [puffKey, setPuffKey] = useState(0);
+  const puffTimer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(puffTimer.current), []);
   // The canvas picker, opened from a quest; the quest reopens once a canvas is linked.
   const [linking, setLinking] = useState(false);
   const [relinkRef, setRelinkRef] = useState<BoardRef | null>(null);
   const [storyOpen, setStoryOpen] = useState(false);
   const [whole, setWhole] = useState(false);
   const season = page.island.season;
+  const todayOpen = page.island.taps_today === 0 && !page.island.resting;
   const goal = season?.goal ?? page.map.goal ?? null;
   // Any sheet or the story over the island stops its animation: nobody is looking at it.
   const paused = panel != null || detail != null || stuck.open || proposing || plot != null || linking || storyOpen;
+
+  /**
+   * The check-in is saved: the project sheet steps aside, then the dust puff
+   * plays at the tree once the island is in view again.
+   */
+  function checkedIn() {
+    setPanel((current) => (current === "project" ? null : current));
+    window.clearTimeout(puffTimer.current);
+    puffTimer.current = window.setTimeout(() => setPuffKey((key) => key + 1), SHEET_CLOSE_MS);
+  }
 
   /** A quest, from the bottom bar (back to the world on close) or from the board (back to the board). */
   function openQuest(ref: BoardRef, fromBoard: boolean) {
@@ -190,9 +232,9 @@ function IslandHome({
 
   return (
     <>
-      <IslandViewport picture={picture} puffKey={puffKey} onPlot={setPlot} paused={paused} whole={whole} />
+      {/* The HUD first: keyboards and screen readers reach its controls before the plots. Both are fixed layers. */}
       <Hud
-        chip={<HudChip name={project.name} stage={project.stage} onOpen={() => setPanel("project")} />}
+        chip={<HudChip name={project.name} stage={project.stage} todayOpen={todayOpen} onOpen={() => setPanel("project")} />}
         buttons={
           <>
             <StoryLauncher demoDay={season?.demo_day ?? null} cta="island" onOpenChange={setStoryOpen} className={hudRoundClass} />
@@ -209,6 +251,14 @@ function IslandHome({
             <BoardButton wide={!hasAction} onClick={() => setPanel("board")} />
           </>
         }
+      />
+      <IslandViewport
+        picture={picture}
+        puffKey={puffKey}
+        onPlot={setPlot}
+        paused={paused}
+        whole={whole}
+        initialPhase={initialPhase}
       />
 
       <BoardSheet open={panel === "board"} onClose={() => setPanel(null)}>
@@ -230,7 +280,7 @@ function IslandHome({
           <TodayCard
             tapsToday={page.island.taps_today}
             resting={page.island.resting}
-            onTapped={() => setPuffKey((key) => key + 1)}
+            onSaved={checkedIn}
             onStuck={() => openStuck({ instanceId: null, title: null })}
           />
         }
@@ -246,7 +296,7 @@ function IslandHome({
           setPanel(null);
         }}
       />
-      <InboxSheet open={panel === "inbox"} onClose={() => setPanel(null)} unread={page.unread} />
+      <InboxSheet open={panel === "inbox"} onClose={() => setPanel(null)} unread={page.unread} discordUrl={discordUrl} />
 
       <QuestDetailSheet
         board={board}

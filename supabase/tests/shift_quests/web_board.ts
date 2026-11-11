@@ -39,7 +39,7 @@ const D = "630000000000000004"; // no project
 const NOBODY = "639999999999999999";
 const NAMES: Record<string, string> = { [A]: "Board Aye", [B]: "Board Bee", [C]: "Board Cee", [D]: "Board Dee" };
 
-/** Mirrors the allowlist at the end of 20261111091100_shift_quest_canvas_links.sql (regprocedure text). */
+/** Mirrors the allowlist at the end of 20261111091200_shift_quest_ownership_web.sql (regprocedure text). */
 const WEB_ALLOWLIST = [
   "shift_quest_board(text)",
   "shift_quest_canvas_get(text)",
@@ -52,6 +52,7 @@ const WEB_ALLOWLIST = [
   "shift_quest_island_optin(text,uuid,boolean)",
   "shift_quest_milestone_start(text,smallint)",
   "shift_quest_milestone_submit(text,smallint,text,text,text)",
+  "shift_quest_ownership_get(text)",
   "shift_quest_project_create(text,text,text,text)",
   "shift_quest_project_list(text)",
   "shift_quest_project_respond(text,uuid,boolean)",
@@ -154,8 +155,8 @@ async function main(): Promise<void> {
   check(role && role.rolinherit === false && role.rolconnlimit === 20 && (role.rolconfig ?? []).includes("statement_timeout=8s"),
     "shift_quest_web: NOINHERIT, 20 connections, statement_timeout 8s", role);
   check((await scalar<string>(web, "show statement_timeout")) === "8s", "a web session runs with the 8s statement timeout");
-  check(Number(await call(web, "shift_quest_schema_version")) === 5, "the website reads schema version 5");
-  check(Number(await call(bot, "shift_quest_schema_version")) === 5, "the bot reads schema version 5 (it needs 2 or more)");
+  check(Number(await call(web, "shift_quest_schema_version")) === 6, "the website reads schema version 6");
+  check(Number(await call(bot, "shift_quest_schema_version")) === 6, "the bot reads schema version 6 (it needs 2 or more)");
 
   const executable: string[] = (await db.query(`
     select p.oid::regprocedure::text as sig
@@ -209,6 +210,7 @@ async function main(): Promise<void> {
     ["canvas_link", "select public.shift_quest_canvas_link($1::text, $2::uuid, $3::text, $4::text)",
       [NOBODY, randomUUID(), "frame", "project"], "not_started"],
     ["canvas_unlink", "select public.shift_quest_canvas_unlink($1::text)", [NOBODY], "not_started"],
+    ["ownership_get", "select public.shift_quest_ownership_get($1::text)", [NOBODY], "not_started"],
   ];
   check(allowCalls.length === WEB_ALLOWLIST.length, "every allowlisted function is called below");
   for (const [name, sql, args, expected] of allowCalls) {

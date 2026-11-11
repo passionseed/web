@@ -189,7 +189,7 @@ export function storyPanels(): StoryPanel[] {
       actors: [],
       fallback: 0,
     },
-    treePanel(2, 1, "builder"),
+    treePanel(2, 2, "builder"),
     treePanel(3, 5, "builder_and_tester"),
     {
       n: 4,

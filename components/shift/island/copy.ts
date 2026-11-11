@@ -166,8 +166,9 @@ export const ISLAND = {
   pictureAlt: "ภาพเกาะ SHIFT ที่มีต้นไม้ของแต่ละโปรเจกต์",
   pictureFailed: "ตอนนี้วาดภาพเกาะไม่ได้ งานของคุณยังอยู่ครบ",
   /** DRAFT */
-  tapHint: "แตะต้นไม้เพื่อดูแปลง",
-  unread: (count: number) => `มีข้อความใหม่ ${count} ข้อความในกล่องข้อความของบอทใน Discord`,
+  tapHint: "เลือกต้นไม้เพื่อดูแปลง",
+  unread: (count: number) => `บอทส่งข้อความใหม่ถึงคุณ ${count} ข้อความ เปิดอ่านใน Discord`,
+  openDiscord: "เปิด Discord",
   avatar: (name: string) => `รูปของ ${name}`,
 };
 
@@ -178,6 +179,8 @@ export const ISLAND = {
 export const HUD = {
   /** The top-left chip's accessible name: the project, its tree, and what the tap opens. */
   chip: (name: string, stage: string) => `${name}, ${stage}, ดูวันนี้ของโปรเจกต์`,
+  /** Read after the chip's name while today's check-in is still open. */
+  chipTodayOpen: "วันนี้ยังไม่ได้เช็กอิน",
   /** The chip before a plot is claimed. */
   noPlot: "ยังไม่มีที่ดิน",
   meter: (stage: number) => `ต้นไม้ขั้น ${stage} จาก 7`,
@@ -189,6 +192,8 @@ export const HUD = {
   invites: (count: number) => `คำชวนเข้าทีม ${count}`,
   myTree: (stage: string) => `ต้นไม้ของคุณตอนนี้เป็น${stage}`,
   viewHeading: "มุมมองเกาะ",
+  /** The roving group of plot buttons over the island. */
+  plots: "แปลงบนเกาะ",
 };
 
 export const PLOT = {
@@ -317,7 +322,8 @@ export const QUEST = {
     count: (count: number) => `${count} ใบ`,
     version: (version: number) => `v${version}`,
     unlinked: {
-      heading: "เชื่อมแคนวาส",
+      // The button is the one "เชื่อมแคนวาส"; the heading stays the box's own.
+      heading: "สำหรับโปรเจกต์คุณ",
       body: "เลือกแคนวาสโปรเจกต์ของคุณบนไวท์บอร์ด แล้วเควสต์จะดึงโน้ตของคุณมาให้",
       action: "เชื่อมแคนวาส",
     },
@@ -333,8 +339,18 @@ export const QUEST = {
     /** Screen readers: the item already has a matching note. */
     hinted: "มีโน้ตในแคนวาสแล้ว",
   },
+  /** Quest 5: the ownership checklist from Discord, read-only (DRAFT copy). */
+  ownership: {
+    loading: "กำลังดึงเช็กลิสต์",
+    where: "อัปเดตใน Discord: พิมพ์ /project ownership",
+    fallback: "เช็กลิสต์อยู่ใน Discord: พิมพ์ /project ownership แล้วเช็กทีละข้อ",
+    mentorHeld: "บัญชีพี่เลี้ยง",
+    attached: "ตอนกดส่ง เช็กลิสต์ /project ownership จะแนบไปกับงานนี้ให้เอง",
+  },
   examples: "ตัวอย่างที่ผ่าน",
   details: "รายละเอียดทั้งหมด",
+  /** A long purpose in full, under the details. */
+  why: "ทำไมเควสต์นี้",
   send: "ส่งเควสต์",
   resend: "ส่งฉบับใหม่",
   stuck: "ติด",

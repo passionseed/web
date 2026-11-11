@@ -466,6 +466,21 @@ reads and writes through `20261111090900_shift_quests_board.sql` and
   the link against the whiteboard on every read and snapshots ticked notes into
   `evidence` through the existing submit functions, so review, export and erase
   are unchanged. Sandbox: `psql -h 127.0.0.1 -p <port> -U postgres -d postgres -v ON_ERROR_STOP=1 -f supabase/migrations/20261111091100_shift_quest_canvas_links.sql`.
+  The three canvas functions are website-only: the bot never gets them (only
+  the website can check a canvas before linking it).
+- **Ownership checklist on the web, schema 6** (`20261111091200_shift_quest_ownership_web.sql`,
+  apply after `091100`; the website needs 6, the bot still 2):
+  `shift_quest_ownership_get(actor)` returns the current project's five items
+  as `{item, state, mentor_held, updated_at}` (no notes, continuation paths or
+  help ids), website-only like the canvas functions. Quest 5 (ถือกุญแจเอง)
+  shows the checklist read-only, lights its first เสร็จเมื่อ item when every
+  item is done (and not on a mentor's account), and `submitMainQuest`
+  snapshots the states under the proof when quest 5 is sent; proof and
+  checklist over 2000 characters together is refused (`text_too_long`), never
+  cut. The checklist is still ticked in Discord (`/project ownership`).
+  **Any later migration that repeats the bot's grant loop must keep excluding
+  `shift_quest_canvas_*` and `shift_quest_ownership_get`**, or end with the
+  same explicit `REVOKE ... FROM shift_quest_bot`.
 
 **The web role.** `shift_quest_web` is a login like `shift_quest_bot`:
 `NOINHERIT`, `statement_timeout` 8s, 20 connections, `USAGE` on `public`, no
@@ -475,11 +490,11 @@ exactly this allowlist: `shift_quest_schema_version`, `_session`, `_start`,
 `_island_optin`, `_milestone_start`, `_milestone_submit`, `_side_choose`,
 `_side_submit`, `_propose`, `_submit`, `_help_create`, `_project_create`,
 `_project_list`, `_project_respond`, `_canvas_get`, `_canvas_link`,
-`_canvas_unlink`. No review, staff, admin, outbox or data
+`_canvas_unlink`, `_ownership_get`. No review, staff, admin, outbox or data
 function. The migrations revoke every `shift_quest_*` function from it, then
 grant the list by full signature and stop if one is missing. `run-local.sh`
-(`check_privileges`) and `web_board.ts` hold the same list and fail on any
-extra or missing grant.
+(`check_privileges`), `web_board.ts` and `web_canvas.ts` hold the same list
+and fail on any extra or missing grant.
 
 **Outside `shift_quest_*` it is not closed by default.** A LOGIN role is
 always a member of `PUBLIC`, and the role has `USAGE` on `public`, so it can

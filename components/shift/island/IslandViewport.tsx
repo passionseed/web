@@ -1,14 +1,23 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type RefObject } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type CSSProperties,
+  type KeyboardEvent,
+  type RefObject,
+} from "react";
 
 import type { IslandHotspot, IslandPicture } from "@/lib/shift-island/picture";
 import { pxPerNativeFor, type Rect } from "@/lib/shift-island/live/geometry";
-import { waterColor } from "@/lib/shift-island/live/lighting";
+import { PHASE_TINT, waterColor } from "@/lib/shift-island/live/lighting";
 import type { LightPhase } from "@/lib/shift-island/live/types";
 import { scrollToCentre, worldLayout, type Insets } from "@/lib/shift-island/live/world";
 
-import { COMMON, ISLAND, stageName } from "./copy";
+import { COMMON, HUD, ISLAND, stageName } from "./copy";
 import islandStyles from "./island.module.css";
 import { IslandLive } from "./live/IslandLive";
 import liveStyles from "./live/live.module.css";
@@ -25,6 +34,11 @@ interface IslandViewportProps {
   paused?: boolean;
   /** The whole island between the HUD bars, instead of the close view. */
   whole?: boolean;
+  /**
+   * Bangkok's light when the server rendered the page, so a night visit is
+   * dark from the first paint instead of flashing the daytime picture.
+   */
+  initialPhase?: LightPhase;
 }
 
 export function hotspotLabel(hotspot: IslandHotspot): string {
@@ -38,6 +52,32 @@ const NO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
 const DAY_SEA = waterColor("day");
 /** A mouse drag shorter than this is still a click on a plot. */
 const DRAG_SLOP = 4;
+/** The tap hint steps aside after this long (its fade starts at 6s in world.module.css). */
+const HINT_MS = 6400;
+
+/** The phase's light as a multiply colour: the PNG under it looks like the canvas's tinted land. */
+function tintColor(phase: LightPhase): string {
+  const [r, g, b] = PHASE_TINT[phase].map((m) => Math.round(m * 255));
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+/** Arrow keys move between plots in their order on the island; Home and End go to either end. */
+function nextPlotIndex(key: string, index: number, count: number): number | null {
+  switch (key) {
+    case "ArrowRight":
+    case "ArrowDown":
+      return Math.min(index + 1, count - 1);
+    case "ArrowLeft":
+    case "ArrowUp":
+      return Math.max(index - 1, 0);
+    case "Home":
+      return 0;
+    case "End":
+      return count - 1;
+    default:
+      return null;
+  }
+}
 
 function subscribeResize(onChange: () => void): () => void {
   window.addEventListener("resize", onChange);
@@ -169,7 +209,15 @@ const px = (r: Rect): CSSProperties => ({ left: r.x, top: r.y, width: r.w, heigh
  * drag or focus. The server-rendered PNG paints first and stays whenever the
  * canvas cannot draw. Each plot is a transparent button over the picture.
  */
-export function IslandViewport({ picture, interactive = true, puffKey = 0, onPlot, paused = false, whole = false }: IslandViewportProps) {
+export function IslandViewport({
+  picture,
+  interactive = true,
+  puffKey = 0,
+  onPlot,
+  paused = false,
+  whole = false,
+  initialPhase,
+}: IslandViewportProps) {
   const world = useRef<HTMLDivElement>(null);
   const probe = useRef<HTMLDivElement>(null);
   const zoom = usePxPerNative();
@@ -181,8 +229,18 @@ export function IslandViewport({ picture, interactive = true, puffKey = 0, onPlo
   const [retry, setRetry] = useState(0);
   const [liveReady, setLiveReady] = useState(false);
   const [liveFailed, setLiveFailed] = useState(false);
-  /** The light of the hour and the open sea's colour in it, from the living island. */
-  const [light, setLight] = useState<{ phase: LightPhase; sea: string } | null>(null);
+  /** The light of the hour and the open sea's colour in it: the server's guess, then the living island's. */
+  const [light, setLight] = useState<{ phase: LightPhase; sea: string } | null>(() =>
+    initialPhase ? { phase: initialPhase, sea: waterColor(initialPhase) } : null
+  );
+  /** The plot that holds the group's one tab stop, once the student has moved to one. */
+  const [activeSlot, setActiveSlot] = useState<number | null>(null);
+  // A timer, not only the CSS fade, so the hint also goes under reduced motion.
+  const [hintGone, setHintGone] = useState(false);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setHintGone(true), HINT_MS);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const liveOn = picture?.scene != null && !liveFailed;
   // When the canvas goes away (no scene), the PNG shows again until a new canvas has drawn.
@@ -215,13 +273,15 @@ export function IslandViewport({ picture, interactive = true, puffKey = 0, onPlo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [centreKey]);
 
-  const sea = (live && light?.sea) || DAY_SEA;
-  const shade = live ? light?.phase : undefined;
+  const sea = light?.sea ?? DAY_SEA;
+  const shade = light?.phase;
+  // Until the canvas draws (or when it cannot), the daytime PNG takes the hour's light too.
+  const pngTint = !live && light && light.phase !== "day" ? tintColor(light.phase) : null;
 
   if (!picture || broken) {
     return (
       <>
-        <div ref={world} className={styles.world} style={{ background: DAY_SEA }} data-empty="true">
+        <div ref={world} className={styles.world} style={{ background: sea }} data-empty="true">
           <div ref={probe} className={styles.safeProbe} aria-hidden="true" />
         </div>
         <div className={styles.failed}>
@@ -252,6 +312,20 @@ export function IslandViewport({ picture, interactive = true, puffKey = 0, onPlo
   const canvasRect: CSSProperties = layout ? px(layout.canvas) : islandRect;
   const src = retry > 0 ? `${picture.src}${picture.src.includes("?") ? "&" : "?"}r=${retry}` : picture.src;
   const pictureSrc = picture.src;
+  const hotspots = picture.hotspots;
+  const tabSlot = hotspots.some((h) => h.slot === activeSlot)
+    ? activeSlot
+    : (hotspots.find((h) => h.mine)?.slot ?? hotspots[0]?.slot ?? null);
+
+  function onPlotKey(event: KeyboardEvent<HTMLDivElement>) {
+    const index = hotspots.findIndex((h) => h.slot === tabSlot);
+    const next = index < 0 ? null : nextPlotIndex(event.key, index, hotspots.length);
+    if (next == null) return;
+    event.preventDefault();
+    const slot = hotspots[next].slot;
+    setActiveSlot(slot);
+    event.currentTarget.querySelector<HTMLButtonElement>(`[data-slot="${slot}"]`)?.focus();
+  }
 
   return (
     <>
@@ -281,6 +355,7 @@ export function IslandViewport({ picture, interactive = true, puffKey = 0, onPlo
               draggable={false}
               onError={() => setFailedSrc(pictureSrc)}
             />
+            {pngTint ? <span className={styles.tint} style={{ background: pngTint }} aria-hidden="true" /> : null}
           </div>
           {liveOn && picture.scene ? (
             <div className={styles.canvasBox} style={canvasRect}>
@@ -300,13 +375,17 @@ export function IslandViewport({ picture, interactive = true, puffKey = 0, onPlo
           <div className={styles.islandBox} style={islandRect}>
             {live ? <span role="img" aria-label={ISLAND.pictureAlt} className={liveStyles.label} /> : null}
             {interactive ? (
-              <div className={styles.hotspots}>
+              // One tab stop for every plot (the student's own, at first); arrow keys move between them.
+              <div role="group" aria-label={HUD.plots} className={styles.hotspots} onKeyDown={onPlotKey}>
                 {picture.hotspots.map((hotspot) => (
                   <button
                     key={hotspot.slot}
                     type="button"
                     className={styles.hotspot}
+                    data-slot={hotspot.slot}
                     data-mine={hotspot.mine ? "true" : undefined}
+                    tabIndex={hotspot.slot === tabSlot ? 0 : -1}
+                    onFocus={() => setActiveSlot(hotspot.slot)}
                     style={{
                       left: `${hotspot.x + hotspot.w / 2}%`,
                       top: `${hotspot.y + hotspot.h / 2}%`,
@@ -316,7 +395,10 @@ export function IslandViewport({ picture, interactive = true, puffKey = 0, onPlo
                       height: whole ? `${hotspot.h}%` : `max(48px, ${hotspot.h}%)`,
                     }}
                     aria-label={hotspotLabel(hotspot)}
-                    onClick={() => onPlot?.(hotspot)}
+                    onClick={() => {
+                      setHintGone(true);
+                      onPlot?.(hotspot);
+                    }}
                   />
                 ))}
                 {mine && puffKey > 0 ? (
@@ -339,7 +421,7 @@ export function IslandViewport({ picture, interactive = true, puffKey = 0, onPlo
         </div>
       </div>
       <div className={styles.shade} data-phase={shade} aria-hidden="true" />
-      {interactive && picture.hotspots.length > 0 ? (
+      {interactive && picture.hotspots.length > 0 && !hintGone ? (
         <p className={styles.tapHint} aria-hidden="true">
           {ISLAND.tapHint}
         </p>

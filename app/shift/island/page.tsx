@@ -5,6 +5,7 @@ import { IslandApp } from "@/components/shift/island/IslandApp";
 import { IslandGate, type GateViewer } from "@/components/shift/island/IslandGate";
 import { IslandShell } from "@/components/shift/island/IslandShell";
 import { StartCard } from "@/components/shift/island/StartCard";
+import { bangkokPhaseNow } from "@/lib/shift-island/live/lighting";
 import { islandPicture } from "@/lib/shift-island/picture";
 import { isShiftDiscordAuthError } from "@/lib/shift/discordAuth";
 import { shiftDiscordUrls } from "@/lib/shift/discordGuild";
@@ -108,7 +109,12 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ a
       const immersive = !result.page.island.project || result.page.board != null;
       return (
         <IslandShell immersive={immersive}>
-          <IslandApp page={{ ...result.page, me: card(result.page.me) }} picture={islandPicture(result.page.map)} />
+          <IslandApp
+            page={{ ...result.page, me: card(result.page.me) }}
+            picture={islandPicture(result.page.map)}
+            initialPhase={bangkokPhaseNow()}
+            discordUrl={shiftDiscordUrls().server}
+          />
         </IslandShell>
       );
     }

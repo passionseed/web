@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 
 import { buildScene } from "@/bot/src/quests/island/scene";
 import type { IslandCanvasProps } from "@/components/shift/island/live/IslandCanvas";
@@ -237,10 +237,62 @@ describe("IslandViewport", () => {
     }
   });
 
-  it("hints that the trees can be tapped, only when they can", () => {
+  it("hints that the trees can be chosen, only when they can", () => {
     const { rerender } = render(<IslandViewport picture={picture} onPlot={jest.fn()} />);
-    expect(screen.getByText("แตะต้นไม้เพื่อดูแปลง")).toBeInTheDocument();
+    expect(screen.getByText("เลือกต้นไม้เพื่อดูแปลง")).toBeInTheDocument();
     rerender(<IslandViewport picture={picture} interactive={false} />);
-    expect(screen.queryByText("แตะต้นไม้เพื่อดูแปลง")).toBeNull();
+    expect(screen.queryByText("เลือกต้นไม้เพื่อดูแปลง")).toBeNull();
+  });
+
+  it("takes the hint away after a while, with or without motion, and after the first plot", () => {
+    jest.useFakeTimers();
+    try {
+      const first = render(<IslandViewport picture={picture} onPlot={jest.fn()} />);
+      expect(screen.getByText("เลือกต้นไม้เพื่อดูแปลง")).toBeInTheDocument();
+      act(() => void jest.advanceTimersByTime(7000));
+      expect(screen.queryByText("เลือกต้นไม้เพื่อดูแปลง")).toBeNull();
+      first.unmount();
+
+      render(<IslandViewport picture={picture} onPlot={jest.fn()} />);
+      fireEvent.click(screen.getByRole("button", { name: "แปลง #4" }));
+      expect(screen.queryByText("เลือกต้นไม้เพื่อดูแปลง")).toBeNull();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("gives the plots one tab stop, on the student's own plot, and moves with the arrow keys", () => {
+    render(<IslandViewport picture={picture} onPlot={jest.fn()} />);
+    const group = screen.getByRole("group", { name: "แปลงบนเกาะ" });
+    const mine = screen.getByRole("button", { name: "แปลงของคุณ #3, ต้นกล้า" });
+    const four = screen.getByRole("button", { name: "แปลง #4" });
+    const nine = screen.getByRole("button", { name: "แปลง #9" });
+    expect(group).toContainElement(mine);
+    expect([mine, four, nine].map((b) => b.tabIndex)).toEqual([0, -1, -1]);
+    mine.focus();
+    fireEvent.keyDown(mine, { key: "ArrowRight" });
+    expect(four).toHaveFocus();
+    expect([mine, four, nine].map((b) => b.tabIndex)).toEqual([-1, 0, -1]);
+    fireEvent.keyDown(four, { key: "End" });
+    expect(nine).toHaveFocus();
+    fireEvent.keyDown(nine, { key: "ArrowRight" });
+    expect(nine).toHaveFocus();
+    fireEvent.keyDown(nine, { key: "Home" });
+    expect(mine).toHaveFocus();
+  });
+
+  it("is in the server's light from the first paint, before the living island draws", () => {
+    const { container } = render(<IslandViewport picture={live} onPlot={jest.fn()} initialPhase="night" />);
+    const world = container.firstElementChild as HTMLElement;
+    const [r, g, b] = waterColor("night").match(/[0-9a-f]{2}/gi)!.map((h) => parseInt(h, 16));
+    expect(world.style.background).toBe(`rgb(${r}, ${g}, ${b})`);
+    expect(container.querySelector("[data-phase]")).toHaveAttribute("data-phase", "night");
+    // The daytime PNG takes the night's multiply until the canvas has drawn.
+    expect(container.querySelector(".tint")).not.toBeNull();
+  });
+
+  it("puts no tint over the PNG by day", () => {
+    const { container } = render(<IslandViewport picture={live} onPlot={jest.fn()} initialPhase="day" />);
+    expect(container.querySelector(".tint")).toBeNull();
   });
 });

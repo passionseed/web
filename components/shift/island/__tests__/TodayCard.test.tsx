@@ -23,27 +23,31 @@ function deferCheckIn() {
 describe("TodayCard", () => {
   it("flips to วันนี้คุณลงมือแล้ว at once and keeps it when the database agrees", async () => {
     const answer = deferCheckIn();
-    const onTapped = jest.fn();
-    render(<TodayCard tapsToday={0} resting={false} onTapped={onTapped} onStuck={jest.fn()} />);
+    const onSaved = jest.fn();
+    render(<TodayCard tapsToday={0} resting={false} onSaved={onSaved} onStuck={jest.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "เช็กอินวันนี้" }));
 
     expect(await screen.findByText("วันนี้คุณลงมือแล้ว")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "เช็กอินวันนี้" })).toBeNull();
-    expect(onTapped).toHaveBeenCalledTimes(1);
+    // The puff waits for the database: nothing celebrates a check-in that may still fail.
+    expect(onSaved).not.toHaveBeenCalled();
     expect(mockedCheckIn).toHaveBeenCalledWith();
 
     await answer({ ok: true, data: { kind: "tap", tapsToday: 1 } });
     expect(screen.getByText("วันนี้คุณลงมือแล้ว")).toBeInTheDocument();
+    expect(onSaved).toHaveBeenCalledTimes(1);
     expect(toast.error).not.toHaveBeenCalled();
   });
 
   it("reverts and says why when the check-in fails", async () => {
     const answer = deferCheckIn();
-    render(<TodayCard tapsToday={0} resting={false} onStuck={jest.fn()} />);
+    const onSaved = jest.fn();
+    render(<TodayCard tapsToday={0} resting={false} onSaved={onSaved} onStuck={jest.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "เช็กอินวันนี้" }));
     expect(await screen.findByText("วันนี้คุณลงมือแล้ว")).toBeInTheDocument();
 
     await answer({ ok: false, code: "unavailable", error: "เกาะปิดปรับปรุงชั่วคราว" });
+    expect(onSaved).not.toHaveBeenCalled();
     await waitFor(() => expect(screen.getByRole("button", { name: "เช็กอินวันนี้" })).toBeInTheDocument());
     expect(screen.queryByText("วันนี้คุณลงมือแล้ว")).toBeNull();
     expect(toast.error).toHaveBeenCalledWith("เกาะปิดปรับปรุงชั่วคราว");

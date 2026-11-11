@@ -12,7 +12,7 @@ import {
   type QuestCanvasContext,
   type QuestCardTarget,
 } from "@/lib/shift-island/quest-canvas";
-import { buildSnapshot, pickNotes } from "@/lib/supabase/shift-quests/canvas-snapshot";
+import { buildSnapshot, pickNotes, piiFlags } from "@/lib/supabase/shift-quests/canvas-snapshot";
 import { SHIFT_CARD_KINDS, SHIFT_CARDS, zoneTitle } from "@/lib/whiteboard/shift-cards";
 
 import { useDraft } from "../drafts";
@@ -30,6 +30,8 @@ export interface QuestCardComposerProps {
   onCancel: () => void;
   /** Optional: switch to the plain SubmitForm ("เขียนเองแทน"). */
   onWriteInstead?: () => void;
+  /** The canvas is being read again (after notes_changed): nothing is sent until it is back. */
+  loading?: boolean;
 }
 
 interface CardDraft {
@@ -75,7 +77,15 @@ function groupsOf(notes: PickableNote[]): { key: string; title: string; notes: P
  * will read. The server re-reads the canvas, checks each note and stores the
  * text, so it cannot change after review. The text is never edited here.
  */
-export function QuestCardComposer({ target, context, onReload, onSubmitted, onCancel, onWriteInstead }: QuestCardComposerProps) {
+export function QuestCardComposer({
+  target,
+  context,
+  onReload,
+  onSubmitted,
+  onCancel,
+  onWriteInstead,
+  loading = false,
+}: QuestCardComposerProps) {
   const ids = { line: useId(), link: useId(), privacy: useId() };
   const [draft, setDraft, clearDraft] = useDraft<CardDraft>(`card:${refKey(target.ref)}`, EMPTY);
   const [linkError, setLinkError] = useState(false);
@@ -90,6 +100,8 @@ export function QuestCardComposer({ target, context, onReload, onSubmitted, onCa
   const groups = useMemo(() => groupsOf(context.notes), [context.notes]);
   const full = ticked.length >= CARD_LIMITS.notes;
   const reflectionLabel = target.reflectionPrompt.trim() || COMPOSER.lineFallback;
+  // The student's own line is stored as written too: the same warning as a note's.
+  const linePii = piiFlags(draft.line);
 
   function toggle(id: string, on: boolean) {
     setDraft((current) => {
@@ -101,7 +113,7 @@ export function QuestCardComposer({ target, context, onReload, onSubmitted, onCa
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (pending || chosen.length === 0) return;
+    if (pending || loading || chosen.length === 0) return;
     const link = draft.link.trim();
     if (link && !isHttpsUrl(link)) {
       setLinkError(true);
@@ -149,13 +161,20 @@ export function QuestCardComposer({ target, context, onReload, onSubmitted, onCa
                 key={note.id}
                 note={note}
                 checked={ticked.includes(note.id)}
-                disabled={pending || (full && !ticked.includes(note.id))}
+                // A note by someone outside the canvas team is shown, never sent as the student's evidence.
+                disabled={pending || !note.byTeam || (full && !ticked.includes(note.id))}
                 onToggle={toggle}
               />
             ))}
           </ul>
         </fieldset>
       ))}
+
+      {loading ? (
+        <p className={styles.quiet} role="status">
+          {COMPOSER.rereading}
+        </p>
+      ) : null}
 
       <p className={styles.count} aria-live="polite">
         {COMPOSER.picked(ticked.length)}
@@ -173,8 +192,14 @@ export function QuestCardComposer({ target, context, onReload, onSubmitted, onCa
           placeholder={COMPOSER.linePlaceholder}
           value={draft.line}
           maxLength={CARD_LIMITS.line}
+          aria-describedby={linePii ? `${ids.line}-pii` : undefined}
           onChange={(event) => setDraft((current) => ({ ...current, line: event.target.value }))}
         />
+        {linePii ? (
+          <p id={`${ids.line}-pii`} className={styles.pii} role="note">
+            {COMPOSER.piiLine}
+          </p>
+        ) : null}
       </div>
 
       <div className={styles.field}>
@@ -217,8 +242,8 @@ export function QuestCardComposer({ target, context, onReload, onSubmitted, onCa
         <button
           type="submit"
           className={`ei-button-dawn ${styles.primary}`}
-          disabled={pending || chosen.length === 0}
-          aria-busy={pending}
+          disabled={pending || loading || chosen.length === 0}
+          aria-busy={pending || loading}
         >
           {pending ? <Loader2 className="h-4 w-4 motion-safe:animate-spin" aria-hidden="true" /> : null}
           <span>{pending ? COMPOSER.sending : target.resubmit ? COMPOSER.resubmit : COMPOSER.submit}</span>

@@ -1,10 +1,9 @@
 "use client";
 
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import dynamic from "next/dynamic";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from "react";
 
-import type { IslandCanvasProps } from "@/components/shift/island/live/IslandCanvas";
+import { IslandLive } from "@/components/shift/island/live/IslandLive";
 import { PixelIcon } from "@/components/shift/poster/pixel/PixelRects";
 
 import { PALETTE, treeGrid } from "../sprites";
@@ -12,12 +11,6 @@ import { STORY, storyLine, type StoryCta } from "./copy";
 import { fitPanel, storyPanels, type PanelFit, type StoryPanel } from "./scenes";
 import styles from "./story.module.css";
 import { usePageVisible, useReducedMotion } from "./useStorySeen";
-
-/** The living island's canvas: client only, loaded when the story first opens. */
-const IslandCanvas = dynamic<IslandCanvasProps>(() => import("@/components/shift/island/live/IslandCanvas"), {
-  ssr: false,
-  loading: () => null,
-});
 
 /** How long each panel holds before a hard cut to the next one. */
 export const PANEL_MS = 3600;
@@ -67,7 +60,7 @@ export function StoryOverlay({ open, demoDay, cta, onClose, onCloseAutoFocus }: 
           }}
           onCloseAutoFocus={onCloseAutoFocus}
         >
-          <StoryBody demoDay={demoDay} cta={cta} onClose={onClose} />
+          <StoryBody demoDay={demoDay} cta={cta} onClose={onClose} content={content} />
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>
@@ -75,7 +68,15 @@ export function StoryOverlay({ open, demoDay, cta, onClose, onCloseAutoFocus }: 
 }
 
 /** Mounted only while the dialog is open, so every opening starts on panel 1. */
-function StoryBody({ demoDay, cta, onClose }: Pick<StoryOverlayProps, "demoDay" | "cta" | "onClose">) {
+function StoryBody({
+  demoDay,
+  cta,
+  onClose,
+  content,
+}: Pick<StoryOverlayProps, "demoDay" | "cta" | "onClose"> & {
+  /** The dialog element, where focus sits when the story opens: the arrow keys listen there. */
+  content: RefObject<HTMLDivElement | null>;
+}) {
   const panels = useMemo(() => storyPanels(), []);
   const last = panels.length - 1;
   const [index, setIndex] = useState(0);
@@ -100,12 +101,20 @@ function StoryBody({ demoDay, cta, onClose }: Pick<StoryOverlayProps, "demoDay" 
   const advance = () => setIndex((i) => Math.min(i + 1, last));
   const fail = (i: number) => setFailed((current) => new Set(current).add(i));
 
-  function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.key === "ArrowRight") advance();
-  }
+  // On the dialog itself, not a child: it holds focus when the story opens. Right is next, left is back.
+  useEffect(() => {
+    const element = content.current;
+    if (!element) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "ArrowRight") setIndex((i) => Math.min(i + 1, last));
+      else if (event.key === "ArrowLeft") setIndex((i) => Math.max(i - 1, 0));
+    };
+    element.addEventListener("keydown", onKeyDown);
+    return () => element.removeEventListener("keydown", onKeyDown);
+  }, [content, last]);
 
   return (
-    <div ref={column} className={styles.body} onKeyDown={onKeyDown}>
+    <div ref={column} className={styles.body}>
       <div ref={head} className={styles.head}>
         <DialogPrimitive.Title className="sr-only">{STORY.dialog}</DialogPrimitive.Title>
         <button type="button" className={styles.skip} onClick={() => onClose("skip")}>
@@ -188,7 +197,8 @@ function Panel({ panel, fit, current, still, failed, onFail }: PanelProps) {
           className={styles.fallback}
         />
       ) : (
-        <IslandCanvas
+        // Behind the same error boundary as the island: a chunk that fails to load shows the tree instead.
+        <IslandLive
           scene={panel.scene}
           phase={panel.phase}
           paused={!current}

@@ -127,13 +127,13 @@ describe("ensureSchema", () => {
     process.env.SHIFT_QUEST_DATABASE_URL = LOCAL;
   });
 
-  it("needs schema 5 (the SHIFT canvas link)", () => {
-    expect(REQUIRED_SCHEMA).toBe(5);
+  it("needs schema 6 (the ownership checklist on the web)", () => {
+    expect(REQUIRED_SCHEMA).toBe(6);
   });
 
-  it("accepts schema 5 and checks only once per pool", async () => {
+  it("accepts schema 6 and checks only once per pool", async () => {
     questApi();
-    poolInstances[0].query.mockResolvedValue({ rows: [{ r: 5 }] });
+    poolInstances[0].query.mockResolvedValue({ rows: [{ r: 6 }] });
     await ensureSchema();
     await ensureSchema();
     expect(poolInstances[0].query).toHaveBeenCalledTimes(1);
@@ -142,7 +142,7 @@ describe("ensureSchema", () => {
 
   it("refuses an older schema and checks again next time", async () => {
     questApi();
-    poolInstances[0].query.mockResolvedValueOnce({ rows: [{ r: 4 }] }).mockResolvedValueOnce({ rows: [{ r: 5 }] });
+    poolInstances[0].query.mockResolvedValueOnce({ rows: [{ r: 5 }] }).mockResolvedValueOnce({ rows: [{ r: 6 }] });
     await expect(ensureSchema()).rejects.toThrow("shift_quest_schema_outdated");
     await expect(ensureSchema()).resolves.toBeUndefined();
     expect(poolInstances[0].query).toHaveBeenCalledTimes(2);
@@ -152,7 +152,7 @@ describe("ensureSchema", () => {
     questApi();
     poolInstances[0].query.mockRejectedValueOnce(Object.assign(new Error("boom"), { code: "08006" }));
     await expect(ensureSchema()).rejects.toMatchObject({ name: "QuestDbError", sqlstate: "08006" });
-    poolInstances[0].query.mockResolvedValueOnce({ rows: [{ r: 5 }] });
+    poolInstances[0].query.mockResolvedValueOnce({ rows: [{ r: 6 }] });
     await expect(ensureSchema()).resolves.toBeUndefined();
   });
 });

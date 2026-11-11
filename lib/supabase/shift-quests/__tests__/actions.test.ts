@@ -196,6 +196,43 @@ describe("validation", () => {
     await expect(actions.submitMainQuest({ milestone: 7, proof: atCap, reflection: atCap })).resolves.toMatchObject({ ok: true });
   });
 
+  it("adds quest 5's ownership checklist, read on the server, under the proof", async () => {
+    call.mockImplementation(async (fn: string) =>
+      fn === "shift_quest_ownership_get"
+        ? [
+            { item: "access", state: "demonstrated", mentor_held: false, updated_at: "x" },
+            { item: "export", state: "not_checked", mentor_held: true, updated_at: "x" },
+          ]
+        : { instance_id: UUID, revision: 2, created: false }
+    );
+    await expect(actions.submitMainQuest({ milestone: 5, ...proof })).resolves.toMatchObject({ ok: true });
+    expect(call).toHaveBeenNthCalledWith(1, "shift_quest_ownership_get", ACTOR);
+    const [fn, actor, milestone, evidence] = call.mock.calls[1];
+    expect([fn, actor, milestone]).toEqual(["shift_quest_milestone_submit", ACTOR, 5]);
+    expect(evidence).toBe(
+      "ทำต้นแบบแล้ว\n\nเช็กลิสต์ /project ownership ตอนส่ง\n✅ เข้าถึงงานได้เอง: ทำได้แล้ว\n⬜ สำรองหรือส่งออกได้: ยังไม่ได้เช็ก (งานอยู่ในบัญชีที่พี่เลี้ยงถือ)"
+    );
+  });
+
+  it("refuses quest 5 rather than cut the proof when proof and checklist pass the cap", async () => {
+    call.mockImplementation(async (fn: string) =>
+      fn === "shift_quest_ownership_get" ? [{ item: "access", state: "demonstrated", mentor_held: false }] : null
+    );
+    const result = await actions.submitMainQuest({ milestone: 5, ...proof, proof: "ก".repeat(TEXT_LIMITS.proof) });
+    expect(result).toMatchObject({ ok: false, code: "text_too_long" });
+    expect(call).toHaveBeenCalledTimes(1);
+  });
+
+  it("reads quest 5's checklist without refreshing the page", async () => {
+    call.mockResolvedValue([{ item: "team", state: "needs_help", mentor_held: false }, { item: "bogus", state: "x" }]);
+    await expect(actions.loadOwnership()).resolves.toEqual({
+      ok: true,
+      data: [{ item: "team", state: "needs_help", mentorHeld: false }],
+    });
+    expect(call).toHaveBeenCalledWith("shift_quest_ownership_get", ACTOR);
+    expect(refresh).not.toHaveBeenCalled();
+  });
+
   it("never forwards an actor the client sends", async () => {
     call.mockResolvedValue("h1");
     await actions.askForHelp({ summary: "a", visibility: "mentors", actor: OTHER } as never);

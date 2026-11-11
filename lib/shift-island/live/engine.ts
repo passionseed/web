@@ -92,6 +92,8 @@ export class LiveIsland {
   private acc = 0;
   private since: number | null = null;
   private timer: ReturnType<typeof setTimeout> | null = null;
+  /** A still island's one slow timer: re-reads Bangkok's light so a page left open still turns to dusk. */
+  private phaseTimer: ReturnType<typeof setTimeout> | null = null;
   /** The loop's frame request. */
   private raf = 0;
   /** Init and first-frame requests. */
@@ -294,9 +296,47 @@ export class LiveIsland {
       this.paintAll();
       this.stillShown = true;
     }
+    this.syncPhaseTimer();
+  }
+
+  /**
+   * A still island in Bangkok's light (reduced motion, say) has no loop to
+   * notice the hour change, so one timer checks every PHASE_CHECK_MS while it
+   * is on screen and the tab is visible. A paused or moving island needs none:
+   * start() re-reads the phase and the loop does the rest.
+   */
+  private syncPhaseTimer(): void {
+    const wanted =
+      this.ready &&
+      !this.failed &&
+      !this.destroyed &&
+      !this.running &&
+      this.isStill() &&
+      !this.props.paused &&
+      this.onScreen &&
+      !this.hidden &&
+      this.props.phase === "auto";
+    if (!wanted) {
+      this.clearPhaseTimer();
+      return;
+    }
+    if (this.phaseTimer) return;
+    this.phaseTimer = setTimeout(() => {
+      this.phaseTimer = null;
+      this.guard(() => {
+        this.checkPhase();
+        this.syncPhaseTimer();
+      });
+    }, PHASE_CHECK_MS);
+  }
+
+  private clearPhaseTimer(): void {
+    if (this.phaseTimer) clearTimeout(this.phaseTimer);
+    this.phaseTimer = null;
   }
 
   private start(): void {
+    this.clearPhaseTimer();
     this.running = true;
     this.stillShown = false;
     this.since = performance.now();
@@ -320,6 +360,7 @@ export class LiveIsland {
 
   private cancelAll(): void {
     this.stop();
+    this.clearPhaseTimer();
     if (this.initRaf) cancelAnimationFrame(this.initRaf);
     if (this.eventRaf) cancelAnimationFrame(this.eventRaf);
     this.initRaf = 0;

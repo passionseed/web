@@ -135,11 +135,11 @@ describe("buildContext", () => {
     expect(rows).toEqual([
       { kind: "problem", label: "ปัญหาตอนนี้", text: "นักเรียน ม.5 ไม่มีเวลาอ่านหนังสือ\nเพราะเรียนพิเศษทุกวัน", version: 2, count: null },
       { kind: "target", label: "คนที่เจอ", text: "นักเรียน ม.5 ที่เรียนพิเศษ", version: 1, count: null },
-      { kind: "interview", label: "คุยแล้ว", text: null, version: null, count: 3 },
+      { kind: "interview", label: "สัมภาษณ์", text: null, version: null, count: 3 },
     ]);
     expect(hints).toEqual([
-      { id: "m1-problem", hinted: true, detail: expect.any(String) },
-      { id: "m1-target", hinted: true, detail: expect.any(String) },
+      { id: "m1-problem", hinted: true, detail: null },
+      { id: "m1-target", hinted: true, detail: null },
       { id: "m1-talked", hinted: true, detail: "สัมภาษณ์ 3 ใบ" },
     ]);
     // Reading order within a zone: left to right.
@@ -206,7 +206,7 @@ describe("buildContext", () => {
     expect(rows.map((r) => [r.label, r.count])).toEqual([
       ["ลองกับ", null],
       ["สิ่งที่จะให้ลอง", null],
-      ["ลองแล้ว", 1],
+      ["ทดสอบ", 1],
     ]);
     expect(hints).toEqual([
       { id: "m3-tested", hinted: true, detail: "ทดสอบ 1 ใบ" },
@@ -222,7 +222,7 @@ describe("buildContext", () => {
     expect(rows.map((r) => [r.label, r.text, r.count])).toEqual([
       ["งานตอนนี้", null, null],
       ["ผลทดสอบล่าสุด", "ให้เพื่อน 3 คนลอง", null],
-      ["เปลี่ยนแผนแล้ว", null, 0],
+      ["เปลี่ยนแผน", null, 0],
     ]);
     expect(hints.map((h) => h.hinted)).toEqual([false, true, false]);
   });
@@ -328,8 +328,26 @@ describe("buildSnapshot", () => {
       ].join("\n"),
       cut: false,
       length: expect.any(Number),
+      blocks: expect.any(Array),
     });
     expect(snap.length).toBe(points(snap.text));
+  });
+
+  it("hands the preview the same notes as blocks, so the tiles and the stored text cannot drift apart", () => {
+    const snap = buildSnapshot("Lamp", [
+      note({ kind: "test", text: "ลองกับเพื่อน 3 คน" }),
+      note({ kind: "idea", text: "แอปจดตาราง", version: 3, history: [{ v: 3, why: "เพิ่มเตือน" }, { v: 2, why: null }] }),
+    ]);
+    expect(snap.blocks).toEqual([
+      { kind: "idea", day: null, header: "💡 ไอเดีย v3", body: "แอปจดตาราง", whys: ["v2 → v3 เปลี่ยนเพราะ: เพิ่มเตือน"] },
+      { kind: "test", day: null, header: "🧪 ทดสอบ", body: "ลองกับเพื่อน 3 คน", whys: [] },
+    ]);
+    for (const block of snap.blocks) expect(snap.text).toContain([block.header, block.body, ...block.whys].join("\n"));
+  });
+
+  it("says when the stored words were edited after the newest saved version", () => {
+    const snap = buildSnapshot("Lamp", [note({ kind: "idea", text: "แก้แล้ว", version: 3, editedSinceVersion: true })]);
+    expect(snap.text).toContain("💡 ไอเดีย v3 (แก้หลัง v3)\nแก้แล้ว");
   });
 
   it("is deterministic and never carries ids", () => {
@@ -422,6 +440,18 @@ describe("piiFlags", () => {
     "ID: mint1234",
     "ทักไอจี @mint.studio",
     "@mint_k ช่วยลองให้",
+    // Handles written the way Thai teens share them, without "@".
+    "น้องมิ้นท์ ไอจี mint.k ลองแล้วงง",
+    "ไอจี mint.k",
+    "ig: mint.k",
+    "IG mint_k99",
+    "fb: Mint Kanya",
+    "เฟสบุ๊ก mint.kanya",
+    "tiktok: mintk",
+    "ติ๊กต็อก mintk",
+    // Thai digits and landlines.
+    "๐๘๑ ๒๓๔ ๕๖๗๘",
+    "เบอร์ 02-123-4567",
   ])("flags %s", (text) => {
     expect(piiFlags(text)).toBe(true);
   });
@@ -438,6 +468,11 @@ describe("piiFlags", () => {
     "ไอเดียใหม่",
     "นักเรียน ม.5 สองคน",
     "08:30 เริ่มทดสอบ",
+    "big idea ทำให้ง่ายขึ้น",
+    "แก้ config file แล้ว",
+    "ทดสอบ 02-11-2026",
+    "อายุ ๑๕ ปี",
+    "ไอเดีย ig ยังไม่ชัด",
   ])("does not flag %s", (text) => {
     expect(piiFlags(text)).toBe(false);
   });

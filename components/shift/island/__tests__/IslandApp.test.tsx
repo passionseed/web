@@ -1,4 +1,6 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+
+import { checkIn } from "@/app/shift/island/actions";
 
 import type { BoardRef } from "@/lib/supabase/shift-quests/board";
 import type { IslandPageData } from "@/lib/supabase/shift-quests/types";
@@ -47,10 +49,20 @@ jest.mock("../IslandSheet", () => {
 jest.mock("../IslandViewport", () => {
   const { createElement } = jest.requireActual<typeof import("react")>("react");
   return {
-    IslandViewport: ({ paused, whole, onPlot }: { paused?: boolean; whole?: boolean; onPlot?: (hotspot: unknown) => void }) =>
+    IslandViewport: ({
+      paused,
+      whole,
+      puffKey,
+      onPlot,
+    }: {
+      paused?: boolean;
+      whole?: boolean;
+      puffKey?: number;
+      onPlot?: (hotspot: unknown) => void;
+    }) =>
       createElement(
         "div",
-        { "data-testid": "viewport", "data-paused": String(!!paused), "data-whole": String(!!whole) },
+        { "data-testid": "viewport", "data-paused": String(!!paused), "data-whole": String(!!whole), "data-puff": String(puffKey ?? 0) },
         onPlot
           ? createElement(
               "button",
@@ -255,6 +267,9 @@ describe("IslandApp", () => {
     render(<IslandApp page={unclaimed({ invites: [invite] })} picture={null} />);
     fireEvent.click(screen.getByRole("button", { name: "คำชวนเข้าทีม 1" }));
     expect(screen.getByText("สวนผักดาดฟ้า ชวนคุณเข้าทีม")).toBeInTheDocument();
+    // The student came to answer an invite: focus lands on the invites, no keyboard over them.
+    expect(screen.getByLabelText("ชื่อโปรเจกต์")).not.toHaveFocus();
+    expect(document.getElementById("island-invites-heading")).toHaveFocus();
   });
 });
 
@@ -289,6 +304,33 @@ describe("IslandApp HUD", () => {
     expect(viewport()).toHaveAttribute("data-paused", "false");
   });
 
+  it("puts the HUD before the island in reading and tab order", () => {
+    render(<IslandApp page={page()} picture={null} />);
+    const heading = screen.getByRole("heading", { level: 1, name: "เกาะ SHIFT" });
+    expect(heading.compareDocumentPosition(viewport()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole("button", { name: "กระดานเควสต์" }).compareDocumentPosition(viewport()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("marks the chip while today's check-in is still open", () => {
+    const { unmount } = render(<IslandApp page={page()} picture={null} />);
+    expect(screen.getByRole("button", { name: /วันนี้ยังไม่ได้เช็กอิน/ })).toBeInTheDocument();
+    expect(screen.getByTestId("chip-today-open")).toBeInTheDocument();
+    unmount();
+    render(<IslandApp page={page({ island: { ...page().island, taps_today: 1 } })} picture={null} />);
+    expect(screen.queryByRole("button", { name: /วันนี้ยังไม่ได้เช็กอิน/ })).toBeNull();
+    expect(screen.queryByTestId("chip-today-open")).toBeNull();
+  });
+
+  it("closes the project sheet once the check-in is saved, then plays the dust puff where it can be seen", async () => {
+    (checkIn as jest.Mock).mockResolvedValue({ ok: true, data: { kind: "tap", tapsToday: 1 } });
+    render(<IslandApp page={page()} picture={null} />);
+    fireEvent.click(screen.getByRole("button", { name: /แอปจองห้องสมุด/ }));
+    fireEvent.click(within(screen.getByRole("dialog", { name: "แอปจองห้องสมุด" })).getByRole("button", { name: "เช็กอินวันนี้" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "แอปจองห้องสมุด" })).toBeNull());
+    expect(viewport()).toHaveAttribute("data-puff", "0");
+    await waitFor(() => expect(viewport()).toHaveAttribute("data-puff", "1"), { timeout: 2000 });
+  });
+
   it("opens the project sheet from the chip, with today's check-in in it", () => {
     render(<IslandApp page={page()} picture={null} />);
     fireEvent.click(screen.getByRole("button", { name: /แอปจองห้องสมุด/ }));
@@ -316,7 +358,7 @@ describe("IslandApp HUD", () => {
     unmount();
     render(<IslandApp page={page({ unread: 2 })} picture={null} />);
     fireEvent.click(screen.getByRole("button", { name: "ข้อความใหม่ 2 ข้อความ" }));
-    expect(screen.getByRole("dialog", { name: "ข้อความใหม่" })).toHaveTextContent("มีข้อความใหม่ 2 ข้อความ");
+    expect(screen.getByRole("dialog", { name: "ข้อความใหม่" })).toHaveTextContent("บอทส่งข้อความใหม่ถึงคุณ 2 ข้อความ");
   });
 
   it("opens a plot over the island", () => {

@@ -407,10 +407,67 @@ textarea.input {
   color: var(--c-lamp);
 }
 
+/* The preview: one compact sticky per note, like the whiteboard's. */
+.cardTiles {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cardTile {
+  display: grid;
+  gap: 4px;
+  padding: 8px 10px 10px;
+  border: 2px solid var(--c-ink);
+  background: var(--sticky, #fff3bf);
+  color: var(--c-note-ink);
+  box-shadow: var(--c-shadow);
+}
+
+.cardTileHead {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.cardTileBody {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.cardRaw {
+  display: grid;
+  gap: 8px;
+}
+
+.cardRawSummary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+  color: var(--c-dim);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.cardRawSummary:focus-visible {
+  outline: 2px solid var(--c-lamp);
+  outline-offset: 2px;
+}
+
 .card {
   margin: 0;
-  max-height: 22rem;
-  overflow: auto;
   padding: 14px;
   border: 2px solid var(--c-ink);
   background: var(--c-cream);
