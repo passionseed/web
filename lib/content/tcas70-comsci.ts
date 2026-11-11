@@ -146,14 +146,14 @@ export const TCAS_CS_UNIVERSITIES: TcasUniversity[] = [
     source: "join.kmutt.ac.th",
     projects: [
       {
-        name: "Active Recruitment 2 / 3 + International Admission 2",
-        seats: "5 + 3 + 2 คน",
+        name: "Active Recruitment + International Admission",
+        seats: "รวม 22 คน: AR1 10 · AR2 5 · AR3 3 · Inter1 2 · Inter2 2",
         gpax: "3.00 · คณิต ภาษาต่างประเทศ 3.00",
         requirement: "ไม่บังคับรางวัล · หลักสูตรภาษาอังกฤษ · ใส่ผลงาน รางวัล กิจกรรมที่เกี่ยวกับสาขา",
         gated: false,
         portfolio: "ไม่เกิน 12 หน้า รวมปก · เกินให้ใช้ QR หรือลิงก์",
         scoring: "สัมภาษณ์ 50 + GPAX 25 + พอร์ต 25",
-        apply: "AR2 27 ต.ค.-25 พ.ย. 69 · Inter 23 พ.ย. 69-11 ม.ค. 70 · AR3 15 ธ.ค. 69-18 ม.ค. 70",
+        apply: "AR1 ปิดแล้ว 28 ก.ย. · Inter1 ปิดแล้ว 26 ต.ค. · AR2 27 ต.ค.-25 พ.ย. 69 · Inter2 23 พ.ย. 69-11 ม.ค. 70 · AR3 15 ธ.ค. 69-18 ม.ค. 70",
       },
       {
         name: "คัดเลือกตรง ประเภทเรียนดี",
