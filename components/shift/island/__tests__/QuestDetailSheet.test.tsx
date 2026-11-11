@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { toast } from "sonner";
 
 import {
@@ -15,6 +15,7 @@ import { keynoteQuest, type BoardRef } from "@/lib/supabase/shift-quests/board";
 
 import { IDS, MAIN_SLUGS, MAIN_TITLES, makeBoard } from "../__fixtures__/board";
 import { QuestCardComposer, useQuestCanvas } from "../canvas";
+import { QUEST_FLAVOR } from "../copy";
 import { clearAllDrafts } from "../drafts";
 import { QuestDetailSheet } from "../QuestDetailSheet";
 
@@ -183,6 +184,17 @@ describe("QuestDetailSheet: the quest page", () => {
     open({ kind: "proposed", instanceId: IDS.proposed });
     expect(within(body()).getByText("เควสต์ที่คุณเสนอ")).toBeInTheDocument();
     expect(within(body()).getByText("ให้เพื่อนหาร้านใกล้โรงเรียนได้")).toBeInTheDocument();
+  });
+
+  it("shows the quest's one lore line on main and side quests, never on a proposed one", () => {
+    open({ kind: "main", milestone: 1 });
+    expect(within(body()).getByText("ทุกต้นเริ่มจากเรื่องที่มีคนเจอจริง")).toBeInTheDocument();
+    cleanup();
+    open({ kind: "side", templateId: IDS.sideVoices });
+    expect(within(body()).getByText("ห้าเสียงจริง ชัดกว่าการเดาคนเดียว")).toBeInTheDocument();
+    cleanup();
+    open({ kind: "proposed", instanceId: IDS.proposed });
+    for (const line of Object.values(QUEST_FLAVOR)) expect(within(body()).queryByText(line)).toBeNull();
   });
 
   it("asks to link a canvas when none is linked, and hands the quest up to open the picker", () => {

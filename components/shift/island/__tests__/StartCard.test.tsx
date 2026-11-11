@@ -88,7 +88,7 @@ describe("StartCard on a first visit", () => {
     fireEvent.click(stage());
     fireEvent.click(stage());
     fireEvent.click(stage());
-    expect(screen.getByText("คืนเทศกาล Demo Day")).toBeInTheDocument();
+    expect(screen.getByText("คืนเทศกาล Demo Day ทั้งเกาะมาโชว์งานด้วยกัน")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "ไปที่เกาะ" }));
     expect(screen.queryByRole("dialog")).toBeNull();

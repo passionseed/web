@@ -1,15 +1,20 @@
 /**
  * Every user-facing string of the island story (the four-panel intro).
  *
- * DRAFT COPY for the founder's multi-model Thai review (AGENTS.md). Lines come
- * from the plan doc (docs/designs/shift-high-island-web.md, "Story").
+ * DRAFT COPY for the founder's multi-model Thai review (AGENTS.md). The panel
+ * lines come from the lore bible (docs/designs/shift-high-island-lore.md,
+ * "story panels"); the scenes from docs/designs/shift-high-island-web.md, "Story".
  *
  * House rules, checked by __tests__/copy.test.ts: Thai first, about the
- * student and real work (never lore, never a lecture), no em dashes, no emoji,
+ * student and real work (the lore only names places, it never replaces the
+ * work, and never lectures), no em dashes, no emoji,
  * no markdown, never น้อง, ลูก or เด็ก, no streak wording. The Demo Day date
  * always comes from the season (thaiShortDate), never from this file.
  */
 import { thaiShortDate } from "../copy";
+
+/** DRAFT: panel 4's second half, the same with or without a date. */
+const FESTIVAL_TAIL = "ทั้งเกาะมาโชว์งานด้วยกัน";
 
 export const STORY = {
   /** The dialog's accessible name. */
@@ -18,12 +23,19 @@ export const STORY = {
   reopen: "ดูเรื่องเล่าของเกาะอีกครั้ง",
   /** Each panel's accessible label. */
   panel: (n: number, total: number) => `ภาพ ${n} จาก ${total}`,
-  /** Panels 1 to 3. */
-  lines: ["เกาะนี้ยังว่าง", "ทุกโปรเจกต์คือต้นไม้หนึ่งต้น", "ต้นไม้โตจากงานจริง"] as const,
-  /** Panel 4 with the season's Demo Day as a short Thai date (thaiShortDate). */
-  festival: (date: string) => `${date} เทศกาล Demo Day`,
-  /** Panel 4 when no season is loaded (the start screen). */
-  festivalUndated: "คืนเทศกาล Demo Day",
+  /** Panels 1 to 3 (DRAFT, lore bible section 9). */
+  lines: [
+    // DRAFT: empty island at dawn.
+    "เกาะนี้ยังว่าง รอคนที่อยากสร้างของจริง",
+    // DRAFT: a seedling and its builder.
+    "ทุกโปรเจกต์คือต้นไม้หนึ่งต้น เริ่มจากเรื่องที่คุณใส่ใจ",
+    // DRAFT: a grown tree, a visitor trying the work.
+    "ต้นไม้โตจากงานจริง ไม่ได้โตจากเวลาออนไลน์",
+  ] as const,
+  /** Panel 4 with the season's Demo Day as a short Thai date (thaiShortDate). DRAFT. */
+  festival: (date: string) => `${date} เทศกาล Demo Day ${FESTIVAL_TAIL}`,
+  /** Panel 4 when no season is loaded (the start screen). DRAFT. */
+  festivalUndated: `คืนเทศกาล Demo Day ${FESTIVAL_TAIL}`,
   skip: "ข้าม",
   /** Only under reduced motion, where panels never advance by themselves. */
   next: "ต่อไป",

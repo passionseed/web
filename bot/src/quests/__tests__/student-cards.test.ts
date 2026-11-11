@@ -756,4 +756,10 @@ describe("student copy", () => {
     expect(text).not.toContain("น้องๆ");
     expect(I.btnBack).toBe("🏝️ กลับเกาะ");
   });
+
+  it("names festival night on the started card without a hardcoded Demo Day date", () => {
+    expect(T.started).toContain("คืนเทศกาล Demo Day");
+    expect(T.started).not.toMatch(/\d{1,2}\s*(ม\.ค\.|ก\.พ\.|มี\.ค\.|เม\.ย\.|พ\.ค\.|มิ\.ย\.|ก\.ค\.|ส\.ค\.|ก\.ย\.|ต\.ค\.|พ\.ย\.|ธ\.ค\.)/);
+    expect(T.introBody).toContain("เกาะ SHIFT");
+  });
 });

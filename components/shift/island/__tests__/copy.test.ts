@@ -1,3 +1,7 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
+import { MAIN_SLUGS } from "@/lib/shift-island/quest-canvas";
 import { lintText } from "@/lib/marketing/copyRules";
 
 import * as copy from "../copy";
@@ -32,7 +36,8 @@ function collect(value: unknown, path: string, out: [string, string][]): void {
 const strings: [string, string][] = [];
 for (const [name, value] of Object.entries(copy)) {
   // Helpers that format data rather than hold copy are exercised below.
-  if (name === "thaiShortDate" || name === "stageName" || name === "tileChip" || name === "unlockLine") continue;
+  if (name === "thaiShortDate" || name === "stageName" || name === "tileChip" || name === "unlockLine" || name === "questFlavor")
+    continue;
   collect(value, name, strings);
 }
 
@@ -88,6 +93,32 @@ describe("island copy", () => {
     expect(copy.CAMPFIRE.spot(3)).toBe("กองไฟ: ห้อง coworking มี 3 คน");
     expect(copy.NOTICE.pinned(["ก", "ข"])).toBe("กระดานเควสต์: ก · ข");
     expect(copy.NOTICE.board).toBe(copy.HUD.board);
+    expect(copy.CAMPFIRE.title).toBe("กองไฟ");
+    expect(copy.FESTIVAL.title).toBe("เวที Demo Day");
+    expect(copy.FESTIVAL.legendHeading).toBe("ที่ลานกลางเกาะ");
+    expect(copy.FESTIVAL.lanterns(4, 10)).toBe("โคมที่ลานสว่างขึ้นทีละดวง ตามเป้าหมายของทั้งเกาะ 4/10");
+  });
+
+  it("names each place once, in PLACES", () => {
+    expect(copy.ISLAND.title).toBe(copy.PLACES.island);
+    expect(copy.HUD.board).toBe(copy.PLACES.board);
+    expect(copy.CAMPFIRE.title).toBe(copy.PLACES.campfire);
+    expect(copy.FESTIVAL.title).toBe(copy.PLACES.stage);
+  });
+
+  it("has one short lore line for every main and side quest, none for a proposed one", () => {
+    const migrations = join(__dirname, "..", "..", "..", "..", "supabase", "migrations");
+    const sides = readFileSync(join(migrations, "20261111090900_shift_quests_board.sql"), "utf8").match(/'side-[a-z-]+'/g) ?? [];
+    const slugs = new Set([...Object.values(MAIN_SLUGS), ...sides.map((s) => s.slice(1, -1))]);
+    expect(slugs.size).toBe(18);
+    expect(Object.keys(copy.QUEST_FLAVOR).sort()).toEqual([...slugs].sort());
+    for (const line of Object.values(copy.QUEST_FLAVOR)) expect(line.length).toBeLessThanOrEqual(60);
+    expect(copy.questFlavor("main", "make-it-exist")).toBe("จากไอเดียในหัว เป็นของที่คนอื่นจับต้องได้");
+    expect(copy.questFlavor("side", "side-readme")).toBe("คู่มือที่ดี ทำให้งานเดินต่อได้แม้คุณไม่อยู่");
+    expect(copy.questFlavor("proposed", "make-it-exist")).toBeNull();
+    expect(copy.questFlavor("side", "no-such-quest")).toBeNull();
+    expect(copy.questFlavor("main", null)).toBeNull();
+    expect(copy.questFlavor("main", "toString")).toBeNull();
   });
 
   it("words unlocks by state", () => {

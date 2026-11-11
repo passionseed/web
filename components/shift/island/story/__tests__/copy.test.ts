@@ -43,20 +43,20 @@ describe("story copy", () => {
 
   it("has the three panel lines in order", () => {
     expect([0, 1, 2].map((i) => storyLine(i, null))).toEqual([
-      "เกาะนี้ยังว่าง",
-      "ทุกโปรเจกต์คือต้นไม้หนึ่งต้น",
-      "ต้นไม้โตจากงานจริง",
+      "เกาะนี้ยังว่าง รอคนที่อยากสร้างของจริง",
+      "ทุกโปรเจกต์คือต้นไม้หนึ่งต้น เริ่มจากเรื่องที่คุณใส่ใจ",
+      "ต้นไม้โตจากงานจริง ไม่ได้โตจากเวลาออนไลน์",
     ]);
   });
 
   it("dates the festival panel from the season, in Bangkok time", () => {
-    expect(storyLine(3, "2026-11-28")).toMatch(/^28 พ\.ย\. เทศกาล Demo Day$/);
-    expect(storyLine(3, "2026-05-14T18:30:00Z")).toMatch(/^15 พ\.ค\. เทศกาล Demo Day$/);
+    expect(storyLine(3, "2026-11-28")).toMatch(/^28 พ\.ย\. เทศกาล Demo Day ทั้งเกาะมาโชว์งานด้วยกัน$/);
+    expect(storyLine(3, "2026-05-14T18:30:00Z")).toMatch(/^15 พ\.ค\. เทศกาล Demo Day ทั้งเกาะมาโชว์งานด้วยกัน$/);
   });
 
   it("falls back to the undated festival line without a usable date", () => {
-    expect(storyLine(3, null)).toBe("คืนเทศกาล Demo Day");
-    expect(storyLine(3, "not a date")).toBe("คืนเทศกาล Demo Day");
+    expect(storyLine(3, null)).toBe("คืนเทศกาล Demo Day ทั้งเกาะมาโชว์งานด้วยกัน");
+    expect(storyLine(3, "not a date")).toBe("คืนเทศกาล Demo Day ทั้งเกาะมาโชว์งานด้วยกัน");
   });
 
   it("never hardcodes a Demo Day date", () => {

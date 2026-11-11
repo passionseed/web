@@ -27,13 +27,13 @@ const SUMMARY: CampfireSummary = { count: 3, joinUrl: JOIN };
 function show(names: CampfireNamesState, summary: CampfireSummary = SUMMARY) {
   const onClose = jest.fn();
   render(<CampfireSheet open onClose={onClose} summary={summary} names={names} />);
-  return screen.getByRole("dialog", { name: "ห้อง coworking" });
+  return screen.getByRole("dialog", { name: "กองไฟ" });
 }
 
 describe("CampfireSheet", () => {
   it("lists who is in the room by name, with the count", () => {
     const sheet = show({ state: "ready", names: ["Ploy", "มิ้นต์", "Ploy"] });
-    expect(screen.getByTestId("sheet-description")).toHaveTextContent("ทำงานไปด้วยกันในห้องเสียงของ SHIFT");
+    expect(screen.getByTestId("sheet-description")).toHaveTextContent("ห้องเสียง coworking ของ SHIFT มานั่งทำงานเป็นเพื่อนกันได้");
     expect(within(sheet).getByText("3 คนกำลังทำงานอยู่")).toBeInTheDocument();
     const list = within(sheet).getByRole("list", { name: "คนที่อยู่ในห้องตอนนี้" });
     // Display names can repeat; each person is one line.

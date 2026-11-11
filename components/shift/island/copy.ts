@@ -12,6 +12,20 @@
 import type { ProjectRoute, SeasonUnlock, TileStatus } from "@/lib/supabase/shift-quests/types";
 import type { ShiftDiscordAuthError } from "@/lib/shift/discordAuth";
 
+/**
+ * DRAFT: the island's place names, from the lore bible
+ * (docs/designs/shift-high-island-lore.md, "ชื่อสถานที่"). Short words students
+ * already use; the labels below read them from here. กระดานเควสต์ is shared
+ * with the bot, so it changes in both or neither.
+ */
+export const PLACES = {
+  island: "เกาะ SHIFT",
+  plaza: "ลานกลางเกาะ",
+  board: "กระดานเควสต์",
+  campfire: "กองไฟ",
+  stage: "เวที Demo Day",
+};
+
 /** Tree stages 0..7, same names as the bot (bot/src/quests/island/copy.ts). */
 export const STAGE_NAMES = ["ที่ดินว่าง", "เมล็ด", "ต้นกล้า", "ต้นอ่อน", "ต้นไม้", "ต้นใหญ่", "ออกผล", "ผลิดอก"] as const;
 
@@ -158,7 +172,7 @@ export const NO_PROJECT = {
 };
 
 export const ISLAND = {
-  title: "เกาะ SHIFT",
+  title: PLACES.island,
   viewWhole: "ดูทั้งเกาะ",
   viewClose: "ขยายดูใกล้ๆ",
   myPlot: (slot: number, stage: string) => `แปลงของคุณ #${slot}, ${stage}`,
@@ -184,7 +198,7 @@ export const HUD = {
   /** The chip before a plot is claimed. */
   noPlot: "ยังไม่มีที่ดิน",
   meter: (stage: number) => `ต้นไม้ขั้น ${stage} จาก 7`,
-  board: "กระดานเควสต์",
+  board: PLACES.board,
   menu: "เมนู",
   inbox: (count: number) => `ข้อความใหม่ ${count} ข้อความ`,
   inboxHeading: "ข้อความใหม่",
@@ -449,12 +463,13 @@ export const FESTIVAL = {
   /** The sign over the stage, two lines: "Demo Day 28 พ.ย." and "อีก 17 วัน". */
   sign: (date: string, days: number, separator = "\n") => `${SEASON.demoDay(date)}${separator}${SEASON.daysLeft(days)}`,
   /** The stage's accessible name, with the sign on one line. */
-  stage: (sign: string) => `เวที Demo Day: ${sign}`,
-  title: "เวที Demo Day",
-  legendHeading: "ที่ลานกลางเกาะ",
+  stage: (sign: string) => `${PLACES.stage}: ${sign}`,
+  title: PLACES.stage,
+  legendHeading: `ที่${PLACES.plaza}`,
   table: (bar: number) => `โต๊ะโชว์งาน: นับได้ ${bar} ขั้น และผ่านเควสต์ 2`,
   stageRule: (bar: number) => `ขึ้นเวที: นับได้ ${bar} ขั้น และผ่านเควสต์ 3`,
-  lanterns: (count: number, target: number) => `ไฟที่ลานสว่างขึ้นตามเป้าหมายของทั้งเกาะ ${count}/${target}`,
+  /** DRAFT (lore: the lantern string lights for everyone together). */
+  lanterns: (count: number, target: number) => `โคมที่ลานสว่างขึ้นทีละดวง ตามเป้าหมายของทั้งเกาะ ${count}/${target}`,
   /** Appended to the table and stage legend lines: other teams' flags show only when they show their name. */
   shownOnly: "เห็นเฉพาะทีมที่โชว์ชื่อบนเกาะ",
   /** To the project sheet, where the season's meter and unlocks live. */
@@ -467,11 +482,14 @@ export const FESTIVAL = {
  */
 export const CAMPFIRE = {
   /** The campfire's accessible name on the island. */
-  spot: (count: number) => (count > 0 ? `กองไฟ: ห้อง coworking มี ${count} คน` : "กองไฟ: ห้อง coworking"),
+  spot: (count: number) =>
+    count > 0 ? `${PLACES.campfire}: ห้อง coworking มี ${count} คน` : `${PLACES.campfire}: ห้อง coworking`,
   count: (count: number) => `${count} คนกำลังทำงานอยู่`,
   more: (count: number) => `+${count}`,
-  title: "ห้อง coworking",
-  body: "ทำงานไปด้วยกันในห้องเสียงของ SHIFT",
+  /** DRAFT (lore: the campfire is where builders keep each other company). */
+  title: PLACES.campfire,
+  /** DRAFT */
+  body: "ห้องเสียง coworking ของ SHIFT มานั่งทำงานเป็นเพื่อนกันได้",
   listLabel: "คนที่อยู่ในห้องตอนนี้",
   loading: "กำลังโหลดรายชื่อ",
   empty: "ตอนนี้ยังไม่มีใครในห้อง เข้าไปเริ่มก่อนได้",
@@ -479,3 +497,38 @@ export const CAMPFIRE = {
   join: "เข้าห้อง",
   fine: "กองไฟบนเกาะเก็บแค่ว่าใครอยู่ในห้องตอนนี้ และลบทันทีเมื่อออก",
 };
+
+/**
+ * DRAFT: one quiet line per quest above its purpose on the quest page, by
+ * template slug (lore bible, "หนึ่งบรรทัดต่อเควสต์"). Why the quest matters on
+ * the island, never how to do it. A proposed quest has none: its goal is the
+ * student's own words. Unknown slugs show nothing.
+ */
+export const QUEST_FLAVOR: Readonly<Record<string, string>> = {
+  // Main quests 1 to 7 (supabase/migrations/20261111090500_shift_quests_starter_templates.sql).
+  "find-something-worth-fixing": "ทุกต้นเริ่มจากเรื่องที่มีคนเจอจริง",
+  "make-it-exist": "จากไอเดียในหัว เป็นของที่คนอื่นจับต้องได้",
+  "let-reality-surprise-you": "คนจริงไม่เคยใช้งานตรงตามที่เราคิดไว้",
+  "give-them-a-reason-to-return": "ครั้งแรกคนลองเพราะอยากรู้ ครั้งที่สองเพราะมันมีค่า",
+  "take-the-keys": "กุญแจอยู่ในมือคุณ งานจึงเดินต่อได้หลัง SHIFT จบ",
+  "help-another-builder-move": "บนเกาะนี้ ไม่มีใครต้องติดอยู่คนเดียว",
+  "improve-our-community": "ทิ้งของดีๆ ไว้ให้คนที่มาทีหลัง",
+  // Side quests (supabase/migrations/20261111090900_shift_quests_board.sql).
+  "side-five-voices": "ห้าเสียงจริง ชัดกว่าการเดาคนเดียว",
+  "side-open-on-phone": "งานที่เปิดได้จากลิงก์เดียว ไปถึงคนได้ไกลกว่า",
+  "side-readme": "คู่มือที่ดี ทำให้งานเดินต่อได้แม้คุณไม่อยู่",
+  "side-thirty-second-cut": "ถ้าคนเข้าใจใน 30 วินาที เขาจะอยากดูต่อ",
+  "side-clear-offer": "คนจะเริ่มใช้ เมื่อเข้าใจว่าคุณช่วยอะไรเขา",
+  "side-outside-circle": "คนนอกวงจะบอกสิ่งที่เพื่อนเกรงใจไม่พูด",
+  "side-fix-one-thing": "แก้ทีละอย่าง แล้วให้ความจริงตัดสินอีกรอบ",
+  "side-demo-three-minutes": "คืนเทศกาล มีคนอยากฟังเรื่องงานของคุณ",
+  "side-handoff-page": "งานที่ส่งต่อได้ คืองานที่อยู่ได้นาน",
+  "side-review-a-friend": "คำติชมที่ดี ช่วยให้ต้นของเพื่อนโตต่อได้",
+  "side-share-a-lesson": "สิ่งที่คุณเพิ่งเรียนรู้ อาจเป็นทางลัดของคนถัดไป",
+};
+
+/** The quest's flavor line, or null for a proposed quest or a slug without one. */
+export function questFlavor(kind: "main" | "side" | "proposed", slug: string | null | undefined): string | null {
+  if (kind === "proposed" || !slug) return null;
+  return Object.hasOwn(QUEST_FLAVOR, slug) ? QUEST_FLAVOR[slug] : null;
+}

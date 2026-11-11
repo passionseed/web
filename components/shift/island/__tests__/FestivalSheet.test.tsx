@@ -59,7 +59,7 @@ describe("FestivalSheet", () => {
 
   it("ties the lanterns to the island goal", () => {
     const sheet = show(season());
-    expect(legend(sheet).map((line) => line.textContent)).toContain("ไฟที่ลานสว่างขึ้นตามเป้าหมายของทั้งเกาะ 4/10");
+    expect(legend(sheet).map((line) => line.textContent)).toContain("โคมที่ลานสว่างขึ้นทีละดวง ตามเป้าหมายของทั้งเกาะ 4/10");
   });
 
   it("keeps at most three legend lines, and leaves the lanterns out without a goal", () => {
@@ -67,7 +67,7 @@ describe("FestivalSheet", () => {
     document.body.innerHTML = "";
     const sheet = show(season({ goal: null }), null);
     expect(legend(sheet)).toHaveLength(2);
-    expect(sheet.textContent).not.toMatch(/ไฟที่ลาน/);
+    expect(sheet.textContent).not.toMatch(/โคมที่ลาน/);
   });
 
   it("draws each piece of the plaza beside its line, hidden from screen readers", () => {
