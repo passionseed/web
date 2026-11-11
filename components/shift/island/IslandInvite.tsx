@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   LETTER_CHAPTERS,
@@ -10,6 +10,7 @@ import {
 } from "@/lib/content/shift-island-invite";
 import type { IslandViewer } from "@/lib/shift/islandInvite";
 
+import { BottleShore } from "./BottleShore";
 import { IslandPrologue } from "./IslandPrologue";
 import styles from "./islandInvite.module.css";
 
@@ -22,6 +23,19 @@ type Scene = "prologue" | "shore" | "letter";
  */
 export function IslandInvite({ viewer, festival }: { viewer: IslandViewer; festival: string }) {
   const [scene, setScene] = useState<Scene>(viewer.kind === "going" ? "letter" : "prologue");
+  const rootRef = useRef<HTMLElement>(null);
+  const focusedScene = useRef(scene);
+
+  // The control that changed the scene unmounts with it, so focus would fall
+  // to the body. Move it into the new scene: its `data-scene-focus` element,
+  // else the page root. Skipped on first load (and React's dev re-run of it).
+  useEffect(() => {
+    if (focusedScene.current === scene) return;
+    focusedScene.current = scene;
+    const root = rootRef.current;
+    const target = root?.querySelector<HTMLElement>("[data-scene-focus]") ?? root;
+    target?.focus({ preventScroll: true });
+  }, [scene]);
 
   const goTo = (next: Scene) => {
     // Each scene starts at its own top; the prologue leaves the page scrolled.
@@ -30,22 +44,11 @@ export function IslandInvite({ viewer, festival }: { viewer: IslandViewer; festi
   };
 
   return (
-    <main className={styles.root} data-scene={scene}>
+    <main ref={rootRef} className={styles.root} data-scene={scene} tabIndex={-1}>
       {scene === "prologue" && <IslandPrologue lines={PROLOGUE} onDone={() => goTo("shore")} />}
-      {scene === "shore" && <ShorePlaceholder onOpen={() => goTo("letter")} />}
+      {scene === "shore" && <BottleShore onOpen={() => goTo("letter")} hint={SHORE.hint} />}
       {scene === "letter" && <LetterPlaceholder viewer={viewer} festival={festival} />}
     </main>
-  );
-}
-
-/** Stand-in for the shore scene (Task 6: `BottleShore`). */
-function ShorePlaceholder({ onOpen }: { onOpen: () => void }) {
-  return (
-    <section className={styles.placeholder}>
-      <button type="button" className={styles.next} onClick={onOpen}>
-        {SHORE.hint}
-      </button>
-    </section>
   );
 }
 

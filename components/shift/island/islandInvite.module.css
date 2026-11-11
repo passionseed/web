@@ -44,6 +44,11 @@
   }
 }
 
+/* Focus lands on the root only when a new scene has nothing better to take it. */
+.root:focus {
+  outline: none;
+}
+
 /* ---------- Buttons shared by every scene ---------- */
 
 .next,
@@ -351,6 +356,277 @@
 
   .next:hover {
     animation: none;
+  }
+}
+
+/* ---------- Scene 1: the shore ---------- */
+
+.shore {
+  position: relative;
+  height: 100svh;
+  min-height: 520px;
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--isl-night);
+}
+
+/* The sea is drawn in whole device pixels by BottleShore; CSS only places it. */
+.sea {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Sand at dusk: a wet edge, then dry sand with a pixel checker for grain. */
+.sand {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: -1;
+  height: var(--sand, 26%);
+  background:
+    repeating-conic-gradient(rgba(42, 29, 46, 0.09) 0 25%, transparent 0 50%) 0 0 / 8px 8px,
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--isl-sand) 45%, var(--isl-dusk)) 0 12px,
+      color-mix(in srgb, var(--isl-sand) 68%, var(--isl-dusk)) 12px 40%,
+      color-mix(in srgb, var(--isl-sand) 50%, var(--isl-violet)) 100%
+    );
+}
+
+/* The bottle: one button, landing on the sand below the middle of the screen. */
+.bottle {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--sand, 26%) * 0.36);
+  display: flex;
+  min-width: 48px;
+  min-height: 48px;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 4px;
+  translate: -50% 0;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  color: var(--isl-text);
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  animation: isl-drift 3400ms var(--isl-ease-tension) both;
+}
+
+.bottle:focus-visible {
+  outline: 3px solid var(--isl-gold);
+  outline-offset: 6px;
+}
+
+.bottleArt {
+  display: block;
+  width: clamp(112px, 34vw, 168px);
+  height: auto;
+  /* The cork flies out past the bottle's own box. */
+  overflow: visible;
+  image-rendering: pixelated;
+  transform: rotate(-7deg);
+  transition: transform 160ms var(--isl-ease-snap);
+  filter: drop-shadow(0 6px 0 rgba(42, 29, 46, 0.35));
+}
+
+/* Three bobs on the way in, then still on the sand. Kept off .bottleArt so a
+   hover there never restarts it. */
+.bottleFloat {
+  display: block;
+  animation: isl-bob 1100ms ease-in-out 3;
+}
+
+/* Warm light pooling under the bottle once it lands. */
+.bottleGlow {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  z-index: -1;
+  width: 150%;
+  height: 70%;
+  translate: -50% 0;
+  background: radial-gradient(closest-side, rgba(255, 201, 107, 0.5), rgba(255, 138, 76, 0.18) 60%, transparent);
+  pointer-events: none;
+  clip-path: inset(50% 0 50% 0);
+  opacity: 0;
+  filter: blur(18px);
+  animation:
+    isl-glow-rise 1600ms var(--isl-ease-tension) 3000ms forwards,
+    isl-glow-wave 4231ms ease-in-out 4600ms infinite;
+}
+
+.bottleHint {
+  font-family: var(--font-kodchasan), var(--font-bai-jamjuree), sans-serif;
+  font-size: clamp(16px, 1vw + 12px, 19px);
+  font-weight: 600;
+  white-space: nowrap;
+  text-shadow: 0 2px 10px rgba(10, 11, 31, 0.85);
+  opacity: 0;
+  filter: blur(6px);
+  animation: isl-hint-in 900ms var(--isl-ease-tension) 3200ms forwards;
+}
+
+.cork {
+  transform-box: fill-box;
+  transform-origin: left center;
+}
+
+@media (hover: hover) {
+  .bottle:hover .bottleArt {
+    animation: isl-lift 420ms var(--isl-ease-tension) forwards;
+  }
+}
+
+.bottle:active .bottleArt {
+  transform: rotate(-7deg) translateY(1px) scale(0.97);
+}
+
+/* Opening: the bottle shivers, the cork flies, the hint goes. */
+.bottle[data-state="opening"] {
+  cursor: default;
+}
+
+.bottle[data-state="opening"] .bottleArt {
+  animation: isl-shiver 260ms ease-in-out 2;
+}
+
+.bottle[data-state="opening"] .cork {
+  animation: isl-pop 560ms var(--isl-ease-snap) forwards;
+}
+
+.bottle[data-state="opening"] .bottleHint {
+  animation: none;
+  opacity: 0;
+  transition: opacity 160ms var(--isl-ease-snap);
+}
+
+/* From out at sea (small, up by the horizon, off to the right) to the sand. */
+@keyframes isl-drift {
+  0% {
+    transform: translate(46vw, -34svh) scale(0.35);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  70% {
+    transform: translate(8vw, -6svh) scale(0.85);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes isl-bob {
+  0%,
+  100% {
+    transform: rotate(0) translateY(0);
+  }
+  50% {
+    transform: rotate(-5deg) translateY(-6px);
+  }
+}
+
+@keyframes isl-lift {
+  0% {
+    transform: rotate(-7deg) translateY(0);
+  }
+  100% {
+    transform: rotate(-9deg) translateY(-6px);
+  }
+}
+
+@keyframes isl-shiver {
+  0%,
+  100% {
+    transform: rotate(-7deg);
+  }
+  25% {
+    transform: rotate(-4deg);
+  }
+  75% {
+    transform: rotate(-10deg);
+  }
+}
+
+/* Lengths here are in the bottle's own pixels (SVG user units). */
+@keyframes isl-pop {
+  0% {
+    transform: translate(0, 0) rotate(0);
+    opacity: 1;
+  }
+  30% {
+    transform: translate(1px, 0) rotate(8deg);
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(6px, -7px) rotate(220deg);
+    opacity: 0;
+  }
+}
+
+@keyframes isl-glow-rise {
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    filter: blur(10px);
+  }
+}
+
+@keyframes isl-glow-wave {
+  0%,
+  100% {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    filter: blur(10px);
+  }
+  50% {
+    clip-path: inset(6% 4% 6% 4%);
+    opacity: 0.6;
+    filter: blur(14px);
+  }
+}
+
+@keyframes isl-hint-in {
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+/* Reduced motion: the bottle already lies on the sand, lit and labelled. */
+@media (prefers-reduced-motion: reduce) {
+  .bottle,
+  .bottleFloat,
+  .bottle:hover .bottleArt,
+  .bottle[data-state="opening"] .bottleArt,
+  .bottle[data-state="opening"] .cork {
+    animation: none;
+    transition: none;
+  }
+
+  .bottleGlow {
+    animation: none;
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    filter: blur(10px);
+  }
+
+  .bottleHint {
+    animation: none;
+    opacity: 1;
+    filter: none;
   }
 }
 
