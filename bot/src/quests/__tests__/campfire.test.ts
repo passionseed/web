@@ -22,6 +22,8 @@ const ROOM = "200000000000000002";
 const OTHER = "200000000000000003";
 const TEXT = "200000000000000004";
 const NEW_ROOM = "200000000000000005";
+const STUDENT = "300000000000000001";
+const STAFF = "300000000000000002";
 
 const flush = () => new Promise<void>((resolve) => setImmediate(resolve));
 
@@ -79,24 +81,40 @@ interface FakeState {
   member: FakeMember | null;
 }
 
+interface FakeChannel {
+  id: string;
+  isVoiceBased: () => boolean;
+  permissionsFor: (role: string) => { has: () => boolean };
+}
+
 interface FakeGuild {
   id: string;
   voiceStates: { cache: Map<string, FakeState> };
-  channels: { cache: Map<string, { isVoiceBased: () => boolean }> };
+  channels: { cache: Map<string, FakeChannel> };
   members: { fetch: jest.Mock };
 }
 
 function fakeWorld() {
-  const voice = { isVoiceBased: () => true };
+  /** The roles that can see and join each channel; every voice channel starts open to @everyone (the guild id). */
+  const access = new Map<string, Set<string>>([
+    [ROOM, new Set([GUILD])],
+    [OTHER, new Set([GUILD])],
+    [NEW_ROOM, new Set([GUILD])],
+  ]);
+  const channel = (id: string, voice = true): FakeChannel => ({
+    id,
+    isVoiceBased: () => voice,
+    permissionsFor: (role) => ({ has: () => access.get(id)?.has(role) ?? false }),
+  });
   const guild: FakeGuild = {
     id: GUILD,
     voiceStates: { cache: new Map() },
     channels: {
       cache: new Map([
-        [ROOM, voice],
-        [OTHER, voice],
-        [NEW_ROOM, voice],
-        [TEXT, { isVoiceBased: () => false }],
+        [ROOM, channel(ROOM)],
+        [OTHER, channel(OTHER)],
+        [NEW_ROOM, channel(NEW_ROOM)],
+        [TEXT, channel(TEXT, false)],
       ]),
     },
     members: { fetch: jest.fn(async () => Promise.reject(new Error("unknown member"))) },
@@ -125,11 +143,18 @@ function fakeWorld() {
     });
   }
 
-  return { client, guild, elsewhere, move, seat, asClient: client as unknown as Client };
+  /** Staff change who may see a channel, then Discord sends ChannelUpdate (unless `silent`, as a role edit). */
+  function permit(id: string, roles: string[], opts: { silent?: boolean } = {}) {
+    access.set(id, new Set(roles));
+    const updated = guild.channels.cache.get(id);
+    if (!opts.silent) client.emit(Events.ChannelUpdate, updated, updated);
+  }
+
+  return { client, guild, elsewhere, move, seat, permit, access, asClient: client as unknown as Client };
 }
 
 function fakeApi(start: string | null = ROOM) {
-  const setting = { channel: start };
+  const setting: { channel: string | null; roles: string[] } = { channel: start, roles: [] };
   const calls: unknown[][] = [];
   const failNext = new Set<string>();
   const holds = new Map<string, Promise<void>>();
@@ -142,7 +167,7 @@ function fakeApi(start: string | null = ROOM) {
         await hold;
       }
       if (failNext.delete(fn)) throw new QuestDbError(fn, "08006");
-      if (fn === "shift_quest_voice_beat") return setting.channel;
+      if (fn === "shift_quest_voice_beat") return { channel_id: setting.channel, student_role_ids: [...setting.roles] };
       if (fn === "shift_quest_voice_set") return args[2] !== null && args[2] === setting.channel;
       if (fn === "shift_quest_voice_sync") return args[1] === setting.channel ? (args[2] as string[]).length : 0;
       throw new Error(`unexpected ${fn}`);
@@ -441,6 +466,222 @@ describe("startCampfire", () => {
     await s.campfire.stop();
   });
 
+  // -------------------------------------------------------------------------
+  // Only while students can see the channel
+  // -------------------------------------------------------------------------
+
+  it("a channel staff make private empties the campfire at once, and nothing per person is written", async () => {
+    const s = await ready();
+    s.seat("10", ROOM, "Ploy");
+    s.move("20", ROOM, "Mek");
+    await flush();
+    expect(s.calls).toEqual([["shift_quest_voice_set", GUILD, "20", ROOM, "Mek"]]);
+
+    s.calls.length = 0;
+    s.permit(ROOM, [STAFF]);
+    await flush();
+    expect(s.calls).toEqual([["shift_quest_voice_sync", GUILD, ROOM, [], []]]);
+    expect(warns).toHaveBeenCalledTimes(1);
+    const warned = warns.mock.calls.flat().join(" ");
+    expect(warned).toContain("not open to students");
+    expect(warned).not.toMatch(/Ploy|Mek/);
+
+    // Joins, renames and leaves in the private room: not one write.
+    s.calls.length = 0;
+    s.move("30", ROOM, "Fon");
+    s.move("20", ROOM, "Mek (staff)");
+    s.move("10", null);
+    await flush();
+    expect(s.calls).toEqual([]);
+
+    // The settle resync after the ready, then heartbeats only beat; the
+    // five-minute resync keeps it empty, with no second warning.
+    await jest.advanceTimersByTimeAsync(60_000);
+    await flush();
+    expect(s.calls).toEqual([
+      ["shift_quest_voice_beat", GUILD],
+      ["shift_quest_voice_sync", GUILD, ROOM, [], []],
+    ]);
+    s.calls.length = 0;
+    await jest.advanceTimersByTimeAsync(4 * 60_000);
+    await flush();
+    expect(s.calls.map((c) => c[0])).toEqual(Array(4).fill("shift_quest_voice_beat"));
+    s.calls.length = 0;
+    await jest.advanceTimersByTimeAsync(60_000);
+    await flush();
+    expect(s.calls).toEqual([
+      ["shift_quest_voice_beat", GUILD],
+      ["shift_quest_voice_sync", GUILD, ROOM, [], []],
+    ]);
+    expect(warns).toHaveBeenCalledTimes(1);
+    await s.campfire.stop();
+  });
+
+  it("puts everyone back when the channel opens to students again", async () => {
+    const s = await ready();
+    s.seat("10", ROOM, "Ploy");
+    s.permit(ROOM, [STAFF]);
+    await flush();
+    s.move("20", ROOM, "Mek");
+    await flush();
+
+    s.calls.length = 0;
+    s.permit(ROOM, [GUILD]);
+    await flush();
+    expect(s.calls).toEqual([["shift_quest_voice_sync", GUILD, ROOM, ["10", "20"], ["Ploy", "Mek"]]]);
+
+    // Open again: per-person writes resume.
+    s.calls.length = 0;
+    s.move("10", null);
+    await flush();
+    expect(s.calls).toEqual([["shift_quest_voice_set", GUILD, "10", null, null]]);
+    await s.campfire.stop();
+  });
+
+  it("a role permission edit (no channel event) is caught by the next heartbeat, both ways", async () => {
+    const s = await ready();
+    s.seat("10", ROOM, "Ploy");
+    await jest.advanceTimersByTimeAsync(60_000);
+    await flush();
+
+    s.calls.length = 0;
+    s.permit(ROOM, [STAFF], { silent: true });
+    await jest.advanceTimersByTimeAsync(60_000);
+    await flush();
+    expect(s.calls).toEqual([
+      ["shift_quest_voice_beat", GUILD],
+      ["shift_quest_voice_sync", GUILD, ROOM, [], []],
+    ]);
+
+    s.calls.length = 0;
+    s.permit(ROOM, [GUILD], { silent: true });
+    await jest.advanceTimersByTimeAsync(60_000);
+    await flush();
+    expect(s.calls).toEqual([
+      ["shift_quest_voice_beat", GUILD],
+      ["shift_quest_voice_sync", GUILD, ROOM, ["10"], ["Ploy"]],
+    ]);
+    await s.campfire.stop();
+  });
+
+  it("a voice update after a silent permission change resyncs empty instead of writing the person", async () => {
+    const s = await ready();
+    s.permit(ROOM, [STAFF], { silent: true });
+    s.move("10", ROOM, "Ploy");
+    s.move("20", ROOM, "Mek");
+    await flush();
+    expect(s.calls).toEqual([["shift_quest_voice_sync", GUILD, ROOM, [], []]]);
+    expect(warns.mock.calls.flat().join(" ")).not.toMatch(/Ploy|Mek/);
+    await s.campfire.stop();
+  });
+
+  it("drops a queued write when the channel closed while it waited", async () => {
+    const s = await ready();
+    const release = s.hold("shift_quest_voice_set");
+    s.move("10", ROOM, "Ploy");
+    s.move("20", ROOM, "Mek");
+    await flush();
+    s.access.set(ROOM, new Set([STAFF]));
+    release();
+    await flush();
+    expect(s.calls).toEqual([["shift_quest_voice_set", GUILD, "10", ROOM, "Ploy"]]);
+
+    s.calls.length = 0;
+    await jest.advanceTimersByTimeAsync(60_000);
+    await flush();
+    expect(s.calls).toEqual([
+      ["shift_quest_voice_beat", GUILD],
+      ["shift_quest_voice_sync", GUILD, ROOM, [], []],
+    ]);
+    await s.campfire.stop();
+  });
+
+  it("resyncs on ChannelUpdate or ChannelDelete of the coworking channel only", async () => {
+    const s = await ready();
+    s.seat("10", ROOM, "Ploy");
+    const other = s.guild.channels.cache.get(OTHER);
+    s.client.emit(Events.ChannelUpdate, other, other);
+    s.client.emit(Events.ChannelDelete, other);
+    await flush();
+    expect(s.calls).toEqual([]);
+
+    // A rename or a topic edit: still open, the same people.
+    const room = s.guild.channels.cache.get(ROOM);
+    s.client.emit(Events.ChannelUpdate, room, room);
+    await flush();
+    expect(s.calls).toEqual([["shift_quest_voice_sync", GUILD, ROOM, ["10"], ["Ploy"]]]);
+
+    s.calls.length = 0;
+    s.guild.channels.cache.delete(ROOM);
+    s.client.emit(Events.ChannelDelete, room);
+    await flush();
+    expect(s.calls).toEqual([["shift_quest_voice_sync", GUILD, ROOM, [], []]]);
+    expect(warns).toHaveBeenCalledTimes(1);
+    expect(warns.mock.calls[0].join(" ")).not.toContain("Ploy");
+    await s.campfire.stop();
+  });
+
+  it("follows the student roles: a role list that cannot see the channel closes it, one that can opens it", async () => {
+    const s = await started();
+    s.access.set(ROOM, new Set([STUDENT]));
+    s.setting.roles = [STUDENT];
+    s.seat("10", ROOM, "Ploy");
+    s.client.emit(Events.ShardReady, 0);
+    await flush();
+    expect(s.calls).toEqual([
+      ["shift_quest_voice_beat", GUILD],
+      ["shift_quest_voice_sync", GUILD, ROOM, ["10"], ["Ploy"]],
+    ]);
+    await jest.advanceTimersByTimeAsync(60_000);
+    await flush();
+
+    // An admin swaps the student role for one that cannot see the room.
+    s.calls.length = 0;
+    s.setting.roles = [STAFF];
+    await jest.advanceTimersByTimeAsync(60_000);
+    await flush();
+    expect(s.calls).toEqual([
+      ["shift_quest_voice_beat", GUILD],
+      ["shift_quest_voice_sync", GUILD, ROOM, [], []],
+    ]);
+    s.calls.length = 0;
+    s.move("20", ROOM, "Mek");
+    await flush();
+    expect(s.calls).toEqual([]);
+
+    // No student role at all: @everyone decides, and it cannot see the room either.
+    s.setting.roles = [];
+    await jest.advanceTimersByTimeAsync(60_000);
+    await flush();
+    expect(s.calls).toEqual([["shift_quest_voice_beat", GUILD]]);
+
+    s.calls.length = 0;
+    s.setting.roles = [STAFF, STUDENT];
+    await jest.advanceTimersByTimeAsync(60_000);
+    await flush();
+    expect(s.calls).toEqual([
+      ["shift_quest_voice_beat", GUILD],
+      ["shift_quest_voice_sync", GUILD, ROOM, ["10", "20"], ["Ploy", "Mek"]],
+    ]);
+    await s.campfire.stop();
+  });
+
+  it("treats a heartbeat without a role list as closed", async () => {
+    const s = await started();
+    (s.api.call as jest.Mock).mockImplementationOnce(async (fn: string, ...args: unknown[]) => {
+      s.calls.push([fn, ...args]);
+      return { channel_id: ROOM };
+    });
+    s.seat("10", ROOM, "Ploy");
+    s.client.emit(Events.ShardReady, 0);
+    await flush();
+    expect(s.calls).toEqual([
+      ["shift_quest_voice_beat", GUILD],
+      ["shift_quest_voice_sync", GUILD, ROOM, [], []],
+    ]);
+    await s.campfire.stop();
+  });
+
   it("stop waits for pending writes, empties the campfire and stops listening", async () => {
     const s = await ready();
     const release = s.hold("shift_quest_voice_set");
@@ -457,6 +698,8 @@ describe("startCampfire", () => {
     ]);
     expect(s.client.listenerCount(Events.VoiceStateUpdate)).toBe(0);
     expect(s.client.listenerCount(Events.ShardReady)).toBe(0);
+    expect(s.client.listenerCount(Events.ChannelUpdate)).toBe(0);
+    expect(s.client.listenerCount(Events.ChannelDelete)).toBe(0);
 
     s.calls.length = 0;
     s.move("20", ROOM, "Mek");

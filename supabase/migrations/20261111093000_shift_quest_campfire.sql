@@ -24,7 +24,11 @@
 --         replace on ready, resume and admin changes. With a null channel it
 --         clears everything (a clean stop).
 --       shift_quest_voice_beat(guild): the heartbeat; drops rows of an old
---         channel and returns the current setting.
+--         channel and returns {channel_id, student_role_ids} from the
+--         settings. The bot publishes the channel only while those roles (or
+--         @everyone when none is set) can see and join it, the same rule
+--         /admin channel checks, so a channel staff make private later empties
+--         the campfire.
 --   * The web-only reader shift_quest_campfire(actor, names): behind the
 --     same gate as shift_quest_island_map, returns {channel_id, guild_id,
 --     live, count, names}. Names only when asked (the web asks on tap, for a
@@ -47,7 +51,9 @@
 -- sandbox (bot/quests-sandbox.sh, run-local.sh) has neither.
 --
 -- Prod-first apply: additive and idempotent (CREATE TABLE IF NOT EXISTS,
--- CREATE OR REPLACE). Keep this file after
+-- CREATE OR REPLACE; shift_quest_voice_beat is dropped and created again,
+-- since its return type changed, and its grants are set again below). Keep
+-- this file after
 -- 20261111091200_shift_quest_ownership_web: a second pass of that file's loops
 -- grants the reader to the bot and takes it from the website, and this file
 -- puts both back.
@@ -204,24 +210,34 @@ $$;
 /**
  * The bot's heartbeat (every minute or so): records beat_at and the guild,
  * deletes rows of any channel that is no longer the coworking channel (and
- * forgets a synced channel that is no longer it), and returns the coworking
- * channel id, or null when none is set. A changed id tells the bot to resync.
+ * forgets a synced channel that is no longer it), and returns
+ * {channel_id, student_role_ids}: the coworking channel id (null when none is
+ * set) and the student role ids (an array, [] when none is set). A changed
+ * channel id tells the bot to resync; the roles tell it whether students can
+ * see the channel, so whether it may publish who sits in it at all.
  * 'sq:invalid' for a set guild id that is not a snowflake.
+ *
+ * The return type was text before this file's last edit (never applied to
+ * production), so the function is dropped first; the grants below put back
+ * exactly what it had.
  */
-CREATE OR REPLACE FUNCTION public.shift_quest_voice_beat(p_guild_id text)
-RETURNS text
+DROP FUNCTION IF EXISTS public.shift_quest_voice_beat(text);
+CREATE FUNCTION public.shift_quest_voice_beat(p_guild_id text)
+RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
+  v_settings public.shift_quest_settings;
   v_setting text;
 BEGIN
   PERFORM 1 FROM public.shift_quest_voice_state WHERE id FOR UPDATE;
   IF p_guild_id IS NOT NULL AND p_guild_id !~ '^[0-9]{5,25}$' THEN
     PERFORM public.shift_quest__fail('invalid');
   END IF;
-  v_setting := (public.shift_quest__settings()).coworking_channel_id;
+  v_settings := public.shift_quest__settings();
+  v_setting := v_settings.coworking_channel_id;
 
   DELETE FROM public.shift_quest_voice_presence WHERE channel_id IS DISTINCT FROM v_setting;
   UPDATE public.shift_quest_voice_state
@@ -229,7 +245,10 @@ BEGIN
       channel_id = CASE WHEN channel_id IS DISTINCT FROM v_setting THEN NULL ELSE channel_id END,
       beat_at = now()
   WHERE id;
-  RETURN v_setting;
+  RETURN jsonb_build_object(
+    'channel_id', v_setting,
+    'student_role_ids', to_jsonb(COALESCE(v_settings.student_role_ids, '{}'::text[]))
+  );
 END;
 $$;
 

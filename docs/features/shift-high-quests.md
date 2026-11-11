@@ -113,6 +113,15 @@ channel right now, for the island's campfire:
   chat. A text channel still works for intentions; the campfire then stays
   empty, and the bot logs one warning. The bot must be able to view the voice
   channel.
+- **Only while students can see it**: the bot publishes who sits in the
+  channel only while a student role (or `@everyone`, when no student role is
+  set) can view and join it, the rule `/admin channel` checks when it is set.
+  The bot checks again on every sync, before every voice write, on a channel
+  update or delete, and on every heartbeat (which catches role permission
+  edits and changed student roles, from `shift_quest_voice_beat`). If staff
+  make the channel private later, the campfire is synced empty at once,
+  nothing per person is written while it stays closed, and the bot logs one
+  warning with no names.
 
 `/data` exports everything about the caller as JSON. An approved erasure
 (`/admin data`) deletes the journal, help requests, shares and notices,

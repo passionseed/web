@@ -35,6 +35,8 @@ const GUILD = "660000000000000001";
 const CH1 = "670000000000000001"; // the coworking voice channel
 const CH2 = "670000000000000002"; // the coworking channel after an admin change
 const OTHER = "670000000000000009"; // any other voice channel
+const ROLE1 = "675000000000000001"; // a student role
+const ROLE2 = "675000000000000002"; // another student role
 const U1 = "680000000000000001";
 const U2 = "680000000000000002";
 const U3 = "680000000000000003";
@@ -121,9 +123,13 @@ async function main(): Promise<void> {
     call<boolean>(bot, "shift_quest_voice_set", guild, user, channel, name);
   const sync = (channel: string | null, ids: (string | null)[], names: (string | null)[], guild: string | null = GUILD) =>
     call<number>(bot, "shift_quest_voice_sync", guild, channel, ids, names);
-  const beat = (guild: string | null = GUILD) => call<string | null>(bot, "shift_quest_voice_beat", guild);
+  const beatFull = (guild: string | null = GUILD) => call<Json>(bot, "shift_quest_voice_beat", guild);
+  /** The coworking channel the heartbeat returns. */
+  const beat = async (guild: string | null = GUILD) => (await beatFull(guild)).channel_id as string | null;
   const read = (who: string | null = A, names = false) => call<Json>(web, "shift_quest_campfire", who, names);
   const coworking = (value: string | null) => call(bot, "shift_quest_admin_set", ADMIN, "coworking_channel", value);
+  const studentRole = (key: "student_role_add" | "student_role_remove", role: string) =>
+    call(bot, "shift_quest_admin_set", ADMIN, key, role);
   const joinedAt = async (id: string) => (await row(id))?.joined_at?.toISOString();
 
   // --- Schema, privileges, row security ------------------------------------------------
@@ -151,6 +157,8 @@ async function main(): Promise<void> {
       `${fn}: security definer with a pinned search_path, ${reader ? "the website's only" : "the bot's only"}`, grants);
     if (reader) check(grants.volatility === "s", `${fn} is STABLE (a read)`, grants.volatility);
   }
+  check(await scalar<string>(db, "select format_type(prorettype, null) from pg_proc where oid = 'public.shift_quest_voice_beat(text)'::regprocedure") === "jsonb",
+    "the heartbeat returns jsonb (the channel and the student roles)");
 
   check((await sqlstate(call(bot, "shift_quest_campfire", A, true))) === "42501", "the bot cannot read the campfire (42501)");
   check((await sqlstate(web.query("select public.shift_quest_voice_set($1, $2, $3, 'x')", [GUILD, U1, CH1]))) === "42501",
@@ -220,7 +228,10 @@ async function main(): Promise<void> {
   check((await read(A, false)).names === null, "names are null when not asked");
   check(await set(U1, CH1, "Aye") === false && await stored() === 0, "unset: a voice update returns false and stores nothing");
   check(await sync(CH1, [U1, U2], ["Aye", "Bee"]) === 0 && await stored() === 0, "unset: a sync stores nothing (0)");
-  check(await beat() === null, "unset: the heartbeat returns null");
+  const unsetBeat = await beatFull();
+  check(keys(unsetBeat) === "channel_id,student_role_ids" && unsetBeat.channel_id === null &&
+      JSON.stringify(unsetBeat.student_role_ids) === "[]",
+    "unset: the heartbeat returns a null channel and no student roles (an array, never null)", unsetBeat);
   check((await read()).live === false, "unset: never live, even with a fresh beat");
 
   // --- The coworking channel is set ---------------------------------------------------------------
@@ -322,6 +333,20 @@ async function main(): Promise<void> {
   check(stale.live === false && stale.count === 0 && JSON.stringify(stale.names) === "[]" && stale.channel_id === CH1,
     "no beat for 3 minutes: not live, count 0, names []", stale);
   check(await beat() === CH1, "the heartbeat returns the coworking channel");
+
+  // --- The heartbeat carries the student roles (whether students can see the channel is the bot's check) -----
+  await studentRole("student_role_add", ROLE1);
+  await studentRole("student_role_add", ROLE2);
+  const withRoles = await beatFull();
+  check(withRoles.channel_id === CH1 && JSON.stringify(withRoles.student_role_ids) === JSON.stringify([ROLE1, ROLE2]),
+    "the heartbeat returns the student role ids from the settings", withRoles);
+  await studentRole("student_role_remove", ROLE1);
+  check(JSON.stringify((await beatFull()).student_role_ids) === JSON.stringify([ROLE2]),
+    "a removed student role is gone from the next heartbeat");
+  await studentRole("student_role_remove", ROLE2);
+  check(JSON.stringify((await beatFull()).student_role_ids) === "[]", "no student roles left: []");
+  check(!PEOPLE.some((id) => JSON.stringify(withRoles).includes(id)) && keys(withRoles) === "channel_id,student_role_ids",
+    "the heartbeat carries the channel and the roles only, never who is in it", withRoles);
   check(await stored() === 3 && (await read()).count === 3, "a beat on the same channel keeps everyone and is live again");
 
   // --- The admin changes the channel ----------------------------------------------------------------------

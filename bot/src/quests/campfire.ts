@@ -1,4 +1,4 @@
-import { Events, PermissionFlagsBits, type Client, type VoiceState } from "discord.js";
+import { Events, PermissionFlagsBits, type Channel, type Client, type VoiceState } from "discord.js";
 
 import { QuestDbError, QuestError, type QuestApi } from "./api";
 import { campersIn, voiceChange, type VoiceMember } from "./campfire-state";
@@ -12,9 +12,17 @@ import { campersIn, voiceChange, type VoiceMember } from "./campfire-state";
  * resume and clean stop. Nothing about any other channel is ever written.
  *
  * Writes go through shift_quest_voice_set/sync/beat (20261111093000, schema 7),
- * which only the bot role may call. The coworking channel is the database's
- * setting (/admin channel kind:coworking), learned from each heartbeat; the
- * web treats the campfire as empty once the heartbeat is 3 minutes old.
+ * which only the bot role may call. The coworking channel and the student
+ * roles are the database's settings (/admin channel kind:coworking, /admin
+ * student-role), learned from each heartbeat; the web treats the campfire as
+ * empty once the heartbeat is 3 minutes old.
+ *
+ * Names are published only while students can see and join the channel
+ * (openToStudents, the rule /admin channel checks when it is set). Staff can
+ * make the channel private later, or change the student roles: the bot checks
+ * again on every sync, every voice update, every channel update or delete, and
+ * every heartbeat (which also catches role permission edits). While closed,
+ * the campfire is synced empty and nothing per person is written.
  *
  * This module has its own listener next to shift-voice (bot/src/shift/voice.ts)
  * and shares nothing with it: not its pool, role, tables or state.
@@ -37,7 +45,7 @@ const SETTLE_BEATS = 1;
 const SNOWFLAKE = /^[0-9]{5,25}$/;
 
 /** The one method openToStudents needs from a guild channel (discord.js GuildChannel has it). */
-interface Permissioned {
+export interface Permissioned {
   permissionsFor?: (role: string) => { has: (permissions: bigint[]) => boolean } | null;
 }
 
@@ -78,6 +86,10 @@ export function campfireFor(version: number, start: () => Campfire): Campfire | 
 export function startCampfire(client: Client, api: QuestApi, guildId: string, connected: () => boolean): Campfire {
   /** The coworking channel from the last heartbeat; undefined until the first one answers. */
   let channel: string | null | undefined;
+  /** The student role ids from the last heartbeat; null when the answer was not a list (closed). */
+  let roles: string[] | null = null;
+  /** Whether the last sync found the channel open to students, so it published who sits in it. */
+  let open = false;
   /** Who the database has at the campfire, as far as this process knows, with the name written. */
   const names = new Map<string, string | null>();
   /** A write failed or was refused: the next heartbeat resyncs everything. */
@@ -103,15 +115,33 @@ export function startCampfire(client: Client, api: QuestApi, guildId: string, co
     return next;
   }
 
-  /** Vouches for the rows and reads the coworking channel; true when it changed. */
+  /** Vouches for the rows and reads the coworking channel and student roles; true when the channel changed. */
   async function beat(): Promise<boolean> {
     const value = await api.call<unknown>("shift_quest_voice_beat", guildId);
-    const next = typeof value === "string" && SNOWFLAKE.test(value) ? value : null;
+    const answer = (value && typeof value === "object" ? value : {}) as { channel_id?: unknown; student_role_ids?: unknown };
+    const next = typeof answer.channel_id === "string" && SNOWFLAKE.test(answer.channel_id) ? answer.channel_id : null;
+    // Kept as given: an id that is no role matches no permission, so it never opens anything.
+    roles = Array.isArray(answer.student_role_ids)
+      ? answer.student_role_ids.filter((role): role is string => typeof role === "string")
+      : null;
     const changed = next !== channel;
     // The beat itself deleted every row of an older channel.
     if (changed) names.clear();
     channel = next;
     return changed;
+  }
+
+  /**
+   * The coworking channel as the gateway's cache has it now: the guild, the
+   * voice channel (when the bot can see one), and whether students can see
+   * and join it, which is the only time who sits in it may be published.
+   */
+  function look(room: string | null) {
+    const guild = room ? client.guilds.cache.get(guildId) : undefined;
+    const found = room ? guild?.channels.cache.get(room) : undefined;
+    const voice = found?.isVoiceBased() ? found : undefined;
+    const isOpen = !!guild && !!voice && roles !== null && openToStudents(voice as Permissioned, roles, guildId);
+    return { guild, voice, open: isOpen };
   }
 
   function warnOnce(key: string, line: string): void {
@@ -131,14 +161,21 @@ export function startCampfire(client: Client, api: QuestApi, guildId: string, co
     let list: (string | null)[] = [];
     /** The guild itself is not in the cache yet (an outage): look again at the next heartbeat. */
     let blind = false;
+    const seen = look(room);
+    open = seen.open;
     if (room) {
-      const guild = client.guilds.cache.get(guildId);
-      const voice = guild?.channels.cache.get(room);
-      if (!guild || !voice?.isVoiceBased()) {
+      const { guild, voice } = seen;
+      if (!guild || !voice) {
         blind = !guild || guild.available === false;
         warnOnce(
           `${room}:hidden`,
           `[shift-quests] campfire: coworking channel ${room} is not a voice channel the bot can see; the campfire stays empty`
+        );
+      } else if (!seen.open) {
+        // Staff made it private, or the student roles changed: who sits there is not the island's to show.
+        warnOnce(
+          `${room}:closed`,
+          `[shift-quests] campfire: coworking channel ${room} is not open to students; the campfire stays empty`
         );
       } else {
         warned = "";
@@ -170,6 +207,17 @@ export function startCampfire(client: Client, api: QuestApi, guildId: string, co
     const change = voiceChange(oldState.channelId, newState.channelId, room, member?.displayName ?? null, names.get(userId));
     if (change.kind === "none") return;
 
+    // Whether students can see the channel is checked again before any write
+    // about a person. A flip either way resyncs the whole campfire instead:
+    // closed empties it, open again fills it with everyone (this person too).
+    const nowOpen = look(room).open;
+    if (nowOpen !== open) {
+      open = nowOpen;
+      void enqueue(nowOpen ? "opened" : "closed", resync);
+      return;
+    }
+    if (!nowOpen) return;
+
     if (change.kind === "leave") {
       names.delete(userId);
       void enqueue("leave", () => api.call("shift_quest_voice_set", guildId, userId, null, null));
@@ -187,6 +235,12 @@ export function startCampfire(client: Client, api: QuestApi, guildId: string, co
         }
         name = fetched?.displayName ?? null;
         if (names.has(userId)) names.set(userId, name);
+      }
+      // The channel may have closed while this write waited its turn.
+      if (room !== channel || !look(room).open) {
+        names.delete(userId);
+        dirty = true;
+        return;
       }
       const kept = await api.call<boolean>("shift_quest_voice_set", guildId, userId, room, name);
       // false: the coworking channel is no longer this one. The next beat resyncs.
@@ -212,9 +266,19 @@ export function startCampfire(client: Client, api: QuestApi, guildId: string, co
     });
   };
 
+  // Staff changed (or deleted) the coworking channel: its permissions may no
+  // longer let students in. Resync at once rather than at the next heartbeat.
+  const onChannel = (...changed: Channel[]): void => {
+    if (stopped || !channel) return;
+    if (!changed.some((c) => c?.id === channel)) return;
+    void enqueue("channel", resync);
+  };
+
   client.on(Events.VoiceStateUpdate, onVoice);
   client.on(Events.ShardReady, onReady);
   client.on(Events.ShardResume, onResume);
+  client.on(Events.ChannelUpdate, onChannel);
+  client.on(Events.ChannelDelete, onChannel);
 
   // While disconnected no events arrive, so the heartbeat must not vouch for
   // rows it cannot see: after 3 minutes the web shows the campfire empty.
@@ -226,7 +290,9 @@ export function startCampfire(client: Client, api: QuestApi, guildId: string, co
       const changed = await beat();
       const settling = settle > 0;
       if (settling) settle -= 1;
-      if (changed || dirty || settling || Date.now() - lastSync >= RESYNC_MS) await resync();
+      // Openness flipped (a role permission edit, or the student roles changed): resync now.
+      const flipped = look(channel ?? null).open !== open;
+      if (changed || flipped || dirty || settling || Date.now() - lastSync >= RESYNC_MS) await resync();
     }).finally(() => {
       ticking = false;
     });
@@ -240,6 +306,8 @@ export function startCampfire(client: Client, api: QuestApi, guildId: string, co
       client.off(Events.VoiceStateUpdate, onVoice);
       client.off(Events.ShardReady, onReady);
       client.off(Events.ShardResume, onResume);
+      client.off(Events.ChannelUpdate, onChannel);
+      client.off(Events.ChannelDelete, onChannel);
       await chain;
       try {
         // Nobody sits at a campfire the bot no longer watches.
