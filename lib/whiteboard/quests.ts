@@ -56,6 +56,8 @@ export type QuestLabelData = {
   dy?: number;
   /** The last task text seen under the label, to put back if it is deleted. */
   backup?: string;
+  /** The text element that is the task. Once known, a deleted task falls back to `backup` rather than the next text down. */
+  taskId?: string;
 };
 
 type El = {
@@ -106,21 +108,31 @@ export function findQuests(elements: readonly El[]): Quest[] {
 
   return labels
     .map((label) => {
-      // The task: the nearest text below the label that starts near it horizontally.
+      const data = questLabelOf(label);
       let title = "";
       let titleId: string | null = null;
-      let best = Infinity;
-      for (const t of texts) {
-        const below = t.y - (label.y + label.height / 2);
-        if (below <= 0 || below > TITLE_BELOW) continue;
-        if (t.x > label.x + Math.max(600, label.width * 3) || t.x + t.width < label.x - 200) continue;
-        if (below < best) {
-          best = below;
-          title = oneLine(t.text ?? "");
-          titleId = t.id;
+      if (typeof data?.taskId === "string") {
+        // A known task: that text while it is on the board, else the saved copy (below).
+        const task = texts.find((t) => t.id === data.taskId);
+        if (task) {
+          title = oneLine(task.text ?? "");
+          titleId = task.id;
+        }
+      } else {
+        // The task: the nearest text below the label that starts near it, and is not someone's quest work.
+        let best = Infinity;
+        for (const t of texts) {
+          if (questTagOf(t)) continue;
+          const below = t.y - (label.y + label.height / 2);
+          if (below <= 0 || below > TITLE_BELOW) continue;
+          if (t.x > label.x + Math.max(600, label.width * 3) || t.x + t.width < label.x - 200) continue;
+          if (below < best) {
+            best = below;
+            title = oneLine(t.text ?? "");
+            titleId = t.id;
+          }
         }
       }
-      const data = questLabelOf(label);
       if (!title && typeof data?.backup === "string") title = oneLine(data.backup);
       if (title.length > MAX_TITLE) title = `${title.slice(0, MAX_TITLE - 1)}…`;
       return {

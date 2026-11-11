@@ -39,6 +39,18 @@ describe("findQuests", () => {
     expect([withText.title, withText.titleId]).toEqual(["new", "t"]);
   });
 
+  it("keeps to its known task: a deleted one falls back to the saved copy, not the next text down", () => {
+    const label = text("q", 0, 0, "Quest", { customData: { questLabel: { taskId: "t", backup: "หา reference" } } });
+    const below = text("work", 0, 200, "ref 1: Canva");
+    expect(findQuests([label, text("t", 0, 110, "หา reference ใหม่"), below])[0].title).toBe("หา reference ใหม่");
+    expect(findQuests([label, { ...text("t", 0, 110, "x"), isDeleted: true }, below]).map((q) => [q.title, q.titleId])).toEqual([["หา reference", null]]);
+  });
+
+  it("never takes someone's quest work as the task", () => {
+    const [q] = findQuests([text("q", 0, 0, "Quest"), text("w", 0, 110, "ref 1", { customData: tag("q", "amy") })]);
+    expect(q.title).toBe("");
+  });
+
   it("ignores deleted labels and boards without quests", () => {
     expect(findQuests([{ ...text("q", 0, 0, "Quest"), isDeleted: true }])).toEqual([]);
     expect(findQuests([text("x", 0, 0, "hello")])).toEqual([]);

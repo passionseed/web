@@ -18,8 +18,9 @@ import type { QuestSession } from "./useQuestSession";
 const MIN_ZOOM = 0.12;
 /** Gap between a quest's label and its button, in scene units. */
 const GAP = 24;
-/** The button's text size in scene units, so it grows and shrinks with the board like the label. */
-const INK_SIZE = 32;
+/** The button's text size against its label's height, in scene units, so it matches however big the label was written. */
+const INK_RATIO = 0.5;
+const inkSize = (q: Quest) => Math.min(200, Math.max(10, q.height * INK_RATIO));
 const DEFAULT_INK = "#2f9e44";
 
 type Props = {
@@ -120,7 +121,8 @@ function useTaskBackup(api: ExcalidrawImperativeAPI, quests: Quest[], on: boolea
       const task = q.titleId ? byId.get(q.titleId) : undefined;
       const label = byId.get(q.id);
       if (!task || !label || task.type !== "text") continue;
-      if (questLabelOf(label)?.backup !== task.text) setQuestLabel(api, q.id, { backup: task.text }, false);
+      const saved = questLabelOf(label);
+      if (saved?.backup !== task.text || saved?.taskId !== task.id) setQuestLabel(api, q.id, { backup: task.text, taskId: task.id }, false);
     }
   }, [api, quests, on]);
 }
@@ -182,7 +184,7 @@ export function QuestLayer({ api, meId, manager, nameOf, onReview, session, onSt
             if (q.hidden) return null;
             const pos = sceneCoordsToViewportCoords({ sceneX: q.x + q.width + GAP + q.dx, sceneY: q.y + q.height / 2 + q.dy }, appState);
             // Culled by its size on the board, which grows with the zoom.
-            const reach = 400 * zoom;
+            const reach = inkSize(q) * 12 * zoom;
             if (pos.x < -reach || pos.y < -reach || pos.x > appState.width || pos.y > appState.height + reach) return null;
             const running = q.id === session?.questId;
             // Laid out at board size and scaled by the zoom as a whole, so it moves and sizes
@@ -212,7 +214,7 @@ export function QuestLayer({ api, meId, manager, nameOf, onReview, session, onSt
                   }}
                   title={`${running ? "จบ" : "เริ่ม"} ${questName(q)}${manager ? " · ลากเพื่อย้ายปุ่ม" : ""}`}
                   className={`wb-quest-ink pointer-events-auto absolute left-0 top-0 ${running ? "wb-quest-ink--on" : ""}`}
-                  style={{ fontSize: INK_SIZE, "--ink": inkOf(q) } as CSSProperties}
+                  style={{ fontSize: inkSize(q), "--ink": inkOf(q) } as CSSProperties}
                 >
                   <span className="wb-quest-ink__mark" aria-hidden>
                     {running ? "■" : "▶"}

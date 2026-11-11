@@ -64,7 +64,7 @@ export function writeQuestTask(api: ExcalidrawImperativeAPI, quest: Quest, task:
         if (el.id === old?.id) return newElementWith(el as ExcalidrawElement, { isDeleted: true });
         if (el.id !== label.id) return el;
         return newElementWith(el as ExcalidrawElement, {
-          customData: { ...el.customData, questLabel: { ...questLabelOf(el), backup: text || undefined } },
+          customData: { ...el.customData, questLabel: { ...questLabelOf(el), backup: text || undefined, taskId: fresh?.id } },
         });
       }),
       ...(fresh ? [fresh] : []),
