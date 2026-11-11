@@ -22,6 +22,23 @@ type Settings = { kind: "settings"; x: number; y: number; quest: Quest; task: st
 type Open = Retag | Settings;
 
 const WIDTH = 260;
+const SETTINGS_WIDTH = WIDTH + 40;
+const GAP = 8;
+
+/**
+ * Where our card goes: beside Excalidraw's own right-click menu, never on it. To
+ * its left when there is room, else to its right, top-aligned with it; next to
+ * the pointer if that menu is not open.
+ */
+function besideMenu(clientX: number, clientY: number, width: number, height: number) {
+  const menu = document.querySelector(".excalidraw .context-menu")?.getBoundingClientRect();
+  const left = menu ? menu.left : clientX;
+  const right = menu ? menu.right : clientX;
+  let x = left - width - GAP;
+  if (x < GAP) x = right + GAP + width <= window.innerWidth - GAP ? right + GAP : GAP;
+  const y = Math.max(GAP, Math.min(menu ? menu.top : clientY, window.innerHeight - height - GAP));
+  return { x, y };
+}
 
 /**
  * "แก้ Quest ที่ส่ง": right-click something on the board and, if this person
@@ -40,15 +57,14 @@ export function QuestMenu({ api, meId, manager }: Props) {
       if (!target?.closest(".excalidraw") || target.tagName !== "CANVAS") return;
       const { clientX, clientY } = e;
       // Excalidraw selects what was right-clicked while handling this event; read it after.
-      requestAnimationFrame(() => {
+      // Two frames: one for Excalidraw to select what was clicked, one for its menu to lay out.
+      requestAnimationFrame(() => requestAnimationFrame(() => {
         const appState = api.getAppState();
         if (appState.viewModeEnabled) return;
         const elements = api.getSceneElements();
         const quests = findQuests(elements);
         const picked = Object.keys(appState.selectedElementIds);
         const one = picked.length === 1 ? elements.find((el) => el.id === picked[0]) : undefined;
-        // To the left of the pointer, since Excalidraw's menu opens to its right.
-        const x = Math.max(8, clientX - WIDTH - 12);
 
         // Mentors right-clicking a quest's label get its settings.
         const quest = one && quests.find((q) => q.id === one.id);
@@ -56,7 +72,7 @@ export function QuestMenu({ api, meId, manager }: Props) {
           if (!manager) return setOpen(null);
           const taskEl = quest.titleId ? elements.find((el) => el.id === quest.titleId) : undefined;
           const task = taskEl?.type === "text" ? taskEl.text : quest.title;
-          return setOpen({ kind: "settings", x, y: Math.max(8, Math.min(clientY, window.innerHeight - 380)), quest, task });
+          return setOpen({ kind: "settings", ...besideMenu(clientX, clientY, SETTINGS_WIDTH, 360), quest, task });
         }
 
         // Mentors can make any other text a quest.
@@ -66,9 +82,9 @@ export function QuestMenu({ api, meId, manager }: Props) {
         if (mine.length === 0 && !makeQuest) return setOpen(null);
         const tags = new Set(mine.map((el) => questTagOf(el)?.id ?? null));
         const current = tags.size === 1 ? [...tags][0] : "mixed";
-        const y = Math.min(clientY, window.innerHeight - 120 - quests.length * 36);
-        setOpen({ kind: "retag", x, y: Math.max(8, y), ids: mine.map((el) => el.id), quests: mine.length ? quests : [], current, makeQuest });
-      });
+        const height = 60 + (mine.length ? (quests.length + 1) * 36 : 0) + (makeQuest ? 40 : 0);
+        setOpen({ kind: "retag", ...besideMenu(clientX, clientY, WIDTH, height), ids: mine.map((el) => el.id), quests: mine.length ? quests : [], current, makeQuest });
+      }));
     };
     // Capture: Excalidraw may stop the event before it bubbles up.
     document.addEventListener("contextmenu", onContextMenu, true);
@@ -193,7 +209,7 @@ function QuestSettings({ api, open, onClose }: { api: ExcalidrawImperativeAPI; o
       role="dialog"
       aria-label={`ตั้งค่า ${questName(quest)}`}
       className="wb-quest-menu fixed z-[60] space-y-1 rounded-lg p-2"
-      style={{ left: open.x, top: open.y, width: WIDTH + 40 }}
+      style={{ left: open.x, top: open.y, width: SETTINGS_WIDTH }}
       onContextMenu={(e) => e.preventDefault()}
     >
       <div className="wb-quest-soft flex items-center gap-1.5 px-1 text-xs font-semibold">
