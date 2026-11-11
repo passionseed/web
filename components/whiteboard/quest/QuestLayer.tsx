@@ -3,7 +3,7 @@
 import { sceneCoordsToViewportCoords } from "@excalidraw/excalidraw";
 import type { AppState, ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import { Flag, LayoutList } from "lucide-react";
-import type { CSSProperties } from "react";
+import { type CSSProperties, useEffect, useRef } from "react";
 
 import { findQuests, questName, questTagOf, questWork, type Quest, type QuestWork } from "@/lib/whiteboard/quests";
 
@@ -32,6 +32,42 @@ type Props = {
   onEnd: () => void;
 };
 
+type Viewport = { scrollX: number; scrollY: number; zoom: number };
+
+/** Where a quest's button goes on screen: right of its label, centred on it, scaled with the board. */
+function buttonTransform(q: Quest, v: Viewport): string {
+  const x = (q.x + q.width + GAP + v.scrollX) * v.zoom;
+  const y = (q.y + q.height / 2 + v.scrollY) * v.zoom;
+  return `translate(${x}px, ${y}px) scale(${v.zoom})`;
+}
+
+/**
+ * Keeps the buttons glued to the board while it pans and zooms. Their place is written straight
+ * to the DOM inside Excalidraw's scroll callback, the same commit that redraws the canvas, so they
+ * move in the same frame as the strokes. Going through a React render instead lands a frame or two
+ * late, and the buttons visibly shake against the drawing.
+ */
+function useGluedButtons(api: ExcalidrawImperativeAPI, quests: Quest[]) {
+  const nodes = useRef(new Map<string, HTMLDivElement>());
+  const latest = useRef(quests);
+  latest.current = quests;
+  useEffect(
+    () =>
+      api.onScrollChange((scrollX, scrollY, zoom) => {
+        const v = { scrollX, scrollY, zoom: zoom.value };
+        for (const q of latest.current) {
+          const node = nodes.current.get(q.id);
+          if (node) node.style.transform = buttonTransform(q, v);
+        }
+      }),
+    [api],
+  );
+  return (id: string) => (node: HTMLDivElement | null) => {
+    if (node) nodes.current.set(id, node);
+    else nodes.current.delete(id);
+  };
+}
+
 /** A colour Excalidraw stores ("transparent", "#1e1e1e", ...) that reads as ink on paper. */
 const inkOf = (q: Quest) => (q.color && q.color !== "transparent" ? q.color : DEFAULT_INK);
 
@@ -51,6 +87,7 @@ function selectedQuest(quests: Quest[], appState: AppState): Quest | undefined {
 export function QuestLayer({ api, meId, nameOf, onReview, session, onStart, onEnd }: Props) {
   useViewportTick(api, { elements: true, selection: true });
   const quests = useSceneMemo(api, (elements) => findQuests(elements), []);
+  const glue = useGluedButtons(api, quests);
   // Who handed in what, per quest, and what went into this person's running session.
   const counts = useSceneMemo(
     api,
@@ -90,12 +127,13 @@ export function QuestLayer({ api, meId, nameOf, onReview, session, onStart, onEn
             if (pos.x < -reach || pos.y < -reach || pos.x > appState.width || pos.y > appState.height + reach) return null;
             const running = q.id === session?.questId;
             // Laid out at board size and scaled by the zoom as a whole, so it moves and sizes
-            // exactly like the label beside it (scaling the font alone made it drift).
+            // exactly like the label beside it. useGluedButtons moves it between renders.
             return (
               <div
                 key={q.id}
+                ref={glue(q.id)}
                 className="absolute left-0 top-0 origin-top-left"
-                style={{ transform: `translate(${pos.x}px, ${pos.y}px) scale(${zoom})` }}
+                style={{ transform: buttonTransform(q, { scrollX: appState.scrollX, scrollY: appState.scrollY, zoom }) }}
               >
                 <button
                   type="button"
