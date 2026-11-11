@@ -142,6 +142,7 @@ export const TCAS_CS_UNIVERSITIES: TcasUniversity[] = [
     key: "kmutt",
     nameTh: "บางมด",
     nameEn: "KMUTT",
+    faculty: "SIT คณะเทคโนโลยีสารสนเทศ",
     source: "join.kmutt.ac.th",
     projects: [
       {
