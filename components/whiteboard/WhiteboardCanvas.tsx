@@ -49,7 +49,7 @@ import { CanvasTeamLayer } from "./shift/CanvasTeamLayer";
 import { CardVersionsLayer } from "./shift/CardVersionsLayer";
 import { useShiftCardCaret } from "./shift/useShiftCardCaret";
 import { ZoneAddLayer } from "./shift/ZoneAddLayer";
-import { QuestDashboard, questSectionId } from "./quest/QuestDashboard";
+import { openQuestPanel, QuestSidebar } from "./quest/QuestSidebar";
 import { QuestLayer } from "./quest/QuestLayer";
 import { QuestMenu } from "./quest/QuestMenu";
 import { useQuestSession } from "./quest/useQuestSession";
@@ -323,7 +323,7 @@ export default function WhiteboardCanvas({
           บอร์ดทั้งหมด · All boards
         </MainMenu.Item>
         {canReviewQuests && api && (
-          <MainMenu.Item icon={<Flag size={16} />} onSelect={() => openKit(api, "quests")}>
+          <MainMenu.Item icon={<Flag size={16} />} onSelect={() => openQuestPanel(api)}>
             Quest Dashboard · งานแต่ละคน
           </MainMenu.Item>
         )}
@@ -391,13 +391,10 @@ export default function WhiteboardCanvas({
   );
 
   const questsPanel = useMemo(
-    () => (canReviewQuests && api ? <QuestDashboard api={api} people={people} nameOf={nameOf} /> : undefined),
+    () => (canReviewQuests && api ? <QuestSidebar api={api} people={people} nameOf={nameOf} /> : null),
     [api, canReviewQuests, people, nameOf],
   );
-  const openQuestDashboard = useCallback(
-    (questId: string) => api && openKit(api, "quests", questSectionId(questId)),
-    [api],
-  );
+  const openQuestDashboard = useCallback((questId: string) => api && openQuestPanel(api, questId), [api]);
 
   const kit = useMemo(
     () =>
@@ -416,10 +413,9 @@ export default function WhiteboardCanvas({
           onVersionSaved={onVersionSaved}
           onVersionsChanged={onVersionsChanged}
           activity={activity}
-          quests={questsPanel}
         />
       ) : null,
-    [api, board.id, editable, me.name, comments, showResolved, saveNow, refreshFiles, onVersionSaved, onVersionsChanged, activity, questsPanel],
+    [api, board.id, editable, me.name, comments, showResolved, saveNow, refreshFiles, onVersionSaved, onVersionsChanged, activity],
   );
 
   const timer = useMemo(
@@ -451,6 +447,7 @@ export default function WhiteboardCanvas({
         {mainMenu}
         {welcomeScreen}
         {kit}
+        {questsPanel}
       </Excalidraw>
 
       {api && (

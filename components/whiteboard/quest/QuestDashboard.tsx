@@ -2,14 +2,15 @@
 
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import { Eye, Flag, PenLine, Users } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { findQuests, questName, questWork, type PersonWork, type Quest } from "@/lib/whiteboard/quests";
 
+import { Face } from "../chrome/Face";
 import { useSceneMemo } from "../shift/sceneMemo";
 import { useSceneTick } from "../useViewportTick";
 
-type Person = { userId: string; name: string; role: string };
+export type Person = { userId: string; name: string; role: string; avatarUrl: string | null };
 
 type Props = {
   api: ExcalidrawImperativeAPI;
@@ -42,6 +43,7 @@ export function QuestDashboard({ api, people, nameOf }: Props) {
   useSceneTick(api);
   const { quests, work } = useSceneMemo(api, (elements) => ({ quests: findQuests(elements), work: questWork(elements) }), []);
   const [view, setView] = useState<View>("quest");
+  const byId = useMemo(() => new Map(people.map((p) => [p.userId, p])), [people]);
 
   if (quests.length === 0 && work.length === 0) {
     return (
@@ -52,6 +54,7 @@ export function QuestDashboard({ api, people, nameOf }: Props) {
   }
 
   const byQuest = new Map(work.map((w) => [w.questId, w]));
+  const personOf = (id: string) => byId.get(id) ?? { userId: id, name: nameOf(id), avatarUrl: null };
   // Students: everyone who can draw on the board, but not the owner.
   const students = people.filter((p) => p.role === "editor");
   const workers = [...new Set(work.flatMap((w) => w.people.map((p) => p.userId)))];
@@ -59,25 +62,23 @@ export function QuestDashboard({ api, people, nameOf }: Props) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <p className="wb-label flex items-center gap-1.5">
-          <Flag className="h-3.5 w-3.5" /> {quests.length} Quest · {workers.length} คนส่งงาน
-        </p>
-        <div className="wb-input flex rounded-lg p-0.5 text-xs" role="tablist">
-          {(["quest", "person"] as const).map((v) => (
-            <button
-              key={v}
-              type="button"
-              role="tab"
-              aria-selected={view === v}
-              onClick={() => setView(v)}
-              className={`rounded-md px-2 py-1 ${view === v ? "wb-quest-tab--on font-semibold" : "wb-soft"}`}
-            >
-              {v === "quest" ? "ตาม Quest" : "ตามคน"}
-            </button>
-          ))}
-        </div>
+      <div className="wb-input grid grid-cols-2 rounded-lg p-0.5 text-sm" role="tablist">
+        {(["quest", "person"] as const).map((v) => (
+          <button
+            key={v}
+            type="button"
+            role="tab"
+            aria-selected={view === v}
+            onClick={() => setView(v)}
+            className={`whitespace-nowrap rounded-md px-2 py-1.5 ${view === v ? "wb-quest-tab--on font-semibold" : "wb-soft"}`}
+          >
+            {v === "quest" ? "ตาม Quest" : "ตามคน"}
+          </button>
+        ))}
       </div>
+      <p className="wb-soft flex items-center gap-1.5 text-xs">
+        <Flag className="h-3.5 w-3.5" /> {quests.length} Quest · {workers.length} คนส่งงาน
+      </p>
 
       {view === "quest" ? (
         <>
@@ -89,10 +90,11 @@ export function QuestDashboard({ api, people, nameOf }: Props) {
               people={byQuest.get(q.id)?.people ?? []}
               missing={students.filter((s) => !byQuest.get(q.id)?.people.some((p) => p.userId === s.userId))}
               nameOf={nameOf}
+              personOf={personOf}
             />
           ))}
           {lostWork.map((w) => (
-            <QuestSection key={w.questId} api={api} quest={null} people={w.people} missing={[]} nameOf={nameOf} />
+            <QuestSection key={w.questId} api={api} quest={null} people={w.people} missing={[]} nameOf={nameOf} personOf={personOf} />
           ))}
         </>
       ) : (
@@ -100,8 +102,9 @@ export function QuestDashboard({ api, people, nameOf }: Props) {
           .sort((a, b) => nameOf(a).localeCompare(nameOf(b), "th"))
           .map((userId) => (
             <section key={userId} className="wb-quest-card space-y-1.5 rounded-lg p-2.5">
-              <p role="heading" aria-level={3} className="text-sm font-semibold">
-                {nameOf(userId)}
+              <p role="heading" aria-level={3} className="flex items-center gap-2 text-sm font-semibold">
+                <Face person={personOf(userId)} size={28} />
+                <span className="min-w-0 truncate">{nameOf(userId)}</span>
               </p>
               {work.map((w) => {
                 const p = w.people.find((x) => x.userId === userId);
@@ -129,12 +132,14 @@ function QuestSection({
   people,
   missing,
   nameOf,
+  personOf,
 }: {
   api: ExcalidrawImperativeAPI;
   quest: Quest | null;
   people: PersonWork[];
   missing: Person[];
   nameOf: (id: string) => string;
+  personOf: (id: string) => Pick<Person, "userId" | "name" | "avatarUrl">;
 }) {
   const sorted = [...people].sort((a, b) => nameOf(a.userId).localeCompare(nameOf(b.userId), "th"));
   return (
@@ -147,20 +152,42 @@ function QuestSection({
         <Users className="h-3 w-3" /> ส่งแล้ว {people.length} คน{missing.length > 0 && ` · ยังไม่ส่ง ${missing.length} คน`}
       </p>
       {sorted.map((p) => (
-        <WorkRow key={p.userId} api={api} label={nameOf(p.userId)} work={p} />
+        <WorkRow key={p.userId} api={api} label={nameOf(p.userId)} who={personOf(p.userId)} work={p} />
       ))}
       {missing.length > 0 && (
-        <p className="wb-soft text-xs leading-relaxed">ยังไม่ส่ง: {missing.map((m) => m.name).join(", ")}</p>
+        <div className="wb-soft space-y-1 text-xs">
+          <p>ยังไม่ส่ง</p>
+          <div className="flex flex-wrap gap-1.5">
+            {missing.map((m) => (
+              <span key={m.userId} className="flex items-center gap-1" title={m.name}>
+                <Face person={m} size={20} />
+                <span className="max-w-[7rem] truncate">{m.name}</span>
+              </span>
+            ))}
+          </div>
+        </div>
       )}
     </section>
   );
 }
 
-export function WorkRow({ api, label, work }: { api: ExcalidrawImperativeAPI; label: string; work: PersonWork }) {
+export function WorkRow({
+  api,
+  label,
+  who,
+  work,
+}: {
+  api: ExcalidrawImperativeAPI;
+  label: string;
+  /** Whose work it is, for their face beside the name. */
+  who?: { userId: string; name: string; avatarUrl: string | null };
+  work: PersonWork;
+}) {
   const pieces = work.texts.length + work.drawings;
   return (
     <div className="wb-rule space-y-1 border-t border-dashed pt-1.5">
       <div className="flex items-center gap-2">
+        {who && <Face person={who} size={24} />}
         <span className="min-w-0 flex-1 truncate text-sm">{label}</span>
         <span className="wb-soft shrink-0 font-mono text-xs">{pieces} ชิ้น</span>
         <button
