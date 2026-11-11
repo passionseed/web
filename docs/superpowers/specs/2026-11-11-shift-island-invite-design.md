@@ -78,6 +78,7 @@ Computed on the server and passed to the client component as a prop.
 |---|---|---|
 | `signedOut` | "เข้าสู่ระบบเพื่อตอบรับ" | Sign in, return to `/shift/island` |
 | `notAlumni` (no record, or declined) | A short line: this RSVP is for SHIFT alumni | Link to the SHIFT apply page |
+| `closed` (after `lastDay`, no RSVP yet) | "ซีซันนี้ปิดรับแล้ว" | None |
 | `canRsvp` | The seal | POST RSVP |
 | `going` | Ticket already shown | Discord button |
 
