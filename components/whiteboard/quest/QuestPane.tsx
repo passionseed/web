@@ -49,8 +49,13 @@ export function useQuestPane(boardId: string, enabled: boolean) {
 
   useEffect(() => {
     if (!enabled) return;
-    const saved = Number(read(WIDTH_KEY));
-    if (Number.isFinite(saved) && saved >= MIN_WIDTH) setWidth(clamp(saved));
+    const wanted = () => {
+      const saved = Number(read(WIDTH_KEY));
+      return Number.isFinite(saved) && saved >= MIN_WIDTH ? saved : DEFAULT_WIDTH;
+    };
+    setWidth(clamp(wanted()));
+    // A narrower window keeps the board's share; a wider one gives the saved width back.
+    const onResize = () => setWidth(clamp(wanted()));
     if (read(openKey(boardId)) === "1") setOpen(true);
     const onOpen = (e: Event) => {
       setOpen(true);
@@ -62,7 +67,11 @@ export function useQuestPane(boardId: string, enabled: boolean) {
       }
     };
     window.addEventListener(OPEN_EVENT, onOpen);
-    return () => window.removeEventListener(OPEN_EVENT, onOpen);
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener(OPEN_EVENT, onOpen);
+      window.removeEventListener("resize", onResize);
+    };
   }, [boardId, enabled]);
 
   const close = useCallback(() => {
