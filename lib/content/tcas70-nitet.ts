@@ -37,6 +37,7 @@ export const TCAS_NITET_UNIVERSITIES: TcasUniversity[] = [
     key: "cu",
     nameTh: "จุฬาฯ",
     nameEn: "CHULA",
+    faculty: "คณะนิเทศศาสตร์",
     source: "admission.chula.ac.th",
     projects: [
       {
@@ -95,6 +96,7 @@ export const TCAS_NITET_UNIVERSITIES: TcasUniversity[] = [
     key: "tu",
     nameTh: "ธรรมศาสตร์",
     nameEn: "THAMMASAT",
+    faculty: "คณะวารสารศาสตร์และสื่อสารมวลชน",
     source: "bjm.jc.tu.ac.th",
     projects: [
       {
@@ -113,6 +115,7 @@ export const TCAS_NITET_UNIVERSITIES: TcasUniversity[] = [
     key: "swu",
     nameTh: "มศว",
     nameEn: "SWU",
+    faculty: "วิทยาลัยนวัตกรรมสื่อสารสังคม",
     source: "admission.swu.ac.th",
     projects: [
       {
@@ -141,6 +144,7 @@ export const TCAS_NITET_UNIVERSITIES: TcasUniversity[] = [
     key: "su",
     nameTh: "ศิลปากร",
     nameEn: "SILPAKORN",
+    faculty: "คณะเทคโนโลยีสารสนเทศและการสื่อสาร",
     source: "admission.su.ac.th",
     projects: [
       {
@@ -162,7 +166,8 @@ export const TCAS_NITET_UNIVERSITIES: TcasUniversity[] = [
     source: "join.kmutt.ac.th",
     projects: [
       {
-        name: "เรียนดี · สื่อสารมวลชน (ครุศาสตร์อุตฯ)",
+        name: "เรียนดี · เทคโนโลยีดิจิทัลทางการศึกษาและสื่อสารมวลชน",
+        faculty: "คณะครุศาสตร์อุตสาหกรรมและเทคโนโลยี",
         seats: "30 คน",
         gpax: "3.00",
         requirement: "ไม่บังคับรางวัล",
@@ -172,7 +177,8 @@ export const TCAS_NITET_UNIVERSITIES: TcasUniversity[] = [
         apply: KMUTT_APPLY,
       },
       {
-        name: "Active Recruitment · สื่อสารมวลชน (ครุศาสตร์อุตฯ)",
+        name: "Active Recruitment · เทคโนโลยีดิจิทัลฯ และสื่อสารมวลชน",
+        faculty: "คณะครุศาสตร์อุตสาหกรรมและเทคโนโลยี",
         seats: "20 คน",
         gpax: "2.75",
         requirement: "ไม่บังคับรางวัล",
@@ -183,6 +189,7 @@ export const TCAS_NITET_UNIVERSITIES: TcasUniversity[] = [
       },
       {
         name: "เรียนดี · มีเดียอาตส์ (4 แขนง)",
+        faculty: "คณะสถาปัตยกรรมศาสตร์และการออกแบบ (บางขุนเทียน)",
         seats: "12 คน (ซินีมาติก 6 + กราฟิก แอนิเมชัน เกม อย่างละ 2)",
         gpax: "2.75",
         requirement: "ไม่บังคับรางวัล · ต้องมีผลงานที่เกี่ยวกับแขนง",
@@ -197,6 +204,7 @@ export const TCAS_NITET_UNIVERSITIES: TcasUniversity[] = [
     key: "kku",
     nameTh: "ขอนแก่น",
     nameEn: "KKU",
+    faculty: "วิทยาลัยนานาชาติ",
     source: "course.mytcas.com",
     projects: [
       {
@@ -216,6 +224,7 @@ export const TCAS_NITET_UNIVERSITIES: TcasUniversity[] = [
     key: "cmu",
     nameTh: "เชียงใหม่",
     nameEn: "CMU",
+    faculty: "คณะการสื่อสารมวลชน",
     source: "admission.reg.cmu.ac.th",
     projects: [
       {
@@ -227,6 +236,7 @@ export const TCAS_NITET_UNIVERSITIES: TcasUniversity[] = [
         portfolio: `${CMU_FOLIO} แนบลิงก์หรือ QR`,
         scoring: CMU_SCORING,
         apply: CMU_APPLY,
+        applyClosed: true,
       },
       {
         name: "สื่อสารมวลชนเพื่อสังคม",
@@ -237,6 +247,7 @@ export const TCAS_NITET_UNIVERSITIES: TcasUniversity[] = [
         portfolio: CMU_FOLIO,
         scoring: CMU_SCORING,
         apply: CMU_APPLY,
+        applyClosed: true,
       },
       {
         name: "นักเรียนผลการเรียนดี",
@@ -247,6 +258,7 @@ export const TCAS_NITET_UNIVERSITIES: TcasUniversity[] = [
         portfolio: CMU_FOLIO,
         scoring: CMU_SCORING,
         apply: CMU_APPLY,
+        applyClosed: true,
       },
       {
         name: "ภาพยนตร์ดิจิทัล (สองภาษา)",
@@ -257,6 +269,7 @@ export const TCAS_NITET_UNIVERSITIES: TcasUniversity[] = [
         portfolio: "TCASFolio ไม่เกิน 15 หน้า · ตอบ: หนัง 1 เรื่องที่เล่าตัวตนคุณ",
         scoring: CMU_SCORING,
         apply: CMU_APPLY,
+        applyClosed: true,
       },
     ],
   },
@@ -264,10 +277,11 @@ export const TCAS_NITET_UNIVERSITIES: TcasUniversity[] = [
     key: "psu",
     nameTh: "ม.อ. ปัตตานี",
     nameEn: "PSU",
+    faculty: "คณะวิทยาการสื่อสาร",
     source: "admission.psu.ac.th",
     projects: [
       {
-        name: "คณะวิทยาการสื่อสาร โดยวิธีพิเศษ (รอบ 1/2)",
+        name: "โดยวิธีพิเศษ (รอบ 1/2)",
         seats: "นิเทศ 15 + 15 คน ต่อช่วง",
         gpax: "2.50",
         requirement: "ไม่บังคับรางวัล · รับ ม.6 และ กศน.",
@@ -296,6 +310,7 @@ export const TCAS_NITET_UNIVERSITIES: TcasUniversity[] = [
     projects: [
       {
         name: "โควตารับตรง Portfolio 1 · นิเทศศาสตร์",
+        faculty: "คณะวิทยาการสารสนเทศ",
         seats: "70 คน",
         gpax: "2.00",
         requirement: "ไม่บังคับรางวัล · รับ ม.6 ปวช. กศน. · มีผลงานด้านนิเทศหรือการสื่อสาร",
@@ -306,6 +321,7 @@ export const TCAS_NITET_UNIVERSITIES: TcasUniversity[] = [
       },
       {
         name: "โควตารับตรง Portfolio 1 + 2 · คอนเทนต์และนวัตกรรมสื่อดิจิทัล",
+        faculty: "คณะมนุษยศาสตร์และสังคมศาสตร์",
         seats: "25 คน (15 + 10)",
         gpax: "3.25 · ภาษาไทย 2.50",
         requirement: "ไม่บังคับรางวัล · มีผลงานเขียน คลิป ข่าว ภาพถ่าย หรือกราฟิก",
@@ -360,7 +376,7 @@ export const TCAS_NITET_TAKEAWAYS: TcasTakeaway[] = [
 
 /** Key dates on one line, oldest first. */
 export const TCAS_NITET_DATES: TcasDate[] = [
-  { date: "5 พ.ย. 69", label: "เชียงใหม่ ปิดรับ" },
+  { date: "5 พ.ย. 69", label: "เชียงใหม่ ปิดแล้ว", done: true },
   { date: "12 พ.ย. 69", label: "จุฬาฯ ภาคไทย ปิดรับ" },
   { date: "16 พ.ย. 69", label: "ศิลปากร ปิดรับ" },
   { date: "19 พ.ย. 69", label: "ม.อ. ช่วง 2 ปิดรับ" },
@@ -455,7 +471,8 @@ export const TCAS_NITET_POSTER: TcasPosterData = {
   skipped: "ไม่รวมโควตาเฉพาะกลุ่ม เช่น นักกีฬา ผู้พิการ โรงเรียนเครือข่าย",
   gateLegend: "ช่องสีส้ม = ต้องมีผลงานสื่อ รางวัล หรือเกียรติบัตรที่กำหนดก่อนถึงจะสมัครได้",
   notes: [
-    "ไม่มีรอบ 1 ทั่วไป: วารสารฯ ธรรมศาสตร์ภาคไทย (มีแค่โควตานักกีฬา) · นิเทศ ม.เกษตร (รอบ 2-3) · บูรพา (รอบ 2 โควตาภาคตะวันออก) · มหิดลและแม่ฟ้าหลวงไม่มีหลักสูตรนี้ · นเรศวรรับเฉพาะ 18 จังหวัดภาคเหนือ ปิดแล้ว",
+    "แต่ละที่ชื่อคณะไม่เหมือนกัน ค้นใน mytcas ด้วยชื่อคณะ ไม่ใช่แค่คำว่านิเทศ",
+    "ไม่มีรอบ 1 ทั่วไป: ธรรมศาสตร์ภาคไทย · ม.เกษตร · บูรพา · นเรศวร (เฉพาะภาคเหนือ) · มหิดลและแม่ฟ้าหลวงไม่มีหลักสูตรนี้",
   ],
   asOf: TCAS_NITET_AS_OF,
   universities: TCAS_NITET_UNIVERSITIES,

@@ -1,4 +1,4 @@
-import { countProjects, type TcasPosterData } from "@/lib/content/tcas70-poster";
+import { countProjects, facultiesOf, type TcasPosterData } from "@/lib/content/tcas70-poster";
 
 import { PassionSeedMark } from "../../riso";
 import { PIXEL_FONT } from "../PixelRects";
@@ -62,6 +62,11 @@ function Lineup({ data }: { data: TcasPosterData }) {
           <span className="mt-[6px] text-[12px] leading-none tracking-[0.06em]" style={{ ...PIXEL_FONT, color: PX.waterLight }}>
             {u.nameEn}
           </span>
+          {facultiesOf(u) && (
+            <span className="mt-[8px] text-[13px] leading-[1.3]" style={{ color: `${PX.cream}cc` }}>
+              {facultiesOf(u)}
+            </span>
+          )}
         </li>
       ))}
     </ul>

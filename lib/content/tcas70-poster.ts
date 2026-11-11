@@ -7,6 +7,8 @@
 
 export interface TcasProject {
   name: string;
+  /** Faculty, when it differs from the university's `faculty`. */
+  faculty?: string;
   seats: string;
   gpax: string;
   /** What you must already have before you can apply. */
@@ -25,6 +27,8 @@ export interface TcasUniversity {
   key: string;
   nameTh: string;
   nameEn: string;
+  /** Faculty or college that runs these projects; names differ by university. */
+  faculty?: string;
   /** Set when the whole university's facts come from an earlier cycle. */
   refCycle?: string;
   source: string;
@@ -102,5 +106,12 @@ export const TCAS_COLUMNS: { key: "project" | keyof TcasProject; th: string; en:
   { key: "scoring", th: "คิดคะแนน", en: "SCORE", fr: 1.15 },
   { key: "apply", th: "รับสมัคร", en: "APPLY", fr: 0.95 },
 ];
+
+/** Faculty label for the cover: the university's faculty, or how many faculties its projects span. */
+export const facultiesOf = (u: TcasUniversity) => {
+  if (u.faculty) return u.faculty;
+  const n = new Set(u.projects.map((p) => p.faculty).filter(Boolean)).size;
+  return n > 1 ? `${n} คณะ` : "";
+};
 
 export const countProjects = (d: TcasPosterData) => d.universities.reduce((n, u) => n + u.projects.length, 0);
