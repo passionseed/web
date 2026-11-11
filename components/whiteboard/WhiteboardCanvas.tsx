@@ -14,7 +14,7 @@ import {
 } from "@excalidraw/excalidraw";
 import type { NonDeleted, OrderedExcalidrawElement, ExcalidrawEmbeddableElement } from "@excalidraw/excalidraw/element/types";
 import type { AppState, BinaryFiles, ExcalidrawProps } from "@excalidraw/excalidraw/types";
-import { ArrowLeft, Copy, FileUp, LayoutTemplate, Save, Settings } from "lucide-react";
+import { ArrowLeft, Copy, FileUp, Flag, LayoutTemplate, Save, Settings } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -311,6 +311,9 @@ export default function WhiteboardCanvas({
     [api, boardInfo, editable, pluginMe, players, channel],
   );
 
+  // The Quest dashboard: the owner and site admins, plus whoever the owner made a quest reviewer.
+  const canReviewQuests = isManager || Boolean(members.find((m) => m.userId === me.id)?.questReviewer);
+
   // Excalidraw re-renders itself whenever its children change, so they are memoized
   // on exactly what they read.
   const mainMenu = useMemo(
@@ -319,6 +322,11 @@ export default function WhiteboardCanvas({
         <MainMenu.Item icon={<ArrowLeft size={16} />} onSelect={() => (window.location.href = "/whiteboard")}>
           บอร์ดทั้งหมด · All boards
         </MainMenu.Item>
+        {canReviewQuests && api && (
+          <MainMenu.Item icon={<Flag size={16} />} onSelect={() => openKit(api, "quests")}>
+            Quest Dashboard · งานแต่ละคน
+          </MainMenu.Item>
+        )}
         <MainMenu.Separator />
         {editable && (
           // Touch devices have no Ctrl+S.
@@ -347,7 +355,7 @@ export default function WhiteboardCanvas({
         </MainMenu.Item>
       </MainMenu>
     ),
-    [duplicate, editable, openSettings, saveAndTell],
+    [api, canReviewQuests, duplicate, editable, openSettings, saveAndTell],
   );
 
   const welcomeScreen = useMemo(
@@ -382,8 +390,6 @@ export default function WhiteboardCanvas({
     [api, board.id, isAdmin, showAuthors],
   );
 
-  // The Quest dashboard: the owner and site admins, plus whoever the owner made a quest reviewer.
-  const canReviewQuests = isManager || Boolean(members.find((m) => m.userId === me.id)?.questReviewer);
   const questsPanel = useMemo(
     () => (canReviewQuests && api ? <QuestDashboard api={api} people={people} nameOf={nameOf} /> : undefined),
     [api, canReviewQuests, people, nameOf],
