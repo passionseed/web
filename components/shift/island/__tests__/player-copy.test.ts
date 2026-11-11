@@ -57,8 +57,12 @@ describe("player copy", () => {
     expect(copy.WALLET.off).toBe("ซีซันนี้ยังไม่เปิดแจก coin");
   });
 
-  it("words the rest-tolerant run without streak words", () => {
-    expect(copy.CHARACTER.run(4)).toBe("จังหวะตอนนี้ 4 วัน เว้นได้ 1 วัน และหยุดรอเมื่อกดพัก");
+  it("counts days shown up as a number that only goes up, as the island's rule says", () => {
+    expect(copy.CHARACTER.days(12)).toBe("ลงมือมาแล้วทั้งหมด 12 วัน");
+    expect(copy.CHARACTER.daysKept).toBe("วันที่ไม่ได้มาไม่ทำให้ตัวเลขนี้ลดลงหรือเริ่มนับใหม่");
+    // No run that resets: the sheet has no wording for one.
+    expect(copy.CHARACTER).not.toHaveProperty("run");
+    expect(JSON.stringify(copy.CHARACTER)).not.toMatch(/จังหวะตอนนี้|เว้นได้/);
   });
 
   it("names the chip after the student, the project and the tree as the level", () => {

@@ -756,4 +756,16 @@ describe("student copy", () => {
     expect(text).not.toContain("น้องๆ");
     expect(I.btnBack).toBe("🏝️ กลับเกาะ");
   });
+
+  it("names festival night on the started card without a hardcoded Demo Day date", () => {
+    expect(T.started).toContain("คืนเทศกาล Demo Day");
+    expect(T.started).not.toMatch(/\d{1,2}\s*(ม\.ค\.|ก\.พ\.|มี\.ค\.|เม\.ย\.|พ\.ค\.|มิ\.ย\.|ก\.ค\.|ส\.ค\.|ก\.ย\.|ต\.ค\.|พ\.ย\.|ธ\.ค\.)/);
+    expect(T.introBody).toContain("เกาะ SHIFT");
+  });
+
+  it("continues the invite: the island is where a SHIFT project keeps growing, and where it goes", () => {
+    expect(T.introBody).toContain("โตต่อหลังวันที่ 7");
+    expect(T.introBody).not.toContain("ยังว่าง");
+    expect(T.started.split("\n").at(-1)).toBe("🌅 ซีซันจบ ต้นไม้ยังอยู่ วันหนึ่งคุณกลับมาช่วยคนที่เพิ่งขึ้นเกาะได้");
+  });
 });

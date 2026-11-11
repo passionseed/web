@@ -50,7 +50,7 @@ export interface CharacterStats {
   side: { team: number; mine: number };
   /** milestones = 0..2 (milestones 6, 7 approved in the project); mine = the viewer's approved contributions on milestone 6 or 7, repeats count; thanks = accepted peer recognitions received plus admin recognitions. */
   community: { milestones: number; mine: number; thanks: number };
-  /** daysActive = distinct Bangkok days with a tap or note; thisWeek = 0..7 in the Monday-start Bangkok week; run = rest-tolerant run, frozen in rest mode (see the database). */
+  /** daysActive = distinct Bangkok days with a tap or note; thisWeek = 0..7 in the Monday-start Bangkok week; run = rest-tolerant run, frozen in rest mode (see the database); the web never shows it, because it drops to 0 after missed days and the island's rule is that a missed day never resets a count. */
   checkins: { daysActive: number; thisWeek: number; run: number };
   coins: WalletSummary;
 }

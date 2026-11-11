@@ -128,7 +128,8 @@ export function CharacterSheet({
           <Stat icon="check" heading={CHARACTER.checkinHeading}>
             <p className={styles.statLine}>{CHARACTER.week(stats.checkins.thisWeek)}</p>
             <p className={styles.statSub}>{CHARACTER.days(stats.checkins.daysActive)}</p>
-            {stats.checkins.run > 0 ? <p className={styles.statSub}>{CHARACTER.run(stats.checkins.run)}</p> : null}
+            {/* No run: it drops to 0 after missed days, and on the island a missed day never resets a count. */}
+            <p className={styles.statSub}>{CHARACTER.daysKept}</p>
           </Stat>
         </div>
 

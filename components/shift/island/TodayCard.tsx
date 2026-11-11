@@ -25,7 +25,9 @@ interface TodayCardProps {
 
 /**
  * The daily check-in. One tap that flips at once (useOptimistic) and reverts
- * if the database refuses. No day counts, streaks or heatmaps, ever.
+ * if the database refuses. No streaks or heatmaps, ever, and no day count
+ * here: the only one is the character sheet's days shown up, which never
+ * resets (CHARACTER.days).
  */
 export function TodayCard({ tapsToday, resting, onSaved, onStuck }: TodayCardProps) {
   // Set when the action succeeds, so the flip holds even before the refreshed props arrive.

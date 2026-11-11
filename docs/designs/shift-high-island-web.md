@@ -370,7 +370,7 @@ review**; it lives in `components/shift/island/copy.ts` and must pass
 | not eligible: pilot_closed | เกาะยังไม่เปิด | ทีมงานจะประกาศในเซิร์ฟเวอร์ SHIFT เมื่อเปิดให้เข้า | none |
 | not eligible: discord_unavailable | เช็กสิทธิ์ไม่ได้ตอนนี้ | Discord ไม่ตอบกลับ ลองรีเฟรชอีกครั้งในอีกสักครู่ | ลองอีกครั้ง |
 | unavailable | เกาะปิดปรับปรุงชั่วคราว | งานและต้นไม้ของคุณยังอยู่ครบ ลองใหม่อีกครั้งในอีกสักครู่ | ลองอีกครั้ง |
-| not started | ยินดีต้อนรับสู่เกาะ SHIFT | four rules: 1 โปรเจกต์ = ต้นไม้ 1 ต้น โตได้ 7 ขั้น ทำขั้นไหนก่อนก็ได้ / ถึงขั้นไหนแล้ว ส่งหลักฐานสั้นๆ กับคำตอบหนึ่งข้อ พี่เลี้ยงจะดูแล้วยืนยัน / ต้นไม้โตจากงานที่พี่เลี้ยงยืนยันเท่านั้น ไม่ได้โตจากจำนวนครั้งที่กด / พักนานแค่ไหนก็ได้ ต้นไม้ไม่เหี่ยว ไม่มีการนับวันต่อเนื่อง | เริ่มเลย |
+| not started | ยินดีต้อนรับสู่เกาะ SHIFT | six rules, the lore bible's "กติกาของเกาะ" card (`START.rules`): 1 โปรเจกต์ = ต้นไม้ 1 ต้น โตได้ 7 ขั้น ทำขั้นไหนก่อนก็ได้ / ถึงขั้นไหนแล้ว ส่งหลักฐานสั้นๆ พี่เลี้ยงดูงานจริงแล้วยืนยัน ไม่ได้นับจากการกดหรือชั่วโมง / พักได้ ต้นไม้ไม่เหี่ยว เกาะนับวันที่คุณมา แต่วันที่ไม่ได้มาไม่ทำให้อะไรหายหรือเริ่มนับใหม่ / ไม่มีอันดับ ไม่มีกระดานคะแนน / ทุกอย่างคุยกันในห้องที่ทุกคนเห็น ไม่มีห้องลับ / ชื่อโปรเจกต์ขึ้นป้ายเมื่อทั้งทีมยินยอมเท่านั้น | เริ่มเลย |
 
 ### No project yet
 
@@ -801,10 +801,13 @@ from the start card.
 
 | # | Scene | Line (draft) |
 |---|---|---|
-| 1 | `buildScene([])`, phase dawn, sea moving, gulls, no boat | เกาะนี้ยังว่าง |
-| 2 | one plot, stage 2 (seedling), crop around it, builder actor beside it, day | ทุกโปรเจกต์คือต้นไม้หนึ่งต้น |
-| 3 | one plot, stage 5, builder plus tester actor trying something, day | ต้นไม้โตจากงานจริง |
-| 4 | 8 plots of mixed stages, 3 lanterns, festival banner and festoon, night | `{d MMM}` เทศกาล Demo Day (no date known: คืนเทศกาล Demo Day) |
+| 1 | `buildScene([])`, phase dawn, sea moving, gulls, no boat | เกาะนี้ยังว่าง รอคนที่อยากสร้างของจริง |
+| 2 | one plot, stage 2 (seedling), crop around it, builder actor beside it, day | ทุกโปรเจกต์คือต้นไม้หนึ่งต้น เริ่มจากเรื่องที่คุณใส่ใจ |
+| 3 | one plot, stage 5, builder plus tester actor trying something, day | ต้นไม้โตจากงานจริง ไม่ได้โตจากเวลาออนไลน์ |
+| 4 | 8 plots of mixed stages, 3 lanterns, festival banner and festoon, night | `{d MMM}` เทศกาล Demo Day ทั้งเกาะมาโชว์งานด้วยกัน (no date known: คืนเทศกาล Demo Day ทั้งเกาะมาโชว์งานด้วยกัน) |
+
+Lines and place names come from the lore bible,
+[`shift-high-island-lore.md`](shift-high-island-lore.md).
 
 CTA on panel 4: not started "ไปที่เกาะ" (closes and starts the island; the start card never opens the story by itself, only from its book); no project
 "จับจองที่ดิน" (closes, scrolls to the create form); with a project
@@ -812,8 +815,9 @@ CTA on panel 4: not started "ไปที่เกาะ" (closes and starts the
 `thaiShortDate`, never hardcoded; the not-started screen has no season, so it
 shows the undated line. Reduced motion: no auto-advance, still frames, a
 "ต่อไป" button. If the canvas fails, each panel shows the matching tree sprite
-through `PixelIcon` on the sky colour. No lore, no characters with names, no
-lecturing.
+through `PixelIcon` on the sky colour. The lore only names places and says
+why the island works the way it does: no characters with names, no fantasy
+that replaces the work, no lecturing.
 
 ### Living island
 
@@ -1417,11 +1421,17 @@ Character copy: "ตัวละครของฉัน", "ต้นไม้�
 "เควสต์หลักที่ทีมผ่าน {n}/7", "ส่วนที่เราลงมือเอง {n}",
 "เควสต์เสริมที่ผ่าน {n}", "ช่วยชุมชน {n}", "คำขอบคุณจากเพื่อน {n}",
 "ลงมือ {n} จาก 7 วันในสัปดาห์นี้", "ลงมือมาแล้วทั้งหมด {n} วัน",
-"จังหวะต่อเนื่อง {n} วัน (พักได้ 1 วันจังหวะไม่หลุด)". The founder asked for a
-streak; this run tolerates one empty Bangkok day so resting is never
-punished, and the copy avoids the banned "สตรีค / streak / ติดต่อกัน N วัน"
-words, so `copy.test.ts` stays as it is. This updates "no streaks" above
-(Screens: Island) for the character sheet only; TodayCard keeps its rule.
+"วันที่ไม่ได้มาไม่ทำให้ตัวเลขนี้ลดลงหรือเริ่มนับใหม่". The founder asked for a
+streak. The database still returns a rest-tolerant run
+(`shift_quest_character`, `checkins.run`: it tolerates one empty Bangkok day
+and freezes in rest mode), but the sheet does not show it: the run drops to
+0 after two empty days, and the island's rule (lore bible, "กติกาของเกาะ",
+rule 3, and `START.rules` line 3) is that a missed day never takes anything
+away or starts a count over. So the stat is a gentle count of days shown up
+that only goes up, with that promise under it. The copy avoids the banned
+"สตรีค / streak / ติดต่อกัน N วัน" words, so `copy.test.ts` stays as it is.
+This updates "no streaks or day counts" above (Screens: Island) for the
+character sheet only; TodayCard shows no count.
 
 Reachability (for the founder, open decision): one student earns at most
 1,500 (main, cap 5) + 2,000 (community, cap 4) + 1,100 (side, cap 11) + 200

@@ -283,10 +283,12 @@ describe("CharacterSheet", () => {
       CHARACTER.thanks(5),
       CHARACTER.week(3),
       CHARACTER.days(12),
-      CHARACTER.run(4),
+      CHARACTER.daysKept,
     ]) {
       expect(within(dialog).getByText(line)).toBeInTheDocument();
     }
+    // The database's run (4 here) resets after missed days, so the sheet never shows it.
+    expect(within(dialog).queryByText(/จังหวะ/)).toBeNull();
     // The team's main quests are the level; the main stat is the viewer's own share, and side shows theirs too.
     expect(within(dialog).queryByText(CHARACTER.mainTeam(3))).toBeNull();
     expect(within(dialog).getByText(CHARACTER.mine(1))).toBeInTheDocument();

@@ -45,11 +45,12 @@ describe("StartCard", () => {
     expect(screen.getByRole("button", { name: START.switchAccount })).toBeInTheDocument();
   });
 
-  it("keeps all four rules, folded under กติกาของเกาะ", () => {
+  it("keeps all six rules, folded under กติกาของเกาะ", () => {
     render(<StartCard me={me} />);
     const summary = screen.getByText("กติกาของเกาะ");
     const fold = summary.closest("details")!;
     expect(fold).not.toHaveAttribute("open");
+    expect(START.rules).toHaveLength(6);
     for (const rule of START.rules) expect(fold).toHaveTextContent(rule);
     fireEvent.click(summary);
     expect(fold).toHaveAttribute("open");
@@ -88,7 +89,7 @@ describe("StartCard on a first visit", () => {
     fireEvent.click(stage());
     fireEvent.click(stage());
     fireEvent.click(stage());
-    expect(screen.getByText("คืนเทศกาล Demo Day")).toBeInTheDocument();
+    expect(screen.getByText("คืนเทศกาล Demo Day ทั้งเกาะโชว์งาน และต้นไม้ทุกต้นยังอยู่ต่อ")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "ไปที่เกาะ" }));
     expect(screen.queryByRole("dialog")).toBeNull();

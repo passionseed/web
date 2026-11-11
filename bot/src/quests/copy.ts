@@ -111,7 +111,9 @@ export const T = {
 
   // /start: a short welcome; the full agreement sits behind the ℹ️ button (T.rules).
   introTitle: "👋 ยินดีต้อนรับสู่ SHIFT High quests",
-  introBody: "**สร้างของที่มีคุณค่าได้ตั้งแต่ตอนนี้**\nเลือกเรื่องที่คุณใส่ใจ ทำกับคนที่พร้อมช่วย แล้วส่งให้คนจริงได้ลองใช้",
+  // DRAFT (lore: docs/designs/shift-high-island-lore.md): the empty island as the hook.
+  // DRAFT (lore: the invite is chapter one): the island is where a SHIFT project keeps growing.
+  introBody: "**เกาะ SHIFT: ที่ที่โปรเจกต์ได้โตต่อหลังวันที่ 7**\nปลูกโปรเจกต์ที่ทำมาจาก SHIFT หรือเริ่มเรื่องใหม่ที่คุณใส่ใจ ทำกับคนที่พร้อมช่วย แล้วส่งให้คนจริงได้ลองใช้",
   introExamples: "จะเป็นเครื่องมือที่มีประโยชน์ เกมที่คนอยากกลับมาเล่น เรื่องที่เชื่อมคน หรือบริการที่แก้ปัญหาจริงก็ได้",
   /** The agreement in one line, visible before anyone presses start. */
   introPromise: "🔒 สมัครใจทุกอย่าง · บันทึกเป็นส่วนตัวเป็นค่าเริ่มต้น · ไม่บันทึกเสียงหรือภาพหน้าจอ",
@@ -133,6 +135,10 @@ export const T = {
   started: [
     "🌳 ทุกโปรเจกต์คือต้นไม้หนึ่งต้นบนเกาะ โตได้ **7 ขั้น** จากงานจริงที่พี่เลี้ยงยืนยัน",
     "🌱 จับจองที่ดิน (สร้างโปรเจกต์) หรือรอเพื่อนชวนเข้าทีมก็ได้",
+    // DRAFT (lore: festival night). No date here: the island card shows the season's own.
+    "🏮 ปลายซีซันมีคืนเทศกาล Demo Day ทั้งเกาะมาโชว์งานด้วยกัน",
+    // DRAFT (lore: ทางที่เดินต่อ): where this goes. Voluntary, no promise of admissions, money or a role.
+    "🌅 ซีซันจบ ต้นไม้ยังอยู่ วันหนึ่งคุณกลับมาช่วยคนที่เพิ่งขึ้นเกาะได้",
   ].join("\n"),
   startedFine: [
     "ยังไม่มีไอเดียที่ขัดเกลามาแล้วก็ไม่เป็นไร ขั้นแรกคือเลือกเรื่องที่คุณใส่ใจ",

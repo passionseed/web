@@ -39,7 +39,7 @@ import { TEXT_LIMITS, type QuestBoard } from "@/lib/supabase/shift-quests/types"
 import { SHIFT_CARDS } from "@/lib/whiteboard/shift-cards";
 
 import { QuestCardComposer, useQuestCanvas } from "./canvas";
-import { BOARD, CANVAS, COMMON, DETAIL, QUEST, tileChip } from "./copy";
+import { BOARD, CANVAS, COMMON, DETAIL, QUEST, questFlavor, tileChip } from "./copy";
 import styles from "./island.module.css";
 import { IslandSheet } from "./IslandSheet";
 import { canStart, detailAction, mentorFeedback, questView, refKey, sameRef, type DetailAction, type QuestView } from "./model";
@@ -233,6 +233,7 @@ function QuestDetailBody({
   const chip = tileChip(quest.status, quest.owner);
   const ready = canvas.context?.state === "ready" ? canvas.context : null;
   const why = quest.purpose.trim();
+  const flavor = questFlavor(quest.kind, quest.slug);
   const ownRows = ownership?.state === "ready" ? ownership.rows : null;
   const hints = ownership
     ? ownRows
@@ -252,6 +253,9 @@ function QuestDetailBody({
         </span>
         {quest.help ? <span className={styles.helpText}>{BOARD.help}</span> : null}
       </div>
+
+      {/* DRAFT lore: one quiet line on why the quest matters on the island (none on a proposed quest). */}
+      {flavor ? <p className={styles.detailFlavor}>{flavor}</p> : null}
 
       {/* A proposed quest's goal is the student's own words: never cut. */}
       {why ? (

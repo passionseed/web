@@ -43,12 +43,15 @@ export const CHARACTER = {
   thanks: (n: number) => `คำขอบคุณ ${n}`,
   checkinHeading: "การลงมือ",
   week: (n: number) => `สัปดาห์นี้ลงมือ ${n} วัน`,
-  days: (n: number) => `ลงมือมาแล้วทั้งหมด ${n} วัน`,
   /**
-   * A run that tolerates one empty Bangkok day and waits while the student
-   * rests (rest mode), so resting is never punished. Shown only above 0.
+   * Days shown up: only ever goes up. The island's rule (lore bible,
+   * "กติกาของเกาะ", rule 3; START.rules line 3) is that a missed day never
+   * takes anything away or starts a count over, so the sheet shows no run
+   * that could drop back to 0.
    */
-  run: (n: number) => `จังหวะตอนนี้ ${n} วัน เว้นได้ 1 วัน และหยุดรอเมื่อกดพัก`,
+  days: (n: number) => `ลงมือมาแล้วทั้งหมด ${n} วัน`,
+  /** DRAFT: under the days count, the same promise as START.rules line 3. */
+  daysKept: "วันที่ไม่ได้มาไม่ทำให้ตัวเลขนี้ลดลงหรือเริ่มนับใหม่",
   coinRow: (balance: string) => `Passioncoin ${balance} coin`,
   coinOpen: "ดูกระเป๋า",
   coinsOff: "ซีซันนี้ยังไม่เปิดแจก coin",

@@ -534,7 +534,7 @@ describe("IslandApp: the plaza", () => {
     render(<IslandApp page={festive()} picture={null} />);
     expect(mockedLoadCampfire).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: /^กองไฟ/ }));
-    const sheet = screen.getByRole("dialog", { name: "ห้อง coworking" });
+    const sheet = screen.getByRole("dialog", { name: "กองไฟ" });
     expect(mockedLoadCampfire).toHaveBeenCalledWith({ names: true });
     expect(viewport()).toHaveAttribute("data-paused", "true");
     expect(await within(sheet).findByText("มิ้นต์")).toBeInTheDocument();
