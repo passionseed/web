@@ -4,6 +4,7 @@ import { after } from "next/server";
 import { isAnonymousUser } from "@/lib/supabase/auth";
 import { elementAuthorIds, groupChanges, type ActivitySession, type ChangeItem } from "@/lib/whiteboard/activity";
 import { shiftPeople } from "@/lib/supabase/shift-people";
+import { compactElements } from "@/lib/whiteboard/compact";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 import {
@@ -188,7 +189,9 @@ export async function openBoard(boardId: string): Promise<OpenedBoard | "signin"
       title: board.title as string,
       // Deleted elements are kept in the database (a save never brings back something with a
       // lower version), but the editor has no use for them: on busy boards they are most of the data.
-      elements: live(board.elements),
+      // Strokes and lines are slimmed as saves are (lib/whiteboard/compact.ts), so boards saved
+      // before that open as light as new ones; versions are untouched, so nothing re-syncs.
+      elements: compactElements(live(board.elements)),
       role,
       linkAccess: board.link_access as LinkAccess,
       shareToken: role === "owner" ? (board.share_token as string) : null,
@@ -729,26 +732,30 @@ export type BoardPerson = { name: string; avatarUrl: string | null };
 const MAX_PEOPLE = 300;
 
 /**
- * Everyone on a board as SHIFT knows them: their Discord name (display name,
- * else username) and Discord picture, falling back to their profile. "On the
- * board" is its owner, members, anyone whose work is on it, and the viewer, so
- * this cannot be used to read anyone else's Discord.
+ * People on a board as SHIFT knows them: their Discord name (display name, else
+ * username) and Discord picture, falling back to their profile. The browser
+ * sends the ids it sees on the board; only the viewer, the owner, members, and
+ * people who have saved changes to this board are looked up, so this cannot
+ * be used to read anyone else's Discord. Reads no elements: the board is
+ * already open in the browser.
  */
-export async function boardPeople(boardId: string, viewerId: string): Promise<Record<string, BoardPerson>> {
+export async function boardPeople(boardId: string, viewerId: string, requested: string[]): Promise<Record<string, BoardPerson>> {
   const [{ data: board, error }, members] = await Promise.all([
-    db().from("whiteboards").select("owner_id, elements").eq("id", boardId).maybeSingle(),
+    db().from("whiteboards").select("owner_id").eq("id", boardId).maybeSingle(),
     boardMembers(boardId),
   ]);
   if (error) throw error;
   if (!board) return {};
-  const ids = new Set<string>([viewerId, board.owner_id as string, ...members.map((m) => m.user_id)]);
-  type Data = { quest?: { by?: unknown }; createdBy?: unknown; updatedBy?: unknown } | null;
-  for (const el of (board.elements ?? []) as { customData?: Data }[]) {
-    for (const v of [el.customData?.quest?.by, el.customData?.createdBy, el.customData?.updatedBy]) {
-      if (typeof v === "string") ids.add(v);
-    }
-  }
-  const list = [...ids].slice(0, MAX_PEOPLE);
+  const known = new Set<string>([viewerId, board.owner_id as string, ...members.map((m) => m.user_id)]);
+  const others = [...new Set(requested)].filter((id) => !known.has(id)).slice(0, MAX_PEOPLE);
+  // Anyone else must have saved to this board (whiteboard_changes is indexed by board).
+  const saved = await Promise.all(
+    others.map(async (id) => {
+      const { data } = await db().from("whiteboard_changes").select("id").eq("whiteboard_id", boardId).eq("user_id", id).limit(1);
+      return data?.length ? id : null;
+    }),
+  );
+  const list = [...known, ...saved.filter((id): id is string => id !== null)].slice(0, MAX_PEOPLE);
 
   const profiles = await profilesById(list);
   const people = await shiftPeople(list, new Map(list.map((id) => [id, profiles[id]?.name ?? "Someone"])));
