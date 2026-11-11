@@ -193,6 +193,7 @@ export function useWhiteboardSync({
   initialElements,
   managerIds = [],
   onCanvasBlocked,
+  newElementData,
 }: {
   boardId: string;
   role: WhiteboardRole;
@@ -202,6 +203,11 @@ export function useWhiteboardSync({
   managerIds?: readonly string[];
   /** Called when an edit inside someone else's SHIFT canvas was undone. */
   onCanvasBlocked?: () => void;
+  /**
+   * Extra customData for every element this browser creates, read on each change (a quest
+   * session's tag, see lib/whiteboard/quests.ts). Null or absent adds nothing.
+   */
+  newElementData?: () => Record<string, unknown> | null;
 }) {
   const { id: myId, name: myName, avatarUrl: myAvatar } = me;
   const [mySocket] = useState(() => `${myId}:${crypto.randomUUID().slice(0, 8)}`);
@@ -321,7 +327,8 @@ export function useWhiteboardSync({
       // Each image is its own request (cached by the browser for good), a few at a time,
       // and shown as soon as it arrives instead of after the whole board's worth.
       let ready: BinaryFileData[] = [];
-      let cancelFlush: (() => void) | null = null;
+      // Typed by assertion: TypeScript would otherwise narrow it to null, not seeing the async writes.
+      let cancelFlush = null as (() => void) | null;
       const flush = () => {
         cancelFlush = null;
         if (ready.length) excalidrawAPI.addFiles(ready);
@@ -476,6 +483,31 @@ export function useWhiteboardSync({
     [boardId, send],
   );
 
+  const newElementDataRef = useRef(newElementData);
+  useEffect(() => {
+    newElementDataRef.current = newElementData;
+  }, [newElementData]);
+  /**
+   * Adds newElementData to elements this browser just made: never sent, never saved, and not
+   * from anyone else (remote and saved copies are marked seen before they reach the scene).
+   * Set on the element itself before its first send, so the tag goes out with it and needs no
+   * extra version; elements already tagged keep their tag.
+   */
+  const tagNewElements = useCallback((elements: Elements) => {
+    const data = newElementDataRef.current?.();
+    if (!data) return;
+    for (const el of elements) {
+      if (el.isDeleted || savedSeen.current.has(el.id) || broadcastSeen.current.has(el.id)) continue;
+      const custom = el.customData as Record<string, unknown> | undefined;
+      if (custom && Object.keys(data).every((k) => k in custom)) continue;
+      try {
+        (el as { customData?: Record<string, unknown> }).customData = { ...data, ...custom };
+      } catch {
+        // A frozen element (should not happen) just stays untagged.
+      }
+    }
+  }, []);
+
   const onChange = useCallback(
     (_elements: Elements, _appState: unknown, files: BinaryFiles) => {
       if (!editable || !excalidrawAPI) return;
@@ -496,6 +528,7 @@ export function useWhiteboardSync({
         return;
       }
       lastEditAt.current = Date.now();
+      tagNewElements(elements);
       broadcastChanges.current(elements);
       if (hasChangedSince(elements, savedSeen.current)) {
         setSaveState((s) => (s === "saving" ? s : "unsaved"));
@@ -504,7 +537,7 @@ export function useWhiteboardSync({
       }
       void uploadFiles(files);
     },
-    [allElements, editable, excalidrawAPI, guard, myId, scheduleBackup, scheduleSave, uploadFiles],
+    [allElements, editable, excalidrawAPI, guard, myId, scheduleBackup, scheduleSave, tagNewElements, uploadFiles],
   );
 
   // The selection is read when the throttled message actually goes out, so a

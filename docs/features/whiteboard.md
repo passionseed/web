@@ -151,6 +151,32 @@ again afterwards.
   it starts and at `/admin/calendar` for the last 90 days. Nothing per person is stored, and it
   shows who used the board, not who spoke in voice.
 
+## Quests
+
+Mentors draw quests on the board by hand, as on SHIFT[3] Day 2: a text that says **Quest** (any
+case, optionally with a star) and the task written under it. Students start a quest, and everything
+they make until they end it counts as their work for that quest. Code: `lib/whiteboard/quests.ts`,
+`components/whiteboard/quest/`.
+
+- **Finding quests** (`findQuests`): every live text whose whole text is "Quest" is a quest; its
+  title is the nearest text up to 400 units below it. Numbered in reading order (rows, then left
+  to right). No setup and no table: move or delete the label and the quest moves or goes.
+- **Start and end:** editors see **เริ่ม Quest** beside each label (hidden below 12% zoom). While
+  one runs, a pill at the top says which quest and how many pieces went in, with **จบ Quest**.
+  Starting another quest ends the first. The session is kept in localStorage per board, so a
+  reload keeps it running.
+- **Tagging:** while a session runs, every element this browser creates (strokes, notes, text,
+  words typed into someone else's box, pastes) gets `customData.quest = { id, session, by, at }`
+  (`id` is the label's element id). `useWhiteboardSync` sets it on the element before its first
+  send, so it syncs and saves like the element itself with no extra version. Edits to things that
+  already existed are not tagged.
+- **แก้ Quest ที่ส่ง:** right-click work and a card beside Excalidraw's menu says which quest it
+  counts for; pick another quest or **ไม่นับเป็นงาน Quest**. A note and its words move together.
+  Students can retag their own work (tagged by them, or untagged and made by them); moderators can
+  retag anything. Excalidraw 0.18 cannot add items to its own menu, so this is our own card.
+- **Reading the work:** `pnpm whiteboard:read <id>` ends with **Quest work**: per quest, per person,
+  the words they wrote and how many drawings. A tag whose label was deleted is still listed.
+
 ## SHIFT project canvas and note versions
 
 SHIFT and SHIFT High students log their project on a canvas laid out like a Business Model

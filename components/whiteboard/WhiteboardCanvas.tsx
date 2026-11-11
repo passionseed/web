@@ -22,6 +22,7 @@ import type { WhiteboardDetail } from "@/lib/supabase/whiteboards";
 import { canEdit, type LinkAccess } from "@/lib/whiteboard/core";
 import { exportBackgroundFor } from "@/lib/whiteboard/settings";
 import { CARD_KINDS, CARDS, cardLibrarySkeleton } from "@/lib/whiteboard/cards";
+import { questName, type Quest } from "@/lib/whiteboard/quests";
 import { templateById } from "@/lib/whiteboard/templates";
 import { widgetIdOf, widgetLink } from "@/lib/whiteboard/widgets";
 
@@ -48,6 +49,9 @@ import { CanvasTeamLayer } from "./shift/CanvasTeamLayer";
 import { CardVersionsLayer } from "./shift/CardVersionsLayer";
 import { useShiftCardCaret } from "./shift/useShiftCardCaret";
 import { ZoneAddLayer } from "./shift/ZoneAddLayer";
+import { QuestLayer } from "./quest/QuestLayer";
+import { QuestMenu } from "./quest/QuestMenu";
+import { useQuestSession } from "./quest/useQuestSession";
 import { ShareDialog } from "./ShareDialog";
 import { TimerWidget } from "./TimerWidget";
 import { useComments } from "./useComments";
@@ -117,7 +121,17 @@ export default function WhiteboardCanvas({
     lastBlockedToast.current = Date.now();
     toast.info("เปลี่ยนตรงนี้ไม่ได้: แคนวาสนี้แก้ได้เฉพาะทีม และลบได้เฉพาะเจ้าของ");
   }, []);
-  const sync = useWhiteboardSync({ boardId: board.id, role: board.role, me, initialElements, managerIds, onCanvasBlocked });
+  // Quest sessions: while one runs, everything this person makes is tagged with it (lib/whiteboard/quests.ts).
+  const quest = useQuestSession(board.id, me.id);
+  const sync = useWhiteboardSync({
+    boardId: board.id,
+    role: board.role,
+    me,
+    initialElements,
+    managerIds,
+    onCanvasBlocked,
+    newElementData: editable ? quest.newElementData : undefined,
+  });
   const api = sync.excalidrawAPI;
   // Loads and saves the Library, and installs libraries from libraries.excalidraw.com (#addLibrary links).
   useHandleLibrary({ excalidrawAPI: api, adapter: LIBRARY_ADAPTER });
@@ -127,6 +141,18 @@ export default function WhiteboardCanvas({
   const pointer = useRef<{ x: number; y: number } | null>(null);
   const emotes = useEmotes(api, channel, pointer);
   useShiftCardCaret(api);
+  const { start: startQuestSession, end: endQuestSession } = quest;
+  const startQuest = useCallback(
+    (q: Quest) => {
+      startQuestSession(q);
+      toast.success(`เริ่ม ${questName(q)}`, { description: "ทุกอย่างที่วาดหรือเขียนจากนี้นับเป็นงานของ Quest นี้ จนกว่าจะกดจบ" });
+    },
+    [startQuestSession],
+  );
+  const endQuest = useCallback(() => {
+    endQuestSession();
+    toast.success("จบ Quest แล้ว", { description: "คลิกขวาที่งานชิ้นไหนก็ย้าย Quest ได้" });
+  }, [endQuestSession]);
   const { settings, update: updateSettings } = useBoardSettings(board.id);
   useCanvasBackground(api, exportBackgroundFor(settings));
 
@@ -424,6 +450,10 @@ export default function WhiteboardCanvas({
           />
           <EmoteLayer api={api} bursts={emotes.bursts} />
           {editable && <ZoneAddLayer api={api} meId={me.id} manager={isManager} />}
+          {editable && (
+            <QuestLayer api={api} manager={isManager} session={quest.session} onStart={startQuest} onEnd={endQuest} />
+          )}
+          {editable && <QuestMenu api={api} meId={me.id} manager={isManager} />}
           <CardVersionsLayer api={api} meId={me.id} editable={editable} manager={isManager} nameOf={nameOf} />
           <CanvasTeamLayer api={api} meId={me.id} manager={isManager} people={people} nameOf={nameOf} />
           {isAdmin && showAuthors && <AuthorsLayer api={api} nameOf={nameOf} />}
