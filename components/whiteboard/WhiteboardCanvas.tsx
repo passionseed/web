@@ -391,8 +391,8 @@ export default function WhiteboardCanvas({
   );
 
   const questsPanel = useMemo(
-    () => (canReviewQuests && api ? <QuestSidebar api={api} people={people} nameOf={nameOf} /> : null),
-    [api, canReviewQuests, people, nameOf],
+    () => (canReviewQuests && api ? <QuestSidebar api={api} boardId={board.id} people={people} nameOf={nameOf} /> : null),
+    [api, board.id, canReviewQuests, people, nameOf],
   );
   const openQuestDashboard = useCallback((questId: string) => api && openQuestPanel(api, questId), [api]);
 

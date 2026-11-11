@@ -8,12 +8,14 @@ import { findQuests, questName, questWork, type PersonWork, type Quest } from "@
 
 import { Face } from "../chrome/Face";
 import { useSceneMemo } from "../shift/sceneMemo";
+import { useQuestPeople } from "./useQuestPeople";
 import { useSceneTick } from "../useViewportTick";
 
 export type Person = { userId: string; name: string; role: string; avatarUrl: string | null };
 
 type Props = {
   api: ExcalidrawImperativeAPI;
+  boardId: string;
   /** Everyone on the board, to list who has not handed anything in yet. */
   people: Person[];
   nameOf: (id: string) => string;
@@ -39,11 +41,14 @@ function showOnBoard(api: ExcalidrawImperativeAPI, ids: string[]) {
  * with what each person made for it, or each person with their quests, and a
  * button that shows that work on the board.
  */
-export function QuestDashboard({ api, people, nameOf }: Props) {
+export function QuestDashboard({ api, boardId, people, nameOf: profileName }: Props) {
   useSceneTick(api);
   const { quests, work } = useSceneMemo(api, (elements) => ({ quests: findQuests(elements), work: questWork(elements) }), []);
   const [view, setView] = useState<View>("quest");
   const byId = useMemo(() => new Map(people.map((p) => [p.userId, p])), [people]);
+  // Names as SHIFT knows people: their Discord name and picture, once loaded.
+  const discord = useQuestPeople(boardId, [...people.map((p) => p.userId), ...work.flatMap((w) => w.people.map((p) => p.userId))]);
+  const nameOf = (id: string) => discord[id]?.name ?? profileName(id);
 
   if (quests.length === 0 && work.length === 0) {
     return (
@@ -54,9 +59,13 @@ export function QuestDashboard({ api, people, nameOf }: Props) {
   }
 
   const byQuest = new Map(work.map((w) => [w.questId, w]));
-  const personOf = (id: string) => byId.get(id) ?? { userId: id, name: nameOf(id), avatarUrl: null };
+  const personOf = (id: string) => ({
+    userId: id,
+    name: nameOf(id),
+    avatarUrl: discord[id]?.avatarUrl ?? byId.get(id)?.avatarUrl ?? null,
+  });
   // Students: everyone who can draw on the board, but not the owner.
-  const students = people.filter((p) => p.role === "editor");
+  const students = people.filter((p) => p.role === "editor").map((p) => ({ ...p, ...personOf(p.userId) }));
   const workers = [...new Set(work.flatMap((w) => w.people.map((p) => p.userId)))];
   const lostWork = work.filter((w) => !w.quest);
 

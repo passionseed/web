@@ -3,6 +3,7 @@ import { after } from "next/server";
 
 import { isAnonymousUser } from "@/lib/supabase/auth";
 import { elementAuthorIds, groupChanges, type ActivitySession, type ChangeItem } from "@/lib/whiteboard/activity";
+import { shiftPeople } from "@/lib/supabase/shift-people";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 import {
@@ -720,4 +721,53 @@ export async function loadActivity(boardId: string): Promise<BoardActivity> {
     sessions,
     people: Object.fromEntries([...ids].map((id) => [id, profiles[id]?.name ?? "Someone"])),
   };
+}
+
+/**
+ * Whether this person may see everyone's quest work on a board: its owner, site
+ * admins, and members the owner made quest reviewers.
+ */
+export async function canReviewQuests(boardId: string, viewer: Viewer, role: WhiteboardRole): Promise<boolean> {
+  if (role === "owner" || viewer.isAdmin) return true;
+  const members = await boardMembers(boardId);
+  return members.some((m) => m.user_id === viewer.id && m.quest_reviewer);
+}
+
+export type QuestPerson = { name: string; avatarUrl: string | null };
+
+/**
+ * People on a board as SHIFT knows them, for the Quest dashboard: their Discord
+ * name (display name, else username) and Discord picture, falling back to
+ * their profile. Only the board's owner, members and people with work on it
+ * are looked up, so the route cannot be used to read anyone else's Discord.
+ */
+export async function questPeople(boardId: string, ids: string[]): Promise<Record<string, QuestPerson>> {
+  if (ids.length === 0) return {};
+  const [{ data: board, error }, members] = await Promise.all([
+    db().from("whiteboards").select("owner_id, elements").eq("id", boardId).maybeSingle(),
+    boardMembers(boardId),
+  ]);
+  if (error) throw error;
+  if (!board) return {};
+  const onBoard = new Set<string>([board.owner_id as string, ...members.map((m) => m.user_id)]);
+  for (const el of (board.elements ?? []) as { customData?: { quest?: { by?: unknown }; createdBy?: unknown } | null }[]) {
+    const by = el.customData?.quest?.by;
+    if (typeof by === "string") onBoard.add(by);
+    const maker = el.customData?.createdBy;
+    if (typeof maker === "string") onBoard.add(maker);
+  }
+  const allowed = [...new Set(ids)].filter((id) => onBoard.has(id));
+  if (allowed.length === 0) return {};
+
+  const profiles = await profilesById(allowed);
+  const people = await shiftPeople(allowed, new Map(allowed.map((id) => [id, profiles[id]?.name ?? "Someone"])));
+  const out: Record<string, QuestPerson> = {};
+  for (const id of allowed) {
+    const p = people.get(id);
+    out[id] = {
+      name: p?.discord?.displayName ?? p?.discord?.username ?? profiles[id]?.name ?? "Someone",
+      avatarUrl: p?.avatarUrl ?? profiles[id]?.avatarUrl ?? null,
+    };
+  }
+  return out;
 }
