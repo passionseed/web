@@ -18,6 +18,9 @@
   --isl-wax: #b8322f;
   --isl-wax-dark: #7a1d22;
   --isl-wax-light: #e0614f;
+  --isl-wax-shade: #962628;
+  --isl-wax-imprint: #5a1418;
+  --isl-wax-lip: #d65446;
   /* Paper and sand */
   --isl-sand: #e8c98f;
   --isl-paper: #f3e6c8;
@@ -936,15 +939,6 @@
   outline-offset: 3px;
 }
 
-/* An unpressed seal, shown above the sign-in link and the closed line. */
-.sealWaxQuiet {
-  display: block;
-  width: 64px;
-  height: 64px;
-  opacity: 0.55;
-  filter: saturate(0.6);
-}
-
 .seal {
   position: relative;
   isolation: isolate;
@@ -959,6 +953,7 @@
   background: none;
   color: var(--isl-ink);
   font: inherit;
+  text-decoration: none;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
@@ -972,12 +967,38 @@
   cursor: progress;
 }
 
-.sealWax {
+/* 44x21 pixels at 5x. The cord and the wax are stacked layers of one size. */
+.sealArt {
+  position: relative;
   display: block;
-  width: 96px;
-  height: 96px;
-  filter: drop-shadow(0 4px 0 rgba(42, 29, 46, 0.3));
+  width: 220px;
+  height: 105px;
+}
+
+.sealCord,
+.sealWax {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.sealCord {
+  filter: drop-shadow(0 2px 1px rgba(42, 29, 46, 0.22));
+}
+
+/* The wax sits proud of the paper: a soft shadow below, not a hard block. */
+.sealWax {
+  transform-origin: 50% 55%;
+  filter: drop-shadow(0 4px 3px rgba(42, 29, 46, 0.34));
   transition: transform 160ms var(--isl-ease-snap);
+}
+
+/* The season is over: the wax has set and nobody presses it. */
+.sealStill {
+  opacity: 0.8;
+  filter: saturate(0.7);
 }
 
 .waxRim {
@@ -992,15 +1013,42 @@
   fill: var(--isl-wax-light);
 }
 
-.waxImprint {
-  fill: #5a1418;
+.waxShade {
+  fill: var(--isl-wax-shade);
 }
 
+.waxImprint {
+  fill: var(--isl-wax-imprint);
+}
+
+.waxLip {
+  fill: var(--isl-wax-lip);
+}
+
+.cord {
+  fill: var(--isl-sea-light);
+}
+
+.cordShade {
+  fill: var(--isl-sea);
+}
+
+/* The action under the wax, underlined in wax so it reads as something to press. */
 .sealLabel {
   font-family: var(--font-kodchasan), var(--font-bai-jamjuree), sans-serif;
   font-size: 17px;
   font-weight: 700;
   line-height: 1.4;
+  text-decoration: underline;
+  text-decoration-color: rgba(184, 50, 47, 0.55);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+  transition: text-decoration-color 160ms var(--isl-ease-snap);
+}
+
+.seal[data-state="pending"] .sealLabel,
+.seal[data-state="stamped"] .sealLabel {
+  text-decoration-color: transparent;
 }
 
 /* Warm light pooling under the wax: clip, opacity and blur move together. */
@@ -1009,8 +1057,8 @@
   top: 0;
   left: 50%;
   z-index: -1;
-  width: 160px;
-  height: 128px;
+  width: 260px;
+  height: 140px;
   translate: -50% 0;
   background: radial-gradient(closest-side, rgba(224, 97, 79, 0.5), rgba(255, 201, 107, 0.28) 55%, transparent);
   pointer-events: none;
@@ -1041,6 +1089,10 @@
 
   .seal:hover:not(:disabled) .sealWax {
     animation: isl-seal-lift 420ms var(--isl-ease-tension) forwards;
+  }
+
+  .seal:hover:not(:disabled) .sealLabel {
+    text-decoration-color: var(--isl-wax);
   }
 }
 

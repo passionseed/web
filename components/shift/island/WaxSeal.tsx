@@ -53,8 +53,7 @@ export function WaxSeal({
     case "signedOut":
       return (
         <div className={styles.sealArea}>
-          <PixelWax className={styles.sealWaxQuiet} />
-          <SealLink href={LOGIN_HREF}>{SEAL.signIn}</SealLink>
+          <SealSignIn />
         </div>
       );
     case "notAlumni":
@@ -69,7 +68,7 @@ export function WaxSeal({
     case "closed":
       return (
         <div className={styles.sealArea}>
-          <PixelWax className={styles.sealWaxQuiet} />
+          <SealArt still />
           <p className={styles.sealLine}>{SEAL.closed}</p>
         </div>
       );
@@ -88,6 +87,19 @@ function SealLink({ href, children }: { href: string; children: string }) {
   return (
     <Link ref={ref} href={href} className={`ei-button-dawn ${styles.cta} ${inView ? "in-view" : ""}`}>
       <span>{children}</span>
+    </Link>
+  );
+}
+
+/** Signed out: the seal looks the same, and pressing it goes to sign in. */
+function SealSignIn() {
+  const ref = useRef<HTMLAnchorElement>(null);
+  const inView = useInView(ref);
+  return (
+    <Link ref={ref} href={LOGIN_HREF} className={styles.seal} data-inview={inView ? "" : undefined}>
+      <span className={styles.sealGlow} aria-hidden="true" />
+      <SealArt />
+      <span className={styles.sealLabel}>{SEAL.signIn}</span>
     </Link>
   );
 }
@@ -192,7 +204,7 @@ function SealButton({ onGoing, focusOnMount }: { onGoing: OnGoing; focusOnMount:
         onClick={press}
       >
         <span className={styles.sealGlow} aria-hidden="true" />
-        <PixelWax className={styles.sealWax} />
+        <SealArt />
         <span className={styles.sealLabel}>{state === "pending" ? SEAL.pending : SEAL.press}</span>
       </button>
       {error && (
@@ -205,55 +217,98 @@ function SealButton({ onGoing, focusOnMount }: { onGoing: OnGoing; focusOnMount:
 }
 
 /*
- * Wax drop with a sprout pressed into it, 16x16. d: rim, x: wax, l: light,
- * i: the imprint.
+ * The seal, 44x21 pixels: a lumpy drop of wax pressed with a ring and a tree
+ * (one project, one tree), sitting on the cord that ties the letter.
+ * r: rim, l: lit side, x: wax, s: shade, k: the pressed imprint, h: the lip
+ * the press pushed up. The cord is drawn on its own so the wax can move on it.
  */
 const WAX = [
-  ".....dddddd.....",
-  "...ddxxxxxxdd...",
-  "..dxxllxxxxxxd..",
-  ".dxllxxxxxxxxxd.",
-  ".dxlxxxxiixxxxd.",
-  "dxxxxxxiiiixxxxd",
-  "dxxxxxiiiiiixxxd",
-  "dxxxxxxiiiixxxxd",
-  "dxxxxxxxiixxxxxd",
-  "dxxxxxxxiixxxxxd",
-  "dxxxxxxxiixxxxxd",
-  ".dxxxxiiiiiixxd.",
-  ".dxxxxxxxxxxxxd.",
-  "..dxxxxxxxxxxd..",
-  "...ddxxxxxxdd...",
-  ".....dddddd.....",
+  "..................rrrrrrrrr.................",
+  "................rrlllllllllrr...............",
+  "..............rrllllllllllxxxr..............",
+  ".............rllllkkkkkkkkxxxxr.............",
+  "............rllllkkxxxxxxkkxxxxr............",
+  "............rlllkxxxkkkxxxxkxxxr............",
+  "...........rlllkkxkkkkkkkxxkkxsr............",
+  "...........rlllkxxkkkkkskxxxkhsr............",
+  "...........rlllkxkkkkkkskkxxkhsr............",
+  "...........rlllkxkskkkkkkkxxkhsr............",
+  "...........rlllkxxkkkkkkkxxxkhsr............",
+  "............rllkxxxxkkkxxxxxkhsr............",
+  "............rllkxxxxxkxxxxxxkhsr............",
+  ".............rlkkxxkkkkkxxxkkxr.............",
+  ".............rxxkxxxxxxxxxxkhsr.............",
+  "..............rxxkkxxxxxxkkhsr..............",
+  "..............rxxxkkkkkkkkhssr..............",
+  "...............rxxxhhhhhhxssr...............",
+  "................rxssssssssrr................",
+  ".................rrsssssrr..................",
+  "...................rrrrr....................",
 ] as const;
 
-const WAX_FILL: Record<string, string> = {
-  d: styles.waxRim,
+/** b: cord, B: its shadow side. Starts on row 8 of the seal. */
+const CORD = [
+  "..bbbbbb............................bbbbbbb.",
+  ".bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.",
+  ".B.BBBBBbbbbbbbbbbbbbbbbbbbbbbbbbbbbBBBBBB..",
+  "........BBBBBBBBBBBBBBBBBBBBBBBBBBBB........",
+] as const;
+const CORD_TOP = 8;
+const SEAL_VIEWBOX = "0 0 44 21";
+
+const TONE: Record<string, string> = {
+  r: styles.waxRim,
   x: styles.waxBody,
   l: styles.waxLight,
-  i: styles.waxImprint,
+  s: styles.waxShade,
+  k: styles.waxImprint,
+  h: styles.waxLip,
+  b: styles.cord,
+  B: styles.cordShade,
 };
 
-/** One rect per run of the same colour in a row. */
-const WAX_RECTS = WAX.flatMap((row, y) => {
-  const rects: { x: number; y: number; w: number; tone: string }[] = [];
-  let x = 0;
-  while (x < row.length) {
-    const tone = row[x];
-    let end = x + 1;
-    while (end < row.length && row[end] === tone) end++;
-    if (tone !== ".") rects.push({ x, y, w: end - x, tone });
-    x = end;
-  }
-  return rects;
-});
+interface Run {
+  x: number;
+  y: number;
+  w: number;
+  tone: string;
+}
 
-function PixelWax({ className }: { className: string }) {
+/** One rect per run of the same tone in a row. */
+function toRuns(rows: readonly string[], top = 0): Run[] {
+  return rows.flatMap((row, i) => {
+    const runs: Run[] = [];
+    let x = 0;
+    while (x < row.length) {
+      const tone = row[x];
+      let end = x + 1;
+      while (end < row.length && row[end] === tone) end++;
+      if (tone !== ".") runs.push({ x, y: top + i, w: end - x, tone });
+      x = end;
+    }
+    return runs;
+  });
+}
+
+const WAX_RUNS = toRuns(WAX);
+const CORD_RUNS = toRuns(CORD, CORD_TOP);
+
+function PixelLayer({ runs, className }: { runs: Run[]; className: string }) {
   return (
-    <svg className={className} viewBox="0 0 16 16" shapeRendering="crispEdges" aria-hidden="true" focusable="false">
-      {WAX_RECTS.map(({ x, y, w, tone }) => (
-        <rect key={`${x}-${y}`} x={x} y={y} width={w} height={1} className={WAX_FILL[tone]} />
+    <svg className={className} viewBox={SEAL_VIEWBOX} shapeRendering="crispEdges" aria-hidden="true" focusable="false">
+      {runs.map(({ x, y, w, tone }) => (
+        <rect key={`${x}-${y}`} x={x} y={y} width={w} height={1} className={TONE[tone]} />
       ))}
     </svg>
+  );
+}
+
+/** The cord, then the wax on top of it. `still`: a seal nobody can press. */
+function SealArt({ still = false }: { still?: boolean }) {
+  return (
+    <span className={`${styles.sealArt} ${still ? styles.sealStill : ""}`} aria-hidden="true">
+      <PixelLayer runs={CORD_RUNS} className={styles.sealCord} />
+      <PixelLayer runs={WAX_RUNS} className={styles.sealWax} />
+    </span>
   );
 }
