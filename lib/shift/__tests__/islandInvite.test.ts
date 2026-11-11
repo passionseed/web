@@ -33,18 +33,41 @@ describe("islandViewer", () => {
   test("admin with no member can rsvp", () => {
     expect(islandViewer({ ...base, isAdmin: true }, URL)).toEqual({ kind: "canRsvp" });
   });
-  test("member with rsvp is going with ticket and discord url", () => {
+  test("confirmed member with rsvp is going with ticket and discord url", () => {
     expect(islandViewer({ ...base, member, rsvp: true }, URL)).toEqual({
       kind: "going",
       ticket: { nickname: "Fah", cohort: "SHIFT 3" },
       discordUrl: URL,
+      confirmed: true,
     });
+  });
+  test("pending member with rsvp is going without the discord url until confirmed", () => {
+    expect(islandViewer({ ...base, member: { ...member, status: "pending" }, rsvp: true }, URL)).toEqual({
+      kind: "going",
+      ticket: { nickname: "Fah", cohort: "SHIFT 3" },
+      discordUrl: null,
+      confirmed: false,
+    });
+  });
+  test("admin with rsvp gets the discord url", () => {
+    expect(islandViewer({ ...base, isAdmin: true, rsvp: true }, URL)).toEqual({
+      kind: "going",
+      ticket: MENTOR_TICKET,
+      discordUrl: URL,
+      confirmed: true,
+    });
+  });
+  test("admin with a pending member record still gets the discord url", () => {
+    expect(
+      islandViewer({ ...base, isAdmin: true, member: { ...member, status: "pending" }, rsvp: true }, URL),
+    ).toMatchObject({ kind: "going", discordUrl: URL, confirmed: true });
   });
   test("admin with rsvp and no member is going as mentor", () => {
     expect(islandViewer({ ...base, isAdmin: true, rsvp: true }, null)).toEqual({
       kind: "going",
       ticket: MENTOR_TICKET,
       discordUrl: null,
+      confirmed: true,
     });
   });
   test("after: alumni without rsvp is closed", () => {

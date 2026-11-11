@@ -43,6 +43,14 @@ describe("shift island invite copy", () => {
     }
   });
 
+  it("has the alumni-board way in and the pending Discord line", () => {
+    expect(SEAL.alumniHint).toBe("เคยผ่าน SHIFT แล้ว? ยืนยันตัวที่บอร์ดศิษย์เก่าก่อน แล้วกลับมาตอบรับ");
+    expect(SEAL.alumniCta).toBe("ไปบอร์ดศิษย์เก่า");
+    expect(TICKET.pendingDiscord).toBe(
+      "ทีมจะยืนยันว่าเราผ่าน SHIFT แล้ว จากนั้นส่งลิงก์ห้องเกาะให้ในกลุ่มรุ่น",
+    );
+  });
+
   it("festivalLine before kickoff counts days", () => {
     expect(festivalLine(BEFORE)).toContain("อีก 3 วัน");
   });

@@ -12,17 +12,20 @@ import { useInView } from "./useInView";
 /**
  * The ticket that takes the seal's place once the RSVP is saved: who is
  * coming, from which round, when the festival runs, and the way into Discord.
- * The stub carries a sprout sprite, as decoration.
+ * The stub carries a sprout sprite, as decoration. Only admins and confirmed
+ * members get the Discord link; anyone else is told the team checks first.
  * `focusHeading` moves focus here when the ticket replaces a pressed seal.
  */
 export function IslandTicket({
   ticket,
   discordUrl,
+  confirmed,
   festival,
   focusHeading = false,
 }: {
   ticket: Ticket;
   discordUrl: string | null;
+  confirmed: boolean;
   festival: string;
   focusHeading?: boolean;
 }) {
@@ -57,7 +60,7 @@ export function IslandTicket({
             <span>{TICKET.discordCta}</span>
           </a>
         ) : (
-          <p className={styles.ticketNote}>{TICKET.noDiscord}</p>
+          <p className={styles.ticketNote}>{confirmed ? TICKET.noDiscord : TICKET.pendingDiscord}</p>
         )}
       </div>
     </section>

@@ -10,10 +10,16 @@ import styles from "./islandInvite.module.css";
 import { useInView } from "./useInView";
 import { useReducedMotion } from "./useReducedMotion";
 
-const LOGIN_HREF = "/login?next=%2Fshift%2Fisland";
+/** Back to this page after sign-in, opened on the letter at the seal. */
+const LOGIN_HREF = "/login?next=%2Fshift%2Fisland%3Fat%3Dseal";
 const APPLY_HREF = "/shift/apply";
+/** Alumni with no record yet confirm themselves here first. */
+const ALUMNI_BOARD_HREF = "/shift/alumni/board";
 /** The wax lifts, presses down and settles, then the ticket takes its place. */
 const STAMP_MS = 720;
+/** A request that has not answered by now is treated as failed. */
+const RSVP_TIMEOUT_MS = 15_000;
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
 type SealState = "idle" | "pending" | "stamped";
 
@@ -21,20 +27,27 @@ interface RsvpReply {
   ok?: boolean;
   ticket?: IslandTicket;
   discordUrl?: string | null;
+  confirmed?: boolean;
   error?: string;
 }
+
+/** A saved RSVP. `confirmed` is false for a member the team has not checked yet. */
+export type OnGoing = (ticket: IslandTicket, discordUrl: string | null, confirmed: boolean) => void;
 
 /**
  * The wax seal at the foot of the letter. Pressing it is the RSVP, so what it
  * shows depends on who is reading: a sign-in link, a line for people who have
  * not been through SHIFT, the closed line, or the seal itself.
+ * `focusOnMount` scrolls to the seal and focuses it (back from sign-in).
  */
 export function WaxSeal({
   viewer,
   onGoing,
+  focusOnMount = false,
 }: {
   viewer: IslandViewer;
-  onGoing: (ticket: IslandTicket, discordUrl: string | null) => void;
+  onGoing: OnGoing;
+  focusOnMount?: boolean;
 }) {
   switch (viewer.kind) {
     case "signedOut":
@@ -49,6 +62,8 @@ export function WaxSeal({
         <div className={styles.sealArea}>
           <p className={styles.sealLine}>{SEAL.notAlumni}</p>
           <SealLink href={APPLY_HREF}>{SEAL.applyCta}</SealLink>
+          <p className={styles.sealLine}>{SEAL.alumniHint}</p>
+          <SealLink href={ALUMNI_BOARD_HREF}>{SEAL.alumniCta}</SealLink>
         </div>
       );
     case "closed":
@@ -59,7 +74,7 @@ export function WaxSeal({
         </div>
       );
     case "canRsvp":
-      return <SealButton onGoing={onGoing} />;
+      return <SealButton onGoing={onGoing} focusOnMount={focusOnMount} />;
     case "going":
       // The ticket is already showing in the seal's place.
       return null;
@@ -78,21 +93,41 @@ function SealLink({ href, children }: { href: string; children: string }) {
 }
 
 /** The seal for an alumnus who has not RSVPed yet. One press, one request. */
-function SealButton({ onGoing }: { onGoing: (ticket: IslandTicket, discordUrl: string | null) => void }) {
+function SealButton({ onGoing, focusOnMount }: { onGoing: OnGoing; focusOnMount: boolean }) {
   const reduced = useReducedMotion();
   const [state, setState] = useState<SealState>("idle");
   const [error, setError] = useState<string | null>(null);
   const inFlight = useRef(false);
   const timer = useRef<number | null>(null);
+  const requestTimer = useRef<number | null>(null);
+  const request = useRef<AbortController | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const inView = useInView(buttonRef);
+
+  const settleRequest = () => {
+    if (requestTimer.current !== null) window.clearTimeout(requestTimer.current);
+    requestTimer.current = null;
+    request.current = null;
+  };
 
   useEffect(
     () => () => {
       if (timer.current !== null) window.clearTimeout(timer.current);
+      if (requestTimer.current !== null) window.clearTimeout(requestTimer.current);
+      request.current?.abort();
     },
     [],
   );
+
+  // Back from sign-in: bring the seal on screen and onto the keyboard. Read
+  // the media query here, since the hook reports false until hydrated.
+  useEffect(() => {
+    const button = buttonRef.current;
+    if (!focusOnMount || !button) return;
+    const still = typeof window.matchMedia === "function" && window.matchMedia(REDUCED_MOTION_QUERY).matches;
+    button.scrollIntoView({ behavior: still ? "auto" : "smooth", block: "center" });
+    button.focus({ preventScroll: true });
+  }, [focusOnMount]);
 
   const fail = (message: string) => {
     inFlight.current = false;
@@ -107,26 +142,34 @@ function SealButton({ onGoing }: { onGoing: (ticket: IslandTicket, discordUrl: s
     setError(null);
     setState("pending");
 
+    // A request that hangs (a dead connection) aborts, so the seal comes back.
+    const controller = new AbortController();
+    request.current = controller;
+    requestTimer.current = window.setTimeout(() => controller.abort(), RSVP_TIMEOUT_MS);
+
     let status: number;
     let body: RsvpReply = {};
     try {
-      const res = await fetch("/api/shift/island/rsvp", { method: "POST" });
+      const res = await fetch("/api/shift/island/rsvp", { method: "POST", signal: controller.signal });
       status = res.status;
       body = (await res.json().catch(() => ({}))) as RsvpReply;
     } catch {
       fail(SEAL.error);
       return;
+    } finally {
+      settleRequest();
     }
 
     if (status === 200 && body.ok && body.ticket) {
       const { ticket } = body;
       const discordUrl = body.discordUrl ?? null;
+      const confirmed = body.confirmed === true;
       if (reduced) {
-        onGoing(ticket, discordUrl);
+        onGoing(ticket, discordUrl, confirmed);
         return;
       }
       setState("stamped");
-      timer.current = window.setTimeout(() => onGoing(ticket, discordUrl), STAMP_MS);
+      timer.current = window.setTimeout(() => onGoing(ticket, discordUrl, confirmed), STAMP_MS);
       return;
     }
     // Only these two carry a line written for the reader.

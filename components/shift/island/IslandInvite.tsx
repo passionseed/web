@@ -18,6 +18,8 @@ type Scene = "prologue" | "shore" | "letter";
 interface Going {
   ticket: Ticket;
   discordUrl: string | null;
+  /** False for a member the team has not confirmed yet (no Discord link). */
+  confirmed: boolean;
   /** True when it came from pressing the seal just now, not from the server. */
   justSealed: boolean;
 }
@@ -26,14 +28,28 @@ interface Going {
  * Root of the SHIFT High Island invite. Holds which scene is on screen:
  * the island's story, the bottle on the shore, then the letter with its seal.
  * A visitor who has already RSVPed opens straight onto the letter and ticket.
+ * `initialScene="letter"` (back from sign-in, `?at=seal`) skips the story and
+ * brings the seal into view with focus on it.
  */
-export function IslandInvite({ viewer, festival }: { viewer: IslandViewer; festival: string }) {
-  const [scene, setScene] = useState<Scene>(viewer.kind === "going" ? "letter" : "prologue");
+export function IslandInvite({
+  viewer,
+  festival,
+  initialScene,
+}: {
+  viewer: IslandViewer;
+  festival: string;
+  initialScene?: "letter";
+}) {
+  const [scene, setScene] = useState<Scene>(
+    initialScene === "letter" || viewer.kind === "going" ? "letter" : "prologue",
+  );
   const rootRef = useRef<HTMLElement>(null);
   const focusedScene = useRef(scene);
   // Held here so a successful RSVP swaps the seal for the ticket without a reload.
   const [going, setGoing] = useState<Going | null>(
-    viewer.kind === "going" ? { ticket: viewer.ticket, discordUrl: viewer.discordUrl, justSealed: false } : null,
+    viewer.kind === "going"
+      ? { ticket: viewer.ticket, discordUrl: viewer.discordUrl, confirmed: viewer.confirmed, justSealed: false }
+      : null,
   );
 
   // The control that changed the scene unmounts with it, so focus would fall
@@ -63,13 +79,15 @@ export function IslandInvite({ viewer, festival }: { viewer: IslandViewer; festi
             <IslandTicket
               ticket={going.ticket}
               discordUrl={going.discordUrl}
+              confirmed={going.confirmed}
               festival={festival}
               focusHeading={going.justSealed}
             />
           ) : (
             <WaxSeal
               viewer={viewer}
-              onGoing={(ticket, discordUrl) => setGoing({ ticket, discordUrl, justSealed: true })}
+              onGoing={(ticket, discordUrl, confirmed) => setGoing({ ticket, discordUrl, confirmed, justSealed: true })}
+              focusOnMount={initialScene === "letter"}
             />
           )}
         </InviteLetter>

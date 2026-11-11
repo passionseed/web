@@ -33,6 +33,7 @@
   --isl-gutter: 16px;
 
   position: relative;
+  min-height: 100vh;
   min-height: 100svh;
   overflow-x: clip;
   background: linear-gradient(180deg, var(--isl-violet) 0%, var(--isl-deep) 45%, var(--isl-night) 100%);
@@ -103,6 +104,18 @@
   }
 }
 
+/* Touch: no hover, so "ต่อ" rests in its charged state. */
+@media (hover: none) {
+  .next {
+    animation: isl-charge 420ms var(--isl-ease-tension) forwards;
+  }
+
+  /* Let the press transform through; a filled animation would hold it. */
+  .next:active {
+    animation: none;
+  }
+}
+
 .next:active {
   transform: translateY(1px) scale(0.98);
 }
@@ -125,15 +138,24 @@
 /* ---------- Scene 0: prologue ---------- */
 
 .prologue {
-  --step: 50svh;
+  /* vh first: a custom property cannot fall back, so svh is set under @supports. */
+  --step: 50vh;
   position: relative;
   /* One screen, then one step of scrolling for every line after the first. */
+  height: calc(100vh + var(--steps, 0) * var(--step));
   height: calc(100svh + var(--steps, 0) * var(--step));
+}
+
+@supports (height: 1svh) {
+  .prologue {
+    --step: 50svh;
+  }
 }
 
 .prologueStage {
   position: sticky;
   top: 0;
+  height: 100vh;
   height: 100svh;
   overflow: hidden;
   isolation: isolate;
@@ -300,6 +322,7 @@
   left: 0;
   width: 1px;
   /* Reaches the middle of the screen one step after the line before it. */
+  top: calc((var(--i) + 1) * var(--step) + 40vh);
   top: calc((var(--i) + 1) * var(--step) + 40svh);
   bottom: 0;
   pointer-events: none;
@@ -313,11 +336,13 @@
 .prologue[data-still] .prologueStage {
   position: relative;
   height: auto;
+  min-height: 100vh;
   min-height: 100svh;
 }
 
 .prologue[data-still] .prologueBody {
   position: relative;
+  min-height: 100vh;
   min-height: 100svh;
   justify-content: flex-end;
   padding-top: 72px;
@@ -356,6 +381,7 @@
     transition: none;
   }
 
+  .next,
   .next:hover {
     animation: none;
   }
@@ -365,6 +391,7 @@
 
 .shore {
   position: relative;
+  height: 100vh;
   height: 100svh;
   min-height: 520px;
   overflow: hidden;
@@ -637,6 +664,7 @@
 
 .letter {
   display: flex;
+  min-height: 100vh;
   min-height: 100svh;
   justify-content: center;
   padding: 48px var(--isl-gutter) 72px;

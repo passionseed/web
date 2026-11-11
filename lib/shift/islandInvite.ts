@@ -17,7 +17,14 @@ export type IslandViewer =
   | { kind: "notAlumni" }
   | { kind: "closed" }
   | { kind: "canRsvp" }
-  | { kind: "going"; ticket: IslandTicket; discordUrl: string | null };
+  | {
+      kind: "going";
+      ticket: IslandTicket;
+      /** Only for admins and confirmed members (safeguarding); null otherwise. */
+      discordUrl: string | null;
+      /** An admin, or a member the team has confirmed went through SHIFT. */
+      confirmed: boolean;
+    };
 
 export interface IslandViewerInput {
   user: { anonymous: boolean } | null;
@@ -38,6 +45,14 @@ function isAlumni(input: IslandViewerInput): boolean {
   return input.linkedApplication !== null;
 }
 
+/**
+ * Safeguarding: the Discord link goes only to people the team has confirmed
+ * (or admins), so an unverified account never lands in a room with students.
+ */
+export function isConfirmed(input: Pick<IslandViewerInput, "isAdmin" | "member">): boolean {
+  return input.isAdmin || input.member?.status === "confirmed";
+}
+
 function ticketFor(input: IslandViewerInput): IslandTicket {
   const source = input.member ?? input.linkedApplication;
   if (source) return { nickname: source.nickname, cohort: source.cohort };
@@ -47,7 +62,10 @@ function ticketFor(input: IslandViewerInput): IslandTicket {
 export function islandViewer(input: IslandViewerInput, discordUrl: string | null): IslandViewer {
   if (!input.user || input.user.anonymous) return { kind: "signedOut" };
   if (!isAlumni(input)) return { kind: "notAlumni" };
-  if (input.rsvp) return { kind: "going", ticket: ticketFor(input), discordUrl };
+  if (input.rsvp) {
+    const confirmed = isConfirmed(input);
+    return { kind: "going", ticket: ticketFor(input), discordUrl: confirmed ? discordUrl : null, confirmed };
+  }
   if (input.phase === "after") return { kind: "closed" };
   return { kind: "canRsvp" };
 }

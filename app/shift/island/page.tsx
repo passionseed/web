@@ -32,8 +32,15 @@ export const metadata: Metadata = {
 /** Reads the visitor's session cookie, so it renders per request. */
 export const dynamic = "force-dynamic";
 
-export default async function ShiftIslandPage() {
-  const { viewer } = await loadIslandViewer();
+export default async function ShiftIslandPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const [{ viewer }, { at }] = await Promise.all([loadIslandViewer(), searchParams]);
+  // `?at=seal` comes back from sign-in: open on the letter, at the seal.
+  // Any other value is ignored.
+  const initialScene = at === "seal" ? "letter" : undefined;
   // Computed here so the first client render never reads the clock.
-  return <IslandInvite viewer={viewer} festival={festivalLine()} />;
+  return <IslandInvite viewer={viewer} festival={festivalLine()} initialScene={initialScene} />;
 }
