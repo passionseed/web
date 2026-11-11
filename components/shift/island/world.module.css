@@ -159,6 +159,55 @@
   100% { transform: translate(var(--dx), var(--dy)); opacity: 0; }
 }
 
+/*
+ * The plaza (live/PlazaLayer.tsx): the notice board, the stage and the
+ * campfire as tap targets over the canvas, sized like .hotspot. The group
+ * itself lets taps through to the plots under it.
+ */
+.plaza,
+.plazaLabels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.plazaSpot {
+  pointer-events: auto;
+}
+
+/* A short line the canvas cannot draw crisply: cream on the dark notch, like the tap hint. */
+.plazaLabel {
+  position: absolute;
+  /* Two lines at most: the sign's "\n" splits date and days; a long count wraps instead of losing words. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  width: max-content;
+  max-width: 128px;
+  padding: 2px 8px;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  white-space: pre-line;
+  color: var(--isl-cream);
+  background: rgba(18, 14, 20, 0.8);
+  clip-path: var(--notch);
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.plazaLabel[data-anchor="bottom"] {
+  transform: translate(-50%, -100%);
+}
+
+.plazaLabel[data-anchor="left"] {
+  transform: translate(0, -50%);
+}
+
 /* The light of the hour over the whole screen, on top of the tinted canvas. */
 .shade {
   position: fixed;
@@ -430,6 +479,32 @@
 
 .round svg {
   display: block;
+}
+
+/*
+ * Narrow phones (360-400px) with four rounds (story, canvas, mail, menu):
+ * 44px rounds and tighter gaps keep the chip's name and its 7-cell meter
+ * whole (about 72px of text at 360px) instead of crushing them.
+ */
+@media (max-width: 400px) {
+  .hudTop,
+  .hudButtons {
+    gap: 6px;
+  }
+
+  .round {
+    width: 44px;
+    height: 44px;
+  }
+
+  .chip {
+    gap: 8px;
+    padding-right: 10px;
+  }
+
+  .chipCell {
+    width: 8px;
+  }
 }
 
 /*

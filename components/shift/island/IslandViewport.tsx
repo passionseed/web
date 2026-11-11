@@ -3,6 +3,7 @@
 import {
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
@@ -14,6 +15,7 @@ import {
 import type { IslandHotspot, IslandPicture } from "@/lib/shift-island/picture";
 import { pxPerNativeFor, type Rect } from "@/lib/shift-island/live/geometry";
 import { PHASE_TINT, waterColor } from "@/lib/shift-island/live/lighting";
+import { NO_PLAZA, plazaWorld, type PlazaInput, type PlazaLabelId, type PlazaSpotId } from "@/lib/shift-island/live/plaza";
 import type { LightPhase } from "@/lib/shift-island/live/types";
 import { scrollToCentre, worldLayout, type Insets } from "@/lib/shift-island/live/world";
 
@@ -21,6 +23,7 @@ import { COMMON, HUD, ISLAND, stageName } from "./copy";
 import islandStyles from "./island.module.css";
 import { IslandLive } from "./live/IslandLive";
 import liveStyles from "./live/live.module.css";
+import { PlazaLayer } from "./live/PlazaLayer";
 import styles from "./world.module.css";
 
 interface IslandViewportProps {
@@ -39,7 +42,30 @@ interface IslandViewportProps {
    * dark from the first paint instead of flashing the daytime picture.
    */
   initialPhase?: LightPhase;
+  /**
+   * The plaza (notice board, Demo Day festival, campfire), drawn by the
+   * living island; labels are their DOM text, names the tap targets' aria-labels.
+   */
+  plaza?: {
+    input: PlazaInput;
+    labels: Partial<Record<PlazaLabelId, string>>;
+    names: Partial<Record<PlazaSpotId, string>>;
+    onSpot?: (id: PlazaSpotId) => void;
+  };
+  /** The living island became (true) or stopped being (false) the picture on screen. */
+  onLiveChange?: (live: boolean) => void;
+  /**
+   * The notice board's tap target is (true) or is not (false) on screen
+   * between the HUD bars, in the close view, big enough to tap: only then
+   * can it stand in for the bottom board button.
+   */
+  onNoticeVisible?: (visible: boolean) => void;
 }
+
+/** The HUD's reserve over the world (top bar, bottom bar): the notice board under it does not count as seen. */
+const HUD_RESERVE = "-64px 0px -96px 0px";
+/** How much of the notice board's tap target must be in that area to count. */
+const NOTICE_SEEN = 0.6;
 
 export function hotspotLabel(hotspot: IslandHotspot): string {
   return hotspot.mine ? ISLAND.myPlot(hotspot.slot, stageName(hotspot.stage)) : ISLAND.plot(hotspot.slot);
@@ -217,6 +243,9 @@ export function IslandViewport({
   paused = false,
   whole = false,
   initialPhase,
+  plaza,
+  onLiveChange,
+  onNoticeVisible,
 }: IslandViewportProps) {
   const world = useRef<HTMLDivElement>(null);
   const probe = useRef<HTMLDivElement>(null);
@@ -252,6 +281,55 @@ export function IslandViewport({
   const live = liveOn && liveReady;
   // The canvas draws from the scene, not the PNG: a failed PNG matters only without it.
   const broken = picture != null && failedSrc === picture.src && !liveOn;
+
+  // The plaza's sprites change only with its input: one repaint each, never per frame.
+  const scene = picture?.scene ?? null;
+  const plazaInput = plaza?.input ?? null;
+  const plazaKey = plazaInput ? JSON.stringify(plazaInput) : null;
+  const plazaView = useMemo(
+    () => (scene && plazaInput ? plazaWorld(scene, plazaInput) : NO_PLAZA),
+    // The key stands for the input, which callers rebuild on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [scene, plazaKey]
+  );
+
+  const liveChange = useRef(onLiveChange);
+  useEffect(() => {
+    liveChange.current = onLiveChange;
+  });
+  useEffect(() => {
+    liveChange.current?.(live);
+  }, [live]);
+  // Gone from the screen: the canvas is no longer the picture.
+  useEffect(() => () => liveChange.current?.(false), []);
+
+  // The notice board on screen, seen through the world's own scrolling (no React render per scroll).
+  const noticeChange = useRef(onNoticeVisible);
+  useEffect(() => {
+    noticeChange.current = onNoticeVisible;
+  });
+  const noticeSpot = live && !whole && interactive && !!plaza?.onSpot && !!plaza?.names.notice;
+  useEffect(() => {
+    const report = (visible: boolean) => noticeChange.current?.(visible);
+    const root = world.current;
+    const spot = noticeSpot ? root?.querySelector<HTMLElement>('[data-spot="notice"]') : null;
+    if (!root || !spot || typeof IntersectionObserver !== "function") {
+      report(false);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries.at(-1);
+        if (entry) report(entry.isIntersecting && entry.intersectionRatio >= NOTICE_SEEN);
+      },
+      { root, rootMargin: HUD_RESERVE, threshold: [0, NOTICE_SEEN, 1] }
+    );
+    observer.observe(spot);
+    return () => {
+      observer.disconnect();
+      report(false);
+    };
+  }, [noticeSpot]);
 
   const layout =
     box && picture
@@ -365,6 +443,7 @@ export function IslandViewport({
                 fit={whole}
                 crop={layout?.frame}
                 scroller={world}
+                actors={plazaView.actors}
                 className={liveStyles.live}
                 onReady={() => setLiveReady(true)}
                 onFail={() => setLiveFailed(true)}
@@ -416,6 +495,25 @@ export function IslandViewport({
                   </span>
                 ) : null}
               </div>
+            ) : null}
+            {plaza ? (
+              <PlazaLayer
+                world={plazaView}
+                labels={plaza.labels}
+                names={plaza.names}
+                onSpot={
+                  plaza.onSpot
+                    ? (id) => {
+                        setHintGone(true);
+                        plaza.onSpot?.(id);
+                      }
+                    : undefined
+                }
+                // The PNG draws no plaza: its tap targets go with the canvas.
+                interactive={interactive && liveOn}
+                showLabels={live && !whole}
+                whole={whole}
+              />
             ) : null}
           </div>
         </div>

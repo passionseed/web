@@ -11,11 +11,12 @@
 #             equal the twice-applied one below
 #   wave1     only the files up to 20261111090700, when later ones exist: wave 1
 #             applies alone, has the island core and no season tables
-#   rules, island, flows, islandflows, board, canvas
+#   rules, island, flows, islandflows, board, canvas, campfire
 #             every migration applied twice (each must be re-runnable), then
 #             db_rules.ts, island_rules.ts, bot_flows.ts, island_flows.ts,
-#             web_board.ts (the web quest board, side quests, shift_quest_web)
-#             and web_canvas.ts (the SHIFT canvas link)
+#             web_board.ts (the web quest board, side quests, shift_quest_web),
+#             web_canvas.ts (the SHIFT canvas link) and campfire.ts (the
+#             coworking voice campfire)
 #
 #   supabase/tests/shift_quests/run-local.sh       # or: pnpm test:db:quests
 #   PG_BIN=/usr/lib/postgresql/15/bin supabase/tests/shift_quests/run-local.sh
@@ -153,9 +154,10 @@ SQL
 # The rules of 20261111090600's grant loop, checked after a single pass: the
 # bot can execute every shift_quest_* entry point and no helper, the Data API
 # can execute none and touch no table, and every table has row level security.
-# The website-only functions (the canvas link, 091100, and the ownership read,
-# 091200) are never the bot's.
-# And the web allowlist (20261111090900, 091000, 091100, 091200): shift_quest_web executes exactly the
+# The website-only functions (the canvas link, 091100, the ownership read,
+# 091200, and the campfire read, 093000) are never the bot's; the campfire
+# writers (093000) are the bot's like every other entry point.
+# And the web allowlist (20261111090900, 091000, 091100, 091200, 093000): shift_quest_web executes exactly the
 # functions listed below (nothing before that file is applied), never a
 # helper, and holds no privilege on any table or sequence. The list repeats
 # the migration's on purpose: a new grant must change both.
@@ -165,8 +167,8 @@ check_privileges() {
 WITH fns0 AS (
   SELECT p.oid, p.oid::regprocedure::text AS sig,
     p.proname LIKE 'shift\_quest\_\_%' OR p.proname = 'shift_quest_bootstrap_admin' AS helper,
-    -- Website-only entry points (091100, 091200): the bot never runs them.
-    p.proname LIKE 'shift\_quest\_canvas\_%' OR p.proname = 'shift_quest_ownership_get' AS web_only
+    -- Website-only entry points (091100, 091200, 093000): the bot never runs them.
+    p.proname LIKE 'shift\_quest\_canvas\_%' OR p.proname IN ('shift_quest_ownership_get', 'shift_quest_campfire') AS web_only
   FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
   WHERE n.nspname = 'public' AND p.proname LIKE 'shift\_quest\_%'
 ), fns AS (
@@ -200,7 +202,8 @@ web_allow(sig) AS (VALUES
   ('shift_quest_canvas_get(text)'),
   ('shift_quest_canvas_link(text,uuid,text,text)'),
   ('shift_quest_canvas_unlink(text)'),
-  ('shift_quest_ownership_get(text)')
+  ('shift_quest_ownership_get(text)'),
+  ('shift_quest_campfire(text,boolean)')
 ), web_applied AS (
   SELECT to_regprocedure('public.shift_quest_board(text)') IS NOT NULL AS yes
 )
@@ -263,7 +266,7 @@ echo "# migrations"
 for f in "${MIGRATIONS[@]}"; do echo "apply $(basename "$f")"; done
 new_db once
 apply once "single pass" "${MIGRATIONS[@]}"
-for DB in rules island flows islandflows board canvas; do
+for DB in rules island flows islandflows board canvas campfire; do
   new_db "$DB"
   apply "$DB" "first pass" "${MIGRATIONS[@]}"
   apply "$DB" "second pass" "${MIGRATIONS[@]}"
@@ -327,6 +330,7 @@ suite "bot flows" flows bot_flows.ts
 suite "island flows" islandflows island_flows.ts
 suite "web board" board web_board.ts
 suite "web canvas link" canvas web_canvas.ts
+suite "campfire" campfire campfire.ts
 # island_rules.ts runs against wave 1 alone once it knows to skip season cases.
 if [ "${#WAVE1[@]}" -lt "${#MIGRATIONS[@]}" ] && grep -q SHIFT_QUESTS_WAVE "$HERE/island_rules.ts"; then
   export SHIFT_QUESTS_WAVE=1

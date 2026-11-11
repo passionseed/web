@@ -39,9 +39,13 @@ const D = "630000000000000004"; // no project
 const NOBODY = "639999999999999999";
 const NAMES: Record<string, string> = { [A]: "Board Aye", [B]: "Board Bee", [C]: "Board Cee", [D]: "Board Dee" };
 
-/** Mirrors the allowlist at the end of 20261111091200_shift_quest_ownership_web.sql (regprocedure text). */
+/**
+ * Mirrors the allowlist at the end of 20261111091200_shift_quest_ownership_web.sql plus the
+ * campfire read of 20261111093000_shift_quest_campfire.sql (regprocedure text).
+ */
 const WEB_ALLOWLIST = [
   "shift_quest_board(text)",
+  "shift_quest_campfire(text,boolean)",
   "shift_quest_canvas_get(text)",
   "shift_quest_canvas_link(text,uuid,text,text)",
   "shift_quest_canvas_unlink(text)",
@@ -155,8 +159,8 @@ async function main(): Promise<void> {
   check(role && role.rolinherit === false && role.rolconnlimit === 20 && (role.rolconfig ?? []).includes("statement_timeout=8s"),
     "shift_quest_web: NOINHERIT, 20 connections, statement_timeout 8s", role);
   check((await scalar<string>(web, "show statement_timeout")) === "8s", "a web session runs with the 8s statement timeout");
-  check(Number(await call(web, "shift_quest_schema_version")) === 6, "the website reads schema version 6");
-  check(Number(await call(bot, "shift_quest_schema_version")) === 6, "the bot reads schema version 6 (it needs 2 or more)");
+  check(Number(await call(web, "shift_quest_schema_version")) === 7, "the website reads schema version 7 (it needs 6 or more)");
+  check(Number(await call(bot, "shift_quest_schema_version")) === 7, "the bot reads schema version 7 (it needs 2 or more)");
 
   const executable: string[] = (await db.query(`
     select p.oid::regprocedure::text as sig
@@ -211,6 +215,7 @@ async function main(): Promise<void> {
       [NOBODY, randomUUID(), "frame", "project"], "not_started"],
     ["canvas_unlink", "select public.shift_quest_canvas_unlink($1::text)", [NOBODY], "not_started"],
     ["ownership_get", "select public.shift_quest_ownership_get($1::text)", [NOBODY], "not_started"],
+    ["campfire", "select public.shift_quest_campfire($1::text, $2::boolean)", [NOBODY, true], "not_started"],
   ];
   check(allowCalls.length === WEB_ALLOWLIST.length, "every allowlisted function is called below");
   for (const [name, sql, args, expected] of allowCalls) {
@@ -232,6 +237,11 @@ async function main(): Promise<void> {
     ["the bot's quest browse", "select public.shift_quest_templates($1)", [A]],
     ["choosing a template directly", "select public.shift_quest_choose($1, $2, 'g', 'n', null, null)", [A, randomUUID()]],
     ["project invites", "select public.shift_quest_project_invite($1, $2, $3)", [A, randomUUID(), B]],
+    ["the campfire's voice update", "select public.shift_quest_voice_set($1, $2, $3, 'x')", [null, A, null]],
+    ["the campfire's voice sync", "select public.shift_quest_voice_sync($1, $2, $3::text[], $4::text[])", [null, null, [], []]],
+    ["the campfire's heartbeat", "select public.shift_quest_voice_beat($1)", [null]],
+    ["reading shift_quest_voice_presence", "select * from public.shift_quest_voice_presence", []],
+    ["reading shift_quest_voice_state", "select * from public.shift_quest_voice_state", []],
     ["helper shift_quest__fail", "select public.shift_quest__fail('x')", []],
     ["helper shift_quest__side_open", "select public.shift_quest__side_open($1, $2, true)", [A, randomUUID()]],
     ["helper shift_quest__side_missing", "select public.shift_quest__side_missing(null, null::public.shift_quest_templates)", []],

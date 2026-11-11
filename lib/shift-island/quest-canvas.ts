@@ -15,6 +15,10 @@
 import type { BoardRef } from "@/lib/supabase/shift-quests/board";
 import { shortTitle, type ShiftCardKind } from "@/lib/whiteboard/shift-cards";
 
+/**
+ * Only the time leaves the server, never the board or frame id: the island
+ * opens the canvas through CANVAS_ROUTE (lib/shift-island/canvas-link.ts).
+ */
 export type CanvasLinkState = { linked: false } | { linked: true; linkedAt: string };
 
 export interface QuestGuideItem {
@@ -49,6 +53,8 @@ export interface ContextRow {
   text: string | null;
   version: number | null;
   count: number | null;
+  /** The id of the note whose text is shown (for "ดูบนแคนวาส"); null for count rows or when there is no note. */
+  noteId: string | null;
 }
 
 export interface ChecklistHint {

@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { buildScene } from "@/bot/src/quests/island/scene";
 import type { IslandCanvasProps } from "@/components/shift/island/live/IslandCanvas";
 import { waterColor } from "@/lib/shift-island/live/lighting";
+import { plazaWorld, type PlazaInput, type PlazaSpotId } from "@/lib/shift-island/live/plaza";
 import type { IslandPicture } from "@/lib/shift-island/picture";
 
 import { IslandViewport } from "../IslandViewport";
@@ -294,5 +295,216 @@ describe("IslandViewport", () => {
   it("puts no tint over the PNG by day", () => {
     const { container } = render(<IslandViewport picture={live} onPlot={jest.fn()} initialPhase="day" />);
     expect(container.querySelector(".tint")).toBeNull();
+  });
+
+  describe("plaza", () => {
+    const input: PlazaInput = {
+      festival: {
+        demoDay: "2026-11-28",
+        daysToDemo: 17,
+        stageStep: 1,
+        tableBar: 2,
+        stageBar: 3,
+        lanterns: { total: 8, lit: 3, reached: false, count: 4, target: 12 },
+        booths: [{ slot: 4, kind: "table" }],
+      },
+      pins: ["active", "main"],
+      campfire: { count: 11 },
+    };
+    const labels = { sign: "Demo Day 28 พ.ย.\nอีก 17 วัน", campfireCount: "11 คนกำลังทำงานอยู่", campfireMore: "+3" };
+    const names = { notice: "กระดานเควสต์: ตั้งชื่อปัญหา", stage: "Demo Day 28 พ.ย. อีก 17 วัน", campfire: "ห้อง coworking, 11 คน" };
+    const plaza = (onSpot?: (id: PlazaSpotId) => void) => ({ input, labels, names, onSpot });
+
+    it("hands the living island the plaza's sprites, and the same empty list without a plaza", () => {
+      const { rerender } = render(<IslandViewport picture={live} onPlot={jest.fn()} />);
+      const empty = mockLive.props.at(-1)?.actors;
+      expect(empty).toEqual([]);
+      rerender(<IslandViewport picture={live} onPlot={jest.fn()} paused />);
+      // The same array, so the engine never sees a change.
+      expect(mockLive.props.at(-1)?.actors).toBe(empty);
+      rerender(<IslandViewport picture={live} onPlot={jest.fn()} plaza={plaza(jest.fn())} />);
+      expect(mockLive.props.at(-1)?.actors).toEqual(plazaWorld(live.scene!, input).actors);
+    });
+
+    it("keeps the sprites while the input stays the same, even as a new object", () => {
+      const { rerender } = render(<IslandViewport picture={live} onPlot={jest.fn()} plaza={plaza(jest.fn())} />);
+      const first = mockLive.props.at(-1)?.actors;
+      rerender(<IslandViewport picture={live} onPlot={jest.fn()} plaza={{ ...plaza(jest.fn()), input: JSON.parse(JSON.stringify(input)) }} />);
+      expect(mockLive.props.at(-1)?.actors).toBe(first);
+      rerender(<IslandViewport picture={live} onPlot={jest.fn()} plaza={{ ...plaza(jest.fn()), input: { ...input, campfire: { count: 2 } } }} />);
+      expect(mockLive.props.at(-1)?.actors).not.toBe(first);
+    });
+
+    it("draws nothing for the plaza without a scene, or when the canvas cannot draw", () => {
+      const { unmount } = render(<IslandViewport picture={picture} onPlot={jest.fn()} plaza={plaza(jest.fn())} />);
+      expect(screen.queryByRole("group", { name: "ลานกลางเกาะ" })).toBeNull();
+      unmount();
+      // The PNG has no notice board or campfire: no tap targets over it.
+      mockLive.mode = "fail";
+      render(<IslandViewport picture={live} onPlot={jest.fn()} plaza={plaza(jest.fn())} />);
+      expect(screen.queryByRole("group", { name: "ลานกลางเกาะ" })).toBeNull();
+      expect(screen.getByRole("button", { name: "แปลง #4" })).toBeInTheDocument();
+    });
+
+    it("puts a named button on each plaza spot, at its place on the picture, apart from the plots", () => {
+      const onSpot = jest.fn();
+      render(<IslandViewport picture={live} onPlot={jest.fn()} plaza={plaza(onSpot)} />);
+      const group = screen.getByRole("group", { name: "ลานกลางเกาะ" });
+      const spots = plazaWorld(live.scene!, input).spots;
+      for (const spot of spots) {
+        const button = screen.getByRole("button", { name: names[spot.id] });
+        expect(group).toContainElement(button);
+        expect(screen.getByRole("group", { name: "แปลงบนเกาะ" })).not.toContainElement(button);
+        expect(button.style.left).toMatch(/^\d+(\.\d+)?%$/);
+        expect(parseFloat(button.style.left)).toBeCloseTo(spot.x + spot.w / 2, 3);
+        expect(parseFloat(button.style.top)).toBeCloseTo(spot.y + spot.h / 2, 3);
+        expect(button.style.width).toBe(`max(48px, ${spot.w}%)`);
+        // A plain tab stop: outside the plots' arrow keys.
+        expect(button.tabIndex).toBe(0);
+      }
+      fireEvent.click(screen.getByRole("button", { name: names.notice }));
+      fireEvent.click(screen.getByRole("button", { name: names.campfire }));
+      expect(onSpot.mock.calls).toEqual([["notice"], ["campfire"]]);
+    });
+
+    it("uses the exact boxes on the whole island, and skips spots without a name", () => {
+      render(<IslandViewport picture={live} onPlot={jest.fn()} whole plaza={{ ...plaza(jest.fn()), names: { stage: names.stage } }} />);
+      const stage = screen.getByRole("button", { name: names.stage });
+      const spot = plazaWorld(live.scene!, input).spots.find((s) => s.id === "stage")!;
+      expect(stage.style.width).toBe(`${spot.w}%`);
+      expect(screen.queryByRole("button", { name: names.notice })).toBeNull();
+      expect(screen.queryByRole("button", { name: names.campfire })).toBeNull();
+    });
+
+    it("has no plaza buttons when the island only shows the place, or nobody listens", () => {
+      const { rerender } = render(<IslandViewport picture={live} interactive={false} plaza={plaza(jest.fn())} />);
+      expect(screen.queryByRole("group", { name: "ลานกลางเกาะ" })).toBeNull();
+      expect(screen.queryByRole("button", { name: names.notice })).toBeNull();
+      rerender(<IslandViewport picture={live} onPlot={jest.fn()} plaza={plaza()} />);
+      expect(screen.queryByRole("group", { name: "ลานกลางเกาะ" })).toBeNull();
+    });
+
+    it("shows no labels before the living island draws (the PNG has no plaza)", () => {
+      const { container } = render(<IslandViewport picture={live} onPlot={jest.fn()} plaza={plaza(jest.fn())} />);
+      expect(container.querySelector("[data-label]")).toBeNull();
+      expect(screen.queryByText("+3")).toBeNull();
+    });
+
+    it("labels the sign and the campfire over the living island, hidden from assistive tech", () => {
+      mockLive.mode = "ready";
+      const { container, rerender } = render(<IslandViewport picture={live} onPlot={jest.fn()} plaza={plaza(jest.fn())} />);
+      const shown = [...container.querySelectorAll<HTMLElement>("[data-label]")];
+      expect(shown.map((el) => [el.dataset.label, el.dataset.anchor, el.textContent])).toEqual([
+        ["sign", "bottom", labels.sign],
+        ["campfireCount", "bottom", labels.campfireCount],
+        ["campfireMore", "left", labels.campfireMore],
+      ]);
+      const points = plazaWorld(live.scene!, input).labels;
+      shown.forEach((el, i) => {
+        expect(el.style.left).toBe(`${points[i].x}%`);
+        expect(el.style.top).toBe(`${points[i].y}%`);
+        expect(el.closest("[aria-hidden='true']")).not.toBeNull();
+      });
+      rerender(<IslandViewport picture={live} onPlot={jest.fn()} plaza={plaza(jest.fn())} whole />);
+      expect(container.querySelector("[data-label]")).toBeNull();
+    });
+
+    describe("the notice board on screen", () => {
+      let observers: { callback: IntersectionObserverCallback; options?: IntersectionObserverInit; targets: Element[]; live: boolean }[];
+      beforeEach(() => {
+        observers = [];
+        (globalThis as { IntersectionObserver?: unknown }).IntersectionObserver = class {
+          targets: Element[] = [];
+          live = true;
+          constructor(
+            readonly callback: IntersectionObserverCallback,
+            readonly options?: IntersectionObserverInit
+          ) {
+            observers.push(this);
+          }
+          observe(target: Element) {
+            this.targets.push(target);
+          }
+          disconnect() {
+            this.live = false;
+          }
+          unobserve() {}
+          takeRecords() {
+            return [];
+          }
+        };
+      });
+      afterEach(() => {
+        delete (globalThis as { IntersectionObserver?: unknown }).IntersectionObserver;
+      });
+      const noticeObserver = () => observers.find((o) => o.live && o.targets.some((t) => t.getAttribute("data-spot") === "notice"));
+      const see = (ratio: number) =>
+        act(() => {
+          const o = noticeObserver()!;
+          o.callback([{ isIntersecting: ratio > 0, intersectionRatio: ratio } as IntersectionObserverEntry], o as unknown as IntersectionObserver);
+        });
+
+      it("reports the notice board only while enough of it is between the HUD bars", () => {
+        mockLive.mode = "ready";
+        const onNoticeVisible = jest.fn();
+        const { container } = render(<IslandViewport picture={live} onPlot={jest.fn()} plaza={plaza(jest.fn())} onNoticeVisible={onNoticeVisible} />);
+        const o = noticeObserver();
+        expect(o).toBeDefined();
+        expect(o?.options?.root).toBe(container.querySelector("[data-live='true']"));
+        expect(o?.options?.rootMargin).toBe("-64px 0px -96px 0px");
+        see(1);
+        expect(onNoticeVisible).toHaveBeenLastCalledWith(true);
+        // The plot centred far from the plaza: the board is off screen, or only a sliver shows.
+        see(0);
+        expect(onNoticeVisible).toHaveBeenLastCalledWith(false);
+        see(0.2);
+        expect(onNoticeVisible).toHaveBeenLastCalledWith(false);
+      });
+
+      it("never reports it on the whole island, before the canvas draws, or without a notice board", () => {
+        const onNoticeVisible = jest.fn();
+        const idle = render(<IslandViewport picture={live} onPlot={jest.fn()} plaza={plaza(jest.fn())} onNoticeVisible={onNoticeVisible} />);
+        expect(noticeObserver()).toBeUndefined();
+        expect(onNoticeVisible).not.toHaveBeenCalledWith(true);
+        idle.unmount();
+
+        mockLive.mode = "ready";
+        const { rerender } = render(<IslandViewport picture={live} onPlot={jest.fn()} plaza={plaza(jest.fn())} onNoticeVisible={onNoticeVisible} />);
+        see(1);
+        expect(onNoticeVisible).toHaveBeenLastCalledWith(true);
+        rerender(<IslandViewport picture={live} onPlot={jest.fn()} plaza={plaza(jest.fn())} onNoticeVisible={onNoticeVisible} whole />);
+        expect(onNoticeVisible).toHaveBeenLastCalledWith(false);
+        expect(noticeObserver()).toBeUndefined();
+        rerender(
+          <IslandViewport
+            picture={live}
+            onPlot={jest.fn()}
+            plaza={{ ...plaza(jest.fn()), names: { stage: names.stage } }}
+            onNoticeVisible={onNoticeVisible}
+          />
+        );
+        expect(noticeObserver()).toBeUndefined();
+      });
+    });
+
+    it("tells the app when the living island becomes the picture, and when it stops", () => {
+      const onLiveChange = jest.fn();
+      const idle = render(<IslandViewport picture={live} onPlot={jest.fn()} onLiveChange={onLiveChange} />);
+      expect(onLiveChange.mock.calls).toEqual([[false]]);
+      idle.unmount();
+
+      onLiveChange.mockClear();
+      mockLive.mode = "ready";
+      const { rerender, unmount } = render(<IslandViewport picture={live} onPlot={jest.fn()} onLiveChange={onLiveChange} />);
+      expect(onLiveChange).toHaveBeenLastCalledWith(true);
+      // The scene goes away: the PNG is the picture again.
+      rerender(<IslandViewport picture={picture} onPlot={jest.fn()} onLiveChange={onLiveChange} />);
+      expect(onLiveChange).toHaveBeenLastCalledWith(false);
+      onLiveChange.mockClear();
+      rerender(<IslandViewport picture={live} onPlot={jest.fn()} onLiveChange={onLiveChange} />);
+      expect(onLiveChange).toHaveBeenLastCalledWith(true);
+      unmount();
+      expect(onLiveChange).toHaveBeenLastCalledWith(false);
+    });
   });
 });

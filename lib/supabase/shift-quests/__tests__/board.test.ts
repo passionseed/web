@@ -3,6 +3,7 @@ import {
   keynoteQuest,
   mainTileStatus,
   missingTitles,
+  openQuests,
   proposedTileStatus,
   sideTileStatus,
   starterQuest,
@@ -160,6 +161,66 @@ describe("keynoteQuest", () => {
     });
     expect(keynoteQuest(board({ main: [older, newer] }))).toEqual({ kind: "main", milestone: 5 });
     expect(keynoteQuest(board({ main: [newer, older] }))).toEqual({ kind: "main", milestone: 5 });
+  });
+
+  it("skips an appealed quest even when it is the newest", () => {
+    const appealed = side("ap", { mine: mine("appealed", "2026-11-11T12:00:00Z") });
+    const submitted = side("sub", { mine: mine("submitted", "2026-11-01T00:00:00Z") });
+    expect(keynoteQuest(board({ side: [appealed, submitted] }))).toEqual({ kind: "side", templateId: submitted.template_id });
+  });
+});
+
+describe("openQuests", () => {
+  const ownMain = (milestone: number, state: QuestState, at: string) =>
+    main(milestone, {
+      in_flight: { instance_id: uuid(milestone), state, version: 1, mine: true, owner: "Me" },
+      mine: mine(state, at),
+    });
+
+  it("lists the caller's own open quests: clarification, active, paused, submitted, then appealed", () => {
+    const appealed = side("ap", { mine: mine("appealed", "2026-11-11T12:00:00Z") });
+    const submitted = ownMain(1, "submitted", "2026-11-11T09:00:00Z");
+    const paused = side("pau", { mine: mine("paused", "2026-11-11T08:00:00Z") });
+    const active = proposed("active", { instance_id: uuid(50), title: "My own", updated_at: "2026-11-01T00:00:00Z" });
+    const clar = side("clar", { mine: mine("clarification", "2026-10-01T00:00:00Z") });
+    const open = openQuests(board({ main: [submitted], side: [appealed, paused, clar], proposed: [active] }));
+    expect(open.map((q) => [q.status, q.title])).toEqual([
+      ["clarification", "Side clar"],
+      ["active", "My own"],
+      ["paused", "Side pau"],
+      ["submitted", "Main 1"],
+      ["appealed", "Side ap"],
+    ]);
+    expect(open[1]).toEqual({
+      ref: { kind: "proposed", instanceId: uuid(50) },
+      status: "active",
+      updatedAt: Date.parse("2026-11-01T00:00:00Z"),
+      title: "My own",
+    });
+  });
+
+  it("breaks ties by the newest updated_at, and an unknown time counts as oldest", () => {
+    const older = ownMain(3, "active", "2026-11-01T00:00:00Z");
+    const newer = ownMain(5, "active", "2026-11-09T00:00:00Z");
+    const unknown = ownMain(6, "active", "not a date");
+    expect(openQuests(board({ main: [unknown, older, newer] })).map((q) => q.ref)).toEqual([
+      { kind: "main", milestone: 5 },
+      { kind: "main", milestone: 3 },
+      { kind: "main", milestone: 6 },
+    ]);
+  });
+
+  it("never lists held, done, declined, locked or available quests", () => {
+    const held = main(2, {
+      in_flight: { instance_id: uuid(2), state: "active", version: 1, mine: false, owner: "Ploy" },
+      mine: mine("active"),
+    });
+    const quests = board({
+      main: [held, main(1, { done: true }), main(3, { mine: mine("declined") }), main(4)],
+      side: [side("lock", { locked: true, mine: mine("active") }), side("ok", { approved: true })],
+      proposed: [proposed("approved", { instance_id: uuid(60) }), proposed("declined", { instance_id: uuid(61) })],
+    });
+    expect(openQuests(quests)).toEqual([]);
   });
 });
 

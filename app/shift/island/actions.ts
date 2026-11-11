@@ -22,12 +22,15 @@ import {
   type QuestCanvasContext,
 } from "@/lib/shift-island/quest-canvas";
 import type { BoardRef } from "@/lib/supabase/shift-quests/board";
+import { CAMPFIRE_NONE, campfireRead } from "@/lib/supabase/shift-quests/campfire";
 import * as canvas from "@/lib/supabase/shift-quests/canvas";
 import { buildContext, buildSnapshot, canvasNotes, pickNotes, type CanvasLinkRow } from "@/lib/supabase/shift-quests/canvas-snapshot";
 import { questApi } from "@/lib/supabase/shift-quests/db";
 import { questErrorText } from "@/lib/supabase/shift-quests/errors";
 import {
   TEXT_LIMITS,
+  type CampfireNames,
+  type CampfireNone,
   type IslandActionResult,
   type ProjectRoute,
   type QuestBoard,
@@ -404,6 +407,24 @@ export async function askForHelp(input: {
       v.instanceId
     );
     return { helpId };
+  });
+}
+
+const loadCampfireSchema = z.object({ names: z.boolean() });
+
+/**
+ * The voice campfire for a ready viewer: the count and the join link, plus the
+ * display names (sanitised, in join order) when `names` is true, else names is
+ * []. A read: never refreshes. `{ none: true }` when the database says no
+ * coworking channel is set (the island takes the campfire away); null when the
+ * read failed (the function missing, or a database error; campfireRead logs a
+ * code), so the island keeps what it had.
+ */
+export async function loadCampfire(input: { names: boolean }): Promise<IslandActionResult<CampfireNames | CampfireNone | null>> {
+  return withReader("loadCampfire", loadCampfireSchema, input, async ({ actor }, v) => {
+    const fire = await campfireRead(questApi(), actor, v.names);
+    if (fire === CAMPFIRE_NONE) return { none: true as const };
+    return fire && !v.names ? { ...fire, names: [] } : fire;
   });
 }
 

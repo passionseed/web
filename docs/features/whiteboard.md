@@ -236,6 +236,17 @@ Canvas, so mentors (and an AI reading the board) can follow each student without
 - **Reading:** `pnpm whiteboard:read <id>` prints each canvas as `## [SHIFT project] <name>`
   with a `###` section per zone, notes as `[🎤 สัมภาษณ์] ...`, and each version with its
   reason. Zone labels and the canvas hint are left out.
+- **Opening one canvas or note (`?focus=`):** `/whiteboard/<id>?focus=<elementId>` brings that
+  element into view once the scene is ready (`components/whiteboard/focusElement.ts`): a frame
+  (a canvas) fills 90% of the screen; anything else, such as a note, is centred without zooming
+  in (at most the current zoom, never past 100%). Animated unless the visitor prefers reduced
+  motion. Then `focus` leaves the address (`history.replaceState`). The id must match
+  `^[A-Za-z0-9_-]{1,100}$` (`ELEMENT_ID` in `lib/shift-island/canvas-link.ts`); anything else,
+  or an element that is missing or deleted, leaves the board's usual scroll-to-content. Sign-in
+  redirects keep `?focus=`. Access is unchanged: the page still opens the board through
+  `openBoard`. The SHIFT High island links here through `/shift/island/canvas[?note=<id>]`,
+  which looks up the student's linked canvas on the server, so board and frame ids never reach
+  the island page.
 
 Next: a per-project log and a mentor progress page (`/admin/shift/progress`) that joins the
 canvases with SeedStack events by user id, then a student "my log" export for the TCAS case

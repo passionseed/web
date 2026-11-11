@@ -80,6 +80,16 @@ describe("island copy", () => {
     expect(copy.thaiShortDate("not a date")).toBe("");
   });
 
+  it("words the Demo Day sign, the stage and the campfire", () => {
+    expect(copy.FESTIVAL.sign("28 พ.ย.", 17)).toBe("Demo Day 28 พ.ย.\nอีก 17 วัน");
+    expect(copy.FESTIVAL.sign("28 พ.ย.", 0)).toBe("Demo Day 28 พ.ย.\nวันนี้");
+    expect(copy.FESTIVAL.stage(`28 พ.ย. · ${copy.SEASON.daysLeft(0)}`)).toBe("เวที Demo Day: 28 พ.ย. · วันนี้");
+    expect(copy.CAMPFIRE.spot(0)).toBe("กองไฟ: ห้อง coworking");
+    expect(copy.CAMPFIRE.spot(3)).toBe("กองไฟ: ห้อง coworking มี 3 คน");
+    expect(copy.NOTICE.pinned(["ก", "ข"])).toBe("กระดานเควสต์: ก · ข");
+    expect(copy.NOTICE.board).toBe(copy.HUD.board);
+  });
+
   it("words unlocks by state", () => {
     const base = { id: "u1", label: "สติกเกอร์เกาะ", milestone_count: 3, deadline: "2026-05-15" };
     expect(copy.unlockLine({ ...base, earned: true })).toBe("สติกเกอร์เกาะ: ได้แล้ว");

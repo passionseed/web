@@ -1062,3 +1062,189 @@ Founder feedback after the first try: "island page should be full IMMERSIVE".
 - Gates and the start card keep the Dawn sky and the centred card; the loading
   state is the full-screen sea with the HUD's shapes.
 
+
+## Festival, notice board, voice campfire, canvas link
+
+Founder asks after the full-screen island: open the team's canvas from
+anywhere, see the next quests on a board in the world, feel Demo Day coming,
+and see who is coworking in Discord right now. Everything below is web-only
+art and data: the bot's island PNG, its pinned hash and `RENDER_REVISION` do
+not change, and every new picture element is an opt-in `LiveActor` drawn by
+the existing engine (no engine change, no per-frame React render).
+
+### Builders and files (disjoint)
+
+| Builder | Owns |
+|---|---|
+| art | `bot/assets/island/motion-sprites.ts`, `bot/assets/island/motion-preview.ts`, `bot/src/quests/__tests__/motion-sprites.test.ts` |
+| world | `lib/shift-island/live/plaza.ts` (new), `lib/shift-island/live/atlas.ts`, `lib/shift-island/live/__tests__/plaza.test.ts` (new), `components/shift/island/IslandViewport.tsx`, `components/shift/island/live/PlazaLayer.tsx` (new), `components/shift/island/world.module.css`, `components/shift/island/__tests__/IslandViewport.test.tsx` |
+| voice-db | `supabase/migrations/20261111093000_shift_quest_campfire.sql` (new), `supabase/tests/shift_quests/{run-local.sh,web_board.ts,web_canvas.ts,island_rules.ts,campfire.ts (new)}` |
+| voice-bot | `bot/src/quests/campfire.ts` (new), `bot/src/quests/campfire-state.ts` (new), `bot/src/quests/__tests__/campfire.test.ts` (new), `bot/src/quests/index.ts`, `bot/src/quests/commands.ts`, `bot/src/quests/handlers/admin.ts`, `bot/src/quests/copy.ts`, `docs/features/shift-high-quests.md` |
+| web-data | `lib/supabase/shift-quests/types.ts`, `lib/supabase/shift-quests/page.ts`, `lib/supabase/shift-quests/board.ts`, `lib/supabase/shift-quests/campfire.ts` (new), `lib/supabase/shift-quests/canvas-snapshot.ts`, `lib/shift-island/quest-canvas.ts`, `lib/shift-island/festival.ts` (new), `lib/shift-island/notice.ts` (new), `lib/shift-island/canvas-link.ts` (new), `app/shift/island/actions.ts`, `app/shift/island/canvas/route.ts` (new), their tests |
+| hud-sheets | `components/shift/island/{IslandApp,IslandHud,HudSheets,QuestDetailSheet,CampfireSheet (new),FestivalSheet (new),useCampfire.ts (new),copy.ts,sprites.ts,island.module.css}`, `components/shift/island/canvas/{QuestCardComposer.tsx,copy.ts,canvas.module.css}`, `components/shift/island/__fixtures__/*`, `app/whiteboard/[id]/page.tsx`, `components/whiteboard/{WhiteboardRoom,WhiteboardCanvas}.tsx`, `components/whiteboard/focusElement.ts` (new), `docs/features/whiteboard.md`, their tests |
+
+### 1. Canvas link
+
+- **HUD 🗒️** (a new 16x16 `note` WebIcon, `HudRound` after 📖): linked, it is a
+  plain link to `/shift/island/canvas` labelled "เปิดแคนวาส"; unlinked, it is a
+  button labelled "เชื่อมแคนวาส" that opens the existing `CanvasLinkSheet`
+  (returning to the world, not a quest).
+- **Quest page**: every quest with zones gets a row "เปิดแคนวาส" under the
+  "สำหรับโปรเจกต์คุณ" box when the canvas is ready (link to
+  `/shift/island/canvas`). A context row whose note is known links that note
+  ("ดูบนแคนวาส", `?note=<id>`).
+- **Quest card composer**: each note row gets a small link "ดูบนแคนวาส"
+  (aria-label "ดูโน้ตนี้บนแคนวาส") to `/shift/island/canvas?note=<id>`.
+- **Redirect route** `GET /shift/island/canvas[?note=<id>]`: resolves the
+  viewer (`resolveIslandViewer`, getUser underneath); not ready goes to
+  `/shift/island`; reads `shift_quest_canvas_get`; no link goes to
+  `/shift/island`; otherwise 307 to `/whiteboard/<board_id>?focus=<note or
+  frame id>`. Ids match `^[A-Za-z0-9_-]{1,100}$`, anything else is dropped. The
+  board and frame ids still never ride in the island page payload; the
+  whiteboard page itself enforces access (`openBoard`).
+- **Whiteboard focus**: `/whiteboard/[id]?focus=<elementId>` (the whiteboard had
+  no such param). After the scene is ready, the element (if present and not
+  deleted) is brought into view: a frame fits the viewport (zoom factor 0.9), a
+  note is centred without zooming in past 100%; then `focus` is removed from
+  the URL with `history.replaceState`. An unknown id does nothing (the board's
+  normal scroll-to-content). Sign-in redirects keep the query.
+
+### 2. Quest notice board in the world
+
+- A pixel notice board (24x22) stands in the plaza left of the well, with up
+  to three pinned notes (5x6): the student's real next quests, from
+  `noticePins(board)`: own open quests first (keynote order: clarification,
+  active, paused, submitted, then appealed), then open main quests by
+  milestone, then open side quests (never locked) by `sort_order`. "Open" is
+  available or declined: a declined main or side quest's page starts a fresh
+  attempt, so it stays pinned; a declined proposed quest is closed and never
+  pinned. Note colour by kind: in progress gold, main cream, side teal.
+- Tapping it opens the quest board sheet. Its accessible name is
+  "กระดานเควสต์" (the same word as the board button and sheet) plus the pinned
+  titles ("กระดานเควสต์: ตั้งชื่อปัญหา · ...").
+- The bottom `BoardButton` becomes visually hidden (still focusable, shown
+  when focused, so keyboards and screen readers keep the old path) only while
+  the notice board can stand in for it: the living canvas is drawn, the close
+  view (not the whole island), a keynote card is in the bottom bar, and at
+  least 60% of the notice board's tap target is on screen between the HUD
+  bars (an `IntersectionObserver` on `[data-spot="notice"]`, root the world
+  scroller, rootMargin `-64px 0px -96px 0px`; `IslandViewport` reports it
+  through `onNoticeVisible`). Panned away from the plaza, before the canvas
+  draws, or if it fails (PNG only), the button shows as before.
+
+### 3. Demo Day festival
+
+All from `page.island.season` (server Bangkok dates) with `page.map.goal` as the
+goal fallback, through `festivalOf`. No active season: no festival props.
+After hydration the countdown and the stage step follow the client's own
+Bangkok date (`useBangkokDay`: UTC+7 arithmetic, one timer to the next Bangkok
+midnight plus a check when the tab shows), so a page left open says "วันนี้"
+on Demo Day; the server's `days_to_demo` stands until then and when
+`demo_day` does not parse.
+
+- **Sign** next to the stage: a blank pixel plank (14x12) plus a DOM label
+  above it, two lines: "Demo Day 28 พ.ย." and "อีก 17 วัน" (on the day "วันนี้",
+  after it "ผ่านไปแล้ว", from `SEASON.daysLeft`). The label is aria-hidden; the
+  stage hotspot carries the same text.
+- **Stage** (44x32, right of the plaza) builds in four steps, by **days
+  elapsed**, not goal progress: the lanterns already show the goal, days never
+  go backwards, and the goal can be null or drop before it latches.
+  `today = demo_day - days_to_demo`, `span = demo_day - starts_on`,
+  `step = days_to_demo <= 0 ? 3 : span <= 0 ? 0 : min(2, floor(3 * clamp(today - starts_on, 0, span) / span))`.
+  Without `starts_on`: `> 28` days gives 0, `> 14` gives 1, `> 0` gives 2.
+  Step 0 pegs and planks on the ground, 1 the deck, 2 backdrop and bunting, 3
+  roof, bunting and lights (only on and after Demo Day).
+- **Lantern string**: 8 bulbs over the banner (the festoon spot, 48x8), drawn
+  day and night. `lit = reached ? 8 : min(7, floor(8 * count / target))`. Lit
+  bulbs are untinted, so they glow at night with no night-only logic. No goal:
+  no string (the night festoon shows as before).
+- **Booth flag / star** (7x12) at `(tree.left + 4, tree.top + 22)`: only on
+  plots whose tree the viewer already sees in full. The viewer's own plot uses
+  `season.qualifies` (confirmed, exact). Other plots: only non-plain (fully
+  consented) ones, from the tree they already show: star when `stage >=
+  stage_bar` and the visitor (main quest 3) is drawn, booth flag when `stage >=
+  table_bar`. Plain plots never get one. This is a proxy (all-time tree
+  stage, milestone 2 not visible), so the copy says "ต้นโตถึงขั้น", never
+  "ได้โต๊ะแล้ว", for other teams. No names, no counts, no order.
+- **Festival sheet** (tap the stage or the sign): a short header (the sign's
+  line "Demo Day 28 พ.ย. · อีก 17 วัน", plus the student's own "ได้โต๊ะ/ได้ขึ้นเวที"
+  notice when set), at most three legend lines, and a link "ดูของปลดล็อกในหน้าโปรเจกต์"
+  to the project sheet (the meter and unlocks live there, not repeated here). Draft copy:
+  - "โต๊ะโชว์งาน: นับได้ {table_bar} ขั้น และผ่านเควสต์ 2 เห็นเฉพาะทีมที่โชว์ชื่อบนเกาะ"
+  - "ขึ้นเวที: นับได้ {stage_bar} ขั้น และผ่านเควสต์ 3 เห็นเฉพาะทีมที่โชว์ชื่อบนเกาะ"
+  - "ไฟที่ลานสว่างขึ้นตามเป้าหมายของทั้งเกาะ {count}/{target}" (no goal: no line)
+
+### 4. Discord voice campfire
+
+- A campfire (pit 14x10, flame 3 frames) below-left of the plaza. One sitting
+  figure (4 variants, 2 frames) per person in the SHIFT coworking voice
+  channel, seats filled in a fixed order, at most 8, then a DOM "+N". Above the
+  fire a DOM label "3 คนกำลังทำงานอยู่". Zero people: an unlit pit, no label.
+  Channel unset or campfire data missing: nothing at all.
+- Tap: the campfire sheet, title "ห้อง coworking", body "ทำงานไปด้วยกันในห้องเสียงของ
+  SHIFT", the names as Discord shows them in the server, a button "เข้าห้อง"
+  (`https://discord.com/channels/<guild>/<channel>`, new tab), empty state
+  "ตอนนี้ยังไม่มีใครในห้อง เข้าไปเริ่มก่อนได้", error "ตอนนี้โหลดรายชื่อไม่ได้", fine
+  print "กองไฟบนเกาะเก็บแค่ว่าใครอยู่ในห้องตอนนี้ และลบทันทีเมื่อออก" (the
+  campfire only: the same bot records SHIFT round voice participation, time,
+  mic, camera and screen share, in its own tables under the existing policy,
+  and the bot's /data card says so).
+- **Privacy**: people sit only at the campfire, never at a plot; figure
+  variants follow seat order, never a person's id. The page payload carries
+  only `{count, joinUrl}`; names load on tap through a server action, only for
+  a ready (signed-in, eligible) viewer. The database stores only who is in the
+  coworking channel now (discord id, channel id, display name, joined_at) and
+  deletes the row on leave; the bot clears and resyncs on every ready, resume
+  and clean stop; the web treats the data as empty when the bot has not beaten
+  for 3 minutes. If the bot dies without its clean stop and does not come
+  back, `shift_quest__voice_purge()` (pg_cron every 5 minutes, no login may
+  call it) deletes every row once the last beat is 10 minutes old, so a row
+  outlives its person by about 15 minutes at most. `/admin channel` refuses a
+  voice channel for anything but coworking, and a coworking voice channel no
+  student role (or @everyone, with none set) can see and join. Adults in the
+  channel are listed the same way: it is a group space, nothing here opens a
+  1:1 channel.
+- **Data flow**: Discord gateway (GuildVoiceStates, already on) to the quest
+  bot module (`bot/src/quests/campfire.ts`, its own listener next to
+  shift-voice, which keeps its own tables) to `shift_quest_voice_set/sync/beat`
+  (bot role only) to `shift_quest_voice_presence` and `shift_quest_voice_state`.
+  The web reads `shift_quest_campfire(actor, names)` (web role only).
+- `coworking_channel_id` is reused: `/admin channel kind:coworking` now accepts
+  voice channels; intention posts then land in that voice channel's text chat.
+- The count refreshes every 90 s while the tab is visible and the island not
+  paused; each change costs one repaint.
+
+### Schema and rollout
+
+- Schema version 7 (`20261111093000_shift_quest_campfire.sql`). Web
+  `REQUIRED_SCHEMA` stays 6 and the bot's stays 2: the web fails soft (no
+  campfire) and the bot starts the campfire only when the version is 7 or more,
+  so either can deploy before the migration.
+- Grants are per function in that file (no repeated grant loops). Any later
+  file that repeats the bot loop must exclude `shift_quest_campfire`.
+
+### Test plan
+
+- Jest: `plaza.test.ts` (placement clear of trees, tags at glyph 1-3,
+  decorations, paths, plot hotspots for 1, 3, 8, 12, 20, 40, 80, 150 plots;
+  seat count cap; booth only on non-plain; no festival props without a
+  season), `festival.test.ts` (step boundaries, `starts_on` missing,
+  days 17/0/-1, goal null/reached/dropping, booths for own/consented/plain),
+  `notice.test.ts` (ordering, locked never, top 3), `canvas-link.test.ts`,
+  `campfire.test.ts` (web: sanitising, join URL, fail soft; bot: who is in the
+  channel, which updates matter), `IslandViewport.test.tsx` (actors passed,
+  plaza buttons with % positions and labels, labels hidden in whole mode and
+  before live), `IslandApp.test.tsx` (🗒️ linked vs unlinked, BoardButton
+  visually hidden only while live), `QuestDetailSheet.test.tsx` and the
+  composer (open-canvas row and note links), `CampfireSheet` and
+  `FestivalSheet` tests, whiteboard `focusElement` test,
+  `motion-sprites.test.ts` (new art validated automatically).
+- DB (`pnpm test:db:quests`): a non-coworking channel is never stored, leave
+  deletes, sync replaces atomically and keeps `joined_at`, beat clears rows of
+  an old channel, the read is empty when stale or unset, names only when asked,
+  no ids in the read, the bot cannot call the read, the web cannot call the
+  writes, anon/authenticated can call neither, applying twice is identical.
+- By hand on the founder's dev server (after the integrator applies the
+  migration to the sandbox and sets `/admin channel kind:coworking` to a voice
+  channel): 360px and desktop, night and day, reduced motion (still world),
+  whole mode, join and leave the channel and watch the count within 90 s.

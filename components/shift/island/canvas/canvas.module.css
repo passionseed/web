@@ -347,6 +347,27 @@
   line-height: 1.45;
 }
 
+/* "ดูบนแคนวาส": bottom right of the sticky, small text on a 44px target that reaches into the padding. */
+.noteOpen {
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  margin: -10px -8px -12px 0;
+  padding: 0 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--c-note-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.noteOpen:focus-visible {
+  outline: 2px solid var(--c-ink);
+  outline-offset: -4px;
+}
+
 .count {
   margin: 0;
   font-size: 0.875rem;

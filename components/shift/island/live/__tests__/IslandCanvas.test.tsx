@@ -48,8 +48,10 @@ let motionListeners: (() => void)[];
 const NIGHT = Date.UTC(2026, 10, 11, 13, 0);
 
 beforeEach(() => {
-  jest.useFakeTimers();
-  jest.setSystemTime(NIGHT);
+  // Install the clock at NIGHT: fake animation frames are timed from the install
+  // time, so setting the time afterwards to a moment before the real one makes a
+  // frame up to 31 ms away and two frames no longer fit in firstFrame().
+  jest.useFakeTimers({ now: NIGHT });
   contexts = [];
   getContext = jest.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation((() => {
     const ctx = fakeContext();

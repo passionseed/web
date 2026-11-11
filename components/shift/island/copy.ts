@@ -423,3 +423,59 @@ export function unlockLine(unlock: SeasonUnlock): string {
   if (unlock.expired) return SEASON.unlockMissed(unlock.label);
   return SEASON.unlockNext(unlock.label, unlock.milestone_count, thaiShortDate(unlock.deadline));
 }
+
+/**
+ * DRAFT: the student's linked SHIFT canvas on the whiteboard, from the HUD
+ * (the note button), a quest page, or one note on it.
+ */
+export const CANVAS = {
+  open: "เปิดแคนวาส",
+  link: "เชื่อมแคนวาส",
+  note: "ดูบนแคนวาส",
+};
+
+/** DRAFT: the notice board in the plaza, with the student's next quests pinned on it. */
+export const NOTICE = {
+  board: HUD.board,
+  pinned: (titles: string[]) => `${HUD.board}: ${titles.join(" · ")}`,
+};
+
+/**
+ * DRAFT: Demo Day in the plaza: the sign, the stage that builds up, the
+ * lanterns for the island goal, and the flags by the trees. No names, no
+ * ranking; other teams' flags are read from the tree they already show.
+ */
+export const FESTIVAL = {
+  /** The sign over the stage, two lines: "Demo Day 28 พ.ย." and "อีก 17 วัน". */
+  sign: (date: string, days: number, separator = "\n") => `${SEASON.demoDay(date)}${separator}${SEASON.daysLeft(days)}`,
+  /** The stage's accessible name, with the sign on one line. */
+  stage: (sign: string) => `เวที Demo Day: ${sign}`,
+  title: "เวที Demo Day",
+  legendHeading: "ที่ลานกลางเกาะ",
+  table: (bar: number) => `โต๊ะโชว์งาน: นับได้ ${bar} ขั้น และผ่านเควสต์ 2`,
+  stageRule: (bar: number) => `ขึ้นเวที: นับได้ ${bar} ขั้น และผ่านเควสต์ 3`,
+  lanterns: (count: number, target: number) => `ไฟที่ลานสว่างขึ้นตามเป้าหมายของทั้งเกาะ ${count}/${target}`,
+  /** Appended to the table and stage legend lines: other teams' flags show only when they show their name. */
+  shownOnly: "เห็นเฉพาะทีมที่โชว์ชื่อบนเกาะ",
+  /** To the project sheet, where the season's meter and unlocks live. */
+  unlocks: "ดูของปลดล็อกในหน้าโปรเจกต์",
+};
+
+/**
+ * DRAFT: the campfire, one figure per person in the SHIFT coworking voice
+ * channel right now. Names only in the sheet, never on the island.
+ */
+export const CAMPFIRE = {
+  /** The campfire's accessible name on the island. */
+  spot: (count: number) => (count > 0 ? `กองไฟ: ห้อง coworking มี ${count} คน` : "กองไฟ: ห้อง coworking"),
+  count: (count: number) => `${count} คนกำลังทำงานอยู่`,
+  more: (count: number) => `+${count}`,
+  title: "ห้อง coworking",
+  body: "ทำงานไปด้วยกันในห้องเสียงของ SHIFT",
+  listLabel: "คนที่อยู่ในห้องตอนนี้",
+  loading: "กำลังโหลดรายชื่อ",
+  empty: "ตอนนี้ยังไม่มีใครในห้อง เข้าไปเริ่มก่อนได้",
+  error: "ตอนนี้โหลดรายชื่อไม่ได้",
+  join: "เข้าห้อง",
+  fine: "กองไฟบนเกาะเก็บแค่ว่าใครอยู่ในห้องตอนนี้ และลบทันทีเมื่อออก",
+};

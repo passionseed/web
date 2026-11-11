@@ -116,14 +116,16 @@ async function main(): Promise<void> {
     fns.some((f) => f.proname === "shift_quest_schema_version"), "the privilege check sees every shift_quest function", fns.length);
   const open = fns.filter((f) => f.public || f.anon || f.authenticated).map((f) => f.sig);
   check(open.length === 0, "no shift_quest function is executable by PUBLIC, anon or authenticated", open);
-  // Website-only entry points (091100, 091200): only the website can check a canvas, and it alone reads ownership this way.
-  const webOnly = (f: Json) => f.proname.startsWith("shift_quest_canvas_") || f.proname === "shift_quest_ownership_get";
+  // Website-only entry points (091100, 091200, 093000): only the website can check a canvas, it alone reads
+  // ownership this way, and only it reads the campfire's names.
+  const webOnly = (f: Json) => f.proname.startsWith("shift_quest_canvas_") ||
+    ["shift_quest_ownership_get", "shift_quest_campfire"].includes(f.proname);
   const missing = fns.filter((f) => !internal(f) && !webOnly(f) && !f.bot).map((f) => f.sig);
   check(missing.length === 0, "the bot can execute every shift_quest entry point but the website-only ones", missing);
   const leaked = fns.filter((f) => internal(f) && f.bot).map((f) => f.sig);
   check(leaked.length === 0, "no helper (shift_quest__*) and not bootstrap_admin is granted to the bot", leaked);
   const webLeaked = fns.filter((f) => webOnly(f) && f.bot).map((f) => f.sig);
-  check(webLeaked.length === 0, "no website-only function (canvas link, ownership read) is granted to the bot", webLeaked);
+  check(webLeaked.length === 0, "no website-only function (canvas link, ownership read, campfire read) is granted to the bot", webLeaked);
   const rels: Json[] = (await db.query(`
     select c.relname, c.relkind, c.relrowsecurity,
       exists (

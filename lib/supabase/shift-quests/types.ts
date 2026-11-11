@@ -244,6 +244,30 @@ export interface IslandPageData {
    * a project, or when the read fails.
    */
   canvasLink: CanvasLinkState;
+  /**
+   * Who is coworking in the SHIFT voice channel right now, as a count only
+   * (shift_quest_campfire with names = false). Optional so older fixtures keep
+   * compiling. null: no coworking channel set, the function is missing, or the
+   * read failed; the world then draws no campfire.
+   */
+  campfire?: CampfireSummary | null;
+}
+
+/** Page payload for the voice campfire: no names, no ids. */
+export interface CampfireSummary {
+  count: number;
+  /** https://discord.com/channels/<guild>/<channel> */
+  joinUrl: string;
+}
+/** loadCampfire({ names: true }): display names as Discord shows them in the server, sanitised. */
+export interface CampfireNames {
+  count: number;
+  names: string[];
+  joinUrl: string;
+}
+/** loadCampfire: the database says no coworking channel is set; the island draws no campfire. */
+export interface CampfireNone {
+  none: true;
 }
 
 export type IslandActionResult<T = null> =

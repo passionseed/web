@@ -4,14 +4,15 @@
  * one compact card (see ../view): what it is, the facts that matter, then the
  * fine print in small grey text.
  */
-import { MessageFlags } from "discord.js";
+import { ChannelType, MessageFlags } from "discord.js";
 
 import { QuestError } from "../api";
+import { openToStudents } from "../campfire";
 import { requireStaff } from "../context";
 import { BLOCKER, T, bkkDate, safe } from "../copy";
 import { cid, isUuid } from "../ids";
 import { I, stageBar } from "../island/copy";
-import { ButtonStyle, button, buttonRows, modal, parseDate, selectRow, show, textValue, type Block, type View } from "../ui";
+import { ButtonStyle, GateError, button, buttonRows, modal, parseDate, selectRow, show, textValue, type Block, type View } from "../ui";
 import { ledgerReason } from "./student";
 import { picked, type HandlerSet } from "./types";
 
@@ -118,11 +119,13 @@ function check(ok: unknown): string {
   return ok ? "✅" : "⚠️";
 }
 
-const CHANNELS: { key: string; label: string }[] = [
+/** `hint` follows the line, set or not: what an admin should know when choosing the channel. */
+const CHANNELS: { key: string; label: string; hint?: string }[] = [
   { key: "help_channel_id", label: "ห้อง help" },
   { key: "staff_channel_id", label: "ห้องทีมพี่เลี้ยง" },
   { key: "celebrate_channel_id", label: "ห้องโพสต์ความสำเร็จ" },
-  { key: "coworking_channel_id", label: "ห้อง coworking" },
+  // A voice channel works too: intention posts land in its text chat, and the campfire (schema 7) shows who is in it.
+  { key: "coworking_channel_id", label: "ห้อง coworking", hint: "ห้องเสียงได้: คนในห้องจะนั่งรอบกองไฟบนเกาะ" },
 ];
 
 /** The switches /admin feature turns on and off, with the blocker list each one has. */
@@ -161,10 +164,11 @@ export function statusView(s: Status, saved = false): View {
   let channelMissing = false;
   for (const c of CHANNELS) {
     const id = st[c.key];
-    if (typeof id === "string") setup.push(`✅ ${c.label}: <#${id}>`);
+    const hint = c.hint ? ` (${c.hint})` : "";
+    if (typeof id === "string") setup.push(`✅ ${c.label}: <#${id}>${hint}`);
     else {
       channelMissing = true;
-      setup.push(`⚠️ ${c.label}: ยังไม่ตั้ง`);
+      setup.push(`⚠️ ${c.label}: ยังไม่ตั้ง${hint}`);
     }
   }
   const owner = safe(st.fulfillment_owner as string | null, 60);
@@ -330,12 +334,18 @@ export const admin: HandlerSet = {
 
     async "admin channel"(i, ctx) {
       requireStaff(ctx, ADMIN);
-      const status = await ctx.api.call<Status>(
-        "shift_quest_admin_set",
-        ctx.userId,
-        `${i.options.getString("kind", true)}_channel`,
-        i.options.getChannel("channel")?.id ?? ""
-      );
+      const kind = i.options.getString("kind", true);
+      const chosen = i.options.getChannel("channel");
+      if (chosen && chosen.type === ChannelType.GuildVoice) {
+        // Only coworking may be voice: its people sit at the island's campfire.
+        if (kind !== "coworking") throw new GateError(T.adminVoiceCoworkingOnly);
+        // A private voice room is nobody's island news: refuse it before anyone sits at the campfire.
+        const full = i.guild?.channels.cache.get(chosen.id) ?? chosen;
+        if (!openToStudents(full as never, ctx.session.settings.student_role_ids, i.guildId ?? "")) {
+          throw new GateError(T.adminCoworkingPrivate);
+        }
+      }
+      const status = await ctx.api.call<Status>("shift_quest_admin_set", ctx.userId, `${kind}_channel`, chosen?.id ?? "");
       await show(i, statusView(status, true));
     },
 

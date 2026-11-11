@@ -134,10 +134,11 @@ export function questCommands(): RESTPostAPIChatInputApplicationCommandsJSONBody
               { name: "help (ชุมชน)", value: "help" },
               { name: "staff (ทีมพี่เลี้ยง)", value: "staff" },
               { name: "celebrate (โพสต์ความสำเร็จ)", value: "celebrate" },
-              { name: "coworking", value: "coworking" }
+              { name: "coworking (ห้องข้อความหรือห้องเสียง)", value: "coworking" }
             )
         )
-        .addChannelOption((o) => o.setName("channel").setDescription("ห้อง").addChannelTypes(ChannelType.GuildText))
+        // coworking may be a voice channel: its people sit at the island's campfire, and intention posts land in its text chat.
+        .addChannelOption((o) => o.setName("channel").setDescription("ห้อง").addChannelTypes(ChannelType.GuildText, ChannelType.GuildVoice))
     )
     .addSubcommand((s) =>
       s

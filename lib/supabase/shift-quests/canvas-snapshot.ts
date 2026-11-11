@@ -269,7 +269,7 @@ export function buildContext(
   const context: ContextRow[] = guide.context.map((spec) => {
     const ofKind = all.filter((n) => n.kind === spec.zone);
     if (spec.show === "count") {
-      return { kind: spec.zone, label: spec.label, text: null, version: null, count: ofKind.length };
+      return { kind: spec.zone, label: spec.label, text: null, version: null, count: ofKind.length, noteId: null };
     }
     const latest = latestOf(ofKind);
     return {
@@ -278,6 +278,7 @@ export function buildContext(
       text: latest ? cutChars(latest.text, CARD_LIMITS.noteChars) : null,
       version: latest?.version ?? null,
       count: null,
+      noteId: latest?.id ?? null,
     };
   });
 

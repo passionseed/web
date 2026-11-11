@@ -3,6 +3,7 @@
  */
 import {
   ACTOR_FRAMES,
+  GOAL_BULB_SPOTS,
   MOTION_SIZES,
   MOTION_SPRITES,
   SHORE_FRAMES,
@@ -11,7 +12,7 @@ import {
   motionGrid,
   type MotionSpriteName,
 } from "../../../assets/island/motion-sprites";
-import { MOTION_RULES, SWAY_TRUNK_ROW, motionSpriteProblems } from "../../../assets/island/motion-preview";
+import { MOTION_RULES, NOTICE_PIN_SPOTS, SWAY_TRUNK_ROW, motionSpriteProblems } from "../../../assets/island/motion-preview";
 import { PALETTE, SPRITES } from "../../../assets/island/sprites";
 
 const names = Object.keys(MOTION_SPRITES) as MotionSpriteName[];
@@ -109,5 +110,69 @@ describe("motion sprites", () => {
     expect([...rules]).toEqual(
       expect.arrayContaining(["water:water_a_1", "shore:shore_n_1", "sway:stage_4_b", "style:gull_0", "size:cloud_a"]),
     );
+  });
+
+  it("the shared checker catches broken plaza art", () => {
+    const string = MOTION_SPRITES.goal_string;
+    const board = MOTION_SPRITES.notice_board;
+    const broken: Record<string, string[]> = {
+      ...MOTION_SPRITES,
+      // A lit key in the unlit string, and a bulb pixel no spot covers.
+      goal_string: [string[0].replace("o", "t"), string[1], string[2].replace("oto", "oyo"), ...string.slice(3)],
+      // Lights before the stage is finished, and a deck that moved.
+      fest_stage_1: MOTION_SPRITES.fest_stage_1.map((row) => row.replace("eeee", "eyee")),
+      fest_stage_2: [...MOTION_SPRITES.fest_stage_2.slice(0, 31), MOTION_SPRITES.fest_stage_2[30]],
+      // An outline under the second pin spot.
+      notice_board: [board[0], board[1], board[2].slice(0, 10) + "o" + board[2].slice(11), ...board.slice(3)],
+      sit_c_1: MOTION_SPRITES.sit_c_1.map((row) => `${row}.`),
+      star_flag: MOTION_SPRITES.star_flag.slice(1),
+    };
+    const rules = new Set(motionSpriteProblems(broken).map((problem) => `${problem.rule}:${problem.name}`));
+    expect([...rules]).toEqual(
+      expect.arrayContaining([
+        "style:goal_string",
+        "plaza:goal_string",
+        "style:fest_stage_1",
+        "plaza:fest_stage_2",
+        "plaza:notice_board",
+        "frames:sit_c_1",
+        "frames:star_flag",
+      ]),
+    );
+  });
+
+  it("lights each goal bulb exactly over an unlit one, left to right", () => {
+    const string = MOTION_SPRITES.goal_string;
+    const bulb = MOTION_SPRITES.goal_bulb;
+    expect(GOAL_BULB_SPOTS).toHaveLength(8);
+    const centres = GOAL_BULB_SPOTS.map(([x, y]) => {
+      for (const [dy, row] of bulb.entries()) {
+        for (const [dx, symbol] of [...row].entries()) if (symbol !== ".") expect(string[y + dy][x + dx]).not.toBe(".");
+      }
+      return x + 1;
+    });
+    expect(centres).toEqual([2, 8, 14, 20, 27, 33, 39, 45]);
+    // Every bulb centre column is a bulb on the night festoon too.
+    for (const [i, [x, y]] of GOAL_BULB_SPOTS.entries()) expect(MOTION_SPRITES.festoon[y][centres[i]]).not.toBe(".");
+    expect(string.join("").match(/[yifrp]/g)).toBeNull();
+  });
+
+  it("keeps the plaza families on shared sizes", () => {
+    const sizeOf = (name: MotionSpriteName) => MOTION_SIZES[name].join("x");
+    expect(new Set(["fest_stage_0", "fest_stage_1", "fest_stage_2", "fest_stage_3"].map((n) => sizeOf(n as MotionSpriteName)))).toEqual(new Set(["44x32"]));
+    expect(new Set([...ACTOR_FRAMES.sitA, ...ACTOR_FRAMES.sitB, ...ACTOR_FRAMES.sitC, ...ACTOR_FRAMES.sitD].map(sizeOf))).toEqual(new Set(["8x10"]));
+    expect(new Set(ACTOR_FRAMES.campfireFlame.map(sizeOf))).toEqual(new Set(["10x10"]));
+    expect([sizeOf("booth_flag"), sizeOf("star_flag")]).toEqual(["7x12", "7x12"]);
+    expect([sizeOf("notice_board"), sizeOf("fest_sign"), sizeOf("goal_string"), sizeOf("goal_bulb"), sizeOf("campfire_pit")]).toEqual([
+      "24x22",
+      "14x12",
+      "48x8",
+      "3x3",
+      "14x10",
+    ]);
+    for (const [x, y] of NOTICE_PIN_SPOTS) {
+      expect(x + MOTION_SIZES.notice_note_main[0]).toBeLessThanOrEqual(MOTION_SIZES.notice_board[0]);
+      expect(y + MOTION_SIZES.notice_note_main[1]).toBeLessThanOrEqual(MOTION_SIZES.notice_board[1]);
+    }
   });
 });

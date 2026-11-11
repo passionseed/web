@@ -1,7 +1,7 @@
 /**
  * @jest-environment node
  */
-import { MessageFlags } from "discord.js";
+import { ChannelType, MessageFlags } from "discord.js";
 
 import { ACTION_HANDLERS, COMMAND_HANDLERS } from "..";
 import type { QuestApi, Session } from "../api";
@@ -199,6 +199,52 @@ describe("admin status card", () => {
     await ACTION_HANDLERS.get("ad_terms")!(terms.i, c, ["reward_terms"]);
     expect((c.api.call as jest.Mock).mock.calls.at(-1)).toEqual(["shift_quest_admin_set", "1111111111", "reward_terms", "กติกา"]);
     expect(viewText(terms.sent[0])).toContain("✅ บันทึกแล้ว");
+  });
+
+  describe("/admin channel with a voice channel", () => {
+    const GUILD = "900000000000000000";
+    /** A voice channel whose permissions open to the given roles only. */
+    const voice = (openTo: string[]) => ({
+      id: "804",
+      type: ChannelType.GuildVoice,
+      permissionsFor: (role: string) => ({ has: () => openTo.includes(role) }),
+    });
+    const set = (kind: string, channel: unknown) => interaction("command", { guildId: GUILD, options: options({ kind, channel }) });
+
+    it("refuses a voice channel for help, staff or celebrate, before any database call", async () => {
+      for (const kind of ["help", "staff", "celebrate"]) {
+        const c = ctx(() => status());
+        await expect(COMMAND_HANDLERS.get("admin channel")!(set(kind, voice(["555"])).i, c)).rejects.toThrow(T.adminVoiceCoworkingOnly);
+        expect(c.api.call).not.toHaveBeenCalled();
+      }
+    });
+
+    it("refuses a coworking voice channel students cannot see or join", async () => {
+      const c = ctx(() => status());
+      await expect(COMMAND_HANDLERS.get("admin channel")!(set("coworking", voice(["999"])).i, c)).rejects.toThrow(T.adminCoworkingPrivate);
+      // Nothing to read the permissions from counts as private.
+      await expect(COMMAND_HANDLERS.get("admin channel")!(set("coworking", { id: "804", type: ChannelType.GuildVoice }).i, c)).rejects.toThrow(
+        T.adminCoworkingPrivate
+      );
+      expect(c.api.call).not.toHaveBeenCalled();
+    });
+
+    it("saves a coworking voice channel a student role can join, and a text channel for any kind", async () => {
+      const c = ctx(() => status());
+      await COMMAND_HANDLERS.get("admin channel")!(set("coworking", voice(["555"])).i, c);
+      expect((c.api.call as jest.Mock).mock.calls.at(-1)).toEqual(["shift_quest_admin_set", "1111111111", "coworking_channel", "804"]);
+      await COMMAND_HANDLERS.get("admin channel")!(set("help", { id: "801", type: ChannelType.GuildText }).i, c);
+      expect((c.api.call as jest.Mock).mock.calls.at(-1)).toEqual(["shift_quest_admin_set", "1111111111", "help_channel", "801"]);
+      await COMMAND_HANDLERS.get("admin channel")!(set("coworking", null).i, c);
+      expect((c.api.call as jest.Mock).mock.calls.at(-1)).toEqual(["shift_quest_admin_set", "1111111111", "coworking_channel", ""]);
+    });
+
+    it("checks @everyone while no student role is set", async () => {
+      const c = ctx(() => status());
+      c.session.settings.student_role_ids = [];
+      await COMMAND_HANDLERS.get("admin channel")!(set("coworking", voice([GUILD])).i, c);
+      expect((c.api.call as jest.Mock).mock.calls.at(-1)?.[3]).toBe("804");
+    });
   });
 
   it("names only a real subcommand for an empty catalog", () => {

@@ -33,6 +33,7 @@ import { GrainDefs } from "./chrome/Grain";
 import { PeopleCorner } from "./chrome/PeopleCorner";
 import { CommentsLayer } from "./CommentsLayer";
 import { EmoteLayer, useEmotes } from "./EmoteLayer";
+import { focusElement } from "./focusElement";
 import { WB_FONT_VARS } from "./fonts";
 import { insertElements, insertSkeletons, insertWidget } from "./insert";
 import { KitSidebar, openKit } from "./KitSidebar";
@@ -91,10 +92,12 @@ export default function WhiteboardCanvas({
   board,
   me,
   templateId,
+  focusId,
 }: {
   board: WhiteboardDetail;
   me: Me;
   templateId?: string | null;
+  focusId?: string | null;
 }) {
   const editable = canEdit(board.role);
   const isAdmin = Boolean(me.isAdmin);
@@ -207,6 +210,17 @@ export default function WhiteboardCanvas({
     const placed = insertSkeletons(api, template.build(), { x: 0, y: 0 });
     api.scrollToContent(placed, { fitToViewport: true, viewportZoomFactor: 0.85 });
   }, [api, board.id, editable, sceneReady, templateId]);
+
+  // ?focus=<element> (the SHIFT High island's "เปิดแคนวาส" and "ดูบนแคนวาส"): bring it into view once,
+  // then tidy the address. An unknown id leaves the board's usual scroll-to-content.
+  const focused = useRef(false);
+  useEffect(() => {
+    if (!api || !sceneReady || !focusId || focused.current) return;
+    focused.current = true;
+    const reduced = typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    focusElement(api, focusId, reduced);
+    window.history.replaceState(null, "", `/whiteboard/${board.id}`);
+  }, [api, board.id, focusId, sceneReady]);
 
   const saveAndTell = useCallback(async () => {
     if (!editable) return;

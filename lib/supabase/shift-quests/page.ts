@@ -3,8 +3,10 @@ import "server-only";
 import { QuestDbError, QuestError, type QuestApi } from "@/bot/src/quests/api";
 import type { CanvasLinkState } from "@/lib/shift-island/quest-canvas";
 
+import { campfireOf } from "./campfire";
 import { questApi } from "./db";
 import type {
+  CampfireNames,
   IslandMapData,
   IslandMapPlot,
   IslandPageData,
@@ -99,8 +101,9 @@ const UNLINKED: CanvasLinkState = { linked: false };
 
 /**
  * Whether the quest project is linked to a SHIFT canvas. Only the time leaves
- * the server (never the board or frame id). Any failure reads as unlinked and
- * logs a code: the island never breaks because of the link.
+ * the server (never the board or frame id: the island opens the canvas through
+ * CANVAS_ROUTE, which resolves the link on the server). Any failure reads as
+ * unlinked and logs a code: the island never breaks because of the link.
  */
 async function canvasLinkOf(api: QuestApi, actor: string): Promise<CanvasLinkState> {
   try {
@@ -124,8 +127,10 @@ async function canvasLinkOf(api: QuestApi, actor: string): Promise<CanvasLinkSta
 /**
  * Everything /shift/island shows for a ready student: the island, the picture
  * data, and either the quest board and the canvas link (with a project) or
- * pending invites (without one). Throws QuestError / QuestDbError from the
- * calls, except the canvas link, which falls back to unlinked.
+ * pending invites (without one), plus the voice campfire's count in both
+ * cases. Throws QuestError / QuestDbError from the calls, except the canvas
+ * link, which falls back to unlinked, and the campfire, which falls back to
+ * null (no campfire drawn).
  */
 export async function getIslandPage(viewer: ReadyViewer): Promise<IslandPageData> {
   const api = questApi();
@@ -138,16 +143,23 @@ export async function getIslandPage(viewer: ReadyViewer): Promise<IslandPageData
   let board: QuestBoard | null = null;
   let invites: ProjectInvite[] = [];
   let canvasLink: CanvasLinkState = UNLINKED;
+  let fire: CampfireNames | null = null;
   if (island.project) {
-    const [boardRaw, link] = await Promise.all([
+    const [boardRaw, link, campfireRead] = await Promise.all([
       api.call<QuestBoard>("shift_quest_board", viewer.actor),
       canvasLinkOf(api, viewer.actor),
+      campfireOf(api, viewer.actor, false),
     ]);
     board = normalizeBoard(boardRaw);
     canvasLink = link;
+    fire = campfireRead;
   } else {
-    const projects = list(await api.call<ProjectListRow[]>("shift_quest_project_list", viewer.actor));
-    invites = projects.filter((p) => p.status === "invited").map(toInvite);
+    const [projectsRaw, campfireRead] = await Promise.all([
+      api.call<ProjectListRow[]>("shift_quest_project_list", viewer.actor),
+      campfireOf(api, viewer.actor, false),
+    ]);
+    invites = list(projectsRaw).filter((p) => p.status === "invited").map(toInvite);
+    fire = campfireRead;
   }
 
   return {
@@ -158,6 +170,8 @@ export async function getIslandPage(viewer: ReadyViewer): Promise<IslandPageData
     board,
     invites,
     canvasLink,
+    // The count and the join link only: names load on tap (loadCampfire).
+    campfire: fire ? { count: fire.count, joinUrl: fire.joinUrl } : null,
   };
 }
 

@@ -55,6 +55,8 @@ export const COMPOSER = {
   writeInstead: "เขียนเองแทน",
   sent: "ส่งแล้ว พี่เลี้ยงจะดูใน Discord แล้วแจ้งผลในกล่องข้อความของบอท",
   failed: "ส่งไม่สำเร็จ ลองอีกครั้ง",
+  /** A note's own link to the whiteboard (a new tab, so the ticks stay). */
+  openNote: "ดูบนแคนวาส",
 };
 
 export const PREVIEW = {

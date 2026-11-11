@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { submitQuestCard } from "@/app/shift/island/actions";
+import { canvasHref } from "@/lib/shift-island/canvas-link";
 import {
   CANVAS_RELOAD_CODES,
   CARD_LIMITS,
@@ -266,6 +267,7 @@ interface NoteStickyProps {
 /** One note as a whiteboard sticky in its zone's colour, with a 44px checkbox. */
 function NoteSticky({ note, checked, disabled, onToggle }: NoteStickyProps) {
   const metaId = useId();
+  const textId = useId();
   const reasons = note.history.filter((h) => h.why).slice(0, 2);
   const tags = [
     note.version ? COMPOSER.version(note.version) : null,
@@ -288,7 +290,9 @@ function NoteSticky({ note, checked, disabled, onToggle }: NoteStickyProps) {
           aria-describedby={tags.length || reasons.length || note.pii ? metaId : undefined}
           onChange={(event) => onToggle(note.id, event.target.checked)}
         />
-        <span className={styles.noteText}>{note.text}</span>
+        <span id={textId} className={styles.noteText}>
+          {note.text}
+        </span>
       </label>
       {tags.length || reasons.length || note.pii ? (
         <div id={metaId} className={styles.noteMeta}>
@@ -313,6 +317,16 @@ function NoteSticky({ note, checked, disabled, onToggle }: NoteStickyProps) {
           ) : null}
         </div>
       ) : null}
+      {/* Outside the label, so opening the note never ticks it; a new tab keeps the ticks here. */}
+      <a
+        className={styles.noteOpen}
+        href={canvasHref(note.id)}
+        target="_blank"
+        rel="noopener"
+        aria-describedby={textId}
+      >
+        {COMPOSER.openNote}
+      </a>
     </li>
   );
 }

@@ -28,6 +28,8 @@ const ERRORS: Record<string, string> = {
   not_started: "กดเริ่มบนหน้าเกาะก่อน ใช้เวลาไม่ถึงนาที",
   not_authorized: "ส่วนนี้สำหรับทีมพี่เลี้ยงที่ได้รับสิทธิ์เท่านั้น",
   bad_input: "ข้อมูลไม่ถูกต้อง ลองใหม่อีกครั้ง",
+  // Raised only by the bot's voice presence writers (migration 093000).
+  invalid: "ข้อมูลไม่ถูกต้อง ลองใหม่อีกครั้ง",
   bad_route: "เลือกเส้นทางจากตัวเลือกที่มี",
   missing_text: "ยังขาดข้อความที่จำเป็น",
   text_too_long: "ข้อความยาวเกินไป ลองตัดให้สั้นลง",

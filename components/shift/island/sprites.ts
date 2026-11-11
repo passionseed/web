@@ -30,7 +30,8 @@ export type WebIcon =
   | "sos"
   | "link"
   | "mail"
-  | "menu";
+  | "menu"
+  | "note";
 
 export const WEB_SPRITES: Record<WebIcon, string[]> = {
   compass: [
@@ -396,6 +397,25 @@ export const WEB_SPRITES: Record<WebIcon, string[]> = {
     "................",
     "................",
     "................",
+    "................",
+    "................",
+  ],
+  // A note pinned up, three lines on it (the linked SHIFT canvas).
+  note: [
+    "................",
+    "................",
+    "......oooo......",
+    ".....oprrro.....",
+    "..oooorrrroooo..",
+    "..offfoooofffo..",
+    "..offffffffffo..",
+    "..ofzzzzzzzzfo..",
+    "..offffffffffo..",
+    "..ofzzzzzzzffo..",
+    "..offffffffffo..",
+    "..ofzzzzzffffo..",
+    "..offffffffffo..",
+    "..oooooooooooo..",
     "................",
     "................",
   ],

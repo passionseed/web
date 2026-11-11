@@ -58,43 +58,52 @@ export type BoardRef =
   | { kind: "side"; templateId: string }
   | { kind: "proposed"; instanceId: string };
 
-/** Keynote priority: the quest that needs the caller most comes first. Appealed waits on staff, so it is never the keynote. */
-const KEYNOTE_ORDER: TileStatus[] = ["clarification", "active", "paused", "submitted"];
+/**
+ * Open-quest priority: the quest that needs the caller most comes first.
+ * Appealed waits on staff, so it comes last (and is never the keynote).
+ */
+const OPEN_ORDER: TileStatus[] = ["clarification", "active", "paused", "submitted", "appealed"];
 
-interface KeynoteCandidate {
+/** One of the caller's own open quests (see openQuests). */
+export interface OpenQuest {
   ref: BoardRef;
-  rank: number;
+  status: TileStatus;
+  /** mine.updated_at in ms, 0 when unknown. */
   updatedAt: number;
+  title: string;
 }
 
-function candidate(ref: BoardRef, status: TileStatus, mine: QuestMine | null): KeynoteCandidate | null {
-  const rank = KEYNOTE_ORDER.indexOf(status);
-  if (rank < 0) return null;
+function openQuest(ref: BoardRef, status: TileStatus, mine: QuestMine | null, title: string): OpenQuest | null {
+  if (!OPEN_ORDER.includes(status)) return null;
   const updatedAt = mine ? Date.parse(mine.updated_at) : Number.NaN;
-  return { ref, rank, updatedAt: Number.isNaN(updatedAt) ? 0 : updatedAt };
+  return { ref, status, updatedAt: Number.isNaN(updatedAt) ? 0 : updatedAt, title };
+}
+
+/**
+ * The caller's own open quests (main, side and proposed): clarification, then
+ * active, paused, submitted and appealed; ties go to the newest
+ * mine.updated_at. Never a quest a teammate holds ("held").
+ */
+export function openQuests(board: QuestBoard): OpenQuest[] {
+  const open: OpenQuest[] = [];
+  const add = (q: OpenQuest | null) => {
+    if (q) open.push(q);
+  };
+  for (const m of board.main) add(openQuest({ kind: "main", milestone: m.milestone }, mainTileStatus(m), m.mine, m.title));
+  for (const s of board.side) add(openQuest({ kind: "side", templateId: s.template_id }, sideTileStatus(s), s.mine, s.title));
+  for (const p of board.proposed) add(openQuest({ kind: "proposed", instanceId: p.instance_id }, proposedTileStatus(p), p, p.title));
+  return open.sort(
+    (a, b) => OPEN_ORDER.indexOf(a.status) - OPEN_ORDER.indexOf(b.status) || b.updatedAt - a.updatedAt,
+  );
 }
 
 /**
  * The caller's own open quest that needs them most: clarification first, then
  * active, then paused, then submitted; ties go to the newest mine.updated_at.
- * Never a quest a teammate holds.
+ * Never a quest a teammate holds, never an appealed one.
  */
 export function keynoteQuest(board: QuestBoard): BoardRef | null {
-  const candidates: KeynoteCandidate[] = [];
-  for (const m of board.main) {
-    const c = candidate({ kind: "main", milestone: m.milestone }, mainTileStatus(m), m.mine);
-    if (c) candidates.push(c);
-  }
-  for (const s of board.side) {
-    const c = candidate({ kind: "side", templateId: s.template_id }, sideTileStatus(s), s.mine);
-    if (c) candidates.push(c);
-  }
-  for (const p of board.proposed) {
-    const c = candidate({ kind: "proposed", instanceId: p.instance_id }, proposedTileStatus(p), p);
-    if (c) candidates.push(c);
-  }
-  candidates.sort((a, b) => a.rank - b.rank || b.updatedAt - a.updatedAt);
-  return candidates[0]?.ref ?? null;
+  return openQuests(board).find((q) => q.status !== "appealed")?.ref ?? null;
 }
 
 /**

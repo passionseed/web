@@ -35,9 +35,10 @@ const D = "640000000000000004"; // no project; invited to project one but has no
 const NOBODY = "649999999999999999";
 const NAMES: Record<string, string> = { [A]: "Canvas Aye", [B]: "Canvas Bee", [C]: "Canvas Cee", [D]: "Canvas Dee" };
 
-/** The full web allowlist after 20261111091200 (regprocedure text), as in web_board.ts. */
+/** The full web allowlist after 20261111093000 (regprocedure text), as in web_board.ts. */
 const WEB_ALLOWLIST = [
   "shift_quest_board(text)",
+  "shift_quest_campfire(text,boolean)",
   "shift_quest_canvas_get(text)",
   "shift_quest_canvas_link(text,uuid,text,text)",
   "shift_quest_canvas_unlink(text)",
@@ -126,7 +127,7 @@ async function main(): Promise<void> {
   const count = async (sql: string, args: unknown[] = []) => Number(await scalar(db, sql, args));
 
   // --- Schema, privileges, row security ------------------------------------------------
-  check(Number(await call(web, "shift_quest_schema_version")) === 6, "the website reads schema version 6");
+  check(Number(await call(web, "shift_quest_schema_version")) === 7, "the website reads schema version 7 (it needs 6 or more)");
 
   const executable: string[] = (await db.query(`
     select p.oid::regprocedure::text as sig

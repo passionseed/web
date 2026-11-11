@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { PixelIcon } from "@/components/shift/poster/pixel/PixelRects";
 
 import { HUD, ISLAND, stageName } from "./copy";
+import island from "./island.module.css";
 import { PALETTE, WEB_SPRITES, iconScale, treeGrid, type WebIcon } from "./sprites";
 import styles from "./world.module.css";
 
@@ -22,7 +23,7 @@ export function Hud({ chip, buttons, bottom }: { chip: ReactNode; buttons: React
       <header className={styles.hudTop}>
         <h1 className="sr-only">{ISLAND.title}</h1>
         {chip}
-        <div className={styles.hudButtons}>{buttons}</div>
+        <div className={`${styles.hudButtons} ${island.hudButtonsTight}`}>{buttons}</div>
       </header>
       <div className={styles.hudBottom}>{bottom}</div>
     </div>
@@ -98,16 +99,30 @@ export function HudRound({ icon, label, badge, onClick }: { icon: WebIcon; label
   );
 }
 
+/** A round pixel link for the top right: leaves the island in a new tab (the canvas on the whiteboard). */
+export function HudLinkRound({ icon, label, href }: { icon: WebIcon; label: string; href: string }) {
+  return (
+    <a className={`${styles.round} ${styles.glass} ${styles.press}`} aria-label={label} title={label} href={href} target="_blank" rel="noopener">
+      <PixelIcon grid={WEB_SPRITES[icon]} palette={PALETTE} scale={2} />
+    </a>
+  );
+}
+
 /** The story book, the envelope and the menu share this look. */
 export const hudRoundClass = `${styles.round} ${styles.glass} ${styles.press}`;
 
-/** Bottom: the quest board. Narrow beside the keynote, wide when there is no keynote. */
-export function BoardButton({ wide, onClick }: { wide: boolean; onClick: () => void }) {
+/**
+ * Bottom: the quest board. Narrow beside the keynote, wide when there is no
+ * keynote. `concealed` while the living island shows the notice board in the
+ * plaza: out of sight, still focusable, and back in view on keyboard focus.
+ */
+export function BoardButton({ wide, concealed = false, onClick }: { wide: boolean; concealed?: boolean; onClick: () => void }) {
   return (
     <button
       type="button"
-      className={`${styles.boardButton} ${styles.glass} ${styles.press}`}
+      className={`${styles.boardButton} ${styles.glass} ${styles.press}${concealed ? ` ${island.concealed}` : ""}`}
       data-wide={wide ? "true" : undefined}
+      data-concealed={concealed ? "true" : undefined}
       aria-haspopup="dialog"
       onClick={onClick}
     >

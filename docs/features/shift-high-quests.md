@@ -82,6 +82,38 @@ Not stored: message content, voice time, screen share, audio, passwords,
 tokens, contact details, test users' identities. Browsing the bot stores
 nothing; only `/start` creates a member.
 
+The one thing the bot notices on its own (from schema 7,
+`20261111093000_shift_quest_campfire.sql`) is who is in the coworking voice
+channel right now, for the island's campfire:
+
+- **Stored**: live presence in the coworking voice channel only, one row per
+  person in it now (Discord ID, channel ID, display name, `joined_at`) in
+  `shift_quest_voice_presence`, plus the bot's heartbeat in
+  `shift_quest_voice_state`. Anyone in the channel counts, member or not,
+  adult or student: it is a group space, and nothing here opens a 1:1 channel.
+  Other voice channels are never written. The row is not linked to a member,
+  project or plot, and is not part of `/data`: it exists only while the person
+  is in the channel.
+- **Deleted**: on leave, the row is deleted at once. The bot replaces the
+  whole table from Discord's voice cache on every start (ready), resume and
+  clean stop, so a missed event never lingers. If the bot goes silent, the
+  web shows the campfire as empty 3 minutes after its last heartbeat. There is
+  no history, no voice time and no audio.
+- **Shown**: the island page carries only the count and the join link. Names
+  (as the server shows them) load only when a signed-in, eligible SHIFT
+  student taps the campfire on `/shift/island`. People sit only at the
+  campfire, never at their plot, so nothing ties a name to a project.
+- **Who can reach it**: `shift_quest_voice_set`, `_sync` and `_beat` are
+  granted to `shift_quest_bot` (and `service_role`) only, never the website;
+  `shift_quest_campfire` (the privacy-shaped read, no Discord IDs) to
+  `shift_quest_web` (and `service_role`) only, never the bot. The tables have
+  RLS on, no policies and no Data API access.
+- `coworking_channel_id` may be a voice channel (`/admin channel
+  kind:coworking`). Intention posts then land in that voice channel's text
+  chat. A text channel still works for intentions; the campfire then stays
+  empty, and the bot logs one warning. The bot must be able to view the voice
+  channel.
+
 `/data` exports everything about the caller as JSON. An approved erasure
 (`/admin data`) deletes the journal, help requests, shares and notices,
 redacts submissions, reviews and appeals, strips their words and name from
@@ -392,7 +424,9 @@ wave 2); `shift_quest_admin_set` takes the key `squads`.
    mic, screen share and camera for students of a SHIFT round in session.
    The quest bot never uses those, and its intro says only that *quests* do
    not count voice time or record audio or screens. If pilot students can
-   also be in a running round, tell them, or exclude them.
+   also be in a running round, tell them, or exclude them. The campfire
+   (schema 7) is separate: its own listener, its own tables, live presence in
+   the coworking channel only, no history (see "What is stored").
 4. Apply the migrations (`supabase db push`, production, after an explicit
    go), set the `shift_quest_bot` password with a SCRAM verifier, and put
    its pooler URL in `bot.env` as `SHIFT_QUEST_DATABASE_URL`.
@@ -400,7 +434,8 @@ wave 2); `shift_quest_admin_set` takes the key `squads`.
    `select public.shift_quest_bootstrap_admin('<discord user id>', '<name>');`
 6. Add `shift-quests` to `BOT_MODULES`, deploy with `bot/deploy.sh`, run
    `pnpm bot:register`, then in Discord: `/admin channel` (help, staff,
-   celebrate, coworking), `/admin role` for mentors, `/admin student-role`
+   celebrate, coworking; coworking may be a voice channel the bot can view,
+   which lights the island's campfire), `/admin role` for mentors, `/admin student-role`
    for the pilot cohort, and `/admin status` to see what is still missing.
 
 ## Web board and shift_quest_web

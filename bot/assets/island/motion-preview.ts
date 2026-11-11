@@ -2,15 +2,18 @@
  *
  * Validates the motion sprites with the same rules as
  * bot/src/quests/__tests__/motion-sprites.test.ts, then writes review files into
- * .gstack/tmp/art/ (gitignored): sheet.png + sheet.json, strips/<family>.png and
- * preview.html. It never writes into bot/assets/island/png, so the bot's
- * pictures and its pinned hash stay as they are.
+ * .gstack/tmp/art/ (gitignored): sheet.png + sheet.json, strips/<family>.png,
+ * preview.html, and plaza.png / plaza-frame1.png (the festival plaza in a real
+ * scene at 2x: stage steps 0-3, goal lights 0/3/6/8, campfire with 0/3/5/11
+ * people, by day on top and with the night tint below). It never writes into
+ * bot/assets/island/png, so the bot's pictures and its pinned hash stay as they are.
  */
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { PNG } from "pngjs";
 import {
   ACTOR_FRAMES,
+  GOAL_BULB_SPOTS,
   MOTION_SIZES,
   MOTION_SPRITES,
   SHORE_FRAMES,
@@ -19,8 +22,9 @@ import {
   type MotionSpriteName,
 } from "./motion-sprites";
 import { PALETTE, SPRITES } from "./sprites";
+import { TILE_BY_CODE, buildScene, type IslandPlot, type IslandScene } from "../../src/quests/island/scene";
 
-export const MOTION_RULES = ["inventory", "size", "palette", "names", "frames", "water", "shore", "sway", "style"] as const;
+export const MOTION_RULES = ["inventory", "size", "palette", "names", "frames", "water", "shore", "sway", "style", "plaza"] as const;
 export type MotionRule = (typeof MOTION_RULES)[number];
 export interface MotionProblem {
   rule: MotionRule;
@@ -49,7 +53,31 @@ const FAMILY_KEYS: [RegExp, string][] = [
   [/^cloud_/, "o"],
   [/^lantern_glow_/, "yif"],
   [/^festoon$/, "orypf"],
+  // Unlit goal bulbs are dull; a lit one is drawn untinted, so it is pure light.
+  [/^goal_string$/, "otaz"],
+  [/^goal_bulb$/, "yf"],
+  // The flame is drawn untinted: light only, no outline. The pit's y and i (embers) glow at night.
+  [/^campfire_flame_/, "ryfi"],
+  [/^campfire_pit$/, "otazbcyi"],
+  [/^campfire_pit_cold$/, "otazbc"],
+  // Only the finished stage has lights (y stays untinted on fest_stage_3 at night).
+  [/^fest_stage_[012]$/, Object.keys(PALETTE).filter((key) => key !== "y").join("")],
 ];
+
+/** Sprites drawn in one spot by turns, or chosen per seat: each group shares one size. */
+const SAME_SIZE: readonly (readonly string[])[] = [
+  ["fest_stage_0", "fest_stage_1", "fest_stage_2", "fest_stage_3"],
+  ["notice_note_active", "notice_note_main", "notice_note_side"],
+  ["booth_flag", "star_flag"],
+  [...ACTOR_FRAMES.sitA, ...ACTOR_FRAMES.sitB, ...ACTOR_FRAMES.sitC, ...ACTOR_FRAMES.sitD],
+];
+
+/** Top-left of each pinned note on `notice_board` (lib/shift-island/live/plaza.ts draws them there). */
+export const NOTICE_PIN_SPOTS: readonly (readonly [number, number])[] = [[3, 3], [9, 2], [16, 3]];
+
+function inkMask(rows: string[]): string {
+  return rows.map((row) => row.replace(/[^.]/g, "#")).join("\n");
+}
 
 function column(rows: string[], x: number): string {
   return rows.map((row) => row[x]).join("");
@@ -127,6 +155,15 @@ export function motionSpriteProblems(sprites: Record<string, string[]> = MOTION_
       }
     });
   }
+  for (const group of SAME_SIZE) {
+    const first = lookup(group[0]);
+    for (const name of group.slice(1)) {
+      const grid = lookup(name);
+      if (first && grid && (grid.length !== first.length || grid[0]?.length !== first[0]?.length)) {
+        add("frames", name, `is not the size of ${group[0]}`);
+      }
+    }
+  }
   for (const base of [...Object.values(WATER_FRAMES), ...Object.values(SHORE_FRAMES)].map((frames) => frames[0])) {
     if (!SPRITES[base]) add("frames", base, "base tile is not in sprites.ts");
   }
@@ -193,6 +230,57 @@ export function motionSpriteProblems(sprites: Record<string, string[]> = MOTION_
     const rows = sprites[name];
     if (rows?.slice(5, 11).some((row) => row.slice(5, 11) !== "......")) add("style", name, "the centre 6x6 must be transparent");
   }
+
+  // Goal lights: the festoon's wire with dull bulbs; each lit bulb paints only over the string, one per unlit bulb.
+  const string = lookup("goal_string");
+  const festoon = lookup("festoon");
+  const bulb = lookup("goal_bulb");
+  if (string && festoon && inkMask(string) !== inkMask(festoon)) add("plaza", "goal_string", "is not the festoon's shape");
+  if (string && bulb) {
+    if (GOAL_BULB_SPOTS.length !== 8) add("plaza", "GOAL_BULB_SPOTS", `has ${GOAL_BULB_SPOTS.length} spots, expected 8`);
+    const glass = new Set<string>();
+    string.forEach((row, y) => [...row].forEach((symbol, x) => symbol === "t" && glass.add(`${x},${y}`)));
+    GOAL_BULB_SPOTS.forEach(([left, top], i) => {
+      if (i > 0 && left <= GOAL_BULB_SPOTS[i - 1][0]) add("plaza", "GOAL_BULB_SPOTS", `spot ${i} is not right of spot ${i - 1}`);
+      let covers = 0;
+      bulb.forEach((row, y) => [...row].forEach((symbol, x) => {
+        if (symbol === ".") return;
+        const under = string[top + y]?.[left + x];
+        if (under === undefined || under === ".") add("plaza", "GOAL_BULB_SPOTS", `spot ${i} paints off the string at ${left + x},${top + y}`);
+        if (glass.delete(`${left + x},${top + y}`)) covers++;
+      }));
+      if (!covers) add("plaza", "GOAL_BULB_SPOTS", `spot ${i} covers no unlit bulb`);
+    });
+    if (glass.size) add("plaza", "goal_string", `bulb pixels ${[...glass].join(" ")} have no lit spot`);
+  }
+
+  // Stage steps: one footprint on the bottom row, and steps 1-3 share the deck they are built on.
+  const stages = [0, 1, 2, 3].map((step) => lookup(`fest_stage_${step}`));
+  stages.forEach((rows, step) => {
+    if (rows && inkBox(rows).maxY !== rows.length - 1) add("plaza", `fest_stage_${step}`, "does not stand on the bottom row");
+  });
+  const deck = stages[1];
+  if (deck) {
+    const from = inkBox(deck).minY;
+    for (const step of [2, 3]) {
+      const rows = stages[step];
+      if (rows && rows.slice(from).join("\n") !== deck.slice(from).join("\n")) add("plaza", `fest_stage_${step}`, `rows ${from}+ differ from fest_stage_1's deck`);
+    }
+  }
+
+  // Notice board: each pin spot is plain board face (no outline), so a note never hangs off the frame.
+  const board = lookup("notice_board");
+  const note = lookup("notice_note_main");
+  if (board && note) {
+    for (const [left, top] of NOTICE_PIN_SPOTS) {
+      for (let y = top; y < top + note.length; y++) {
+        for (let x = left; x < left + note[0].length; x++) {
+          const symbol = board[y]?.[x];
+          if (symbol === undefined || symbol === "." || symbol === "o") add("plaza", "notice_board", `pin spot ${left},${top} is not on the face at ${x},${y}`);
+        }
+      }
+    }
+  }
   return problems;
 }
 
@@ -252,6 +340,12 @@ const STRIPS: Record<string, string[]> = {
   plaza_night: ["lamp_post", "festoon"],
   builder: [...ACTOR_FRAMES.builder],
   tester: [...ACTOR_FRAMES.tester],
+  notice: ["notice_board", "notice_note_active", "notice_note_main", "notice_note_side"],
+  fest_stage: ["fest_stage_0", "fest_stage_1", "fest_stage_2", "fest_stage_3", "fest_sign"],
+  goal: ["goal_string", "goal_bulb", "festoon"],
+  flags: ["booth_flag", "star_flag", "key_flag", "visitor"],
+  campfire: ["campfire_pit", ...ACTOR_FRAMES.campfireFlame.slice(0, 3)],
+  sitters: [...ACTOR_FRAMES.sitA, ...ACTOR_FRAMES.sitB, ...ACTOR_FRAMES.sitC, ...ACTOR_FRAMES.sitD],
 };
 
 function previewHtml(all: Record<string, string[]>, rgb: Record<string, RGB>): string {
@@ -332,6 +426,166 @@ setInterval(() => { if (!document.getElementById("pause").checked) draw(tick++);
 `;
 }
 
+/* ------------------------------------------------------------ plaza composite */
+
+/**
+ * Review copies of what lib/shift-island/live owns (atlas.ts UNTINTED and
+ * LIT_KEYS, lighting.ts night multiply, plaza.ts offsets from the plaza
+ * centre). The bot cannot import the web, so these mirror the plan's contract;
+ * the world's own tests pin the real values.
+ */
+const NIGHT: readonly [number, number, number] = [0.4, 0.47, 0.72];
+const PREVIEW_UNTINTED = new Set([
+  "marker", "lantern_glow_0", "lantern_glow_1", "goal_bulb", ...ACTOR_FRAMES.campfireFlame,
+]);
+const PREVIEW_LIT: Readonly<Record<string, string>> = {
+  lantern: "yif", lamp_post: "yif", festoon: "yifrp", campfire_pit: "yi", fest_stage_3: "y",
+};
+type Offset = readonly [number, number];
+const PLAZA_PREVIEW = {
+  noticeBoard: [-38, -24] as Offset,
+  notes: [[-35, -21], [-29, -22], [-22, -21]] as readonly Offset[],
+  sign: [36, -12] as Offset,
+  stage: [50, -16] as Offset,
+  pit: [-63, 46] as Offset,
+  flame: [-61, 38] as Offset,
+  seats: [[-73, 54], [-47, 54], [-71, 34], [-49, 34], [-87, 52], [-33, 52], [-85, 36], [-35, 36]] as readonly Offset[],
+};
+const SITTER_FAMILIES = [ACTOR_FRAMES.sitA, ACTOR_FRAMES.sitB, ACTOR_FRAMES.sitC, ACTOR_FRAMES.sitD] as const;
+
+interface PlazaPanel {
+  title: string;
+  step: 0 | 1 | 2 | 3;
+  lit: number;
+  people: number;
+  pins: ("active" | "main" | "side")[];
+  /** Which frame of each animation (0 = the reduced-motion still). */
+  frame: number;
+}
+
+/** A native-pixel RGB buffer that draws sprites with the web's night rules. */
+class Layer {
+  readonly data: Uint8Array;
+  constructor(readonly width: number, readonly height: number, private readonly rgb: Record<string, RGB>, private readonly night: boolean) {
+    this.data = new Uint8Array(width * height * 3);
+  }
+  put(name: string, left: number, top: number, all: Record<string, string[]>, flip = false): void {
+    const rows = all[name];
+    if (!rows) throw new Error(`no sprite ${name}`);
+    const lit = PREVIEW_UNTINTED.has(name) ? null : PREVIEW_LIT[name] ?? "";
+    rows.forEach((row, y) => {
+      [...row].forEach((symbol, x) => {
+        if (symbol === ".") return;
+        const px = left + (flip ? row.length - 1 - x : x);
+        const py = top + y;
+        if (px < 0 || py < 0 || px >= this.width || py >= this.height) return;
+        const base = this.rgb[symbol];
+        const keep = !this.night || lit === null || lit.includes(symbol);
+        const colour = keep ? base : (base.map((v, i) => Math.round(v * NIGHT[i])) as RGB);
+        this.data.set(colour, (py * this.width + px) * 3);
+      });
+    });
+  }
+}
+
+/** Plots round the plaza: a few at stage 4 and up, two with the visitor (stage slot), one helper path. */
+const PREVIEW_PLOTS: IslandPlot[] = [4, 5, 4, 6, 3, 7, 4, 2, 5, 4].map((stage, i) => ({
+  slot: i + 1,
+  stage,
+  visitor: i === 1 || i === 5,
+  key: i === 3,
+  helper: i === 2,
+  lantern: i === 4,
+  name: null,
+  mine: i === 0,
+}));
+
+function drawPlaza(layer: Layer, scene: IslandScene, origin: { x: number; y: number }, panel: PlazaPanel, night: boolean, all: Record<string, string[]>): void {
+  const put = (name: string, x: number, y: number, flip = false) => layer.put(name, x - origin.x, y - origin.y, all, flip);
+  const { cols, tile } = scene;
+  for (let i = 0; i < scene.tiles.length; i++) put(TILE_BY_CODE[scene.tiles[i]], (i % cols) * tile, Math.floor(i / cols) * tile);
+  for (const cell of scene.paths) put("path", (cell % cols) * tile, Math.floor(cell / cols) * tile);
+  put("well", scene.well.x, scene.well.y);
+  if (scene.banner) put("banner", scene.banner.x, scene.banner.y);
+  for (const tree of scene.trees) {
+    put(tree.sprite, tree.left, tree.top);
+    if (tree.key) put("key_flag", tree.key.x, tree.key.y);
+    if (tree.visitor) put("visitor", tree.visitor.x, tree.visitor.y);
+    if (night && tree.lantern) put(ACTOR_FRAMES.lanternGlow[panel.frame % 2], tree.lantern.x - 4, tree.lantern.y - 1);
+    if (tree.lantern) put("lantern", tree.lantern.x, tree.lantern.y);
+  }
+  const px = scene.well.x + 12;
+  const py = scene.well.y + 12;
+  const at = ([dx, dy]: Offset): [number, number] => [px + dx, py + dy];
+  if (night) {
+    const plaza = { x: px - 48, y: py - 32, w: 96, h: 64 };
+    const [lw, lh] = MOTION_SIZES.lamp_post;
+    put("lamp_post", plaza.x + 2, plaza.y - 10);
+    put("lamp_post", plaza.x + plaza.w - 2 - lw, plaza.y - 10);
+    put("lamp_post", plaza.x + 2, plaza.y + plaza.h - 1 - lh);
+    put("lamp_post", plaza.x + plaza.w - 2 - lw, plaza.y + plaza.h - 1 - lh);
+    if (scene.banner) put("festoon", scene.banner.x, scene.banner.y);
+  }
+  // The plaza actors, in plaza.ts's draw order.
+  if (scene.banner) {
+    put("goal_string", scene.banner.x, scene.banner.y);
+    for (let i = 0; i < panel.lit; i++) put("goal_bulb", scene.banner.x + GOAL_BULB_SPOTS[i][0], scene.banner.y + GOAL_BULB_SPOTS[i][1]);
+  }
+  put(`fest_stage_${panel.step}`, ...at(PLAZA_PREVIEW.stage));
+  put("fest_sign", ...at(PLAZA_PREVIEW.sign));
+  put("notice_board", ...at(PLAZA_PREVIEW.noticeBoard));
+  panel.pins.forEach((kind, i) => put(`notice_note_${kind}`, ...at(PLAZA_PREVIEW.notes[i])));
+  for (const tree of scene.trees) {
+    if (tree.stage < 4) continue;
+    put(tree.visitor ? "star_flag" : "booth_flag", tree.left + 4, tree.top + 22);
+  }
+  put(panel.people > 0 ? "campfire_pit" : "campfire_pit_cold", ...at(PLAZA_PREVIEW.pit));
+  const seated = Math.min(panel.people, PLAZA_PREVIEW.seats.length);
+  const seat = (i: number) => {
+    const frames = SITTER_FAMILIES[i % 4];
+    const order = i % 2 === 1 ? [...frames].reverse() : [...frames];
+    const [dx, dy] = PLAZA_PREVIEW.seats[i];
+    put(order[panel.frame % 2], ...at([dx, dy]), dx > -56);
+  };
+  for (let i = 0; i < seated; i++) if (PLAZA_PREVIEW.seats[i][1] < 45) seat(i);
+  if (panel.people > 0) put(ACTOR_FRAMES.campfireFlame[panel.frame % 4], ...at(PLAZA_PREVIEW.flame));
+  for (let i = 0; i < seated; i++) if (PLAZA_PREVIEW.seats[i][1] >= 45) seat(i);
+}
+
+/** The plaza in a real scene: stage steps 0-3, lanterns 0/3/6/8, campfire 0/3/5/11, by day and at night. */
+function plazaComposite(all: Record<string, string[]>, rgb: Record<string, RGB>, scale: number, frame: number): PNG {
+  const scene = buildScene(PREVIEW_PLOTS, { festival: true, markMine: true });
+  const cx = scene.well.x + 12;
+  const cy = scene.well.y + 12;
+  const crop = { x: cx - 112, y: cy - 72, w: 224, h: 152 };
+  const panels: PlazaPanel[] = [
+    { title: "step 0", step: 0, lit: 0, people: 0, pins: ["main"], frame },
+    { title: "step 1", step: 1, lit: 3, people: 3, pins: ["active", "main", "side"], frame },
+    { title: "step 2", step: 2, lit: 6, people: 5, pins: ["main", "side", "side"], frame },
+    { title: "step 3", step: 3, lit: 8, people: 11, pins: ["active", "active", "main"], frame },
+  ];
+  const gap = 8;
+  const out = blank(panels.length * (crop.w * scale + gap) + gap, 2 * (crop.h * scale + gap) + gap, [40, 44, 46]);
+  [false, true].forEach((night, row) => {
+    panels.forEach((panel, col) => {
+      const layer = new Layer(crop.w, crop.h, rgb, night);
+      drawPlaza(layer, scene, crop, panel, night, all);
+      const left = gap + col * (crop.w * scale + gap);
+      const top = gap + row * (crop.h * scale + gap);
+      for (let y = 0; y < crop.h; y++) {
+        for (let x = 0; x < crop.w; x++) {
+          const o = (y * crop.w + x) * 3;
+          const colour = [layer.data[o], layer.data[o + 1], layer.data[o + 2], 255];
+          for (let dy = 0; dy < scale; dy++) {
+            for (let dx = 0; dx < scale; dx++) out.data.set(colour, ((top + y * scale + dy) * out.width + left + x * scale + dx) * 4);
+          }
+        }
+      }
+    });
+  });
+  return out;
+}
+
 function main(): void {
   const root = process.cwd();
   if (!existsSync(join(root, "bot/assets/island/sprites.ts"))) {
@@ -382,9 +636,12 @@ function main(): void {
   }
 
   writeFileSync(join(out, "preview.html"), previewHtml(all, rgb));
+  // Plaza at 2x (how it reads on a phone) in the still frame, and frame 1 to check the motion is small.
+  writeFileSync(join(out, "plaza.png"), PNG.sync.write(plazaComposite(all, rgb, 2, 0)));
+  writeFileSync(join(out, "plaza-frame1.png"), PNG.sync.write(plazaComposite(all, rgb, 2, 1)));
   const motion = Object.keys(MOTION_SPRITES) as MotionSpriteName[];
   console.log(`Valid: ${motion.length} motion sprites, palette ${Object.keys(PALETTE).length} keys.`);
-  console.log(`Wrote ${join(out, "sheet.png")}, sheet.json, strips/ (${Object.keys(STRIPS).length}) and preview.html.`);
+  console.log(`Wrote ${join(out, "sheet.png")}, sheet.json, strips/ (${Object.keys(STRIPS).length}), plaza.png, plaza-frame1.png and preview.html.`);
 }
 
 if (process.argv[1] && /motion-preview\.ts$/.test(process.argv[1])) main();

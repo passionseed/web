@@ -334,3 +334,59 @@ describe("database failures", () => {
     expect(logged).not.toContain("student text");
   });
 });
+
+describe("loadCampfire", () => {
+  const GUILD = "111111111111111111";
+  const CHANNEL = "222222222222222222";
+  const JOIN_URL = `https://discord.com/channels/${GUILD}/${CHANNEL}`;
+  const fire = { channel_id: CHANNEL, guild_id: GUILD, live: true, count: 2, names: ["Mint", "‮ครูพลอย‬"] };
+
+  it("reads names for a ready viewer, sanitised, without refreshing", async () => {
+    call.mockResolvedValue(fire);
+    await expect(actions.loadCampfire({ names: true })).resolves.toEqual({
+      ok: true,
+      data: { count: 2, names: ["Mint", "ครูพลอย"], joinUrl: JOIN_URL },
+    });
+    expect(call).toHaveBeenCalledTimes(1);
+    expect(call).toHaveBeenCalledWith("shift_quest_campfire", ACTOR, true);
+    expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it("returns no names when not asked", async () => {
+    call.mockResolvedValue(fire);
+    await expect(actions.loadCampfire({ names: false })).resolves.toEqual({
+      ok: true,
+      data: { count: 2, names: [], joinUrl: JOIN_URL },
+    });
+    expect(call).toHaveBeenCalledWith("shift_quest_campfire", ACTOR, false);
+  });
+
+  it("says none when no coworking channel is set, and null, not an error, when the read fails", async () => {
+    call.mockResolvedValue({ channel_id: null, guild_id: null, live: false, count: 0, names: null });
+    await expect(actions.loadCampfire({ names: true })).resolves.toEqual({ ok: true, data: { none: true } });
+    call.mockRejectedValue(new QuestDbError("shift_quest_campfire", "42883"));
+    await expect(actions.loadCampfire({ names: true })).resolves.toEqual({ ok: true, data: null });
+    expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [{ state: "signed_out" }, "signed_out"],
+    [{ state: "no_discord", accountLabel: null }, "signed_out"],
+    [{ state: "unavailable", reason: "db_error" }, "unavailable"],
+    [{ state: "not_eligible", me, reason: "no_role" }, "not_eligible"],
+    [{ state: "not_started", me, actor: ACTOR }, "not_started"],
+  ])("refuses %j with %s, never reading names and never refreshing", async (viewer, code) => {
+    resolveIslandViewer.mockResolvedValue(viewer);
+    await expect(actions.loadCampfire({ names: true })).resolves.toMatchObject({ ok: false, code });
+    expect(call).not.toHaveBeenCalled();
+    expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it.each([[undefined], [{}], [{ names: "yes" }], [{ names: 1 }]])("refuses input %p as invalid_input", async (input) => {
+    await expect((actions.loadCampfire as (i: unknown) => Promise<unknown>)(input)).resolves.toMatchObject({
+      ok: false,
+      code: "invalid_input",
+    });
+    expect(call).not.toHaveBeenCalled();
+  });
+});

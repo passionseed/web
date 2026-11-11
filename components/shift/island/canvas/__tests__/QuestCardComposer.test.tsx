@@ -99,6 +99,20 @@ describe("QuestCardComposer", () => {
     expect(screen.getByText("ส่งแล้วการ์ดนี้จะไม่เปลี่ยน ถึงจะแก้โน้ตในแคนวาสทีหลัง")).toBeInTheDocument();
   });
 
+  it("links each note to itself on the canvas, outside its checkbox so opening it never ticks it", () => {
+    setup();
+    const links = screen.getAllByRole("link", { name: "ดูบนแคนวาส" });
+    expect(links.map((link) => link.getAttribute("href"))).toEqual(NOTES.map((n) => `/shift/island/canvas?note=${n.id}`));
+    const first = links[0];
+    expect(first).toHaveTextContent("ดูบนแคนวาส");
+    expect(first).toHaveAttribute("target", "_blank");
+    expect(first).toHaveAccessibleDescription("ให้เพื่อน 3 คนลองแอป");
+    expect(first.closest("label")).toBeNull();
+    fireEvent.click(first);
+    expect(box("ให้เพื่อน 3 คนลองแอป")).not.toBeChecked();
+    expect(sendButton()).toBeDisabled();
+  });
+
   it("disables send until a note is ticked, then previews the exact card with its meter", () => {
     setup();
     expect(sendButton()).toBeDisabled();

@@ -17,6 +17,7 @@ import { toast } from "sonner";
 
 import { chooseSideQuest, resumeQuest, startMainQuest } from "@/app/shift/island/actions";
 import { PixelIcon } from "@/components/shift/poster/pixel/PixelRects";
+import { CANVAS_ROUTE, canvasHref } from "@/lib/shift-island/canvas-link";
 import {
   questGuide,
   type CanvasLinkState,
@@ -38,7 +39,7 @@ import { TEXT_LIMITS, type QuestBoard } from "@/lib/supabase/shift-quests/types"
 import { SHIFT_CARDS } from "@/lib/whiteboard/shift-cards";
 
 import { QuestCardComposer, useQuestCanvas } from "./canvas";
-import { BOARD, COMMON, DETAIL, QUEST, tileChip } from "./copy";
+import { BOARD, CANVAS, COMMON, DETAIL, QUEST, tileChip } from "./copy";
 import styles from "./island.module.css";
 import { IslandSheet } from "./IslandSheet";
 import { canStart, detailAction, mentorFeedback, questView, refKey, sameRef, type DetailAction, type QuestView } from "./model";
@@ -162,6 +163,7 @@ export function QuestDetailSheet({ board, target, keynote, canvasLink, onClose, 
             hasZones={hasZones}
             canvas={canvas}
             ownership={ownership}
+            openHref={canvasLink.linked ? CANVAS_ROUTE : null}
             onLinkCanvas={() => onLinkCanvas(quest.ref)}
           />
         )
@@ -207,6 +209,7 @@ function QuestDetailBody({
   hasZones,
   canvas,
   ownership,
+  openHref,
   onLinkCanvas,
 }: {
   quest: QuestView;
@@ -219,6 +222,11 @@ function QuestDetailBody({
   canvas: CanvasState;
   /** Quest 5's ownership checklist; null on every other quest. */
   ownership: OwnershipState | null;
+  /**
+   * Opens the linked canvas on the whiteboard (CANVAS_ROUTE, which resolves
+   * the link on the server); null when none is linked.
+   */
+  openHref: string | null;
   onLinkCanvas: () => void;
 }) {
   const feedback = mentorFeedback(quest);
@@ -267,6 +275,20 @@ function QuestDetailBody({
       {ownership ? <OwnershipBox ownership={ownership} /> : null}
 
       <DoneWhen guide={guide} hints={hints} evidence={quest.evidence} hinting={hasZones || !!ownRows} />
+
+      {/* On every quest: the linked canvas, else (where the notes box does not already ask) linking one. */}
+      {openHref ? (
+        // A new tab: the quest, its drafts and the island stay as they are.
+        <a className={`${styles.quietButton} ${styles.contextAction}`} href={openHref} target="_blank" rel="noopener">
+          <Icon name="note" />
+          <span>{CANVAS.open}</span>
+        </a>
+      ) : !hasZones ? (
+        <button type="button" className={`${styles.quietButton} ${styles.contextAction}`} onClick={onLinkCanvas}>
+          <Icon name="link" />
+          <span>{CANVAS.link}</span>
+        </button>
+      ) : null}
 
       <MoreDetails quest={quest} guide={guide} />
 
@@ -371,9 +393,11 @@ function ContextRowItem({ row }: { row: ContextRow }) {
   const count = row.count != null && row.count > 0 ? row.count : null;
   const empty = !text && !count;
   const zone = { "--zone": card?.color ?? "#e9ecef" } as CSSProperties;
+  // "ดูบนแคนวาส" repeats on every row: the row's own words (the description) tell the links apart.
+  const textId = useId();
   return (
     <li className={styles.contextRow} style={zone} data-empty={empty ? "true" : undefined}>
-      <span className={styles.contextText}>
+      <span id={textId} className={styles.contextText}>
         {card ? <span aria-hidden="true">{card.emoji} </span> : null}
         <span className={styles.contextLabel}>
           {row.label}
@@ -386,6 +410,17 @@ function ContextRowItem({ row }: { row: ContextRow }) {
           {row.version != null ? <span className={styles.contextTag}>{QUEST.context.version(row.version)}</span> : null}
           {count ? <span className={styles.contextTag}>{QUEST.context.count(count)}</span> : null}
         </span>
+      ) : null}
+      {row.noteId ? (
+        <a
+          className={styles.contextNote}
+          href={canvasHref(row.noteId)}
+          target="_blank"
+          rel="noopener"
+          aria-describedby={textId}
+        >
+          {CANVAS.note}
+        </a>
       ) : null}
     </li>
   );

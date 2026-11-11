@@ -133,9 +133,10 @@ describe("buildContext", () => {
   it("quest 1: problem and target notes, interviews counted, hints from notes", () => {
     const { context: rows, hints, notes } = context("find-something-worth-fixing");
     expect(rows).toEqual([
-      { kind: "problem", label: "ปัญหาตอนนี้", text: "นักเรียน ม.5 ไม่มีเวลาอ่านหนังสือ\nเพราะเรียนพิเศษทุกวัน", version: 2, count: null },
-      { kind: "target", label: "คนที่เจอ", text: "นักเรียน ม.5 ที่เรียนพิเศษ", version: 1, count: null },
-      { kind: "interview", label: "สัมภาษณ์", text: null, version: null, count: 3 },
+      { kind: "problem", label: "ปัญหาตอนนี้", text: "นักเรียน ม.5 ไม่มีเวลาอ่านหนังสือ\nเพราะเรียนพิเศษทุกวัน", version: 2, count: null, noteId: "n-problem" },
+      { kind: "target", label: "คนที่เจอ", text: "นักเรียน ม.5 ที่เรียนพิเศษ", version: 1, count: null, noteId: "n-target" },
+      // A count row links no single note.
+      { kind: "interview", label: "สัมภาษณ์", text: null, version: null, count: 3, noteId: null },
     ]);
     expect(hints).toEqual([
       { id: "m1-problem", hinted: true, detail: null },
@@ -183,10 +184,11 @@ describe("buildContext", () => {
 
   it("quest 2: idea vN and the empty ship note, decision item never hinted", () => {
     const { context: rows, hints, notes } = context("make-it-exist");
-    expect(rows.map((r) => [r.label, r.text, r.version])).toEqual([
-      ["ปัญหาที่แก้", expect.stringContaining("ไม่มีเวลา"), 2],
-      ["ไอเดีย", "แอปจดตารางอ่านหนังสือ", 3],
-      ["ปล่อยแล้ว", null, null],
+    expect(rows.map((r) => [r.label, r.text, r.version, r.noteId])).toEqual([
+      ["ปัญหาที่แก้", expect.stringContaining("ไม่มีเวลา"), 2, "n-problem"],
+      ["ไอเดีย", "แอปจดตารางอ่านหนังสือ", 3, "n-idea"],
+      // The ship zone has only an empty card: no text, no note to link.
+      ["ปล่อยแล้ว", null, null, null],
     ]);
     expect(hints.map((h) => [h.id, h.hinted])).toEqual([
       ["m2-idea", true],
@@ -236,6 +238,8 @@ describe("buildContext", () => {
       access,
     );
     expect(rows[0].text).toBe("โทรหาเขาที่ 081-234-5678");
+    // noteId names the note whose text the row shows.
+    expect(rows[0].noteId).toBe("n-int-2");
   });
 
   it("side quests list each zone's latest note and no checklist", () => {

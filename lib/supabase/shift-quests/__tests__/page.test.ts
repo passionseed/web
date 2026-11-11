@@ -56,6 +56,12 @@ const map = {
   season: null,
 };
 
+const GUILD = "111111111111111111";
+const CHANNEL = "222222222222222222";
+/** shift_quest_campfire with names = false, as the database answers while the bot beats. */
+const FIRE = { channel_id: CHANNEL, guild_id: GUILD, live: true, count: 2, names: null };
+const JOIN_URL = `https://discord.com/channels/${GUILD}/${CHANNEL}`;
+
 function respond(responses: Record<string, unknown>) {
   call.mockImplementation(async (fn: string) => {
     if (!(fn in responses)) throw new Error(`unexpected ${fn}`);
@@ -80,6 +86,7 @@ describe("getIslandPage", () => {
       shift_quest_island_map: map,
       shift_quest_board: board,
       shift_quest_canvas_get: null,
+      shift_quest_campfire: FIRE,
     });
 
     const page = await getIslandPage(viewer);
@@ -88,8 +95,10 @@ describe("getIslandPage", () => {
       ["shift_quest_island_map", [ACTOR]],
       ["shift_quest_board", [ACTOR]],
       ["shift_quest_canvas_get", [ACTOR]],
+      ["shift_quest_campfire", [ACTOR, false]],
     ]);
     expect(page.canvasLink).toEqual({ linked: false });
+    expect(page.campfire).toEqual({ count: 2, joinUrl: JOIN_URL });
     expect(page.me).toBe(viewer.me);
     expect(page.unread).toBe(3);
     expect(page.island.project?.name).toBe("Lamp");
@@ -108,12 +117,15 @@ describe("getIslandPage", () => {
         { id: "b", name: "Old", route: "other", status: "active", is_current: false, inviter: null },
         { id: "c", name: "Zine", route: "creative", status: "invited", is_current: false, inviter: null },
       ],
+      shift_quest_campfire: FIRE,
     });
 
     const page = await getIslandPage(viewer);
     expect(call).not.toHaveBeenCalledWith("shift_quest_board", expect.anything());
     expect(call).not.toHaveBeenCalledWith("shift_quest_canvas_get", expect.anything());
+    expect(call).toHaveBeenCalledWith("shift_quest_campfire", ACTOR, false);
     expect(page.canvasLink).toEqual({ linked: false });
+    expect(page.campfire).toEqual({ count: 2, joinUrl: JOIN_URL });
     expect(page.board).toBeNull();
     expect(page.invites).toEqual([
       { projectId: "a", name: "Garden", route: "service", inviter: "Ploy" },
@@ -131,11 +143,12 @@ describe("getIslandPage", () => {
       shift_quest_board: board,
     };
 
-    it("is linked with only the time, never the board or frame id", async () => {
+    it("is linked with only the time, never the board, frame or canvas project id", async () => {
       const boardId = "9d1f2c3b-4a5e-4f60-8a7b-1c2d3e4f5a6b";
       respond({
         ...base,
         shift_quest_canvas_get: { board_id: boardId, frame_id: "frame-1", canvas_project: "proj-1", linked_at: "2026-11-11T08:00:00Z" },
+        shift_quest_campfire: FIRE,
       });
       const page = await getIslandPage(viewer);
       expect(page.canvasLink).toEqual({ linked: true, linkedAt: "2026-11-11T08:00:00Z" });
@@ -162,6 +175,62 @@ describe("getIslandPage", () => {
     it("treats a malformed row as unlinked", async () => {
       respond({ ...base, shift_quest_canvas_get: { board_id: "x" } });
       expect((await getIslandPage(viewer)).canvasLink).toEqual({ linked: false });
+    });
+  });
+
+  describe("campfire", () => {
+    const board = { project: { id: "p1", route: "software", stage: 1, milestones_done: [] }, main: [], side: [], proposed: [], help_open: [] };
+    const withProject = {
+      shift_quest_island: { project, milestones: [], taps_today: 0, resting: false, season: null },
+      shift_quest_island_map: map,
+      shift_quest_board: board,
+      shift_quest_canvas_get: null,
+    };
+    const noProject = {
+      shift_quest_island: { project: null, milestones: [], taps_today: 0, resting: false, season: null },
+      shift_quest_island_map: map,
+      shift_quest_project_list: [],
+    };
+
+    it.each([
+      ["with a project", withProject],
+      ["without a project", noProject],
+    ])("is read %s, with names = false", async (_label, base) => {
+      respond({ ...base, shift_quest_campfire: { ...FIRE, count: 0 } });
+      const page = await getIslandPage(viewer);
+      expect(call).toHaveBeenCalledWith("shift_quest_campfire", ACTOR, false);
+      expect(page.campfire).toEqual({ count: 0, joinUrl: JOIN_URL });
+    });
+
+    it.each([
+      ["with a project", withProject],
+      ["without a project", noProject],
+    ])("is null %s when no coworking channel is set", async (_label, base) => {
+      respond({ ...base, shift_quest_campfire: { channel_id: null, guild_id: null, live: false, count: 0, names: null } });
+      expect((await getIslandPage(viewer)).campfire).toBeNull();
+    });
+
+    it.each([
+      ["the function missing (before the migration)", new QuestDbError("shift_quest_campfire", "42883")],
+      ["no grant", new QuestDbError("shift_quest_campfire", "42501")],
+      ["a refusal", new QuestError("not_started")],
+      ["an unexpected error", new Error("student text in a message")],
+      ["malformed data", "not an object"],
+    ])("is null on %s, and the rest of the page still loads", async (_label, failure) => {
+      respond({ ...withProject, shift_quest_campfire: failure });
+      const page = await getIslandPage(viewer);
+      expect(page.campfire).toBeNull();
+      expect(page.board).toEqual(board);
+      expect((console.error as jest.Mock).mock.calls.flat().map(String).join("\n")).not.toContain("student text");
+    });
+
+    it("carries only the count and the join link, never names or ids", async () => {
+      // Even if the database sent names with names = false, the payload has none.
+      respond({ ...withProject, shift_quest_campfire: { ...FIRE, names: ["Mint", "ครูพลอย"], discord_user_id: "333333333333333333" } });
+      const page = await getIslandPage(viewer);
+      expect(Object.keys(page.campfire ?? {}).sort()).toEqual(["count", "joinUrl"]);
+      const json = JSON.stringify(page.campfire);
+      for (const secret of ["Mint", "ครูพลอย", "333333333333333333", ACTOR]) expect(json).not.toContain(secret);
     });
   });
 

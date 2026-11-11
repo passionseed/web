@@ -1,8 +1,9 @@
 /**
  * Every island sprite (the bot's SPRITES plus the web's MOTION_SPRITES)
  * decoded once into one RGBA atlas per light phase, with the phase's multiply
- * applied to the palette. Lantern glow, lamp light, festoon bulbs and the
- * caller's pin stay untinted, so they read as lit at night. Mirrored copies
+ * applied to the palette. Lantern glow, lamp light, festoon bulbs, the
+ * campfire's flame and embers, the goal's lit bulbs, the finished stage's
+ * lights and the caller's pin stay untinted, so they read as lit at night. Mirrored copies
  * of everything but ground tiles sit beside the originals, so a boat sailing
  * left is one plain drawImage.
  *
@@ -33,13 +34,23 @@ export interface AtlasData {
   flipped: ReadonlyMap<string, AtlasRect>;
 }
 
-/** Drawn as is in every phase. */
-const UNTINTED = new Set(["marker", "lantern_glow_0", "lantern_glow_1"]);
+/** Drawn as is in every phase: the pin, glows, the campfire's flame and the goal's lit bulbs. */
+const UNTINTED = new Set([
+  "marker",
+  "lantern_glow_0",
+  "lantern_glow_1",
+  "campfire_flame_0",
+  "campfire_flame_1",
+  "campfire_flame_2",
+  "goal_bulb",
+]);
 /** Palette keys that stay untinted in these sprites: their light. */
 const LIT_KEYS: Readonly<Record<string, string>> = {
   lantern: "yif",
   lamp_post: "yif",
   festoon: "yifrp",
+  campfire_pit: "yi",
+  fest_stage_3: "y",
 };
 
 /** Ground tiles are never mirrored. */

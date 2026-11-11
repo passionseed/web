@@ -98,9 +98,9 @@ const READY: Extract<QuestCanvasContext, { state: "ready" }> = {
   state: "ready",
   canvas: { title: "แอปจองห้องสมุด", boardTitle: "SHIFT ห้อง 2", lastEdited: 1_762_848_000_000 },
   context: [
-    { kind: "problem", label: "ปัญหาตอนนี้", text: "ห้องสมุดเต็มตอนพักเที่ยง", version: 2, count: null },
-    { kind: "target", label: "คนที่เจอ", text: null, version: null, count: null },
-    { kind: "interview", label: "สัมภาษณ์", text: null, version: null, count: 3 },
+    { kind: "problem", label: "ปัญหาตอนนี้", text: "ห้องสมุดเต็มตอนพักเที่ยง", version: 2, count: null, noteId: "note_P1" },
+    { kind: "target", label: "คนที่เจอ", text: null, version: null, count: null, noteId: null },
+    { kind: "interview", label: "สัมภาษณ์", text: null, version: null, count: 3, noteId: null },
   ],
   hints: [
     { id: "m1-problem", hinted: true, detail: null },
@@ -215,6 +215,55 @@ describe("QuestDetailSheet: the quest page", () => {
     expect(within(box).getByText("จากแคนวาส แอปจองห้องสมุด")).toBeInTheDocument();
     fireEvent.click(within(box).getByRole("button", { name: "เปลี่ยน" }));
     expect(onLinkCanvas).toHaveBeenCalledWith({ kind: "main", milestone: 1 });
+  });
+
+  it("opens the canvas from the quest page, and each shown note on it", () => {
+    canvasAnswer = { context: READY, loading: false };
+    open({ kind: "main", milestone: 1 }, LINKED);
+    const box = within(body()).getByRole("heading", { name: "สำหรับโปรเจกต์คุณ" }).closest("section") as HTMLElement;
+    const openCanvas = within(body()).getByRole("link", { name: "เปิดแคนวาส" });
+    expect(openCanvas).toHaveAttribute("href", "/shift/island/canvas");
+    expect(openCanvas).toHaveAttribute("target", "_blank");
+    // Only the row that shows a note's text links to it.
+    const noteLinks = within(box).getAllByRole("link", { name: "ดูบนแคนวาส" });
+    expect(noteLinks).toHaveLength(1);
+    expect(noteLinks[0]).toHaveAttribute("href", "/shift/island/canvas?note=note_P1");
+    expect(noteLinks[0]).toHaveTextContent("ดูบนแคนวาส");
+    expect(noteLinks[0]).toHaveAccessibleDescription(/ห้องสมุดเต็มตอนพักเที่ยง/);
+    expect(within(box).getAllByRole("listitem")[0]).toContainElement(noteLinks[0]);
+  });
+
+  it("links a note id that is not safe to the canvas only", () => {
+    canvasAnswer = {
+      context: { ...READY, context: [{ ...READY.context[0], noteId: "../../x?y=1" }] },
+      loading: false,
+    };
+    open({ kind: "main", milestone: 1 }, LINKED);
+    expect(within(body()).getByRole("link", { name: "ดูบนแคนวาส" })).toHaveAttribute("href", "/shift/island/canvas");
+  });
+
+  it("has no open-canvas row without a linked canvas", () => {
+    canvasAnswer = { context: READY, loading: false };
+    open({ kind: "main", milestone: 1 }, UNLINKED);
+    expect(within(body()).queryByRole("link", { name: "เปิดแคนวาส" })).toBeNull();
+  });
+
+  it("opens the canvas on a quest without canvas zones too", () => {
+    open({ kind: "main", milestone: 6 }, LINKED);
+    expect(within(body()).queryByRole("heading", { name: "สำหรับโปรเจกต์คุณ" })).toBeNull();
+    expect(within(body()).getByRole("link", { name: "เปิดแคนวาส" })).toHaveAttribute("href", "/shift/island/canvas");
+  });
+
+  it("opens the canvas while the notes still load", () => {
+    canvasAnswer = { context: null, loading: true };
+    open({ kind: "main", milestone: 1 }, LINKED);
+    expect(within(body()).getByRole("link", { name: "เปิดแคนวาส" })).toBeInTheDocument();
+  });
+
+  it("offers to link a canvas on a quest without zones when none is linked", () => {
+    const { onLinkCanvas } = open({ kind: "main", milestone: 6 });
+    fireEvent.click(within(body()).getByRole("button", { name: "เชื่อมแคนวาส" }));
+    expect(onLinkCanvas).toHaveBeenCalledWith({ kind: "main", milestone: 6 });
   });
 
   it("says when the student is not on the canvas team", () => {

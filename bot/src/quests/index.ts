@@ -3,6 +3,7 @@ import { Events, type Client, type Interaction } from "discord.js";
 import type { ShiftQuestsEnv } from "../env";
 import { createRolePool } from "../pg";
 import { QuestDbError, createQuestApi, type QuestApi } from "./api";
+import { campfireFor, startCampfire } from "./campfire";
 import { loadCtx, requireStudent } from "./context";
 import { admin } from "./handlers/admin";
 import { island } from "./handlers/island";
@@ -98,7 +99,8 @@ export async function handleInteraction(api: QuestApi, guildId: string, i: Inter
  * adds the web quest board and side quests; this bot uses nothing from it and
  * works with it (shift_quest_templates leaves side quests out of its browse),
  * so it still needs only 2. Raise it with every migration whose contract the
- * bot starts to depend on.
+ * bot starts to depend on. 7 (20261111093000_shift_quest_campfire) adds the
+ * campfire; it is optional: below 7 the bot runs without it (CAMPFIRE_SCHEMA).
  */
 export const REQUIRED_SCHEMA = 2;
 
@@ -150,16 +152,19 @@ export async function loadCommandIds(client: Client<true>, guildId: string): Pro
 
 /**
  * SHIFT High quests: slash commands, buttons and modals over the
- * shift_quest_* database functions, plus the delivery loop. The bot never
- * reads message content, never joins voice and records nothing passively.
+ * shift_quest_* database functions, plus the delivery loop and, from schema
+ * 7, the island campfire. The bot never reads message content and never joins
+ * voice. The one thing it notices on its own is who is in the coworking voice
+ * channel right now (campfire.ts): never audio, deleted on leave, no history.
  * Checks the database schema first and throws (starting nothing) when the
  * database is older than this bot.
  */
 export async function registerShiftQuests(client: Client, env: ShiftQuestsEnv): Promise<{ stop: () => Promise<void> }> {
   const pool = createRolePool(env.databaseUrl, "shift-quests");
   const api = createQuestApi(pool);
+  let version: number;
   try {
-    const version = await checkQuestSchema(api);
+    version = await checkQuestSchema(api);
     console.log(`[shift-quests] database schema ${version} (bot needs ${REQUIRED_SCHEMA})`);
   } catch (error) {
     await pool.end().catch(() => undefined);
@@ -187,9 +192,13 @@ export async function registerShiftQuests(client: Client, env: ShiftQuestsEnv): 
   });
 
   const outbox = startOutbox(client, api, () => connected);
+  // Started only on a database that has the campfire functions (schema 7).
+  const campfire = campfireFor(version, () => startCampfire(client, api, env.guildId, () => connected));
 
   return {
     async stop() {
+      // First: it still needs the pool to clear the campfire.
+      await campfire?.stop();
       await outbox.stop();
       await pool.end();
     },

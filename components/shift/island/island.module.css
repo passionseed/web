@@ -1954,3 +1954,133 @@
     transition: none !important;
   }
 }
+
+/* ---------------------------------------------------------------- HUD: canvas, notice board */
+
+/*
+ * 360px first: the note button joins the top row, so the round buttons
+ * close up and the chip keeps about 120px (four buttons with the envelope).
+ * Doubled class: wins over world.module.css's .hudButtons in any load order.
+ */
+@media (max-width: 400px) {
+  .hudButtonsTight.hudButtonsTight {
+    gap: 4px;
+  }
+}
+
+/*
+ * While the living island shows the notice board in the plaza, the bottom
+ * board button steps out of sight but stays in the tab order (and in the
+ * accessibility tree): it shows again the moment a keyboard reaches it.
+ */
+.concealed.concealed:not(:focus-visible) {
+  position: absolute;
+  width: 1px;
+  min-width: 0;
+  height: 1px;
+  min-height: 0;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+/* ---------------------------------------------------------------- quest page: the canvas */
+
+/* "ดูบนแคนวาส" on one context row: small on the strip, a 44px target all the same. */
+.contextNote {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin: -12px -6px -12px 0;
+  padding: 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1d4ed8;
+  white-space: nowrap;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.contextNote:focus-visible {
+  outline-color: #1d4ed8;
+  outline-offset: -2px;
+}
+
+/* ---------------------------------------------------------------- campfire and festival sheets */
+
+.campfireNames {
+  display: grid;
+  gap: 8px;
+}
+
+.campfireCount {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text-hi);
+}
+
+.campfireList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.campfireName {
+  max-width: 100%;
+  padding: 4px 10px;
+  overflow: hidden;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--isl-ink);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  background: var(--isl-cream);
+  box-shadow: inset 0 0 0 2px var(--isl-ink);
+  clip-path: var(--notch);
+}
+
+.campfireJoin {
+  text-decoration: none;
+}
+
+.festivalLegend {
+  display: grid;
+  gap: 8px;
+}
+
+.festivalLines {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.festivalLine {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.festivalLine[data-line="flags"] {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.festivalGlyph {
+  display: grid;
+  place-items: center;
+}
+
+.festivalGlyph svg {
+  display: block;
+}
