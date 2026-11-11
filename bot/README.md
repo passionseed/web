@@ -101,8 +101,10 @@ running it again returns to the image you rolled back from. Database migrations
 are additive, so an older bot runs against a newer schema.
 
 **Release order** when a release has migrations: `supabase db push`, then
-`bot/deploy.sh`, then the register step. The migration runbook is in
-[`docs/features/shift-high-quests.md`](../docs/features/shift-high-quests.md).
+`bot/deploy.sh`, then the register step. The migration rules are in
+[`docs/features/shift-high-quests.md`](../docs/features/shift-high-quests.md);
+the SHIFT High island rollout, step by step, in
+[`docs/runbooks/shift-high-island-rollout.md`](../docs/runbooks/shift-high-island-rollout.md).
 A bot newer than its database does not start: with `shift-quests` enabled,
 startup reads `shift_quest_schema_version()` before any module runs, and when
 it is below `REQUIRED_SCHEMA` (`bot/src/quests/index.ts`, now 2) the bot exits
@@ -123,6 +125,18 @@ in `bot.env` as `SHIFT_VOICE_DATABASE_URL`. TLS is verified against
 `bot/supabase-ca.pem`, Supabase's root CA: the pooler's certificate does not
 chain to a public one.
 
+The SHIFT High logins (`shift_quest_bot` for this bot, `shift_quest_web` for
+the website) are also created without LOGIN. Give them LOGIN and a password
+with `pnpm shift:role-passwords` (`scripts/shift-quests-set-role-passwords.ts`)
+from your own machine: it reads an admin URL and the new passwords from the
+shell (`SHIFT_QUEST_ADMIN_DATABASE_URL`, `SHIFT_QUEST_BOT_PASSWORD`,
+`SHIFT_QUEST_WEB_PASSWORD`), sends Postgres a SCRAM-SHA-256 verifier, prints
+nothing secret and logs in as each role to prove it; `--check` changes
+nothing and reports whether each role can log in, `--only bot` rotates one.
+The full production order (migrations, checks, passwords, Vercel and bot
+env, Discord setup, smoke test, rollback) is
+[`docs/runbooks/shift-high-island-rollout.md`](../docs/runbooks/shift-high-island-rollout.md).
+
 ## Environment
 
 | Variable | Module | Notes |
@@ -132,7 +146,7 @@ chain to a public one.
 | `DISCORD_SHIFT_GUILD_ID` | shift-voice | The SHIFT server |
 | `SHIFT_VOICE_DATABASE_URL` | shift-voice | The `shift_voice_bot` login through the pooler (see Deploying) |
 | `DISCORD_SHIFT_GUILD_ID` | shift-quests | The SHIFT server (same variable as shift-voice) |
-| `SHIFT_QUEST_DATABASE_URL` | shift-quests | The `shift_quest_bot` login through the pooler, set up like `shift_voice_bot` (migration `20261111090600`) |
+| `SHIFT_QUEST_DATABASE_URL` | shift-quests | The `shift_quest_bot` login through the session pooler: `postgresql://shift_quest_bot.<project ref>:<password>@<pooler host>:5432/postgres`, no `?sslmode=` (migration `20261111090600`; password with `pnpm shift:role-passwords`, see Deploying) |
 | `SHIFT_ISLAND_URL` | shift-quests | Optional. Full URL of the island page, used as is, e.g. `https://www.passionseed.org/shift/island`. Falls back to `NEXT_PUBLIC_SITE_URL` + `/shift/island`. With neither set, the "🌐 เปิดเกาะบนเว็บ" button is left off. https only; http just for `localhost` and `127.0.0.1`, and only with `SHIFT_ISLAND_URL_ALLOW_HTTP=1` (Discord may refuse an http link button and fail the whole card, so to try the link locally prefer an https tunnel URL); a value that is set but refused also leaves the button off |
 | `SHIFT_ISLAND_URL_ALLOW_HTTP` | shift-quests | Optional. `1` lets the island link use `http://localhost` or `http://127.0.0.1` for local tries. Never set it in production |
 | `NEXT_PUBLIC_SITE_URL` | shift-quests | Optional. The site's address, e.g. `https://www.passionseed.org`; only read when `SHIFT_ISLAND_URL` is unset |

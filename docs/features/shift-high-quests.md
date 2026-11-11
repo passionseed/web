@@ -437,8 +437,10 @@ wave 2); `shift_quest_admin_set` takes the key `squads`.
    (schema 7) is separate: its own listener, its own tables, live presence in
    the coworking channel only, no history (see "What is stored").
 4. Apply the migrations (`supabase db push`, production, after an explicit
-   go), set the `shift_quest_bot` password with a SCRAM verifier, and put
-   its pooler URL in `bot.env` as `SHIFT_QUEST_DATABASE_URL`.
+   go), set the `shift_quest_bot` password with `pnpm shift:role-passwords`
+   (it sends a SCRAM verifier), and put its pooler URL in `bot.env` as
+   `SHIFT_QUEST_DATABASE_URL`. The whole order, with commands and checks:
+   [`docs/runbooks/shift-high-island-rollout.md`](../runbooks/shift-high-island-rollout.md).
 5. Make the first admin once, from a trusted shell:
    `select public.shift_quest_bootstrap_admin('<discord user id>', '<name>');`
 6. Add `shift-quests` to `BOT_MODULES`, deploy with `bot/deploy.sh`, run
@@ -587,12 +589,21 @@ Production, after an explicit go and after the bot's migrations:
    Invoker functions (`prosecdef` false) cannot touch a table the role has
    no privilege on, so the first half lists definer functions only; the
    second half lists any table or view the role reaches through `PUBLIC`.
-3. From a trusted shell, never in this repo:
-   `ALTER ROLE shift_quest_web WITH LOGIN PASSWORD '<SCRAM verifier>';`
+3. From a trusted shell, never in this repo: `pnpm shift:role-passwords`
+   (`scripts/shift-quests-set-role-passwords.ts`) runs
+   `ALTER ROLE ... WITH LOGIN PASSWORD '<SCRAM verifier>'` for both logins,
+   refuses while step 2 still returns rows, and logs in as each to prove it.
+   Step 2 and the grant checks are in one read-only file:
+   `supabase db query --linked -o table -f docs/runbooks/shift-high-island-checks.sql`
+   (no rows means all is well).
 4. The pooler user is `shift_quest_web.<project ref>` on the Supavisor
    transaction pooler (port 6543, TLS against Supabase's CA). Set
    `SHIFT_QUEST_DATABASE_URL=postgresql://shift_quest_web.<project ref>:<password>@<pooler host>:6543/postgres`
-   in Vercel (Production only), then redeploy.
+   in Vercel (Production only), then redeploy. The pool is attached to the
+   function lifecycle with `@vercel/functions` `attachDatabasePool` (idle
+   timeout 5 s), so Fluid Compute closes idle connections before an instance
+   sleeps; it keeps no session state and sends only unnamed statements, as
+   transaction mode requires.
 5. Publish the side quests one slug at a time, after the Thai review.
 
 Locally: `QUEST_SANDBOX_PORT=55451 QUEST_SANDBOX_ADMIN_ID=<your Discord user id> bot/quests-sandbox.sh --db-only --reset`
