@@ -97,7 +97,7 @@ describe("StoryLauncher", () => {
     // Focus lands on the dialog itself, so a story that opened by itself shows no ring on "ข้าม".
     expect(screen.getByRole("dialog")).toHaveFocus();
     expect(panel(1)).toBeInTheDocument();
-    expect(screen.getByText("เกาะนี้ยังว่าง รอคนที่อยากสร้างของจริง")).toBeInTheDocument();
+    expect(screen.getByText("เจอกันบนเกาะแล้ว ที่ดินยังว่าง รอโปรเจกต์ที่คุณถือมา")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "ข้าม" }));
     expect(screen.queryByRole("dialog")).toBeNull();
@@ -166,12 +166,12 @@ describe("StoryLauncher", () => {
     expect(panel(1)).toBeInTheDocument();
     tick(1);
     expect(panel(2)).toBeInTheDocument();
-    expect(screen.getByText("ทุกโปรเจกต์คือต้นไม้หนึ่งต้น เริ่มจากเรื่องที่คุณใส่ใจ")).toBeInTheDocument();
+    expect(screen.getByText("ลงแปลงแล้ว โปรเจกต์ได้โตต่อ หลังวันที่ 7 ของ SHIFT")).toBeInTheDocument();
     tick(PANEL_MS);
-    expect(screen.getByText("ต้นไม้โตจากงานจริง ไม่ได้โตจากเวลาออนไลน์")).toBeInTheDocument();
+    expect(screen.getByText("ต้นไม้โตทีละขั้น เมื่อพี่เลี้ยงเห็นงานที่ทำจริง")).toBeInTheDocument();
     tick(PANEL_MS);
     expect(panel(4)).toBeInTheDocument();
-    expect(screen.getByText(/^28 พ\.ย\. เทศกาล Demo Day ทั้งเกาะมาโชว์งานด้วยกัน$/)).toBeInTheDocument();
+    expect(screen.getByText(/^28 พ\.ย\. เทศกาล Demo Day ทั้งเกาะโชว์งาน และต้นไม้ทุกต้นยังอยู่ต่อ$/)).toBeInTheDocument();
 
     tick(60_000);
     expect(screen.getByRole("dialog")).toBeInTheDocument();
@@ -239,7 +239,7 @@ describe("StoryLauncher", () => {
   it("shows the undated festival line without a Demo Day", () => {
     renderLauncher({ demoDay: null });
     toLast();
-    expect(screen.getByText("คืนเทศกาล Demo Day ทั้งเกาะมาโชว์งานด้วยกัน")).toBeInTheDocument();
+    expect(screen.getByText("คืนเทศกาล Demo Day ทั้งเกาะโชว์งาน และต้นไม้ทุกต้นยังอยู่ต่อ")).toBeInTheDocument();
   });
 
   it("draws the panel on screen and the next one ahead, paused, with each panel's phase", () => {
