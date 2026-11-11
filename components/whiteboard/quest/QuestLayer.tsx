@@ -10,6 +10,14 @@ import { isBusy, useSceneMemo } from "../shift/sceneMemo";
 import { useViewportTick } from "../useViewportTick";
 import type { QuestSession } from "./useQuestSession";
 
+/**
+ * Gives the keyboard back to the board after one of our buttons: Excalidraw only
+ * hears shortcuts (P for pen, T for text) while its own area has focus.
+ */
+export function focusBoard(from: Element) {
+  from.closest(".whiteboard-root")?.querySelector<HTMLElement>(".excalidraw")?.focus({ preventScroll: true });
+}
+
 /** Zoomed out further than this, the buttons would crowd the board. */
 const MIN_ZOOM = 0.12;
 /** Gap between a quest's label and its button, in scene units. */
@@ -76,7 +84,11 @@ export function QuestLayer({ api, manager, session, onStart, onEnd }: Props) {
               >
                 <button
                   type="button"
-                  onClick={() => (running ? onEnd() : onStart(q))}
+                  onClick={(e) => {
+                    if (running) onEnd();
+                    else onStart(q);
+                    focusBoard(e.currentTarget);
+                  }}
                   title={running ? `จบ ${questName(q)}` : `เริ่ม ${questName(q)}`}
                   className={`wb-version-chip flex items-center gap-1.5 rounded-md px-2.5 text-xs font-semibold ${
                     running ? "!border-emerald-600 !bg-emerald-600 !text-white" : ""
@@ -100,16 +112,19 @@ export function QuestLayer({ api, manager, session, onStart, onEnd }: Props) {
         <div className="pointer-events-none fixed inset-x-0 top-16 z-[5] flex justify-center px-4">
           <div
             role="status"
-            className="pointer-events-auto flex max-w-[min(640px,100%)] items-center gap-2 rounded-full border border-emerald-600/40 bg-white/95 py-1.5 pl-3 pr-1.5 text-sm shadow-md dark:bg-neutral-900/95"
+            className="wb-quest-pill pointer-events-auto flex max-w-[min(640px,100%)] items-center gap-2 rounded-full py-1.5 pl-3 pr-1.5 text-sm"
           >
             <Flag className="h-4 w-4 shrink-0 text-emerald-600" />
             <span className="min-w-0 truncate">
               กำลังทำ <b>{active ? questName(active) : "Quest ที่ถูกลบไปแล้ว"}</b>
             </span>
-            <span className="shrink-0 font-mono text-xs text-neutral-500">{counts.mine} ชิ้น</span>
+            <span className="wb-quest-soft shrink-0 font-mono text-xs">{counts.mine} ชิ้น</span>
             <button
               type="button"
-              onClick={onEnd}
+              onClick={(e) => {
+                onEnd();
+                focusBoard(e.currentTarget);
+              }}
               className="shrink-0 rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-700"
             >
               จบ Quest

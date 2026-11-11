@@ -2677,3 +2677,25 @@ body:has(.whiteboard-room .excalidraw.theme--dark) .wb-dot--bg:is([aria-pressed=
     opacity: 0.88;
   }
 }
+
+/* ---------- Quests (components/whiteboard/quest/) ---------- */
+/* Board tokens, not Tailwind dark: variants: the site's own dark class says nothing about the board's look. */
+
+.wb-quest-pill,
+.wb-quest-menu {
+  border: 1px solid var(--wb-hairline-strong);
+  background: var(--wb-card);
+  color: var(--wb-text);
+  box-shadow: var(--wb-shadow-float);
+}
+.wb-quest-soft {
+  color: var(--wb-text-soft);
+}
+.wb-quest-option:hover,
+.wb-quest-option:focus-visible {
+  background: var(--wb-hover);
+  outline: none;
+}
+.wb-quest-menu .wb-rule {
+  border-color: var(--wb-hairline-strong);
+}

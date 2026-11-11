@@ -92,6 +92,7 @@ export function QuestMenu({ api, meId, manager }: Props) {
     });
     api.setToast({ message: questId ? "ย้ายงานไป Quest แล้ว" : "ไม่นับเป็นงาน Quest แล้ว", duration: 1500 });
     close();
+    document.querySelector<HTMLElement>(".whiteboard-root .excalidraw")?.focus({ preventScroll: true });
   };
 
   if (!open) return null;
@@ -100,7 +101,7 @@ export function QuestMenu({ api, meId, manager }: Props) {
       key={key}
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
+      className="wb-quest-option flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm"
     >
       <Check className={`h-3.5 w-3.5 shrink-0 ${chosen ? "text-emerald-600" : "invisible"}`} />
       <span className="min-w-0 truncate">{label}</span>
@@ -111,17 +112,17 @@ export function QuestMenu({ api, meId, manager }: Props) {
     <div
       data-quest-menu
       role="menu"
-      className="fixed z-[60] rounded-lg border border-neutral-200 bg-white p-1.5 shadow-lg dark:border-neutral-700 dark:bg-neutral-900"
+      className="wb-quest-menu fixed z-[60] rounded-lg p-1.5"
       style={{ left: open.x, top: open.y, width: WIDTH }}
       onContextMenu={(e) => e.preventDefault()}
     >
-      <div className="flex items-center gap-1.5 px-2 pb-1 pt-0.5 text-xs font-semibold text-neutral-500">
+      <div className="wb-quest-soft flex items-center gap-1.5 px-2 pb-1 pt-0.5 text-xs font-semibold">
         <Flag className="h-3.5 w-3.5 text-emerald-600" />
         แก้ Quest ที่ส่ง
         {open.ids.length > 1 && <span className="font-normal">· {open.ids.length} ชิ้น</span>}
       </div>
       {open.quests.map((q) => option(q.id, questName(q), open.current === q.id, () => assign(q.id)))}
-      <div className="my-1 border-t border-dashed border-neutral-200 dark:border-neutral-700" />
+      <div className="wb-rule my-1 border-t border-dashed" />
       {option("none", "ไม่นับเป็นงาน Quest", open.current === null, () => assign(null))}
     </div>
   );
