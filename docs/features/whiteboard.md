@@ -194,8 +194,10 @@ they make until they end it counts as their work for that quest. Code: `lib/whit
   edit the task (written back on the board) or put it back if it was deleted, remove or re-create
   the start button, move it back, or **เลิกเป็น Quest**. Right-clicking any other text offers
   **ทำข้อความนี้เป็น Quest**. Clicking a label shows a card of who handed in what.
-- **Quest dashboard** (`QuestSidebar.tsx`, its own side panel, opened from the board menu or a
-  quest's card): each quest with what each person made for it (their words, how many drawings),
+- **Quest dashboard** (`QuestPane.tsx`, a pane beside the board like the Claude app's side
+  panes, opened from the board menu or a quest's card): the board's right edge moves in to make
+  room, so nothing is covered, and drawing never closes it (it stays open across reloads until its
+  close button). Drag its left edge to resize it. each quest with what each person made for it (their words, how many drawings),
   who has not handed in yet (members who can edit), and **ดูบนบอร์ด** to select their work and zoom
   to it; **ตามคน** lists each person with their quests.
 - **Who sees the dashboard:** the board's owner, site admins, and quest reviewers: members the owner
@@ -209,8 +211,12 @@ they make until they end it counts as their work for that quest. Code: `lib/whit
   opens (one sign-in record read per person, so not on the open path); profile names until then and
   for anyone without Discord. The browser sends the ids it sees; only the viewer, owner, members and
   people who saved to the board are looked up, and the route reads no elements.
-- **Quest panel size:** drag the panel's left edge to resize it (kept per browser, double-click
-  for the default), and dock it to keep it beside the board.
+- **Quest pane size:** drag the pane's left edge to resize it (kept per browser, double-click
+  for the default); the board always keeps at least 240 px.
+- **Backfill:** on 2026-11-12, 326 pieces of SHIFT[3] Day 2 work made before quest tagging existed
+  were tagged from a reviewed plan (students' own columns, matched by heading and content; Stitch
+  counts as the paper prototype), sent through `whiteboard_merge_elements` with session
+  `backfill-<userId>`.
 - **Reading the work:** `pnpm whiteboard:read <id>` ends with **Quest work**: per quest, per person,
   the words they wrote and how many drawings. A tag whose label was deleted is still listed.
 

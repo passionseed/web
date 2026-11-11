@@ -2851,7 +2851,17 @@ body:has([data-quest-menu][role="dialog"]) .wb-quest-label-card {
   font-size: 0.82rem;
 }
 
-/* The Quest panel's left edge (quest/QuestSidebar.tsx): drag to resize. A hairline that lights up on hover. */
+/* The Quest pane (quest/QuestPane.tsx), beside the board like the Claude app's side panes. */
+.wb-quest-pane {
+  background: var(--wb-card);
+  color: var(--wb-text);
+  border-left: 1px solid var(--wb-hairline-strong);
+  box-shadow: var(--wb-shadow-float);
+}
+.wb-quest-pane__head {
+  border-bottom: 1px dashed var(--wb-hairline-strong);
+}
+/* Its left edge: drag to resize. A hairline that lights up on hover. */
 .wb-panel-edge {
   position: absolute;
   top: 0;

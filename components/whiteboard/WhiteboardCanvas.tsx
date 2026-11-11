@@ -49,7 +49,7 @@ import { CanvasTeamLayer } from "./shift/CanvasTeamLayer";
 import { CardVersionsLayer } from "./shift/CardVersionsLayer";
 import { useShiftCardCaret } from "./shift/useShiftCardCaret";
 import { ZoneAddLayer } from "./shift/ZoneAddLayer";
-import { openQuestPanel, QuestSidebar } from "./quest/QuestSidebar";
+import { openQuestPanel, QuestPane, useQuestPane } from "./quest/QuestPane";
 import { useBoardPeople } from "./useBoardPeople";
 import { QuestLayer } from "./quest/QuestLayer";
 import { QuestMenu } from "./quest/QuestMenu";
@@ -348,7 +348,7 @@ export default function WhiteboardCanvas({
           บอร์ดทั้งหมด · All boards
         </MainMenu.Item>
         {canReviewQuests && api && (
-          <MainMenu.Item icon={<Flag size={16} />} onSelect={() => openQuestPanel(api)}>
+          <MainMenu.Item icon={<Flag size={16} />} onSelect={() => openQuestPanel()}>
             Quest Dashboard · งานแต่ละคน
           </MainMenu.Item>
         )}
@@ -415,11 +415,9 @@ export default function WhiteboardCanvas({
     [api, board.id, isAdmin, showAuthors],
   );
 
-  const questsPanel = useMemo(
-    () => (canReviewQuests && api ? <QuestSidebar api={api} people={people} nameOf={nameOf} avatarOf={avatarOf} /> : null),
-    [api, canReviewQuests, people, nameOf, avatarOf],
-  );
-  const openQuestDashboard = useCallback((questId: string) => api && openQuestPanel(api, questId), [api]);
+  // The Quest dashboard, in a pane beside the board that the board makes room for.
+  const questPane = useQuestPane(board.id, canReviewQuests);
+  const openQuestDashboard = useCallback((questId: string) => openQuestPanel(questId), []);
 
   const kit = useMemo(
     () =>
@@ -453,7 +451,12 @@ export default function WhiteboardCanvas({
   const closePlacing = useCallback(() => setPlacingComment(false), []);
 
   return (
-    <div className={`whiteboard-root whiteboard-room fixed inset-0 ${WB_FONT_VARS}`}>
+    <>
+      <div
+        className={`whiteboard-root whiteboard-room fixed inset-0 ${WB_FONT_VARS}`}
+        // The Quest pane sits beside the board: the board's right edge moves in to make room.
+        style={questPane.open ? { right: questPane.width } : undefined}
+      >
       {/* The grain filters, once for the whole board. */}
       <GrainDefs />
       <BoardBackdrop api={api} settings={settings} />
@@ -472,7 +475,6 @@ export default function WhiteboardCanvas({
         {mainMenu}
         {welcomeScreen}
         {kit}
-        {questsPanel}
       </Excalidraw>
 
       {api && (
@@ -574,6 +576,18 @@ export default function WhiteboardCanvas({
         onMembersChange={setMembers}
         onlineIds={onlineIds}
       />
-    </div>
+      </div>
+      {questPane.open && api && (
+        <QuestPane
+          api={api}
+          width={questPane.width}
+          onResize={questPane.resize}
+          onClose={questPane.close}
+          people={people}
+          nameOf={nameOf}
+          avatarOf={avatarOf}
+        />
+      )}
+    </>
   );
 }
