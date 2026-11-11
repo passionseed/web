@@ -95,7 +95,10 @@ export const filesSchema = z
   .min(1)
   .max(20);
 
-export const memberPatchSchema = z.object({ role: z.enum(["editor", "viewer"]) }).strict();
+export const memberPatchSchema = z
+  .object({ role: z.enum(["editor", "viewer"]).optional(), questReviewer: z.boolean().optional() })
+  .strict()
+  .refine((p) => p.role !== undefined || p.questReviewer !== undefined, "Nothing to change");
 
 type Versioned = { id: string; version: number };
 

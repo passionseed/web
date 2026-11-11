@@ -1,4 +1,9 @@
 const PUBLIC_ROUTE_PREFIXES = [
+  // Crawler files. Behind the login wall, search engines and AI answer
+  // engines got the sign-in page instead of the rules and the page list.
+  "/robots.txt",
+  "/sitemap.xml",
+  "/llms.txt",
   "/login",
   "/auth",
   "/download",
@@ -40,6 +45,8 @@ const PUBLIC_ROUTE_PREFIXES = [
   "/slide",
   "/worksheet",
   "/tips",
+  // Portfolio guides: the written versions of the Instagram tips.
+  "/port",
   // Marketing Studio: noindex export pages for social posts, public copy only
   "/studio",
   // SHIFT rounds: public certificate verify page + share images, and two API
