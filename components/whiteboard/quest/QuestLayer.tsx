@@ -5,11 +5,12 @@ import type { AppState, ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/t
 import { Flag, LayoutList } from "lucide-react";
 import { type CSSProperties, useEffect, useRef } from "react";
 
-import { findQuests, questName, questTagOf, questWork, type Quest, type QuestWork } from "@/lib/whiteboard/quests";
+import { findQuests, questLabelOf, questName, questTagOf, questWork, type Quest, type QuestWork } from "@/lib/whiteboard/quests";
 
 import { focusCanvas } from "../chrome/useActiveTool";
 import { isBusy, useSceneMemo } from "../shift/sceneMemo";
 import { useViewportTick } from "../useViewportTick";
+import { setQuestLabel } from "./labelEdits";
 import { WorkRow } from "./QuestDashboard";
 import type { QuestSession } from "./useQuestSession";
 
@@ -24,6 +25,8 @@ const DEFAULT_INK = "#2f9e44";
 type Props = {
   api: ExcalidrawImperativeAPI;
   meId: string;
+  /** Mentors (the board's owner and moderators) may drag the buttons; their place is saved on the label. */
+  manager: boolean;
   nameOf: (id: string) => string;
   /** For quest reviewers: opens the Quest dashboard at a quest. Others see only their own work. */
   onReview?: (questId: string) => void;
@@ -36,8 +39,8 @@ type Viewport = { scrollX: number; scrollY: number; zoom: number };
 
 /** Where a quest's button goes on screen: right of its label, centred on it, scaled with the board. */
 function buttonTransform(q: Quest, v: Viewport): string {
-  const x = (q.x + q.width + GAP + v.scrollX) * v.zoom;
-  const y = (q.y + q.height / 2 + v.scrollY) * v.zoom;
+  const x = (q.x + q.width + GAP + q.dx + v.scrollX) * v.zoom;
+  const y = (q.y + q.height / 2 + q.dy + v.scrollY) * v.zoom;
   return `translate(${x}px, ${y}px) scale(${v.zoom})`;
 }
 
@@ -68,6 +71,60 @@ function useGluedButtons(api: ExcalidrawImperativeAPI, quests: Quest[]) {
   };
 }
 
+/** Pointer travel, in screen pixels, after which pressing the button is a drag rather than a click. */
+const DRAG_FROM = 4;
+
+/**
+ * Mentors drag a quest's button to move it: it follows the pointer, and on release the offset is
+ * saved on the label. A press that barely moves is a click, which starts or ends the quest.
+ */
+function dragButton(api: ExcalidrawImperativeAPI, q: Quest, e: React.PointerEvent<HTMLButtonElement>, onClick: () => void) {
+  const button = e.currentTarget;
+  const wrapper = button.parentElement as HTMLElement;
+  const start = { x: e.clientX, y: e.clientY };
+  let moved = false;
+  let offset = { dx: q.dx, dy: q.dy };
+  button.setPointerCapture(e.pointerId);
+  const move = (ev: PointerEvent) => {
+    const zoom = api.getAppState().zoom.value;
+    if (!moved && Math.hypot(ev.clientX - start.x, ev.clientY - start.y) < DRAG_FROM) return;
+    moved = true;
+    button.classList.add("wb-quest-ink--drag");
+    offset = { dx: q.dx + (ev.clientX - start.x) / zoom, dy: q.dy + (ev.clientY - start.y) / zoom };
+    const s = api.getAppState();
+    wrapper.style.transform = buttonTransform({ ...q, ...offset }, { scrollX: s.scrollX, scrollY: s.scrollY, zoom: s.zoom.value });
+  };
+  const up = () => {
+    button.removeEventListener("pointermove", move);
+    button.removeEventListener("pointerup", up);
+    button.removeEventListener("pointercancel", up);
+    button.classList.remove("wb-quest-ink--drag");
+    if (moved) setQuestLabel(api, q.id, { dx: Math.round(offset.dx), dy: Math.round(offset.dy) });
+    else onClick();
+    focusCanvas();
+  };
+  button.addEventListener("pointermove", move);
+  button.addEventListener("pointerup", up);
+  button.addEventListener("pointercancel", up);
+}
+
+/**
+ * Mentors' boards keep each quest's task text saved on its label, so the quest
+ * still knows its task if the text is deleted (and the settings can put it back).
+ */
+function useTaskBackup(api: ExcalidrawImperativeAPI, quests: Quest[], on: boolean) {
+  useEffect(() => {
+    if (!on || api.getAppState().editingTextElement) return;
+    const byId = new Map(api.getSceneElements().map((el) => [el.id, el]));
+    for (const q of quests) {
+      const task = q.titleId ? byId.get(q.titleId) : undefined;
+      const label = byId.get(q.id);
+      if (!task || !label || task.type !== "text") continue;
+      if (questLabelOf(label)?.backup !== task.text) setQuestLabel(api, q.id, { backup: task.text }, false);
+    }
+  }, [api, quests, on]);
+}
+
 /** A colour Excalidraw stores ("transparent", "#1e1e1e", ...) that reads as ink on paper. */
 const inkOf = (q: Quest) => (q.color && q.color !== "transparent" ? q.color : DEFAULT_INK);
 
@@ -84,10 +141,11 @@ function selectedQuest(quests: Quest[], appState: AppState): Quest | undefined {
  * "Quest" opens a card with who handed in what. While a quest runs, a pill at
  * the top of the board shows its name, how much has gone into it, and an end button.
  */
-export function QuestLayer({ api, meId, nameOf, onReview, session, onStart, onEnd }: Props) {
+export function QuestLayer({ api, meId, manager, nameOf, onReview, session, onStart, onEnd }: Props) {
   useViewportTick(api, { elements: true, selection: true });
   const quests = useSceneMemo(api, (elements) => findQuests(elements), []);
   const glue = useGluedButtons(api, quests);
+  useTaskBackup(api, quests, manager);
   // Who handed in what, per quest, and what went into this person's running session.
   const counts = useSceneMemo(
     api,
@@ -121,7 +179,8 @@ export function QuestLayer({ api, meId, nameOf, onReview, session, onStart, onEn
       {showButtons && (
         <div className="pointer-events-none absolute inset-0 z-[2] overflow-hidden">
           {quests.map((q) => {
-            const pos = sceneCoordsToViewportCoords({ sceneX: q.x + q.width + GAP, sceneY: q.y + q.height / 2 }, appState);
+            if (q.hidden) return null;
+            const pos = sceneCoordsToViewportCoords({ sceneX: q.x + q.width + GAP + q.dx, sceneY: q.y + q.height / 2 + q.dy }, appState);
             // Culled by its size on the board, which grows with the zoom.
             const reach = 400 * zoom;
             if (pos.x < -reach || pos.y < -reach || pos.x > appState.width || pos.y > appState.height + reach) return null;
@@ -137,13 +196,21 @@ export function QuestLayer({ api, meId, nameOf, onReview, session, onStart, onEn
               >
                 <button
                   type="button"
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={() => {
+                  onPointerDown={(e) => {
+                    e.stopPropagation();
+                    if (!manager || e.button !== 0) return;
+                    // Mentors: a drag moves it; the click is handled when the press ends.
+                    e.preventDefault();
+                    dragButton(api, q, e, () => (running ? onEnd() : onStart(q)));
+                  }}
+                  onClick={(e) => {
+                    // Keyboard presses, and everyone who cannot drag. A mentor's mouse click was handled on release.
+                    if (manager && e.detail > 0) return;
                     if (running) onEnd();
                     else onStart(q);
                     focusCanvas();
                   }}
-                  title={running ? `จบ ${questName(q)}` : `เริ่ม ${questName(q)}`}
+                  title={`${running ? "จบ" : "เริ่ม"} ${questName(q)}${manager ? " · ลากเพื่อย้ายปุ่ม" : ""}`}
                   className={`wb-quest-ink pointer-events-auto absolute left-0 top-0 ${running ? "wb-quest-ink--on" : ""}`}
                   style={{ fontSize: INK_SIZE, "--ink": inkOf(q) } as CSSProperties}
                 >

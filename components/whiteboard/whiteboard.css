@@ -2744,6 +2744,12 @@ body:has(.whiteboard-room .excalidraw.theme--dark) .wb-dot--bg:is([aria-pressed=
   outline: 2px dashed var(--ink);
   outline-offset: 3px;
 }
+.wb-quest-ink--drag {
+  cursor: grabbing;
+  transition: none;
+  transform: translateY(-50%) rotate(2deg) scale(1.06);
+  box-shadow: 0 0.3em 0.8em rgba(0, 0, 0, 0.18);
+}
 .wb-quest-ink--on {
   background: var(--ink);
   color: #fff;

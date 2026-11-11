@@ -35,6 +35,27 @@ export type Quest = {
   height: number;
   /** The label's ink colour, so its button can be drawn in the same pen. */
   color?: string;
+  /** The text element on the board the title was read from, if any. */
+  titleId: string | null;
+  /** The start button is hidden (a mentor turned it off). */
+  hidden: boolean;
+  /** Where a mentor dragged the start button, from its usual place right of the label, in scene units. */
+  dx: number;
+  dy: number;
+};
+
+/**
+ * customData.questLabel on a quest's label: the mentor's settings for it. Any
+ * text with this is a quest (the "Quest" wording only finds them on its own),
+ * unless `off` says a "Quest" text is not one.
+ */
+export type QuestLabelData = {
+  off?: boolean;
+  hidden?: boolean;
+  dx?: number;
+  dy?: number;
+  /** The last task text seen under the label, to put back if it is deleted. */
+  backup?: string;
 };
 
 type El = {
@@ -62,7 +83,20 @@ const MAX_TITLE = 140;
 
 const oneLine = (s: string) => s.replace(/\s+/g, " ").trim();
 
-const isLabel = (el: El) => el.type === "text" && !el.isDeleted && LABEL.test(el.text ?? "");
+/** A label's settings, or null when it has none (or malformed ones). */
+export function questLabelOf(el: { customData?: Record<string, unknown> | null }): QuestLabelData | null {
+  const data = el.customData?.questLabel;
+  return data && typeof data === "object" ? (data as QuestLabelData) : null;
+}
+
+const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
+
+const isLabel = (el: El) => {
+  if (el.type !== "text" || el.isDeleted) return false;
+  const data = questLabelOf(el);
+  if (data?.off) return false;
+  return Boolean(data) || LABEL.test(el.text ?? "");
+};
 
 /** The quests drawn on a board, in reading order. */
 export function findQuests(elements: readonly El[]): Quest[] {
@@ -74,6 +108,7 @@ export function findQuests(elements: readonly El[]): Quest[] {
     .map((label) => {
       // The task: the nearest text below the label that starts near it horizontally.
       let title = "";
+      let titleId: string | null = null;
       let best = Infinity;
       for (const t of texts) {
         const below = t.y - (label.y + label.height / 2);
@@ -82,10 +117,26 @@ export function findQuests(elements: readonly El[]): Quest[] {
         if (below < best) {
           best = below;
           title = oneLine(t.text ?? "");
+          titleId = t.id;
         }
       }
+      const data = questLabelOf(label);
+      if (!title && typeof data?.backup === "string") title = oneLine(data.backup);
       if (title.length > MAX_TITLE) title = `${title.slice(0, MAX_TITLE - 1)}…`;
-      return { id: label.id, number: 0, title, x: label.x, y: label.y, width: label.width, height: label.height, color: label.strokeColor };
+      return {
+        id: label.id,
+        number: 0,
+        title,
+        x: label.x,
+        y: label.y,
+        width: label.width,
+        height: label.height,
+        color: label.strokeColor,
+        titleId,
+        hidden: Boolean(data?.hidden),
+        dx: num(data?.dx),
+        dy: num(data?.dy),
+      };
     })
     .sort((a, b) => Math.round(a.y / ROW) - Math.round(b.y / ROW) || a.x - b.x)
     .map((q, i) => ({ ...q, number: i + 1 }));

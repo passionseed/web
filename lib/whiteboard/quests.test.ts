@@ -24,6 +24,21 @@ describe("findQuests", () => {
     ]);
   });
 
+  it("treats any text a mentor made a quest as one, and a turned-off Quest text as none", () => {
+    const quests = findQuests([
+      text("made", 0, 0, "ภารกิจลับ", { customData: { questLabel: { hidden: true, dx: 40, dy: -10 } } }),
+      text("off", 1000, 0, "Quest", { customData: { questLabel: { off: true } } }),
+    ]);
+    expect(quests.map((q) => [q.id, q.hidden, q.dx, q.dy])).toEqual([["made", true, 40, -10]]);
+  });
+
+  it("falls back to the saved task text when the one on the board is gone", () => {
+    const [q] = findQuests([text("q", 0, 0, "Quest", { customData: { questLabel: { backup: "หา reference\n3 อย่าง" } } })]);
+    expect([q.title, q.titleId]).toEqual(["หา reference 3 อย่าง", null]);
+    const [withText] = findQuests([text("q", 0, 0, "Quest", { customData: { questLabel: { backup: "old" } } }), text("t", 0, 110, "new")]);
+    expect([withText.title, withText.titleId]).toEqual(["new", "t"]);
+  });
+
   it("ignores deleted labels and boards without quests", () => {
     expect(findQuests([{ ...text("q", 0, 0, "Quest"), isDeleted: true }])).toEqual([]);
     expect(findQuests([text("x", 0, 0, "hello")])).toEqual([]);
