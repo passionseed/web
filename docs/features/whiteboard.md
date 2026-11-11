@@ -61,6 +61,17 @@ again afterwards.
   elements stay in the database but are not sent to the editor (on the SHIFT High board they were
   60% of the data). The board list fetches the editor's code in idle time, so opening a board
   from it starts warm.
+- **Board size:** every save rewrites the whole board row, so its size is what makes saves slow.
+  The save route slims strokes and lines first (`lib/whiteboard/compact.ts`): coordinates and
+  pressures keep 2 decimals, and lines and stylus strokes drop points within half a pixel of the
+  line through their neighbours. Mouse and finger strokes keep every point (their thickness comes
+  from point spacing), and arrows are untouched. The stored copy changes, not the version. A
+  trigger (`whiteboard_drop_old_tombstones`) drops deleted elements older than 24 hours on every
+  write, as Excalidraw's own app does. `pnpm tsx scripts/whiteboard-slim.ts` reports what slimming
+  would save on stored boards and, with `--board <id> --apply`, writes it (only if nobody saved
+  since it read). On 2026-11-10 it showed Shift[3] going from 5.5 MB to 2.3 MB. Opening a board
+  slims its live elements the same way before they are sent (`openBoard`), so boards saved before
+  this open light too: on 2026-11-12 Shift[3] went from 3.2 MB to 1.9 MB sent, in 18 ms.
 - **Images** are still stored as data URLs in `whiteboard_files`, but each one is served on its own
   as plain bytes from `GET /api/whiteboards/<id>/files/<fileId>`, cached by the browser for a year
   (a file id's bytes never change; saving ignores duplicates). The editor fetches five at a time,
@@ -150,6 +161,64 @@ again afterwards.
   arrived, walk-ins, help asked and given, closed with a next step), shown on the block once
   it starts and at `/admin/calendar` for the last 90 days. Nothing per person is stored, and it
   shows who used the board, not who spoke in voice.
+
+## Quests
+
+Mentors draw quests on the board by hand, as on SHIFT[3] Day 2: a text that says **Quest** (any
+case, optionally with a star) and the task written under it. Students start a quest, and everything
+they make until they end it counts as their work for that quest. Code: `lib/whiteboard/quests.ts`,
+`components/whiteboard/quest/`.
+
+- **Finding quests** (`findQuests`): every live text whose whole text is "Quest" is a quest, and so
+  is any text a mentor made one (`customData.questLabel`, unless its `off` is set). Its task is the
+  nearest text up to 400 units below that is not someone's quest work; once seen, the task's id and
+  a copy of its text are kept on the label (`taskId`, `backup`), so a deleted task falls back to the
+  copy instead of the next text down. Numbered in reading order (rows, then left to right).
+- **Start and end:** editors see **เริ่ม Quest** beside each label, drawn in the label's ink and
+  sized with the board (hidden below 12% zoom); it moves in the same frame as the canvas
+  (Excalidraw's scroll callback, not a React render). Mentors drag it to move it (`dx`, `dy` on the
+  label). While
+  one runs, a pill at the top says which quest and how many pieces went in, with **จบ Quest**.
+  Starting another quest ends the first. The session is kept in localStorage per board, so a
+  reload keeps it running.
+- **Tagging:** while a session runs, every element this browser creates (strokes, notes, text,
+  words typed into someone else's box, pastes) gets `customData.quest = { id, session, by, at }`
+  (`id` is the label's element id). `useWhiteboardSync` sets it on the element before its first
+  send, so it syncs and saves like the element itself with no extra version. Edits to things that
+  already existed are not tagged.
+- **แก้ Quest ที่ส่ง:** right-click work and a card beside Excalidraw's menu says which quest it
+  counts for; pick another quest or **ไม่นับเป็นงาน Quest**. A note and its words move together.
+  Students can retag their own work (tagged by them, or untagged and made by them); moderators can
+  retag anything. Excalidraw 0.18 cannot add items to its own menu, so this is our own card.
+- **Quest settings:** mentors right-click a quest's label for its settings, beside Excalidraw's menu:
+  edit the task (written back on the board) or put it back if it was deleted, remove or re-create
+  the start button, move it back, or **เลิกเป็น Quest**. Right-clicking any other text offers
+  **ทำข้อความนี้เป็น Quest**. Clicking a label shows a card of who handed in what.
+- **Quest dashboard** (`QuestPane.tsx`, a pane beside the board like the Claude app's side
+  panes, opened from the board menu or a quest's card): the board's right edge moves in to make
+  room, so nothing is covered, and drawing never closes it (it stays open across reloads until its
+  close button). Drag its left edge to resize it. each quest with what each person made for it (their words, how many drawings),
+  who has not handed in yet (members who can edit), and **ดูบนบอร์ด** to select their work and zoom
+  to it; **ตามคน** lists each person with their quests.
+- **Who sees the dashboard:** the board's owner, site admins, and quest reviewers: members the owner
+  marks with the **Quest** toggle in Share (`whiteboard_members.quest_reviewer`, migration
+  `20261111120000_whiteboard_quest_reviewers.sql`). A reviewer sees it after reopening the board.
+  Everyone's work is on the board for all members anyway; the role only opens the summary. Until the
+  migration is applied, `openBoard` reads members without the column, so boards keep opening.
+- **Names:** the board shows people by their Discord name (display name, else username) and
+  picture: in the people corner, cursors, comments, who-made-what and the Quest dashboard.
+  `useBoardPeople` loads them from `POST /api/whiteboards/[id]/people` a moment after the board
+  opens (one sign-in record read per person, so not on the open path); profile names until then and
+  for anyone without Discord. The browser sends the ids it sees; only the viewer, owner, members and
+  people who saved to the board are looked up, and the route reads no elements.
+- **Quest pane size:** drag the pane's left edge to resize it (kept per browser, double-click
+  for the default); the board always keeps at least 240 px.
+- **Backfill:** on 2026-11-12, 326 pieces of SHIFT[3] Day 2 work made before quest tagging existed
+  were tagged from a reviewed plan (students' own columns, matched by heading and content; Stitch
+  counts as the paper prototype), sent through `whiteboard_merge_elements` with session
+  `backfill-<userId>`.
+- **Reading the work:** `pnpm whiteboard:read <id>` ends with **Quest work**: per quest, per person,
+  the words they wrote and how many drawings. A tag whose label was deleted is still listed.
 
 ## SHIFT project canvas and note versions
 

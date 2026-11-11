@@ -20,9 +20,13 @@ export default function robots(): MetadataRoute.Robots {
         // Explicitly allow AI Answer Engines (AEO) to crawl public knowledge and proof surfaces
         userAgent: [
           "GPTBot",
+          "OAI-SearchBot",
           "ChatGPT-User",
           "PerplexityBot",
+          "Perplexity-User",
           "ClaudeBot",
+          "Claude-SearchBot",
+          "Claude-User",
           "Claude-Web",
           "Google-Extended",
           "Amazonbot",
@@ -33,6 +37,8 @@ export default function robots(): MetadataRoute.Robots {
           "/llms.txt",
           "/llms-full.txt",
           "/shift",
+          "/port",
+          "/tips",
           "/techseed",
           "/hackathon",
           "/hackathon/gallery",

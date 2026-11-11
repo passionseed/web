@@ -193,6 +193,8 @@ export function useWhiteboardSync({
   initialElements,
   managerIds = [],
   onCanvasBlocked,
+  newElementData,
+  shownAs,
 }: {
   boardId: string;
   role: WhiteboardRole;
@@ -202,6 +204,16 @@ export function useWhiteboardSync({
   managerIds?: readonly string[];
   /** Called when an edit inside someone else's SHIFT canvas was undone. */
   onCanvasBlocked?: () => void;
+  /**
+   * Extra customData for every element this browser creates, read on each change (a quest
+   * session's tag, see lib/whiteboard/quests.ts). Null or absent adds nothing.
+   */
+  newElementData?: () => Record<string, unknown> | null;
+  /**
+   * A person's name and picture as the board shows people (their Discord, see useBoardPeople),
+   * when known; it wins over what their tab sends, so cursors and faces agree everywhere.
+   */
+  shownAs?: (userId: string) => { name: string; avatarUrl: string | null } | undefined;
 }) {
   const { id: myId, name: myName, avatarUrl: myAvatar } = me;
   const [mySocket] = useState(() => `${myId}:${crypto.randomUUID().slice(0, 8)}`);
@@ -321,7 +333,8 @@ export function useWhiteboardSync({
       // Each image is its own request (cached by the browser for good), a few at a time,
       // and shown as soon as it arrives instead of after the whole board's worth.
       let ready: BinaryFileData[] = [];
-      let cancelFlush: (() => void) | null = null;
+      // Typed by assertion: TypeScript would otherwise narrow it to null, not seeing the async writes.
+      let cancelFlush = null as (() => void) | null;
       const flush = () => {
         cancelFlush = null;
         if (ready.length) excalidrawAPI.addFiles(ready);
@@ -476,6 +489,35 @@ export function useWhiteboardSync({
     [boardId, send],
   );
 
+  const shownAsRef = useRef(shownAs);
+  useEffect(() => {
+    shownAsRef.current = shownAs;
+  }, [shownAs]);
+  const newElementDataRef = useRef(newElementData);
+  useEffect(() => {
+    newElementDataRef.current = newElementData;
+  }, [newElementData]);
+  /**
+   * Adds newElementData to elements this browser just made: never sent, never saved, and not
+   * from anyone else (remote and saved copies are marked seen before they reach the scene).
+   * Set on the element itself before its first send, so the tag goes out with it and needs no
+   * extra version; elements already tagged keep their tag.
+   */
+  const tagNewElements = useCallback((elements: Elements) => {
+    const data = newElementDataRef.current?.();
+    if (!data) return;
+    for (const el of elements) {
+      if (el.isDeleted || savedSeen.current.has(el.id) || broadcastSeen.current.has(el.id)) continue;
+      const custom = el.customData as Record<string, unknown> | undefined;
+      if (custom && Object.keys(data).every((k) => k in custom)) continue;
+      try {
+        (el as { customData?: Record<string, unknown> }).customData = { ...data, ...custom };
+      } catch {
+        // A frozen element (should not happen) just stays untagged.
+      }
+    }
+  }, []);
+
   const onChange = useCallback(
     (_elements: Elements, _appState: unknown, files: BinaryFiles) => {
       if (!editable || !excalidrawAPI) return;
@@ -496,6 +538,7 @@ export function useWhiteboardSync({
         return;
       }
       lastEditAt.current = Date.now();
+      tagNewElements(elements);
       broadcastChanges.current(elements);
       if (hasChangedSince(elements, savedSeen.current)) {
         setSaveState((s) => (s === "saving" ? s : "unsaved"));
@@ -504,7 +547,7 @@ export function useWhiteboardSync({
       }
       void uploadFiles(files);
     },
-    [allElements, editable, excalidrawAPI, guard, myId, scheduleBackup, scheduleSave, uploadFiles],
+    [allElements, editable, excalidrawAPI, guard, myId, scheduleBackup, scheduleSave, tagNewElements, uploadFiles],
   );
 
   // The selection is read when the throttled message actually goes out, so a
@@ -545,17 +588,26 @@ export function useWhiteboardSync({
 
   const onScrollChange = useCallback(() => broadcastViewport(), [broadcastViewport]);
 
+  // Read when tracking, so a name that arrives later (Discord, see useBoardPeople) updates presence
+  // without tearing down the channel.
+  const shownMe = useRef({ name: myName, avatarUrl: myAvatar });
+  shownMe.current = { name: myName, avatarUrl: myAvatar };
   const trackMe = useCallback(async () => {
     await channelRef.current?.track({
       userId: myId,
       socketId: mySocket,
-      name: myName,
-      avatarUrl: myAvatar,
+      name: shownMe.current.name,
+      avatarUrl: shownMe.current.avatarUrl,
       role,
       following: following.current,
       visible: typeof document === "undefined" || document.visibilityState === "visible",
     } satisfies PresentUser);
-  }, [myAvatar, myId, myName, mySocket, role]);
+  }, [myId, mySocket, role]);
+
+  // Everyone else sees the new name on their next presence sync.
+  useEffect(() => {
+    if (channelRef.current?.state === "joined") void trackMe();
+  }, [myName, myAvatar, trackMe]);
 
   // Tell the others when this tab is hidden, so a background tab never holds the thumbnail job.
   useEffect(() => {
@@ -830,9 +882,14 @@ export function useWhiteboardSync({
           pushCollaborators();
         })
         .on("presence", { event: "sync" }, () => {
-          const users = Object.values(channel.presenceState<PresentUser>())
-            .map((metas) => metas[0])
-            .filter(Boolean) as PresentUser[];
+          const users = (
+            Object.values(channel.presenceState<PresentUser>())
+              .map((metas) => metas[0])
+              .filter(Boolean) as PresentUser[]
+          ).map((u) => {
+            const shown = shownAsRef.current?.(u.userId);
+            return shown ? { ...u, name: shown.name, avatarUrl: shown.avatarUrl ?? u.avatarUrl } : u;
+          });
           presentRef.current = users;
           setPresent(users);
 

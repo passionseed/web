@@ -1,3 +1,4 @@
+import { questsToMarkdown, questWork } from "@/lib/whiteboard/quests";
 import { authorIds, boardToMarkdown, summarizeElements, type SummaryComment } from "@/lib/whiteboard/summary";
 import { createAdminClient } from "@/utils/supabase/admin";
 
@@ -61,10 +62,12 @@ export async function readBoardMarkdown(boardId: string): Promise<string | null>
   if (error) throw error;
   if (!board) return null;
 
-  const summary = summarizeElements((board.elements as unknown[]) ?? []);
+  const elements = ((board.elements as unknown[]) ?? []) as Parameters<typeof questWork>[0];
+  const summary = summarizeElements(elements as unknown[]);
   const people = await displayNames([
     ...new Set([
       ...authorIds(summary),
+      ...questWork(elements).flatMap((w) => w.people.map((p) => p.userId)),
       board.owner_id as string,
       ...(members ?? []).map((m) => m.user_id as string),
       ...(comments ?? []).map((c) => c.author_id as string),
@@ -84,7 +87,7 @@ export async function readBoardMarkdown(boardId: string): Promise<string | null>
         .map((r) => ({ author: who(r.author_id as string), body: r.body as string, createdAt: r.created_at as string })),
     }));
 
-  return boardToMarkdown(
+  const markdown = boardToMarkdown(
     {
       title: board.title as string,
       owner: who(board.owner_id as string),
@@ -95,4 +98,5 @@ export async function readBoardMarkdown(boardId: string): Promise<string | null>
     threads,
     people,
   );
+  return markdown + questsToMarkdown(elements, who);
 }
