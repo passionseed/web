@@ -793,10 +793,13 @@ from the start card.
 
 | # | Scene | Line (draft) |
 |---|---|---|
-| 1 | `buildScene([])`, phase dawn, sea moving, gulls, no boat | เกาะนี้ยังว่าง |
-| 2 | one plot, stage 2 (seedling), crop around it, builder actor beside it, day | ทุกโปรเจกต์คือต้นไม้หนึ่งต้น |
-| 3 | one plot, stage 5, builder plus tester actor trying something, day | ต้นไม้โตจากงานจริง |
-| 4 | 8 plots of mixed stages, 3 lanterns, festival banner and festoon, night | `{d MMM}` เทศกาล Demo Day (no date known: คืนเทศกาล Demo Day) |
+| 1 | `buildScene([])`, phase dawn, sea moving, gulls, no boat | เกาะนี้ยังว่าง รอคนที่อยากสร้างของจริง |
+| 2 | one plot, stage 2 (seedling), crop around it, builder actor beside it, day | ทุกโปรเจกต์คือต้นไม้หนึ่งต้น เริ่มจากเรื่องที่คุณใส่ใจ |
+| 3 | one plot, stage 5, builder plus tester actor trying something, day | ต้นไม้โตจากงานจริง ไม่ได้โตจากเวลาออนไลน์ |
+| 4 | 8 plots of mixed stages, 3 lanterns, festival banner and festoon, night | `{d MMM}` เทศกาล Demo Day ทั้งเกาะมาโชว์งานด้วยกัน (no date known: คืนเทศกาล Demo Day ทั้งเกาะมาโชว์งานด้วยกัน) |
+
+Lines and place names come from the lore bible,
+[`shift-high-island-lore.md`](shift-high-island-lore.md).
 
 CTA on panel 4: not started "ไปที่เกาะ" (closes and starts the island; the start card never opens the story by itself, only from its book); no project
 "จับจองที่ดิน" (closes, scrolls to the create form); with a project
@@ -804,8 +807,9 @@ CTA on panel 4: not started "ไปที่เกาะ" (closes and starts the
 `thaiShortDate`, never hardcoded; the not-started screen has no season, so it
 shows the undated line. Reduced motion: no auto-advance, still frames, a
 "ต่อไป" button. If the canvas fails, each panel shows the matching tree sprite
-through `PixelIcon` on the sky colour. No lore, no characters with names, no
-lecturing.
+through `PixelIcon` on the sky colour. The lore only names places and says
+why the island works the way it does: no characters with names, no fantasy
+that replaces the work, no lecturing.
 
 ### Living island
 
