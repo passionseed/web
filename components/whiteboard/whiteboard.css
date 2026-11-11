@@ -2717,9 +2717,10 @@ body:has(.whiteboard-room .excalidraw.theme--dark) .wb-dot--bg:is([aria-pressed=
   align-items: center;
   gap: 0.4em;
   padding: 0.18em 0.7em 0.22em 0.55em;
-  border: 0.12em solid var(--ink);
+  border: 0.14em solid var(--ink);
   border-radius: 1.4em 0.5em 1.2em 0.45em / 0.5em 1.2em 0.45em 1.3em;
-  background: transparent;
+  /* The board's paper, so strokes under the button don't show through its words. */
+  background: var(--wb-board-bg, #fff);
   color: var(--ink);
   font-family: "Excalifont", "Virgil", var(--wb-font);
   line-height: 1.2;
@@ -2732,7 +2733,7 @@ body:has(.whiteboard-room .excalidraw.theme--dark) .wb-dot--bg:is([aria-pressed=
 }
 @media (hover: hover) {
   .wb-quest-ink:hover {
-    background: color-mix(in srgb, var(--ink) 14%, transparent);
+    background: color-mix(in srgb, var(--ink) 14%, var(--wb-board-bg, #fff));
     transform: translateY(-50%) rotate(1deg) scale(1.04);
   }
 }

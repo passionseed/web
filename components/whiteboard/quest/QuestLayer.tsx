@@ -18,7 +18,7 @@ const MIN_ZOOM = 0.12;
 /** Gap between a quest's label and its button, in scene units. */
 const GAP = 24;
 /** The button's text size in scene units, so it grows and shrinks with the board like the label. */
-const INK_SIZE = 26;
+const INK_SIZE = 32;
 const DEFAULT_INK = "#2f9e44";
 
 type Props = {
@@ -203,18 +203,17 @@ function QuestCard({
       {shown.map((p) => (
         <WorkRow key={p.userId} api={api} label={onReview ? nameOf(p.userId) : "งานของคุณ"} work={p} />
       ))}
-      <div className="wb-rule flex items-center justify-between gap-2 border-t pt-2">
-        <span className="wb-quest-soft text-[11px]">ดับเบิลคลิกที่คำว่า Quest เพื่อแก้ข้อความ</span>
-        {onReview && (
+      {onReview && (
+        <div className="wb-rule flex justify-end border-t pt-2">
           <button
             type="button"
             onClick={() => onReview(quest.id)}
             className="wb-quest-option inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-xs"
           >
-            <LayoutList className="h-3.5 w-3.5" /> Dashboard
+            <LayoutList className="h-3.5 w-3.5" /> เปิดใน Dashboard
           </button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
