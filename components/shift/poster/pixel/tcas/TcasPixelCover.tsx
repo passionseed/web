@@ -1,4 +1,4 @@
-import { countProjects, type TcasPosterData } from "@/lib/content/tcas70-poster";
+import { countProjects, facultiesOf, type TcasPosterData } from "@/lib/content/tcas70-poster";
 
 import { PassionSeedMark } from "../../riso";
 import { PIXEL_FONT } from "../PixelRects";
@@ -62,6 +62,11 @@ function Lineup({ data }: { data: TcasPosterData }) {
           <span className="mt-[6px] text-[12px] leading-none tracking-[0.06em]" style={{ ...PIXEL_FONT, color: PX.waterLight }}>
             {u.nameEn}
           </span>
+          {facultiesOf(u) && (
+            <span className="mt-[8px] text-[13px] leading-[1.3]" style={{ color: `${PX.cream}cc` }}>
+              {facultiesOf(u)}
+            </span>
+          )}
         </li>
       ))}
     </ul>
@@ -82,7 +87,7 @@ function Notes({ notes }: { notes?: string[] }) {
   );
 }
 
-function Warning({ asOf }: { asOf: string }) {
+function Warning({ asOf, hasRef }: { asOf: string; hasRef: boolean }) {
   return (
     <div
       className="mx-auto mt-14 flex w-full max-w-[860px] gap-[20px] px-[28px] py-[26px]"
@@ -104,8 +109,9 @@ function Warning({ asOf }: { asOf: string }) {
           ข้อมูลนี้อาจคลาดเคลื่อน
         </p>
         <p className="mt-2 text-[19px] leading-[1.6]" style={{ color: PX.cream }}>
-          เรารวบรวมจากระเบียบการของแต่ละคณะและ mytcas.com ณ {asOf} บางโครงการยังไม่ประกาศเกณฑ์ปี 70
-          จึงใช้ข้อมูลปี 69 อ้างอิง (มีป้าย REF TCAS69) และเกณฑ์อาจเปลี่ยนได้ทุกเมื่อ
+          เรารวบรวมจากระเบียบการของแต่ละคณะและ mytcas.com ณ {asOf}{" "}
+          {hasRef && "บางโครงการยังไม่ประกาศเกณฑ์ปี 70 จึงใช้ข้อมูลปี 69 อ้างอิง (มีป้าย REF TCAS69) "}
+          และเกณฑ์อาจเปลี่ยนได้ทุกเมื่อ
         </p>
         <p className="mt-2 text-[19px] font-semibold leading-[1.6]" style={{ color: PX.cream }}>
           แนะนำให้ใช้ประกอบการหาข้อมูลด้วยตัวเอง และเช็กระเบียบการฉบับล่าสุดที่เว็บคณะก่อนสมัครทุกครั้ง
@@ -145,7 +151,7 @@ export function TcasPixelCover({ data }: { data: TcasPosterData }) {
         <Title data={data} />
         <Lineup data={data} />
         <Notes notes={data.notes} />
-        <Warning asOf={data.asOf} />
+        <Warning asOf={data.asOf} hasRef={data.universities.some((u) => u.refCycle || u.projects.some((p) => p.refCycle))} />
       </div>
       <Band data={data} />
     </TcasSheet>
