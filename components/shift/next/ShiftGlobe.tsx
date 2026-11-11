@@ -5,7 +5,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
 
-import { COSMOS } from "./cosmos";
+import { COSMOS, DAWN_GLOBE } from "./cosmos";
 
 import {
   atmosphereFragment,
@@ -19,7 +19,7 @@ import {
 } from "./globeShaders";
 
 /**
- * The /shift/next hero planet. Land mask from Natural Earth, built by
+ * The SHIFT planet at dawn. Land mask from Natural Earth, built by
  * scripts/build-shift-globe-mask.mjs. Pauses when off screen and holds
  * still for prefers-reduced-motion.
  */
@@ -103,8 +103,11 @@ function Planet({ still, onReady, onArrive, focusThailand, animateFocus }: {
     destination: faceLongitude(BANGKOK.lon),
     position: new THREE.Vector3(),
   });
+  // The sun sits to the east and barely in front, so the dawn line crosses
+  // the face of the planet and Thailand arrives in first light. The planet
+  // turns eastward under it: places travel out of the night into the day.
   const sun = useMemo(
-    () => new THREE.Vector3(-0.85, 0.45, 0.55).normalize(),
+    () => new THREE.Vector3(0.9, 0.3, 0.2).normalize(),
     []
   );
 
@@ -115,13 +118,16 @@ function Planet({ still, onReady, onArrive, focusThailand, animateFocus }: {
       uRows: { value: 150 },
       uSun: { value: sun },
       uBeacon: { value: sphereDirection(BANGKOK.lat, BANGKOK.lon) },
-      uSea: { value: color(COSMOS.sea) },
-      uLandDay: { value: color("#e9eeff") },
-      uLandNight: { value: color(COSMOS.indigo) },
-      uCity: { value: color(COSMOS.sol) },
-      uDawn: { value: color(COSMOS.nebula) },
-      uBeaconColor: { value: color(COSMOS.sol) },
-      uRim: { value: color(COSMOS.aurora) },
+      uSea: { value: color(DAWN_GLOBE.sea) },
+      uSeaInk: { value: color(DAWN_GLOBE.seaInk) },
+      uLandDay: { value: color(DAWN_GLOBE.landDay) },
+      uLandNight: { value: color(DAWN_GLOBE.landNight) },
+      uCity: { value: color(DAWN_GLOBE.city) },
+      uDawnPink: { value: color(DAWN_GLOBE.pink) },
+      uDawnOrange: { value: color(DAWN_GLOBE.orange) },
+      uDawnGold: { value: color(DAWN_GLOBE.gold) },
+      uBeaconColor: { value: color(DAWN_GLOBE.beacon) },
+      uRimNight: { value: color(DAWN_GLOBE.rimNight) },
     }),
     [mask, sun]
   );
@@ -217,15 +223,16 @@ function Aura({ sun, still }: { sun: THREE.Vector3; still: boolean }) {
   const halo = useRef<THREE.Mesh>(null);
   const shell = (scale: number, strength: number, power: number) => ({
     uSun: { value: sun },
-    uRim: { value: color(COSMOS.aurora) },
-    uDawn: { value: color(COSMOS.nebula) },
+    uNight: { value: color(DAWN_GLOBE.rimNight) },
+    uDawn: { value: color(DAWN_GLOBE.pink) },
+    uDay: { value: color(DAWN_GLOBE.orange) },
     uTime: { value: 0 },
     uEdge: { value: limbEdge(scale) },
     uStrength: { value: strength },
     uPower: { value: power },
   });
-  const rim = useMemo(() => shell(1.16, 1.5, 2.4), [sun]); // eslint-disable-line react-hooks/exhaustive-deps
-  const wide = useMemo(() => shell(1.5, 0.55, 1.6), [sun]); // eslint-disable-line react-hooks/exhaustive-deps
+  const rim = useMemo(() => shell(1.16, 1.7, 2.4), [sun]); // eslint-disable-line react-hooks/exhaustive-deps
+  const wide = useMemo(() => shell(1.5, 0.6, 1.6), [sun]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useFrame((state) => {
     const t = still ? 0 : state.clock.elapsedTime;
@@ -278,28 +285,28 @@ const SATELLITES: SatelliteOrbit[] = [
     tilt: [1.1, 0.2],
     speed: 0.21,
     phase: 0.4,
-    light: COSMOS.aurora,
+    light: DAWN_GLOBE.city,
   },
   {
     radius: 1.46,
     tilt: [-0.5, 0.9],
     speed: -0.15,
     phase: 2.6,
-    light: COSMOS.sol,
+    light: DAWN_GLOBE.orange,
   },
   {
     radius: 1.78,
     tilt: [0.25, -0.35],
     speed: 0.09,
     phase: 4.1,
-    light: COSMOS.nebula,
+    light: DAWN_GLOBE.pink,
   },
   {
     radius: 2.05,
     tilt: [0.7, 1.4],
     speed: -0.06,
     phase: 1.2,
-    light: COSMOS.aurora,
+    light: DAWN_GLOBE.city,
   },
 ];
 
@@ -340,7 +347,7 @@ function Satellite({
     <group rotation={[orbit.tilt[0], 0, orbit.tilt[1]]}>
       <lineLoop geometry={path}>
         <lineBasicMaterial
-          color={COSMOS.orbit}
+          color={DAWN_GLOBE.orbit}
           transparent
           opacity={0.12}
           depthWrite={false}
@@ -355,7 +362,7 @@ function Satellite({
           {[-1, 1].map((side) => (
             <mesh key={side} position={[0, 0, side * 0.062]}>
               <boxGeometry args={[0.05, 0.003, 0.07]} />
-              <meshBasicMaterial color={COSMOS.panel} />
+              <meshBasicMaterial color={DAWN_GLOBE.panel} />
             </mesh>
           ))}
           <mesh position={[0, 0.024, 0]}>
@@ -399,8 +406,8 @@ function Orbit({ still }: { still: boolean }) {
     () => ({
       uTime: { value: 0 },
       uPixelRatio: { value: gl.getPixelRatio() },
-      uColor: { value: color(COSMOS.orbit) },
-      uHeadColor: { value: color(COSMOS.sol) },
+      uColor: { value: color(DAWN_GLOBE.orbit) },
+      uHeadColor: { value: color(DAWN_GLOBE.beacon) },
     }),
     [gl]
   );

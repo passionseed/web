@@ -6,7 +6,8 @@
  */
 
 import type { RisoIconName } from "@/components/shift/poster/RisoIcons";
-import { SHIFT_COHORT_0, SHIFT_PAYMENT, type ShiftShowcaseProject } from "@/lib/content/shift-cohort";
+import { AFTERSHIFT_PROMISE } from "@/lib/content/aftershift";
+import { SHIFT_COHORT, SHIFT_COHORT_0, SHIFT_PAYMENT, type ShiftShowcaseProject } from "@/lib/content/shift-cohort";
 
 export interface HomeLink {
   href: string;
@@ -95,6 +96,57 @@ export const HOME_SHOWCASE: HomeShowcaseProject[] = (SHIFT_COHORT_0.showcase ?? 
   .filter((p) => p.featured && SHOWCASE_SHOTS[p.title])
   .map((p) => ({ ...p, shots: SHOWCASE_SHOTS[p.title] }));
 
+/**
+ * Silent screen recordings from the SHIFT[1] demo day, keyed by showcase
+ * title. Each file in public/shift/demo is cropped to the app itself: no
+ * browser tabs, no taskbar, no Discord window, no voice. Add a project here
+ * only after the student and a parent agreed to app clips (see the consent
+ * note kept with the footage). An empty map leaves the hero as copy
+ * only and brings back the SHIFT[0] phones.
+ *
+ * Thai reviewed by Codex, Antigravity and Cursor on 2026-11-11; lines two or
+ * more of them flagged were rewritten.
+ */
+const DEMO_CLIPS: Record<string, string> = {
+  "USE NEXT": "use-next",
+  HabitPerk: "habitperk",
+  "TCAS Command Center": "tcas-command-center",
+  TAX: "tax",
+};
+
+export interface HomeDemo extends ShiftShowcaseProject {
+  video: string;
+  poster: string;
+  /** The app's address, shown in the browser bar of the frame. */
+  host: string;
+}
+
+const DEMO_PROJECTS = SHIFT_COHORT.showcase ?? [];
+
+export const HOME_DEMOS: HomeDemo[] = DEMO_PROJECTS.filter((p) => DEMO_CLIPS[p.title]).map((p) => ({
+  ...p,
+  video: `/shift/demo/${DEMO_CLIPS[p.title]}.mp4`,
+  poster: `/shift/demo/${DEMO_CLIPS[p.title]}.jpg`,
+  host: new URL(p.url).host,
+}));
+
+export const HOME_DEMO_COPY = {
+  round: SHIFT_COHORT.name,
+  heading: `แอปจริงจาก demo day ของ ${SHIFT_COHORT.name}`,
+  lede: `${DEMO_PROJECTS.length} โปรเจกต์ที่นักเรียน ม.ปลายสร้างเองใน 7 วัน คลิป ${HOME_DEMOS.length} แอปนี้อัดไว้ตอน demo day และตอนนี้ยังเปิดให้เข้าไปลองใช้อยู่`,
+  tryIt: "ลองใช้ของจริง",
+};
+
+/** One real frame of a session: seven screens shared at once in Discord. */
+export const HOME_SESSION_SHOT = {
+  src: "/shift/demo/session-live.jpg",
+  width: 1600,
+  height: 586,
+  alt: `หน้าจอ Discord ระหว่างนัดของ ${SHIFT_COHORT.name} มี 7 จอแชร์อยู่พร้อมกัน`,
+  label: "ภาพตอนทำงานจริงใน Discord",
+  caption: `${SHIFT_COHORT.name}: แชร์จอพร้อมกัน 7 จอ ต่างคนต่างสร้างของตัวเอง`,
+};
+
 /** One icon per sprint day, in schedule order. */
 export const HOME_DAY_ICONS: RisoIconName[] = ["lock", "chat", "hammer", "send", "bug", "gauge", "mic"];
 
@@ -148,6 +200,12 @@ export const HOME_LADDER: HomeLadderStep[] = [
     name: "SHIFT",
     href: "/shift",
     body: "7 วัน 1 โปรเจกต์จริง ปล่อยให้คนนอกใช้ เก็บ failure data แล้วเล่าเป็นพอร์ต 1 หน้า",
+  },
+  {
+    step: "03",
+    name: "SHIFT High",
+    href: "/shift/alumni",
+    body: AFTERSHIFT_PROMISE,
   },
 ];
 

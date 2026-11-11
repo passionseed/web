@@ -97,6 +97,29 @@ export function paletteVars(p: ShiftPalette): CSSProperties {
   } as CSSProperties;
 }
 
+/**
+ * The space style of /shift and /shift/next (shiftNext.module.css), as a
+ * palette, so pages built from the themed pieces can wear it: the home page
+ * does. Starlight text, aurora, nebula and sol accents, no print plates.
+ */
+export const SPACE_PALETTE: ShiftPalette = {
+  bg: "#03040b",
+  text: "#f4f6ff",
+  accent1: "#7fe3ff",
+  accent2: "#9d8cff",
+  accent3: "#ffd29a",
+  accent4: "#ff8fb1",
+  hair: "rgba(255,255,255,0.1)",
+  headingShadow: "none",
+  bar: "rgba(3,4,11,0.82)",
+  button: {
+    bg: "linear-gradient(180deg, #ffffff 0%, #e2e7fa 100%)",
+    fg: "#070815",
+    shadow: "inset 0 -1px 0 rgba(20, 30, 80, 0.18), 0 14px 40px -14px rgba(150, 175, 255, 0.8)",
+    shadowHover: "inset 0 -1px 0 rgba(20, 30, 80, 0.18), 0 22px 50px -16px rgba(150, 175, 255, 0.95)",
+  },
+};
+
 export const RISO_PALETTE: ShiftPalette = {
   ...RISO_FALLBACK,
   button: {

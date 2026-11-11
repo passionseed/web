@@ -1,4 +1,6 @@
 import { HomePage } from "@/components/home/HomePage";
+import { shiftHighSessionLine } from "@/lib/content/shift-high";
+import { loadAlumniCalendar } from "@/lib/supabase/shift-alumni-calendar";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { unstable_cache } from "next/cache";
 
@@ -29,8 +31,21 @@ const getStudentCount = unstable_cache(
   { revalidate: 3600 }
 );
 
-export default async function Home() {
-  const studentCount = await getStudentCount().catch(() => null);
+/**
+ * The weekly SHIFT High slot. loadAlumniCalendar never throws: it falls back
+ * to the defaults in code, which is also what gets cached if the read fails.
+ */
+const getSessionLine = unstable_cache(
+  async (): Promise<string> => shiftHighSessionLine((await loadAlumniCalendar()).doc.defaults),
+  ["shift-high-session-line"],
+  { revalidate: 3600 }
+);
 
-  return <HomePage studentCount={studentCount} />;
+export default async function Home() {
+  const [studentCount, sessionLine] = await Promise.all([
+    getStudentCount().catch(() => null),
+    getSessionLine(),
+  ]);
+
+  return <HomePage studentCount={studentCount} sessionLine={sessionLine} />;
 }

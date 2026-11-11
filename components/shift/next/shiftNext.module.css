@@ -352,12 +352,24 @@
   aspect-ratio: 1;
   translate: -50% -50%;
   border-radius: 50%;
+  /* The planet at dawn, as the WebGL globe draws it: night to the west,
+     paper daylight to the east, a pink and orange line between them. */
   background:
-    radial-gradient(circle at 30% 28%, rgba(233, 238, 255, 0.16), transparent 45%),
-    radial-gradient(circle at 50% 50%, #0c1640 0%, #070d2a 62%, #03061a 100%);
+    radial-gradient(circle at 50% 50%, transparent 55%, rgba(3, 6, 26, 0.75) 100%),
+    linear-gradient(
+      98deg,
+      transparent 34%,
+      rgba(255, 72, 176, 0.2) 43%,
+      rgba(255, 108, 47, 0.3) 49%,
+      rgba(255, 196, 106, 0.2) 55%,
+      rgba(242, 234, 217, 0.17) 68%,
+      rgba(242, 234, 217, 0.2) 100%
+    ),
+    radial-gradient(circle at 50% 50%, #0a1a48 0%, #06102e 62%, #03061a 100%);
   box-shadow:
-    0 0 70px 8px rgba(127, 227, 255, 0.25),
-    inset -30px -20px 80px rgba(157, 140, 255, 0.2);
+    18px -6px 70px 4px rgba(255, 108, 47, 0.26),
+    -14px 4px 60px 0 rgba(47, 143, 224, 0.2),
+    inset 30px -10px 80px rgba(0, 120, 191, 0.2);
   transition: opacity 900ms ease-out;
 }
 

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { ArrowDown, ArrowUpRight } from "lucide-react";
 
 import { ShiftCohortCard } from "@/components/shift/ShiftCohortCard";
 import { ShiftGalleryMotion } from "@/components/shift/ShiftGalleryMotion";
+import { ShiftHighBlocks } from "@/components/shift/high/ShiftHighBlocks";
 import { MetaPixel } from "@/components/shift/MetaPixel";
 import { ShiftTopBar } from "@/components/shift/ShiftTopBar";
 import { ShiftNextCosmos, ShiftNextHero } from "@/components/shift/next/ShiftNextHero";
@@ -13,7 +13,7 @@ import space from "@/components/shift/next/shiftNext.module.css";
 import { SHIFT_COHORTS, bangkokToday, cohortStatus } from "@/lib/content/shift-cohort";
 import { NOTES } from "@/lib/content/pathlab-page";
 import { NEXT_ROUND_NAME } from "@/lib/content/shift-next";
-import { weekdayName } from "@/lib/content/shift-alumni";
+import { SHIFT_HIGH, shiftHighSessionLine } from "@/lib/content/shift-high";
 import { loadAlumniCalendar } from "@/lib/supabase/shift-alumni-calendar";
 
 import styles from "@/components/shift/shiftGallery.module.css";
@@ -129,17 +129,16 @@ export default async function ShiftGalleryPage() {
           </section>
         )}
 
-        <section aria-labelledby="alumni" className={styles.section} data-shift-reveal>
+        <section aria-labelledby="shift-high" className={styles.section} data-shift-reveal>
           <div className={styles.sectionHeading}>
             <div>
-              <p className={styles.eyebrow}>SHIFT ALUMNI</p>
-              <h2 id="alumni" className="font-kodchasan">จบ 7 วันแล้ว ยังสร้างต่อด้วยกัน</h2>
+              <p className={styles.eyebrow}>{SHIFT_HIGH.eyebrow}</p>
+              <h2 id="shift-high" className="font-kodchasan">{SHIFT_HIGH.heading}</h2>
             </div>
-            <p className={styles.sectionAside}>ศิษย์เก่านัดกันทุก{weekdayName(alumni.defaults.firstDate)}<br />ออนไลน์ใน Discord</p>
+            <p className={styles.sectionAside} style={{ maxWidth: "23rem" }}>{SHIFT_HIGH.lede}</p>
           </div>
-          <Link href="/shift/alumni" className={styles.textLink}>
-            ดูตาราง session ศิษย์เก่า <ArrowUpRight size={16} aria-hidden="true" />
-          </Link>
+          <ShiftHighBlocks sessionLine={shiftHighSessionLine(alumni.defaults)} />
+          <p className={styles.note}><span className="pathlab-note">{SHIFT_HIGH.note}</span></p>
         </section>
 
         <footer className={styles.footer}>

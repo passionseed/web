@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
-import { INK, paper } from "@/components/shift/ShiftRiso";
+import { T, tint } from "./homeTheme";
 
 const TILT = ["", "home-phone-2", "home-phone-3"];
 
@@ -52,7 +52,7 @@ export function ShowcasePhone({
       onClick={() => setPage((p) => 1 - p)}
       aria-label={`${title}: ดูหน้าจอ${page === 0 ? "ถัดไป" : "แรก"}`}
       className={`home-phone ${TILT[index % TILT.length]} relative mx-auto block w-full max-w-[240px] rounded-[2.2rem] p-2.5 text-left`}
-      style={{ backgroundColor: "#0c0b10", boxShadow: `inset 0 0 0 1.5px ${paper("26")}` }}
+      style={{ backgroundColor: "#0c0b10", boxShadow: `inset 0 0 0 1.5px ${tint("26")}` }}
     >
       <div className="relative aspect-[390/844] overflow-hidden rounded-[1.7rem] bg-black">
         {shots.map((src, i) => (
@@ -74,7 +74,7 @@ export function ShowcasePhone({
             className="h-1.5 rounded-full transition-all duration-300"
             style={{
               width: page === i ? 18 : 6,
-              backgroundColor: page === i ? INK.yellow : paper("40"),
+              backgroundColor: page === i ? T.accent3 : tint("40"),
             }}
           />
         ))}

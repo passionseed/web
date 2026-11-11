@@ -248,22 +248,27 @@ export function RisoIcon({
   ink,
   size = 56,
   className = "",
+  flat = false,
 }: {
   name: IconName;
   ink: string;
   size?: number;
   className?: string;
+  /** One clean line, no offset plate: for pages outside the riso style. */
+  flat?: boolean;
 }) {
   return (
     <span
       className={`relative inline-block shrink-0 ${className}`}
       style={{ width: size, height: size }}
     >
-      <Plate
-        name={name}
-        color={T.accent4}
-        className="absolute inset-0 h-full w-full translate-x-[2px] translate-y-[-1.5px] opacity-60 blur-[0.6px]"
-      />
+      {!flat && (
+        <Plate
+          name={name}
+          color={T.accent4}
+          className="absolute inset-0 h-full w-full translate-x-[2px] translate-y-[-1.5px] opacity-60 blur-[0.6px]"
+        />
+      )}
       <Plate name={name} color={ink} className="relative h-full w-full" />
     </span>
   );

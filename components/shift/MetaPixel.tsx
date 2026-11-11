@@ -62,13 +62,39 @@ function saveConsent(value: AdsConsent) {
   }
 }
 
+/** The banner waits this long, so the page gets read before it is covered. */
+export const COOKIE_BANNER_DELAY_MS = 10_000;
+/** Scrolling this share of a screen means the hero is read: ask then. */
+const COOKIE_BANNER_SCROLL = 0.75;
+
+/** True once the visitor has had the page to themselves for a moment. */
+function useBannerDue(waiting: boolean) {
+  const [due, setDue] = useState(false);
+
+  useEffect(() => {
+    if (!waiting) return;
+    const show = () => setDue(true);
+    const onScroll = () => {
+      if (window.scrollY > window.innerHeight * COOKIE_BANNER_SCROLL) show();
+    };
+    const timer = window.setTimeout(show, COOKIE_BANNER_DELAY_MS);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, [waiting]);
+
+  return due;
+}
+
 /** Asks once. Declining changes nothing about using the page or applying. */
 function CookieBanner({ onChoose }: { onChoose: (value: AdsConsent) => void }) {
   return (
     <div
       role="dialog"
       aria-label="คุกกี้"
-      className="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-md rounded-xl px-5 py-4 font-bai-jamjuree text-sm leading-relaxed shadow-lg"
+      className="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-md rounded-xl px-5 py-4 font-bai-jamjuree text-sm leading-relaxed shadow-lg duration-500 animate-in fade-in slide-in-from-bottom-4 motion-reduce:animate-none"
       style={{ backgroundColor: INK.paper, color: INK.black }}
       lang="th"
     >
@@ -99,9 +125,11 @@ function CookieBanner({ onChoose }: { onChoose: (value: AdsConsent) => void }) {
 
 /**
  * Meta Pixel for SHIFT pages. Mount once per page. Loads only after the
- * visitor accepts the cookie banner (PDPA: advertising cookies need consent),
- * then fires PageView, and ViewContent when a round name is provided. Until
- * then trackMetaEvent is a no-op, because window.fbq does not exist.
+ * visitor accepts the cookie banner (PDPA: advertising cookies need consent).
+ * The banner itself waits for COOKIE_BANNER_DELAY_MS or a scroll past the hero,
+ * whichever comes first. On consent it fires PageView, and ViewContent when a
+ * round name is provided. Until then trackMetaEvent is a no-op, because
+ * window.fbq does not exist.
  */
 export function MetaPixel({
   pagePath,
@@ -117,6 +145,8 @@ export function MetaPixel({
   useEffect(() => {
     setConsent(readConsent());
   }, []);
+
+  const bannerDue = useBannerDue(consent === null);
 
   useEffect(() => {
     if (consent !== "granted") return;
@@ -134,7 +164,7 @@ export function MetaPixel({
     setConsent(value);
   }
 
-  if (consent === null) return <CookieBanner onChoose={choose} />;
+  if (consent === null) return bannerDue ? <CookieBanner onChoose={choose} /> : null;
   if (consent !== "granted") return null;
 
   return (

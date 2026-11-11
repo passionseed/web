@@ -51,6 +51,8 @@ const PUBLIC_ROUTE_PREFIXES = [
   "/link-preview",
   // Share links must render for chat link previews; signing in happens on the way in.
   "/whiteboard/join",
+  // Merch build guides (noindex): opened on phones at the work table, no data.
+  "/merch",
 ] as const;
 
 export function isPublicRoute(pathname: string): boolean {
