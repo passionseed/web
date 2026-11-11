@@ -78,7 +78,6 @@ export function QuestLayer({ api, meId, nameOf, onReview, session, onStart, onEn
   const active = session ? quests.find((q) => q.id === session.questId) : undefined;
   const showButtons = zoom >= MIN_ZOOM && !appState.viewModeEnabled && !isBusy(appState);
   const open = showButtons ? selectedQuest(quests, appState) : undefined;
-  const fontSize = Math.min(44, Math.max(12, INK_SIZE * zoom));
 
   return (
     <>
@@ -86,27 +85,36 @@ export function QuestLayer({ api, meId, nameOf, onReview, session, onStart, onEn
         <div className="pointer-events-none absolute inset-0 z-[2] overflow-hidden">
           {quests.map((q) => {
             const pos = sceneCoordsToViewportCoords({ sceneX: q.x + q.width + GAP, sceneY: q.y + q.height / 2 }, appState);
-            if (pos.x < -300 || pos.y < -60 || pos.x > appState.width || pos.y > appState.height + 60) return null;
+            // Culled by its size on the board, which grows with the zoom.
+            const reach = 400 * zoom;
+            if (pos.x < -reach || pos.y < -reach || pos.x > appState.width || pos.y > appState.height + reach) return null;
             const running = q.id === session?.questId;
+            // Laid out at board size and scaled by the zoom as a whole, so it moves and sizes
+            // exactly like the label beside it (scaling the font alone made it drift).
             return (
-              <button
+              <div
                 key={q.id}
-                type="button"
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={() => {
-                  if (running) onEnd();
-                  else onStart(q);
-                  focusCanvas();
-                }}
-                title={running ? `จบ ${questName(q)}` : `เริ่ม ${questName(q)}`}
-                className={`wb-quest-ink pointer-events-auto absolute ${running ? "wb-quest-ink--on" : ""}`}
-                style={{ left: pos.x, top: pos.y, fontSize, "--ink": inkOf(q) } as CSSProperties}
+                className="absolute left-0 top-0 origin-top-left"
+                style={{ transform: `translate(${pos.x}px, ${pos.y}px) scale(${zoom})` }}
               >
-                <span className="wb-quest-ink__mark" aria-hidden>
-                  {running ? "■" : "▶"}
-                </span>
-                {running ? "จบ Quest" : "เริ่ม Quest"}
-              </button>
+                <button
+                  type="button"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={() => {
+                    if (running) onEnd();
+                    else onStart(q);
+                    focusCanvas();
+                  }}
+                  title={running ? `จบ ${questName(q)}` : `เริ่ม ${questName(q)}`}
+                  className={`wb-quest-ink pointer-events-auto absolute left-0 top-0 ${running ? "wb-quest-ink--on" : ""}`}
+                  style={{ fontSize: INK_SIZE, "--ink": inkOf(q) } as CSSProperties}
+                >
+                  <span className="wb-quest-ink__mark" aria-hidden>
+                    {running ? "■" : "▶"}
+                  </span>
+                  {running ? "จบ Quest" : "เริ่ม Quest"}
+                </button>
+              </div>
             );
           })}
         </div>
