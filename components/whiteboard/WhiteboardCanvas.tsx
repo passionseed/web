@@ -126,7 +126,14 @@ export default function WhiteboardCanvas({
   // Quest sessions: while one runs, everything this person makes is tagged with it (lib/whiteboard/quests.ts).
   const quest = useQuestSession(board.id, me.id);
   // Everyone's Discord name and picture, a moment after the board opens; profile names until then.
-  const discord = useBoardPeople(board.id);
+  const discord = useBoardPeople(board.id, () => [
+    me.id,
+    ...board.members.map((m) => m.userId),
+    ...initialElements.flatMap((el) => {
+      const data = el.customData as { createdBy?: unknown; updatedBy?: unknown; quest?: { by?: unknown } } | undefined;
+      return [data?.createdBy, data?.updatedBy, data?.quest?.by].filter((v): v is string => typeof v === "string");
+    }),
+  ]);
   const shownAs = useCallback((userId: string) => discord[userId], [discord]);
   const shownMe = useMemo(
     () => ({ ...me, name: discord[me.id]?.name ?? me.name, avatarUrl: discord[me.id]?.avatarUrl ?? me.avatarUrl }),

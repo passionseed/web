@@ -962,7 +962,7 @@ img.wb-avatar {
 }
 /* The board kit opens over the right edge; keep Share and the people next to it. */
 .whiteboard-room:not(:has(.excalidraw--mobile)):has(.excalidraw .sidebar) .wb-corner--right {
-  right: calc(302px + 1rem);
+  right: calc(var(--wb-sidebar-w, 302px) + 1rem);
 }
 
 .wb-title {
@@ -2849,4 +2849,34 @@ body:has([data-quest-menu][role="dialog"]) .wb-quest-label-card {
 /* Our quest cards beside it: the same rows and rules. */
 .wb-quest-menu .wb-quest-option {
   font-size: 0.82rem;
+}
+
+/* The Quest panel's left edge (quest/QuestSidebar.tsx): drag to resize. A hairline that lights up on hover. */
+.wb-panel-edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -4px;
+  z-index: 5;
+  width: 8px;
+  cursor: col-resize;
+  touch-action: none;
+}
+.wb-panel-edge::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 2px;
+  background: transparent;
+  transition: background-color 120ms ease-out;
+}
+@media (hover: hover) {
+  .wb-panel-edge:hover::after {
+    background: var(--wb-hairline-strong);
+  }
+}
+.wb-panel-edge--on::after {
+  background: var(--wb-on-bg, #3d4bd8);
 }

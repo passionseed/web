@@ -69,7 +69,9 @@ again afterwards.
   trigger (`whiteboard_drop_old_tombstones`) drops deleted elements older than 24 hours on every
   write, as Excalidraw's own app does. `pnpm tsx scripts/whiteboard-slim.ts` reports what slimming
   would save on stored boards and, with `--board <id> --apply`, writes it (only if nobody saved
-  since it read). On 2026-11-10 it showed Shift[3] going from 5.5 MB to 2.3 MB.
+  since it read). On 2026-11-10 it showed Shift[3] going from 5.5 MB to 2.3 MB. Opening a board
+  slims its live elements the same way before they are sent (`openBoard`), so boards saved before
+  this open light too: on 2026-11-12 Shift[3] went from 3.2 MB to 1.9 MB sent, in 18 ms.
 - **Images** are still stored as data URLs in `whiteboard_files`, but each one is served on its own
   as plain bytes from `GET /api/whiteboards/<id>/files/<fileId>`, cached by the browser for a year
   (a file id's bytes never change; saving ignores duplicates). The editor fetches five at a time,
@@ -203,10 +205,12 @@ they make until they end it counts as their work for that quest. Code: `lib/whit
   migration is applied, `openBoard` reads members without the column, so boards keep opening.
 - **Names:** the board shows people by their Discord name (display name, else username) and
   picture: in the people corner, cursors, comments, who-made-what and the Quest dashboard.
-  `useBoardPeople` loads them from `GET /api/whiteboards/[id]/people` a moment after the board
+  `useBoardPeople` loads them from `POST /api/whiteboards/[id]/people` a moment after the board
   opens (one sign-in record read per person, so not on the open path); profile names until then and
-  for anyone without Discord. Only people on the board (owner, members, anyone with work on it, the
-  viewer) are looked up.
+  for anyone without Discord. The browser sends the ids it sees; only the viewer, owner, members and
+  people who saved to the board are looked up, and the route reads no elements.
+- **Quest panel size:** drag the panel's left edge to resize it (kept per browser, double-click
+  for the default), and dock it to keep it beside the board.
 - **Reading the work:** `pnpm whiteboard:read <id>` ends with **Quest work**: per quest, per person,
   the words they wrote and how many drawings. A tag whose label was deleted is still listed.
 
