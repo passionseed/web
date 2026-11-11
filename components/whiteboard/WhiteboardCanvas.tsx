@@ -466,6 +466,8 @@ export default function WhiteboardCanvas({
           {editable && (
             <QuestLayer
               api={api}
+              meId={me.id}
+              nameOf={nameOf}
               onReview={canReviewQuests ? openQuestDashboard : undefined}
               session={quest.session}
               onStart={startQuest}

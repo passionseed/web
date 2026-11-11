@@ -33,6 +33,8 @@ export type Quest = {
   y: number;
   width: number;
   height: number;
+  /** The label's ink colour, so its button can be drawn in the same pen. */
+  color?: string;
 };
 
 type El = {
@@ -44,6 +46,7 @@ type El = {
   height: number;
   isDeleted?: boolean;
   text?: string;
+  strokeColor?: string;
   containerId?: string | null;
   boundElements?: readonly { id: string; type: string }[] | null;
   customData?: Record<string, unknown> | null;
@@ -82,7 +85,7 @@ export function findQuests(elements: readonly El[]): Quest[] {
         }
       }
       if (title.length > MAX_TITLE) title = `${title.slice(0, MAX_TITLE - 1)}…`;
-      return { id: label.id, number: 0, title, x: label.x, y: label.y, width: label.width, height: label.height };
+      return { id: label.id, number: 0, title, x: label.x, y: label.y, width: label.width, height: label.height, color: label.strokeColor };
     })
     .sort((a, b) => Math.round(a.y / ROW) - Math.round(b.y / ROW) || a.x - b.x)
     .map((q, i) => ({ ...q, number: i + 1 }));

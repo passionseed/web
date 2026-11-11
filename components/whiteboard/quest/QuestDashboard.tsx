@@ -156,7 +156,7 @@ function QuestSection({
   );
 }
 
-function WorkRow({ api, label, work }: { api: ExcalidrawImperativeAPI; label: string; work: PersonWork }) {
+export function WorkRow({ api, label, work }: { api: ExcalidrawImperativeAPI; label: string; work: PersonWork }) {
   const pieces = work.texts.length + work.drawings;
   return (
     <div className="wb-rule space-y-1 border-t border-dashed pt-1.5">

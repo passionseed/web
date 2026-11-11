@@ -2708,3 +2708,72 @@ body:has(.whiteboard-room .excalidraw.theme--dark) .wb-dot--bg:is([aria-pressed=
   color: var(--wb-text);
   box-shadow: var(--wb-shadow);
 }
+
+/* A quest's start button, drawn in the label's own pen (--ink) and sized with the board,
+   so it reads as part of the drawing rather than a floating control. The wobbly radius is
+   the hand-drawn box; hover fills it in, and a running quest is filled solid. */
+.wb-quest-ink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.18em 0.7em 0.22em 0.55em;
+  border: 0.12em solid var(--ink);
+  border-radius: 1.4em 0.5em 1.2em 0.45em / 0.5em 1.2em 0.45em 1.3em;
+  background: transparent;
+  color: var(--ink);
+  font-family: "Excalifont", "Virgil", var(--wb-font);
+  line-height: 1.2;
+  white-space: nowrap;
+  transform: translateY(-50%) rotate(-1.5deg);
+  transition: transform 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+}
+.wb-quest-ink__mark {
+  font-size: 0.7em;
+}
+@media (hover: hover) {
+  .wb-quest-ink:hover {
+    background: color-mix(in srgb, var(--ink) 14%, transparent);
+    transform: translateY(-50%) rotate(1deg) scale(1.04);
+  }
+}
+.wb-quest-ink:active {
+  transform: translateY(-50%) rotate(0deg) scale(0.97);
+}
+.wb-quest-ink:focus-visible {
+  outline: 2px dashed var(--ink);
+  outline-offset: 3px;
+}
+.wb-quest-ink--on {
+  background: var(--ink);
+  color: #fff;
+}
+.wb-quest-ink--on .wb-quest-ink__mark {
+  animation: wb-quest-blink 1.4s ease-in-out infinite;
+}
+@keyframes wb-quest-blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wb-quest-ink,
+  .wb-quest-ink--on .wb-quest-ink__mark {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* ---------- Narrow windows (under Excalidraw's 730px phone breakpoint) ----------
+   Excalidraw's phone layout puts the menu and undo/redo on a full-width bar under ours.
+   Drop the bar and float those buttons as small cards, like the rest of the chrome. */
+.whiteboard-room .excalidraw--mobile .App-bottom-bar > .Island {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+.whiteboard-room .excalidraw--mobile .App-toolbar-content > :is(.main-menu-trigger, .ToolIcon_type_button--show, div) {
+  background: var(--wb-card) !important;
+  border: 1px solid var(--wb-hairline);
+  border-radius: var(--wb-card-radius);
+  box-shadow: var(--wb-shadow);
+}
