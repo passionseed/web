@@ -1,0 +1,314 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+
+import { SEAL } from "@/lib/content/shift-island-invite";
+import type { IslandTicket, IslandViewer } from "@/lib/shift/islandInvite";
+
+import styles from "./islandInvite.module.css";
+import { useInView } from "./useInView";
+import { useReducedMotion } from "./useReducedMotion";
+
+/** Back to this page after sign-in, opened on the letter at the seal. */
+const LOGIN_HREF = "/login?next=%2Fshift%2Fisland%3Fat%3Dseal";
+const APPLY_HREF = "/shift/apply";
+/** Alumni with no record yet confirm themselves here first. */
+const ALUMNI_BOARD_HREF = "/shift/alumni/board";
+/** The wax lifts, presses down and settles, then the ticket takes its place. */
+const STAMP_MS = 720;
+/** A request that has not answered by now is treated as failed. */
+const RSVP_TIMEOUT_MS = 15_000;
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
+type SealState = "idle" | "pending" | "stamped";
+
+interface RsvpReply {
+  ok?: boolean;
+  ticket?: IslandTicket;
+  discordUrl?: string | null;
+  confirmed?: boolean;
+  error?: string;
+}
+
+/** A saved RSVP. `confirmed` is false for a member the team has not checked yet. */
+export type OnGoing = (ticket: IslandTicket, discordUrl: string | null, confirmed: boolean) => void;
+
+/**
+ * The wax seal at the foot of the letter. Pressing it is the RSVP, so what it
+ * shows depends on who is reading: a sign-in link, a line for people who have
+ * not been through SHIFT, the closed line, or the seal itself.
+ * `focusOnMount` scrolls to the seal and focuses it (back from sign-in).
+ */
+export function WaxSeal({
+  viewer,
+  onGoing,
+  focusOnMount = false,
+}: {
+  viewer: IslandViewer;
+  onGoing: OnGoing;
+  focusOnMount?: boolean;
+}) {
+  switch (viewer.kind) {
+    case "signedOut":
+      return (
+        <div className={styles.sealArea}>
+          <SealSignIn />
+        </div>
+      );
+    case "notAlumni":
+      return (
+        <div className={styles.sealArea}>
+          <p className={styles.sealLine}>{SEAL.notAlumni}</p>
+          <SealLink href={APPLY_HREF}>{SEAL.applyCta}</SealLink>
+          <p className={styles.sealLine}>{SEAL.alumniHint}</p>
+          <SealLink href={ALUMNI_BOARD_HREF}>{SEAL.alumniCta}</SealLink>
+        </div>
+      );
+    case "closed":
+      return (
+        <div className={styles.sealArea}>
+          <SealArt still />
+          <p className={styles.sealLine}>{SEAL.closed}</p>
+        </div>
+      );
+    case "canRsvp":
+      return <SealButton onGoing={onGoing} focusOnMount={focusOnMount} />;
+    case "going":
+      // The ticket is already showing in the seal's place.
+      return null;
+  }
+}
+
+/** Dawn call to action in place of the seal; glows on hover, or in view on touch. */
+function SealLink({ href, children }: { href: string; children: string }) {
+  const ref = useRef<HTMLAnchorElement>(null);
+  const inView = useInView(ref);
+  return (
+    <Link ref={ref} href={href} className={`ei-button-dawn ${styles.cta} ${inView ? "in-view" : ""}`}>
+      <span>{children}</span>
+    </Link>
+  );
+}
+
+/** Signed out: the seal looks the same, and pressing it goes to sign in. */
+function SealSignIn() {
+  const ref = useRef<HTMLAnchorElement>(null);
+  const inView = useInView(ref);
+  return (
+    <Link ref={ref} href={LOGIN_HREF} className={styles.seal} data-inview={inView ? "" : undefined}>
+      <span className={styles.sealGlow} aria-hidden="true" />
+      <SealArt />
+      <span className={styles.sealLabel}>{SEAL.signIn}</span>
+    </Link>
+  );
+}
+
+/** The seal for an alumnus who has not RSVPed yet. One press, one request. */
+function SealButton({ onGoing, focusOnMount }: { onGoing: OnGoing; focusOnMount: boolean }) {
+  const reduced = useReducedMotion();
+  const [state, setState] = useState<SealState>("idle");
+  const [error, setError] = useState<string | null>(null);
+  const inFlight = useRef(false);
+  const timer = useRef<number | null>(null);
+  const requestTimer = useRef<number | null>(null);
+  const request = useRef<AbortController | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const inView = useInView(buttonRef);
+
+  const settleRequest = () => {
+    if (requestTimer.current !== null) window.clearTimeout(requestTimer.current);
+    requestTimer.current = null;
+    request.current = null;
+  };
+
+  useEffect(
+    () => () => {
+      if (timer.current !== null) window.clearTimeout(timer.current);
+      if (requestTimer.current !== null) window.clearTimeout(requestTimer.current);
+      request.current?.abort();
+    },
+    [],
+  );
+
+  // Back from sign-in: bring the seal on screen and onto the keyboard. Read
+  // the media query here, since the hook reports false until hydrated.
+  useEffect(() => {
+    const button = buttonRef.current;
+    if (!focusOnMount || !button) return;
+    const still = typeof window.matchMedia === "function" && window.matchMedia(REDUCED_MOTION_QUERY).matches;
+    button.scrollIntoView({ behavior: still ? "auto" : "smooth", block: "center" });
+    button.focus({ preventScroll: true });
+  }, [focusOnMount]);
+
+  const fail = (message: string) => {
+    inFlight.current = false;
+    setError(message);
+    setState("idle");
+  };
+
+  const press = async () => {
+    // A ref, not state: a second tap in the same frame must not send twice.
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setError(null);
+    setState("pending");
+
+    // A request that hangs (a dead connection) aborts, so the seal comes back.
+    const controller = new AbortController();
+    request.current = controller;
+    requestTimer.current = window.setTimeout(() => controller.abort(), RSVP_TIMEOUT_MS);
+
+    let status: number;
+    let body: RsvpReply = {};
+    try {
+      const res = await fetch("/api/shift/island/rsvp", { method: "POST", signal: controller.signal });
+      status = res.status;
+      body = (await res.json().catch(() => ({}))) as RsvpReply;
+    } catch {
+      fail(SEAL.error);
+      return;
+    } finally {
+      settleRequest();
+    }
+
+    if (status === 200 && body.ok && body.ticket) {
+      const { ticket } = body;
+      const discordUrl = body.discordUrl ?? null;
+      const confirmed = body.confirmed === true;
+      if (reduced) {
+        onGoing(ticket, discordUrl, confirmed);
+        return;
+      }
+      setState("stamped");
+      timer.current = window.setTimeout(() => onGoing(ticket, discordUrl, confirmed), STAMP_MS);
+      return;
+    }
+    // Only these two carry a line written for the reader.
+    const known = (status === 403 || status === 422) && typeof body.error === "string";
+    fail(known ? (body.error as string) : SEAL.error);
+  };
+
+  const busy = state !== "idle";
+
+  return (
+    <div className={styles.sealArea}>
+      <button
+        ref={buttonRef}
+        type="button"
+        className={styles.seal}
+        data-state={state}
+        data-inview={inView ? "" : undefined}
+        disabled={busy}
+        aria-busy={state === "pending"}
+        onClick={press}
+      >
+        <span className={styles.sealGlow} aria-hidden="true" />
+        <SealArt />
+        <span className={styles.sealLabel}>{state === "pending" ? SEAL.pending : SEAL.press}</span>
+      </button>
+      {error && (
+        <p className={styles.sealError} role="alert">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/*
+ * The seal, 44x21 pixels: a lumpy drop of wax pressed with a ring and a tree
+ * (one project, one tree), sitting on the cord that ties the letter.
+ * r: rim, l: lit side, x: wax, s: shade, k: the pressed imprint, h: the lip
+ * the press pushed up. The cord is drawn on its own so the wax can move on it.
+ */
+const WAX = [
+  "..................rrrrrrrrr.................",
+  "................rrlllllllllrr...............",
+  "..............rrllllllllllxxxr..............",
+  ".............rllllkkkkkkkkxxxxr.............",
+  "............rllllkkxxxxxxkkxxxxr............",
+  "............rlllkxxxkkkxxxxkxxxr............",
+  "...........rlllkkxkkkkkkkxxkkxsr............",
+  "...........rlllkxxkkkkkskxxxkhsr............",
+  "...........rlllkxkkkkkkskkxxkhsr............",
+  "...........rlllkxkskkkkkkkxxkhsr............",
+  "...........rlllkxxkkkkkkkxxxkhsr............",
+  "............rllkxxxxkkkxxxxxkhsr............",
+  "............rllkxxxxxkxxxxxxkhsr............",
+  ".............rlkkxxkkkkkxxxkkxr.............",
+  ".............rxxkxxxxxxxxxxkhsr.............",
+  "..............rxxkkxxxxxxkkhsr..............",
+  "..............rxxxkkkkkkkkhssr..............",
+  "...............rxxxhhhhhhxssr...............",
+  "................rxssssssssrr................",
+  ".................rrsssssrr..................",
+  "...................rrrrr....................",
+] as const;
+
+/** b: cord, B: its shadow side. Starts on row 8 of the seal. */
+const CORD = [
+  "..bbbbbb............................bbbbbbb.",
+  ".bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.",
+  ".B.BBBBBbbbbbbbbbbbbbbbbbbbbbbbbbbbbBBBBBB..",
+  "........BBBBBBBBBBBBBBBBBBBBBBBBBBBB........",
+] as const;
+const CORD_TOP = 8;
+const SEAL_VIEWBOX = "0 0 44 21";
+
+const TONE: Record<string, string> = {
+  r: styles.waxRim,
+  x: styles.waxBody,
+  l: styles.waxLight,
+  s: styles.waxShade,
+  k: styles.waxImprint,
+  h: styles.waxLip,
+  b: styles.cord,
+  B: styles.cordShade,
+};
+
+interface Run {
+  x: number;
+  y: number;
+  w: number;
+  tone: string;
+}
+
+/** One rect per run of the same tone in a row. */
+function toRuns(rows: readonly string[], top = 0): Run[] {
+  return rows.flatMap((row, i) => {
+    const runs: Run[] = [];
+    let x = 0;
+    while (x < row.length) {
+      const tone = row[x];
+      let end = x + 1;
+      while (end < row.length && row[end] === tone) end++;
+      if (tone !== ".") runs.push({ x, y: top + i, w: end - x, tone });
+      x = end;
+    }
+    return runs;
+  });
+}
+
+const WAX_RUNS = toRuns(WAX);
+const CORD_RUNS = toRuns(CORD, CORD_TOP);
+
+function PixelLayer({ runs, className }: { runs: Run[]; className: string }) {
+  return (
+    <svg className={className} viewBox={SEAL_VIEWBOX} shapeRendering="crispEdges" aria-hidden="true" focusable="false">
+      {runs.map(({ x, y, w, tone }) => (
+        <rect key={`${x}-${y}`} x={x} y={y} width={w} height={1} className={TONE[tone]} />
+      ))}
+    </svg>
+  );
+}
+
+/** The cord, then the wax on top of it. `still`: a seal nobody can press. */
+function SealArt({ still = false }: { still?: boolean }) {
+  return (
+    <span className={`${styles.sealArt} ${still ? styles.sealStill : ""}`} aria-hidden="true">
+      <PixelLayer runs={CORD_RUNS} className={styles.sealCord} />
+      <PixelLayer runs={WAX_RUNS} className={styles.sealWax} />
+    </span>
+  );
+}

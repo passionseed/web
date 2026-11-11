@@ -23,13 +23,20 @@ interface IslandDiscordButtonProps {
   /** Switch account: sign this browser out first and let Discord ask which account. */
   switchAccount?: boolean;
   variant?: "primary" | "quiet";
+  /** Replaces the primary button's classes: the invite's ticket wears its own (islandInvite.module.css). */
+  className?: string;
 }
 
 /**
  * Sign in with Discord and come back to /shift/island. The server reads the
  * Discord id from the Supabase user afterwards; this button never sends one.
  */
-export function IslandDiscordButton({ label, switchAccount = false, variant = "primary" }: IslandDiscordButtonProps) {
+export function IslandDiscordButton({
+  label,
+  switchAccount = false,
+  variant = "primary",
+  className,
+}: IslandDiscordButtonProps) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -71,7 +78,7 @@ export function IslandDiscordButton({ label, switchAccount = false, variant = "p
         onClick={signIn}
         disabled={pending}
         aria-busy={pending}
-        className={variant === "primary" ? `ei-button-dawn ${styles.primary}` : styles.quietButton}
+        className={variant === "primary" ? (className ?? `ei-button-dawn ${styles.primary}`) : styles.quietButton}
       >
         {pending ? <Loader2 className="h-4 w-4 motion-safe:animate-spin" aria-hidden="true" /> : null}
         <span>{label}</span>

@@ -16,6 +16,19 @@ the SHIFT server. The bot keeps reminders, the weekly island post, inbox
 notifications and mentor review. For now the bot only gains a link button to
 the website. Mentors keep reviewing in Discord.
 
+### One address with the invitation
+
+`/shift/island` is also the address of the island invitation (message in a
+bottle, `docs/superpowers/specs/2026-11-11-shift-island-invite-design.md`).
+One page serves both (`app/shift/island/page.tsx`, rule in
+`lib/shift/islandEntry.ts`): signed-out visitors, people who have not RSVPed
+and RSVPed people the game does not let in yet see the invitation; RSVPed
+players the game lets in (and staff) see the game below, whose story picks
+up from the ticket. The game's own sign-in card now only shows after a
+failed Discord sign-in from the ticket; signed-out players use the
+"อยู่บนเกาะแล้ว? เข้าด้วย Discord ได้เลย" button under the seal. Staff give each
+RSVP the Discord role `SHIFT high` by hand for now.
+
 ## Prototype scope
 
 A student can:

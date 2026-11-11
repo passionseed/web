@@ -344,11 +344,13 @@ The bot runs on its own host (`bot/deploy.sh`), not on Vercel.
 - [ ] Season:
 
       ```
-      /admin season name:<season name> starts:2026-11-14 ends:2026-11-28 demo_day:<Demo Day, YYYY-MM-DD> activate:true
+      /admin season name:Season 1 starts:2026-11-14 ends:2026-11-28 demo_day:<Demo Day, YYYY-MM-DD> activate:true
       ```
 
-      Take the name and the Demo Day date from the company brain, not from
-      memory. Optional: `goal_milestone`, `goal_target`, `goal_deadline`,
+      The name and dates are the invitation's (`ISLAND_SEASON` in
+      `lib/content/shift-island.ts`, which the RSVP saves and the ticket
+      shows); a test keeps this line and that file in step. Take the Demo
+      Day date from the company brain, not from memory. Optional: `goal_milestone`, `goal_target`, `goal_deadline`,
       `goal_unlock` for the island goal; `table_bar` and `stage_bar` default
       to 2 and 3.
 - [ ] `/admin status`: read what it says is still missing and fix each item.

@@ -34,23 +34,8 @@ export function useStorySeen(): boolean {
   return useSyncExternalStore(noSubscribe, readStorySeen, () => true);
 }
 
-const REDUCED = "(prefers-reduced-motion: reduce)";
-
-function subscribeReduced(onChange: () => void): () => void {
-  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return () => {};
-  const query = window.matchMedia(REDUCED);
-  query.addEventListener?.("change", onChange);
-  return () => query.removeEventListener?.("change", onChange);
-}
-
-function readReduced(): boolean {
-  return typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia(REDUCED).matches;
-}
-
-/** prefers-reduced-motion, live. The server assumes motion is fine. */
-export function useReducedMotion(): boolean {
-  return useSyncExternalStore(subscribeReduced, readReduced, () => false);
-}
+/** prefers-reduced-motion, live: one hook for the game and the invite (../useReducedMotion). */
+export { useReducedMotion } from "../useReducedMotion";
 
 function subscribeVisibility(onChange: () => void): () => void {
   document.addEventListener("visibilitychange", onChange);
