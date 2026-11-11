@@ -50,6 +50,7 @@ import { CardVersionsLayer } from "./shift/CardVersionsLayer";
 import { useShiftCardCaret } from "./shift/useShiftCardCaret";
 import { ZoneAddLayer } from "./shift/ZoneAddLayer";
 import { openQuestPanel, QuestSidebar } from "./quest/QuestSidebar";
+import { useBoardPeople } from "./useBoardPeople";
 import { QuestLayer } from "./quest/QuestLayer";
 import { QuestMenu } from "./quest/QuestMenu";
 import { useQuestSession } from "./quest/useQuestSession";
@@ -124,10 +125,18 @@ export default function WhiteboardCanvas({
   }, []);
   // Quest sessions: while one runs, everything this person makes is tagged with it (lib/whiteboard/quests.ts).
   const quest = useQuestSession(board.id, me.id);
+  // Everyone's Discord name and picture, a moment after the board opens; profile names until then.
+  const discord = useBoardPeople(board.id);
+  const shownAs = useCallback((userId: string) => discord[userId], [discord]);
+  const shownMe = useMemo(
+    () => ({ ...me, name: discord[me.id]?.name ?? me.name, avatarUrl: discord[me.id]?.avatarUrl ?? me.avatarUrl }),
+    [me, discord],
+  );
   const sync = useWhiteboardSync({
     boardId: board.id,
     role: board.role,
-    me,
+    me: shownMe,
+    shownAs,
     initialElements,
     managerIds,
     onCanvasBlocked,
@@ -138,7 +147,7 @@ export default function WhiteboardCanvas({
   useHandleLibrary({ excalidrawAPI: api, adapter: LIBRARY_ADAPTER });
   const { send: syncSend, on: syncOn, onChange: syncOnChange, onPointerUpdate: syncOnPointer, saveNow, refreshFiles } = sync;
   const channel = useMemo(() => ({ send: syncSend, on: syncOn }), [syncSend, syncOn]);
-  const comments = useComments(board.id, channel);
+  const comments = useComments(board.id, channel, shownAs);
   const pointer = useRef<{ x: number; y: number } | null>(null);
   const emotes = useEmotes(api, channel, pointer);
   useShiftCardCaret(api);
@@ -181,10 +190,19 @@ export default function WhiteboardCanvas({
     const newcomers = sync.present
       .filter((p) => !known.has(p.userId) && Boolean(known.add(p.userId)))
       .map((p) => ({ userId: p.userId, name: p.name, avatarUrl: p.avatarUrl, role: p.role }));
-    return [...members, ...newcomers];
-  }, [members, sync.present]);
+    return [...members, ...newcomers].map((p) =>
+      discord[p.userId] ? { ...p, name: discord[p.userId].name, avatarUrl: discord[p.userId].avatarUrl ?? p.avatarUrl } : p,
+    );
+  }, [members, sync.present, discord]);
   const namesById = useMemo(() => new Map(people.map((p) => [p.userId, p.name])), [people]);
-  const nameOf = useCallback((id: string) => namesById.get(id) ?? authorNames[id] ?? "Someone", [namesById, authorNames]);
+  const nameOf = useCallback(
+    (id: string) => discord[id]?.name ?? namesById.get(id) ?? authorNames[id] ?? "Someone",
+    [discord, namesById, authorNames],
+  );
+  const avatarOf = useCallback(
+    (id: string) => discord[id]?.avatarUrl ?? people.find((p) => p.userId === id)?.avatarUrl ?? null,
+    [discord, people],
+  );
   const onlineIds = useMemo(() => new Set(sync.present.map((p) => p.userId)), [sync.present]);
 
   // What board apps get: the board, who I am, and who is online now (one entry per person).
@@ -391,8 +409,8 @@ export default function WhiteboardCanvas({
   );
 
   const questsPanel = useMemo(
-    () => (canReviewQuests && api ? <QuestSidebar api={api} boardId={board.id} people={people} nameOf={nameOf} /> : null),
-    [api, board.id, canReviewQuests, people, nameOf],
+    () => (canReviewQuests && api ? <QuestSidebar api={api} people={people} nameOf={nameOf} avatarOf={avatarOf} /> : null),
+    [api, canReviewQuests, people, nameOf, avatarOf],
   );
   const openQuestDashboard = useCallback((questId: string) => api && openQuestPanel(api, questId), [api]);
 

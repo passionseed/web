@@ -26,12 +26,12 @@ export function openQuestPanel(api: ExcalidrawImperativeAPI, questId?: string) {
  */
 export const QuestSidebar = memo(function QuestSidebar({
   api,
-  boardId,
   people,
   nameOf,
+  avatarOf,
 }: {
   api: ExcalidrawImperativeAPI;
-  boardId: string;
+  avatarOf: (id: string) => string | null;
   people: Person[];
   nameOf: (id: string) => string;
 }) {
@@ -43,7 +43,7 @@ export const QuestSidebar = memo(function QuestSidebar({
         </span>
       </Sidebar.Header>
       <div className="min-h-0 flex-1 overflow-y-auto p-3">
-        <QuestDashboard api={api} boardId={boardId} people={people} nameOf={nameOf} />
+        <QuestDashboard api={api} people={people} nameOf={nameOf} avatarOf={avatarOf} />
       </div>
     </Sidebar>
   );

@@ -194,6 +194,7 @@ export function useWhiteboardSync({
   managerIds = [],
   onCanvasBlocked,
   newElementData,
+  shownAs,
 }: {
   boardId: string;
   role: WhiteboardRole;
@@ -208,6 +209,11 @@ export function useWhiteboardSync({
    * session's tag, see lib/whiteboard/quests.ts). Null or absent adds nothing.
    */
   newElementData?: () => Record<string, unknown> | null;
+  /**
+   * A person's name and picture as the board shows people (their Discord, see useBoardPeople),
+   * when known; it wins over what their tab sends, so cursors and faces agree everywhere.
+   */
+  shownAs?: (userId: string) => { name: string; avatarUrl: string | null } | undefined;
 }) {
   const { id: myId, name: myName, avatarUrl: myAvatar } = me;
   const [mySocket] = useState(() => `${myId}:${crypto.randomUUID().slice(0, 8)}`);
@@ -483,6 +489,10 @@ export function useWhiteboardSync({
     [boardId, send],
   );
 
+  const shownAsRef = useRef(shownAs);
+  useEffect(() => {
+    shownAsRef.current = shownAs;
+  }, [shownAs]);
   const newElementDataRef = useRef(newElementData);
   useEffect(() => {
     newElementDataRef.current = newElementData;
@@ -578,17 +588,26 @@ export function useWhiteboardSync({
 
   const onScrollChange = useCallback(() => broadcastViewport(), [broadcastViewport]);
 
+  // Read when tracking, so a name that arrives later (Discord, see useBoardPeople) updates presence
+  // without tearing down the channel.
+  const shownMe = useRef({ name: myName, avatarUrl: myAvatar });
+  shownMe.current = { name: myName, avatarUrl: myAvatar };
   const trackMe = useCallback(async () => {
     await channelRef.current?.track({
       userId: myId,
       socketId: mySocket,
-      name: myName,
-      avatarUrl: myAvatar,
+      name: shownMe.current.name,
+      avatarUrl: shownMe.current.avatarUrl,
       role,
       following: following.current,
       visible: typeof document === "undefined" || document.visibilityState === "visible",
     } satisfies PresentUser);
-  }, [myAvatar, myId, myName, mySocket, role]);
+  }, [myId, mySocket, role]);
+
+  // Everyone else sees the new name on their next presence sync.
+  useEffect(() => {
+    if (channelRef.current?.state === "joined") void trackMe();
+  }, [myName, myAvatar, trackMe]);
 
   // Tell the others when this tab is hidden, so a background tab never holds the thumbnail job.
   useEffect(() => {
@@ -863,9 +882,14 @@ export function useWhiteboardSync({
           pushCollaborators();
         })
         .on("presence", { event: "sync" }, () => {
-          const users = Object.values(channel.presenceState<PresentUser>())
-            .map((metas) => metas[0])
-            .filter(Boolean) as PresentUser[];
+          const users = (
+            Object.values(channel.presenceState<PresentUser>())
+              .map((metas) => metas[0])
+              .filter(Boolean) as PresentUser[]
+          ).map((u) => {
+            const shown = shownAsRef.current?.(u.userId);
+            return shown ? { ...u, name: shown.name, avatarUrl: shown.avatarUrl ?? u.avatarUrl } : u;
+          });
           presentRef.current = users;
           setPresent(users);
 

@@ -158,10 +158,15 @@ case, optionally with a star) and the task written under it. Students start a qu
 they make until they end it counts as their work for that quest. Code: `lib/whiteboard/quests.ts`,
 `components/whiteboard/quest/`.
 
-- **Finding quests** (`findQuests`): every live text whose whole text is "Quest" is a quest; its
-  title is the nearest text up to 400 units below it. Numbered in reading order (rows, then left
-  to right). No setup and no table: move or delete the label and the quest moves or goes.
-- **Start and end:** editors see **เริ่ม Quest** beside each label (hidden below 12% zoom). While
+- **Finding quests** (`findQuests`): every live text whose whole text is "Quest" is a quest, and so
+  is any text a mentor made one (`customData.questLabel`, unless its `off` is set). Its task is the
+  nearest text up to 400 units below that is not someone's quest work; once seen, the task's id and
+  a copy of its text are kept on the label (`taskId`, `backup`), so a deleted task falls back to the
+  copy instead of the next text down. Numbered in reading order (rows, then left to right).
+- **Start and end:** editors see **เริ่ม Quest** beside each label, drawn in the label's ink and
+  sized with the board (hidden below 12% zoom); it moves in the same frame as the canvas
+  (Excalidraw's scroll callback, not a React render). Mentors drag it to move it (`dx`, `dy` on the
+  label). While
   one runs, a pill at the top says which quest and how many pieces went in, with **จบ Quest**.
   Starting another quest ends the first. The session is kept in localStorage per board, so a
   reload keeps it running.
@@ -174,15 +179,25 @@ they make until they end it counts as their work for that quest. Code: `lib/whit
   counts for; pick another quest or **ไม่นับเป็นงาน Quest**. A note and its words move together.
   Students can retag their own work (tagged by them, or untagged and made by them); moderators can
   retag anything. Excalidraw 0.18 cannot add items to its own menu, so this is our own card.
-- **Quest dashboard** (`QuestDashboard.tsx`, the **Quest** tab of the side panel): each quest with
-  what each person made for it (their words, how many drawings), who has not handed in yet (members
-  who can edit), and **ดูบนบอร์ด** to select their work and zoom to it; **ตามคน** lists each person
-  with their quests. The **N คนส่งแล้ว** chip beside a quest opens it there.
+- **Quest settings:** mentors right-click a quest's label for its settings, beside Excalidraw's menu:
+  edit the task (written back on the board) or put it back if it was deleted, remove or re-create
+  the start button, move it back, or **เลิกเป็น Quest**. Right-clicking any other text offers
+  **ทำข้อความนี้เป็น Quest**. Clicking a label shows a card of who handed in what.
+- **Quest dashboard** (`QuestSidebar.tsx`, its own side panel, opened from the board menu or a
+  quest's card): each quest with what each person made for it (their words, how many drawings),
+  who has not handed in yet (members who can edit), and **ดูบนบอร์ด** to select their work and zoom
+  to it; **ตามคน** lists each person with their quests.
 - **Who sees the dashboard:** the board's owner, site admins, and quest reviewers: members the owner
   marks with the **Quest** toggle in Share (`whiteboard_members.quest_reviewer`, migration
   `20261111120000_whiteboard_quest_reviewers.sql`). A reviewer sees it after reopening the board.
   Everyone's work is on the board for all members anyway; the role only opens the summary. Until the
   migration is applied, `openBoard` reads members without the column, so boards keep opening.
+- **Names:** the board shows people by their Discord name (display name, else username) and
+  picture: in the people corner, cursors, comments, who-made-what and the Quest dashboard.
+  `useBoardPeople` loads them from `GET /api/whiteboards/[id]/people` a moment after the board
+  opens (one sign-in record read per person, so not on the open path); profile names until then and
+  for anyone without Discord. Only people on the board (owner, members, anyone with work on it, the
+  viewer) are looked up.
 - **Reading the work:** `pnpm whiteboard:read <id>` ends with **Quest work**: per quest, per person,
   the words they wrote and how many drawings. A tag whose label was deleted is still listed.
 
