@@ -174,6 +174,15 @@ they make until they end it counts as their work for that quest. Code: `lib/whit
   counts for; pick another quest or **ไม่นับเป็นงาน Quest**. A note and its words move together.
   Students can retag their own work (tagged by them, or untagged and made by them); moderators can
   retag anything. Excalidraw 0.18 cannot add items to its own menu, so this is our own card.
+- **Quest dashboard** (`QuestDashboard.tsx`, the **Quest** tab of the side panel): each quest with
+  what each person made for it (their words, how many drawings), who has not handed in yet (members
+  who can edit), and **ดูบนบอร์ด** to select their work and zoom to it; **ตามคน** lists each person
+  with their quests. The **N คนส่งแล้ว** chip beside a quest opens it there.
+- **Who sees the dashboard:** the board's owner, site admins, and quest reviewers: members the owner
+  marks with the **Quest** toggle in Share (`whiteboard_members.quest_reviewer`, migration
+  `20261111120000_whiteboard_quest_reviewers.sql`). A reviewer sees it after reopening the board.
+  Everyone's work is on the board for all members anyway; the role only opens the summary. Until the
+  migration is applied, `openBoard` reads members without the column, so boards keep opening.
 - **Reading the work:** `pnpm whiteboard:read <id>` ends with **Quest work**: per quest, per person,
   the words they wrote and how many drawings. A tag whose label was deleted is still listed.
 

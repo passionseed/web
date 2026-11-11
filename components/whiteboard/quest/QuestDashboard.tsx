@@ -100,7 +100,9 @@ export function QuestDashboard({ api, people, nameOf }: Props) {
           .sort((a, b) => nameOf(a).localeCompare(nameOf(b), "th"))
           .map((userId) => (
             <section key={userId} className="wb-quest-card space-y-1.5 rounded-lg p-2.5">
-              <h3 className="text-sm font-semibold">{nameOf(userId)}</h3>
+              <p role="heading" aria-level={3} className="text-sm font-semibold">
+                {nameOf(userId)}
+              </p>
               {work.map((w) => {
                 const p = w.people.find((x) => x.userId === userId);
                 return p ? (
@@ -137,7 +139,10 @@ function QuestSection({
   const sorted = [...people].sort((a, b) => nameOf(a.userId).localeCompare(nameOf(b.userId), "th"));
   return (
     <section id={quest ? questSectionId(quest.id) : undefined} className="wb-quest-card space-y-1.5 rounded-lg p-2.5">
-      <h3 className="text-sm font-semibold leading-snug">{quest ? questName(quest) : "Quest ที่ถูกลบไปแล้ว"}</h3>
+      {/* Not an h3: the side panel styles those as small numbered labels. */}
+      <p role="heading" aria-level={3} className="text-sm font-semibold leading-snug">
+        {quest ? questName(quest) : "Quest ที่ถูกลบไปแล้ว"}
+      </p>
       <p className="wb-soft flex items-center gap-1 text-xs">
         <Users className="h-3 w-3" /> ส่งแล้ว {people.length} คน{missing.length > 0 && ` · ยังไม่ส่ง ${missing.length} คน`}
       </p>
