@@ -2784,3 +2784,8 @@ body:has(.whiteboard-room .excalidraw.theme--dark) .wb-dot--bg:is([aria-pressed=
   border-radius: var(--wb-card-radius);
   box-shadow: var(--wb-shadow);
 }
+
+/* A quest's settings (right-click) and its details card (click) both open from the label: one at a time. */
+body:has([data-quest-menu][role="dialog"]) .wb-quest-label-card {
+  display: none;
+}

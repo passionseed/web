@@ -299,7 +299,7 @@ function QuestCard({
 
   return (
     <div
-      className="wb-quest-menu absolute z-[3] max-h-[50vh] space-y-2 overflow-y-auto rounded-xl p-3 text-sm"
+      className="wb-quest-menu wb-quest-label-card absolute z-[3] max-h-[50vh] space-y-2 overflow-y-auto rounded-xl p-3 text-sm"
       style={{ left, top, width: CARD_W }}
       onPointerDown={(e) => e.stopPropagation()}
     >
