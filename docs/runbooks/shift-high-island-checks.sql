@@ -12,7 +12,14 @@
 WITH fns0 AS (
   SELECT p.oid, p.oid::regprocedure::text AS sig,
     p.proname LIKE 'shift\_quest\_\_%' OR p.proname = 'shift_quest_bootstrap_admin' AS helper,
-    p.proname LIKE 'shift\_quest\_canvas\_%' OR p.proname IN ('shift_quest_ownership_get', 'shift_quest_campfire') AS web_only
+    -- Website-only entry points (091100, 091200, 093000, 094000, 095000): the bot never runs them.
+    p.proname LIKE 'shift\_quest\_canvas\_%'
+      OR p.proname IN ('shift_quest_ownership_get', 'shift_quest_campfire', 'shift_quest_island_links')
+      OR p.proname IN ('shift_quest_character', 'shift_quest_wallet', 'shift_quest_consent_get',
+        'shift_quest_consent_adult', 'shift_quest_consent_link', 'shift_quest_consent_import',
+        'shift_quest_consent_parent_view', 'shift_quest_consent_parent_answer',
+        'shift_quest_consent_parent_withdraw', 'shift_quest_island_news', 'shift_quest_digest_inputs',
+        'shift_quest_digest_save') AS web_only
   FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
   WHERE n.nspname = 'public' AND p.proname LIKE 'shift\_quest\_%'
 ), fns AS (
@@ -48,13 +55,31 @@ web_allow(sig) AS (VALUES
   ('shift_quest_canvas_link(text,uuid,text,text)'),
   ('shift_quest_canvas_unlink(text)'),
   ('shift_quest_ownership_get(text)'),
-  ('shift_quest_campfire(text,boolean)')
+  ('shift_quest_campfire(text,boolean)'),
+  -- 20261111094000_shift_quest_live.
+  ('shift_quest_island_links(text)'),
+  -- 20261111095000_shift_quest_player.
+  ('shift_quest_character(text)'),
+  ('shift_quest_wallet(text)'),
+  ('shift_quest_redeem(text,uuid,text,integer)'),
+  ('shift_quest_redeem_cancel(text,uuid)'),
+  ('shift_quest_consent_get(text)'),
+  ('shift_quest_consent_adult(text,date,text)'),
+  ('shift_quest_consent_link(text,text,text,text)'),
+  ('shift_quest_consent_import(text,text,timestamp with time zone,boolean,boolean)'),
+  ('shift_quest_consent_parent_view(text)'),
+  ('shift_quest_consent_parent_answer(text,boolean,boolean,text,text,text,text,text)'),
+  ('shift_quest_consent_parent_withdraw(text)'),
+  ('shift_quest_island_news(text)'),
+  ('shift_quest_digest_inputs(date,text)'),
+  ('shift_quest_digest_save(date,text,jsonb)'),
+  ('shift_quest_digest_hide(text,integer,boolean,text)')
 )
--- The schema: 7 is every migration on this branch (the campfire, 093000).
-SELECT 'schema: shift_quest_schema_version() is ' || coalesce(v::text, 'missing') || ', expected 7' AS problem
+-- The schema: 9 is every migration on this branch (the player, economy and consent, 095000).
+SELECT 'schema: shift_quest_schema_version() is ' || coalesce(v::text, 'missing') || ', expected 9' AS problem
 FROM (SELECT CASE WHEN to_regprocedure('public.shift_quest_schema_version()') IS NULL THEN NULL
   ELSE public.shift_quest_schema_version() END AS v) s
-WHERE v IS DISTINCT FROM 7
+WHERE v IS DISTINCT FROM 9
 UNION ALL
 -- The two logins: they exist, NOINHERIT, member of no role, their connection
 -- limit and statement_timeout. LOGIN itself is step D, so it is not checked here.

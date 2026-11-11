@@ -39,20 +39,22 @@ read -rs NAME && export NAME     # paste, press Enter
 
 ## A. Merge
 
-- [ ] **The island PR** (`feat/shift-island-web`, with this rollout branch
-      merged in) is green: the `build` check (lint, tests, `pnpm build`) and
-      `shift-quests-db`. Check the Vercel preview: `/shift/island` shows the
-      closed-for-maintenance screen there (no database on previews), which is
+- [ ] **The island PR** (`merge/shift-island-all`: the game from
+      `feat/shift-island-web`, this rollout work, the lore and the island
+      invitation from #271) is green: the `build` check (lint, tests,
+      `pnpm build`) and `shift-quests-db`. Check the Vercel preview: signed
+      out, `/shift/island` shows the invitation (prologue, bottle, letter,
+      seal, ticket); signed in as an RSVPed member it shows the
+      closed-for-maintenance screen (no quest database on previews), which is
       expected.
-- [ ] Squash-merge it into `main`. Production redeploys by itself; the island
-      still says closed, nothing else changes.
-- [ ] **The invite PR (#271)** is independent and can merge before or after.
-      **Before it merges, its migration needs a new version number:**
-      `20261111120000_shift_island_rsvps.sql` has the same version as
-      `20261111120000_whiteboard_quest_reviewers.sql`, already on `main`.
-      Two files with one version cannot both be applied. Rename it to an
-      unused later version (e.g. `20261111130000_shift_island_rsvps.sql`) in
-      that PR first.
+- [ ] Squash-merge it into `main`. Production redeploys by itself; visitors
+      see the invitation, members still see "closed", nothing else changes.
+- [ ] **The invite PR (#271)** must not merge its island files on its own any
+      more: they live in this branch, with the RSVP migration renumbered to
+      `20261112090000_shift_island_rsvps.sql` (its old version,
+      `20261111120000`, is the same as
+      `20261111120000_whiteboard_quest_reviewers.sql` on `main`). Trim #271 to
+      its home page and merch work before it merges.
 - [ ] `git checkout main && git pull` locally. Every step below runs from an
       up-to-date `main`.
 
@@ -78,10 +80,11 @@ these files. The migrations are additive and idempotent.
       ```
 
       Expect: every row that has a Remote version also has a Local one. The
-      rows with Local only are what will be applied. They must be the 14
+      rows with Local only are what will be applied. They must be the 16
       SHIFT quest files, `20261111090000_shift_quests_schema` to
-      `20261111093000_shift_quest_campfire` (plus the renamed island RSVP
-      file if #271 is merged). **Anything else Local-only, or any
+      `20261111095000_shift_quest_player` (the live post, `094000`, and the
+      player, economy and consent file, `095000`, are the last two), plus the
+      island RSVP table, `20261112090000_shift_island_rsvps`. **Anything else Local-only, or any
       Remote-only row: stop** and find out where it comes from before
       pushing (restore it from git like the file above if it was applied
       from another branch).
@@ -93,7 +96,7 @@ these files. The migrations are additive and idempotent.
       ```
 
       If it says local migrations would be inserted before the last remote
-      one (the quest files are dated 09:00 to 09:30 on 11 Nov, and
+      one (the quest files are dated 09:00 to 09:50 on 11 Nov, and
       `20261111120000_whiteboard_quest_reviewers` from `main` may already be
       applied), add `--include-all` to both commands. With or without it,
       the list it prints must be exactly the files you expected above.
@@ -125,12 +128,13 @@ these files. The migrations are additive and idempotent.
       supabase db query --linked -o table -f docs/runbooks/shift-high-island-checks.sql
       ```
 
-      Expect **no rows**. It checks: `shift_quest_schema_version()` is 7;
+      Expect **no rows**. It checks: `shift_quest_schema_version()` is 9;
       both logins exist, `NOINHERIT`, connection limits 5 (bot) and 20
       (web), a `statement_timeout`, member of no role; the Data API (`anon`,
       `authenticated`) can run no `shift_quest_*` function; the bot can run
-      every entry point and no helper or website-only function; the website
-      can run exactly its allowlist; every quest table has row level
+      every entry point and no helper or website-only function (the
+      character sheet, wallet, consent, island news and digest readers are
+      the website's); the website can run exactly its allowlist; every quest table has row level
       security and no grant; and neither login can reach a definer function
       or a table in `public` outside `shift_quest_*` through `PUBLIC`.
 
@@ -178,7 +182,7 @@ then logs in as each role to prove it works.
       pnpm shift:role-passwords --check
       ```
 
-      Expect: `quest schema: 7`, `exposure ...: none`, both roles
+      Expect: `quest schema: 9`, `exposure ...: none`, both roles
       `LOGIN off`, and "Check found problems" (LOGIN is off: that is what the
       next command fixes).
 
@@ -236,10 +240,17 @@ then read and write students' real quest data.
       join; add them if `vercel env ls` did not list them.
 - [ ] `DISCORD_SHIFT_INVITE_URL` (optional): the invite link shown to
       students who are not in the server yet.
-- [ ] The AI key for the digest feature (not on this branch yet): SHIFT's
-      Claude features use `ANTHROPIC_API_KEY` (`lib/shift/canvas-claude.ts`).
-      If the digest lands with a different variable, set that one instead.
-      Nothing in this rollout reads it.
+- [ ] AI island news (ข่าวเกาะ): the daily job `/api/cron/shift-island-digest`
+      (`vercel.json`, 20:00 Bangkok) needs two variables on Production:
+      - `ANTHROPIC_API_KEY`: the model call (`lib/shift-island/digest/claude.ts`).
+        Without it the job logs why and stores nothing; the island, the bot
+        and everything else keep working.
+      - `CRON_SECRET`: Vercel Cron sends it as `Authorization: Bearer ...`.
+        Without it the job answers 401 and never runs. It is probably
+        already set for the other crons (`vercel env ls` above).
+      Generation also stays off until an admin turns it on in Discord
+      (`settings.digest_enabled`, default off; step G). Check
+      `vercel env ls production | grep -E 'ANTHROPIC|CRON_SECRET'` lists both.
 - [ ] Fluid Compute is on for the project (Settings, Functions; the default
       for new projects). The quest pool relies on it to close idle
       connections before an instance sleeps (`attachDatabasePool`).
@@ -287,7 +298,8 @@ The bot runs on its own host (`bot/deploy.sh`), not on Vercel.
       ssh <bot host> docker logs --tail 50 passionseed-discord-bot | grep shift-quests
       ```
 
-      Expect `[shift-quests] database schema 7 (bot needs 2)`.
+      Expect `[shift-quests] database schema 9 (bot needs 2)`. From 8 the bot
+      runs the live post, from 9 the island news post.
 - [ ] Register the slash commands (REST calls only; it never starts a second
       bot):
 
@@ -319,10 +331,11 @@ The bot runs on its own host (`bot/deploy.sh`), not on Vercel.
       - `kind:coworking` the coworking **voice** channel (it lights the
         island's campfire; the bot only needs View Channel there, it never
         joins voice)
-      - **live** and **suggest**: `/admin channel` has no such kind on this
-        branch (it takes help, staff, celebrate, coworking). Create the
-        channels in Discord now if you want them for the season; the bot does
-        not use them yet.
+      - `kind:live` the live island channel: the bot keeps **one** post there
+        and edits it as the island changes (schema 8), and posts the island
+        news there when it is on (schema 9)
+      - `kind:suggest` the ideas and bug reports channel, a forum or a text
+        channel: the web island's ⋯ menu links to it
       Every channel is a group space. The bot never opens a private channel
       between a mentor and a student.
 - [ ] Reviewers: `/admin role user:@<mentor> role:reviewer action:grant` for
@@ -341,6 +354,23 @@ The bot runs on its own host (`bot/deploy.sh`), not on Vercel.
 - [ ] `/admin status`: read what it says is still missing and fix each item.
       Leave coins and redemption off unless the amounts, budget and stock
       are decided (they stay off by default).
+- [ ] Consent: `settings.consent_required` is **on by default**. Students
+      under 18 need a parent's yes (the parent link on the island) and adults
+      confirm their own before their work, name or plot can be shown or
+      redeemed. Leave it on. `/admin island action:consent-off` is the kill
+      switch for an emergency only (it lifts the gate for everyone);
+      `consent-reset` reopens one student's request after staff talked with
+      the family.
+- [ ] AI island news stays off until the team decides to run it:
+      `/admin island action:digest-on` starts generation, the feed and the
+      Discord post; `digest-off` stops all three; `digest-hide plot:<n>`
+      hides one team's summaries. A team only ever gets news while every
+      active member shows their name and has consent and AI consent.
+- [ ] Island invitation RSVPs: every RSVP should lead to the Discord role
+      `SHIFT high`. Nothing grants it automatically yet: until it does, staff
+      read the new RSVPs (`shift_island_rsvps`, newest first, in the SQL
+      editor or the Supabase table view) and give each person the role in
+      the SHIFT server by hand. Only SHIFT alumni can RSVP.
 - [ ] Side quests stay drafts until their Thai copy has had the multi-model
       review (`AGENTS.md`). Then publish one slug at a time:
       `/admin template template:<slug> publish:true`.
