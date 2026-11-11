@@ -14,7 +14,7 @@ import { review } from "./handlers/review";
 import { student } from "./handlers/student";
 import type { ActionHandler, AutocompleteHandler, CommandHandler, HandlerSet } from "./handlers/types";
 import { parseCid } from "./ids";
-import { showError } from "./ui";
+import { commandIdMap, setCommandIds, showError } from "./ui";
 import { startOutbox } from "./outbox";
 
 export { registerQuestCommands } from "./commands";
@@ -94,8 +94,11 @@ export async function handleInteraction(api: QuestApi, guildId: string, i: Inter
  * The island schema this bot needs (public.shift_quest_schema_version()):
  * 1 is the island core (20261111090700_shift_quests_island), 2 adds seasons,
  * squads and the weekly post (20261111090800_shift_quests_seasons), which the
- * handlers and the delivery loop call. Raise it with every migration whose
- * contract the bot starts to depend on.
+ * handlers and the delivery loop call. 3 (20261111090900_shift_quests_board)
+ * adds the web quest board and side quests; this bot uses nothing from it and
+ * works with it (shift_quest_templates leaves side quests out of its browse),
+ * so it still needs only 2. Raise it with every migration whose contract the
+ * bot starts to depend on.
  */
 export const REQUIRED_SCHEMA = 2;
 
@@ -130,6 +133,22 @@ export async function checkQuestSchema(api: QuestApi): Promise<number> {
 }
 
 /**
+ * Reads the guild's slash command IDs once logged in, so "/island" in bot
+ * copy becomes a clickable command mention. Without them the copy stays
+ * plain text; nothing else depends on this.
+ */
+export async function loadCommandIds(client: Client<true>, guildId: string): Promise<void> {
+  try {
+    const commands = await client.application.commands.fetch({ guildId });
+    const ids = commandIdMap(commands.values());
+    setCommandIds(ids);
+    console.log(`[shift-quests] ${ids.size} command mention(s) ready`);
+  } catch (error) {
+    console.error(`[shift-quests] command mentions off: ${(error as Error)?.name ?? "unknown"} ${(error as Error)?.message ?? ""}`);
+  }
+}
+
+/**
  * SHIFT High quests: slash commands, buttons and modals over the
  * shift_quest_* database functions, plus the delivery loop. The bot never
  * reads message content, never joins voice and records nothing passively.
@@ -150,6 +169,9 @@ export async function registerShiftQuests(client: Client, env: ShiftQuestsEnv): 
 
   client.on(Events.InteractionCreate, (i) => {
     void handleInteraction(api, env.guildId, i);
+  });
+  client.once(Events.ClientReady, (ready) => {
+    void loadCommandIds(ready, env.guildId);
   });
   client.on(Events.ShardReady, () => {
     connected = true;

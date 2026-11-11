@@ -402,3 +402,143 @@ wave 2); `shift_quest_admin_set` takes the key `squads`.
    `pnpm bot:register`, then in Discord: `/admin channel` (help, staff,
    celebrate, coworking), `/admin role` for mentors, `/admin student-role`
    for the pilot cohort, and `/admin status` to see what is still missing.
+
+## Web board and shift_quest_web
+
+The island website (`/shift/island`, plan:
+[`docs/designs/shift-high-island-web.md`](../designs/shift-high-island-web.md))
+reads and writes through `20261111090900_shift_quests_board.sql` and
+`20261111091000_shift_quests_board_fixes.sql`, applied after wave 2. They add:
+
+- **Side quests.** Templates with `side = true` (never a milestone, so they
+  never grow the tree), plus `route_keys` (null: every route; a soft filter
+  shown as `route_match`, any route may take any side quest),
+  `requires_milestones` (main quests the current project must have approved),
+  `requires_slugs` (side quests the project must have approved, by any
+  member), `branch_of` (the main quest it hangs off on the board) and `icon`.
+  One `BEFORE INSERT` trigger on `shift_quest_instances`
+  (`shift_quest__side_gate`) refuses a side quest without a project
+  (`no_project`) or with a prerequisite missing (`quest_locked`), on every
+  path: the web functions, the bot's `shift_quest_choose`, a direct insert.
+  `shift_quest_templates(actor)` (the bot's browse) leaves side quests out.
+- **`shift_quest_board(actor)`**: the project, the seven main quests (with
+  `in_flight` as in `shift_quest_island` and `mine`), the published side
+  quests (`locked`, `missing_milestones`, `missing_slugs`, `approved` in the
+  project, `mine`), the caller's proposed quests and open help requests.
+  `mine` is only ever the caller's own quest.
+- **`shift_quest_side_choose(actor, template)`** and
+  **`shift_quest_side_submit(actor, template, proof, reflection, url)`**:
+  one-step side quests like `shift_quest_milestone_submit`. Refusals:
+  `quest_locked`, `quest_done` (a non-repeatable side quest the project
+  already has approved; it only blocks a new quest, never the caller's own
+  open one), `quest_appealed`, plus the usual ones. A declined
+  non-repeatable side quest is archived when the student starts it again,
+  so "try again" works. A side quest belongs to the project:
+  `shift_quest_choose` counts `not_repeatable` for side quests in the current
+  project only, so a student who moves to a new project can do it again there.
+- **`shift_quest_milestone_start(actor, milestone)`**: start a main quest from
+  the board without submitting (it becomes the caller's active quest and shows
+  as held to teammates). Same gates as `shift_quest_milestone_submit`, through
+  one shared helper (`shift_quest__milestone_open`): the advisory lock,
+  `milestone_done`, `milestone_open` (a teammate holds it),
+  `milestone_appealed`; the caller's own open quest is reused, a paused one
+  resumed.
+- **`shift_quest_resume(actor, instance)`**: resume one paused quest the
+  caller owns, of any kind (rest pauses proposed quests too, and
+  `shift_quest_submit` refuses a paused one).
+- **Caps on group posts** (`shift_quest__cap`, bot and website alike):
+  `shift_quest_help_create` refuses with `too_many_open` at 3 open or claimed
+  requests, or 5 asked in the last hour; `shift_quest_propose` at 5 open
+  proposed quests a mentor has not agreed yet.
+- **Eleven draft side quests** in Thai, `status = 'draft'`, no reward rule.
+  **Their copy needs the founder's multi-model Thai review (`AGENTS.md`)
+  before an admin publishes each slug** with `/admin template` (or
+  `select public.shift_quest_admin_template_state('<admin discord id>', '<slug>', true);`).
+  Nothing shows on the board until then. The sandbox publishes them all.
+- **`shift_quest_schema_version()` = 4.** The bot needs 2 and keeps working;
+  the website needed 4 until the canvas link below.
+- **SHIFT canvas link, schema 5** (`20261111091100_shift_quest_canvas_links.sql`,
+  apply after `091000`; the website needs 5, the bot still 2):
+  `shift_quest_canvas_links` (one row per quest project: whiteboard board id,
+  canvas frame id and project tag, no text; RLS on, no policies) and
+  `shift_quest_canvas_get(actor)`, `shift_quest_canvas_link(actor, board, frame, canvas_project)`,
+  `shift_quest_canvas_unlink(actor)` on the web allowlist. The website re-verifies
+  the link against the whiteboard on every read and snapshots ticked notes into
+  `evidence` through the existing submit functions, so review, export and erase
+  are unchanged. Sandbox: `psql -h 127.0.0.1 -p <port> -U postgres -d postgres -v ON_ERROR_STOP=1 -f supabase/migrations/20261111091100_shift_quest_canvas_links.sql`.
+
+**The web role.** `shift_quest_web` is a login like `shift_quest_bot`:
+`NOINHERIT`, `statement_timeout` 8s, 20 connections, `USAGE` on `public`, no
+table privilege, no helper. Among the `shift_quest_*` functions it executes
+exactly this allowlist: `shift_quest_schema_version`, `_session`, `_start`,
+`_island`, `_island_map`, `_board`, `_checkin`, `_rest`, `_resume`,
+`_island_optin`, `_milestone_start`, `_milestone_submit`, `_side_choose`,
+`_side_submit`, `_propose`, `_submit`, `_help_create`, `_project_create`,
+`_project_list`, `_project_respond`, `_canvas_get`, `_canvas_link`,
+`_canvas_unlink`. No review, staff, admin, outbox or data
+function. The migrations revoke every `shift_quest_*` function from it, then
+grant the list by full signature and stop if one is missing. `run-local.sh`
+(`check_privileges`) and `web_board.ts` hold the same list and fail on any
+extra or missing grant.
+
+**Outside `shift_quest_*` it is not closed by default.** A LOGIN role is
+always a member of `PUBLIC`, and the role has `USAGE` on `public`, so it can
+execute any other function in `public` that still grants `EXECUTE` to
+`PUBLIC` (the Postgres default unless a migration revoked it), over a raw SQL
+session where `auth.uid()` and `auth.role()` are NULL. The same is true of
+`shift_quest_bot`. The local sandbox only has the quest schema, so its
+`check_privileges` cannot see these; run the runbook check below on
+production before giving either role LOGIN.
+
+**Every future student function the website needs must be added to the web
+allowlist on purpose:** a later migration that grants it, plus the two test
+lists. The grant loop at the end of each migration never touches
+`shift_quest_web`, so a new function stays closed to the website until then,
+and a function that is dropped and created again (a signature change) loses
+its grant and fails the check.
+
+Production, after an explicit go and after the bot's migrations:
+
+1. Apply the migrations (`supabase db push`, production).
+2. Check what else the logins could run (read-only; expect no rows). Every
+   row is a function in `public` outside `shift_quest_*` that the role can
+   execute through `PUBLIC`; revoke it from `PUBLIC` in an additive migration
+   (`REVOKE EXECUTE ON FUNCTION ... FROM PUBLIC;`, then grant the roles that
+   need it) before step 3:
+
+   ```sql
+   SELECT r.role, p.oid::regprocedure AS fn, p.prosecdef AS security_definer
+   FROM pg_proc p
+   JOIN pg_namespace n ON n.oid = p.pronamespace,
+     (VALUES ('shift_quest_web'), ('shift_quest_bot')) r(role)
+   WHERE n.nspname = 'public'
+     AND p.proname NOT LIKE 'shift\_quest\_%'
+     AND p.prosecdef
+     AND has_function_privilege(r.role, p.oid, 'EXECUTE')
+   UNION ALL
+   SELECT r.role, c.oid::regclass::text, NULL
+   FROM pg_class c
+   JOIN pg_namespace n ON n.oid = c.relnamespace,
+     (VALUES ('shift_quest_web'), ('shift_quest_bot')) r(role)
+   WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p', 'v', 'm', 'f')
+     AND has_table_privilege(r.role, c.oid, 'SELECT, INSERT, UPDATE, DELETE')
+   ORDER BY 1, 2;
+   ```
+
+   Invoker functions (`prosecdef` false) cannot touch a table the role has
+   no privilege on, so the first half lists definer functions only; the
+   second half lists any table or view the role reaches through `PUBLIC`.
+3. From a trusted shell, never in this repo:
+   `ALTER ROLE shift_quest_web WITH LOGIN PASSWORD '<SCRAM verifier>';`
+4. The pooler user is `shift_quest_web.<project ref>` on the Supavisor
+   transaction pooler (port 6543, TLS against Supabase's CA). Set
+   `SHIFT_QUEST_DATABASE_URL=postgresql://shift_quest_web.<project ref>:<password>@<pooler host>:6543/postgres`
+   in Vercel (Production only), then redeploy.
+5. Publish the side quests one slug at a time, after the Thai review.
+
+Locally: `QUEST_SANDBOX_PORT=55451 QUEST_SANDBOX_ADMIN_ID=<your Discord user id> bot/quests-sandbox.sh --db-only --reset`
+prints the web URL (`postgresql://shift_quest_web:sandbox@127.0.0.1:55451/postgres`,
+for `SHIFT_QUEST_DATABASE_URL` with `pnpm dev`) and a command that approves
+every pending submission as the stand-in reviewer `100000000000000701` (you
+cannot approve your own work). Tested in
+`supabase/tests/shift_quests/web_board.ts`.

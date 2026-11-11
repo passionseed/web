@@ -1,6 +1,8 @@
 /**
  * Program administrators and fulfillment operators. Every setting change is a
- * database call that refuses incomplete reward configurations.
+ * database call that refuses incomplete reward configurations. Every reply is
+ * one compact card (see ../view): what it is, the facts that matter, then the
+ * fine print in small grey text.
  */
 import { MessageFlags } from "discord.js";
 
@@ -8,13 +10,19 @@ import { QuestError } from "../api";
 import { requireStaff } from "../context";
 import { BLOCKER, T, bkkDate, safe } from "../copy";
 import { cid, isUuid } from "../ids";
-import { ButtonStyle, button, buttonRows, modal, parseDate, selectRow, show, textValue } from "../ui";
+import { I, stageBar } from "../island/copy";
+import { ButtonStyle, button, buttonRows, modal, parseDate, selectRow, show, textValue, type Block, type View } from "../ui";
 import { ledgerReason } from "./student";
 import { picked, type HandlerSet } from "./types";
 
 const ADMIN = ["admin"];
 const FULFILLMENT = ["fulfillment"];
 const SNOWFLAKE = /^\d{5,25}$/;
+
+/** Season unlocks listed on the season card; the rest are counted. */
+const UNLOCKS_SHOWN = 6;
+/** Published coin rules listed in the status fine print; the rest are counted. */
+const RULES_SHOWN = 6;
 
 interface SeasonAdmin {
   id: string;
@@ -39,30 +47,60 @@ interface SeasonAdmin {
   unlocks: { id: string; label: string; milestone_count: number; deadline: string; reward_rule_key: string | null; earned: number }[];
 }
 
-function renderGoal(goal: SeasonAdmin["goal"]): string {
-  if (!goal) return "🎯 ยังไม่มีเป้าทั้งเกาะ";
+/** count of target as a ten-step bar: ▰▰▰▱▱▱▱▱▱▱. */
+function goalBar(count: number, target: number): string {
+  const steps = 10;
+  return stageBar(target > 0 ? Math.round((Math.min(Math.max(count, 0), target) / target) * steps) : 0, steps);
+}
+
+function goalLines(goal: SeasonAdmin["goal"]): string[] {
+  if (!goal) return ["🎯 ยังไม่มีเป้าทั้งเกาะ"];
   const unlock = goal.unlock ? ` → ${safe(goal.unlock, 80)}` : "";
-  let reached = "";
-  if (goal.reached) reached = ` · ถึงเป้าแล้ว${goal.reached_at ? ` (${bkkDate(goal.reached_at)})` : ""}`;
-  return `🎯 เป้าทั้งเกาะ: ${goal.count}/${goal.target} ต้นผ่านขั้น ${goal.milestone} ภายใน ${bkkDate(goal.deadline)}${unlock}${reached}`;
+  const reached = goal.reached ? ` · ถึงเป้าแล้ว${goal.reached_at ? ` (${bkkDate(goal.reached_at)})` : ""}` : "";
+  return [
+    `🎯 เป้าทั้งเกาะ: ${goal.target} ต้นผ่านขั้น ${goal.milestone} ภายใน ${bkkDate(goal.deadline)}${unlock}`,
+    `${goalBar(goal.count, goal.target)} **${goal.count}**/${goal.target}${reached}`,
+  ];
 }
 
 /** The season as admins see it: dates, bars, the island goal and unlocks (counts only). */
-export function renderSeason(s: SeasonAdmin): string {
-  return [
-    `🎪 **${safe(s.name, 60)}** (${s.status}) ${bkkDate(s.starts_on)} ถึง ${bkkDate(s.ends_on)} · Demo Day ${bkkDate(s.demo_day)}`,
-    `โต๊ะโชว์งาน: ${s.table_bar} ขั้น รวมขั้น 2 · ขึ้นเวที: ${s.stage_bar} ขั้น รวมขั้น 3 (นับขั้นที่ส่งในซีซันจนจบ Demo Day และพี่เลี้ยงยืนยันแล้ว)`,
-    renderGoal(s.goal),
-    ...(s.unlocks.length
-      ? s.unlocks.map((u) => `🎁 ${safe(u.label, 60)}: ครบ ${u.milestone_count} ขั้นภายใน ${bkkDate(u.deadline)}${u.reward_rule_key ? ` (กติกา ${u.reward_rule_key})` : ""} · ได้แล้ว ${u.earned} คน`)
-      : ["🎁 ยังไม่มีของปลดล็อก"]),
-    ...(typeof s.surprise_cap === "number"
-      ? [`🌟 คำชมแบบเซอร์ไพรส์: ได้ ${s.surprise_cap} ครั้งต่อคนในซีซันนี้ (รางวัลตามหมวดไม่นับ)`]
-      : []),
-    "",
-    "ของปลดล็อกได้เท่ากันทุกคนที่ถึงเกณฑ์ ไม่ผูกกับความเร็ว ไม่มีการจัดอันดับ",
-    "-# แก้ซีซัน: /admin season ใส่ชื่อกับเฉพาะค่าที่จะเปลี่ยน ค่าที่เว้นไว้คงเดิม · ลบเป้าทั้งเกาะ: clear_goal · เพดานคำชมเซอร์ไพรส์: surprise_cap",
-  ].join("\n");
+export function seasonView(s: SeasonAdmin): View {
+  const unlocks = s.unlocks.length
+    ? s.unlocks
+        .slice(0, UNLOCKS_SHOWN)
+        .map(
+          (u) =>
+            `🎁 ${safe(u.label, 60)}: ครบ ${u.milestone_count} ขั้นภายใน ${bkkDate(u.deadline)}${u.reward_rule_key ? ` (กติกา ${u.reward_rule_key})` : ""} · ได้แล้ว **${u.earned}** คน`
+        )
+    : ["🎁 ยังไม่มีของปลดล็อก"];
+  if (s.unlocks.length > UNLOCKS_SHOWN) unlocks.push(I.more(s.unlocks.length - UNLOCKS_SHOWN));
+  return {
+    tone: "season",
+    title: `🎪 ${safe(s.name, 60)}`,
+    blocks: [
+      {
+        kind: "text",
+        text: [
+          `${s.status} · ${bkkDate(s.starts_on)} ถึง ${bkkDate(s.ends_on)} · Demo Day **${bkkDate(s.demo_day)}**`,
+          `โต๊ะโชว์งาน **${s.table_bar}** ขั้น (รวมขั้น 2) · ขึ้นเวที **${s.stage_bar}** ขั้น (รวมขั้น 3)`,
+        ].join("\n"),
+      },
+      { kind: "subtext", text: "นับขั้นที่ส่งในซีซันจนจบ Demo Day และพี่เลี้ยงยืนยันแล้ว" },
+      { kind: "text", text: [...goalLines(s.goal), ...unlocks].join("\n") },
+      ...(typeof s.surprise_cap === "number"
+        ? [{ kind: "text" as const, text: `🌟 คำชมแบบเซอร์ไพรส์: ได้ ${s.surprise_cap} ครั้งต่อคนในซีซันนี้ (รางวัลตามหมวดไม่นับ)` }]
+        : []),
+      { kind: "divider", line: false },
+      {
+        kind: "subtext",
+        text: [
+          "ของปลดล็อกได้เท่ากันทุกคนที่ถึงเกณฑ์ ไม่ผูกกับความเร็ว ไม่มีการจัดอันดับ",
+          "แก้ซีซัน: /admin season ใส่ชื่อกับเฉพาะค่าที่จะเปลี่ยน ค่าที่เว้นไว้คงเดิม · ลบเป้าทั้งเกาะ: clear_goal · เพดานคำชมเซอร์ไพรส์: surprise_cap",
+        ].join("\n"),
+      },
+    ],
+    rows: buttonRows([button(cid("ad_unlock", s.id), "🎁 เพิ่มของปลดล็อก", ButtonStyle.Primary)]),
+  };
 }
 
 interface Status {
@@ -75,36 +113,91 @@ interface Status {
   data_requests_open: number;
 }
 
-function onOff(value: unknown): string {
-  return value ? "เปิด" : "ปิด";
+/** ✅ configured, ⚠️ missing. */
+function check(ok: unknown): string {
+  return ok ? "✅" : "⚠️";
 }
 
-function channel(id: unknown): string {
-  return typeof id === "string" ? `<#${id}>` : "ยังไม่ตั้ง";
+const CHANNELS: { key: string; label: string }[] = [
+  { key: "help_channel_id", label: "ห้อง help" },
+  { key: "staff_channel_id", label: "ห้องทีมพี่เลี้ยง" },
+  { key: "celebrate_channel_id", label: "ห้องโพสต์ความสำเร็จ" },
+  { key: "coworking_channel_id", label: "ห้อง coworking" },
+];
+
+/** The switches /admin feature turns on and off, with the blocker list each one has. */
+const FEATURES: { key: string; label: string; setting: string }[] = [
+  { key: "awards", label: "เหรียญ", setting: "awards_enabled" },
+  { key: "redemption", label: "แลกของ", setting: "redemption_enabled" },
+  { key: "sharing", label: "แชร์สาธารณะ", setting: "sharing_enabled" },
+  { key: "reminders", label: "การเตือน", setting: "reminders_enabled" },
+  { key: "squads", label: "สควอด", setting: "squads_enabled" },
+];
+
+/**
+ * One switch: ✅ on and working, ⚠️ on but not working yet, ⚪ off. Whatever
+ * it still needs is listed under it (with the command that fixes it), on or off.
+ */
+function featureLines(s: Status, f: (typeof FEATURES)[number]): string[] {
+  const on = Boolean(s.settings[f.setting]);
+  const missing = s.blockers[f.key] ?? [];
+  const reported = (s.live as Record<string, boolean | undefined>)[f.key];
+  const working = reported ?? !missing.length;
+  let head: string;
+  if (!on) head = `⚪ ${f.label}: ปิด`;
+  else if (working) head = `✅ ${f.label}: เปิด${typeof reported === "boolean" ? " ใช้งานอยู่" : ""}`;
+  else head = `⚠️ ${f.label}: เปิด แต่ยังใช้ไม่ได้`;
+  return [head, ...missing.map((b) => `- ${BLOCKER[b] ?? b}`)];
 }
 
-function renderStatus(s: Status): string {
+/** The settings as a checklist: what is set, what is missing, what is on, then the counts. */
+export function statusView(s: Status, saved = false): View {
   const st = s.settings;
-  const blockers = (key: string) =>
-    s.blockers[key]?.length ? `\n  ยังขาด: ${s.blockers[key].map((b) => BLOCKER[b] ?? b).join(", ")}` : "";
-  return [
-    "**SHIFT High quests: สถานะ**",
-    `บทบาทนักเรียนนำร่อง: ${st.student_role_ids.length ? st.student_role_ids.map((r) => `<@&${r}>`).join(" ") : "ยังไม่ตั้ง (นักเรียนยังใช้ไม่ได้)"}`,
-    `ห้อง help: ${channel(st.help_channel_id)} · ห้องทีมพี่เลี้ยง: ${channel(st.staff_channel_id)}`,
-    `ห้องโพสต์ความสำเร็จ: ${channel(st.celebrate_channel_id)} · ห้อง coworking: ${channel(st.coworking_channel_id)}`,
-    "",
-    `เหรียญ: ${onOff(st.awards_enabled)}${s.live.awards ? " (ใช้งานอยู่)" : ""}${blockers("awards")}`,
-    `แลกของ: ${onOff(st.redemption_enabled)}${s.live.redemption ? " (ใช้งานอยู่)" : ""}${blockers("redemption")}`,
-    `แชร์สาธารณะ: ${onOff(st.sharing_enabled)}${blockers("sharing")}`,
-    `การเตือน: ${onOff(st.reminders_enabled)} · สควอด: ${onOff(st.squads_enabled)}`,
-    `กติกาเหรียญประกาศแล้ว: ${onOff(st.reward_terms)} · เงื่อนไขแลก: ${onOff(st.redemption_terms)} · ขั้นตอนจัดส่ง: ${onOff(st.fulfillment_process)} · ผู้รับผิดชอบ: ${safe(st.fulfillment_owner as string | null, 60) || "ยังไม่ระบุ"}`,
-    "",
-    `กติกาเหรียญ: ${s.rules.length ? s.rules.map((r) => `${r.key} v${r.version} = ${r.amount}${r.cap ? ` (สูงสุด ${r.cap})` : ""}${r.team_allocation ? ` ทีม: ${r.team_allocation}` : ""}`).join(" · ") : "ไม่มี"}`,
+  const setup: string[] = [
+    st.student_role_ids.length
+      ? `✅ บทบาทนักเรียน: ${st.student_role_ids.map((r) => `<@&${r}>`).join(" ")}`
+      : "⚠️ บทบาทนักเรียน: ยังไม่ตั้ง นักเรียนยังใช้ไม่ได้ (/admin student-role)",
+  ];
+  let channelMissing = false;
+  for (const c of CHANNELS) {
+    const id = st[c.key];
+    if (typeof id === "string") setup.push(`✅ ${c.label}: <#${id}>`);
+    else {
+      channelMissing = true;
+      setup.push(`⚠️ ${c.label}: ยังไม่ตั้ง`);
+    }
+  }
+  const owner = safe(st.fulfillment_owner as string | null, 60);
+  setup.push(
+    `${check(st.reward_terms)} กติกาเหรียญ · ${check(st.redemption_terms)} เงื่อนไขการแลก · ${check(st.fulfillment_process)} ขั้นตอนจัดส่ง`,
+    owner ? `✅ ผู้รับผิดชอบจัดส่ง: ${owner}` : "⚠️ ผู้รับผิดชอบจัดส่ง: ยังไม่ระบุ"
+  );
+
+  const rules = s.rules
+    .slice(0, RULES_SHOWN)
+    .map((r) => `${r.key} v${r.version} = ${r.amount}${r.cap ? ` (สูงสุด ${r.cap})` : ""}${r.team_allocation ? ` ทีม: ${r.team_allocation}` : ""}`);
+  if (s.rules.length > RULES_SHOWN) rules.push(I.more(s.rules.length - RULES_SHOWN));
+  const fine = [
+    `กติกาเหรียญที่เผยแพร่: ${rules.length ? rules.join(" · ") : "ไม่มี"}`,
     `ทีม: admin ${s.staff.admin} · reviewer ${s.staff.reviewer} · fulfillment ${s.staff.fulfillment}`,
     `ข้อความรอส่ง ${s.outbox.pending} · รอตั้งห้อง/รอเปิดแชร์ ${s.outbox.blocked} · ส่งไม่สำเร็จ ${s.outbox.failed}`,
-    `คำขอเรื่องข้อมูลที่เปิดอยู่: ${s.data_requests_open}`,
-  ].join("\n");
+    `คำขอเรื่องข้อมูลที่เปิดอยู่: ${s.data_requests_open}${s.data_requests_open > 0 ? " · ดูที่ /admin data" : ""}`,
+  ];
+
+  // Missing terms already show under the switch they hold back, with their command.
+  const blocks: Block[] = [{ kind: "text", text: setup.join("\n") }];
+  if (channelMissing) blocks.push({ kind: "subtext", text: "ตั้งห้อง: /admin channel" });
+  blocks.push(
+    { kind: "divider" },
+    { kind: "text", text: FEATURES.flatMap((f) => featureLines(s, f)).join("\n") },
+    { kind: "divider", line: false },
+    { kind: "subtext", text: fine.join("\n") }
+  );
+  return { tone: "staff", title: saved ? "✅ บันทึกแล้ว" : "⚙️ สถานะ SHIFT High quests", blocks };
 }
+
+/** What each fulfillment action moves a redemption to (T.redemptionStatus keys). */
+const FULFILL_STATUS: Record<string, string> = { start: "processing", complete: "completed", cancel: "cancelled" };
 
 const TERMS_LABEL: Record<string, string> = {
   reward_terms: "กติกาเหรียญ (นักเรียนเห็น)",
@@ -143,6 +236,7 @@ function count(n: unknown): string {
   return typeof n === "number" ? String(n) : "-";
 }
 
+/** The report's island section, heading first. Empty when the report has no island block. */
 export function renderIslandReport(isl: IslandReport | null | undefined): string[] {
   if (!isl) return [];
   const stages = Object.entries(isl.projects_by_stage ?? {})
@@ -150,7 +244,6 @@ export function renderIslandReport(isl: IslandReport | null | undefined): string
     .map(([stage, n]) => `ขั้น ${stage}: ${n}`)
     .join(" · ");
   const lines = [
-    "",
     "**เกาะ**",
     `ต้นไม้ตามขั้น: ${stages || "ยังไม่มี"}`,
     `กดลงมือในช่วงนี้ ${count(isl.taps_in_window)} ครั้ง · กำลังพัก ${count(isl.members_resting)} คน`,
@@ -176,33 +269,52 @@ export function renderIslandReport(isl: IslandReport | null | undefined): string
   return lines;
 }
 
-function renderReport(r: Record<string, any>): string {
+/** Aggregate numbers only, grouped: students and work, coins and delivery, the island. */
+export function reportView(r: Record<string, any>): View {
   const breakdown = (o: Record<string, number> | null | undefined): string =>
     o && Object.keys(o).length ? Object.entries(o).map(([k, v]) => `${k} ${v}`).join(", ") : "0";
-  return [
-    `**รายงานรวม ${r.window_days} วันล่าสุด** (ตัวเลขรวมเท่านั้น ไม่ระบุตัวบุคคล)`,
-    `เริ่มใช้แล้ว ${r.members_onboarded} คน · เริ่มลงมือแล้ว ${r.members_started}`,
-    `บันทึกความคืบหน้าในช่วงนี้ ${r.members_with_progress_in_window} คน · ส่งงาน ${r.members_submitting_in_window} คน`,
-    `เควสต์ตามสถานะ: ${breakdown(r.quests_by_state)}`,
-    `ผลรีวิวในช่วงนี้: ${breakdown(r.reviews_in_window)} · ค้างรีวิว ${r.review_backlog} · มัธยฐานเวลารีวิว ${r.review_median_hours ?? "-"} ชม.`,
-    `โปรเจกต์ที่มีผลทดสอบกับคนจริงและการตัดสินใจ: ${r.projects_with_feedback_decision}`,
-    `ความเป็นเจ้าของ: เช็กครบ ${r.ownership.all_checks_done}/${r.ownership.projects} โปรเจกต์ · ติดอยู่ ${r.ownership.with_blocker}`,
-    `ความช่วยเหลือ: เปิดใหม่ ${r.help.opened_in_window} · ปิดแล้ว ${r.help.resolved_in_window} · ค้าง ${r.help.open_now}`,
-    `เหรียญ: ออก ${r.coins.awarded_in_window} · ปรับคืน ${r.coins.reversed_in_window} · คนที่เคยได้ ${r.coins.members_awarded} · อนุมัติแต่ยังไม่ออก ${r.coins.awards_not_issued}`,
-    `การแลก: ${breakdown(r.redemptions)}`,
-    `แชร์: โพสต์ ${r.sharing.posted} · เพื่อนปฏิเสธ ${r.sharing.peer_declined}`,
-    `ส่งข้อความไม่สำเร็จ ${r.delivery.failed} · รอห้อง ${r.delivery.blocked} · การเข้าถึงที่ถูกปฏิเสธ ${r.access_denied_in_window}`,
-    ...renderIslandReport(r.island),
-    "",
-    "ตัวเลขกิจกรรมไม่ได้บอกแรงจูงใจภายใน อ่านคู่กับความเห็นของนักเรียนและเกณฑ์ที่ตกลงไว้ก่อนนำร่อง",
-  ].join("\n");
+  const island = renderIslandReport(r.island);
+  return {
+    tone: "staff",
+    title: `📊 รายงานรวม ${r.window_days} วันล่าสุด`,
+    blocks: [
+      { kind: "subtext", text: "ตัวเลขรวมเท่านั้น ไม่ระบุตัวบุคคล" },
+      {
+        kind: "text",
+        text: [
+          "**นักเรียนและงาน**",
+          `เริ่มใช้แล้ว ${r.members_onboarded} คน · เริ่มลงมือแล้ว ${r.members_started}`,
+          `บันทึกความคืบหน้าในช่วงนี้ ${r.members_with_progress_in_window} คน · ส่งงาน ${r.members_submitting_in_window} คน`,
+          `เควสต์ตามสถานะ: ${breakdown(r.quests_by_state)}`,
+          `ผลรีวิวในช่วงนี้: ${breakdown(r.reviews_in_window)} · ค้างรีวิว ${r.review_backlog} · มัธยฐานเวลารีวิว ${r.review_median_hours ?? "-"} ชม.`,
+          `โปรเจกต์ที่มีผลทดสอบกับคนจริงและการตัดสินใจ: ${r.projects_with_feedback_decision}`,
+          `ความเป็นเจ้าของ: เช็กครบ ${r.ownership.all_checks_done}/${r.ownership.projects} โปรเจกต์ · ติดอยู่ ${r.ownership.with_blocker}`,
+          `ความช่วยเหลือ: เปิดใหม่ ${r.help.opened_in_window} · ปิดแล้ว ${r.help.resolved_in_window} · ค้าง ${r.help.open_now}`,
+        ].join("\n"),
+      },
+      { kind: "divider" },
+      {
+        kind: "text",
+        text: [
+          "**เหรียญ การแลก และการส่ง**",
+          `เหรียญ: ออก ${r.coins.awarded_in_window} · ปรับคืน ${r.coins.reversed_in_window} · คนที่เคยได้ ${r.coins.members_awarded} · อนุมัติแต่ยังไม่ออก ${r.coins.awards_not_issued}`,
+          `การแลก: ${breakdown(r.redemptions)}`,
+          `แชร์: โพสต์ ${r.sharing.posted} · เพื่อนปฏิเสธ ${r.sharing.peer_declined}`,
+          `ส่งข้อความไม่สำเร็จ ${r.delivery.failed} · รอห้อง ${r.delivery.blocked} · การเข้าถึงที่ถูกปฏิเสธ ${r.access_denied_in_window}`,
+        ].join("\n"),
+      },
+      ...(island.length ? [{ kind: "divider" as const }, { kind: "text" as const, text: island.join("\n") }] : []),
+      { kind: "divider", line: false },
+      { kind: "subtext", text: "ตัวเลขกิจกรรมไม่ได้บอกแรงจูงใจภายใน อ่านคู่กับความเห็นของนักเรียนและเกณฑ์ที่ตกลงไว้ก่อนนำร่อง" },
+    ],
+  };
 }
 
 export const admin: HandlerSet = {
   commands: {
     async "admin status"(i, ctx) {
       requireStaff(ctx, ADMIN);
-      await show(i, { content: renderStatus(await ctx.api.call<Status>("shift_quest_admin_status", ctx.userId)) });
+      await show(i, statusView(await ctx.api.call<Status>("shift_quest_admin_status", ctx.userId)));
     },
 
     async "admin feature"(i, ctx) {
@@ -213,7 +325,7 @@ export const admin: HandlerSet = {
         i.options.getString("name", true),
         i.options.getString("state", true)
       );
-      await show(i, { content: renderStatus(status) });
+      await show(i, statusView(status, true));
     },
 
     async "admin channel"(i, ctx) {
@@ -224,7 +336,7 @@ export const admin: HandlerSet = {
         `${i.options.getString("kind", true)}_channel`,
         i.options.getChannel("channel")?.id ?? ""
       );
-      await show(i, { content: renderStatus(status) });
+      await show(i, statusView(status, true));
     },
 
     async "admin student-role"(i, ctx) {
@@ -235,7 +347,7 @@ export const admin: HandlerSet = {
         i.options.getString("action", true) === "remove" ? "student_role_remove" : "student_role_add",
         i.options.getRole("role", true).id
       );
-      await show(i, { content: renderStatus(status) });
+      await show(i, statusView(status, true));
     },
 
     async "admin terms"(i, ctx) {
@@ -269,7 +381,11 @@ export const admin: HandlerSet = {
         i.options.getString("role", true),
         i.options.getString("action", true) === "grant"
       );
-      await show(i, { content: `<@${user.id}>: ${result.roles.join(", ") || "ไม่มีบทบาท"}` });
+      await show(i, {
+        tone: "success",
+        title: "✅ บันทึกแล้ว",
+        blocks: [{ kind: "text", text: `<@${user.id}>: ${result.roles.length ? `**${result.roles.join(", ")}**` : "ไม่มีบทบาท"}` }],
+      });
     },
 
     async "admin rule"(i, ctx) {
@@ -295,7 +411,11 @@ export const admin: HandlerSet = {
         i.options.getString("template", true),
         i.options.getString("rule") ?? null
       );
-      await show(i, { content: `${T.done} มีผลกับเควสต์ที่เลือกหลังจากนี้ เควสต์เดิมใช้กติกาเดิม` });
+      await show(i, {
+        tone: "success",
+        title: `✅ ${T.done}`,
+        blocks: [{ kind: "text", text: "มีผลกับเควสต์ที่เลือกหลังจากนี้ เควสต์เดิมใช้กติกาเดิม" }],
+      });
     },
 
     async "admin templates"(i, ctx) {
@@ -305,19 +425,34 @@ export const admin: HandlerSet = {
         ctx.userId
       );
       await show(i, {
-        content: list.map((t) => `• \`${t.slug}\` v${t.version} ${safe(t.title, 60)}: ${t.status}${t.reward_rule_key ? ` · กติกา ${t.reward_rule_key}` : ""}`).join("\n"),
+        tone: "staff",
+        title: `📋 เควสต์ตัวอย่าง (${list.length})`,
+        blocks: [
+          {
+            kind: "text",
+            text: list.length
+              ? list
+                  .map((t) => `- \`${t.slug}\` v${t.version} ${safe(t.title, 60)}: ${t.status}${t.reward_rule_key ? ` · กติกา ${t.reward_rule_key}` : ""}`)
+                  .join("\n")
+              : "ยังไม่มีเควสต์ตัวอย่าง",
+          },
+          { kind: "subtext", text: "เปิดหรือเก็บ: /admin template · ผูกกติกาเหรียญ: /admin template-rule" },
+        ],
       });
     },
 
     async "admin template"(i, ctx) {
       requireStaff(ctx, ADMIN);
-      await ctx.api.call(
-        "shift_quest_admin_template_state",
-        ctx.userId,
-        i.options.getString("template", true),
-        i.options.getBoolean("publish", true)
-      );
-      await show(i, { content: T.done });
+      const slug = i.options.getString("template", true);
+      const publish = i.options.getBoolean("publish", true);
+      await ctx.api.call("shift_quest_admin_template_state", ctx.userId, slug, publish);
+      // The slug as typed, as code: a backtick in it would end the code span early.
+      const shown = `\`${slug.split("`").join("'").slice(0, 60)}\``;
+      await show(i, {
+        tone: "success",
+        title: `✅ ${T.done}`,
+        blocks: [{ kind: "text", text: publish ? `เปิด ${shown} แล้ว` : `เก็บ ${shown} แล้ว` }],
+      });
     },
 
     async "admin catalog"(i, ctx) {
@@ -338,13 +473,18 @@ export const admin: HandlerSet = {
         ctx.userId
       );
       await show(i, {
-        content: [
-          `บันทึก **${safe(result.name, 80)}** แล้ว`,
-          "",
-          ...list.map((x) => `• ${safe(x.name, 60)} ${x.cost} เหรียญ · เหลือ ${x.stock_available} · จองอยู่ ${x.reserved} · ${x.active ? "เปิด" : "ปิด"}`),
-          "",
-          "แสดงให้นักเรียนเห็นเฉพาะตอนที่การแลกเปิดและตั้งค่าครบแล้ว",
-        ].join("\n"),
+        tone: "coins",
+        title: `✅ บันทึก ${safe(result.name, 80)} แล้ว`,
+        blocks: [
+          {
+            kind: "text",
+            text: [
+              `**ของทั้งหมด ${list.length} อย่าง**`,
+              ...list.map((x) => `- ${safe(x.name, 60)} **${x.cost}** เหรียญ · เหลือ ${x.stock_available} · จองอยู่ ${x.reserved} · ${x.active ? "เปิด" : "ปิด"}`),
+            ].join("\n"),
+          },
+          { kind: "subtext", text: "แสดงให้นักเรียนเห็นเฉพาะตอนที่การแลกเปิดและตั้งค่าครบแล้ว" },
+        ],
       });
     },
 
@@ -358,10 +498,25 @@ export const admin: HandlerSet = {
       }>("shift_quest_admin_ledger", ctx.userId, user.id);
       const awards = ledger.entries.filter((e) => e.kind === "award" && e.reversed < e.amount);
       await show(i, {
-        content: [
-          `**${safe(ledger.name, 60)}** ยอด ${ledger.balance}`,
-          ...ledger.entries.map((e) => `${bkkDate(e.created_at)} ${e.amount > 0 ? "+" : ""}${e.amount} ${ledgerReason(e.kind, e.reason, e.title, e.category)}${e.reversed ? ` (ปรับคืนแล้ว ${e.reversed})` : ""}`),
-        ].join("\n"),
+        tone: "coins",
+        title: `🪙 ${safe(ledger.name, 60) || "บัญชีเหรียญ"}`,
+        blocks: [
+          { kind: "text", text: `ยอด **${ledger.balance}** เหรียญ` },
+          ...(ledger.entries.length
+            ? [
+                { kind: "divider" as const },
+                {
+                  kind: "text" as const,
+                  text: ledger.entries
+                    .map(
+                      (e) =>
+                        `${bkkDate(e.created_at)} **${e.amount > 0 ? "+" : ""}${e.amount}** ${ledgerReason(e.kind, e.reason, e.title, e.category)}${e.reversed ? ` (ปรับคืนแล้ว ${e.reversed})` : ""}`
+                    )
+                    .join("\n"),
+                },
+              ]
+            : []),
+        ],
         rows: awards.length
           ? [
               selectRow(
@@ -377,7 +532,7 @@ export const admin: HandlerSet = {
     async "admin report"(i, ctx) {
       requireStaff(ctx, ADMIN);
       const report = await ctx.api.call<Record<string, any>>("shift_quest_admin_report", ctx.userId, i.options.getInteger("days") ?? 14);
-      await show(i, { content: renderReport(report) });
+      await show(i, reportView(report));
     },
 
     async "admin season"(i, ctx) {
@@ -404,10 +559,7 @@ export const admin: HandlerSet = {
         i.options.getBoolean("clear_goal") ?? false,
         i.options.getInteger("surprise_cap")
       );
-      await show(i, {
-        content: renderSeason(season),
-        rows: buttonRows([button(cid("ad_unlock", season.id), "🎁 เพิ่มของปลดล็อก", ButtonStyle.Primary)]),
-      });
+      await show(i, seasonView(season));
     },
 
     async "admin recognize"(i, ctx) {
@@ -448,14 +600,22 @@ export const admin: HandlerSet = {
         ctx.userId
       );
       if (!list.length) {
-        await show(i, { content: "ไม่มีคำขอที่เปิดอยู่" });
+        await show(i, { tone: "staff", title: "🗂️ คำขอเรื่องข้อมูล", blocks: [{ kind: "text", text: "ไม่มีคำขอที่เปิดอยู่" }] });
         return;
       }
+      const kindLabel = (kind: string) => (kind === "erasure" ? "ขอลบ" : "ขอแก้");
       await show(i, {
-        content: list
-          .map((d) => `• ${bkkDate(d.created_at)} ${d.kind === "erasure" ? "ขอลบ" : "ขอแก้"}: ${safe(d.name, 60)}${d.note ? `: ${safe(d.note, 200)}` : ""}`)
-          .join("\n"),
-        rows: [selectRow(cid("ad_data"), "เลือกคำขอ", list.map((d) => ({ label: `${d.kind}: ${d.name ?? ""}`, value: `${d.id}:${d.kind}` })))],
+        tone: "staff",
+        title: `🗂️ คำขอเรื่องข้อมูล (${list.length})`,
+        blocks: [
+          {
+            kind: "text",
+            text: list
+              .map((d) => `- ${bkkDate(d.created_at)} **${kindLabel(d.kind)}**: ${safe(d.name, 60)}${d.note ? `: ${safe(d.note, 200)}` : ""}`)
+              .join("\n"),
+          },
+        ],
+        rows: [selectRow(cid("ad_data"), "เลือกคำขอ", list.map((d) => ({ label: `${kindLabel(d.kind)}: ${d.name ?? ""}`, value: `${d.id}:${d.kind}` })))],
       });
     },
 
@@ -467,16 +627,31 @@ export const admin: HandlerSet = {
       );
       const mine = queue.filter((q) => !q.own);
       if (!mine.length) {
-        await show(i, { content: "ไม่มีคำขอแลกที่รออยู่" });
+        await show(i, { tone: "staff", title: "📦 คำขอแลก", blocks: [{ kind: "text", text: "ไม่มีคำขอแลกที่รออยู่" }] });
         return;
       }
       await show(i, {
-        content: [
-          ...mine.map((q) => `• ${bkkDate(q.created_at)} ${safe(q.student, 60)}: ${safe(q.item, 60)} (${T.redemptionStatus[q.status] ?? q.status})`),
-          "",
-          "ข้อมูลจัดส่งให้ผู้ปกครองเป็นคนกรอก ผ่านแบบฟอร์มที่แชร์ในห้องกลุ่มหรือขั้นตอนที่อนุมัติแล้วเท่านั้น ห้ามถามที่อยู่ในห้องแชทหรือ DM",
-        ].join("\n"),
-        rows: [selectRow(cid("fl_pick"), "เลือกคำขอ", mine.map((q) => ({ label: `${q.student ?? ""}: ${q.item}`, value: q.id, description: q.status })))],
+        tone: "staff",
+        title: `📦 คำขอแลกที่รออยู่ (${mine.length})`,
+        blocks: [
+          {
+            kind: "text",
+            text: mine
+              .map((q) => `- ${bkkDate(q.created_at)} ${safe(q.student, 60)}: **${safe(q.item, 60)}** (${T.redemptionStatus[q.status] ?? q.status})`)
+              .join("\n"),
+          },
+          {
+            kind: "subtext",
+            text: "ข้อมูลจัดส่งให้ผู้ปกครองเป็นคนกรอก ผ่านแบบฟอร์มที่แชร์ในห้องกลุ่มหรือขั้นตอนที่อนุมัติแล้วเท่านั้น ห้ามถามที่อยู่ในห้องแชทหรือ DM",
+          },
+        ],
+        rows: [
+          selectRow(
+            cid("fl_pick"),
+            "เลือกคำขอ",
+            mine.map((q) => ({ label: `${q.student ?? ""}: ${q.item}`, value: q.id, description: T.redemptionStatus[q.status] ?? q.status }))
+          ),
+        ],
       });
     },
   },
@@ -499,7 +674,13 @@ export const admin: HandlerSet = {
           parseDate(textValue(i, "deadline")),
           textValue(i, "rule")
         );
-        await show(i, { content: `${T.done} ทุกคนที่ถึงเกณฑ์จะได้เท่ากัน และได้รับแจ้งใน /inbox` });
+        await show(i, {
+          tone: "success",
+          title: "✅ เพิ่มของปลดล็อกแล้ว",
+          blocks: [{ kind: "text", text: "ทุกคนที่ถึงเกณฑ์จะได้เท่ากัน และได้รับแจ้งใน /inbox" }],
+          // The same button the season card has: the next unlock opens the same form.
+          rows: buttonRows([button(cid("ad_unlock", seasonId), "🎁 เพิ่มอีก")]),
+        });
         return;
       }
       if (!i.isButton()) return;
@@ -530,14 +711,19 @@ export const admin: HandlerSet = {
         textValue(i, "category"),
         `recog:${requestId}`
       );
-      await show(i, { content: result.duplicate ? "บันทึกไปแล้ว" : `บันทึกแล้ว <@${userId}> ได้รับแจ้งใน /inbox` });
+      await show(
+        i,
+        result.duplicate
+          ? { tone: "success", title: "✅ บันทึกไปแล้ว" }
+          : { tone: "success", title: "✅ บันทึกแล้ว", blocks: [{ kind: "text", text: `<@${userId}> ได้รับแจ้งใน /inbox` }] }
+      );
     },
 
     async ad_terms(i, ctx, [kind]) {
       requireStaff(ctx, ADMIN);
       if (!TERMS_LABEL[kind] || !i.isModalSubmit()) return;
       const status = await ctx.api.call<Status>("shift_quest_admin_set", ctx.userId, kind, textValue(i, "text") ?? "");
-      await show(i, { content: renderStatus(status) });
+      await show(i, statusView(status, true));
     },
 
     async ad_rule(i, ctx, [key, amount, cap, team]) {
@@ -555,7 +741,12 @@ export const admin: HandlerSet = {
         textValue(i, "reversal")
       );
       await show(i, {
-        content: `เผยแพร่ ${result.key} v${result.version} แล้ว เควสต์ที่เลือกไปแล้วใช้เวอร์ชันเดิม ผูกกับเควสต์ตัวอย่างด้วย /admin template-rule`,
+        tone: "success",
+        title: `✅ เผยแพร่ ${result.key} v${result.version} แล้ว`,
+        blocks: [
+          { kind: "text", text: "เควสต์ที่เลือกไปแล้วใช้เวอร์ชันเดิม" },
+          { kind: "subtext", text: "ผูกกับเควสต์ตัวอย่าง: /admin template-rule" },
+        ],
       });
     },
 
@@ -578,7 +769,21 @@ export const admin: HandlerSet = {
           textValue(i, "reason"),
           `${entryId}:${requestId}`
         );
-        await show(i, { content: result.duplicate ? "บันทึกไปแล้ว" : `ปรับคืนแล้ว ยอดใหม่ ${result.balance ?? ""} นักเรียนได้รับแจ้งเหตุผลใน /inbox` });
+        await show(
+          i,
+          result.duplicate
+            ? { tone: "success", title: "✅ บันทึกไปแล้ว" }
+            : {
+                tone: "success",
+                title: "✅ ปรับคืนแล้ว",
+                blocks: [
+                  {
+                    kind: "text",
+                    text: `${typeof result.balance === "number" ? `ยอดใหม่ **${result.balance}** · ` : ""}นักเรียนได้รับแจ้งเหตุผลใน /inbox`,
+                  },
+                ],
+              }
+        );
         return;
       }
       const entryId = picked(i, args);
@@ -611,7 +816,19 @@ export const admin: HandlerSet = {
       if (kind === "erasure") buttons.unshift(button(cid("ad_erase", id), "ลบข้อมูล", ButtonStyle.Danger));
       await show(
         i,
-        { content: kind === "erasure" ? "ลบข้อมูลตามนโยบายที่ประกาศไว้ (ย้อนกลับไม่ได้)" : "แก้ข้อมูลตามที่ขอ แล้วกดดำเนินการแล้ว", rows: buttonRows(buttons) },
+        kind === "erasure"
+          ? {
+              tone: "warn",
+              title: "🗑️ คำขอลบข้อมูล",
+              blocks: [{ kind: "text", text: "ลบข้อมูลตามนโยบายที่ประกาศไว้ **ย้อนกลับไม่ได้**" }],
+              rows: buttonRows(buttons),
+            }
+          : {
+              tone: "staff",
+              title: "✏️ คำขอแก้ข้อมูล",
+              blocks: [{ kind: "text", text: "แก้ข้อมูลตามที่ขอ แล้วกด **ดำเนินการแล้ว**" }],
+              rows: buttonRows(buttons),
+            },
         { replace: true }
       );
     },
@@ -620,7 +837,7 @@ export const admin: HandlerSet = {
       requireStaff(ctx, ADMIN);
       if (!isUuid(id)) return;
       await ctx.api.call("shift_quest_admin_data_close", ctx.userId, id, outcome === "done");
-      await show(i, { content: T.done }, { replace: true });
+      await show(i, { tone: "success", title: `✅ ${T.done}` }, { replace: true });
     },
 
     async ad_erase(i, ctx, [id]) {
@@ -629,8 +846,18 @@ export const admin: HandlerSet = {
       await show(
         i,
         {
-          content:
-            "**ยืนยันการลบ** บันทึก ข้อความ คำขอความช่วยเหลือ และการเชื่อม Discord ของคนนี้จะถูกลบถาวร ยอดเหรียญและสถานะเควสต์คงไว้แบบไม่ระบุตัวตน ย้อนกลับไม่ได้",
+          tone: "warn",
+          title: "⚠️ ยืนยันการลบ",
+          blocks: [
+            {
+              kind: "text",
+              text: [
+                "บันทึก ข้อความ คำขอความช่วยเหลือ และการเชื่อม Discord ของคนนี้จะถูกลบถาวร",
+                "ยอดเหรียญและสถานะเควสต์คงไว้แบบไม่ระบุตัวตน",
+                "**ย้อนกลับไม่ได้**",
+              ].join("\n"),
+            },
+          ],
           rows: buttonRows([button(cid("ad_erase_go", id), "ลบถาวร", ButtonStyle.Danger), button(cid("noop"), T.btnCancel)]),
         },
         { replace: true }
@@ -641,7 +868,7 @@ export const admin: HandlerSet = {
       requireStaff(ctx, ADMIN);
       if (!isUuid(id)) return;
       await ctx.api.call("shift_quest_admin_erase", ctx.userId, id);
-      await show(i, { content: "ลบแล้ว" }, { replace: true });
+      await show(i, { tone: "success", title: "✅ ลบแล้ว" }, { replace: true });
     },
 
     async fl_pick(i, ctx, args) {
@@ -651,7 +878,9 @@ export const admin: HandlerSet = {
       await show(
         i,
         {
-          content: "อัปเดตคำขอ (นักเรียนจะได้รับแจ้งใน /inbox)",
+          tone: "staff",
+          title: "📦 อัปเดตคำขอ",
+          blocks: [{ kind: "subtext", text: "นักเรียนจะได้รับแจ้งใน /inbox" }],
           rows: buttonRows([
             button(cid("fl_act", id, "start"), "เริ่มดำเนินการ", ButtonStyle.Primary),
             button(cid("fl_act", id, "complete"), "เสร็จแล้ว", ButtonStyle.Success),
@@ -680,7 +909,20 @@ export const admin: HandlerSet = {
         action,
         i.isModalSubmit() ? textValue(i, "note") : null
       );
-      await show(i, { content: result === "unchanged" ? "สถานะเปลี่ยนไปแล้ว ไม่มีอะไรเปลี่ยน" : T.done }, { replace: !i.isModalSubmit() });
+      await show(
+        i,
+        result === "unchanged"
+          ? { tone: "neutral", title: "ℹ️ ไม่มีอะไรเปลี่ยน", blocks: [{ kind: "text", text: "สถานะเปลี่ยนไปแล้ว" }] }
+          : {
+              tone: "success",
+              title: `✅ ${T.done}`,
+              blocks: [
+                { kind: "text", text: `สถานะใหม่: **${T.redemptionStatus[FULFILL_STATUS[action]] ?? action}**` },
+                { kind: "subtext", text: "นักเรียนได้รับแจ้งใน /inbox" },
+              ],
+            },
+        { replace: !i.isModalSubmit() }
+      );
     },
   },
 

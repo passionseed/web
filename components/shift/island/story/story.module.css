@@ -1,0 +1,383 @@
+/*
+ * The island story (StoryOverlay) and its book button (StoryLauncher), plus
+ * the start card's rule fold. The overlay portals to <body>, so it carries its
+ * own tokens instead of reading island.module.css.
+ *
+ * Motion: panels cut hard (no slide, no zoom); only the line fades in, over
+ * 200 ms. The CTA is .ei-button-dawn, whose glow and touch replay
+ * (InViewAnimator in IslandShell) come from globals. prefers-reduced-motion
+ * removes the fade and every transition.
+ */
+
+.dialog,
+.launcher,
+.startHead,
+.rulesFold {
+  --story-ease-snap: cubic-bezier(0.4, 0, 0.2, 1);
+  --story-snap: 160ms;
+  --story-text-hi: #fef9e7;
+  --story-text: #e2e8f0;
+  --story-text-dim: #94a3b8;
+  --story-action-soft: #93c5fd;
+  /* The one gold element on the overlay: the current dot. */
+  --story-gold: #fed95c;
+  /* Pixel corners: a 2px notch instead of a border radius (same as the island). */
+  --story-notch: polygon(
+    2px 0,
+    calc(100% - 2px) 0,
+    calc(100% - 2px) 2px,
+    100% 2px,
+    100% calc(100% - 2px),
+    calc(100% - 2px) calc(100% - 2px),
+    calc(100% - 2px) 100%,
+    2px 100%,
+    2px calc(100% - 2px),
+    0 calc(100% - 2px),
+    0 2px,
+    2px 2px
+  );
+}
+
+/* ---------------------------------------------------------------- book button */
+
+.launcher {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.04);
+  border: 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  transition:
+    background-color var(--story-snap) var(--story-ease-snap),
+    transform 80ms var(--story-ease-snap);
+}
+
+.launcher:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.launcher:active {
+  transform: translateY(1px);
+}
+
+.launcher:focus-visible {
+  outline: 2px solid var(--story-action-soft);
+  outline-offset: 2px;
+}
+
+.launcher svg {
+  display: block;
+}
+
+/* ---------------------------------------------------------------- overlay */
+
+/* The Dawn night sky, near-black overhead, lifting only at the horizon. */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: linear-gradient(
+    to bottom,
+    #000006 0%,
+    #01030e 22%,
+    #04061a 46%,
+    #0d1136 74%,
+    #1d2559 94%,
+    #27306a 100%
+  );
+}
+
+.dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 61;
+  color: var(--story-text);
+  font-family: var(--font-bai-jamjuree), "Bai Jamjuree", sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  /* The pale gold horizon band: the bottom third only. */
+  background: linear-gradient(
+    to top,
+    rgba(255, 196, 106, 0.2) 0%,
+    rgba(254, 217, 92, 0.08) 22%,
+    transparent 38%
+  );
+  outline: none;
+}
+
+/*
+ * One column: the skip row on top, then the picture with its line, dots and
+ * button as one unit, centred in the room left by two equal spacers. The
+ * picture's room is measured from this column (StoryOverlay useStageBox).
+ */
+.body {
+  box-sizing: border-box;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: max(8px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+}
+
+.spacer {
+  flex: 1 1 0;
+  min-height: 12px;
+}
+
+.head {
+  flex: none;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  min-height: 48px;
+}
+
+.skip {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--story-text-dim);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  transition: color var(--story-snap) var(--story-ease-snap);
+}
+
+.skip:hover {
+  color: var(--story-text-hi);
+}
+
+.skip:focus-visible,
+.next:focus-visible {
+  outline: 2px solid var(--story-action-soft);
+  outline-offset: 2px;
+}
+
+/* The picture's box: as tall as the tallest panel (set inline), so cuts never move the line. */
+.stage {
+  position: relative;
+  flex: none;
+  width: 100%;
+  margin-bottom: 16px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.stage[data-last="true"] {
+  cursor: default;
+}
+
+/* Every mounted panel shares one grid cell; only the current one is visible. */
+.frame {
+  grid-area: 1 / 1;
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  clip-path: var(--story-notch);
+}
+
+.frame[aria-hidden="true"] {
+  visibility: hidden;
+}
+
+/* The sky behind each panel: what shows before the first frame and behind a fallback tree. */
+.frame[data-phase="dawn"] {
+  background: linear-gradient(180deg, #eca6b2 0%, #f6e4b5 48%, #8acbd0 100%);
+}
+
+.frame[data-phase="day"] {
+  background: linear-gradient(180deg, #8acbd0 0%, #59a9be 52%, #438eac 100%);
+}
+
+.frame[data-phase="dusk"] {
+  background: linear-gradient(180deg, #de796c 0%, #e3ab80 46%, #438eac 100%);
+}
+
+.frame[data-phase="night"] {
+  background: linear-gradient(180deg, #0d1136 0%, #344447 58%, #438eac 100%);
+}
+
+.canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+
+.fallback {
+  display: block;
+}
+
+/* ---------------------------------------------------------------- line, dots, actions */
+
+.foot {
+  flex: none;
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+/* Room for two lines, so the dots and the button never jump between panels. */
+.lineBox {
+  display: grid;
+  place-items: center;
+  min-height: calc(2 * 1.45 * clamp(22px, 6.2vw, 32px));
+}
+
+.line {
+  margin: 0;
+  max-width: 22em;
+  font-family: var(--font-kodchasan), var(--font-bai-jamjuree), sans-serif;
+  font-weight: 600;
+  font-size: clamp(22px, 6.2vw, 32px);
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+  color: var(--story-text-hi);
+  text-wrap: balance;
+  animation: story-line-in 200ms var(--story-ease-snap) both;
+}
+
+@keyframes story-line-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.dots {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dot,
+.dotOn {
+  width: 6px;
+  height: 6px;
+  background: rgba(226, 232, 240, 0.28);
+}
+
+.dotOn {
+  background: var(--story-gold);
+}
+
+.actions {
+  display: grid;
+  width: min(100%, 360px);
+  min-height: 52px;
+}
+
+.cta {
+  width: 100%;
+  min-height: 48px;
+  font-size: 16px;
+}
+
+.next {
+  min-height: 48px;
+  padding: 8px 16px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  color: #bfdbfe;
+  background: rgba(59, 130, 246, 0.1);
+  border: 0;
+  box-shadow: inset 0 0 0 1px rgba(147, 197, 253, 0.3);
+  clip-path: var(--story-notch);
+  cursor: pointer;
+  transition: background-color var(--story-snap) var(--story-ease-snap);
+}
+
+.next:hover {
+  background: rgba(59, 130, 246, 0.18);
+}
+
+/* ---------------------------------------------------------------- start card */
+
+.startHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.startHead > h1 {
+  flex: 1;
+  min-width: 0;
+}
+
+.rulesFold {
+  margin: 0;
+}
+
+.rulesSummary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #bfdbfe;
+  cursor: pointer;
+  list-style: none;
+}
+
+.rulesSummary::-webkit-details-marker {
+  display: none;
+}
+
+/* A stepped pixel arrow that turns down when the fold is open. */
+.rulesSummary::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 10px;
+  background: currentColor;
+  clip-path: polygon(0 0, 33% 0, 33% 20%, 67% 20%, 67% 40%, 100% 40%, 100% 60%, 67% 60%, 67% 80%, 33% 80%, 33% 100%, 0 100%);
+  transition: transform var(--story-snap) var(--story-ease-snap);
+}
+
+.rulesFold[open] > .rulesSummary::before {
+  transform: rotate(90deg);
+}
+
+.rulesSummary:focus-visible {
+  outline: 2px solid var(--story-action-soft);
+  outline-offset: 2px;
+}
+
+.rulesFold[open] > :not(summary) {
+  margin-top: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .line {
+    animation: none;
+  }
+
+  .launcher,
+  .skip,
+  .next,
+  .rulesSummary::before {
+    transition: none;
+  }
+}

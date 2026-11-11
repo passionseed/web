@@ -77,10 +77,12 @@ jobs:
 
   # SHIFT High quests: every shift_quest migration on throwaway Postgres 15
   # databases (production's major, supabase/config.toml), applied once and
-  # twice, then the database rules, island rules and bot flows, plus the bot
-  # typecheck and the deploy smoke check. No secrets: it never touches a real
-  # database. It runs on every pull request so it can be a required check, and
-  # skips its steps when nothing it covers changed.
+  # twice, then the database rules, island rules, bot flows and the web board
+  # suite (side quests and the shift_quest_web allowlist, web_board.ts, wired
+  # through run-local.sh), plus the bot typecheck and the deploy smoke check.
+  # No secrets: it never touches a real database. It runs on every pull
+  # request so it can be a required check, and skips its steps when nothing
+  # it covers changed.
   shift-quests-db:
     runs-on: ubuntu-latest
     steps:

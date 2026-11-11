@@ -133,6 +133,9 @@ chain to a public one.
 | `SHIFT_VOICE_DATABASE_URL` | shift-voice | The `shift_voice_bot` login through the pooler (see Deploying) |
 | `DISCORD_SHIFT_GUILD_ID` | shift-quests | The SHIFT server (same variable as shift-voice) |
 | `SHIFT_QUEST_DATABASE_URL` | shift-quests | The `shift_quest_bot` login through the pooler, set up like `shift_voice_bot` (migration `20261111090600`) |
+| `SHIFT_ISLAND_URL` | shift-quests | Optional. Full URL of the island page, used as is, e.g. `https://www.passionseed.org/shift/island`. Falls back to `NEXT_PUBLIC_SITE_URL` + `/shift/island`. With neither set, the "🌐 เปิดเกาะบนเว็บ" button is left off. https only; http just for `localhost` and `127.0.0.1`, and only with `SHIFT_ISLAND_URL_ALLOW_HTTP=1` (Discord may refuse an http link button and fail the whole card, so to try the link locally prefer an https tunnel URL); a value that is set but refused also leaves the button off |
+| `SHIFT_ISLAND_URL_ALLOW_HTTP` | shift-quests | Optional. `1` lets the island link use `http://localhost` or `http://127.0.0.1` for local tries. Never set it in production |
+| `NEXT_PUBLIC_SITE_URL` | shift-quests | Optional. The site's address, e.g. `https://www.passionseed.org`; only read when `SHIFT_ISLAND_URL` is unset |
 | `NEXT_PUBLIC_SUPABASE_URL` | projectseed | |
 | `SUPABASE_SERVICE_ROLE_KEY` | projectseed | |
 | `DISCORD_BOT_TOKEN` | projectseed | Regenerate in the Discord developer portal if it 401s |
@@ -259,7 +262,11 @@ The short version for whoever runs the bot:
   and `--no-pin` change what it draws.
 - Students use one command, `/island`: a private picture of SHIFT Island with
   their tree, the next milestone, the season (Demo Day countdown, shared island
-  goal, unlocks) and one-tap buttons. `bot/src/quests/island/render.ts` draws
+  goal, unlocks) and one-tap buttons. When `SHIFT_ISLAND_URL` or
+  `NEXT_PUBLIC_SITE_URL` is set, the island card and the `/start` cards also
+  get a "🌐 เปิดเกาะบนเว็บ" link button to the island on the website
+  (`bot/src/quests/weblink.ts`); the link never carries a Discord id or
+  anything a student typed. `bot/src/quests/island/render.ts` draws
   it in pure JavaScript and encodes the PNG with Node's own zlib: no extra
   dependency, no fonts or native modules, and the same map always gives the
   same picture.

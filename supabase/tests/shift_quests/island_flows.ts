@@ -22,6 +22,8 @@ import { I, PENDING_SLOT, SQ } from "../../../bot/src/quests/island/copy";
 import { startOutbox } from "../../../bot/src/quests/outbox";
 import { createRolePool } from "../../../bot/src/pg";
 
+import { readCard, type CardComponent } from "./cards";
+
 const adminUrl = process.env.SHIFT_QUESTS_TEST_DATABASE_URL!;
 const botUrl = process.env.SHIFT_QUESTS_BOT_DATABASE_URL!;
 if (!adminUrl || !botUrl || process.env.SHIFT_QUESTS_TEST_DISPOSABLE !== "1") {
@@ -47,18 +49,16 @@ const FOURTH = "810000000000000006";
 
 let failures = 0;
 let passes = 0;
+/** The latest reply, shown when a failed check names no detail of its own. */
+let lastContent: string | undefined;
 function check(ok: boolean, name: string, detail?: unknown): void {
   if (ok) passes += 1;
   else failures += 1;
+  if (!ok && detail === undefined) detail = lastContent;
   console.log(`${ok ? "ok" : "not ok"} - ${name}${ok || detail === undefined ? "" : ` :: ${JSON.stringify(detail).slice(0, 600)}`}`);
 }
 
-interface Component {
-  custom_id: string;
-  label?: string;
-  options?: { value: string; label: string }[];
-  disabled?: boolean;
-}
+type Component = CardComponent;
 
 interface File {
   name: string;
@@ -72,15 +72,6 @@ interface Response {
   modal?: { custom_id: string; fields: string[]; values: Record<string, string | undefined> };
   files: File[];
   flags?: number;
-}
-
-function flatten(rows: unknown[]): Component[] {
-  const out: Component[] = [];
-  for (const row of rows ?? []) {
-    const json = typeof (row as { toJSON?: () => unknown }).toJSON === "function" ? (row as { toJSON: () => any }).toJSON() : row;
-    for (const c of (json as { components?: any[] }).components ?? []) out.push(c);
-  }
-  return out;
 }
 
 function files(payload: { files?: any[] }): File[] {
@@ -112,8 +103,7 @@ function fake(kind: Kind, o: FakeOptions) {
   const record = (type: Response["type"]) => async (payload: any) => {
     responses.push({
       type,
-      content: payload.content ?? "",
-      components: flatten(payload.components ?? []),
+      ...readCard(payload),
       files: files(payload),
       flags: payload.flags,
     });
@@ -197,6 +187,7 @@ async function run(kind: Kind, o: FakeOptions): Promise<Response> {
   if (responses.length === before) throw new Error(`no response to ${o.command ?? ""} ${o.sub ?? ""} ${o.customId ?? ""}`);
   const generic = responses.slice(before).find((x) => x.content.includes(T.generic.slice(0, 20)));
   if (generic) throw new Error(`generic error from ${o.command ?? ""} ${o.sub ?? ""} ${o.customId ?? ""}`);
+  lastContent = r.content;
   return r;
 }
 
@@ -209,6 +200,8 @@ function find(r: Response, pred: (c: Component) => boolean): Component {
 const has = (r: Response, id: string) => r.components.some((c) => c.custom_id === id);
 /** A refusal: the error's words first, then the reference line every error reply ends with. */
 const refused = (r: Response, text: string) => r.content.startsWith(text) && /\n-# อ้างอิง [A-Z2-9]{6}$/.test(r.content);
+/** A "not yet" (a gate or an expected state): its own title and the words, no error reference. */
+const notYet = (r: Response, text: string) => r.content === `### ${T.notYetTitle}\n${text}`;
 const ids = (r: Response) => r.components.map((c) => c.custom_id);
 const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 const isPng = (f: File | undefined) => Boolean(f && Buffer.isBuffer(f.data) && f.data.subarray(0, 8).equals(PNG_MAGIC));
@@ -240,7 +233,7 @@ async function main(): Promise<void> {
   const mapOf = (user: string) => api.call<{ plots: Plot[] }>("shift_quest_island_map", user);
 
   // --- The bot's startup check: it refuses a database older than itself -------
-  check((await checkQuestSchema(api)) === REQUIRED_SCHEMA, "the startup check accepts this database", REQUIRED_SCHEMA);
+  check((await checkQuestSchema(api)) >= REQUIRED_SCHEMA, "the startup check accepts this database", REQUIRED_SCHEMA);
   const wave1 = (await db.query("select 1 from pg_database where datname = 'wave1'")).rowCount === 1;
   if (wave1) {
     const url = new URL(botUrl);
@@ -265,17 +258,19 @@ async function main(): Promise<void> {
   const S = { user: STUDENT, name: "Student Sorn" };
   const F = { user: FRIEND, name: "Friend Fah" };
   const island = (who: FakeOptions) => run("command", { ...who, command: "island" });
+  /** The season details behind the island card's ℹ️ button. */
+  const seasonOf = (who: FakeOptions) => run("button", { ...who, customId: "sq|is_season" });
 
   await run("command", { ...A, command: "admin", sub: "student-role", options: { action: "add", role: PILOT_ROLE } });
   await run("command", { ...A, command: "admin", sub: "role", options: { user: MENTOR, role: "reviewer", action: "grant" } });
 
   // --- /start, then an island with no plot ------------------------------------
   let r = await island(S);
-  check(refused(r, T.notStarted), "/island before /start asks for /start", r.content);
+  check(notYet(r, T.notStarted), "/island before /start asks for /start", r.content);
 
   r = await run("command", { ...S, command: "start" });
   r = await run("button", { ...S, customId: find(r, (c) => c.label === T.startButton).custom_id });
-  check(r.content === T.started && has(r, "sq|nav|island"), "start onboards and offers the island", ids(r));
+  check(r.content.startsWith(`### ${T.startedTitle}\n${T.started}`) && has(r, "sq|nav|island"), "start onboards and offers the island", { content: r.content, ids: ids(r) });
 
   r = await run("button", { ...S, customId: "sq|nav|island" });
   check(r.type === "editReply" && r.content.includes(I.noPlot), "the island button replaces the message with the island", r);
@@ -288,7 +283,7 @@ async function main(): Promise<void> {
   check(has(r, "sq|is_claim") && has(r, "sq|is_how") && !has(r, "sq|browse") && !has(r, "sq|is_tap"), "no plot: claim and how-it-works only", ids(r));
   check(r.files.length === 1 && isPng(r.files[0]), "no plot: the picture is still attached");
   r = await run("button", { ...S, customId: "sq|is_how" });
-  check(r.content === I.how && has(r, "sq|is_claim"), "how the island works, with the claim button", r.content);
+  check(r.content.startsWith(`### ${I.btnHow}\n${I.how}`) && has(r, "sq|is_claim"), "how the island works, with the claim button", r.content);
 
   // --- Claim a plot (create the project) --------------------------------------
   r = await run("button", { ...S, customId: "sq|is_claim" });
@@ -298,10 +293,10 @@ async function main(): Promise<void> {
     customId: r.modal!.custom_id,
     fields: { name: "Trip Splitter", route: ["software"], ambition: "Split trip costs fairly" },
   });
-  check(r.content === T.projectCreated("Trip Splitter"), "project created from the island", r.content);
+  check(r.content.startsWith(`### ${T.projectCreatedTitle}\n${T.projectCreated("Trip Splitter")}`), "project created from the island", r.content);
 
   r = await island(S);
-  check(r.content.includes("Trip Splitter") && r.content.includes("แปลง #1") && r.content.includes("(0/7)"), "the plot shows on /island", r.content);
+  check(r.content.includes(I.plot(1, 0, "Trip Splitter")), "the plot shows on /island", r.content);
   check(r.files.length === 1 && isPng(r.files[0]), "the island image is attached", r.files.map((f) => f.name));
   const projectId = find(r, (c) => c.custom_id.startsWith("sq|is_name|")).custom_id.split("|")[2];
   check(
@@ -320,15 +315,15 @@ async function main(): Promise<void> {
   r = await run("command", { ...S, command: "project", sub: "invite", options: { user: FRIEND } });
   r = await run("command", { ...F, command: "inbox" });
   r = await run("button", { ...F, customId: find(r, (c) => c.custom_id === `sq|invite|${projectId}|y`).custom_id });
-  check(r.content === T.projectJoined, "teammate accepts the project invite");
+  check(r.content === `✅ ${T.projectJoined}`, "teammate accepts the project invite");
   r = await island(F);
   check(r.content.includes("Trip Splitter") && r.content.includes("แปลง #1"), "the teammate sees the same plot", r.content);
 
   // --- One tap a day, and a private note ---------------------------------------
   r = await run("button", { ...S, customId: "sq|is_tap" });
-  check(r.content === I.tapped && has(r, "sq|is_note") && has(r, "sq|is_view"), "first tap is logged", r);
+  check(r.content === `### ${I.tappedTitle}\n${I.tapped}` && has(r, "sq|is_note") && has(r, "sq|is_view"), "first tap is logged", r);
   r = await run("button", { ...S, customId: "sq|is_tap" });
-  check(r.content === I.tapAgain, "second tap today says it is already logged", r.content);
+  check(r.content === `### ${I.tapAgainTitle}\n${I.tapAgain}`, "second tap today says it is already logged", r.content);
   const taps = Number(
     await scalar(
       `select count(*) from public.shift_quest_progress p join public.shift_quest_members m on m.id = p.member_id
@@ -343,7 +338,7 @@ async function main(): Promise<void> {
   r = await run("button", { ...S, customId: "sq|is_note" });
   check(r.type === "modal" && r.modal!.custom_id === "sq|is_note" && r.modal!.fields.includes("note"), "note button opens a modal", r.modal);
   r = await run("modal", { ...S, customId: "sq|is_note", fields: { note: "Sketched the totals screen" } });
-  check(r.content === I.noteSaved, "note saved", r.content);
+  check(r.content === `### ${I.noteSavedTitle}\n-# ${I.noteSaved}`, "note saved", r.content);
   const note = await db.query(
     `select p.changed, p.visibility from public.shift_quest_progress p join public.shift_quest_members m on m.id = p.member_id
      where m.discord_user_id = $1 and p.kind = 'note'`,
@@ -370,12 +365,12 @@ async function main(): Promise<void> {
       activate: true,
     },
   });
-  check(r.content.includes("Season 1") && r.content.includes("(active)") && r.content.includes("0/3"), "season created and active", r.content);
+  check(r.content.includes("### 🎪 Season 1\nactive ·") && r.content.includes("**0**/3"), "season created and active", r.content);
   const unlockButton = find(r, (c) => c.custom_id.startsWith("sq|ad_unlock|")).custom_id;
   r = await run("command", { ...A, command: "admin", sub: "season", options: { name: "Season 1", starts: "2026-13-01", ends: await day(30), demo_day: await day(20) } });
   check(refused(r, errorText("bad_date")), "a malformed season date is refused clearly", r.content);
   r = await run("command", { ...S, command: "admin", sub: "season", options: { name: "x", starts: await day(0), ends: await day(1), demo_day: await day(1) } });
-  check(refused(r, T.staffOnly), "students cannot set a season", r.content);
+  check(notYet(r, T.staffOnly), "students cannot set a season", r.content);
   r = await run("command", { ...A, command: "admin", sub: "season", options: { name: "Season 2", demo_day: await day(5) } });
   check(refused(r, errorText("bad_dates")), "a new season needs all three dates", r.content);
 
@@ -385,22 +380,27 @@ async function main(): Promise<void> {
   r = await run("modal", { ...A, customId: unlockModal, fields: { label: "สติกเกอร์ SHIFT High", count: "๑", deadline: await day(20), rule: "" } });
   check(refused(r, errorText("bad_input")), "a count that is not a digit 1 to 7 is refused clearly", r.content);
   r = await run("modal", { ...A, customId: unlockModal, fields: { label: "สติกเกอร์ SHIFT High", count: "1", deadline: await day(20), rule: "" } });
-  check(r.content.startsWith(T.done), "unlock added", r.content);
+  check(r.content.startsWith("### ✅ เพิ่มของปลดล็อกแล้ว\n"), "unlock added", r.content);
   // Re-running with the name only changes nothing (review finding 5): the goal and the bars stay.
   r = await run("command", { ...A, command: "admin", sub: "season", options: { name: "Season 1" } });
-  check(r.content.includes("สติกเกอร์ SHIFT High") && r.content.includes("ได้แล้ว 0 คน"), "the admin view lists the unlock with a count only", r.content);
+  check(r.content.includes("🎁 สติกเกอร์ SHIFT High: ครบ 1 ขั้น") && r.content.includes("ได้แล้ว **0** คน"), "the admin view lists the unlock with a count only", r.content);
   check(
-    r.content.includes("(active)") && r.content.includes("โต๊ะโชว์งาน: 1 ขั้น") && r.content.includes("ขึ้นเวที: 2 ขั้น") &&
-      r.content.includes("0/3") && r.content.includes("Pizza night") && has(r, unlockButton),
+    r.content.includes("\nactive ·") && r.content.includes("โต๊ะโชว์งาน **1** ขั้น") && r.content.includes("ขึ้นเวที **2** ขั้น") &&
+      r.content.includes("**0**/3") && r.content.includes("Pizza night") && has(r, unlockButton),
     "a name-only re-run keeps the goal, the bars and the unlock button",
     r.content
   );
 
   r = await island(S);
   check(
-    r.content.includes("Season 1") && r.content.includes("อีก 1 ขั้น ได้โต๊ะโชว์งาน") && r.content.includes("🎁 ครบ 1 ขั้นก่อน") &&
-      r.content.includes("🎯 ทั้งเกาะ: 0/3"),
-    "the season block shows the bar, the unlock and the island goal",
+    r.content.includes("🎪 **Season 1**") && r.content.includes("อีก 1 ขั้น ได้โต๊ะโชว์งาน") && has(r, "sq|is_season"),
+    "the island card shows the season's headline, the bar and a details button",
+    r.content
+  );
+  r = await seasonOf(S);
+  check(
+    r.content.startsWith("### 🎪 Season 1\n") && r.content.includes("🎁 ครบ 1 ขั้นก่อน") && r.content.includes("🎯 ทั้งเกาะ: 0/3"),
+    "the season details show the unlock and the island goal",
     r.content
   );
 
@@ -421,7 +421,7 @@ async function main(): Promise<void> {
     customId: "sq|is_msgo|1",
     fields: { proof: "Asked 5 classmates how they split trip costs", note: "Nobody likes chasing friends for money" },
   });
-  check(r.content === I.sent && has(r, "sq|is_view"), "milestone sent for a visit", r);
+  check(r.content.startsWith(`### ${I.sentTitle}\n${I.sent}`) && has(r, "sq|is_view"), "milestone sent for a visit", r);
 
   r = await island(S);
   check(r.content.includes(I.inFlight(title(1), STATE.submitted)), "/island shows the milestone waiting", r.content);
@@ -436,19 +436,22 @@ async function main(): Promise<void> {
   check(r.content.includes("Asked 5 classmates") && r.content.includes("Nobody likes chasing"), "the mentor sees proof and portfolio note", r.content);
   r = await run("button", { ...M, customId: find(r, (c) => c.label === "อนุมัติ").custom_id });
   r = await run("modal", { ...M, customId: r.modal!.custom_id, fields: { feedback: "Real conversations, a clear choice" } });
-  check(r.content.startsWith("บันทึกแล้ว: อนุมัติ"), "mentor approves", r.content);
+  check(r.content.startsWith("### ✅ บันทึกแล้ว: อนุมัติ\n"), "mentor approves", r.content);
 
   r = await island(S);
-  check(r.content.includes("เมล็ด (1/7)"), "/island shows stage 1", r.content);
+  check(r.content.includes(I.plot(1, 1, "Trip Splitter")), "/island shows stage 1", r.content);
   check(r.files.length === 1 && isPng(r.files[0]) && hash(r.files[0]) !== beforeApproval, "the picture changes: the tree grew", { beforeApproval, after: hash(r.files[0]) });
+  const islandCard = r;
+  r = await seasonOf(S);
   check(r.content.includes("🎁 ปลดล็อกแล้ว: สติกเกอร์ SHIFT High"), "the student sees the unlock earned", r.content);
+  check(r.content.includes("🎯 ทั้งเกาะ: 1/3"), "the island goal counts the project", r.content);
+  r = islandCard;
   // A gallery table needs milestone 2 among the counted ones, whatever the bar (review finding 9).
   check(
     r.content.includes(`อีก 1 ขั้น ได้โต๊ะโชว์งานใน Demo Day (ต้องมีขั้น "${title(2)}" ด้วย)`) && !r.content.includes("✅ ได้โต๊ะ"),
     "one counted milestone meets the bar of 1, but a table also needs milestone 2",
     r.content
   );
-  check(r.content.includes("🎯 ทั้งเกาะ: 1/3"), "the island goal counts the project", r.content);
   check(r.content.includes(title(2)) && !r.content.includes(I.inFlight(title(1), STATE.submitted)), "the next milestone moves on", r.content);
   // Nobody consented to show the plot yet: outsiders and the weekly post see the slot only (review findings 1, 3).
   const plain = (await publicMap()).plots.find((p) => p.slot === 1);
@@ -463,7 +466,12 @@ async function main(): Promise<void> {
   );
   check(nullCaller === "not_started", "the island map refuses a null caller", nullCaller);
   r = await island(F);
-  check(r.content.includes("เมล็ด (1/7)") && r.content.includes("🎁 ปลดล็อกแล้ว: สติกเกอร์ SHIFT High"), "the teammate's tree grew and earned the unlock too", r.content);
+  const friendSeason = await seasonOf(F);
+  check(
+    r.content.includes(I.plot(1, 1, "Trip Splitter")) && friendSeason.content.includes("🎁 ปลดล็อกแล้ว: สติกเกอร์ SHIFT High"),
+    "the teammate's tree grew and earned the unlock too",
+    { island: r.content, season: friendSeason.content }
+  );
   r = await run("command", { ...S, command: "inbox" });
   check(r.content.includes("ผ่านแล้ว") && r.content.includes("ได้ **สติกเกอร์ SHIFT High**"), "the inbox tells the approval and the unlock", r.content);
 
@@ -474,7 +482,7 @@ async function main(): Promise<void> {
     customId: r.modal!.custom_id,
     fields: { proof: "A paper prototype of the totals page", note: "I can now sketch a flow before coding", link: "https://example.org/proto" },
   });
-  check(r.content === I.sent, "milestone 2 sent");
+  check(r.content.startsWith(`### ${I.sentTitle}\n${I.sent}`), "milestone 2 sent");
   // Sent, not seen by a mentor yet: the table rests on it, and /island says it waits for the mentor.
   r = await island(S);
   check(r.content.includes(PENDING_SLOT.table) && !r.content.includes("✅ ได้โต๊ะ"), "a slot that needs pending work says it waits for the mentor", r.content);
@@ -482,7 +490,7 @@ async function main(): Promise<void> {
   r = await run("select", { ...M, customId: "sq|rv_sub", values: [find(r, (c) => c.custom_id === "sq|rv_sub").options![0].value] });
   r = await run("button", { ...M, customId: find(r, (c) => c.label === "ขอข้อมูลเพิ่ม").custom_id });
   r = await run("modal", { ...M, customId: r.modal!.custom_id, fields: { feedback: "Show one person trying it" } });
-  check(r.content.startsWith("บันทึกแล้ว: ขอข้อมูลเพิ่ม"), "mentor asks for more on milestone 2", r.content);
+  check(r.content.startsWith("### ✅ บันทึกแล้ว: ขอข้อมูลเพิ่ม\n"), "mentor asks for more on milestone 2", r.content);
   r = await island(S);
   check(r.content.includes(I.inFlight(title(2), STATE.clarification)) && has(r, "sq|is_rest|on"), "/island shows the question and offers rest", r.content);
 
@@ -506,12 +514,12 @@ async function main(): Promise<void> {
   check(openTwo === 1, "still one open quest for milestone 2", openTwo);
 
   r = await run("button", { ...S, customId: "sq|is_rest|on" });
-  check(r.content === I.rested(1), "rest pauses the open milestone", r.content);
+  check(r.content === `### ${I.restedTitle}\n${I.rested(1)}`, "rest pauses the open milestone", r.content);
   r = await island(S);
   check(r.content.includes(I.resting) && has(r, "sq|is_rest|off") && !has(r, "sq|is_rest|on"), "/island shows resting and a wake button", { content: r.content, ids: ids(r) });
-  check(r.content.includes("เมล็ด (1/7)"), "resting never lowers the tree", r.content);
+  check(r.content.includes(I.plot(1, 1, "Trip Splitter")), "resting never lowers the tree", r.content);
   r = await run("button", { ...S, customId: "sq|is_rest|off" });
-  check(r.content === I.woke(1), "wake resumes it", r.content);
+  check(r.content === `### ${I.wokeTitle}\n${I.woke(1)}`, "wake resumes it", r.content);
   r = await island(S);
   check(!r.content.includes(I.resting) && has(r, "sq|is_rest|on"), "awake again", r.content);
   r = await run("button", { ...S, customId: "sq|is_work" });
@@ -520,7 +528,7 @@ async function main(): Promise<void> {
   r = await run("button", { ...S, customId: "sq|is_stuck" });
   check(r.type === "modal" && r.modal!.fields.includes("summary"), "stuck opens the help modal", r.modal);
   r = await run("modal", { ...S, customId: r.modal!.custom_id, fields: { summary: "How do I find testers?", visibility: ["mentors"] } });
-  check(r.content === T.helpSent(false), "help goes to the mentors' group queue", r.content);
+  check(r.content === `### ${T.helpSentTitle}\n${T.helpSent(false)}`, "help goes to the mentors' group queue", r.content);
 
   // Milestone 2 answered and approved: a table now, and the stage needs milestone 3.
   r = await run("select", { ...S, customId: "sq|is_mspick", values: ["2"] });
@@ -529,26 +537,26 @@ async function main(): Promise<void> {
     customId: r.modal!.custom_id,
     fields: { proof: "Two classmates tried the paper prototype", note: "Watching someone use it beats guessing" },
   });
-  check(r.content === I.sent, "the answer to the question is sent", r.content);
+  check(r.content.startsWith(`### ${I.sentTitle}\n${I.sent}`), "the answer to the question is sent", r.content);
   r = await run("command", { ...M, command: "review", sub: "queue" });
   r = await run("select", { ...M, customId: "sq|rv_sub", values: [find(r, (c) => c.custom_id === "sq|rv_sub").options![0].value] });
   r = await run("button", { ...M, customId: find(r, (c) => c.label === "อนุมัติ").custom_id });
   r = await run("modal", { ...M, customId: r.modal!.custom_id, fields: { feedback: "It works on paper" } });
-  check(r.content.startsWith("บันทึกแล้ว: อนุมัติ"), "mentor approves milestone 2", r.content);
+  check(r.content.startsWith("### ✅ บันทึกแล้ว: อนุมัติ\n"), "mentor approves milestone 2", r.content);
   r = await island(S);
   check(
-    r.content.includes("(2/7)") && r.content.includes(`✅ ได้โต๊ะโชว์งานแล้ว อีก 1 ขั้นได้ขึ้นเวที (ต้องมีขั้น "${title(3)}" ด้วย)`),
+    r.content.includes(I.plot(1, 2, "Trip Splitter")) && r.content.includes(`✅ ได้โต๊ะโชว์งานแล้ว อีก 1 ขั้นได้ขึ้นเวที (ต้องมีขั้น "${title(3)}" ด้วย)`),
     "milestone 2 gives a table; two counted meet the stage bar of 2, but a stage slot also needs milestone 3",
     r.content
   );
 
   // --- 🪧 Name on the island: only with both teammates' consent ---------------
   r = await run("button", { ...S, customId: `sq|is_name|${projectId}|on` });
-  check(r.content === I.nameShown(false), "one consent waits for the teammate", r.content);
+  check(r.content === `### ${I.nameWaitingTitle}\n${I.nameWaiting}`, "one consent waits for the teammate", r.content);
   check((await publicMap()).plots.find((p) => p.slot === 1)?.name === null, "the shared map has no name with one consent");
   r = await island(F);
   r = await run("button", { ...F, customId: find(r, (c) => c.custom_id === `sq|is_name|${projectId}|on`).custom_id });
-  check(r.content === I.nameShown(true), "the second consent shows the name", r.content);
+  check(r.content === `### ${I.nameShown}`, "the second consent shows the name", r.content);
   const named = await publicMap();
   const namedPlot = named.plots.find((p) => p.slot === 1);
   check(
@@ -563,9 +571,9 @@ async function main(): Promise<void> {
 
   // --- Squads: off until an admin switches them on; then new, invite, accept, view --
   r = await run("command", { ...S, command: "squad", sub: "view" });
-  check(refused(r, SQ.notOpen), "/squad answers not open yet while squads are off", r.content);
+  check(notYet(r, SQ.notOpen), "/squad answers not open yet while squads are off", r.content);
   r = await run("command", { ...S, command: "squad", sub: "new", options: { name: "Too Early", target: "x" } });
-  check(refused(r, SQ.notOpen), "and starts nothing", r.content);
+  check(notYet(r, SQ.notOpen), "and starts nothing", r.content);
   check(Number(await scalar("select count(*) from public.shift_quest_squads")) === 0, "no squad was made while off");
   r = await run("command", { ...A, command: "admin", sub: "feature", options: { name: "squads", state: "on" } });
   check(r.content.includes("สควอด: เปิด"), "an admin switches squads on, with nothing to publish first", r.content);
@@ -575,14 +583,14 @@ async function main(): Promise<void> {
   check(refused(r, errorText("missing_text")), "a squad without a target is refused clearly", r.content);
   // Squads are for students: staff are told so before anything else (safeguarding, review findings 4 and 10).
   r = await run("command", { ...M, command: "squad", sub: "view" });
-  check(refused(r, errorText("staff_no_squad")), "staff cannot open squads", r.content);
+  check(notYet(r, errorText("staff_no_squad")), "staff cannot open squads", r.content);
   r = await run("command", { ...M, command: "squad", sub: "new", options: { name: "Mentor Pod", target: "x" } });
-  check(refused(r, errorText("staff_no_squad")), "staff cannot start a squad", r.content);
+  check(notYet(r, errorText("staff_no_squad")), "staff cannot start a squad", r.content);
   r = await run("command", { ...S, command: "squad", sub: "new", options: { name: "Sprint Crew", target: "Ship the totals screen", days: 7 } });
-  check(r.content === SQ.created, "squad created", r.content);
+  check(r.content.startsWith(`### ${SQ.createdTitle}\n${SQ.created}`), "squad created", r.content);
   const squadId = find(r, (c) => c.custom_id.startsWith("sq|squad_view|")).custom_id.split("|")[2];
   r = await run("command", { ...S, command: "squad", sub: "invite", options: { user: FRIEND } });
-  check(r.content === SQ.invited(`<@${FRIEND}>`), "teammate invited to the squad", r.content);
+  check(r.content.startsWith(`### 📨 ส่งคำชวนแล้ว\n${SQ.invited(`<@${FRIEND}>`)}`), "teammate invited to the squad", r.content);
   r = await run("command", { ...F, command: "inbox" });
   check(r.content.includes("Sprint Crew") && has(r, `sq|squad_rsvp|${squadId}|y`), "the squad invite shows in the inbox", r);
   r = await run("button", { ...F, customId: `sq|squad_rsvp|${squadId}|y` });
@@ -617,13 +625,13 @@ async function main(): Promise<void> {
 
   // Withdrawing an invite: only the member who sent it, and it leaves the invitee's inbox.
   r = await run("command", { ...S, command: "squad", sub: "invite", options: { user: FOURTH } });
-  check(r.content === SQ.invited(`<@${FOURTH}>`), "a fourth student invited", r.content);
+  check(r.content.startsWith(`### 📨 ส่งคำชวนแล้ว\n${SQ.invited(`<@${FOURTH}>`)}`), "a fourth student invited", r.content);
   r = await run("command", { ...Fourth, command: "inbox" });
   check(r.content.includes("Sprint Crew") && has(r, `sq|squad_rsvp|${squadId}|y`), "the fourth student sees the invite", r.content);
   r = await run("command", { ...F, command: "squad", sub: "withdraw", options: { user: FOURTH } });
   check(refused(r, errorText("no_invite")), "only the member who sent an invite can withdraw it", r.content);
   r = await run("command", { ...S, command: "squad", sub: "withdraw", options: { user: FOURTH } });
-  check(r.content === SQ.withdrawn(`<@${FOURTH}>`), "the inviter withdraws the invite", r.content);
+  check(r.content === `### ${SQ.withdrawnTitle}\n${SQ.withdrawn(`<@${FOURTH}>`)}`, "the inviter withdraws the invite", r.content);
   r = await run("command", { ...Fourth, command: "inbox" });
   check(!r.content.includes("Sprint Crew") && !has(r, `sq|squad_rsvp|${squadId}|y`), "the withdrawn invite is gone from the inbox", r.content);
   r = await run("button", { ...Fourth, customId: `sq|squad_rsvp|${squadId}|y` });
@@ -633,7 +641,7 @@ async function main(): Promise<void> {
   r = await run("command", { ...M, command: "start" });
   await run("button", { ...M, customId: find(r, (c) => c.label === T.startButton).custom_id });
   r = await run("command", { ...S, command: "squad", sub: "invite", options: { user: MENTOR } });
-  check(refused(r, errorText("staff_no_squad")), "a mentor cannot be invited into a squad", r.content);
+  check(notYet(r, errorText("staff_no_squad")), "a mentor cannot be invited into a squad", r.content);
   r = await run("command", { ...M, command: "inbox" });
   check(!r.content.includes("Sprint Crew") && !r.components.some((c) => c.custom_id.startsWith("sq|squad_")), "staff see no squad in their inbox", r.content);
 
@@ -648,9 +656,9 @@ async function main(): Promise<void> {
   const recogModal = r.modal!;
   const recogFields = { reason: "Turned a failed test into a clear next step", category: recogModal.values.category ?? "" };
   r = await run("modal", { ...A, customId: recogModal.custom_id, id: "991000000000000001", fields: recogFields });
-  check(r.content === `บันทึกแล้ว <@${STUDENT}> ได้รับแจ้งใน /inbox`, "recognition recorded", r.content);
+  check(r.content === `### ✅ บันทึกแล้ว\n<@${STUDENT}> ได้รับแจ้งใน /inbox`, "recognition recorded", r.content);
   r = await run("modal", { ...A, customId: recogModal.custom_id, id: "991000000000000001", fields: recogFields });
-  check(r.content === "บันทึกไปแล้ว", "a resubmitted recognition is a no-op", r.content);
+  check(r.content === "### ✅ บันทึกไปแล้ว", "a resubmitted recognition is a no-op", r.content);
   const recog = await db.query("select category, amount, ledger_entry_id from public.shift_quest_recognitions");
   check(recog.rows.length === 1 && recog.rows[0].category === category && recog.rows[0].ledger_entry_id === null, "one recognition, full category, no coins", recog.rows);
   r = await run("command", { ...S, command: "inbox" });
@@ -668,7 +676,7 @@ async function main(): Promise<void> {
     const opened = await run("command", { ...A, command: "admin", sub: "recognize", options: { user: STUDENT, amount: 0 } });
     return run("modal", { ...A, customId: opened.modal!.custom_id, fields: { reason, category } });
   };
-  const recorded = `บันทึกแล้ว <@${STUDENT}> ได้รับแจ้งใน /inbox`;
+  const recorded = `### ✅ บันทึกแล้ว\n<@${STUDENT}> ได้รับแจ้งใน /inbox`;
   r = await recognize("", "Kept testing after a flop");
   check(r.content === recorded, "a surprise recognition recorded", r.content);
   r = await recognize("", "Kept testing, round 2");
@@ -699,6 +707,7 @@ async function main(): Promise<void> {
   );
 
   const sent: { target: string; payload: any }[] = [];
+  const isIslandPost = (payload: any) => readCard(payload).content.startsWith("### 🏝️");
   let nextMessage = 1;
   const fakeDiscord: any = {
     channels: {
@@ -721,7 +730,7 @@ async function main(): Promise<void> {
   };
   // One delivery tick per pass, run by hand instead of on the 10-second timer.
   const realSetInterval = globalThis.setInterval;
-  for (let pass = 0; pass < 5 && !sent.some((s) => s.payload.content?.startsWith("🏝️")); pass += 1) {
+  for (let pass = 0; pass < 5 && !sent.some((s) => isIslandPost(s.payload)); pass += 1) {
     let tick: (() => void) | null = null;
     (globalThis as any).setInterval = (fn: () => void) => {
       tick = fn;
@@ -732,12 +741,13 @@ async function main(): Promise<void> {
     tick!();
     await loop.stop();
   }
-  const post = sent.find((s) => s.payload.content?.startsWith("🏝️"));
+  const post = sent.find((s) => isIslandPost(s.payload));
+  const postText = post ? readCard(post.payload).content : "";
   check(post?.target === `channel:${CELEBRATE}`, "the island post goes to the celebrate channel", sent.map((s) => s.target));
   check(
-    Boolean(post) && post!.payload.content.includes("เป้าหมายของเกาะ: 1 จาก 3 โปรเจกต์") && post!.payload.content.includes("🪧 #1 Trip Splitter"),
+    postText.includes("🎯 เป้าหมายของเกาะ") && postText.includes("**1**/3 โปรเจกต์") && postText.includes(`${I.signs} #1 Trip Splitter`),
     "the post has the goal count and the opt-in sign",
-    post?.payload.content
+    postText
   );
   const attachment = post?.payload.files?.[0];
   check(
@@ -746,7 +756,7 @@ async function main(): Promise<void> {
     post?.payload.files?.map((f: any) => f.name)
   );
   check(
-    Boolean(post) && !/Student Sorn|Friend Fah|<@/.test(post!.payload.content) && post!.payload.allowedMentions?.parse?.length === 0 &&
+    Boolean(post) && !/Student Sorn|Friend Fah|<@/.test(postText) && post!.payload.allowedMentions?.parse?.length === 0 &&
       post!.payload.allowedMentions?.users?.length === 0,
     "the post names nobody and pings nobody",
     post?.payload
@@ -755,24 +765,26 @@ async function main(): Promise<void> {
   check(delivered.rows[0]?.status === "sent" && Boolean(delivered.rows[0]?.discord_message_id), "the outbox row is marked sent", delivered.rows);
 
   r = await run("button", { ...S, customId: `sq|is_name|${projectId}|off` });
-  check(r.content === I.nameHidden, "hiding the name", r.content);
+  check(r.content === `### ${I.nameHiddenTitle}\n${I.nameHidden}`, "hiding the name", r.content);
   const hidden = (await publicMap()).plots.find((p) => p.slot === 1);
   check(hidden?.name === null && hidden.plain && hidden.stage === 0, "one withdrawn consent hides the name and the tree again", hidden);
 
   // --- Season edits: one change keeps the rest; clear_goal removes the goal ----------
   r = await run("command", { ...A, command: "admin", sub: "season", options: { name: "Season 1", goal_target: 5 } });
-  check(r.content.includes("1/5") && r.content.includes("โต๊ะโชว์งาน: 1 ขั้น") && r.content.includes("Pizza night"), "changing the target alone keeps the rest of the goal and the bars", r.content);
+  check(r.content.includes("**1**/5") && r.content.includes("โต๊ะโชว์งาน **1** ขั้น") && r.content.includes("Pizza night"), "changing the target alone keeps the rest of the goal and the bars", r.content);
   r = await run("command", { ...A, command: "admin", sub: "season", options: { name: "Season 1", clear_goal: true, goal_target: 4 } });
   check(refused(r, errorText("bad_input")), "clear_goal with goal values is refused", r.content);
   r = await run("command", { ...A, command: "admin", sub: "season", options: { name: "Season 1", clear_goal: true } });
-  check(r.content.includes("ยังไม่มีเป้าทั้งเกาะ") && r.content.includes("(active)") && r.content.includes("ขึ้นเวที: 2 ขั้น"), "clear_goal removes the goal only", r.content);
-  r = await island(S);
-  check(!r.content.includes("🎯 ทั้งเกาะ"), "the island no longer shows a goal", r.content);
+  check(r.content.includes("ยังไม่มีเป้าทั้งเกาะ") && r.content.includes("\nactive ·") && r.content.includes("ขึ้นเวที **2** ขั้น"), "clear_goal removes the goal only", r.content);
+  r = await seasonOf(S);
+  check(r.content.startsWith("### 🎪 Season 1\n") && !r.content.includes("🎯 ทั้งเกาะ"), "the season details no longer show a goal", r.content);
 
   // Every reply was private: a fresh reply or follow-up is ephemeral, and every
   // edit is of an ephemeral reply or of the private message it replaces.
   const fresh = responses.filter((x) => x.type === "reply" || x.type === "followUp");
-  check(fresh.length > 0 && fresh.every((x) => x.flags === 64), "every reply is ephemeral", fresh.filter((x) => x.flags !== 64).map((x) => x.content.slice(0, 60)));
+  // Components V2 (32768) is set on every card as well; Ephemeral is 64.
+  const ephemeral = (flags: number | undefined) => ((flags ?? 0) & 64) === 64;
+  check(fresh.length > 0 && fresh.every((x) => ephemeral(x.flags)), "every reply is ephemeral", fresh.filter((x) => !ephemeral(x.flags)).map((x) => x.content.slice(0, 60)));
   check(deferFlags.length > 0 && deferFlags.every((f) => f === 64), "every deferred reply is ephemeral", deferFlags);
 
   await db.end();

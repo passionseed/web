@@ -180,6 +180,79 @@ export async function joinShiftGuild(input: {
   }
 }
 
+export type ShiftGuildMemberResult =
+  | { ok: true; roles: string[]; nick: string | null }
+  | { ok: false; reason: "not_member" | "not_configured" | "rate_limited" | "error" };
+
+const MEMBER_TTL_MS = 60_000;
+const NOT_MEMBER_TTL_MS = 15_000;
+/** How long an expired answer may still stand in while Discord is down or rate limiting. */
+const MEMBER_STALE_MS = 10 * 60_000;
+const MEMBER_CACHE_MAX = 500;
+const MEMBER_ID = /^\d{17,20}$/;
+
+/** Member lookups by Discord id: who holds which roles, for the island's eligibility check. */
+const memberCache = new Map<string, { result: ShiftGuildMemberResult; fetchedAt: number; ttl: number }>();
+
+function pruneMemberCache(now: number) {
+  if (memberCache.size < MEMBER_CACHE_MAX) return;
+  for (const [id, entry] of memberCache) {
+    if (now - entry.fetchedAt > MEMBER_STALE_MS) memberCache.delete(id);
+  }
+  // Still full of fresh entries: drop the oldest (Map keeps insertion order).
+  while (memberCache.size >= MEMBER_CACHE_MAX) {
+    const oldest = memberCache.keys().next().value;
+    if (oldest === undefined) break;
+    memberCache.delete(oldest);
+  }
+}
+
+async function lookupShiftGuildMember(config: GuildConfig, discordUserId: string): Promise<ShiftGuildMemberResult> {
+  try {
+    const res = await discordFetch(config, `/members/${discordUserId}`, { method: "GET" }, "SHIFT island access check");
+    if (res.ok) {
+      const body = (await res.json()) as { roles?: unknown; nick?: unknown };
+      const roles = Array.isArray(body.roles) ? body.roles.filter((r): r is string => typeof r === "string") : [];
+      const nick = typeof body.nick === "string" && body.nick.trim() ? body.nick.trim() : null;
+      return { ok: true, roles, nick };
+    }
+    if (res.status === 404) {
+      const body = (await res.json().catch(() => null)) as { code?: unknown } | null;
+      return { ok: false, reason: body?.code === 10007 ? "not_member" : "error" };
+    }
+    return { ok: false, reason: res.status === 429 ? "rate_limited" : "error" };
+  } catch {
+    return { ok: false, reason: "error" };
+  }
+}
+
+/**
+ * The person's roles and server nickname in the SHIFT server right now, for
+ * pages that have no Discord interaction to read them from (the web island).
+ * Cached per Discord id: 60 s for a member, 15 s for "not in the server". When
+ * Discord is rate limiting or failing, a recent answer stands in; otherwise
+ * the caller gets the failure and must deny access.
+ */
+export async function fetchShiftGuildMember(discordUserId: string): Promise<ShiftGuildMemberResult> {
+  const config = guildConfig();
+  if (!config) return { ok: false, reason: "not_configured" };
+  if (!MEMBER_ID.test(discordUserId)) return { ok: false, reason: "error" };
+
+  const now = Date.now();
+  const cached = memberCache.get(discordUserId);
+  if (cached && now - cached.fetchedAt < cached.ttl) return cached.result;
+
+  const result = await lookupShiftGuildMember(config, discordUserId);
+  if (result.ok || result.reason === "not_member") {
+    memberCache.delete(discordUserId);
+    pruneMemberCache(now);
+    memberCache.set(discordUserId, { result, fetchedAt: now, ttl: result.ok ? MEMBER_TTL_MS : NOT_MEMBER_TTL_MS });
+    return result;
+  }
+  if (cached && now - cached.fetchedAt < MEMBER_STALE_MS) return cached.result;
+  return result;
+}
+
 export type RoleRemovalResult =
   | { ok: true; state: "removed" | "nothing_to_remove" }
   | { ok: false; state: "not_configured" | "error"; message: string };

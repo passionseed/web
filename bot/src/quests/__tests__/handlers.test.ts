@@ -12,10 +12,11 @@ import type { Ctx } from "../context";
 import { STATE, T, errorText, renderInbox } from "../copy";
 import { renderIslandReport } from "../handlers/admin";
 import { islandMessage, milestoneModal, proofLink } from "../handlers/island";
-import { squadLines } from "../handlers/squad";
+import { squadCard } from "../handlers/squad";
 import { ledgerReason } from "../handlers/student";
 import { I, SQ } from "../island/copy";
-import { showError } from "../ui";
+import { renderView, showError } from "../ui";
+import { bodyText, mediaUrls, viewText } from "../test-helpers/view";
 
 const QUEST_SRC = path.join(__dirname, "..");
 
@@ -116,9 +117,11 @@ describe("/island", () => {
       const c = ctx((fn) => (fn === "shift_quest_island" ? islandView() : { plots: [plot(4, "ความลับ")] }));
       const view = await islandMessage(c);
       expect(view.files).toEqual([]);
-      expect(view.content).toContain("แปลง #4");
-      expect(view.content).toContain("รูปเกาะโหลดไม่ขึ้นรอบนี้");
-      const ref = /อ้างอิง ([A-Z0-9]{6})/.exec(view.content)![1];
+      const text = viewText(renderView(view));
+      expect(mediaUrls(renderView(view))).toEqual([]);
+      expect(text).toContain("แปลง #4");
+      expect(text).toContain("รูปเกาะโหลดไม่ขึ้นรอบนี้");
+      const ref = /อ้างอิง ([A-Z0-9]{6})/.exec(text)![1];
       const logged = spy.mock.calls.flat().join(" ");
       expect(logged).toContain(`ref=${ref}`);
       expect(logged).toContain("code=missing_sprite detail=boat");
@@ -133,8 +136,25 @@ describe("/island", () => {
     const c = ctx((fn) => (fn === "shift_quest_island" ? islandView() : { plots: [plot(1, "ร้านข้าวมันไก่"), plot(4)] }));
     const view = await islandMessage(c);
     expect(view.files).toHaveLength(1);
-    expect(view.content).toContain("แปลง #4");
-    expect(view.content).toContain("#1 ร้านข้าวมันไก่");
+    expect(mediaUrls(renderView(view))).toEqual(["attachment://shift-island.png"]);
+    const text = viewText(renderView(view));
+    expect(text).toContain("แปลง #4");
+    expect(text).toContain("#1 ร้านข้าวมันไก่");
+  });
+
+  it("is one island card: picture on top, heading, stage bar, main actions on the first row", async () => {
+    const c = ctx((fn) => (fn === "shift_quest_island" ? islandView() : { plots: [plot(1, "ร้าน"), plot(4)] }));
+    const payload = renderView(await islandMessage(c));
+    const card = payload.components[0].toJSON() as { accent_color?: number; components: { type: number; components?: { custom_id?: string }[] }[] };
+    expect(card.components[0].type).toBe(12);
+    expect(card.components[1].type).toBe(10);
+    expect(bodyText(payload)).toMatch(/^### 🏝️ เกาะ SHIFT\n🌳 \*\*แอปจดการบ้าน\*\* · แปลง #4\n▰▰▱▱▱▱▱ /);
+    const rows = card.components.filter((x) => x.type === 1).map((r) => r.components!.map((b) => b.custom_id));
+    expect(rows).toEqual([
+      ["sq|is_tap", "sq|is_ms", "sq|is_work"],
+      ["sq|is_stuck", "sq|is_rest|on", "sq|is_name|p|on", "sq|inbox"],
+    ]);
+    expect(card.accent_color).toBe(0x3ba55c);
   });
 
   it("offers a plot and how the island works when there is no project, never the old quest form", async () => {
@@ -146,7 +166,7 @@ describe("/island", () => {
     expect(ids).not.toContain("sq|browse");
     const { i, sent } = interaction("button");
     await ACTION_HANDLERS.get("is_how")!(i, c, []);
-    expect(sent[0].content).toBe(I.how);
+    expect(bodyText(sent[0])).toBe(`### ${I.btnHow}\n${I.how}\n${I.howFine.split("\n").map((l) => `-# ${l}`).join("\n")}`);
   });
 
   it("asks for proof once, with the evidence criteria on the form", () => {
@@ -170,7 +190,7 @@ describe("/island", () => {
       const c = ctx((fn) => (fn === "shift_quest_island" ? islandView() : { instance_id: "x" }));
       const { i, sent } = interaction("modal", { fields: fields({ proof: "https://example.com", note: "n" }) });
       await ACTION_HANDLERS.get("is_msgo")!(i, c, [n]);
-      expect(sent[0].content).toBe(expected);
+      expect(bodyText(sent[0])).toBe(`### ${I.sentTitle}\n${expected}\n-# ${I.resultIn}`);
       expect((c.api.call as jest.Mock).mock.calls.at(-1)).toEqual(["shift_quest_milestone_submit", "1111111111", Number(n), "https://example.com", "n", "https://example.com"]);
     }
   });
@@ -179,17 +199,17 @@ describe("/island", () => {
     const held = { ...milestone(3), in_flight: { instance_id: "i", state: "submitted", version: 1, mine: false, owner: "ฟ้า" } };
     const c = ctx((fn) => (fn === "shift_quest_island" ? islandView({ milestones: [milestone(1, true), milestone(2, true), held] }) : { plots: [plot(4)] }));
     const view = await islandMessage(c);
-    expect(view.content).toContain(I.inFlightHeld("ขั้น 3", STATE.submitted, "ฟ้า"));
+    expect(viewText(renderView(view))).toContain(I.inFlightHeld("ขั้น 3", STATE.submitted, "ฟ้า"));
     const { i, sent } = interaction("button");
     await ACTION_HANDLERS.get("is_ms")!(i, c, []);
     const values = JSON.stringify(sent[0].components!.map((r) => (r as { toJSON: () => unknown }).toJSON()));
     expect(values).not.toContain('"value":"3"');
-    expect(sent[0].content).toContain(I.heldBy("ฟ้า"));
+    expect(viewText(sent[0])).toContain(I.heldBy("ฟ้า"));
     // Only held milestones left: no empty select (Discord refuses one), just the list and the way back.
     const onlyHeld = ctx((fn) => (fn === "shift_quest_island" ? islandView({ milestones: [held] }) : null));
     const b = interaction("button");
     await ACTION_HANDLERS.get("is_ms")!(b.i, onlyHeld, []);
-    expect(b.sent[0].content).toContain(I.nothingToPick);
+    expect(viewText(b.sent[0])).toContain(I.nothingToPick);
     expect(JSON.stringify(b.sent[0].components!.map((r) => (r as { toJSON: () => unknown }).toJSON()))).toContain("sq|is_view");
   });
 
@@ -197,11 +217,11 @@ describe("/island", () => {
     const c = ctx(() => ({ paused: 0, resumed: 0 }));
     const { i, sent } = interaction("button");
     await ACTION_HANDLERS.get("is_rest")!(i, c, ["on"]);
-    expect(sent[0].content).toBe(I.nothingToRest);
+    expect(bodyText(sent[0])).toBe(`### ${I.nothingToRestTitle}\n${I.nothingToRest}`);
     const c2 = ctx(() => ({ paused: 2, resumed: 0 }));
     const b = interaction("button");
     await ACTION_HANDLERS.get("is_rest")!(b.i, c2, ["on"]);
-    expect(b.sent[0].content).toBe(I.rested(2));
+    expect(bodyText(b.sent[0])).toBe(`### ${I.restedTitle}\n${I.rested(2)}`);
   });
 });
 
@@ -288,7 +308,7 @@ describe("admin season", () => {
     });
     await COMMAND_HANDLERS.get("admin season")!(cmd.i, c);
     expect(calls[0]).toEqual(["shift_quest_admin_season", "1111111111", "S1", null, null, null, null, null, null, 20, null, null, false, false, null]);
-    expect(cmd.sent[0].content).toContain("ยังไม่มีเป้าทั้งเกาะ");
+    expect(viewText(cmd.sent[0])).toContain("ยังไม่มีเป้าทั้งเกาะ");
     const required = (questCommands().find((x) => x.name === "admin")!.options as { name: string; options?: { name: string; required?: boolean }[] }[])
       .find((o) => o.name === "season")!
       .options!.filter((o) => o.required)
@@ -318,14 +338,14 @@ describe("squads", () => {
   });
 
   it("shows one group number once running, never a number per member", () => {
-    const text = squadLines(view() as never).join("\n");
+    const text = viewText(renderView(squadCard(view() as never)));
     expect(text).toContain(SQ.together(2)); // the database's own total, never 4 (a shared project counts once)
-    expect(text).toContain("• A (คุณ)");
+    expect(text).toContain(SQ.members(`A (${SQ.you}) · B · C`));
     expect(text).not.toMatch(/\+\d+ ขั้น/);
   });
 
   it("says a squad of fewer than 3 is still forming, with no progress number", () => {
-    const text = squadLines(view({ phase: "forming", running: false, members_active: 2, milestones_gained: null }) as never).join("\n");
+    const text = viewText(renderView(squadCard(view({ phase: "forming", running: false, members_active: 2, milestones_gained: null }) as never)));
     expect(text).toContain(SQ.forming(2));
     expect(text).not.toMatch(/โตไปแล้ว|\d+ ขั้นในรอบนี้/);
   });
@@ -371,7 +391,7 @@ describe("squads", () => {
     const { i, sent } = interaction("command", { options: { getUser: () => ({ id: "4444444444" }) } });
     await COMMAND_HANDLERS.get("squad withdraw")!(i, c);
     expect((c.api.call as jest.Mock).mock.calls.at(-1)).toEqual(["shift_quest_squad_withdraw", "1111111111", "sq1", "4444444444"]);
-    expect(sent[0].content).toBe(SQ.withdrawn("<@4444444444>"));
+    expect(bodyText(sent[0])).toContain(SQ.withdrawn("<@4444444444>"));
   });
 });
 
@@ -420,7 +440,7 @@ describe("error replies", () => {
     try {
       const a = interaction("button", { customId: "sq|is_ms" });
       const ref = await showError(a.i, new QuestError("not_found", "student text here", "shift_quest_island"));
-      expect(a.sent[0].content).toContain(`อ้างอิง ${ref}`);
+      expect(viewText(a.sent[0])).toContain(`อ้างอิง ${ref}`);
       expect(ref).toMatch(/^[A-Z2-9]{6}$/);
       const line = warn.mock.calls.flat().join(" ");
       expect(line).toContain(`ref=${ref} action=is_ms fn=shift_quest_island code=sq:not_found`);
@@ -429,13 +449,13 @@ describe("error replies", () => {
       // A code with no Thai words yet shows the code itself.
       const b = interaction("button");
       await showError(b.i, new QuestError("brand_new_code"));
-      expect(b.sent[0].content).toContain(T.generic);
-      expect(b.sent[0].content).toContain("sq:brand_new_code");
+      expect(viewText(b.sent[0])).toContain(T.generic);
+      expect(viewText(b.sent[0])).toContain("sq:brand_new_code");
 
       const c = interaction("button");
       const ref2 = await showError(c.i, new QuestDbError("shift_quest_submit", "23514"));
       expect(error.mock.calls.flat().join(" ")).toContain(`ref=${ref2} action=x fn=shift_quest_submit code=sqlstate:23514`);
-      expect(c.sent[0].content).toContain(`อ้างอิง ${ref2}`);
+      expect(viewText(c.sent[0])).toContain(`อ้างอิง ${ref2}`);
     } finally {
       warn.mockRestore();
       error.mockRestore();

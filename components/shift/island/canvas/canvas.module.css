@@ -1,0 +1,452 @@
+/*
+ * The SHIFT canvas link picker and the quest card composer (Dawn, inside an
+ * IslandSheet). Pixel look: 2px ink outlines and hard pixel shadows, notes in
+ * their whiteboard sticky colours (--sticky from SHIFT_CARDS). No glow, no
+ * sticker clutter. Tokens fall back to the island palette when the sheet's
+ * own (--isl-*) are not in scope.
+ */
+
+.picker,
+.composer {
+  --c-ink: var(--isl-ink, #344447);
+  --c-cream: var(--isl-cream, #fff1d6);
+  --c-lamp: var(--isl-lamp, #f4c56a);
+  --c-coral: var(--isl-coral, #de796c);
+  --c-text: var(--text, #e2e8f0);
+  --c-text-hi: var(--text-hi, #fef9e7);
+  --c-dim: var(--text-dim, #94a3b8);
+  --c-panel: rgba(20, 16, 20, 0.96);
+  --c-note-ink: #1e1e1e;
+  --c-shadow: 3px 3px 0 0 var(--c-ink);
+  --c-press: 80ms;
+  display: grid;
+  gap: 16px;
+  color: var(--c-text);
+}
+
+/* --- Shared bits ----------------------------------------------------------- */
+
+.heading {
+  margin: 0;
+  font-family: var(--font-kodchasan), var(--font-bai-jamjuree), sans-serif;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--c-text-hi);
+}
+
+.subheading {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--c-text-hi);
+}
+
+.sub,
+.quiet,
+.fine {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--c-dim);
+}
+
+.fine {
+  font-size: 0.8125rem;
+}
+
+.warn {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--c-lamp);
+}
+
+.primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+}
+
+.quietButton,
+.textButton {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--c-text);
+  font: inherit;
+  font-size: 0.9375rem;
+  cursor: pointer;
+}
+
+.quietButton {
+  border-color: rgba(226, 232, 240, 0.28);
+}
+
+.textButton {
+  justify-self: start;
+  padding: 0 4px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.quietButton:disabled,
+.textButton:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.quietButton:focus-visible,
+.textButton:focus-visible,
+.check:focus-visible {
+  outline: 2px solid var(--c-lamp);
+  outline-offset: 2px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border: 2px solid var(--c-ink);
+  background: var(--c-cream);
+  color: var(--c-note-ink);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.chipOn {
+  background: var(--c-lamp);
+}
+
+/* --- Picker ---------------------------------------------------------------- */
+
+.skeleton {
+  display: grid;
+  gap: 10px;
+}
+
+.skeleton span {
+  display: block;
+  height: 72px;
+  border: 2px solid rgba(226, 232, 240, 0.12);
+  background: rgba(226, 232, 240, 0.06);
+}
+
+.empty {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+}
+
+.empty p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.choices {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.choice {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 2px solid var(--c-ink);
+  background: rgba(255, 241, 214, 0.06);
+  box-shadow: var(--c-shadow);
+}
+
+.choice[data-linked="true"] {
+  border-color: var(--c-lamp);
+}
+
+.choiceHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.choiceTitle {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-weight: 600;
+  color: var(--c-text-hi);
+  overflow-wrap: anywhere;
+}
+
+.choiceMeta {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--c-dim);
+  overflow-wrap: anywhere;
+}
+
+.choice .primary,
+.choice .quietButton {
+  justify-self: start;
+}
+
+/* --- Composer -------------------------------------------------------------- */
+
+.composerHead {
+  display: grid;
+  gap: 4px;
+}
+
+.privacy {
+  margin: 0;
+  padding: 10px 12px;
+  border: 2px solid var(--c-ink);
+  background: rgba(244, 197, 106, 0.12);
+  color: var(--c-text-hi);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.zone {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.zoneTitle {
+  padding: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--c-text-hi);
+}
+
+.notes {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.note {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px 12px;
+  border: 2px solid var(--c-ink);
+  background: var(--sticky, #fff3bf);
+  color: var(--c-note-ink);
+  box-shadow: var(--c-shadow);
+  transition:
+    transform var(--c-press) steps(2, end),
+    box-shadow var(--c-press) steps(2, end);
+}
+
+.note[data-checked="true"] {
+  outline: 3px solid var(--c-lamp);
+  outline-offset: 0;
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 0 var(--c-ink);
+}
+
+.note[data-disabled="true"]:not([data-checked="true"]) {
+  opacity: 0.6;
+}
+
+@media (hover: hover) {
+  .note:not([data-disabled="true"]):hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 0 var(--c-ink);
+  }
+}
+
+/* Touch: the pressed state stands in for hover. */
+@media (hover: none) {
+  .note:not([data-disabled="true"]):active {
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0 0 var(--c-ink);
+  }
+}
+
+.noteLabel {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: start;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.note[data-disabled="true"] .noteLabel {
+  cursor: default;
+}
+
+.check {
+  width: 44px;
+  height: 44px;
+  margin: -8px 0 -8px -8px;
+  accent-color: var(--c-ink);
+  cursor: inherit;
+}
+
+.noteText {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+  overflow: hidden;
+  padding-top: 4px;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.noteMeta {
+  display: grid;
+  gap: 4px;
+  padding-left: 40px;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+}
+
+.tag {
+  padding: 0 6px;
+  border: 2px solid var(--c-ink);
+  background: rgba(255, 255, 255, 0.55);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.reason {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.pii {
+  margin: 0;
+  padding: 4px 6px;
+  border: 2px dashed var(--c-coral);
+  background: rgba(255, 255, 255, 0.6);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.count {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--c-text);
+}
+
+.countFull {
+  color: var(--c-lamp);
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.label {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--c-text-hi);
+}
+
+.input {
+  width: 100%;
+  font-size: 1rem;
+}
+
+textarea.input {
+  resize: vertical;
+}
+
+.fieldError {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--c-coral);
+}
+
+/* --- Preview (the quest card) ---------------------------------------------- */
+
+.preview {
+  display: grid;
+  gap: 8px;
+}
+
+.previewHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.meter {
+  font-family: var(--font-space-mono), monospace;
+  font-size: 0.8125rem;
+  color: var(--c-dim);
+}
+
+.meter[data-near="true"] {
+  color: var(--c-lamp);
+}
+
+.card {
+  margin: 0;
+  max-height: 22rem;
+  overflow: auto;
+  padding: 14px;
+  border: 2px solid var(--c-ink);
+  background: var(--c-cream);
+  color: var(--c-note-ink);
+  box-shadow: var(--c-shadow);
+  font-family: var(--font-bai-jamjuree), sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* --- Sticky action row ----------------------------------------------------- */
+
+.bar {
+  position: sticky;
+  bottom: -24px;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0 -20px -24px;
+  padding: 12px 20px calc(16px + env(safe-area-inset-bottom, 0px));
+  border-top: 2px solid var(--c-ink);
+  background: var(--c-panel);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .note {
+    transition: none;
+  }
+
+  .note[data-checked="true"],
+  .note:hover,
+  .note:active {
+    transform: none;
+  }
+}

@@ -9,7 +9,7 @@ import { QuestError, type Quest } from "../api";
 import { requireStudent, type Ctx } from "../context";
 import { STATE, T, safe } from "../copy";
 import { cid } from "../ids";
-import { I, seasonLines, type SeasonView } from "../island/copy";
+import { I, WIP_CORNER, WIP_CORNER_SHORT, seasonHead, seasonParts, type SeasonView } from "../island/copy";
 import { RenderError, renderIsland, type IslandPlot, type RenderedIsland } from "../island/render";
 import {
   ButtonStyle,
@@ -23,12 +23,17 @@ import {
   textValue,
   type Field,
   type Replyable,
+  type Block,
   type Row,
   type View,
 } from "../ui";
+import { islandLinkButton } from "../weblink";
 import { newProjectModal } from "./project";
 import { helpModal } from "./journal";
 import { picked, type HandlerSet } from "./types";
+
+/** The island picture's attachment name: an image block shows it with { kind: "image", name: ISLAND_PNG }. */
+export const ISLAND_PNG = "shift-island.png";
 
 interface MilestoneView {
   milestone: number;
@@ -88,16 +93,32 @@ function drawIsland(plots: IslandPlot[], festival: boolean): { image: RenderedIs
   }
 }
 
-/** One message: picture, status lines, buttons. */
-export async function islandMessage(ctx: Ctx): Promise<Required<View>> {
+/** The island card: blocks, buttons and the picture it shows. */
+export type IslandCard = View & Required<Pick<View, "blocks" | "rows" | "files">>;
+
+/** Signs shown on the card; the rest are counted. */
+const SIGNS_SHOWN = 6;
+
+/** Open work listed on the work card; the menu below it holds every one. */
+const WORK_SHOWN = 5;
+
+/**
+ * One card: the picture on top, your plot with its stage bar, the next
+ * milestone, the season, then the fine print and the buttons.
+ */
+export async function islandMessage(ctx: Ctx): Promise<IslandCard> {
   const [view, map] = await Promise.all([
     ctx.api.call<IslandView>("shift_quest_island", ctx.userId),
     ctx.api.call<IslandMap>("shift_quest_island_map", ctx.userId),
   ]);
   const drawn = drawIsland(map.plots, Boolean(view.season));
-  const lines = [I.header];
-  if ("ref" in drawn) lines.push(I.pictureFailed(drawn.ref));
+  const files =
+    "image" in drawn ? [new AttachmentBuilder(drawn.image.png, { name: ISLAND_PNG, description: "เกาะ SHIFT" })] : [];
+  const blocks: Block[] = [];
+  if ("image" in drawn) blocks.push({ kind: "image", name: ISLAND_PNG, alt: "เกาะ SHIFT" });
+  else blocks.push({ kind: "subtext", text: I.pictureFailed(drawn.ref) });
 
+  const lines: string[] = [];
   if (!view.project) {
     lines.push(I.noPlot);
   } else {
@@ -117,44 +138,91 @@ export async function islandMessage(ctx: Ctx): Promise<Required<View>> {
     if (view.resting) lines.push(I.resting);
     if (view.taps_today > 0) lines.push(I.tappedToday);
   }
+  blocks.push({ kind: "text", text: lines.join("\n") });
+
   if (view.season) {
-    const titleOf = (n: number) => view.milestones.find((m) => m.milestone === n)?.title ?? null;
-    const goal = view.season.goal;
-    lines.push("", ...seasonLines(view.season, goal ? titleOf(goal.milestone) : null, titleOf));
+    // The headline and where you stand; unlocks and the island's goal sit behind ℹ️.
+    const season = seasonParts(view.season, null, titleLookup(view));
+    const text = [seasonHead(view.season), ...season.status, ...(season.wip ? [`-# ${WIP_CORNER_SHORT}`] : [])];
+    blocks.push({ kind: "divider" }, { kind: "section", text: text.join("\n"), button: button(cid("is_season"), I.btnSeason) });
   }
+
   const signs = map.plots
     .filter((plot) => plot.name)
     .sort((a, b) => a.slot - b.slot)
     .map((plot) => `#${plot.slot} ${safe(plot.name, 40)}`);
-  if (signs.length) lines.push("", `${I.signs} ${signs.slice(0, 20).join(" · ")}`);
-  lines.push("", `-# ${I.growthRule}`);
+  const fine: string[] = [];
+  if (signs.length) {
+    const rest = signs.length - SIGNS_SHOWN;
+    fine.push(`${I.signs} ${signs.slice(0, SIGNS_SHOWN).join(" · ")}${rest > 0 ? ` · ${I.more(rest)}` : ""}`);
+  }
+  fine.push(I.growthRule);
+  blocks.push({ kind: "divider", line: false }, { kind: "subtext", text: fine.join("\n") });
 
-  const buttons = view.project
+  // The island is the hub: review results, invites and help replies are one tap away
+  // in the inbox (the existing sq|inbox action), with the unread count on the button.
+  const unread = ctx.session.unread ?? 0;
+  const inboxButton = button(
+    cid("inbox"),
+    unread > 0 ? `${T.btnInbox} (${unread})` : T.btnInbox,
+    unread > 0 ? ButtonStyle.Primary : ButtonStyle.Secondary
+  );
+  // The island on the website, when configured: last on the second row while
+  // it has room (buttonRows starts a new row after five), or on the claim row.
+  const link = islandLinkButton();
+  const web = link ? [link] : [];
+  // Main actions on the first row, the rest below. Same buttons and IDs as before, plus the inbox.
+  const rows = view.project
     ? [
-        button(cid("is_tap"), I.btnTap, ButtonStyle.Primary),
-        button(cid("is_ms"), I.btnMilestone, ButtonStyle.Success),
-        button(cid("is_stuck"), I.btnStuck),
-        view.resting ? button(cid("is_rest", "off"), I.btnWake) : button(cid("is_rest", "on"), I.btnRest),
-        button(cid("is_work"), I.btnWork),
-        view.project.show_name
-          ? button(cid("is_name", view.project.id, "off"), I.btnHideName)
-          : button(cid("is_name", view.project.id, "on"), I.btnShowName),
+        ...buttonRows([
+          button(cid("is_tap"), I.btnTap, ButtonStyle.Primary),
+          button(cid("is_ms"), I.btnMilestone, ButtonStyle.Success),
+          button(cid("is_work"), I.btnWork),
+        ]),
+        ...buttonRows([
+          button(cid("is_stuck"), I.btnStuck),
+          view.resting ? button(cid("is_rest", "off"), I.btnWake) : button(cid("is_rest", "on"), I.btnRest),
+          view.project.show_name
+            ? button(cid("is_name", view.project.id, "off"), I.btnHideName)
+            : button(cid("is_name", view.project.id, "on"), I.btnShowName),
+          inboxButton,
+          ...web,
+        ]),
       ]
     : // No project yet: claim a plot, or read how the island works. Never the old quest form.
-      [button(cid("is_claim"), I.btnClaim, ButtonStyle.Success), button(cid("is_how"), I.btnHow)];
+      buttonRows([button(cid("is_claim"), I.btnClaim, ButtonStyle.Success), button(cid("is_how"), I.btnHow), inboxButton, ...web]);
 
-  return {
-    content: lines.join("\n"),
-    rows: buttonRows(buttons),
-    files:
-      "image" in drawn
-        ? [new AttachmentBuilder(drawn.image.png, { name: "shift-island.png", description: "เกาะ SHIFT" })]
-        : [],
-  };
+  return { tone: "island", title: I.header, blocks, rows, files };
 }
 
 function backRow(): Row[] {
   return buttonRows([button(cid("is_view"), I.btnBack)]);
+}
+
+/** A milestone's title by its number, for the season's "needs milestone 2 / 3" hints. */
+function titleLookup(view: IslandView): (milestone: number) => string | null {
+  return (n) => view.milestones.find((m) => m.milestone === n)?.title ?? null;
+}
+
+/**
+ * The season in full: Demo Day, where you stand, the work-in-progress corner,
+ * unlocks and the island's shared goal. The island card shows only the headline.
+ */
+export function seasonCard(view: IslandView): View {
+  if (!view.season) return { tone: "neutral", blocks: [{ kind: "text", text: I.noSeason }], rows: backRow() };
+  const titleOf = titleLookup(view);
+  const goal = view.season.goal;
+  const season = seasonParts(view.season, goal ? titleOf(goal.milestone) : null, titleOf);
+  const blocks: Block[] = [{ kind: "text", text: [season.when, ...season.status, ...(season.wip ? [WIP_CORNER] : [])].join("\n") }];
+  if (season.extras.length) blocks.push({ kind: "divider" }, { kind: "text", text: season.extras.join("\n") });
+  blocks.push({ kind: "subtext", text: I.seasonFine });
+  const back = button(cid("is_view"), I.btnBack);
+  return {
+    tone: "season",
+    title: season.title,
+    blocks,
+    rows: buttonRows(view.project ? [button(cid("is_ms"), I.btnMilestone, ButtonStyle.Success), back] : [back]),
+  };
 }
 
 /**
@@ -232,18 +300,37 @@ export const island: HandlerSet = {
 
     async is_how(i, ctx) {
       requireStudent(ctx);
-      await show(i, {
-        content: I.how,
-        rows: buttonRows([button(cid("is_claim"), I.btnClaim, ButtonStyle.Success), button(cid("is_view"), I.btnBack)]),
-      });
+      // A details screen: it takes the island card's place, and 🏝️ brings the island back.
+      await show(
+        i,
+        {
+          tone: "island",
+          title: I.btnHow,
+          blocks: [
+            { kind: "text", text: I.how },
+            { kind: "subtext", text: I.howFine },
+          ],
+          rows: buttonRows([button(cid("is_claim"), I.btnClaim, ButtonStyle.Success), button(cid("is_view"), I.btnBack)]),
+        },
+        { replace: true }
+      );
+    },
+
+    async is_season(i, ctx) {
+      requireStudent(ctx);
+      const view = await ctx.api.call<IslandView>("shift_quest_island", ctx.userId);
+      await show(i, seasonCard(view), { replace: true });
     },
 
     async is_tap(i, ctx) {
       requireStudent(ctx);
       const before = await ctx.api.call<IslandView>("shift_quest_island", ctx.userId);
       await ctx.api.call("shift_quest_checkin", ctx.userId, null);
+      const again = before.taps_today > 0;
       await show(i, {
-        content: before.taps_today > 0 ? I.tapAgain : I.tapped,
+        tone: again ? "island" : "success",
+        title: again ? I.tapAgainTitle : I.tappedTitle,
+        blocks: [{ kind: "text", text: again ? I.tapAgain : I.tapped }],
         rows: buttonRows([button(cid("is_note"), I.btnNote), button(cid("is_view"), I.btnBack)]),
       });
     },
@@ -252,7 +339,7 @@ export const island: HandlerSet = {
       requireStudent(ctx);
       if (i.isModalSubmit()) {
         await ctx.api.call("shift_quest_checkin", ctx.userId, textValue(i, "note"));
-        await show(i, { content: I.noteSaved });
+        await show(i, { tone: "success", title: I.noteSavedTitle, blocks: [{ kind: "subtext", text: I.noteSaved }], rows: backRow() });
         return;
       }
       if (!i.isButton()) return;
@@ -265,7 +352,12 @@ export const island: HandlerSet = {
       requireStudent(ctx);
       const view = await ctx.api.call<IslandView>("shift_quest_island", ctx.userId);
       if (!view.project) {
-        await show(i, { content: I.noPlot, rows: buttonRows([button(cid("is_claim"), I.btnClaim, ButtonStyle.Success)]) });
+        await show(i, {
+          tone: "island",
+          title: I.header,
+          blocks: [{ kind: "text", text: I.noPlot }],
+          rows: buttonRows([button(cid("is_claim"), I.btnClaim, ButtonStyle.Success), button(cid("is_view"), I.btnBack)]),
+        });
         return;
       }
       // Not-yet-done milestones first; done ones stay available for distinct repeats.
@@ -274,14 +366,18 @@ export const island: HandlerSet = {
       const ordered = view.milestones
         .filter((m) => m.in_flight?.state !== "appealed" && !heldByTeammate(m))
         .sort((a, b) => Number(a.done) - Number(b.done) || a.milestone - b.milestone);
-      const list = view.milestones
-        .map((m) => {
-          const held = heldByTeammate(m) ? ` (${safe(I.heldBy(m.in_flight!.owner ?? null), 60)})` : "";
-          return `${m.done ? "✅" : m.in_flight ? "⏳" : "▫️"} ${milestoneLabel(m)}: ${safe(m.purpose, 90)}${held}`;
-        })
-        .join("\n");
+      // One short line per milestone; what each one asks for is in the menu below.
+      const list = view.milestones.map((m) => {
+        const held = heldByTeammate(m) ? ` (${safe(I.heldBy(m.in_flight!.owner ?? null), 60)})` : "";
+        return `${m.done ? "✅" : m.in_flight ? "⏳" : "▫️"} ${milestoneLabel(m)}${held}`;
+      });
+      const blocks: Block[] = [{ kind: "text", text: list.join("\n") }];
+      if (!ordered.length) blocks.push({ kind: "text", text: I.nothingToPick });
+      blocks.push({ kind: "subtext", text: I.msLegend });
       await show(i, {
-        content: `**${I.pickMilestone}**\n${list}${ordered.length ? "" : `\n\n${I.nothingToPick}`}`,
+        tone: "island",
+        title: `🌟 ${I.pickMilestone}`,
+        blocks,
         // A select needs at least one option: with none, the list and the way back only.
         rows: ordered.length
           ? [
@@ -291,9 +387,14 @@ export const island: HandlerSet = {
                 ordered.map((m) => ({
                   label: milestoneLabel(m),
                   value: String(m.milestone),
-                  description: m.done ? I.doneRepeat : m.in_flight ? STATE[m.in_flight.state] : m.purpose,
+                  description: m.done
+                    ? I.doneRepeat
+                    : m.in_flight
+                      ? [STATE[m.in_flight.state], m.purpose].filter(Boolean).join(" · ")
+                      : m.purpose,
                 }))
               ),
+              ...backRow(),
             ]
           : backRow(),
       });
@@ -330,7 +431,15 @@ export const island: HandlerSet = {
         textValue(i, "note"),
         proofLink(proof)
       );
-      await show(i, { content: repeat ? I.sentRepeat : I.sent, rows: backRow() });
+      await show(i, {
+        tone: "success",
+        title: I.sentTitle,
+        blocks: [
+          { kind: "text", text: repeat ? I.sentRepeat : I.sent },
+          { kind: "subtext", text: I.resultIn },
+        ],
+        rows: backRow(),
+      });
     },
 
     async is_stuck(i, ctx) {
@@ -343,11 +452,11 @@ export const island: HandlerSet = {
       const on = state === "on";
       const result = await ctx.api.call<{ paused: number; resumed: number }>("shift_quest_rest", ctx.userId, on);
       // Nothing open means nothing was paused: say so rather than claim a rest that never shows.
-      let content: string;
-      if (!on) content = I.woke(result.resumed);
-      else if (result.paused > 0) content = I.rested(result.paused);
-      else content = I.nothingToRest;
-      await show(i, { content, rows: backRow() });
+      let card: View;
+      if (!on) card = { tone: "success", title: I.wokeTitle, blocks: [{ kind: "text", text: I.woke(result.resumed) }] };
+      else if (result.paused > 0) card = { tone: "island", title: I.restedTitle, blocks: [{ kind: "text", text: I.rested(result.paused) }] };
+      else card = { tone: "neutral", title: I.nothingToRestTitle, blocks: [{ kind: "text", text: I.nothingToRest }] };
+      await show(i, { ...card, rows: backRow() });
     },
 
     async is_name(i, ctx, [projectId, state]) {
@@ -359,29 +468,44 @@ export const island: HandlerSet = {
         projectId,
         on
       );
-      await show(i, {
-        content: on ? I.nameShown(result.project_name_visible) : I.nameHidden,
-        rows: backRow(),
-      });
+      // Shown, waiting for every teammate to agree, or hidden.
+      let card: View;
+      if (!on) card = { title: I.nameHiddenTitle, blocks: [{ kind: "text", text: I.nameHidden }] };
+      else if (result.project_name_visible) card = { title: I.nameShown };
+      else card = { title: I.nameWaitingTitle, blocks: [{ kind: "text", text: I.nameWaiting }] };
+      await show(i, { tone: "success", ...card, rows: backRow() });
     },
 
     async is_work(i, ctx) {
       requireStudent(ctx);
       const quests = await ctx.api.call<Quest[]>("shift_quest_my_quests", ctx.userId, false);
       if (!quests.length) {
-        await show(i, { content: T.statusEmpty, rows: backRow() });
+        // Nothing open: the next useful thing is sending a milestone.
+        await show(i, {
+          tone: "island",
+          title: I.workTitle,
+          blocks: [{ kind: "text", text: I.workEmpty }],
+          rows: buttonRows([button(cid("is_ms"), I.btnMilestone, ButtonStyle.Success), button(cid("is_view"), I.btnBack)]),
+        });
         return;
       }
+      const lines = quests
+        .slice(0, WORK_SHOWN)
+        .map((q) => `- **${safe(q.title, 80)}** · ${STATE[q.state] ?? q.state}${q.latest_review?.feedback && q.state === "clarification" ? " 💬" : ""}`);
+      const rest = quests.length - WORK_SHOWN;
+      const blocks: Block[] = [{ kind: "text", text: lines.join("\n") }];
+      if (rest > 0) blocks.push({ kind: "subtext", text: I.more(rest) });
       await show(i, {
-        content: quests
-          .map((q) => `• **${safe(q.title, 80)}**: ${STATE[q.state] ?? q.state}${q.latest_review?.feedback && q.state === "clarification" ? " 💬" : ""}`)
-          .join("\n"),
+        tone: "island",
+        title: I.workTitle,
+        blocks,
         rows: [
           selectRow(
             cid("q"),
             T.statusPick,
             quests.map((q) => ({ label: q.title, value: q.id, description: STATE[q.state] ?? q.state }))
           ),
+          ...backRow(),
         ],
       });
     },

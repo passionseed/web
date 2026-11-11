@@ -191,8 +191,8 @@ describe("copy", () => {
     expect(kinds.has("review_needed")).toBe(true);
     for (const kind of kinds) {
       const rendered = renderOutbox(kind, { title: "t", summary: "s", body: "b", item: "i", revision: 1 }, "111", "222");
-      expect([kind, rendered?.content.length ?? 0]).not.toEqual([kind, 0]);
-      expect(rendered!.content.length).toBeLessThanOrEqual(2000);
+      expect([kind, rendered?.title.length ?? 0]).not.toEqual([kind, 0]);
+      expect([rendered!.title, rendered!.body, rendered!.note].join("\n").length).toBeLessThanOrEqual(2000);
     }
     expect(renderOutbox("mystery", {}, null, null)).toBeNull();
   });
@@ -216,7 +216,7 @@ describe("copy", () => {
   it("only pings the people a post is about", () => {
     const post = renderOutbox("help_community", { summary: "@everyone help" }, "111", null)!;
     expect(post.mentionUserIds).toEqual(["111"]);
-    expect(post.content).not.toContain("@everyone help");
+    expect(post.body).not.toContain("@everyone help");
     expect(renderOutbox("review_needed", { title: "x", revision: 1 }, "111", null)!.mentionUserIds).toEqual([]);
   });
 
@@ -231,7 +231,9 @@ describe("copy", () => {
   });
 
   it("never claims the quest bot records voice, screens or time", () => {
-    expect(T.intro(false)).toContain("ไม่นับเวลาในห้องเสียง");
+    // The full agreement sits behind the ℹ️ button; the welcome card keeps the one-line promise.
+    expect(T.rules(false)).toContain("ไม่นับเวลาในห้องเสียง");
+    expect(T.introPromise).toContain("ไม่บันทึกเสียงหรือภาพหน้าจอ");
     expect(DAY_NAMES).toHaveLength(7);
   });
 });

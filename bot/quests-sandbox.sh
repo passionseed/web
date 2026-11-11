@@ -9,13 +9,24 @@
 #   bot/quests-sandbox.sh --db-only    # the database alone: no Discord, no token
 #   bot/quests-sandbox.sh --reset      # wipe the sandbox database and build it again
 #
+# The island website (/shift/island) against the sandbox, signed in with your
+# own Discord account (you are admin, so you count as eligible):
+#
+#   QUEST_SANDBOX_PORT=55451 QUEST_SANDBOX_ADMIN_ID=<your Discord user id> \
+#   bot/quests-sandbox.sh --db-only --reset
+#   SHIFT_QUEST_DATABASE_URL=postgresql://shift_quest_web:sandbox@127.0.0.1:55451/postgres pnpm dev
+#
 # First run: makes a Postgres cluster in ~/.cache/shift-quests-sandbox (or
 # QUEST_SANDBOX_DIR), applies the shift_quest migrations and seeds it like a
 # Season 1 pilot: you are admin, no reward rule (milestones earn no coins), a
 # demo student with a quest waiting in /review queue, five neighbours with
-# trees and, once the season migration exists, a season with a Demo Day, an
-# island goal and an unlock. --rewards adds a sandbox reward rule on every
-# published template and switches coins on.
+# trees, a stand-in reviewer (100000000000000701) who can approve your own
+# work (you cannot: conflict of interest), every draft side quest published
+# for the web board and, once the season migration exists, a season with a
+# Demo Day, an island goal and an unlock. --rewards adds a sandbox reward
+# rule on every published template and switches coins on. Both login roles
+# get the password 'sandbox': shift_quest_bot (the bot) and shift_quest_web
+# (the website).
 #
 # Every run checks the sandbox still matches the migrations (a hash of the
 # shift_quest files): after you pull new ones it stops and tells you to reset.
@@ -133,6 +144,10 @@ SQL
     "${PSQL[@]}" -f "$f" >/dev/null
   done
   "${PSQL[@]}" -c "ALTER ROLE shift_quest_bot WITH LOGIN PASSWORD 'sandbox'"
+  # The website's login (20261111090900_shift_quests_board), once it exists.
+  if [ "$("${PSQL[@]}" -Atc "SELECT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'shift_quest_web')")" = t ]; then
+    "${PSQL[@]}" -c "ALTER ROLE shift_quest_web WITH LOGIN PASSWORD 'sandbox'"
+  fi
 
   # Season 1 defaults: you are admin, coins stay off and no rule pays for milestones.
   "${PSQL[@]}" -o /dev/null -v admin="$ADMIN" -v demo="$DEMO_STUDENT" <<'SQL'
@@ -187,8 +202,23 @@ BEGIN
   END LOOP;
 END;
 $$;
+
+-- A stand-in reviewer on no project, so your own submissions can be approved
+-- (the approve-all command printed by --db-only uses this ID).
+SELECT public.shift_quest_admin_role(:'admin', '100000000000000701', 'Sandbox reviewer', 'reviewer', true);
 SQL
-  SEEDED="you are admin, coins are off (Season 1 default), five neighbours have trees and a demo submission waits in /review queue"
+  SEEDED="you are admin, coins are off (Season 1 default), five neighbours have trees, a demo submission waits in /review queue and a stand-in reviewer (100000000000000701) can approve your work"
+
+  # Side quests for the web board are seeded as drafts; publish them all here.
+  if [ "$("${PSQL[@]}" -Atc "SELECT EXISTS (SELECT 1 FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'shift_quest_templates' AND column_name = 'side')")" = t ]; then
+    "${PSQL[@]}" -o /dev/null -v admin="$ADMIN" <<'SQL'
+SELECT public.shift_quest_admin_template_state(:'admin', slug, true)
+FROM (SELECT DISTINCT slug FROM public.shift_quest_templates WHERE side) s
+ORDER BY slug;
+SQL
+    SEEDED="$SEEDED; every side quest is published for the web board"
+  fi
 
   if [ -n "$REWARDS" ]; then
     "${PSQL[@]}" -o /dev/null -v admin="$ADMIN" <<'SQL'
@@ -240,6 +270,11 @@ if [ "$DB_ONLY" = 1 ]; then
   echo "Database up on 127.0.0.1:$PORT until Ctrl-C."
   echo "  psql:     psql -h 127.0.0.1 -p $PORT -U postgres -d postgres"
   echo "  bot role: SHIFT_QUEST_DATABASE_URL=postgresql://shift_quest_bot:sandbox@127.0.0.1:$PORT/postgres"
+  if [ "$("${PSQL[@]}" -Atc "SELECT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'shift_quest_web' AND rolcanlogin)")" = t ]; then
+    echo "  web (SHIFT_QUEST_DATABASE_URL for pnpm dev): postgresql://shift_quest_web:sandbox@127.0.0.1:$PORT/postgres"
+  fi
+  echo "  approve every pending submission as the stand-in reviewer (you cannot approve your own):"
+  echo "    psql -h 127.0.0.1 -p $PORT -U postgres -d postgres -c \"select public.shift_quest_review_decide('100000000000000701', s.id, 'approved', 'Sandbox review', true) from public.shift_quest_submissions s where s.status = 'pending'\""
   while :; do
     sleep 3600 &
     wait $! || true

@@ -13,6 +13,8 @@ import { createQuestApi } from "../../../bot/src/quests/api";
 import { T } from "../../../bot/src/quests/copy";
 import { createRolePool } from "../../../bot/src/pg";
 
+import { readCard, type CardComponent } from "./cards";
+
 const adminUrl = process.env.SHIFT_QUESTS_TEST_DATABASE_URL!;
 const botUrl = process.env.SHIFT_QUESTS_BOT_DATABASE_URL!;
 if (!adminUrl || !botUrl || process.env.SHIFT_QUESTS_TEST_DISPOSABLE !== "1") {
@@ -29,18 +31,16 @@ const FRIEND = "800000000000000004";
 
 let failures = 0;
 let passes = 0;
+/** The latest reply, shown when a failed check names no detail of its own. */
+let lastContent: string | undefined;
 function check(ok: boolean, name: string, detail?: unknown): void {
   if (ok) passes += 1;
   else failures += 1;
+  if (!ok && detail === undefined) detail = lastContent;
   console.log(`${ok ? "ok" : "not ok"} - ${name}${ok || detail === undefined ? "" : ` :: ${JSON.stringify(detail).slice(0, 400)}`}`);
 }
 
-interface Component {
-  custom_id: string;
-  label?: string;
-  options?: { value: string; label: string }[];
-  disabled?: boolean;
-}
+type Component = CardComponent;
 
 interface Response {
   type: "reply" | "update" | "modal" | "followUp" | "editReply";
@@ -48,15 +48,6 @@ interface Response {
   components: Component[];
   modal?: { custom_id: string; fields: string[] };
   files: number;
-}
-
-function flatten(rows: unknown[]): Component[] {
-  const out: Component[] = [];
-  for (const row of rows ?? []) {
-    const json = typeof (row as { toJSON?: () => unknown }).toJSON === "function" ? (row as { toJSON: () => any }).toJSON() : row;
-    for (const c of (json as { components?: any[] }).components ?? []) out.push(c);
-  }
-  return out;
 }
 
 type Kind = "command" | "button" | "select" | "modal";
@@ -79,8 +70,7 @@ function fake(kind: Kind, o: FakeOptions) {
   const record = (type: Response["type"]) => async (payload: any) => {
     responses.push({
       type,
-      content: payload.content ?? "",
-      components: flatten(payload.components ?? []),
+      ...readCard(payload),
       files: (payload.files ?? []).length,
     });
     state.replied = true;
@@ -153,11 +143,12 @@ async function run(kind: Kind, o: FakeOptions): Promise<Response> {
   if (responses.length === before) throw new Error(`no response to ${o.command ?? o.customId}`);
   const generic = responses.slice(before).find((x) => x.content.includes(T.generic.slice(0, 20)));
   if (generic) throw new Error(`generic error from ${o.command ?? ""} ${o.sub ?? ""} ${o.customId ?? ""}`);
+  lastContent = r.content;
   return r;
 }
 
-/** A refusal: the error's words first, then the reference line every error reply ends with. */
-const refused = (r: Response, text: string) => r.content.startsWith(text) && /\n-# อ้างอิง [A-Z2-9]{6}$/.test(r.content);
+/** A "not yet" (a gate or an expected state): its own title and the words, no error reference. */
+const notYet = (r: Response, text: string) => r.content === `### ${T.notYetTitle}\n${text}`;
 
 function find(r: Response, pred: (c: Component) => boolean): Component {
   const c = r.components.find(pred);
@@ -198,17 +189,17 @@ async function main(): Promise<void> {
   await run("modal", { ...A, customId: r.modal!.custom_id, fields: { eligibility: "e", review: "r", reversal: "v" } });
   await run("command", { ...A, command: "admin", sub: "template-rule", options: { template: "make-it-exist", rule: "learn" } });
   r = await run("command", { ...A, command: "admin", sub: "feature", options: { name: "awards", state: "on" } });
-  check(r.content.includes("(ใช้งานอยู่)"), "awards go live once configured", r.content);
+  check(r.content.includes("✅ เหรียญ: เปิด ใช้งานอยู่"), "awards go live once configured", r.content);
 
   // A student outside the pilot is turned away before anything is stored.
   r = await run("command", { user: "800000000000000099", name: "Outsider", roles: ["1"], command: "start" });
-  check(refused(r, T.notEligible), "non-pilot students are turned away", r.content);
+  check(notYet(r, T.notEligible), "non-pilot students are turned away", r.content);
 
   // Join.
   r = await run("command", { ...S, command: "start" });
   check(r.content.includes("SHIFT High quests"), "start explains the program");
   r = await run("button", { ...S, customId: find(r, (c) => c.label === T.startButton).custom_id });
-  check(r.content.startsWith("เริ่มแล้ว"), "start button onboards");
+  check(r.content.startsWith(`### ${T.startedTitle}\n`), "start button onboards");
   r = await run("button", { ...S, customId: find(r, (c) => c.label === T.btnNewProject).custom_id });
   check(r.type === "modal", "new project opens a modal");
   r = await run("modal", { ...S, customId: r.modal!.custom_id, fields: { name: "Trip Splitter", route: ["software"], ambition: "x" } });
@@ -219,7 +210,7 @@ async function main(): Promise<void> {
   r = await run("command", { ...S, command: "project", sub: "invite", options: { user: FRIEND } });
   r = await run("command", { ...F, command: "inbox" });
   r = await run("button", { ...F, customId: find(r, (c) => c.custom_id.startsWith("sq|invite|") && c.custom_id.endsWith("|y")).custom_id });
-  check(r.content === T.projectJoined, "friend accepts the invite");
+  check(r.content === `✅ ${T.projectJoined}`, "friend accepts the invite");
 
   // Choose a quest from the library.
   r = await run("command", { ...S, command: "quest", sub: "browse" });
@@ -235,17 +226,17 @@ async function main(): Promise<void> {
   // Progress: private first, then shared.
   r = await run("command", { ...S, command: "progress", sub: "add" });
   r = await run("modal", { ...S, customId: r.modal!.custom_id, fields: { changed: "Built the form", learned: "Forms", next: "Totals", blocker: "Deploy fails", link: "" } });
-  check(r.content === T.progressSaved, "progress saved privately");
+  check(r.content === `### ${T.progressSavedTitle}\n${T.progressSaved}`, "progress saved privately");
   const shareTeam = find(r, (c) => c.label === T.btnShareTeam);
   r = await run("button", { ...S, customId: shareTeam.custom_id });
-  check(r.content === T.progressShared, "progress shared with the team");
+  check(r.content === `### ${T.progressShared}`, "progress shared with the team");
   r = await run("command", { ...F, command: "progress", sub: "view", options: { team: true } });
   check(r.content.includes("Built the form"), "teammate sees the shared entry");
 
   // Help from a blocker.
   r = await run("command", { ...S, command: "help" });
   r = await run("modal", { ...S, customId: r.modal!.custom_id, fields: { summary: "Deploy fails", visibility: ["mentors"] } });
-  check(r.content === T.helpSent(false), "help goes to mentors");
+  check(r.content === `### ${T.helpSentTitle}\n${T.helpSent(false)}`, "help goes to mentors");
 
   // Submit with a teammate, preview first.
   r = await run("command", { ...S, command: "quest", sub: "status" });
@@ -258,15 +249,15 @@ async function main(): Promise<void> {
     customId: r.modal!.custom_id,
     fields: { evidence: "Two classmates used it", reflection: "Totals confused them", artifact: "https://example.org", part: "Logic", teammates: [FRIEND] },
   });
-  check(r.content.startsWith(`**${T.submitPreview}**`), "submission shows a preview");
+  check(r.content.startsWith(`### ${T.submitPreview}\n`) && r.content.includes("Two classmates used it"), "submission shows a preview");
   r = await run("button", { ...S, customId: find(r, (c) => c.label === T.visTeam).custom_id });
-  check(r.content.includes("ครั้งที่ 1"), "submitted", r.content);
+  check(r.content.startsWith(`### ${T.submittedTitle}\n${T.submitted(1)}`), "submitted", r.content);
 
   // Teammate confirms their part.
   r = await run("command", { ...F, command: "inbox" });
   r = await run("button", { ...F, customId: find(r, (c) => c.label === T.btnConfirmPart).custom_id });
   r = await run("modal", { ...F, customId: r.modal!.custom_id, fields: { part: "UI" } });
-  check(r.content === T.contributionDone, "teammate confirms");
+  check(r.content === `✅ ${T.contributionDone}`, "teammate confirms");
 
   // Mentor reviews.
   r = await run("command", { ...M, command: "review", sub: "queue" });
@@ -287,12 +278,12 @@ async function main(): Promise<void> {
   const help = find(r, (c) => c.custom_id === "sq|rv_help").options![0].value;
   r = await run("select", { ...M, customId: "sq|rv_help", values: [help] });
   r = await run("button", { ...M, customId: find(r, (c) => c.label === "รับเรื่อง").custom_id });
-  check(r.content === T.done, "mentor claims help");
+  check(r.content.startsWith("### ✅ รับเรื่องแล้ว\n"), "mentor claims help");
 
   // Celebrate: needs sharing on.
   r = await run("command", { ...S, command: "celebrate" });
   r = await run("modal", { ...S, customId: r.modal!.custom_id, fields: { body: "First real users" } });
-  check(r.content.startsWith(T.sharePreview), "celebration preview");
+  check(r.content.startsWith(`### ${T.sharePreview}\n`) && r.content.includes("First real users"), "celebration preview");
   check(find(r, (c) => c.label === T.btnPost).disabled === true, "post is disabled while sharing is off");
 
   // Settings and data.
@@ -306,7 +297,7 @@ async function main(): Promise<void> {
 
   // Work session.
   r = await run("command", { ...S, command: "work", sub: "start", options: { intention: "Fix deploy" } });
-  check(r.content === T.workStarted, "work starts");
+  check(r.content === `### ${T.workStartedTitle}\n**Fix deploy**\n-# ${T.workStarted}`, "work starts");
   r = await run("command", { ...S, command: "work", sub: "end", options: { reflection: "Fixed" } });
   check(r.content.includes("Fix deploy"), "work ends");
 
@@ -316,7 +307,7 @@ async function main(): Promise<void> {
   r = await run("command", { ...A, command: "admin", sub: "report", options: { days: 30 } });
   check(r.content.includes("รายงานรวม") && !r.content.includes("Student"), "report is aggregate only");
   r = await run("command", { ...S, command: "admin", sub: "status" });
-  check(refused(r, T.staffOnly), "students cannot use admin commands", r.content);
+  check(notYet(r, T.staffOnly), "students cannot use admin commands", r.content);
 
   await db.end();
   await pool.end();

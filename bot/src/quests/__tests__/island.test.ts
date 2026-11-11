@@ -6,7 +6,18 @@ import { createHash } from "node:crypto";
 import { PNG } from "pngjs";
 
 import { PALETTE, SPRITES } from "../../../assets/island/sprites";
-import { MAX_WIDTH, RenderError, SPOTS, glyphFor, layoutFor, plotSpots, renderIsland, type IslandPlot } from "../island/render";
+import {
+  MAX_WIDTH,
+  RenderError,
+  SPOTS,
+  glyphFor,
+  layoutFor,
+  plotBoxes,
+  plotSpots,
+  renderIsland,
+  type IslandPlot,
+  type PlotBox,
+} from "../island/render";
 import { I, PENDING_SLOT, SQ, STAGE_NAMES, WIP_CORNER, nextUnlock, pendingSlot, seasonLines, type SeasonView } from "../island/copy";
 
 /** sha256 of the decoded RGBA pixels of renderIsland(plots(6), { markMine, festival }). Update only with a sprite or layout change you meant. */
@@ -220,6 +231,118 @@ describe("island renderer", () => {
     } finally {
       SPRITES.boat = boat;
     }
+  });
+});
+
+describe("plot boxes", () => {
+  /** Decoded scale-1 render: one image pixel per native pixel. */
+  const native = (input: IslandPlot[], options: { markMine?: boolean; festival?: boolean } = {}) => {
+    const out = renderIsland(input, { ...options, scale: 1 });
+    expect(out.scale).toBe(1);
+    return PNG.sync.read(out.png);
+  };
+  /** Pixels (x, y) where two same-sized renders differ. */
+  const diff = (a: PNG, b: PNG) => {
+    expect([a.width, a.height]).toEqual([b.width, b.height]);
+    const out: [number, number][] = [];
+    for (let k = 0; k < a.data.length; k += 4) {
+      if (a.data[k] !== b.data[k] || a.data[k + 1] !== b.data[k + 1] || a.data[k + 2] !== b.data[k + 2]) {
+        const i = k / 4;
+        out.push([i % a.width, Math.floor(i / a.width)]);
+      }
+    }
+    return out;
+  };
+  const inside = (box: PlotBox, [x, y]: [number, number]) =>
+    x >= box.left && x < box.left + box.width && y >= box.top && y < box.top + box.height;
+  /** First sprite row with a visible pixel. */
+  const inkTop = (name: string) => SPRITES[name].findIndex((row) => /[^. ]/.test(row));
+
+  it("matches the size of the scale-1 picture, smallest island included", () => {
+    for (const n of [0, 1, 6, 12, 38, 50, 120, 200]) {
+      const out = renderIsland(plots(n), { scale: 1 });
+      const boxes = plotBoxes(plots(n));
+      expect([n, boxes.width, boxes.height]).toEqual([n, out.width, out.height]);
+      expect(boxes.boxes.map((b) => b.slot)).toEqual(plots(n).map((p) => p.slot));
+    }
+  });
+
+  it("keeps every box inside the image, covering the tree sprite and its number tag", () => {
+    const wrong: string[] = [];
+    for (let n = 1; n <= 200; n++) {
+      const { width, height, boxes } = plotBoxes(plots(n));
+      const layout = layoutFor(n);
+      const glyph = glyphFor(layout.cols);
+      for (const box of boxes) {
+        const at = `n=${n} slot=${box.slot}`;
+        if (box.left < 0 || box.top < 0 || box.left + box.width > width || box.top + box.height > height) wrong.push(`${at} outside`);
+        // The tree's 32 x 40 sprite stands on its spot, and the tag hangs 9 glyphs below it.
+        const s = SPOTS[box.slot - 1];
+        const treeLeft = (layout.pcx + s.x) * 16;
+        const treeTop = (layout.pcy + s.y + 1) * 16 - 40;
+        if (box.top !== treeTop || box.top + box.height !== treeTop + 40 + 9 * glyph) wrong.push(`${at} rows`);
+        if (box.left > treeLeft || box.left + box.width < treeLeft + 32) wrong.push(`${at} columns`);
+      }
+    }
+    expect(wrong).toEqual([]);
+  });
+
+  it("holds every pixel its plot draws, tag included, at any island size", () => {
+    for (const n of [3, 9, 16, 38, 48]) {
+      const all = bare(n).map((p) => ({ ...p, stage: p.slot % 8 }));
+      const { boxes } = plotBoxes(all);
+      for (const slot of [1, Math.ceil(n / 2), n - 1]) {
+        // Same highest slot, so the same island: only this plot's pixels change.
+        const without = native(all.filter((p) => p.slot !== slot));
+        const changed = diff(native(all), without);
+        const box = boxes.find((b) => b.slot === slot)!;
+        expect([n, slot, changed.length > 100]).toEqual([n, slot, true]);
+        expect([n, slot, changed.filter((px) => !inside(box, px))]).toEqual([n, slot, []]);
+        // The tag's bottom row is the box's bottom row.
+        expect([n, slot, Math.max(...changed.map(([, y]) => y))]).toEqual([n, slot, box.top + box.height - 1]);
+      }
+    }
+  });
+
+  it("puts the caller's marker over the middle of their box, above the tree", () => {
+    for (const stage of [0, 3, 7]) {
+      const input = bare(9).map((p) => (p.slot === 5 ? { ...p, stage, mine: true } : p));
+      const box = plotBoxes(input).boxes.find((b) => b.slot === 5)!;
+      const pin = diff(native(input, { markMine: true }), native(input, { markMine: false }));
+      expect(pin.length).toBeGreaterThan(10);
+      const xs = pin.map(([x]) => x);
+      const centre = (Math.min(...xs) + Math.max(...xs) + 1) / 2;
+      expect(Math.abs(centre - (box.left + box.width / 2))).toBeLessThanOrEqual(1);
+      expect(Math.max(...pin.map(([, y]) => y))).toBeLessThan(box.top + inkTop(`stage_${stage}`));
+    }
+  });
+
+  it("does not depend on input order, and places plain plots like the picture does", () => {
+    const input = plots(14);
+    expect(plotBoxes([...input].reverse())).toEqual(plotBoxes(input));
+    const plain = input.map((p) => (p.slot === 4 ? { ...p, plain: true } : p));
+    expect(plotBoxes(plain)).toEqual(plotBoxes(input));
+    const gap = input.filter((p) => p.slot !== 2);
+    expect(plotBoxes(gap).boxes).toEqual(plotBoxes(input).boxes.filter((b) => b.slot !== 2));
+  });
+
+  it("fails with the renderer's typed errors", () => {
+    const fail = (input: IslandPlot[]) => {
+      try {
+        plotBoxes(input);
+      } catch (error) {
+        expect(error).toBeInstanceOf(RenderError);
+        return (error as RenderError).code;
+      }
+      throw new Error("expected a render error");
+    };
+    const [one] = plots(1);
+    expect(fail([one, { ...one }])).toBe("bad_plot");
+    expect(fail([{ ...one, slot: 0 }])).toBe("bad_plot");
+    expect(fail([{ ...one, slot: 1.5 }])).toBe("bad_plot");
+    expect(fail([{ ...one, stage: Number.NaN }])).toBe("bad_plot");
+    expect(fail([{ ...one, slot: SPOTS.length + 1 }])).toBe("too_large");
+    expect(fail(plots(201))).toBe("too_large");
   });
 });
 

@@ -7,13 +7,20 @@ import { bkkDate, safe } from "../copy";
 /** Tree stage = number of milestones a mentor has confirmed (0..7). */
 export const STAGE_NAMES = ["ที่ดินว่าง", "เมล็ด", "ต้นกล้า", "ต้นอ่อน", "ต้นไม้", "ต้นใหญ่", "ออกผล", "ผลิดอก"];
 
+/** A stage as a bar: ▰▰▱▱▱▱▱ for 2 of 7. */
+export function stageBar(stage: number, total = 7): string {
+  const done = Math.max(0, Math.min(total, Math.floor(stage)));
+  return `${"▰".repeat(done)}${"▱".repeat(total - done)}`;
+}
+
 export const I = {
-  header: "🏝️ **เกาะ SHIFT**",
+  /** The card title (rendered as a ### heading). */
+  header: "🏝️ เกาะ SHIFT",
   noPlot:
-    "คุณยังไม่มีที่ดินบนเกาะ จับจองด้วยการสร้างโปรเจกต์ (ทำเรื่องอะไรก็ได้ที่คุณใส่ใจ) หรือให้เพื่อนชวนเข้าโปรเจกต์ของเขาก็ได้ ต้นไม้ของคุณจะเริ่มจากเมล็ด",
+    "🌱 **คุณยังไม่มีที่ดินบนเกาะ**\nสร้างโปรเจกต์เรื่องที่คุณใส่ใจเพื่อจับจองที่ดิน หรือให้เพื่อนชวนเข้าโปรเจกต์ของเขาก็ได้ ต้นไม้จะเริ่มจากเมล็ด",
   plot: (n: number | undefined, stage: number, name: string) =>
-    `🌳 **${safe(name, 60)}**${n ? ` · แปลง #${n}` : ""} · ${STAGE_NAMES[stage] ?? STAGE_NAMES[7]} (${stage}/7)`,
-  next: (title: string) => `ขั้นต่อไปที่แนะนำ: **${safe(title, 80)}** (จะทำขั้นไหนก่อนก็ได้)`,
+    `🌳 **${safe(name, 60)}**${n ? ` · แปลง #${n}` : ""}\n${stageBar(stage)} ${STAGE_NAMES[stage] ?? STAGE_NAMES[7]} **${stage}**/7`,
+  next: (title: string) => `➡️ ขั้นต่อไป: **${safe(title, 80)}** (ทำขั้นไหนก่อนก็ได้)`,
   allDone: "ครบ 7 ขั้นแล้ว ต้นไม้ผลิดอกเต็มต้น ทำขั้นไหนซ้ำเพื่อเรียนรู้ต่อก็ได้",
   inFlight: (title: string, state: string) => `⏳ ${safe(title, 80)}: ${state}`,
   /** A teammate holds the project's one open quest for this milestone. */
@@ -24,8 +31,10 @@ export const I = {
   nothingToPick: "ตอนนี้ทุกขั้นมีงานเปิดอยู่แล้ว รอผลรีวิวหรือช่วยเพื่อนร่วมทีมในงานที่เขาถืออยู่ได้เลย",
   resting: "🌙 กำลังพัก ต้นไม้ไม่ตาย ไม่มีอะไรหาย กด ☀️ เมื่อพร้อมกลับมา",
   tappedToday: "🔨 วันนี้คุณลงมือแล้ว",
-  growthRule: "ต้นไม้โตเมื่อพี่เลี้ยงมาเยี่ยมและยืนยันขั้นที่ทำได้จริง ไม่ได้โตจากจำนวนครั้งที่กดหรือเวลาออนไลน์",
+  growthRule: "ต้นไม้โตเมื่อพี่เลี้ยงยืนยันขั้นที่ทำได้จริง ไม่ได้โตจากจำนวนครั้งที่กดหรือเวลาออนไลน์",
   signs: "🪧 ป้ายชื่อบนเกาะ:",
+  /** The rest of a list that is cut short. */
+  more: (n: number) => `และอีก ${n}`,
   /** The picture failed; the text view still works. The reference matches one log line. */
   pictureFailed: (ref: string) => `🖼️ รูปเกาะโหลดไม่ขึ้นรอบนี้ งานและต้นไม้ของคุณยังอยู่ครบ (อ้างอิง ${ref})`,
 
@@ -41,42 +50,65 @@ export const I = {
   btnShowName: "🪧 โชว์ชื่อบนเกาะ",
   btnHideName: "🪧 ซ่อนชื่อ",
   btnNote: "✏️ เพิ่มโน้ตสั้นๆ",
+  /** Opens the season details from the season line on the island card. */
+  btnSeason: "ℹ️ ดูเพิ่ม",
 
+  /** How the island works: four short rules, then the fine print. The title is btnHow. */
   how: [
-    "**เกาะ SHIFT ทำงานยังไง**",
-    "• หนึ่งโปรเจกต์คือต้นไม้หนึ่งต้น โตได้ 7 ขั้น ทำขั้นไหนก่อนก็ได้",
-    "• ถึงขั้นไหนแล้ว กด 🌟 ส่งหลักฐานสั้นๆ กับคำตอบหนึ่งข้อ พี่เลี้ยงจะมาดูแล้วยืนยัน",
-    "• ต้นไม้โตจากงานที่พี่เลี้ยงยืนยันเท่านั้น ไม่ได้โตจากจำนวนครั้งที่กดหรือความเร็ว",
-    "• ต้นไม้ไม่เหี่ยว ไม่หดเล็กลง และไม่มีการนับวันต่อเนื่อง จะพักนานแค่ไหนก็ได้",
-    "• ไม่มีการจัดอันดับ ของปลดล็อก ทุกคนที่ถึงเกณฑ์ได้เท่ากัน",
-    "• เริ่มได้สองทาง: จับจองที่ดินด้วยการสร้างโปรเจกต์ หรือให้เพื่อนชวนเข้าโปรเจกต์ของเขา",
+    "- **1 โปรเจกต์ = ต้นไม้ 1 ต้น** โตได้ 7 ขั้น ทำขั้นไหนก่อนก็ได้",
+    "- **ถึงขั้นไหนแล้ว กด 🌟** ส่งหลักฐานสั้นๆ กับคำตอบหนึ่งข้อ พี่เลี้ยงจะมาดูแล้วยืนยัน",
+    "- **โตจากงานที่พี่เลี้ยงยืนยันเท่านั้น** ไม่ได้โตจากจำนวนครั้งที่กดหรือความเร็ว",
+    "- **พักนานแค่ไหนก็ได้** ต้นไม้ไม่เหี่ยว ไม่หดเล็กลง ไม่มีการนับวันต่อเนื่อง",
+  ].join("\n"),
+  howFine: [
+    "ไม่มีการจัดอันดับ ของปลดล็อกทุกคนที่ถึงเกณฑ์ได้เท่ากัน",
+    "เริ่มได้สองทาง: จับจองที่ดินด้วยการสร้างโปรเจกต์ หรือให้เพื่อนชวนเข้าโปรเจกต์ของเขา",
   ].join("\n"),
 
-  tapped: "บันทึกแล้ว ขอให้สนุกกับการสร้าง 🔨",
-  tapAgain: "วันนี้บันทึกไว้แล้ว อยากเล่าเพิ่มก็เพิ่มโน้ตได้",
+  tappedTitle: "🔨 บันทึกแล้ว",
+  tapped: "ขอให้สนุกกับการสร้าง",
+  tapAgainTitle: "🔨 วันนี้บันทึกไว้แล้ว",
+  tapAgain: "อยากเล่าเพิ่ม เพิ่มโน้ตสั้นๆ ได้",
   noteTitle: "โน้ตสั้นๆ",
   noteLabel: "วันนี้ทำอะไรไป (สั้นๆ)",
-  noteSaved: "เก็บโน้ตแล้ว (ส่วนตัว เห็นแค่คุณ)",
+  noteSavedTitle: "✅ เก็บโน้ตแล้ว",
+  noteSaved: "ส่วนตัว เห็นแค่คุณ",
 
   pickMilestone: "ถึงขั้นไหนแล้ว",
+  /** What the marks in the milestone list mean. */
+  msLegend: "✅ ผ่านแล้ว · ⏳ มีงานเปิดอยู่ · ▫️ ยังไม่ได้ทำ",
   doneRepeat: "ผ่านแล้ว ส่งซ้ำได้ถ้าได้เรียนรู้อะไรใหม่ (ต้นไม้นับขั้นนี้แล้ว)",
   criteria: (text: string) => `**พี่เลี้ยงดูอะไร**\n${safe(text, 600)}`,
   proof: "หลักฐาน: ลิงก์ หรือเล่าสั้นๆ",
   proofHint: "ห้ามระบุชื่อคนที่คุยด้วยหรือคนที่ทดสอบ ห้ามใส่รหัสผ่าน โทเคน หรือข้อมูลลูกค้า",
   portfolio: "โน้ตพอร์ต",
   portfolioHint: "ตอบสั้นๆ ข้อเดียว เก็บไว้ใช้ในพอร์ตได้",
-  sent: "ส่งแล้ว พี่เลี้ยงจะมาดูงานนี้ ผลแจ้งใน /inbox ถ้าผ่าน ต้นไม้โตขึ้นหนึ่งขั้น",
+  sentTitle: "📨 ส่งแล้ว",
+  sent: "พี่เลี้ยงจะมาดูงานนี้ ถ้าผ่าน ต้นไม้โตขึ้นหนึ่งขั้น",
   /** A repeat never grows the tree: the stage is already counted. */
-  sentRepeat:
-    "ส่งแล้ว ขั้นนี้นับให้ต้นไม้ไปแล้ว ครั้งนี้พี่เลี้ยงจะดูว่าคุณได้เรียนรู้อะไรใหม่ต่างจากครั้งก่อน ผลแจ้งใน /inbox",
+  sentRepeat: "ขั้นนี้นับให้ต้นไม้ไปแล้ว ครั้งนี้พี่เลี้ยงจะดูว่าคุณได้เรียนรู้อะไรใหม่ต่างจากครั้งก่อน",
+  resultIn: "ผลแจ้งใน /inbox",
 
-  rested: (n: number) => `พักแล้ว (พักงาน ${n} อย่าง) ต้นไม้ไม่ตาย ไม่มีอะไรหาย`,
+  restedTitle: "🌙 พักแล้ว",
+  rested: (n: number) => `พักงาน **${n}** อย่าง ต้นไม้ไม่ตาย ไม่มีอะไรหาย`,
   /** Rest with nothing open: there is nothing to pause, and no resting state is shown. */
-  nothingToRest: "ตอนนี้ไม่มีงานที่เปิดอยู่ให้พัก ไม่ต้องทำอะไรเพิ่ม ต้นไม้ไม่เหี่ยวและไม่มีอะไรหาย กลับมาเมื่อไหร่ก็ได้",
-  woke: (n: number) => `กลับมาแล้ว ☀️${n ? ` (เปิดงาน ${n} อย่างต่อ)` : ""}`,
-  nameShown: (visible: boolean) =>
-    visible ? "ชื่อโปรเจกต์ขึ้นป้ายบนเกาะแล้ว" : "บันทึกแล้ว ชื่อจะขึ้นป้ายเมื่อเพื่อนร่วมทีมทุกคนยินยอม",
-  nameHidden: "ซ่อนชื่อโปรเจกต์แล้ว บนเกาะจะเห็นเป็นต้นไม้ไม่มีป้าย",
+  nothingToRestTitle: "🌙 ไม่มีงานให้พัก",
+  nothingToRest: "ไม่ต้องทำอะไรเพิ่ม ต้นไม้ไม่เหี่ยวและไม่มีอะไรหาย กลับมาเมื่อไหร่ก็ได้",
+  wokeTitle: "☀️ กลับมาแล้ว",
+  woke: (n: number) => (n ? `เปิดงาน **${n}** อย่างต่อ` : ""),
+  /** The project name on the island's sign: shown, waiting for every teammate, or hidden. */
+  nameShown: "🪧 ชื่อโปรเจกต์ขึ้นป้ายบนเกาะแล้ว",
+  nameWaitingTitle: "🪧 บันทึกแล้ว",
+  nameWaiting: "ชื่อจะขึ้นป้ายเมื่อเพื่อนร่วมทีมทุกคนยินยอม",
+  nameHiddenTitle: "🪧 ซ่อนชื่อแล้ว",
+  nameHidden: "บนเกาะจะเห็นเป็นต้นไม้ไม่มีป้าย",
+
+  workTitle: "📋 งานที่ส่งไว้",
+  workEmpty: "ยังไม่มีงานที่เปิดอยู่ ถึงขั้นไหนแล้วส่งได้เลย",
+
+  /** The season details card: the island card shows only the season's headline. */
+  noSeason: "ตอนนี้ไม่มีซีซันที่เปิดอยู่",
+  seasonFine: "ไม่มีการจัดอันดับ ทุกคนที่ถึงเกณฑ์ได้เท่ากัน",
 };
 
 /**
@@ -86,25 +118,44 @@ export const I = {
 export const SQ = {
   /** /admin feature squads is off (the default until founder decision 5). */
   notOpen: "สควอดยังไม่เปิดให้ใช้ตอนนี้ ระหว่างนี้ลงมือกับโปรเจกต์ของคุณบน /island ได้ตามปกติ เปิดเมื่อไหร่ใช้ /squad ได้เลย",
-  created: "ตั้งสควอดแล้ว ชวนเพื่อนอีก 2 ถึง 3 คนด้วย /squad invite (เพื่อนต้องกดตอบรับเอง) ครบ 3 คนเมื่อไหร่ สควอดเริ่มนับขั้นด้วยกัน",
-  none: "ยังไม่มีสควอด ตั้งสควอดเล็กๆ กับเพื่อนด้วย /squad new ไม่บังคับ",
-  invited: (who: string) =>
-    `ส่งคำชวนเข้าสควอดให้ ${who} แล้ว เขาจะเห็นใน /inbox หรือ /squad view คำชวนอยู่ได้ 3 วัน ถอนคืนได้ด้วย /squad withdraw`,
+  createdTitle: "✅ ตั้งสควอดแล้ว",
+  created: "ชวนเพื่อนอีก 2 ถึง 3 คนด้วย /squad invite",
+  createdFine: "เพื่อนต้องกดตอบรับเอง ครบ 3 คนเมื่อไหร่ สควอดเริ่มนับขั้นด้วยกัน",
+  /** The card title when there is no squad yet. */
+  none: "👥 ยังไม่มีสควอด",
+  noneHint: "ตั้งสควอดเล็กๆ กับเพื่อนได้ด้วย /squad new ไม่บังคับ",
+  invited: (who: string) => `${who} จะเห็นคำชวนใน /inbox หรือ /squad view คำชวนอยู่ได้ 3 วัน`,
+  /** One invite in /inbox. */
   inviteLine: (name: string, expiresAt?: string | null) =>
     `👥 มีคนชวนคุณเข้าสควอด **${safe(name, 60)}**${expiresAt ? ` (ตอบได้ถึง ${bkkDate(expiresAt)})` : ""}`,
+  /** One invite on the /squad view invites card, under invitesTitle. */
+  invitesTitle: "📨 คำชวนเข้าสควอด",
+  inviteItem: (name: string, expiresAt?: string | null) =>
+    `👥 **${safe(name, 60)}**${expiresAt ? ` · ตอบได้ถึง ${bkkDate(expiresAt)}` : ""}`,
+  moreInvites: "ตอบ 2 คำชวนแรกก่อน คำชวนที่เหลือจะขึ้นมาให้ตอบต่อ",
+  /** The squad's window: dates, then the days left while it is open. */
+  window: (startsOn: string, endsOn: string, daysLeft?: number | null) =>
+    `📅 ${bkkDate(startsOn)} ถึง ${bkkDate(endsOn)}${daysLeft ? ` · อีก **${daysLeft}** วัน` : ""}`,
+  target: (target: string) => `🎯 เป้าที่ตั้งกันเอง: ${safe(target, 200)}`,
+  /** Names only, already escaped and joined. */
+  members: (names: string) => `👤 ${names}`,
+  you: "คุณ",
   /** Fewer than 3 active members: no progress number yet, only who is in. */
-  forming: (n: number) =>
-    `🌱 สควอดกำลังรวมคน: ตอนนี้ ${n} คน ครบ 3 คนเมื่อไหร่เริ่มนับขั้นด้วยกัน ชวนเพื่อนได้ด้วย /squad invite`,
-  together: (total: number) => `ทั้งสควอดโตไปแล้ว ${total} ขั้นในรอบนี้ 🌱`,
-  ended: (total: number) => `รอบนี้จบแล้ว ทั้งสควอดโตไป ${total} ขั้นด้วยกัน ขอบคุณที่ลงมือด้วยกัน 🌳`,
+  forming: (n: number) => `🌱 กำลังรวมคน ${stageBar(Math.min(n, 3), 3)} **${n}**/3 ครบ 3 คนเริ่มนับขั้นด้วยกัน`,
+  inviteHint: "ชวนเพื่อนเพิ่มได้ด้วย /squad invite",
+  together: (total: number) => `🌱 ทั้งสควอดโตไปแล้ว **${total}** ขั้นในรอบนี้`,
+  ended: (total: number) => `🌳 รอบนี้จบแล้ว ทั้งสควอดโตไป **${total}** ขั้นด้วยกัน ขอบคุณที่ลงมือด้วยกัน`,
   /** A squad that ends below three members shows no number: it would be someone's own count. */
-  endedQuiet: "รอบนี้จบแล้ว ขอบคุณที่ลงมือด้วยกัน 🌳",
+  endedQuiet: "🌳 รอบนี้จบแล้ว ขอบคุณที่ลงมือด้วยกัน",
   private: "เห็นเฉพาะคนในสควอด ไม่มีการจัดอันดับ",
   withdrawHint: "ถอนคำชวนที่ยังไม่ตอบได้ด้วย /squad withdraw",
-  withdrawn: (who: string) => `ถอนคำชวนเข้าสควอดของ ${who} แล้ว ไม่มีอะไรค้างในกล่องข้อความของเขา`,
+  withdrawnTitle: "↩️ ถอนคำชวนแล้ว",
+  withdrawn: (who: string) => `ไม่มีคำชวนค้างในกล่องข้อความของ ${who} แล้ว`,
+  declined: "ปฏิเสธคำชวนเข้าสควอดแล้ว",
   btnView: "👥 ดูสควอด",
   btnLeave: "ออกจากสควอด",
-  left: "ออกจากสควอดแล้ว โปรเจกต์และต้นไม้ของคุณยังอยู่ครบ",
+  left: "🚪 ออกจากสควอดแล้ว",
+  leftKeeps: "โปรเจกต์และต้นไม้ของคุณยังอยู่ครบ",
 };
 
 export interface SeasonUnlock {
@@ -154,8 +205,8 @@ export const STAGE_MILESTONE = 3;
  * sent in time, so review time never costs the slot; a decline would.
  */
 export const PENDING_SLOT = {
-  table: "⏳ ได้โต๊ะโชว์งานใน Demo Day เมื่อพี่เลี้ยงยืนยันงานที่ส่งไว้: รอพี่เลี้ยงยืนยัน (ส่งทันกำหนดแล้ว ตรวจทีหลังก็ยังนับ)",
-  stage: "⏳ ได้ขึ้นเวทีใน Demo Day เมื่อพี่เลี้ยงยืนยันงานที่ส่งไว้: รอพี่เลี้ยงยืนยัน (ส่งทันกำหนดแล้ว ตรวจทีหลังก็ยังนับ)",
+  table: "⏳ รอพี่เลี้ยงยืนยันงานที่ส่งไว้ ถ้าผ่าน ได้โต๊ะโชว์งานใน Demo Day (ส่งทันกำหนดแล้ว ตรวจทีหลังก็ยังนับ)",
+  stage: "⏳ รอพี่เลี้ยงยืนยันงานที่ส่งไว้ ถ้าผ่าน ได้ขึ้นเวทีใน Demo Day (ส่งทันกำหนดแล้ว ตรวจทีหลังก็ยังนับ)",
 };
 
 const SLOT_RANK = { stage: 2, table: 1 } as const;
@@ -169,6 +220,8 @@ export function pendingSlot(season: Pick<SeasonView, "qualifies" | "qualifies_wi
 
 /** Open to every builder below the bars; the bars decide only gallery tables and stage slots. */
 export const WIP_CORNER = "🛠️ Demo Day มีมุมงานที่ยังทำอยู่ เปิดให้ทุกคน เอางานมาให้คนลองและรับฟีดแบ็กได้ ไม่ต้องรอถึงเกณฑ์";
+/** The same corner in one small line, for the island card; the season details show WIP_CORNER. */
+export const WIP_CORNER_SHORT = "🛠️ มุมงานที่ยังทำอยู่ใน Demo Day เปิดให้ทุกคน ไม่ต้องรอถึงเกณฑ์";
 
 /**
  * Today in Bangkok as YYYY-MM-DD, taken from the database's own count
@@ -204,51 +257,85 @@ function stepsTo(season: SeasonView, bar: number, needed: number): { steps: numb
   return { steps: Math.max(bar - season.stage_at_cutoff, missing ? 1 : 0), missing };
 }
 
+/** "Demo Day 15 พ.ค. (อีก 30 วัน)": the database's own day count, Bangkok dates. */
+function seasonWhen(season: SeasonView): string {
+  const days = season.days_to_demo;
+  return `Demo Day ${bkkDate(season.demo_day)}${days > 0 ? ` (อีก ${days} วัน)` : days === 0 ? " (วันนี้!)" : ""}`;
+}
+
+/** The season's pieces, so the island card can show the headline and the details card the rest. */
+export interface SeasonParts {
+  /** "🎪 Season 1": the details card's title. */
+  title: string;
+  /** "Demo Day 15 พ.ค. (อีก 30 วัน)" */
+  when: string;
+  /** Where the student stands for Demo Day: a slot, one waiting for a mentor, or the steps still needed. */
+  status: string[];
+  /** Below the bars before Demo Day: the open work-in-progress corner (WIP_CORNER) applies. */
+  wip: boolean;
+  /** Unlocks earned and the next one to aim for, then the island's shared goal. */
+  extras: string[];
+}
+
 /**
- * The season block on /island: a date, an audience, a shared goal. No ranking.
+ * The season: a date, an audience, a shared goal. No ranking.
  * titleOf names a milestone for the "needs milestone 2 / 3" hint.
  */
-export function seasonLines(
+export function seasonParts(
   season: SeasonView,
   goalTitle: string | null,
   titleOf: (milestone: number) => string | null = () => null
-): string[] {
-  const lines: string[] = [];
+): SeasonParts {
+  const status: string[] = [];
+  const extras: string[] = [];
+  let wip = false;
   const days = season.days_to_demo;
   const needs = (milestone: number) => ` (ต้องมีขั้น "${safe(titleOf(milestone) ?? String(milestone), 60)}" ด้วย)`;
-  lines.push(
-    `🎪 **${safe(season.name, 60)}**: Demo Day ${bkkDate(season.demo_day)}${days > 0 ? ` (อีก ${days} วัน)` : days === 0 ? " (วันนี้!)" : ""}`
-  );
   const pending = pendingSlot(season);
-  if (season.qualifies === "stage") lines.push("✅ ได้ขึ้นเวทีใน Demo Day แล้ว");
+  if (season.qualifies === "stage") status.push("✅ ได้ขึ้นเวทีใน Demo Day แล้ว");
   else if (season.qualifies === "table") {
     const stage = stepsTo(season, season.stage_bar, STAGE_MILESTONE);
     if (pending === "stage") {
-      lines.push("✅ ได้โต๊ะโชว์งานใน Demo Day แล้ว", PENDING_SLOT.stage);
+      status.push("✅ ได้โต๊ะโชว์งานใน Demo Day แล้ว", PENDING_SLOT.stage);
     } else if (days >= 0) {
-      lines.push(`✅ ได้โต๊ะโชว์งานแล้ว อีก ${stage.steps} ขั้นได้ขึ้นเวที${stage.missing ? needs(STAGE_MILESTONE) : ""}`);
+      status.push(`✅ ได้โต๊ะโชว์งานแล้ว อีก ${stage.steps} ขั้นได้ขึ้นเวที${stage.missing ? needs(STAGE_MILESTONE) : ""}`);
     } else {
-      lines.push("✅ ได้โต๊ะโชว์งานใน Demo Day");
+      status.push("✅ ได้โต๊ะโชว์งานใน Demo Day");
     }
   } else if (pending) {
     // Below the bars on approved work alone, at a bar once the work already sent is confirmed.
-    lines.push(PENDING_SLOT[pending]);
+    status.push(PENDING_SLOT[pending]);
   } else if (days >= 0) {
     const table = stepsTo(season, season.table_bar, TABLE_MILESTONE);
-    lines.push(`อีก ${table.steps} ขั้น ได้โต๊ะโชว์งานใน Demo Day${table.missing ? needs(TABLE_MILESTONE) : ""}`);
-    lines.push(WIP_CORNER);
+    status.push(`อีก ${table.steps} ขั้น ได้โต๊ะโชว์งานใน Demo Day${table.missing ? needs(TABLE_MILESTONE) : ""}`);
+    wip = true;
   }
   // Earned unlocks stay listed whatever their date; missed ones simply drop out.
-  for (const u of season.unlocks.filter((x) => x.earned)) lines.push(`🎁 ปลดล็อกแล้ว: ${safe(u.label, 80)}`);
+  for (const u of season.unlocks.filter((x) => x.earned)) extras.push(`🎁 ปลดล็อกแล้ว: ${safe(u.label, 80)}`);
   const next = nextUnlock(season);
-  if (next) lines.push(`🎁 ครบ ${next.milestone_count} ขั้นก่อน ${bkkDate(next.deadline)}: ${safe(next.label, 80)}`);
+  if (next) extras.push(`🎁 ครบ ${next.milestone_count} ขั้นก่อน ${bkkDate(next.deadline)}: ${safe(next.label, 80)}`);
   if (season.goal) {
     const g = season.goal;
-    lines.push(
+    extras.push(
       `🎯 ทั้งเกาะ: ${g.count}/${g.target} ต้นผ่านขั้น "${safe(goalTitle ?? String(g.milestone), 60)}"${
         g.reached ? " ถึงเป้าแล้ว!" : ` ก่อน ${bkkDate(g.deadline)}`
       }${g.unlock ? ` → ${safe(g.unlock, 80)}` : ""}`
     );
   }
-  return lines;
+  return { title: `🎪 ${safe(season.name, 60)}`, when: seasonWhen(season), status, wip, extras };
+}
+
+/** The season's one-line headline: "🎪 **Season 1**: Demo Day 15 พ.ค. (อีก 30 วัน)". */
+export function seasonHead(season: SeasonView): string {
+  return `🎪 **${safe(season.name, 60)}**: ${seasonWhen(season)}`;
+}
+
+/** Every season line in order: headline, status, work-in-progress corner, unlocks, goal. */
+export function seasonLines(
+  season: SeasonView,
+  goalTitle: string | null,
+  titleOf: (milestone: number) => string | null = () => null
+): string[] {
+  const p = seasonParts(season, goalTitle, titleOf);
+  return [seasonHead(season), ...p.status, ...(p.wip ? [WIP_CORNER] : []), ...p.extras];
 }

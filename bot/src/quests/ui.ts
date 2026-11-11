@@ -8,7 +8,6 @@ import {
   ButtonBuilder,
   ButtonStyle,
   LabelBuilder,
-  MessageFlags,
   ModalBuilder,
   StringSelectMenuBuilder,
   TextDisplayBuilder,
@@ -22,47 +21,64 @@ import {
 
 import { QuestDbError, QuestError } from "./api";
 import { BLOCKER, T, clip, errorText, hasErrorText } from "./copy";
-import { parseCid } from "./ids";
+import { cid, parseCid } from "./ids";
+import { I } from "./island/copy";
+import { renderView, type View } from "./view";
 
 /**
  * Small helpers so handlers read as flows, not as discord.js plumbing. Every
- * bot reply here is ephemeral (seen only by the person who asked) and pings
- * nobody: student text could otherwise turn into @everyone.
+ * bot reply here is one Components V2 card (see ./view), ephemeral (seen only
+ * by the person who asked), and pings nobody: student text could otherwise
+ * turn into @everyone.
  */
 
-export const NO_MENTIONS = { parse: [] as [] };
-
-export type Row = ActionRowBuilder<ButtonBuilder> | ActionRowBuilder<StringSelectMenuBuilder>;
+export {
+  LIMITS,
+  NO_MENTIONS,
+  TONE_COLORS,
+  commandIdMap,
+  commandIds,
+  linkCommands,
+  renderView,
+  setCommandIds,
+  type Block,
+  type RenderOptions,
+  type Row,
+  type Tone,
+  type View,
+  type ViewPayload,
+} from "./view";
 
 /** Anything the bot can answer: commands, buttons, selects, modals. */
 export type Replyable = RepliableInteraction | MessageComponentInteraction | ModalSubmitInteraction;
 
-export interface View {
-  content: string;
-  rows?: Row[];
-  files?: AttachmentBuilder[];
+/**
+ * A message sent before the cards (plain content or embeds) must have both
+ * cleared when it is edited into a card: Discord refuses content with V2.
+ */
+function legacyFields(i: RepliableInteraction): { content?: null; embeds?: [] } {
+  if (!i.isMessageComponent()) return {};
+  const m = i.message as { content?: string; embeds?: unknown[] } | undefined;
+  return m && (m.content || m.embeds?.length) ? { content: null, embeds: [] } : {};
 }
 
 /**
- * Shows a private view. A button press on a private message replaces that
- * message (replace: true); everything else is a new private reply.
+ * Shows a private card. A button press on a private message replaces that
+ * message (replace: true); everything else is a new private reply. Every
+ * path (reply, update, editReply after a defer, followUp) sends Components V2.
  */
 export async function show(target: Replyable, view: View, opts: { replace?: boolean } = {}): Promise<void> {
   const i = target as RepliableInteraction;
-  const payload = {
-    content: clip(view.content || "​"),
-    components: view.rows ?? [],
-    files: view.files ?? [],
-    allowedMentions: NO_MENTIONS,
-  };
+  const action = () => actionOf(i);
   if (opts.replace && i.isMessageComponent() && !i.replied && !i.deferred) {
-    await i.update(payload);
+    // An edit keeps the message's own privacy: only the V2 flag is sent.
+    await i.update({ ...renderView(view, { ephemeral: false, action }), ...legacyFields(i) });
   } else if (i.deferred) {
-    await i.editReply(payload);
+    await i.editReply({ ...renderView(view, { ephemeral: false, action }), ...legacyFields(i) });
   } else if (i.replied) {
-    await i.followUp({ ...payload, flags: MessageFlags.Ephemeral });
+    await i.followUp(renderView(view, { action }));
   } else {
-    await i.reply({ ...payload, flags: MessageFlags.Ephemeral });
+    await i.reply(renderView(view, { action }));
   }
 }
 
@@ -100,8 +116,31 @@ function actionOf(i: Replyable): string {
 /** Refusal raised before any database write (eligibility, staff role). */
 export class GateError extends Error {}
 
+/** Database codes that mean "not yet" or "not for you", not that something broke. */
+const EXPECTED_STATE = new Set(["not_started", "squads_off", "staff_no_squad"]);
+
+/** A friendly "not yet" (a gate, or an expected state), shown without the error colour or a reference. */
+function isRefusal(error: unknown): boolean {
+  return error instanceof GateError || (error instanceof QuestError && EXPECTED_STATE.has(error.code));
+}
+
 /**
- * Replies with the error's words plus a short reference, and logs one line
+ * After a failed button press, the same button again (its own custom ID, an
+ * existing action) and the way back to the island, so an error that replaced
+ * the card never leaves the student stranded. Buttons only: a select's or a
+ * modal's custom ID would reach its handler without the values it needs.
+ */
+function retryRows(i: Replyable): ActionRowBuilder<ButtonBuilder>[] {
+  if (!i.isButton() || !parseCid(i.customId)) return [];
+  const buttons = [new ButtonBuilder().setCustomId(i.customId).setLabel(T.btnRetry).setStyle(ButtonStyle.Secondary)];
+  if (parseCid(i.customId)?.action !== "is_view") {
+    buttons.push(new ButtonBuilder().setCustomId(cid("is_view")).setLabel(I.btnBack).setStyle(ButtonStyle.Secondary));
+  }
+  return [new ActionRowBuilder<ButtonBuilder>().addComponents(buttons)];
+}
+
+/**
+ * Replies with an error card (the error's words, then "-# อ้างอิง REF"), and logs one line
  * with that reference, the action, the database function, the sq code or
  * SQLSTATE and the release revision. Never student text. Returns the reference.
  */
@@ -141,10 +180,23 @@ export async function showError(i: Replyable, error: unknown): Promise<string> {
   // Refusals are expected; only failures are errors.
   if (error instanceof QuestError || error instanceof GateError) console.warn(line);
   else console.error(line);
-  // A code without Thai words yet is shown, so staff can still tell what happened.
-  content += `\n-# อ้างอิง ${ref}${unknownCode ? ` · ${code}` : ""}`;
+  // A "not yet" reads as a heads-up, not as something broken: no red, no reference.
+  const refusal = isRefusal(error) && !unknownCode;
   try {
-    await show(i, { content });
+    await show(
+      i,
+      refusal
+        ? { tone: "warn", title: T.notYetTitle, blocks: [{ kind: "text", text: content }] }
+        : {
+            tone: "error",
+            blocks: [
+              { kind: "text", text: content },
+              // A code without Thai words yet is shown, so staff can still tell what happened.
+              { kind: "subtext", text: `อ้างอิง ${ref}${unknownCode ? ` · ${code}` : ""}` },
+            ],
+            rows: retryRows(i),
+          }
+    );
   } catch {
     // The interaction may have expired; nothing more to tell the user.
   }

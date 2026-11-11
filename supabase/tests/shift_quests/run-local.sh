@@ -6,13 +6,16 @@
 # production. One fresh database per step:
 #
 #   once      every shift_quest migration applied exactly once, as the first
-#             production push will: the privilege check, and its catalog must
+#             production push will: the privilege check (the bot, the website's
+#             shift_quest_web allowlist, the Data API), and its catalog must
 #             equal the twice-applied one below
 #   wave1     only the files up to 20261111090700, when later ones exist: wave 1
 #             applies alone, has the island core and no season tables
-#   rules, island, flows, islandflows
+#   rules, island, flows, islandflows, board, canvas
 #             every migration applied twice (each must be re-runnable), then
-#             db_rules.ts, island_rules.ts, bot_flows.ts and island_flows.ts
+#             db_rules.ts, island_rules.ts, bot_flows.ts, island_flows.ts,
+#             web_board.ts (the web quest board, side quests, shift_quest_web)
+#             and web_canvas.ts (the SHIFT canvas link)
 #
 #   supabase/tests/shift_quests/run-local.sh       # or: pnpm test:db:quests
 #   PG_BIN=/usr/lib/postgresql/15/bin supabase/tests/shift_quests/run-local.sh
@@ -150,6 +153,10 @@ SQL
 # The rules of 20261111090600's grant loop, checked after a single pass: the
 # bot can execute every shift_quest_* entry point and no helper, the Data API
 # can execute none and touch no table, and every table has row level security.
+# And the web allowlist (20261111090900, 091000, 091100): shift_quest_web executes exactly the
+# functions listed below (nothing before that file is applied), never a
+# helper, and holds no privilege on any table or sequence. The list repeats
+# the migration's on purpose: a new grant must change both.
 check_privileges() {
   local problems
   problems="$("${PSQL[@]}" -d "$1" -At <<'SQL'
@@ -162,7 +169,34 @@ WITH fns AS (
   SELECT c.oid, c.relname, c.relkind, c.relrowsecurity
   FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
   WHERE n.nspname = 'public' AND c.relname LIKE 'shift\_quest\_%' AND c.relkind IN ('r', 'p', 'v', 'm', 'f')
-), roles(role) AS (VALUES ('anon'), ('authenticated'))
+), roles(role) AS (VALUES ('anon'), ('authenticated')),
+web_allow(sig) AS (VALUES
+  ('shift_quest_schema_version()'),
+  ('shift_quest_session(text,text)'),
+  ('shift_quest_start(text,text,boolean)'),
+  ('shift_quest_island(text)'),
+  ('shift_quest_island_map(text)'),
+  ('shift_quest_board(text)'),
+  ('shift_quest_checkin(text,text)'),
+  ('shift_quest_rest(text,boolean)'),
+  ('shift_quest_resume(text,uuid)'),
+  ('shift_quest_island_optin(text,uuid,boolean)'),
+  ('shift_quest_milestone_start(text,smallint)'),
+  ('shift_quest_milestone_submit(text,smallint,text,text,text)'),
+  ('shift_quest_side_choose(text,uuid)'),
+  ('shift_quest_side_submit(text,uuid,text,text,text)'),
+  ('shift_quest_propose(text,text,text,text,text,text)'),
+  ('shift_quest_submit(text,uuid,integer,text,text,text,text,text,text[])'),
+  ('shift_quest_help_create(text,text,text,text,uuid)'),
+  ('shift_quest_project_create(text,text,text,text)'),
+  ('shift_quest_project_list(text)'),
+  ('shift_quest_project_respond(text,uuid,boolean)'),
+  ('shift_quest_canvas_get(text)'),
+  ('shift_quest_canvas_link(text,uuid,text,text)'),
+  ('shift_quest_canvas_unlink(text)')
+), web_applied AS (
+  SELECT to_regprocedure('public.shift_quest_board(text)') IS NOT NULL AS yes
+)
 SELECT 'function ' || sig || ': ' || role || ' can execute it' FROM fns, roles
 WHERE has_function_privilege(role, oid, 'EXECUTE')
 UNION ALL
@@ -172,12 +206,41 @@ UNION ALL
 SELECT 'function ' || sig || ': a helper shift_quest_bot can execute' FROM fns
 WHERE NOT for_bot AND has_function_privilege('shift_quest_bot', oid, 'EXECUTE')
 UNION ALL
+SELECT 'function ' || sig || ': a helper shift_quest_web can execute' FROM fns
+WHERE NOT for_bot AND has_function_privilege('shift_quest_web', oid, 'EXECUTE')
+UNION ALL
+SELECT 'function ' || sig || ': shift_quest_web can execute it but it is not on the web allowlist' FROM fns
+WHERE for_bot AND has_function_privilege('shift_quest_web', oid, 'EXECUTE')
+  AND sig NOT IN (SELECT sig FROM web_allow)
+UNION ALL
+SELECT 'function ' || w.sig || ': on the web allowlist but shift_quest_web cannot execute it'
+FROM web_allow w, web_applied a
+WHERE a.yes AND NOT EXISTS (
+  SELECT 1 FROM fns f WHERE f.sig = w.sig AND has_function_privilege('shift_quest_web', f.oid, 'EXECUTE')
+)
+UNION ALL
 SELECT 'table ' || relname || ': row level security is off' FROM rels
 WHERE relkind IN ('r', 'p') AND NOT relrowsecurity
 UNION ALL
 SELECT 'table ' || relname || ': ' || role || ' has a privilege on it'
 FROM rels, (SELECT role FROM roles UNION ALL SELECT 'shift_quest_bot') r
 WHERE has_table_privilege(role, oid, 'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')
+UNION ALL
+SELECT 'relation ' || n.nspname || '.' || c.relname || ': shift_quest_web has a privilege on it'
+FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname NOT IN ('pg_catalog', 'information_schema') AND n.nspname NOT LIKE 'pg\_toast%'
+  AND c.relkind IN ('r', 'p', 'v', 'm', 'f', 'S')
+  AND CASE WHEN c.relkind = 'S' THEN has_sequence_privilege('shift_quest_web', c.oid, 'USAGE, SELECT, UPDATE')
+      ELSE has_table_privilege('shift_quest_web', c.oid, 'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER') END
+UNION ALL
+-- Both logins are members of PUBLIC: a SECURITY DEFINER function outside
+-- shift_quest_* that still grants EXECUTE to PUBLIC would be reachable. This
+-- sandbox has none; the runbook runs the same check on production.
+SELECT 'function ' || p.oid::regprocedure::text || ': ' || r.role || ' can execute it (outside shift_quest_*)'
+FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace,
+  (VALUES ('shift_quest_web'), ('shift_quest_bot')) r(role)
+WHERE n.nspname = 'public' AND p.proname NOT LIKE 'shift\_quest\_%' AND p.prosecdef
+  AND has_function_privilege(r.role, p.oid, 'EXECUTE')
 ORDER BY 1;
 SQL
 )"
@@ -186,14 +249,14 @@ SQL
     echo "$problems" | sed 's/^/  /' >&2
     exit 1
   fi
-  echo "ok - $1: grants and row level security as intended"
+  echo "ok - $1: grants (bot, website, Data API) and row level security as intended"
 }
 
 echo "# migrations"
 for f in "${MIGRATIONS[@]}"; do echo "apply $(basename "$f")"; done
 new_db once
 apply once "single pass" "${MIGRATIONS[@]}"
-for DB in rules island flows islandflows; do
+for DB in rules island flows islandflows board canvas; do
   new_db "$DB"
   apply "$DB" "first pass" "${MIGRATIONS[@]}"
   apply "$DB" "second pass" "${MIGRATIONS[@]}"
@@ -203,6 +266,7 @@ if [ "${#WAVE1[@]}" -lt "${#MIGRATIONS[@]}" ]; then
   apply wave1 "wave 1 alone" "${WAVE1[@]}"
 fi
 "${PSQL[@]}" -d postgres -c "ALTER ROLE shift_quest_bot WITH LOGIN PASSWORD 'local-test-only'"
+"${PSQL[@]}" -d postgres -c "ALTER ROLE shift_quest_web WITH LOGIN PASSWORD 'local-test-only'"
 
 echo "# single pass"
 check_privileges once
@@ -240,11 +304,13 @@ fi
 export SHIFT_QUESTS_TEST_DISPOSABLE=1
 db_url() { echo "postgresql://postgres@127.0.0.1:$PORT/$1"; }
 bot_url() { echo "postgresql://shift_quest_bot:local-test-only@127.0.0.1:$PORT/$1"; }
+web_url() { echo "postgresql://shift_quest_web:local-test-only@127.0.0.1:$PORT/$1"; }
 # Every suite runs even after one fails, so one run shows every failure.
 FAILED=()
 suite() {
   echo "# $1"
   SHIFT_QUESTS_TEST_DATABASE_URL="$(db_url "$2")" SHIFT_QUESTS_BOT_DATABASE_URL="$(bot_url "$2")" \
+    SHIFT_QUESTS_WEB_DATABASE_URL="$(web_url "$2")" \
     "$ROOT/node_modules/.bin/tsx" "$HERE/$3" || FAILED+=("$1")
 }
 
@@ -252,6 +318,8 @@ suite "database rules" rules db_rules.ts
 suite "island rules" island island_rules.ts
 suite "bot flows" flows bot_flows.ts
 suite "island flows" islandflows island_flows.ts
+suite "web board" board web_board.ts
+suite "web canvas link" canvas web_canvas.ts
 # island_rules.ts runs against wave 1 alone once it knows to skip season cases.
 if [ "${#WAVE1[@]}" -lt "${#MIGRATIONS[@]}" ] && grep -q SHIFT_QUESTS_WAVE "$HERE/island_rules.ts"; then
   export SHIFT_QUESTS_WAVE=1

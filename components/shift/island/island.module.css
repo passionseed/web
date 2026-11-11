@@ -1,0 +1,1926 @@
+/*
+ * SHIFT High Island (/shift/island). Dawn theme, pixel island as a lit
+ * diorama in the night sky. Tokens live here because :root does not carry
+ * them; sheets portal to <body>, so .sheet repeats them.
+ *
+ * Motion contract (docs/ui-design-system.md): glows animate clip-path,
+ * opacity and filter together; charge in with keyframes on --ease-tension,
+ * snap out with a short transition on --ease-snap. Touch replays glows once
+ * through .in-view (InViewAnimator). prefers-reduced-motion turns all of it off.
+ */
+
+.page,
+.sheet {
+  --ease-tension: cubic-bezier(0.05, 0.7, 0.35, 0.99);
+  --ease-snap: cubic-bezier(0.4, 0, 0.2, 1);
+  --snap: 160ms;
+  --press: 80ms;
+
+  /* Island colours, from bot/assets/island/sprites.ts PALETTE. */
+  --isl-ink: #344447;
+  --isl-water: #438eac;
+  --isl-sand: #e7cd92;
+  --isl-sand-hi: #f6e4b5;
+  --isl-leaf: #50976b;
+  --isl-leaf-hi: #78b880;
+  --isl-wood: #79583f;
+  --isl-wood-hi: #c89561;
+  --isl-cream: #fff1d6;
+  --isl-lamp: #f4c56a;
+  --isl-stone: #626f73;
+  --isl-stone-hi: #b8c7bf;
+  --isl-coral: #de796c;
+
+  --text-hi: #fef9e7;
+  --text: #e2e8f0;
+  --text-dim: #94a3b8;
+  --action: #3b82f6;
+  --action-soft: #93c5fd;
+  /* One gold element per screen: the keynote quest. */
+  --gold: #fed95c;
+
+  /* Pixel corners: a 2px notch instead of a border radius. */
+  --notch: polygon(
+    2px 0,
+    calc(100% - 2px) 0,
+    calc(100% - 2px) 2px,
+    100% 2px,
+    100% calc(100% - 2px),
+    calc(100% - 2px) calc(100% - 2px),
+    calc(100% - 2px) 100%,
+    2px 100%,
+    2px calc(100% - 2px),
+    0 calc(100% - 2px),
+    0 2px,
+    2px 2px
+  );
+
+  color: var(--text);
+  font-family: var(--font-bai-jamjuree), "Bai Jamjuree", sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.page {
+  position: relative;
+  min-height: 100svh;
+  isolation: isolate;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px calc(32px + env(safe-area-inset-bottom));
+}
+
+:where(.page, .sheet) :focus-visible {
+  outline: 2px solid var(--action-soft);
+  outline-offset: 2px;
+}
+
+:where(.page, .sheet) h1,
+:where(.page, .sheet) h2,
+:where(.page, .sheet) h3 {
+  font-family: var(--font-kodchasan), var(--font-bai-jamjuree), sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* ---------------------------------------------------------------- shell */
+
+.avatar {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  background: var(--isl-wood);
+  color: var(--isl-cream);
+  font-weight: 600;
+  font-size: 14px;
+  clip-path: var(--notch);
+  object-fit: cover;
+}
+
+/* Every grid here sizes its column to the screen, never to a wide child (the route chips, the 2x picture). */
+.board,
+.card,
+.sideBranches,
+.form,
+.detail,
+.noProject,
+.claim,
+.gateCard {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.card {
+  display: grid;
+  gap: 12px;
+  padding: 20px 16px;
+}
+
+.sectionHeading {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.35;
+  color: var(--text-hi);
+}
+
+.sectionSub {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+
+.quiet {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+.hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+
+/* ---------------------------------------------------------------- buttons */
+
+.primary {
+  width: 100%;
+  min-height: 48px;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.quietButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 16px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: #bfdbfe;
+  background: rgba(59, 130, 246, 0.08);
+  border: 0;
+  box-shadow: inset 0 0 0 1px rgba(147, 197, 253, 0.3);
+  clip-path: var(--notch);
+  cursor: pointer;
+  transition: background-color var(--snap) var(--ease-snap), transform var(--press) var(--ease-snap);
+}
+
+.quietButton:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.16);
+}
+
+.quietButton:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.quietButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.linkButton {
+  min-height: 44px;
+  padding: 8px 0;
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  color: var(--action-soft);
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.hintInline {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.discord {
+  display: grid;
+  gap: 8px;
+}
+
+/* ---------------------------------------------------------------- gate */
+
+.gate {
+  position: relative;
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 32px 0 calc(48px + env(safe-area-inset-bottom));
+}
+
+.gateCard {
+  width: min(100%, 440px);
+  display: grid;
+  gap: 16px;
+  padding: 28px 22px;
+}
+
+.gateHeading {
+  margin: 0;
+  font-size: 26px;
+  line-height: 1.3;
+  color: var(--text-hi);
+}
+
+.gateBody {
+  margin: 0;
+  color: var(--text);
+}
+
+.gateActions {
+  display: grid;
+  gap: 12px;
+}
+
+.gateBackdrop {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 4svh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 2px;
+  overflow: hidden;
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+.rules {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rule {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.ruleIcon {
+  margin-top: 5px;
+}
+
+/* ---------------------------------------------------------------- season */
+
+.seasonText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.seasonName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-hi);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.seasonWhen {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.seasonFacts {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.seasonFacts li[data-earned="true"] {
+  color: #b7e2bd;
+}
+
+.meter {
+  flex: none;
+  display: inline-flex;
+  gap: 2px;
+  padding-top: 9px;
+}
+
+.meter[data-size="large"] {
+  gap: 4px;
+  padding-top: 18px;
+}
+
+.meterCell {
+  position: relative;
+  width: 10px;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px var(--isl-stone);
+}
+
+.meter[data-size="large"] .meterCell {
+  width: 28px;
+  height: 28px;
+  box-shadow: inset 0 0 0 2px var(--isl-stone);
+}
+
+.meterCell[data-filled="true"] {
+  background: var(--isl-leaf-hi);
+  box-shadow: inset 0 0 0 1px var(--isl-ink);
+}
+
+.meter[data-size="large"] .meterCell[data-filled="true"] {
+  box-shadow: inset 0 0 0 2px var(--isl-ink);
+}
+
+.meterFlag {
+  position: absolute;
+  left: 1px;
+  bottom: 100%;
+}
+
+/* ---------------------------------------------------------------- today */
+
+.today {
+  gap: 12px;
+}
+
+.tapButton {
+  min-height: 56px;
+  font-size: 18px;
+}
+
+.todayDone {
+  display: grid;
+  gap: 4px;
+}
+
+.todayDoneLine,
+.todayResting {
+  margin: 0;
+  font-family: var(--font-kodchasan), var(--font-bai-jamjuree), sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 1.45;
+  color: var(--text-hi);
+}
+
+.todayQuiet {
+  display: flex;
+  gap: 8px;
+}
+
+.todayQuiet > * {
+  flex: 1;
+}
+
+/* ---------------------------------------------------------------- keynote (the one gold element) */
+
+.keynote {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 76px;
+  overflow: hidden;
+  font: inherit;
+  text-align: left;
+  color: var(--text-hi);
+  cursor: pointer;
+  transition: transform var(--press) var(--ease-snap);
+}
+
+.keynote:active {
+  transform: translateY(1px);
+}
+
+.keynote > :not(.keynoteGlow) {
+  position: relative;
+  z-index: 1;
+}
+
+.keynoteGlow {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(to top, rgba(254, 217, 92, 0.24) 0%, rgba(254, 217, 92, 0.08) 45%, rgba(254, 217, 92, 0) 80%);
+  clip-path: inset(100% 0 0 0);
+  opacity: 0;
+  filter: blur(14px);
+  transition: clip-path var(--snap) var(--ease-snap), opacity var(--snap) var(--ease-snap), filter var(--snap) var(--ease-snap);
+}
+
+.keynoteIcon {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  background: var(--isl-sand);
+  box-shadow: inset 0 0 0 2px var(--isl-ink);
+  clip-path: var(--notch);
+}
+
+.keynoteText {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+}
+
+.keynoteTitle {
+  font-family: var(--font-kodchasan), var(--font-bai-jamjuree), sans-serif;
+  font-weight: 600;
+  font-size: 17px;
+  line-height: 1.4;
+  color: var(--gold);
+}
+
+.keynoteArrow {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: var(--gold);
+}
+
+/* ---------------------------------------------------------------- board */
+
+.board {
+  display: grid;
+  gap: 16px;
+}
+
+.laneList {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.goal {
+  display: grid;
+  gap: 8px;
+}
+
+.goalLine {
+  margin: 0;
+  color: var(--text-hi);
+}
+
+.goalMeter {
+  height: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px var(--isl-stone);
+}
+
+.goalMeterFill {
+  display: block;
+  height: 100%;
+  background: var(--isl-leaf-hi);
+}
+
+/* The ring: seven main quests around the tree, no first or last. */
+.ring {
+  position: relative;
+  width: min(100%, 340px);
+  aspect-ratio: 1;
+  margin: 4px auto 28px;
+  /* The tree scales with the ring, so the top tile's chip never covers a tall tree. */
+  container-type: inline-size;
+}
+
+.ringTree {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  transform: translate(-50%, -56%);
+}
+
+.ringTree svg {
+  display: block;
+  width: min(96px, 26cqw);
+  height: auto;
+  image-rendering: pixelated;
+}
+
+/* The main quests' names under the ring: two columns, each opening its quest. */
+.legend {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 4px 6px;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.35;
+  text-align: left;
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  clip-path: var(--notch);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background var(--snap) var(--ease-snap);
+}
+
+.legendItem:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.legendItem:active {
+  transform: translateY(1px);
+}
+
+.legendItem:focus-visible {
+  outline: 2px solid var(--action-soft);
+  outline-offset: 2px;
+}
+
+.legendItem[data-status="done"] {
+  color: var(--text-dim);
+}
+
+.legendIcon {
+  flex: none;
+  image-rendering: pixelated;
+}
+
+.legendTitle {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.ringStage {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.ringList {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ringItem {
+  position: absolute;
+  /* Centre the 60px tile (not the chip below it) on the ring point. */
+  transform: translate(-50%, -30px);
+}
+
+/* Side branches. */
+.sideBranches {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.routeChips {
+  width: 100%;
+  min-width: 0;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.routeChips .routeChip {
+  flex: none;
+  height: auto;
+  min-height: 44px;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+  clip-path: var(--notch);
+}
+
+.routeChips .routeChip:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.routeChips .routeChip:active {
+  transform: translateY(1px);
+}
+
+.routeChips .routeChip[data-state="on"] {
+  color: #fff;
+  background: rgba(59, 130, 246, 0.2);
+  box-shadow: inset 0 0 0 2px rgba(59, 130, 246, 0.8);
+}
+
+.branch {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  padding-left: 20px;
+}
+
+/* A stepped 2px line: down from the main quest, then across to each side quest. */
+.branch::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 14px;
+  bottom: 32px;
+  width: 2px;
+  background: var(--isl-stone-hi);
+  opacity: 0.55;
+}
+
+.branchHeading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 0 -20px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--isl-sand-hi);
+}
+
+.branchIcon {
+  flex: none;
+  image-rendering: pixelated;
+}
+
+/* The free group has no main quest: a plain sand square instead of its icon. */
+.branchHeading[data-free="true"]::before {
+  content: "";
+  flex: none;
+  width: 10px;
+  height: 10px;
+  background: var(--isl-sand);
+  box-shadow: inset 0 0 0 2px var(--isl-ink);
+}
+
+.branchList {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.branchRow {
+  position: relative;
+}
+
+.branchRow::before,
+.branchRow::after {
+  content: "";
+  position: absolute;
+  background: var(--isl-stone-hi);
+  opacity: 0.55;
+}
+
+.branchRow::before {
+  left: -16px;
+  top: calc(50% - 4px);
+  width: 6px;
+  height: 2px;
+}
+
+.branchRow::after {
+  left: -12px;
+  top: calc(50% - 4px);
+  width: 2px;
+  height: 6px;
+  box-shadow: 2px 4px 0 0 var(--isl-stone-hi), 4px 4px 0 0 var(--isl-stone-hi);
+}
+
+/* ---------------------------------------------------------------- tiles */
+
+.tile {
+  --tile: 56px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  font: inherit;
+  text-align: center;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tile[data-layout="ring"] {
+  --tile: 60px;
+  width: 96px;
+}
+
+.tile[data-layout="row"] {
+  flex-direction: row;
+  gap: 14px;
+  width: 100%;
+  min-height: 64px;
+  padding: 4px 6px 4px 0;
+  text-align: left;
+}
+
+.tile:focus-visible {
+  outline: 2px solid var(--action-soft);
+  outline-offset: 4px;
+}
+
+.tile[data-status="locked"] {
+  cursor: help;
+}
+
+.tileBox {
+  position: relative;
+  flex: none;
+  width: var(--tile);
+  height: var(--tile);
+}
+
+.tileFace {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  background: var(--isl-sand);
+  box-shadow: inset 0 0 0 2px var(--isl-ink);
+  clip-path: var(--notch);
+  transition: transform var(--press) var(--ease-snap);
+}
+
+/* The hard 3px wood shadow, a second notched block behind the face. */
+.tileShadow {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: var(--isl-wood);
+  clip-path: var(--notch);
+  transform: translate(3px, 3px);
+  transition: transform var(--press) var(--ease-snap);
+}
+
+.tile:active .tileFace {
+  transform: translateY(1px);
+}
+
+.tile:active .tileShadow {
+  transform: translate(1px, 2px);
+}
+
+.tileSprite {
+  display: block;
+}
+
+.tileCheck {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+}
+
+.tileMoon {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+}
+
+/* Declined: a small coral notch. Never red. */
+.tileNotch {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  background: var(--isl-coral);
+  box-shadow: inset 2px -2px 0 0 var(--isl-ink);
+}
+
+.tileFlag {
+  position: absolute;
+  top: -8px;
+  left: -6px;
+  z-index: 3;
+}
+
+.tile[data-status="locked"] .tileFace {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px var(--isl-stone);
+}
+
+.tile[data-status="locked"] .tileSprite {
+  opacity: 0.6;
+}
+
+.tile[data-status="held"] .tileSprite {
+  opacity: 0.4;
+}
+
+.tile[data-status="submitted"] .tileFace {
+  box-shadow: inset 0 0 0 2px var(--isl-ink), inset 0 0 0 4px var(--isl-cream);
+}
+
+.tile[data-status="done"] .tileFace {
+  background: var(--isl-leaf);
+}
+
+/* Halo for an open quest that needs the student: blue, gold only on the keynote. */
+.tileHalo {
+  position: absolute;
+  inset: -10px;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(59, 130, 246, 0.9) 68%, rgba(59, 130, 246, 0.4) 84%, rgba(59, 130, 246, 0) 100%);
+  clip-path: inset(0 0 0 0);
+  opacity: 0.9;
+  filter: blur(6px);
+  animation: haloCharge 640ms var(--ease-tension) both;
+}
+
+.tile[data-keynote="true"] .tileHalo {
+  background: radial-gradient(closest-side, rgba(254, 217, 92, 0.9) 68%, rgba(254, 217, 92, 0.4) 84%, rgba(254, 217, 92, 0) 100%);
+}
+
+.tile[data-status="done"] .tileHalo {
+  animation: none;
+}
+
+/* Hover glow: charges in on keyframes, snaps out on the base transition. */
+.tileGlow {
+  position: absolute;
+  inset: -8px;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(147, 197, 253, 0.55) 0%, rgba(147, 197, 253, 0.18) 60%, rgba(147, 197, 253, 0) 100%);
+  clip-path: inset(100% 0 0 0);
+  opacity: 0;
+  filter: blur(14px);
+  transition: clip-path var(--snap) var(--ease-snap), opacity var(--snap) var(--ease-snap), filter var(--snap) var(--ease-snap);
+}
+
+@media (hover: hover) {
+  .tile:not([data-status="locked"]):not([data-status="done"]):hover .tileGlow,
+  .keynote:hover .keynoteGlow {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    filter: blur(5px);
+    animation: glowCharge 600ms var(--ease-tension) both;
+  }
+}
+
+@media (hover: none) {
+  .tile:global(.in-view):not([data-status="locked"]):not([data-status="done"]) .tileGlow,
+  .keynote:global(.in-view) .keynoteGlow {
+    animation: glowPass 700ms var(--ease-tension) both;
+  }
+}
+
+@keyframes haloCharge {
+  from {
+    clip-path: inset(100% 0 0 0);
+    opacity: 0;
+    filter: blur(16px);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 0.9;
+    filter: blur(6px);
+  }
+}
+
+@keyframes glowCharge {
+  0% {
+    clip-path: inset(100% 0 0 0);
+    opacity: 0;
+    filter: blur(14px);
+  }
+  55% {
+    clip-path: inset(25% 0 0 0);
+    opacity: 0.75;
+    filter: blur(8px);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    filter: blur(5px);
+  }
+}
+
+/* Touch: one charge and release when the tile scrolls into view. */
+@keyframes glowPass {
+  0% {
+    clip-path: inset(100% 0 0 0);
+    opacity: 0;
+    filter: blur(14px);
+  }
+  55% {
+    clip-path: inset(0 0 0 0);
+    opacity: 0.8;
+    filter: blur(5px);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+    opacity: 0;
+    filter: blur(12px);
+  }
+}
+
+.tileText {
+  display: grid;
+  gap: 2px;
+  justify-items: center;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.tile[data-layout="row"] .tileText {
+  justify-items: start;
+}
+
+.tileTitle {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text-hi);
+}
+
+.tileNote {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+.helpText {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--isl-lamp);
+}
+
+.tile[data-layout="ring"] .helpText {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.chip {
+  display: inline-block;
+  max-width: 100%;
+  padding: 1px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+
+.chip[data-status="available"] {
+  color: var(--isl-sand-hi);
+  box-shadow: inset 0 0 0 1px rgba(231, 205, 146, 0.4);
+}
+
+.chip[data-status="active"],
+.chip[data-status="clarification"] {
+  color: #bfdbfe;
+  background: rgba(59, 130, 246, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.55);
+}
+
+.chip[data-keynote="true"] {
+  color: var(--gold);
+  background: rgba(254, 217, 92, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(254, 217, 92, 0.45);
+}
+
+.chip[data-status="submitted"],
+.chip[data-status="appealed"] {
+  color: var(--isl-cream);
+}
+
+.chip[data-status="paused"],
+.chip[data-status="held"],
+.chip[data-status="locked"] {
+  color: var(--text-dim);
+}
+
+.chip[data-status="declined"] {
+  color: #f3b9b0;
+  background: rgba(222, 121, 108, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(222, 121, 108, 0.5);
+}
+
+.chip[data-status="done"] {
+  color: #c4e8c9;
+  background: rgba(80, 151, 107, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(120, 184, 128, 0.5);
+}
+
+/* ---------------------------------------------------------------- forms */
+
+.form {
+  display: grid;
+  gap: 16px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.label {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--text-hi);
+}
+
+/* 16px stops iOS from zooming into the field. */
+:where(.page, .sheet) .input {
+  font-size: 16px;
+  line-height: 1.5;
+  padding: 12px 14px;
+  border-radius: 0;
+}
+
+.textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.counter {
+  justify-self: end;
+  margin: 0;
+  font-family: var(--font-space-mono), monospace;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.fieldError {
+  margin: 0;
+  font-size: 14px;
+  color: #fca5a5;
+}
+
+.choices {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 10px 14px;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  clip-path: var(--notch);
+}
+
+.choice[data-checked="true"] {
+  background: rgba(59, 130, 246, 0.14);
+  box-shadow: inset 0 0 0 2px rgba(59, 130, 246, 0.75);
+}
+
+.choiceInput {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  accent-color: var(--action);
+}
+
+.routePicker {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.routeOption {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 8px 10px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+  clip-path: var(--notch);
+  transition: transform var(--press) var(--ease-snap);
+}
+
+.routeOption:active {
+  transform: translateY(1px);
+}
+
+.routeOption .choiceInput {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.routeOption:focus-within {
+  outline: 2px solid var(--action-soft);
+  outline-offset: 2px;
+}
+
+.routeOption[data-checked="true"] {
+  color: #fff;
+  background: rgba(59, 130, 246, 0.2);
+  box-shadow: inset 0 0 0 2px rgba(59, 130, 246, 0.8);
+}
+
+/* ---------------------------------------------------------------- sheets */
+
+.sheet {
+  color: var(--text);
+}
+
+.sheetDrawer {
+  max-height: 92svh;
+  outline: none;
+}
+
+/* The warm Dawn glass, nearly opaque: long Thai text over the pixel island must stay readable. */
+.sheet.sheetDrawer,
+.sheet.sheetDialog {
+  background: linear-gradient(165deg, rgba(34, 26, 20, 0.97) 0%, rgba(20, 16, 20, 0.98) 48%, rgba(12, 10, 18, 0.99) 100%);
+}
+
+.sheetDialog {
+  max-width: 560px;
+  max-height: 86svh;
+  gap: 0;
+  padding: 0;
+  overflow-y: auto;
+  border: 0;
+  border-radius: 16px;
+}
+
+.sheetHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px 4px 20px;
+}
+
+.sheetTitle {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-family: var(--font-kodchasan), var(--font-bai-jamjuree), sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  color: var(--text-hi);
+}
+
+.sheetClose {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: var(--text-dim);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.sheetDescription {
+  margin: 0;
+  padding: 0 20px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.sheetBody {
+  flex: 1;
+  min-height: 0;
+  padding: 12px 20px 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.detail {
+  display: grid;
+  gap: 16px;
+}
+
+.detailChips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.detailPurpose {
+  margin: 0;
+  color: var(--text-hi);
+}
+
+.feedback {
+  margin: 0;
+  padding: 12px 14px;
+  color: var(--text-hi);
+  background: rgba(231, 205, 146, 0.08);
+  border-left: 3px solid var(--isl-sand);
+}
+
+.feedback p {
+  margin: 0;
+}
+
+.detailBlock {
+  display: grid;
+  gap: 4px;
+}
+
+.detailBlock p {
+  margin: 0;
+}
+
+.detailHeading {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--isl-sand-hi);
+}
+
+.notice {
+  margin: 0;
+  padding: 12px 14px;
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px rgba(184, 199, 191, 0.35);
+}
+
+.notice[data-tone="done"] {
+  color: #d5f0d8;
+  background: rgba(80, 151, 107, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(120, 184, 128, 0.5);
+}
+
+.notice[data-tone="locked"] {
+  box-shadow: inset 0 0 0 2px var(--isl-stone);
+}
+
+/* ---------------------------------------------------------------- quest sheet: badge, why, canvas, done when */
+
+.pixelIcon {
+  display: block;
+  flex: none;
+  image-rendering: pixelated;
+}
+
+.questBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  padding: 2px 10px 2px 4px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--isl-sand-hi);
+  background: rgba(231, 205, 146, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(231, 205, 146, 0.4);
+  clip-path: var(--notch);
+}
+
+.questBadge[data-kind="side"] {
+  color: #c4e8c9;
+  background: rgba(80, 151, 107, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(120, 184, 128, 0.45);
+}
+
+.questBadge[data-kind="proposed"] {
+  color: var(--isl-cream);
+  background: rgba(255, 241, 214, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 241, 214, 0.3);
+}
+
+/* One line of why, never a paragraph: two lines at most. */
+.detailWhy {
+  margin: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--text-hi);
+}
+
+.context,
+.doneWhen {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* The student's notes as a small whiteboard strip: cream board, 2px ink outline, a sticky-coloured notch per zone. */
+.contextStrip {
+  min-width: 0;
+  color: var(--isl-ink);
+  background: linear-gradient(180deg, #fff6e4 0%, var(--isl-cream) 55%, #fbe9c8 100%);
+  box-shadow: inset 0 0 0 2px var(--isl-ink), 3px 3px 0 0 rgba(0, 0, 0, 0.35);
+  clip-path: var(--notch);
+}
+
+.contextRows {
+  display: grid;
+  margin: 0;
+  padding: 2px 0;
+  list-style: none;
+}
+
+.contextRow {
+  --zone: var(--isl-stone-hi);
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px 12px 8px 20px;
+}
+
+.contextRow + .contextRow {
+  border-top: 1px dashed rgba(52, 68, 71, 0.28);
+}
+
+.contextRow::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 6px;
+  bottom: 6px;
+  width: 8px;
+  background: var(--zone);
+  box-shadow: inset -2px 0 0 0 var(--isl-ink), inset 0 2px 0 0 var(--isl-ink), inset 0 -2px 0 0 var(--isl-ink);
+}
+
+.contextRow[data-skeleton="true"]::before,
+.contextRow[data-empty="true"]::before {
+  opacity: 0.55;
+}
+
+.contextText {
+  flex: 1;
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.contextLabel {
+  font-weight: 600;
+}
+
+.contextRow[data-empty="true"] .contextText {
+  color: rgba(52, 68, 71, 0.7);
+}
+
+.contextTags {
+  flex: none;
+  display: flex;
+  gap: 4px;
+  padding-top: 1px;
+}
+
+.contextTag {
+  padding: 0 6px;
+  font-family: var(--font-space-mono), monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--isl-ink);
+  background: rgba(52, 68, 71, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(52, 68, 71, 0.45);
+  white-space: nowrap;
+}
+
+.contextFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0 8px 0 20px;
+  font-size: 13px;
+  border-top: 2px solid rgba(52, 68, 71, 0.22);
+}
+
+.contextFrom {
+  min-width: 0;
+  color: rgba(52, 68, 71, 0.75);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.contextChange {
+  flex: none;
+  min-height: 44px;
+  padding: 0 6px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1d4ed8;
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.contextChange:focus-visible {
+  outline-color: #1d4ed8;
+  outline-offset: -2px;
+}
+
+/* No canvas yet: one dashed prompt where the strip will be. */
+.contextPrompt {
+  display: grid;
+  gap: 8px;
+  padding: 14px 14px 12px;
+  background: linear-gradient(160deg, rgba(231, 205, 146, 0.08) 0%, rgba(231, 205, 146, 0.04) 60%, rgba(231, 205, 146, 0.02) 100%);
+  outline: 2px dashed rgba(231, 205, 146, 0.45);
+  outline-offset: -2px;
+}
+
+.contextPromptBody {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.contextAction {
+  justify-self: start;
+}
+
+.skeletonBar {
+  display: block;
+  height: 12px;
+  margin: 5px 0;
+  background: rgba(52, 68, 71, 0.2);
+  animation: pixelBlink 1200ms steps(2, jump-none) infinite;
+}
+
+@keyframes pixelBlink {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.45;
+  }
+}
+
+.doneList {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.doneItem {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.doneText {
+  min-width: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.doneItem[data-hinted="true"] .doneText {
+  color: var(--text-hi);
+}
+
+.doneDetail {
+  display: block;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+/* The pixel check: an empty stone box, lit leaf-green with a cream tick when the canvas has a matching note. */
+.doneCheck {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 2px var(--isl-stone);
+}
+
+.doneCheck[data-lit="true"] {
+  background: var(--isl-leaf);
+  box-shadow: inset 0 0 0 2px var(--isl-ink);
+}
+
+.doneCheck > svg {
+  position: relative;
+  z-index: 1;
+}
+
+.doneGlow {
+  position: absolute;
+  inset: -8px;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(120, 184, 128, 0.85) 40%, rgba(254, 217, 92, 0.3) 75%, rgba(254, 217, 92, 0) 100%);
+  clip-path: inset(0 0 0 0);
+  opacity: 0.55;
+  filter: blur(5px);
+  animation: checkLight 640ms var(--ease-tension) both;
+}
+
+/* Touch: one more charge when the lit check scrolls into view. */
+@media (hover: none) {
+  .doneGlow:global(.in-view) {
+    animation: checkLightPass 700ms var(--ease-tension) both;
+  }
+}
+
+@keyframes checkLight {
+  from {
+    clip-path: inset(100% 0 0 0);
+    opacity: 0;
+    filter: blur(12px);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 0.55;
+    filter: blur(5px);
+  }
+}
+
+@keyframes checkLightPass {
+  0% {
+    clip-path: inset(100% 0 0 0);
+    opacity: 0;
+    filter: blur(12px);
+  }
+  60% {
+    clip-path: inset(0 0 0 0);
+    opacity: 0.9;
+    filter: blur(4px);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+    opacity: 0.55;
+    filter: blur(5px);
+  }
+}
+
+/* Collapsed rows: examples and the full details, one tap each. */
+.moreRows {
+  display: grid;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.more + .more {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.moreSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  list-style: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.moreSummary::-webkit-details-marker {
+  display: none;
+}
+
+.moreSummary::marker {
+  content: "";
+}
+
+.moreCaret {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--text-dim);
+  transition: transform var(--snap) var(--ease-snap);
+}
+
+.more[open] .moreCaret {
+  transform: rotate(180deg);
+}
+
+.moreList {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 14px;
+  padding-left: 18px;
+  list-style: square;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.moreList li::marker {
+  color: var(--isl-sand);
+}
+
+.moreBody {
+  display: grid;
+  gap: 12px;
+  padding-bottom: 14px;
+}
+
+.detailSubheading {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--isl-sand-hi);
+}
+
+/* ---------------------------------------------------------------- quest sheet: action bar and compose */
+
+/* Drawer: below the scrolling body. Dialog (which scrolls as a whole): stuck to its bottom edge. */
+.sheetFooter {
+  flex: none;
+  padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, rgba(18, 14, 19, 0.97) 0%, rgba(14, 11, 18, 0.985) 55%, rgba(12, 10, 18, 0.99) 100%);
+  box-shadow: 0 -1px 0 0 rgba(255, 255, 255, 0.08);
+}
+
+.sheetDialog .sheetFooter {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  padding-bottom: 16px;
+}
+
+.actionBar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.actionBar[data-single="true"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.barButton {
+  min-height: 48px;
+  gap: 8px;
+}
+
+.barStuck {
+  padding: 8px 18px;
+}
+
+.compose {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.compose:focus {
+  outline: none;
+}
+
+.composeTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+
+.composeBack,
+.composeSwitch {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  padding: 8px 0;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--action-soft);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.composeSwitch {
+  margin-left: auto;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.plot {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+.plot p {
+  margin: 0;
+}
+
+.plotTree svg {
+  display: block;
+}
+
+.plotSign {
+  font-weight: 600;
+  color: var(--text-hi);
+}
+
+/* ---------------------------------------------------------------- no project */
+
+.noProject {
+  display: grid;
+  gap: 16px;
+}
+
+.claim {
+  display: grid;
+  gap: 16px;
+}
+
+.invites {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.invite {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.inviteTitle {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text-hi);
+}
+
+.inviteActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* ---------------------------------------------------------------- footer */
+
+.footer {
+  display: grid;
+  gap: 8px;
+  padding: 8px 4px 24px;
+}
+
+.footerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+}
+
+.footerWho {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.footerLabel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: 600;
+  color: var(--text-hi);
+  cursor: pointer;
+}
+
+.footer .switch[data-state="checked"] {
+  background-color: var(--action);
+}
+
+.footer .switch[data-state="unchecked"] {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.growth {
+  margin: 0;
+  padding-top: 12px;
+  font-size: 14px;
+  color: var(--text-dim);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ---------------------------------------------------------------- layout */
+
+/* Landscape phones and short windows: the gate card starts near the top. */
+@media (max-height: 600px) {
+  .gate {
+    min-height: auto;
+    padding-top: 16px;
+  }
+
+  .gateBackdrop {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page *,
+  .page *::before,
+  .page *::after,
+  .sheet *,
+  .sheet *::before,
+  .sheet *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
