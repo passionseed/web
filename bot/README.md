@@ -1,10 +1,14 @@
 # PassionSeed Discord bot
 
-One long-running process with two modules, chosen by `BOT_MODULES`:
+One long-running process with three modules, chosen by `BOT_MODULES`:
 
 - **`shift-voice`** (default): records SHIFT students' voice participation in
   the SHIFT server (time in voice, mic open, screen share, camera, joins) and
   feeds `/admin/shift/voice`.
+- **`shift-quests`**: SHIFT High quests in the SHIFT server: quests, a private
+  progress journal, group help, human review, Passioncoin and redemption.
+  Slash commands only; it records nothing passively. See
+  [`docs/features/shift-high-quests.md`](../docs/features/shift-high-quests.md).
 - **`projectseed`**: records who was in voice, reminds people about the hours
   they declared, and answers `/stats`. Linear: PS-213.
 
@@ -21,18 +25,37 @@ so the host never holds the service role key. projectseed still uses
 ```bash
 pnpm bot:dev        # local, reads .env.local
 pnpm bot:start      # production
-pnpm bot:register   # projectseed only: once, and after changing any slash command
+pnpm bot:register   # projectseed and shift-quests: once, and after changing any slash command
+pnpm bot:smoke      # loads every module and draws a tiny island: no Discord, no database
 ```
 
 Run one instance at a time. Two would both write rows for the same people.
 
+**Registering never starts a bot.** `--register-commands` makes its REST calls
+to Discord and exits without logging in to the gateway, so it is safe while the
+deployed bot runs. (A second gateway client would close and reopen every open
+voice row of the running one.) On the host it uses the container's own
+environment:
+
+```bash
+ssh <ssh-host> docker exec passionseed-discord-bot node --import tsx bot/src/index.ts --register-commands
+```
+
+**projectseed must never register in the SHIFT server.** Its registration
+(`registerCommands` in `bot/src/commands.ts`) replaces every command the bot's
+Discord application has in `DISCORD_GUILD_ID` with its own list (`/stats`).
+With one token for both, as one process requires, a `DISCORD_GUILD_ID` equal
+to `DISCORD_SHIFT_GUILD_ID` would delete every SHIFT High command. Keep the two
+IDs different, and check them before registering with `projectseed` in
+`BOT_MODULES`. The shift-quests registration only touches its own commands.
+
 ## Deploying
 
-Any host with Docker works. `bot/deploy.sh <ssh-host>` ships the committed bot
-(not the whole web app), builds `bot/Dockerfile` on the host, replaces the
-`passionseed-discord-bot` container (`--restart unless-stopped`, so it comes
-back after a crash or reboot) and installs `bot/watchdog.py` in the host's
-crontab. The previous image is kept for a rollback.
+Any host with Docker works. `bot/deploy.sh` ships the committed bot (not the
+whole web app), builds `bot/Dockerfile` on the host, checks the new image,
+swaps the `passionseed-discord-bot` container (`--restart unless-stopped`, so it
+comes back after a crash or reboot) and installs `bot/watchdog.py` in the
+host's crontab.
 
 On the host, in `~/passionseed/discord-bot/` (`chmod 600`, never in the repo):
 
@@ -43,10 +66,48 @@ On the host, in `~/passionseed/discord-bot/` (`chmod 600`, never in the repo):
   minutes, and once when it is back.
 
 ```bash
-bot/deploy.sh <ssh-host>                              # deploy or update
+bot/deploy.sh <ssh-host>                              # deploy HEAD
+bot/deploy.sh <ssh-host> --rollback                   # run the previous image again
 ssh <ssh-host> docker logs -f passionseed-discord-bot  # logs
 ssh <ssh-host> docker stop passionseed-discord-bot     # stop
 ```
+
+A deploy stops at the first step that fails:
+
+1. **Stage.** Only `bot/`, the two lib files it imports and `tsconfig.json`,
+   from HEAD (uncommitted bot changes refuse), plus a `package.json` pinned to
+   the versions in `node_modules` here. The pinned packages are `DEPS` at the
+   top of `bot/deploy.sh`, the one list; a package missing from `node_modules`
+   refuses.
+2. **Build** on the host, tagged with the revision only.
+3. **Smoke check.** The new image runs once with `--network none` and
+   `bot.env`: `bot/src/smoke.ts --env` loads every module, validates the
+   environment the way startup does and draws a tiny island. On failure the
+   deploy prints the revision, "The old container (<rev>) is still running;
+   nothing changed", the last lines and the fix, and removes the new image.
+   `pnpm bot:smoke` runs the same check here, without the env file.
+4. **Swap.** The old container stops (30 seconds to close open voice rows, so
+   two bots never overlap), the new one starts, and the deploy waits up to 4
+   minutes for Docker to report it healthy. If it turns unhealthy, restarts or
+   is still not healthy, the deploy prints its last log lines, stops it and
+   starts the old image again. With `projectseed` alone no module writes the
+   health file, so it waits for a minute without a restart instead.
+5. **Keep.** The healthy image is tagged `latest` and the one it replaced
+   `previous`; older images are removed.
+
+**Rollback.** `bot/deploy.sh <ssh-host> --rollback` stops the running container,
+starts the `previous` image and swaps the `latest` and `previous` tags, so
+running it again returns to the image you rolled back from. Database migrations
+are additive, so an older bot runs against a newer schema.
+
+**Release order** when a release has migrations: `supabase db push`, then
+`bot/deploy.sh`, then the register step. The migration runbook is in
+[`docs/features/shift-high-quests.md`](../docs/features/shift-high-quests.md).
+A bot newer than its database does not start: with `shift-quests` enabled,
+startup reads `shift_quest_schema_version()` before any module runs, and when
+it is below `REQUIRED_SCHEMA` (`bot/src/quests/index.ts`, now 2) the bot exits
+with a message naming the migration to apply, so the swap fails and the old
+container comes back.
 
 **Health.** The container is healthy while heartbeats reach the database
 (Docker `HEALTHCHECK`). After 15 minutes without one the bot exits and Docker
@@ -66,10 +127,12 @@ chain to a public one.
 
 | Variable | Module | Notes |
 |---|---|---|
-| `BOT_MODULES` | all | Comma-separated: `shift-voice`, `projectseed`. Default `shift-voice` |
+| `BOT_MODULES` | all | Comma-separated: `shift-voice`, `shift-quests`, `projectseed`. Default `shift-voice` |
 | `DISCORD_SHIFT_BOT_TOKEN` | shift-voice | Falls back to `DISCORD_BOT_TOKEN`, like the web app, so the bot that hands out SHIFT roles is the one watching voice |
 | `DISCORD_SHIFT_GUILD_ID` | shift-voice | The SHIFT server |
 | `SHIFT_VOICE_DATABASE_URL` | shift-voice | The `shift_voice_bot` login through the pooler (see Deploying) |
+| `DISCORD_SHIFT_GUILD_ID` | shift-quests | The SHIFT server (same variable as shift-voice) |
+| `SHIFT_QUEST_DATABASE_URL` | shift-quests | The `shift_quest_bot` login through the pooler, set up like `shift_voice_bot` (migration `20261111090600`) |
 | `NEXT_PUBLIC_SUPABASE_URL` | projectseed | |
 | `SUPABASE_SERVICE_ROLE_KEY` | projectseed | |
 | `DISCORD_BOT_TOKEN` | projectseed | Regenerate in the Discord developer portal if it 401s |
@@ -163,3 +226,56 @@ SHIFT, `shift_voice_spans` is admin-only, never shown to students, and is
 deleted with the application it belongs to. Retention: kept indefinitely for
 now (decided 9 Nov 2026); revisit before the data is used for anything beyond
 checking in on a student. What parents are told is still open.
+
+## SHIFT High quests
+
+What it is, what it stores and how to run a pilot:
+[`docs/features/shift-high-quests.md`](../docs/features/shift-high-quests.md).
+The short version for whoever runs the bot:
+
+- Add `shift-quests` to `BOT_MODULES` and set `SHIFT_QUEST_DATABASE_URL`. It
+  needs no extra intent: slash commands, buttons and modals arrive on the
+  `Guilds` gateway connection.
+- `pnpm bot:register` creates or updates its 15 commands in the SHIFT server
+  (one upsert per command; other commands are left alone).
+- Its delivery loop posts queued messages every 10 seconds and touches the
+  same health file as shift-voice, so the Docker `HEALTHCHECK` covers it.
+- It never reads message content and never DMs anyone who did not opt in in
+  `/settings`. DMs it does send are content-free nudges ("there is an update,
+  use /inbox"), which keeps the safeguarding rules below intact.
+- Tests: `pnpm test:db:quests` needs Postgres 15 or newer, finds it on `PATH`
+  or in the usual install folders (`PG_BIN=<folder>` picks one) and says how to
+  install it when missing. On throwaway databases it applies every shift_quest
+  migration once (then checks grants and row level security, with Supabase's
+  default grants stubbed) and twice (the catalogs must match), applies wave 1
+  alone once a later migration exists, and runs the database rules, island
+  rules and bot flows. CI runs it on Postgres 15, the production major, in the
+  `shift-quests-db` job, with the bot typecheck and `pnpm bot:smoke`.
+  `pnpm test bot/src` runs the unit tests.
+- Preview: `pnpm island:render` draws the island with the bot's renderer, no
+  Discord and no database, to `/tmp/shift-island-preview.png` and prints the
+  path. `--fixture full|empty|overflow`, a saved `shift_quest_island_map`
+  result as a JSON file, `--out <file>`, `--thumb` (scale 1), `--no-festival`
+  and `--no-pin` change what it draws.
+- Students use one command, `/island`: a private picture of SHIFT Island with
+  their tree, the next milestone, the season (Demo Day countdown, shared island
+  goal, unlocks) and one-tap buttons. `bot/src/quests/island/render.ts` draws
+  it in pure JavaScript and encodes the PNG with Node's own zlib: no extra
+  dependency, no fonts or native modules, and the same map always gives the
+  same picture.
+- The art is pixel matrices in `bot/assets/island/sprites.ts` (generated with
+  Codex, original). After editing a sprite, run
+  `node_modules/.bin/tsx bot/assets/island/generate.ts` to refresh the PNGs and
+  the contact sheet `bot/assets/island/png/_sheet.png`; the bot itself reads
+  only `sprites.ts`.
+- Once a week (Monday 18:00 Bangkok, while sharing is on) the bot posts the
+  island to the celebrate channel with only the project names every teammate
+  opted in to show.
+- Try it locally: `bot/quests-sandbox.sh` (a test Discord server and a test bot
+  token; never the SHIFT server). It seeds Season 1 defaults (no reward rule on
+  milestones); `--rewards` adds a sandbox reward rule and switches coins on.
+  `--db-only` needs no Discord credentials and keeps the database up until
+  Ctrl-C. It prints a hash of the shift_quest migrations and refuses a sandbox
+  built from other ones, an unfinished build or another admin;
+  `bot/quests-sandbox.sh --reset` wipes it and builds it again.
+

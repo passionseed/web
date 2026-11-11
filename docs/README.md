@@ -49,6 +49,7 @@ Documentation index. Files are organized by purpose, not by date.
 | [PERFORMANCE.md](features/PERFORMANCE.md) | Performance optimizations: bundle, images, caching |
 | [whiteboard.md](features/whiteboard.md) | Multiplayer whiteboard: sync, saving, sharing, authorship, reading boards for AI |
 | [admin-console.md](features/admin-console.md) | Admin console: work queues, KPIs, activity, live counts, Cmd+K search, admin gates; recipes to add a queue, KPI or search entity |
+| [shift-high-quests.md](features/shift-high-quests.md) | SHIFT High quest bot on Discord: quests, journal, group help, review, Passioncoin, redemption; data, invariants, launch checklist |
 
 ## 📁 `hackathon/` — Hackathon Documentation
 
