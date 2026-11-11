@@ -2699,3 +2699,12 @@ body:has(.whiteboard-room .excalidraw.theme--dark) .wb-dot--bg:is([aria-pressed=
 .wb-quest-menu .wb-rule {
   border-color: var(--wb-hairline-strong);
 }
+.wb-quest-card {
+  border: 1px solid var(--wb-hairline);
+  background: var(--wb-card);
+}
+.wb-quest-tab--on {
+  background: var(--wb-card);
+  color: var(--wb-text);
+  box-shadow: var(--wb-shadow);
+}

@@ -17,7 +17,7 @@ import { VersionHistory } from "./VersionHistory";
 
 export const KIT_SIDEBAR = "board-kit";
 /** The kit's tabs, opened from the Apps menu. */
-export type KitTab = "create" | "shift" | "templates" | "comments" | "history" | "activity";
+export type KitTab = "create" | "shift" | "templates" | "comments" | "history" | "activity" | "quests";
 /** Id of the room cards section in the "create" tab, so the Apps menu can scroll to it. */
 export const KIT_CARDS_ID = "wb-kit-cards";
 
@@ -45,6 +45,8 @@ type Props = {
   onVersionsChanged: (fn: () => void) => () => void;
   /** Admin-only Activity tab. */
   activity?: ReactNode;
+  /** Quest dashboard, for the owner, site admins and quest reviewers. */
+  quests?: ReactNode;
 };
 
 const STICKY_TEXT_SIZE = 200;
@@ -86,6 +88,7 @@ export const KitSidebar = memo(function KitSidebar(props: Props) {
           {editable && <Sidebar.TabTrigger tab="templates">เทมเพลต</Sidebar.TabTrigger>}
           <Sidebar.TabTrigger tab="comments">คอมเมนต์</Sidebar.TabTrigger>
           <Sidebar.TabTrigger tab="history">ประวัติ</Sidebar.TabTrigger>
+          {props.quests && <Sidebar.TabTrigger tab="quests">Quest</Sidebar.TabTrigger>}
           {props.activity && <Sidebar.TabTrigger tab="activity">ใครทำอะไร</Sidebar.TabTrigger>}
         </Sidebar.TabTriggers>
 
@@ -230,6 +233,12 @@ export const KitSidebar = memo(function KitSidebar(props: Props) {
             onVersionsChanged={props.onVersionsChanged}
           />
         </Sidebar.Tab>
+
+        {props.quests && (
+          <Sidebar.Tab tab="quests" className="p-3">
+            {props.quests}
+          </Sidebar.Tab>
+        )}
 
         {props.activity && (
           <Sidebar.Tab tab="activity" className="p-3">

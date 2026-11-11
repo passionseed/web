@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { safeServerError } from "@/lib/security/route-guards";
-import { removeMember, setMemberRole } from "@/lib/supabase/whiteboards";
+import { removeMember, setMemberRole, setQuestReviewer } from "@/lib/supabase/whiteboards";
 import { memberPatchSchema } from "@/lib/whiteboard/core";
 import { guardBoard, readJson } from "@/lib/whiteboard/route-guard";
 
@@ -14,7 +14,9 @@ export async function PATCH(request: Request, { params }: Params) {
   const parsed = memberPatchSchema.safeParse(await readJson(request));
   if (!parsed.success) return NextResponse.json({ error: "Invalid role" }, { status: 422 });
   try {
-    await setMemberRole(id, userId, parsed.data.role);
+    // Owner only (guard "manage"): who may edit, and who may see everyone's quest work.
+    if (parsed.data.role) await setMemberRole(id, userId, parsed.data.role);
+    if (parsed.data.questReviewer !== undefined) await setQuestReviewer(id, userId, parsed.data.questReviewer);
     return NextResponse.json({ ok: true });
   } catch (error) {
     return safeServerError("Failed to change access", error);

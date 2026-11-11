@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, RefreshCw, UserMinus } from "lucide-react";
+import { Check, Copy, Flag, RefreshCw, UserMinus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -82,6 +82,13 @@ export function ShareDialog(props: Props) {
     run(async () => {
       await call(`/api/whiteboards/${boardId}/members/${userId}`, { method: "PATCH", body: JSON.stringify({ role: next }) });
       props.onMembersChange(members.map((m) => (m.userId === userId ? { ...m, role: next } : m)));
+    });
+
+  const setReviewer = (userId: string, on: boolean) =>
+    run(async () => {
+      await call(`/api/whiteboards/${boardId}/members/${userId}`, { method: "PATCH", body: JSON.stringify({ questReviewer: on }) });
+      props.onMembersChange(members.map((m) => (m.userId === userId ? { ...m, questReviewer: on } : m)));
+      toast.success(on ? "ดูงาน Quest ของทุกคนได้แล้ว (เปิดบอร์ดใหม่)" : "ปิดการดูงาน Quest แล้ว");
     });
 
   const remove = (userId: string) =>
@@ -166,6 +173,19 @@ export function ShareDialog(props: Props) {
                 <span className="min-w-0 flex-1 truncate text-sm">{m.name}</span>
                 {isOwner && m.role !== "owner" ? (
                   <>
+                    <button
+                      type="button"
+                      aria-pressed={Boolean(m.questReviewer)}
+                      disabled={busy}
+                      onClick={() => void setReviewer(m.userId, !m.questReviewer)}
+                      title={m.questReviewer ? "ดูงาน Quest ของทุกคนได้ · กดเพื่อปิด" : "ให้ดูงาน Quest ของทุกคน"}
+                      className={`wb-version-chip inline-flex items-center gap-1 rounded-md px-2 text-xs ${
+                        m.questReviewer ? "wb-version-chip--on font-semibold" : "wb-soft"
+                      }`}
+                    >
+                      <Flag className="h-3 w-3" />
+                      Quest
+                    </button>
                     <select
                       value={m.role}
                       disabled={busy}

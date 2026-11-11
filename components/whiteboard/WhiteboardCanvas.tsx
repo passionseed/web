@@ -49,6 +49,7 @@ import { CanvasTeamLayer } from "./shift/CanvasTeamLayer";
 import { CardVersionsLayer } from "./shift/CardVersionsLayer";
 import { useShiftCardCaret } from "./shift/useShiftCardCaret";
 import { ZoneAddLayer } from "./shift/ZoneAddLayer";
+import { QuestDashboard, questSectionId } from "./quest/QuestDashboard";
 import { QuestLayer } from "./quest/QuestLayer";
 import { QuestMenu } from "./quest/QuestMenu";
 import { useQuestSession } from "./quest/useQuestSession";
@@ -381,6 +382,17 @@ export default function WhiteboardCanvas({
     [api, board.id, isAdmin, showAuthors],
   );
 
+  // The Quest dashboard: the owner and site admins, plus whoever the owner made a quest reviewer.
+  const canReviewQuests = isManager || Boolean(members.find((m) => m.userId === me.id)?.questReviewer);
+  const questsPanel = useMemo(
+    () => (canReviewQuests && api ? <QuestDashboard api={api} people={people} nameOf={nameOf} /> : undefined),
+    [api, canReviewQuests, people, nameOf],
+  );
+  const openQuestDashboard = useCallback(
+    (questId: string) => api && openKit(api, "quests", questSectionId(questId)),
+    [api],
+  );
+
   const kit = useMemo(
     () =>
       api ? (
@@ -398,9 +410,10 @@ export default function WhiteboardCanvas({
           onVersionSaved={onVersionSaved}
           onVersionsChanged={onVersionsChanged}
           activity={activity}
+          quests={questsPanel}
         />
       ) : null,
-    [api, board.id, editable, me.name, comments, showResolved, saveNow, refreshFiles, onVersionSaved, onVersionsChanged, activity],
+    [api, board.id, editable, me.name, comments, showResolved, saveNow, refreshFiles, onVersionSaved, onVersionsChanged, activity, questsPanel],
   );
 
   const timer = useMemo(
@@ -451,7 +464,13 @@ export default function WhiteboardCanvas({
           <EmoteLayer api={api} bursts={emotes.bursts} />
           {editable && <ZoneAddLayer api={api} meId={me.id} manager={isManager} />}
           {editable && (
-            <QuestLayer api={api} manager={isManager} session={quest.session} onStart={startQuest} onEnd={endQuest} />
+            <QuestLayer
+              api={api}
+              onReview={canReviewQuests ? openQuestDashboard : undefined}
+              session={quest.session}
+              onStart={startQuest}
+              onEnd={endQuest}
+            />
           )}
           {editable && <QuestMenu api={api} meId={me.id} manager={isManager} />}
           <CardVersionsLayer api={api} meId={me.id} editable={editable} manager={isManager} nameOf={nameOf} />

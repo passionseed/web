@@ -79,8 +79,8 @@ describe("questWork", () => {
     const result = questWork(work);
     expect(result.map((w) => w.quest?.number ?? null)).toEqual([2, null]);
     expect(result[0].people).toEqual([
-      { userId: "amy", texts: ["Canva ช่วยทำโพสต์"], drawings: 1, sessions: 1 },
-      { userId: "ben", texts: ["ref 2"], drawings: 0, sessions: 1 },
+      { userId: "amy", texts: ["Canva ช่วยทำโพสต์"], drawings: 1, sessions: 1, ids: ["stroke", "box", "w"] },
+      { userId: "ben", texts: ["ref 2"], drawings: 0, sessions: 1, ids: ["typed"] },
     ]);
   });
 

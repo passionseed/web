@@ -34,7 +34,27 @@ export type WhiteboardMember = {
   name: string;
   avatarUrl: string | null;
   role: WhiteboardRole;
+  /** May open the Quest dashboard (set by the owner). The owner and site admins always may. */
+  questReviewer?: boolean;
 };
+
+type MemberRow = { user_id: string; role: string; quest_reviewer: boolean };
+
+/**
+ * A board's members with their quest reviewer flag. Until the quest_reviewer
+ * migration is applied the column is missing (Postgres 42703): read without it,
+ * so boards keep opening whatever order code and migration land in.
+ */
+async function boardMembers(boardId: string): Promise<MemberRow[]> {
+  const res = await db().from("whiteboard_members").select("user_id, role, quest_reviewer").eq("whiteboard_id", boardId);
+  if (res.error?.code === "42703") {
+    const old = await db().from("whiteboard_members").select("user_id, role").eq("whiteboard_id", boardId);
+    if (old.error) throw old.error;
+    return (old.data ?? []).map((m) => ({ user_id: m.user_id as string, role: m.role as string, quest_reviewer: false }));
+  }
+  if (res.error) throw res.error;
+  return (res.data ?? []) as MemberRow[];
+}
 
 export type WhiteboardDetail = {
   id: string;
@@ -115,26 +135,24 @@ export type OpenedBoard = { viewer: Viewer; board: WhiteboardDetail };
  * null when there is no board or the viewer has no access.
  */
 export async function openBoard(boardId: string): Promise<OpenedBoard | "signin" | null> {
-  const [auth, boardRes, membersRes] = await Promise.all([
+  const [auth, boardRes, members] = await Promise.all([
     createClient().then((supabase) => supabase.auth.getUser()),
     db()
       .from("whiteboards")
       .select("id, title, elements, owner_id, link_access, share_token, timer_ends_at, timer_seconds")
       .eq("id", boardId)
       .maybeSingle(),
-    db().from("whiteboard_members").select("user_id, role").eq("whiteboard_id", boardId),
+    boardMembers(boardId),
   ]);
   const user = auth.data.user;
   if (!user || isAnonymousUser(user)) return "signin";
   if (boardRes.error) throw boardRes.error;
-  if (membersRes.error) throw membersRes.error;
   const board = boardRes.data;
   if (!board) return null;
-  const members = membersRes.data ?? [];
 
   const people = [
     { userId: board.owner_id as string, role: "owner" as WhiteboardRole },
-    ...members.map((m) => ({ userId: m.user_id as string, role: m.role as WhiteboardRole })),
+    ...members.map((m) => ({ userId: m.user_id, role: m.role as WhiteboardRole, questReviewer: m.quest_reviewer })),
   ];
   const ids = [...new Set([...people.map((p) => p.userId), user.id])];
   const [profiles, { data: admins, error: adminsError }] = await Promise.all([
@@ -319,6 +337,16 @@ export async function deleteBoard(boardId: string): Promise<void> {
 
 export async function removeMember(boardId: string, userId: string): Promise<void> {
   const { error } = await db().from("whiteboard_members").delete().eq("whiteboard_id", boardId).eq("user_id", userId);
+  if (error) throw error;
+}
+
+/** Lets a member open the Quest dashboard, or stops them. */
+export async function setQuestReviewer(boardId: string, userId: string, on: boolean): Promise<void> {
+  const { error } = await db()
+    .from("whiteboard_members")
+    .update({ quest_reviewer: on })
+    .eq("whiteboard_id", boardId)
+    .eq("user_id", userId);
   if (error) throw error;
 }
 

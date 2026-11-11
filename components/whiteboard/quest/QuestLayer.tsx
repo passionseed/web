@@ -6,17 +6,10 @@ import { Flag, Play, Square } from "lucide-react";
 
 import { findQuests, questName, questTagOf, questWork, type Quest } from "@/lib/whiteboard/quests";
 
+import { focusCanvas } from "../chrome/useActiveTool";
 import { isBusy, useSceneMemo } from "../shift/sceneMemo";
 import { useViewportTick } from "../useViewportTick";
 import type { QuestSession } from "./useQuestSession";
-
-/**
- * Gives the keyboard back to the board after one of our buttons: Excalidraw only
- * hears shortcuts (P for pen, T for text) while its own area has focus.
- */
-export function focusBoard(from: Element) {
-  from.closest(".whiteboard-root")?.querySelector<HTMLElement>(".excalidraw")?.focus({ preventScroll: true });
-}
 
 /** Zoomed out further than this, the buttons would crowd the board. */
 const MIN_ZOOM = 0.12;
@@ -25,8 +18,8 @@ const GAP = 24;
 
 type Props = {
   api: ExcalidrawImperativeAPI;
-  /** Moderators see how many people have handed in work for each quest. */
-  manager: boolean;
+  /** For quest reviewers: opens the Quest dashboard at a quest. Others do not see the "N คน" chip. */
+  onReview?: (questId: string) => void;
   session: QuestSession | null;
   onStart: (quest: Quest) => void;
   onEnd: () => void;
@@ -37,7 +30,7 @@ type Props = {
  * the one this person is doing), and while a quest runs, a pill at the top of
  * the board with its name, how much has gone into it, and an end button.
  */
-export function QuestLayer({ api, manager, session, onStart, onEnd }: Props) {
+export function QuestLayer({ api, onReview, session, onStart, onEnd }: Props) {
   useViewportTick(api, { elements: true });
   const quests = useSceneMemo(api, (elements) => findQuests(elements), []);
   // Per quest, how many people handed in work (for moderators), and what went into this session.
@@ -84,10 +77,10 @@ export function QuestLayer({ api, manager, session, onStart, onEnd }: Props) {
               >
                 <button
                   type="button"
-                  onClick={(e) => {
+                  onClick={() => {
                     if (running) onEnd();
                     else onStart(q);
-                    focusBoard(e.currentTarget);
+                    focusCanvas();
                   }}
                   title={running ? `จบ ${questName(q)}` : `เริ่ม ${questName(q)}`}
                   className={`wb-version-chip flex items-center gap-1.5 rounded-md px-2.5 text-xs font-semibold ${
@@ -97,10 +90,15 @@ export function QuestLayer({ api, manager, session, onStart, onEnd }: Props) {
                   {running ? <Square className="h-3 w-3 fill-current" /> : <Play className="h-3 w-3 fill-current" />}
                   {running ? "จบ Quest" : "เริ่ม Quest"}
                 </button>
-                {manager && handedIn > 0 && (
-                  <span className="wb-version-chip rounded-md px-2 text-[11px]" title="คนที่มีงานใน Quest นี้">
-                    {handedIn} คน
-                  </span>
+                {onReview && (
+                  <button
+                    type="button"
+                    onClick={() => onReview(q.id)}
+                    className="wb-version-chip rounded-md px-2 text-[11px]"
+                    title="ดูงานของทุกคนใน Quest นี้"
+                  >
+                    {handedIn} คนส่งแล้ว
+                  </button>
                 )}
               </div>
             );
@@ -121,9 +119,9 @@ export function QuestLayer({ api, manager, session, onStart, onEnd }: Props) {
             <span className="wb-quest-soft shrink-0 font-mono text-xs">{counts.mine} ชิ้น</span>
             <button
               type="button"
-              onClick={(e) => {
+              onClick={() => {
                 onEnd();
-                focusBoard(e.currentTarget);
+                focusCanvas();
               }}
               className="shrink-0 rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-700"
             >

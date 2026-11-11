@@ -6,6 +6,7 @@ import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import { Check, Flag } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
+import { focusCanvas } from "../chrome/useActiveTool";
 import { findQuests, mayRetag, newQuestTag, questName, questTagOf, withBoundText, type Quest } from "@/lib/whiteboard/quests";
 
 type Props = {
@@ -92,7 +93,7 @@ export function QuestMenu({ api, meId, manager }: Props) {
     });
     api.setToast({ message: questId ? "ย้ายงานไป Quest แล้ว" : "ไม่นับเป็นงาน Quest แล้ว", duration: 1500 });
     close();
-    document.querySelector<HTMLElement>(".whiteboard-root .excalidraw")?.focus({ preventScroll: true });
+    focusCanvas();
   };
 
   if (!open) return null;

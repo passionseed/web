@@ -139,7 +139,17 @@ export function withBoundText<T extends El>(elements: readonly T[], selectedIds:
   return [...ids].map((id) => byId.get(id)).filter((el): el is T => Boolean(el && !el.isDeleted));
 }
 
-export type QuestWork = { quest: Quest | null; questId: string; people: { userId: string; texts: string[]; drawings: number; sessions: number }[] };
+export type PersonWork = {
+  userId: string;
+  /** Words they wrote for the quest (a note's words once, with the note). */
+  texts: string[];
+  /** Everything else they made: strokes, shapes, images. */
+  drawings: number;
+  sessions: number;
+  /** Every element of theirs tagged with the quest, words included, to show it on the board. */
+  ids: string[];
+};
+export type QuestWork = { quest: Quest | null; questId: string; people: PersonWork[] };
 
 /**
  * Who made what for each quest. Text (including the words inside notes) is
@@ -149,20 +159,21 @@ export type QuestWork = { quest: Quest | null; questId: string; people: { userId
 export function questWork(elements: readonly El[]): QuestWork[] {
   const quests = findQuests(elements);
   const byId = new Map(elements.map((el) => [el.id, el]));
-  const work = new Map<string, Map<string, { texts: string[]; drawings: number; sessions: Set<string> }>>();
+  const work = new Map<string, Map<string, { texts: string[]; drawings: number; sessions: Set<string>; ids: string[] }>>();
 
   for (const el of elements) {
     if (el.isDeleted) continue;
     const tag = questTagOf(el);
     if (!tag) continue;
+    const people = work.get(tag.id) ?? new Map();
+    work.set(tag.id, people);
+    const mine = people.get(tag.by) ?? { texts: [], drawings: 0, sessions: new Set<string>(), ids: [] };
+    people.set(tag.by, mine);
+    mine.ids.push(el.id);
     // Words inside a note are listed with the note, not twice.
     if (el.type === "text" && el.containerId && byId.get(el.containerId) && questTagOf(byId.get(el.containerId)!)) {
       continue;
     }
-    const people = work.get(tag.id) ?? new Map();
-    work.set(tag.id, people);
-    const mine = people.get(tag.by) ?? { texts: [], drawings: 0, sessions: new Set<string>() };
-    people.set(tag.by, mine);
     mine.sessions.add(tag.session);
 
     // A note's words are in its bound text; a text element's are its own.
@@ -178,7 +189,7 @@ export function questWork(elements: readonly El[]): QuestWork[] {
     .map(([questId, people]) => ({
       questId,
       quest: quests.find((q) => q.id === questId) ?? null,
-      people: [...people.entries()].map(([userId, p]) => ({ userId, texts: p.texts, drawings: p.drawings, sessions: p.sessions.size })),
+      people: [...people.entries()].map(([userId, p]) => ({ userId, texts: p.texts, drawings: p.drawings, sessions: p.sessions.size, ids: p.ids })),
     }));
 }
 
