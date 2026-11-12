@@ -1,4 +1,4 @@
-import { BLOCK_GAP, NAME_ROOM, packBlocks } from "./questBoard";
+import { BLOCK_GAP, NAME_ROOM, nameSize, packBlocks } from "./questBoard";
 
 describe("packBlocks", () => {
   it("lays blocks out in rows, in order, without overlap", () => {
@@ -25,5 +25,16 @@ describe("packBlocks", () => {
     expect(placed[0]).toMatchObject({ x: 0, y: NAME_ROOM });
     expect(placed[1].x).toBeGreaterThanOrEqual(0);
     expect(packBlocks([])).toEqual([]);
+  });
+});
+
+describe("nameSize", () => {
+  it("grows names with the layout so they read when it is all in view, within limits", () => {
+    expect(nameSize(600)).toBe(36);
+    expect(nameSize(4500)).toBe(150);
+    expect(nameSize(50000)).toBe(200);
+  });
+  it("leaves the room asked for above each block", () => {
+    expect(packBlocks([{ key: "a", width: 100, height: 100 }], 300)[0].y).toBe(300);
   });
 });

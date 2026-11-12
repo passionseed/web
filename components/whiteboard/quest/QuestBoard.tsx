@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { questName, type PersonWork, type Quest } from "@/lib/whiteboard/quests";
-import { BLOCK_PAD, NAME_ROOM, packBlocks } from "@/lib/whiteboard/questBoard";
+import { BLOCK_PAD, nameSize, packBlocks } from "@/lib/whiteboard/questBoard";
 
 import { Face } from "../chrome/Face";
 import { WB_FONT_VARS } from "../fonts";
@@ -50,9 +50,18 @@ export function QuestBoard({ api, quest, students, groupLabel, onClose }: Props)
     elements: scene,
     files: api.getFiles(),
     appState: { theme: api.getAppState().theme, viewBackgroundColor: "#f5f5f3" },
-    scrollToContent: true,
   }));
   const shown = useRef(scene);
+  const fitted = useRef(false);
+  // Fit everyone in view once the first scene is drawn (initialData's own scrollToContent
+  // misjudges a board that opens inside a page-sized overlay).
+  const onChange = () => {
+    if (fitted.current || !view) return;
+    const elements = view.getSceneElements();
+    if (elements.length === 0) return;
+    fitted.current = true;
+    view.scrollToContent(elements, { fitToViewport: true, viewportZoomFactor: 0.95 });
+  };
 
   useEffect(() => {
     if (!view || scene === shown.current) return;
@@ -98,6 +107,7 @@ export function QuestBoard({ api, quest, students, groupLabel, onClose }: Props)
           <Excalidraw
             excalidrawAPI={setView}
             initialData={initialData}
+            onChange={onChange}
             viewModeEnabled
             UIOptions={VIEW_UI}
             name={questName(quest)}
@@ -121,7 +131,12 @@ function buildScene(elements: readonly ExcalidrawElement[], handed: Student[]): 
     const [minX, minY, maxX, maxY] = getCommonBounds(mine);
     return [{ who: s.who, mine, minX, minY, width: maxX - minX + BLOCK_PAD * 2, height: maxY - minY + BLOCK_PAD * 2 }];
   });
-  const placed = packBlocks(blocks.map((b) => ({ key: b.who.userId, width: b.width, height: b.height })));
+  const sizes = blocks.map((b) => ({ key: b.who.userId, width: b.width, height: b.height }));
+  // Packed once to see how wide it is, then again with room for names that size.
+  const first = packBlocks(sizes);
+  const font = nameSize(Math.max(0, ...first.map((p) => p.x + p.width)));
+  const room = Math.round(font * 1.5);
+  const placed = packBlocks(sizes, room);
 
   return blocks.flatMap((b, i) => {
     const p = placed[i];
@@ -145,10 +160,10 @@ function buildScene(elements: readonly ExcalidrawElement[], handed: Student[]): 
       {
         type: "text",
         x: p.x + 4,
-        y: p.y - NAME_ROOM + 12,
+        y: p.y - room + Math.round(font * 0.2),
         text: b.who.name,
         // Large enough to read when the whole group is in view.
-        fontSize: Math.max(28, Math.min(64, p.width / 12)),
+        fontSize: font,
         fontFamily: 2,
         strokeColor: "#2a2e9b",
         locked: true,
