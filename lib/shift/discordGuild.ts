@@ -303,3 +303,25 @@ export async function removeShiftCohortRole(input: {
     return { ok: false, state: "error", message: error instanceof Error ? error.message : "Discord request failed" };
   }
 }
+
+/**
+ * Server nicknames in the SHIFT (PassionSeed) Discord server, by Discord id: the
+ * name people go by there. Only members who set one are in the result. A few
+ * lookups at a time (each cached by fetchShiftGuildMember); whatever has not
+ * answered within `withinMs` is left out, so a page never waits long on Discord.
+ */
+export async function fetchShiftNicknames(discordIds: readonly string[], withinMs = 2500): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  const queue = [...new Set(discordIds)].filter((id) => MEMBER_ID.test(id));
+  if (queue.length === 0 || !guildConfig()) return out;
+  const worker = async () => {
+    for (let id = queue.shift(); id !== undefined; id = queue.shift()) {
+      const member = await fetchShiftGuildMember(id);
+      if (member.ok && member.nick) out.set(id, member.nick);
+    }
+  };
+  const deadline = new Promise<void>((resolve) => setTimeout(resolve, withinMs));
+  await Promise.race([Promise.all(Array.from({ length: 4 }, worker)), deadline]);
+  // Late answers are dropped: a copy, so they cannot change what was returned.
+  return new Map(out);
+}

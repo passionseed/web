@@ -226,8 +226,10 @@ they make until they end it counts as their work for that quest. Code: `lib/whit
   lists only students as "ยังไม่ส่ง". Someone made staff gets their powers after reopening the board.
   Everyone's work is on the board for all members anyway; the role only opens the summary. Until the
   migration is applied, `openBoard` reads members without the column, so boards keep opening.
-- **Names:** the board shows people by their Discord name (display name, else username) and
-  picture: in the people corner, cursors, comments, who-made-what and the Quest dashboard.
+- **Names:** the board shows people by the name they go by in the PassionSeed SHIFT Discord
+  server (their server nickname, read by the SHIFT bot through `fetchShiftNicknames`, at most
+  2.5 s), else their Discord display name, else username, and their picture: in the people
+  corner, cursors, comments, who-made-what and the Mentor dashboard.
   `useBoardPeople` loads them from `POST /api/whiteboards/[id]/people` a moment after the board
   opens (one sign-in record read per person, so not on the open path); profile names until then and
   for anyone without Discord. The browser sends the ids it sees; only the viewer, owner, members and
