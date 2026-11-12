@@ -20,6 +20,13 @@
  * not belong above the apply button. The line never says "Demo day": on the
  * home page a demo day is day 7 of SHIFT and nothing else.
  *
+ * The island invitation (/shift/island, lib/content/shift-island-invite.ts)
+ * and the game on the same page read the season and the stage names from
+ * here too: the game's STAGE_NAMES (components/shift/island/copy.ts and
+ * bot/src/quests/island/copy.ts) must equal ISLAND_STAGES, and the season the
+ * staff create with /admin season uses ISLAND_SEASON's name and dates
+ * (__tests__/shift-island.test.ts checks both).
+ *
  * Thai reviewed by Codex, Antigravity and Cursor on 2026-11-11; lines two or
  * more of them flagged were rewritten. The stage names are the bot's and match
  * its sprites (fruit at stage 6, blossom at stage 7), so they stay as they are

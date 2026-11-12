@@ -54,12 +54,13 @@ const PUBLIC_ROUTE_PREFIXES = [
   "/c",
   "/api/shift/transcribe",
   "/api/shift/cert-health",
+  // The SHIFT island picture checks the session itself and answers 401, not
+  // a login redirect an <img> cannot follow.
+  "/api/shift/island",
   // Admin link-preview cards: metadata and a poster only, no admin data.
   "/link-preview",
   // Share links must render for chat link previews; signing in happens on the way in.
   "/whiteboard/join",
-  // Merch build guides (noindex): opened on phones at the work table, no data.
-  "/merch",
 ] as const;
 
 export function isPublicRoute(pathname: string): boolean {

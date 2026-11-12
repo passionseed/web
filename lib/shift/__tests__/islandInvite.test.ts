@@ -88,12 +88,12 @@ describe("islandDiscordUrl", () => {
         DISCORD_SHIFT_ISLAND_CHANNEL_URL: "https://x/island",
         DISCORD_SHIFT_GUILD_ID: "9",
         DISCORD_SHIFT_INVITE_URL: "https://x/inv",
-      } as NodeJS.ProcessEnv),
+      } as unknown as NodeJS.ProcessEnv),
     ).toBe("https://x/island");
   });
   test("falls back to the guild url", () => {
     expect(
-      islandDiscordUrl({ DISCORD_SHIFT_GUILD_ID: "9", DISCORD_SHIFT_INVITE_URL: "https://x/inv" } as NodeJS.ProcessEnv),
+      islandDiscordUrl({ DISCORD_SHIFT_GUILD_ID: "9", DISCORD_SHIFT_INVITE_URL: "https://x/inv" } as unknown as NodeJS.ProcessEnv),
     ).toBe("https://discord.com/channels/9");
   });
   test("then the invite url, empty strings count as unset", () => {
@@ -102,10 +102,10 @@ describe("islandDiscordUrl", () => {
         DISCORD_SHIFT_ISLAND_CHANNEL_URL: "",
         DISCORD_SHIFT_GUILD_ID: "",
         DISCORD_SHIFT_INVITE_URL: "https://x/inv",
-      } as NodeJS.ProcessEnv),
+      } as unknown as NodeJS.ProcessEnv),
     ).toBe("https://x/inv");
   });
   test("all unset is null", () => {
-    expect(islandDiscordUrl({} as NodeJS.ProcessEnv)).toBeNull();
+    expect(islandDiscordUrl({} as unknown as NodeJS.ProcessEnv)).toBeNull();
   });
 });

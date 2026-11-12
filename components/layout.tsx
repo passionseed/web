@@ -52,8 +52,6 @@ export function Layout({ children }: LayoutProps) {
     // Tips links are a pass-through to a PDF: spinner only, no site chrome
     pathname?.startsWith("/tips") ||
     pathname?.startsWith("/talent") ||
-    // Merch build guides are standalone pages
-    pathname?.startsWith("/merch") ||
     pathname?.startsWith("/pathlab") ||
     pathname?.startsWith("/plan") ||
     pathname?.includes("finish-profile") ||

@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 
-import { FOLD, LETTER_CHAPTERS, PROLOGUE, SEAL } from "@/lib/content/shift-island-invite";
+import { FOLD, ISLAND_DOOR, LETTER_CHAPTERS, PROLOGUE, SEAL, TICKET } from "@/lib/content/shift-island-invite";
 
 import { IslandInvite } from "./IslandInvite";
 
@@ -58,6 +58,29 @@ it("jumps to the seal without smooth scrolling under reduced motion", () => {
 it("does not move focus to the seal when the letter opens on its own", () => {
   render(<IslandInvite viewer={{ kind: "canRsvp" }} festival={FESTIVAL} />);
   expect(scrollIntoView).not.toHaveBeenCalled();
+});
+
+it("offers a signed-out player already on the island a way straight in with Discord", () => {
+  render(<IslandInvite viewer={{ kind: "signedOut" }} festival={FESTIVAL} initialScene="letter" />);
+  expect(screen.getByText(ISLAND_DOOR.returning)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: ISLAND_DOOR.discordCta })).toBeInTheDocument();
+});
+
+it("keeps the Discord way in for signed-out visitors only", () => {
+  render(<IslandInvite viewer={{ kind: "canRsvp" }} festival={FESTIVAL} initialScene="letter" />);
+  expect(screen.queryByText(ISLAND_DOOR.returning)).not.toBeInTheDocument();
+});
+
+it("passes the page's door to the ticket of an RSVPed visitor", () => {
+  render(
+    <IslandInvite
+      viewer={{ kind: "going", ticket: { nickname: "มายด์", cohort: "SHIFT[1]" }, discordUrl: null, confirmed: true }}
+      festival={FESTIVAL}
+      door="waiting"
+    />,
+  );
+  expect(screen.getByRole("heading", { name: TICKET.heading })).toBeInTheDocument();
+  expect(screen.getByText(ISLAND_DOOR.waiting)).toBeInTheDocument();
 });
 
 it("folds the letter away to show the island and opens it again", () => {

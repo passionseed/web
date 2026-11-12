@@ -267,10 +267,11 @@ module.exports = {
 
 **Rule:** Thai text uses Bai Jamjuree or Kodchasan by default. Never default to system fonts.
 
-**Homepage notes:** since 2026-11-11 the home page no longer loads the
-handwriting font (Iannnnn-COW). Its `.pathlab-note` asides use the standard
-note type, lit warm like the notes on `/shift`. The font files remain in
-`components/home/fonts` but nothing imports them.
+**Homepage handwritten notes (2026-10-07):** `.home-handwritten-notes` uses
+self-hosted Iannnnn-COW only for `.pathlab-note` (Regular / 400, 18px).
+Headings use Kodchasan. Keep note letter spacing at zero and line height at
+1.6 so Thai marks have room. Only the Regular OTF source is loaded with
+`next/font/local`, `display: swap`, and no global preload.
 Source and usage terms: [designer's release page](https://www.f0nt.com/release/iannnnn-cow/).
 
 ### Type Scale (Thai)
@@ -2125,166 +2126,6 @@ shows the project community step (`FeedbackCommunityStep`): a saved badge,
 four icon cards for what the community is, and two large glass cards for
 the ways in, with "ask parents first" and "not now" as quiet pills. Keep the
 community explained in cards, never one long paragraph; students skip it.
-
-### The dawn globe (every globe page)
-
-Restyled 2026-11-10. The planet is the PassionSeed idea drawn once: night
-turning into day. It is lit from the east by a sun fixed in view space, so
-the dawn line stands still while the planet turns eastward under it and
-places travel out of the night. The colours are the SHIFT riso inks, in the
-same order as the sky on the home page and the posters:
-
-| Part | Colour |
-|------|--------|
-| Night land, open water | Blue plate (`#1f5fae` dots, `#0078bf` sea ink on `#050a22`) |
-| City lights, Bangkok beacon, comet | Yellow (`#ffe800`, `#ffd84d`) |
-| The dawn line, night side to day side | Pink `#ff48b0`, orange `#ff6c2f`, gold `#ffc46a` |
-| Land in daylight | Paper `#f2ead9` |
-| Atmosphere | Blue over the night limb, pink then orange towards the sun |
-
-Rules:
-
-- Tokens live in `DAWN_GLOBE` (`components/shift/next/cosmos.ts`). `COSMOS`
-  still feeds the SHIFT[3] posters and the glass UI; do not merge the two.
-- Dots are a halftone: radius grows with the light that falls on the cell.
-  Night land thins out; it never turns grey.
-- Warm light belongs to the dawn line and the beacon only. Do not add a
-  warm rim to the night limb or tint the daylight side orange.
-- Keep the sun barely in front of the planet (`z` near 0.2) so Thailand sits
-  in first light when `/shift/next` zooms in.
-- `.orb`, the CSS stand-in before WebGL loads, draws the same planet: night
-  to the west, paper to the east, one pink and orange line between.
-- The cyan `--aurora` accents on these pages are interactive UI light, not
-  planet light, and stay as they are.
-
-### Home page offer (`/`)
-
-`getHomeOffer()` in `lib/content/home-offer.ts` decides what the hero and the
-closing section sell: the round taking applications, or the sign-up list for
-the next round once the newest one has closed. Never read `POSTER_COHORT`
-for a call to action; it keeps pointing at a round after its deadline. The
-hero horizon is short enough (`62svh`) that the pitch and the button sit
-above the fold at 1440 × 900 and 390 × 844. Keep it that way when adding
-lines to the hero.
-
-### Home page style (`/`): space, not riso
-
-Changed 2026-11-11. The home page wears the space style of `/shift` and
-`/shift/next`: starlight type, glass cards and soft glows on a dark sky. It has
-no print grain, no misregistered headings, no chrome wordmark and no hard
-offset plates.
-
-The backdrop is pixel dithering, not blurred spot gradients (`ShiftNextCosmos`
-is not used on `/`). `DitherCanvas` (`components/home/DitherCanvas.tsx`) draws
-one canvas pixel per 3px cell and scales it up with `image-rendering:
-pixelated`; the maths is in `components/home/dither.ts` (8x8 Bayer ordered
-dither over a few flat brightness levels).
-
-- `scene="sky"` is fixed behind the whole page: violet and blue clouds with
-  square stars, thinner down the middle where the copy is. It drifts slowly
-  with time and at a fraction of the scroll, a few frames a second.
-- `scene="dawn"` fills the closing section: a dithered sun rising over the
-  bottom edge. It is drawn once per size.
-- Keep the sky dim (`SKY_LEVELS`). Text and glass cards sit on it, so raise
-  brightness only where no copy lands.
-- Under `prefers-reduced-motion` the sky is one still frame; it also idles
-  while the tab is hidden. New background light on `/` goes through
-  `dither.ts`, not a `radial-gradient` or a blurred blob.
-
-It does not use the globe. On `/shift` the planet means something (rounds, the
-trip to Thailand); on `/` it was decoration in the best spot on the page. The
-hero's right column is the product instead: `DemoReel`, student apps playing.
-
-- The page root carries `space.page`, the class `home-space`, and
-  `paletteVars(SPACE_PALETTE)` (`components/shift/theme/tokens.ts`). Components
-  in `components/home` and `components/site` read colour only through `T`,
-  `tint()` and `accentFor()` from `components/home/homeTheme.tsx`. Never import
-  `INK`, `paper()` or `MISREG_TEXT` there.
-- Headings are `HomeHeading`; cards are `.home-card` (`home.css`); icons are
-  `<RisoIcon flat>`, one clean line with no offset plate.
-- `ShiftApplyButton` becomes the white pill through the palette's button values
-  plus the `.home-space .shift-button` shape rules. Secondary actions use
-  `space.ghost`.
-- Emphasis is a soft glow in an accent colour (aurora `#7fe3ff`, nebula
-  `#9d8cff`, sol `#ffd29a`, flare `#ff8fb1`), never a hard shadow.
-- Hero facts (dates and price, or the next-round note) sit above the buttons,
-  so on phones the button is the last thing before the reel.
-- `space.container` sets its own `padding`, which beats Tailwind padding
-  utilities on the same element. Put vertical spacing on a child.
-- The SHIFT round pages (`/shift/1`, `/shift/2`, ...) still use their own
-  round themes, including riso. That is a separate decision.
-
-### Home page sections (`/`): read it as a visitor
-
-The page answers a visitor's questions in the order they ask them: what is it
-(hero), the facts (`HomeGlance`), why it beats a camp (`HomeContrast`), proof it
-works (`HomeShowcase`), what the week is (`HomeWeek`), what happens after
-(`HomeHigh`), who says so (`HomeProof`), is it safe to pay for (`HomeParents`),
-the last objections (`HomeFaq`), then the button. Keep that order.
-
-- **Every visual must read without interaction.** The week shows all seven days
-  with their titles (seven columns on desktop, a list on phones); the detail
-  panel is extra. Never hide the whole behind tabs labelled `D1`…`D7`.
-- **A comparison points at the winner.** The camp panel is grey and dashed; the
-  SHIFT panel is lit glass with an aurora edge. Each line carries its own cross
-  or tick.
-- **Reveal must not hide content.** On `/` the scroll reveal ends within the
-  first quarter of the element's entry and never blurs (`home-reveal` in
-  `home.css`). The shared `shift-reveal` range is a share of the element's
-  height, which left tall cards out of focus while already on screen.
-- **Body copy is `tint("b8")` or brighter**, 14px minimum. `tint("99")` and
-  below is for metadata only.
-- **No autoplay on a phone list.** `WeekStepper` autoplays on desktop only;
-  opening rows by timer on a phone moves the text being read.
-- FAQ answers (`lib/content/home-faq.ts`) restate facts that live elsewhere and
-  fit in one breath. Section padding is `py-10 sm:py-20`.
-
-### Home demo reel (`/`): show before arguing
-
-The hero's right column (below the copy on phones) is `DemoReel`: one
-browser-framed screen that plays silent recordings of student apps in turn,
-with tabs for each app and its pitch, proof line and link to the live app under it.
-
-- Order on `/` is hero with the reel, facts, week, voices, comparison, SHIFT
-  High, parents, FAQ. Do not put an argument above the reel.
-- Clips live in `public/shift/demo` and are listed in `DEMO_CLIPS` in
-  `lib/content/home.ts`. Each is cropped to the app only (no browser tabs, taskbar
-  or Discord window), 960x540, silent, about 12 seconds, under 300 KB, with a
-  still of the same name as its poster.
-- A clip goes in only after the student and a parent agreed to app clips. Students
-  are minors: no names, faces or voices. Remove the entry and the reel drops that
-  app; with no entries the hero is copy only and the SHIFT[0] phone screens
-  (`HomeShowcase`) appear as the first section.
-- It plays only while on screen and moves to the next app by itself until the
-  visitor picks one. With reduced motion it shows the still and the player controls.
-- The text panels share one grid cell, so the section keeps its height when the
-  app changes. Keep that if you add fields.
-- `HomeWeek` shows one still of a real session (`HOME_SESSION_SHOT`), cropped to
-  the shared screens only.
-
-### SHIFT High section (`/` and `/shift`)
-
-`ShiftHighBlocks` (`components/shift/high/`) is the one place the landing pages
-pitch the community after day 7. It has three parts, in this order: community,
-goals, prizes. Each page supplies its own heading (`HomeHeading` on `/`, the
-gallery `sectionHeading` on `/shift`); the blocks and the copy are shared.
-
-- Copy lives in `lib/content/shift-high.ts`. Every claim there traces to the
-  company brain. It states no price and promises no outcome.
-- The weekly day, time and place come from the alumni calendar through
-  `shiftHighSessionLine()`. Never type them into copy.
-- The goal card is the only light object in the section: a white card with a
-  soft glow, no tilt and no offset plate. Its answers are examples and carry the `ตัวอย่าง` tag;
-  never present them as a real student's goals.
-- Prizes are things a student carries away (a demo day slot, co-hosting, a
-  next step). Add a physical prize only once the brain records it.
-
-### Cookie banner timing (SHIFT pages)
-
-The Meta cookie banner in `MetaPixel` must not cover the first screen. It waits
-for `COOKIE_BANNER_DELAY_MS` or a scroll past three quarters of a screen,
-whichever comes first, then slides in from the bottom (no motion under
-`prefers-reduced-motion`). The pixel still loads only after consent.
 
 ### SHIFT[3] Thailand arrival (`/shift/next`)
 

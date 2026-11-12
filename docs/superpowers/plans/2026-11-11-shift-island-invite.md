@@ -10,6 +10,50 @@
 
 **Spec:** `docs/superpowers/specs/2026-11-11-shift-island-invite-design.md`
 
+## Status: merged into the island game (2026-11-12)
+
+This invite now lives on `merge/shift-island-all` with the SHIFT High island
+game, its rollout work and its lore. What changed from the tasks below:
+
+- **One address.** `/shift/island` is one page (`app/shift/island/page.tsx`)
+  for the invitation and the game; the rule is `islandEntry` in
+  `lib/shift/islandEntry.ts` (tests in `lib/shift/__tests__/islandEntry.test.ts`
+  and `app/shift/island/__tests__/page.test.tsx`):
+  - Signed out, not alumni, not RSVPed, or RSVPed and not let into the game
+    yet: the invitation (prologue, bottle, letter, seal, ticket).
+  - RSVPed and let in by the game (signed in with Discord, in the SHIFT
+    server, with the student role): the game. Its story picks up from the
+    ticket (panel 1, "เจอกันบนเกาะแล้ว"; lore bible, section 16).
+  - Staff the game lets in (mentors, reviewers) skip the RSVP: they are not
+    alumni and get no ticket.
+  - RSVPed but not let in yet: the ticket carries a door (`ISLAND_DOOR`):
+    sign in with Discord (`discord`), wait for the role (`waiting`), or the
+    island is off right now (`closed`, e.g. before the quest database is
+    set in production).
+  - Signed out: under the seal, a quiet "อยู่บนเกาะแล้ว? เข้าด้วย Discord ได้เลย"
+    so a returning player goes straight in.
+- **Alumni rule kept.** Only people who finished SHIFT (a confirmed or pending
+  alumni record, or a linked paid application) or site admins can RSVP; the
+  route checks again before it writes.
+- **RSVP → Discord role "SHIFT high".** An RSVP should lead to the Discord
+  role `SHIFT high` in the SHIFT server, the role the game reads (`/admin
+  student-role`). Nothing grants it automatically yet: staff read new rows in
+  `shift_island_rsvps` and give the role by hand (rollout runbook, step G).
+  Automatic granting is not built: it needs the bot token on the website, a
+  match from the PassionSeed account to a Discord member, and a check that
+  the person is a confirmed alumnus, never a pending one (safeguarding: an
+  unverified account must not land in a room with students). A Discord
+  sign-in that makes a second PassionSeed account (different email) does not
+  carry the first account's RSVP over; the person RSVPs again on it.
+- **Migration renumbered** to `20261112090000_shift_island_rsvps.sql`
+  (`20261111120000` is `whiteboard_quest_reviewers` on `main`), now with an
+  admin read policy and a read-own policy, like `shift_alumni_members`.
+- **Home-page dependencies brought in:** `lib/content/shift-island.ts` (+ its
+  test, without the home journey part), the stage sprites and sample picture
+  in `public/shift/island/`, and island-local copies of `StageSprite` and
+  `IslandTree` in `components/shift/island/` (the home versions depend on the
+  home theme). `useReducedMotion` is one hook for the game and the invite.
+
 ## Global Constraints
 
 - Depends on uncommitted home-page work in this tree: `lib/content/shift-island.ts`, `components/home/IslandTree.tsx`, `components/home/StageSprite.tsx`, `public/shift/island/*`. Import them; never stage or edit them on this branch. The PR opens only after that work is on `main` (or the user says to include it).

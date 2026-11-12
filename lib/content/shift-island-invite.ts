@@ -84,6 +84,24 @@ export const TICKET = {
   pendingDiscord: "ทีมจะยืนยันว่าเราผ่าน SHIFT แล้ว จากนั้นส่งลิงก์ห้องเกาะให้ในกลุ่มรุ่น",
 } as const;
 
+/**
+ * DRAFT: under the ticket, for someone who has RSVPed but cannot open the
+ * game on this page yet (lib/shift/islandEntry.ts). Same address: once they
+ * can, /shift/island shows the island itself and its story picks up from
+ * this ticket.
+ */
+export const ISLAND_DOOR = {
+  /** Signed in without Discord: the island checks the SHIFT server's role. */
+  discord: "เกาะบนเว็บเปิดด้วยบัญชี Discord ที่อยู่ในเซิร์ฟเวอร์ SHIFT",
+  discordCta: "เข้าเกาะด้วย Discord",
+  /** In Discord, but no SHIFT high role yet (staff grant it after the RSVP). */
+  waiting: "ตั๋วบันทึกไว้แล้ว ทีมงานจะให้บทบาท SHIFT high ใน Discord แล้วหน้านี้จะพาเข้าเกาะเลย",
+  /** Under the seal, signed out: a player already on the island goes straight in. */
+  returning: "อยู่บนเกาะแล้ว? เข้าด้วย Discord ได้เลย",
+  /** The game is off (before launch, or down for a moment). */
+  closed: "ตั๋วบันทึกไว้แล้ว เกาะบนเว็บยังเข้าไม่ได้ตอนนี้ กลับมาที่หน้านี้อีกครั้งได้เลย",
+} as const;
+
 const DAY_MS = 24 * 3600 * 1000;
 
 /**

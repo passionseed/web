@@ -34,6 +34,7 @@ import { GrainDefs } from "./chrome/Grain";
 import { PeopleCorner } from "./chrome/PeopleCorner";
 import { CommentsLayer } from "./CommentsLayer";
 import { EmoteLayer, useEmotes } from "./EmoteLayer";
+import { focusElement } from "./focusElement";
 import { WB_FONT_VARS } from "./fonts";
 import { insertElements, insertSkeletons, insertWidget } from "./insert";
 import { KitSidebar, openKit } from "./KitSidebar";
@@ -49,7 +50,7 @@ import { CanvasTeamLayer } from "./shift/CanvasTeamLayer";
 import { CardVersionsLayer } from "./shift/CardVersionsLayer";
 import { useShiftCardCaret } from "./shift/useShiftCardCaret";
 import { ZoneAddLayer } from "./shift/ZoneAddLayer";
-import { openQuestPanel, QuestSidebar } from "./quest/QuestSidebar";
+import { openQuestPanel, QuestPane, useQuestPane } from "./quest/QuestPane";
 import { useBoardPeople } from "./useBoardPeople";
 import { QuestLayer } from "./quest/QuestLayer";
 import { QuestMenu } from "./quest/QuestMenu";
@@ -97,10 +98,12 @@ export default function WhiteboardCanvas({
   board,
   me,
   templateId,
+  focusId,
 }: {
   board: WhiteboardDetail;
   me: Me;
   templateId?: string | null;
+  focusId?: string | null;
 }) {
   const editable = canEdit(board.role);
   const isAdmin = Boolean(me.isAdmin);
@@ -126,7 +129,14 @@ export default function WhiteboardCanvas({
   // Quest sessions: while one runs, everything this person makes is tagged with it (lib/whiteboard/quests.ts).
   const quest = useQuestSession(board.id, me.id);
   // Everyone's Discord name and picture, a moment after the board opens; profile names until then.
-  const discord = useBoardPeople(board.id);
+  const discord = useBoardPeople(board.id, () => [
+    me.id,
+    ...board.members.map((m) => m.userId),
+    ...initialElements.flatMap((el) => {
+      const data = el.customData as { createdBy?: unknown; updatedBy?: unknown; quest?: { by?: unknown } } | undefined;
+      return [data?.createdBy, data?.updatedBy, data?.quest?.by].filter((v): v is string => typeof v === "string");
+    }),
+  ]);
   const shownAs = useCallback((userId: string) => discord[userId], [discord]);
   const shownMe = useMemo(
     () => ({ ...me, name: discord[me.id]?.name ?? me.name, avatarUrl: discord[me.id]?.avatarUrl ?? me.avatarUrl }),
@@ -253,6 +263,17 @@ export default function WhiteboardCanvas({
     api.scrollToContent(placed, { fitToViewport: true, viewportZoomFactor: 0.85 });
   }, [api, board.id, editable, sceneReady, templateId]);
 
+  // ?focus=<element> (the SHIFT High island's "เปิดแคนวาส" and "ดูบนแคนวาส"): bring it into view once,
+  // then tidy the address. An unknown id leaves the board's usual scroll-to-content.
+  const focused = useRef(false);
+  useEffect(() => {
+    if (!api || !sceneReady || !focusId || focused.current) return;
+    focused.current = true;
+    const reduced = typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    focusElement(api, focusId, reduced);
+    window.history.replaceState(null, "", `/whiteboard/${board.id}`);
+  }, [api, board.id, focusId, sceneReady]);
+
   const saveAndTell = useCallback(async () => {
     if (!editable) return;
     const ok = await saveNow();
@@ -341,7 +362,7 @@ export default function WhiteboardCanvas({
           บอร์ดทั้งหมด · All boards
         </MainMenu.Item>
         {canReviewQuests && api && (
-          <MainMenu.Item icon={<Flag size={16} />} onSelect={() => openQuestPanel(api)}>
+          <MainMenu.Item icon={<Flag size={16} />} onSelect={() => openQuestPanel()}>
             Quest Dashboard · งานแต่ละคน
           </MainMenu.Item>
         )}
@@ -408,11 +429,9 @@ export default function WhiteboardCanvas({
     [api, board.id, isAdmin, showAuthors],
   );
 
-  const questsPanel = useMemo(
-    () => (canReviewQuests && api ? <QuestSidebar api={api} people={people} nameOf={nameOf} avatarOf={avatarOf} /> : null),
-    [api, canReviewQuests, people, nameOf, avatarOf],
-  );
-  const openQuestDashboard = useCallback((questId: string) => api && openQuestPanel(api, questId), [api]);
+  // The Quest dashboard, in a pane beside the board that the board makes room for.
+  const questPane = useQuestPane(board.id, canReviewQuests);
+  const openQuestDashboard = useCallback((questId: string) => openQuestPanel(questId), []);
 
   const kit = useMemo(
     () =>
@@ -446,7 +465,12 @@ export default function WhiteboardCanvas({
   const closePlacing = useCallback(() => setPlacingComment(false), []);
 
   return (
-    <div className={`whiteboard-root whiteboard-room fixed inset-0 ${WB_FONT_VARS}`}>
+    <>
+      <div
+        className={`whiteboard-root whiteboard-room fixed inset-0 ${WB_FONT_VARS}`}
+        // The Quest pane sits beside the board: the board's right edge moves in to make room.
+        style={questPane.open ? { right: questPane.width } : undefined}
+      >
       {/* The grain filters, once for the whole board. */}
       <GrainDefs />
       <BoardBackdrop api={api} settings={settings} />
@@ -465,7 +489,6 @@ export default function WhiteboardCanvas({
         {mainMenu}
         {welcomeScreen}
         {kit}
-        {questsPanel}
       </Excalidraw>
 
       {api && (
@@ -567,6 +590,18 @@ export default function WhiteboardCanvas({
         onMembersChange={setMembers}
         onlineIds={onlineIds}
       />
-    </div>
+      </div>
+      {questPane.open && api && (
+        <QuestPane
+          api={api}
+          width={questPane.width}
+          onResize={questPane.resize}
+          onClose={questPane.close}
+          people={people}
+          nameOf={nameOf}
+          avatarOf={avatarOf}
+        />
+      )}
+    </>
   );
 }

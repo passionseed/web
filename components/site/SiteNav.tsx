@@ -7,7 +7,7 @@ import type { User } from "@supabase/supabase-js";
 import { Menu, X } from "lucide-react";
 
 import { ShiftApplyButton } from "@/components/shift/ShiftApplyButton";
-import { T, tint } from "@/components/home/homeTheme";
+import { INK, paper } from "@/components/shift/ShiftRiso";
 import { UserNav } from "@/components/user-nav";
 import { SITE_NAV_LINKS } from "@/lib/content/home";
 import { createClient } from "@/utils/supabase/client";
@@ -41,7 +41,7 @@ function Wordmark() {
   return (
     <Link href="/" className="flex items-center gap-2.5">
       <Image src="/passion-seed-logo.png" alt="" width={32} height={32} unoptimized />
-      <span className="font-kodchasan text-lg font-bold tracking-tight" style={{ color: T.text }}>
+      <span className="font-kodchasan text-lg font-bold tracking-tight" style={{ color: INK.paper }}>
         PassionSeed
       </span>
     </Link>
@@ -54,7 +54,7 @@ function AccountLink({ user }: { user: User | null }) {
     <Link
       href="/login"
       className="text-sm font-semibold transition-opacity hover:opacity-100"
-      style={{ color: T.text, opacity: 0.75 }}
+      style={{ color: INK.paper, opacity: 0.75 }}
     >
       เข้าสู่ระบบ
     </Link>
@@ -65,7 +65,7 @@ function MobileMenu({ user, onClose }: { user: User | null; onClose: () => void 
   return (
     <div
       className="border-t px-5 pb-8 pt-4 md:hidden"
-      style={{ backgroundColor: T.bg, borderColor: tint("1f") }}
+      style={{ backgroundColor: INK.black, borderColor: paper("1f") }}
     >
       <ul className="flex flex-col">
         {SITE_NAV_LINKS.map((link) => (
@@ -74,7 +74,7 @@ function MobileMenu({ user, onClose }: { user: User | null; onClose: () => void 
               href={link.href}
               onClick={onClose}
               className="block border-b py-4 font-kodchasan text-lg font-semibold"
-              style={{ borderColor: tint("1f"), color: T.text }}
+              style={{ borderColor: paper("1f"), color: INK.paper }}
             >
               {link.label}
             </Link>
@@ -83,7 +83,7 @@ function MobileMenu({ user, onClose }: { user: User | null; onClose: () => void 
       </ul>
       <div className="mt-6 flex items-center justify-between gap-4">
         <AccountLink user={user} />
-        <ShiftApplyButton href="/shift" location="site_nav_mobile" className="!min-h-11 !px-5 !text-sm">
+        <ShiftApplyButton href="/shift" location="site_nav_mobile" className="!px-5 !py-2.5 !text-sm">
           สมัคร SHIFT
         </ShiftApplyButton>
       </div>
@@ -92,8 +92,8 @@ function MobileMenu({ user, onClose }: { user: User | null; onClose: () => void 
 }
 
 /**
- * Public-site navbar in the space palette. Transparent over the hero, backed
- * with the page colour once the page scrolls.
+ * Public-site navbar in the SHIFT riso palette. Transparent over the hero
+ * sky, ink-backed once the page scrolls.
  */
 export function SiteNav() {
   const user = useSignedInUser();
@@ -105,11 +105,11 @@ export function SiteNav() {
     <header
       className="fixed inset-x-0 top-0 z-50 border-b backdrop-blur-md transition-colors duration-300"
       style={{
-        backgroundColor: solid ? T.bar : "transparent",
-        borderColor: solid ? tint("1f") : "transparent",
+        backgroundColor: solid ? "rgba(23,21,28,0.88)" : "transparent",
+        borderColor: solid ? paper("1f") : "transparent",
       }}
     >
-      <nav className="mx-auto flex h-16 max-w-[74rem] items-center justify-between gap-6 px-5 sm:px-8">
+      <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-6 px-5 sm:px-8">
         <Wordmark />
 
         <ul className="hidden items-center gap-7 md:flex">
@@ -117,8 +117,8 @@ export function SiteNav() {
             <li key={link.href}>
               <Link
                 href={link.href}
-                className="text-sm font-semibold transition-colors hover:text-[#7fe3ff]"
-                style={{ color: tint("d9") }}
+                className="text-sm font-semibold transition-colors hover:text-[#ffe800]"
+                style={{ color: paper("d9") }}
               >
                 {link.label}
               </Link>
@@ -128,7 +128,7 @@ export function SiteNav() {
 
         <div className="hidden items-center gap-5 md:flex">
           <AccountLink user={user} />
-          <ShiftApplyButton href="/shift" location="site_nav" className="!min-h-10 !px-5 !text-sm">
+          <ShiftApplyButton href="/shift" location="site_nav" className="!px-5 !py-2 !text-sm">
             สมัคร SHIFT
           </ShiftApplyButton>
         </div>
@@ -137,7 +137,7 @@ export function SiteNav() {
           type="button"
           onClick={() => setOpen((v) => !v)}
           className="-mr-2 p-2 md:hidden"
-          style={{ color: T.text }}
+          style={{ color: INK.paper }}
           aria-label={open ? "ปิดเมนู" : "เปิดเมนู"}
           aria-expanded={open}
         >

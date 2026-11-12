@@ -18,25 +18,3 @@ export const COSMOS = {
 
 /** Starlight at a hex alpha, e.g. starlight("99"). */
 export const starlight = (alpha: string) => `${COSMOS.star}${alpha}`;
-
-/**
- * The globe: the planet at dawn, in the SHIFT riso inks. Night is the blue
- * plate, land in daylight is paper, and the dawn line runs pink, orange,
- * gold, the order of the sky on the home page and the posters. Warm light
- * means the same thing here as everywhere else in PassionSeed: the sun is
- * coming up. Kept apart from COSMOS, which the SHIFT[3] posters still print.
- */
-export const DAWN_GLOBE = {
-  sea: "#050a22",
-  seaInk: "#0078bf",
-  landNight: "#1f5fae",
-  landDay: "#f2ead9",
-  city: "#ffe800",
-  pink: "#ff48b0",
-  orange: "#ff6c2f",
-  gold: "#ffc46a",
-  beacon: "#ffd84d",
-  rimNight: "#2f8fe0",
-  orbit: "#6a9fd8",
-  panel: "#2f6fb8",
-} as const;

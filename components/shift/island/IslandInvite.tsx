@@ -2,10 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { PROLOGUE, SHORE } from "@/lib/content/shift-island-invite";
+import { ISLAND_DOOR, PROLOGUE, SHORE } from "@/lib/content/shift-island-invite";
+import type { IslandDoor } from "@/lib/shift/islandEntry";
 import type { IslandTicket as Ticket, IslandViewer } from "@/lib/shift/islandInvite";
 
 import { BottleShore } from "./BottleShore";
+import { IslandDiscordButton } from "./IslandDiscordButton";
 import { InviteLetter } from "./InviteLetter";
 import { IslandPrologue } from "./IslandPrologue";
 import { IslandTicket } from "./IslandTicket";
@@ -35,10 +37,13 @@ export function IslandInvite({
   viewer,
   festival,
   initialScene,
+  door = null,
 }: {
   viewer: IslandViewer;
   festival: string;
   initialScene?: "letter";
+  /** For an RSVPed visitor the game does not let in yet: shown under the ticket. */
+  door?: IslandDoor | null;
 }) {
   const [scene, setScene] = useState<Scene>(
     initialScene === "letter" || viewer.kind === "going" ? "letter" : "prologue",
@@ -82,13 +87,23 @@ export function IslandInvite({
               confirmed={going.confirmed}
               festival={festival}
               focusHeading={going.justSealed}
+              door={door}
             />
           ) : (
-            <WaxSeal
-              viewer={viewer}
-              onGoing={(ticket, discordUrl, confirmed) => setGoing({ ticket, discordUrl, confirmed, justSealed: true })}
-              focusOnMount={initialScene === "letter"}
-            />
+            <>
+              <WaxSeal
+                viewer={viewer}
+                onGoing={(ticket, discordUrl, confirmed) => setGoing({ ticket, discordUrl, confirmed, justSealed: true })}
+                focusOnMount={initialScene === "letter"}
+              />
+              {viewer.kind === "signedOut" && (
+                // Same page as the game: a player already on the island signs in with Discord and lands in it.
+                <div className={styles.returning} data-returning>
+                  <p className={styles.ticketNote}>{ISLAND_DOOR.returning}</p>
+                  <IslandDiscordButton label={ISLAND_DOOR.discordCta} className={`ei-button-dawn ${styles.cta}`} />
+                </div>
+              )}
+            </>
           )}
         </InviteLetter>
       )}

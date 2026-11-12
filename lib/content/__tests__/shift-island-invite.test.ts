@@ -1,5 +1,6 @@
 import { formatThaiDate } from "@/lib/content/shift-cohort";
 import {
+  ISLAND_DOOR,
   LETTER_CHAPTERS,
   FOLD,
   PROLOGUE,
@@ -37,6 +38,7 @@ describe("shift island invite copy", () => {
       ...strings(LETTER_CHAPTERS),
       ...strings(SEAL),
       ...strings(TICKET),
+      ...strings(ISLAND_DOOR),
       ...[BEFORE, KICKOFF, RUNNING, AFTER].map((d) => festivalLine(d)),
     ];
     for (const s of all) {

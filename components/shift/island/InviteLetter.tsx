@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 
-import { IslandTree } from "@/components/home/IslandTree";
+import { IslandTree } from "./IslandTree";
 import { ISLAND_STAGES } from "@/lib/content/shift-island";
 import { FOLD, LETTER_CHAPTERS } from "@/lib/content/shift-island-invite";
 

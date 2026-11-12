@@ -2,10 +2,12 @@
 
 import { useEffect, useRef } from "react";
 
-import { StageSprite } from "@/components/home/StageSprite";
-import { TICKET } from "@/lib/content/shift-island-invite";
+import { StageSprite } from "./StageSprite";
+import { ISLAND_DOOR, TICKET } from "@/lib/content/shift-island-invite";
+import type { IslandDoor } from "@/lib/shift/islandEntry";
 import type { IslandTicket as Ticket } from "@/lib/shift/islandInvite";
 
+import { IslandDiscordButton } from "./IslandDiscordButton";
 import styles from "./islandInvite.module.css";
 import { useInView } from "./useInView";
 
@@ -15,6 +17,8 @@ import { useInView } from "./useInView";
  * The stub carries a sprout sprite, as decoration. Only admins and confirmed
  * members get the Discord link; anyone else is told the team checks first.
  * `focusHeading` moves focus here when the ticket replaces a pressed seal.
+ * `door` (from the page, lib/shift/islandEntry.ts) says what still stands
+ * between an RSVPed visitor and the game on this same page.
  */
 export function IslandTicket({
   ticket,
@@ -22,12 +26,14 @@ export function IslandTicket({
   confirmed,
   festival,
   focusHeading = false,
+  door = null,
 }: {
   ticket: Ticket;
   discordUrl: string | null;
   confirmed: boolean;
   festival: string;
   focusHeading?: boolean;
+  door?: IslandDoor | null;
 }) {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const ctaRef = useRef<HTMLAnchorElement>(null);
@@ -62,7 +68,25 @@ export function IslandTicket({
         ) : (
           <p className={styles.ticketNote}>{confirmed ? TICKET.noDiscord : TICKET.pendingDiscord}</p>
         )}
+        {door ? <TicketDoor door={door} /> : null}
       </div>
     </section>
+  );
+}
+
+/** The way from the ticket into the island game, on this same page. */
+function TicketDoor({ door }: { door: IslandDoor }) {
+  if (door !== "discord") {
+    return (
+      <p className={styles.ticketNote} data-door={door}>
+        {ISLAND_DOOR[door]}
+      </p>
+    );
+  }
+  return (
+    <div data-door={door}>
+      <p className={styles.ticketNote}>{ISLAND_DOOR.discord}</p>
+      <IslandDiscordButton label={ISLAND_DOOR.discordCta} switchAccount className={`ei-button-dawn ${styles.cta}`} />
+    </div>
   );
 }
