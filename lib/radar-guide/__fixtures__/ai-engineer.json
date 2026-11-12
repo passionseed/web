@@ -1,0 +1,981 @@
+{
+  "id": "b7e0261d-5001-46f1-820f-9b86936d3999",
+  "slug": "ai-engineer",
+  "name_th": "วิศวกร AI",
+  "name_en": "AI Engineer",
+  "tagline_th": "สร้าง AI ให้ใช้งานจริง: จากข้อมูล โมเดล RAG/evals/API ไปจนถึงระบบ production ที่วัดผลและดูแลได้",
+  "tagline_en": "Build AI that works in production: data, models, RAG/evals/APIs, deployment, monitoring, and measurable business value.",
+  "emoji": "🤖",
+  "color": "#06b6d4",
+  "tile_size": "md",
+  "tags": [
+    "growing",
+    "high-pay",
+    "trending",
+    "global"
+  ],
+  "is_published": true,
+  "has_content": true,
+  "sort_order": 0,
+  "squad_url": "/seeds/pathlab/ai-engineer",
+  "hero_image_url": null,
+  "hero_image_prompt": null,
+  "hero_image_credit": null,
+  "hero_image_license": null,
+  "hero_image_alt_th": null,
+  "hero_image_alt_en": null,
+  "research": {
+    "tier": "growing",
+    "aliases": [
+      "Machine Learning Engineer",
+      "ML Engineer",
+      "GenAI Engineer",
+      "AI Solutions Engineer",
+      "Applied AI Engineer",
+      "MLOps Engineer"
+    ],
+    "metrics": {
+      "salary_floor": 35000,
+      "demand_growth": 9,
+      "salary_ceiling": 250000,
+      "saturation_level": 4,
+      "grad_employment_pct": 82,
+      "progression_difficulty": 6
+    },
+    "sources": [
+      {
+        "url": "https://th.jobsdb.com/ai-engineer-jobs",
+        "date": "2026-07-22",
+        "title": "AI Engineer Jobs in Thailand",
+        "author": "JobsDB Thailand"
+      },
+      {
+        "url": "https://www.bls.gov/ooh/math/data-scientists.htm",
+        "date": "2026-07-22",
+        "title": "Data Scientists: Occupational Outlook Handbook",
+        "author": "U.S. Bureau of Labor Statistics"
+      },
+      {
+        "url": "https://365datascience.com/career-advice/career-guides/ai-engineer-job-outlook-2025/",
+        "date": "2026-07-22",
+        "title": "AI Engineer Job Outlook 2026",
+        "author": "365 Data Science"
+      },
+      {
+        "url": "https://aiunlock.co/blog/ai-engineer-salary-thailand",
+        "date": "2026-07-22",
+        "title": "เงินเดือน AI Engineer ในไทย 2025",
+        "author": "AI Unlock"
+      },
+      {
+        "url": "https://axialsearch.com/insights/ai-ml-engineering-jobs/",
+        "date": "2026-07-22",
+        "title": "AI/ML Engineering Jobs in 2026: Analyzing 10,000+ Posts",
+        "author": "Axialsearch"
+      },
+      {
+        "url": "https://cloud.google.com/learn/certification/machine-learning-engineer",
+        "date": "2026-07-22",
+        "title": "Professional Machine Learning Engineer Certification",
+        "author": "Google Cloud"
+      },
+      {
+        "url": "https://tdri.or.th/en/2025/06/thailand-ai-readiness-assessment-report-2025/",
+        "date": "2026-07-22",
+        "title": "Thailand AI Readiness Assessment Report 2025",
+        "author": "TDRI"
+      },
+      {
+        "url": "https://www.depa.or.th/th/article-view/Digital-workforce",
+        "date": "2026-07-22",
+        "title": "ปัญหากำลังคนด้านดิจิทัลในไทย",
+        "author": "depa"
+      }
+    ],
+    "insights": [
+      {
+        "content": "AI Engineer ที่ดีไม่ใช่แค่รู้โมเดล แต่รู้ว่า data เข้าอย่างไร, eval วัดอะไร, latency/cost/security เป็นเท่าไร และระบบพังแล้ว debug ตรงไหน",
+        "category": "skills",
+        "priority": 1
+      },
+      {
+        "content": "ตลาดไทยกำลังต้องการคน build AI solution ใช้งานจริง โดยเฉพาะ RAG, GenAI app, AI platform, fraud/risk, automation และ enterprise integration",
+        "category": "market",
+        "priority": 2
+      },
+      {
+        "content": "เส้นตรงคือ CS/Computer Engineering/Data/AI แต่เส้นทางที่แข็งมากคือ software engineer หรือ data engineer ที่ค่อย ๆ ต่อ ML/LLM/MLOps",
+        "category": "education",
+        "priority": 3
+      }
+    ],
+    "reasoning": "AI Engineer เป็นสายที่ตลาดต้องการสูง เพราะองค์กรไทยเริ่มย้ายจากการทดลอง GenAI ไปสู่ระบบใช้งานจริง เช่น RAG, internal copilots, fraud/risk models, AI workflow automation และ AI platform/MLOps แต่การแข่งขันสูงขึ้นเร็ว คนที่โตได้ต้องไม่ใช่แค่ prompt เก่ง ต้องทำ data, model quality, eval, API, cloud, monitoring, security และ governance ให้ระบบอยู่รอดใน production",
+    "global_metrics": {
+      "salary_floor": 5304,
+      "demand_growth": 9,
+      "salary_ceiling": 16201,
+      "saturation_level": 6,
+      "grad_employment_pct": 75,
+      "progression_difficulty": 6
+    },
+    "metric_details": {
+      "salary_floor": {
+        "th": "AI Unlock (aiunlock.co) รายงาน Junior ML Engineer ในไทย 40,000–65,000 บาท/เดือน; JobsDB ไทยแสดง AI Engineer entry-level 25,000–35,000 บาท/เดือน จึงใช้ 35,000 บาท/เดือนเป็น floor สำหรับเด็กจบใหม่ที่มีพื้นฐาน CS/Data",
+        "source": "AI Unlock / JobsDB Thailand",
+        "source_url": "https://aiunlock.co/blog/ai-engineer-salary-thailand"
+      },
+      "demand_growth": {
+        "th": "BLS คาด data scientists โต 34% ช่วง 2024–2034; 365 Data Science วิเคราะห์ 903 job postings พบ AI engineer salary เฉลี่ยสหรัฐเพิ่ม $50k ใน 1 ปี; Axialsearch รายงาน AI/ML engineering postings ทรงตัวที่ 1,550–2,300 โพสต์ต่อสัปดาห์ในครึ่งแรกปี 2026",
+        "source": "BLS OOH / 365 Data Science / Axialsearch",
+        "source_url": "https://365datascience.com/career-advice/career-guides/ai-engineer-job-outlook-2025/"
+      },
+      "salary_ceiling": {
+        "th": "AI Unlock รายงาน Lead/Principal ML Engineer ในไทย 180,000–300,000+ บาท/เดือน; JobsDB career advice ระบุ Lead AI Engineer / AI Architect 100,000–150,000 บาท/เดือน; ใช้ 250,000 บาท/เดือนเป็น realistic ceiling สำหรับ senior AI lead ที่บริษัท top-tier (KBTG, SCB DataX, Agoda, Grab)",
+        "source": "AI Unlock / JobsDB Thailand Career Advice",
+        "source_url": "https://aiunlock.co/blog/ai-engineer-salary-thailand"
+      },
+      "saturation_level": {
+        "en": "The market is less saturated than it looks — only the theory-only entry layer is crowded; people who can ship production AI end-to-end are still scarce. Axialsearch found mid-level and senior roles make up 66% of AI/ML postings in 2026. (This measures overall talent-pool crowding, not the per-opening competition score on the Thailand market card.)",
+        "th": "ตลาดไม่ saturated อย่างที่คิด — สิ่งที่ saturated คือ entry-level theory-only layer เท่านั้น คนที่ทำ production AI end-to-end (data + ML + cloud + deployment + monitoring) ยังขาดแคลนมาก; Axialsearch พบ mid-level และ senior roles ครอง 66% ของ AI/ML postings ในปี 2026 (ตัวนี้วัด 'ความอิ่มตัวของคนในตลาด' ว่าคนสายนี้ล้นตลาดหรือยัง ไม่ใช่ 'การแข่งขันต่อตำแหน่ง' บนการ์ดตลาดไทย — คนละมุมกัน) (ตัวนี้วัด 'ความอิ่มตัวของคนในตลาด' ว่าคนสายนี้ล้นตลาดหรือยัง ไม่ใช่ 'การแข่งขันต่อตำแหน่ง' บนการ์ดตลาดไทย — คนละมุมกัน)",
+        "source": "Axialsearch / AI/ML Engineering Jobs 2026",
+        "source_url": "https://axialsearch.com/insights/ai-ml-engineering-jobs/"
+      },
+      "grad_employment_pct": {
+        "en": "What this number means: the % of fresh graduates with relevant skills and a real portfolio who land a job within 6 months of graduating — NOT the % of all graduates, and NOT the % of postings open to fresh grads (only 2.5% of AI engineer postings target entry level, per 365 Data Science). The 82% is an estimate, not an official statistic: TDRI reports Thailand is short about 80,000 AI professionals, so demand is high but companies are selective — which is why this number and the high 'entry barrier' score on the Thailand market card can both be true.",
+        "th": "นิยามตัวเลขนี้: '% ของเด็กจบใหม่ที่มีทักษะและผลงาน (portfolio) ตรงสาย ที่ได้งานภายใน 6 เดือนหลังจบ' — ไม่ใช่ % ของเด็กจบทุกคน และไม่ใช่ % ของประกาศงานที่เปิดรับเด็กจบใหม่ (ประกาศที่รับเด็กจบใหม่จริง ๆ มีแค่ 2.5% ตาม 365 Data Science) ตัวเลข 82% เป็นการประเมิน ไม่ใช่สถิติทางการ: TDRI ระบุว่าไทยขาดคนสาย AI ราว 80,000 คน งานจึงมีรออยู่มาก แต่บริษัทเลือกคนเข้ม ใครมี portfolio ระบบจริงจะได้งานดีกว่าค่าเฉลี่ย ส่วนใครมีแค่ certificate มักตกรอบตั้งแต่ด่านแรก — นี่คือเหตุที่ตัวเลขนี้สูง ทั้งที่ 'ด่านทักษะแรกเข้า' บนการ์ดตลาดไทยก็สูงเช่นกัน",
+        "source": "TDRI / 365 Data Science",
+        "source_url": "https://tdri.or.th/en/2025/06/thailand-ai-readiness-assessment-report-2025/"
+      },
+      "progression_difficulty": {
+        "th": "โตเร็วได้ถ้าทำระบบจริง แต่ยากตรงต้อง master หลาย skill พร้อมกัน: software engineering, data engineering, ML/LLM, cloud, MLOps, eval/monitoring, security/governance; tool stack เปลี่ยนเร็วมาก (framework ใหม่ทุก 3–6 เดือน); ต้องสื่อสาร business value ได้ ไม่ใช่แค่ทำ model",
+        "source": "Google Cloud Certification / 365 Data Science",
+        "source_url": "https://cloud.google.com/learn/certification/machine-learning-engineer"
+      }
+    },
+    "escape_route_slug": "software-engineer",
+    "global_metric_details": {
+      "salary_floor": {
+        "th": "BLS ระบุ lowest 10% ของ data scientists ต่ำกว่า $63,650/ปี หรือประมาณ $5,304/เดือน",
+        "source": "BLS OOH Data Scientists",
+        "source_url": "https://www.bls.gov/ooh/math/data-scientists.htm"
+      },
+      "demand_growth": {
+        "th": "BLS คาด data scientists โต 34% ช่วง 2024–2034 และ software developers/QA/testers โต 15%; AI Engineer อยู่ตรงกลางของสองตลาดนี้",
+        "source": "BLS OOH",
+        "source_url": "https://www.bls.gov/ooh/math/data-scientists.htm"
+      },
+      "salary_ceiling": {
+        "th": "BLS ระบุ highest 10% ของ data scientists มากกว่า $194,410/ปี หรือประมาณ $16,201/เดือน",
+        "source": "BLS OOH Data Scientists",
+        "source_url": "https://www.bls.gov/ooh/math/data-scientists.htm"
+      }
+    }
+  },
+  "researched_at": null,
+  "research_model": null,
+  "created_at": "2026-07-04T13:15:39.000197+00:00",
+  "updated_at": "2026-07-24T20:08:20.062043+00:00",
+  "score": 7,
+  "tier": "growing",
+  "radar_cards": [
+    {
+      "id": "d23c07be-8d6f-41cf-b7c9-7bd183110fb9",
+      "kind": "hook",
+      "field_id": "b7e0261d-5001-46f1-820f-9b86936d3999",
+      "position": 0,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "body": "You are not just using ChatGPT — you build it. You design the AI systems that reshape whole industries, and every major tech company is fighting to hire the people who can.",
+        "title": "AI Engineer",
+        "eyebrow": "The hottest job on Earth"
+      },
+      "content_th": {
+        "body": "งานนี้คือการเอาโมเดล ข้อมูล API cloud และ business workflow มาประกอบเป็นระบบที่คนใช้ได้จริง วัดผลได้ ดูแลได้ และไม่พังเมื่อเจอข้อมูลจริงที่ไม่สวยเหมือนใน demo",
+        "stat": "265",
+        "title": "AI Engineer ไม่ได้แค่ใช้ AI แต่ทำให้ AI ใช้งานจริงในองค์กร",
+        "eyebrow": "Career Radar",
+        "statLabel": "ประกาศงาน AI Engineer ในไทยบน JobsDB ก.ค. 2569"
+      },
+      "created_at": "2026-07-08T01:25:39.891379+00:00",
+      "updated_at": "2026-07-24T20:08:19.067849+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "debb43e3-3b5e-4d86-bf04-d5fe1576fe01",
+      "kind": "fantasyReality",
+      "field_id": "b7e0261d-5001-46f1-820f-9b86936d3999",
+      "position": 10,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "title": "What AI Engineers Actually Do",
+        "eyebrow": "Fantasy vs Reality",
+        "fantasy": "Writing cutting-edge AI code all day, building AGI that changes the world, working with world-class geniuses",
+        "reality": "80% of the time is data prep, debugging pipelines, and reading papers. Good AI takes months, not days — the people who last are the ones who can sit with the boring parts."
+      },
+      "content_th": {
+        "title": "ไม่ใช่นั่ง train โมเดลเทพทั้งวัน",
+        "eyebrow": "จินตนาการ vs ความจริง",
+        "fantasy": "ภาพจำคือทำ research ล้ำ ๆ อ่าน paper แล้วสร้างโมเดลใหม่ที่ฉลาดกว่าเดิมทุกสัปดาห์",
+        "reality": "งานส่วนใหญ่คือทำ AI ให้เข้า workflow จริง: เตรียม data, เลือก model/API, ทำ RAG หรือ fine-tune เท่าที่จำเป็น, เขียน service, ทำ eval, monitor cost/latency, แก้ hallucination และคุยกับ stakeholder ว่า success metric คืออะไร",
+        "source_refs": [
+          1,
+          4,
+          5
+        ]
+      },
+      "created_at": "2026-07-08T01:25:39.891379+00:00",
+      "updated_at": "2026-07-24T20:08:19.25745+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "05628027-d4a6-4c8d-b81b-b8363dab3bb9",
+      "kind": "salaryProgression",
+      "field_id": "b7e0261d-5001-46f1-820f-9b86936d3999",
+      "position": 40,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "title": "AI Engineer Pay (USD/year)",
+        "levels": [
+          {
+            "note": "New grad or bootcamp grad at a startup or big tech. What it takes: implement a model from a paper yourself, not just call an API.",
+            "level": "Entry",
+            "years": "0-2",
+            "salary": "$80k — $120k"
+          },
+          {
+            "note": "Shipped real AI features people use. What it takes: judgment on which problems AI should — and should not — solve.",
+            "level": "Mid",
+            "years": "3-5",
+            "salary": "$150k — $250k"
+          },
+          {
+            "note": "AI team lead or Staff Engineer. What it takes: framing problems no one has solved yet and getting a team there.",
+            "level": "Senior",
+            "years": "6-10",
+            "salary": "$170k — $300k"
+          },
+          {
+            "note": "Principal / executive tier (US market, total comp). What it takes: betting the company's technical direction right, again and again.",
+            "level": "Staff+",
+            "years": "10+",
+            "salary": "$300k — $500k+"
+          }
+        ],
+        "eyebrow": "Salary"
+      },
+      "content_th": {
+        "title": "เงินดี แต่ขึ้นกับว่าทำ production ได้แค่ไหน",
+        "levels": [
+          {
+            "note": "ทำ data prep, notebook-to-script, API integration, prompt/RAG prototype, evaluation เบื้องต้น และช่วย deploy งานเล็ก",
+            "level": "Junior AI / ML Engineer",
+            "years": "0-2 ปี",
+            "salary": "ประมาณ 35k-50k บาท/เดือน"
+          },
+          {
+            "note": "เริ่ม own use case: data pipeline, model/API choice, vector search, eval set, service endpoint, monitoring และ handoff ให้ทีม product/ops",
+            "level": "AI Engineer",
+            "years": "2-5 ปี",
+            "salary": "ประมาณ 50k-90k บาท/เดือน"
+          },
+          {
+            "note": "คุม architecture, cost/latency tradeoff, MLOps, security, governance, model risk และทีมข้ามสายงาน",
+            "level": "Senior / Lead AI Engineer",
+            "years": "5-8 ปี",
+            "salary": "ประมาณ 90k-150k บาท/เดือน"
+          },
+          {
+            "note": "ดูทั้ง AI platform, portfolio ของ use cases, vendor/model strategy, compliance, ROI และมาตรฐานการ deploy AI ทั้งองค์กร (เพดานอ้างอิง AI Unlock ปี 2568: Lead/Principal ML Engineer 180k–300k+ บาท/เดือน)",
+            "level": "AI Architect / Head of AI Platform",
+            "years": "8+ ปี",
+            "salary": "ประมาณ 150k–250k+ บาท/เดือน"
+          }
+        ],
+        "eyebrow": "รายได้",
+        "source_refs": [
+          1,
+          2,
+          3
+        ]
+      },
+      "created_at": "2026-07-08T01:25:39.891379+00:00",
+      "updated_at": "2026-07-24T20:08:19.31445+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "761daf11-c2fa-4fd7-81c9-89ddb0d1651f",
+      "kind": "aiImpact",
+      "field_id": "b7e0261d-5001-46f1-820f-9b86936d3999",
+      "position": 70,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "title": "AI is Changing AI Engineers Too",
+        "eyebrow": "AI Impact",
+        "verdict": "The short answer: no — but the job is changing fast. AI writes code, prototypes, and experiments several times faster now, but the people who define the problem, design the architecture, check quality, control risk, and own production systems are not easily replaced.",
+        "augmented": [
+          "AI coding assistants (Copilot, Cursor) write boilerplate 2-3x faster",
+          "AutoML cuts experiment time from days to hours",
+          "LLM agents help debug and read through logs",
+          "Synthetic data lowers data-collection cost"
+        ],
+        "automated": [
+          "Simple model fine-tuning with no customization",
+          "Repetitive hyperparameter tuning",
+          "Basic data-cleaning pipelines"
+        ]
+      },
+      "content_th": {
+        "title": "AI จะมาแทน AI Engineer เองไหม?",
+        "eyebrow": "AI จะแทนเธอไหม",
+        "verdict": "คำตอบสั้น ๆ: ยังแทนเธอไม่ได้ แต่งานเปลี่ยนเร็วมาก AI ช่วยเขียน code, prototype และทดลองเร็วขึ้นหลายเท่า ส่วนคนที่นิยาม problem, วาง architecture, ตรวจ quality, คุม risk และรับผิดชอบ production system ยังเป็นสิ่งที่ AI แทนไม่ได้ง่าย",
+        "augmented": [
+          "Copilot/LLM ช่วยเขียน boilerplate, test, prompt variant, data transformation และ experiment script",
+          "AutoML/model APIs ช่วยลดเวลาลอง baseline และทำให้ทีมเล็ก deploy use case ได้เร็วขึ้น",
+          "AI eval tools ช่วยสร้าง test cases, ตรวจ regression, หา hallucination pattern และสรุป failure modes"
+        ],
+        "automated": [
+          "prototype chatbot/RAG ง่าย ๆ ที่ไม่มี integration หรือ SLA จริง",
+          "งาน notebook ซ้ำ ๆ เช่น train baseline, clean data เบื้องต้น, เขียน wrapper API ง่าย ๆ",
+          "prompt-only solution ที่ไม่ได้ต้องการ engineering, monitoring หรือ governance หนัก"
+        ],
+        "source_refs": [
+          1,
+          4,
+          5,
+          6
+        ],
+        "ai_risk_score": 5
+      },
+      "created_at": "2026-07-08T01:25:39.891379+00:00",
+      "updated_at": "2026-07-24T20:08:19.376997+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "85be2ea1-626f-45e6-8abe-ca65c6d3fe8d",
+      "kind": "marketThailand",
+      "field_id": "b7e0261d-5001-46f1-820f-9b86936d3999",
+      "position": 80,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "body": "Demand is real — JobsDB listed 265 AI engineer openings (Jul 2026) and TDRI estimates Thailand is short about 80,000 AI professionals — but entry is narrow for beginners: many listings ask for 3–5 years of experience and production AI skills. New grads with a real-system portfolio still get through; certificate-only applicants stall at the first gate.",
+        "title": "How easy is it to find this job?",
+        "eyebrow": "Thailand market · assessed 21 Jul 2026",
+        "job_access": {
+          "label": "Moderate; difficult for beginners",
+          "score": 60,
+          "confidence": "medium",
+          "methodology": "Formula: demand 50% + inverse competition 25% + inverse entry barrier 25%. This is not a probability of receiving an offer.",
+          "demand_score": 8,
+          "applicant_data": "No reliable public applicants-per-opening figure exists for AI Engineer roles in Thailand; qualified-skill scarcity is used as a competition proxy. This measures 'how hard qualified people fight per opening' — unlike the Outlook card's saturation metric, which measures whether the overall talent pool is crowded.",
+          "competition_score": 4,
+          "entry_barrier_score": 8
+        },
+        "source_refs": [
+          1,
+          7,
+          8
+        ]
+      },
+      "content_th": {
+        "body": "ตลาดต้องการคนจริง — JobsDB มีประกาศสายนี้ 265 ตำแหน่ง (ก.ค. 2569) และ TDRI ประเมินว่าไทยขาดคนสาย AI ราว 80,000 คน แต่ประตูเข้าแคบสำหรับมือใหม่ เพราะหลายประกาศขอประสบการณ์ 3–5 ปีพร้อมทักษะทำ AI ขึ้น production เด็กจบใหม่ที่มี portfolio ระบบจริงยังผ่านด่านนี้ได้ดี ส่วนคนที่มีแค่ certificate มักตกรอบตั้งแต่ด่านแรก",
+        "title": "งานนี้หาง่ายแค่ไหนในไทย?",
+        "eyebrow": "ตลาดไทย · ประเมิน 21 ก.ค. 2569",
+        "openings": "265 ตำแหน่งบน JobsDB Thailand",
+        "companies": [
+          "Bangkok Bank",
+          "ttb",
+          "SCB DataX",
+          "True Corporation",
+          "ETDA",
+          "SCG",
+          "CP Axtra",
+          "Fujitsu Thailand",
+          "MUI Robotics"
+        ],
+        "job_access": {
+          "label": "ปานกลาง · ยากสำหรับมือใหม่",
+          "score": 60,
+          "confidence": "medium",
+          "methodology": "สูตร: ความต้องการจ้าง 50% + การแข่งขันแบบกลับคะแนน 25% + ด่านทักษะแรกเข้าแบบกลับคะแนน 25% คะแนนนี้ไม่ใช่เปอร์เซ็นต์โอกาสได้งาน",
+          "demand_score": 8,
+          "applicant_data": "ยังไม่มีข้อมูลผู้สมัครต่อ 1 ตำแหน่ง AI Engineer ในไทย คะแนนการแข่งขันจึงใช้ภาวะขาดแคลนคนที่มีทักษะพร้อมทำงานเป็นตัวแทน — ตัวนี้วัดว่า 'คนทักษะตรงกันแย่งกันต่อ 1 ตำแหน่งมากแค่ไหน' ต่างจาก 'ความอิ่มตัว' บนการ์ด Outlook ที่วัดว่าตลาดมีคนสายนี้ล้นหรือยัง",
+          "competition_score": 4,
+          "entry_barrier_score": 8
+        },
+        "source_refs": [
+          1,
+          7,
+          8
+        ]
+      },
+      "created_at": "2026-07-10T07:32:53.501773+00:00",
+      "updated_at": "2026-07-24T20:08:19.435106+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "4e25c90a-6b77-460c-9bf3-5113109453fb",
+      "kind": "dayInLife",
+      "field_id": "b7e0261d-5001-46f1-820f-9b86936d3999",
+      "position": 90,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "steps": [
+          {
+            "time": "9:00",
+            "label": "Standup: review overnight experiment results"
+          },
+          {
+            "time": "10:00",
+            "label": "Chase down a training pipeline that crashed at 3am"
+          },
+          {
+            "time": "12:00",
+            "label": "Read a new paper that dropped this morning"
+          },
+          {
+            "time": "14:00",
+            "label": "Write the eval code for a new model"
+          },
+          {
+            "time": "16:00",
+            "label": "Meeting: plan the next round of experiments"
+          },
+          {
+            "time": "17:00",
+            "label": "Launch a new training run, go home, wait for results"
+          }
+        ],
+        "title": "9am — 6pm at Google DeepMind",
+        "eyebrow": "A Day in the Life"
+      },
+      "content_th": {
+        "steps": [
+          {
+            "label": "เช็ค dashboard (จอแสดงสถานะระบบ) ของ AI ที่คนใช้จริง — ความเร็ว ค่าใช้จ่าย อัตราพลาด",
+            "detail": "เปิด Grafana หรือ Datadog (โปรแกรมเฝ้าดูสถานะระบบแบบเรียลไทม์) เช็ค latency (เวลาที่ระบบใช้ตอบกลับต่อ 1 คำขอ), token cost (ค่าเรียก AI ต่อคำขอ), error rate (อัตราคำตอบที่พลาด) และคุณภาพการดึงข้อมูล เพื่อจับสัญญาณผิดปกติก่อนที่ผู้ใช้จะทักมา"
+          },
+          {
+            "label": "คุยกับ product owner (คนตัดสินว่าฟีเจอร์นี้ต้องทำอะไร) ว่าจะวัดความสำเร็จของ AI ยังไง",
+            "detail": "นั่งคุยกับ PM หรือเจ้าของธุรกิจว่าจะวัด success ด้วย metric (ตัวชี้วัด) อะไร เช่น accuracy (ความแม่น), hallucination rate (อัตราที่ AI แต่งคำตอบมั่ว), task completion rate (อัตราที่ผู้ใช้ทำงานสำเร็จจริง) — ไม่ใช่แค่ดู demo แล้วรู้สึกว่าฉลาด"
+          },
+          {
+            "label": "เตรียมข้อมูลให้ AI ค้นความรู้เจอ: แบ่งเอกสารเป็นชิ้น ทำดัชนีค้นหา ใส่ป้ายกำกับ",
+            "detail": "clean เอกสารต้นฉบับ แล้วทำ chunking (แบ่งเอกสารเป็นชิ้นพอดีคำ), สร้าง embedding (แปลงข้อความเป็นชุดตัวเลขที่ค้นหาความหมายใกล้กันได้), กำหนด metadata (ป้ายกำกับ เช่น แผนกเจ้าของหรือสิทธิ์การมองเห็น) เพื่อให้ RAG (เทคนิคให้ AI ค้นเอกสารจริงก่อนตอบ) ดึงข้อมูลถูกชุด"
+          },
+          {
+            "label": "ทดลองโมเดล/คำสั่งใหม่ แล้วสอบคะแนนเทียบกับของเดิมก่อนปล่อยใช้จริง",
+            "detail": "ลอง prompt (ข้อความสั่ง AI) แบบใหม่, เปลี่ยนวิธีค้นข้อมูล หรือ fine-tune (สอนโมเดลเพิ่มด้วยข้อมูลของตัวเอง) แล้วรัน offline eval (ชุดข้อสอบที่รันก่อนปล่อยให้คนใช้จริง) เทียบกับ baseline (คะแนนของเวอร์ชันเดิม) ดูทั้งความแม่น ความเร็ว ค่าใช้จ่าย และเคสที่พลาด"
+          },
+          {
+            "label": "เขียนโค้ดเชื่อม AI เข้ากับระบบจริง พร้อมตัวกรองคำตอบและบันทึกการทำงาน",
+            "detail": "เขียน API (ประตูให้โปรแกรมอื่นเรียกใช้ AI) ด้วย FastAPI หรือ Lambda (เครื่องมือทำเว็บเซอร์วิส), ใส่ guardrail (ตัวกรองคำตอบที่เสี่ยงหรือไม่ปลอดภัย), เพิ่ม structured logging (บันทึกทุกขั้นตอนเป็นระบบ เผื่อต้องไล่หาบั๊กหรือตรวจสอบย้อนหลัง)"
+          },
+          {
+            "label": "เขียนรายงานสรุปว่าโมเดลตัวนี้ทำอะไรได้บ้าง และทำอะไรไม่ได้",
+            "detail": "ทำ model card (เอกสารประจำตัวโมเดล คล้ายฉลากข้างกล่องยา) สรุปความแม่น ข้อจำกัด ความเสี่ยง และตัวเลขที่ต้องเฝ้าดูหลังปล่อยใช้จริง เพื่อให้ทีมอื่นเอาไปใช้ต่อได้อย่างรู้เท่าทัน"
+          }
+        ],
+        "title": "วันจริงของ AI Engineer คือครึ่งหนึ่ง coding ครึ่งหนึ่งไล่ความจริงของระบบ",
+        "eyebrow": "วันทำงาน",
+        "source_refs": [
+          1,
+          4,
+          5
+        ]
+      },
+      "created_at": "2026-07-08T01:25:39.891379+00:00",
+      "updated_at": "2026-07-24T20:08:19.496639+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "84231f7c-1d60-4609-881f-fd6b2e003e68",
+      "kind": "risks",
+      "field_id": "b7e0261d-5001-46f1-820f-9b86936d3999",
+      "position": 110,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": null,
+      "content_th": {
+        "risks": [
+          "ตลาดเปลี่ยนเร็วมาก framework, model, pricing และ best practice เปลี่ยนทุกไตรมาส ต้องเรียนรู้ต่อเนื่องแบบจริงจัง",
+          "เด็กจบใหม่แข่งกับ software engineer/data engineer ที่มี production experience อยู่แล้ว การมีแค่ certificate หรือ prompt portfolio อาจไม่พอ",
+          "AI demo ทำง่าย แต่ production ยาก: permissions, privacy, latency, hallucination, eval, cost, monitoring และ rollback ต้องคิดตั้งแต่ต้น",
+          "บางบริษัทเรียกทุกอย่างว่า AI Engineer ทั้งที่งานอาจเป็น data analyst, prompt trainer, automation consultant หรือ software integration ต้องอ่าน JD ให้ดี",
+          "งานมีแรงกดดันจาก hype: stakeholder คาดหวัง AI magic แต่ engineer ต้องกล้าพูดว่า use case ไหนไม่คุ้ม ไม่พร้อม หรือเสี่ยงเกินไป"
+        ],
+        "title": "สายนี้ร้อนแรง แต่ไม่ใช่ทางลัด",
+        "eyebrow": "ความเสี่ยง",
+        "source_refs": [
+          1,
+          4,
+          5
+        ]
+      },
+      "created_at": "2026-07-10T07:32:53.501773+00:00",
+      "updated_at": "2026-07-10T11:26:18.872796+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "6852be61-aab5-4286-8568-2877085292a9",
+      "kind": "entryRoutes",
+      "field_id": "b7e0261d-5001-46f1-820f-9b86936d3999",
+      "position": 120,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "title": "How to Start",
+        "routes": [
+          {
+            "tag": "Computer Science Degree",
+            "route": "Graduate CS/Math/Physics from a good university → apply to an AI lab internship → return offer → fulltime AI Engineer"
+          },
+          {
+            "tag": "Bootcamp + Portfolio",
+            "route": "Finish an ML/Data Science bootcamp (3-6 months) → build a real project using an LLM/Transformer → apply to a startup"
+          },
+          {
+            "tag": "Internal Transfer",
+            "route": "Already a software engineer → request a move to the AI/ML team → learn on the job"
+          },
+          {
+            "tag": "Research → Industry",
+            "route": "Do a master/PhD in AI → publish a paper → get recruited by a big company AI lab"
+          }
+        ],
+        "eyebrow": "Entry Routes",
+        "faculties": [
+          {
+            "name": "Computer Science",
+            "note": "Builds the coding, data structures, algorithms, databases, and software-engineering foundation used in production AI systems.",
+            "tier": "direct"
+          },
+          {
+            "name": "Computer Engineering",
+            "note": "Combines software, computer architecture, networking, and systems knowledge for infrastructure- or hardware-connected AI.",
+            "tier": "direct"
+          },
+          {
+            "name": "Software Engineering",
+            "note": "Develops API, backend, testing, cloud, and system-design skills needed to move models into production.",
+            "tier": "direct"
+          },
+          {
+            "name": "Artificial Intelligence",
+            "note": "Covers models, deep learning, and evaluation directly; add data engineering, DevOps, and system design.",
+            "tier": "direct"
+          },
+          {
+            "name": "Data Science",
+            "note": "Provides statistics, experimentation, data preparation, and machine learning; add software engineering and deployment.",
+            "tier": "related"
+          },
+          {
+            "name": "Robotics Engineering",
+            "note": "Transfers well to computer vision, control, and edge AI after strengthening coding, ML, and data pipelines.",
+            "tier": "alternative"
+          }
+        ]
+      },
+      "content_th": {
+        "title": "มีเส้นทางไหนเข้าสู่อาชีพนี้ได้บ้าง?",
+        "eyebrow": "เรียนคณะไหนดี",
+        "faculties": [
+          {
+            "name": "วิทยาการคอมพิวเตอร์",
+            "note": "ได้พื้นฐาน coding, data structure, algorithm, database และ software engineering ที่ใช้สร้างระบบ AI จริง",
+            "tier": "direct"
+          },
+          {
+            "name": "วิศวกรรมคอมพิวเตอร์",
+            "note": "ได้ทั้ง software, computer architecture, network และระบบ เหมาะกับ AI ที่ต้องเชื่อมฮาร์ดแวร์หรือ infrastructure",
+            "tier": "direct"
+          },
+          {
+            "name": "วิศวกรรมซอฟต์แวร์",
+            "note": "แข็งด้าน API, backend, testing, cloud และ system design ซึ่งจำเป็นต่อการนำโมเดลขึ้น production",
+            "tier": "direct"
+          },
+          {
+            "name": "ปัญญาประดิษฐ์",
+            "note": "เรียน model, deep learning และการประเมินผลโดยตรง แต่ควรเสริม data engineering, DevOps และการออกแบบระบบ",
+            "tier": "direct"
+          },
+          {
+            "name": "วิทยาศาสตร์ข้อมูล",
+            "note": "ได้สถิติ การทดลอง การเตรียมข้อมูล และ machine learning ดี ต้องเติม software engineering และ deployment",
+            "tier": "related"
+          },
+          {
+            "name": "วิศวกรรมหุ่นยนต์",
+            "note": "ต่อยอดสู่ computer vision, control และ edge AI ได้ดี แต่ต้องสร้าง coding, ML และ data pipeline ให้แน่น",
+            "tier": "alternative"
+          }
+        ],
+        "source_refs": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "created_at": "2026-07-08T01:25:39.891379+00:00",
+      "updated_at": "2026-07-22T11:53:47.121448+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "e2f44000-d8f6-4772-816e-29d5fab1ab40",
+      "kind": "text",
+      "field_id": "b7e0261d-5001-46f1-820f-9b86936d3999",
+      "position": 125,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": null,
+      "content_th": {
+        "body": "• Problem framing แบบวัดผลได้: แปลงคำว่า 'อยากใช้ AI' ให้เป็น task, baseline (ผลของวิธีเดิมไว้เทียบคะแนน), success metric, acceptable error, cost/latency budget (งบค่าใช้และความเร็วที่รับได้) และ owner ที่ชัดเจน\n• Data engineering for AI: รู้ data grain, schema, lineage (ที่มาของข้อมูลแต่ละชุด), PII (ข้อมูลระบุตัวคน เช่น ชื่อหรือเลขบัตร), permissions, leakage (เฉลยหลุดเข้าชุดข้อมูลฝึก), data freshness และการทำ pipeline/feature/retrieval source ที่ระบบ production ใช้ซ้ำได้\n• Model selection + evaluation: เลือกใช้ API model, open-source model, fine-tune (สอนโมเดลเพิ่มด้วยข้อมูลตัวเอง) หรือ train เองตาม constraint จริง และทำ eval set (ชุดข้อสอบโมเดล), regression test (เทสว่าของใหม่ไม่พังของเดิม), hallucination/error taxonomy (จัดหมวดรูปแบบที่ AI ตอบมั่ว) ไม่ใช่ดูจาก demo 5 เคส\n• RAG/LLM application architecture: ออกแบบ chunking (แบ่งเอกสารเป็นชิ้นพอดีคำ), embeddings (แปลงข้อความเป็นตัวเลขเพื่อค้นความหมายใกล้กัน), vector search, reranking (จัดอันดับผลค้นใหม่ให้ตรงขึ้น), prompt orchestration, tool/function calling, guardrails (ตัวกรองคำตอบเสี่ยง) และ citation/grounding (คำตอบต้องอ้างแหล่งได้) ให้ตอบได้แม่นและตรวจสอบได้\n• Software engineering ที่แข็ง: เขียน Python/TypeScript/Go, API, async job, queue, cache, auth, tests, observability (ระบบมองเห็นพฤติกรรมระบบจาก log/metric) และ clean interfaces เพื่อให้ AI component อยู่กับระบบอื่นได้จริง\n• MLOps/LLMOps (วินัยการดูแลโมเดลบนระบบจริง): ทำ versioning ของ data/model/prompt, experiment tracking, CI/CD (ระบบเทสและปล่อยโค้ดอัตโนมัติ), canary release (ปล่อยของใหม่ให้ผู้ใช้กลุ่มเล็กก่อน), monitoring, rollback, drift/quality dashboard (จอเฝ้าดูว่าโมเดลแย่ลงเมื่อข้อมูลจริงเปลี่ยน) และ incident playbook\n• Cloud + infra judgment: เข้าใจ GPU/CPU tradeoff, autoscaling, container, Kubernetes/Cloud Run/SageMaker/Vertex AI, storage, network, secrets และ cost control ต่อ request/token\n• Responsible AI + security: คิดเรื่อง privacy, prompt injection (การหลอก AI ด้วยข้อความแอบแฝง), data exfiltration (การดึงข้อมูลออกจากระบบ), bias, model abuse, audit log, human-in-the-loop (ให้คนตรวจก่อนตัดสินใจสำคัญ) และ policy ก่อนปล่อยให้ user จริงใช้\n• Product communication: อธิบาย tradeoff ให้ non-tech เข้าใจ เช่น ทำไม accuracy 90% ยังไม่พอ, ทำไมต้องเก็บ feedback, ทำไมบาง use case ไม่ควรใช้ LLM และต้องคุยกับ legal/security/ops ตั้งแต่แรก",
+        "title": "ต้องเก่งอะไรถึงทำ AI Engineer ได้จริง?",
+        "eyebrow": "Skill ที่สายนี้ใช้",
+        "source_refs": [
+          1,
+          4,
+          5
+        ],
+        "presentation": "skills"
+      },
+      "created_at": "2026-07-10T11:26:19.224898+00:00",
+      "updated_at": "2026-07-24T20:08:19.55588+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "fc6111fb-4e37-43eb-8447-fc8ca06bde66",
+      "kind": "text",
+      "field_id": "b7e0261d-5001-46f1-820f-9b86936d3999",
+      "position": 130,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": null,
+      "content_th": {
+        "body": "1. ทำพื้นฐาน software ให้แน่น: Python, SQL, Git, API (ประตูให้โปรแกรมคุยกัน), testing, Docker (กล่องแพ็กโปรแกรมให้รันเหมือนกันทุกเครื่อง), cloud deploy และอ่าน log/debug เป็น\n2. ทำ ML พื้นฐานให้เข้าใจจริง: train/validation/test, overfitting (โมเดลจำข้อสอบจนทำข้อใหม่ไม่ได้), metrics, feature leakage (เฉลยหลุดเข้าข้อมูลฝึก), classification/regression, embeddings (แปลงข้อความเป็นตัวเลขเพื่อเทียบความหมาย) และ error analysis\n3. สร้าง RAG project (ระบบให้ AI ค้นเอกสารจริงก่อนตอบ) หนึ่งชิ้นแบบ production-ish: ingest documents, chunk, embed, search, rerank, answer with citations (ตอบพร้อมอ้างแหล่ง), auth/permissions และ deploy เป็น API\n4. ทำ eval set (ชุดข้อสอบโมเดล) 50-100 cases แล้ววัด accuracy, groundedness (คำตอบอิงเอกสารจริงแค่ไหน), latency (ความเร็วในการตอบ), cost, failure categories และ regression (ของใหม่พังของเดิมไหม) หลังเปลี่ยน prompt/model\n5. เพิ่ม MLOps/LLMOps (ระบบดูแลโมเดลบน production): version prompt/data, CI test, logging, dashboard, feedback loop และ write README ที่บอก limitation ชัด\n6. สมัคร internship/junior ด้วย portfolio ที่อธิบาย tradeoff ได้ ไม่ใช่แค่ screenshot chatbot",
+        "title": "เริ่มจากสร้าง AI app ที่มี eval ไม่ใช่แค่ demo",
+        "eyebrow": "เริ่มยังไง",
+        "source_refs": [
+          1,
+          4,
+          5
+        ],
+        "presentation": "startCarousel"
+      },
+      "created_at": "2026-07-10T07:32:53.501773+00:00",
+      "updated_at": "2026-07-24T20:08:19.625568+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "f2cb4dc1-1a18-4973-bed2-491e9c6c7a47",
+      "kind": "cta",
+      "field_id": "b7e0261d-5001-46f1-820f-9b86936d3999",
+      "position": 140,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": null,
+      "content_th": {
+        "body": "ถ้าชอบทั้ง coding, data, model, product และการทำของยากให้ใช้งานจริงได้ สายนี้ควรอยู่ใน radar ของเธอ",
+        "title": "อยากลองสายวิศวกร AI",
+        "button": "สนใจสายนี้",
+        "eyebrow": "สนใจไหม?",
+        "resources": [
+          {
+            "url": "https://huggingface.co/learn",
+            "note": "คอร์ส NLP/AI Agents ฟรี ทำตามได้ทันที",
+            "label": "Hugging Face Learn"
+          },
+          {
+            "url": "https://www.kaggle.com",
+            "note": "โน้ตบุ๊กและการแข่งขัน ML จริง",
+            "label": "Kaggle"
+          }
+        ]
+      },
+      "created_at": "2026-07-22T09:45:12.917782+00:00",
+      "updated_at": "2026-07-24T20:19:12.718642+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "65a2f73a-7cd5-44b3-8a57-a9c3e48f7018",
+      "kind": "sources",
+      "field_id": "b7e0261d-5001-46f1-820f-9b86936d3999",
+      "position": 150,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "items": [
+          {
+            "ref": 1,
+            "url": "https://th.jobsdb.com/ai-engineer-jobs",
+            "title": "ประกาศงาน AI Engineer ในไทย",
+            "publisher": "JobsDB Thailand"
+          },
+          {
+            "ref": 2,
+            "url": "https://www.bls.gov/ooh/math/data-scientists.htm",
+            "title": "Data Scientists: Occupational Outlook Handbook",
+            "publisher": "U.S. Bureau of Labor Statistics"
+          },
+          {
+            "ref": 3,
+            "url": "https://365datascience.com/career-advice/career-guides/ai-engineer-job-outlook-2025/",
+            "title": "AI Engineer Job Outlook 2026",
+            "publisher": "365 Data Science"
+          },
+          {
+            "ref": 4,
+            "url": "https://aiunlock.co/blog/ai-engineer-salary-thailand",
+            "title": "เงินเดือน AI Engineer ในไทย 2025",
+            "publisher": "AI Unlock"
+          },
+          {
+            "ref": 5,
+            "url": "https://cloud.google.com/learn/certification/machine-learning-engineer",
+            "title": "Professional Machine Learning Engineer Certification",
+            "publisher": "Google Cloud"
+          },
+          {
+            "ref": 6,
+            "url": "https://www.weforum.org/publications/the-future-of-jobs-report-2025/",
+            "title": "The Future of Jobs Report 2025",
+            "publisher": "World Economic Forum"
+          },
+          {
+            "ref": 7,
+            "url": "https://tdri.or.th/en/2025/06/thailand-ai-readiness-assessment-report-2025/",
+            "title": "Thailand AI Readiness Assessment Report 2025",
+            "publisher": "TDRI"
+          },
+          {
+            "ref": 8,
+            "url": "https://www.depa.or.th/th/article-view/Digital-workforce",
+            "title": "ปัญหากำลังคนด้านดิจิทัลในไทย",
+            "publisher": "depa"
+          }
+        ],
+        "title": "Where These Numbers Come From",
+        "eyebrow": "Sources"
+      },
+      "content_th": {
+        "items": [
+          {
+            "ref": 1,
+            "url": "https://th.jobsdb.com/ai-engineer-jobs",
+            "title": "ประกาศงาน AI Engineer ในไทย",
+            "publisher": "JobsDB Thailand"
+          },
+          {
+            "ref": 2,
+            "url": "https://www.bls.gov/ooh/math/data-scientists.htm",
+            "title": "Data Scientists: Occupational Outlook Handbook",
+            "publisher": "U.S. Bureau of Labor Statistics"
+          },
+          {
+            "ref": 3,
+            "url": "https://365datascience.com/career-advice/career-guides/ai-engineer-job-outlook-2025/",
+            "title": "AI Engineer Job Outlook 2026",
+            "publisher": "365 Data Science"
+          },
+          {
+            "ref": 4,
+            "url": "https://aiunlock.co/blog/ai-engineer-salary-thailand",
+            "title": "เงินเดือน AI Engineer ในไทย 2025",
+            "publisher": "AI Unlock"
+          },
+          {
+            "ref": 5,
+            "url": "https://cloud.google.com/learn/certification/machine-learning-engineer",
+            "title": "Professional Machine Learning Engineer Certification",
+            "publisher": "Google Cloud"
+          },
+          {
+            "ref": 6,
+            "url": "https://www.weforum.org/publications/the-future-of-jobs-report-2025/",
+            "title": "The Future of Jobs Report 2025",
+            "publisher": "World Economic Forum"
+          },
+          {
+            "ref": 7,
+            "url": "https://tdri.or.th/en/2025/06/thailand-ai-readiness-assessment-report-2025/",
+            "title": "Thailand AI Readiness Assessment Report 2025",
+            "publisher": "TDRI"
+          },
+          {
+            "ref": 8,
+            "url": "https://www.depa.or.th/th/article-view/Digital-workforce",
+            "title": "ปัญหากำลังคนด้านดิจิทัลในไทย",
+            "publisher": "depa"
+          }
+        ],
+        "title": "ตัวเลขพวกนี้มาจากไหน",
+        "eyebrow": "แหล่งอ้างอิง"
+      },
+      "created_at": "2026-07-08T01:25:39.891379+00:00",
+      "updated_at": "2026-07-24T20:08:19.822018+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    }
+  ],
+  "radar_sources": [
+    {
+      "id": "f787ed52-a15e-47f6-a31f-a6756b0e95c1",
+      "ref": 8,
+      "url": "https://www.depa.or.th/th/article-view/Digital-workforce",
+      "tier": "primary",
+      "title": "ปัญหากำลังคนด้านดิจิทัลในไทย",
+      "field_id": "b7e0261d-5001-46f1-820f-9b86936d3999",
+      "quote_en": null,
+      "quote_th": null,
+      "publisher": "depa",
+      "accessed_at": "2026-07-22",
+      "published_at": null
+    },
+    {
+      "id": "7312873c-e0fc-480e-bca5-ad42204ffb84",
+      "ref": 2,
+      "url": "https://www.bls.gov/ooh/math/data-scientists.htm",
+      "tier": "primary",
+      "title": "BLS Data Scientists",
+      "field_id": "b7e0261d-5001-46f1-820f-9b86936d3999",
+      "quote_en": null,
+      "quote_th": null,
+      "publisher": "U.S. BLS",
+      "accessed_at": "2026-07-22",
+      "published_at": null
+    },
+    {
+      "id": "292301c1-37f3-4441-a777-22147b84da55",
+      "ref": 1,
+      "url": "https://th.jobsdb.com/ai-engineer-jobs",
+      "tier": "primary",
+      "title": "AI Engineer Jobs in Thailand",
+      "field_id": "b7e0261d-5001-46f1-820f-9b86936d3999",
+      "quote_en": "JobsDB listed 265 AI engineer jobs in Thailand as of July 2026.",
+      "quote_th": "JobsDB แสดง 265 ตำแหน่งสาย AI Engineer ในไทย (ก.ค. 2569)",
+      "publisher": "JobsDB Thailand",
+      "accessed_at": "2026-07-24",
+      "published_at": null
+    },
+    {
+      "id": "955442c4-1aaf-4cca-b7c8-78d67a8b0b65",
+      "ref": 6,
+      "url": "https://www.weforum.org/publications/the-future-of-jobs-report-2025/",
+      "tier": "primary",
+      "title": "The Future of Jobs Report 2025",
+      "field_id": "b7e0261d-5001-46f1-820f-9b86936d3999",
+      "quote_en": null,
+      "quote_th": null,
+      "publisher": "World Economic Forum",
+      "accessed_at": "2026-07-24",
+      "published_at": null
+    },
+    {
+      "id": "e61dfc81-cf0e-4996-a7a9-0e6f2109f13d",
+      "ref": 3,
+      "url": "https://365datascience.com/career-advice/career-guides/ai-engineer-job-outlook-2025/",
+      "tier": "primary",
+      "title": "AI Engineer Job Outlook 2026",
+      "field_id": "b7e0261d-5001-46f1-820f-9b86936d3999",
+      "quote_en": null,
+      "quote_th": null,
+      "publisher": "365 Data Science",
+      "accessed_at": "2026-07-22",
+      "published_at": null
+    },
+    {
+      "id": "53aa610d-c784-4d05-9f3c-e370465ed469",
+      "ref": 5,
+      "url": "https://cloud.google.com/learn/certification/machine-learning-engineer",
+      "tier": "primary",
+      "title": "Professional Machine Learning Engineer Certification",
+      "field_id": "b7e0261d-5001-46f1-820f-9b86936d3999",
+      "quote_en": null,
+      "quote_th": null,
+      "publisher": "Google Cloud",
+      "accessed_at": "2026-07-24",
+      "published_at": null
+    },
+    {
+      "id": "ff7f208b-5ea1-4929-a1d8-2fd72fcda6db",
+      "ref": 4,
+      "url": "https://aiunlock.co/blog/ai-engineer-salary-thailand",
+      "tier": "primary",
+      "title": "AI Engineer Salary Thailand 2025",
+      "field_id": "b7e0261d-5001-46f1-820f-9b86936d3999",
+      "quote_en": null,
+      "quote_th": null,
+      "publisher": "AI Unlock",
+      "accessed_at": "2026-07-22",
+      "published_at": null
+    },
+    {
+      "id": "47a15c44-64b2-420e-bbd4-ba3e20b1fca8",
+      "ref": 7,
+      "url": "https://tdri.or.th/en/2025/06/thailand-ai-readiness-assessment-report-2025/",
+      "tier": "primary",
+      "title": "Thailand AI Readiness Assessment 2025",
+      "field_id": "b7e0261d-5001-46f1-820f-9b86936d3999",
+      "quote_en": null,
+      "quote_th": null,
+      "publisher": "TDRI",
+      "accessed_at": "2026-07-22",
+      "published_at": null
+    }
+  ]
+}

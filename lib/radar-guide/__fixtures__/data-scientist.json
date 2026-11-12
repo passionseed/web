@@ -1,0 +1,1123 @@
+{
+  "id": "8cc44322-ba64-4e00-8595-f6f40cd7f4f7",
+  "slug": "data-scientist",
+  "name_th": "นักวิทยาศาสตร์ข้อมูล",
+  "name_en": "Data Scientist",
+  "tagline_th": "องค์กรต่างลงทุนกับ AI และการวิเคราะห์ข้อมูลมากขึ้น ทำให้ตลาดต้องการนักวิทยาศาสตร์ข้อมูลที่เปลี่ยนข้อมูลดิบเป็นคำตัดสินใจทางธุรกิจได้อย่างต่อเนื่อง",
+  "tagline_en": "Organizations are investing heavily in AI and analytics, driving sustained demand for data scientists who can translate ",
+  "emoji": "📊",
+  "color": "#6366f1",
+  "tile_size": "md",
+  "tags": [
+    "tech",
+    "data",
+    "ai"
+  ],
+  "is_published": true,
+  "has_content": true,
+  "sort_order": 1,
+  "squad_url": null,
+  "hero_image_url": null,
+  "hero_image_prompt": null,
+  "hero_image_credit": null,
+  "hero_image_license": null,
+  "hero_image_alt_th": null,
+  "hero_image_alt_en": null,
+  "research": {
+    "tier": "growing",
+    "aliases": [
+      "data analyst",
+      "machine learning engineer",
+      "ml engineer",
+      "data engineer"
+    ],
+    "metrics": {
+      "salary_floor": 25000,
+      "demand_growth": 8,
+      "salary_ceiling": 150000,
+      "saturation_level": 5,
+      "grad_employment_pct": 67,
+      "progression_difficulty": 5
+    },
+    "sources": [
+      {
+        "url": "https://www.bls.gov/ooh/math/data-scientists.htm",
+        "date": "2026-01-01",
+        "title": "Occupational Outlook Handbook: Data Scientists (2024-2034)",
+        "author": "U.S. Bureau of Labor Statistics"
+      },
+      {
+        "url": "https://th.jobsdb.com/career-advice/role/data-scientist/salary",
+        "date": "2026-07-01",
+        "title": "Data Scientist Salary in Thailand (July 2026)",
+        "author": "JobsDB Thailand"
+      },
+      {
+        "url": "https://365datascience.com/career-advice/data-scientist-job-market/",
+        "date": "2026-01-01",
+        "title": "Data Scientist Job Market 2026: Analysis, Trends, Opportunities",
+        "author": "365 Data Science"
+      },
+      {
+        "url": "https://qualifynation.com/en-gb/insights/data-science-job-market/",
+        "date": "2026-01-01",
+        "title": "Data Scientist Employment Outlook: BLS 2024-2034 Projections",
+        "author": "Qualify Nation"
+      },
+      {
+        "url": "https://www.glassdoor.com/Salaries/bangkok-data-scientist-salary-SRCH_IL.0,7_IC3179725_KO8,22.htm",
+        "date": "2026-04-01",
+        "title": "Data Scientist Salary in Bangkok 2026",
+        "author": "Glassdoor"
+      },
+      {
+        "url": "https://www.onetonline.org/link/summary/15-2051.00",
+        "date": "2025-12-01",
+        "title": "15-2051.00 - Data Scientists",
+        "author": "O*NET OnLine"
+      },
+      {
+        "url": "https://tdri.or.th/2025/08/bigdata-report-labourmarket-q2-2025/",
+        "date": "2025-08-01",
+        "title": "Big Data ตลาดแรงงานไทย ไตรมาส 2 ปี 2568",
+        "author": "TDRI"
+      }
+    ],
+    "insights": [],
+    "reasoning": "BLS คาดการณ์การเติบโต 34% ภายในปี 2024-2034 ซึ่งเร็วกว่าค่าเฉลี่ยทุกอาชีพ 11 เท่า และเป็นอาชีพที่เติบโตเร็วอันดับ 4 ในสหรัฐฯ ในไทย ธนาคาร ค้าปลีก และสตาร์ทอัพแข่งกันหาคนทำ data ตำแหน่ง mid-senior ยังขาดแคลน แต่ตลาดจบใหม่เริ่มอิ่มตัว",
+    "global_metrics": {
+      "salary_floor": 4876,
+      "demand_growth": 9,
+      "salary_ceiling": 14566,
+      "saturation_level": 5,
+      "grad_employment_pct": 78,
+      "progression_difficulty": 5
+    },
+    "metric_details": {
+      "salary_floor": {
+        "th": "JobsDB Thailand (ก.ค. 2569) รายงาน Data Scientist ระดับ P10 ที่ 18,000 บาท/เดือน Junior DS เริ่มจริงที่ 25,000-35,000 บาทในกรุงเทพ",
+        "source": "JobsDB Thailand Data Scientist Salary July 2026",
+        "source_url": "https://th.jobsdb.com/career-advice/role/data-scientist/salary"
+      },
+      "demand_growth": {
+        "th": "ประกาศ Data Scientist/Data Analyst ในไทยเพิ่มขึ้น 23% จาก 2,129 เป็น 2,618 ตำแหน่ง (TDRI ไตรมาส 2/2568) ธนาคาร ค้าปลีก และบริษัทเทคแข่งกันจ้าง",
+        "source": "TDRI Big Data Labour Market Report Q2/2025",
+        "source_url": "https://tdri.or.th/2025/08/bigdata-report-labourmarket-q2-2025/"
+      },
+      "salary_ceiling": {
+        "th": "JobsDB Thailand P90 อยู่ที่ 114,000 บาท/เดือน Lead Data Scientist รายงานที่ 170,000+ บาท/เดือนใน Glassdoor Head of Data/CDO ที่ธนาคารใหญ่เกิน 200,000 บาทรวมโบนัส",
+        "source": "JobsDB Thailand Data Scientist Salary July 2026",
+        "source_url": "https://th.jobsdb.com/career-advice/role/data-scientist/salary"
+      },
+      "saturation_level": {
+        "th": "ตลาดจบใหม่เริ่มอิ่มตัว คนจบ bootcamp สมัครด้วย portfolio คล้ายกัน แต่ Data Scientist ถูก layoff เพียง 3% เทียบกับ 22% สำหรับ SWE ระดับ mid-senior ยังขาดแคลน",
+        "source": "365 Data Science: DS Job Market 2026",
+        "source_url": "https://365datascience.com/career-advice/data-scientist-job-market/"
+      },
+      "grad_employment_pct": {
+        "en": "What this number means: an estimate of what share of fresh data/CS/statistics graduates land a job within their first year (% of graduates who get hired — not % of job postings open to fresh graduates). There is no directly measured public statistic for Thailand, so 67% is a market-level estimate. What is actually measured in Thailand is entry-level competition: the Computer Science field had 8,242 graduates versus 3,088 graduate-suitable postings, with only 376 requiring no experience at all (TDRI Q2 2025).",
+        "th": "ความหมายของตัวเลขนี้: ประมาณการว่าคนจบใหม่สาย data/CS/สถิติ กี่เปอร์เซ็นต์ที่ได้งานภายในปีแรกหลังเรียนจบ (% ของคนจบที่ 'ได้งาน' ไม่ใช่ % ของประกาศงานที่รับจบใหม่) ยังไม่มีสถิติสาธารณะที่วัดตรงๆ สำหรับไทย เลข 67% จึงเป็นการประมาณจากภาพรวมตลาด สิ่งที่วัดจริงในไทยคือความแข่งขันระดับจบใหม่: สาขาวิทยาการคอมพิวเตอร์มีบัณฑิต 8,242 คน แต่งานที่รับจบใหม่ 3,088 ตำแหน่ง และงานที่ไม่ต้องใช้ประสบการณ์เลยเพียง 376 ตำแหน่ง (TDRI ไตรมาส 2/2568)",
+        "source": "TDRI Big Data Labour Market Report Q2/2025",
+        "source_url": "https://tdri.or.th/2025/08/bigdata-report-labourmarket-q2-2025/"
+      },
+      "progression_difficulty": {
+        "th": "เส้นทางชัดเจน Analyst → Senior DS → Lead DS → Head of Data/CDO (6-9 ปี) แต่ต้องพัฒนาทั้งทักษะ technical และ business communication ตลอดเวลา",
+        "source": "365 Data Science: DS Job Market 2026",
+        "source_url": "https://365datascience.com/career-advice/data-scientist-job-market/"
+      }
+    },
+    "escape_route_slug": null,
+    "global_metric_details": {
+      "salary_floor": {
+        "th": "BLS รายงาน P10 ของ data scientist ที่ $58,510/ปี (~$4,876/เดือน) คนจบ bootcamp ระดับ entry ในสหรัฐฯ มักได้ $85,000-$120,000",
+        "source": "BLS Occupational Outlook Handbook: Data Scientists",
+        "source_url": "https://www.bls.gov/ooh/math/data-scientists.htm"
+      },
+      "demand_growth": {
+        "th": "BLS คาดการณ์การเติบโต 34% สำหรับ data scientist ปี 2024-2034 อาชีพที่เติบโตเร็วอันดับ 4 ในสหรัฐฯ จ้างงานเพิ่มจาก 245,900 (2024) เป็น 328,300 (2034) เพิ่ม 82,500 ตำแหน่ง ~23,400 ตำแหน่ง/ปี",
+        "source": "BLS Occupational Outlook Handbook: Data Scientists 2024-2034",
+        "source_url": "https://www.bls.gov/ooh/math/data-scientists.htm"
+      },
+      "salary_ceiling": {
+        "th": "BLS P90 อยู่ที่ $174,790/ปี (~$14,566/เดือน) Senior DS ที่ FAANG ได้ $200,000-$350,000+ รวม equity 365 Data Science รายงานช่วงเงินเดือนเฉลี่ย DS ที่ $160,000-$200,000",
+        "source": "BLS Occupational Outlook Handbook: Data Scientists",
+        "source_url": "https://www.bls.gov/ooh/math/data-scientists.htm"
+      },
+      "saturation_level": {
+        "th": "ระดับ entry แข่งขันมากขึ้นเพราะคนจบ bootcamp เข้ามาด้วย portfolio คล้ายกัน แต่ demand ยังเกิน supply โดยรวม DS ถูก layoff เพียง 3% เทียบกับ SWE ที่ 22%",
+        "source": "365 Data Science: DS Job Market 2026",
+        "source_url": "https://365datascience.com/career-advice/data-scientist-job-market/"
+      },
+      "grad_employment_pct": {
+        "th": "~78% ของผู้จบ data science/statistics ได้งานในปีแรก คนทำ STEM ได้ค่าจ้างมัธยฐาน $103,580 เทียบกับ $49,500 ของทุกอาชีพ",
+        "source": "365 Data Science: DS Job Market 2026",
+        "source_url": "https://365datascience.com/career-advice/data-scientist-job-market/"
+      },
+      "progression_difficulty": {
+        "th": "เส้นทางชัดเจนแต่ skill requirements เปลี่ยนเร็ว 54% ของตำแหน่ง DS ต้องการปริญญาโท 24% ต้องการปริญญาเอก Python ยังนำแต่ลดลง (57% ของ posting ปี 2025 จาก 78% ปี 2024) NLP พุ่ง (5% → 19%) ใช้เวลา 5-8 ปีถึง senior",
+        "source": "365 Data Science: DS Job Market 2026",
+        "source_url": "https://365datascience.com/career-advice/data-scientist-job-market/"
+      }
+    }
+  },
+  "researched_at": "2026-07-09T00:00:00+00:00",
+  "research_model": "claude-opus-4-6",
+  "created_at": "2026-06-24T06:30:53.621015+00:00",
+  "updated_at": "2026-07-24T20:11:53.430361+00:00",
+  "score": 6,
+  "tier": "growing",
+  "radar_cards": [
+    {
+      "id": "d522b489-fdf7-434c-81fb-14483ea27721",
+      "kind": "hook",
+      "field_id": "8cc44322-ba64-4e00-8595-f6f40cd7f4f7",
+      "position": 0,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "body": "Every company has mountains of data but few people who can turn it into answers. Data scientists make numbers meaningful — and globally this role is projected to grow 34% by 2034 (US BLS).",
+        "stat": "23%",
+        "title": "Data Scientist",
+        "eyebrow": "Data Science",
+        "statLabel": "YoY growth in Thai data scientist/analyst postings (TDRI Q2 2025)"
+      },
+      "content_th": {
+        "body": "ทุกบริษัทมีข้อมูลมหาศาล แต่หาคนที่เปลี่ยนข้อมูลดิบเป็นคำตอบที่ธุรกิจตัดสินใจได้ยากมาก นักวิทยาศาสตร์ข้อมูลคือคนที่ทำให้ตัวเลขมีความหมาย ทั่วโลกตำแหน่งนี้คาดว่าจะโต 34% ภายในปี 2034 (BLS สหรัฐฯ)",
+        "stat": "23%",
+        "title": "นักวิทยาศาสตร์ข้อมูล",
+        "eyebrow": "สายนักวิทยาศาสตร์ข้อมูล",
+        "statLabel": "ประกาศงาน Data/Analyst ในไทยโตขึ้นต่อปี (TDRI ไตรมาส 2/2568)"
+      },
+      "created_at": "2026-07-10T02:42:06.182856+00:00",
+      "updated_at": "2026-07-24T20:11:52.618742+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "2fd41040-1ff9-4a11-82bf-cf85d6f6cf57",
+      "kind": "fantasyReality",
+      "field_id": "8cc44322-ba64-4e00-8595-f6f40cd7f4f7",
+      "position": 10,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "title": "It's not what you think",
+        "eyebrow": "Fantasy vs Reality",
+        "fantasy": "Building cool AI models every day, discovering business-changing insights, being the company hero.",
+        "reality": "80% of the time is cleaning data, fixing missing values, formatting CSV/JSON, and explaining results to people who don't understand statistics.",
+        "source_refs": [
+          4,
+          6
+        ]
+      },
+      "content_th": {
+        "title": "มันไม่ใช่แบบที่คิด",
+        "eyebrow": "จินตนาการ vs ความจริง",
+        "fantasy": "สร้าง AI model เจ๋งๆ ทุกวัน ค้นพบ insight ที่เปลี่ยนธุรกิจ เป็นฮีโร่ของบริษัท",
+        "reality": "80% ของเวลาไปกับการทำความสะอาดข้อมูล แก้ missing values จัดรูปแบบ CSV/JSON และอธิบายผลลัพธ์ให้คนที่ไม่เข้าใจ statistics ฟัง",
+        "source_refs": [
+          4,
+          6
+        ]
+      },
+      "created_at": "2026-07-10T02:42:06.182856+00:00",
+      "updated_at": "2026-07-24T20:11:52.735507+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "f3aaace9-1111-4006-af92-6e653aed8b5d",
+      "kind": "salaryProgression",
+      "field_id": "8cc44322-ba64-4e00-8595-f6f40cd7f4f7",
+      "position": 40,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "title": "The more skilled, the more you earn",
+        "levels": [
+          {
+            "note": "Start with dashboards, SQL queries, and helping seniors with analysis — needs basic Python + SQL",
+            "level": "Junior Data Analyst",
+            "years": "0-2",
+            "salary": "25,000-40,000฿"
+          },
+          {
+            "note": "Build models yourself, run A/B tests and feature engineering — needs real stats + ML",
+            "level": "Data Scientist",
+            "years": "2-5",
+            "salary": "45,000-80,000฿"
+          },
+          {
+            "note": "Lead projects end-to-end, decide methodology, mentor the team",
+            "level": "Senior Data Scientist",
+            "years": "5-8",
+            "salary": "80,000-120,000฿"
+          },
+          {
+            "note": "Set company-wide data strategy; decide where to invest in ML",
+            "level": "Staff / Principal DS",
+            "years": "8+",
+            "salary": "120,000-150,000+฿"
+          }
+        ],
+        "eyebrow": "Salary",
+        "source_refs": [
+          2,
+          3
+        ]
+      },
+      "content_th": {
+        "title": "ยิ่งเก่ง ยิ่งได้",
+        "levels": [
+          {
+            "note": "งานส่วนใหญ่คือ SQL, dashboard และ EDA ทักษะที่ดูรอดคือความสามารถตั้งคำถามกับข้อมูลได้ ไม่ใช่ใช้ tool เป็น",
+            "level": "Entry Data Analyst",
+            "years": "0-2",
+            "salary": "$70,000–$100,000"
+          },
+          {
+            "note": "เริ่มสร้างและ deploy โมเดล ML คนที่เติบโตไวคือคนที่อธิบายผลลัพธ์ให้ business team เข้าใจได้",
+            "level": "Data Scientist",
+            "years": "2-5",
+            "salary": "$120,000–$160,000"
+          },
+          {
+            "note": "นำโปรเจกต์ ตัดสินใจด้านเทคนิค mentor คนอื่น ทักษะ domain knowledge และ stakeholder management สำคัญกว่า tool",
+            "level": "Senior Data Scientist",
+            "years": "5-8",
+            "salary": "$160,000–$200,000"
+          },
+          {
+            "note": "กำหนด data strategy ทั้งองค์กร หรือเป็น CDO ต้องเชื่อมโยงระหว่าง business vision กับสิ่งที่ข้อมูลทำได้จริง",
+            "level": "Staff / Principal DS",
+            "years": "8+",
+            "salary": "$200,000–$350,000+"
+          }
+        ],
+        "eyebrow": "เงินเดือน",
+        "currency": "USD",
+        "title_thb": "ยิ่งเก่ง ยิ่งได้",
+        "levels_thb": [
+          {
+            "note": "เริ่มจากทำ dashboard, SQL query, ช่วย senior วิเคราะห์ — ต้องมี Python + SQL พื้นฐาน",
+            "level": "Junior Data Analyst",
+            "years": "0-2",
+            "salary": "25,000-40,000฿"
+          },
+          {
+            "note": "สร้าง model เอง ทำ A/B test, feature engineering — ต้องมี stats + ML จริง",
+            "level": "Data Scientist",
+            "years": "2-5",
+            "salary": "45,000-80,000฿"
+          },
+          {
+            "note": "Lead โปรเจค end-to-end ตัดสินใจ methodology เป็น mentor ให้ทีม",
+            "level": "Senior Data Scientist",
+            "years": "5-8",
+            "salary": "80,000-120,000฿"
+          },
+          {
+            "note": "กำหนด data strategy ระดับบริษัท ตัดสินใจว่าจะลงทุน ML ตรงไหน",
+            "level": "Staff / Principal DS",
+            "years": "8+",
+            "salary": "120,000-150,000+฿"
+          }
+        ],
+        "eyebrow_thb": "เงินเดือน (ไทย)",
+        "source_refs": [
+          2,
+          3
+        ]
+      },
+      "created_at": "2026-07-10T02:42:06.182856+00:00",
+      "updated_at": "2026-07-24T20:11:52.796599+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "afe41efc-c3e8-4d69-b029-52e89265fbd2",
+      "kind": "aiImpact",
+      "field_id": "8cc44322-ba64-4e00-8595-f6f40cd7f4f7",
+      "position": 70,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "title": "Will AI take my job?",
+        "eyebrow": "AI Impact",
+        "verdict": "Not replaced — AI is speeding up the routine parts of the job (data cleaning, basic EDA, boilerplate code), but the most important work — framing the right problem, interpreting results, and connecting them to business context — still needs a human. BLS still projects 34% growth through 2034: AI augments this role rather than replacing it.",
+        "augmented": [
+          "Faster model building with AutoML",
+          "Automated EDA",
+          "Faster Python/SQL coding",
+          "Auto-generated visualizations"
+        ],
+        "automated": [
+          "Basic data cleaning",
+          "Repetitive dashboard reports",
+          "Simple feature engineering"
+        ],
+        "source_refs": [
+          4,
+          5
+        ],
+        "ai_risk_score": 3
+      },
+      "content_th": {
+        "title": "จะโดน AI แย่งงานไหม?",
+        "eyebrow": "ผลกระทบจาก AI",
+        "verdict": "ยังไม่โดนแทนที่ — AI กำลังช่วยทำงาน routine ของ data scientist ให้เร็วขึ้น เช่น data cleaning, EDA เบื้องต้น และเขียนโค้ด boilerplate แต่งานที่สำคัญที่สุด — การตั้งโจทย์ การตีความผลลัพธ์ และการเชื่อมโยงกับบริบทธุรกิจ — ยังต้องการมนุษย์ BLS ยังคาดว่าอาชีพนี้จะโต 34% ถึงปี 2034 แปลว่า AI มาเสริม ไม่ใช่มาแทนที่",
+        "augmented": [
+          "สร้างและ tune โมเดล ML เร็วขึ้นด้วย AutoML และ LLM-assisted code",
+          "ทำ EDA อัตโนมัติและได้ initial visualization เร็วกว่าเดิม",
+          "เขียน SQL, Python และ documentation เร็วขึ้นด้วย AI coding assistants",
+          "วิเคราะห์ log และ anomaly detection แบบ real-time ด้วย AI pipelines",
+          "สร้าง prototype model ทดสอบ hypothesis ได้ในชั่วโมงแทนที่จะเป็นสัปดาห์"
+        ],
+        "automated": [
+          "Data cleaning พื้นฐาน เช่น แก้ null values, standardize format",
+          "รายงาน dashboard ซ้ำๆ และ report generation",
+          "Feature engineering อย่างง่ายบน structured data",
+          "Basic SQL queries และ data extraction"
+        ],
+        "source_refs": [
+          4,
+          5
+        ],
+        "ai_risk_score": 3
+      },
+      "created_at": "2026-07-10T02:42:06.182856+00:00",
+      "updated_at": "2026-07-24T20:11:52.867007+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "4ef608e3-afe5-4056-bafd-ceccf3d5e6b8",
+      "kind": "marketThailand",
+      "field_id": "8cc44322-ba64-4e00-8595-f6f40cd7f4f7",
+      "position": 80,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "body": "Data Scientist/Data Analyst postings grew 23%, from 2,129 to 2,618. Entry-level supply is tighter: the broader Computer Science feeder field had 8,242 graduates versus 3,088 graduate-suitable postings, with only 376 explicitly requiring no experience. This is not a direct Data Scientist application ratio. The '67% fresh-graduate hiring rate' on the Outlook card is a broad estimate that most graduates in this field find work within their first year — it doesn't conflict with this: most do get hired, but competition for a first, directly data-related role is much tougher.",
+        "title": "How easy is it to find this job?",
+        "eyebrow": "Thailand market · TDRI Q2 2025 data · assessed Jul 2026",
+        "openings": "~800 positions (JobsDB, Jul 2026)",
+        "companies": [
+          "SCB",
+          "KBTG",
+          "AIS",
+          "Agoda",
+          "Shopee",
+          "Central Group",
+          "True Digital"
+        ],
+        "job_access": {
+          "label": "Moderate · growing but selective on skills",
+          "score": 50,
+          "confidence": "medium",
+          "methodology": "Formula: demand 50% + inverse competition 25% + inverse entry barrier 25%. This is not a probability of receiving an offer.",
+          "demand_score": 8,
+          "applicant_data": "No reliable public applicants-per-opening figure exists for Data Scientist roles in Thailand; graduate supply and graduate-suitable postings are used as a proxy.",
+          "competition_score": 7,
+          "entry_barrier_score": 7
+        },
+        "source_refs": [
+          8,
+          9
+        ]
+      },
+      "content_th": {
+        "body": "ประกาศ Data Scientist/Data Analyst โต 23% จาก 2,129 เป็น 2,618 ตำแหน่ง แต่ตลาดเด็กจบใหม่ยังแน่น: ในกลุ่มวิทยาการคอมพิวเตอร์ที่เป็นแหล่งผู้สมัครหลัก มีบัณฑิต 8,242 คน เทียบกับประกาศที่เหมาะกับจบใหม่ 3,088 งาน และเพียง 376 งานระบุว่าไม่ต้องมีประสบการณ์ ตัวเลขกลุ่ม CS ไม่ใช่อัตราสมัครงาน Data Scientist โดยตรง ส่วนตัวเลข 'อัตราการจ้างจบใหม่ 67%' บนการ์ด Outlook คือประมาณการภาพรวมว่าคนจบสายนี้ส่วนใหญ่ยังหางานได้ภายในปีแรก ไม่ได้ขัดกับตรงนี้ — คนส่วนใหญ่ได้งาน แต่การแข่งขันเพื่องาน data ชิ้นแรกที่ตรงสายนั้นสูงกว่ามาก",
+        "title": "งานนี้หาง่ายแค่ไหนในไทย?",
+        "eyebrow": "ตลาดไทย · ข้อมูล TDRI ไตรมาส 2/2568 · ประเมิน ก.ค. 2569",
+        "openings": "~800 ตำแหน่ง (JobsDB ก.ค. 2569)",
+        "companies": [
+          "SCB",
+          "KBTG",
+          "AIS",
+          "Agoda",
+          "Shopee",
+          "Central Group",
+          "True Digital"
+        ],
+        "job_access": {
+          "label": "ปานกลาง · งานโตแต่คัดทักษะสูง",
+          "score": 50,
+          "confidence": "medium",
+          "methodology": "สูตร: ความต้องการจ้าง 50% + การแข่งขันแบบกลับคะแนน 25% + ด่านทักษะแรกเข้าแบบกลับคะแนน 25% คะแนนนี้ไม่ใช่เปอร์เซ็นต์โอกาสได้งาน",
+          "demand_score": 8,
+          "applicant_data": "ยังไม่มีข้อมูลสาธารณะที่น่าเชื่อถือเรื่องผู้สมัครต่อ 1 ตำแหน่ง Data Scientist ในไทย จึงใช้ข้อมูลบัณฑิตและงานที่เหมาะกับจบใหม่เป็นตัวแทนการแข่งขัน",
+          "competition_score": 7,
+          "entry_barrier_score": 7
+        },
+        "source_refs": [
+          8,
+          9
+        ]
+      },
+      "created_at": "2026-07-10T02:42:06.182856+00:00",
+      "updated_at": "2026-07-24T20:11:52.933789+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "d682492c-fac6-47d7-a8c6-8b22ce809d4e",
+      "kind": "dayInLife",
+      "field_id": "8cc44322-ba64-4e00-8595-f6f40cd7f4f7",
+      "position": 90,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "steps": [
+          {
+            "label": "Clean and explore data (EDA)",
+            "detail": "EDA (exploratory data analysis) means getting to know the data before real analysis begins. Pull raw data from the data warehouse (the company's central data store) into Jupyter (a notebook for writing analysis code step by step), fix null values (missing entries), outliers (values far outside the norm), and inconsistent formats, then plot distributions and correlations to understand the data before deciding next steps. This eats 60–80% of a project."
+          },
+          {
+            "label": "Build and test machine learning models",
+            "detail": "Pick an algorithm (a method for training a model) that fits the problem — XGBoost, Random Forest, or a Neural Network are popular ones. Do feature engineering (creating new variables from raw data so the model predicts better) and hyperparameter tuning (adjusting the model's settings) with grid search or Optuna (a tool that finds the best settings automatically). Log experiments in MLflow (an experiment tracker), then measure metrics like precision, recall, and AUC — numbers that show how accurate the model is."
+          },
+          {
+            "label": "Frame the problem: make business questions measurable",
+            "detail": "Take a brief from the product or marketing team — e.g. 'why are customers leaving?' — and turn it into metrics (numbers you can actually measure), define hypotheses (assumptions to prove), and design a cohort analysis (comparing customer groups over time) or an experiment before writing any code. This needs business sense, not just coding skill."
+          },
+          {
+            "label": "Build visualizations and present insights",
+            "detail": "Use Tableau, Looker, or Plotly/Seaborn (charting tools) to make readable charts showing trends and KPIs (key business performance metrics) that stakeholders (the people affected by this work, like managers or business teams) care about. Prepare slides that summarize results in business language, not technical jargon, with a clear recommendation on what to do next."
+          },
+          {
+            "label": "Maintain data pipelines and data quality",
+            "detail": "A data pipeline is the path data travels from raw sources to dashboards or models. Check that Airflow DAGs (scheduled jobs that run the pipeline every day) or dbt jobs (data transformation tasks) succeeded, run data quality checks that the schema (the tables' structure) didn't change unexpectedly, no weird values appeared, and the data arrived on time."
+          },
+          {
+            "label": "Do code reviews and share knowledge with the team",
+            "detail": "Code review means reading and checking teammates' code before it goes live. Write documentation explaining how the model and methodology work, and sometimes present in an internal knowledge-sharing session so the analytics and engineering teams understand what you built."
+          }
+        ],
+        "title": "A Day in the Life of a Data Scientist",
+        "eyebrow": "A Day",
+        "source_refs": [
+          6,
+          7
+        ]
+      },
+      "content_th": {
+        "steps": [
+          {
+            "label": "ทำความสะอาดและสำรวจข้อมูล (EDA)",
+            "detail": "EDA (Exploratory Data Analysis) คือการสำรวจข้อมูลเบื้องต้นก่อนเริ่มวิเคราะห์จริง โหลดข้อมูลดิบจาก data warehouse (คลังข้อมูลกลางของบริษัท) มาใน Jupyter (โปรแกรมสำหรับเขียนโค้ดวิเคราะห์ข้อมูลทีละขั้น) แก้ null values (ค่าที่หายไป), outlier (ค่าที่ผิดปกติจนโดดออกจากกลุ่ม) และ format ที่ไม่สม่ำเสมอ จากนั้นพล็อต distribution (การกระจายตัวของข้อมูล) และ correlation (ความสัมพันธ์ระหว่างตัวแปร) เพื่อเข้าใจข้อมูลก่อนตัดสินใจขั้นต่อไป งานนี้กินเวลาถึง 60-80% ของโปรเจกต์"
+          },
+          {
+            "label": "สร้างและทดสอบโมเดล machine learning",
+            "detail": "เลือก algorithm (วิธีการสอนโมเดล) ที่เหมาะกับปัญหา เช่น XGBoost, Random Forest หรือ Neural Network — ล้วนเป็นชื่อวิธีสอนโมเดลยอดนิยม ทำ feature engineering (สร้างตัวแปรใหม่จากข้อมูลดิบเพื่อให้โมเดลแม่นขึ้น) และ hyperparameter tuning (ปรับค่าตั้งต้นของโมเดล) ด้วย grid search หรือ Optuna (เครื่องมือช่วยหาค่าที่ดีที่สุดอัตโนมัติ) บันทึกผลการทดลองลง MLflow (เครื่องมือจัดการ experiment) แล้ววัดผลด้วย metric เช่น precision, recall และ AUC — ตัวเลขที่บอกว่าโมเดลทำนายแม่นแค่ไหน"
+          },
+          {
+            "label": "ตั้งโจทย์ แปลคำถามธุรกิจให้วัดผลได้",
+            "detail": "รับ brief จากทีม product หรือ marketing เช่น 'ลูกค้าหายไปทำไม' แล้วแปลงเป็น metric (ตัวเลขที่วัดได้จริง) กำหนด hypothesis (สมมติฐานที่จะพิสูจน์) และออกแบบ cohort analysis (การวิเคราะห์พฤติกรรมลูกค้าเป็นกลุ่มตามช่วงเวลา) หรือ experiment ก่อนเริ่มเขียนโค้ด งานนี้ต้องการ business sense ไม่ใช่แค่ทักษะ coding"
+          },
+          {
+            "label": "สร้าง visualization และนำเสนอ insight",
+            "detail": "ใช้ Tableau, Looker หรือ Plotly/Seaborn (เครื่องมือทำกราฟ) สร้างกราฟที่อ่านง่าย แสดง trend และ KPI (ตัวชี้วัดผลงานหลักของธุรกิจ) ที่ stakeholder (คนที่เกี่ยวข้องกับงานชิ้นนี้ เช่น ผู้จัดการหรือทีมธุรกิจ) สนใจ เตรียมสไลด์สรุปผลเป็นภาษาธุรกิจ ไม่ใช่ศัพท์เทคนิค พร้อมข้อเสนอแนะว่าควรทำอะไรต่อ"
+          },
+          {
+            "label": "ดูแล data pipeline และคุณภาพข้อมูล",
+            "detail": "data pipeline คือเส้นทางที่ข้อมูลไหลจากแหล่งดิบมาถึง dashboard หรือโมเดล ตรวจสอบ Airflow DAG (ตารางงานอัตโนมัติที่สั่งให้ pipeline รันทุกวัน) หรือ dbt job (งานแปลงข้อมูลให้พร้อมใช้) ว่ารันสำเร็จ ดู data quality check ว่า schema (โครงสร้างของตารางข้อมูล) ไม่เปลี่ยนโดยไม่ตั้งใจ ไม่มีค่าผิดปกติโผล่ และข้อมูลมาตรงเวลา"
+          },
+          {
+            "label": "ทำ code review และแบ่งปันความรู้ในทีม",
+            "detail": "code review คือการอ่านและตรวจโค้ดของเพื่อนร่วมทีมก่อนนำไปใช้จริง เขียน documentation (เอกสารอธิบายว่าโมเดลและวิธีการทำงานอย่างไร) และอาจได้ present ใน session แบ่งปันความรู้ภายใน เพื่อให้ทีม analytics และ engineering เข้าใจสิ่งที่เราสร้าง"
+          }
+        ],
+        "title": "Data Scientist ทำอะไรจริงๆ?",
+        "eyebrow": "ชีวิตประจำวัน",
+        "source_refs": [
+          6,
+          7
+        ]
+      },
+      "created_at": "2026-07-10T02:42:06.182856+00:00",
+      "updated_at": "2026-07-24T20:11:53.008547+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "aa45db8a-3928-44c9-8756-d7919134497f",
+      "kind": "realPeople",
+      "field_id": "8cc44322-ba64-4e00-8595-f6f40cd7f4f7",
+      "position": 100,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": null,
+      "content_th": {
+        "title": "เส้นทางของคนที่ทำจริง",
+        "people": [
+          {
+            "url": "https://365datascience.com/career-advice/data-scientist-job-market/",
+            "role": "Data Scientist (ปีที่ 3)",
+            "advice": "อย่าติดกับแค่ tool — Python, R, Spark จะเปลี่ยน แต่ statistical thinking กับ business sense อยู่ตลอด",
+            "nowDoing": "สร้าง churn prediction model ให้ทีม marketing ใช้ AutoML ช่วยแต่ยังต้อง feature engineer เอง",
+            "publisher": "Composite from BLS/365 Data Science career data",
+            "background": "จบ Statistics/Math แล้วเรียน Python + ML เพิ่มเอง เริ่มจาก Data Analyst ทำ dashboard ใน Power BI ก่อนจะย้ายไปเป็น DS เต็มตัว",
+            "whereHeading": "ตั้งเป้า Senior DS — ต้องเก่ง communication กับ business stakeholders มากขึ้น"
+          }
+        ],
+        "eyebrow": "คนจริงในสายนี้",
+        "source_refs": [
+          4,
+          7
+        ]
+      },
+      "created_at": "2026-07-23T19:19:59.0093+00:00",
+      "updated_at": "2026-07-23T19:19:59.0093+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "1f4cacef-8a70-429e-a137-87943f7d414a",
+      "kind": "risks",
+      "field_id": "8cc44322-ba64-4e00-8595-f6f40cd7f4f7",
+      "position": 110,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "risks": [
+          "AutoML may reduce demand for junior data analysts",
+          "Must constantly learn — tools change every year",
+          "Without communication skills, you become a 'report maker' instead of strategic partner",
+          "Dirty data creates high frustration",
+          "Many Thai companies don't understand DS role — may end up doing Excel"
+        ],
+        "title": "Career Risks",
+        "eyebrow": "Risks",
+        "source_refs": [
+          4,
+          5
+        ]
+      },
+      "content_th": {
+        "risks": [
+          "AutoML อาจลดความต้องการ junior data analyst ในอนาคต",
+          "ต้องเรียนรู้ตลอดเวลา — เครื่องมือเปลี่ยนทุกปี",
+          "ถ้าไม่เก่ง communication อาจกลายเป็น 'คนทำรายงาน' แทนที่จะเป็น strategic partner",
+          "ปัญหาข้อมูลไม่สะอาดสร้างความหงุดหงิดสูง",
+          "หลายบริษัทไทยยังไม่เข้าใจบทบาท DS จริงๆ อาจถูกใช้ทำ Excel แทน"
+        ],
+        "title": "ความเสี่ยงสายนี้",
+        "eyebrow": "ความเสี่ยง",
+        "source_refs": [
+          4,
+          5
+        ]
+      },
+      "created_at": "2026-07-10T02:42:06.182856+00:00",
+      "updated_at": "2026-07-10T07:39:05.332343+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "390c7df5-bdbf-4766-9168-4d6cf8330060",
+      "kind": "entryRoutes",
+      "field_id": "8cc44322-ba64-4e00-8595-f6f40cd7f4f7",
+      "position": 120,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": null,
+      "content_th": {
+        "title": "มีเส้นทางไหนเข้าสู่อาชีพนี้ได้บ้าง?",
+        "eyebrow": "เรียนอะไรดี?",
+        "faculties": [
+          {
+            "name": "วิทยาการคอมพิวเตอร์ / วิศวกรรมคอมพิวเตอร์",
+            "note": "ได้ทั้ง coding foundation และ ML/AI theory ในหลักสูตรเดียว เป็นเส้นทางที่ตลาดงาน DS รับมากที่สุด",
+            "tier": "direct"
+          },
+          {
+            "name": "สถิติ / คณิตศาสตร์ประยุกต์",
+            "note": "แข็งด้าน statistical modeling และ theory ต้องเรียน Python/SQL เพิ่มเองแต่พื้นฐานคณิต-สถิติแน่นกว่าสาย CS",
+            "tier": "direct"
+          },
+          {
+            "name": "Data Science / Data Engineering",
+            "note": "หลักสูตรใหม่ที่ออกแบบมาตรงสาย DS โดยเฉพาะ รวม programming, statistics และ business context ไว้ในที่เดียว",
+            "tier": "direct"
+          },
+          {
+            "name": "วิศวกรรมอุตสาหการ",
+            "note": "มีพื้นฐาน optimization, statistics และ process thinking ดี ต้องเรียน ML และ coding เพิ่มอีกช่วง",
+            "tier": "related"
+          },
+          {
+            "name": "เศรษฐศาสตร์ / บริหารธุรกิจ",
+            "note": "เข้าใจ business context และ causal reasoning ดี ต้องเรียน coding + statistics เพิ่มผ่าน bootcamp หรือ Coursera",
+            "tier": "related"
+          },
+          {
+            "name": "วิทยาศาสตร์อื่น (ฟิสิกส์, เคมี, ชีววิทยา)",
+            "note": "มี analytical thinking และความเข้าใจ scientific method ดี ต้องเปลี่ยนสายจริงจัง สร้าง portfolio ใหม่ และเรียน programming เพิ่ม",
+            "tier": "alternative"
+          }
+        ],
+        "source_refs": [
+          1,
+          4
+        ]
+      },
+      "created_at": "2026-07-10T05:43:51.820834+00:00",
+      "updated_at": "2026-07-22T11:53:47.316215+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "305ec55d-8d03-483f-b029-b2c057639d89",
+      "kind": "text",
+      "field_id": "8cc44322-ba64-4e00-8595-f6f40cd7f4f7",
+      "position": 125,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": null,
+      "content_th": {
+        "title": "งานนี้ต้องใช้ทักษะอะไรบ้าง?",
+        "skills": [
+          {
+            "title": "Statistical Thinking",
+            "description": "เลือก hypothesis test (วิธีทดสอบสมมติฐานทางสถิติ) ที่ถูกต้อง ประเมิน significance (ผลที่ได้ไม่ใช่เรื่องบังเอิญ), effect size (ขนาดของผลจริงๆ ว่ามากแค่ไหน) และ confounders (ปัจจัยอื่นที่อาจทำให้สรุปผลผิด) — ไม่ใช่แค่รัน p-value แล้วจบ"
+          },
+          {
+            "title": "SQL + Data Wrangling",
+            "description": "ดึงข้อมูลจาก data warehouse (คลังข้อมูลกลางของบริษัท) ด้วย SQL ซับซ้อน ทำความสะอาด missing values (ค่าที่หายไป), outliers (ค่าผิดปกติ) และ join (รวมข้อมูลหลายตารางเข้าด้วยกัน)"
+          },
+          {
+            "title": "Machine Learning",
+            "description": "เลือก algorithm ที่เหมาะกับปัญหา (classification, regression, clustering — ประเภทของโจทย์ทำนาย) tune hyperparameters (ปรับค่าตั้งต้นของโมเดล) และประเมิน overfitting (อาการที่โมเดลจำข้อมูลฝึกจนเกินไป จนทำนายข้อมูลใหม่ไม่แม่น)"
+          },
+          {
+            "title": "Python / R Programming",
+            "description": "เขียน pandas, scikit-learn, PyTorch ได้คล่อง สร้าง reproducible pipeline ไม่ใช่แค่ notebook ที่รันครั้งเดียว"
+          },
+          {
+            "title": "Feature Engineering",
+            "description": "สร้าง features (ตัวแปรที่โมเดลใช้ทำนาย) ใหม่จากข้อมูลดิบที่ทำให้ model แม่นขึ้น — ทักษะนี้ AutoML ยังทำแทนได้ยาก"
+          },
+          {
+            "title": "Data Visualization + Storytelling",
+            "description": "สร้าง chart ที่ตอบคำถามธุรกิจได้ชัด นำเสนอ insight ให้คนไม่มี technical background เข้าใจ"
+          },
+          {
+            "title": "Experiment Design (A/B Testing)",
+            "description": "ออกแบบ experiment ที่ valid กำหนด sample size (จำนวนคนในการทดลอง), control group (กลุ่มเปรียบเทียบที่ไม่โดนสิ่งที่กำลังทดสอบ) และ metrics ก่อนรัน — ไม่ใช่ดู data แล้วสรุปย้อนหลัง"
+          },
+          {
+            "title": "Business Acumen",
+            "description": "ตั้งคำถามที่ถูกก่อนสร้าง model ถาม business ว่าจะเอา output ไปทำอะไร แล้ว scope งานให้ตรง"
+          }
+        ],
+        "eyebrow": "ทักษะที่ใช้จริง",
+        "source_refs": [
+          1,
+          7
+        ],
+        "presentation": "skills"
+      },
+      "created_at": "2026-07-10T08:43:54.670073+00:00",
+      "updated_at": "2026-07-24T20:11:53.137113+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "ba747cf5-7eb9-4cf4-9396-83575456d642",
+      "kind": "text",
+      "field_id": "8cc44322-ba64-4e00-8595-f6f40cd7f4f7",
+      "position": 130,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": null,
+      "content_th": {
+        "title": "ไม่ต้องรอจบมหาวิทยาลัย",
+        "eyebrow": "เริ่มลงมือ",
+        "options": [
+          {
+            "cta": "สนใจวิธีนี้",
+            "url": "https://www.coursera.org/professional-certificates/google-data-analytics",
+            "cost": "ฟรี (audit) / $49/mo",
+            "type": "คอร์ส",
+            "title": "Google Data Analytics Certificate",
+            "duration": "6 เดือน",
+            "description": "เรียน data analytics ตั้งแต่ศูนย์ ครอบคลุม SQL, spreadsheet, Tableau, R — ได้ certificate จาก Google"
+          },
+          {
+            "cta": "อยากลองโจทย์นี้",
+            "url": "https://www.kaggle.com/competitions",
+            "cost": "ฟรี",
+            "type": "ลองทำ",
+            "title": "Kaggle Competitions",
+            "duration": "ต่อเนื่อง",
+            "description": "ลองแก้โจทย์ data science จริง เริ่มจาก Titanic dataset แล้วค่อยขยับไป featured competitions"
+          },
+          {
+            "cta": "สนใจวิธีนี้",
+            "url": "https://www.youtube.com/@statquest",
+            "cost": "ฟรี",
+            "type": "YouTube",
+            "title": "StatQuest with Josh Starmer",
+            "duration": "ดูเรื่อยๆ",
+            "description": "สอน statistics + ML ด้วยภาษาง่ายๆ มี animation ช่วยเข้าใจ — พื้นฐานที่ DS ทุกคนต้องมี"
+          },
+          {
+            "cta": "อยากลองโจทย์นี้",
+            "cost": "ฟรี",
+            "type": "ลองทำ",
+            "title": "วิเคราะห์ข้อมูลที่สนใจด้วย Python",
+            "duration": "2-4 สัปดาห์",
+            "description": "หาข้อมูลที่สนใจ (เช่น ราคาหอพัก อาหาร หนัง) ทำ EDA ด้วย pandas + matplotlib แล้ว publish บน GitHub"
+          }
+        ],
+        "source_refs": [
+          1
+        ],
+        "presentation": "startCarousel"
+      },
+      "created_at": "2026-07-10T07:32:53.501773+00:00",
+      "updated_at": "2026-07-23T19:19:59.0093+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "e57a8bec-6bd7-4620-aa45-5847b5301d65",
+      "kind": "cta",
+      "field_id": "8cc44322-ba64-4e00-8595-f6f40cd7f4f7",
+      "position": 140,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "body": "If this path sounds right for you, tap below to let us know.",
+        "title": "Want to try data science?",
+        "button": "Interested",
+        "eyebrow": "Interested?",
+        "resources": [
+          {
+            "url": "https://www.kaggle.com/learn",
+            "note": "Short free courses: Python, Pandas, ML",
+            "label": "Kaggle Learn"
+          },
+          {
+            "url": "https://www.kaggle.com",
+            "note": "Practice on real public datasets",
+            "label": "Kaggle"
+          }
+        ]
+      },
+      "content_th": {
+        "body": "ถ้าเธอสนใจสายนี้ กดปุ่มด้านล่างเพื่อบอกเราว่าอยากรู้เพิ่มเติม",
+        "title": "อยากลองสายนักวิทยาศาสตร์ข้อมูล",
+        "button": "สนใจสายนี้",
+        "eyebrow": "สนใจไหม?",
+        "resources": [
+          {
+            "url": "https://www.kaggle.com/learn",
+            "note": "คอร์สสั้น Python, Pandas, ML — ฟรี มีใบรับรอง",
+            "label": "Kaggle Learn"
+          },
+          {
+            "url": "https://www.kaggle.com",
+            "note": "ลองวิเคราะห์ข้อมูลจริงกับชุดข้อมูลสาธารณะ",
+            "label": "Kaggle"
+          }
+        ]
+      },
+      "created_at": "2026-07-10T02:42:06.182856+00:00",
+      "updated_at": "2026-07-24T20:19:12.976477+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "ed1b7d87-bc5a-4918-bb20-908d8cbe0f58",
+      "kind": "sources",
+      "field_id": "8cc44322-ba64-4e00-8595-f6f40cd7f4f7",
+      "position": 150,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "items": [
+          {
+            "ref": 1,
+            "url": "https://www.bls.gov/ooh/math/data-scientists.htm",
+            "title": "Occupational Outlook Handbook: Data Scientists",
+            "publisher": "U.S. Bureau of Labor Statistics"
+          },
+          {
+            "ref": 2,
+            "url": "https://th.jobsdb.com/career-advice/role/data-scientist/salary",
+            "title": "Data Scientist Salary in Thailand",
+            "publisher": "JobsDB Thailand"
+          },
+          {
+            "ref": 3,
+            "url": "https://www.robertwalters.co.th/our-services/salary-survey.html",
+            "title": "Thailand Salary Survey",
+            "publisher": "Robert Walters"
+          },
+          {
+            "ref": 4,
+            "url": "https://qualifynation.com/en-gb/insights/data-science-job-market/",
+            "title": "Data Scientist Employment Outlook: BLS 2024-2034",
+            "publisher": "Qualify Nation"
+          },
+          {
+            "ref": 5,
+            "url": "https://careery.pro/blog/data-science-careers/will-ai-replace-data-scientists",
+            "title": "Will AI Replace Data Scientists?",
+            "publisher": "Careery"
+          },
+          {
+            "ref": 6,
+            "url": "https://www.nobledesktop.com/careers/data-scientist/daily-life",
+            "title": "Daily Life of a Data Scientist",
+            "publisher": "Noble Desktop"
+          },
+          {
+            "ref": 7,
+            "url": "https://www.onetonline.org/link/summary/15-2051.00",
+            "title": "15-2051.00 - Data Scientists",
+            "publisher": "O*NET OnLine"
+          },
+          {
+            "ref": 8,
+            "url": "https://tdri.or.th/2025/08/ai-job-market-2tracked-growth/",
+            "title": "Thailand's AI job market grows, but skills lag behind",
+            "publisher": "TDRI"
+          },
+          {
+            "ref": 9,
+            "url": "https://tdri.or.th/2025/08/bigdata-report-labourmarket-q2-2025/",
+            "title": "Big Data: Thai labour market report, Q2 2025",
+            "publisher": "TDRI"
+          }
+        ],
+        "title": "Where this comes from",
+        "eyebrow": "Sources"
+      },
+      "content_th": {
+        "items": [
+          {
+            "ref": 1,
+            "url": "https://www.bls.gov/ooh/math/data-scientists.htm",
+            "title": "Occupational Outlook Handbook: Data Scientists",
+            "publisher": "U.S. Bureau of Labor Statistics"
+          },
+          {
+            "ref": 2,
+            "url": "https://th.jobsdb.com/career-advice/role/data-scientist/salary",
+            "title": "Data Scientist Salary in Thailand",
+            "publisher": "JobsDB Thailand"
+          },
+          {
+            "ref": 3,
+            "url": "https://www.robertwalters.co.th/our-services/salary-survey.html",
+            "title": "Thailand Salary Survey",
+            "publisher": "Robert Walters"
+          },
+          {
+            "ref": 4,
+            "url": "https://qualifynation.com/en-gb/insights/data-science-job-market/",
+            "title": "Data Scientist Employment Outlook: BLS 2024-2034",
+            "publisher": "Qualify Nation"
+          },
+          {
+            "ref": 5,
+            "url": "https://careery.pro/blog/data-science-careers/will-ai-replace-data-scientists",
+            "title": "Will AI Replace Data Scientists?",
+            "publisher": "Careery"
+          },
+          {
+            "ref": 6,
+            "url": "https://www.nobledesktop.com/careers/data-scientist/daily-life",
+            "title": "Daily Life of a Data Scientist",
+            "publisher": "Noble Desktop"
+          },
+          {
+            "ref": 7,
+            "url": "https://www.onetonline.org/link/summary/15-2051.00",
+            "title": "15-2051.00 - Data Scientists",
+            "publisher": "O*NET OnLine"
+          },
+          {
+            "ref": 8,
+            "url": "https://tdri.or.th/2025/08/ai-job-market-2tracked-growth/",
+            "title": "ตลาดงาน AI ไทยโต แต่ทักษะคนยังไม่ทัน",
+            "publisher": "TDRI"
+          },
+          {
+            "ref": 9,
+            "url": "https://tdri.or.th/2025/08/bigdata-report-labourmarket-q2-2025/",
+            "title": "Big Data ตลาดแรงงานไทย ไตรมาส 2 ปี 2568",
+            "publisher": "TDRI"
+          }
+        ],
+        "title": "แหล่งข้อมูล",
+        "eyebrow": "แหล่งข้อมูล"
+      },
+      "created_at": "2026-07-10T02:42:06.182856+00:00",
+      "updated_at": "2026-07-24T20:11:53.30182+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    }
+  ],
+  "radar_sources": [
+    {
+      "id": "ed414435-5904-4800-9136-b8661f2dcc9d",
+      "ref": 7,
+      "url": "https://www.onetonline.org/link/summary/15-2051.00",
+      "tier": "primary",
+      "title": "15-2051.00 - Data Scientists",
+      "field_id": "8cc44322-ba64-4e00-8595-f6f40cd7f4f7",
+      "quote_en": null,
+      "quote_th": "O*NET ระบุงาน data scientist เช่น clean/manipulate data, visualization, presentation, identify business problems, validate models และ write code",
+      "publisher": "O*NET OnLine",
+      "accessed_at": "2026-07-10",
+      "published_at": null
+    },
+    {
+      "id": "e311ea57-acc0-4829-912c-1e5209eba4c2",
+      "ref": 1,
+      "url": "https://www.bls.gov/ooh/math/data-scientists.htm",
+      "tier": "primary",
+      "title": "Occupational Outlook Handbook: Data Scientists",
+      "field_id": "8cc44322-ba64-4e00-8595-f6f40cd7f4f7",
+      "quote_en": null,
+      "quote_th": "BLS คาดการณ์ตำแหน่ง Data Scientist ในสหรัฐฯ โต 34% ช่วง 2024-2034 เร็วกว่าค่าเฉลี่ยของทุกอาชีพมาก มีตำแหน่งเปิดใหม่เฉลี่ยราว 23,400 ตำแหน่งต่อปี",
+      "publisher": "U.S. Bureau of Labor Statistics",
+      "accessed_at": "2026-07-10",
+      "published_at": null
+    },
+    {
+      "id": "d483e2ed-3f14-4d6d-91c7-c0d2add9a6ed",
+      "ref": 2,
+      "url": "https://th.jobsdb.com/career-advice/role/data-scientist/salary",
+      "tier": "primary",
+      "title": "JobsDB Data Scientist Salary Thailand",
+      "field_id": "8cc44322-ba64-4e00-8595-f6f40cd7f4f7",
+      "quote_en": null,
+      "quote_th": null,
+      "publisher": "JobsDB",
+      "accessed_at": "2026-07-10",
+      "published_at": null
+    },
+    {
+      "id": "b2c6088c-b44f-4704-a7a6-61aca23da6b2",
+      "ref": 3,
+      "url": "https://www.robertwalters.co.th/our-services/salary-survey.html",
+      "tier": "primary",
+      "title": "Robert Walters Thailand Salary Survey",
+      "field_id": "8cc44322-ba64-4e00-8595-f6f40cd7f4f7",
+      "quote_en": null,
+      "quote_th": null,
+      "publisher": "Robert Walters",
+      "accessed_at": "2026-07-10",
+      "published_at": null
+    },
+    {
+      "id": "53ba4ab4-e64c-47f4-88f8-60a0c12065b2",
+      "ref": 4,
+      "url": "https://qualifynation.com/en-gb/insights/data-science-job-market/",
+      "tier": "secondary",
+      "title": "Qualify Nation: Data Science Job Market",
+      "field_id": "8cc44322-ba64-4e00-8595-f6f40cd7f4f7",
+      "quote_en": null,
+      "quote_th": null,
+      "publisher": "Qualify Nation",
+      "accessed_at": "2026-07-10",
+      "published_at": null
+    },
+    {
+      "id": "5ee3ebd7-030a-48f5-9650-87b3d099a76b",
+      "ref": 5,
+      "url": "https://careery.pro/blog/data-science-careers/will-ai-replace-data-scientists",
+      "tier": "secondary",
+      "title": "Careery: Will AI Replace Data Scientists",
+      "field_id": "8cc44322-ba64-4e00-8595-f6f40cd7f4f7",
+      "quote_en": null,
+      "quote_th": null,
+      "publisher": "Careery",
+      "accessed_at": "2026-07-10",
+      "published_at": null
+    },
+    {
+      "id": "cea0dee9-d21d-4b42-9ccb-69d9c0ac8514",
+      "ref": 6,
+      "url": "https://www.nobledesktop.com/careers/data-scientist/daily-life",
+      "tier": "tertiary",
+      "title": "Noble Desktop: Data Scientist Daily Life",
+      "field_id": "8cc44322-ba64-4e00-8595-f6f40cd7f4f7",
+      "quote_en": null,
+      "quote_th": null,
+      "publisher": "Noble Desktop",
+      "accessed_at": "2026-07-10",
+      "published_at": null
+    },
+    {
+      "id": "c71f9506-2b2e-4218-bd01-fd06f177731b",
+      "ref": 8,
+      "url": "https://tdri.or.th/2025/08/ai-job-market-2tracked-growth/",
+      "tier": "primary",
+      "title": "ตลาดงาน AI ไทยโต แต่ทักษะคนยังไม่ทัน",
+      "field_id": "8cc44322-ba64-4e00-8595-f6f40cd7f4f7",
+      "quote_en": null,
+      "quote_th": null,
+      "publisher": "TDRI",
+      "accessed_at": "2026-07-21",
+      "published_at": null
+    },
+    {
+      "id": "9fc8fda5-49e8-4970-9221-09026616ef4c",
+      "ref": 9,
+      "url": "https://tdri.or.th/2025/08/bigdata-report-labourmarket-q2-2025/",
+      "tier": "primary",
+      "title": "Big Data ตลาดแรงงานไทย ไตรมาส 2 ปี 2568",
+      "field_id": "8cc44322-ba64-4e00-8595-f6f40cd7f4f7",
+      "quote_en": null,
+      "quote_th": null,
+      "publisher": "TDRI",
+      "accessed_at": "2026-07-21",
+      "published_at": null
+    }
+  ]
+}

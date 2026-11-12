@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { memo, useEffect, useState, useCallback, useMemo, useRef, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
@@ -13,18 +13,44 @@ import {
   routeRadarCardIntent,
   syncPendingRadarMyPathEvents,
 } from "@/lib/supabase/radar";
-import { RadarCardView, SourceRefs } from "@/components/radar/RadarCards";
-import { getCareerCardVisual } from "@/components/radar/RadarPageClient";
+import {
+  CtaResourceLinks,
+  RadarCardView,
+  SourceRefs,
+  ctaPathSlug,
+  ctaResources,
+} from "@/components/radar/RadarCards";
+import { detailFigure, getCareerCardVisual, readableAccent } from "@/lib/radar/card-visuals";
 import {
   RadarSkillExperience,
+  StartOptionTile,
+  firstStartOption,
   type RadarSkillSummary,
 } from "@/components/radar/RadarSkillExperience";
+import {
+  GuideIntentButton,
+  GuideOutro,
+  GuideProgramLine,
+  MidShareCard,
+  type GuideSource,
+} from "@/components/radar/guide";
+import { useRadarVisit } from "@/lib/radar-guide/use-radar-visit";
+import {
+  buildDeckSections,
+  isSkillsCard,
+  outroCtaCard,
+  type DeckInteractTarget,
+  type DeckSection,
+} from "@/lib/radar/deck-sections";
+import type { GuideCtaTarget, GuideTracker } from "@/lib/radar-guide/types";
+import { radarProgramLine } from "@/lib/content/radar-cta";
 import type { Database } from "@/lib/supabase/database.types";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft,
   ArrowRight,
   Check,
+  ChevronDown,
   Compass,
   Heart,
   X,
@@ -33,12 +59,16 @@ import {
   readRadarInterests,
   toggleRadarInterest,
 } from "@/lib/my-path/radar-interest";
+import type { RadarIntentScope } from "@/lib/my-path/radar-sync";
 import { createClient } from "@/utils/supabase/client";
 import { isAnonymousUser } from "@/lib/supabase/auth";
 
 type RadarField = Database["public"]["Tables"]["radar_fields"]["Row"];
 type RadarCard = Database["public"]["Tables"]["radar_cards"]["Row"];
-const HIDDEN_RADAR_CARD_KINDS = new Set(["jobs", "growthCompare", "list"]);
+
+/** Stable empty defaults: a fresh `[]` per render would rebuild the deck and rerun its effects. */
+const NO_SKILLS: RadarSkillSummary[] = [];
+const NO_SOURCES: FieldSource[] = [];
 
 function pickContent(card: RadarCard): Record<string, unknown> {
   const th = card.content_th as Record<string, unknown> | null;
@@ -46,155 +76,37 @@ function pickContent(card: RadarCard): Record<string, unknown> {
   return th ?? en ?? {};
 }
 
-function cardLabel(card: RadarCard): string {
-  if (card.kind === "cta") return "Next Step";
-  const c = pickContent(card);
-  return (
-    (c.eyebrow as string) ||
-    (c.title as string) ||
-    (typeof c.level === "string" ? (c.level as string) : "") ||
-    card.kind
-  );
-}
-
 function cardChapterKey(card: RadarCard): string {
   const content = pickContent(card);
   return (content.chapterKey as string) || card.id;
 }
 
-function normalizedCardText(card: RadarCard): string {
-  const content = pickContent(card);
-  return [
-    card.kind,
-    content.eyebrow,
-    content.title,
-    content.presentation,
-    content.chapterKey,
-  ]
-    .filter((value): value is string => typeof value === "string")
-    .join(" ")
-    .toLocaleLowerCase();
+/** The deck position a section element carries. */
+function sectionIndexOf(element: Element): number {
+  return Number((element as HTMLElement).dataset.radarIndex);
 }
 
-function isExploreCard(card: RadarCard): boolean {
-  if (card.kind !== "text") return false;
-  const content = pickContent(card);
-  const presentation = String(content.presentation ?? "").toLowerCase();
-  return !presentation.includes("skill") && !presentation.includes("start");
+/** Safari (not Chrome, Firefox, Edge or Opera on iOS), read on the client only. */
+function detectSafari(): boolean {
+  if (typeof window === "undefined" || typeof navigator === "undefined") return false;
+  return (
+    (navigator.vendor ?? "").includes("Apple") &&
+    !/(CriOS|FxiOS|EdgiOS|OPiOS)/.test(navigator.userAgent)
+  );
 }
 
-function isStartCard(card: RadarCard): boolean {
-  if (card.kind !== "text") return false;
-  const presentation = String(
-    (pickContent(card).presentation as string | undefined) ?? ""
-  ).toLowerCase();
-  return presentation.includes("start");
+/** The browser never changes under the page, so there is nothing to subscribe to. */
+function subscribeNever(): () => void {
+  return () => {};
 }
 
-function radarCardDisplayOrder(card: RadarCard): number {
-  const text = normalizedCardText(card);
-
-  if (card.kind === "hook") return 10;
-  if (card.kind === "salaryProgression") return 20;
-  if (card.kind === "aiImpact") return 30;
-  if (card.kind === "marketThailand") return 40;
-  if (card.kind === "careerSurvival") return 50;
-  if (card.kind === "fantasyReality") return 60;
-  if (card.kind === "dayInLife") return 70;
-  if (card.kind === "risks") return 80;
-  if (card.kind === "entryRoutes") return 90;
-  if (
-    text.includes("skills") ||
-    text.includes("skill") ||
-    text.includes("ต้องเก่งอะไร") ||
-    text.includes("ทักษะ")
-  ) {
-    return 100;
-  }
-  if (
-    card.kind === "cta" ||
-    card.kind === "reflection" ||
-    text.includes("ทางนี้ใช่เธอจริงไหม")
-  ) {
-    return 110;
-  }
-  if (card.kind === "sources") return 10000;
-
-  return 1000;
-}
-
-function sortRadarCardsForStory(cards: RadarCard[]) {
-  return cards
-    .map((card, index) => ({ card, index }))
-    .sort((a, b) => {
-      const orderDiff = radarCardDisplayOrder(a.card) - radarCardDisplayOrder(b.card);
-      if (orderDiff !== 0) return orderDiff;
-
-      const positionDiff = (a.card.position ?? 0) - (b.card.position ?? 0);
-      if (positionDiff !== 0) return positionDiff;
-
-      return a.index - b.index;
-    })
-    .map(({ card }) => card);
-}
-
-function readableAccent(hex: string, fallback = "#60a5fa"): string {
-  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
-  if (!m) return fallback;
-  const n = parseInt(m[1], 16);
-  let r = (n >> 16) / 255;
-  let g = ((n >> 8) & 0xff) / 255;
-  let b = (n & 0xff) / 255;
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  let h = 0;
-  const l = (max + min) / 2;
-  const d = max - min;
-  let s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
-  if (d !== 0) {
-    if (max === r) h = ((g - b) / d) % 6;
-    else if (max === g) h = (b - r) / d + 2;
-    else h = (r - g) / d + 4;
-    h *= 60;
-    if (h < 0) h += 360;
-  }
-  const lightness = 0.68;
-  s = Math.max(s, 0.55);
-  const c = (1 - Math.abs(2 * lightness - 1)) * s;
-  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-  const mm = lightness - c / 2;
-  const seg = [
-    [c, x, 0],
-    [x, c, 0],
-    [0, c, x],
-    [0, x, c],
-    [x, 0, c],
-    [c, 0, x],
-  ][Math.floor(h / 60) % 6];
-  r = Math.round((seg[0] + mm) * 255);
-  g = Math.round((seg[1] + mm) * 255);
-  b = Math.round((seg[2] + mm) * 255);
-  return `#${[r, g, b]
-    .map((v) => v.toString(16).padStart(2, "0"))
-    .join("")}`;
-}
-
-export type FieldSource = { ref: number; title: string; publisher?: string | null; url: string };
-
-/**
- * The "Start" and "Next Step" endings ship students into stock PathLabs. When
- * the plan wizard sent them here, the plan decision bar replaces both.
- */
-function isPlanReplacedCta(card: RadarCard): boolean {
-  if (card.kind === "cta") return true;
-  return isStartCard(card);
-}
+export type FieldSource = GuideSource;
 
 export function RadarFieldPageClient({
   initialField,
   initialCards,
-  fieldSources = [],
-  initialSkills = [],
+  fieldSources = NO_SOURCES,
+  initialSkills = NO_SKILLS,
   fromPlan = false,
 }: {
   initialField: RadarField;
@@ -202,33 +114,25 @@ export function RadarFieldPageClient({
   fieldSources?: FieldSource[];
   initialSkills?: RadarSkillSummary[];
   /**
-   * Arrived from the My Path wizard. The generic "Start / Next Step" CTAs are
-   * the wrong ending there — the student owes the plan a decision instead.
+   * Arrived from the My Path wizard. The generic outro and CTA are the wrong
+   * ending there: the student owes the plan a decision instead.
    */
   fromPlan?: boolean;
 }) {
   const router = useRouter();
   const field = initialField;
   const fieldSlug = field.slug ?? "";
-  const cards = useMemo(
-    () =>
-      sortRadarCardsForStory(
-        initialCards.filter((card) => {
-          if (HIDDEN_RADAR_CARD_KINDS.has(card.kind)) return false;
-          if (isExploreCard(card)) return false;
-          if (
-            card.kind === "text" &&
-            (card.content_th as Record<string, string>)?.title === "ทางนี้คืออะไร"
-          ) {
-            return false;
-          }
-          if (isStartCard(card)) return false;
-          if (fromPlan && isPlanReplacedCta(card)) return false;
-          return true;
-        })
-      ),
-    [initialCards, fromPlan]
+  // Attribution, utm stripping and the visit record.
+  const { tracker, attribution } = useRadarVisit(fieldSlug || null);
+  const visitIdRef = useRef<string | null>(null);
+  visitIdRef.current = tracker.visitId;
+
+  const sections = useMemo(
+    () => buildDeckSections(initialCards, initialSkills, { fromPlan }),
+    [initialCards, initialSkills, fromPlan]
   );
+  const ctaCard = useMemo(() => outroCtaCard(initialCards, { fromPlan }), [initialCards, fromPlan]);
+
   const [current, setCurrent] = useState(0);
   const [submitted, setSubmitted] = useState<Set<string>>(new Set());
   const [showSignupPrompt, setShowSignupPrompt] = useState(true);
@@ -245,13 +149,10 @@ export function RadarFieldPageClient({
   const blackoutRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
   const isSafariRef = useRef(false);
-  const [isSafari, setIsSafari] = useState(() => {
-    if (typeof navigator === "undefined") return false;
-    return (
-      navigator.vendor.includes("Apple") &&
-      !/(CriOS|FxiOS|EdgiOS|OPiOS)/.test(navigator.userAgent)
-    );
-  });
+  // Server snapshot is false: Node has a global `navigator` without `vendor`,
+  // so reading it during SSR crashed the render. The client value applies
+  // right after hydration, so the markup never mismatches.
+  const isSafari = useSyncExternalStore(subscribeNever, detectSafari, () => false);
   const fieldOpenRecordedRef = useRef(false);
   const touchSectionGuardRef = useRef<{
     sectionIndex: number;
@@ -283,19 +184,18 @@ export function RadarFieldPageClient({
     isSafariRef.current = isSafari;
   }, [isSafari]);
 
-  const goTo = useCallback((i: number) => {
+  const goTo = useCallback((i: number, instant = false) => {
     touchSectionGuardRef.current = null;
     const section = sectionRefs.current[i];
     if (!section) return;
-    const behavior: ScrollBehavior = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches
-      ? "auto"
-      : "smooth";
+    const behavior: ScrollBehavior =
+      instant || window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth";
 
     // The deck scrolls inside `.radar-deck`, not the window. scrollIntoView has
     // to guess which ancestor to move and does nothing once a section is
-    // `content-visibility: auto` off-screen, so drive the container directly —
+    // `content-visibility: auto` off-screen, so drive the container directly;
     // section offsets are already relative to the deck (it is their offsetParent).
     const deck = scrollRef.current;
     if (deck) {
@@ -312,7 +212,7 @@ export function RadarFieldPageClient({
         touchSectionGuardRef.current = null;
         return;
       }
-      // On mobile, let the browser handle scrolling natively — no snap guard
+      // On mobile, let the browser handle scrolling natively: no snap guard
       if (window.matchMedia("(max-width: 640px)").matches) {
         touchSectionGuardRef.current = null;
         return;
@@ -418,7 +318,7 @@ export function RadarFieldPageClient({
       const savedChapterKeys = await getSavedRadarReflectionChapterKeys(fieldSlug);
       if (!active || savedChapterKeys.size === 0) return;
 
-      const savedCardIds = cards
+      const savedCardIds = initialCards
         .filter((card) => savedChapterKeys.has(cardChapterKey(card)))
         .map((card) => card.id);
       setSubmitted((prev) => new Set([...prev, ...savedCardIds]));
@@ -451,7 +351,7 @@ export function RadarFieldPageClient({
       active = false;
       subscription.unsubscribe();
     };
-  }, [fieldSlug, field.id, cards]);
+  }, [fieldSlug, field.id, initialCards]);
 
   // Record a field view once per field mount (not when cards/auth state churn).
   useEffect(() => {
@@ -490,7 +390,7 @@ export function RadarFieldPageClient({
     ro.observe(deck);
     sectionRefs.current.forEach((s) => s && ro.observe(s));
     return () => ro.disconnect();
-  }, [cards.length, initialSkills.length]);
+  }, [sections.length]);
 
   useEffect(() => {
     const root = scrollRef.current;
@@ -501,21 +401,23 @@ export function RadarFieldPageClient({
           .filter((entry) => entry.isIntersecting)
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
         if (!visible) return;
-        const index = Number((visible.target as HTMLElement).dataset.radarIndex);
+        const index = sectionIndexOf(visible.target);
         if (Number.isInteger(index)) setCurrent(index);
       },
       { root, threshold: [0.25, 0.5, 0.75] }
     );
     sectionRefs.current.forEach((section) => section && observer.observe(section));
     return () => observer.disconnect();
-  }, [cards.length, initialSkills.length]);
+  }, [sections.length]);
 
   // Gradually fade in/out blackout overlay around AI impact section
+  const aiIndex = sections.findIndex(
+    (section) => section.type === "card" && section.card.kind === "aiImpact"
+  );
   useEffect(() => {
     const deck = scrollRef.current;
     const blackout = blackoutRef.current;
     if (!deck || !blackout) return;
-    const aiIndex = cards.findIndex((c) => c.kind === "aiImpact");
     if (aiIndex < 0) return;
 
     let raf = 0;
@@ -563,22 +465,12 @@ export function RadarFieldPageClient({
       deck.removeEventListener("scroll", onScroll);
       if (raf) cancelAnimationFrame(raf);
     };
-  }, [cards]);
+  }, [aiIndex, sections.length]);
 
   const accent = readableAccent(field.color || "#3b82f6");
   const visual = getCareerCardVisual(field);
-  const progressItems = [
-    ...cards.map((card, i) => ({
-      key: card.id,
-      label: cardLabel(card),
-      scrollIndex: i,
-    })),
-    ...(initialSkills.length > 0
-      ? [{ key: "skills", label: "ทักษะและการเริ่มลงมือ", scrollIndex: cards.length }]
-      : []),
-  ];
-  const totalSlides = Math.max(progressItems.length, 1);
-  const displayCurrent = Math.min(current + 1, totalSlides);
+
+  const totalSlides = Math.max(sections.length, 1);
   const keepRadarHref = `/radar/keep?next=${encodeURIComponent(`/radar/${fieldSlug}`)}`;
   const isFinalSlide = current >= totalSlides - 1;
   // The plan decision bar owns the bottom of the screen in the wizard flow.
@@ -589,9 +481,34 @@ export function RadarFieldPageClient({
     signupToastVisible &&
     !signupToastDismissed;
 
+  /** The CtaCard intent path: radar_path_intents plus the My Path intent, now with the visit id. */
+  const recordIntent = useCallback(
+    (pathSlug: string, buttonLabel: string | undefined, scope: RadarIntentScope | undefined, fallbackLabel?: string) => {
+      if (!fieldSlug || !field.id) return;
+      routeRadarCardIntent({
+        scope,
+        buttonLabel,
+        recordAnalytics() {
+          void recordRadarPathIntent({
+            fieldSlug,
+            fieldId: field.id,
+            pathSlug,
+            buttonLabel: buttonLabel || fallbackLabel || undefined,
+            visitId: visitIdRef.current,
+          });
+        },
+        recordCanonical(intent) {
+          recordRadarMyPathIntent({ careerSlug: fieldSlug, intent });
+        },
+      });
+    },
+    [fieldSlug, field.id]
+  );
+
   const handleReflect = useCallback(
     async (
       card: RadarCard,
+      sectionIndex: number,
       chapterKey: string,
       payload: { rating?: number; tags?: string[]; text?: string }
     ) => {
@@ -611,16 +528,14 @@ export function RadarFieldPageClient({
           setSignupToastDismissed(false);
         }
       }
-      const idx = cards.findIndex((c) => c.id === card.id);
-      const nextIdx = idx + 1;
-      const slideCount = cards.length;
-      if (nextIdx < slideCount) {
+      const nextIdx = sectionIndex + 1;
+      if (nextIdx < sections.length) {
         setTimeout(() => {
           goTo(nextIdx);
         }, 400);
       }
     },
-    [fieldSlug, cards, showSignupPrompt, hasShownFirstToast, goTo]
+    [fieldSlug, sections.length, showSignupPrompt, hasShownFirstToast, goTo]
   );
 
   useEffect(() => {
@@ -654,6 +569,150 @@ export function RadarFieldPageClient({
       setFinalToastDismissed(true);
     }
   }, [isFinalSlide]);
+
+  const trackTap = useCallback(
+    (target: DeckInteractTarget | string, cardId?: string) => {
+      tracker.track({ type: "interactive_tap", cardId, target });
+    },
+    [tracker]
+  );
+
+  const firstStep = useMemo(() => firstStartOption(initialSkills), [initialSkills]);
+  const programLine = radarProgramLine(fieldSlug);
+  const outroResources = ctaCard ? ctaResources(pickContent(ctaCard)) : [];
+
+  const renderSection = (section: DeckSection<RadarCard>) => {
+    const i = section.index;
+    const sectionRef = (element: HTMLElement | null) => {
+      sectionRefs.current[i] = element;
+    };
+
+    switch (section.type) {
+      case "midShare":
+        return (
+          <GuideShellSection key="mid-share" index={i} sectionRef={sectionRef}>
+            <MidShareCard
+              fieldSlug={fieldSlug}
+              fieldNameTh={field.name_th}
+              uaApp={attribution?.ua_app ?? null}
+              utmSource={attribution?.utm_source ?? null}
+              tracker={tracker}
+            />
+          </GuideShellSection>
+        );
+      case "outro":
+        return (
+          <GuideShellSection key="outro" index={i} sectionRef={sectionRef} grow>
+            <GuideOutro
+              fieldSlug={fieldSlug}
+              fieldNameTh={field.name_th}
+              tracker={tracker}
+              uaApp={attribution?.ua_app ?? null}
+              utmSource={attribution?.utm_source ?? null}
+              firstStep={
+                firstStep ? (
+                  <StartOptionTile option={firstStep} accent={accent} visitId={tracker.visitId} />
+                ) : undefined
+              }
+              intentSlot={
+                <GuideIntentButton
+                  tracker={tracker}
+                  onIntent={() =>
+                    recordIntent(ctaPathSlug(field.squad_url), "interested", "field", "สนใจสายนี้")
+                  }
+                />
+              }
+              programSlot={
+                programLine ? (
+                  <GuideProgramLine
+                    tracker={tracker}
+                    lineTh={programLine.body}
+                    linkLabelTh={programLine.cta}
+                    href={programLine.href}
+                  />
+                ) : undefined
+              }
+              resourcesSlot={
+                outroResources.length > 0 ? (
+                  <CtaResourceLinks
+                    resources={outroResources}
+                    onCtaClick={(target: GuideCtaTarget) =>
+                      tracker.track({ type: "cta_click", target })
+                    }
+                  />
+                ) : undefined
+              }
+            />
+          </GuideShellSection>
+        );
+      case "skills":
+        return (
+          <section
+            key="skills"
+            ref={sectionRef}
+            data-radar-index={i}
+            className="radar-card-section in-view px-6 py-20"
+          >
+            <RadarViewportFit>
+              <RadarSkillExperience
+                skills={initialSkills}
+                accent={accent}
+                startFirst
+                visitId={tracker.visitId}
+                onInteract={(target) => trackTap(target)}
+              />
+            </RadarViewportFit>
+          </section>
+        );
+      case "card": {
+        const card = section.card;
+        const content = pickContent(card);
+        const reflectionKey = cardChapterKey(card);
+        const sourceRefs = (content.source_refs as number[] | undefined) ?? [];
+        const view = (
+          <RadarCardView
+            kind={card.kind}
+            content={content}
+            accent={accent}
+            fieldNameTh={field.name_th ?? undefined}
+            fieldNameEn={field.name_en ?? undefined}
+            fieldSlug={field.slug ?? undefined}
+            squadUrl={field.squad_url}
+            fieldSources={fieldSources}
+            reflectionSubmitted={submitted.has(card.id)}
+            showSignupPrompt={false}
+            onReflect={(payload) => handleReflect(card, i, reflectionKey, payload)}
+            onIntent={(pathSlug, buttonLabel, scope) =>
+              recordIntent(pathSlug, buttonLabel, scope, content.button as string | undefined)
+            }
+            onInteract={(target) => trackTap(target, card.id)}
+            onCtaClick={(target) => tracker.track({ type: "cta_click", cardId: card.id, target })}
+          />
+        );
+        return (
+          <RadarCardSection
+            key={card.id}
+            isFirst={i === 0}
+            hasMore={sections.length > 1}
+            accent={accent}
+            figure={detailFigure(visual.figure)}
+            sourceRefs={sourceRefs}
+            fieldSources={fieldSources}
+            sectionRef={sectionRef}
+            index={i}
+          >
+            {isSkillsCard(card) ? (
+              <SkillsExpander onExpand={() => trackTap("skills:expand", card.id)}>
+                {view}
+              </SkillsExpander>
+            ) : (
+              view
+            )}
+          </RadarCardSection>
+        );
+      }
+    }
+  };
 
   return (
     <div
@@ -696,44 +755,17 @@ export function RadarFieldPageClient({
       </div>
 
       <div className="absolute top-0 inset-x-0 z-30 px-4 pt-4">
-        <div className="flex items-center gap-3 max-w-xl mx-auto">
+        <div className="flex items-center gap-2 max-w-xl mx-auto">
           <button
             onClick={() => router.push("/radar")}
             className="shrink-0 rounded-full border border-white/10 bg-white/5 p-2 text-white/80 hover:bg-white/10 transition-colors"
-            aria-label="Back to Radar"
+            aria-label="กลับไปหน้า Career Radar"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
-          <div className="flex-1 flex gap-1">
-            {progressItems.map((item, i) => (
-              <button
-                key={item.key}
-                type="button"
-                onClick={() => goTo(item.scrollIndex)}
-                aria-label={`ไปที่ ${i + 1}: ${item.label}`}
-                aria-current={i === current ? "step" : undefined}
-                className="group relative min-h-12 flex-1 flex items-center rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-              >
-                <span
-                  className={`h-1 w-full rounded-full transition-all duration-300 group-hover:h-1.5 ${
-                    i === current ? "radar-dot-active" : ""
-                  }`}
-                  style={{
-                    background: i <= current ? accent : "rgba(255,255,255,0.12)",
-                    ["--dot-color" as string]: accent,
-                  }}
-                />
-                <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-2 whitespace-nowrap rounded-md border border-white/10 bg-neutral-900/95 px-2 py-1 text-[11px] text-white/90 opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0 group-focus-visible:opacity-100 group-focus-visible:translate-y-0 z-40 shadow-lg">
-                  <span className="text-white/40 tabular-nums mr-1.5">
-                    {i + 1}
-                  </span>
-                  {item.label}
-                </span>
-              </button>
-            ))}
-          </div>
+          <DeckProgress current={current} total={totalSlides} accent={accent} />
           <span className="shrink-0 text-xs tabular-nums text-white/40">
-            {displayCurrent}/{totalSlides}
+            {Math.min(current + 1, totalSlides)}/{totalSlides}
           </span>
           <span className="shrink-0 text-lg">{field.emoji}</span>
         </div>
@@ -745,18 +777,18 @@ export function RadarFieldPageClient({
             <button
               onClick={dismissSignupToast}
               className="absolute right-3 top-3 rounded-full p-1 text-white/50 transition-colors hover:bg-white/10 hover:text-white"
-              aria-label="Hide signup prompt"
+              aria-label="ซ่อนข้อความนี้"
             >
               <X className="h-4 w-4" />
             </button>
             <div>
               <p className="text-sm font-semibold text-white">
-                Keep your Career Radar
+                เก็บ Career Radar นี้ไว้
               </p>
               <p className="mt-1 text-xs leading-relaxed text-neutral-400">
                 {isFinalSlide
-                  ? "You reached the end. Save this radar so it can turn into next steps."
-                  : "Saved here. Create an account later if you want this to follow you."}
+                  ? "อ่านจบแล้ว เก็บไว้ จะได้ต่อยอดเป็นก้าวถัดไปของเธอ"
+                  : "บันทึกไว้ในเครื่องนี้แล้ว อยากเปิดจากเครื่องอื่นค่อยสมัครบัญชีทีหลังได้"}
               </p>
             </div>
             <Button
@@ -765,7 +797,7 @@ export function RadarFieldPageClient({
               style={{ background: accent }}
             >
               <a href={keepRadarHref}>
-                See why <ArrowRight className="ml-1 h-4 w-4" />
+                ดูว่าทำไม <ArrowRight className="ml-1 h-4 w-4" />
               </a>
             </Button>
           </div>
@@ -777,6 +809,7 @@ export function RadarFieldPageClient({
           fieldSlug={fieldSlug}
           fieldTitle={field.name_th || field.name_en || "เส้นทางนี้"}
           accent={accent}
+          tracker={tracker}
         />
       )}
 
@@ -789,92 +822,84 @@ export function RadarFieldPageClient({
         onTouchEnd={handleDeckTouchEnd}
         onScroll={handleDeckScroll}
       >
-        {cards.length > 0 ? (
-          <>
-            {cards.map((card, i) => {
-              const content = pickContent(card);
-              const chapterKey = cardChapterKey(card);
-              const sourceRefs = (content.source_refs as number[] | undefined) ?? [];
-              return (
-                <RadarCardSection
-                  key={card.id}
-                  isFirst={i === 0}
-                  hasMore={cards.length > 1}
-                  accent={accent}
-                  figure={visual.figure}
-                  sourceRefs={sourceRefs}
-                  fieldSources={fieldSources}
-                  sectionRef={(element) => {
-                    sectionRefs.current[i] = element;
-                  }}
-                  index={i}
-                >
-                  <RadarCardView
-                    kind={card.kind}
-                    content={content}
-                    accent={accent}
-                    fieldNameTh={field.name_th ?? undefined}
-                    fieldNameEn={field.name_en ?? undefined}
-                    fieldSlug={field.slug ?? undefined}
-                    squadUrl={field.squad_url}
-                    fieldSources={fieldSources}
-                    reflectionSubmitted={submitted.has(card.id)}
-                    showSignupPrompt={false}
-                    onReflect={(payload) =>
-                      handleReflect(card, chapterKey, payload)
-                    }
-                    onIntent={(pathSlug, buttonLabel, scope) => {
-                      if (!fieldSlug || !field.id) return;
-                      routeRadarCardIntent({
-                        scope,
-                        buttonLabel,
-                        recordAnalytics() {
-                          void recordRadarPathIntent({
-                            fieldSlug,
-                            fieldId: field.id,
-                            pathSlug,
-                            buttonLabel:
-                              buttonLabel ||
-                              (content.button as string | undefined) ||
-                              undefined,
-                          });
-                        },
-                        recordCanonical(intent) {
-                          recordRadarMyPathIntent({
-                            careerSlug: fieldSlug,
-                            intent,
-                          });
-                        },
-                      });
-                    }}
-                  />
-                </RadarCardSection>
-              );
-            })}
-            {initialSkills.length > 0 && (
-              <section
-                ref={(element) => {
-                  sectionRefs.current[cards.length] = element;
-                }}
-                data-radar-index={cards.length}
-                className="radar-card-section in-view px-6 py-20"
-              >
-                <RadarViewportFit>
-                  <RadarSkillExperience skills={initialSkills} accent={accent} />
-                </RadarViewportFit>
-              </section>
-            )}
-          </>
+        {sections.length > 0 ? (
+          sections.map(renderSection)
         ) : (
           <section data-radar-index={0} className="radar-card-section px-6 py-20">
             <div className="min-h-[calc(100dvh-10rem)] flex flex-col">
               <div className="my-auto text-center">
-                <p className="text-neutral-400">No content yet for this field.</p>
+                <p className="text-neutral-400">สายนี้ยังไม่มีข้อมูล</p>
               </div>
             </div>
           </section>
         )}
       </div>
+    </div>
+  );
+}
+
+/** Header progress, display only: how far through the deck the student is. */
+function DeckProgress({ current, total, accent }: { current: number; total: number; accent: string }) {
+  const fill = total > 0 ? Math.min(1, (current + 1) / total) : 0;
+  return (
+    <div className="relative h-1 flex-1 overflow-hidden rounded-full bg-white/[0.12]" aria-hidden="true">
+      <span
+        className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-300"
+        style={{ width: `${Math.round(fill * 100)}%`, background: accent }}
+      />
+    </div>
+  );
+}
+
+/** Wraps a non-card guide section (mid-deck share card, outro) in the deck's section shell. */
+function GuideShellSection({
+  children,
+  index,
+  sectionRef,
+  grow = false,
+}: {
+  children: React.ReactNode;
+  index: number;
+  sectionRef: (element: HTMLElement | null) => void;
+  /** The outro grows with its content instead of fitting the viewport. */
+  grow?: boolean;
+}) {
+  return (
+    <section
+      ref={sectionRef}
+      data-radar-index={index}
+      className="radar-card-section in-view px-6 py-20"
+    >
+      <div className={grow ? "mx-auto w-full max-w-xl" : "min-h-[calc(100dvh-10rem)] flex flex-col"}>
+        <div className={grow ? undefined : "my-auto mx-auto w-full max-w-xl"}>{children}</div>
+      </div>
+    </section>
+  );
+}
+
+/** The skills card sits behind "ดูทักษะทั้งหมด" after the skill rail. */
+function SkillsExpander({
+  children,
+  onExpand,
+}: {
+  children: React.ReactNode;
+  onExpand: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  if (open) return <>{children}</>;
+  return (
+    <div className="mx-auto flex w-full max-w-xl flex-col items-center gap-3 text-center">
+      <p className="text-sm text-neutral-400">อยากรู้ว่าสายนี้ใช้ทักษะอะไรบ้าง</p>
+      <button
+        type="button"
+        onClick={() => {
+          setOpen(true);
+          onExpand();
+        }}
+        className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-5 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+      >
+        ดูทักษะทั้งหมด <ChevronDown className="h-4 w-4" />
+      </button>
     </div>
   );
 }
@@ -888,10 +913,12 @@ function PlanDecisionBar({
   fieldSlug,
   fieldTitle,
   accent,
+  tracker,
 }: {
   fieldSlug: string;
   fieldTitle: string;
   accent: string;
+  tracker: GuideTracker;
 }) {
   const router = useRouter();
   const [interests, setInterests] = useState<string[]>([]);
@@ -907,13 +934,14 @@ function PlanDecisionBar({
       <div className="mx-auto w-full max-w-xl px-4 py-3">
         <p className="text-center text-[11px] text-white/45">
           {isInterested
-            ? `เก็บ “${fieldTitle}” เข้าแผนของคุณแล้ว — สำรวจต่อได้อีก`
+            ? `เก็บ “${fieldTitle}” เข้าแผนของคุณแล้ว สำรวจต่อได้อีก`
             : "อ่านจบแล้วคิดว่าไง? เลือกได้หลายเส้นทาง"}
         </p>
         <div className="mt-2.5 flex items-center gap-2">
           <button
             type="button"
             onClick={() => {
+              if (!isInterested) tracker.track({ type: "cta_click", target: "plan" });
               setInterests(toggleRadarInterest(window.localStorage, fieldSlug));
             }}
             aria-pressed={isInterested}
@@ -1048,7 +1076,6 @@ const RadarCardSection = memo(function RadarCardSection({
               sizes="100vw"
               className="object-contain object-center"
               draggable={false}
-              priority
             />
           </div>
         </div>

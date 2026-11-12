@@ -32,6 +32,11 @@ export interface ThreadAdviceRequest {
     interests?: string[];
   };
   timeoutMs?: number;
+  /**
+   * `dm_conversations.origin`. Radar-origin threads (students who asked for a
+   * Career Radar link) are never drafted for (spec 5.6).
+   */
+  origin?: string | null;
 }
 
 export interface ThreadDraft {
@@ -132,6 +137,7 @@ export function parseDrafts(raw: string): ThreadDraft[] {
  * its deterministic chips when the model is down.
  */
 export async function draftFromThread(request: ThreadAdviceRequest): Promise<ThreadDraft[]> {
+  if (request.origin === "radar") return [];
   if (!request.messages.some((m) => m.direction === "inbound")) return [];
 
   try {

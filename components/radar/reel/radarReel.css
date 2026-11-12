@@ -1,0 +1,87 @@
+/*
+ * Career Radar motion reel (Dusk City). Entrances reuse the SHIFT reel
+ * classes (reel-slam, reel-rise, reel-pop, reel-strike from
+ * components/shift/poster/testimonial/testimonialReel.css); these add the
+ * Dusk City pieces. Every animation has an explicit delay (--in, --out) so
+ * render mode can pause them all and seek to any frame.
+ */
+
+/* A window switching on: dark, a flicker, then lit. */
+.rr-lit {
+  opacity: 0.16;
+  animation: rr-lit 0.24s steps(3) var(--in) forwards;
+}
+
+@keyframes rr-lit {
+  0% { opacity: 0.16; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+/* A progress dot: magenta while its scene plays, cream after. */
+.rr-dot {
+  background-color: rgba(255, 241, 230, 0.22);
+  animation:
+    rr-dot-now 0.12s linear var(--in) forwards,
+    rr-dot-done 0.12s linear var(--out) forwards;
+}
+
+.rr-dot-last {
+  background-color: rgba(255, 241, 230, 0.22);
+  animation: rr-dot-now 0.12s linear var(--in) forwards;
+}
+
+@keyframes rr-dot-now {
+  to { background-color: #ff3fb4; transform: scale(1.25); }
+}
+
+@keyframes rr-dot-done {
+  from { background-color: #ff3fb4; transform: scale(1.25); }
+  to { background-color: #fff1e6; transform: none; }
+}
+
+/* A list step lighting up as it is said: dim before, lit after. */
+.rr-step {
+  opacity: 0.32;
+  animation: rr-step 0.3s cubic-bezier(0.05, 0.7, 0.35, 0.99) var(--in) forwards;
+}
+
+@keyframes rr-step {
+  from { opacity: 0.32; transform: translateX(-18px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Plain fade for scene backdrops (no overshoot). */
+.rr-fade {
+  animation:
+    rr-fade 0.2s ease-out var(--in) both,
+    rr-fade-out 0.14s ease-in var(--out) forwards;
+}
+
+.rr-fade-last {
+  animation: rr-fade 0.2s ease-out var(--in) both;
+}
+
+@keyframes rr-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes rr-fade-out {
+  to { opacity: 0; }
+}
+
+/* Window glow behind the keyword on the end card. */
+.rr-glow {
+  animation: rr-glow 1.4s ease-in-out var(--in) infinite alternate;
+}
+
+@keyframes rr-glow {
+  from { filter: drop-shadow(0 0 6px rgba(255, 179, 107, 0.4)); }
+  to { filter: drop-shadow(0 0 22px rgba(255, 138, 76, 0.85)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The studio is a render tool, but keep the live preview calm on request. */
+  .rr-glow { animation: none; }
+}

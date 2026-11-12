@@ -14,8 +14,11 @@ import Link from "next/link";
 import {
   ArrowRight,
   BarChart3,
+  Clapperboard,
   Eye,
   FileText,
+  Filter,
+  Inbox,
   MousePointerClick,
   Search,
   Users,
@@ -24,6 +27,15 @@ import { cn } from "@/lib/utils";
 import { RadarAnalyticsCharts } from "@/components/admin/RadarAnalyticsCharts";
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
 import { AdminEmptyState, AdminErrorState } from "@/components/admin/shared/AdminStates";
+import { RadarCareerRequests } from "@/components/admin/radar/RadarCareerRequests";
+import { RadarGuideFunnel } from "@/components/admin/radar/RadarGuideFunnel";
+import { Button } from "@/components/ui/button";
+import { requireAdmin } from "@/lib/admin/requireAdmin";
+import {
+  loadCareerRequestsView,
+  loadGuideFunnelView,
+  type RadarAdminDb,
+} from "@/lib/supabase/radar-guide-admin";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +48,8 @@ type AdminRadarPageProps = {
   searchParams?: Promise<{
     view?: string;
     q?: string;
+    weeks?: string;
+    page?: string;
   }>;
 };
 
@@ -51,14 +65,22 @@ function formatActivityDate(value: string | null) {
 const VIEW_TAB =
   "inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium transition-colors";
 
-function ViewTabs({ activeView }: { activeView: "content" | "analytics" }) {
+type RadarView = "content" | "analytics" | "funnel" | "requests";
+
+function parseView(value: string | undefined): RadarView {
+  return value === "analytics" || value === "funnel" || value === "requests" ? value : "content";
+}
+
+function ViewTabs({ activeView }: { activeView: RadarView }) {
   const tabs = [
     { view: "content", href: "/admin/radar", label: "Content", icon: FileText },
     { view: "analytics", href: "/admin/radar?view=analytics", label: "Analytics", icon: BarChart3 },
+    { view: "funnel", href: "/admin/radar?view=funnel", label: "Guide funnel", icon: Filter },
+    { view: "requests", href: "/admin/radar?view=requests", label: "Requests", icon: Inbox },
   ] as const;
   return (
     <nav
-      className="grid w-full grid-cols-2 rounded-lg border bg-muted/40 p-1 lg:w-auto"
+      className="grid w-full grid-cols-2 rounded-lg border bg-muted/40 p-1 sm:grid-cols-4 lg:w-auto"
       aria-label="Radar workspace views"
     >
       {tabs.map(({ view, href, label, icon: Icon }) => (
@@ -84,10 +106,52 @@ function ViewTabs({ activeView }: { activeView: "content" | "analytics" }) {
 export default async function AdminRadarPage({
   searchParams,
 }: AdminRadarPageProps) {
+  await requireAdmin();
   const params = await searchParams;
-  const activeView = params?.view === "analytics" ? "analytics" : "content";
+  const activeView = parseView(params?.view);
   const searchQuery = params?.q?.trim() || "";
   const supabase = await createClient();
+
+  const header = (
+    <AdminPageHeader
+      eyebrow="Career Radar"
+      title="Radar workspace"
+      description="Maintain the career stories students see, then review which fields and paths are earning attention."
+      actions={
+        <div className="flex flex-wrap items-center gap-2">
+          <Button asChild variant="outline" className="min-h-11">
+            <Link href="/admin/radar/reels">
+              <Clapperboard className="h-4 w-4" aria-hidden="true" />
+              Reels and links
+            </Link>
+          </Button>
+          <ViewTabs activeView={activeView} />
+        </div>
+      }
+    />
+  );
+
+  if (activeView === "funnel") {
+    const funnel = await loadGuideFunnelView(supabase as unknown as RadarAdminDb, {
+      weeks: params?.weeks,
+      page: params?.page,
+    });
+    return (
+      <div className="space-y-8">
+        {header}
+        <RadarGuideFunnel {...funnel} />
+      </div>
+    );
+  }
+  if (activeView === "requests") {
+    const requests = await loadCareerRequestsView(supabase as unknown as RadarAdminDb);
+    return (
+      <div className="space-y-8">
+        {header}
+        <RadarCareerRequests {...requests} />
+      </div>
+    );
+  }
 
   // Independent reads run together; profiles wait for the intent user ids.
   const [
@@ -177,12 +241,7 @@ export default async function AdminRadarPage({
 
   return (
     <div className="space-y-8">
-      <AdminPageHeader
-        eyebrow="Career Radar"
-        title="Radar workspace"
-        description="Maintain the career stories students see, then review which fields and paths are earning attention."
-        actions={<ViewTabs activeView={activeView} />}
-      />
+      {header}
 
       {error && (
         <AdminErrorState

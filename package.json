@@ -54,7 +54,14 @@
     "cleanup:self-comments": "dotenv -e .env.local -o -- tsx scripts/mark-self-comments-replied.ts",
     "build:extension": "tsc --noEmit -p extension/tsconfig.json && node scripts/build-extension.mjs",
     "typecheck:extension": "tsc --noEmit -p extension/tsconfig.json",
-    "generate:og": "tsx scripts/generate-og-images.tsx"
+    "generate:og": "tsx scripts/generate-og-images.tsx",
+    "radar:dump": "dotenv -e .env.local -o -- tsx scripts/radar-guide/dump.ts",
+    "radar:clip": "dotenv -e .env.local -o -- tsx scripts/radar-guide/clip.ts",
+    "radar:reel": "dotenv -e .env.local -o -- tsx scripts/radar-guide/reel.ts",
+    "radar:cover": "dotenv -e .env.local -o -- tsx scripts/radar-guide/cover.ts",
+    "radar:check": "tsx scripts/radar-guide/check.ts",
+    "radar:tcas": "tsx scripts/radar-guide/tcas.ts",
+    "radar:art": "tsx scripts/radar-guide/art.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.38",

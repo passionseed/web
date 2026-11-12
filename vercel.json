@@ -21,6 +21,12 @@
     "app/api/cron/brain-sync/route.ts": {
       "maxDuration": 60
     },
+    "app/api/cron/radar-reel-insights/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/meta/webhook/route.ts": {
+      "maxDuration": 30
+    },
     "app/api/cron/shift-island-digest/route.ts": {
       "maxDuration": 60
     },
@@ -44,6 +50,10 @@
     {
       "path": "/api/cron/shift-canvas-snapshots",
       "schedule": "45 16 * * *"
+    },
+    {
+      "path": "/api/cron/radar-reel-insights",
+      "schedule": "15 3 * * *"
     },
     {
       "path": "/api/cron/shift-island-digest",
