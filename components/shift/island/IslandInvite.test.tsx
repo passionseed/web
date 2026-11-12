@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 
-import { LETTER_CHAPTERS, PROLOGUE, SEAL } from "@/lib/content/shift-island-invite";
+import { LETTER_CHAPTERS, MAP, PROLOGUE, SEAL } from "@/lib/content/shift-island-invite";
 
 import { IslandInvite } from "./IslandInvite";
 
@@ -58,4 +58,28 @@ it("jumps to the seal without smooth scrolling under reduced motion", () => {
 it("does not move focus to the seal when the letter opens on its own", () => {
   render(<IslandInvite viewer={{ kind: "canRsvp" }} festival={FESTIVAL} />);
   expect(scrollIntoView).not.toHaveBeenCalled();
+});
+
+it("folds the letter away to show the island and opens it again", () => {
+  jest.useFakeTimers();
+  window.scrollTo = jest.fn();
+  try {
+    render(<IslandInvite viewer={{ kind: "signedOut" }} festival={FESTIVAL} initialScene="letter" />);
+    const letter = screen.getByRole("article");
+
+    fireEvent.click(screen.getByRole("button", { name: MAP.close }));
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+    expect(letter).not.toBeVisible();
+    const open = screen.getByRole("button", { name: MAP.open });
+    expect(open).toHaveFocus();
+
+    fireEvent.click(open);
+    expect(letter).toBeVisible();
+    expect(screen.getByRole("heading", { level: 1, name: LETTER_CHAPTERS[0].title })).toHaveFocus();
+    expect(screen.queryByRole("button", { name: MAP.open })).not.toBeInTheDocument();
+  } finally {
+    jest.useRealTimers();
+  }
 });

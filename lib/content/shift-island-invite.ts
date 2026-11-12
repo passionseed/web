@@ -28,6 +28,15 @@ export const SHORE = {
   next: "ต่อ",
 } as const;
 
+/**
+ * Behind the letter is the island it came from, drawn as a treasure map. The
+ * letter folds away to show it, and opens again from the same place.
+ */
+export const MAP = {
+  close: "พับจดหมาย ดูเกาะ",
+  open: "เปิดจดหมาย",
+} as const;
+
 export const LETTER_CHAPTERS: readonly {
   id: "island" | "tree" | "festival" | "rules";
   title: string;

@@ -670,20 +670,216 @@
   min-height: 100vh;
   min-height: 100svh;
   justify-content: center;
-  padding: 48px var(--isl-gutter) 72px;
-  /* Lantern light behind the paper, so it reads as lit from the shore. */
-  background: radial-gradient(60% 40% at 50% 18%, rgba(255, 201, 107, 0.16), rgba(255, 138, 76, 0.06) 55%, transparent);
+  /* Room above the paper for the fold button. */
+  padding: 80px var(--isl-gutter) 72px;
 }
 
 @media (min-width: 768px) {
   .letter {
-    padding-top: 72px;
+    padding-top: 88px;
     padding-bottom: 96px;
+  }
+}
+
+/* ---------- The island behind the letter, as a treasure map ---------- */
+
+.map {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: var(--isl-sea);
+  pointer-events: none;
+}
+
+.mapImage,
+.mapMarks {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* object-fit: cover crops exactly like the overlay's xMidYMid slice. */
+.mapImage {
+  max-width: none;
+  object-fit: cover;
+  image-rendering: pixelated;
+  filter: saturate(0.8) brightness(0.62);
+  transition: filter 700ms var(--isl-ease-tension);
+}
+
+/* Dusk over the midday sample, darker at the edges like an old chart. */
+.mapTint {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 90% at 50% 45%, transparent 40%, rgba(10, 11, 31, 0.7) 100%),
+    linear-gradient(180deg, rgba(59, 36, 88, 0.5) 0%, rgba(122, 63, 110, 0.3) 45%, rgba(255, 138, 76, 0.16) 100%);
+  transition: opacity 700ms var(--isl-ease-tension);
+}
+
+/* Letter folded: the island comes up into the light. */
+.map[data-revealed] .mapImage {
+  filter: saturate(0.95) brightness(0.92);
+}
+
+.map[data-revealed] .mapTint {
+  opacity: 0.6;
+}
+
+.trail,
+.trailShadow {
+  fill: none;
+  stroke-width: 7;
+  stroke-dasharray: 12 11;
+}
+
+.trail {
+  stroke: var(--isl-wax);
+}
+
+.trailShadow {
+  stroke: rgba(42, 29, 46, 0.6);
+  transform: translate(0, 3px);
+}
+
+/* The trail draws on from the boat once the letter has unrolled. */
+.trailReveal {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 40;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+  animation: isl-trail 1800ms var(--isl-ease-snap) 1700ms forwards;
+}
+
+.xShadow,
+.xStroke {
+  fill: none;
+  stroke-linecap: square;
+}
+
+.xShadow {
+  stroke: var(--isl-ink);
+  stroke-width: 15;
+}
+
+.xStroke {
+  stroke: var(--isl-wax);
+  stroke-width: 8;
+}
+
+.xMark {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: isl-x-pop 480ms var(--isl-ease-tension) 3300ms backwards;
+}
+
+/* Light pooling round the X once the island is the whole view. */
+.xRing {
+  fill: rgba(255, 201, 107, 0.22);
+  stroke: var(--isl-gold);
+  stroke-width: 3;
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  transition: opacity 400ms var(--isl-ease-snap);
+}
+
+.map[data-revealed] .xRing {
+  opacity: 1;
+  animation: isl-x-ring 2400ms ease-in-out 300ms infinite;
+}
+
+.mapTag {
+  position: absolute;
+  top: 22px;
+  left: var(--isl-gutter);
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--isl-glass);
+  color: var(--isl-text-dim);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  opacity: 0;
+  transition: opacity 400ms var(--isl-ease-snap);
+}
+
+.map[data-revealed] .mapTag {
+  opacity: 1;
+}
+
+@keyframes isl-trail {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes isl-x-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.2) rotate(-20deg);
+  }
+}
+
+@keyframes isl-x-ring {
+  0%,
+  100% {
+    transform: scale(0.85);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.45;
+  }
+}
+
+/* Fold the letter away: top right, clear of the paper. */
+.skip.mapFold {
+  position: fixed;
+  top: 14px;
+  right: var(--isl-gutter);
+  z-index: 3;
+}
+
+/* Open it again: the one thing on screen besides the island. */
+.next.mapOpen {
+  position: fixed;
+  bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  z-index: 3;
+  translate: -50% 0;
+}
+
+/* Rolling up: the paper clips away bottom to top, the rods follow it out. */
+.scroll[data-state="folding"] .paper {
+  animation: isl-roll-up 460ms var(--isl-ease-snap) forwards;
+}
+
+.scroll[data-state="folding"] .rod {
+  animation: isl-rod-out 460ms var(--isl-ease-snap) forwards;
+}
+
+@keyframes isl-roll-up {
+  to {
+    clip-path: inset(0 0 100% 0);
+    opacity: 0.4;
+    filter: blur(4px) brightness(1.2);
+  }
+}
+
+@keyframes isl-rod-out {
+  to {
+    opacity: 0;
+    transform: translateY(-10px) scaleX(0.7);
   }
 }
 
 .scroll {
   position: relative;
+  z-index: 1;
   width: 100%;
   /* Wide enough on desktop for the tree row to draw its sprites at 2x. */
   max-width: 40rem;
@@ -735,7 +931,9 @@
     inset 0 12px 16px -12px rgba(42, 29, 46, 0.4),
     inset 0 -12px 16px -12px rgba(42, 29, 46, 0.4),
     inset 1px 0 0 rgba(42, 29, 46, 0.12),
-    inset -1px 0 0 rgba(42, 29, 46, 0.12);
+    inset -1px 0 0 rgba(42, 29, 46, 0.12),
+    /* Aged at the edges, like a chart that has been at sea. */
+    inset 0 0 56px rgba(122, 74, 32, 0.3);
   /* Fill backwards only: once unrolled, nothing is left clipped or filtered. */
   animation: isl-unroll 1500ms cubic-bezier(0.45, 0, 0.2, 1) 180ms backwards;
 }
@@ -833,15 +1031,42 @@
   letter-spacing: -0.01em;
 }
 
-/* A square of wax before each chapter title. */
+/* A pixel X in wax before each chapter title: the spots marked on the map. */
 .chapterTitle::before {
   content: "";
   flex: none;
-  width: 8px;
-  height: 8px;
-  translate: 0 -3px;
-  background: var(--isl-wax);
-  box-shadow: 2px 2px 0 var(--isl-wax-dark);
+  width: 10px;
+  height: 10px;
+  translate: 0 -2px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 5 5' shape-rendering='crispEdges'%3E%3Cpath fill='%23b8322f' d='M0 0h1v1H0zM4 0h1v1H4zM1 1h1v1H1zM3 1h1v1H3zM2 2h1v1H2zM1 3h1v1H1zM3 3h1v1H3zM0 4h1v1H0zM4 4h1v1H4z'/%3E%3C/svg%3E")
+    center / 100% 100% no-repeat;
+}
+
+/* A compass rose in the corner of the map. */
+.compass {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  width: 39px;
+  height: 39px;
+  opacity: 0.55;
+}
+
+@media (min-width: 768px) {
+  .compass {
+    right: 24px;
+    bottom: 24px;
+    width: 52px;
+    height: 52px;
+  }
+}
+
+.compassInk {
+  fill: var(--isl-ink);
+}
+
+.compassWax {
+  fill: var(--isl-wax);
 }
 
 .chapterBody {
@@ -1341,5 +1566,23 @@
   .root :global(.ei-button-dawn)::before,
   .root :global(.ei-button-dawn)::after {
     animation: none !important;
+  }
+}
+
+/* Reduced motion: the trail and the X are already drawn, nothing pulses. */
+@media (prefers-reduced-motion: reduce) {
+  .trailReveal {
+    stroke-dashoffset: 0;
+    animation: none;
+  }
+
+  .xMark,
+  .map[data-revealed] .xRing {
+    animation: none;
+  }
+
+  .mapImage,
+  .mapTint {
+    transition: none;
   }
 }
