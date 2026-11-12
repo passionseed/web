@@ -1,7 +1,9 @@
 import type { MetadataRoute } from "next";
 
+import { CANONICAL_ORIGIN } from "@/lib/seo/canonical-origin";
+
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://passionseed.org";
+  const baseUrl = CANONICAL_ORIGIN;
 
   return {
     rules: [

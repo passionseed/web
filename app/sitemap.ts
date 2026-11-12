@@ -1,12 +1,13 @@
 import type { MetadataRoute } from "next";
 
+import { CANONICAL_ORIGIN } from "@/lib/seo/canonical-origin";
 import { PORT_GUIDES, portGuidePath } from "@/lib/content/port-guides";
 import { SHIFT_COHORTS, cohortPath } from "@/lib/content/shift-cohort";
 import { guideSitemapEntries } from "@/components/radar/guide/shell/guide-routes";
 import { allGuides } from "@/lib/radar-guides/registry.server";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://passionseed.org";
+  const baseUrl = CANONICAL_ORIGIN;
   const now = new Date();
 
   return [

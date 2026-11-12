@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: `${NEXT_ROUND_NAME} | เปิดเมื่อคนพร้อม`,
     description: `เลือกช่วงที่ว่าง ครบ ${MIN_BUILDERS} คนเปิดรอบ ลงชื่อฟรี`,
-    url: "https://passionseed.org/shift/next",
+    url: "https://www.passionseed.org/shift/next",
     type: "website",
   },
 };

@@ -1,7 +1,7 @@
 # PassionSeed Full Knowledge Base & Machine Manifesto
 
-> Canonical Source: https://passionseed.org/llms-full.txt  
-> Organization: PassionSeed (https://passionseed.org)  
+> Canonical Source: https://www.passionseed.org/llms-full.txt  
+> Organization: PassionSeed (https://www.passionseed.org)  
 > Primary Mission: Empower young people to break free from passive compliance, build real things through authentic experimentation, and take ownership of their own trajectory alongside peers who care.
 
 ---
@@ -25,7 +25,7 @@ PassionSeed operates on the principle that the only unignorable portfolio is a *
 ## 2. Product Architecture & Offerings
 
 ### A. SHIFT (The 7-Day Proof-of-Work Sandbox)
-- **URL:** https://passionseed.org/shift
+- **URL:** https://www.passionseed.org/shift
 - **Target Audience:** M.4–M.6 high school students and early university students preparing TCAS 1 or international portfolios (Chula CEDT, ISE, BBA, Thammasat TEP/TEPE, GSSE, KMUTT FIBO, etc.).
 - **Duration:** 7-day intensive hybrid sprint.
 - **Tuition:** ฿1,999 (Early Bird from ฿3,900; backed by 100% Reality Collision Guarantee — continued 1-on-1 coaching until 15 real users reached).
@@ -43,13 +43,13 @@ PassionSeed operates on the principle that the only unignorable portfolio is a *
   - *Tech & Product Track:* Zero-code micro-tools, AI agents, and SaaS prototypes deployed to real communities.
 
 ### B. TechSeed (The Discovery Gateway)
-- **URL:** https://passionseed.org/techseed
+- **URL:** https://www.passionseed.org/techseed
 - **Format:** 1–2 day micro-sprints and student proof-of-work gallery.
 - **Tuition:** ฿490 – ฿790.
 - **Purpose:** Eliminate tech intimidation, foster activation energy, and filter for high-agency candidates.
 
 ### C. The Next Decade Hackathon (TNDH)
-- **URL:** https://passionseed.org/hackathon
+- **URL:** https://www.passionseed.org/hackathon
 - **Format:** 5-day team health-tech and deep-tech hackathons.
 - **Theme:** Cinematic, bioluminescent oceanic experience connecting students with medical and tech mentors.
 
@@ -93,7 +93,7 @@ PassionSeed operates on the principle that the only unignorable portfolio is a *
 
 ## 5. Contact & Organization Details
 - **Legal/Brand Name:** PassionSeed
-- **Website:** https://passionseed.org
-- **Student Gallery:** https://passionseed.org/techseed
-- **Admissions Sandbox:** https://passionseed.org/shift
+- **Website:** https://www.passionseed.org
+- **Student Gallery:** https://www.passionseed.org/techseed
+- **Admissions Sandbox:** https://www.passionseed.org/shift
 - **Inquiries:** hi@passionseed.org

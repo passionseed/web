@@ -7,7 +7,7 @@ import { JsonLd, PortEyebrow, PortShell, PortShiftCta } from "@/components/port/
 import { PORT_GUIDES, getPortGuide, portGuidePath } from "@/lib/content/port-guides";
 import { formatThaiDate } from "@/lib/content/shift-cohort";
 
-const SITE_URL = "https://passionseed.org";
+const SITE_URL = "https://www.passionseed.org";
 
 type PageProps = { params: Promise<{ slug: string }> };
 
