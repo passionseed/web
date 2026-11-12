@@ -1,7 +1,10 @@
 import type { User } from "@supabase/supabase-js";
+import { after } from "next/server";
 
 import { isAnonymousUser } from "@/lib/supabase/auth";
 import { elementAuthorIds, groupChanges, type ActivitySession, type ChangeItem } from "@/lib/whiteboard/activity";
+import { shiftPeople } from "@/lib/supabase/shift-people";
+import { compactElements } from "@/lib/whiteboard/compact";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 import {
@@ -33,7 +36,27 @@ export type WhiteboardMember = {
   name: string;
   avatarUrl: string | null;
   role: WhiteboardRole;
+  /** May open the Quest dashboard (set by the owner). The owner and site admins always may. */
+  questReviewer?: boolean;
 };
+
+type MemberRow = { user_id: string; role: string; quest_reviewer: boolean };
+
+/**
+ * A board's members with their quest reviewer flag. Until the quest_reviewer
+ * migration is applied the column is missing (Postgres 42703): read without it,
+ * so boards keep opening whatever order code and migration land in.
+ */
+async function boardMembers(boardId: string): Promise<MemberRow[]> {
+  const res = await db().from("whiteboard_members").select("user_id, role, quest_reviewer").eq("whiteboard_id", boardId);
+  if (res.error?.code === "42703") {
+    const old = await db().from("whiteboard_members").select("user_id, role").eq("whiteboard_id", boardId);
+    if (old.error) throw old.error;
+    return (old.data ?? []).map((m) => ({ user_id: m.user_id as string, role: m.role as string, quest_reviewer: false }));
+  }
+  if (res.error) throw res.error;
+  return (res.data ?? []) as MemberRow[];
+}
 
 export type WhiteboardDetail = {
   id: string;
@@ -102,6 +125,88 @@ export async function roleFor(boardId: string, viewer: Viewer): Promise<Whiteboa
   if (board.owner_id === viewer.id) return "owner";
   if (member) return member.role as MemberRole;
   return viewer.isAdmin ? "viewer" : null;
+}
+
+export type OpenedBoard = { viewer: Viewer; board: WhiteboardDetail };
+
+/**
+ * Everything the board page needs in two rounds of queries instead of five in
+ * a row: the sign-in check and the board's rows together, then the people's
+ * profiles and admin flags (the viewer's included) together. Same answer as
+ * getViewer + roleFor + loadBoard. Returns "signin" when nobody is signed in,
+ * null when there is no board or the viewer has no access.
+ */
+export async function openBoard(boardId: string): Promise<OpenedBoard | "signin" | null> {
+  const [auth, boardRes, members] = await Promise.all([
+    createClient().then((supabase) => supabase.auth.getUser()),
+    db()
+      .from("whiteboards")
+      .select("id, title, elements, owner_id, link_access, share_token, timer_ends_at, timer_seconds")
+      .eq("id", boardId)
+      .maybeSingle(),
+    boardMembers(boardId),
+  ]);
+  const user = auth.data.user;
+  if (!user || isAnonymousUser(user)) return "signin";
+  if (boardRes.error) throw boardRes.error;
+  const board = boardRes.data;
+  if (!board) return null;
+
+  const people = [
+    { userId: board.owner_id as string, role: "owner" as WhiteboardRole },
+    ...members.map((m) => ({ userId: m.user_id, role: m.role as WhiteboardRole, questReviewer: m.quest_reviewer })),
+  ];
+  const ids = [...new Set([...people.map((p) => p.userId), user.id])];
+  const [profiles, { data: admins, error: adminsError }] = await Promise.all([
+    profilesById(ids),
+    db().from("user_roles").select("user_id").eq("role", "admin").in("user_id", ids),
+  ]);
+  if (adminsError) throw adminsError;
+  const adminIds = new Set((admins ?? []).map((a) => a.user_id as string));
+
+  const isAdmin = adminIds.has(user.id);
+  const mine = members.find((m) => m.user_id === user.id);
+  const role: WhiteboardRole | null =
+    board.owner_id === user.id ? "owner" : mine ? (mine.role as MemberRole) : isAdmin ? "viewer" : null;
+  if (!role) return null;
+
+  if (mine) {
+    // Bookkeeping only: do it after the page is sent.
+    after(async () => {
+      await db()
+        .from("whiteboard_members")
+        .update({ last_opened_at: new Date().toISOString() })
+        .eq("whiteboard_id", boardId)
+        .eq("user_id", user.id);
+    });
+  }
+
+  const profile = profiles[user.id];
+  return {
+    viewer: { id: user.id, name: profile?.name ?? fallbackName(user), avatarUrl: profile?.avatarUrl ?? null, isAdmin },
+    board: {
+      id: board.id as string,
+      title: board.title as string,
+      // Deleted elements are kept in the database (a save never brings back something with a
+      // lower version), but the editor has no use for them: on busy boards they are most of the data.
+      // Strokes and lines are slimmed as saves are (lib/whiteboard/compact.ts), so boards saved
+      // before that open as light as new ones; versions are untouched, so nothing re-syncs.
+      elements: compactElements(live(board.elements)),
+      role,
+      linkAccess: board.link_access as LinkAccess,
+      shareToken: role === "owner" ? (board.share_token as string) : null,
+      members: people.map((p) => ({
+        ...p,
+        name: profiles[p.userId]?.name ?? "Someone",
+        avatarUrl: profiles[p.userId]?.avatarUrl ?? null,
+      })),
+      managerIds: [...new Set([board.owner_id as string, ...people.map((p) => p.userId).filter((id) => adminIds.has(id))])],
+      timer: {
+        endsAt: (board.timer_ends_at as string | null) ?? null,
+        seconds: (board.timer_seconds as number | null) ?? null,
+      },
+    },
+  };
 }
 
 export async function listBoards(viewer: Viewer): Promise<WhiteboardSummary[]> {
@@ -239,6 +344,16 @@ export async function removeMember(boardId: string, userId: string): Promise<voi
   if (error) throw error;
 }
 
+/** Lets a member open the Quest dashboard, or stops them. */
+export async function setQuestReviewer(boardId: string, userId: string, on: boolean): Promise<void> {
+  const { error } = await db()
+    .from("whiteboard_members")
+    .update({ quest_reviewer: on })
+    .eq("whiteboard_id", boardId)
+    .eq("user_id", userId);
+  if (error) throw error;
+}
+
 export async function setMemberRole(boardId: string, userId: string, role: MemberRole): Promise<void> {
   const { error } = await db()
     .from("whiteboard_members")
@@ -331,6 +446,41 @@ export async function saveFiles(boardId: string, userId: string, files: BoardFil
       { onConflict: "whiteboard_id,file_id", ignoreDuplicates: true },
     );
   if (error) throw error;
+}
+
+/**
+ * The signed-in caller's role on a board, for hot read paths such as images:
+ * the sign-in check, then the owner, membership and admin lookups at once.
+ * Returns "signin" when nobody is signed in, null when they have no access.
+ */
+export async function callerRole(boardId: string): Promise<WhiteboardRole | "signin" | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user || isAnonymousUser(user)) return "signin";
+  const [{ data: board, error }, { data: member }, { data: admin }] = await Promise.all([
+    db().from("whiteboards").select("owner_id").eq("id", boardId).maybeSingle(),
+    db().from("whiteboard_members").select("role").eq("whiteboard_id", boardId).eq("user_id", user.id).maybeSingle(),
+    db().from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").limit(1),
+  ]);
+  if (error) throw error;
+  if (!board) return null;
+  if (board.owner_id === user.id) return "owner";
+  if (member) return member.role as MemberRole;
+  return admin?.length ? "viewer" : null;
+}
+
+export async function loadFile(boardId: string, fileId: string): Promise<BoardFile | null> {
+  const { data, error } = await db()
+    .from("whiteboard_files")
+    .select("file_id, mime_type, data_url")
+    .eq("whiteboard_id", boardId)
+    .eq("file_id", fileId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return { id: data.file_id as string, mimeType: data.mime_type as string, dataURL: data.data_url as string };
 }
 
 export async function loadFiles(boardId: string, ids: string[]): Promise<BoardFile[]> {
@@ -574,4 +724,48 @@ export async function loadActivity(boardId: string): Promise<BoardActivity> {
     sessions,
     people: Object.fromEntries([...ids].map((id) => [id, profiles[id]?.name ?? "Someone"])),
   };
+}
+
+export type BoardPerson = { name: string; avatarUrl: string | null };
+
+/** The most people looked up at once: each costs one sign-in record read. */
+const MAX_PEOPLE = 300;
+
+/**
+ * People on a board as SHIFT knows them: their Discord name (display name, else
+ * username) and Discord picture, falling back to their profile. The browser
+ * sends the ids it sees on the board; only the viewer, the owner, members, and
+ * people who have saved changes to this board are looked up, so this cannot
+ * be used to read anyone else's Discord. Reads no elements: the board is
+ * already open in the browser.
+ */
+export async function boardPeople(boardId: string, viewerId: string, requested: string[]): Promise<Record<string, BoardPerson>> {
+  const [{ data: board, error }, members] = await Promise.all([
+    db().from("whiteboards").select("owner_id").eq("id", boardId).maybeSingle(),
+    boardMembers(boardId),
+  ]);
+  if (error) throw error;
+  if (!board) return {};
+  const known = new Set<string>([viewerId, board.owner_id as string, ...members.map((m) => m.user_id)]);
+  const others = [...new Set(requested)].filter((id) => !known.has(id)).slice(0, MAX_PEOPLE);
+  // Anyone else must have saved to this board (whiteboard_changes is indexed by board).
+  const saved = await Promise.all(
+    others.map(async (id) => {
+      const { data } = await db().from("whiteboard_changes").select("id").eq("whiteboard_id", boardId).eq("user_id", id).limit(1);
+      return data?.length ? id : null;
+    }),
+  );
+  const list = [...known, ...saved.filter((id): id is string => id !== null)].slice(0, MAX_PEOPLE);
+
+  const profiles = await profilesById(list);
+  const people = await shiftPeople(list, new Map(list.map((id) => [id, profiles[id]?.name ?? "Someone"])));
+  const out: Record<string, BoardPerson> = {};
+  for (const id of list) {
+    const p = people.get(id);
+    out[id] = {
+      name: p?.discord?.displayName ?? p?.discord?.username ?? profiles[id]?.name ?? "Someone",
+      avatarUrl: p?.avatarUrl ?? profiles[id]?.avatarUrl ?? null,
+    };
+  }
+  return out;
 }

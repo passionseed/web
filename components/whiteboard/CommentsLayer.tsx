@@ -1,13 +1,16 @@
 "use client";
 
-import { getSceneVersion, sceneCoordsToViewportCoords, viewportCoordsToSceneCoords } from "@excalidraw/excalidraw";
-import type { AppState, ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
+import { sceneCoordsToViewportCoords, viewportCoordsToSceneCoords } from "@excalidraw/excalidraw";
+import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import { formatDistanceToNow } from "date-fns";
 import { Check, RotateCcw, Send, Trash2, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Avatar } from "./ShareDialog";
 import type { CommentsApi, Thread } from "./useComments";
+import { useViewportTick } from "./useViewportTick";
+
+export { useViewportTick };
 
 type Props = {
   api: ExcalidrawImperativeAPI;
@@ -22,31 +25,6 @@ type Props = {
   showResolved: boolean;
 };
 
-/** What scene-to-screen positions depend on. */
-const viewportKey = (a: AppState) => `${a.scrollX},${a.scrollY},${a.zoom.value},${a.width},${a.height},${a.offsetLeft},${a.offsetTop}`;
-
-/**
- * Hook that re-renders when the canvas scrolls, zooms or resizes, with
- * `elements` also when elements change, and with `selection` also when the
- * selection changes. Excalidraw's onChange fires on every update (cursors,
- * hovers, each frame of a drag), so it only ticks when something the overlay
- * draws from actually changed.
- */
-export function useViewportTick(api: ExcalidrawImperativeAPI, { elements = false, selection = false } = {}) {
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    let last = "";
-    return api.onChange((sceneElements, appState) => {
-      let key = viewportKey(appState);
-      if (elements) key += `|${getSceneVersion(sceneElements)}`;
-      if (selection) key += `|${Object.keys(appState.selectedElementIds).join(",")}`;
-      if (key === last) return;
-      last = key;
-      setTick((t) => t + 1);
-    });
-  }, [api, elements, selection]);
-}
-
 /** Comment pins on the canvas, the new-comment composer and the open thread. */
 export function CommentsLayer(props: Props) {
   const { api, comments, placing, openId, onOpen, showResolved } = props;
@@ -55,16 +33,22 @@ export function CommentsLayer(props: Props) {
   const appState = api.getAppState();
   const toScreen = (x: number, y: number) => sceneCoordsToViewportCoords({ sceneX: x, sceneY: y }, appState);
 
+  // The listener lives for the whole mount and reads the latest props from a ref.
+  const latest = useRef({ placing, onOpen, onPlaced: props.onPlaced });
+  useEffect(() => {
+    latest.current = { placing, onOpen, onPlaced: props.onPlaced };
+  });
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
+      const { placing: isPlacing, onOpen: open, onPlaced } = latest.current;
       setDraft(null);
-      onOpen(null);
-      if (placing) props.onPlaced();
+      open(null);
+      if (isPlacing) onPlaced();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  });
+  }, []);
 
   const visible = comments.threads.filter((t) => showResolved || !t.resolvedAt || t.id === openId);
   const open = comments.threads.find((t) => t.id === openId) ?? null;
@@ -75,7 +59,7 @@ export function CommentsLayer(props: Props) {
         <div
           className="pointer-events-auto absolute inset-0 cursor-crosshair"
           onClick={(e) => {
-            const { x, y } = viewportCoordsToSceneCoords({ clientX: e.clientX, clientY: e.clientY }, appState);
+            const { x, y } = viewportCoordsToSceneCoords({ clientX: e.clientX, clientY: e.clientY }, api.getAppState());
             setDraft({ x, y });
             props.onPlaced();
           }}
@@ -89,14 +73,14 @@ export function CommentsLayer(props: Props) {
             key={thread.id}
             type="button"
             onClick={() => onOpen(openId === thread.id ? null : thread.id)}
-            className={`pointer-events-auto absolute flex -translate-y-full items-center gap-1 rounded-full rounded-bl-none border-2 bg-white p-0.5 pr-2 shadow-lg transition-transform hover:scale-110 ${
-              thread.resolvedAt ? "border-emerald-400 opacity-60" : "border-orange-400"
+            className={`wb-pin pointer-events-auto absolute flex -translate-y-full items-center gap-1 rounded-full rounded-bl-none p-0.5 pr-2 ${
+              thread.resolvedAt ? "wb-pin--resolved" : ""
             }`}
             style={{ left: pos.x, top: pos.y }}
-            aria-label={`Comment by ${thread.authorName}`}
+            aria-label={`คอมเมนต์ของ ${thread.authorName} · Comment`}
           >
             <Avatar name={thread.authorName} url={thread.authorAvatar} size={24} />
-            <span className="text-xs font-semibold text-neutral-700">{i + 1}</span>
+            <span className="text-xs font-medium">{i + 1}</span>
           </button>
         );
       })}
@@ -131,7 +115,7 @@ function Panel({ at, children }: { at: { x: number; y: number }; children: React
   const top = Math.min(Math.max(at.y - 24, 70), (typeof window !== "undefined" ? window.innerHeight : 800) - 380);
   return (
     <div
-      className="pointer-events-auto absolute w-80 rounded-xl border border-black/10 bg-white text-neutral-900 shadow-2xl"
+      className="wb-thread pointer-events-auto absolute w-80"
       style={{ left, top }}
       onPointerDown={(e) => e.stopPropagation()}
       onKeyDown={(e) => e.stopPropagation()}
@@ -179,14 +163,15 @@ function Composer({
           }
           if (e.key === "Escape") onCancel?.();
         }}
-        className="min-h-9 flex-1 resize-none rounded-lg border border-black/10 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-orange-400"
+        className="wb-input min-h-9 flex-1 resize-none px-3 py-2 text-sm"
       />
       <button
         type="button"
         onClick={() => void submit()}
         disabled={!body.trim() || busy}
-        aria-label="Send"
-        className="rounded-lg bg-orange-500 p-2 text-white disabled:opacity-40"
+        aria-label="ส่ง · Send"
+        title="ส่ง · Send"
+        className="wb-btn wb-btn--solid inline-flex h-9 w-9 shrink-0 items-center justify-center disabled:opacity-40"
       >
         <Send className="h-4 w-4" />
       </button>
@@ -207,20 +192,21 @@ function ThreadCard({
   const canResolve = canModerate || thread.authorId === meId;
   return (
     <Panel at={at}>
-      <div className="flex items-center justify-between border-b border-black/5 px-3 py-2">
-        <span className="text-xs font-medium text-neutral-500">{thread.resolvedAt ? "Resolved" : "Comment"}</span>
+      <div className="wb-thread__head flex items-center justify-between px-3 py-2">
+        <span className="wb-label">{thread.resolvedAt ? "ปิดแล้ว · Resolved" : "คอมเมนต์ · Comment"}</span>
         <div className="flex items-center gap-1">
           {canResolve && (
             <button
               type="button"
-              title={thread.resolvedAt ? "Reopen" : "Resolve"}
+              title={thread.resolvedAt ? "เปิดอีกครั้ง · Reopen" : "ปิดคอมเมนต์ · Resolve"}
+              aria-label={thread.resolvedAt ? "เปิดอีกครั้ง · Reopen" : "ปิดคอมเมนต์ · Resolve"}
               onClick={() => void comments.resolve(thread.id, !thread.resolvedAt)}
-              className="rounded-md p-1 text-neutral-500 hover:bg-neutral-100 hover:text-emerald-600"
+              className="wb-thread__btn"
             >
               {thread.resolvedAt ? <RotateCcw className="h-4 w-4" /> : <Check className="h-4 w-4" />}
             </button>
           )}
-          <button type="button" onClick={onClose} aria-label="Close" className="rounded-md p-1 text-neutral-500 hover:bg-neutral-100">
+          <button type="button" onClick={onClose} aria-label="ปิด · Close" title="ปิด · Close" className="wb-thread__btn">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -232,19 +218,21 @@ function ThreadCard({
             <div className="min-w-0 flex-1">
               <p className="text-xs">
                 <span className="font-semibold">{c.authorName}</span>{" "}
-                <span className="text-neutral-400">{formatDistanceToNow(new Date(c.createdAt), { addSuffix: true })}</span>
+                <span className="wb-soft">{formatDistanceToNow(new Date(c.createdAt), { addSuffix: true })}</span>
               </p>
               <p className="whitespace-pre-wrap break-words text-sm">{c.body}</p>
             </div>
             {(isOwner || c.authorId === meId) && (
               <button
                 type="button"
-                aria-label="Delete comment"
+                aria-label="ลบคอมเมนต์ · Delete comment"
+                title="ลบคอมเมนต์ · Delete comment"
                 onClick={() => {
                   if (c.id === thread.id) onClose();
                   void comments.remove(c.id);
                 }}
-                className="self-start text-neutral-300 opacity-0 hover:text-red-500 group-hover:opacity-100"
+                // Hidden until hover or focus; on touch it always shows, dimmed (.wb-thread__delete).
+                className="wb-thread__delete self-start"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
@@ -252,7 +240,7 @@ function ThreadCard({
           </li>
         ))}
       </ul>
-      <div className="border-t border-black/5">
+      <div className="wb-thread__foot">
         <Composer compact placeholder="ตอบกลับ · Reply" onSubmit={async (body) => void (await comments.reply(thread.id, body))} />
       </div>
     </Panel>

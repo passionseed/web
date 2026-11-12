@@ -190,6 +190,15 @@ export async function GET(request: Request) {
     return NextResponse.redirect(retry);
   }
 
+  // The SHIFT island signs in with Discord too: back to the island with a
+  // reason it can show, instead of the generic error page.
+  const nextPath = next.split(/[?#]/)[0];
+  if (nextPath === "/shift/island" || nextPath.startsWith("/shift/island/")) {
+    const retry = new URL("/shift/island", origin);
+    retry.searchParams.set("auth_error", shiftDiscordAuthError(searchParams));
+    return NextResponse.redirect(retry);
+  }
+
   const errorRedirect = new URL("/auth/auth-code-error", origin);
   errorRedirect.searchParams.set("next", next);
   for (const key of ["error", "error_code", "error_description"]) {

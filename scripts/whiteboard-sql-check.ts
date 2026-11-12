@@ -222,6 +222,21 @@ function checkDatabaseOnly(): string[] {
     return wrong.length === 0 || `wrong privileges: ${wrong.join(", ")}`;
   });
 
+  check("saving drops deleted elements older than a day, and keeps the rest", () => {
+    const now = Date.now();
+    const day = 24 * 60 * 60 * 1000;
+    const els = [
+      { id: "old-dead", type: "freedraw", version: 2, isDeleted: true, updated: now - 2 * day },
+      { id: "new-dead", type: "freedraw", version: 2, isDeleted: true, updated: now - 60_000 },
+      { id: "old-live", type: "freedraw", version: 1, isDeleted: false, updated: now - 2 * day },
+      { id: "dead-no-time", type: "line", version: 2, isDeleted: true },
+    ];
+    const edit = { id: "E", type: "rectangle", version: 1, updated: now, customData: { createdBy: owner } };
+    const { stored } = runSave(els.map((el) => ({ ...el, customData: { createdBy: owner } })), owner, [edit]);
+    const ids = stored.map((el) => el.id).sort().join(",");
+    return ids === "E,dead-no-time,new-dead,old-live" || ids;
+  });
+
   check("the projects table has row level security", () => {
     const out = psql(`SELECT relrowsecurity FROM pg_class WHERE oid = 'public.whiteboard_projects'::regclass;`);
     return out === "t" || out;

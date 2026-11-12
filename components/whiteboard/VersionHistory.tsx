@@ -51,7 +51,7 @@ export function VersionHistory({ api, boardId, editable, saveNow, refreshFiles, 
     setBusy("save");
     try {
       if (!(await saveNow())) throw new Error("Could not save the latest changes");
-      const thumbnail = await boardThumbnail(api).catch(() => undefined);
+      const thumbnail = await boardThumbnail(api, boardId).catch(() => undefined);
       await boardApi(`/api/whiteboards/${boardId}/versions`, {
         method: "POST",
         body: JSON.stringify({ label: name, ...(thumbnail ? { thumbnail } : {}) }),
@@ -115,23 +115,23 @@ export function VersionHistory({ api, boardId, editable, saveNow, refreshFiles, 
             onChange={(e) => setLabel(e.target.value)}
             onKeyDown={(e) => e.stopPropagation()}
             placeholder="ตั้งชื่อเวอร์ชัน · Name this version"
-            className="min-w-0 flex-1 rounded-md border border-black/10 bg-transparent px-2 py-1.5 text-sm dark:border-white/10"
+            className="wb-input min-h-9 min-w-0 flex-1 px-2 py-1.5 text-sm"
           />
           <button
             type="submit"
             disabled={busy === "save"}
-            className="rounded-md bg-orange-500 px-3 text-sm font-medium text-white disabled:opacity-50"
+            className="wb-btn wb-btn--solid shrink-0 px-3 text-sm font-medium disabled:opacity-50"
           >
-            {busy === "save" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+            {busy === "save" ? <Loader2 className="h-4 w-4 animate-spin" /> : "บันทึก · Save"}
           </button>
         </form>
       )}
-      <p className="text-xs opacity-60">บันทึกอัตโนมัติทุกครั้งที่แก้ และเก็บเวอร์ชันย้อนหลังให้ทุก 30 นาที</p>
+      <p className="wb-soft text-xs">บันทึกอัตโนมัติทุกครั้งที่แก้ และเก็บเวอร์ชันย้อนหลังให้ทุก 30 นาที</p>
 
       {versions === null ? (
-        <Loader2 className="mx-auto h-5 w-5 animate-spin opacity-50" />
+        <Loader2 className="wb-soft mx-auto h-5 w-5 animate-spin" />
       ) : versions.length === 0 ? (
-        <p className="py-6 text-center text-sm opacity-60">
+        <p className="wb-soft py-6 text-center text-sm">
           <History className="mx-auto mb-2 h-6 w-6" />
           ยังไม่มีเวอร์ชันเก่า
         </p>
@@ -141,12 +141,12 @@ export function VersionHistory({ api, boardId, editable, saveNow, refreshFiles, 
             <li key={v.id} className="wb-tile overflow-hidden">
               {v.thumbnail && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={v.thumbnail} alt="" className="h-24 w-full bg-white object-contain" />
+                <img src={v.thumbnail} alt="" className="h-24 w-full object-contain" style={{ background: "var(--wb-paper)" }} />
               )}
-              <div className="flex items-center gap-2 p-2">
+              <div className="flex items-center gap-1 p-2">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{v.label ?? "บันทึกอัตโนมัติ · Autosave"}</p>
-                  <p className="text-xs opacity-60" title={format(new Date(v.createdAt), "PPpp")}>
+                  <p className="wb-soft text-xs" title={format(new Date(v.createdAt), "PPpp")}>
                     {formatDistanceToNow(new Date(v.createdAt), { addSuffix: true })}
                     {v.createdBy ? ` · ${v.createdBy}` : ""}
                   </p>
@@ -154,20 +154,22 @@ export function VersionHistory({ api, boardId, editable, saveNow, refreshFiles, 
                 {editable && (
                   <button
                     type="button"
-                    title="Restore"
+                    title="ย้อนกลับไปเวอร์ชันนี้ · Restore"
+                    aria-label="ย้อนกลับไปเวอร์ชันนี้ · Restore"
                     disabled={busy !== null}
                     onClick={() => void restore(v)}
-                    className="rounded-md p-1.5 opacity-70 hover:bg-black/5 hover:opacity-100 dark:hover:bg-white/10"
+                    className="wb-window__btn"
                   >
                     {busy === v.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
                   </button>
                 )}
                 <button
                   type="button"
-                  title="Copy to a new board"
+                  title="คัดลอกเป็นบอร์ดใหม่ · Copy to a new board"
+                  aria-label="คัดลอกเป็นบอร์ดใหม่ · Copy to a new board"
                   disabled={busy !== null}
                   onClick={() => void copy(v)}
-                  className="rounded-md p-1.5 opacity-70 hover:bg-black/5 hover:opacity-100 dark:hover:bg-white/10"
+                  className="wb-window__btn"
                 >
                   {busy === `copy-${v.id}` ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
                 </button>

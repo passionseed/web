@@ -74,3 +74,99 @@ jobs:
 
       - name: Check whiteboard SQL
         run: pnpm test:whiteboard-sql
+
+  # SHIFT High quests: every shift_quest migration on throwaway Postgres 15
+  # databases (production's major, supabase/config.toml), applied once and
+  # twice, then the database rules, island rules, bot flows and the web board
+  # suite (side quests and the shift_quest_web allowlist, web_board.ts, wired
+  # through run-local.sh), plus the bot typecheck and the deploy smoke check.
+  # No secrets: it never touches a real database. It runs on every pull
+  # request so it can be a required check, and skips its steps when nothing
+  # it covers changed.
+  shift-quests-db:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The pull request's merge commit and its first parent, main's tip.
+          fetch-depth: 2
+
+      - name: Did quest files change?
+        id: changes
+        run: |
+          if [ "${{ github.event_name }}" != pull_request ] || ! git rev-parse -q --verify HEAD^2 >/dev/null; then
+            echo "quests=true" >> "$GITHUB_OUTPUT"
+          elif grep -qE '^(supabase/migrations/[^/]*shift_quest|supabase/tests/shift_quests/|bot/|scripts/island-render-preview\.ts$|lib/content/shift-cohort\.ts$|lib/shift/voiceWindow\.ts$|package\.json$|pnpm-lock\.yaml$|\.github/workflows/ci\.yml$)' <<<"$(git diff --name-only HEAD^1 HEAD)"; then
+            echo "quests=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No quest files changed; skipping."
+            echo "quests=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # supabase db push refuses a migration older than the newest applied
+      # one, so new shift_quest files must sort after everything on main.
+      # Files up to APPLIED_THROUGH are already in production (applied
+      # 2026-11-12 with db push --include-all): renaming them would apply
+      # them a second time, so they are exempt.
+      - name: New quest migrations sort after main's newest
+        if: steps.changes.outputs.quests == 'true' && github.event_name == 'pull_request'
+        env:
+          APPLIED_THROUGH: "20261111095000"
+        run: |
+          base="$(git ls-tree --name-only HEAD^1 supabase/migrations/ | sed 's#.*/##' | sort)"
+          newest="$(echo "$base" | grep -E '^[0-9]{14}_' | tail -n 1)"
+          added="$(git ls-tree --name-only HEAD supabase/migrations/ | sed 's#.*/##' | sort | comm -13 <(echo "$base") - | grep shift_quest || true)"
+          for f in $added; do
+            if [[ ! "${f:0:14}" > "$APPLIED_THROUGH" ]]; then
+              echo "applied in production already: $f"
+              continue
+            fi
+            if [[ ! "$f" > "$newest" ]]; then
+              echo "::error file=supabase/migrations/$f::$f sorts before main's newest migration $newest. Rename the unapplied shift_quest files to timestamps after it (docs/features/shift-high-quests.md, migration runbook)."
+              exit 1
+            fi
+          done
+          echo "ok: $(echo ${added:-no new shift_quest migrations}) after $newest"
+
+      - name: Install PostgreSQL 15
+        if: steps.changes.outputs.quests == 'true'
+        run: |
+          sudo apt-get install -y -qq postgresql-common
+          # Binaries only: run-local.sh makes its own throwaway cluster.
+          echo 'create_main_cluster = false' | sudo tee -a /etc/postgresql-common/createcluster.conf >/dev/null
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-15
+          /usr/lib/postgresql/15/bin/postgres --version
+
+      - uses: pnpm/action-setup@v4
+        if: steps.changes.outputs.quests == 'true'
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        if: steps.changes.outputs.quests == 'true'
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        if: steps.changes.outputs.quests == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Quest database tests on Postgres 15
+        if: steps.changes.outputs.quests == 'true'
+        run: pnpm test:db:quests
+        env:
+          PG_BIN: /usr/lib/postgresql/15/bin
+
+      - name: Typecheck the bot
+        if: steps.changes.outputs.quests == 'true'
+        run: pnpm exec tsc -p bot/tsconfig.json --noEmit
+
+      # The same check bot/deploy.sh runs in the new image before a swap.
+      - name: Bot smoke check and island render
+        if: steps.changes.outputs.quests == 'true'
+        run: |
+          pnpm bot:smoke
+          pnpm island:render --out "$RUNNER_TEMP/shift-island-preview.png"

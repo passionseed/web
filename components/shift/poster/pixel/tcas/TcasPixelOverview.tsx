@@ -83,6 +83,11 @@ function UniversityLabel({ u }: { u: TcasUniversity }) {
       <p className="mt-[6px] text-[11px] leading-none tracking-[0.04em]" style={{ ...PIXEL_FONT, color: PX.waterLight }}>
         {u.nameEn}
       </p>
+      {u.faculty && (
+        <p className="mt-[6px] text-[11px] leading-[1.3]" style={{ color: `${PX.cream}b3` }}>
+          {u.faculty}
+        </p>
+      )}
       {u.refCycle && <RefTag cycle={u.refCycle} />}
     </div>
   );
@@ -128,6 +133,11 @@ function ProjectRow({ p }: { p: TcasProject }) {
         <p className="font-kodchasan text-[15px] font-bold leading-[1.25]" style={{ color: PX.accentLight }}>
           {p.name}
         </p>
+        {p.faculty && (
+          <p className="mt-[2px] text-[12px] leading-[1.3]" style={{ color: PX.waterLight }}>
+            {p.faculty}
+          </p>
+        )}
         <p className="mt-[3px] text-[13px] leading-[1.3]" style={{ color: `${PX.cream}bf` }}>
           {p.seats}
         </p>
