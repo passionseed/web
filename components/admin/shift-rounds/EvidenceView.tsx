@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { REASON_LABEL, TYPE_LABEL, describeError, formatIct } from "@/lib/shift-round/admin/format";
 import type { AdminError, AdminEvidence, EvidenceMedia } from "@/lib/shift-round/admin/types";
 
-import { Pill, statusTone } from "./shared";
+import { EmptyValue, Pill, statusTone } from "./shared";
 
 /** Payload keys shown first, with staff labels. Unknown keys are listed after. */
 const FIELD_LABEL: Record<string, string> = {
@@ -61,7 +61,7 @@ function IdeasList({ ideas, picked }: { ideas: unknown[]; picked: unknown }) {
 }
 
 function renderValue(key: string, value: unknown, payload: Record<string, unknown> = {}) {
-  if (value === null || value === undefined || value === "") return <span className="text-muted-foreground">—</span>;
+  if (value === null || value === undefined || value === "") return <EmptyValue />;
   if (key === "ideas" && Array.isArray(value)) return <IdeasList ideas={value} picked={payload.picked} />;
   if (typeof value === "boolean") return <span>{value ? "Yes" : "No"}</span>;
   if ((key === "link" || key === "url") && isHttps(value)) {
@@ -201,7 +201,7 @@ export function EvidenceView({ item, showMedia = true }: { item: AdminEvidence; 
         <div className="rounded-md border border-dashed p-3 text-sm">
           <p className="text-xs text-muted-foreground">Linked source</p>
           <p>
-            {TYPE_LABEL[item.source.type]} · {item.source.who_label ?? "—"}{" "}
+            {TYPE_LABEL[item.source.type]} · {item.source.who_label ?? <EmptyValue />}{" "}
             <Pill tone={statusTone(item.source.status)}>{item.source.status}</Pill>
           </p>
           {item.source.key_point && <p className="mt-1 text-muted-foreground">{item.source.key_point}</p>}

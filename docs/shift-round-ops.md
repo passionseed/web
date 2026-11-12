@@ -39,9 +39,11 @@ The user must already have signed in once (an `auth.users` row must exist), othe
    `curriculum_key` (the `/shift/curriculum?round=<key>` the app reads its day plan and interview guide
    from; missing rows fall back to the `default` row) and `application_cohort` (e.g. `SHIFT[3]`).
    Missions come from the round's `missions` config (default: the SHIFT steps 1 to 7).
-2. **Who can join**: students whose `shift_applications` row for `application_cohort` is `accepted` and linked
-   to their account (they opened their join link and signed in) can join without any allowlist entry. Others:
-   paste emails (lower-cased automatically) or import accepted applications of a cohort
+2. **Who can join**: students whose `shift_applications` row for `application_cohort` is `accepted`, marked
+   paid, and linked to their account (they connected Discord from the apply page or their join link) can join
+   without any allowlist entry. Linking alone no longer implies payment (migration 20261027090000, which must
+   be pushed before the apply-time Discord link code deploys). Others:
+   paste emails (lower-cased automatically) or import accepted, paid applications of a cohort
    (`shift_round_admin_allowlist_import`). Students match by user id or by sign-in email.
 3. **Publish**: set status `published`. This emits `round_published`, which pushes the waitlist.
 4. **Squads** (before day 1): create squads (name, mentor, optional Discord link), assign 3 entrants each.

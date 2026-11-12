@@ -11,7 +11,7 @@
  * bucket definitions can never drift between the list and the detail pane.
  */
 
-import type { DmConversation } from "@/types/dm-leads";
+import type { DmConversation, DmLeadStatus } from "@/types/dm-leads";
 
 /* -------------------------------------------------------------------------- */
 /* Field coverage                                                             */
@@ -161,6 +161,21 @@ export const BUCKET_ORDER: DmLeadBucket[] = (
   Object.keys(BUCKET_META) as DmLeadBucket[]
 ).sort((a, b) => BUCKET_META[a].order - BUCKET_META[b].order);
 
+/**
+ * Lead statuses that need no reply: the conversation is finished. The `done`
+ * bucket, the open-only list filter and the overview's "DMs waiting for a
+ * reply" count all read this list, so they cannot drift apart.
+ */
+export const CLOSED_LEAD_STATUSES = [
+  "converted",
+  "lost",
+  "spam",
+] as const satisfies readonly DmLeadStatus[];
+
+export function isClosedLeadStatus(status: string | null | undefined): boolean {
+  return (CLOSED_LEAD_STATUSES as readonly string[]).includes(status ?? "");
+}
+
 /** A lead is "qualified" once we know both their grade and their field. */
 export function isQualified(conversation: Pick<DmConversation, "grade_level" | "interests">): boolean {
   return Boolean(conversation.grade_level) && (conversation.interests?.length ?? 0) > 0;
@@ -177,13 +192,7 @@ export function classifyBucket(
   >,
   signals: DmLeadSignals
 ): DmLeadBucket {
-  if (
-    conversation.lead_status === "converted" ||
-    conversation.lead_status === "lost" ||
-    conversation.lead_status === "spam"
-  ) {
-    return "done";
-  }
+  if (isClosedLeadStatus(conversation.lead_status)) return "done";
 
   // Checked before `hot`: a thread where we dropped a price into the void is a
   // lead who never engaged, not a lead with money on the table.

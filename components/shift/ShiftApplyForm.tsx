@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { ArrowRight, ChevronDown } from "lucide-react";
 
 import { getShiftSource, normalizeShiftSource } from "@/lib/shift/attribution";
@@ -11,9 +11,19 @@ import {
   type ShiftCohort,
 } from "@/lib/content/shift-cohort";
 
+import { PdpaNotice } from "@/components/shift/consent/PdpaNotice";
+import { SHIFT_NOTICE, applicantNeedsParent } from "@/lib/shift/parentConsent";
+
 import { ShiftApplyDone } from "./apply/ShiftApplyDone";
 import { ChoiceChips, INPUT, Question } from "./form/ShiftQuestion";
-import { clearApplyDraft, useApplyDraft } from "./apply/useApplyDraft";
+import {
+  clearApplyDraft,
+  clearSubmittedApplication,
+  readSubmittedApplication,
+  saveSubmittedApplication,
+  useApplyDraft,
+  type SubmittedApplication,
+} from "./apply/useApplyDraft";
 import {
   SHIFT_AVAILABILITY,
   SHIFT_FOUND_VIA,
@@ -31,17 +41,19 @@ import {
  */
 
 type Field = keyof ShiftApplicationInput;
-type Status = "idle" | "sending" | "done" | "error";
+type Status = "idle" | "sending" | "done" | "error" | "closed";
 
 const EMPTY: ShiftApplicationInput = {
   fullName: "",
   nickname: "",
   grade: "" as ShiftApplicationInput["grade"],
+  birthDate: "",
   targetTrack: "",
   problem: "",
   availability: "" as ShiftApplicationInput["availability"],
   igHandle: "",
   discordHandle: "",
+  parentEmail: "",
   parentContact: "",
   foundVia: "" as ShiftApplicationInput["foundVia"],
   consent: false as unknown as true,
@@ -63,7 +75,7 @@ function revealFirstError(form: HTMLFormElement | null) {
     const fieldset = alert?.closest("fieldset") ?? alert?.parentElement;
     if (!fieldset) return;
     fieldset.scrollIntoView({ behavior: "smooth", block: "center" });
-    // Questions 1 and 6 hold two inputs; the empty one is the likely culprit.
+    // Questions 1, 2, 6 and 7 hold two inputs; the empty one is the likely culprit.
     const inputs = Array.from(
       fieldset.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
         "input:not([type=checkbox]), textarea",
@@ -133,10 +145,18 @@ export function ShiftApplyForm({
   const cohortDates = formatThaiDateRange(cohort.startDate, cohort.endDate);
   const [errors, setErrors] = useState<ShiftApplicationErrors>({});
   const [status, setStatus] = useState<Status>("idle");
-  const [joinUrl, setJoinUrl] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState<SubmittedApplication | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  // Under 20 (or no valid birth date yet) the parent question shows. PDPA s.20.
+  const needsParent = applicantNeedsParent(values.birthDate);
 
   useApplyDraft(values, (draft) => setValues((prev) => ({ ...prev, ...draft })));
+
+  // Back from an abandoned Discord sign-in reloads this page: show the done
+  // screen again instead of a blank form. After mount, like the draft.
+  useEffect(() => {
+    setSubmitted(readSubmittedApplication(cohort.round));
+  }, [cohort.round]);
 
   const set = <K extends Field>(field: K, value: ShiftApplicationInput[K]) => {
     setValues((prev) => ({ ...prev, [field]: value }));
@@ -173,10 +193,17 @@ export function ShiftApplyForm({
       });
       if (res.ok) {
         const data = (await res.json().catch(() => ({}))) as { joinUrl?: string };
-        setJoinUrl(data.joinUrl ?? null);
+        const entry = { round: cohort.round, values, joinUrl: data.joinUrl ?? null };
+        saveSubmittedApplication(entry);
         clearApplyDraft();
+        setSubmitted(entry);
         setStatus("done");
         trackMetaEvent("Lead", { content_name: cohort.name, content_category: "shift" });
+        return;
+      }
+      // The round closed while the form was open (e.g. past midnight on the deadline).
+      if (res.status === 409) {
+        setStatus("closed");
         return;
       }
       const data = await res.json().catch(() => ({}));
@@ -190,7 +217,25 @@ export function ShiftApplyForm({
     }
   }
 
-  if (status === "done") return <ShiftApplyDone cohort={cohort} values={values} joinUrl={joinUrl} />;
+  // A friend applying next on the same phone starts from a blank form.
+  function applyForSomeoneElse() {
+    clearSubmittedApplication();
+    setSubmitted(null);
+    setStatus("idle");
+    setErrors({});
+    setValues({ ...EMPTY, source: source ?? "", round: cohort.round });
+  }
+
+  if (submitted) {
+    return (
+      <ShiftApplyDone
+        cohort={cohort}
+        values={submitted.values}
+        joinUrl={submitted.joinUrl}
+        onApplyAgain={applyForSomeoneElse}
+      />
+    );
+  }
 
   return (
     <form ref={formRef} onSubmit={submit} noValidate>
@@ -201,7 +246,7 @@ export function ShiftApplyForm({
             className="mt-10 text-center font-kodchasan text-sm font-semibold uppercase tracking-[0.2em]"
             style={{ color: paper("80") }}
           >
-            ใบสมัคร · 8 ข้อ · 2 นาที
+            ใบสมัคร · {needsParent ? 8 : 7} ข้อ · 2 นาที
           </p>
         </>
       )}
@@ -224,12 +269,25 @@ export function ShiftApplyForm({
         </div>
       </Question>
 
-      <Question num={2} label="ตอนนี้เรียนชั้นไหน" error={errors.grade}>
+      <Question
+        num={2}
+        label="ตอนนี้เรียนชั้นไหน และวันเกิด"
+        hint="อายุยังไม่ถึง 20 ปี ผู้ปกครองต้องกดยินยอมด้วยตามกฎหมาย PDPA"
+        error={errors.grade ?? errors.birthDate}
+      >
         <ChoiceChips
           name="ชั้นเรียน"
           options={SHIFT_GRADES}
           value={values.grade}
           onChange={(v) => set("grade", v)}
+        />
+        <input
+          {...text("birthDate")}
+          type="date"
+          aria-label="วันเกิด"
+          autoComplete="bday"
+          className={`${INPUT} mt-4`}
+          style={{ ...text("birthDate").style, colorScheme: "dark" }}
         />
       </Question>
 
@@ -299,19 +357,31 @@ export function ShiftApplyForm({
         </div>
       </Question>
 
-      <Question
-        num={7}
-        label="ช่องทางติดต่อผู้ปกครอง"
-        hint="เบอร์โทรหรือ LINE ไว้ยืนยันการเข้าร่วมและการชำระเงินเท่านั้น"
-        error={errors.parentContact}
-      >
-        <input
-          {...text("parentContact")}
-          placeholder="เช่น 08x-xxx-xxxx หรือ LINE ID"
-        />
-      </Question>
+      {needsParent && (
+        <Question
+          num={7}
+          label="อีเมล และเบอร์หรือ LINE ผู้ปกครอง"
+          hint="เราส่งลิงก์ให้ผู้ปกครองกดยินยอมทางอีเมล เบอร์หรือ LINE ไว้ยืนยันการเข้าร่วมและการชำระเงินเท่านั้น"
+          error={errors.parentEmail ?? errors.parentContact}
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <input
+              {...text("parentEmail")}
+              type="email"
+              inputMode="email"
+              placeholder="อีเมลผู้ปกครอง"
+              autoCapitalize="none"
+              autoCorrect="off"
+            />
+            <input
+              {...text("parentContact")}
+              placeholder="เช่น 08x-xxx-xxxx หรือ LINE ID"
+            />
+          </div>
+        </Question>
+      )}
 
-      <Question num={8} label="รู้จัก SHIFT จากไหน" error={errors.foundVia}>
+      <Question num={needsParent ? 8 : 7} label="รู้จัก SHIFT จากไหน" error={errors.foundVia}>
         <div className="relative">
           <select
             name="foundVia"
@@ -351,8 +421,13 @@ export function ShiftApplyForm({
       />
 
       <div className="border-t pt-7" style={{ borderColor: paper("1f") }}>
+        <PdpaNotice
+          notice={SHIFT_NOTICE}
+          variant="collapsed"
+          collapsedLabel="ข้อมูลในใบสมัครไปไหนบ้าง (อ่านก่อนติ๊ก)"
+        />
         <label
-          className="flex cursor-pointer items-start gap-3 text-sm leading-relaxed"
+          className="mt-5 flex cursor-pointer items-start gap-3 text-sm leading-relaxed"
           style={{ color: paper("b3") }}
         >
           <input
@@ -361,8 +436,8 @@ export function ShiftApplyForm({
             onChange={(e) => set("consent", e.target.checked as true)}
             className="mt-1 h-4 w-4 shrink-0 accent-[#ff6c2f]"
           />
-          ยินยอมให้ PassionSeed ใช้ข้อมูลนี้เพื่อคัดเลือกและติดต่อเรื่อง SHIFT
-          เท่านั้น ไม่ส่งต่อให้ใคร
+          อ่านแล้วว่าข้อมูลไปไหนบ้าง และยินยอมให้ PassionSeed ใช้ข้อมูลนี้เพื่อคัดเลือก
+          ติดต่อ และดูแลเรื่อง SHIFT ตามที่แจ้งไว้ด้านบน
         </label>
         {errors.consent && (
           <p
@@ -381,6 +456,15 @@ export function ShiftApplyForm({
             role="alert"
           >
             ส่งไม่สำเร็จ ลองกดส่งใหม่อีกครั้งนะ ข้อมูลที่กรอกยังอยู่ครบ
+          </p>
+        )}
+        {status === "closed" && (
+          <p
+            className="mt-6 text-sm font-semibold"
+            style={{ color: INK.pink }}
+            role="alert"
+          >
+            {cohort.name} ปิดรับสมัครไปแล้ว รีเฟรชหน้านี้เพื่อดูรอบที่ยังเปิดอยู่ ข้อมูลที่กรอกยังอยู่ครบ
           </p>
         )}
 

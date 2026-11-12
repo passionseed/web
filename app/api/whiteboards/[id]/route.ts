@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { safeServerError } from "@/lib/security/route-guards";
 import { deleteBoard, patchBoard, removeMember } from "@/lib/supabase/whiteboards";
+import { compactElements } from "@/lib/whiteboard/compact";
 import { patchBoardSchema, stampAuthor } from "@/lib/whiteboard/core";
 import { guardBoard, readJson } from "@/lib/whiteboard/route-guard";
 
@@ -23,9 +24,12 @@ export async function PATCH(request: Request, { params }: Params) {
   if (!guard.ok) return guard.response;
 
   try {
-    // The server, not the client, says who last changed each element.
-    await patchBoard(id, patch.elements ? { ...patch, elements: stampAuthor(patch.elements, guard.viewer.id) } : patch);
-    return NextResponse.json({ ok: true });
+    // The server, not the client, says who last changed each element. Postgres answers with
+    // what it kept differently or left out, so the saver's browser can put its copy right.
+    // Strokes and lines are slimmed first (compact.ts): the same drawing, a fraction of the bytes.
+    const elements = patch.elements && compactElements(stampAuthor(patch.elements, guard.viewer.id));
+    const result = await patchBoard(id, elements ? { ...patch, elements } : patch);
+    return NextResponse.json({ ok: true, ...result });
   } catch (error) {
     return safeServerError("Failed to save board", error);
   }

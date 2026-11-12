@@ -305,7 +305,7 @@ function AllowlistSection({ round }: { round: AdminRoundListItem }) {
             Remove from allowlist
           </Button>
         </Field>
-        <Field label="Import from applications" htmlFor="allow-cohort" hint="Accepted applications with an account, by cohort name.">
+        <Field label="Import from applications" htmlFor="allow-cohort" hint="Accepted, paid applications with an account, by cohort name.">
           <Input id="allow-cohort" list="allow-cohorts" value={cohort} onChange={(e) => setCohort(e.target.value)} />
           <datalist id="allow-cohorts">
             {SHIFT_COHORTS.map((c) => (

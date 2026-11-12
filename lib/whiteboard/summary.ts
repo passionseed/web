@@ -1,4 +1,6 @@
+import { CARDS, cardStartText, isCardKind } from "./cards";
 import { STICKY_COLORS } from "./core";
+import { type CardVersion, isShiftCardKind, isWritten, readVersions, SHIFT_CARDS, shortTitle, zoneTitle as shiftZoneTitle } from "./shift-cards";
 
 /**
  * Turns a board's raw Excalidraw elements into something a person or an AI can
@@ -22,20 +24,44 @@ type El = {
   boundElements?: { id: string; type: string }[] | null;
   startBinding?: { elementId: string } | null;
   endBinding?: { elementId: string } | null;
-  customData?: { createdBy?: unknown; updatedBy?: unknown } | null;
+  customData?: {
+    createdBy?: unknown;
+    updatedBy?: unknown;
+    originalBy?: unknown;
+    card?: unknown;
+    versions?: unknown;
+    project?: unknown;
+    zone?: unknown;
+    day?: unknown;
+    zoneLabel?: unknown;
+    canvasHint?: unknown;
+    cardTitle?: unknown;
+  } | null;
 };
 
 export type SummaryItem = {
   id: string;
-  kind: "sticky" | "shape" | "text" | "image";
+  kind: "sticky" | "shape" | "text" | "image" | "card";
+  /** Empty for a card nobody has written on yet. */
   text: string;
   color?: string;
   /** User ids from customData (see stampAuthor); absent on elements from before it existed. */
   createdBy?: string;
   updatedBy?: string;
+  /** Who a pasted element said wrote it (customData.originalBy). Not checked: createdBy is whoever pasted it. */
+  originalBy?: string;
+  /** A room card or SHIFT card kind (customData.card). */
+  card?: string;
+  /** Saved versions of a SHIFT card, oldest first. */
+  history?: CardVersion[];
 };
-export type SummaryArea = { id: string; title: string; items: SummaryItem[] };
-export type SummaryLink = { from: string; to: string; label?: string };
+/**
+ * `project` is the SHIFT project id of a project frame. `zone` is the kind of a
+ * SHIFT canvas zone, and `parent` the id of the project frame it belongs to.
+ */
+export type SummaryArea = { id: string; title: string; items: SummaryItem[]; project?: string; zone?: string; parent?: string };
+/** `fromId` and `toId` are the ids of the elements an arrow is bound to, to tell which canvas it belongs to. */
+export type SummaryLink = { from: string; to: string; label?: string; fromId?: string; toId?: string };
 export type BoardSummary = { areas: SummaryArea[]; loose: SummaryItem[]; links: SummaryLink[]; counts: Record<string, number> };
 
 export type SummaryComment = {
@@ -58,6 +84,22 @@ const inside = (outer: El, e: El) => {
   return c.x > outer.x && c.x < outer.x + outer.width && c.y > outer.y && c.y < outer.y + outer.height;
 };
 const oneLine = (s: string) => s.replace(/\s+/g, " ").trim();
+const squash = (s: string) => s.replace(/\s+/g, "");
+
+/** A tagged card's kind and whether anyone wrote on it, or null for anything else. */
+function cardOf(e: El, text: string): { card: string; written: boolean } | null {
+  const kind = e.customData?.card;
+  if (isShiftCardKind(kind)) return { card: kind, written: isWritten(kind, text) };
+  if (isCardKind(kind)) return { card: kind, written: squash(text) !== squash(cardStartText(kind)) };
+  return null;
+}
+
+/** How a card is named in Markdown, e.g. "🎤 สัมภาษณ์". */
+export function cardName(kind: string): string {
+  if (isShiftCardKind(kind)) return `${SHIFT_CARDS[kind].emoji} ${shortTitle(kind)}`;
+  if (isCardKind(kind)) return `${CARDS[kind].emoji} ${CARDS[kind].title.split(" · ")[0]}`;
+  return kind;
+}
 /** Rows top to bottom, left to right within a row. */
 const readingOrder = (a: El, b: El) => Math.round(a.y / ROW) - Math.round(b.y / ROW) || a.x - b.x;
 
@@ -78,18 +120,25 @@ export function summarizeElements(raw: unknown[]): BoardSummary {
     const pick = (v: unknown) => (typeof v === "string" ? v : undefined);
     const createdBy = pick(source?.createdBy);
     const updatedBy = pick(source?.updatedBy);
-    return { ...(createdBy ? { createdBy } : {}), ...(updatedBy ? { updatedBy } : {}) };
+    const originalBy = pick(source?.originalBy);
+    return {
+      ...(createdBy ? { createdBy } : {}),
+      ...(updatedBy ? { updatedBy } : {}),
+      ...(originalBy ? { originalBy } : {}),
+    };
   };
 
-  // Areas: frames, plus big unlabelled rectangles with something inside.
+  // Areas: frames, SHIFT canvas zones, plus big unlabelled rectangles with something inside.
   const frames = all.filter((e) => e.type === "frame" || e.type === "magicframe");
+  const shiftZone = (e: El) => (e.type === "rectangle" && isShiftCardKind(e.customData?.zone) ? e.customData!.zone : null);
   const zones = all.filter(
     (e) =>
-      e.type === "rectangle" &&
-      !labelOf.has(e.id) &&
-      e.width >= MIN_AREA &&
-      e.height >= MIN_AREA &&
-      all.some((o) => o !== e && o.type !== "arrow" && o.type !== "line" && !o.containerId && inside(e, o) && o.width < e.width),
+      shiftZone(e) ||
+      (e.type === "rectangle" &&
+        !labelOf.has(e.id) &&
+        e.width >= MIN_AREA &&
+        e.height >= MIN_AREA &&
+        all.some((o) => o !== e && o.type !== "arrow" && o.type !== "line" && !o.containerId && inside(e, o) && o.width < e.width)),
   );
   const zoneIds = new Set(zones.map((z) => z.id));
 
@@ -113,35 +162,69 @@ export function summarizeElements(raw: unknown[]): BoardSummary {
     return oneLine(t.text!);
   };
 
-  const areas = [...frames, ...zones]
-    .map((a) => ({ el: a, title: a.type === "rectangle" ? zoneTitle(a) : oneLine(a.name ?? "Frame") }))
-    .sort((a, b) => readingOrder(a.el, b.el));
+  const titleOf = (a: El) => {
+    const kind = shiftZone(a);
+    if (kind) return shiftZoneTitle(kind, typeof a.customData?.day === "number" ? a.customData.day : undefined);
+    return a.type === "rectangle" ? zoneTitle(a) : oneLine(a.name ?? "Frame");
+  };
+  const areas = [...frames, ...zones].map((a) => ({ el: a, title: titleOf(a) })).sort((a, b) => readingOrder(a.el, b.el));
 
   const toItem = (e: El): SummaryItem | null => {
     const by = authors(e);
     if (e.type === "text") return e.text ? { id: e.id, kind: "text", text: oneLine(e.text), ...by } : null;
     if (e.type === "image") return { id: e.id, kind: "image", text: labelOf.get(e.id) ?? "(image)", ...by };
     if (!SHAPES.has(e.type)) return null;
+    const tagged = cardOf(e, labelOf.get(e.id) ?? "");
+    if (tagged) {
+      const history = readVersions(e.customData);
+      return {
+        id: e.id,
+        kind: "card",
+        card: tagged.card,
+        text: tagged.written ? (labelOf.get(e.id) ?? "") : "",
+        ...(history.length ? { history } : {}),
+        ...by,
+      };
+    }
     const color = STICKY_BY_FILL.get((e.backgroundColor ?? "").toLowerCase());
     const text = labelOf.get(e.id) ?? "";
     if (color && e.type === "rectangle") return { id: e.id, kind: "sticky", text, color, ...by };
     return text ? { id: e.id, kind: "shape", text, ...by } : null;
   };
 
-  const placed: SummaryArea[] = areas.map((a) => ({ id: a.el.id, title: a.title, items: [] }));
+  const projectFrames = new Set(frames.filter((f) => typeof f.customData?.project === "string").map((f) => f.id));
+  const placed: SummaryArea[] = areas.map((a) => {
+    const project = a.el.type === "frame" ? a.el.customData?.project : undefined;
+    const zone = shiftZone(a.el);
+    const parent = zone && a.el.frameId && projectFrames.has(a.el.frameId) ? a.el.frameId : undefined;
+    return {
+      id: a.el.id,
+      title: a.title,
+      items: [],
+      ...(typeof project === "string" ? { project } : {}),
+      ...(zone ? { zone } : {}),
+      ...(parent ? { parent } : {}),
+    };
+  });
   const loose: SummaryItem[] = [];
+  // A canvas's zone titles, questions and hint, and a Library card's name tag, are layout, not anyone's writing.
+  const layout = (e: El) => Boolean(e.customData?.zoneLabel || e.customData?.canvasHint || e.customData?.cardTitle);
   const items = all
-    .filter((e) => !e.containerId && !zoneIds.has(e.id) && !frames.includes(e) && !titleTexts.has(e.id))
+    .filter((e) => !e.containerId && !zoneIds.has(e.id) && !frames.includes(e) && !titleTexts.has(e.id) && !layout(e))
     .sort(readingOrder);
   for (const e of items) {
     const item = toItem(e);
     if (!item) continue;
-    // Smallest area that holds it; a frame claims its children directly.
-    let home = e.frameId ? areas.findIndex((a) => a.el.id === e.frameId) : -1;
+    // Smallest area that holds it; a frame claims its children directly, unless a zone in it holds them.
+    let home = -1;
+    if (e.frameId && !projectFrames.has(e.frameId)) home = areas.findIndex((a) => a.el.id === e.frameId);
     if (home < 0) {
       let best = Infinity;
       areas.forEach((a, i) => {
         const size = a.el.width * a.el.height;
+        // A SHIFT canvas and its zones only hold what is in the canvas, not things lying on top of it.
+        const canvas = projectFrames.has(a.el.id) ? a.el.id : placed[i].parent;
+        if (canvas && e.frameId !== canvas) return;
         if (a.el.id !== e.id && inside(a.el, e) && size < best) {
           best = size;
           home = i;
@@ -162,6 +245,8 @@ export function summarizeElements(raw: unknown[]): BoardSummary {
       from: name(e.startBinding?.elementId),
       to: name(e.endBinding?.elementId),
       ...(labelOf.has(e.id) ? { label: labelOf.get(e.id) } : {}),
+      ...(e.startBinding?.elementId ? { fromId: e.startBinding.elementId } : {}),
+      ...(e.endBinding?.elementId ? { toId: e.endBinding.elementId } : {}),
     }));
 
   const counts: Record<string, number> = {};
@@ -176,13 +261,18 @@ export function authorIds(summary: BoardSummary): string[] {
   for (const i of [...summary.areas.flatMap((a) => a.items), ...summary.loose]) {
     if (i.createdBy) ids.add(i.createdBy);
     if (i.updatedBy) ids.add(i.updatedBy);
+    if (i.originalBy) ids.add(i.originalBy);
+    for (const v of i.history ?? []) ids.add(v.by);
   }
   return [...ids];
 }
 
 function itemLine(i: SummaryItem, names: Map<string, string>) {
+  const version = i.history?.length ? ` v${i.history.at(-1)!.v}` : "";
   const body =
-    i.kind === "sticky"
+    i.kind === "card"
+      ? `[${cardName(i.card ?? "")}${version}] ${i.text || "(empty)"}`
+      : i.kind === "sticky"
       ? `[${i.color} sticky] ${i.text || "(empty)"}`
       : i.kind === "image"
         ? `[image] ${i.text}`
@@ -192,8 +282,67 @@ function itemLine(i: SummaryItem, names: Map<string, string>) {
   const name = (id?: string) => (id ? (names.get(id) ?? "someone") : undefined);
   const by = name(i.createdBy);
   const edited = i.updatedBy && i.updatedBy !== i.createdBy ? name(i.updatedBy) : undefined;
-  const credit = by ? ` (by ${by}${edited ? `, edited by ${edited}` : ""})` : "";
-  return `- ${body}${credit}`;
+  const original = i.originalBy && i.originalBy !== i.createdBy ? name(i.originalBy) : undefined;
+  const credit = by ? ` (by ${by}${original ? `, copied from ${original}` : ""}${edited ? `, edited by ${edited}` : ""})` : "";
+  const history = (i.history ?? []).map(
+    (v) =>
+      `  - v${v.v} ${v.at.slice(0, 10)}${name(v.by) ? ` by ${name(v.by)}` : ""}${v.copied ? " (copied)" : ""}: ${oneLine(v.text)}${v.why ? ` (why: ${oneLine(v.why)})` : ""}`,
+  );
+  return [`- ${body}${credit}`, ...history].join("\n");
+}
+
+/** An area's own items, then each of its zones as a sub-section (a SHIFT canvas's zones). */
+function areaBody(summary: BoardSummary, area: SummaryArea, line: (i: SummaryItem) => string, heading: string): string[] {
+  const out: string[] = [];
+  const zones = summary.areas.filter((z) => z.parent === area.id);
+  if (area.items.length || !zones.length) out.push(...(area.items.length ? area.items.map(line) : ["(empty)"]));
+  for (const z of zones) {
+    out.push("", `${heading} ${z.title}`);
+    out.push(...(z.items.length ? z.items.map(line) : ["(empty)"]));
+  }
+  return out;
+}
+
+/** Every item on a SHIFT canvas: the frame's own and its zones'. */
+export function canvasItems(summary: BoardSummary, frameId: string): SummaryItem[] {
+  return summary.areas.filter((a) => a.id === frameId || a.parent === frameId).flatMap((a) => a.items);
+}
+
+/**
+ * Markdown for one SHIFT project canvas: its zones and notes (with who wrote
+ * them and their versions), the arrows between its notes, and the comments
+ * placed on it. Null when the board has no canvas with that frame id.
+ */
+export function canvasToMarkdown(
+  summary: BoardSummary,
+  frameId: string,
+  meta: { board: string; owner: string; team: string[]; updatedAt?: string },
+  comments: SummaryComment[] = [],
+  names: Map<string, string> = new Map(),
+): string | null {
+  const area = summary.areas.find((a) => a.id === frameId && a.project);
+  if (!area) return null;
+  const line = (i: SummaryItem) => itemLine(i, names);
+  const out = [
+    `# ${area.title || "Untitled canvas"}`,
+    "",
+    `Board: ${meta.board} · Owner: ${meta.owner} · Team: ${meta.team.length ? meta.team.join(", ") : "nobody yet"}${meta.updatedAt ? ` · Updated: ${meta.updatedAt}` : ""}`,
+    ...areaBody(summary, area, line, "##"),
+  ];
+  const ids = new Set(canvasItems(summary, frameId).map((i) => i.id));
+  const links = summary.links.filter((l) => (l.fromId && ids.has(l.fromId)) || (l.toId && ids.has(l.toId)));
+  if (links.length) {
+    out.push("", "## Arrows");
+    out.push(...links.map((l) => `- ${l.from} → ${l.to}${l.label ? ` (${l.label})` : ""}`));
+  }
+  if (comments.length) {
+    out.push("", "## Comments");
+    for (const c of comments) {
+      out.push(`- ${c.author} (${c.createdAt.slice(0, 10)})${c.resolved ? " [resolved]" : ""}: ${oneLine(c.body)}`);
+      for (const r of c.replies) out.push(`  - ${r.author}: ${oneLine(r.body)}`);
+    }
+  }
+  return out.join("\n") + "\n";
 }
 
 /** Markdown for one board. */
@@ -212,9 +361,10 @@ export function boardToMarkdown(
     .join(", ");
   out.push(`Elements: ${counts || "none"}`);
 
+  // A SHIFT canvas reads as one project with a section per zone.
   for (const a of summary.areas) {
-    out.push("", `## ${a.title || "Untitled area"}`);
-    out.push(...(a.items.length ? a.items.map(line) : ["(empty)"]));
+    if (a.parent) continue;
+    out.push("", `## ${a.project ? "[SHIFT project] " : ""}${a.title || "Untitled area"}`, ...areaBody(summary, a, line, "###"));
   }
   if (summary.loose.length) out.push("", summary.areas.length ? "## Elsewhere on the board" : "## Board", ...summary.loose.map(line));
   if (summary.links.length) {

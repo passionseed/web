@@ -5,11 +5,13 @@ import {
   colorFor,
   commentSchema,
   formatClock,
+  hasChangedSince,
   remapIds,
   restoreVersion,
   secondsLeft,
   joinRole,
   markSeen,
+  queueLatest,
   mergeElements,
   patchBoardSchema,
   shareUrl,
@@ -48,6 +50,21 @@ describe("element sync", () => {
     expect(changedSince([a2, b1], seen)).toEqual([a2]);
   });
 
+  it("tells whether anything changed since it was seen", () => {
+    const seen = new Map<string, number>();
+    expect(hasChangedSince([a1], seen)).toBe(true);
+    markSeen(seen, [a1, b1]);
+    expect(hasChangedSince([a1, b1], seen)).toBe(false);
+    expect(hasChangedSince([a2, b1], seen)).toBe(true);
+  });
+
+  it("queues the highest version of each element", () => {
+    const queue = new Map<string, typeof a1>();
+    queueLatest(queue, [a2, b1]);
+    queueLatest(queue, [a1]);
+    expect([...queue.values()]).toEqual([a2, b1]);
+  });
+
   it("keeps the higher version per element and adds new ones", () => {
     expect(mergeElements([a2, b1], [a1])).toEqual([a2, b1]);
     expect(mergeElements([a1], [a2, b1])).toEqual([a2, b1]);
@@ -62,7 +79,18 @@ describe("patchBoardSchema", () => {
 
   it("rejects unknown fields and non-image thumbnails", () => {
     expect(patchBoardSchema.safeParse({ ownerId: "me" }).success).toBe(false);
+    // Fields canvas access reads must be typed, so Postgres and browsers agree on them.
+    const el = { id: "x", version: 1, type: "frame" };
+    expect(patchBoardSchema.safeParse({ elements: [{ ...el, isDeleted: "false" }] }).success).toBe(false);
+    expect(patchBoardSchema.safeParse({ elements: [{ ...el, frameId: 7 }] }).success).toBe(false);
+    expect(patchBoardSchema.safeParse({ elements: [{ ...el, customData: { project: 1 } }] }).success).toBe(false);
+    expect(patchBoardSchema.safeParse({ elements: [{ ...el, isDeleted: false, frameId: null, customData: { project: "p", card: "x" } }] }).success).toBe(true);
     expect(patchBoardSchema.safeParse({ thumbnail: "javascript:alert(1)" }).success).toBe(false);
+  });
+
+  it("rejects versions past what JavaScript counts exactly", () => {
+    expect(patchBoardSchema.safeParse({ elements: [{ id: "x", version: 3_000_000_000 }] }).success).toBe(true);
+    expect(patchBoardSchema.safeParse({ elements: [{ id: "x", version: 2 ** 53 }] }).success).toBe(false);
   });
 });
 

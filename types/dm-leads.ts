@@ -47,6 +47,13 @@ export interface DmConversation {
   admin_tags: string[];
   follow_up_at: string | null;
   lead_status: DmLeadStatus;
+  /**
+   * `'radar'` when the thread was opened by a Career Radar DM (spec 5.6):
+   * fenced off from the sales tooling. Optional until every select reads it.
+   */
+  origin?: "radar" | null;
+  /** When the one fixed automatic reply on a Radar thread was sent. */
+  radar_reply_sent_at?: string | null;
   created_at: string;
   updated_at: string;
 }

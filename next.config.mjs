@@ -51,6 +51,8 @@ const nextConfig = {
     // SHIFT certificate images (@napi-rs/canvas reads these at runtime).
     "/c/**": ["./lib/shift-round/certificate/fonts/*.ttf"],
     "/api/shift/cert-health": ["./lib/shift-round/certificate/fonts/*.ttf"],
+    // Code-authored Career Radar guides read clips.json and captions from disk (registry.server).
+    "/radar/**": ["./lib/radar-guides/**/clips.json", "./lib/radar-guides/**/clips/*.vtt"],
   },
   // Native Skia binding for the SHIFT certificate renderer: load from node_modules, never bundle.
   serverExternalPackages: ["@napi-rs/canvas"],

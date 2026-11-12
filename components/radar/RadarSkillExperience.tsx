@@ -35,7 +35,28 @@ const KIND_LABELS: Record<RadarStartOption["kind"], string> = {
   community: "คอมมูนิตี้",
 };
 
-function StartOptionTile({ option, accent }: { option: RadarStartOption; accent: string }) {
+/**
+ * The first start option of the primary skill (else of the first skill that
+ * has one): the outro's "ลองอันนี้ก่อน" tile (spec 2.8, item 1).
+ */
+export function firstStartOption(skills: readonly RadarSkillSummary[]): RadarStartOption | null {
+  const ordered = [...skills.filter((s) => s.is_primary), ...skills.filter((s) => !s.is_primary)];
+  for (const skill of ordered) {
+    if (skill.start_options.length > 0) return skill.start_options[0];
+  }
+  return null;
+}
+
+export interface StartOptionTileProps {
+  option: RadarStartOption;
+  accent: string;
+  /** Radar Guide visit, stored in the interest event's metadata for the funnel. */
+  visitId?: string | null;
+  /** Called when the student opens the option's destination. */
+  onOpen?: () => void;
+}
+
+export function StartOptionTile({ option, accent, visitId = null, onOpen }: StartOptionTileProps) {
   const [interestedRecorded, setInterestedRecorded] = useState(false);
   const [notInterestedRecorded, setNotInterestedRecorded] = useState(false);
   const anyIntentRecorded = interestedRecorded || notInterestedRecorded;
@@ -44,7 +65,8 @@ function StartOptionTile({ option, accent }: { option: RadarStartOption; accent:
   const cost = typeof option.metadata.cost === "string" ? option.metadata.cost : null;
 
   const record = async (eventType: "opened" | "interested" | "not_interested") => {
-    await recordRadarStartOptionInterest(option.id, eventType);
+    if (eventType === "opened") onOpen?.();
+    await recordRadarStartOptionInterest(option.id, eventType, visitId);
     if (eventType === "interested") setInterestedRecorded(true);
     if (eventType === "not_interested") setNotInterestedRecorded(true);
   };
@@ -119,13 +141,22 @@ function StartOptionTile({ option, accent }: { option: RadarStartOption; accent:
 export function RadarSkillExperience({
   skills,
   accent,
+  startFirst = false,
+  visitId = null,
+  onInteract,
 }: {
   skills: RadarSkillSummary[];
   accent: string;
+  /** Field guide: start options lead, the skill list follows (spec 2.1, chapter `start`). */
+  startFirst?: boolean;
+  visitId?: string | null;
+  /** Guide `interactive_tap`; fires "skill:open" when a start option is opened. */
+  onInteract?: (target: string) => void;
 }) {
   const carouselRef = useRef<HTMLDivElement>(null);
   if (skills.length === 0) return null;
   const startOptions = skills.flatMap((skill) => skill.start_options).slice(0, 6);
+  const openOption = () => onInteract?.("skill:open");
 
   const moveCarousel = (direction: -1 | 1) => {
     const carousel = carouselRef.current;
@@ -136,41 +167,45 @@ export function RadarSkillExperience({
     });
   };
 
-  return (
-    <section className="mx-auto w-full max-w-xl space-y-7">
-      <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: accent }}>
-          ทักษะที่ใช้จริง
-        </p>
-        <h2 className="mt-2 text-3xl font-bold text-white">งานนี้เก่งจากอะไร</h2>
-        <p className="mt-2 text-sm leading-relaxed text-neutral-400">
-          เลือกทักษะเพื่อดูงานที่เกี่ยวข้อง หรือเริ่มจากคำแนะนำสั้นๆ ที่เหมาะกับเวลาของคุณ
-        </p>
-      </header>
-      <div className="divide-y divide-white/10">
-        {skills.map((skill) => (
-          <Link
-            key={skill.id}
-            href={`/radar/skills/${skill.slug}`}
-            className="flex min-h-16 items-center gap-3 py-3 focus-visible:outline-none focus-visible:ring-2"
-          >
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-white">{skill.name_th}</h3>
-                {skill.is_primary && (
-                  <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-neutral-300">
-                    ทักษะหลัก
-                  </span>
-                )}
-              </div>
-              {skill.description_th && (
-                <p className="mt-1 line-clamp-1 text-sm text-neutral-400">{skill.description_th}</p>
+  const intro = (
+    <header>
+      <p className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: accent }}>
+        ทักษะที่ใช้จริง
+      </p>
+      <h2 className="mt-2 text-3xl font-bold text-white">งานนี้เก่งจากอะไร</h2>
+      <p className="mt-2 text-sm leading-relaxed text-neutral-400">
+        เลือกทักษะเพื่อดูงานที่เกี่ยวข้อง หรือเริ่มจากคำแนะนำสั้นๆ ที่เหมาะกับเวลาของคุณ
+      </p>
+    </header>
+  );
+  const skillList = (
+    <div className="divide-y divide-white/10">
+      {skills.map((skill) => (
+        <Link
+          key={skill.id}
+          href={`/radar/skills/${skill.slug}`}
+          className="flex min-h-16 items-center gap-3 py-3 focus-visible:outline-none focus-visible:ring-2"
+        >
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-white">{skill.name_th}</h3>
+              {skill.is_primary && (
+                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-neutral-300">
+                  ทักษะหลัก
+                </span>
               )}
             </div>
-            <ArrowRight className="h-4 w-4 shrink-0" style={{ color: accent }} />
-          </Link>
-        ))}
-      </div>
+            {skill.description_th && (
+              <p className="mt-1 line-clamp-1 text-sm text-neutral-400">{skill.description_th}</p>
+            )}
+          </div>
+          <ArrowRight className="h-4 w-4 shrink-0" style={{ color: accent }} />
+        </Link>
+      ))}
+    </div>
+  );
+  const startRail = (
+    <>
       {startOptions.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-end justify-between gap-3">
@@ -192,11 +227,39 @@ export function RadarSkillExperience({
           </div>
           <div ref={carouselRef} className="radar-horizontal-carousel -mx-6 flex gap-3 overflow-x-auto px-6 pb-3">
             {startOptions.map((option) => (
-              <StartOptionTile key={option.id} option={option} accent={accent} />
+              <StartOptionTile
+                key={option.id}
+                option={option}
+                accent={accent}
+                visitId={visitId}
+                onOpen={openOption}
+              />
             ))}
           </div>
         </div>
       )}
+    </>
+  );
+
+  if (startFirst) {
+    return (
+      <section className="mx-auto w-full max-w-xl space-y-7">
+        {startRail}
+        <div className="space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: accent }}>
+            ทักษะที่ใช้จริง
+          </p>
+          {skillList}
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="mx-auto w-full max-w-xl space-y-7">
+      {intro}
+      {skillList}
+      {startRail}
     </section>
   );
 }

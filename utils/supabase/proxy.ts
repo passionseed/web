@@ -1,12 +1,12 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import type { JwtPayload, User } from '@supabase/supabase-js'
+import type { User } from '@supabase/supabase-js'
 import { NextResponse, type NextRequest } from 'next/server'
 import { isAnonymousUser } from '@/lib/supabase/auth'
 import {
   isProfileComplete,
   PROFILE_COMPLETION_SELECT,
 } from '@/lib/profile-completion'
-import { SHIFT_JOIN_PREFIX } from '@/lib/shift/joinLink'
+import { isShiftPath } from '@/lib/shift/joinLink'
 import { isPublicRoute } from './public-routes'
 
 function shouldSkipOnboardGate(pathname: string): boolean {
@@ -14,13 +14,17 @@ function shouldSkipOnboardGate(pathname: string): boolean {
     pathname === '/onboard' ||
     pathname.startsWith('/onboard/') ||
     pathname.startsWith('/auth/') ||
-    // Paid SHIFT students link Discord without the full PassionSeed onboard.
-    pathname.startsWith(SHIFT_JOIN_PREFIX) ||
-    // SeedStack links a SHIFT student's CLI; the auth callback skips onboard too.
-    pathname.startsWith('/shift/seedstack') ||
-    // The school proposal is forwarded to teachers and parents, who may hold
-    // a half-finished account; a proposal page should never bounce to /onboard.
-    pathname.startsWith('/shift/school') ||
+    // SHIFT applicants never do the full onboard, so no /shift page may
+    // bounce them (or a friend applying on the same phone) to /onboard. This
+    // also covers the school proposal forwarded to teachers and parents who
+    // may hold a half-finished account.
+    isShiftPath(pathname) ||
+    // Career Radar is public, and its links carry utm tags the page reads in
+    // the browser: a bounce to /onboard would drop them. /r/ short links
+    // return early in proxy.ts; they are listed here too as a second guard.
+    pathname === '/radar' ||
+    pathname.startsWith('/radar/') ||
+    pathname.startsWith('/r/') ||
     pathname.startsWith('/api/') ||
     pathname.startsWith('/_next/')
   )
@@ -30,8 +34,8 @@ function copySessionCookies(
   from: NextResponse,
   to: NextResponse
 ): NextResponse {
-  from.cookies.getAll().forEach(({ name, value }) => {
-    to.cookies.set(name, value)
+  from.cookies.getAll().forEach((cookie) => {
+    to.cookies.set(cookie)
   })
   return to
 }
@@ -63,17 +67,69 @@ async function needsOnboard(
   return !isProfileComplete(profile, guardianConsent) || !profile?.is_onboarded
 }
 
-// The JWT carries every field the proxy reads (id, email, app_metadata,
-// is_anonymous, aud), so it stands in for the full User without a fetch.
-function userFromClaims(claims: JwtPayload): User {
-  return {
-    id: claims.sub,
-    email: claims.email,
-    aud: typeof claims.aud === 'string' ? claims.aud : '',
-    is_anonymous: claims.is_anonymous,
-    app_metadata: claims.app_metadata ?? {},
-    user_metadata: claims.user_metadata ?? {},
-    created_at: '',
+/** decodeURIComponent that keeps any escape it cannot decode, instead of throwing. */
+function decodeLeniently(path: string): string {
+  try {
+    return decodeURIComponent(path)
+  } catch {
+    // One bad escape (e.g. "%zz") must not hide the rest of the path.
+    return path.replace(/%[0-9a-f]{2}/gi, (escape) => {
+      try {
+        return decodeURIComponent(escape)
+      } catch {
+        return escape
+      }
+    })
+  }
+}
+
+/**
+ * The path as Next's router matches it. Next decodes percent-escapes before
+ * it picks a route, so /%61dmin/users and /admin%2Fusers both render
+ * app/admin/users, while request.nextUrl.pathname keeps the escapes. Route
+ * checks that guard something (the admin gate, the admin no-store rule) must
+ * use this. Decoding repeats (at most three passes) and repeated slashes
+ * collapse: either can only make a path look more like a guarded one, so the
+ * checks fail closed.
+ */
+export function routingPathname(pathname: string): string {
+  let path = pathname
+  for (let pass = 0; pass < 3; pass += 1) {
+    const decoded = decodeLeniently(path)
+    if (decoded === path) break
+    path = decoded
+  }
+  return path.replace(/\/{2,}/g, '/')
+}
+
+/**
+ * /admin and everything under it, but not look-alikes such as /administrator.
+ * Also /admin.rsc and similar suffixes, which Next's router can map back to
+ * /admin. Matches the decoded routing path (see routingPathname).
+ */
+export function isAdminPagePath(pathname: string): boolean {
+  return /^\/admin(?:$|[/.])/.test(routingPathname(pathname))
+}
+
+/**
+ * Whether the signed-in user holds the web admin role. Uses the request's own
+ * client, so RLS (users_read_own_roles) applies. Any error counts as "no":
+ * the admin gate fails closed.
+ */
+async function hasAdminRole(
+  supabase: ReturnType<typeof createServerClient>,
+  userId: string
+): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .eq('role', 'admin')
+      .limit(1)
+    return !error && Array.isArray(data) && data.length > 0
+  } catch {
+    return false
   }
 }
 
@@ -145,10 +201,7 @@ export async function updateSession(request: NextRequest) {
   // with the Supabase client, your users may be randomly logged out.
   let user: User | null = null
   try {
-    // getClaims() refreshes the session if expired, then verifies the JWT
-    // locally against the cached JWKS instead of a round trip to the auth
-    // server on every navigation.
-    const { data, error } = await supabase.auth.getClaims()
+    const { data, error } = await supabase.auth.getUser()
     if (error && isDeadRefreshToken(error)) {
       // The browser holds a refresh token the auth server no longer knows
       // (revoked or already rotated). auth-js drops the session server-side,
@@ -156,17 +209,22 @@ export async function updateSession(request: NextRequest) {
       // resurfacing as error noise downstream. Treat as signed out.
       supabaseResponse = clearSupabaseAuthCookies(request, supabaseResponse)
     }
-    user = data?.claims ? userFromClaims(data.claims) : null
+    user = error ? null : data.user
   } catch {
-    // Supabase unreachable (e.g. Docker not running in dev).
-    // Skip auth check and let the request through — pages will
-    // handle their own auth state gracefully.
-    return supabaseResponse
+    // Public pages remain available during an auth outage. Protected pages
+    // must not render when the identity check cannot complete.
+    if (!isAdminPagePath(request.nextUrl.pathname) && isPublicRoute(request.nextUrl.pathname)) return supabaseResponse
+    return copySessionCookies(supabaseResponse, new NextResponse(
+      'Authentication temporarily unavailable',
+      { status: 503, headers: { 'Cache-Control': 'no-store', 'Retry-After': '30' } }
+    ))
   }
 
   const pathname = request.nextUrl.pathname
 
-  if (!user && !isPublicRoute(pathname)) {
+  // Admin pages are never public, even when a public rule (such as the .md
+  // suffix) would otherwise match the path.
+  if (!user && (isAdminPagePath(pathname) || !isPublicRoute(pathname))) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone()
     url.pathname = '/login'
@@ -174,6 +232,19 @@ export async function updateSession(request: NextRequest) {
     if (/^\/(whiteboard|calendar)(\/|$)/.test(pathname)) {
       url.search = `?next=${encodeURIComponent(pathname + request.nextUrl.search)}`
     }
+    return copySessionCookies(supabaseResponse, NextResponse.redirect(url))
+  }
+
+  // Admin pages are checked here as well as in app/admin/layout.tsx. An RSC
+  // request carrying a forged Next-Router-State-Tree header can make Next
+  // render an admin page without its layout, so the layout alone is not a
+  // boundary (docs/features/admin-console.md, S1). Non-admins go to /me, like
+  // lib/admin/requireAdmin.ts. Link-preview bots never reach this: proxy.ts
+  // rewrites them to /link-preview first.
+  if (user && isAdminPagePath(pathname) && !(await hasAdminRole(supabase, user.id))) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/me'
+    url.search = ''
     return copySessionCookies(supabaseResponse, NextResponse.redirect(url))
   }
 

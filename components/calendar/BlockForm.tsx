@@ -8,11 +8,14 @@ import { useState } from "react";
 import { BLOCK_KINDS, KIND_STYLE, bangkokParts, type BlockInput, type CalendarBlock } from "@/lib/calendar/core";
 import type { VoiceRoom } from "@/lib/calendar/notify";
 
+import type { CalendarTone } from "./AgendaList";
 import type { BlockFormValue } from "./useCalendar";
 import { bangkokToday } from "@/lib/content/shift-cohort";
 
-const field =
-  "w-full rounded-lg border cal-line bg-transparent px-2.5 py-1.5 text-sm outline-none focus:border-orange-400/70";
+const FIELD = {
+  default: "w-full rounded-lg border cal-line bg-transparent px-2.5 py-1.5 text-sm outline-none focus:border-orange-400/70",
+  grain: "wb-input w-full px-2.5 py-1.5 text-sm",
+};
 
 const clockOf = (hour: number, endOfDay = false) => (endOfDay ? "23:59" : `${String(hour).padStart(2, "0")}:00`);
 
@@ -25,6 +28,7 @@ export function BlockForm({
   rooms = [],
   onSubmit,
   onCancel,
+  tone = "default",
 }: {
   block?: CalendarBlock;
   /** Default date for a new block. */
@@ -38,7 +42,11 @@ export function BlockForm({
   /** Resolves true to close the form. */
   onSubmit: (input: BlockFormValue) => Promise<boolean>;
   onCancel: () => void;
+  /** "grain" on a whiteboard: see CalendarTone. */
+  tone?: CalendarTone;
 }) {
+  const grain = tone === "grain";
+  const field = FIELD[tone];
   const start = block ? bangkokParts(block.startsAt) : null;
   const [form, setForm] = useState({
     title: block?.title ?? "",
@@ -80,8 +88,13 @@ export function BlockForm({
             key={k}
             type="button"
             onClick={() => setForm((f) => ({ ...f, kind: k }))}
-            className={`rounded-full border px-2.5 py-0.5 text-xs ${form.kind === k ? "border-transparent text-white" : "cal-line opacity-70"}`}
-            style={form.kind === k ? { background: KIND_STYLE[k].color } : undefined}
+            aria-pressed={form.kind === k}
+            className={
+              grain
+                ? `wb-pick min-h-8 px-2.5 text-xs ${form.kind === k ? "wb-pick--on" : ""}`
+                : `rounded-full border px-2.5 py-0.5 text-xs ${form.kind === k ? "border-transparent text-white" : "cal-line opacity-70"}`
+            }
+            style={!grain && form.kind === k ? { background: KIND_STYLE[k].color } : undefined}
           >
             {KIND_STYLE[k].label}
           </button>
@@ -99,29 +112,38 @@ export function BlockForm({
           <option value="">ไม่ใช้ห้อง Discord</option>
           {rooms.map((r) => (
             <option key={r.channelId} value={r.channelId}>
-              🔊 {r.name}
+              {grain ? "" : "🔊 "}
+              {r.name}
             </option>
           ))}
         </select>
       )}
       {!block && !(attachBoard && attach) && (
-        <label className="flex items-start gap-2 text-xs opacity-80">
+        <label className={`flex items-start gap-2 text-xs ${grain ? "" : "opacity-80"}`}>
           <input type="checkbox" className="mt-0.5" checked={roomBoard} onChange={(e) => setRoomBoard(e.target.checked)} />
           <span>สร้างบอร์ดห้อง: มาถึง · ช่วยกัน · ปิดท้าย พร้อมการ์ดคำถาม</span>
         </label>
       )}
       {attachBoard && (
-        <label className="flex items-center gap-2 text-xs opacity-80">
+        <label className={`flex items-center gap-2 text-xs ${grain ? "" : "opacity-80"}`}>
           <input type="checkbox" checked={attach} onChange={(e) => setAttach(e.target.checked)} />
           แนบลิงก์บอร์ด &quot;{attachBoard.title}&quot; ให้ทุกคนกดเข้ามาได้
         </label>
       )}
-      <p className="text-xs opacity-60">ทุกคนที่ล็อกอินเห็นนัดนี้และเห็นว่าใครจะมา</p>
+      <p className={`text-xs ${grain ? "wb-soft" : "opacity-60"}`}>ทุกคนที่ล็อกอินเห็นนัดนี้และเห็นว่าใครจะมา</p>
       <div className="flex justify-end gap-2">
-        <button type="button" onClick={onCancel} className="rounded-lg px-3 py-1.5 text-sm opacity-70 hover:opacity-100">
+        <button type="button" onClick={onCancel} className={grain ? "wb-btn wb-btn--quiet h-9 px-3 text-sm" : "rounded-lg px-3 py-1.5 text-sm opacity-70 hover:opacity-100"}>
           ยกเลิก
         </button>
-        <button type="submit" disabled={busy} className="rounded-lg bg-orange-500 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50">
+        <button
+          type="submit"
+          disabled={busy}
+          className={
+            grain
+              ? "wb-btn wb-btn--primary wb-btn--sm inline-flex min-w-[5.5rem] items-center justify-center pl-3 pr-8 text-sm disabled:opacity-50"
+              : "rounded-lg bg-orange-500 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+          }
+        >
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : block ? "บันทึก" : "เพิ่ม"}
         </button>
       </div>

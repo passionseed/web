@@ -9,6 +9,8 @@ import {
 } from "@/components/shift/apply/ApplyGuides";
 import { MetaPixel } from "@/components/shift/MetaPixel";
 import { ShiftPageView } from "@/components/shift/ShiftPageView";
+import { RestoredApplyDone } from "@/components/shift/apply/RestoredApplyDone";
+import { BringAFriendBanner } from "@/components/shift/apply/BringAFriend";
 import {
   HALLOWEEN_PAGE_BG,
   HalloweenApplyHeader,
@@ -129,6 +131,8 @@ export default async function ShiftApplyPage({
               </p>
             </div>
 
+            <BringAFriendBanner cohort={cohort} />
+
             <RoundSwitcher current={cohort} open={openCohorts} />
 
             <div className="mt-8">
@@ -141,7 +145,9 @@ export default async function ShiftApplyPage({
             </div>
           </>
         ) : (
-          <ClosedRoundNotice requested={cohort} open={openCohorts} />
+          <RestoredApplyDone cohort={cohort}>
+            <ClosedRoundNotice requested={cohort} open={openCohorts} />
+          </RestoredApplyDone>
         )}
       </main>
     </div>

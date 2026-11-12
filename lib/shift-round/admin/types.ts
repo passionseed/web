@@ -116,7 +116,7 @@ export interface RoundPolicy {
   session_end: string;
   /** `shift_curriculum.round` this round's day plan is read from (soft reference). */
   curriculum_key: string | null;
-  /** Accepted applications of this cohort (`shift_applications.cohort`) may join (D6). */
+  /** Accepted, paid applications of this cohort (`shift_applications.cohort`) may join (D6). */
   application_cohort: string | null;
 }
 

@@ -6,36 +6,55 @@ import "./whiteboard.css";
 import {
   convertToExcalidrawElements,
   Excalidraw,
-  Footer,
-  LiveCollaborationTrigger,
   loadFromBlob,
   MainMenu,
   restoreElements,
-  Sidebar,
+  useHandleLibrary,
   WelcomeScreen,
 } from "@excalidraw/excalidraw";
-import type { OrderedExcalidrawElement } from "@excalidraw/excalidraw/element/types";
-import type { AppState, BinaryFiles } from "@excalidraw/excalidraw/types";
-import { ArrowLeft, Copy, FileUp, LayoutTemplate, MessageCircle, PanelRight, Save } from "lucide-react";
+import type { NonDeleted, OrderedExcalidrawElement, ExcalidrawEmbeddableElement } from "@excalidraw/excalidraw/element/types";
+import type { AppState, BinaryFiles, ExcalidrawProps } from "@excalidraw/excalidraw/types";
+import { ArrowLeft, Copy, FileUp, Flag, LayoutTemplate, Save, Settings } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import type { WhiteboardDetail } from "@/lib/supabase/whiteboards";
 import { canEdit, type LinkAccess } from "@/lib/whiteboard/core";
-import { CARD_KINDS, CARDS, cardSkeleton } from "@/lib/whiteboard/cards";
+import { exportBackgroundFor } from "@/lib/whiteboard/settings";
+import { CARD_KINDS, CARDS, cardLibrarySkeleton } from "@/lib/whiteboard/cards";
+import { questName, type Quest } from "@/lib/whiteboard/quests";
 import { templateById } from "@/lib/whiteboard/templates";
 import { widgetIdOf, widgetLink } from "@/lib/whiteboard/widgets";
 
 import { ActivityPanel } from "./ActivityPanel";
 import { AuthorsLayer } from "./AuthorsLayer";
-import { BoardTitle, SaveBadge } from "./BoardChrome";
+import { BoardCorner } from "./chrome/BoardCorner";
+import { BottomBar } from "./chrome/BottomBar";
+import { GrainDefs } from "./chrome/Grain";
+import { PeopleCorner } from "./chrome/PeopleCorner";
 import { CommentsLayer } from "./CommentsLayer";
-import { EmoteLayer, EmotePicker, useEmotes } from "./EmoteLayer";
+import { EmoteLayer, useEmotes } from "./EmoteLayer";
+import { focusElement } from "./focusElement";
+import { WB_FONT_VARS } from "./fonts";
 import { insertElements, insertSkeletons, insertWidget } from "./insert";
-import { KIT_SIDEBAR, KitSidebar } from "./KitSidebar";
+import { KitSidebar, openKit } from "./KitSidebar";
+import { boardLibraryAdapter } from "./libraryAdapter";
 import { BoardWidget } from "./plugins/BoardWidget";
 import { PluginHost, usePluginWindows } from "./plugins/PluginHost";
-import { PluginMenu } from "./plugins/PluginMenu";
+import type { BoardPlugin } from "./plugins/types";
+import { BoardBackdrop } from "./settings/BoardBackdrop";
+import { BoardSettingsDialog } from "./settings/BoardSettingsDialog";
+import { useBoardSettings } from "./settings/useBoardSettings";
+import { useCanvasBackground } from "./settings/useCanvasBackground";
+import { CanvasTeamLayer } from "./shift/CanvasTeamLayer";
+import { CardVersionsLayer } from "./shift/CardVersionsLayer";
+import { useShiftCardCaret } from "./shift/useShiftCardCaret";
+import { ZoneAddLayer } from "./shift/ZoneAddLayer";
+import { openQuestPanel, QuestPane, useQuestPane } from "./quest/QuestPane";
+import { useBoardPeople } from "./useBoardPeople";
+import { QuestLayer } from "./quest/QuestLayer";
+import { QuestMenu } from "./quest/QuestMenu";
+import { useQuestSession } from "./quest/useQuestSession";
 import { ShareDialog } from "./ShareDialog";
 import { TimerWidget } from "./TimerWidget";
 import { useComments } from "./useComments";
@@ -48,52 +67,118 @@ const THEME_KEY = "whiteboard-theme";
 // Thai faces registered in whiteboard.css under Excalidraw's family names.
 const THAI_FONTS = ["Excalifont", "Nunito", "Comic Shanns"];
 
+/** Excalidraw options that never change; a new object each render would re-render it. */
+const UI_OPTIONS: ExcalidrawProps["UIOptions"] = { canvasActions: { loadScene: false, saveToActiveFile: false } };
+
+/** Only our own widget links may be embedded; anything else falls back to Excalidraw's rules. */
+const validateEmbeddable = (link: string) => (widgetIdOf(link) ? true : undefined);
+
 /** Loads the Thai faces up front so Thai text is measured with the right font. */
 function preloadThaiFonts() {
   if (typeof document === "undefined" || !document.fonts) return;
   for (const family of THAI_FONTS) void document.fonts.load(`20px "${family}"`, "ก").catch(() => undefined);
 }
 
-/** Room cards in the Library panel, so people can drag them onto any board. */
+/** Room cards in the Library panel, each with its name on top, so people can tell them apart and drag them onto any board. */
 function cardLibrary() {
   return CARD_KINDS.map((kind) => ({
     id: `passionseed-card-${kind}`,
     status: "published" as const,
     name: CARDS[kind].title,
     created: 0,
-    elements: convertToExcalidrawElements([cardSkeleton(kind)]),
+    elements: convertToExcalidrawElements(cardLibrarySkeleton(kind)),
   }));
 }
+
+/** The Library: our cards, plus what each person adds or installs from libraries.excalidraw.com, kept in their browser. */
+const LIBRARY_ADAPTER = boardLibraryAdapter(cardLibrary);
 
 /** The live editor: Excalidraw plus sync, stickies, comments, reactions, timer, history and sharing. */
 export default function WhiteboardCanvas({
   board,
   me,
   templateId,
+  focusId,
 }: {
   board: WhiteboardDetail;
   me: Me;
   templateId?: string | null;
+  focusId?: string | null;
 }) {
   const editable = canEdit(board.role);
+  const isAdmin = Boolean(me.isAdmin);
   const initialElements = useMemo(
     () => restoreElements(board.elements as never, null) as readonly OrderedExcalidrawElement[],
     [board.elements],
   );
   const initialData = useMemo(() => {
     const theme = (typeof window !== "undefined" && (localStorage.getItem(THEME_KEY) as Theme | null)) || "light";
-    return { elements: initialElements, appState: { theme }, scrollToContent: true, libraryItems: cardLibrary() };
+    // See-through from the first paint: the paper and the dots are our own layer (BoardBackdrop).
+    return { elements: initialElements, appState: { theme, viewBackgroundColor: "transparent" }, scrollToContent: true };
   }, [initialElements]);
 
-  const sync = useWhiteboardSync({ boardId: board.id, role: board.role, me, initialElements });
+  // Moderators (the board's owner and site admins on it) may change any SHIFT canvas; everyone else only their own team's.
+  const managerIds = board.managerIds;
+  const isManager = managerIds.includes(me.id);
+  const lastBlockedToast = useRef(0);
+  const onCanvasBlocked = useCallback(() => {
+    if (Date.now() - lastBlockedToast.current < 4000) return;
+    lastBlockedToast.current = Date.now();
+    toast.info("เปลี่ยนตรงนี้ไม่ได้: แคนวาสนี้แก้ได้เฉพาะทีม และลบได้เฉพาะเจ้าของ");
+  }, []);
+  // Quest sessions: while one runs, everything this person makes is tagged with it (lib/whiteboard/quests.ts).
+  const quest = useQuestSession(board.id, me.id);
+  // Everyone's Discord name and picture, a moment after the board opens; profile names until then.
+  const discord = useBoardPeople(board.id, () => [
+    me.id,
+    ...board.members.map((m) => m.userId),
+    ...initialElements.flatMap((el) => {
+      const data = el.customData as { createdBy?: unknown; updatedBy?: unknown; quest?: { by?: unknown } } | undefined;
+      return [data?.createdBy, data?.updatedBy, data?.quest?.by].filter((v): v is string => typeof v === "string");
+    }),
+  ]);
+  const shownAs = useCallback((userId: string) => discord[userId], [discord]);
+  const shownMe = useMemo(
+    () => ({ ...me, name: discord[me.id]?.name ?? me.name, avatarUrl: discord[me.id]?.avatarUrl ?? me.avatarUrl }),
+    [me, discord],
+  );
+  const sync = useWhiteboardSync({
+    boardId: board.id,
+    role: board.role,
+    me: shownMe,
+    shownAs,
+    initialElements,
+    managerIds,
+    onCanvasBlocked,
+    newElementData: editable ? quest.newElementData : undefined,
+  });
   const api = sync.excalidrawAPI;
-  const channel = useMemo(() => ({ send: sync.send, on: sync.on }), [sync.send, sync.on]);
-  const comments = useComments(board.id, channel);
+  // Loads and saves the Library, and installs libraries from libraries.excalidraw.com (#addLibrary links).
+  useHandleLibrary({ excalidrawAPI: api, adapter: LIBRARY_ADAPTER });
+  const { send: syncSend, on: syncOn, onChange: syncOnChange, onPointerUpdate: syncOnPointer, saveNow, refreshFiles } = sync;
+  const channel = useMemo(() => ({ send: syncSend, on: syncOn }), [syncSend, syncOn]);
+  const comments = useComments(board.id, channel, shownAs);
   const pointer = useRef<{ x: number; y: number } | null>(null);
   const emotes = useEmotes(api, channel, pointer);
+  useShiftCardCaret(api);
+  const { start: startQuestSession, end: endQuestSession } = quest;
+  const startQuest = useCallback(
+    (q: Quest) => {
+      startQuestSession(q);
+      toast.success(`เริ่ม ${questName(q)}`, { description: "ทุกอย่างที่วาดหรือเขียนจากนี้นับเป็นงานของ Quest นี้ จนกว่าจะกดจบ" });
+    },
+    [startQuestSession],
+  );
+  const endQuest = useCallback(() => {
+    endQuestSession();
+    toast.success("จบ Quest แล้ว", { description: "คลิกขวาที่งานชิ้นไหนก็ย้าย Quest ได้" });
+  }, [endQuestSession]);
+  const { settings, update: updateSettings } = useBoardSettings(board.id);
+  useCanvasBackground(api, exportBackgroundFor(settings));
 
   const [title, setTitle] = useState(board.title);
   const [shareOpen, setShareOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [linkAccess, setLinkAccess] = useState<LinkAccess>(board.linkAccess);
   const [shareToken, setShareToken] = useState(board.shareToken);
   const [members, setMembers] = useState(board.members);
@@ -115,13 +200,36 @@ export default function WhiteboardCanvas({
     const newcomers = sync.present
       .filter((p) => !known.has(p.userId) && Boolean(known.add(p.userId)))
       .map((p) => ({ userId: p.userId, name: p.name, avatarUrl: p.avatarUrl, role: p.role }));
-    return [...members, ...newcomers];
-  }, [members, sync.present]);
+    return [...members, ...newcomers].map((p) =>
+      discord[p.userId] ? { ...p, name: discord[p.userId].name, avatarUrl: discord[p.userId].avatarUrl ?? p.avatarUrl } : p,
+    );
+  }, [members, sync.present, discord]);
+  const namesById = useMemo(() => new Map(people.map((p) => [p.userId, p.name])), [people]);
   const nameOf = useCallback(
-    (id: string) => people.find((p) => p.userId === id)?.name ?? authorNames[id] ?? "Someone",
-    [people, authorNames],
+    (id: string) => discord[id]?.name ?? namesById.get(id) ?? authorNames[id] ?? "Someone",
+    [discord, namesById, authorNames],
+  );
+  const avatarOf = useCallback(
+    (id: string) => discord[id]?.avatarUrl ?? people.find((p) => p.userId === id)?.avatarUrl ?? null,
+    [discord, people],
   );
   const onlineIds = useMemo(() => new Set(sync.present.map((p) => p.userId)), [sync.present]);
+
+  // What board apps get: the board, who I am, and who is online now (one entry per person).
+  const boardInfo = useMemo(() => ({ id: board.id, title, role: board.role }), [board.id, title, board.role]);
+  const pluginMe = useMemo(() => ({ id: me.id, name: me.name, avatarUrl: me.avatarUrl }), [me.id, me.name, me.avatarUrl]);
+  const players = useMemo(() => {
+    const seen = new Set<string>();
+    const list: { userId: string; name: string; avatarUrl: string | null }[] = [];
+    for (const p of sync.present) {
+      if (seen.has(p.userId)) continue;
+      seen.add(p.userId);
+      list.push({ userId: p.userId, name: p.name, avatarUrl: p.avatarUrl });
+    }
+    // Presence can lag behind the first render; I am always playing.
+    if (!seen.has(pluginMe.id)) list.unshift({ userId: pluginMe.id, name: pluginMe.name, avatarUrl: pluginMe.avatarUrl });
+    return list;
+  }, [sync.present, pluginMe]);
 
   const onChange = useCallback(
     (elements: readonly OrderedExcalidrawElement[], appState: AppState, files: BinaryFiles) => {
@@ -130,17 +238,17 @@ export default function WhiteboardCanvas({
         localStorage.setItem(THEME_KEY, appState.theme);
       }
       if (!sceneReady) setSceneReady(true);
-      sync.onChange(elements, appState, files);
+      syncOnChange(elements, appState, files);
     },
-    [sceneReady, sync],
+    [sceneReady, syncOnChange],
   );
 
   const onPointerUpdate = useCallback(
-    (update: Parameters<typeof sync.onPointerUpdate>[0]) => {
+    (update: Parameters<typeof syncOnPointer>[0]) => {
       pointer.current = { x: update.pointer.x, y: update.pointer.y };
-      sync.onPointerUpdate(update);
+      syncOnPointer(update);
     },
-    [sync],
+    [syncOnPointer],
   );
 
   useEffect(preloadThaiFonts, []);
@@ -155,49 +263,217 @@ export default function WhiteboardCanvas({
     api.scrollToContent(placed, { fitToViewport: true, viewportZoomFactor: 0.85 });
   }, [api, board.id, editable, sceneReady, templateId]);
 
+  // ?focus=<element> (the SHIFT High island's "เปิดแคนวาส" and "ดูบนแคนวาส"): bring it into view once,
+  // then tidy the address. An unknown id leaves the board's usual scroll-to-content.
+  const focused = useRef(false);
+  useEffect(() => {
+    if (!api || !sceneReady || !focusId || focused.current) return;
+    focused.current = true;
+    const reduced = typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    focusElement(api, focusId, reduced);
+    window.history.replaceState(null, "", `/whiteboard/${board.id}`);
+  }, [api, board.id, focusId, sceneReady]);
+
+  const saveAndTell = useCallback(async () => {
+    if (!editable) return;
+    const ok = await saveNow();
+    api?.setToast({ message: ok ? "บันทึกแล้ว · Saved" : "ยังบันทึกไม่ได้ จะลองใหม่ให้", duration: 1500 });
+  }, [api, editable, saveNow]);
+
   // Ctrl/Cmd+S saves now instead of downloading a file.
   useEffect(() => {
-    const onKey = async (e: KeyboardEvent) => {
+    const onKey = (e: KeyboardEvent) => {
       if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== "s" || e.shiftKey) return;
       e.preventDefault();
       e.stopPropagation();
-      if (!editable) return;
-      const ok = await sync.saveNow();
-      api?.setToast({ message: ok ? "บันทึกแล้ว · Saved" : "ยังบันทึกไม่ได้ จะลองใหม่ให้", duration: 1500 });
+      void saveAndTell();
     };
     window.addEventListener("keydown", onKey, { capture: true });
     return () => window.removeEventListener("keydown", onKey, { capture: true });
-  }, [api, editable, sync]);
+  }, [saveAndTell]);
 
-  const importFile = async (file: File) => {
-    if (!api) return;
-    try {
-      const scene = await loadFromBlob(file, null, null);
-      const elements = scene.elements.filter((el) => !el.isDeleted);
-      if (scene.files) api.addFiles(Object.values(scene.files));
-      const placed = insertElements(api, elements);
-      api.scrollToContent(placed, { fitToViewport: true, viewportZoomFactor: 0.8, animate: true });
-    } catch {
-      toast.error("เปิดไฟล์นี้ไม่ได้ ใช้ไฟล์ .excalidraw หรือ PNG ที่ส่งออกจากบอร์ด");
-    }
-  };
+  const importFile = useCallback(
+    async (file: File) => {
+      if (!api) return;
+      try {
+        const scene = await loadFromBlob(file, null, null);
+        const elements = scene.elements.filter((el) => !el.isDeleted);
+        if (scene.files) api.addFiles(Object.values(scene.files));
+        const placed = insertElements(api, elements);
+        api.scrollToContent(placed, { fitToViewport: true, viewportZoomFactor: 0.8, animate: true });
+      } catch {
+        toast.error("เปิดไฟล์นี้ไม่ได้ ใช้ไฟล์ .excalidraw หรือ PNG ที่ส่งออกจากบอร์ด");
+      }
+    },
+    [api],
+  );
 
-  const duplicate = async () => {
+  const duplicate = useCallback(async () => {
     try {
       const { id } = await boardApi<{ id: string }>(`/api/whiteboards/${board.id}/duplicate`, { method: "POST", body: "{}" });
       window.open(`/whiteboard/${id}`, "_blank");
     } catch {
       toast.error("คัดลอกไม่สำเร็จ · Could not copy");
     }
-  };
+  }, [board.id]);
 
-  const syncOn = sync.on;
   const onVersionsChanged = useCallback((fn: () => void) => syncOn("versions", fn), [syncOn]);
+  const onVersionSaved = useCallback(() => syncSend("versions", {}), [syncSend]);
+  const openShare = useCallback(() => setShareOpen(true), []);
+  const openSettings = useCallback(() => setSettingsOpen(true), []);
+  const onPlace = useMemo(
+    () =>
+      editable && api
+        ? (plugin: BoardPlugin) => {
+            if (plugin.widget) insertWidget(api, widgetLink(plugin.id), plugin.widget);
+          }
+        : undefined,
+    [api, editable],
+  );
 
-  const openKit = (tab: string) => api?.toggleSidebar({ name: KIT_SIDEBAR, tab, force: true });
+  const renderEmbeddable = useCallback(
+    (element: NonDeleted<ExcalidrawEmbeddableElement>) => {
+      const widget = widgetIdOf(element.link);
+      if (!widget || !api) return null;
+      return (
+        <BoardWidget
+          pluginId={widget}
+          api={api}
+          board={boardInfo}
+          editable={editable}
+          me={pluginMe}
+          players={players}
+          channel={channel}
+        />
+      );
+    },
+    [api, boardInfo, editable, pluginMe, players, channel],
+  );
+
+  // The Quest dashboard: the owner and site admins, plus whoever the owner made a quest reviewer.
+  const canReviewQuests = isManager || Boolean(members.find((m) => m.userId === me.id)?.questReviewer);
+
+  // Excalidraw re-renders itself whenever its children change, so they are memoized
+  // on exactly what they read.
+  const mainMenu = useMemo(
+    () => (
+      <MainMenu>
+        <MainMenu.Item icon={<ArrowLeft size={16} />} onSelect={() => (window.location.href = "/whiteboard")}>
+          บอร์ดทั้งหมด · All boards
+        </MainMenu.Item>
+        {canReviewQuests && api && (
+          <MainMenu.Item icon={<Flag size={16} />} onSelect={() => openQuestPanel()}>
+            Quest Dashboard · งานแต่ละคน
+          </MainMenu.Item>
+        )}
+        <MainMenu.Separator />
+        {editable && (
+          // Touch devices have no Ctrl+S.
+          <MainMenu.Item icon={<Save size={16} />} shortcut="Ctrl+S" onSelect={() => void saveAndTell()}>
+            บันทึกตอนนี้ · Save now
+          </MainMenu.Item>
+        )}
+        <MainMenu.Item icon={<Copy size={16} />} onSelect={() => void duplicate()}>
+          ทำสำเนา · Make a copy
+        </MainMenu.Item>
+        {editable && (
+          <MainMenu.Item icon={<FileUp size={16} />} onSelect={() => importInput.current?.click()}>
+            นำเข้าไฟล์ · Import
+          </MainMenu.Item>
+        )}
+        <MainMenu.DefaultItems.SaveAsImage />
+        <MainMenu.DefaultItems.Export />
+        <MainMenu.DefaultItems.SearchMenu />
+        <MainMenu.DefaultItems.Help />
+        {editable && <MainMenu.DefaultItems.ClearCanvas />}
+        <MainMenu.Separator />
+        <MainMenu.DefaultItems.ToggleTheme />
+        {/* The canvas colour and the dot grid: the one place for them (Excalidraw's own picker is left out). */}
+        <MainMenu.Item icon={<Settings size={16} />} onSelect={openSettings}>
+          ตั้งค่าบอร์ด · Board settings
+        </MainMenu.Item>
+      </MainMenu>
+    ),
+    [api, canReviewQuests, duplicate, editable, openSettings, saveAndTell],
+  );
+
+  const welcomeScreen = useMemo(
+    () => (
+      <WelcomeScreen>
+        <WelcomeScreen.Hints.MenuHint />
+        <WelcomeScreen.Center>
+          <WelcomeScreen.Center.Heading>{title}</WelcomeScreen.Center.Heading>
+          <WelcomeScreen.Center.Menu>
+            {editable && (
+              <WelcomeScreen.Center.MenuItem
+                onSelect={() => api && openKit(api, "templates")}
+                icon={<LayoutTemplate size={16} />}
+              >
+                เริ่มจากเทมเพลต · Start from a template
+              </WelcomeScreen.Center.MenuItem>
+            )}
+            <WelcomeScreen.Center.MenuItem onSelect={openShare}>ชวนเพื่อนมาวาดด้วยกัน · Invite friends</WelcomeScreen.Center.MenuItem>
+            <WelcomeScreen.Center.MenuItemHelp />
+          </WelcomeScreen.Center.Menu>
+        </WelcomeScreen.Center>
+      </WelcomeScreen>
+    ),
+    [api, editable, openShare, title],
+  );
+
+  const activity = useMemo(
+    () =>
+      isAdmin && api ? (
+        <ActivityPanel api={api} boardId={board.id} showAuthors={showAuthors} onShowAuthors={setShowAuthors} onPeople={setAuthorNames} />
+      ) : undefined,
+    [api, board.id, isAdmin, showAuthors],
+  );
+
+  // The Quest dashboard, in a pane beside the board that the board makes room for.
+  const questPane = useQuestPane(board.id, canReviewQuests);
+  const openQuestDashboard = useCallback((questId: string) => openQuestPanel(questId), []);
+
+  const kit = useMemo(
+    () =>
+      api ? (
+        <KitSidebar
+          api={api}
+          boardId={board.id}
+          editable={editable}
+          myName={me.name}
+          comments={comments}
+          showResolved={showResolved}
+          onShowResolved={setShowResolved}
+          onOpenThread={setOpenThread}
+          saveNow={saveNow}
+          refreshFiles={refreshFiles}
+          onVersionSaved={onVersionSaved}
+          onVersionsChanged={onVersionsChanged}
+          activity={activity}
+        />
+      ) : null,
+    [api, board.id, editable, me.name, comments, showResolved, saveNow, refreshFiles, onVersionSaved, onVersionsChanged, activity],
+  );
+
+  const timer = useMemo(
+    () => <TimerWidget boardId={board.id} initial={board.timer} canControl={editable} channel={channel} />,
+    // board.timer is only the starting value; the widget follows the channel after that.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [board.id, editable, channel],
+  );
+
+  const closePlacing = useCallback(() => setPlacingComment(false), []);
 
   return (
-    <div className="whiteboard-root whiteboard-room fixed inset-0">
+    <>
+      <div
+        className={`whiteboard-root whiteboard-room fixed inset-0 ${WB_FONT_VARS}`}
+        // The Quest pane sits beside the board: the board's right edge moves in to make room.
+        style={questPane.open ? { right: questPane.width } : undefined}
+      >
+      {/* The grain filters, once for the whole board. */}
+      <GrainDefs />
+      <BoardBackdrop api={api} settings={settings} />
       <Excalidraw
         excalidrawAPI={sync.setExcalidrawAPI}
         initialData={initialData}
@@ -206,135 +482,13 @@ export default function WhiteboardCanvas({
         isCollaborating
         viewModeEnabled={!editable}
         name={title}
-        UIOptions={{ canvasActions: { loadScene: false, saveToActiveFile: false } }}
-        validateEmbeddable={(link) => (widgetIdOf(link) ? true : undefined)}
-        renderEmbeddable={(element) => {
-          const widget = widgetIdOf(element.link);
-          if (!widget || !api) return null;
-          return (
-            <BoardWidget
-              pluginId={widget}
-              api={api}
-              board={{ id: board.id, title, role: board.role }}
-              editable={editable}
-              channel={channel}
-            />
-          );
-        }}
-        renderTopRightUI={(isMobile) => (
-          <div className="flex items-center gap-2">
-            {!isMobile && (
-              <BoardTitle boardId={board.id} title={title} canRename={board.role === "owner"} onRenamed={setTitle} />
-            )}
-            <TimerWidget boardId={board.id} initial={board.timer} canControl={editable} channel={channel} />
-            <SaveBadge state={sync.saveState} connected={sync.connected} readOnly={!editable} />
-            <PluginMenu
-              open={windows.open}
-              onToggle={windows.toggle}
-              onPlace={
-                editable && api
-                  ? (plugin) => plugin.widget && insertWidget(api, widgetLink(plugin.id), plugin.widget)
-                  : undefined
-              }
-            />
-            <Sidebar.Trigger name={KIT_SIDEBAR} tab={editable ? "create" : "comments"} icon={<PanelRight size={16} />} title="Board kit" />
-            <LiveCollaborationTrigger isCollaborating={sync.connected} onSelect={() => setShareOpen(true)} />
-          </div>
-        )}
+        UIOptions={UI_OPTIONS}
+        validateEmbeddable={validateEmbeddable}
+        renderEmbeddable={renderEmbeddable}
       >
-        <MainMenu>
-          <MainMenu.Item icon={<ArrowLeft size={16} />} onSelect={() => (window.location.href = "/whiteboard")}>
-            บอร์ดทั้งหมด · All boards
-          </MainMenu.Item>
-          <MainMenu.Separator />
-          {editable && (
-            <MainMenu.Item icon={<Save size={16} />} shortcut="Ctrl+S" onSelect={() => void sync.saveNow()}>
-              บันทึกตอนนี้ · Save now
-            </MainMenu.Item>
-          )}
-          <MainMenu.Item icon={<Copy size={16} />} onSelect={() => void duplicate()}>
-            ทำสำเนา · Make a copy
-          </MainMenu.Item>
-          {editable && (
-            <MainMenu.Item icon={<FileUp size={16} />} onSelect={() => importInput.current?.click()}>
-              นำเข้าไฟล์ · Import
-            </MainMenu.Item>
-          )}
-          {editable && (
-            <MainMenu.Item icon={<LayoutTemplate size={16} />} onSelect={() => openKit("templates")}>
-              เทมเพลต · Templates
-            </MainMenu.Item>
-          )}
-          <MainMenu.DefaultItems.SaveAsImage />
-          <MainMenu.DefaultItems.Export />
-          <MainMenu.DefaultItems.SearchMenu />
-          <MainMenu.DefaultItems.Help />
-          {editable && <MainMenu.DefaultItems.ClearCanvas />}
-          <MainMenu.Separator />
-          <MainMenu.DefaultItems.ToggleTheme />
-          <MainMenu.DefaultItems.ChangeCanvasBackground />
-        </MainMenu>
-
-        <WelcomeScreen>
-          <WelcomeScreen.Hints.MenuHint />
-          <WelcomeScreen.Hints.ToolbarHint />
-          <WelcomeScreen.Center>
-            <WelcomeScreen.Center.Heading>{title}</WelcomeScreen.Center.Heading>
-            <WelcomeScreen.Center.Menu>
-              {editable && (
-                <WelcomeScreen.Center.MenuItem onSelect={() => openKit("templates")} icon={<LayoutTemplate size={16} />}>
-                  เริ่มจากเทมเพลต · Start from a template
-                </WelcomeScreen.Center.MenuItem>
-              )}
-              <WelcomeScreen.Center.MenuItem onSelect={() => setShareOpen(true)}>
-                ชวนเพื่อนมาวาดด้วยกัน · Invite friends
-              </WelcomeScreen.Center.MenuItem>
-              <WelcomeScreen.Center.MenuItemHelp />
-            </WelcomeScreen.Center.Menu>
-          </WelcomeScreen.Center>
-        </WelcomeScreen>
-
-        <Footer>
-          <div className="mx-auto flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setPlacingComment((p) => !p)}
-              title="Comment: click anywhere on the board"
-              className={`wb-pill text-sm ${placingComment ? "wb-pill--on" : ""}`}
-            >
-              <MessageCircle className="h-4 w-4" />
-              {placingComment ? "คลิกบนบอร์ด" : "คอมเมนต์"}
-            </button>
-            <EmotePicker onPick={emotes.react} />
-          </div>
-        </Footer>
-
-        {api && (
-          <KitSidebar
-            api={api}
-            boardId={board.id}
-            editable={editable}
-            comments={comments}
-            showResolved={showResolved}
-            onShowResolved={setShowResolved}
-            onOpenThread={setOpenThread}
-            saveNow={sync.saveNow}
-            refreshFiles={sync.refreshFiles}
-            onVersionSaved={() => sync.send("versions", {})}
-            onVersionsChanged={onVersionsChanged}
-            activity={
-              me.isAdmin ? (
-                <ActivityPanel
-                  api={api}
-                  boardId={board.id}
-                  showAuthors={showAuthors}
-                  onShowAuthors={setShowAuthors}
-                  onPeople={setAuthorNames}
-                />
-              ) : undefined
-            }
-          />
-        )}
+        {mainMenu}
+        {welcomeScreen}
+        {kit}
       </Excalidraw>
 
       {api && (
@@ -346,21 +500,67 @@ export default function WhiteboardCanvas({
             canModerate={editable}
             isOwner={board.role === "owner"}
             placing={placingComment}
-            onPlaced={() => setPlacingComment(false)}
+            onPlaced={closePlacing}
             openId={openThread}
             onOpen={setOpenThread}
             showResolved={showResolved}
           />
           <EmoteLayer api={api} bursts={emotes.bursts} />
-          {me.isAdmin && showAuthors && <AuthorsLayer api={api} nameOf={nameOf} />}
-          <PluginHost
-            api={api}
-            board={{ id: board.id, title, role: board.role }}
-            editable={editable}
-            channel={channel}
-            windows={windows}
-          />
+          {editable && <ZoneAddLayer api={api} meId={me.id} manager={isManager} />}
+          {editable && (
+            <QuestLayer
+              api={api}
+              meId={me.id}
+              manager={isManager}
+              nameOf={nameOf}
+              onReview={canReviewQuests ? openQuestDashboard : undefined}
+              session={quest.session}
+              onStart={startQuest}
+              onEnd={endQuest}
+            />
+          )}
+          {editable && <QuestMenu api={api} meId={me.id} manager={isManager} />}
+          <CardVersionsLayer api={api} meId={me.id} editable={editable} manager={isManager} nameOf={nameOf} />
+          <CanvasTeamLayer api={api} meId={me.id} manager={isManager} people={people} nameOf={nameOf} />
+          {isAdmin && showAuthors && <AuthorsLayer api={api} nameOf={nameOf} />}
         </>
+      )}
+
+      {/* Our chrome sits above the canvas and the comment overlay, under Excalidraw's own menus. */}
+      <BoardCorner
+        boardId={board.id}
+        title={title}
+        canRename={board.role === "owner"}
+        onRenamed={setTitle}
+        saveState={sync.saveState}
+        connected={sync.connected}
+        readOnly={!editable}
+      />
+      <PeopleCorner api={api} present={sync.present} meId={me.id} timer={timer} onShare={openShare} />
+      <BottomBar
+        api={api}
+        boardId={board.id}
+        editable={editable}
+        isAdmin={isAdmin}
+        placingComment={placingComment}
+        onPlacingComment={setPlacingComment}
+        onReact={emotes.react}
+        openWindows={windows.open}
+        onToggleWindow={windows.toggle}
+        onPlace={onPlace}
+        onSettings={openSettings}
+      />
+
+      {api && (
+        <PluginHost
+          api={api}
+          board={boardInfo}
+          editable={editable}
+          me={pluginMe}
+          players={players}
+          channel={channel}
+          windows={windows}
+        />
       )}
 
       <input
@@ -375,6 +575,8 @@ export default function WhiteboardCanvas({
         }}
       />
 
+      <BoardSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} settings={settings} update={updateSettings} />
+
       <ShareDialog
         open={shareOpen}
         onOpenChange={setShareOpen}
@@ -388,6 +590,18 @@ export default function WhiteboardCanvas({
         onMembersChange={setMembers}
         onlineIds={onlineIds}
       />
-    </div>
+      </div>
+      {questPane.open && api && (
+        <QuestPane
+          api={api}
+          width={questPane.width}
+          onResize={questPane.resize}
+          onClose={questPane.close}
+          people={people}
+          nameOf={nameOf}
+          avatarOf={avatarOf}
+        />
+      )}
+    </>
   );
 }

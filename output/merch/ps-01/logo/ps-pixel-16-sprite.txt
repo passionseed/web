@@ -1,0 +1,16 @@
+............O...
+......O....OO.O.
+.....OO...OOO.O.
+.....OOO.OOOOOO.
+....OOOOOOOYYOO.
+...OOOYYOYYYYOO.
+...OOYYYYYYYYO..
+..OOYYYKKKKYYO..
+..OYYYKKKKKKYO..
+..OYYWWKKWWKYO..
+..OYYWKKKWKKYO..
+..OYYKKKKKKKYO..
+...OYYKKKKKYO...
+...OOYYYYYYOO...
+.....OOOOOO.....
+................

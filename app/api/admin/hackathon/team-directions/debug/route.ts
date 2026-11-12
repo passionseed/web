@@ -1,27 +1,13 @@
 import { NextResponse } from "next/server";
+import { requireDebugAccess } from "@/lib/security/route-guards";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { getNextPendingJob, claimJob, completeJob, failJob } from "@/lib/embeddings/jobs";
 import { createTeamDirectionSnapshot, collectTeamText } from "@/lib/embeddings/team-direction";
 import { getHackathonClient } from "@/lib/embeddings/hackathon-client";
 
-async function requireAdminUser() {
-  const { createClient } = await import("@/utils/supabase/server");
-  const supabase = await createClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) return null;
-
-  const { data: roles } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", user.id)
-    .eq("role", "admin");
-
-  return roles?.length ? user : null;
-}
-
 export async function GET() {
-  const admin = await requireAdminUser();
-  if (!admin) return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+  const admin = await requireDebugAccess();
+  if (!admin.ok) return admin.response;
 
   try {
     const client = createAdminClient();
@@ -113,8 +99,8 @@ export async function GET() {
  * and returns results.
  */
 export async function POST() {
-  const admin = await requireAdminUser();
-  if (!admin) return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+  const admin = await requireDebugAccess();
+  if (!admin.ok) return admin.response;
 
   try {
     const client = createAdminClient();

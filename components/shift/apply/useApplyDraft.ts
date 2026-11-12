@@ -19,11 +19,13 @@ const DRAFT_FIELDS: readonly (keyof ShiftApplicationInput)[] = [
   "fullName",
   "nickname",
   "grade",
+  "birthDate",
   "targetTrack",
   "problem",
   "availability",
   "igHandle",
   "discordHandle",
+  "parentEmail",
   "parentContact",
   "foundVia",
 ];
@@ -82,4 +84,55 @@ export function useApplyDraft(
       // Storage full or disabled: the form still works, it just won't persist.
     }
   }, [values]);
+}
+
+/**
+ * The submitted application, kept for this tab only. The done screen leads
+ * with Discord sign-in, which leaves the page; backing out of Discord's
+ * login reloads /shift/apply, and without this the receipt, payment QR and
+ * personal join link would be gone. It expires so someone else applying
+ * later on the same phone gets a blank form.
+ */
+const SUBMITTED_KEY = "shift_apply_submitted_v1";
+// Long enough for a Discord sign-in round trip, short enough that the next
+// person on a shared phone rarely meets someone else's receipt.
+const SUBMITTED_TTL_MS = 30 * 60 * 1000;
+
+export interface SubmittedApplication {
+  round: number;
+  values: ShiftApplicationInput;
+  joinUrl: string | null;
+}
+
+export function saveSubmittedApplication(entry: SubmittedApplication) {
+  try {
+    window.sessionStorage.setItem(SUBMITTED_KEY, JSON.stringify({ ...entry, savedAt: Date.now() }));
+  } catch {
+    // Storage disabled: the done screen still shows, it just won't survive a reload.
+  }
+}
+
+export function clearSubmittedApplication() {
+  try {
+    window.sessionStorage.removeItem(SUBMITTED_KEY);
+  } catch {
+    // Storage disabled: nothing was saved.
+  }
+}
+
+export function readSubmittedApplication(round: number): SubmittedApplication | null {
+  try {
+    const raw = window.sessionStorage.getItem(SUBMITTED_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<SubmittedApplication> & { savedAt?: number };
+    const fresh = typeof parsed.savedAt === "number" && Date.now() - parsed.savedAt < SUBMITTED_TTL_MS;
+    if (!fresh || parsed.round !== round || !parsed.values || typeof parsed.values !== "object") return null;
+    return {
+      round,
+      values: parsed.values,
+      joinUrl: typeof parsed.joinUrl === "string" ? parsed.joinUrl : null,
+    };
+  } catch {
+    return null;
+  }
 }

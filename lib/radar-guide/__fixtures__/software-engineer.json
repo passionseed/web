@@ -1,0 +1,1231 @@
+{
+  "id": "ac112631-0ee9-491a-8c4d-a339df949132",
+  "slug": "software-engineer",
+  "name_th": "นักพัฒนาซอฟต์แวร์",
+  "name_en": "Software Developer",
+  "tagline_th": "ทุกธุรกิจต้องใช้ซอฟต์แวร์ แต่ AI กำลังเปลี่ยนวงการ — ตำแหน่ง junior ลดลง คนที่ใช้ AI เป็นจะได้เปรียบ",
+  "tagline_en": "Demand for software engineers continues to outpace supply globally. AI coding assistants augment productivity but do not",
+  "emoji": "💻",
+  "color": "#3b82f6",
+  "tile_size": "md",
+  "tags": [
+    "growing",
+    "high-pay",
+    "ai-proof"
+  ],
+  "is_published": true,
+  "has_content": true,
+  "sort_order": 6,
+  "squad_url": null,
+  "hero_image_url": null,
+  "hero_image_prompt": null,
+  "hero_image_credit": null,
+  "hero_image_license": null,
+  "hero_image_alt_th": null,
+  "hero_image_alt_en": null,
+  "research": {
+    "tier": "shifting",
+    "aliases": [
+      "programmer",
+      "coder",
+      "developer",
+      "software developer"
+    ],
+    "metrics": {
+      "salary_floor": 25000,
+      "demand_growth": 5,
+      "salary_ceiling": 220000,
+      "saturation_level": 7,
+      "grad_employment_pct": 50,
+      "progression_difficulty": 6
+    },
+    "sources": [
+      {
+        "url": "https://www.bls.gov/ooh/computer-and-information-technology/software-developers.htm",
+        "date": "2025-09-01",
+        "title": "Occupational Outlook Handbook: Software Developers, QA Analysts, and Testers",
+        "author": "U.S. Bureau of Labor Statistics"
+      },
+      {
+        "url": "https://th.jobsdb.com/career-advice/role/software-engineer/salary",
+        "date": "2026-06-01",
+        "title": "Software Engineer Salary in Thailand (June 2026)",
+        "author": "JobsDB Thailand"
+      },
+      {
+        "url": "https://www.levels.fyi/t/software-engineer/locations/thailand",
+        "date": "2026-07-01",
+        "title": "Software Engineer Compensation — Thailand",
+        "author": "Levels.fyi"
+      },
+      {
+        "url": "https://www.payscale.com/research/TH/Job=Software_Engineer/Salary/bb33c4e4/Bangkok",
+        "date": "2025-06-04",
+        "title": "Software Engineer Salary in Bangkok, Thailand",
+        "author": "PayScale"
+      },
+      {
+        "url": "https://ardura.consulting/blog/junior-developer-crisis-2026-why-companies-stopped-hiring-entry-level/",
+        "date": "2026-01-01",
+        "title": "Junior Developer Crisis 2026 — Why Hiring Dropped 50%",
+        "author": "ARDURA Consulting"
+      },
+      {
+        "url": "https://metana.io/blog/coding-bootcamp-statistics-for-2026/",
+        "date": "2026-01-01",
+        "title": "25+ Coding Bootcamp Statistics for 2026: Key Findings",
+        "author": "Metana"
+      },
+      {
+        "url": "https://www.levels.fyi/blog/swe-level-framework.html",
+        "date": "2024-01-01",
+        "title": "Software Engineering Level Framework",
+        "author": "Levels.fyi"
+      }
+    ],
+    "insights": [],
+    "reasoning": "Software engineering demand remains strong globally (BLS projects 15% growth 2024-2034) and in Thailand's banking/e-commerce digital transformation. However, the junior market is experiencing a crisis: new-grad hiring share dropped from 15% to 7% of tech hires, AI tools are replacing some entry-level tasks, and bootcamp graduate placement rates fell to 71-79%. Senior and staff engineers remain highly sought-after. Career progression from junior to senior takes 5-8 years, and the senior-to-staff leap is the hardest transition on the IC track, requiring multi-team influence. Thailand salary range spans 25,000 THB/month for entry-level to 200,000+ THB/month for staff/principal engineers at top companies or remote international roles (Levels.fyi P90 = 224,000 THB/month). Score lowered from 7 to 6 due to increased junior saturation and higher progression difficulty.",
+    "global_metrics": {
+      "salary_floor": 6654,
+      "demand_growth": 8,
+      "salary_ceiling": 17621,
+      "saturation_level": 7,
+      "grad_employment_pct": 70,
+      "progression_difficulty": 6
+    },
+    "metric_details": {
+      "salary_floor": {
+        "en": "Entry-level software engineers in Bangkok earn 25,000-35,000 THB/month per JobsDB 2026 data. PayScale reports entry-level (<1yr) at ~39,000 THB/month. The floor is closer to 25,000 THB for fresh graduates at smaller companies.",
+        "th": "นักพัฒนาซอฟต์แวร์จบใหม่ในกรุงเทพเริ่มต้นที่ 25,000-35,000 บาท/เดือน ตาม JobsDB 2026 PayScale รายงานเริ่มต้น (<1 ปี) ที่ ~39,000 บาท/เดือน ค่าต่ำสุดอยู่ที่ราว 25,000 บาทสำหรับจบใหม่ในบริษัทเล็ก",
+        "sources": [
+          {
+            "url": "https://th.jobsdb.com/career-advice/role/software-engineer/salary",
+            "title": "JobsDB Thailand Software Engineer Salary 2026"
+          },
+          {
+            "url": "https://www.payscale.com/research/TH/Job=Software_Engineer/Salary/bb33c4e4/Bangkok",
+            "title": "PayScale Software Engineer Bangkok 2025"
+          }
+        ]
+      },
+      "demand_growth": {
+        "en": "BLS projects 15% growth for software developers 2024-2034, much faster than the 3% average for all occupations. ~129,200 openings projected annually. Thailand's digital transformation in banking and e-commerce drives 15-20% annual growth in demand.",
+        "th": "BLS คาดการณ์ software developer จะโต 15% ระหว่างปี 2024-2034 (เร็วกว่าค่าเฉลี่ยของทุกอาชีพมาก ราว 129,200 ตำแหน่งใหม่/ปี) แต่การจ้างตำแหน่งจบใหม่ลดลงกว่าครึ่งเพราะ AI",
+        "sources": [
+          {
+            "url": "https://www.bls.gov/ooh/computer-and-information-technology/software-developers.htm",
+            "title": "BLS Occupational Outlook: Software Developers 2024-2034"
+          },
+          {
+            "url": "https://www.bls.gov/news.release/pdf/ecopro.pdf",
+            "title": "BLS Employment Projections 2024-2034"
+          }
+        ]
+      },
+      "salary_ceiling": {
+        "en": "Levels.fyi reports P90 total compensation in Thailand at 2,689,346 THB/year (~224,000 THB/month). Senior engineers at Agoda earn ~2.5M THB/year. Staff/principal roles at multinationals or remote international companies can exceed 200,000 THB/month.",
+        "th": "Levels.fyi รายงาน P90 ค่าตอบแทนรวมในไทยที่ 2,689,346 บาท/ปี (~224,000 บาท/เดือน) Senior ที่ Agoda ได้ราว 2.5 ล้านบาท/ปี Staff/Principal ในบริษัทข้ามชาติหรืองาน remote ต่างประเทศเกิน 200,000 บาท/เดือน",
+        "sources": [
+          {
+            "url": "https://www.levels.fyi/t/software-engineer/locations/thailand",
+            "title": "Levels.fyi Software Engineer Thailand Compensation"
+          },
+          {
+            "url": "https://www.glassdoor.com/Salaries/bangkok-thailand-senior-software-engineer-salary-SRCH_IL.0,16_IM1119_KO17,41.htm",
+            "title": "Glassdoor Senior Software Engineer Bangkok 2026"
+          }
+        ]
+      },
+      "saturation_level": {
+        "en": "Junior market is significantly more saturated in 2026: new grad hiring share dropped from 15% to 7% of tech hires. Junior developer hiring dropped ~50%. However, mid-senior developers remain scarce — the saturation is concentrated at entry level.",
+        "th": "ตลาด junior อิ่มตัวสูงในปี 2026: สัดส่วนจ้างจบใหม่ลดจาก 15% เหลือ 7% การจ้าง junior developer ลดลง ~50% (ARDURA) แต่ mid-senior ยังขาดแคลน — สำหรับคนที่กำลังจะเข้าตลาด ความอิ่มตัวที่จะเจอจริงสูงกว่าค่าเฉลี่ย (ตัวเลขนี้วัดความอิ่มตัวของแรงงานทั้งตลาด ต่างจากคะแนน 'การแข่งขัน' ในการ์ดตลาดไทยที่วัดผู้สมัครต่อตำแหน่งเปิดสำหรับจบใหม่)",
+        "sources": [
+          {
+            "url": "https://ardura.consulting/blog/junior-developer-crisis-2026-why-companies-stopped-hiring-entry-level/",
+            "title": "ARDURA: Junior Developer Crisis 2026"
+          },
+          {
+            "url": "https://metana.io/blog/coding-bootcamp-statistics-for-2026/",
+            "title": "Coding Bootcamp Statistics 2026"
+          }
+        ]
+      },
+      "grad_employment_pct": {
+        "en": "This number is the estimated share of new computer-science graduates who actually land a software job within their first year after graduating — now around 50%, because companies have slashed entry-level hiring: new grads fell from 15% to 7% of IT hires in three years, and junior hiring dropped by more than half. The often-quoted 71-79% placement figures are US bootcamp outcomes (CIRR ~71%, Course Report ~79%), which measure only bootcamp graduates, not the whole graduate market.",
+        "th": "ตัวเลขนี้คือสัดส่วนของเด็กจบใหม่สายคอมพิวเตอร์ที่ได้งานพัฒนาซอฟต์แวร์จริงภายในปีแรกหลังเรียนจบ (โดยประมาณ) — ตอนนี้อยู่ราว 50% เพราะบริษัทลดรับจบใหม่ลงมาก สัดส่วนคนจบใหม่ในการจ้างงาน IT ลดจาก 15% เหลือ 7% ใน 3 ปี และการจ้าง junior หดลงกว่าครึ่ง ส่วนตัวเลข placement 71-79% ที่เคยเห็นเป็นข้อมูลคนจบ bootcamp ฝั่งสหรัฐฯ (CIRR ~71%, Course Report ~79%) ซึ่งวัดเฉพาะกลุ่ม bootcamp ไม่ใช่เด็กจบใหม่ทั้งตลาด",
+        "source": "ARDURA Consulting",
+        "sources": [
+          {
+            "url": "https://ardura.consulting/blog/junior-developer-crisis-2026-why-companies-stopped-hiring-entry-level/",
+            "title": "ARDURA: Junior Developer Hiring Crisis 2026"
+          },
+          {
+            "url": "https://metana.io/blog/coding-bootcamp-statistics-for-2026/",
+            "title": "Coding Bootcamp Statistics 2026 — Metana"
+          }
+        ],
+        "source_url": "https://ardura.consulting/blog/junior-developer-crisis-2026-why-companies-stopped-hiring-entry-level/"
+      },
+      "progression_difficulty": {
+        "en": "Junior → Mid takes 2-4 years, Mid → Senior takes 2-4 more years (total 4-8 years to Senior). Senior → Staff is the hardest leap on the IC track, requiring multi-team influence and technical strategy — typically takes 3-5 additional years. Total path to Staff: 8-12 years. No licenses needed but continuous skill development is essential.",
+        "th": "Junior → Mid ใช้เวลา 2-4 ปี, Mid → Senior อีก 2-4 ปี (รวม 4-8 ปีถึง Senior) Senior → Staff เป็นก้าวที่ยากที่สุดในสาย IC ต้องมีอิทธิพลข้ามทีมและวิสัยทัศน์เชิงเทคนิค ใช้เวลาอีก 3-5 ปี รวมถึง Staff: 8-12 ปี ไม่ต้องใช้ใบอนุญาตแต่ต้องพัฒนาทักษะต่อเนื่อง",
+        "sources": [
+          {
+            "url": "https://www.levels.fyi/blog/swe-level-framework.html",
+            "title": "Levels.fyi SWE Level Framework"
+          },
+          {
+            "url": "https://mentorcruise.com/blog/from-junior-to-senior-a-guide-to-software-engineering-levels-b942b/",
+            "title": "MentorCruise: Junior to Senior Guide"
+          },
+          {
+            "url": "https://www.jointaro.com/question/ZhDlofnJHKHWVFfDNriE/how-many-years-does-it-take-for-most-software-engineers-to-advance-to-senior-level/",
+            "title": "Taro: Years to Advance to Senior Level"
+          }
+        ]
+      }
+    },
+    "escape_route_slug": null,
+    "global_metric_details": {
+      "salary_floor": {
+        "en": "The 10th percentile salary for US software developers is $79,850/year (~$6,654/month) per BLS OES May 2024.",
+        "th": "P10 ของ software developer ในสหรัฐฯ อยู่ที่ $79,850/ปี (~$6,654/เดือน) ตาม BLS OES May 2024",
+        "sources": [
+          {
+            "url": "https://www.bls.gov/oes/current/oes151252.htm",
+            "title": "BLS OES Software Developers May 2024"
+          }
+        ]
+      },
+      "demand_growth": {
+        "en": "BLS projects 15% growth for software developers 2024-2034 (~129,200 openings/year), driven by AI, IoT, robotics, and automation applications.",
+        "th": "BLS คาดการณ์ software developer จะโต 15% ระหว่าง 2024-2034 (~129,200 ตำแหน่ง/ปี) ขับเคลื่อนโดย AI, IoT, หุ่นยนต์ และระบบอัตโนมัติ",
+        "sources": [
+          {
+            "url": "https://www.bls.gov/ooh/computer-and-information-technology/software-developers.htm",
+            "title": "BLS Occupational Outlook: Software Developers"
+          },
+          {
+            "url": "https://www.bls.gov/news.release/pdf/ecopro.pdf",
+            "title": "BLS Employment Projections 2024-2034"
+          }
+        ]
+      },
+      "salary_ceiling": {
+        "en": "90th percentile is $211,450/year (~$17,621/month) per BLS. Senior engineers at FAANG earn $300K-$500K+ total compensation including RSU/equity.",
+        "th": "P90 ของ software developer อยู่ที่ $211,450/ปี (~$17,621/เดือน) ตาม BLS Senior ที่ FAANG ได้ $300K-$500K+ รวม RSU",
+        "sources": [
+          {
+            "url": "https://www.bls.gov/oes/current/oes151252.htm",
+            "title": "BLS OES Software Developers May 2024"
+          },
+          {
+            "url": "https://www.levels.fyi",
+            "title": "Levels.fyi Compensation Data"
+          }
+        ]
+      },
+      "saturation_level": {
+        "en": "Junior developer hiring dropped ~50% globally. AI tools replacing entry-level tasks. But 1.4M+ unfilled computing positions in the US — saturation is entry-level only, not industry-wide.",
+        "th": "การจ้าง junior developer ลดลง ~50% ทั่วโลก AI แทนที่งาน entry-level บางส่วน แต่ยังมี 1.4 ล้าน+ ตำแหน่ง computing ว่างในสหรัฐฯ — อิ่มตัวเฉพาะ entry-level ไม่ใช่ทั้งอุตสาหกรรม",
+        "sources": [
+          {
+            "url": "https://ardura.consulting/blog/junior-developer-crisis-2026-why-companies-stopped-hiring-entry-level/",
+            "title": "ARDURA: Junior Developer Crisis 2026"
+          },
+          {
+            "url": "https://code.org/promote",
+            "title": "Code.org Computing Workforce Data"
+          }
+        ]
+      },
+      "grad_employment_pct": {
+        "en": "CS graduate unemployment at ~5.7% (Q4 2025), underemployment at 42.5%. Employment for software developers aged 22-25 declined ~20% from 2022 peak. Overall CS employment remains higher than most fields.",
+        "th": "อัตราว่างงาน CS จบใหม่ ~5.7% (Q4 2025) ว่างงานแฝง 42.5% การจ้างงาน software developer อายุ 22-25 ลดลง ~20% จากจุดสูงสุดปี 2022 ภาพรวม CS ยังจ้างงานดีกว่าสาขาส่วนใหญ่",
+        "sources": [
+          {
+            "url": "https://ardura.consulting/blog/junior-developer-crisis-2026-why-companies-stopped-hiring-entry-level/",
+            "title": "ARDURA: Junior Developer Hiring Crisis 2026"
+          },
+          {
+            "url": "https://nces.ed.gov/programs/coe/indicator/sbc",
+            "title": "NCES Employment Outcomes for CS Graduates"
+          }
+        ]
+      },
+      "progression_difficulty": {
+        "en": "No license barriers but the Senior→Staff transition is the hardest leap, requiring multi-team scope and technical strategy. Frequent job-hopping is common for faster progression and salary increases.",
+        "th": "ไม่มีอุปสรรคใบอนุญาต แต่ Senior→Staff เป็นก้าวที่ยากที่สุด ต้องมี scope ข้ามทีมและกลยุทธ์เชิงเทคนิค การย้ายงานบ่อยเป็นเรื่องปกติเพื่อเลื่อนตำแหน่งและขึ้นเงินเร็วขึ้น",
+        "sources": [
+          {
+            "url": "https://www.levels.fyi/blog/swe-level-framework.html",
+            "title": "Levels.fyi Career Framework"
+          },
+          {
+            "url": "https://survey.stackoverflow.co/2024/",
+            "title": "Stack Overflow Developer Survey 2024"
+          }
+        ]
+      }
+    }
+  },
+  "researched_at": null,
+  "research_model": null,
+  "created_at": "2026-06-24T06:30:53.621015+00:00",
+  "updated_at": "2026-07-24T20:09:29.910123+00:00",
+  "score": 4,
+  "tier": "shifting",
+  "radar_cards": [
+    {
+      "id": "f4e2d81f-7843-4c20-ab87-9f1145b4738d",
+      "kind": "hook",
+      "field_id": "ac112631-0ee9-491a-8c4d-a339df949132",
+      "position": 0,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "body": "Every business needs software — from mobile apps to banking systems to AI. One of the most creative and in-demand careers in the world.",
+        "stat": "15%",
+        "title": "Software Engineer",
+        "eyebrow": "Software Engineering",
+        "statLabel": "projected job growth 2024-2034 (BLS) — but entry-level hiring has fallen by over half"
+      },
+      "content_th": {
+        "body": "ทุกธุรกิจต้องใช้ซอฟต์แวร์ — แต่วงการกำลังเปลี่ยนเร็วมาก AI ทำให้ทีมเล็กลงแต่ต้องเก่งขึ้น คนที่ใช้ AI เป็นจะได้เปรียบสุดๆ แต่ตำแหน่ง junior กำลังลดลงอย่างรวดเร็ว",
+        "stat": "15%",
+        "title": "นักพัฒนาซอฟต์แวร์",
+        "eyebrow": "สายนักพัฒนาซอฟต์แวร์",
+        "statLabel": "อัตราเติบโตของตำแหน่งงาน 2024-2034 (BLS) — แต่การจ้างตำแหน่งจบใหม่ลดลงกว่าครึ่ง"
+      },
+      "created_at": "2026-07-10T02:41:49.894376+00:00",
+      "updated_at": "2026-07-24T20:09:30.314121+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "b68b51b3-610a-4128-a0be-89edfcfe3d5d",
+      "kind": "fantasyReality",
+      "field_id": "ac112631-0ee9-491a-8c4d-a339df949132",
+      "position": 10,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "title": "It's not what you think",
+        "eyebrow": "Fantasy vs Reality",
+        "fantasy": "Coding all day building cool apps solo, headphones on, Lo-fi playing, no meetings.",
+        "reality": "60% of the time is reading others' code, code reviews, debugging mysterious issues, and writing docs — but when everything finally runs, it's incredibly satisfying.",
+        "source_refs": [
+          4
+        ]
+      },
+      "content_th": {
+        "title": "มันไม่ใช่แบบที่คิด",
+        "eyebrow": "จินตนาการ vs ความจริง",
+        "fantasy": "นั่งเขียนโค้ดทั้งวัน สร้างแอปเท่ๆ คนเดียว ใส่หูฟังเปิดเพลง Lo-fi ไม่ต้องคุยกับใคร",
+        "reality": "ส่วนใหญ่ของเวลาไปกับการอ่านโค้ดคนอื่น ประชุม code review แก้บั๊กที่หาสาเหตุไม่เจอ และเขียน documentation — แต่ตอนที่ทุกอย่างรันผ่าน มันฟินมาก",
+        "source_refs": [
+          4
+        ]
+      },
+      "created_at": "2026-07-10T02:41:49.894376+00:00",
+      "updated_at": "2026-07-24T20:09:30.375571+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "07c09dcf-873a-427d-82fb-691547e64ada",
+      "kind": "salaryProgression",
+      "field_id": "ac112631-0ee9-491a-8c4d-a339df949132",
+      "position": 40,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "title": "The more skilled, the more you earn",
+        "levels": [
+          {
+            "note": "Learning the ropes with small tasks — entry roles are shrinking because of AI",
+            "level": "Junior Developer",
+            "years": "0-2",
+            "salary": "25,000-35,000฿"
+          },
+          {
+            "note": "Owning full features, using AI as a core tool",
+            "level": "Mid-level Developer",
+            "years": "2-5",
+            "salary": "40,000-70,000฿"
+          },
+          {
+            "note": "System design and mentoring — roles still in short supply",
+            "level": "Senior Developer",
+            "years": "5-8",
+            "salary": "90,000-130,000฿"
+          },
+          {
+            "note": "Architecture decisions for entire systems. Levels.fyi P90 ≈ 224K/mo",
+            "level": "Lead / Staff Engineer",
+            "years": "8+",
+            "salary": "130,000-220,000+฿"
+          }
+        ],
+        "eyebrow": "Salary",
+        "source_refs": [
+          2,
+          10
+        ]
+      },
+      "content_th": {
+        "title": "ยิ่งเก่ง ยิ่งได้",
+        "levels": [
+          {
+            "note": "เริ่มต้นเรียนรู้ ทำ task เล็กๆ — ตำแหน่งนี้กำลังลดลงเพราะ AI",
+            "level": "Junior Developer",
+            "years": "0-2",
+            "salary": "25,000-35,000฿"
+          },
+          {
+            "note": "รับผิดชอบ feature เต็มรูปแบบ ใช้ AI เป็นเครื่องมือหลัก",
+            "level": "Mid-level Developer",
+            "years": "2-5",
+            "salary": "40,000-70,000฿"
+          },
+          {
+            "note": "ออกแบบระบบ เป็น mentor ให้ทีม — ตำแหน่งที่ยังขาดแคลน",
+            "level": "Senior Developer",
+            "years": "5-8",
+            "salary": "90,000-130,000฿"
+          },
+          {
+            "note": "ตัดสินใจเรื่อง architecture ทั้งระบบ Levels.fyi P90 ≈ 224K/เดือน",
+            "level": "Lead / Staff Engineer",
+            "years": "8+",
+            "salary": "130,000-220,000+฿"
+          }
+        ],
+        "eyebrow": "เงินเดือน",
+        "source_refs": [
+          2,
+          10
+        ]
+      },
+      "created_at": "2026-07-10T02:41:49.894376+00:00",
+      "updated_at": "2026-07-24T20:09:30.442187+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "15c8fc15-1a4f-407a-842d-5406981f592e",
+      "kind": "aiImpact",
+      "field_id": "ac112631-0ee9-491a-8c4d-a339df949132",
+      "position": 70,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "title": "AI Impact",
+        "eyebrow": "How much AI disruption?",
+        "verdict": "AI will not replace software engineers as a profession — but it is replacing engineers who don't use it. Headcount is genuinely shrinking, especially at junior/mid levels, because AI plus a few senior engineers can match the output of a larger team. Engineers who leverage AI become exponentially more valuable.",
+        "augmented": [
+          "Write boilerplate and CRUD code faster",
+          "Generate tests automatically",
+          "Debug and find bugs faster",
+          "Translate code across languages",
+          "Build prototypes within hours"
+        ],
+        "automated": [
+          "Routine junior tasks — many companies already reduced headcount",
+          "Non-developers can build simple apps themselves (vibe coding)",
+          "Basic code review done by AI",
+          "Documentation and migration scripts"
+        ],
+        "ai_risk_score": 7
+      },
+      "content_th": {
+        "title": "AI Impact",
+        "eyebrow": "โดน AI กระทบเยอะแค่ไหน",
+        "verdict": "AI ไม่ได้แทนที่นักพัฒนาทุกคน แต่แทนที่คนที่ใช้ AI ไม่เป็น ตำแหน่ง junior/mid หายไปเพราะ senior + AI ทำงานแทนทั้งทีมได้ คนที่ใช้ AI เป็นจะยิ่งมีค่ามากขึ้น",
+        "augmented": [
+          "เขียนโค้ดซ้ำๆ เร็วขึ้น (boilerplate, CRUD)",
+          "เขียน test อัตโนมัติ",
+          "Debug และหาบั๊กเร็วขึ้น",
+          "แปลงโค้ดข้ามภาษา",
+          "สร้าง prototype ได้ภายในชั่วโมง"
+        ],
+        "automated": [
+          "งาน junior ที่เป็น routine — หลายบริษัทลด headcount แล้ว",
+          "คนไม่ใช่ dev ก็สร้างแอปง่ายๆ ได้เอง (vibe coding)",
+          "Code review เบื้องต้น AI ทำได้เลย",
+          "Documentation และ migration scripts"
+        ],
+        "ai_risk_score": 7
+      },
+      "created_at": "2026-07-10T02:41:49.894376+00:00",
+      "updated_at": "2026-08-09T13:28:01.526413+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "a184c411-a043-4a90-91ee-ac1898453dbd",
+      "kind": "marketThailand",
+      "field_id": "ac112631-0ee9-491a-8c4d-a339df949132",
+      "position": 80,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "body": "The market still wants skilled developers, but entry-level roles have shrunk as companies lean on AI. JobsDB currently lists roughly 800-1,000 Software Engineer/Developer openings nationwide, mostly in Bangkok, and most ask for mid-to-senior engineers who already use AI well. New graduates face intense competition — only about half (50%) are estimated to land a software job within their first year after graduating.",
+        "title": "How easy is it to find this job?",
+        "eyebrow": "Thailand market · assessed Jul 2026",
+        "openings": "~800-1,000 openings (JobsDB, Jul 2026)",
+        "companies": [
+          "Agoda",
+          "LINE MAN Wongnai",
+          "SCB",
+          "True Digital",
+          "KBTG",
+          "Shopee",
+          "Grab"
+        ],
+        "job_access": {
+          "label": "Hard for newcomers — a real portfolio is a must",
+          "score": 40,
+          "confidence": "medium",
+          "methodology": "Formula: hiring demand 50% + inverse competition 25% + inverse entry barrier 25%. (Competition here = applicants per entry-level opening, unlike the 'saturation' metric on the outlook card, which measures the whole labour market.) This score is not a probability of receiving an offer.",
+          "demand_score": 5,
+          "applicant_data": "Junior hiring has fallen by more than half (ARDURA 2026) — the often-quoted 71-79% placement figures are US bootcamp outcomes, not the Thai graduate market. Mid-senior roles remain scarce but require 3+ years of experience.",
+          "competition_score": 7,
+          "entry_barrier_score": 6
+        },
+        "source_refs": [
+          2,
+          9,
+          11
+        ]
+      },
+      "content_th": {
+        "body": "ตลาดยังต้องการ dev เก่งๆ แต่ตำแหน่งจบใหม่ลดลงมากเพราะบริษัทใช้ AI แทน ปัจจุบัน JobsDB มีตำแหน่ง Software Engineer/Developer ราว 800-1,000 ตำแหน่งทั่วประเทศ ส่วนใหญ่กระจุกในกรุงเทพฯ และต้องการคนระดับ mid-senior ที่ใช้ AI เป็น เด็กจบใหม่ต้องแข่งกันสูงมาก — โดยประมาณว่าจบใหม่สายนี้ได้งานจริงราวครึ่งหนึ่ง (50%) ภายในปีแรกหลังเรียนจบ",
+        "title": "งานนี้หาง่ายแค่ไหนในไทย?",
+        "eyebrow": "ตลาดไทย · ประเมิน ก.ค. 2569",
+        "openings": "~800-1,000 ตำแหน่ง (JobsDB, Jul 2026)",
+        "companies": [
+          "Agoda",
+          "LINE MAN Wongnai",
+          "SCB",
+          "True Digital",
+          "KBTG",
+          "Shopee",
+          "Grab"
+        ],
+        "job_access": {
+          "label": "ยากสำหรับมือใหม่ — ต้องมีผลงานจริง",
+          "score": 40,
+          "confidence": "medium",
+          "methodology": "สูตร: ความต้องการจ้าง 50% + การแข่งขันแบบกลับคะแนน 25% + ด่านทักษะแรกเข้าแบบกลับคะแนน 25% (การแข่งขันที่นี่ = ผู้สมัครต่อตำแหน่งเปิดสำหรับจบใหม่ ต่างจาก 'ความอิ่มตัว' ในการ์ดภาพรวมที่วัดแรงงานทั้งตลาด) คะแนนนี้ไม่ใช่เปอร์เซ็นต์โอกาสได้งาน",
+          "demand_score": 5,
+          "applicant_data": "การจ้าง junior ลดลงกว่าครึ่ง (ARDURA 2026) — ตัวเลข placement 71-79% ที่เคยได้ยินเป็นของคนจบ bootcamp ฝั่งสหรัฐฯ ไม่ใช่ตลาดจบใหม่ไทย ตำแหน่ง mid-senior ยังขาดแคลน แต่ต้องมีประสบการณ์ 3+ ปี",
+          "competition_score": 7,
+          "entry_barrier_score": 6
+        },
+        "source_refs": [
+          2,
+          9,
+          11
+        ]
+      },
+      "created_at": "2026-07-10T02:41:49.894376+00:00",
+      "updated_at": "2026-07-24T20:09:30.600593+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "29809d74-91da-40b5-b265-3a9f064c6498",
+      "kind": "dayInLife",
+      "field_id": "ac112631-0ee9-491a-8c4d-a339df949132",
+      "position": 90,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "steps": [
+          {
+            "time": "09:00",
+            "label": "Check Slack, review pending PRs"
+          },
+          {
+            "time": "09:30",
+            "label": "Stand-up with team (15 min)"
+          },
+          {
+            "time": "10:00",
+            "label": "Deep coding — no meetings"
+          },
+          {
+            "time": "12:00",
+            "label": "Lunch break"
+          },
+          {
+            "time": "13:00",
+            "label": "Code review + pair programming"
+          },
+          {
+            "time": "14:30",
+            "label": "Fix bugs from QA or production"
+          },
+          {
+            "time": "16:00",
+            "label": "Sprint planning / design discussion"
+          },
+          {
+            "time": "17:30",
+            "label": "Push code, update ticket, done"
+          }
+        ],
+        "title": "A Day in the Life of a SWE",
+        "eyebrow": "A Day",
+        "source_refs": [
+          4
+        ]
+      },
+      "content_th": {
+        "steps": [
+          {
+            "label": "เขียนโค้ดฟีเจอร์ใหม่โดยใช้ AI ช่วย",
+            "detail": "อ่าน user story (โจทย์งานที่ต้องทำ) จาก Jira (แอปจัดการงานของทีม) แล้วใช้ AI coding assistant (Copilot, Claude, Cursor) ช่วยเขียนโค้ดให้เร็วขึ้น แต่ต้องตรวจ logic ความปลอดภัย และ edge case (กรณีพิเศษที่โค้ดอาจพัง) เองทุกครั้ง"
+          },
+          {
+            "label": "Review โค้ดของเพื่อนร่วมทีม (Code Review)",
+            "detail": "อ่าน PR (Pull Request = คำขอนำโค้ดใหม่เข้าระบบหลัก) บน GitHub ตรวจ logic การตั้งชื่อตัวแปร และช่องโหว่ความปลอดภัย — AI ช่วย review เบื้องต้นได้ แต่คนยังเป็นผู้ตัดสินใจ"
+          },
+          {
+            "label": "แก้บั๊กจาก production (ระบบที่ผู้ใช้จริงกำลังใช้อยู่)",
+            "detail": "อ่าน error log (บันทึกข้อผิดพลาด) จาก Sentry หรือ Datadog (เครื่องมือเฝ้าดูระบบ) หาจุดที่พัง ลองทำซ้ำปัญหาในเครื่องตัวเอง หาสาเหตุที่แท้จริง แล้วแก้พร้อมเขียน test กัน regression (บั๊กเดิมที่กลับมาอีก)"
+          },
+          {
+            "label": "ออกแบบ architecture (โครงสร้างใหญ่ของระบบ) สำหรับระบบใหม่",
+            "detail": "ประชุมกับทีมเพื่อร่างระบบบนกระดาน พิจารณา scalability (รองรับผู้ใช้จำนวนมากได้ไหม) ค่าใช้จ่าย และ trade-offs (ต้องแลกอะไรกับอะไร) — งานนี้ AI ยังทำแทนไม่ได้"
+          },
+          {
+            "label": "เขียน test และรัน CI pipeline",
+            "detail": "ใช้ AI ช่วยสร้าง test case แต่ต้องตรวจเองว่า test จับ bug จริง ไม่ใช่แค่เพิ่ม coverage (เปอร์เซ็นต์โค้ดที่ถูกทดสอบ) แล้วรัน CI pipeline (ระบบทดสอบโค้ดอัตโนมัติทุกครั้งที่มีการแก้) ให้ผ่านก่อน merge (รวมโค้ดเข้าส่วนกลาง)"
+          },
+          {
+            "label": "Deploy (ปล่อยระบบขึ้นใช้งานจริง) และเฝ้าดูระบบ",
+            "detail": "ส่งโค้ดผ่าน CI/CD (สายพานทดสอบและปล่อยระบบอัตโนมัติ) แล้วเฝ้าดู error rate (อัตราความพัง) และ latency (ความหน่วงในการตอบสนอง) บน Grafana หรือ CloudWatch (แดชบอร์ดเฝ้าระบบ) อย่างน้อย 30 นาทีหลัง deploy"
+          }
+        ],
+        "title": "หนึ่งวันของนักพัฒนาซอฟต์แวร์",
+        "eyebrow": "หนึ่งวัน",
+        "source_refs": [
+          4
+        ]
+      },
+      "created_at": "2026-07-10T02:41:49.894376+00:00",
+      "updated_at": "2026-07-24T20:09:30.656881+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "6bec2cad-fb69-4c64-948c-ea84ce8b0469",
+      "kind": "realPeople",
+      "field_id": "ac112631-0ee9-491a-8c4d-a339df949132",
+      "position": 100,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": null,
+      "content_th": {
+        "title": "เส้นทางของคนที่ทำจริง",
+        "people": [
+          {
+            "url": "https://survey.stackoverflow.co/2024/",
+            "role": "Mid-level Developer (ปีที่ 4)",
+            "advice": "อย่ารอให้เก่งก่อนค่อยสมัคร — สมัครเลย แล้วเรียนจากงานจริง ตอนนี้ต้องใช้ AI เป็นด้วย ไม่งั้นช้ากว่าคนอื่น",
+            "nowDoing": "รับผิดชอบ feature เต็มรูปแบบ ใช้ AI ช่วยเขียน boilerplate แต่ต้อง review ทุก line",
+            "publisher": "Composite from WEF/SO Survey developer career data",
+            "background": "จบ CS จากมหาวิทยาลัยไทย เริ่มเป็น junior dev ที่บริษัทเล็ก เงินเดือน 22K ช่วง 2 ปีแรกเรียนรู้จาก codebase จริงมากกว่าตอนเรียน ย้ายไปบริษัทใหญ่ขึ้นตอนมี portfolio",
+            "whereHeading": "ตั้งเป้า Senior ใน 2 ปี — ต้องมี system design + mentoring skill"
+          }
+        ],
+        "eyebrow": "คนจริงในสายนี้",
+        "source_refs": [
+          4,
+          7
+        ]
+      },
+      "created_at": "2026-07-23T16:59:57.99132+00:00",
+      "updated_at": "2026-07-23T16:59:57.99132+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "40bcf992-0f93-4f7c-a40e-4f1f99c3c6c9",
+      "kind": "risks",
+      "field_id": "ac112631-0ee9-491a-8c4d-a339df949132",
+      "position": 110,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "risks": [
+          "Burnout from on-call duties and tight deadlines",
+          "Technology changes rapidly — must constantly learn",
+          "Long screen hours affect eye and back health",
+          "Without soft skills, may plateau at mid-level",
+          "Ageism — some companies prefer younger hires"
+        ],
+        "title": "Career Risks",
+        "eyebrow": "Risks",
+        "source_refs": [
+          4
+        ]
+      },
+      "content_th": {
+        "risks": [
+          "ตำแหน่ง junior ลดลง 50% — บริษัทใช้ AI + senior แทนทีมใหญ่ เข้าสู่วงการยากขึ้นมาก",
+          "คนไม่ใช่ dev สร้างแอปง่ายๆ ได้เอง (vibe coding) — งานบางประเภทหายไป",
+          "เทคโนโลยีเปลี่ยนเร็วมาก ต้องเรียนรู้ตลอดเวลา ถ้าหยุดเรียนจะตกยุค",
+          "Burnout จากการ on-call, deadline กดดัน และความคาดหวังที่สูงขึ้นเรื่อยๆ",
+          "ถ้าไม่พัฒนา soft skills + system thinking อาจติดอยู่ระดับ mid-level นาน",
+          "Ageism — บางบริษัทชอบจ้างคนรุ่นใหม่ที่เงินเดือนถูกกว่า"
+        ],
+        "title": "ความเสี่ยงสายนี้",
+        "eyebrow": "ความเสี่ยง",
+        "source_refs": [
+          4,
+          9
+        ]
+      },
+      "created_at": "2026-07-10T02:41:49.894376+00:00",
+      "updated_at": "2026-07-23T16:59:57.99132+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "faae2eb9-aadd-4605-b7e6-75f97bbcf0fa",
+      "kind": "entryRoutes",
+      "field_id": "ac112631-0ee9-491a-8c4d-a339df949132",
+      "position": 120,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": null,
+      "content_th": {
+        "title": "มีเส้นทางไหนเข้าสู่อาชีพนี้ได้บ้าง?",
+        "eyebrow": "เรียนอะไรดี?",
+        "faculties": [
+          {
+            "name": "วิศวกรรมคอมพิวเตอร์",
+            "note": "เรียนตรงสายที่สุด ได้ทั้ง CS theory + engineering",
+            "tier": "direct"
+          },
+          {
+            "name": "วิทยาการคอมพิวเตอร์ (CS)",
+            "note": "เน้น algorithm และ theory มากกว่า เข้าสาย dev ได้เลย",
+            "tier": "direct"
+          },
+          {
+            "name": "เทคโนโลยีสารสนเทศ (IT)",
+            "note": "เรียนกว้างกว่า CS เน้นใช้งานจริง",
+            "tier": "direct"
+          },
+          {
+            "name": "วิศวกรรมไฟฟ้า / อิเล็กทรอนิกส์",
+            "note": "ได้พื้นฐาน hardware + embedded ต้องเรียน coding เพิ่มเอง",
+            "tier": "related"
+          },
+          {
+            "name": "คณิตศาสตร์ / สถิติ",
+            "note": "Logic แข็ง ต้องฝึก coding เพิ่มผ่าน bootcamp หรือ self-study",
+            "tier": "related"
+          },
+          {
+            "name": "สาขาอื่นๆ (Self-taught)",
+            "note": "เป็นไปได้แต่ต้องสร้าง portfolio แข็งแรง บริษัทไทยบางที่ยังดูวุฒิ",
+            "tier": "alternative"
+          }
+        ],
+        "source_refs": [
+          1
+        ]
+      },
+      "created_at": "2026-07-10T05:43:51.18913+00:00",
+      "updated_at": "2026-07-23T16:38:05.09144+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "9ccb502f-33a5-4be3-9698-4eb2cefcb3d1",
+      "kind": "text",
+      "field_id": "ac112631-0ee9-491a-8c4d-a339df949132",
+      "position": 125,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": null,
+      "content_th": {
+        "title": "งานนี้ต้องใช้ทักษะอะไรบ้าง?",
+        "skills": [
+          {
+            "title": "Programming fundamentals",
+            "description": "อ่าน code คนอื่น debug edge case เข้าใจ data structures, algorithms, async/state/error handling และเลือก abstraction พอดี"
+          },
+          {
+            "title": "Requirements → Design",
+            "description": "ถามให้ชัดว่า user ต้องการอะไร แล้วแปลงเป็น API, data model, state flow, permission และ failure case"
+          },
+          {
+            "title": "Code quality under change",
+            "description": "เขียน code ที่แก้ต่อได้ มี naming ดี แยก responsibility และไม่สร้าง dependency ที่ทำให้ระบบเปราะ"
+          },
+          {
+            "title": "Testing strategy",
+            "description": "รู้ว่าอะไรควร unit test, integration test, e2e หรือ manual QA และเขียน test ที่จับ regression (บั๊กเดิมที่กลับมาอีก) ได้จริง ไม่ใช่แค่เพิ่ม coverage (เปอร์เซ็นต์โค้ดที่ถูกทดสอบ)"
+          },
+          {
+            "title": "Debugging + Observability",
+            "description": "อ่าน logs (บันทึกการทำงานของระบบ), stack trace (ร่องรอยจุดที่โค้ดพัง), metrics, network request, database query และ reproduce bug (ทำปัญหาซ้ำให้เห็นได้) ก่อนค่อยเดาสาเหตุ"
+          },
+          {
+            "title": "System reliability",
+            "description": "เข้าใจ latency (ความหน่วงตอบสนอง), caching (เก็บข้อมูลไว้ตอบเร็ว), retries, rate limits, migrations, backward compatibility และ deploy/rollback (ปล่อยระบบ/ย้อนกลับ) แบบไม่ทำ user พัง"
+          },
+          {
+            "title": "Security basics",
+            "description": "auth/session, input validation, secrets, dependency risk, access control และคิด abuse case ตั้งแต่ design"
+          },
+          {
+            "title": "Collaboration workflow",
+            "description": "ใช้ Git/PR (คำขอรวมโค้ด)/review/issue/doc ได้ดี สื่อสาร trade-off (จุดที่ต้องเลือกเสียอย่างหนึ่งเพื่อได้อย่างหนึ่ง) กับ PM, designer, QA และคนใช้งาน"
+          },
+          {
+            "title": "AI tools + Product judgment",
+            "description": "ใช้ AI ช่วยเขียน/refactor/test ได้ แต่ยังต้องตรวจ logic, security, UX และ maintainability เอง"
+          }
+        ],
+        "eyebrow": "ทักษะที่ใช้จริง",
+        "source_refs": [
+          1,
+          7
+        ],
+        "presentation": "skills"
+      },
+      "created_at": "2026-07-10T08:43:55.894755+00:00",
+      "updated_at": "2026-07-24T20:09:30.717783+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "e53aa200-9e73-4d71-91d7-68c9f2d7ff29",
+      "kind": "text",
+      "field_id": "ac112631-0ee9-491a-8c4d-a339df949132",
+      "position": 130,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": null,
+      "content_th": {
+        "title": "ไม่ต้องรอจบมหาวิทยาลัย",
+        "eyebrow": "เริ่มลงมือ",
+        "options": [
+          {
+            "cta": "อยากลองโจทย์นี้",
+            "cost": "ฟรี",
+            "type": "ลองทำ",
+            "title": "สร้างเว็บส่วนตัวด้วย HTML/CSS/JS",
+            "duration": "1-2 สัปดาห์",
+            "description": "ลองสร้างเว็บไซต์ง่ายๆ ด้วยตัวเอง deploy ขึ้น Vercel หรือ Netlify ฟรี ได้ portfolio ชิ้นแรก"
+          },
+          {
+            "cta": "สนใจวิธีนี้",
+            "url": "https://www.freecodecamp.org/",
+            "cost": "ฟรี",
+            "type": "YouTube",
+            "title": "freeCodeCamp / The Odin Project",
+            "duration": "3-6 เดือน",
+            "description": "เรียน web development ตั้งแต่ศูนย์ มีโปรเจคให้ทำจริง ฝึก Git และ deployment"
+          },
+          {
+            "cta": "สนใจวิธีนี้",
+            "url": "https://cs50.harvard.edu/x/",
+            "cost": "ฟรี (audit) / $149 (certificate)",
+            "type": "คอร์ส",
+            "title": "CS50 — Harvard (edX)",
+            "duration": "12 สัปดาห์",
+            "description": "คอร์ส CS พื้นฐานที่ดีที่สุด สอน problem solving, algorithms, web dev มี certificate"
+          },
+          {
+            "cta": "อยากลองโจทย์นี้",
+            "url": "https://leetcode.com/",
+            "cost": "ฟรี",
+            "type": "ลองทำ",
+            "title": "แก้โจทย์บน LeetCode / Codewars",
+            "duration": "ต่อเนื่อง",
+            "description": "ฝึก problem solving และ algorithm ทุกวัน เริ่มจาก Easy แล้วค่อยขยับ — ทักษะนี้ใช้ในการสัมภาษณ์งาน"
+          }
+        ],
+        "source_refs": [
+          1
+        ],
+        "presentation": "startCarousel"
+      },
+      "created_at": "2026-07-10T07:32:53.501773+00:00",
+      "updated_at": "2026-07-23T16:59:57.99132+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "6dcd21d2-cd42-4709-af1f-dbae9d60eb97",
+      "kind": "cta",
+      "field_id": "ac112631-0ee9-491a-8c4d-a339df949132",
+      "position": 140,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "body": "If this path sounds right for you, tap below to let us know.",
+        "title": "Want to try software engineering?",
+        "button": "Interested",
+        "eyebrow": "Interested?",
+        "resources": [
+          {
+            "url": "https://www.freecodecamp.org",
+            "note": "Free coding courses with certificates",
+            "label": "freeCodeCamp"
+          },
+          {
+            "url": "https://www.theodinproject.com",
+            "note": "Project-based full-stack curriculum",
+            "label": "The Odin Project"
+          }
+        ]
+      },
+      "content_th": {
+        "body": "ถ้าเธอสนใจสายนี้ กดปุ่มด้านล่างเพื่อบอกเราว่าอยากรู้เพิ่มเติม",
+        "title": "อยากลองสายนักพัฒนาซอฟต์แวร์",
+        "button": "สนใจสายนี้",
+        "eyebrow": "สนใจไหม?",
+        "resources": [
+          {
+            "url": "https://www.freecodecamp.org",
+            "note": "คอร์สเขียนโค้ดฟรีพร้อมใบรับรอง",
+            "label": "freeCodeCamp"
+          },
+          {
+            "url": "https://www.theodinproject.com",
+            "note": "หลักสูตร full-stack แบบทำโปรเจกต์จริง",
+            "label": "The Odin Project"
+          }
+        ]
+      },
+      "created_at": "2026-07-10T02:41:49.894376+00:00",
+      "updated_at": "2026-07-24T20:19:13.159059+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "34d64375-9b54-49d7-99a7-c8386096d1f6",
+      "kind": "sources",
+      "field_id": "ac112631-0ee9-491a-8c4d-a339df949132",
+      "position": 150,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "items": [
+          {
+            "ref": 1,
+            "url": "https://www.bls.gov/ooh/computer-and-information-technology/software-developers.htm",
+            "title": "Software Developers, Quality Assurance Analysts, and Testers",
+            "publisher": "U.S. Bureau of Labor Statistics"
+          },
+          {
+            "ref": 2,
+            "url": "https://th.jobsdb.com/career-advice/role/software-engineer/salary",
+            "title": "Software Engineer Salary in Thailand",
+            "publisher": "JobsDB"
+          },
+          {
+            "ref": 4,
+            "url": "https://survey.stackoverflow.co/2025/",
+            "title": "Stack Overflow Developer Survey 2025",
+            "publisher": "Stack Overflow"
+          },
+          {
+            "ref": 5,
+            "url": "https://www.weforum.org/publications/the-future-of-jobs-report-2025/",
+            "title": "WEF Future of Jobs Report 2025",
+            "publisher": "World Economic Forum"
+          },
+          {
+            "ref": 6,
+            "url": "https://business.linkedin.com/talent-solutions/talent-insights",
+            "title": "LinkedIn Thailand Talent Insights",
+            "publisher": "LinkedIn"
+          },
+          {
+            "ref": 7,
+            "url": "https://www.onetonline.org/link/summary/15-1252.00",
+            "title": "15-1252.00 - Software Developers",
+            "publisher": "O*NET OnLine"
+          },
+          {
+            "ref": 8,
+            "url": "https://www.depa.or.th/storage/app/media/file-announce/01%20SW%202023_compressed.pdf",
+            "title": "Software and Software Services Industry in 2023, 3-Year Forecast",
+            "publisher": "depa"
+          },
+          {
+            "ref": 9,
+            "url": "https://www.depa.or.th/th/article-view/Digital-workforce",
+            "title": "ปัญหากำลังคนด้านดิจิทัลในไทย",
+            "publisher": "depa"
+          },
+          {
+            "ref": 10,
+            "url": "https://www.levels.fyi/t/software-engineer/locations/thailand",
+            "title": "Software Engineer Compensation — Thailand",
+            "publisher": "Levels.fyi"
+          },
+          {
+            "ref": 11,
+            "url": "https://ardura.consulting/blog/junior-developer-crisis-2026-why-companies-stopped-hiring-entry-level/",
+            "title": "Junior Developer Crisis 2026: Why Companies Stopped Hiring Entry-Level",
+            "publisher": "ARDURA Consulting"
+          }
+        ],
+        "title": "Where this comes from",
+        "eyebrow": "Sources"
+      },
+      "content_th": {
+        "items": [
+          {
+            "ref": 1,
+            "url": "https://www.bls.gov/ooh/computer-and-information-technology/software-developers.htm",
+            "title": "Software Developers, Quality Assurance Analysts, and Testers",
+            "publisher": "U.S. Bureau of Labor Statistics"
+          },
+          {
+            "ref": 2,
+            "url": "https://th.jobsdb.com/career-advice/role/software-engineer/salary",
+            "title": "Software Engineer Salary in Thailand",
+            "publisher": "JobsDB"
+          },
+          {
+            "ref": 4,
+            "url": "https://survey.stackoverflow.co/2025/",
+            "title": "Stack Overflow Developer Survey 2025",
+            "publisher": "Stack Overflow"
+          },
+          {
+            "ref": 5,
+            "url": "https://www.weforum.org/publications/the-future-of-jobs-report-2025/",
+            "title": "WEF Future of Jobs Report 2025",
+            "publisher": "World Economic Forum"
+          },
+          {
+            "ref": 6,
+            "url": "https://business.linkedin.com/talent-solutions/talent-insights",
+            "title": "LinkedIn Thailand Talent Insights",
+            "publisher": "LinkedIn"
+          },
+          {
+            "ref": 7,
+            "url": "https://www.onetonline.org/link/summary/15-1252.00",
+            "title": "15-1252.00 - Software Developers",
+            "publisher": "O*NET OnLine"
+          },
+          {
+            "ref": 8,
+            "url": "https://www.depa.or.th/storage/app/media/file-announce/01%20SW%202023_compressed.pdf",
+            "title": "Software and Software Services Industry in 2023, 3-Year Forecast",
+            "publisher": "depa"
+          },
+          {
+            "ref": 9,
+            "url": "https://www.depa.or.th/th/article-view/Digital-workforce",
+            "title": "ปัญหากำลังคนด้านดิจิทัลในไทย",
+            "publisher": "depa"
+          },
+          {
+            "ref": 10,
+            "url": "https://www.levels.fyi/t/software-engineer/locations/thailand",
+            "title": "Software Engineer Compensation — Thailand",
+            "publisher": "Levels.fyi"
+          },
+          {
+            "ref": 11,
+            "url": "https://ardura.consulting/blog/junior-developer-crisis-2026-why-companies-stopped-hiring-entry-level/",
+            "title": "Junior Developer Crisis 2026: Why Companies Stopped Hiring Entry-Level",
+            "publisher": "ARDURA Consulting"
+          }
+        ],
+        "title": "แหล่งข้อมูล",
+        "eyebrow": "แหล่งข้อมูล"
+      },
+      "created_at": "2026-07-10T02:41:49.894376+00:00",
+      "updated_at": "2026-07-24T20:09:30.77918+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    }
+  ],
+  "radar_sources": [
+    {
+      "id": "aeab1183-de31-427f-87c6-a3dd319aa630",
+      "ref": 7,
+      "url": "https://www.onetonline.org/link/summary/15-1252.00",
+      "tier": "primary",
+      "title": "15-1252.00 - Software Developers",
+      "field_id": "ac112631-0ee9-491a-8c4d-a339df949132",
+      "quote_en": null,
+      "quote_th": "O*NET ระบุทักษะ software developer เช่น programming, systems analysis, complex problem solving, technology design, coordination และ communication",
+      "publisher": "O*NET OnLine",
+      "accessed_at": "2026-07-10",
+      "published_at": null
+    },
+    {
+      "id": "089bb118-4682-40b2-a7e0-239a6a845b81",
+      "ref": 1,
+      "url": "https://www.bls.gov/ooh/computer-and-information-technology/software-developers.htm",
+      "tier": "primary",
+      "title": "Software Developers, Quality Assurance Analysts, and Testers",
+      "field_id": "ac112631-0ee9-491a-8c4d-a339df949132",
+      "quote_en": null,
+      "quote_th": "BLS ระบุว่าสาย software ต้องวิเคราะห์ความต้องการผู้ใช้ สื่อสารกับทีม คิดสร้างสรรค์ ใส่ใจรายละเอียด และแก้ปัญหาตลอดกระบวนการออกแบบ",
+      "publisher": "U.S. Bureau of Labor Statistics",
+      "accessed_at": "2026-07-10",
+      "published_at": null
+    },
+    {
+      "id": "cebe6c5c-81e0-436a-8545-55903c4c76a5",
+      "ref": 2,
+      "url": "https://th.jobsdb.com/career-advice/role/software-engineer/salary",
+      "tier": "primary",
+      "title": "Software Engineer Salary in Thailand",
+      "field_id": "ac112631-0ee9-491a-8c4d-a339df949132",
+      "quote_en": null,
+      "quote_th": null,
+      "publisher": "JobsDB",
+      "accessed_at": "2026-07-24",
+      "published_at": null
+    },
+    {
+      "id": "771b85d0-e086-4160-a0c1-4a0b9e22c0b7",
+      "ref": 4,
+      "url": "https://survey.stackoverflow.co/2025/",
+      "tier": "secondary",
+      "title": "Stack Overflow Developer Survey 2025",
+      "field_id": "ac112631-0ee9-491a-8c4d-a339df949132",
+      "quote_en": null,
+      "quote_th": null,
+      "publisher": "Stack Overflow",
+      "accessed_at": "2026-07-24",
+      "published_at": null
+    },
+    {
+      "id": "e17f9d76-5f63-4b7e-b71e-22096d2552e1",
+      "ref": 5,
+      "url": "https://www.weforum.org/publications/the-future-of-jobs-report-2025/",
+      "tier": "secondary",
+      "title": "WEF Future of Jobs Report 2025",
+      "field_id": "ac112631-0ee9-491a-8c4d-a339df949132",
+      "quote_en": null,
+      "quote_th": null,
+      "publisher": "World Economic Forum",
+      "accessed_at": "2026-07-10",
+      "published_at": null
+    },
+    {
+      "id": "b7cd76cc-6ced-4802-827e-99beaa93bece",
+      "ref": 6,
+      "url": "https://business.linkedin.com/talent-solutions/talent-insights",
+      "tier": "secondary",
+      "title": "LinkedIn Thailand Talent Insights",
+      "field_id": "ac112631-0ee9-491a-8c4d-a339df949132",
+      "quote_en": null,
+      "quote_th": null,
+      "publisher": "LinkedIn",
+      "accessed_at": "2026-07-10",
+      "published_at": null
+    },
+    {
+      "id": "a6a2ae7f-d11c-4b2d-a761-e81aa323336a",
+      "ref": 8,
+      "url": "https://www.depa.or.th/storage/app/media/file-announce/01%20SW%202023_compressed.pdf",
+      "tier": "primary",
+      "title": "Software and Software Services Industry in 2023, 3-Year Forecast",
+      "field_id": "ac112631-0ee9-491a-8c4d-a339df949132",
+      "quote_en": null,
+      "quote_th": null,
+      "publisher": "depa",
+      "accessed_at": "2026-07-21",
+      "published_at": null
+    },
+    {
+      "id": "1fa9087d-cbd0-49fc-a201-4c341ddba3d9",
+      "ref": 9,
+      "url": "https://www.depa.or.th/th/article-view/Digital-workforce",
+      "tier": "primary",
+      "title": "ปัญหากำลังคนด้านดิจิทัลในไทย",
+      "field_id": "ac112631-0ee9-491a-8c4d-a339df949132",
+      "quote_en": null,
+      "quote_th": null,
+      "publisher": "depa",
+      "accessed_at": "2026-07-21",
+      "published_at": null
+    },
+    {
+      "id": "2b4d11a4-373a-46fc-ac32-c031a5851c6e",
+      "ref": 10,
+      "url": "https://www.levels.fyi/t/software-engineer/locations/thailand",
+      "tier": "primary",
+      "title": "Software Engineer Compensation — Thailand",
+      "field_id": "ac112631-0ee9-491a-8c4d-a339df949132",
+      "quote_en": null,
+      "quote_th": null,
+      "publisher": "Levels.fyi",
+      "accessed_at": "2026-07-24",
+      "published_at": null
+    },
+    {
+      "id": "54206433-7722-44db-be17-8e3893233fa4",
+      "ref": 11,
+      "url": "https://ardura.consulting/blog/junior-developer-crisis-2026-why-companies-stopped-hiring-entry-level/",
+      "tier": "secondary",
+      "title": "Junior Developer Crisis 2026: Why Companies Stopped Hiring Entry-Level",
+      "field_id": "ac112631-0ee9-491a-8c4d-a339df949132",
+      "quote_en": null,
+      "quote_th": null,
+      "publisher": "ARDURA Consulting",
+      "accessed_at": "2026-07-24",
+      "published_at": null
+    }
+  ]
+}

@@ -11,8 +11,9 @@ import { ShiftNextCosmos, ShiftNextHero } from "@/components/shift/next/ShiftNex
 import { ShiftJourneyLink } from "@/components/shift/next/ShiftGlobeScene";
 import { ShiftNextLight } from "@/components/shift/next/ShiftNextLight";
 import space from "@/components/shift/next/shiftNext.module.css";
-import { SHIFT_COHORTS, bangkokToday, cohortStatus } from "@/lib/content/shift-cohort";
+import { SHIFT_COHORTS, bangkokToday, cohortPath, cohortStatus } from "@/lib/content/shift-cohort";
 import { NOTES } from "@/lib/content/pathlab-page";
+import { SHIFT_DELIVERABLES, buildShiftFaqs } from "@/lib/content/shift-pitch";
 import { NEXT_ROUND_NAME } from "@/lib/content/shift-next";
 import { weekdayName } from "@/lib/content/shift-alumni";
 import { loadAlumniCalendar } from "@/lib/supabase/shift-alumni-calendar";
@@ -41,16 +42,67 @@ export const metadata: Metadata = {
 /** Status flips on Bangkok dates, so re-render at least hourly. */
 export const revalidate = 3600;
 
+const SITE_URL = "https://passionseed.org";
+
+/**
+ * Course + FAQ structured data for the page that stays up between rounds, so
+ * search engines and AI answer engines can describe SHIFT even when no round
+ * is open. Prices live on each round page, since they change by round.
+ */
+function buildGalleryJsonLd(faqs: ReturnType<typeof buildShiftFaqs>) {
+  const url = `${SITE_URL}/shift`;
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Course",
+        "@id": `${url}#course`,
+        name: "SHIFT: 7 วัน ปั้น 1 โปรเจกต์จริง",
+        description:
+          "A 7-day online program where Thai high school students (M.4 to M.6) build one real project, test it with outside users, record what broke and what they changed, and turn it into a 1-page case study for their TCAS round 1 portfolio.",
+        url,
+        inLanguage: "th",
+        educationalLevel: "High School (M.4 to M.6)",
+        provider: { "@type": "Organization", name: "PassionSeed", url: SITE_URL },
+        hasCourseInstance: SHIFT_COHORTS.map((cohort) => ({
+          "@type": "CourseInstance",
+          name: cohort.name,
+          courseMode: "online",
+          startDate: cohort.startDate,
+          endDate: cohort.endDate,
+          url: `${SITE_URL}${cohortPath(cohort)}`,
+        })),
+      },
+      {
+        "@type": "FAQPage",
+        "@id": `${url}#faq`,
+        mainEntity: faqs.map((faq) => ({
+          "@type": "Question",
+          name: faq.q,
+          acceptedAnswer: { "@type": "Answer", text: faq.a },
+        })),
+      },
+    ],
+  };
+}
+
 export default async function ShiftGalleryPage() {
   const today = bangkokToday();
   const { doc: alumni } = await loadAlumniCalendar();
   const cohorts = [...SHIFT_COHORTS].sort((a, b) => b.round - a.round);
   const open = cohorts.filter((cohort) => cohortStatus(cohort, today) === "open");
   const archive = cohorts.filter((cohort) => cohortStatus(cohort, today) !== "open");
+  // The FAQ's tester answer quotes a round's target; the newest round's is current.
+  const faqs = buildShiftFaqs(cohorts[0]);
+  const jsonLd = buildGalleryJsonLd(faqs);
 
   return (
     <div className={`${space.page} ${styles.cosmicGallery} font-bai-jamjuree antialiased`} lang="th">
       <ShiftPageView pagePath="/shift" />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
+      />
       <MetaPixel pagePath="/shift" />
       <ShiftNextCosmos />
       <ShiftNextLight />
@@ -130,6 +182,45 @@ export default async function ShiftGalleryPage() {
             </div>
           </section>
         )}
+
+        <section aria-labelledby="what-you-get" className={styles.section} data-shift-reveal>
+          <div className={styles.sectionHeading}>
+            <div>
+              <p className={styles.eyebrow}>WHAT YOU LEAVE WITH</p>
+              <h2 id="what-you-get" className="font-kodchasan">จบ 7 วัน ได้อะไรกลับไป</h2>
+            </div>
+            <p className={styles.sectionAside}>ทุกรุ่นได้ 3 อย่างนี้<br />ไม่ว่าจะเป็นโจทย์ไหน</p>
+          </div>
+          <ol className="grid gap-4 sm:grid-cols-3">
+            {SHIFT_DELIVERABLES.map((item) => (
+              <li key={item.num} className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+                <span className="font-kodchasan text-2xl font-bold text-[#fed95c]">{item.num}</span>
+                <h3 className="mt-2 text-lg font-semibold leading-snug">{item.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed opacity-80">{item.body}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <section aria-labelledby="faq" className={styles.section} data-shift-reveal>
+          <div className={styles.sectionHeading}>
+            <div>
+              <p className={styles.eyebrow}>FAQ</p>
+              <h2 id="faq" className="font-kodchasan">คำถามที่เจอบ่อย</h2>
+            </div>
+            <p className={styles.sectionAside}>อยากเริ่มพอร์ตจากศูนย์?<br /><Link href="/port" className={styles.textLink}>อ่านคู่มือทำพอร์ต</Link></p>
+          </div>
+          <div>
+            {faqs.map((faq) => (
+              <details key={faq.q} className="group border-b border-white/10 py-5">
+                <summary className="cursor-pointer list-none text-lg font-semibold leading-snug">
+                  {faq.q}
+                </summary>
+                <p className="mt-3 leading-relaxed opacity-80">{faq.a}</p>
+              </details>
+            ))}
+          </div>
+        </section>
 
         <section aria-labelledby="alumni" className={styles.section} data-shift-reveal>
           <div className={styles.sectionHeading}>

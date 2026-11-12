@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { sanitizeExpertInput, sanitizeUrl } from "@/lib/expert-interview/sanitizer";
+import { hasValidSession } from "@/lib/expert-interview/session-token";
 import { z } from "zod";
 
 const submitSchema = z.object({
@@ -54,6 +55,12 @@ export async function POST(request: NextRequest) {
     }
 
     const { sessionId, interviewData, interviewTranscript, profile, mentoring, source, contributionMode } = parsed.data;
+
+    // One submission per signed session (enforced below), so this also caps
+    // expert_profiles inserts and claim emails at the /session rate limit.
+    if (!hasValidSession(request, sessionId)) {
+      return NextResponse.json({ error: "Interview session expired. Please start again." }, { status: 401 });
+    }
 
     const supabase = createAdminClient();
 

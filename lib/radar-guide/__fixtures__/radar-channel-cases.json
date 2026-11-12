@@ -1,0 +1,18 @@
+[
+  { "utm_source": "ig-comment-dm", "referrer_host": null, "ua_app": "instagram", "expected": "ig-comment-dm" },
+  { "utm_source": "share", "referrer_host": "l.instagram.com", "ua_app": null, "expected": "share" },
+  { "utm_source": null, "referrer_host": null, "ua_app": "instagram", "expected": "ig-untagged" },
+  { "utm_source": null, "referrer_host": "l.instagram.com", "ua_app": null, "expected": "ig-untagged" },
+  { "utm_source": null, "referrer_host": "instagram.com", "ua_app": "other", "expected": "ig-untagged" },
+  { "utm_source": null, "referrer_host": "l.instagram.com", "ua_app": "tiktok", "expected": "ig-untagged" },
+  { "utm_source": null, "referrer_host": null, "ua_app": "tiktok", "expected": "tiktok-untagged" },
+  { "utm_source": null, "referrer_host": "www.tiktok.com", "ua_app": null, "expected": "tiktok-untagged" },
+  { "utm_source": null, "referrer_host": null, "ua_app": "line", "expected": "line-untagged" },
+  { "utm_source": null, "referrer_host": "www.google.com", "ua_app": "facebook", "expected": "facebook-untagged" },
+  { "utm_source": null, "referrer_host": null, "ua_app": null, "expected": "direct" },
+  { "utm_source": null, "referrer_host": null, "ua_app": "other", "expected": "direct" },
+  { "utm_source": null, "referrer_host": "passionseed.org", "ua_app": null, "expected": "direct" },
+  { "utm_source": null, "referrer_host": "www.passionseed.org", "ua_app": "other", "expected": "direct" },
+  { "utm_source": null, "referrer_host": "www.google.com", "ua_app": null, "expected": "referral" },
+  { "utm_source": null, "referrer_host": "www.google.com", "ua_app": "other", "expected": "referral" }
+]

@@ -18,15 +18,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChipInput } from "@/components/hackathon/chip-input";
 import { ProblemExplorer } from "@/components/hackathon/problem-explorer";
-
-// Only allow same-origin relative redirects. Rejects absolute URLs and
-// protocol-relative "//host" so returnTo cannot send users off-site.
-function safeReturnTo(value: string | null, fallback: string): string {
-  if (value && value.startsWith("/") && !value.startsWith("//")) {
-    return value;
-  }
-  return fallback;
-}
+import { safeRedirectPath } from "@/lib/security/redirects";
 
 type WizardStep = "step1" | "step2" | "step3";
 
@@ -94,7 +86,7 @@ export default function HackathonOnboardingPage() {
       .then((data) => {
         if (data.data) {
           // Questionnaire already completed, redirect to dashboard
-          const returnTo = safeReturnTo(searchParams.get("returnTo"), "/hackathon/dashboard");
+          const returnTo = safeRedirectPath(searchParams.get("returnTo"), "/hackathon/dashboard");
           router.replace(returnTo);
         }
       })
@@ -197,7 +189,7 @@ export default function HackathonOnboardingPage() {
       showToast("Questionnaire submitted successfully!", "success");
       setTimeout(() => {
         // Check for returnTo query param
-        const returnTo = safeReturnTo(searchParams.get("returnTo"), "/hackathon/dashboard");
+        const returnTo = safeRedirectPath(searchParams.get("returnTo"), "/hackathon/dashboard");
         router.push(returnTo);
       }, 1500);
     } catch (error) {

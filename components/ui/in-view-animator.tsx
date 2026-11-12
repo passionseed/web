@@ -10,6 +10,11 @@ interface InViewAnimatorProps {
   selector?: string;
   /** How much of the element must be visible before the animation fires */
   threshold?: number;
+  /**
+   * Also pick up matching elements added after mount (client-rendered lists,
+   * portaled sheets and dialogs), by watching document.body for new nodes.
+   */
+  watch?: boolean;
 }
 
 /**
@@ -23,6 +28,7 @@ interface InViewAnimatorProps {
 export function InViewAnimator({
   selector = DEFAULT_SELECTOR,
   threshold = 0.4,
+  watch = false,
 }: InViewAnimatorProps) {
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -41,8 +47,25 @@ export function InViewAnimator({
       .querySelectorAll(selector)
       .forEach((element) => observer.observe(element));
 
-    return () => observer.disconnect();
-  }, [selector, threshold]);
+    let mutations: MutationObserver | null = null;
+    if (watch && typeof MutationObserver !== "undefined") {
+      mutations = new MutationObserver((records) => {
+        for (const record of records) {
+          record.addedNodes.forEach((node) => {
+            if (!(node instanceof Element)) return;
+            if (node.matches(selector)) observer.observe(node);
+            node.querySelectorAll(selector).forEach((element) => observer.observe(element));
+          });
+        }
+      });
+      mutations.observe(document.body, { childList: true, subtree: true });
+    }
+
+    return () => {
+      mutations?.disconnect();
+      observer.disconnect();
+    };
+  }, [selector, threshold, watch]);
 
   return null;
 }

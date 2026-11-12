@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -9,16 +10,43 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getCommentsForAdmin, getCommentsMissedByDm } from "@/lib/supabase/ig-comments";
+import {
+  ADMIN_COMMENTS_DEFAULT_LIMIT,
+  countCommentsForAdmin,
+  getCommentsForAdmin,
+  getCommentsMissedByDm,
+  getRadarCommentQueue,
+  type RadarQueueItem,
+} from "@/lib/supabase/ig-comments";
 import {
   getDefaultCommentDmMessage,
   getDefaultPublicCommentReply,
 } from "@/lib/dm-leads/delivery-status";
 import { getCampaign } from "@/lib/meta/comment-intent";
+import { daysSince, formatBangkokDateTime } from "@/lib/admin/queue-tools/format";
+import {
+  igCommentsHref,
+  igDmWindow,
+  insidePrivateReplyWindow,
+  IG_REPLY_FILTERS,
+  IG_STAGE_FILTERS,
+  parseIgCommentsView,
+  type IgCommentsView,
+  type IgReplyFilter,
+  type IgStageFilter,
+} from "@/lib/admin/queue-tools/ig-comments";
+import { requireAdmin } from "@/lib/admin/requireAdmin";
 import { IgCommentReplyRow } from "@/components/admin/IgCommentReplyRow";
 import { LeadTagBadges } from "@/components/admin/LeadTagBadges";
 import { MissedCommentsCard } from "@/components/admin/MissedCommentsCard";
+import { RadarCommentQueue, type RadarQueueRow } from "@/components/admin/RadarCommentQueue";
+import type { RadarRowInfo } from "@/components/admin/IgCommentReplyRow";
+import { isRadarAutoDmEnabled, RADAR_DM_WINDOW_MS } from "@/lib/radar-guide/comment-dm";
+import { isAutoSendableTarget } from "@/lib/radar-guide/comment-target";
 import { RefreshButton } from "@/components/admin/RefreshButton";
+import { FilterLinks } from "@/components/admin/queue-tools/FilterLinks";
+import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
+import { AdminEmptyState } from "@/components/admin/shared/AdminStates";
 import type { DmLeadStage } from "@/types/dm-leads";
 
 export const dynamic = "force-dynamic";
@@ -37,27 +65,117 @@ const STAGE_LABEL: Record<DmLeadStage, string> = {
   job_seeking: "Job seeking",
 };
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+const STAGE_FILTER_LABEL: Record<IgStageFilter, string> = { all: "All stages", ...STAGE_LABEL };
+
+const REPLY_FILTER_LABEL: Record<IgReplyFilter, string> = {
+  all: "All comments",
+  unreplied: "Unreplied",
+  missed: "No DM yet, last 7 days",
+};
+
+const EMPTY_TITLE: Record<IgReplyFilter, string> = {
+  all: "No comments yet",
+  unreplied: "Every comment here has a reply",
+  missed: "No keyword comments are waiting for a DM",
+};
+
+const PAGE_SIZE = ADMIN_COMMENTS_DEFAULT_LIMIT;
+
+/** Row info for a Radar comment, from its resolved target and DM log row. */
+function radarRowInfo(item: RadarQueueItem, now: number): RadarRowInfo {
+  const { target, dm, comment } = item;
+  const label = target.reel?.careerLabelTh
+    ? `สาย ${target.reel.careerLabelTh}`
+    : target.fieldSlug ?? "Hub";
+  const insideWindow = now - Date.parse(comment.commented_at) <= RADAR_DM_WINDOW_MS;
+  const reelAllows = !target.reel || target.reel.dmEnabled;
+  return {
+    label,
+    status: dm?.status ?? null,
+    errorCode: dm?.errorCode ?? null,
+    needsReview: Boolean(target.needsReview),
+    canSend: insideWindow && reelAllows,
+  };
 }
 
-function daysAgo(iso: string): number {
-  return Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24));
+/** The queue, or an error note so a Radar failure never takes the comments page down. */
+async function loadRadarQueue(): Promise<{ items: RadarQueueItem[]; error: string | null }> {
+  try {
+    return { items: await getRadarCommentQueue(), error: null };
+  } catch (error) {
+    console.error("Radar comment queue failed to load:", error);
+    return { items: [], error: "The Radar queue could not be loaded. The other comment tools still work." };
+  }
+}
+const PAGER_LINK = "min-h-11 lg:[@media(pointer:fine)]:min-h-9";
+
+/** "Comments 301 to 600 of 1,234" with Newer and Older links. Server-rendered. */
+function CommentPager({
+  view,
+  totalPages,
+  total,
+  shown,
+}: {
+  view: IgCommentsView;
+  totalPages: number;
+  total: number;
+  shown: number;
+}) {
+  const first = (view.page - 1) * PAGE_SIZE + 1;
+  const last = first + shown - 1;
+  const step = (page: number, label: string, enabled: boolean) =>
+    enabled ? (
+      <Button asChild variant="outline" size="sm" className={PAGER_LINK}>
+        <Link href={igCommentsHref({ ...view, page })} scroll={false}>
+          {label}
+        </Link>
+      </Button>
+    ) : (
+      <Button variant="outline" size="sm" className={PAGER_LINK} disabled>
+        {label}
+      </Button>
+    );
+  return (
+    <nav aria-label="Comment pages" className="flex flex-wrap items-center justify-between gap-2">
+      <p className="text-sm tabular-nums text-muted-foreground">
+        Comments {first.toLocaleString("en-US")} to {last.toLocaleString("en-US")} of{" "}
+        {total.toLocaleString("en-US")}
+      </p>
+      {totalPages > 1 && (
+        <div className="flex items-center gap-2">
+          {step(view.page - 1, "Newer", view.page > 1)}
+          {step(view.page + 1, "Older", view.page < totalPages)}
+        </div>
+      )}
+    </nav>
+  );
 }
 
 export default async function IgCommentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ stage?: string }>;
+  searchParams: Promise<{ stage?: string; filter?: string; page?: string }>;
 }) {
-  const { stage } = await searchParams;
-  const [comments, missedComments, neverContacted] = await Promise.all([
-    getCommentsForAdmin(stage && stage !== "all" ? stage : undefined),
+  // The admin layout also checks, but this page reads with the service-role client.
+  await requireAdmin();
+  const view = parseIgCommentsView(await searchParams);
+  const stage = view.stage === "all" ? undefined : view.stage;
+  // The all and unreplied lists are paged in SQL; the missed list is short and never paged.
+  const paged = view.filter !== "missed";
+  const [listed, stageCount, unrepliedCount, missedComments, neverContacted] = await Promise.all([
+    // ?filter=unreplied runs in SQL, so the newest unreplied comments are never
+    // pushed out of the capped list by replied ones. ?filter=missed is cut
+    // from the missed-by-DM list below instead.
+    view.filter === "missed"
+      ? Promise.resolve([])
+      : getCommentsForAdmin({
+          stage,
+          unrepliedOnly: view.filter === "unreplied",
+          limit: PAGE_SIZE,
+          offset: (view.page - 1) * PAGE_SIZE,
+        }),
+    countCommentsForAdmin({ stage }),
+    countCommentsForAdmin({ stage, unrepliedOnly: true }),
     // Same 30-day window as the bulk-reply action, so the card lists exactly
     // what the button would send to.
     getCommentsMissedByDm(30),
@@ -65,33 +183,74 @@ export default async function IgCommentsPage({
     // "skip anyone already messaged" without a second round trip.
     getCommentsMissedByDm(30, undefined, true),
   ]);
+  const radarQueue = await loadRadarQueue();
+  const now = Date.now();
+  // The overview's "IG comments to answer" queue: getCommentsMissedByDm(7).
+  const missedInWindow = insidePrivateReplyWindow(missedComments, now).filter(
+    (c) => !stage || c.stage === stage,
+  );
+  const comments = view.filter === "missed" ? missedInWindow : listed;
+  const filterCounts: Record<IgReplyFilter, number> = {
+    all: stageCount,
+    unreplied: unrepliedCount,
+    missed: missedInWindow.length,
+  };
+  const matchingCount = filterCounts[view.filter];
+  const totalPages = paged ? Math.max(1, Math.ceil(matchingCount / PAGE_SIZE)) : 1;
+  const pastTheEnd = paged && comments.length === 0 && view.page > 1 && matchingCount > 0;
   const neverContactedIds = new Set(neverContacted.map((c) => c.id));
   const shiftDmMessage = getDefaultCommentDmMessage("shift");
+  const radarById = new Map(radarQueue.items.map((item) => [item.comment.id, radarRowInfo(item, now)]));
+  const radarRows: RadarQueueRow[] = radarQueue.items.map((item) => ({
+    id: item.comment.id,
+    username: item.comment.username,
+    text: item.comment.text,
+    commented_at: item.comment.commented_at,
+    autoSendable: isAutoSendableTarget(item.target),
+    info: radarById.get(item.comment.id)!,
+  }));
+  /** Radar keyword comments older than the queue window: shown as Radar, no send. */
+  const radarFallback = (text: string): RadarRowInfo | undefined =>
+    getCampaign(text) === "radar"
+      ? { label: "Radar", status: null, needsReview: false, canSend: false }
+      : undefined;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-semibold">IG Comments</h2>
-          <p className="text-sm text-muted-foreground">
-            Comments on posts, auto-labeled by stage. Private reply (DM) only works within 7
-            days of the comment — after that, only a public reply is possible.
-          </p>
-        </div>
-        <RefreshButton />
+      <AdminPageHeader
+        eyebrow="Inbox"
+        title="IG comments"
+        description="Comments on posts, auto-labelled by stage. A private reply (DM) only works within 7 days of the comment. After that, only a public reply is possible."
+        actions={<RefreshButton />}
+      />
+
+      <div className="space-y-2">
+        <FilterLinks
+          label="Reply status"
+          items={IG_REPLY_FILTERS.map((filter) => ({
+            key: filter,
+            label: REPLY_FILTER_LABEL[filter],
+            href: igCommentsHref({ ...view, filter, page: 1 }),
+            active: view.filter === filter,
+            count: filterCounts[filter],
+          }))}
+        />
+        <FilterLinks
+          label="Stage"
+          items={IG_STAGE_FILTERS.map((stage) => ({
+            key: stage,
+            label: STAGE_FILTER_LABEL[stage],
+            href: igCommentsHref({ ...view, stage, page: 1 }),
+            active: view.stage === stage,
+          }))}
+        />
       </div>
 
-      <div className="flex gap-2">
-        {(["all", "unknown", "exploring", "building", "job_seeking"] as const).map((s) => (
-          <Link
-            key={s}
-            href={s === "all" ? "/admin/ig-comments" : `/admin/ig-comments?stage=${s}`}
-            className="text-sm text-muted-foreground underline-offset-4 hover:underline"
-          >
-            {s === "all" ? "All" : STAGE_LABEL[s]}
-          </Link>
-        ))}
-      </div>
+      <RadarCommentQueue
+        rows={radarRows}
+        autoOn={isRadarAutoDmEnabled()}
+        loadError={radarQueue.error}
+      />
 
       <MissedCommentsCard
         comments={missedComments.map((c) => ({
@@ -108,11 +267,36 @@ export default async function IgCommentsPage({
         shiftDmMessage={shiftDmMessage}
       />
 
-      <Card>
-        <CardContent className="pt-6">
-          {comments.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">No comments yet.</p>
-          ) : (
+      {pastTheEnd ? (
+        <AdminEmptyState
+          title={`Page ${view.page} is past the end`}
+          description={`${matchingCount.toLocaleString("en-US")} comments match, ${totalPages.toLocaleString("en-US")} pages in all.`}
+          action={
+            <Button asChild variant="outline" size="sm" className={PAGER_LINK}>
+              <Link href={igCommentsHref({ ...view, page: totalPages })} scroll={false}>
+                Go to the last page
+              </Link>
+            </Button>
+          }
+        />
+      ) : comments.length === 0 ? (
+        <AdminEmptyState
+          title={EMPTY_TITLE[view.filter]}
+          description={
+            view.stage !== "all" ? `Showing the ${STAGE_LABEL[view.stage]} stage only.` : undefined
+          }
+        />
+      ) : (
+        <Card>
+          <CardContent className="space-y-3 pt-6">
+            {paged && totalPages > 1 ? (
+              <CommentPager
+                view={view}
+                totalPages={totalPages}
+                total={matchingCount}
+                shown={comments.length}
+              />
+            ) : null}
             <Table>
               <TableHeader>
                 <TableRow>
@@ -128,42 +312,39 @@ export default async function IgCommentsPage({
               </TableHeader>
               <TableBody>
                 {comments.map((c) => {
-                  const age = daysAgo(c.commented_at);
-                  const dmOpen = age <= 7;
+                  const dmWindow = igDmWindow(c.replied_at, daysSince(c.commented_at, now));
+                  const isShift = getCampaign(c.text) === "shift";
                   return (
                     <TableRow key={c.id}>
-                      <TableCell className="font-medium">{c.username ?? c.ig_user_id ?? "—"}</TableCell>
+                      <TableCell className="font-medium">{c.username ?? c.ig_user_id ?? "-"}</TableCell>
                       <TableCell className="max-w-[240px] truncate">{c.text}</TableCell>
-                      <TableCell>{c.grade_level ?? "—"}</TableCell>
+                      <TableCell>{c.grade_level ?? "-"}</TableCell>
                       <TableCell>
                         <Badge variant="secondary">{STAGE_LABEL[c.stage]}</Badge>
                       </TableCell>
                       <TableCell>
                         <LeadTagBadges tags={c} />
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {formatDate(c.commented_at)}
+                      <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
+                        {formatBangkokDateTime(c.commented_at)}
                       </TableCell>
                       <TableCell>
-                        {c.replied_at ? (
-                          <Badge variant="outline">Replied</Badge>
-                        ) : dmOpen ? (
-                          <Badge variant="outline">{7 - age}d left</Badge>
-                        ) : (
-                          <Badge variant="outline">Closed</Badge>
-                        )}
+                        <Badge variant="outline">
+                          {dmWindow.state === "replied"
+                            ? "Replied"
+                            : dmWindow.state === "open"
+                              ? `${dmWindow.daysLeft}d left`
+                              : "Closed"}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <IgCommentReplyRow
                           commentId={c.id}
-                          defaultPrivateMessage={
-                            getCampaign(c.text) === "shift" ? shiftDmMessage : undefined
-                          }
+                          defaultPrivateMessage={isShift ? shiftDmMessage : undefined}
                           defaultPublicMessage={
-                            getCampaign(c.text) === "shift"
-                              ? getDefaultPublicCommentReply(c.username, "shift")
-                              : undefined
+                            isShift ? getDefaultPublicCommentReply(c.username, "shift") : undefined
                           }
+                          radar={radarById.get(c.id) ?? radarFallback(c.text)}
                         />
                       </TableCell>
                     </TableRow>
@@ -171,9 +352,17 @@ export default async function IgCommentsPage({
                 })}
               </TableBody>
             </Table>
-          )}
-        </CardContent>
-      </Card>
+            {paged && totalPages > 1 ? (
+              <CommentPager
+                view={view}
+                totalPages={totalPages}
+                total={matchingCount}
+                shown={comments.length}
+              />
+            ) : null}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

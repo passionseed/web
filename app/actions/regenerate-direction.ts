@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/utils/supabase/server";
+import { requireAdmin } from "@/lib/security/route-guards";
 import { generateDirectionProfileCore } from "@/lib/ai/directionProfileEngine";
 import { AssessmentAnswers, DirectionFinderResult } from "@/types/direction-finder";
 
@@ -12,9 +12,18 @@ export interface RegenerateResult {
   error?: string;
 }
 
+// Each model id is a paid LLM call, so cap how many one request can fan out to.
+const MAX_MODELS = 5;
+
+function isValidModelSelection(modelIds: unknown): modelIds is string[] {
+  if (!Array.isArray(modelIds)) return false;
+  if (modelIds.length < 1 || modelIds.length > MAX_MODELS) return false;
+  return modelIds.every((id) => typeof id === "string" && id.length > 0 && id.length <= 200);
+}
+
 /**
  * Regenerate direction profile with specific model(s) for comparison
- * Only accessible by admin users (or in development mode)
+ * Only accessible by admin users
  */
 export async function regenerateDirectionProfile(
   answers: AssessmentAnswers,
@@ -22,36 +31,10 @@ export async function regenerateDirectionProfile(
   modelIds: string[],
   language: "en" | "th" = "en"
 ): Promise<RegenerateResult[]> {
-  const supabase = await createClient();
-
-  // Allow in development mode (NODE_ENV === 'development')
-  const isDevelopment =
-    process.env.NODE_ENV === 'development' ||
-    process.env.VERCEL_ENV === 'preview';
-
-  // Allow everyone in dev/preview to compare models
-  const isAllowedEnv = isDevelopment;
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // If in dev/preview, we can be more lenient, but still track the user if logged in
-  // Check admin role (skip check in dev/preview mode)
-  if (!isAllowedEnv) {
-    if (!user) {
-      throw new Error("Unauthorized");
-    }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (profile?.role !== "admin") {
-      throw new Error("Only admins can use model comparison");
-    }
+  const admin = await requireAdmin();
+  if (!admin.ok) throw new Error("Only admins can use model comparison");
+  if (!isValidModelSelection(modelIds)) {
+    throw new Error(`Select between 1 and ${MAX_MODELS} valid models`);
   }
 
   // Generate profiles for each model
@@ -97,30 +80,7 @@ export async function regenerateDirectionProfile(
 /**
  * Check if current user can access model comparison feature
  * Returns true for admins only (not teachers)
- * Always returns true in development mode
  */
 export async function canAccessModelComparison(): Promise<boolean> {
-  // Allow in development mode
-  // Allow in development and preview modes
-  const isDevelopment =
-    process.env.NODE_ENV === 'development' ||
-    process.env.VERCEL_ENV === 'preview';
-
-  if (isDevelopment) return true;
-
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return false;
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  // Only admins, not teachers
-  return profile?.role === "admin";
+  return (await requireAdmin()).ok;
 }

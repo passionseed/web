@@ -155,21 +155,48 @@ export async function finalizeMetaWebhookReceipt(
   return status;
 }
 
+export interface MetaWebhookReceiptFilters {
+  /** Receipt statuses to include; every status when empty. */
+  statuses?: readonly MetaWebhookReceiptStatus[] | null;
+  /** Only receipts with at least one event of this exact kind. */
+  eventKind?: string | null;
+  /** Only receipts received at or after this ISO instant. */
+  receivedSince?: string | null;
+}
+
+/**
+ * Newest receipts with all of their events. Filters run in SQL, so "failed"
+ * searches every receipt, not just the newest page.
+ */
 export async function getRecentMetaWebhookReceipts(
-  limit = 100
+  limit = 100,
+  filters: MetaWebhookReceiptFilters = {}
 ): Promise<MetaWebhookReceiptWithEvents[]> {
   const supabase = createAdminClient();
   const safeLimit = Math.max(1, Math.min(limit, 250));
-  const { data, error } = await supabase
+  const eventKind = filters.eventKind?.trim() || null;
+  // The kind filter uses a second, aliased !inner embed: it drops receipts with
+  // no matching event while meta_webhook_events still returns every event.
+  const select = eventKind
+    ? "*, meta_webhook_events(*), kind_match:meta_webhook_events!inner(id)"
+    : "*, meta_webhook_events(*)";
+
+  let query = supabase
     .from("meta_webhook_receipts")
-    .select("*, meta_webhook_events(*)")
+    .select(select)
     .order("received_at", { ascending: false })
     .order("created_at", { referencedTable: "meta_webhook_events", ascending: true })
     .limit(safeLimit);
+  if (filters.statuses?.length) query = query.in("status", [...filters.statuses]);
+  if (eventKind) query = query.eq("kind_match.event_kind", eventKind);
+  if (filters.receivedSince) query = query.gte("received_at", filters.receivedSince);
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("Failed to fetch Meta webhook receipts:", error);
     throw new Error("Failed to fetch webhook diagnostics");
   }
-  return (data ?? []) as MetaWebhookReceiptWithEvents[];
+  const rows = (data ?? []) as unknown as (MetaWebhookReceiptWithEvents & { kind_match?: unknown })[];
+  return rows.map(({ kind_match: _kindMatch, ...receipt }) => receipt);
 }

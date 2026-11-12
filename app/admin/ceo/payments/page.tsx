@@ -1,87 +1,46 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
 import { ManualPaymentTracker } from "@/components/admin/ceo/ManualPaymentTracker";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getNorthStarMetrics } from "@/lib/supabase/ceo-dashboard";
-
-async function checkAdminAccess() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  if (!user) redirect("/login");
-  
-  const { data: roles } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", user.id)
-    .in("role", ["admin", "team"]);
-    
-  if (!roles || roles.length === 0) redirect("/me");
-  
-  return user;
-}
+import {
+  PaymentIntegrationsCard,
+  RecentPaymentsCard,
+  RecordedRevenueCard,
+} from "@/components/admin/ceo/RecordedPayments";
+import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
+import { AdminErrorState } from "@/components/admin/shared/AdminStates";
+import { requireAdmin } from "@/lib/admin/requireAdmin";
+import { getRecordedPaymentSummary } from "@/lib/supabase/ceo-payments";
 
 export const dynamic = "force-dynamic";
 
+/** /admin/ceo/payments: record family round and camp payments by hand. */
 export default async function PaymentsPage() {
-  await checkAdminAccess();
-  const metrics = await getNorthStarMetrics();
+  // The layout checks too; this page reads with the service-role client.
+  await requireAdmin();
+  const summary = await getRecordedPaymentSummary();
 
   return (
-    <div className="min-h-screen relative overflow-hidden dusk-gradient">
-      <div className="dusk-atmosphere" />
-      
-      <div className="relative z-10 container mx-auto px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-white font-kodchasan tracking-tight mb-2">
-            Payment Tracking
-          </h1>
-          <p className="text-slate-400">
-            Manual entry for family round and camp payments
-          </p>
-        </div>
+    <div className="space-y-4">
+      <AdminPageHeader
+        eyebrow="CEO"
+        title="Payment tracking"
+        description="Record family round and camp payments by hand. The totals come from these entries only."
+      />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <ManualPaymentTracker />
-          
-          <div className="space-y-6">
-            <Card className="ei-card">
-              <CardHeader>
-                <CardTitle className="text-white">Current MRR</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold text-white">
-                  ฿{metrics.mrr.toLocaleString()}
-                </p>
-                <p className="text-sm text-slate-400 mt-1">
-                  Based on recorded payments
-                </p>
-              </CardContent>
-            </Card>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ManualPaymentTracker />
 
-            <Card className="ei-card">
-              <CardHeader>
-                <CardTitle className="text-white">Integration Status</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-300">Stripe</span>
-                  <span className="text-amber-400 text-sm">Not connected</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-300">OMISE (Thailand)</span>
-                  <span className="text-amber-400 text-sm">Not connected</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-300">Manual Entry</span>
-                  <span className="text-emerald-400 text-sm">Active</span>
-                </div>
-                <p className="text-xs text-slate-500 mt-4">
-                  Manual payment tracking is active. Connect Stripe or OMISE for automated tracking.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+        <div className="space-y-4">
+          {summary ? (
+            <>
+              <RecordedRevenueCard summary={summary} />
+              <RecentPaymentsCard payments={summary.recent} />
+            </>
+          ) : (
+            <AdminErrorState
+              title="Could not load recorded payments"
+              message="Totals are unavailable right now. Recording a payment still works; reload the page to try again."
+            />
+          )}
+          <PaymentIntegrationsCard />
         </div>
       </div>
     </div>

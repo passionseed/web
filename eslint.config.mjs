@@ -87,4 +87,30 @@ export default [
       },
     },
   },
+  // Guide content is server-only: client islands get only their block's JSON as props
+  // (docs/features/radar-guides-in-code.md 1.1). Client chrome uses lib/radar-guides/index.ts.
+  // ESLint cannot see "use client", so this covers all of components/radar; server components
+  // there import content through lib/radar-guides/registry.server only from app/ routes.
+  {
+    files: ["components/radar/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: [
+                "@/lib/radar-guides/*/pages/*",
+                "@/lib/radar-guides/*/guide",
+                "@/lib/radar-guides/*/facts",
+                "@/lib/radar-guides/registry.server",
+              ],
+              message:
+                "Guide content is server-only. Pass the block's data as props, or use @/lib/radar-guides (index) for metadata.",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];

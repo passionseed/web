@@ -1,6 +1,8 @@
 import Link from "next/link";
 
 import { ShiftAdminTabs } from "@/components/admin/ShiftAdminTabs";
+import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
+import { AdminEmptyState, AdminErrorState } from "@/components/admin/shared/AdminStates";
 import { ShiftFeedbackResponses } from "@/components/admin/shift-feedback/ShiftFeedbackResponses";
 import { ShiftFeedbackSummary } from "@/components/admin/shift-feedback/ShiftFeedbackSummary";
 import { weekdayKey } from "@/lib/content/shift-alumni";
@@ -10,6 +12,7 @@ import { loadAlumniCalendar } from "@/lib/supabase/shift-alumni-calendar";
 import { listShiftFeedback, type ShiftFeedbackRow } from "@/lib/supabase/shift-feedback";
 import { cn } from "@/lib/utils";
 import { adminMetadata } from "@/lib/admin/metadata";
+import { requireAdmin } from "@/lib/admin/requireAdmin";
 
 export const metadata = adminMetadata("/admin/shift/feedback");
 export const dynamic = "force-dynamic";
@@ -25,9 +28,12 @@ function RoundFilter({ selected }: { selected?: number }) {
         <Link
           key={link.href}
           href={link.href}
+          aria-current={link.round === selected ? "page" : undefined}
           className={cn(
-            "rounded-md border px-3 py-1 text-sm",
-            link.round === selected ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground",
+            "inline-flex min-h-11 items-center rounded-md border px-3 text-sm transition-colors",
+            link.round === selected
+              ? "border-primary bg-primary/10 font-medium text-foreground"
+              : "text-muted-foreground hover:bg-muted hover:text-foreground active:bg-muted",
           )}
         >
           {link.label}
@@ -51,6 +57,8 @@ export default async function AdminShiftFeedbackPage({
 }: {
   searchParams: Promise<{ round?: string }>;
 }) {
+  // The admin layout also checks, but this page reads with the service-role client.
+  await requireAdmin();
   const { round } = await searchParams;
   const cohort = round ? getShiftCohort(Number(round)) : undefined;
   const [rows, { doc: calendar }] = await Promise.all([loadRows(cohort?.name), loadAlumniCalendar()]);
@@ -58,18 +66,23 @@ export default async function AdminShiftFeedbackPage({
   return (
     <div className="space-y-4">
       <ShiftAdminTabs />
-      <div className="space-y-2">
-        <h2 className="text-2xl font-semibold">SHIFT Feedback</h2>
-        <p className="text-sm text-muted-foreground">
-          End-of-round answers from /shift/feedback. Students are minors: quote only as each card allows.
-        </p>
-      </div>
+      <AdminPageHeader
+        eyebrow="SHIFT"
+        title="Feedback"
+        description="End-of-round answers from /shift/feedback. Students are minors: quote only as each card allows."
+      />
       <RoundFilter selected={cohort?.round} />
 
       {rows === null ? (
-        <p role="alert" className="text-sm text-muted-foreground">Failed to load feedback.</p>
+        <AdminErrorState
+          title="Could not load feedback"
+          message="The feedback responses did not load. Reload the page to try again."
+        />
       ) : rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No responses yet{cohort ? ` from ${cohort.name}` : ""}.</p>
+        <AdminEmptyState
+          title={`No responses yet${cohort ? ` from ${cohort.name}` : ""}`}
+          description="Answers appear here as students send the end-of-round form."
+        />
       ) : (
         <>
           <ShiftFeedbackSummary

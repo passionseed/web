@@ -83,7 +83,9 @@ describe("SHIFT[3] publish slots", () => {
     const [deadline] = slotsFor(["x-shift3-deadline-day"]);
     const [lastCall] = slotsFor(["x-shift3-last-call"]);
     const [day1] = slotsFor(["x-shift3-day-1"]);
-    expect(day(deadline)).toBe(C.applyDeadline);
+    // Posted on the original close, Sat 7 Nov, before applications were
+    // extended through Day 1.
+    expect(day(deadline)).toBe("2026-11-07");
     expect(day(lastCall) < C.applyDeadline).toBe(true);
     expect(day(day1)).toBe(C.startDate);
     expect(day1.at.slice(11, 16) < C.sessionTime.slice(0, 5)).toBe(true);

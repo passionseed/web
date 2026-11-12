@@ -21,7 +21,7 @@ export function LeadNeedsSummary({ conversation }: { conversation: DmConversatio
       <div className="flex flex-wrap items-center gap-2">
         {summary.priority === "hot" && (
           <Badge variant="destructive" className="gap-1">
-            <Flame className="h-3 w-3" /> Hot — พร้อมสมัคร
+            <Flame className="h-3 w-3" /> Hot: พร้อมสมัคร
           </Badge>
         )}
         {summary.priority === "reply" && (

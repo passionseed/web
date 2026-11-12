@@ -10,6 +10,10 @@ export async function POST(request: NextRequest) {
   if (!userCheck.ok) return userCheck.response;
 
   const { supabase, userId } = userCheck.value;
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user || user.is_anonymous) {
+    return NextResponse.json({ error: "A registered account is required" }, { status: 403 });
+  }
   let createdMapId: string | null = null;
 
   try {

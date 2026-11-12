@@ -1684,7 +1684,7 @@ export function AdminHackathonActivities() {
                             rel="noreferrer"
                             className="block text-xs font-light text-blue-300 hover:text-blue-200 truncate"
                           >
-                            ↗ file {index + 1} — {url}
+                            ↗ file {index + 1}: {url}
                           </a>
                         ))}
                       </div>
@@ -1746,7 +1746,7 @@ export function AdminHackathonActivities() {
                         <div className="flex items-center justify-between gap-2 text-[11px] font-light">
                           <span className="flex items-center gap-1.5 text-violet-200">
                             <Sparkles className="h-3 w-3 shrink-0" />
-                            AI draft ready — review & approve
+                            AI draft ready: review & approve
                             {selectedSubmission.review.ai_draft_source &&
                               selectedSubmission.review.ai_draft_source !== "manual" && (
                                 <span className="text-violet-400/60">
@@ -1792,8 +1792,8 @@ export function AdminHackathonActivities() {
                                   <ChevronRight className="h-3 w-3 shrink-0" />
                                 )}
                                 {selectedSubmission.review.ai_draft.consensus.agreement === "disagree"
-                                  ? "Models disagreed — view other opinion"
-                                  : "Single model available — view fallback details"}
+                                  ? "Models disagreed: view other opinion"
+                                  : "Single model available: view fallback details"}
                               </button>
                               {consensusExpanded && (
                                 <div className="space-y-2 rounded border border-violet-500/20 bg-violet-500/5 px-2.5 py-2">
@@ -2006,7 +2006,7 @@ export function AdminHackathonActivities() {
                           type="number"
                           value={gradeScore}
                           onChange={(e) => setGradeScore(e.target.value)}
-                          placeholder="—"
+                          placeholder="–"
                           className="h-8 text-sm font-light"
                         />
                       </div>
@@ -2137,7 +2137,7 @@ export function AdminHackathonActivities() {
                 <div className="rounded border border-slate-800 bg-slate-900/60 px-2 py-1.5 truncate">
                   <span className="text-slate-500">Phase:</span>{" "}
                   <span className="text-slate-200">
-                    {promptPreview.phase_number != null ? `${promptPreview.phase_number} — ` : ""}
+                    {promptPreview.phase_number != null ? `${promptPreview.phase_number}: ` : ""}
                     {promptPreview.phase_title ?? "(unknown)"}
                   </span>
                 </div>
@@ -2751,7 +2751,7 @@ function RevisionThread({
             const isOpen = openIds.has(rev.n);
             const dateLabel = rev.submitted_at
               ? format(new Date(rev.submitted_at), "MMM d, HH:mm")
-              : "—";
+              : "–";
             const status = rev.review?.status ?? null;
             return (
               <div key={rev.n} className="min-w-0">

@@ -70,6 +70,7 @@ export function assignVariant(
 
 /** Why a conversation is not in the queue. Surfaced so the count reconciles. */
 export type IneligibleReason =
+  | "radar_origin"
   | "internal"
   | "never_replied"
   | "window_closed"
@@ -77,6 +78,7 @@ export type IneligibleReason =
   | "done";
 
 export const INELIGIBLE_LABELS: Record<IneligibleReason, string> = {
+  radar_origin: "เธรดจาก Career Radar (ไม่ใช่ลีด)",
   internal: "บัญชีภายใน",
   never_replied: "ไม่เคยตอบ (ไม่มี window)",
   window_closed: "เกิน 7 วัน ส่งไม่ได้แล้ว",
@@ -92,6 +94,11 @@ export interface CampaignCandidate {
   signals: DmLeadSignals;
   /** Conversations already swept in this campaign are skipped, not re-sent. */
   alreadyTargeted?: boolean;
+  /**
+   * `dm_conversations.origin`. Radar-origin threads belong to students who
+   * asked for a Career Radar link; they are never in a broadcast (spec 5.6).
+   */
+  origin?: string | null;
 }
 
 export interface QueueEntry {
@@ -116,6 +123,7 @@ const HUMAN_AGENT_WINDOW_HOURS = 7 * 24;
 
 function emptySkipped(): Record<IneligibleReason, number> {
   return {
+    radar_origin: 0,
     internal: 0,
     never_replied: 0,
     window_closed: 0,
@@ -167,6 +175,11 @@ export function buildQueue(
   const entries: QueueEntry[] = [];
 
   for (const candidate of candidates) {
+    // Safeguarding first: a Radar-origin thread is never a campaign recipient.
+    if (candidate.origin === "radar") {
+      skipped.radar_origin += 1;
+      continue;
+    }
     if (candidate.adminTags.includes(INTERNAL_TAG)) {
       skipped.internal += 1;
       continue;

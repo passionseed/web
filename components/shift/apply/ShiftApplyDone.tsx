@@ -1,10 +1,14 @@
 "use client";
 
 import { useEffect } from "react";
-import { Check } from "lucide-react";
+import { CalendarDays, Check, CreditCard, Mail } from "lucide-react";
 
 import { INK, MISREG_TEXT } from "@/components/shift/poster/riso";
 import { ShiftPayment } from "@/components/shift/ShiftPayment";
+import { DiscordIcon } from "@/components/shift/join/DiscordIcon";
+import { DiscordSteps } from "@/components/shift/join/DiscordSteps";
+import { ConnectDiscordButton } from "@/components/shift/join/ShiftJoinActions";
+import { BringAFriendInvite } from "./BringAFriend";
 import {
   SHIFT_PAYMENT,
   formatThaiDate,
@@ -12,11 +16,15 @@ import {
   type ShiftCohort,
 } from "@/lib/content/shift-cohort";
 import { cleanIgHandle, type ShiftApplicationInput } from "@/lib/shift/application";
+import { tokenFromShiftJoinPath } from "@/lib/shift/joinLink";
+import { applicantNeedsParent } from "@/lib/shift/parentConsent";
 
 /**
- * After submit: what was received, what happens next, and how to pay.
- * A receipt beats a blank "thanks", because the applicant screenshots it
- * and a parent asks "สมัครอะไรไป".
+ * After submit: connect Discord, what was received, what happens next, and
+ * how to pay. Discord comes first because one tap makes the PassionSeed
+ * account and drops the applicant into the round's server. A receipt beats
+ * a blank "thanks", because the applicant screenshots it and a parent asks
+ * "สมัครอะไรไป".
  */
 
 const paper = (alpha: string) => `${INK.paper}${alpha}`;
@@ -51,29 +59,59 @@ function Receipt({ cohort, values }: { cohort: ShiftCohort; values: ShiftApplica
   );
 }
 
-function NextSteps({ cohort }: { cohort: ShiftCohort }) {
+/** The personal /shift/join token inside the link the apply API returns. */
+function joinTokenFrom(joinUrl: string | null): string | null {
+  if (!joinUrl) return null;
+  try {
+    return tokenFromShiftJoinPath(new URL(joinUrl).pathname);
+  } catch {
+    return null;
+  }
+}
+
+function DiscordStep({ cohort, token }: { cohort: ShiftCohort; token: string }) {
+  return (
+    <div
+      className="mx-auto mt-10 max-w-md rounded-xl px-5 py-6 text-left"
+      style={{ backgroundColor: paper("0a"), boxShadow: `inset 0 0 0 1px ${paper("1f")}` }}
+    >
+      <p className="flex items-center gap-3 font-kodchasan text-xl font-semibold"><DiscordIcon className="h-7 w-7 shrink-0" />เข้าห้องเรียน SHIFT</p>
+      <p className="mt-2 text-sm leading-relaxed" style={{ color: paper("b3") }}>
+        เราเรียนและคุยกันใน Discord กดปุ่มนี้เพื่อเข้าห้องของ {cohort.name}
+      </p>
+      <div className="mt-5">
+        <ConnectDiscordButton token={token} label="เข้าห้องเรียนด้วย Discord" />
+      </div>
+      <div className="mt-6"><DiscordSteps /></div>
+    </div>
+  );
+}
+
+function NextSteps({
+  cohort,
+  canConnect,
+  parentEmail,
+}: {
+  cohort: ShiftCohort;
+  canConnect: boolean;
+  /** Set when the applicant is under 20: the parent agrees from an emailed link, before or after joining. */
+  parentEmail: string | null;
+}) {
+  const hasFee = cohort.priceBaht > 0;
   const steps = [
-    ...(cohort.priceBaht > 0
-      ? [`โอนแล้วส่งสลิปใน LINE ${SHIFT_PAYMENT.lineId} ด้านล่าง`]
-      : []),
-    "พี่ยืนยันที่นั่งในแชท แล้วกดลิงก์ส่วนตัวเพื่อเข้า Discord ของรุ่น",
-    `เริ่ม Day 1 ${formatThaiDate(cohort.startDate)} ${cohort.sessionTime} น.`,
+    ...(parentEmail ? [{ icon: Mail, title: "ให้ผู้ปกครองกดยินยอม", detail: `เปิดอีเมลที่ส่งไป ${parentEmail} ถ้าไม่เจอ ลองดู Spam หรือ Promotions` }] : []),
+    ...(hasFee ? [{ icon: CreditCard, title: "โอนแล้วส่งสลิป", detail: `QR อยู่ด้านล่าง ส่งสลิปใน LINE ${SHIFT_PAYMENT.lineId} แล้วรอทีมงานยืนยันที่นั่ง` }] : []),
+    ...(!canConnect ? [{ icon: DiscordIcon, title: "เข้าห้องเรียนใน Discord", detail: "ใช้ลิงก์ส่วนตัวที่ทีมงานส่งให้" }] : []),
+    { icon: CalendarDays, title: "วันเริ่มเรียน", detail: `${formatThaiDate(cohort.startDate)} ${cohort.sessionTime} น.` },
   ];
   return (
     <ol className="mx-auto mt-10 max-w-md space-y-4 text-left">
-      {steps.map((step, i) => (
-        <li key={step} className="flex items-start gap-3">
-          <span
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-kodchasan text-sm font-bold"
-            style={{
-              backgroundColor: i === 0 ? INK.yellow : paper("1a"),
-              color: i === 0 ? INK.black : INK.paper,
-            }}
-          >
-            {i + 1}
-          </span>
-          <span className="pt-0.5 leading-relaxed" style={{ color: paper(i === 0 ? "f2" : "b3") }}>
-            {step}
+      {steps.map(({ icon: Icon, title, detail }) => (
+        <li key={title} className="flex items-start gap-3">
+          <Icon className="mt-1 h-6 w-6 shrink-0" aria-hidden="true" style={{ color: INK.yellow }} />
+          <span className="leading-relaxed">
+            <strong className="block">{title}</strong>
+            <span style={{ color: paper("c2") }}>{detail}</span>
           </span>
         </li>
       ))}
@@ -85,10 +123,13 @@ export function ShiftApplyDone({
   cohort,
   values,
   joinUrl,
+  onApplyAgain,
 }: {
   cohort: ShiftCohort;
   values: ShiftApplicationInput;
   joinUrl: string | null;
+  /** Clears this receipt for the next applicant. Absent after the round closes. */
+  onApplyAgain?: () => void;
 }) {
   // The form swaps for this screen in place; start reading from the top.
   useEffect(() => {
@@ -96,6 +137,9 @@ export function ShiftApplyDone({
   }, []);
 
   const nickname = values.nickname.trim();
+  const token = joinTokenFrom(joinUrl);
+  // Under 20 the parent also agrees from an emailed link (PDPA).
+  const parentEmail = applicantNeedsParent(values.birthDate) ? values.parentEmail?.trim() || null : null;
   return (
     <div className="py-16 text-center">
       <p
@@ -108,11 +152,15 @@ export function ShiftApplyDone({
         ได้รับใบสมัครแล้ว{nickname ? ` ${nickname}` : ""}
       </h2>
       <p className="mx-auto mt-4 max-w-md leading-relaxed" style={{ color: paper("b3") }}>
-        แคปหน้านี้เก็บไว้ได้เลย ระหว่างรอ ลองคิดต่อว่าใครอีก 3 คนที่เจอปัญหาเดียวกับเรา
+        แคปหน้านี้เก็บไว้ แล้วทำตามขั้นตอนด้านล่างได้เลย
       </p>
 
-      <Receipt cohort={cohort} values={values} />
-      <NextSteps cohort={cohort} />
+      {token && <DiscordStep cohort={cohort} token={token} />}
+      <NextSteps
+        cohort={cohort}
+        canConnect={token !== null}
+        parentEmail={parentEmail}
+      />
 
       {cohort.priceBaht > 0 && (
         <div className="mx-auto mt-12 max-w-xl border-t pt-10" style={{ borderColor: paper("1f") }}>
@@ -123,11 +171,29 @@ export function ShiftApplyDone({
               nickname,
               fullName: values.fullName,
               igHandle: values.igHandle,
-              parentContact: values.parentContact,
+              parentContact: values.parentContact ?? undefined,
               joinUrl,
             }}
           />
         </div>
+      )}
+
+      <details className="mx-auto mt-10 max-w-md text-left">
+        <summary className="min-h-12 cursor-pointer py-3 font-semibold">รายละเอียดใบสมัคร</summary>
+        <Receipt cohort={cohort} values={values} />
+      </details>
+      <BringAFriendInvite cohort={cohort} onApplyHere={onApplyAgain} />
+
+      {/* Free rounds have no pair offer, so the same-phone reset stands alone. */}
+      {onApplyAgain && cohort.priceBaht === 0 && (
+        <button
+          type="button"
+          onClick={onApplyAgain}
+          className="mx-auto mt-12 inline-flex min-h-12 items-center text-sm font-semibold underline underline-offset-4"
+          style={{ color: paper("b3") }}
+        >
+          สมัครให้อีกคน
+        </button>
       )}
     </div>
   );

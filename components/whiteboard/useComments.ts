@@ -14,8 +14,14 @@ type Channel = {
   on: (event: BoardEvent, handler: (payload: unknown) => void) => () => void;
 };
 
-/** Comment threads for a board, kept in sync with everyone else on it. */
-export function useComments(boardId: string, channel: Channel) {
+type Shown = { name: string; avatarUrl: string | null } | undefined;
+
+/**
+ * Comment threads for a board, kept in sync with everyone else on it. `shownAs`
+ * gives an author's name and picture as the board shows people (their Discord),
+ * when known.
+ */
+export function useComments(boardId: string, channel: Channel, shownAs?: (userId: string) => Shown) {
   const [comments, setComments] = useState<WhiteboardComment[]>([]);
   const { send, on } = channel;
 
@@ -35,11 +41,21 @@ export function useComments(boardId: string, channel: Channel) {
 
   const threads = useMemo<Thread[]>(() => {
     const replies = new Map<string, WhiteboardComment[]>();
-    for (const c of comments) {
-      if (c.parentId) replies.set(c.parentId, [...(replies.get(c.parentId) ?? []), c]);
+    const shown = (c: WhiteboardComment): WhiteboardComment => {
+      const p = shownAs?.(c.authorId);
+      return p ? { ...c, authorName: p.name, authorAvatar: p.avatarUrl ?? c.authorAvatar } : c;
+    };
+    for (const raw of comments) {
+      const c = shown(raw);
+      if (!c.parentId) continue;
+      const list = replies.get(c.parentId);
+      if (list) list.push(c);
+      else replies.set(c.parentId, [c]);
     }
-    return comments.filter((c) => !c.parentId).map((c) => ({ ...c, replies: replies.get(c.id) ?? [] }));
-  }, [comments]);
+    return comments
+      .filter((c) => !c.parentId)
+      .map((c) => ({ ...shown(c), replies: replies.get(c.id) ?? [] }));
+  }, [comments, shownAs]);
 
   const mutate = useCallback(
     async (path: string, init: RequestInit) => {
@@ -56,16 +72,20 @@ export function useComments(boardId: string, channel: Channel) {
     [refresh, send],
   );
 
-  const base = `/api/whiteboards/${boardId}/comments`;
-  return {
-    threads,
-    addThread: (x: number, y: number, body: string) =>
-      mutate(base, { method: "POST", body: JSON.stringify({ x, y, body }) }),
-    reply: (parentId: string, body: string) => mutate(base, { method: "POST", body: JSON.stringify({ parentId, body }) }),
-    resolve: (id: string, resolved: boolean) =>
-      mutate(`${base}/${id}`, { method: "PATCH", body: JSON.stringify({ resolved }) }),
-    remove: (id: string) => mutate(`${base}/${id}`, { method: "DELETE" }),
-  };
+  // Stable between renders, so the editor only re-renders when comments change.
+  return useMemo(() => {
+    const base = `/api/whiteboards/${boardId}/comments`;
+    return {
+      threads,
+      addThread: (x: number, y: number, body: string) =>
+        mutate(base, { method: "POST", body: JSON.stringify({ x, y, body }) }),
+      reply: (parentId: string, body: string) =>
+        mutate(base, { method: "POST", body: JSON.stringify({ parentId, body }) }),
+      resolve: (id: string, resolved: boolean) =>
+        mutate(`${base}/${id}`, { method: "PATCH", body: JSON.stringify({ resolved }) }),
+      remove: (id: string) => mutate(`${base}/${id}`, { method: "DELETE" }),
+    };
+  }, [boardId, mutate, threads]);
 }
 
 export type CommentsApi = ReturnType<typeof useComments>;
