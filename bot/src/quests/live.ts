@@ -13,6 +13,7 @@ import {
 } from "discord.js";
 
 import { QuestDbError, QuestError, type QuestApi } from "./api";
+import { cid } from "./ids";
 import { LIVE } from "./island/copy";
 import { renderIsland, type IslandPlot } from "./island/render";
 import { islandSigns, signsLine } from "./outbox";
@@ -24,8 +25,10 @@ import { ISLAND_LINK_LABEL, islandWebUrl } from "./weblink";
  * kind:live) that the bot keeps editing in place, never a stream of new posts.
  * It shows the island picture and a short card: trees, and the confirmed
  * milestones of the trees shown by name (never a quiet project's), the island goal, the Demo Day countdown, how many people sit at
- * the campfire (a number, never who), and links to the web island and the
- * coworking voice channel.
+ * the campfire (a number, never who), then a button panel: personal buttons
+ * ("sq|lp|<target>", answered by handlers/panel.ts with a private reply to
+ * whoever pressed, never an edit of this post) and links to the web island,
+ * the coworking voice channel and the suggestions channel.
  *
  * Everything comes from shift_quest_live_post() (20261111094000, schema 8):
  * the same outsider view of the island as the weekly public post (a plot
@@ -89,6 +92,12 @@ export interface LivePostData {
   channel_id: string | null;
   message_id: string | null;
   coworking_channel_id: string | null;
+  /**
+   * The suggestions channel, when the database's answer names one: then the
+   * panel links to it. shift_quest_live_post() (schema 8 and 9) does not
+   * return it, so the link stays off until a migration adds the field.
+   */
+  suggest_channel_id?: string | null;
   plots: IslandPlot[];
   goal: { milestone: number; target: number; count: number; reached: boolean; deadline: string } | null;
   season: { name: string; demo_day: string; days_to_demo: number } | null;
@@ -130,6 +139,7 @@ function normalize(raw: unknown): LivePostData | null {
     channel_id: snowflake(r.channel_id),
     message_id: snowflake(r.message_id),
     coworking_channel_id: snowflake(r.coworking_channel_id),
+    suggest_channel_id: snowflake(r.suggest_channel_id),
     plots: Array.isArray(r.plots) ? r.plots.filter((p: unknown) => p && typeof p === "object" && Number.isInteger((p as IslandPlot).slot)) : [],
     goal: goal
       ? {
@@ -152,7 +162,9 @@ function normalize(raw: unknown): LivePostData | null {
 /**
  * Everything the post shows except the time: when it is unchanged and the
  * last edit is under 10 minutes old, the tick edits nothing. The message id
- * is left out (where the post is, not what it shows).
+ * is left out (where the post is, not what it shows). So are the panel's
+ * buttons: they change only with a release, and a new process always edits
+ * (last starts empty, and every gateway ready forces an edit).
  */
 export function liveSignature(d: LivePostData, webUrl: string | null): string {
   return JSON.stringify({
@@ -163,25 +175,56 @@ export function liveSignature(d: LivePostData, webUrl: string | null): string {
     approved: d.approved,
     campfire: campers(d),
     coworking: d.coworking_channel_id,
+    suggest: d.suggest_channel_id ?? null,
     webUrl,
   });
+}
+
+/**
+ * The panel's personal buttons, in order: the first five fill the first row,
+ * how to play opens the second. handlers/panel.ts answers each one.
+ */
+export const PANEL_TARGETS = ["me", "quests", "checkin", "help", "rewards", "how"] as const;
+
+export type PanelTarget = (typeof PANEL_TARGETS)[number];
+
+export function isPanelTarget(value: string | undefined): value is PanelTarget {
+  return (PANEL_TARGETS as readonly string[]).includes(value ?? "");
+}
+
+/** "sq|lp|<target>": one action for the whole panel, never an id that edits the message it sits on. */
+export function panelId(target: PanelTarget): string {
+  return cid("lp", target);
+}
+
+function panelButton(target: PanelTarget, style: ButtonStyle = ButtonStyle.Secondary): ButtonBuilder {
+  return new ButtonBuilder().setCustomId(panelId(target)).setLabel(LIVE.panel[target]).setStyle(style);
 }
 
 function linkButton(url: string, label: string): ButtonBuilder {
   return new ButtonBuilder().setStyle(ButtonStyle.Link).setURL(url).setLabel(label);
 }
 
+/** A link to a channel of the SHIFT server. */
+function channelUrl(guildId: string, channelId: string): string {
+  return `https://discord.com/channels/${guildId}/${channelId}`;
+}
+
 /**
  * The live card: the picture above the title (when it could be drawn), the
  * numbers, the signs every teammate opted in to show, then when it was
- * updated and the marker the bot finds its post by. The buttons open the web
- * island and the coworking voice channel, each only when there is one.
+ * updated and the marker the bot finds its post by. Below it, always (with
+ * or without the picture), the panel: five personal buttons on the first
+ * row; how to play, then the web island, the coworking voice channel and the
+ * suggestions channel on the second, each link only when there is one.
  */
 export function liveView(d: LivePostData, o: { nowMs: number; guildId: string; webUrl: string | null; picture: boolean }): View {
   const blocks: Block[] = [];
   if (o.picture) blocks.push({ kind: "image", name: LIVE_PNG, alt: "เกาะ SHIFT" });
 
   const room = snowflake(d.coworking_channel_id);
+  const suggest = snowflake(d.suggest_channel_id);
+  const guild = SNOWFLAKE.test(o.guildId);
   const lines = [LIVE.trees(d.trees, d.approved)];
   if (d.goal && d.goal.target > 0) lines.push(LIVE.goal(d.goal.count, d.goal.target, d.goal.reached));
   if (d.season && d.season.days_to_demo >= 0) lines.push(LIVE.demo(d.season.demo_day, d.season.days_to_demo));
@@ -193,10 +236,20 @@ export function liveView(d: LivePostData, o: { nowMs: number; guildId: string; w
   if (!o.picture) blocks.push({ kind: "subtext", text: LIVE.pictureFailed });
   blocks.push({ kind: "subtext", text: `${LIVE.updated(Math.floor(o.nowMs / 1000))} · ${LIVE.marker}` });
 
-  const buttons: ButtonBuilder[] = [];
-  if (o.webUrl) buttons.push(linkButton(o.webUrl, ISLAND_LINK_LABEL));
-  if (room && SNOWFLAKE.test(o.guildId)) buttons.push(linkButton(`https://discord.com/channels/${o.guildId}/${room}`, LIVE.join));
-  const rows = buttons.length ? [new ActionRowBuilder<ButtonBuilder>().addComponents(buttons)] : [];
+  const links: ButtonBuilder[] = [];
+  if (o.webUrl) links.push(linkButton(o.webUrl, ISLAND_LINK_LABEL));
+  if (room && guild) links.push(linkButton(channelUrl(o.guildId, room), LIVE.join));
+  if (suggest && guild) links.push(linkButton(channelUrl(o.guildId, suggest), LIVE.suggest));
+  const rows = [
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      panelButton("me", ButtonStyle.Primary),
+      panelButton("quests"),
+      panelButton("checkin"),
+      panelButton("help"),
+      panelButton("rewards")
+    ),
+    new ActionRowBuilder<ButtonBuilder>().addComponents(panelButton("how"), ...links),
+  ];
 
   return { tone: "island", title: LIVE.title, blocks, rows };
 }

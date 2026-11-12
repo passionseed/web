@@ -299,11 +299,25 @@ The short version for whoever runs the bot:
   one message there and edits it in place: the island picture (the same
   consent-shaped view as the weekly post), trees and the mentor-confirmed
   milestones of the trees shown by name (quiet projects never count), the island goal, the Demo Day
-  countdown, how many people sit at the campfire (a number, never names), a
-  "🔥 เข้าห้อง" link to the coworking voice channel and the "🌐 เปิดเกาะบนเว็บ"
-  link. It edits about 5 seconds after every gateway ready, then within a
-  minute of anything shown changing, and at least every 10 minutes; at most
-  one edit a minute. It is not gated on sharing: setting the channel turns it
+  countdown, how many people sit at the campfire (a number, never names), and
+  a button panel. The first row is personal: "🏝️ ของฉัน" (the /island card),
+  "📋 งานที่ส่งไว้" (the island's 📋 card of your own open and sent work, under
+  the same name), "✍️ เช็กอิน" (the island's 🔨 check-in; without a plot it
+  offers 🌱 จับจองที่ดิน instead), "🆘 ขอช่วย" (the help form) and "🎁 รางวัล"
+  (the /rewards card). The second row has "📖 วิธีเล่น" (how the island works;
+  its 🌱 จับจองที่ดิน shows only to students without a project), then
+  links: "🌐 เปิดเกาะบนเว็บ", "🔥 เข้ากองไฟ" (the coworking voice channel) and
+  "💡 เสนอไอเดีย" (the suggestions channel, only once
+  `shift_quest_live_post()` returns a `suggest_channel_id`; it does not yet,
+  so the link stays off). Every panel button is one action, `sq|lp|<target>`
+  (`bot/src/quests/handlers/panel.ts`), which answers only the person who
+  pressed it, in a new private reply, and never edits the shared post. It
+  uses the slash commands' gate: someone outside the pilot gets the same
+  polite "not yet", and someone in the pilot who has not started gets the
+  /start welcome card. The post is edited about 5 seconds after every gateway
+  ready (so a new release puts its buttons on the existing post right away),
+  then within a minute of anything shown changing, and at least every 10
+  minutes; at most one edit a minute. It is not gated on sharing: setting the channel turns it
   on, clearing it stops the edits and leaves the last message as it is.
   - Finding its message after a restart: the message id is stored in the
     database (`shift_quest_live_state`) with its channel, written with a

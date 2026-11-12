@@ -131,7 +131,22 @@ export const LIVE = {
   /** The database's own day count (Bangkok); only called while Demo Day is today or ahead. */
   demo: (day: string, days: number) => `🎤 Demo Day ${bkkDate(day)} · ${days > 0 ? `อีก **${days}** วัน` : "วันนี้!"}`,
   campfire: (n: number) => (n > 0 ? `🔥 กองไฟตอนนี้ **${n}** คน` : "🔥 กองไฟยังว่าง มานั่งเป็นคนแรกได้"),
-  join: "🔥 เข้าห้อง",
+  /**
+   * The panel under the post. Each button answers only the person who
+   * pressed it, in a private reply, with the card its own command shows.
+   * quests opens the island's 📋 card, so it carries that card's own name.
+   */
+  panel: {
+    me: "🏝️ ของฉัน",
+    quests: I.btnWork,
+    checkin: "✍️ เช็กอิน",
+    help: "🆘 ขอช่วย",
+    rewards: "🎁 รางวัล",
+    how: "📖 วิธีเล่น",
+  },
+  /** Links: the coworking voice channel, and the suggestions channel when the post's data names one. */
+  join: "🔥 เข้ากองไฟ",
+  suggest: "💡 เสนอไอเดีย",
   updated: (unix: number) => `อัปเดตล่าสุด <t:${unix}:R>`,
   /** Also how the bot finds its own pinned post again: keep it unique to this post. */
   marker: "🏝️ โพสต์นี้อัปเดตเองทุก 10 นาที",

@@ -203,7 +203,8 @@ function ago(iso: string): string {
 // ---------------------------------------------------------------------------
 // Screens
 
-function introView(): View {
+/** The welcome card /start shows before someone has started (also the live post panel's answer then). */
+export function introView(): View {
   return {
     tone: "island",
     title: T.introTitle,

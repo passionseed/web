@@ -199,6 +199,16 @@ function backRow(): Row[] {
   return buttonRows([button(cid("is_view"), I.btnBack)]);
 }
 
+/** No plot yet: what 🌟 and 🔨 (also the live post's check-in) answer instead, claim a plot or go back. */
+function noPlotCard(): View {
+  return {
+    tone: "island",
+    title: I.header,
+    blocks: [{ kind: "text", text: I.noPlot }],
+    rows: buttonRows([button(cid("is_claim"), I.btnClaim, ButtonStyle.Success), button(cid("is_view"), I.btnBack)]),
+  };
+}
+
 /** A milestone's title by its number, for the season's "needs milestone 2 / 3" hints. */
 function titleLookup(view: IslandView): (milestone: number) => string | null {
   return (n) => view.milestones.find((m) => m.milestone === n)?.title ?? null;
@@ -266,7 +276,11 @@ export function proofLink(proof: string | null): string | null {
   return url && url.length <= 500 ? url : null;
 }
 
-async function showIsland(i: Replyable, ctx: Ctx, replace: boolean): Promise<void> {
+/**
+ * The island card. replace: in place of the private card the button is on;
+ * otherwise a new private reply (deferred first, unless the caller already did).
+ */
+export async function showIsland(i: Replyable, ctx: Ctx, replace: boolean): Promise<void> {
   // Rendering plus two queries can approach Discord's 3-second limit: acknowledge first.
   if (replace && i.isMessageComponent()) await i.deferUpdate();
   else if (!replace && (i.isChatInputCommand() || i.isMessageComponent() || i.isModalSubmit()) && !i.deferred && !i.replied) {
@@ -301,6 +315,9 @@ export const island: HandlerSet = {
     async is_how(i, ctx) {
       requireStudent(ctx);
       // A details screen: it takes the island card's place, and 🏝️ brings the island back.
+      // 🌱 only without a project: with one, claiming would start a second project
+      // and move the student's current project to it (the live post's 📖 reaches both).
+      const back = button(cid("is_view"), I.btnBack);
       await show(
         i,
         {
@@ -310,7 +327,7 @@ export const island: HandlerSet = {
             { kind: "text", text: I.how },
             { kind: "subtext", text: I.howFine },
           ],
-          rows: buttonRows([button(cid("is_claim"), I.btnClaim, ButtonStyle.Success), button(cid("is_view"), I.btnBack)]),
+          rows: buttonRows(ctx.session.current_project_id ? [back] : [button(cid("is_claim"), I.btnClaim, ButtonStyle.Success), back]),
         },
         { replace: true }
       );
@@ -325,6 +342,12 @@ export const island: HandlerSet = {
     async is_tap(i, ctx) {
       requireStudent(ctx);
       const before = await ctx.api.call<IslandView>("shift_quest_island", ctx.userId);
+      // No plot is a normal state (the live post's ✍️ reaches it): the check-in
+      // would only refuse with no_project, so offer a plot instead of an error.
+      if (!before.project) {
+        await show(i, noPlotCard());
+        return;
+      }
       await ctx.api.call("shift_quest_checkin", ctx.userId, null);
       const again = before.taps_today > 0;
       await show(i, {
@@ -352,12 +375,7 @@ export const island: HandlerSet = {
       requireStudent(ctx);
       const view = await ctx.api.call<IslandView>("shift_quest_island", ctx.userId);
       if (!view.project) {
-        await show(i, {
-          tone: "island",
-          title: I.header,
-          blocks: [{ kind: "text", text: I.noPlot }],
-          rows: buttonRows([button(cid("is_claim"), I.btnClaim, ButtonStyle.Success), button(cid("is_view"), I.btnBack)]),
-        });
+        await show(i, noPlotCard());
         return;
       }
       // Not-yet-done milestones first; done ones stay available for distinct repeats.
