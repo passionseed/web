@@ -1,4 +1,7 @@
 /** @jest-environment node */
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { NextRequest } from "next/server";
 
 import { QuestDbError } from "@/bot/src/quests/api";
@@ -60,8 +63,11 @@ afterEach(() => {
 });
 
 describe("GET /api/cron/shift-island-digest", () => {
-  it("allows the 300 seconds the job may need", () => {
-    expect(maxDuration).toBe(300);
+  it("stays within the plan's 60 second limit, the same as vercel.json", () => {
+    // Vercel refuses the whole deployment when maxDuration is over the plan's limit.
+    const config = JSON.parse(readFileSync(join(process.cwd(), "vercel.json"), "utf8"));
+    expect(maxDuration).toBeLessThanOrEqual(60);
+    expect(config.functions["app/api/cron/shift-island-digest/route.ts"].maxDuration).toBe(maxDuration);
   });
 
   it.each([[undefined], ["Bearer wrong"], [`Basic ${SECRET}`]])("is 401 without the cron secret (%p), reading nothing", async (auth) => {

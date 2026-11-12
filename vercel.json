@@ -22,7 +22,7 @@
       "maxDuration": 60
     },
     "app/api/cron/shift-island-digest/route.ts": {
-      "maxDuration": 300
+      "maxDuration": 60
     },
     "app/api/**/*.ts": {
       "maxDuration": 10

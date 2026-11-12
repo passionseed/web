@@ -5,7 +5,11 @@ import { DIGEST_KEY_ENV, DIGEST_MODEL, describeTeam, hasDigestKey } from "@/lib/
 import { bangkokDay, runIslandDigest } from "@/lib/shift-island/digest/generate";
 import { questApi } from "@/lib/supabase/shift-quests/db";
 
-export const maxDuration = 300;
+// The plan's limit. Past RUN_BUDGET_MS no new team or retry starts, so even a
+// call begun just before it (10 s timeout, one SDK retry: claude.ts) ends in
+// time to save; teams it did not reach keep their last summary.
+export const maxDuration = 60;
+const RUN_BUDGET_MS = 30_000;
 
 /**
  * Daily at 20:00 Bangkok (vercel.json): the AI island news (ข่าวเกาะ) for
@@ -22,12 +26,14 @@ export async function GET(request: NextRequest) {
   }
 
   const day = bangkokDay();
+  const deadline = Date.now() + RUN_BUDGET_MS;
   try {
     const run = await runIslandDigest({
       api: questApi(),
       day,
       describe: hasDigestKey() ? describeTeam : null,
       model: DIGEST_MODEL,
+      deadline,
     });
     if (run.status === "disabled") return NextResponse.json({ ok: true, skipped: "disabled", day });
     if (run.status === "no_key") {
@@ -41,6 +47,10 @@ export async function GET(request: NextRequest) {
       const codes = [...new Set(run.errors)].join(", ");
       const hint = run.errors.includes("auth") ? ` Check that ${DIGEST_KEY_ENV} is a valid key.` : "";
       console.error(`[shift island digest] ${run.errors.length} team summaries failed (${codes}); their last summaries stay.${hint}`);
+    }
+    const skipped = run.runs.reduce((sum, r) => sum + r.skipped, 0);
+    if (skipped > 0) {
+      console.error(`[shift island digest] ran out of time: ${skipped} teams not summarized for ${day}; their last summaries stay.`);
     }
     return NextResponse.json({ ok: true, day, runs: run.runs });
   } catch (error) {

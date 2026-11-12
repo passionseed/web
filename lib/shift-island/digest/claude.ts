@@ -19,6 +19,8 @@ export const DIGEST_KEY_ENV = "ANTHROPIC_API_KEY";
 
 /** Room for low-effort thinking plus a 220-character answer. */
 const MAX_TOKENS = 4000;
+// One call must fit well inside the cron's 60 s limit (route.ts).
+const CALL_TIMEOUT_MS = 10_000;
 
 /** True when the key is set. Without it the cron writes nothing and says why. */
 export function hasDigestKey(env: NodeJS.ProcessEnv = process.env): boolean {
@@ -68,7 +70,7 @@ export function parseAnswer(text: string): DigestAnswer | null {
 export async function describeTeam(facts: DigestFacts, note: string | null): Promise<DigestAnswer | null> {
   let response: Anthropic.Message;
   try {
-    const client = new Anthropic();
+    const client = new Anthropic({ timeout: CALL_TIMEOUT_MS, maxRetries: 1 });
     response = await client.messages.create({
       model: DIGEST_MODEL,
       max_tokens: MAX_TOKENS,

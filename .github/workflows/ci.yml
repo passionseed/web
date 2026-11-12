@@ -105,13 +105,22 @@ jobs:
 
       # supabase db push refuses a migration older than the newest applied
       # one, so new shift_quest files must sort after everything on main.
+      # Files up to APPLIED_THROUGH are already in production (applied
+      # 2026-11-12 with db push --include-all): renaming them would apply
+      # them a second time, so they are exempt.
       - name: New quest migrations sort after main's newest
         if: steps.changes.outputs.quests == 'true' && github.event_name == 'pull_request'
+        env:
+          APPLIED_THROUGH: "20261111095000"
         run: |
           base="$(git ls-tree --name-only HEAD^1 supabase/migrations/ | sed 's#.*/##' | sort)"
           newest="$(echo "$base" | grep -E '^[0-9]{14}_' | tail -n 1)"
           added="$(git ls-tree --name-only HEAD supabase/migrations/ | sed 's#.*/##' | sort | comm -13 <(echo "$base") - | grep shift_quest || true)"
           for f in $added; do
+            if [[ ! "${f:0:14}" > "$APPLIED_THROUGH" ]]; then
+              echo "applied in production already: $f"
+              continue
+            fi
             if [[ ! "$f" > "$newest" ]]; then
               echo "::error file=supabase/migrations/$f::$f sorts before main's newest migration $newest. Rename the unapplied shift_quest files to timestamps after it (docs/features/shift-high-quests.md, migration runbook)."
               exit 1

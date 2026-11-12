@@ -33,6 +33,8 @@ export interface DigestStats {
   calls: number;
   /** Teams left out because the model call failed (stored nothing; the last summary stays). */
   failed: number;
+  /** Teams not started before the run's deadline (stored nothing; the last summary stays). */
+  skipped: number;
   /** Rows the database stored (it skips teams that stopped being eligible). */
   saved: number;
 }
@@ -69,20 +71,23 @@ function noUpdate(project: DigestProject, model: string | null): DigestEntry {
 /**
  * One team: "no update" without asking when the window is empty; otherwise
  * one model call, a check of the answer, and at most one retry with a
- * stricter note. A refusal, an unusable answer or a second failed check is
- * stored as "no update". A thrown model error propagates (nothing stored).
+ * stricter note (only while `timeLeft()`). A refusal, an unusable answer or
+ * a second failed check is stored as "no update". A thrown model error
+ * propagates (nothing stored).
  */
 export async function summarizeProject(
   project: DigestProject,
   inputs: Pick<DigestInputs, "kind" | "from" | "to">,
   describe: DescribeTeam,
   model: string | null,
-  counter: { calls: number } = { calls: 0 }
+  counter: { calls: number } = { calls: 0 },
+  timeLeft: () => boolean = () => true
 ): Promise<DigestEntry> {
   if (!hasFacts(project)) return noUpdate(project, null);
   const facts = buildFacts(project, inputs);
   let note: string | null = null;
   for (let attempt = 0; attempt < 2; attempt++) {
+    if (attempt > 0 && !timeLeft()) break;
     counter.calls++;
     const answer = await describe(facts, note);
     if (!answer || answer.no_update) return noUpdate(project, model);
@@ -95,12 +100,14 @@ export async function summarizeProject(
 
 /**
  * Every team of one kind, a few at a time. A failed model call leaves that
- * team out (counted, logged by code) and the others carry on.
+ * team out (counted, logged by code) and the others carry on. Past
+ * `deadline` (epoch ms) no new team starts, so the run can still save what it
+ * has before the function's time limit; teams already asked finish.
  */
 export async function generateDigest(
   inputs: DigestInputs,
   describe: DescribeTeam,
-  options: { model?: string | null; parallel?: number } = {}
+  options: { model?: string | null; parallel?: number; deadline?: number; now?: () => number } = {}
 ): Promise<{ entries: DigestEntry[]; stats: Omit<DigestStats, "saved">; errors: string[] }> {
   const model = options.model ?? null;
   const counter = { calls: 0 };
@@ -108,11 +115,13 @@ export async function generateDigest(
   const errors: string[] = [];
   let failed = 0;
   let next = 0;
+  const now = options.now ?? Date.now;
+  const timeLeft = () => options.deadline === undefined || now() < options.deadline;
   const work = async () => {
-    while (next < inputs.projects.length) {
+    while (next < inputs.projects.length && timeLeft()) {
       const project = inputs.projects[next++];
       try {
-        entries.push(await summarizeProject(project, inputs, describe, model, counter));
+        entries.push(await summarizeProject(project, inputs, describe, model, counter, timeLeft));
       } catch (error) {
         failed++;
         errors.push(codeOf(error));
@@ -124,7 +133,15 @@ export async function generateDigest(
   const summaries = entries.filter((e) => !e.no_update).length;
   return {
     entries,
-    stats: { kind: inputs.kind, teams: inputs.projects.length, summaries, noUpdate: entries.length - summaries, calls: counter.calls, failed },
+    stats: {
+      kind: inputs.kind,
+      teams: inputs.projects.length,
+      summaries,
+      noUpdate: entries.length - summaries,
+      calls: counter.calls,
+      failed,
+      skipped: inputs.projects.length - next,
+    },
     errors,
   };
 }
@@ -142,6 +159,9 @@ export async function runIslandDigest(options: {
   describe: DescribeTeam | null;
   model?: string | null;
   parallel?: number;
+  /** Epoch ms after which no new team starts (generateDigest). */
+  deadline?: number;
+  now?: () => number;
 }): Promise<DigestRun> {
   const { api, day } = options;
   const kinds: DigestKind[] = isSunday(day) ? ["week", "day"] : ["day"];
@@ -154,6 +174,8 @@ export async function runIslandDigest(options: {
     const { entries, stats, errors: failures } = await generateDigest(inputs, options.describe, {
       model: options.model,
       parallel: options.parallel,
+      deadline: options.deadline,
+      now: options.now,
     });
     errors.push(...failures);
     let saved = 0;

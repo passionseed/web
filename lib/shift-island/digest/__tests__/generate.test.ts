@@ -196,8 +196,27 @@ describe("generateDigest", () => {
       ["p1", false],
       ["p3", true],
     ]);
-    expect(stats).toEqual({ kind: "day", teams: 3, summaries: 1, noUpdate: 1, calls: 2, failed: 1 });
+    expect(stats).toEqual({ kind: "day", teams: 3, summaries: 1, noUpdate: 1, calls: 2, failed: 1, skipped: 0 });
     expect(errors).toEqual(["rate_limit"]);
+  });
+
+  it("starts no new team past the deadline and counts the rest as skipped", async () => {
+    const i = inputs([rawProject(), rawProject({ project_id: "p2", slot: 4 }), rawProject({ project_id: "p3", slot: 5 })]);
+    let clock = 0;
+    const ask: DescribeTeam = async () => {
+      clock += 60;
+      return answer("ทีมส่งเควสต์ทดสอบต้นแบบ");
+    };
+    const { entries, stats } = await generateDigest(i, ask, { model: MODEL, parallel: 1, deadline: 100, now: () => clock });
+    expect(entries.map((e) => e.project_id)).toEqual(["p1", "p2"]);
+    expect(stats).toMatchObject({ teams: 3, summaries: 2, calls: 2, skipped: 1 });
+  });
+
+  it("does not retry an unusable answer past the deadline", async () => {
+    const ask = jest.fn(async () => answer("ก".repeat(MAX_SUMMARY + 50)));
+    const entry = await summarizeProject(project(), { kind: "day", from: DAY, to: DAY }, ask, MODEL, { calls: 0 }, () => false);
+    expect(ask).toHaveBeenCalledTimes(1);
+    expect(entry.no_update).toBe(true);
   });
 });
 
@@ -232,7 +251,7 @@ describe("runIslandDigest", () => {
       status: "done",
       day: DAY,
       errors: [],
-      runs: [{ kind: "day", teams: 1, summaries: 1, noUpdate: 0, calls: 1, failed: 0, saved: 1 }],
+      runs: [{ kind: "day", teams: 1, summaries: 1, noUpdate: 0, calls: 1, failed: 0, skipped: 0, saved: 1 }],
     });
     const save = call.mock.calls.find((c) => c[0] === "shift_quest_digest_save")!;
     expect(save.slice(1, 3)).toEqual([DAY, "day"]);
