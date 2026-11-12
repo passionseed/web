@@ -135,6 +135,14 @@ export async function getRadarSources(fieldId: string) {
 
 // ── Reflections ──────────────────────────────────────────────────
 
+/**
+ * The device's Radar session id (localStorage, shared with field views,
+ * intents and reflections). Radar Guide RPCs send it as `p_session_id`.
+ */
+export function getRadarSessionId(): string {
+  return getOrCreateSessionId();
+}
+
 function getOrCreateSessionId(): string {
   if (typeof window === "undefined") return "";
 
@@ -382,7 +390,18 @@ export interface RadarPathIntentData {
   fieldId?: string;
   pathSlug: string;
   buttonLabel?: string;
+  /** Radar Guide visit (`useRadarVisit`), so the funnel can count intents per visit. */
+  visitId?: string | null;
 }
+
+const VISIT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function validVisitId(visitId: string | null | undefined): string | null {
+  return typeof visitId === "string" && VISIT_ID_PATTERN.test(visitId) ? visitId : null;
+}
+
+/** PostgREST "column not in schema cache": the visit_id migration has not reached this database. */
+const MISSING_COLUMN_CODE = "PGRST204";
 
 export type RadarAnalyticsWriteResult = "recorded" | "skipped" | "failed";
 
@@ -421,14 +440,24 @@ export async function recordRadarPathIntent(
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { error } = await supabase.from("radar_path_intents").insert({
+  const row = {
     user_id: user && !isAnonymousUser(user) ? user.id : null,
     session_id: getOrCreateSessionId(),
     field_id: data.fieldId || null,
     field_slug: data.fieldSlug,
     path_slug: data.pathSlug,
     button_label: data.buttonLabel || null,
-  });
+  };
+  const visitId = validVisitId(data.visitId);
+  // `visit_id` is newer than the generated types (migration 20261111100100).
+  let { error } = await supabase
+    .from("radar_path_intents")
+    .insert((visitId ? { ...row, visit_id: visitId } : row) as typeof row);
+
+  if (error && visitId && (error as { code?: string }).code === MISSING_COLUMN_CODE) {
+    // The intent matters more than its visit link: retry without the column.
+    ({ error } = await supabase.from("radar_path_intents").insert(row));
+  }
 
   if (error) {
     console.error("Error recording radar path intent:", error);
@@ -440,7 +469,8 @@ export async function recordRadarPathIntent(
 
 export async function recordRadarStartOptionInterest(
   startOptionId: string,
-  eventType: "interested" | "opened" | "saved" | "dismissed" | "not_interested"
+  eventType: "interested" | "opened" | "saved" | "dismissed" | "not_interested",
+  visitId?: string | null
 ): Promise<void> {
   if (typeof window === "undefined" || shouldSkipRadarAnalytics()) return;
 
@@ -454,7 +484,8 @@ export async function recordRadarStartOptionInterest(
     p_start_option_id: startOptionId,
     p_event_type: eventType,
     p_session_id: getOrCreateSessionId(),
-    p_metadata: {},
+    // The funnel view reads metadata.visit_id for "interested" events.
+    p_metadata: validVisitId(visitId) ? { visit_id: validVisitId(visitId) } : {},
   });
 
   if (error) {

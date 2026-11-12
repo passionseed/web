@@ -6,6 +6,7 @@ import {
   getDefaultPublicCommentReply,
 } from "@/lib/dm-leads/delivery-status";
 import { shiftCommentDm, shiftCommentPublicReply } from "@/lib/dm-leads/shift-comment-copy";
+import { buildRadarDm, buildRadarPublicReply } from "@/lib/radar-guide/dm-copy";
 import type { DmMessage } from "@/types/dm-leads";
 
 describe("delivery-status helpers", () => {
@@ -72,5 +73,43 @@ describe("delivery-status helpers", () => {
     expect(getDefaultPublicCommentReply("mind.m5", "shift")).toBe(
       shiftCommentPublicReply("mind.m5")
     );
+  });
+});
+
+describe("radar branch (spec 5.5)", () => {
+  const radar = { fieldSlug: "cybersecurity", careerLabelTh: "ไซเบอร์", linkCode: "cyber-money-k3f9", commentId: "1785" };
+
+  it("returns the fixed Radar DM, never the tips or 'DM us first' copy", () => {
+    const dm = getDefaultCommentDmMessage("radar", radar);
+    expect(dm).toBe(buildRadarDm(radar).message);
+    expect(dm).not.toContain("tips/intro");
+    expect(getDefaultCommentDmMessage("radar")).toBe(
+      buildRadarDm({ fieldSlug: null, careerLabelTh: null, linkCode: "hub-ig" }).message
+    );
+  });
+
+  it("returns the fixed Radar public reply, never the privacy note", () => {
+    const reply = getDefaultPublicCommentReply("mind.m5", "radar", radar);
+    expect(reply).toBe(buildRadarPublicReply("mind.m5", "1785"));
+    expect(reply).not.toContain("privacy");
+    expect(reply).not.toContain("กดทัก DM");
+  });
+
+  it("never sends Radar copy through Qwen", async () => {
+    const { getPersonalizedDmMessage, getPersonalizedPublicCommentReply } = await import(
+      "@/lib/dm-leads/delivery-status"
+    );
+    await expect(getPersonalizedDmMessage({ username: "a", campaign: "radar", radar })).resolves.toBe(
+      buildRadarDm(radar).message
+    );
+    await expect(
+      getPersonalizedPublicCommentReply({ username: "a", campaign: "radar", radar })
+    ).resolves.toBe(buildRadarPublicReply("a", "1785"));
+  });
+
+  it("keeps the other campaigns unchanged", () => {
+    expect(getDefaultCommentDmMessage("port")).toContain("tips/intro");
+    expect(getDefaultPublicCommentReply("x", "uni")).toContain("privacy");
+    expect(getDefaultCommentDmMessage(null)).toContain("tips/intro");
   });
 });

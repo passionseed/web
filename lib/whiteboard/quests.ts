@@ -1,0 +1,278 @@
+/**
+ * Quests on a whiteboard: tasks mentors draw on the board by hand (a green
+ * "Quest" label with the task written under it, as on SHIFT[3] Day 2).
+ *
+ * A student starts a quest, and everything new they put on the board until
+ * they end it is their work for that quest: each element carries a tag in
+ * customData.quest (which quest, which session, who, when). The tag travels
+ * with the element like any edit, so it needs no table of its own, and it can
+ * be changed later by right-clicking the element.
+ */
+
+/** customData.quest on an element made for a quest. */
+export type QuestTag = {
+  /** The id of the quest's "Quest" label element. */
+  id: string;
+  /** One start-to-end run of the quest by one person. */
+  session: string;
+  /** User id of whoever made it for the quest. */
+  by: string;
+  /** ISO time it was tagged. */
+  at: string;
+};
+
+export type Quest = {
+  /** The id of its "Quest" label element. */
+  id: string;
+  /** 1-based, in reading order (top to bottom, then left to right). */
+  number: number;
+  /** The task written under the label, on one line; empty if there is none. */
+  title: string;
+  /** The label's position and size, to put the start button next to it. */
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  /** The label's ink colour, so its button can be drawn in the same pen. */
+  color?: string;
+  /** The text element on the board the title was read from, if any. */
+  titleId: string | null;
+  /** The start button is hidden (a mentor turned it off). */
+  hidden: boolean;
+  /** Where a mentor dragged the start button, from its usual place right of the label, in scene units. */
+  dx: number;
+  dy: number;
+};
+
+/**
+ * customData.questLabel on a quest's label: the mentor's settings for it. Any
+ * text with this is a quest (the "Quest" wording only finds them on its own),
+ * unless `off` says a "Quest" text is not one.
+ */
+export type QuestLabelData = {
+  off?: boolean;
+  hidden?: boolean;
+  dx?: number;
+  dy?: number;
+  /** The last task text seen under the label, to put back if it is deleted. */
+  backup?: string;
+  /** The text element that is the task. Once known, a deleted task falls back to `backup` rather than the next text down. */
+  taskId?: string;
+};
+
+type El = {
+  id: string;
+  type: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  isDeleted?: boolean;
+  text?: string;
+  strokeColor?: string;
+  containerId?: string | null;
+  boundElements?: readonly { id: string; type: string }[] | null;
+  customData?: Record<string, unknown> | null;
+};
+
+/** The label text: "Quest", in any case, with an optional star or number sign. */
+const LABEL = /^\s*quest\s*[#:⭐★]?\s*$/i;
+/** How far below its label a quest's task may be written, in scene units. */
+const TITLE_BELOW = 400;
+/** Quests whose labels are within this many units vertically are one row, read left to right. */
+const ROW = 200;
+const MAX_TITLE = 140;
+
+const oneLine = (s: string) => s.replace(/\s+/g, " ").trim();
+
+/** A label's settings, or null when it has none (or malformed ones). */
+export function questLabelOf(el: { customData?: Record<string, unknown> | null }): QuestLabelData | null {
+  const data = el.customData?.questLabel;
+  return data && typeof data === "object" ? (data as QuestLabelData) : null;
+}
+
+const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
+
+const isLabel = (el: El) => {
+  if (el.type !== "text" || el.isDeleted) return false;
+  const data = questLabelOf(el);
+  if (data?.off) return false;
+  return Boolean(data) || LABEL.test(el.text ?? "");
+};
+
+/** The quests drawn on a board, in reading order. */
+export function findQuests(elements: readonly El[]): Quest[] {
+  const labels = elements.filter(isLabel);
+  if (labels.length === 0) return [];
+  const texts = elements.filter((el) => el.type === "text" && !el.isDeleted && !isLabel(el) && oneLine(el.text ?? ""));
+
+  return labels
+    .map((label) => {
+      const data = questLabelOf(label);
+      let title = "";
+      let titleId: string | null = null;
+      if (typeof data?.taskId === "string") {
+        // A known task: that text while it is on the board, else the saved copy (below).
+        const task = texts.find((t) => t.id === data.taskId);
+        if (task) {
+          title = oneLine(task.text ?? "");
+          titleId = task.id;
+        }
+      } else {
+        // The task: the nearest text below the label that starts near it, and is not someone's quest work.
+        let best = Infinity;
+        for (const t of texts) {
+          if (questTagOf(t)) continue;
+          const below = t.y - (label.y + label.height / 2);
+          if (below <= 0 || below > TITLE_BELOW) continue;
+          if (t.x > label.x + Math.max(600, label.width * 3) || t.x + t.width < label.x - 200) continue;
+          if (below < best) {
+            best = below;
+            title = oneLine(t.text ?? "");
+            titleId = t.id;
+          }
+        }
+      }
+      if (!title && typeof data?.backup === "string") title = oneLine(data.backup);
+      if (title.length > MAX_TITLE) title = `${title.slice(0, MAX_TITLE - 1)}…`;
+      return {
+        id: label.id,
+        number: 0,
+        title,
+        x: label.x,
+        y: label.y,
+        width: label.width,
+        height: label.height,
+        color: label.strokeColor,
+        titleId,
+        hidden: Boolean(data?.hidden),
+        dx: num(data?.dx),
+        dy: num(data?.dy),
+      };
+    })
+    .sort((a, b) => Math.round(a.y / ROW) - Math.round(b.y / ROW) || a.x - b.x)
+    .map((q, i) => ({ ...q, number: i + 1 }));
+}
+
+/** "Quest 2: หา reference ...", or "Quest 2" when it has no task text. */
+export const questName = (q: Pick<Quest, "number" | "title">) => (q.title ? `Quest ${q.number}: ${q.title}` : `Quest ${q.number}`);
+
+/** An element's quest tag, or null when it has none (or a malformed one). */
+export function questTagOf(el: { customData?: Record<string, unknown> | null }): QuestTag | null {
+  const tag = el.customData?.quest as Partial<QuestTag> | undefined;
+  if (!tag || typeof tag !== "object") return null;
+  const { id, session, by, at } = tag;
+  if (typeof id !== "string" || typeof session !== "string" || typeof by !== "string" || typeof at !== "string") return null;
+  return { id, session, by, at };
+}
+
+/** A new tag for something made in a quest session. */
+export const newQuestTag = (questId: string, session: string, by: string, at = new Date()): QuestTag => ({
+  id: questId,
+  session,
+  by,
+  at: at.toISOString(),
+});
+
+/**
+ * Whether this person may change an element's quest tag: their own tagged
+ * work, or anything untagged they made (or that has no maker on record);
+ * moderators may change any.
+ */
+export function mayRetag(el: { customData?: Record<string, unknown> | null }, meId: string, manager: boolean): boolean {
+  if (manager) return true;
+  const tag = questTagOf(el);
+  if (tag) return tag.by === meId;
+  const createdBy = el.customData?.createdBy;
+  return createdBy === undefined || createdBy === meId;
+}
+
+/**
+ * The elements a right-click retag applies to: the selected ones plus the text
+ * inside a selected shape (or the shape around a selected text), so a note and
+ * its words always move together.
+ */
+export function withBoundText<T extends El>(elements: readonly T[], selectedIds: ReadonlySet<string>): T[] {
+  const byId = new Map(elements.map((el) => [el.id, el]));
+  const ids = new Set<string>();
+  for (const id of selectedIds) {
+    const el = byId.get(id);
+    if (!el || el.isDeleted) continue;
+    ids.add(id);
+    if (el.containerId) ids.add(el.containerId);
+    for (const b of el.boundElements ?? []) if (b.type === "text") ids.add(b.id);
+  }
+  return [...ids].map((id) => byId.get(id)).filter((el): el is T => Boolean(el && !el.isDeleted));
+}
+
+export type PersonWork = {
+  userId: string;
+  /** Words they wrote for the quest (a note's words once, with the note). */
+  texts: string[];
+  /** Everything else they made: strokes, shapes, images. */
+  drawings: number;
+  sessions: number;
+  /** Every element of theirs tagged with the quest, words included, to show it on the board. */
+  ids: string[];
+};
+export type QuestWork = { quest: Quest | null; questId: string; people: PersonWork[] };
+
+/**
+ * Who made what for each quest. Text (including the words inside notes) is
+ * listed; everything else is counted as drawings. A tag whose quest label was
+ * deleted is still reported, with quest null.
+ */
+export function questWork(elements: readonly El[]): QuestWork[] {
+  const quests = findQuests(elements);
+  const byId = new Map(elements.map((el) => [el.id, el]));
+  const work = new Map<string, Map<string, { texts: string[]; drawings: number; sessions: Set<string>; ids: string[] }>>();
+
+  for (const el of elements) {
+    if (el.isDeleted) continue;
+    const tag = questTagOf(el);
+    if (!tag) continue;
+    const people = work.get(tag.id) ?? new Map();
+    work.set(tag.id, people);
+    const mine = people.get(tag.by) ?? { texts: [], drawings: 0, sessions: new Set<string>(), ids: [] };
+    people.set(tag.by, mine);
+    mine.ids.push(el.id);
+    // Words inside a note are listed with the note, not twice.
+    if (el.type === "text" && el.containerId && byId.get(el.containerId) && questTagOf(byId.get(el.containerId)!)) {
+      continue;
+    }
+    mine.sessions.add(tag.session);
+
+    // A note's words are in its bound text; a text element's are its own.
+    const inner = (el.boundElements ?? []).find((b) => b.type === "text");
+    const words = oneLine((inner ? byId.get(inner.id)?.text : el.type === "text" ? el.text : "") ?? "");
+    if (words) mine.texts.push(words);
+    else mine.drawings++;
+  }
+
+  const order = (id: string) => quests.find((q) => q.id === id)?.number ?? Infinity;
+  return [...work.entries()]
+    .sort(([a], [b]) => order(a) - order(b))
+    .map(([questId, people]) => ({
+      questId,
+      quest: quests.find((q) => q.id === questId) ?? null,
+      people: [...people.entries()].map(([userId, p]) => ({ userId, texts: p.texts, drawings: p.drawings, sessions: p.sessions.size, ids: p.ids })),
+    }));
+}
+
+/** Markdown section for `pnpm whiteboard:read`: each quest, then what each person made for it. Empty if nobody has. */
+export function questsToMarkdown(elements: readonly El[], nameOf: (id: string) => string): string {
+  const work = questWork(elements);
+  if (work.length === 0) return "";
+  const out = ["", "## Quest work"];
+  for (const w of work) {
+    out.push("", `### ${w.quest ? questName(w.quest) : "A quest that was deleted"}`);
+    for (const p of w.people) {
+      const parts = [
+        ...p.texts.map((t) => `"${t.length > 160 ? `${t.slice(0, 159)}…` : t}"`),
+        ...(p.drawings ? [`${p.drawings} drawing${p.drawings === 1 ? "" : "s"}`] : []),
+      ];
+      out.push(`- ${nameOf(p.userId)}: ${parts.join("; ")}`);
+    }
+  }
+  return out.join("\n") + "\n";
+}

@@ -134,6 +134,23 @@ export async function POST(request: NextRequest) {
     conversation = data ?? null;
   }
 
+  // Radar-origin threads (students who asked for a Career Radar link) are
+  // fenced off from the sales tooling (spec 5.6): no scripts, quick replies,
+  // Qwen personalization or drafts. A failed check (for example before the
+  // origin column exists) leaves the thread treated as a sales thread, which
+  // is what it was before.
+  let isRadarThread = false;
+  if (conversation) {
+    const { data: originRow, error: originError } = await supabase
+      .from("dm_conversations")
+      .select("origin")
+      .eq("id", conversation.id)
+      .maybeSingle();
+    if (!originError) {
+      isRadarThread = (originRow as unknown as { origin?: string | null } | null)?.origin === "radar";
+    }
+  }
+
   const signals = deriveSignalsFromMessages(
     messages.map((m) => ({ direction: m.direction, body: m.body, sent_at: m.sent_at }))
   );
@@ -148,12 +165,14 @@ export async function POST(request: NextRequest) {
 
   // The script selector is rung-aware; ladder-1-qualify is the default fallback
   // for unknown leads who have not told us their grade or field yet.
-  let scripts: DmLeadScript[] = selectScripts(bucket, coverage);
-  if (scripts.length === 0) {
+  let scripts: DmLeadScript[] = isRadarThread ? [] : selectScripts(bucket, coverage);
+  if (scripts.length === 0 && !isRadarThread) {
     scripts = selectScripts("waiting_unqualified", "unknown");
   }
 
-  const quickReplies: QuickReply[] = conversation
+  const quickReplies: QuickReply[] = isRadarThread
+    ? []
+    : conversation
     ? getQuickReplies(contextFromConversation(conversation))
     : getQuickReplies({
         stage: "unknown",
@@ -211,7 +230,8 @@ export async function POST(request: NextRequest) {
   // Opt-in, because the model call is the slowest part of this route by an
   // order of magnitude. The tray asks for chips first and drafts in a second
   // request, so nothing waits on the LLM to render.
-  const aiDrafts = body.includeDrafts === true ? await draftFromThread({
+  const aiDrafts = body.includeDrafts === true && !isRadarThread ? await draftFromThread({
+    origin: isRadarThread ? "radar" : null,
     messages,
     bucketLabel: BUCKET_META[bucket].label,
     coverageOffer: COVERAGE_OFFER[coverage],
@@ -237,6 +257,7 @@ export async function POST(request: NextRequest) {
     ok: true,
     conversationId: conversation?.id ?? null,
     username: conversation?.username ?? username,
+    origin: isRadarThread ? "radar" : null,
     bucket,
     bucketLabel: BUCKET_META[bucket].label,
     coverage,

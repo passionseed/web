@@ -8,7 +8,7 @@ import { useState } from "react";
 
 import { accessOf, canEditCanvas, cleanEditors, type CanvasAccess } from "@/lib/whiteboard/canvas-access";
 
-import { useViewportTick } from "../CommentsLayer";
+import { useViewportTick } from "../useViewportTick";
 import { WHEEL_THROUGH } from "../wheelBridge";
 import { isBusy, useSceneMemo } from "./sceneMemo";
 import { type Person, TeamPanel } from "./TeamPanel";
@@ -77,7 +77,7 @@ export function CanvasTeamLayer({ api, meId, manager, people, nameOf, onInvite }
             onClick={() => setOpenId(openId === frame.id ? null : frame.id)}
             aria-haspopup="dialog"
             aria-expanded={openId === frame.id}
-            className="wb-version-chip pointer-events-auto absolute flex -translate-x-full -translate-y-[calc(100%+6px)] items-center gap-1.5 rounded-full px-3 text-xs font-semibold"
+            className="wb-version-chip pointer-events-auto absolute flex -translate-x-full -translate-y-[calc(100%+6px)] items-center gap-1.5 rounded-md px-3 text-xs font-semibold"
             style={{ left: pos.x, top: pos.y }}
           >
             {mine ? (

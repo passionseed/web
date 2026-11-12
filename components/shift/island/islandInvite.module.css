@@ -1,0 +1,1617 @@
+/*
+ * SHIFT High Island invite (/shift/island). Dusk at sea: the island sample
+ * sits under a violet-to-ember sky, text is warm foam on deep water.
+ * Every scene reads its colours from the tokens on .root.
+ */
+
+.root {
+  /* Sky and sea */
+  --isl-night: #0a0b1f;
+  --isl-deep: #101a3a;
+  --isl-sea: #1d3a66;
+  --isl-sea-light: #3f6f9e;
+  --isl-violet: #3b2458;
+  --isl-dusk: #7a3f6e;
+  /* Sun, lanterns, wax */
+  --isl-ember: #ff8a4c;
+  --isl-gold: #ffc96b;
+  --isl-wax: #b8322f;
+  --isl-wax-dark: #7a1d22;
+  --isl-wax-light: #e0614f;
+  --isl-wax-shade: #962628;
+  --isl-wax-imprint: #5a1418;
+  --isl-wax-lip: #d65446;
+  /* Paper and sand */
+  --isl-sand: #e8c98f;
+  --isl-paper: #f3e6c8;
+  --isl-ink: #2a1d2e;
+  /* Text on the dark scenes */
+  --isl-text: #f6efe2;
+  --isl-text-dim: #c9bfd6;
+  --isl-line: rgba(255, 201, 107, 0.32);
+  --isl-glass: rgba(10, 11, 31, 0.55);
+  /* Motion */
+  --isl-ease-tension: cubic-bezier(0.05, 0.7, 0.35, 0.99);
+  --isl-ease-snap: cubic-bezier(0.4, 0, 0.2, 1);
+  --isl-gutter: 16px;
+
+  position: relative;
+  min-height: 100vh;
+  min-height: 100svh;
+  overflow-x: clip;
+  background: linear-gradient(180deg, var(--isl-violet) 0%, var(--isl-deep) 45%, var(--isl-night) 100%);
+  color: var(--isl-text);
+  font-family: var(--font-bai-jamjuree), var(--font-noto-sans-thai), sans-serif;
+}
+
+@media (min-width: 768px) {
+  .root {
+    --isl-gutter: 40px;
+  }
+}
+
+/* Focus lands on the root only when a new scene has nothing better to take it. */
+.root:focus {
+  outline: none;
+}
+
+/* ---------- Buttons shared by every scene ---------- */
+
+.next,
+.skip {
+  min-height: 48px;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 160ms var(--isl-ease-snap),
+    box-shadow 160ms var(--isl-ease-snap),
+    background-color 160ms var(--isl-ease-snap);
+}
+
+.next {
+  min-width: 120px;
+  padding: 0 28px;
+  border: 0;
+  background: linear-gradient(135deg, var(--isl-gold) 0%, #ffad5c 55%, var(--isl-ember) 100%);
+  color: var(--isl-ink);
+  font-size: 18px;
+  box-shadow:
+    0 0 0 1px rgba(255, 201, 107, 0.35),
+    0 8px 24px -10px rgba(255, 138, 76, 0.7);
+}
+
+.skip {
+  padding: 0 20px;
+  border: 1px solid rgba(246, 239, 226, 0.28);
+  background: var(--isl-glass);
+  color: var(--isl-text);
+  font-size: 15px;
+  backdrop-filter: blur(8px);
+}
+
+.next:focus-visible,
+.skip:focus-visible {
+  outline: 3px solid var(--isl-gold);
+  outline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .next:hover {
+    animation: isl-charge 420ms var(--isl-ease-tension) forwards;
+  }
+
+  .skip:hover {
+    background-color: rgba(10, 11, 31, 0.8);
+  }
+}
+
+/* Touch: no hover, so "ต่อ" rests in its charged state. */
+@media (hover: none) {
+  .next {
+    animation: isl-charge 420ms var(--isl-ease-tension) forwards;
+  }
+
+  /* Let the press transform through; a filled animation would hold it. */
+  .next:active {
+    animation: none;
+  }
+}
+
+.next:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+@keyframes isl-charge {
+  0% {
+    transform: translateY(0);
+    box-shadow:
+      0 0 0 1px rgba(255, 201, 107, 0.35),
+      0 8px 24px -10px rgba(255, 138, 76, 0.7);
+  }
+  100% {
+    transform: translateY(-2px);
+    box-shadow:
+      0 0 0 1px rgba(255, 201, 107, 0.6),
+      0 14px 34px -10px rgba(255, 138, 76, 0.95);
+  }
+}
+
+/* ---------- Scene 0: prologue ---------- */
+
+.prologue {
+  /* vh first: a custom property cannot fall back, so svh is set under @supports. */
+  --step: 50vh;
+  position: relative;
+  /* One screen, then one step of scrolling for every line after the first. */
+  height: calc(100vh + var(--steps, 0) * var(--step));
+  height: calc(100svh + var(--steps, 0) * var(--step));
+}
+
+@supports (height: 1svh) {
+  .prologue {
+    --step: 50svh;
+  }
+}
+
+.prologueStage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.pan {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  container-type: inline-size;
+  background: var(--isl-sea);
+}
+
+.panImage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: auto;
+  min-width: 120%;
+  max-width: none;
+  object-fit: cover;
+  image-rendering: pixelated;
+  filter: saturate(0.9) brightness(0.85);
+  animation: isl-pan 30s ease-in-out infinite alternate;
+}
+
+/* Left edge to right edge of the picture, then back. */
+@keyframes isl-pan {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-100% + 100cqw));
+  }
+}
+
+/* Dusk over the midday sample, then deep water behind the words. */
+.prologueTint {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(10, 11, 31, 0.55) 0%,
+      rgba(10, 11, 31, 0) 16%,
+      rgba(10, 11, 31, 0) 30%,
+      rgba(16, 26, 58, 0.82) 52%,
+      rgba(10, 11, 31, 0.96) 100%
+    ),
+    linear-gradient(180deg, rgba(59, 36, 88, 0.55) 0%, rgba(122, 63, 110, 0.35) 40%, rgba(255, 138, 76, 0.18) 100%);
+}
+
+/* Wide screens: the words sit on the left, so the water darkens from there. */
+@media (min-width: 768px) {
+  .prologueTint {
+    background:
+      linear-gradient(90deg, rgba(10, 11, 31, 0.88) 0%, rgba(10, 11, 31, 0.6) 38%, rgba(10, 11, 31, 0) 62%),
+      linear-gradient(180deg, rgba(10, 11, 31, 0.55) 0%, rgba(10, 11, 31, 0) 16%, rgba(10, 11, 31, 0) 60%, rgba(10, 11, 31, 0.7) 100%),
+      linear-gradient(180deg, rgba(59, 36, 88, 0.55) 0%, rgba(122, 63, 110, 0.35) 40%, rgba(255, 138, 76, 0.18) 100%);
+  }
+}
+
+.sampleTag {
+  position: absolute;
+  top: 22px;
+  left: var(--isl-gutter);
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--isl-glass);
+  color: var(--isl-text-dim);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.skip {
+  position: absolute;
+  top: 10px;
+  right: var(--isl-gutter);
+}
+
+.prologueBody {
+  position: absolute;
+  inset: auto 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 0 var(--isl-gutter) max(24px, env(safe-area-inset-bottom));
+}
+
+@media (min-width: 768px) {
+  .prologueBody {
+    max-width: 40rem;
+    padding-bottom: 48px;
+  }
+}
+
+.prologueLines {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.prologueLine {
+  font-family: var(--font-kodchasan), var(--font-bai-jamjuree), sans-serif;
+  font-size: clamp(17px, 2vw + 10px, 22px);
+  font-weight: 600;
+  line-height: 1.6;
+  text-wrap: pretty;
+  text-shadow: 0 2px 12px rgba(10, 11, 31, 0.8);
+  transition:
+    opacity 900ms var(--isl-ease-tension),
+    transform 900ms var(--isl-ease-tension),
+    filter 900ms var(--isl-ease-tension),
+    color 600ms ease;
+}
+
+.prologueLine[data-state="current"] {
+  color: var(--isl-text);
+}
+
+.prologueLine[data-state="past"] {
+  color: var(--isl-text-dim);
+  opacity: 0.78;
+}
+
+.prologueLine[data-state="hidden"] {
+  opacity: 0;
+  transform: translateY(10px);
+  filter: blur(6px);
+}
+
+.prologueControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.progress {
+  display: flex;
+  gap: 8px;
+}
+
+/* Square dots, in keeping with the pixel island. */
+.progressDot {
+  width: 8px;
+  height: 8px;
+  background: rgba(246, 239, 226, 0.25);
+  transition: background-color 600ms ease;
+}
+
+.progressDot[data-on] {
+  background: var(--isl-gold);
+}
+
+.marker {
+  position: absolute;
+  left: 0;
+  width: 1px;
+  /* Reaches the middle of the screen one step after the line before it. */
+  top: calc((var(--i) + 1) * var(--step) + 40vh);
+  top: calc((var(--i) + 1) * var(--step) + 40svh);
+  bottom: 0;
+  pointer-events: none;
+}
+
+/* Reduced motion (set from JS once hydrated): one screen, every line shown. */
+.prologue[data-still] {
+  height: auto;
+}
+
+.prologue[data-still] .prologueStage {
+  position: relative;
+  height: auto;
+  min-height: 100vh;
+  min-height: 100svh;
+}
+
+.prologue[data-still] .prologueBody {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100svh;
+  justify-content: flex-end;
+  padding-top: 72px;
+}
+
+.prologue[data-still] .prologueLine[data-state="past"] {
+  color: var(--isl-text);
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panImage {
+    animation: none;
+    /* The middle of the island, since it no longer pans. */
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .prologueLine,
+  .prologueLine[data-state="hidden"],
+  .prologueLine[data-state="past"] {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    color: var(--isl-text);
+    transition: none;
+  }
+
+  .progressDot {
+    background: var(--isl-gold);
+    transition: none;
+  }
+
+  .next,
+  .skip {
+    transition: none;
+  }
+
+  .next,
+  .next:hover {
+    animation: none;
+  }
+}
+
+/* ---------- Scene 1: the shore ---------- */
+
+.shore {
+  position: relative;
+  height: 100vh;
+  height: 100svh;
+  min-height: 520px;
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--isl-night);
+}
+
+/* The sea is drawn in whole device pixels by BottleShore; CSS only places it. */
+.sea {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Sand at dusk: a wet edge, then dry sand with a pixel checker for grain. */
+.sand {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: -1;
+  height: var(--sand, 26%);
+  background:
+    repeating-conic-gradient(rgba(42, 29, 46, 0.09) 0 25%, transparent 0 50%) 0 0 / 8px 8px,
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--isl-sand) 45%, var(--isl-dusk)) 0 12px,
+      color-mix(in srgb, var(--isl-sand) 68%, var(--isl-dusk)) 12px 40%,
+      color-mix(in srgb, var(--isl-sand) 50%, var(--isl-violet)) 100%
+    );
+}
+
+/* The bottle: one button, landing on the sand below the middle of the screen. */
+.bottle {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--sand, 26%) * 0.36);
+  display: flex;
+  min-width: 48px;
+  min-height: 48px;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 4px;
+  translate: -50% 0;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  color: var(--isl-text);
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  animation: isl-drift 3400ms var(--isl-ease-tension) both;
+}
+
+.bottle:focus-visible {
+  outline: 3px solid var(--isl-gold);
+  outline-offset: 6px;
+}
+
+.bottleArt {
+  display: block;
+  width: clamp(112px, 34vw, 168px);
+  height: auto;
+  /* The cork flies out past the bottle's own box. */
+  overflow: visible;
+  image-rendering: pixelated;
+  transform: rotate(-7deg);
+  transition: transform 160ms var(--isl-ease-snap);
+  filter: drop-shadow(0 6px 0 rgba(42, 29, 46, 0.35));
+}
+
+/* Three bobs on the way in, then still on the sand. Kept off .bottleArt so a
+   hover there never restarts it. */
+.bottleFloat {
+  display: block;
+  animation: isl-bob 1100ms ease-in-out 3;
+}
+
+/* Warm light pooling under the bottle once it lands. */
+.bottleGlow {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  z-index: -1;
+  width: 150%;
+  height: 70%;
+  translate: -50% 0;
+  background: radial-gradient(closest-side, rgba(255, 201, 107, 0.5), rgba(255, 138, 76, 0.18) 60%, transparent);
+  pointer-events: none;
+  clip-path: inset(50% 0 50% 0);
+  opacity: 0;
+  filter: blur(18px);
+  animation:
+    isl-glow-rise 1600ms var(--isl-ease-tension) 3000ms forwards,
+    isl-glow-wave 4231ms ease-in-out 4600ms infinite;
+}
+
+.bottleHint {
+  font-family: var(--font-kodchasan), var(--font-bai-jamjuree), sans-serif;
+  font-size: clamp(16px, 1vw + 12px, 19px);
+  font-weight: 600;
+  white-space: nowrap;
+  text-shadow: 0 2px 10px rgba(10, 11, 31, 0.85);
+  opacity: 0;
+  filter: blur(6px);
+  animation: isl-hint-in 900ms var(--isl-ease-tension) 3200ms forwards;
+}
+
+.cork {
+  transform-box: fill-box;
+  transform-origin: left center;
+}
+
+@media (hover: hover) {
+  .bottle:hover .bottleArt {
+    animation: isl-lift 420ms var(--isl-ease-tension) forwards;
+  }
+}
+
+.bottle:active .bottleArt {
+  transform: rotate(-7deg) translateY(1px) scale(0.97);
+}
+
+/* Opening: the bottle shivers, the cork flies, the hint goes. */
+.bottle[data-state="opening"] {
+  cursor: default;
+}
+
+.bottle[data-state="opening"] .bottleArt {
+  animation: isl-shiver 260ms ease-in-out 2;
+}
+
+.bottle[data-state="opening"] .cork {
+  animation: isl-pop 560ms var(--isl-ease-snap) forwards;
+}
+
+.bottle[data-state="opening"] .bottleHint {
+  animation: none;
+  opacity: 0;
+  transition: opacity 160ms var(--isl-ease-snap);
+}
+
+/* From out at sea (small, up by the horizon, off to the right) to the sand. */
+@keyframes isl-drift {
+  0% {
+    transform: translate(46vw, -34svh) scale(0.35);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  70% {
+    transform: translate(8vw, -6svh) scale(0.85);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes isl-bob {
+  0%,
+  100% {
+    transform: rotate(0) translateY(0);
+  }
+  50% {
+    transform: rotate(-5deg) translateY(-6px);
+  }
+}
+
+@keyframes isl-lift {
+  0% {
+    transform: rotate(-7deg) translateY(0);
+  }
+  100% {
+    transform: rotate(-9deg) translateY(-6px);
+  }
+}
+
+@keyframes isl-shiver {
+  0%,
+  100% {
+    transform: rotate(-7deg);
+  }
+  25% {
+    transform: rotate(-4deg);
+  }
+  75% {
+    transform: rotate(-10deg);
+  }
+}
+
+/* Lengths here are in the bottle's own pixels (SVG user units). */
+@keyframes isl-pop {
+  0% {
+    transform: translate(0, 0) rotate(0);
+    opacity: 1;
+  }
+  30% {
+    transform: translate(1px, 0) rotate(8deg);
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(6px, -7px) rotate(220deg);
+    opacity: 0;
+  }
+}
+
+@keyframes isl-glow-rise {
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    filter: blur(10px);
+  }
+}
+
+@keyframes isl-glow-wave {
+  0%,
+  100% {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    filter: blur(10px);
+  }
+  50% {
+    clip-path: inset(6% 4% 6% 4%);
+    opacity: 0.6;
+    filter: blur(14px);
+  }
+}
+
+@keyframes isl-hint-in {
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+/* Reduced motion: the bottle already lies on the sand, lit and labelled. */
+@media (prefers-reduced-motion: reduce) {
+  .bottle,
+  .bottleFloat,
+  .bottle:hover .bottleArt,
+  .bottle[data-state="opening"] .bottleArt,
+  .bottle[data-state="opening"] .cork {
+    animation: none;
+    transition: none;
+  }
+
+  .bottleGlow {
+    animation: none;
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    filter: blur(10px);
+  }
+
+  .bottleHint {
+    animation: none;
+    opacity: 1;
+    filter: none;
+  }
+}
+
+
+/* ---------- Scene 2: the letter ---------- */
+
+.letter {
+  display: flex;
+  min-height: 100vh;
+  min-height: 100svh;
+  justify-content: center;
+  /* Room above the paper for the fold button. */
+  padding: 80px var(--isl-gutter) 72px;
+}
+
+@media (min-width: 768px) {
+  .letter {
+    padding-top: 88px;
+    padding-bottom: 96px;
+  }
+}
+
+/* ---------- Behind the letter: the beach, and a ship offshore ---------- */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--isl-night);
+  pointer-events: none;
+}
+
+/* At anchor where the sky meets the water (the sea's horizon is 40% down),
+   left of the setting sun. The hull's waterline sits just under the line. */
+.ship {
+  position: absolute;
+  top: 40%;
+  left: 12%;
+  z-index: -1;
+  width: 120px;
+  translate: 0 -84%;
+  animation: isl-ship-ride 5200ms ease-in-out infinite;
+}
+
+@media (min-width: 768px) {
+  .ship {
+    left: 18%;
+    width: 160px;
+  }
+}
+
+.shipArt {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.shipHull {
+  fill: #2a1a2e;
+}
+
+.shipRail {
+  fill: #5c343c;
+}
+
+.shipRig {
+  fill: #22162a;
+}
+
+.shipSail {
+  fill: #c9aa96;
+}
+
+.shipSailLit {
+  fill: #ffd6a0;
+}
+
+.shipMast {
+  fill: #78596a;
+}
+
+.shipFlag {
+  fill: var(--isl-wax);
+}
+
+.shipLight {
+  fill: var(--isl-gold);
+}
+
+.shipPort {
+  fill: #1a101e;
+}
+
+.shipGlint {
+  fill: rgba(246, 239, 226, 0.35);
+}
+
+/* Riding the swell: a pixel up and down, a degree of roll. */
+@keyframes isl-ship-ride {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  50% {
+    transform: translateY(2px) rotate(-1deg);
+  }
+}
+
+/* Dusk falls further while the letter is open, so the paper reads first. */
+.backdropShade {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 11, 31, 0.5);
+  transition: opacity 700ms var(--isl-ease-tension);
+}
+
+.backdrop[data-revealed] .backdropShade {
+  opacity: 0;
+}
+
+/* Fold the letter away: top right, clear of the paper. */
+.skip.mapFold {
+  position: fixed;
+  top: 14px;
+  right: var(--isl-gutter);
+  z-index: 3;
+}
+
+/* Open it again: the one thing on screen besides the island. */
+.next.mapOpen {
+  position: fixed;
+  bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  z-index: 3;
+  translate: -50% 0;
+}
+
+/* Rolling up: the paper clips away bottom to top, the rods follow it out. */
+.scroll[data-state="folding"] .paper {
+  animation: isl-roll-up 460ms var(--isl-ease-snap) forwards;
+}
+
+.scroll[data-state="folding"] .rod {
+  animation: isl-rod-out 460ms var(--isl-ease-snap) forwards;
+}
+
+@keyframes isl-roll-up {
+  to {
+    clip-path: inset(0 0 100% 0);
+    opacity: 0.4;
+    filter: blur(4px) brightness(1.2);
+  }
+}
+
+@keyframes isl-rod-out {
+  to {
+    opacity: 0;
+    transform: translateY(-10px) scaleX(0.7);
+  }
+}
+
+.scroll {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  /* Wide enough on desktop for the tree row to draw its sprites at 2x. */
+  max-width: 40rem;
+}
+
+/* The wooden rods the paper is rolled on: stepped bands, square knobs. */
+.rod {
+  position: relative;
+  z-index: 1;
+  height: 14px;
+  margin: 0 -8px;
+  background: linear-gradient(180deg, #a8714a 0 3px, #7d4c30 3px 10px, #50301f 10px 14px);
+  box-shadow: 0 4px 0 rgba(10, 11, 31, 0.35);
+  animation: isl-rod-in 520ms var(--isl-ease-tension) backwards;
+}
+
+.rod::before,
+.rod::after {
+  content: "";
+  position: absolute;
+  top: -4px;
+  width: 8px;
+  height: 22px;
+  background: linear-gradient(180deg, var(--isl-gold) 0 4px, #c98a3a 4px 18px, #8a5a2a 18px 22px);
+}
+
+.rod::before {
+  left: -6px;
+}
+
+.rod::after {
+  right: -6px;
+}
+
+/* The lower rod arrives with the end of the paper. */
+.rodEnd {
+  animation: isl-rod-end 700ms var(--isl-ease-tension) 1250ms backwards;
+}
+
+.paper {
+  position: relative;
+  padding: 32px 20px 40px;
+  color: var(--isl-ink);
+  background:
+    repeating-conic-gradient(rgba(42, 29, 46, 0.035) 0 25%, transparent 0 50%) 0 0 / 6px 6px,
+    linear-gradient(180deg, #f8eed6 0%, var(--isl-paper) 45%, #e9d6ad 100%);
+  box-shadow:
+    0 28px 60px -28px rgba(0, 0, 0, 0.8),
+    inset 0 12px 16px -12px rgba(42, 29, 46, 0.4),
+    inset 0 -12px 16px -12px rgba(42, 29, 46, 0.4),
+    inset 1px 0 0 rgba(42, 29, 46, 0.12),
+    inset -1px 0 0 rgba(42, 29, 46, 0.12),
+    /* Aged at the edges, like a chart that has been at sea. */
+    inset 0 0 56px rgba(122, 74, 32, 0.3);
+  /* Fill backwards only: once unrolled, nothing is left clipped or filtered. */
+  animation: isl-unroll 1500ms cubic-bezier(0.45, 0, 0.2, 1) 180ms backwards;
+}
+
+@media (min-width: 768px) {
+  .paper {
+    padding: 52px 60px 60px;
+  }
+}
+
+/* Top to bottom, the paper uncurls: clip, light and focus arrive together. */
+@keyframes isl-unroll {
+  from {
+    clip-path: inset(0 0 100% 0);
+    opacity: 0.4;
+    filter: blur(4px) brightness(1.25);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    filter: blur(0) brightness(1);
+  }
+}
+
+@keyframes isl-rod-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scaleX(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes isl-rod-end {
+  from {
+    opacity: 0;
+    transform: translateY(-28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Chapters (and the seal) rise into view once, as they are scrolled to. */
+.reveal {
+  transition:
+    opacity 900ms var(--isl-ease-tension),
+    transform 900ms var(--isl-ease-tension),
+    filter 900ms var(--isl-ease-tension);
+}
+
+.reveal:not([data-shown]) {
+  opacity: 0;
+  transform: translateY(14px);
+  filter: blur(5px);
+}
+
+/* A dashed pixel rule between chapters. */
+.chapter + .chapter,
+.chapter + .reveal {
+  padding-top: 28px;
+  background: repeating-linear-gradient(90deg, rgba(42, 29, 46, 0.3) 0 6px, transparent 6px 12px) top / 100% 2px no-repeat;
+}
+
+.chapter {
+  padding-bottom: 28px;
+}
+
+.letterTitle {
+  margin: 0 0 14px;
+  font-family: var(--font-kodchasan), var(--font-bai-jamjuree), sans-serif;
+  font-size: clamp(26px, 2.5vw + 18px, 36px);
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.letterTitle:focus {
+  outline: none;
+}
+
+.chapterTitle {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 10px;
+  font-family: var(--font-kodchasan), var(--font-bai-jamjuree), sans-serif;
+  font-size: clamp(20px, 1.2vw + 16px, 26px);
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+/* A square of wax before each chapter title. */
+.chapterTitle::before {
+  content: "";
+  flex: none;
+  width: 8px;
+  height: 8px;
+  translate: 0 -3px;
+  background: var(--isl-wax);
+  box-shadow: 2px 2px 0 var(--isl-wax-dark);
+}
+
+/* The island sketched in ink on the letter. Each stroke draws itself on. */
+.sketch {
+  display: block;
+  width: 100%;
+  max-width: 30rem;
+  height: auto;
+  margin: 20px auto 0;
+  overflow: visible;
+}
+
+.inkLine,
+.inkBeach,
+.inkTrail,
+.inkMark {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.inkLine {
+  stroke: rgba(42, 29, 46, 0.78);
+  stroke-width: 1.6;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+[data-shown] .inkLine {
+  animation: isl-ink 1300ms cubic-bezier(0.4, 0, 0.3, 1) calc(400ms + var(--d, 0ms)) forwards;
+}
+
+.inkBeach {
+  stroke: rgba(42, 29, 46, 0.4);
+  stroke-width: 1.2;
+  stroke-dasharray: 2 4;
+}
+
+.inkTrail {
+  stroke: rgba(42, 29, 46, 0.7);
+  stroke-width: 2.2;
+  stroke-dasharray: 0.1 6;
+}
+
+.inkMark {
+  stroke: var(--isl-wax);
+  stroke-width: 2.2;
+}
+
+.inkLetter {
+  fill: rgba(42, 29, 46, 0.78);
+  font-size: 11px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+/* What is not a drawn stroke comes in after the drawing, last the mark. */
+.inkBeach,
+.inkTrail,
+.inkMark,
+.inkLetter {
+  opacity: 0;
+}
+
+[data-shown] .inkBeach,
+[data-shown] .inkLetter {
+  animation: isl-ink-in 600ms ease-out 1600ms forwards;
+}
+
+[data-shown] .inkTrail {
+  animation: isl-ink-in 900ms ease-out 2400ms forwards;
+}
+
+[data-shown] .inkMark {
+  animation: isl-ink-in 400ms ease-out 3100ms forwards;
+}
+
+@keyframes isl-ink {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes isl-ink-in {
+  to {
+    opacity: 1;
+  }
+}
+
+.chapterBody {
+  max-width: 34rem;
+  margin: 0;
+  color: rgba(42, 29, 46, 0.9);
+  font-size: 17px;
+  line-height: 1.75;
+  text-wrap: pretty;
+}
+
+.festival {
+  margin: 16px 0 0;
+  padding: 10px 14px;
+  /* A stamped date slip on the paper, not a side accent bar. */
+  border: 1px dashed rgba(184, 50, 47, 0.5);
+  border-radius: 4px;
+  background: rgba(184, 50, 47, 0.06);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+/* IslandTree's row of sprites, set on paper. Its home-page rules are not
+   loaded here, so the row is laid out from this module, in ink. */
+.tree {
+  --shift-text: var(--isl-ink);
+  margin-top: 8px;
+}
+
+.tree :global(.home-stage-row) {
+  container-type: inline-size;
+  display: flex;
+  max-width: 34rem;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding-bottom: 3px;
+  background: repeating-linear-gradient(90deg, rgba(42, 29, 46, 0.45) 0 6px, transparent 6px 12px) bottom / 100% 3px
+    no-repeat;
+}
+
+.tree :global(.home-stage-row) img {
+  width: 32px;
+  height: 40px;
+  image-rendering: pixelated;
+}
+
+@container (min-width: 512px) {
+  .tree :global(.home-stage-row) img {
+    width: 64px;
+    height: 80px;
+  }
+}
+
+.tree figcaption {
+  max-width: 34rem;
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+/* ---------- The seal ---------- */
+
+.sealArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding-top: 32px;
+  text-align: center;
+}
+
+.sealLine {
+  max-width: 28rem;
+  margin: 0;
+  color: rgba(42, 29, 46, 0.9);
+  font-size: 16px;
+  line-height: 1.7;
+  text-wrap: pretty;
+}
+
+/* Dawn call to action, sized for Thai and a thumb. */
+:global(.ei-button-dawn).cta {
+  min-height: 48px;
+  max-width: 100%;
+  justify-content: center;
+  padding: 10px 28px;
+  font-size: 16px;
+  line-height: 1.4;
+  text-align: center;
+  text-decoration: none;
+}
+
+:global(.ei-button-dawn).cta:focus-visible {
+  outline: 3px solid var(--isl-wax-dark);
+  outline-offset: 3px;
+}
+
+.seal {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  min-height: 48px;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px 14px;
+  border: 0;
+  border-radius: 16px;
+  background: none;
+  color: var(--isl-ink);
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.seal:focus-visible {
+  outline: 3px solid var(--isl-wax-dark);
+  outline-offset: 4px;
+}
+
+.seal:disabled {
+  cursor: progress;
+}
+
+/* 44x21 pixels at 5x. The cord and the wax are stacked layers of one size. */
+.sealArt {
+  position: relative;
+  display: block;
+  width: 220px;
+  height: 105px;
+}
+
+.sealCord,
+.sealWax {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.sealCord {
+  filter: drop-shadow(0 2px 1px rgba(42, 29, 46, 0.22));
+}
+
+/* The wax sits proud of the paper: a soft shadow below, not a hard block. */
+.sealWax {
+  transform-origin: 50% 55%;
+  filter: drop-shadow(0 4px 3px rgba(42, 29, 46, 0.34));
+  transition: transform 160ms var(--isl-ease-snap);
+}
+
+/* The season is over: the wax has set and nobody presses it. */
+.sealStill {
+  opacity: 0.8;
+  filter: saturate(0.7);
+}
+
+.waxRim {
+  fill: var(--isl-wax-dark);
+}
+
+.waxBody {
+  fill: var(--isl-wax);
+}
+
+.waxLight {
+  fill: var(--isl-wax-light);
+}
+
+.waxShade {
+  fill: var(--isl-wax-shade);
+}
+
+.waxImprint {
+  fill: var(--isl-wax-imprint);
+}
+
+.waxLip {
+  fill: var(--isl-wax-lip);
+}
+
+.cord {
+  fill: var(--isl-sea-light);
+}
+
+.cordShade {
+  fill: var(--isl-sea);
+}
+
+/* The action under the wax, underlined in wax so it reads as something to press. */
+.sealLabel {
+  font-family: var(--font-kodchasan), var(--font-bai-jamjuree), sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-decoration: underline;
+  text-decoration-color: rgba(184, 50, 47, 0.55);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+  transition: text-decoration-color 160ms var(--isl-ease-snap);
+}
+
+.seal[data-state="pending"] .sealLabel,
+.seal[data-state="stamped"] .sealLabel {
+  text-decoration-color: transparent;
+}
+
+/* Warm light pooling under the wax: clip, opacity and blur move together. */
+.sealGlow {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: -1;
+  width: 260px;
+  height: 140px;
+  translate: -50% 0;
+  background: radial-gradient(closest-side, rgba(224, 97, 79, 0.5), rgba(255, 201, 107, 0.28) 55%, transparent);
+  pointer-events: none;
+  clip-path: inset(100% 0 0 0);
+  opacity: 0;
+  filter: blur(18px);
+  transition:
+    clip-path 160ms var(--isl-ease-snap),
+    opacity 160ms var(--isl-ease-snap),
+    filter 160ms var(--isl-ease-snap);
+}
+
+.sealError {
+  max-width: 26rem;
+  margin: 0;
+  color: var(--isl-wax-dark);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+@media (hover: hover) {
+  .seal:hover:not(:disabled) .sealGlow {
+    animation:
+      isl-seal-glow 900ms var(--isl-ease-tension) forwards,
+      isl-seal-wave 4231ms ease-in-out 900ms infinite;
+  }
+
+  .seal:hover:not(:disabled) .sealWax {
+    animation: isl-seal-lift 420ms var(--isl-ease-tension) forwards;
+  }
+
+  .seal:hover:not(:disabled) .sealLabel {
+    text-decoration-color: var(--isl-wax);
+  }
+}
+
+/* Touch: no hover, so the glow rises once the seal is on screen. */
+@media (hover: none) {
+  .seal[data-inview]:not(:disabled) .sealGlow {
+    animation:
+      isl-seal-glow 1400ms var(--isl-ease-tension) forwards,
+      isl-seal-wave 4231ms ease-in-out 1400ms infinite;
+  }
+}
+
+.seal:active:not(:disabled) .sealWax {
+  animation: none;
+  transform: translateY(2px) scale(0.95);
+}
+
+/* Waiting on the server: the wax rocks, still pressed. */
+.seal[data-state="pending"] .sealWax {
+  animation: isl-seal-rock 1100ms ease-in-out infinite;
+}
+
+/* Saved: the wax lifts, comes down hard and settles, and the light spreads. */
+.seal[data-state="stamped"] .sealWax {
+  animation: isl-stamp 720ms var(--isl-ease-tension) forwards;
+}
+
+.seal[data-state="stamped"] .sealGlow {
+  animation: isl-stamp-ring 720ms var(--isl-ease-tension) forwards;
+}
+
+@keyframes isl-seal-glow {
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    filter: blur(10px);
+  }
+}
+
+@keyframes isl-seal-wave {
+  0%,
+  100% {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    filter: blur(10px);
+  }
+  50% {
+    clip-path: inset(8% 6% 8% 6%);
+    opacity: 0.65;
+    filter: blur(14px);
+  }
+}
+
+@keyframes isl-seal-lift {
+  to {
+    transform: translateY(-4px) rotate(-3deg);
+  }
+}
+
+@keyframes isl-seal-rock {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  50% {
+    transform: rotate(-4deg) translateY(1px);
+  }
+}
+
+@keyframes isl-stamp {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  35% {
+    transform: translateY(-12px) scale(1.14);
+  }
+  62% {
+    transform: translateY(3px) scale(0.9);
+  }
+  80% {
+    transform: translateY(0) scale(1.04);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes isl-stamp-ring {
+  0% {
+    clip-path: inset(40% 40% 40% 40%);
+    opacity: 0;
+    filter: blur(18px);
+  }
+  60% {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    filter: blur(8px);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+    opacity: 0.85;
+    filter: blur(12px);
+  }
+}
+
+/* ---------- The ticket ---------- */
+
+.ticket {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  margin-top: 8px;
+  overflow: hidden;
+  border-radius: 6px;
+  color: var(--isl-text);
+  background: linear-gradient(160deg, var(--isl-violet) 0%, var(--isl-deep) 55%, var(--isl-night) 100%);
+  box-shadow:
+    0 0 0 1px var(--isl-line),
+    0 18px 40px -20px rgba(10, 11, 31, 0.9);
+  text-align: left;
+  animation: isl-ticket-in 900ms var(--isl-ease-tension) backwards;
+}
+
+/* The stub, torn off along a dotted line, with the seed the tree starts from. */
+.ticketStub {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, rgba(255, 201, 107, 0.18) 0%, rgba(255, 138, 76, 0.1) 50%, rgba(122, 63, 110, 0.12) 100%);
+  border-right: 2px dashed var(--isl-line);
+}
+
+/* Phones: the stub becomes a band across the top, so the body has the width. */
+@media (max-width: 479px) {
+  .ticket {
+    grid-template-columns: 1fr;
+  }
+
+  .ticketStub {
+    height: 72px;
+    border-right: 0;
+    border-bottom: 2px dashed var(--isl-line);
+  }
+}
+
+.ticketSprite {
+  width: 48px;
+  height: 60px;
+  image-rendering: pixelated;
+}
+
+.ticketBody {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 20px 18px 22px;
+}
+
+.ticketHeading {
+  margin: 0 0 6px;
+  color: var(--isl-gold);
+  font-family: var(--font-kodchasan), var(--font-bai-jamjuree), sans-serif;
+  font-size: clamp(22px, 1.5vw + 16px, 28px);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.ticketHeading:focus {
+  outline: none;
+}
+
+.ticketName {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.ticketCohort {
+  margin: 0;
+  color: var(--isl-text-dim);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.ticketFestival {
+  margin: 10px 0 14px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.ticketNote {
+  margin: 0;
+  color: var(--isl-text-dim);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.ticket :global(.ei-button-dawn).cta:focus-visible {
+  outline-color: var(--isl-gold);
+}
+
+@keyframes isl-ticket-in {
+  from {
+    clip-path: inset(0 100% 0 0);
+    opacity: 0;
+    filter: blur(6px) brightness(1.4);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    filter: blur(0) brightness(1);
+  }
+}
+
+/* Reduced motion: the letter is already open, every chapter in place. */
+@media (prefers-reduced-motion: reduce) {
+  .rod,
+  .rodEnd,
+  .paper,
+  .ticket,
+  .seal .sealWax,
+  .seal .sealGlow,
+  .seal:hover .sealWax,
+  .seal:hover .sealGlow,
+  .seal[data-inview] .sealGlow {
+    animation: none !important;
+  }
+
+  .reveal,
+  .reveal:not([data-shown]) {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+
+  .sealWax,
+  .sealGlow {
+    transition: none;
+  }
+
+  .root :global(.ei-button-dawn),
+  .root :global(.ei-button-dawn)::before,
+  .root :global(.ei-button-dawn)::after {
+    animation: none !important;
+  }
+}
+
+/* Under the seal, signed out: the way back in for a player already on the
+   island (the game lives on this same page). Quiet, so the seal leads. */
+.returning {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px dashed rgba(42, 29, 46, 0.25);
+  text-align: center;
+}
+
+/* Reduced motion: the ship holds still and the sketch is already drawn. */
+@media (prefers-reduced-motion: reduce) {
+  .ship {
+    animation: none;
+  }
+
+  .backdropShade {
+    transition: none;
+  }
+
+  .inkLine,
+  [data-shown] .inkLine {
+    stroke-dashoffset: 0;
+    animation: none;
+  }
+
+  .inkBeach,
+  .inkTrail,
+  .inkMark,
+  .inkLetter,
+  [data-shown] .inkBeach,
+  [data-shown] .inkTrail,
+  [data-shown] .inkMark,
+  [data-shown] .inkLetter {
+    opacity: 1;
+    animation: none;
+  }
+}

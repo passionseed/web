@@ -1,3 +1,4 @@
+import { questsToMarkdown, questWork } from "@/lib/whiteboard/quests";
 import { authorIds, boardToMarkdown, summarizeElements, type SummaryComment } from "@/lib/whiteboard/summary";
 import { createAdminClient } from "@/utils/supabase/admin";
 
@@ -16,7 +17,8 @@ export type BoardListing = {
   memberCount: number;
 };
 
-async function names(ids: string[]): Promise<Map<string, string>> {
+/** Display names for user ids, for reads that show who wrote what. */
+export async function displayNames(ids: string[]): Promise<Map<string, string>> {
   if (ids.length === 0) return new Map();
   const { data, error } = await createAdminClient().from("profiles").select("id, full_name, username").in("id", ids);
   if (error) throw error;
@@ -34,7 +36,7 @@ export async function listAllBoards(search?: string): Promise<BoardListing[]> {
   if (search) query = query.ilike("title", `%${search}%`);
   const { data, error } = await query;
   if (error) throw error;
-  const owners = await names([...new Set((data ?? []).map((b) => b.owner_id as string))]);
+  const owners = await displayNames([...new Set((data ?? []).map((b) => b.owner_id as string))]);
   return (data ?? []).map((b) => ({
     id: b.id as string,
     title: b.title as string,
@@ -60,10 +62,12 @@ export async function readBoardMarkdown(boardId: string): Promise<string | null>
   if (error) throw error;
   if (!board) return null;
 
-  const summary = summarizeElements((board.elements as unknown[]) ?? []);
-  const people = await names([
+  const elements = ((board.elements as unknown[]) ?? []) as Parameters<typeof questWork>[0];
+  const summary = summarizeElements(elements as unknown[]);
+  const people = await displayNames([
     ...new Set([
       ...authorIds(summary),
+      ...questWork(elements).flatMap((w) => w.people.map((p) => p.userId)),
       board.owner_id as string,
       ...(members ?? []).map((m) => m.user_id as string),
       ...(comments ?? []).map((c) => c.author_id as string),
@@ -83,7 +87,7 @@ export async function readBoardMarkdown(boardId: string): Promise<string | null>
         .map((r) => ({ author: who(r.author_id as string), body: r.body as string, createdAt: r.created_at as string })),
     }));
 
-  return boardToMarkdown(
+  const markdown = boardToMarkdown(
     {
       title: board.title as string,
       owner: who(board.owner_id as string),
@@ -94,4 +98,5 @@ export async function readBoardMarkdown(boardId: string): Promise<string | null>
     threads,
     people,
   );
+  return markdown + questsToMarkdown(elements, who);
 }

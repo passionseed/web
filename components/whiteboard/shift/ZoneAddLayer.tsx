@@ -7,7 +7,7 @@ import { Plus } from "lucide-react";
 import { canvasAccessMap, mayEditFrame } from "@/lib/whiteboard/canvas-access";
 import { isShiftCardKind, isZone, zoneTitle } from "@/lib/whiteboard/shift-cards";
 
-import { useViewportTick } from "../CommentsLayer";
+import { useViewportTick } from "../useViewportTick";
 import { WHEEL_THROUGH } from "../wheelBridge";
 import { insertZoneNote } from "./insertShift";
 import { isBusy, useSceneMemo } from "./sceneMemo";
@@ -55,7 +55,7 @@ export function ZoneAddLayer({ api, meId, manager }: { api: ExcalidrawImperative
           onClick={() => insertZoneNote(api, id)}
           aria-label={`เพิ่มโน้ต: ${title}`}
           title={`เพิ่มโน้ต · ${title}`}
-          className={`wb-version-chip pointer-events-auto absolute flex -translate-x-full items-center gap-1 rounded-full text-xs font-semibold ${
+          className={`wb-version-chip pointer-events-auto absolute flex -translate-x-full items-center gap-1 rounded-md text-xs font-semibold ${
             compact ? "w-7 justify-center" : "px-2.5"
           }`}
           style={{ left: pos.x, top: pos.y }}

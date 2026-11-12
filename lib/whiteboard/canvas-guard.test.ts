@@ -11,6 +11,7 @@ type El = {
   type: string;
   version: number;
   frameId?: string | null;
+  containerId?: string | null;
   isDeleted?: boolean;
   x?: number;
   customData?: Record<string, unknown> | null;

@@ -66,7 +66,17 @@ export function DmLeadPublicReplyBar({ conversation, thread }: DmLeadPublicReply
       .then((data) => {
         if (cancelled) return;
         setComment(data);
-        setMessage(getDefaultPublicCommentReply(conversation.username, getCampaign(data?.text)));
+        const campaign = getCampaign(data?.text);
+        setMessage(
+          getDefaultPublicCommentReply(
+            conversation.username,
+            campaign,
+            // Radar's public reply is fixed; the variant follows the comment id.
+            campaign === "radar" && data
+              ? { fieldSlug: null, careerLabelTh: null, linkCode: "hub-ig", commentId: data.ig_comment_id }
+              : null
+          )
+        );
         setLoadingComment(false);
       })
       .catch(() => {
@@ -87,6 +97,8 @@ export function DmLeadPublicReplyBar({ conversation, thread }: DmLeadPublicReply
   useEffect(() => {
     const visible = isBlocked || isOpen;
     if (!visible || personalized || loadingComment || !message.trim()) return;
+    // Radar copy is fixed and never rewritten by Qwen (spec 5.3).
+    if (getCampaign(comment?.text) === "radar") return;
 
     let cancelled = false;
     setPersonalized(true);

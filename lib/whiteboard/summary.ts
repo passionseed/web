@@ -60,7 +60,8 @@ export type SummaryItem = {
  * SHIFT canvas zone, and `parent` the id of the project frame it belongs to.
  */
 export type SummaryArea = { id: string; title: string; items: SummaryItem[]; project?: string; zone?: string; parent?: string };
-export type SummaryLink = { from: string; to: string; label?: string };
+/** `fromId` and `toId` are the ids of the elements an arrow is bound to, to tell which canvas it belongs to. */
+export type SummaryLink = { from: string; to: string; label?: string; fromId?: string; toId?: string };
 export type BoardSummary = { areas: SummaryArea[]; loose: SummaryItem[]; links: SummaryLink[]; counts: Record<string, number> };
 
 export type SummaryComment = {
@@ -244,6 +245,8 @@ export function summarizeElements(raw: unknown[]): BoardSummary {
       from: name(e.startBinding?.elementId),
       to: name(e.endBinding?.elementId),
       ...(labelOf.has(e.id) ? { label: labelOf.get(e.id) } : {}),
+      ...(e.startBinding?.elementId ? { fromId: e.startBinding.elementId } : {}),
+      ...(e.endBinding?.elementId ? { toId: e.endBinding.elementId } : {}),
     }));
 
   const counts: Record<string, number> = {};
@@ -288,6 +291,60 @@ function itemLine(i: SummaryItem, names: Map<string, string>) {
   return [`- ${body}${credit}`, ...history].join("\n");
 }
 
+/** An area's own items, then each of its zones as a sub-section (a SHIFT canvas's zones). */
+function areaBody(summary: BoardSummary, area: SummaryArea, line: (i: SummaryItem) => string, heading: string): string[] {
+  const out: string[] = [];
+  const zones = summary.areas.filter((z) => z.parent === area.id);
+  if (area.items.length || !zones.length) out.push(...(area.items.length ? area.items.map(line) : ["(empty)"]));
+  for (const z of zones) {
+    out.push("", `${heading} ${z.title}`);
+    out.push(...(z.items.length ? z.items.map(line) : ["(empty)"]));
+  }
+  return out;
+}
+
+/** Every item on a SHIFT canvas: the frame's own and its zones'. */
+export function canvasItems(summary: BoardSummary, frameId: string): SummaryItem[] {
+  return summary.areas.filter((a) => a.id === frameId || a.parent === frameId).flatMap((a) => a.items);
+}
+
+/**
+ * Markdown for one SHIFT project canvas: its zones and notes (with who wrote
+ * them and their versions), the arrows between its notes, and the comments
+ * placed on it. Null when the board has no canvas with that frame id.
+ */
+export function canvasToMarkdown(
+  summary: BoardSummary,
+  frameId: string,
+  meta: { board: string; owner: string; team: string[]; updatedAt?: string },
+  comments: SummaryComment[] = [],
+  names: Map<string, string> = new Map(),
+): string | null {
+  const area = summary.areas.find((a) => a.id === frameId && a.project);
+  if (!area) return null;
+  const line = (i: SummaryItem) => itemLine(i, names);
+  const out = [
+    `# ${area.title || "Untitled canvas"}`,
+    "",
+    `Board: ${meta.board} · Owner: ${meta.owner} · Team: ${meta.team.length ? meta.team.join(", ") : "nobody yet"}${meta.updatedAt ? ` · Updated: ${meta.updatedAt}` : ""}`,
+    ...areaBody(summary, area, line, "##"),
+  ];
+  const ids = new Set(canvasItems(summary, frameId).map((i) => i.id));
+  const links = summary.links.filter((l) => (l.fromId && ids.has(l.fromId)) || (l.toId && ids.has(l.toId)));
+  if (links.length) {
+    out.push("", "## Arrows");
+    out.push(...links.map((l) => `- ${l.from} → ${l.to}${l.label ? ` (${l.label})` : ""}`));
+  }
+  if (comments.length) {
+    out.push("", "## Comments");
+    for (const c of comments) {
+      out.push(`- ${c.author} (${c.createdAt.slice(0, 10)})${c.resolved ? " [resolved]" : ""}: ${oneLine(c.body)}`);
+      for (const r of c.replies) out.push(`  - ${r.author}: ${oneLine(r.body)}`);
+    }
+  }
+  return out.join("\n") + "\n";
+}
+
 /** Markdown for one board. */
 export function boardToMarkdown(
   board: { title: string; owner: string; updatedAt: string; members: string[] },
@@ -305,16 +362,9 @@ export function boardToMarkdown(
   out.push(`Elements: ${counts || "none"}`);
 
   // A SHIFT canvas reads as one project with a section per zone.
-  const zonesOf = (id: string) => summary.areas.filter((z) => z.parent === id);
   for (const a of summary.areas) {
     if (a.parent) continue;
-    out.push("", `## ${a.project ? "[SHIFT project] " : ""}${a.title || "Untitled area"}`);
-    const zones = zonesOf(a.id);
-    if (a.items.length || !zones.length) out.push(...(a.items.length ? a.items.map(line) : ["(empty)"]));
-    for (const z of zones) {
-      out.push("", `### ${z.title}`);
-      out.push(...(z.items.length ? z.items.map(line) : ["(empty)"]));
-    }
+    out.push("", `## ${a.project ? "[SHIFT project] " : ""}${a.title || "Untitled area"}`, ...areaBody(summary, a, line, "###"));
   }
   if (summary.loose.length) out.push("", summary.areas.length ? "## Elsewhere on the board" : "## Board", ...summary.loose.map(line));
   if (summary.links.length) {

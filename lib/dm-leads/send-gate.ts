@@ -13,6 +13,7 @@ import { messageSignalFlags } from "@/lib/dm-leads/signals";
 import { countPlaceholders, type DmScriptRung } from "@/lib/dm-leads/scripts";
 import type { MessagingWindowMode } from "@/lib/dm-leads/messaging-window";
 import type { DmLeadBucket } from "@/lib/dm-leads/playbook";
+import { isRadarFixedTemplate } from "@/lib/radar-guide/dm-copy";
 
 export type SendDecision = "auto" | "review" | "block";
 
@@ -28,7 +29,8 @@ export type GateReason =
   | "too_long"
   | "empty"
   | "bucket_needs_judgment"
-  | "already_followed_up";
+  | "already_followed_up"
+  | "radar_origin";
 
 export const GATE_REASON_LABELS: Record<GateReason, string> = {
   window_closed: "เกิน 7 วัน ส่งไม่ได้",
@@ -42,6 +44,7 @@ export const GATE_REASON_LABELS: Record<GateReason, string> = {
   empty: "ข้อความว่าง",
   bucket_needs_judgment: "เคสนี้ต้องอ่านเธรดก่อน",
   already_followed_up: "ตามไปแล้ว 1 ครั้ง",
+  radar_origin: "เธรดจาก Career Radar ส่งได้แค่ข้อความ Radar ที่กำหนดไว้",
 };
 
 export interface GateInput {
@@ -51,6 +54,11 @@ export interface GateInput {
   windowMode: MessagingWindowMode;
   /** Consecutive outbound messages with no inbound since. Enforces §4.6. */
   consecutiveOutbound: number;
+  /**
+   * `dm_conversations.origin`. A thread opened by a Radar DM belongs to a
+   * student who asked for a link, not a sales lead (spec 5.6).
+   */
+  origin?: string | null;
 }
 
 export interface GateResult {
@@ -74,9 +82,26 @@ const MAX_AUTO_RUNG = 2;
 
 const MAX_AUTO_LENGTH = 420;
 
+/**
+ * Radar-origin threads (safeguarding): nothing may be sent to them except the
+ * fixed Radar templates, by automation or by hand. Returns the block, or null
+ * when the thread is not Radar-origin or the body is a fixed template.
+ */
+export function gateRadarThread(origin: string | null | undefined, body: string): GateResult | null {
+  if (origin !== "radar") return null;
+  if (isRadarFixedTemplate(body)) return null;
+  return { decision: "block", reasons: ["radar_origin"] };
+}
+
 export function gateDraft(input: GateInput): GateResult {
   const reasons: GateReason[] = [];
   const body = input.body.trim();
+
+  const radar = gateRadarThread(input.origin, body);
+  if (radar) return radar;
+  // Even a fixed Radar template is never auto-sent by the sales tooling to a
+  // Radar thread; the Radar flow sends its own messages (lib/radar-guide).
+  if (input.origin === "radar") reasons.push("radar_origin");
 
   // Hard stop: there is no compliant API route past 7 days.
   if (input.windowMode === "closed") {

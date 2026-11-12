@@ -134,3 +134,6 @@ output/capstone-consent/
 # Python bytecode (ops scripts)
 __pycache__/
 *.pyc
+
+# Radar Guide pipeline cache (radar:dump output, regenerated on demand)
+.cache/

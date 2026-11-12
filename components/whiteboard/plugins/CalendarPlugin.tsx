@@ -7,7 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import { AgendaList } from "@/components/calendar/AgendaList";
 import { BlockForm } from "@/components/calendar/BlockForm";
 import { useCalendar } from "@/components/calendar/useCalendar";
-import { KIND_STYLE, addDays, bangkokParts, shortThaiDay, timeRange, type CalendarBlock } from "@/lib/calendar/core";
+import { addDays, bangkokParts, shortThaiDay, timeRange, type CalendarBlock } from "@/lib/calendar/core";
 import { bangkokToday } from "@/lib/content/shift-cohort";
 import { STICKY_COLORS } from "@/lib/whiteboard/core";
 import { sticky } from "@/lib/whiteboard/templates";
@@ -44,6 +44,7 @@ export function CalendarPlugin({ api, board, editable, broadcast, onBroadcast }:
     <div className="space-y-3 p-3">
       {adding ? (
         <BlockForm
+          tone="grain"
           attachBoard={board.role === "owner" ? { id: board.id, title: board.title } : undefined}
           rooms={calendar.share.rooms}
           onSubmit={async (input) => {
@@ -55,22 +56,17 @@ export function CalendarPlugin({ api, board, editable, broadcast, onBroadcast }:
         />
       ) : (
         <div className="flex items-center gap-2">
-          <button type="button" onClick={() => setAdding(true)} className="inline-flex items-center gap-1 rounded-lg bg-orange-500 px-3 py-1.5 text-xs font-medium text-white">
+          <button type="button" onClick={() => setAdding(true)} className="wb-btn wb-btn--solid inline-flex min-h-8 items-center gap-1 px-3 text-xs font-medium">
             <Plus className="h-3.5 w-3.5" /> เพิ่มนัด
           </button>
-          <a href="/calendar" target="_blank" rel="noreferrer" className="ml-auto inline-flex items-center gap-1 text-xs opacity-70 hover:opacity-100">
+          <a href="/calendar" target="_blank" rel="noreferrer" className="wb-link ml-auto inline-flex items-center gap-1 text-xs">
             ดูทั้งสัปดาห์ <ExternalLink className="h-3.5 w-3.5" />
           </a>
         </div>
       )}
-      <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] opacity-60">
-        {Object.values(KIND_STYLE).map((k) => (
-          <span key={k.label} className="inline-flex items-center gap-1">
-            <span className="h-1.5 w-1.5 rounded-full" style={{ background: k.color }} /> {k.label}
-          </span>
-        ))}
-      </div>
+      {/* No colour legend here: on a board each row names its kind in words (tone="grain"). */}
       <AgendaList
+        tone="grain"
         key={added ?? "list"}
         initialOpen={added}
         calendar={calendar}

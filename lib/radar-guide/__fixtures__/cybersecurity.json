@@ -1,0 +1,2048 @@
+{
+  "id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+  "slug": "cybersecurity",
+  "name_th": "ความมั่นคงปลอดภัยทางไซเบอร์",
+  "name_en": "Cybersecurity",
+  "tagline_th": "ปกป้องโลกดิจิทัลจากภัยคุกคาม",
+  "tagline_en": "Defending the digital world from threats",
+  "emoji": "🛡️",
+  "color": "#004d00",
+  "tile_size": "lg",
+  "tags": [
+    "high-pay",
+    "trending",
+    "global"
+  ],
+  "is_published": true,
+  "has_content": true,
+  "sort_order": 0,
+  "squad_url": null,
+  "hero_image_url": null,
+  "hero_image_prompt": "A stylized digital shield glowing with circuits, protecting a network of abstract data points. A binary code background.",
+  "hero_image_credit": null,
+  "hero_image_license": null,
+  "hero_image_alt_th": "ภาพโล่ดิจิทัลที่ส่องแสง แสดงถึงความปลอดภัยของข้อมูล",
+  "hero_image_alt_en": "A glowing digital shield representing data security",
+  "research": {
+    "jobs": [
+      {
+        "title": "Security Analyst",
+        "demand": "High",
+        "listings": [
+          {
+            "url": "https://www.jobsdb.com/th/job/cyber-security-analyst-100003000496939",
+            "title": "Cyber Security Analyst",
+            "source": "JobsDB",
+            "company": "AIS"
+          },
+          {
+            "url": "https://www.jobthai.com/th/jobs/2374888",
+            "title": "Cyber Security Officer",
+            "source": "JobThai",
+            "company": "True Corporation"
+          },
+          {
+            "url": "https://www.linkedin.com/jobs/view/cyber-security-specialist-at-siam-commercial-bank-scb-3802593331",
+            "title": "Cyber Security Specialist",
+            "source": "LinkedIn",
+            "company": "SCB (Siam Commercial Bank)"
+          }
+        ],
+        "openings": {
+          "en": "200+ Openings (estimated)",
+          "th": "200+ ตำแหน่งเปิดรับ (ประมาณการ)"
+        },
+        "growth_pct": 15,
+        "salary_note": {
+          "en": "Base salary + annual bonus",
+          "th": "ฐานเงินเดือน + โบนัสประจำปี"
+        },
+        "source_refs": [
+          2,
+          3,
+          4
+        ],
+        "salary_global": {
+          "max": 9000,
+          "min": 5000,
+          "currency": "USD"
+        },
+        "listing_source": "JobsDB, LinkedIn, JobThai",
+        "salary_thb_month": {
+          "max": 70000,
+          "min": 35000
+        }
+      },
+      {
+        "title": "Network Security Engineer",
+        "demand": "High",
+        "listings": [
+          {
+            "url": "https://www.jobsdb.com/th/job/network-security-engineer-100003000493801",
+            "title": "Network Security Engineer",
+            "source": "JobsDB",
+            "company": "PTT Global Chemical"
+          },
+          {
+            "url": "https://www.linkedin.com/jobs/view/network-security-engineer-at-bangkok-bank-3788731650",
+            "title": "Network Security Engineer",
+            "source": "LinkedIn",
+            "company": "Bangkok Bank"
+          }
+        ],
+        "openings": {
+          "en": "150+ Openings (estimated)",
+          "th": "150+ ตำแหน่งเปิดรับ (ประมาณการ)"
+        },
+        "growth_pct": 12,
+        "salary_note": {
+          "en": "Base salary + benefits + bonus",
+          "th": "ฐานเงินเดือน + สวัสดิการ + โบนัส"
+        },
+        "source_refs": [
+          2,
+          4,
+          5
+        ],
+        "salary_global": {
+          "max": 11000,
+          "min": 6000,
+          "currency": "USD"
+        },
+        "listing_source": "JobsDB, LinkedIn",
+        "salary_thb_month": {
+          "max": 90000,
+          "min": 45000
+        }
+      },
+      {
+        "title": "Penetration Tester (Ethical Hacker)",
+        "demand": "Growing",
+        "listings": [
+          {
+            "url": "https://www.linkedin.com/jobs/view/penetration-tester-at-decode-thailand-3823459789",
+            "title": "Penetration Tester",
+            "source": "LinkedIn",
+            "company": "DECODE Thailand"
+          }
+        ],
+        "openings": {
+          "en": "50+ Openings (estimated)",
+          "th": "50+ ตำแหน่งเปิดรับ (ประมาณการ)"
+        },
+        "growth_pct": 18,
+        "salary_note": {
+          "en": "Base salary + project-based incentives",
+          "th": "ฐานเงินเดือน + ค่าตอบแทนพิเศษสำหรับโครงการ"
+        },
+        "source_refs": [
+          4
+        ],
+        "salary_global": {
+          "max": 15000,
+          "min": 7000,
+          "currency": "USD"
+        },
+        "listing_source": "LinkedIn, Specialized Security Firms",
+        "salary_thb_month": {
+          "max": 120000,
+          "min": 50000
+        }
+      }
+    ],
+    "name": {
+      "en": "Cybersecurity",
+      "th": "ความมั่นคงปลอดภัยทางไซเบอร์"
+    },
+    "slug": "cybersecurity",
+    "tags": [
+      "high-pay",
+      "trending",
+      "global"
+    ],
+    "tier": "growing",
+    "color": "#004d00",
+    "emoji": "🛡️",
+    "risks": [
+      {
+        "en": "High stress from handling emergencies and time pressure.",
+        "th": "ความเครียดสูงจากการรับมือกับเหตุการณ์ฉุกเฉินและการกดดันจากเวลา"
+      },
+      {
+        "en": "Constant exposure to complex and evolving cyber threats.",
+        "th": "การเผชิญกับภัยคุกคามทางไซเบอร์ที่ซับซ้อนและเปลี่ยนแปลงตลอดเวลา"
+      },
+      {
+        "en": "Risk of being targeted by cybercriminals (if handling sensitive information).",
+        "th": "ความเสี่ยงที่จะถูกตกเป็นเป้าหมายโดยอาชญากรไซเบอร์ (หากทำงานในตำแหน่งที่มีข้อมูลละเอียดอ่อน)"
+      },
+      {
+        "en": "Continuous learning required to keep up with new technologies and threats.",
+        "th": "ต้องเรียนรู้อย่างต่อเนื่องเพื่อตามให้ทันเทคโนโลยีและภัยคุกคามใหม่ๆ"
+      }
+    ],
+    "skills": [
+      {
+        "why": {
+          "en": "Essential to understand how systems work and how to protect them.",
+          "th": "จำเป็นต่อการเข้าใจวิธีการทำงานของระบบและการป้องกัน"
+        },
+        "skill": {
+          "en": "Networking and Operating System Fundamentals",
+          "th": "ความรู้ด้านเครือข่ายและระบบปฏิบัติการ"
+        }
+      },
+      {
+        "why": {
+          "en": "Used for data protection and authentication.",
+          "th": "ใช้ในการปกป้องข้อมูลและยืนยันตัวตน"
+        },
+        "skill": {
+          "en": "Cryptography",
+          "th": "การเข้ารหัส (Cryptography)"
+        }
+      },
+      {
+        "why": {
+          "en": "Helps in identifying and understanding threats.",
+          "th": "ช่วยในการระบุและทำความเข้าใจภัยคุกคาม"
+        },
+        "skill": {
+          "en": "Malware Analysis",
+          "th": "การวิเคราะห์มัลแวร์"
+        }
+      },
+      {
+        "why": {
+          "en": "Finds vulnerabilities before malicious actors do.",
+          "th": "ค้นหาจุดอ่อนในระบบก่อนที่ผู้ไม่ประสงค์ดีจะพบ"
+        },
+        "skill": {
+          "en": "Penetration Testing",
+          "th": "การทดสอบการเจาะระบบ (Penetration Testing)"
+        }
+      },
+      {
+        "why": {
+          "en": "Used for creating tools and automating tasks.",
+          "th": "ใช้ในการสร้างเครื่องมือและสคริปต์อัตโนมัติ"
+        },
+        "skill": {
+          "en": "Programming (e.g., Python, Bash)",
+          "th": "การเขียนโปรแกรม (เช่น Python, Bash)"
+        }
+      },
+      {
+        "why": {
+          "en": "Crucial for handling complex security incidents.",
+          "th": "หัวใจสำคัญในการรับมือกับเหตุการณ์ด้านความปลอดภัยที่ซับซ้อน"
+        },
+        "skill": {
+          "en": "Analytical Thinking and Problem-Solving",
+          "th": "การคิดเชิงวิเคราะห์และการแก้ปัญหา"
+        }
+      }
+    ],
+    "metrics": {
+      "salary_floor": 25000,
+      "demand_growth": 9,
+      "salary_ceiling": 70000,
+      "saturation_level": 3,
+      "grad_employment_pct": 88,
+      "progression_difficulty": 4
+    },
+    "sources": [
+      {
+        "url": "https://www.bls.gov/ooh/computer-and-information-technology/information-security-analysts.htm",
+        "date": "2025-09-04",
+        "title": "BLS Occupational Outlook - Information Security Analysts",
+        "author": "U.S. Bureau of Labor Statistics"
+      },
+      {
+        "url": "https://www.isc2.org/Insights/2024/10/ISC2-2024-Cybersecurity-Workforce-Study",
+        "date": "2024-10-01",
+        "title": "ISC2 2024 Cybersecurity Workforce Study",
+        "author": "ISC2"
+      },
+      {
+        "url": "https://th.jobsdb.com/career-advice/role/security-engineer/salary",
+        "date": "2026-07-01",
+        "title": "Security Engineer Salary in Thailand",
+        "author": "JobsDB Thailand"
+      },
+      {
+        "url": "https://www.nucamp.co/blog/coding-bootcamp-thailand-tha-thailand-cybersecurity-salaries-what-can-you-expect-to-earn",
+        "date": "2025-01-01",
+        "title": "Thailand Cybersecurity Salaries: What Can You Expect to Earn?",
+        "author": "Nucamp"
+      },
+      {
+        "url": "https://www.stationx.net/will-ai-replace-cyber-security-jobs/",
+        "date": "2025-01-01",
+        "title": "Will AI Replace Cyber Security Jobs?",
+        "author": "StationX"
+      },
+      {
+        "url": "https://factosecure.com/top-10-cybersecurity-companies-in-thailand-for-2026-safeguarding-the-digital-kingdom/",
+        "date": "2026-01-01",
+        "title": "Top 10 Cybersecurity Companies in Thailand 2026",
+        "author": "FactoSecure"
+      }
+    ],
+    "summary": {
+      "en": "People in this field protect an organization's systems and data from hackers — spotting suspicious activity, attacking their own systems before criminals do, and responding to real incidents. Thailand is short on these skills. If you like picking systems apart and thinking like an attacker (legally), jobs are waiting.",
+      "th": "งานของสายนี้คือปกป้องระบบและข้อมูลขององค์กรจากแฮกเกอร์ — จับสัญญาณผิดปกติ ลองเจาะระบบตัวเองก่อนคนร้าย และรับมือเหตุโจมตีจริง ตลาดไทยขาดคนสายนี้มาก ถ้าเธอชอบแกะระบบและคิดเหมือนคนร้าย (แบบถูกกฎหมาย) ทางนี้มีงานรออยู่"
+    },
+    "tagline": {
+      "en": "Defending the digital world from threats",
+      "th": "ปกป้องโลกดิจิทัลจากภัยคุกคาม"
+    },
+    "ai_impact": {
+      "verdict": {
+        "en": "No — AI is unlikely to replace you, but it will become a tool you use every day. Repetitive monitoring work like reading logs or basic vulnerability scanning is being automated, but judgment during a live attack, understanding business context, and handling never-seen-before threats still need humans. In ISC2's 2024 survey, two in three professionals were confident their skills will complement AI, not be replaced by it.",
+        "th": "ไม่ — AI ไม่น่าจะแทนเธอ แต่จะกลายเป็นเครื่องมือที่เธอใช้ทุกวัน งานเฝ้าระวังซ้ำๆ อย่างการไล่อ่าน log หรือสแกนช่องโหว่เบื้องต้นกำลังถูก AI ทำแทน แต่การตัดสินใจท่ามกลางเหตุโจมตีจริง การเข้าใจบริบทของธุรกิจ และการรับมือภัยคุกคามที่ไม่เคยเจอมาก่อนยังต้องอาศัยคน — ในงานสำรวจ ISC2 (2024) มืออาชีพสองในสามมั่นใจว่าทักษะของตนจะทำงานร่วมกับ AI ไม่ใช่ถูกแทนที่"
+      },
+      "augmented": [
+        {
+          "en": "Real-time threat detection and analysis",
+          "th": "การตรวจจับและวิเคราะห์ภัยคุกคามแบบเรียลไทม์"
+        },
+        {
+          "en": "Automated incident response",
+          "th": "การตอบสนองต่อเหตุการณ์อัตโนมัติ"
+        },
+        {
+          "en": "Vulnerability identification and remediation advice",
+          "th": "การระบุช่องโหว่และให้คำแนะนำการแก้ไข"
+        }
+      ],
+      "automated": [
+        {
+          "en": "Large-scale log monitoring",
+          "th": "การตรวจสอบบันทึก (Log Monitoring) จำนวนมาก"
+        },
+        {
+          "en": "Basic vulnerability scanning",
+          "th": "การสแกนช่องโหว่เบื้องต้น"
+        },
+        {
+          "en": "Certain aspects of User Behavior Analytics",
+          "th": "การวิเคราะห์พฤติกรรมผู้ใช้ (User Behavior Analytics) บางส่วน"
+        }
+      ],
+      "source_refs": [
+        7
+      ]
+    },
+    "reasoning": "Cybersecurity เป็นสายงานที่เติบโตสูงมาก BLS คาดการณ์ 29% ใน 10 ปี ขาดแคลนบุคลากรทั่วโลก 4.76 ล้านคน (ISC2 2024) เงินเดือนสูง AI ช่วยเสริมมากกว่าแทนที่ (82% ของผู้เชี่ยวชาญเห็นว่า AI ช่วยเพิ่มประสิทธิภาพ) ตลาดไทยมี 400+ ตำแหน่งเปิดรับบน JobsDB",
+    "tile_size": "large",
+    "hero_image": {
+      "alt": {
+        "en": "A glowing digital shield representing data security",
+        "th": "ภาพโล่ดิจิทัลที่ส่องแสง แสดงถึงความปลอดภัยของข้อมูล"
+      },
+      "image_prompt": "A stylized digital shield glowing with circuits, protecting a network of abstract data points. A binary code background.",
+      "image_source": null
+    },
+    "what_it_is": {
+      "en": "Cybersecurity is the practice of protecting computer systems, networks, digital devices, programs, and data from unauthorized access, attack, or damage. This includes defending against malware, phishing, data theft, and denial-of-service attacks. Professionals in this field design, implement, and maintain security systems, as well as respond to security incidents.",
+      "th": "ความมั่นคงปลอดภัยทางไซเบอร์ (Cybersecurity) คือการปกป้องระบบคอมพิวเตอร์ เครือข่าย อุปกรณ์ดิจิทัล โปรแกรม และข้อมูล จากการโจมตี การเข้าถึง หรือความเสียหายโดยไม่ได้รับอนุญาต ซึ่งรวมถึงการป้องกันมัลแวร์ (Malware), ฟิชชิ่ง (Phishing), การโจรกรรมข้อมูล (Data Theft) และการโจมตีแบบปฏิเสธการให้บริการ (Denial-of-Service Attacks) ผู้เชี่ยวชาญด้านนี้จะออกแบบ ติดตั้ง และดูแลระบบรักษาความปลอดภัย รวมถึงตอบสนองต่อเหตุการณ์ด้านความปลอดภัย",
+      "source_refs": [
+        1
+      ],
+      "image_prompt": "An infographic showing different types of cyber threats (malware, phishing, DDoS) being blocked by a digital shield."
+    },
+    "day_in_life": {
+      "steps": [
+        {
+          "time": "09:00",
+          "label": {
+            "en": "Review system logs and security reports",
+            "th": "ตรวจสอบระบบและรายงานความปลอดภัย"
+          }
+        },
+        {
+          "time": "10:30",
+          "label": {
+            "en": "Team meeting to discuss latest threats",
+            "th": "ประชุมทีมเพื่อหารือเกี่ยวกับภัยคุกคามล่าสุด"
+          }
+        },
+        {
+          "time": "11:30",
+          "label": {
+            "en": "Perform vulnerability analysis",
+            "th": "ดำเนินการวิเคราะห์ช่องโหว่"
+          }
+        },
+        {
+          "time": "13:00",
+          "label": {
+            "en": "Lunch break",
+            "th": "พักกลางวัน"
+          }
+        },
+        {
+          "time": "14:00",
+          "label": {
+            "en": "Develop defense strategies or incident response plans",
+            "th": "พัฒนากลยุทธ์การป้องกันหรือตอบสนองต่อเหตุการณ์"
+          }
+        },
+        {
+          "time": "16:00",
+          "label": {
+            "en": "Test security systems",
+            "th": "ทดสอบระบบรักษาความปลอดภัย"
+          }
+        },
+        {
+          "time": "17:00",
+          "label": {
+            "en": "Document findings and actions",
+            "th": "บันทึกและจัดทำเอกสาร"
+          }
+        }
+      ],
+      "image_prompt": "A split image: one side shows a person looking intently at multiple computer screens displaying code and network traffic, the other side shows a team collaborating around a whiteboard with diagrams."
+    },
+    "real_people": [],
+    "entry_routes": [
+      {
+        "cost": "Medium-High",
+        "time": "3-4 years",
+        "route": {
+          "en": "Bachelor's degree in Computer Science, Information Technology, or related fields",
+          "th": "ปริญญาตรีสาขาวิทยาการคอมพิวเตอร์, เทคโนโลยีสารสนเทศ, หรือสาขาที่เกี่ยวข้อง"
+        },
+        "archetype": "degree"
+      },
+      {
+        "cost": "Medium",
+        "time": "6-18 months",
+        "route": {
+          "en": "Professional certifications (e.g., CompTIA Security+, CEH, CISSP) and specialized training",
+          "th": "ใบรับรองวิชาชีพ (เช่น CompTIA Security+, CEH, CISSP) และการฝึกอบรมเฉพาะทาง"
+        },
+        "archetype": "fast"
+      },
+      {
+        "cost": "Low",
+        "time": "Ongoing",
+        "route": {
+          "en": "Self-study, online courses (Coursera, edX), practice via CTF platforms",
+          "th": "การเรียนรู้ด้วยตนเอง, คอร์สออนไลน์ (Coursera, edX), การฝึกฝนผ่านแพลตฟอร์ม CTF (Capture The Flag)"
+        },
+        "archetype": "self"
+      }
+    ],
+    "market_global": {
+      "body": {
+        "en": "Global demand for Cybersecurity professionals is extremely high, with millions of job openings worldwide. These roles span various industries, including technology, finance, healthcare, and government. Cyber threats are borderless, making this expertise internationally sought after.",
+        "th": "ความต้องการผู้เชี่ยวชาญด้าน Cybersecurity ทั่วโลกมีสูงมาก โดยมีตำแหน่งงานว่างนับล้าน ตำแหน่งเหล่านี้กระจายอยู่ในหลากหลายอุตสาหกรรม ตั้งแต่เทคโนโลยี การเงิน การดูแลสุขภาพ ไปจนถึงภาครัฐ ภัยคุกคามทางไซเบอร์ไม่ได้จำกัดอยู่แค่พรมแดนใดพรมแดนหนึ่ง ทำให้ความเชี่ยวชาญด้านนี้เป็นที่ต้องการในระดับสากล"
+      },
+      "source_refs": [
+        7,
+        9
+      ],
+      "remote_friendly": true
+    },
+    "global_metrics": {
+      "salary_floor": 70000,
+      "demand_growth": 9,
+      "salary_ceiling": 400000,
+      "saturation_level": 2,
+      "grad_employment_pct": 91,
+      "progression_difficulty": 5
+    },
+    "metric_details": {
+      "salary_floor": {
+        "en": "Entry-level pay in Thailand, e.g. junior Security Analyst/Engineer roles, is roughly ฿25,000–35,000/month, based on salary ranges employers disclose in JobsDB job ads (accessed Jul 2026).",
+        "th": "เงินเดือนเริ่มต้นของตำแหน่งระดับ entry ในไทย เช่น Security Analyst/Engineer จบใหม่ อยู่ราว 25,000–35,000 บาท/เดือน จากช่วงเงินเดือนที่นายจ้างระบุจริงในประกาศงานบน JobsDB (เข้าถึงข้อมูล ก.ค. 2569)",
+        "source": "JobsDB Thailand — Security Engineer Salary",
+        "source_url": "https://th.jobsdb.com/career-advice/role/security-engineer/salary"
+      },
+      "demand_growth": {
+        "th": "BLS คาดการณ์การเติบโต 29% ในช่วงปี 2024-2034 สูงกว่าค่าเฉลี่ยทุกอาชีพ (3%) มาก มีตำแหน่งเปิดรับเฉลี่ย 16,000 ตำแหน่ง/ปีในสหรัฐฯ ไทยมี 401+ ตำแหน่งบน JobsDB เฉพาะกรุงเทพฯ",
+        "source": "BLS Occupational Outlook Handbook",
+        "source_url": "https://www.bls.gov/ooh/computer-and-information-technology/information-security-analysts.htm"
+      },
+      "salary_ceiling": {
+        "en": "Senior/lead roles in Thailand start around ฿70,000+/month based on live JobsDB listings (Jul 2026). Executive roles like bank CISOs can pay far more, but that's the ceiling for a small minority, not the standard path.",
+        "th": "ระดับอาวุโส/หัวหน้าทีมในไทยเริ่มที่ราว 70,000 บาท/เดือนขึ้นไป จากประกาศงานจริงบน JobsDB (ก.ค. 2569) — ตำแหน่งผู้บริหารอย่าง CISO ในธนาคารอาจสูงกว่านี้มาก แต่นั่นคือเพดานของคนส่วนน้อย ไม่ใช่เส้นทางมาตรฐาน",
+        "source": "JobsDB Thailand — Security Engineer Salary",
+        "source_url": "https://th.jobsdb.com/career-advice/role/security-engineer/salary"
+      },
+      "saturation_level": {
+        "en": "Measures whether the market has enough people in this field (lower = bigger shortage) — not the same as 'competition' on the Thailand market card, which measures how hard applicants chase each opening. The shortage is severe: ISC2 (2024) estimates a global gap of 4,763,963 people, up 19.1% from 2023.",
+        "th": "วัดว่าตลาดมีคนทำสายนี้มากพอหรือยัง (ยิ่งต่ำยิ่งขาดคน) — ไม่ใช่ตัวเดียวกับ 'การแข่งขัน' ในการ์ดตลาดไทย ที่วัดว่าผู้สมัครแย่งงานกันมากแค่ไหน ตลาดขาดคนอย่างหนัก: ISC2 (2024) ระบุช่องว่างบุคลากรทั่วโลก 4,763,963 คน เพิ่มขึ้น 19.1% จากปี 2023 อุปสงค์มากกว่าอุปทานมาก",
+        "source": "ISC2 2024 Cybersecurity Workforce Study",
+        "source_url": "https://www.isc2.org/Insights/2024/10/ISC2-2024-Cybersecurity-Workforce-Study"
+      },
+      "grad_employment_pct": {
+        "en": "Definition: an estimated chance that a fresh graduate with provable skills gets hired in this field — not a measured hiring statistic, and not the % of postings open to grads. It's high because of a severe shortage: ISC2 (2024) found 67% of organizations understaffed and a 4.76M global workforce gap. Most postings still ask for experience, so you must prove skills first (see the Thailand market card).",
+        "th": "นิยาม: โอกาสโดยประเมินที่เด็กจบใหม่ 'ที่มีทักษะพิสูจน์ได้' จะได้งานสายนี้ — ไม่ใช่สถิติการจ้างจริง และไม่ใช่ % ของประกาศที่รับจบใหม่ ตัวเลขสูงเพราะตลาดขาดคนหนัก: ISC2 (2024) พบองค์กรทั่วโลก 67% มีคน security ไม่พอ และขาดคนรวม 4.76 ล้านตำแหน่ง แต่ประกาศส่วนใหญ่ยังอยากได้คนมีประสบการณ์ จึงต้องพิสูจน์ทักษะก่อน (ดูการ์ดตลาดไทย)",
+        "source": "ISC2 2024 Cybersecurity Workforce Study",
+        "source_url": "https://www.isc2.org/Insights/2024/10/ISC2-2024-Cybersecurity-Workforce-Study"
+      },
+      "progression_difficulty": {
+        "th": "เส้นทางอาชีพชัดเจนผ่าน Certification (CompTIA Security+ → CEH → CISSP) ประสบการณ์ 5-10 ปีเพิ่มเงินเดือน 30-40% Cert เช่น CISSP เพิ่มเงินเดือนอีก ~25%",
+        "source": "Nucamp Thailand Cybersecurity Salaries",
+        "source_url": "https://www.nucamp.co/blog/coding-bootcamp-thailand-tha-thailand-cybersecurity-salaries-what-can-you-expect-to-earn"
+      }
+    },
+    "not_for_you_if": [
+      {
+        "en": "Dislike continuous learning or get bored with changes.",
+        "th": "ไม่ชอบการเรียนรู้สิ่งใหม่ๆ หรือรู้สึกเบื่อหน่ายกับการเปลี่ยนแปลง"
+      },
+      {
+        "en": "Cannot work well under pressure or handle complex situations.",
+        "th": "ไม่สามารถทำงานภายใต้แรงกดดัน หรือจัดการกับสถานการณ์ที่ซับซ้อนได้ดี"
+      },
+      {
+        "en": "Lack meticulousness and attention to small details.",
+        "th": "ขาดความละเอียดรอบคอบ และไม่ใส่ใจในรายละเอียดเล็กๆ น้อยๆ"
+      }
+    ],
+    "proof_to_build": [
+      {
+        "project": {
+          "en": "Set up and test a secure network with firewalls and IDS/IPS",
+          "th": "ตั้งค่าและทดสอบเครือข่ายที่ปลอดภัยด้วยไฟร์วอลล์และ IDS/IPS"
+        },
+        "difficulty": "Intermediate"
+      },
+      {
+        "project": {
+          "en": "Write a Python script for basic vulnerability scanning",
+          "th": "เขียนสคริปต์ Python เพื่อสแกนหาช่องโหว่เบื้องต้น"
+        },
+        "difficulty": "Intermediate"
+      },
+      {
+        "project": {
+          "en": "Create Virtual Machines (VMs) and practice attack/defense in a controlled environment",
+          "th": "สร้าง Virtual Machine (VM) และฝึกการโจมตี/ป้องกันในสภาพแวดล้อมที่ควบคุมได้"
+        },
+        "difficulty": "Beginner"
+      }
+    ],
+    "market_thailand": {
+      "body": {
+        "en": "The Cybersecurity job market in Thailand is growing rapidly, driven by increased digital transactions, cybercrime, and regulatory demands. Organizations of all sizes, from startups to large financial institutions and government agencies, require experts to protect their digital assets.",
+        "th": "ตลาดแรงงานด้าน Cybersecurity ในประเทศไทยกำลังเติบโตอย่างรวดเร็ว โดยได้รับแรงหนุนจากการเพิ่มขึ้นของการทำธุรกรรมดิจิทัล อาชญากรรมไซเบอร์ และความต้องการของหน่วยงานกำกับดูแล องค์กรทุกขนาด ตั้งแต่สตาร์ทอัพไปจนถึงสถาบันการเงินขนาดใหญ่ และหน่วยงานภาครัฐ ต่างต้องการผู้เชี่ยวชาญเพื่อปกป้องทรัพย์สินดิจิทัล"
+      },
+      "source_refs": [
+        2,
+        3,
+        4,
+        5,
+        8
+      ],
+      "hiring_companies": [
+        "AIS",
+        "True Corporation",
+        "SCB (Siam Commercial Bank)",
+        "Bangkok Bank",
+        "PTT Global Chemical",
+        "DECODE Thailand",
+        "Kasikornbank (KBank)",
+        "Digital Economy Promotion Agency (depa)",
+        "Government agencies (e.g., NCSA Thailand)"
+      ],
+      "openings_estimate": {
+        "en": "Over 1,000 job openings are estimated in the next 1-2 years.",
+        "th": "คาดว่าจะมีตำแหน่งงานว่างมากกว่า 1,000 ตำแหน่งในอีก 1-2 ปีข้างหน้า"
+      }
+    },
+    "fantasy_vs_reality": {
+      "fantasy": {
+        "en": "Movies often depict genius hackers who can breach the most complex security systems overnight with just a few computers, making it seem consistently easy and thrilling.",
+        "th": "ภาพยนตร์มักแสดงให้เห็นแฮกเกอร์อัจฉริยะที่สามารถเจาะระบบรักษาความปลอดภัยที่ซับซ้อนที่สุดได้ในชั่วข้ามคืน โดยใช้เพียงแค่คอมพิวเตอร์ไม่กี่เครื่อง และดูเหมือนเป็นเรื่องง่ายและน่าตื่นเต้นตลอดเวลา"
+      },
+      "reality": {
+        "en": "The reality is that Cybersecurity requires deep technical knowledge, teamwork, meticulous attention to detail, strategic planning, and continuous learning. Strong security systems are built through a combination of technology, processes, and skilled personnel. Dealing with threats is often a time-consuming process of analysis and hard work.",
+        "th": "ความเป็นจริงคือ Cybersecurity เป็นการทำงานที่ต้องอาศัยความรู้เชิงลึก การทำงานเป็นทีม ความละเอียดรอบคอบ การวางแผนเชิงกลยุทธ์ และการเรียนรู้อย่างต่อเนื่อง ระบบรักษาความปลอดภัยที่แข็งแกร่งเกิดจากการผสมผสานเทคโนโลยี กระบวนการ และบุคลากรที่มีทักษะ การรับมือกับภัยคุกคามมักเป็นการต่อสู้ที่ต้องใช้เวลา การวิเคราะห์ และการทำงานหนัก"
+      },
+      "source_refs": [
+        1
+      ]
+    },
+    "salary_progression": {
+      "levels": [
+        {
+          "note": {
+            "en": "Includes overtime and allowances",
+            "th": "รวมค่าล่วงเวลาและเบี้ยเลี้ยง"
+          },
+          "level": "Junior/Entry-Level",
+          "years": "0-3",
+          "thb_month": {
+            "max": 35000,
+            "min": 25000
+          },
+          "source_refs": [
+            2,
+            4
+          ]
+        },
+        {
+          "note": {
+            "en": "Includes bonuses and performance-based pay",
+            "th": "รวมโบนัสและค่าตอบแทนตามผลงาน"
+          },
+          "level": "Mid-Level",
+          "years": "3-7",
+          "thb_month": {
+            "max": 55000,
+            "min": 35000
+          },
+          "source_refs": [
+            2,
+            4
+          ]
+        },
+        {
+          "note": {
+            "en": "Includes bonuses, management fees, and special benefits",
+            "th": "รวมโบนัส, ค่าจัดการ, และสวัสดิการพิเศษ"
+          },
+          "level": "Senior/Lead",
+          "years": "7+",
+          "thb_month": {
+            "max": 70000,
+            "min": 70000
+          },
+          "source_refs": [
+            2,
+            4
+          ]
+        }
+      ],
+      "source_refs": [
+        2,
+        4
+      ]
+    },
+    "global_metric_details": {
+      "salary_floor": {
+        "th": "เริ่มต้นที่ประมาณ $69,660/ปี (10th percentile) ในสหรัฐฯ",
+        "source": "BLS Occupational Outlook Handbook",
+        "source_url": "https://www.bls.gov/ooh/computer-and-information-technology/information-security-analysts.htm"
+      },
+      "demand_growth": {
+        "th": "BLS คาดการณ์การเติบโต 29% ในช่วงปี 2024-2034 มีตำแหน่งเปิดเฉลี่ย 16,000 ตำแหน่ง/ปี",
+        "source": "BLS Occupational Outlook Handbook",
+        "source_url": "https://www.bls.gov/ooh/computer-and-information-technology/information-security-analysts.htm"
+      },
+      "salary_ceiling": {
+        "th": "CISO ระดับสูงในสหรัฐฯ ได้ถึง $300,000-400,000+/ปี เฉลี่ย $124,910/ปี",
+        "source": "BLS Occupational Outlook Handbook",
+        "source_url": "https://www.bls.gov/ooh/computer-and-information-technology/information-security-analysts.htm"
+      },
+      "saturation_level": {
+        "th": "ขาดแคลนบุคลากรทั่วโลก 4.76 ล้านตำแหน่ง อุปสงค์สูงกว่าอุปทานมาก",
+        "source": "ISC2 2024 Workforce Study",
+        "source_url": "https://www.isc2.org/Insights/2024/10/ISC2-2024-Cybersecurity-Workforce-Study"
+      },
+      "grad_employment_pct": {
+        "en": "Same definition as the Thai figure: an estimated chance a fresh grad gets hired, not a measured statistic — slightly higher globally because the 4.76M workforce gap spans every market (ISC2 2024).",
+        "th": "นิยามเดียวกับตัวเลขไทย: โอกาสโดยประเมินที่เด็กจบใหม่จะได้งาน ไม่ใช่สถิติจริง — ระดับโลกสูงกว่าเล็กน้อยเพราะช่องว่างบุคลากร 4.76 ล้านตำแหน่งกระจายทั่วโลก (ISC2 2024)",
+        "source": "ISC2 2024 Cybersecurity Workforce Study",
+        "source_url": "https://www.isc2.org/Insights/2024/10/ISC2-2024-Cybersecurity-Workforce-Study"
+      },
+      "progression_difficulty": {
+        "th": "ต้องมี Certification (CISSP, CISM) และประสบการณ์ แต่เส้นทางชัดเจนและรายได้เพิ่มตามลำดับ",
+        "source": "CompTIA Career Roadmap",
+        "source_url": "https://www.comptia.org/content/it-careers-path-roadmap"
+      }
+    }
+  },
+  "researched_at": "2026-06-17T13:36:35.557+00:00",
+  "research_model": "deep-research-preview",
+  "created_at": "2026-06-17T07:05:32.874163+00:00",
+  "updated_at": "2026-07-24T20:13:06.7204+00:00",
+  "score": 8,
+  "tier": "growing",
+  "radar_cards": [
+    {
+      "id": "1dab4d68-1f3c-4ca4-b979-adbc531942d8",
+      "kind": "hook",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "position": 0,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "body": "People in this field protect an organization's systems and data from hackers — spotting suspicious activity, attacking their own systems before criminals do, and responding to real incidents. Thailand is short on these skills. If you like picking systems apart and thinking like an attacker (legally), jobs are waiting.",
+        "stat": "25k–70k+",
+        "title": "Cybersecurity",
+        "eyebrow": "Underrated path",
+        "statLabel": "THB/mo · entry to senior"
+      },
+      "content_th": {
+        "body": "งานของสายนี้คือปกป้องระบบและข้อมูลขององค์กรจากแฮกเกอร์ — จับสัญญาณผิดปกติ ลองเจาะระบบตัวเองก่อนคนร้าย และรับมือเหตุโจมตีจริง ตลาดไทยขาดคนสายนี้มาก ถ้าเธอชอบแกะระบบและคิดเหมือนคนร้าย (แบบถูกกฎหมาย) ทางนี้มีงานรออยู่",
+        "stat": "25k–70k+",
+        "title": "ความมั่นคงปลอดภัยทางไซเบอร์",
+        "eyebrow": "เส้นทางที่คนมองข้าม",
+        "statLabel": "บาท/เดือน · ตั้งแต่จบใหม่ถึงอาวุโส"
+      },
+      "created_at": "2026-06-17T13:36:38.072703+00:00",
+      "updated_at": "2026-07-24T20:13:06.114992+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "70eb36c4-725f-4a9c-94e6-7876593937f4",
+      "kind": "fantasyReality",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "position": 10,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "title": "Not what you think",
+        "eyebrow": "Fantasy vs reality",
+        "fantasy": "Movies often depict genius hackers who can breach the most complex security systems overnight with just a few computers, making it seem consistently easy and thrilling.",
+        "reality": "The reality is that Cybersecurity requires deep technical knowledge, teamwork, meticulous attention to detail, strategic planning, and continuous learning. Strong security systems are built through a combination of technology, processes, and skilled personnel. Dealing with threats is often a time-consuming process of analysis and hard work.",
+        "source_refs": [
+          1
+        ]
+      },
+      "content_th": {
+        "title": "มันไม่ใช่แบบที่คิด",
+        "eyebrow": "ภาพในหัว vs ของจริง",
+        "fantasy": "ภาพยนตร์มักแสดงให้เห็นแฮกเกอร์อัจฉริยะที่สามารถเจาะระบบรักษาความปลอดภัยที่ซับซ้อนที่สุดได้ในชั่วข้ามคืน โดยใช้เพียงแค่คอมพิวเตอร์ไม่กี่เครื่อง และดูเหมือนเป็นเรื่องง่ายและน่าตื่นเต้นตลอดเวลา",
+        "reality": "ความเป็นจริงคือ Cybersecurity เป็นการทำงานที่ต้องอาศัยความรู้เชิงลึก การทำงานเป็นทีม ความละเอียดรอบคอบ การวางแผนเชิงกลยุทธ์ และการเรียนรู้อย่างต่อเนื่อง ระบบรักษาความปลอดภัยที่แข็งแกร่งเกิดจากการผสมผสานเทคโนโลยี กระบวนการ และบุคลากรที่มีทักษะ การรับมือกับภัยคุกคามมักเป็นการต่อสู้ที่ต้องใช้เวลา การวิเคราะห์ และการทำงานหนัก",
+        "source_refs": [
+          1
+        ]
+      },
+      "created_at": "2026-06-17T13:36:38.072703+00:00",
+      "updated_at": "2026-07-10T07:39:05.332343+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "985e5510-dbe9-47b9-b62e-eec46ae75c92",
+      "kind": "salaryProgression",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "position": 40,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "title": "Grow, earn more",
+        "levels": [
+          {
+            "note": "You know SOC tools and monitoring, with a base cert (e.g. Security+). Durable skill: thinking like an attacker — spotting the gap first.",
+            "level": "Junior/Entry-Level",
+            "years": "0-3",
+            "salary": "25k–35k",
+            "source_refs": [
+              2,
+              4
+            ]
+          },
+          {
+            "note": "You handle real incidents and can pen-test systems. Durable skill: deciding well while a system is under attack and information is incomplete.",
+            "level": "Mid-Level",
+            "years": "3-7",
+            "salary": "35k–55k",
+            "source_refs": [
+              2,
+              4
+            ]
+          },
+          {
+            "note": "You architect security for the whole org and brief the board on risk. Durable skill: weighing risk against the business — what an AI vuln-scanner can't.",
+            "level": "Senior/Lead",
+            "years": "7+",
+            "salary": "70k+",
+            "source_refs": [
+              2,
+              4
+            ]
+          }
+        ],
+        "eyebrow": "How pay grows · JobsDB listings, Jul 2026",
+        "source_refs": [
+          2,
+          4
+        ]
+      },
+      "content_th": {
+        "title": "ยิ่งเก่ง ยิ่งได้",
+        "levels": [
+          {
+            "note": "รู้เครื่องมือ SOC/มอนิเตอร์ มี cert พื้นฐาน (เช่น Security+) สกิลที่ติดตัว: คิดแบบคนร้าย — มองเห็นช่องโหว่ก่อนใคร",
+            "level": "Junior/Entry-Level",
+            "years": "0-3",
+            "salary": "25k–35k",
+            "source_refs": [
+              2,
+              4
+            ]
+          },
+          {
+            "note": "รับมือ incident จริงได้ เจาะระบบทดสอบ (pen-test) เป็น สกิลที่ติดตัว: ตัดสินใจถูกตอนระบบกำลังถูกโจมตีและข้อมูลไม่ครบ",
+            "level": "Mid-Level",
+            "years": "3-7",
+            "salary": "35k–55k",
+            "source_refs": [
+              2,
+              4
+            ]
+          },
+          {
+            "note": "วางสถาปัตยกรรมความปลอดภัยทั้งองค์กร คุยกับบอร์ดเรื่องความเสี่ยงได้ สกิลที่ติดตัว: ชั่งความเสี่ยงกับธุรกิจ — สิ่งที่ AI สแกนช่องโหว่แทนไม่ได้",
+            "level": "Senior/Lead",
+            "years": "7+",
+            "salary": "70k+",
+            "source_refs": [
+              2,
+              4
+            ]
+          }
+        ],
+        "eyebrow": "เงินเดือนโตแค่ไหน · จากประกาศ JobsDB ก.ค. 2569",
+        "source_refs": [
+          2,
+          4
+        ]
+      },
+      "created_at": "2026-06-17T13:36:38.072703+00:00",
+      "updated_at": "2026-07-24T20:13:06.175028+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "e9edb51a-6a5e-4844-a1a2-21a586bab0c7",
+      "kind": "aiImpact",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "position": 70,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "title": "AI helps vs replaces",
+        "eyebrow": "Will AI replace you",
+        "verdict": "No — AI is unlikely to replace you, but it will become a tool you use every day. Repetitive monitoring work like reading logs or basic vulnerability scanning is being automated, but judgment during a live attack, understanding business context, and handling never-seen-before threats still need humans. In ISC2's 2024 survey, two in three professionals were confident their skills will complement AI, not be replaced by it.",
+        "augmented": [
+          "Real-time threat detection and analysis",
+          "Automated incident response",
+          "Vulnerability identification and remediation advice"
+        ],
+        "automated": [
+          "Large-scale log monitoring",
+          "Basic vulnerability scanning",
+          "Certain aspects of User Behavior Analytics"
+        ],
+        "source_refs": [
+          7
+        ],
+        "ai_risk_score": 3
+      },
+      "content_th": {
+        "title": "AI ช่วย vs AI แทน",
+        "eyebrow": "AI จะแทนเธอไหม",
+        "verdict": "ไม่ — AI ไม่น่าจะแทนเธอ แต่จะกลายเป็นเครื่องมือที่เธอใช้ทุกวัน งานเฝ้าระวังซ้ำๆ อย่างการไล่อ่าน log หรือสแกนช่องโหว่เบื้องต้นกำลังถูก AI ทำแทน แต่การตัดสินใจท่ามกลางเหตุโจมตีจริง การเข้าใจบริบทของธุรกิจ และการรับมือภัยคุกคามที่ไม่เคยเจอมาก่อนยังต้องอาศัยคน — ในงานสำรวจ ISC2 (2024) มืออาชีพสองในสามมั่นใจว่าทักษะของตนจะทำงานร่วมกับ AI ไม่ใช่ถูกแทนที่",
+        "augmented": [
+          "การตรวจจับและวิเคราะห์ภัยคุกคามแบบเรียลไทม์",
+          "การตอบสนองต่อเหตุการณ์อัตโนมัติ",
+          "การระบุช่องโหว่และให้คำแนะนำการแก้ไข"
+        ],
+        "automated": [
+          "การตรวจสอบบันทึก (Log Monitoring) จำนวนมาก",
+          "การสแกนช่องโหว่เบื้องต้น",
+          "การวิเคราะห์พฤติกรรมผู้ใช้ (User Behavior Analytics) บางส่วน"
+        ],
+        "source_refs": [
+          7
+        ],
+        "ai_risk_score": 3
+      },
+      "created_at": "2026-06-17T13:36:38.072703+00:00",
+      "updated_at": "2026-07-24T20:13:06.240166+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "1f111b61-0fb5-4c0b-888c-dc621a14ceb7",
+      "kind": "marketThailand",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "position": 80,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "body": "Demand is real and the market is short on people — 67% of organizations worldwide say their security teams are understaffed (ISC2 2024), so people with proven skills are fought over. But the first step is still steep for fresh grads because most postings ask for experience: LinkedIn (Jul 2026) showed 222 results, only 34 open to low-experience candidates versus 133 mid-senior. Bottom line: your odds are good if you can prove skill — e.g. certs or hands-on labs you can show. These are platform search results, not national vacancy counts.",
+        "title": "How easy is it to find this job?",
+        "eyebrow": "Thailand market · assessed 21 Jul 2026",
+        "openings": "Over 1,000 job openings are estimated in the next 1-2 years.",
+        "companies": [
+          "AIS",
+          "True Corporation",
+          "SCB (Siam Commercial Bank)",
+          "Bangkok Bank",
+          "PTT Global Chemical",
+          "DECODE Thailand",
+          "Kasikornbank (KBank)",
+          "Digital Economy Promotion Agency (depa)",
+          "Government agencies (e.g., NCSA Thailand)"
+        ],
+        "job_access": {
+          "label": "Moderate; easier with demonstrated skills",
+          "score": 63,
+          "confidence": "medium",
+          "methodology": "Formula: demand 50% + inverse competition 25% + inverse entry barrier 25%. This is not a probability of receiving an offer.",
+          "demand_score": 8,
+          "applicant_data": "No reliable public Thailand-wide applicants-per-opening figure is available for cybersecurity.",
+          "competition_score": 4,
+          "entry_barrier_score": 7
+        },
+        "source_refs": [
+          9,
+          14,
+          15
+        ]
+      },
+      "content_th": {
+        "body": "ตลาดมีงานให้เห็นจริงและกำลังขาดคนมาก — องค์กรทั่วโลก 67% บอกว่าคน security ไม่พอ (ISC2 2024) คนที่มีทักษะจริงจึงถูกแย่งตัว แต่ด่านแรกของเด็กจบใหม่ยังสูง เพราะประกาศส่วนใหญ่อยากได้คนมีประสบการณ์: LinkedIn (ก.ค. 2569) แสดงผลค้นหา 222 งาน มีเพียง 34 งานที่รับระดับประสบการณ์น้อย เทียบกับ 133 งานระดับกึ่งอาวุโส สรุป: โอกาสมีสูงถ้าเธอพิสูจน์ทักษะได้ เช่น ผ่าน cert หรือทำ lab ฝึกมือจนมีผลงานโชว์ ตัวเลขเป็นภาพจากแพลตฟอร์ม ไม่ใช่จำนวนงานว่างทั้งประเทศ",
+        "title": "งานนี้หาง่ายแค่ไหนในไทย?",
+        "eyebrow": "ตลาดไทย · ประเมิน 21 ก.ค. 2569",
+        "openings": "คาดว่าจะมีตำแหน่งงานว่างมากกว่า 1,000 ตำแหน่งในอีก 1-2 ปีข้างหน้า",
+        "companies": [
+          "AIS",
+          "True Corporation",
+          "SCB (Siam Commercial Bank)",
+          "Bangkok Bank",
+          "PTT Global Chemical",
+          "DECODE Thailand",
+          "Kasikornbank (KBank)",
+          "Digital Economy Promotion Agency (depa)",
+          "Government agencies (e.g., NCSA Thailand)"
+        ],
+        "job_access": {
+          "label": "ปานกลางค่อนไปทางง่ายเมื่อมีทักษะจริง",
+          "score": 63,
+          "confidence": "medium",
+          "methodology": "สูตร: ความต้องการจ้าง 50% + การแข่งขันแบบกลับคะแนน 25% + ด่านทักษะแรกเข้าแบบกลับคะแนน 25% คะแนนนี้ไม่ใช่เปอร์เซ็นต์โอกาสได้งาน",
+          "demand_score": 8,
+          "applicant_data": "ยังไม่มีข้อมูลสาธารณะที่น่าเชื่อถือว่ามีผู้สมัครกี่คนต่อ 1 ตำแหน่งไซเบอร์ในไทย",
+          "competition_score": 4,
+          "entry_barrier_score": 7
+        },
+        "source_refs": [
+          9,
+          14,
+          15
+        ]
+      },
+      "created_at": "2026-06-17T13:36:38.072703+00:00",
+      "updated_at": "2026-07-24T20:13:06.300194+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "bb5d3ec6-aaf0-4edd-a175-4fc900b75156",
+      "kind": "dayInLife",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "position": 90,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "steps": [
+          {
+            "label": "Monitor and analyze threats (Threat Monitoring)",
+            "detail": "Open the SIEM (a system that collects and analyzes security logs from across the organization), such as Splunk or Microsoft Sentinel, review triggered alerts, and separate false positives (alerts that look suspicious but aren't attacks) from the ones worth investigating."
+          },
+          {
+            "label": "Test defenses by attacking them (Penetration Testing)",
+            "detail": "Use tools like Metasploit (attack simulation software), Burp Suite (a web security testing tool), or Nmap (a network scanner) to find vulnerabilities in systems you're authorized to test, then exploit them (use the weakness to actually break in) to prove the risk and write a report."
+          },
+          {
+            "label": "Analyze vulnerabilities and ship patches",
+            "detail": "Track new CVEs (standard IDs for publicly disclosed vulnerabilities) from the NVD (the US government vulnerability database) or vendor advisories, score severity with CVSS (a 0–10 rating), then coordinate with IT to patch (update software to close the hole) or mitigate (reduce risk temporarily) within the SLA (the promised fix time)."
+          },
+          {
+            "label": "Respond to security incidents (Incident Response)",
+            "detail": "When an incident hits — e.g. malware (malicious software) or a data breach (leaked data) — you first contain (isolate infected systems), then eradicate (remove the cause), recover (restore systems), and write a post-mortem (a lessons-learned summary)."
+          },
+          {
+            "label": "Write security policies and compliance documentation",
+            "detail": "Draft or update policies such as the acceptable use policy (rules for using company systems) and the incident response plan, aligned with ISO 27001 (the international information-security standard) or PDPA (Thailand's personal data protection law), and keep evidence for audits (inspections)."
+          },
+          {
+            "label": "Train employees on security awareness",
+            "detail": "Run phishing simulations (fake scam emails sent to test staff), see who clicks, then summarize results and teach online sessions about social engineering (tricking people into giving up information) and safe password habits."
+          },
+          {
+            "label": "Review logs and do forensic analysis",
+            "detail": "Collect logs (system activity records) from endpoints (employee devices), firewalls (network filters), and servers to rebuild the event timeline with forensic tools (digital evidence analysis) like Autopsy or Volatility, to figure out how the attacker got in."
+          }
+        ],
+        "title": "What the day looks like",
+        "eyebrow": "A day in the life",
+        "source_refs": [
+          13
+        ]
+      },
+      "content_th": {
+        "steps": [
+          {
+            "label": "ตรวจจับและวิเคราะห์ภัยคุกคาม (Threat Monitoring)",
+            "detail": "เปิด SIEM (ระบบรวมและวิเคราะห์ log ความปลอดภัยจากทั้งองค์กร) เช่น Splunk หรือ Microsoft Sentinel ดู alert (สัญญาณเตือน) ที่ถูก trigger (เรียกขึ้นมา) แล้วแยกว่าอันไหนเป็น false positive (เตือนหลอก — ดูน่าสงสัยแต่ไม่ใช่การโจมตี) อันไหนต้องสืบสวนต่อ"
+          },
+          {
+            "label": "ทดสอบเจาะระบบ (Penetration Testing)",
+            "detail": "ใช้เครื่องมือเช่น Metasploit (โปรแกรมจำลองการโจมตี), Burp Suite (เครื่องมือทดสอบความปลอดภัยเว็บ) หรือ Nmap (เครื่องมือสแกนเครือข่าย) หาช่องโหว่ในระบบที่ได้รับอนุญาต จากนั้นลอง exploit (ใช้ช่องโหว่เจาะเข้าระบบจริง) เพื่อพิสูจน์ความเสี่ยงและเขียนรายงาน"
+          },
+          {
+            "label": "วิเคราะห์ช่องโหว่และออก patch",
+            "detail": "ติดตาม CVE (รหัสมาตรฐานของช่องโหว่ที่เพิ่งเปิดเผย) จาก NVD (ฐานข้อมูลช่องโหว่ของรัฐบาลสหรัฐฯ) หรือประกาศของ vendor ให้คะแนนความรุนแรงด้วย CVSS (คะแนน 0–10) แล้วประสานทีม IT ให้ patch (อัปเดตแก้ช่องโหว่) หรือ mitigate (ลดความเสี่ยงชั่วคราว) ให้ทันกรอบเวลา SLA (เวลาที่สัญญาไว้ว่าต้องแก้)"
+          },
+          {
+            "label": "ตอบสนองเหตุการณ์ด้านความปลอดภัย (Incident Response)",
+            "detail": "เมื่อเกิด incident (เหตุโจมตีจริง) เช่น malware (โปรแกรมอันตราย) หรือ data breach (ข้อมูลรั่วไหล) ต้อง contain (กักกันระบบที่ติดเชื้อ) ก่อน แล้ว eradicate (กำจัดสาเหตุ) recover (กู้ระบบกลับมา) และเขียน post-mortem (สรุปบทเรียนหลังเหตุ)"
+          },
+          {
+            "label": "เขียน security policy และ compliance documentation",
+            "detail": "ร่างหรืออัปเดต policy (นโยบายความปลอดภัยขององค์กร) เช่น acceptable use policy (กฎการใช้ระบบที่ยอมรับได้), incident response plan (แผนรับมือเหตุโจมตี) ให้ตรงมาตรฐาน ISO 27001 (มาตรฐานสากลด้านความมั่นคงข้อมูล) หรือ PDPA (กฎหมายคุ้มครองข้อมูลส่วนบุคคลของไทย) พร้อมเก็บ evidence (หลักฐาน) ไว้ให้ audit (การตรวจสอบ)"
+          },
+          {
+            "label": "ฝึกอบรมพนักงานเรื่อง security awareness",
+            "detail": "จัดทำ phishing simulation (ส่งอีเมลหลอกจำลองเพื่อทดสอบพนักงาน) ดูว่าใครคลิก แล้วสรุปผลและจัดอบรมเรื่อง social engineering (การหลอกให้คนเผยข้อมูล) และการตั้งรหัสผ่านที่ปลอดภัย"
+          },
+          {
+            "label": "ตรวจสอบ log และ forensic analysis",
+            "detail": "รวบรวม log (บันทึกกิจกรรมของระบบ) จาก endpoint (เครื่องปลายทาง เช่น โน้ตบุ๊กพนักงาน), firewall (กำแพงกั้นเครือข่าย) และ server มาเรียง timeline ของเหตุการณ์ ด้วยเครื่องมือ forensic (การตรวจหลักฐานดิจิทัล) เช่น Autopsy หรือ Volatility เพื่อหาว่าผู้โจมตีเข้ามาได้ยังไง"
+          }
+        ],
+        "title": "ชีวิตจริงของสายนี้",
+        "eyebrow": "วันนึงทำอะไรบ้าง",
+        "source_refs": [
+          13
+        ]
+      },
+      "created_at": "2026-06-17T13:36:38.072703+00:00",
+      "updated_at": "2026-07-24T20:13:06.364174+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "3c466d15-5dbb-4f47-8b3c-7ae04cd00dea",
+      "kind": "risks",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "position": 110,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "risks": [
+          "High stress from handling emergencies and time pressure.",
+          "Constant exposure to complex and evolving cyber threats.",
+          "Risk of being targeted by cybercriminals (if handling sensitive information).",
+          "Continuous learning required to keep up with new technologies and threats."
+        ],
+        "title": "Downsides + who it's not for",
+        "eyebrow": "The honest part",
+        "notForYou": [
+          "Dislike continuous learning or get bored with changes.",
+          "Cannot work well under pressure or handle complex situations.",
+          "Lack meticulousness and attention to small details."
+        ]
+      },
+      "content_th": {
+        "risks": [
+          "ความเครียดสูงจากการรับมือกับเหตุการณ์ฉุกเฉินและการกดดันจากเวลา",
+          "การเผชิญกับภัยคุกคามทางไซเบอร์ที่ซับซ้อนและเปลี่ยนแปลงตลอดเวลา",
+          "ความเสี่ยงที่จะถูกตกเป็นเป้าหมายโดยอาชญากรไซเบอร์ (หากทำงานในตำแหน่งที่มีข้อมูลละเอียดอ่อน)",
+          "ต้องเรียนรู้อย่างต่อเนื่องเพื่อตามให้ทันเทคโนโลยีและภัยคุกคามใหม่ๆ"
+        ],
+        "title": "ข้อเสีย + ใครไม่เหมาะ",
+        "eyebrow": "ความจริงที่ต้องรู้",
+        "notForYou": [
+          "ไม่ชอบการเรียนรู้สิ่งใหม่ๆ หรือรู้สึกเบื่อหน่ายกับการเปลี่ยนแปลง",
+          "ไม่สามารถทำงานภายใต้แรงกดดัน หรือจัดการกับสถานการณ์ที่ซับซ้อนได้ดี",
+          "ขาดความละเอียดรอบคอบ และไม่ใส่ใจในรายละเอียดเล็กๆ น้อยๆ"
+        ]
+      },
+      "created_at": "2026-06-17T13:36:38.072703+00:00",
+      "updated_at": "2026-07-10T07:39:05.332343+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "06b2b12d-c1a9-4ff6-adf6-0d3292dae6d4",
+      "kind": "entryRoutes",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "position": 120,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": null,
+      "content_th": {
+        "title": "มีเส้นทางไหนเข้าสู่อาชีพนี้ได้บ้าง?",
+        "eyebrow": "เรียนอะไรดี?",
+        "faculties": [
+          {
+            "name": "วิศวกรรมคอมพิวเตอร์ / IT Security",
+            "note": "เรียนครบทั้ง network, OS, security ได้เปรียบที่สุด",
+            "tier": "direct"
+          },
+          {
+            "name": "วิทยาการคอมพิวเตอร์ (CS)",
+            "note": "ได้พื้นฐาน coding แข็ง เสริม network security เพิ่ม",
+            "tier": "direct"
+          },
+          {
+            "name": "เทคโนโลยีสารสนเทศ (IT)",
+            "note": "เรียน network + system admin ได้ ต่อยอด security ง่าย",
+            "tier": "direct"
+          },
+          {
+            "name": "วิศวกรรมไฟฟ้า / โทรคมนาคม",
+            "note": "เข้าใจ network infrastructure ดี ต้องเรียน security + coding เพิ่ม",
+            "tier": "related"
+          },
+          {
+            "name": "วิทยาศาสตร์ข้อมูล / คณิตศาสตร์",
+            "note": "ถ้าสนใจ cryptography หรือ security analytics เข้าทางดี",
+            "tier": "related"
+          },
+          {
+            "name": "สาขาอื่น + Certification",
+            "note": "เปลี่ยนสายได้ถ้ามี cert + hands-on lab (TryHackMe, HackTheBox)",
+            "tier": "alternative"
+          }
+        ],
+        "source_refs": []
+      },
+      "created_at": "2026-07-10T05:56:24.703003+00:00",
+      "updated_at": "2026-07-22T11:53:47.375688+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "044d343d-e657-4ada-997e-73058bed8987",
+      "kind": "text",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "position": 125,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": null,
+      "content_th": {
+        "body": "• System fundamentals: ใช้ Windows/Linux, network, web, cloud และ IAM (ระบบจัดการสิทธิ์ผู้ใช้) เป็น พออ่าน architecture แล้วบอก attack surface (จุดที่ระบบถูกโจมตีได้) กับ trust boundary (เส้นแบ่งระหว่างส่วนที่เชื่อถือกับไม่เชื่อถือ) ได้\n• Risk assessment, not just hacking: วิเคราะห์ว่า vulnerability (ช่องโหว่) ไหนกระทบ business จริง โอกาสเกิดเท่าไร และควรแก้ลำดับไหน\n• Attacker + defender mindset: คิดเส้นทางโจมตีได้ แต่ตัดสินใจแบบ defender: ลด blast radius (ขอบเขตความเสียหายถ้าระบบโดน), harden config (ตั้งค่าให้ปลอดภัยขึ้น), monitor และเตรียม response\n• Log + event analysis: อ่าน auth log (บันทึกการล็อกอิน), endpoint alert, network traffic, cloud audit log และแยก false positive (เตือนหลอก) ออกจาก incident (เหตุโจมตี) จริง\n• Scripting for scale: ใช้ Python, PowerShell หรือ Bash เพื่อ parse log (แกะข้อมูลจากบันทึก), enrich indicator (เติมบริบทให้ร่องรอยการโจมตี), automate checks และทำงานซ้ำให้ตรวจสอบได้\n• Tools by role: SOC ใช้ SIEM (ระบบรวมวิเคราะห์ log ความปลอดภัย)/EDR (โปรแกรมเฝ้าระวังเครื่องปลายทาง), pentest ใช้ Burp/proxy/scanner, vuln team ใช้ Nessus/OpenVAS (เครื่องมือสแกนช่องโหว่), network ใช้ firewall/IDS (ระบบตรวจจับการบุกรุก), threat intel ใช้ MITRE ATT&CK (คลังความรู้วิธีโจมตีของแฮกเกอร์)/CVE — ไม่ใช่ทุกคนต้องใช้ทุก tool\n• Incident response discipline: preserve evidence (เก็บหลักฐานไว้ก่อน), scope impact, contain (กักกัน), eradicate (กำจัดสาเหตุ), recover (กู้ระบบ), write postmortem (สรุปบทเรียนหลังเหตุ) และไม่รีบแก้จนทำ forensic (การตรวจหลักฐานดิจิทัล) เสีย\n• Security communication: เขียน risk/report ให้ทีม IT, product, legal และผู้บริหารเข้าใจว่าต้องทำอะไร ทำไม และถ้าไม่ทำจะเสียอะไร\n• Continuous learning: ตาม CVE, TTP (รูปแบบวิธีโจมตีของแฮกเกอร์), cloud misconfig, phishing technique และฝึก lab/CTF (แข่งเจาะระบบฝึกมือ) เพื่อให้มือไวแต่ยังคิดเป็นระบบ",
+        "title": "ต้องเก่งอะไรถึงทำงาน Cybersecurity ได้?",
+        "eyebrow": "Skill ที่สายนี้ใช้",
+        "source_refs": [
+          12,
+          13
+        ],
+        "presentation": "skills"
+      },
+      "created_at": "2026-07-10T08:43:53.797335+00:00",
+      "updated_at": "2026-07-24T20:13:06.426799+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "d7eff395-107a-4e0a-8991-dfc4c3d2b170",
+      "kind": "text",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "position": 130,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "body": "Cybersecurity is the practice of protecting computer systems, networks, digital devices, programs, and data from unauthorized access, attack, or damage. This includes defending against malware, phishing, data theft, and denial-of-service attacks. Professionals in this field design, implement, and maintain security systems, as well as respond to security incidents.",
+        "title": "What this path is",
+        "eyebrow": "What it actually is",
+        "source_refs": [
+          1
+        ]
+      },
+      "content_th": {
+        "body": "ความมั่นคงปลอดภัยทางไซเบอร์ (Cybersecurity) คือการปกป้องระบบคอมพิวเตอร์ เครือข่าย อุปกรณ์ดิจิทัล โปรแกรม และข้อมูล จากการโจมตี การเข้าถึง หรือความเสียหายโดยไม่ได้รับอนุญาต ซึ่งรวมถึงการป้องกันมัลแวร์ (Malware), ฟิชชิ่ง (Phishing), การโจรกรรมข้อมูล (Data Theft) และการโจมตีแบบปฏิเสธการให้บริการ (Denial-of-Service Attacks) ผู้เชี่ยวชาญด้านนี้จะออกแบบ ติดตั้ง และดูแลระบบรักษาความปลอดภัย รวมถึงตอบสนองต่อเหตุการณ์ด้านความปลอดภัย",
+        "title": "ทางนี้คืออะไร",
+        "eyebrow": "มันคืออะไรกันแน่",
+        "source_refs": [
+          1
+        ]
+      },
+      "created_at": "2026-06-17T13:36:38.072703+00:00",
+      "updated_at": "2026-07-10T07:39:05.332343+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "68b9d2b9-6079-4985-8270-89ffd02d34ee",
+      "kind": "cta",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "position": 140,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "body": "Join a squad of 8–12. Test the path. Leave with your Career Evidence Report.",
+        "title": "Is this really your path?",
+        "button": "Join the 7-Day Squad",
+        "eyebrow": "Test it for 7 days",
+        "resources": [
+          {
+            "url": "https://tryhackme.com",
+            "note": "Guided beginner-friendly hacking rooms",
+            "label": "TryHackMe"
+          },
+          {
+            "url": "https://www.hackthebox.com",
+            "note": "Intermediate-to-advanced practice labs",
+            "label": "HackTheBox"
+          }
+        ]
+      },
+      "content_th": {
+        "body": "เข้า squad 8–12 คน ทำภารกิจทดสอบเส้นทางนี้ จบแล้วได้ Career Evidence Report",
+        "title": "ทางนี้ใช่เธอจริงไหม?",
+        "button": "เข้าร่วม 7-Day Squad",
+        "eyebrow": "ลองของจริง 7 วัน",
+        "resources": [
+          {
+            "url": "https://tryhackme.com",
+            "note": "ห้องฝึกแฮ็กแบบเป็นขั้นตอน เหมาะกับมือใหม่",
+            "label": "TryHackMe"
+          },
+          {
+            "url": "https://www.hackthebox.com",
+            "note": "สนามฝึกเจาะระบบระดับกลาง-สูง",
+            "label": "HackTheBox"
+          }
+        ]
+      },
+      "created_at": "2026-06-17T13:36:38.072703+00:00",
+      "updated_at": "2026-07-24T20:19:12.456838+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "725e8e83-ca80-401f-888f-4137519d3b7d",
+      "kind": "sources",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "position": 150,
+      "image_url": null,
+      "is_hidden": false,
+      "content_en": {
+        "items": [
+          {
+            "ref": 1,
+            "url": "https://www.nist.gov/cybersecurity/what-cybersecurity",
+            "title": "What Is Cybersecurity?",
+            "publisher": "National Institute of Standards and Technology (NIST)"
+          },
+          {
+            "ref": 2,
+            "url": "https://th.jobsdb.com/career-advice/role/security-engineer/salary",
+            "title": "Security Engineer Salary in Thailand",
+            "publisher": "JobsDB Thailand"
+          },
+          {
+            "ref": 3,
+            "url": "https://www.jobthai.com/th/company/2103157/insight",
+            "title": "JobThai Job Market Analysis - IT/Computer",
+            "publisher": "JobThai"
+          },
+          {
+            "ref": 4,
+            "url": "https://www.linkedin.com/jobs/",
+            "title": "LinkedIn Jobs Data - Thailand Cybersecurity Roles",
+            "publisher": "LinkedIn"
+          },
+          {
+            "ref": 5,
+            "url": "https://th.jobsdb.com/th/jobs/network-security-engineer",
+            "title": "Network Security Engineer Job Openings",
+            "publisher": "JobsDB Thailand"
+          },
+          {
+            "ref": 7,
+            "url": "https://www.isc2.org/Insights/2024/10/ISC2-2024-Cybersecurity-Workforce-Study",
+            "title": "ISC2 2024 Cybersecurity Workforce Study",
+            "publisher": "ISC²"
+          },
+          {
+            "ref": 8,
+            "url": "https://www.depa.or.th/th/article-view/digital-economy-outlook-2023",
+            "title": "Thailand Digital Economy Outlook 2023",
+            "publisher": "Digital Economy Promotion Agency (depa)"
+          },
+          {
+            "ref": 9,
+            "url": "https://www.isc2.org/Research/Workforce-Study",
+            "title": "Global Cybersecurity Workforce Study",
+            "publisher": "ISC²"
+          },
+          {
+            "ref": 12,
+            "url": "https://www.bls.gov/ooh/computer-and-information-technology/information-security-analysts.htm",
+            "title": "Information Security Analysts",
+            "publisher": "U.S. Bureau of Labor Statistics"
+          },
+          {
+            "ref": 13,
+            "url": "https://www.onetonline.org/link/summary/15-1212.00",
+            "title": "15-1212.00 - Information Security Analysts",
+            "publisher": "O*NET OnLine"
+          },
+          {
+            "ref": 14,
+            "url": "https://th.linkedin.com/jobs/cyber-security-jobs",
+            "title": "Cyber Security jobs in Thailand",
+            "publisher": "LinkedIn"
+          },
+          {
+            "ref": 15,
+            "url": "https://www.depa.or.th/th/article-view/Digital-workforce",
+            "title": "ปัญหากำลังคนด้านดิจิทัลในไทย",
+            "publisher": "depa"
+          }
+        ],
+        "title": "Real, checkable sources",
+        "eyebrow": "Where this comes from"
+      },
+      "content_th": {
+        "items": [
+          {
+            "ref": 1,
+            "url": "https://www.nist.gov/cybersecurity/what-cybersecurity",
+            "title": "What Is Cybersecurity?",
+            "publisher": "National Institute of Standards and Technology (NIST)"
+          },
+          {
+            "ref": 2,
+            "url": "https://th.jobsdb.com/career-advice/role/security-engineer/salary",
+            "title": "Security Engineer Salary in Thailand",
+            "publisher": "JobsDB Thailand"
+          },
+          {
+            "ref": 3,
+            "url": "https://www.jobthai.com/th/company/2103157/insight",
+            "title": "JobThai Job Market Analysis - IT/Computer",
+            "publisher": "JobThai"
+          },
+          {
+            "ref": 4,
+            "url": "https://www.linkedin.com/jobs/",
+            "title": "LinkedIn Jobs Data - Thailand Cybersecurity Roles",
+            "publisher": "LinkedIn"
+          },
+          {
+            "ref": 5,
+            "url": "https://th.jobsdb.com/th/jobs/network-security-engineer",
+            "title": "Network Security Engineer Job Openings",
+            "publisher": "JobsDB Thailand"
+          },
+          {
+            "ref": 7,
+            "url": "https://www.isc2.org/Insights/2024/10/ISC2-2024-Cybersecurity-Workforce-Study",
+            "title": "ISC2 2024 Cybersecurity Workforce Study",
+            "publisher": "ISC²"
+          },
+          {
+            "ref": 8,
+            "url": "https://www.depa.or.th/th/article-view/digital-economy-outlook-2023",
+            "title": "Thailand Digital Economy Outlook 2023",
+            "publisher": "Digital Economy Promotion Agency (depa)"
+          },
+          {
+            "ref": 9,
+            "url": "https://www.isc2.org/Research/Workforce-Study",
+            "title": "Global Cybersecurity Workforce Study",
+            "publisher": "ISC²"
+          },
+          {
+            "ref": 12,
+            "url": "https://www.bls.gov/ooh/computer-and-information-technology/information-security-analysts.htm",
+            "title": "Information Security Analysts",
+            "publisher": "U.S. Bureau of Labor Statistics"
+          },
+          {
+            "ref": 13,
+            "url": "https://www.onetonline.org/link/summary/15-1212.00",
+            "title": "15-1212.00 - Information Security Analysts",
+            "publisher": "O*NET OnLine"
+          },
+          {
+            "ref": 14,
+            "url": "https://th.linkedin.com/jobs/cyber-security-jobs",
+            "title": "Cyber Security jobs in Thailand",
+            "publisher": "LinkedIn"
+          },
+          {
+            "ref": 15,
+            "url": "https://www.depa.or.th/th/article-view/Digital-workforce",
+            "title": "ปัญหากำลังคนด้านดิจิทัลในไทย",
+            "publisher": "depa"
+          }
+        ],
+        "title": "อ้างอิงจริง ตรวจสอบได้",
+        "eyebrow": "ที่มาของข้อมูล"
+      },
+      "created_at": "2026-06-17T13:36:38.072703+00:00",
+      "updated_at": "2026-07-24T20:13:06.527473+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "0c2eefbc-5621-44f3-8d9f-7db2a85edd36",
+      "kind": "reflection",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "position": 925,
+      "image_url": null,
+      "is_hidden": true,
+      "content_en": {
+        "title": "How much do you want to try this?",
+        "rating": true,
+        "eyebrow": "Quick gut-check",
+        "chapterKey": "what-it-is"
+      },
+      "content_th": {
+        "title": "อยากลองทางนี้แค่ไหน?",
+        "rating": true,
+        "eyebrow": "เช็กใจตัวเอง",
+        "chapterKey": "what-it-is"
+      },
+      "created_at": "2026-06-20T02:55:53.797575+00:00",
+      "updated_at": "2026-07-10T07:39:05.332343+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "385f45d9-6f53-4aab-adae-352fafb420d3",
+      "kind": "jobs",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "position": 930,
+      "image_url": null,
+      "is_hidden": true,
+      "content_en": {
+        "jobs": [
+          {
+            "note": "Base salary + annual bonus",
+            "title": "Security Analyst",
+            "demand": "High",
+            "growth": "+15%",
+            "salary": "35k–70k",
+            "listings": [
+              {
+                "url": "https://www.jobsdb.com/th/job/cyber-security-analyst-100003000496939",
+                "title": "Cyber Security Analyst",
+                "source": "JobsDB",
+                "company": "AIS"
+              },
+              {
+                "url": "https://www.jobthai.com/th/jobs/2374888",
+                "title": "Cyber Security Officer",
+                "source": "JobThai",
+                "company": "True Corporation"
+              },
+              {
+                "url": "https://www.linkedin.com/jobs/view/cyber-security-specialist-at-siam-commercial-bank-scb-3802593331",
+                "title": "Cyber Security Specialist",
+                "source": "LinkedIn",
+                "company": "SCB (Siam Commercial Bank)"
+              }
+            ],
+            "openings": "200+ Openings (estimated)",
+            "jobsdbUrl": "https://th.jobsdb.com/security-analyst-jobs",
+            "source_refs": [
+              2,
+              3,
+              4
+            ],
+            "salaryGlobal": "$5k–$9k",
+            "listingSource": "JobsDB, LinkedIn, JobThai",
+            "salaryGlobalThb": "≈฿180k–324k"
+          },
+          {
+            "note": "Base salary + benefits + bonus",
+            "title": "Network Security Engineer",
+            "demand": "High",
+            "growth": "+12%",
+            "salary": "45k–90k",
+            "listings": [
+              {
+                "url": "https://www.jobsdb.com/th/job/network-security-engineer-100003000493801",
+                "title": "Network Security Engineer",
+                "source": "JobsDB",
+                "company": "PTT Global Chemical"
+              },
+              {
+                "url": "https://www.linkedin.com/jobs/view/network-security-engineer-at-bangkok-bank-3788731650",
+                "title": "Network Security Engineer",
+                "source": "LinkedIn",
+                "company": "Bangkok Bank"
+              }
+            ],
+            "openings": "150+ Openings (estimated)",
+            "jobsdbUrl": "https://th.jobsdb.com/network-security-engineer-jobs",
+            "source_refs": [
+              2,
+              4,
+              5
+            ],
+            "salaryGlobal": "$6k–$11k",
+            "listingSource": "JobsDB, LinkedIn",
+            "salaryGlobalThb": "≈฿216k–396k"
+          },
+          {
+            "note": "Base salary + project-based incentives",
+            "title": "Penetration Tester (Ethical Hacker)",
+            "demand": "Growing",
+            "growth": "+18%",
+            "salary": "50k–120k",
+            "listings": [
+              {
+                "url": "https://www.linkedin.com/jobs/view/penetration-tester-at-decode-thailand-3823459789",
+                "title": "Penetration Tester",
+                "source": "LinkedIn",
+                "company": "DECODE Thailand"
+              }
+            ],
+            "openings": "50+ Openings (estimated)",
+            "jobsdbUrl": "https://th.jobsdb.com/penetration-tester-ethical-hacker-jobs",
+            "source_refs": [
+              4
+            ],
+            "salaryGlobal": "$7k–$15k",
+            "listingSource": "LinkedIn, Specialized Security Firms",
+            "salaryGlobalThb": "≈฿252k–540k"
+          }
+        ],
+        "note": "Base salary + annual bonus",
+        "title": "Real jobs, real pay",
+        "eyebrow": "Where it leads",
+        "source_refs": [
+          2,
+          3,
+          4
+        ]
+      },
+      "content_th": {
+        "jobs": [
+          {
+            "note": "ฐานเงินเดือน + โบนัสประจำปี",
+            "title": "Security Analyst",
+            "demand": "High",
+            "growth": "+15%",
+            "salary": "35k–70k",
+            "listings": [
+              {
+                "url": "https://www.jobsdb.com/th/job/cyber-security-analyst-100003000496939",
+                "title": "Cyber Security Analyst",
+                "source": "JobsDB",
+                "company": "AIS"
+              },
+              {
+                "url": "https://www.jobthai.com/th/jobs/2374888",
+                "title": "Cyber Security Officer",
+                "source": "JobThai",
+                "company": "True Corporation"
+              },
+              {
+                "url": "https://www.linkedin.com/jobs/view/cyber-security-specialist-at-siam-commercial-bank-scb-3802593331",
+                "title": "Cyber Security Specialist",
+                "source": "LinkedIn",
+                "company": "SCB (Siam Commercial Bank)"
+              }
+            ],
+            "openings": "200+ ตำแหน่งเปิดรับ (ประมาณการ)",
+            "jobsdbUrl": "https://th.jobsdb.com/security-analyst-jobs",
+            "source_refs": [
+              2,
+              3,
+              4
+            ],
+            "salaryGlobal": "$5k–$9k",
+            "listingSource": "JobsDB, LinkedIn, JobThai",
+            "salaryGlobalThb": "≈฿180k–324k"
+          },
+          {
+            "note": "ฐานเงินเดือน + สวัสดิการ + โบนัส",
+            "title": "Network Security Engineer",
+            "demand": "High",
+            "growth": "+12%",
+            "salary": "45k–90k",
+            "listings": [
+              {
+                "url": "https://www.jobsdb.com/th/job/network-security-engineer-100003000493801",
+                "title": "Network Security Engineer",
+                "source": "JobsDB",
+                "company": "PTT Global Chemical"
+              },
+              {
+                "url": "https://www.linkedin.com/jobs/view/network-security-engineer-at-bangkok-bank-3788731650",
+                "title": "Network Security Engineer",
+                "source": "LinkedIn",
+                "company": "Bangkok Bank"
+              }
+            ],
+            "openings": "150+ ตำแหน่งเปิดรับ (ประมาณการ)",
+            "jobsdbUrl": "https://th.jobsdb.com/network-security-engineer-jobs",
+            "source_refs": [
+              2,
+              4,
+              5
+            ],
+            "salaryGlobal": "$6k–$11k",
+            "listingSource": "JobsDB, LinkedIn",
+            "salaryGlobalThb": "≈฿216k–396k"
+          },
+          {
+            "note": "ฐานเงินเดือน + ค่าตอบแทนพิเศษสำหรับโครงการ",
+            "title": "Penetration Tester (Ethical Hacker)",
+            "demand": "Growing",
+            "growth": "+18%",
+            "salary": "50k–120k",
+            "listings": [
+              {
+                "url": "https://www.linkedin.com/jobs/view/penetration-tester-at-decode-thailand-3823459789",
+                "title": "Penetration Tester",
+                "source": "LinkedIn",
+                "company": "DECODE Thailand"
+              }
+            ],
+            "openings": "50+ ตำแหน่งเปิดรับ (ประมาณการ)",
+            "jobsdbUrl": "https://th.jobsdb.com/penetration-tester-ethical-hacker-jobs",
+            "source_refs": [
+              4
+            ],
+            "salaryGlobal": "$7k–$15k",
+            "listingSource": "LinkedIn, Specialized Security Firms",
+            "salaryGlobalThb": "≈฿252k–540k"
+          }
+        ],
+        "note": "ฐานเงินเดือน + โบนัสประจำปี",
+        "title": "งานจริง + เงินจริง",
+        "eyebrow": "ทางนี้พาไปไหนได้บ้าง",
+        "source_refs": [
+          2,
+          3,
+          4
+        ]
+      },
+      "created_at": "2026-06-17T13:36:38.072703+00:00",
+      "updated_at": "2026-07-24T20:13:06.584579+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "d7ce8255-32a0-4b28-bc34-5f6efb481896",
+      "kind": "reflection",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "position": 935,
+      "image_url": null,
+      "is_hidden": true,
+      "content_en": {
+        "chips": [
+          "Good pay",
+          "Looks fun",
+          "Challenging",
+          "Freedom",
+          "Helps people",
+          "Trending"
+        ],
+        "title": "What attracts you here?",
+        "eyebrow": "What pulls you",
+        "allowText": true,
+        "chapterKey": "money-jobs"
+      },
+      "content_th": {
+        "chips": [
+          "เงินดี",
+          "ดูสนุก",
+          "ท้าทาย",
+          "อิสระ",
+          "ได้ช่วยคน",
+          "มาแรง"
+        ],
+        "title": "อะไรที่ดึงดูดเธอในทางนี้?",
+        "eyebrow": "อะไรที่ถูกใจ",
+        "allowText": true,
+        "chapterKey": "money-jobs"
+      },
+      "created_at": "2026-06-20T02:55:53.797575+00:00",
+      "updated_at": "2026-07-12T16:02:44.009911+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "d497e43e-9700-494a-9704-f6900898f588",
+      "kind": "growthCompare",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "position": 950,
+      "image_url": null,
+      "is_hidden": true,
+      "content_en": {
+        "unit": "demand/yr",
+        "items": [
+          {
+            "self": false,
+            "label": "Data Analyst",
+            "growth": 33
+          },
+          {
+            "self": false,
+            "label": "Content Creator",
+            "growth": 25
+          },
+          {
+            "self": false,
+            "label": "Fintech (Financial Technology)",
+            "growth": 25
+          },
+          {
+            "self": true,
+            "label": "Cybersecurity",
+            "growth": 18
+          }
+        ],
+        "title": "Growth vs other paths",
+        "eyebrow": "How fast it's growing"
+      },
+      "content_th": {
+        "unit": "ความต้องการ/ปี",
+        "items": [
+          {
+            "self": false,
+            "label": "นักวิเคราะห์ข้อมูล (Data Analyst)",
+            "growth": 33
+          },
+          {
+            "self": false,
+            "label": "นักสร้างสรรค์คอนเทนต์",
+            "growth": 25
+          },
+          {
+            "self": false,
+            "label": "สายงานฟินเทค (เทคโนโลยีทางการเงิน)",
+            "growth": 25
+          },
+          {
+            "self": true,
+            "label": "ความมั่นคงปลอดภัยทางไซเบอร์",
+            "growth": 18
+          }
+        ],
+        "title": "เทียบการเติบโตกับสายอื่น",
+        "eyebrow": "โตเร็วแค่ไหน"
+      },
+      "created_at": "2026-06-17T13:36:38.072703+00:00",
+      "updated_at": "2026-07-10T07:39:05.332343+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "39d616b9-9c0f-4ff6-8b8f-2dfef90249eb",
+      "kind": "list",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "position": 960,
+      "image_url": null,
+      "is_hidden": true,
+      "content_en": {
+        "items": [
+          "Networking and Operating System Fundamentals",
+          "Cryptography",
+          "Malware Analysis",
+          "Penetration Testing",
+          "Programming (e.g., Python, Bash)",
+          "Analytical Thinking and Problem-Solving"
+        ],
+        "title": "Skills that make you strong",
+        "eyebrow": "Skills you need"
+      },
+      "content_th": {
+        "items": [
+          "ความรู้ด้านเครือข่ายและระบบปฏิบัติการ",
+          "การเข้ารหัส (Cryptography)",
+          "การวิเคราะห์มัลแวร์",
+          "การทดสอบการเจาะระบบ (Penetration Testing)",
+          "การเขียนโปรแกรม (เช่น Python, Bash)",
+          "การคิดเชิงวิเคราะห์และการแก้ปัญหา"
+        ],
+        "title": "สกิลที่ทำให้เธอเก่งทางนี้",
+        "eyebrow": "ต้องมีสกิลอะไร"
+      },
+      "created_at": "2026-06-17T13:36:38.072703+00:00",
+      "updated_at": "2026-07-12T16:02:44.009911+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "5b647806-541d-4ceb-b20a-1d21c1f7a07a",
+      "kind": "realPeople",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "position": 1020,
+      "image_url": null,
+      "is_hidden": true,
+      "content_en": {
+        "title": "How they started",
+        "people": [],
+        "eyebrow": "Real people"
+      },
+      "content_th": {
+        "title": "เขาเริ่มยังไง",
+        "people": [],
+        "eyebrow": "คนจริงในสายนี้"
+      },
+      "created_at": "2026-06-17T13:36:38.072703+00:00",
+      "updated_at": "2026-07-24T20:13:06.646544+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    },
+    {
+      "id": "8a77717c-89ba-4c67-ada5-9fb764d4ffd7",
+      "kind": "reflection",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "position": 1035,
+      "image_url": null,
+      "is_hidden": true,
+      "content_en": {
+        "chips": [
+          "Fits me",
+          "Want to master it",
+          "Good future",
+          "Not sure yet"
+        ],
+        "title": "Why does this interest you?",
+        "eyebrow": "Before you go on",
+        "allowText": true,
+        "chapterKey": "you-in-it",
+        "placeholder": "A sentence is fine..."
+      },
+      "content_th": {
+        "chips": [
+          "ตรงกับตัวฉัน",
+          "อยากเก่งด้านนี้",
+          "อนาคตดี",
+          "ยังไม่แน่ใจ"
+        ],
+        "title": "ทำไมเธอถึงสนใจทางนี้?",
+        "eyebrow": "ก่อนไปต่อ",
+        "allowText": true,
+        "chapterKey": "you-in-it",
+        "placeholder": "เขียนสั้นๆ ก็ได้..."
+      },
+      "created_at": "2026-06-20T02:55:53.797575+00:00",
+      "updated_at": "2026-07-12T16:02:44.009911+00:00",
+      "image_alt_en": null,
+      "image_alt_th": null,
+      "image_credit": null,
+      "image_prompt": null,
+      "image_license": null
+    }
+  ],
+  "radar_sources": [
+    {
+      "id": "89a79657-246a-41cb-b513-2b0b6f06acc3",
+      "ref": 2,
+      "url": "https://th.jobsdb.com/career-advice/role/security-engineer/salary",
+      "tier": "secondary",
+      "title": "Security Engineer Salary in Thailand",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "quote_en": "Salary insights are based on full-time salary ranges disclosed by employers on Jobsdb job ads.",
+      "quote_th": "ข้อมูลเงินเดือนอิงจากช่วงเงินเดือนที่นายจ้างระบุจริงในประกาศงานบน JobsDB",
+      "publisher": "JobsDB Thailand",
+      "accessed_at": "2026-07-24",
+      "published_at": null
+    },
+    {
+      "id": "d76e28c2-9882-4d1d-b6d1-dbf977f3c213",
+      "ref": 14,
+      "url": "https://th.linkedin.com/jobs/cyber-security-jobs",
+      "tier": "secondary",
+      "title": "Cyber Security jobs in Thailand",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "quote_en": null,
+      "quote_th": null,
+      "publisher": "LinkedIn",
+      "accessed_at": "2026-07-21",
+      "published_at": null
+    },
+    {
+      "id": "4f222c51-ebd7-4897-b373-6e88de9f41fa",
+      "ref": 15,
+      "url": "https://www.depa.or.th/th/article-view/Digital-workforce",
+      "tier": "primary",
+      "title": "ปัญหากำลังคนด้านดิจิทัลในไทย",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "quote_en": null,
+      "quote_th": null,
+      "publisher": "depa",
+      "accessed_at": "2026-07-21",
+      "published_at": null
+    },
+    {
+      "id": "a2233df5-1f53-4b3f-9ab2-88cb47f1687a",
+      "ref": 12,
+      "url": "https://www.bls.gov/ooh/computer-and-information-technology/information-security-analysts.htm",
+      "tier": "primary",
+      "title": "Information Security Analysts",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "quote_en": null,
+      "quote_th": "BLS ระบุทักษะสำคัญ เช่น analytical, communication, creative, detail-oriented และ problem-solving พร้อมหน้าที่ monitor breaches, use firewalls/encryption, assess vulnerabilities และ prepare reports",
+      "publisher": "U.S. Bureau of Labor Statistics",
+      "accessed_at": "2026-07-10",
+      "published_at": null
+    },
+    {
+      "id": "f912fdae-5e22-4ddf-a1a0-f8b516f8bdfc",
+      "ref": 13,
+      "url": "https://www.onetonline.org/link/summary/15-1212.00",
+      "tier": "primary",
+      "title": "15-1212.00 - Information Security Analysts",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "quote_en": null,
+      "quote_th": "O*NET ระบุงานและทักษะด้านการปกป้องไฟล์ เข้ารหัส ตรวจ risk assessment ใช้เครื่องมือ network/security monitoring และ systems analysis",
+      "publisher": "O*NET OnLine",
+      "accessed_at": "2026-07-10",
+      "published_at": null
+    },
+    {
+      "id": "85620219-54da-4aa8-af66-a2be845a2d28",
+      "ref": 7,
+      "url": "https://www.isc2.org/Insights/2024/10/ISC2-2024-Cybersecurity-Workforce-Study",
+      "tier": "secondary",
+      "title": "ISC2 2024 Cybersecurity Workforce Study",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "quote_en": "AI may assume some cybersecurity tasks, but it won't replace the human skill set.",
+      "quote_th": "AI อาจรับงานบางส่วนของสายนี้ไป แต่แทนที่ชุดทักษะของมนุษย์ไม่ได้ — มืออาชีพสองในสามมั่นใจว่าความเชี่ยวชาญของตนจะทำงานร่วมกับ AI",
+      "publisher": "ISC²",
+      "accessed_at": "2026-07-24",
+      "published_at": "2024-10-01"
+    },
+    {
+      "id": "6d603ce8-c323-4bf4-92f8-4eb93d098268",
+      "ref": 1,
+      "url": "https://www.nist.gov/cybersecurity/what-cybersecurity",
+      "tier": "primary",
+      "title": "What Is Cybersecurity?",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "quote_en": "Cybersecurity is the protection of systems, devices, and data from unauthorized access, attack, or damage.",
+      "quote_th": "ความมั่นคงปลอดภัยไซเบอร์คือการป้องกันระบบคอมพิวเตอร์ อุปกรณ์ และข้อมูล จากการถูกโจมตี การเข้าถึง หรือความเสียหายโดยไม่ได้รับอนุญาต",
+      "publisher": "National Institute of Standards and Technology (NIST)",
+      "accessed_at": "2026-06-17",
+      "published_at": "2023-10-26"
+    },
+    {
+      "id": "6fadccbe-cd2d-40d7-a2dd-0d1f8443c540",
+      "ref": 3,
+      "url": "https://www.jobthai.com/th/company/2103157/insight",
+      "tier": "secondary",
+      "title": "JobThai Job Market Analysis - IT/Computer",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "quote_en": "Demand for cybersecurity personnel continues to rise across various industries.",
+      "quote_th": "ความต้องการบุคลากรด้านความปลอดภัยไซเบอร์เพิ่มขึ้นอย่างต่อเนื่องในอุตสาหกรรมต่างๆ",
+      "publisher": "JobThai",
+      "accessed_at": "2026-06-17",
+      "published_at": "2023-11-01"
+    },
+    {
+      "id": "e853795e-7646-4857-bc2f-bd292196f386",
+      "ref": 4,
+      "url": "https://www.linkedin.com/jobs/",
+      "tier": "secondary",
+      "title": "LinkedIn Jobs Data - Thailand Cybersecurity Roles",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "quote_en": "A significant number of Cybersecurity job openings are available in Thailand, particularly in the finance and technology sectors.",
+      "quote_th": "มีตำแหน่งงานด้าน Cybersecurity เปิดรับจำนวนมากในประเทศไทย โดยเฉพาะในภาคการเงินและเทคโนโลยี",
+      "publisher": "LinkedIn",
+      "accessed_at": "2026-06-17",
+      "published_at": "2024-01-20"
+    },
+    {
+      "id": "5602d27c-9611-44bf-a977-ef6633339dd3",
+      "ref": 5,
+      "url": "https://th.jobsdb.com/th/jobs/network-security-engineer",
+      "tier": "tertiary",
+      "title": "Network Security Engineer Job Openings",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "quote_en": "Network Security Engineer roles are highly sought after by tech companies and large enterprises.",
+      "quote_th": "ตำแหน่ง Network Security Engineer เป็นที่ต้องการอย่างมากในบริษัทเทคโนโลยีและองค์กรขนาดใหญ่",
+      "publisher": "JobsDB Thailand",
+      "accessed_at": "2026-06-17",
+      "published_at": "2024-01-15"
+    },
+    {
+      "id": "55c0dc66-08a3-41df-8345-f3a93e0da803",
+      "ref": 8,
+      "url": "https://www.depa.or.th/th/article-view/digital-economy-outlook-2023",
+      "tier": "primary",
+      "title": "Thailand Digital Economy Outlook 2023",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "quote_en": "The growth of Thailand's digital economy is leading to an increased demand for cybersecurity skilled personnel.",
+      "quote_th": "การเติบโตของเศรษฐกิจดิจิทัลในไทยนำไปสู่ความต้องการบุคลากรที่มีทักษะด้านความปลอดภัยไซเบอร์ที่เพิ่มขึ้น",
+      "publisher": "Digital Economy Promotion Agency (depa)",
+      "accessed_at": "2026-06-17",
+      "published_at": "2023-05-10"
+    },
+    {
+      "id": "c5edc6a4-dbb1-4f41-b38e-4abf875694cd",
+      "ref": 9,
+      "url": "https://www.isc2.org/Research/Workforce-Study",
+      "tier": "secondary",
+      "title": "Global Cybersecurity Workforce Study",
+      "field_id": "ba10dbb5-f049-480d-a55f-635d10fbf7ca",
+      "quote_en": "A global cybersecurity skills gap persists, with millions of unfilled positions.",
+      "quote_th": "ช่องว่างทักษะด้าน Cybersecurity ทั่วโลกยังคงมีอยู่ โดยมีตำแหน่งงานว่างหลายล้านตำแหน่ง",
+      "publisher": "ISC²",
+      "accessed_at": "2026-06-17",
+      "published_at": "2023-11-01"
+    }
+  ]
+}

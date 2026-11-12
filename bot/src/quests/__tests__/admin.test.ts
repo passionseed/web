@@ -1,0 +1,942 @@
+/**
+ * @jest-environment node
+ */
+import { ChannelType, MessageFlags, PermissionFlagsBits } from "discord.js";
+
+import { ACTION_HANDLERS, COMMAND_HANDLERS } from "..";
+import type { QuestApi, Session } from "../api";
+import { questCommands } from "../commands";
+import type { Ctx } from "../context";
+import { BLOCKER, T } from "../copy";
+import { reportView, seasonView, statusView } from "../handlers/admin";
+import { LIMITS, TONE_COLORS, renderView } from "../ui";
+import { accentColor, bodyText, componentCount, customIds, textLength, viewText } from "../test-helpers/view";
+
+const UUID = "3f1c2a64-1d2b-4c3d-9e8f-0a1b2c3d4e5f";
+const V2 = MessageFlags.IsComponentsV2;
+
+function session(roles: string[]): Session {
+  return {
+    member_id: "m",
+    onboarded: true,
+    roles,
+    current_project_id: null,
+    unread: 0,
+    prefs: null,
+    settings: {
+      student_role_ids: ["555"],
+      awards: true,
+      redemption: false,
+      sharing: false,
+      reminders: false,
+      reward_terms: null,
+      redemption_terms: null,
+      squads: true,
+    },
+  };
+}
+
+function ctx(call: (fn: string, ...args: unknown[]) => unknown, roles: string[] = ["admin"]): Ctx {
+  const api = { call: jest.fn(async (fn: string, ...args: unknown[]) => call(fn, ...args)), rows: jest.fn() };
+  return { api: api as unknown as QuestApi, userId: "1111111111", name: "x", memberRoleIds: ["555"], session: session(roles) };
+}
+
+type Sent = { flags?: number; components?: unknown[]; allowedMentions?: unknown; content?: unknown };
+
+/** A minimal Discord interaction that records what the bot sent and how (reply, update, editReply). */
+function interaction(kind: "button" | "select" | "modal" | "command", over: Record<string, unknown> = {}) {
+  const sent: Sent[] = [];
+  const via: string[] = [];
+  const modals: { custom_id: string }[] = [];
+  const record = (how: string) => async (p: Sent) => {
+    via.push(how);
+    sent.push(p);
+  };
+  const i: Record<string, unknown> = {
+    id: "222222222222222222",
+    deferred: false,
+    replied: false,
+    customId: "sq|x",
+    isChatInputCommand: () => kind === "command",
+    isMessageComponent: () => kind === "button" || kind === "select",
+    isButton: () => kind === "button",
+    isStringSelectMenu: () => kind === "select",
+    isModalSubmit: () => kind === "modal",
+    reply: async (p: Sent) => {
+      i.replied = true;
+      await record("reply")(p);
+    },
+    update: record("update"),
+    editReply: record("editReply"),
+    followUp: record("followUp"),
+    deferReply: async () => {
+      i.deferred = true;
+    },
+    showModal: async (m: { toJSON: () => { custom_id: string } }) => modals.push(m.toJSON()),
+    ...over,
+  };
+  return { i: i as never, sent, via, modals };
+}
+
+const fields = (values: Record<string, string>) => ({
+  getTextInputValue: (id: string) => {
+    if (!(id in values)) throw new Error("no field");
+    return values[id];
+  },
+});
+
+/** Options for a slash command, by option name. */
+function options(values: Record<string, unknown>) {
+  const get = (n: string) => (values[n] as never) ?? null;
+  return { getString: get, getInteger: get, getBoolean: get, getUser: get, getMember: get, getRole: get, getChannel: get };
+}
+
+/** Every admin card: one V2 card, inside Discord's limits, pinging nobody. */
+function expectCard(p: Sent, ephemeral = true) {
+  expect(p.content).toBeUndefined();
+  expect((p.flags ?? 0) & V2).toBe(V2);
+  if (ephemeral) expect((p.flags ?? 0) & MessageFlags.Ephemeral).toBe(MessageFlags.Ephemeral);
+  expect(p.allowedMentions).toEqual({ parse: [] });
+  expect(p.components).toHaveLength(1);
+  expect(componentCount(p)).toBeLessThanOrEqual(LIMITS.components);
+  expect(textLength(p)).toBeLessThanOrEqual(LIMITS.text);
+}
+
+const status = (over: Record<string, unknown> = {}) => ({
+  settings: {
+    student_role_ids: ["777"],
+    help_channel_id: "801",
+    staff_channel_id: null,
+    celebrate_channel_id: "803",
+    coworking_channel_id: null,
+    awards_enabled: true,
+    redemption_enabled: true,
+    sharing_enabled: false,
+    reminders_enabled: false,
+    squads_enabled: true,
+    reward_terms: true,
+    redemption_terms: false,
+    fulfillment_process: true,
+    fulfillment_owner: "ครูเอ",
+  },
+  live: { awards: true, redemption: false },
+  blockers: { awards: [], redemption: ["redemption_terms", "catalog_item"], sharing: [], reminders: [] },
+  rules: [{ key: "quest", version: 2, amount: 10, cap: 3, team_allocation: "each_confirmed" }],
+  staff: { admin: 1, reviewer: 2, fulfillment: 0 },
+  outbox: { pending: 4, blocked: 1, failed: 0 },
+  data_requests_open: 2,
+  ...over,
+});
+
+describe("admin status card", () => {
+  it("reads as a checklist: what is set, what is missing, what is on", () => {
+    const p = renderView(statusView(status() as never));
+    expectCard(p);
+    expect(accentColor(p)).toBe(TONE_COLORS.staff);
+    const body = bodyText(p);
+    expect(body.startsWith("### ⚙️ สถานะ SHIFT High quests\n")).toBe(true);
+    expect(body).toContain("✅ บทบาทนักเรียน: <@&777>");
+    expect(body).toContain("✅ ห้อง help: <#801>");
+    expect(body).toContain("⚠️ ห้องทีมพี่เลี้ยง: ยังไม่ตั้ง");
+    expect(body).toContain("⚠️ ห้อง coworking: ยังไม่ตั้ง");
+    expect(body).toContain("-# ตั้งห้อง: /admin channel");
+    expect(body).toContain("✅ กติกาเหรียญ · ⚠️ เงื่อนไขการแลก · ✅ ขั้นตอนจัดส่ง");
+    expect(body).toContain("✅ ผู้รับผิดชอบจัดส่ง: ครูเอ");
+    // Switches: on and working, on but held back (with what it needs), off.
+    expect(body).toContain("✅ เหรียญ: เปิด ใช้งานอยู่");
+    expect(body).toContain(`⚠️ แลกของ: เปิด แต่ยังใช้ไม่ได้\n- ${BLOCKER.redemption_terms}\n- ${BLOCKER.catalog_item}`);
+    expect(body).toContain("⚪ แชร์สาธารณะ: ปิด");
+    expect(body).toContain("⚪ การเตือน: ปิด");
+    expect(body).toContain("✅ สควอด: เปิด");
+    // The counts are fine print.
+    expect(body).toContain("-# กติกาเหรียญที่เผยแพร่: quest v2 = 10 (สูงสุด 3) ทีม: each_confirmed");
+    expect(body).toContain("-# ทีม: admin 1 · reviewer 2 · fulfillment 0");
+    expect(body).toContain("-# ข้อความรอส่ง 4 · รอตั้งห้อง/รอเปิดแชร์ 1 · ส่งไม่สำเร็จ 0");
+    expect(body).toContain("-# คำขอเรื่องข้อมูลที่เปิดอยู่: 2 · ดูที่ /admin data");
+  });
+
+  it("says students cannot use it yet without a student role, and names the command", () => {
+    const s = status();
+    s.settings.student_role_ids = [];
+    s.settings.staff_channel_id = "802" as never;
+    s.settings.coworking_channel_id = "804" as never;
+    s.settings.fulfillment_owner = null as never;
+    const body = bodyText(renderView(statusView(s as never)));
+    expect(body).toContain("⚠️ บทบาทนักเรียน: ยังไม่ตั้ง นักเรียนยังใช้ไม่ได้ (/admin student-role)");
+    expect(body).toContain("⚠️ ผู้รับผิดชอบจัดส่ง: ยังไม่ระบุ");
+    // Every channel set: no channel hint.
+    expect(body).not.toContain("/admin channel");
+  });
+
+  it("lists what an off switch still needs, and escapes the owner name", () => {
+    const s = status({
+      blockers: { awards: ["reward_terms", "reward_rule"], redemption: [], sharing: ["celebrate_channel"], reminders: [] },
+      live: { awards: false, redemption: false },
+      data_requests_open: 0,
+    });
+    s.settings.awards_enabled = false;
+    s.settings.fulfillment_owner = "**@everyone**";
+    const body = bodyText(renderView(statusView(s as never)));
+    expect(body).toContain(`⚪ เหรียญ: ปิด\n- ${BLOCKER.reward_terms}\n- ${BLOCKER.reward_rule}`);
+    expect(body).toContain(`⚪ แชร์สาธารณะ: ปิด\n- ${BLOCKER.celebrate_channel}`);
+    expect(body).not.toContain("**@everyone**");
+    expect(body.endsWith("-# คำขอเรื่องข้อมูลที่เปิดอยู่: 0")).toBe(true);
+  });
+
+  it("is what /admin status shows, and every setting change shows it again as saved", async () => {
+    const c = ctx(() => status());
+    const cmd = interaction("command");
+    await COMMAND_HANDLERS.get("admin status")!(cmd.i, c);
+    expectCard(cmd.sent[0]);
+    expect(bodyText(cmd.sent[0])).toMatch(/^### ⚙️ สถานะ SHIFT High quests\n/);
+
+    const set = interaction("command", { options: options({ name: "squads", state: "on" }) });
+    await COMMAND_HANDLERS.get("admin feature")!(set.i, c);
+    expect((c.api.call as jest.Mock).mock.calls.at(-1)).toEqual(["shift_quest_admin_set", "1111111111", "squads", "on"]);
+    expectCard(set.sent[0]);
+    expect(bodyText(set.sent[0])).toMatch(/^### ✅ บันทึกแล้ว\n✅ บทบาทนักเรียน/);
+
+    const terms = interaction("modal", { fields: fields({ text: "กติกา" }) });
+    await ACTION_HANDLERS.get("ad_terms")!(terms.i, c, ["reward_terms"]);
+    expect((c.api.call as jest.Mock).mock.calls.at(-1)).toEqual(["shift_quest_admin_set", "1111111111", "reward_terms", "กติกา"]);
+    expect(viewText(terms.sent[0])).toContain("✅ บันทึกแล้ว");
+  });
+
+  describe("/admin channel with a voice channel", () => {
+    const GUILD = "900000000000000000";
+    /** A voice channel whose permissions open to the given roles only. */
+    const voice = (openTo: string[]) => ({
+      id: "804",
+      type: ChannelType.GuildVoice,
+      permissionsFor: (role: string) => ({ has: () => openTo.includes(role) }),
+    });
+    const set = (kind: string, channel: unknown) => interaction("command", { guildId: GUILD, options: options({ kind, channel }) });
+
+    it("refuses a voice channel for help, staff or celebrate, before any database call", async () => {
+      for (const kind of ["help", "staff", "celebrate"]) {
+        const c = ctx(() => status());
+        await expect(COMMAND_HANDLERS.get("admin channel")!(set(kind, voice(["555"])).i, c)).rejects.toThrow(T.adminVoiceCoworkingOnly);
+        expect(c.api.call).not.toHaveBeenCalled();
+      }
+    });
+
+    it("refuses a coworking voice channel students cannot see or join", async () => {
+      const c = ctx(() => status());
+      await expect(COMMAND_HANDLERS.get("admin channel")!(set("coworking", voice(["999"])).i, c)).rejects.toThrow(T.adminCoworkingPrivate);
+      // Nothing to read the permissions from counts as private.
+      await expect(COMMAND_HANDLERS.get("admin channel")!(set("coworking", { id: "804", type: ChannelType.GuildVoice }).i, c)).rejects.toThrow(
+        T.adminCoworkingPrivate
+      );
+      expect(c.api.call).not.toHaveBeenCalled();
+    });
+
+    it("saves a coworking voice channel a student role can join, and a text channel for any kind", async () => {
+      const c = ctx(() => status());
+      await COMMAND_HANDLERS.get("admin channel")!(set("coworking", voice(["555"])).i, c);
+      expect((c.api.call as jest.Mock).mock.calls.at(-1)).toEqual(["shift_quest_admin_set", "1111111111", "coworking_channel", "804"]);
+      await COMMAND_HANDLERS.get("admin channel")!(set("help", { id: "801", type: ChannelType.GuildText }).i, c);
+      expect((c.api.call as jest.Mock).mock.calls.at(-1)).toEqual(["shift_quest_admin_set", "1111111111", "help_channel", "801"]);
+      await COMMAND_HANDLERS.get("admin channel")!(set("coworking", null).i, c);
+      expect((c.api.call as jest.Mock).mock.calls.at(-1)).toEqual(["shift_quest_admin_set", "1111111111", "coworking_channel", ""]);
+    });
+
+    it("checks @everyone while no student role is set", async () => {
+      const c = ctx(() => status());
+      c.session.settings.student_role_ids = [];
+      await COMMAND_HANDLERS.get("admin channel")!(set("coworking", voice([GUILD])).i, c);
+      expect((c.api.call as jest.Mock).mock.calls.at(-1)?.[3]).toBe("804");
+    });
+  });
+
+  describe("/admin channel for the live post and the suggestions forum", () => {
+    const GUILD = "900000000000000000";
+    const LIVE = "805";
+    const run = (kind: string, channel: unknown, guild?: unknown) =>
+      COMMAND_HANDLERS.get("admin channel")!(interaction("command", { guildId: GUILD, guild, options: options({ kind, channel }) }).i, c);
+    let c: Ctx;
+    const last = () => (c.api.call as jest.Mock).mock.calls.at(-1);
+    /** A guild whose cache has the channel, with the bot allowed the given permissions there. */
+    const guildWith = (allowed: bigint[]) => ({
+      members: { me: { id: "bot" } },
+      channels: {
+        cache: new Map([[LIVE, { permissionsFor: () => ({ has: (wanted: bigint[]) => wanted.every((p) => allowed.includes(p)) }) }]]),
+      },
+    });
+    const ALL = [
+      PermissionFlagsBits.ViewChannel,
+      PermissionFlagsBits.SendMessages,
+      PermissionFlagsBits.AttachFiles,
+      PermissionFlagsBits.ReadMessageHistory,
+    ];
+
+    beforeEach(() => {
+      c = ctx(() => status());
+    });
+
+    /** A channel whose permissions give the listed roles the listed permissions only. */
+    const room = (id: string, type: ChannelType, openTo: string[] = ["555"], allowed: bigint[] = SEE_AND_POST) => ({
+      id,
+      type,
+      permissionsFor: (role: string) => ({
+        has: (wanted: bigint[]) => openTo.includes(role) && wanted.every((p) => allowed.includes(p)),
+      }),
+    });
+    const SEE_AND_POST = [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages];
+
+    it("takes a forum only for suggest, before any database call", async () => {
+      for (const kind of ["help", "staff", "celebrate", "coworking", "live"]) {
+        await expect(run(kind, { id: "806", type: ChannelType.GuildForum })).rejects.toThrow(T.adminForumSuggestOnly);
+      }
+      expect(c.api.call).not.toHaveBeenCalled();
+      await run("suggest", room("806", ChannelType.GuildForum));
+      expect(last()).toEqual(["shift_quest_admin_set", "1111111111", "suggest_channel", "806"]);
+      await run("suggest", room("807", ChannelType.GuildText));
+      expect(last()).toEqual(["shift_quest_admin_set", "1111111111", "suggest_channel", "807"]);
+      await run("suggest", null);
+      expect(last()).toEqual(["shift_quest_admin_set", "1111111111", "suggest_channel", ""]);
+    });
+
+    it("refuses a suggestions forum or text channel students cannot see or post in, before any database call", async () => {
+      for (const type of [ChannelType.GuildForum, ChannelType.GuildText]) {
+        // Staff only: no student role can see it.
+        await expect(run("suggest", room("806", type, ["999"]))).rejects.toThrow(T.adminSuggestPrivate);
+        // Students can read but not post.
+        await expect(run("suggest", room("806", type, ["555"], [PermissionFlagsBits.ViewChannel]))).rejects.toThrow(T.adminSuggestPrivate);
+        // Nothing to read the permissions from counts as private.
+        await expect(run("suggest", { id: "806", type })).rejects.toThrow(T.adminSuggestPrivate);
+      }
+      expect(c.api.call).not.toHaveBeenCalled();
+      // The guild's cached channel is the one checked, as for coworking.
+      const cached = { channels: { cache: new Map([["806", room("806", ChannelType.GuildForum)]]) } };
+      await run("suggest", { id: "806", type: ChannelType.GuildForum }, cached);
+      expect(last()).toEqual(["shift_quest_admin_set", "1111111111", "suggest_channel", "806"]);
+    });
+
+    it("checks @everyone for the suggestions channel while no student role is set", async () => {
+      c.session.settings.student_role_ids = [];
+      await expect(run("suggest", room("806", ChannelType.GuildForum, ["555"]))).rejects.toThrow(T.adminSuggestPrivate);
+      await run("suggest", room("806", ChannelType.GuildForum, [GUILD]));
+      expect(last()).toEqual(["shift_quest_admin_set", "1111111111", "suggest_channel", "806"]);
+    });
+
+    it("refuses a voice channel for live or suggest, and any other type", async () => {
+      for (const kind of ["live", "suggest"]) {
+        await expect(run(kind, { id: "804", type: ChannelType.GuildVoice })).rejects.toThrow(T.adminVoiceCoworkingOnly);
+      }
+      await expect(run("live", { id: "808", type: ChannelType.GuildAnnouncement })).rejects.toThrow(T.adminLiveText);
+      await expect(run("suggest", { id: "808", type: ChannelType.GuildAnnouncement })).rejects.toThrow(T.adminSuggestType);
+      expect(c.api.call).not.toHaveBeenCalled();
+    });
+
+    it("takes a text channel for live only when the bot can post, attach and read history there", async () => {
+      for (const missing of ALL) {
+        await expect(run("live", { id: LIVE, type: ChannelType.GuildText }, guildWith(ALL.filter((p) => p !== missing)))).rejects.toThrow(
+          T.adminLiveBotPerms
+        );
+      }
+      expect(c.api.call).not.toHaveBeenCalled();
+      // Pin Messages is not required: without it the post works, only unpinned.
+      await run("live", { id: LIVE, type: ChannelType.GuildText }, guildWith(ALL));
+      expect(last()).toEqual(["shift_quest_admin_set", "1111111111", "live_channel", LIVE]);
+      // Nothing cached to tell: not refused (the live post logs and retries if it really cannot post).
+      await run("live", { id: "809", type: ChannelType.GuildText });
+      expect(last()).toEqual(["shift_quest_admin_set", "1111111111", "live_channel", "809"]);
+      await run("live", null);
+      expect(last()).toEqual(["shift_quest_admin_set", "1111111111", "live_channel", ""]);
+    });
+
+    it("offers both kinds and a forum in /admin channel", () => {
+      const sub = questCommands()
+        .find((x) => x.name === "admin")
+        ?.options?.find((o) => o.name === "channel") as { options?: { name: string; choices?: { value: string }[]; channel_types?: number[] }[] };
+      expect(sub.options?.find((o) => o.name === "kind")?.choices?.map((x) => x.value)).toEqual([
+        "help",
+        "staff",
+        "celebrate",
+        "coworking",
+        "live",
+        "suggest",
+      ]);
+      expect(sub.options?.find((o) => o.name === "channel")?.channel_types).toContain(ChannelType.GuildForum);
+    });
+
+    it("shows both on the status card once the database has them: set, unset, or not at all", () => {
+      const s = status();
+      Object.assign(s.settings, { live_channel_id: LIVE, suggest_channel_id: null });
+      const body = bodyText(renderView(statusView(s as never)));
+      expect(body).toContain(`✅ ห้องเกาะสด: <#${LIVE}> (บอทแก้โพสต์เดียวในห้องนี้ ไม่โพสต์ซ้ำ)`);
+      expect(body).toContain("⚪ ห้องเสนอไอเดีย: ยังไม่ตั้ง (ฟอรัมได้ ลิงก์อยู่ในเมนู ⋯ บนเว็บ)");
+      expect(body).toContain("-# ตั้งห้อง: /admin channel");
+      const older = bodyText(renderView(statusView(status() as never)));
+      expect(older).not.toContain("ห้องเกาะสด");
+      expect(older).not.toContain("ห้องเสนอไอเดีย");
+    });
+  });
+
+  it("names only a real subcommand for an empty catalog", () => {
+    expect(BLOCKER.catalog_item).toContain("(/admin catalog)");
+  });
+});
+
+describe("admin season card", () => {
+  const season = (over: Record<string, unknown> = {}) => ({
+    id: UUID,
+    name: "Season_1",
+    status: "active",
+    starts_on: "2027-01-01",
+    ends_on: "2027-06-01",
+    demo_day: "2027-05-15",
+    table_bar: 2,
+    stage_bar: 3,
+    surprise_cap: 1,
+    goal: { milestone: 3, target: 30, count: 12, deadline: "2027-05-01", unlock: "ปาร์ตี้พิซซ่า", reached: false },
+    unlocks: Array.from({ length: 8 }, (_, k) => ({
+      id: `u${k}`,
+      label: `ของ ${k}`,
+      milestone_count: 3,
+      deadline: "2027-05-01",
+      reward_rule_key: k === 0 ? "bonus" : null,
+      earned: k,
+    })),
+    ...over,
+  });
+
+  it("shows the bars, the goal as a progress bar, unlocks cut to six, and one unlock button", () => {
+    const p = renderView(seasonView(season() as never));
+    expectCard(p);
+    expect(accentColor(p)).toBe(TONE_COLORS.season);
+    const body = bodyText(p);
+    expect(body.startsWith("### 🎪 Season\\_1\n")).toBe(true);
+    expect(body).toContain("โต๊ะโชว์งาน **2** ขั้น (รวมขั้น 2) · ขึ้นเวที **3** ขั้น (รวมขั้น 3)");
+    expect(body).toContain("-# นับขั้นที่ส่งในซีซันจนจบ Demo Day และพี่เลี้ยงยืนยันแล้ว");
+    expect(body).toContain("🎯 เป้าทั้งเกาะ: 30 ต้นผ่านขั้น 3 ภายใน");
+    expect(body).toContain("→ ปาร์ตี้พิซซ่า");
+    expect(body).toContain("▰▰▰▰▱▱▱▱▱▱ **12**/30");
+    expect(body).toContain("🎁 ของ 0: ครบ 3 ขั้นภายใน");
+    expect(body).toContain("(กติกา bonus)");
+    expect(body).toContain("🎁 ของ 5:");
+    expect(body).not.toContain("🎁 ของ 6:");
+    expect(body).toContain("และอีก 2");
+    expect(body).toContain("🌟 คำชมแบบเซอร์ไพรส์: ได้ 1 ครั้งต่อคนในซีซันนี้");
+    // Fairness and how to edit stay, as fine print.
+    expect(body).toContain("-# ของปลดล็อกได้เท่ากันทุกคนที่ถึงเกณฑ์ ไม่ผูกกับความเร็ว ไม่มีการจัดอันดับ");
+    expect(body).toContain("-# แก้ซีซัน: /admin season");
+    expect(customIds(p)).toEqual([`sq|ad_unlock|${UUID}`]);
+  });
+
+  it("says when there is no goal and no unlock yet, and when the goal is reached", () => {
+    const empty = bodyText(renderView(seasonView(season({ goal: null, unlocks: [], surprise_cap: undefined }) as never)));
+    expect(empty).toContain("🎯 ยังไม่มีเป้าทั้งเกาะ");
+    expect(empty).toContain("🎁 ยังไม่มีของปลดล็อก");
+    expect(empty).not.toContain("🌟");
+    const reached = bodyText(
+      renderView(seasonView(season({ goal: { milestone: 3, target: 30, count: 31, deadline: "2027-05-01", unlock: null, reached: true, reached_at: null } }) as never))
+    );
+    expect(reached).toContain("▰▰▰▰▰▰▰▰▰▰ **31**/30 · ถึงเป้าแล้ว");
+  });
+
+  it("adds an unlock from its button, then offers to add another", async () => {
+    const c = ctx(() => null);
+    const b = interaction("button");
+    await ACTION_HANDLERS.get("ad_unlock")!(b.i, c, [UUID]);
+    expect(b.modals[0].custom_id).toBe(`sq|ad_unlock|${UUID}`);
+    const m = interaction("modal", { fields: fields({ label: "สติกเกอร์", count: "3", deadline: "2027-05-01" }) });
+    await ACTION_HANDLERS.get("ad_unlock")!(m.i, c, [UUID]);
+    expect((c.api.call as jest.Mock).mock.calls.at(-1)).toEqual(["shift_quest_admin_unlock", "1111111111", UUID, "สติกเกอร์", 3, "2027-05-01", null]);
+    expectCard(m.sent[0]);
+    expect(accentColor(m.sent[0])).toBe(TONE_COLORS.success);
+    expect(viewText(m.sent[0])).toContain("ทุกคนที่ถึงเกณฑ์จะได้เท่ากัน และได้รับแจ้งใน /inbox");
+    expect(customIds(m.sent[0])).toEqual([`sq|ad_unlock|${UUID}`]);
+  });
+});
+
+describe("admin report card", () => {
+  const report = {
+    window_days: 14,
+    members_onboarded: 30,
+    members_started: 25,
+    members_with_progress_in_window: 20,
+    members_submitting_in_window: 12,
+    quests_by_state: { active: 10, submitted: 3 },
+    reviews_in_window: { approved: 5 },
+    review_backlog: 3,
+    review_median_hours: 12,
+    projects_with_feedback_decision: 4,
+    ownership: { all_checks_done: 2, projects: 9, with_blocker: 1 },
+    help: { opened_in_window: 6, resolved_in_window: 5, open_now: 1 },
+    coins: { awarded_in_window: 100, reversed_in_window: 5, members_awarded: 11, awards_not_issued: 2 },
+    redemptions: {},
+    sharing: { posted: 7, peer_declined: 1 },
+    delivery: { failed: 0, blocked: 2 },
+    access_denied_in_window: 3,
+    island: {
+      projects_by_stage: { "1": 4 },
+      taps_in_window: 40,
+      members_resting: 2,
+      season: { demo_day: "2027-05-15", projects_at_table_bar: 6, projects_at_stage_bar: 3, milestones_pending_review: 4 },
+    },
+  };
+
+  it("groups the counts, says they are aggregate only, and keeps the caveat", () => {
+    const p = renderView(reportView(report));
+    expectCard(p);
+    const body = bodyText(p);
+    expect(body.startsWith("### 📊 รายงานรวม 14 วันล่าสุด\n-# ตัวเลขรวมเท่านั้น ไม่ระบุตัวบุคคล\n")).toBe(true);
+    for (const fact of [
+      "เริ่มใช้แล้ว 30 คน · เริ่มลงมือแล้ว 25",
+      "เควสต์ตามสถานะ: active 10, submitted 3",
+      "ค้างรีวิว 3 · มัธยฐานเวลารีวิว 12 ชม.",
+      "ความเป็นเจ้าของ: เช็กครบ 2/9 โปรเจกต์ · ติดอยู่ 1",
+      "เหรียญ: ออก 100 · ปรับคืน 5 · คนที่เคยได้ 11 · อนุมัติแต่ยังไม่ออก 2",
+      "การแลก: 0",
+      "การเข้าถึงที่ถูกปฏิเสธ 3",
+      "**เกาะ**\nต้นไม้ตามขั้น: ขั้น 1: 4",
+      "รอพี่เลี้ยงยืนยัน 4 ชิ้น",
+    ]) {
+      expect(body).toContain(fact);
+    }
+    expect(body).toContain("-# ตัวเลขกิจกรรมไม่ได้บอกแรงจูงใจภายใน");
+  });
+
+  it("leaves the island section out when the report has none", async () => {
+    const c = ctx(() => ({ ...report, island: null }));
+    const cmd = interaction("command", { options: options({}) });
+    await COMMAND_HANDLERS.get("admin report")!(cmd.i, c);
+    expect((c.api.call as jest.Mock).mock.calls[0]).toEqual(["shift_quest_admin_report", "1111111111", 14]);
+    expectCard(cmd.sent[0]);
+    expect(bodyText(cmd.sent[0])).not.toContain("**เกาะ**");
+  });
+});
+
+describe("admin coin cards", () => {
+  it("shows a ledger with the balance first and the reversal picker inside the card", async () => {
+    const c = ctx(() => ({
+      name: "ฟ้า",
+      balance: 40,
+      entries: [
+        { id: UUID, amount: 30, kind: "award", reason: "quest", created_at: "2027-01-02T03:00:00Z", reversed: 0, title: "แอป" },
+        { id: "4f1c2a64-1d2b-4c3d-9e8f-0a1b2c3d4e5f", amount: -5, kind: "reversal", reason: "ซ้ำ", created_at: "2027-01-03T03:00:00Z", reversed: 0, title: null },
+      ],
+    }));
+    const cmd = interaction("command", { options: options({ user: { id: "4444444444" } }) });
+    await COMMAND_HANDLERS.get("admin ledger")!(cmd.i, c);
+    const p = cmd.sent[0];
+    expectCard(p);
+    expect(accentColor(p)).toBe(TONE_COLORS.coins);
+    const body = bodyText(p);
+    expect(body).toMatch(/^### 🪙 ฟ้า\nยอด \*\*40\*\* เหรียญ/);
+    expect(body).toContain("**+30** ได้จากเควสต์: แอป");
+    expect(body).toContain("**-5**");
+    expect(customIds(p)).toEqual(["sq|ad_rev"]);
+    expect(viewText(p)).toContain("ปรับคืนรายการ (ต้องมีเหตุผล นักเรียนจะเห็น)");
+  });
+
+  it("confirms a reversal with the new balance", async () => {
+    const c = ctx(() => ({ duplicate: false, balance: 35 }));
+    const m = interaction("modal", { fields: fields({ amount: "5", reason: "ซ้ำ" }) });
+    await ACTION_HANDLERS.get("ad_rev")!(m.i, c, [UUID, "555555555555555555"]);
+    expect(m.via).toEqual(["editReply"]);
+    expectCard(m.sent[0], false);
+    expect(bodyText(m.sent[0])).toBe("### ✅ ปรับคืนแล้ว\nยอดใหม่ **35** · นักเรียนได้รับแจ้งเหตุผลใน /inbox");
+    const again = ctx(() => ({ duplicate: true }));
+    const m2 = interaction("modal", { fields: fields({ amount: "5", reason: "ซ้ำ" }) });
+    await ACTION_HANDLERS.get("ad_rev")!(m2.i, again, [UUID, "555555555555555555"]);
+    expect(bodyText(m2.sent[0])).toBe("### ✅ บันทึกไปแล้ว");
+  });
+
+  it("saves a catalog item and lists every item as one card", async () => {
+    const c = ctx((fn) =>
+      fn === "shift_quest_admin_catalog"
+        ? { name: "สติกเกอร์", cost: 20, stock_available: 5, active: true }
+        : [
+            { name: "สติกเกอร์", cost: 20, stock_available: 5, active: true, reserved: 1 },
+            { name: "เสื้อ", cost: 200, stock_available: 0, active: false, reserved: 0 },
+          ]
+    );
+    const cmd = interaction("command", { options: options({ name: "สติกเกอร์", cost: 20 }) });
+    await COMMAND_HANDLERS.get("admin catalog")!(cmd.i, c);
+    expect((c.api.call as jest.Mock).mock.calls[0]).toEqual(["shift_quest_admin_catalog", "1111111111", null, "สติกเกอร์", null, 20, null, null]);
+    expectCard(cmd.sent[0]);
+    const body = bodyText(cmd.sent[0]);
+    expect(body).toContain("### ✅ บันทึก สติกเกอร์ แล้ว");
+    expect(body).toContain("- สติกเกอร์ **20** เหรียญ · เหลือ 5 · จองอยู่ 1 · เปิด");
+    expect(body).toContain("- เสื้อ **200** เหรียญ · เหลือ 0 · จองอยู่ 0 · ปิด");
+    expect(body).toContain("-# แสดงให้นักเรียนเห็นเฉพาะตอนที่การแลกเปิดและตั้งค่าครบแล้ว");
+  });
+
+  it("confirms a recognition without pinging the student", async () => {
+    const c = ctx(() => ({ duplicate: false }));
+    const m = interaction("modal", { fields: fields({ reason: "r" }) });
+    await ACTION_HANDLERS.get("ad_recog")!(m.i, c, ["4444444444", "50", "333333333333333333"]);
+    expect(m.via).toEqual(["editReply"]);
+    expectCard(m.sent[0], false);
+    expect(bodyText(m.sent[0])).toBe("### ✅ บันทึกแล้ว\n<@4444444444> ได้รับแจ้งใน /inbox");
+  });
+});
+
+describe("admin data and fulfillment cards", () => {
+  it("lists open data requests with Thai kinds in the picker, values unchanged", async () => {
+    const c = ctx(() => [
+      { id: UUID, kind: "erasure", note: "ลบ *ทั้งหมด*", name: "ฟ้า", created_at: "2027-01-02T03:00:00Z" },
+      { id: "4f1c2a64-1d2b-4c3d-9e8f-0a1b2c3d4e5f", kind: "correction", note: null, name: "ดิน", created_at: "2027-01-02T03:00:00Z" },
+    ]);
+    const cmd = interaction("command");
+    await COMMAND_HANDLERS.get("admin data")!(cmd.i, c);
+    const p = cmd.sent[0];
+    expectCard(p);
+    const body = bodyText(p);
+    expect(body).toMatch(/^### 🗂️ คำขอเรื่องข้อมูล \(2\)\n/);
+    expect(body).toContain("**ขอลบ**: ฟ้า: ลบ \\*ทั้งหมด\\*");
+    expect(body).toContain("**ขอแก้**: ดิน");
+    const json = JSON.stringify(p.components!.map((x) => (x as { toJSON: () => unknown }).toJSON()));
+    expect(json).toContain(`"value":"${UUID}:erasure"`);
+    expect(viewText(p)).toContain("ขอลบ: ฟ้า");
+  });
+
+  it("stays inside Discord's limits with a full page of long requests", async () => {
+    const c = ctx(() =>
+      Array.from({ length: 25 }, (_, k) => ({ id: UUID, kind: "correction", note: "ก".repeat(300), name: `คน ${k}`, created_at: "2027-01-02T03:00:00Z" }))
+    );
+    const cmd = interaction("command", { commandName: "admin", options: { getSubcommand: () => "data" } });
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      await COMMAND_HANDLERS.get("admin data")!(cmd.i, c);
+      // Clipped to fit, and said so in one log line that names the command.
+      expect(warn.mock.calls.flat().join(" ")).toContain("view trimmed action=admin/data");
+    } finally {
+      warn.mockRestore();
+    }
+    expectCard(cmd.sent[0]);
+    expect(customIds(cmd.sent[0])).toEqual(["sq|ad_data"]);
+  });
+
+  it("says when nothing is open", async () => {
+    const data = interaction("command");
+    await COMMAND_HANDLERS.get("admin data")!(data.i, ctx(() => []));
+    expect(bodyText(data.sent[0])).toBe("### 🗂️ คำขอเรื่องข้อมูล\nไม่มีคำขอที่เปิดอยู่");
+    const fulfill = interaction("command");
+    await COMMAND_HANDLERS.get("fulfill")!(fulfill.i, ctx(() => [{ id: UUID, item: "x", cost: 1, status: "reserved", student: "s", created_at: "", own: true }], ["fulfillment"]));
+    expect(bodyText(fulfill.sent[0])).toBe("### 📦 คำขอแลก\nไม่มีคำขอแลกที่รออยู่");
+  });
+
+  it("asks before erasing, warns it cannot be undone, and keeps the same buttons", async () => {
+    const c = ctx(() => null);
+    const pick = interaction("select", { values: [`${UUID}:erasure`] });
+    await ACTION_HANDLERS.get("ad_data")!(pick.i, c, []);
+    expect(pick.via).toEqual(["update"]);
+    expectCard(pick.sent[0], false);
+    expect(customIds(pick.sent[0])).toEqual([`sq|ad_erase|${UUID}`, `sq|ad_dclose|${UUID}|done`, `sq|ad_dclose|${UUID}|reject`]);
+    expect(bodyText(pick.sent[0])).toContain("**ย้อนกลับไม่ได้**");
+
+    const erase = interaction("button");
+    await ACTION_HANDLERS.get("ad_erase")!(erase.i, c, [UUID]);
+    expect(accentColor(erase.sent[0])).toBe(TONE_COLORS.warn);
+    expect(bodyText(erase.sent[0])).toContain("### ⚠️ ยืนยันการลบ");
+    expect(bodyText(erase.sent[0])).toContain("ยอดเหรียญและสถานะเควสต์คงไว้แบบไม่ระบุตัวตน");
+    expect(customIds(erase.sent[0])).toEqual([`sq|ad_erase_go|${UUID}`, "sq|noop"]);
+    expect(viewText(erase.sent[0])).toContain(T.btnCancel);
+
+    const go = interaction("button");
+    await ACTION_HANDLERS.get("ad_erase_go")!(go.i, c, [UUID]);
+    expect((c.api.call as jest.Mock).mock.calls.at(-1)).toEqual(["shift_quest_admin_erase", "1111111111", UUID]);
+    expect(bodyText(go.sent[0])).toBe("### ✅ ลบแล้ว");
+  });
+
+  it("shows the fulfillment queue with the address rule, then the status a press moved it to", async () => {
+    const c = ctx((fn) =>
+      fn === "shift_quest_fulfill_queue"
+        ? [
+            { id: UUID, item: "สติกเกอร์", cost: 20, status: "reserved", student: "ฟ้า", created_at: "2027-01-02T03:00:00Z", own: false },
+            { id: "4f1c2a64-1d2b-4c3d-9e8f-0a1b2c3d4e5f", item: "x", cost: 1, status: "reserved", student: "ตัวเอง", created_at: "", own: true },
+          ]
+        : "start",
+      ["fulfillment"]
+    );
+    const cmd = interaction("command");
+    await COMMAND_HANDLERS.get("fulfill")!(cmd.i, c);
+    const p = cmd.sent[0];
+    expectCard(p);
+    const body = bodyText(p);
+    expect(body).toMatch(/^### 📦 คำขอแลกที่รออยู่ \(1\)\n/);
+    expect(body).toContain("ฟ้า: **สติกเกอร์** (จองแล้ว)");
+    expect(body).not.toContain("ตัวเอง");
+    expect(body).toContain("-# ข้อมูลจัดส่งให้ผู้ปกครองเป็นคนกรอก");
+    expect(body).toContain("ห้ามถามที่อยู่ในห้องแชทหรือ DM");
+    expect(customIds(p)).toEqual(["sq|fl_pick"]);
+
+    const pick = interaction("select", { values: [UUID] });
+    await ACTION_HANDLERS.get("fl_pick")!(pick.i, c, []);
+    expect(customIds(pick.sent[0])).toEqual([`sq|fl_act|${UUID}|start`, `sq|fl_act|${UUID}|complete`, `sq|fl_act|${UUID}|cancel`]);
+    expect(bodyText(pick.sent[0])).toBe("### 📦 อัปเดตคำขอ\n-# นักเรียนจะได้รับแจ้งใน /inbox");
+
+    const act = interaction("button");
+    await ACTION_HANDLERS.get("fl_act")!(act.i, c, [UUID, "start"]);
+    expect((c.api.call as jest.Mock).mock.calls.at(-1)).toEqual(["shift_quest_fulfill_update", "1111111111", UUID, "start", null]);
+    expect(act.via).toEqual(["update"]);
+    expect(bodyText(act.sent[0])).toBe(`### ✅ ${T.done}\nสถานะใหม่: **กำลังดำเนินการ**\n-# นักเรียนได้รับแจ้งใน /inbox`);
+
+    const cancel = interaction("modal", { fields: fields({ note: "หมด" }) });
+    const stale = ctx(() => "unchanged", ["fulfillment"]);
+    await ACTION_HANDLERS.get("fl_act")!(cancel.i, stale, [UUID, "cancel"]);
+    expect((stale.api.call as jest.Mock).mock.calls.at(-1)).toEqual(["shift_quest_fulfill_update", "1111111111", UUID, "cancel", "หมด"]);
+    expect(cancel.via).toEqual(["reply"]);
+    expect(bodyText(cancel.sent[0])).toBe("### ℹ️ ไม่มีอะไรเปลี่ยน\nสถานะเปลี่ยนไปแล้ว");
+  });
+});
+
+describe("admin templates and roles", () => {
+  it("lists templates with the commands that change them, and says which one changed", async () => {
+    const c = ctx((fn) =>
+      fn === "shift_quest_admin_templates"
+        ? [{ slug: "ms-1", version: 2, title: "ขั้น 1", status: "published", reward_rule_key: "quest" }]
+        : null
+    );
+    const list = interaction("command");
+    await COMMAND_HANDLERS.get("admin templates")!(list.i, c);
+    expectCard(list.sent[0]);
+    expect(bodyText(list.sent[0])).toBe(
+      "### 📋 เควสต์ตัวอย่าง (1)\n- `ms-1` v2 ขั้น 1: published · กติกา quest\n-# เปิดหรือเก็บ: /admin template · ผูกกติกาเหรียญ: /admin template-rule"
+    );
+
+    const set = interaction("command", { options: options({ template: "ms-1", publish: false }) });
+    await COMMAND_HANDLERS.get("admin template")!(set.i, c);
+    expect((c.api.call as jest.Mock).mock.calls.at(-1)).toEqual(["shift_quest_admin_template_state", "1111111111", "ms-1", false]);
+    expect(bodyText(set.sent[0])).toBe(`### ✅ ${T.done}\nเก็บ \`ms-1\` แล้ว`);
+  });
+
+  it("shows a member's roles without pinging them", async () => {
+    const c = ctx(() => ({ roles: ["reviewer", "admin"] }));
+    const cmd = interaction("command", {
+      options: options({ user: { id: "4444444444", username: "u" }, role: "admin", action: "grant" }),
+    });
+    await COMMAND_HANDLERS.get("admin role")!(cmd.i, c);
+    expect((c.api.call as jest.Mock).mock.calls[0]).toEqual(["shift_quest_admin_role", "1111111111", "4444444444", "u", "admin", true]);
+    expectCard(cmd.sent[0]);
+    expect(bodyText(cmd.sent[0])).toBe("### ✅ บันทึกแล้ว\n<@4444444444>: **reviewer, admin**");
+  });
+
+  it("refuses a non-admin before any database call", async () => {
+    for (const key of ["admin status", "admin data", "admin report"]) {
+      const c = ctx(() => null, ["reviewer"]);
+      await expect(COMMAND_HANDLERS.get(key)!(interaction("command").i, c)).rejects.toThrow();
+      expect(c.api.call).not.toHaveBeenCalled();
+    }
+  });
+});
+
+describe("admin island, staff awards and shop gates (schema 9)", () => {
+  const islandStatus = (over: { consent?: Record<string, unknown>; digest?: Record<string, unknown> } = {}) => ({
+    consent: { required: true, adult_age: 20, granted: 4, waiting: 2, none: 9, ...over.consent },
+    digest: { enabled: true, channel: "live", last_day: "2026-11-11", hidden: [{ slot: 3, name: "**ทีมสาม**" }], ...over.digest },
+  });
+  const subcommand = (name: string) =>
+    questCommands()
+      .find((x) => x.name === "admin")
+      ?.options?.find((o) => o.name === name) as { options?: { name: string; required?: boolean; choices?: { value: string }[] }[] };
+
+  it("registers /admin island, /admin award and the catalog gates", () => {
+    expect(subcommand("island").options?.find((o) => o.name === "action")?.choices?.map((x) => x.value)).toEqual([
+      "status",
+      "consent-on",
+      "consent-off",
+      "digest-on",
+      "digest-off",
+      "digest-hide",
+      "digest-show",
+      "consent-reset",
+    ]);
+    expect(subcommand("island").options?.map((o) => o.name)).toEqual(["action", "plot", "reason", "user"]);
+    expect(subcommand("award").options?.find((o) => o.name === "kind")?.choices?.map((x) => x.value)).toEqual(["taught", "helped"]);
+    expect(subcommand("award").options?.find((o) => o.name === "user")?.required).toBe(true);
+    expect(subcommand("catalog").options?.map((o) => o.name)).toEqual(
+      expect.arrayContaining(["min_stage", "requires_community"])
+    );
+    const admin = questCommands().find((x) => x.name === "admin");
+    expect(admin?.options?.length).toBeLessThanOrEqual(25);
+  });
+
+  it("shows consent counts and the island news, escaping team names, counts only", async () => {
+    const c = ctx(() => islandStatus());
+    const cmd = interaction("command", { options: options({ action: "status" }) });
+    await COMMAND_HANDLERS.get("admin island")!(cmd.i, c);
+    expect((c.api.call as jest.Mock).mock.calls).toEqual([["shift_quest_admin_island_status", "1111111111"]]);
+    expectCard(cmd.sent[0]);
+    const body = bodyText(cmd.sent[0]);
+    expect(body).toContain(`### ${T.adminIslandTitle}`);
+    expect(body).toContain("✅ ต้องมีความยินยอมผู้ปกครอง: **เปิด** · ยืนยันอายุเองได้ตั้งแต่ 20 ปี");
+    expect(body).toContain("ยินยอมแล้ว **4** · รอผู้ปกครอง 2 · ยังไม่มี 9");
+    expect(body).toContain("✅ ข่าวเกาะ AI: **เปิด** · โพสต์วันละครั้งที่ห้องเกาะสด");
+    expect(body).toContain("แปลง 3 \\*\\*ทีมสาม\\*\\*");
+    expect(body).not.toContain(T.adminConsentOffWarn);
+  });
+
+  it("flips a switch through admin_island_set and warns while consent is off", async () => {
+    const c = ctx(() => islandStatus({ consent: { required: false }, digest: { enabled: false, channel: null, hidden: [] } }));
+    const cmd = interaction("command", { options: options({ action: "consent-off" }) });
+    await COMMAND_HANDLERS.get("admin island")!(cmd.i, c);
+    expect((c.api.call as jest.Mock).mock.calls).toEqual([["shift_quest_admin_island_set", "1111111111", "consent_required", "off"]]);
+    const body = bodyText(cmd.sent[0]);
+    expect(body).toContain("### ✅ บันทึกแล้ว");
+    expect(body).toContain(T.adminConsentOffWarn);
+    expect(body).toContain("⚪ ข่าวเกาะ AI: **ปิด**");
+    expect(body).toContain("ซ่อนสรุปอยู่: ไม่มี");
+    for (const [action, key, value] of [
+      ["consent-on", "consent_required", "on"],
+      ["digest-on", "digest_enabled", "on"],
+      ["digest-off", "digest_enabled", "off"],
+    ]) {
+      const c2 = ctx(() => islandStatus());
+      await COMMAND_HANDLERS.get("admin island")!(interaction("command", { options: options({ action }) }).i, c2);
+      expect((c2.api.call as jest.Mock).mock.calls[0]).toEqual(["shift_quest_admin_island_set", "1111111111", key, value]);
+    }
+  });
+
+  it("hides and shows a team's summaries by plot, and needs the plot first", async () => {
+    const none = ctx(() => islandStatus());
+    await expect(
+      COMMAND_HANDLERS.get("admin island")!(interaction("command", { options: options({ action: "digest-hide" }) }).i, none)
+    ).rejects.toThrow(T.adminIslandPlot);
+    expect(none.api.call).not.toHaveBeenCalled();
+
+    const c = ctx((fn) => (fn === "shift_quest_digest_hide" ? { slot: 3, hidden: true } : islandStatus()));
+    const cmd = interaction("command", { options: options({ action: "digest-hide", plot: 3, reason: "นอกเรื่อง" }) });
+    await COMMAND_HANDLERS.get("admin island")!(cmd.i, c);
+    expect((c.api.call as jest.Mock).mock.calls).toEqual([
+      ["shift_quest_digest_hide", "1111111111", 3, true, "นอกเรื่อง"],
+      ["shift_quest_admin_island_status", "1111111111"],
+    ]);
+    const show = ctx((fn) => (fn === "shift_quest_digest_hide" ? { slot: 3, hidden: false } : islandStatus()));
+    await COMMAND_HANDLERS.get("admin island")!(interaction("command", { options: options({ action: "digest-show", plot: 3 }) }).i, show);
+    expect((show.api.call as jest.Mock).mock.calls[0]).toEqual(["shift_quest_digest_hide", "1111111111", 3, false, null]);
+  });
+
+  it("resets a student's consent only with the user named, then shows the status", async () => {
+    const none = ctx(() => islandStatus());
+    await expect(
+      COMMAND_HANDLERS.get("admin island")!(interaction("command", { options: options({ action: "consent-reset" }) }).i, none)
+    ).rejects.toThrow(T.adminIslandUser);
+    expect(none.api.call).not.toHaveBeenCalled();
+
+    const c = ctx((fn) => (fn === "shift_quest_admin_consent_reset" ? { state: "none" } : islandStatus()));
+    const cmd = interaction("command", { options: options({ action: "consent-reset", user: { id: "4444444444" } }) });
+    await COMMAND_HANDLERS.get("admin island")!(cmd.i, c);
+    expect((c.api.call as jest.Mock).mock.calls).toEqual([
+      ["shift_quest_admin_consent_reset", "1111111111", "4444444444"],
+      ["shift_quest_admin_island_status", "1111111111"],
+    ]);
+    expect(bodyText(cmd.sent[0])).toContain(T.adminConsentReset("4444444444"));
+  });
+
+  it("says the database needs schema 9 instead of the generic error", async () => {
+    const { QuestDbError } = await import("../api");
+    const c = ctx(() => {
+      throw new QuestDbError("shift_quest_admin_island_status", "42883");
+    });
+    await expect(
+      COMMAND_HANDLERS.get("admin island")!(interaction("command", { options: options({ action: "status" }) }).i, c)
+    ).rejects.toThrow(T.adminNeedsPlayer);
+  });
+
+  it("opens a reason modal for a staff award, then gives it once with the command as the request key", async () => {
+    const cmd = interaction("command", { options: options({ kind: "taught", user: { id: "4444444444" } }) });
+    const none = ctx(() => null);
+    await COMMAND_HANDLERS.get("admin award")!(cmd.i, none);
+    expect(none.api.call).not.toHaveBeenCalled();
+    expect(cmd.modals.map((m) => m.custom_id)).toEqual(["sq|ad_award|taught|4444444444|222222222222222222"]);
+
+    const c = ctx(() => ({ amount: 3000, balance: 3300, duplicate: false }));
+    const m = interaction("modal", { fields: fields({ reason: "สอนเรื่องทดสอบกับผู้ใช้ใน SHIFT รอบถัดไป" }) });
+    await ACTION_HANDLERS.get("ad_award")!(m.i, c, ["taught", "4444444444", "222222222222222222"]);
+    expect((c.api.call as jest.Mock).mock.calls[0]).toEqual([
+      "shift_quest_admin_staff_award",
+      "1111111111",
+      "4444444444",
+      "taught-next-shift",
+      "สอนเรื่องทดสอบกับผู้ใช้ใน SHIFT รอบถัดไป",
+      "award:222222222222222222",
+    ]);
+    expect(m.via).toEqual(["editReply"]);
+    expectCard(m.sent[0], false);
+    expect(bodyText(m.sent[0])).toBe(
+      "### ✅ ให้รางวัลแล้ว\n<@4444444444> ได้ **3000** Passioncoin · ยอดใหม่ 3300 · นักเรียนได้รับแจ้งเหตุผลใน /inbox"
+    );
+
+    const again = ctx(() => ({ amount: 1000, balance: 1000, duplicate: true }));
+    const m2 = interaction("modal", { fields: fields({ reason: "r" }) });
+    await ACTION_HANDLERS.get("ad_award")!(m2.i, again, ["helped", "4444444444", "222222222222222222"]);
+    expect((again.api.call as jest.Mock).mock.calls[0][3]).toBe("helped-most");
+    expect(bodyText(m2.sent[0])).toBe(`### ✅ ${T.adminAwardDuplicate}`);
+
+    const forged = ctx(() => null);
+    await ACTION_HANDLERS.get("ad_award")!(interaction("modal", { fields: fields({ reason: "r" }) }).i, forged, [
+      "everything",
+      "4444444444",
+      "222222222222222222",
+    ]);
+    expect(forged.api.call).not.toHaveBeenCalled();
+  });
+
+  it("refuses staff awards and the island switches to non-admins before any database call", async () => {
+    for (const key of ["admin island", "admin award"]) {
+      const c = ctx(() => null, ["reviewer"]);
+      await expect(COMMAND_HANDLERS.get(key)!(interaction("command").i, c)).rejects.toThrow();
+      expect(c.api.call).not.toHaveBeenCalled();
+    }
+  });
+
+  it("sets a catalog item's gates after saving it, and lists them", async () => {
+    const c = ctx((fn) =>
+      fn === "shift_quest_admin_catalog"
+        ? { id: UUID, name: "มัทฉะ", cost: 8000, stock_available: 5, active: true }
+        : fn === "shift_quest_admin_catalog_gate"
+          ? { id: UUID, min_stage: 5, requires_community: true }
+          : [
+              { name: "สติกเกอร์ SHIFT High", cost: 300, stock_available: 50, active: true, reserved: 0, min_stage: 0, requires_community: false },
+              { name: "มัทฉะ", cost: 8000, stock_available: 5, active: true, reserved: 0, min_stage: 5, requires_community: true },
+            ]
+    );
+    const cmd = interaction("command", { options: options({ name: "มัทฉะ", cost: 8000, min_stage: 5, requires_community: true }) });
+    await COMMAND_HANDLERS.get("admin catalog")!(cmd.i, c);
+    const calls = (c.api.call as jest.Mock).mock.calls;
+    expect(calls[0][0]).toBe("shift_quest_admin_catalog");
+    expect(calls[1]).toEqual(["shift_quest_admin_catalog_gate", "1111111111", UUID, 5, true]);
+
+    // "active: true" with gates waits for the gates: created off, gated, then switched on.
+    const order: unknown[][] = [];
+    const held = ctx((fn, ...args) => {
+      order.push([fn, ...args]);
+      if (fn === "shift_quest_admin_catalog") return { id: UUID, name: "มัทฉะ", cost: 8000, stock_available: 5, active: args[6] === true };
+      return fn === "shift_quest_admin_catalog_gate" ? { id: UUID } : [];
+    });
+    await COMMAND_HANDLERS.get("admin catalog")!(
+      interaction("command", { options: options({ name: "มัทฉะ", cost: 8000, active: true, min_stage: 5, requires_community: true }) }).i,
+      held
+    );
+    expect(order.map((x) => [x[0], x[7]])).toEqual([
+      ["shift_quest_admin_catalog", null],
+      ["shift_quest_admin_catalog_gate", undefined],
+      ["shift_quest_admin_catalog", true],
+      ["shift_quest_admin_catalog_list", undefined],
+    ]);
+
+    // The gate call fails: the item was never switched on.
+    const failing = ctx((fn) => {
+      if (fn === "shift_quest_admin_catalog_gate") throw new Error("db down");
+      return { id: UUID, name: "มัทฉะ", cost: 8000, stock_available: 5, active: false };
+    });
+    await expect(
+      COMMAND_HANDLERS.get("admin catalog")!(
+        interaction("command", { options: options({ name: "มัทฉะ", cost: 8000, active: true, min_stage: 5 }) }).i,
+        failing
+      )
+    ).rejects.toThrow("db down");
+    expect((failing.api.call as jest.Mock).mock.calls.filter((x) => x[0] === "shift_quest_admin_catalog").map((x) => x[7])).toEqual([null]);
+    const body = bodyText(cmd.sent[0]);
+    expect(body).toContain("- สติกเกอร์ SHIFT High **300** เหรียญ · เหลือ 50 · จองอยู่ 0 · เปิด\n");
+    expect(body).toContain("- มัทฉะ **8000** เหรียญ · เหลือ 5 · จองอยู่ 0 · เปิด · ต้นไม้ขั้น 5 ขึ้นไป · ต้องผ่านเควสต์ชุมชน");
+
+    const plain = ctx((fn) => (fn === "shift_quest_admin_catalog" ? { id: UUID, name: "x", cost: 1, stock_available: 1, active: true } : []));
+    await COMMAND_HANDLERS.get("admin catalog")!(interaction("command", { options: options({ name: "x" }) }).i, plain);
+    expect((plain.api.call as jest.Mock).mock.calls.map((x) => x[0])).toEqual(["shift_quest_admin_catalog", "shift_quest_admin_catalog_list"]);
+  });
+});

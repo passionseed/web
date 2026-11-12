@@ -72,8 +72,9 @@ export default async function proxy(request: NextRequest) {
   const previewPath = adminPreviewPath(request.method, request.nextUrl.pathname, request.headers.get("user-agent"));
   if (previewPath) return NextResponse.rewrite(new URL(previewPath, request.url));
 
-  // Campaign redirects must work before sign-in and profile onboarding.
-  if (request.nextUrl.pathname.startsWith('/go/')) {
+  // Campaign redirects (/go/ for SHIFT, /r/ for Radar short links) must work
+  // before sign-in and profile onboarding.
+  if (request.nextUrl.pathname.startsWith('/go/') || request.nextUrl.pathname.startsWith('/r/')) {
     return NextResponse.next({ request });
   }
 

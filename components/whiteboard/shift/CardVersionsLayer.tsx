@@ -23,7 +23,7 @@ import {
 
 import { canvasAccessMap, mayEditFrame } from "@/lib/whiteboard/canvas-access";
 
-import { useViewportTick } from "../CommentsLayer";
+import { useViewportTick } from "../useViewportTick";
 import { WHEEL_THROUGH } from "../wheelBridge";
 import { isBusy, useSceneMemo } from "./sceneMemo";
 
@@ -161,7 +161,7 @@ export function CardVersionsLayer({ api, meId, editable, manager, nameOf }: Prop
             aria-expanded={openId === card.id}
             aria-label={`เวอร์ชันของการ์ด${shortTitle(kind)}: ${label}`}
             title="ประวัติเวอร์ชัน · Versions"
-            className={`wb-version-chip pointer-events-auto absolute flex -translate-x-full -translate-y-full items-center gap-1 rounded-full rounded-br-none px-2.5 text-xs font-semibold ${
+            className={`wb-version-chip pointer-events-auto absolute flex -translate-x-full -translate-y-full items-center gap-1 rounded-md rounded-br-none px-2.5 text-xs font-semibold ${
               selected ? "wb-version-chip--on" : ""
             }`}
             style={{ left: pos.x, top: pos.y - 2 }}

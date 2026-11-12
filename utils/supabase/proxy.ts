@@ -19,6 +19,12 @@ function shouldSkipOnboardGate(pathname: string): boolean {
     // also covers the school proposal forwarded to teachers and parents who
     // may hold a half-finished account.
     isShiftPath(pathname) ||
+    // Career Radar is public, and its links carry utm tags the page reads in
+    // the browser: a bounce to /onboard would drop them. /r/ short links
+    // return early in proxy.ts; they are listed here too as a second guard.
+    pathname === '/radar' ||
+    pathname.startsWith('/radar/') ||
+    pathname.startsWith('/r/') ||
     pathname.startsWith('/api/') ||
     pathname.startsWith('/_next/')
   )

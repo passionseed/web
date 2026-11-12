@@ -84,7 +84,7 @@ export function TeamPanel({ access, at, canManage, people, nameOf, onChange, onT
                         e.target.checked ? [...access.editors, p.userId] : access.editors.filter((id) => id !== p.userId),
                       )
                     }
-                    className="h-4 w-4 accent-orange-700"
+                    className="h-4 w-4 accent-[#3d4bd8]"
                   />
                 </label>
                 <button
