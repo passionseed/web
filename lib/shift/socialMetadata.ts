@@ -7,9 +7,11 @@ export function shiftSocialMetadata(
   title: string,
   description: string,
   path: string,
+  /** Use this preview instead of the round's banner, e.g. the register link's own card. */
+  imageSrc?: string,
 ): Pick<Metadata, "openGraph" | "twitter"> {
   const image = new URL(
-    cohort.bannerSrc ?? `/shift/banners/shift-${cohort.round}.png`,
+    imageSrc ?? cohort.bannerSrc ?? `/shift/banners/shift-${cohort.round}.png`,
     "https://passionseed.org",
   ).href;
   return {

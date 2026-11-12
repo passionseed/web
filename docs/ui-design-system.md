@@ -1922,14 +1922,44 @@ for the selected navigation item. The public site navigation is replaced with
 the admin sidebar and account menu.
 
 - Group tools using `components/admin/admin-navigation.ts`. Keep daily work
-  expanded; reveal other groups on demand or when their route is active. Search
-  includes every group. Only the longest matching route is selected.
-- Use a single divided statistics row and simple action rows on the overview.
-  Avoid adding a separate card or accent color for every metric or tool.
+  expanded; reveal other groups on demand or when their route is active, and
+  remember each group the admin opens or closes. Search includes every group.
+  Only the longest matching route is selected; mark an item `exact` when other
+  tools live under its path (SHIFT Tracker at `/admin/shift`).
+- The overview leads with an attention list: the open work queues from
+  `lib/admin/console.ts`, most urgent first, each a row that deep-links into
+  the tool already filtered. Below it sits one divided statistics row of KPIs;
+  a small sparkline and a delta per metric are fine. Avoid adding a separate
+  card or accent color for every metric or tool.
+- Sidebar items show a count badge from the same queues (`navBadgeCounts`):
+  a muted pill capped at 99+, amber only when the item is selected or its work
+  is urgent ("now"). A collapsed group shows its total on the summary. The
+  topbar adds a "Needs you" link to the attention list, hidden at zero.
+- The topbar holds breadcrumbs (Admin, the tool, then readable sub-pages).
+  Record IDs show as a short noun such as "Round" or "Lead", never the raw ID,
+  and crumbs only link to routes that have a page.
+- The command palette (`components/admin/console/CommandPalette.tsx`) opens
+  with Cmd+K on Apple devices and Ctrl+K elsewhere (also inside fields; Ctrl+K
+  stays a text-editing key on macOS), or from the search-style
+  topbar button. Empty, it lists what needs attention, recent pages, every tool,
+  and actions; typing filters tools instantly and searches records through
+  `/api/admin/search`. Enter opens, Cmd/Ctrl+Enter opens a new tab, and keys
+  are ignored during IME composition. Record URLs carry IDs only.
+- Global shortcuts live in `useAdminHotkeys`: `?` lists them and "g then a
+  key" jumps to a daily tool. They pause while typing, and only a completed
+  chord is swallowed, so page keys (j and k in the DM inbox and round review)
+  keep working, and "gg" is left to the page. Keys match the physical key when
+  a non-Latin layout such as Thai is active. While the palette or a dialog is
+  open, keystrokes never reach the page underneath. Show key hints with `components/admin/shared/Kbd.tsx`.
 - Semantic Shadcn tokens are scoped to the workspace and, while it is mounted,
   the body so portaled dialogs, menus, and selects share the Dusk palette.
 - Below 1024px, navigation becomes a labeled, keyboard-accessible sheet. Below
-  640px, metrics use two columns. Keep interactive targets at least 44px tall.
+  768px the palette button shrinks to an icon; below 640px, metrics use two
+  columns and breadcrumbs keep the last two crumbs. Keep interactive targets at
+  least 44px tall.
+- `app/admin/loading.tsx` shows a heading and row skeleton inside the shell, so
+  every navigation answers at once. Tool pages use `AdminPageHeader` and the
+  load states in `components/admin/shared/AdminStates.tsx`.
 - Motion is limited to a short content entrance, disclosure chevrons, and action
   arrows. Touch uses pressed states; reduced motion disables transitions and
   animations. This workspace does not add animated glow layers.
@@ -2061,6 +2091,16 @@ open RSVP form; the calendar, admin editor, and private attendee names retain
 their existing behavior. Use the shared glass surface for RSVP and the shared
 white CTA for both form submission and the mobile sticky action. The agenda
 uses divided rows rather than the print poster's offset shadows and stamps.
+
+### SHIFT High (`/shift/alumni`)
+
+The alumni community is named **SHIFT High**. Keep the existing URL, shared
+Dawn globe scene, and calendar/RSVP behavior. The wordmark uses a small enough
+fluid scale for the full name to fit on phones. The introduction uses divided,
+numbered rows to explain weekly goals, small teams, and the weekly session,
+then links to the invite-only board. Feedback questions and calendar exports
+use the same name. Membership pricing remains in the feedback offer's shared
+constants; the calendar RSVP is separate from paid membership.
 
 ### SHIFT feedback globe (`/shift/feedback`)
 

@@ -307,3 +307,20 @@ export async function verifyIsInstructor(userId: string): Promise<void> {
     );
   }
 }
+
+/** Resolve a builder child record to its activity before authorizing a mutation. */
+export async function verifyBuilderRecordOwnership(
+  kind: 'content' | 'assessment' | 'question', id: string, userId: string
+): Promise<void> {
+  const supabase = await createClient();
+  if (kind === 'question') {
+    const { data, error } = await supabase.from('path_quiz_questions')
+      .select('assessment_id').eq('id', id).maybeSingle();
+    if (error || !data) throw new NotFoundError('Question not found');
+    return verifyBuilderRecordOwnership('assessment', data.assessment_id, userId);
+  }
+  const table = kind === 'content' ? 'path_content' : 'path_assessments';
+  const { data, error } = await supabase.from(table).select('activity_id').eq('id', id).maybeSingle();
+  if (error || !data) throw new NotFoundError('Record not found');
+  await verifyActivityOwnership(data.activity_id, userId);
+}

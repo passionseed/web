@@ -130,3 +130,10 @@ output/capstone-consent/
 
 # Local SeedStack test scripts
 .tmp-seedstack-test/
+
+# Python bytecode (ops scripts)
+__pycache__/
+*.pyc
+
+# Radar Guide pipeline cache (radar:dump output, regenerated on demand)
+.cache/

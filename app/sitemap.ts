@@ -1,6 +1,9 @@
 import type { MetadataRoute } from "next";
 
+import { PORT_GUIDES, portGuidePath } from "@/lib/content/port-guides";
 import { SHIFT_COHORTS, cohortPath } from "@/lib/content/shift-cohort";
+import { guideSitemapEntries } from "@/components/radar/guide/shell/guide-routes";
+import { allGuides } from "@/lib/radar-guides/registry.server";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://passionseed.org";
@@ -26,6 +29,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     })),
     {
+      url: `${baseUrl}/port`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    ...PORT_GUIDES.map((guide) => ({
+      url: `${baseUrl}${portGuidePath(guide)}`,
+      lastModified: new Date(guide.updated),
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
+    })),
+    {
       url: `${baseUrl}/techseed`,
       lastModified: now,
       changeFrequency: "daily",
@@ -44,12 +59,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
-      url: `${baseUrl}/impact`,
-      lastModified: now,
-      changeFrequency: "monthly",
-      priority: 0.7,
-    },
-    {
       url: `${baseUrl}/about`,
       lastModified: now,
       changeFrequency: "monthly",
@@ -61,5 +70,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.5,
     },
+    // Career Radar code guides: cover + every level (live guides only on production).
+    ...guideSitemapEntries(allGuides(), baseUrl),
   ];
 }

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { GrowthStageGuide } from "@/components/my-path/GrowthStageGuide";
 import { MyPathDashboard } from "@/components/my-path/MyPathDashboard";
 import { MyPathSummaryCard } from "@/components/my-path/MyPathSummaryCard";
 import { buildMyPathDashboard } from "@/lib/my-path/dashboard";
@@ -56,6 +57,7 @@ export default async function PortalPage() {
       />
       <main id="my-path" className="dawn-theme relative z-10 flex-1">
         <div className="container mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-10 lg:py-14">
+          <GrowthStageGuide />
           <MyPathSummaryCard summary={myPathSummary} />
           <MyPathDashboard model={model} projectSeed={projectSeed} />
         </div>

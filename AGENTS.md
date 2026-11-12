@@ -74,6 +74,7 @@ between adults and students; work happens in visible group spaces.
 - `utils/supabase/`: Supabase client setup. `proxy.ts` at the root (Next.js 16's middleware) refreshes sessions and guards routes through `utils/supabase/proxy.ts`.
 - `supabase/migrations/`: schema migrations.
 - `lib/supabase/__tests__/` and colocated `*.test.ts`: Jest tests.
+- `components/whiteboard/` and `app/whiteboard/`: the multiplayer whiteboard. Read [`docs/features/whiteboard.md`](docs/features/whiteboard.md) first; `pnpm whiteboard:read <id>` prints a board as Markdown.
 
 Keep code modular: split large components and functions into small, named
 pieces, and follow the patterns already in the neighbouring files.
@@ -111,6 +112,10 @@ changing UI. The rules people most often break:
 - Reuse `.ei-card` and `.ei-button-dusk` from `app/globals.css`; do not redefine them inline.
 - Marketing pages use one `.pathlab-note` margin note per section: a short, warm aside, never on headings or body copy. Copy lives in the `NOTES` block of `lib/content/pathlab-page.ts`.
 
+Before designing a bespoke poster or poster series, read
+[`skills/key-art-poster/SKILL.md`](skills/key-art-poster/SKILL.md): one image,
+one headline, readable labels, and the patterns that read as AI slop.
+
 Copy rules (details in [`PRODUCT.md`](PRODUCT.md)):
 
 - No em dashes in user-facing copy. Use a comma, a colon, or rewrite the sentence.
@@ -118,7 +123,30 @@ Copy rules (details in [`PRODUCT.md`](PRODUCT.md)):
 - Students are autonomous builders: never talk down, lecture, or use ed-tech jargon.
 - Sell the outcome parents and students want (a real project and portfolio evidence), not the philosophy behind it.
 
+Thai copy review: before shipping Thai marketing copy, have it checked by
+several models, because each catches different problems. From a three-way
+review of the awaken-grow carousel (October 2026):
+
+| Reviewer | Use it for | Watch out for |
+|---|---|---|
+| Antigravity (Gemini) | Drafting and rewriting: the most natural, punchy Thai | Misses grammar slips; breaks house rules (wrote น้องๆ) |
+| Cursor | Proofreading: the only one to catch missing particles and made-up words | Light on logic; stray non-Thai characters can leak into its output |
+| Codex | Logic: ambiguous lines, terms that shift meaning, overclaims | Stiff, academic Thai; over-hedges until the hook is gone |
+
+Lines that two or more reviewers flag are almost always real. Check every
+suggestion against the copy rules above before applying it.
+
 ## Gotchas
 
 - `@/components/map/MapViewer` resolves to `components/map/MapViewer.tsx`. `MapViewer.original.tsx`, `MapViewer.refactored.tsx`, and the `MapViewer/` folder are not what the pages import.
 - When both `Foo.tsx` and `Foo/index.tsx` exist, grep the import statements to find which one is live before editing, and ask if it is still unclear.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

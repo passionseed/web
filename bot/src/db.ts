@@ -8,7 +8,7 @@ import type { BotEnv } from "./env";
  * alone — see `20260801000000_projectseed_bot_rpcs.sql` for why the web app's
  * equivalents cannot be reused.
  */
-export function createDb(env: BotEnv): SupabaseClient {
+export function createDb(env: Pick<BotEnv, "supabaseUrl" | "supabaseServiceKey">): SupabaseClient {
   return createClient(env.supabaseUrl, env.supabaseServiceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });

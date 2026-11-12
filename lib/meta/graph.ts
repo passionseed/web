@@ -222,6 +222,11 @@ export interface GraphMediaSummary {
   caption?: string;
   timestamp: string;
   permalink?: string;
+  /** The code in instagram.com/reel/<shortcode>; used for Radar utm_content. */
+  shortcode?: string;
+  media_type?: string;
+  media_product_type?: string;
+  thumbnail_url?: string;
 }
 
 export interface GraphComment {
@@ -236,17 +241,30 @@ export interface GraphComment {
 /**
  * Lists media for an IG business/creator account, newest first, following
  * pagination. Used to backfill comment history since the webhook only sees
- * comments posted after subscription.
+ * comments posted after subscription, and by the Radar reel mapper.
+ *
+ * `maxPages` caps the walk (50 media per page). The comment backfill passes
+ * nothing and keeps walking the whole history, as before; the Radar mapper
+ * passes `RADAR_MEDIA_MAX_PAGES` because it only needs recent posts.
  */
-export async function listInstagramMedia(igUserId: string): Promise<GraphMediaSummary[]> {
+export const RADAR_MEDIA_MAX_PAGES = 2;
+
+export async function listInstagramMedia(
+  igUserId: string,
+  options: { maxPages?: number } = {}
+): Promise<GraphMediaSummary[]> {
   const accessToken = requireAccessToken();
   const media: GraphMediaSummary[] = [];
+  const maxPages = options.maxPages ?? Number.POSITIVE_INFINITY;
 
   let url: string | null =
     `${IG_GRAPH_HOST}/${GRAPH_API_VERSION}/${igUserId}/media` +
-    `?fields=id,caption,timestamp,permalink&limit=50&access_token=${encodeURIComponent(accessToken)}`;
+    `?fields=id,caption,timestamp,permalink,shortcode,media_type,media_product_type,thumbnail_url` +
+    `&limit=50&access_token=${encodeURIComponent(accessToken)}`;
 
-  while (url) {
+  let pages = 0;
+  while (url && pages < maxPages) {
+    pages += 1;
     const res = await fetch(url);
     if (!res.ok) {
       const errBody = await res.text();
@@ -258,6 +276,49 @@ export async function listInstagramMedia(igUserId: string): Promise<GraphMediaSu
   }
 
   return media;
+}
+
+/**
+ * Graph `/{media-id}/insights` for the given metrics, as `{ name: value }`.
+ *
+ * Instagram fails the whole request when one metric is not available for the
+ * media type, so callers that want "whatever exists" ask in small groups (see
+ * the radar-reel-insights cron). Lifetime metrics come back either as
+ * `values[0].value` or `total_value.value` depending on the metric; both are
+ * read. Non-numeric values are dropped.
+ */
+export async function getMediaInsights(
+  mediaId: string,
+  metrics: string[]
+): Promise<Record<string, number>> {
+  if (!/^[0-9_]{5,64}$/.test(mediaId)) throw new Error("Invalid media id");
+  if (metrics.length === 0) return {};
+  const accessToken = requireAccessToken();
+
+  const res = await fetch(
+    `${IG_GRAPH_HOST}/${GRAPH_API_VERSION}/${mediaId}/insights` +
+      `?metric=${encodeURIComponent(metrics.join(","))}&access_token=${encodeURIComponent(accessToken)}`
+  );
+  if (!res.ok) {
+    const errBody = await res.text();
+    throw parseMetaErrorBody(errBody, res.status);
+  }
+
+  const json: {
+    data?: {
+      name?: string;
+      values?: { value?: unknown }[];
+      total_value?: { value?: unknown };
+    }[];
+  } = await res.json();
+
+  const out: Record<string, number> = {};
+  for (const item of json.data ?? []) {
+    if (!item.name) continue;
+    const value = item.total_value?.value ?? item.values?.[0]?.value;
+    if (typeof value === "number" && Number.isFinite(value)) out[item.name] = value;
+  }
+  return out;
 }
 
 /**
@@ -493,6 +554,50 @@ export async function privateReplyToComment(commentId: string, message: string):
     body: JSON.stringify({
       recipient: { comment_id: commentId },
       message: { text: message },
+    }),
+  });
+
+  if (!res.ok) {
+    const errBody = await res.text();
+    throw new Error(`Failed to private-reply to comment ${commentId} (${res.status}): ${errBody}`);
+  }
+}
+
+/**
+ * Private reply with quick-reply buttons (Radar quick-reply flow, flag
+ * RADAR_DM_QUICK_REPLY, off by default). The tap comes back as a normal
+ * `message.quick_reply` webhook with the button's payload.
+ *
+ * Unverified: Meta documents quick replies for the Send API, but whether a
+ * `recipient.comment_id` private reply accepts them must be checked with a
+ * test comment before the flag is turned on (spec 5.4).
+ */
+export async function privateReplyToCommentWithQuickReplies(
+  commentId: string,
+  text: string,
+  options: MetaQuickReplyOption[]
+): Promise<void> {
+  if (options.length === 0) {
+    throw new Error("privateReplyToCommentWithQuickReplies requires at least one option");
+  }
+  const accessToken = requireAccessToken();
+
+  const res = await fetch(`${IG_GRAPH_HOST}/${GRAPH_API_VERSION}/me/messages`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      recipient: { comment_id: commentId },
+      message: {
+        text,
+        quick_replies: options.slice(0, MAX_QUICK_REPLIES).map((o) => ({
+          content_type: "text",
+          title: o.title,
+          payload: o.payload,
+        })),
+      },
     }),
   });
 

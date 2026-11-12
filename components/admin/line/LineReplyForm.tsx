@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { replyOnLine } from "@/app/admin/line/actions";
+import { refreshAdminCounts } from "@/components/admin/console/live-counts";
 import { LINE_TEXT_LIMIT } from "@/lib/line-oa/limits";
 
 export function LineReplyForm({ contactId, disabled }: { contactId: string; disabled?: boolean }) {
@@ -23,6 +24,7 @@ export function LineReplyForm({ contactId, disabled }: { contactId: string; disa
       const result = await replyOnLine(contactId, body);
       if (result.ok) {
         setText("");
+        refreshAdminCounts();
         if (result.method === "push") toast("Sent as a push message (counts toward the monthly quota).");
       } else {
         toast.error(result.error);

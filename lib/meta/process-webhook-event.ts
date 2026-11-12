@@ -12,6 +12,8 @@ import { applyCommentClassification, upsertComment } from "@/lib/supabase/ig-com
 import { classifyConversationText } from "@/lib/meta/classify";
 import { getInstagramProfile } from "@/lib/meta/graph";
 import { isSelfAuthored } from "@/lib/meta/self-account";
+import { maybeAutoSendRadarDm } from "@/lib/radar-guide/comment-dm";
+import { handleRadarThreadInbound } from "@/lib/radar-guide/dm-thread";
 import type { NormalizedAttachment, NormalizedMetaEvent } from "@/lib/meta/webhook-events";
 import type { MetaWebhookEventResult } from "@/lib/supabase/meta-webhook-events";
 import type { DmMessageType } from "@/types/dm-leads";
@@ -110,15 +112,36 @@ async function processMessage(
         }
       )
     : false;
-  if (event.text || event.quickReplyPayload) {
+
+  // Radar-origin threads are not sales leads: no classification, and at most
+  // one fixed automatic reply (spec 5.6). The handler never throws.
+  const radarConversation = write.conversation as typeof write.conversation & {
+    origin?: string | null;
+    radar_reply_sent_at?: string | null;
+  };
+  const isRadarThread = radarConversation.origin === "radar";
+  const radarAction = await handleRadarThreadInbound({
+    conversationId: write.conversation.id,
+    platform: event.platform,
+    platformUserId: event.senderId,
+    origin: isRadarThread ? "radar" : null,
+    radarReplySentAt: radarConversation.radar_reply_sent_at ?? null,
+    quickReplyPayload: event.quickReplyPayload ?? null,
+  });
+
+  if (!isRadarThread && (event.text || event.quickReplyPayload)) {
     await classifyNewTextMessage(write.conversation.id);
   }
+
+  const metadata: Record<string, string | boolean> = {};
+  if (enrichmentFailed) metadata.username_enrichment_failed = true;
+  if (radarAction !== "none") metadata.radar_thread = radarAction;
 
   return {
     status: "processed",
     conversationId: write.conversation.id,
     dmMessageId: write.messageId,
-    metadata: enrichmentFailed ? { username_enrichment_failed: true } : {},
+    metadata,
   };
 }
 
@@ -225,7 +248,16 @@ export async function processMetaWebhookEvent(
         commentedAt: event.occurredAt ?? new Date().toISOString(),
       });
       await applyCommentClassification(comment.id, classifyConversationText([comment.text]));
-      return { status: "processed", igCommentId: comment.id };
+      // Fixed Radar DM when RADAR_COMMENT_DM_AUTO=on and the comment asked for
+      // it (spec 5.4). Never throws; the claim makes redeliveries a no-op.
+      const dm = await maybeAutoSendRadarDm(comment);
+      return {
+        status: "processed",
+        igCommentId: comment.id,
+        ...(dm.reason === "not_radar"
+          ? {}
+          : { metadata: { radar_dm: dm.status, radar_dm_reason: dm.reason } }),
+      };
     }
 
     case "messaging.referral":

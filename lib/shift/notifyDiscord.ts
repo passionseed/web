@@ -1,5 +1,5 @@
 import type { ShiftApplication } from "@/lib/shift/application";
-import { SHIFT_AVAILABILITY, SHIFT_GRADES } from "@/lib/shift/application";
+import { SHIFT_AVAILABILITY, SHIFT_FOUND_VIA, SHIFT_GRADES } from "@/lib/shift/application";
 
 /**
  * Pings the team's Discord channel when a SHIFT application lands.
@@ -23,7 +23,8 @@ export interface ShiftApplicationNotice {
   application: Pick<
     ShiftApplication,
     "nickname" | "grade" | "targetTrack" | "problem" | "availability" | "source"
-  >;
+  > &
+    Partial<Pick<ShiftApplication, "foundVia">>;
 }
 
 let warnedMissingWebhook = false;
@@ -71,6 +72,11 @@ export function buildShiftApplicationPayload(notice: ShiftApplicationNotice) {
           {
             name: "เวลาว่าง",
             value: labelFor(SHIFT_AVAILABILITY, app.availability),
+            inline: true,
+          },
+          {
+            name: "รู้จักจาก",
+            value: app.foundVia ? labelFor(SHIFT_FOUND_VIA, app.foundVia) : "-",
             inline: true,
           },
           { name: "มาจาก", value: truncate(app.source || "direct", 80), inline: true },

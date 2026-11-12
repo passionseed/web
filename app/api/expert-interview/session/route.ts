@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/expert-interview/rate-limiter";
+import { setSessionCookie } from "@/lib/expert-interview/session-token";
 import { getFirstQuestion, getTotalQuestions } from "@/lib/expert-interview/chat-service";
 import type { InterviewType } from "@/types/expert-interview";
 
@@ -52,12 +53,14 @@ export async function POST(request: NextRequest) {
     const sessionId = crypto.randomUUID();
     console.log("[expert-interview/session] Session created:", sessionId);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       sessionId,
       firstQuestion: getFirstQuestion(language, interviewType),
       progress: { current: 1, total: getTotalQuestions() },
       interviewType,
     });
+    setSessionCookie(response, sessionId);
+    return response;
   } catch (error) {
     console.error("[expert-interview/session] failed", error);
     console.error("[expert-interview/session] error details:", {

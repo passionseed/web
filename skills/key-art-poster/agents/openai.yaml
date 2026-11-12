@@ -1,0 +1,4 @@
+interface:
+  display_name: "Key-art poster"
+  short_description: "One-image pixel posters that read in a glance"
+  default_prompt: "Use $key-art-poster to design this poster set: one feeling and one image per poster, Kodchasan headline, the cover's offer band, rendered to PNG."

@@ -43,3 +43,14 @@ test("App Store support and legal pages stay public without login", () => {
   assert.equal(isPublicRoute("/worksheet"), true);
   assert.equal(isPublicRoute("/worksheet/portfolio-weight-test"), true);
 });
+
+test("Crawler files and portfolio guides are readable without login", () => {
+  // Search engines and AI answer engines never sign in. Redirecting them to
+  // /login hid the robots rules, the sitemap and the guides from them.
+  assert.equal(isPublicRoute("/robots.txt"), true);
+  assert.equal(isPublicRoute("/sitemap.xml"), true);
+  assert.equal(isPublicRoute("/llms.txt"), true);
+  assert.equal(isPublicRoute("/port"), true);
+  assert.equal(isPublicRoute("/port/certificates-vs-projects"), true);
+  assert.equal(isPublicRoute("/portal"), false);
+});

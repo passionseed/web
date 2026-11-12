@@ -5,14 +5,16 @@ import {
   type MessagingWindowMode,
 } from "@/lib/dm-leads/messaging-window";
 import {
+  CLOSED_LEAD_STATUSES,
   classifyBucket,
   getFieldCoverage,
+  isClosedLeadStatus,
   type DmLeadBucket,
   type DmLeadSignals,
   type FunnelScoreboard,
 } from "@/lib/dm-leads/playbook";
 import { messageSignalFlags, signalsFor } from "@/lib/dm-leads/signals";
-import { gateDraft } from "@/lib/dm-leads/send-gate";
+import { gateDraft, gateRadarThread, GATE_REASON_LABELS } from "@/lib/dm-leads/send-gate";
 import { scoreLead } from "@/lib/dm-leads/scoring";
 import type { DmScriptRung } from "@/lib/dm-leads/scripts";
 import { DM_LEAD_LIST_COLUMNS } from "@/types/dm-leads";
@@ -42,6 +44,81 @@ export interface InboundAttachmentInput {
   url: string | null;
   title: string | null;
   payload: Record<string, unknown>;
+}
+
+import { isMissingOriginColumn, warnMissingOriginColumn } from "./dm-origin";
+
+/** `dm_conversations.origin` (migration 20261111100300); not in the generated types yet. */
+type ConversationOrigin = { origin?: string | null; radar_reply_sent_at?: string | null };
+
+async function conversationExists(
+  supabase: ReturnType<typeof createAdminClient>,
+  platform: DmPlatform,
+  platformThreadId: string
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("dm_conversations")
+    .select("id")
+    .eq("platform", platform)
+    .eq("platform_thread_id", platformThreadId)
+    .maybeSingle();
+  if (error) {
+    console.error("Error checking for an existing dm_conversation:", error);
+    throw new Error("Failed to record conversation");
+  }
+  return Boolean(data);
+}
+
+/**
+ * Tags a newly created conversation as Radar-origin when its sender got a
+ * Radar comment DM in the last 30 days (spec 5.6), so it never enters lead
+ * scoring, buckets, campaigns or Qwen. Existing conversations keep their
+ * origin. A failed check leaves the thread untagged rather than losing the
+ * inbound message; the failure is logged.
+ */
+async function tagRadarOriginOnCreate(
+  supabase: ReturnType<typeof createAdminClient>,
+  conversation: DmConversation & ConversationOrigin,
+  sender: { platformUserId: string; username?: string | null }
+): Promise<DmConversation & ConversationOrigin> {
+  if (conversation.platform !== "instagram") return conversation;
+  try {
+    const { hasRecentRadarDms, isRadarOriginCandidate } = await import("@/lib/supabase/radar-reels");
+    let username = sender.username ?? conversation.username ?? null;
+    let radar = await isRadarOriginCandidate(
+      { platformUserId: sender.platformUserId, username },
+      { db: supabase }
+    );
+    // The comment's from.id may differ from the messaging sender id, and a
+    // webhook thread has no username yet (enrichment runs later). Look the
+    // handle up, but only while Radar DMs are actually going out.
+    if (!radar && !username && (await hasRecentRadarDms({ db: supabase }))) {
+      const { getInstagramProfile } = await import("@/lib/meta/graph");
+      username = (await getInstagramProfile(sender.platformUserId)).username;
+      if (username) {
+        radar = await isRadarOriginCandidate({ platformUserId: null, username }, { db: supabase });
+      }
+    }
+    if (!radar) return conversation;
+    const { error } = await supabase
+      .from("dm_conversations")
+      .update({ origin: "radar" })
+      .eq("id", conversation.id)
+      .is("origin", null);
+    if (error) throw new Error(error.message);
+    return { ...conversation, origin: "radar" };
+  } catch (error) {
+    console.error("Radar origin tagging failed", {
+      errorCode: "radar_origin_tag_failed",
+      message: error instanceof Error ? error.message.slice(0, 120) : "unknown",
+    });
+    return conversation;
+  }
+}
+
+/** True for a thread opened by a Radar comment DM (spec 5.6). */
+export function isRadarOriginConversation(conversation: object | null | undefined): boolean {
+  return (conversation as ConversationOrigin | null | undefined)?.origin === "radar";
 }
 
 /**
@@ -119,7 +196,13 @@ export async function recordInboundMessage(params: {
   const existing = await loadExisting();
   if (existing) return existing;
 
-  const { data: conversation, error: conversationError } = await supabase
+  const isNewConversation = !(await conversationExists(
+    supabase,
+    params.platform,
+    params.platformThreadId
+  ));
+
+  const { data: upserted, error: conversationError } = await supabase
     .from("dm_conversations")
     .upsert(
       {
@@ -140,6 +223,13 @@ export async function recordInboundMessage(params: {
     console.error("Error upserting dm_conversation:", conversationError);
     throw new Error("Failed to record conversation");
   }
+
+  const conversation = isNewConversation
+    ? await tagRadarOriginOnCreate(supabase, upserted, {
+        platformUserId: params.platformUserId,
+        username: params.username,
+      })
+    : upserted;
 
   const { data: message, error: messageError } = await supabase
     .from("dm_messages")
@@ -200,6 +290,12 @@ export async function recordBackfilledMessage(params: {
 }): Promise<{ conversationId: string; outcome: "created" | "duplicate" }> {
   const supabase = createAdminClient();
 
+  const isNewConversation = !(await conversationExists(
+    supabase,
+    params.platform,
+    params.platformThreadId
+  ));
+
   const { data: conversation, error: conversationError } = await supabase
     .from("dm_conversations")
     .upsert(
@@ -220,6 +316,12 @@ export async function recordBackfilledMessage(params: {
   if (conversationError) {
     console.error("Error upserting dm_conversation (backfill):", conversationError);
     throw new Error("Failed to record conversation");
+  }
+  if (isNewConversation) {
+    await tagRadarOriginOnCreate(supabase, conversation, {
+      platformUserId: params.platformUserId,
+      username: params.username,
+    });
   }
 
   const { data: msgData, error: messageError } = await supabase
@@ -335,6 +437,11 @@ export interface DmLeadFilters {
   grade?: string;
   platform?: DmPlatform;
   intent?: DmLeadIntentFilter;
+  /**
+   * The lead wrote last and the conversation is still open. Converted, lost
+   * and spam conversations are never waiting on us (the same rule as
+   * needsReply, the done bucket and the overview's dm_awaiting_reply queue).
+   */
   myTurnOnly?: boolean;
   /** Case-insensitive match on username / display name. */
   search?: string;
@@ -346,6 +453,8 @@ export interface DmLeadFilters {
   /** Only conversations whose follow-up time has arrived (or passed). */
   followUpDue?: boolean;
   leadStatus?: DmLeadStatus;
+  /** Hide finished conversations: lead_status converted, lost or spam. */
+  openOnly?: boolean;
   /** Exact match on an admin tag. */
   tag?: string;
   /**
@@ -353,6 +462,13 @@ export interface DmLeadFilters {
    * it is applied in memory after the DB-side filters have narrowed the set.
    */
   bucket?: DmLeadBucket;
+  /**
+   * "radar" lists only Radar-origin threads (the read-only Radar filter).
+   * Without it, Radar-origin threads are excluded from every list, bucket,
+   * facet and score: students who asked for a Career Radar link are not
+   * sales leads (spec 5.6).
+   */
+  origin?: "radar";
 }
 
 const INTENT_COLUMN: Record<DmLeadIntentFilter, string> = {
@@ -370,11 +486,14 @@ function escapeIlike(term: string): string {
 /** Matches the value written by scripts/tag-internal-lead.ts. */
 const INTERNAL_TAG = "internal";
 
+/** PostgREST list for `.not("lead_status", "in", ...)`: "(converted,lost,spam)". */
+const CLOSED_LEAD_STATUS_LIST = `(${CLOSED_LEAD_STATUSES.join(",")})`;
+
 /** Shared filter application so list + facet counts stay in sync. */
 function applyDmLeadFilters<T>(
   query: T,
   filters: DmLeadFilters,
-  { skipStage = false }: { skipStage?: boolean } = {}
+  { skipStage = false, withOrigin = true }: { skipStage?: boolean; withOrigin?: boolean } = {}
 ): T {
   let q = query as {
     eq: (col: string, val: unknown) => typeof q;
@@ -389,6 +508,12 @@ function applyDmLeadFilters<T>(
   // admin_tags is NOT NULL DEFAULT '{}', so `not cs` never trips on nulls.
   q = q.not("admin_tags", "cs", `{${INTERNAL_TAG}}`);
 
+  // Radar-origin threads are fenced off from the sales inbox (spec 5.6).
+  // `origin` is NULL or 'radar', so "is null" is the whole sales inbox.
+  // Before the origin migration is applied there is no column and no Radar
+  // thread, so the fallback read leaves the filter out (`withOrigin: false`).
+  if (withOrigin) q = filters.origin === "radar" ? q.eq("origin", "radar") : q.is("origin", null);
+
   if (filters.stage && !skipStage) q = q.eq("stage", filters.stage);
   if (filters.grade) {
     q = filters.grade === "none" ? q.is("grade_level", null) : q.eq("grade_level", filters.grade);
@@ -399,6 +524,9 @@ function applyDmLeadFilters<T>(
   if (filters.starredOnly) q = q.eq("starred", true);
   if (filters.followUpDue) q = q.lte("follow_up_at", new Date().toISOString());
   if (filters.leadStatus) q = q.eq("lead_status", filters.leadStatus);
+  if (filters.openOnly || filters.myTurnOnly) {
+    q = q.not("lead_status", "in", CLOSED_LEAD_STATUS_LIST);
+  }
   if (filters.tag) q = q.contains("admin_tags", [filters.tag]);
   if (filters.search) {
     const term = escapeIlike(filters.search);
@@ -542,20 +670,26 @@ export async function getConversationsForAdmin(
   const supabase = createAdminClient();
   const signals = preloadedSignals ?? (await getDmLeadSignals());
 
-  let query = supabase
-    .from("dm_conversations")
-    .select(DM_LEAD_LIST_COLUMNS.join(", "));
-  query = applyDmLeadFilters(query, filters);
-  if (filters.pathlabLinkSent) {
-    const ids = pathlabLinkConversationIds(signals);
-    if (ids.size === 0) return [];
-    query = query.in("id", [...ids]);
-  }
-  query = query.order("last_message_at", {
-    ascending: filters.sort === "waiting",
-  });
+  const pathlabIds = filters.pathlabLinkSent ? pathlabLinkConversationIds(signals) : null;
+  if (pathlabIds && pathlabIds.size === 0) return [];
+  const listQuery = (withOrigin: boolean) => {
+    let query = supabase
+      .from("dm_conversations")
+      .select(DM_LEAD_LIST_COLUMNS.join(", "));
+    query = applyDmLeadFilters(query, filters, { withOrigin });
+    if (pathlabIds) query = query.in("id", [...pathlabIds]);
+    return query.order("last_message_at", {
+      ascending: filters.sort === "waiting",
+    });
+  };
 
-  const { data, error } = await query;
+  let { data, error } = await listQuery(true);
+  if (error && isMissingOriginColumn(error)) {
+    warnMissingOriginColumn("getConversationsForAdmin");
+    // No Radar-origin threads exist before the column does.
+    if (filters.origin === "radar") return [];
+    ({ data, error } = await listQuery(false));
+  }
 
   if (error) {
     console.error("Error fetching dm_conversations:", error);
@@ -590,6 +724,7 @@ export interface DmLeadFacets {
   /** Funnel health for the WHOLE inbox — never scoped to the current view. */
   scoreboard: FunnelScoreboard;
   total: number;
+  /** Lead wrote last and the conversation is still open (not converted, lost or spam). */
   needsReply: number;
   payReady: number;
   /** Conversations we already sent a /pathlab link to. */
@@ -657,13 +792,24 @@ async function computeScoreboard(
 
   const scoreboard: FunnelScoreboard = { ...EMPTY_SCOREBOARD };
 
-  for (let offset = 0; ; offset += CONVERSATION_PAGE_SIZE) {
-    const { data, error } = await supabase
+  let withOrigin = true;
+  const pageQuery = (offset: number) => {
+    const base = supabase
       .from("dm_conversations")
       .select("id, last_message_direction")
-      .not("admin_tags", "cs", `{${INTERNAL_TAG}}`)
+      .not("admin_tags", "cs", `{${INTERNAL_TAG}}`);
+    return (withOrigin ? base.is("origin", null) : base)
       .order("id", { ascending: true })
       .range(offset, offset + CONVERSATION_PAGE_SIZE - 1);
+  };
+
+  for (let offset = 0; ; offset += CONVERSATION_PAGE_SIZE) {
+    let { data, error } = await pageQuery(offset);
+    if (error && withOrigin && isMissingOriginColumn(error)) {
+      warnMissingOriginColumn("computeScoreboard");
+      withOrigin = false;
+      ({ data, error } = await pageQuery(offset));
+    }
 
     if (error) {
       console.error("Error fetching dm_conversations for scoreboard:", error);
@@ -697,16 +843,20 @@ export async function getDmLeadFacets(
   const signals = preloadedSignals ?? (await getDmLeadSignals());
   const pathlabIds = pathlabLinkConversationIds(signals);
 
-  let query = supabase
-    .from("dm_conversations")
-    .select(
-      "id, stage, grade_level, interests, last_message_direction, pathlab_pay_ready, starred, follow_up_at, lead_status, admin_tags"
-    );
-  query = applyDmLeadFilters(query, filters, { skipStage: true });
   const emptyByPathlabFilter = filters.pathlabLinkSent && pathlabIds.size === 0;
-  if (filters.pathlabLinkSent && !emptyByPathlabFilter) {
-    query = query.in("id", [...pathlabIds]);
-  }
+  const facetQuery = (withOrigin: boolean) => {
+    let query = supabase
+      .from("dm_conversations")
+      .select(
+        "id, stage, grade_level, interests, last_message_direction, pathlab_pay_ready, starred, follow_up_at, lead_status, admin_tags"
+      );
+    query = applyDmLeadFilters(query, filters, { skipStage: true, withOrigin });
+    if (filters.pathlabLinkSent && !emptyByPathlabFilter) {
+      query = query.in("id", [...pathlabIds]);
+    }
+    return query;
+  };
+  const query = facetQuery(true);
 
   // The scoreboard spans the whole inbox and the facets respect the active
   // filters, so they cannot share one read — but neither depends on the other.
@@ -717,14 +867,21 @@ export async function getDmLeadFacets(
 
   if (emptyByPathlabFilter) return { ...EMPTY_FACETS, scoreboard };
 
-  const { data, error } = facetRows!;
+  let { data, error } = facetRows!;
+  let noRadarColumn = false;
+  if (error && isMissingOriginColumn(error)) {
+    warnMissingOriginColumn("getDmLeadFacets");
+    noRadarColumn = true;
+    ({ data, error } = await facetQuery(false));
+  }
 
   if (error) {
     console.error("Error fetching dm_conversation facets:", error);
     throw new Error("Failed to fetch conversation facets");
   }
 
-  const rows = data ?? [];
+  // The Radar filter is empty before the origin column exists.
+  const rows = noRadarColumn && filters.origin === "radar" ? [] : data ?? [];
   const now = Date.now();
   const stageCounts: Record<DmLeadStage, number> = {
     unknown: 0,
@@ -756,7 +913,11 @@ export async function getDmLeadFacets(
     if (row.lead_status in leadStatusCounts) {
       leadStatusCounts[row.lead_status as DmLeadStatus] += 1;
     }
-    if (row.last_message_direction === "inbound") needsReply += 1;
+    // Same rule as the `done` bucket and the overview's dm_awaiting_reply count:
+    // a finished conversation is never waiting on us, whoever wrote last.
+    if (row.last_message_direction === "inbound" && !isClosedLeadStatus(row.lead_status)) {
+      needsReply += 1;
+    }
     if (row.pathlab_pay_ready) payReady += 1;
     if (pathlabIds.has(row.id)) pathlabSent += 1;
     if (row.starred) starred += 1;
@@ -1003,6 +1164,67 @@ export async function applyClassification(
 }
 
 /**
+ * Refuses anything but a fixed Radar template to a Radar-origin thread, from
+ * the admin inbox, campaigns and quick replies alike (spec 5.6).
+ */
+async function assertRadarThreadAllows(
+  supabase: ReturnType<typeof createAdminClient>,
+  conversationId: string,
+  body: string
+): Promise<void> {
+  const { data, error } = await supabase
+    .from("dm_conversations")
+    .select("origin")
+    .eq("id", conversationId)
+    .maybeSingle();
+  if (error) {
+    // Before the origin migration no thread can be Radar-origin.
+    if (isMissingOriginColumn(error)) {
+      warnMissingOriginColumn("assertRadarThreadAllows");
+      return;
+    }
+    console.error("Error checking conversation origin before send:", error);
+    throw new Error("Could not check this conversation before sending");
+  }
+  const gate = gateRadarThread((data as ConversationOrigin | null)?.origin, body);
+  if (gate) throw new Error(GATE_REASON_LABELS.radar_origin);
+}
+
+/**
+ * Writes an automatic Radar message (the one fixed thread reply, or the
+ * quick-reply link) into the thread so admins can see it. The Send API call
+ * has already happened; this only records it.
+ */
+export async function recordRadarAutoOutbound(params: {
+  conversationId: string;
+  body: string;
+  platformMessageId: string;
+}): Promise<void> {
+  const supabase = createAdminClient();
+  const sentAt = new Date().toISOString();
+  const { error } = await supabase.from("dm_messages").insert({
+    conversation_id: params.conversationId,
+    direction: "outbound" as DmMessageDirection,
+    sender_type: "admin" as DmMessageSenderType,
+    body: params.body,
+    ...messageSignalFlags(params.body),
+    platform_message_id: params.platformMessageId,
+    message_type: "text" as DmMessageType,
+    metadata: { radar_auto: true },
+    send_status: "sent",
+    sent_at: sentAt,
+  });
+  if (error) {
+    console.error("Error recording Radar auto message:", error);
+    throw new Error("Failed to record Radar message");
+  }
+  await supabase
+    .from("dm_conversations")
+    .update({ last_message_at: sentAt, last_message_direction: "outbound" })
+    .eq("id", params.conversationId);
+}
+
+/**
  * Records an admin-sent reply and pushes it to the lead via the Send API.
  * Insert-then-send: if the Send API call fails, the outbound message row is
  * still there so the admin UI shows it was attempted, not silently dropped.
@@ -1173,6 +1395,7 @@ export async function sendCampaignReply(
   if (!text) throw new Error("Empty reply");
 
   const supabase = createAdminClient();
+  await assertRadarThreadAllows(supabase, conversationId, text);
 
   const { data: conversation, error: fetchError } = await supabase
     .from("dm_conversations")
@@ -1242,6 +1465,8 @@ export async function sendAdminReply(
   }
 
   const supabase = createAdminClient();
+  // An attachment is never a fixed Radar template, so it is checked as free text.
+  await assertRadarThreadAllows(supabase, conversationId, attachmentUrl ? `[attachment] ${text ?? ""}` : text ?? "");
 
   const { data: conversation, error: fetchError } = await supabase
     .from("dm_conversations")
@@ -1314,6 +1539,8 @@ export async function sendLeadQuickReplies(
   }
 
   const supabase = createAdminClient();
+  // Quick-reply buttons invite a chat, so they are never a fixed Radar template.
+  await assertRadarThreadAllows(supabase, conversationId, `[quick replies] ${text}`);
 
   const { data: conversation, error: fetchError } = await supabase
     .from("dm_conversations")

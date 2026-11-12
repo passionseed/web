@@ -229,7 +229,7 @@ export function AdminHackathonMentors() {
       const res = await fetch("/api/admin/hackathon/mentor-bookings/reset-quota", { method: "POST" });
       const data = await res.json();
       if (!res.ok) setResetResult(`Error: ${data.error}`);
-      else if (data.reset === 0) setResetResult("No active bookings — nothing changed.");
+      else if (data.reset === 0) setResetResult("No active bookings, so nothing changed.");
       else setResetResult(`Reset ${data.reset} booking(s). All teams now have 1 chance.`);
     } catch {
       setResetResult("Request failed.");

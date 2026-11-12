@@ -8,6 +8,11 @@ import {
   VinylColorScheme,
   getVinylColorsFromCover,
 } from "@/utils/color-extraction";
+import { League_Gothic } from "next/font/google";
+
+// Only this card uses League Gothic; loading it here keeps it out of the
+// render-blocking global CSS (it used to be an @import in app/globals.css).
+const leagueGothic = League_Gothic({ subsets: ["latin"], display: "swap", preload: false });
 
 // Default album covers for maps without images
 const DEFAULT_ALBUM_COVERS = [
@@ -163,8 +168,7 @@ export function MapCard({ map }: MapCardProps) {
             <div className="relative z-10 h-full flex flex-col">
               <div className="mt-auto p-4">
                 <h3
-                  style={{ fontFamily: "League Gothic" }}
-                  className="font-black text-white leading-none mb-1 tracking-wider uppercase text-lg line-clamp-2"
+                  className={`${leagueGothic.className} font-black text-white leading-none mb-1 tracking-wider uppercase text-lg line-clamp-2`}
                 >
                   {map.title}
                 </h3>

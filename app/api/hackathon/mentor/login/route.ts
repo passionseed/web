@@ -1,3 +1,4 @@
+import { checkHackathonAuthRateLimit } from "@/lib/hackathon/auth-rate-limit";
 import { NextRequest, NextResponse } from "next/server";
 import {
   verifyMentorPassword,
@@ -14,6 +15,11 @@ export async function POST(req: NextRequest) {
     const { email, password } = await req.json();
     if (!email || !password) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
+    }
+
+    if (typeof email !== "string") return NextResponse.json({ error: "Invalid email" }, { status: 400 });
+    if (!await checkHackathonAuthRateLimit(req, email, "mentor-login")) {
+      return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
     }
 
     const mentor = await findMentorByEmail(email);

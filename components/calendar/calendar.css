@@ -1,0 +1,11 @@
+/* Lines and hovers that follow the text colour, so calendar pieces read on the
+   dark /calendar page and on light or dark whiteboards alike. */
+.cal-line {
+  border-color: color-mix(in srgb, currentColor 16%, transparent);
+}
+.cal-hover:hover {
+  background: color-mix(in srgb, currentColor 7%, transparent);
+}
+.cal-grid-line {
+  border-color: color-mix(in srgb, currentColor 9%, transparent);
+}

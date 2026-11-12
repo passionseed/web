@@ -1,0 +1,382 @@
+/*
+ * Radar guide components (spec docs/features/radar-guide.md, sections 2.3-2.8).
+ *
+ * The guide lives inside the dark Radar deck: Instrument Serif for Latin
+ * display, Athiti for Thai, `--radar-accent` for the career colour. Captions
+ * alone use Bai Jamjuree 600. No Dawn backgrounds, no second type system.
+ *
+ * Touch rules (docs/ui-design-system.md): every target is at least 44px (48px
+ * for primary actions). Hover colour changes sit behind `(hover: hover)`;
+ * touch gets the same feedback from `:active`. There are no hover-only
+ * animations. Reduced motion turns transitions off.
+ *
+ * Sheets portal to <body>, outside the deck, so they read the accent from
+ * `--radar-guide-sheet-accent` (set by GuideSheet from its `accent` prop).
+ */
+
+.radar-guide-card,
+.radar-guide-sheet {
+  --rg-accent: var(--radar-guide-sheet-accent, var(--radar-accent, #60a5fa));
+  --rg-thai: var(--font-athiti), var(--font-noto-sans-thai), sans-serif;
+  font-family: var(--rg-thai);
+}
+
+/* ── Buttons and chips ─────────────────────────────────────────────────── */
+
+.radar-guide-button {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(255 255 255 / 14%);
+  background: rgb(255 255 255 / 6%);
+  padding: 0.65rem 1rem;
+  font-family: var(--font-athiti), var(--font-noto-sans-thai), sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #fff;
+  text-align: center;
+  transition: background-color 150ms ease, border-color 150ms ease, transform 120ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.radar-guide-button:active {
+  transform: scale(0.98);
+  background: rgb(255 255 255 / 12%);
+}
+
+.radar-guide-button:disabled {
+  cursor: default;
+  opacity: 0.6;
+  transform: none;
+}
+
+.radar-guide-button:focus-visible,
+.radar-guide-icon-button:focus-visible,
+.radar-guide-chip:focus-visible,
+.radar-guide-row:focus-visible {
+  outline: 2px solid var(--rg-accent, #60a5fa);
+  outline-offset: 2px;
+}
+
+.radar-guide-button--accent {
+  border-color: transparent;
+  background: var(--rg-accent, #60a5fa);
+  color: #0a0a0a;
+}
+
+.radar-guide-button--accent:active {
+  background: color-mix(in srgb, var(--rg-accent, #60a5fa) 85%, white);
+}
+
+.radar-guide-button--line {
+  border-color: transparent;
+  background: #06c755;
+  color: #fff;
+}
+
+.radar-guide-button--line:active {
+  background: #05b04b;
+}
+
+.radar-guide-icon-button {
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: rgb(255 255 255 / 92%);
+  transition: background-color 150ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.radar-guide-icon-button:active {
+  background: rgb(255 255 255 / 16%);
+}
+
+.radar-guide-chip {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  border: 1px solid rgb(255 255 255 / 16%);
+  background: rgb(10 10 10 / 55%);
+  padding: 0 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: rgb(255 255 255 / 82%);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  transition: background-color 150ms ease, border-color 150ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.radar-guide-chip:active {
+  background: rgb(255 255 255 / 12%);
+}
+
+.radar-guide-chip--accent {
+  border-color: color-mix(in srgb, var(--rg-accent, #60a5fa) 55%, transparent);
+  color: color-mix(in srgb, var(--rg-accent, #60a5fa) 70%, white);
+}
+
+.radar-guide-row {
+  width: 100%;
+  min-height: 48px;
+  transition: background-color 150ms ease, border-color 150ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.radar-guide-row:active {
+  background: rgb(255 255 255 / 8%);
+}
+
+@media (hover: hover) {
+  .radar-guide-button:not(:disabled):hover {
+    background: rgb(255 255 255 / 11%);
+    border-color: rgb(255 255 255 / 24%);
+  }
+
+  .radar-guide-button--accent:not(:disabled):hover {
+    background: color-mix(in srgb, var(--rg-accent, #60a5fa) 88%, white);
+  }
+
+  .radar-guide-button--line:hover {
+    background: #05b04b;
+  }
+
+  .radar-guide-icon-button:hover,
+  .radar-guide-chip:hover,
+  .radar-guide-row:not(:disabled):hover {
+    background: rgb(255 255 255 / 10%);
+  }
+}
+
+/* ── Inputs ────────────────────────────────────────────────────────────── */
+
+.radar-guide-input {
+  min-height: 48px;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(255 255 255 / 16%);
+  background: rgb(255 255 255 / 5%);
+  padding: 0.6rem 0.9rem;
+  /* 16px or more stops iOS from zooming into the field. */
+  font-size: 16px;
+  color: #fff;
+}
+
+.radar-guide-input::placeholder {
+  color: rgb(255 255 255 / 40%);
+}
+
+.radar-guide-input:focus {
+  outline: none;
+  border-color: var(--rg-accent, #60a5fa);
+}
+
+.radar-guide-input[aria-invalid="true"] {
+  border-color: #f87171;
+}
+
+/* ── Sheets ────────────────────────────────────────────────────────────── */
+
+.radar-guide-sheet__overlay[data-state="open"] {
+  animation: radar-guide-fade-in 180ms ease-out;
+}
+
+.radar-guide-sheet[data-state="open"] {
+  animation: radar-guide-sheet-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.radar-guide-sheet__handle {
+  width: 2.5rem;
+  height: 0.3rem;
+  margin: 0.6rem auto 0;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 22%);
+}
+
+.radar-guide-sheet__title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #fff;
+}
+
+.radar-guide-transcript p {
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: rgb(255 255 255 / 88%);
+}
+
+.radar-guide-details summary {
+  display: flex;
+  min-height: 44px;
+  cursor: pointer;
+  align-items: center;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--rg-accent, #60a5fa) 70%, white);
+}
+
+@keyframes radar-guide-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes radar-guide-sheet-in {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Captions: Bai Jamjuree 600, white on a dark strip, two lines at most, 18% up. */
+.radar-guide-captions {
+  position: absolute;
+  inset: auto 0 18%;
+  z-index: 3;
+  display: flex;
+  justify-content: center;
+  padding: 0 0.85rem;
+  pointer-events: none;
+}
+
+.radar-guide-captions__cue {
+  display: -webkit-box;
+  max-width: 100%;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  border-radius: 0.35rem;
+  background: rgba(2, 6, 23, 0.72);
+  padding: 8px;
+  font-family: var(--font-bai-jamjuree), "Bai Jamjuree", sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #fff;
+  text-align: center;
+  white-space: pre-line;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+@media (max-width: 640px) {
+  .radar-guide-captions__cue {
+    font-size: 18px;
+  }
+}
+
+/* ── Cards: mid-deck share and outro ───────────────────────────────────── */
+
+.radar-guide-card {
+  width: 100%;
+  max-width: 34rem;
+  margin-inline: auto;
+  color: #fff;
+}
+
+.radar-guide-midshare {
+  text-align: center;
+}
+
+.radar-guide-midshare__line {
+  font-size: clamp(1.6rem, 6vw, 2.3rem);
+  font-weight: 700;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+.radar-guide-follow-line {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: color-mix(in srgb, var(--rg-accent, #60a5fa) 70%, white);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--rg-accent, #60a5fa) 40%, transparent);
+  text-underline-offset: 4px;
+}
+
+.radar-guide-outro {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding-bottom: 2rem;
+}
+
+.radar-guide-outro__title {
+  font-size: clamp(2rem, 7vw, 2.8rem);
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.radar-guide-outro__block {
+  border-top: 1px solid rgb(255 255 255 / 10%);
+  padding-top: 1.25rem;
+}
+
+.radar-guide-outro__heading {
+  display: block;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #fff;
+}
+
+.radar-guide-request__message {
+  min-height: 1.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: rgb(255 255 255 / 80%);
+}
+
+.radar-guide-request__message[data-state="ok"] {
+  color: #86efac;
+}
+
+.radar-guide-request__message[data-state="invalid"],
+.radar-guide-request__message[data-state="rate_limited"],
+.radar-guide-request__message[data-state="failed"] {
+  color: #fca5a5;
+}
+
+.radar-guide-program__line {
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: rgb(255 255 255 / 75%);
+}
+
+.radar-guide-program__link {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--rg-accent, #60a5fa) 70%, white);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .radar-guide-button,
+  .radar-guide-icon-button,
+  .radar-guide-chip,
+  .radar-guide-row {
+    transition: none;
+  }
+
+  .radar-guide-button:active {
+    transform: none;
+  }
+
+  .radar-guide-sheet[data-state="open"],
+  .radar-guide-sheet__overlay[data-state="open"] {
+    animation: none;
+  }
+}

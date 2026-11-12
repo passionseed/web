@@ -1,4 +1,9 @@
 const PUBLIC_ROUTE_PREFIXES = [
+  // Crawler files. Behind the login wall, search engines and AI answer
+  // engines got the sign-in page instead of the rules and the page list.
+  "/robots.txt",
+  "/sitemap.xml",
+  "/llms.txt",
   "/login",
   "/auth",
   "/download",
@@ -41,6 +46,8 @@ const PUBLIC_ROUTE_PREFIXES = [
   "/slide",
   "/worksheet",
   "/tips",
+  // Portfolio guides: the written versions of the Instagram tips.
+  "/port",
   // Marketing Studio: noindex export pages for social posts, public copy only
   "/studio",
   // SHIFT rounds: public certificate verify page + share images, and two API
@@ -48,8 +55,13 @@ const PUBLIC_ROUTE_PREFIXES = [
   "/c",
   "/api/shift/transcribe",
   "/api/shift/cert-health",
+  // The SHIFT island picture checks the session itself and answers 401, not
+  // a login redirect an <img> cannot follow.
+  "/api/shift/island",
   // Admin link-preview cards: metadata and a poster only, no admin data.
   "/link-preview",
+  // Share links must render for chat link previews; signing in happens on the way in.
+  "/whiteboard/join",
 ] as const;
 
 export function isPublicRoute(pathname: string): boolean {

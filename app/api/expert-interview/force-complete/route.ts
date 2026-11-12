@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractCareerData } from "@/lib/expert-interview/chat-service";
 import type { ChatMessage } from "@/types/expert-interview";
+import { requireDebugAccess } from "@/lib/security/route-guards";
 
 /**
- * DEBUG ENDPOINT: Force complete a stuck interview session
- * This should be removed or protected in production
+ * DEBUG ENDPOINT: Force complete a stuck interview session.
+ * Admin-only and off unless DEBUG_ROUTES_ENABLED=true.
  */
 export async function POST(request: NextRequest) {
+  const access = await requireDebugAccess();
+  if (!access.ok) return access.response;
+
   try {
     const body = await request.json();
     const { conversationHistory } = body;

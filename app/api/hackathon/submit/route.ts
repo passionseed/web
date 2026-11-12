@@ -1,3 +1,4 @@
+import { safeServerError } from "@/lib/security/route-guards";
 import { NextRequest, NextResponse } from "next/server";
 import { b2 } from "@/lib/backblaze";
 import { getSessionParticipant } from "@/lib/hackathon/db";
@@ -141,7 +142,7 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       console.error("[hackathon/submit] team DB error:", error.message);
-      return NextResponse.json({ error: "Failed to save submission", detail: error.message }, { status: 500 });
+      return safeServerError("Failed to save submission", error);
     }
 
     // Resubmit resets the live review; historical review is preserved in revisions[].
@@ -193,7 +194,7 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     console.error("[hackathon/submit] individual DB error:", error.message);
-    return NextResponse.json({ error: "Failed to save submission", detail: error.message }, { status: 500 });
+    return safeServerError("Failed to save submission", error);
   }
 
   // Resubmit resets the live review; historical review is preserved in revisions[].
@@ -204,7 +205,7 @@ export async function POST(req: NextRequest) {
       .eq("individual_submission_id", data.id);
   }
 
-  const mainSupabase = createMainClient();
+  const mainSupabase = await createMainClient();
   await mainSupabase.from("funnel_events").insert({
     user_id: participant.id,
     event_name: "hackathon_activity_complete",

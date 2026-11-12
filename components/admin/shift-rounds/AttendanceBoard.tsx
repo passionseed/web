@@ -23,7 +23,7 @@ import { describeError, roundName, sessionTimeLabel } from "@/lib/shift-round/ad
 import type { AdminError, AdminResult, AttendanceStatus } from "@/lib/shift-round/admin/types";
 import { cn } from "@/lib/utils";
 
-import { ActionError, LoadError } from "./shared";
+import { ActionError, EMPTY_VALUE, LoadError } from "./shared";
 import { useAdminQuery } from "./useAdminData";
 import { useRound } from "./useRound";
 
@@ -57,7 +57,7 @@ export function AttendanceBoard({ roundId, now: fixedNow }: { roundId: string; n
   const steps = useAdminQuery(() => roundStepsAction(roundId), [roundId]);
   const [now] = useState(() => fixedNow ?? new Date());
   const [marks, setMarks] = useState<Record<string, Mark>>({});
-  /** The steps payload the marks were loaded from; the grid waits for it so no cell shows a stale "—". */
+  /** The steps payload the marks were loaded from; the grid waits for it so no cell shows a stale placeholder. */
   const [loadedFrom, setLoadedFrom] = useState<unknown>(null);
   const [pending, setPending] = useState(0);
   const [error, setError] = useState<AdminError | null>(null);
@@ -200,7 +200,7 @@ export function AttendanceBoard({ roundId, now: fixedNow }: { roundId: string; n
                           c.phase === "upcoming" && "cursor-not-allowed opacity-50",
                         )}
                       >
-                        {mark ? ATTENDANCE_LABEL[mark] : "—"}
+                        {mark ? ATTENDANCE_LABEL[mark] : EMPTY_VALUE}
                       </button>
                     </td>
                   );

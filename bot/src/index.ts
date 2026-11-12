@@ -1,66 +1,79 @@
 import { Client, GatewayIntentBits, Partials } from "discord.js";
 
 import { loadEnv } from "./env";
-import { createDb, resolveCohortId } from "./db";
-import { registerVoiceTracking, reconcileVoiceState } from "./voice";
-import { startReminderLoop } from "./reminders";
-import { registerDmGuard } from "./dm-guard";
-import { registerCommands, registerInteractions } from "./commands";
+import { createDb } from "./db";
+import { registerCommands } from "./commands";
+import { startProjectSeed } from "./projectseed";
+import { registerShiftVoice } from "./shift/voice";
+import { registerQuestCommands, registerShiftQuests } from "./quests";
 
 async function main(): Promise<void> {
   const env = loadEnv();
-  const db = createDb(env);
-  const cohortId = await resolveCohortId(db, env.cohortSlug);
 
-  console.log(`ProjectSeed bot starting — cohort ${env.cohortSlug} (${cohortId})`);
+  // Registering commands is a one-off REST call, never a second bot: it must
+  // not log in, because a second shift-voice instance would close and reopen
+  // every open voice row of the running one.
+  if (process.argv.includes("--register-commands")) {
+    if (env.projectseed) await registerCommands(env.projectseed);
+    if (env.shiftQuests) await registerQuestCommands(env.core.discordToken, env.shiftQuests.guildId);
+    if (!env.projectseed && !env.shiftQuests) {
+      console.log("No slash commands to register: only projectseed and shift-quests have any");
+    }
+    return;
+  }
+
+  const intents = [
+    GatewayIntentBits.Guilds,
+    // Voice states are what presence, mic, stream and camera are read from.
+    GatewayIntentBits.GuildVoiceStates,
+  ];
+  if (env.projectseed) {
+    // Only so the DM guard can notice a message arrived. It never reads the
+    // content — see dm-guard.ts.
+    intents.push(GatewayIntentBits.DirectMessages);
+  }
 
   const client = new Client({
-    intents: [
-      GatewayIntentBits.Guilds,
-      // Voice states are what presence is measured from.
-      GatewayIntentBits.GuildVoiceStates,
-      // DirectMessages plus MessageContent are needed only so the DM guard can
-      // notice a message arrived. It never reads the content — see dm-guard.ts.
-      GatewayIntentBits.DirectMessages,
-    ],
+    intents,
     // Without the Channel partial, a DM from someone the bot has never messaged
-    // arrives with an uncached channel and the guard silently never fires.
-    partials: [Partials.Channel, Partials.Message],
+    // arrives with an uncached channel and the DM guard silently never fires.
+    partials: env.projectseed ? [Partials.Channel, Partials.Message] : [],
   });
 
-  registerVoiceTracking(client, db, env, cohortId);
-  registerDmGuard(client);
-  registerInteractions(client, db, cohortId);
+  const modules: { name: string; stop: () => Promise<void> }[] = [];
 
-  let reminderTimer: NodeJS.Timeout | null = null;
+  // Started first: it checks the quest database schema and throws when the
+  // database is older than this bot, before any other module has started.
+  const quests = env.shiftQuests ? await registerShiftQuests(client, env.shiftQuests) : null;
+  if (env.shiftVoice) {
+    modules.push({ name: "shift-voice", ...registerShiftVoice(client, env.shiftVoice) });
+  }
+  if (quests) {
+    modules.push({ name: "shift-quests", ...quests });
+  }
+  if (env.projectseed) {
+    const db = createDb(env.projectseed);
+    modules.push({ name: "projectseed", ...(await startProjectSeed(client, db, env.projectseed)) });
+  }
+  console.log(`Bot starting with modules: ${modules.map((m) => m.name).join(", ")}`);
 
-  client.once("clientReady", async () => {
+  client.once("clientReady", () => {
     console.log(`Logged in as ${client.user?.tag}`);
-
-    try {
-      await reconcileVoiceState(client, db, env, cohortId);
-    } catch (error) {
-      console.error("[startup] voice reconcile failed:", error);
-    }
-
-    reminderTimer = startReminderLoop(client, db, env, cohortId);
-    console.log(`Reminder loop running every ${env.reminderIntervalMs}ms`);
   });
 
+  let stopping = false;
   const shutdown = async (signal: string) => {
+    // A second Ctrl-C, or a signal forwarded by pnpm as well, must not close twice.
+    if (stopping) return;
+    stopping = true;
     console.log(`\n${signal} received, shutting down`);
-    if (reminderTimer) clearInterval(reminderTimer);
-
-    // Close open sessions on the way out. Without this every session stays open
-    // until the next startup reconcile, and a redeploy would bank the gap as
-    // time somebody spent in voice.
-    try {
-      const { closeAllVoiceSessions } = await import("./db");
-      await closeAllVoiceSessions(db, cohortId);
-    } catch (error) {
-      console.error("[shutdown] failed to close sessions:", error);
+    for (const module of modules) {
+      try {
+        await module.stop();
+      } catch (error) {
+        console.error(`[shutdown] ${module.name} failed to stop cleanly:`, error);
+      }
     }
-
     await client.destroy();
     process.exit(0);
   };
@@ -68,11 +81,7 @@ async function main(): Promise<void> {
   process.on("SIGINT", () => void shutdown("SIGINT"));
   process.on("SIGTERM", () => void shutdown("SIGTERM"));
 
-  if (process.argv.includes("--register-commands")) {
-    await registerCommands(env);
-  }
-
-  await client.login(env.discordToken);
+  await client.login(env.core.discordToken);
 }
 
 main().catch((error) => {

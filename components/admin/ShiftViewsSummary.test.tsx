@@ -29,13 +29,13 @@ test("shows recorded views by source with their global scope", async () => {
 test("keeps failed analytics distinct from zero views and allows retry", async () => {
   fetchViews.mockResolvedValueOnce({ ok: false });
   render(<ShiftViewsSummary />);
-  expect(await screen.findByRole("alert")).toHaveTextContent("Failed to load page views");
+  expect(await screen.findByRole("alert")).toHaveTextContent("Could not load page views");
   expect(screen.queryByText("No page views recorded yet.")).not.toBeInTheDocument();
   fetchViews.mockResolvedValueOnce({
     ok: true,
     json: async () => ({ totalViews: 0, sources: [] }),
   });
-  fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+  fireEvent.click(screen.getByRole("button", { name: "Try again" }));
   expect(await screen.findByText("No page views recorded yet.")).toBeInTheDocument();
 });
 

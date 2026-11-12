@@ -6,6 +6,7 @@ import { Check, Copy, Download, ExternalLink } from "lucide-react";
 
 import {
   PAIR_DISCOUNT_BAHT,
+  PAIR_TOTAL_DISCOUNT_BAHT,
   SHIFT_PAYMENT,
   pairPriceBaht,
   type ShiftCohort,
@@ -95,16 +96,19 @@ function CopyLineMessage({ message }: { message: string }) {
 export function ShiftPayment({
   cohort,
   applicant,
+  stacked = false,
 }: {
   cohort: ShiftCohort;
   /** Set after applying: unlocks the pre-filled LINE message. */
   applicant?: ApplicantSummary;
+  /** One column at every width, for narrow pages like /shift/join. */
+  stacked?: boolean;
 }) {
   const pair = pairPriceBaht(cohort);
   if (pair === null) return null;
 
   return (
-    <div className="grid items-center gap-8 sm:grid-cols-[240px_1fr]">
+    <div className={stacked ? "grid gap-8" : "grid items-center gap-8 sm:grid-cols-[240px_1fr]"}>
       <div className="mx-auto w-full max-w-[240px]">
         <div className="overflow-hidden rounded-2xl bg-white p-2">
           <Image
@@ -137,7 +141,7 @@ export function ShiftPayment({
           </span>
         </p>
         <p className="mt-1 text-sm font-semibold" style={{ color: T.accent2 }}>
-          มากับเพื่อนเป็นคู่ ลดคนละ {baht(PAIR_DISCOUNT_BAHT)} เหลือคนละ{" "}
+          มากับเพื่อนเป็นคู่ ลดรวม {baht(PAIR_TOTAL_DISCOUNT_BAHT)} (คนละ {baht(PAIR_DISCOUNT_BAHT)}) เหลือคนละ{" "}
           {baht(pair)}
         </p>
         <ol className="mt-6 space-y-3 text-sm" style={{ color: tint("d9") }}>

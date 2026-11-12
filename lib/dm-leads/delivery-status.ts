@@ -1,6 +1,29 @@
 import type { DmMessage } from "@/types/dm-leads";
-import type { CampaignKey } from "@/lib/meta/comment-intent";
+import { assertNeverCampaign, type CampaignKey } from "@/lib/meta/comment-intent";
 import { shiftCommentDm, shiftCommentPublicReply } from "@/lib/dm-leads/shift-comment-copy";
+import {
+  buildRadarDm,
+  buildRadarPublicReply,
+  RADAR_HUB_DM_LINK_CODE,
+} from "@/lib/radar-guide/dm-copy";
+
+/**
+ * What the Radar templates need. Without it the hub variant is used, which is
+ * what an unmapped post gets anyway.
+ */
+export interface RadarCopyContext {
+  fieldSlug: string | null;
+  careerLabelTh: string | null;
+  linkCode: string;
+  /** Picks the public-reply variant; defaults to the username. */
+  commentId?: string;
+}
+
+function radarDm(radar?: RadarCopyContext | null): string {
+  return buildRadarDm(
+    radar ?? { fieldSlug: null, careerLabelTh: null, linkCode: RADAR_HUB_DM_LINK_CODE }
+  ).message;
+}
 
 /**
  * Checks whether an outbound message failed to deliver specifically because
@@ -59,16 +82,29 @@ export function hasThreadDeliveryFailure(messages?: DmMessage[] | null): boolean
  * Public reply under a comment.
  *
  * SHIFT posts the open cohort's apply link, or a closed note with no link
- * once applications have ended. Every other campaign keeps the privacy note
- * that asks the student to DM first.
+ * once applications have ended. Radar posts its fixed "check your DM" reply,
+ * which never asks the student to message us. Port and uni keep the privacy
+ * note that asks the student to DM first.
  */
 export function getDefaultPublicCommentReply(
   username?: string | null,
-  campaign?: CampaignKey | null
+  campaign?: CampaignKey | null,
+  radar?: RadarCopyContext | null
 ): string {
-  if (campaign === "shift") return shiftCommentPublicReply(username);
   const mention = username ? `@${username} ` : "";
-  return `${mention}พอดีน้องตั้งค่า privacy ไม่เปิดรับ DM จากคนแปลกหน้า พี่เลยส่ง DM หาไม่ได้ 🥺 รบกวนน้องกดทัก DM พี่มาก่อนได้เลยน้า เดี๋ยวพี่ส่งข้อมูล/แนะนำให้ครับ! 📩✨`;
+  const privacyNote = `${mention}พอดีน้องตั้งค่า privacy ไม่เปิดรับ DM จากคนแปลกหน้า พี่เลยส่ง DM หาไม่ได้ 🥺 รบกวนน้องกดทัก DM พี่มาก่อนได้เลยน้า เดี๋ยวพี่ส่งข้อมูล/แนะนำให้ครับ! 📩✨`;
+  if (!campaign) return privacyNote;
+  switch (campaign) {
+    case "radar":
+      return buildRadarPublicReply(username, radar?.commentId ?? username ?? "radar");
+    case "shift":
+      return shiftCommentPublicReply(username);
+    case "uni":
+    case "port":
+      return privacyNote;
+    default:
+      return assertNeverCampaign(campaign);
+  }
 }
 
 /**
@@ -82,14 +118,28 @@ export function getDefaultPublicCommentReply(
  * Grow, Where, and Prove keyword replies live in Meta Business Suite and are
  * not this message.
  */
-export function getDefaultCommentDmMessage(campaign?: CampaignKey | null): string {
-  if (campaign === "shift") return shiftCommentDm();
-  return [
+export function getDefaultCommentDmMessage(
+  campaign?: CampaignKey | null,
+  radar?: RadarCopyContext | null
+): string {
+  const tips = [
     "ลองดูในลิงค์นี้ได้เลยนะ✌️",
     "https://passionseed.org/tips/intro",
     "และพิมพ์มาว่าเราอยู่กลุ่มไหน 1, 2 หรือ 3",
     "เดี๋ยวพี่ส่ง tips เพิ่มเติมไปให้🫡",
   ].join("\n");
+  if (!campaign) return tips;
+  switch (campaign) {
+    case "radar":
+      return radarDm(radar);
+    case "shift":
+      return shiftCommentDm();
+    case "uni":
+    case "port":
+      return tips;
+    default:
+      return assertNeverCampaign(campaign);
+  }
 }
 
 export async function getPersonalizedDmMessage(lead: {
@@ -98,7 +148,10 @@ export async function getPersonalizedDmMessage(lead: {
   gradeLevel?: string | null;
   interests?: string[];
   campaign?: CampaignKey | null;
+  radar?: RadarCopyContext | null;
 }): Promise<string> {
+  // Radar copy is fixed and never passed to Qwen (spec 5.3).
+  if (lead.campaign === "radar") return getDefaultCommentDmMessage("radar", lead.radar);
   const { personalizeMessage } = await import("@/lib/dm-leads/personalize");
   return personalizeMessage({
     template: getDefaultCommentDmMessage(lead.campaign),
@@ -120,7 +173,11 @@ export async function getPersonalizedPublicCommentReply(lead: {
   gradeLevel?: string | null;
   interests?: string[];
   campaign?: CampaignKey | null;
+  radar?: RadarCopyContext | null;
 }): Promise<string> {
+  if (lead.campaign === "radar") {
+    return getDefaultPublicCommentReply(lead.username, "radar", lead.radar);
+  }
   const { personalizeMessage } = await import("@/lib/dm-leads/personalize");
   return personalizeMessage({
     template: getDefaultPublicCommentReply(lead.username, lead.campaign),

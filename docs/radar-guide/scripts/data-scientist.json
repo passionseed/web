@@ -1,0 +1,532 @@
+{
+  "slug": "data-scientist",
+  "version": 1,
+  "as_of": "2026-11-11",
+  "chapters": [
+    {
+      "key": "hook",
+      "title_th": "อาชีพนี้คืออะไร ทำไมต้องรู้ตอนนี้",
+      "duration_target_s": 20,
+      "hook": {
+        "say_th": "ทุกบริษัทมีข้อมูล แต่น้อยคนอ่านมันออก",
+        "on_screen_th": "ข้อมูลเต็มบริษัท แต่ใครอ่านออก?"
+      },
+      "beats": [
+        {
+          "say_th": "Data Scientist คือคนที่เอาข้อมูลดิบๆ มาเปลี่ยนเป็นคำตอบ ที่ช่วยบริษัทตัดสินใจว่าจะทำอะไรต่อ",
+          "on_screen_th": "จากข้อมูลดิบ สู่คำตอบที่ช่วยตัดสินใจ",
+          "visual": "card:hook",
+          "broll": "messy spreadsheet morphing into one clean chart",
+          "safety": false,
+          "claims": [
+            {
+              "text": "O*NET 15-2051.00 tasks include analysing large data sets, identifying business problems that data analysis can address, and recommending data-driven solutions to stakeholders.",
+              "source_ref": 7,
+              "url": "https://www.onetonline.org/link/summary/15-2051.00",
+              "grade": "A",
+              "as_of": "2026-10-06",
+              "topic": "other"
+            }
+          ]
+        },
+        {
+          "say_th": "ในไทย ประกาศงานสาย AI ตำแหน่ง Data Scientist กับ Data Analyst รวมกันโตตั้ง 23% ในปีเดียว จาก 2,129 เป็น 2,618 ตำแหน่ง",
+          "on_screen_th": "Data Scientist + Analyst ในงานสาย AI ไทย: 2,129 เป็น 2,618 ตำแหน่ง (+23%), TDRI ไตรมาส 2 ปี 67 เทียบปี 68",
+          "visual": "motion:bars 2129 to 2618",
+          "broll": "two bars growing, TDRI logo-free source line",
+          "safety": false,
+          "claims": [
+            {
+              "text": "TDRI table 'อัตราการเติบโตของงาน AI ประเภทต่างๆ ในประเทศไทย', row นักวิทยาศาสตร์ข้อมูล/นักวิเคราะห์ข้อมูล: 2,129 (Q2/2567) to 2,618 (Q2/2568), +23% year on year, from online job postings. These are AI-job postings classified to this role (table totals 7,220 to 9,470 AI jobs), not every data posting in Thailand. Verified 2026-11-11.",
+              "source_ref": 8,
+              "url": "https://tdri.or.th/2025/08/ai-job-market-2tracked-growth/",
+              "grade": "A",
+              "as_of": "2025-08-25",
+              "topic": "jobs"
+            }
+          ]
+        },
+        {
+          "say_th": "ก่อนเลือกคณะ มาดูกันว่างานจริงทำอะไร ได้เงินเท่าไหร่ แล้วเราลองได้เลยตั้งแต่ ม.ปลาย",
+          "on_screen_th": "งานจริง · เงินจริง · ลองก่อนเลือกคณะ",
+          "visual": "founder to camera",
+          "broll": "chapter list flashing: ความจริง, เงิน, AI, หนึ่งวัน, เรียนต่อ, เริ่มเลย",
+          "safety": false,
+          "claims": []
+        }
+      ],
+      "cta_th": "เลื่อนลงไปดูว่างานจริงหน้าตาเป็นยังไง",
+      "reel": {
+        "angle": "overview",
+        "hook_variants_th": [
+          "ทุกบริษัทมีข้อมูล แต่น้อยคนอ่านมันออก",
+          "อาชีพที่ทำให้ตัวเลขพูดได้",
+          "ปีเดียว งาน Data สาย AI ในไทยโตแค่ไหน"
+        ],
+        "send_to_friend_th": "ส่งให้เพื่อนที่ชอบเลขแต่ยังไม่รู้จะเข้าคณะไหน",
+        "end_card": "comment_radar",
+        "pinned_comment_th": "คอมเมนต์ RADAR รับลิงก์ข้อมูลเต็มสาย Data ทาง DM",
+        "tiktok_alias": "data"
+      }
+    },
+    {
+      "key": "reality",
+      "title_th": "ภาพในหัว กับ งานจริง",
+      "duration_target_s": 25,
+      "hook": {
+        "say_th": "นึกว่าได้สร้าง AI เท่ๆ ทุกวันใช่ไหม",
+        "on_screen_th": "สร้าง AI ทุกวัน จริงเหรอ?"
+      },
+      "beats": [
+        {
+          "say_th": "ภาพในหัวคือ นั่งสร้างโมเดลเจ๋งๆ เจอ insight ปุ๊บ กลายเป็นฮีโร่ของบริษัท",
+          "on_screen_th": "ภาพในหัว: ฮีโร่สร้างโมเดล",
+          "visual": "card:fantasyReality (fantasy side)",
+          "broll": "glossy sci-fi dashboard",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "งานจริง เวลาส่วนใหญ่หมดไปกับการคลีนข้อมูล ค่าหาย ตารางไม่ตรงกัน ไฟล์ฟอร์แมตเละ",
+          "on_screen_th": "งานจริง: คลีนข้อมูลซะส่วนใหญ่",
+          "visual": "card:fantasyReality (reality side, flip)",
+          "broll": "spreadsheet with blank cells and mixed date formats",
+          "safety": false,
+          "claims": [
+            {
+              "text": "O*NET lists 'Clean and manipulate raw data using statistical software' as a core data scientist task. No percentage of time is claimed (the card's 80% figure is not used).",
+              "source_ref": 7,
+              "url": "https://www.onetonline.org/link/summary/15-2051.00",
+              "grade": "A",
+              "as_of": "2026-10-06",
+              "topic": "other"
+            }
+          ]
+        },
+        {
+          "say_th": "อีกพาร์ตสำคัญ คือเล่าผลให้คนที่ไม่ได้เรียนสถิติฟังแล้วเข้าใจ",
+          "on_screen_th": "เล่าให้คนไม่เรียนสถิติเข้าใจ",
+          "visual": "founder to camera",
+          "broll": "presenting one chart to a meeting room",
+          "safety": false,
+          "claims": [
+            {
+              "text": "O*NET task: 'Deliver oral or written presentations of the results of mathematical modeling and data analysis to management or other end users.'",
+              "source_ref": 7,
+              "url": "https://www.onetonline.org/link/summary/15-2051.00",
+              "grade": "A",
+              "as_of": "2026-10-06",
+              "topic": "other"
+            }
+          ]
+        },
+        {
+          "say_th": "ถ้าชอบไขปริศนาจากข้อมูลรกๆ สายนี้สนุกมาก แต่ถ้ากะมาเอาแค่ความเท่ อาจเบื่อเร็ว",
+          "on_screen_th": "ชอบไขปริศนาไหม? นั่นแหละคำตอบ",
+          "visual": "founder to camera",
+          "broll": "",
+          "safety": false,
+          "claims": []
+        }
+      ],
+      "cta_th": "กดลิงก์ไปพลิกการ์ด เทียบภาพในหัวกับงานจริง",
+      "reel": {
+        "angle": "myth_busted",
+        "hook_variants_th": [
+          "นึกว่าได้สร้าง AI เท่ๆ ทุกวันใช่ไหม",
+          "Data Scientist ไม่ได้สร้าง AI ทั้งวัน",
+          "งาน Data ที่ไม่มีใครเล่าให้ฟัง"
+        ],
+        "send_to_friend_th": "ส่งให้เพื่อนที่คิดว่าสาย Data คือสร้าง AI ทั้งวัน",
+        "end_card": "comment_radar",
+        "pinned_comment_th": "คอมเมนต์ RADAR รับลิงก์ข้อมูลเต็มสาย Data ทาง DM",
+        "tiktok_alias": "data"
+      }
+    },
+    {
+      "key": "money",
+      "title_th": "เงินเดือนจริงในไทย",
+      "duration_target_s": 30,
+      "hook": {
+        "say_th": "สาย Data ในไทย ได้เดือนละเท่าไหร่",
+        "on_screen_th": "สาย Data ได้เดือนละเท่าไหร่?"
+      },
+      "beats": [
+        {
+          "say_th": "เรื่องแรกที่ต้องรู้ หลายคนเริ่มจาก Data Analyst ก่อน แล้วค่อยขยับไปเป็น Data Scientist",
+          "on_screen_th": "หลายคนเริ่มจาก Data Analyst",
+          "visual": "card:salaryProgression (THB, level 1 highlighted)",
+          "broll": "salary ladder, step 1 lights up",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "ประกาศงาน Data Analyst บน JobsDB ค่ากลางอยู่ราว 33,500 บาทต่อเดือน",
+          "on_screen_th": "Data Analyst ค่ากลาง ฿33,500/เดือน (JobsDB ทั่วไทย พ.ย. 2569)",
+          "visual": "card:salaryProgression",
+          "broll": "number counter to 33,500",
+          "safety": false,
+          "claims": [
+            {
+              "text": "JobsDB Thailand role page 'Data Analyst Salary in TH (November, 2026)': schema.org estimatedSalary, occupationLocation Country TH, duration P1M, median THB 33,500 (P25 29,000, P75 43,000). The page labels it 'Average salary' and repeats the same value for every province including Bangkok, so it is a national median, not a Bangkok average. Based on full-time salary ranges disclosed by employers in JobsDB ads; mixes all experience levels. Verified 2026-11-11.",
+              "url": "https://th.jobsdb.com/career-advice/role/data-analyst/salary",
+              "grade": "B",
+              "level": "median",
+              "as_of": "2026-11",
+              "topic": "salary"
+            }
+          ]
+        },
+        {
+          "say_th": "ส่วนประกาศ Data Scientist ค่ากลางสูงขึ้นไปอีก ราว 50,000 บาท",
+          "on_screen_th": "Data Scientist ค่ากลาง ฿50,000/เดือน (JobsDB ทั่วไทย พ.ย. 2569)",
+          "visual": "card:salaryProgression",
+          "broll": "number counter to 50,000, ladder step 2",
+          "safety": false,
+          "claims": [
+            {
+              "text": "JobsDB Thailand role page 'Data Scientist Salary in TH (November, 2026)': schema.org estimatedSalary, occupationLocation Country TH, duration P1M, median THB 50,000 (P25 46,000, P75 64,000). Same value shown for Bangkok and most provinces (Nonthaburi 71,250 is an outlier), so it is a national median. Based on full-time salary ranges disclosed by employers in JobsDB ads; mixes all experience levels. Verified 2026-11-11.",
+              "source_ref": 2,
+              "url": "https://th.jobsdb.com/career-advice/role/data-scientist/salary",
+              "grade": "B",
+              "level": "median",
+              "as_of": "2026-11",
+              "topic": "salary"
+            }
+          ]
+        },
+        {
+          "say_th": "แต่นี่คือค่ากลางจากประกาศรวมทุกระดับประสบการณ์ ไม่ใช่เงินเดือนจบใหม่ของทุกคน",
+          "on_screen_th": "ค่ากลางรวมทุกระดับ ไม่ใช่เงินเดือนจบใหม่",
+          "visual": "founder to camera",
+          "broll": "",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "ทักษะที่ควรฝึกถ้าอยากโตในสายนี้ คือสร้างโมเดลเองได้ และเล่าผลให้ฝั่งธุรกิจเข้าใจ",
+          "on_screen_th": "ทักษะที่ควรฝึก: สร้างโมเดลเป็น + เล่าเป็น",
+          "visual": "card:salaryProgression (levels 2 to 4)",
+          "broll": "ladder climbing",
+          "safety": false,
+          "claims": []
+        }
+      ],
+      "cta_th": "ดูบันไดเงินเดือนเต็มทุกขั้นได้ในลิงก์",
+      "reel": {
+        "angle": "salary_reveal",
+        "hook_variants_th": [
+          "สาย Data ในไทย ได้เดือนละเท่าไหร่",
+          "Analyst กับ Scientist ได้ต่างกันไหม",
+          "ประกาศงาน Data ให้เงินเดือนเท่าไหร่"
+        ],
+        "send_to_friend_th": "ส่งให้เพื่อนที่ชอบเลขแต่ยังไม่รู้จะเข้าคณะไหน",
+        "end_card": "comment_radar",
+        "pinned_comment_th": "คอมเมนต์ RADAR รับลิงก์บันไดเงินเดือนเต็มทาง DM",
+        "tiktok_alias": "data"
+      }
+    },
+    {
+      "key": "ai",
+      "title_th": "AI จะมาแทนไหม",
+      "duration_target_s": 30,
+      "hook": {
+        "say_th": "AI เขียนโค้ดได้แล้ว สาย Data ยังรอดไหม",
+        "on_screen_th": "AI มาแล้ว สาย Data รอดไหม?"
+      },
+      "beats": [
+        {
+          "say_th": "ตอบตรงๆ งานซ้ำๆ โดนกระทบก่อน อย่างคลีนข้อมูลพื้นฐาน ทำรีพอร์ตเดิมทุกสัปดาห์ เขียน SQL ง่ายๆ ตอนนี้ AI ช่วยทำได้เร็วขึ้นมากแล้ว",
+          "on_screen_th": "งานซ้ำๆ: AI ช่วยทำเร็วขึ้น",
+          "visual": "card:aiImpact (automated list)",
+          "broll": "AI assistant writing a SQL query",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "แปลว่างานระดับเริ่มต้นที่ทำแค่งานพวกนี้ น่าจะแข่งกันหนักขึ้น",
+          "on_screen_th": "งานระดับเริ่มต้นแบบนี้ แข่งหนักขึ้น",
+          "visual": "founder to camera",
+          "broll": "",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "ส่วนที่ยังต้องใช้คน คือตั้งคำถามให้ถูก ออกแบบการทดลอง และตีความว่าผลนี้มีความหมายยังไงกับธุรกิจ",
+          "on_screen_th": "ตั้งคำถาม · ออกแบบการทดลอง · ตีความ",
+          "visual": "card:aiImpact (augmented list)",
+          "broll": "whiteboard with one business question",
+          "safety": false,
+          "claims": [
+            {
+              "text": "O*NET task: 'Identify business problems or management objectives that can be addressed through data analysis.'",
+              "source_ref": 7,
+              "url": "https://www.onetonline.org/link/summary/15-2051.00",
+              "grade": "A",
+              "as_of": "2026-10-06",
+              "topic": "ai"
+            }
+          ]
+        },
+        {
+          "say_th": "ที่อเมริกา หน่วยงานแรงงานยังคาดว่างาน Data Scientist จะโต 35% ใน 10 ปี ไม่ได้แปลว่าปลอดภัยทุกคนนะ แต่คนที่ใช้ AI เป็นเครื่องมือได้ ยังมีที่ยืน",
+          "on_screen_th": "Data Scientist สหรัฐฯ: คาดโต 35% ปี 2025-2035 (BLS)",
+          "visual": "card:aiImpact",
+          "broll": "single bar +35%, label US only",
+          "safety": false,
+          "claims": [
+            {
+              "text": "BLS: employment of data scientists in the US is projected to grow 35 percent from 2025 to 2035; about 24,800 openings a year. US only.",
+              "source_ref": 1,
+              "url": "https://www.bls.gov/ooh/math/data-scientists.htm",
+              "grade": "A",
+              "as_of": "2026-08-27",
+              "topic": "jobs"
+            }
+          ]
+        }
+      ],
+      "cta_th": "ดูว่างานไหน AI ทำแทน งานไหน AI ช่วย ได้ในลิงก์",
+      "reel": {
+        "angle": "ai_replace",
+        "hook_variants_th": [
+          "AI เขียนโค้ดได้แล้ว สาย Data ยังรอดไหม",
+          "งาน Data ส่วนไหนที่ AI ทำแทนได้แล้ว",
+          "เรียน Data ตอนนี้ ช้าไปไหม"
+        ],
+        "send_to_friend_th": "ส่งให้เพื่อนที่กลัวว่าเรียนไปแล้ว AI จะมาแทน",
+        "end_card": "comment_radar",
+        "pinned_comment_th": "คอมเมนต์ RADAR รับลิงก์ข้อมูลเต็มสาย Data ทาง DM",
+        "tiktok_alias": "data"
+      }
+    },
+    {
+      "key": "day",
+      "title_th": "หนึ่งวันทำอะไรบ้าง",
+      "duration_target_s": 25,
+      "hook": {
+        "say_th": "งานนี้ไม่เริ่มจากโค้ด แต่เริ่มจากคำถาม",
+        "on_screen_th": "เริ่มจากคำถาม ไม่ใช่โค้ด"
+      },
+      "beats": [
+        {
+          "say_th": "อย่างทีมการตลาดถามว่า ทำไมลูกค้าหายไป เราต้องตกลงก่อนว่า หาย แปลว่าอะไร แล้วแปลงเป็นตัวเลขที่วัดได้",
+          "on_screen_th": "\"ทำไมลูกค้าหายไป?\"",
+          "visual": "card:dayInLife (step: ตั้งโจทย์)",
+          "broll": "sticky note with the question, then a metric name",
+          "safety": false,
+          "claims": [
+            {
+              "text": "O*NET task: 'Identify business problems or management objectives that can be addressed through data analysis.' The churn question is an illustrative example from the dayInLife card.",
+              "source_ref": 7,
+              "url": "https://www.onetonline.org/link/summary/15-2051.00",
+              "grade": "A",
+              "as_of": "2026-10-06",
+              "topic": "other"
+            }
+          ]
+        },
+        {
+          "say_th": "จากนั้นดึงข้อมูลด้วย SQL เอามาคลีนใน Python แล้วไล่ดูว่าลูกค้ากลุ่มไหนหายไปเยอะสุด",
+          "on_screen_th": "SQL ดึง · Python คลีน · หากลุ่มที่หาย",
+          "visual": "card:dayInLife (step: EDA)",
+          "broll": "Jupyter notebook scrolling, a cohort chart appears",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "ถ้าดูแล้วคุ้ม ค่อยสร้างโมเดลทำนายว่าใครกำลังจะเลิกใช้ แล้วเทสต์ว่ามันแม่นจริงไหม",
+          "on_screen_th": "สร้างโมเดล แล้วเทสต์ว่าแม่นจริงไหม",
+          "visual": "card:dayInLife (step: โมเดล)",
+          "broll": "model accuracy chart",
+          "safety": false,
+          "claims": [
+            {
+              "text": "O*NET task: 'Test, validate, and reformulate models to ensure accurate prediction of outcomes of interest.'",
+              "source_ref": 7,
+              "url": "https://www.onetonline.org/link/summary/15-2051.00",
+              "grade": "A",
+              "as_of": "2026-10-06",
+              "topic": "other"
+            }
+          ]
+        },
+        {
+          "say_th": "แล้วปิดงานด้วยกราฟกับสไลด์ เล่าเป็นภาษาธุรกิจว่าทีมควรทำอะไรต่อ ไม่ใช่พ่นศัพท์เทคนิค",
+          "on_screen_th": "กราฟที่ทีมดูแล้วตัดสินใจได้",
+          "visual": "card:dayInLife (step: นำเสนอ)",
+          "broll": "one clean chart on a slide",
+          "safety": false,
+          "claims": [
+            {
+              "text": "O*NET task: 'Create graphs, charts, or other visualizations to convey the results of data analysis using specialized software.'",
+              "source_ref": 7,
+              "url": "https://www.onetonline.org/link/summary/15-2051.00",
+              "grade": "A",
+              "as_of": "2026-10-06",
+              "topic": "other"
+            }
+          ]
+        }
+      ],
+      "cta_th": "ดูขั้นตอนงานเต็มๆ ได้ในลิงก์",
+      "reel": {
+        "angle": "day_in_life",
+        "hook_variants_th": [
+          "งานนี้ไม่เริ่มจากโค้ด แต่เริ่มจากคำถาม",
+          "ลูกค้าหายไปไหน งานนี้ต้องหาคำตอบ",
+          "หนึ่งโจทย์ของ Data Scientist ทำอะไรบ้าง"
+        ],
+        "send_to_friend_th": "ส่งให้เพื่อนที่ชอบถาม \"ทำไม\" ไม่หยุด",
+        "end_card": "comment_radar",
+        "pinned_comment_th": "คอมเมนต์ RADAR รับลิงก์ข้อมูลเต็มสาย Data ทาง DM",
+        "tiktok_alias": "data"
+      }
+    },
+    {
+      "key": "study",
+      "title_th": "เรียนอะไร เข้าคณะไหน",
+      "duration_target_s": 25,
+      "hook": {
+        "say_th": "อยากทำงานกับข้อมูล ต้องเข้าคณะไหน",
+        "on_screen_th": "สาย Data เข้าคณะไหนดี?"
+      },
+      "beats": [
+        {
+          "say_th": "สายตรงเลยก็มี วิทย์คอม สถิติ คณิตประยุกต์ แล้วก็หลักสูตร Data Science โดยตรง",
+          "on_screen_th": "ทางตรง: วิทย์คอม · สถิติ · คณิตประยุกต์ · Data Science",
+          "visual": "card:entryRoutes (direct tier)",
+          "broll": "faculty names stacking",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "ส่วนสายใกล้เคียงอย่าง วิศวะอุตสาหการ เศรษฐศาสตร์ หรือบริหาร ก็มาได้ แต่อาจต้องฝึกเขียนโค้ดกับสถิติเพิ่มเอง",
+          "on_screen_th": "ทางอ้อม: วิศวะอุตสาหการ · เศรษฐศาสตร์ · บริหาร",
+          "visual": "card:entryRoutes (related tier)",
+          "broll": "",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "ไม่ว่าจะจบคณะไหน งานสาย AI ในไทยเกือบทุกตำแหน่ง รวมถึงสาย Data ขอ SQL กับ Python เป็นพื้นฐาน",
+          "on_screen_th": "งานสาย AI เกือบทุกตำแหน่งขอ SQL + Python (TDRI ส.ค. 2568)",
+          "visual": "founder to camera",
+          "broll": "SQL and Python logos side by side",
+          "safety": false,
+          "claims": [
+            {
+              "text": "TDRI (25 Aug 2025): 'ทักษะหลัก 3 ทักษะที่กลายเป็นมาตรฐานขั้นต่ำ (minimum viable stack) สำหรับเกือบทุกบทบาทในสายงาน AI ไม่ว่าจะเป็นวิศวกร AI/ML นักวิเคราะห์ข้อมูล…': SQL for accessing and managing data, Python for analysis and model building, plus a cloud platform (AWS, Azure or Google Cloud). Scope: AI-related postings, nearly all roles (not every role). Verified 2026-11-11.",
+              "source_ref": 8,
+              "url": "https://tdri.or.th/2025/08/ai-job-market-2tracked-growth/",
+              "grade": "A",
+              "as_of": "2025-08-25",
+              "topic": "study"
+            }
+          ]
+        },
+        {
+          "say_th": "ก่อนยื่นคณะ เช็กดีๆ ว่าหลักสูตรที่เล็งไว้ ได้ฝึกสองตัวนี้จริงไหม",
+          "on_screen_th": "เช็กหลักสูตรก่อนยื่น",
+          "visual": "card:entryRoutes",
+          "broll": "",
+          "safety": false,
+          "claims": []
+        }
+      ],
+      "cta_th": "ดูเส้นทางเข้าสายนี้จากแต่ละคณะได้ในลิงก์",
+      "reel": {
+        "angle": "which_faculty",
+        "hook_variants_th": [
+          "อยากทำงานกับข้อมูล ต้องเข้าคณะไหน",
+          "ไม่ได้เข้าวิทย์คอม ทำสาย Data ได้ไหม",
+          "สาย Data ต้องเรียนสถิติหรือคอม"
+        ],
+        "send_to_friend_th": "ส่งให้เพื่อนที่ลังเลระหว่างสถิติกับวิทย์คอม",
+        "end_card": "comment_radar",
+        "pinned_comment_th": "คอมเมนต์ RADAR รับลิงก์เส้นทางเข้าคณะทาง DM",
+        "tiktok_alias": "data"
+      }
+    },
+    {
+      "key": "start",
+      "title_th": "พอร์ตสายนี้ต้องมีอะไร",
+      "duration_target_s": 32,
+      "hook": {
+        "say_th": "พอร์ตสาย Data ต้องมีอะไร",
+        "on_screen_th": "พอร์ตสาย Data ต้องมีอะไร?"
+      },
+      "beats": [
+        {
+          "say_th": "งานรับเด็กจบใหม่สายวิทย์คอมในไทย 3,088 ตำแหน่ง มีแค่ 376 ที่ไม่ขอประสบการณ์เลย",
+          "on_screen_th": "งานรับจบใหม่สายวิทย์คอม 3,088 ตำแหน่ง ไม่ขอประสบการณ์แค่ 376 (TDRI, ก.ค. 67 ถึง มิ.ย. 68)",
+          "visual": "motion:376 of 3088 dots",
+          "broll": "grid of dots, a small cluster lit",
+          "safety": false,
+          "claims": [
+            {
+              "text": "TDRI Big Data labour report Q2/2568 (28 Aug 2025): Computer Science field of study had 10,486 positions; 3,088 open to new bachelor's graduates (no experience or at most 2 years), of which 376 required no experience; postings Jul 2024 to Jun 2025 from 23 Thai job sites. Positions are matched to majors named in each posting, so one posting can count under several majors. Feeder field, not a data-scientist-only figure. Verified 2026-11-11.",
+              "source_ref": 9,
+              "url": "https://tdri.or.th/2025/08/bigdata-report-labourmarket-q2-2025/",
+              "grade": "A",
+              "as_of": "2025-08-28",
+              "topic": "jobs"
+            }
+          ]
+        },
+        {
+          "say_th": "พอร์ตเลยเป็นที่โชว์ว่าเราทำได้จริง โปรเจกต์ที่ดีเริ่มจากคำถามจริง ใช้ข้อมูลจริง แล้วจบด้วยกราฟที่คนอ่านเข้าใจ",
+          "on_screen_th": "คำถามจริง · ข้อมูลจริง · กราฟที่อ่านรู้เรื่อง",
+          "visual": "founder to camera",
+          "broll": "",
+          "safety": false,
+          "claims": []
+        },
+        {
+          "say_th": "เริ่มคืนนี้ได้เลย เปิดโจทย์ Titanic บน Kaggle ฟรี ทำตาม Titanic Tutorial จนส่งคำตอบแรกขึ้น Leaderboard",
+          "on_screen_th": "Kaggle Titanic Tutorial · ฟรี · ส่งคำตอบแรก",
+          "visual": "screen recording: Kaggle Titanic submission",
+          "broll": "leaderboard row appears",
+          "safety": false,
+          "claims": [
+            {
+              "text": "Kaggle 'Titanic - Machine Learning from Disaster' is Kaggle's free getting-started competition; Alexis Cook's 'Titanic Tutorial' notebook walks through a first submission. Both pages resolve (titles verified 2026-11-11); page bodies are JS-rendered, so the walkthrough and free entry are confirmed via secondary sources, hence grade B.",
+              "url": "https://www.kaggle.com/code/alexisbcook/titanic-tutorial",
+              "grade": "B",
+              "as_of": "2026-11-11",
+              "topic": "other"
+            }
+          ]
+        },
+        {
+          "say_th": "แล้วต่อด้วยโปรเจกต์ของตัวเอง เช่น ข้าวโรงอาหารแพงขึ้นจริงไหม เอาขึ้น GitHub นี่แหละชิ้นแรกในพอร์ต ใบเซอร์ค่อยว่ากันทีหลัง",
+          "on_screen_th": "โปรเจกต์ของเราเอง ขึ้น GitHub",
+          "visual": "card:RadarSkillExperience (start options)",
+          "broll": "canteen price chart in a notebook, pushed to GitHub",
+          "safety": false,
+          "claims": []
+        }
+      ],
+      "cta_th": "ดูวิธีเริ่มทั้งหมดได้ในลิงก์",
+      "reel": {
+        "angle": "portfolio_for_this_career",
+        "hook_variants_th": [
+          "พอร์ตสาย Data ต้องมีอะไร",
+          "ยังไม่มีประสบการณ์ จะเข้าสาย Data ยังไง",
+          "ชิ้นแรกในพอร์ต Data ทำได้คืนนี้"
+        ],
+        "send_to_friend_th": "ส่งให้เพื่อนที่กำลังทำพอร์ตยื่นคณะ",
+        "end_card": "comment_radar",
+        "pinned_comment_th": "คอมเมนต์ RADAR รับลิงก์วิธีเริ่มทั้งหมดทาง DM",
+        "tiktok_alias": "data"
+      },
+      "first_step": {
+        "title_th": "Kaggle Titanic Tutorial: ส่งคำตอบแรก",
+        "url": "https://www.kaggle.com/code/alexisbcook/titanic-tutorial",
+        "free": true,
+        "minutes": 90,
+        "makes_th": "notebook ที่ทำตาม Tutorial เอง พร้อมคำตอบแรกบน Leaderboard ของ Kaggle"
+      }
+    }
+  ]
+}

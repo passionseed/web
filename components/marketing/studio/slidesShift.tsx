@@ -12,7 +12,8 @@ import {
 } from "@/lib/content/shift-cohort";
 import type { OfferSlide, ScheduleSlide } from "@/lib/marketing/types";
 
-import { Panel, Tag, Title } from "./SlideParts";
+import { CosmosOffer, CosmosSchedule } from "./slidesCosmos";
+import { Panel, Tag, Title, isCosmos } from "./SlideParts";
 import type { StudioInks } from "./studioTheme";
 
 /**
@@ -36,6 +37,7 @@ export const studioApplyUrl = (cohort: ShiftCohort) =>
 
 export function OfferView({ slide, inks }: Props<OfferSlide>) {
   const cohort = cohortOrThrow(slide.round);
+  if (isCosmos(inks)) return <CosmosOffer slide={slide} inks={inks} cohort={cohort} applyUrl={studioApplyUrl(cohort)} />;
   const pair = pairPriceBaht(cohort);
   return (
     <>
@@ -96,6 +98,7 @@ export function OfferView({ slide, inks }: Props<OfferSlide>) {
 
 export function ScheduleView({ slide, inks }: Props<ScheduleSlide>) {
   const cohort = cohortOrThrow(slide.round);
+  if (isCosmos(inks)) return <CosmosSchedule slide={slide} inks={inks} cohort={cohort} />;
   return (
     <>
       <Tag inks={inks}>{slide.tag}</Tag>

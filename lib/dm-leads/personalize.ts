@@ -39,6 +39,11 @@ export interface PersonalizeRequest {
   template: string;
   lead: PersonalizeLead;
   kind?: PersonalizeKind;
+  /**
+   * `dm_conversations.origin`. Radar-origin threads never go through Qwen
+   * (spec 5.6); the template comes back unchanged.
+   */
+  origin?: string | null;
 }
 
 const PLACEHOLDER_PATTERN = /\[[^\]\n]+\]/g;
@@ -279,6 +284,7 @@ export function sanitizePersonalizedMessage(template: string, raw: string): stri
 export async function personalizeMessage(request: PersonalizeRequest): Promise<string> {
   const template = request.template.trim();
   if (!template) return request.template;
+  if (request.origin === "radar") return template;
 
   try {
     const raw = await completeQwenChat({

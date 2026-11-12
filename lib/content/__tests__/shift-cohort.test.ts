@@ -93,7 +93,7 @@ describe("shift cohort", () => {
     // When round is invalid or omitted, returns an effective cohort (never undefined)
     const effective = getEffectiveCohort();
     expect(effective).toBeDefined();
-    expect([1, 2]).toContain(effective.round);
+    expect(SHIFT_COHORTS.map((c) => c.round)).toContain(effective.round);
 
     const effectiveInvalid = getEffectiveCohort("invalid");
     expect(effectiveInvalid).toBeDefined();

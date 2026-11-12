@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PS[01] · Dawn / Dusk · Tech pack v0.3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Kodchasan:wght@600;700&family=Bai+Jamjuree:wght@400;600&family=Libre+Franklin:wght@400;600;800&family=Space+Mono:wght@400;700&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root { --cream:#fef9e7; --mute:#9a93b8; --line:rgba(254,249,231,.12); --ember:#f97316; --gold:#ffc33e; }
+  * { box-sizing:border-box; }
+  body { margin:0; color:var(--cream); font:13px/1.5 "Libre Franklin", sans-serif; }
+  .sheet { padding:16px; border-radius:var(--radius,12px);
+    background: radial-gradient(120% 60% at 0% 100%, rgba(255,196,106,.10), transparent 60%),
+                radial-gradient(120% 60% at 100% 100%, rgba(249,115,22,.10), transparent 60%),
+                linear-gradient(100deg, #03040f 0%, #070a22 45%, #12061c 70%, #1a0618 100%); }
+  header { display:flex; justify-content:space-between; align-items:flex-end; padding-bottom:12px; border-bottom:1px solid var(--line); }
+  .px { font-family:"Silkscreen", monospace; }
+  h1 { font:700 40px/1 "Silkscreen", monospace; margin:0; letter-spacing:.02em; }
+  h1 .dawn { color:#ffc46a; } h1 .dusk { color:#f97316; }
+  .sub { font:600 13px "Libre Franklin"; color:var(--mute); margin-top:6px; }
+  .meta { font:11px/1.6 "Space Mono", monospace; text-align:right; color:var(--mute); }
+  h2 { font:400 12px "Silkscreen", monospace; letter-spacing:.06em; color:var(--mute); margin:26px 0 10px; }
+  .row { display:grid; gap:12px; }
+  .r2 { grid-template-columns:1fr 1fr; }
+  .card { background:rgba(254,249,231,.035); border:1px solid var(--line); border-radius:12px; padding:12px; }
+  .cap { font:700 13px "Silkscreen", monospace; margin-top:6px; }
+  .cap small { font:400 11px "Space Mono", monospace; color:var(--mute); margin-left:6px; }
+  .note { color:var(--mute); font-size:12px; margin-top:4px; }
+  .note b { color:var(--cream); font-weight:600; }
+  ol.legend { columns:2; margin:10px 0 0; padding-left:18px; font-size:12px; color:var(--mute); }
+  ol.legend li { margin-bottom:4px; break-inside:avoid; }
+  ol.legend b { color:var(--cream); font-weight:600; }
+  .inks { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+  .ink { font:10px "Space Mono", monospace; color:var(--mute); display:flex; align-items:center; gap:4px; }
+  .ink i { width:12px; height:12px; display:inline-block; border:1px solid rgba(255,255,255,.2); }
+  svg { display:block; width:100%; height:auto; }
+  .th { font-family:"Bai Jamjuree", sans-serif; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <clipPath id="teeclip"><path d="M146,36 Q200,50 254,36 L330,62 L392,150 L350,178 L318,152 L318,430 L82,430 L82,152 L50,178 L8,150 L70,62 Z"/></clipPath>
+</defs></svg>
+
+<div class="sheet">
+  <header>
+    <div>
+      <h1>PS[01] <span class="dawn">DAWN</span><span style="color:#5d5677">/</span><span class="dusk">DUSK</span></h1>
+      <div class="sub">One shirt, two skies. Your sky shows your role.</div>
+    </div>
+    <div class="meta">TECH PACK v0.3<br>40 numbered pcs<br>2026-11-01</div>
+  </header>
+
+  <h2>01 · BACK (the hero)</h2>
+  <div class="row r2">
+    <div class="card"><div id="back-dawn"></div>
+      <div class="cap" style="color:#ffc46a">DAWN<small>community · alumni</small></div>
+      <div class="note">The sun is rising. Night sky, a gold horizon. For people early in the climb.</div></div>
+    <div class="card"><div id="back-dusk"></div>
+      <div class="cap" style="color:#f97316">DUSK<small>team · mentors</small></div>
+      <div class="note">The sun is setting, embers rising. Things earned over time. For the people who hold the room.</div></div>
+  </div>
+
+  <h2>02 · FRONT</h2>
+  <div class="row r2">
+    <div class="card"><div id="front-dawn"></div></div>
+    <div class="card"><div id="front-dusk"></div></div>
+  </div>
+  <ol class="legend">
+    <li><b>Seed in the pocket.</b> The pixel logo, embroidered and peeking over the pocket edge. The pocket is real: 11 × 13 cm with a pen slot.</li>
+    <li><b>Wrap-around horizon.</b> Printed on the cut panels before sewing, so the sky lines up across the side seams.</li>
+    <li><b>Patch panel</b> on the left sleeve, 5 × 5 cm loop velcro. Your role patch comes with the shirt; round patches are earned.</li>
+    <li><b>TAP label</b> in the left side seam, with a washable NFC tag sealed inside. Opens what you're building now.</li>
+    <li><b>Glow stars.</b> The stars are printed in glow-in-the-dark ink, so after dark the shirt turns into its own night sky.</li>
+    <li><b>Ember locker loop</b> at the back neck. Hang it on a hook.</li>
+  </ol>
+
+  <h2>03 · DETAILS</h2>
+  <div class="row r2">
+    <div class="card"><div id="d-pocket"></div>
+      <div class="cap">A · SEED IN THE POCKET</div>
+      <div class="note">The 16px logo with its disc removed, so only the flame and eyes show above the pocket. Embroidered in flat fill stitching, 3 mm per pixel, so the edges stay sharp.</div></div>
+    <div class="card"><div id="d-patches"></div>
+      <div class="cap">B · PATCHES <small>PVC, 5 × 5 cm, hook back</small></div>
+      <div class="note">Pixel sprites like game achievements. <b>Role patches</b> come with the shirt. <b>SHIFT[n]</b> patches only go to people who mentored or shipped in that round, and are never sold.</div></div>
+    <div class="card"><div id="d-sep"></div>
+      <div class="cap">C · HOW THE SKY PRINTS</div>
+      <div class="note">No gradients. The sky is dithered in pixel steps, so each edition is <b>4 flat screen-print colours + 1 glow ink</b>: cheaper, sharper, and true to the pixel style.</div>
+      <div class="inks" id="inks"></div></div>
+    <div class="card"><div id="d-neck"></div>
+      <div class="cap">D · INSIDE NECK + TAP LABEL</div>
+      <div class="note">The neck print uses SHIFT's bracket naming. The Thai line is a draft; run the multi-model review first.</div></div>
+  </div>
+</div>
+
+<script>
+const TEE = "M146,36 Q200,50 254,36 L330,62 L392,150 L350,178 L318,152 L318,430 L82,430 L82,152 L50,178 L8,150 L70,62 Z";
+const ED = {
+  dawn: { garment:'#0c1132', inks:['#2b3577','#e0679f','#ffc46a'], sun:'#fef3d6', star:'#d5dcff', ember:null, sunY:404, sunR:44, loop:'#ffc46a' },
+  dusk: { garment:'#1c0a25', inks:['#5a1d8a','#c2185b','#f97316'], sun:'#ffc33e', star:'#f1d2ff', ember:'#fb923c', sunY:432, sunR:60, loop:'#f97316' },
+};
+const BAYER=[[0,8,2,10],[12,4,14,6],[3,11,1,9],[15,7,13,5]];
+const rng = seed => { let s=seed>>>0; return () => (s = (s*1664525 + 1013904223) >>> 0) / 4294967296; };
+const R = (x,y,w,h,f,o) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${f}"${o!=null?` opacity="${o.toFixed(2)}"`:''}/>`;
+
+function sky(inks, x0,x1,y0,y1,c, ease=1.25){
+  let s='';
+  for(let y=y0;y<y1;y+=c){
+    const v=3*Math.pow((y-y0)/(y1-y0),ease), i=Math.floor(v), f=v-i, cy=Math.round((y-y0)/c);
+    for(let x=x0;x<x1;x+=c){
+      const cx=Math.round((x-x0)/c), idx = f > (BAYER[cy%4][cx%4]+.5)/16 ? i+1 : i;
+      if(idx>0) s+=R(x,y,c,c,inks[Math.min(idx,3)-1]);
+    }
+  }
+  return s;
+}
+function sun(color,cx,cy,r,c,yMax){
+  let s='';
+  for(let y=Math.floor((cy-r)/c)*c;y<yMax;y+=c) for(let x=Math.floor((cx-r)/c)*c;x<cx+r;x+=c){
+    const dx=x+c/2-cx, dy=y+c/2-cy; if(dx*dx+dy*dy<=r*r) s+=R(x,y,c,c,color);
+  }
+  return s;
+}
+function stars(color,seed,x0,x1,y0,y1,n){
+  const r=rng(seed); let s='';
+  for(let k=0;k<n;k++){
+    const x=x0+Math.floor(r()*(x1-x0)/3)*3, y=y0+Math.floor(Math.pow(r(),1.5)*(y1-y0)/3)*3, o=.35+.6*r();
+    if(r()<.14){ s+=R(x,y,3,3,color,o)+R(x-3,y,3,3,color,o*.55)+R(x+3,y,3,3,color,o*.55)+R(x,y-3,3,3,color,o*.55)+R(x,y+3,3,3,color,o*.55); }
+    else s+=R(x,y,3,3,color,o);
+  }
+  return s;
+}
+function embers(color,seed,n){
+  const r=rng(seed); let s='';
+  for(let k=0;k<n;k++){ const x=140+Math.floor(r()*30)*4, y=250+Math.floor(r()*24)*4; s+=R(x,y,4,4,color,.3+.6*(y-250)/96); }
+  return s;
+}
+const SEED16 = ["...........Y..Y.", ".....44Y44YY..Y.", "...4444Y4YYY4.YY", "..144OYYYYYYYYYY", "..11O4YYYYYYYYYY", ".11YOYYYYYYYYYY.", ".11Y1YYYYYYYYY4.", ".11YYYYKKKYYY44.", ".11YWWWKKKKYY44.", ".11YWKWKKWWWY44.", ".111WWWKKWKW444.", ".111YKKKKWWW444.", "..111YKKKYY144..", "...111YYY1111...", "....11111111....", "................"];
+const SEED16P = ["...........Y..Y.", ".......Y..YY..Y.", ".......Y.YYY..YY", ".....OYYYYYYYYYY", "....O.YYYYYYYYYY", "...YOYYYYYYYYYY.", "...Y.YYYYYYYYY..", "...YYYYKKKYYY...", "...YWWWKKKKYY...", "...YWKWKKWWWY...", "....WWWKKWKW....", "....YKKKKWWW....", ".....YKKKYY.....", "......YYY.......", "................", "................"];
+const SEED32 = ["................................", "..................O...Y.....Y...", "...........4444444O44YY.....YY..", ".........333444YY444YYY......YY.", ".......33333344YYYYYYYYY4BY..YY.", "......3333O333YYYBYYYYYBBOY..YY.", ".....2333OO333YYYBBYYYBBYYYYYYY.", "....22233OO33YYYYYBBYYBBYYYYYYY.", "....22223OO33YYYYYBBYYBBYYYYYY..", "...2222Y2OO3YYYYYYBBYYBBYBYYY...", "...2222Y22OOYYYYYYBBYYYBBBYY4...", "..2222YY222OYYYYYBBYYYYYYY4444..", "..1222YYY2YYYYYYYYOYYYYYYY4444..", "..1122YYYWYYYYYKKOYYYYYYYY4444..", "..1112YYYYWWYKKKKKKYYYYYYY4444..", "..1111YYYYYYWKKKKKKWWYYYYY4444..", "..1111YYYWWWKKKKKKKKYWYYY44444..", "..11111YWWKKWKKKKKWWWYYYY34444..", "..11111YWWKKWKKKKWWKKWYY333444..", "..11111YWWWWWKKKKWWKKWYY333344..", "..111111YWWWKKKKKWWWWWY3333334..", "...11111YYYYKKKKKKWWWYY333333...", "...111111YYYKKKKKKKYYY3333333...", "....11111YYYYKKKKKYYY2233333....", "....111111YYYYYYYYYY2222333.....", ".....111111YYYYYYYY22222233.....", "......1111111YYYY222222222......", ".......11111111111222222........", ".........11111111112222.........", "...........1111111112...........", "................................", "................................"];
+const PAL = {'1':'#521020','2':'#6a1434','3':'#82184a','4':'#9a1b5b',Y:'#ffc33e',O:'#ff8f19',B:'#ffe31e',K:'#000000',W:'#ffffff'};
+function sprite(x0,y0,c,maxRow=99,grid=SEED16P){
+  let s=''; grid.forEach((row,ry)=>{ if(ry>maxRow) return; [...row].forEach((ch,rx)=>{ if(PAL[ch]) s+=R(x0+rx*c,y0+ry*c,c,c,PAL[ch]); }); }); return s;
+}
+function disk(cx,cy,r,c,color){ return sun(color,cx,cy,r,c,cy+r); }
+const DETAIL = 'rgba(254,249,231,.22)';
+function collarBack(){ return `<path d="M146,36 Q200,60 254,36" fill="none" stroke="${DETAIL}" stroke-width="1.6"/>`; }
+function seams(){ return `<path d="M312,56 Q324,104 318,152 M88,56 Q76,104 82,152" fill="none" stroke="${DETAIL}" stroke-width="1.1"/><path d="M387.6,143.4 L345.6,171.4 M12.4,143.4 L54.4,171.4 M82,421 L318,421" fill="none" stroke="${DETAIL}" stroke-width=".8" stroke-dasharray="3 2"/>`; }
+function outline(){ return `<path d="${TEE}" fill="none" stroke="rgba(254,249,231,.3)" stroke-width="1.4" stroke-linejoin="round"/>`; }
+
+function back(k){
+  const e=ED[k];
+  return `<svg viewBox="0 0 400 450"><path d="${TEE}" fill="${e.garment}"/>
+    <g clip-path="url(#teeclip)">
+      ${stars(e.star, k==='dawn'?7:19, 82,318, 70,330, 70)}
+      ${e.ember?embers(e.ember,5,16):''}
+      ${sky(e.inks,78,324,300,432,6,1)}
+      ${sun(e.sun,200,e.sunY,e.sunR,6,432)}
+    </g>
+    ${collarBack()}${seams()}${outline()}
+    <path d="M193,48 Q200,70 207,48" fill="none" stroke="${e.loop}" stroke-width="3.2" stroke-linecap="round"/>
+  </svg>`;
+}
+function miniPatch(x,y,size){ // TEAM patch on sleeve
+  const c=size/16;
+  return `<g transform="rotate(-34 ${x+size/2} ${y+size/2})"><rect x="${x-2}" y="${y-2}" width="${size+4}" height="${size+4}" rx="2" fill="#120a16" stroke="rgba(254,249,231,.35)" stroke-width=".8"/>${sprite(x,y,c,99,SEED16)}</g>`;
+}
+function front(k){
+  const e=ED[k];
+  return `<svg viewBox="0 0 400 450"><path d="${TEE}" fill="${e.garment}"/>
+    <g clip-path="url(#teeclip)">
+      ${stars(e.star, k==='dawn'?3:11, 82,318, 60,300, 18)}
+      ${sky(e.inks,78,324,300,432,6,1)}
+    </g>
+    <path d="M156,38 Q200,53 244,38 Q200,84 156,38 Z" fill="#000" fill-opacity=".4"/>
+    <path d="M146,36 Q200,98 254,36" fill="none" stroke="${DETAIL}" stroke-width="1.6"/>
+    ${seams()}
+    ${sprite(235,82,3,11)}
+    <rect x="228" y="118" width="62" height="72" fill="${e.garment}" stroke="rgba(254,249,231,.35)" stroke-width="1.2"/>
+    <path d="M279,124 L279,190" stroke="${DETAIL}" stroke-dasharray="3 2"/>
+    <rect x="227" y="117" width="4" height="8" fill="${e.loop}"/><rect x="287" y="117" width="4" height="8" fill="${e.loop}"/>
+    ${miniPatch(335,114,24)}
+    <rect x="318" y="384" width="11" height="22" fill="#fef9e7"/>${R(321.5,391,4,4,'#0c1132')}${R(321.5,387,4,3,'#0c1132',.5)}${R(321.5,395,4,3,'#0c1132',.5)}
+    ${outline()}
+    <g font-family="Space Mono, monospace" font-size="9" font-weight="700" text-anchor="middle">
+      ${[[214,104,1],[200,372,2],[372,96,3],[346,396,4],[130,110,5]].map(([x,y,n])=>`<circle cx="${x}" cy="${y}" r="8" fill="#fef9e7"/><text x="${x}" y="${y+3}" fill="#0b0b0b">${n}</text>`).join('')}
+    </g>
+  </svg>`;
+}
+function patchBase(x,y,bg,stroke){ return `<rect x="${x}" y="${y}" width="100" height="100" rx="10" fill="${bg}"/><rect x="${x+5}" y="${y+5}" width="90" height="90" rx="7" fill="none" stroke="${stroke}" stroke-width="1.6" stroke-dasharray="4 3"/>`; }
+function label(x,y,t,color,size=12){ return `<text x="${x}" y="${y}" font-family="Silkscreen, monospace" font-weight="700" font-size="${size}" fill="${color}" text-anchor="middle">${t}</text>`; }
+function patches(){
+  const D=ED.dusk, W=ED.dawn;
+  const clip = (id,x,y)=>`<clipPath id="${id}"><rect x="${x+8}" y="${y+8}" width="84" height="62" rx="4"/></clipPath>`;
+  return `<svg viewBox="0 0 220 220"><defs>${clip('pm',112,6)}${clip('pc',6,112)}</defs>
+    ${patchBase(6,6,'#120a16','#ffc33e')}${sprite(24,12,2,99,SEED32)}${label(56,88,'TEAM','#fef9e7')}
+    ${patchBase(112,6,D.garment,'#f97316')}<g clip-path="url(#pm)">${stars(D.star,2,120,204,14,50,10)}${sky(D.inks,120,204,40,70,4)}${sun(D.sun,162,70,20,4,70)}</g>${label(162,88,'MENTOR','#fef9e7')}
+    ${patchBase(6,112,W.garment,'#ffc46a')}<g clip-path="url(#pc)">${stars(W.star,4,14,98,120,156,10)}${sky(W.inks,14,98,146,176,4)}${sun(W.sun,56,174,16,4,176)}</g>${label(56,194,'COMMUNITY','#fef9e7',10)}
+    ${patchBase(112,112,'#0b0b0b','#fef9e7')}${label(162,150,'SHIFT','#f97316',19)}${label(162,173,'[3]','#fef9e7',19)}${label(162,194,'SHIPPED','#9a93b8',9)}
+  </svg>`;
+}
+function pocketDetail(){
+  const e=ED.dusk;
+  return `<svg viewBox="0 0 220 190"><rect width="220" height="190" fill="${e.garment}" rx="6"/>
+    ${sprite(62,2,6,11)}
+    <rect x="40" y="74" width="140" height="110" fill="${e.garment}" stroke="rgba(254,249,231,.45)" stroke-width="1.6"/>
+    <path d="M40,86 L180,86 M158,86 L158,184" stroke="rgba(254,249,231,.3)" stroke-dasharray="4 3" fill="none"/>
+    <rect x="38" y="72" width="7" height="14" fill="#f97316"/><rect x="175" y="72" width="7" height="14" fill="#f97316"/>
+    <text x="110" y="140" font-family="Space Mono, monospace" font-size="10" fill="#9a93b8" text-anchor="middle">11 × 13 cm</text>
+    <text x="169" y="158" font-family="Space Mono, monospace" font-size="8" fill="#9a93b8" text-anchor="middle" transform="rotate(-90 169 158)">pen</text>
+  </svg>`;
+}
+function sepDetail(){
+  const D=ED.dusk;
+  let s=`<svg viewBox="0 0 220 180"><rect width="220" height="180" rx="6" fill="${D.garment}"/>
+    <clipPath id="sepc"><rect width="220" height="180" rx="6"/></clipPath><g clip-path="url(#sepc)">
+    ${stars(D.star,23,0,220,0,70,26)}
+    ${sky(D.inks,0,220,60,180,8)}${sun(D.sun,110,190,62,8,180)}</g></svg>`;
+  return s;
+}
+function neckDetail(){
+  return `<svg viewBox="0 0 220 180"><rect width="220" height="180" rx="6" fill="#1c0a25"/>
+    <path d="M0,24 Q110,84 220,24" fill="none" stroke="#f97316" stroke-width="10"/>
+    <text x="80" y="104" font-family="Silkscreen, monospace" font-weight="700" font-size="16" fill="#fef9e7" text-anchor="middle">PS[01]</text>
+    <text x="80" y="122" font-family="Space Mono, monospace" font-size="9" fill="#f97316" text-anchor="middle">DUSK · M · 07/40</text>
+    <text x="80" y="144" font-family="Bai Jamjuree, sans-serif" font-weight="600" font-size="11" fill="#c9bfdc" text-anchor="middle">ส่งก่อน แล้วค่อยแก้</text>
+    <rect x="166" y="70" width="40" height="78" fill="#fef9e7"/>
+    ${R(180,86,12,12,'#1c0a25')}${R(180,78,12,6,'#1c0a25',.45)}${R(180,100,12,6,'#1c0a25',.45)}${R(172,86,6,12,'#1c0a25',.45)}${R(194,86,6,12,'#1c0a25',.45)}
+    <text x="186" y="128" font-family="Silkscreen, monospace" font-weight="700" font-size="12" fill="#1c0a25" text-anchor="middle">TAP</text>
+    <text x="186" y="164" font-family="Space Mono, monospace" font-size="8" fill="#9a93b8" text-anchor="middle">NFC inside</text>
+  </svg>`;
+}
+document.getElementById('back-dawn').innerHTML=back('dawn');
+document.getElementById('back-dusk').innerHTML=back('dusk');
+document.getElementById('front-dawn').innerHTML=front('dawn');
+document.getElementById('front-dusk').innerHTML=front('dusk');
+document.getElementById('d-pocket').innerHTML=pocketDetail();
+document.getElementById('d-patches').innerHTML=patches();
+document.getElementById('d-sep').innerHTML=sepDetail();
+document.getElementById('d-neck').innerHTML=neckDetail();
+const sw=(c,n)=>`<span class="ink"><i style="background:${c}"></i>${n}</span>`;
+document.getElementById('inks').innerHTML =
+  sw(ED.dusk.inks[0],'violet')+sw(ED.dusk.inks[1],'magenta')+sw(ED.dusk.inks[2],'ember')+sw(ED.dusk.sun,'sun')+sw('#f1d2ff','glow');
+</script>
+</body>
+</html>

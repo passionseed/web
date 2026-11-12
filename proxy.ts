@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { updateSession } from "@/utils/supabase/proxy";
+import { routingPathname, updateSession } from "@/utils/supabase/proxy";
 import { adminPreviewPath } from "@/lib/og/linkPreviewBots";
+import { isTrustedAdminRequest } from "@/lib/security/request-origin";
 
 /**
  * Supabase Auth reports OAuth failures by redirecting to the project's Site URL
@@ -24,7 +25,46 @@ function authErrorRedirect(request: NextRequest): NextResponse | null {
   return NextResponse.redirect(target);
 }
 
+/**
+ * Public music-catalogue searches. Listed by name: a suffix rule such as
+ * "ends in /search" would also hand a public cache header to any new or
+ * percent-encoded route that happens to end the same way.
+ */
+const PUBLIC_SEARCH_ROUTES = new Set([
+  '/api/apple-music/search',
+  '/api/deezer/search',
+  '/api/soundcloud/search',
+  '/api/spotify/search',
+])
+
+/**
+ * Cache-Control for GET /api/* responses, or null to leave the route's own.
+ * `pathname` is the decoded routing path (routingPathname), so an encoded
+ * admin URL such as /api/%61dmin/search is still recognised as admin.
+ *
+ * Admin APIs answer per signed-in admin and carry student data, so they are
+ * never cached by the CDN, whatever their path ends in. A public s-maxage on
+ * an admin path (e.g. /api/admin/search) would let a CDN serve one admin's
+ * results to anyone requesting the same URL, because the cache key ignores
+ * cookies. Checked before the public rules below.
+ *
+ * Never publicly cache a path whose response depends on the signed-in user
+ * (maps progress, assignments): the CDN would serve one user's data to the next.
+ */
+function apiCacheControl(pathname: string): string | null {
+  if (pathname === '/api/admin' || pathname.startsWith('/api/admin/')) return 'private, no-store'
+  if (pathname.startsWith('/api/hero-galaxy')) return 'public, s-maxage=300, stale-while-revalidate=600'
+  if (pathname.startsWith('/api/tcas')) return 'public, s-maxage=300, stale-while-revalidate=600'
+  if (PUBLIC_SEARCH_ROUTES.has(pathname)) return 'public, s-maxage=300, stale-while-revalidate=600'
+  return null
+}
+
 export default async function proxy(request: NextRequest) {
+  // Cookie-authenticated admin mutations must reject cross-origin requests.
+  if (request.nextUrl.pathname.startsWith("/api/admin/") && !isTrustedAdminRequest(request)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const authError = authErrorRedirect(request);
   if (authError) return authError;
 
@@ -32,33 +72,25 @@ export default async function proxy(request: NextRequest) {
   const previewPath = adminPreviewPath(request.method, request.nextUrl.pathname, request.headers.get("user-agent"));
   if (previewPath) return NextResponse.rewrite(new URL(previewPath, request.url));
 
-  // Campaign redirects must work before sign-in and profile onboarding.
-  if (request.nextUrl.pathname.startsWith('/go/')) {
+  // Campaign redirects (/go/ for SHIFT, /r/ for Radar short links) must work
+  // before sign-in and profile onboarding.
+  if (request.nextUrl.pathname.startsWith('/go/') || request.nextUrl.pathname.startsWith('/r/')) {
     return NextResponse.next({ request });
   }
 
+  // Route checks below use the decoded path, the one Next's router matches.
+  const routePath = routingPathname(request.nextUrl.pathname)
+
   // Add caching headers for GET API requests
-  if (request.method === 'GET' && request.nextUrl.pathname.startsWith('/api/')) {
-    const { pathname } = request.nextUrl
+  if (request.method === 'GET' && routePath.startsWith('/api/')) {
     const response = NextResponse.next({ request })
-    
-    if (pathname.startsWith('/api/maps')) {
-      response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')
-    } else if (pathname.startsWith('/api/assignments')) {
-      response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=120')
-    } else if (pathname.startsWith('/api/hero-galaxy')) {
-      response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
-    } else if (pathname.startsWith('/api/tcas')) {
-      response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
-    } else if (pathname.endsWith('/search') || pathname.endsWith('/list')) {
-      response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
-    }
-    
+    const cacheControl = apiCacheControl(routePath)
+    if (cacheControl) response.headers.set('Cache-Control', cacheControl)
     return response
   }
 
   // Skip session refresh for API routes — they handle auth themselves
-  if (request.nextUrl.pathname.startsWith('/api/')) {
+  if (routePath.startsWith('/api/')) {
     return NextResponse.next({ request });
   }
 
@@ -68,6 +100,8 @@ export default async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    // API security checks must also cover dynamic IDs ending in an asset suffix.
+    "/api/:path*",
     /*
      * Match all request paths except for the ones starting with:
      * - _next/static (static files)

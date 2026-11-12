@@ -1,0 +1,48 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;600&family=Space+Mono&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;color:#fef9e7;font:13px/1.5 "Libre Franklin",sans-serif}
+.sheet{padding:16px;border-radius:var(--radius,12px);background:linear-gradient(100deg,#03040f,#070a22 45%,#12061c 70%,#1a0618)}
+h2{font:400 12px Silkscreen,monospace;color:#9a93b8;margin:18px 0 10px;letter-spacing:.06em}
+h2:first-child{margin-top:0}
+.row{display:grid;gap:12px}.r3{grid-template-columns:1fr 1fr 1fr}.r2{grid-template-columns:1.25fr 1fr}
+.card{background:rgba(254,249,231,.035);border:1px solid rgba(254,249,231,.12);border-radius:12px;padding:12px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.cap{font:700 12px Silkscreen,monospace;margin-top:8px;text-align:center}.cap small{display:block;font:400 11px "Space Mono",monospace;color:#9a93b8}
+.note{color:#9a93b8;font-size:12px}.note b{color:#fef9e7;font-weight:600}
+svg{display:block;image-rendering:pixelated}
+.sizes{display:flex;align-items:flex-end;gap:10px;padding:12px;border-radius:10px;width:100%;justify-content:center}
+ul{margin:6px 0 0;padding-left:18px}
+</style></head><body><div class="sheet">
+<h2>BEFORE / AFTER</h2>
+<div class="row r3">
+ <div class="card"><div id="old"></div><div class="cap">BEFORE<small>16px, flame + face only</small></div></div>
+ <div class="card"><div id="new32"></div><div class="cap" style="color:#ffc33e">AFTER · 32<small>master</small></div></div>
+ <div class="card"><img src="/Users/bunyasit/dev/passionseed/web/public/passion-seed-logo.png" width="150" height="150" style="display:block"><div class="cap">REFERENCE<small>vector logo</small></div></div>
+</div>
+<h2>TWO SIZES, EACH DRAWN BY HAND</h2>
+<div class="row r2">
+ <div class="card" style="align-items:stretch">
+  <div class="sizes" style="background:#1c0a25" id="dusk"></div>
+  <div class="sizes" style="background:#0c1132;margin-top:8px" id="dawn"></div>
+  <div class="note" style="margin-top:8px">32px at 112 and 64px, then the 16px version at 64 and 32px. The 16px version is drawn separately rather than shrunk, so its eyes still read at favicon size.</div>
+ </div>
+ <div class="card" style="align-items:stretch"><div id="new16" style="align-self:center"></div>
+  <div class="note" style="margin-top:10px"><b>What changed</b><ul>
+   <li>The disc is back, with the logo's dark-to-magenta shift as 4 stepped bands</li>
+   <li>The real flame shape: left spike, three tongues, and the tongue that breaks out of the circle</li>
+   <li>Both yellow flicks and the orange crescent</li>
+   <li>32px: googly eyes with pupils and brows, set at uneven heights like the original</li><li>16px: the traced flame and disc, with 3×3 white eyes and the pupil in the centre.</li>
+  </ul></div></div>
+</div>
+<h2>WHERE EACH ONE GOES</h2>
+<div class="note"><b>32px</b>: PVC TEAM patch, back print, avatars, stickers, Discord. &nbsp; <b>16px</b>: pocket embroidery (3 mm per pixel), sleeve patch, favicon. &nbsp; <b>16px peek</b> (no disc): the pocket.</div>
+</div>
+<script>
+const PAL={'1':'#521020','2':'#6a1434','3':'#82184a','4':'#9a1b5b',Y:'#ffc33e',O:'#ff8f19',B:'#ffe31e',K:'#000000',W:'#ffffff'};
+const G16=["...........Y..Y.", ".....44Y44YY..Y.", "...4444Y4YYY4.YY", "..144OYYYYYYYYYY", "..11O4YYYYYYYYYY", ".11YOYYYYYYYYYY.", ".11Y1YYYYYYYYY4.", ".11YYYYKKKYYY44.", ".11YWWWKKKKYY44.", ".11YWKWKKWWWY44.", ".111WWWKKWKW444.", ".111YKKKKWWW444.", "..111YKKKYY144..", "...111YYY1111...", "....11111111....", "................"], G32=["................................", "..................O...Y.....Y...", "...........4444444O44YY.....YY..", ".........333444YY444YYY......YY.", ".......33333344YYYYYYYYY4BY..YY.", "......3333O333YYYBYYYYYBBOY..YY.", ".....2333OO333YYYBBYYYBBYYYYYYY.", "....22233OO33YYYYYBBYYBBYYYYYYY.", "....22223OO33YYYYYBBYYBBYYYYYY..", "...2222Y2OO3YYYYYYBBYYBBYBYYY...", "...2222Y22OOYYYYYYBBYYYBBBYY4...", "..2222YY222OYYYYYBBYYYYYYY4444..", "..1222YYY2YYYYYYYYOYYYYYYY4444..", "..1122YYYWYYYYYKKOYYYYYYYY4444..", "..1112YYYYWWYKKKKKKYYYYYYY4444..", "..1111YYYYYYWKKKKKKWWYYYYY4444..", "..1111YYYWWWKKKKKKKKYWYYY44444..", "..11111YWWKKWKKKKKWWWYYYY34444..", "..11111YWWKKWKKKKWWKKWYY333444..", "..11111YWWWWWKKKKWWKKWYY333344..", "..111111YWWWKKKKKWWWWWY3333334..", "...11111YYYYKKKKKKWWWYY333333...", "...111111YYYKKKKKKKYYY3333333...", "....11111YYYYKKKKKYYY2233333....", "....111111YYYYYYYYYY2222333.....", ".....111111YYYYYYYY22222233.....", "......1111111YYYY222222222......", ".......11111111111222222........", ".........11111111112222.........", "...........1111111112...........", "................................", "................................"], OLD=["......Y....Y....", "..Y..YY...YY.Y..", "..YY.YYY.YYY.YY.", "..YYYYOYYYYYYYY.", ".YYYYOOYYYYOYYY.", ".YYYYYYYYYYYYY..", ".YYYYKKKKKKYYY..", ".YYYKKKKKKKKYY..", ".YYWWWKKKKWWWY..", ".YYWKWKKKKWKWY..", ".YYWWWKKKKWWWY..", "..YYKKKKKKKKY...", "..YYYKKKKKKYY...", "...YYYYYYYYY....", "....YYYYYYY.....", "................"];
+function svg(g,px){const n=g[0].length;let r='';g.forEach((row,y)=>[...row].forEach((c,x)=>{if(PAL[c])r+=`<rect x="${x}" y="${y}" width="1.02" height="1.02" fill="${PAL[c]}"/>`}));
+ return `<svg width="${px}" height="${px}" viewBox="0 0 ${n} ${n}" shape-rendering="crispEdges">${r}</svg>`;}
+old.innerHTML=svg(OLD,150); new32.innerHTML=svg(G32,150); new16.innerHTML=svg(G16,176);
+const row=svg(G32,112)+svg(G32,64)+svg(G16,64)+svg(G16,32);
+dusk.innerHTML=row; dawn.innerHTML=row;
+</script></body></html>

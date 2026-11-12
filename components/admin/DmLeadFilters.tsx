@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { OPEN_STATUS_FILTER, openStatusCount } from "@/lib/admin/queue-tools/dm-leads";
 import { cn } from "@/lib/utils";
 
 export const DM_LEAD_SEARCH_INPUT_ID = "dm-lead-search";
@@ -25,7 +26,7 @@ export interface DmLeadFilterValues {
   tag: string;
   sort: string;
   search: string;
-  /** Toggle chips — empty string means off. */
+  /** Toggle chips: an empty string means off. */
   turn: string;
   link: string;
   star: string;
@@ -130,7 +131,7 @@ interface DmLeadFiltersProps {
   stageCounts?: Record<string, number>;
   /** Live counts per lead status, shown inside the status options. */
   statusCounts?: Record<string, number>;
-  /** Distinct admin tags in the current set, with counts — tag options. */
+  /** Distinct admin tags in the current set, with counts, for the tag options. */
   tagCounts?: Record<string, number>;
 }
 
@@ -151,12 +152,20 @@ export function DmLeadFilters({
   const [localValues, setLocalValues] = useState<DmLeadFilterValues>(values);
   const [search, setSearch] = useState(values.search);
   const isFirstRender = useRef(true);
+  /** The search text this bar last wrote to the URL, until the server echoes it. */
+  const pushedSearch = useRef<string | null>(null);
 
-  // Sync server props into local state when props change
+  // Take the applied filters from the server after each navigation. Keyed on
+  // the values, not the object, so a refresh with the same filters is a no-op.
+  // The echo of our own debounced search is skipped, so a slow response cannot
+  // overwrite what is still being typed.
+  const valuesKey = JSON.stringify(values);
   useEffect(() => {
     setLocalValues(values);
-    setSearch(values.search);
-  }, [values]);
+    if (values.search !== pushedSearch.current) setSearch(values.search);
+    pushedSearch.current = null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [valuesKey]);
 
   const pushParams = (patch: Partial<DmLeadFilterValues>) => {
     const updated = { ...localValues, ...patch };
@@ -184,7 +193,10 @@ export function DmLeadFilters({
       isFirstRender.current = false;
       return;
     }
+    // Already applied (for example, synced from the server): nothing to push.
+    if (search === (new URLSearchParams(window.location.search).get("search") ?? "")) return;
     const timer = setTimeout(() => {
+      pushedSearch.current = search;
       pushParams({ search });
     }, 250);
     return () => clearTimeout(timer);
@@ -343,6 +355,10 @@ export function DmLeadFilters({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">ทุกสถานะ</SelectItem>
+          <SelectItem value={OPEN_STATUS_FILTER}>
+            Open (not closed)
+            {statusCounts ? ` (${openStatusCount(statusCounts)})` : ""}
+          </SelectItem>
           {STATUS_OPTIONS.map((o) => (
             <SelectItem key={o.value} value={o.value}>
               {o.label}

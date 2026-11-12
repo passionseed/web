@@ -1,16 +1,9 @@
 "use client";
 
-import { createContext, useContext, useRef, useState } from "react";
+import { createContext, useContext, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { OglTrendBackground } from "@/components/radar/OglTrendBackground";
+import dynamic from "next/dynamic";
 import {
   getAiImpactLabel,
   getEntryRouteLabel,
@@ -24,12 +17,35 @@ import Image from "next/image";
 import Link from "next/link";
 import { ExternalLink, ArrowRight, Check, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
 import type { RadarIntentScope } from "@/lib/my-path/radar-sync";
+import { radarProgramLine } from "@/lib/content/radar-cta";
+import type { GuideCtaTarget } from "@/lib/radar-guide/types";
+
+// WebGL background, decorative only: keep it out of the server render and the
+// first JS chunk (spec 2.9).
+const OglTrendBackground = dynamic(
+  () => import("@/components/radar/OglTrendBackground").then((mod) => mod.OglTrendBackground),
+  { ssr: false }
+);
 
 type RadarIntentHandler = (
   pathSlug: string,
   buttonLabel: string | undefined,
   scope: RadarIntentScope
 ) => void;
+
+/** Guide tracking hooks (spec 2.7). Cards read them from context so their props stay unchanged. */
+type RadarGuideInteractions = {
+  /** `interactive_tap` target, e.g. "salary:level". */
+  onInteract?: (target: string) => void;
+  /** `cta_click` target, e.g. "program" or "resource:1". */
+  onCtaClick?: (target: GuideCtaTarget) => void;
+};
+
+const RadarInteractContext = createContext<RadarGuideInteractions>({});
+
+function useRadarInteract(): RadarGuideInteractions {
+  return useContext(RadarInteractContext);
+}
 
 // ── content shapes (one per radar_cards.kind) ────────────────────────────────
 
@@ -331,9 +347,10 @@ function HookCard({
 }
 
 function FantasyRealityCard({ c, accent }: { c: FantasyRealityContent; accent: string }) {
+  const { onInteract } = useRadarInteract();
   return (
     <section className="fantasy-reality-page" style={{ "--radar-accent": accent } as CSSProperties}>
-      <div className="fantasy-reality-sheet">
+      <div className="fantasy-reality-sheet" onClick={() => onInteract?.("fantasy:flip")}>
         <article className="fantasy-reality-panel fantasy-reality-panel--fantasy rc-panel-left">
           <div className="fantasy-reality-panel__head">
             <div>
@@ -776,8 +793,10 @@ function SalaryProgressionCard({ c, accent }: { c: SalaryProgressionContent; acc
         ? "salary-rook-crash-image"
         : null;
   const safariImageHue = `${Math.round(getHexHue(accent) - 45)}deg`;
+  const { onInteract } = useRadarInteract();
 
   const changeCurrency = (nextCurrency: "USD" | "THB") => {
+    if (nextCurrency !== currency) onInteract?.("salary:currency");
     setCurrency(nextCurrency);
     setSelectedLevel(null);
     setIntroComplete(false);
@@ -892,6 +911,7 @@ function SalaryProgressionCard({ c, accent }: { c: SalaryProgressionContent; acc
                       setIntroComplete(true);
                       setHasOpenedDetail(true);
                       setSelectedLevel(i);
+                      onInteract?.("salary:level");
                     }}
                     aria-label={`View details for ${lvl.level}`}
                   >
@@ -1059,6 +1079,11 @@ function aiRiskLabel(score: number): string {
 
 function AiImpactCard({ c, accent }: { c: AiImpactContent; accent: string }) {
   const [activePanel, setActivePanel] = useState<"augmented" | "automated">("augmented");
+  const { onInteract } = useRadarInteract();
+  const showPanel = (panel: "augmented" | "automated") => {
+    if (panel !== activePanel) onInteract?.("ai:detail");
+    setActivePanel(panel);
+  };
   const score = c.ai_risk_score ?? null;
   const percent = score === null ? 0 : Math.round(Math.max(0, Math.min(score, 10)) * 10);
   const chartColor = aiRiskChartColor(percent);
@@ -1091,6 +1116,7 @@ function AiImpactCard({ c, accent }: { c: AiImpactContent; accent: string }) {
         {score !== null && (
           <p className="ai-pixel-score">
             {score}/10 {aiRiskLabel(score)}
+            <span className="ml-2 align-middle text-[11px] font-normal opacity-70">(ทีมเราประเมิน)</span>
           </p>
         )}
         <PixelHelperIcon className="ai-pixel-vector ai-pixel-vector--helper" />
@@ -1113,7 +1139,7 @@ function AiImpactCard({ c, accent }: { c: AiImpactContent; accent: string }) {
           role="tab"
           aria-selected={activePanel === "augmented"}
           aria-controls="ai-impact-panel"
-          onClick={() => setActivePanel("augmented")}
+          onClick={() => showPanel("augmented")}
         >
           AI ช่วยไรได้บ้าง?
         </button>
@@ -1123,7 +1149,7 @@ function AiImpactCard({ c, accent }: { c: AiImpactContent; accent: string }) {
           role="tab"
           aria-selected={activePanel === "automated"}
           aria-controls="ai-impact-panel"
-          onClick={() => setActivePanel("automated")}
+          onClick={() => showPanel("automated")}
         >
           AI แทนไรได้บ้าง?
         </button>
@@ -1274,7 +1300,7 @@ function MarketThailandCard({ c, accent }: { c: MarketThailandContent; accent: s
             <div className="market-ticket__main">
             <div className="market-ticket__score-row">
               <div>
-                <p className="market-ticket__kicker">คะแนนโอกาสหางาน</p>
+                <p className="market-ticket__kicker">คะแนนโอกาสหางาน (ทีมเราประเมิน)</p>
                 <div className="market-ticket__score">
                   <EditableText value={String(accessScore)} field={["job_access", "score"]} className="inline" valueType="number" />
                   <span>/100</span>
@@ -1837,6 +1863,74 @@ function SourcesCard({ c, accent }: { c: SourcesContent; accent: string }) {
   );
 }
 
+const CTA_BODY_TH =
+  "ถ้าสนใจสายนี้ กดบอกไว้ได้เลย เราจะเก็บสายนี้ไว้ในเส้นทางของเธอ แล้วลองเริ่มจากของฟรีก่อนก็ได้";
+const CTA_INTENT_LABEL_TH = "สนใจสายนี้";
+
+/** The CTA card's resource links that are real external URLs. */
+export function ctaResources(content: unknown): NonNullable<CtaContent["resources"]> {
+  const list = (content as CtaContent | null | undefined)?.resources;
+  return (Array.isArray(list) ? list : []).filter(
+    (r) => !!r && typeof r.url === "string" && /^https?:\/\//.test(r.url)
+  );
+}
+
+/**
+ * The path slug an intent is recorded under: the last segment of the field's
+ * squad URL, else "interested" (what CtaCard has always sent).
+ */
+export function ctaPathSlug(squadUrl: string | null | undefined, origin?: string): string {
+  if (!squadUrl) return "interested";
+  try {
+    const base = origin ?? (typeof window === "undefined" ? "https://passionseed.org" : window.location.origin);
+    const url = new URL(squadUrl, base);
+    return url.pathname.split("/").filter(Boolean).pop() || "interested";
+  } catch {
+    return "interested";
+  }
+}
+
+/**
+ * The free resource chips ("หรือลองเล่นด้วยตัวเองก่อน (ฟรี)"). Used by the CTA
+ * card and by GuideOutro's resources slot on the field page.
+ */
+export function CtaResourceLinks({
+  resources,
+  onCtaClick,
+}: {
+  resources: NonNullable<CtaContent["resources"]>;
+  onCtaClick?: (target: GuideCtaTarget) => void;
+}) {
+  if (resources.length === 0) return null;
+  return (
+    <div className="mt-3">
+      <p className="text-xs font-medium text-neutral-400">
+        หรือลองเล่นด้วยตัวเองก่อน (ฟรี)
+      </p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {resources.map((r, i) => (
+          <a
+            key={r.url}
+            href={r.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={r.note}
+            onClick={() => onCtaClick?.(`resource:${i + 1}`)}
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 text-xs text-neutral-200 transition-colors hover:bg-white/10"
+          >
+            {r.label} <ExternalLink className="h-3 w-3" />
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The CTA card. The paid 1:1 "นัดคุยกับรุ่นพี่" session and its LINE QR are
+ * gone: no feature may open a private channel between adults and students
+ * (AGENTS.md safeguarding). The intent button records interest only.
+ */
 function CtaCard({
   c,
   accent,
@@ -1850,38 +1944,18 @@ function CtaCard({
   fieldSlug?: string;
   onIntent?: RadarIntentHandler;
 }) {
-  const nextStepBody =
-    "ถ้าสนใจสายนี้ มาลองคุยกับพวกเรารุ่นพี่จะช่วยแนะนำเส้นทางให้ ควรเตรียมตัวยังไงบ้าง?";
-  const nextStepButton = "นัดคุยกับรุ่นพี่";
-  const resources = (c.resources ?? []).filter((r) =>
-    /^https?:\/\//.test(r.url)
-  );
-  const techseedHref = fieldSlug
-    ? `/techseed?from=radar-${fieldSlug}`
-    : "/techseed";
+  const { onCtaClick } = useRadarInteract();
+  const resources = ctaResources(c);
+  const program = radarProgramLine(fieldSlug);
   const [interestedRecorded, setInterestedRecorded] = useState(false);
   const [notInterestedRecorded, setNotInterestedRecorded] = useState(false);
-  const [lineQrOpen, setLineQrOpen] = useState(false);
   const anyRecorded = interestedRecorded || notInterestedRecorded;
 
   const recordInterested = () => {
-    if (interestedRecorded) {
-      setLineQrOpen(true);
-      return;
-    }
-    if (squadUrl) {
-      try {
-        const url = new URL(squadUrl, window.location.origin);
-        const pathSlug = url.pathname.split("/").filter(Boolean).pop();
-        if (pathSlug) onIntent?.(pathSlug, "interested", "field");
-      } catch {
-        onIntent?.("interested", "interested", "field");
-      }
-    } else {
-      onIntent?.("interested", "interested", "field");
-    }
+    if (anyRecorded) return;
+    onCtaClick?.("intent");
+    onIntent?.(ctaPathSlug(squadUrl), "interested", "field");
     setInterestedRecorded(true);
-    setLineQrOpen(true);
   };
 
   const recordNotInterested = () => {
@@ -1893,62 +1967,26 @@ function CtaCard({
     <CardFrame accent={accent}>
       <p>
         <EditableText
-          value={nextStepBody}
+          value={CTA_BODY_TH}
           field="body"
           className="block text-neutral-300 text-base leading-relaxed"
         />
       </p>
-      <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
-        <p className="text-sm font-semibold text-white">
-          อยากลองทำจริงเป็นทีม ไม่ใช่แค่อ่าน?
-        </p>
-        <p className="mt-1 text-xs leading-relaxed text-neutral-400">
-          TechSeed รุ่น 6 — ค่ายออนไลน์หลายสัปดาห์ ทำโปรเจกต์จริงในทีม
-          มีพี่ ๆ ดูแล พร้อมแผนการเรียนของเธอเอง
-        </p>
-        <Link
-          href={techseedHref}
-          className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-b from-blue-700 via-blue-600 to-blue-500 px-4 text-sm font-semibold text-white transition-transform duration-150 hover:-translate-y-0.5"
-        >
-          สมัคร TechSeed รุ่น 6 <ArrowRight className="h-4 w-4" />
-        </Link>
-      </div>
-      {resources.length > 0 && (
-        <div className="mt-3">
-          <p className="text-xs font-medium text-neutral-400">
-            หรือลองเล่นด้วยตัวเองก่อน (ฟรี)
-          </p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {resources.map((r) => (
-              <a
-                key={r.url}
-                href={r.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                title={r.note}
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 text-xs text-neutral-200 transition-colors hover:bg-white/10"
-              >
-                {r.label} <ExternalLink className="h-3 w-3" />
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
       <div className="flex flex-col gap-2">
         <Button
-          className={`mt-2 w-full font-semibold transition-all ${
+          className={`mt-2 min-h-12 w-full font-semibold transition-all ${
             interestedRecorded ? "text-white" : "text-neutral-950"
           }`}
           style={{ background: interestedRecorded ? undefined : accent }}
           variant={interestedRecorded ? "outline" : "default"}
           onClick={recordInterested}
-          disabled={notInterestedRecorded}
+          disabled={anyRecorded}
         >
           <span className="inline-flex items-center gap-2">
             {interestedRecorded ? (
-              <><Check className="h-4 w-4" /> บันทึกแล้ว!</>
+              <><Check className="h-4 w-4" /> บันทึกแล้ว</>
             ) : (
-              <EditableText value={nextStepButton} field="button" className="inline" />
+              CTA_INTENT_LABEL_TH
             )}
           </span>
         </Button>
@@ -1956,50 +1994,25 @@ function CtaCard({
           type="button"
           disabled={anyRecorded}
           onClick={recordNotInterested}
-          className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-medium text-neutral-400 hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-medium text-neutral-400 hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {notInterestedRecorded ? "บันทึกแล้ว" : "ไม่สนใจลอง"}
         </button>
       </div>
-      <Dialog open={lineQrOpen} onOpenChange={setLineQrOpen}>
-        <DialogContent
-          overlayClassName="!z-[190]"
-          className="!z-[200] w-[calc(100%_-_2rem)] max-w-sm border-white/15 bg-[#101b22] text-white shadow-2xl"
-        >
-          <DialogHeader className="items-center text-center sm:text-center">
-            <DialogTitle className="text-2xl">เพิ่มเพื่อนทาง LINE</DialogTitle>
-            <DialogDescription className="text-neutral-300">
-              สแกน QR Code เพื่อพูดคุยและรับข้อมูลขั้นตอนถัดไป
-            </DialogDescription>
-          </DialogHeader>
-          <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white">
-            <p className="text-center font-medium">
-              Mentor session จะใช้เวลาประมาณ 30-60 นาที ในราคา 100 บาท
-            </p>
-            <div className="mt-3 border-t border-white/10 pt-3 text-neutral-300">
-              <p className="font-medium text-white">รุ่นพี่จะช่วยแนะนำ</p>
-              <ul className="mt-2 list-disc space-y-1 pl-5">
-                <li>การเลือกสายที่ตรงกับเราและอยู่ได้ในอนาคต</li>
-                <li>การเตรียมตัวเข้าสายนั้น</li>
-                <li>วางแผนระยะสั้นให้ในการเตรียมตัว</li>
-              </ul>
-            </div>
-          </div>
-          <div className="mx-auto rounded-2xl bg-white p-3 shadow-[0_0_40px_rgba(0,185,0,0.18)]">
-            <Image
-              src="https://qr-official.line.me/gs/M_161irjbq_BW.png?oat_content=qr"
-              alt="LINE official account QR Code"
-              width={240}
-              height={240}
-              className="h-auto w-60 rounded-xl"
-              unoptimized
-            />
-          </div>
-          <p className="text-center text-xs text-neutral-400">
-            เปิดกล้องหรือแอป LINE เพื่อสแกน
-          </p>
-        </DialogContent>
-      </Dialog>
+      {program && (
+        <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
+          <p className="text-sm font-semibold text-white">{program.title}</p>
+          <p className="mt-1 text-xs leading-relaxed text-neutral-400">{program.body}</p>
+          <Link
+            href={program.href}
+            onClick={() => onCtaClick?.("program")}
+            className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-white/15 px-4 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+          >
+            {program.cta} <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      )}
+      <CtaResourceLinks resources={resources} onCtaClick={onCtaClick} />
     </CardFrame>
   );
 }
@@ -2017,7 +2030,8 @@ const SURVIVAL_METRICS: Array<{
   isSalary?: boolean;
 }> = [
   { key: "demand_growth", emoji: "📈", label: "ความต้องการตลาด", labelEn: "Market Demand", max: 10 },
-  { key: "grad_employment_pct", emoji: "🚀", label: "อัตราการจ้างจบใหม่", labelEn: "New Grad Employment", unit: "%", max: 100 },
+  // A team-estimated score, not a measured employment rate (spec 2.9).
+  { key: "grad_employment_pct", emoji: "🚀", label: "คะแนนโอกาสงานจบใหม่ (ทีมเราประเมิน)", labelEn: "New Grad Job Score (our estimate)", unit: "/100", max: 100 },
   { key: "saturation_level", emoji: "🧃", label: "ความอิ่มตัว", labelEn: "Market Saturation", max: 10, invert: true },
   { key: "progression_difficulty", emoji: "🗼", label: "ความยากในการเติบโต", labelEn: "Growth Difficulty", max: 10, invert: true },
   { key: "salary_floor", emoji: "💰", label: "เงินเดือนเริ่มต้น", labelEn: "Entry Salary", max: 1, isSalary: true },
@@ -2140,8 +2154,8 @@ function CareerSurvivalCard({ c, accent }: { c: CareerSurvivalContent; accent: s
                   <div className="flex items-center gap-2">
                     <span className="text-base shrink-0">{emoji}</span>
                     <span className="text-xs text-neutral-300 flex-1">{label}</span>
-                    <span className="text-white font-bold text-xs tabular-nums w-10 text-right">
-                      {val}{key === "grad_employment_pct" ? "%" : "/10"}
+                    <span className="text-white font-bold text-xs tabular-nums min-w-10 text-right">
+                      {val}{key === "grad_employment_pct" ? "/100" : "/10"}
                     </span>
                     {detail && (
                       <span className={`radar-expand-indicator radar-expand-indicator--compact ${isExpanded ? "rotate-180" : ""}`} aria-hidden="true">
@@ -2301,7 +2315,7 @@ function ReflectionCard({
         <Textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={c.placeholder ?? "Optional — a sentence is fine..."}
+          placeholder={c.placeholder ?? "ไม่บังคับ เขียนสั้นๆ ประโยคเดียวก็พอ"}
           className="bg-white/5 border-white/10 text-white placeholder:text-neutral-500 resize-none"
           rows={3}
         />
@@ -2338,6 +2352,10 @@ export interface RadarCardViewProps {
   signupHref?: string;
   onReflect?: (payload: { rating?: number; tags?: string[]; text?: string }) => Promise<void> | void;
   onIntent?: RadarIntentHandler;
+  /** Guide `interactive_tap` (spec 2.7): "salary:level", "fantasy:flip", "ai:detail", ... */
+  onInteract?: (target: string) => void;
+  /** Guide `cta_click` from the CTA card: "intent", "program", "resource:<n>". */
+  onCtaClick?: (target: GuideCtaTarget) => void;
 }
 
 export function SourceRefs({ refs, sources }: { refs: number[]; sources: FieldSource[] }) {
@@ -2411,9 +2429,42 @@ export function RadarCardView({
   reflectionSubmitted = false,
   onReflect,
   onIntent,
+  onInteract,
+  onCtaClick,
 }: RadarCardViewProps) {
+  const interactions = useMemo(() => ({ onInteract, onCtaClick }), [onInteract, onCtaClick]);
+  return (
+    <RadarInteractContext.Provider value={interactions}>
+      <RadarCardViewBody
+        kind={kind}
+        content={content}
+        accent={accent}
+        fieldNameTh={fieldNameTh}
+        fieldNameEn={fieldNameEn}
+        fieldSlug={fieldSlug}
+        squadUrl={squadUrl}
+        fieldSources={fieldSources}
+        reflectionSubmitted={reflectionSubmitted}
+        onReflect={onReflect}
+        onIntent={onIntent}
+      />
+    </RadarInteractContext.Provider>
+  );
+}
+
+function RadarCardViewBody({
+  kind,
+  content,
+  accent,
+  fieldNameTh,
+  fieldNameEn,
+  fieldSlug,
+  squadUrl,
+  reflectionSubmitted = false,
+  onReflect,
+  onIntent,
+}: Omit<RadarCardViewProps, "onInteract" | "onCtaClick">) {
   const c = content as never;
-  const sourceRefs = (content.source_refs as number[] | undefined) ?? [];
 
   let cardNode: React.ReactNode;
   switch (kind) {
@@ -2473,7 +2524,15 @@ export function RadarCardView({
       cardNode = <SourcesCard c={c} accent={accent} />;
       break;
     case "cta":
-      cardNode = <CtaCard c={c} accent={accent} squadUrl={squadUrl} fieldSlug={fieldSlug} onIntent={onIntent} />;
+      cardNode = (
+        <CtaCard
+          c={c}
+          accent={accent}
+          squadUrl={squadUrl}
+          fieldSlug={fieldSlug}
+          onIntent={onIntent}
+        />
+      );
       break;
     case "reflection":
       cardNode = (

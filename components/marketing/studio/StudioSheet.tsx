@@ -6,13 +6,15 @@ import { GroundGlow } from "@/components/shift/poster/ShiftPosterDetails";
 import { FORMATS } from "@/lib/marketing/formats";
 import type { StudioFormat, StudioTheme } from "@/lib/marketing/types";
 
-import { STUDIO_INKS, type StudioInks } from "./studioTheme";
+import { CosmosGround, CosmosWordmark, PageChip } from "./cosmosParts";
+import { LATIN, STUDIO_INKS, type StudioInks } from "./studioTheme";
 
 /**
  * One exported sheet. Night sheets reuse the SHIFT riso print (paper margin,
  * black ink, dawn horizon); paper sheets are cream stock with a pink
- * halftone bleed. Content sits in a flex column so the last block can
- * `mt-auto` to the foot at any format height.
+ * halftone bleed; cosmos sheets are full-bleed deep space (SHIFT[3]).
+ * Content sits in a flex column so the last block can `mt-auto` to the
+ * foot at any format height.
  */
 
 const MARGIN = 26;
@@ -37,6 +39,13 @@ export function StudioSheet({ id, format, theme, page, total, wordmark, sky, cue
   const spec = FORMATS[format];
   const inks = STUDIO_INKS[theme];
   const swipe = cue === undefined ? (page < total ? "SWIPE →" : null) : cue;
+  if (inks.look === "cosmos") {
+    return (
+      <CosmosSheet id={id} format={format} page={page} total={total} wordmark={wordmark} sky={sky} cue={swipe} inks={inks}>
+        {children}
+      </CosmosSheet>
+    );
+  }
   const skyHorizon = Math.round((spec.height - MARGIN * 2) * 0.56);
   return (
     <div
@@ -127,3 +136,65 @@ function SheetFoot({ inks, page, total, cue }: { inks: StudioInks; page: number;
     </div>
   );
 }
+
+/** Cosmos: no paper, no tilt. Space runs to every edge; the sheet is glass on top. */
+function CosmosSheet({
+  id,
+  format,
+  page,
+  total,
+  wordmark,
+  sky,
+  cue,
+  inks,
+  children,
+}: Omit<SheetProps, "theme" | "cue"> & { cue: string | null; inks: StudioInks }) {
+  const spec = FORMATS[format];
+  return (
+    <div
+      id={id}
+      lang="th"
+      className="relative shrink-0 overflow-hidden font-bai-jamjuree antialiased"
+      style={{ width: spec.width, height: spec.height, backgroundColor: inks.ground, color: inks.text }}
+    >
+      <CosmosGround page={page} width={spec.width} height={spec.height} sky={sky} />
+      <div
+        className="relative flex h-full flex-col"
+        style={{
+          paddingLeft: PAD_X,
+          paddingRight: PAD_X,
+          paddingTop: 56 + spec.safeTop,
+          paddingBottom: 52 + spec.safeBottom,
+        }}
+      >
+        <div className="flex h-[72px] items-center justify-between">
+          <span className="inline-flex items-center gap-3">
+            <Image
+              src="/passion-seed-logo.png"
+              alt="PassionSeed"
+              width={46}
+              height={46}
+              unoptimized
+              className="drop-shadow-[0_2px_10px_rgba(127,227,255,0.18)]"
+            />
+            <span className="font-kodchasan text-[24px] font-bold tracking-tight" style={{ color: inks.text }}>
+              PassionSeed
+            </span>
+          </span>
+          {wordmark && <CosmosWordmark size={58} name={wordmark} />}
+        </div>
+        <div className="mt-10 flex flex-1 flex-col">{children}</div>
+        <div className="mt-8 flex items-center justify-between">
+          <PageChip>{total > 1 ? `${pad2(page)} / ${pad2(total)}` : "passionseed.org"}</PageChip>
+          {cue && (
+            <span className="text-[19px] font-medium uppercase tracking-[0.24em]" style={{ fontFamily: LATIN, color: `${inks.text}b3` }}>
+              {cue}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const pad2 = (n: number) => String(n).padStart(2, "0");

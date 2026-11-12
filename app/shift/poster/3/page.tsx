@@ -1,28 +1,37 @@
 import type { Metadata } from "next";
 
-import { ShiftThreeDateCover } from "@/components/shift/poster/ShiftThreeDateCover";
-import { ChromeBevelFilter } from "@/components/shift/poster/riso";
+import { SheetGallery, type SheetSearchParams, isRenderMode } from "@/components/shift/poster/SheetGallery";
+import { SHIFT3_DATE_POSTER_ID, ShiftThreeDateCover } from "@/components/shift/poster/ShiftThreeDateCover";
+import { SHIFT3 } from "@/components/shift/poster/shift3/facts";
 
 /**
- * SHIFT[3] date poster (IG, 1080x1350): 9 to 14 Nov 2026.
- * Export: screenshot #shift3-poster-1.
+ * SHIFT[3] save-the-date poster (IG feed, 1080x1350), cosmos style. Facts come
+ * from SHIFT_COHORT_3. Visitors see the exported image; ?render=1 shows the
+ * live sheet.
+ * Export: node scripts/render-poster.mjs --route /shift/poster/3
+ *         --ids shift3-poster-1 --out <dir> --publish public/shift/poster/3/sheets
  */
 
 export const metadata: Metadata = {
-  title: "SHIFT[3] Poster",
-  description: "SHIFT[3] วันที่ 9 ถึง 14 พ.ย. 2569",
+  title: `${SHIFT3.name} save the date`,
+  description: `${SHIFT3.name} วันที่ ${SHIFT3.datesWithYear}`,
   robots: { index: false, follow: false },
 };
 
-export default function Shift3PosterPage() {
+export default async function Shift3PosterPage({ searchParams }: { searchParams: SheetSearchParams }) {
   return (
-    <div className="min-h-screen overflow-auto bg-neutral-950 py-10">
-      {/* Keep the Next.js dev indicator out of exported screenshots. */}
-      <style>{"nextjs-portal{display:none!important}"}</style>
-      <ChromeBevelFilter />
-      <div className="flex flex-col items-center gap-10">
-        <ShiftThreeDateCover />
-      </div>
-    </div>
+    <SheetGallery
+      dir="/shift/poster/3/sheets"
+      render={await isRenderMode(searchParams)}
+      sheets={[
+        {
+          id: SHIFT3_DATE_POSTER_ID,
+          width: 1080,
+          height: 1350,
+          alt: `${SHIFT3.name} save the date, ${SHIFT3.datesWithYear}`,
+          live: <ShiftThreeDateCover />,
+        },
+      ]}
+    />
   );
 }

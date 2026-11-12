@@ -79,7 +79,7 @@ export function MentorAssignmentRow({ teamId, teamName }: { teamId: string; team
     <div className="mt-4 rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-3 space-y-3" onClick={(e) => e.stopPropagation()}>
       <span className="text-xs font-semibold text-indigo-300 flex items-center gap-1.5">
         <Users className="h-3 w-3" />
-        Assigned Mentors — {teamName}
+        Assigned Mentors: {teamName}
       </span>
 
       {assignments.length === 0 ? (

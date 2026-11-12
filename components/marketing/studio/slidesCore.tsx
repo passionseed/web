@@ -2,8 +2,8 @@ import { RisoIcon } from "@/components/shift/poster/RisoIcons";
 import { ChromeWordmark, INK } from "@/components/shift/poster/riso";
 import type { CompareSlide, CoverSlide, PointsSlide, StatementSlide } from "@/lib/marketing/types";
 
-import { RichText } from "./RichText";
-import { Body, Footnote, MarginNote, Panel, Stamp, Tag, Title } from "./SlideParts";
+import { CosmosWordmark, Glass, OrbDot, RingStamp } from "./cosmosParts";
+import { Body, Footnote, MarginNote, Panel, Rich, Stamp, Tag, Title, displayFont, isCosmos } from "./SlideParts";
 import { accentAt, type StudioInks } from "./studioTheme";
 
 /**
@@ -27,28 +27,42 @@ function coverSize(lines: number, tall: boolean): number {
   return 84 + bump;
 }
 
+/** A riso line icon; on cosmos it gives off a little of its own light. */
+function CoverIcon({ inks, name, size }: { inks: StudioInks; name: NonNullable<CoverSlide["icon"]>; size: number }) {
+  const icon = <RisoIcon name={name} ink={inks.kicker} size={size} />;
+  if (!isCosmos(inks)) return icon;
+  return <span style={{ display: "inline-block", filter: `drop-shadow(0 0 22px ${inks.kicker}59)` }}>{icon}</span>;
+}
+
 export function CoverView({ slide, inks, tall, wordmarkName = "SHIFT" }: Props<CoverSlide> & { wordmarkName?: string }) {
+  const cosmos = isCosmos(inks);
+  const face = cosmos ? "font-bai-jamjuree font-bold leading-[1.22]" : "font-kodchasan font-bold leading-[1.2] tracking-tight";
   return (
     <>
       <Tag inks={inks}>{slide.kicker}</Tag>
       <h1
-        className="mt-5 font-kodchasan font-bold leading-[1.2] tracking-tight"
+        className={`mt-5 ${face}`}
         style={{ fontSize: coverSize(slide.title.length, tall), color: inks.text, textShadow: inks.headingShadow }}
       >
         {slide.title.map((line) => (
           <span key={line} className="block">
-            <RichText text={line} accent={inks.kicker} />
+            <Rich inks={inks} text={line} />
           </span>
         ))}
       </h1>
-      {slide.wordmark && (
-        <div className="-ml-[36px] mt-4">
-          <ChromeWordmark size={tall ? 150 : 128} name={wordmarkName} />
-        </div>
-      )}
+      {slide.wordmark &&
+        (cosmos ? (
+          <div className="mt-6">
+            <CosmosWordmark size={tall ? 168 : 148} name={wordmarkName} />
+          </div>
+        ) : (
+          <div className="-ml-[36px] mt-4">
+            <ChromeWordmark size={tall ? 150 : 128} name={wordmarkName} />
+          </div>
+        ))}
       {slide.note && (
         <div className="mt-9">
-          <MarginNote text={slide.note} size={36} />
+          <MarginNote text={slide.note} size={36} inks={inks} />
         </div>
       )}
       <div className="mt-auto flex items-end justify-between gap-8 pt-10">
@@ -61,7 +75,7 @@ export function CoverView({ slide, inks, tall, wordmarkName = "SHIFT" }: Props<C
         )}
         {slide.icon && (
           <div className="-mb-2 -mr-2 shrink-0" style={{ rotate: "-6deg" }}>
-            <RisoIcon name={slide.icon} ink={inks.kicker} size={tall ? 280 : 230} />
+            <CoverIcon inks={inks} name={slide.icon} size={tall ? 280 : 230} />
           </div>
         )}
       </div>
@@ -69,9 +83,77 @@ export function CoverView({ slide, inks, tall, wordmarkName = "SHIFT" }: Props<C
   );
 }
 
+/** One point on cosmos: a glass row led by a ring stamp or a lit orb. */
+function CosmosPoint({
+  inks,
+  point,
+  index,
+  start,
+  numbered,
+  tall,
+  compact,
+}: {
+  inks: StudioInks;
+  point: PointsSlide["points"][number];
+  index: number;
+  start: number;
+  numbered?: boolean;
+  tall: boolean;
+  compact: boolean;
+}) {
+  const first = index === 0 && start === 1;
+  return (
+    <Glass radius={24} className={`flex items-start gap-6 ${compact ? "px-8 py-5" : "px-8 py-6"}`}>
+      <span className="mt-[2px] flex shrink-0 items-center justify-center" style={{ width: tall ? 62 : 56, height: tall ? 62 : 56 }}>
+        {numbered ? (
+          <RingStamp n={index + start} ink={first ? inks.hot : inks.kicker} lit={first} size={tall ? 62 : 56} />
+        ) : (
+          <OrbDot ink={accentAt(inks, index)} size={tall ? 36 : 32} />
+        )}
+      </span>
+      <div className="min-w-0">
+        <p className="font-semibold leading-[1.3]" style={{ fontSize: tall ? 46 : 40, color: inks.text }}>
+          <Rich inks={inks} text={point.title} />
+        </p>
+        {point.body && (
+          <div className="mt-1">
+            <Body inks={inks} text={point.body} size={tall ? 32 : 29} />
+          </div>
+        )}
+      </div>
+    </Glass>
+  );
+}
+
 export function PointsView({ slide, inks, tall }: Props<PointsSlide>) {
   const gap = tall ? "space-y-11" : "space-y-8";
   const start = slide.startAt ?? 1;
+  if (isCosmos(inks)) {
+    const compact = slide.points.length > 3;
+    return (
+      <>
+        <Tag inks={inks}>{slide.tag}</Tag>
+        <Title inks={inks} text={slide.title} size={tall ? 72 : 66} />
+        <div className="flex flex-1 flex-col justify-center py-8">
+          <div className={`flex flex-col ${compact ? "gap-4" : tall ? "gap-6" : "gap-5"}`}>
+            {slide.points.map((point, i) => (
+              <CosmosPoint
+                key={point.title}
+                inks={inks}
+                point={point}
+                index={i}
+                start={start}
+                numbered={slide.numbered}
+                tall={tall}
+                compact={compact}
+              />
+            ))}
+          </div>
+        </div>
+        {slide.footnote && <Footnote inks={inks} text={slide.footnote} />}
+      </>
+    );
+  }
   return (
     <>
       <Tag inks={inks}>{slide.tag}</Tag>
@@ -93,7 +175,7 @@ export function PointsView({ slide, inks, tall }: Props<PointsSlide>) {
                   className="font-kodchasan font-bold leading-[1.3]"
                   style={{ fontSize: tall ? 48 : 42, color: inks.text }}
                 >
-                  <RichText text={point.title} accent={inks.kicker} />
+                  <Rich inks={inks} text={point.title} />
                 </p>
                 {point.body && (
                   <div className="mt-2">
@@ -123,17 +205,23 @@ function CompareColumn({
   hot?: boolean;
   tall: boolean;
 }) {
+  const cosmos = isCosmos(inks);
+  // Riso: the hot panel is solid orange, so marks print in its black ink.
+  // Cosmos: glass stays dark, so the marks carry the light (flare out, sol in).
+  const markColor = cosmos ? (hot ? inks.hot : inks.accent.pink) : undefined;
   return (
     <Panel inks={inks} hot={hot} className="!px-10 !py-9">
-      <p className="font-kodchasan font-bold leading-tight" style={{ fontSize: tall ? 44 : 40 }}>
+      <p className={`${displayFont(inks)} font-bold leading-tight`} style={{ fontSize: tall ? 44 : 40 }}>
         {label}
       </p>
       <ul className="mt-5 space-y-4">
         {items.map((item) => (
           <li key={item} className="flex gap-4 leading-[1.45]" style={{ fontSize: tall ? 38 : 34 }}>
-            <span className="shrink-0 font-bold">{hot ? "✓" : "✕"}</span>
+            <span className="shrink-0 font-bold" style={markColor ? { color: markColor } : undefined}>
+              {hot ? "✓" : "✕"}
+            </span>
             <span style={hot ? undefined : { color: inks.dim }}>
-              <RichText text={item} accent={inks.kicker} />
+              <Rich inks={inks} text={item} />
             </span>
           </li>
         ))}
@@ -160,17 +248,15 @@ export function CompareView({ slide, inks, tall }: Props<CompareSlide>) {
 }
 
 export function StatementView({ slide, inks, tall }: Props<StatementSlide>) {
+  const face = isCosmos(inks) ? "font-bai-jamjuree font-bold leading-[1.25]" : "font-kodchasan font-bold leading-[1.25] tracking-tight";
   return (
     <>
       {slide.tag && <Tag inks={inks}>{slide.tag}</Tag>}
       <div className="my-auto py-8">
-        <p
-          className="font-kodchasan font-bold leading-[1.25] tracking-tight"
-          style={{ fontSize: tall ? 96 : 84, color: inks.text, textShadow: inks.headingShadow }}
-        >
+        <p className={face} style={{ fontSize: tall ? 96 : 84, color: inks.text, textShadow: inks.headingShadow }}>
           {slide.big.map((line) => (
             <span key={line} className="block">
-              <RichText text={line} accent={inks.kicker} />
+              <Rich inks={inks} text={line} />
             </span>
           ))}
         </p>
@@ -181,7 +267,7 @@ export function StatementView({ slide, inks, tall }: Props<StatementSlide>) {
         )}
         {slide.note && (
           <div className="mt-10">
-            <MarginNote text={slide.note} tilt={1.3} size={34} />
+            <MarginNote text={slide.note} tilt={1.3} size={34} inks={inks} />
           </div>
         )}
       </div>

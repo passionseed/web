@@ -198,7 +198,7 @@ export function NPCConversationTest({ conversationId }: NPCConversationTestProps
                         <p className="text-sm leading-relaxed">{entry.node.text_content}</p>
                         {entry.node.npc_avatar && (
                           <p className="text-xs text-muted-foreground mt-2">
-                            — {entry.node.npc_avatar.name}
+                            Said by {entry.node.npc_avatar.name}
                           </p>
                         )}
                       </CardContent>

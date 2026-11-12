@@ -3,6 +3,8 @@
 // CRUD operations for path_activities
 // =====================================================
 
+import { requireUser, safeServerError } from "@/lib/security/route-guards";
+import { verifyActivityOwnership, verifyPageOwnership, UnauthorizedError, NotFoundError } from "@/lib/pathlab/authorization";
 import { NextRequest, NextResponse } from "next/server";
 import {
   getPathDayActivities,
@@ -24,6 +26,8 @@ import type {
 //   - activityId: Fetch single activity by ID
 // =====================================================
 export async function GET(request: NextRequest) {
+  const auth = await requireUser();
+  if (!auth.ok) return auth.response;
   try {
     const { searchParams } = new URL(request.url);
     const dayId = searchParams.get("dayId");
@@ -50,14 +54,10 @@ export async function GET(request: NextRequest) {
       { status: 400 }
     );
   } catch (error) {
-    console.error("Error fetching activities:", error);
-    const detail = error instanceof Error ? error.message : (error as any)?.message ?? JSON.stringify(error);
-    const hint = (error as any)?.hint;
-    const code = (error as any)?.code;
-    return NextResponse.json(
-      { error: "Failed to fetch activities", detail, hint, code },
-      { status: 500 }
-    );
+    if (error instanceof UnauthorizedError || error instanceof NotFoundError) {
+      return NextResponse.json({ error: "Forbidden" }, { status: error.statusCode });
+    }
+    return safeServerError("PathLab operation failed", error);
   }
 }
 
@@ -66,6 +66,8 @@ export async function GET(request: NextRequest) {
 // Body: CreatePathActivityInput
 // =====================================================
 export async function POST(request: NextRequest) {
+  const auth = await requireUser();
+  if (!auth.ok) return auth.response;
   try {
     const body: CreatePathActivityInput = await request.json();
 
@@ -77,17 +79,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    await verifyPageOwnership(body.path_day_id, auth.value.userId);
     const activity = await createPathActivity(body);
     return NextResponse.json({ activity }, { status: 201 });
-  } catch (error: any) {
-    console.error("Error creating activity:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to create activity",
-        details: error?.message || "Unknown error"
-      },
-      { status: 500 }
-    );
+  } catch (error) {
+    if (error instanceof UnauthorizedError || error instanceof NotFoundError) {
+      return NextResponse.json({ error: "Forbidden" }, { status: error.statusCode });
+    }
+    return safeServerError("PathLab operation failed", error);
   }
 }
 
@@ -98,6 +97,8 @@ export async function POST(request: NextRequest) {
 //   - For reorder: { dayId, activityIds: string[] }
 // =====================================================
 export async function PATCH(request: NextRequest) {
+  const auth = await requireUser();
+  if (!auth.ok) return auth.response;
   try {
     const body = await request.json();
     console.log('[API /pathlab/activities PATCH] Request received:', {
@@ -113,6 +114,11 @@ export async function PATCH(request: NextRequest) {
         dayId: body.dayId,
         activityIds: body.activityIds,
       });
+      await verifyPageOwnership(body.dayId, auth.value.userId);
+      for (const id of body.activityIds) {
+        const owned = await verifyActivityOwnership(id, auth.value.userId);
+        if (owned.pageId !== body.dayId) throw new UnauthorizedError("Activity belongs to another page");
+      }
       await reorderPathActivities(body.dayId, body.activityIds);
       console.log('[API /pathlab/activities PATCH] Reorder successful');
       return NextResponse.json({ success: true });
@@ -124,6 +130,8 @@ export async function PATCH(request: NextRequest) {
         activityId: body.activityId,
         updates: body.updates,
       });
+      await verifyActivityOwnership(body.activityId, auth.value.userId);
+      if ("path_day_id" in body.updates || "id" in body.updates) throw new UnauthorizedError("Invalid update");
       const activity = await updatePathActivity(
         body.activityId,
         body.updates as UpdatePathActivityInput
@@ -141,11 +149,10 @@ export async function PATCH(request: NextRequest) {
       { status: 400 }
     );
   } catch (error) {
-    console.error("[API /pathlab/activities PATCH] Error updating activity:", error);
-    return NextResponse.json(
-      { error: "Failed to update activity" },
-      { status: 500 }
-    );
+    if (error instanceof UnauthorizedError || error instanceof NotFoundError) {
+      return NextResponse.json({ error: "Forbidden" }, { status: error.statusCode });
+    }
+    return safeServerError("PathLab operation failed", error);
   }
 }
 
@@ -155,6 +162,8 @@ export async function PATCH(request: NextRequest) {
 //   - activityId: ID of activity to delete
 // =====================================================
 export async function DELETE(request: NextRequest) {
+  const auth = await requireUser();
+  if (!auth.ok) return auth.response;
   try {
     const { searchParams } = new URL(request.url);
     const activityId = searchParams.get("activityId");
@@ -166,13 +175,13 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    await verifyActivityOwnership(activityId, auth.value.userId);
     await deletePathActivity(activityId);
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting activity:", error);
-    return NextResponse.json(
-      { error: "Failed to delete activity" },
-      { status: 500 }
-    );
+    if (error instanceof UnauthorizedError || error instanceof NotFoundError) {
+      return NextResponse.json({ error: "Forbidden" }, { status: error.statusCode });
+    }
+    return safeServerError("PathLab operation failed", error);
   }
 }

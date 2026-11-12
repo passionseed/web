@@ -4,14 +4,14 @@ export const dynamic = "force-dynamic";
 
 export default function HackathonTeamFinderAdminPage() {
   return (
-    <div className="space-y-3">
+    <section className="space-y-3" aria-labelledby="hackathon-team-finder">
       <div>
-        <h3 className="text-xl font-semibold">Team Finder</h3>
+        <h2 id="hackathon-team-finder" className="text-lg font-semibold">Team finder</h2>
         <p className="text-sm text-muted-foreground">
           ดูว่าใครกำลังหาทีม จำลองการจับกลุ่ม และยืนยันเพื่อสร้างทีมจริง
         </p>
       </div>
       <TeamFinderAdminPage />
-    </div>
+    </section>
   );
 }

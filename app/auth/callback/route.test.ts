@@ -69,3 +69,12 @@ it.each([null, "taken"])("completes SHIFT using the existing Discord account and
   expect(response.headers.get("location")).toBe(`https://passionseed.org${joinPath}${joinError ? `?error=${joinError}` : ""}`);
   expect(response.headers.get("set-cookie")).toContain("test-session=test-session-value");
 });
+
+it.each(["//evil.invalid", "/\\evil.invalid", "/\t/evil.invalid"])(
+  "rejects browser-normalized external return destination %p", async (next) => {
+    const response = await callback({ next, error: "access_denied" });
+    const target = new URL(response.headers.get("location")!);
+    expect(target.origin).toBe("https://passionseed.org");
+    expect(target.searchParams.get("next")).toBe("/me");
+  }
+);

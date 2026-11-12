@@ -1,0 +1,294 @@
+/*
+ * Island consent: the banner strip and the consent sheet. Dawn theme on the
+ * island's night sky, island tokens from island.module.css (.page and .sheet
+ * carry them; fallbacks keep the banner readable anywhere). Pixel corners
+ * through --notch, no rounded pills, no stickers, no eyebrow labels.
+ */
+
+/* ---------------------------------------------------------------- banner */
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 10px 12px 10px 14px;
+  color: var(--text-hi, #fef9e7);
+  background: rgba(244, 197, 106, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(244, 197, 106, 0.55);
+  clip-path: var(--notch, none);
+}
+
+.lamp {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  background: var(--isl-lamp, #f4c56a);
+  box-shadow: 0 0 0 2px rgba(244, 197, 106, 0.25);
+}
+
+.bannerText {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.bannerButton {
+  flex: none;
+  min-height: 44px;
+  padding: 8px 14px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f1a0e;
+  background: var(--isl-lamp, #f4c56a);
+  border: 0;
+  clip-path: var(--notch, none);
+  cursor: pointer;
+  transition: filter var(--snap, 160ms) var(--ease-snap, ease), transform var(--press, 80ms) var(--ease-snap, ease);
+}
+
+.bannerButton:hover {
+  filter: brightness(1.06);
+}
+
+.bannerButton:active {
+  transform: translateY(1px);
+}
+
+.bannerButton:focus-visible {
+  outline: 2px solid #1f1a0e;
+  outline-offset: -4px;
+}
+
+.banner[data-compact="true"] {
+  padding: 6px 8px 6px 12px;
+  gap: 10px;
+}
+
+.banner[data-compact="true"] .bannerText {
+  font-size: 13px;
+}
+
+.banner[data-compact="true"] .bannerButton {
+  min-height: 44px;
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+/* ---------------------------------------------------------------- sheet */
+
+.stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+}
+
+.section {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  min-width: 0;
+}
+
+.heading {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.4;
+  color: var(--text-hi, #fef9e7);
+}
+
+.status {
+  margin: 0;
+  padding: 12px 14px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text-hi, #fef9e7);
+  background: rgba(244, 197, 106, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(244, 197, 106, 0.45);
+  clip-path: var(--notch, none);
+}
+
+.status[data-tone="done"] {
+  color: #d5f0d8;
+  background: rgba(80, 151, 107, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(120, 184, 128, 0.5);
+}
+
+.list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.listItem {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.listItem::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  transform: translateY(-2px);
+  background: var(--isl-leaf-hi, #78b880);
+}
+
+.meanwhile {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-dim, #94a3b8);
+}
+
+.form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  min-width: 0;
+}
+
+.agree {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 48px;
+  padding: 12px 14px;
+  font-size: 15px;
+  line-height: 1.55;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  clip-path: var(--notch, none);
+}
+
+.agree input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 3px;
+  accent-color: var(--action, #3b82f6);
+}
+
+/* The link the student copies: a read-only field (long-press works when the clipboard does not) and a copy button. */
+.linkBox {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  padding: 14px;
+  background: rgba(255, 241, 214, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(255, 241, 214, 0.22);
+  clip-path: var(--notch, none);
+}
+
+.linkField {
+  width: 100%;
+  min-width: 0;
+  font-family: var(--font-space-mono), monospace;
+  font-size: 14px;
+  text-overflow: ellipsis;
+}
+
+.small {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-dim, #94a3b8);
+}
+
+.copied {
+  margin: 0;
+  font-size: 14px;
+  color: #d5f0d8;
+}
+
+/* ---------------------------------------------------------------- notice */
+
+.details {
+  min-width: 0;
+  box-shadow: inset 0 0 0 1px rgba(184, 199, 191, 0.3);
+  clip-path: var(--notch, none);
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 8px 14px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--action-soft, #93c5fd);
+  cursor: pointer;
+  list-style: none;
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+.summary::after {
+  content: "+";
+  margin-left: auto;
+  font-family: var(--font-space-mono), monospace;
+}
+
+.details[open] .summary::after {
+  content: "-";
+}
+
+.summary:focus-visible {
+  outline: 2px solid var(--action-soft, #93c5fd);
+  outline-offset: -4px;
+}
+
+.noticeRows {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 4px 14px 16px;
+  list-style: none;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.noticeRow {
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+}
+
+.noticeEmoji {
+  flex: none;
+  width: 22px;
+  line-height: 1.6;
+}
+
+.noticeLead {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text-hi, #fef9e7);
+}
+
+.noticeText {
+  margin: 0;
+}
+
+.noticeItems {
+  display: grid;
+  gap: 4px;
+  margin: 4px 0 0;
+  padding-left: 16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bannerButton {
+    transition: none;
+  }
+}

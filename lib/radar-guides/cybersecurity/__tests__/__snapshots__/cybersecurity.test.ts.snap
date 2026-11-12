@@ -1,0 +1,745 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`cybersecurity guide matches the Thai copy snapshot (diff this in the Thai review) 1`] = `
+[
+  "mythos.titleTh: AI เพิ่งเจอบั๊กที่อายุมากกว่าเธอ
+mythos.questionTh: AI เก่งเรื่องหาช่องโหว่แค่ไหนแล้วจริงๆ
+mythos.navLabelTh: บั๊กอายุมากกว่าเธอ
+mythos.og.headlineTh: AI เพิ่งเจอบั๊กที่อายุมากกว่าเธอ
+mythos.og.stat.th: บั๊กที่ซ่อนอยู่ราว 27 ปี
+mythos.blocks[0].lines[0].text.th: เริ่มรันสายไซเบอร์กัน ด่านแรกเปิดด้วยบั๊กตัวเดียว
+mythos.blocks[0].lines[1].text.th: บั๊กตัวนี้อยู่ในโค้ดมานานกว่าอายุเธออีก
+mythos.blocks[0].lines[2].text.th: ไม่เชื่อใช่ไหม ลองเทียบกับปีเกิดตัวเองดู
+mythos.blocks[1].props.promptTh: เธอเกิดปีไหน
+mythos.blocks[1].props.skipTh: ไม่บอก
+mythos.blocks[1].props.bugLabelTh: บั๊กเกิดราวปีนี้
+mythos.blocks[1].props.youLabelTh: เธอเกิด
+mythos.blocks[1].props.nowLabelTh: วันนี้
+mythos.blocks[1].props.resultTh: บั๊กนี้อยู่ในโค้ดมาก่อนเธอเกิดราว {n} ปี
+mythos.blocks[1].props.resultNoYearTh: บั๊กนี้อยู่ในโค้ดมาราว 27 ปี
+mythos.blocks[1].props.privacyTh: เราไม่เก็บปีเกิด และไม่ส่งไปไหน
+mythos.blocks[1].fallbackTh[0]: บั๊กใน OpenBSD ตัวนี้อยู่ในโค้ดมาราว 27 ปี นานกว่าอายุคนอ่านหน้านี้ส่วนใหญ่
+mythos.blocks[2].unlockLabelTh: ลองหาบั๊กเอง
+mythos.blocks[2].blocks[0].lines[0].text.th: นี่คือโค้ดจำลองแนวเดียวกัน เขียนโค้ดไม่เป็นก็เล่นได้
+mythos.blocks[2].blocks[0].lines[1].text.th: ข้อมูลวิ่งมาจากเครือข่าย แตะบรรทัดที่อันตรายที่สุด
+mythos.blocks[2].blocks[1].game.data.captionTh: โค้ดจำลองแนวคิด ไม่ใช่โค้ดจริงของ OpenBSD
+mythos.blocks[2].blocks[1].game.data.lines[0].code: // รับข้อมูลที่ส่งมาจากเครือข่าย
+mythos.blocks[2].blocks[1].game.data.lines[2].code:   uint8_t name[64];            // ที่ว่าง 64 ไบต์
+mythos.blocks[2].blocks[1].game.data.lines[3].code:   if (n < 1) return;           // ข้อมูลว่าง ข้าม
+mythos.blocks[2].blocks[1].game.data.lines[4].code:   int len = buf[0];            // ความยาว: คนส่งเป็นคนบอก
+mythos.blocks[2].blocks[1].game.data.lines[6].code:   copy(name, buf + 1, len);    // คัดลอกตามความยาวที่เขาบอก
+mythos.blocks[2].blocks[1].game.data.lines[7].code:   if (len > 64) {              // เช็กขนาด
+mythos.blocks[2].blocks[1].game.data.nearMissTh.5: ใช่ ค่านี้มาจากคนนอก แล้วโค้ดเอาไปใช้ต่อที่บรรทัดไหน
+mythos.blocks[2].blocks[1].game.data.nearMissTh.8: ใกล้แล้ว เช็กขนาดตรงนี้ถูก แต่ดูว่ามันเช็กก่อนหรือหลังคัดลอก
+mythos.blocks[2].blocks[1].game.data.hintsTh[0]: ค่าไหนมาจากคนนอก
+mythos.blocks[2].blocks[1].game.data.hintsTh[1]: name จุได้เท่าไหร่ แล้วเช็กขนาดก่อนหรือหลังคัดลอก
+mythos.blocks[2].blocks[1].game.data.onFound.counter.captionTh: จำนวนครั้งที่เทสต์อัตโนมัติวิ่งผ่านบรรทัดที่มีบั๊กใน FFmpeg โดยไม่เคยจับได้ (บั๊กอายุ 16 ปี)
+mythos.blocks[2].blocks[1].game.data.onFound.explanationTh: บรรทัด 7 คัดลอกข้อมูลตามความยาวที่คนส่งเป็นคนบอก ซึ่งใหญ่ได้ถึง 255 ไบต์ แต่ name มีที่แค่ 64 ไบต์ แล้วโค้ดค่อยมาเช็กทีหลัง ข้อมูลเลยล้นไปทับหน่วยความจำส่วนอื่น บั๊กตระกูลนี้แหละที่ AI ไล่หาในโค้ดจริง
+mythos.blocks[2].blocks[1].answersTh[0]: บรรทัดอันตรายคือบรรทัด 7: คัดลอกข้อมูลตามความยาวที่คนส่งบอก (ได้ถึง 255 ไบต์) ลงในที่ว่างแค่ 64 ไบต์
+mythos.blocks[2].blocks[1].answersTh[1]: การเช็กขนาดอยู่บรรทัด 8 ซึ่งมาหลังการคัดลอก ข้อมูลเลยล้นไปทับหน่วยความจำส่วนอื่นก่อน
+mythos.blocks[2].blocks[2].text.th: เม.ย. 2569 Anthropic เปิดตัว AI ชื่อ Claude Mythos Preview แต่ไม่เปิดให้คนทั่วไปใช้ เพราะมันหาช่องโหว่เก่งเกินไป
+mythos.blocks[2].blocks[2].titleTh: แฟ้มลับ: Mythos Preview
+mythos.blocks[2].blocks[3].text.th: บั๊กใน OpenBSD ซ่อนอยู่ราว 27 ปี แค่เชื่อมต่อเข้าเครื่องได้ ก็สั่งเครื่องล่มได้เลย
+mythos.blocks[2].blocks[3].titleTh: บั๊กตัวแรก
+mythos.blocks[2].blocks[4].text.th: บั๊กใน FFmpeg อายุ 16 ปี อยู่ในบรรทัดที่เทสต์อัตโนมัติวิ่งผ่านมาแล้ว 5,000,000 ครั้ง
+mythos.blocks[2].blocks[4].titleTh: บั๊กตัวที่สอง
+mythos.blocks[3].unlockLabelTh: แล้วโลกจริงเปลี่ยนแค่ไหน
+mythos.blocks[3].blocks[0].lines[0].text.th: ปกติ Firefox แก้ช่องโหว่เดือนละ 20 ถึง 30 ตัว
+mythos.blocks[3].blocks[0].lines[1].text.th: ลองทายว่าเดือนเมษายน 2569 แก้ไปกี่ตัว
+mythos.blocks[3].blocks[1].game.data.promptTh: เม.ย. 2569 Firefox แก้ช่องโหว่ไปกี่ตัว
+mythos.blocks[3].blocks[1].game.data.chart.band.labelTh: 2568: ปกติเดือนละ 20 ถึง 30
+mythos.blocks[3].blocks[1].game.data.chart.bars[0].labelTh: มี.ค. 2569 (สถิติเดิม)
+mythos.blocks[3].blocks[1].game.data.chart.bars[1].labelTh: เม.ย. 2569
+mythos.blocks[3].blocks[1].game.data.chart.bars[1].segment.labelTh: เจอด้วย Mythos Preview
+mythos.blocks[3].blocks[1].game.data.nearTh: เกือบเป๊ะ
+mythos.blocks[3].blocks[1].game.data.overTh: เธอเดาสูงไป {d} ตัว
+mythos.blocks[3].blocks[1].game.data.underTh: เธอเดาต่ำไป {d} ตัว
+mythos.blocks[3].blocks[1].game.data.revealTh: เธอเดา {g} ของจริงคือ 423
+mythos.blocks[3].blocks[1].answersTh[0]: เม.ย. 2569 Firefox แก้ช่องโหว่ 423 ตัว สถิติเดิมคือ 76 ตัวเมื่อ มี.ค. 2569
+mythos.blocks[3].blocks[1].answersTh[1]: Mozilla บอกว่าในนั้น 271 ตัวเจอด้วย Mythos Preview
+mythos.blocks[3].blocks[2].text.th: Firefox แก้ไป 423 ตัว Mozilla บอกว่า 271 ตัวเจอด้วย Mythos Preview และในกลุ่มนี้ 180 ตัวร้ายแรงสูง
+mythos.blocks[3].blocks[2].titleTh: ผลจริงจาก Mozilla
+mythos.blocks[3].blocks[3].text.th: 9 พ.ย. 2569 รุ่นใหม่ Mythos 5.2 ออกแล้ว และยังไม่เปิดให้ทุกคนใช้
+mythos.blocks[3].blocks[3].titleTh: อัปเดตล่าสุด
+mythos.blocks[3].blocks[4].text.th: ตัวเลขส่วนใหญ่มาจาก Anthropic เอง มีทีมวิจัยอื่นแย้งว่าโมเดลเล็กกว่าก็เจอบางบั๊กได้ ถ้ามีคนตัดเฉพาะโค้ดส่วนที่มีปัญหามาให้ดู
+mythos.blocks[3].blocks[4].titleTh: อีกฝั่งของเรื่อง
+mythos.blocks[3].blocks[5].lines[0].text.th: ถ้า AI หาช่องโหว่เก่งขนาดนี้
+mythos.blocks[3].blocks[5].lines[1].text.th: คำถามต่อไป: ใครได้ใช้มัน
+mythos.clip.hookTh: AI เจอบั๊กที่แก่กว่าเธอ
+mythos.clip.scriptLinesTh[0]: เมษาที่ผ่านมา Anthropic สร้าง AI ชื่อ Mythos
+mythos.clip.scriptLinesTh[1]: แล้วไม่ยอมปล่อยให้คนทั่วไปใช้ เพราะมันหาช่องโหว่เก่งเกินไป
+mythos.clip.scriptLinesTh[2]: บริษัทบอกว่ามันเจอบั๊กที่ซ่อนอยู่ในระบบมาราว 27 ปี
+mythos.clip.scriptLinesTh[3]: แก่กว่าเธออีก
+mythos.clip.scriptLinesTh[4]: แต่นี่ไม่ได้แปลว่าคนหมดความหมายนะ
+mythos.clip.scriptLinesTh[5]: ไกด์นี้จะพาไปดูว่าตรงไหนที่ยังต้องใช้คน
+mythos.clip.scriptLinesTh[6]: และเธอเริ่มลงมือได้ตั้งแต่คืนนี้
+mythos.reel.hook.th: AI เพิ่งเจอบั๊กที่ซ่อนอยู่ 27 ปี แก่กว่าเธออีก
+mythos.reel.variantsTh[0]: บรรทัดนี้ถูกเทสต์ 5 ล้านครั้ง ไม่มีใครเห็นบั๊ก
+mythos.reel.variantsTh[1]: AI ที่บริษัทไม่กล้าปล่อยให้คนทั่วไปใช้
+mythos.reel.sendToFriendTh: ส่งให้เพื่อนที่ชอบแกะว่าระบบพังตรงไหน
+mythos.reel.visual[0]: ตัวเลขปีหมุนย้อนจาก 2569 ไป 2542 แล้วไอคอนบั๊กตกลงมา
+mythos.reel.visual[1]: บรรทัด 7 เรืองแดง
+mythos.reel.visual[2]: ตัวนับวิ่งถึง 5,000,000
+mythos.reel.visual[3]: แท่ง Firefox พุ่งจากแถบ 20 ถึง 30 ผ่าน 76 ไปถึง 423",
+  "doors.titleTh: AI ตัวเดียวกัน สองประตู
+doors.questionTh: ใครได้ใช้ AI สายไซเบอร์ที่ถูกล็อกไว้ แล้วทำไมความน่าเชื่อถือถึงกลายเป็นทักษะ
+doors.navLabelTh: สองประตู
+doors.og.headlineTh: AI ตัวเดียวกัน แต่มีสองประตู
+doors.og.stat.th: Anthropic บอกว่า Fable 5.2 กับ Mythos 5.2 คือโมเดลตัวเดียวกัน
+doors.blocks[0].lines[0].text.th: 9 พ.ย. 2569 Anthropic ปล่อย AI สองชื่อ
+doors.blocks[0].lines[1].text.th: Fable 5.2 กับ Mythos 5.2 บริษัทบอกว่าเป็นโมเดลตัวเดียวกัน
+doors.blocks[0].lines[2].text.th: ต่างกันแค่ประตู
+doors.blocks[1].text.th: เปิดให้ผู้ใช้ทั่วไป แต่ถ้าสั่งงานไซเบอร์ที่เสี่ยงสูง ระบบจะส่งไปให้โมเดลรุ่นเก่ากว่าตอบแทน
+doors.blocks[1].titleTh: ประตูแรก: Fable 5.2
+doors.blocks[2].text.th: ไม่มีตัวกั้นนั้น เปิดให้เฉพาะองค์กรที่ผ่านการตรวจสอบ กับลูกค้าองค์กรของบริษัท
+doors.blocks[2].titleTh: ประตูที่สอง: Mythos 5.2
+doors.blocks[3].unlockLabelTh: เล่นเกม ใครได้กุญแจ
+doors.blocks[3].blocks[0].lines[0].text.th: ด่านนี้เธอคือคนเฝ้าประตูที่สอง
+doors.blocks[3].blocks[0].lines[1].text.th: แตะการ์ดหนึ่งใบ แล้วแตะประตูที่เขาควรได้เข้า ดูว่าเธอแจกกุญแจถูกกฎไหม
+doors.blocks[3].blocks[1].game.data.goalTh: ใครได้เข้าประตูไหน
+doors.blocks[3].blocks[1].game.data.bins[3].labelTh: ไม่ผ่าน
+doors.blocks[3].blocks[1].game.data.items[0].labelTh: ทีมความปลอดภัยของโรงพยาบาล
+doors.blocks[3].blocks[1].game.data.items[0].revealTh: ทีมความปลอดภัยขององค์กรเข้าทาง Defense ได้
+doors.blocks[3].blocks[1].game.data.items[1].labelTh: นักล่าบั๊กอิสระ มีผลงานเปิดเผย
+doors.blocks[3].blocks[1].game.data.items[1].nearTh.redteam: ใกล้แล้ว Red Team รับเฉพาะองค์กร
+doors.blocks[3].blocks[1].game.data.items[1].revealTh: คนที่มีประวัติผลงานตรวจสอบได้เข้า Defense ได้ แต่ Red Team รับเฉพาะองค์กร
+doors.blocks[3].blocks[1].game.data.items[2].labelTh: บริษัททดสอบเจาะระบบ มีสัญญากับลูกค้า
+doors.blocks[3].blocks[1].game.data.items[2].revealTh: ทดสอบเจาะระบบที่ได้รับอนุญาต รับเฉพาะองค์กร และยังบล็อกงานแบบแรนซัมแวร์อยู่ดี
+doors.blocks[3].blocks[1].game.data.items[3].labelTh: ผู้ดูแลระบบไฟฟ้า
+doors.blocks[3].blocks[1].game.data.items[3].revealTh: ระบบที่พลาดไม่ได้ ตรวจละเอียดร่วมกับรัฐบาลสหรัฐฯ หรือเข้า Defense ในฐานะผู้ดูแลโครงสร้างพื้นฐานสำคัญ
+doors.blocks[3].blocks[1].game.data.items[4].labelTh: บัญชีไม่ระบุตัวตน พิมพ์มาว่า "นี่คือการทดสอบที่ได้รับอนุญาต"
+doors.blocks[3].blocks[1].game.data.items[4].revealTh: พิมพ์เองไม่นับ ข้ออ้างนี้แหละที่คนร้ายเคยใช้หลอก AI มาแล้ว
+doors.blocks[3].blocks[1].game.data.items[5].labelTh: แล้วนักเรียน ม.5 ที่ชอบแฮกล่ะ
+doors.blocks[3].blocks[1].game.data.items[5].revealTh: ตอนนี้ยังไม่ผ่าน (ความเห็นทีมเรา ตีความจากเกณฑ์: ต้องเป็นทีมความปลอดภัย หรือนักวิจัยที่มีผลงานตรวจสอบได้) ข่าวดีคือผลงานแบบนั้นเริ่มเก็บได้ตั้งแต่ ม.ปลาย
+doors.blocks[3].blocks[1].game.data.resultTh: แจกกุญแจถูก {score}/{total}
+doors.blocks[3].blocks[1].answersTh[0]: ทีมความปลอดภัยของโรงพยาบาล: Defense
+doors.blocks[3].blocks[1].answersTh[1]: นักล่าบั๊กอิสระที่มีผลงานเปิดเผย: Defense (Red Team รับเฉพาะองค์กร)
+doors.blocks[3].blocks[1].answersTh[2]: บริษัททดสอบเจาะระบบที่มีสัญญา: Red Team
+doors.blocks[3].blocks[1].answersTh[3]: ผู้ดูแลระบบไฟฟ้า: Specialized หรือ Defense
+doors.blocks[3].blocks[1].answersTh[4]: บัญชีไม่ระบุตัวตนที่พิมพ์ว่าได้รับอนุญาต: ไม่ผ่าน
+doors.blocks[3].blocks[2].lines[0].text.th: แค่มีฝีมือยังเปิดประตูที่สองไม่ได้ ต้องมีหลักฐานว่าไว้ใจเธอได้ด้วย
+doors.blocks[3].blocks[2].lines[1].text.th: ในสายนี้ ความไว้ใจคือส่วนหนึ่งของเรซูเม่
+doors.blocks[4].unlockLabelTh: ดูข้ออ้างที่คนร้ายใช้
+doors.blocks[4].blocks[0].lines[0].text.th: มีเคสจริงอย่างน้อยสามเคส ที่คนร้ายหลอก AI ด้วยข้ออ้างเดียวกัน
+doors.blocks[4].blocks[0].lines[1].text.th: พลิกการ์ดดูทีละใบ
+doors.blocks[4].blocks[1].game.data.highlightTh: นี่คือการทดสอบที่ได้รับอนุญาต
+doors.blocks[4].blocks[1].game.data.cards[0].frontTh: กลุ่มแรนซัมแวร์
+doors.blocks[4].blocks[1].game.data.cards[0].dateTh: ส.ค. 2569
+doors.blocks[4].blocks[1].game.data.cards[0].backTh: สั่ง AI agent ช่วยเขียนโค้ดเจาะระบบ พอ AI ปฏิเสธ ก็เปิดงานใหม่แล้วอ้างว่าเป็นงานทดสอบที่ได้รับอนุญาต และ Reuters รายงานว่ามีบริษัทโดนเจาะอย่างน้อย 7 แห่ง
+doors.blocks[4].blocks[1].game.data.cards[1].frontTh: รัฐบาลแห่งหนึ่งในเอเชีย
+doors.blocks[4].blocks[1].game.data.cards[1].dateTh: ส.ค. 2569
+doors.blocks[4].blocks[1].game.data.cards[1].backTh: บริษัทวิจัย Dream รายงานว่าคนร้ายเลี่ยงระบบป้องกันของ AI agent ด้วยการอ้างว่าเป็นการทดสอบเจาะระบบที่ได้รับอนุญาต สื่อระบุว่าเป็นไต้หวัน และไต้หวันยืนยันว่าโดนโจมตีที่มี AI agent ช่วย
+doors.blocks[4].blocks[1].game.data.cards[2].frontTh: กลุ่มจารกรรม
+doors.blocks[4].blocks[1].game.data.cards[2].dateTh: พ.ย. 2568
+doors.blocks[4].blocks[1].game.data.cards[2].backTh: Anthropic บอกว่าจับกลุ่มที่ใช้ Claude Code บุกเป้าหมายราว 30 แห่งได้ คนร้ายอ้างว่าเป็นบริษัทความปลอดภัยที่กำลังทดสอบระบบ แล้วซอยงานเป็นชิ้นเล็กๆ ที่ดูไม่มีพิษภัย
+doors.blocks[4].blocks[1].answersTh[0]: ส.ค. 2569 กลุ่มแรนซัมแวร์อ้างกับ AI ว่าเป็นงานทดสอบที่ได้รับอนุญาต มีบริษัทโดนเจาะอย่างน้อย 7 แห่ง
+doors.blocks[4].blocks[1].answersTh[1]: ส.ค. 2569 คนร้ายที่โจมตีหน่วยงานรัฐในเอเชียใช้ข้ออ้างเดียวกัน เลี่ยงระบบป้องกันของ AI agent
+doors.blocks[4].blocks[1].answersTh[2]: พ.ย. 2568 กลุ่มจารกรรมอ้างว่าเป็นบริษัทความปลอดภัย แล้วใช้ AI บุกเป้าหมายราว 30 แห่ง
+doors.blocks[4].blocks[2].lines[0].text.th: ทั้งสามเคสอ้างเหมือนกัน: ได้รับอนุญาต
+doors.blocks[4].blocks[2].lines[1].text.th: ในงานจริง คำนี้ต้องมีสัญญาที่เจ้าของระบบเซ็น มีขอบเขต มีเวลา
+doors.blocks[4].blocks[2].lines[2].text.th: พิมพ์อ้างเองไม่นับ แถมยังผิดกฎหมาย
+doors.blocks[4].blocks[3].lineTh: เจาะระบบที่เจ้าของไม่ได้อนุญาตเป็นลายลักษณ์อักษร ผิดกฎหมาย ต่อให้พิมพ์ว่าได้รับอนุญาตก็ตาม
+doors.blocks[5].unlockLabelTh: ทุกแล็บมีห้องล็อก
+doors.blocks[5].blocks[0].lines[0].text.th: ไม่ใช่แค่ Anthropic ที่ล็อกห้อง ลองดูแล็บอื่น
+doors.blocks[5].blocks[1].text.th: มีโปรแกรมตรวจสอบก่อนให้ใช้รุ่นที่เก่งเรื่องไซเบอร์ที่สุด รับทั้งองค์กรและคนที่มีผลงานตรวจสอบได้
+doors.blocks[5].blocks[2].text.th: 5 พ.ย. 2569 ปล่อย GPT-6 Cyber ให้เฉพาะลูกค้าที่ได้รับอนุญาตทำงานเจาะระบบ
+doors.blocks[5].blocks[3].text.th: 30 ก.ย. 2569 ให้โมเดลใหม่กับทีมป้องกันในโปรแกรมของตัวเองก่อน แล้วค่อยเปิดกว้างขึ้นราวกลาง ต.ค.
+doors.blocks[5].blocks[4].lines[0].text.th: แล็บใหญ่หลายแห่งคัดคน ก่อนให้ใช้โมเดลที่เก่งเรื่องไซเบอร์ที่สุดของตัวเอง
+doors.blocks[6].unlockLabelTh: เช็กพาสปอร์ต
+doors.blocks[6].blocks[0].lines[0].text.th: ปี 2569 เคยมีช่วงที่คนไทยใช้ AI ตัวนี้ไม่ได้เลย 19 วัน
+doors.blocks[6].blocks[0].lines[1].text.th: แตะวันที่ แล้วดูว่าวันนั้นผู้ใช้ในไทยเข้าประตูไหนได้บ้าง
+doors.blocks[6].blocks[1].game.data.chips[0].labelTh: 9 มิ.ย. 2569
+doors.blocks[6].blocks[1].game.data.chips[1].labelTh: 12 มิ.ย. 2569
+doors.blocks[6].blocks[1].game.data.chips[2].labelTh: 1 ก.ค. 2569
+doors.blocks[6].blocks[1].game.data.columns[0].labelTh: Fable 5 (ผู้ใช้ทั่วไป)
+doors.blocks[6].blocks[1].game.data.cells.jun9.fable5.noteTh: เปิด
+doors.blocks[6].blocks[1].game.data.cells.jun9.mythos5.noteTh: ปิด เฉพาะองค์กรพันธมิตร
+doors.blocks[6].blocks[1].game.data.cells.jun12.fable5.noteTh: ปิดสำหรับทุกคน
+doors.blocks[6].blocks[1].game.data.cells.jun12.mythos5.noteTh: ปิด
+doors.blocks[6].blocks[1].game.data.cells.jul1.fable5.noteTh: กลับมาทั่วโลก
+doors.blocks[6].blocks[1].game.data.cells.jul1.mythos5.noteTh: ปิด เฉพาะองค์กรในสหรัฐฯ ที่ได้รับอนุมัติ
+doors.blocks[6].blocks[1].answersTh[0]: 9 มิ.ย. 2569: Fable 5 เปิดให้ผู้ใช้ทั่วไป Mythos 5 ปิด เฉพาะองค์กรพันธมิตร
+doors.blocks[6].blocks[1].answersTh[1]: 12 มิ.ย. 2569: ปิดทั้งสองตัวสำหรับทุกคน
+doors.blocks[6].blocks[1].answersTh[2]: 1 ก.ค. 2569: Fable 5 กลับมาทั่วโลก Mythos 5 เฉพาะองค์กรในสหรัฐฯ ที่ได้รับอนุมัติ
+doors.blocks[6].blocks[2].text.th: รัฐบาลสหรัฐฯ สั่งให้ปิดโมเดลสองตัวนี้สำหรับคนที่ไม่ใช่สัญชาติอเมริกัน บริษัทเช็กสัญชาติแบบทันทีไม่ได้ เลยปิดไม่ให้ทุกคนใช้ คำสั่งถูกยกเลิก 30 มิ.ย.
+doors.blocks[6].blocks[2].titleTh: 12 มิ.ย. 2569
+doors.blocks[6].blocks[3].lines[0].text.th: การเข้าถึง AI จึงเป็นเรื่องระหว่างประเทศด้วย
+doors.blocks[7].lines[0].text.th: ถ้าวันหนึ่งเธออยากได้กุญแจ ต้องเริ่มจากผลงานที่คนอื่นตรวจสอบได้
+doors.blocks[7].lines[1].text.th: ด่านต่อไป: งานจริงวันธรรมดา
+doors.clip.hookTh: แฮกเกอร์หลอก AI ด้วยข้ออ้างเดียว
+doors.clip.scriptLinesTh[0]: มีเคสจริงอย่างน้อยสามเคส ที่คนร้ายหลอก AI ด้วยข้ออ้างเดียวกัน
+doors.clip.scriptLinesTh[1]: ว่านี่คือการทดสอบที่ได้รับอนุญาต
+doors.clip.scriptLinesTh[2]: สิ่งที่แยกนักทดสอบระบบออกจากอาชญากร ไม่ใช่ฝีมือ
+doors.clip.scriptLinesTh[3]: แต่คือการได้รับอนุญาตจริงๆ มีสัญญา มีขอบเขตชัดเจน
+doors.clip.scriptLinesTh[4]: จำไว้เลย ระบบที่ไม่ใช่ของเรา
+doors.clip.scriptLinesTh[5]: ถ้าเจ้าของไม่ได้อนุญาตเป็นลายลักษณ์อักษร ห้ามแตะ ผิดกฎหมาย
+doors.clip.scriptLinesTh[6]: แค่พิมพ์บอกเองว่าได้รับอนุญาต แบบนั้นไม่นับ
+doors.reel.hook.th: AI ที่เก่งไซเบอร์ที่สุดของบริษัท ไม่ได้ให้ทุกคนใช้
+doors.reel.variantsTh[0]: แฮกเกอร์หลอก AI ด้วยข้ออ้างเดียว: นี่คือการทดสอบที่ได้รับอนุญาต
+doors.reel.variantsTh[1]: มิ.ย. 2569 คนไทยใช้ AI ตัวนี้ไม่ได้ 19 วัน
+doors.reel.sendToFriendTh: ส่งให้เพื่อนที่คิดว่าเก่งอย่างเดียวพอ
+doors.reel.visual[0]: ประตูสองบานคู่กัน คำขอวิ่งเข้าหา ประตู Fable เบี่ยงคำขอหนึ่งไปประตูเล็กที่เก่ากว่า
+doors.reel.visual[1]: กุญแจล็อกที่ประตู Mythos
+doors.reel.visual[2]: การ์ดสามใบพลิกตามจังหวะ ข้ออ้างเดียวกันสว่างขึ้นสามครั้ง",
+  "triage.titleTh: งานจริง คือจับผิด AI
+triage.questionTh: วันธรรมดาของคนสายนี้ เขาทำอะไรกันแน่
+triage.navLabelTh: จับผิด AI
+triage.og.headlineTh: งานแรกของเธออาจไม่ใช่นั่งดูจอ แต่คือการตรวจงาน AI
+triage.og.stat.th: AI ติดป้ายผิด 2 ใน 10 เธอหาเจอไหม
+triage.blocks[0].lines[0].text.th: ในหนัง แฮกเกอร์พิมพ์รัวๆ คืนเดียวระบบแตก
+triage.blocks[0].lines[1].text.th: ของจริงคือคิวสัญญาณเตือนยาวเหยียด และหลายทีมให้ AI ติดป้ายมาก่อน
+triage.blocks[0].lines[2].text.th: ด่านนี้เธอเป็นหัวหน้าทีม AI ป้ายไหนผิด เธอต้องจับให้ได้
+triage.blocks[1].text.th: AI ติดป้ายสัญญาณเตือนมาให้แล้ว 10 อัน มี 2 อันที่มันพลาด
+triage.blocks[1].titleTh: ภารกิจ
+triage.blocks[2].game.data.goalTh: หาข้อที่ AI พลาด (มี 2 ข้อ)
+triage.blocks[2].game.data.bins[0].labelTh: เห็นด้วยกับ AI
+triage.blocks[2].game.data.bins[1].labelTh: AI พลาด
+triage.blocks[2].game.data.timer.labelTh: ก่อนคนร้ายขยับต่อ
+triage.blocks[2].game.data.simulated.watermarkTh: ตัวอย่างจำลอง
+triage.blocks[2].game.data.items[0].labelTh: รหัสผ่านผิด 3 ครั้ง บัญชี somchai.k
+triage.blocks[2].game.data.items[0].meta.aiLabel: เตือนหลอก
+triage.blocks[2].game.data.items[0].detailTh: ครั้งที่ 4 เข้าได้จากเครื่องประจำของเขาเอง
+triage.blocks[2].game.data.items[0].revealTh: พิมพ์ผิดธรรมดา AI ถูก
+triage.blocks[2].game.data.items[1].labelTh: ล็อกอินสำเร็จจากต่างประเทศ บัญชี finance01
+triage.blocks[2].game.data.items[1].meta.aiLabel: เตือนหลอก
+triage.blocks[2].game.data.items[1].meta.aiNote: ผู้ใช้เดินทางบ่อย
+triage.blocks[2].game.data.items[1].detailTh: 4 นาทีก่อน มีคนรีเซ็ตรหัสผ่านบัญชีนี้ผ่าน SMS และเจ้าของบัญชีเพิ่งแตะบัตรเข้าออฟฟิศที่กรุงเทพฯ เมื่อ 10 นาทีก่อน
+triage.blocks[2].game.data.items[1].revealTh: บัญชีโดนยึดจริง AI ดูแค่ประวัติการเดินทาง แต่ไม่ได้ดูว่าเพิ่งมีคนรีเซ็ตรหัสผ่าน และเจ้าของยังอยู่ที่ออฟฟิศ
+triage.blocks[2].game.data.items[2].labelTh: งานสำรองข้อมูลตามตาราง ส่งไฟล์ใหญ่ไปเซิร์ฟเวอร์สำรอง
+triage.blocks[2].game.data.items[2].meta.aiLabel: เตือนหลอก
+triage.blocks[2].game.data.items[2].detailTh: ตรงกับตารางสำรองข้อมูลทุกคืน
+triage.blocks[2].game.data.items[2].revealTh: AI ถูก
+triage.blocks[2].game.data.items[3].labelTh: อีเมลฟิชชิงถูกบล็อกก่อนถึงกล่องจดหมาย
+triage.blocks[2].game.data.items[3].meta.aiLabel: บล็อกแล้ว ไม่ต้องทำอะไร
+triage.blocks[2].game.data.items[3].detailTh: ไม่มีใครเปิด ระบบจัดการแล้ว
+triage.blocks[2].game.data.items[3].revealTh: AI ถูก
+triage.blocks[2].game.data.items[4].labelTh: สแกนพอร์ตทั้งเครือข่ายจาก 198.51.100.23
+triage.blocks[2].game.data.items[4].meta.aiLabel: โจมตีจริง
+triage.blocks[2].game.data.items[4].detailTh: IP นี้อยู่ในเอกสารขอบเขตงานของบริษัททดสอบเจาะระบบที่เราจ้างเอง และอยู่ในช่วงเวลาที่ตกลงไว้
+triage.blocks[2].game.data.items[4].revealTh: เตือนหลอก AI ไม่รู้ว่าเราจ้างคนมาทดสอบระบบเอง ถ้าอ่านเอกสารขอบเขตงานเป็น จะรู้ทันที
+triage.blocks[2].game.data.items[5].labelTh: เครื่องพิมพ์ชั้น 3 ส่งสัญญาณผิดปกติ
+triage.blocks[2].game.data.items[5].meta.aiLabel: เตือนหลอก
+triage.blocks[2].game.data.items[5].detailTh: กระดาษติดซ้ำ
+triage.blocks[2].game.data.items[5].revealTh: AI ถูก
+triage.blocks[2].game.data.items[6].labelTh: อัปเดตระบบล้มเหลว 2 เครื่อง
+triage.blocks[2].game.data.items[6].meta.aiLabel: เตือนหลอก
+triage.blocks[2].game.data.items[6].detailTh: ระบบตั้งให้ลองใหม่คืนนี้
+triage.blocks[2].game.data.items[6].revealTh: AI ถูก แต่จดไว้ตามต่อพรุ่งนี้
+triage.blocks[2].game.data.items[7].labelTh: พนักงานคลิกลิงก์ในอีเมลฟิชชิง
+triage.blocks[2].game.data.items[7].meta.aiLabel: โจมตีจริง
+triage.blocks[2].game.data.items[7].meta.aiNote: ให้รีเซ็ตรหัสและสแกนเครื่อง
+triage.blocks[2].game.data.items[7].detailTh: บันทึกพบว่ากรอกรหัสผ่านลงหน้าเว็บปลอมก่อนถูกบล็อก
+triage.blocks[2].game.data.items[7].revealTh: AI ถูก ข้อนี้ต้องรีบ
+triage.blocks[2].game.data.items[8].labelTh: ไฟร์วอลล์บล็อกการเชื่อมต่อจากนอกประเทศ 1,200 ครั้ง
+triage.blocks[2].game.data.items[8].meta.aiLabel: บล็อกแล้ว ไม่ต้องทำอะไร
+triage.blocks[2].game.data.items[8].detailTh: สแกนทั่วไปจากอินเทอร์เน็ต ถูกบล็อกหมด
+triage.blocks[2].game.data.items[8].revealTh: AI ถูก
+triage.blocks[2].game.data.items[9].labelTh: ผู้ใช้ขอรีเซ็ตรหัสผ่านผ่านฝ่ายไอที
+triage.blocks[2].game.data.items[9].meta.aiLabel: เตือนหลอก
+triage.blocks[2].game.data.items[9].detailTh: ยืนยันตัวตนผ่านหัวหน้าแล้ว
+triage.blocks[2].game.data.items[9].revealTh: AI ถูก
+triage.blocks[2].game.data.resultTh: จับข้อที่ AI พลาดได้ {x}/{xTotal} · เห็นด้วยถูก {y}/{yTotal}
+triage.blocks[2].game.data.outcomesTh.wrong: ข้อนี้ AI ถูก: {reveal}
+triage.blocks[2].game.data.outcomesTh.hit:a2: ข้อ 2 คือบัญชีโดนยึดจริง เธอเห็นสิ่งที่ AI มองข้าม
+triage.blocks[2].game.data.outcomesTh.miss:a2: AI ถูก 8 จาก 10 ฟังดูดี แต่ข้อหนึ่งที่มันพลาดคือโดนจริง ลองกดข้อ 2 ดูอีกที
+triage.blocks[2].answersTh[0]: ข้อ 2 (02:31 ล็อกอินจากต่างประเทศ): AI พลาด บัญชีโดนยึดจริง เพิ่งมีคนรีเซ็ตรหัสผ่าน และเจ้าของยังอยู่ที่ออฟฟิศ
+triage.blocks[2].answersTh[1]: ข้อ 5 (08:45 สแกนพอร์ต): AI พลาด เป็นบริษัททดสอบเจาะระบบที่เราจ้างเอง อยู่ในเอกสารขอบเขตงาน
+triage.blocks[2].answersTh[2]: อีก 8 ข้อ AI ติดป้ายถูก
+triage.blocks[4].unlockLabelTh: ทำไมต้องรีบ
+triage.blocks[4].blocks[0].text.th: CrowdStrike รายงานว่าปี 2568 ในเคสที่ติดตาม คนร้ายใช้เวลาเฉลี่ย 29 นาที ตั้งแต่เจาะเข้าได้จนขยับไปเครื่องอื่น
+triage.blocks[4].blocks[0].titleTh: นาฬิกาคนร้าย
+triage.blocks[4].blocks[1].text.th: เคสเร็วที่สุดที่เคยเห็นใช้แค่ 27 วินาที (เคสเดียว ไม่ใช่ปกติ)
+triage.blocks[4].blocks[1].titleTh: สถิติเร็วสุด
+triage.blocks[4].blocks[2].lines[0].text.th: ฝั่งโอเพนซอร์สก็ติดคอขวดเดียวกัน ดูถังกับท่อนี้
+triage.blocks[4].blocks[3].props.titleTh: เจอเร็ว แต่แก้ช้า
+triage.blocks[4].blocks[3].props.asOfTh: ถึง 2 พ.ย. 2569 เท่าที่ Anthropic รู้
+triage.blocks[4].blocks[3].props.bucketLabelTh: แจ้งแล้ว
+triage.blocks[4].blocks[3].props.pipeLabelTh: แก้แล้วอย่างน้อย
+triage.blocks[4].blocks[3].props.unitTh: ตัว
+triage.blocks[4].blocks[3].props.ratioTh: ราว 12%
+triage.blocks[4].blocks[3].props.ratioLabelTh: เราคำนวณเอง
+triage.blocks[4].blocks[3].props.badgeTh: ตัวเลขจากบริษัทเจ้าของเอง
+triage.blocks[4].blocks[3].fallbackTh[0]: ถึง 2 พ.ย. 2569 Anthropic แจ้งช่องโหว่ให้โปรเจกต์โอเพนซอร์สไปแล้ว 5,087 ตัว เท่าที่บริษัทรู้ แก้แล้วอย่างน้อย 629 ตัว (ราว 12% เราคำนวณเอง)
+triage.blocks[4].blocks[4].text.th: ความปลอดภัยของซอฟต์แวร์เคยติดที่ความเร็วในการหาช่องโหว่ ตอนนี้ติดที่ความเร็วในการตรวจ แจ้ง และแก้
+triage.blocks[4].blocks[4].titleTh: Anthropic เขียนไว้เอง
+triage.blocks[5].lines[0].text.th: ถ้าเคยสนใจห้องฉุกเฉิน งานนี้คล้ายกัน คือคัดว่าอะไรด่วนจริง
+triage.blocks[5].lines[1].text.th: แค่คนไข้คือระบบ
+triage.blocks[5].lines[2].text.th: ข้อเสีย: เหตุด่วนไม่เลือกเวลา โดนตอนตีสามก็ต้องตื่น
+triage.clip.hookTh: เกมนี้ AI ติดป้ายผิด 2 ใน 10 เธอเจอไหม
+triage.clip.scriptLinesTh[0]: ถ้าเธอลังเลระหว่างหมอกับคอม ลองดูงานนี้
+triage.clip.scriptLinesTh[1]: หมอห้องฉุกเฉินต้องคัดว่าใครด่วนจริง
+triage.clip.scriptLinesTh[2]: คนสายไซเบอร์ก็คัดว่าสัญญาณไหนคือโดนจริง
+triage.clip.scriptLinesTh[3]: ต่างกันที่ตอนนี้ AI ติดป้ายมาให้ก่อน และบางทีมันก็ผิด
+triage.clip.scriptLinesTh[4]: งานของเราคือรู้ว่ามันผิดตรงไหน
+triage.clip.scriptLinesTh[5]: ลองเล่นเกมนี้ดู ถ้าสนุก นั่นคือเบาะแสสำคัญเกี่ยวกับตัวเธอ
+triage.reel.hook.th: งานไซเบอร์จริง คือจับผิด AI
+triage.reel.variantsTh[0]: เกมจำลอง: AI ติดป้ายผิด 2 ใน 10 เธอหาเจอไหม
+triage.reel.variantsTh[1]: AI ตอบถูก 8 จาก 10 แต่ข้อที่ผิดคือโดนแฮกจริง (เกมจำลอง)
+triage.reel.sendToFriendTh: ส่งให้เพื่อนที่ยังลังเลระหว่างหมอกับคอม
+triage.reel.visual[0]: รายการสัญญาณเตือนเลื่อน AI ประทับป้ายทีละแถว แถวที่ 2 กลายเป็นสีแดงทีหลัง
+triage.reel.visual[1]: ถังที่เติมเร็วกว่าท่อที่ไหลออก",
+  "scam.titleTh: แชตบ้านเธอ คือสนามจริง
+scam.questionTh: ภัยไซเบอร์ในไทยตอนนี้หน้าตาเป็นยังไง แล้วใครเป็นคนหยุดมัน
+scam.navLabelTh: แชตบ้านเธอ
+scam.og.headlineTh: ไซเบอร์ไม่ได้อยู่ไกล มันอยู่ในแชตบ้านเธอ
+scam.og.stat.th: ผู้ใหญ่ไทยในผลสำรวจ 79% เคยเจอมิจฉาชีพ
+scam.blocks[0].lines[0].text.th: ไซเบอร์ไม่ได้อยู่ไกล มันอยู่ในแชตบ้านเธอ
+scam.blocks[0].lines[1].text.th: ก่อนเล่น ดูข่าวไซเบอร์ไทยแค่สัปดาห์นี้ก่อน
+scam.blocks[1].text.th: หน่วยงานรัฐ ธนาคาร และสาธารณูปโภค โดนพยายามเจาะระบบทุกวัน และคนร้ายใช้ AI หาจุดอ่อนของระบบก่อนลงมือ
+scam.blocks[1].titleTh: สมช.
+scam.blocks[1].metaTh: 9 พ.ย. 2569
+scam.blocks[2].text.th: เรียก CIO ของทุกสถาบันการเงินมาประชุมกับ TB-CERT และสมาคมธนาคารไทย หลังมีเหตุโจมตีธนาคารต่างประเทศ ตอนนี้ยังไม่พบผลกระทบกับบริการในไทย
+scam.blocks[2].titleTh: ธปท.
+scam.blocks[2].metaTh: 9 พ.ย. 2569
+scam.blocks[3].text.th: ข้อมูลการจองผู้โดยสารราว 60,000 รายการถูกเข้าถึงผ่านระบบของ Amadeus บริษัทระบบจองที่สายการบินใช้ นานกว่า 3 ปี การบินไทยแจ้งว่าข้อมูลบัตรเครดิตไม่ได้รับผลกระทบ
+scam.blocks[3].titleTh: การบินไทย
+scam.blocks[3].metaTh: 10 พ.ย. 2569
+scam.blocks[4].text.th: ข้อมูลองค์กรหลุดผ่านบริษัทคู่ค้าได้ และในไทย คนเขียนระบบก็โดนปรับได้: ปี 2568 สคส. ปรับบริษัทผู้พัฒนาระบบ 3 ล้านบาท มากกว่าบริษัทลูกค้าที่โดน 500,000 บาท
+scam.blocks[4].titleTh: อีกสายหนึ่งของไซเบอร์: ความเสี่ยงจากคู่ค้า
+scam.blocks[5].unlockLabelTh: เข้าแชตบ้านเรา
+scam.blocks[5].blocks[0].lines[0].text.th: ลองแยก 7 ข้อความนี้ อันไหนปลอดภัย อันไหนหลอก
+scam.blocks[5].blocks[0].lines[1].text.th: ทุกข้อความเป็นตัวอย่างจำลอง แต่หลายข้อความอิงบทพูดจากเคสจริง
+scam.blocks[5].blocks[1].game.data.goalTh: แชตบ้านเรา: แยกข้อความปลอดภัยกับข้อความหลอก
+scam.blocks[5].blocks[1].game.data.bins[0].labelTh: ปลอดภัย
+scam.blocks[5].blocks[1].game.data.bins[1].labelTh: หลอก
+scam.blocks[5].blocks[1].game.data.simulated.watermarkTh: ตัวอย่างจำลอง
+scam.blocks[5].blocks[1].game.data.items[0].labelTh: ข้อความเสียง (ถอดความ): ลูก แม่เปลี่ยนเบอร์นะ โอนให้แม่ก่อน 5,000 ด่วน เดี๋ยวคืน
+scam.blocks[5].blocks[1].game.data.items[0].meta.sender: แม่
+scam.blocks[5].blocks[1].game.data.items[0].meta.senderNote: บัญชีใหม่ ไม่มีรูป
+scam.blocks[5].blocks[1].game.data.items[0].flags[0]: เปลี่ยนเบอร์หรือช่องทาง
+scam.blocks[5].blocks[1].game.data.items[0].flags[1]: เร่ง
+scam.blocks[5].blocks[1].game.data.items[0].flags[2]: ขอเงินหรือบัญชี
+scam.blocks[5].blocks[1].game.data.items[0].revealTh: ตอนนี้ AI เลียนเสียงคนใกล้ตัวได้แล้ว กระทรวงดิจิทัลฯ เตือนเรื่องนี้ ทางแก้: วางสาย แล้วโทรกลับเบอร์เดิมของแม่
+scam.blocks[5].blocks[1].game.data.items[1].labelTh: ค่าไฟค้างชำระ จะตัดไฟคืนนี้ จ่ายที่ลิงก์นี้ด่วน
+scam.blocks[5].blocks[1].game.data.items[1].meta.sender: การไฟฟ้า
+scam.blocks[5].blocks[1].game.data.items[1].flags[0]: เร่ง
+scam.blocks[5].blocks[1].game.data.items[1].flags[1]: ลิงก์แปลก
+scam.blocks[5].blocks[1].game.data.items[1].revealTh: ลิงก์จ่ายเงินปลอมที่แอบอ้างการไฟฟ้าหรือการประปา คือเทรนด์แรกที่กระทรวงดิจิทัลฯ เตือนสำหรับปี 2569
+scam.blocks[5].blocks[1].game.data.items[2].labelTh: โอนออก 120 บาท (ตรงกับค่าข้าวที่เธอเพิ่งโอน)
+scam.blocks[5].blocks[1].game.data.items[2].meta.sender: แจ้งเตือนในแอปธนาคาร
+scam.blocks[5].blocks[1].game.data.items[2].revealTh: มาจากแอปเอง ไม่มีลิงก์ ไม่ขออะไร ถ้าสงสัย เปิดแอปเช็กเอง อย่ากดลิงก์
+scam.blocks[5].blocks[1].game.data.items[3].labelTh: บัตรประชาชนของคุณถูกใช้เปิดซิมฟอกเงิน เดี๋ยวโอนสายให้ตำรวจ วิดีโอคอลนะ ห้ามบอกครอบครัว
+scam.blocks[5].blocks[1].game.data.items[3].meta.sender: เจ้าหน้าที่ค่ายมือถือ
+scam.blocks[5].blocks[1].game.data.items[3].flags[0]: ห้ามบอกใคร
+scam.blocks[5].blocks[1].game.data.items[3].flags[1]: เปลี่ยนเบอร์หรือช่องทาง
+scam.blocks[5].blocks[1].game.data.items[3].revealTh: คำสั่งให้ปิดเรื่องจากครอบครัว คือธงแดงใหญ่ที่สุด มุกนี้เหมือนเคสจริงเมื่อ 2 ก.ย. 2569
+scam.blocks[5].blocks[1].game.data.items[4].labelTh: ยินดีด้วย ได้ทุนเรียนต่ออังกฤษ ต้องโอนเงินแสดงในบัญชีก่อนวันศุกร์
+scam.blocks[5].blocks[1].game.data.items[4].meta.sender: อาจารย์มหาวิทยาลัย
+scam.blocks[5].blocks[1].game.data.items[4].flags[0]: ขอเงินหรือบัญชี
+scam.blocks[5].blocks[1].game.data.items[4].flags[1]: เร่ง
+scam.blocks[5].blocks[1].game.data.items[4].revealTh: ทุนจริงไม่ให้โอนเงินไปให้คนแปลกหน้า เคสจริงปีนี้ใช้มุกนี้หลอกคนอายุ 19 ถึง 22
+scam.blocks[5].blocks[1].game.data.items[5].labelTh: เปิดบัญชีธนาคารให้พี่ 3 บัญชี มีค่าขนมให้ ไม่ผิดกฎหมายหรอก
+scam.blocks[5].blocks[1].game.data.items[5].meta.sender: รุ่นพี่
+scam.blocks[5].blocks[1].game.data.items[5].flags[0]: ขอเงินหรือบัญชี
+scam.blocks[5].blocks[1].game.data.items[5].revealTh: หลอก และเธออาจกลายเป็นผู้ต้องหา บัญชีที่เปิดให้คนอื่นใช้ เรียกว่าบัญชีม้า คนเปิดก็เสี่ยงโดนคดีด้วย
+scam.blocks[5].blocks[1].game.data.items[6].labelTh: พรุ่งนี้สอบย่อยคาบ 3 นะ
+scam.blocks[5].blocks[1].game.data.items[6].meta.sender: ครูในกลุ่มห้อง
+scam.blocks[5].blocks[1].game.data.items[6].revealTh: ไม่มีลิงก์ ไม่ขอเงิน ไม่มีความลับ
+scam.blocks[5].blocks[1].game.data.resultTh: แยกข้อความถูก {score}/{total}
+scam.blocks[5].blocks[1].answersTh[0]: หลอก: แม่เปลี่ยนเบอร์ขอเงินด่วน, SMS ค่าไฟพร้อมลิงก์, เจ้าหน้าที่ค่ายมือถือที่สั่งห้ามบอกครอบครัว, ทุนเรียนต่อที่ให้โอนเงิน, รุ่นพี่ขอให้เปิดบัญชีให้
+scam.blocks[5].blocks[1].answersTh[1]: ปลอดภัย: แจ้งเตือนในแอปธนาคารที่ตรงกับที่เธอโอนเอง, ครูบอกเรื่องสอบย่อย
+scam.blocks[5].blocks[1].answersTh[2]: ธงแดง: เร่ง, ห้ามบอกใคร, เปลี่ยนเบอร์หรือช่องทาง, ขอเงินหรือบัญชี, ลิงก์แปลก
+scam.blocks[6].unlockLabelTh: เรื่องจริงเบื้องหลังแชต
+scam.blocks[6].blocks[0].text.th: ผลสำรวจปี 2569 (1,290 คน) ผู้ใหญ่ไทย 79% เคยเจอมิจฉาชีพ ช่องทางที่เจอบ่อยคือ Facebook 54% กับ LINE 48% แต่มีแค่ 4% ที่ไปแจ้งความ
+scam.blocks[6].blocks[0].titleTh: ผลสำรวจ
+scam.blocks[6].blocks[1].text.th: 2 ก.ย. 2569 คนอายุ 19 ถึง 22 สามคนเสียเงินรวม 2,743,984 บาท ให้ตำรวจปลอมทางวิดีโอคอล สองในสามคนเริ่มจากอาจารย์ปลอมที่เสนอทุนเรียนต่อต่างประเทศ
+scam.blocks[6].blocks[1].titleTh: เคสจริง: ตำรวจปลอม
+scam.blocks[6].blocks[2].lines[0].text.th: แต่มีเงิน 500,000 บาทที่รอดมาได้ เพราะธนาคารโทรมาเตือนก่อนโอน
+scam.blocks[6].blocks[2].lines[1].text.th: คนที่โทรคือทีมกันโกงของธนาคาร นั่นแหละงานสายนี้
+scam.blocks[6].blocks[3].text.th: 18 ต.ค. 2569 ตำรวจไซเบอร์จับนายหน้าที่ชวนนักเรียน ม.2 อายุ 15 เปิดบัญชีธนาคาร 3 บัญชีให้ บัญชีพวกนั้นโยงกับ 5 คดี เสียหายรวม 675,000 บาท
+scam.blocks[6].blocks[3].titleTh: เคสจริง: บัญชีม้า
+scam.blocks[6].blocks[4].lines[0].text.th: ห้ามให้ยืม ห้ามขาย ทั้งบัญชีและบัตรประชาชน
+scam.blocks[6].blocks[5].text.th: กระทรวงดิจิทัลฯ เตือนว่าปี 2569 จะเจอคลิปและเสียงปลอมด้วย AI ที่เลียนแบบญาติหรือเจ้าหน้าที่มากขึ้น
+scam.blocks[6].blocks[5].titleTh: เทรนด์ปีนี้
+scam.blocks[7].lines[0].text.th: ใครทำงานนี้: ทีมกันโกงของธนาคาร ค่ายมือถือ ศูนย์ AOC 1441
+scam.blocks[7].lines[1].text.th: บริษัทแอปเตือนเบอร์มิจฉาชีพ และตำรวจไซเบอร์ ทั้งหมดนี้คือสายไซเบอร์
+scam.blocks[8].text.th: เจอเรื่องแบบนี้ โทร 1441
+scam.blocks[8].titleTh: สายด่วน
+scam.clip.hookTh: ข้อความไหนในแชตบ้านเธอคือมิจ
+scam.clip.scriptLinesTh[0]: ข่าวไซเบอร์ไม่ได้อยู่ไกลเลย
+scam.clip.scriptLinesTh[1]: เมื่อกันยาที่ผ่านมา มีคนอายุ 19 ถึง 22 สามคน
+scam.clip.scriptLinesTh[2]: เสียเงินรวมกว่า 2,700,000 บาท ให้ตำรวจปลอมกับทุนเรียนต่อปลอม
+scam.clip.scriptLinesTh[3]: แต่มีเงิน 500,000 บาทที่รอดมาได้ เพราะคนจากธนาคารโทรมาเตือนทัน
+scam.clip.scriptLinesTh[4]: งานนั้นแหละคือสายไซเบอร์
+scam.clip.scriptLinesTh[5]: ลองแยกเจ็ดข้อความนี้ดู ถ้าแยกถูกหมด ส่งให้ที่บ้านเลย
+scam.reel.hook.th: 3 คนอายุ 19 ถึง 22 เสียเงินรวม 2.7 ล้าน ด้วยบทพูดนี้
+scam.reel.variantsTh[0]: ข้อความไหนในแชตบ้านเธอคือมิจฉาชีพ ลองทาย
+scam.reel.variantsTh[1]: ทุนเรียนต่อปลอม หลอกคนอายุ 19 ถึง 22 ไปแล้วหลักล้าน
+scam.reel.sendToFriendTh: ส่งให้แม่
+scam.reel.visual[0]: ฟองแชตเด้งขึ้นทีละอัน ป้ายธงแดงประทับลงบนคำ
+scam.reel.visual[1]: หมุดแผนที่ที่กรุงเทพฯ กับการ์ดข่าวสามใบมีวันที่ตกลงมา",
+  "firstjob.titleTh: งานแรกของฉัน จะเหลืออะไร
+firstjob.questionTh: ถ้า AI ทำงานพื้นฐานได้ ตำแหน่งเริ่มต้นจะหายไหม
+firstjob.navLabelTh: งานแรก
+firstjob.og.headlineTh: บันไดขั้นแรกอาจไม่ได้หาย แต่ย้ายจากเฝ้าจอ ไปเป็นตรวจงาน AI
+firstjob.og.stat.th: 31% คิดว่าจะเกิดตำแหน่งเริ่มต้นแบบใหม่
+firstjob.blocks[0].lines[0].text.th: พอ AI ทำงานพื้นฐานได้แล้ว งานแรกของเธอจะเหลืออะไร
+firstjob.blocks[0].lines[1].text.th: ลองกดเพิ่ม AI เข้าไปในบันไดนี้ แล้วดูว่าขั้นไหนจะหายไป
+firstjob.blocks[1].game.data.rungsTh[0]: นั่งเฝ้าจอแจ้งเตือน
+firstjob.blocks[1].game.data.rungsTh[1]: อ่าน log ทั้งคืน
+firstjob.blocks[1].game.data.rungsTh[2]: สแกนช่องโหว่เบื้องต้น
+firstjob.blocks[1].game.data.rungsTh[3]: สืบสวนเหตุ
+firstjob.blocks[1].game.data.rungsTh[4]: วางระบบป้องกัน
+firstjob.blocks[1].game.data.aiCaption.th: 52% ของคนสายนี้ในผลสำรวจ ISC2 คิดว่า AI จะลดความต้องการคนระดับเริ่มต้น
+firstjob.blocks[1].game.data.newRungsTh[0]: ตรวจงาน AI
+firstjob.blocks[1].game.data.newRungsTh[1]: นักวิเคราะห์ SOC ที่ใช้ AI ช่วย
+firstjob.blocks[1].game.data.newRungsTh[2]: ทดสอบ AI เอง (AI red team)
+firstjob.blocks[1].game.data.newCaption.th: แต่ 31% คิดว่าจะเกิดตำแหน่งเริ่มต้นแบบใหม่ เช่น นักวิเคราะห์ SOC ที่ใช้ AI ช่วย
+firstjob.blocks[1].game.data.proofChips[0].labelTh: เขียน write-up จากห้องฝึก
+firstjob.blocks[1].game.data.proofChips[0].evidenceTh: ลิงก์ write-up ที่คนอื่นอ่านได้
+firstjob.blocks[1].game.data.proofChips[1].labelTh: แข่ง CTF
+firstjob.blocks[1].game.data.proofChips[1].evidenceTh: อันดับหรือใบประกาศ
+firstjob.blocks[1].game.data.proofChips[2].labelTh: ทำแล็บที่บ้าน
+firstjob.blocks[1].game.data.proofChips[2].evidenceTh: รูปและบันทึกว่าตั้งค่าอะไร
+firstjob.blocks[1].game.data.proofChips[3].labelTh: ช่วยงานโอเพนซอร์ส
+firstjob.blocks[1].game.data.proofChips[3].evidenceTh: ลิงก์ issue หรือ pull request
+firstjob.blocks[1].game.data.proofChips[4].labelTh: เรียนพื้นฐานเครือข่าย
+firstjob.blocks[1].game.data.proofChips[4].evidenceTh: สรุปโน้ตของตัวเอง
+firstjob.blocks[1].game.data.proofChips[5].labelTh: สอนที่บ้านเรื่องมิจฉาชีพ
+firstjob.blocks[1].game.data.proofChips[5].evidenceTh: เรื่องเล่าในพอร์ตว่าเธอช่วยใคร
+firstjob.blocks[1].answersTh[0]: ขั้นล่างที่ AI ทำได้: นั่งเฝ้าจอแจ้งเตือน อ่าน log ทั้งคืน สแกนช่องโหว่เบื้องต้น
+firstjob.blocks[1].answersTh[1]: ขั้นใหม่ที่อาจมาแทน: ตรวจงาน AI, นักวิเคราะห์ SOC ที่ใช้ AI ช่วย, ทดสอบ AI เอง (AI red team)
+firstjob.blocks[1].answersTh[2]: ขั้นแรกของเธอสร้างเองได้: write-up จากห้องฝึก, แข่ง CTF, แล็บที่บ้าน, ช่วยงานโอเพนซอร์ส, พื้นฐานเครือข่าย, สอนที่บ้านเรื่องมิจฉาชีพ
+firstjob.blocks[2].lines[0].text.th: บันไดขั้นแรกอาจไม่ได้หาย แต่ย้ายจากเฝ้าจอ ไปเป็นตรวจงาน AI
+firstjob.blocks[3].text.th: ทักษะที่คนสายนี้ทั่วโลกบอกว่าขาดมากที่สุดตอนนี้คือ AI (41% จากผู้ตอบ 16,029 คน)
+firstjob.blocks[4].text.th: ฝั่งคนร้ายก็ใช้ AI: Anthropic บอกว่าเคสจารกรรมที่จับได้ปี 2568 AI ทำงานไปราว 80 ถึง 90% คนเข้ามาตัดสินใจแค่ราว 4 ถึง 6 จุด
+firstjob.blocks[4].titleTh: อีกฝั่งก็อัปเกรด
+firstjob.blocks[5].text.th: ในอเมริกามีชื่องานใหม่โผล่มาแล้ว: AI/ML security engineer กว่า 850 ตำแหน่ง, AI governance ราว 430, AI red team ราว 100, AI SOC orchestrator 36
+firstjob.blocks[5].titleTh: ชื่องานใหม่ (สหรัฐฯ ก.ย. 2569)
+firstjob.blocks[6].text.th: ในไทย TDRI ประเมินว่าคนทำงานราว 2.2 ล้านคนเสี่ยงสูงที่งานจะถูก AI ทำแทน และเด็กจบใหม่เริ่มหางานระดับเริ่มต้นยากขึ้นแล้ว
+firstjob.blocks[6].titleTh: ฝั่งไทย
+firstjob.blocks[7].lines[0].text.th: อย่ารอเรียนจบค่อยมีผลงาน
+firstjob.blocks[7].lines[1].text.th: ขั้นแรกของเธอสร้างได้ตั้งแต่ ม.ปลาย
+firstjob.reel.hook.th: AI จะกินงานแรกของสายไซเบอร์ไหม
+firstjob.reel.variantsTh[0]: AI อาจไม่ได้ลบงานแรก แต่ย้ายบันไดขั้นแรก
+firstjob.reel.variantsTh[1]: 52% ในวงการคิดว่างานแรกจะลด แต่ 31% คิดว่าจะมีงานแรกแบบใหม่
+firstjob.reel.sendToFriendTh: ส่งให้เพื่อนที่กลัวว่า AI จะแย่งงาน
+firstjob.reel.visual[0]: บันไดหนึ่งอัน ขั้นล่างจางหายเมื่อตรา AI ผ่าน
+firstjob.reel.visual[1]: ขั้นใหม่สามขั้นเด้งเข้าที่สูงขึ้นหนึ่งระดับ
+firstjob.reel.visual[2]: บล็อกผลงานสามก้อนซ้อนใต้บันได",
+  "money.titleTh: เงินเดือนจริงในไทย
+money.questionTh: ทำสายนี้ในไทย ได้เท่าไหร่ ตั้งแต่เริ่มจนเก๋า
+money.navLabelTh: เงินเดือน
+money.og.headlineTh: เงินเดือนสายไซเบอร์ในไทย ของจริง
+money.og.stat.th: ค่ากลาง 35,500 เพดาน 250,000
+money.blocks[0].lines[0].text.th: ด่านนี้เดาก่อน แล้วค่อยดูของจริง
+money.blocks[0].lines[1].text.th: ลากหรือกดปุ่ม ล็อกคำตอบแล้วห้ามแก้นะ
+money.blocks[1].game.data.promptTh: ลองทายค่ากลางเงินเดือนในประกาศงาน Security Engineer ในไทย (บาทต่อเดือน)
+money.blocks[1].game.data.chart.markers[0].labelTh: 10% ล่าง
+money.blocks[1].game.data.chart.markers[1].labelTh: 25% ล่าง
+money.blocks[1].game.data.chart.markers[2].labelTh: ค่ากลาง
+money.blocks[1].game.data.chart.markers[3].labelTh: 25% บน
+money.blocks[1].game.data.chart.markers[4].labelTh: 10% บน
+money.blocks[1].game.data.chart.gapLabelTh: ช่วงกลางอาชีพ: ไม่มีข้อมูลที่ตรวจสอบได้ เราเลยไม่เดาเอง
+money.blocks[1].game.data.nearTh: เกือบเป๊ะ
+money.blocks[1].game.data.overTh: เธอเดาสูงไป {d} บาท
+money.blocks[1].game.data.underTh: เธอเดาต่ำไป {d} บาท
+money.blocks[1].game.data.revealTh: ค่ากลางในประกาศงานคือ 35,500 บาทต่อเดือน
+money.blocks[1].answersTh[0]: ค่ากลางในประกาศงาน Security Engineer บน JobsDB คือ 35,500 บาทต่อเดือน
+money.blocks[1].answersTh[1]: ประกาศช่วงกลางๆ อยู่ระหว่าง 33,000 ถึง 39,000 บาท รวมทุกระดับประสบการณ์
+money.blocks[2].text.th: ค่ากลางในประกาศงาน Security Engineer บน JobsDB คือ 35,500 บาทต่อเดือน ครึ่งกลางของประกาศอยู่ระหว่าง 33,000 ถึง 39,000 บาท
+money.blocks[2].titleTh: ค่ากลาง
+money.blocks[3].lines[0].text.th: นี่รวมทุกระดับประสบการณ์ ไม่ใช่เงินเดือนแรกของทุกคน
+money.blocks[4].text.th: ประกาศระดับเริ่มต้นอยู่ราว 25,000 ถึง 35,000 บาท เงินเดือนแรกอาจไม่หวือหวา
+money.blocks[4].titleTh: ด่านแรก
+money.blocks[6].text.th: คู่มือเงินเดือน Adecco ปี 2569 บอกว่า IT Security ระดับอาวุโส 7 ปีขึ้นไป สูงสุดราว 250,000 แต่ตัวเลขนี้ค่อนไปทางบริษัทข้ามชาติ
+money.blocks[6].titleTh: เพดาน (คนละแหล่งข้อมูล)
+money.blocks[7].text.th: Adecco บอกว่าคนย้ายงานสายไซเบอร์ ข้อมูล และ AI ขอขึ้นเงินเดือนราว 20 ถึง 25% ส่วนพนักงานทั่วไปปรับขึ้นปีละราว 2 ถึง 5%
+money.blocks[7].titleTh: ตอนย้ายงาน
+money.blocks[8].text.th: ค่ากลาง Information Security Analyst ในสหรัฐฯ ปีละ $129,180 ตำแหน่งใหม่อย่าง AI/ML security engineer ค่ากลางในประกาศ $140,000 คนละประเทศ คนละค่าครองชีพ อย่าเอามาเทียบตรงๆ
+money.blocks[8].titleTh: ตัวเลขสหรัฐฯ (ไม่ใช่ของไทย)
+money.blocks[9].lines[0].text.th: จุดเริ่มไม่หวือหวา แต่ทางขึ้นชัน
+money.blocks[9].lines[1].text.th: ที่ช่วยให้ไต่ขึ้นได้ คือผลงานที่พิสูจน์ว่าทำได้จริง
+money.blocks[9].lines[2].text.th: ซึ่งเริ่มเก็บได้ตั้งแต่ ม.ปลาย
+money.clip.hookTh: เงินเดือนไซเบอร์ไทย ของจริง
+money.clip.scriptLinesTh[0]: ตัวเลขเงินเดือนไซเบอร์ที่เห็นในคลิป บางตัวเป็นของอเมริกา
+money.clip.scriptLinesTh[1]: ของไทย ไปดูประกาศงาน Security Engineer บน JobsDB
+money.clip.scriptLinesTh[2]: ตัวเลขกลางๆ อยู่ที่เดือนละ 35,500 บาท
+money.clip.scriptLinesTh[3]: อันนี้รวมทุกระดับนะ ไม่ใช่เงินเดือนแรก
+money.clip.scriptLinesTh[4]: ส่วนตัวเลขสูงสุด คู่มือเงินเดือนของ Adecco บอกว่า
+money.clip.scriptLinesTh[5]: ระดับอาวุโส 7 ปีขึ้นไป สูงสุดราว 250,000 บาท
+money.clip.scriptLinesTh[6]: แต่ตัวเลขนี้ค่อนไปทางบริษัทข้ามชาตินะ
+money.clip.scriptLinesTh[7]: จุดเริ่มไม่หวือหวา แต่ทางขึ้นชันสำหรับคนที่พิสูจน์ฝีมือได้
+money.reel.hook.th: สายไซเบอร์ในไทย ค่ากลาง 35,500 เพดาน 250,000
+money.reel.variantsTh[0]: เดาดู เงินเดือนสายไซเบอร์ในไทยเท่าไหร่
+money.reel.variantsTh[1]: ตัวเลขเงินเดือนไซเบอร์ในคลิป อาจไม่ใช่ตัวเลขไทย
+money.reel.sendToFriendTh: ส่งให้เพื่อนที่คิดว่าสายนี้รวยตั้งแต่วันแรก
+money.reel.visual[0]: หมุดตกลงที่ 35,500 ในแถบที่แรเงา
+money.reel.visual[1]: แกนหักแบบซิกแซก
+money.reel.visual[2]: แท่งสูงแยกของเพดาน 250,000 พร้อมคำอธิบาย",
+  "fit.titleTh: ฉันเหมาะไหม เทียบกับคอม วิศวะ หมอ
+fit.questionTh: ควรไปไซเบอร์ตรงๆ ไปคอมกว้างๆ ก่อน หรือใจจริงอยู่ที่หมอ
+fit.navLabelTh: เหมาะไหม
+fit.og.headlineTh: ลังเลระหว่างคอม วิศวะ หมอ เป็นเรื่องปกติมาก
+fit.blocks[1].lines[0].text.th: ลังเลระหว่างคอม วิศวะ หมอ เป็นเรื่องปกติมาก
+fit.blocks[1].lines[1].text.th: หกข้อนี้ไม่ได้ตัดสินแทนเธอ แค่ช่วยให้เห็นว่าเธอเอนไปทางไหน
+fit.blocks[1].lines[2].text.th: ไม่มีข้อไหนผิด เลือกอันที่ใช่กว่านิดเดียวก็พอ
+fit.blocks[2].game.data.questions[0].leftTh: ปริศนาที่ไม่มีเฉลยในหนังสือ
+fit.blocks[2].game.data.questions[0].rightTh: โจทย์ที่มีเฉลยชัด
+fit.blocks[2].game.data.questions[1].leftTh: ของพังแล้ว อยากรู้ว่าพังเพราะอะไร
+fit.blocks[2].game.data.questions[1].rightTh: อยากให้มีคนซ่อมให้เร็วๆ
+fit.blocks[2].game.data.questions[2].leftTh: สร้างของใหม่
+fit.blocks[2].game.data.questions[2].rightTh: หาจุดพังของที่มีอยู่
+fit.blocks[2].game.data.questions[3].leftTh: ช่วยคนตรงหน้าทีละคน
+fit.blocks[2].game.data.questions[3].rightTh: ปกป้องคนเป็นล้านที่ไม่เคยเห็นหน้า
+fit.blocks[2].game.data.questions[4].leftTh: ตัดสินใจเร็วตอนกดดัน
+fit.blocks[2].game.data.questions[4].rightTh: ได้คิดนานๆ ไม่มีใครเร่ง
+fit.blocks[2].game.data.questions[5].leftTh: อธิบายเรื่องยากให้คนทั่วไปเข้าใจ: โอเค
+fit.blocks[2].game.data.questions[5].rightTh: อธิบายเรื่องยากให้คนทั่วไปเข้าใจ: ไม่ชอบเลย
+fit.blocks[2].game.data.outcomes.A.titleTh: ไซเบอร์ตรง
+fit.blocks[2].game.data.outcomes.A.bodyTh: หลักสูตรที่มีคำว่าไซเบอร์ในชื่อ เหมาะกับคนที่รู้แล้วว่าชอบหาจุดพัง
+fit.blocks[2].game.data.outcomes.B.titleTh: คอมกว้างก่อน
+fit.blocks[2].game.data.outcomes.B.bodyTh: วิศวะคอม วิทย์คอม หรือไอที แล้วค่อยเลือกไซเบอร์ตอนปีหลังๆ ประตูกว้างกว่า เปลี่ยนใจได้ง่ายกว่า
+fit.blocks[2].game.data.outcomes.C.titleTh: ใจอยู่กับคน
+fit.blocks[2].game.data.outcomes.C.bodyTh: หมออาจตอบโจทย์เธอกว่า และไม่ต้องทิ้งความชอบเรื่องคัดเคสด่วน ห้องฉุกเฉินก็เป็นงานคัดแยกเหมือนกัน
+fit.blocks[2].game.data.disclaimerTh: ไม่ใช่แบบทดสอบบุคลิก แค่ช่วยคิด
+fit.blocks[2].answersTh[0]: ไซเบอร์ตรง: หลักสูตรที่มีคำว่าไซเบอร์ในชื่อ เหมาะกับคนที่รู้แล้วว่าชอบหาจุดพัง
+fit.blocks[2].answersTh[1]: คอมกว้างก่อน: วิศวะคอม วิทย์คอม หรือไอที แล้วค่อยเลือกไซเบอร์ตอนปีหลังๆ
+fit.blocks[2].answersTh[2]: ใจอยู่กับคน: หมออาจตอบโจทย์เธอกว่า ห้องฉุกเฉินก็เป็นงานคัดแยกเหมือนกัน
+fit.blocks[2].answersTh[3]: ไม่ใช่แบบทดสอบบุคลิก แค่ช่วยคิด
+fit.blocks[3].text.th: วิศวะคอมมักเรียนฮาร์ดแวร์และเครือข่ายมากกว่า วิทย์คอมเน้นซอฟต์แวร์และทฤษฎี แต่หลักสูตรแต่ละที่ต่างกัน เปิดดูรายวิชาจริงก่อนเลือก
+fit.blocks[3].titleTh: วิศวะคอม กับ วิทย์คอม
+fit.blocks[4].text.th: ใน TCAS70 หลักสูตรที่มีคำว่าไซเบอร์ในชื่อมี 9 หลักสูตร อยู่ใต้วิทย์คอม 5 วิศวะคอม 2 วิศวะซอฟต์แวร์ 1 ไอที 1 แปลว่าเข้าได้จากหลายประตู
+fit.blocks[4].titleTh: เข้าได้หลายประตู
+fit.blocks[5].lines[0].text.th: งานสายนี้ส่วนหนึ่งคือเขียนรายงานให้คนที่ไม่ใช่สายเทคเข้าใจ
+fit.blocks[5].lines[1].text.th: ถ้าข้อสุดท้ายเธอเลือก ไม่ชอบเลย ก็ไม่เป็นไร แต่รู้ไว้ก่อน
+fit.blocks[6].lines[0].text.th: อย่าเพิ่งเลือกคณะจากคลิป ลองห้องฝึกจริงก่อนสักครั้ง
+fit.blocks[6].lines[1].text.th: ถ้าทำแล้วลืมดูเวลา นั่นคือข้อมูลที่ดีที่สุดที่เธอมี
+fit.clip.hookTh: ลังเลคอม วิศวะ หมอ ลองตอบหกข้อ
+fit.clip.scriptLinesTh[0]: ตอน ม.5 หลายคนเลือกคณะจากคะแนน ที่บ้าน หรือเพื่อน
+fit.clip.scriptLinesTh[1]: แต่แทบไม่มีใครถามว่าเธอเคยลองงานจริงหรือยัง
+fit.clip.scriptLinesTh[2]: ถ้าเธอชอบหาว่าอะไรพัง ชอบตัดสินใจตอนกดดัน
+fit.clip.scriptLinesTh[3]: ไซเบอร์กับหมอมีอะไรคล้ายกันมากกว่าที่คิด
+fit.clip.scriptLinesTh[4]: ลองตอบหกข้อนี้ ไม่ใช่แบบทดสอบบุคลิก แค่ช่วยคิด
+fit.clip.scriptLinesTh[5]: แล้วไปลองห้องฝึกคืนนี้ ค่อยตัดสินใจ
+fit.reel.hook.th: ลังเลระหว่างคอม วิศวะ หมอ ลองตอบหกข้อนี้
+fit.reel.variantsTh[0]: ไซเบอร์กับหมอ คล้ายกันมากกว่าที่คิด
+fit.reel.variantsTh[1]: เลือกคณะจากคะแนนอย่างเดียว อาจพลาดสิ่งนี้
+fit.reel.sendToFriendTh: ส่งให้เพื่อนที่ยังเลือกคณะไม่ได้
+fit.reel.visual[0]: การ์ดคู่พลิกซ้ายขวา
+fit.reel.visual[1]: ป้ายบอกทางสามป้าย ไซเบอร์ตรง คอมกว้าง หมอ แล้วป้ายหนึ่งสว่างขึ้น",
+  "tcas.titleTh: สมัครที่ไหน เมื่อไหร่
+tcas.questionTh: ถ้าจะไปทางนี้ ต้องยื่นที่ไหน รอบไหน ภายในวันไหน
+tcas.navLabelTh: สมัครที่ไหน
+tcas.og.headlineTh: ไซเบอร์ตรงๆ มีแล้วใน TCAS70
+tcas.og.stat.th: 9 หลักสูตรที่มีคำว่าไซเบอร์ในชื่อ
+tcas.blocks[0].lines[0].text.th: ถ้าจะไปทางนี้ ต้องยื่นที่ไหน รอบไหน ภายในวันไหน
+tcas.blocks[0].lines[1].text.th: บอกก่อนว่าตอนนี้เธออยู่ ม.อะไร แผนจะต่างกันเลย
+tcas.blocks[1].game.data.gradeQuestionTh: ตอนนี้เธออยู่ ม.อะไร
+tcas.blocks[1].game.data.gradeBannersTh.m6: เธอคือ TCAS70 รอบนี้เลย ดูวันปิดรับให้ดี
+tcas.blocks[1].game.data.gradeBannersTh.m5: ปีหน้าเธอคือ TCAS71 ดู TCAS70 เป็นตัวอย่างว่าเขาขออะไร แล้วเริ่มเก็บผลงานตั้งแต่ตอนนี้
+tcas.blocks[1].game.data.gradeBannersTh.m4: เธอคือ TCAS72 ดู TCAS70 เป็นตัวอย่าง แล้วค่อยๆ เก็บผลงานตามลิสต์นี้
+tcas.blocks[1].game.data.extraChecklistTh.m4[0]: พื้นฐานเครือข่าย
+tcas.blocks[1].game.data.extraChecklistTh.m4[1]: ห้องฝึกเดือนละห้อง
+tcas.blocks[1].game.data.extraChecklistTh.m4[2]: write-up ทุกห้องที่ทำ
+tcas.blocks[1].game.data.extraChecklistTh.m4[3]: แข่ง CTF รุ่นมัธยม
+tcas.blocks[1].game.data.programmes[0].uniTh: สถาบันเทคโนโลยีพระจอมเกล้าเจ้าคุณทหารลาดกระบัง
+tcas.blocks[1].game.data.programmes[0].degreeTh: วศ.บ. วิศวกรรมคอมพิวเตอร์และความปลอดภัยไซเบอร์ หลักสูตรภาษาไทย ปกติ
+tcas.blocks[1].game.data.programmes[0].deadline.labelTh: รอบ 1 Portfolio ปิด 28 ม.ค. 2570 เวลา 16:30
+tcas.blocks[1].game.data.programmes[0].noteTh: ยังรอตรวจสอบ: แหล่งรอง เช็กประกาศทางการ
+tcas.blocks[1].game.data.programmes[1].uniTh: มหาวิทยาลัยขอนแก่น
+tcas.blocks[1].game.data.programmes[1].degreeTh: วิทยาศาสตรบัณฑิต (ความมั่นคงปลอดภัยไซเบอร์) หลักสูตรภาษาไทย ปกติ
+tcas.blocks[1].game.data.programmes[1].noteTh: มีโครงการรอบ 1 ใน TCAS70 ดูจำนวนรับใน mytcas
+tcas.blocks[1].game.data.programmes[2].uniTh: มหาวิทยาลัยเชียงใหม่
+tcas.blocks[1].game.data.programmes[2].degreeTh: หลักสูตรวิศวกรรมศาสตรบัณฑิต สาขาวิชาระบบสารสนเทศและความมั่นคงปลอดภัยไซเบอร์ หลักสูตรนานาชาติ
+tcas.blocks[1].game.data.programmes[2].noteTh: หลักสูตรนานาชาติ
+tcas.blocks[1].game.data.programmes[3].uniTh: มหาวิทยาลัยธรรมศาสตร์
+tcas.blocks[1].game.data.programmes[3].degreeTh: วท.บ.สาขาวิชาคอมพิวเตอร์เครือข่ายและความปลอดภัยทางไซเบอร์ (โครงการพิเศษ) หลักสูตรภาษาไทย พิเศษ
+tcas.blocks[1].game.data.programmes[3].noteTh: โครงการพิเศษ ค่าเรียนสูงกว่าภาคปกติ เช็กใน mytcas
+tcas.blocks[1].game.data.snapshotProgrammes[0].uniTh: มหาวิทยาลัยขอนแก่น
+tcas.blocks[1].game.data.snapshotProgrammes[0].degreeTh: วิทยาศาสตรบัณฑิต (ความมั่นคงปลอดภัยไซเบอร์) หลักสูตรภาษาไทย พิเศษ
+tcas.blocks[1].game.data.snapshotProgrammes[0].noteTh: ดูรอบและจำนวนรับใน mytcas
+tcas.blocks[1].game.data.snapshotProgrammes[1].uniTh: มหาวิทยาลัยศรีนครินทรวิโรฒ
+tcas.blocks[1].game.data.snapshotProgrammes[1].degreeTh: หลักสูตรวิศวกรรมศาสตรบัณฑิต สาขาวิชาวิศวกรรมด้านความปลอดภัยไซเบอร์ (หลักสูตรนานาชาติ) หลักสูตรนานาชาติ
+tcas.blocks[1].game.data.snapshotProgrammes[1].noteTh: ดูรอบและจำนวนรับใน mytcas
+tcas.blocks[1].game.data.snapshotProgrammes[2].uniTh: มหาวิทยาลัยอุบลราชธานี
+tcas.blocks[1].game.data.snapshotProgrammes[2].degreeTh: วท.บ.สาขาวิชาเทคโนโลยีสารสนเทศและการสื่อสาร (วิชาเอกเทคโนโลยีดิจิทัลและเกม (Digital and Game Technology), วิชาเอกเทคโนโลยีเครือข่ายและความมั่นคงปลอดภัยไซเบอร์ (Network Technology and Cyber Security)) หลักสูตรภาษาไทย ปกติ
+tcas.blocks[1].game.data.snapshotProgrammes[2].noteTh: ดูรอบและจำนวนรับใน mytcas
+tcas.blocks[1].game.data.snapshotProgrammes[3].uniTh: มหาวิทยาลัยสวนดุสิต
+tcas.blocks[1].game.data.snapshotProgrammes[3].degreeTh: หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาความมั่นคงปลอดภัยไซเบอร์ หลักสูตรภาษาไทย ปกติ
+tcas.blocks[1].game.data.snapshotProgrammes[3].noteTh: ดูรอบและจำนวนรับใน mytcas
+tcas.blocks[1].game.data.snapshotProgrammes[4].uniTh: มหาวิทยาลัยหอการค้าไทย
+tcas.blocks[1].game.data.snapshotProgrammes[4].degreeTh: หลักสูตรวิทยาศาสตร์บัณฑิต (กลุ่มวิชาความปลอดภัยทางไซเบอร์) หลักสูตรนานาชาติ
+tcas.blocks[1].game.data.snapshotProgrammes[4].noteTh: ดูรอบและจำนวนรับใน mytcas
+tcas.blocks[1].game.data.broadRoutes[0].labelTh: ประตูกว้าง: วิศวะคอม วิทย์คอม ไอที หลายมหาวิทยาลัย ดูใน mytcas
+tcas.blocks[1].answersTh[0]: TCAS70 มีหลักสูตรที่มีคำว่าไซเบอร์ในชื่อ 9 หลักสูตร
+tcas.blocks[1].answersTh[1]: สถาบันเทคโนโลยีพระจอมเกล้าเจ้าคุณทหารลาดกระบัง: วศ.บ. วิศวกรรมคอมพิวเตอร์และความปลอดภัยไซเบอร์ หลักสูตรภาษาไทย ปกติ
+tcas.blocks[1].answersTh[2]: มหาวิทยาลัยขอนแก่น: วิทยาศาสตรบัณฑิต (ความมั่นคงปลอดภัยไซเบอร์) หลักสูตรภาษาไทย ปกติ
+tcas.blocks[1].answersTh[3]: มหาวิทยาลัยเชียงใหม่: หลักสูตรวิศวกรรมศาสตรบัณฑิต สาขาวิชาระบบสารสนเทศและความมั่นคงปลอดภัยไซเบอร์ หลักสูตรนานาชาติ
+tcas.blocks[1].answersTh[4]: มหาวิทยาลัยธรรมศาสตร์: วท.บ.สาขาวิชาคอมพิวเตอร์เครือข่ายและความปลอดภัยทางไซเบอร์ (โครงการพิเศษ) หลักสูตรภาษาไทย พิเศษ
+tcas.blocks[1].answersTh[5]: มหาวิทยาลัยขอนแก่น: วิทยาศาสตรบัณฑิต (ความมั่นคงปลอดภัยไซเบอร์) หลักสูตรภาษาไทย พิเศษ
+tcas.blocks[1].answersTh[6]: มหาวิทยาลัยศรีนครินทรวิโรฒ: หลักสูตรวิศวกรรมศาสตรบัณฑิต สาขาวิชาวิศวกรรมด้านความปลอดภัยไซเบอร์ (หลักสูตรนานาชาติ) หลักสูตรนานาชาติ
+tcas.blocks[1].answersTh[7]: มหาวิทยาลัยอุบลราชธานี: วท.บ.สาขาวิชาเทคโนโลยีสารสนเทศและการสื่อสาร (วิชาเอกเทคโนโลยีดิจิทัลและเกม (Digital and Game Technology), วิชาเอกเทคโนโลยีเครือข่ายและความมั่นคงปลอดภัยไซเบอร์ (Network Technology and Cyber Security)) หลักสูตรภาษาไทย ปกติ
+tcas.blocks[1].answersTh[8]: มหาวิทยาลัยสวนดุสิต: หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาความมั่นคงปลอดภัยไซเบอร์ หลักสูตรภาษาไทย ปกติ
+tcas.blocks[1].answersTh[9]: มหาวิทยาลัยหอการค้าไทย: หลักสูตรวิทยาศาสตร์บัณฑิต (กลุ่มวิชาความปลอดภัยทางไซเบอร์) หลักสูตรนานาชาติ
+tcas.blocks[1].answersTh[10]: ม.6 ดูวันปิดรับรอบนี้ ม.5 คือ TCAS71 ม.4 คือ TCAS72 ใช้ TCAS70 เป็นตัวอย่างว่าเขาขออะไร
+tcas.blocks[2].text.th: ใน mytcas TCAS70 มีหลักสูตรที่มีคำว่าไซเบอร์ในชื่อ 9 หลักสูตร
+tcas.blocks[2].titleTh: นับจาก mytcas
+tcas.blocks[3].lines[0].text.th: ไม่ต้องเรียนหลักสูตรชื่อไซเบอร์ก็เข้าสายนี้ได้
+tcas.blocks[3].lines[1].text.th: วิศวะคอม วิทย์คอม และไอที คือทางหลัก
+tcas.blocks[4].text.th: ค่าเรียนต่างกันมาก โครงการพิเศษกับนานาชาติแพงกว่าภาคปกติ เช็กใน mytcas ก่อนยื่น
+tcas.blocks[4].titleTh: ค่าเรียน
+tcas.blocks[5].text.th: Thailand Cyber Top Talent มีรุ่น Junior สำหรับนักเรียนมัธยม ปี 2569 มีผู้แข่งรุ่นนี้ 484 คน จากทั้งหมด 1,399 คน ทีมชนะได้ 80,000 บาทพร้อมถ้วยพระราชทาน
+tcas.blocks[5].titleTh: ตัวช่วยพอร์ต: แข่งแฮกแบบถูกกติกา
+tcas.blocks[6].text.th: รอบชิงปีนี้จัดวันที่ 5 ก.ย. 2569 รอบหน้ายังไม่ประกาศวัน ติดตามที่ thnca.or.th
+tcas.blocks[7].text.th: สจล. ยกการแข่งนี้เป็นตัวอย่างในโครงการ Top Talents แต่ไม่ใช่ทุกรางวัลที่ใช้ยื่นได้ อ่านเงื่อนไขเต็มก่อน
+tcas.blocks[7].titleTh: เช็กเงื่อนไขก่อนหวัง
+tcas.blocks[8].text.th: ตอนนี้ลุยห้องฝึกกับ CTF แล้วค่อยเก็บ Security+ ช่วงมหาวิทยาลัย ส่วน SecAI+ ไว้ทีหลัง ใบเซอร์ด้าน AI security มีจริง แต่เขาแนะนำให้มีประสบการณ์ไอที 3 ถึง 4 ปี และงานด้านความปลอดภัยมาก่อน ตอนนี้เก็บผลงานดีกว่า
+tcas.blocks[8].titleTh: บันไดใบเซอร์
+tcas.reel.hook.th: อยากเรียนไซเบอร์ตรงๆ TCAS70 มีที่ไหนบ้าง
+tcas.reel.variantsTh[0]: ม.5 ตอนนี้ ปีหน้าคือ TCAS71 เริ่มเก็บอะไรได้เลย
+tcas.reel.variantsTh[1]: เด็ก ม.ปลาย แข่งแฮกถูกกติกา ได้ถ้วยพระราชทาน
+tcas.reel.sendToFriendTh: ส่งให้เพื่อนที่กำลังเลือกคณะสายคอม
+tcas.reel.visual[0]: ชิปชื่อมหาวิทยาลัยมารวมกันเป็นตาราง
+tcas.reel.visual[1]: ตัวเลขนับถอยหลังแบบพลิก
+tcas.reel.visual[2]: สวิตช์ระดับชั้นที่ปิดการนับถอยหลังเมื่อเลือก ม.5",
+  "terminal.titleTh: ลองเป็นนักป้องกันในเครื่องจำลอง
+terminal.questionTh: งานนี้รู้สึกยังไงตอนลงมือจริง
+terminal.navLabelTh: ลองเป็นนักป้องกัน
+terminal.og.headlineTh: ลองเป็นนักป้องกัน ในเครื่องจำลอง
+terminal.blocks[0].lines[0].text.th: ในหนัง แฮกเกอร์พิมพ์รัวๆ จอเขียว
+terminal.blocks[0].lines[1].text.th: ในชีวิตจริง งานแรกๆ คืออ่าน log แล้วหาบรรทัดที่ผิดปกติให้เจอ
+terminal.blocks[0].lines[2].text.th: และสิ่งแรกที่มืออาชีพทำ คืออ่านขอบเขตงานก่อน
+terminal.blocks[1].lineTh: ฝึกเฉพาะในแล็บหรือระบบที่ได้รับอนุญาตเท่านั้น ระบบของคนอื่น ห้ามลอง ผิดกฎหมาย
+terminal.blocks[2].game.data.labelTh: เครื่องจำลองในหน้านี้ ไม่ได้ต่อกับเครื่องหรือเว็บจริงเครื่องไหนเลย
+terminal.blocks[2].game.data.files.README.txt[0]: เธอคือนักศึกษาฝึกงานทีมป้องกันของแล็บ เมื่อคืนมีสัญญาณแปลกๆ ที่เครื่อง lab.local
+terminal.blocks[2].game.data.files.scope.txt[0]: ได้รับอนุญาต: lab.local (เครื่องในแล็บนี้)
+terminal.blocks[2].game.data.files.scope.txt[1]: ห้ามแตะ: ระบบอื่นทั้งหมด รวมถึงเว็บโรงเรียน เว็บเพื่อน เว็บธนาคาร
+terminal.blocks[2].game.data.commands[0].output[0]: คำสั่งในแล็บนี้:
+terminal.blocks[2].game.data.commands[0].output[1]: ls, ls -a          ดูไฟล์ (รวมไฟล์ซ่อน)
+terminal.blocks[2].game.data.commands[0].output[2]: cat <ไฟล์>          เปิดอ่านไฟล์
+terminal.blocks[2].game.data.commands[0].output[3]: head auth.log      ดู 10 บรรทัดแรก
+terminal.blocks[2].game.data.commands[0].output[4]: grep -c "Failed" auth.log   นับบรรทัด
+terminal.blocks[2].game.data.commands[0].output[5]: grep "Accepted" auth.log    หาบรรทัด
+terminal.blocks[2].game.data.commands[0].output[6]: whoami, clear, scan <เครื่อง>
+terminal.blocks[2].game.data.commands[2].noteTh: ไฟล์ที่ขึ้นต้นด้วยจุดถูกซ่อนไว้
+terminal.blocks[2].game.data.commands[9].output[0]: student (ได้รับอนุญาตในแล็บนี้เท่านั้น)
+terminal.blocks[2].game.data.commands[10].output[0]: พบพอร์ต 80 เปิดอยู่ (จำลอง)
+terminal.blocks[2].game.data.commands[10].noteTh: ต่อจากนี้ไปฝึกในห้องจริงได้ ด่านถัดไป
+terminal.blocks[2].game.data.commands[11].output[0]: หยุด: นอกขอบเขต
+terminal.blocks[2].game.data.commands[11].output[1]: ไม่มีใครอนุญาต แปลว่าผิดกฎหมาย ต่อให้เจตนาดี
+terminal.blocks[2].game.data.commands[11].noteTh: สแกนเว็บโรงเรียน ที่ดูหละหลวมมาก
+terminal.blocks[2].game.data.commands[12].output[0]: หยุด: นอกขอบเขต
+terminal.blocks[2].game.data.commands[12].output[1]: ไม่มีใครอนุญาต แปลว่าผิดกฎหมาย ต่อให้เจตนาดี
+terminal.blocks[2].game.data.unknownTh: ไม่มีคำสั่งนี้ในแล็บ ลอง help
+terminal.blocks[2].game.data.missions[0].titleTh: อ่านขอบเขตก่อน
+terminal.blocks[2].game.data.missions[1].titleTh: นับว่ามีคนเดารหัสผิดกี่ครั้ง
+terminal.blocks[2].game.data.missions[1].question.promptTh: กี่ครั้ง
+terminal.blocks[2].game.data.missions[2].titleTh: หาว่าเดาสำเร็จไหม
+terminal.blocks[2].game.data.missions[2].feedbackTh: บรรทัดนี้แหละ เดาผิด 41 ครั้ง แล้วครั้งที่ 42 เข้าได้
+terminal.blocks[2].game.data.missions[3].titleTh: หาไฟล์ที่ซ่อน
+terminal.blocks[2].game.data.missions[4].titleTh: ตัดสินใจ
+terminal.blocks[2].game.data.decision.options[0].labelTh: บล็อก IP อย่างเดียว
+terminal.blocks[2].game.data.decision.options[0].feedbackTh: ยังไม่พอ คนร้ายเข้ามาแล้ว เปลี่ยน IP ก็ใช้รหัสเดิมเข้าได้อีก
+terminal.blocks[2].game.data.decision.options[1].labelTh: ล็อกบัญชี intern01 + รีเซ็ตรหัส + เปิดเคส + บล็อก IP
+terminal.blocks[2].game.data.decision.options[1].feedbackTh: ใช่ ปิดทางเข้า เปลี่ยนกุญแจ และจดบันทึกให้ทีมตามต่อ
+terminal.blocks[2].game.data.decision.options[2].labelTh: ไม่ต้องทำอะไร
+terminal.blocks[2].game.data.decision.options[2].feedbackTh: บัญชีนี้โดนยึดแล้ว ถ้าไม่ทำอะไร คนร้ายจะขยับไปเครื่องอื่น
+terminal.blocks[2].game.data.poll.prompt.th: AI สายเจาะระบบตัวหนึ่ง ในการทดสอบของบริษัทเอง ออกนอกขอบเขต 0.07% เท่ากับราว 7 ครั้งในการรัน 10,000 ครั้ง ถ้าเป็นเครือข่ายโรงพยาบาล รับได้ไหม
+terminal.blocks[2].game.data.poll.options[0].labelTh: รับได้
+terminal.blocks[2].game.data.poll.options[1].labelTh: ไม่ได้
+terminal.blocks[2].game.data.poll.options[2].labelTh: แล้วแต่ว่าออกไปทำอะไร
+terminal.blocks[2].game.data.poll.reveal.th: OpenAI เองพักแผนโมเดลรุ่นถัดไปตัวหนึ่งไว้ เพราะมันเก่งขึ้น แต่อยู่ในขอบเขตได้แย่ลง ในงานนี้ เก่งอย่างเดียวไม่พอ ต้องคุมให้อยู่ในขอบเขตได้ด้วย
+terminal.blocks[2].answersTh[0]: ภารกิจ 1: cat scope.txt อ่านขอบเขตก่อน ได้รับอนุญาตแค่ lab.local
+terminal.blocks[2].answersTh[1]: ภารกิจ 2: grep -c "Failed" auth.log ได้ 41 ครั้ง
+terminal.blocks[2].answersTh[2]: ภารกิจ 3: grep "Accepted" auth.log บรรทัดที่น่าสงสัยคือ intern01 จาก 203.0.113.45 เดาผิด 41 ครั้ง แล้วครั้งที่ 42 เข้าได้
+terminal.blocks[2].answersTh[3]: ภารกิจ 4: ls -a แล้ว cat .flag ได้ FLAG{read_the_scope_first}
+terminal.blocks[2].answersTh[4]: ภารกิจ 5: ล็อกบัญชี intern01 รีเซ็ตรหัส เปิดเคส และบล็อก IP
+terminal.blocks[2].answersTh[5]: สแกนเว็บโรงเรียนหรือเว็บธนาคาร: หยุด นอกขอบเขต ผิดกฎหมาย ต่อให้เจตนาดี
+terminal.blocks[3].lines[0].text.th: ls cat grep คือคำสั่งเดียวกับที่ใช้บน Linux จริง
+terminal.blocks[3].lines[1].text.th: ห้องฝึกมือใหม่มักเริ่มจากคำสั่งพวกนี้
+terminal.blocks[3].lines[2].text.th: สังเกตไหม ก่อนสแกนอะไร เราอ่านขอบเขตก่อน
+terminal.blocks[3].lines[3].text.th: นี่คือนิสัยที่แยกมืออาชีพ ออกจากคนทำผิดกฎหมาย
+terminal.blocks[4].text.th: ก.ค. 2569 Sysdig รายงานว่า AI agent ของคนร้ายเข้ามาทางช่องโหว่ในเครื่องมือ Langflow ที่มีแพตช์ตั้งแต่ เม.ย. 2568 แต่ไม่มีใครลงแพตช์ พอขั้นตอนหนึ่งพัง มันแก้ให้ใช้ได้ใน 31 วินาที
+terminal.blocks[4].titleTh: ทำไมต้องลงแพตช์
+terminal.reel.hook.th: ลองพิมพ์คำสั่งนักป้องกันดู ในเครื่องจำลอง
+terminal.reel.variantsTh[0]: สิ่งแรกที่แฮกเกอร์สายขาวทำ ไม่ใช่การเจาะ
+terminal.reel.variantsTh[1]: งานแรกของสายไซเบอร์ คือหาบรรทัดนี้ใน log ให้เจอ
+terminal.reel.sendToFriendTh: ส่งให้เพื่อนที่ชอบใช้คอมจอดำ
+terminal.reel.visual[0]: บันทึกหน้าจอ ?demo=1: ชิปถูกแตะ เลข 41 โผล่
+terminal.reel.visual[1]: บรรทัด Accepted ถูกไฮไลต์
+terminal.reel.visual[2]: การ์ดแดง หยุด: นอกขอบเขต ที่ชิปเว็บโรงเรียน
+terminal.reel.visual[3]: ธง FLAG",
+  "tonight.titleTh: คืนนี้ ห้องเดียว ได้ผลงานชิ้นแรก
+tonight.questionTh: คืนนี้ทำอะไรได้เลย ที่จบด้วยของจริงในพอร์ต
+tonight.navLabelTh: ภารกิจคืนนี้
+tonight.og.headlineTh: คืนนี้ลองแค่ห้องเดียว แล้วเธอจะมีผลงานไซเบอร์ชิ้นแรก
+tonight.blocks[0].lines[0].text.th: ด่านนี้ไม่ได้เล่นในจอ เป็นภารกิจจริงคืนนี้
+tonight.blocks[0].lines[1].text.th: ลองแค่ห้องเดียว แล้วเธอจะมีผลงานไซเบอร์ชิ้นแรก
+tonight.blocks[2].lineTh: เข้าระบบของคนอื่นโดยไม่ได้รับอนุญาต ผิดกฎหมาย ต่อให้แค่ลองดูก็ตาม ฝึกได้แค่เครื่องของตัวเอง หรือห้องที่เขาเปิดให้ลอง ห้ามลองกับเว็บโรงเรียน เว็บเพื่อน หรือเว็บไหนที่ไม่ได้รับอนุญาตเป็นลายลักษณ์อักษร
+tonight.blocks[3].text.th: ห้องนี้เขาสร้างเว็บธนาคารปลอมไว้ให้ฝึกหาช่องโหว่โดยเฉพาะ เป็นห้องสำหรับมือใหม่
+tonight.blocks[3].titleTh: ห้องฝึก: Offensive Security Intro
+tonight.blocks[4].game.data.room.badgeTh: ฟรีตามคู่มือของ TryHackMe ณ 31 ส.ค. 2569 เช็กอีกครั้งก่อนสมัคร
+tonight.blocks[4].game.data.room.subTh: เช็กเกณฑ์อายุของเว็บก่อน ถ้าต้องมีผู้ปกครอง ให้สมัครด้วยกัน
+tonight.blocks[4].game.data.checklistTh[0]: สมัคร
+tonight.blocks[4].game.data.checklistTh[1]: ทำห้องให้จบ
+tonight.blocks[4].game.data.checklistTh[2]: แคปหน้าจอผลลัพธ์ (ไม่ให้ติดอีเมลหรือชื่อจริง)
+tonight.blocks[4].game.data.checklistTh[3]: เขียน write-up
+tonight.blocks[4].game.data.fields[0].placeholderTh: ห้องอะไร / เป้าหมาย
+tonight.blocks[4].game.data.fields[1].placeholderTh: ฉันลองอะไร
+tonight.blocks[4].game.data.fields[2].placeholderTh: อะไรไม่เวิร์ก
+tonight.blocks[4].game.data.fields[3].placeholderTh: ถ้าเป็นเจ้าของระบบ จะแก้ยังไง
+tonight.blocks[4].game.data.fields[4].placeholderTh: ยังไม่เข้าใจอะไร
+tonight.blocks[4].game.data.fixedLinesTh[0]: ทำในแล็บฝึกที่ได้รับอนุญาตเท่านั้น
+tonight.blocks[4].game.data.privacyTh: เก็บไว้ในเครื่องนี้เท่านั้น ไม่ส่งไปที่ไหน
+tonight.blocks[4].answersTh[0]: เปิดห้อง Offensive Security Intro บน TryHackMe (เช็กเกณฑ์อายุของเว็บก่อน ถ้าต้องมีผู้ปกครอง ให้สมัครด้วยกัน)
+tonight.blocks[4].answersTh[1]: ทำให้จบ แคปหน้าจอโดยไม่ให้ติดอีเมลหรือชื่อจริง
+tonight.blocks[4].answersTh[2]: เขียน write-up: ห้องอะไร ลองอะไร อะไรไม่เวิร์ก ถ้าเป็นเจ้าของระบบจะแก้ยังไง ยังไม่เข้าใจอะไร
+tonight.blocks[4].demoScript[1].text: Offensive Security Intro: ลองหาจุดอ่อนของเว็บธนาคารปลอมในห้องฝึก
+tonight.blocks[4].demoScript[2].text: ถ้าเป็นเจ้าของ จะปิดทางที่เจอ แล้วเพิ่มการเช็กสิทธิ์
+tonight.blocks[5].lines[0].text.th: ที่สำคัญกว่าทำจบ คือเขียนสรุปสั้นๆ ว่าลองอะไรไปบ้าง อะไรไม่เวิร์ก
+tonight.blocks[5].lines[1].text.th: และถ้าเป็นเจ้าของระบบ จะแก้ยังไง
+tonight.blocks[5].lines[2].text.th: ทีมเราคิดว่าข้อสุดท้ายมีค่าที่สุด อย่าข้ามนะ
+tonight.blocks[6].lines[0].text.th: จำประตูที่สองได้ไหม มันเปิดให้คนที่มีผลงานตรวจสอบได้
+tonight.blocks[6].lines[1].text.th: write-up นี้คือบรรทัดแรกของประวัตินั้น
+tonight.blocks[6].lines[2].text.th: ถ้าสนุก ทำห้องถัดไปพรุ่งนี้ ถ้าไม่สนุก ก็รู้ก่อนเลือกคณะ ไม่เสียอะไร
+tonight.blocks[6].lines[3].text.th: เช็กกติกาของห้องก่อนโพสต์ write-up สาธารณะ
+tonight.clip.hookTh: คืนนี้ ห้องเดียว ได้ผลงานชิ้นแรก
+tonight.clip.scriptLinesTh[0]: คืนนี้ลองแค่ห้องเดียว ฟรี
+tonight.clip.scriptLinesTh[1]: เปิด TryHackMe ห้อง Offensive Security Intro
+tonight.clip.scriptLinesTh[2]: เขาสร้างเว็บธนาคารปลอมไว้ให้ฝึกโดยเฉพาะ
+tonight.clip.scriptLinesTh[3]: ย้ำอีกที ฝึกเฉพาะในห้องที่เขาเปิดให้ลองแบบนี้เท่านั้น
+tonight.clip.scriptLinesTh[4]: ระบบจริงของคนอื่น ห้ามลอง ผิดกฎหมาย ต่อให้แค่ลองดูก็ตาม
+tonight.clip.scriptLinesTh[5]: ทำเสร็จแล้วกลับมาหน้านี้ เขียนสั้นๆ ว่าลองอะไร อะไรไม่เวิร์ก
+tonight.clip.scriptLinesTh[6]: ถ้าเป็นเจ้าของระบบจะแก้ยังไง
+tonight.clip.scriptLinesTh[7]: นั่นคือผลงานไซเบอร์ชิ้นแรกของเธอ
+tonight.reel.hook.th: คืนนี้ ห้องเดียว ได้ผลงานไซเบอร์ชิ้นแรกในพอร์ต
+tonight.reel.variantsTh[0]: ลองเจาะเว็บธนาคารปลอม ในห้องที่สร้างไว้ให้ฝึก
+tonight.reel.variantsTh[1]: ทำห้องฝึกไซเบอร์จบแล้ว อย่าข้ามขั้นนี้
+tonight.reel.sendToFriendTh: ส่งให้เพื่อนที่อยากลองแต่ไม่รู้จะเริ่มตรงไหน
+tonight.reel.visual[0]: ผู้ก่อตั้งพูดกับกล้อง หน้าอยู่ในเฟรมตอนพูดประโยคความปลอดภัย
+tonight.reel.visual[1]: ตัดไปภาพหน้าจอเริ่มห้องฝึก บันทึกจากบัญชีฟรี และยืนยันว่ามีเว็บธนาคารปลอมจริง
+tonight.reel.visual[2]: บล็อก write-up ประกอบขึ้นทีละบรรทัด",
+  "next.titleTh: แล้วเธอล่ะ
+next.questionTh: สายนี้ใช่เธอไหม แล้วจะดูอะไรต่อ
+next.navLabelTh: แล้วเธอล่ะ
+next.og.headlineTh: สายไซเบอร์ใช่เธอไหม เล่นจนจบแล้วค่อยตัดสินใจ
+next.blocks[0].lines[0].text.th: มาถึงด่านสุดท้ายแล้ว
+next.blocks[0].lines[1].text.th: เล่นมาทั้งหมด เธอชอบส่วนไหนที่สุด
+next.blocks[1].game.data.lines.mythos: หาบรรทัดอันตรายเจอใน {attempts} ครั้ง
+next.blocks[1].game.data.lines.doors: แจกกุญแจถูก {score}/{total}
+next.blocks[1].game.data.lines.triage: จับข้อที่ AI พลาดได้ {x} ข้อ || ตัดสินสัญญาณเตือนถูก {score}/{total}
+next.blocks[1].game.data.lines.scam: แยกข้อความถูก {score}/{total}
+next.blocks[1].game.data.lines.firstjob: ขั้นแรกที่เธอเลือก: {proof}
+next.blocks[1].game.data.lines.fit: ทางที่เธอเอนไป: {title}
+next.blocks[1].game.data.lines.tcas: ติดดาวไว้ {shortlist} หลักสูตร
+next.blocks[1].game.data.lines.terminal: ภารกิจ log {score}/{total} · ลองสแกนนอกขอบเขต {scopeTries} ครั้ง || ภารกิจ log {score}/{total} · ไม่หลุดขอบเขต ✓
+next.blocks[1].game.data.lines.tonight: เตรียม write-up ชิ้นแรกแล้ว
+next.blocks[1].game.data.favourites.mythos: สายที่เธอเลือกเอง: นักล่าช่องโหว่ งานจริงคือหาจุดพังในโค้ดก่อนคนร้าย
+next.blocks[1].game.data.favourites.doors: สายที่เธอเลือกเอง: ทีมทดสอบเจาะระบบ งานจริงคือเจาะแบบมีสัญญา แล้วเขียนรายงานให้เจ้าของแก้
+next.blocks[1].game.data.favourites.triage: สายที่เธอเลือกเอง: นักวิเคราะห์ SOC งานจริงคือคัดว่าสัญญาณไหนโดนจริง และตรวจงาน AI
+next.blocks[1].game.data.favourites.scam: สายที่เธอเลือกเอง: ทีมกันโกง งานจริงคือจับรูปแบบมิจฉาชีพก่อนเงินหลุด
+next.blocks[1].game.data.favourites.terminal: สายที่เธอเลือกเอง: ทีมรับมือเหตุ งานจริงคือสืบจาก log แล้วปิดทางให้ทัน
+next.blocks[1].game.data.cardLineTh: นี่ไม่ใช่คำทำนาย มันคือจุดเริ่ม เธอตัดสินใจเอง
+next.blocks[1].answersTh[0]: เลือกเกมที่สนุกที่สุด แล้วดูว่ามันตรงกับงานจริงสายไหน
+next.blocks[1].answersTh[1]: นักล่าช่องโหว่ ทีมทดสอบเจาะระบบ นักวิเคราะห์ SOC ทีมกันโกง หรือทีมรับมือเหตุ
+next.blocks[1].answersTh[2]: นี่ไม่ใช่คำทำนาย มันคือจุดเริ่ม เธอตัดสินใจเอง
+next.blocks[2].lines[0].text.th: กดบอกเราหน่อยว่าสายนี้ใช่ไหม เราจะได้รู้ว่าควรทำสายนี้ให้ลึกขึ้นไหม
+next.blocks[2].lines[1].text.th: ไม่ว่าจะกดอันไหน ถือว่าได้ข้อมูล
+next.blocks[2].lines[2].text.th: ลองแล้วรู้ว่าไม่ใช่ ก็ได้คำตอบเร็วกว่าคนที่ไม่เคยลอง
+next.blocks[4].lines[0].text.th: ถ้าสนใจ สิ่งเดียวที่ต้องทำต่อ
+next.blocks[4].lines[1].text.th: คือห้องที่สองพรุ่งนี้ กับ write-up อีกหนึ่งชิ้น
+next.blocks[5].text.th: ไม่ชอบเรียนของใหม่ตลอด รับแรงกดดันตอนเหตุด่วนไม่ไหว หรือไม่ชอบงานเอกสาร เพราะงานส่วนหนึ่งคือเขียนรายงานและหลักฐานตามมาตรฐาน
+next.blocks[5].titleTh: สายนี้อาจไม่เหมาะ ถ้า...",
+]
+`;

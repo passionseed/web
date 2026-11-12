@@ -152,3 +152,19 @@ describe("applyVariant", () => {
     expect(applyVariant("เอาไหมครับ", "no_ask")).toBe("เอาไหมครับ");
   });
 });
+
+describe("buildQueue fences Radar-origin threads (spec 5.6)", () => {
+  it("never queues a radar thread and counts it as skipped", () => {
+    const { entries, skipped } = buildQueue(
+      [
+        candidate({ conversationId: "sales" }),
+        candidate({ conversationId: "radar-1", origin: "radar" }),
+        candidate({ conversationId: "radar-2", origin: "radar", bucket: "hot" }),
+      ],
+      "camp",
+      NOW
+    );
+    expect(entries.map((e) => e.conversationId)).toEqual(["sales"]);
+    expect(skipped.radar_origin).toBe(2);
+  });
+});

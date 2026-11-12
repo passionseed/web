@@ -22,6 +22,7 @@ import {
   MessageCircle,
   Shield,
   LayoutDashboard,
+  PenTool,
 } from "lucide-react";
 import Link from "next/link";
 import { useAdmin, usePassionSeedTeam } from "@/hooks/use-auth";
@@ -189,6 +190,12 @@ export function UserNav({ user }: UserNavProps) {
             <Link href="/me">
               <LayoutDashboard className="mr-2 h-4 w-4" />
               <span>Dashboard</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/whiteboard">
+              <PenTool className="mr-2 h-4 w-4" />
+              <span>Whiteboards</span>
             </Link>
           </DropdownMenuItem>
 

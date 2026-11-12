@@ -1,3 +1,4 @@
+import { safeServerError } from "@/lib/security/route-guards";
 import { NextRequest, NextResponse } from "next/server";
 import {
   hashMentorPassword,
@@ -57,8 +58,6 @@ export async function POST(req: NextRequest) {
     });
     return res;
   } catch (err) {
-    const msg = err instanceof Error ? err.message : JSON.stringify(err);
-    console.error("Mentor register error:", msg, err);
-    return NextResponse.json({ error: "Registration failed", detail: msg }, { status: 500 });
+    return safeServerError("Registration failed", err);
   }
 }
