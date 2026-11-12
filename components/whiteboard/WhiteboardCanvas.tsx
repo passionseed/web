@@ -14,7 +14,7 @@ import {
 } from "@excalidraw/excalidraw";
 import type { NonDeleted, OrderedExcalidrawElement, ExcalidrawEmbeddableElement } from "@excalidraw/excalidraw/element/types";
 import type { AppState, BinaryFiles, ExcalidrawProps } from "@excalidraw/excalidraw/types";
-import { ArrowLeft, Copy, FileUp, Flag, LayoutTemplate, Save, Settings } from "lucide-react";
+import { ArrowLeft, Copy, FileUp, GraduationCap, LayoutTemplate, Save, Settings } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -360,8 +360,13 @@ export default function WhiteboardCanvas({
     [api, boardInfo, editable, pluginMe, players, channel],
   );
 
-  // The Quest dashboard: the owner and site admins, plus whoever the owner made a quest reviewer.
-  const canReviewQuests = isManager || Boolean(members.find((m) => m.userId === me.id)?.questReviewer);
+  // Quest leads: the owner and site admins, plus whoever the owner made staff. They make
+  // quests (only their "Quest" text counts) and see everyone's work in the Quest dashboard.
+  const questLeads = useMemo(
+    () => new Set([...managerIds, ...members.filter((m) => m.questReviewer).map((m) => m.userId)]),
+    [managerIds, members],
+  );
+  const canReviewQuests = questLeads.has(me.id);
 
   // Excalidraw re-renders itself whenever its children change, so they are memoized
   // on exactly what they read.
@@ -371,11 +376,6 @@ export default function WhiteboardCanvas({
         <MainMenu.Item icon={<ArrowLeft size={16} />} onSelect={() => (window.location.href = "/whiteboard")}>
           บอร์ดทั้งหมด · All boards
         </MainMenu.Item>
-        {canReviewQuests && api && (
-          <MainMenu.Item icon={<Flag size={16} />} onSelect={() => openQuestPanel()}>
-            Quest Dashboard · งานแต่ละคน
-          </MainMenu.Item>
-        )}
         <MainMenu.Separator />
         {editable && (
           // Touch devices have no Ctrl+S.
@@ -404,7 +404,7 @@ export default function WhiteboardCanvas({
         </MainMenu.Item>
       </MainMenu>
     ),
-    [api, canReviewQuests, duplicate, editable, openSettings, saveAndTell],
+    [api, duplicate, editable, openSettings, saveAndTell],
   );
 
   const welcomeScreen = useMemo(
@@ -442,6 +442,25 @@ export default function WhiteboardCanvas({
   // The Quest dashboard, in a pane beside the board that the board makes room for.
   const questPane = useQuestPane(board.id, canReviewQuests);
   const openQuestDashboard = useCallback((questId: string) => openQuestPanel(questId), []);
+  // Staff: the Mentor dashboard, beside the timer. Pressed while the pane is open.
+  const { open: mentorOpen, close: closeMentor } = questPane;
+  const mentorButton = useMemo(
+    () =>
+      canReviewQuests && api ? (
+        <button
+          type="button"
+          onClick={() => (mentorOpen ? closeMentor() : openQuestPanel())}
+          aria-pressed={mentorOpen}
+          aria-label="Mentor Dashboard · งานของนักเรียน"
+          data-tip="Mentor Dashboard · งานของนักเรียน"
+          data-tip-side="bottom"
+          className={`wb-timer ${mentorOpen ? "wb-timer--running" : ""}`}
+        >
+          <GraduationCap className="h-4 w-4" aria-hidden />
+        </button>
+      ) : null,
+    [api, canReviewQuests, mentorOpen, closeMentor],
+  );
 
   const kit = useMemo(
     () =>
@@ -522,7 +541,8 @@ export default function WhiteboardCanvas({
             <QuestLayer
               api={api}
               meId={me.id}
-              manager={isManager}
+              manager={canReviewQuests}
+              leads={questLeads}
               nameOf={nameOf}
               onReview={canReviewQuests ? openQuestDashboard : undefined}
               session={quest.session}
@@ -530,7 +550,7 @@ export default function WhiteboardCanvas({
               onEnd={endQuest}
             />
           )}
-          {editable && <QuestMenu api={api} meId={me.id} manager={isManager} />}
+          {editable && <QuestMenu api={api} meId={me.id} manager={canReviewQuests} leads={questLeads} />}
           <CardVersionsLayer api={api} meId={me.id} editable={editable} manager={isManager} nameOf={nameOf} />
           <CanvasTeamLayer
             api={api}
@@ -554,7 +574,7 @@ export default function WhiteboardCanvas({
         connected={sync.connected}
         readOnly={!editable}
       />
-      <PeopleCorner api={api} present={sync.present} meId={me.id} timer={timer} onShare={openShare} />
+      <PeopleCorner api={api} present={sync.present} meId={me.id} timer={timer} mentor={mentorButton} onShare={openShare} />
       <BottomBar
         api={api}
         boardId={board.id}
@@ -618,6 +638,10 @@ export default function WhiteboardCanvas({
           people={people}
           nameOf={nameOf}
           avatarOf={avatarOf}
+          leads={questLeads}
+          focus={questPane.focus}
+          boardId={board.id}
+          meId={me.id}
         />
       )}
     </>

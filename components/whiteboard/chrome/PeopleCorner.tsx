@@ -61,19 +61,23 @@ function useFollowing(api: ExcalidrawImperativeAPI | null) {
 
 /**
  * The top-right card: everyone else on the board (click a face to follow their
- * view, again to stop), the shared timer and the Share button.
+ * view, again to stop), the shared timer, the Mentor button for staff and the
+ * Share button.
  */
 export const PeopleCorner = memo(function PeopleCorner({
   api,
   present,
   meId,
   timer,
+  mentor,
   onShare,
 }: {
   api: ExcalidrawImperativeAPI | null;
   present: PresentUser[];
   meId: string;
   timer: ReactNode;
+  /** Staff only: opens the Mentor dashboard. */
+  mentor?: ReactNode;
   onShare: () => void;
 }) {
   // One face per person (their first tab), without me.
@@ -170,6 +174,7 @@ export const PeopleCorner = memo(function PeopleCorner({
         </div>
       )}
       {timer}
+      {mentor}
       <button type="button" onClick={onShare} aria-label="แชร์บอร์ด · Share board" className="wb-share">
         {!narrow && <Share2 className="h-4 w-4" aria-hidden />}
         {narrow ? "แชร์" : "แชร์ · Share"}

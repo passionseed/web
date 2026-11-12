@@ -9,12 +9,15 @@ import { useCallback, useEffect, useState } from "react";
 import { setQuestLabel, writeQuestTask } from "./labelEdits";
 
 import { focusCanvas } from "../chrome/useActiveTool";
-import { findQuests, mayRetag, newQuestTag, questName, questTagOf, withBoundText, type Quest } from "@/lib/whiteboard/quests";
+import { findQuests, mayRetag, newQuestTag, questName, questTagOf, withBoundText, type Quest, type QuestLeads } from "@/lib/whiteboard/quests";
 
 type Props = {
   api: ExcalidrawImperativeAPI;
   meId: string;
+  /** A quest lead (owner, site admin or staff): makes quests and changes their settings. */
   manager: boolean;
+  /** Whose "Quest" text makes a quest. */
+  leads: QuestLeads;
 };
 
 type Retag = { kind: "retag"; x: number; y: number; ids: string[]; quests: Quest[]; current: string | null | "mixed"; makeQuest: string | null };
@@ -47,7 +50,7 @@ function besideMenu(clientX: number, clientY: number, width: number, height: num
  * Excalidraw 0.18 has no way to add items to its menu, so this is our own card,
  * opened from the same right-click (Excalidraw selects what was clicked first).
  */
-export function QuestMenu({ api, meId, manager }: Props) {
+export function QuestMenu({ api, meId, manager, leads }: Props) {
   const [open, setOpen] = useState<Open | null>(null);
   const close = useCallback(() => setOpen(null), []);
 
@@ -62,7 +65,7 @@ export function QuestMenu({ api, meId, manager }: Props) {
         const appState = api.getAppState();
         if (appState.viewModeEnabled) return;
         const elements = api.getSceneElements();
-        const quests = findQuests(elements);
+        const quests = findQuests(elements, leads);
         const picked = Object.keys(appState.selectedElementIds);
         const one = picked.length === 1 ? elements.find((el) => el.id === picked[0]) : undefined;
 
@@ -89,7 +92,7 @@ export function QuestMenu({ api, meId, manager }: Props) {
     // Capture: Excalidraw may stop the event before it bubbles up.
     document.addEventListener("contextmenu", onContextMenu, true);
     return () => document.removeEventListener("contextmenu", onContextMenu, true);
-  }, [api, meId, manager]);
+  }, [api, meId, manager, leads]);
 
   // Any other click, a key, or scrolling closes it, like Excalidraw's own menu.
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { findQuests, mayRetag, newQuestTag, questName, questsToMarkdown, questTagOf, questWork, withBoundText } from "./quests";
+import { findQuests, mayRetag, newQuestTag, questName, questRoster, questsToMarkdown, questTagOf, questWork, withBoundText } from "./quests";
 
 const text = (id: string, x: number, y: number, t: string, extra: object = {}) => ({ id, type: "text", x, y, width: 160, height: 60, text: t, ...extra });
 const tag = (questId: string, by: string, session = "s1") => ({ quest: newQuestTag(questId, session, by, new Date("2026-11-11T10:00:00Z")) });
@@ -49,6 +49,17 @@ describe("findQuests", () => {
   it("never takes someone's quest work as the task", () => {
     const [q] = findQuests([text("q", 0, 0, "Quest"), text("w", 0, 110, "ref 1", { customData: tag("q", "amy") })]);
     expect(q.title).toBe("");
+  });
+
+  it("counts a Quest text only when staff wrote it, once it knows who staff are", () => {
+    const els = [
+      text("staff", 0, 0, "Quest", { customData: { createdBy: "mentor" } }),
+      text("kid", 1000, 0, "Quest", { customData: { createdBy: "amy" } }),
+      text("unsaved", 2000, 0, "Quest"),
+      text("made", 3000, 0, "Quest", { customData: { createdBy: "amy", questLabel: {} } }),
+    ];
+    expect(findQuests(els, new Set(["mentor"])).map((q) => q.id)).toEqual(["staff", "unsaved", "made"]);
+    expect(findQuests(els).map((q) => q.id)).toEqual(["staff", "kid", "unsaved", "made"]);
   });
 
   it("ignores deleted labels and boards without quests", () => {
@@ -106,8 +117,8 @@ describe("questWork", () => {
     const result = questWork(work);
     expect(result.map((w) => w.quest?.number ?? null)).toEqual([2, null]);
     expect(result[0].people).toEqual([
-      { userId: "amy", texts: ["Canva ช่วยทำโพสต์"], drawings: 1, sessions: 1, ids: ["stroke", "box", "w"] },
-      { userId: "ben", texts: ["ref 2"], drawings: 0, sessions: 1, ids: ["typed"] },
+      { userId: "amy", texts: ["Canva ช่วยทำโพสต์"], drawings: 1, sessions: 1, ids: ["stroke", "box", "w"], last: "2026-11-11T10:00:00.000Z" },
+      { userId: "ben", texts: ["ref 2"], drawings: 0, sessions: 1, ids: ["typed"], last: "2026-11-11T10:00:00.000Z" },
     ]);
   });
 
@@ -119,5 +130,27 @@ describe("questWork", () => {
     expect(md).toContain('- Ben: "ref 2"');
     expect(md).toContain("### A quest that was deleted");
     expect(questsToMarkdown(board, () => "x")).toBe("");
+  });
+});
+
+describe("questRoster", () => {
+  it("lists students who have done least first, and anyone else who handed work in", () => {
+    const els = [
+      ...board,
+      text("a1", 0, 0, "ref", { customData: tag("q1", "amy") }),
+      text("a2", 0, 0, "ref", { customData: tag("q2", "amy") }),
+      text("b1", 0, 0, "ref", { customData: tag("q1", "ben") }),
+      text("m1", 0, 0, "demo", { customData: tag("q1", "mentor") }),
+      text("x1", 0, 0, "ref", { customData: tag("q2", "guest") }),
+    ];
+    const quests = findQuests(els);
+    const rows = questRoster(quests, questWork(els), ["amy", "ben", "cat"], new Set(["mentor"]));
+    expect(rows.map((r) => [r.userId, r.done])).toEqual([
+      ["cat", 0],
+      ["ben", 1],
+      ["guest", 1],
+      ["amy", 2],
+    ]);
+    expect(rows[3].cells.map((c) => c?.ids ?? null)).toEqual([["a1"], ["a2"], null]);
   });
 });

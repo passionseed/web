@@ -4,6 +4,7 @@ import { after } from "next/server";
 import { isAnonymousUser } from "@/lib/supabase/auth";
 import { elementAuthorIds, groupChanges, type ActivitySession, type ChangeItem } from "@/lib/whiteboard/activity";
 import { shiftPeople } from "@/lib/supabase/shift-people";
+import { fetchShiftNicknames } from "@/lib/shift/discordGuild";
 import { compactElements } from "@/lib/whiteboard/compact";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
@@ -759,11 +760,14 @@ export async function boardPeople(boardId: string, viewerId: string, requested: 
 
   const profiles = await profilesById(list);
   const people = await shiftPeople(list, new Map(list.map((id) => [id, profiles[id]?.name ?? "Someone"])));
+  // The name each person goes by in the PassionSeed SHIFT Discord server, when they set one there.
+  const nicks = await fetchShiftNicknames([...people.values()].flatMap((p) => (p.discord?.id ? [p.discord.id] : [])));
   const out: Record<string, BoardPerson> = {};
   for (const id of list) {
     const p = people.get(id);
+    const nick = p?.discord?.id ? nicks.get(p.discord.id) : undefined;
     out[id] = {
-      name: p?.discord?.displayName ?? p?.discord?.username ?? profiles[id]?.name ?? "Someone",
+      name: nick ?? p?.discord?.displayName ?? p?.discord?.username ?? profiles[id]?.name ?? "Someone",
       avatarUrl: p?.avatarUrl ?? profiles[id]?.avatarUrl ?? null,
     };
   }

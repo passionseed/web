@@ -2867,6 +2867,71 @@ body:has([data-quest-menu][role="dialog"]) .wb-quest-label-card {
 .wb-quest-pane__head {
   border-bottom: 1px dashed var(--wb-hairline-strong);
 }
+/* The staff overview (quest/QuestDashboard.tsx): progress bars and the student-by-quest grid. */
+.wb-qd-bar {
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--wb-hover);
+}
+.wb-qd-bar__fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--wb-accent);
+}
+.wb-qd-grid {
+  table-layout: auto;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.wb-qd-grid th:not(:first-child),
+.wb-qd-grid td:not(:first-child) {
+  width: 2.25rem;
+}
+.wb-qd-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 7px;
+  vertical-align: middle;
+}
+.wb-qd-cell--empty {
+  border: 1px dashed var(--wb-rule);
+}
+.wb-qd-cell--done {
+  background: var(--wb-on-bg);
+  color: var(--wb-on-text);
+  transition: transform 120ms ease-out;
+}
+@media (hover: hover) {
+  .wb-qd-cell--done:hover {
+    transform: scale(1.08);
+  }
+}
+.wb-qd-cell--done:focus-visible {
+  outline: 2px solid var(--wb-focus);
+  outline-offset: 2px;
+}
+.wb-qd-chip {
+  border: 1px solid var(--wb-hairline);
+}
+.wb-qd-chip--on {
+  border-color: var(--wb-accent);
+  background: var(--wb-selected);
+}
+/* A quest's work on a board of its own (quest/QuestBoard.tsx), over the whole page. */
+.wb-quest-board {
+  background: var(--wb-card);
+  color: var(--wb-text);
+}
+@media (prefers-reduced-motion: reduce) {
+  .wb-qd-cell--done {
+    transition: none;
+  }
+}
+
 /* Its left edge: drag to resize. A hairline that lights up on hover. */
 .wb-panel-edge {
   position: absolute;

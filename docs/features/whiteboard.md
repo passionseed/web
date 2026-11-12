@@ -169,7 +169,10 @@ case, optionally with a star) and the task written under it. Students start a qu
 they make until they end it counts as their work for that quest. Code: `lib/whiteboard/quests.ts`,
 `components/whiteboard/quest/`.
 
-- **Finding quests** (`findQuests`): every live text whose whole text is "Quest" is a quest, and so
+- **Finding quests** (`findQuests`): every live text whose whole text is "Quest" and that a quest
+  lead wrote (the owner, a site admin or staff; text with no `createdBy` yet also counts) is a
+  quest. A student writing "Quest" makes none. A lead's browser marks each of their labels with
+  `customData.questLabel`, so it counts for everyone, even people whose staff list is older. So
   is any text a mentor made one (`customData.questLabel`, unless its `off` is set). Its task is the
   nearest text up to 400 units below that is not someone's quest work; once seen, the task's id and
   a copy of its text are kept on the label (`taskId`, `backup`), so a deleted task falls back to the
@@ -194,19 +197,39 @@ they make until they end it counts as their work for that quest. Code: `lib/whit
   edit the task (written back on the board) or put it back if it was deleted, remove or re-create
   the start button, move it back, or **เลิกเป็น Quest**. Right-clicking any other text offers
   **ทำข้อความนี้เป็น Quest**. Clicking a label shows a card of who handed in what.
-- **Quest dashboard** (`QuestPane.tsx`, a pane beside the board like the Claude app's side
-  panes, opened from the board menu or a quest's card): the board's right edge moves in to make
+- **Mentor dashboard** (`QuestPane.tsx`, a pane beside the board like the Claude app's side
+  panes, opened from the graduation-cap button after the timer in the top-right card, or a
+  quest's card): the board's right edge moves in to make
   room, so nothing is covered, and drawing never closes it (it stays open across reloads until its
-  close button). Drag its left edge to resize it. each quest with what each person made for it (their words, how many drawings),
-  who has not handed in yet (members who can edit), and **ดูบนบอร์ด** to select their work and zoom
-  to it; **ตามคน** lists each person with their quests.
-- **Who sees the dashboard:** the board's owner, site admins, and quest reviewers: members the owner
-  marks with the **Quest** toggle in Share (`whiteboard_members.quest_reviewer`, migration
-  `20261111120000_whiteboard_quest_reviewers.sql`). A reviewer sees it after reopening the board.
+  close button). Drag its left edge to resize it. It opens on an overview: each quest's progress
+  (handed in / students), then a grid of every student against every quest (`questRoster`): a
+  filled cell is work handed in, with its number of pieces, and selects and zooms to it; an empty
+  dashed cell is none yet. Students who have done least come first, then the least recently
+  active (or by name), each with how long ago their latest piece was. A quest opens who has not
+  handed in, then the work newest first; a person opens their work per quest. A quest's card on
+  the board opens the pane at that quest.
+- **Mentor groups** (`whiteboard_groups`, migration `20261112150000_whiteboard_mentor_groups.sql`,
+  `lib/whiteboard/groups.ts`, `/api/whiteboards/[id]/groups`): staff split students into groups,
+  each with a name, its mentors and its students (**จัดกลุ่ม** in the dashboard). The dashboard
+  opens on **กลุ่มของฉัน**, the students of every group the viewer mentors, or everyone when they
+  mentor none; the picker also offers **ทุกคน** and each group (kept per board in the browser).
+  Groups are a filter for staff views only: students never see them, and they open no channel.
+- **Quest view** (`QuestBoard.tsx`, the grid button on a quest's row, or **ดูงานทุกคนแบบบอร์ด** in a
+  quest): one quest's work by every student in view, on a read-only board over the page. Each
+  student's pieces are moved into a block with their name above it, packed in rows
+  (`lib/whiteboard/questBoard.ts`), and follow the live board. Nothing is saved; the real
+  board is untouched. Who has not handed in is listed in its header.
+- **Roles:** in Share the owner gives each person one role: **Staff** (draws, makes quests,
+  changes quest settings and sees the dashboard), **Student** (draws and does quests) or
+  **Viewer**. Staff is `role = 'editor'` with `whiteboard_members.quest_reviewer` (migration
+  `20261111120000_whiteboard_quest_reviewers.sql`); Student is `editor` without it. The dashboard
+  lists only students as "ยังไม่ส่ง". Someone made staff gets their powers after reopening the board.
   Everyone's work is on the board for all members anyway; the role only opens the summary. Until the
   migration is applied, `openBoard` reads members without the column, so boards keep opening.
-- **Names:** the board shows people by their Discord name (display name, else username) and
-  picture: in the people corner, cursors, comments, who-made-what and the Quest dashboard.
+- **Names:** the board shows people by the name they go by in the PassionSeed SHIFT Discord
+  server (their server nickname, read by the SHIFT bot through `fetchShiftNicknames`, at most
+  2.5 s), else their Discord display name, else username, and their picture: in the people
+  corner, cursors, comments, who-made-what and the Mentor dashboard.
   `useBoardPeople` loads them from `POST /api/whiteboards/[id]/people` a moment after the board
   opens (one sign-in record read per person, so not on the open path); profile names until then and
   for anyone without Discord. The browser sends the ids it sees; only the viewer, owner, members and

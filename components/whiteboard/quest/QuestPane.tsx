@@ -1,11 +1,13 @@
 "use client";
 
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
-import { Flag, X } from "lucide-react";
+import { GraduationCap, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import type { QuestLeads } from "@/lib/whiteboard/quests";
+
 import { WB_FONT_VARS } from "../fonts";
-import { QuestDashboard, questSectionId, type Person } from "./QuestDashboard";
+import { QuestDashboard, type Person } from "./QuestDashboard";
 
 const OPEN_EVENT = "wb-quest-pane";
 const WIDTH_KEY = "whiteboard-quest-panel-width";
@@ -33,7 +35,7 @@ const write = (key: string, value: string | null) => {
   }
 };
 
-/** Opens the Quest pane, optionally scrolled to one quest. */
+/** Opens the Quest pane, optionally at one quest. */
 export function openQuestPanel(questId?: string) {
   window.dispatchEvent(new CustomEvent(OPEN_EVENT, { detail: { questId } }));
 }
@@ -46,6 +48,7 @@ export function openQuestPanel(questId?: string) {
 export function useQuestPane(boardId: string, enabled: boolean) {
   const [open, setOpen] = useState(false);
   const [width, setWidth] = useState(DEFAULT_WIDTH);
+  const [focus, setFocus] = useState<{ questId: string; n: number } | null>(null);
 
   useEffect(() => {
     if (!enabled) return;
@@ -61,10 +64,7 @@ export function useQuestPane(boardId: string, enabled: boolean) {
       setOpen(true);
       write(openKey(boardId), "1");
       const questId = (e as CustomEvent<{ questId?: string }>).detail?.questId;
-      if (questId) {
-        // After the pane has rendered.
-        setTimeout(() => document.getElementById(questSectionId(questId))?.scrollIntoView({ block: "start", behavior: "smooth" }), 80);
-      }
+      if (questId) setFocus((f) => ({ questId, n: (f?.n ?? 0) + 1 }));
     };
     window.addEventListener(OPEN_EVENT, onOpen);
     window.addEventListener("resize", onResize);
@@ -84,7 +84,7 @@ export function useQuestPane(boardId: string, enabled: boolean) {
     if (save) write(WIDTH_KEY, String(next));
   }, []);
 
-  return { open: enabled && open, width, close, resize };
+  return { open: enabled && open, width, focus, close, resize };
 }
 
 /** The pane's left edge: drag to resize, double-click for the default width. */
@@ -125,7 +125,7 @@ function ResizeEdge({ width, onResize }: { width: number; onResize: (w: number, 
 }
 
 /**
- * The Quest dashboard as a pane of its own beside the board, like the Claude
+ * The Mentor dashboard (quest work by student) as a pane of its own beside the board, like the Claude
  * app's side panes: the board shrinks to make room (the room's right edge moves
  * in, see WhiteboardCanvas), so nothing is covered, and drawing never closes it.
  * For the board's owner, site admins and quest reviewers.
@@ -138,6 +138,10 @@ export function QuestPane({
   people,
   nameOf,
   avatarOf,
+  leads,
+  focus,
+  boardId,
+  meId,
 }: {
   api: ExcalidrawImperativeAPI;
   width: number;
@@ -146,23 +150,27 @@ export function QuestPane({
   people: Person[];
   nameOf: (id: string) => string;
   avatarOf: (id: string) => string | null;
+  leads: QuestLeads;
+  focus: { questId: string; n: number } | null;
+  boardId: string;
+  meId: string;
 }) {
   return (
     <aside
-      aria-label="Quest Dashboard"
+      aria-label="Mentor Dashboard"
       className={`wb-theme wb-quest-pane fixed inset-y-0 right-0 z-[40] flex flex-col ${WB_FONT_VARS}`}
       style={{ width }}
     >
       <ResizeEdge width={width} onResize={onResize} />
       <header className="wb-quest-pane__head flex items-center gap-2 px-3 py-2.5">
-        <Flag className="h-4 w-4 text-emerald-600" />
-        <span className="flex-1 text-sm font-semibold">Quest Dashboard</span>
+        <GraduationCap className="h-4 w-4" aria-hidden />
+        <span className="flex-1 text-sm font-semibold">Mentor Dashboard</span>
         <button type="button" onClick={onClose} className="wb-quest-option rounded-md p-1.5" aria-label="ปิด · Close">
           <X className="h-4 w-4" />
         </button>
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto p-3">
-        <QuestDashboard api={api} people={people} nameOf={nameOf} avatarOf={avatarOf} />
+        <QuestDashboard api={api} people={people} nameOf={nameOf} avatarOf={avatarOf} leads={leads} focus={focus} boardId={boardId} meId={meId} />
       </div>
     </aside>
   );
