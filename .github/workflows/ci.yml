@@ -14,7 +14,8 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  # Lint, audit and `next build` run beside the test shards instead of after them.
+  lint-and-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -39,11 +40,18 @@ jobs:
       - name: Lint
         run: pnpm lint
 
-      - name: Test
-        run: pnpm test
+      # Turbopack keeps its build cache in .next/cache; reusing it skips work
+      # that did not change since the last run.
+      - name: Restore Next.js build cache
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
       # Catches build-time failures (e.g. prerender reads of missing files)
-      # before Vercel does. Env vars are dummies — the build must not depend
+      # before Vercel does. Env vars are dummies: the build must not depend
       # on real services.
       - name: Build
         run: pnpm build
@@ -51,6 +59,45 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
           NEXT_PUBLIC_SITE_URL: http://localhost:3000
+
+  # The Jest suite, split across three runners. Coverage is off here: it is
+  # not reported anywhere in CI and was most of the test time.
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test (shard ${{ matrix.shard }} of 3)
+        run: pnpm test --coverage=false --shard=${{ matrix.shard }}/3
+
+  # The check that `main`'s ruleset requires. It passes only when lint, the
+  # build and every test shard passed, so the ruleset does not need changing.
+  build:
+    if: always()
+    needs: [lint-and-build, test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: All checks passed
+        run: |
+          echo "lint-and-build: ${{ needs.lint-and-build.result }}, test: ${{ needs.test.result }}"
+          test "${{ needs.lint-and-build.result }}" = success
+          test "${{ needs.test.result }}" = success
 
   # The whiteboard merge function runs against a throwaway Postgres in Docker,
   # with the same cases as the TypeScript copy of the SHIFT canvas rule, so the
