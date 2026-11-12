@@ -3,14 +3,25 @@
  */
 import { EventEmitter } from "node:events";
 
-import { AttachmentBuilder, ChannelType, DiscordAPIError, Events, MessageFlags, type Client } from "discord.js";
+import { AttachmentBuilder, ButtonStyle, ChannelType, DiscordAPIError, Events, MessageFlags, type Client } from "discord.js";
 
 import { QuestDbError, type QuestApi } from "../api";
 import { bkkDate } from "../copy";
 import { LIVE } from "../island/copy";
 import type { IslandPlot } from "../island/render";
-import { LIVE_PNG, LIVE_SCHEMA, liveFor, liveSignature, liveView, startLivePost, type LivePostData } from "../live";
-import { registerShiftQuests } from "..";
+import { parseCid } from "../ids";
+import {
+  LIVE_PNG,
+  LIVE_SCHEMA,
+  PANEL_TARGETS,
+  liveFor,
+  liveSignature,
+  liveView,
+  panelId,
+  startLivePost,
+  type LivePostData,
+} from "../live";
+import { ACTION_HANDLERS, registerShiftQuests } from "..";
 import { LIMITS, TONE_COLORS, renderView } from "../ui";
 import { accentColor, bodyText, cardsOf, componentCount, customIds, mediaUrls, textLength, viewText } from "../test-helpers/view";
 import { createRolePool } from "../../pg";
@@ -21,6 +32,7 @@ const GUILD = "100000000000000001";
 const LIVE_CH = "200000000000000010";
 const NEW_CH = "200000000000000011";
 const ROOM = "200000000000000002";
+const SUGGEST = "200000000000000003";
 const BOT = "400000000000000001";
 const SOMEONE = "400000000000000002";
 const WEB = "https://www.passionseed.org/shift/island";
@@ -53,6 +65,37 @@ function card(d: LivePostData, o: { webUrl?: string | null; picture?: boolean; g
   const view = liveView(d, { nowMs: NOW, guildId: o.guildId ?? GUILD, webUrl: o.webUrl === undefined ? WEB : o.webUrl, picture });
   const files = picture ? [new AttachmentBuilder(Buffer.from("png"), { name: LIVE_PNG })] : [];
   return renderView({ ...view, files }, { ephemeral: false });
+}
+
+/** The panel's custom ids, in order: the same on every live card, whatever else it shows. */
+const PANEL_IDS = ["sq|lp|me", "sq|lp|quests", "sq|lp|checkin", "sq|lp|help", "sq|lp|rewards", "sq|lp|how"];
+
+interface SeenButton {
+  label: string;
+  style: number;
+  id?: string;
+  url?: string;
+}
+
+/** The card's action rows, each as its buttons in order. */
+function rowsOf(payload: unknown): SeenButton[][] {
+  const rows: SeenButton[][] = [];
+  const walk = (c: Record<string, unknown>) => {
+    if (c.type === 1) {
+      rows.push(
+        (c.components as Record<string, unknown>[]).map((b) => ({
+          label: String(b.label),
+          style: Number(b.style),
+          ...(b.custom_id ? { id: String(b.custom_id) } : {}),
+          ...(b.url ? { url: String(b.url) } : {}),
+        }))
+      );
+      return;
+    }
+    for (const child of (c.components as Record<string, unknown>[] | undefined) ?? []) walk(child);
+  };
+  for (const c of cardsOf(payload)) walk(c as Record<string, unknown>);
+  return rows;
 }
 
 /** Link button URLs, in order. */
@@ -89,11 +132,66 @@ describe("liveView", () => {
         `-# อัปเดตล่าสุด <t:${NOW / 1000}:R> · ${LIVE.marker}`,
       ].join("\n")
     );
-    // Two link buttons: the web island and the coworking voice channel. Nothing a student can press that posts.
+    // Two link buttons: the web island and the coworking voice channel. The
+    // panel's buttons answer only whoever presses them (handlers/panel.ts).
     expect(linkUrls(p)).toEqual([WEB, `https://discord.com/channels/${GUILD}/${ROOM}`]);
     expect(viewText(p)).toContain("🌐 เปิดเกาะบนเว็บ");
-    expect(viewText(p)).toContain(LIVE.join);
-    expect(customIds(p)).toEqual([]);
+    expect(viewText(p)).toContain("🔥 เข้ากองไฟ");
+    expect(customIds(p)).toEqual(PANEL_IDS);
+  });
+
+  it("ends with the panel: five personal buttons, then how to play and the links", () => {
+    const rows = rowsOf(card(data({ suggest_channel_id: SUGGEST })));
+    expect(rows).toEqual([
+      [
+        { label: "🏝️ ของฉัน", style: ButtonStyle.Primary, id: "sq|lp|me" },
+        { label: "📋 งานที่ส่งไว้", style: ButtonStyle.Secondary, id: "sq|lp|quests" },
+        { label: "✍️ เช็กอิน", style: ButtonStyle.Secondary, id: "sq|lp|checkin" },
+        { label: "🆘 ขอช่วย", style: ButtonStyle.Secondary, id: "sq|lp|help" },
+        { label: "🎁 รางวัล", style: ButtonStyle.Secondary, id: "sq|lp|rewards" },
+      ],
+      [
+        { label: "📖 วิธีเล่น", style: ButtonStyle.Secondary, id: "sq|lp|how" },
+        { label: "🌐 เปิดเกาะบนเว็บ", style: ButtonStyle.Link, url: WEB },
+        { label: "🔥 เข้ากองไฟ", style: ButtonStyle.Link, url: `https://discord.com/channels/${GUILD}/${ROOM}` },
+        { label: "💡 เสนอไอเดีย", style: ButtonStyle.Link, url: `https://discord.com/channels/${GUILD}/${SUGGEST}` },
+      ],
+    ]);
+  });
+
+  it("gives every panel button one sq|lp id a handler answers, inside Discord's limits", () => {
+    const p = card(data({ suggest_channel_id: SUGGEST }));
+    expect(PANEL_TARGETS.map(panelId)).toEqual(PANEL_IDS);
+    expect(ACTION_HANDLERS.has("lp")).toBe(true);
+    for (const id of customIds(p)) {
+      expect(id.length).toBeLessThanOrEqual(100);
+      const parsed = parseCid(id);
+      expect(parsed?.action).toBe("lp");
+      expect(PANEL_TARGETS as readonly string[]).toContain(parsed?.args[0]);
+      expect(parsed?.args).toHaveLength(1);
+    }
+    for (const row of rowsOf(p)) {
+      expect(row.length).toBeLessThanOrEqual(5);
+      for (const b of row) {
+        expect(b.label.length).toBeGreaterThan(0);
+        expect(b.label.length).toBeLessThanOrEqual(80);
+        expect(b.label).not.toContain("—");
+        // A link opens a URL and nothing else; every other button carries a panel id.
+        expect(Boolean(b.url) !== Boolean(b.id)).toBe(true);
+        if (b.url) expect(b.url).toMatch(/^https:\/\//);
+      }
+    }
+    expect(componentCount(p)).toBeLessThanOrEqual(LIMITS.components);
+  });
+
+  it("links the suggestions channel only when the post's data names one", () => {
+    const suggest = `https://discord.com/channels/${GUILD}/${SUGGEST}`;
+    expect(linkUrls(card(data({ suggest_channel_id: SUGGEST })))).toEqual([WEB, `https://discord.com/channels/${GUILD}/${ROOM}`, suggest]);
+    expect(linkUrls(card(data({ suggest_channel_id: SUGGEST, coworking_channel_id: null }), { webUrl: null }))).toEqual([suggest]);
+    // What shift_quest_live_post returns today: no suggest id, no link.
+    expect(viewText(card(data()))).not.toContain(LIVE.suggest);
+    for (const bad of [null, "", "general", "12"]) expect(linkUrls(card(data({ suggest_channel_id: bad })))).not.toContain(suggest);
+    expect(linkUrls(card(data({ suggest_channel_id: SUGGEST }), { guildId: "nope" }))).toEqual([WEB]);
   });
 
   it("names nobody: only consented signs, a campfire count, no mentions and no em dashes", () => {
@@ -134,10 +232,11 @@ describe("liveView", () => {
     expect(bodyText(card(data({ goal: null })))).not.toContain("🎯");
   });
 
-  it("has no buttons without a web address or a coworking channel, and falls back to text without a picture", () => {
+  it("keeps the panel without a web address, a coworking channel or a picture, and falls back to text", () => {
     const p = card(data({ coworking_channel_id: null }), { webUrl: null, picture: false });
     expect(linkUrls(p)).toEqual([]);
-    expect(JSON.stringify(cardsOf(p))).not.toMatch(/"type":1[,}]/);
+    expect(customIds(p)).toEqual(PANEL_IDS);
+    expect(rowsOf(p).map((row) => row.length)).toEqual([5, 1]);
     expect(mediaUrls(p)).toEqual([]);
     expect(bodyText(p)).toContain(`-# ${LIVE.pictureFailed}\n-# อัปเดตล่าสุด`);
     // A guild id that is not a snowflake never makes a join link.
@@ -153,6 +252,7 @@ describe("liveView", () => {
       expect(textLength(p)).toBeLessThanOrEqual(LIMITS.text);
       expect(bodyText(p)).toContain("และอีก 30");
       expect(bodyText(p)).toContain(LIVE.marker);
+      expect(customIds(p)).toEqual(PANEL_IDS);
       expect(warn).not.toHaveBeenCalled();
     } finally {
       warn.mockRestore();
@@ -169,6 +269,7 @@ describe("liveSignature", () => {
     expect(liveSignature(data({ approved: 10 }), WEB)).not.toBe(base);
     expect(liveSignature(data({ season: { name: "Season 1", demo_day: "2027-05-15", days_to_demo: 29 } }), WEB)).not.toBe(base);
     expect(liveSignature(data(), null)).not.toBe(base);
+    expect(liveSignature(data({ suggest_channel_id: SUGGEST }), WEB)).not.toBe(base);
     const idle = liveSignature(data({ campfire: { live: false, count: 3 } }), WEB);
     expect(liveSignature(data({ campfire: { live: false, count: 7 } }), WEB)).toBe(idle);
   });
@@ -379,7 +480,45 @@ describe("startLivePost", () => {
     expect(edit.flags).toBe(MessageFlags.IsComponentsV2);
     expect(edit.allowedMentions).toEqual({ parse: [] });
     expect(edit.files as unknown[]).toHaveLength(1);
+    expect(customIds(edit)).toEqual(PANEL_IDS);
     expect(marks(w)).toEqual([]);
+  });
+
+  it("puts the panel on a post from before it at the first ready after a deploy, then edits only on change", async () => {
+    const w = make();
+    // The post as the previous release left it: the marker and the two links only.
+    const old = renderView(
+      { ...liveView(data(), { nowMs: NOW - 60_000, guildId: GUILD, webUrl: WEB, picture: false }), rows: [] },
+      { ephemeral: false }
+    );
+    w.live.message("500000000000000001", BOT, old.components, true);
+    w.db.stored = { channel: LIVE_CH, message: "500000000000000001" };
+    await ready(w);
+    const edits = w.live.channel.messages.edit;
+    expect(edits).toHaveBeenCalledTimes(1);
+    expect(customIds(edits.mock.calls[0][1])).toEqual(PANEL_IDS);
+    expect(customIds({ components: w.live.store.get("500000000000000001")!.components })).toEqual(PANEL_IDS);
+    expect(w.live.channel.send).not.toHaveBeenCalled();
+    // The panel is not data: nothing changed, so no edit until the 10 minute refresh.
+    await minutes(1);
+    expect(edits).toHaveBeenCalledTimes(1);
+  });
+
+  it("links the suggestions channel as soon as the database's answer names one", async () => {
+    const w = make();
+    await ready(w);
+    const suggest = `https://discord.com/channels/${GUILD}/${SUGGEST}`;
+    expect(linkUrls(w.live.channel.send.mock.calls[0][0])).not.toContain(suggest);
+    w.db.data = { ...data(), suggest_channel_id: SUGGEST };
+    await minutes(1);
+    const edits = w.live.channel.messages.edit;
+    expect(edits).toHaveBeenCalledTimes(1);
+    expect(linkUrls(edits.mock.calls[0][1])).toEqual([WEB, `https://discord.com/channels/${GUILD}/${ROOM}`, suggest]);
+    // Anything else in that field is dropped, never sent to Discord.
+    w.db.data = { ...data(), suggest_channel_id: "<#123> not an id" } as LivePostData;
+    await minutes(1);
+    expect(edits).toHaveBeenCalledTimes(2);
+    expect(linkUrls(edits.mock.calls[1][1])).toEqual([WEB, `https://discord.com/channels/${GUILD}/${ROOM}`]);
   });
 
   it("edits again only when something shown changed, or every 10 minutes", async () => {
@@ -426,6 +565,7 @@ describe("startLivePost", () => {
     expect(mediaUrls(edit)).toEqual([]);
     expect(bodyText(edit)).toContain(LIVE.pictureFailed);
     expect(bodyText(edit)).toContain("-# 🪧 ป้ายชื่อบนเกาะ: #0 เกม");
+    expect(customIds(edit)).toEqual(PANEL_IDS);
     expect(error).toHaveBeenCalledWith(expect.stringContaining("live island picture skipped"));
   });
 
@@ -448,6 +588,9 @@ describe("startLivePost", () => {
     expect(mediaUrls(second)).toEqual([]);
     expect(bodyText(second)).toContain(LIVE.pictureFailed);
     expect(bodyText(second)).toContain(LIVE.marker);
+    // The panel goes out with the numbers: only the picture is left behind.
+    expect(customIds(first)).toEqual(PANEL_IDS);
+    expect(customIds(second)).toEqual(PANEL_IDS);
     expect(w.live.channel.send).not.toHaveBeenCalled();
 
     // The next edit tries the picture again, falls back again, and does not warn again.
@@ -476,6 +619,7 @@ describe("startLivePost", () => {
     expect(sent.pin).toHaveBeenCalledTimes(1);
     expect(w.db.stored).toEqual({ channel: LIVE_CH, message: sent.id });
     expect(bodyText(send.mock.calls[1][0])).toContain(LIVE.pictureFailed);
+    expect(customIds(send.mock.calls[1][0])).toEqual(PANEL_IDS);
   });
 
   it("does not blame the picture when the card fails without it too", async () => {

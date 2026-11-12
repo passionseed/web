@@ -7,6 +7,7 @@ import { campfireFor, startCampfire } from "./campfire";
 import { loadCtx, requireStudent } from "./context";
 import { admin } from "./handlers/admin";
 import { island } from "./handlers/island";
+import { panel } from "./handlers/panel";
 import { squad } from "./handlers/squad";
 import { journal } from "./handlers/journal";
 import { project, newProjectModal } from "./handlers/project";
@@ -22,7 +23,7 @@ import { startOutbox } from "./outbox";
 
 export { registerQuestCommands } from "./commands";
 
-const SETS: HandlerSet[] = [student, project, quest, journal, review, admin, island, squad];
+const SETS: HandlerSet[] = [student, project, quest, journal, review, admin, island, squad, panel];
 
 function merge<T>(pick: (set: HandlerSet) => Record<string, T> | undefined): Map<string, T> {
   const map = new Map<string, T>();

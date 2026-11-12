@@ -383,6 +383,28 @@ describe("island screens", () => {
     expect((c.api.call as jest.Mock).mock.calls).toEqual([]);
   });
 
+  it("how the island works never offers 🌱 to someone who already has a project", async () => {
+    const c = ctx(() => null);
+    c.session.current_project_id = "p";
+    const { i, sent } = interaction("button");
+    await ACTION_HANDLERS.get("is_how")!(i, c, []);
+    expect(bodyText(sent[0].payload).startsWith(`### ${I.btnHow}\n`)).toBe(true);
+    expect(customIds(sent[0].payload)).toEqual(["sq|is_view"]);
+    expect((c.api.call as jest.Mock).mock.calls).toEqual([]);
+  });
+
+  it("a tap without a plot offers one, as 🌟 does, and never asks the database to check in", async () => {
+    const c = ctx((fn) => (fn === "shift_quest_island" ? islandView({ project: null }) : null));
+    const { i, sent } = interaction("button");
+    await ACTION_HANDLERS.get("is_tap")!(i, c, []);
+    expect((c.api.call as jest.Mock).mock.calls).toEqual([["shift_quest_island", "1111111111"]]);
+    expect(sent).toHaveLength(1);
+    expectCard(sent[0].payload);
+    expect(bodyText(sent[0].payload)).toBe(`### ${I.header}\n${I.noPlot}`);
+    expect(customIds(sent[0].payload)).toEqual(["sq|is_claim", "sq|is_view"]);
+    expect(accentColor(sent[0].payload)).toBe(TONE_COLORS.island);
+  });
+
   it("a tap is a small toast: first today, or already noted, with the note and back buttons", async () => {
     for (const [taps, title, words, tone] of [
       [0, I.tappedTitle, I.tapped, TONE_COLORS.success],
