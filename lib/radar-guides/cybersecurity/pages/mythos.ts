@@ -160,7 +160,7 @@ export const mythos: GuidePage = {
               band: { from: 20, to: 30, labelTh: "2568: ปกติเดือนละ 20 ถึง 30" },
               bars: [
                 { labelTh: "มี.ค. 2569 (สถิติเดิม)", value: 76 },
-                { labelTh: "เม.ย. 2569", value: 423, segment: { value: 271, labelTh: "เจอด้วย Mythos Preview" } },
+                { labelTh: "เม.ย. 2569", value: null, segment: { value: 271, labelTh: "เจอด้วย Mythos Preview" } },
               ],
             },
             nearTh: "เกือบเป๊ะ",
