@@ -44,17 +44,22 @@ export function QuestBoard({ api, quest, students, groupLabel, onClose }: Props)
   const missing = students.filter((s) => !s.work);
   const key = handed.map((s) => `${s.who.userId}:${s.who.name}:${s.work!.ids.length}`).join("|");
   const scene = useSceneMemo(api, (elements) => buildScene(elements, handed), [key]);
-  const fitted = useRef(false);
+  // Excalidraw loads initialData after handing over its API, so the first scene goes in
+  // there (an earlier updateScene would be overwritten); later changes follow the live board.
+  const [initialData] = useState(() => ({
+    elements: scene,
+    files: api.getFiles(),
+    appState: { theme: api.getAppState().theme, viewBackgroundColor: "#f5f5f3" },
+    scrollToContent: true,
+  }));
+  const shown = useRef(scene);
 
   useEffect(() => {
-    if (!view) return;
+    if (!view || scene === shown.current) return;
+    shown.current = scene;
     const files = Object.values(api.getFiles()) as BinaryFileData[];
     if (files.length) view.addFiles(files);
     view.updateScene({ elements: scene });
-    if (!fitted.current && scene.length) {
-      fitted.current = true;
-      view.scrollToContent(scene, { fitToViewport: true, viewportZoomFactor: 0.9 });
-    }
   }, [api, view, scene]);
 
   // Escape closes it, as other panes do.
@@ -92,7 +97,7 @@ export function QuestBoard({ api, quest, students, groupLabel, onClose }: Props)
         ) : (
           <Excalidraw
             excalidrawAPI={setView}
-            initialData={{ elements: [], appState: { theme: api.getAppState().theme, viewBackgroundColor: "#f5f5f3" } }}
+            initialData={initialData}
             viewModeEnabled
             UIOptions={VIEW_UI}
             name={questName(quest)}
