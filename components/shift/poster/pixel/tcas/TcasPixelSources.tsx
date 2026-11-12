@@ -104,7 +104,7 @@ export function TcasPixelSources({ data }: { data: TcasPosterData }) {
       <div className="absolute inset-x-0 px-[44px]" style={{ top: (SHEET_DECK + 6) * CELL }}>
         {data.reality?.length ? (
           <section>
-            <SectionLabel th="คะแนนจริงของคนที่ติด" en="What admits actually had" />
+            <SectionLabel th={data.realityTitle ?? "คะแนนจริงของคนที่ติด"} en="What admits actually had" />
             <p className="mt-[8px] text-[15px] leading-[1.45]" style={{ color: `${PX.cream}bf` }}>
               เฉพาะที่มหาวิทยาลัยเผยแพร่เอง ตัวเลขปีที่แล้วใช้กะระยะได้ แต่ปีนี้อาจสูงกว่า
             </p>

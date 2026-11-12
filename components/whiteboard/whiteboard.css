@@ -962,7 +962,7 @@ img.wb-avatar {
 }
 /* The board kit opens over the right edge; keep Share and the people next to it. */
 .whiteboard-room:not(:has(.excalidraw--mobile)):has(.excalidraw .sidebar) .wb-corner--right {
-  right: calc(302px + 1rem);
+  right: calc(var(--wb-sidebar-w, 302px) + 1rem);
 }
 
 .wb-title {
@@ -1379,9 +1379,10 @@ button.wb-timer:enabled:active {
 /* The sticky pad. Lower sheets are the sticky colour under a wash of ink; the corner that curls
    up is the same colour under a wash of white. The top sheet lifts a little on hover and is
    gone while it is being dragged out, which leaves the next sheet showing. */
-/* Sticky colours are light in both themes: the pad keeps dark ink lines on dark paper too. */
+/* The pad is outlined with the bar's own hairline: one screen pixel at every --wb-obj-scale. */
 .wb-pad {
-  stroke: #1b1c3a;
+  stroke: var(--wb-rule);
+  stroke-width: calc(1px / var(--wb-obj-scale));
 }
 .wb-pad__shade {
   fill: var(--wb-navy);
@@ -1438,6 +1439,12 @@ button.wb-timer:enabled:active {
 .wb-shape .wb-art {
   width: 100%;
   height: 100%;
+}
+/* The square and circle are outlined with the bar's hairline: one screen pixel at every scale. */
+.wb-shape--rectangle .wb-art,
+.wb-shape--ellipse .wb-art {
+  stroke: var(--wb-rule);
+  stroke-width: calc(1px / var(--s));
 }
 .whiteboard-room .wb-shapes .wb-shape--rectangle {
   left: calc(8px * var(--s));
@@ -2676,4 +2683,210 @@ body:has(.whiteboard-room .excalidraw.theme--dark) .wb-dot--bg:is([aria-pressed=
   .wb-version-panel .wb-save:hover {
     opacity: 0.88;
   }
+}
+
+/* ---------- Quests (components/whiteboard/quest/) ---------- */
+/* Board tokens, not Tailwind dark: variants: the site's own dark class says nothing about the board's look. */
+
+.wb-quest-pill,
+.wb-quest-menu {
+  border: 1px solid var(--wb-hairline-strong);
+  background: var(--wb-card);
+  color: var(--wb-text);
+  box-shadow: var(--wb-shadow-float);
+}
+.wb-quest-soft {
+  color: var(--wb-text-soft);
+}
+.wb-quest-option:hover,
+.wb-quest-option:focus-visible {
+  background: var(--wb-hover);
+  outline: none;
+}
+.wb-quest-menu .wb-rule {
+  border-color: var(--wb-hairline-strong);
+}
+.wb-quest-card {
+  border: 1px solid var(--wb-hairline);
+  background: var(--wb-card);
+}
+.wb-quest-tab--on {
+  background: var(--wb-card);
+  color: var(--wb-text);
+  box-shadow: var(--wb-shadow);
+}
+
+/* A quest's start button, drawn in the label's own pen (--ink) and sized with the board,
+   so it reads as part of the drawing rather than a floating control. The wobbly radius is
+   the hand-drawn box; hover fills it in, and a running quest is filled solid. */
+.wb-quest-ink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.18em 0.7em 0.22em 0.55em;
+  border: 0.14em solid var(--ink);
+  border-radius: 1.4em 0.5em 1.2em 0.45em / 0.5em 1.2em 0.45em 1.3em;
+  /* The board's paper, so strokes under the button don't show through its words. */
+  background: var(--wb-board-bg, #fff);
+  color: var(--ink);
+  font-family: "Excalifont", "Virgil", var(--wb-font);
+  line-height: 1.2;
+  white-space: nowrap;
+  transform: translateY(-50%) rotate(-1.5deg);
+  transition: transform 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+}
+.wb-quest-ink__mark {
+  font-size: 0.7em;
+}
+@media (hover: hover) {
+  .wb-quest-ink:hover {
+    background: color-mix(in srgb, var(--ink) 14%, var(--wb-board-bg, #fff));
+    transform: translateY(-50%) rotate(1deg) scale(1.04);
+  }
+}
+.wb-quest-ink:active {
+  transform: translateY(-50%) rotate(0deg) scale(0.97);
+}
+.wb-quest-ink:focus-visible {
+  outline: 2px dashed var(--ink);
+  outline-offset: 3px;
+}
+.wb-quest-ink--drag {
+  cursor: grabbing;
+  transition: none;
+  transform: translateY(-50%) rotate(2deg) scale(1.06);
+  box-shadow: 0 0.3em 0.8em rgba(0, 0, 0, 0.18);
+}
+.wb-quest-ink--on {
+  background: var(--ink);
+  color: #fff;
+}
+.wb-quest-ink--on .wb-quest-ink__mark {
+  animation: wb-quest-blink 1.4s ease-in-out infinite;
+}
+@keyframes wb-quest-blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wb-quest-ink,
+  .wb-quest-ink--on .wb-quest-ink__mark {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* ---------- Narrow windows (under Excalidraw's 730px phone breakpoint) ----------
+   Excalidraw's phone layout puts the menu and undo/redo on a full-width bar under ours.
+   Drop the bar and float those buttons as small cards, like the rest of the chrome. */
+.whiteboard-room .excalidraw--mobile .App-bottom-bar > .Island {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+.whiteboard-room .excalidraw--mobile .App-toolbar-content > :is(.main-menu-trigger, .ToolIcon_type_button--show, div) {
+  background: var(--wb-card) !important;
+  border: 1px solid var(--wb-hairline);
+  border-radius: var(--wb-card-radius);
+  box-shadow: var(--wb-shadow);
+}
+
+/* A quest's settings (right-click) and its details card (click) both open from the label: one at a time. */
+body:has([data-quest-menu][role="dialog"]) .wb-quest-label-card {
+  display: none;
+}
+
+/* ---------- Excalidraw's right-click menu, in the board's card style ----------
+   The same paper, hairline, radius and shadow as our menus and the quest cards beside it,
+   rounded rows that light up like the rest of the chrome, and dashed rules between groups. */
+.whiteboard-room .excalidraw .context-menu {
+  margin: 0;
+  padding: 6px;
+  border: 1px solid var(--wb-hairline-strong);
+  border-radius: var(--wb-card-radius);
+  background: var(--wb-card);
+  color: var(--wb-text);
+  box-shadow: var(--wb-shadow-float);
+  font-family: var(--wb-font);
+}
+.whiteboard-room .excalidraw .context-menu-item {
+  min-width: 11rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 8px;
+  color: var(--wb-text);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  transition: background-color 120ms ease-out;
+}
+.whiteboard-room .excalidraw .context-menu-item .context-menu-item__shortcut {
+  color: var(--wb-text-soft);
+  opacity: 1;
+  font-family: var(--wb-mono);
+  font-size: 0.68rem;
+}
+.whiteboard-room .excalidraw .context-menu-item:hover,
+.whiteboard-room .excalidraw .context-menu-item:focus-visible {
+  background: var(--wb-hover);
+  color: var(--wb-text);
+}
+.whiteboard-room .excalidraw .context-menu-item:active {
+  background: var(--wb-press);
+}
+.whiteboard-room .excalidraw .context-menu-item.dangerous .context-menu-item__label {
+  color: #dc2626;
+}
+.whiteboard-room .excalidraw .context-menu-item:hover.dangerous {
+  background: rgb(220 38 38 / 0.1);
+}
+.whiteboard-room .excalidraw .context-menu-item:hover.dangerous .context-menu-item__label {
+  color: #dc2626;
+}
+.whiteboard-room .excalidraw .context-menu-item-separator {
+  margin: 4px 6px;
+  border-top: 1px dashed var(--wb-hairline-strong);
+}
+/* Our quest cards beside it: the same rows and rules. */
+.wb-quest-menu .wb-quest-option {
+  font-size: 0.82rem;
+}
+
+/* The Quest pane (quest/QuestPane.tsx), beside the board like the Claude app's side panes. */
+.wb-quest-pane {
+  background: var(--wb-card);
+  color: var(--wb-text);
+  border-left: 1px solid var(--wb-hairline-strong);
+  box-shadow: var(--wb-shadow-float);
+}
+.wb-quest-pane__head {
+  border-bottom: 1px dashed var(--wb-hairline-strong);
+}
+/* Its left edge: drag to resize. A hairline that lights up on hover. */
+.wb-panel-edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -4px;
+  z-index: 5;
+  width: 8px;
+  cursor: col-resize;
+  touch-action: none;
+}
+.wb-panel-edge::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 2px;
+  background: transparent;
+  transition: background-color 120ms ease-out;
+}
+@media (hover: hover) {
+  .wb-panel-edge:hover::after {
+    background: var(--wb-hairline-strong);
+  }
+}
+.wb-panel-edge--on::after {
+  background: var(--wb-on-bg, #3d4bd8);
 }

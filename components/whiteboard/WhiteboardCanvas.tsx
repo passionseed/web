@@ -14,7 +14,7 @@ import {
 } from "@excalidraw/excalidraw";
 import type { NonDeleted, OrderedExcalidrawElement, ExcalidrawEmbeddableElement } from "@excalidraw/excalidraw/element/types";
 import type { AppState, BinaryFiles, ExcalidrawProps } from "@excalidraw/excalidraw/types";
-import { ArrowLeft, Copy, FileUp, LayoutTemplate, Save, Settings } from "lucide-react";
+import { ArrowLeft, Copy, FileUp, Flag, LayoutTemplate, Save, Settings } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -22,6 +22,7 @@ import type { WhiteboardDetail } from "@/lib/supabase/whiteboards";
 import { canEdit, type LinkAccess } from "@/lib/whiteboard/core";
 import { exportBackgroundFor } from "@/lib/whiteboard/settings";
 import { CARD_KINDS, CARDS, cardLibrarySkeleton } from "@/lib/whiteboard/cards";
+import { questName, type Quest } from "@/lib/whiteboard/quests";
 import { templateById } from "@/lib/whiteboard/templates";
 import { widgetIdOf, widgetLink } from "@/lib/whiteboard/widgets";
 
@@ -49,6 +50,11 @@ import { CanvasTeamLayer } from "./shift/CanvasTeamLayer";
 import { CardVersionsLayer } from "./shift/CardVersionsLayer";
 import { useShiftCardCaret } from "./shift/useShiftCardCaret";
 import { ZoneAddLayer } from "./shift/ZoneAddLayer";
+import { openQuestPanel, QuestPane, useQuestPane } from "./quest/QuestPane";
+import { useBoardPeople } from "./useBoardPeople";
+import { QuestLayer } from "./quest/QuestLayer";
+import { QuestMenu } from "./quest/QuestMenu";
+import { useQuestSession } from "./quest/useQuestSession";
 import { ShareDialog } from "./ShareDialog";
 import { TimerWidget } from "./TimerWidget";
 import { useComments } from "./useComments";
@@ -120,16 +126,53 @@ export default function WhiteboardCanvas({
     lastBlockedToast.current = Date.now();
     toast.info("เปลี่ยนตรงนี้ไม่ได้: แคนวาสนี้แก้ได้เฉพาะทีม และลบได้เฉพาะเจ้าของ");
   }, []);
-  const sync = useWhiteboardSync({ boardId: board.id, role: board.role, me, initialElements, managerIds, onCanvasBlocked });
+  // Quest sessions: while one runs, everything this person makes is tagged with it (lib/whiteboard/quests.ts).
+  const quest = useQuestSession(board.id, me.id);
+  // Everyone's Discord name and picture, a moment after the board opens; profile names until then.
+  const discord = useBoardPeople(board.id, () => [
+    me.id,
+    ...board.members.map((m) => m.userId),
+    ...initialElements.flatMap((el) => {
+      const data = el.customData as { createdBy?: unknown; updatedBy?: unknown; quest?: { by?: unknown } } | undefined;
+      return [data?.createdBy, data?.updatedBy, data?.quest?.by].filter((v): v is string => typeof v === "string");
+    }),
+  ]);
+  const shownAs = useCallback((userId: string) => discord[userId], [discord]);
+  const shownMe = useMemo(
+    () => ({ ...me, name: discord[me.id]?.name ?? me.name, avatarUrl: discord[me.id]?.avatarUrl ?? me.avatarUrl }),
+    [me, discord],
+  );
+  const sync = useWhiteboardSync({
+    boardId: board.id,
+    role: board.role,
+    me: shownMe,
+    shownAs,
+    initialElements,
+    managerIds,
+    onCanvasBlocked,
+    newElementData: editable ? quest.newElementData : undefined,
+  });
   const api = sync.excalidrawAPI;
   // Loads and saves the Library, and installs libraries from libraries.excalidraw.com (#addLibrary links).
   useHandleLibrary({ excalidrawAPI: api, adapter: LIBRARY_ADAPTER });
   const { send: syncSend, on: syncOn, onChange: syncOnChange, onPointerUpdate: syncOnPointer, saveNow, refreshFiles } = sync;
   const channel = useMemo(() => ({ send: syncSend, on: syncOn }), [syncSend, syncOn]);
-  const comments = useComments(board.id, channel);
+  const comments = useComments(board.id, channel, shownAs);
   const pointer = useRef<{ x: number; y: number } | null>(null);
   const emotes = useEmotes(api, channel, pointer);
   useShiftCardCaret(api);
+  const { start: startQuestSession, end: endQuestSession } = quest;
+  const startQuest = useCallback(
+    (q: Quest) => {
+      startQuestSession(q);
+      toast.success(`เริ่ม ${questName(q)}`, { description: "ทุกอย่างที่วาดหรือเขียนจากนี้นับเป็นงานของ Quest นี้ จนกว่าจะกดจบ" });
+    },
+    [startQuestSession],
+  );
+  const endQuest = useCallback(() => {
+    endQuestSession();
+    toast.success("จบ Quest แล้ว", { description: "คลิกขวาที่งานชิ้นไหนก็ย้าย Quest ได้" });
+  }, [endQuestSession]);
   const { settings, update: updateSettings } = useBoardSettings(board.id);
   useCanvasBackground(api, exportBackgroundFor(settings));
 
@@ -157,10 +200,19 @@ export default function WhiteboardCanvas({
     const newcomers = sync.present
       .filter((p) => !known.has(p.userId) && Boolean(known.add(p.userId)))
       .map((p) => ({ userId: p.userId, name: p.name, avatarUrl: p.avatarUrl, role: p.role }));
-    return [...members, ...newcomers];
-  }, [members, sync.present]);
+    return [...members, ...newcomers].map((p) =>
+      discord[p.userId] ? { ...p, name: discord[p.userId].name, avatarUrl: discord[p.userId].avatarUrl ?? p.avatarUrl } : p,
+    );
+  }, [members, sync.present, discord]);
   const namesById = useMemo(() => new Map(people.map((p) => [p.userId, p.name])), [people]);
-  const nameOf = useCallback((id: string) => namesById.get(id) ?? authorNames[id] ?? "Someone", [namesById, authorNames]);
+  const nameOf = useCallback(
+    (id: string) => discord[id]?.name ?? namesById.get(id) ?? authorNames[id] ?? "Someone",
+    [discord, namesById, authorNames],
+  );
+  const avatarOf = useCallback(
+    (id: string) => discord[id]?.avatarUrl ?? people.find((p) => p.userId === id)?.avatarUrl ?? null,
+    [discord, people],
+  );
   const onlineIds = useMemo(() => new Set(sync.present.map((p) => p.userId)), [sync.present]);
 
   // What board apps get: the board, who I am, and who is online now (one entry per person).
@@ -298,6 +350,9 @@ export default function WhiteboardCanvas({
     [api, boardInfo, editable, pluginMe, players, channel],
   );
 
+  // The Quest dashboard: the owner and site admins, plus whoever the owner made a quest reviewer.
+  const canReviewQuests = isManager || Boolean(members.find((m) => m.userId === me.id)?.questReviewer);
+
   // Excalidraw re-renders itself whenever its children change, so they are memoized
   // on exactly what they read.
   const mainMenu = useMemo(
@@ -306,6 +361,11 @@ export default function WhiteboardCanvas({
         <MainMenu.Item icon={<ArrowLeft size={16} />} onSelect={() => (window.location.href = "/whiteboard")}>
           บอร์ดทั้งหมด · All boards
         </MainMenu.Item>
+        {canReviewQuests && api && (
+          <MainMenu.Item icon={<Flag size={16} />} onSelect={() => openQuestPanel()}>
+            Quest Dashboard · งานแต่ละคน
+          </MainMenu.Item>
+        )}
         <MainMenu.Separator />
         {editable && (
           // Touch devices have no Ctrl+S.
@@ -334,7 +394,7 @@ export default function WhiteboardCanvas({
         </MainMenu.Item>
       </MainMenu>
     ),
-    [duplicate, editable, openSettings, saveAndTell],
+    [api, canReviewQuests, duplicate, editable, openSettings, saveAndTell],
   );
 
   const welcomeScreen = useMemo(
@@ -369,6 +429,10 @@ export default function WhiteboardCanvas({
     [api, board.id, isAdmin, showAuthors],
   );
 
+  // The Quest dashboard, in a pane beside the board that the board makes room for.
+  const questPane = useQuestPane(board.id, canReviewQuests);
+  const openQuestDashboard = useCallback((questId: string) => openQuestPanel(questId), []);
+
   const kit = useMemo(
     () =>
       api ? (
@@ -401,7 +465,12 @@ export default function WhiteboardCanvas({
   const closePlacing = useCallback(() => setPlacingComment(false), []);
 
   return (
-    <div className={`whiteboard-root whiteboard-room fixed inset-0 ${WB_FONT_VARS}`}>
+    <>
+      <div
+        className={`whiteboard-root whiteboard-room fixed inset-0 ${WB_FONT_VARS}`}
+        // The Quest pane sits beside the board: the board's right edge moves in to make room.
+        style={questPane.open ? { right: questPane.width } : undefined}
+      >
       {/* The grain filters, once for the whole board. */}
       <GrainDefs />
       <BoardBackdrop api={api} settings={settings} />
@@ -438,6 +507,19 @@ export default function WhiteboardCanvas({
           />
           <EmoteLayer api={api} bursts={emotes.bursts} />
           {editable && <ZoneAddLayer api={api} meId={me.id} manager={isManager} />}
+          {editable && (
+            <QuestLayer
+              api={api}
+              meId={me.id}
+              manager={isManager}
+              nameOf={nameOf}
+              onReview={canReviewQuests ? openQuestDashboard : undefined}
+              session={quest.session}
+              onStart={startQuest}
+              onEnd={endQuest}
+            />
+          )}
+          {editable && <QuestMenu api={api} meId={me.id} manager={isManager} />}
           <CardVersionsLayer api={api} meId={me.id} editable={editable} manager={isManager} nameOf={nameOf} />
           <CanvasTeamLayer api={api} meId={me.id} manager={isManager} people={people} nameOf={nameOf} />
           {isAdmin && showAuthors && <AuthorsLayer api={api} nameOf={nameOf} />}
@@ -508,6 +590,18 @@ export default function WhiteboardCanvas({
         onMembersChange={setMembers}
         onlineIds={onlineIds}
       />
-    </div>
+      </div>
+      {questPane.open && api && (
+        <QuestPane
+          api={api}
+          width={questPane.width}
+          onResize={questPane.resize}
+          onClose={questPane.close}
+          people={people}
+          nameOf={nameOf}
+          avatarOf={avatarOf}
+        />
+      )}
+    </>
   );
 }
