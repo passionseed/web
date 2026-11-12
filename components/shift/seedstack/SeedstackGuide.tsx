@@ -60,8 +60,8 @@ const COMMAND_ICONS: Record<string, LucideIcon> = {
   "/seedstack-scope": Crosshair,
   "/seedstack-ship": ClipboardCheck,
   "/seedstack-test": Users,
-  "/seedstack-build": Blocks,
-  "/seedstack-autobuild": Zap,
+  "/seedstack-guidance-build": Blocks,
+  "/seedstack-auto-build": Zap,
   "/seedstack-live": Globe,
   "/seedstack-connect": Cable,
 };

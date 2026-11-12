@@ -38,7 +38,7 @@ export const SEEDSTACK_GUIDE = {
     body: "มันดูไฟล์ในโฟลเดอร์โปรเจกต์ บอกว่าเราอยู่ตรงไหน แล้วแนะนำขั้นถัดไป 1 ขั้นพร้อมเหตุผล เราเป็นคนเลือกว่าจะไปทางนั้นไหม",
     board: ["✅ scope card", "✅ ship ticket (ขั้น 2: เว็บหน้าเดียว)", "⏳ เทสต์แล้ว 1 / 3", "⬜ ลิงก์ live"],
     create:
-      "รู้แล้วว่าอยากสร้างอะไร? พิมพ์ /seedstack create ตามด้วยไอเดีย เช่น /seedstack create เว็บจองคิวร้านตัดผม แล้ว AI เริ่มสร้างกับเราในแชตนี้เลย",
+      "รู้แล้วว่าอยากสร้างอะไร? พิมพ์ /seedstack guidance-build ตามด้วยไอเดีย เช่น /seedstack guidance-build เว็บจองคิวร้านตัดผม แล้ว AI เริ่มสร้างกับเราในแชตนี้เลย",
   },
 
   commands: {
@@ -49,13 +49,13 @@ export const SEEDSTACK_GUIDE = {
       { cmd: "/seedstack-ship", when: "ก่อนลงมือสร้าง เช็กว่าพร้อมเทสต์กับคนจริงไหม", out: "ship-ticket.md" },
       { cmd: "/seedstack-test", when: "หาคนเทสต์ เทสต์เสร็จ หรือได้ feedback มา", out: "test-log.md" },
       {
-        cmd: "/seedstack-build",
-        when: "บอกว่าอยากได้อะไร AI ตั้งโปรเจกต์ Next.js แล้วเขียนโค้ดให้ทีละขั้นในแชตเดียว พร้อมบอกว่าทำไม เราดูผลทุกขั้น · หรือพิมพ์ /seedstack create <ไอเดีย>",
+        cmd: "/seedstack-guidance-build",
+        when: "บอกว่าอยากได้อะไร AI ตั้งโปรเจกต์ Next.js แล้วเขียนโค้ดให้ทีละขั้นในแชตเดียว พร้อมบอกว่าทำไม เราดูผลทุกขั้น · หรือพิมพ์ /seedstack guidance-build <ไอเดีย>",
         out: "แอป + build-plan.md",
       },
       {
-        cmd: "/seedstack-autobuild",
-        when: "ทางด่วน: AI ทำเกือบทั้งหมดจนได้ลิงก์ live เราทำแค่ส่วนที่ต้องเป็นเรา คือสมัครบัญชี login พิมพ์รหัสผ่านคอม และวาง secret key · หรือพิมพ์ /seedstack autobuild <ไอเดีย>",
+        cmd: "/seedstack-auto-build",
+        when: "ทางด่วน: AI ทำเกือบทั้งหมดจนได้ลิงก์ live เราทำแค่ส่วนที่ต้องเป็นเรา คือสมัครบัญชี login พิมพ์รหัสผ่านคอม และวาง secret key · หรือพิมพ์ /seedstack auto-build <ไอเดีย>",
         out: "ลิงก์ live เร็วที่สุด",
       },
       { cmd: "/seedstack-live", when: "ของในเครื่องเวิร์กแล้ว อยากได้ลิงก์ให้คนเปิด", out: "ลิงก์ live" },
