@@ -1,0 +1,520 @@
+/*
+ * The player round on /shift/island: the pixel avatar, the coin pill, the
+ * own-plot marker, the character sheet and the wallet. Tokens (--isl-*,
+ * --notch, --text-*) come from island.module.css's .page and .sheet, which
+ * wrap everything here.
+ *
+ * Motion: presses only (translateY 1px), and a 1px bob on the plot marker
+ * that prefers-reduced-motion turns off. No glow, no rotation, no sticker or
+ * extruded shadow.
+ */
+
+/* ---------------------------------------------------------------- pixel avatar */
+
+.pixelAvatar {
+  position: relative;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  overflow: hidden;
+  font-family: var(--font-kodchasan), var(--font-bai-jamjuree), sans-serif;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--isl-cream);
+  background: var(--isl-wood);
+  clip-path: var(--notch);
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.pixelAvatar[data-fill="true"] {
+  width: 100%;
+  height: 100%;
+}
+
+/* The ink frame sits over the picture, like the island's own sprite outlines. */
+.pixelAvatar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  box-shadow: inset 0 0 0 2px var(--isl-ink);
+  pointer-events: none;
+}
+
+.pixelCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+  visibility: hidden;
+}
+
+.pixelAvatar[data-ready="true"] .pixelCanvas {
+  visibility: visible;
+}
+
+.pixelInitial {
+  position: relative;
+}
+
+/* ---------------------------------------------------------------- HUD coin pill */
+
+/* A 44px tap area around a 32px glass pill. */
+.coinPill {
+  display: inline-flex;
+  align-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.coinFace {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px 0 8px;
+  font-family: var(--font-space-mono), monospace;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--isl-lamp);
+  clip-path: var(--notch);
+  transition: transform var(--press) var(--ease-snap), background-color var(--snap) var(--ease-snap);
+}
+
+.coinFace svg {
+  display: block;
+  flex: none;
+}
+
+.coinPill:active .coinFace {
+  transform: translateY(1px);
+}
+
+.coinPill:focus-visible {
+  outline: none;
+}
+
+.coinPill:focus-visible .coinFace {
+  outline: 2px solid var(--isl-cream);
+  outline-offset: -4px;
+}
+
+@media (hover: hover) {
+  .coinPill:hover .coinFace {
+    background: rgba(40, 32, 38, 0.86);
+  }
+}
+
+/* ---------------------------------------------------------------- own plot marker */
+
+/* Over the yellow pin of the viewer's own plot; only the viewer sees it. */
+.marker {
+  position: absolute;
+  z-index: 1;
+  aspect-ratio: 1;
+  pointer-events: none;
+}
+
+.marker[data-anchor="top"] {
+  transform: translate(-50%, -100%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .marker {
+    animation: marker-bob 1600ms steps(1, end) infinite;
+  }
+}
+
+@keyframes marker-bob {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+
+  50% {
+    translate: 0 -1px;
+  }
+}
+
+/* ---------------------------------------------------------------- character sheet */
+
+.charHead {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.charWho {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.charName {
+  margin: 0;
+  font-family: var(--font-kodchasan), var(--font-bai-jamjuree), sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text-hi);
+  overflow-wrap: anywhere;
+}
+
+.charLevel {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--isl-sand-hi);
+}
+
+/* A pixel progress bar: one cell per step, like the HUD chip's meter. */
+.cells {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.cell {
+  width: 14px;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(98, 111, 115, 0.9);
+}
+
+.cell[data-filled="true"] {
+  background: var(--isl-leaf-hi);
+  box-shadow: inset 0 0 0 1px var(--isl-ink);
+}
+
+.cells[data-tone="lamp"] .cell[data-filled="true"] {
+  background: var(--isl-lamp);
+}
+
+.cells[data-size="pip"] .cell {
+  width: 22px;
+}
+
+/* Two columns from 360px up: the four stats fit about one screen, and the 7-cell bars (110px) still fit a column. */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.stat {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 10px 10px;
+  min-width: 0;
+  background: rgba(255, 241, 214, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(184, 199, 191, 0.25);
+  clip-path: var(--notch);
+}
+
+.statHeading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--isl-sand-hi);
+}
+
+.statHeading svg {
+  display: block;
+  flex: none;
+}
+
+.statLine {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-hi);
+}
+
+.statSub {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+/* The coin row: opens the wallet. */
+.coinRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 14px;
+  font: inherit;
+  text-align: left;
+  color: var(--text-hi);
+  background: rgba(244, 197, 106, 0.1);
+  border: 0;
+  box-shadow: inset 0 0 0 1px rgba(244, 197, 106, 0.4);
+  clip-path: var(--notch);
+  cursor: pointer;
+  transition: background-color var(--snap) var(--ease-snap), transform var(--press) var(--ease-snap);
+}
+
+.coinRow:focus-visible {
+  outline: 2px solid var(--action-soft);
+  outline-offset: -4px;
+}
+
+.coinRow:active {
+  transform: translateY(1px);
+}
+
+@media (hover: hover) {
+  .coinRow:hover {
+    background: rgba(244, 197, 106, 0.16);
+  }
+}
+
+.coinRowMain {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.coinRowMain svg {
+  display: block;
+  flex: none;
+}
+
+.coinRowAction {
+  flex: none;
+  font-size: 14px;
+  color: var(--action-soft);
+}
+
+.projectHeading {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--isl-sand-hi);
+}
+
+/* ---------------------------------------------------------------- wallet */
+
+.balance {
+  display: grid;
+  gap: 4px;
+}
+
+.balanceValue {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-family: var(--font-space-mono), monospace;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--isl-lamp);
+}
+
+.balanceValue svg {
+  display: block;
+  flex: none;
+}
+
+.section {
+  display: grid;
+  gap: 10px;
+}
+
+.list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.rowText {
+  display: grid;
+  min-width: 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.rowSub {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.amount {
+  flex: none;
+  font-family: var(--font-space-mono), monospace;
+  font-weight: 700;
+  color: var(--isl-lamp);
+  white-space: nowrap;
+}
+
+.amount[data-sign="minus"] {
+  color: var(--text-dim);
+}
+
+.terms {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-dim);
+  white-space: pre-line;
+}
+
+/* ---------------------------------------------------------------- shop */
+
+.item {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  box-shadow: inset 0 0 0 1px rgba(184, 199, 191, 0.3);
+  clip-path: var(--notch);
+}
+
+.itemHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.itemName {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--text-hi);
+  overflow-wrap: anywhere;
+}
+
+.itemText {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.lock {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--isl-sand-hi);
+}
+
+/* What an item needs: every line, a square lamp lit for the ones already met. */
+.needs {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.need {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--isl-sand-hi);
+}
+
+.need[data-met="true"] {
+  color: var(--text-dim);
+}
+
+.needMark {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  box-shadow: inset 0 0 0 1px var(--isl-sand-hi);
+}
+
+.need[data-met="true"] .needMark {
+  background: var(--isl-leaf-hi);
+  box-shadow: inset 0 0 0 1px var(--isl-ink);
+}
+
+.confirm {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  background: rgba(244, 197, 106, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(244, 197, 106, 0.35);
+  clip-path: var(--notch);
+}
+
+.confirm p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-hi);
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.buttons > * {
+  flex: 1 1 140px;
+}
+
+.message {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.message[data-tone="error"] {
+  color: #f7b4ab;
+}
+
+.message[data-tone="ok"] {
+  color: var(--isl-leaf-hi);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .coinFace,
+  .coinRow {
+    transition: none !important;
+  }
+
+  .coinPill:active .coinFace,
+  .coinRow:active {
+    transform: none;
+  }
+}

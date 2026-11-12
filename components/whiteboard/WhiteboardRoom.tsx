@@ -18,6 +18,8 @@ export function WhiteboardRoom(props: {
   board: WhiteboardDetail;
   me: { id: string; name: string; avatarUrl: string | null; isAdmin?: boolean };
   templateId?: string | null;
+  /** An element to scroll to once the board loads (/whiteboard/<id>?focus=<element>). */
+  focusId?: string | null;
 }) {
   return <WhiteboardCanvas {...props} />;
 }

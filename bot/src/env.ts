@@ -9,9 +9,9 @@
  * "shift-voice"). Each module checks only the variables it needs.
  */
 
-export type BotModule = "shift-voice" | "projectseed";
+export type BotModule = "shift-voice" | "shift-quests" | "projectseed";
 
-const KNOWN_MODULES: BotModule[] = ["shift-voice", "projectseed"];
+const KNOWN_MODULES: BotModule[] = ["shift-voice", "shift-quests", "projectseed"];
 
 export interface CoreEnv {
   discordToken: string;
@@ -40,10 +40,21 @@ export interface ShiftVoiceEnv {
   databaseUrl: string;
 }
 
+/** SHIFT High quests in the SHIFT server. */
+export interface ShiftQuestsEnv {
+  guildId: string;
+  /**
+   * Postgres URL for the least-privilege shift_quest_bot role, through the
+   * Supavisor pooler. Never the service role key: see migration 20261111090600.
+   */
+  databaseUrl: string;
+}
+
 export interface LoadedEnv {
   core: CoreEnv;
   projectseed: BotEnv | null;
   shiftVoice: ShiftVoiceEnv | null;
+  shiftQuests: ShiftQuestsEnv | null;
 }
 
 function optional(name: string): string | undefined {
@@ -80,16 +91,17 @@ function parseModules(raw: string | undefined): Set<BotModule> {
 function resolveToken(modules: Set<BotModule>): string {
   const shared = optional("DISCORD_BOT_TOKEN");
   const shift = optional("DISCORD_SHIFT_BOT_TOKEN") ?? shared;
+  const usesShift = modules.has("shift-voice") || modules.has("shift-quests");
 
-  if (modules.has("shift-voice") && modules.has("projectseed") && shift !== shared) {
+  if (usesShift && modules.has("projectseed") && shift !== shared) {
     throw new Error(
-      "DISCORD_SHIFT_BOT_TOKEN and DISCORD_BOT_TOKEN are different bots; run shift-voice and projectseed as separate processes"
+      "DISCORD_SHIFT_BOT_TOKEN and DISCORD_BOT_TOKEN are different bots; run the SHIFT modules and projectseed as separate processes"
     );
   }
-  const token = modules.has("shift-voice") ? shift : shared;
+  const token = usesShift ? shift : shared;
   if (!token) {
     throw new Error(
-      modules.has("shift-voice")
+      usesShift
         ? "Missing required environment variable: DISCORD_SHIFT_BOT_TOKEN or DISCORD_BOT_TOKEN"
         : "Missing required environment variable: DISCORD_BOT_TOKEN"
     );
@@ -123,5 +135,9 @@ export function loadEnv(): LoadedEnv {
     ? { guildId: required("DISCORD_SHIFT_GUILD_ID"), databaseUrl: required("SHIFT_VOICE_DATABASE_URL") }
     : null;
 
-  return { core, projectseed, shiftVoice };
+  const shiftQuests: ShiftQuestsEnv | null = modules.has("shift-quests")
+    ? { guildId: required("DISCORD_SHIFT_GUILD_ID"), databaseUrl: required("SHIFT_QUEST_DATABASE_URL") }
+    : null;
+
+  return { core, projectseed, shiftVoice, shiftQuests };
 }

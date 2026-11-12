@@ -27,13 +27,19 @@ export async function getAlumniMember(userId: string): Promise<AlumniMember | nu
   return (data as AlumniMember | null) ?? null;
 }
 
-/** The latest paid application linked to the account, if any. */
+/**
+ * The latest paid application linked to the account, if any. A declined
+ * application never counts, even when paid: it would otherwise confirm the
+ * account as an alumnus straight away (the island RSVP and the alumni board
+ * both rely on that confirmation before sharing the Discord link).
+ */
 export async function findLinkedApplication(userId: string): Promise<LinkedApplication | null> {
   const { data, error } = await createAdminClient()
     .from("shift_applications")
     .select("id, nickname, cohort")
     .eq("user_id", userId)
     .not("paid_at", "is", null)
+    .neq("status", "declined")
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();

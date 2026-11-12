@@ -27,6 +27,9 @@
     "app/api/meta/webhook/route.ts": {
       "maxDuration": 30
     },
+    "app/api/cron/shift-island-digest/route.ts": {
+      "maxDuration": 60
+    },
     "app/api/**/*.ts": {
       "maxDuration": 10
     }
@@ -51,6 +54,10 @@
     {
       "path": "/api/cron/radar-reel-insights",
       "schedule": "15 3 * * *"
+    },
+    {
+      "path": "/api/cron/shift-island-digest",
+      "schedule": "0 13 * * *"
     }
   ]
 }
