@@ -21,6 +21,11 @@ export function nameSize(layoutWidth: number) {
   return Math.round(Math.max(36, Math.min(200, layoutWidth / 30)));
 }
 
+/** Roughly how wide a name is drawn at a font size (a little generous, so it never overflows). */
+export function nameWidth(name: string, fontSize: number) {
+  return Math.ceil([...name].length * fontSize * 0.62 + fontSize * 0.5);
+}
+
 /**
  * Places blocks of the given sizes left to right in rows about as wide as the
  * whole set is tall, so the result is roughly square. Keeps the input order.

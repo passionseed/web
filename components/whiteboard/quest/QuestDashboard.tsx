@@ -129,6 +129,7 @@ export function QuestDashboard({ api, boardId, meId, people, nameOf, avatarOf, l
     shownQuest >= 0 ? (
       <QuestBoard
         api={api}
+        boardId={boardId}
         quest={quests[shownQuest]}
         students={rows.map((r) => ({ who: who(r.userId), work: r.cells[shownQuest] }))}
         groupLabel={groupLabel}

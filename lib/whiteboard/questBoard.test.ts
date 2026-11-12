@@ -1,4 +1,4 @@
-import { BLOCK_GAP, NAME_ROOM, nameSize, packBlocks } from "./questBoard";
+import { BLOCK_GAP, NAME_ROOM, nameSize, nameWidth, packBlocks } from "./questBoard";
 
 describe("packBlocks", () => {
   it("lays blocks out in rows, in order, without overlap", () => {
@@ -33,6 +33,9 @@ describe("nameSize", () => {
     expect(nameSize(600)).toBe(36);
     expect(nameSize(4500)).toBe(150);
     expect(nameSize(50000)).toBe(200);
+  });
+  it("measures a longer name as wider", () => {
+    expect(nameWidth("hey_wake_up_two", 100)).toBeGreaterThan(nameWidth("Tigaa", 100));
   });
   it("leaves the room asked for above each block", () => {
     expect(packBlocks([{ key: "a", width: 100, height: 100 }], 300)[0].y).toBe(300);

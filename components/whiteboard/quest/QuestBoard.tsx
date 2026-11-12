@@ -8,17 +8,20 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { questName, type PersonWork, type Quest } from "@/lib/whiteboard/quests";
-import { BLOCK_PAD, nameSize, packBlocks } from "@/lib/whiteboard/questBoard";
+import { imageUrl } from "@/lib/whiteboard/images";
+import { BLOCK_PAD, nameSize, nameWidth, packBlocks } from "@/lib/whiteboard/questBoard";
 
 import { Face } from "../chrome/Face";
 import { WB_FONT_VARS } from "../fonts";
 import { useSceneMemo } from "../shift/sceneMemo";
+import { blobToDataUrl } from "../useWhiteboardSync";
 
 type Who = { userId: string; name: string; avatarUrl: string | null };
 type Student = { who: Who; work: PersonWork | null };
 
 type Props = {
   api: ExcalidrawImperativeAPI;
+  boardId: string;
   quest: Quest;
   /** The students in view (the mentor's group, or everyone), with their work for this quest. */
   students: Student[];
@@ -38,7 +41,7 @@ const VIEW_UI: ExcalidrawProps["UIOptions"] = {
  * so a mentor can see whose work is whose. Read-only, and it follows the live
  * board. Nothing here is saved; the real board is untouched.
  */
-export function QuestBoard({ api, quest, students, groupLabel, onClose }: Props) {
+export function QuestBoard({ api, boardId, quest, students, groupLabel, onClose }: Props) {
   const [view, setView] = useState<ExcalidrawImperativeAPI | null>(null);
   const handed = students.filter((s) => s.work);
   const missing = students.filter((s) => !s.work);
@@ -70,6 +73,8 @@ export function QuestBoard({ api, quest, students, groupLabel, onClose }: Props)
     if (files.length) view.addFiles(files);
     view.updateScene({ elements: scene });
   }, [api, view, scene]);
+
+  useImages(boardId, view, scene);
 
   // Escape closes it, as other panes do.
   useEffect(() => {
@@ -119,6 +124,31 @@ export function QuestBoard({ api, quest, students, groupLabel, onClose }: Props)
   );
 }
 
+/**
+ * Fetches the photos in view that this board does not have yet. The main board
+ * fetches them in the background too, so it may not have had them when this opened.
+ */
+function useImages(boardId: string, view: ExcalidrawImperativeAPI | null, scene: readonly ExcalidrawElement[]) {
+  const asked = useRef(new Set<string>());
+  useEffect(() => {
+    if (!view) return;
+    const have = view.getFiles();
+    const missing = [
+      ...new Set(scene.flatMap((el) => (el.type === "image" && el.fileId && !have[el.fileId] && !asked.current.has(el.fileId) ? [el.fileId] : []))),
+    ];
+    missing.forEach((id) => asked.current.add(id));
+    for (const id of missing) {
+      void fetch(imageUrl(boardId, id), { credentials: "same-origin" })
+        .then(async (res) => {
+          if (!res.ok) throw new Error(String(res.status));
+          const blob = await res.blob();
+          view.addFiles([{ id, mimeType: blob.type, dataURL: await blobToDataUrl(blob), created: Date.now() } as unknown as BinaryFileData]);
+        })
+        .catch(() => asked.current.delete(id));
+    }
+  }, [boardId, view, scene]);
+}
+
 /** Each student's work moved into its own block, with their name above it. */
 function buildScene(elements: readonly ExcalidrawElement[], handed: Student[]): ExcalidrawElement[] {
   const byId = new Map(elements.map((el) => [el.id, el]));
@@ -132,11 +162,15 @@ function buildScene(elements: readonly ExcalidrawElement[], handed: Student[]): 
     return [{ who: s.who, mine, minX, minY, width: maxX - minX + BLOCK_PAD * 2, height: maxY - minY + BLOCK_PAD * 2 }];
   });
   const sizes = blocks.map((b) => ({ key: b.who.userId, width: b.width, height: b.height }));
-  // Packed once to see how wide it is, then again with room for names that size.
+  // Packed once to see how wide it is, then again with room for names that size, each
+  // block at least as wide as its name so names never run into the next block.
   const first = packBlocks(sizes);
   const font = nameSize(Math.max(0, ...first.map((p) => p.x + p.width)));
   const room = Math.round(font * 1.5);
-  const placed = packBlocks(sizes, room);
+  const placed = packBlocks(
+    sizes.map((s, i) => ({ ...s, width: Math.max(s.width, nameWidth(blocks[i].who.name, font)) })),
+    room,
+  );
 
   return blocks.flatMap((b, i) => {
     const p = placed[i];
