@@ -5,6 +5,7 @@ import { ArrowDown, ArrowUpRight } from "lucide-react";
 import { ShiftCohortCard } from "@/components/shift/ShiftCohortCard";
 import { ShiftGalleryMotion } from "@/components/shift/ShiftGalleryMotion";
 import { MetaPixel } from "@/components/shift/MetaPixel";
+import { ShiftPageView } from "@/components/shift/ShiftPageView";
 import { ShiftTopBar } from "@/components/shift/ShiftTopBar";
 import { ShiftNextCosmos, ShiftNextHero } from "@/components/shift/next/ShiftNextHero";
 import { ShiftJourneyLink } from "@/components/shift/next/ShiftGlobeScene";
@@ -97,6 +98,7 @@ export default async function ShiftGalleryPage() {
 
   return (
     <div className={`${space.page} ${styles.cosmicGallery} font-bai-jamjuree antialiased`} lang="th">
+      <ShiftPageView pagePath="/shift" />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
