@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 
-import { LETTER_CHAPTERS, MAP, PROLOGUE, SEAL } from "@/lib/content/shift-island-invite";
+import { FOLD, LETTER_CHAPTERS, PROLOGUE, SEAL } from "@/lib/content/shift-island-invite";
 
 import { IslandInvite } from "./IslandInvite";
 
@@ -67,18 +67,18 @@ it("folds the letter away to show the island and opens it again", () => {
     render(<IslandInvite viewer={{ kind: "signedOut" }} festival={FESTIVAL} initialScene="letter" />);
     const letter = screen.getByRole("article");
 
-    fireEvent.click(screen.getByRole("button", { name: MAP.close }));
+    fireEvent.click(screen.getByRole("button", { name: FOLD.close }));
     act(() => {
       jest.runOnlyPendingTimers();
     });
     expect(letter).not.toBeVisible();
-    const open = screen.getByRole("button", { name: MAP.open });
+    const open = screen.getByRole("button", { name: FOLD.open });
     expect(open).toHaveFocus();
 
     fireEvent.click(open);
     expect(letter).toBeVisible();
     expect(screen.getByRole("heading", { level: 1, name: LETTER_CHAPTERS[0].title })).toHaveFocus();
-    expect(screen.queryByRole("button", { name: MAP.open })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: FOLD.open })).not.toBeInTheDocument();
   } finally {
     jest.useRealTimers();
   }

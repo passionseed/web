@@ -681,159 +681,104 @@
   }
 }
 
-/* ---------- The island behind the letter, as a treasure map ---------- */
+/* ---------- Behind the letter: the beach, and a ship offshore ---------- */
 
-.map {
+.backdrop {
   position: fixed;
   inset: 0;
   z-index: 0;
   overflow: hidden;
-  background: var(--isl-sea);
+  isolation: isolate;
+  background: var(--isl-night);
   pointer-events: none;
 }
 
-.mapImage,
-.mapMarks {
+/* At anchor where the sky meets the water (the sea's horizon is 40% down),
+   left of the setting sun. The hull's waterline sits just under the line. */
+.ship {
   position: absolute;
-  inset: 0;
+  top: 40%;
+  left: 12%;
+  z-index: -1;
+  width: 120px;
+  translate: 0 -84%;
+  animation: isl-ship-ride 5200ms ease-in-out infinite;
+}
+
+@media (min-width: 768px) {
+  .ship {
+    left: 18%;
+    width: 160px;
+  }
+}
+
+.shipArt {
+  display: block;
   width: 100%;
-  height: 100%;
+  height: auto;
 }
 
-/* object-fit: cover crops exactly like the overlay's xMidYMid slice. */
-.mapImage {
-  max-width: none;
-  object-fit: cover;
-  image-rendering: pixelated;
-  filter: saturate(0.8) brightness(0.62);
-  transition: filter 700ms var(--isl-ease-tension);
+.shipHull {
+  fill: #2a1a2e;
 }
 
-/* Dusk over the midday sample, darker at the edges like an old chart. */
-.mapTint {
+.shipRail {
+  fill: #5c343c;
+}
+
+.shipRig {
+  fill: #22162a;
+}
+
+.shipSail {
+  fill: #c9aa96;
+}
+
+.shipSailLit {
+  fill: #ffd6a0;
+}
+
+.shipMast {
+  fill: #78596a;
+}
+
+.shipFlag {
+  fill: var(--isl-wax);
+}
+
+.shipLight {
+  fill: var(--isl-gold);
+}
+
+.shipPort {
+  fill: #1a101e;
+}
+
+.shipGlint {
+  fill: rgba(246, 239, 226, 0.35);
+}
+
+/* Riding the swell: a pixel up and down, a degree of roll. */
+@keyframes isl-ship-ride {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  50% {
+    transform: translateY(2px) rotate(-1deg);
+  }
+}
+
+/* Dusk falls further while the letter is open, so the paper reads first. */
+.backdropShade {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(120% 90% at 50% 45%, transparent 40%, rgba(10, 11, 31, 0.7) 100%),
-    linear-gradient(180deg, rgba(59, 36, 88, 0.5) 0%, rgba(122, 63, 110, 0.3) 45%, rgba(255, 138, 76, 0.16) 100%);
+  background: rgba(10, 11, 31, 0.5);
   transition: opacity 700ms var(--isl-ease-tension);
 }
 
-/* Letter folded: the island comes up into the light. */
-.map[data-revealed] .mapImage {
-  filter: saturate(0.95) brightness(0.92);
-}
-
-.map[data-revealed] .mapTint {
-  opacity: 0.6;
-}
-
-.trail,
-.trailShadow {
-  fill: none;
-  stroke-width: 7;
-  stroke-dasharray: 12 11;
-}
-
-.trail {
-  stroke: var(--isl-wax);
-}
-
-.trailShadow {
-  stroke: rgba(42, 29, 46, 0.6);
-  transform: translate(0, 3px);
-}
-
-/* The trail draws on from the boat once the letter has unrolled. */
-.trailReveal {
-  fill: none;
-  stroke: #fff;
-  stroke-width: 40;
-  stroke-dasharray: 1 1;
-  stroke-dashoffset: 1;
-  animation: isl-trail 1800ms var(--isl-ease-snap) 1700ms forwards;
-}
-
-.xShadow,
-.xStroke {
-  fill: none;
-  stroke-linecap: square;
-}
-
-.xShadow {
-  stroke: var(--isl-ink);
-  stroke-width: 15;
-}
-
-.xStroke {
-  stroke: var(--isl-wax);
-  stroke-width: 8;
-}
-
-.xMark {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: isl-x-pop 480ms var(--isl-ease-tension) 3300ms backwards;
-}
-
-/* Light pooling round the X once the island is the whole view. */
-.xRing {
-  fill: rgba(255, 201, 107, 0.22);
-  stroke: var(--isl-gold);
-  stroke-width: 3;
-  transform-box: fill-box;
-  transform-origin: center;
+.backdrop[data-revealed] .backdropShade {
   opacity: 0;
-  transition: opacity 400ms var(--isl-ease-snap);
-}
-
-.map[data-revealed] .xRing {
-  opacity: 1;
-  animation: isl-x-ring 2400ms ease-in-out 300ms infinite;
-}
-
-.mapTag {
-  position: absolute;
-  top: 22px;
-  left: var(--isl-gutter);
-  padding: 2px 10px;
-  border-radius: 999px;
-  background: var(--isl-glass);
-  color: var(--isl-text-dim);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  opacity: 0;
-  transition: opacity 400ms var(--isl-ease-snap);
-}
-
-.map[data-revealed] .mapTag {
-  opacity: 1;
-}
-
-@keyframes isl-trail {
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-@keyframes isl-x-pop {
-  from {
-    opacity: 0;
-    transform: scale(0.2) rotate(-20deg);
-  }
-}
-
-@keyframes isl-x-ring {
-  0%,
-  100% {
-    transform: scale(0.85);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.15);
-    opacity: 0.45;
-  }
 }
 
 /* Fold the letter away: top right, clear of the paper. */
@@ -1031,42 +976,102 @@
   letter-spacing: -0.01em;
 }
 
-/* A pixel X in wax before each chapter title: the spots marked on the map. */
+/* A square of wax before each chapter title. */
 .chapterTitle::before {
   content: "";
   flex: none;
-  width: 10px;
-  height: 10px;
-  translate: 0 -2px;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 5 5' shape-rendering='crispEdges'%3E%3Cpath fill='%23b8322f' d='M0 0h1v1H0zM4 0h1v1H4zM1 1h1v1H1zM3 1h1v1H3zM2 2h1v1H2zM1 3h1v1H1zM3 3h1v1H3zM0 4h1v1H0zM4 4h1v1H4z'/%3E%3C/svg%3E")
-    center / 100% 100% no-repeat;
+  width: 8px;
+  height: 8px;
+  translate: 0 -3px;
+  background: var(--isl-wax);
+  box-shadow: 2px 2px 0 var(--isl-wax-dark);
 }
 
-/* A compass rose in the corner of the map. */
-.compass {
-  position: absolute;
-  right: 14px;
-  bottom: 14px;
-  width: 39px;
-  height: 39px;
-  opacity: 0.55;
+/* The island sketched in ink on the letter. Each stroke draws itself on. */
+.sketch {
+  display: block;
+  width: 100%;
+  max-width: 30rem;
+  height: auto;
+  margin: 20px auto 0;
+  overflow: visible;
 }
 
-@media (min-width: 768px) {
-  .compass {
-    right: 24px;
-    bottom: 24px;
-    width: 52px;
-    height: 52px;
+.inkLine,
+.inkBeach,
+.inkTrail,
+.inkMark {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.inkLine {
+  stroke: rgba(42, 29, 46, 0.78);
+  stroke-width: 1.6;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+[data-shown] .inkLine {
+  animation: isl-ink 1300ms cubic-bezier(0.4, 0, 0.3, 1) calc(400ms + var(--d, 0ms)) forwards;
+}
+
+.inkBeach {
+  stroke: rgba(42, 29, 46, 0.4);
+  stroke-width: 1.2;
+  stroke-dasharray: 2 4;
+}
+
+.inkTrail {
+  stroke: rgba(42, 29, 46, 0.7);
+  stroke-width: 2.2;
+  stroke-dasharray: 0.1 6;
+}
+
+.inkMark {
+  stroke: var(--isl-wax);
+  stroke-width: 2.2;
+}
+
+.inkLetter {
+  fill: rgba(42, 29, 46, 0.78);
+  font-size: 11px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+/* What is not a drawn stroke comes in after the drawing, last the mark. */
+.inkBeach,
+.inkTrail,
+.inkMark,
+.inkLetter {
+  opacity: 0;
+}
+
+[data-shown] .inkBeach,
+[data-shown] .inkLetter {
+  animation: isl-ink-in 600ms ease-out 1600ms forwards;
+}
+
+[data-shown] .inkTrail {
+  animation: isl-ink-in 900ms ease-out 2400ms forwards;
+}
+
+[data-shown] .inkMark {
+  animation: isl-ink-in 400ms ease-out 3100ms forwards;
+}
+
+@keyframes isl-ink {
+  to {
+    stroke-dashoffset: 0;
   }
 }
 
-.compassInk {
-  fill: var(--isl-ink);
-}
-
-.compassWax {
-  fill: var(--isl-wax);
+@keyframes isl-ink-in {
+  to {
+    opacity: 1;
+  }
 }
 
 .chapterBody {
@@ -1569,20 +1574,31 @@
   }
 }
 
-/* Reduced motion: the trail and the X are already drawn, nothing pulses. */
+/* Reduced motion: the ship holds still and the sketch is already drawn. */
 @media (prefers-reduced-motion: reduce) {
-  .trailReveal {
+  .ship {
+    animation: none;
+  }
+
+  .backdropShade {
+    transition: none;
+  }
+
+  .inkLine,
+  [data-shown] .inkLine {
     stroke-dashoffset: 0;
     animation: none;
   }
 
-  .xMark,
-  .map[data-revealed] .xRing {
+  .inkBeach,
+  .inkTrail,
+  .inkMark,
+  .inkLetter,
+  [data-shown] .inkBeach,
+  [data-shown] .inkTrail,
+  [data-shown] .inkMark,
+  [data-shown] .inkLetter {
+    opacity: 1;
     animation: none;
-  }
-
-  .mapImage,
-  .mapTint {
-    transition: none;
   }
 }

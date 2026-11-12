@@ -1,7 +1,7 @@
 import { formatThaiDate } from "@/lib/content/shift-cohort";
 import {
   LETTER_CHAPTERS,
-  MAP,
+  FOLD,
   PROLOGUE,
   PROLOGUE_SAMPLE_TAG,
   SEAL,
@@ -33,7 +33,7 @@ describe("shift island invite copy", () => {
       ...strings(PROLOGUE),
       PROLOGUE_SAMPLE_TAG,
       ...strings(SHORE),
-      ...strings(MAP),
+      ...strings(FOLD),
       ...strings(LETTER_CHAPTERS),
       ...strings(SEAL),
       ...strings(TICKET),

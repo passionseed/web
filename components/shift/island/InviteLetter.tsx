@@ -4,10 +4,11 @@ import { useEffect, useRef, useState, type ReactNode, type RefObject } from "rea
 
 import { IslandTree } from "@/components/home/IslandTree";
 import { ISLAND_STAGES } from "@/lib/content/shift-island";
-import { LETTER_CHAPTERS, MAP } from "@/lib/content/shift-island-invite";
+import { FOLD, LETTER_CHAPTERS } from "@/lib/content/shift-island-invite";
 
-import { IslandMap } from "./IslandMap";
 import styles from "./islandInvite.module.css";
+import { IslandSketch } from "./IslandSketch";
+import { ShoreBackdrop } from "./ShoreBackdrop";
 import { useReducedMotion } from "./useReducedMotion";
 
 /** Open, rolling up, or folded away with the island as the whole view. */
@@ -18,12 +19,12 @@ const FOLD_MS = 460;
 type Chapter = (typeof LETTER_CHAPTERS)[number];
 
 /**
- * Scene 2: the letter from the bottle, laid over the island it came from
- * (drawn as a treasure map). A paper scroll unrolls, and each chapter rises
+ * Scene 2: the letter from the bottle, read on the beach where it landed,
+ * with a ship waiting offshore. A paper scroll unrolls, and each chapter rises
  * into view as it is scrolled to. The seal (or the ticket that replaces it) is
  * passed in as children and sits at the foot of the paper.
- * The letter folds away to show the whole island and opens again. It is
- * hidden, not unmounted, so a seal press in flight still lands.
+ * The letter folds away to show the beach and opens again. It is hidden, not
+ * unmounted, so a seal press in flight still lands.
  */
 export function InviteLetter({ festival, children }: { festival: string; children: ReactNode }) {
   const paperRef = useRef<HTMLDivElement>(null);
@@ -75,10 +76,10 @@ export function InviteLetter({ festival, children }: { festival: string; childre
 
   return (
     <section className={styles.letter} data-letter={state}>
-      <IslandMap revealed={state === "folded"} />
+      <ShoreBackdrop revealed={state === "folded"} />
       {state === "open" && (
         <button type="button" className={`${styles.skip} ${styles.mapFold}`} onClick={fold}>
-          {MAP.close}
+          {FOLD.close}
         </button>
       )}
       <article className={styles.scroll} data-state={state} hidden={state === "folded"}>
@@ -96,51 +97,15 @@ export function InviteLetter({ festival, children }: { festival: string; childre
           <div className={styles.reveal} data-reveal>
             {children}
           </div>
-          <Compass />
         </div>
         <div className={`${styles.rod} ${styles.rodEnd}`} aria-hidden="true" />
       </article>
       {state === "folded" && (
         <button ref={openRef} type="button" className={`${styles.next} ${styles.mapOpen}`} onClick={unfold}>
-          {MAP.open}
+          {FOLD.open}
         </button>
       )}
     </section>
-  );
-}
-
-/*
- * A compass rose for the corner of the map, 13x13. k: ink, w: wax, c: centre.
- */
-const COMPASS = [
-  "......k......",
-  "......k......",
-  ".....kwk.....",
-  ".....kwk.....",
-  "....kwwwk....",
-  ".kkkkwcwkkkk.",
-  "kwwwwcccwwwwk",
-  ".kkkkwcwkkkk.",
-  "....kwwwk....",
-  ".....kwk.....",
-  ".....kwk.....",
-  "......k......",
-  "......k......",
-] as const;
-
-const COMPASS_TONE: Record<string, string> = { k: styles.compassInk, w: styles.compassWax, c: styles.compassInk };
-
-const COMPASS_CELLS = COMPASS.flatMap((row, y) =>
-  Array.from(row).flatMap((tone, x) => (tone === "." ? [] : [{ x, y, tone }])),
-);
-
-function Compass() {
-  return (
-    <svg className={styles.compass} viewBox="0 0 13 13" shapeRendering="crispEdges" aria-hidden="true" focusable="false">
-      {COMPASS_CELLS.map(({ x, y, tone }) => (
-        <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} className={COMPASS_TONE[tone]} />
-      ))}
-    </svg>
   );
 }
 
@@ -172,6 +137,7 @@ function LetterChapter({
       ) : (
         <p className={styles.chapterBody}>{chapter.body}</p>
       )}
+      {chapter.id === "island" && <IslandSketch />}
       {chapter.id === "festival" && <p className={styles.festival}>{festival}</p>}
     </section>
   );

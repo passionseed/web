@@ -29,11 +29,11 @@ export const SHORE = {
 } as const;
 
 /**
- * Behind the letter is the island it came from, drawn as a treasure map. The
- * letter folds away to show it, and opens again from the same place.
+ * Behind the letter is the beach where the bottle landed, and a ship waiting
+ * offshore. The letter folds away to show it, and opens again.
  */
-export const MAP = {
-  close: "พับจดหมาย ดูเกาะ",
+export const FOLD = {
+  close: "พับจดหมาย",
   open: "เปิดจดหมาย",
 } as const;
 
