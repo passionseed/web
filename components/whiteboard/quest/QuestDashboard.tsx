@@ -1,7 +1,7 @@
 "use client";
 
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
-import { ArrowDownAZ, ArrowLeft, Clock, Eye, PenLine } from "lucide-react";
+import { ArrowDownAZ, ArrowLeft, Clock, Eye, LayoutGrid, PenLine, UsersRound } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import {
@@ -14,16 +14,22 @@ import {
   type QuestLeads,
   type RosterRow,
 } from "@/lib/whiteboard/quests";
+import { pickedStudents } from "@/lib/whiteboard/groups";
 
 import { Face } from "../chrome/Face";
 import { useSceneMemo } from "../shift/sceneMemo";
 import { useSceneTick } from "../useViewportTick";
+import { MentorGroups } from "./MentorGroups";
+import { QuestBoard } from "./QuestBoard";
+import { useMentorGroups } from "./useMentorGroups";
 
 export type Person = { userId: string; name: string; role: string; avatarUrl: string | null };
 type Who = Pick<Person, "userId" | "name" | "avatarUrl">;
 
 type Props = {
   api: ExcalidrawImperativeAPI;
+  boardId: string;
+  meId: string;
   /** Pictures for people who are not on the members list (their Discord one when known). */
   avatarOf: (id: string) => string | null;
   /** Everyone on the board, to list who has not handed anything in yet. */
@@ -36,7 +42,7 @@ type Props = {
 };
 
 /** What the pane shows: the overview, one quest, or one person. */
-type View = { kind: "all" } | { kind: "quest"; id: string } | { kind: "person"; id: string };
+type View = { kind: "all" } | { kind: "quest"; id: string } | { kind: "person"; id: string } | { kind: "groups" };
 
 /** Selects work on the board and brings it into view. */
 function showOnBoard(api: ExcalidrawImperativeAPI, ids: readonly string[]) {
@@ -75,7 +81,7 @@ const pieces = (w: PersonWork) => w.texts.length + w.drawings;
  * against every quest, those who have done least first. A quest or a person
  * opens their detail; a cell shows that work on the board.
  */
-export function QuestDashboard({ api, people, nameOf, avatarOf, leads, focus }: Props) {
+export function QuestDashboard({ api, boardId, meId, people, nameOf, avatarOf, leads, focus }: Props) {
   useSceneTick(api);
   const now = useNow();
   const { quests, work } = useSceneMemo(
@@ -85,6 +91,9 @@ export function QuestDashboard({ api, people, nameOf, avatarOf, leads, focus }: 
   );
   const [view, setView] = useState<View>({ kind: "all" });
   const [byName, setByName] = useState(false);
+  // The quest shown on a board of its own (QuestBoard), if any.
+  const [boardQuest, setBoardQuest] = useState<string | null>(null);
+  const groups = useMentorGroups(boardId);
   const byId = useMemo(() => new Map(people.map((p) => [p.userId, p])), [people]);
 
   // Opened from a quest's card on the board: straight to that quest.
@@ -102,14 +111,54 @@ export function QuestDashboard({ api, people, nameOf, avatarOf, leads, focus }: 
 
   const who = (id: string): Who => ({ userId: id, name: nameOf(id), avatarUrl: byId.get(id)?.avatarUrl ?? avatarOf(id) });
   // Students: everyone who can draw on the board, but not the owner, admins or staff.
-  const students = people.filter((p) => p.role === "editor" && !leads?.has(p.userId)).map((p) => p.userId);
-  const rows = questRoster(quests, work, students, leads, byName ? nameOf : undefined);
+  const allStudents = people.filter((p) => p.role === "editor" && !leads?.has(p.userId)).map((p) => p.userId);
+  // A mentor sees their own group first; "ทุกคน" or another group from the picker.
+  const picked = pickedStudents(groups.groups, groups.pick, meId);
+  const students = picked ? [...picked] : allStudents;
+  const rows = questRoster(quests, work, students, leads, byName ? nameOf : undefined).filter((r) => !picked || picked.has(r.userId));
   const lost = work.filter((w) => !w.quest);
-  const ctx = { api, quests, rows, who, now };
+  const ctx = { api, quests, rows, who, now, onBoard: setBoardQuest };
+  const groupLabel = !picked
+    ? "ทุกคน"
+    : groups.pick === "mine"
+      ? "กลุ่มของฉัน"
+      : (groups.groups.find((g) => g.id === groups.pick)?.name ?? "ทุกคน");
+
+  const shownQuest = boardQuest ? quests.findIndex((q) => q.id === boardQuest) : -1;
+  const questBoard =
+    shownQuest >= 0 ? (
+      <QuestBoard
+        api={api}
+        quest={quests[shownQuest]}
+        students={rows.map((r) => ({ who: who(r.userId), work: r.cells[shownQuest] }))}
+        groupLabel={groupLabel}
+        onClose={() => setBoardQuest(null)}
+      />
+    ) : null;
+
+  if (view.kind === "groups") {
+    return (
+      <MentorGroups
+        groups={groups.groups}
+        staff={people.filter((p) => leads?.has(p.userId)).map((p) => who(p.userId))}
+        students={allStudents.map(who)}
+        meId={meId}
+        save={groups.save}
+        remove={groups.remove}
+        onBack={() => setView({ kind: "all" })}
+      />
+    );
+  }
 
   if (view.kind === "quest") {
     const index = quests.findIndex((q) => q.id === view.id);
-    if (index >= 0) return <QuestDetail {...ctx} index={index} onBack={() => setView({ kind: "all" })} onPerson={(id) => setView({ kind: "person", id })} />;
+    if (index >= 0)
+      return (
+        <>
+          <QuestDetail {...ctx} index={index} onBack={() => setView({ kind: "all" })} onPerson={(id) => setView({ kind: "person", id })} />
+          {questBoard}
+        </>
+      );
   }
   if (view.kind === "person") {
     const row = rows.find((r) => r.userId === view.id);
@@ -118,8 +167,33 @@ export function QuestDashboard({ api, people, nameOf, avatarOf, leads, focus }: 
 
   const total = rows.length;
   const started = rows.filter((r) => r.done > 0).length;
+  const mine = groups.groups.filter((g) => g.mentorIds.includes(meId));
   return (
     <div className="space-y-4">
+      {questBoard}
+      <div className="flex items-center gap-2">
+        <select
+          value={picked ? groups.pick : "all"}
+          onChange={(e) => groups.setPick(e.target.value)}
+          aria-label="ดูงานของกลุ่มไหน"
+          className="wb-input min-w-0 flex-1 px-2 py-1.5 text-sm"
+        >
+          {mine.length > 0 && <option value="mine">กลุ่มของฉัน{mine.length > 1 ? ` (${mine.length} กลุ่ม)` : ` · ${mine[0].name}`}</option>}
+          <option value="all">ทุกคน</option>
+          {groups.groups.map((g) => (
+            <option key={g.id} value={g.id}>
+              {g.name}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={() => setView({ kind: "groups" })}
+          className="wb-quest-option inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1.5 text-xs"
+        >
+          <UsersRound className="h-3.5 w-3.5" /> จัดกลุ่ม
+        </button>
+      </div>
       <p className="wb-soft text-xs">
         นักเรียน {total} คน · ส่งงานแล้ว {started} คน{total - started > 0 && ` · ยังไม่เริ่ม ${total - started} คน`}
       </p>
@@ -129,11 +203,11 @@ export function QuestDashboard({ api, people, nameOf, avatarOf, leads, focus }: 
         {quests.map((q, i) => {
           const done = rows.filter((r) => r.cells[i]).length;
           return (
-            <li key={q.id}>
+            <li key={q.id} className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => setView({ kind: "quest", id: q.id })}
-                className="wb-quest-option w-full space-y-1 rounded-lg px-2 py-1.5 text-left"
+                className="wb-quest-option min-w-0 flex-1 space-y-1 rounded-lg px-2 py-1.5 text-left"
               >
                 <span className="flex items-baseline gap-2 text-sm">
                   <span className="wb-num shrink-0 font-semibold">Q{q.number}</span>
@@ -143,6 +217,15 @@ export function QuestDashboard({ api, people, nameOf, avatarOf, leads, focus }: 
                   </span>
                 </span>
                 <Bar value={done} max={total} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setBoardQuest(q.id)}
+                aria-label={`ดูงาน ${questName(q)} ของทุกคนแบบบอร์ด`}
+                title="ดูงานของทุกคนใน Quest นี้แบบบอร์ด แยกเป็นบล็อกพร้อมชื่อ"
+                className="wb-quest-option wb-soft shrink-0 rounded-md p-2"
+              >
+                <LayoutGrid className="h-4 w-4" />
               </button>
             </li>
           );
@@ -223,9 +306,17 @@ export function QuestDashboard({ api, people, nameOf, avatarOf, leads, focus }: 
   );
 }
 
-type Ctx = { api: ExcalidrawImperativeAPI; quests: Quest[]; rows: RosterRow[]; who: (id: string) => Who; now: number };
+type Ctx = {
+  api: ExcalidrawImperativeAPI;
+  quests: Quest[];
+  rows: RosterRow[];
+  who: (id: string) => Who;
+  now: number;
+  /** Opens a quest's work on a board of its own. */
+  onBoard: (questId: string) => void;
+};
 
-function QuestDetail({ api, quests, rows, who, now, index, onBack, onPerson }: Ctx & { index: number; onBack: () => void; onPerson: (id: string) => void }) {
+function QuestDetail({ api, quests, rows, who, now, onBoard, index, onBack, onPerson }: Ctx & { index: number; onBack: () => void; onPerson: (id: string) => void }) {
   const quest = quests[index];
   const handed = rows
     .filter((r) => r.cells[index])
@@ -248,6 +339,15 @@ function QuestDetail({ api, quests, rows, who, now, index, onBack, onPerson }: C
           </p>
           {all.length > 0 && <ShowButton onClick={() => showOnBoard(api, all)} label="ดูทั้งหมดบนบอร์ด" />}
         </div>
+        {all.length > 0 && (
+          <button
+            type="button"
+            onClick={() => onBoard(quest.id)}
+            className="wb-btn wb-btn--sm inline-flex w-full items-center justify-center gap-1.5 text-sm"
+          >
+            <LayoutGrid className="h-4 w-4" /> ดูงานทุกคนแบบบอร์ด
+          </button>
+        )}
       </div>
 
       {missing.length > 0 && (

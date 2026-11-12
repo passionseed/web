@@ -2917,6 +2917,15 @@ body:has([data-quest-menu][role="dialog"]) .wb-quest-label-card {
 .wb-qd-chip {
   border: 1px solid var(--wb-hairline);
 }
+.wb-qd-chip--on {
+  border-color: var(--wb-accent);
+  background: var(--wb-selected);
+}
+/* A quest's work on a board of its own (quest/QuestBoard.tsx), over the whole page. */
+.wb-quest-board {
+  background: var(--wb-card);
+  color: var(--wb-text);
+}
 @media (prefers-reduced-motion: reduce) {
   .wb-qd-cell--done {
     transition: none;

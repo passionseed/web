@@ -197,8 +197,9 @@ they make until they end it counts as their work for that quest. Code: `lib/whit
   edit the task (written back on the board) or put it back if it was deleted, remove or re-create
   the start button, move it back, or **เลิกเป็น Quest**. Right-clicking any other text offers
   **ทำข้อความนี้เป็น Quest**. Clicking a label shows a card of who handed in what.
-- **Quest dashboard** (`QuestPane.tsx`, a pane beside the board like the Claude app's side
-  panes, opened from the board menu or a quest's card): the board's right edge moves in to make
+- **Mentor dashboard** (`QuestPane.tsx`, a pane beside the board like the Claude app's side
+  panes, opened from the graduation-cap button after the timer in the top-right card, or a
+  quest's card): the board's right edge moves in to make
   room, so nothing is covered, and drawing never closes it (it stays open across reloads until its
   close button). Drag its left edge to resize it. It opens on an overview: each quest's progress
   (handed in / students), then a grid of every student against every quest (`questRoster`): a
@@ -207,6 +208,17 @@ they make until they end it counts as their work for that quest. Code: `lib/whit
   active (or by name), each with how long ago their latest piece was. A quest opens who has not
   handed in, then the work newest first; a person opens their work per quest. A quest's card on
   the board opens the pane at that quest.
+- **Mentor groups** (`whiteboard_groups`, migration `20261112150000_whiteboard_mentor_groups.sql`,
+  `lib/whiteboard/groups.ts`, `/api/whiteboards/[id]/groups`): staff split students into groups,
+  each with a name, its mentors and its students (**จัดกลุ่ม** in the dashboard). The dashboard
+  opens on **กลุ่มของฉัน**, the students of every group the viewer mentors, or everyone when they
+  mentor none; the picker also offers **ทุกคน** and each group (kept per board in the browser).
+  Groups are a filter for staff views only: students never see them, and they open no channel.
+- **Quest view** (`QuestBoard.tsx`, the grid button on a quest's row, or **ดูงานทุกคนแบบบอร์ด** in a
+  quest): one quest's work by every student in view, on a read-only board over the page. Each
+  student's pieces are moved into a block with their name above it, packed in rows
+  (`lib/whiteboard/questBoard.ts`), and follow the live board. Nothing is saved; the real
+  board is untouched. Who has not handed in is listed in its header.
 - **Roles:** in Share the owner gives each person one role: **Staff** (draws, makes quests,
   changes quest settings and sees the dashboard), **Student** (draws and does quests) or
   **Viewer**. Staff is `role = 'editor'` with `whiteboard_members.quest_reviewer` (migration

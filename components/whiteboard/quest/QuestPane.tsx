@@ -1,7 +1,7 @@
 "use client";
 
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
-import { Flag, X } from "lucide-react";
+import { GraduationCap, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { QuestLeads } from "@/lib/whiteboard/quests";
@@ -125,7 +125,7 @@ function ResizeEdge({ width, onResize }: { width: number; onResize: (w: number, 
 }
 
 /**
- * The Quest dashboard as a pane of its own beside the board, like the Claude
+ * The Mentor dashboard (quest work by student) as a pane of its own beside the board, like the Claude
  * app's side panes: the board shrinks to make room (the room's right edge moves
  * in, see WhiteboardCanvas), so nothing is covered, and drawing never closes it.
  * For the board's owner, site admins and quest reviewers.
@@ -140,6 +140,8 @@ export function QuestPane({
   avatarOf,
   leads,
   focus,
+  boardId,
+  meId,
 }: {
   api: ExcalidrawImperativeAPI;
   width: number;
@@ -150,23 +152,25 @@ export function QuestPane({
   avatarOf: (id: string) => string | null;
   leads: QuestLeads;
   focus: { questId: string; n: number } | null;
+  boardId: string;
+  meId: string;
 }) {
   return (
     <aside
-      aria-label="Quest Dashboard"
+      aria-label="Mentor Dashboard"
       className={`wb-theme wb-quest-pane fixed inset-y-0 right-0 z-[40] flex flex-col ${WB_FONT_VARS}`}
       style={{ width }}
     >
       <ResizeEdge width={width} onResize={onResize} />
       <header className="wb-quest-pane__head flex items-center gap-2 px-3 py-2.5">
-        <Flag className="h-4 w-4 text-emerald-600" />
-        <span className="flex-1 text-sm font-semibold">Quest Dashboard</span>
+        <GraduationCap className="h-4 w-4" aria-hidden />
+        <span className="flex-1 text-sm font-semibold">Mentor Dashboard</span>
         <button type="button" onClick={onClose} className="wb-quest-option rounded-md p-1.5" aria-label="ปิด · Close">
           <X className="h-4 w-4" />
         </button>
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto p-3">
-        <QuestDashboard api={api} people={people} nameOf={nameOf} avatarOf={avatarOf} leads={leads} focus={focus} />
+        <QuestDashboard api={api} people={people} nameOf={nameOf} avatarOf={avatarOf} leads={leads} focus={focus} boardId={boardId} meId={meId} />
       </div>
     </aside>
   );
