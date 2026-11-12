@@ -229,6 +229,8 @@ export type PersonWork = {
   sessions: number;
   /** Every element of theirs tagged with the quest, words included, to show it on the board. */
   ids: string[];
+  /** ISO time of their latest piece for the quest. */
+  last: string;
 };
 export type QuestWork = { quest: Quest | null; questId: string; people: PersonWork[] };
 
@@ -240,7 +242,7 @@ export type QuestWork = { quest: Quest | null; questId: string; people: PersonWo
 export function questWork(elements: readonly El[], leads?: QuestLeads): QuestWork[] {
   const quests = findQuests(elements, leads);
   const byId = new Map(elements.map((el) => [el.id, el]));
-  const work = new Map<string, Map<string, { texts: string[]; drawings: number; sessions: Set<string>; ids: string[] }>>();
+  const work = new Map<string, Map<string, { texts: string[]; drawings: number; sessions: Set<string>; ids: string[]; last: string }>>();
 
   for (const el of elements) {
     if (el.isDeleted) continue;
@@ -248,9 +250,10 @@ export function questWork(elements: readonly El[], leads?: QuestLeads): QuestWor
     if (!tag) continue;
     const people = work.get(tag.id) ?? new Map();
     work.set(tag.id, people);
-    const mine = people.get(tag.by) ?? { texts: [], drawings: 0, sessions: new Set<string>(), ids: [] };
+    const mine = people.get(tag.by) ?? { texts: [], drawings: 0, sessions: new Set<string>(), ids: [], last: "" };
     people.set(tag.by, mine);
     mine.ids.push(el.id);
+    if (tag.at > mine.last) mine.last = tag.at;
     // Words inside a note are listed with the note, not twice.
     if (el.type === "text" && el.containerId && byId.get(el.containerId) && questTagOf(byId.get(el.containerId)!)) {
       continue;
@@ -270,8 +273,45 @@ export function questWork(elements: readonly El[], leads?: QuestLeads): QuestWor
     .map(([questId, people]) => ({
       questId,
       quest: quests.find((q) => q.id === questId) ?? null,
-      people: [...people.entries()].map(([userId, p]) => ({ userId, texts: p.texts, drawings: p.drawings, sessions: p.sessions.size, ids: p.ids })),
+      people: [...people.entries()].map(([userId, p]) => ({ userId, texts: p.texts, drawings: p.drawings, sessions: p.sessions.size, ids: p.ids, last: p.last })),
     }));
+}
+
+export type RosterRow = {
+  userId: string;
+  /** Their work for each quest, in quest order; null where they have handed nothing in. */
+  cells: (PersonWork | null)[];
+  /** How many quests they have handed something in for. */
+  done: number;
+  /** ISO time of their latest piece for any quest, or "" for none. */
+  last: string;
+};
+
+/**
+ * One row per student for the staff overview: who has done which quest. Anyone
+ * else with quest work (not a lead) is a row too, so no work goes unseen. Those
+ * who have done least come first (the ones to check on), then the least recently
+ * active; `byName` sorts by `nameOf` instead.
+ */
+export function questRoster(
+  quests: readonly Quest[],
+  work: readonly QuestWork[],
+  students: readonly string[],
+  leads: QuestLeads,
+  nameOf?: (id: string) => string,
+): RosterRow[] {
+  const byQuest = new Map(work.map((w) => [w.questId, new Map(w.people.map((p) => [p.userId, p]))]));
+  const ids = new Set(students);
+  for (const w of work) for (const p of w.people) if (!leads?.has(p.userId)) ids.add(p.userId);
+  const rows = [...ids].map((userId) => {
+    const cells = quests.map((q) => byQuest.get(q.id)?.get(userId) ?? null);
+    const done = cells.filter(Boolean).length;
+    const last = cells.reduce((max, c) => (c && c.last > max ? c.last : max), "");
+    return { userId, cells, done, last };
+  });
+  return nameOf
+    ? rows.sort((a, b) => nameOf(a.userId).localeCompare(nameOf(b.userId), "th"))
+    : rows.sort((a, b) => a.done - b.done || a.last.localeCompare(b.last) || a.userId.localeCompare(b.userId));
 }
 
 /** Markdown section for `pnpm whiteboard:read`: each quest, then what each person made for it. Empty if nobody has. */

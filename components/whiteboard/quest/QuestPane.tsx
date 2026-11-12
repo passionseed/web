@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { QuestLeads } from "@/lib/whiteboard/quests";
 
 import { WB_FONT_VARS } from "../fonts";
-import { QuestDashboard, questSectionId, type Person } from "./QuestDashboard";
+import { QuestDashboard, type Person } from "./QuestDashboard";
 
 const OPEN_EVENT = "wb-quest-pane";
 const WIDTH_KEY = "whiteboard-quest-panel-width";
@@ -35,7 +35,7 @@ const write = (key: string, value: string | null) => {
   }
 };
 
-/** Opens the Quest pane, optionally scrolled to one quest. */
+/** Opens the Quest pane, optionally at one quest. */
 export function openQuestPanel(questId?: string) {
   window.dispatchEvent(new CustomEvent(OPEN_EVENT, { detail: { questId } }));
 }
@@ -48,6 +48,7 @@ export function openQuestPanel(questId?: string) {
 export function useQuestPane(boardId: string, enabled: boolean) {
   const [open, setOpen] = useState(false);
   const [width, setWidth] = useState(DEFAULT_WIDTH);
+  const [focus, setFocus] = useState<{ questId: string; n: number } | null>(null);
 
   useEffect(() => {
     if (!enabled) return;
@@ -63,10 +64,7 @@ export function useQuestPane(boardId: string, enabled: boolean) {
       setOpen(true);
       write(openKey(boardId), "1");
       const questId = (e as CustomEvent<{ questId?: string }>).detail?.questId;
-      if (questId) {
-        // After the pane has rendered.
-        setTimeout(() => document.getElementById(questSectionId(questId))?.scrollIntoView({ block: "start", behavior: "smooth" }), 80);
-      }
+      if (questId) setFocus((f) => ({ questId, n: (f?.n ?? 0) + 1 }));
     };
     window.addEventListener(OPEN_EVENT, onOpen);
     window.addEventListener("resize", onResize);
@@ -86,7 +84,7 @@ export function useQuestPane(boardId: string, enabled: boolean) {
     if (save) write(WIDTH_KEY, String(next));
   }, []);
 
-  return { open: enabled && open, width, close, resize };
+  return { open: enabled && open, width, focus, close, resize };
 }
 
 /** The pane's left edge: drag to resize, double-click for the default width. */
@@ -141,6 +139,7 @@ export function QuestPane({
   nameOf,
   avatarOf,
   leads,
+  focus,
 }: {
   api: ExcalidrawImperativeAPI;
   width: number;
@@ -150,6 +149,7 @@ export function QuestPane({
   nameOf: (id: string) => string;
   avatarOf: (id: string) => string | null;
   leads: QuestLeads;
+  focus: { questId: string; n: number } | null;
 }) {
   return (
     <aside
@@ -166,7 +166,7 @@ export function QuestPane({
         </button>
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto p-3">
-        <QuestDashboard api={api} people={people} nameOf={nameOf} avatarOf={avatarOf} leads={leads} />
+        <QuestDashboard api={api} people={people} nameOf={nameOf} avatarOf={avatarOf} leads={leads} focus={focus} />
       </div>
     </aside>
   );

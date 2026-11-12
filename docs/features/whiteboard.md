@@ -200,9 +200,13 @@ they make until they end it counts as their work for that quest. Code: `lib/whit
 - **Quest dashboard** (`QuestPane.tsx`, a pane beside the board like the Claude app's side
   panes, opened from the board menu or a quest's card): the board's right edge moves in to make
   room, so nothing is covered, and drawing never closes it (it stays open across reloads until its
-  close button). Drag its left edge to resize it. each quest with what each person made for it (their words, how many drawings),
-  who has not handed in yet (members who can edit), and **ดูบนบอร์ด** to select their work and zoom
-  to it; **ตามคน** lists each person with their quests.
+  close button). Drag its left edge to resize it. It opens on an overview: each quest's progress
+  (handed in / students), then a grid of every student against every quest (`questRoster`): a
+  filled cell is work handed in, with its number of pieces, and selects and zooms to it; an empty
+  dashed cell is none yet. Students who have done least come first, then the least recently
+  active (or by name), each with how long ago their latest piece was. A quest opens who has not
+  handed in, then the work newest first; a person opens their work per quest. A quest's card on
+  the board opens the pane at that quest.
 - **Roles:** in Share the owner gives each person one role: **Staff** (draws, makes quests,
   changes quest settings and sees the dashboard), **Student** (draws and does quests) or
   **Viewer**. Staff is `role = 'editor'` with `whiteboard_members.quest_reviewer` (migration

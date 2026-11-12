@@ -625,6 +625,7 @@ export default function WhiteboardCanvas({
           nameOf={nameOf}
           avatarOf={avatarOf}
           leads={questLeads}
+          focus={questPane.focus}
         />
       )}
     </>
