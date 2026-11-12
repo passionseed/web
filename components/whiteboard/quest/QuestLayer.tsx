@@ -5,7 +5,7 @@ import type { AppState, ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/t
 import { Flag, LayoutList } from "lucide-react";
 import { type CSSProperties, useEffect, useRef } from "react";
 
-import { findQuests, questLabelOf, questName, questTagOf, questWork, type Quest, type QuestWork } from "@/lib/whiteboard/quests";
+import { findQuests, questLabelOf, questName, questTagOf, questWork, type Quest, type QuestLeads, type QuestWork } from "@/lib/whiteboard/quests";
 
 import { focusCanvas } from "../chrome/useActiveTool";
 import { isBusy, useSceneMemo } from "../shift/sceneMemo";
@@ -27,8 +27,10 @@ const DEFAULT_INK = "#2f9e44";
 type Props = {
   api: ExcalidrawImperativeAPI;
   meId: string;
-  /** Mentors (the board's owner and moderators) may drag the buttons; their place is saved on the label. */
+  /** Quest leads (the board's owner, site admins and staff) may drag the buttons; their place is saved on the label. */
   manager: boolean;
+  /** Whose "Quest" text makes a quest. */
+  leads: QuestLeads;
   nameOf: (id: string) => string;
   /** For quest reviewers: opens the Quest dashboard at a quest. Others see only their own work. */
   onReview?: (questId: string) => void;
@@ -121,8 +123,12 @@ function useTaskBackup(api: ExcalidrawImperativeAPI, quests: Quest[], on: boolea
     for (const q of quests) {
       const task = q.titleId ? byId.get(q.titleId) : undefined;
       const label = byId.get(q.id);
-      if (!task || !label || task.type !== "text") continue;
+      if (!label) continue;
       const saved = questLabelOf(label);
+      // Marks a lead's label as a quest on the label itself, so it counts for people whose
+      // list of staff is older than this person being made staff.
+      if (!saved) setQuestLabel(api, q.id, {}, false);
+      if (!task || task.type !== "text") continue;
       if (saved?.backup !== task.text || saved?.taskId !== task.id) setQuestLabel(api, q.id, { backup: task.text, taskId: task.id }, false);
     }
   }, [api, quests, on]);
@@ -144,16 +150,16 @@ function selectedQuest(quests: Quest[], appState: AppState): Quest | undefined {
  * "Quest" opens a card with who handed in what. While a quest runs, a pill at
  * the top of the board shows its name, how much has gone into it, and an end button.
  */
-export function QuestLayer({ api, meId, manager, nameOf, onReview, session, onStart, onEnd }: Props) {
+export function QuestLayer({ api, meId, manager, leads, nameOf, onReview, session, onStart, onEnd }: Props) {
   useViewportTick(api, { elements: true, selection: true });
-  const quests = useSceneMemo(api, (elements) => findQuests(elements), []);
+  const quests = useSceneMemo(api, (elements) => findQuests(elements, leads), [leads]);
   const glue = useGluedButtons(api, quests);
   useTaskBackup(api, quests, manager);
   // Who handed in what, per quest, and what went into this person's running session.
   const counts = useSceneMemo(
     api,
     (elements) => {
-      const work = new Map(questWork(elements).map((w) => [w.questId, w]));
+      const work = new Map(questWork(elements, leads).map((w) => [w.questId, w]));
       let mine = 0;
       if (session) {
         const byId = new Map(elements.map((el) => [el.id, el]));

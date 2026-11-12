@@ -51,6 +51,17 @@ describe("findQuests", () => {
     expect(q.title).toBe("");
   });
 
+  it("counts a Quest text only when staff wrote it, once it knows who staff are", () => {
+    const els = [
+      text("staff", 0, 0, "Quest", { customData: { createdBy: "mentor" } }),
+      text("kid", 1000, 0, "Quest", { customData: { createdBy: "amy" } }),
+      text("unsaved", 2000, 0, "Quest"),
+      text("made", 3000, 0, "Quest", { customData: { createdBy: "amy", questLabel: {} } }),
+    ];
+    expect(findQuests(els, new Set(["mentor"])).map((q) => q.id)).toEqual(["staff", "unsaved", "made"]);
+    expect(findQuests(els).map((q) => q.id)).toEqual(["staff", "kid", "unsaved", "made"]);
+  });
+
   it("ignores deleted labels and boards without quests", () => {
     expect(findQuests([{ ...text("q", 0, 0, "Quest"), isDeleted: true }])).toEqual([]);
     expect(findQuests([text("x", 0, 0, "hello")])).toEqual([]);

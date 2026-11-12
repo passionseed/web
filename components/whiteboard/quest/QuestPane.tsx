@@ -4,6 +4,8 @@ import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import { Flag, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import type { QuestLeads } from "@/lib/whiteboard/quests";
+
 import { WB_FONT_VARS } from "../fonts";
 import { QuestDashboard, questSectionId, type Person } from "./QuestDashboard";
 
@@ -138,6 +140,7 @@ export function QuestPane({
   people,
   nameOf,
   avatarOf,
+  leads,
 }: {
   api: ExcalidrawImperativeAPI;
   width: number;
@@ -146,6 +149,7 @@ export function QuestPane({
   people: Person[];
   nameOf: (id: string) => string;
   avatarOf: (id: string) => string | null;
+  leads: QuestLeads;
 }) {
   return (
     <aside
@@ -162,7 +166,7 @@ export function QuestPane({
         </button>
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto p-3">
-        <QuestDashboard api={api} people={people} nameOf={nameOf} avatarOf={avatarOf} />
+        <QuestDashboard api={api} people={people} nameOf={nameOf} avatarOf={avatarOf} leads={leads} />
       </div>
     </aside>
   );

@@ -4,7 +4,7 @@ import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import { Eye, Flag, PenLine, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { findQuests, questName, questWork, type PersonWork, type Quest } from "@/lib/whiteboard/quests";
+import { findQuests, questName, questWork, type PersonWork, type Quest, type QuestLeads } from "@/lib/whiteboard/quests";
 
 import { Face } from "../chrome/Face";
 import { useSceneMemo } from "../shift/sceneMemo";
@@ -19,6 +19,8 @@ type Props = {
   /** Everyone on the board, to list who has not handed anything in yet. */
   people: Person[];
   nameOf: (id: string) => string;
+  /** The owner, site admins and staff: whose "Quest" text makes a quest, and who is not a student. */
+  leads: QuestLeads;
 };
 
 type View = "quest" | "person";
@@ -41,9 +43,9 @@ function showOnBoard(api: ExcalidrawImperativeAPI, ids: string[]) {
  * with what each person made for it, or each person with their quests, and a
  * button that shows that work on the board.
  */
-export function QuestDashboard({ api, people, nameOf, avatarOf }: Props) {
+export function QuestDashboard({ api, people, nameOf, avatarOf, leads }: Props) {
   useSceneTick(api);
-  const { quests, work } = useSceneMemo(api, (elements) => ({ quests: findQuests(elements), work: questWork(elements) }), []);
+  const { quests, work } = useSceneMemo(api, (elements) => ({ quests: findQuests(elements, leads), work: questWork(elements, leads) }), [leads]);
   const [view, setView] = useState<View>("quest");
   const byId = useMemo(() => new Map(people.map((p) => [p.userId, p])), [people]);
 
@@ -61,8 +63,8 @@ export function QuestDashboard({ api, people, nameOf, avatarOf }: Props) {
     name: nameOf(id),
     avatarUrl: byId.get(id)?.avatarUrl ?? avatarOf(id),
   });
-  // Students: everyone who can draw on the board, but not the owner.
-  const students = people.filter((p) => p.role === "editor").map((p) => ({ ...p, ...personOf(p.userId) }));
+  // Students: everyone who can draw on the board, but not the owner, admins or staff.
+  const students = people.filter((p) => p.role === "editor" && !leads?.has(p.userId)).map((p) => ({ ...p, ...personOf(p.userId) }));
   const workers = [...new Set(work.flatMap((w) => w.people.map((p) => p.userId)))];
   const lostWork = work.filter((w) => !w.quest);
 

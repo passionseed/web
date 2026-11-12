@@ -360,8 +360,13 @@ export default function WhiteboardCanvas({
     [api, boardInfo, editable, pluginMe, players, channel],
   );
 
-  // The Quest dashboard: the owner and site admins, plus whoever the owner made a quest reviewer.
-  const canReviewQuests = isManager || Boolean(members.find((m) => m.userId === me.id)?.questReviewer);
+  // Quest leads: the owner and site admins, plus whoever the owner made staff. They make
+  // quests (only their "Quest" text counts) and see everyone's work in the Quest dashboard.
+  const questLeads = useMemo(
+    () => new Set([...managerIds, ...members.filter((m) => m.questReviewer).map((m) => m.userId)]),
+    [managerIds, members],
+  );
+  const canReviewQuests = questLeads.has(me.id);
 
   // Excalidraw re-renders itself whenever its children change, so they are memoized
   // on exactly what they read.
@@ -522,7 +527,8 @@ export default function WhiteboardCanvas({
             <QuestLayer
               api={api}
               meId={me.id}
-              manager={isManager}
+              manager={canReviewQuests}
+              leads={questLeads}
               nameOf={nameOf}
               onReview={canReviewQuests ? openQuestDashboard : undefined}
               session={quest.session}
@@ -530,7 +536,7 @@ export default function WhiteboardCanvas({
               onEnd={endQuest}
             />
           )}
-          {editable && <QuestMenu api={api} meId={me.id} manager={isManager} />}
+          {editable && <QuestMenu api={api} meId={me.id} manager={canReviewQuests} leads={questLeads} />}
           <CardVersionsLayer api={api} meId={me.id} editable={editable} manager={isManager} nameOf={nameOf} />
           <CanvasTeamLayer
             api={api}
@@ -618,6 +624,7 @@ export default function WhiteboardCanvas({
           people={people}
           nameOf={nameOf}
           avatarOf={avatarOf}
+          leads={questLeads}
         />
       )}
     </>

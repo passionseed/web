@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, Flag, RefreshCw, UserMinus } from "lucide-react";
+import { Check, Copy, RefreshCw, UserMinus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -17,7 +17,16 @@ const ACCESS_LABEL: Record<LinkAccess, string> = {
   none: "ปิดลิงก์ · Link off",
 };
 
-const ROLE_LABEL: Record<WhiteboardRole, string> = { owner: "Owner", editor: "Editor", viewer: "Viewer" };
+/**
+ * What the owner picks for each person. Staff and students both draw; staff
+ * also run quests (make them, see everyone's work). Stored as the member's
+ * role plus quest_reviewer.
+ */
+type Seat = "staff" | "student" | "viewer";
+const SEAT_LABEL: Record<Seat, string> = { staff: "ทีมงาน · Staff", student: "นักเรียน · Student", viewer: "ดูอย่างเดียว · Viewer" };
+const seatOf = (m: Pick<WhiteboardMember, "role" | "questReviewer">): Seat =>
+  m.role === "viewer" ? "viewer" : m.questReviewer ? "staff" : "student";
+const shownRole = (m: WhiteboardMember) => (m.role === "owner" ? "Owner" : SEAT_LABEL[seatOf(m)].split(" · ")[1]);
 
 type Props = {
   open: boolean;
@@ -78,17 +87,13 @@ export function ShareDialog(props: Props) {
       toast.success("ลิงก์เก่าใช้ไม่ได้แล้ว · Old link turned off");
     });
 
-  const setRole = (userId: string, next: MemberRole) =>
+  const setSeat = (userId: string, seat: Seat) =>
     run(async () => {
-      await call(`/api/whiteboards/${boardId}/members/${userId}`, { method: "PATCH", body: JSON.stringify({ role: next }) });
-      props.onMembersChange(members.map((m) => (m.userId === userId ? { ...m, role: next } : m)));
-    });
-
-  const setReviewer = (userId: string, on: boolean) =>
-    run(async () => {
-      await call(`/api/whiteboards/${boardId}/members/${userId}`, { method: "PATCH", body: JSON.stringify({ questReviewer: on }) });
-      props.onMembersChange(members.map((m) => (m.userId === userId ? { ...m, questReviewer: on } : m)));
-      toast.success(on ? "ดูงาน Quest ของทุกคนได้แล้ว (เปิดบอร์ดใหม่)" : "ปิดการดูงาน Quest แล้ว");
+      const role: MemberRole = seat === "viewer" ? "viewer" : "editor";
+      const questReviewer = seat === "staff";
+      await call(`/api/whiteboards/${boardId}/members/${userId}`, { method: "PATCH", body: JSON.stringify({ role, questReviewer }) });
+      props.onMembersChange(members.map((m) => (m.userId === userId ? { ...m, role, questReviewer } : m)));
+      if (seat === "staff") toast.success("เป็นทีมงานแล้ว: สร้าง Quest และดูงานทุกคนได้ (ให้เขาเปิดบอร์ดใหม่)");
     });
 
   const remove = (userId: string) =>
@@ -101,7 +106,8 @@ export function ShareDialog(props: Props) {
     <Dialog open={props.open} onOpenChange={props.onOpenChange}>
       <DialogContent
         // Portalled out of the board: `wb-theme` gives it the board's tokens, light or dark.
-        className={`wb-theme wb-dialog max-w-md ${WB_FONT_VARS}`}
+        // One column that may shrink: a grid track otherwise grows to its widest row and spills out of the card.
+        className={`wb-theme wb-dialog max-w-md grid-cols-[minmax(0,1fr)] ${WB_FONT_VARS}`}
         // Back to the canvas, not the Share button (outside Excalidraw), so shortcuts and paste work again.
         onCloseAutoFocus={(e) => {
           e.preventDefault();
@@ -173,27 +179,18 @@ export function ShareDialog(props: Props) {
                 <span className="min-w-0 flex-1 truncate text-sm">{m.name}</span>
                 {isOwner && m.role !== "owner" ? (
                   <>
-                    <button
-                      type="button"
-                      aria-pressed={Boolean(m.questReviewer)}
-                      disabled={busy}
-                      onClick={() => void setReviewer(m.userId, !m.questReviewer)}
-                      title={m.questReviewer ? "ดูงาน Quest ของทุกคนได้ · กดเพื่อปิด" : "ให้ดูงาน Quest ของทุกคน"}
-                      className={`wb-version-chip inline-flex items-center gap-1 rounded-md px-2 text-xs ${
-                        m.questReviewer ? "wb-version-chip--on font-semibold" : "wb-soft"
-                      }`}
-                    >
-                      <Flag className="h-3 w-3" />
-                      Quest
-                    </button>
                     <select
-                      value={m.role}
+                      value={seatOf(m)}
                       disabled={busy}
-                      onChange={(e) => void setRole(m.userId, e.target.value as MemberRole)}
-                      className="wb-input px-2 py-1 text-xs"
+                      aria-label={`บทบาทของ ${m.name} · Role`}
+                      onChange={(e) => void setSeat(m.userId, e.target.value as Seat)}
+                      className="wb-input shrink-0 px-2 py-1 text-xs"
                     >
-                      <option value="editor">Editor</option>
-                      <option value="viewer">Viewer</option>
+                      {(Object.keys(SEAT_LABEL) as Seat[]).map((seat) => (
+                        <option key={seat} value={seat}>
+                          {SEAT_LABEL[seat]}
+                        </option>
+                      ))}
                     </select>
                     <button
                       type="button"
@@ -207,7 +204,7 @@ export function ShareDialog(props: Props) {
                     </button>
                   </>
                 ) : (
-                  <span className="wb-soft text-xs">{ROLE_LABEL[m.role]}</span>
+                  <span className="wb-soft shrink-0 text-xs">{shownRole(m)}</span>
                 )}
               </li>
             ))}

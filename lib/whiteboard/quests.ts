@@ -93,18 +93,33 @@ export function questLabelOf(el: { customData?: Record<string, unknown> | null }
 
 const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
 
-const isLabel = (el: El) => {
+/**
+ * Who may make quests: the board's owner, site admins and staff. Without it
+ * (old callers, the Markdown reader) anyone's "Quest" text is one.
+ */
+export type QuestLeads = ReadonlySet<string> | undefined;
+
+/**
+ * A quest label: text a lead made a quest (customData.questLabel), or a
+ * "Quest" text written by a lead. A student writing "Quest" makes no quest.
+ * Text with no maker on record (from before authorship, or not saved yet)
+ * counts, so a lead's new label shows at once.
+ */
+const isLabel = (el: El, leads: QuestLeads) => {
   if (el.type !== "text" || el.isDeleted) return false;
   const data = questLabelOf(el);
   if (data?.off) return false;
-  return Boolean(data) || LABEL.test(el.text ?? "");
+  if (data) return true;
+  if (!LABEL.test(el.text ?? "")) return false;
+  const by = el.customData?.createdBy;
+  return !leads || typeof by !== "string" || leads.has(by);
 };
 
 /** The quests drawn on a board, in reading order. */
-export function findQuests(elements: readonly El[]): Quest[] {
-  const labels = elements.filter(isLabel);
+export function findQuests(elements: readonly El[], leads?: QuestLeads): Quest[] {
+  const labels = elements.filter((el) => isLabel(el, leads));
   if (labels.length === 0) return [];
-  const texts = elements.filter((el) => el.type === "text" && !el.isDeleted && !isLabel(el) && oneLine(el.text ?? ""));
+  const texts = elements.filter((el) => el.type === "text" && !el.isDeleted && !isLabel(el, leads) && oneLine(el.text ?? ""));
 
   return labels
     .map((label) => {
@@ -222,8 +237,8 @@ export type QuestWork = { quest: Quest | null; questId: string; people: PersonWo
  * listed; everything else is counted as drawings. A tag whose quest label was
  * deleted is still reported, with quest null.
  */
-export function questWork(elements: readonly El[]): QuestWork[] {
-  const quests = findQuests(elements);
+export function questWork(elements: readonly El[], leads?: QuestLeads): QuestWork[] {
+  const quests = findQuests(elements, leads);
   const byId = new Map(elements.map((el) => [el.id, el]));
   const work = new Map<string, Map<string, { texts: string[]; drawings: number; sessions: Set<string>; ids: string[] }>>();
 
