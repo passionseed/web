@@ -7,7 +7,7 @@ import { useReducedMotion } from "./useReducedMotion";
 import { drawSeaFrame, prepareSea, type Sea } from "./shoreSea";
 
 /** Share of the screen the sand covers, read by both the CSS strip and the sea. */
-const SAND = 0.26;
+export const SAND = 0.26;
 /** The cork pops, then the letter opens. */
 const OPEN_DELAY_MS = 600;
 /** Pixel-art pace: the sea moves in steps, not at 60fps. */
@@ -69,7 +69,7 @@ export function BottleShore({ onOpen, hint }: { onOpen: () => void; hint: string
  * whole number of screen pixels at any devicePixelRatio. The loop runs only
  * while the canvas is on screen and the tab is visible; `still` draws one frame.
  */
-function SeaCanvas({ still, sand }: { still: boolean; sand: number }) {
+export function SeaCanvas({ still, sand }: { still: boolean; sand: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {

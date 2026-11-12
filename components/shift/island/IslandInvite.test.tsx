@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 
-import { ISLAND_DOOR, LETTER_CHAPTERS, PROLOGUE, SEAL, TICKET } from "@/lib/content/shift-island-invite";
+import { FOLD, ISLAND_DOOR, LETTER_CHAPTERS, PROLOGUE, SEAL, TICKET } from "@/lib/content/shift-island-invite";
 
 import { IslandInvite } from "./IslandInvite";
 
@@ -81,4 +81,28 @@ it("passes the page's door to the ticket of an RSVPed visitor", () => {
   );
   expect(screen.getByRole("heading", { name: TICKET.heading })).toBeInTheDocument();
   expect(screen.getByText(ISLAND_DOOR.waiting)).toBeInTheDocument();
+});
+
+it("folds the letter away to show the island and opens it again", () => {
+  jest.useFakeTimers();
+  window.scrollTo = jest.fn();
+  try {
+    render(<IslandInvite viewer={{ kind: "signedOut" }} festival={FESTIVAL} initialScene="letter" />);
+    const letter = screen.getByRole("article");
+
+    fireEvent.click(screen.getByRole("button", { name: FOLD.close }));
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+    expect(letter).not.toBeVisible();
+    const open = screen.getByRole("button", { name: FOLD.open });
+    expect(open).toHaveFocus();
+
+    fireEvent.click(open);
+    expect(letter).toBeVisible();
+    expect(screen.getByRole("heading", { level: 1, name: LETTER_CHAPTERS[0].title })).toHaveFocus();
+    expect(screen.queryByRole("button", { name: FOLD.open })).not.toBeInTheDocument();
+  } finally {
+    jest.useRealTimers();
+  }
 });

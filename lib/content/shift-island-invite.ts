@@ -28,6 +28,15 @@ export const SHORE = {
   next: "ต่อ",
 } as const;
 
+/**
+ * Behind the letter is the beach where the bottle landed, and a ship waiting
+ * offshore. The letter folds away to show it, and opens again.
+ */
+export const FOLD = {
+  close: "พับจดหมาย",
+  open: "เปิดจดหมาย",
+} as const;
+
 export const LETTER_CHAPTERS: readonly {
   id: "island" | "tree" | "festival" | "rules";
   title: string;

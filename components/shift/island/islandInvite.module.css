@@ -670,20 +670,161 @@
   min-height: 100vh;
   min-height: 100svh;
   justify-content: center;
-  padding: 48px var(--isl-gutter) 72px;
-  /* Lantern light behind the paper, so it reads as lit from the shore. */
-  background: radial-gradient(60% 40% at 50% 18%, rgba(255, 201, 107, 0.16), rgba(255, 138, 76, 0.06) 55%, transparent);
+  /* Room above the paper for the fold button. */
+  padding: 80px var(--isl-gutter) 72px;
 }
 
 @media (min-width: 768px) {
   .letter {
-    padding-top: 72px;
+    padding-top: 88px;
     padding-bottom: 96px;
+  }
+}
+
+/* ---------- Behind the letter: the beach, and a ship offshore ---------- */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--isl-night);
+  pointer-events: none;
+}
+
+/* At anchor where the sky meets the water (the sea's horizon is 40% down),
+   left of the setting sun. The hull's waterline sits just under the line. */
+.ship {
+  position: absolute;
+  top: 40%;
+  left: 12%;
+  z-index: -1;
+  width: 120px;
+  translate: 0 -84%;
+  animation: isl-ship-ride 5200ms ease-in-out infinite;
+}
+
+@media (min-width: 768px) {
+  .ship {
+    left: 18%;
+    width: 160px;
+  }
+}
+
+.shipArt {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.shipHull {
+  fill: #2a1a2e;
+}
+
+.shipRail {
+  fill: #5c343c;
+}
+
+.shipRig {
+  fill: #22162a;
+}
+
+.shipSail {
+  fill: #c9aa96;
+}
+
+.shipSailLit {
+  fill: #ffd6a0;
+}
+
+.shipMast {
+  fill: #78596a;
+}
+
+.shipFlag {
+  fill: var(--isl-wax);
+}
+
+.shipLight {
+  fill: var(--isl-gold);
+}
+
+.shipPort {
+  fill: #1a101e;
+}
+
+.shipGlint {
+  fill: rgba(246, 239, 226, 0.35);
+}
+
+/* Riding the swell: a pixel up and down, a degree of roll. */
+@keyframes isl-ship-ride {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  50% {
+    transform: translateY(2px) rotate(-1deg);
+  }
+}
+
+/* Dusk falls further while the letter is open, so the paper reads first. */
+.backdropShade {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 11, 31, 0.5);
+  transition: opacity 700ms var(--isl-ease-tension);
+}
+
+.backdrop[data-revealed] .backdropShade {
+  opacity: 0;
+}
+
+/* Fold the letter away: top right, clear of the paper. */
+.skip.mapFold {
+  position: fixed;
+  top: 14px;
+  right: var(--isl-gutter);
+  z-index: 3;
+}
+
+/* Open it again: the one thing on screen besides the island. */
+.next.mapOpen {
+  position: fixed;
+  bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  z-index: 3;
+  translate: -50% 0;
+}
+
+/* Rolling up: the paper clips away bottom to top, the rods follow it out. */
+.scroll[data-state="folding"] .paper {
+  animation: isl-roll-up 460ms var(--isl-ease-snap) forwards;
+}
+
+.scroll[data-state="folding"] .rod {
+  animation: isl-rod-out 460ms var(--isl-ease-snap) forwards;
+}
+
+@keyframes isl-roll-up {
+  to {
+    clip-path: inset(0 0 100% 0);
+    opacity: 0.4;
+    filter: blur(4px) brightness(1.2);
+  }
+}
+
+@keyframes isl-rod-out {
+  to {
+    opacity: 0;
+    transform: translateY(-10px) scaleX(0.7);
   }
 }
 
 .scroll {
   position: relative;
+  z-index: 1;
   width: 100%;
   /* Wide enough on desktop for the tree row to draw its sprites at 2x. */
   max-width: 40rem;
@@ -735,7 +876,9 @@
     inset 0 12px 16px -12px rgba(42, 29, 46, 0.4),
     inset 0 -12px 16px -12px rgba(42, 29, 46, 0.4),
     inset 1px 0 0 rgba(42, 29, 46, 0.12),
-    inset -1px 0 0 rgba(42, 29, 46, 0.12);
+    inset -1px 0 0 rgba(42, 29, 46, 0.12),
+    /* Aged at the edges, like a chart that has been at sea. */
+    inset 0 0 56px rgba(122, 74, 32, 0.3);
   /* Fill backwards only: once unrolled, nothing is left clipped or filtered. */
   animation: isl-unroll 1500ms cubic-bezier(0.45, 0, 0.2, 1) 180ms backwards;
 }
@@ -842,6 +985,93 @@
   translate: 0 -3px;
   background: var(--isl-wax);
   box-shadow: 2px 2px 0 var(--isl-wax-dark);
+}
+
+/* The island sketched in ink on the letter. Each stroke draws itself on. */
+.sketch {
+  display: block;
+  width: 100%;
+  max-width: 30rem;
+  height: auto;
+  margin: 20px auto 0;
+  overflow: visible;
+}
+
+.inkLine,
+.inkBeach,
+.inkTrail,
+.inkMark {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.inkLine {
+  stroke: rgba(42, 29, 46, 0.78);
+  stroke-width: 1.6;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+[data-shown] .inkLine {
+  animation: isl-ink 1300ms cubic-bezier(0.4, 0, 0.3, 1) calc(400ms + var(--d, 0ms)) forwards;
+}
+
+.inkBeach {
+  stroke: rgba(42, 29, 46, 0.4);
+  stroke-width: 1.2;
+  stroke-dasharray: 2 4;
+}
+
+.inkTrail {
+  stroke: rgba(42, 29, 46, 0.7);
+  stroke-width: 2.2;
+  stroke-dasharray: 0.1 6;
+}
+
+.inkMark {
+  stroke: var(--isl-wax);
+  stroke-width: 2.2;
+}
+
+.inkLetter {
+  fill: rgba(42, 29, 46, 0.78);
+  font-size: 11px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+/* What is not a drawn stroke comes in after the drawing, last the mark. */
+.inkBeach,
+.inkTrail,
+.inkMark,
+.inkLetter {
+  opacity: 0;
+}
+
+[data-shown] .inkBeach,
+[data-shown] .inkLetter {
+  animation: isl-ink-in 600ms ease-out 1600ms forwards;
+}
+
+[data-shown] .inkTrail {
+  animation: isl-ink-in 900ms ease-out 2400ms forwards;
+}
+
+[data-shown] .inkMark {
+  animation: isl-ink-in 400ms ease-out 3100ms forwards;
+}
+
+@keyframes isl-ink {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes isl-ink-in {
+  to {
+    opacity: 1;
+  }
 }
 
 .chapterBody {
@@ -1355,4 +1585,33 @@
   padding-top: 20px;
   border-top: 1px dashed rgba(42, 29, 46, 0.25);
   text-align: center;
+}
+
+/* Reduced motion: the ship holds still and the sketch is already drawn. */
+@media (prefers-reduced-motion: reduce) {
+  .ship {
+    animation: none;
+  }
+
+  .backdropShade {
+    transition: none;
+  }
+
+  .inkLine,
+  [data-shown] .inkLine {
+    stroke-dashoffset: 0;
+    animation: none;
+  }
+
+  .inkBeach,
+  .inkTrail,
+  .inkMark,
+  .inkLetter,
+  [data-shown] .inkBeach,
+  [data-shown] .inkTrail,
+  [data-shown] .inkMark,
+  [data-shown] .inkLetter {
+    opacity: 1;
+    animation: none;
+  }
 }
