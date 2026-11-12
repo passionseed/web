@@ -27,6 +27,7 @@ import ErrorBoundary from "@/components/error-boundary";
 import { DevHealthCheck } from "@/components/dev-health-check";
 import { TOSAcceptanceModal } from "@/components/TOSAcceptanceModal";
 import { LanguageProvider } from "@/lib/i18n/language-context";
+import { CANONICAL_ORIGIN } from "@/lib/seo/canonical-origin";
 import { DirectionFinderProvider } from "@/components/education/direction-finder/direction-finder-context";
 
 const spaceMono = Space_Mono({
@@ -125,9 +126,9 @@ export const metadata: Metadata = {
   // Required for Open Graph: without it Next emits a relative image path, and
   // scrapers like Instagram cannot fetch a relative URL, so they fall back to
   // guessing an image from the page.
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://passionseed.org"
-  ),
+  // Always the production www address (passionseed.org redirects there), so
+  // every page's canonical tag names the address visitors actually land on.
+  metadataBase: new URL(CANONICAL_ORIGIN),
   title: {
     default: "PassionSeed | Empowering Youth Agency & Real-World Proof of Work",
     template: "%s | PassionSeed",
@@ -215,10 +216,10 @@ export default async function RootLayout({
     "@graph": [
       {
         "@type": "EducationalOrganization",
-        "@id": "https://passionseed.org/#organization",
+        "@id": "https://www.passionseed.org/#organization",
         "name": "PassionSeed",
-        "url": "https://passionseed.org",
-        "logo": "https://passionseed.org/passionseed-logo.svg",
+        "url": "https://www.passionseed.org",
+        "logo": "https://www.passionseed.org/passionseed-logo.svg",
         "description":
           "Empowering young people to break free from passive compliance, build real things through authentic experimentation, and take ownership of their own trajectory.",
         "sameAs": [
@@ -233,11 +234,11 @@ export default async function RootLayout({
       },
       {
         "@type": "WebSite",
-        "@id": "https://passionseed.org/#website",
-        "url": "https://passionseed.org",
+        "@id": "https://www.passionseed.org/#website",
+        "url": "https://www.passionseed.org",
         "name": "PassionSeed",
         "publisher": {
-          "@id": "https://passionseed.org/#organization"
+          "@id": "https://www.passionseed.org/#organization"
         }
       }
     ]

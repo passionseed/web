@@ -163,7 +163,7 @@ const tracks: {
 
 
 function buildJsonLd(cohort: ShiftCohort, faqs: ReturnType<typeof buildFaqs>) {
-  const url = `https://passionseed.org${cohortPath(cohort)}`;
+  const url = `https://www.passionseed.org${cohortPath(cohort)}`;
   return {
     "@context": "https://schema.org",
     "@graph": [
@@ -176,7 +176,7 @@ function buildJsonLd(cohort: ShiftCohort, faqs: ReturnType<typeof buildFaqs>) {
         provider: {
           "@type": "Organization",
           name: "PassionSeed",
-          url: "https://passionseed.org",
+          url: "https://www.passionseed.org",
         },
         educationalLevel: "High School (M.4–M.6) / University Undergraduate",
         offers: [

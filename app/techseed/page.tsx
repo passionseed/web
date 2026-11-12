@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     title: "TechSeed | คลังผลงานจริงจากนักเรียน ม.ปลาย (Proof of Work)",
     description:
       "รวมชิ้นงานจริงที่นักเรียนสร้างเองและปล่อยสู่โลกจริง ตั้งแต่ AI, Web Apps ไปจนถึง 3D Games พร้อมหลักฐานการทดสอบจริง",
-    url: "https://passionseed.org/techseed",
+    url: "https://www.passionseed.org/techseed",
     type: "website",
   },
   twitter: {
@@ -50,20 +50,20 @@ const techseedJsonLd = {
   "@graph": [
     {
       "@type": "CollectionPage",
-      "@id": "https://passionseed.org/techseed#collection",
+      "@id": "https://www.passionseed.org/techseed#collection",
       "name": "TechSeed Student Proof-of-Work Gallery",
-      "url": "https://passionseed.org/techseed",
+      "url": "https://www.passionseed.org/techseed",
       "description":
         "Curated showcase of real student projects built by high school students in TechSeed cohorts across Thailand, spanning AI, web tools, game dev, and hardware.",
       "publisher": {
         "@type": "Organization",
         "name": "PassionSeed",
-        "url": "https://passionseed.org"
+        "url": "https://www.passionseed.org"
       }
     },
     {
       "@type": "ItemList",
-      "@id": "https://passionseed.org/techseed#items",
+      "@id": "https://www.passionseed.org/techseed#items",
       "name": "TechSeed Final Projects",
       "numberOfItems": curated.length,
       "itemListElement": curated.map((item, index) => ({

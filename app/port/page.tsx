@@ -11,7 +11,7 @@ import { PORT_GUIDES, portGuidePath } from "@/lib/content/port-guides";
  * answer engines can read and quote them.
  */
 
-const SITE_URL = "https://passionseed.org";
+const SITE_URL = "https://www.passionseed.org";
 const TITLE = "ทำพอร์ต TCAS รอบ 1 เริ่มยังไง: คู่มือทีละขั้น";
 const DESCRIPTION =
   "คู่มือทำพอร์ต TCAS รอบ 1 จาก PassionSeed ตั้งแต่ยังไม่รู้จะเข้าคณะไหน ลองทำโปรเจกต์ 7 วันเพื่อเช็กว่าชอบจริงไหม จนถึงวางแผนพอร์ตและโปรเจกต์ที่ใช้งานจริง";

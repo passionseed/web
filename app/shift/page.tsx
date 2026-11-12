@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "SHIFT | 7 วัน ปั้น 1 โปรเจกต์จริง",
     description: "เลือกรุ่น SHIFT ที่ใช่ สร้างโปรเจกต์จริงที่คนนอกได้ลองใช้ใน 7 วัน",
-    url: "https://passionseed.org/shift",
+    url: "https://www.passionseed.org/shift",
     type: "website",
   },
 };
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
 /** Status flips on Bangkok dates, so re-render at least hourly. */
 export const revalidate = 3600;
 
-const SITE_URL = "https://passionseed.org";
+const SITE_URL = "https://www.passionseed.org";
 
 /**
  * Course + FAQ structured data for the page that stays up between rounds, so

@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: SCHOOL_META.ogTitle,
     description: SCHOOL_META.ogDescription,
-    url: "https://passionseed.org/shift/school",
+    url: "https://www.passionseed.org/shift/school",
     type: "website",
   },
 };
