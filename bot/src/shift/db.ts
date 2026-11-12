@@ -1,8 +1,6 @@
-import fs from "node:fs";
-import path from "node:path";
+import type pg from "pg";
 
-import pg from "pg";
-
+import { createRolePool } from "../pg";
 import type { RosterRow } from "./roster";
 import type { VoiceFlags } from "./state";
 
@@ -13,19 +11,8 @@ import type { VoiceFlags } from "./state";
  * the service role key.
  */
 
-/** Supabase's own root CA: the pooler's certificate does not chain to a public one. */
-const SUPABASE_CA = fs.readFileSync(path.join(__dirname, "..", "..", "supabase-ca.pem"), "utf8");
-
 export function createVoicePool(databaseUrl: string): pg.Pool {
-  const pool = new pg.Pool({
-    connectionString: databaseUrl,
-    ssl: { ca: SUPABASE_CA, rejectUnauthorized: true },
-    max: 2,
-    idleTimeoutMillis: 60_000,
-  });
-  // An idle client dropping (pooler restart, network blip) must not crash the bot.
-  pool.on("error", (error) => console.error("[shift-voice] database connection error:", error.message));
-  return pool;
+  return createRolePool(databaseUrl, "shift-voice");
 }
 
 /** Who a row belongs to. Null closes the open row without opening another. */

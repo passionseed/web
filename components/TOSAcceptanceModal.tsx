@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
+import { isShiftPath } from "@/lib/shift/joinLink";
 import { isAbortError } from "@/lib/supabase/errors";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -14,6 +16,11 @@ import { toast } from "sonner";
 const CURRENT_TOS_VERSION = "2025-01-24";
 
 export function TOSAcceptanceModal() {
+  // SHIFT pages (students on Discord, a future Discord Activity) never get this
+  // English modal; whether they need their own consent step is a founder and
+  // legal decision. Same rule as the auth callback and the proxy (isShiftPath).
+  const pathname = usePathname();
+  const onShift = isShiftPath(pathname ?? "");
   const [open, setOpen] = useState(false);
   const [accepted, setAccepted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -21,8 +28,9 @@ export function TOSAcceptanceModal() {
   const supabase = createClient();
 
   useEffect(() => {
+    if (onShift) return;
     checkTOSAcceptance();
-  }, []);
+  }, [onShift]);
 
   const checkTOSAcceptance = async () => {
     try {
@@ -91,6 +99,8 @@ export function TOSAcceptanceModal() {
       setIsSubmitting(false);
     }
   };
+
+  if (onShift) return null;
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
