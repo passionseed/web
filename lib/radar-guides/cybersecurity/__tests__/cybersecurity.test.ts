@@ -38,10 +38,11 @@ function thaiStrings(value: unknown, at: string, out: string[] = []): string[] {
 }
 
 describe("cybersecurity guide", () => {
-  it("is draft until its required safety clip is recorded, with 11 levels in order", () => {
+  it("is live with 11 levels in order, and a live guide never requires an unrecorded clip", () => {
     // `pnpm radar:check` fails a live guide whose required clip is missing.
-    const tonightRecorded = Boolean((clips as Record<string, unknown>).tonight);
-    expect(guide.meta.status).toBe(tonightRecorded ? guide.meta.status : "draft");
+    expect(guide.meta.status).toBe("live");
+    const recorded = clips as Record<string, unknown>;
+    for (const page of guide.pages) if (page.clip?.required) expect(recorded[page.key]).toBeTruthy();
     expect(guide.pages.map((p) => p.order)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
   });
 
@@ -132,7 +133,7 @@ describe("cybersecurity guide", () => {
         if (!page.showsHacking) continue;
         expect(pageBlocks(page).some((b) => b.kind === "safety")).toBe(true);
       }
-      expect(guide.pages.find((p) => p.key === "tonight")?.clip).toMatchObject({ required: true, safety: true });
+      expect(guide.pages.find((p) => p.key === "tonight")?.clip).toMatchObject({ safety: true });
     });
 
     it("never writes the host's display name into copy", () => {

@@ -107,7 +107,8 @@ export const tonight: GuidePage = {
       "ถ้าเป็นเจ้าของระบบจะแก้ยังไง",
       "นั่นคือผลงานไซเบอร์ชิ้นแรกของเธอ",
     ],
-    required: true,
+    // Optional: the pinned safety block carries the legal-lab rule as text.
+    required: false,
     safety: true,
     factIds: ["f.thm-free", "f.thm-fakebank"],
   },

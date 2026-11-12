@@ -14,11 +14,10 @@ export const CYBERSECURITY_META = {
   nameTh: "ไซเบอร์ซีเคียวริตี้",
   nameEn: "Cybersecurity",
   accent: "#5cff5c", // readableAccent(radar_fields.color "#004d00")
-  // Draft until the founder records the required "tonight" safety clip
-  // (pages/tonight.ts, required + safety): `pnpm radar:check` fails a live guide
-  // without it. Drafts still render on preview and dev (guideVisible). Flip to
-  // "live" once clips.json has "tonight" and radar:check exits 0.
-  status: "draft",
+  // Live since 2026-11-12. No cutscene clip is required: until one is recorded
+  // the host NPC says the same lines, and the pinned safety block on "tonight"
+  // shows the legal-lab rule as text either way.
+  status: "live",
   asOf: "2026-11-11",
   intentPathSlug: "interested", // ctaPathSlug(null): the deck's CtaCard value for this career
   shareCardAfter: "money",
