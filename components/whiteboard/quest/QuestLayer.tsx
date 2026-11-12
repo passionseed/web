@@ -13,6 +13,7 @@ import { useViewportTick } from "../useViewportTick";
 import { setQuestLabel } from "./labelEdits";
 import { WorkRow } from "./QuestDashboard";
 import type { QuestSession } from "./useQuestSession";
+import { WHEEL_THROUGH } from "../wheelBridge";
 
 /** Zoomed out further than this, the buttons would crowd the board. */
 const MIN_ZOOM = 0.12;
@@ -213,6 +214,7 @@ export function QuestLayer({ api, meId, manager, nameOf, onReview, session, onSt
                     focusCanvas();
                   }}
                   title={`${running ? "จบ" : "เริ่ม"} ${questName(q)}${manager ? " · ลากเพื่อย้ายปุ่ม" : ""}`}
+                  {...WHEEL_THROUGH}
                   className={`wb-quest-ink pointer-events-auto absolute left-0 top-0 ${running ? "wb-quest-ink--on" : ""}`}
                   style={{ fontSize: inkSize(q), "--ink": inkOf(q) } as CSSProperties}
                 >

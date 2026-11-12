@@ -155,7 +155,7 @@ again afterwards.
   room board made from the `room` template (Arrive, Help, Close). The block, its reminders and
   the IG message link the voice room next to the board. There is no voice bot: attendance is
   read from **room cards** (`lib/whiteboard/cards.ts`: Arrive 👋, Help 🙏, I can help 🙋,
-  Close ✅), which are in the board kit and the Library and are tagged in `customData.card`.
+  Close ✅), which are in the board kit (and its Library) and are tagged in `customData.card`.
   A card counts for whoever placed it (`createdBy`); the template's example cards count only
   once someone writes on them. `lib/calendar/attendance.ts` turns that into counts (booked vs
   arrived, walk-ins, help asked and given, closed with a next step), shown on the block once
@@ -247,8 +247,21 @@ Canvas, so mentors (and an AI reading the board) can follow each student without
   is, so plain stickies dragged into a zone count too. A note starts with one space so its
   label keeps the board's note font; `useShiftCardCaret` selects that space (or, on a written
   note, puts the caret at the end, since Excalidraw otherwise selects all text on a laptop).
+  Notes have a 10px corner (`roundness.value`): Excalidraw sets text 5px from the edge, so its
+  default 32px corner curved over the first letters of a note that reads from the top-left.
 - **Pivot arrows:** an arrow from an interview or test to a pivot note is the "why" of the
   pivot log.
+- **Rows fit their notes** (`lib/whiteboard/canvas-fit.ts`, `components/whiteboard/shift/useCanvasFit.ts`):
+  - A row of zones is as tall as its fullest zone needs: the lowest note's bottom plus 24.
+  - It is never shorter than the template made it, so it grows when a note gets taller as someone
+    types and shrinks back when notes are removed.
+  - The rows below move with everything in them (labels, notes and their text, loose stickies),
+    arrows bend to keep meeting their notes, and the frame grows or shrinks to match.
+  - **+ เพิ่ม** in a full zone first grows it by a line of notes.
+  - Only the browser that made the edit refits, after the drag or resize ends and only on canvases
+    that person may change, so two people never move the same rows. The moves sync and save like
+    any edit, and running the fit again changes nothing.
+  - A note belongs to the zone its top-left corner is in.
 - **Versions** on Problem, Target, Idea and Ship notes: select the note, click its chip, and
   **เก็บเป็น vN** saves the note's text (up to 5,000 characters), time, author and an optional
   reason (**เปลี่ยนเพราะ**) into `customData.versions` (newest 20 kept, numbers never reused). It
@@ -264,7 +277,9 @@ Canvas, so mentors (and an AI reading the board) can follow each student without
 - **Who may change a canvas** (`lib/whiteboard/canvas-access.ts`): a canvas belongs to whoever
   made it (`customData.owner`). They pick teammates from the board's editors with the
   **ทีม** tag above the canvas (`customData.editors`, `CanvasTeamLayer`), and can hand the canvas
-  to one of them (**ให้เป็นเจ้าของ**, two clicks; the old owner stays on the team). Moderators
+  to one of them (**ให้เป็นเจ้าของ**, two clicks; the old owner stays on the team). Board members
+  who can only view are listed but cannot be picked. The board's owner gets **ชวนเพื่อนเข้าบอร์ด**
+  in the panel, which opens the share dialog; other canvas owners are told to ask them. Moderators
   (the board's owner and site admins who are on the board, `managerIds` from `loadBoard`) may
   change any canvas and hand it over. Owners and teammates must be people on the board.
   Everyone else sees **ดูอย่างเดียว · ของ <name>** (view only) and no **+ เพิ่ม** buttons. The rule
@@ -438,6 +453,14 @@ copies the two typefaces over.
 - Font files live in `components/whiteboard/fonts/`, not `public/`: the proxy matcher only
   lets images through, so `.woff2` under `public/` redirects to login.
 - Thumbnails are WebP. Satori can't decode WebP, so link previews re-encode with `sharp`.
+- Excalidraw zooms only for wheels on its canvas. Over our overlays (outside it) a trackpad
+  pinch zoomed the web page, and over its own frame names it did nothing.
+  `components/whiteboard/wheelBridge.ts` passes wheels over anything marked `WHEEL_THROUGH`
+  (and frame names) to the canvas, and stops a pinch over our panels from zooming the page.
+  Mark new chips with it; leave it off anything that scrolls.
+- Excalidraw's Library button is hidden (`.default-sidebar-trigger` in `whiteboard.css`): it
+  opened a second right-hand panel next to the board kit. The kit's **สร้าง** tab opens the
+  Library instead (`toggleSidebar({ name: "default", tab: "library" })`).
 
 ## Reading boards (for people and AI agents)
 

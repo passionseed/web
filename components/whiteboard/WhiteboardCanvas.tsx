@@ -49,6 +49,7 @@ import { useCanvasBackground } from "./settings/useCanvasBackground";
 import { CanvasTeamLayer } from "./shift/CanvasTeamLayer";
 import { CardVersionsLayer } from "./shift/CardVersionsLayer";
 import { useShiftCardCaret } from "./shift/useShiftCardCaret";
+import { useCanvasFit } from "./shift/useCanvasFit";
 import { ZoneAddLayer } from "./shift/ZoneAddLayer";
 import { openQuestPanel, QuestPane, useQuestPane } from "./quest/QuestPane";
 import { useBoardPeople } from "./useBoardPeople";
@@ -58,6 +59,7 @@ import { useQuestSession } from "./quest/useQuestSession";
 import { ShareDialog } from "./ShareDialog";
 import { TimerWidget } from "./TimerWidget";
 import { useComments } from "./useComments";
+import { bridgeWheel } from "./wheelBridge";
 import { boardApi, useWhiteboardSync } from "./useWhiteboardSync";
 
 type Me = { id: string; name: string; avatarUrl: string | null; isAdmin?: boolean };
@@ -126,6 +128,8 @@ export default function WhiteboardCanvas({
     lastBlockedToast.current = Date.now();
     toast.info("เปลี่ยนตรงนี้ไม่ได้: แคนวาสนี้แก้ได้เฉพาะทีม และลบได้เฉพาะเจ้าของ");
   }, []);
+  // SHIFT canvas rows grow and shrink with this person's notes; the sync hook says when they edited.
+  const localEdit = useRef<(changed: readonly OrderedExcalidrawElement[]) => void>(undefined);
   // Quest sessions: while one runs, everything this person makes is tagged with it (lib/whiteboard/quests.ts).
   const quest = useQuestSession(board.id, me.id);
   // Everyone's Discord name and picture, a moment after the board opens; profile names until then.
@@ -150,9 +154,11 @@ export default function WhiteboardCanvas({
     initialElements,
     managerIds,
     onCanvasBlocked,
+    onLocalEdit: (changed) => localEdit.current?.(changed),
     newElementData: editable ? quest.newElementData : undefined,
   });
   const api = sync.excalidrawAPI;
+  localEdit.current = useCanvasFit(api, me.id, isManager);
   // Loads and saves the Library, and installs libraries from libraries.excalidraw.com (#addLibrary links).
   useHandleLibrary({ excalidrawAPI: api, adapter: LIBRARY_ADAPTER });
   const { send: syncSend, on: syncOn, onChange: syncOnChange, onPointerUpdate: syncOnPointer, saveNow, refreshFiles } = sync;
@@ -189,9 +195,13 @@ export default function WhiteboardCanvas({
   const windows = usePluginWindows(board.id);
   const [authorNames, setAuthorNames] = useState<Record<string, string>>({});
   const importInput = useRef<HTMLInputElement>(null);
+  const root = useRef<HTMLDivElement>(null);
   const theme = useRef<Theme>(initialData.appState.theme);
   // Excalidraw hands over its API before the initial scene loads; wait for the first change.
   const [sceneReady, setSceneReady] = useState(false);
+
+  // Wheel and pinch over chips and canvas names move the board, not the page.
+  useEffect(() => (root.current ? bridgeWheel(root.current) : undefined), []);
 
   // People who opened the board since this page loaded also show up in the list.
   const people = useMemo(() => {
@@ -467,6 +477,7 @@ export default function WhiteboardCanvas({
   return (
     <>
       <div
+        ref={root}
         className={`whiteboard-root whiteboard-room fixed inset-0 ${WB_FONT_VARS}`}
         // The Quest pane sits beside the board: the board's right edge moves in to make room.
         style={questPane.open ? { right: questPane.width } : undefined}
@@ -521,7 +532,14 @@ export default function WhiteboardCanvas({
           )}
           {editable && <QuestMenu api={api} meId={me.id} manager={isManager} />}
           <CardVersionsLayer api={api} meId={me.id} editable={editable} manager={isManager} nameOf={nameOf} />
-          <CanvasTeamLayer api={api} meId={me.id} manager={isManager} people={people} nameOf={nameOf} />
+          <CanvasTeamLayer
+            api={api}
+            meId={me.id}
+            manager={isManager}
+            people={people}
+            nameOf={nameOf}
+            onInvite={board.role === "owner" ? openShare : undefined}
+          />
           {isAdmin && showAuthors && <AuthorsLayer api={api} nameOf={nameOf} />}
         </>
       )}

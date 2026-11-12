@@ -138,6 +138,11 @@ export const isWritten = (kind: ShiftCardKind, text: string | null | undefined) 
 /** A note on the project canvas: sticky-sized, so a zone holds several side by side. */
 export const SHIFT_CARD_WIDTH = 240;
 export const SHIFT_CARD_HEIGHT = 200;
+/**
+ * A note's corner radius. Excalidraw sets text only 5px in from the edge, and its default 32px
+ * corner would curve over the first letters of a note that reads from the top-left.
+ */
+const NOTE_RADIUS = 10;
 
 /**
  * One note as a sticky in its kind's colour, tagged customData.card. It starts
@@ -164,7 +169,7 @@ export function shiftCardSkeleton(
     fillStyle: "solid",
     strokeWidth: 1,
     roughness: 0,
-    roundness: { type: 3 },
+    roundness: { type: 3, value: NOTE_RADIUS },
     customData: example ? { card: kind, example: true } : { card: kind },
     // A single space, not "": Excalidraw only creates the label (with this font and alignment) for non-empty text,
     // and a note without one gets the board's current font, often the hand-drawn one, when typing starts.
@@ -365,23 +370,42 @@ export function freeSlot(
   return null;
 }
 
+/** The part of a zone notes go in: below its title, inside its padding. */
+const zoneInner = (zone: Box): Box => ({
+  x: zone.x + ZONE_PAD,
+  y: zone.y + ZONE_HEADER,
+  width: zone.width - 2 * ZONE_PAD,
+  height: zone.height - ZONE_HEADER - ZONE_PAD / 2,
+});
+
 /**
- * Where a new note goes in a zone: the first free slot reading from the zone's
- * top-left, below its title. A full zone gets the note cascaded over its first
- * slot, so the click still does something visible.
+ * The centre of the first free note-sized slot in a zone, reading from its
+ * top-left below the title, line by line however tall the zone has grown.
+ * Null when the zone is full.
+ */
+export function zoneFreeSlot(zone: Box, obstacles: readonly Box[]): { x: number; y: number } | null {
+  const inner = zoneInner(zone);
+  const size = { width: SHIFT_CARD_WIDTH, height: SHIFT_CARD_HEIGHT };
+  for (let top = inner.y; top + size.height <= inner.y + inner.height; top += size.height + SLOT_GAP) {
+    for (let left = inner.x; left + size.width <= inner.x + inner.width; left += size.width + SLOT_GAP) {
+      const box = { x: left, y: top, ...size };
+      if (!obstacles.some((o) => overlaps(o, box))) return { x: left + size.width / 2, y: top + size.height / 2 };
+    }
+  }
+  return null;
+}
+
+/**
+ * Where a new note goes in a zone: its first free slot. A zone still full
+ * (one that could not grow) gets the note cascaded over its first slot, so the
+ * click still does something visible.
  */
 export function zoneSlot(zone: Box, obstacles: readonly Box[], count = 0): { x: number; y: number } {
-  const inner = {
-    x: zone.x + ZONE_PAD,
-    y: zone.y + ZONE_HEADER,
-    width: zone.width - 2 * ZONE_PAD,
-    height: zone.height - ZONE_HEADER - ZONE_PAD / 2,
-  };
-  const first = { x: inner.x + SHIFT_CARD_WIDTH / 2, y: inner.y + SHIFT_CARD_HEIGHT / 2 };
-  const free = freeSlot(obstacles, first, undefined, inner);
+  const free = zoneFreeSlot(zone, obstacles);
   if (free) return free;
+  const inner = zoneInner(zone);
   const step = 20 * ((count % 5) + 1);
-  return { x: first.x + step, y: first.y + step };
+  return { x: inner.x + SHIFT_CARD_WIDTH / 2 + step, y: inner.y + SHIFT_CARD_HEIGHT / 2 + step };
 }
 
 // ---------------------------------------------------------------------------

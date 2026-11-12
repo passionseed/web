@@ -556,6 +556,12 @@ img.wb-avatar {
   color: var(--wb-text);
 }
 
+/* One panel button, the board kit: Excalidraw's Library button opened a second panel that looked
+   the same, so it is hidden and the Library opens from the kit's สร้าง tab instead. */
+.whiteboard-root .default-sidebar-trigger {
+  display: none;
+}
+
 /* Sidebar content */
 .whiteboard-kit {
   font-family: var(--wb-font);

@@ -195,6 +195,7 @@ export function useWhiteboardSync({
   onCanvasBlocked,
   newElementData,
   shownAs,
+  onLocalEdit,
 }: {
   boardId: string;
   role: WhiteboardRole;
@@ -214,6 +215,8 @@ export function useWhiteboardSync({
    * when known; it wins over what their tab sends, so cursors and faces agree everywhere.
    */
   shownAs?: (userId: string) => { name: string; avatarUrl: string | null } | undefined;
+  /** Called with the elements this person just changed (not others' live edits), once they passed the canvas check. */
+  onLocalEdit?: (changed: readonly OrderedExcalidrawElement[]) => void;
 }) {
   const { id: myId, name: myName, avatarUrl: myAvatar } = me;
   const [mySocket] = useState(() => `${myId}:${crypto.randomUUID().slice(0, 8)}`);
@@ -241,6 +244,8 @@ export function useWhiteboardSync({
   managers.current = new Set(managerIds);
   const onBlocked = useRef(onCanvasBlocked);
   onBlocked.current = onCanvasBlocked;
+  const onEdited = useRef(onLocalEdit);
+  onEdited.current = onLocalEdit;
   const lastEditAt = useRef(0);
   const thumbVersion = useRef(-1);
   const apiRef = useRef<ExcalidrawImperativeAPI | null>(null);
@@ -527,7 +532,7 @@ export function useWhiteboardSync({
       lastSceneVersion.current = version;
       // Undo edits inside SHIFT canvases this person may not change, and give new canvases
       // their owner; the corrected scene comes back through onChange and syncs from there.
-      const { fixes, blocked } = guard.checkLocal(elements, myId, managers.current.has(myId));
+      const { fixes, blocked, changed } = guard.checkLocal(elements, myId, managers.current.has(myId));
       if (blocked) onBlocked.current?.();
       if (fixes.length) {
         const fixed = new Map(fixes.map((el) => [el.id, el]));
@@ -539,6 +544,7 @@ export function useWhiteboardSync({
       }
       lastEditAt.current = Date.now();
       tagNewElements(elements);
+      if (changed.length) onEdited.current?.(changed);
       broadcastChanges.current(elements);
       if (hasChangedSince(elements, savedSeen.current)) {
         setSaveState((s) => (s === "saving" ? s : "unsaved"));

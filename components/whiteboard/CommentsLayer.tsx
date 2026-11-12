@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { Avatar } from "./ShareDialog";
 import type { CommentsApi, Thread } from "./useComments";
 import { useViewportTick } from "./useViewportTick";
+import { WHEEL_THROUGH } from "./wheelBridge";
 
 export { useViewportTick };
 
@@ -57,6 +58,7 @@ export function CommentsLayer(props: Props) {
     <div className="pointer-events-none absolute inset-0 z-[3] overflow-hidden">
       {placing && (
         <div
+          {...WHEEL_THROUGH}
           className="pointer-events-auto absolute inset-0 cursor-crosshair"
           onClick={(e) => {
             const { x, y } = viewportCoordsToSceneCoords({ clientX: e.clientX, clientY: e.clientY }, api.getAppState());
@@ -73,6 +75,7 @@ export function CommentsLayer(props: Props) {
             key={thread.id}
             type="button"
             onClick={() => onOpen(openId === thread.id ? null : thread.id)}
+            {...WHEEL_THROUGH}
             className={`wb-pin pointer-events-auto absolute flex -translate-y-full items-center gap-1 rounded-full rounded-bl-none p-0.5 pr-2 ${
               thread.resolvedAt ? "wb-pin--resolved" : ""
             }`}

@@ -11,6 +11,7 @@ import {
   MAX_VERSIONS,
   canvasZones,
   projectCanvasSkeleton,
+  zoneFreeSlot,
   zoneSlot,
   readVersions,
   settleVersions,
@@ -46,6 +47,19 @@ describe("SHIFT cards", () => {
     expect(isWritten("interview", "พี่เภสัชบอกว่า…")).toBe(true);
     // Cards from before the canvas carried a header and question; those alone are still unwritten.
     expect(isWritten("interview", shiftCardStartText("interview"))).toBe(false);
+  });
+
+  it("keeps a note's rounded corner clear of its text", () => {
+    // Excalidraw sets a note's text 5px in from the top-left, and rounds an adaptive
+    // corner by `roundness.value` (32px when unset) once the note is big enough.
+    const PADDING = 5;
+    const note = shiftCardSkeleton("interview") as { roundness: { type: number; value?: number }; width: number; height: number };
+    const side = Math.min(note.width, note.height);
+    const value = note.roundness.value ?? 32;
+    const r = side <= value / 0.25 ? side * 0.25 : value;
+    // How far the curve reaches in from the left edge at the text's top line.
+    const curveInset = r - Math.sqrt(r * r - Math.max(r - PADDING, 0) ** 2);
+    expect(PADDING - curveInset).toBeGreaterThanOrEqual(2);
   });
 
   it("tags each card with its kind, and examples as examples", () => {
@@ -249,5 +263,26 @@ describe("version history display", () => {
   it("marks lines that are new since the previous version", () => {
     expect([...newLines("คนป่วย\nซื้อยาไม่สะดวก", "ผู้สูงอายุ\nซื้อยาไม่สะดวก\n\nลืมกินยา")]).toEqual([0, 3]);
     expect(newLines("a", "a").size).toBe(0);
+  });
+});
+
+describe("zoneFreeSlot", () => {
+  // A zone two notes wide and three lines tall: 96 of title, then lines of 200 with 24 between.
+  const zone = { x: 0, y: 0, width: 24 + 240 + 24 + 240 + 24, height: 96 + 3 * 200 + 2 * 24 + 12 };
+  const at = (x: number, y: number) => ({ x, y, width: 240, height: 200 });
+
+  it("fills a zone line by line, reading from its top-left", () => {
+    expect(zoneFreeSlot(zone, [])).toEqual({ x: 24 + 120, y: 96 + 100 });
+    expect(zoneFreeSlot(zone, [at(24, 96)])).toEqual({ x: 24 + 264 + 120, y: 96 + 100 });
+  });
+
+  it("reaches every line of a zone that has grown, however tall", () => {
+    const full = [at(24, 96), at(288, 96), at(24, 320), at(288, 320)];
+    expect(zoneFreeSlot(zone, full)).toEqual({ x: 24 + 120, y: 544 + 100 });
+  });
+
+  it("says when a zone is full", () => {
+    const full = [96, 320, 544].flatMap((y) => [at(24, y), at(288, y)]);
+    expect(zoneFreeSlot(zone, full)).toBeNull();
   });
 });
