@@ -89,7 +89,7 @@ Admins can RSVP as mentors.
 
 ## Data
 
-Migration `supabase/migrations/20261111120000_shift_island_rsvps.sql`:
+Migration `supabase/migrations/20261112090000_shift_island_rsvps.sql`:
 
 ```sql
 CREATE TABLE IF NOT EXISTS public.shift_island_rsvps (

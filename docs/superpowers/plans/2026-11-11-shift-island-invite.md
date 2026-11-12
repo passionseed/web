@@ -35,7 +35,7 @@
 ### Task 1: RSVP table and data access
 
 **Files:**
-- Create: `supabase/migrations/20261111120000_shift_island_rsvps.sql`
+- Create: `supabase/migrations/20261112090000_shift_island_rsvps.sql`
 - Create: `lib/supabase/shift-island-rsvps.ts`
 - Test: `lib/supabase/__tests__/shift-island-rsvps.test.ts`
 
