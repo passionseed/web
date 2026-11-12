@@ -15,6 +15,7 @@ const ADMIN_TITLES: Record<string, string> = {
   "/admin/shift/views": "SHIFT Page Views",
   "/admin/shift/voice": "SHIFT Voice",
   "/admin/shift/canvases": "SHIFT Canvases",
+  "/admin/marketing": "Meta Marketing",
 };
 
 function titleCase(text: string): string {
