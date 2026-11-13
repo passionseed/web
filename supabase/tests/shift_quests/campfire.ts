@@ -133,8 +133,8 @@ async function main(): Promise<void> {
   const joinedAt = async (id: string) => (await row(id))?.joined_at?.toISOString();
 
   // --- Schema, privileges, row security ------------------------------------------------
-  check(Number(await call(web, "shift_quest_schema_version")) === 11, "the website reads schema version 11");
-  check(Number(await call(bot, "shift_quest_schema_version")) === 11, "the bot reads schema version 11 (the campfire starts from 7)");
+  check(Number(await call(web, "shift_quest_schema_version")) === 12, "the website reads schema version 12");
+  check(Number(await call(bot, "shift_quest_schema_version")) === 12, "the bot reads schema version 12 (the campfire starts from 7)");
 
   for (const fn of [...WRITERS, READER]) {
     const grants: Json = (await db.query(

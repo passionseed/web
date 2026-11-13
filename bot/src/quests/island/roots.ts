@@ -20,6 +20,8 @@
  */
 import { QuestDbError, QuestError, type QuestApi } from "../api";
 
+import { schemaOf } from "../schema";
+
 import { rootsLevel } from "./scene";
 
 /** The island schema that adds shift_quest_island_roots (20261113090000_shift_quest_roots.sql). */
@@ -66,22 +68,6 @@ export function withRoots<P extends { slot: number; plain?: boolean; mine?: bool
     const level = plot.plain ? 0 : (plot.mine && myRoots !== null ? myRoots : (roots.get(plot.slot) ?? 0));
     return (level > 0 ? { ...rest, roots: level } : rest) as P;
   });
-}
-
-const versions = new WeakMap<QuestApi, Promise<number>>();
-
-/** The database's island schema, read once per api (a failed read is tried again next time). */
-function schemaOf(api: QuestApi): Promise<number> {
-  let version = versions.get(api);
-  if (!version) {
-    const read = api.call<number>("shift_quest_schema_version").then((v) => Number(v));
-    version = read;
-    versions.set(api, read);
-    read.catch(() => {
-      if (versions.get(api) === read) versions.delete(api);
-    });
-  }
-  return version;
 }
 
 const logged = new Set<string>();

@@ -145,7 +145,7 @@ async function main(): Promise<void> {
   const count = async (sql: string, args: unknown[] = []) => Number(await scalar(db, sql, args));
 
   // --- Schema, privileges, row security ------------------------------------------------
-  check(Number(await call(web, "shift_quest_schema_version")) === 11, "the website reads schema version 11 (it needs 6 or more)");
+  check(Number(await call(web, "shift_quest_schema_version")) === 12, "the website reads schema version 12 (it needs 6 or more)");
 
   const executable: string[] = (await db.query(`
     select p.oid::regprocedure::text as sig

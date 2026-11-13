@@ -736,3 +736,18 @@ for `SHIFT_QUEST_DATABASE_URL` with `pnpm dev`) and a command that approves
 every pending submission as the stand-in reviewer `100000000000000701` (you
 cannot approve your own work). Tested in
 `supabase/tests/shift_quests/web_board.ts`.
+
+### Atomic campfire round close (schema 12)
+
+The ✍️ form captures the actor's open work-session UUID with one fast
+`shift_quest_work_open(actor)` read before opening the modal. Submission uses
+`shift_quest_round_close(actor, session, learned, stuck)` to close that exact
+session and write the private journal note in one transaction, reusing
+`shift_quest_progress_add` validation and audit. A failed journal write leaves
+the session open for retry. A stale form still journals under its captured
+session's intention without closing a newer session. A null, deleted, or
+foreign session journals under the campfire default and closes nothing.
+Pre-upgrade forms without a captured UUID also journal only on schema 12.
+Below schema 12 the bot keeps the legacy two-call close path. Schema reads are
+cached per API instance, so restart the bot after the maintainer applies
+`20261114090000_shift_quest_round_close.sql`. This change does not apply it.
