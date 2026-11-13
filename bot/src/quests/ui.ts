@@ -251,6 +251,8 @@ export type Field =
       long?: boolean;
       required?: boolean;
       max?: number;
+      /** Fewest characters Discord accepts (it then refuses the submit with its own hint). */
+      min?: number;
       value?: string | null;
       placeholder?: string;
     }
@@ -284,6 +286,7 @@ export function modal(id: string, title: string, fields: Field[]): ModalBuilder 
         .setStyle(field.long ? TextInputStyle.Paragraph : TextInputStyle.Short)
         .setRequired(field.required ?? false)
         .setMaxLength(field.max ?? (field.long ? 1000 : 200));
+      if (field.min) input.setMinLength(field.min);
       if (field.value) input.setValue(field.value.slice(0, field.max ?? 4000));
       if (field.placeholder) input.setPlaceholder(field.placeholder.slice(0, 100));
       label.setTextInputComponent(input);

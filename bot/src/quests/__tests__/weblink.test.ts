@@ -3,7 +3,7 @@
  */
 import { ButtonStyle } from "discord.js";
 
-import { ISLAND_LINK_LABEL, islandLinkButton, islandWebUrl } from "../weblink";
+import { GUIDE_LINK_LABEL, ISLAND_LINK_LABEL, guideLinkButton, islandGuideUrl, islandLinkButton, islandWebUrl } from "../weblink";
 
 /** The island on the website: the bot's link button reads its address from the environment only. */
 
@@ -98,5 +98,22 @@ describe("islandLinkButton", () => {
   it("is null when no address is configured or the address is refused", () => {
     expect(islandLinkButton(env({}))).toBeNull();
     expect(islandLinkButton(env({ SHIFT_ISLAND_URL: "http://example.com" }))).toBeNull();
+  });
+});
+
+describe("islandGuideUrl", () => {
+  it("is the guide under the island's address, from either setting", () => {
+    expect(islandGuideUrl(env({ NEXT_PUBLIC_SITE_URL: "https://www.passionseed.org/" }))).toBe("https://www.passionseed.org/shift/island/guide");
+    expect(islandGuideUrl(env({ SHIFT_ISLAND_URL: "https://island.example.org/shift/island/" }))).toBe("https://island.example.org/shift/island/guide");
+    expect(guideLinkButton(env({ NEXT_PUBLIC_SITE_URL: "https://www.passionseed.org" }))?.toJSON()).toEqual(
+      expect.objectContaining({ style: ButtonStyle.Link, url: "https://www.passionseed.org/shift/island/guide", label: GUIDE_LINK_LABEL })
+    );
+  });
+
+  it("is null without an address, with a refused one, or when the island's address carries a query", () => {
+    expect(islandGuideUrl(env({}))).toBeNull();
+    expect(islandGuideUrl(env({ SHIFT_ISLAND_URL: "http://example.com" }))).toBeNull();
+    expect(islandGuideUrl(env({ SHIFT_ISLAND_URL: "https://example.com/shift/island?x=1" }))).toBeNull();
+    expect(guideLinkButton(env({}))).toBeNull();
   });
 });

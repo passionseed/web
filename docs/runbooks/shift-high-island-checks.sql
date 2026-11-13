@@ -73,13 +73,15 @@ web_allow(sig) AS (VALUES
   ('shift_quest_island_news(text)'),
   ('shift_quest_digest_inputs(date,text)'),
   ('shift_quest_digest_save(date,text,jsonb)'),
-  ('shift_quest_digest_hide(text,integer,boolean,text)')
+  ('shift_quest_digest_hide(text,integer,boolean,text)'),
+  -- 20261113090000_shift_quest_roots.
+  ('shift_quest_island_roots()')
 )
--- The schema: 9 is every migration on this branch (the player, economy and consent, 095000).
-SELECT 'schema: shift_quest_schema_version() is ' || coalesce(v::text, 'missing') || ', expected 9' AS problem
+-- The schema: 10 is every migration on this branch (roots, 20261113090000).
+SELECT 'schema: shift_quest_schema_version() is ' || coalesce(v::text, 'missing') || ', expected 10' AS problem
 FROM (SELECT CASE WHEN to_regprocedure('public.shift_quest_schema_version()') IS NULL THEN NULL
   ELSE public.shift_quest_schema_version() END AS v) s
-WHERE v IS DISTINCT FROM 9
+WHERE v IS DISTINCT FROM 10
 UNION ALL
 -- The two logins: they exist, NOINHERIT, member of no role, their connection
 -- limit and statement_timeout. LOGIN itself is step D, so it is not checked here.

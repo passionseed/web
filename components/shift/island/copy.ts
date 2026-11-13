@@ -219,6 +219,8 @@ export const HUD = {
   viewHeading: "มุมมองเกาะ",
   /** The roving group of plot buttons over the island. */
   plots: "แปลงบนเกาะ",
+  /** DRAFT: the ⋯ menu's link to the guide page (/shift/island/guide; the 📖 is drawn beside it, aria-hidden). */
+  guide: "คู่มือเกาะ: ต้นไม้ ราก รอบกองไฟ",
   /** DRAFT: the ⋯ menu's link to the suggestions channel on Discord (the 💡 is drawn beside it, aria-hidden). */
   suggest: "เสนอไอเดีย / แจ้งบั๊ก",
   /** DRAFT: a group space, so say who sees the post. */

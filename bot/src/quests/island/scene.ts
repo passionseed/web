@@ -28,6 +28,12 @@ export interface IslandPlot {
   mine: boolean;
   /** The viewer may see only the slot (no full consent): drawn as an empty plot, whatever else it carries. */
   plain?: boolean;
+  /**
+   * Roots level 0..3 from the team's reflections (shift_quest_island_roots,
+   * schema 10; island/roots.ts merges it by slot). Absent is 0. Drawn over
+   * the tree's soil; never on a plain plot.
+   */
+  roots?: number;
 }
 
 /** Why a render failed. The detail is a sprite key or a slot, never student text. */
@@ -56,6 +62,10 @@ const PLAZA_H = 4;
 const LAND_X = 0.44;
 const LAND_Y = 0.4;
 const ROWS_PER_COL = 0.56;
+/** Highest roots level (roots_1..roots_3). */
+export const MAX_ROOTS = 3;
+/** The first soil row of every tree sprite: roots are drawn from here down, inside the tree's own box. */
+export const ROOTS_ROW = 30;
 
 /**
  * Deterministic noise for a tile, keyed by its offset from the plaza, so the
@@ -298,13 +308,20 @@ interface Arrangement {
 
 function arrange(plots: IslandPlot[]): Arrangement {
   const spots = plotSpots(plots);
-  // A plain plot is a slot only: the database already sends stage 0 and no
-  // decorations for one; drawing it empty here too keeps that true for any input.
+  // A plain plot is a slot only: the database already sends stage 0, no
+  // decorations and no roots for one; drawing it empty here too keeps that
+  // true for any input.
   const ordered = plots
-    .map((p) => (p.plain ? { ...p, stage: 0, visitor: false, key: false, helper: false, lantern: false } : p))
+    .map((p) => (p.plain ? { ...p, stage: 0, visitor: false, key: false, helper: false, lantern: false, roots: 0 } : p))
     .sort((a, b) => a.slot - b.slot);
   const layout = layoutFor(ordered.length ? ordered[ordered.length - 1].slot : 0);
   return { spots, ordered, layout };
+}
+
+/** A roots level as drawn: 0..MAX_ROOTS, rounded and clamped; anything not a finite number is 0. */
+export function rootsLevel(value: unknown): number {
+  const n = typeof value === "number" ? value : NaN;
+  return Number.isFinite(n) ? Math.min(Math.max(Math.round(n), 0), MAX_ROOTS) : 0;
 }
 
 /** A tree as drawn: its stage sprite and that sprite's top-left corner, in image pixels at scale 1. */
@@ -334,6 +351,15 @@ function placeTrees({ spots, ordered, layout }: Arrangement): PlacedTree[] {
     const top = (sy + 1) * TILE - size.h;
     return { plot, stage, sprite, size, left, top };
   });
+}
+
+/** Where a tree's roots are drawn, or null (roots 0). The sprite is checked so a missing one fails like a tree's. */
+function rootsSprite(plot: IslandPlot, left: number, top: number): SceneTree["roots"] {
+  const level = rootsLevel(plot.roots);
+  if (level === 0) return null;
+  const sprite = `roots_${level}`;
+  spriteSize(sprite);
+  return { sprite, x: left, y: top + ROOTS_ROW };
 }
 
 /** A tree's number tag: centred under the tree, on its soil line. */
@@ -391,6 +417,13 @@ export interface SceneTree {
   visitor: ScenePoint | null;
   /** Only an earned lantern is drawn. */
   lantern: ScenePoint | null;
+  /**
+   * The roots overlay ("roots_1".."roots_3") over the tree's soil, at
+   * (left, top + ROOTS_ROW): inside the tree's box, so it never covers a tag.
+   * Null for roots 0 and for every plain plot. Absent in scenes built before
+   * roots (treat as null).
+   */
+  roots?: { sprite: string; x: number; y: number } | null;
   mine: boolean;
 }
 
@@ -506,6 +539,7 @@ export function buildScene(plots: IslandPlot[], options: { markMine?: boolean; f
     key: plot.key ? { x: left - 6, y: top + size.h - 22 } : null,
     visitor: plot.visitor ? { x: left + size.w - 2, y: top + size.h - 18 } : null,
     lantern: plot.lantern ? { x: left + size.w + 6, y: top + size.h - 20 } : null,
+    roots: rootsSprite(plot, left, top),
     mine: plot.mine,
   }));
   const tags: SceneTag[] = placed.map((tree) => ({ slot: tree.plot.slot, ...treeTag(tree, glyph) }));

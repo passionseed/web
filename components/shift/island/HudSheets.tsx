@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useId, type ReactNode } from "react";
 
 import { PixelIcon } from "@/components/shift/poster/pixel/PixelRects";
@@ -131,6 +132,12 @@ export function MenuSheet({
             {onPrizes ? <MenuRow icon="trophy" label={PRIZES_UI.menu} onClick={onPrizes} /> : null}
           </section>
         ) : null}
+        <section className={world.menuList}>
+          <Link className={styles.quietButton} href="/shift/island/guide">
+            <span aria-hidden="true">📖 </span>
+            {HUD.guide}
+          </Link>
+        </section>
         {suggestUrl ? (
           <section className={world.menuList}>
             <a

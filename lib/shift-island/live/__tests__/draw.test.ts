@@ -25,6 +25,11 @@ function plots(n: number): IslandPlot[] {
   }));
 }
 
+/** Roots 0..3 by slot, so every level is on the island. */
+function withRootLevels(input: IslandPlot[]): IslandPlot[] {
+  return input.map((p) => ({ ...p, roots: p.slot % 4 }));
+}
+
 interface Setup {
   scene: IslandScene;
   model: SceneModel;
@@ -99,6 +104,16 @@ describe("the living island's still daytime frame", () => {
       expect([n, differing(frame.rgb(), pngRgb(input, options))]).toEqual([n, 0]);
     }
   });
+
+  it("draws roots exactly where the PNG does", () => {
+    const input = withRootLevels(plots(12));
+    const options = { markMine: true, festival: false };
+    const s = setup(buildScene(input, options), "day");
+    const frame = paintFull(s, s.motion(0, { still: true }));
+    expect(differing(frame.rgb(), pngRgb(input, options))).toBe(0);
+    // And the roots are really there: the picture differs from the same island without them.
+    expect(differing(frame.rgb(), pngRgb(plots(12), options))).toBeGreaterThan(0);
+  });
 });
 
 describe("incremental painting", () => {
@@ -131,6 +146,11 @@ describe("incremental painting", () => {
     const s = setup(buildScene(plots(6), { markMine: true, festival: true }), "day");
     const ticks = Array.from({ length: 70 }, (_, k) => k + 10);
     expect(replay(s, ticks)).toBeGreaterThan(20);
+  });
+
+  it("keeps roots through a gust: a swaying tree's repaint redraws its roots", () => {
+    const s = setup(buildScene(withRootLevels(plots(8)), { markMine: false, festival: false }), "day");
+    expect(replay(s, Array.from({ length: 70 }, (_, k) => k + 10))).toBeGreaterThan(20);
   });
 
   it("does the same at night, with lantern glows, lamps, the festoon and a story actor", () => {

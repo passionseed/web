@@ -22,6 +22,9 @@
 #   player    every migration applied twice, then player.ts (consent, the shop
 #             gates, staff awards, the character and wallet reads, AI island
 #             news), with consent on and off
+#   roots     every migration applied twice, then roots.ts (the roots read,
+#             20261113090000: what counts, the daily cap, the levels, plain
+#             plots), with consent on and off
 #
 #   supabase/tests/shift_quests/run-local.sh       # or: pnpm test:db:quests
 #   PG_BIN=/usr/lib/postgresql/15/bin supabase/tests/shift_quests/run-local.sh
@@ -235,7 +238,9 @@ web_allow(sig) AS (VALUES
   ('shift_quest_island_news(text)'),
   ('shift_quest_digest_inputs(date,text)'),
   ('shift_quest_digest_save(date,text,jsonb)'),
-  ('shift_quest_digest_hide(text,integer,boolean,text)')
+  ('shift_quest_digest_hide(text,integer,boolean,text)'),
+  -- 20261113090000_shift_quest_roots.
+  ('shift_quest_island_roots()')
 ), web_applied AS (
   SELECT to_regprocedure('public.shift_quest_board(text)') IS NOT NULL AS yes
 )
@@ -298,7 +303,7 @@ echo "# migrations"
 for f in "${MIGRATIONS[@]}"; do echo "apply $(basename "$f")"; done
 new_db once
 apply once "single pass" "${MIGRATIONS[@]}"
-for DB in rules island flows islandflows board canvas campfire live player; do
+for DB in rules island flows islandflows board canvas campfire live player roots; do
   new_db "$DB"
   apply "$DB" "first pass" "${MIGRATIONS[@]}"
   apply "$DB" "second pass" "${MIGRATIONS[@]}"
@@ -370,6 +375,7 @@ suite "web canvas link" canvas web_canvas.ts
 suite "campfire" campfire campfire.ts
 suite "live post" live live.ts
 suite "player, economy, news and consent" player player.ts
+suite "roots" roots roots.ts
 # island_rules.ts runs against wave 1 alone once it knows to skip season cases.
 if [ "${#WAVE1[@]}" -lt "${#MIGRATIONS[@]}" ] && grep -q SHIFT_QUESTS_WAVE "$HERE/island_rules.ts"; then
   export SHIFT_QUESTS_WAVE=1

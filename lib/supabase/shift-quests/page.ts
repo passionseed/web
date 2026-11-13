@@ -1,6 +1,7 @@
 import "server-only";
 
 import { QuestDbError, QuestError, type QuestApi } from "@/bot/src/quests/api";
+import { readRoots, withRoots, type RootsBySlot } from "@/bot/src/quests/island/roots";
 import type { CanvasLinkState } from "@/lib/shift-island/quest-canvas";
 
 import { campfireOf } from "./campfire";
@@ -32,6 +33,9 @@ interface ProjectListRow {
 }
 
 const list = <T>(value: T[] | null | undefined): T[] => (Array.isArray(value) ? value : []);
+
+/** The log prefix of a failed roots read (logged once per cause). */
+const ROOTS_LOG = "[shift-island]";
 
 function normalizeIsland(raw: IslandView | null | undefined): IslandView {
   const project = raw?.project ?? null;
@@ -65,9 +69,10 @@ function normalizePlot(plot: Partial<IslandMapPlot> & Pick<IslandMapPlot, "slot"
   };
 }
 
-function normalizeMap(raw: IslandMapData | null | undefined): IslandMapData {
+/** The map with every field checked and, from schema 10, each shown tree's roots merged by slot (none on a plain plot). */
+function normalizeMap(raw: IslandMapData | null | undefined, roots: RootsBySlot = new Map()): IslandMapData {
   return {
-    plots: list(raw?.plots).map(normalizePlot),
+    plots: withRoots(list(raw?.plots).map(normalizePlot), roots),
     goal: raw?.goal ?? null,
     season: raw?.season ?? null,
   };
@@ -135,13 +140,13 @@ async function canvasLinkOf(api: QuestApi, actor: string): Promise<CanvasLinkSta
  * suggestions link in both cases. Throws QuestError / QuestDbError from the
  * calls, except the canvas link, which falls back to unlinked, and the
  * campfire and the suggestions link, which fall back to null (no campfire
- * drawn, no link in the menu), and the character sheet, consent and island
+ * drawn, no link in the menu), the character sheet, consent and island
  * news, which fall back to null too (no stats or coin pill, nothing gated,
- * no news).
+ * no news), and the roots (schema 10), which fall back to none.
  */
 export async function getIslandPage(viewer: ReadyViewer): Promise<IslandPageData> {
   const api = questApi();
-  const [islandRaw, mapRaw, suggestUrl, character, consent, news] = await Promise.all([
+  const [islandRaw, mapRaw, suggestUrl, character, consent, news, roots] = await Promise.all([
     api.call<IslandView>("shift_quest_island", viewer.actor),
     api.call<IslandMapData>("shift_quest_island_map", viewer.actor),
     suggestUrlOf(api, viewer.actor),
@@ -149,6 +154,8 @@ export async function getIslandPage(viewer: ReadyViewer): Promise<IslandPageData
     soft(characterOf(api, viewer.actor)),
     soft(consentOf(api, { actor: viewer.actor, userId: viewer.userId })),
     soft(newsOf(api, viewer.actor)),
+    // Schema 10: the shown trees' roots. Never throws: no roots on failure, logged once.
+    readRoots(api, ROOTS_LOG),
   ]);
   const island = normalizeIsland(islandRaw);
 
@@ -178,7 +185,7 @@ export async function getIslandPage(viewer: ReadyViewer): Promise<IslandPageData
     me: viewer.me,
     unread: Number(viewer.session.unread) || 0,
     island,
-    map: normalizeMap(mapRaw),
+    map: normalizeMap(mapRaw, roots),
     board,
     invites,
     canvasLink,
@@ -202,7 +209,12 @@ function soft<T>(read: Promise<T | null>): Promise<T | null> {
   });
 }
 
-/** shift_quest_island_map for the picture route. Throws QuestError / QuestDbError. */
+/** shift_quest_island_map for the picture route, with roots as on the page. Throws QuestError / QuestDbError (roots never throw). */
 export async function getIslandMap(actor: string): Promise<IslandMapData> {
-  return normalizeMap(await questApi().call<IslandMapData>("shift_quest_island_map", actor));
+  const api = questApi();
+  const [map, roots] = await Promise.all([
+    api.call<IslandMapData>("shift_quest_island_map", actor),
+    readRoots(api, ROOTS_LOG),
+  ]);
+  return normalizeMap(map, roots);
 }

@@ -1,0 +1,551 @@
+/*
+ * The island guide (/shift/island/guide). Sits inside IslandShell, so the
+ * island's tokens (--isl-*, --text*, --notch, --ease-*) come from its .page.
+ * One reading column, phone first: every grid sizes to the screen, never to
+ * a wide child, and nothing scrolls sideways.
+ *
+ * Motion: the only glow is .ei-button-dawn (globals.css), which IslandShell
+ * replays on touch through InViewAnimator. Cards are .ei-card--static.
+ */
+
+.guide {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+  width: min(100%, 640px);
+  margin: 0 auto;
+  padding-top: calc(32px + env(safe-area-inset-top));
+}
+
+/* ---------------------------------------------------------------- hero */
+
+.hero {
+  display: grid;
+  gap: 10px;
+  padding: 16px 0 4px;
+  text-align: center;
+}
+
+.eyebrow {
+  margin: 0;
+  font-family: var(--font-tiny5), monospace;
+  font-size: 14px;
+  letter-spacing: 0.12em;
+  color: var(--isl-lamp);
+}
+
+.heroHeading {
+  margin: 0;
+  font-size: clamp(32px, 9vw, 44px);
+  line-height: 1.2;
+  color: var(--text-hi);
+}
+
+.lede {
+  margin: 0 auto;
+  max-width: 32ch;
+  color: var(--text);
+}
+
+/* Seven trees from seed to blossom, standing on one line of sand. */
+.treeRow {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 48px));
+  justify-content: center;
+  align-items: end;
+  gap: 2px;
+  margin-top: 8px;
+  padding-bottom: 6px;
+  border-bottom: 4px solid var(--isl-sand);
+  box-shadow: 0 4px 0 var(--isl-wood);
+}
+
+.treeRowSprite {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* ---------------------------------------------------------------- contents */
+
+.toc {
+  display: grid;
+  gap: 10px;
+}
+
+.tocLabel {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+.tocList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tocLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 14px;
+  font-size: 15px;
+  color: #bfdbfe;
+  text-decoration: none;
+  background: rgba(59, 130, 246, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(147, 197, 253, 0.3);
+  clip-path: var(--notch);
+  transition: background-color var(--snap) var(--ease-snap);
+}
+
+.tocLink:hover {
+  background: rgba(59, 130, 246, 0.18);
+}
+
+.tocLink:focus-visible {
+  /* The notch clips anything outside the box: the ring goes inside. */
+  outline: 2px solid var(--action-soft);
+  outline-offset: -4px;
+}
+
+.tocNum {
+  font-family: var(--font-tiny5), monospace;
+  font-size: 12px;
+  color: var(--isl-lamp);
+}
+
+/* ---------------------------------------------------------------- sections */
+
+.section {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  padding: 22px 18px;
+  scroll-margin-top: 16px;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.num {
+  flex: none;
+  font-family: var(--font-tiny5), monospace;
+  font-size: 16px;
+  color: var(--isl-lamp);
+}
+
+.icon {
+  flex: none;
+}
+
+.sectionTitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  min-width: 0;
+  font-size: 22px;
+  line-height: 1.3;
+  color: var(--text-hi);
+}
+
+.badge {
+  padding: 1px 8px;
+  font-family: var(--font-bai-jamjuree), sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #10291c;
+  background: var(--isl-leaf-hi);
+  clip-path: var(--notch);
+}
+
+.subTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-hi);
+}
+
+.lines {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lines li {
+  position: relative;
+  padding-left: 18px;
+}
+
+/* A square leaf for a bullet, the island's own pixel. */
+.lines li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0.65em;
+  width: 6px;
+  height: 6px;
+  background: var(--isl-leaf-hi);
+}
+
+.callout {
+  margin: 0;
+  padding: 12px 14px;
+  font-family: var(--font-kodchasan), var(--font-bai-jamjuree), sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--text-hi);
+  background: rgba(244, 197, 106, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(244, 197, 106, 0.45);
+  clip-path: var(--notch);
+}
+
+.rule {
+  margin: 0;
+  padding: 10px 14px;
+  font-size: 15px;
+  color: var(--isl-cream);
+  background: rgba(80, 151, 107, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(120, 184, 128, 0.35);
+  clip-path: var(--notch);
+}
+
+.note {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  margin: 0;
+  color: var(--text);
+}
+
+.noteIcon {
+  margin-top: 5px;
+}
+
+.hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+
+/* ---------------------------------------------------------------- island picture */
+
+.figure {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.sample {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+  clip-path: var(--notch);
+}
+
+.caption {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+
+/* ---------------------------------------------------------------- stages */
+
+.stages {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stage,
+.root {
+  display: grid;
+  justify-items: center;
+  align-content: end;
+  gap: 2px;
+  padding: 8px 4px 6px;
+  text-align: center;
+  background: rgba(67, 142, 172, 0.12);
+  clip-path: var(--notch);
+}
+
+.stageSprite {
+  display: block;
+  width: 48px;
+  height: auto;
+}
+
+.stageNum {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.stageName {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text-hi);
+}
+
+/* ---------------------------------------------------------------- roots */
+
+.roots {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rootPicture {
+  display: block;
+  width: 100%;
+  max-width: 96px;
+  height: auto;
+}
+
+/* ---------------------------------------------------------------- campfire */
+
+.fireRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+}
+
+.fire {
+  display: block;
+  width: 136px;
+  height: auto;
+  justify-self: center;
+}
+
+@media (min-width: 520px) {
+  .fireRow {
+    grid-template-columns: 136px minmax(0, 1fr);
+  }
+}
+
+.rhythm {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.rhythmBar {
+  display: flex;
+  height: 40px;
+  gap: 2px;
+}
+
+.rhythmFocus,
+.rhythmRest {
+  position: relative;
+  flex-basis: 0;
+  min-width: 0;
+  clip-path: var(--notch);
+}
+
+.rhythmFocus {
+  background: linear-gradient(180deg, var(--isl-lamp), var(--isl-coral));
+}
+
+.rhythmRest {
+  background: linear-gradient(180deg, #8acbd0, var(--isl-water));
+}
+
+.rhythmAt {
+  position: absolute;
+  left: 4px;
+  bottom: 2px;
+  font-family: var(--font-tiny5), monospace;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--isl-ink);
+}
+
+/* The rest blocks are too narrow on a phone for a label. */
+.rhythmRest .rhythmAt {
+  display: none;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.legendFocus,
+.legendRest {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legendFocus::before,
+.legendRest::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+}
+
+.legendFocus::before {
+  background: var(--isl-lamp);
+}
+
+.legendRest::before {
+  background: #8acbd0;
+}
+
+.steps {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+  justify-items: start;
+}
+
+.chip,
+.chipQuiet,
+.command {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 3px 10px;
+  font-size: 14px;
+  font-weight: 600;
+  clip-path: var(--notch);
+}
+
+/* Looks like the Discord button it names; it is not a button here. */
+.chip {
+  color: #fff;
+  background: #4752c4;
+}
+
+.chipQuiet {
+  color: var(--text-hi);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.command {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--isl-cream);
+  background: rgba(52, 68, 71, 0.85);
+}
+
+.aside {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  clip-path: var(--notch);
+}
+
+/* ---------------------------------------------------------------- start */
+
+.or {
+  margin: 0;
+  color: var(--text);
+}
+
+.actions {
+  display: grid;
+  gap: 10px;
+}
+
+.primary {
+  justify-content: center;
+  width: 100%;
+  min-height: 48px;
+  font-size: 16px;
+  text-decoration: none;
+}
+
+.quiet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 8px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #bfdbfe;
+  text-decoration: none;
+  background: rgba(59, 130, 246, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(147, 197, 253, 0.3);
+  clip-path: var(--notch);
+  transition: background-color var(--snap) var(--ease-snap);
+}
+
+.quiet:hover {
+  background: rgba(59, 130, 246, 0.16);
+}
+
+.quiet:focus-visible {
+  outline: 2px solid var(--action-soft);
+  outline-offset: -4px;
+}
+
+/* ---------------------------------------------------------------- footer */
+
+.footer {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 8px 0 16px;
+  text-align: center;
+  color: var(--text-dim);
+}
+
+.footer p {
+  margin: 0;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--action-soft);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tocLink,
+  .quiet {
+    transition: none;
+  }
+}

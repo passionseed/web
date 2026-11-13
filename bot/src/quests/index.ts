@@ -8,6 +8,7 @@ import { loadCtx, requireStudent } from "./context";
 import { admin } from "./handlers/admin";
 import { island } from "./handlers/island";
 import { panel } from "./handlers/panel";
+import { rounds } from "./handlers/rounds";
 import { squad } from "./handlers/squad";
 import { journal } from "./handlers/journal";
 import { project, newProjectModal } from "./handlers/project";
@@ -18,13 +19,14 @@ import type { ActionHandler, AutocompleteHandler, CommandHandler, HandlerSet } f
 import { parseCid } from "./ids";
 import { digestFor, startDigestPost } from "./digest";
 import { liveFor, startLivePost } from "./live";
+import { startRounds } from "./rounds";
 import { warmStory } from "./story";
 import { commandIdMap, setCommandIds, showError } from "./ui";
 import { startOutbox } from "./outbox";
 
 export { registerQuestCommands } from "./commands";
 
-const SETS: HandlerSet[] = [student, project, quest, journal, review, admin, island, squad, panel];
+const SETS: HandlerSet[] = [student, project, quest, journal, review, admin, island, squad, panel, rounds];
 
 function merge<T>(pick: (set: HandlerSet) => Record<string, T> | undefined): Map<string, T> {
   const map = new Map<string, T>();
@@ -110,8 +112,13 @@ export async function handleInteraction(api: QuestApi, guildId: string, i: Inter
  * the live post (LIVE_SCHEMA).
  * 9 (20261111095000_shift_quest_player) adds the daily island news post;
  * also optional: below 9 the bot runs without it (DIGEST_SCHEMA).
+ * 10 (20261113090000_shift_quest_roots) adds tree roots from reflections;
+ * also optional: below 10 every tree is drawn without roots (ROOTS_SCHEMA).
  */
 export const REQUIRED_SCHEMA = 2;
+
+/** The island schema that adds roots: read where the pictures are drawn (island/roots.ts). */
+export { ROOTS_SCHEMA } from "./island/roots";
 
 /**
  * Reads the database's island schema and refuses to start a bot that is newer
@@ -206,6 +213,8 @@ export async function registerShiftQuests(client: Client, env: ShiftQuestsEnv): 
   const outbox = startOutbox(client, api, () => connected);
   // Started only on a database that has the campfire functions (schema 7).
   const campfire = campfireFor(version, () => startCampfire(client, api, env.guildId, () => connected));
+  // Focus and rest rounds in the campfire's chat, only while someone sits at it (rounds.ts).
+  const roundLoop = campfire ? startRounds(client, campfire) : null;
   // Started only on a database that has the live post functions (schema 8).
   const live = liveFor(version, () => startLivePost(client, api, env.guildId, () => connected));
   // Started only on a database that has the island news functions (schema 9): one post a day, no pings.
@@ -217,6 +226,8 @@ export async function registerShiftQuests(client: Client, env: ShiftQuestsEnv): 
       await digest?.stop();
       // The live post: it leaves its message as it is, so it only waits for a running edit.
       await live?.stop();
+      // The rounds: their message goes, since no bot would keep it.
+      await roundLoop?.stop();
       // Then the campfire: it still needs the pool to clear the campfire.
       await campfire?.stop();
       await outbox.stop();

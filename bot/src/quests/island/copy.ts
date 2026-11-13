@@ -67,6 +67,9 @@ export const I = {
    * No date: the island card shows the season's own. Voluntary, no promise of
    * admissions, money or a role.
    */
+  // DRAFT for the Thai review: the campfire rounds and the roots, in two lines (rounds.ts, roots).
+  howRounds:
+    "🔥 **รอบกองไฟ** เข้าห้องเสียงกองไฟ โฟกัสพร้อมกัน แล้วพักสั้นๆ ตามรอบ\n🌱 **ราก** ปิดรอบด้วย ✍️ เขียนว่าได้อะไร รากต้นไม้งอกลึกขึ้น (ขั้นของต้นไม้ยังมาจากงานที่พี่เลี้ยงยืนยัน)",
   howSeason: [
     "🏮 ปลายซีซันมีคืนเทศกาล Demo Day ทั้งเกาะมาโชว์งานด้วยกัน",
     "🌅 ซีซันจบ ต้นไม้ยังอยู่ วันหนึ่งคุณกลับมาช่วยคนที่เพิ่งขึ้นเกาะได้",

@@ -15,6 +15,8 @@ const dimensions: Record<string, [number, number]> = {
   ...Object.fromEntries(Array.from({ length: 8 }, (_, stage) => [`stage_${stage}`, [32, 40]])),
   visitor: [10, 14], key_flag: [10, 16], lantern: [8, 14], marker: [9, 9],
   banner: [48, 20], well: [24, 24], boat: [20, 12],
+  // Roots: overlays on a tree's soil (rows 30-39), one per level.
+  ...Object.fromEntries(Array.from({ length: 3 }, (_, k) => [`roots_${k + 1}`, [32, 10]])),
 };
 
 function validate(): Record<string, [number, number, number]> {

@@ -12,6 +12,8 @@ export const ISLAND_WEB_PATH = "/shift/island";
 
 /** The link button's label. */
 export const ISLAND_LINK_LABEL = "🌐 เปิดเกาะบนเว็บ";
+/** The guide page's link button (DRAFT for the Thai review). */
+export const GUIDE_LINK_LABEL = "📖 คู่มือเกาะ";
 
 /** Discord's limit for a link button's URL. */
 const MAX_URL = 512;
@@ -51,6 +53,22 @@ export function islandWebUrl(env: NodeJS.ProcessEnv = process.env): string | nul
   // A site address with a query or a fragment would swallow the appended path.
   if (!explicit && (url.search || url.hash || !url.pathname.endsWith(ISLAND_WEB_PATH))) return null;
   return candidate;
+}
+
+/** The guide page under the island's address, or null when the island has none (or carries a query). */
+export function islandGuideUrl(env: NodeJS.ProcessEnv = process.env): string | null {
+  const base = islandWebUrl(env);
+  if (!base) return null;
+  const url = new URL(base);
+  if (url.search || url.hash) return null;
+  url.pathname = `${url.pathname.replace(/\/+$/, "")}/guide`;
+  return url.toString();
+}
+
+/** "📖 คู่มือเกาะ" opening the guide page, or null when no address is configured. */
+export function guideLinkButton(env: NodeJS.ProcessEnv = process.env, label: string = GUIDE_LINK_LABEL): ButtonBuilder | null {
+  const url = islandGuideUrl(env);
+  return url ? new ButtonBuilder().setStyle(ButtonStyle.Link).setURL(url).setLabel(label) : null;
 }
 
 /** "🌐 เปิดเกาะบนเว็บ" (or another label) opening the island page, or null when no address is configured. */

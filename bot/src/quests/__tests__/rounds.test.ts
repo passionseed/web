@@ -1,0 +1,295 @@
+/**
+ * @jest-environment node
+ */
+import { MessageFlags, type Client } from "discord.js";
+
+import { ACTION_HANDLERS } from "..";
+import { QuestError, type QuestApi, type Session } from "../api";
+import type { Ctx } from "../context";
+import { T } from "../copy";
+import { R } from "../rounds-copy";
+import { ROUND_MARKER, roundAt, roundView, startRounds, type RoundDeps } from "../rounds";
+import { renderView } from "../ui";
+import { bodyText, customIds, viewText } from "../test-helpers/view";
+
+const MIN = 60_000;
+/** 2026-11-13 10:00 Bangkok (03:00 UTC). */
+const TEN = Date.UTC(2026, 10, 13, 3, 0, 0);
+
+describe("roundAt", () => {
+  it("runs two rounds an hour on the clock: focus :00 to :25 and :30 to :55, rest after each", () => {
+    const at = (m: number) => roundAt(TEN + m * MIN + 30_000);
+    expect([0, 24, 25, 29, 30, 54, 55, 59].map((m) => at(m).phase)).toEqual(["focus", "focus", "rest", "rest", "focus", "focus", "rest", "rest"]);
+    expect(at(0).round).toBe(at(29).round);
+    expect(at(30).round).toBe(at(0).round + 1);
+    expect(at(10).restAt).toBe((TEN + 25 * MIN) / 1000);
+    expect(at(10).nextAt).toBe((TEN + 30 * MIN) / 1000);
+    expect(at(40).restAt).toBe((TEN + 55 * MIN) / 1000);
+  });
+});
+
+describe("roundView", () => {
+  it("focus: when the rest starts, 🎯, the marker, nobody's minutes", () => {
+    const p = renderView(roundView(roundAt(TEN)), { ephemeral: false });
+    expect(p.flags).toBe(MessageFlags.IsComponentsV2);
+    expect(bodyText(p).startsWith(`### ${R.focusTitle}\n`)).toBe(true);
+    expect(viewText(p)).toContain(`<t:${(TEN + 25 * MIN) / 1000}:t>`);
+    expect(viewText(p)).toContain(ROUND_MARKER);
+    expect(customIds(p)).toEqual(["sq|rd_aim"]);
+  });
+
+  it("rest: a diffuse-mode tip that changes each round, ✍️ first", () => {
+    const a = renderView(roundView(roundAt(TEN + 26 * MIN)), { ephemeral: false });
+    const b = renderView(roundView(roundAt(TEN + 56 * MIN)), { ephemeral: false });
+    expect(bodyText(a).startsWith(`### ${R.restTitle}\n`)).toBe(true);
+    expect(customIds(a)).toEqual(["sq|rd_close", "sq|rd_aim"]);
+    expect(viewText(a)).not.toBe(viewText(b));
+    expect(R.tips.some((tip) => viewText(a).includes(tip))).toBe(true);
+  });
+
+  it("copy has no em dash and no streak wording", () => {
+    const text = JSON.stringify(R);
+    expect(text).not.toContain("—");
+    expect(text).not.toContain("น้องๆ");
+    expect(text).not.toMatch(/สตรีค|streak|ติดต่อกัน/);
+  });
+});
+
+/** A voice channel's chat that records what the loop does. */
+function world(start = TEN) {
+  let now = start;
+  let sitters = 0;
+  let room: string | null = "700000000000000001";
+  const log: string[] = [];
+  const posted: { id: string; text: string; deleted: boolean }[] = [];
+  let next = 1;
+  const message = (text: string, mine = true) => {
+    const m = {
+      id: `m${next++}`,
+      text,
+      deleted: false,
+      author: { id: mine ? "bot" : "someone" },
+      components: [{ text }],
+      edit: async (payload: unknown) => {
+        m.text = JSON.stringify(payload);
+        m.components = [{ text: m.text }];
+        log.push(`edit ${m.id}`);
+      },
+      delete: async () => {
+        m.deleted = true;
+        log.push(`delete ${m.id}`);
+      },
+    };
+    return m;
+  };
+  const leftover = message(`old round ${ROUND_MARKER}`);
+  const other = message("someone's message", false);
+  const channel = {
+    id: room!,
+    send: async (payload: unknown) => {
+      const m = message(JSON.stringify(payload));
+      posted.push(m);
+      log.push(`send ${m.id}`);
+      return m as never;
+    },
+    messages: { fetch: async () => new Map([[leftover.id, leftover as never], [other.id, other as never]]) },
+  };
+  const deps: RoundDeps = { now: () => now, channelOf: (id) => (id === channel.id ? (channel as never) : null), botId: () => "bot" };
+  const loop = startRounds({} as Client, { status: () => ({ channel: room, sitters }) }, deps);
+  return {
+    loop,
+    log,
+    posted,
+    leftover,
+    other,
+    at: (minutes: number) => (now = start + minutes * MIN),
+    sit: (n: number) => (sitters = n),
+    close: () => (room = null),
+  };
+}
+
+describe("startRounds", () => {
+  const open: { loop: { stop: () => Promise<void> } }[] = [];
+  afterEach(async () => {
+    for (const w of open.splice(0)) await w.loop.stop();
+  });
+  const make = () => {
+    const w = world();
+    open.push(w);
+    return w;
+  };
+
+  it("posts nothing while nobody sits at the fire", async () => {
+    const w = make();
+    await w.loop.tick();
+    expect(w.log).toEqual([]);
+  });
+
+  it("posts once a round, edits it to the rest, then replaces it; its own leftovers go, nobody else's", async () => {
+    const w = make();
+    w.sit(2);
+    w.at(3);
+    await w.loop.tick();
+    expect(w.log).toEqual(["delete m1", "send m3"]);
+    expect([w.leftover.deleted, w.other.deleted]).toEqual([true, false]);
+    w.at(10);
+    await w.loop.tick();
+    expect(w.log).toHaveLength(2);
+    w.at(26);
+    await w.loop.tick();
+    expect(w.log.at(-1)).toBe("edit m3");
+    expect(w.posted[0].text).toContain(R.btnClose);
+    w.at(31);
+    await w.loop.tick();
+    expect(w.log.slice(-2)).toEqual(["delete m3", "send m4"]);
+  });
+
+  it("keeps the round's message when the fire empties, and removes it once that round is over", async () => {
+    const w = make();
+    w.sit(1);
+    await w.loop.tick();
+    w.sit(0);
+    w.at(20);
+    await w.loop.tick();
+    expect(w.log.filter((l) => l.startsWith("delete m3"))).toEqual([]);
+    w.at(30);
+    await w.loop.tick();
+    expect(w.log.at(-1)).toBe("delete m3");
+    w.at(35);
+    await w.loop.tick();
+    expect(w.log.at(-1)).toBe("delete m3");
+  });
+
+  it("removes its message on stop", async () => {
+    const w = world();
+    w.sit(1);
+    await w.loop.tick();
+    await w.loop.stop();
+    expect(w.log.at(-1)).toBe("delete m3");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The buttons
+// ---------------------------------------------------------------------------
+
+function session(): Session {
+  return {
+    member_id: "m",
+    onboarded: true,
+    roles: [],
+    current_project_id: null,
+    unread: 0,
+    prefs: null,
+    settings: {
+      student_role_ids: ["555"],
+      awards: true,
+      redemption: false,
+      sharing: false,
+      reminders: false,
+      reward_terms: null,
+      redemption_terms: null,
+      squads: true,
+    },
+  };
+}
+
+function ctx(call: (fn: string, ...args: unknown[]) => unknown = () => null): Ctx {
+  const api = { call: jest.fn(async (fn: string, ...args: unknown[]) => call(fn, ...args)), rows: jest.fn() };
+  return { api: api as unknown as QuestApi, userId: "1111111111", name: "x", memberRoleIds: ["555"], session: session() };
+}
+const calls = (c: Ctx) => (c.api.call as jest.Mock).mock.calls;
+
+function interaction(kind: "button" | "modal", fields: Record<string, string> = {}) {
+  const sent: { how: string; payload: unknown }[] = [];
+  const modals: { custom_id?: string; components?: unknown[] }[] = [];
+  const i: Record<string, unknown> = {
+    id: "2",
+    deferred: false,
+    replied: false,
+    customId: "sq|x",
+    message: { content: "", embeds: [] },
+    isChatInputCommand: () => false,
+    isMessageComponent: () => kind === "button",
+    isButton: () => kind === "button",
+    isStringSelectMenu: () => false,
+    isModalSubmit: () => kind === "modal",
+    fields: { getTextInputValue: (id: string) => fields[id] ?? "" },
+    reply: async (payload: unknown) => {
+      i.replied = true;
+      sent.push({ how: "reply", payload });
+    },
+    showModal: async (m: { toJSON: () => { custom_id?: string } }) => modals.push(m.toJSON()),
+  };
+  return { i: i as never, sent, modals };
+}
+
+describe("round buttons", () => {
+  it("🎯 opens the intention form and starts a work session with it, privately", async () => {
+    const a = interaction("button");
+    await ACTION_HANDLERS.get("rd_aim")!(a.i, ctx(), []);
+    expect(a.modals[0].custom_id).toBe("sq|rd_aim_go");
+
+    const c = ctx();
+    const b = interaction("modal", { intention: "ทำหน้า login" });
+    await ACTION_HANDLERS.get("rd_aim_go")!(b.i, c, []);
+    expect(calls(c)).toEqual([["shift_quest_work_start", "1111111111", "ทำหน้า login"]]);
+    expect((b.sent[0].payload as { flags: number }).flags & MessageFlags.Ephemeral).toBeTruthy();
+    expect(bodyText(b.sent[0].payload as never)).toContain("ทำหน้า login");
+  });
+
+  it("🎯 again with a round still open closes it without a reflection first", async () => {
+    let started = 0;
+    const c = ctx((fn) => {
+      if (fn === "shift_quest_work_start" && started++ === 0) throw new QuestError("session_open");
+      if (fn === "shift_quest_work_end") return { intention: "เก่า" };
+      return null;
+    });
+    await ACTION_HANDLERS.get("rd_aim_go")!(interaction("modal", { intention: "ใหม่" }).i, c, []);
+    expect(calls(c).map((x) => x[0])).toEqual(["shift_quest_work_start", "shift_quest_work_end", "shift_quest_work_start"]);
+    expect(calls(c)[1]).toEqual(["shift_quest_work_end", "1111111111", null]);
+  });
+
+  it("✍️ asks what was learned (at least 10 characters) and where it is stuck", async () => {
+    const a = interaction("button");
+    await ACTION_HANDLERS.get("rd_close")!(a.i, ctx(), []);
+    const json = JSON.stringify(a.modals[0]);
+    expect(a.modals[0].custom_id).toBe("sq|rd_close_go");
+    expect(json).toContain('"min_length":10');
+    expect(json).toContain(R.closeStuck);
+  });
+
+  it("✍️ saves a private journal entry under the round's intention, and offers help for a stuck note", async () => {
+    const c = ctx((fn) => {
+      if (fn === "shift_quest_work_end") return { id: "s", intention: "ทำหน้า login" };
+      if (fn === "shift_quest_progress_add") return "3f1c2a64-1d2b-4c3d-9e8f-0a1b2c3d4e51";
+      return null;
+    });
+    const b = interaction("modal", { learned: "เข้าใจ session cookie แล้ว", stuck: "redirect วน" });
+    await ACTION_HANDLERS.get("rd_close_go")!(b.i, c, []);
+    expect(calls(c)).toEqual([
+      ["shift_quest_work_end", "1111111111", "เข้าใจ session cookie แล้ว"],
+      ["shift_quest_progress_add", "1111111111", "ทำหน้า login", "เข้าใจ session cookie แล้ว", null, "redirect วน", null, "private", null],
+    ]);
+    expect(customIds(b.sent[0].payload as never)).toEqual(["sq|prog_help|3f1c2a64-1d2b-4c3d-9e8f-0a1b2c3d4e51"]);
+    expect(viewText(b.sent[0].payload as never)).toContain(R.closed);
+  });
+
+  it("✍️ without a round started still saves, under the campfire's name, with no help button when not stuck", async () => {
+    const c = ctx((fn) => {
+      if (fn === "shift_quest_work_end") throw new QuestError("no_session");
+      if (fn === "shift_quest_progress_add") return "3f1c2a64-1d2b-4c3d-9e8f-0a1b2c3d4e52";
+      return null;
+    });
+    const b = interaction("modal", { learned: "ลองใช้ git rebase ครั้งแรก" });
+    await ACTION_HANDLERS.get("rd_close_go")!(b.i, c, []);
+    expect(calls(c)[1].slice(0, 6)).toEqual(["shift_quest_progress_add", "1111111111", R.changedDefault, "ลองใช้ git rebase ครั้งแรก", null, null]);
+    expect(customIds(b.sent[0].payload as never)).toEqual([]);
+  });
+
+  it("is for students who have started", async () => {
+    const c = ctx();
+    c.session = { ...c.session, member_id: null, onboarded: false };
+    await expect(ACTION_HANDLERS.get("rd_close")!(interaction("button").i, c, [])).rejects.toThrow(T.notStarted);
+  });
+});

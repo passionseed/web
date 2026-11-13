@@ -3,7 +3,7 @@
  * PNG's own order with the motion layers slotted in:
  *
  *   sea and shore cells (animated frames) -> land layer (one blit) -> boat ->
- *   trees with key, visitor, night glow and lantern -> night lamp posts ->
+ *   trees with roots, key, visitor, night glow and lantern -> night lamp posts ->
  *   festival festoon -> cloud shadows -> tags and pin (one blit, untinted) ->
  *   story actors -> gulls
  *
@@ -253,6 +253,8 @@ export function redrawRect<Img>(ctx: DrawContext<Img>, r: Rect, model: SceneMode
     if (!overlaps(m.bounds, r)) return;
     const { tree } = m;
     blit(ctx, atlas, rects.get(motion.sway[i] && m.b ? m.b : tree.sprite), tree.left, tree.top);
+    // Roots sit on the soil, inside the tree's rect: a sway repaint redraws them too.
+    if (tree.roots) blit(ctx, atlas, rects.get(tree.roots.sprite), tree.roots.x, tree.roots.y);
     if (tree.key) blit(ctx, atlas, rects.get("key_flag"), tree.key.x, tree.key.y);
     if (tree.visitor) blit(ctx, atlas, rects.get("visitor"), tree.visitor.x, tree.visitor.y);
     // Only an earned lantern glows, and only at night: behind the lantern, over the tree.
