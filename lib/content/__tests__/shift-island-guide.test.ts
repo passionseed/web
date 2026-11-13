@@ -1,4 +1,3 @@
-import { T } from "@/bot/src/quests/copy";
 import { ISLAND_STAGES } from "@/lib/content/shift-island";
 import {
   CAMPFIRE_ROUND,
@@ -72,8 +71,8 @@ describe("shift island guide copy", () => {
     expect(privacy).toContain("เป็นส่วนตัว");
     // The reflection flow offers no team sharing, so the guide must not promise it.
     expect(privacy).not.toContain("แชร์กับทีม");
-    // The real help button (T.btnSendBlocker), not the ownership checklist's 🆘.
-    expect(privacy).toContain(T.btnSendBlocker.split(" ")[0]);
+    // The real help button (🙋, T.btnSendBlocker in the bot), not the ownership checklist's 🆘.
+    expect(privacy).toContain("🙋");
   });
 
   it("lists seven sections in order with unique anchors", () => {
