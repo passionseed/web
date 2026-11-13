@@ -197,6 +197,12 @@ function find(r: Response, pred: (c: Component) => boolean): Component {
   return c;
 }
 
+/** /start, then ข้าม to the story's last page, where the start button is. */
+async function startCard(who: FakeOptions): Promise<Response> {
+  const intro = await run("command", { ...who, command: "start" });
+  return run("button", { ...who, customId: find(intro, (c) => c.label === T.storySkip).custom_id });
+}
+
 const has = (r: Response, id: string) => r.components.some((c) => c.custom_id === id);
 /** A refusal: the error's words first, then the reference line every error reply ends with. */
 const refused = (r: Response, text: string) => r.content.startsWith(text) && /\n-# อ้างอิง [A-Z2-9]{6}$/.test(r.content);
@@ -268,7 +274,7 @@ async function main(): Promise<void> {
   let r = await island(S);
   check(notYet(r, T.notStarted), "/island before /start asks for /start", r.content);
 
-  r = await run("command", { ...S, command: "start" });
+  r = await startCard(S);
   r = await run("button", { ...S, customId: find(r, (c) => c.label === T.startButton).custom_id });
   check(r.content.startsWith(`### ${T.startedTitle}\n${T.started}`) && has(r, "sq|nav|island"), "start onboards and offers the island", { content: r.content, ids: ids(r) });
 
@@ -310,7 +316,7 @@ async function main(): Promise<void> {
   check(r.content.includes(title(1)), "the next milestone is suggested", r.content);
 
   // A teammate joins before anything is approved.
-  r = await run("command", { ...F, command: "start" });
+  r = await startCard(F);
   await run("button", { ...F, customId: find(r, (c) => c.label === T.startButton).custom_id });
   r = await run("command", { ...S, command: "project", sub: "invite", options: { user: FRIEND } });
   r = await run("command", { ...F, command: "inbox" });
@@ -612,7 +618,7 @@ async function main(): Promise<void> {
   const Third = { user: THIRD, name: "Third Tan" };
   const Fourth = { user: FOURTH, name: "Fourth Fon" };
   for (const who of [Third, Fourth]) {
-    r = await run("command", { ...who, command: "start" });
+    r = await startCard(who);
     await run("button", { ...who, customId: find(r, (c) => c.label === T.startButton).custom_id });
   }
   r = await run("command", { ...S, command: "squad", sub: "invite", options: { user: THIRD } });
@@ -638,7 +644,7 @@ async function main(): Promise<void> {
   check(refused(r, errorText("no_invite")), "a withdrawn invite cannot be accepted", r.content);
 
   // A student cannot pull an adult in either.
-  r = await run("command", { ...M, command: "start" });
+  r = await startCard(M);
   await run("button", { ...M, customId: find(r, (c) => c.label === T.startButton).custom_id });
   r = await run("command", { ...S, command: "squad", sub: "invite", options: { user: MENTOR } });
   check(notYet(r, errorText("staff_no_squad")), "a mentor cannot be invited into a squad", r.content);

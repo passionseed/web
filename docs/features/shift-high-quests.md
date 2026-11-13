@@ -541,6 +541,9 @@ reads and writes through `20261111090900_shift_quests_board.sql` and
     every 10 minutes. It shows the same outsider view of the island as the
     weekly post (names and stages only for fully consented plots), tree and
     goal counts, the Demo Day countdown, and the campfire as a count only.
+    The picture is a looping GIF in the light of the Bangkok hour
+    (`bot/src/quests/island/gif.ts`), or the still PNG when the GIF is over
+    2 MB or fails to draw.
     When Discord refuses the picture (no Attach Files, 50013, or too large,
     40005) the card goes out once more without it.
   - **Stored**: `shift_quest_live_state`, one row with the channel id and

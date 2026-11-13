@@ -156,6 +156,12 @@ function find(r: Response, pred: (c: Component) => boolean): Component {
   return c;
 }
 
+/** /start, then ข้าม to the story's last page, where the start button is. */
+async function startCard(who: FakeOptions): Promise<Response> {
+  const intro = await run("command", { ...who, command: "start" });
+  return run("button", { ...who, customId: find(intro, (c) => c.label === T.storySkip).custom_id });
+}
+
 const pool = createRolePool(botUrl, "test");
 const api = createQuestApi(pool);
 
@@ -197,7 +203,11 @@ async function main(): Promise<void> {
 
   // Join.
   r = await run("command", { ...S, command: "start" });
-  check(r.content.includes("SHIFT High quests"), "start explains the program");
+  check(r.content.startsWith(`### ${T.storyPages[0].title}\n`), "start opens the island's story", r.content);
+  r = await run("button", { ...S, customId: find(r, (c) => c.label === T.storyNext).custom_id });
+  check(r.content.startsWith(`### ${T.storyPages[1].title}\n`), "▶ turns to the next page", r.content);
+  r = await run("button", { ...S, customId: find(r, (c) => c.label === T.storySkip).custom_id });
+  check(r.content.includes(T.introPromise), "the last page shows the promise", r.content);
   r = await run("button", { ...S, customId: find(r, (c) => c.label === T.startButton).custom_id });
   check(r.content.startsWith(`### ${T.startedTitle}\n`), "start button onboards");
   r = await run("button", { ...S, customId: find(r, (c) => c.label === T.btnNewProject).custom_id });
@@ -206,7 +216,7 @@ async function main(): Promise<void> {
   check(r.content.includes("Trip Splitter"), "project created");
 
   // Friend joins the project by consent.
-  await run("command", { ...F, command: "start" }).then((x) => run("button", { ...F, customId: x.components[0].custom_id }));
+  await startCard(F).then((x) => run("button", { ...F, customId: find(x, (c) => c.label === T.startButton).custom_id }));
   r = await run("command", { ...S, command: "project", sub: "invite", options: { user: FRIEND } });
   r = await run("command", { ...F, command: "inbox" });
   r = await run("button", { ...F, customId: find(r, (c) => c.custom_id.startsWith("sq|invite|") && c.custom_id.endsWith("|y")).custom_id });

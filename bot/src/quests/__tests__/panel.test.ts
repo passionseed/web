@@ -301,14 +301,14 @@ describe("live post panel", () => {
     }
   });
 
-  it("gives someone in the pilot who has not started the welcome card /start shows, with its start button", async () => {
+  it("gives someone in the pilot who has not started the story /start shows, from its first page", async () => {
     for (const target of PANEL_TARGETS) {
       const { calls, db } = await run(panelId(target), session({ onboarded: false, member_id: null, current_project_id: null }));
       expectPostUntouched(calls);
       expect([target, calls.map((c) => c.how)]).toEqual([target, ["reply"]]);
       expect(calls[0].payload.flags).toBe(PRIVATE);
-      expect(bodyText(calls[0].payload).startsWith(`### ${T.introTitle}\n`)).toBe(true);
-      expect(customIds(calls[0].payload)).toEqual(["sq|start", "sq|start_info"]);
+      expect(bodyText(calls[0].payload).startsWith(`### ${T.storyPages[0].title}\n`)).toBe(true);
+      expect(customIds(calls[0].payload)).toEqual(["sq|story|1", "sq|story|4"]);
       expect(db).toEqual([]);
     }
   });

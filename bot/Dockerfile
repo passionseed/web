@@ -1,5 +1,6 @@
 # The Discord bot, alone. Build context is the directory bot/deploy.sh stages:
-# bot/, the two lib files it imports, tsconfig.json (for the @/ paths) and a
+# bot/, the lib files it imports (two, plus lib/shift-island/live for the moving
+# island), tsconfig.json (for the @/ paths) and a
 # package.json pinned to this repo's versions. The web app is not in it.
 FROM node:24-alpine
 

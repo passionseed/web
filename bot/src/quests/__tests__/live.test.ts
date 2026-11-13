@@ -11,6 +11,7 @@ import { LIVE } from "../island/copy";
 import type { IslandPlot } from "../island/render";
 import { parseCid } from "../ids";
 import {
+  LIVE_GIF,
   LIVE_PNG,
   LIVE_SCHEMA,
   PANEL_TARGETS,
@@ -452,7 +453,7 @@ describe("startLivePost", () => {
     expect(payload.flags).toBe(MessageFlags.IsComponentsV2);
     expect(payload.allowedMentions).toEqual({ parse: [] });
     expect(payload.files).toHaveLength(1);
-    expect(mediaUrls(payload)).toEqual([`attachment://${LIVE_PNG}`]);
+    expect(mediaUrls(payload)).toEqual([`attachment://${LIVE_GIF}`]);
     expect(bodyText(payload)).toContain(LIVE.marker);
     const sent = [...w.live.store.values()][0];
     expect(sent.pin).toHaveBeenCalledTimes(1);

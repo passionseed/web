@@ -18,6 +18,7 @@ import type { ActionHandler, AutocompleteHandler, CommandHandler, HandlerSet } f
 import { parseCid } from "./ids";
 import { digestFor, startDigestPost } from "./digest";
 import { liveFor, startLivePost } from "./live";
+import { warmStory } from "./story";
 import { commandIdMap, setCommandIds, showError } from "./ui";
 import { startOutbox } from "./outbox";
 
@@ -186,6 +187,8 @@ export async function registerShiftQuests(client: Client, env: ShiftQuestsEnv): 
   });
   client.once(Events.ClientReady, (ready) => {
     void loadCommandIds(ready, env.guildId);
+    // The story's pictures, drawn now so the first /start never waits on them.
+    warmStory();
   });
   client.on(Events.ShardReady, () => {
     connected = true;

@@ -44,8 +44,11 @@ export const TONE_COLORS: Record<Tone, number> = {
 
 /**
  * The pieces of a card, top to bottom. Consecutive text and subtext blocks
- * are joined into one text display (one component). Put what matters first:
- * when a card is over Discord's limits, blocks are dropped from the end.
+ * are joined into one text display (one component), with a blank line
+ * before each body block that follows another, so Thai text has room to
+ * breathe (BLOCK_GAP). Fine print stays right under the line it belongs to;
+ * a divider with line: false sets it apart when it is the card's own. Put what matters first: when a card is over
+ * Discord's limits, blocks are dropped from the end.
  */
 export type Block =
   /** Markdown. Student-written parts must already have gone through safe(). */
@@ -229,24 +232,34 @@ function heading(title: string, ids: ReadonlyMap<string, string>): string {
   return `### ${linkCommands(clipText(title.trim().replace(/\s*\n\s*/g, " "), 200), ids)}`;
 }
 
+/** Between two blocks joined into one text display: an empty line. */
+export const BLOCK_GAP = "\n\n";
+
 function unitsOf(view: View, blocks: Block[], ids: ReadonlyMap<string, string>): Unit[] {
   const units: Unit[] = [];
   const files = new Map((view.files ?? []).map((f) => [f.name ?? "", f]));
   let titled = !view.title?.trim();
-  const pushText = (text: string) => {
+  /** What the open text display ends with: the title, body text or fine print. */
+  let tail: "heading" | "text" | "subtext" | null = null;
+  const pushText = (text: string, kind: "heading" | "text" | "subtext") => {
     if (!text.trim()) return;
     const last = units.at(-1);
-    if (last?.type === "text") last.text += `\n${text}`;
-    else units.push({ type: "text", text });
+    if (last?.type === "text") {
+      // A blank line before each new body block. Tight under the title, and for fine
+      // print, which belongs to the line above it (a toast's note, a journal entry's detail).
+      const tight = tail === "heading" || kind !== "text";
+      last.text += `${tight ? "\n" : BLOCK_GAP}${text}`;
+    } else units.push({ type: "text", text });
+    tail = kind;
   };
   for (const b of blocks) {
     if (!titled && b.kind !== "image") {
-      pushText(heading(view.title!, ids));
+      pushText(heading(view.title!, ids), "heading");
       titled = true;
     }
     switch (b.kind) {
       case "text":
-        pushText(linkCommands(b.text, ids));
+        pushText(linkCommands(b.text, ids), "text");
         break;
       case "subtext":
         pushText(
@@ -254,7 +267,8 @@ function unitsOf(view: View, blocks: Block[], ids: ReadonlyMap<string, string>):
             .split("\n")
             .filter((line) => line.trim())
             .map((line) => (line.startsWith("-# ") ? line : `-# ${line}`))
-            .join("\n")
+            .join("\n"),
+          "subtext"
         );
         break;
       case "section": {
@@ -282,7 +296,7 @@ function unitsOf(view: View, blocks: Block[], ids: ReadonlyMap<string, string>):
         break;
     }
   }
-  if (!titled) pushText(heading(view.title!, ids));
+  if (!titled) pushText(heading(view.title!, ids), "heading");
   return units;
 }
 
