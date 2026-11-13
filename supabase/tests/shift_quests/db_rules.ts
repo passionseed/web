@@ -528,7 +528,8 @@ async function main(): Promise<void> {
 
   // --- Data rights ------------------------------------------------------------------------
   const exported = await call(bot, "shift_quest_data_export", B);
-  check(exported.quests.length >= 1 && exported.progress.length === 2, "export includes the student's own records");
+  // B wrote two journal entries above, plus one round close as "another actor" in the round close checks.
+  check(exported.quests.length >= 1 && exported.progress.length === 3, "export includes the student's own records");
   const reqId: string = await call(bot, "shift_quest_data_request", B, "erasure", null);
   check(await code(call(bot, "shift_quest_admin_erase", A, reqId)) === "not_authorized", "only admins erase");
   const ledgerBefore = Number(await scalar(db, "select count(*) from public.shift_quest_ledger"));
