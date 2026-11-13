@@ -652,7 +652,7 @@ exactly this allowlist: `shift_quest_schema_version`, `_session`, `_start`,
 `_project_list`, `_project_respond`, `_canvas_get`, `_canvas_link`,
 `_canvas_unlink`, `_ownership_get`, `_campfire` (schema 7),
 `_island_links` (schema 8), the player functions (schema 9) and
-`_island_roots` (schema 10). No review, staff, admin, outbox or data
+`_island_roots` (schema 10), and `_island_my_roots` (schema 11). No review, staff, admin, outbox or data
 function. The migrations revoke every `shift_quest_*` function from it, then
 grant the list by full signature and stop if one is missing. `run-local.sh`
 (`check_privileges`), `web_board.ts` and `web_canvas.ts` hold the same list

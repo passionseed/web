@@ -44,6 +44,7 @@ const NAMES: Record<string, string> = { [A]: "Board Aye", [B]: "Board Bee", [C]:
  * campfire read of 20261111093000_shift_quest_campfire.sql, the menu links read of
  * 20261111094000_shift_quest_live.sql, the player, shop, consent and news functions of
  * 20261111095000_shift_quest_player.sql and the roots read of 20261113090000_shift_quest_roots.sql
+ * plus the own-tree roots read of 20261113173515_shift_quest_own_roots.sql
  * (regprocedure text).
  */
 const WEB_ALLOWLIST = [
