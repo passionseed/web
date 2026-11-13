@@ -7,7 +7,8 @@ import { ACTION_HANDLERS } from "..";
 import { QuestDbError, QuestError, type QuestApi, type Session } from "../api";
 import type { Ctx } from "../context";
 import { T } from "../copy";
-import { R } from "../rounds-copy";
+import { LEARNED_MIN, R } from "../rounds-copy";
+import { I } from "../island/copy";
 import { ENCOUNTER_EVERY, ROUND_MARKER, encounterAt, roundAt, roundView, startRounds, type RoundAt, type RoundDeps } from "../rounds";
 import { boardFixture, side, SIDE_IDS } from "../test-helpers/board";
 import { renderView } from "../ui";
@@ -507,5 +508,65 @@ describe("the encounter's button", () => {
     const c = ctx();
     c.session = { ...c.session, member_id: null, onboarded: false };
     await expect(press(c)).rejects.toThrow(T.notStarted);
+  });
+});
+
+
+describe("island reflections", () => {
+  it("opens the shared learned and optional stuck form", async () => {
+    const b = interaction("button");
+    await ACTION_HANDLERS.get("is_reflect")!(b.i, ctx(), []);
+    const campfire = interaction("button");
+    await ACTION_HANDLERS.get("rd_close")!(campfire.i, ctx(), []);
+    expect(b.modals[0].custom_id).toBe("sq|is_reflect_go");
+    expect(b.modals[0].components).toEqual(campfire.modals[0].components);
+    expect(JSON.stringify(b.modals[0])).toContain(`"min_length":${LEARNED_MIN}`);
+    expect(JSON.stringify(b.modals[0])).toContain('"max_length":1000');
+  });
+
+  it.each(["", "ติด API"])("defers privately before database access, saves without changing any work session (stuck: %s)", async (stuck) => {
+    const b = interaction("modal", { learned: "ลองใช้ git rebase ครั้งแรก", stuck });
+    const id = "3f1c2a64-1d2b-4c3d-9e8f-0a1b2c3d4e51";
+    const c = ctx((fn) => {
+      expect(b.sent[0]).toEqual({ how: "deferReply", payload: { flags: MessageFlags.Ephemeral } });
+      return fn === "shift_quest_island" ? { project: { id: "p" } } : id;
+    });
+    await ACTION_HANDLERS.get("is_reflect_go")!(b.i, c, []);
+    expect(calls(c)).toEqual([
+      ["shift_quest_island", c.userId],
+      ["shift_quest_progress_add", c.userId, I.reflectionChanged, "ลองใช้ git rebase ครั้งแรก", null, stuck || null, null, "private", null],
+    ]);
+    expect(b.sent.map((s) => s.how)).toEqual(["deferReply", "editReply"]);
+    const card = b.sent[1].payload as never;
+    expect(viewText(card)).toContain(R.closedTitle);
+    expect(viewText(card)).toContain(R.closed);
+    expect(viewText(card)).toContain(R.closedFine);
+    expect(customIds(card)).toEqual(stuck ? [`sq|prog_help|${id}`] : []);
+  });
+
+  it("offers a plot if the project is missing at submit time, without saving an unattached note", async () => {
+    const c = ctx(() => ({ project: null }));
+    const b = interaction("modal", { learned: "ลองใช้ git rebase ครั้งแรก" });
+    await ACTION_HANDLERS.get("is_reflect_go")!(b.i, c, []);
+    expect(calls(c)).toEqual([["shift_quest_island", c.userId]]);
+    expect(bodyText(b.sent[1].payload as never)).toContain(I.noPlot);
+    expect(customIds(b.sent[1].payload as never)).toEqual(["sq|is_claim", "sq|is_view"]);
+  });
+
+  it("lets the normal router handle RPC refusals after deferring", async () => {
+    const c = ctx((fn) => {
+      if (fn === "shift_quest_island") return { project: { id: "p" } };
+      throw new QuestError("not_student");
+    });
+    const b = interaction("modal", { learned: "ลองใช้ git rebase ครั้งแรก" });
+    await expect(ACTION_HANDLERS.get("is_reflect_go")!(b.i, c, [])).rejects.toThrow("sq:not_student");
+    expect(b.sent.map((s) => s.how)).toEqual(["deferReply"]);
+  });
+
+  it.each(["is_reflect", "is_reflect_go"])("%s requires an onboarded student", async (action) => {
+    const c = ctx();
+    c.session = { ...c.session, member_id: null, onboarded: false };
+    await expect(ACTION_HANDLERS.get(action)!(interaction(action === "is_reflect" ? "button" : "modal").i, c, [])).rejects.toThrow(T.notStarted);
+    expect(calls(c)).toEqual([]);
   });
 });

@@ -32,6 +32,7 @@ import {
 import { guideLinkButton, islandLinkButton } from "../weblink";
 import { newProjectModal } from "./project";
 import { helpModal } from "./journal";
+import { reflectionModal, reflectionSavedView } from "./reflection";
 import { picked, type HandlerSet } from "./types";
 
 /** The island picture's attachment name: an image block shows it with { kind: "image", name: ISLAND_PNG }. */
@@ -195,6 +196,7 @@ export async function islandMessage(ctx: Ctx): Promise<IslandCard> {
           // The quest board in Discord (handlers/board.ts); 📋 stays for your own sent work.
           button(cid("is_board"), I.btnBoard),
           button(cid("is_work"), I.btnWork),
+          button(cid("is_reflect"), I.btnReflect),
         ]),
         ...buttonRows([
           button(cid("is_stuck"), I.btnStuck),
@@ -379,6 +381,31 @@ export const island: HandlerSet = {
         blocks: [{ kind: "text", text: again ? I.tapAgain : I.tapped }],
         rows: buttonRows([button(cid("is_note"), I.btnNote), button(cid("is_view"), I.btnBack)]),
       });
+    },
+
+    async is_reflect(i, ctx) {
+      requireStudent(ctx);
+      if (!i.isButton()) return;
+      await i.showModal(reflectionModal("is_reflect_go", I.btnReflect));
+    },
+
+    async is_reflect_go(i, ctx) {
+      requireStudent(ctx);
+      if (!i.isModalSubmit()) return;
+      await i.deferReply({ flags: MessageFlags.Ephemeral });
+      // Read at submit time: the project may have changed while the form was open.
+      const view = await ctx.api.call<IslandView>("shift_quest_island", ctx.userId);
+      if (!view.project) {
+        await show(i, noPlotCard());
+        return;
+      }
+      const learned = textValue(i, "learned");
+      if (!learned) return;
+      const stuck = textValue(i, "stuck");
+      const id = await ctx.api.call<string>(
+        "shift_quest_progress_add", ctx.userId, I.reflectionChanged, learned, null, stuck, null, "private", null
+      );
+      await show(i, reflectionSavedView(id, stuck));
     },
 
     async is_note(i, ctx) {

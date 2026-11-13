@@ -39,7 +39,8 @@ export const R = {
   changedDefault: "รอบกองไฟ",
   closedTitle: "🌱 บันทึกแล้ว",
   closed: "เก็บสิ่งที่คุณได้เรียนรู้ไว้แล้ว",
-  closedFine: `รากนับได้คนละไม่เกิน ${REFLECTIONS_PER_DAY} บันทึกต่อวัน · บันทึกนี้อยู่ใน /progress เห็นแค่คุณ`,
+  // Thai reviewed (agy, Codex, Cursor), 2026-11-14
+  closedFine: `นับรากได้คนละไม่เกิน ${REFLECTIONS_PER_DAY} บันทึกต่อวัน · บันทึกนี้เป็นส่วนตัว`,
 
   /**
    * Encounters on some 🌊 rests (rounds.ts encounterAt): a moment from the

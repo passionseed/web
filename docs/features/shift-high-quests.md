@@ -437,6 +437,14 @@ counted from the progress journal at read time.
   member per Bangkok day (`created_at` in Asia/Bangkok), the earliest first.
   A member who leaves takes their reflections along; erasure already deletes
   the journal. Private and team notes count alike.
+- **Writing a reflection.** Discord's `/island` main action row opens the same
+  learned/stuck form as the campfire close button, without starting or ending
+  a work session. It saves a private `shift_quest_progress_add` note; a filled
+  blocker offers the separate help choice. A missing project at submit time
+  shows the existing claim-plot card, so the note is not saved without a tree.
+  The web TodayCard remains a check-in only: `shift_quest_web` has no EXECUTE
+  grant for `shift_quest_progress_add` in the migration allowlists. Enabling
+  web reflections needs an explicit grant migration and privilege tests first.
 - **What is shown.** `shift_quest_island_roots()` (bot and website, no
   caller) returns `[{slot, roots}]` for drawn plots with roots above 0: level
   1 (1 to 4 counted), 2 (5 to 14) or 3 (15 or more). Never a count, a name,

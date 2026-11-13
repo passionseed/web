@@ -16,14 +16,14 @@ import { MessageFlags } from "discord.js";
 
 import { QuestDbError, QuestError, type QuestApi } from "../api";
 import { requireStudent } from "../context";
-import { T } from "../copy";
 import { cid } from "../ids";
 import { I } from "../island/copy";
 import { encounterAt } from "../rounds";
 import { schemaOf } from "../schema";
-import { LEARNED_MIN, R } from "../rounds-copy";
+import { R } from "../rounds-copy";
 import { ButtonStyle, button, buttonRows, modal, show, textValue, type View } from "../ui";
 import { pickSide, readBoard, sideView } from "./board";
+import { reflectionModal, reflectionSavedView } from "./reflection";
 import type { HandlerSet } from "./types";
 
 const oneLine = (text: string, max: number) => {
@@ -126,12 +126,7 @@ export const rounds: HandlerSet = {
       } catch (error) {
         if (!(error instanceof QuestDbError && error.sqlstate === "42883")) throw error;
       }
-      await i.showModal(
-        modal(cid("rd_close_go", sessionId), R.closeTitle, [
-          { kind: "text", id: "learned", label: R.closeLearned, description: R.closeLearnedHint, long: true, required: true, min: LEARNED_MIN, max: 1000 },
-          { kind: "text", id: "stuck", label: R.closeStuck, description: R.closeStuckHint, long: true, required: false, max: 1000 },
-        ])
-      );
+      await i.showModal(reflectionModal("rd_close_go", R.closeTitle, sessionId));
     },
 
     async rd_close_go(i, ctx, [sessionId]) {
@@ -152,15 +147,7 @@ export const rounds: HandlerSet = {
           learned, null, stuck, null, "private", null
         );
       }
-      await show(i, {
-        tone: "success",
-        title: R.closedTitle,
-        blocks: [
-          { kind: "text", text: R.closed },
-          { kind: "subtext", text: R.closedFine },
-        ],
-        rows: stuck ? buttonRows([button(cid("prog_help", id), T.btnSendBlocker, ButtonStyle.Primary)]) : undefined,
-      });
+      await show(i, reflectionSavedView(id, stuck));
     },
   },
 };
