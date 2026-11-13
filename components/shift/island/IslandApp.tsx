@@ -49,6 +49,8 @@ interface IslandAppProps {
   initialPhase?: LightPhase;
   /** The SHIFT Discord server's URL (from the server's env), for the inbox's "open Discord". */
   discordUrl?: string | null;
+  /** A sheet to open on arrival: "board" from the bot's 🌐 board link (`?at=board`). Only with a plot. */
+  initialPanel?: "board";
 }
 
 /** About as long as a sheet takes to slide away (vaul's drawer is the slower one). */
@@ -180,7 +182,7 @@ function PlayerSheets({ page, panel, onPanel }: { page: IslandPageData; panel: P
  * (board, quest, stuck, propose, canvas link, claim) as a sheet over the
  * island, which stays in view, dimmed and still, behind it.
  */
-export function IslandApp({ page, picture, initialPhase, discordUrl }: IslandAppProps) {
+export function IslandApp({ page, picture, initialPhase, discordUrl, initialPanel }: IslandAppProps) {
   const project = page.island.project;
   const demoDay = page.island.season?.demo_day ?? null;
   if (!project) {
@@ -197,6 +199,7 @@ export function IslandApp({ page, picture, initialPhase, discordUrl }: IslandApp
       picture={picture}
       initialPhase={initialPhase}
       discordUrl={discordUrl}
+      initialPanel={initialPanel}
     />
   );
 }
@@ -292,13 +295,14 @@ function IslandHome({
   picture,
   initialPhase,
   discordUrl,
+  initialPanel,
 }: IslandAppProps & {
   board: NonNullable<IslandPageData["board"]>;
   project: NonNullable<IslandPageData["island"]["project"]>;
 }) {
   const keynote = useMemo(() => keynoteQuest(board), [board]);
   const hasAction = useMemo(() => (keynote ?? starterQuest(board)) != null, [keynote, board]);
-  const [panel, setPanel] = useState<Panel>(null);
+  const [panel, setPanel] = useState<Panel>(initialPanel ?? null);
   const [detail, setDetail] = useState<BoardRef | null>(null);
   // A quest opened from the board goes back to the board when it closes.
   const [detailFromBoard, setDetailFromBoard] = useState(false);

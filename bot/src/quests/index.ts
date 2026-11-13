@@ -8,6 +8,7 @@ import { loadCtx, requireStudent } from "./context";
 import { admin } from "./handlers/admin";
 import { island } from "./handlers/island";
 import { panel } from "./handlers/panel";
+import { board } from "./handlers/board";
 import { rounds } from "./handlers/rounds";
 import { squad } from "./handlers/squad";
 import { journal } from "./handlers/journal";
@@ -26,7 +27,7 @@ import { startOutbox } from "./outbox";
 
 export { registerQuestCommands } from "./commands";
 
-const SETS: HandlerSet[] = [student, project, quest, journal, review, admin, island, squad, panel, rounds];
+const SETS: HandlerSet[] = [student, project, quest, journal, review, admin, island, squad, panel, rounds, board];
 
 function merge<T>(pick: (set: HandlerSet) => Record<string, T> | undefined): Map<string, T> {
   const map = new Map<string, T>();

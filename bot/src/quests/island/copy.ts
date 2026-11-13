@@ -44,6 +44,8 @@ export const I = {
   btnRest: "🌙 ขอพัก",
   btnWake: "☀️ กลับมาแล้ว",
   btnWork: "📋 งานที่ส่งไว้",
+  /** The quest card (handlers/board.ts): the island's quest board in Discord. DRAFT. */
+  btnBoard: "📜 กระดานเควสต์",
   btnClaim: "🌱 จับจองที่ดิน",
   btnHow: "📖 เกาะนี้ทำงานยังไง",
   btnBack: "🏝️ กลับเกาะ",
@@ -68,8 +70,12 @@ export const I = {
    * admissions, money or a role.
    */
   // DRAFT for the Thai review: the campfire rounds and the roots, in two lines (rounds.ts, roots).
-  howRounds:
-    "🔥 **รอบกองไฟ** เข้าห้องเสียงกองไฟ โฟกัสพร้อมกัน แล้วพักสั้นๆ ตามรอบ\n🌱 **ราก** ปิดรอบด้วย ✍️ เขียนว่าได้อะไร รากต้นไม้งอกลึกขึ้น (ขั้นของต้นไม้ยังมาจากงานที่พี่เลี้ยงยืนยัน)",
+  // DRAFT: the quest card and the encounters at rest (handlers/board.ts, rounds.ts), one line each.
+  howRounds: [
+    "📜 **กระดานเควสต์** ขั้นต่อไป เควสต์ชุมชน และเควสต์เสริม ดูและส่งงานได้จากปุ่ม 📜",
+    "🔥 **รอบกองไฟ** เข้าห้องเสียงกองไฟ โฟกัสพร้อมกัน แล้วพักสั้นๆ ตามรอบ บางรอบพักมีโน้ตเควสต์เสริมแวะมาที่กองไฟ",
+    "🌱 **ราก** ปิดรอบด้วย ✍️ เขียนว่าได้อะไร รากต้นไม้งอกลึกขึ้น (ขั้นของต้นไม้ยังมาจากงานที่พี่เลี้ยงยืนยัน)",
+  ].join("\n"),
   howSeason: [
     "🏮 ปลายซีซันมีคืนเทศกาล Demo Day ทั้งเกาะมาโชว์งานด้วยกัน",
     "🌅 ซีซันจบ ต้นไม้ยังอยู่ วันหนึ่งคุณกลับมาช่วยคนที่เพิ่งขึ้นเกาะได้",
@@ -126,6 +132,71 @@ export const I = {
 };
 
 /**
+ * The quest card (handlers/board.ts): the web quest board in Discord, one line
+ * per quest. DRAFT for the Thai review. Never a coin number: rewards come
+ * from mentor-approved quests only, and the board reads none.
+ */
+export const QB = {
+  title: I.btnBoard,
+  main: "**🌳 เควสต์หลัก**",
+  community: "**🤝 เควสต์ชุมชน**",
+  side: "**🧭 เควสต์เสริม**",
+  /** One quest on the card: its state's mark, the milestone when it has one, the title, the state. */
+  line: (mark: string, title: string, state: string, milestone?: number | null) =>
+    `${mark} ${milestone ? `ขั้น ${milestone} · ` : ""}**${safe(title, 80)}** · ${state}`,
+  /** Every main quest outside the community ones has passed. */
+  coreDone: "✅ เควสต์หลักที่เหลือผ่านครบแล้ว ส่งซ้ำได้ถ้าได้เรียนรู้อะไรใหม่",
+  noSide: "ยังไม่มีเควสต์เสริมเปิดตอนนี้",
+  locked: (n: number) => `🔒 อีก ${n} เควสต์ยังล็อก ผ่านเควสต์ที่ต้องทำก่อนแล้วจะเปิด`,
+  legend: "▫️ เปิดให้ทำ · 🔨 กำลังทำ · ⏳ รอรีวิว · ✅ ผ่านแล้ว · 👥 เพื่อนถืออยู่ · 🔒 ยังล็อก",
+  growth: "ต้นไม้โตจากเควสต์หลักและเควสต์ชุมชนที่พี่เลี้ยงยืนยัน เควสต์เสริมไม่ทำให้ต้นไม้โต แต่เป็นหลักฐานในพอร์ตได้",
+  noPlot: "🌱 **ยังไม่มีที่ดิน** เควสต์ทุกใบผูกกับโปรเจกต์ จับจองที่ดินก่อน แล้วกระดานจะเปิด",
+  pickSide: "เปิดดูเควสต์เสริม",
+
+  /** A tile's state, as the web board names them (lib/supabase/shift-quests/board.ts). */
+  status: {
+    available: "เปิดให้ทำ",
+    active: "กำลังทำ",
+    paused: "พักไว้",
+    submitted: "รอรีวิว",
+    clarification: "ขอข้อมูลเพิ่ม",
+    appealed: "อุทธรณ์อยู่",
+    declined: "ยังไม่ผ่าน ลองใหม่ได้",
+    held: "เพื่อนร่วมทีมถืออยู่",
+    done: "ผ่านแล้ว",
+    locked: "ยังล็อก",
+  },
+  mark: {
+    available: "▫️",
+    active: "🔨",
+    paused: "⏸️",
+    submitted: "⏳",
+    clarification: "💬",
+    appealed: "⚖️",
+    declined: "↩️",
+    held: "👥",
+    done: "✅",
+    locked: "🔒",
+  },
+
+  /** One side quest (also the note an encounter at the campfire leaves). */
+  sideTitle: (title: string) => `🧭 ${safe(title, 80)}`,
+  offRoute: "นอกเส้นทางของโปรเจกต์คุณ แต่ทำได้",
+  doneWhen: "เสร็จเมื่อ",
+  examples: "ตัวอย่าง",
+  needs: (titles: string) => `🔒 ต้องผ่านก่อน: ${titles}`,
+  needsPlot: "🔒 จับจองที่ดินก่อน เควสต์เสริมเป็นของโปรเจกต์",
+  sideFine: "เควสต์เสริมไม่ทำให้ต้นไม้โต · ผ่านเมื่อพี่เลี้ยงดูงานแล้ว",
+  btnTake: "🧭 รับเควสต์นี้",
+  btnSend: "🌟 ส่งงานเลย",
+  btnSendAgain: "🌟 ส่งอีกครั้ง",
+  taken: "รับเควสต์แล้ว",
+  sent: "พี่เลี้ยงจะมาดูงานนี้",
+  /** The side quest is no longer on the board (unpublished since the card was drawn). */
+  gone: "เควสต์นี้ไม่ได้อยู่บนกระดานแล้ว",
+};
+
+/**
  * The live island post (../live.ts): one message in the live channel that the
  * bot keeps editing. Counts only: the campfire is a number, never who sits
  * there, and the only names are the signs every teammate opted in to show.
@@ -147,11 +218,12 @@ export const LIVE = {
   /**
    * The panel under the post. Each button answers only the person who
    * pressed it, in a private reply, with the card its own command shows.
-   * quests opens the island's 📋 card, so it carries that card's own name.
+   * quests opens the quest card (📜, with 📋 งานที่ส่งไว้ inside), so it
+   * carries that card's own name.
    */
   panel: {
     me: "🏝️ ของฉัน",
-    quests: I.btnWork,
+    quests: I.btnBoard,
     checkin: "✍️ เช็กอิน",
     help: "🆘 ขอช่วย",
     rewards: "🎁 รางวัล",

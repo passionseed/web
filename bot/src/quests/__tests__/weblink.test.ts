@@ -3,7 +3,17 @@
  */
 import { ButtonStyle } from "discord.js";
 
-import { GUIDE_LINK_LABEL, ISLAND_LINK_LABEL, guideLinkButton, islandGuideUrl, islandLinkButton, islandWebUrl } from "../weblink";
+import {
+  BOARD_LINK_LABEL,
+  GUIDE_LINK_LABEL,
+  ISLAND_LINK_LABEL,
+  boardLinkButton,
+  guideLinkButton,
+  islandBoardUrl,
+  islandGuideUrl,
+  islandLinkButton,
+  islandWebUrl,
+} from "../weblink";
 
 /** The island on the website: the bot's link button reads its address from the environment only. */
 
@@ -115,5 +125,27 @@ describe("islandGuideUrl", () => {
     expect(islandGuideUrl(env({ SHIFT_ISLAND_URL: "http://example.com" }))).toBeNull();
     expect(islandGuideUrl(env({ SHIFT_ISLAND_URL: "https://example.com/shift/island?x=1" }))).toBeNull();
     expect(guideLinkButton(env({}))).toBeNull();
+  });
+});
+
+describe("islandBoardUrl", () => {
+  it("is the island page opened on its quest board", () => {
+    expect(islandBoardUrl(env({ NEXT_PUBLIC_SITE_URL: "https://www.passionseed.org/" }))).toBe("https://www.passionseed.org/shift/island?at=board");
+    expect(islandBoardUrl(env({ SHIFT_ISLAND_URL: "https://island.example.org/play" }))).toBe("https://island.example.org/play?at=board");
+  });
+
+  it("is null without an island address, or when the address already has a query or a fragment", () => {
+    expect(islandBoardUrl(env({}))).toBeNull();
+    expect(islandBoardUrl(env({ SHIFT_ISLAND_URL: "https://example.com/shift/island?x=1" }))).toBeNull();
+    expect(islandBoardUrl(env({ SHIFT_ISLAND_URL: "https://example.com/shift/island#top" }))).toBeNull();
+    expect(islandBoardUrl(env({ SHIFT_ISLAND_URL: `https://example.com/${"a".repeat(495)}` }))).toBeNull();
+  });
+
+  it("makes a link button with no custom id, or none", () => {
+    const b = boardLinkButton(env({ NEXT_PUBLIC_SITE_URL: "https://www.passionseed.org" }))!.toJSON() as { label?: string; url?: string; custom_id?: string };
+    expect(b.label).toBe(BOARD_LINK_LABEL);
+    expect(b.url).toBe("https://www.passionseed.org/shift/island?at=board");
+    expect(b.custom_id).toBeUndefined();
+    expect(boardLinkButton(env({}))).toBeNull();
   });
 });

@@ -83,6 +83,15 @@ describe("/shift/island: one page for the invitation and the game", () => {
     expect((await find()).type).toBe(IslandApp);
   });
 
+  it("opens the quest board sheet from the bot's 🌐 board link (?at=board), and nothing else", async () => {
+    invite(going);
+    game({ state: "ready", me, actor: "a", userId: "u1", session: {} } as GameViewer);
+    getIslandPage.mockResolvedValue({ me, island: { project: null }, board: null, map: null });
+    expect((await find({ at: "board" })).props.initialPanel).toBe("board");
+    expect((await find()).props.initialPanel).toBeUndefined();
+    expect((await find({ at: "seal" })).props.initialPanel).toBeUndefined();
+  });
+
   it("lets staff into the game without an RSVP", async () => {
     invite({ kind: "notAlumni" });
     game({ state: "not_started", me: { ...me, staff: true }, actor: "a", userId: "u1" } as GameViewer);

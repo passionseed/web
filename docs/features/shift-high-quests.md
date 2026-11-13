@@ -16,7 +16,7 @@ publishes the rules they depend on.
 
 | Who | Commands |
 |---|---|
-| Student (holds a pilot Discord role) | `/start`, `/island` (tap, milestone, stuck, rest, open work, name sign), `/project new\|list\|invite\|view\|ownership\|leave`, `/squad new\|invite\|withdraw\|view` (students only; answers "not open yet" while the `squads` switch is off), `/work start\|end`, `/help`, `/celebrate`, `/inbox`, `/coins`, `/rewards`, `/settings`, `/data` |
+| Student (holds a pilot Discord role) | `/start`, `/island` (tap, milestone, quest board, stuck, rest, open work, name sign), `/project new\|list\|invite\|view\|ownership\|leave`, `/squad new\|invite\|withdraw\|view` (students only; answers "not open yet" while the `squads` switch is off), `/work start\|end`, `/help`, `/celebrate`, `/inbox`, `/coins`, `/rewards`, `/settings`, `/data` |
 | Reviewer | `/review queue\|help\|awards` |
 | Fulfillment operator | `/fulfill` |
 | Admin | `/admin status\|feature\|channel\|student-role\|terms\|role\|rule\|template-rule\|templates\|template\|catalog\|ledger\|report\|data\|season\|recognize` |
@@ -451,6 +451,44 @@ counted from the progress journal at read time.
   read fails (logged once per cause); the page and the post never fail
   because of it. Tested in `supabase/tests/shift_quests/roots.ts` and
   `bot/src/quests/__tests__/roots.test.ts`.
+
+### Quest card and campfire encounters (Discord)
+
+Phases 4 and 5 of
+`docs/superpowers/specs/2026-11-13-shift-campfire-rounds-roots-design.md`.
+No migration and no new command: the bot already executes the board
+functions (the grant loop of `20261111090900`), and nothing new is stored.
+
+- **Quest card** (`bot/src/quests/handlers/board.ts`). "📜 กระดานเควสต์" on the
+  island card and the live post's panel (the panel's `sq|lp|quests` button,
+  which used to open 📋) reads `shift_quest_board(actor)`, the web board's own
+  read, and shows one line per quest with its state: the next main quest for
+  the tree (the lowest one outside 6 and 7 not yet passed) and the caller's
+  other open main quests, the community quests (6 and 7), and the side quests
+  that are not locked (the caller's open ones first; locked ones are counted,
+  and all of them are in the menu). Tile states come from
+  `lib/supabase/shift-quests/board.ts`, as on the web. Actions: 🌟 opens the
+  island's milestone picker (`shift_quest_milestone_submit`), a side quest's
+  card offers 🧭 take it (`shift_quest_side_choose`) and 🌟 send it
+  (`shift_quest_side_submit`, proof and the quest's question), or opens the
+  caller's own open one; 📋 งานที่ส่งไว้ (`shift_quest_my_quests`) stays one
+  tap away; "🌐 กระดานบนเว็บ" opens `/shift/island?at=board`, which opens the
+  board sheet. Side quests pay only through their mentor review, as on the web.
+- **Encounters** (`bot/src/quests/rounds.ts`, `handlers/rounds.ts` `rd_enc`,
+  copy `R.encounters`, DRAFT). On about one 🌊 rest in three (a hash of the
+  round number, so a restart never rerolls), the round's public message adds
+  one moment from the lore (a person from the boat, a bottle, a gull, a mentor
+  passing) and a button. Everyone at the fire sees the same lines and names no
+  one. The button answers privately, deferred first and never an edit of the
+  round message: it reads the presser's board and shows one side quest open
+  to them, starting from the same place in the board's order for everyone in
+  that round (also from the round number), on their project's route first.
+  With none open it says so and points to the board (or to claiming a plot).
+  Nothing is stored per person, and being at the fire pays nothing.
+
+Tested in `bot/src/quests/__tests__/board.test.ts` and `rounds.test.ts`
+(no new database call order in existing flows, so `supabase/tests` is
+unchanged).
 
 ## Before a pilot
 

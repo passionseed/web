@@ -14,6 +14,10 @@ export const ISLAND_WEB_PATH = "/shift/island";
 export const ISLAND_LINK_LABEL = "🌐 เปิดเกาะบนเว็บ";
 /** The guide page's link button (DRAFT for the Thai review). */
 export const GUIDE_LINK_LABEL = "📖 คู่มือเกาะ";
+/** The quest board's link button, on the bot's quest card (DRAFT for the Thai review). */
+export const BOARD_LINK_LABEL = "🌐 กระดานบนเว็บ";
+/** The island page's query that opens its quest board sheet (app/shift/island/page.tsx). */
+export const BOARD_QUERY = "at=board";
 
 /** Discord's limit for a link button's URL. */
 const MAX_URL = 512;
@@ -63,6 +67,25 @@ export function islandGuideUrl(env: NodeJS.ProcessEnv = process.env): string | n
   if (url.search || url.hash) return null;
   url.pathname = `${url.pathname.replace(/\/+$/, "")}/guide`;
   return url.toString();
+}
+
+/**
+ * The island page opened on its quest board (?at=board), or null when the
+ * island has no address, or its address already carries a query or a fragment.
+ */
+export function islandBoardUrl(env: NodeJS.ProcessEnv = process.env): string | null {
+  const base = islandWebUrl(env);
+  if (!base) return null;
+  const url = new URL(base);
+  if (url.search || url.hash) return null;
+  const board = `${base}?${BOARD_QUERY}`;
+  return board.length > MAX_URL ? null : board;
+}
+
+/** "🌐 กระดานบนเว็บ" opening the island's quest board, or null when no address is configured. */
+export function boardLinkButton(env: NodeJS.ProcessEnv = process.env, label: string = BOARD_LINK_LABEL): ButtonBuilder | null {
+  const url = islandBoardUrl(env);
+  return url ? new ButtonBuilder().setStyle(ButtonStyle.Link).setURL(url).setLabel(label) : null;
 }
 
 /** "📖 คู่มือเกาะ" opening the guide page, or null when no address is configured. */
