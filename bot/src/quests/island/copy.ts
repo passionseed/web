@@ -2,6 +2,8 @@
  * SHIFT Island words. Thai first, one place, same house rules as ../copy.ts:
  * no em dashes, never talk down, never promise rewards that are not live.
  */
+import { FOCUS_MINUTES, REFLECTIONS_PER_DAY, REST_MINUTES } from "@/lib/shift-island/rounds-rules";
+
 import { bkkDate, meter, safe } from "../copy";
 
 /** Tree stage = number of milestones a mentor has confirmed (0..7). */
@@ -69,7 +71,8 @@ export const I = {
    */
   // DRAFT for the Thai review: the campfire rounds and the roots, in two lines (rounds.ts, roots).
   howRounds:
-    "🔥 **รอบกองไฟ** เข้าห้องเสียงกองไฟ โฟกัสพร้อมกัน แล้วพักสั้นๆ ตามรอบ\n🌱 **ราก** ปิดรอบด้วย ✍️ เขียนว่าได้อะไร รากต้นไม้งอกลึกขึ้น (ขั้นของต้นไม้ยังมาจากงานที่พี่เลี้ยงยืนยัน)",
+    `🔥 **รอบกองไฟ** เข้าห้องเสียงกองไฟ โฟกัส ${FOCUS_MINUTES} นาที พัก ${REST_MINUTES} นาที เริ่มพร้อมกันทุก :00 และ :30\n` +
+    `🌱 **ราก** กด ✍️ ปิดรอบ แล้วเขียนว่าได้เรียนรู้อะไร รากต้นไม้จะหยั่งลึกขึ้น (นับได้คนละไม่เกิน ${REFLECTIONS_PER_DAY} บันทึกต่อวัน ส่วนขั้นของต้นไม้ยังมาจากงานที่พี่เลี้ยงยืนยัน)`,
   howSeason: [
     "🏮 ปลายซีซันมีคืนเทศกาล Demo Day ทั้งเกาะมาโชว์งานด้วยกัน",
     "🌅 ซีซันจบ ต้นไม้ยังอยู่ วันหนึ่งคุณกลับมาช่วยคนที่เพิ่งขึ้นเกาะได้",
