@@ -95,6 +95,8 @@ export const rounds: HandlerSet = {
       if (!i.isModalSubmit()) return;
       const intention = textValue(i, "intention");
       if (!intention) return;
+      // Two database calls may follow: answer Discord first (3 seconds), privately.
+      await i.deferReply({ flags: MessageFlags.Ephemeral });
       try {
         await ctx.api.call("shift_quest_work_start", ctx.userId, intention);
       } catch (error) {
@@ -130,6 +132,8 @@ export const rounds: HandlerSet = {
       const learned = textValue(i, "learned");
       if (!learned) return;
       const stuck = textValue(i, "stuck");
+      // Two database writes follow: answer Discord first (3 seconds), privately.
+      await i.deferReply({ flags: MessageFlags.Ephemeral });
       const intention = await endSession(ctx.api, ctx.userId, learned);
       const id = await ctx.api.call<string>(
         "shift_quest_progress_add",

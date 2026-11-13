@@ -34,6 +34,8 @@ export const REST_MIN = REST_MINUTES;
 const ROUND_MIN = FOCUS_MIN + REST_MIN;
 /** How often the loop looks at the clock and the campfire. */
 const TICK_MS = 15_000;
+/** Discord's "Unknown Message" error code: the message no longer exists. */
+const UNKNOWN_MESSAGE = 10008;
 /** A line only round messages carry, so a restart can find and remove its own leftovers. */
 export const ROUND_MARKER = "-# 🔥 รอบกองไฟ";
 
@@ -208,7 +210,10 @@ export function startRounds(client: Client, campfire: Pick<Campfire, "status">, 
         current.phase = at.phase;
       } catch (error) {
         warnOnce(`edit:${codeOf(error)}`, `[shift-quests] rounds: edit failed (${codeOf(error)})`);
-        current = null;
+        // The message is gone (deleted by hand): post anew next tick. Any other
+        // failure (network, Discord 5xx) keeps it, and the next tick retries
+        // the edit, so a stale message never stays behind.
+        if (codeOf(error) === String(UNKNOWN_MESSAGE)) current = null;
       }
       return;
     }
