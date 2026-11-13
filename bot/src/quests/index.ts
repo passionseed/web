@@ -3,8 +3,8 @@ import { Events, type Client, type Interaction } from "discord.js";
 import type { ShiftQuestsEnv } from "../env";
 import { createRolePool } from "../pg";
 import { QuestDbError, createQuestApi, type QuestApi } from "./api";
-import { campfireFor, startCampfire } from "./campfire";
-import { loadCtx, requireStudent } from "./context";
+import { campfireFor, startCampfire, type Campfire } from "./campfire";
+import { loadCtx, requireStudent, type Ctx } from "./context";
 import { admin } from "./handlers/admin";
 import { island } from "./handlers/island";
 import { panel } from "./handlers/panel";
@@ -59,14 +59,14 @@ function commandKey(i: Interaction): string | null {
   return sub ? `${i.commandName} ${sub}` : i.commandName;
 }
 
-export async function handleInteraction(api: QuestApi, guildId: string, i: Interaction): Promise<void> {
+export async function handleInteraction(api: QuestApi, guildId: string, i: Interaction, extras: Pick<Ctx, "campfire"> = {}): Promise<void> {
   if (!i.inGuild() || i.guildId !== guildId) return;
 
   if (i.isAutocomplete()) {
     const handler = AUTOCOMPLETE_HANDLERS.get(commandKey(i) ?? "");
     if (!handler) return;
     try {
-      await handler(i, await loadCtx(api, i));
+      await handler(i, await loadCtx(api, i, extras));
     } catch {
       await i.respond([]).catch(() => undefined);
     }
@@ -77,7 +77,7 @@ export async function handleInteraction(api: QuestApi, guildId: string, i: Inter
     const handler = COMMAND_HANDLERS.get(commandKey(i) ?? "");
     if (!handler) return;
     try {
-      await handler(i, await loadCtx(api, i));
+      await handler(i, await loadCtx(api, i, extras));
     } catch (error) {
       await showError(i, error);
     }
@@ -90,7 +90,7 @@ export async function handleInteraction(api: QuestApi, guildId: string, i: Inter
     const handler = ACTION_HANDLERS.get(parsed.action);
     if (!handler) return;
     try {
-      await handler(i, await loadCtx(api, i), parsed.args);
+      await handler(i, await loadCtx(api, i, extras), parsed.args);
     } catch (error) {
       await showError(i, error);
     }
@@ -188,9 +188,12 @@ export async function registerShiftQuests(client: Client, env: ShiftQuestsEnv): 
     throw error;
   }
   let connected = false;
+  /** Set below once the campfire starts; /island reads who sits there for its picture. */
+  let campfire: Campfire | null = null;
+  const extras: Pick<Ctx, "campfire"> = { campfire: () => campfire?.status() ?? { channel: null, sitters: 0 } };
 
   client.on(Events.InteractionCreate, (i) => {
-    void handleInteraction(api, env.guildId, i);
+    void handleInteraction(api, env.guildId, i, extras);
   });
   client.once(Events.ClientReady, (ready) => {
     void loadCommandIds(ready, env.guildId);
@@ -212,7 +215,7 @@ export async function registerShiftQuests(client: Client, env: ShiftQuestsEnv): 
 
   const outbox = startOutbox(client, api, () => connected);
   // Started only on a database that has the campfire functions (schema 7).
-  const campfire = campfireFor(version, () => startCampfire(client, api, env.guildId, () => connected));
+  campfire = campfireFor(version, () => startCampfire(client, api, env.guildId, () => connected));
   // Focus and rest rounds in the campfire's chat, only while someone sits at it (rounds.ts).
   const roundLoop = campfire ? startRounds(client, campfire) : null;
   // Started only on a database that has the live post functions (schema 8).

@@ -14,8 +14,10 @@
  */
 import { deflateSync } from "node:zlib";
 
-import { PALETTE, SPRITES } from "../../../assets/island/sprites";
+import { motionGrid } from "../../../assets/island/motion-sprites";
+import { PALETTE } from "../../../assets/island/sprites";
 
+import { campfireActors, type CampfireView } from "./firepit";
 import { DIGITS, MAX_WIDTH, RenderError, TILE_BY_CODE, buildScene, markerAt, type IslandPlot, type SceneRect } from "./scene";
 
 export * from "./scene";
@@ -27,6 +29,8 @@ export interface RenderOptions {
   markMine?: boolean;
   /** Festival bunting over the plaza while a season runs. */
   festival?: boolean;
+  /** The plaza's voice campfire, as one still frame (firepit.ts); none when left out. */
+  campfire?: CampfireView;
 }
 
 export interface RenderedIsland {
@@ -120,10 +124,10 @@ interface Bitmap {
   px: Uint32Array;
 }
 
-/** Sprites decoded once into packed pixels, so drawing is one write per pixel. */
+/** Sprites (the island's and the live island's motion ones) decoded once into packed pixels, so drawing is one write per pixel. */
 const bitmaps = new Map<string, Bitmap>();
 function bitmap(name: string): Bitmap {
-  const rows = SPRITES[name];
+  const rows = motionGrid(name);
   if (!rows?.length) throw new RenderError("missing_sprite", name);
   const cached = bitmaps.get(name);
   if (cached && cached.rows === rows) return cached;
@@ -169,6 +173,20 @@ class Canvas {
 
   rect(x: number, y: number, w: number, h: number, c: RGBA): void {
     for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) this.pixel(x + i, y + j, c);
+  }
+
+  /** Draws a sprite mirrored left to right, top-left at (x, y), at scale 1. */
+  flipped(name: string, x: number, y: number): void {
+    const b = bitmap(name);
+    for (let j = 0; j < b.h; j++) {
+      const ty = y + j;
+      if (ty < 0 || ty >= this.height) continue;
+      for (let i = 0; i < b.w; i++) {
+        const tx = x + i;
+        const v = b.px[j * b.w + (b.w - 1 - i)];
+        if (v !== 0 && tx >= 0 && tx < this.width) this.px[ty * this.width + tx] = v;
+      }
+    }
   }
 
   /** Draws a sprite with its top-left at (x, y), each source pixel as a k x k block. */
@@ -241,7 +259,7 @@ function scaleFor(width: number, requested: number | undefined): number {
  * Renders the island: rasterizes buildScene() in its order (tiles, helper
  * paths, well, bunting, boat, each tree with its roots, key, visitor and lantern,
  * every tag on top so no tree hides a neighbour's number, then the caller's
- * pin). Each plot sits at its slot's fixed spot and carries its slot number;
+ * pin, then the plaza's campfire as the live island draws its actors, first frames). Each plot sits at its slot's fixed spot and carries its slot number;
  * the island is sized from the highest slot drawn, so archived slots leave a
  * gap instead of shifting anyone. Throws RenderError.
  */
@@ -279,6 +297,12 @@ export function renderIsland(plots: IslandPlot[], options: RenderOptions = {}): 
       const pin = markerAt(tree, scene.glyph);
       canvas.sprite("marker", pin.x, pin.y, pin.scale);
     }
+  }
+  for (const actor of campfireActors(scene, options.campfire)) {
+    const x = Math.round(actor.x);
+    const y = Math.round(actor.y);
+    if (actor.flip) canvas.flipped(actor.frames[0], x, y);
+    else canvas.sprite(actor.frames[0], x, y);
   }
 
   return { png: canvas.scaled(scale), width: canvas.width * scale, height: canvas.height * scale, scale, numbers };
