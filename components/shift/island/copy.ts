@@ -6,11 +6,12 @@
  * (docs/designs/shift-high-island-web.md, "Screens").
  *
  * House rules, checked by __tests__/copy.test.ts: Thai first, no em dashes,
- * no emoji, no markdown, never น้อง or ลูก, never talk down, no streaks. The
+ * no emoji except the reflection entry/help cues, no markdown, never น้อง or ลูก, never talk down, no streaks. The
  * one day count is the character sheet's days shown up (player/copy.ts
  * CHARACTER.days), which only goes up: a missed day never takes anything
  * away or starts a count over (lore bible, "กติกาของเกาะ", rule 3).
  */
+import { REFLECTION_MIN_CHARS, REFLECTIONS_PER_DAY } from "@/lib/shift-island/rounds-rules";
 import type { ProjectRoute, SeasonUnlock, TileStatus } from "@/lib/supabase/shift-quests/types";
 import type { ShiftDiscordAuthError } from "@/lib/shift/discordAuth";
 
@@ -559,3 +560,19 @@ export function questFlavor(kind: "main" | "side" | "proposed", slug: string | n
   if (kind === "proposed" || !slug) return null;
   return Object.hasOwn(QUEST_FLAVOR, slug) ? QUEST_FLAVOR[slug] : null;
 }
+
+// Thai reviewed (agy, Codex, Cursor), 2026-11-14. stuckHint and the form labels are the bot's rounds copy.
+export const REFLECT = {
+  entry: "✍️ ได้เรียนรู้อะไร",
+  changed: "บันทึกจากเกาะ",
+  learned: "ได้เรียนรู้อะไร",
+  learnedHint: `ลองอะไรแล้วพบอะไร หรือเพิ่งเข้าใจอะไร อย่างน้อย ${REFLECTION_MIN_CHARS} ตัวอักษร`,
+  stuck: "ติดตรงไหน (ไม่บังคับ)",
+  stuckHint: "เขียนไว้ก่อน แล้วค่อยส่งให้พี่เลี้ยงช่วยดูได้",
+  save: "บันทึกสิ่งที่ได้เรียนรู้",
+  saved: "เก็บสิ่งที่คุณได้เรียนรู้ไว้แล้ว",
+  again: "เขียนบันทึกเพิ่ม",
+  private: `รากนับได้คนละไม่เกิน ${REFLECTIONS_PER_DAY} บันทึกต่อวัน · บันทึกนี้เป็นส่วนตัว`,
+  discordHelp: "อยากให้พี่เลี้ยงช่วยไหม? ใน Discord พิมพ์ /island แล้วกด 🧱 ติด",
+  tooShort: `เขียนว่าได้เรียนรู้อะไร อย่างน้อย ${REFLECTION_MIN_CHARS} ตัวอักษร`,
+};

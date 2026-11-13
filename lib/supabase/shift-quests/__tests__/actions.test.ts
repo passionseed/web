@@ -390,3 +390,54 @@ describe("loadCampfire", () => {
     expect(call).not.toHaveBeenCalled();
   });
 });
+
+
+describe("reflect", () => {
+  it.each([undefined, null, "", "   ", " ติดเรื่องลิงก์ "])("saves private learned text with optional blocker %s", async (stuck) => {
+    call.mockResolvedValue(UUID);
+    await expect(actions.reflect({ learned: "  ได้ลองทดสอบกับเพื่อนแล้ว  ", stuck })).resolves.toEqual({ ok: true, data: null });
+    expect(call).toHaveBeenCalledTimes(1);
+    expect(call).toHaveBeenCalledWith("shift_quest_progress_add", ACTOR, "บันทึกจากเกาะ", "ได้ลองทดสอบกับเพื่อนแล้ว", null, stuck?.trim() || null, null, "private", null);
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    { learned: "" }, { learned: "   " }, { learned: "ก".repeat(9) },
+    { learned: "ก".repeat(1001) }, { learned: "ก".repeat(10), stuck: "ก".repeat(1001) },
+  ])("rejects invalid reflection before calling the database", async (input) => {
+    expect(await actions.reflect(input)).toMatchObject({ ok: false, code: "invalid_input" });
+    expect(call).not.toHaveBeenCalled();
+    expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it.each([10, 1000])("accepts %i code points", async (length) => {
+    call.mockResolvedValue(UUID);
+    expect(await actions.reflect({ learned: "🌱".repeat(length) })).toEqual({ ok: true, data: null });
+  });
+
+  it.each(["signed_out", "not_eligible", "not_started", "unavailable"])("refuses %s", async (state) => {
+    resolveIslandViewer.mockResolvedValue({ state });
+    expect(await actions.reflect({ learned: "ก".repeat(10) })).toMatchObject({ ok: false, code: state });
+    expect(call).not.toHaveBeenCalled();
+  });
+
+  it("uses the server actor even when input forges one", async () => {
+    call.mockResolvedValue(UUID);
+    const input = { learned: "ก".repeat(10), actor: OTHER };
+    await actions.reflect(input);
+    expect(call.mock.calls[0][1]).toBe(ACTOR);
+  });
+
+  it("maps no_project to the friendly Thai refusal and refreshes", async () => {
+    call.mockRejectedValue(new QuestError("no_project"));
+    expect(await actions.reflect({ learned: "ก".repeat(10) })).toEqual({ ok: false, code: "no_project", error: questErrorText("no_project") });
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not log private text on database failure", async () => {
+    call.mockRejectedValue(new QuestDbError("shift_quest_progress_add", "42501"));
+    expect(await actions.reflect({ learned: "PRIVATE_LEARNED_TEXT", stuck: "PRIVATE_STUCK_TEXT" })).toMatchObject({ ok: false, code: "unknown" });
+    expect(JSON.stringify(jest.mocked(console.error).mock.calls)).not.toMatch(/PRIVATE_/);
+    expect(refresh).not.toHaveBeenCalled();
+  });
+});

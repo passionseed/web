@@ -12,6 +12,7 @@
 import { z } from "zod";
 
 import { QuestError, type QuestApi } from "@/bot/src/quests/api";
+import { REFLECT } from "@/components/shift/island/copy";
 import { MAIN_MILESTONE_TAKE_THE_KEYS, ownershipRows, proofWithOwnership, type OwnershipRow } from "@/lib/shift-island/ownership";
 import {
   CARD_REFLECTION_FALLBACK,
@@ -42,6 +43,7 @@ import {
   linkCanvasSchema,
   loadQuestCanvasSchema,
   proposeQuestSchema,
+  reflectSchema,
   respondInviteSchema,
   resumeQuestSchema,
   setRestingSchema,
@@ -124,6 +126,19 @@ export async function checkIn(input?: {
       v.note
     );
     return { kind: row.kind === "note" ? "note" : "tap", tapsToday: Number(row.taps_today) || 0 };
+  });
+}
+
+/** A private reflection, counted toward roots by the existing Bangkok-day rules. */
+export async function reflect(input: {
+  learned: string;
+  stuck?: string | null;
+}): Promise<IslandActionResult> {
+  return withReadyViewer("reflect", reflectSchema, input, async ({ actor }, v) => {
+    await questApi().call(
+      "shift_quest_progress_add", actor, REFLECT.changed, v.learned, null, v.stuck, null, "private", null
+    );
+    return null;
   });
 }
 

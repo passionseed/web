@@ -3,6 +3,7 @@ import "server-only";
 import { z } from "zod";
 
 import { CARD_LIMITS } from "@/lib/shift-island/quest-canvas";
+import { REFLECTION_MIN_CHARS } from "@/lib/shift-island/rounds-rules";
 
 import { TEXT_LIMITS, type ProjectRoute } from "./types";
 
@@ -57,6 +58,11 @@ export const checkInSchema = z
   .object({ note: optionalText(TEXT_LIMITS.note) })
   .nullish()
   .transform((v) => ({ note: v?.note ?? null }));
+
+export const reflectSchema = z.object({
+  learned: requiredText(TEXT_LIMITS.learned).refine((v) => chars(v) >= REFLECTION_MIN_CHARS),
+  stuck: optionalText(TEXT_LIMITS.stuck),
+});
 
 export const setRestingSchema = z.object({ on: z.boolean() });
 

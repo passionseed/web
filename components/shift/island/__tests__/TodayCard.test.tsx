@@ -1,12 +1,15 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { toast } from "sonner";
 
-import { checkIn, setResting } from "@/app/shift/island/actions";
+import { checkIn, reflect, setResting } from "@/app/shift/island/actions";
 import type { IslandActionResult } from "@/lib/supabase/shift-quests/types";
+
+import { REFLECT } from "../copy";
+import { REFLECTION_MIN_CHARS, REFLECTIONS_PER_DAY } from "@/lib/shift-island/rounds-rules";
 
 import { TodayCard } from "../TodayCard";
 
-jest.mock("@/app/shift/island/actions", () => ({ checkIn: jest.fn(), setResting: jest.fn() }));
+jest.mock("@/app/shift/island/actions", () => ({ checkIn: jest.fn(), reflect: jest.fn(), setResting: jest.fn() }));
 jest.mock("sonner", () => ({ toast: { success: jest.fn(), error: jest.fn(), info: jest.fn() } }));
 
 type CheckInResult = IslandActionResult<{ kind: "tap" | "note"; tapsToday: number }>;
@@ -102,5 +105,62 @@ describe("TodayCard", () => {
     expect(screen.queryByRole("button", { name: "เช็กอินวันนี้" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "กลับมาแล้ว" }));
     await waitFor(() => expect(mockedSetResting).toHaveBeenCalledWith({ on: false }));
+  });
+});
+
+
+describe("TodayCard reflection", () => {
+  function open(resting = false) {
+    render(<TodayCard tapsToday={0} resting={resting} onStuck={jest.fn()} />);
+    fireEvent.click(screen.getByText(REFLECT.entry));
+  }
+
+  it.each([false, true])("is available before check-in, resting=%s", (resting) => {
+    open(resting);
+    expect(screen.getByLabelText(REFLECT.learned)).toHaveAttribute("maxLength", "1000");
+    expect(screen.getByLabelText(REFLECT.stuck)).toHaveAttribute("maxLength", "1000");
+    expect(screen.getByText(REFLECT.learnedHint)).toHaveTextContent(String(REFLECTION_MIN_CHARS));
+  });
+
+  it("rejects short reflections without saving", () => {
+    open();
+    fireEvent.change(screen.getByLabelText(REFLECT.learned), { target: { value: "  สั้น  " } });
+    fireEvent.click(screen.getByRole("button", { name: REFLECT.save }));
+    expect(screen.getByRole("alert")).toHaveTextContent(REFLECT.tooShort);
+    expect(reflect).not.toHaveBeenCalled();
+  });
+
+  it.each(["", "  ติดเรื่องลิงก์  "])("saves private reflection with blocker %s", async (stuck) => {
+    jest.mocked(reflect).mockResolvedValueOnce({ ok: true, data: null });
+    open();
+    fireEvent.change(screen.getByLabelText(REFLECT.learned), { target: { value: "  เรียนรู้จากการลองกับเพื่อน  " } });
+    fireEvent.change(screen.getByLabelText(REFLECT.stuck), { target: { value: stuck } });
+    fireEvent.click(screen.getByRole("button", { name: REFLECT.save }));
+    expect(await screen.findByText(REFLECT.saved)).toBeInTheDocument();
+    expect(reflect).toHaveBeenCalledWith({ learned: "เรียนรู้จากการลองกับเพื่อน", stuck: stuck.trim() || null });
+    expect(screen.getByText(REFLECT.private)).toHaveTextContent(String(REFLECTIONS_PER_DAY));
+    expect(!!screen.queryByText(REFLECT.discordHelp)).toBe(!!stuck.trim());
+    expect(screen.queryByLabelText(REFLECT.learned)).toBeNull();
+  });
+
+  it("retains writing on a server refusal", async () => {
+    jest.mocked(reflect).mockResolvedValueOnce({ ok: false, code: "no_project", error: "สร้างโปรเจกต์ก่อน" });
+    open();
+    fireEvent.change(screen.getByLabelText(REFLECT.learned), { target: { value: "เรียนรู้จากการลองกับเพื่อน" } });
+    fireEvent.click(screen.getByRole("button", { name: REFLECT.save }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("สร้างโปรเจกต์ก่อน");
+    expect(screen.getByLabelText(REFLECT.learned)).toHaveValue("เรียนรู้จากการลองกับเพื่อน");
+    expect(screen.queryByText(REFLECT.saved)).toBeNull();
+  });
+
+  it("disables save while pending and prevents duplicate requests", async () => {
+    let answer!: (value: IslandActionResult) => void;
+    jest.mocked(reflect).mockImplementationOnce(() => new Promise((resolve) => { answer = resolve; }));
+    open();
+    fireEvent.change(screen.getByLabelText(REFLECT.learned), { target: { value: "เรียนรู้จากการลองกับเพื่อน" } });
+    fireEvent.click(screen.getByRole("button", { name: REFLECT.save }));
+    expect(await screen.findByRole("button", { name: "กำลังบันทึก" })).toBeDisabled();
+    expect(reflect).toHaveBeenCalledTimes(1);
+    await act(async () => answer({ ok: true, data: null }));
   });
 });

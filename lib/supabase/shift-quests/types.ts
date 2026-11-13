@@ -27,6 +27,8 @@ export type QuestState =
 
 /** Caps copied from the SQL (__check_len / __check_url). UI shows counters against these; actions enforce them. */
 export const TEXT_LIMITS = {
+  learned: 1000,
+  stuck: 1000,
   proof: 2000,
   reflection: 2000,
   artifactUrl: 500,
