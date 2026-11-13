@@ -445,8 +445,11 @@ The short version for whoever runs the bot:
   5 to 14, 3 is 15 or more. Only trees every member agreed to show (with
   consent) get roots; a plain plot never does. Stages, coins and shop gates
   do not change. The bot reads `shift_quest_island_roots()` only from schema
-  10; below it, or when the read fails (logged once), trees have no roots. No
-  new command.
+  10; below it, or when the read fails (logged once), trees have no roots.
+  From schema 11, the ephemeral /island picture uses
+  `shift_quest_island_my_roots(actor)` for the caller's own tree even when
+  quiet, falling back to the public value on error. The live post stays public.
+  No new command.
 - Try it locally: `bot/quests-sandbox.sh` (a test Discord server and a test bot
   token; never the SHIFT server). Coins are on: `bot/scripts/economy-seed.ts`
   applies the DRAFT economy from `lib/content/shift-island-economy.ts` (reward

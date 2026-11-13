@@ -12,6 +12,9 @@
  * never fails the picture or the post: it is logged once per cause and the
  * trees are drawn without roots.
  *
+ * Schema 11 adds a caller-only override via shift_quest_island_my_roots(actor).
+ * It is used only on member views, never on the public live post.
+ *
  * Shared by the bot (the live post, /island) and the website (the island page
  * and its picture route): no Discord, Node or DOM imports.
  */
@@ -21,6 +24,8 @@ import { rootsLevel } from "./scene";
 
 /** The island schema that adds shift_quest_island_roots (20261113090000_shift_quest_roots.sql). */
 export const ROOTS_SCHEMA = 10;
+/** Schema that adds the caller-aware own-tree read. */
+export const MY_ROOTS_SCHEMA = 11;
 
 /** Roots by slot (levels 1..3 only). */
 export type RootsBySlot = ReadonlyMap<number, number>;
@@ -50,13 +55,15 @@ export function rootsFrom(raw: unknown): RootsBySlot {
  * The plots with their roots merged by slot: a level only where the map has
  * one and the plot is not plain (a plain plot has no roots, whatever it was
  * sent). Any roots the plots already carried are replaced. New objects; the
+ * On private member views, myRoots overrides only a non-plain mine plot;
+ * null keeps the public value, including when schema 11 is unavailable. The
  * input is not changed. A plot without roots has no roots field, so pictures
  * and signatures of an island without roots stay exactly as they were.
  */
-export function withRoots<P extends { slot: number; plain?: boolean; roots?: number }>(plots: readonly P[], roots: RootsBySlot): P[] {
+export function withRoots<P extends { slot: number; plain?: boolean; mine?: boolean; roots?: number }>(plots: readonly P[], roots: RootsBySlot, myRoots: number | null = null): P[] {
   return plots.map((plot) => {
     const { roots: _previous, ...rest } = plot;
-    const level = plot.plain ? 0 : (roots.get(plot.slot) ?? 0);
+    const level = plot.plain ? 0 : (plot.mine && myRoots !== null ? myRoots : (roots.get(plot.slot) ?? 0));
     return (level > 0 ? { ...rest, roots: level } : rest) as P;
   });
 }
@@ -114,4 +121,16 @@ export async function readRoots(api: QuestApi, prefix = "[shift-quests]"): Promi
 /** Test hook: forgets the causes already logged (versions are kept per api object; tests make a new one). */
 export function resetRootsForTests(): void {
   logged.clear();
+}
+
+/** Schema 11: caller's current tree only. Null preserves the outsider value on failure or older schemas. */
+export async function readMyRoots(api: QuestApi, actor: string, prefix = "[shift-quests]"): Promise<number | null> {
+  try {
+    if (!((await schemaOf(api)) >= MY_ROOTS_SCHEMA)) return null;
+    const level = await api.call<unknown>("shift_quest_island_my_roots", actor);
+    return typeof level === "number" && Number.isInteger(level) && level >= 0 && level <= 3 ? level : null;
+  } catch (error) {
+    logOnce(prefix, `own roots ${reasonOf(error)}`);
+    return null;
+  }
 }

@@ -12,7 +12,7 @@ import { cid } from "../ids";
 import { I, WIP_CORNER, WIP_CORNER_SHORT, seasonHead, seasonParts, type SeasonView } from "../island/copy";
 import type { CampfireView } from "../island/firepit";
 import { RenderError, renderIsland, type IslandPlot, type RenderedIsland } from "../island/render";
-import { readRoots, withRoots } from "../island/roots";
+import { readMyRoots, readRoots, withRoots } from "../island/roots";
 import {
   ButtonStyle,
   REVISION,
@@ -125,7 +125,8 @@ export async function islandMessage(ctx: Ctx): Promise<IslandCard> {
     // Schema 10: the shown trees' roots, merged by slot. Never throws: no roots on failure.
     readRoots(ctx.api),
   ]);
-  const drawn = drawIsland(withRoots(map.plots, roots), Boolean(view.season), islandCampfire(ctx));
+  const myRoots = view.project && map.plots.some((p) => p.mine && !p.plain) ? await readMyRoots(ctx.api, ctx.userId) : null;
+  const drawn = drawIsland(withRoots(map.plots, roots, myRoots), Boolean(view.season), islandCampfire(ctx));
   const files =
     "image" in drawn ? [new AttachmentBuilder(drawn.image.png, { name: ISLAND_PNG, description: "เกาะ SHIFT" })] : [];
   const blocks: Block[] = [];

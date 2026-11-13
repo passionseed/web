@@ -159,6 +159,8 @@ describe("getIslandPage", () => {
       ["shift_quest_board", [ACTOR]],
       ["shift_quest_canvas_get", [ACTOR]],
       ["shift_quest_campfire", [ACTOR, false]],
+      // Retry after the optional public roots schema read failed.
+      ["shift_quest_schema_version", []],
     ]);
     expect(page.canvasLink).toEqual({ linked: false });
     expect(page.campfire).toEqual({ count: 2, joinUrl: JOIN_URL });
@@ -482,5 +484,33 @@ describe("getIslandMap", () => {
     });
     const result = await getIslandMap(ACTOR);
     expect(result.plots).toEqual([{ ...map.plots[0], plain: false }]);
+  });
+});
+
+
+describe("member roots on web", () => {
+  it("uses quiet own-tree roots on both the page and picture, leaving outsiders unchanged", async () => {
+    respond({
+      shift_quest_island: { project }, shift_quest_board: {},
+      shift_quest_island_map: { ...map, plots: [...map.plots, { ...map.plots[0], slot: 5, mine: false, plain: true }] },
+      shift_quest_schema_version: 11,
+      shift_quest_island_roots: [], shift_quest_island_my_roots: 3,
+    });
+    for (const result of [(await getIslandPage(viewer)).map, await getIslandMap(ACTOR)]) {
+      expect(result.plots.map((p) => p.roots ?? 0)).toEqual([3, 0]);
+    }
+    expect(call).toHaveBeenCalledWith("shift_quest_island_my_roots", ACTOR);
+  });
+  it.each([10, 11])("keeps outsider roots if own roots are unavailable at schema %s", async (version) => {
+    respond({ shift_quest_island_map: map, shift_quest_schema_version: version,
+      shift_quest_island_roots: [{ slot: 4, roots: 1 }],
+      shift_quest_island_my_roots: new QuestDbError("shift_quest_island_my_roots", "42883") });
+    expect((await getIslandMap(ACTOR)).plots[0].roots).toBe(1);
+    if (version === 10) expect(call).not.toHaveBeenCalledWith("shift_quest_island_my_roots", ACTOR);
+  });
+  it("never requests private roots for an outsider picture", async () => {
+    respond({ shift_quest_island_map: { ...map, plots: map.plots.map((p) => ({ ...p, mine: false })) }, shift_quest_schema_version: 11 });
+    await getIslandMap(ACTOR);
+    expect(call).not.toHaveBeenCalledWith("shift_quest_island_my_roots", ACTOR);
   });
 });

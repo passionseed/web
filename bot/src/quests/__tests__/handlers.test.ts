@@ -157,6 +157,22 @@ describe("/island", () => {
     expect(card.accent_color).toBe(0x3ba55c);
   });
 
+  it("draws private roots for a quiet own tree, retaining outsider roots elsewhere", async () => {
+    const picture = async (ownRoots: number) => {
+      const c = ctx((fn) => ({
+        shift_quest_schema_version: 11,
+        shift_quest_island: islandView(),
+        shift_quest_island_map: { plots: [plot(1), plot(4)] },
+        shift_quest_island_roots: [{ slot: 1, roots: 2 }],
+        shift_quest_island_my_roots: ownRoots,
+      })[fn]);
+      const card = await islandMessage(c);
+      expect(c.api.call).toHaveBeenCalledWith("shift_quest_island_my_roots", c.userId);
+      return card.files[0].attachment;
+    };
+    expect(await picture(3)).not.toEqual(await picture(0));
+  });
+
   it("offers a plot and how the island works when there is no project, never the old quest form", async () => {
     const c = ctx((fn) => (fn === "shift_quest_island" ? islandView({ project: null }) : { plots: [] }));
     const view = await islandMessage(c);
