@@ -53,9 +53,12 @@ describe("island copy", () => {
   it.each(strings)("%s has no em dash, emoji or markdown", (path, text) => {
     expect(text).not.toMatch(/[—–]/);
     // These two Discord-matching entry/help cues are explicitly part of the reflection flow.
-    const emojiCue = path === "REFLECT.entry" ? "✍️ " : path === "REFLECT.discordHelp" ? "🆘 " : "";
+    const emojiCue = path === "REFLECT.entry" ? "✍️ " : "";
     if (emojiCue) expect(text.startsWith(emojiCue)).toBe(true);
-    expect(text.slice(emojiCue.length)).not.toMatch(/\p{Extended_Pictographic}/u);
+    // discordHelp names the real Discord button, 🧱 ติด (I.btnStuck in the bot), and no other emoji.
+    const named = path === "REFLECT.discordHelp" ? text.replace("🧱 ติด", "ติด") : text;
+    if (path === "REFLECT.discordHelp") expect(text).toContain("/island แล้วกด 🧱 ติด");
+    expect(named.slice(emojiCue.length)).not.toMatch(/\p{Extended_Pictographic}/u);
     expect(text).not.toMatch(/\*\*|__|`|^#|\[[^\]]*\]\(/);
   });
 

@@ -561,7 +561,7 @@ export function questFlavor(kind: "main" | "side" | "proposed", slug: string | n
   return Object.hasOwn(QUEST_FLAVOR, slug) ? QUEST_FLAVOR[slug] : null;
 }
 
-// DRAFT for the Thai review
+// Thai reviewed (agy, Codex, Cursor), 2026-11-14. stuckHint and the form labels are the bot's rounds copy.
 export const REFLECT = {
   entry: "✍️ ได้เรียนรู้อะไร",
   changed: "บันทึกจากเกาะ",
@@ -571,8 +571,8 @@ export const REFLECT = {
   stuckHint: "เขียนไว้ก่อน แล้วค่อยส่งให้พี่เลี้ยงช่วยดูได้",
   save: "บันทึกสิ่งที่ได้เรียนรู้",
   saved: "เก็บสิ่งที่คุณได้เรียนรู้ไว้แล้ว",
-  again: "เขียนบันทึกอีก",
-  private: `บันทึกนี้เป็นส่วนตัว รากนับได้คนละไม่เกิน ${REFLECTIONS_PER_DAY} บันทึกต่อวันตามเวลาไทย`,
-  discordHelp: "🆘 ส่งเรื่องที่ติดให้พี่เลี้ยงช่วยดูได้จาก Discord",
-  tooShort: `เล่าสิ่งที่ได้เรียนรู้อย่างน้อย ${REFLECTION_MIN_CHARS} ตัวอักษร`,
+  again: "เขียนบันทึกเพิ่ม",
+  private: `รากนับได้คนละไม่เกิน ${REFLECTIONS_PER_DAY} บันทึกต่อวัน · บันทึกนี้เป็นส่วนตัว`,
+  discordHelp: "อยากให้พี่เลี้ยงช่วยไหม? ใน Discord พิมพ์ /island แล้วกด 🧱 ติด",
+  tooShort: `เขียนว่าได้เรียนรู้อะไร อย่างน้อย ${REFLECTION_MIN_CHARS} ตัวอักษร`,
 };
