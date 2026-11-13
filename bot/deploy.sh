@@ -143,7 +143,7 @@ cd "$ROOT"
 DEPS=(discord.js @supabase/supabase-js pg tsx gifenc)
 # lib/shift-island/live: the web's living-island drawing code, which draws the bot's moving island GIF.
 # components/shift/island/story/scenes.ts: the story's scenes, shared with the web story (bot/src/quests/story.ts).
-FILES=(bot lib/content/shift-cohort.ts lib/shift/voiceWindow.ts lib/shift-island/live lib/shift-island/rounds-rules.ts components/shift/island/story/scenes.ts tsconfig.json)
+FILES=(bot lib/content/shift-cohort.ts lib/content/shift-island-economy.ts lib/supabase/shift-quests/board.ts lib/supabase/shift-quests/types.ts lib/shift/voiceWindow.ts lib/shift-island/live lib/shift-island/rounds-rules.ts components/shift/island/story/scenes.ts tsconfig.json)
 
 read -r -d '' REMOTE_DEPLOY <<'DEPLOY' || true
 ARCHIVE="$1"
