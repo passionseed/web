@@ -6,9 +6,10 @@ import { AttachmentBuilder, MessageFlags, MessageFlagsBitField } from "discord.j
 import { handleInteraction } from "..";
 import { QuestError, type QuestApi, type Session } from "../api";
 import { T } from "../copy";
-import { I, LIVE } from "../island/copy";
+import { I, LIVE, QB } from "../island/copy";
 import { PANEL_TARGETS, liveView, panelId, type LivePostData } from "../live";
 import { TONE_COLORS, renderView } from "../ui";
+import { boardFixture } from "../test-helpers/board";
 import { accentColor, bodyText, customIds } from "../test-helpers/view";
 
 /**
@@ -71,6 +72,7 @@ const ANSWERS: Record<string, unknown> = {
   shift_quest_island: islandView(),
   shift_quest_island_map: { plots: [{ slot: 4, stage: 2, visitor: false, key: false, helper: false, lantern: false, name: null, mine: true, plain: true }] },
   shift_quest_my_quests: [],
+  shift_quest_board: boardFixture(),
   shift_quest_checkin: null,
   shift_quest_catalog_list: { live: false, terms: null, balance: 0, items: [], mine: [] },
   shift_quest_help_create: "h",
@@ -173,7 +175,7 @@ function expectPostUntouched(calls: Call[]) {
 const OPENS: Record<string, { title: string; db: string[] }> = {
   // The schema version: roots are read only from schema 10, and this fake database does not answer it (no roots).
   me: { title: I.header, db: ["shift_quest_island", "shift_quest_island_map", "shift_quest_schema_version"] },
-  quests: { title: I.workTitle, db: ["shift_quest_my_quests"] },
+  quests: { title: QB.title, db: ["shift_quest_board"] },
   checkin: { title: I.tappedTitle, db: ["shift_quest_island", "shift_quest_checkin"] },
   rewards: { title: T.rewardsTitle, db: ["shift_quest_catalog_list"] },
   how: { title: I.btnHow, db: [] },
@@ -258,10 +260,11 @@ describe("live post panel", () => {
     }
   });
 
-  it("names the work button after the card it opens", async () => {
-    expect(LIVE.panel.quests).toBe(I.btnWork);
+  it("names the quest button after the card it opens, which keeps 📋 งานที่ส่งไว้ one tap away", async () => {
+    expect(LIVE.panel.quests).toBe(I.btnBoard);
     const { calls } = await run("sq|lp|quests", session());
     expect(bodyText(calls[1].payload).startsWith(`### ${LIVE.panel.quests}\n`)).toBe(true);
+    expect(customIds(calls[1].payload)).toEqual(expect.arrayContaining(["sq|is_work", "sq|is_ms", "sq|qb_side"]));
   });
 
   it("shows a failure in the private reply, never on the post, with a retry of the same panel button", async () => {

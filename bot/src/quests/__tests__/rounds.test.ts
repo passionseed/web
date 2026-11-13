@@ -8,7 +8,8 @@ import { QuestError, type QuestApi, type Session } from "../api";
 import type { Ctx } from "../context";
 import { T } from "../copy";
 import { R } from "../rounds-copy";
-import { ROUND_MARKER, roundAt, roundView, startRounds, type RoundDeps } from "../rounds";
+import { ENCOUNTER_EVERY, ROUND_MARKER, encounterAt, roundAt, roundView, startRounds, type RoundAt, type RoundDeps } from "../rounds";
+import { boardFixture, side, SIDE_IDS } from "../test-helpers/board";
 import { renderView } from "../ui";
 import { bodyText, customIds, viewText } from "../test-helpers/view";
 
@@ -42,7 +43,7 @@ describe("roundView", () => {
     const a = renderView(roundView(roundAt(TEN + 26 * MIN)), { ephemeral: false });
     const b = renderView(roundView(roundAt(TEN + 56 * MIN)), { ephemeral: false });
     expect(bodyText(a).startsWith(`### ${R.restTitle}\n`)).toBe(true);
-    expect(customIds(a)).toEqual(["sq|rd_close", "sq|rd_aim"]);
+    expect(customIds(a).slice(0, 2)).toEqual(["sq|rd_close", "sq|rd_aim"]);
     expect(viewText(a)).not.toBe(viewText(b));
     expect(R.tips.some((tip) => viewText(a).includes(tip))).toBe(true);
   });
@@ -51,7 +52,64 @@ describe("roundView", () => {
     const text = JSON.stringify(R);
     expect(text).not.toContain("—");
     expect(text).not.toContain("น้องๆ");
+    expect(text).not.toContain("ปลูก");
     expect(text).not.toMatch(/สตรีค|streak|ติดต่อกัน/);
+  });
+});
+
+/** The rest of a round, by its number. */
+const restOf = (round: number): RoundAt => ({ round, phase: "rest", restAt: 0, nextAt: 60 });
+/** The first rounds from TEN's whose rest carries an encounter, and one whose rest does not. */
+const FIRST = roundAt(TEN).round;
+const withEncounter = Array.from({ length: 200 }, (_, k) => FIRST + k).filter((r) => encounterAt(r));
+const without = Array.from({ length: 200 }, (_, k) => FIRST + k).find((r) => !encounterAt(r))!;
+
+describe("encounters", () => {
+  it("come on about one rest in three, chosen by the round number alone, so a restart shows the same one", () => {
+    const rounds = Array.from({ length: 3000 }, (_, k) => FIRST + k);
+    const share = rounds.filter((r) => encounterAt(r)).length / rounds.length;
+    expect(share).toBeGreaterThan(1 / ENCOUNTER_EVERY - 0.05);
+    expect(share).toBeLessThan(1 / ENCOUNTER_EVERY + 0.05);
+    for (const r of rounds.slice(0, 50)) expect(encounterAt(r)).toBe(encounterAt(r));
+    // Every moment from the lore turns up, and not on a fixed beat.
+    const keys = new Set(rounds.map((r) => encounterAt(r)?.key).filter(Boolean));
+    expect([...keys].sort()).toEqual(R.encounters.map((e) => e.key).sort());
+    const gaps = new Set(withEncounter.slice(1).map((r, k) => r - withEncounter[k]));
+    expect(gaps.size).toBeGreaterThan(1);
+    expect(encounterAt(Number.NaN)).toBeNull();
+  });
+
+  it("puts the encounter on the rest for everyone: its lines, its button with the round, the fine print, the marker", () => {
+    const round = withEncounter[0];
+    const encounter = encounterAt(round)!;
+    const p = renderView(roundView(restOf(round)), { ephemeral: false });
+    expect(p.flags).toBe(MessageFlags.IsComponentsV2);
+    expect(bodyText(p)).toContain(encounter.text);
+    expect(bodyText(p)).toContain(R.encounterFine);
+    expect(viewText(p)).toContain(ROUND_MARKER);
+    expect(viewText(p)).toContain(encounter.button);
+    expect(customIds(p)).toEqual(["sq|rd_close", "sq|rd_aim", `sq|rd_enc|${round}`]);
+    // A restart draws the same message.
+    expect(JSON.stringify(renderView(roundView(restOf(round)), { ephemeral: false }))).toBe(JSON.stringify(p));
+    // Nobody is named or pinged.
+    expect(p.allowedMentions).toEqual({ parse: [] });
+    expect(viewText(p)).not.toMatch(/<@|@everyone|@here/);
+  });
+
+  it("leaves most rests, and every focus, without one", () => {
+    const rest = renderView(roundView(restOf(without)), { ephemeral: false });
+    expect(customIds(rest)).toEqual(["sq|rd_close", "sq|rd_aim"]);
+    expect(bodyText(rest)).not.toContain(R.encounterFine);
+    const focus = renderView(roundView({ ...restOf(withEncounter[0]), phase: "focus" }), { ephemeral: false });
+    expect(customIds(focus)).toEqual(["sq|rd_aim"]);
+  });
+
+  it("has one to two lines each, in the house style", () => {
+    for (const e of R.encounters) {
+      expect(e.text.split("\n").length).toBeLessThanOrEqual(2);
+      expect(e.button.length).toBeLessThanOrEqual(80);
+      expect(`${e.text}${e.button}${e.found}`).not.toMatch(/—|น้องๆ|ปลูก|เหรียญ|coin/i);
+    }
   });
 });
 
@@ -219,6 +277,13 @@ function interaction(kind: "button" | "modal", fields: Record<string, string> = 
       i.replied = true;
       sent.push({ how: "reply", payload });
     },
+    deferReply: async (payload: unknown) => {
+      i.deferred = true;
+      sent.push({ how: "deferReply", payload });
+    },
+    editReply: async (payload: unknown) => sent.push({ how: "editReply", payload }),
+    update: async (payload: unknown) => sent.push({ how: "update", payload }),
+    deferUpdate: async () => sent.push({ how: "deferUpdate", payload: null }),
     showModal: async (m: { toJSON: () => { custom_id?: string } }) => modals.push(m.toJSON()),
   };
   return { i: i as never, sent, modals };
@@ -291,5 +356,63 @@ describe("round buttons", () => {
     const c = ctx();
     c.session = { ...c.session, member_id: null, onboarded: false };
     await expect(ACTION_HANDLERS.get("rd_close")!(interaction("button").i, c, [])).rejects.toThrow(T.notStarted);
+  });
+});
+
+describe("the encounter's button", () => {
+  const round = withEncounter[0];
+  const press = async (c: Ctx, r: number | string = round) => {
+    const b = interaction("button");
+    await ACTION_HANDLERS.get("rd_enc")!(b.i, c, [String(r)]);
+    return b;
+  };
+
+  it("answers privately with the note: one side quest the presser can take, read from the board, never an edit of the round message", async () => {
+    const c = ctx((fn) => (fn === "shift_quest_board" ? boardFixture() : null));
+    const b = await press(c);
+    expect(calls(c)).toEqual([["shift_quest_board", "1111111111"]]);
+    expect(b.sent.map((x) => x.how)).toEqual(["deferReply", "editReply"]);
+    expect((b.sent[0].payload as { flags: number }).flags & MessageFlags.Ephemeral).toBeTruthy();
+    const card = b.sent[1].payload as never;
+    expect(bodyText(card)).toContain(encounterAt(round)!.found);
+    expect(bodyText(card)).toContain(R.encounterNoteFine);
+    // Only a side quest open to take: never the one in progress or the locked one.
+    const ids = customIds(card);
+    const take = ids.find((id) => id.startsWith("sq|qb_take|"))!;
+    expect([SIDE_IDS[0], SIDE_IDS[3]]).toContain(take.split("|")[2]);
+    expect(ids).toContain(`sq|qb_send|${take.split("|")[2]}`);
+  });
+
+  it("offers everyone at the fire the same quest in a round, when it is open to them", async () => {
+    const picks = new Set<string>();
+    for (const user of ["1", "2", "3"]) {
+      const c = ctx((fn) => (fn === "shift_quest_board" ? boardFixture({ side: [side(0), side(1), side(2), side(3)] }) : null));
+      c.userId = user;
+      picks.add(customIds((await press(c)).sent[1].payload as never).find((id) => id.startsWith("sq|qb_take|"))!);
+    }
+    expect(picks.size).toBe(1);
+  });
+
+  it("says so, and points to the board or a plot, when no side quest is open to the presser", async () => {
+    const none = ctx((fn) => (fn === "shift_quest_board" ? boardFixture({ side: [side(2, { locked: true, missing_milestones: [3] })] }) : null));
+    let card = (await press(none)).sent[1].payload as never;
+    expect(bodyText(card)).toContain(R.encounterNone);
+    expect(customIds(card)).toEqual(["sq|is_board", "sq|is_view"]);
+
+    const noPlot = ctx((fn) => (fn === "shift_quest_board" ? boardFixture({ project: null }) : null));
+    card = (await press(noPlot)).sent[1].payload as never;
+    expect(bodyText(card)).toContain(R.encounterNoPlot);
+    expect(customIds(card)).toEqual(["sq|is_claim", "sq|is_view"]);
+  });
+
+  it("does nothing for a round without an encounter or a forged round, and is for students who have started", async () => {
+    for (const r of [without, "abc", "-1", ""]) {
+      const c = ctx();
+      const b = await press(c, r);
+      expect([r, b.sent, calls(c)]).toEqual([r, [], []]);
+    }
+    const c = ctx();
+    c.session = { ...c.session, member_id: null, onboarded: false };
+    await expect(press(c)).rejects.toThrow(T.notStarted);
   });
 });

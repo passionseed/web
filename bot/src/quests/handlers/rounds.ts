@@ -5,13 +5,24 @@
  * the person who pressed, privately. The reflection is a private journal
  * entry, the same as /progress add, so /data, erasure and the journal cover
  * it; the roots count it (design: docs/superpowers/specs/2026-11-13-shift-campfire-rounds-roots-design.md).
+ *
+ * On a rest with an encounter (rounds.ts encounterAt), its button shows the
+ * note it left: one side quest from the board, the same starting pick for
+ * everyone at the fire (handlers/board.ts pickSide), as the quest card's own
+ * side quest card. Nothing is stored and nothing pays for being there: the
+ * side quest pays only through its normal mentor review.
  */
+import { MessageFlags } from "discord.js";
+
 import { QuestError, type QuestApi } from "../api";
 import { requireStudent } from "../context";
 import { T } from "../copy";
 import { cid } from "../ids";
+import { I } from "../island/copy";
+import { encounterAt } from "../rounds";
 import { LEARNED_MIN, R } from "../rounds-copy";
-import { ButtonStyle, button, buttonRows, modal, show, textValue } from "../ui";
+import { ButtonStyle, button, buttonRows, modal, show, textValue, type View } from "../ui";
+import { pickSide, readBoard, sideView } from "./board";
 import type { HandlerSet } from "./types";
 
 const oneLine = (text: string, max: number) => {
@@ -30,8 +41,45 @@ async function endSession(api: QuestApi, userId: string, reflection: string | nu
   }
 }
 
+/** The encounter's note when no side quest is open to the person who pressed. */
+function emptyNote(found: string, hasPlot: boolean): View {
+  return {
+    tone: "island",
+    title: R.encounterEmptyTitle,
+    blocks: [
+      { kind: "subtext", text: found },
+      { kind: "text", text: hasPlot ? R.encounterNone : R.encounterNoPlot },
+    ],
+    rows: buttonRows(
+      hasPlot
+        ? [button(cid("is_board"), I.btnBoard), button(cid("is_view"), I.btnBack)]
+        : [button(cid("is_claim"), I.btnClaim, ButtonStyle.Success), button(cid("is_view"), I.btnBack)]
+    ),
+  };
+}
+
 export const rounds: HandlerSet = {
   actions: {
+    /**
+     * The encounter's button on the round's public message: a new private
+     * reply, acknowledged before the board is read, never an edit of the
+     * message everyone at the fire shares.
+     */
+    async rd_enc(i, ctx, [roundText]) {
+      requireStudent(ctx);
+      if (!i.isButton() || !/^\d{1,12}$/.test(roundText ?? "")) return;
+      const round = Number(roundText);
+      const encounter = encounterAt(round);
+      if (!encounter) return;
+      await i.deferReply({ flags: MessageFlags.Ephemeral });
+      const board = await readBoard(ctx);
+      const side = pickSide(board, round);
+      await show(
+        i,
+        side ? sideView(board, side, { intro: encounter.found, fine: R.encounterNoteFine }) : emptyNote(encounter.found, Boolean(board.project))
+      );
+    },
+
     async rd_aim(i, ctx) {
       requireStudent(ctx);
       if (!i.isButton()) return;

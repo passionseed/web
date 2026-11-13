@@ -18,6 +18,7 @@ import { MessageFlags } from "discord.js";
 import { requireEligible, type Ctx } from "../context";
 import { isPanelTarget, type PanelTarget } from "../live";
 import { show } from "../ui";
+import { board } from "./board";
 import { island, showIsland } from "./island";
 import { introView, showRewards } from "./student";
 import type { ActionInteraction, HandlerSet } from "./types";
@@ -26,7 +27,7 @@ type Open = (i: ActionInteraction, ctx: Ctx) => Promise<void>;
 
 /** One of the island card's own buttons, as it is (each checks the student gate itself). */
 const islandAction =
-  (action: "is_work" | "is_tap" | "is_stuck" | "is_how"): Open =>
+  (action: "is_tap" | "is_stuck" | "is_how"): Open =>
   (i, ctx) =>
     island.actions![action](i, ctx, []);
 
@@ -38,8 +39,9 @@ const islandAction =
 const OPEN: Record<PanelTarget, { open: Open; form?: true }> = {
   // /island
   me: { open: (i, ctx) => showIsland(i, ctx, false) },
-  // 📋 on the island card: the student's own quests (/quest is retired; they live on the island)
-  quests: { open: islandAction("is_work") },
+  // 📜 on the island card: the quest card (next main quest, community and side quests),
+  // with 📋 งานที่ส่งไว้ (the student's own quests) one tap away on it
+  quests: { open: (i, ctx) => board.actions!.is_board(i, ctx, []) },
   // 🔨 on the island card: today's private check-in, then ✏️ for a note
   // Without a plot, is_tap offers one (🌱) instead of checking in.
   checkin: { open: islandAction("is_tap") },

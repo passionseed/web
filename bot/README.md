@@ -325,8 +325,8 @@ The short version for whoever runs the bot:
   milestones of the trees shown by name (quiet projects never count), the island goal, the Demo Day
   countdown, how many people sit at the campfire (a number, never names), and
   a button panel. The first row is personal: "🏝️ ของฉัน" (the /island card),
-  "📋 งานที่ส่งไว้" (the island's 📋 card of your own open and sent work, under
-  the same name), "✍️ เช็กอิน" (the island's 🔨 check-in; without a plot it
+  "📜 กระดานเควสต์" (the quest card, below; its 📋 งานที่ส่งไว้ button opens
+  your own open and sent work, as before), "✍️ เช็กอิน" (the island's 🔨 check-in; without a plot it
   offers 🌱 จับจองที่ดิน instead), "🆘 ขอช่วย" (the help form) and "🎁 รางวัล"
   (the /rewards card). The second row has "📖 วิธีเล่น" (how the island works;
   its 🌱 จับจองที่ดิน shows only to students without a project), then
@@ -408,6 +408,34 @@ The short version for whoever runs the bot:
   (Read Message History to sweep leftovers); without it, rounds log once and
   stay off. Students learn about it from the 📖 card and the web guide
   (`/shift/island/guide`).
+  - Encounters: on about one rest in three, the rest message also carries a
+    moment from the island's lore (a person from the boat, a bottle on the
+    shore, a gull, a mentor passing; `R.encounters` in `rounds-copy.ts`, DRAFT)
+    and a button that shows its note privately: one side quest from the
+    board, as the quest card's side quest card, with 🧭 take it and 🌟 send
+    it. Which rest and which moment follow from the round number alone
+    (`encounterAt` in `rounds.ts`), so a restart shows the same one and
+    everyone at the fire sees the same lines. The quest is read from the
+    presser's board when they press (`pickSide` in `handlers/board.ts`): the
+    same starting place in the board's order for everyone in that round, then
+    the first one that person can take, on their project's route first.
+    Nothing is stored, nothing pays for being there: a side quest pays only
+    through its normal mentor review.
+- Quest card (`bot/src/quests/handlers/board.ts`, copy `QB` in
+  `island/copy.ts`): "📜 กระดานเควสต์" on the island card and the live post's
+  panel shows the website's quest board in Discord, read with the same
+  `shift_quest_board(actor)`: the next main quest for the tree (and your other
+  open main quests), the community quests (milestones 6 and 7), and the side
+  quests, one line each with its state (tile states from
+  `lib/supabase/shift-quests/board.ts`, the web board's own). Actions where
+  Discord already has them: 🌟 sends a main quest (the island's milestone
+  picker), the menu opens a side quest with 🧭 รับเควสต์นี้
+  (`shift_quest_side_choose`, then the quest as 📋 shows it) and 🌟 ส่งงานเลย
+  (`shift_quest_side_submit`: proof and the quest's question), 📋 งานที่ส่งไว้
+  stays one tap away, and "🌐 กระดานบนเว็บ" opens `/shift/island?at=board`,
+  which opens the board sheet (`islandBoardUrl` in `weblink.ts`; only when the
+  island's address is set). The bot already holds these functions (the grant
+  loop of `20261111090900`); no migration, no new command.
 - Roots (schema 10, `20261113090000_shift_quest_roots`;
   `bot/src/quests/island/roots.ts`): reflections grow a tree's roots, drawn
   over its soil in the live post and the /island picture (`roots_1` to

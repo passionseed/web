@@ -146,7 +146,7 @@ describe("liveView", () => {
     expect(rows).toEqual([
       [
         { label: "🏝️ ของฉัน", style: ButtonStyle.Primary, id: "sq|lp|me" },
-        { label: "📋 งานที่ส่งไว้", style: ButtonStyle.Secondary, id: "sq|lp|quests" },
+        { label: "📜 กระดานเควสต์", style: ButtonStyle.Secondary, id: "sq|lp|quests" },
         { label: "✍️ เช็กอิน", style: ButtonStyle.Secondary, id: "sq|lp|checkin" },
         { label: "🆘 ขอช่วย", style: ButtonStyle.Secondary, id: "sq|lp|help" },
         { label: "🎁 รางวัล", style: ButtonStyle.Secondary, id: "sq|lp|rewards" },

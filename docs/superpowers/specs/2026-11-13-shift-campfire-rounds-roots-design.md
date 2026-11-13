@@ -46,8 +46,9 @@ campfire (live presence in the coworking voice channel).
 
 3. Fire pit in the Discord picture; confirm the coworking channel is the
    voice channel so the web fire shows.
-4. Encounters during 🌊 rests.
-5. A quest card in Discord with a 🌐 link.
+4. Encounters during 🌊 rests. Built: see "Quest card and campfire
+   encounters" in `docs/features/shift-high-quests.md`.
+5. A quest card in Discord with a 🌐 link. Built (same section).
 
 ## Anti-goals
 

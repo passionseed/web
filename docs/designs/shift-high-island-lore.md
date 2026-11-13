@@ -314,6 +314,8 @@ student's own words and stands alone.
 | Place names | `components/shift/island/copy.ts` (`PLACES`) | one source for the island, plaza, board, campfire and stage names; the campfire sheet is titled กองไฟ; the lantern line names the lanterns |
 | Quest flavor | `components/shift/island/copy.ts` (`QUEST_FLAVOR`), shown by `QuestDetailSheet.tsx` | one muted line above the purpose |
 | Discord /start | `bot/src/quests/copy.ts` (`T.introBody`, `T.started`) | the intro now continues from the invite (the island is where a SHIFT project keeps growing); the started card keeps the festival line and adds "where this goes" |
+| Campfire encounters (DRAFT) | `bot/src/quests/rounds-copy.ts` (`R.encounters`) | on about one 🌊 rest in three, one moment at the fire: a person from the boat, a bottle on the shore (a note, not an invitation), a gull, a mentor passing. Each leaves one side quest's note, shown privately. The bottle is the only one the game had not used before: the invite's bottle stays the invite's, and this one says so ("รอบนี้ข้างในไม่ใช่จดหมายเชิญ") |
+| Quest card (DRAFT) | `bot/src/quests/island/copy.ts` (`QB`) | กระดานเควสต์ in Discord: the same name as the plaza's board on the web |
 
 Not wired: the bot's island card and quest pages (no room without making them
 longer; only the rest rule in "how the island works" changed), the gate, the

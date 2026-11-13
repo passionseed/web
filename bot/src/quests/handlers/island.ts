@@ -191,6 +191,8 @@ export async function islandMessage(ctx: Ctx): Promise<IslandCard> {
         ...buttonRows([
           button(cid("is_tap"), I.btnTap, ButtonStyle.Primary),
           button(cid("is_ms"), I.btnMilestone, ButtonStyle.Success),
+          // The quest board in Discord (handlers/board.ts); 📋 stays for your own sent work.
+          button(cid("is_board"), I.btnBoard),
           button(cid("is_work"), I.btnWork),
         ]),
         ...buttonRows([

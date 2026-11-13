@@ -11,6 +11,11 @@
  * message is the same for everyone, and its buttons answer each person
  * privately (handlers/rounds.ts). Nothing here is stored.
  *
+ * About one rest in three carries an encounter (encounterAt): a moment from
+ * the island's lore that leaves one side quest's note at the fire. Which rest,
+ * and which moment, follow from the round number alone, so a restart shows
+ * the same one and everyone at the fire sees the same lines.
+ *
  * Design: docs/superpowers/specs/2026-11-13-shift-campfire-rounds-roots-design.md.
  */
 import type { Client, Message } from "discord.js";
@@ -19,7 +24,7 @@ import { FOCUS_MINUTES, REST_MINUTES } from "@/lib/shift-island/rounds-rules";
 
 import type { Campfire } from "./campfire";
 import { cid } from "./ids";
-import { R } from "./rounds-copy";
+import { R, type Encounter } from "./rounds-copy";
 import { ButtonStyle, button, buttonRows, renderView, type View } from "./ui";
 
 const MINUTE = 60_000;
@@ -61,6 +66,28 @@ export function roundAt(nowMs: number): RoundAt {
   };
 }
 
+/**
+ * A well-mixed 32-bit number from a round (a murmur3 finaliser), so encounters
+ * do not fall on a visible every-third-rest beat. Pure: the same round always
+ * gives the same number, in every process.
+ */
+export function roundHash(round: number, salt = 0): number {
+  let x = (Math.trunc(round) ^ Math.imul(salt + 1, 0x9e3779b9)) >>> 0;
+  x = Math.imul(x ^ (x >>> 16), 0x85ebca6b) >>> 0;
+  x = Math.imul(x ^ (x >>> 13), 0xc2b2ae35) >>> 0;
+  return (x ^ (x >>> 16)) >>> 0;
+}
+
+/** One rest in this many carries an encounter, on average. */
+export const ENCOUNTER_EVERY = 3;
+
+/** The encounter a round's rest carries, or null (most rests): decided by the round number only. */
+export function encounterAt(round: number): Encounter | null {
+  if (!Number.isSafeInteger(round)) return null;
+  if (roundHash(round) % ENCOUNTER_EVERY !== 0) return null;
+  return R.encounters[roundHash(round, 1) % R.encounters.length];
+}
+
 /** The round's message: the same for everyone at the fire. */
 export function roundView(at: RoundAt): View {
   if (at.phase === "focus") {
@@ -75,14 +102,18 @@ export function roundView(at: RoundAt): View {
     };
   }
   const tip = R.tips[((at.round % R.tips.length) + R.tips.length) % R.tips.length];
+  const encounter = encounterAt(at.round);
+  const buttons = [button(cid("rd_close"), R.btnClose, ButtonStyle.Success), button(cid("rd_aim"), R.btnAim)];
+  if (encounter) buttons.push(button(cid("rd_enc", at.round), encounter.button));
   return {
     tone: "island",
     title: R.restTitle,
     blocks: [
       { kind: "text", text: R.rest(tip, at.nextAt) },
-      { kind: "subtext", text: `${R.restFine}\n${ROUND_MARKER}` },
+      ...(encounter ? [{ kind: "divider" } as const, { kind: "text", text: encounter.text } as const] : []),
+      { kind: "subtext", text: `${encounter ? `${R.encounterFine}\n` : ""}${R.restFine}\n${ROUND_MARKER}` },
     ],
-    rows: buttonRows([button(cid("rd_close"), R.btnClose, ButtonStyle.Success), button(cid("rd_aim"), R.btnAim)]),
+    rows: buttonRows(buttons),
   };
 }
 
