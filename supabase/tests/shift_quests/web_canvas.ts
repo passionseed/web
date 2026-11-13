@@ -44,6 +44,7 @@ const WEB_ALLOWLIST = [
   "shift_quest_canvas_unlink(text)",
   "shift_quest_character(text)",
   "shift_quest_checkin(text,text)",
+  "shift_quest_progress_add(text,text,text,text,text,text,text,uuid)",
   "shift_quest_consent_adult(text,date,text)",
   "shift_quest_consent_get(text)",
   "shift_quest_consent_import(text,text,timestamp with time zone,boolean,boolean)",
