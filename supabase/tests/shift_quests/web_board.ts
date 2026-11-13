@@ -241,6 +241,7 @@ async function main(): Promise<void> {
     ["island_links", "select public.shift_quest_island_links($1::text)", [NOBODY], "not_started"],
     // 20261113090000_shift_quest_roots: no caller, the outsider view; an empty island has no roots.
     ["island_roots", "select public.shift_quest_island_roots()", [], "ok"],
+    ["island_my_roots", "select public.shift_quest_island_my_roots($1::text)", [NOBODY], "not_started"],
     // 20261111095000_shift_quest_player: an unknown caller or an unknown link stores nothing.
     ["character", "select public.shift_quest_character($1::text)", [NOBODY], "not_started"],
     ["wallet", "select public.shift_quest_wallet($1::text)", [NOBODY], "not_started"],
