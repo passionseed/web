@@ -46,7 +46,7 @@ export const I = {
   btnRest: "🌙 ขอพัก",
   btnWake: "☀️ กลับมาแล้ว",
   btnWork: "📋 งานที่ส่งไว้",
-  /** The quest card (handlers/board.ts): the island's quest board in Discord. DRAFT. */
+  /** The quest card (handlers/board.ts): the island's quest board in Discord. Thai reviewed (agy, Codex, Cursor), 2026-11-14. */
   btnBoard: "📜 กระดานเควสต์",
   btnClaim: "🌱 จับจองที่ดิน",
   btnHow: "📖 เกาะนี้ทำงานยังไง",
@@ -71,10 +71,9 @@ export const I = {
    * No date: the island card shows the season's own. Voluntary, no promise of
    * admissions, money or a role.
    */
-  // DRAFT for the Thai review: the campfire rounds and the roots, in two lines (rounds.ts, roots).
-  // DRAFT: the quest board, the campfire rounds (with their encounters) and the roots, one line each.
+  // Thai reviewed 2026-11-14: the quest board, the campfire rounds (with their encounters) and the roots, one line each.
   howRounds:
-    "📜 **กระดานเควสต์** ขั้นต่อไป เควสต์ชุมชน และเควสต์เสริม ดูและส่งงานได้จากปุ่ม 📜\n" +
+    "📜 **กระดานเควสต์** เควสต์หลัก เควสต์ชุมชน และเควสต์เสริม ดูและส่งงานได้จากปุ่ม 📜\n" +
     `🔥 **รอบกองไฟ** เข้าห้องเสียงกองไฟ โฟกัส ${FOCUS_MINUTES} นาที พัก ${REST_MINUTES} นาที เริ่มพร้อมกันทุก :00 และ :30 บางรอบพักมีโน้ตเควสต์เสริมแวะมาที่กองไฟ\n` +
     `🌱 **ราก** กด ✍️ ปิดรอบ แล้วเขียนว่าได้เรียนรู้อะไร รากต้นไม้จะหยั่งลึกขึ้น (นับได้คนละไม่เกิน ${REFLECTIONS_PER_DAY} บันทึกต่อวัน ส่วนขั้นของต้นไม้ยังมาจากงานที่พี่เลี้ยงยืนยัน)`,
   howSeason: [
@@ -134,7 +133,7 @@ export const I = {
 
 /**
  * The quest card (handlers/board.ts): the web quest board in Discord, one line
- * per quest. DRAFT for the Thai review. Never a coin number: rewards come
+ * per quest. Thai reviewed (agy, Codex, Cursor), 2026-11-14. Never a coin number: rewards come
  * from mentor-approved quests only, and the board reads none.
  */
 export const QB = {
@@ -146,11 +145,11 @@ export const QB = {
   line: (mark: string, title: string, state: string, milestone?: number | null) =>
     `${mark} ${milestone ? `ขั้น ${milestone} · ` : ""}**${safe(title, 80)}** · ${state}`,
   /** Every main quest outside the community ones has passed. */
-  coreDone: "✅ เควสต์หลักที่เหลือผ่านครบแล้ว ส่งซ้ำได้ถ้าได้เรียนรู้อะไรใหม่",
-  noSide: "ยังไม่มีเควสต์เสริมเปิดตอนนี้",
-  locked: (n: number) => `🔒 อีก ${n} เควสต์ยังล็อก ผ่านเควสต์ที่ต้องทำก่อนแล้วจะเปิด`,
-  legend: "▫️ เปิดให้ทำ · 🔨 กำลังทำ · ⏳ รอรีวิว · ✅ ผ่านแล้ว · 👥 เพื่อนถืออยู่ · 🔒 ยังล็อก",
-  growth: "ต้นไม้โตจากเควสต์หลักและเควสต์ชุมชนที่พี่เลี้ยงยืนยัน เควสต์เสริมไม่ทำให้ต้นไม้โต แต่เป็นหลักฐานในพอร์ตได้",
+  coreDone: "✅ ผ่านครบทุกใบแล้ว ส่งซ้ำได้ถ้าเรียนรู้อะไรใหม่",
+  noSide: "ตอนนี้ยังไม่มีเควสต์เสริมเปิดให้รับ",
+  locked: (n: number) => `🔒 อีก ${n} ใบยังล็อก ผ่านเควสต์ก่อนหน้าแล้วจะเปิด`,
+  legend: "▫️ เปิดให้ทำ · 🔨 กำลังทำ · ⏳ รอรีวิว · ✅ ผ่านแล้ว · 👥 เพื่อนในทีมรับอยู่ · 🔒 ยังล็อก",
+  growth: "ต้นไม้โตจากเควสต์หลักและเควสต์ชุมชนที่พี่เลี้ยงยืนยันว่าผ่าน เควสต์เสริมไม่ทำให้ต้นไม้โต แต่งานที่ทำใช้เป็นผลงานในพอร์ตได้",
   noPlot: "🌱 **ยังไม่มีที่ดิน** เควสต์ทุกใบผูกกับโปรเจกต์ จับจองที่ดินก่อน แล้วกระดานจะเปิด",
   pickSide: "เปิดดูเควสต์เสริม",
 
@@ -163,7 +162,7 @@ export const QB = {
     clarification: "ขอข้อมูลเพิ่ม",
     appealed: "อุทธรณ์อยู่",
     declined: "ยังไม่ผ่าน ลองใหม่ได้",
-    held: "เพื่อนร่วมทีมถืออยู่",
+    held: "เพื่อนในทีมรับอยู่",
     done: "ผ่านแล้ว",
     locked: "ยังล็อก",
   },
@@ -182,17 +181,17 @@ export const QB = {
 
   /** One side quest (also the note an encounter at the campfire leaves). */
   sideTitle: (title: string) => `🧭 ${safe(title, 80)}`,
-  offRoute: "นอกเส้นทางของโปรเจกต์คุณ แต่ทำได้",
+  offRoute: "นอกเส้นทางหลักของโปรเจกต์คุณ",
   doneWhen: "เสร็จเมื่อ",
   examples: "ตัวอย่าง",
   needs: (titles: string) => `🔒 ต้องผ่านก่อน: ${titles}`,
   needsPlot: "🔒 จับจองที่ดินก่อน เควสต์เสริมเป็นของโปรเจกต์",
-  sideFine: "เควสต์เสริมไม่ทำให้ต้นไม้โต · ผ่านเมื่อพี่เลี้ยงดูงานแล้ว",
+  sideFine: "เควสต์เสริมไม่ทำให้ต้นไม้โต · ผ่านเมื่อพี่เลี้ยงยืนยันแล้ว",
   btnTake: "🧭 รับเควสต์นี้",
   btnSend: "🌟 ส่งงานเลย",
   btnSendAgain: "🌟 ส่งอีกครั้ง",
-  taken: "รับเควสต์แล้ว",
-  sent: "พี่เลี้ยงจะมาดูงานนี้",
+  taken: "รับเควสต์แล้ว ลุยเลย",
+  sent: "ส่งแล้ว พี่เลี้ยงจะมาดูงานนี้",
   /** The side quest is no longer on the board (unpublished since the card was drawn). */
   gone: "เควสต์นี้ไม่ได้อยู่บนกระดานแล้ว",
 };
