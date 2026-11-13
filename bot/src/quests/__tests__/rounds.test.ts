@@ -120,6 +120,8 @@ function world(start = TEN) {
   let room: string | null = "700000000000000001";
   const log: string[] = [];
   const posted: { id: string; text: string; deleted: boolean }[] = [];
+  /** Error codes the next edits fail with, in turn. */
+  const editFailures: number[] = [];
   let next = 1;
   const message = (text: string, mine = true) => {
     const m = {
@@ -129,6 +131,11 @@ function world(start = TEN) {
       author: { id: mine ? "bot" : "someone" },
       components: [{ text }],
       edit: async (payload: unknown) => {
+        const code = editFailures.shift();
+        if (code !== undefined) {
+          log.push(`edit ${m.id} failed ${code}`);
+          throw Object.assign(new Error("edit failed"), { code });
+        }
         m.text = JSON.stringify(payload);
         m.components = [{ text: m.text }];
         log.push(`edit ${m.id}`);
@@ -162,6 +169,7 @@ function world(start = TEN) {
     other,
     at: (minutes: number) => (now = start + minutes * MIN),
     sit: (n: number) => (sitters = n),
+    failEdits: (...codes: number[]) => editFailures.push(...codes),
     close: () => (room = null),
   };
 }
@@ -200,6 +208,27 @@ describe("startRounds", () => {
     w.at(31);
     await w.loop.tick();
     expect(w.log.slice(-2)).toEqual(["delete m3", "send m4"]);
+  });
+
+  it("retries a failed edit on the same message, and posts anew only when the message is gone", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    const w = make();
+    w.sit(1);
+    await w.loop.tick();
+    w.failEdits(500);
+    w.at(26);
+    await w.loop.tick();
+    await w.loop.tick();
+    expect(w.log.slice(-2)).toEqual(["edit m3 failed 500", "edit m3"]);
+    expect(w.posted).toHaveLength(1);
+    w.at(31);
+    await w.loop.tick();
+    w.failEdits(10008);
+    w.at(56);
+    await w.loop.tick();
+    await w.loop.tick();
+    expect(w.log.slice(-2)).toEqual(["edit m4 failed 10008", "send m5"]);
+    warn.mockRestore();
   });
 
   it("keeps the round's message when the fire empties, and removes it once that round is over", async () => {
@@ -299,8 +328,10 @@ describe("round buttons", () => {
     const b = interaction("modal", { intention: "ทำหน้า login" });
     await ACTION_HANDLERS.get("rd_aim_go")!(b.i, c, []);
     expect(calls(c)).toEqual([["shift_quest_work_start", "1111111111", "ทำหน้า login"]]);
+    // Answered at once (deferred, private), then filled in.
+    expect(b.sent.map((x) => x.how)).toEqual(["deferReply", "editReply"]);
     expect((b.sent[0].payload as { flags: number }).flags & MessageFlags.Ephemeral).toBeTruthy();
-    expect(bodyText(b.sent[0].payload as never)).toContain("ทำหน้า login");
+    expect(bodyText(b.sent[1].payload as never)).toContain("ทำหน้า login");
   });
 
   it("🎯 again with a round still open closes it without a reflection first", async () => {
@@ -336,8 +367,10 @@ describe("round buttons", () => {
       ["shift_quest_work_end", "1111111111", "เข้าใจ session cookie แล้ว"],
       ["shift_quest_progress_add", "1111111111", "ทำหน้า login", "เข้าใจ session cookie แล้ว", null, "redirect วน", null, "private", null],
     ]);
-    expect(customIds(b.sent[0].payload as never)).toEqual(["sq|prog_help|3f1c2a64-1d2b-4c3d-9e8f-0a1b2c3d4e51"]);
-    expect(viewText(b.sent[0].payload as never)).toContain(R.closed);
+    expect(b.sent.map((x) => x.how)).toEqual(["deferReply", "editReply"]);
+    expect((b.sent[0].payload as { flags: number }).flags & MessageFlags.Ephemeral).toBeTruthy();
+    expect(customIds(b.sent[1].payload as never)).toEqual(["sq|prog_help|3f1c2a64-1d2b-4c3d-9e8f-0a1b2c3d4e51"]);
+    expect(viewText(b.sent[1].payload as never)).toContain(R.closed);
   });
 
   it("✍️ without a round started still saves, under the campfire's name, with no help button when not stuck", async () => {
@@ -349,7 +382,7 @@ describe("round buttons", () => {
     const b = interaction("modal", { learned: "ลองใช้ git rebase ครั้งแรก" });
     await ACTION_HANDLERS.get("rd_close_go")!(b.i, c, []);
     expect(calls(c)[1].slice(0, 6)).toEqual(["shift_quest_progress_add", "1111111111", R.changedDefault, "ลองใช้ git rebase ครั้งแรก", null, null]);
-    expect(customIds(b.sent[0].payload as never)).toEqual([]);
+    expect(customIds(b.sent[1].payload as never)).toEqual([]);
   });
 
   it("is for students who have started", async () => {
