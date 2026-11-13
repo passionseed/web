@@ -4,7 +4,7 @@
 import { MessageFlags, type Client } from "discord.js";
 
 import { ACTION_HANDLERS } from "..";
-import { QuestError, type QuestApi, type Session } from "../api";
+import { QuestDbError, QuestError, type QuestApi, type Session } from "../api";
 import type { Ctx } from "../context";
 import { T } from "../copy";
 import { R } from "../rounds-copy";
@@ -282,7 +282,7 @@ function session(): Session {
 }
 
 function ctx(call: (fn: string, ...args: unknown[]) => unknown = () => null): Ctx {
-  const api = { call: jest.fn(async (fn: string, ...args: unknown[]) => call(fn, ...args)), rows: jest.fn() };
+  const api = { call: jest.fn(async (fn: string, ...args: unknown[]) => (fn === "shift_quest_schema_version" ? call(fn, ...args) ?? 11 : call(fn, ...args))), rows: jest.fn() };
   return { api: api as unknown as QuestApi, userId: "1111111111", name: "x", memberRoleIds: ["555"], session: session() };
 }
 const calls = (c: Ctx) => (c.api.call as jest.Mock).mock.calls;
@@ -350,7 +350,7 @@ describe("round buttons", () => {
     const a = interaction("button");
     await ACTION_HANDLERS.get("rd_close")!(a.i, ctx(), []);
     const json = JSON.stringify(a.modals[0]);
-    expect(a.modals[0].custom_id).toBe("sq|rd_close_go");
+    expect(a.modals[0].custom_id).toBe("sq|rd_close_go|");
     expect(json).toContain('"min_length":10');
     expect(json).toContain(R.closeStuck);
   });
@@ -364,6 +364,7 @@ describe("round buttons", () => {
     const b = interaction("modal", { learned: "เข้าใจ session cookie แล้ว", stuck: "redirect วน" });
     await ACTION_HANDLERS.get("rd_close_go")!(b.i, c, []);
     expect(calls(c)).toEqual([
+      ["shift_quest_schema_version"],
       ["shift_quest_work_end", "1111111111", "เข้าใจ session cookie แล้ว"],
       ["shift_quest_progress_add", "1111111111", "ทำหน้า login", "เข้าใจ session cookie แล้ว", null, "redirect วน", null, "private", null],
     ]);
@@ -381,8 +382,67 @@ describe("round buttons", () => {
     });
     const b = interaction("modal", { learned: "ลองใช้ git rebase ครั้งแรก" });
     await ACTION_HANDLERS.get("rd_close_go")!(b.i, c, []);
-    expect(calls(c)[1].slice(0, 6)).toEqual(["shift_quest_progress_add", "1111111111", R.changedDefault, "ลองใช้ git rebase ครั้งแรก", null, null]);
+    expect(calls(c)[2].slice(0, 6)).toEqual(["shift_quest_progress_add", "1111111111", R.changedDefault, "ลองใช้ git rebase ครั้งแรก", null, null]);
     expect(customIds(b.sent[1].payload as never)).toEqual([]);
+  });
+
+  const SESSION = "3f1c2a64-1d2b-4c3d-9e8f-0a1b2c3d4e51";
+
+  it.each([SESSION, null])("captures the open session %s with one read before showing the form", async (id) => {
+    const c = ctx((fn) => fn === "shift_quest_work_open" ? id : null);
+    const a = interaction("button");
+    await ACTION_HANDLERS.get("rd_close")!(a.i, c, []);
+    expect(calls(c)).toEqual([["shift_quest_work_open", c.userId]]);
+    expect(a.modals[0].custom_id).toBe(`sq|rd_close_go|${id ?? ""}`);
+    expect(a.modals[0].custom_id!.length).toBeLessThanOrEqual(100);
+  });
+
+  it("opens on older schemas, but propagates other session-read failures", async () => {
+    const old = ctx(() => { throw new QuestDbError("shift_quest_work_open", "42883"); });
+    const a = interaction("button");
+    await ACTION_HANDLERS.get("rd_close")!(a.i, old, []);
+    expect(a.modals[0].custom_id).toBe("sq|rd_close_go|");
+    const failed = ctx(() => { throw new QuestDbError("shift_quest_work_open", "08006"); });
+    const b = interaction("button");
+    await expect(ACTION_HANDLERS.get("rd_close")!(b.i, failed, [])).rejects.toThrow();
+    expect(b.modals).toEqual([]);
+  });
+
+  it.each([[SESSION], [""], []])("schema 12 submits the captured session, including stale and empty IDs: %j", async (...args) => {
+    const b = interaction("modal", { learned: "เข้าใจ session cookie แล้ว", stuck: "redirect วน" });
+    const c = ctx((fn) => {
+      expect(b.sent[0].how).toBe("deferReply");
+      if (fn === "shift_quest_schema_version") return 12;
+      if (fn === "shift_quest_round_close") return SESSION;
+      throw new Error(`Unexpected call ${fn}`);
+    });
+    await ACTION_HANDLERS.get("rd_close_go")!(b.i, c, args);
+    expect(calls(c)).toEqual([
+      ["shift_quest_schema_version"],
+      ["shift_quest_round_close", c.userId, args[0] || null, "เข้าใจ session cookie แล้ว", "redirect วน"],
+    ]);
+    expect(customIds(b.sent[1].payload as never)).toEqual([`sq|prog_help|${SESSION}`]);
+    // The schema is cached per API, as with roots.
+    await ACTION_HANDLERS.get("rd_close_go")!(b.i, c, args);
+    expect(calls(c).filter(([fn]) => fn === "shift_quest_schema_version")).toHaveLength(1);
+  });
+
+  it("never falls back to actor-only close after an atomic write fails; a retry keeps the captured ID", async () => {
+    let fail = true;
+    const c = ctx((fn) => {
+      if (fn === "shift_quest_schema_version") return 12;
+      if (fn === "shift_quest_round_close") {
+        if (fail) throw new QuestError("busy");
+        return SESSION;
+      }
+      throw new Error(`Unexpected call ${fn}`);
+    });
+    const submit = () => ACTION_HANDLERS.get("rd_close_go")!(interaction("modal", { learned: "ลองใช้ git rebase ครั้งแรก" }).i, c, [SESSION]);
+    await expect(submit()).rejects.toThrow("sq:busy");
+    fail = false;
+    await submit();
+    expect(calls(c).map(([fn]) => fn)).toEqual(["shift_quest_schema_version", "shift_quest_round_close", "shift_quest_round_close"]);
+    expect(calls(c).slice(1).map((call) => call[2])).toEqual([SESSION, SESSION]);
   });
 
   it("is for students who have started", async () => {
