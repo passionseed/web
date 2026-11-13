@@ -40,9 +40,9 @@ export const I = {
   /** The picture failed; the text view still works. The reference matches one log line. */
   pictureFailed: (ref: string) => `🖼️ รูปเกาะโหลดไม่ขึ้นรอบนี้ งานและต้นไม้ของคุณยังอยู่ครบ (อ้างอิง ${ref})`,
 
-  // DRAFT for the Thai review
+  // Thai reviewed (agy, Codex, Cursor), 2026-11-14
   btnReflect: "✍️ ได้เรียนรู้อะไร",
-  // DRAFT for the Thai review
+  // Thai reviewed (agy, Codex, Cursor), 2026-11-14
   reflectionChanged: "บันทึกจากเกาะ",
   btnTap: "🔨 วันนี้ทำต่อ",
   btnMilestone: "🌟 ถึงขั้นต่อไปแล้ว",
