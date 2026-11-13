@@ -12,6 +12,12 @@ export interface Ctx {
   /** Discord role IDs the person holds in the SHIFT server right now. */
   memberRoleIds: string[];
   session: Session;
+  /**
+   * The coworking voice channel and how many sit in it now (campfire.ts's
+   * status), for the campfire on /island's picture; absent when the campfire
+   * is not running (schema below 7, or tests).
+   */
+  campfire?: () => { channel: string | null; sitters: number };
 }
 
 export function displayName(i: Interaction): string {
@@ -28,10 +34,10 @@ export function memberRoleIds(i: Interaction): string[] {
   return [...(member as GuildMember).roles.cache.keys()];
 }
 
-export async function loadCtx(api: QuestApi, i: Interaction): Promise<Ctx> {
+export async function loadCtx(api: QuestApi, i: Interaction, extras: Pick<Ctx, "campfire"> = {}): Promise<Ctx> {
   const name = displayName(i);
   const session = await api.call<Session>("shift_quest_session", i.user.id, name);
-  return { api, userId: i.user.id, name, memberRoleIds: memberRoleIds(i), session };
+  return { api, userId: i.user.id, name, memberRoleIds: memberRoleIds(i), session, ...extras };
 }
 
 export function isStaff(ctx: Ctx, roles: string[] = ["reviewer", "admin", "fulfillment"]): boolean {

@@ -10,6 +10,7 @@ import { requireStudent, type Ctx } from "../context";
 import { STATE, T, safe } from "../copy";
 import { cid } from "../ids";
 import { I, WIP_CORNER, WIP_CORNER_SHORT, seasonHead, seasonParts, type SeasonView } from "../island/copy";
+import type { CampfireView } from "../island/firepit";
 import { RenderError, renderIsland, type IslandPlot, type RenderedIsland } from "../island/render";
 import { readRoots, withRoots } from "../island/roots";
 import {
@@ -83,15 +84,25 @@ export interface IslandMap {
  * island too big for one image) it logs one line and returns its reference
  * instead: the text view and every button still work without the picture.
  */
-function drawIsland(plots: IslandPlot[], festival: boolean): { image: RenderedIsland } | { ref: string } {
+function drawIsland(plots: IslandPlot[], festival: boolean, campfire: CampfireView): { image: RenderedIsland } | { ref: string } {
   try {
-    return { image: renderIsland(plots, { scale: 2, markMine: true, festival }) };
+    return { image: renderIsland(plots, { scale: 2, markMine: true, festival, campfire }) };
   } catch (error) {
     const ref = errorRef();
     const code = error instanceof RenderError ? `${error.code} detail=${error.detail}` : `unexpected:${(error as Error)?.name ?? "unknown"}`;
     console.error(`[shift-quests] ref=${ref} action=island_render code=${code} rev=${REVISION}`);
     return { ref };
   }
+}
+
+/**
+ * The campfire on the picture, from what this process already knows (no
+ * database call): none until the campfire has seen a coworking channel, else
+ * the pit with one figure per person sitting there.
+ */
+export function islandCampfire(ctx: Pick<Ctx, "campfire">): CampfireView {
+  const fire = ctx.campfire?.();
+  return fire?.channel ? { count: fire.sitters } : null;
 }
 
 /** The island card: blocks, buttons and the picture it shows. */
@@ -114,7 +125,7 @@ export async function islandMessage(ctx: Ctx): Promise<IslandCard> {
     // Schema 10: the shown trees' roots, merged by slot. Never throws: no roots on failure.
     readRoots(ctx.api),
   ]);
-  const drawn = drawIsland(withRoots(map.plots, roots), Boolean(view.season));
+  const drawn = drawIsland(withRoots(map.plots, roots), Boolean(view.season), islandCampfire(ctx));
   const files =
     "image" in drawn ? [new AttachmentBuilder(drawn.image.png, { name: ISLAND_PNG, description: "เกาะ SHIFT" })] : [];
   const blocks: Block[] = [];

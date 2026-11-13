@@ -315,7 +315,13 @@ The short version for whoever runs the bot:
   one message there and edits it in place: the island picture (the same
   consent-shaped view as the weekly post, as a moving GIF in the light of the
   Bangkok hour; a GIF over 2 MB or one that fails to draw goes out as the
-  still PNG), trees and the mentor-confirmed
+  still PNG). With a coworking channel set, the picture shows the plaza's
+  campfire as the web island does (`island/firepit.ts` over
+  `lib/shift-island/live/plaza.ts`): the pit, a flickering flame while anyone
+  sits in the voice channel, and one figure per seat by seat order (at most 8,
+  never tied to a person; the text has the exact count). The pit stays unlit
+  when nobody is there or the count is not live. /island draws the same from
+  what the running campfire knows, with no extra database call. Then trees and the mentor-confirmed
   milestones of the trees shown by name (quiet projects never count), the island goal, the Demo Day
   countdown, how many people sit at the campfire (a number, never names), and
   a button panel. The first row is personal: "🏝️ ของฉัน" (the /island card),
