@@ -316,6 +316,55 @@ async function main(): Promise<void> {
   await call(bot, "shift_quest_work_end", C, "Found it");
   check(Number(await scalar(db, "select count(*) from public.shift_quest_ledger")) === before, "coworking creates no ledger entry");
 
+  // --- Atomic campfire close, bound to the form's captured session ------------
+  const countNotes = () => scalar<string>(db, "select count(*) from public.shift_quest_progress");
+  const countAudits = () => scalar<string>(db, "select count(*) from public.shift_quest_audit");
+  const readNote = async (id: string) => (await db.query("select * from public.shift_quest_progress where id = $1", [id])).rows[0];
+  const readWork = async (id: string) => (await db.query("select * from public.shift_quest_work_sessions where id = $1", [id])).rows[0];
+  check(await call(bot, "shift_quest_work_open", C) === null, "open-session read returns null without a session");
+  const roundA = await call(bot, "shift_quest_work_start", C, "  Original intention  ");
+  check(await call(bot, "shift_quest_work_open", C) === roundA, "open-session read returns the captured UUID");
+  const notesBefore = await countNotes();
+  const auditsBefore = await countAudits();
+  // The blocker is validated inside progress_add, after the session UPDATE.
+  check(await code(call(bot, "shift_quest_round_close", C, roundA, "learned something", "x".repeat(1001))) === "text_too_long",
+    "journal failure rejects the atomic close");
+  check((await readWork(roundA)).ended_at === null && (await readWork(roundA)).reflection === null,
+    "journal failure rolls back the session close and reflection");
+  check(await countNotes() === notesBefore && await countAudits() === auditsBefore,
+    "failed close leaves neither a partial journal entry nor an audit");
+  const retryId = await call(bot, "shift_quest_round_close", C, roundA, "  learned something  ", "  a blocker  ");
+  const retryNote = await readNote(retryId);
+  const currentProject = await scalar(db, "select current_project_id from public.shift_quest_members where discord_user_id = $1", [C]);
+  check(retryNote.changed === "Original intention" && retryNote.learned === "learned something" && retryNote.blocker === "a blocker",
+    "retry recovers the intention and uses progress_add trimming");
+  check(retryNote.visibility === "private" && retryNote.kind === "note" && retryNote.project_id === currentProject,
+    "atomic close preserves private note and current-project resolution");
+  check((await readWork(roundA)).ended_at !== null && (await readWork(roundA)).reflection === "learned something",
+    "happy path closes the captured session with its reflection");
+  check(await call(bot, "shift_quest_work_open", C) === null, "happy path leaves no open session");
+  check(Number(await countNotes()) === Number(notesBefore) + 1 && Number(await countAudits()) === Number(auditsBefore) + 1,
+    "successful retry writes exactly one journal entry and its progress_add audit");
+
+  const staleA = await call(bot, "shift_quest_work_start", C, "Session A intention");
+  await call(bot, "shift_quest_work_end", C, null);
+  const sessionB = await call(bot, "shift_quest_work_start", C, "Session B intention");
+  const staleId = await call(bot, "shift_quest_round_close", C, staleA, "reflection from A", null);
+  check((await readNote(staleId)).changed === "Session A intention", "stale form journals under A's intention");
+  check((await readWork(staleA)).reflection === null && await call(bot, "shift_quest_work_open", C) === sessionB,
+    "stale form leaves A's earlier close and B's open session untouched");
+  const noSessionId = await call(bot, "shift_quest_round_close", C, null, "form opened before B", null);
+  check((await readNote(noSessionId)).changed === "รอบกองไฟ" && await call(bot, "shift_quest_work_open", C) === sessionB,
+    "null captured session journals only, even when a session has since started");
+  const foreign = await call(bot, "shift_quest_round_close", B, sessionB, "another actor's note", null);
+  const missingSession = await call(bot, "shift_quest_round_close", C, randomUUID(), "deleted session note", null);
+  check((await readNote(foreign)).changed === "รอบกองไฟ" && (await readNote(missingSession)).changed === "รอบกองไฟ",
+    "foreign and missing sessions do not leak an intention");
+  check(await call(bot, "shift_quest_work_open", C) === sessionB, "foreign and missing IDs cannot close B");
+  await call(bot, "shift_quest_round_close", C, sessionB, "B's own reflection", null);
+  check(Number(await scalar(db, "select count(*) from public.shift_quest_ledger")) === before,
+    "round close never mints coins");
+
   // --- Help survives pauses and missing channels ------------------------------------
   await call(bot, "shift_quest_admin_set", ADMIN, "awards", "off");
   const help: string = await call(bot, "shift_quest_help_create", C, "Stuck deploying", "community", "student", null);
@@ -479,7 +528,8 @@ async function main(): Promise<void> {
 
   // --- Data rights ------------------------------------------------------------------------
   const exported = await call(bot, "shift_quest_data_export", B);
-  check(exported.quests.length >= 1 && exported.progress.length === 2, "export includes the student's own records");
+  // B wrote two journal entries above, plus one round close as "another actor" in the round close checks.
+  check(exported.quests.length >= 1 && exported.progress.length === 3, "export includes the student's own records");
   const reqId: string = await call(bot, "shift_quest_data_request", B, "erasure", null);
   check(await code(call(bot, "shift_quest_admin_erase", A, reqId)) === "not_authorized", "only admins erase");
   const ledgerBefore = Number(await scalar(db, "select count(*) from public.shift_quest_ledger"));

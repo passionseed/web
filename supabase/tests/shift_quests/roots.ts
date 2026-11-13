@@ -112,8 +112,8 @@ async function main(): Promise<void> {
   const slotOf = (project: string) => scalar<number>(db, "select slot from public.shift_quest_plots where project_id = $1", [project]);
 
   // --- Schema, privileges ------------------------------------------------------------------
-  check(Number(await call(bot, "shift_quest_schema_version")) === 11, "the bot reads schema version 11 (roots start from 10)");
-  check(Number(await call(web, "shift_quest_schema_version")) === 11, "the website reads schema version 11");
+  check(Number(await call(bot, "shift_quest_schema_version")) === 12, "the bot reads schema version 12 (roots start from 10)");
+  check(Number(await call(web, "shift_quest_schema_version")) === 12, "the website reads schema version 12");
   const grants: Json = (await db.query(
     `select has_function_privilege('shift_quest_bot', $1::regprocedure, 'EXECUTE') as bot,
             has_function_privilege('shift_quest_web', $1::regprocedure, 'EXECUTE') as web,

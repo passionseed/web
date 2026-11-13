@@ -14,12 +14,13 @@
  */
 import { MessageFlags } from "discord.js";
 
-import { QuestError, type QuestApi } from "../api";
+import { QuestDbError, QuestError, type QuestApi } from "../api";
 import { requireStudent } from "../context";
 import { T } from "../copy";
 import { cid } from "../ids";
 import { I } from "../island/copy";
 import { encounterAt } from "../rounds";
+import { schemaOf } from "../schema";
 import { LEARNED_MIN, R } from "../rounds-copy";
 import { ButtonStyle, button, buttonRows, modal, show, textValue, type View } from "../ui";
 import { pickSide, readBoard, sideView } from "./board";
@@ -118,34 +119,39 @@ export const rounds: HandlerSet = {
     async rd_close(i, ctx) {
       requireStudent(ctx);
       if (!i.isButton()) return;
+      // One fast read before showModal. Older schemas do not have this read.
+      let sessionId: string | null = null;
+      try {
+        sessionId = await ctx.api.call<string | null>("shift_quest_work_open", ctx.userId);
+      } catch (error) {
+        if (!(error instanceof QuestDbError && error.sqlstate === "42883")) throw error;
+      }
       await i.showModal(
-        modal(cid("rd_close_go"), R.closeTitle, [
+        modal(cid("rd_close_go", sessionId), R.closeTitle, [
           { kind: "text", id: "learned", label: R.closeLearned, description: R.closeLearnedHint, long: true, required: true, min: LEARNED_MIN, max: 1000 },
           { kind: "text", id: "stuck", label: R.closeStuck, description: R.closeStuckHint, long: true, required: false, max: 1000 },
         ])
       );
     },
 
-    async rd_close_go(i, ctx) {
+    async rd_close_go(i, ctx, [sessionId]) {
       requireStudent(ctx);
       if (!i.isModalSubmit()) return;
       const learned = textValue(i, "learned");
       if (!learned) return;
       const stuck = textValue(i, "stuck");
-      // Two database writes follow: answer Discord first (3 seconds), privately.
       await i.deferReply({ flags: MessageFlags.Ephemeral });
-      const intention = await endSession(ctx.api, ctx.userId, learned);
-      const id = await ctx.api.call<string>(
-        "shift_quest_progress_add",
-        ctx.userId,
-        intention ?? R.changedDefault,
-        learned,
-        null,
-        stuck,
-        null,
-        "private",
-        null
-      );
+      let id: string;
+      if ((await schemaOf(ctx.api)) >= 12) {
+        // Empty (or a pre-upgrade modal with no argument) means journal only.
+        id = await ctx.api.call<string>("shift_quest_round_close", ctx.userId, sessionId || null, learned, stuck);
+      } else {
+        const intention = await endSession(ctx.api, ctx.userId, learned);
+        id = await ctx.api.call<string>(
+          "shift_quest_progress_add", ctx.userId, intention ?? R.changedDefault,
+          learned, null, stuck, null, "private", null
+        );
+      }
       await show(i, {
         tone: "success",
         title: R.closedTitle,
