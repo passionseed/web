@@ -8,6 +8,7 @@ import { TEXT_LIMITS } from "@/lib/supabase/shift-quests/types";
 
 import { COMMON, DETAIL, TODAY } from "./copy";
 import styles from "./island.module.css";
+import { ReflectionForm } from "./ReflectionForm";
 import { Field } from "./SubmitForm";
 
 interface TodayCardProps {
@@ -69,6 +70,7 @@ export function TodayCard({ tapsToday, resting, onSaved, onStuck }: TodayCardPro
   if (isResting) {
     return (
       <section className={`ei-card ei-card--static ${styles.card} ${styles.today}`} aria-label={TODAY.heading}>
+        <ReflectionForm />
         <p className={styles.todayResting}>{TODAY.resting}</p>
         <button type="button" className={`ei-button-dawn ${styles.primary}`} disabled={restPending} onClick={() => rest(false)}>
           <span>{TODAY.wake}</span>
@@ -98,6 +100,7 @@ export function TodayCard({ tapsToday, resting, onSaved, onStuck }: TodayCardPro
           {TODAY.tap}
         </button>
       )}
+      <ReflectionForm />
       <div className={styles.todayQuiet}>
         <button type="button" className={styles.quietButton} onClick={onStuck}>
           {TODAY.stuck}

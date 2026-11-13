@@ -172,6 +172,14 @@ async function main(): Promise<void> {
     }
   };
 
+  // The website can write a private reflection without accessing journal tables.
+  const webNote: string = await call(web, "shift_quest_progress_add", A, "บันทึกจากเกาะ", TEN, null, "a blocker", null, "private", null);
+  const savedNote = (await db.query("select kind, learned, blocker, visibility, project_id from public.shift_quest_progress where id = $1", [webNote])).rows[0];
+  check(savedNote?.kind === "note" && savedNote.learned === TEN && savedNote.blocker === "a blocker" && savedNote.visibility === "private" && savedNote.project_id === p1,
+    "web reflection writes a private note for the actor's project", savedNote);
+  check(await own(A) === 1, "web reflection grows the writer's roots");
+  await db.query("delete from public.shift_quest_progress where id = $1", [webNote]);
+
   // --- Quiet trees have no roots ------------------------------------------------------------------
   await notes(A, p1, 2, "2026-10-01");
   check(show(await roots()) === "", "a quiet tree (nobody agreed to show it) has no roots, whatever its members wrote");

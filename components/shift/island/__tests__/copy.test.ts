@@ -50,9 +50,12 @@ describe("island copy", () => {
     expect(lintText(text, path, "instagram")).toEqual([]);
   });
 
-  it.each(strings)("%s has no em dash, emoji or markdown", (_path, text) => {
+  it.each(strings)("%s has no em dash, emoji or markdown", (path, text) => {
     expect(text).not.toMatch(/[—–]/);
-    expect(text).not.toMatch(/\p{Extended_Pictographic}/u);
+    // These two Discord-matching entry/help cues are explicitly part of the reflection flow.
+    const emojiCue = path === "REFLECT.entry" ? "✍️ " : path === "REFLECT.discordHelp" ? "🆘 " : "";
+    if (emojiCue) expect(text.startsWith(emojiCue)).toBe(true);
+    expect(text.slice(emojiCue.length)).not.toMatch(/\p{Extended_Pictographic}/u);
     expect(text).not.toMatch(/\*\*|__|`|^#|\[[^\]]*\]\(/);
   });
 

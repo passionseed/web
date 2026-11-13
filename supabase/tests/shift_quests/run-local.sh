@@ -241,7 +241,8 @@ web_allow(sig) AS (VALUES
   ('shift_quest_digest_hide(text,integer,boolean,text)'),
   -- 20261113090000_shift_quest_roots.
   ('shift_quest_island_roots()'),
-  ('shift_quest_island_my_roots(text)')
+  ('shift_quest_island_my_roots(text)'),
+  ('shift_quest_progress_add(text,text,text,text,text,text,text,uuid)')
 ), web_applied AS (
   SELECT to_regprocedure('public.shift_quest_board(text)') IS NOT NULL AS yes
 )
