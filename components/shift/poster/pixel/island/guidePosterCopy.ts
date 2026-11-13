@@ -68,14 +68,14 @@ export const ISLAND_GUIDE_POSTER = {
       n: 2,
       title: "นั่งที่กองไฟ ทุกวัน",
       lines: [
-        [{ text: "เข้าห้องเสียงกองไฟ ทำงานไปพร้อมกับคนอื่น" }],
+        [{ text: "เข้าห้องเสียงกองไฟ ทำงานไปพร้อมกับเพื่อนๆ" }],
         [
           { phase: `โฟกัส ${CAMPFIRE_ROUND.focusMinutes} นาที`, icon: "flame", tone: "focus" },
           { phase: `พัก ${CAMPFIRE_ROUND.restMinutes} นาที`, icon: "wave", tone: "rest" },
           { text: "แล้วกด" },
           { button: GUIDE_POSTER_BUTTONS.close, icon: "pencil" },
         ],
-        [{ text: "เขียนว่าได้เรียนรู้อะไร รากจะโต ติดตรงไหน พี่เลี้ยงช่วยดูได้" }],
+        [{ text: "เขียนว่าได้เรียนรู้อะไร รากจะหยั่งลึก ติดตรงไหน พี่เลี้ยงช่วยดูได้" }],
       ],
     },
     {
@@ -83,9 +83,9 @@ export const ISLAND_GUIDE_POSTER = {
       title: "ต้นไม้โต",
       lines: [
         [
-          { text: "ทำงานถึงขั้นไหนแล้ว กด" },
+          { text: "ทำงานหลักข้อไหนได้แล้ว ก็กด" },
           { button: GUIDE_POSTER_BUTTONS.milestone, icon: "star" },
-          { text: "ส่งหลักฐานสั้นๆ พี่เลี้ยงดูงานแล้วยืนยัน ต้นไม้โตหนึ่งขั้น" },
+          { text: "ส่งหลักฐานสั้นๆ พี่เลี้ยงยืนยันแล้ว ต้นไม้โตหนึ่งขั้น" },
         ],
       ],
     },
