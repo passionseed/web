@@ -70,6 +70,12 @@ export function openToStudents(
 
 export interface Campfire {
   stop: () => Promise<void>;
+  /**
+   * The coworking voice channel and how many people sit in it now, as far as
+   * this process knows; 0 while the channel is not open to students. For the
+   * campfire rounds (rounds.ts), which post only while someone sits there.
+   */
+  status: () => { channel: string | null; sitters: number };
 }
 
 /** A failure as a code only: messages can carry names, which never go to logs. */
@@ -306,6 +312,9 @@ export function startCampfire(client: Client, api: QuestApi, guildId: string, co
   timer.unref?.();
 
   return {
+    status() {
+      return { channel: channel ?? null, sitters: open && !stopped ? names.size : 0 };
+    },
     async stop() {
       stopped = true;
       clearInterval(timer);

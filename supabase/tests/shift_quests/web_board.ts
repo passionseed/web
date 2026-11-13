@@ -42,8 +42,9 @@ const NAMES: Record<string, string> = { [A]: "Board Aye", [B]: "Board Bee", [C]:
 /**
  * Mirrors the allowlist at the end of 20261111091200_shift_quest_ownership_web.sql plus the
  * campfire read of 20261111093000_shift_quest_campfire.sql, the menu links read of
- * 20261111094000_shift_quest_live.sql and the player, shop, consent and news functions of
- * 20261111095000_shift_quest_player.sql (regprocedure text).
+ * 20261111094000_shift_quest_live.sql, the player, shop, consent and news functions of
+ * 20261111095000_shift_quest_player.sql and the roots read of 20261113090000_shift_quest_roots.sql
+ * (regprocedure text).
  */
 const WEB_ALLOWLIST = [
   "shift_quest_board(text)",
@@ -69,6 +70,7 @@ const WEB_ALLOWLIST = [
   "shift_quest_island_map(text)",
   "shift_quest_island_news(text)",
   "shift_quest_island_optin(text,uuid,boolean)",
+  "shift_quest_island_roots()",
   "shift_quest_milestone_start(text,smallint)",
   "shift_quest_milestone_submit(text,smallint,text,text,text)",
   "shift_quest_ownership_get(text)",
@@ -177,8 +179,8 @@ async function main(): Promise<void> {
   check(role && role.rolinherit === false && role.rolconnlimit === 20 && (role.rolconfig ?? []).includes("statement_timeout=8s"),
     "shift_quest_web: NOINHERIT, 20 connections, statement_timeout 8s", role);
   check((await scalar<string>(web, "show statement_timeout")) === "8s", "a web session runs with the 8s statement timeout");
-  check(Number(await call(web, "shift_quest_schema_version")) === 9, "the website reads schema version 9 (it needs 6 or more)");
-  check(Number(await call(bot, "shift_quest_schema_version")) === 9, "the bot reads schema version 9 (it needs 2 or more)");
+  check(Number(await call(web, "shift_quest_schema_version")) === 10, "the website reads schema version 10 (it needs 6 or more)");
+  check(Number(await call(bot, "shift_quest_schema_version")) === 10, "the bot reads schema version 10 (it needs 2 or more)");
 
   const executable: string[] = (await db.query(`
     select p.oid::regprocedure::text as sig
@@ -235,6 +237,8 @@ async function main(): Promise<void> {
     ["ownership_get", "select public.shift_quest_ownership_get($1::text)", [NOBODY], "not_started"],
     ["campfire", "select public.shift_quest_campfire($1::text, $2::boolean)", [NOBODY, true], "not_started"],
     ["island_links", "select public.shift_quest_island_links($1::text)", [NOBODY], "not_started"],
+    // 20261113090000_shift_quest_roots: no caller, the outsider view; an empty island has no roots.
+    ["island_roots", "select public.shift_quest_island_roots()", [], "ok"],
     // 20261111095000_shift_quest_player: an unknown caller or an unknown link stores nothing.
     ["character", "select public.shift_quest_character($1::text)", [NOBODY], "not_started"],
     ["wallet", "select public.shift_quest_wallet($1::text)", [NOBODY], "not_started"],

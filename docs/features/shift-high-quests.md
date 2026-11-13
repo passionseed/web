@@ -421,6 +421,37 @@ refusals: `milestone_done`, `milestone_open`, `milestone_appealed`,
 `shift_quest_admin_status` adds `settings.squads_enabled` (both false without
 wave 2); `shift_quest_admin_set` takes the key `squads`.
 
+### Roots (schema 10)
+
+`20261113090000_shift_quest_roots` (design:
+`docs/superpowers/specs/2026-11-13-shift-campfire-rounds-roots-design.md`)
+lets reflections grow a tree's **roots**, a second layer drawn over the
+tree's soil. The 7 stages still come only from mentor-confirmed milestones,
+and coins and shop gates stay on stage. Nothing new is stored: roots are
+counted from the progress journal at read time.
+
+- **What counts.** A `shift_quest_progress` row with `kind = 'note'` whose
+  `learned` has at least 10 characters (the journal trims it on write),
+  whose `project_id` is the tree's project (the writer's current project when
+  they wrote it), by someone who is an active member now. At most 3 count per
+  member per Bangkok day (`created_at` in Asia/Bangkok), the earliest first.
+  A member who leaves takes their reflections along; erasure already deletes
+  the journal. Private and team notes count alike.
+- **What is shown.** `shift_quest_island_roots()` (bot and website, no
+  caller) returns `[{slot, roots}]` for drawn plots with roots above 0: level
+  1 (1 to 4 counted), 2 (5 to 14) or 3 (15 or more). Never a count, a name,
+  an id or journal text. Only plots every active member agreed to show (and,
+  with `consent_required`, have consent) get roots, so a quiet team's
+  writing is never measured in public; the scene also draws roots 0 on every
+  plain plot. A student whose own tree is not shown yet sees it without
+  roots too (the read has no caller).
+- **Where.** The live post, `/island` and the island page (picture, living
+  canvas and the bot's GIF), merged by slot in `bot/src/quests/island/roots.ts`.
+  Both read it only from schema 10 and draw no roots below it or when the
+  read fails (logged once per cause); the page and the post never fail
+  because of it. Tested in `supabase/tests/shift_quests/roots.ts` and
+  `bot/src/quests/__tests__/roots.test.ts`.
+
 ## Before a pilot
 
 1. Decide the spec's open items that block each feature (amounts, caps, team
@@ -575,8 +606,9 @@ exactly this allowlist: `shift_quest_schema_version`, `_session`, `_start`,
 `_island_optin`, `_milestone_start`, `_milestone_submit`, `_side_choose`,
 `_side_submit`, `_propose`, `_submit`, `_help_create`, `_project_create`,
 `_project_list`, `_project_respond`, `_canvas_get`, `_canvas_link`,
-`_canvas_unlink`, `_ownership_get`, `_campfire` (schema 7) and
-`_island_links` (schema 8). No review, staff, admin, outbox or data
+`_canvas_unlink`, `_ownership_get`, `_campfire` (schema 7),
+`_island_links` (schema 8), the player functions (schema 9) and
+`_island_roots` (schema 10). No review, staff, admin, outbox or data
 function. The migrations revoke every `shift_quest_*` function from it, then
 grant the list by full signature and stop if one is missing. `run-local.sh`
 (`check_privileges`), `web_board.ts` and `web_canvas.ts` hold the same list

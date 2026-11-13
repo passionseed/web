@@ -10,7 +10,7 @@ import { T } from "../copy";
 import { islandMessage, seasonCard, type IslandView } from "../handlers/island";
 import { I, PENDING_SLOT, WIP_CORNER, WIP_CORNER_SHORT, type SeasonView } from "../island/copy";
 import { LIMITS, NO_MENTIONS, TONE_COLORS, renderView } from "../ui";
-import { ISLAND_LINK_LABEL } from "../weblink";
+import { GUIDE_LINK_LABEL, ISLAND_LINK_LABEL } from "../weblink";
 import { accentColor, bodyText, cardsOf, componentCount, customIds, textLength, viewText } from "../test-helpers/view";
 
 /**
@@ -314,7 +314,7 @@ describe("island card link to the website", () => {
     }
   });
 
-  it("is left off when the address is refused, and never added to the season or how cards", async () => {
+  it("is left off when the address is refused, and never added to the season card; the how card links the guide instead", async () => {
     process.env.NEXT_PUBLIC_SITE_URL = "http://example.com";
     const c = ctx((fn) => (fn === "shift_quest_island" ? islandView() : { plots: [] }));
     const refused = renderView(await islandMessage(c));
@@ -325,7 +325,8 @@ describe("island card link to the website", () => {
     expect(linksOf(renderView(seasonCard(islandView({ season: season() }))))).toEqual([]);
     const { i, sent } = interaction("button");
     await ACTION_HANDLERS.get("is_how")!(i, ctx(() => null), []);
-    expect(linksOf(sent[0].payload)).toEqual([]);
+    expect(linksOf(sent[0].payload)).toEqual([expect.objectContaining({ url: `${SITE}/shift/island/guide`, label: GUIDE_LINK_LABEL })]);
+    expect(viewText(sent[0].payload)).not.toContain(ISLAND_LINK_LABEL);
   });
 
   it("is absent without either address: the rows are exactly as before", async () => {

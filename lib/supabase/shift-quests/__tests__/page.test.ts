@@ -154,6 +154,8 @@ describe("getIslandPage", () => {
       ["shift_quest_character", [ACTOR]],
       ["shift_quest_consent_get", [ACTOR]],
       ["shift_quest_island_news", [ACTOR]],
+      // Roots (schema 10): the version first; this database does not answer it, so no roots are read.
+      ["shift_quest_schema_version", []],
       ["shift_quest_board", [ACTOR]],
       ["shift_quest_canvas_get", [ACTOR]],
       ["shift_quest_campfire", [ACTOR, false]],
@@ -438,10 +440,47 @@ describe("getIslandPage", () => {
 });
 
 describe("getIslandMap", () => {
+  beforeEach(() => {
+    jest.spyOn(console, "warn").mockImplementation(() => undefined);
+  });
+
   it("calls shift_quest_island_map for the actor and normalizes plots", async () => {
     respond({ shift_quest_island_map: map });
     const result = await getIslandMap(ACTOR);
     expect(call).toHaveBeenCalledWith("shift_quest_island_map", ACTOR);
+    expect(result.plots).toEqual([{ ...map.plots[0], plain: false }]);
+  });
+
+  it("merges the roots by slot from schema 10, never onto a plain plot", async () => {
+    const plots = [
+      { ...map.plots[0], slot: 1 },
+      { ...map.plots[0], slot: 2, mine: false, plain: true },
+      { ...map.plots[0], slot: 3, mine: false },
+    ];
+    respond({
+      shift_quest_island_map: { ...map, plots },
+      shift_quest_schema_version: 10,
+      shift_quest_island_roots: [{ slot: 1, roots: 2 }, { slot: 2, roots: 3 }, { slot: 9, roots: 1 }],
+    });
+    const result = await getIslandMap(ACTOR);
+    expect(call).toHaveBeenCalledWith("shift_quest_island_roots");
+    expect(result.plots.map((p) => [p.slot, p.roots ?? 0])).toEqual([[1, 2], [2, 0], [3, 0]]);
+  });
+
+  it("draws no roots below schema 10 and never calls the roots read", async () => {
+    respond({ shift_quest_island_map: map, shift_quest_schema_version: 9 });
+    const result = await getIslandMap(ACTOR);
+    expect(call).not.toHaveBeenCalledWith("shift_quest_island_roots");
+    expect(result.plots[0]).not.toHaveProperty("roots");
+  });
+
+  it("keeps the map when the roots read fails", async () => {
+    respond({
+      shift_quest_island_map: map,
+      shift_quest_schema_version: 10,
+      shift_quest_island_roots: new QuestDbError("shift_quest_island_roots", "42883"),
+    });
+    const result = await getIslandMap(ACTOR);
     expect(result.plots).toEqual([{ ...map.plots[0], plain: false }]);
   });
 });

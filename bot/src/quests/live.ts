@@ -20,6 +20,7 @@ import type { LightPhase } from "@/lib/shift-island/live/types";
 import { LIVE } from "./island/copy";
 import { renderIslandGif } from "./island/gif";
 import { renderIsland, type IslandPlot } from "./island/render";
+import { readRoots, withRoots } from "./island/roots";
 import { islandSigns, signsLine } from "./outbox";
 import { renderView, type Block, type View, type ViewPayload } from "./view";
 import { ISLAND_LINK_LABEL, islandWebUrl } from "./weblink";
@@ -38,7 +39,9 @@ import { ISLAND_LINK_LABEL, islandWebUrl } from "./weblink";
  *
  * Everything comes from shift_quest_live_post() (20261111094000, schema 8):
  * the same outsider view of the island as the weekly public post (a plot
- * shows its stage and name only once every teammate consented), plus counts.
+ * shows its stage and name only once every teammate consented), plus counts,
+ * and from schema 10 each shown tree's roots (shift_quest_island_roots, a
+ * level 0..3 merged by slot in island/roots.ts; none when the read fails).
  * No identities reach this module, so none can reach the post.
  *
  * Finding its message again, without spam:
@@ -475,6 +478,8 @@ export function startLivePost(client: Client, api: QuestApi, guildId: string, co
     if (stopped || !connected()) return;
     const d = normalize(await api.call<unknown>("shift_quest_live_post"));
     const channelId = d?.channel_id ?? null;
+    // Schema 10: the shown trees' roots, merged by slot (readRoots never throws: no roots on failure).
+    if (d && channelId) d.plots = withRoots(d.plots, await readRoots(api));
     if (!d || !channelId) {
       // No live channel: nothing to do, and the last message (if any) stays as it was.
       last = null;

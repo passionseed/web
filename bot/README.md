@@ -387,6 +387,32 @@ The short version for whoever runs the bot:
     summaries come from the website's cron (`/api/cron/shift-island-digest`,
     20:00 Bangkok), which needs `CRON_SECRET`, `SHIFT_QUEST_DATABASE_URL` and
     `ANTHROPIC_API_KEY` on Vercel. Below schema 9 the bot runs without it.
+- Campfire rounds (`bot/src/quests/rounds.ts`, buttons in
+  `handlers/rounds.ts`, rules in `lib/shift-island/rounds-rules.ts`): while
+  anyone sits in the coworking voice channel (the campfire), the bot keeps one
+  message in that channel's chat on the clock: 🔥 focus from :00 to :25 and
+  :30 to :55, then 🌊 rest (diffuse mode, one tip each time) to :30 and :00.
+  It edits the message from focus to rest, deletes it when the next round
+  posts, when a round ends with nobody left, on stop, and (its own, by the
+  marker line) after a restart. 🎯 ตั้งใจ starts a work session with an
+  intention; ✍️ ปิดรอบ ends it and saves a private journal entry (what was
+  learned, at least 10 characters, and where it is stuck, with the help
+  button when it is). No minutes are stored or shown, nobody is pinged, every
+  answer is private. The bot needs Send Messages in the voice channel's chat
+  (Read Message History to sweep leftovers); without it, rounds log once and
+  stay off. Students learn about it from the 📖 card and the web guide
+  (`/shift/island/guide`).
+- Roots (schema 10, `20261113090000_shift_quest_roots`;
+  `bot/src/quests/island/roots.ts`): reflections grow a tree's roots, drawn
+  over its soil in the live post and the /island picture (`roots_1` to
+  `roots_3` in `bot/assets/island/sprites.ts`). A journal note with at least
+  10 characters of what was learned counts, at most 3 per member per Bangkok
+  day, written for the project by someone still on it; level 1 is 1 to 4, 2 is
+  5 to 14, 3 is 15 or more. Only trees every member agreed to show (with
+  consent) get roots; a plain plot never does. Stages, coins and shop gates
+  do not change. The bot reads `shift_quest_island_roots()` only from schema
+  10; below it, or when the read fails (logged once), trees have no roots. No
+  new command.
 - Try it locally: `bot/quests-sandbox.sh` (a test Discord server and a test bot
   token; never the SHIFT server). Coins are on: `bot/scripts/economy-seed.ts`
   applies the DRAFT economy from `lib/content/shift-island-economy.ts` (reward

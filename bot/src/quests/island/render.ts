@@ -239,7 +239,7 @@ function scaleFor(width: number, requested: number | undefined): number {
 
 /**
  * Renders the island: rasterizes buildScene() in its order (tiles, helper
- * paths, well, bunting, boat, each tree with its key, visitor and lantern,
+ * paths, well, bunting, boat, each tree with its roots, key, visitor and lantern,
  * every tag on top so no tree hides a neighbour's number, then the caller's
  * pin). Each plot sits at its slot's fixed spot and carries its slot number;
  * the island is sized from the highest slot drawn, so archived slots leave a
@@ -262,6 +262,7 @@ export function renderIsland(plots: IslandPlot[], options: RenderOptions = {}): 
   // Trees first, then every tag on top, so no tree hides a neighbour's number.
   for (const tree of scene.trees) {
     canvas.sprite(tree.sprite, tree.left, tree.top);
+    if (tree.roots) canvas.sprite(tree.roots.sprite, tree.roots.x, tree.roots.y);
     if (tree.key) canvas.sprite("key_flag", tree.key.x, tree.key.y);
     if (tree.visitor) canvas.sprite("visitor", tree.visitor.x, tree.visitor.y);
     if (tree.lantern) canvas.sprite("lantern", tree.lantern.x, tree.lantern.y);

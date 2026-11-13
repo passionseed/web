@@ -171,7 +171,8 @@ function expectPostUntouched(calls: Call[]) {
 
 /** The card a target opens, and the database calls behind it. */
 const OPENS: Record<string, { title: string; db: string[] }> = {
-  me: { title: I.header, db: ["shift_quest_island", "shift_quest_island_map"] },
+  // The schema version: roots are read only from schema 10, and this fake database does not answer it (no roots).
+  me: { title: I.header, db: ["shift_quest_island", "shift_quest_island_map", "shift_quest_schema_version"] },
   quests: { title: I.workTitle, db: ["shift_quest_my_quests"] },
   checkin: { title: I.tappedTitle, db: ["shift_quest_island", "shift_quest_checkin"] },
   rewards: { title: T.rewardsTitle, db: ["shift_quest_catalog_list"] },

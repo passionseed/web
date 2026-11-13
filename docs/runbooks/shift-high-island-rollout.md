@@ -298,8 +298,8 @@ The bot runs on its own host (`bot/deploy.sh`), not on Vercel.
       ssh <bot host> docker logs --tail 50 passionseed-discord-bot | grep shift-quests
       ```
 
-      Expect `[shift-quests] database schema 9 (bot needs 2)`. From 8 the bot
-      runs the live post, from 9 the island news post.
+      Expect `[shift-quests] database schema 10 (bot needs 2)`. From 8 the bot
+      runs the live post, from 9 the island news post, from 10 it draws roots.
 - [ ] Register the slash commands (REST calls only; it never starts a second
       bot):
 

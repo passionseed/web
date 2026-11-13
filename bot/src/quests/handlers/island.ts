@@ -11,6 +11,7 @@ import { STATE, T, safe } from "../copy";
 import { cid } from "../ids";
 import { I, WIP_CORNER, WIP_CORNER_SHORT, seasonHead, seasonParts, type SeasonView } from "../island/copy";
 import { RenderError, renderIsland, type IslandPlot, type RenderedIsland } from "../island/render";
+import { readRoots, withRoots } from "../island/roots";
 import {
   ButtonStyle,
   REVISION,
@@ -27,7 +28,7 @@ import {
   type Row,
   type View,
 } from "../ui";
-import { islandLinkButton } from "../weblink";
+import { guideLinkButton, islandLinkButton } from "../weblink";
 import { newProjectModal } from "./project";
 import { helpModal } from "./journal";
 import { picked, type HandlerSet } from "./types";
@@ -107,11 +108,13 @@ const WORK_SHOWN = 5;
  * milestone, the season, then the fine print and the buttons.
  */
 export async function islandMessage(ctx: Ctx): Promise<IslandCard> {
-  const [view, map] = await Promise.all([
+  const [view, map, roots] = await Promise.all([
     ctx.api.call<IslandView>("shift_quest_island", ctx.userId),
     ctx.api.call<IslandMap>("shift_quest_island_map", ctx.userId),
+    // Schema 10: the shown trees' roots, merged by slot. Never throws: no roots on failure.
+    readRoots(ctx.api),
   ]);
-  const drawn = drawIsland(map.plots, Boolean(view.season));
+  const drawn = drawIsland(withRoots(map.plots, roots), Boolean(view.season));
   const files =
     "image" in drawn ? [new AttachmentBuilder(drawn.image.png, { name: ISLAND_PNG, description: "เกาะ SHIFT" })] : [];
   const blocks: Block[] = [];
@@ -318,6 +321,7 @@ export const island: HandlerSet = {
       // 🌱 only without a project: with one, claiming would start a second project
       // and move the student's current project to it (the live post's 📖 reaches both).
       const back = button(cid("is_view"), I.btnBack);
+      const guide = guideLinkButton();
       await show(
         i,
         {
@@ -325,10 +329,14 @@ export const island: HandlerSet = {
           title: I.btnHow,
           blocks: [
             { kind: "text", text: I.how },
+            { kind: "text", text: I.howRounds },
             { kind: "text", text: I.howSeason },
             { kind: "subtext", text: I.howFine },
           ],
-          rows: buttonRows(ctx.session.current_project_id ? [back] : [button(cid("is_claim"), I.btnClaim, ButtonStyle.Success), back]),
+          rows: buttonRows([
+            ...(ctx.session.current_project_id ? [back] : [button(cid("is_claim"), I.btnClaim, ButtonStyle.Success), back]),
+            ...(guide ? [guide] : []),
+          ]),
         },
         { replace: true }
       );

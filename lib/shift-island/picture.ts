@@ -7,6 +7,7 @@ import {
   buildScene,
   plotBoxes,
   renderIsland,
+  rootsLevel,
   type IslandPlot,
   type IslandScene,
   type PlotBox,
@@ -76,18 +77,24 @@ function toPlot(p: IslandMapPlot): IslandPlot {
     name: p.name,
     mine: p.mine,
     plain: p.plain ?? false,
+    roots: p.roots ?? 0,
   };
 }
 
 /**
  * 12 hex characters that change whenever the picture would: every drawn field
  * of every plot (sorted by slot) and the festival flag. Names are not drawn,
- * so they are not hashed.
+ * so they are not hashed. Roots join a plot's fields only when it has some,
+ * so an island without roots keeps the version it had before roots existed.
  */
 export function pictureVersion(map: IslandMapData): string {
   const plots = [...map.plots]
     .sort((a, b) => a.slot - b.slot)
-    .map((p) => [p.slot, p.stage, p.visitor, p.key, p.helper, p.lantern, p.mine, p.plain ?? false].map((v) => (typeof v === "boolean" ? Number(v) : v)));
+    .map((p) => {
+      const fields = [p.slot, p.stage, p.visitor, p.key, p.helper, p.lantern, p.mine, p.plain ?? false];
+      const roots = p.plain ? 0 : rootsLevel(p.roots);
+      return (roots > 0 ? [...fields, roots] : fields).map((v) => (typeof v === "boolean" ? Number(v) : v));
+    });
   const input = JSON.stringify({ r: RENDER_REVISION, festival: festivalFor(map), plots });
   return createHash("sha256").update(input).digest("hex").slice(0, 12);
 }

@@ -63,7 +63,8 @@ describe("MenuSheet: the suggestions link", () => {
   ])("is hidden when the link is %s", (_label, suggestUrl) => {
     menu({ suggestUrl });
     expect(screen.getByRole("dialog", { name: HUD.menu })).toBeInTheDocument();
-    expect(screen.queryByRole("link")).toBeNull();
+    // Only the guide is linked.
+    expect(screen.getAllByRole("link").map((a) => a.getAttribute("href"))).toEqual(["/shift/island/guide"]);
     expect(screen.queryByText(HUD.suggestHint)).toBeNull();
     expect(screen.queryByText(/เสนอไอเดีย/)).toBeNull();
   });
