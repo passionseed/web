@@ -142,6 +142,15 @@ function campers(d: LivePostData): number {
   return d.campfire?.live ? whole(d.campfire.count) : 0;
 }
 
+/**
+ * The campfire on the picture: none without a coworking channel, else the
+ * pit with one figure per person sitting there (unlit while nobody is, or
+ * while the count is not live).
+ */
+export function pictureCampfire(d: LivePostData): { count: number } | null {
+  return snowflake(d.coworking_channel_id) ? { count: campers(d) } : null;
+}
+
 /** The database's answer with every field checked, so a surprise shape never reaches Discord. */
 function normalize(raw: unknown): LivePostData | null {
   if (!raw || typeof raw !== "object") return null;
@@ -345,11 +354,12 @@ export function startLivePost(client: Client, api: QuestApi, guildId: string, co
 
   /** The moving island, or null when it cannot be drawn or is too large (the still PNG goes instead). */
   function movingPicture(d: LivePostData, phase: LightPhase): Buffer | null {
-    const key = JSON.stringify({ plots: d.plots, festival: Boolean(d.season), phase });
+    const campfire = pictureCampfire(d);
+    const key = JSON.stringify({ plots: d.plots, festival: Boolean(d.season), phase, campfire });
     if (gifCache?.key === key) return gifCache.gif;
     let gif: Buffer | null = null;
     try {
-      const drawn = renderIslandGif(d.plots, { scale: 2, festival: Boolean(d.season), phase }).gif;
+      const drawn = renderIslandGif(d.plots, { scale: 2, festival: Boolean(d.season), phase, campfire }).gif;
       if (drawn.length <= LIVE_GIF_MAX_BYTES) {
         gif = drawn;
         gifWarned = false;
@@ -375,7 +385,7 @@ export function startLivePost(client: Client, api: QuestApi, guildId: string, co
       return [new AttachmentBuilder(gif, { name: LIVE_GIF, description: "เกาะ SHIFT" })];
     }
     try {
-      const image = renderIsland(d.plots, { scale: 2, festival: Boolean(d.season) });
+      const image = renderIsland(d.plots, { scale: 2, festival: Boolean(d.season), campfire: pictureCampfire(d) });
       pictureWarned = false;
       return [new AttachmentBuilder(image.png, { name: LIVE_PNG, description: "เกาะ SHIFT" })];
     } catch (error) {

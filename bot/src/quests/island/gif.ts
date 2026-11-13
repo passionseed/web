@@ -8,7 +8,9 @@
  * ticks, foam every 16, lantern glow every 12 and the moored boat's bob every
  * 8, so all of them meet again at tick 48. Trees catch one gust per loop. The
  * boat stays moored where the PNG draws it, and there are no gulls or cloud
- * shadows: things that cross the island cannot loop in 6 seconds.
+ * shadows: things that cross the island cannot loop in 6 seconds. People and
+ * the plaza's campfire keep their own pace, snapped to one that divides the
+ * loop (loopActor): the flame flickers every 2 ticks, the sitters every 8.
  *
  * A frame is written only when something changed, with the time until the next
  * change as its delay (about 24 to 32 frames), and after the first only its
@@ -27,6 +29,7 @@ import { PixelContext, PixelImage } from "@/lib/shift-island/live/pixelCanvas";
 import type { Rect } from "@/lib/shift-island/live/geometry";
 import type { LightPhase, LiveActor } from "@/lib/shift-island/live/types";
 
+import { campfireActors, type CampfireView } from "./firepit";
 import { MAX_WIDTH, RenderError, buildScene, type IslandPlot, type IslandScene } from "./scene";
 
 /** Ticks in one loop: 6 seconds. */
@@ -47,6 +50,8 @@ export interface GifOptions {
   markMine?: boolean;
   /** Light over the island (default day). */
   phase?: LightPhase;
+  /** The plaza's voice campfire (firepit.ts); none when left out. */
+  campfire?: CampfireView;
 }
 
 export interface SceneGifOptions {
@@ -75,6 +80,24 @@ export interface RenderedGif {
 export function loopSway(ms: number, delay: number): boolean {
   const local = ms - delay - GUST.at;
   return local >= 0 && local < GUST.length && Math.floor(local / GUST.flip) % 2 === 0;
+}
+
+/**
+ * An actor whose frames take a whole number of ticks that, times its frame
+ * count, divides the loop: the nearest such pace to its own (frameMs, default
+ * 500 ms), so its last frame lasts as long as the others and it meets itself
+ * at the seam. Unchanged when no pace fits (a frame count that does not divide 48).
+ */
+export function loopActor(actor: LiveActor): LiveActor {
+  const n = actor.frames.length;
+  if (n < 2) return actor;
+  const want = (actor.frameMs ?? 500) / TICK_MS;
+  let best = 0;
+  for (let ticks = 1; ticks * n <= LOOP_TICKS; ticks++) {
+    if (LOOP_TICKS % (ticks * n) !== 0) continue;
+    if (!best || Math.abs(ticks - want) < Math.abs(best - want)) best = ticks;
+  }
+  return best ? { ...actor, frameMs: best * TICK_MS } : actor;
 }
 
 /** Everything that moves, at one tick of the loop. */
@@ -217,14 +240,14 @@ function indexFrames(frames: Uint32Array[], indexOf: (word: number) => number, c
  */
 export function renderIslandGif(plots: IslandPlot[], options: GifOptions = {}): RenderedGif {
   const scene = buildScene(plots, { markMine: options.markMine, festival: options.festival });
-  return renderSceneGif(scene, { scale: options.scale, phase: options.phase });
+  return renderSceneGif(scene, { scale: options.scale, phase: options.phase, actors: campfireActors(scene, options.campfire) });
 }
 
 /** A built scene (or part of it, with people in it) as a looping GIF: the story pages use this directly. */
 export function renderSceneGif(scene: IslandScene, options: SceneGifOptions = {}): RenderedGif {
   const view = options.view ?? { x: 0, y: 0, w: scene.width, h: scene.height };
   if (view.w < 1 || view.h < 1) throw new RenderError("bad_plot", `empty view ${view.w}x${view.h}`);
-  const actors = options.actors ?? [];
+  const actors = (options.actors ?? []).map(loopActor);
   const p = painter(scene, options.phase ?? "day");
   const k = scaleFor(view.w, options.scale, options.maxWidth);
 
