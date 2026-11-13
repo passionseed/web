@@ -14,7 +14,11 @@ import {
 
 import { QuestDbError, QuestError, type QuestApi } from "./api";
 import { cid } from "./ids";
+import { bangkokPhase } from "@/lib/shift-island/live/lighting";
+import type { LightPhase } from "@/lib/shift-island/live/types";
+
 import { LIVE } from "./island/copy";
+import { renderIslandGif } from "./island/gif";
 import { renderIsland, type IslandPlot } from "./island/render";
 import { islandSigns, signsLine } from "./outbox";
 import { renderView, type Block, type View, type ViewPayload } from "./view";
@@ -23,7 +27,9 @@ import { ISLAND_LINK_LABEL, islandWebUrl } from "./weblink";
 /**
  * The live island post: one message in the live channel (/admin channel
  * kind:live) that the bot keeps editing in place, never a stream of new posts.
- * It shows the island picture and a short card: trees, and the confirmed
+ * It shows the island picture (a looping GIF: the sea, foam, trees and
+ * lanterns move, in the light of the hour in Bangkok; a still PNG when the
+ * GIF cannot be drawn or is too large) and a short card: trees, and the confirmed
  * milestones of the trees shown by name (never a quiet project's), the island goal, the Demo Day countdown, how many people sit at
  * the campfire (a number, never who), then a button panel: personal buttons
  * ("sq|lp|<target>", answered by handlers/panel.ts with a private reply to
@@ -66,8 +72,12 @@ import { ISLAND_LINK_LABEL, islandWebUrl } from "./weblink";
 /** The island schema that adds shift_quest_live_post and shift_quest_live_mark (20261111094000_shift_quest_live.sql). */
 export const LIVE_SCHEMA = 8;
 
-/** The picture's attachment name. */
+/** The still picture's attachment name (the fallback). */
 export const LIVE_PNG = "shift-island-live.png";
+/** The moving picture's attachment name. */
+export const LIVE_GIF = "shift-island-live.gif";
+/** A GIF larger than this goes out as the still PNG instead. Discord takes far more; phones on mobile data should not. */
+export const LIVE_GIF_MAX_BYTES = 2 * 1024 * 1024;
 
 /** One check a minute: also the debounce for approvals, new plots, opt-ins and campfire changes. */
 const TICK_MS = 60_000;
@@ -160,14 +170,16 @@ function normalize(raw: unknown): LivePostData | null {
 }
 
 /**
- * Everything the post shows except the time: when it is unchanged and the
+ * Everything the post shows except the time, the light of the hour
+ * included (dawn, day, dusk, night): when it is unchanged and the
  * last edit is under 10 minutes old, the tick edits nothing. The message id
  * is left out (where the post is, not what it shows). So are the panel's
  * buttons: they change only with a release, and a new process always edits
  * (last starts empty, and every gateway ready forces an edit).
  */
-export function liveSignature(d: LivePostData, webUrl: string | null): string {
+export function liveSignature(d: LivePostData, webUrl: string | null, phase: LightPhase = "day"): string {
   return JSON.stringify({
+    phase,
     plots: d.plots,
     goal: d.goal,
     season: d.season,
@@ -218,9 +230,10 @@ function channelUrl(guildId: string, channelId: string): string {
  * row; how to play, then the web island, the coworking voice channel and the
  * suggestions channel on the second, each link only when there is one.
  */
-export function liveView(d: LivePostData, o: { nowMs: number; guildId: string; webUrl: string | null; picture: boolean }): View {
+export function liveView(d: LivePostData, o: { nowMs: number; guildId: string; webUrl: string | null; picture: boolean | string }): View {
   const blocks: Block[] = [];
-  if (o.picture) blocks.push({ kind: "image", name: LIVE_PNG, alt: "เกาะ SHIFT" });
+  // picture: the attachment's name, or true for the still PNG.
+  if (o.picture) blocks.push({ kind: "image", name: typeof o.picture === "string" ? o.picture : LIVE_PNG, alt: "เกาะ SHIFT" });
 
   const room = snowflake(d.coworking_channel_id);
   const suggest = snowflake(d.suggest_channel_id);
@@ -323,8 +336,41 @@ export function startLivePost(client: Client, api: QuestApi, guildId: string, co
     console.warn(`[shift-quests] live post: ${reason}; nothing new posted, trying again in a minute`);
   }
 
-  /** The island picture, or none when it cannot be drawn: the numbers still go out. */
-  function picture(d: LivePostData): AttachmentBuilder[] {
+  /** The last moving picture, by what it shows: the 10 minute refresh reuses it instead of drawing it again. */
+  let gifCache: { key: string; gif: Buffer | null } | null = null;
+  let gifWarned = false;
+
+  /** The moving island, or null when it cannot be drawn or is too large (the still PNG goes instead). */
+  function movingPicture(d: LivePostData, phase: LightPhase): Buffer | null {
+    const key = JSON.stringify({ plots: d.plots, festival: Boolean(d.season), phase });
+    if (gifCache?.key === key) return gifCache.gif;
+    let gif: Buffer | null = null;
+    try {
+      const drawn = renderIslandGif(d.plots, { scale: 2, festival: Boolean(d.season), phase }).gif;
+      if (drawn.length <= LIVE_GIF_MAX_BYTES) {
+        gif = drawn;
+        gifWarned = false;
+      } else if (!gifWarned) {
+        gifWarned = true;
+        console.warn(`[shift-quests] live island GIF is ${drawn.length} bytes (over ${LIVE_GIF_MAX_BYTES}); sending the still picture`);
+      }
+    } catch (error) {
+      if (!gifWarned) {
+        gifWarned = true;
+        console.warn(`[shift-quests] live island GIF skipped, sending the still picture: ${(error as Error)?.message ?? "unknown"}`);
+      }
+    }
+    gifCache = { key, gif };
+    return gif;
+  }
+
+  /** The island picture (moving, else still), or none when it cannot be drawn: the numbers still go out. */
+  function picture(d: LivePostData, phase: LightPhase): AttachmentBuilder[] {
+    const gif = movingPicture(d, phase);
+    if (gif) {
+      pictureWarned = false;
+      return [new AttachmentBuilder(gif, { name: LIVE_GIF, description: "เกาะ SHIFT" })];
+    }
     try {
       const image = renderIsland(d.plots, { scale: 2, festival: Boolean(d.season) });
       pictureWarned = false;
@@ -436,18 +482,19 @@ export function startLivePost(client: Client, api: QuestApi, guildId: string, co
       return;
     }
     const webUrl = islandWebUrl();
-    const sig = liveSignature(d, webUrl);
     const now = Date.now();
+    const phase = bangkokPhase(now);
+    const sig = liveSignature(d, webUrl, phase);
     const where = `${channelId}:${d.message_id ?? ""}`;
     if (!force && last && last.where === where && last.sig === sig && now - last.at < REFRESH_MS) return;
 
     const channel = await liveChannel(channelId);
     if (!channel || stopped) return;
     const payload = (files: AttachmentBuilder[]): ViewPayload => {
-      const view: View = { ...liveView(d, { nowMs: now, guildId, webUrl, picture: files.length > 0 }), files };
+      const view: View = { ...liveView(d, { nowMs: now, guildId, webUrl, picture: files[0]?.name ?? false }), files };
       return renderView(view, { ephemeral: false, action: "live_post" });
     };
-    const files = picture(d);
+    const files = picture(d, phase);
     let placed: string | null;
     try {
       placed = await place(channel, channelId, d.message_id, payload(files));

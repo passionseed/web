@@ -61,6 +61,16 @@ export const I = {
     // DRAFT (lore: กติกาของเกาะ): a missed day never resets or takes anything away.
     "- **พักนานแค่ไหนก็ได้** ต้นไม้ไม่เหี่ยว ไม่หดเล็กลง วันที่ไม่ได้มาไม่ทำให้อะไรหายหรือเริ่มนับใหม่",
   ].join("\n"),
+  /**
+   * The season, after the rules: the festival night and what comes after.
+   * Moved here from the old started card. DRAFT (lore: festival night, ทางที่เดินต่อ).
+   * No date: the island card shows the season's own. Voluntary, no promise of
+   * admissions, money or a role.
+   */
+  howSeason: [
+    "🏮 ปลายซีซันมีคืนเทศกาล Demo Day ทั้งเกาะมาโชว์งานด้วยกัน",
+    "🌅 ซีซันจบ ต้นไม้ยังอยู่ วันหนึ่งคุณกลับมาช่วยคนที่เพิ่งขึ้นเกาะได้",
+  ].join("\n"),
   howFine: [
     "ไม่มีการจัดอันดับ ของปลดล็อกทุกคนที่ถึงเกณฑ์ได้เท่ากัน",
     "เริ่มได้สองทาง: จับจองที่ดินด้วยการสร้างโปรเจกต์ หรือให้เพื่อนชวนเข้าโปรเจกต์ของเขา",

@@ -10,6 +10,8 @@ import { isEligible, requireEligible, requireMember, requireStudent, type Ctx } 
 import { DAY_NAMES, STAFF_AWARD_LABEL, T, bkkDate, renderInbox, safe } from "../copy";
 import { cid, isUuid } from "../ids";
 import { I, SQ } from "../island/copy";
+import { MORNING_ALT, MORNING_GIF, morningAttachment } from "../island/morning";
+import { storyPage, storyView } from "../story";
 import {
   ButtonStyle,
   button,
@@ -203,34 +205,43 @@ function ago(iso: string): string {
 // ---------------------------------------------------------------------------
 // Screens
 
-/** The welcome card /start shows before someone has started (also the live post panel's answer then). */
+/**
+ * The door: what /start shows before someone has started (also the live post
+ * panel's answer then): the island's story from its first page (../story.ts).
+ */
 export function introView(): View {
-  return {
-    tone: "island",
-    title: T.introTitle,
-    blocks: [
-      { kind: "text", text: T.introBody },
-      { kind: "subtext", text: T.introExamples },
-      { kind: "text", text: T.introPromise },
-    ],
-    rows: buttonRows([button(cid("start"), T.startButton, ButtonStyle.Primary), button(cid("start_info"), T.btnRules), ...webLink()]),
-  };
+  return storyView(0);
 }
 
-function startedView(): View {
+/**
+ * After start, or /start again: one next step. Without a plot, claim one (the
+ * first morning's picture again); with one, back to the island.
+ */
+export function startedView(ctx: Ctx): View {
+  if (ctx.session.current_project_id) {
+    return {
+      tone: "island",
+      title: T.returnedTitle,
+      blocks: [{ kind: "text", text: T.returned }],
+      rows: buttonRows([button(cid("nav", "island"), T.btnIsland, ButtonStyle.Primary), button(cid("start_info"), T.btnRules), ...webLink()]),
+    };
+  }
+  const files = morningAttachment();
   return {
     tone: "island",
     title: T.startedTitle,
     blocks: [
+      ...(files.length ? [{ kind: "image" as const, name: MORNING_GIF, alt: MORNING_ALT }] : []),
       { kind: "text", text: T.started },
       { kind: "subtext", text: T.startedFine },
     ],
     rows: buttonRows([
-      button(cid("nav", "island"), T.btnIsland, ButtonStyle.Primary),
       button(cid("nav", "project_new"), T.btnNewProject, ButtonStyle.Success),
-      button(cid("start_info"), T.btnRules),
+      button(cid("nav", "island"), T.btnIsland),
+      button(cid("is_how"), I.btnHow),
       ...webLink(),
     ]),
+    files,
   };
 }
 
@@ -464,7 +475,7 @@ export const student: HandlerSet = {
   commands: {
     async start(i, ctx) {
       requireEligible(ctx);
-      await show(i, ctx.session.onboarded ? startedView() : introView());
+      await show(i, ctx.session.onboarded ? startedView(ctx) : introView());
     },
 
     async inbox(i, ctx) {
@@ -516,7 +527,13 @@ export const student: HandlerSet = {
     async start(i, ctx) {
       requireEligible(ctx);
       await ctx.api.call("shift_quest_start", ctx.userId, ctx.name, false);
-      await show(i, startedView(), { replace: true });
+      await show(i, startedView(ctx), { replace: true });
+    },
+
+    /** ▶ ◀ and ข้าม in the story: another page, in place. Text and a picture only, no database call. */
+    async story(i, ctx, [page]) {
+      requireEligible(ctx);
+      await show(i, storyView(storyPage(page)), { replace: true });
     },
 
     /** ℹ️ on the welcome cards: the full agreement. Text only, no database call. */

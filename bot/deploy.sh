@@ -6,7 +6,8 @@
 #   bot/deploy.sh <ssh-host> --rollback   # run the previous image again
 #
 # A deploy, in order; each step stops it on failure:
-#   1. Stage only what the bot imports (bot/, two lib files, tsconfig.json)
+#   1. Stage only what the bot imports (bot/, two lib files, the living-island
+#      drawing code in lib/shift-island/live, tsconfig.json)
 #      plus a package.json pinned to the versions installed here (DEPS).
 #   2. Build the image on the host, tagged with the revision only.
 #   3. Smoke check: run the new image once with --network none and bot.env
@@ -139,8 +140,10 @@ ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
 
 # The image's npm dependencies: the one list, pinned to the versions installed here.
-DEPS=(discord.js @supabase/supabase-js pg tsx)
-FILES=(bot lib/content/shift-cohort.ts lib/shift/voiceWindow.ts tsconfig.json)
+DEPS=(discord.js @supabase/supabase-js pg tsx gifenc)
+# lib/shift-island/live: the web's living-island drawing code, which draws the bot's moving island GIF.
+# components/shift/island/story/scenes.ts: the story's scenes, shared with the web story (bot/src/quests/story.ts).
+FILES=(bot lib/content/shift-cohort.ts lib/shift/voiceWindow.ts lib/shift-island/live components/shift/island/story/scenes.ts tsconfig.json)
 
 read -r -d '' REMOTE_DEPLOY <<'DEPLOY' || true
 ARCHIVE="$1"

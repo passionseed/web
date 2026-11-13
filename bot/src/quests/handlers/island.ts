@@ -325,6 +325,7 @@ export const island: HandlerSet = {
           title: I.btnHow,
           blocks: [
             { kind: "text", text: I.how },
+            { kind: "text", text: I.howSeason },
             { kind: "subtext", text: I.howFine },
           ],
           rows: buttonRows(ctx.session.current_project_id ? [back] : [button(cid("is_claim"), I.btnClaim, ButtonStyle.Success), back]),

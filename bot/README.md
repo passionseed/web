@@ -284,6 +284,22 @@ The short version for whoever runs the bot:
   it in pure JavaScript and encodes the PNG with Node's own zlib: no extra
   dependency, no fonts or native modules, and the same map always gives the
   same picture.
+- Moving pictures (`bot/src/quests/island/gif.ts`): the live post and the
+  story pages are looping GIFs drawn with the website's living-island code
+  (`lib/shift-island/live`, on the software canvas `pixelCanvas.ts`) and
+  encoded with `gifenc`. One seamless 6 second loop: the sea, foam, the moored
+  boat, one gust through the trees, and lanterns at night; no gulls or cloud
+  shadows, which cannot loop that fast. Only changed pixels are encoded after
+  the first frame, so a big island stays a few hundred KB. The light follows
+  Bangkok time (dawn, day, dusk, night).
+- `/start` before starting is the island's story (`bot/src/quests/story.ts`):
+  five pages, each a moving picture and a few lines, stepped with ▶ ถัดไป,
+  ◀ ย้อน and ข้าม on the same private message, with no database call. The
+  pictures are the web story's panels (`components/shift/island/story/scenes.ts`)
+  and are drawn once when the bot is ready. The last page holds the two ways
+  in: "🏝️ ขึ้นเกาะ" (the website, when its address is set) and
+  "🌱 เริ่มใน Discord". After starting, the card shows the island at dawn and
+  offers 🌱 จับจองที่ดิน first.
 - The art is pixel matrices in `bot/assets/island/sprites.ts` (generated with
   Codex, original). After editing a sprite, run
   `node_modules/.bin/tsx bot/assets/island/generate.ts` to refresh the PNGs and
@@ -297,7 +313,9 @@ The short version for whoever runs the bot:
   (the bot needs View Channel, Send Messages, Attach Files and Read Message
   History there; Pin Messages too, or the post works unpinned). The bot keeps
   one message there and edits it in place: the island picture (the same
-  consent-shaped view as the weekly post), trees and the mentor-confirmed
+  consent-shaped view as the weekly post, as a moving GIF in the light of the
+  Bangkok hour; a GIF over 2 MB or one that fails to draw goes out as the
+  still PNG), trees and the mentor-confirmed
   milestones of the trees shown by name (quiet projects never count), the island goal, the Demo Day
   countdown, how many people sit at the campfire (a number, never names), and
   a button panel. The first row is personal: "🏝️ ของฉัน" (the /island card),
@@ -314,7 +332,7 @@ The short version for whoever runs the bot:
   pressed it, in a new private reply, and never edits the shared post. It
   uses the slash commands' gate: someone outside the pilot gets the same
   polite "not yet", and someone in the pilot who has not started gets the
-  /start welcome card. The post is edited about 5 seconds after every gateway
+  /start story. The post is edited about 5 seconds after every gateway
   ready (so a new release puts its buttons on the existing post right away),
   then within a minute of anything shown changing, and at least every 10
   minutes; at most one edit a minute. It is not gated on sharing: setting the channel turns it

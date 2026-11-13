@@ -144,6 +144,7 @@
     "esbuild": "^0.27.3",
     "fast-blurhash": "^1.2.0",
     "framer-motion": "^12.34.0",
+    "gifenc": "1.0.3",
     "googleapis": "^172.0.0",
     "groq-sdk": "^1.1.1",
     "gsap": "^3.14.2",

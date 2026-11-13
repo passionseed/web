@@ -166,7 +166,7 @@ describe("/island", () => {
     expect(ids).not.toContain("sq|browse");
     const { i, sent } = interaction("button");
     await ACTION_HANDLERS.get("is_how")!(i, c, []);
-    expect(bodyText(sent[0])).toBe(`### ${I.btnHow}\n${I.how}\n${I.howFine.split("\n").map((l) => `-# ${l}`).join("\n")}`);
+    expect(bodyText(sent[0])).toBe(`### ${I.btnHow}\n${I.how}\n\n${I.howSeason}\n${I.howFine.split("\n").map((l) => `-# ${l}`).join("\n")}`);
   });
 
   it("asks for proof once, with the evidence criteria on the form", () => {

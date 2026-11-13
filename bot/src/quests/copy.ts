@@ -109,14 +109,47 @@ export const T = {
   /** Shown under a private card's title: nobody else sees it. */
   onlyYou: "เห็นแค่คุณ",
 
-  // /start: a short welcome; the full agreement sits behind the ℹ️ button (T.rules).
-  introTitle: "👋 ยินดีต้อนรับสู่ SHIFT High quests",
-  // DRAFT (lore: docs/designs/shift-high-island-lore.md): the empty island as the hook.
-  // DRAFT (lore: the invite is chapter one): the island is where a SHIFT project keeps growing.
-  introBody: "**เกาะ SHIFT: ที่ที่โปรเจกต์ได้โตต่อหลังวันที่ 7**\nปลูกโปรเจกต์ที่ทำมาจาก SHIFT หรือเริ่มเรื่องใหม่ที่คุณใส่ใจ ทำกับคนที่พร้อมช่วย แล้วส่งให้คนจริงได้ลองใช้",
-  introExamples: "จะเป็นเครื่องมือที่มีประโยชน์ เกมที่คนอยากกลับมาเล่น เรื่องที่เชื่อมคน หรือบริการที่แก้ปัญหาจริงก็ได้",
+  // /start before starting: the island's story, five pages with a moving
+  // picture each (../story.ts), stepped with ▶ and ◀. The prologue comes from
+  // the invite (lore bible sections 1 and 16); pages 2 to 5 are the web story's
+  // four panels (lore bible section 9), each split into short lines. "ลงแปลง",
+  // never "ปลูก" (the house test rejects ลูก inside it). No Demo Day date: the
+  // story never loads the season. The last page holds the two ways in.
+  // DRAFT for the multi-model Thai review: every storyPages line, the three buttons, btnBoard.
+  storyPages: [
+    {
+      title: "🌅 วันที่ 7",
+      text: "7 วันของ SHIFT จบลง\nคุณมีโปรเจกต์จริงหนึ่งชิ้นอยู่ในมือ\n\nตกเย็น ขวดใบหนึ่งลอยมาเกยฝั่ง\nในขวดมีตั๋วเขียนว่า **เจอกันบนเกาะ**",
+      alt: "เกาะ SHIFT ตอนเย็น ทะเลขยับ เรือลำเล็กจอดอยู่ริมฝั่ง",
+    },
+    {
+      title: "🏝️ เช้าวันแรก",
+      text: "เจอกันบนเกาะแล้ว\n\nที่ดินยังว่าง\nรอโปรเจกต์ที่คุณถือมา",
+      alt: "เกาะ SHIFT ตอนเช้า ที่ดินยังว่าง มีลานกลางเกาะกับบ่อน้ำ",
+    },
+    {
+      title: "🌱 ลงแปลง",
+      text: "ลงแปลงแล้ว\n\nโปรเจกต์ได้โตต่อ\nหลังวันที่ 7 ของ SHIFT",
+      alt: "ต้นกล้าหนึ่งต้น มีคนสร้างยืนถือค้อนอยู่ข้างๆ",
+    },
+    {
+      title: "🌳 โตทีละขั้น",
+      text: "ต้นไม้โตทีละขั้น\nเมื่อพี่เลี้ยงเห็นงานที่ทำจริง\n\nและมีคนจริงได้ลองของที่คุณสร้าง",
+      alt: "ต้นไม้ที่โตขึ้นแล้ว คนสร้างยืนข้างต้น อีกคนกำลังลองใช้งานบนโทรศัพท์",
+    },
+    {
+      title: "🏮 คืนเทศกาล",
+      text: "ปลายซีซันคือคืนเทศกาล Demo Day\nทั้งเกาะโชว์งาน และต้นไม้ทุกต้นยังอยู่ต่อ\n\n**แปลงของคุณรออยู่**",
+      alt: "เกาะตอนกลางคืน ต้นไม้หลายต้น โคมไฟส่องแสง ธงเทศกาลเหนือลานกลางเกาะ",
+    },
+  ],
+  storyNext: "ถัดไป ▶",
+  storyBack: "◀ ย้อน",
+  storySkip: "ข้าม",
   /** The agreement in one line, visible before anyone presses start. */
   introPromise: "🔒 สมัครใจทุกอย่าง · บันทึกเป็นส่วนตัวเป็นค่าเริ่มต้น · ไม่บันทึกเสียงหรือภาพหน้าจอ",
+  /** DRAFT: the link to the web island, where the story plays. */
+  btnBoard: "🏝️ ขึ้นเกาะ",
   rulesTitle: "ℹ️ ตกลงกันก่อน",
   rules: (coins: boolean) =>
     [
@@ -130,20 +163,16 @@ export const T = {
       "• **ข้อมูลของคุณ** ดู ส่งออก หรือขอลบได้ที่ /data",
     ].join("\n"),
   btnRules: "ℹ️ กติกาและความเป็นส่วนตัว",
-  startButton: "🏝️ เริ่มเลย",
-  startedTitle: "🏝️ เริ่มแล้ว ยินดีต้อนรับสู่เกาะ SHIFT",
-  started: [
-    "🌳 ทุกโปรเจกต์คือต้นไม้หนึ่งต้นบนเกาะ โตได้ **7 ขั้น** จากงานจริงที่พี่เลี้ยงยืนยัน",
-    "🌱 จับจองที่ดิน (สร้างโปรเจกต์) หรือรอเพื่อนชวนเข้าทีมก็ได้",
-    // DRAFT (lore: festival night). No date here: the island card shows the season's own.
-    "🏮 ปลายซีซันมีคืนเทศกาล Demo Day ทั้งเกาะมาโชว์งานด้วยกัน",
-    // DRAFT (lore: ทางที่เดินต่อ): where this goes. Voluntary, no promise of admissions, money or a role.
-    "🌅 ซีซันจบ ต้นไม้ยังอยู่ วันหนึ่งคุณกลับมาช่วยคนที่เพิ่งขึ้นเกาะได้",
-  ].join("\n"),
-  startedFine: [
-    "ยังไม่มีไอเดียที่ขัดเกลามาแล้วก็ไม่เป็นไร ขั้นแรกคือเลือกเรื่องที่คุณใส่ใจ",
-    "ทุกอย่างอยู่ที่ /island ที่เดียว",
-  ].join("\n"),
+  /** Starts here in Discord; the web island is the other way in. DRAFT. */
+  startButton: "🌱 เริ่มใน Discord",
+  // After start: one step, claim a plot. How the island works, the festival and
+  // what comes after the season moved to 📖 (I.how, I.howSeason). DRAFT.
+  startedTitle: "🌅 ถึงเกาะแล้ว",
+  started: "ขั้นแรก จับจองที่ดินด้วยโปรเจกต์ที่คุณถือมาจาก SHIFT\nหรือเรื่องใหม่ที่คุณใส่ใจ",
+  startedFine: "ยังไม่ได้เลือกเรื่องก็ไม่เป็นไร รอเพื่อนชวนเข้าทีมก็ได้",
+  /** /start again, with a plot already: back to the island. DRAFT. */
+  returnedTitle: "🏝️ คุณอยู่บนเกาะแล้ว",
+  returned: "ต้นไม้ของคุณรออยู่ ไปดูกันเลย",
   btnIsland: "🏝️ ไปที่เกาะ",
   btnNewProject: "🌱 จับจองที่ดิน",
   btnBrowse: "ดูเควสต์",

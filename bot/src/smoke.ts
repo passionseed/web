@@ -7,7 +7,7 @@
  *
  * Loads every module the bot loads (so a missing dependency, sprite file or CA
  * file fails here and not after the swap), draws a tiny island with the real
- * renderer and, with --env, validates the environment the way startup does.
+ * renderer (the still PNG and the moving GIF) and, with --env, validates the environment the way startup does.
  * Nothing here logs in to Discord or connects to a database.
  *
  * Prints one line, `smoke ok ... health=file|none`, and exits 0; or prints
@@ -52,6 +52,17 @@ async function main(): Promise<string> {
     throw new Error(`render island: unexpected output (${island.width}x${island.height}, ${island.png.length} bytes)`);
   }
 
+  // The moving island: gifenc and lib/shift-island/live must be in the image.
+  const { renderIslandGif } = await step("load gif renderer", () => import("./quests/island/gif"));
+  const moving = await step("render island gif", () => renderIslandGif([], { scale: 1, phase: "dawn", festival: true }));
+  if (moving.gif.subarray(0, 6).toString("latin1") !== "GIF89a" || moving.frames < 2) {
+    throw new Error(`render island gif: unexpected output (${moving.frames} frames, ${moving.gif.length} bytes)`);
+  }
+  // The story's scenes come from components/shift/island/story/scenes.ts: it must be in the image.
+  const { storyGif, STORY_PAGES } = await step("load story", () => import("./quests/story"));
+  const story = await step("render story page", () => storyGif(STORY_PAGES - 1));
+  if (!story) throw new Error("render story page: no picture");
+
   let modules = "unchecked";
   let health = "unchecked";
   if (process.argv.includes("--env")) {
@@ -63,7 +74,7 @@ async function main(): Promise<string> {
   }
 
   const revision = existsSync("REVISION") ? readFileSync("REVISION", "utf8").trim() : "local";
-  return `smoke ok rev=${revision} modules=${modules} island=${island.width}x${island.height} png=${island.png.length}B health=${health}`;
+  return `smoke ok rev=${revision} modules=${modules} island=${island.width}x${island.height} png=${island.png.length}B gif=${moving.gif.length}B health=${health}`;
 }
 
 main().then(

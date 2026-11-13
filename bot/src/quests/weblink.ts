@@ -53,8 +53,8 @@ export function islandWebUrl(env: NodeJS.ProcessEnv = process.env): string | nul
   return candidate;
 }
 
-/** "🌐 เปิดเกาะบนเว็บ" opening the island page, or null when no address is configured. */
-export function islandLinkButton(env: NodeJS.ProcessEnv = process.env): ButtonBuilder | null {
+/** "🌐 เปิดเกาะบนเว็บ" (or another label) opening the island page, or null when no address is configured. */
+export function islandLinkButton(env: NodeJS.ProcessEnv = process.env, label: string = ISLAND_LINK_LABEL): ButtonBuilder | null {
   const url = islandWebUrl(env);
-  return url ? new ButtonBuilder().setStyle(ButtonStyle.Link).setURL(url).setLabel(ISLAND_LINK_LABEL) : null;
+  return url ? new ButtonBuilder().setStyle(ButtonStyle.Link).setURL(url).setLabel(label) : null;
 }

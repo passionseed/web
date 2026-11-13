@@ -9,6 +9,8 @@ import type { Ctx } from "../context";
 import { DAY_NAMES, T } from "../copy";
 import { I } from "../island/copy";
 import { LIMITS, NO_MENTIONS, TONE_COLORS } from "../ui";
+import { MORNING_GIF } from "../island/morning";
+import { STORY_PAGES, storyPage, storyPictureName } from "../story";
 import { ISLAND_LINK_LABEL } from "../weblink";
 import { accentColor, bodyText, cardsOf, componentCount, customIds, mediaUrls, textLength, viewText } from "../test-helpers/view";
 
@@ -132,21 +134,47 @@ function buttonOf(p: Payload, id: string): Json {
 }
 
 describe("/start", () => {
-  it("welcomes with a short card: the promise in view, the rules behind ℹ️, start as the main button", async () => {
+  it("opens the island's story on its first page: a moving picture, a few lines, ▶ as the main button", async () => {
     const c = ctx(() => null, session({ onboarded: false }));
     const { i, sent } = interaction("command");
     await COMMAND_HANDLERS.get("start")!(i, c);
     const p = sent[0].payload;
     expectCard(p);
     expect(sent[0].how).toBe("reply");
-    expect(bodyText(p).startsWith(`### ${T.introTitle}\n`)).toBe(true);
+    expect(bodyText(p).startsWith(`### ${T.storyPages[0].title}\n${T.storyPages[0].text}`)).toBe(true);
+    expect(mediaUrls(p)).toEqual([`attachment://${storyPictureName(0)}`]);
+    expect(viewText(p)).toContain("● ○ ○ ○ ○");
+    expect(customIds(p)).toEqual(["sq|story|1", `sq|story|${STORY_PAGES - 1}`]);
+    expect(buttonOf(p, "sq|story|1").style).toBe(1); // primary
+    expect(accentColor(p)).toBe(TONE_COLORS.island);
+    expect(calls(c)).toEqual([]);
+  });
+
+  it("steps through the story in place, without a database call; the last page holds the promise and start", async () => {
+    const c = ctx(() => null, session({ onboarded: false }));
+    const mid = interaction("button");
+    await ACTION_HANDLERS.get("story")!(mid.i, c, ["2"]);
+    expect(mid.sent[0].how).toBe("update");
+    expect(bodyText(mid.sent[0].payload).startsWith(`### ${T.storyPages[2].title}\n`)).toBe(true);
+    expect(customIds(mid.sent[0].payload)).toEqual(["sq|story|1", "sq|story|3", `sq|story|${STORY_PAGES - 1}`]);
+    expect(mediaUrls(mid.sent[0].payload)).toEqual([`attachment://${storyPictureName(2)}`]);
+
+    const last = interaction("button");
+    await ACTION_HANDLERS.get("story")!(last.i, c, ["99"]);
+    const p = last.sent[0].payload;
+    expect(bodyText(p).startsWith(`### ${T.storyPages[STORY_PAGES - 1].title}\n`)).toBe(true);
     expect(viewText(p)).toContain(T.introPromise);
     expect(viewText(p)).not.toContain("ไม่นับเวลาในห้องเสียง");
-    expect(customIds(p)).toEqual(["sq|start", "sq|start_info"]);
-    expect(buttonOf(p, "sq|start").style).toBe(1); // primary
-    expect(accentColor(p)).toBe(TONE_COLORS.island);
-    expect(bodyText(p).split("\n").length).toBeLessThanOrEqual(6);
+    expect(customIds(p)).toEqual(["sq|start", "sq|start_info", `sq|story|${STORY_PAGES - 2}`]);
+    expect(buttonOf(p, "sq|start").style).toBe(1);
     expect(calls(c)).toEqual([]);
+  });
+
+  it("clamps a page out of range, and keeps people outside the pilot out of the story", async () => {
+    expect([storyPage("-3"), storyPage("x"), storyPage("1.7"), storyPage(99)]).toEqual([0, 0, 1, STORY_PAGES - 1]);
+    const c = ctx();
+    c.memberRoleIds = [];
+    await expect(ACTION_HANDLERS.get("story")!(interaction("button").i, c, ["1"])).rejects.toThrow(T.notEligible);
   });
 
   it("starts with the same call and makes the island the next step", async () => {
@@ -157,9 +185,18 @@ describe("/start", () => {
     expect(sent[0].how).toBe("update");
     const p = sent[0].payload;
     expectCard(p, V2);
-    expect(bodyText(p).startsWith(`### ${T.startedTitle}\n`)).toBe(true);
-    expect(viewText(p)).toContain("/island");
-    expect(customIds(p)).toEqual(["sq|nav|island", "sq|nav|project_new", "sq|start_info"]);
+    expect(bodyText(p).startsWith(`### ${T.startedTitle}\n${T.started}`)).toBe(true);
+    expect(mediaUrls(p)).toEqual([`attachment://${MORNING_GIF}`]);
+    expect(customIds(p)).toEqual(["sq|nav|project_new", "sq|nav|island", "sq|is_how"]);
+    expect(buttonOf(p, "sq|nav|project_new").style).toBe(3); // success
+  });
+
+  it("sends someone with a project back to their island", async () => {
+    const { i, sent } = interaction("command");
+    await COMMAND_HANDLERS.get("start")!(i, ctx(() => null, session({ current_project_id: ID(1) })));
+    const p = sent[0].payload;
+    expect(bodyText(p)).toBe(`### ${T.returnedTitle}\n${T.returned}`);
+    expect(customIds(p)).toEqual(["sq|nav|island", "sq|start_info"]);
     expect(buttonOf(p, "sq|nav|island").style).toBe(1);
   });
 
@@ -214,16 +251,15 @@ describe("/start link to the website", () => {
   const SITE = "https://www.passionseed.org";
   const ISLAND_URL = `${SITE}/shift/island`;
 
-  it("adds 🌐 after the start button on the welcome card, the start flow unchanged", async () => {
+  it("puts 🏝️ ขึ้นเกาะ first on the story's last page, start still the main button", async () => {
     process.env.NEXT_PUBLIC_SITE_URL = `${SITE}/`;
     const c = ctx(() => null, session({ onboarded: false }));
-    const { i, sent } = interaction("command");
-    await COMMAND_HANDLERS.get("start")!(i, c);
+    const { i, sent } = interaction("button");
+    await ACTION_HANDLERS.get("story")!(i, c, [String(STORY_PAGES - 1)]);
     const p = sent[0].payload;
-    expectCard(p);
-    expect(rowsWithLinks(p)).toEqual([["sq|start", "sq|start_info", `link:${ISLAND_URL}`]]);
-    expect(linksOf(p)).toEqual([expect.objectContaining({ type: 2, style: 5, url: ISLAND_URL, label: ISLAND_LINK_LABEL })]);
-    expect(customIds(p)).toEqual(["sq|start", "sq|start_info"]);
+    expectCard(p, V2);
+    expect(rowsWithLinks(p)).toEqual([[`link:${ISLAND_URL}`, "sq|start", "sq|start_info", `sq|story|${STORY_PAGES - 2}`]]);
+    expect(linksOf(p)).toEqual([expect.objectContaining({ type: 2, style: 5, url: ISLAND_URL, label: T.btnBoard })]);
     expect(buttonOf(p, "sq|start").style).toBe(1);
     expect(calls(c)).toEqual([]);
   });
@@ -235,8 +271,8 @@ describe("/start link to the website", () => {
     await ACTION_HANDLERS.get("start")!(a.i, c, []);
     expect(calls(c)).toEqual([["shift_quest_start", "1111111111", "x", false]]);
     expectCard(a.sent[0].payload, V2);
-    expect(rowsWithLinks(a.sent[0].payload)).toEqual([["sq|nav|island", "sq|nav|project_new", "sq|start_info", `link:${ISLAND_URL}`]]);
-    expect(buttonOf(a.sent[0].payload, "sq|nav|island").style).toBe(1);
+    expect(rowsWithLinks(a.sent[0].payload)).toEqual([["sq|nav|project_new", "sq|nav|island", "sq|is_how", `link:${ISLAND_URL}`]]);
+    expect(buttonOf(a.sent[0].payload, "sq|nav|project_new").style).toBe(3);
 
     const b = interaction("command");
     await COMMAND_HANDLERS.get("start")!(b.i, ctx());
@@ -254,12 +290,12 @@ describe("/start link to the website", () => {
   it("is absent without an address, or with a refused one", async () => {
     for (const site of [undefined, "http://example.com", "not a url"]) {
       if (site) process.env.NEXT_PUBLIC_SITE_URL = site;
-      const intro = interaction("command");
-      await COMMAND_HANDLERS.get("start")!(intro.i, ctx(() => null, session({ onboarded: false })));
-      expect(rowsWithLinks(intro.sent[0].payload)).toEqual([["sq|start", "sq|start_info"]]);
+      const intro = interaction("button");
+      await ACTION_HANDLERS.get("story")!(intro.i, ctx(() => null, session({ onboarded: false })), [String(STORY_PAGES - 1)]);
+      expect(rowsWithLinks(intro.sent[0].payload)).toEqual([["sq|start", "sq|start_info", `sq|story|${STORY_PAGES - 2}`]]);
       const started = interaction("command");
       await COMMAND_HANDLERS.get("start")!(started.i, ctx());
-      expect(rowsWithLinks(started.sent[0].payload)).toEqual([["sq|nav|island", "sq|nav|project_new", "sq|start_info"]]);
+      expect(rowsWithLinks(started.sent[0].payload)).toEqual([["sq|nav|project_new", "sq|nav|island", "sq|is_how"]]);
       expect(viewText(started.sent[0].payload)).not.toContain(ISLAND_LINK_LABEL);
     }
   });
@@ -306,7 +342,7 @@ describe("/inbox", () => {
     expectCard(p);
     expect(accentColor(p)).toBe(TONE_COLORS.neutral);
     const body = bodyText(p);
-    expect(body.startsWith(`### ${T.inboxTitle}\n-# ${T.onlyYou}\n✅ **แอป**`)).toBe(true);
+    expect(body.startsWith(`### ${T.inboxTitle}\n-# ${T.onlyYou}\n\n✅ **แอป**`)).toBe(true);
     // The requests come last, so the last text above the buttons is what they answer.
     expect(body).toContain(`**${T.inboxAsks}**\n**1** 🙌 ฟ้า`);
     expect(body.indexOf(`**${T.inboxAsks}**`)).toBeGreaterThan(body.indexOf(T.helpMine));
@@ -751,21 +787,23 @@ describe("/data", () => {
 
 describe("student copy", () => {
   it("uses no em dashes and never writes น้องๆ", () => {
-    const text = [T.introBody, T.introExamples, T.introPromise, T.rules(true), T.rules(false), T.started, T.startedFine, T.dataBody, T.dataRights].join("\n");
+    const story = T.storyPages.flatMap((p) => [p.title, p.text, p.alt]);
+    const text = [...story, T.introPromise, T.rules(true), T.rules(false), T.started, T.startedFine, T.returned, T.dataBody, T.dataRights, I.howSeason].join("\n");
     expect(text).not.toContain("\u2014");
     expect(text).not.toContain("น้องๆ");
     expect(I.btnBack).toBe("🏝️ กลับเกาะ");
   });
 
-  it("names festival night on the started card without a hardcoded Demo Day date", () => {
-    expect(T.started).toContain("คืนเทศกาล Demo Day");
-    expect(T.started).not.toMatch(/\d{1,2}\s*(ม\.ค\.|ก\.พ\.|มี\.ค\.|เม\.ย\.|พ\.ค\.|มิ\.ย\.|ก\.ค\.|ส\.ค\.|ก\.ย\.|ต\.ค\.|พ\.ย\.|ธ\.ค\.)/);
-    expect(T.introBody).toContain("เกาะ SHIFT");
+  it("tells the story in five pages, ending on festival night without a hardcoded Demo Day date", () => {
+    expect(T.storyPages).toHaveLength(5);
+    const all = T.storyPages.map((p) => p.text).join("\n");
+    expect(all).toContain("เจอกันบนเกาะ");
+    expect(T.storyPages.at(-1)!.text).toContain("คืนเทศกาล Demo Day");
+    expect(`${all}\n${I.howSeason}`).not.toMatch(/\d{1,2}\s*(ม\.ค\.|ก\.พ\.|มี\.ค\.|เม\.ย\.|พ\.ค\.|มิ\.ย\.|ก\.ค\.|ส\.ค\.|ก\.ย\.|ต\.ค\.|พ\.ย\.|ธ\.ค\.)/);
+    expect(all).not.toContain("ปลูก");
   });
 
-  it("continues the invite: the island is where a SHIFT project keeps growing, and where it goes", () => {
-    expect(T.introBody).toContain("โตต่อหลังวันที่ 7");
-    expect(T.introBody).not.toContain("ยังว่าง");
-    expect(T.started.split("\n").at(-1)).toBe("🌅 ซีซันจบ ต้นไม้ยังอยู่ วันหนึ่งคุณกลับมาช่วยคนที่เพิ่งขึ้นเกาะได้");
+  it("keeps the season's ending on the how card", () => {
+    expect(I.howSeason.split("\n").at(-1)).toBe("🌅 ซีซันจบ ต้นไม้ยังอยู่ วันหนึ่งคุณกลับมาช่วยคนที่เพิ่งขึ้นเกาะได้");
   });
 });
