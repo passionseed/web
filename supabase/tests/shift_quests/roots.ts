@@ -6,7 +6,9 @@
  * learned, written for the project by a current member), the cap of 3 per
  * member per Bangkok day, the levels (1: 1 to 4, 2: 5 to 14, 3: 15 or more),
  * and that a plain plot (not every member agreed to show it, or no consent)
- * has no roots. consent_required starts off and is switched on at the end.
+ * has no public roots. Schema 11 adds a private own-tree level using the
+ * same counter, regardless of visibility. consent_required starts off and
+ * is switched on at the end.
  *
  *   supabase/tests/shift_quests/run-local.sh
  *
@@ -100,12 +102,18 @@ async function main(): Promise<void> {
     }
     return fromBot;
   };
+  const own = async (actor: string): Promise<number> => {
+    const b = await call<number>(bot, "shift_quest_island_my_roots", actor);
+    const w = await call<number>(web, "shift_quest_island_my_roots", actor);
+    check(b === w, "bot and web read the same own-tree level");
+    return w;
+  };
   const show = (r: Json[]) => r.map((x) => `${x.slot}:${x.roots}`).join(",");
   const slotOf = (project: string) => scalar<number>(db, "select slot from public.shift_quest_plots where project_id = $1", [project]);
 
   // --- Schema, privileges ------------------------------------------------------------------
-  check(Number(await call(bot, "shift_quest_schema_version")) === 10, "the bot reads schema version 10 (roots start from 10)");
-  check(Number(await call(web, "shift_quest_schema_version")) === 10, "the website reads schema version 10");
+  check(Number(await call(bot, "shift_quest_schema_version")) === 11, "the bot reads schema version 11 (roots start from 10)");
+  check(Number(await call(web, "shift_quest_schema_version")) === 11, "the website reads schema version 11");
   const grants: Json = (await db.query(
     `select has_function_privilege('shift_quest_bot', $1::regprocedure, 'EXECUTE') as bot,
             has_function_privilege('shift_quest_web', $1::regprocedure, 'EXECUTE') as web,
@@ -131,10 +139,17 @@ async function main(): Promise<void> {
   }
   check(show(await roots()) === "", "an empty island has no roots: []");
 
+  for (const role of ["shift_quest_bot", "shift_quest_web", "service_role", "anon", "authenticated"]) {
+    check(await scalar<boolean>(db, "select has_function_privilege($1, 'public.shift_quest_island_my_roots(text)', 'EXECUTE')", [role]) ===
+      !["anon", "authenticated"].includes(role), `${role}: own roots grant`);
+    check(await scalar<boolean>(db, "select has_function_privilege($1, 'public.shift_quest__project_roots(uuid)', 'EXECUTE')", [role]) === false,
+      `${role}: internal counter is not callable`);
+  }
   // --- Fixtures --------------------------------------------------------------------------------
   await db.query("update public.shift_quest_settings set consent_required = false where id");
   await call(db, "shift_quest_bootstrap_admin", ADMIN, NAMES[ADMIN]);
   for (const id of [A, B, C, D]) await call(bot, "shift_quest_start", id, NAMES[id], false);
+  check(await own(A) === 0, "no current project returns 0");
   const p1: string = await call(bot, "shift_quest_project_create", A, "Roots One", "software", null);
   await call(bot, "shift_quest_project_invite", A, p1, B);
   await call(bot, "shift_quest_project_respond", B, p1, true);
@@ -160,6 +175,7 @@ async function main(): Promise<void> {
   // --- Quiet trees have no roots ------------------------------------------------------------------
   await notes(A, p1, 2, "2026-10-01");
   check(show(await roots()) === "", "a quiet tree (nobody agreed to show it) has no roots, whatever its members wrote");
+  check(await own(A) === 1 && await own(B) === 1 && await own(C) === 0, "quiet teammates see their own roots, never another project");
   await optin(A, p1);
   check(show(await roots()) === "", "one of two members agreed: still quiet, no roots");
   await optin(B, p1);
@@ -181,6 +197,7 @@ async function main(): Promise<void> {
   await note(A, p1, TEN, "2026-10-01 09:06+07");
   check(show(await roots()) === `${s1}:1`, "a note with exactly 10 characters of learned counts (level 1)", await roots());
 
+  check(await own(A) === 1, "exactly ten characters count privately");
   // --- The cap: 3 per member per Bangkok day ----------------------------------------------------------
   await notes(A, p1, 4, "2026-10-01", "22:00");
   check(show(await roots()) === `${s1}:1`, "5 notes on one Bangkok day count as 3 (still level 1)");
@@ -190,11 +207,13 @@ async function main(): Promise<void> {
   await notes(B, p1, 1, "2026-10-01", "23:00");
   check(show(await roots()) === `${s1}:2`, "a teammate's note adds to the same tree: 5 counted, level 2", await roots());
 
+  check(await own(A) === 2, "private read uses the per-member Bangkok cap");
   // --- Levels: 5 to 14 is 2, 15 or more is 3 ------------------------------------------------------
   await notes(B, p1, 3, "2026-10-02"); // B: 1 + 3 = 4, total 8
   await notes(B, p1, 3, "2026-10-03"); // total 11
   await notes(A, p1, 5, "2026-10-03"); // A: 3 count, total 14
   check(show(await roots()) === `${s1}:2`, "14 counted reflections are still level 2", await roots());
+  check(await own(A) === 2, "14 counted reflections are privately level 2");
   await notes(B, p1, 1, "2026-10-04"); // total 15
   check(show(await roots()) === `${s1}:3`, "15 counted reflections are level 3", await roots());
   await notes(A, p1, 30, "2026-10-05");
@@ -202,6 +221,7 @@ async function main(): Promise<void> {
   check(show(await roots()) === `${s1}:3`, "level 3 is the top: more reflections show nothing more", await roots());
   await db.query("delete from public.shift_quest_progress where created_at >= '2026-10-05 00:00+07'");
 
+  check(await own(A) === 3, "private read reaches level 3");
   // --- Another tree, through the real journal ---------------------------------------------------------
   await call(bot, "shift_quest_progress_add", C, "Built the first screen", "Users want a bigger button", null, null, null, "private", null);
   check(show(await roots()) === `${s1}:3`, "a quiet second tree has no roots");
@@ -214,12 +234,14 @@ async function main(): Promise<void> {
   await db.query("update public.shift_quest_projects set archived_at = now() where id = $1", [p3]);
   check(show(await roots()) === `${s1}:3,${s2}:1`, "an archived project is not drawn and has no roots");
 
+  check(await own(D) === 0, "archived project returns 0");
   // --- Current members only -----------------------------------------------------------------------
   await call(bot, "shift_quest_project_leave", B, p1);
   // B's 9 counted reflections leave with B: A's 3 + 1 + 3 = 7 remain.
   check(show(await roots()) === `${s1}:2,${s2}:1`, "a member who leaves takes their reflections along (15 down to 7: level 2)",
     await roots());
 
+  check(await own(B) === 0 && await own(A) === 2, "leaving removes membership and counted notes");
   // --- Plain again ------------------------------------------------------------------------------------
   await optin(A, p1, false);
   check(show(await roots()) === `${s2}:1`, "a member stops showing the tree: plain, no roots");
@@ -229,6 +251,7 @@ async function main(): Promise<void> {
   // --- Consent (20261111095000) -----------------------------------------------------------------------
   await db.query("update public.shift_quest_settings set consent_required = true where id");
   check(show(await roots()) === "", "consent required and nobody has it: every tree is plain, no roots");
+  check(await own(A) === 2 && await own(C) === 1, "missing consent never hides own roots");
   await call(web, "shift_quest_consent_import", A, "shift_adult", null, false, false);
   check(show(await roots()) === `${s1}:2`, "A's consent arrives: their tree has roots again, the other stays plain", await roots());
 

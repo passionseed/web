@@ -178,8 +178,8 @@ async function main(): Promise<void> {
   )).rows[0];
 
   // --- Schema, privileges, defaults ---------------------------------------------------------
-  check(Number(await call(web, "shift_quest_schema_version")) === 10, "the website reads schema version 10");
-  check(Number(await call(bot, "shift_quest_schema_version")) === 10, "the bot reads schema version 10 (the digest post starts from 9)");
+  check(Number(await call(web, "shift_quest_schema_version")) === 11, "the website reads schema version 11");
+  check(Number(await call(bot, "shift_quest_schema_version")) === 11, "the bot reads schema version 11 (the digest post starts from 9)");
 
   const fnInfo = async (sig: string): Promise<Json> => (await db.query(
     `select has_function_privilege('shift_quest_bot', $1::regprocedure, 'EXECUTE') as bot,

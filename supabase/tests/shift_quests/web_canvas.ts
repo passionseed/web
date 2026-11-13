@@ -61,6 +61,7 @@ const WEB_ALLOWLIST = [
   "shift_quest_island_news(text)",
   "shift_quest_island_optin(text,uuid,boolean)",
   "shift_quest_island_roots()",
+  "shift_quest_island_my_roots(text)",
   "shift_quest_milestone_start(text,smallint)",
   "shift_quest_milestone_submit(text,smallint,text,text,text)",
   "shift_quest_ownership_get(text)",
@@ -144,7 +145,7 @@ async function main(): Promise<void> {
   const count = async (sql: string, args: unknown[] = []) => Number(await scalar(db, sql, args));
 
   // --- Schema, privileges, row security ------------------------------------------------
-  check(Number(await call(web, "shift_quest_schema_version")) === 10, "the website reads schema version 10 (it needs 6 or more)");
+  check(Number(await call(web, "shift_quest_schema_version")) === 11, "the website reads schema version 11 (it needs 6 or more)");
 
   const executable: string[] = (await db.query(`
     select p.oid::regprocedure::text as sig

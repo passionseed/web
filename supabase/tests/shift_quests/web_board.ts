@@ -71,6 +71,7 @@ const WEB_ALLOWLIST = [
   "shift_quest_island_news(text)",
   "shift_quest_island_optin(text,uuid,boolean)",
   "shift_quest_island_roots()",
+  "shift_quest_island_my_roots(text)",
   "shift_quest_milestone_start(text,smallint)",
   "shift_quest_milestone_submit(text,smallint,text,text,text)",
   "shift_quest_ownership_get(text)",
@@ -179,8 +180,8 @@ async function main(): Promise<void> {
   check(role && role.rolinherit === false && role.rolconnlimit === 20 && (role.rolconfig ?? []).includes("statement_timeout=8s"),
     "shift_quest_web: NOINHERIT, 20 connections, statement_timeout 8s", role);
   check((await scalar<string>(web, "show statement_timeout")) === "8s", "a web session runs with the 8s statement timeout");
-  check(Number(await call(web, "shift_quest_schema_version")) === 10, "the website reads schema version 10 (it needs 6 or more)");
-  check(Number(await call(bot, "shift_quest_schema_version")) === 10, "the bot reads schema version 10 (it needs 2 or more)");
+  check(Number(await call(web, "shift_quest_schema_version")) === 11, "the website reads schema version 11 (it needs 6 or more)");
+  check(Number(await call(bot, "shift_quest_schema_version")) === 11, "the bot reads schema version 11 (it needs 2 or more)");
 
   const executable: string[] = (await db.query(`
     select p.oid::regprocedure::text as sig

@@ -123,7 +123,7 @@ export interface IslandMapPlot {
   name: string | null;
   mine: boolean;
   plain: boolean;
-  /** Roots level 1..3 (shift_quest_island_roots, schema 10, merged by slot); absent is 0. Never on a plain plot. */
+  /** Roots level 1..3 (shift_quest_island_roots, schema 10, merged by slot); absent is 0. Schema 11 overrides the member plot with its own roots. Never on a plain plot. */
   roots?: number;
 }
 /** shift_quest_island_map(actor) */

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { QuestDbError, QuestError, type QuestApi } from "@/bot/src/quests/api";
-import { readRoots, withRoots, type RootsBySlot } from "@/bot/src/quests/island/roots";
+import { readMyRoots, readRoots, withRoots, type RootsBySlot } from "@/bot/src/quests/island/roots";
 import type { CanvasLinkState } from "@/lib/shift-island/quest-canvas";
 
 import { campfireOf } from "./campfire";
@@ -70,9 +70,9 @@ function normalizePlot(plot: Partial<IslandMapPlot> & Pick<IslandMapPlot, "slot"
 }
 
 /** The map with every field checked and, from schema 10, each shown tree's roots merged by slot (none on a plain plot). */
-function normalizeMap(raw: IslandMapData | null | undefined, roots: RootsBySlot = new Map()): IslandMapData {
+function normalizeMap(raw: IslandMapData | null | undefined, roots: RootsBySlot = new Map(), myRoots: number | null = null): IslandMapData {
   return {
-    plots: withRoots(list(raw?.plots).map(normalizePlot), roots),
+    plots: withRoots(list(raw?.plots).map(normalizePlot), roots, myRoots),
     goal: raw?.goal ?? null,
     season: raw?.season ?? null,
   };
@@ -142,7 +142,8 @@ async function canvasLinkOf(api: QuestApi, actor: string): Promise<CanvasLinkSta
  * campfire and the suggestions link, which fall back to null (no campfire
  * drawn, no link in the menu), the character sheet, consent and island
  * news, which fall back to null too (no stats or coin pill, nothing gated,
- * no news), and the roots (schema 10), which fall back to none.
+ * no news), and public roots (schema 10), which fall back to none. Own roots (schema 11)
+ * override only the member plot, falling back to its outsider value.
  */
 export async function getIslandPage(viewer: ReadyViewer): Promise<IslandPageData> {
   const api = questApi();
@@ -185,7 +186,8 @@ export async function getIslandPage(viewer: ReadyViewer): Promise<IslandPageData
     me: viewer.me,
     unread: Number(viewer.session.unread) || 0,
     island,
-    map: normalizeMap(mapRaw, roots),
+    map: normalizeMap(mapRaw, roots, island.project && mapRaw?.plots?.some((p) => p.mine && !p.plain)
+      ? await readMyRoots(api, viewer.actor, ROOTS_LOG) : null),
     board,
     invites,
     canvasLink,
@@ -216,5 +218,6 @@ export async function getIslandMap(actor: string): Promise<IslandMapData> {
     api.call<IslandMapData>("shift_quest_island_map", actor),
     readRoots(api, ROOTS_LOG),
   ]);
-  return normalizeMap(map, roots);
+  return normalizeMap(map, roots, map?.plots?.some((p) => p.mine && !p.plain)
+    ? await readMyRoots(api, actor, ROOTS_LOG) : null);
 }

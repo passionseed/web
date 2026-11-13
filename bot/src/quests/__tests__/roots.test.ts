@@ -8,7 +8,7 @@ import { PNG } from "pngjs";
 import { PALETTE, SPRITES } from "../../../assets/island/sprites";
 import { QuestDbError, type QuestApi } from "../api";
 import { MAX_ROOTS, ROOTS_ROW, buildScene, plotBoxes, renderIsland, rootsLevel, type IslandPlot } from "../island/render";
-import { ROOTS_SCHEMA, readRoots, resetRootsForTests, rootsFrom, withRoots } from "../island/roots";
+import { ROOTS_SCHEMA, readMyRoots, readRoots, resetRootsForTests, rootsFrom, withRoots } from "../island/roots";
 
 function plots(n: number): IslandPlot[] {
   return Array.from({ length: n }, (_, k) => ({
@@ -195,5 +195,30 @@ describe("readRoots", () => {
     expect((await readRoots(api)).size).toBe(0);
     expect((await readRoots(api)).size).toBe(0);
     expect(api.call.mock.calls.map((c) => c[0])).toEqual(["shift_quest_schema_version", "shift_quest_schema_version"]);
+  });
+});
+
+
+describe("private own roots", () => {
+  it("overrides only mine and keeps plain plots empty", () => {
+    const input = [{ slot: 1, mine: true }, { slot: 2, mine: false }, { slot: 3, mine: true, plain: true }];
+    const publicRoots = new Map([[1, 1], [2, 2], [3, 3]]);
+    expect(withRoots(input, publicRoots, 3).map((p) => (p as { roots?: number }).roots)).toEqual([3, 2, undefined]);
+    expect(withRoots(input, publicRoots, 0).map((p) => (p as { roots?: number }).roots)).toEqual([undefined, 2, undefined]);
+    expect(withRoots(input, publicRoots, null).map((p) => (p as { roots?: number }).roots)).toEqual([1, 2, undefined]);
+  });
+  it("reads only from schema 11 with the supplied actor", async () => {
+    const api = fakeApi({ shift_quest_schema_version: 11, shift_quest_island_my_roots: 2 });
+    expect(await readMyRoots(api, "actor")).toBe(2);
+    expect(api.call).toHaveBeenCalledWith("shift_quest_island_my_roots", "actor");
+    const old = fakeApi({ shift_quest_schema_version: 10 });
+    expect(await readMyRoots(old, "actor")).toBeNull();
+    expect(old.call).toHaveBeenCalledTimes(1);
+  });
+  it.each([new QuestDbError("shift_quest_island_my_roots", "42883"), null, "3", 4, -1, 1.5])("preserves public roots on failed or invalid reads (%s)", async (value) => {
+    jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    const api = fakeApi({ shift_quest_schema_version: 11, shift_quest_island_my_roots: value });
+    expect(await readMyRoots(api, "actor")).toBeNull();
+    jest.restoreAllMocks();
   });
 });

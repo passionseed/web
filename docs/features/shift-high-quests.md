@@ -421,7 +421,7 @@ refusals: `milestone_done`, `milestone_open`, `milestone_appealed`,
 `shift_quest_admin_status` adds `settings.squads_enabled` (both false without
 wave 2); `shift_quest_admin_set` takes the key `squads`.
 
-### Roots (schema 10)
+### Roots (schemas 10 and 11)
 
 `20261113090000_shift_quest_roots` (design:
 `docs/superpowers/specs/2026-11-13-shift-campfire-rounds-roots-design.md`)
@@ -443,11 +443,17 @@ counted from the progress journal at read time.
   an id or journal text. Only plots every active member agreed to show (and,
   with `consent_required`, have consent) get roots, so a quiet team's
   writing is never measured in public; the scene also draws roots 0 on every
-  plain plot. A student whose own tree is not shown yet sees it without
-  roots too (the read has no caller).
+  plain plot. From schema 11 (`20261113173515_shift_quest_own_roots`),
+  `shift_quest_island_my_roots(actor text)` returns only the current project's
+  level, including quiet trees, or 0 for no project or an archived project.
+  It shares an internal counter with the public read. Only trusted server
+  roles can call it.
 - **Where.** The live post, `/island` and the island page (picture, living
   canvas and the bot's GIF), merged by slot in `bot/src/quests/island/roots.ts`.
-  Both read it only from schema 10 and draw no roots below it or when the
+  The member page, picture route and ephemeral `/island` override only the
+  caller's own plot from schema 11, falling back to the outsider value on
+  error or older schemas. The public live post never uses the own-tree read.
+  Both read public roots only from schema 10 and draw no roots below it or when the
   read fails (logged once per cause); the page and the post never fail
   because of it. Tested in `supabase/tests/shift_quests/roots.ts` and
   `bot/src/quests/__tests__/roots.test.ts`.
