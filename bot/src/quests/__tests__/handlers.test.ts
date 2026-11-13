@@ -151,7 +151,7 @@ describe("/island", () => {
     expect(bodyText(payload)).toMatch(/^### 🏝️ เกาะ SHIFT\n🌳 \*\*แอปจดการบ้าน\*\* · แปลง #4\n▰▰▱▱▱▱▱ /);
     const rows = card.components.filter((x) => x.type === 1).map((r) => r.components!.map((b) => b.custom_id));
     expect(rows).toEqual([
-      ["sq|is_tap", "sq|is_ms", "sq|is_board", "sq|is_work"],
+      ["sq|is_tap", "sq|is_ms", "sq|is_board", "sq|is_work", "sq|is_reflect"],
       ["sq|is_stuck", "sq|is_rest|on", "sq|is_name|p|on", "sq|inbox"],
     ]);
     expect(card.accent_color).toBe(0x3ba55c);

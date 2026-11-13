@@ -2,6 +2,7 @@ import { ISLAND_STAGES } from "@/lib/content/shift-island";
 import {
   CAMPFIRE_ROUND,
   GUIDE_ALL,
+  GUIDE_CAMPFIRE,
   GUIDE_GROWTH,
   GUIDE_ROOTS,
   GUIDE_SECTIONS,
@@ -59,6 +60,16 @@ describe("shift island guide copy", () => {
     expect(CAMPFIRE_ROUND.focusMinutes + CAMPFIRE_ROUND.restMinutes).toBe(30);
     expect(GUIDE_ROOTS.lines.join(" ")).toContain(String(ROOTS_RULE.perDay));
     expect(GUIDE_ROOTS.levelsTitle).toContain(String(ROOTS_RULE.levels));
+  });
+
+  it("points to reachable reflection entries and distinguishes private notes from help", () => {
+    expect(ALL.some(([, text]) => text.includes("/progress"))).toBe(false);
+    expect(GUIDE_ROOTS.lines.join(" ")).toContain("/island");
+    expect(GUIDE_ROOTS.lines.join(" ")).toContain("✍️ ได้เรียนรู้อะไร");
+    expect(GUIDE_ROOTS.lines.join(" ")).toContain("✍️ ปิดรอบ");
+    expect(GUIDE_CAMPFIRE.privacy.join(" ")).toContain("เป็นส่วนตัวตั้งแต่แรก");
+    expect(GUIDE_CAMPFIRE.privacy.join(" ")).toContain("แชร์กับทีม");
+    expect(GUIDE_CAMPFIRE.privacy.join(" ")).toContain("🆘");
   });
 
   it("lists seven sections in order with unique anchors", () => {

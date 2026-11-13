@@ -171,6 +171,7 @@ describe("island card", () => {
       "sq|is_ms",
       "sq|is_board",
       "sq|is_work",
+      "sq|is_reflect",
       "sq|is_stuck",
       "sq|is_rest|on",
       "sq|is_name|p|on",
@@ -262,7 +263,7 @@ describe("island card link to the website", () => {
     const payload = renderView(await islandMessage(c));
     expectCard(payload);
     expect(rowsOf(payload)).toEqual([
-      ["sq|is_tap", "sq|is_ms", "sq|is_board", "sq|is_work"],
+      ["sq|is_tap", "sq|is_ms", "sq|is_board", "sq|is_work", "sq|is_reflect"],
       ["sq|is_stuck", "sq|is_rest|on", "sq|is_name|p|on", "sq|inbox", `link:${ISLAND_URL}`],
     ]);
     expect(linksOf(payload)).toEqual([expect.objectContaining({ type: 2, style: 5, url: ISLAND_URL, label: ISLAND_LINK_LABEL })]);
@@ -273,6 +274,7 @@ describe("island card link to the website", () => {
       "sq|is_ms",
       "sq|is_board",
       "sq|is_work",
+      "sq|is_reflect",
       "sq|is_stuck",
       "sq|is_rest|on",
       "sq|is_name|p|on",
@@ -335,7 +337,7 @@ describe("island card link to the website", () => {
     const c = ctx((fn) => (fn === "shift_quest_island" ? islandView() : { plots: [] }));
     const payload = renderView(await islandMessage(c));
     expect(rowsOf(payload)).toEqual([
-      ["sq|is_tap", "sq|is_ms", "sq|is_board", "sq|is_work"],
+      ["sq|is_tap", "sq|is_ms", "sq|is_board", "sq|is_work", "sq|is_reflect"],
       ["sq|is_stuck", "sq|is_rest|on", "sq|is_name|p|on", "sq|inbox"],
     ]);
     expect(viewText(payload)).not.toContain(ISLAND_LINK_LABEL);
