@@ -357,8 +357,8 @@ async function main(): Promise<void> {
   check((await readNote(noSessionId)).changed === "รอบกองไฟ" && await call(bot, "shift_quest_work_open", C) === sessionB,
     "null captured session journals only, even when a session has since started");
   const foreign = await call(bot, "shift_quest_round_close", B, sessionB, "another actor's note", null);
-  const missing = await call(bot, "shift_quest_round_close", C, randomUUID(), "deleted session note", null);
-  check((await readNote(foreign)).changed === "รอบกองไฟ" && (await readNote(missing)).changed === "รอบกองไฟ",
+  const missingSession = await call(bot, "shift_quest_round_close", C, randomUUID(), "deleted session note", null);
+  check((await readNote(foreign)).changed === "รอบกองไฟ" && (await readNote(missingSession)).changed === "รอบกองไฟ",
     "foreign and missing sessions do not leak an intention");
   check(await call(bot, "shift_quest_work_open", C) === sessionB, "foreign and missing IDs cannot close B");
   await call(bot, "shift_quest_round_close", C, sessionB, "B's own reflection", null);
