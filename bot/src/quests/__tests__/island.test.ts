@@ -353,6 +353,12 @@ describe("island copy", () => {
     expect(PRE_STAGE).toBe("เมล็ด");
   });
 
+  it("calls a seeded plot at stage 0 the seed, never an empty plot", () => {
+    expect(I.plot(4, 0, "แอป", true)).toContain(`${PRE_STAGE} **0**/7`);
+    expect(I.plot(4, 0, "แอป")).toContain(`${STAGE_NAMES[0]} **0**/7`);
+    expect(I.plot(4, 2, "แอป", true)).toContain(`${STAGE_NAMES[2]} **2**/7`);
+  });
+
   it("states the season as a date and a bar, never a rank", () => {
     const lines = seasonLines(
       {

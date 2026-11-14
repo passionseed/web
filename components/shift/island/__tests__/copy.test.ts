@@ -84,6 +84,10 @@ describe("island copy", () => {
     expect(copy.stageName(7)).toBe("ผลิดอก");
     expect(copy.stageName(12)).toBe("ผลิดอก");
     expect(copy.stageName(-1)).toBe("ที่ดินว่าง");
+    // A planted seed is the seed at stage 0, never an empty plot; later stages keep their names.
+    expect(copy.treeStageName(0, true)).toBe(copy.PRE_STAGE);
+    expect(copy.treeStageName(0, false)).toBe("ที่ดินว่าง");
+    expect(copy.treeStageName(1, true)).toBe("เมล็ดงอก");
   });
 
   it("prints Bangkok short dates and tolerates bad input", () => {

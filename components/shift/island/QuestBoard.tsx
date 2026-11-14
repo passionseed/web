@@ -6,7 +6,7 @@ import { PixelIcon } from "@/components/shift/poster/pixel/PixelRects";
 import type { BoardRef } from "@/lib/supabase/shift-quests/board";
 import type { MyTree, QuestBoard as QuestBoardData, SeasonGoal } from "@/lib/supabase/shift-quests/types";
 
-import { BOARD, stageName, thaiShortDate, TREE } from "./copy";
+import { BOARD, thaiShortDate, TREE, treeStageName } from "./copy";
 import { useDraft } from "./drafts";
 import styles from "./island.module.css";
 import { COMMUNITY_SLUGS, mainTitle, questView, refKey, type QuestView } from "./model";
@@ -170,7 +170,7 @@ export function QuestBoard({ board, stage, goal, keynote, onOpen, onPropose, tre
             <p className={styles.laneSub}>{BOARD.mainSub}</p>
             <ul className={styles.cards}>
               {cards(mains)}
-              <TreeCell stage={stage} />
+              <TreeCell stage={stage} seeded={tree?.seed != null} />
             </ul>
           </section>
 
@@ -224,13 +224,13 @@ function SeedCard({ onOpen }: { onOpen: () => void }) {
 }
 
 /** The eighth cell of the main lane: the tree the seven quests grow, as the level. */
-function TreeCell({ stage }: { stage: number }) {
+function TreeCell({ stage, seeded }: { stage: number; seeded: boolean }) {
   const level = Math.min(Math.max(Number.isFinite(stage) ? Math.trunc(stage) : 0, 0), 7);
   return (
     <li className={styles.treeCell}>
       <PixelIcon grid={treeGrid(level)} palette={PALETTE} scale={2} className={styles.treeSprite} />
       <span className={styles.treeText}>
-        <span className={styles.treeName}>{stageName(level)}</span>
+        <span className={styles.treeName}>{treeStageName(level, seeded)}</span>
         {/* A number never wraps away from its word: "ต้นไม้ขั้น 3" and "จาก 7" break as pairs. */}
         <span>{BOARD.tree(level).replace(/ (?=\d)/g, " ")}</span>
       </span>

@@ -7,7 +7,8 @@ import { wearItem, type CloseupInput } from "@/lib/shift-island/tree-closeup";
 import { DEFAULT_STYLE, resolveStyle, TREE_ITEMS, type TreeItem, type TreeSlot } from "@/lib/shift-island/tree-style";
 import type { MyTree } from "@/lib/supabase/shift-quests/types";
 
-import { PRE_STAGE, stageName } from "../copy";
+/** The stage's name, a planted seed at stage 0 called the seed (it lives with the stage names in ../copy). */
+export { treeStageName } from "../copy";
 
 /** How a look is previewed on a tile (96 CSS px square): shared with the bot's gift picture. */
 export { previewView } from "@/lib/shift-island/tree-closeup";
@@ -25,11 +26,6 @@ export const PUBLIC_ROOTS: readonly number[] = [0, 3, 8, 15];
 export function publicRoots(level: number | undefined): CloseupInput["roots"] {
   const n = Math.min(Math.max(Math.trunc(Number.isFinite(level) ? (level as number) : 0), 0), 3);
   return { count: PUBLIC_ROOTS[n], recent: 0 };
-}
-
-/** The stage's name, with a planted seed at stage 0 called the seed (เมล็ด) rather than an empty plot. */
-export function treeStageName(stage: number, seeded: boolean): string {
-  return Math.trunc(stage) <= 0 && seeded ? PRE_STAGE : stageName(stage);
 }
 
 /** The team's own close-up: its look, stage, seed and all its roots with the recent glow. */

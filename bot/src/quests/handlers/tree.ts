@@ -109,11 +109,14 @@ export function treeButtons(tree: MyTree, closeup = true): ButtonBuilder[] {
 
 /**
  * The close-up: the tree large with its roots, its stage and roots in words,
- * then the tree's buttons. lead: a line above (planted, picked).
+ * then the tree's buttons. lead: a line above (planted, picked). Before the
+ * seed and the first stage the drawing has no tree and no roots, so the roots
+ * line is left out, as on the website.
  */
 function closeupCard(tree: MyTree, action: string, over: { title?: string; tone?: View["tone"]; lead?: string } = {}): View {
   const shot = picture(drawn(action, () => closeupPng(closeupOf(tree))), CLOSEUP_PNG, TREE.closeup.caption);
-  const lines = [stageLine(tree), TREE.closeup.roots(tree.roots.count)];
+  const planted = tree.seed != null || tree.stage > 0;
+  const lines = [stageLine(tree), ...(planted ? [TREE.closeup.roots(tree.roots.count)] : [])];
   const web = islandLinkButton();
   return {
     tone: over.tone ?? "island",

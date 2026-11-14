@@ -11,7 +11,7 @@ import type { Ctx } from "../context";
 import { errorText } from "../copy";
 import { islandMessage, type IslandView } from "../handlers/island";
 import { CLOSEUP_PNG, GIFT_PNG, SEED_PNG } from "../handlers/tree";
-import { I, TREE } from "../island/copy";
+import { I, PRE_STAGE, STAGE_NAMES, TREE } from "../island/copy";
 import { putDraft } from "../drafts";
 import { closeupPng, giftPreviewPng, seedPreviewPng } from "../island/closeup-png";
 import { resetTreeForTests } from "../island/tree";
@@ -429,6 +429,21 @@ describe("🔍 the close-up", () => {
     expect(customIds(card.payload)).not.toContain("sq|tr_seed");
   });
 
+  it("says nothing about roots before the seed and the first stage, when the drawing has none", async () => {
+    const c = ctx({ shift_quest_tree_get: tree({ seed: null, stage: 0, roots: { count: 0, recent: 0 }, gifts: [] }) });
+    const b = interaction("button");
+    await ACTION_HANDLERS.get("is_tree")!(b.i, c, []);
+    const text = viewText(cards(b.sent).at(-1)!.payload);
+    expect(text).not.toContain(TREE.closeup.roots(0));
+    expect(text).toContain(STAGE_NAMES[0]);
+
+    const seeded = ctx({ shift_quest_tree_get: tree({ stage: 0, roots: { count: 0, recent: 0 }, gifts: [] }) });
+    const s = interaction("button");
+    await ACTION_HANDLERS.get("is_tree")!(s.i, seeded, []);
+    expect(viewText(cards(s.sent).at(-1)!.payload)).toContain(TREE.closeup.roots(0));
+    expect(viewText(cards(s.sent).at(-1)!.payload)).toContain(PRE_STAGE);
+  });
+
   it("offers the seed while the team has none, and a plot when there is no project", async () => {
     const c = ctx({ shift_quest_tree_get: tree({ seed: null, gifts: [] }) });
     const b = interaction("button");
@@ -476,6 +491,14 @@ describe("/island", () => {
     const seeded = customIds(renderView(await islandMessage(island(13, { shift_quest_tree_get: tree() }))));
     expect(seeded).toEqual(expect.arrayContaining(["sq|is_tree", "sq|tr_gift"]));
     expect(seeded).not.toContain("sq|tr_seed");
+  });
+
+  it("calls a seeded team's stage 0 plot the seed on the island card", async () => {
+    const at0 = (): IslandView => ({ ...view(), project: { ...view().project!, stage: 0, milestones_done: [] } });
+    const seeded = ctx({ shift_quest_schema_version: 13, shift_quest_island: at0(), shift_quest_island_map: plots, shift_quest_tree_get: tree({ stage: 0 }) });
+    expect(viewText(renderView(await islandMessage(seeded)))).toContain(`${PRE_STAGE} **0**/7`);
+    const bare = ctx({ shift_quest_schema_version: 13, shift_quest_island: at0(), shift_quest_island_map: plots, shift_quest_tree_get: tree({ seed: null, stage: 0 }) });
+    expect(viewText(renderView(await islandMessage(bare)))).toContain(`${STAGE_NAMES[0]} **0**/7`);
   });
 
   it("no 🎁 when every waiting gift offers only looks the team owns by now", async () => {

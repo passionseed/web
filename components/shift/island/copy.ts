@@ -50,6 +50,11 @@ export function stageName(stage: number): string {
   return STAGE_NAMES[Math.min(Math.max(n, 0), STAGE_NAMES.length - 1)];
 }
 
+/** The stage's name, with a planted seed at stage 0 called the seed (เมล็ด) rather than an empty plot. */
+export function treeStageName(stage: number, seeded: boolean): string {
+  return (Number.isFinite(stage) ? Math.trunc(stage) : 0) <= 0 && seeded ? PRE_STAGE : stageName(stage);
+}
+
 export const ROUTE_NAMES: Record<ProjectRoute, string> = {
   software: "ซอฟต์แวร์",
   creative: "งานสร้างสรรค์",

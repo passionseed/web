@@ -6,7 +6,8 @@ import { waterColor } from "@/lib/shift-island/live/lighting";
 import { plazaWorld, type PlazaInput, type PlazaSpotId } from "@/lib/shift-island/live/plaza";
 import type { IslandPicture } from "@/lib/shift-island/picture";
 
-import { IslandViewport } from "../IslandViewport";
+import { ISLAND, PRE_STAGE, stageName } from "../copy";
+import { IslandViewport, hotspotLabel } from "../IslandViewport";
 
 /** The living island, mocked: jsdom has no canvas. "idle" never draws, "ready" draws at night, "fail" has no 2D context. */
 const mockLive: { mode: "idle" | "ready" | "fail"; props: IslandCanvasProps[] } = { mode: "idle", props: [] };
@@ -552,5 +553,13 @@ describe("IslandViewport", () => {
       unmount();
       expect(onLiveChange).toHaveBeenLastCalledWith(false);
     });
+  });
+});
+
+describe("hotspotLabel", () => {
+  it("names the own plot's planted seed at stage 0 as the seed, never an empty plot", () => {
+    const spot = { slot: 3, mine: true, plain: false, stage: 0, name: "แอป", x: 0, y: 0, w: 1, h: 1 };
+    expect(hotspotLabel({ ...spot, seeded: true })).toBe(ISLAND.myPlot(3, PRE_STAGE));
+    expect(hotspotLabel(spot)).toBe(ISLAND.myPlot(3, stageName(0)));
   });
 });

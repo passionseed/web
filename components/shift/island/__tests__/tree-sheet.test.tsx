@@ -7,7 +7,7 @@ import { keynoteQuest } from "@/lib/supabase/shift-quests/board";
 import type { MyTree } from "@/lib/supabase/shift-quests/types";
 
 import { makeBoard } from "../__fixtures__/board";
-import { PLOT, TREE } from "../copy";
+import { PLOT, PRE_STAGE, stageName, TREE } from "../copy";
 import { clearAllDrafts } from "../drafts";
 import { PlotSheet } from "../PlotSheet";
 import { QuestBoard } from "../QuestBoard";
@@ -380,7 +380,14 @@ describe("QuestBoard seed card", () => {
     renderBoard(tree());
     expect(screen.queryByRole("button", { name: new RegExp(TREE.seed.title) })).toBeNull();
   });
+
+  it("names the tree at the end of the main lane the seed once it is planted, at stage 0", () => {
+    renderBoard(tree({ stage: 0 }));
+    expect(screen.getByText(PRE_STAGE)).toBeInTheDocument();
+    expect(screen.queryByText(stageName(0))).toBeNull();
+  });
 });
+
 
 describe("PlotSheet close-up of another team's plot", () => {
   function spot(over: Partial<IslandHotspot> = {}): IslandHotspot {

@@ -33,8 +33,11 @@ export const I = {
   header: "🏝️ เกาะ SHIFT",
   noPlot:
     "🌱 **คุณยังไม่มีที่ดินบนเกาะ**\nสร้างโปรเจกต์เรื่องที่คุณใส่ใจเพื่อจับจองที่ดิน หรือให้เพื่อนชวนเข้าโปรเจกต์ของเขาก็ได้ ต้นไม้จะเริ่มจากเมล็ด",
-  plot: (n: number | undefined, stage: number, name: string) =>
-    `🌳 **${safe(name, 60)}**${n ? ` · แปลง #${n}` : ""}\n${stageBar(stage)} ${STAGE_NAMES[stage] ?? STAGE_NAMES[7]} **${stage}**/7`,
+  /** seeded: the team planted its seed, so stage 0 is the seed (PRE_STAGE), not an empty plot. */
+  plot: (n: number | undefined, stage: number, name: string, seeded = false) =>
+    `🌳 **${safe(name, 60)}**${n ? ` · แปลง #${n}` : ""}\n${stageBar(stage)} ${
+      stage === 0 && seeded ? PRE_STAGE : (STAGE_NAMES[stage] ?? STAGE_NAMES[7])
+    } **${stage}**/7`,
   next: (title: string) => `➡️ ขั้นต่อไป: **${safe(title, 80)}** (ทำขั้นไหนก่อนก็ได้)`,
   allDone: "ครบ 7 ขั้นแล้ว ต้นไม้ผลิดอกเต็มต้น ทำขั้นไหนซ้ำเพื่อเรียนรู้ต่อก็ได้",
   inFlight: (title: string, state: string) => `⏳ ${safe(title, 80)}: ${state}`,

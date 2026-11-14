@@ -149,7 +149,7 @@ export async function islandMessage(ctx: Ctx): Promise<IslandCard> {
   } else {
     const p = view.project;
     // The number on the image is the plot's slot, so it holds even without a picture.
-    lines.push(I.plot(p.slot, p.stage, p.name));
+    lines.push(I.plot(p.slot, p.stage, p.name, tree?.seed != null));
     const next = view.milestones.find((m) => m.milestone === p.next_milestone);
     lines.push(next ? I.next(next.title) : I.allDone);
     // A teammate's open quest shows whatever its state, so nobody starts a second one.
