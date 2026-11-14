@@ -22,8 +22,9 @@
 -- Functions (actor = Discord id text, resolved with shift_quest__student and
 -- shift_quest__current_project; refusals are 'sq:<code>'):
 --   * shift_quest_tree_get(actor): the caller's team tree, {seed, equipped,
---     owned, gifts, roots: {count, recent}, stage}.
---   * shift_quest_seed_plant(actor, seed, idea): once per project.
+--     owned, gifts, roots: {count, recent}, stage, ambition}.
+--   * shift_quest_seed_plant(actor, seed, idea): once per project; the idea
+--     becomes the project's ambition (the pickers prefill the current one).
 --   * shift_quest_round_close_gift(actor, session, learned, stuck): calls
 --     shift_quest_round_close (unchanged, so a schema-12 bot behaves exactly
 --     as before) and adds at most one gift, {id, gift}. Bot-only, like
@@ -220,11 +221,14 @@ $$;
 
 /**
  * A project's tree, as its own team sees it: {seed, equipped, owned, gifts,
- * roots: {count, recent}, stage}. owned lists catalog ids in catalog order
- * and always includes the defaults; gifts are the unpicked ones, oldest
- * first, as {id, options}; roots.count is the qualifying notes (the roots
- * counter) up to 15, the top roots level, and roots.recent those of the last
- * 7 days, up to the same 15; stage is the number of milestones approved.
+ * roots: {count, recent}, stage, ambition}. owned lists catalog ids in
+ * catalog order and always includes the defaults; gifts are the unpicked
+ * ones, oldest first, as {id, options}; roots.count is the qualifying notes
+ * (the roots counter) up to 15, the top roots level, and roots.recent those
+ * of the last 7 days, up to the same 15; stage is the number of milestones
+ * approved; ambition is the project's current ambition text or null, so the
+ * seed pickers can prefill it. Only ever returned to the team itself (the
+ * shift_quest_tree_* entry points), never to shift_quest_island_styles().
  */
 CREATE OR REPLACE FUNCTION public.shift_quest__tree_json(p_project uuid)
 RETURNS jsonb
@@ -251,7 +255,8 @@ AS $$
       'count', least(public.shift_quest__project_root_notes(p_project, NULL), 15),
       'recent', least(public.shift_quest__project_root_notes(p_project, now() - interval '7 days'), 15)
     ),
-    'stage', cardinality(public.shift_quest__milestones(p_project))
+    'stage', cardinality(public.shift_quest__milestones(p_project)),
+    'ambition', (SELECT p.ambition FROM public.shift_quest_projects p WHERE p.id = p_project)
   )
   FROM (SELECT 1) AS one
   LEFT JOIN public.shift_quest_tree_style s ON s.project_id = p_project;
@@ -278,20 +283,28 @@ $$;
  * Creates a project's gift for one source, at most once ever: null when the
  * source already has a gift or the team owns every item, else {id, options}.
  * Options are up to 3 catalog items the team does not own (defaults are
- * always owned):
- *   1. The slot with the most unowned items gives its unowned items, in
+ * always owned). An item that one of the project's waiting (unpicked) gifts
+ * already offers is held back: it comes only after every fresh item, so two
+ * waiting gifts never share an option while 3 fresh items are left, and a
+ * gift still offers 3 until the team owns all but 2 items.
+ *   1. Fresh items first. The slot with the most fresh items gives them, in
  *      catalog order.
  *   2. Ties between slots: the slots in catalog order (shape, leaf, bark,
  *      bloom: each slot by its first item's sort) rotated by the number of
  *      gifts the project already has, so gift 0 prefers shape, gift 1 leaf,
  *      gift 2 bark, gift 3 bloom, gift 4 shape again; the first tied slot in
  *      that rotated order wins.
- *   3. When the winning slot has fewer than 3 unowned items, the rest come
- *      from the other slots in the same order (most unowned first, ties by
- *      the rotation), each in catalog order.
+ *   3. When the winning slot has fewer than 3 fresh items, the rest come from
+ *      the other slots in the same order (most fresh first, ties by the
+ *      rotation), each in catalog order.
+ *   4. Then, only when fewer than 3 fresh items are left, the held-back items
+ *      fill the gift, ranked the same way among themselves.
  * So a gift offers 3 until the team owns all but 2 items, then 2, then 1,
  * then none. Options are what was unowned when the gift was made; a later
- * pick of an item owned since adds nothing twice (shift_quest_tree_pick).
+ * pick of an item owned since adds nothing twice (shift_quest_tree_pick), and
+ * the pickers hide options the team owns by then.
+ * Gift decisions of one project take turns (a transaction advisory lock), so
+ * two at once cannot both choose the same fresh items.
  */
 CREATE OR REPLACE FUNCTION public.shift_quest__gift_create(p_project uuid, p_member uuid, p_source text)
 RETURNS jsonb
@@ -300,17 +313,35 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  v_owned text[] := COALESCE(
-    (SELECT owned FROM public.shift_quest_tree_style WHERE project_id = p_project), '{}'::text[]
-  );
-  v_turn integer := (SELECT count(*) FROM public.shift_quest_tree_gifts WHERE project_id = p_project);
+  v_owned text[];
+  v_offered text[];
+  v_turn integer;
   v_options text[];
   v_id uuid;
 BEGIN
+  -- Read the project's items and gifts only once the lock is held (each
+  -- statement below sees what a gift decision before this one committed).
+  PERFORM pg_advisory_xact_lock(hashtext('shift_quest_tree_gift_project:' || p_project));
+  v_owned := COALESCE(
+    (SELECT owned FROM public.shift_quest_tree_style WHERE project_id = p_project), '{}'::text[]
+  );
+  v_offered := COALESCE(
+    (SELECT array_agg(DISTINCT o.item)
+     FROM public.shift_quest_tree_gifts g, unnest(g.options) AS o (item)
+     WHERE g.project_id = p_project AND g.picked IS NULL),
+    '{}'::text[]
+  );
+  v_turn := (SELECT count(*) FROM public.shift_quest_tree_gifts WHERE project_id = p_project);
+
   WITH unowned AS (
-    SELECT i.id, i.slot, i.sort
+    SELECT i.id, i.slot, i.sort, i.id = ANY (v_offered) AS held
     FROM public.shift_quest_tree_items i
     WHERE NOT i.is_default AND NOT (i.id = ANY (v_owned))
+  ),
+  counted AS (
+    -- left_n: the slot's fresh items for a fresh item, its held-back ones for a held-back item.
+    SELECT u.*, count(*) OVER (PARTITION BY u.slot, u.held) AS left_n
+    FROM unowned u
   ),
   slots AS (
     SELECT i.slot,
@@ -320,15 +351,13 @@ BEGIN
     GROUP BY i.slot
   ),
   ranked AS (
-    SELECT s.slot,
-           (SELECT count(*) FROM unowned u WHERE u.slot = s.slot) AS left_n,
-           ((s.pos - v_turn) % s.n + s.n) % s.n AS turn_pos
+    SELECT s.slot, ((s.pos - v_turn) % s.n + s.n) % s.n AS turn_pos
     FROM slots s
   )
   SELECT array_agg(x.id ORDER BY x.rn) INTO v_options
   FROM (
-    SELECT u.id, row_number() OVER (ORDER BY r.left_n DESC, r.turn_pos, u.sort) AS rn
-    FROM unowned u JOIN ranked r ON r.slot = u.slot
+    SELECT c.id, row_number() OVER (ORDER BY c.held, c.left_n DESC, r.turn_pos, c.sort) AS rn
+    FROM counted c JOIN ranked r ON r.slot = c.slot
   ) x
   WHERE x.rn <= 3;
 
@@ -373,8 +402,11 @@ $$;
 
 /**
  * Plant the team's seed, once per project, by any member: sets the seed,
- * owns and wears its four items, and fills the project's ambition with the
- * idea (trimmed, 1 to 500 characters) only when the ambition is empty.
+ * owns and wears its four items, and makes the idea (trimmed, 1 to 500
+ * characters) the project's ambition. Both pickers prefill the field with the
+ * current ambition (tree_json's ambition), so an untouched line keeps it, an
+ * empty ambition is filled, and a line the team edited replaces it: what the
+ * student sees in the field is what the team's ambition becomes.
  * Refuses 'sq:no_project', 'sq:seed_unknown', 'sq:missing_text',
  * 'sq:text_too_long' and 'sq:seed_planted'. Returns the tree.
  */
@@ -418,7 +450,7 @@ BEGIN
 
   UPDATE public.shift_quest_projects
   SET ambition = v_idea, updated_at = now()
-  WHERE id = v_project AND ambition IS NULL;
+  WHERE id = v_project AND ambition IS DISTINCT FROM v_idea;
 
   PERFORM public.shift_quest__audit(v_member.id, 'seed_plant', 'project', v_project);
   RETURN public.shift_quest__tree_json(v_project);
@@ -434,8 +466,9 @@ $$;
  * gifts this Bangkok day (quest gifts never count), or the team owns
  * everything. Returns {id: <journal note id>, gift: null | {id, options}}.
  * The gift never fails the save it follows: any error while making it is
- * caught (its subtransaction rolls back) and gift is null, while the round's
- * close and journal note stay saved.
+ * caught (its subtransaction rolls back), raised as a WARNING with its
+ * SQLSTATE only, and gift is null, while the round's close and journal note
+ * stay saved.
  */
 CREATE OR REPLACE FUNCTION public.shift_quest_round_close_gift(
   p_actor text, p_session uuid, p_learned text, p_stuck text
@@ -471,6 +504,8 @@ BEGIN
       END IF;
     END IF;
   EXCEPTION WHEN OTHERS THEN
+    -- The code only: an error message can carry student text, which never goes to logs.
+    RAISE WARNING 'shift_quest_round_close_gift: gift skipped (SQLSTATE %)', SQLSTATE;
     v_gift := NULL;
   END;
 

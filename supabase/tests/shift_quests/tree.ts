@@ -1,12 +1,15 @@
 /**
  * SHIFT High Island: seeds, tree style and gifts (20261114120000_shift_quest_tree_style,
  * schema 13). A team plants one of four seeds once (it sets the tree's look and
- * fills the project's ambition when empty), earns gifts (pick 1 of up to 3
- * unowned items) after a closed campfire round (2 per member per Bangkok day)
- * and after the first submit of each quest (one per source, ever, not capped),
- * picks and equips items, and reads its own tree (shift_quest_tree_get: style,
- * waiting gifts, root counts, stage). Other teams' styles are read through
- * shift_quest_island_styles(), only for plots every member agreed to show.
+ * its line becomes the project's ambition, which the pickers prefill), earns
+ * gifts (pick 1 of up to 3 unowned items, never one a waiting gift already
+ * offers while fresh ones are left) after a closed campfire round (2 per member
+ * per Bangkok day) and after the first submit of each quest (one per source,
+ * ever, not capped), picks and equips items, and reads its own tree
+ * (shift_quest_tree_get: style, waiting gifts, root counts, stage, ambition).
+ * Other teams' styles are read through shift_quest_island_styles(), only for
+ * shown plots. Plots are hidden explicitly before those checks, so they hold
+ * whether a plot's name starts shown or hidden (20261114110000).
  * Every student call goes through shift_quest_web or shift_quest_bot, as the
  * website and the bot make them. consent_required is switched off up front.
  *
@@ -62,9 +65,9 @@ const PUBLIC_FNS = [
   "shift_quest_tree_equip(text,text)",
   "shift_quest_island_styles()",
 ];
-/** Internal helpers: nobody but the definer functions calls them. */
 /** Bot-only, like shift_quest_round_close (20261114090000): the website never closes a round. */
 const BOT_ONLY = new Set(["shift_quest_round_close_gift(text,uuid,text,text)"]);
+/** Internal helpers: nobody but the definer functions calls them. */
 const HELPERS = [
   "shift_quest__project_root_notes(uuid,timestamp with time zone)",
   "shift_quest__gift_create(uuid,uuid,text)",
@@ -260,10 +263,11 @@ async function main(): Promise<void> {
 
   // --- A fresh tree ----------------------------------------------------------------------------------
   let t1 = await tree(A);
-  check(keys(t1) === "equipped,gifts,owned,roots,seed,stage", "the tree is {seed, equipped, owned, gifts, roots, stage}", keys(t1));
+  check(keys(t1) === "ambition,equipped,gifts,owned,roots,seed,stage",
+    "the tree is {seed, equipped, owned, gifts, roots, stage, ambition}", keys(t1));
   check(t1.seed === null && same(t1.equipped, DEFAULT_STYLE) && same(t1.owned, inOrder(DEFAULTS)) &&
-      same(t1.gifts, []) && same(t1.roots, { count: 0, recent: 0 }) && t1.stage === 0,
-    "a fresh tree: no seed, the default look, the defaults owned, no gifts, no roots, stage 0", t1);
+      same(t1.gifts, []) && same(t1.roots, { count: 0, recent: 0 }) && t1.stage === 0 && t1.ambition === null,
+    "a fresh tree: no seed, the default look, the defaults owned, no gifts, no roots, stage 0, no ambition yet", t1);
   check(await styleRow(p1) === undefined, "and reading it stored nothing");
 
   // --- Seeds ----------------------------------------------------------------------------------------
@@ -279,16 +283,19 @@ async function main(): Promise<void> {
   check(sakura.every((id) => t1.owned.includes(id)) && same(t1.owned, inOrder([...DEFAULTS, ...sakura])),
     "the seed's items are owned, with the defaults", t1.owned);
   check(same(await tree(A), t1), "seed_plant returns the tree, as tree_get reads it");
-  check(await scalar(db, "select ambition from public.shift_quest_projects where id = $1", [p1]) === IDEA,
-    "the idea, trimmed, fills an empty ambition");
+  check(await scalar(db, "select ambition from public.shift_quest_projects where id = $1", [p1]) === IDEA &&
+      t1.ambition === IDEA, "the idea, trimmed, fills an empty ambition, and the tree carries it", t1.ambition);
   check(await code(call(web, "shift_quest_seed_plant", B, "pine", "another idea")) === "seed_planted",
     "a teammate cannot plant a second seed");
   check(await code(call(bot, "shift_quest_seed_plant", A, "sakura", IDEA)) === "seed_planted", "nor can the planter, from Discord");
   check((await tree(B)).seed === "sakura", "the teammate sees the team's seed");
-  const t3 = await call<Json>(bot, "shift_quest_seed_plant", D, "maple", "ก".repeat(500));
+  check((await tree(D)).ambition === AIM, "the tree carries the ambition the project already has, for the pickers to prefill");
+  // A line the team edited in the prefilled field replaces the ambition (and is exactly 500 characters).
+  const EDITED = "ก".repeat(500);
+  const t3 = await call<Json>(bot, "shift_quest_seed_plant", D, "maple", EDITED);
   check(t3.seed === "maple" && same(t3.equipped, SEEDS.maple.style), "an idea of exactly 500 characters plants (Discord)");
-  check(await scalar(db, "select ambition from public.shift_quest_projects where id = $1", [p3]) === AIM,
-    "an ambition already set is kept");
+  check(await scalar(db, "select ambition from public.shift_quest_projects where id = $1", [p3]) === EDITED &&
+      t3.ambition === EDITED, "a line edited from the prefilled ambition replaces it");
 
   // --- Gifts after a campfire round --------------------------------------------------------------
   const owned1 = new Set<string>(t1.owned);
@@ -323,6 +330,10 @@ async function main(): Promise<void> {
   const roundA2: string = await call(bot, "shift_quest_work_start", A, "Round two");
   const g2 = (await call<Json>(bot, "shift_quest_round_close_gift", A, roundA2, LEARNED, "a blocker")).gift;
   check(g2 !== null && g2.options.length === 3, "a second round the same day gives a second gift (Discord)", g2);
+  // g1 still waits, so its leaves are held back: leaf has 2 fresh items, shape 4, bark and bloom 3.
+  check(same(g2?.options, ["shape:maple", "shape:pine", "shape:willow"]) && !g2.options.some((id: string) => g1.options.includes(id)),
+    "two waiting gifts never share an option: the second skips g1's leaves and offers the slot with the most fresh items",
+    g2?.options);
   const roundA3: string = await call(bot, "shift_quest_work_start", A, "Round three");
   const r3 = await call<Json>(bot, "shift_quest_round_close_gift", A, roundA3, LEARNED, null);
   check(r3.gift === null && typeof r3.id === "string", "a third round the same Bangkok day saves the note but gives no gift", r3);
@@ -340,9 +351,23 @@ async function main(): Promise<void> {
   const c1 = (await call<Json>(bot, "shift_quest_round_close_gift", C, roundC1, LEARNED, null)).gift;
   check(same(c1?.options, ["shape:maple", "shape:heart", "shape:pine"]),
     "a plain tree: shape and leaf tie at 5 unowned, the first gift offers shapes", c1);
+  // C takes maple and comes to own one leaf too: no gift waits and every slot has 4 unowned items.
+  await call(web, "shift_quest_tree_pick", C, c1.id, "shape:maple");
+  await db.query("update public.shift_quest_tree_style set owned = owned || '{leaf:autumn}' where project_id = $1", [p2]);
   const roundC2: string = await call(bot, "shift_quest_work_start", C, "C round two");
   const c2 = (await call<Json>(bot, "shift_quest_round_close_gift", C, roundC2, LEARNED, null)).gift;
-  check(same(c2?.options, ["leaf:autumn", "leaf:mint", "leaf:gold"]), "the second gift's tie turns to leaves", c2);
+  check(same(c2?.options, ["leaf:mint", "leaf:gold", "leaf:dusk"]),
+    "all four slots tie at 4 unowned: the second gift's tie turns to leaves, not shapes", c2);
+
+  // Fewer than 3 fresh items: the fresh one first, then items a waiting gift offers fill the gift to 3.
+  await db.query("update public.shift_quest_tree_style set owned = $2 where project_id = $1",
+    [p2, ORDER.filter((id) => !DEFAULTS.includes(id) && !["leaf:mint", "leaf:gold", "leaf:dusk", "leaf:sky"].includes(id))]);
+  const ownC: string = await call(web, "shift_quest_propose", C, "C's own quest", null, "Goal", "Criteria", "Step");
+  await call(web, "shift_quest_submit", C, ownC, 1, "Evidence", "Reflection", null, "reviewers", null, []);
+  const c3 = (await call<Json>(web, "shift_quest_quest_gift", C, ownC)).gift;
+  check(same(c3?.options, ["leaf:sky", "leaf:mint", "leaf:gold"]),
+    "one fresh item left (c2 waits with the other three): it comes first and c2's items fill the gift to 3", c3);
+  check(same((await tree(C)).gifts.map((g: Json) => g.id), [c2.id, c3.id]), "and both gifts wait", (await tree(C)).gifts);
 
   // A gift never fails the save it follows: make every gift insert fail, then close a round.
   await db.query("alter table public.shift_quest_tree_gifts add constraint tree_test_no_gifts check (false) not valid");
@@ -387,13 +412,16 @@ async function main(): Promise<void> {
   check(picked.equipped.leaf === "leaf:mint" && picked.equipped.shape === "shape:heart", "and worn at once, in its slot",
     picked.equipped);
   check(same(picked.gifts, [g2]), "the picked gift is gone from the tree", picked.gifts);
+  check(!picked.gifts.some((g: Json) => g.options.includes("leaf:mint")), "and no waiting gift offers the item it gave",
+    picked.gifts);
   check(same(await tree(A), picked), "tree_pick returns the tree, as tree_get reads it");
   check(await code(call(web, "shift_quest_tree_pick", B, g1.id, "leaf:gold")) === "gift_gone", "a gift is picked once");
 
   // Two teammates pick the same gift at once: the first holds the gift's row lock, the second waits for it.
   await web2.query("begin");
-  const first = await code(call(web2, "shift_quest_tree_pick", A, g2.id, "leaf:mint"));
-  const secondP = code(call(web, "shift_quest_tree_pick", B, g2.id, "leaf:autumn"));
+  const [won, lost] = g2.options as string[];
+  const first = await code(call(web2, "shift_quest_tree_pick", A, g2.id, won));
+  const secondP = code(call(web, "shift_quest_tree_pick", B, g2.id, lost));
   let waited = false;
   for (let k = 0; k < 50 && !waited; k++) {
     waited = await scalar<boolean>(db,
@@ -405,9 +433,9 @@ async function main(): Promise<void> {
   const second = await secondP;
   check(same([first, second], ["ok", "gift_gone"]), "exactly one concurrent pick wins, the other is told the gift is gone",
     [first, second]);
-  const row1 = await styleRow(p1);
-  check(row1.owned.length === new Set(row1.owned).size, "picking an item the team already owns adds no duplicate", row1.owned);
-  check(!(await tree(A)).owned.includes("leaf:autumn"), "and the losing pick changed nothing");
+  const after = await tree(A);
+  check(after.owned.includes(won) && after.equipped.shape === won && !after.owned.includes(lost),
+    "the winning pick is owned and worn, and the losing pick changed nothing", after);
 
   // --- The wardrobe ----------------------------------------------------------------------------------
   check(await code(call(web, "shift_quest_tree_equip", A, "bark:birch")) === "item_not_owned", "an unowned item cannot be worn");
@@ -416,7 +444,7 @@ async function main(): Promise<void> {
   let worn = await call<Json>(web, "shift_quest_tree_equip", B, "leaf:forest");
   check(worn.equipped.leaf === "leaf:forest" && worn.equipped.bark === "bark:cedar", "a teammate wears a default", worn.equipped);
   worn = await call<Json>(bot, "shift_quest_tree_equip", A, "bark:oak");
-  check(same(worn.equipped, { shape: "shape:heart", leaf: "leaf:forest", bark: "bark:oak", bloom: "bloom:sakura" }),
+  check(same(worn.equipped, { shape: won, leaf: "leaf:forest", bark: "bark:oak", bloom: "bloom:sakura" }),
     "and switches back to any owned item, slot by slot (Discord)", worn.equipped);
   worn = await call<Json>(web, "shift_quest_tree_equip", A, "leaf:mint");
   check(worn.equipped.leaf === "leaf:mint" && same(await tree(B), worn), "a picked item can be worn again");
@@ -462,8 +490,11 @@ async function main(): Promise<void> {
   for (const n of [1, 2]) {
     const round: string = await call(bot, "shift_quest_work_start", B, `B round ${n}`);
     const r = await call<Json>(bot, "shift_quest_round_close_gift", B, round, LEARNED, null);
-    check(r.gift !== null, `B's round gift ${n} lands the same day as B's quest gift`, r);
+    check(r.gift?.options?.length === 3, `B's round gift ${n} lands the same day as B's quest gift`, r);
   }
+  const waitingA: string[] = (await tree(A)).gifts.flatMap((g: Json) => g.options);
+  check(waitingA.length === 12 && new Set(waitingA).size === 12,
+    "four gifts wait and, while fresh items were left, no two of them share an option", (await tree(A)).gifts);
   const sideA = await call<Json>(web, "shift_quest_side_submit", A, friend, "A reviewed too", "A learned", null);
   check(sideA.instance_id !== sideB.instance_id && same(await call(web, "shift_quest_quest_gift", A, sideA.instance_id), noGift),
     "a teammate's own quest of the same side template gives nothing: one gift per template");
@@ -475,6 +506,10 @@ async function main(): Promise<void> {
   check(qOwn.gift?.options?.length === 3 &&
       await scalar(db, "select source from public.shift_quest_tree_gifts where id = $1", [qOwn.gift.id]) === `quest:proposed:${own1}`,
     "the first submit of a proposed quest gives a gift, sourced by the quest", qOwn);
+  // Only leaf:sky is fresh now: it comes first; the waiting gifts' items fill the rest (every slot ties
+  // at 3 held back, and the seventh gift's turn starts at bark).
+  check(same(qOwn.gift?.options, ["leaf:sky", "bark:birch", "bark:ebony"]),
+    "one fresh item left: it comes first, and items waiting gifts offer keep the gift at 3", qOwn.gift?.options);
 
   // --- Running out --------------------------------------------------------------------------------------
   const proposeAndSubmit = async (title: string) => {
@@ -494,6 +529,13 @@ async function main(): Promise<void> {
   const roundB3: string = await call(bot, "shift_quest_work_start", B, "B round 3");
   const b3 = (await call<Json>(bot, "shift_quest_round_close_gift", B, roundB3, LEARNED, null)).gift;
   check(same(sorted(b3?.options ?? []), ["bloom:peach", "leaf:sky"]), "a new Bangkok day: B's round gives again, the same 2", b3);
+  // Both wait with the same 2 (nothing fresh was left). Picking peach from one leaves it offered by the
+  // other, as the database stores it (the pickers hide owned options); picking it there adds nothing twice.
+  await call(web, "shift_quest_tree_pick", A, two.gift.id, "bloom:peach");
+  const again = await call<Json>(bot, "shift_quest_tree_pick", A, b3.id, "bloom:peach");
+  const peaches = (await styleRow(p1)).owned.filter((id: string) => id === "bloom:peach").length;
+  check(peaches === 1 && again.owned.filter((id: string) => id === "bloom:peach").length === 1,
+    "picking an item the team already owns adds no duplicate", (await styleRow(p1)).owned);
   await db.query("update public.shift_quest_tree_style set owned = $2 where project_id = $1",
     [p1, ORDER.filter((id) => !DEFAULTS.includes(id))]);
   const giftsBefore = await gifts();
@@ -535,9 +577,11 @@ async function main(): Promise<void> {
   check((await tree(A)).stage === 1, "an approved main quest grows the tree: stage 1");
 
   // --- Other teams see only shown trees' styles ------------------------------------------------------------
-  check(same(await styles(), []), "nobody agreed to show a tree: no styles");
+  // Whether a plot's name starts shown or hidden (20261114110000 makes it shown), every member hides it first.
+  for (const [who, project] of [[A, p1], [B, p1], [C, p2], [D, p3]]) await call(web, "shift_quest_island_optin", who, project, false);
+  check(same(await styles(), []), "every member hid their tree: no styles");
   await call(web, "shift_quest_island_optin", A, p1, true);
-  check(same(await styles(), []), "one of two members agreed: still plain, no style");
+  check(same(await styles(), []), "one of two members shows it: still plain, no style");
   await call(web, "shift_quest_island_optin", B, p1, true);
   const eq1 = (await tree(A)).equipped;
   let st = await styles();
@@ -563,9 +607,10 @@ async function main(): Promise<void> {
   const text = JSON.stringify(await styles());
   const ids: string[] = (await db.query("select id::text from public.shift_quest_members")).rows.map((r) => r.id);
   const leaks = [p1, p2, p3, p4, ...ids, ...Object.values(NAMES), "Tree One", "Tree Two", "Tree Three", "Tree Four", IDEA, AIM,
-    A, B, C, D, E, "roots", "count"]
+    EDITED, A, B, C, D, E, "roots", "count", "ambition"]
     .filter((s) => text.includes(s));
-  check(leaks.length === 0, "the styles carry no project or member id, no name, no Discord id, no idea and no roots", leaks);
+  check(leaks.length === 0, "the styles carry no project or member id, no name, no Discord id, no idea or ambition and no roots",
+    leaks);
 
   console.log(`\n${passes} passed, ${failures} failed`);
   await Promise.all([db.end(), bot.end(), web.end(), web2.end()]);
