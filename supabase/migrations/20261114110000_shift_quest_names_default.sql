@@ -14,7 +14,7 @@
 -- 1. Column default true (new members, created by shift_quest_project_create).
 -- 2. shift_quest_project_invite used to reset show_name = false on a re-invite
 --    ("asked afresh"); it now sets true, so a re-joiner starts shown as well.
--- 3. Backfill: active members who never explicitly hid it become shown. An explicit
+-- 3. Backfill: active and invited members (an invite accepted later keeps show_name) who never explicitly hid it become shown. An explicit
 --    hide is the member's latest island_name_on / island_name_off audit row for the
 --    project (since this membership row began) being island_name_off. Re-running is
 --    safe: a hide made after the first run leaves an island_name_off row as the
@@ -27,7 +27,7 @@ ALTER TABLE public.shift_quest_project_members ALTER COLUMN show_name SET DEFAUL
 
 UPDATE public.shift_quest_project_members pm
 SET show_name = true
-WHERE pm.status = 'active'
+WHERE pm.status IN ('active', 'invited')
   AND NOT pm.show_name
   AND COALESCE((
     SELECT a.action

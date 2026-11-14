@@ -327,6 +327,33 @@ async function main(): Promise<void> {
   await call(bot, "shift_quest_island_optin", B, p1, true);
   check((await memberRow(A)) === true && (await memberRow(B)) === true && plotAt(await postMap(), 1).name === "Plot One",
     "everyone shown again after the backfill checks");
+  // Pending invites are backfilled too: someone invited before the migration accepts into a shown state.
+  const jRow = async (status: string) => (await db.query(
+    "select pm.show_name from public.shift_quest_project_members pm join public.shift_quest_members m on m.id = pm.member_id where m.discord_user_id = $1 and pm.project_id = $2 and pm.status = $3",
+    [J, p1, status])).rows[0]?.show_name;
+  const oldEra = (status: string) => db.query(
+    "update public.shift_quest_project_members pm set show_name = false from public.shift_quest_members m where m.id = pm.member_id and m.discord_user_id = $1 and pm.project_id = $2 and pm.status = $3",
+    [J, p1, status]);
+  await call(bot, "shift_quest_project_invite", A, p1, J);
+  await oldEra("invited"); // an invite sent in the opt-in era
+  await db.query(backfill);
+  check((await jRow("invited")) === true, "backfill: a pending invite becomes shown", await jRow("invited"));
+  await call(bot, "shift_quest_project_respond", J, p1, true);
+  check((await jRow("active")) === true && plotAt(await postMap(), 1).name === "Plot One",
+    "an invite accepted after the migration joins shown, the plot keeps its name");
+  // A hide made in an earlier stint (before leaving and a fresh invite) does not keep them hidden.
+  await call(bot, "shift_quest_island_optin", J, p1, false);
+  await call(bot, "shift_quest_project_leave", J, p1);
+  await call(bot, "shift_quest_project_invite", A, p1, J);
+  await oldEra("invited");
+  await db.query(backfill);
+  check((await jRow("invited")) === true, "backfill: a hide from before a leave and re-invite does not count", await jRow("invited"));
+  // But a hide made while invited-then-active in this stint does.
+  await call(bot, "shift_quest_project_respond", J, p1, true);
+  await call(bot, "shift_quest_island_optin", J, p1, false);
+  await db.query(backfill);
+  check((await jRow("active")) === false, "backfill: a hide in the current stint stays hidden", await jRow("active"));
+  await call(bot, "shift_quest_project_leave", J, p1);
   // Consent is untouched: shown by default is not consented. With consent required and none given, the plot stays plain.
   if (!WAVE1) { // consent arrives with the player migration, after wave 1
     const wasRequired = await scalar<boolean>(db, "select consent_required from public.shift_quest_settings where id");
