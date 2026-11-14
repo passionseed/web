@@ -21,6 +21,7 @@ import { LIVE } from "./island/copy";
 import { renderIslandGif } from "./island/gif";
 import { renderIsland, type IslandPlot } from "./island/render";
 import { readRoots, withRoots } from "./island/roots";
+import { readStyles, withStyles } from "./island/tree";
 import { islandSigns, signsLine } from "./outbox";
 import { renderView, type Block, type View, type ViewPayload } from "./view";
 import { ISLAND_LINK_LABEL, islandWebUrl } from "./weblink";
@@ -41,7 +42,9 @@ import { ISLAND_LINK_LABEL, islandWebUrl } from "./weblink";
  * the same outsider view of the island as the weekly public post (a plot
  * shows its stage and name only once every teammate consented), plus counts,
  * and from schema 10 each shown tree's roots (shift_quest_island_roots, a
- * level 0..3 merged by slot in island/roots.ts; none when the read fails).
+ * level 0..3 merged by slot in island/roots.ts; none when the read fails),
+ * and from schema 13 each shown tree's look (shift_quest_island_styles,
+ * merged by slot in island/tree.ts; the default look when the read fails).
  * No identities reach this module, so none can reach the post.
  *
  * Finding its message again, without spam:
@@ -488,8 +491,9 @@ export function startLivePost(client: Client, api: QuestApi, guildId: string, co
     if (stopped || !connected()) return;
     const d = normalize(await api.call<unknown>("shift_quest_live_post"));
     const channelId = d?.channel_id ?? null;
-    // Schema 10: the shown trees' roots, merged by slot (readRoots never throws: no roots on failure).
-    if (d && channelId) d.plots = withRoots(d.plots, await readRoots(api));
+    // Schema 10: the shown trees' roots; schema 13: their looks. Both merged by slot, only on shown plots
+    // (readRoots and readStyles never throw: no roots or the default look on failure or an older schema).
+    if (d && channelId) d.plots = withStyles(withRoots(d.plots, await readRoots(api)), await readStyles(api));
     if (!d || !channelId) {
       // No live channel: nothing to do, and the last message (if any) stays as it was.
       last = null;
