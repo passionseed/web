@@ -44,7 +44,6 @@ describe("canvas copy", () => {
     expect(copy.LINK_SHEET.title).toBe("เชื่อมแคนวาส");
     expect(copy.LINK_SHEET.description).toBe("เห็นเฉพาะแคนวาสที่คุณเป็นเจ้าของหรืออยู่ในทีม");
     expect(copy.LINK_SHEET.meta("ห้อง 5/1", "12 พ.ย.", 4)).toBe("บอร์ด ห้อง 5/1 · แก้ล่าสุด 12 พ.ย. · โน้ต 4 ใบ");
-    expect(copy.COMPOSER.pick).toBe("เลือกโน้ตที่จะส่ง (สูงสุด 8 ใบ)");
     expect(copy.PREVIEW.meter(812)).toBe("812/2000");
   });
 

@@ -327,10 +327,13 @@ export const DETAIL = {
   declinedProposed: "เควสต์นี้ปิดไปแล้ว เสนอเควสต์ใหม่ได้เสมอ",
   proofLabel: "หลักฐาน (ลิงก์หรือเล่าสั้นๆ)",
   proofHint: "ไม่ต้องใส่ชื่อจริง เบอร์โทร หรือข้อมูลส่วนตัวของใคร",
+  /** DRAFT (not yet through the Thai review). */
+  proofPlaceholder: "วางลิงก์ หรือเล่าสั้นๆ ว่าทำอะไรไป แล้วเจออะไร",
   urlLabel: "ลิงก์งาน (ไม่บังคับ, ขึ้นต้นด้วย https://)",
+  /** The bot's reviewed portfolio hint (bot/src/quests/island/copy.ts portfolioHint), word for word. */
+  reflectionPlaceholder: "ตอบสั้นๆ ข้อเดียว เก็บไว้ใช้ในพอร์ตได้",
   submit: "ส่งให้พี่เลี้ยงดู",
   resubmit: "ส่งฉบับใหม่",
-  sent: "ส่งแล้ว พี่เลี้ยงจะดูใน Discord แล้วแจ้งผลในกล่องข้อความของบอท",
   /** DRAFT */
   submittedWaiting: "ส่งแล้ว รอพี่เลี้ยงดูอยู่ ถ้าแก้งานแล้วส่งฉบับใหม่ได้",
   stuck: "ติด",

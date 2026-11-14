@@ -3,15 +3,19 @@
 /**
  * Every mutation on /shift/island. Each action re-derives who is asking from
  * the session (the client never sends an actor), validates its input against
- * the database's own caps, calls exactly one shift_quest_* function, and on
- * success refreshes the page so the same response carries the new island.
+ * the database's own caps, calls exactly one shift_quest_* function to make
+ * the change, and on success refreshes the page so the same response carries
+ * the new island. A saved quest submit then asks for the quest's gift (schema
+ * 13), a second call that can never fail the submit (questGift).
  * Logs carry the function name and SQLSTATE or a refusal code, never text a
  * student wrote. The shared gate lives in ./gate.ts.
  */
 
 import { z } from "zod";
 
-import { QuestError, type QuestApi } from "@/bot/src/quests/api";
+import { QuestDbError, QuestError, type QuestApi } from "@/bot/src/quests/api";
+import { readMyTree, TREE_SCHEMA } from "@/bot/src/quests/island/tree";
+import { schemaOf } from "@/bot/src/quests/schema";
 import { REFLECT } from "@/components/shift/island/copy";
 import { MAIN_MILESTONE_TAKE_THE_KEYS, ownershipRows, proofWithOwnership, type OwnershipRow } from "@/lib/shift-island/ownership";
 import {
@@ -76,6 +80,52 @@ const noInput = z.unknown().transform(() => null);
 
 function submitted(row: SubmitRow): QuestSubmitResult {
   return { instanceId: row.instance_id, revision: Number(row.revision), created: row.created === true };
+}
+
+type QuestGift = Pick<QuestSubmitResult, "gift" | "tree">;
+
+const NO_GIFT: QuestGift = { gift: null, tree: null };
+
+/** shift_quest_quest_gift's {gift: null | {id, options}}, checked; null when it is anything else. */
+function giftFrom(raw: unknown): { id: string; options: string[] } | null {
+  const gift = raw && typeof raw === "object" ? (raw as { gift?: unknown }).gift : null;
+  if (!gift || typeof gift !== "object") return null;
+  const { id, options } = gift as { id?: unknown; options?: unknown };
+  if (typeof id !== "string" || !Array.isArray(options)) return null;
+  const known = options.filter((o): o is string => typeof o === "string");
+  return known.length > 0 ? { id, options: known } : null;
+}
+
+/** A failure as a code only: database messages can carry student text, which never goes to logs. */
+function failureCode(error: unknown): string {
+  if (error instanceof QuestError) return `sq:${error.code}`;
+  if (error instanceof QuestDbError) return `SQLSTATE ${error.sqlstate}`;
+  return errorName(error);
+}
+
+/**
+ * After a saved submit: the quest's gift for the team's tree, and the tree to
+ * draw its options on (schema 13 and up; the database gives one per quest per
+ * team, so a resubmit gets none). Never throws: the submit is already saved,
+ * so any failure is logged by its code and answers no gift. A gift without a
+ * tree to draw it on is left out here; it waits in the close-up.
+ */
+async function questGift(api: QuestApi, actor: string, instanceId: string, action: string): Promise<QuestGift> {
+  try {
+    if (!((await schemaOf(api)) >= TREE_SCHEMA)) return NO_GIFT;
+    const gift = giftFrom(await api.call<unknown>("shift_quest_quest_gift", actor, instanceId));
+    if (!gift) return NO_GIFT;
+    const tree = await readMyTree(api, actor, "[shift-island]");
+    return tree ? { gift, tree } : NO_GIFT;
+  } catch (error) {
+    console.error(`[shift-island] ${action}: quest gift skipped (${failureCode(error)})`);
+    return NO_GIFT;
+  }
+}
+
+/** A saved submit, with the quest's gift when it earned one. */
+async function withGift(api: QuestApi, actor: string, result: QuestSubmitResult, action: string): Promise<QuestSubmitResult> {
+  return { ...result, ...(await questGift(api, actor, result.instanceId, action)) };
 }
 
 function started(row: StartRow): StartResult {
@@ -200,7 +250,7 @@ export async function submitMainQuest(input: {
       v.reflection,
       v.artifactUrl
     );
-    return submitted(row);
+    return withGift(api, actor, submitted(row), "submitMainQuest");
   });
 }
 
@@ -237,7 +287,8 @@ export async function submitSideQuest(input: {
   artifactUrl?: string | null;
 }): Promise<IslandActionResult<QuestSubmitResult>> {
   return withReadyViewer("submitSideQuest", submitSideQuestSchema, input, async ({ actor }, v) => {
-    const row = await questApi().call<SubmitRow>(
+    const api = questApi();
+    const row = await api.call<SubmitRow>(
       "shift_quest_side_submit",
       actor,
       v.templateId,
@@ -245,7 +296,7 @@ export async function submitSideQuest(input: {
       v.reflection,
       v.artifactUrl
     );
-    return submitted(row);
+    return withGift(api, actor, submitted(row), "submitSideQuest");
   });
 }
 
@@ -280,7 +331,8 @@ export async function submitProposedQuest(input: {
 }): Promise<IslandActionResult<QuestSubmitResult>> {
   return withReadyViewer("submitProposedQuest", submitProposedQuestSchema, input, async ({ actor }, v) => {
     // Visible to reviewers only, no contributors: the same submit the bot's milestone flow makes.
-    const row = await questApi().call<{ revision: number | string }>(
+    const api = questApi();
+    const row = await api.call<{ revision: number | string }>(
       "shift_quest_submit",
       actor,
       v.instanceId,
@@ -292,7 +344,7 @@ export async function submitProposedQuest(input: {
       null,
       []
     );
-    return { instanceId: v.instanceId, revision: Number(row.revision), created: false };
+    return withGift(api, actor, { instanceId: v.instanceId, revision: Number(row.revision), created: false }, "submitProposedQuest");
   });
 }
 
@@ -500,16 +552,14 @@ export async function submitQuestCard(input: {
     const evidence = buildSnapshot(read.title, chosen).text;
     const reflection = v.line ?? CARD_REFLECTION_FALLBACK;
     const ref = v.ref;
+    let row: SubmitRow;
     if (ref.kind === "main") {
-      return submitted(
-        await api.call<SubmitRow>("shift_quest_milestone_submit", actor, ref.milestone, evidence, reflection, v.link)
-      );
+      row = await api.call<SubmitRow>("shift_quest_milestone_submit", actor, ref.milestone, evidence, reflection, v.link);
+    } else if (ref.kind === "side") {
+      row = await api.call<SubmitRow>("shift_quest_side_submit", actor, ref.templateId, evidence, reflection, v.link);
+    } else {
+      throw new QuestError("note_not_allowed");
     }
-    if (ref.kind === "side") {
-      return submitted(
-        await api.call<SubmitRow>("shift_quest_side_submit", actor, ref.templateId, evidence, reflection, v.link)
-      );
-    }
-    throw new QuestError("note_not_allowed");
+    return withGift(api, actor, submitted(row), "submitQuestCard");
   });
 }

@@ -337,6 +337,14 @@ export interface QuestSubmitResult {
   instanceId: string;
   revision: number;
   created: boolean;
+  /**
+   * The quest's gift for the team's tree (schema 13): the first submit of each
+   * quest gives one, ever. Null below schema 13, on a resubmit, with nothing
+   * left to own, or when asking for it failed (the submit is saved either way).
+   */
+  gift?: { id: string; options: string[] } | null;
+  /** The team's tree to draw the gift's options on; null whenever gift is null. */
+  tree?: MyTree | null;
 }
 
 export type TileStatus =

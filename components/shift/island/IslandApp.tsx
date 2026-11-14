@@ -385,6 +385,18 @@ function IslandHome({
     setDetailFromBoard(false);
   }
 
+  /** From the sent screen: back to the world, wherever the quest was opened from. */
+  function leaveQuest() {
+    setDetail(null);
+    setDetailFromBoard(false);
+  }
+
+  /** From the sent screen: the team's tree up close (schema 13), where a gift kept for later waits. */
+  function openTreeFromQuest() {
+    leaveQuest();
+    setPanel("tree");
+  }
+
   /** From the student's own plot: the plot sheet gives way to the quest board. */
   function showBoard() {
     setPlot(null);
@@ -558,6 +570,8 @@ function IslandHome({
         onClose={closeQuest}
         onStuck={openStuck}
         onLinkCanvas={openLinking}
+        onIsland={leaveQuest}
+        onTree={tree ? openTreeFromQuest : undefined}
       />
       <StuckSheet
         open={stuck.open}

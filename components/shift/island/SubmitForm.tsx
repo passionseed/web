@@ -8,7 +8,9 @@ import { submitMainQuest, submitProposedQuest, submitSideQuest } from "@/app/shi
 import { TEXT_LIMITS, type IslandActionResult, type QuestSubmitResult } from "@/lib/supabase/shift-quests/types";
 
 import { COMMON, DETAIL } from "./copy";
+import { DoneWhenLine } from "./DoneWhenLine";
 import { useDraft } from "./drafts";
+import { InSheetFooter } from "./InSheetFooter";
 import styles from "./island.module.css";
 import { refKey, type QuestView } from "./model";
 
@@ -16,7 +18,12 @@ interface SubmitFormProps {
   quest: QuestView;
   /** ส่งฉบับใหม่ instead of ส่งให้พี่เลี้ยงดู (submitted or clarification). */
   resubmit: boolean;
-  onSubmitted: () => void;
+  /** Saved: the server's answer, with the quest's gift when it earned one. */
+  onSubmitted: (result: QuestSubmitResult) => void;
+  /** The sheet's footer: the send button goes there and submits this form through `form`. */
+  footer: HTMLElement | null;
+  /** What the mentor looks for (เสร็จเมื่อ), as a reminder on top. */
+  doneWhen?: string[];
   /** One line above the form (quest 5: the checklist is attached by the server). */
   note?: string;
   /** A lower cap for the proof, when the server adds text under it (quest 5's checklist). */
@@ -72,8 +79,23 @@ function send(quest: QuestView, proof: string, reflection: string, artifactUrl: 
   }
 }
 
-/** Proof, an optional https link, and one reflection, sent for a mentor's review. */
-export function SubmitForm({ quest, resubmit, onSubmitted, note, proofMax = TEXT_LIMITS.proof }: SubmitFormProps) {
+const NONE: string[] = [];
+
+/**
+ * The written form: what the mentor looks for on top, then proof, an optional
+ * https link and one reflection, sent for a mentor's review from the sheet's
+ * bar.
+ */
+export function SubmitForm({
+  quest,
+  resubmit,
+  onSubmitted,
+  footer,
+  doneWhen = NONE,
+  note,
+  proofMax = TEXT_LIMITS.proof,
+}: SubmitFormProps) {
+  const formId = useId();
   const ids = { proof: useId(), url: useId(), reflection: useId() };
   // Kept per quest across the sheet closing, so a stray swipe never loses the text.
   const [draft, setDraft, clearDraft] = useDraft<Draft>(`submit:${refKey(quest.ref)}`, EMPTY);
@@ -96,9 +118,8 @@ export function SubmitForm({ quest, resubmit, onSubmitted, note, proofMax = TEXT
     startTransition(async () => {
       const result = await send(quest, draft.proof.trim(), draft.reflection.trim(), url ? url : null);
       if (result.ok) {
-        toast.success(DETAIL.sent);
         clearDraft();
-        onSubmitted();
+        onSubmitted(result.data);
       } else {
         toast.error(result.error || COMMON.failed);
       }
@@ -106,12 +127,14 @@ export function SubmitForm({ quest, resubmit, onSubmitted, note, proofMax = TEXT
   }
 
   return (
-    <form className={styles.form} onSubmit={onSubmit} noValidate>
+    <form id={formId} className={styles.form} onSubmit={onSubmit} noValidate>
+      <DoneWhenLine items={doneWhen} />
       {note ? <p className={styles.hint}>{note}</p> : null}
       <Field
         id={ids.proof}
         label={DETAIL.proofLabel}
         hint={DETAIL.proofHint}
+        placeholder={DETAIL.proofPlaceholder}
         value={draft.proof}
         max={proofMax}
         error={errors.proof}
@@ -145,16 +168,25 @@ export function SubmitForm({ quest, resubmit, onSubmitted, note, proofMax = TEXT
       <Field
         id={ids.reflection}
         label={reflectionLabel}
+        placeholder={DETAIL.reflectionPlaceholder}
         value={draft.reflection}
         max={TEXT_LIMITS.reflection}
         error={errors.reflection}
         rows={3}
         onChange={(value) => update("reflection", value)}
       />
-      <button type="submit" className={`ei-button-dawn ${styles.primary}`} disabled={pending} aria-busy={pending}>
-        {pending ? <Loader2 className="h-4 w-4 motion-safe:animate-spin" aria-hidden="true" /> : null}
-        <span>{pending ? COMMON.sending : resubmit ? DETAIL.resubmit : DETAIL.submit}</span>
-      </button>
+      <InSheetFooter slot={footer}>
+        <button
+          type="submit"
+          form={formId}
+          className={`ei-button-dawn ${styles.primary} ${styles.barButton}`}
+          disabled={pending}
+          aria-busy={pending}
+        >
+          {pending ? <Loader2 className="h-4 w-4 motion-safe:animate-spin" aria-hidden="true" /> : null}
+          <span>{pending ? COMMON.sending : resubmit ? DETAIL.resubmit : DETAIL.submit}</span>
+        </button>
+      </InSheetFooter>
     </form>
   );
 }
@@ -163,6 +195,7 @@ interface FieldProps {
   id: string;
   label: string;
   hint?: string;
+  placeholder?: string;
   value: string;
   max: number;
   error?: string;
@@ -171,7 +204,7 @@ interface FieldProps {
 }
 
 /** A labelled textarea with a counter that appears near the cap. */
-export function Field({ id, label, hint, value, max, error, rows, onChange }: FieldProps) {
+export function Field({ id, label, hint, placeholder, value, max, error, rows, onChange }: FieldProps) {
   const near = value.length >= Math.floor(max * 0.8);
   const describedBy = [hint ? `${id}-hint` : null, error ? `${id}-error` : null, near ? `${id}-count` : null]
     .filter(Boolean)
@@ -190,6 +223,7 @@ export function Field({ id, label, hint, value, max, error, rows, onChange }: Fi
         id={id}
         rows={rows}
         className={`ei-input ${styles.input} ${styles.textarea}`}
+        placeholder={placeholder}
         value={value}
         maxLength={max}
         aria-invalid={error ? true : undefined}
