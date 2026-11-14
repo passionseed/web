@@ -157,6 +157,8 @@ async function main(): Promise<void> {
   const p3: string = await call(bot, "shift_quest_project_create", D, "Roots Three", "service", null);
   const [s1, s2, s3] = [await slotOf(p1), await slotOf(p2), await slotOf(p3)];
   const optin = (who: string, project: string, on = true) => call(bot, "shift_quest_island_optin", who, project, on);
+  // Names show by default; these trees start quiet because their members hide them first.
+  for (const [who, project] of [[A, p1], [B, p1], [C, p2], [D, p3]]) await optin(who, project, false);
 
   /** A journal row written straight into the table, at a given time (the journal itself stamps now()). */
   const note = (who: string, project: string | null, learned: string | null, at: string, kind = "note") =>
