@@ -3,12 +3,14 @@
  * team's own tree and for another team's plot, previews of one item on the
  * team's tree, and the owned items per slot. No React, no requests.
  */
-import type { CloseupInput } from "@/lib/shift-island/tree-closeup";
-import { DEFAULT_STYLE, resolveStyle, treeItem, TREE_ITEMS, type TreeItem, type TreeSlot } from "@/lib/shift-island/tree-style";
+import { wearItem, type CloseupInput } from "@/lib/shift-island/tree-closeup";
+import { DEFAULT_STYLE, resolveStyle, TREE_ITEMS, type TreeItem, type TreeSlot } from "@/lib/shift-island/tree-style";
 import type { MyTree } from "@/lib/supabase/shift-quests/types";
 
 import { PRE_STAGE, stageName } from "../copy";
-import type { TreeView } from "./TreeCanvas";
+
+/** How a look is previewed on a tile (96 CSS px square): shared with the bot's gift picture. */
+export { previewView } from "@/lib/shift-island/tree-closeup";
 
 /** The wardrobe's tabs and the catalog's slot order. */
 export const SLOTS: readonly TreeSlot[] = ["shape", "leaf", "bark", "bloom"];
@@ -40,33 +42,9 @@ export function ownCloseup(tree: MyTree): CloseupInput {
   };
 }
 
-/**
- * The first stage where an item of each slot shows in the close-up: a canopy
- * for shape, leaves and bark at a size where they read, the flowers for a
- * blossom. A preview of a younger tree is drawn at that stage instead.
- */
-const SHOWS_FROM: Record<TreeSlot, number> = { shape: 5, leaf: 5, bark: 5, bloom: 7 };
-
 /** The team's own tree wearing one item, for a gift option or a wardrobe tile; null for an id the catalog does not have. */
 export function wearing(tree: MyTree, itemId: string): CloseupInput | null {
-  const item = treeItem(itemId);
-  if (!item) return null;
-  const own = ownCloseup(tree);
-  return {
-    ...own,
-    style: { ...own.style, [item.slot]: item.id },
-    stage: Math.max(Math.trunc(own.stage) || 0, SHOWS_FROM[item.slot]),
-    seeded: true,
-  };
-}
-
-/**
- * How a look is previewed on a tile (96 CSS px square): a leaf shape as a
- * close look at the leaves, where the shapes differ; anything else as the
- * whole tree.
- */
-export function previewView(slot: TreeSlot): { view: TreeView; scale: number } {
-  return slot === "shape" ? { view: "canopy", scale: 2 } : { view: "tree", scale: 1 };
+  return wearItem(ownCloseup(tree), itemId);
 }
 
 /** The items of one slot the team owns, in catalog order; the slot's default is always owned. */

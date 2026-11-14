@@ -62,6 +62,10 @@ async function main(): Promise<string> {
   const { storyGif, STORY_PAGES } = await step("load story", () => import("./quests/story"));
   const story = await step("render story page", () => storyGif(STORY_PAGES - 1));
   if (!story) throw new Error("render story page: no picture");
+  // The tree pictures (🔍, gifts, seeds) come from lib/shift-island/tree-closeup.ts and tree-style.ts: they must be in the image.
+  const { seedPreviewPng } = await step("load tree pictures", () => import("./quests/island/closeup-png"));
+  const seeds = await step("render tree seeds", () => seedPreviewPng());
+  if (!PNG_SIGNATURE.every((byte, k) => seeds[k] === byte)) throw new Error(`render tree seeds: unexpected output (${seeds.length} bytes)`);
 
   let modules = "unchecked";
   let health = "unchecked";
@@ -74,7 +78,7 @@ async function main(): Promise<string> {
   }
 
   const revision = existsSync("REVISION") ? readFileSync("REVISION", "utf8").trim() : "local";
-  return `smoke ok rev=${revision} modules=${modules} island=${island.width}x${island.height} png=${island.png.length}B gif=${moving.gif.length}B health=${health}`;
+  return `smoke ok rev=${revision} modules=${modules} island=${island.width}x${island.height} png=${island.png.length}B gif=${moving.gif.length}B tree=${seeds.length}B health=${health}`;
 }
 
 main().then(

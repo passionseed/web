@@ -1,7 +1,11 @@
 import {
   CLOSEUP_SIZE,
+  CLOSEUP_WINDOWS,
   closeupGrid,
+  cropGrid,
   gridToRgba,
+  previewView,
+  wearItem,
   type CloseupInput,
   type PixelGrid,
 } from "@/lib/shift-island/tree-closeup";
@@ -99,5 +103,28 @@ describe("gridToRgba", () => {
   it("writes hex colours opaque and empty pixels transparent", () => {
     const { data } = gridToRgba([["#10203A", null]], 1);
     expect([...data]).toEqual([0x10, 0x20, 0x3a, 255, 0, 0, 0, 0]);
+  });
+});
+
+describe("previews of one look (shared by the website's tiles and the bot's gift picture)", () => {
+  it("wears the item at a stage where it shows, keeping the rest of the tree", () => {
+    const young = input({ stage: 2, seeded: false, roots: { count: 4, recent: 1 } });
+    expect(wearItem(young, "leaf:autumn")).toEqual({ ...young, style: { ...DEFAULT_STYLE, leaf: "leaf:autumn" }, stage: 5, seeded: true });
+    expect(wearItem(young, "bloom:frost")?.stage).toBe(7);
+    expect(wearItem(input({ stage: 6 }), "bark:birch")?.stage).toBe(6);
+    expect(wearItem(young, "leaf:nope")).toBeNull();
+  });
+
+  it("crops each view's window, and previews a shape by its leaves at twice the scale", () => {
+    const grid = closeupGrid(input());
+    for (const view of ["full", "tree", "canopy"] as const) {
+      const { rows, cols } = CLOSEUP_WINDOWS[view];
+      const crop = cropGrid(grid, view);
+      expect(crop).toHaveLength(rows[1] - rows[0]);
+      expect(crop[0]).toHaveLength(cols[1] - cols[0]);
+      expect(crop[0][0]).toBe(grid[rows[0]][cols[0]]);
+    }
+    expect(previewView("shape")).toEqual({ view: "canopy", scale: 2 });
+    expect(previewView("leaf")).toEqual({ view: "tree", scale: 1 });
   });
 });

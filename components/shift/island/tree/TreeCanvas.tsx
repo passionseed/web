@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-import { CLOSEUP_SIZE, closeupGrid, gridToRgba, type CloseupInput } from "@/lib/shift-island/tree-closeup";
+import { CLOSEUP_WINDOWS, closeupGrid, cropGrid, gridToRgba, type CloseupInput, type CloseupView } from "@/lib/shift-island/tree-closeup";
 
 import { useReducedMotion } from "../useReducedMotion";
 import styles from "./tree.module.css";
@@ -10,18 +10,11 @@ import styles from "./tree.module.css";
 /**
  * "full": sky, tree and the cut-open ground. "tree": a square around the
  * tree, for small previews. "canopy": a small square of the leaves (show it
- * at twice the scale), where the leaf shapes can be told apart.
+ * at twice the scale), where the leaf shapes can be told apart. The windows
+ * are lib/shift-island/tree-closeup.ts's, shared with the bot's pictures.
  */
-export type TreeView = "full" | "tree" | "canopy";
+export type TreeView = CloseupView;
 
-/** Each view's window on the 96 x 150 close-up: [top, bottom) rows and [left, right) columns. */
-const WINDOWS: Record<TreeView, { rows: readonly [number, number]; cols: readonly [number, number] }> = {
-  full: { rows: [0, CLOSEUP_SIZE.h], cols: [0, CLOSEUP_SIZE.w] },
-  // From just under the top of the sky to just under the grass.
-  tree: { rows: [4, 100], cols: [0, CLOSEUP_SIZE.w] },
-  // The top of a stage 5 canopy, or the middle of a bigger one.
-  canopy: { rows: [14, 62], cols: [24, 72] },
-};
 /** One stage of the grow-in. */
 const STEP_MS = 140;
 
@@ -47,11 +40,7 @@ export function growFrames(input: CloseupInput): CloseupInput[] {
 }
 
 function draw(context: CanvasRenderingContext2D, input: CloseupInput, view: TreeView): void {
-  const { rows, cols } = WINDOWS[view];
-  const grid = closeupGrid(input)
-    .slice(...rows)
-    .map((row) => row.slice(...cols));
-  const { width, height, data } = gridToRgba(grid, 1);
+  const { width, height, data } = gridToRgba(cropGrid(closeupGrid(input), view), 1);
   const image = context.createImageData(width, height);
   image.data.set(data);
   context.putImageData(image, 0, 0);
@@ -99,7 +88,7 @@ export function TreeCanvas({ input, scale, view = "full", grow = false, label, c
     return () => window.clearTimeout(timer);
   }, [shape, leaf, bark, bloom, stage, seeded, count, recent, view, grow, reduced]);
 
-  const { rows, cols } = WINDOWS[view];
+  const { rows, cols } = CLOSEUP_WINDOWS[view];
   const width = cols[1] - cols[0];
   const height = rows[1] - rows[0];
   const k = Math.max(1, Math.trunc(scale) || 1);

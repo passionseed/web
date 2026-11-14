@@ -11,7 +11,7 @@
  * CHARACTER.days), which only goes up: a missed day never takes anything
  * away or starts a count over (lore bible, "กติกาของเกาะ", rule 3).
  */
-import { TREE_CLOSEUP, TREE_GIFT, TREE_PLANTED, TREE_SEEDS, TREE_WARDROBE } from "@/lib/shift-island/tree-copy";
+import { TREE_CLOSEUP, TREE_GIFT, TREE_PLANTED, TREE_SEED_PICK, TREE_SEEDS, TREE_SLOTS, TREE_WARDROBE } from "@/lib/shift-island/tree-copy";
 import { REFLECTION_MIN_CHARS, REFLECTIONS_PER_DAY } from "@/lib/shift-island/rounds-rules";
 import type { ProjectRoute, SeasonUnlock, TileStatus } from "@/lib/supabase/shift-quests/types";
 import type { ShiftDiscordAuthError } from "@/lib/shift/discordAuth";
@@ -596,14 +596,14 @@ export const TREE = {
     ask: "ทีมอยากสร้างอะไร",
     askHint: "เขียนสั้นๆ หนึ่งบรรทัด ทุกคนในทีมเห็นได้",
     askPlaceholder: "เช่น แอปช่วยหาที่นั่งอ่านหนังสือใกล้บ้าน",
-    pick: "เลือกเมล็ดหนึ่งแบบ ต้นไม้ของทีมจะเริ่มจากเมล็ดนี้",
+    pick: TREE_SEED_PICK,
     action: "เริ่มจากเมล็ดนี้",
     planted: TREE_PLANTED,
     needIdea: "เขียนก่อนว่าทีมอยากสร้างอะไร",
     needSeed: "เลือกเมล็ดก่อน",
   },
   seeds: TREE_SEEDS,
-  slots: { shape: "ทรงพุ่ม", leaf: "สีใบ", bark: "เปลือกไม้", bloom: "ดอก" },
+  slots: TREE_SLOTS,
   gift: {
     ...TREE_GIFT,
     pick: "เลือกลุคนี้",

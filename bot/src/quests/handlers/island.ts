@@ -13,6 +13,7 @@ import { I, WIP_CORNER, WIP_CORNER_SHORT, seasonHead, seasonParts, type SeasonVi
 import type { CampfireView } from "../island/firepit";
 import { RenderError, renderIsland, type IslandPlot, type RenderedIsland } from "../island/render";
 import { readMyRoots, readRoots, withRoots } from "../island/roots";
+import { readMyTree, readStyles, withStyles } from "../island/tree";
 import {
   ButtonStyle,
   REVISION,
@@ -33,6 +34,7 @@ import { guideLinkButton, islandLinkButton } from "../weblink";
 import { newProjectModal } from "./project";
 import { helpModal } from "./journal";
 import { reflectionModal, reflectionSavedView } from "./reflection";
+import { offerQuestGift, treeButtons } from "./tree";
 import { picked, type HandlerSet } from "./types";
 
 /** The island picture's attachment name: an image block shows it with { kind: "image", name: ISLAND_PNG }. */
@@ -120,14 +122,21 @@ const WORK_SHOWN = 5;
  * milestone, the season, then the fine print and the buttons.
  */
 export async function islandMessage(ctx: Ctx): Promise<IslandCard> {
-  const [view, map, roots] = await Promise.all([
+  const [view, map, roots, styles] = await Promise.all([
     ctx.api.call<IslandView>("shift_quest_island", ctx.userId),
     ctx.api.call<IslandMap>("shift_quest_island_map", ctx.userId),
     // Schema 10: the shown trees' roots, merged by slot. Never throws: no roots on failure.
     readRoots(ctx.api),
+    // Schema 13: the shown trees' looks, merged by slot. Never throws: the default look on failure.
+    readStyles(ctx.api),
   ]);
-  const myRoots = view.project && map.plots.some((p) => p.mine && !p.plain) ? await readMyRoots(ctx.api, ctx.userId) : null;
-  const drawn = drawIsland(withRoots(map.plots, roots, myRoots), Boolean(view.season), islandCampfire(ctx));
+  const [myRoots, tree] = await Promise.all([
+    view.project && map.plots.some((p) => p.mine && !p.plain) ? readMyRoots(ctx.api, ctx.userId) : null,
+    // Schema 13: the team's own tree (its look, seed and waiting gifts). Never throws: null below 13 or on failure.
+    view.project ? readMyTree(ctx.api, ctx.userId) : null,
+  ]);
+  const plots = withStyles(withRoots(map.plots, roots, myRoots), styles, tree);
+  const drawn = drawIsland(plots, Boolean(view.season), islandCampfire(ctx));
   const files =
     "image" in drawn ? [new AttachmentBuilder(drawn.image.png, { name: ISLAND_PNG, description: "เกาะ SHIFT" })] : [];
   const blocks: Block[] = [];
@@ -207,6 +216,8 @@ export async function islandMessage(ctx: Ctx): Promise<IslandCard> {
           inboxButton,
           ...web,
         ]),
+        // The team's tree (schema 13): 🌰 while it has no seed, 🔍 the close-up, 🎁 while a gift waits.
+        ...(tree ? buttonRows(treeButtons(tree)) : []),
       ]
     : // No project yet: claim a plot, or read how the island works. Never the old quest form.
       buttonRows([button(cid("is_claim"), I.btnClaim, ButtonStyle.Success), button(cid("is_how"), I.btnHow), inboxButton, ...web]);
@@ -491,7 +502,7 @@ export const island: HandlerSet = {
       const view = await ctx.api.call<IslandView>("shift_quest_island", ctx.userId);
       const repeat = Boolean(view.milestones.find((x) => x.milestone === Number(milestone))?.done);
       const proof = textValue(i, "proof");
-      await ctx.api.call(
+      const row = await ctx.api.call<{ instance_id?: unknown } | null>(
         "shift_quest_milestone_submit",
         ctx.userId,
         Number(milestone),
@@ -508,6 +519,7 @@ export const island: HandlerSet = {
         ],
         rows: backRow(),
       });
+      await offerQuestGift(i, ctx, row?.instance_id, "is_msgo");
     },
 
     async is_stuck(i, ctx) {

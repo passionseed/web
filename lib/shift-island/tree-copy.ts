@@ -14,6 +14,12 @@ export const TREE_SEEDS = {
 
 export const TREE_PLANTED = "ทีมเลือกเมล็ดแล้ว ต้นไม้เริ่มจากตรงนี้";
 
+/** Above the four seeds. */
+export const TREE_SEED_PICK = "เลือกเมล็ดหนึ่งแบบ ต้นไม้ของทีมจะเริ่มจากเมล็ดนี้";
+
+/** Which part of the tree a look changes, shown with its name (สีใบ ทอง). */
+export const TREE_SLOTS = { shape: "ทรงพุ่ม", leaf: "สีใบ", bark: "เปลือกไม้", bloom: "ดอก" };
+
 export const TREE_GIFT = {
   roundHeading: "จบรอบแล้ว ทีมได้ของขวัญหนึ่งชิ้น",
   questHeading: "ส่งเควสต์นี้ครั้งแรกแล้ว ทีมได้ของขวัญหนึ่งชิ้น",

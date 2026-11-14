@@ -2,7 +2,7 @@
  * SHIFT Island words. Thai first, one place, same house rules as ../copy.ts:
  * no em dashes, never talk down, never promise rewards that are not live.
  */
-import { TREE_CLOSEUP, TREE_GIFT, TREE_PLANTED, TREE_SEEDS, TREE_WARDROBE } from "@/lib/shift-island/tree-copy";
+import { TREE_CLOSEUP, TREE_GIFT, TREE_PLANTED, TREE_SEED_PICK, TREE_SEEDS, TREE_SLOTS, TREE_WARDROBE } from "@/lib/shift-island/tree-copy";
 import { FOCUS_MINUTES, REFLECTIONS_PER_DAY, REST_MINUTES } from "@/lib/shift-island/rounds-rules";
 
 import { bkkDate, meter, safe } from "../copy";
@@ -309,8 +309,12 @@ export const TREE = {
   ideaPlaceholder: "เขียนสั้นๆ หนึ่งบรรทัด",
   seedLabel: "เมล็ด",
   seedPlaceholder: "เลือกเมล็ดหนึ่งแบบ",
+  /** Above the four seeds (tr_seed). */
+  pick: TREE_SEED_PICK,
   seeds: TREE_SEEDS,
   planted: TREE_PLANTED,
+  /** A gift option's button and the picked line: the part of the tree, then the look's name. */
+  slots: TREE_SLOTS,
   gift: {
     ...TREE_GIFT,
     kept: "เก็บไว้แล้ว เพื่อนในทีมคนไหนก็เปิดได้ทีหลังจากปุ่ม 🎁 เปิดของขวัญ",

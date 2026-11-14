@@ -74,7 +74,7 @@ export function withStyles<P extends { slot: number; plain?: boolean; mine?: boo
 const logged = new Set<string>();
 
 /** A failure as a code only: database messages can carry student text, which never goes to logs. */
-function reasonOf(error: unknown): string {
+export function reasonOf(error: unknown): string {
   if (error instanceof QuestError) return `sq:${error.code}`;
   if (error instanceof QuestDbError) return `SQLSTATE ${error.sqlstate}`;
   return error instanceof Error ? error.name : "unknown";

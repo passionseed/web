@@ -6,7 +6,7 @@
  */
 import { PALETTE, SPRITES } from "@/bot/assets/island/sprites";
 
-import { mapTreeColor, resolveStyle, treeItem, type TreeItem, type TreeStyle } from "./tree-style";
+import { mapTreeColor, resolveStyle, treeItem, type TreeItem, type TreeSlot, type TreeStyle } from "./tree-style";
 
 export interface CloseupInput {
   style: TreeStyle;
@@ -124,6 +124,52 @@ export function gridToRgba(grid: PixelGrid, scale: number): { width: number; hei
     }),
   );
   return { width, height, data };
+}
+
+/**
+ * "full": sky, tree and the cut-open ground. "tree": a square around the
+ * tree, for small previews. "canopy": a small square of the leaves (show it
+ * at twice the scale), where the leaf shapes can be told apart.
+ */
+export type CloseupView = "full" | "tree" | "canopy";
+
+/** Each view's window on the 96 x 150 close-up: [top, bottom) rows and [left, right) columns. */
+export const CLOSEUP_WINDOWS: Readonly<Record<CloseupView, { rows: readonly [number, number]; cols: readonly [number, number] }>> = {
+  full: { rows: [0, H], cols: [0, W] },
+  // From just under the top of the sky to just under the grass.
+  tree: { rows: [4, 100], cols: [0, W] },
+  // The top of a stage 5 canopy, or the middle of a bigger one.
+  canopy: { rows: [14, 62], cols: [24, 72] },
+};
+
+/** One view's window of a close-up grid. */
+export function cropGrid(grid: PixelGrid, view: CloseupView): PixelGrid {
+  const { rows, cols } = CLOSEUP_WINDOWS[view];
+  return grid.slice(...rows).map((row) => row.slice(...cols));
+}
+
+/**
+ * The first stage where an item of each slot shows in the close-up: a canopy
+ * for shape, leaves and bark at a size where they read, the flowers for a
+ * blossom. A preview of a younger tree is drawn at that stage instead.
+ */
+export const SHOWS_FROM: Readonly<Record<TreeSlot, number>> = { shape: 5, leaf: 5, bark: 5, bloom: 7 };
+
+/** A tree wearing one item, at a stage where the item shows: for gift options and wardrobe tiles. Null for an id the catalog does not have. */
+export function wearItem(base: CloseupInput, itemId: string): CloseupInput | null {
+  const item = treeItem(itemId);
+  if (!item) return null;
+  return {
+    ...base,
+    style: { ...resolveStyle(base.style), [item.slot]: item.id },
+    stage: Math.max(Math.trunc(base.stage) || 0, SHOWS_FROM[item.slot]),
+    seeded: true,
+  };
+}
+
+/** How a look is previewed: a leaf shape as a close look at the leaves (shown at twice the scale), anything else as the whole tree. */
+export function previewView(slot: TreeSlot): { view: CloseupView; scale: number } {
+  return slot === "shape" ? { view: "canopy", scale: 2 } : { view: "tree", scale: 1 };
 }
 
 function lookOf(style: TreeStyle): Look {

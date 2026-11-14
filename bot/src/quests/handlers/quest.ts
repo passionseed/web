@@ -28,6 +28,7 @@ import {
   type View,
 } from "../ui";
 import { celebrateModal, helpModal } from "./journal";
+import { offerQuestGift } from "./tree";
 import { picked, type ActionInteraction, type HandlerSet } from "./types";
 
 interface SubmitDraft {
@@ -585,6 +586,7 @@ export const quest: HandlerSet = {
         },
         { replace: true }
       );
+      await offerQuestGift(i, ctx, draft.instanceId, "sub_go");
     },
 
     async sub_no(i, _ctx, [key]) {
