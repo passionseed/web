@@ -41,6 +41,7 @@ const TREE = {
   gifts: [GIFT],
   roots: { count: 3, recent: 1 },
   stage: 2,
+  ambition: null,
 };
 
 /** The quest database by function name; an Error answer is thrown. Anything else asked is a test failure. */

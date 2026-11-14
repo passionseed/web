@@ -39,6 +39,7 @@ const TREE = {
   gifts: [],
   roots: { count: 4, recent: 1 },
   stage: 2,
+  ambition: null,
 };
 
 beforeEach(() => {

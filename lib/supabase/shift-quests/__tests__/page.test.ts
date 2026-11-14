@@ -520,7 +520,7 @@ describe("member roots on web", () => {
 describe("tree styles on web", () => {
   const AUTUMN = { shape: "shape:round", leaf: "leaf:autumn", bark: "bark:oak", bloom: "bloom:cream" };
   const BIRCH = { shape: "shape:heart", leaf: "leaf:forest", bark: "bark:birch", bloom: "bloom:sakura" };
-  const tree = { seed: "maple", equipped: BIRCH, owned: [], gifts: [], roots: { count: 0, recent: 0 }, stage: 1 };
+  const tree = { seed: "maple", equipped: BIRCH, owned: [], gifts: [], roots: { count: 0, recent: 0 }, stage: 1, ambition: "แอปจองโต๊ะ" };
   const plots = [
     { ...map.plots[0], slot: 4 },
     { ...map.plots[0], slot: 5, mine: false },
