@@ -9,7 +9,8 @@
  * gift), tr_pick|<giftId>|<0..2> and tr_later (the gift waits). A pick reads
  * the gift's options from shift_quest_tree_get and takes the item at that
  * index, never an item named by the button; a gift that no longer waits
- * answers gift_gone, never an error.
+ * answers gift_gone, never an error. A gift never offers a look the team
+ * owns by now (openOptions), and one with nothing left is skipped.
  *
  * A gift after a save comes as its own private message, after the saved or
  * sent reply: picking or keeping it replaces only the gift card, never that
@@ -19,7 +20,7 @@
 import { AttachmentBuilder, MessageFlags, type ButtonBuilder, type RepliableInteraction } from "discord.js";
 
 import type { CloseupInput } from "@/lib/shift-island/tree-closeup";
-import { SEEDS, treeItem, type SeedId, type TreeItem } from "@/lib/shift-island/tree-style";
+import { openGifts, openOptions, SEEDS, treeItem, type SeedId, type TreeItem } from "@/lib/shift-island/tree-style";
 import type { MyTree } from "@/lib/supabase/shift-quests/types";
 
 import { QuestError } from "../api";
@@ -101,7 +102,7 @@ export function treeButtons(tree: MyTree, closeup = true): ButtonBuilder[] {
   const buttons: ButtonBuilder[] = [];
   if (!tree.seed) buttons.push(button(cid("tr_seed"), TREE.btnSeed, ButtonStyle.Success));
   if (closeup) buttons.push(button(cid("is_tree"), TREE.btnClose));
-  const waiting = tree.gifts.length;
+  const waiting = openGifts(tree.owned, tree.gifts).length;
   if (waiting > 0) buttons.push(button(cid("tr_gift"), waiting > 1 ? `${TREE.btnGift} (${waiting})` : TREE.btnGift, ButtonStyle.Primary));
   return buttons;
 }
@@ -128,12 +129,14 @@ function closeupCard(tree: MyTree, action: string, over: { title?: string; tone?
   };
 }
 
-/** A gift to pick from: the options on the team's tree side by side, a button each, and keep for later. Null when no option is known. */
+/**
+ * A gift to pick from: the options on the team's tree side by side, a button
+ * each (carrying the option's index in the gift as stored), and keep for
+ * later. Only options the team can still take (openOptions: known, not owned
+ * by now). Null when none is left.
+ */
 function giftCard(tree: MyTree, gift: Gift, heading: string | null, action: string): View | null {
-  const options = gift.options.flatMap((id, index) => {
-    const item = treeItem(id);
-    return item ? [{ index, item }] : [];
-  });
+  const options = openOptions(tree.owned, gift.options);
   if (!options.length) return null;
   const names = options.map((o) => lookName(o.item));
   const shot = picture(drawn(action, () => giftPreviewPng(closeupOf(tree), options.map((o) => o.item.id))), GIFT_PNG, names.join(" · "));
@@ -298,7 +301,7 @@ export const tree: HandlerSet = {
       await i.deferReply({ flags: MessageFlags.Ephemeral });
       const own = await ownTree(ctx);
       if (!own) return show(i, noPlotCard());
-      const gift = own.gifts[0];
+      const gift = openGifts(own.owned, own.gifts)[0];
       await show(i, (gift && giftCard(own, gift, null, "tr_gift")) || refusalCard("gift_gone"));
     },
 
@@ -309,9 +312,14 @@ export const tree: HandlerSet = {
       await i.deferUpdate();
       const own = await ownTree(ctx);
       if (!own) return show(i, noPlotCard(), { clearFiles: true });
-      const id = own.gifts.find((g) => g.id === giftId)?.options[Number(index)];
+      const gift = own.gifts.find((g) => g.id === giftId);
+      const id = gift?.options[Number(index)];
       const item = id ? treeItem(id) : null;
-      if (!id || !item) return show(i, refusalCard("gift_gone"), { clearFiles: true });
+      if (!gift || !id || !item) return show(i, refusalCard("gift_gone"), { clearFiles: true });
+      if (!openOptions(own.owned, [id]).length) {
+        // The team got this look from another gift since the card was drawn: what this gift still offers, or gone.
+        return show(i, giftCard(own, gift, null, "tr_pick") ?? refusalCard("gift_gone"), { clearFiles: true });
+      }
       let picked: MyTree | null;
       try {
         picked = myTreeFrom(await ctx.api.call<unknown>("shift_quest_tree_pick", ctx.userId, giftId, id));

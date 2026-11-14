@@ -3,6 +3,8 @@ import {
   SEEDS,
   TREE_ITEMS,
   mapTreeColor,
+  openGifts,
+  openOptions,
   resolveStyle,
   treeItem,
   type SeedId,
@@ -66,5 +68,28 @@ describe("mapTreeColor", () => {
 
   it("leaves other palette keys alone", () => {
     expect(mapTreeColor(DEFAULT_STYLE, "o", 3)).toBeNull();
+  });
+});
+
+describe("openOptions and openGifts", () => {
+  const owned = [...Object.values(DEFAULT_STYLE), "leaf:mint"];
+
+  it("keeps the gift's order and each option's stored index, leaving out owned, default and unknown ids", () => {
+    const open = openOptions(owned, ["leaf:autumn", "leaf:mint", "leaf:nope", "shape:round", "leaf:gold"]);
+    expect(open.map((o) => [o.index, o.item.id])).toEqual([
+      [0, "leaf:autumn"],
+      [4, "leaf:gold"],
+    ]);
+  });
+
+  it("skips a gift whose every option the team owns, and keeps the others in order", () => {
+    const gifts = [
+      { id: "a", options: ["leaf:mint"] },
+      { id: "b", options: ["leaf:mint", "bark:birch"] },
+      { id: "c", options: ["leaf:nope"] },
+      { id: "d", options: ["bloom:peach"] },
+    ];
+    expect(openGifts(owned, gifts).map((g) => g.id)).toEqual(["b", "d"]);
+    expect(openGifts([...owned, "bark:birch", "bloom:peach"], gifts)).toEqual([]);
   });
 });

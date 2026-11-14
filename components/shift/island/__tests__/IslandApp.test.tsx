@@ -492,6 +492,16 @@ describe("IslandApp: the team's tree", () => {
     expect(treeButton()).toHaveAccessibleName(`${TREE.closeup.open}, ${TREE.gift.waiting(1)}`);
     expect(within(treeButton()!).getByTestId("tree-dot")).toBeInTheDocument();
     unmount();
+    // A gift that offers only a look the team owns by now waits for nothing: no dot.
+    const stale = render(
+      <IslandApp
+        page={page({ tree: { ...TREE_DATA, owned: [...TREE_DATA.owned, "leaf:mint"], gifts: [{ id: "g1", options: ["leaf:mint"] }] } })}
+        picture={null}
+      />,
+    );
+    expect(treeButton()).toHaveAccessibleName(TREE.closeup.open);
+    expect(within(treeButton()!).queryByTestId("tree-dot")).toBeNull();
+    stale.unmount();
     render(<IslandApp page={page({ tree: { ...TREE_DATA, seed: null } })} picture={null} />);
     expect(treeButton()).toHaveAccessibleName(`${TREE.closeup.open}, ${TREE.seed.title}`);
   });

@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react";
 
-import { treeItem } from "@/lib/shift-island/tree-style";
+import { openGifts } from "@/lib/shift-island/tree-style";
 import type { MyTree } from "@/lib/supabase/shift-quests/types";
 
 import { PLOT, TREE } from "../copy";
@@ -42,8 +42,9 @@ export function TreeSheet({ open, onClose, tree: given, onBoard }: TreeSheetProp
   const closeup = ownCloseup(tree);
   const planted = closeup.seeded || closeup.stage > 0;
   const stageLine = PLOT.stage(treeStageName(tree.stage, closeup.seeded));
-  // A gift whose options the catalog no longer has cannot be shown; it waits for a newer catalog.
-  const gifts = tree.gifts.filter((gift) => gift.options.some((id) => treeItem(id) !== null));
+  // Only gifts that still offer something: an option the catalog no longer has, or a look the team owns by
+  // now, is never offered (openOptions), so a gift with none of those left is skipped.
+  const gifts = openGifts(tree.owned, tree.gifts);
   const gift = gifts[0] ?? null;
 
   return (

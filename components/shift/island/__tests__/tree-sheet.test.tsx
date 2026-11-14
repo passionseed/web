@@ -161,6 +161,13 @@ describe("TreeSheet", () => {
     expect(within(giftGroup()).getByRole("button", { name: "มิ้นต์" })).toHaveAccessibleDescription(TREE.slots.leaf);
   });
 
+  it("skips a waiting gift whose every option the team owns, and counts only the others", () => {
+    const STALE = { id: "7c1d2e3f-4a5b-4c6d-8e7f-000000000002", options: ["leaf:autumn"] };
+    renderSheet(tree({ gifts: [STALE, GIFT] }));
+    expect(screen.getByText(TREE.gift.waiting(1))).toBeInTheDocument();
+    expectButtons(giftGroup(), ["มิ้นต์", "ทอง", "ม่วงค่ำ"]);
+  });
+
   it("picks a gift option: one call, the tree updates", async () => {
     const after = tree({ equipped: { ...tree().equipped, leaf: "leaf:gold" }, owned: [...tree().owned, "leaf:gold"], gifts: [] });
     jest.mocked(pickGift).mockResolvedValue({ ok: true, data: { tree: after } });
@@ -294,6 +301,18 @@ describe("GiftPicker", () => {
     fireEvent.click(screen.getByRole("button", { name: TREE.gift.keep }));
     expect(onLater).toHaveBeenCalledTimes(1);
     expect(pickGift).not.toHaveBeenCalled();
+  });
+
+  it("never offers a look the team owns by now (a teammate took it from another gift)", () => {
+    render(<GiftPicker tree={tree({ owned: [...tree().owned, "leaf:gold"] })} gift={GIFT} onPicked={jest.fn()} />);
+    expectButtons(screen.getByRole("group", { name: TREE.gift.subFew }), ["มิ้นต์", "ม่วงค่ำ"]);
+  });
+
+  it("shows nothing for a gift whose every option the team owns", () => {
+    const { container } = render(
+      <GiftPicker tree={tree({ owned: [...tree().owned, ...GIFT.options] })} gift={GIFT} onPicked={jest.fn()} />
+    );
+    expect(container).toBeEmptyDOMElement();
   });
 
   it("leaves out an option the catalog no longer has", () => {

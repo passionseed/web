@@ -80,6 +80,31 @@ export function treeItem(id: string): TreeItem | null {
   return BY_ID.get(id) ?? null;
 }
 
+/** One option a gift can still give: the item, and its index in the gift as stored (the bot's pick buttons carry it). */
+export interface OpenOption {
+  index: number;
+  item: TreeItem;
+}
+
+/**
+ * A gift's options the team can still take, in the gift's order: catalog
+ * items the team does not own. The database keeps a gift's options as they
+ * were when it was made, so an item the team came to own since (a teammate
+ * took it from another gift) is left out here; defaults are always owned.
+ */
+export function openOptions(owned: readonly string[], options: readonly string[]): OpenOption[] {
+  const have = new Set(owned);
+  return options.flatMap((id, index) => {
+    const item = BY_ID.get(id);
+    return item && DEFAULT_STYLE[item.slot] !== id && !have.has(id) ? [{ index, item }] : [];
+  });
+}
+
+/** The waiting gifts that still offer something, oldest first: a gift whose every option the team owns is skipped. */
+export function openGifts<G extends { options: readonly string[] }>(owned: readonly string[], gifts: readonly G[]): G[] {
+  return gifts.filter((gift) => openOptions(owned, gift.options).length > 0);
+}
+
 /** Coerce stored or user data into a valid style: unknown or missing slots get the default. */
 export function resolveStyle(raw: unknown): TreeStyle {
   const src = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};

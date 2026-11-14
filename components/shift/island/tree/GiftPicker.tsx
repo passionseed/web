@@ -4,7 +4,7 @@ import { useId, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { pickGift } from "@/app/shift/island/tree-actions";
-import { treeItem, type TreeItem } from "@/lib/shift-island/tree-style";
+import { openOptions, type TreeItem } from "@/lib/shift-island/tree-style";
 import type { MyTree } from "@/lib/supabase/shift-quests/types";
 
 import { COMMON, TREE } from "../copy";
@@ -22,15 +22,23 @@ export interface GiftPickerProps {
   onPicked: (tree: MyTree) => void;
   /** Shows "เก็บไว้ก่อน", which calls this; the gift keeps waiting in the close-up. */
   onLater?: () => void;
+  /** A teammate picked the gift first: the picker shows its gone line, and the caller can change its own buttons. */
+  onGone?: () => void;
+  /**
+   * No toast for a pick or for a gift a teammate took first: the caller shows
+   * the picked look and its line itself, and the gone line is on screen (the
+   * sent screen). Other failures still toast.
+   */
+  quiet?: boolean;
 }
 
 type Option = { item: TreeItem; preview: NonNullable<ReturnType<typeof wearing>> };
 
+/** The options the team can still take (openOptions: never one it owns by now), each drawn on the team's tree. */
 function optionsOf(tree: MyTree, ids: string[]): Option[] {
-  return ids.flatMap((id) => {
-    const item = treeItem(id);
-    const preview = wearing(tree, id);
-    return item && preview ? [{ item, preview }] : [];
+  return openOptions(tree.owned, ids).flatMap(({ item }) => {
+    const preview = wearing(tree, item.id);
+    return preview ? [{ item, preview }] : [];
   });
 }
 
@@ -38,11 +46,13 @@ function optionsOf(tree: MyTree, ids: string[]): Option[] {
  * A gift for the team's tree: pick 1 of its options (up to 3), each drawn as
  * the team's own tree wearing it. One tap sends one pick, never two (a
  * double click, or a tap on another option while the first is saving).
- * When a teammate picked it first (gift_gone) it says so and offers nothing
- * more; the page refreshes behind it. Used by the close-up (TreeSheet) and
- * the quest sent screen.
+ * Options the team owns by now (a teammate took the same look from another
+ * gift) are not offered; with none left it shows nothing. When a teammate
+ * picked it first (gift_gone) it says so in its own status line and offers
+ * nothing more; the page refreshes behind it. Used by the close-up
+ * (TreeSheet) and the quest sent screen (quiet).
  */
-export function GiftPicker({ tree, gift, onPicked, onLater }: GiftPickerProps) {
+export function GiftPicker({ tree, gift, onPicked, onLater, onGone, quiet = false }: GiftPickerProps) {
   const subId = useId();
   // Set on the first tap, before any re-render: a second tap in the same frame sees it.
   const sending = useRef(false);
@@ -59,11 +69,14 @@ export function GiftPicker({ tree, gift, onPicked, onLater }: GiftPickerProps) {
       const result = await pickGift(gift.id, option.item.id);
       if (result.ok) {
         picked = true;
-        toast.success(TREE.gift.picked(option.item.name));
+        if (!quiet) toast.success(TREE.gift.picked(option.item.name));
         onPicked(result.data.tree);
       } else {
-        toast.error(result.error || COMMON.failed);
-        if (result.code === "gift_gone") setGone(true);
+        if (!(quiet && result.code === "gift_gone")) toast.error(result.error || COMMON.failed);
+        if (result.code === "gift_gone") {
+          setGone(true);
+          onGone?.();
+        }
       }
     } catch {
       toast.error(COMMON.failed);

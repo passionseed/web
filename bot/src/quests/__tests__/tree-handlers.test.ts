@@ -255,6 +255,44 @@ describe("🎁 picking a gift", () => {
     expect(bodyText(cards(b.sent).at(-1)!.payload)).toContain(errorText("gift_gone"));
   });
 
+  it("never offers a look the team owns by now: its button goes, the others keep their index", async () => {
+    // A teammate took leaf:mint from another gift after this one was made.
+    const c = ctx({ shift_quest_tree_get: tree({ owned: [...Object.values(DEFAULT_STYLE), "leaf:mint"] }) });
+    const b = interaction("button");
+    await ACTION_HANDLERS.get("tr_gift")!(b.i, c, []);
+    const card = cards(b.sent).at(-1)!;
+    expect(customIds(card.payload)).toEqual([pickIds[0], pickIds[2], "sq|tr_later"]);
+    expect(viewText(card.payload)).not.toContain(`${TREE.slots.leaf} มิ้นต์`);
+    expect(viewText(card.payload)).toContain(TREE.gift.subFew);
+  });
+
+  it("a pick of a look the team came to own meanwhile is not sent: the gift's other options come back", async () => {
+    const c = ctx({ shift_quest_tree_get: tree({ owned: [...Object.values(DEFAULT_STYLE), "leaf:mint"] }) });
+    const b = interaction("button");
+    await ACTION_HANDLERS.get("tr_pick")!(b.i, c, [GIFT, "1"]);
+    expect(called(c, "shift_quest_tree_pick")).toEqual([]);
+    const card = cards(b.sent).at(-1)!;
+    expect(customIds(card.payload)).toEqual([pickIds[0], pickIds[2], "sq|tr_later"]);
+
+    // Every option owned by now: the gift has nothing left, so it reads as gone.
+    const all = ctx({ shift_quest_tree_get: tree({ owned: [...Object.values(DEFAULT_STYLE), ...OPTIONS] }) });
+    const e = interaction("button");
+    await ACTION_HANDLERS.get("tr_pick")!(e.i, all, [GIFT, "1"]);
+    expect(called(all, "shift_quest_tree_pick")).toEqual([]);
+    expect(bodyText(cards(e.sent).at(-1)!.payload)).toContain(errorText("gift_gone"));
+  });
+
+  it("🎁 skips a gift whose every option the team owns, and counts only gifts with something left", async () => {
+    const OTHER = "7c1c2a64-1d2b-4c3d-9e8f-0a1b2c3d4e72";
+    const stale = { id: GIFT, options: ["leaf:mint"] };
+    const fresh = { id: OTHER, options: ["bark:ash"] };
+    const owned = [...Object.values(DEFAULT_STYLE), "leaf:mint"];
+    const c = ctx({ shift_quest_tree_get: tree({ owned, gifts: [stale, fresh] }) });
+    const b = interaction("button");
+    await ACTION_HANDLERS.get("tr_gift")!(b.i, c, []);
+    expect(customIds(cards(b.sent).at(-1)!.payload)).toEqual([`sq|tr_pick|${OTHER}|0`, "sq|tr_later"]);
+  });
+
   it("ignores forged ids and indexes", async () => {
     for (const args of [["not-a-uuid", "0"], [GIFT, "3"], [GIFT, "-1"], [GIFT, "x"], [GIFT]]) {
       const c = ctx({ shift_quest_tree_get: tree() });
@@ -425,6 +463,13 @@ describe("/island", () => {
     const seeded = customIds(renderView(await islandMessage(island(13, { shift_quest_tree_get: tree() }))));
     expect(seeded).toEqual(expect.arrayContaining(["sq|is_tree", "sq|tr_gift"]));
     expect(seeded).not.toContain("sq|tr_seed");
+  });
+
+  it("no 🎁 when every waiting gift offers only looks the team owns by now", async () => {
+    const owned = [...Object.values(DEFAULT_STYLE), "leaf:mint"];
+    const card = renderView(await islandMessage(island(13, { shift_quest_tree_get: tree({ owned, gifts: [{ id: GIFT, options: ["leaf:mint"] }] }) })));
+    expect(customIds(card)).toContain("sq|is_tree");
+    expect(customIds(card)).not.toContain("sq|tr_gift");
   });
 
   it("draws the team's own tree in its look", async () => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { PixelIcon } from "@/components/shift/poster/pixel/PixelRects";
+import { openGifts } from "@/lib/shift-island/tree-style";
 import type { MyTree } from "@/lib/supabase/shift-quests/types";
 
 import { TREE } from "../copy";
@@ -11,7 +12,8 @@ import styles from "./tree.module.css";
 
 /** What waits behind the pill, for its name and its lamp dot: a gift first, then the seed choice. */
 export function treeWaiting(tree: MyTree): string | null {
-  if (tree.gifts.length > 0) return TREE.gift.waiting(tree.gifts.length);
+  const gifts = openGifts(tree.owned, tree.gifts).length;
+  if (gifts > 0) return TREE.gift.waiting(gifts);
   return tree.seed == null ? TREE.seed.title : null;
 }
 

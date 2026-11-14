@@ -4,7 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { PixelIcon } from "@/components/shift/poster/pixel/PixelRects";
-import { resolveStyle, treeItem, type TreeItem } from "@/lib/shift-island/tree-style";
+import { openOptions, resolveStyle, treeItem, type TreeItem } from "@/lib/shift-island/tree-style";
 import type { MyTree, QuestSubmitResult } from "@/lib/supabase/shift-quests/types";
 
 import { SUBMIT } from "./canvas/copy";
@@ -28,10 +28,10 @@ interface SentScreenProps {
   onTree?: () => void;
 }
 
-/** The gift as something to draw: the gift and the team's tree, or null (none, or no tree came with it). */
+/** The gift as something to draw: the gift and the team's tree, or null (none, no tree came with it, or nothing left to offer). */
 function offerOf(result: QuestSubmitResult): { gift: { id: string; options: string[] }; tree: MyTree } | null {
   const { gift, tree: team } = result;
-  if (!gift || !team || !gift.options.some((id) => treeItem(id))) return null;
+  if (!gift || !team || openOptions(team.owned, gift.options).length === 0) return null;
   return { gift, tree: team };
 }
 
