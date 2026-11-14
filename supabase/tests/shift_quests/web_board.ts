@@ -44,7 +44,8 @@ const NAMES: Record<string, string> = { [A]: "Board Aye", [B]: "Board Bee", [C]:
  * campfire read of 20261111093000_shift_quest_campfire.sql, the menu links read of
  * 20261111094000_shift_quest_live.sql, the player, shop, consent and news functions of
  * 20261111095000_shift_quest_player.sql and the roots read of 20261113090000_shift_quest_roots.sql
- * plus the own-tree roots read of 20261113173515_shift_quest_own_roots.sql
+ * plus the own-tree roots read of 20261113173515_shift_quest_own_roots.sql, the web reflection of
+ * 20261114100000_shift_quest_web_reflect.sql and the tree style of 20261114120000_shift_quest_tree_style.sql
  * (regprocedure text).
  */
 const WEB_ALLOWLIST = [
@@ -92,6 +93,14 @@ const WEB_ALLOWLIST = [
   "shift_quest_start(text,text,boolean)",
   "shift_quest_submit(text,uuid,integer,text,text,text,text,text,text[])",
   "shift_quest_wallet(text)",
+  // 20261114120000_shift_quest_tree_style.
+  "shift_quest_tree_get(text)",
+  "shift_quest_seed_plant(text,text,text)",
+  "shift_quest_round_close_gift(text,uuid,text,text)",
+  "shift_quest_quest_gift(text,uuid)",
+  "shift_quest_tree_pick(text,uuid,text)",
+  "shift_quest_tree_equip(text,text)",
+  "shift_quest_island_styles()",
 ];
 
 /** The draft side quests, in sort order. */
@@ -182,8 +191,8 @@ async function main(): Promise<void> {
   check(role && role.rolinherit === false && role.rolconnlimit === 20 && (role.rolconfig ?? []).includes("statement_timeout=8s"),
     "shift_quest_web: NOINHERIT, 20 connections, statement_timeout 8s", role);
   check((await scalar<string>(web, "show statement_timeout")) === "8s", "a web session runs with the 8s statement timeout");
-  check(Number(await call(web, "shift_quest_schema_version")) === 12, "the website reads schema version 12 (it needs 6 or more)");
-  check(Number(await call(bot, "shift_quest_schema_version")) === 12, "the bot reads schema version 12 (it needs 2 or more)");
+  check(Number(await call(web, "shift_quest_schema_version")) === 13, "the website reads schema version 13 (it needs 6 or more)");
+  check(Number(await call(bot, "shift_quest_schema_version")) === 13, "the bot reads schema version 13 (it needs 2 or more)");
 
   const executable: string[] = (await db.query(`
     select p.oid::regprocedure::text as sig
@@ -245,6 +254,16 @@ async function main(): Promise<void> {
     // 20261113090000_shift_quest_roots: no caller, the outsider view; an empty island has no roots.
     ["island_roots", "select public.shift_quest_island_roots()", [], "ok"],
     ["island_my_roots", "select public.shift_quest_island_my_roots($1::text)", [NOBODY], "not_started"],
+    // 20261114120000_shift_quest_tree_style: an unknown caller is refused; the styles read has no caller.
+    ["tree_get", "select public.shift_quest_tree_get($1::text)", [NOBODY], "not_started"],
+    ["seed_plant", "select public.shift_quest_seed_plant($1::text, $2::text, $3::text)", [NOBODY, "oak", "idea"], "not_started"],
+    ["round_close_gift", "select public.shift_quest_round_close_gift($1::text, $2::uuid, $3::text, $4::text)",
+      [NOBODY, randomUUID(), "learned something", null], "not_started"],
+    ["quest_gift", "select public.shift_quest_quest_gift($1::text, $2::uuid)", [NOBODY, randomUUID()], "not_started"],
+    ["tree_pick", "select public.shift_quest_tree_pick($1::text, $2::uuid, $3::text)", [NOBODY, randomUUID(), "leaf:mint"],
+      "not_started"],
+    ["tree_equip", "select public.shift_quest_tree_equip($1::text, $2::text)", [NOBODY, "leaf:mint"], "not_started"],
+    ["island_styles", "select public.shift_quest_island_styles()", [], "ok"],
     // 20261111095000_shift_quest_player: an unknown caller or an unknown link stores nothing.
     ["character", "select public.shift_quest_character($1::text)", [NOBODY], "not_started"],
     ["wallet", "select public.shift_quest_wallet($1::text)", [NOBODY], "not_started"],

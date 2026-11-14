@@ -35,7 +35,7 @@ const D = "640000000000000004"; // no project; invited to project one but has no
 const NOBODY = "649999999999999999";
 const NAMES: Record<string, string> = { [A]: "Canvas Aye", [B]: "Canvas Bee", [C]: "Canvas Cee", [D]: "Canvas Dee" };
 
-/** The full web allowlist after 20261113173515 (regprocedure text), as in web_board.ts. */
+/** The full web allowlist after 20261114120000 (regprocedure text), as in web_board.ts. */
 const WEB_ALLOWLIST = [
   "shift_quest_board(text)",
   "shift_quest_campfire(text,boolean)",
@@ -81,6 +81,14 @@ const WEB_ALLOWLIST = [
   "shift_quest_start(text,text,boolean)",
   "shift_quest_submit(text,uuid,integer,text,text,text,text,text,text[])",
   "shift_quest_wallet(text)",
+  // 20261114120000_shift_quest_tree_style.
+  "shift_quest_tree_get(text)",
+  "shift_quest_seed_plant(text,text,text)",
+  "shift_quest_round_close_gift(text,uuid,text,text)",
+  "shift_quest_quest_gift(text,uuid)",
+  "shift_quest_tree_pick(text,uuid,text)",
+  "shift_quest_tree_equip(text,text)",
+  "shift_quest_island_styles()",
 ];
 
 let failures = 0;
@@ -146,7 +154,7 @@ async function main(): Promise<void> {
   const count = async (sql: string, args: unknown[] = []) => Number(await scalar(db, sql, args));
 
   // --- Schema, privileges, row security ------------------------------------------------
-  check(Number(await call(web, "shift_quest_schema_version")) === 12, "the website reads schema version 12 (it needs 6 or more)");
+  check(Number(await call(web, "shift_quest_schema_version")) === 13, "the website reads schema version 13 (it needs 6 or more)");
 
   const executable: string[] = (await db.query(`
     select p.oid::regprocedure::text as sig

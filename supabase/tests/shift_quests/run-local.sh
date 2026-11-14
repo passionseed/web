@@ -25,6 +25,9 @@
 #   roots     every migration applied twice, then roots.ts (the roots read,
 #             20261113090000: what counts, the daily cap, the levels, plain
 #             plots), with consent on and off
+#   tree      every migration applied twice, then tree.ts (schema 13,
+#             20261114120000: seeds, tree style, round and quest gifts, the
+#             own tree read and other teams' styles), with consent off
 #
 #   supabase/tests/shift_quests/run-local.sh       # or: pnpm test:db:quests
 #   PG_BIN=/usr/lib/postgresql/15/bin supabase/tests/shift_quests/run-local.sh
@@ -169,7 +172,8 @@ SQL
 # 091200, the campfire read, 093000, and the menu links read, 094000) are
 # never the bot's; the campfire writers (093000) and the live post's reader
 # and writer (094000) are the bot's like every other entry point.
-# And the web allowlist (20261111090900, 091000, 091100, 091200, 093000, 094000): shift_quest_web executes exactly the
+# And the web allowlist (20261111090900, 091000, 091100, 091200, 093000, 094000, and every later file
+# that grants shift_quest_web, up to 20261114120000's tree style): shift_quest_web executes exactly the
 # functions listed below (nothing before that file is applied), never a
 # helper, and holds no privilege on any table or sequence. The list repeats
 # the migration's on purpose: a new grant must change both.
@@ -242,7 +246,15 @@ web_allow(sig) AS (VALUES
   -- 20261113090000_shift_quest_roots.
   ('shift_quest_island_roots()'),
   ('shift_quest_island_my_roots(text)'),
-  ('shift_quest_progress_add(text,text,text,text,text,text,text,uuid)')
+  ('shift_quest_progress_add(text,text,text,text,text,text,text,uuid)'),
+  -- 20261114120000_shift_quest_tree_style.
+  ('shift_quest_tree_get(text)'),
+  ('shift_quest_seed_plant(text,text,text)'),
+  ('shift_quest_round_close_gift(text,uuid,text,text)'),
+  ('shift_quest_quest_gift(text,uuid)'),
+  ('shift_quest_tree_pick(text,uuid,text)'),
+  ('shift_quest_tree_equip(text,text)'),
+  ('shift_quest_island_styles()')
 ), web_applied AS (
   SELECT to_regprocedure('public.shift_quest_board(text)') IS NOT NULL AS yes
 )
@@ -305,7 +317,7 @@ echo "# migrations"
 for f in "${MIGRATIONS[@]}"; do echo "apply $(basename "$f")"; done
 new_db once
 apply once "single pass" "${MIGRATIONS[@]}"
-for DB in rules island flows islandflows board canvas campfire live player roots; do
+for DB in rules island flows islandflows board canvas campfire live player roots tree; do
   new_db "$DB"
   apply "$DB" "first pass" "${MIGRATIONS[@]}"
   apply "$DB" "second pass" "${MIGRATIONS[@]}"
@@ -378,6 +390,7 @@ suite "campfire" campfire campfire.ts
 suite "live post" live live.ts
 suite "player, economy, news and consent" player player.ts
 suite "roots" roots roots.ts
+suite "tree" tree tree.ts
 # island_rules.ts runs against wave 1 alone once it knows to skip season cases.
 if [ "${#WAVE1[@]}" -lt "${#MIGRATIONS[@]}" ] && grep -q SHIFT_QUESTS_WAVE "$HERE/island_rules.ts"; then
   export SHIFT_QUESTS_WAVE=1
