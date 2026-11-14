@@ -11,7 +11,9 @@
  * Writes to <outDir>: tree-promo-1080x1920.mp4 (stories and reels),
  * tree-promo-1080x1080.mp4 (a seamless loop) and tree-promo-1080x1080.gif when
  * it stays under Discord's 15 MB. Frames stay in frames-<w>x<h>/ for checking.
- * It is marketing output: keep it out of git (output/marketing/ is ignored).
+ * It is marketing output: keep it out of git. .gitignore ignores only the
+ * tree-promo folder inside each dated output/marketing folder (the rest of
+ * output/marketing is tracked), so write it to output/marketing/<date>/tree-promo.
  *
  * Needs ffmpeg on PATH, or FFMPEG=/path/to/ffmpeg. Thai is drawn with
  * @napi-rs/canvas (HarfBuzz shaping, see lib/shift-round/certificate/render.ts)
@@ -166,7 +168,8 @@ const LAYOUTS: Record<Layout["name"], Layout> = {
     text: { cy: 240, size: 76, maxW: 960 },
     chip: { cx: 540, cy: 420, slot: 34, name: 46 },
     card: { cy: 878, seedScale: 2, giftScale: 3, label: 40 },
-    end: { head: [390, 96], tree: [480, 6], cta: [1500, 58], url: [1600, 40] },
+    // The call to action and the link sit above y ~1500, clear of the Reels and TikTok caption overlay.
+    end: { head: [390, 96], tree: [490, 5], cta: [1380, 58], url: [1470, 40] },
     loop: false,
   },
   square: {
