@@ -7,7 +7,10 @@ import { FOCUS_MINUTES, REFLECTIONS_PER_DAY, REST_MINUTES } from "@/lib/shift-is
 import { bkkDate, meter, safe } from "../copy";
 
 /** Tree stage = number of milestones a mentor has confirmed (0..7). */
-export const STAGE_NAMES = ["ที่ดินว่าง", "เมล็ด", "ต้นกล้า", "ต้นอ่อน", "ต้นไม้", "ต้นใหญ่", "ออกผล", "ผลิดอก"];
+/** Before stage 1: the team has a seed but no confirmed quest yet. */
+export const PRE_STAGE = "เมล็ด";
+
+export const STAGE_NAMES = ["ที่ดินว่าง", "เมล็ดงอก", "ต้นกล้า", "ต้นอ่อน", "ต้นไม้", "ต้นใหญ่", "ออกผล", "ผลิดอก"];
 
 /** A stage as a bar: ▰▰▱▱▱▱▱ for 2 of 7. */
 export function stageBar(stage: number, total = 7): string {
@@ -287,6 +290,48 @@ export const SQ = {
   btnLeave: "ออกจากสควอด",
   left: "🚪 ออกจากสควอดแล้ว",
   leftKeeps: "โปรเจกต์และต้นไม้ของคุณยังอยู่ครบ",
+};
+
+/**
+ * DRAFT: the team's tree in Discord: the seed modal, the gift reply, the
+ * close-up. Same words as the website's TREE. Gifts belong to the team; nothing
+ * here names a student.
+ */
+export const TREE = {
+  btnSeed: "🌰 เลือกเมล็ด",
+  btnClose: "🔍 ดูต้นไม้ใกล้ๆ",
+  btnGift: "🎁 เปิดของขวัญ",
+  btnKeep: "เก็บไว้ก่อน",
+  btnWardrobe: "👗 ลุคของต้นไม้",
+  modalTitle: "เลือกเมล็ดของทีม",
+  ideaLabel: "ทีมอยากสร้างอะไร",
+  ideaPlaceholder: "เขียนสั้นๆ หนึ่งบรรทัด",
+  seedLabel: "เมล็ด",
+  seedPlaceholder: "เลือกเมล็ดหนึ่งแบบ",
+  seeds: {
+    oak: { name: "ต้นโอ๊ก", blurb: "พุ่มกลมสีเขียวป่า เปลือกไม้โอ๊ก" },
+    sakura: { name: "ซากุระ", blurb: "พุ่มทรงหัวใจ เปลือกสีซีดาร์แดง ดอกซากุระ" },
+    pine: { name: "สน", blurb: "ทรงสนเรียวแหลม ใบสีมิ้นต์ ปลายกิ่งมีน้ำแข็งเกาะ" },
+    maple: { name: "เมเปิล", blurb: "ใบเมเปิลสีแดง เปลือกสีขาวแบบเบิร์ช ดอกโคมไฟสีส้ม" },
+  },
+  planted: "ทีมเลือกเมล็ดแล้ว ต้นไม้เริ่มจากตรงนี้",
+  gift: {
+    roundHeading: "จบรอบแล้ว ทีมได้ของขวัญหนึ่งชิ้น",
+    questHeading: "ส่งเควสต์นี้ครั้งแรกแล้ว ทีมได้ของขวัญหนึ่งชิ้น",
+    sub: "เลือกลุคให้ต้นไม้ของทีม 1 จาก 3 แบบ ทุกคนเห็นบนเกาะ",
+    keep: "เก็บไว้ก่อน",
+    kept: "เก็บไว้แล้ว เพื่อนในทีมคนไหนก็เปิดได้ทีหลังจากปุ่ม 🎁 เปิดของขวัญ",
+    picked: (name: string) => `ต้นไม้ของทีมได้ ${name} แล้ว`,
+  },
+  wardrobe: {
+    heading: "ลุคของต้นไม้",
+    sub: "สลับลุคที่ทีมมี ทุกคนในทีมเปลี่ยนได้",
+    changed: "เปลี่ยนลุคต้นไม้แล้ว",
+  },
+  closeup: {
+    caption: "เหนือดินคือต้นไม้ของทีม ใต้ดินคือราก รากแต่ละเส้นมาจากบันทึกที่ทีมเขียนหลังจบรอบ",
+    roots: (n: number) => (n > 0 ? `ตอนนี้มีราก ${n} เส้น` : "ยังไม่มีราก รากเส้นแรกมาจากบันทึกของทีมหลังจบรอบ"),
+  },
 };
 
 export interface SeasonUnlock {

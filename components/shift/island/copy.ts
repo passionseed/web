@@ -30,7 +30,10 @@ export const PLACES = {
 };
 
 /** Tree stages 0..7, same names as the bot (bot/src/quests/island/copy.ts). */
-export const STAGE_NAMES = ["ที่ดินว่าง", "เมล็ด", "ต้นกล้า", "ต้นอ่อน", "ต้นไม้", "ต้นใหญ่", "ออกผล", "ผลิดอก"] as const;
+/** Before stage 1: the team has a seed but no confirmed quest yet. */
+export const PRE_STAGE = "เมล็ด";
+
+export const STAGE_NAMES = ["ที่ดินว่าง", "เมล็ดงอก", "ต้นกล้า", "ต้นอ่อน", "ต้นไม้", "ต้นใหญ่", "ออกผล", "ผลิดอก"] as const;
 
 export function stageName(stage: number): string {
   const n = Number.isFinite(stage) ? Math.trunc(stage) : 0;
@@ -575,4 +578,57 @@ export const REFLECT = {
   private: `รากนับได้คนละไม่เกิน ${REFLECTIONS_PER_DAY} บันทึกต่อวัน · บันทึกนี้เป็นส่วนตัว`,
   discordHelp: "อยากให้พี่เลี้ยงช่วยไหม? ใน Discord พิมพ์ /island แล้วกด 🧱 ติด",
   tooShort: `เขียนว่าได้เรียนรู้อะไร อย่างน้อย ${REFLECTION_MIN_CHARS} ตัวอักษร`,
+};
+
+/**
+ * DRAFT: the team's tree. A seed on day one, a close-up with roots (the team's
+ * reflections), a gift to pick 1 of 3 after a closed round and after the first
+ * submit of a quest, and a wardrobe. Gifts belong to the team, never one
+ * student; nothing here names a student.
+ */
+export const TREE = {
+  seed: {
+    title: "เลือกเมล็ดของทีม",
+    ask: "ทีมอยากสร้างอะไร",
+    askHint: "เขียนสั้นๆ หนึ่งบรรทัด ทุกคนในทีมเห็นได้",
+    askPlaceholder: "เช่น แอปช่วยหาที่นั่งอ่านหนังสือใกล้บ้าน",
+    pick: "เลือกเมล็ดหนึ่งแบบ ต้นไม้ของทีมจะเริ่มจากเมล็ดนี้",
+    action: "เริ่มจากเมล็ดนี้",
+    planted: "ทีมเลือกเมล็ดแล้ว ต้นไม้เริ่มจากตรงนี้",
+    needIdea: "เขียนก่อนว่าทีมอยากสร้างอะไร",
+    needSeed: "เลือกเมล็ดก่อน",
+  },
+  seeds: {
+    oak: { name: "ต้นโอ๊ก", blurb: "พุ่มกลมสีเขียวป่า เปลือกไม้โอ๊ก" },
+    sakura: { name: "ซากุระ", blurb: "พุ่มทรงหัวใจ เปลือกสีซีดาร์แดง ดอกซากุระ" },
+    pine: { name: "สน", blurb: "ทรงสนเรียวแหลม ใบสีมิ้นต์ ปลายกิ่งมีน้ำแข็งเกาะ" },
+    maple: { name: "เมเปิล", blurb: "ใบเมเปิลสีแดง เปลือกสีขาวแบบเบิร์ช ดอกโคมไฟสีส้ม" },
+  },
+  slots: { shape: "ทรงพุ่ม", leaf: "สีใบ", bark: "เปลือกไม้", bloom: "ดอก" },
+  gift: {
+    roundHeading: "จบรอบแล้ว ทีมได้ของขวัญหนึ่งชิ้น",
+    questHeading: "ส่งเควสต์นี้ครั้งแรกแล้ว ทีมได้ของขวัญหนึ่งชิ้น",
+    sub: "เลือกลุคให้ต้นไม้ของทีม 1 จาก 3 แบบ ทุกคนเห็นบนเกาะ",
+    pick: "เลือกลุคนี้",
+    keep: "เก็บไว้ก่อน",
+    kept: "เก็บไว้แล้ว เพื่อนในทีมคนไหนก็เปิดได้ทีหลัง",
+    waiting: (n: number) => `มีของขวัญรออยู่ ${n} ชิ้น`,
+    open: "เปิดของขวัญ",
+    picked: (name: string) => `ต้นไม้ของทีมได้ ${name} แล้ว`,
+    gone: "ของขวัญชิ้นนี้ถูกเลือกไปแล้ว",
+  },
+  wardrobe: {
+    heading: "ลุคของต้นไม้",
+    sub: "สลับลุคที่ทีมมี ทุกคนในทีมเปลี่ยนได้",
+    using: "ใช้อยู่",
+    use: "ใช้ลุคนี้",
+    changed: "เปลี่ยนลุคต้นไม้แล้ว",
+    empty: "รับลุคใหม่ได้จากของขวัญหลังจบรอบ หรือหลังส่งเควสต์ครั้งแรก",
+  },
+  closeup: {
+    open: "ดูต้นไม้ใกล้ๆ",
+    close: "กลับไปที่เกาะ",
+    caption: "เหนือดินคือต้นไม้ของทีม ใต้ดินคือราก รากแต่ละเส้นมาจากบันทึกที่ทีมเขียนหลังจบรอบ",
+    roots: (n: number) => (n > 0 ? `ตอนนี้มีราก ${n} เส้น` : "ยังไม่มีราก รากเส้นแรกมาจากบันทึกของทีมหลังจบรอบ"),
+  },
 };

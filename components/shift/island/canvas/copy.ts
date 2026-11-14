@@ -59,6 +59,21 @@ export const COMPOSER = {
   openNote: "ดูบนแคนวาส",
 };
 
+/** DRAFT: the quest submission sheet in two steps, then the sent screen. */
+export const SUBMIT = {
+  steps: ["เลือกหลักฐาน", "ตรวจแล้วส่ง"],
+  pickHint: "ติ๊กโน้ตบนแคนวาสที่เป็นหลักฐานของเควสต์นี้",
+  next: (n: number) => `ต่อไป (เลือกแล้ว ${n} ใบ)`,
+  needOne: "เลือกโน้ตอย่างน้อย 1 ใบ",
+  editNotes: "แก้โน้ต",
+  openCanvas: "เปิดแคนวาส",
+  reviewHint: "นี่คือการ์ดที่พี่เลี้ยงจะได้รับ จะเพิ่มข้อความสั้นๆ หรือลิงก์ก็ได้",
+  sentTitle: "ส่งถึงพี่เลี้ยงแล้ว",
+  sentWhere: "พี่เลี้ยงจะดูใน Discord แล้วแจ้งผลในกล่องข้อความของบอท",
+  backToIsland: "กลับไปที่เกาะ",
+  seeTree: "ดูต้นไม้ของทีม",
+};
+
 export const PREVIEW = {
   heading: "หน้าตาที่พี่เลี้ยงจะเห็น",
   meter: (n: number) => `${n}/${CARD_LIMITS.evidence}`,

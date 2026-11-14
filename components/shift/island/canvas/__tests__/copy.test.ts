@@ -48,6 +48,19 @@ describe("canvas copy", () => {
     expect(copy.PREVIEW.meter(812)).toBe("812/2000");
   });
 
+  it("words the two-step submission with the plan's exact lines", () => {
+    expect(copy.SUBMIT.steps).toEqual(["เลือกหลักฐาน", "ตรวจแล้วส่ง"]);
+    expect(copy.SUBMIT.next(3)).toBe("ต่อไป (เลือกแล้ว 3 ใบ)");
+    expect(copy.SUBMIT.needOne).toBe("เลือกโน้ตอย่างน้อย 1 ใบ");
+    expect(copy.SUBMIT.editNotes).toBe("แก้โน้ต");
+    expect(copy.SUBMIT.openCanvas).toBe("เปิดแคนวาส");
+    expect(copy.SUBMIT.sentTitle).toBe("ส่งถึงพี่เลี้ยงแล้ว");
+    expect(copy.SUBMIT.sentWhere).toContain("Discord");
+    expect(copy.SUBMIT.backToIsland).toBe("กลับไปที่เกาะ");
+    expect(copy.SUBMIT.seeTree).toBe("ดูต้นไม้ของทีม");
+    expect(copy.SUBMIT.sentWhere).toContain("กล่องข้อความของบอท");
+  });
+
   it("prints Bangkok short dates and tolerates nothing", () => {
     expect(copy.shortDate(Date.UTC(2026, 10, 11, 18, 30))).toMatch(/^12 พ\.ย\.$/);
     expect(copy.shortDate(null)).toBeNull();

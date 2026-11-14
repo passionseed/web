@@ -18,7 +18,7 @@ import {
   type IslandPlot,
   type PlotBox,
 } from "../island/render";
-import { I, PENDING_SLOT, SQ, STAGE_NAMES, WIP_CORNER, nextUnlock, pendingSlot, seasonLines, type SeasonView } from "../island/copy";
+import { I, TREE, PRE_STAGE, PENDING_SLOT, SQ, STAGE_NAMES, WIP_CORNER, nextUnlock, pendingSlot, seasonLines, type SeasonView } from "../island/copy";
 
 /** sha256 of the decoded RGBA pixels of renderIsland(plots(6), { markMine, festival }). Update only with a sprite or layout change you meant. */
 const PINNED_6 = "c763498f1351ca17485e76264c996dcae5a91bbe38b5fae89192e839e8d426ab";
@@ -349,6 +349,8 @@ describe("plot boxes", () => {
 describe("island copy", () => {
   it("names all eight stages", () => {
     expect(STAGE_NAMES).toHaveLength(8);
+    expect(STAGE_NAMES[1]).toBe("เมล็ดงอก");
+    expect(PRE_STAGE).toBe("เมล็ด");
   });
 
   it("states the season as a date and a bar, never a rank", () => {
@@ -476,5 +478,26 @@ describe("island copy", () => {
     // The tester-privacy hint is a ban, and fits a placeholder.
     expect(I.proofHint.startsWith("ห้าม")).toBe(true);
     expect(I.proofHint.length).toBeLessThanOrEqual(100);
+  });
+});
+
+describe("tree copy", () => {
+  const texts: string[] = [];
+  const walk = (v: unknown): void => {
+    if (typeof v === "string") texts.push(v);
+    else if (typeof v === "function") texts.push(String((v as (...a: unknown[]) => unknown)("ตัวอย่าง", 3)));
+    else if (v && typeof v === "object") Object.values(v).forEach(walk);
+  };
+  walk(TREE);
+
+  it("has words for the buttons, seed modal, gift reply and close-up", () => {
+    expect(texts.length).toBeGreaterThan(20);
+    expect(TREE.btnClose).toContain("🔍");
+    expect(TREE.gift.keep).toBe("เก็บไว้ก่อน");
+    expect(Object.keys(TREE.seeds).sort()).toEqual(["maple", "oak", "pine", "sakura"]);
+  });
+
+  it("keeps the house rules", () => {
+    for (const text of texts) expect([text, /—|–|น้องๆ|ปลูก|สตรีค|streak|เหี่ยว|อันดับ/i.test(text)]).toEqual([text, false]);
   });
 });
