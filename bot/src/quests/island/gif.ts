@@ -22,7 +22,7 @@
  */
 import { GIFEncoder, applyPalette, quantize, type Palette } from "gifenc";
 
-import { buildAtlasData } from "@/lib/shift-island/live/atlas";
+import { allSprites, buildAtlasData, stylesOf } from "@/lib/shift-island/live/atlas";
 import { TICK_MS, actorFrame, foamFrame, glowFrame, seaFrame, swayDelay, type Motion } from "@/lib/shift-island/live/clock";
 import { paintLand, paintOverlay, redrawRect, sceneModel, seaRectsFor, type Layers, type SceneModel } from "@/lib/shift-island/live/draw";
 import { PixelContext, PixelImage } from "@/lib/shift-island/live/pixelCanvas";
@@ -142,7 +142,7 @@ interface Painter {
 }
 
 function painter(scene: IslandScene, phase: LightPhase): Painter {
-  const data = buildAtlasData(phase);
+  const data = buildAtlasData(phase, allSprites(), stylesOf(scene.trees));
   const atlas = new PixelImage(data.width, data.height, data.data);
   const model = sceneModel(scene);
   const land = new PixelImage(scene.width, scene.height);

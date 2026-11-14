@@ -7,6 +7,7 @@
  * (a dot is transparent). Draw them with PixelIcon at integer scales.
  */
 import { PALETTE, SPRITES } from "@/bot/assets/island/sprites";
+import { mapTreeColor, resolveStyle, type TreeStyle } from "@/lib/shift-island/tree-style";
 
 export { PALETTE };
 
@@ -552,6 +553,37 @@ export function iconGrid(key: IconKey): string[] {
 export function treeGrid(stage: number): string[] {
   const n = Math.min(Math.max(Math.trunc(Number.isFinite(stage) ? stage : 0), 0), 7);
   return SPRITES[`stage_${n}`];
+}
+
+/**
+ * A tree for a stage drawn in a style: the grid and a palette for PixelIcon.
+ * Leaf, bark and blossom pixels get new palette keys (soil rows keep theirs),
+ * so a styled tree is still one grid and one palette. Without a style or a
+ * seed it is exactly treeGrid(stage) and the plain palette.
+ */
+export function styledTree(stage: number, style?: TreeStyle | null, seeded = false): { grid: string[]; palette: Record<string, string> } {
+  const n = Math.min(Math.max(Math.trunc(Number.isFinite(stage) ? stage : 0), 0), 7);
+  const base = n === 0 && seeded ? SPRITES.stage_seed : treeGrid(n);
+  if (!style) return { grid: base, palette: PALETTE };
+  const resolved = resolveStyle(style);
+  const keys = new Map<string, string>();
+  const palette: Record<string, string> = { ...PALETTE };
+  const grid = base.map((row, j) =>
+    [...row]
+      .map((ch) => {
+        const hex = mapTreeColor(resolved, ch, j);
+        if (!hex) return ch;
+        let key = keys.get(hex);
+        if (!key) {
+          key = String.fromCharCode(0x100 + keys.size);
+          keys.set(hex, key);
+          palette[key] = hex;
+        }
+        return key;
+      })
+      .join("")
+  );
+  return { grid, palette };
 }
 
 /** Largest integer scale that fits the grid inside a square of `box` px (at least 1). */

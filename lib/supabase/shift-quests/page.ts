@@ -2,6 +2,7 @@ import "server-only";
 
 import { QuestDbError, QuestError, type QuestApi } from "@/bot/src/quests/api";
 import { readMyRoots, readRoots, withRoots, type RootsBySlot } from "@/bot/src/quests/island/roots";
+import { readMyTree, readStyles, withStyles, type StylesBySlot } from "@/bot/src/quests/island/tree";
 import type { CanvasLinkState } from "@/lib/shift-island/quest-canvas";
 
 import { campfireOf } from "./campfire";
@@ -16,6 +17,7 @@ import type {
   IslandMapPlot,
   IslandPageData,
   IslandView,
+  MyTree,
   ProjectInvite,
   ProjectRoute,
   QuestBoard,
@@ -70,9 +72,15 @@ function normalizePlot(plot: Partial<IslandMapPlot> & Pick<IslandMapPlot, "slot"
 }
 
 /** The map with every field checked and, from schema 10, each shown tree's roots merged by slot (none on a plain plot). */
-function normalizeMap(raw: IslandMapData | null | undefined, roots: RootsBySlot = new Map(), myRoots: number | null = null): IslandMapData {
+function normalizeMap(
+  raw: IslandMapData | null | undefined,
+  roots: RootsBySlot = new Map(),
+  myRoots: number | null = null,
+  styles: StylesBySlot = new Map(),
+  myTree: MyTree | null = null
+): IslandMapData {
   return {
-    plots: withRoots(list(raw?.plots).map(normalizePlot), roots, myRoots),
+    plots: withStyles(withRoots(list(raw?.plots).map(normalizePlot), roots, myRoots), styles, myTree),
     goal: raw?.goal ?? null,
     season: raw?.season ?? null,
   };
@@ -147,7 +155,7 @@ async function canvasLinkOf(api: QuestApi, actor: string): Promise<CanvasLinkSta
  */
 export async function getIslandPage(viewer: ReadyViewer): Promise<IslandPageData> {
   const api = questApi();
-  const [islandRaw, mapRaw, suggestUrl, character, consent, news, roots] = await Promise.all([
+  const [islandRaw, mapRaw, suggestUrl, character, consent, news, roots, styles] = await Promise.all([
     api.call<IslandView>("shift_quest_island", viewer.actor),
     api.call<IslandMapData>("shift_quest_island_map", viewer.actor),
     suggestUrlOf(api, viewer.actor),
@@ -157,8 +165,12 @@ export async function getIslandPage(viewer: ReadyViewer): Promise<IslandPageData
     soft(newsOf(api, viewer.actor)),
     // Schema 10: the shown trees' roots. Never throws: no roots on failure, logged once.
     readRoots(api, ROOTS_LOG),
+    // Schema 13: the shown trees' colours. Never throws: default trees on failure, logged once.
+    readStyles(api, ROOTS_LOG),
   ]);
   const island = normalizeIsland(islandRaw);
+  // Schema 13: the caller's own tree (colours, seed, owned items). Null without a project or on any failure.
+  const tree = island.project ? await soft(readMyTree(api, viewer.actor, ROOTS_LOG)) : null;
 
   let board: QuestBoard | null = null;
   let invites: ProjectInvite[] = [];
@@ -187,7 +199,8 @@ export async function getIslandPage(viewer: ReadyViewer): Promise<IslandPageData
     unread: Number(viewer.session.unread) || 0,
     island,
     map: normalizeMap(mapRaw, roots, island.project && mapRaw?.plots?.some((p) => p.mine && !p.plain)
-      ? await readMyRoots(api, viewer.actor, ROOTS_LOG) : null),
+      ? await readMyRoots(api, viewer.actor, ROOTS_LOG) : null, styles, tree),
+    tree,
     board,
     invites,
     canvasLink,
@@ -214,10 +227,11 @@ function soft<T>(read: Promise<T | null>): Promise<T | null> {
 /** shift_quest_island_map for the picture route, with roots as on the page. Throws QuestError / QuestDbError (roots never throw). */
 export async function getIslandMap(actor: string): Promise<IslandMapData> {
   const api = questApi();
-  const [map, roots] = await Promise.all([
+  const [map, roots, styles] = await Promise.all([
     api.call<IslandMapData>("shift_quest_island_map", actor),
     readRoots(api, ROOTS_LOG),
+    readStyles(api, ROOTS_LOG),
   ]);
-  return normalizeMap(map, roots, map?.plots?.some((p) => p.mine && !p.plain)
-    ? await readMyRoots(api, actor, ROOTS_LOG) : null);
+  const hasMine = map?.plots?.some((p) => p.mine && !p.plain);
+  return normalizeMap(map, roots, hasMine ? await readMyRoots(api, actor, ROOTS_LOG) : null, styles, hasMine ? await readMyTree(api, actor, ROOTS_LOG) : null);
 }

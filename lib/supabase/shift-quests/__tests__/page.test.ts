@@ -156,6 +156,8 @@ describe("getIslandPage", () => {
       ["shift_quest_island_news", [ACTOR]],
       // Roots (schema 10): the version first; this database does not answer it, so no roots are read.
       ["shift_quest_schema_version", []],
+      // Tree styles (schema 13): the same unanswered version read, retried by each optional reader.
+      ["shift_quest_schema_version", []],
       ["shift_quest_board", [ACTOR]],
       ["shift_quest_canvas_get", [ACTOR]],
       ["shift_quest_campfire", [ACTOR, false]],
@@ -512,5 +514,55 @@ describe("member roots on web", () => {
     respond({ shift_quest_island_map: { ...map, plots: map.plots.map((p) => ({ ...p, mine: false })) }, shift_quest_schema_version: 11 });
     await getIslandMap(ACTOR);
     expect(call).not.toHaveBeenCalledWith("shift_quest_island_my_roots", ACTOR);
+  });
+});
+
+describe("tree styles on web", () => {
+  const AUTUMN = { shape: "shape:round", leaf: "leaf:autumn", bark: "bark:oak", bloom: "bloom:cream" };
+  const BIRCH = { shape: "shape:heart", leaf: "leaf:forest", bark: "bark:birch", bloom: "bloom:sakura" };
+  const tree = { seed: "maple", equipped: BIRCH, owned: [], gifts: [], roots: { count: 0, recent: 0 }, stage: 1 };
+  const plots = [
+    { ...map.plots[0], slot: 4 },
+    { ...map.plots[0], slot: 5, mine: false },
+    { ...map.plots[0], slot: 6, mine: false, plain: true },
+  ];
+  const answers = {
+    shift_quest_island: { project },
+    shift_quest_board: {},
+    shift_quest_island_map: { ...map, plots },
+    shift_quest_schema_version: 13,
+    shift_quest_island_roots: [],
+    shift_quest_island_my_roots: 0,
+    shift_quest_island_styles: [{ slot: 5, seed: null, equipped: AUTUMN }, { slot: 6, seed: null, equipped: AUTUMN }, { slot: 4, seed: null, equipped: AUTUMN }],
+    shift_quest_tree_get: tree,
+  };
+
+  it("styles shown plots, uses the caller's own tree for mine, and hands it to the page", async () => {
+    respond(answers);
+    const page = await getIslandPage(viewer);
+    expect(page.tree).toEqual(tree);
+    for (const map of [page.map, await getIslandMap(ACTOR)]) {
+      expect(map.plots[0]).toMatchObject({ slot: 4, style: BIRCH, seeded: true });
+      expect(map.plots[1]).toMatchObject({ slot: 5, style: AUTUMN });
+      expect(map.plots[1]).not.toHaveProperty("seeded");
+      expect(map.plots[2]).not.toHaveProperty("style");
+    }
+  });
+
+  it("falls back to default trees when the style reads fail", async () => {
+    respond({ ...answers, shift_quest_island_styles: new QuestDbError("shift_quest_island_styles", "42883"), shift_quest_tree_get: new QuestError("no_project") });
+    const page = await getIslandPage(viewer);
+    expect(page.tree).toBeNull();
+    expect(page.map.plots.every((p) => !("style" in p))).toBe(true);
+  });
+
+  it.each([12, 10])("makes no style call below schema 13 (%s)", async (version) => {
+    respond({ ...answers, shift_quest_schema_version: version });
+    const page = await getIslandPage(viewer);
+    await getIslandMap(ACTOR);
+    expect(call).not.toHaveBeenCalledWith("shift_quest_island_styles");
+    expect(call).not.toHaveBeenCalledWith("shift_quest_tree_get", ACTOR);
+    expect(page.tree).toBeNull();
+    expect(page.map.plots.every((p) => !("style" in p) && !("seeded" in p))).toBe(true);
   });
 });

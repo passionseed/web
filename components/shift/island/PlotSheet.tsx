@@ -11,7 +11,7 @@ import styles from "./island.module.css";
 import { IslandSheet } from "./IslandSheet";
 import news from "./news/news.module.css";
 import { TeamCard } from "./news/TeamCard";
-import { PALETTE, treeGrid } from "./sprites";
+import { styledTree } from "./sprites";
 
 interface PlotSheetProps {
   hotspot: IslandHotspot | null;
@@ -56,7 +56,7 @@ export function PlotSheet({ hotspot, onClose, onBoard, team, staff = false }: Pl
           {shown.plain ? null : (
             <>
               <span className={styles.plotTree} aria-hidden="true">
-                <PixelIcon grid={treeGrid(shown.stage)} palette={PALETTE} scale={2} />
+                <PixelIcon {...styledTree(shown.stage, shown.style, shown.seeded)} scale={2} />
               </span>
               <p>{PLOT.stage(stageName(shown.stage))}</p>
             </>

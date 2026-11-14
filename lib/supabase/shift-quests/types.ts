@@ -7,6 +7,7 @@
  */
 import type { Session } from "@/bot/src/quests/api";
 import type { CanvasLinkState } from "@/lib/shift-island/quest-canvas";
+import type { TreeStyle } from "@/lib/shift-island/tree-style";
 
 import type { CharacterStats, IslandConsent, IslandNews } from "./playerTypes";
 
@@ -127,6 +128,20 @@ export interface IslandMapPlot {
   plain: boolean;
   /** Roots level 1..3 (shift_quest_island_roots, schema 10, merged by slot); absent is 0. Schema 11 overrides the member plot with its own roots. Never on a plain plot. */
   roots?: number;
+  /** The team's tree colours (shift_quest_island_styles, schema 13, merged by slot; the caller's own plot uses their live tree). Only on a plot whose name is visible; absent draws the default tree. */
+  style?: TreeStyle;
+  /** A seed is planted (stage 0 draws a planted seed instead of bare soil). */
+  seeded?: boolean;
+}
+
+/** shift_quest_tree_get(actor): the caller's team tree (schema 13). */
+export interface MyTree {
+  seed: string | null;
+  equipped: TreeStyle;
+  owned: string[];
+  gifts: { id: string; options: string[] }[];
+  roots: { count: number; recent: number };
+  stage: number;
 }
 /** shift_quest_island_map(actor) */
 export interface IslandMapData {
@@ -245,6 +260,8 @@ export interface IslandPageData {
   unread: number;
   island: IslandView;
   map: IslandMapData;
+  /** The caller's own tree (schema 13); null below it, without a project, or when the read fails. */
+  tree?: MyTree | null;
   /** null when island.project is null */
   board: QuestBoard | null;
   /** only loaded when island.project is null, else [] */

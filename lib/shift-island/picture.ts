@@ -12,6 +12,8 @@ import {
   type IslandScene,
   type PlotBox,
 } from "@/bot/src/quests/island/render";
+import { styleKey } from "@/bot/src/quests/island/tree";
+import { resolveStyle, type TreeStyle } from "@/lib/shift-island/tree-style";
 import type { IslandMapData, IslandMapPlot } from "@/lib/supabase/shift-quests/types";
 
 /**
@@ -35,6 +37,10 @@ export interface IslandHotspot {
   mine: boolean;
   plain: boolean;
   stage: number;
+  /** The tree's colours, as drawn (absent: the default tree). */
+  style?: TreeStyle;
+  /** A seed is planted. */
+  seeded?: boolean;
   name: string | null;
   /** Percent (0..100) of the picture box. */
   x: number;
@@ -78,6 +84,8 @@ function toPlot(p: IslandMapPlot): IslandPlot {
     mine: p.mine,
     plain: p.plain ?? false,
     roots: p.roots ?? 0,
+    ...(p.style ? { style: p.style } : {}),
+    ...(p.seeded ? { seeded: true } : {}),
   };
 }
 
@@ -93,7 +101,10 @@ export function pictureVersion(map: IslandMapData): string {
     .map((p) => {
       const fields = [p.slot, p.stage, p.visitor, p.key, p.helper, p.lantern, p.mine, p.plain ?? false];
       const roots = p.plain ? 0 : rootsLevel(p.roots);
-      return (roots > 0 ? [...fields, roots] : fields).map((v) => (typeof v === "boolean" ? Number(v) : v));
+      const drawn: unknown[] = roots > 0 ? [...fields, roots] : fields;
+      // Styles join a plot's fields only when it has one, so an island without styles keeps its version.
+      if (!p.plain && (p.style || p.seeded)) drawn.push(p.style ? styleKey(resolveStyle(p.style)) : "", p.seeded ? 1 : 0);
+      return drawn.map((v) => (typeof v === "boolean" ? Number(v) : v));
     });
   const input = JSON.stringify({ r: RENDER_REVISION, festival: festivalFor(map), plots });
   return createHash("sha256").update(input).digest("hex").slice(0, 12);
@@ -134,6 +145,8 @@ function hotspot(box: PlotBox, plot: IslandMapPlot, width: number, height: numbe
     plain,
     // What the picture shows: a plain plot is an empty slot with no name.
     stage: plain ? 0 : plot.stage,
+    ...(!plain && plot.style ? { style: resolveStyle(plot.style) } : {}),
+    ...(!plain && plot.seeded ? { seeded: true } : {}),
     name: plain ? null : plot.name,
     x: left,
     y: top,

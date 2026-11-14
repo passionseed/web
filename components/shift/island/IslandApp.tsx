@@ -477,6 +477,7 @@ function IslandHome({
         me={page.me}
         stats={page.character ?? null}
         project={project}
+        tree={page.tree ?? null}
         season={season}
         consent={page.consent}
         onOpenWallet={() => setPanel("wallet")}
