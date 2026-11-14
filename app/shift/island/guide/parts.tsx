@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { PixelIcon } from "@/components/shift/poster/pixel/PixelRects";
 import { StageSprite } from "@/components/shift/island/StageSprite";
 import { MOTION_SPRITES } from "@/bot/assets/island/motion-sprites";
-import { PALETTE, WEB_SPRITES } from "@/components/shift/island/sprites";
+import { PALETTE, WEB_SPRITES, styledTree } from "@/components/shift/island/sprites";
 import { ISLAND_STAGES, SHIFT_ISLAND } from "@/lib/content/shift-island";
 import {
   CAMPFIRE_ROUND,
@@ -27,6 +27,10 @@ import {
 
 import styles from "./guide.module.css";
 import { Campfire, TreeWithRoots } from "./pictures";
+
+/** The planted seed (stage_seed), before stage 1, and stage 1 with its green pixel (stage_1), drawn from the bot's sprites so the two tiles differ. */
+export const SEED_TILE = styledTree(0, null, true);
+export const STAGE_1_TILE = styledTree(1);
 
 /** Two-digit section number in the pixel font, as the island labels its plots. */
 const num = (n: number) => String(n).padStart(2, "0");
@@ -152,13 +156,17 @@ export function GrowthSection() {
       <Lines lines={GUIDE_GROWTH.lines} />
       <ol className={styles.stages} aria-label={GUIDE_GROWTH.stagesLabel}>
         <li className={styles.stage}>
-          <PixelIcon grid={[...WEB_SPRITES.seed]} palette={PALETTE} scale={3} className={styles.stageSeed} />
+          <PixelIcon grid={SEED_TILE.grid} palette={SEED_TILE.palette} scale={1.5} className={styles.stageSprite} />
           <span className={styles.stageNum}>{GUIDE_GROWTH.preStageLabel}</span>
           <span className={styles.stageName}>{GUIDE_STAGE_NAMES[0]}</span>
         </li>
         {ISLAND_STAGES.slice(1).map((name, i) => (
           <li key={name} className={styles.stage}>
-            <StageSprite stage={i + 1} className={styles.stageSprite} />
+            {i === 0 ? (
+              <PixelIcon grid={STAGE_1_TILE.grid} palette={STAGE_1_TILE.palette} scale={1.5} className={styles.stageSprite} />
+            ) : (
+              <StageSprite stage={i + 1} className={styles.stageSprite} />
+            )}
             <span className={styles.stageNum}>{GUIDE_GROWTH.stageLabel(i + 1)}</span>
             <span className={styles.stageName}>{name}</span>
           </li>
