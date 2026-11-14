@@ -18,11 +18,11 @@ import { REQUIRED_SCHEMA, checkQuestSchema, handleInteraction } from "../../../b
 import { QuestError, createQuestApi } from "../../../bot/src/quests/api";
 import { questCommands } from "../../../bot/src/quests/commands";
 import { STATE, T, errorText } from "../../../bot/src/quests/copy";
-import { I, PENDING_SLOT, SQ } from "../../../bot/src/quests/island/copy";
+import { I, PENDING_SLOT, SQ, TREE } from "../../../bot/src/quests/island/copy";
 import { startOutbox } from "../../../bot/src/quests/outbox";
 import { createRolePool } from "../../../bot/src/pg";
 
-import { readCard, type CardComponent } from "./cards";
+import { giftPicks, isGiftCard, readCard, type CardComponent } from "./cards";
 
 const adminUrl = process.env.SHIFT_QUESTS_TEST_DATABASE_URL!;
 const botUrl = process.env.SHIFT_QUESTS_BOT_DATABASE_URL!;
@@ -180,15 +180,22 @@ function fake(kind: Kind, o: FakeOptions) {
   return i;
 }
 
-async function run(kind: Kind, o: FakeOptions): Promise<Response> {
+/** Every reply to one interaction, in order (a saved quest submit can add a gift follow-up). */
+async function runAll(kind: Kind, o: FakeOptions): Promise<Response[]> {
   const before = responses.length;
   await handleInteraction(api, GUILD, fake(kind, o));
-  const r = responses[responses.length - 1];
   if (responses.length === before) throw new Error(`no response to ${o.command ?? ""} ${o.sub ?? ""} ${o.customId ?? ""}`);
-  const generic = responses.slice(before).find((x) => x.content.includes(T.generic.slice(0, 20)));
+  const batch = responses.slice(before);
+  const generic = batch.find((x) => x.content.includes(T.generic.slice(0, 20)));
   if (generic) throw new Error(`generic error from ${o.command ?? ""} ${o.sub ?? ""} ${o.customId ?? ""}`);
-  lastContent = r.content;
-  return r;
+  lastContent = batch[batch.length - 1].content;
+  return batch;
+}
+
+/** The last reply to one interaction. */
+async function run(kind: Kind, o: FakeOptions): Promise<Response> {
+  const batch = await runAll(kind, o);
+  return batch[batch.length - 1];
 }
 
 function find(r: Response, pred: (c: Component) => boolean): Component {
@@ -212,6 +219,14 @@ const ids = (r: Response) => r.components.map((c) => c.custom_id);
 const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 const isPng = (f: File | undefined) => Boolean(f && Buffer.isBuffer(f.data) && f.data.subarray(0, 8).equals(PNG_MAGIC));
 const hash = (f: File | undefined) => (f ? createHash("sha256").update(f.data).digest("hex") : "");
+/**
+ * Schema 13: the replies to a quest submit are the sent card, then (first
+ * submit of the quest only) the team's gift as its own private follow-up:
+ * the quest heading, a picture of the options, three picks and keep.
+ */
+const questGiftCard = (gift: Response | undefined) =>
+  gift?.type === "followUp" && isGiftCard(gift, TREE.gift.questHeading) && gift.files.length === 1 && isPng(gift.files[0]);
+const replies = (batch: Response[]) => batch.map((x) => ({ type: x.type, content: x.content.slice(0, 80), ids: ids(x), files: x.files.length }));
 
 const pool = createRolePool(botUrl, "test");
 const api = createQuestApi(pool);
@@ -422,12 +437,14 @@ async function main(): Promise<void> {
     "picking a milestone opens the proof modal",
     r.modal
   );
-  r = await run("modal", {
+  let submit = await runAll("modal", {
     ...S,
     customId: "sq|is_msgo|1",
     fields: { proof: "Asked 5 classmates how they split trip costs", note: "Nobody likes chasing friends for money" },
   });
-  check(r.content.startsWith(`### ${I.sentTitle}\n${I.sent}`) && has(r, "sq|is_view"), "milestone sent for a visit", r);
+  r = submit[0];
+  check(r.content.startsWith(`### ${I.sentTitle}\n${I.sent}`) && has(r, "sq|is_view") && giftPicks(r).length === 0, "milestone sent for a visit", r);
+  check(submit.length === 2 && questGiftCard(submit[1]), "a first milestone submit at schema 13 also offers the team a gift", replies(submit));
 
   r = await island(S);
   check(r.content.includes(I.inFlight(title(1), STATE.submitted)), "/island shows the milestone waiting", r.content);
@@ -483,12 +500,14 @@ async function main(): Promise<void> {
 
   // --- Milestone 2 asks for more; 🌙 rest pauses it, ☀️ wakes it -------------
   r = await run("select", { ...S, customId: "sq|is_mspick", values: ["2"] });
-  r = await run("modal", {
+  submit = await runAll("modal", {
     ...S,
     customId: r.modal!.custom_id,
     fields: { proof: "A paper prototype of the totals page", note: "I can now sketch a flow before coding", link: "https://example.org/proto" },
   });
+  r = submit[0];
   check(r.content.startsWith(`### ${I.sentTitle}\n${I.sent}`), "milestone 2 sent");
+  check(submit.length === 2 && questGiftCard(submit[1]), "milestone 2's first submit gives the team its own gift", replies(submit));
   // Sent, not seen by a mentor yet: the table rests on it, and /island says it waits for the mentor.
   r = await island(S);
   check(r.content.includes(PENDING_SLOT.table) && !r.content.includes("✅ ได้โต๊ะ"), "a slot that needs pending work says it waits for the mentor", r.content);
@@ -538,12 +557,15 @@ async function main(): Promise<void> {
 
   // Milestone 2 answered and approved: a table now, and the stage needs milestone 3.
   r = await run("select", { ...S, customId: "sq|is_mspick", values: ["2"] });
-  r = await run("modal", {
+  submit = await runAll("modal", {
     ...S,
     customId: r.modal!.custom_id,
     fields: { proof: "Two classmates tried the paper prototype", note: "Watching someone use it beats guessing" },
   });
+  r = submit[0];
   check(r.content.startsWith(`### ${I.sentTitle}\n${I.sent}`), "the answer to the question is sent", r.content);
+  // The same quest sent again: its gift was given on the first submit, so no second one.
+  check(submit.length === 1 && giftPicks(r).length === 0, "a resubmit of the same quest gives no second gift", replies(submit));
   r = await run("command", { ...M, command: "review", sub: "queue" });
   r = await run("select", { ...M, customId: "sq|rv_sub", values: [find(r, (c) => c.custom_id === "sq|rv_sub").options![0].value] });
   r = await run("button", { ...M, customId: find(r, (c) => c.label === "อนุมัติ").custom_id });
