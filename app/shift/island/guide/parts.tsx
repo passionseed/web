@@ -10,6 +10,7 @@ import { ISLAND_STAGES, SHIFT_ISLAND } from "@/lib/content/shift-island";
 import {
   CAMPFIRE_ROUND,
   GUIDE_CAMPFIRE,
+  GUIDE_CLOSEUP,
   GUIDE_COINS,
   GUIDE_GROWTH,
   GUIDE_HERO,
@@ -17,6 +18,8 @@ import {
   GUIDE_PRIVACY,
   GUIDE_ROOTS,
   GUIDE_SECTIONS,
+  GUIDE_SEED,
+  GUIDE_STAGE_NAMES,
   GUIDE_START,
   ROOTS_RULE,
   type GuideSectionHead,
@@ -118,11 +121,41 @@ export function IslandSection() {
   );
 }
 
+export function SeedSection() {
+  return (
+    <Section head={GUIDE_SEED} icon={WEB_SPRITES.seed}>
+      <Lines lines={GUIDE_SEED.lines} />
+      <h3 className={styles.subTitle}>{GUIDE_SEED.seedsLabel}</h3>
+      <ul className={styles.seeds}>
+        {GUIDE_SEED.seeds.map((seed) => (
+          <li key={seed.name} className={styles.seed}>
+            <span className={styles.seedName}>{seed.name}</span>
+            <span>{seed.blurb}</span>
+          </li>
+        ))}
+      </ul>
+      <ol className={styles.steps}>
+        {GUIDE_SEED.steps.map((step) => (
+          <li key={step.label} className={styles.step}>
+            <span className={styles.chip}>{step.label}</span>
+            <span>{step.body}</span>
+          </li>
+        ))}
+      </ol>
+    </Section>
+  );
+}
+
 export function GrowthSection() {
   return (
     <Section head={GUIDE_GROWTH} icon={WEB_SPRITES.star}>
       <Lines lines={GUIDE_GROWTH.lines} />
       <ol className={styles.stages} aria-label={GUIDE_GROWTH.stagesLabel}>
+        <li className={styles.stage}>
+          <PixelIcon grid={[...WEB_SPRITES.seed]} palette={PALETTE} scale={3} className={styles.stageSeed} />
+          <span className={styles.stageNum}>{GUIDE_GROWTH.preStageLabel}</span>
+          <span className={styles.stageName}>{GUIDE_STAGE_NAMES[0]}</span>
+        </li>
         {ISLAND_STAGES.slice(1).map((name, i) => (
           <li key={name} className={styles.stage}>
             <StageSprite stage={i + 1} className={styles.stageSprite} />
@@ -156,6 +189,23 @@ export function RootsSection() {
         ))}
       </ol>
       <p className={styles.rule}>{GUIDE_ROOTS.rule}</p>
+    </Section>
+  );
+}
+
+export function CloseupSection() {
+  return (
+    <Section head={GUIDE_CLOSEUP} icon={WEB_SPRITES.star}>
+      <Lines lines={GUIDE_CLOSEUP.lines} />
+      <ol className={styles.steps}>
+        {GUIDE_CLOSEUP.steps.map((step) => (
+          <li key={step.label} className={styles.step}>
+            <span className={styles.chip}>{step.label}</span>
+            <span>{step.body}</span>
+          </li>
+        ))}
+      </ol>
+      <p className={styles.rule}>{GUIDE_CLOSEUP.rule}</p>
     </Section>
   );
 }

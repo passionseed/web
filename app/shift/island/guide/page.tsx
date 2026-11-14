@@ -9,6 +9,7 @@ import { GUIDE_FOOTER, GUIDE_META } from "@/lib/content/shift-island-guide";
 import styles from "./guide.module.css";
 import {
   CampfireSection,
+  CloseupSection,
   CoinsSection,
   Contents,
   GrowthSection,
@@ -16,6 +17,7 @@ import {
   IslandSection,
   PrivacySection,
   RootsSection,
+  SeedSection,
   StartSection,
 } from "./parts";
 
@@ -63,8 +65,10 @@ export default function IslandGuidePage() {
         <Hero />
         <Contents />
         <IslandSection />
+        <SeedSection />
         <GrowthSection />
         <RootsSection />
+        <CloseupSection />
         <CampfireSection />
         <CoinsSection />
         <StartSection discordUrl={discordUrl()} />
