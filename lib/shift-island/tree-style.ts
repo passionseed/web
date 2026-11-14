@@ -18,7 +18,7 @@ export interface TreeItem {
   name: string;
   /** Leaf and bark: dark to light. Bloom: [highlight, centre, petal]. */
   colors?: [string, string, string];
-  /** Shape only: canopy stamp rows, "#" is canopy. */
+  /** Shape only: the leaf stamp rows, "#" is leaf. The canopy's outline per shape lives in tree-closeup.ts (inCanopy). */
   stamp?: string[];
 }
 

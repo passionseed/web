@@ -9,7 +9,7 @@ import {
   type CloseupInput,
   type PixelGrid,
 } from "@/lib/shift-island/tree-closeup";
-import { DEFAULT_STYLE, resolveStyle } from "@/lib/shift-island/tree-style";
+import { DEFAULT_STYLE, SEEDS, TREE_ITEMS, resolveStyle } from "@/lib/shift-island/tree-style";
 
 const { ground } = CLOSEUP_SIZE;
 
@@ -89,6 +89,34 @@ describe("closeupGrid", () => {
     expect(JSON.stringify(closeupGrid(input({ style: resolved })))).toBe(round);
     const raw = { ...DEFAULT_STYLE, shape: "shape:nope" };
     expect(JSON.stringify(closeupGrid(input({ style: raw })))).toBe(round);
+  });
+
+  /** The plant's silhouette above the ground: every pixel that is not sky or sun. */
+  const silhouette = (shape: string, stage: number) =>
+    closeupGrid(input({ style: { ...DEFAULT_STYLE, shape }, stage, roots: { count: 0, recent: 0 } }))
+      .slice(0, ground)
+      .map((row) => row.map((c) => !["#BFE3E6", "#D6EEE6", "#FFE9A8"].includes(c ?? "")));
+  const SHAPES = TREE_ITEMS.filter((i) => i.slot === "shape").map((i) => i.id);
+
+  it.each([5, 7])("gives each of the six shapes its own canopy outline at stage %s", (stage) => {
+    expect(SHAPES).toHaveLength(6);
+    const masks = SHAPES.map((shape) => silhouette(shape, stage));
+    for (let a = 0; a < SHAPES.length; a++) {
+      for (let b = a + 1; b < SHAPES.length; b++) {
+        let differ = 0;
+        masks[a].forEach((row, y) => row.forEach((on, x) => (differ += on === masks[b][y][x] ? 0 : 1)));
+        // A clear margin, not a few stray leaves: whole lobes, points or strands apart.
+        expect([SHAPES[a], SHAPES[b], differ > 150]).toEqual([SHAPES[a], SHAPES[b], true]);
+      }
+    }
+  });
+
+  it("draws the sakura seed's heart well apart from the oak seed's round canopy", () => {
+    const heart = silhouette(SEEDS.sakura.style.shape, 7);
+    const oak = silhouette(SEEDS.oak.style.shape, 7);
+    let differ = 0;
+    heart.forEach((row, y) => row.forEach((on, x) => (differ += on === oak[y][x] ? 0 : 1)));
+    expect(differ).toBeGreaterThan(600);
   });
 });
 

@@ -326,16 +326,90 @@ function drawTree(layer: Layer, look: Look, stage: number): void {
   if (stage >= 6) drawBlossoms(layer, look.bloom, stage === 7, T, inside, R);
 }
 
-/** Canopy membership in full-size tree coordinates: tiers for the pine, blobs for every other shape. */
+/**
+ * Canopy membership in full-size tree coordinates (stage 6 and 7 size; the
+ * sky is rows 0 to 95): each shape's own outline. Round and willow are the
+ * blobs (the willow adds its strands), pine is stacked tiers, heart two lobes
+ * over a point, star five points, maple five pointed lobes with notches
+ * between them. Every outline covers the branch tips (drawTree) and leaves
+ * the trunk showing below it.
+ */
 function inCanopy(shape: string, x: number, y: number): boolean {
-  if (shape === "shape:pine") {
-    return [0, 1, 2, 3].some((q) => {
-      const y0 = 6 + q * 13;
-      const y1 = y0 + 22;
-      return y >= y0 && y <= y1 && Math.abs(x - CX) <= ((y - y0) / (y1 - y0)) * (13 + q * 6);
-    });
+  switch (shape) {
+    case "shape:pine":
+      return inPine(x, y);
+    case "shape:heart":
+      return inHeart(x, y);
+    case "shape:star":
+      return inStar(x, y);
+    case "shape:maple":
+      return inMaple(x, y);
+    default:
+      return BLOBS.some(([bx, by, br]) => (x - bx) ** 2 + (y - by) ** 2 <= br * br);
   }
-  return BLOBS.some(([bx, by, br]) => (x - bx) ** 2 + (y - by) ** 2 <= br * br);
+}
+
+function inPine(x: number, y: number): boolean {
+  return [0, 1, 2, 3].some((q) => {
+    const y0 = 6 + q * 13;
+    const y1 = y0 + 22;
+    return y >= y0 && y <= y1 && Math.abs(x - CX) <= ((y - y0) / (y1 - y0)) * (13 + q * 6);
+  });
+}
+
+/** The heart curve (u² + v² - 1)³ ≤ u²v³: two lobes with a notch between them, over a point. */
+const HEART = { cy: 39, sx: 31, sy: 23 };
+function inHeart(x: number, y: number): boolean {
+  const u = (x - CX) / HEART.sx;
+  const v = (HEART.cy - y) / HEART.sy;
+  // Pulling the middle down a little deepens the notch so it still reads on a small tree.
+  const w = v + 0.28 * Math.exp(-((u / 0.32) ** 2));
+  return (u * u + w * w - 1) ** 3 - u * u * w ** 3 <= 0;
+}
+
+/** A five-pointed star, one point up: 10 corners between an outer and an inner radius. */
+const STAR = { cx: CX, cy: 40, outer: 34, inner: 19 };
+const STAR_CORNERS: Pt[] = Array.from({ length: 10 }, (_, i) => {
+  const r = i % 2 === 0 ? STAR.outer : STAR.inner;
+  const a = -Math.PI / 2 + (i * Math.PI) / 5;
+  return [STAR.cx + r * Math.cos(a), STAR.cy + r * Math.sin(a)];
+});
+function inStar(x: number, y: number): boolean {
+  let inside = false;
+  for (let i = 0, j = STAR_CORNERS.length - 1; i < STAR_CORNERS.length; j = i++) {
+    const [xi, yi] = STAR_CORNERS[i];
+    const [xj, yj] = STAR_CORNERS[j];
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+/**
+ * A maple leaf: around a centre, the outline reaches out to five lobes (one
+ * up, two to the sides, two smaller ones low) with deep notches between them,
+ * a gap at the bottom where the trunk comes out, and small teeth along each
+ * lobe. [angle in degrees, up is 90, how far the lobe reaches].
+ */
+const MAPLE = { cy: 46, core: 20, reach: 38, width: 32, teeth: 2.5, toothEvery: 12 };
+const MAPLE_LOBES: [number, number][] = [
+  [90, 1],
+  [30, 0.9],
+  [150, 0.9],
+  [-25, 0.62],
+  [205, 0.62],
+];
+function inMaple(x: number, y: number): boolean {
+  const dx = x - CX;
+  const dy = MAPLE.cy - y;
+  const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+  let lobe = 0;
+  for (const [at, reach] of MAPLE_LOBES) {
+    const off = Math.abs((((angle - at) % 360) + 540) % 360 - 180);
+    lobe = Math.max(lobe, reach * Math.max(0, 1 - off / MAPLE.width));
+  }
+  const phase = (((angle % MAPLE.toothEvery) + MAPLE.toothEvery) % MAPLE.toothEvery) / MAPLE.toothEvery;
+  const tooth = lobe > 0.2 ? MAPLE.teeth * (1 - Math.abs(phase * 2 - 1)) : 0;
+  return Math.hypot(dx, dy) <= MAPLE.core + (MAPLE.reach - MAPLE.core) * lobe + tooth;
 }
 
 function drawBranch(layer: Layer, [x0, y0]: Pt, [x1, y1]: Pt, thick: number, bark: Trio): void {
