@@ -96,7 +96,6 @@ const WEB_ALLOWLIST = [
   // 20261114120000_shift_quest_tree_style.
   "shift_quest_tree_get(text)",
   "shift_quest_seed_plant(text,text,text)",
-  "shift_quest_round_close_gift(text,uuid,text,text)",
   "shift_quest_quest_gift(text,uuid)",
   "shift_quest_tree_pick(text,uuid,text)",
   "shift_quest_tree_equip(text,text)",
@@ -255,10 +254,9 @@ async function main(): Promise<void> {
     ["island_roots", "select public.shift_quest_island_roots()", [], "ok"],
     ["island_my_roots", "select public.shift_quest_island_my_roots($1::text)", [NOBODY], "not_started"],
     // 20261114120000_shift_quest_tree_style: an unknown caller is refused; the styles read has no caller.
+    // The round close with a gift is the bot's only, like the round close (denied below).
     ["tree_get", "select public.shift_quest_tree_get($1::text)", [NOBODY], "not_started"],
     ["seed_plant", "select public.shift_quest_seed_plant($1::text, $2::text, $3::text)", [NOBODY, "oak", "idea"], "not_started"],
-    ["round_close_gift", "select public.shift_quest_round_close_gift($1::text, $2::uuid, $3::text, $4::text)",
-      [NOBODY, randomUUID(), "learned something", null], "not_started"],
     ["quest_gift", "select public.shift_quest_quest_gift($1::text, $2::uuid)", [NOBODY, randomUUID()], "not_started"],
     ["tree_pick", "select public.shift_quest_tree_pick($1::text, $2::uuid, $3::text)", [NOBODY, randomUUID(), "leaf:mint"],
       "not_started"],
@@ -322,6 +320,9 @@ async function main(): Promise<void> {
     ["the island admin switches", "select public.shift_quest_admin_island_set($1, 'digest_enabled', 'on')", [ADMIN]],
     ["shop gates", "select public.shift_quest_admin_catalog_gate($1, $2, 1::smallint, true)", [ADMIN, randomUUID()]],
     ["coin history", "select public.shift_quest_coins($1)", [A]],
+    ["the campfire round close", "select public.shift_quest_round_close($1, $2, 'learned something', null)", [A, randomUUID()]],
+    ["the round close with a gift (bot-only, 20261114120000)",
+      "select public.shift_quest_round_close_gift($1, $2, 'learned something', null)", [A, randomUUID()]],
     ["reading shift_quest_consents", "select * from public.shift_quest_consents", []],
     ["reading shift_quest_digests", "select * from public.shift_quest_digests", []],
     ["helper shift_quest__consent_ok", "select public.shift_quest__consent_ok($1)", [randomUUID()]],

@@ -84,7 +84,6 @@ const WEB_ALLOWLIST = [
   // 20261114120000_shift_quest_tree_style.
   "shift_quest_tree_get(text)",
   "shift_quest_seed_plant(text,text,text)",
-  "shift_quest_round_close_gift(text,uuid,text,text)",
   "shift_quest_quest_gift(text,uuid)",
   "shift_quest_tree_pick(text,uuid,text)",
   "shift_quest_tree_equip(text,text)",

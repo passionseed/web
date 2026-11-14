@@ -26,7 +26,9 @@
 --   * shift_quest_seed_plant(actor, seed, idea): once per project.
 --   * shift_quest_round_close_gift(actor, session, learned, stuck): calls
 --     shift_quest_round_close (unchanged, so a schema-12 bot behaves exactly
---     as before) and adds at most one gift, {id, gift}.
+--     as before) and adds at most one gift, {id, gift}. Bot-only, like
+--     shift_quest_round_close (20261114090000): never granted to the website.
+--     A failure while making the gift never rolls the round back.
 --   * shift_quest_quest_gift(actor, instance): after a submit, {gift}.
 --   * shift_quest_tree_pick(actor, gift, item), shift_quest_tree_equip(actor, item).
 --   * shift_quest_island_styles(): [{slot, seed, equipped}] for shown plots
@@ -36,7 +38,9 @@
 --   * shift_quest_schema_version() = 13.
 --
 -- Grants are per function: every entry point is the bot's, service_role's
--- and (where the role exists) shift_quest_web's; the helpers are nobody's.
+-- and (where the role exists) shift_quest_web's, except
+-- shift_quest_round_close_gift, which is the bot's and service_role's only;
+-- the helpers are nobody's.
 -- Mirrored in supabase/tests/shift_quests/run-local.sh (check_privileges),
 -- web_board.ts, web_canvas.ts and tree.ts.
 --
@@ -429,6 +433,9 @@ $$;
  * the round already gave one (a retry), the caller already earned 2 round
  * gifts this Bangkok day (quest gifts never count), or the team owns
  * everything. Returns {id: <journal note id>, gift: null | {id, options}}.
+ * The gift never fails the save it follows: any error while making it is
+ * caught (its subtransaction rolls back) and gift is null, while the round's
+ * close and journal note stay saved.
  */
 CREATE OR REPLACE FUNCTION public.shift_quest_round_close_gift(
   p_actor text, p_session uuid, p_learned text, p_stuck text
@@ -445,21 +452,27 @@ DECLARE
   v_gift jsonb;
 BEGIN
   v_note := public.shift_quest_round_close(p_actor, p_session, p_learned, p_stuck);
-  v_project := public.shift_quest__current_project(v_member);
 
-  IF v_project IS NOT NULL AND EXISTS (
-    SELECT 1 FROM public.shift_quest_work_sessions
-    WHERE id = p_session AND member_id = v_member.id AND ended_at IS NOT NULL
-  ) THEN
-    -- One round gift decision per member at a time, so two closes at once
-    -- cannot both pass the daily count. Nothing else takes this lock.
-    PERFORM pg_advisory_xact_lock(hashtext('shift_quest_tree_gift:' || v_member.id));
-    IF (SELECT count(*) FROM public.shift_quest_tree_gifts
-        WHERE member_id = v_member.id AND source LIKE 'round:%'
-          AND (created_at AT TIME ZONE 'Asia/Bangkok')::date = (now() AT TIME ZONE 'Asia/Bangkok')::date) < 2 THEN
-      v_gift := public.shift_quest__gift_create(v_project, v_member.id, 'round:' || p_session);
+  -- The gift is extra: its own subtransaction, so an error here leaves the
+  -- round closed and its note saved, with no gift.
+  BEGIN
+    v_project := public.shift_quest__current_project(v_member);
+    IF v_project IS NOT NULL AND EXISTS (
+      SELECT 1 FROM public.shift_quest_work_sessions
+      WHERE id = p_session AND member_id = v_member.id AND ended_at IS NOT NULL
+    ) THEN
+      -- One round gift decision per member at a time, so two closes at once
+      -- cannot both pass the daily count. Nothing else takes this lock.
+      PERFORM pg_advisory_xact_lock(hashtext('shift_quest_tree_gift:' || v_member.id));
+      IF (SELECT count(*) FROM public.shift_quest_tree_gifts
+          WHERE member_id = v_member.id AND source LIKE 'round:%'
+            AND (created_at AT TIME ZONE 'Asia/Bangkok')::date = (now() AT TIME ZONE 'Asia/Bangkok')::date) < 2 THEN
+        v_gift := public.shift_quest__gift_create(v_project, v_member.id, 'round:' || p_session);
+      END IF;
     END IF;
-  END IF;
+  EXCEPTION WHEN OTHERS THEN
+    v_gift := NULL;
+  END;
 
   RETURN jsonb_build_object('id', v_note, 'gift', v_gift);
 END;
@@ -647,7 +660,8 @@ REVOKE ALL ON FUNCTION public.shift_quest__gift_create(uuid, uuid, text)
   FROM PUBLIC, anon, authenticated, service_role, shift_quest_bot;
 -- shift_quest__project_roots keeps its grants (none): CREATE OR REPLACE leaves them.
 
--- Entry points: the bot's and service_role's.
+-- Entry points: the bot's and service_role's. shift_quest_round_close_gift
+-- stays bot-only (no website grant below), as shift_quest_round_close is.
 REVOKE ALL ON FUNCTION public.shift_quest_tree_get(text) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.shift_quest_seed_plant(text, text, text) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.shift_quest_round_close_gift(text, uuid, text, text) FROM PUBLIC, anon, authenticated;
@@ -676,7 +690,6 @@ BEGIN
     REVOKE ALL ON FUNCTION public.shift_quest__gift_create(uuid, uuid, text) FROM shift_quest_web;
     GRANT EXECUTE ON FUNCTION public.shift_quest_tree_get(text) TO shift_quest_web;
     GRANT EXECUTE ON FUNCTION public.shift_quest_seed_plant(text, text, text) TO shift_quest_web;
-    GRANT EXECUTE ON FUNCTION public.shift_quest_round_close_gift(text, uuid, text, text) TO shift_quest_web;
     GRANT EXECUTE ON FUNCTION public.shift_quest_quest_gift(text, uuid) TO shift_quest_web;
     GRANT EXECUTE ON FUNCTION public.shift_quest_tree_pick(text, uuid, text) TO shift_quest_web;
     GRANT EXECUTE ON FUNCTION public.shift_quest_tree_equip(text, text) TO shift_quest_web;

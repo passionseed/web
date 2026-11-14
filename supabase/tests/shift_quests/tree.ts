@@ -52,7 +52,7 @@ const AIM = "Already has an aim";
 /** A reflection that counts toward roots (10 characters or more). */
 const LEARNED = "learned how to split the work";
 
-/** The new entry points of schema 13: the bot's and the website's. */
+/** The new entry points of schema 13: the bot's and the website's, but the round close with a gift (bot-only). */
 const PUBLIC_FNS = [
   "shift_quest_tree_get(text)",
   "shift_quest_seed_plant(text,text,text)",
@@ -63,6 +63,8 @@ const PUBLIC_FNS = [
   "shift_quest_island_styles()",
 ];
 /** Internal helpers: nobody but the definer functions calls them. */
+/** Bot-only, like shift_quest_round_close (20261114090000): the website never closes a round. */
+const BOT_ONLY = new Set(["shift_quest_round_close_gift(text,uuid,text,text)"]);
 const HELPERS = [
   "shift_quest__project_root_notes(uuid,timestamp with time zone)",
   "shift_quest__gift_create(uuid,uuid,text)",
@@ -185,9 +187,10 @@ async function main(): Promise<void> {
        from pg_proc p where p.oid = $1::regprocedure`,
       [`public.${fn}`],
     )).rows[0];
-    check(g?.bot === true && g.web === true && g.service_role === true && g.anon === false && g.authenticated === false &&
+    const web = !BOT_ONLY.has(fn);
+    check(g?.bot === true && g.web === web && g.service_role === true && g.anon === false && g.authenticated === false &&
         g.public === false && g.definer === true && g.pinned === true,
-      `${fn}: a security definer with a pinned search_path, the bot's and the website's only`, g);
+      `${fn}: a security definer with a pinned search_path, the bot's${web ? " and the website's" : " (not the website's)"} only`, g);
   }
   for (const fn of HELPERS) {
     const g: Json = (await db.query(
@@ -211,6 +214,8 @@ async function main(): Promise<void> {
   }
   check((await sqlstate(web.query("select * from public.shift_quest_tree_gifts"))) === "42501",
     "the website cannot read the gifts directly (42501)");
+  check((await sqlstate(call(web, "shift_quest_round_close_gift", A, randomUUID(), LEARNED, null))) === "42501",
+    "the website cannot close a round, with or without a gift (42501)");
   for (const r of ["anon", "authenticated"]) {
     await db.query(`set role ${r}`);
     check((await sqlstate(call(db, "shift_quest_island_styles"))) === "42501", `${r} cannot read the island styles`);
@@ -288,7 +293,7 @@ async function main(): Promise<void> {
   // --- Gifts after a campfire round --------------------------------------------------------------
   const owned1 = new Set<string>(t1.owned);
   const roundA1: string = await call(bot, "shift_quest_work_start", A, "Round one");
-  const r1 = await call<Json>(web, "shift_quest_round_close_gift", A, roundA1, LEARNED, null);
+  const r1 = await call<Json>(bot, "shift_quest_round_close_gift", A, roundA1, LEARNED, null);
   check(keys(r1) === "gift,id" && typeof r1.id === "string", "round_close_gift returns {id, gift}", r1);
   check(await count("select count(*) from public.shift_quest_progress where id = $1 and kind = 'note' and learned = $2",
     [r1.id, LEARNED]) === 1, "id is the journal note the round close wrote");
@@ -303,12 +308,12 @@ async function main(): Promise<void> {
     "the options come from the slot with the most unowned items, in catalog order", g1.options);
   check(await scalar(db, "select source from public.shift_quest_tree_gifts where id = $1", [g1.id]) === `round:${roundA1}`,
     "its source is the round");
-  check((await call<Json>(web, "shift_quest_round_close_gift", A, roundA1, LEARNED, null)).gift === null,
+  check((await call<Json>(bot, "shift_quest_round_close_gift", A, roundA1, LEARNED, null)).gift === null,
     "closing the same round again (a retry) gives no second gift");
-  check((await call<Json>(web, "shift_quest_round_close_gift", A, null, LEARNED, null)).gift === null,
+  check((await call<Json>(bot, "shift_quest_round_close_gift", A, null, LEARNED, null)).gift === null,
     "a round close with no captured session gives no gift");
   const roundB0: string = await call(bot, "shift_quest_work_start", B, "B's round");
-  check((await call<Json>(web, "shift_quest_round_close_gift", A, roundB0, LEARNED, null)).gift === null,
+  check((await call<Json>(bot, "shift_quest_round_close_gift", A, roundB0, LEARNED, null)).gift === null,
     "another member's session gives no gift");
   check(await scalar(db, "select ended_at is null from public.shift_quest_work_sessions where id = $1", [roundB0]) === true,
     "and stays open");
@@ -319,7 +324,7 @@ async function main(): Promise<void> {
   const g2 = (await call<Json>(bot, "shift_quest_round_close_gift", A, roundA2, LEARNED, "a blocker")).gift;
   check(g2 !== null && g2.options.length === 3, "a second round the same day gives a second gift (Discord)", g2);
   const roundA3: string = await call(bot, "shift_quest_work_start", A, "Round three");
-  const r3 = await call<Json>(web, "shift_quest_round_close_gift", A, roundA3, LEARNED, null);
+  const r3 = await call<Json>(bot, "shift_quest_round_close_gift", A, roundA3, LEARNED, null);
   check(r3.gift === null && typeof r3.id === "string", "a third round the same Bangkok day saves the note but gives no gift", r3);
   check(await scalar(db, "select ended_at is not null from public.shift_quest_work_sessions where id = $1", [roundA3]) === true,
     "and still closes the round");
@@ -336,8 +341,31 @@ async function main(): Promise<void> {
   check(same(c1?.options, ["shape:maple", "shape:heart", "shape:pine"]),
     "a plain tree: shape and leaf tie at 5 unowned, the first gift offers shapes", c1);
   const roundC2: string = await call(bot, "shift_quest_work_start", C, "C round two");
-  const c2 = (await call<Json>(web, "shift_quest_round_close_gift", C, roundC2, LEARNED, null)).gift;
+  const c2 = (await call<Json>(bot, "shift_quest_round_close_gift", C, roundC2, LEARNED, null)).gift;
   check(same(c2?.options, ["leaf:autumn", "leaf:mint", "leaf:gold"]), "the second gift's tie turns to leaves", c2);
+
+  // A gift never fails the save it follows: make every gift insert fail, then close a round.
+  await db.query("alter table public.shift_quest_tree_gifts add constraint tree_test_no_gifts check (false) not valid");
+  const roundD1: string = await call(bot, "shift_quest_work_start", D, "D round one");
+  const giftsBeforeD = await gifts();
+  let d1: Json | string;
+  try {
+    d1 = await call<Json>(bot, "shift_quest_round_close_gift", D, roundD1, LEARNED, null);
+  } catch (error) {
+    d1 = (error as Error).message;
+  }
+  await db.query("alter table public.shift_quest_tree_gifts drop constraint tree_test_no_gifts");
+  check(typeof d1 === "object" && keys(d1) === "gift,id" && d1.gift === null && typeof d1.id === "string",
+    "a failing gift insert does not fail the round close: {id, gift: null}", d1);
+  const dNote = await count(
+    `select count(*) from public.shift_quest_progress e join public.shift_quest_members m on m.id = e.member_id
+     where m.discord_user_id = $1 and e.kind = 'note' and e.learned = $2`, [D, LEARNED]);
+  check(dNote === 1 &&
+      await scalar(db, "select ended_at is not null from public.shift_quest_work_sessions where id = $1", [roundD1]) === true &&
+      await gifts() === giftsBeforeD, "the round stays closed and its note saved, with no gift", { dNote });
+  const roundD2: string = await call(bot, "shift_quest_work_start", D, "D round two");
+  const dGift = await call<Json>(bot, "shift_quest_round_close_gift", D, roundD2, LEARNED, null);
+  check(dGift.gift?.options?.length === 3, "the next round gives a gift again: the failed one used up nothing", dGift);
 
   // --- Picking a gift --------------------------------------------------------------------------------
   t1 = await tree(A);
@@ -433,7 +461,7 @@ async function main(): Promise<void> {
     "the first submit of a side quest gives a gift, sourced by its template", qB);
   for (const n of [1, 2]) {
     const round: string = await call(bot, "shift_quest_work_start", B, `B round ${n}`);
-    const r = await call<Json>(web, "shift_quest_round_close_gift", B, round, LEARNED, null);
+    const r = await call<Json>(bot, "shift_quest_round_close_gift", B, round, LEARNED, null);
     check(r.gift !== null, `B's round gift ${n} lands the same day as B's quest gift`, r);
   }
   const sideA = await call<Json>(web, "shift_quest_side_submit", A, friend, "A reviewed too", "A learned", null);
@@ -464,7 +492,7 @@ async function main(): Promise<void> {
     `update public.shift_quest_tree_gifts set created_at = created_at - interval '1 day'
      where source like 'round:%' and member_id = (select id from public.shift_quest_members where discord_user_id = $1)`, [B]);
   const roundB3: string = await call(bot, "shift_quest_work_start", B, "B round 3");
-  const b3 = (await call<Json>(web, "shift_quest_round_close_gift", B, roundB3, LEARNED, null)).gift;
+  const b3 = (await call<Json>(bot, "shift_quest_round_close_gift", B, roundB3, LEARNED, null)).gift;
   check(same(sorted(b3?.options ?? []), ["bloom:peach", "leaf:sky"]), "a new Bangkok day: B's round gives again, the same 2", b3);
   await db.query("update public.shift_quest_tree_style set owned = $2 where project_id = $1",
     [p1, ORDER.filter((id) => !DEFAULTS.includes(id))]);
@@ -472,7 +500,7 @@ async function main(): Promise<void> {
   check(same(await proposeAndSubmit("Own quest three"), noGift) && await gifts() === giftsBefore,
     "owning everything: no gift after a quest, and none stored");
   const roundB4: string = await call(bot, "shift_quest_work_start", B, "B round 4");
-  check((await call<Json>(web, "shift_quest_round_close_gift", B, roundB4, LEARNED, null)).gift === null &&
+  check((await call<Json>(bot, "shift_quest_round_close_gift", B, roundB4, LEARNED, null)).gift === null &&
       await gifts() === giftsBefore, "nor after a round (B is under today's cap)");
   check(same((await tree(A)).owned, ORDER), "the team owns the whole catalog");
 
