@@ -128,6 +128,9 @@ public/shift/posters/shift2-grid/
 output/research-ethics/
 output/capstone-consent/
 
+# Tree promo video and its frames (scripts/render-tree-promo.ts), regenerate, never commit
+output/marketing/*/tree-promo/
+
 # Local SeedStack test scripts
 .tmp-seedstack-test/
 
