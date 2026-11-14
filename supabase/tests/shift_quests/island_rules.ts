@@ -37,6 +37,7 @@ for (const url of [adminUrl, botUrl]) {
 /** Wave 1 alone: no seasons, recognitions, squads or weekly post until the upgrade at the end. */
 const WAVE1 = process.env.SHIFT_QUESTS_WAVE === "1";
 const SEASONS_MIGRATION = resolve(__dirname, "../../migrations/20261111090800_shift_quests_seasons.sql");
+const NAMES_DEFAULT_MIGRATION = resolve(__dirname, "../../migrations/20261114110000_shift_quest_names_default.sql");
 
 // Synthetic Discord IDs and names.
 const ADMIN = "510000000000000001";
@@ -265,31 +266,76 @@ async function main(): Promise<void> {
   check(isl.project.stage === 0 && isl.taps_today === 1 && (await ledgerCount()) === ledger0, "taps grow nothing and mint nothing", isl.project);
   check((await count("select count(*) from public.shift_quest_outbox")) === 0, "taps post nothing");
 
-  // --- Opt-in names and the shared map -----------------------------------------------
+  // --- Names show by default; a member can hide them -----------------------------------
+  // Wave 1 alone ends at 20261111090700: bring in the names-default migration (idempotent) like production will.
+  if (WAVE1) await db.query(readFileSync(NAMES_DEFAULT_MIGRATION, "utf8"));
   let m = await map(A);
   check(m.plots.map((p: Json) => p.slot).join(",") === "1,2,3,4", "the map lists plots by slot", m.plots);
-  check(m.plots.every((p: Json) => p.name === null), "no project names without consent");
+  check(m.plots.every((p: Json) => typeof p.name === "string" && p.name.length > 0),
+    "every plot shows its project name by default, nobody opted in", m.plots);
   check(m.plots.filter((p: Json) => p.mine).map((p: Json) => p.slot).join(",") === "1", "only the caller's plot is mine");
   check(m.goal === null && m.season === null, "no goal and no season on the map yet", m);
-  let opt = await call(bot, "shift_quest_island_optin", A, p1, true);
-  check(opt.show_name === true && opt.project_name_visible === false, "one teammate's consent is not enough", opt);
+  check(plotAt(await postMap(), 1).name === "Plot One", "the post map shows the name with nobody opting in");
+  check((await count("select count(*) from public.shift_quest_project_members where show_name is not true")) === 0,
+    "every project member starts shown (column default and project_create)");
+  check((await scalar(db, "select column_default from information_schema.columns where table_name = 'shift_quest_project_members' and column_name = 'show_name'")) === "true",
+    "show_name defaults to true");
+  let opt = await call(bot, "shift_quest_island_optin", A, p1, false);
+  check(opt.show_name === false && opt.project_name_visible === false, "one member hiding keeps the plot plain", opt);
+  check(plotAt(await postMap(), 1).name === null && isPlain(plotAt(await postMap(), 1)), "an explicit hide hides the name and the stage");
+  opt = await call(bot, "shift_quest_island_optin", A, p1, true);
+  check(opt.show_name === true && opt.project_name_visible === true, "showing again brings the name back", opt);
   opt = await call(bot, "shift_quest_island_optin", B, null, true);
-  check(opt.project_id === p1 && opt.project_name_visible === true, "every active member agreed: the name may show", opt);
+  check(opt.project_id === p1 && opt.project_name_visible === true, "opting in still works", opt);
   m = await postMap();
   check(plotAt(m, 1).name === "Plot One" && m.plots.every((p: Json) => !p.mine),
-    "the post map shows the agreed name and marks no plot", m.plots);
+    "the post map shows the name and marks no plot", m.plots);
   await call(bot, "shift_quest_project_invite", A, p1, J);
   check(plotAt(await postMap(), 1).name === "Plot One", "a pending invite does not hide the name");
   await call(bot, "shift_quest_project_respond", J, p1, true);
-  check(plotAt(await postMap(), 1).name === null, "a new teammate who has not agreed hides it");
+  check(plotAt(await postMap(), 1).name === "Plot One", "a new teammate starts shown, so the name stays");
+  await call(bot, "shift_quest_island_optin", J, p1, false);
+  check(plotAt(await postMap(), 1).name === null, "a new teammate can hide it");
   await call(bot, "shift_quest_island_optin", J, p1, true);
-  check(plotAt(await postMap(), 1).name === "Plot One", "until they agree too");
+  check(plotAt(await postMap(), 1).name === "Plot One", "and show it again");
+  await call(bot, "shift_quest_island_optin", J, p1, false);
   await call(bot, "shift_quest_project_leave", J, p1);
-  check(plotAt(await postMap(), 1).name === "Plot One", "once they leave, the others' consent stands");
+  check(plotAt(await postMap(), 1).name === "Plot One", "once they leave, the others stand");
   await call(bot, "shift_quest_project_invite", A, p1, J);
   await call(bot, "shift_quest_project_respond", J, p1, true);
-  check(plotAt(await postMap(), 1).name === null, "rejoining asks for consent again");
+  check(plotAt(await postMap(), 1).name === "Plot One", "rejoining starts shown again");
   await call(bot, "shift_quest_project_leave", J, p1);
+
+  // The migration's backfill: a member who never hid it becomes shown, an explicit hide
+  // stays, and running it twice changes nothing more. Simulate the opt-in era's rows.
+  const memberRow = async (who: string) => (await db.query(
+    "select pm.show_name from public.shift_quest_project_members pm join public.shift_quest_members m on m.id = pm.member_id where m.discord_user_id = $1 and pm.project_id = $2 and pm.status = 'active'",
+    [who, p1])).rows[0]?.show_name;
+  await call(bot, "shift_quest_island_optin", B, p1, false); // B hides explicitly (audited island_name_off)
+  await db.query(
+    "update public.shift_quest_project_members pm set show_name = false from public.shift_quest_members m where m.id = pm.member_id and m.discord_user_id = $1 and pm.project_id = $2",
+    [A, p1]); // A never touched the control: false only because of the old default
+  const backfill = readFileSync(NAMES_DEFAULT_MIGRATION, "utf8");
+  await db.query(backfill);
+  check((await memberRow(A)) === true, "backfill: a member who never hid it is shown", await memberRow(A));
+  check((await memberRow(B)) === false, "backfill: an explicit hide stays hidden", await memberRow(B));
+  await call(bot, "shift_quest_island_optin", A, p1, false);
+  await db.query(backfill);
+  check((await memberRow(A)) === false && (await memberRow(B)) === false,
+    "re-running the migration does not re-show someone who hid it since", [await memberRow(A), await memberRow(B)]);
+  await call(bot, "shift_quest_island_optin", A, p1, true);
+  await call(bot, "shift_quest_island_optin", B, p1, true);
+  check((await memberRow(A)) === true && (await memberRow(B)) === true && plotAt(await postMap(), 1).name === "Plot One",
+    "everyone shown again after the backfill checks");
+  // Consent is untouched: shown by default is not consented. With consent required and none given, the plot stays plain.
+  if (!WAVE1) { // consent arrives with the player migration, after wave 1
+    const wasRequired = await scalar<boolean>(db, "select consent_required from public.shift_quest_settings where id");
+    await db.query("update public.shift_quest_settings set consent_required = true where id");
+    check(isPlain(plotAt(await postMap(), 1)) && plotAt(await postMap(), 1).name === null,
+      "a member without consent keeps the plot plain, shown by default or not");
+    await db.query("update public.shift_quest_settings set consent_required = $1 where id", [wasRequired]);
+    check(plotAt(await postMap(), 1).name === "Plot One", "and the name returns when consent is not required");
+  }
   check(await code(call(bot, "shift_quest_island_optin", C, p1, true)) === "not_project_member", "only members opt in for a project");
   check(await code(map(NOBODY)) === "not_started", "the map needs /start");
   check(await code(map(null)) === "not_started", "the private map refuses a missing caller (the post has its own map)");
@@ -407,12 +453,13 @@ async function main(): Promise<void> {
   await db.query("update public.shift_quest_templates set repeatable = true where slug = 'give-them-a-reason-to-return'");
 
   // --- Privacy of the map ---------------------------------------------------------------
-  // Plot one: both members consented. Plot four (E, F): grown, nobody consented.
+  // Plot one: both members shown. Plot four (E, F): grown, E hid it.
+  await call(bot, "shift_quest_island_optin", E, null, false);
   m = await map(A);
   check(plotAt(m, 1).stage === 2 && plotAt(m, 1).visitor && plotAt(m, 1).name === "Plot One" && plotAt(m, 1).mine,
     "a member sees their consented plot in full", plotAt(m, 1));
   check(isPlain(plotAt(m, 4)) && plotAt(m, 4).mine === false,
-    "another student sees a plot without full consent as its slot only (stage 0, no decorations, no name)", plotAt(m, 4));
+    "another student sees a plot a member hid as its slot only (stage 0, no decorations, no name)", plotAt(m, 4));
   const own = plotAt(await map(E), 4);
   check(own.stage === 1 && own.mine === true && own.plain === false && own.name === null,
     "its own members see its real stage", own);
@@ -421,7 +468,7 @@ async function main(): Promise<void> {
     "the post map shows a consented plot's stage and only the slot of the others", m.plots);
   await call(bot, "shift_quest_island_optin", B, p1, false);
   check(isPlain(plotAt(await postMap(), 1)) && isPlain(plotAt(await map(C), 1)),
-    "one member withdrawing consent hides the stage again, not just the name");
+    "one member hiding it hides the stage again, not just the name");
   await call(bot, "shift_quest_island_optin", B, p1, true);
 
   // --- Rest -----------------------------------------------------------------------------
