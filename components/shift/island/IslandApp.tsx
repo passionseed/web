@@ -37,6 +37,9 @@ import { QuestDetailSheet } from "./QuestDetailSheet";
 import { StoryLauncher } from "./story/StoryLauncher";
 import { StuckSheet, type StuckTarget } from "./StuckSheet";
 import { TodayCard } from "./TodayCard";
+import treeStyles from "./tree/tree.module.css";
+import { TreePill } from "./tree/TreePill";
+import { TreeSheet } from "./tree/TreeSheet";
 import { useBangkokDay } from "./useBangkokDay";
 import { useCampfire } from "./useCampfire";
 import world from "./world.module.css";
@@ -72,6 +75,7 @@ type Panel =
   | "prizes"
   | "news"
   | "consent"
+  | "tree"
   | null;
 
 /** The sheets a student without a plot can open: the menu and what it leads to, and the wallet. */
@@ -312,6 +316,8 @@ function IslandHome({
   });
   const [proposing, setProposing] = useState(false);
   const [plot, setPlot] = useState<IslandHotspot | null>(null);
+  // The team's tree (schema 13); null below it, and then the own plot opens the plot sheet as before.
+  const tree = page.tree ?? null;
   // The plot sheet keeps its last plot while it slides closed; its team card stays with it.
   const [lastPlot, setLastPlot] = useState<IslandHotspot | null>(null);
   if (plot && plot !== lastPlot) setLastPlot(plot);
@@ -385,6 +391,12 @@ function IslandHome({
     setPanel("board");
   }
 
+  /** A tapped plot: the team's own opens its tree up close (schema 13), any other the plot sheet. */
+  function openPlot(hotspot: IslandHotspot) {
+    if (hotspot.mine && tree) setPanel("tree");
+    else setPlot(hotspot);
+  }
+
   function openStuck(target: StuckTarget) {
     setPanel(null);
     setDetail(null);
@@ -423,7 +435,17 @@ function IslandHome({
       {/* The HUD first: keyboards and screen readers reach its controls before the plots. Both are fixed layers. */}
       <Hud
         chip={<HudChip me={page.me} name={project.name} stage={project.stage} todayOpen={todayOpen} onOpen={() => setPanel("character")} />}
-        pill={coinPill(page, () => setPanel("wallet"))}
+        pill={
+          tree ? (
+            // The team's tree beside the coins (schema 13 only): the top row is full on a 360px phone.
+            <div className={treeStyles.pills}>
+              {coinPill(page, () => setPanel("wallet"))}
+              <TreePill tree={tree} onOpen={() => setPanel("tree")} />
+            </div>
+          ) : (
+            coinPill(page, () => setPanel("wallet"))
+          )
+        }
         buttons={
           <>
             <StoryLauncher demoDay={season?.demo_day ?? null} cta="island" onOpenChange={setStoryOpen} className={hudRoundClass} />
@@ -451,7 +473,7 @@ function IslandHome({
       <IslandViewport
         picture={picture}
         puffKey={puffKey}
-        onPlot={setPlot}
+        onPlot={openPlot}
         paused={paused}
         whole={whole}
         initialPhase={initialPhase}
@@ -468,8 +490,11 @@ function IslandHome({
           keynote={keynote}
           onOpen={(ref) => openQuest(ref, true)}
           onPropose={openPropose}
+          tree={tree}
+          onSeed={() => setPanel("tree")}
         />
       </BoardSheet>
+      {tree ? <TreeSheet open={panel === "tree"} onClose={() => setPanel(null)} tree={tree} onBoard={() => setPanel("board")} /> : null}
       {/* From the chip: who you are, your stats and coins, then the project sheet as before (tree, today, season). */}
       <CharacterSheet
         open={panel === "character" || panel === "project"}

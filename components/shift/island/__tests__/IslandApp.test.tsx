@@ -8,10 +8,10 @@ import type { PlazaSpotId } from "@/lib/shift-island/live/plaza";
 import type { CharacterStats, IslandConsent, IslandNews, WalletDetail } from "@/lib/supabase/shift-quests/playerTypes";
 import { noticePins } from "@/lib/shift-island/notice";
 import type { BoardRef } from "@/lib/supabase/shift-quests/board";
-import type { IslandPageData } from "@/lib/supabase/shift-quests/types";
+import type { IslandPageData, MyTree } from "@/lib/supabase/shift-quests/types";
 
 import { makeBoard } from "../__fixtures__/board";
-import { HUD } from "../copy";
+import { HUD, PLOT, TREE } from "../copy";
 import { IslandApp } from "../IslandApp";
 import type { IslandViewport } from "../IslandViewport";
 import { CHARACTER as CHARACTER_COPY, PLAYER, PLAYER_MENU, WALLET } from "../player/copy";
@@ -40,6 +40,12 @@ jest.mock("@/app/shift/island/consent-actions", () => ({
   requestParentLink: jest.fn(),
 }));
 jest.mock("@/app/shift/island/news-actions", () => ({ hideTeamNews: jest.fn() }));
+jest.mock("@/app/shift/island/tree-actions", () => ({ plantSeed: jest.fn(), pickGift: jest.fn(), equipItem: jest.fn() }));
+// The close-up canvas (jsdom has no 2D canvas): only that it is there.
+jest.mock("../tree/TreeCanvas", () => {
+  const { createElement } = jest.requireActual<typeof import("react")>("react");
+  return { TreeCanvas: () => createElement("div", { "data-testid": "tree-canvas" }) };
+});
 jest.mock("sonner", () => ({ toast: { success: jest.fn(), error: jest.fn() } }));
 // The client's Bangkok date: null keeps the page's own days_to_demo, a day number overrides it.
 const mockToday: { day: number | null } = { day: null };
@@ -94,6 +100,16 @@ jest.mock("../IslandViewport", () => {
                 onClick: () => onPlot({ slot: 4, mine: false, plain: false, stage: 5, name: null, x: 20, y: 30, w: 6, h: 10 }),
               },
               "plot-4",
+            )
+          : null,
+        onPlot
+          ? createElement(
+              "button",
+              {
+                type: "button",
+                onClick: () => onPlot({ slot: 3, mine: true, plain: false, stage: 1, name: null, x: 40, y: 30, w: 6, h: 10 }),
+              },
+              "plot-mine",
             )
           : null,
         onSpot
@@ -421,6 +437,72 @@ describe("IslandApp HUD", () => {
     render(<IslandApp page={page()} picture={null} />);
     fireEvent.click(screen.getByRole("button", { name: "plot-4" }));
     expect(screen.getByRole("dialog", { name: "แปลง #4" })).toBeInTheDocument();
+  });
+});
+
+describe("IslandApp: the team's tree", () => {
+  const TREE_DATA: MyTree = {
+    seed: "oak",
+    equipped: { shape: "shape:round", leaf: "leaf:forest", bark: "bark:oak", bloom: "bloom:cream" },
+    owned: ["shape:round", "leaf:forest", "bark:oak", "bloom:cream"],
+    gifts: [],
+    roots: { count: 2, recent: 0 },
+    stage: 1,
+  };
+  const treeButton = () => screen.queryByRole("button", { name: new RegExp(`^${TREE.closeup.open}`) });
+
+  it("has no tree button, no close-up and no seed card below schema 13", () => {
+    render(<IslandApp page={page({ tree: null })} picture={null} />);
+    expect(treeButton()).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "กระดานเควสต์" }));
+    expect(screen.getByRole("dialog", { name: "กระดานเควสต์" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: new RegExp(TREE.seed.title) })).toBeNull();
+    expect(screen.queryByTestId("tree-canvas")).toBeNull();
+  });
+
+  it("keeps the own plot leading to the plot sheet and the board below schema 13", () => {
+    render(<IslandApp page={page()} picture={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "plot-mine" }));
+    expect(screen.getByRole("dialog", { name: PLOT.mine(3) })).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: TREE.closeup.title })).toBeNull();
+  });
+
+  it("opens the close-up from the tree pill under the chip", () => {
+    render(<IslandApp page={page({ tree: TREE_DATA })} picture={null} />);
+    const button = treeButton()!;
+    expect(button.closest("header")).not.toBeNull();
+    expect(button).toHaveAccessibleName(TREE.closeup.open);
+    expect(button).toHaveTextContent("เมล็ดงอก");
+    fireEvent.click(button);
+    expect(screen.getByRole("dialog", { name: TREE.closeup.title })).toBeInTheDocument();
+    expect(viewport()).toHaveAttribute("data-paused", "true");
+  });
+
+  it("opens the close-up from the own plot, and other plots as before", () => {
+    render(<IslandApp page={page({ tree: TREE_DATA })} picture={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "plot-mine" }));
+    expect(screen.getByRole("dialog", { name: TREE.closeup.title })).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: PLOT.mine(3) })).toBeNull();
+  });
+
+  it("says on the tree button that a gift or the seed waits", () => {
+    const { unmount } = render(
+      <IslandApp page={page({ tree: { ...TREE_DATA, gifts: [{ id: "g1", options: ["leaf:mint"] }] } })} picture={null} />,
+    );
+    expect(treeButton()).toHaveAccessibleName(`${TREE.closeup.open}, ${TREE.gift.waiting(1)}`);
+    expect(within(treeButton()!).getByTestId("tree-dot")).toBeInTheDocument();
+    unmount();
+    render(<IslandApp page={page({ tree: { ...TREE_DATA, seed: null } })} picture={null} />);
+    expect(treeButton()).toHaveAccessibleName(`${TREE.closeup.open}, ${TREE.seed.title}`);
+  });
+
+  it("opens the seed choice from the board's seed card", () => {
+    render(<IslandApp page={page({ tree: { ...TREE_DATA, seed: null, stage: 0 } })} picture={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "กระดานเควสต์" }));
+    const board = screen.getByRole("dialog", { name: "กระดานเควสต์" });
+    fireEvent.click(within(board).getByRole("button", { name: new RegExp(TREE.seed.title) }));
+    const sheet = screen.getByRole("dialog", { name: TREE.closeup.title });
+    expect(within(sheet).getByRole("region", { name: TREE.seed.title })).toBeInTheDocument();
   });
 });
 

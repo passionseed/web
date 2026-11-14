@@ -41,6 +41,8 @@ export interface IslandHotspot {
   style?: TreeStyle;
   /** A seed is planted. */
   seeded?: boolean;
+  /** Roots level 1..3, as the map shows it (absent is 0). Never on a plain plot: the close-up draws roots from this level only. */
+  roots?: number;
   name: string | null;
   /** Percent (0..100) of the picture box. */
   x: number;
@@ -147,6 +149,7 @@ function hotspot(box: PlotBox, plot: IslandMapPlot, width: number, height: numbe
     stage: plain ? 0 : plot.stage,
     ...(!plain && plot.style ? { style: resolveStyle(plot.style) } : {}),
     ...(!plain && plot.seeded ? { seeded: true } : {}),
+    ...(!plain && plot.roots ? { roots: plot.roots } : {}),
     name: plain ? null : plot.name,
     x: left,
     y: top,

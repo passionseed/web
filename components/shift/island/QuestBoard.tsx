@@ -4,9 +4,9 @@ import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 
 import { PixelIcon } from "@/components/shift/poster/pixel/PixelRects";
 import type { BoardRef } from "@/lib/supabase/shift-quests/board";
-import type { QuestBoard as QuestBoardData, SeasonGoal } from "@/lib/supabase/shift-quests/types";
+import type { MyTree, QuestBoard as QuestBoardData, SeasonGoal } from "@/lib/supabase/shift-quests/types";
 
-import { BOARD, stageName, thaiShortDate } from "./copy";
+import { BOARD, stageName, thaiShortDate, TREE } from "./copy";
 import { useDraft } from "./drafts";
 import styles from "./island.module.css";
 import { COMMUNITY_SLUGS, mainTitle, questView, refKey, type QuestView } from "./model";
@@ -14,6 +14,7 @@ import { QuestCard } from "./QuestTile";
 import { SideBranches } from "./SideBranches";
 import { PALETTE, WEB_SPRITES, iconGrid, treeGrid, type IconKey } from "./sprites";
 import { useReducedMotion } from "./story/useStorySeen";
+import treeStyles from "./tree/tree.module.css";
 
 export type BoardLane = "main" | "side" | "mine" | "island";
 
@@ -62,6 +63,10 @@ interface QuestBoardProps {
   keynote: BoardRef | null;
   onOpen: (ref: BoardRef) => void;
   onPropose: () => void;
+  /** The team's tree (schema 13); null or absent below it, and then no seed card. */
+  tree?: MyTree | null;
+  /** Opens the close-up, where the team chooses its seed. */
+  onSeed?: () => void;
 }
 
 /**
@@ -71,7 +76,7 @@ interface QuestBoardProps {
  * student's own quests, and the island's shared ones. Every lane stays in the
  * DOM and the accessibility tree; only the strip's scroll position changes.
  */
-export function QuestBoard({ board, stage, goal, keynote, onOpen, onPropose }: QuestBoardProps) {
+export function QuestBoard({ board, stage, goal, keynote, onOpen, onPropose, tree, onSeed }: QuestBoardProps) {
   const [lane, setLane] = useDraft<BoardLane>(LANE_DRAFT, startLane(board, keynote));
   const active = Math.max(LANES.indexOf(lane), 0);
   const reduced = useReducedMotion();
@@ -136,6 +141,8 @@ export function QuestBoard({ board, stage, goal, keynote, onOpen, onPropose }: Q
 
   return (
     <div className={styles.board}>
+      {/* The team's first step, before any quest: choose the seed. */}
+      {tree && tree.seed == null && onSeed ? <SeedCard onOpen={onSeed} /> : null}
       <div role="group" aria-label={BOARD.lanes} className={styles.laneNav}>
         {LANES.map((id, index) => (
           <button
@@ -198,6 +205,21 @@ export function QuestBoard({ board, stage, goal, keynote, onOpen, onPropose }: Q
         </div>
       </div>
     </div>
+  );
+}
+
+/** เลือกเมล็ด at the top of the board: opens the close-up, where the seed card is. */
+function SeedCard({ onOpen }: { onOpen: () => void }) {
+  return (
+    <button type="button" className={treeStyles.seedCard} aria-haspopup="dialog" onClick={onOpen}>
+      <span className={treeStyles.seedCardIcon} aria-hidden="true">
+        <PixelIcon grid={WEB_SPRITES.seed} palette={PALETTE} scale={2} />
+      </span>
+      <span className={treeStyles.seedCardText}>
+        <span className={treeStyles.seedCardTitle}>{TREE.seed.title}</span>
+        <span className={treeStyles.seedCardLine}>{TREE.seed.pick}</span>
+      </span>
+    </button>
   );
 }
 

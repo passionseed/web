@@ -36,7 +36,8 @@ export type WebIcon =
   | "coin"
   | "trophy"
   | "news"
-  | "letter";
+  | "letter"
+  | "tree";
 
 export const WEB_SPRITES: Record<WebIcon, string[]> = {
   compass: [
@@ -499,6 +500,24 @@ export const WEB_SPRITES: Record<WebIcon, string[]> = {
     "................",
     "................",
     "................",
+  ],
+  tree: [
+    "................",
+    ".....oooooo.....",
+    "...oonnnnnmoo...",
+    "..onnnnnmmmmmo..",
+    ".onnnpmmmmmmmlo.",
+    ".onnnmmmmmmmmlo.",
+    ".onmmmmmmmymllo.",
+    ".ommmmmmmmmlllo.",
+    "..ommmmmmllllo..",
+    "...oollllllloo..",
+    "....ooobcooo....",
+    "......obco......",
+    "......obco......",
+    "....oobbccoo....",
+    "..oggggggggggo..",
+    "...oooooooooo...",
   ],
 };
 

@@ -617,6 +617,8 @@ export const TREE = {
   },
   closeup: {
     ...TREE_CLOSEUP,
+    /** DRAFT (not yet through the Thai review): the close-up sheet's title. */
+    title: "ต้นไม้ของทีม",
     open: "ดูต้นไม้ใกล้ๆ",
     close: "กลับไปที่เกาะ",
   },

@@ -18,6 +18,8 @@ export const TREE_GIFT = {
   roundHeading: "จบรอบแล้ว ทีมได้ของขวัญหนึ่งชิ้น",
   questHeading: "ส่งเควสต์นี้ครั้งแรกแล้ว ทีมได้ของขวัญหนึ่งชิ้น",
   sub: "เลือกลุคให้ต้นไม้ของทีม 1 จาก 3 แบบ ทุกคนเห็นบนเกาะ",
+  /** DRAFT (not yet through the Thai review): the team owns all but one or two items, so fewer than 3 options are left. */
+  subFew: "เลือกลุคให้ต้นไม้ของทีม 1 แบบ ทุกคนเห็นบนเกาะ",
   keep: "เก็บไว้ก่อน",
   picked: (name: string) => `ต้นไม้ของทีมได้ ${name} แล้ว`,
 };

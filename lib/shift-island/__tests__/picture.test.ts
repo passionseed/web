@@ -129,6 +129,17 @@ describe("islandPicture", () => {
     expect(named).toMatchObject({ plain: false, stage: 4, name: "โปรเจกต์ 5" });
   });
 
+  it("carries a shown plot's public roots level for its close-up, never a plain plot's", () => {
+    const input = plots(6).map((p) =>
+      p.slot === 4 ? { ...p, plain: true, roots: 3 } : p.slot === 5 ? { ...p, roots: 2 } : p.slot === 6 ? { ...p, roots: 0 } : p,
+    );
+    const hotspots = islandPicture(map(input))!.hotspots;
+    expect(hotspots.find((h) => h.slot === 5)!.roots).toBe(2);
+    expect(hotspots.find((h) => h.slot === 4)).not.toHaveProperty("roots");
+    expect(hotspots.find((h) => h.slot === 6)).not.toHaveProperty("roots");
+    expect(hotspots.find((h) => h.slot === 1)).not.toHaveProperty("roots");
+  });
+
   it("links to the picture route with the map's version and flags the festival", () => {
     const withSeason = islandPicture(map(plots(5)))!;
     expect(withSeason.src).toBe(`/api/shift/island/map?v=${pictureVersion(map(plots(5)))}`);

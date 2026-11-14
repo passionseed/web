@@ -2090,6 +2090,12 @@
   display: block;
 }
 
+/* Another team's tree up close (tree/TreeCanvas), in the same ink frame as the own close-up. */
+.plotCloseup {
+  justify-self: center;
+  box-shadow: 0 0 0 2px var(--isl-ink);
+}
+
 .plotSign {
   font-weight: 600;
   color: var(--text-hi);
