@@ -341,7 +341,7 @@ export const DETAIL = {
   declinedProposed: "เควสต์นี้ปิดไปแล้ว เสนอเควสต์ใหม่ได้เสมอ",
   proofLabel: "หลักฐาน (ลิงก์หรือเล่าสั้นๆ)",
   proofHint: "ไม่ต้องใส่ชื่อจริง เบอร์โทร หรือข้อมูลส่วนตัวของใคร",
-  /** DRAFT (not yet through the Thai review). */
+  /** Thai reviewed (Cursor, Codex), 2026-11-14. */
   proofPlaceholder: "วางลิงก์ หรือเล่าสั้นๆ ว่าทำอะไรไป แล้วเจออะไร",
   urlLabel: "ลิงก์งาน (ไม่บังคับ, ขึ้นต้นด้วย https://)",
   /** The bot's reviewed portfolio hint (bot/src/quests/island/copy.ts portfolioHint), word for word. */
@@ -599,10 +599,11 @@ export const REFLECT = {
 };
 
 /**
- * DRAFT: the team's tree. A seed on day one, a close-up with roots (the team's
- * reflections), a gift to pick 1 of 3 after a closed round and after the first
- * submit of a quest, and a wardrobe. Gifts belong to the team, never one
- * student; nothing here names a student.
+ * The team's tree. A seed on day one, a close-up with roots (the team's
+ * reflections), a gift to pick 1 of up to 3 after a closed round and after
+ * the first submit of a quest, and a wardrobe. Gifts belong to the team,
+ * never one student; nothing here names a student. Thai reviewed (agy, Codex,
+ * Cursor), then the remaining lines (Cursor, Codex), 2026-11-14.
  */
 export const TREE = {
   seed: {
@@ -636,7 +637,7 @@ export const TREE = {
   },
   closeup: {
     ...TREE_CLOSEUP,
-    /** DRAFT (not yet through the Thai review): the close-up sheet's title. */
+    /** The close-up sheet's title. */
     title: "ต้นไม้ของทีม",
     open: "ดูต้นไม้ใกล้ๆ",
     close: "กลับไปที่เกาะ",

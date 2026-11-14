@@ -19,7 +19,14 @@
  * ISLAND_STAGES. The round and roots rules below must match the bot.
  */
 
-import { FOCUS_MINUTES, REFLECTION_MIN_CHARS, REFLECTIONS_PER_DAY, REST_MINUTES, ROOT_LEVELS } from "@/lib/shift-island/rounds-rules";
+import {
+  FOCUS_MINUTES,
+  REFLECTION_MIN_CHARS,
+  REFLECTIONS_PER_DAY,
+  REST_MINUTES,
+  ROOT_LEVELS,
+  ROUND_GIFTS_PER_DAY,
+} from "@/lib/shift-island/rounds-rules";
 import { ISLAND_STAGES } from "@/lib/content/shift-island";
 import { PRE_STAGE } from "@/components/shift/island/copy";
 import { TREE_SEEDS } from "@/lib/shift-island/tree-copy";
@@ -138,9 +145,12 @@ export const GUIDE_CLOSEUP = {
   lines: [
     "เปิดดูต้นไม้ของทีมใกล้ๆ ได้ เหนือดินคือต้นไม้ ใต้ดินคือราก",
     "รากแต่ละเส้นมาจากบันทึกที่ทีมเขียนหลังจบรอบ และเรืองแสงอยู่ 7 วันหลังจากนั้น",
-    "ปิดรอบกองไฟด้วยบันทึก ทีมได้ของขวัญหนึ่งชิ้น",
+    // The round gift cap, said once (shift_quest_round_close_gift). Thai reviewed (Cursor, Codex), 2026-11-14.
+    `ปิดรอบกองไฟด้วยบันทึก ทีมได้ของขวัญหนึ่งชิ้น (คนละไม่เกิน ${ROUND_GIFTS_PER_DAY} ชิ้นต่อวัน)`,
     "ส่งเควสต์แต่ละข้อครั้งแรก ทีมได้ของขวัญอีกหนึ่งชิ้น",
-    "ของขวัญคือลุคใหม่ให้ต้นไม้ของทีม เลือก 1 จาก 3 แบบ เช่น ทรงพุ่ม สีใบ เปลือกไม้ หรือดอก ลุคที่เลือกขึ้นต้นไม้ทันที ทุกคนเห็นบนเกาะ",
+    // Up to 3 options, and no "everyone sees it": a plot that does not show its name shows no look to others.
+    // Thai reviewed twice (Cursor, Codex), 2026-11-14.
+    "ของขวัญคือลุคใหม่ที่ทีมยังไม่มี เลือก 1 จากไม่เกิน 3 แบบ เช่น ทรงพุ่ม สีใบ เปลือกไม้ หรือดอก ต้นไม้ของทีมจะเปลี่ยนเป็นลุคที่เลือกทันที",
     "ถ้ายังไม่อยากเลือก กดเก็บไว้ก่อน เพื่อนในทีมคนไหนก็เปิดได้ทีหลัง",
     "ลุคเป็นของทั้งทีม ใครในทีมก็สลับไปใช้ลุคที่ทีมมีได้",
   ],

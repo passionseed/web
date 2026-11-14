@@ -36,7 +36,7 @@ export const COMPOSER = {
   version: (v: number) => `v${v}`,
   why: (why: string) => `เปลี่ยนเพราะ ${why}`,
   editedSince: (v: number) => `แก้หลัง v${v}`,
-  /** DRAFT: one short tag on a dimmed note someone outside the canvas team wrote (it cannot be ticked). */
+  /** One short tag on a dimmed note someone outside the canvas team wrote (it cannot be ticked). Thai reviewed (Cursor, Codex), 2026-11-14. */
   outsider: "โน้ตจากคนนอกทีม",
   /** The line field's hint on step 2: who never goes on the card. */
   privacy: "อย่าใส่ชื่อจริง เบอร์โทร หรือช่องทางติดต่อของคนที่ลองงานคุณ",
@@ -53,7 +53,7 @@ export const COMPOSER = {
   failed: "ส่งไม่สำเร็จ ลองอีกครั้ง",
 };
 
-/** DRAFT: the quest submission sheet in two steps, then the sent screen. */
+/** The quest submission sheet in two steps, then the sent screen. Thai reviewed (agy, Codex, Cursor), then again (Cursor, Codex), 2026-11-14. */
 export const SUBMIT = {
   steps: ["เลือกหลักฐาน", "ตรวจแล้วส่ง"],
   pickHint: "ติ๊กโน้ตบนแคนวาสที่เป็นหลักฐานของเควสต์นี้",

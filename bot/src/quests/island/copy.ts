@@ -306,9 +306,10 @@ export const SQ = {
 };
 
 /**
- * DRAFT: the team's tree in Discord: the seed modal, the gift reply, the
- * close-up. Same words as the website's TREE. Gifts belong to the team; nothing
- * here names a student.
+ * The team's tree in Discord: the seed modal, the gift reply, the close-up.
+ * Same words as the website's TREE. Gifts belong to the team; nothing here
+ * names a student. Thai reviewed (agy, Codex, Cursor), then again (Cursor,
+ * Codex), 2026-11-14.
  */
 export const TREE = {
   btnSeed: "🌰 เลือกเมล็ด",

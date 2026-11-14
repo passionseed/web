@@ -733,7 +733,7 @@ describe("QuestDetailSheet: the sent screen", () => {
     openForm({ kind: "main", milestone: 1 }, LINKED, { onTree: jest.fn() });
     fireEvent.click(screen.getByRole("button", { name: "composer-sent" }));
     expect(within(body()).getByRole("heading", { name: "ส่งเควสต์นี้ครั้งแรกแล้ว ทีมได้ของขวัญหนึ่งชิ้น" })).toBeInTheDocument();
-    const options = within(screen.getByRole("group", { name: "เลือกลุคให้ต้นไม้ของทีม 1 จาก 3 แบบ ทุกคนเห็นบนเกาะ" })).getAllByRole("button");
+    const options = within(screen.getByRole("group", { name: "เลือกลุคให้ต้นไม้ของทีม 1 จาก 3 แบบ" })).getAllByRole("button");
     expect(options).toHaveLength(3);
     // While the gift waits, the bar only offers to keep it for later.
     expect(within(footer()).getAllByRole("button").map((b) => b.textContent)).toEqual(["เก็บไว้ก่อน"]);

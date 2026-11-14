@@ -151,7 +151,7 @@ it("picks notes, checks the card, sends it once and ends on the gift for the tea
   expect(onClose).not.toHaveBeenCalled();
 
   // The gift: 1 of 3, picked onto the team's tree.
-  const options = within(screen.getByRole("group", { name: "เลือกลุคให้ต้นไม้ของทีม 1 จาก 3 แบบ ทุกคนเห็นบนเกาะ" })).getAllByRole("button");
+  const options = within(screen.getByRole("group", { name: "เลือกลุคให้ต้นไม้ของทีม 1 จาก 3 แบบ" })).getAllByRole("button");
   expect(options).toHaveLength(3);
   fireEvent.click(options[1]);
   await waitFor(() => expect(pickGift).toHaveBeenCalledWith(GIFT_ID, "bark:ebony"));

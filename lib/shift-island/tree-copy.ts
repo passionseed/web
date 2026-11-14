@@ -18,9 +18,9 @@ export const TREE_PLANTED = "ทีมเลือกเมล็ดแล้ว
 export const TREE_SEED_PICK = "เลือกเมล็ดหนึ่งแบบ ต้นไม้ของทีมจะเริ่มจากเมล็ดนี้";
 
 /**
- * DRAFT (Thai review in progress): the idea line's hint when it starts from
- * the ambition the team wrote when it made the project. The planted line
- * becomes the ambition, so an edit here changes it.
+ * The idea line's hint when it starts from the ambition the team wrote when
+ * it made the project. The planted line becomes the ambition, so an edit here
+ * changes it. Thai reviewed (Cursor, Codex), 2026-11-14.
  */
 export const TREE_IDEA_PREFILLED = "ทีมเขียนไว้ตอนสร้างโปรเจกต์ แก้ให้ตรงกับตอนนี้ได้";
 
@@ -30,9 +30,10 @@ export const TREE_SLOTS = { shape: "ทรงพุ่ม", leaf: "สีใบ"
 export const TREE_GIFT = {
   roundHeading: "จบรอบแล้ว ทีมได้ของขวัญหนึ่งชิ้น",
   questHeading: "ส่งเควสต์นี้ครั้งแรกแล้ว ทีมได้ของขวัญหนึ่งชิ้น",
-  sub: "เลือกลุคให้ต้นไม้ของทีม 1 จาก 3 แบบ ทุกคนเห็นบนเกาะ",
-  /** DRAFT (not yet through the Thai review): the team owns all but one or two items, so fewer than 3 options are left. */
-  subFew: "เลือกลุคให้ต้นไม้ของทีม 1 แบบ ทุกคนเห็นบนเกาะ",
+  /** The gift's line. Not "everyone sees it": a plot that does not show its name shows no look to others. */
+  sub: "เลือกลุคให้ต้นไม้ของทีม 1 จาก 3 แบบ",
+  /** The team owns all but one or two items, so fewer than 3 options are left. Thai reviewed (Cursor, Codex), 2026-11-14. */
+  subFew: "เลือก 1 แบบจากลุคที่เหลือให้ต้นไม้ของทีม",
   keep: "เก็บไว้ก่อน",
   picked: (name: string) => `ต้นไม้ของทีมได้ ${name} แล้ว`,
 };

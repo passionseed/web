@@ -1,3 +1,4 @@
+import { ROUND_GIFTS_PER_DAY } from "@/lib/shift-island/rounds-rules";
 import { ISLAND_STAGES } from "@/lib/content/shift-island";
 import { PRE_STAGE, STAGE_NAMES } from "@/components/shift/island/copy";
 
@@ -96,7 +97,10 @@ describe("shift island guide copy", () => {
     const text = GUIDE_CLOSEUP.lines.join(" ");
     expect(text).toContain("ปิดรอบ");
     expect(text).toContain("ครั้งแรก");
-    expect(text).toContain("1 จาก 3");
+    expect(text).toContain("1 จากไม่เกิน 3");
+    // Never "everyone sees it": a plot that does not show its name shows no look to others.
+    expect(text).not.toContain("ทุกคนเห็น");
+    expect(text).toContain(`ไม่เกิน ${ROUND_GIFTS_PER_DAY} ชิ้นต่อวัน`);
     expect(GUIDE_SEED.seeds).toHaveLength(4);
   });
 
