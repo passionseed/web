@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ComponentProps } from "react";
 import { toast } from "sonner";
 
 import { PixelIcon } from "@/components/shift/poster/pixel/PixelRects";
@@ -26,6 +26,8 @@ interface SentScreenProps {
   onIsland: () => void;
   /** ดูต้นไม้ของทีม; only where the island has the team's tree (schema 13). */
   onTree?: () => void;
+  /** The gift's pick action (GiftPicker's default, the server action, when left out). */
+  pickGift?: ComponentProps<typeof GiftPicker>["pickGift"];
 }
 
 /** The gift as something to draw: the gift and the team's tree, or null (none, no tree came with it, or nothing left to offer). */
@@ -51,20 +53,30 @@ const CHECK = iconGrid("check");
  * After a successful send the sheet stays open here, never a toast and a
  * close: it is with the mentor, where the answer will come, and then, when
  * the submit earned one, the gift for the team's tree (pick 1 of 3, each
- * drawn as the team's own tree wearing it). A pick shows the tree wearing it;
- * "เก็บไว้ก่อน" leaves the gift waiting in the close-up.
+ * drawn as the team's own tree wearing it). A pick shows the tree wearing it,
+ * said once (the picker stays quiet), and focus moves to กลับไปที่เกาะ.
+ * "เก็บไว้ก่อน" leaves the gift waiting in the close-up. When a teammate
+ * picked the gift first, the picker says so and the footer offers the way
+ * back instead of keeping a gift that is gone.
  */
-export function SentScreen({ result, footer, onIsland, onTree }: SentScreenProps) {
+export function SentScreen({ result, footer, onIsland, onTree, pickGift }: SentScreenProps) {
   const giftHeadingId = useId();
   const heading = useRef<HTMLHeadingElement>(null);
+  const back = useRef<HTMLButtonElement>(null);
   const [picked, setPicked] = useState<MyTree | null>(null);
+  const [gone, setGone] = useState(false);
   const offer = offerOf(result);
-  const waiting = offer != null && picked == null;
+  const waiting = offer != null && picked == null && !gone;
 
   // Focus lands on what happened, at the top of the sheet.
   useEffect(() => {
     heading.current?.focus();
   }, []);
+
+  // Once the gift is settled (picked, or a teammate's), the tapped tile is gone: focus the way back.
+  useEffect(() => {
+    if (picked || gone) back.current?.focus();
+  }, [picked, gone]);
 
   function later() {
     toast.success(TREE.gift.kept);
@@ -91,7 +103,14 @@ export function SentScreen({ result, footer, onIsland, onTree }: SentScreenProps
           {picked ? (
             <PickedLook tree={picked} options={offer.gift.options} />
           ) : (
-            <GiftPicker tree={offer.tree} gift={offer.gift} onPicked={setPicked} />
+            <GiftPicker
+              tree={offer.tree}
+              gift={offer.gift}
+              onPicked={setPicked}
+              onGone={() => setGone(true)}
+              quiet
+              pickGift={pickGift}
+            />
           )}
         </section>
       ) : null}
@@ -105,7 +124,7 @@ export function SentScreen({ result, footer, onIsland, onTree }: SentScreenProps
           </div>
         ) : (
           <div className={styles.actionBar} data-single={onTree ? undefined : "true"}>
-            <button type="button" className={`ei-button-dawn ${styles.primary} ${styles.barButton}`} onClick={onIsland}>
+            <button ref={back} type="button" className={`ei-button-dawn ${styles.primary} ${styles.barButton}`} onClick={onIsland}>
               <span>{SUBMIT.backToIsland}</span>
             </button>
             {onTree ? (

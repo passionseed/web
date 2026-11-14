@@ -303,6 +303,28 @@ describe("GiftPicker", () => {
     expect(onPicked).not.toHaveBeenCalled();
   });
 
+  it("quiet: no toast for a pick or a gone gift (the caller shows them), and tells the caller the gift is gone", async () => {
+    const onGone = jest.fn();
+    jest.mocked(pickGift).mockResolvedValueOnce({ ok: false, code: "gift_gone", error: "ไปแล้ว" });
+    render(<GiftPicker tree={tree()} gift={GIFT} onPicked={jest.fn()} onGone={onGone} quiet />);
+    await act(async () => {
+      fireEvent.click(within(giftGroup()).getByRole("button", { name: "มิ้นต์" }));
+    });
+    expect(onGone).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("status")).toHaveTextContent(TREE.gift.gone);
+    expect(toast.error).not.toHaveBeenCalled();
+
+    const onPicked = jest.fn();
+    const after = tree({ equipped: { ...tree().equipped, leaf: "leaf:gold" } });
+    jest.mocked(pickGift).mockResolvedValueOnce({ ok: true, data: { tree: after } });
+    render(<GiftPicker tree={tree()} gift={{ ...GIFT, id: "7c1d2e3f-4a5b-4c6d-8e7f-000000000005" }} onPicked={onPicked} quiet />);
+    await act(async () => {
+      fireEvent.click(within(giftGroup()).getByRole("button", { name: "ทอง" }));
+    });
+    expect(onPicked).toHaveBeenCalledWith(after);
+    expect(toast.success).not.toHaveBeenCalled();
+  });
+
   it("lets the student try again after any other failure", async () => {
     jest.mocked(pickGift).mockResolvedValueOnce({ ok: false, code: "unknown", error: "ลองใหม่" });
     render(<GiftPicker tree={tree()} gift={GIFT} onPicked={jest.fn()} />);

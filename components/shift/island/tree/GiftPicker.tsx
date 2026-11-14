@@ -3,7 +3,7 @@
 import { useId, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { pickGift } from "@/app/shift/island/tree-actions";
+import { pickGift as pickGiftAction } from "@/app/shift/island/tree-actions";
 import { openOptions, type TreeItem } from "@/lib/shift-island/tree-style";
 import type { MyTree } from "@/lib/supabase/shift-quests/types";
 
@@ -30,6 +30,8 @@ export interface GiftPickerProps {
    * sent screen). Other failures still toast.
    */
   quiet?: boolean;
+  /** The pick itself: the server action, unless a caller passes another (a local preview of the screen). */
+  pickGift?: typeof pickGiftAction;
 }
 
 type Option = { item: TreeItem; preview: NonNullable<ReturnType<typeof wearing>> };
@@ -52,7 +54,7 @@ function optionsOf(tree: MyTree, ids: string[]): Option[] {
  * nothing more; the page refreshes behind it. Used by the close-up
  * (TreeSheet) and the quest sent screen (quiet).
  */
-export function GiftPicker({ tree, gift, onPicked, onLater, onGone, quiet = false }: GiftPickerProps) {
+export function GiftPicker({ tree, gift, onPicked, onLater, onGone, quiet = false, pickGift = pickGiftAction }: GiftPickerProps) {
   const subId = useId();
   // Set on the first tap, before any re-render: a second tap in the same frame sees it.
   const sending = useRef(false);

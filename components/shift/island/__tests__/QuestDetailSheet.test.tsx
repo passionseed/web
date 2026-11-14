@@ -745,6 +745,25 @@ describe("QuestDetailSheet: the sent screen", () => {
     const drawn = within(body()).getByTestId("tree-canvas");
     expect(JSON.parse(drawn.getAttribute("data-input") ?? "{}").style.leaf).toBe("leaf:gold");
     expect(within(footer()).getAllByRole("button").map((b) => b.textContent)).toEqual(["กลับไปที่เกาะ", "ดูต้นไม้ของทีม"]);
+    // Said once, on the screen (no toast on top of it), and focus moves to the way back.
+    expect(toast.success).not.toHaveBeenCalled();
+    expect(within(footer()).getByRole("button", { name: "กลับไปที่เกาะ" })).toHaveFocus();
+  });
+
+  it("when a teammate picked the gift first: says so once, and the bar offers the way back, not keeping it", async () => {
+    mockSent = withGift;
+    mocked.pickGift.mockResolvedValue({ ok: false, code: "gift_gone", error: "ของขวัญชิ้นนี้ถูกเลือกไปแล้ว ดูลุคที่ทีมมีได้ในลุคของต้นไม้" });
+    canvasAnswer = { context: READY, loading: false };
+    const { onClose } = openForm({ kind: "main", milestone: 1 }, LINKED, { onTree: jest.fn() });
+    fireEvent.click(screen.getByRole("button", { name: "composer-sent" }));
+    fireEvent.click(within(screen.getByRole("group", { name: "เลือกลุคให้ต้นไม้ของทีม 1 จาก 3 แบบ" })).getAllByRole("button")[0]);
+    expect(await within(body()).findByRole("status")).toHaveTextContent("ของขวัญชิ้นนี้ถูกเลือกไปแล้ว");
+    expect(toast.error).not.toHaveBeenCalled();
+    expect(within(footer()).getAllByRole("button").map((b) => b.textContent)).toEqual(["กลับไปที่เกาะ", "ดูต้นไม้ของทีม"]);
+    expect(within(footer()).getByRole("button", { name: "กลับไปที่เกาะ" })).toHaveFocus();
+    fireEvent.click(within(footer()).getByRole("button", { name: "กลับไปที่เกาะ" }));
+    expect(toast.success).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it("keeps the gift for later: the sheet closes and the gift waits in the close-up", () => {
