@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** A team picks a seed on day one, sees its tree up close growing with its reflections as roots, earns a pick-1-of-3 style gift after every campfire round, and the island map, the guide and a promo video all show it.
+**Goal:** A team picks a seed on day one, sees its tree up close growing with its reflections as roots, earns a pick-1-of-3 style gift after every campfire round and after the first submit of each quest, submits quests through a redesigned two-step flow that ends on a sent screen with that gift, and the island map, the guide and a promo video all show it.
 
 **Architecture:** One pure drawing module (catalog + close-up grid) in `lib/shift-island/`, used by the web (canvas), the bot (PNG) and the promo renderer (frames → ffmpeg). Ownership and gifts live in schema 13 (SECURITY DEFINER functions, actor-first, `sq:` refusals) that the bot and `shift_quest_web` call; both gate on `schemaOf(api) >= 13`, so a pre-migration deploy behaves exactly as today.
 
@@ -16,7 +16,7 @@
 - New public functions: `REVOKE ALL ... FROM PUBLIC, anon, authenticated`; `GRANT EXECUTE ... TO shift_quest_bot, service_role`; and inside the `IF EXISTS (pg_roles 'shift_quest_web')` block to `shift_quest_web`. Add each to the web allowlist in `supabase/tests/shift_quests/run-local.sh`.
 - `shift_quest_schema_version()` returns 13. Bot and web gate every new call on `schemaOf(api) >= 13` (`bot/src/quests/schema.ts`).
 - The database stores item ids only (`shape:round`, `leaf:forest`, `bark:oak`, `bloom:cream`, seeds `oak|sakura|pine|maple`); colours and Thai names live in `lib/shift-island/tree-style.ts`. An unknown id resolves to that slot's default.
-- Gifts come only from a closed campfire round (`rd_close_go`). Web reflections never create gifts.
+- Gifts come from a closed campfire round (`rd_close_go`) and from the first submit of each quest (spec goal 9). Web reflections never create gifts. A gift call never fails or slows the save it follows.
 - Stage numbers and every rule built on `shift_quest__milestones` stay unchanged. The seed is a pre-stage at stage 0.
 - Copy: no em dashes, never น้องๆ, no ปลูก, no streak or loss wording, nothing that ranks teams. All new Thai copy goes through the three-model review (agy draft, cursor proofread, codex logic) before merge.
 - Students are minors: nothing names a student to another team; the bot never DMs.
@@ -30,6 +30,7 @@
 3. **Two teammates pick the same gift at once, or one double-clicks**: exactly one pick lands, the other gets `sq:gift_gone`, `owned` has no duplicate. Test in Task 3.
 4. **Other teams and plain plots**: style only on name-visible plots; root count and recent glow only on the caller's own tree. Tests in Tasks 3 and 4.
 5. **Stale button**: a student who left the team, or has no project, presses an old gift or seed button and gets the refusal text, never a crash or another team's tree. Tests in Tasks 3 and 7.
+6. **Quest gifts**: one per quest per team ever (resubmit, repeat or a teammate's second instance of the same template gets `gift: null`); an instance that is not the caller's current project's, or has no submission, gets `gift: null` (never an error that could fail the submit flow); the web submit returns `ok` even when the gift call throws. Tests in Tasks 3, 6b and 7.
 
 ---
 
@@ -122,16 +123,18 @@ Behaviour pinned by the spec:
 
 **Interfaces:**
 - Produces (all `SECURITY DEFINER`, `SET search_path = public`, actor = Discord id text, resolved with `shift_quest__student` and `shift_quest__current_project`):
-  - Tables: `shift_quest_tree_items(id text pk, slot text check in ('shape','leaf','bark','bloom'), is_default boolean not null default false, sort int)` seeded with Task 1's ids (`ON CONFLICT DO NOTHING`); `shift_quest_tree_style(project_id uuid pk references shift_quest_projects, seed text null, equipped jsonb not null default '{}', owned text[] not null default '{}', updated_at timestamptz)`; `shift_quest_tree_gifts(id uuid pk default gen_random_uuid(), project_id uuid not null, member_id uuid not null, session_id uuid null, options text[] not null, picked text null, created_at timestamptz default now(), picked_at timestamptz null)`. RLS enabled, no policies.
+  - Tables: `shift_quest_tree_items(id text pk, slot text check in ('shape','leaf','bark','bloom'), is_default boolean not null default false, sort int)` seeded with Task 1's ids (`ON CONFLICT DO NOTHING`); `shift_quest_tree_style(project_id uuid pk references shift_quest_projects, seed text null, equipped jsonb not null default '{}', owned text[] not null default '{}', updated_at timestamptz)`; `shift_quest_tree_gifts(id uuid pk default gen_random_uuid(), project_id uuid not null, member_id uuid not null, source text not null, options text[] not null, picked text null, created_at timestamptz default now(), picked_at timestamptz null, unique (project_id, source))`. `source` is `round:<session_id>`, `quest:main:<milestone>`, `quest:side:<template_id>` or `quest:proposed:<instance_id>`. RLS enabled, no policies.
   - `shift_quest_tree_get(p_actor text) RETURNS jsonb`: `{seed, equipped:{shape,leaf,bark,bloom}, owned:[ids], gifts:[{id, options}], roots:{count, recent}, stage}`; `owned` always includes defaults; `gifts` = the project's unpicked gifts, oldest first; `roots.count` = the qualifying-notes count from the same counter as `shift_quest__project_roots` (extract a helper `shift_quest__project_root_notes(uuid, timestamptz)` returning the count since the given instant, null = all time) capped at 15; `recent` = count in the last 7 days.
   - `shift_quest_seed_plant(p_actor text, p_seed text, p_idea text) RETURNS jsonb` (= tree_get): idea trimmed 1..500 via `shift_quest__check_len`; refuses `sq:seed_unknown`, `sq:seed_planted`; sets seed, adds the seed's 4 items to `owned`, equips them; fills `shift_quest_projects.ambition` only when it is null.
   - `shift_quest_round_close_gift(p_actor text, p_session uuid, p_learned text, p_stuck text) RETURNS jsonb`: calls `shift_quest_round_close` (unchanged), then creates at most one gift: none when the member already got 2 gifts today (Asia/Bangkok date of `created_at`) or the team owns everything. Options: up to 3 unowned ids from the slot with the most unowned items (ties: `sort` order of the slot rotated by the project's gift count), filled from other slots when that slot has fewer than 3. Returns `{id: <progress uuid>, gift: null | {id, options}}`.
+  - Gift options are chosen by one helper, `shift_quest__gift_create(p_project uuid, p_member uuid, p_source text) RETURNS jsonb` (`null` or `{id, options}`; `INSERT ... ON CONFLICT (project_id, source) DO NOTHING`, so a source gives at most one gift), used by both gift paths.
+  - `shift_quest_quest_gift(p_actor text, p_instance uuid) RETURNS jsonb`: `{gift: null | {id, options}}`. Never raises for a normal miss: returns `gift: null` when the instance is not on the caller's current project, has no submission yet, or its source already has a gift, or the team owns everything. Source from the instance: main → `quest:main:<milestone>`, side → `quest:side:<template_id>`, proposed → `quest:proposed:<instance_id>`. Not counted against the round daily cap.
   - `shift_quest_tree_pick(p_actor text, p_gift uuid, p_item text) RETURNS jsonb` (= tree_get): locks the gift `FOR UPDATE`; refuses `sq:gift_gone` (missing, already picked, or not the caller's current project) and `sq:item_not_offered`; sets `picked`, adds to `owned` without duplicates, equips the item in its slot.
   - `shift_quest_tree_equip(p_actor text, p_item text) RETURNS jsonb` (= tree_get): refuses `sq:item_not_owned`.
   - `shift_quest_island_styles() RETURNS jsonb`: `[{slot, seed, equipped}]` for plots whose project passes `shift_quest__name_visible` and has a style row. Never a count, a name or a member.
   - `shift_quest_schema_version()` → 13.
 
-- [ ] **Step 1: Write `tree.ts`** in the style of `roots.ts` (synthetic ids; bot and web connections). Checks: schema version 13; tree_get on a fresh project = defaults, seed null, no gifts; seed_plant sets seed `sakura` look and owned ⊇ its items, ambition filled when null and kept when set; second seed_plant → `sq:seed_planted`; unknown seed → `sq:seed_unknown`; idea of 501 chars refused; round_close_gift creates a gift with 3 distinct unowned options; third round close the same Bangkok day → `gift: null`; pick → owned +1, equipped updated, gift gone from tree_get; two concurrent picks on one gift from two teammates' connections → exactly one ok, one `sq:gift_gone`, owned has no duplicates; pick by a member of another project → `sq:gift_gone`; pick of an id not offered → `sq:item_not_offered`; equip of an unowned id → `sq:item_not_owned`; owning all but 2 items → gift has 2 options; owning all → no gift; island_styles omits a plain (not name-visible) project and never includes `roots`; tree_get `roots.count` matches a known number of qualifying notes and `recent` counts only the last 7 days (backdate rows as admin); all functions callable as `shift_quest_web`.
+- [ ] **Step 1: Write `tree.ts`** in the style of `roots.ts` (synthetic ids; bot and web connections). Checks: schema version 13; tree_get on a fresh project = defaults, seed null, no gifts; seed_plant sets seed `sakura` look and owned ⊇ its items, ambition filled when null and kept when set; second seed_plant → `sq:seed_planted`; unknown seed → `sq:seed_unknown`; idea of 501 chars refused; round_close_gift creates a gift with 3 distinct unowned options; third round close the same Bangkok day → `gift: null`; pick → owned +1, equipped updated, gift gone from tree_get; two concurrent picks on one gift from two teammates' connections → exactly one ok, one `sq:gift_gone`, owned has no duplicates; pick by a member of another project → `sq:gift_gone`; pick of an id not offered → `sq:item_not_offered`; equip of an unowned id → `sq:item_not_owned`; owning all but 2 items → gift has 2 options; owning all → no gift; quest_gift after a first main-quest submit returns 3 options; a second call for the same instance, a resubmit, or a teammate's call for the same milestone returns `gift: null`; quest_gift on an instance with no submission or another project's instance returns `gift: null` without raising; quest gifts do not use up the round daily cap (two round gifts and one quest gift on the same day all land); island_styles omits a plain (not name-visible) project and never includes `roots`; tree_get `roots.count` matches a known number of qualifying notes and `recent` counts only the last 7 days (backdate rows as admin); all functions callable as `shift_quest_web`.
 - [ ] **Step 2: Run** `pnpm test:db:quests`. Expected: the `tree` suite FAILS (functions missing); every other suite passes.
 - [ ] **Step 3: Write the migration.** Header comment states schema 13, prod-first, functions + tables, the maintainer applies it.
 - [ ] **Step 4: Run** `pnpm test:db:quests`. Expected: all suites PASS, including migrations applied twice.
@@ -176,7 +179,7 @@ Behaviour pinned by the spec:
 - Modify: `lib/content/shift-island.ts` and its test if they repeat stage names
 - Test: `components/shift/island/__tests__/copy.test.ts`, `bot/src/quests/__tests__/` copy tests
 
-Copy the builder writes, then sends through review: seed card title and one-line ask (what the team wants to build), the 4 seed blurbs, seed planted confirmation, gift heading after a round (one gift for the team, pick 1 of 3, the team sees it on the island), "เก็บไว้ก่อน" (keep for later), wardrobe heading, 🔍 button label, close-up caption (roots = reflections), refusal lines.
+Copy the builder writes, then sends through review: seed card title and one-line ask (what the team wants to build), the 4 seed blurbs, seed planted confirmation, gift heading after a round (one gift for the team, pick 1 of 3, the team sees it on the island), gift heading after a quest submit, "เก็บไว้ก่อน" (keep for later), wardrobe heading, 🔍 button label, close-up caption (roots = reflections), refusal lines, and the Task 6b submission copy (step titles เลือกหลักฐาน / ตรวจแล้วส่ง, "ต่อไป (เลือกแล้ว n ใบ)", "เลือกโน้ตอย่างน้อย 1 ใบ", "แก้โน้ต", "เปิดแคนวาส", sent screen "ส่งถึงพี่เลี้ยงแล้ว" + where the result arrives, "กลับไปที่เกาะ", "ดูต้นไม้ของทีม").
 
 - [ ] **Step 1: Write failing copy tests**: `STAGE_NAMES[1] === "เมล็ดงอก"` in both copy files; every new string has no "—", no "น้องๆ", no "ปลูก", no "สตรีค"/"streak"; each new `sq:` code has `hasErrorText` true.
 - [ ] **Step 2: Run** `pnpm jest components/shift/island/__tests__/copy.test.ts bot/src/quests/__tests__`. Expected: FAIL.
@@ -190,6 +193,7 @@ Copy the builder writes, then sends through review: seed card title and one-line
 - Create: `components/shift/island/tree/TreeCanvas.tsx` (draws `closeupGrid` to a `<canvas>` with `image-rendering: pixelated`; respects `useReducedMotion` for the grow-in)
 - Create: `components/shift/island/tree/TreeSheet.tsx` (IslandSheet: canvas, waiting gift card, wardrobe tabs per slot showing owned items, seed card when `seed` is null)
 - Create: `components/shift/island/tree/SeedPicker.tsx` (4 seed previews + one-line idea field, max 500)
+- Create: `components/shift/island/tree/GiftPicker.tsx` (`{ tree: MyTree; gift: { id; options }; onPicked(tree: MyTree); onLater?() }`: 3 option buttons, each a small `TreeCanvas` of the team's tree wearing that item plus its name; one tap calls `pickGift`; used by TreeSheet and by Task 6b's sent screen)
 - Create: `app/shift/island/tree-actions.ts` (`plantSeed(seed, idea)`, `pickGift(giftId, item)`, `equipItem(item)`: server actions, `supabase.auth.getUser()` via the existing viewer helper, call the Task 3 functions, return `{ ok: true, tree: MyTree } | { ok: false, code }`, `revalidatePath("/shift/island")`)
 - Modify: `components/shift/island/IslandApp.tsx` (own plot tap and HUD tree open `TreeSheet`)
 - Modify: `components/shift/island/PlotSheet.tsx` (another team's non-plain plot shows `TreeCanvas` with its style and stage; roots drawn from its public level only, `count = [0,3,8,15][level]`, `recent = 0`; a plain plot shows no tree, as today)
@@ -205,6 +209,28 @@ Copy the builder writes, then sends through review: seed card title and one-line
 - [ ] **Step 4: Run** `pnpm lint && pnpm test`. Expected: PASS.
 - [ ] **Step 5: Commit** `feat(shift): web tree close-up, seed choice and wardrobe`.
 
+### Task 6b: Quest submission redesign and the sent screen (web)
+
+**Files:**
+- Modify: `components/shift/island/QuestDetailSheet.tsx` (`QuestCompose`: step state `pick | review | sent`; footer per step through `IslandSheet`'s `footer`, buttons using `form=` attributes so the footer submits the body's form; back always top left; the sent screen replaces toast-and-close)
+- Modify: `components/shift/island/canvas/QuestCardComposer.tsx` (split into a pick step and a review step; whole-sticky toggle with a visually hidden native checkbox and a pixel check badge; one "เปิดแคนวาส" link under the list; remove the internal `.bar`; expose `formId`, picked count and pending to the parent; `onSubmitted(result)` passes the submit result through)
+- Modify: `components/shift/island/canvas/QuestCardPreview.tsx` (review-step layout)
+- Modify: `components/shift/island/SubmitForm.tsx` (เสร็จเมื่อ reminder, placeholders, submit button moves to the footer via `form=`; `onSubmitted(result)`)
+- Create: `components/shift/island/SentScreen.tsx` (sent line, where the result arrives, `GiftPicker` when `result.gift`, else "กลับไปที่เกาะ" + "ดูต้นไม้ของทีม")
+- Modify: `components/shift/island/canvas/canvas.module.css`, `components/shift/island/island.module.css` (island button classes in the composer; check badge; selected outline; touch `:active` equivalents for every hover)
+- Modify: `app/shift/island/actions.ts` (`submitMainQuest`, `submitSideQuest`, `submitProposedQuest`, `submitQuestCard`: after a successful submit, at schema ≥ 13 call `shift_quest_quest_gift(actor, instanceId)` inside its own try/catch and add `gift` and `tree` (from `readMyTree`) to the result; any gift failure is logged and returns `gift: null`)
+- Modify: `lib/supabase/shift-quests/types.ts` (`QuestSubmitResult` gains `gift?: { id: string; options: string[] } | null; tree?: MyTree | null`)
+- Test: `components/shift/island/__tests__/QuestDetailSheet.test.tsx`, `components/shift/island/canvas/__tests__/QuestCardComposer.test.tsx`, `app/shift/island/__tests__/` submit actions test
+
+**Interfaces:**
+- Consumes: Task 3 (`shift_quest_quest_gift`), Task 4 (`readMyTree`, `TREE_SCHEMA`), Task 5 copy, Task 6 (`GiftPicker`, `TreeCanvas`, `pickGift`).
+
+- [ ] **Step 1: Write failing tests**: pick step shows no "ดูบนแคนวาส" per note and one "เปิดแคนวาส" link; tapping a sticky's text toggles it; the footer button reads "เลือกโน้ตอย่างน้อย 1 ใบ" and is disabled with 0 picked, and "ต่อไป (เลือกแล้ว 2 ใบ)" with 2; ต่อไป shows the review step with the preview tiles and the line field; แก้โน้ต returns with the ticks kept; submitting calls `submitQuestCard` once and shows "ส่งถึงพี่เลี้ยงแล้ว" without closing the sheet; with `result.gift` the sent screen shows 3 gift options and picking one calls `pickGift(giftId, item)`; without a gift it shows "กลับไปที่เกาะ", which closes the sheet; the written form submits from the footer button and shows the same sent screen; the actions return `ok` with `gift: null` when `shift_quest_quest_gift` throws, and make no gift call below schema 13.
+- [ ] **Step 2: Run** `pnpm jest components/shift/island app/shift/island`. Expected: the new tests FAIL.
+- [ ] **Step 3: Implement**, following `docs/ui-design-system.md`; read `components/shift/island/island.module.css` for the notched buttons and the sheet footer. Phone width first (390px), then 1024px dialog.
+- [ ] **Step 4: Look at it**: render the pick, review and sent steps at 390px and 1280px from a throwaway page that is not committed, and fix what looks wrong before committing.
+- [ ] **Step 5: Run** `pnpm lint && pnpm jest components/shift/island app/shift/island`. Expected: PASS. **Commit** `feat(shift): two-step quest submission that ends in a gift`.
+
 ### Task 7: Discord seed, gifts and 🔍
 
 **Files:**
@@ -213,13 +239,14 @@ Copy the builder writes, then sends through review: seed card title and one-line
 - Modify: `bot/src/quests/handlers/rounds.ts` (`rd_close_go`: at schema ≥ 13 call `shift_quest_round_close_gift`, else unchanged; when `gift` is present, the saved view adds the gift image and 3 buttons `tr_pick:<giftId>:<i>` plus `tr_later`)
 - Modify: `bot/src/quests/handlers/island.ts` (at schema ≥ 13: `is_tree` 🔍 button; `tr_seed` button while seed is null)
 - Modify: handler registry (where `is_reflect` is registered)
+- Modify: the bot's quest submit paths (`bot/src/quests/handlers/island.ts` milestone submit, `bot/src/quests/handlers/quest.ts` and `board.ts` submits): at schema ≥ 13, after the submit succeeds, call `shift_quest_quest_gift(actor, instanceId)` in its own try/catch; when a gift comes back, the success reply adds the gift image and the same `tr_pick`/`tr_later` buttons
 - Test: `bot/src/quests/__tests__/tree-handlers.test.ts`
 
 **Interfaces:**
 - Custom ids: `is_tree`; `tr_seed` (reply: seed preview + 4 buttons `tr_seed_pick:<seed>`); `tr_seed_pick:<seed>` opens modal `tr_seed_go:<seed>` (field idea, 1..500); `tr_pick:<giftId>:<index 0..2>` (index into the gift's options read from tree_get, never the id in the custom id); `tr_later` (removes the buttons, gift waits).
 - All replies ephemeral; modal submits `deferReply` first (as #288).
 
-- [ ] **Step 1: Write failing tests** with the existing test helpers: schema 12 → `rd_close_go` calls `shift_quest_round_close` and shows no gift; schema 13 with a gift → calls `shift_quest_round_close_gift`, reply has an image attachment and 3 `tr_pick` buttons; `tr_pick` with `sq:gift_gone` replies with `errorText("gift_gone")`; `tr_seed_go:pine` calls `shift_quest_seed_plant(actor,"pine",idea)`; `is_tree` replies with a PNG attachment; schema 12 `/island` has no `is_tree` or `tr_seed` button.
+- [ ] **Step 1: Write failing tests** with the existing test helpers: schema 12 → `rd_close_go` calls `shift_quest_round_close` and shows no gift; schema 13 with a gift → calls `shift_quest_round_close_gift`, reply has an image attachment and 3 `tr_pick` buttons; `tr_pick` with `sq:gift_gone` replies with `errorText("gift_gone")`; `tr_seed_go:pine` calls `shift_quest_seed_plant(actor,"pine",idea)`; `is_tree` replies with a PNG attachment; schema 12 `/island` has no `is_tree` or `tr_seed` button; a schema 13 milestone submit whose `shift_quest_quest_gift` returns a gift shows the gift buttons, and one whose gift call throws still shows the normal sent reply.
 - [ ] **Step 2: Run** `pnpm jest bot/src/quests/__tests__/tree-handlers.test.ts`. Expected: FAIL.
 - [ ] **Step 3: Implement.**
 - [ ] **Step 4: Run** `pnpm jest bot`. Expected: PASS.
@@ -231,7 +258,7 @@ Copy the builder writes, then sends through review: seed card title and one-line
 - Modify: `lib/content/shift-island-guide.ts`, `app/shift/island/guide/parts.tsx` if a new part is needed
 - Test: `lib/content/__tests__/shift-island-guide.test.ts`
 
-Content: the seed as the first step (no review needed), the close-up (tap your tree on the web, 🔍 in `/island`), roots = reflections, a gift after every campfire round (pick 1 of 3, the whole team's tree), the wardrobe, stage names matching `STAGE_NAMES` (with เมล็ด before stage 1).
+Content: the seed as the first step (no review needed), the close-up (tap your tree on the web, 🔍 in `/island`), roots = reflections, a gift after every campfire round and after the first submit of each quest (pick 1 of 3, the whole team's tree), the wardrobe, stage names matching `STAGE_NAMES` (with เมล็ด before stage 1).
 
 - [ ] **Step 1: Failing test**: guide stage list equals `[PRE_STAGE, ...STAGE_NAMES.slice(1)]` where it lists stages; guide mentions 🔍 and the campfire gift; copy rule checks pass.
 - [ ] **Step 2: Run** `pnpm jest lib/content/__tests__/shift-island-guide.test.ts`. Expected: FAIL.

@@ -1,6 +1,10 @@
 # SHIFT Island: tree close-up and tree style
 
-Status: approved in conversation 2026-11-14 (gifts from campfire rounds only; seed approach A). Founder picked the cutaway close-up (mockup C) and
+Status: approved in conversation 2026-11-14 (seed approach A). Amended the
+same day: the founder asked to fold in the quest submission redesign and to
+give a pick after a quest is submitted too ("After submit, let them pick
+options"), so gifts now come from campfire rounds **and** quest submits.
+See goal 9. Founder picked the cutaway close-up (mockup C) and
 "whoever finishes a round picks 1 of 3". Mockup:
 `scratchpad/tree-zoom/mockup.html` (not committed; the drawing code moves into
 `lib/shift-island/tree-closeup.ts`).
@@ -98,6 +102,55 @@ shows the tree growing and being customised.
    the seed, the close-up, gifts after rounds and the wardrobe, and the
    stage names match. Same Thai review.
 
+9. **Quest submission redesign, ending in a gift** (added 2026-11-14).
+   The founder called the island's quest submission UX "so bad". Seen on a
+   390px phone: the quest card composer's 44px native checkboxes render as
+   dark grey blocks; every note repeats "ดูบนแคนวาส"; a privacy box sits
+   above everything; the picked count and a send button that is disabled
+   with no reason sit at the very bottom; the composer's own sticky bar
+   (negative-margin hack) has square buttons that do not match the
+   island's notched ones; "การ์ดเควสต์" repeats under the quest title; the
+   preview repeats the notes; and a successful send only toasts and closes
+   the sheet. The written form (no canvas) is three bare fields with no
+   reminder of what the mentor looks for.
+   - **Card path, two steps in the same sheet.** Step 1 เลือกหลักฐาน: the
+     quest's เสร็จเมื่อ list in one compact line or two, then the notes as
+     tappable stickies (the whole sticky toggles; a small pixel check badge
+     in the corner; selected = lamp outline). One "เปิดแคนวาส" link under
+     the list instead of one per note. Outsider notes stay visible but
+     dimmed with one short tag; a possible-PII note keeps a short warning.
+     Step 2 ตรวจแล้วส่ง: the card exactly as the mentor gets it (the
+     preview tiles; the raw text one tap away), the reflection line with
+     the privacy reminder as its hint, the optional link, and the "this
+     card will not change" line next to the button.
+   - **Written path, one step**: the เสร็จเมื่อ reminder on top, the three
+     fields with placeholders, same footer.
+   - **One action bar.** Every compose step uses the sheet's own sticky
+     `footer` (the same bar as the quest view), with island buttons: a
+     full-width primary that says what it does and how many notes are
+     picked ("ต่อไป (เลือกแล้ว 2 ใบ)"), and states why it is disabled
+     ("เลือกโน้ตอย่างน้อย 1 ใบ"). Back is always in the same place (top
+     left). The composer's own `.bar` goes away.
+   - **After a successful send, the sheet stays open on a sent screen**,
+     never a toast-and-close: "ส่งถึงพี่เลี้ยงแล้ว", where the result will
+     arrive (Discord, the bot's messages), and then, when the submit earned
+     one, **the gift: pick 1 of 3** for the team's tree, each option drawn
+     as the team's own tree wearing that item. Picking puts it on the tree
+     at once and shows the tree; "เก็บไว้ก่อน" leaves it waiting in the
+     close-up. With no gift (database before schema 13, nothing left to
+     own, already given for this quest) the screen shows the sent line and
+     "กลับไปที่เกาะ" plus a link to the tree.
+   - **Gift rule for quest submits** (builder's call): the first submit of
+     each quest gives the team one gift, ever: main quests per milestone,
+     side quests per template, proposed quests per instance. Resubmits and
+     repeats of a done quest give nothing. A declined submit keeps its gift
+     (no losing items). Not counted against the 2-per-day round cap,
+     because the quest list already bounds it. The submit saves first; the
+     gift is a second call that can never fail the submit.
+   - **Discord**: after a quest submit succeeds in the bot (island milestone
+     modal, board and quest flows), the reply adds the same gift image and
+     buttons as after a round.
+
 ## Non-goals
 
 - Buying looks with coins. Coins stay for real-world prizes.
@@ -151,8 +204,13 @@ shows the tree growing and being customised.
   ids, seeded idempotently, so SQL can choose options. Colours stay in code.
 - `shift_quest_tree_style(project_id pk, equipped jsonb, owned text[],
   updated_at)`.
-- `shift_quest_tree_gifts(id, project_id, member_id, session_id unique,
-  slot, options text[3], picked text null, created_at, picked_at)`.
+- `shift_quest_tree_gifts(id, project_id, member_id, source text,
+  options text[3], picked text null, created_at, picked_at)`, unique on
+  `(project_id, source)`. `source` is `round:<session_id>`,
+  `quest:main:<milestone>`, `quest:side:<template_id>` or
+  `quest:proposed:<instance_id>`.
+- New function `shift_quest_quest_gift(actor, instance_id)` returns
+  `{gift: null | {id, options}}`: called after a successful submit.
 - `shift_quest_round_close` (replaced) also creates the gift when the
   student's team has unowned items left and returns `gift: {id, options}`.
 - New functions: `shift_quest_tree_get(actor)`,
