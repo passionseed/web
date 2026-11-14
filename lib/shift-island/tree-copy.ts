@@ -17,6 +17,13 @@ export const TREE_PLANTED = "ทีมเลือกเมล็ดแล้ว
 /** Above the four seeds. */
 export const TREE_SEED_PICK = "เลือกเมล็ดหนึ่งแบบ ต้นไม้ของทีมจะเริ่มจากเมล็ดนี้";
 
+/**
+ * DRAFT (Thai review in progress): the idea line's hint when it starts from
+ * the ambition the team wrote when it made the project. The planted line
+ * becomes the ambition, so an edit here changes it.
+ */
+export const TREE_IDEA_PREFILLED = "ทีมเขียนไว้ตอนสร้างโปรเจกต์ แก้ให้ตรงกับตอนนี้ได้";
+
 /** Which part of the tree a look changes, shown with its name (สีใบ ทอง). */
 export const TREE_SLOTS = { shape: "ทรงพุ่ม", leaf: "สีใบ", bark: "เปลือกไม้", bloom: "ดอก" };
 

@@ -125,6 +125,30 @@ describe("TreeSheet", () => {
     expect(main().input).toMatchObject({ seeded: true, style: { shape: "shape:round" } });
   });
 
+  it("starts the line from the project's ambition, says so, and plants the line as edited", async () => {
+    jest.mocked(plantSeed).mockResolvedValue({ ok: true, data: { tree: tree({ seed: "oak", stage: 0 }) } });
+    renderSheet(tree({ seed: null, stage: 0, ambition: "แอปจองโต๊ะอ่านหนังสือ" }));
+    const card = screen.getByRole("region", { name: TREE.seed.title });
+    const line = within(card).getByLabelText(TREE.seed.ask);
+    expect(line).toHaveValue("แอปจองโต๊ะอ่านหนังสือ");
+    expect(line).toHaveAccessibleDescription(TREE.seed.askHintPrefilled);
+    expect(within(card).queryByText(TREE.seed.askHint)).toBeNull();
+
+    fireEvent.change(line, { target: { value: "แอปจองโต๊ะอ่านหนังสือในโรงเรียน" } });
+    fireEvent.click(within(card).getByRole("radio", { name: new RegExp(TREE.seeds.oak.name) }));
+    await act(async () => {
+      fireEvent.click(within(card).getByRole("button", { name: TREE.seed.action }));
+    });
+    expect(plantSeed).toHaveBeenCalledWith("oak", "แอปจองโต๊ะอ่านหนังสือในโรงเรียน");
+  });
+
+  it("starts empty without an ambition (none, or blank)", () => {
+    renderSheet(tree({ seed: null, stage: 0, ambition: "   " }));
+    const card = screen.getByRole("region", { name: TREE.seed.title });
+    expect(within(card).getByLabelText(TREE.seed.ask)).toHaveValue("");
+    expect(within(card).getByText(TREE.seed.askHint)).toBeInTheDocument();
+  });
+
   it("asks for the idea and the seed before sending anything", () => {
     renderSheet(tree({ seed: null, stage: 0 }));
     const card = screen.getByRole("region", { name: TREE.seed.title });

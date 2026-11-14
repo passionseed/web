@@ -142,6 +142,12 @@ export interface MyTree {
   gifts: { id: string; options: string[] }[];
   roots: { count: number; recent: number };
   stage: number;
+  /**
+   * The project's current ambition (its own team only), or null: the seed
+   * pickers prefill their line with it, and the planted line becomes it.
+   * Absent reads as none.
+   */
+  ambition?: string | null;
 }
 /** shift_quest_island_map(actor) */
 export interface IslandMapData {

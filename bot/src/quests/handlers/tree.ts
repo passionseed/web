@@ -259,14 +259,26 @@ export const tree: HandlerSet = {
       else await show(i, seedCard("tr_seed"));
     },
 
+    /** The idea form: its line starts from the project's ambition when the team wrote one (read first; none on any failure). */
     async tr_seed_pick(i, ctx, [seed]) {
       requireStudent(ctx);
       if (!i.isButton() || !isSeed(seed)) return;
       const { name, blurb } = TREE.seeds[seed];
+      const ambition = (await readMyTree(ctx.api, ctx.userId))?.ambition ?? null;
       await i.showModal(
         modal(cid("tr_seed_go", seed), TREE.modalTitle, [
           { kind: "note", text: `🌰 **${name}** ${blurb}` },
-          { kind: "text", id: "idea", label: TREE.ideaLabel, placeholder: TREE.ideaPlaceholder, required: true, min: 1, max: 500 },
+          {
+            kind: "text",
+            id: "idea",
+            label: TREE.ideaLabel,
+            description: ambition ? TREE.ideaPrefilled : undefined,
+            placeholder: TREE.ideaPlaceholder,
+            value: ambition,
+            required: true,
+            min: 1,
+            max: 500,
+          },
         ])
       );
     },

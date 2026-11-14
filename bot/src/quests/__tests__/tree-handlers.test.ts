@@ -361,9 +361,22 @@ describe("🌰 choosing the seed", () => {
     expect(json).toContain('"required":true');
     expect(json).toContain(TREE.ideaLabel);
     expect(json).toContain(TREE.seeds.pine.name);
+    // No ambition (or no tree to read): the line starts empty, with no prefilled hint.
+    expect(json).not.toContain(TREE.ideaPrefilled);
+    expect(json).not.toContain('"value"');
     const forged = interaction("button");
     await ACTION_HANDLERS.get("tr_seed_pick")!(forged.i, ctx(), ["palm"]);
     expect(forged.modals).toEqual([]);
+  });
+
+  it("the idea line starts from the project's ambition, and its hint says the team can edit it", async () => {
+    const c = ctx({ shift_quest_schema_version: 13, shift_quest_tree_get: tree({ seed: null, ambition: "แอปจองโต๊ะอ่านหนังสือ" }) });
+    const b = interaction("button");
+    await ACTION_HANDLERS.get("tr_seed_pick")!(b.i, c, ["oak"]);
+    const json = JSON.stringify(b.modals[0]);
+    expect(json).toContain('"value":"แอปจองโต๊ะอ่านหนังสือ"');
+    expect(json).toContain(TREE.ideaPrefilled);
+    expect(TREE.ideaPrefilled.length).toBeLessThanOrEqual(100);
   });
 
   it("puts the seed in the ground with the idea, answered first, then shows the tree", async () => {

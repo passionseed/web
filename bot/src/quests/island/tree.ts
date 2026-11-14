@@ -124,6 +124,7 @@ export function myTreeFrom(raw: unknown): MyTree | null {
     gifts,
     roots: { count: count(roots.count), recent: count(roots.recent) },
     stage: count(r.stage),
+    ambition: typeof r.ambition === "string" && r.ambition.trim() ? r.ambition : null,
   };
 }
 

@@ -82,7 +82,8 @@ shows the tree growing and being customised.
    soon as the team has a plot (top of the quest board, Discord and web,
    and in the close-up of an empty plot):
    - Write one line about what the team wants to build (rough is fine; it
-     fills the project's `ambition` when empty, prefilled when not), then
+     starts from the project's `ambition` when the team wrote one, and the
+     planted line becomes the ambition, so an edit there is kept), then
      pick 1 of 4 seeds. No mentor review: the seed is in the ground at once.
    - Any team member can do it, once per project. Teams that already have
      progress but no seed get the same card; until then they draw as โอ๊ก.

@@ -57,7 +57,7 @@ export function TreeSheet({ open, onClose, tree: given, onBoard }: TreeSheetProp
       description={stageLine}
     >
       <div className={`${styles.stack} ${styles.layout}`}>
-        {tree.seed == null ? <SeedPicker onPlanted={setTree} /> : null}
+        {tree.seed == null ? <SeedPicker ambition={tree.ambition} onPlanted={setTree} /> : null}
 
         {gift ? (
           <section aria-labelledby={giftHeadingId} className={styles.card}>

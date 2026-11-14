@@ -22,15 +22,17 @@ const chars = (value: string) => Array.from(value).length;
 
 /**
  * เลือกเมล็ด, the team's first step: one line on what the team wants to
- * build (it fills the project's ambition when that is empty), then one of
- * four seeds, each drawn grown up in its look. Any teammate, once per
+ * build, then one of four seeds, each drawn grown up in its look. The line
+ * starts from the project's ambition when the team wrote one (its hint says
+ * so), and the planted line becomes the ambition. Any teammate, once per
  * project; no mentor review, the seed is in the ground at once.
  */
-export function SeedPicker({ onPlanted }: { onPlanted: (tree: MyTree) => void }) {
+export function SeedPicker({ ambition = null, onPlanted }: { ambition?: string | null; onPlanted: (tree: MyTree) => void }) {
   const headingId = useId();
   const ideaId = useId();
   const groupName = useId();
-  const [idea, setIdea] = useState("");
+  const prefilled = Boolean(ambition?.trim());
+  const [idea, setIdea] = useState(prefilled ? (ambition as string) : "");
   const [seed, setSeed] = useState<SeedId | null>(null);
   const [errors, setErrors] = useState<{ idea?: string; seed?: string }>({});
   const [pending, startTransition] = useTransition();
@@ -76,7 +78,7 @@ export function SeedPicker({ onPlanted }: { onPlanted: (tree: MyTree) => void })
             {TREE.seed.ask}
           </label>
           <p id={`${ideaId}-hint`} className={island.hint}>
-            {TREE.seed.askHint}
+            {prefilled ? TREE.seed.askHintPrefilled : TREE.seed.askHint}
           </p>
           <input
             id={ideaId}

@@ -109,7 +109,15 @@ describe("readers below schema 13", () => {
     const api = fakeApi({
       shift_quest_schema_version: 13,
       shift_quest_island_styles: [{ slot: 1, seed: null, equipped: AUTUMN }],
-      shift_quest_tree_get: { seed: "pine", equipped: BIRCH, owned: ["x"], gifts: [{ id: "g", options: ["leaf:gold"] }, 5], roots: { count: 2, recent: 1 }, stage: 4 },
+      shift_quest_tree_get: {
+        seed: "pine",
+        equipped: BIRCH,
+        owned: ["x"],
+        gifts: [{ id: "g", options: ["leaf:gold"] }, 5],
+        roots: { count: 2, recent: 1 },
+        stage: 4,
+        ambition: "แอปจองโต๊ะ",
+      },
     });
     expect((await readStyles(api)).get(1)?.style).toEqual(AUTUMN);
     expect(await readMyTree(api, "42")).toEqual({
@@ -119,6 +127,7 @@ describe("readers below schema 13", () => {
       gifts: [{ id: "g", options: ["leaf:gold"] }],
       roots: { count: 2, recent: 1 },
       stage: 4,
+      ambition: "แอปจองโต๊ะ",
     });
     const broken = fakeApi({
       shift_quest_schema_version: 13,
@@ -127,6 +136,11 @@ describe("readers below schema 13", () => {
     });
     expect((await readStyles(broken)).size).toBe(0);
     expect(await readMyTree(broken, "42")).toBeNull();
+    // No ambition, a blank one or one that is not text: none (the pickers start empty).
+    for (const ambition of [undefined, null, "  ", 7]) {
+      const plain = fakeApi({ shift_quest_schema_version: 13, shift_quest_tree_get: { equipped: BIRCH, ambition } });
+      expect((await readMyTree(plain, "42"))?.ambition).toBeNull();
+    }
     expect(console.warn).toHaveBeenCalledTimes(1);
   });
 });

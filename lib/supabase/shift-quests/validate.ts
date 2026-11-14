@@ -158,7 +158,7 @@ const SEED_IDS = ["oak", "sakura", "pine", "maple"] as const satisfies readonly 
 /** A catalog item id (`leaf:autumn`); the database checks again that it is offered or owned. */
 const treeItemId = z.string().refine((v) => treeItem(v) !== null, { message: "unknown item" });
 
-/** The idea fills the project's ambition when it is empty, so it has the ambition's cap. */
+/** The planted idea becomes the project's ambition (the pickers prefill it), so it has the ambition's cap. */
 export const plantSeedSchema = z.object({ seed: z.enum(SEED_IDS), idea: requiredText(TEXT_LIMITS.ambition) });
 
 export const pickGiftSchema = z.object({ giftId: id, item: treeItemId });
