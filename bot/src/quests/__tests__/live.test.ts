@@ -574,7 +574,8 @@ describe("startLivePost", () => {
     const old = make();
     await ready(old);
     expect(old.db.calls.filter((c) => c[0] === "shift_quest_island_styles")).toEqual([]);
-  });
+    // Four real GIFs (about 2 s alone): room for a loaded CI machine.
+  }, 30_000);
 
   it("edits on every gateway ready, even with nothing changed", async () => {
     const w = make();
