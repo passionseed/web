@@ -2,6 +2,7 @@
  * SHIFT Island words. Thai first, one place, same house rules as ../copy.ts:
  * no em dashes, never talk down, never promise rewards that are not live.
  */
+import { TREE_CLOSEUP, TREE_GIFT, TREE_PLANTED, TREE_SEEDS, TREE_WARDROBE } from "@/lib/shift-island/tree-copy";
 import { FOCUS_MINUTES, REFLECTIONS_PER_DAY, REST_MINUTES } from "@/lib/shift-island/rounds-rules";
 
 import { bkkDate, meter, safe } from "../copy";
@@ -308,30 +309,14 @@ export const TREE = {
   ideaPlaceholder: "เขียนสั้นๆ หนึ่งบรรทัด",
   seedLabel: "เมล็ด",
   seedPlaceholder: "เลือกเมล็ดหนึ่งแบบ",
-  seeds: {
-    oak: { name: "ต้นโอ๊ก", blurb: "พุ่มกลมสีเขียวป่า เปลือกไม้โอ๊ก" },
-    sakura: { name: "ซากุระ", blurb: "พุ่มทรงหัวใจ เปลือกสีซีดาร์แดง ดอกซากุระ" },
-    pine: { name: "สน", blurb: "ทรงสนเรียวแหลม ใบสีมิ้นต์ ปลายกิ่งมีน้ำแข็งเกาะ" },
-    maple: { name: "เมเปิล", blurb: "ใบเมเปิลสีแดง เปลือกสีขาวแบบเบิร์ช ดอกโคมไฟสีส้ม" },
-  },
-  planted: "ทีมเลือกเมล็ดแล้ว ต้นไม้เริ่มจากตรงนี้",
+  seeds: TREE_SEEDS,
+  planted: TREE_PLANTED,
   gift: {
-    roundHeading: "จบรอบแล้ว ทีมได้ของขวัญหนึ่งชิ้น",
-    questHeading: "ส่งเควสต์นี้ครั้งแรกแล้ว ทีมได้ของขวัญหนึ่งชิ้น",
-    sub: "เลือกลุคให้ต้นไม้ของทีม 1 จาก 3 แบบ ทุกคนเห็นบนเกาะ",
-    keep: "เก็บไว้ก่อน",
+    ...TREE_GIFT,
     kept: "เก็บไว้แล้ว เพื่อนในทีมคนไหนก็เปิดได้ทีหลังจากปุ่ม 🎁 เปิดของขวัญ",
-    picked: (name: string) => `ต้นไม้ของทีมได้ ${name} แล้ว`,
   },
-  wardrobe: {
-    heading: "ลุคของต้นไม้",
-    sub: "สลับลุคที่ทีมมี ทุกคนในทีมเปลี่ยนได้",
-    changed: "เปลี่ยนลุคต้นไม้แล้ว",
-  },
-  closeup: {
-    caption: "เหนือดินคือต้นไม้ของทีม ใต้ดินคือราก รากแต่ละเส้นมาจากบันทึกที่ทีมเขียนหลังจบรอบ",
-    roots: (n: number) => (n > 0 ? `ตอนนี้มีราก ${n} เส้น` : "ยังไม่มีราก รากเส้นแรกมาจากบันทึกของทีมหลังจบรอบ"),
-  },
+  wardrobe: TREE_WARDROBE,
+  closeup: TREE_CLOSEUP,
 };
 
 export interface SeasonUnlock {

@@ -11,6 +11,7 @@
  * CHARACTER.days), which only goes up: a missed day never takes anything
  * away or starts a count over (lore bible, "กติกาของเกาะ", rule 3).
  */
+import { TREE_CLOSEUP, TREE_GIFT, TREE_PLANTED, TREE_SEEDS, TREE_WARDROBE } from "@/lib/shift-island/tree-copy";
 import { REFLECTION_MIN_CHARS, REFLECTIONS_PER_DAY } from "@/lib/shift-island/rounds-rules";
 import type { ProjectRoute, SeasonUnlock, TileStatus } from "@/lib/supabase/shift-quests/types";
 import type { ShiftDiscordAuthError } from "@/lib/shift/discordAuth";
@@ -594,41 +595,29 @@ export const TREE = {
     askPlaceholder: "เช่น แอปช่วยหาที่นั่งอ่านหนังสือใกล้บ้าน",
     pick: "เลือกเมล็ดหนึ่งแบบ ต้นไม้ของทีมจะเริ่มจากเมล็ดนี้",
     action: "เริ่มจากเมล็ดนี้",
-    planted: "ทีมเลือกเมล็ดแล้ว ต้นไม้เริ่มจากตรงนี้",
+    planted: TREE_PLANTED,
     needIdea: "เขียนก่อนว่าทีมอยากสร้างอะไร",
     needSeed: "เลือกเมล็ดก่อน",
   },
-  seeds: {
-    oak: { name: "ต้นโอ๊ก", blurb: "พุ่มกลมสีเขียวป่า เปลือกไม้โอ๊ก" },
-    sakura: { name: "ซากุระ", blurb: "พุ่มทรงหัวใจ เปลือกสีซีดาร์แดง ดอกซากุระ" },
-    pine: { name: "สน", blurb: "ทรงสนเรียวแหลม ใบสีมิ้นต์ ปลายกิ่งมีน้ำแข็งเกาะ" },
-    maple: { name: "เมเปิล", blurb: "ใบเมเปิลสีแดง เปลือกสีขาวแบบเบิร์ช ดอกโคมไฟสีส้ม" },
-  },
+  seeds: TREE_SEEDS,
   slots: { shape: "ทรงพุ่ม", leaf: "สีใบ", bark: "เปลือกไม้", bloom: "ดอก" },
   gift: {
-    roundHeading: "จบรอบแล้ว ทีมได้ของขวัญหนึ่งชิ้น",
-    questHeading: "ส่งเควสต์นี้ครั้งแรกแล้ว ทีมได้ของขวัญหนึ่งชิ้น",
-    sub: "เลือกลุคให้ต้นไม้ของทีม 1 จาก 3 แบบ ทุกคนเห็นบนเกาะ",
+    ...TREE_GIFT,
     pick: "เลือกลุคนี้",
-    keep: "เก็บไว้ก่อน",
     kept: "เก็บไว้แล้ว เพื่อนในทีมคนไหนก็เปิดได้ทีหลัง",
     waiting: (n: number) => `มีของขวัญรออยู่ ${n} ชิ้น`,
     open: "เปิดของขวัญ",
-    picked: (name: string) => `ต้นไม้ของทีมได้ ${name} แล้ว`,
     gone: "ของขวัญชิ้นนี้ถูกเลือกไปแล้ว",
   },
   wardrobe: {
-    heading: "ลุคของต้นไม้",
-    sub: "สลับลุคที่ทีมมี ทุกคนในทีมเปลี่ยนได้",
+    ...TREE_WARDROBE,
     using: "ใช้อยู่",
     use: "ใช้ลุคนี้",
-    changed: "เปลี่ยนลุคต้นไม้แล้ว",
     empty: "รับลุคใหม่ได้จากของขวัญหลังจบรอบ หรือหลังส่งเควสต์ครั้งแรก",
   },
   closeup: {
+    ...TREE_CLOSEUP,
     open: "ดูต้นไม้ใกล้ๆ",
     close: "กลับไปที่เกาะ",
-    caption: "เหนือดินคือต้นไม้ของทีม ใต้ดินคือราก รากแต่ละเส้นมาจากบันทึกที่ทีมเขียนหลังจบรอบ",
-    roots: (n: number) => (n > 0 ? `ตอนนี้มีราก ${n} เส้น` : "ยังไม่มีราก รากเส้นแรกมาจากบันทึกของทีมหลังจบรอบ"),
   },
 };
