@@ -306,9 +306,9 @@ async function main(): Promise<void> {
   check(r.files.length === 1 && isPng(r.files[0]), "the island image is attached", r.files.map((f) => f.name));
   const projectId = find(r, (c) => c.custom_id.startsWith("sq|is_name|")).custom_id.split("|")[2];
   check(
-    ["sq|is_tap", "sq|is_ms", "sq|is_stuck", "sq|is_rest|on", "sq|is_work", `sq|is_name|${projectId}|on`].every((id) => has(r, id)) &&
+    ["sq|is_tap", "sq|is_ms", "sq|is_stuck", "sq|is_rest|on", "sq|is_work", `sq|is_name|${projectId}|off`].every((id) => has(r, id)) &&
       !has(r, "sq|is_claim"),
-    "with a plot: tap, milestone, stuck, rest, work and name buttons",
+    "with a plot: tap, milestone, stuck, rest, work and a hide-name button (names show by default)",
     ids(r)
   );
   const firstView = await api.call<{ milestones: { milestone: number; title: string }[] }>("shift_quest_island", STUDENT);
@@ -459,13 +459,24 @@ async function main(): Promise<void> {
     r.content
   );
   check(r.content.includes(title(2)) && !r.content.includes(I.inFlight(title(1), STATE.submitted)), "the next milestone moves on", r.content);
-  // Nobody consented to show the plot yet: outsiders and the weekly post see the slot only (review findings 1, 3).
-  const plain = (await publicMap()).plots.find((p) => p.slot === 1);
-  check(plain?.stage === 0 && plain.plain === true && plain.name === null && !plain.mine, "the shared map shows a plain slot without consent", plain);
+  // Names show by default: outsiders and the weekly post see the real stage and the name with nobody opting in.
+  const shownByDefault = (await publicMap()).plots.find((p) => p.slot === 1);
+  check(shownByDefault?.stage === 1 && shownByDefault.plain === false && shownByDefault.name === "Trip Splitter" && !shownByDefault.mine,
+    "the shared map shows the name by default", shownByDefault);
   const own = (await mapOf(STUDENT)).plots.find((p) => p.slot === 1);
   check(own?.stage === 1 && own.mine && !own.plain, "the student's own map shows the seed", own);
   const outsider = (await mapOf(ADMIN)).plots.find((p) => p.slot === 1);
-  check(outsider?.stage === 0 && outsider.plain && !outsider.mine, "someone outside the project sees a plain slot", outsider);
+  check(outsider?.stage === 1 && !outsider.plain && outsider.name === "Trip Splitter" && !outsider.mine,
+    "someone outside the project sees the name by default", outsider);
+  // An explicit hide gives the plain slot (review findings 1, 3), and showing again brings it back.
+  r = await run("button", { ...S, customId: `sq|is_name|${projectId}|off` });
+  check(r.content === `### ${I.nameHiddenTitle}\n${I.nameHidden}`, "hiding the name from the first card", r.content);
+  const plain = (await publicMap()).plots.find((p) => p.slot === 1);
+  check(plain?.stage === 0 && plain.plain === true && plain.name === null && !plain.mine, "the shared map shows a plain slot after a hide", plain);
+  const outsiderPlain = (await mapOf(ADMIN)).plots.find((p) => p.slot === 1);
+  check(outsiderPlain?.stage === 0 && outsiderPlain.plain && !outsiderPlain.mine, "someone outside the project sees a plain slot after a hide", outsiderPlain);
+  r = await run("button", { ...S, customId: `sq|is_name|${projectId}|on` });
+  check(r.content === `### ${I.nameShown}`, "showing it again", r.content);
   const nullCaller = await api.call("shift_quest_island_map", null).then(
     () => "allowed",
     (error) => (error instanceof QuestError ? error.code : String(error))
@@ -556,18 +567,22 @@ async function main(): Promise<void> {
     r.content
   );
 
-  // --- 🪧 Name on the island: only with both teammates' consent ---------------
+  // --- 🪧 Name on the island: shown by default, hidden when any teammate hides it ---------------
+  r = await island(F);
+  r = await run("button", { ...F, customId: find(r, (c) => c.custom_id === `sq|is_name|${projectId}|off`).custom_id });
+  check(r.content === `### ${I.nameHiddenTitle}\n${I.nameHidden}`, "a teammate hides the name", r.content);
+  check((await publicMap()).plots.find((p) => p.slot === 1)?.name === null, "the shared map has no name while one teammate hides it");
   r = await run("button", { ...S, customId: `sq|is_name|${projectId}|on` });
-  check(r.content === `### ${I.nameWaitingTitle}\n${I.nameWaiting}`, "one consent waits for the teammate", r.content);
-  check((await publicMap()).plots.find((p) => p.slot === 1)?.name === null, "the shared map has no name with one consent");
+  check(r.content === `### ${I.nameWaitingTitle}\n${I.nameWaiting}`, "showing it waits for the teammate who hid it", r.content);
+  check((await publicMap()).plots.find((p) => p.slot === 1)?.name === null, "still no name with one teammate hiding");
   r = await island(F);
   r = await run("button", { ...F, customId: find(r, (c) => c.custom_id === `sq|is_name|${projectId}|on`).custom_id });
-  check(r.content === `### ${I.nameShown}`, "the second consent shows the name", r.content);
+  check(r.content === `### ${I.nameShown}`, "the teammate shows it again: the name shows", r.content);
   const named = await publicMap();
   const namedPlot = named.plots.find((p) => p.slot === 1);
   check(
     namedPlot?.name === "Trip Splitter" && namedPlot.stage === 2 && !namedPlot.plain && !namedPlot.mine,
-    "the shared map shows the name and the real tree once both opt in",
+    "the shared map shows the name and the real tree once both show it",
     named.plots
   );
   const mapJson = JSON.stringify(named);
@@ -773,7 +788,7 @@ async function main(): Promise<void> {
   r = await run("button", { ...S, customId: `sq|is_name|${projectId}|off` });
   check(r.content === `### ${I.nameHiddenTitle}\n${I.nameHidden}`, "hiding the name", r.content);
   const hidden = (await publicMap()).plots.find((p) => p.slot === 1);
-  check(hidden?.name === null && hidden.plain && hidden.stage === 0, "one withdrawn consent hides the name and the tree again", hidden);
+  check(hidden?.name === null && hidden.plain && hidden.stage === 0, "one hide takes the name and the tree down again", hidden);
 
   // --- Season edits: one change keeps the rest; clear_goal removes the goal ----------
   r = await run("command", { ...A, command: "admin", sub: "season", options: { name: "Season 1", goal_target: 5 } });

@@ -123,7 +123,7 @@ export const I = {
   /** The project name on the island's sign: shown, waiting for every teammate, or hidden. */
   nameShown: "🪧 ชื่อโปรเจกต์ขึ้นป้ายบนเกาะแล้ว",
   nameWaitingTitle: "🪧 บันทึกแล้ว",
-  nameWaiting: "ชื่อจะขึ้นป้ายเมื่อเพื่อนร่วมทีมทุกคนยินยอม",
+  nameWaiting: "ชื่อจะขึ้นป้ายเมื่อไม่มีใครในทีมซ่อน และทุกคนยินยอมครบ",
   nameHiddenTitle: "🪧 ซ่อนชื่อแล้ว",
   nameHidden: "บนเกาะจะเห็นเป็นต้นไม้ไม่มีป้าย",
 

@@ -224,6 +224,8 @@ async function main(): Promise<void> {
     await call(bot, "shift_quest_review_decide", R1, s.submission_id, "approved", null, false);
   };
   const optin = (who: string, project: string) => call(bot, "shift_quest_island_optin", who, project, true);
+  // Names show by default; these plots start quiet because their members hide them first.
+  const hide = (who: string, project: string) => call(bot, "shift_quest_island_optin", who, project, false);
 
   // --- /admin channel live and suggest ----------------------------------------------------------
   let status = await call<Json>(bot, "shift_quest_admin_status", ADMIN);
@@ -274,14 +276,18 @@ async function main(): Promise<void> {
   const p1: string = await call(bot, "shift_quest_project_create", A, "Live One", "software", null);
   await call(bot, "shift_quest_project_invite", A, p1, B);
   await call(bot, "shift_quest_project_respond", B, p1, true);
+  await hide(A, p1);
+  await hide(B, p1);
   await reach(A, 1);
   await reach(B, 2);
   const p2: string = await call(bot, "shift_quest_project_create", C, "Live Two", "creative", null);
+  await hide(C, p2);
   await reach(C, 1);
   p = await post();
   check(p.trees === 2 && p.approved === 0, "two quiet trees with approvals: approved is 0 (none shown)", [p.trees, p.approved]);
 
   const p3: string = await call(bot, "shift_quest_project_create", D, "Live Three", "service", null);
+  await hide(D, p3);
   p = await post();
   let pm = await postMap();
   check(JSON.stringify(p.plots) === JSON.stringify(pm.plots) && JSON.stringify(p.goal) === JSON.stringify(pm.goal) &&
@@ -289,7 +295,7 @@ async function main(): Promise<void> {
     "plots, goal and season are exactly the weekly post's map", { live: p.plots, post: pm.plots });
   check(p.plots.map((x: Json) => x.slot).join(",") === "1,2,3", "plots by slot", p.plots);
   check(p.plots.every((x: Json) => x.plain === true && x.stage === 0 && x.name === null && !x.mine && !x.visitor && !x.key),
-    "without consent every plot is a plain slot: no stage, no name", p.plots);
+    "with every member hiding, every plot is a plain slot: no stage, no name", p.plots);
   check(p.trees === 3 && p.approved === 0,
     "three trees with 3 approvals between them, none consented: approved is 0, never the quiet total", [p.trees, p.approved]);
 
@@ -306,6 +312,7 @@ async function main(): Promise<void> {
   // The review's sequence: each opt-in may add only the stage that team now shows, so comparing
   // one edit with the next never tells anything about the projects still quiet.
   const p4: string = await call(bot, "shift_quest_project_create", E, "Live Four", "other", null);
+  await hide(E, p4);
   await reach(E, 1);
   await reach(E, 3);
   p = await post();
