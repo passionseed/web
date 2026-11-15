@@ -365,9 +365,10 @@ review**; it lives in `components/shift/island/copy.ts` and must pass
 - Fonts: Kodchasan 600 for Thai headings, Bai Jamjuree 16px / 1.6 for body,
   Space Mono for digits. Never Mitr, never Tiny5 for Thai, no eyebrow labels,
   no uppercase tracking on Thai.
-- One gold (#fed95c) element per screen: the keynote quest card. Blue is for
-  interactive elements. Red only for real errors; declined and stuck are never
-  red.
+- One gold (#fed95c) element per screen: the keynote quest card. Leaf
+  (#3b6a48, soft #9fd19a) is for interactive elements; nothing on the island
+  is blue (founder, 2026-11-15). Red only for real errors; declined and stuck
+  are never red.
 
 ### Gate states (one card each, centred, the island art dimmed behind)
 
@@ -388,7 +389,7 @@ review**; it lives in `components/shift/island/copy.ts` and must pass
 ### No project yet
 
 - Heading: จับจองที่ดินบนเกาะ. Body: สร้างโปรเจกต์เรื่องที่คุณใส่ใจ แล้วต้นไม้ของคุณจะเริ่มจากเมล็ด หรือรอเพื่อนชวนเข้าโปรเจกต์ของเขาก็ได้
-- Form: ชื่อโปรเจกต์ (max 80), เส้นทาง as four chips (ซอฟต์แวร์, งานสร้างสรรค์, บริการ, อื่นๆ), อยากให้มันไปถึงไหน (ไม่บังคับ, max 500). Button: จับจองที่ดิน.
+- Form: ชื่อโปรเจกต์ (max 80), เส้นทาง as four chips (ซอฟต์แวร์, งานสร้างสรรค์, บริการ, อื่นๆ), อยากแก้ปัญหาอะไร ให้ใคร (ไม่บังคับ, max 500). Button: จับจองที่ดิน.
 - Pending invites above the form: "{project} ชวนคุณเข้าทีม" with buttons เข้าร่วม and ไม่ใช่ตอนนี้.
 - The island picture is shown (no marker) so the student sees the place first.
 
@@ -441,6 +442,10 @@ description and shown in the quest sheet on tap.
 
 vaul Drawer on mobile (`dawn-panel rounded-t-3xl border-0 pb-[env(safe-area-inset-bottom)]`,
 `shouldScaleBackground={false}`), Dialog at 1024px or wider.
+
+> Layout updated 2026-11-15: write or show first, the canvas as a reference,
+> pictures beside every hint. See "The quest page" in
+> [`shift-high-quest-pitfalls.md`](shift-high-quest-pitfalls.md).
 
 - Title, purpose, state chip, mentor feedback when `latest_review` exists
   ("พี่เลี้ยงบอกว่า: {feedback}").

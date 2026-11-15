@@ -409,7 +409,7 @@
   min-height: 44px;
   font-size: 0.9375rem;
   font-weight: 600;
-  color: var(--action-soft, #93c5fd);
+  color: var(--action-soft, #9fd19a);
   text-decoration: underline;
   text-underline-offset: 3px;
 }

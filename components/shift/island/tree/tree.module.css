@@ -367,7 +367,7 @@
 }
 
 .tab[data-state="active"]:focus-visible {
-  outline-color: #1d4ed8;
+  outline-color: #3b6a48;
 }
 
 .panel {

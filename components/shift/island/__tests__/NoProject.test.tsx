@@ -24,7 +24,7 @@ describe("NoProject", () => {
     expect(screen.queryByRole("button", { name: /แปลง/ })).toBeNull();
     expect(screen.getByRole("region", { name: "จับจองที่ดินบนเกาะ" })).toHaveAttribute("id", "island-claim");
     expect(screen.getByLabelText("ชื่อโปรเจกต์")).toHaveAttribute("maxLength", "80");
-    expect(screen.getByLabelText("อยากให้มันไปถึงไหน (ไม่บังคับ)")).toHaveAttribute("maxLength", "500");
+    expect(screen.getByLabelText("อยากแก้ปัญหาอะไร ให้ใคร (ไม่บังคับ)")).toHaveAttribute("maxLength", "500");
     expect(screen.getAllByRole("radio")).toHaveLength(4);
   });
 
@@ -47,7 +47,7 @@ describe("NoProject", () => {
     render(<NoProject invites={[]} />);
     fireEvent.change(screen.getByLabelText("ชื่อโปรเจกต์"), { target: { value: "เพลงประจำโรงเรียน" } });
     fireEvent.click(screen.getByRole("radio", { name: "งานสร้างสรรค์" }));
-    fireEvent.change(screen.getByLabelText("อยากให้มันไปถึงไหน (ไม่บังคับ)"), { target: { value: "เปิดในงานกีฬาสี" } });
+    fireEvent.change(screen.getByLabelText("อยากแก้ปัญหาอะไร ให้ใคร (ไม่บังคับ)"), { target: { value: "เปิดในงานกีฬาสี" } });
     fireEvent.click(screen.getByRole("button", { name: "จับจองที่ดิน" }));
     await waitFor(() =>
       expect(mockedCreate).toHaveBeenCalledWith({ name: "เพลงประจำโรงเรียน", route: "creative", ambition: "เปิดในงานกีฬาสี" }),

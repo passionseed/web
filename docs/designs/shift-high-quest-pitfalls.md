@@ -225,6 +225,43 @@ migration can run twice):
 (`side-outside-circle` branches off 4, not 7: a side quest that needs a main
 quest hangs off one of the quests it needs, a rule the board tests check.)
 
+## The quest page (2026-11-15, founder feedback)
+
+After the founder used the live page: "10x the quest page", icons for
+หลุมพราง, a picture beside every hint, buttons in the island's colours, and
+the canvas not leading the first quest.
+
+- **Write or show first.** The sticky bar's main action is เขียนหรือแนบงาน on
+  every quest and opens the written form (a line, a link, evidence text). The
+  canvas quest card is one tap away inside it (ใช้โน้ตจากแคนวาส) when the
+  team's notes are ready; the page never waits for the canvas.
+- **The canvas is a reference, never a gate.** Every quest shows the team's
+  relevant notes when a canvas is linked, an open-canvas link, or one quiet
+  row (แคนวาสของทีม, ไม่บังคับ) to link one.
+- **Order on the page:** the quest's picture with its chips and a seven-cell
+  stage meter grouped by act; the purpose and lore line; mentor feedback;
+  ปัญหาที่ทีมเลือก (first act); หลุมพราง; เสร็จเมื่อ with who checks; examples
+  (open); ตัวช่วย; the canvas; the remaining details (collapsed).
+- **Pictures.** Each pitfall has its own pixel icon (`icon` in
+  `QUEST_PITFALLS`); the sign row has an eye and the avoid row a signpost.
+  Checklist items, examples (by route) and helper rows carry icons from
+  `components/shift/island/questArt.ts`. Fourteen new 16x16 icons in
+  `sprites.ts` use only the island palette.
+- **The team's problem.** Planting now asks ทีมอยากแก้ปัญหาอะไร ให้ใคร
+  (web seed sheet, Discord modal, NoProject's optional line), still saved as
+  the project's ambition. The first act's main quests show it as
+  ปัญหาที่ทีมเลือก, or a way to the team's tree when nothing is planted.
+- **ตัวช่วย.** The side quests that branch off a main quest, each opening in
+  the same sheet, and on the first act the safety line (tell a parent or
+  teacher, meet where other people are).
+- **Who checks.** One line under เสร็จเมื่อ (`WhoChecks`, `data-slot="who-checks"`)
+  says พี่เลี้ยงตรวจ. How a peer check and a mentor check work is still being
+  decided and comes as its own change; it replaces that line's words.
+- **No blue.** Interactive colour is leaf (`--action` #3b6a48, `--action-soft`
+  #9fd19a); the primary button is a leaf pixel slab on top of
+  `ei-button-dawn`'s motion; in-progress stamps and chips are a warm apricot.
+  Gold stays the keynote's alone.
+
 ## Open items
 
 - **Economy (DRAFT, coins off).** The community gate and counts now key on
@@ -234,6 +271,10 @@ quest hangs off one of the quests it needs, a rule the board tests check.)
   An approved main quest 6 or 7 no longer opens the gate. The draft main-quest
   rule now covers all seven main quests (cap still 5); the amounts and cap are
   the founder's to confirm before coins switch on.
+- **Changing the team's problem later.** Planting writes the ambition once
+  (`shift_quest_seed_plant` refuses a second plant). Editing it after a pivot
+  needs a new database function; until then the page calls it a starting
+  point and offers no change link.
 - **Thai review.** The copy here is a draft: run the three-reviewer pass in
   AGENTS.md before Season 2.
 

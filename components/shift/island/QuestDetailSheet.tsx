@@ -42,12 +42,14 @@ import { SHIFT_CARDS } from "@/lib/whiteboard/shift-cards";
 import { refreshIsland } from "./useIslandRefresh";
 import { QuestCardComposer, useQuestCanvas, type CardStep } from "./canvas";
 import { SUBMIT } from "./canvas/copy";
-import { BOARD, CANVAS, COMMON, DETAIL, PITFALL, QUEST, SYNC, questFlavor, questPitfalls, tileChip, type QuestPitfall } from "./copy";
+import { BOARD, CANVAS, COMMON, DETAIL, QUEST, SYNC, questFlavor, questPitfalls, tileChip } from "./copy";
 import { doneWhenItems } from "./DoneWhenLine";
 import { InSheetFooter } from "./InSheetFooter";
 import styles from "./island.module.css";
 import { IslandSheet } from "./IslandSheet";
 import { canStart, detailAction, mentorFeedback, questView, refKey, sameRef, type DetailAction, type QuestView } from "./model";
+import { checkIcon, HELPER_ICONS } from "./questArt";
+import { Examples, Helpers, HintIcon, inFirstAct, Pitfalls, QuestHeader, TeamProblem, WhoChecks } from "./QuestSections";
 import { SentScreen } from "./SentScreen";
 import { PALETTE, iconGrid, iconScale, type IconKey } from "./sprites";
 import { SubmitForm } from "./SubmitForm";
@@ -69,6 +71,15 @@ interface QuestDetailSheetProps {
   onIsland?: () => void;
   /** The sent screen's ดูต้นไม้ของทีม; give it only where the island has the team's tree (schema 13). */
   onTree?: () => void;
+  /**
+   * The team's planted problem (the project's ambition, from the tree, schema
+   * 13): shown on the first act's quests. Null below schema 13.
+   */
+  team?: { ambition: string | null; planted: boolean } | null;
+  /** Open the team's tree, where the seed and its problem line are planted. */
+  onPlant?: () => void;
+  /** Open another quest in this sheet (a ตัวช่วย side quest). */
+  onOpenQuest?: (ref: BoardRef) => void;
 }
 
 /** "card" builds a quest card from canvas notes; "text" is the written form (SubmitForm). */
@@ -96,6 +107,9 @@ export function QuestDetailSheet({
   onLinkCanvas,
   onIsland = onClose,
   onTree,
+  team = null,
+  onPlant,
+  onOpenQuest,
 }: QuestDetailSheetProps) {
   // The last quest shown stays in the sheet while it slides closed, so it never closes empty.
   const [last, setLast] = useState<BoardRef | null>(target);
@@ -154,7 +168,8 @@ export function QuestDetailSheet({
         quest={quest}
         action={action}
         sendRef={sendRef}
-        onSend={() => setCompose({ key: bodyKey, form: hasZones ? "card" : "text" })}
+        // Write or show the work right here first; the canvas card stays one tap away inside the form.
+        onSend={() => setCompose({ key: bodyKey, form: "text" })}
         onStuck={onStuck}
       />
     ) : null;
@@ -197,6 +212,10 @@ export function QuestDetailSheet({
         ) : (
           <QuestDetailBody
             key={bodyKey}
+            board={board}
+            team={team}
+            onPlant={onPlant}
+            onOpenQuest={onOpenQuest}
             quest={quest}
             action={action}
             total={board.main.length}
@@ -243,6 +262,10 @@ function Icon({ name, size = 16 }: { name: IconKey; size?: number }) {
 // ---------------------------------------------------------------- view
 
 function QuestDetailBody({
+  board,
+  team,
+  onPlant,
+  onOpenQuest,
   quest,
   action,
   total,
@@ -254,6 +277,10 @@ function QuestDetailBody({
   openHref,
   onLinkCanvas,
 }: {
+  board: QuestBoard;
+  team: QuestDetailSheetProps["team"];
+  onPlant?: () => void;
+  onOpenQuest?: (ref: BoardRef) => void;
   quest: QuestView;
   action: DetailAction;
   total: number;
@@ -282,31 +309,36 @@ function QuestDetailBody({
       ? [{ id: TAKE_THE_KEYS_CHECKED, hinted: ownershipAllLit(ownRows), detail: null }]
       : []
     : (ready?.hints ?? []);
+  // The team's problem leads the first act's main quests: meeting people starts from it.
+  const showProblem = quest.kind === "main" && inFirstAct(board, quest) && !!team;
+  const examples =
+    quest.kind === "main"
+      ? guide.examples
+      : quest.kind === "side" && quest.examples
+        ? quest.examples.split("\n")
+        : [];
 
   return (
     <div className={styles.detail}>
-      <div className={styles.detailChips}>
-        <span className={styles.questBadge} data-kind={quest.kind}>
-          <Icon name={quest.icon} />
-          <span>{badgeText(quest, total)}</span>
-        </span>
-        <span className={styles.chip} data-status={quest.status} data-keynote={keynote ? "true" : undefined}>
-          {chip}
-        </span>
-        {quest.help ? <span className={styles.helpText}>{BOARD.help}</span> : null}
+      <QuestHeader
+        quest={quest}
+        board={board}
+        badge={badgeText(quest, total)}
+        chip={chip}
+        keynote={keynote}
+        help={quest.help ? BOARD.help : null}
+      />
+
+      <div className={styles.detailLead}>
+        {/* A proposed quest's goal is the student's own words: never cut. */}
+        {why ? (
+          <p className={styles.detailWhy} data-full={quest.kind === "proposed" ? "true" : undefined}>
+            {why}
+          </p>
+        ) : null}
+        {/* DRAFT lore: one quiet line on why the quest matters on the island (none on a proposed quest). */}
+        {flavor ? <p className={styles.detailFlavor}>{flavor}</p> : null}
       </div>
-
-      {/* DRAFT lore: one quiet line on why the quest matters on the island (none on a proposed quest). */}
-      {flavor ? <p className={styles.detailFlavor}>{flavor}</p> : null}
-
-      {/* A proposed quest's goal is the student's own words: never cut. */}
-      {why ? (
-        <p className={styles.detailWhy} data-full={quest.kind === "proposed" ? "true" : undefined}>
-          {why}
-        </p>
-      ) : null}
-
-      <Pitfalls pitfalls={questPitfalls(quest.kind, quest.slug)} />
 
       {feedback ? (
         <blockquote className={styles.feedback}>
@@ -314,31 +346,39 @@ function QuestDetailBody({
         </blockquote>
       ) : null}
 
-      {hasZones ? (
-        <CanvasBoundary fallback={<p className={styles.hint}>{QUEST.context.error}</p>}>
-          <CanvasContextBox context={canvas.context} loading={canvas.loading} onLink={onLinkCanvas} />
-          <button type="button" className={`${styles.quietButton} ${styles.contextAction}`} onClick={refreshIsland} disabled={canvas.loading} aria-busy={canvas.loading}>
-            {canvas.loading ? SYNC.refreshing : SYNC.refresh}
-          </button>
-        </CanvasBoundary>
-      ) : null}
+      {showProblem && team ? <TeamProblem ambition={team.ambition} planted={team.planted} onPlant={onPlant} /> : null}
+
+      <Pitfalls pitfalls={questPitfalls(quest.kind, quest.slug)} />
 
       {ownership ? <OwnershipBox ownership={ownership} /> : null}
 
-      <DoneWhen guide={guide} hints={hints} evidence={quest.evidence} hinting={hasZones || !!ownRows} />
+      {/* The tick hint only means something once notes can light it: a linked canvas, or the ownership checklist. */}
+      <DoneWhen guide={guide} hints={hints} evidence={quest.evidence} hinting={(hasZones && !!ready) || !!ownRows} />
 
-      {/* On every quest: the linked canvas, else (where the notes box does not already ask) linking one. */}
+      <Examples lines={examples} />
+
+      <Helpers board={board} quest={quest} onOpenQuest={onOpenQuest} />
+
+      {/* The canvas is a reference on every quest, never a gate: the team's notes when linked, else one quiet row. */}
+      {hasZones ? (
+        <CanvasBoundary fallback={<p className={styles.hint}>{QUEST.context.error}</p>}>
+          <CanvasContextBox context={canvas.context} loading={canvas.loading} onLink={onLinkCanvas} />
+          {canvas.context?.state === "ready" ? (
+            <button type="button" className={styles.canvasRefresh} onClick={refreshIsland} disabled={canvas.loading} aria-busy={canvas.loading}>
+              {canvas.loading ? SYNC.refreshing : SYNC.refresh}
+            </button>
+          ) : null}
+        </CanvasBoundary>
+      ) : null}
+      {/* On every quest: open the linked canvas, else (where the notes box does not already ask) link one. */}
       {openHref ? (
         // A new tab: the quest, its drafts and the island stay as they are.
-        <a className={`${styles.quietButton} ${styles.contextAction}`} href={openHref} target="_blank" rel="noopener">
-          <Icon name="note" />
+        <a className={styles.canvasRow} href={openHref} target="_blank" rel="noopener">
+          <HintIcon name={HELPER_ICONS.canvas} size={20} />
           <span>{CANVAS.open}</span>
         </a>
       ) : !hasZones ? (
-        <button type="button" className={`${styles.quietButton} ${styles.contextAction}`} onClick={onLinkCanvas}>
-          <Icon name="link" />
-          <span>{CANVAS.link}</span>
-        </button>
+        <CanvasLinkRow onLink={onLinkCanvas} />
       ) : null}
 
       <MoreDetails quest={quest} guide={guide} />
@@ -348,28 +388,22 @@ function QuestDetailBody({
   );
 }
 
-/** หลุมพราง: the pitfall the quest is built around, the warning sign to check alone, and how to avoid it. */
-function Pitfalls({ pitfalls }: { pitfalls: readonly QuestPitfall[] }) {
+/** แคนวาสของทีม, not linked: one quiet row saying it is optional, and the link button. */
+function CanvasLinkRow({ onLink }: { onLink: () => void }) {
   const headingId = useId();
-  if (pitfalls.length === 0) return null;
   return (
-    <section className={styles.pitfalls} aria-labelledby={headingId}>
-      <h3 id={headingId} className={styles.detailHeading}>
-        {PITFALL.heading}
-      </h3>
-      {pitfalls.map((pitfall) => (
-        <div key={pitfall.name} className={styles.pitfall}>
-          <p className={styles.pitfallName}>{pitfall.name}</p>
-          <p className={styles.pitfallLine}>
-            <span className={styles.pitfallLabel}>{PITFALL.sign}: </span>
-            {pitfall.sign}
-          </p>
-          <p className={styles.pitfallLine}>
-            <span className={styles.pitfallLabel}>{PITFALL.avoid}: </span>
-            {pitfall.avoid}
-          </p>
-        </div>
-      ))}
+    <section className={styles.canvasRow} data-unlinked="true" aria-labelledby={headingId}>
+      <HintIcon name={HELPER_ICONS.canvas} size={20} />
+      <div className={styles.canvasRowText}>
+        <h3 id={headingId} className={styles.canvasRowHeading}>
+          {QUEST.context.unlinked.heading}
+        </h3>
+        <p className={styles.hint}>{QUEST.context.unlinked.body}</p>
+      </div>
+      <button type="button" className={styles.canvasRowAction} onClick={onLink}>
+        <HintIcon name={HELPER_ICONS.link} size={16} />
+        <span>{QUEST.context.unlinked.action}</span>
+      </button>
     </section>
   );
 }
@@ -401,18 +435,7 @@ function CanvasContextBox({
     case "error":
       return <p className={styles.hint}>{QUEST.context.error}</p>;
     case "unlinked":
-      return (
-        <section className={styles.contextPrompt} aria-labelledby={headingId}>
-          <h3 id={headingId} className={styles.detailHeading}>
-            {QUEST.context.unlinked.heading}
-          </h3>
-          <p className={styles.contextPromptBody}>{QUEST.context.unlinked.body}</p>
-          <button type="button" className={`${styles.quietButton} ${styles.contextAction}`} onClick={onLink}>
-            <Icon name="link" />
-            <span>{QUEST.context.unlinked.action}</span>
-          </button>
-        </section>
-      );
+      return <CanvasLinkRow onLink={onLink} />;
     case "not_yours":
       return (
         <section className={styles.context} aria-labelledby={headingId}>
@@ -580,8 +603,9 @@ function DoneWhen({
   const byId = new Map(hints.map((hint) => [hint.id, hint]));
   return (
     <section className={styles.doneWhen} aria-labelledby={headingId}>
-      <h3 id={headingId} className={styles.detailHeading}>
-        {QUEST.doneWhen.heading}
+      <h3 id={headingId} className={styles.sectionLabel}>
+        <HintIcon name="check" size={20} />
+        <span>{QUEST.doneWhen.heading}</span>
       </h3>
       <ul className={styles.doneList}>
         {items.map((item) => {
@@ -589,17 +613,21 @@ function DoneWhen({
           const lit = !!hint?.hinted;
           return (
             <li key={item.id} className={styles.doneItem} data-hinted={lit ? "true" : undefined}>
-              <PixelCheck lit={lit} />
+              <span className={styles.doneIcon} aria-hidden="true">
+                <HintIcon name={checkIcon(item.id)} size={32} />
+              </span>
               <span className={styles.doneText}>
                 {lit ? <span className="sr-only">{`${QUEST.doneWhen.hinted}: `}</span> : null}
                 {item.label}
                 {hint?.detail ? <span className={styles.doneDetail}>{hint.detail}</span> : null}
               </span>
+              <PixelCheck lit={lit} />
             </li>
           );
         })}
       </ul>
       {hinting && guided ? <p className={styles.hint}>{QUEST.doneWhen.hint}</p> : null}
+      <WhoChecks />
     </section>
   );
 }
@@ -621,38 +649,19 @@ function PixelCheck({ lit }: { lit: boolean }) {
 const LONG_PURPOSE = 120;
 
 /**
- * Collapsed rows: passing examples, and the details not already on the page
- * (the criteria when เสร็จเมื่อ has its own checklist, a long purpose in full,
- * the question).
+ * One collapsed row: the details not already on the page (the criteria when
+ * เสร็จเมื่อ has its own checklist, a long purpose in full, the question).
+ * Examples have their own open section above (Examples).
  */
 function MoreDetails({ quest, guide }: { quest: QuestView; guide: QuestGuide }) {
-  const examples =
-    quest.kind === "main"
-      ? guide.examples.filter((line) => line.trim())
-      : quest.kind === "side" && quest.examples
-        ? quest.examples.split("\n").map((line) => line.trim()).filter(Boolean)
-        : [];
   // Without a guide checklist, เสร็จเมื่อ already shows the criteria as its one item.
   const evidence = guide.checklist.length > 0 ? quest.evidence.trim() : "";
   const purpose = quest.purpose.trim();
   const goal = quest.kind !== "proposed" && purpose.length > LONG_PURPOSE ? purpose : "";
   const prompt = quest.reflectionPrompt.trim();
-  if (examples.length === 0 && !evidence && !goal && !prompt) return null;
+  if (!evidence && !goal && !prompt) return null;
   return (
     <div className={styles.moreRows}>
-      {examples.length > 0 ? (
-        <details className={styles.more}>
-          <summary className={styles.moreSummary}>
-            <span>{QUEST.examples}</span>
-            <ChevronDown className={styles.moreCaret} aria-hidden="true" />
-          </summary>
-          <ul className={styles.moreList}>
-            {examples.map((line, i) => (
-              <li key={i}>{line}</li>
-            ))}
-          </ul>
-        </details>
-      ) : null}
       {evidence || goal || prompt ? (
         <details className={styles.more}>
           <summary className={styles.moreSummary}>

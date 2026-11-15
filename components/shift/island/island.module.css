@@ -34,8 +34,9 @@
   --text-hi: #fef9e7;
   --text: #e2e8f0;
   --text-dim: #94a3b8;
-  --action: #3b82f6;
-  --action-soft: #93c5fd;
+  --action: #3b6a48;
+  --action-hi: #55894f;
+  --action-soft: #9fd19a;
   /* One gold element per screen: the keynote quest. */
   --gold: #fed95c;
 
@@ -151,6 +152,79 @@
   font-size: 16px;
 }
 
+/*
+ * The island's primary button: a leaf-green pixel slab with a lit top edge
+ * and a dark leaf base, cream text (5.6:1 on #3b6a48). It keeps
+ * ei-button-dawn's rise and touch replay; only the colours and the glow
+ * change, so nothing on the island is blue. Gold stays the keynote's alone.
+ */
+:is(.page, .sheet) :global(.ei-button-dawn) {
+  color: var(--isl-cream);
+  background: linear-gradient(180deg, var(--action-hi) 0%, var(--action) 38%, var(--action) 100%);
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--notch);
+  box-shadow:
+    inset 0 2px 0 0 rgba(178, 204, 126, 0.55),
+    inset 0 -3px 0 0 rgba(20, 44, 28, 0.55),
+    inset 0 0 0 1px rgba(20, 44, 28, 0.6);
+}
+
+:is(.page, .sheet) :global(.ei-button-dawn)::before,
+:is(.page, .sheet) :global(.ei-button-dawn)::after {
+  border-radius: 0;
+}
+
+/* The rising heat inside: lamp light, not indigo. */
+:is(.page, .sheet) :global(.ei-button-dawn)::after {
+  background: radial-gradient(circle at center, rgba(244, 197, 106, 0.28) 0%, transparent 70%);
+}
+
+:is(.page, .sheet) :global(.ei-button-dawn):hover:not(:disabled) {
+  animation:
+    dawn-btn-rise 10000ms var(--ease-tension) forwards,
+    islandButtonGlow 14000ms var(--ease-tension) forwards;
+}
+
+@media (hover: none) {
+  :is(.page, .sheet) :global(.ei-button-dawn.in-view) {
+    animation:
+      dawn-btn-rise 10000ms var(--ease-tension) forwards,
+      islandButtonGlow 14000ms var(--ease-tension) forwards;
+  }
+}
+
+:is(.page, .sheet) :global(.ei-button-dawn):active:not(:disabled) {
+  box-shadow:
+    inset 0 2px 6px 0 rgba(20, 44, 28, 0.6),
+    inset 0 0 0 1px rgba(20, 44, 28, 0.6);
+}
+
+@keyframes islandButtonGlow {
+  0% {
+    filter: brightness(1);
+    box-shadow:
+      inset 0 2px 0 0 rgba(178, 204, 126, 0.55),
+      inset 0 -3px 0 0 rgba(20, 44, 28, 0.55),
+      inset 0 0 0 1px rgba(20, 44, 28, 0.6);
+  }
+  100% {
+    filter: brightness(1.12);
+    box-shadow:
+      inset 0 2px 0 0 rgba(246, 228, 181, 0.7),
+      inset 0 -3px 0 0 rgba(20, 44, 28, 0.55),
+      inset 0 0 0 1px rgba(244, 197, 106, 0.55);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(.page, .sheet) :global(.ei-button-dawn),
+  :is(.page, .sheet) :global(.ei-button-dawn)::before,
+  :is(.page, .sheet) :global(.ei-button-dawn)::after {
+    animation: none !important;
+  }
+}
+
 .quietButton {
   display: inline-flex;
   align-items: center;
@@ -161,10 +235,10 @@
   font: inherit;
   font-size: 15px;
   font-weight: 600;
-  color: #bfdbfe;
-  background: rgba(59, 130, 246, 0.08);
+  color: var(--isl-cream);
+  background: rgba(255, 241, 214, 0.06);
   border: 0;
-  box-shadow: inset 0 0 0 1px rgba(147, 197, 253, 0.3);
+  box-shadow: inset 0 0 0 1px rgba(255, 241, 214, 0.26);
   clip-path: var(--notch);
   cursor: pointer;
   transition: background-color var(--snap) var(--ease-snap), transform var(--press) var(--ease-snap);
@@ -177,7 +251,7 @@
 }
 
 .quietButton:hover:not(:disabled) {
-  background: rgba(59, 130, 246, 0.16);
+  background: rgba(255, 241, 214, 0.12);
 }
 
 .quietButton:active:not(:disabled) {
@@ -532,7 +606,7 @@
 }
 
 .laneButton[aria-pressed="true"]:focus-visible {
-  outline-color: #1d4ed8;
+  outline-color: #3b6a48;
 }
 
 .laneIcon {
@@ -795,7 +869,7 @@
 }
 
 .routeChips .routeChip[data-state="on"]:focus-visible {
-  outline-color: #1d4ed8;
+  outline-color: #3b6a48;
 }
 
 .branch {
@@ -1003,39 +1077,98 @@
   color: var(--isl-sand-hi);
 }
 
-/* หลุมพราง on a quest page: the pitfall, its warning sign and how to avoid it. */
+/*
+ * หลุมพราง on a quest page: one card per pitfall. Its picture and name first,
+ * then the warning sign (coral, an eye) and how to avoid it (leaf, a
+ * signpost) as two rows that look different at a glance.
+ */
 .pitfalls {
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 
 .pitfall {
   display: grid;
-  gap: 4px;
+  gap: 10px;
   margin: 0;
-  padding: 10px 12px;
-  background: rgba(222, 121, 108, 0.1);
-  border-left: 3px solid var(--isl-coral);
+  padding: 14px;
+  background: linear-gradient(180deg, rgba(222, 121, 108, 0.13) 0%, rgba(222, 121, 108, 0.05) 100%);
+  box-shadow: inset 0 0 0 1px rgba(222, 121, 108, 0.38);
+  clip-path: var(--notch);
+}
+
+.pitfallTop {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.pitfallArt {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  background: rgba(18, 14, 19, 0.6);
+  box-shadow: inset 0 0 0 2px rgba(222, 121, 108, 0.6);
+  clip-path: var(--notch);
 }
 
 .pitfallName {
   margin: 0;
-  font-size: 15px;
+  font-family: var(--font-kodchasan), var(--font-bai-jamjuree), sans-serif;
+  font-size: 18px;
   font-weight: 600;
-  line-height: 1.5;
+  line-height: 1.35;
   color: var(--text-hi);
 }
 
-.pitfallLine {
+.pitfallRow {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 10px 12px;
+}
+
+.pitfallRow > :first-child {
+  margin-top: 3px;
+}
+
+.pitfallRow[data-tone="sign"] {
+  background: rgba(222, 121, 108, 0.12);
+}
+
+.pitfallRow[data-tone="avoid"] {
+  background: rgba(80, 151, 107, 0.18);
+}
+
+.pitfallRow p {
   margin: 0;
-  font-size: 14px;
-  line-height: 1.55;
-  color: var(--text);
+  min-width: 0;
 }
 
 .pitfallLabel {
-  font-weight: 600;
-  color: var(--isl-sand-hi);
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.pitfallRow[data-tone="sign"] .pitfallLabel {
+  color: #f3b9b0;
+}
+
+.pitfallRow[data-tone="avoid"] .pitfallLabel {
+  color: #c4e8c9;
+}
+
+.pitfallText {
+  display: block;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text);
 }
 
 .tile:focus-visible {
@@ -1145,13 +1278,13 @@
   background: var(--isl-leaf);
 }
 
-/* Halo for an open quest that needs the student: blue, gold only on the keynote. */
+/* Halo for an open quest that needs the student: leaf, gold only on the keynote. */
 .tileHalo {
   position: absolute;
   inset: -10px;
   z-index: 0;
   pointer-events: none;
-  background: radial-gradient(closest-side, rgba(59, 130, 246, 0.9) 68%, rgba(59, 130, 246, 0.4) 84%, rgba(59, 130, 246, 0) 100%);
+  background: radial-gradient(closest-side, rgba(120, 184, 128, 0.9) 68%, rgba(120, 184, 128, 0.4) 84%, rgba(120, 184, 128, 0) 100%);
   clip-path: inset(0 0 0 0);
   opacity: 0.9;
   filter: blur(6px);
@@ -1172,7 +1305,7 @@
   inset: -8px;
   z-index: 0;
   pointer-events: none;
-  background: radial-gradient(closest-side, rgba(147, 197, 253, 0.55) 0%, rgba(147, 197, 253, 0.18) 60%, rgba(147, 197, 253, 0) 100%);
+  background: radial-gradient(closest-side, rgba(159, 209, 154, 0.55) 0%, rgba(159, 209, 154, 0.18) 60%, rgba(159, 209, 154, 0) 100%);
   clip-path: inset(100% 0 0 0);
   opacity: 0;
   filter: blur(14px);
@@ -1296,9 +1429,9 @@
 
 .chip[data-status="active"],
 .chip[data-status="clarification"] {
-  color: #bfdbfe;
-  background: rgba(59, 130, 246, 0.16);
-  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.55);
+  color: #f9d3a8;
+  background: rgba(232, 150, 80, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(232, 150, 80, 0.55);
 }
 
 .chip[data-keynote="true"] {
@@ -1350,10 +1483,11 @@
   box-shadow: inset 0 0 0 1px currentColor;
 }
 
+/* In progress: warm lamp-lit apricot (6.7:1), apart from done's leaf and the keynote's gold. */
 .stamp[data-status="active"],
 .stamp[data-status="clarification"] {
-  color: #1e40af;
-  background: #dbeafe;
+  color: #7a3e12;
+  background: #fde3c4;
 }
 
 .stamp[data-status="submitted"],
@@ -1454,8 +1588,8 @@
 }
 
 .choice[data-checked="true"] {
-  background: rgba(59, 130, 246, 0.14);
-  box-shadow: inset 0 0 0 2px rgba(59, 130, 246, 0.75);
+  background: rgba(120, 184, 128, 0.14);
+  box-shadow: inset 0 0 0 2px rgba(120, 184, 128, 0.75);
 }
 
 .choiceInput {
@@ -1503,8 +1637,8 @@
 
 .routeOption[data-checked="true"] {
   color: #fff;
-  background: rgba(59, 130, 246, 0.2);
-  box-shadow: inset 0 0 0 2px rgba(59, 130, 246, 0.8);
+  background: rgba(120, 184, 128, 0.2);
+  box-shadow: inset 0 0 0 2px rgba(120, 184, 128, 0.8);
 }
 
 /* ---------------------------------------------------------------- sheets */
@@ -1582,7 +1716,7 @@
 
 .detail {
   display: grid;
-  gap: 16px;
+  gap: 20px;
 }
 
 .detailChips {
@@ -1695,6 +1829,373 @@
   font-size: 16px;
   line-height: 1.55;
   color: var(--text-hi);
+}
+
+/* The quest's picture on a sand tile, its chips, and where it sits in the seven stages. */
+.questHeader {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.questTile {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(180deg, var(--isl-sand-hi) 0%, var(--isl-sand) 100%);
+  box-shadow: inset 0 0 0 2px var(--isl-ink), inset 0 -4px 0 0 rgba(121, 88, 63, 0.35);
+  clip-path: var(--notch);
+}
+
+.questTile[data-kind="side"] {
+  background: linear-gradient(180deg, #dcefcf 0%, #b2cc7e 100%);
+}
+
+.questTile[data-kind="proposed"] {
+  background: linear-gradient(180deg, #fff8ea 0%, var(--isl-cream) 100%);
+}
+
+.questHeaderText {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.actMeter {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+}
+
+.actCells {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.actGroup {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.actCell {
+  width: 12px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+.actCell[data-done="true"] {
+  background: var(--isl-leaf-hi);
+  box-shadow: inset 0 0 0 1px var(--isl-ink);
+}
+
+.actCell[data-current="true"] {
+  background: var(--isl-sand-hi);
+  box-shadow: inset 0 0 0 1px var(--isl-ink), 0 0 0 1px rgba(246, 228, 181, 0.5);
+}
+
+.actName {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--isl-sand-hi);
+}
+
+.detailLead {
+  display: grid;
+  gap: 6px;
+}
+
+/* A section's own heading: a pixel icon and a short Kodchasan line. */
+.sectionLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-family: var(--font-kodchasan), var(--font-bai-jamjuree), sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--isl-sand-hi);
+}
+
+/* ปัญหาที่ทีมเลือก: the planted line, leaf like growth. */
+.teamProblem {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 14px;
+  background: rgba(80, 151, 107, 0.13);
+  box-shadow: inset 0 0 0 1px rgba(120, 184, 128, 0.42);
+  clip-path: var(--notch);
+}
+
+.teamProblemIcon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  background: rgba(18, 14, 19, 0.55);
+  box-shadow: inset 0 0 0 2px rgba(120, 184, 128, 0.55);
+  clip-path: var(--notch);
+}
+
+.teamProblemBody {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.teamProblemHeading {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.5;
+  color: #c4e8c9;
+}
+
+.teamProblemLine {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--text-hi);
+  overflow-wrap: anywhere;
+}
+
+.teamProblemBody .contextAction {
+  margin-top: 6px;
+}
+
+/* ตัวอย่างที่ผ่าน: open, one line each, with the route's icon. */
+.examples,
+.helpers {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.exampleList,
+.helperList {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.example {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text);
+  background: rgba(244, 197, 106, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(244, 197, 106, 0.2);
+}
+
+.example > :first-child,
+.safetyLine > :first-child {
+  margin-top: 2px;
+}
+
+.exampleRoute {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.6;
+  color: var(--isl-ink);
+  background: var(--isl-sand);
+}
+
+/* ตัวช่วย: the side quests off this one, a tap each. */
+.helperRow {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  min-height: 48px;
+  padding: 6px 12px 6px 6px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.45;
+  text-align: left;
+  color: var(--isl-cream);
+  background: rgba(255, 241, 214, 0.05);
+  border: 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 241, 214, 0.18);
+  clip-path: var(--notch);
+  cursor: pointer;
+  transition: background-color var(--snap) var(--ease-snap), transform var(--press) var(--ease-snap);
+}
+
+.helperRow:hover {
+  background: rgba(255, 241, 214, 0.1);
+}
+
+.helperRow:active {
+  transform: translateY(1px);
+}
+
+.helperRow:focus-visible {
+  outline: 2px solid var(--action-soft);
+  outline-offset: -4px;
+}
+
+.helperIcon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  background: var(--isl-sand);
+  box-shadow: inset 0 0 0 2px var(--isl-ink);
+}
+
+.helperTitle {
+  min-width: 0;
+}
+
+.helperState {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.helperState[data-state="done"] {
+  color: #c4e8c9;
+}
+
+.safetyLine {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text);
+  background: rgba(231, 205, 146, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(231, 205, 146, 0.3);
+}
+
+/* Who checks the quest: one quiet line, its own slot (a peer check may come later). */
+.whoChecks {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+.whoChecksLabel {
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* The canvas as a reference: a quiet row, never the way to finish a quest. */
+.canvasRow {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 6px 10px;
+  align-items: center;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--action-soft);
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.canvasRow[data-unlinked="true"] {
+  align-items: start;
+  font-weight: 400;
+  color: var(--text);
+}
+
+.canvasRow[data-unlinked="true"] > :first-child {
+  margin-top: 2px;
+}
+
+a.canvasRow:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+a.canvasRow:focus-visible,
+.canvasRowAction:focus-visible,
+.canvasRefresh:focus-visible {
+  outline: 2px solid var(--action-soft);
+  outline-offset: 2px;
+}
+
+.canvasRowText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.canvasRowHeading {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--text-hi);
+}
+
+.canvasRowAction {
+  grid-column: 2;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--isl-cream);
+  background: rgba(255, 241, 214, 0.06);
+  border: 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 241, 214, 0.26);
+  clip-path: var(--notch);
+  cursor: pointer;
+}
+
+.canvasRowAction:hover {
+  background: rgba(255, 241, 214, 0.12);
+}
+
+.canvasRefresh {
+  justify-self: start;
+  min-height: 40px;
+  padding: 6px 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--action-soft);
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.canvasRefresh:disabled {
+  opacity: 0.6;
+  cursor: progress;
 }
 
 /* A proposed quest's goal is the student's own: shown whole. */
@@ -1823,7 +2324,7 @@
   font: inherit;
   font-size: 13px;
   font-weight: 600;
-  color: #1d4ed8;
+  color: #3b6a48;
   background: none;
   border: 0;
   text-decoration: underline;
@@ -1832,7 +2333,7 @@
 }
 
 .contextChange:focus-visible {
-  outline-color: #1d4ed8;
+  outline-color: #3b6a48;
   outline-offset: -2px;
 }
 
@@ -1884,9 +2385,25 @@
 
 .doneItem {
   display: grid;
-  grid-template-columns: 20px minmax(0, 1fr);
+  grid-template-columns: 36px minmax(0, 1fr) 20px;
   gap: 10px;
-  align-items: start;
+  align-items: center;
+  padding: 8px 10px 8px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.doneItem[data-hinted="true"] {
+  background: rgba(80, 151, 107, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(120, 184, 128, 0.35);
+}
+
+.doneIcon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 241, 214, 0.08);
 }
 
 .doneText {
@@ -1914,7 +2431,6 @@
   place-items: center;
   width: 20px;
   height: 20px;
-  margin-top: 2px;
   background: rgba(255, 255, 255, 0.04);
   box-shadow: inset 0 0 0 2px var(--isl-stone);
 }
@@ -2443,14 +2959,14 @@
   padding: 0 6px;
   font-size: 13px;
   font-weight: 600;
-  color: #1d4ed8;
+  color: #3b6a48;
   white-space: nowrap;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
 .contextNote:focus-visible {
-  outline-color: #1d4ed8;
+  outline-color: #3b6a48;
   outline-offset: -2px;
 }
 

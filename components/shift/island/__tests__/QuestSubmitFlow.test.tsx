@@ -118,7 +118,9 @@ it("picks notes, checks the card, sends it once and ends on the gift for the tea
       onTree={jest.fn()}
     />,
   );
-  fireEvent.click(within(screen.getByTestId("sheet-footer")).getByRole("button", { name: "ส่งเควสต์" }));
+  fireEvent.click(within(screen.getByTestId("sheet-footer")).getByRole("button", { name: "เขียนหรือแนบงาน" }));
+  // Write-first: the written form opens; the quest card is one tap away with the canvas ready.
+  fireEvent.click(screen.getByRole("button", { name: "ใช้โน้ตจากแคนวาส" }));
 
   // Step 1: the bar says why it waits, then how many are picked.
   expect(within(body()).getByRole("heading", { name: "เลือกหลักฐาน" })).toBeInTheDocument();
