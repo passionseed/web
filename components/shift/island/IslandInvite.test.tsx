@@ -3,6 +3,8 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { FOLD, ISLAND_DOOR, LETTER_CHAPTERS, PROLOGUE, SEAL, TICKET } from "@/lib/content/shift-island-invite";
 
 import { IslandInvite } from "./IslandInvite";
+import { VOYAGE_COPY } from "./voyage/copy";
+import { VOYAGE_HREF } from "./voyage/link";
 
 const FESTIVAL = "เทศกาลเปิดอยู่ตอนนี้";
 const scrollIntoView = jest.fn();
@@ -105,4 +107,27 @@ it("folds the letter away to show the island and opens it again", () => {
   } finally {
     jest.useRealTimers();
   }
+});
+
+it("offers the ship on the ticket right after the seal, and only then", async () => {
+  global.fetch = jest.fn().mockResolvedValue({
+    status: 200,
+    json: () => Promise.resolve({ ok: true, ticket: { nickname: "มายด์", cohort: "SHIFT[1]" }, discordUrl: null, confirmed: true }),
+  } as Response);
+  render(<IslandInvite viewer={{ kind: "canRsvp" }} festival={FESTIVAL} initialScene="letter" />);
+  expect(screen.queryByRole("link", { name: VOYAGE_COPY.board })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: SEAL.press }));
+  const board = await screen.findByRole("link", { name: VOYAGE_COPY.board }, { timeout: 3000 });
+  expect(board).toHaveAttribute("href", VOYAGE_HREF);
+});
+
+it("offers no ship on a ticket the page already has a door for", () => {
+  render(
+    <IslandInvite
+      viewer={{ kind: "going", ticket: { nickname: "มายด์", cohort: "SHIFT[1]" }, discordUrl: null, confirmed: true }}
+      festival={FESTIVAL}
+      door="closed"
+    />,
+  );
+  expect(screen.queryByRole("link", { name: VOYAGE_COPY.board })).toBeNull();
 });

@@ -10,6 +10,7 @@ import type { IslandTicket as Ticket } from "@/lib/shift/islandInvite";
 import { IslandDiscordButton } from "./IslandDiscordButton";
 import styles from "./islandInvite.module.css";
 import { useInView } from "./useInView";
+import { BoardLink } from "./voyage/BoardLink";
 
 /**
  * The ticket that takes the seal's place once the RSVP is saved: who is
@@ -19,6 +20,9 @@ import { useInView } from "./useInView";
  * `focusHeading` moves focus here when the ticket replaces a pressed seal.
  * `door` (from the page, lib/shift/islandEntry.ts) says what still stands
  * between an RSVPed visitor and the game on this same page.
+ * `board` (right after the seal, when the page has not looked at the game
+ * yet): the way onto the ship, which sails to the island or comes back to
+ * this ticket with its door. The Discord room steps down to a quiet link.
  */
 export function IslandTicket({
   ticket,
@@ -27,6 +31,7 @@ export function IslandTicket({
   festival,
   focusHeading = false,
   door = null,
+  board = false,
 }: {
   ticket: Ticket;
   discordUrl: string | null;
@@ -34,6 +39,7 @@ export function IslandTicket({
   festival: string;
   focusHeading?: boolean;
   door?: IslandDoor | null;
+  board?: boolean;
 }) {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const ctaRef = useRef<HTMLAnchorElement>(null);
@@ -55,13 +61,14 @@ export function IslandTicket({
         <p className={styles.ticketName}>{ticket.nickname}</p>
         <p className={styles.ticketCohort}>{ticket.cohort}</p>
         <p className={styles.ticketFestival}>{festival}</p>
+        {board ? <BoardLink className={`ei-button-dawn ${styles.cta} ${styles.boardCta}`} /> : null}
         {discordUrl ? (
           <a
             ref={ctaRef}
             href={discordUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className={`ei-button-dawn ${styles.cta} ${ctaInView ? "in-view" : ""}`}
+            className={board ? styles.quietLink : `ei-button-dawn ${styles.cta} ${ctaInView ? "in-view" : ""}`}
           >
             <span>{TICKET.discordCta}</span>
           </a>

@@ -1,0 +1,248 @@
+/*
+ * The voyage (IslandVoyage): a full-screen pixel cutscene over the island.
+ * Portals to <body>, so it carries its own tokens, the same as the story's.
+ *
+ * Motion: the picture fades up from the night it opens on; each line fades
+ * in over 240 ms; at the end a circle closes on the student, holds a beat,
+ * then shuts, and the island underneath is there. prefers-reduced-motion
+ * shows one still frame, no fades, no circle.
+ */
+
+.dialog {
+  --voyage-ease-snap: cubic-bezier(0.4, 0, 0.2, 1);
+  --voyage-ease-tension: cubic-bezier(0.05, 0.7, 0.35, 0.99);
+  --voyage-night: #03041a;
+  --voyage-text-hi: #fef9e7;
+  --voyage-text-dim: #c9bfd6;
+  --voyage-gold: #ffc96b;
+  --voyage-action-soft: #93c5fd;
+  /* Pixel corners, as on the island: a 2px notch instead of a radius. */
+  --voyage-notch: polygon(
+    2px 0,
+    calc(100% - 2px) 0,
+    calc(100% - 2px) 2px,
+    100% 2px,
+    100% calc(100% - 2px),
+    calc(100% - 2px) calc(100% - 2px),
+    calc(100% - 2px) 100%,
+    2px 100%,
+    2px calc(100% - 2px),
+    0 calc(100% - 2px),
+    0 2px,
+    2px 2px
+  );
+
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  font-family: var(--font-bai-jamjuree), "Bai Jamjuree", sans-serif;
+  color: var(--voyage-text-hi);
+  outline: none;
+}
+
+.body {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--voyage-night);
+}
+
+/* The circle: wide open, closed down to the student, a held beat, then shut. */
+.body[data-iris="true"] {
+  animation: voyage-iris 800ms var(--voyage-ease-snap) forwards;
+}
+
+@keyframes voyage-iris {
+  0% {
+    clip-path: circle(150vmax at var(--iris-x) var(--iris-y));
+  }
+  62% {
+    clip-path: circle(11vmin at var(--iris-x) var(--iris-y));
+  }
+  80% {
+    clip-path: circle(11vmin at var(--iris-x) var(--iris-y));
+  }
+  100% {
+    clip-path: circle(0 at var(--iris-x) var(--iris-y));
+  }
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  animation: voyage-fade-up 600ms var(--voyage-ease-tension) both;
+}
+
+.body[data-still="true"] .canvas {
+  cursor: default;
+}
+
+@keyframes voyage-fade-up {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* The student's name over their head, moved every frame from IslandVoyage. */
+.tag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.tagText {
+  display: block;
+  translate: -50% calc(-100% - 6px);
+  max-width: 14em;
+  padding: 2px 8px 3px;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--voyage-night);
+  background: var(--voyage-gold);
+  clip-path: var(--voyage-notch);
+}
+
+/* Night over the island until the crossing has mounted (server-rendered). */
+.cover {
+  position: fixed;
+  inset: 0;
+  z-index: 69;
+  background: #03041a;
+  pointer-events: none;
+}
+
+/* The ticket's "board the ship": the invite falls into the same night the crossing opens on. */
+.nightfall {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: #03041a;
+  pointer-events: none;
+  animation: voyage-fade-up 520ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* ---------------------------------------------------------------- skip */
+
+.head {
+  position: absolute;
+  top: max(8px, env(safe-area-inset-top));
+  right: 12px;
+  z-index: 1;
+}
+
+.skip {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--voyage-text-dim);
+  background: rgba(3, 4, 26, 0.35);
+  border: 0;
+  clip-path: var(--voyage-notch);
+  cursor: pointer;
+  transition:
+    color 160ms var(--voyage-ease-snap),
+    background-color 160ms var(--voyage-ease-snap);
+}
+
+.skip:focus-visible,
+.ashore:focus-visible {
+  outline: 2px solid var(--voyage-action-soft);
+  outline-offset: -4px;
+}
+
+@media (hover: hover) {
+  .skip:hover {
+    color: var(--voyage-text-hi);
+    background: rgba(3, 4, 26, 0.6);
+  }
+}
+
+/* ---------------------------------------------------------------- the line */
+
+.foot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  padding: 48px 16px max(28px, calc(env(safe-area-inset-bottom) + 16px));
+  text-align: center;
+  pointer-events: none;
+  /* A little night under the words, so they read over the sand and the sun's road. */
+  background: linear-gradient(to top, rgba(3, 4, 26, 0.55), rgba(3, 4, 26, 0));
+}
+
+.lineBox {
+  display: grid;
+  place-items: center;
+  min-height: calc(1.45 * clamp(24px, 6.4vw, 36px));
+}
+
+.line {
+  margin: 0;
+  max-width: 22em;
+  font-family: var(--font-kodchasan), var(--font-bai-jamjuree), sans-serif;
+  font-weight: 600;
+  font-size: clamp(24px, 6.4vw, 36px);
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+  color: var(--voyage-text-hi);
+  text-shadow: 0 2px 0 rgba(3, 4, 26, 0.6);
+  text-wrap: balance;
+  animation: voyage-line-in 240ms var(--voyage-ease-snap) both;
+}
+
+@keyframes voyage-line-in {
+  from {
+    opacity: 0;
+    translate: 0 4px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+.ashore {
+  width: min(100%, 320px);
+  min-height: 48px;
+  font-size: 16px;
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canvas,
+  .line {
+    animation: none;
+  }
+
+  .body[data-iris="true"] {
+    animation: none;
+  }
+
+  .skip {
+    transition: none;
+  }
+}
