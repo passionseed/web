@@ -240,6 +240,12 @@ export interface ViewerCard {
   /** Normalized on the server (avatar.ts): a Discord CDN avatar as a 64px PNG, or null. */
   avatarUrl: string | null;
   staff: boolean;
+  /**
+   * Holds the 'admin' application role (session.roles). Only shows the admin's
+   * own reset control; the database checks the role again on every call.
+   * Absent reads as false.
+   */
+  admin?: boolean;
 }
 
 export type IslandViewer =

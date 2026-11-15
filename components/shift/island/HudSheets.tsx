@@ -6,6 +6,7 @@ import { useId, type ReactNode } from "react";
 import { PixelIcon } from "@/components/shift/poster/pixel/PixelRects";
 import type { IslandPageData, IslandProject, MyTree, ViewerCard } from "@/lib/supabase/shift-quests/types";
 
+import { AdminReset } from "./AdminReset";
 import { Avatar } from "./Avatar";
 import { FOOTER, HUD, ISLAND, NO_PROJECT, treeStageName } from "./copy";
 import styles from "./island.module.css";
@@ -157,6 +158,8 @@ export function MenuSheet({
             </p>
           </section>
         ) : null}
+        {/* Admins only: the database checks the role again on every reset. */}
+        {me.admin ? <AdminReset /> : null}
         {project ? (
           <IslandFooter project={project} me={me} avatar={<Avatar me={me} />} />
         ) : (
