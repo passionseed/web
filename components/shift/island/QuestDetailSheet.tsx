@@ -30,6 +30,7 @@ import {
   OWNERSHIP_LABEL,
   OWNERSHIP_STATE_LABEL,
   TAKE_THE_KEYS,
+  TAKE_THE_KEYS_CHECKED,
   ownershipAllLit,
   ownershipLit,
   ownershipSnapshot,
@@ -40,7 +41,7 @@ import { SHIFT_CARDS } from "@/lib/whiteboard/shift-cards";
 
 import { QuestCardComposer, useQuestCanvas, type CardStep } from "./canvas";
 import { SUBMIT } from "./canvas/copy";
-import { BOARD, CANVAS, COMMON, DETAIL, QUEST, questFlavor, tileChip } from "./copy";
+import { BOARD, CANVAS, COMMON, DETAIL, PITFALL, QUEST, questFlavor, questPitfalls, tileChip, type QuestPitfall } from "./copy";
 import { doneWhenItems } from "./DoneWhenLine";
 import { InSheetFooter } from "./InSheetFooter";
 import styles from "./island.module.css";
@@ -124,8 +125,8 @@ export function QuestDetailSheet({
   const hasZones = guide.zones.length > 0 && action?.kind !== "locked";
   const canvasTarget = useMemo(() => (open && hasZones && ref ? { ref, slug } : null), [open, hasZones, ref, slug]);
   const canvas = useQuestCanvas(canvasTarget, canvasLink);
-  // Quest 5 reads the ownership checklist (ticked in Discord) instead of the canvas.
-  const keys = kind === "main" && slug === TAKE_THE_KEYS && action?.kind !== "locked";
+  // The ถือกุญแจเอง side quest reads the ownership checklist (ticked in Discord) instead of the canvas.
+  const keys = kind === "side" && slug === TAKE_THE_KEYS && action?.kind !== "locked";
   const ownership = useOwnership(open && keys);
 
   // A new quest state (after a submit, or another quest) ends compose mode for good.
@@ -260,7 +261,7 @@ function QuestDetailBody({
   /** The quest reads the canvas (it has zones and is not locked). */
   hasZones: boolean;
   canvas: CanvasState;
-  /** Quest 5's ownership checklist; null on every other quest. */
+  /** The ถือกุญแจเอง side quest's ownership checklist; null on every other quest. */
   ownership: OwnershipState | null;
   /**
    * Opens the linked canvas on the whiteboard (CANVAS_ROUTE, which resolves
@@ -277,7 +278,7 @@ function QuestDetailBody({
   const ownRows = ownership?.state === "ready" ? ownership.rows : null;
   const hints = ownership
     ? ownRows
-      ? [{ id: "m5-checked", hinted: ownershipAllLit(ownRows), detail: null }]
+      ? [{ id: TAKE_THE_KEYS_CHECKED, hinted: ownershipAllLit(ownRows), detail: null }]
       : []
     : (ready?.hints ?? []);
 
@@ -303,6 +304,8 @@ function QuestDetailBody({
           {why}
         </p>
       ) : null}
+
+      <Pitfalls pitfalls={questPitfalls(quest.kind, quest.slug)} />
 
       {feedback ? (
         <blockquote className={styles.feedback}>
@@ -338,6 +341,32 @@ function QuestDetailBody({
 
       <DetailNotice quest={quest} action={action} />
     </div>
+  );
+}
+
+/** หลุมพราง: the pitfall the quest is built around, the warning sign to check alone, and how to avoid it. */
+function Pitfalls({ pitfalls }: { pitfalls: readonly QuestPitfall[] }) {
+  const headingId = useId();
+  if (pitfalls.length === 0) return null;
+  return (
+    <section className={styles.pitfalls} aria-labelledby={headingId}>
+      <h3 id={headingId} className={styles.detailHeading}>
+        {PITFALL.heading}
+      </h3>
+      {pitfalls.map((pitfall) => (
+        <div key={pitfall.name} className={styles.pitfall}>
+          <p className={styles.pitfallName}>{pitfall.name}</p>
+          <p className={styles.pitfallLine}>
+            <span className={styles.pitfallLabel}>{PITFALL.sign}: </span>
+            {pitfall.sign}
+          </p>
+          <p className={styles.pitfallLine}>
+            <span className={styles.pitfallLabel}>{PITFALL.avoid}: </span>
+            {pitfall.avoid}
+          </p>
+        </div>
+      ))}
+    </section>
   );
 }
 
@@ -487,7 +516,7 @@ function ContextSkeleton({ label = QUEST.context.loading }: { label?: string }) 
 }
 
 /**
- * Quest 5's "สำหรับโปรเจกต์คุณ": the ownership checklist as ticked in Discord,
+ * The ถือกุญแจเอง side quest's "สำหรับโปรเจกต์คุณ": the ownership checklist as ticked in Discord,
  * read-only, and where to change it.
  */
 function OwnershipBox({ ownership }: { ownership: OwnershipState }) {
@@ -793,7 +822,7 @@ function QuestCompose({
   const cardLoading = form === "card" && hasZones && !ready && (canvas.loading || !canvas.context);
   const reviewing = !!card && step === "review";
   const doneWhen = doneWhenItems(guide, quest.evidence);
-  // Quest 5: the server adds the checklist under the proof, so the proof leaves room for it.
+  // ถือกุญแจเอง: the server adds the checklist under the proof, so the proof leaves room for it.
   const ownRows = ownership?.state === "ready" ? (ownership.rows ?? []) : [];
   const attach = ownership
     ? {

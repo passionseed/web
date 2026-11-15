@@ -102,12 +102,25 @@ describe("cardPin", () => {
 });
 
 describe("QuestCard", () => {
-  it.each([6, 7])("marks main quest %i as a community quest", (milestone) => {
-    expect(renderCard({ kind: "main", milestone }).button).toHaveAccessibleDescription(COMMUNITY);
+  it("marks the community side quests (ช่วยเพื่อน, พัฒนาชุมชน), main 6 and 7 until the pitfall map", () => {
+    const board = makeBoard();
+    board.side = board.side.map((s) => (s.template_id === IDS.sideFriend ? { ...s, slug: "side-help-a-builder" } : s));
+    const view = questView(board, { kind: "side", templateId: IDS.sideFriend })!;
+    render(<QuestCard view={view} keynote={null} onOpen={jest.fn()} />);
+    expect(screen.getByRole("button")).toHaveAccessibleDescription(COMMUNITY);
+  });
+
+  it("shows a hint on the card and reads it as part of the description", () => {
+    const view = questView(makeBoard(), { kind: "main", milestone: 1 })!;
+    render(<QuestCard view={view} keynote={null} hint="แนะนำหลังได้พันธมิตร" onOpen={jest.fn()} />);
+    expect(screen.getByText("แนะนำหลังได้พันธมิตร")).toBeVisible();
+    expect(screen.getByRole("button")).toHaveAccessibleDescription("แนะนำหลังได้พันธมิตร");
   });
 
   it.each<BoardRef>([
     { kind: "main", milestone: 1 },
+    { kind: "main", milestone: 6 },
+    { kind: "main", milestone: 7 },
     { kind: "side", templateId: IDS.sideFriend },
   ])("does not mark %o as a community quest", (ref) => {
     renderCard(ref);

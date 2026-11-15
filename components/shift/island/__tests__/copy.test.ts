@@ -111,6 +111,30 @@ describe("island copy", () => {
     expect(copy.FESTIVAL.lanterns(4, 10)).toBe("โคมที่ลานสว่างขึ้นทีละดวง ตามเป้าหมายของทั้งเกาะ 4/10");
   });
 
+  it("names one pitfall or two, with a warning sign and a way around it, for every main quest", () => {
+    expect(Object.keys(copy.QUEST_PITFALLS).sort()).toEqual(Object.values(MAIN_SLUGS).sort());
+    for (const pitfalls of Object.values(copy.QUEST_PITFALLS)) {
+      expect(pitfalls.length).toBeGreaterThanOrEqual(1);
+      expect(pitfalls.length).toBeLessThanOrEqual(2);
+      for (const p of pitfalls) {
+        for (const text of [p.name, p.sign, p.avoid]) {
+          expect(text.trim().length).toBeGreaterThan(0);
+          expect(text).not.toMatch(/[—–]|น้อง/);
+        }
+      }
+    }
+    expect(copy.questPitfalls("main", "first-partner").map((p) => p.name)).toEqual(["เยสแบบสุภาพ"]);
+    expect(copy.questPitfalls("proposed", "first-partner")).toEqual([]);
+    expect(copy.questPitfalls("side", "side-readme")).toEqual([]);
+    expect(copy.questPitfalls("main", "toString")).toEqual([]);
+  });
+
+  it("puts every main quest in exactly one act, in order", () => {
+    expect(copy.QUEST_ACTS.flatMap((act) => act.milestones)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    expect(copy.QUEST_ACTS.map((act) => act.title)).toEqual(["หาคนที่ใช่", "สร้างสิ่งที่สำคัญ", "ขยาย"]);
+    expect(copy.QUEST_ACTS[0].milestones).toContain(copy.PARTNER_MILESTONE);
+  });
+
   it("names each place once, in PLACES", () => {
     expect(copy.ISLAND.title).toBe(copy.PLACES.island);
     expect(copy.HUD.board).toBe(copy.PLACES.board);
@@ -120,14 +144,20 @@ describe("island copy", () => {
 
   it("has one short lore line for every main and side quest, none for a proposed one", () => {
     const migrations = join(__dirname, "..", "..", "..", "..", "supabase", "migrations");
-    const sides = readFileSync(join(migrations, "20261111090900_shift_quests_board.sql"), "utf8").match(/'side-[a-z-]+'/g) ?? [];
-    const slugs = new Set([...Object.values(MAIN_SLUGS), ...sides.map((s) => s.slice(1, -1))]);
-    expect(slugs.size).toBe(18);
+    const sidesIn = (file: string) => readFileSync(join(migrations, file), "utf8").match(/'side-[a-z-]+'/g) ?? [];
+    const sides = new Set(
+      [...sidesIn("20261111090900_shift_quests_board.sql"), ...sidesIn("20261115090000_shift_quests_pitfall_map.sql")]
+        .map((s) => s.slice(1, -1))
+    );
+    // Retired by the pitfall quest map (main quest 5 does the same thing).
+    sides.delete("side-fix-one-thing");
+    const slugs = new Set([...Object.values(MAIN_SLUGS), ...sides]);
+    expect(slugs.size).toBe(24);
     expect(Object.keys(copy.QUEST_FLAVOR).sort()).toEqual([...slugs].sort());
     for (const line of Object.values(copy.QUEST_FLAVOR)) expect(line.length).toBeLessThanOrEqual(60);
-    expect(copy.questFlavor("main", "make-it-exist")).toBe("จากไอเดียในหัว เป็นของที่คนอื่นจับต้องได้");
+    expect(copy.questFlavor("main", "meet-one-real-person")).toBe("ทุกต้นเริ่มจากคนหนึ่งคนที่เจอปัญหาจริง");
     expect(copy.questFlavor("side", "side-readme")).toBe("คู่มือที่ดี ทำให้งานเดินต่อได้แม้คุณไม่อยู่");
-    expect(copy.questFlavor("proposed", "make-it-exist")).toBeNull();
+    expect(copy.questFlavor("proposed", "meet-one-real-person")).toBeNull();
     expect(copy.questFlavor("side", "no-such-quest")).toBeNull();
     expect(copy.questFlavor("main", null)).toBeNull();
     expect(copy.questFlavor("main", "toString")).toBeNull();

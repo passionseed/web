@@ -13,7 +13,10 @@
  */
 import { Client } from "pg";
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
+const PITFALL_MAP = resolve(__dirname, "../../migrations/20261115090000_shift_quests_pitfall_map.sql");
 const adminUrl = process.env.SHIFT_QUESTS_TEST_DATABASE_URL;
 const botUrl = process.env.SHIFT_QUESTS_BOT_DATABASE_URL;
 const webUrl = process.env.SHIFT_QUESTS_WEB_DATABASE_URL;
@@ -102,7 +105,28 @@ const WEB_ALLOWLIST = [
   "shift_quest_island_styles()",
 ];
 
-/** The draft side quests, in sort order. */
+/**
+ * The side quests 20261115090000 (the pitfall quest map) leaves on the board,
+ * in sort order: four published first-conversation quests, the ten drafts, and
+ * the three old main quests as published side quests.
+ */
+const SEEDED_SIDE = [
+  "side-stakeholder-map", "side-practice-talk", "side-question-check", "side-warm-intro",
+  "side-five-voices", "side-open-on-phone", "side-readme", "side-thirty-second-cut", "side-clear-offer",
+  "side-outside-circle", "side-demo-three-minutes", "side-handoff-page", "side-review-a-friend", "side-share-a-lesson",
+  "side-take-the-keys", "side-help-a-builder", "side-improve-community",
+];
+const PUBLISHED_SIDE = [
+  "side-stakeholder-map", "side-practice-talk", "side-question-check", "side-warm-intro",
+  "side-take-the-keys", "side-help-a-builder", "side-improve-community",
+];
+
+/**
+ * The board mechanics below were written against the first draft map
+ * (20261111090900): these eleven side quests with these prerequisites. The
+ * fixture puts them back (and takes the pitfall map's published ones off) so
+ * every unlock path keeps its check; the seed itself is checked above it.
+ */
 const SIDE_SLUGS = [
   "side-five-voices", "side-open-on-phone", "side-readme", "side-thirty-second-cut", "side-clear-offer",
   "side-outside-circle", "side-fix-one-thing", "side-demo-three-minutes", "side-handoff-page",
@@ -117,7 +141,13 @@ const BOARD_ORDER = [
 ];
 
 /** Main quest icons (components/shift/island/sprites.ts MAIN_ICONS): no side quest reuses one. */
-const MAIN_ICON_KEYS = ["compass", "hammer", "visitor", "door", "key", "key_flag", "path", "lantern"];
+const MAIN_ICON_KEYS = ["visitor", "compass", "door", "hammer", "path", "book", "lantern"];
+
+/** The main quests of the pitfall map, by milestone. */
+const MAIN_SLUGS = [
+  "meet-one-real-person", "real-stories-not-compliments", "first-partner",
+  "in-their-hands", "run-the-loop", "what-we-learned", "beyond-the-first",
+];
 
 let failures = 0;
 let passes = 0;
@@ -356,23 +386,44 @@ async function main(): Promise<void> {
     await db.query("reset role");
   }
 
-  // --- Draft side quests ------------------------------------------------------------------
-  const seeds: Json[] = (await db.query(
-    "select * from public.shift_quest_templates where side order by sort_order"
+  // --- The pitfall map's seed -------------------------------------------------------------
+  const mains: Json[] = (await db.query(
+    "select * from public.shift_quest_templates where milestone is not null and status = 'published' order by milestone"
   )).rows;
-  check(seeds.length === 11 && seeds.map((s) => s.slug).join(",") === SIDE_SLUGS.join(","),
-    "eleven side quests are seeded, in board order", seeds.map((s) => s.slug));
-  check(seeds.every((s) => s.status === "draft" && s.side === true && s.milestone === null && s.version === 1 &&
-      s.reward_rule_key === null),
-    "all draft, side, no milestone, version 1, no reward rule");
-  check(seeds.map((s) => s.sort_order).join(",") === "110,120,130,140,150,160,170,180,190,200,210", "sort_order 110 to 210");
+  check(mains.map((m) => m.slug).join(",") === MAIN_SLUGS.join(",") &&
+      mains.every((m, i) => m.milestone === i + 1 && m.side === false && m.repeatable === true && m.icon === null),
+    "the seven main quests of the pitfall map, one per milestone", mains.map((m) => [m.slug, m.milestone]));
+  check((await count("select count(*) from public.shift_quest_templates where version = 1 and status = 'retired' and slug in " +
+      "('find-something-worth-fixing','make-it-exist','let-reality-surprise-you','give-them-a-reason-to-return'," +
+      "'take-the-keys','help-another-builder-move','improve-our-community','side-fix-one-thing')")) === 8,
+    "the first main quests and side-fix-one-thing are retired");
+  const seeds: Json[] = (await db.query(
+    "select * from public.shift_quest_templates where side and status <> 'retired' order by sort_order"
+  )).rows;
+  const rerunSource: Json[] = (await db.query(
+    "select slug, title, purpose from public.shift_quest_templates where version = 1 and milestone is not null"
+  )).rows;
+  check(seeds.map((s) => s.slug).join(",") === SEEDED_SIDE.join(","),
+    "seventeen side quests are seeded, in sort order", seeds.map((s) => s.slug));
+  check(seeds.every((s) => s.side === true && s.milestone === null && s.version === 1 && s.reward_rule_key === null &&
+      s.status === (PUBLISHED_SIDE.includes(s.slug) ? "published" : "draft")),
+    "side, no milestone, version 1, no reward rule; only the pitfall map's new ones are published",
+    seeds.map((s) => [s.slug, s.status]));
   const bySeed = (slug: string) => seeds.find((s) => s.slug === slug)!;
-  check(JSON.stringify(bySeed("side-fix-one-thing").requires_slugs) === '["side-outside-circle"]' &&
-      bySeed("side-fix-one-thing").repeatable === true &&
-      JSON.stringify(bySeed("side-demo-three-minutes").requires_milestones) === "[2,3]" &&
-      JSON.stringify(bySeed("side-review-a-friend").requires_milestones) === "[]" &&
+  const needs = (slug: string) => JSON.stringify(bySeed(slug).requires_milestones);
+  check(PUBLISHED_SIDE.every((slug) => needs(slug) === "[]") && needs("side-five-voices") === "[1]" &&
+      needs("side-open-on-phone") === "[4]" && needs("side-demo-three-minutes") === "[4]" &&
+      needs("side-outside-circle") === "[4]" && needs("side-share-a-lesson") === "[6]" &&
+      needs("side-handoff-page") === "[]" && needs("side-review-a-friend") === "[]" &&
+      seeds.every((s) => s.requires_slugs.length === 0) &&
       JSON.stringify(bySeed("side-open-on-phone").route_keys) === '["software"]' && bySeed("side-five-voices").route_keys === null,
     "prerequisites and routes as planned");
+  check(["take-the-keys:side-take-the-keys", "help-another-builder-move:side-help-a-builder",
+    "improve-our-community:side-improve-community"].every((pair) => {
+    const [old, slug] = pair.split(":");
+    const first = rerunSource.find((r) => r.slug === old);
+    return first !== undefined && bySeed(slug).title === first.title && bySeed(slug).purpose === first.purpose;
+  }), "the old ownership and community quests are side quests now, with the same copy");
   const textCols = ["title", "purpose", "routes", "examples", "evidence_criteria", "reflection_prompt", "support_options"];
   const sideIcons = seeds.map((s) => s.icon);
   check(!sideIcons.some((icon) => MAIN_ICON_KEYS.includes(icon)), "no side quest wears a main quest's icon", sideIcons);
@@ -380,8 +431,31 @@ async function main(): Promise<void> {
       s.requires_milestones.includes(s.branch_of)),
     "a side quest with a required main quest branches off one of them",
     seeds.map((s) => [s.slug, s.branch_of, s.requires_milestones]));
-  const badCopy = seeds.flatMap((s) => textCols.filter((k) => /—|น้อง/.test(s[k])).map((k) => `${s.slug}.${k}`));
-  check(badCopy.length === 0, "the Thai drafts have no em dash and never say น้อง", badCopy);
+  const badCopy = [...mains, ...seeds].flatMap((s) => textCols.filter((k) => /—|น้อง/.test(s[k])).map((k) => `${s.slug}.${k}`));
+  check(badCopy.length === 0, "the Thai copy has no em dash and never says น้อง", badCopy);
+  const rerun = await db.query("select slug, status, requires_milestones, branch_of from public.shift_quest_templates order by slug, version");
+  await db.query(readFileSync(PITFALL_MAP, "utf8"));
+  const after = await db.query("select slug, status, requires_milestones, branch_of from public.shift_quest_templates order by slug, version");
+  check(JSON.stringify(after.rows) === JSON.stringify(rerun.rows), "the pitfall map applies twice with no change");
+
+  // --- Fixture: the first draft map, for the board mechanics below ----------------------------------
+  await db.query(
+    `update public.shift_quest_templates set status = 'retired' where slug = any($1::text[])`, [PUBLISHED_SIDE]);
+  await db.query("update public.shift_quest_templates set status = 'draft' where slug = 'side-fix-one-thing'");
+  await db.query(`
+    update public.shift_quest_templates t
+    set requires_milestones = v.req::smallint[], branch_of = v.branch::smallint
+    from (values
+      ('side-five-voices', '{1}', 1), ('side-open-on-phone', '{2}', 2), ('side-readme', '{2}', 2),
+      ('side-thirty-second-cut', '{2}', 2), ('side-clear-offer', '{2}', 2), ('side-outside-circle', '{3}', 3),
+      ('side-fix-one-thing', '{3}', 3), ('side-demo-three-minutes', '{2,3}', 3), ('side-handoff-page', '{5}', 5),
+      ('side-review-a-friend', '{}', null), ('side-share-a-lesson', '{3}', 3)
+    ) as v (slug, req, branch)
+    where t.slug = v.slug and t.side`);
+  const drafts: Json[] = (await db.query(
+    "select * from public.shift_quest_templates where side and status = 'draft' order by sort_order"
+  )).rows;
+  check(drafts.map((s) => s.slug).join(",") === SIDE_SLUGS.join(","), "the fixture has the eleven first drafts", drafts.map((s) => s.slug));
   for (const [label, sql] of [
     ["a side quest is never a milestone", "update public.shift_quest_templates set milestone = 1 where slug = 'side-readme'"],
     ["routes are the four project routes", "update public.shift_quest_templates set route_keys = '{mobile}' where slug = 'side-readme'"],
@@ -417,7 +491,7 @@ async function main(): Promise<void> {
   check(bD.side.length === 0, "draft side quests are not on the board");
   const m1 = mainOf(bD, 1);
   check(keys(m1) === "done,evidence_criteria,in_flight,milestone,mine,purpose,reflection_prompt,slug,template_id,title" &&
-      m1.slug === "find-something-worth-fixing" && m1.done === false && m1.in_flight === null && m1.mine === null,
+      m1.slug === "meet-one-real-person" && m1.done === false && m1.in_flight === null && m1.mine === null,
     "a main quest's shape", m1);
 
   // Publish every side quest, as an admin would after the Thai review.

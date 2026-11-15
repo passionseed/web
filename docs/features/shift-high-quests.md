@@ -42,8 +42,14 @@ review and proposal notices (staff channel, title only), and celebrations,
 peer recognitions and coworking intentions after the author confirms a
 preview (and, for a recognition, after the peer accepts).
 
-The seven starter quests from the spec are seeded in Thai
+The seven starter quests from the spec were seeded in Thai
 (`20261111090500_shift_quests_starter_templates.sql`) with no reward rule.
+Since 2026-11-15 the main quests are the pitfall quest map
+(`20261115090000_shift_quests_pitfall_map.sql`,
+[`docs/designs/shift-high-quest-pitfalls.md`](../designs/shift-high-quest-pitfalls.md)):
+milestones 1 to 3 find a stakeholder, 4 to 6 build what matters, 7 scales, and
+each names a pitfall on the web quest page. The first quests are retired;
+ถือกุญแจเอง and the two community quests are side quests now.
 
 ## How it is built
 

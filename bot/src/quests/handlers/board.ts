@@ -16,7 +16,7 @@
 import type { ButtonBuilder, ModalBuilder } from "discord.js";
 import { MessageFlags } from "discord.js";
 
-import { COMMUNITY_RULE_MILESTONES } from "@/lib/content/shift-island-economy";
+import { COMMUNITY_RULE_SLUGS } from "@/lib/content/shift-island-economy";
 import { mainTileStatus, missingTitles, sideTileStatus } from "@/lib/supabase/shift-quests/board";
 import type { BoardMain, BoardSide, QuestBoard, TileStatus } from "@/lib/supabase/shift-quests/types";
 
@@ -32,8 +32,8 @@ import { questDetail } from "./quest";
 import { offerQuestGift } from "./tree";
 import { picked, type HandlerSet } from "./types";
 
-/** Community quests: main quests 6 and 7 (the economy's community rule). */
-const COMMUNITY = new Set<number>(COMMUNITY_RULE_MILESTONES);
+/** Community quests: the two community side quests (the economy's community rule), listed in their own section. */
+const COMMUNITY = new Set<string>(COMMUNITY_RULE_SLUGS);
 
 /** The caller's own open quests, the one that needs them most first (as the web board orders them). */
 const OPEN: TileStatus[] = ["clarification", "active", "paused", "submitted", "appealed"];
@@ -75,20 +75,16 @@ function sortedSides(board: QuestBoard): BoardSide[] {
     .map(({ s }) => s);
 }
 
-/** The next main quest for the tree: the lowest one, outside the community quests, not yet passed. */
+/** The next main quest for the tree: the lowest one not yet passed. */
 export function nextMain(board: QuestBoard): BoardMain | null {
-  return (
-    board.main
-      .filter((m) => !COMMUNITY.has(m.milestone) && !m.done)
-      .sort((a, b) => a.milestone - b.milestone)[0] ?? null
-  );
+  return board.main.filter((m) => !m.done).sort((a, b) => a.milestone - b.milestone)[0] ?? null;
 }
 
 function mainLines(board: QuestBoard): string[] {
   const next = nextMain(board);
   const lines = [next ? mainLine(next) : QB.coreDone];
   const mine = board.main
-    .filter((m) => m !== next && !COMMUNITY.has(m.milestone) && OPEN.includes(mainTileStatus(m)))
+    .filter((m) => m !== next && OPEN.includes(mainTileStatus(m)))
     .sort((a, b) => OPEN.indexOf(mainTileStatus(a)) - OPEN.indexOf(mainTileStatus(b)) || a.milestone - b.milestone);
   for (const m of mine.slice(0, MAIN_SHOWN - 1)) lines.push(mainLine(m));
   return lines;
@@ -107,10 +103,11 @@ export function boardView(board: QuestBoard, web: ButtonBuilder | null = null): 
   }
 
   const blocks: Block[] = [{ kind: "text", text: [QB.main, ...mainLines(board)].join("\n") }];
-  const community = board.main.filter((m) => COMMUNITY.has(m.milestone)).sort((a, b) => a.milestone - b.milestone);
-  if (community.length) blocks.push({ kind: "text", text: [QB.community, ...community.map(mainLine)].join("\n") });
+  const all = sortedSides(board);
+  const community = all.filter((s) => COMMUNITY.has(s.slug));
+  if (community.length) blocks.push({ kind: "text", text: [QB.community, ...community.map(sideLine)].join("\n") });
 
-  const sides = sortedSides(board);
+  const sides = all.filter((s) => !COMMUNITY.has(s.slug));
   const open = sides.filter((s) => sideTileStatus(s) !== "locked");
   const locked = sides.length - open.length;
   const sideText = [QB.side];
@@ -123,7 +120,7 @@ export function boardView(board: QuestBoard, web: ButtonBuilder | null = null): 
   if (sideFine.length) blocks.push({ kind: "subtext", text: sideFine.join(" · ") });
   blocks.push({ kind: "divider", line: false }, { kind: "subtext", text: `${QB.legend}\n${QB.growth}` });
 
-  const menu = sides.slice(0, MENU_MAX).map((s) => {
+  const menu = [...community, ...sides].slice(0, MENU_MAX).map((s) => {
     const status = sideTileStatus(s);
     return { label: s.title, value: s.template_id, description: `${QB.mark[status]} ${QB.status[status]} · ${s.purpose}` };
   });

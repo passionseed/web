@@ -11,8 +11,8 @@ jest.mock("@/app/shift/island/actions", () => ({ loadQuestCanvas: jest.fn() }));
 const mockedLoad = loadQuestCanvas as jest.MockedFunction<typeof loadQuestCanvas>;
 
 const LINKED: CanvasLinkState = { linked: true, linkedAt: "2026-11-11T01:00:00Z" };
-const m1 = { ref: { kind: "main", milestone: 1 } as BoardRef, slug: "find-something-worth-fixing" };
-const m3 = { ref: { kind: "main", milestone: 3 } as BoardRef, slug: "let-reality-surprise-you" };
+const m1 = { ref: { kind: "main", milestone: 1 } as BoardRef, slug: "meet-one-real-person" };
+const m3 = { ref: { kind: "main", milestone: 3 } as BoardRef, slug: "first-partner" };
 const ready = (title: string): QuestCanvasContext => ({
   state: "ready",
   canvas: { title, boardTitle: "b", lastEdited: null },
@@ -32,7 +32,7 @@ beforeEach(() => mockedLoad.mockReset());
 describe("useQuestCanvas", () => {
   it.each([
     ["no quest open", null, LINKED, { state: "no_zones" }],
-    ["a quest without zones", { ref: { kind: "main", milestone: 5 } as BoardRef, slug: "take-the-keys" }, LINKED, { state: "no_zones" }],
+    ["a quest without zones", { ref: { kind: "side", templateId: "t-keys" } as BoardRef, slug: "side-take-the-keys" }, LINKED, { state: "no_zones" }],
     ["a proposed quest", { ref: { kind: "proposed", instanceId: "x" } as BoardRef, slug: null }, LINKED, { state: "no_zones" }],
     ["no link", m1, { linked: false } as CanvasLinkState, { state: "unlinked" }],
   ])("answers %s without a server call", (_label, target, link, expected) => {

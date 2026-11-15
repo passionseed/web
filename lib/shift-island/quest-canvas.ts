@@ -108,15 +108,19 @@ export const CARD_LIMITS = { notes: 8, line: 2000, link: 500, evidence: 2000, no
 // Guide config (pure data; buildContext in canvas-snapshot.ts evaluates it)
 // ---------------------------------------------------------------------------
 
-/** The seven main quests by milestone (supabase/migrations/20261111090500_shift_quests_starter_templates.sql). */
+/**
+ * The seven main quests by milestone: the pitfall quest map
+ * (supabase/migrations/20261115090000_shift_quests_pitfall_map.sql,
+ * docs/designs/shift-high-quest-pitfalls.md).
+ */
 export const MAIN_SLUGS: Readonly<Record<number, string>> = {
-  1: "find-something-worth-fixing",
-  2: "make-it-exist",
-  3: "let-reality-surprise-you",
-  4: "give-them-a-reason-to-return",
-  5: "take-the-keys",
-  6: "help-another-builder-move",
-  7: "improve-our-community",
+  1: "meet-one-real-person",
+  2: "real-stories-not-compliments",
+  3: "first-partner",
+  4: "in-their-hands",
+  5: "run-the-loop",
+  6: "what-we-learned",
+  7: "beyond-the-first",
 };
 
 /** When a checklist item lights up as a hint, from the notes on the linked canvas. */
@@ -150,118 +154,148 @@ const versionAtLeast = (zone: ShiftCardKind, min: number): HintRule => ({ rule: 
 const anyOf = (...of: HintRule[]): HintRule => ({ rule: "any", of });
 
 const MAIN_GUIDES: Readonly<Record<string, GuideSpec>> = {
-  "find-something-worth-fixing": {
-    zones: ["problem", "target", "interview"],
+  // Act 1: find your stakeholder.
+  "meet-one-real-person": {
+    zones: ["target", "interview", "problem"],
     context: [
+      { zone: "target", label: "คนที่จะไปคุย", show: "note" },
+      { zone: "interview", label: "สัมภาษณ์", show: "count" },
       { zone: "problem", label: "ปัญหาตอนนี้", show: "note" },
-      { zone: "target", label: "คนที่เจอ", show: "note" },
+    ],
+    checklist: [
+      { id: "m1-who", label: "ชี้ตัวได้ว่าเป็นใคร เจอที่ไหน", hint: written("target") },
+      { id: "m1-talked", label: "คุยกับเขาจริงอย่างน้อย 10 นาที", hint: atLeast("interview", 1) },
+      { id: "m1-new", label: "จดสิ่งที่เขาเล่าที่คุณไม่เคยรู้", hint: null },
+    ],
+    examples: [
+      "ไม่ใช่ \"นักเรียน\" แต่เป็น \"นักเรียน ม.6 ที่อ่านหนังสือสอบคนเดียวตอนดึก\"",
+      "คุยกับบรรณารักษ์โรงเรียน 15 นาที เรื่องที่นักเรียนหาหนังสือไม่เจอ",
+    ],
+  },
+  "real-stories-not-compliments": {
+    zones: ["interview", "problem", "pivot"],
+    context: [
+      { zone: "interview", label: "สัมภาษณ์", show: "count" },
+      { zone: "problem", label: "ปัญหาตอนนี้", show: "note" },
+      { zone: "pivot", label: "เปลี่ยนแผน", show: "count" },
+    ],
+    checklist: [
+      { id: "m2-three", label: "คุยครบอย่างน้อย 3 คน", hint: atLeast("interview", 3) },
+      { id: "m2-story", label: "มีเรื่องจริงหนึ่งเรื่อง: ครั้งล่าสุดที่มันเกิดขึ้น", hint: null },
+      {
+        id: "m2-belief",
+        label: "บอกสิ่งที่เคยเชื่อแต่ตอนนี้ไม่แน่ใจ",
+        hint: anyOf(versionAtLeast("problem", 2), atLeast("pivot", 1)),
+      },
+    ],
+    examples: [
+      "แทนที่จะถาม \"ถ้ามีแอปนี้จะใช้ไหม\" ให้ถาม \"ครั้งล่าสุดที่ลืมส่งงาน เกิดอะไรขึ้น\"",
+      "คุยกับเจ้าของร้าน 3 ร้าน แล้วพบว่าปัญหาจริงไม่ใช่ลูกค้าน้อย แต่คือเตรียมของไม่ทัน",
+    ],
+  },
+  "first-partner": {
+    zones: ["target", "interview"],
+    context: [
+      { zone: "target", label: "คนที่เกี่ยวข้อง", show: "note" },
       { zone: "interview", label: "สัมภาษณ์", show: "count" },
     ],
     checklist: [
-      { id: "m1-problem", label: "เขียนปัญหาที่เลือก", hint: written("problem") },
-      { id: "m1-target", label: "รู้ว่าใครเจอปัญหานี้", hint: written("target") },
-      { id: "m1-talked", label: "คุยหรือสังเกตคนจริงอย่างน้อย 1 คน", hint: atLeast("interview", 1) },
+      { id: "m3-agreed", label: "พันธมิตรตกลงทำขั้นต่อไปกับคุณ", hint: null },
+      { id: "m3-date", label: "มีวันที่ชัดเจน", hint: null },
+      { id: "m3-gain", label: "บอกได้ว่าเขาได้อะไรจากการช่วยคุณ", hint: null },
     ],
     examples: [
-      "คุยกับเพื่อน 3 คนเรื่องการจัดตารางอ่านหนังสือ แล้วเลือกปัญหาที่เจอซ้ำ",
-      "ดูว่าคนในกลุ่มเกมที่ชอบ พูดถึงเรื่องไหนบ่อย",
+      "ครูแนะแนวตกลงให้ลองเครื่องมือกับนักเรียน ม.6 หนึ่งห้อง วันศุกร์หน้า",
+      "ร้านข้าวหน้าโรงเรียนให้ลองระบบสั่งล่วงหน้าหนึ่งสัปดาห์",
     ],
   },
-  "make-it-exist": {
-    zones: ["idea", "ship"],
+  // Act 2: build what matters.
+  "in-their-hands": {
+    zones: ["idea", "ship", "test"],
     context: [
-      { zone: "problem", label: "ปัญหาที่แก้", show: "note" },
+      { zone: "problem", label: "เรื่องที่เขาเล่า", show: "note" },
       { zone: "idea", label: "ไอเดีย", show: "note" },
       { zone: "ship", label: "ปล่อยแล้ว", show: "note" },
     ],
     checklist: [
-      { id: "m2-idea", label: "มีไอเดียที่บอกว่าแก้ปัญหาข้อไหน", hint: written("idea") },
-      { id: "m2-ship", label: "มีชิ้นงานที่คนอื่นลองได้", hint: written("ship") },
-      { id: "m2-why", label: "บอกเหตุผลของการตัดสินใจหลัก", hint: null },
+      { id: "m4-idea", label: "ชิ้นงานแก้เรื่องที่เขาเล่า", hint: written("idea") },
+      { id: "m4-ship", label: "มีของที่ลองได้จริง", hint: written("ship") },
+      { id: "m4-tried", label: "เขาลองแล้ว และคุณดูอยู่", hint: atLeast("test", 1) },
     ],
     examples: [
-      "หน้าเว็บที่คำนวณค่าใช้จ่ายทริปได้หนึ่งแบบ",
-      "ด่านแรกของเกมที่เล่นจบได้ใน 2 นาที",
-      "ออกแบบโพสต์ให้ร้านแถวบ้านหนึ่งชิ้น",
+      "ซอฟต์แวร์: หน้าเว็บที่ทำได้อย่างเดียว แต่ทำเรื่องที่เขาเล่าได้จริง",
+      "งานสร้างสรรค์: ฉากเดียว หรือเพลงท่อนเดียว ให้คนที่เขาพูดถึงลองดู",
+      "บริการ: ลองให้บริการจริงหนึ่งครั้งกับพันธมิตร",
     ],
   },
-  "let-reality-surprise-you": {
-    zones: ["test", "pivot"],
-    context: [
-      { zone: "target", label: "ลองกับ", show: "note" },
-      { zone: "idea", label: "สิ่งที่จะให้ลอง", show: "note" },
-      { zone: "test", label: "ทดสอบ", show: "count" },
-    ],
-    checklist: [
-      { id: "m3-tested", label: "มีคนจริงลองงานของคุณ", hint: atLeast("test", 1) },
-      { id: "m3-surprise", label: "จดสิ่งที่ไม่ตรงกับที่คิด", hint: null },
-      { id: "m3-change", label: "บอกว่าจะเปลี่ยนอะไร", hint: anyOf(atLeast("pivot", 1), versionAtLeast("idea", 2)) },
-    ],
-    examples: [
-      "ให้เพื่อนต่างห้อง 3 คนลองใช้แอป แล้วจดว่าติดตรงไหน",
-      "เปิดเพลงให้คนฟัง แล้วถามว่าจำท่อนไหนได้",
-    ],
-  },
-  "give-them-a-reason-to-return": {
-    zones: ["test", "pivot"],
+  "run-the-loop": {
+    zones: ["test", "pivot", "ship"],
     context: [
       { zone: "ship", label: "งานตอนนี้", show: "note" },
-      { zone: "test", label: "ผลทดสอบล่าสุด", show: "note" },
+      { zone: "test", label: "ทดสอบ", show: "count" },
       { zone: "pivot", label: "เปลี่ยนแผน", show: "count" },
     ],
     checklist: [
-      { id: "m4-tweak", label: "ลองปรับหนึ่งอย่าง", hint: anyOf(atLeast("pivot", 1), versionAtLeast("ship", 2)) },
-      { id: "m4-return", label: "ดูว่าใครกลับมา", hint: atLeast("test", 1) },
-      { id: "m4-learned", label: "บอกสิ่งที่เรียนรู้ ถึงไม่มีใครกลับมาก็นับ", hint: null },
+      { id: "m5-rounds", label: "ลองกับคนจริงอย่างน้อย 2 รอบ", hint: atLeast("test", 2) },
+      { id: "m5-fixed", label: "บอกว่าแก้อะไรในแต่ละรอบ", hint: anyOf(atLeast("pivot", 1), versionAtLeast("ship", 2)) },
+      { id: "m5-compare", label: "ผลก่อนและหลังแก้", hint: null },
     ],
     examples: [
-      "เพิ่มการแจ้งเตือนที่ผู้ใช้เลือกเปิดเองได้ แล้วดูว่าใครกลับมาใช้ใน 1 สัปดาห์",
-      "ทำด่านใหม่ แล้วชวนคนที่เคยเล่นกลับมาลอง",
+      "รอบแรกคนหาปุ่มสั่งไม่เจอ ย้ายปุ่ม รอบสองทุกคนกดได้ใน 10 วินาที",
+      "ท่อนแรกของเพลงยาวไป คนข้าม ตัดเหลือครึ่ง แล้วเปิดให้คนเดิมฟังอีกครั้ง",
     ],
   },
-  // Quests 5 to 7: line and link only, no canvas zones. Quest 5's checklist is
-  // the ownership checklist ticked in Discord (/project ownership): the quest
-  // page shows it read-only and lights m5-checked from it, and the submit
-  // snapshots it (lib/shift-island/ownership.ts), so its hint here is null.
-  "take-the-keys": {
+  "what-we-learned": {
+    zones: ["pivot", "problem"],
+    context: [
+      { zone: "problem", label: "ปัญหาตอนนี้", show: "note" },
+      { zone: "pivot", label: "เปลี่ยนแผน", show: "count" },
+    ],
+    checklist: [
+      { id: "m6-believed", label: "เคยเชื่ออะไร", hint: null },
+      { id: "m6-found", label: "เจออะไรจริง", hint: null },
+      { id: "m6-next", label: "จะทำอะไรต่อ", hint: null },
+    ],
+    examples: [
+      "เคยเชื่อว่านักเรียนไม่มีเวลา เจอว่าจริงๆ ไม่รู้ว่าจะเริ่มตรงไหน ต่อไปจะทำแค่หน้าแรกให้ชัด",
+      "เล่าให้พันธมิตรฟัง แล้วเขาแนะนำคนที่ควรคุยต่อ",
+    ],
+  },
+  // Act 3: scale.
+  "beyond-the-first": {
+    zones: ["test", "ship"],
+    context: [
+      { zone: "ship", label: "งานตอนนี้", show: "note" },
+      { zone: "test", label: "ทดสอบ", show: "count" },
+    ],
+    checklist: [
+      { id: "m7-outside", label: "มีคนนอกวงใช้เองได้", hint: null },
+      { id: "m7-stuck", label: "จดว่าเขาติดตรงไหน", hint: null },
+      { id: "m7-return", label: "ดูว่ามีใครกลับมาเองไหม", hint: null },
+    ],
+    examples: [
+      "ส่งลิงก์ให้ชมรมอื่นในโรงเรียน แล้วดูว่ามีใครใช้จบโดยไม่ถามคุณ",
+      "พันธมิตรแนะนำร้านที่สอง และร้านนั้นเริ่มใช้เองได้",
+    ],
+  },
+};
+
+/**
+ * Side quests with their own checklist (line and link only). Ownership: its
+ * checklist is the one ticked in Discord (/project ownership): the quest page
+ * shows it read-only and lights keys-checked from it, and the submit snapshots
+ * it (lib/shift-island/ownership.ts), so its hint here is null.
+ */
+const SIDE_GUIDES: Readonly<Record<string, GuideSpec>> = {
+  "side-take-the-keys": {
     zones: [],
     context: [],
     checklist: [
-      { id: "m5-checked", label: "ผลเช็กลิสต์ /project ownership ทีละข้อ", hint: null },
-      { id: "m5-open", label: "เรื่องที่ยังแก้ไม่ได้", hint: null },
-      { id: "m5-secrets", label: "ไม่มีรหัสผ่าน โทเคน หรือภาพหน้าจอบัญชีส่วนตัว", hint: null },
+      { id: "keys-checked", label: "ผลเช็กลิสต์ /project ownership ทีละข้อ", hint: null },
+      { id: "keys-open", label: "เรื่องที่ยังแก้ไม่ได้", hint: null },
+      { id: "keys-secrets", label: "ไม่มีรหัสผ่าน โทเคน หรือภาพหน้าจอบัญชีส่วนตัว", hint: null },
     ],
-    examples: [
-      "ย้ายโค้ดไปไว้ในบัญชี GitHub ของตัวเอง",
-      "เช็กว่าเพลงหรือภาพที่ใช้ มีสิทธิ์ใช้ต่อได้ไหม",
-      "ตกลงกับทีมว่าถ้ามีคนออก งานจะเป็นยังไง",
-    ],
-  },
-  "help-another-builder-move": {
-    zones: [],
-    context: [],
-    checklist: [
-      { id: "m6-helped", label: "บอกว่าช่วยเพื่อนเรื่องอะไร", hint: null },
-      { id: "m6-now", label: "ตอนนี้เพื่อนทำอะไรได้เอง", hint: null },
-      { id: "m6-confirm", label: "ให้เพื่อนยืนยันได้ ถ้าเขายินดี", hint: null },
-    ],
-    examples: [
-      "นั่งดูบั๊กกับเพื่อนจนเขาแก้เองได้",
-      "เป็นผู้ทดสอบให้โปรเจกต์ของเพื่อน แล้วสรุปสิ่งที่เห็น",
-    ],
-  },
-  "improve-our-community": {
-    zones: [],
-    context: [],
-    checklist: [
-      { id: "m7-what", label: "สิ่งที่คุณปรับ", hint: null },
-      { id: "m7-who", label: "ใครได้ประโยชน์", hint: null },
-      { id: "m7-how", label: "รู้ได้ยังไงว่ามันช่วย", hint: null },
-    ],
-    examples: [
-      "เขียนคู่มือ deploy ฉบับสั้น ที่เพื่อนลองทำตามแล้วใช้ได้",
-      "เสนอเควสต์ใหม่ แล้วให้คนอื่นลองทำ",
-    ],
+    examples: [],
   },
 };
 
@@ -269,7 +303,6 @@ const MAIN_GUIDES: Readonly<Record<string, GuideSpec>> = {
 const SIDE_ZONES: Readonly<Record<string, ShiftCardKind[]>> = {
   "side-five-voices": ["interview", "target"],
   "side-outside-circle": ["test"],
-  "side-fix-one-thing": ["test", "pivot"],
   "side-open-on-phone": ["ship", "idea"],
   "side-thirty-second-cut": ["ship", "idea"],
   "side-clear-offer": ["ship", "idea"],
@@ -289,6 +322,7 @@ const EMPTY_SPEC: GuideSpec = { zones: [], context: [], checklist: [], examples:
 export function questGuideSpec(q: { kind: BoardRef["kind"]; slug: string | null }): GuideSpec {
   if (q.kind === "proposed" || !q.slug) return EMPTY_SPEC;
   if (q.kind === "main") return Object.hasOwn(MAIN_GUIDES, q.slug) ? MAIN_GUIDES[q.slug] : EMPTY_SPEC;
+  if (Object.hasOwn(SIDE_GUIDES, q.slug)) return SIDE_GUIDES[q.slug];
   if (!Object.hasOwn(SIDE_ZONES, q.slug)) return EMPTY_SPEC;
   const zones = SIDE_ZONES[q.slug];
   return {

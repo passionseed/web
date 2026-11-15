@@ -130,25 +130,25 @@ describe("buildContext", () => {
   const context = (slug: string, kind: "main" | "side" = "main") =>
     buildContext(questGuideSpec({ kind, slug }), summary, cut, "frame-1", access);
 
-  it("quest 1: problem and target notes, interviews counted, hints from notes", () => {
-    const { context: rows, hints, notes } = context("find-something-worth-fixing");
+  it("quest 1: target and problem notes, interviews counted, hints from notes", () => {
+    const { context: rows, hints, notes } = context("meet-one-real-person");
     expect(rows).toEqual([
-      { kind: "problem", label: "ปัญหาตอนนี้", text: "นักเรียน ม.5 ไม่มีเวลาอ่านหนังสือ\nเพราะเรียนพิเศษทุกวัน", version: 2, count: null, noteId: "n-problem" },
-      { kind: "target", label: "คนที่เจอ", text: "นักเรียน ม.5 ที่เรียนพิเศษ", version: 1, count: null, noteId: "n-target" },
+      { kind: "target", label: "คนที่จะไปคุย", text: "นักเรียน ม.5 ที่เรียนพิเศษ", version: 1, count: null, noteId: "n-target" },
       // A count row links no single note.
       { kind: "interview", label: "สัมภาษณ์", text: null, version: null, count: 3, noteId: null },
+      { kind: "problem", label: "ปัญหาตอนนี้", text: "นักเรียน ม.5 ไม่มีเวลาอ่านหนังสือ\nเพราะเรียนพิเศษทุกวัน", version: 2, count: null, noteId: "n-problem" },
     ]);
     expect(hints).toEqual([
-      { id: "m1-problem", hinted: true, detail: null },
-      { id: "m1-target", hinted: true, detail: null },
+      { id: "m1-who", hinted: true, detail: null },
       { id: "m1-talked", hinted: true, detail: "สัมภาษณ์ 3 ใบ" },
+      { id: "m1-new", hinted: false, detail: null },
     ]);
     // Reading order within a zone: left to right.
     expect(notes.map((n) => n.id)).toEqual(["n-problem", "n-target", "n-int-1", "n-int-2", "n-int-plain"]);
   });
 
   it("reads each note's own text, versions (newest first) and team, and flags contact details", () => {
-    const { notes } = context("find-something-worth-fixing");
+    const { notes } = context("meet-one-real-person");
     const problem = notes.find((n) => n.id === "n-problem")!;
     expect(problem).toEqual({
       id: "n-problem",
@@ -173,8 +173,8 @@ describe("buildContext", () => {
 
   it("never sends ids of people, version authors or anything outside the canvas", () => {
     const all = JSON.stringify([
-      context("find-something-worth-fixing"),
-      context("let-reality-surprise-you"),
+      context("meet-one-real-person"),
+      context("in-their-hands"),
       context("side-demo-three-minutes", "side"),
     ]);
     for (const secret of [OWNER, EDITOR, OUTSIDER, BOARD_OWNER, "2026-11-10T10:00", "โน้ตของคนอื่น", "วางทับไว้เฉยๆ", "ข้อความนอกแคนวาส", "ลบไปแล้ว"]) {
@@ -182,51 +182,56 @@ describe("buildContext", () => {
     }
   });
 
-  it("quest 2: idea vN and the empty ship note, decision item never hinted", () => {
-    const { context: rows, hints, notes } = context("make-it-exist");
+  it("quest 2: interviews counted, and a problem at v2 counts as a changed belief", () => {
+    const { context: rows, hints, notes } = context("real-stories-not-compliments");
+    expect(rows.map((r) => [r.label, r.version, r.count])).toEqual([
+      ["สัมภาษณ์", null, 3],
+      ["ปัญหาตอนนี้", 2, null],
+      // The only pivot note was deleted.
+      ["เปลี่ยนแผน", null, 0],
+    ]);
+    expect(hints).toEqual([
+      { id: "m2-three", hinted: true, detail: "สัมภาษณ์ 3 ใบ" },
+      { id: "m2-story", hinted: false, detail: null },
+      { id: "m2-belief", hinted: true, detail: "ปัญหา v2" },
+    ]);
+    expect(notes.map((n) => n.kind)).toEqual(["problem", "interview", "interview", "interview"]);
+  });
+
+  it("quest 4: idea vN and the empty ship note, a test from outside the team", () => {
+    const { context: rows, hints, notes } = context("in-their-hands");
     expect(rows.map((r) => [r.label, r.text, r.version, r.noteId])).toEqual([
-      ["ปัญหาที่แก้", expect.stringContaining("ไม่มีเวลา"), 2, "n-problem"],
+      ["เรื่องที่เขาเล่า", expect.stringContaining("ไม่มีเวลา"), 2, "n-problem"],
       ["ไอเดีย", "แอปจดตารางอ่านหนังสือ", 3, "n-idea"],
       // The ship zone has only an empty card: no text, no note to link.
       ["ปล่อยแล้ว", null, null, null],
     ]);
-    expect(hints.map((h) => [h.id, h.hinted])).toEqual([
-      ["m2-idea", true],
-      ["m2-ship", false],
-      ["m2-why", false],
+    expect(hints).toEqual([
+      { id: "m4-idea", hinted: true, detail: null },
+      { id: "m4-ship", hinted: false, detail: null },
+      { id: "m4-tried", hinted: true, detail: "ทดสอบ 1 ใบ" },
     ]);
-    expect(notes.map((n) => n.id)).toEqual(["n-idea"]);
-    expect(notes[0].history).toEqual([
+    expect(notes.map((n) => n.id).sort()).toEqual(["n-idea", "n-test"]);
+    expect(notes.find((n) => n.id === "n-idea")!.history).toEqual([
       { v: 3, why: "เพิ่มเตือน" },
       { v: 2, why: "เพื่อนอยากเห็นเวลาว่าง" },
       { v: 1, why: null },
     ]);
+    expect(notes.find((n) => n.id === "n-test")).toMatchObject({ kind: "test", byTeam: false });
   });
 
-  it("quest 3: a test note from outside the team, and an idea at v3 counts as a change", () => {
-    const { context: rows, hints, notes } = context("let-reality-surprise-you");
-    expect(rows.map((r) => [r.label, r.count])).toEqual([
-      ["ลองกับ", null],
-      ["สิ่งที่จะให้ลอง", null],
-      ["ทดสอบ", 1],
-    ]);
-    expect(hints).toEqual([
-      { id: "m3-tested", hinted: true, detail: "ทดสอบ 1 ใบ" },
-      { id: "m3-surprise", hinted: false, detail: null },
-      { id: "m3-change", hinted: true, detail: "ไอเดีย v3" },
-    ]);
-    expect(notes).toHaveLength(1);
-    expect(notes[0]).toMatchObject({ id: "n-test", kind: "test", byTeam: false });
-  });
-
-  it("quest 4: the latest test, no pivots yet", () => {
-    const { context: rows, hints } = context("give-them-a-reason-to-return");
+  it("quest 5: one test is not two rounds, no pivots yet", () => {
+    const { context: rows, hints } = context("run-the-loop");
     expect(rows.map((r) => [r.label, r.text, r.count])).toEqual([
       ["งานตอนนี้", null, null],
-      ["ผลทดสอบล่าสุด", "ให้เพื่อน 3 คนลอง", null],
+      ["ทดสอบ", null, 1],
       ["เปลี่ยนแผน", null, 0],
     ]);
-    expect(hints.map((h) => h.hinted)).toEqual([false, true, false]);
+    expect(hints.map((h) => [h.id, h.hinted])).toEqual([
+      ["m5-rounds", false],
+      ["m5-fixed", false],
+      ["m5-compare", false],
+    ]);
   });
 
   it("picks the zone's note changed last for a note row", () => {
@@ -253,10 +258,10 @@ describe("buildContext", () => {
   });
 
   it("quests without zones get nothing to pick", () => {
-    const empty: GuideSpec = questGuideSpec({ kind: "main", slug: "take-the-keys" });
+    const empty: GuideSpec = questGuideSpec({ kind: "side", slug: "side-take-the-keys" });
     expect(buildContext(empty, summary, cut, "frame-1", access)).toEqual({
       context: [],
-      hints: [{ id: "m5-checked", hinted: false, detail: null }, { id: "m5-open", hinted: false, detail: null }, { id: "m5-secrets", hinted: false, detail: null }],
+      hints: [{ id: "keys-checked", hinted: false, detail: null }, { id: "keys-open", hinted: false, detail: null }, { id: "keys-secrets", hinted: false, detail: null }],
       notes: [],
     });
   });
@@ -421,7 +426,7 @@ describe("buildSnapshot", () => {
   it("is the text the server stores for the notes the composer shows", () => {
     const cut = frameElements(elements, "frame-1");
     const summary = summarizeElements(cut);
-    const { notes } = buildContext(questGuideSpec({ kind: "main", slug: "find-something-worth-fixing" }), summary, cut, "frame-1", access);
+    const { notes } = buildContext(questGuideSpec({ kind: "main", slug: "meet-one-real-person" }), summary, cut, "frame-1", access);
     const fromComposer = buildSnapshot("Lamp project", pickNotes(notes, ["n-int-2", "n-problem"]));
     const server: PickableNote[] = canvasNotes(summarizeElements(elements), elements, "frame-1", access);
     expect(buildSnapshot("Lamp project", pickNotes(server, ["n-problem", "n-int-2"]))).toEqual(fromComposer);

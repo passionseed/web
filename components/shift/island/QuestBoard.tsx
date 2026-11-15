@@ -6,10 +6,10 @@ import { PixelIcon } from "@/components/shift/poster/pixel/PixelRects";
 import type { BoardRef } from "@/lib/supabase/shift-quests/board";
 import type { MyTree, QuestBoard as QuestBoardData, SeasonGoal } from "@/lib/supabase/shift-quests/types";
 
-import { BOARD, thaiShortDate, TREE, treeStageName } from "./copy";
+import { BOARD, PARTNER_FIRST, QUEST_ACTS, thaiShortDate, TREE, treeStageName } from "./copy";
 import { useDraft } from "./drafts";
 import styles from "./island.module.css";
-import { COMMUNITY_SLUGS, mainTitle, questView, refKey, type QuestView } from "./model";
+import { COMMUNITY_SLUGS, mainTitle, partnerFirst, questView, refKey, type QuestView } from "./model";
 import { QuestCard } from "./QuestTile";
 import { SideBranches } from "./SideBranches";
 import { PALETTE, WEB_SPRITES, iconGrid, treeGrid, type IconKey } from "./sprites";
@@ -135,9 +135,10 @@ export function QuestBoard({ board, stage, goal, keynote, onOpen, onPropose, tre
   const cards = (views: QuestView[]) =>
     views.map((view) => (
       <li key={refKey(view.ref)}>
-        <QuestCard view={view} keynote={keynote} onOpen={onOpen} />
+        <QuestCard view={view} keynote={keynote} hint={partnerFirst(board, view) ? PARTNER_FIRST : null} onOpen={onOpen} />
       </li>
     ));
+  const acts = mainActs(mains);
 
   return (
     <div className={styles.board}>
@@ -168,10 +169,15 @@ export function QuestBoard({ board, stage, goal, keynote, onOpen, onPropose, tre
               {BOARD.mainHeading}
             </h2>
             <p className={styles.laneSub}>{BOARD.mainSub}</p>
-            <ul className={styles.cards}>
-              {cards(mains)}
-              <TreeCell stage={stage} seeded={tree?.seed != null} />
-            </ul>
+            {acts.map((act, index) => (
+              <div key={act.title} className={styles.act}>
+                <h3 className={styles.actHeading}>{act.title}</h3>
+                <ul className={styles.cards}>
+                  {cards(act.views)}
+                  {index === acts.length - 1 ? <TreeCell stage={stage} seeded={tree?.seed != null} /> : null}
+                </ul>
+              </div>
+            ))}
           </section>
 
           <section id={LANE.side.section} className={styles.lane} aria-labelledby={LANE.side.heading}>
@@ -206,6 +212,23 @@ export function QuestBoard({ board, stage, goal, keynote, onOpen, onPropose, tre
       </div>
     </div>
   );
+}
+
+/**
+ * The main quests by act (QUEST_ACTS), in the board's order. A main quest on
+ * no act's list joins the last act, so nothing on the board is ever hidden.
+ */
+export function mainActs(mains: QuestView[]): { title: string; views: QuestView[] }[] {
+  const milestoneOf = (view: QuestView) => (view.ref.kind === "main" ? view.ref.milestone : 0);
+  const known = new Set(QUEST_ACTS.flatMap((act) => act.milestones));
+  const acts = QUEST_ACTS.map((act, index) => ({
+    title: act.title,
+    views: mains.filter((view) =>
+      act.milestones.includes(milestoneOf(view)) || (index === QUEST_ACTS.length - 1 && !known.has(milestoneOf(view)))
+    ),
+  }));
+  const shown = acts.filter((act) => act.views.length > 0);
+  return shown.length > 0 ? shown : [{ title: QUEST_ACTS[0].title, views: [] }];
 }
 
 /** เลือกเมล็ด at the top of the board: opens the close-up, where the seed card is. */

@@ -103,9 +103,8 @@ describe("boardView", () => {
     expect(text).toContain(QB.main);
     expect(text).toContain(QB.line("▫️", "หลัก 3", QB.status.available, 3));
     expect(text).not.toContain("หลัก 4");
-    expect(text).toContain(QB.community);
-    expect(text).toContain(QB.line("▫️", "หลัก 6", QB.status.available, 6));
-    expect(text).toContain(QB.line("▫️", "หลัก 7", QB.status.available, 7));
+    // Main quests 6 and 7 are not community quests since the pitfall quest map: no community section here.
+    expect(text).not.toContain(QB.community);
     // Side quests: the caller's own open one first, then the ones open to take; the locked one is counted.
     const sideLines = lines(p).filter((l) => l.includes("เสริม "));
     expect(sideLines).toEqual([
@@ -153,12 +152,26 @@ describe("boardView", () => {
     expect(text).toContain(QB.line("⏳", "หลัก 5", QB.status.submitted, 5));
   });
 
-  it("says so when every main quest outside the community ones has passed", () => {
+  it("names main quests 6 and 7 as the next ones like any other, and says so when all seven have passed", () => {
     const b = boardFixture({ main: [1, 2, 3, 4, 5, 6, 7].map((n) => main(n, { done: n <= 5 })) });
-    expect(nextMain(b)).toBeNull();
-    const text = bodyText(card(boardView(b)));
-    expect(text).toContain(QB.coreDone);
-    expect(text).toContain(QB.line("▫️", "หลัก 6", QB.status.available, 6));
+    expect(nextMain(b)?.milestone).toBe(6);
+    const done = boardFixture({ main: [1, 2, 3, 4, 5, 6, 7].map((n) => main(n, { done: true })) });
+    expect(nextMain(done)).toBeNull();
+    expect(bodyText(card(boardView(done)))).toContain(QB.coreDone);
+  });
+
+  it("lists the community side quests in their own section, first in the menu, and not again under the side quests", () => {
+    const fixture = boardFixture();
+    const b = boardFixture({
+      side: [...fixture.side, side(0, { template_id: "99999999-9999-4999-8999-999999999999", slug: "side-help-a-builder", title: "เสริม ชุมชน", requires_milestones: [] })],
+    });
+    const p = card(boardView(b));
+    const text = bodyText(p);
+    expect(text).toContain(QB.community);
+    const at = lines(p).findIndex((l) => l === QB.community);
+    expect(lines(p)[at + 1]).toContain("เสริม ชุมชน");
+    expect(lines(p).filter((l) => l.includes("เสริม ชุมชน"))).toHaveLength(1);
+    expect(viewText(p)).toContain("เสริม ชุมชน");
   });
 
   it("without side quests says none are open, with no menu", () => {

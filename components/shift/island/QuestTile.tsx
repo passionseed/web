@@ -9,7 +9,7 @@ import type { NoticeKind } from "@/lib/shift-island/notice";
 
 import { BOARD, tileChip } from "./copy";
 import styles from "./island.module.css";
-import { sameRef, type QuestView } from "./model";
+import { COMMUNITY_QUESTS, sameRef, type QuestView } from "./model";
 import { HELP_FLAG, PALETTE, SILHOUETTE, WEB_SPRITES, iconGrid, iconScale, type IconKey } from "./sprites";
 
 const HALO: ReadonlySet<TileStatus> = new Set(["active", "clarification"]);
@@ -17,17 +17,24 @@ const HALO: ReadonlySet<TileStatus> = new Set(["active", "clarification"]);
 /** The caller's open quests: their pin is gold, as on the plaza's notice board. */
 const OPEN: ReadonlySet<TileStatus> = new Set(["active", "clarification", "paused", "submitted", "appealed"]);
 
-/** Main quests 6 (help another builder move) and 7 (improve our community) are the community quests. */
-const COMMUNITY_MILESTONES: ReadonlySet<number> = new Set([6, 7]);
-
 /** A card's pin colour: in progress gold, else main cream and side teal (a proposed quest is cream). */
 export function cardPin(view: Pick<QuestView, "kind" | "status">): NoticeKind {
   if (OPEN.has(view.status)) return "active";
   return view.kind === "side" ? "side" : "main";
 }
 
-/** One quest from the board as a pinned card. */
-export function QuestCard({ view, keynote, onOpen }: { view: QuestView; keynote: BoardRef | null; onOpen: (ref: BoardRef) => void }) {
+/** One quest from the board as a pinned card; `hint` is PARTNER_FIRST on an Act 2 or 3 quest (partnerFirst). */
+export function QuestCard({
+  view,
+  keynote,
+  hint = null,
+  onOpen,
+}: {
+  view: QuestView;
+  keynote: BoardRef | null;
+  hint?: string | null;
+  onOpen: (ref: BoardRef) => void;
+}) {
   return (
     <QuestTile
       layout="card"
@@ -38,8 +45,9 @@ export function QuestCard({ view, keynote, onOpen }: { view: QuestView; keynote:
       help={view.help}
       keynote={sameRef(keynote, view.ref)}
       pin={cardPin(view)}
-      community={view.ref.kind === "main" && COMMUNITY_MILESTONES.has(view.ref.milestone)}
+      community={view.ref.kind === "side" && !!view.slug && COMMUNITY_QUESTS.has(view.slug)}
       note={view.status === "locked" && view.lockedBy.length > 0 ? BOARD.unlockWhen(view.lockedBy) : null}
+      hint={hint}
       onOpen={() => onOpen(view.ref)}
     />
   );
@@ -64,8 +72,10 @@ export interface QuestTileProps {
   note?: string | null;
   /** Card only: the pin's colour, as the notes on the plaza's notice board. */
   pin?: NoticeKind;
-  /** A community quest (main quests 6 and 7): a small heart, its meaning read as part of the description. */
+  /** A community quest (COMMUNITY_QUESTS): a small heart, its meaning read as part of the description. */
   community?: boolean;
+  /** Card only: a quiet suggestion in the card's foot (PARTNER_FIRST), read as part of the description. Never a lock. */
+  hint?: string | null;
   onOpen: () => void;
 }
 
@@ -74,14 +84,16 @@ export interface QuestTileProps {
  * (to read the unlock rule): the lock is in the label ("..., ล็อกอยู่") and the
  * described-by note, never aria-disabled on a button that works.
  */
-export function QuestTile({ status, icon, title, owner, keynote, help, layout, note, pin, community, onOpen }: QuestTileProps) {
+export function QuestTile({ status, icon, title, owner, keynote, help, layout, note, pin, community, hint, onOpen }: QuestTileProps) {
   const noteId = useId();
   const communityId = useId();
+  const hintId = useId();
   const chip = tileChip(status, owner);
   const card = layout === "card";
   const gold = keynote && HALO.has(status);
   const label = BOARD.tileLabel(title, chip) + (help ? `, ${BOARD.help}` : "");
-  const describedBy = [community ? communityId : null, note ? noteId : null].filter(Boolean).join(" ");
+  const cardHint = layout === "card" && hint ? hint : null;
+  const describedBy = [community ? communityId : null, cardHint ? hintId : null, note ? noteId : null].filter(Boolean).join(" ");
 
   const stamp = (
     <span className={card ? styles.stamp : styles.chip} data-status={status}>
@@ -114,6 +126,11 @@ export function QuestTile({ status, icon, title, owner, keynote, help, layout, n
           <span className={styles.cardTitle}>{title}</span>
           <span className={styles.cardFoot}>
             {stamp}
+            {cardHint ? (
+              <span id={hintId} className={styles.cardHint}>
+                {cardHint}
+              </span>
+            ) : null}
             {community ? (
               <PixelIcon grid={WEB_SPRITES.heart} palette={PALETTE} scale={1} className={styles.cardHeart} />
             ) : null}
