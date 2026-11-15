@@ -11,9 +11,10 @@ import { Client } from "pg";
 import { handleInteraction } from "../../../bot/src/quests";
 import { createQuestApi } from "../../../bot/src/quests/api";
 import { T } from "../../../bot/src/quests/copy";
+import { TREE } from "../../../bot/src/quests/island/copy";
 import { createRolePool } from "../../../bot/src/pg";
 
-import { readCard, type CardComponent } from "./cards";
+import { giftPicks, isGiftCard, readCard, type CardComponent } from "./cards";
 
 const adminUrl = process.env.SHIFT_QUESTS_TEST_DATABASE_URL!;
 const botUrl = process.env.SHIFT_QUESTS_BOT_DATABASE_URL!;
@@ -136,15 +137,22 @@ function fake(kind: Kind, o: FakeOptions) {
   return i;
 }
 
-async function run(kind: Kind, o: FakeOptions): Promise<Response> {
+/** Every reply to one interaction, in order (a saved quest submit can add a gift follow-up). */
+async function runAll(kind: Kind, o: FakeOptions): Promise<Response[]> {
   const before = responses.length;
   await handleInteraction(api, GUILD, fake(kind, o));
-  const r = responses[responses.length - 1];
   if (responses.length === before) throw new Error(`no response to ${o.command ?? o.customId}`);
-  const generic = responses.slice(before).find((x) => x.content.includes(T.generic.slice(0, 20)));
+  const batch = responses.slice(before);
+  const generic = batch.find((x) => x.content.includes(T.generic.slice(0, 20)));
   if (generic) throw new Error(`generic error from ${o.command ?? ""} ${o.sub ?? ""} ${o.customId ?? ""}`);
-  lastContent = r.content;
-  return r;
+  lastContent = batch[batch.length - 1].content;
+  return batch;
+}
+
+/** The last reply to one interaction. */
+async function run(kind: Kind, o: FakeOptions): Promise<Response> {
+  const batch = await runAll(kind, o);
+  return batch[batch.length - 1];
 }
 
 /** A "not yet" (a gate or an expected state): its own title and the words, no error reference. */
@@ -260,8 +268,17 @@ async function main(): Promise<void> {
     fields: { evidence: "Two classmates used it", reflection: "Totals confused them", artifact: "https://example.org", part: "Logic", teammates: [FRIEND] },
   });
   check(r.content.startsWith(`### ${T.submitPreview}\n`) && r.content.includes("Two classmates used it"), "submission shows a preview");
-  r = await run("button", { ...S, customId: find(r, (c) => c.label === T.visTeam).custom_id });
-  check(r.content.startsWith(`### ${T.submittedTitle}\n${T.submitted(1)}`), "submitted", r.content);
+  const sent = await runAll("button", { ...S, customId: find(r, (c) => c.label === T.visTeam).custom_id });
+  // The sent card first, in place of the preview.
+  r = sent[0];
+  check(r.type === "update" && r.content.startsWith(`### ${T.submittedTitle}\n${T.submitted(1)}`), "submitted", r.content);
+  // Schema 13: the first submit of a quest gives the team one gift, as its own private follow-up.
+  const gift = sent[1];
+  check(
+    sent.length === 2 && gift.type === "followUp" && isGiftCard(gift, TREE.gift.questHeading) && gift.files === 1 && giftPicks(r).length === 0,
+    "a first submit at schema 13 also offers the team a gift: its picture, three picks and keep",
+    sent.map((x) => ({ type: x.type, content: x.content.slice(0, 80), ids: x.components.map((c) => c.custom_id), files: x.files }))
+  );
 
   // Teammate confirms their part.
   r = await run("command", { ...F, command: "inbox" });

@@ -1,8 +1,8 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ComponentProps } from "react";
 
-import { HUD } from "../copy";
-import { MenuSheet } from "../HudSheets";
+import { HUD, PRE_STAGE, stageName } from "../copy";
+import { MenuSheet, ProjectBody } from "../HudSheets";
 import { NEWS } from "../news/copy";
 import { PLAYER_MENU } from "../player/copy";
 import { PRIZES_UI } from "../prizes/copy";
@@ -115,5 +115,17 @@ describe("MenuSheet: the player rows", () => {
     menu({ project: null });
     expect(screen.queryByRole("button", { name: PRIZES_UI.menu })).toBeNull();
     expect(screen.getByRole("button", { name: "ดูทั้งเกาะ" })).toBeInTheDocument();
+  });
+});
+
+describe("ProjectBody: the team's tree", () => {
+  const tree = { seed: "oak", equipped: { shape: "shape:round", leaf: "leaf:forest", bark: "bark:oak", bloom: "bloom:cream" }, owned: [], gifts: [], roots: { count: 0, recent: 0 }, stage: 0 };
+
+  it("calls a planted seed at stage 0 the seed, never an empty plot", () => {
+    const { unmount } = render(<ProjectBody project={{ name: "แอป", stage: 0 }} tree={tree} season={null} today={null} />);
+    expect(screen.getByText(HUD.myTree(PRE_STAGE))).toBeInTheDocument();
+    unmount();
+    render(<ProjectBody project={{ name: "แอป", stage: 0 }} tree={{ ...tree, seed: null }} season={null} today={null} />);
+    expect(screen.getByText(HUD.myTree(stageName(0)))).toBeInTheDocument();
   });
 });

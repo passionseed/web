@@ -66,15 +66,18 @@ function legacyFields(i: RepliableInteraction): { content?: null; embeds?: [] } 
  * Shows a private card. A button press on a private message replaces that
  * message (replace: true); everything else is a new private reply. Every
  * path (reply, update, editReply after a defer, followUp) sends Components V2.
+ * clearFiles: an edit drops the message's earlier attachments (a replaced
+ * picture), keeping only the view's own files.
  */
-export async function show(target: Replyable, view: View, opts: { replace?: boolean } = {}): Promise<void> {
+export async function show(target: Replyable, view: View, opts: { replace?: boolean; clearFiles?: boolean } = {}): Promise<void> {
   const i = target as RepliableInteraction;
   const action = () => actionOf(i);
+  const kept = opts.clearFiles ? { attachments: [] } : {};
   if (opts.replace && i.isMessageComponent() && !i.replied && !i.deferred) {
     // An edit keeps the message's own privacy: only the V2 flag is sent.
-    await i.update({ ...renderView(view, { ephemeral: false, action }), ...legacyFields(i) });
+    await i.update({ ...renderView(view, { ephemeral: false, action }), ...legacyFields(i), ...kept });
   } else if (i.deferred) {
-    await i.editReply({ ...renderView(view, { ephemeral: false, action }), ...legacyFields(i) });
+    await i.editReply({ ...renderView(view, { ephemeral: false, action }), ...legacyFields(i), ...kept });
   } else if (i.replied) {
     await i.followUp(renderView(view, { action }));
   } else {

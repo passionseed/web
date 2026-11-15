@@ -10,8 +10,10 @@ import {
   submitProposedQuest,
   submitSideQuest,
 } from "@/app/shift/island/actions";
+import { pickGift } from "@/app/shift/island/tree-actions";
 import { questGuide, type CanvasLinkState, type QuestCanvasContext } from "@/lib/shift-island/quest-canvas";
 import { keynoteQuest, type BoardRef } from "@/lib/supabase/shift-quests/board";
+import type { MyTree, QuestSubmitResult } from "@/lib/supabase/shift-quests/types";
 
 import { IDS, MAIN_SLUGS, MAIN_TITLES, makeBoard } from "../__fixtures__/board";
 import { QuestCardComposer, useQuestCanvas } from "../canvas";
@@ -29,7 +31,18 @@ jest.mock("@/app/shift/island/actions", () => ({
   loadOwnership: jest.fn(() => Promise.resolve({ ok: true, data: null })),
 }));
 
+jest.mock("@/app/shift/island/tree-actions", () => ({ pickGift: jest.fn() }));
+
 jest.mock("sonner", () => ({ toast: { success: jest.fn(), error: jest.fn() } }));
+
+// The tree close-up canvas: what it was asked to draw (jsdom has no 2D canvas).
+jest.mock("../tree/TreeCanvas", () => {
+  const { createElement } = jest.requireActual<typeof import("react")>("react");
+  return {
+    TreeCanvas: ({ input, label }: { input: unknown; label?: string }) =>
+      createElement("div", { "data-testid": "tree-canvas", "data-input": JSON.stringify(input), "aria-label": label }),
+  };
+});
 
 // vaul needs layout APIs jsdom lacks; the sheet only has to show its content and its action bar when open.
 jest.mock("../IslandSheet", () => {
@@ -60,26 +73,43 @@ jest.mock("../IslandSheet", () => {
   };
 });
 
+/** What the stub composer hands up as sent (set per test). */
+let mockSent: QuestSubmitResult;
+
 // The canvas side is canvas-submit's: a hook whose answer each test picks, and a stub composer.
 jest.mock("../canvas", () => {
   const { createElement } = jest.requireActual<typeof import("react")>("react");
+  const { createPortal } = jest.requireActual<typeof import("react-dom")>("react-dom");
   return {
     useQuestCanvas: jest.fn(),
     CanvasLinkSheet: () => null,
     QuestCardComposer: jest.fn(
-      ({ target, onCancel, onSubmitted }: { target: { title: string }; onCancel: () => void; onSubmitted: () => void }) =>
+      ({
+        target,
+        step,
+        onStep,
+        footer,
+        onSubmitted,
+      }: {
+        target: { title: string };
+        step: string;
+        onStep: (step: string) => void;
+        footer: HTMLElement | null;
+        onSubmitted: (result: QuestSubmitResult) => void;
+      }) =>
         createElement(
           "div",
-          { "data-testid": "composer" },
+          { "data-testid": "composer", "data-step": step },
           createElement("p", null, `composer:${target.title}`),
-          createElement("button", { type: "button", onClick: onCancel }, "composer-cancel"),
-          createElement("button", { type: "button", onClick: onSubmitted }, "composer-sent"),
+          createElement("button", { type: "button", onClick: () => onStep("review") }, "composer-next"),
+          createElement("button", { type: "button", onClick: () => onSubmitted(mockSent) }, "composer-sent"),
+          footer ? createPortal(createElement("button", { type: "button" }, `composer-footer:${step}`), footer) : null,
         ),
     ),
   };
 });
 
-const ok = { ok: true as const, data: { instanceId: "i", revision: 1, created: true } };
+const ok = { ok: true as const, data: { instanceId: "i", revision: 1, created: true, gift: null, tree: null } };
 const mocked = {
   submitMainQuest: submitMainQuest as jest.MockedFunction<typeof submitMainQuest>,
   submitSideQuest: submitSideQuest as jest.MockedFunction<typeof submitSideQuest>,
@@ -90,6 +120,7 @@ const mocked = {
   useQuestCanvas: useQuestCanvas as jest.MockedFunction<typeof useQuestCanvas>,
   loadOwnership: loadOwnership as jest.MockedFunction<typeof loadOwnership>,
   QuestCardComposer: QuestCardComposer as unknown as jest.Mock,
+  pickGift: pickGift as jest.MockedFunction<typeof pickGift>,
 };
 
 const UNLINKED: CanvasLinkState = { linked: false };
@@ -117,6 +148,10 @@ let canvasAnswer: { context: QuestCanvasContext | null; loading: boolean };
 
 beforeEach(() => {
   clearAllDrafts();
+  mockSent = ok.data;
+  jest.mocked(toast.success).mockReset();
+  jest.mocked(toast.error).mockReset();
+  mocked.pickGift.mockReset();
   canvasAnswer = { context: { state: "unlinked" }, loading: false };
   mocked.useQuestCanvas.mockImplementation((target) =>
     target ? { ...canvasAnswer, reload } : { context: { state: "no_zones" }, loading: false, reload },
@@ -130,12 +165,12 @@ beforeEach(() => {
   mocked.loadOwnership.mockResolvedValue({ ok: true, data: null });
 });
 
-function open(target: BoardRef, link: CanvasLinkState = UNLINKED) {
+function open(target: BoardRef, link: CanvasLinkState = UNLINKED, extra: { onTree?: () => void } = {}) {
   const board = makeBoard();
   const onClose = jest.fn();
   const onStuck = jest.fn();
   const onLinkCanvas = jest.fn();
-  render(
+  const utils = render(
     <QuestDetailSheet
       board={board}
       target={target}
@@ -144,14 +179,15 @@ function open(target: BoardRef, link: CanvasLinkState = UNLINKED) {
       onClose={onClose}
       onStuck={onStuck}
       onLinkCanvas={onLinkCanvas}
+      {...extra}
     />,
   );
-  return { onClose, onStuck, onLinkCanvas };
+  return { onClose, onStuck, onLinkCanvas, board, ...utils };
 }
 
 /** Open a quest and press ส่งเควสต์ in the bar. */
-function openForm(target: BoardRef, link: CanvasLinkState = UNLINKED) {
-  const handlers = open(target, link);
+function openForm(target: BoardRef, link: CanvasLinkState = UNLINKED, extra: { onTree?: () => void } = {}) {
+  const handlers = open(target, link, extra);
   fireEvent.click(within(footer()).getByRole("button", { name: "ส่งเควสต์" }));
   return handlers;
 }
@@ -514,11 +550,13 @@ describe("QuestDetailSheet: the action bar", () => {
     expect(screen.queryByRole("textbox")).toBeNull();
   });
 
-  it("opens the quest card composer when the canvas is ready", () => {
+  it("opens the quest card composer when the canvas is ready, on step 1 with the sheet's own bar", () => {
     canvasAnswer = { context: READY, loading: false };
     openForm({ kind: "main", milestone: 1 }, LINKED);
     expect(screen.getByTestId("composer")).toHaveTextContent(`composer:${MAIN_TITLES[0]}`);
-    expect(screen.queryByTestId("sheet-footer")).toBeNull();
+    expect(screen.getByTestId("composer")).toHaveAttribute("data-step", "pick");
+    // The composer's button sits in the sheet's footer, in place of ส่งเควสต์ and ติด.
+    expect(within(footer()).getAllByRole("button").map((b) => b.textContent)).toEqual(["composer-footer:pick"]);
     expect(screen.queryByLabelText("หลักฐาน (ลิงก์หรือเล่าสั้นๆ)")).toBeNull();
     const props = mocked.QuestCardComposer.mock.calls.at(-1)[0];
     expect(props.target).toEqual({
@@ -531,21 +569,43 @@ describe("QuestDetailSheet: the action bar", () => {
     });
     expect(props.context).toBe(READY);
     expect(props.onReload).toBe(reload);
+    // What the mentor looks for, for step 1's compact reminder.
+    expect(props.doneWhen).toEqual(questGuide({ kind: "main", slug: MAIN_SLUGS[0] }).checklist.map((item) => item.label));
   });
 
-  it("goes back to the quest from the composer, with the bar back", () => {
+  it("goes back to the quest from step 1 with กลับ, top left, with the bar back", () => {
     canvasAnswer = { context: READY, loading: false };
     openForm({ kind: "main", milestone: 1 }, LINKED);
-    fireEvent.click(screen.getByRole("button", { name: "composer-cancel" }));
+    const back = within(body()).getAllByRole("button")[0];
+    expect(back).toHaveAccessibleName("กลับ");
+    fireEvent.click(back);
     expect(screen.queryByTestId("composer")).toBeNull();
     expect(within(footer()).getByRole("button", { name: "ส่งเควสต์" })).toHaveFocus();
   });
 
-  it("closes the sheet when the composer has sent the card", () => {
+  it("goes back from step 2 to step 1 with แก้โน้ต, in the same top left place", () => {
+    canvasAnswer = { context: READY, loading: false };
+    openForm({ kind: "main", milestone: 1 }, LINKED);
+    fireEvent.click(screen.getByRole("button", { name: "composer-next" }));
+    expect(screen.getByTestId("composer")).toHaveAttribute("data-step", "review");
+    expect(within(footer()).getByRole("button", { name: "composer-footer:review" })).toBeInTheDocument();
+    // Step 2 is about the card: no switch to the written form.
+    expect(screen.queryByRole("button", { name: "เขียนเองแทน" })).toBeNull();
+    const back = within(body()).getAllByRole("button")[0];
+    expect(back).toHaveAccessibleName("แก้โน้ต");
+    fireEvent.click(back);
+    expect(screen.getByTestId("composer")).toHaveAttribute("data-step", "pick");
+  });
+
+  it("stays open on the sent screen when the composer has sent the card", () => {
     canvasAnswer = { context: READY, loading: false };
     const { onClose } = openForm({ kind: "main", milestone: 1 }, LINKED);
     fireEvent.click(screen.getByRole("button", { name: "composer-sent" }));
-    expect(onClose).toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.queryByTestId("composer")).toBeNull();
+    expect(within(body()).getByRole("heading", { name: "ส่งถึงพี่เลี้ยงแล้ว" })).toHaveFocus();
+    expect(within(body()).getByText("พี่เลี้ยงจะดูใน Discord แล้วแจ้งผลในกล่องข้อความของบอท")).toBeInTheDocument();
+    expect(toast.success).not.toHaveBeenCalled();
   });
 
   it("switches from the composer to writing it out with เขียนเองแทน, and back", () => {
@@ -572,6 +632,8 @@ describe("QuestDetailSheet: the action bar", () => {
     canvasAnswer = { context: null, loading: true };
     openForm({ kind: "main", milestone: 1 }, LINKED);
     expect(within(body()).getByRole("status")).toHaveTextContent("กำลังดึงโน้ตจากแคนวาส");
+    // The bar keeps its place, with nothing to press yet.
+    expect(within(footer()).getByRole("button")).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "เขียนเองแทน" }));
     expect(screen.getByLabelText("หลักฐาน (ลิงก์หรือเล่าสั้นๆ)")).toBeInTheDocument();
   });
@@ -589,6 +651,142 @@ describe("QuestDetailSheet: the action bar", () => {
   });
 });
 
+describe("QuestDetailSheet: the sent screen", () => {
+  const GIFT_ID = "7c1d2e3f-4a5b-4c6d-8e7f-000000000001";
+  const DEFAULTS = ["shape:round", "leaf:forest", "bark:oak", "bloom:cream"];
+  const TREE: MyTree = {
+    seed: "oak",
+    equipped: { shape: "shape:round", leaf: "leaf:forest", bark: "bark:oak", bloom: "bloom:cream" },
+    owned: DEFAULTS,
+    gifts: [{ id: GIFT_ID, options: ["leaf:mint", "leaf:gold", "leaf:dusk"] }],
+    roots: { count: 2, recent: 1 },
+    stage: 2,
+  };
+  const withGift: QuestSubmitResult = {
+    instanceId: "i",
+    revision: 1,
+    created: true,
+    gift: { id: GIFT_ID, options: ["leaf:mint", "leaf:gold", "leaf:dusk"] },
+    tree: TREE,
+  };
+  const PICKED: MyTree = { ...TREE, owned: [...DEFAULTS, "leaf:gold"], gifts: [], equipped: { ...TREE.equipped, leaf: "leaf:gold" } };
+
+  /** The written form, filled and sent from the sheet's bar. */
+  async function sendWritten(extra: { onTree?: () => void } = {}) {
+    const handlers = openForm({ kind: "main", milestone: 1 }, UNLINKED, extra);
+    fill({ proof: "หลักฐาน", reflection: "คำตอบ" });
+    fireEvent.click(within(footer()).getByRole("button", { name: "ส่งให้พี่เลี้ยงดู" }));
+    await within(body()).findByRole("heading", { name: "ส่งถึงพี่เลี้ยงแล้ว" });
+    return handlers;
+  }
+
+  it("after the written form, says where the result arrives, with กลับไปที่เกาะ closing the sheet", async () => {
+    const { onClose } = await sendWritten();
+    expect(mocked.submitMainQuest).toHaveBeenCalledTimes(1);
+    expect(within(body()).getByText("พี่เลี้ยงจะดูใน Discord แล้วแจ้งผลในกล่องข้อความของบอท")).toBeInTheDocument();
+    expect(within(body()).queryByRole("textbox")).toBeNull();
+    // No tree below schema 13: no gift and no link to it.
+    expect(screen.queryByRole("group", { name: /เลือกลุค/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: "ดูต้นไม้ของทีม" })).toBeNull();
+    expect(within(footer()).getAllByRole("button").map((b) => b.textContent)).toEqual(["กลับไปที่เกาะ"]);
+    fireEvent.click(within(footer()).getByRole("button", { name: "กลับไปที่เกาะ" }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("offers the team's tree beside กลับไปที่เกาะ when the island has one", async () => {
+    const onTree = jest.fn();
+    await sendWritten({ onTree });
+    fireEvent.click(within(footer()).getByRole("button", { name: "ดูต้นไม้ของทีม" }));
+    expect(onTree).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the sent screen when the page refreshes with the quest's new state", async () => {
+    const { board, rerender, onClose, onStuck, onLinkCanvas } = await sendWritten();
+    const next = { ...board, main: board.main.map((m) => (m.milestone === 1 ? { ...m, in_flight: { instance_id: "i", state: "submitted" as const, version: 1, mine: true, owner: null } } : m)) };
+    rerender(
+      <QuestDetailSheet
+        board={next}
+        target={{ kind: "main", milestone: 1 }}
+        keynote={null}
+        canvasLink={UNLINKED}
+        onClose={onClose}
+        onStuck={onStuck}
+        onLinkCanvas={onLinkCanvas}
+      />,
+    );
+    expect(within(body()).getByRole("heading", { name: "ส่งถึงพี่เลี้ยงแล้ว" })).toBeInTheDocument();
+  });
+
+  it("starts on the quest again when the sheet reopens after sending", async () => {
+    const { board, rerender, onClose, onStuck, onLinkCanvas } = await sendWritten();
+    const props = { board, keynote: null, canvasLink: UNLINKED, onClose, onStuck, onLinkCanvas };
+    rerender(<QuestDetailSheet {...props} target={null} />);
+    rerender(<QuestDetailSheet {...props} target={{ kind: "main", milestone: 1 }} />);
+    expect(screen.queryByRole("heading", { name: "ส่งถึงพี่เลี้ยงแล้ว" })).toBeNull();
+    expect(within(footer()).getByRole("button", { name: "ส่งเควสต์" })).toBeInTheDocument();
+  });
+
+  it("offers the gift, 1 of 3 as the team's tree wearing each, and puts the pick on the tree", async () => {
+    mockSent = withGift;
+    mocked.pickGift.mockResolvedValue({ ok: true, data: { tree: PICKED } });
+    canvasAnswer = { context: READY, loading: false };
+    openForm({ kind: "main", milestone: 1 }, LINKED, { onTree: jest.fn() });
+    fireEvent.click(screen.getByRole("button", { name: "composer-sent" }));
+    expect(within(body()).getByRole("heading", { name: "ส่งเควสต์นี้ครั้งแรกแล้ว ทีมได้ของขวัญหนึ่งชิ้น" })).toBeInTheDocument();
+    const options = within(screen.getByRole("group", { name: "เลือกลุคให้ต้นไม้ของทีม 1 จาก 3 แบบ" })).getAllByRole("button");
+    expect(options).toHaveLength(3);
+    // While the gift waits, the bar only offers to keep it for later.
+    expect(within(footer()).getAllByRole("button").map((b) => b.textContent)).toEqual(["เก็บไว้ก่อน"]);
+    fireEvent.click(options[1]);
+    await waitFor(() => expect(mocked.pickGift).toHaveBeenCalledWith(GIFT_ID, "leaf:gold"));
+    // The picked look on the team's tree, and no tiles left to press.
+    expect(await within(body()).findByText("ต้นไม้ของทีมได้ ทอง แล้ว")).toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: /เลือกลุค/ })).toBeNull();
+    const drawn = within(body()).getByTestId("tree-canvas");
+    expect(JSON.parse(drawn.getAttribute("data-input") ?? "{}").style.leaf).toBe("leaf:gold");
+    expect(within(footer()).getAllByRole("button").map((b) => b.textContent)).toEqual(["กลับไปที่เกาะ", "ดูต้นไม้ของทีม"]);
+    // Said once, on the screen (no toast on top of it), and focus moves to the way back.
+    expect(toast.success).not.toHaveBeenCalled();
+    expect(within(footer()).getByRole("button", { name: "กลับไปที่เกาะ" })).toHaveFocus();
+  });
+
+  it("when a teammate picked the gift first: says so once, and the bar offers the way back, not keeping it", async () => {
+    mockSent = withGift;
+    mocked.pickGift.mockResolvedValue({ ok: false, code: "gift_gone", error: "ของขวัญชิ้นนี้ถูกเลือกไปแล้ว ดูลุคที่ทีมมีได้ในลุคของต้นไม้" });
+    canvasAnswer = { context: READY, loading: false };
+    const { onClose } = openForm({ kind: "main", milestone: 1 }, LINKED, { onTree: jest.fn() });
+    fireEvent.click(screen.getByRole("button", { name: "composer-sent" }));
+    fireEvent.click(within(screen.getByRole("group", { name: "เลือกลุคให้ต้นไม้ของทีม 1 จาก 3 แบบ" })).getAllByRole("button")[0]);
+    expect(await within(body()).findByRole("status")).toHaveTextContent("ของขวัญชิ้นนี้ถูกเลือกไปแล้ว");
+    expect(toast.error).not.toHaveBeenCalled();
+    expect(within(footer()).getAllByRole("button").map((b) => b.textContent)).toEqual(["กลับไปที่เกาะ", "ดูต้นไม้ของทีม"]);
+    expect(within(footer()).getByRole("button", { name: "กลับไปที่เกาะ" })).toHaveFocus();
+    fireEvent.click(within(footer()).getByRole("button", { name: "กลับไปที่เกาะ" }));
+    expect(toast.success).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the gift for later: the sheet closes and the gift waits in the close-up", () => {
+    mockSent = withGift;
+    canvasAnswer = { context: READY, loading: false };
+    const { onClose } = openForm({ kind: "main", milestone: 1 }, LINKED);
+    fireEvent.click(screen.getByRole("button", { name: "composer-sent" }));
+    fireEvent.click(within(footer()).getByRole("button", { name: "เก็บไว้ก่อน" }));
+    expect(mocked.pickGift).not.toHaveBeenCalled();
+    expect(toast.success).toHaveBeenCalledWith("เก็บไว้แล้ว เพื่อนในทีมคนไหนก็เปิดได้ทีหลัง");
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows no gift it cannot draw (no tree came with it)", () => {
+    mockSent = { ...withGift, tree: null };
+    canvasAnswer = { context: READY, loading: false };
+    openForm({ kind: "main", milestone: 1 }, LINKED);
+    fireEvent.click(screen.getByRole("button", { name: "composer-sent" }));
+    expect(screen.queryByRole("group", { name: /เลือกลุค/ })).toBeNull();
+    expect(within(footer()).getByRole("button", { name: "กลับไปที่เกาะ" })).toBeInTheDocument();
+  });
+});
+
 describe("QuestDetailSheet: the written form and quest states", () => {
   it("caps the written form like the database", () => {
     openForm({ kind: "main", milestone: 1 });
@@ -596,6 +794,25 @@ describe("QuestDetailSheet: the written form and quest states", () => {
     expect(screen.getByLabelText("ลิงก์งาน (ไม่บังคับ, ขึ้นต้นด้วย https://)")).toHaveAttribute("maxLength", "500");
     expect(screen.getByLabelText("คำถามของขั้นที่ 1")).toHaveAttribute("maxLength", "2000");
     expect(screen.getByRole("button", { name: "ส่งให้พี่เลี้ยงดู" })).toBeInTheDocument();
+  });
+
+  it("reminds what the mentor looks for on top, with placeholders, and sends from the sheet's bar", () => {
+    openForm({ kind: "main", milestone: 1 });
+    const reminder = within(body()).getByRole("list", { name: "เสร็จเมื่อ" });
+    expect(within(reminder).getAllByRole("listitem")).toHaveLength(3);
+    expect(reminder.compareDocumentPosition(screen.getByLabelText("หลักฐาน (ลิงก์หรือเล่าสั้นๆ)")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByLabelText("หลักฐาน (ลิงก์หรือเล่าสั้นๆ)")).toHaveAttribute("placeholder", "วางลิงก์ หรือเล่าสั้นๆ ว่าทำอะไรไป แล้วเจออะไร");
+    expect(screen.getByLabelText("คำถามของขั้นที่ 1")).toHaveAttribute("placeholder", "ตอบสั้นๆ ข้อเดียว เก็บไว้ใช้ในพอร์ตได้");
+    const send = within(footer()).getByRole("button", { name: "ส่งให้พี่เลี้ยงดู" });
+    expect(send).toHaveAttribute("type", "submit");
+    expect(send).toHaveAttribute("form", (body().querySelector("form") as HTMLFormElement).id);
+    expect(within(body()).queryByRole("button", { name: "ส่งให้พี่เลี้ยงดู" })).toBeNull();
+  });
+
+  it("shows criteria without a guide as the one reminder line", () => {
+    openForm({ kind: "proposed", instanceId: IDS.proposed });
+    const reminder = within(body()).getByRole("list", { name: "เสร็จเมื่อ" });
+    expect(within(reminder).getAllByRole("listitem")).toHaveLength(1);
   });
 
   it("refuses text over the cap and empty answers without calling the server", async () => {
@@ -634,8 +851,9 @@ describe("QuestDetailSheet: the written form and quest states", () => {
       artifactUrl: "https://example.com/work",
     });
     expect(JSON.stringify(input)).not.toMatch(/actor|discord|\d{17,20}/i);
-    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("ส่งแล้ว พี่เลี้ยงจะดูใน Discord แล้วแจ้งผลในกล่องข้อความของบอท"));
-    expect(onClose).toHaveBeenCalled();
+    expect(await within(body()).findByRole("heading", { name: "ส่งถึงพี่เลี้ยงแล้ว" })).toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
+    expect(toast.success).not.toHaveBeenCalled();
   });
 
   it("sends a side quest by template id and shows the mentor's feedback", async () => {

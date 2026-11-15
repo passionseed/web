@@ -11,6 +11,16 @@
  * CHARACTER.days), which only goes up: a missed day never takes anything
  * away or starts a count over (lore bible, "กติกาของเกาะ", rule 3).
  */
+import {
+  TREE_CLOSEUP,
+  TREE_GIFT,
+  TREE_IDEA_PREFILLED,
+  TREE_PLANTED,
+  TREE_SEED_PICK,
+  TREE_SEEDS,
+  TREE_SLOTS,
+  TREE_WARDROBE,
+} from "@/lib/shift-island/tree-copy";
 import { REFLECTION_MIN_CHARS, REFLECTIONS_PER_DAY } from "@/lib/shift-island/rounds-rules";
 import type { ProjectRoute, SeasonUnlock, TileStatus } from "@/lib/supabase/shift-quests/types";
 import type { ShiftDiscordAuthError } from "@/lib/shift/discordAuth";
@@ -30,11 +40,19 @@ export const PLACES = {
 };
 
 /** Tree stages 0..7, same names as the bot (bot/src/quests/island/copy.ts). */
-export const STAGE_NAMES = ["ที่ดินว่าง", "เมล็ด", "ต้นกล้า", "ต้นอ่อน", "ต้นไม้", "ต้นใหญ่", "ออกผล", "ผลิดอก"] as const;
+/** Before stage 1: the team has a seed but no confirmed quest yet. */
+export const PRE_STAGE = "เมล็ด";
+
+export const STAGE_NAMES = ["ที่ดินว่าง", "เมล็ดงอก", "ต้นกล้า", "ต้นอ่อน", "ต้นไม้", "ต้นใหญ่", "ออกผล", "ผลิดอก"] as const;
 
 export function stageName(stage: number): string {
   const n = Number.isFinite(stage) ? Math.trunc(stage) : 0;
   return STAGE_NAMES[Math.min(Math.max(n, 0), STAGE_NAMES.length - 1)];
+}
+
+/** The stage's name, with a planted seed at stage 0 called the seed (เมล็ด) rather than an empty plot. */
+export function treeStageName(stage: number, seeded: boolean): string {
+  return (Number.isFinite(stage) ? Math.trunc(stage) : 0) <= 0 && seeded ? PRE_STAGE : stageName(stage);
 }
 
 export const ROUTE_NAMES: Record<ProjectRoute, string> = {
@@ -323,10 +341,13 @@ export const DETAIL = {
   declinedProposed: "เควสต์นี้ปิดไปแล้ว เสนอเควสต์ใหม่ได้เสมอ",
   proofLabel: "หลักฐาน (ลิงก์หรือเล่าสั้นๆ)",
   proofHint: "ไม่ต้องใส่ชื่อจริง เบอร์โทร หรือข้อมูลส่วนตัวของใคร",
+  /** Thai reviewed (Cursor, Codex), 2026-11-14. */
+  proofPlaceholder: "วางลิงก์ หรือเล่าสั้นๆ ว่าทำอะไรไป แล้วเจออะไร",
   urlLabel: "ลิงก์งาน (ไม่บังคับ, ขึ้นต้นด้วย https://)",
+  /** The bot's reviewed portfolio hint (bot/src/quests/island/copy.ts portfolioHint), word for word. */
+  reflectionPlaceholder: "ตอบสั้นๆ ข้อเดียว เก็บไว้ใช้ในพอร์ตได้",
   submit: "ส่งให้พี่เลี้ยงดู",
   resubmit: "ส่งฉบับใหม่",
-  sent: "ส่งแล้ว พี่เลี้ยงจะดูใน Discord แล้วแจ้งผลในกล่องข้อความของบอท",
   /** DRAFT */
   submittedWaiting: "ส่งแล้ว รอพี่เลี้ยงดูอยู่ ถ้าแก้งานแล้วส่งฉบับใหม่ได้",
   stuck: "ติด",
@@ -584,4 +605,50 @@ export const REFLECT = {
 export const SYNC = {
   refresh: "รีเฟรชเควสต์และแคนวาส",
   refreshing: "กำลังรีเฟรช",
+};
+
+/**
+ * The team's tree. A seed on day one, a close-up with roots (the team's
+ * reflections), a gift to pick 1 of up to 3 after a closed round and after
+ * the first submit of a quest, and a wardrobe. Gifts belong to the team,
+ * never one student; nothing here names a student. Thai reviewed (agy, Codex,
+ * Cursor), then the remaining lines (Cursor, Codex), 2026-11-14.
+ */
+export const TREE = {
+  seed: {
+    title: "เลือกเมล็ดของทีม",
+    ask: "ทีมอยากสร้างอะไร",
+    askHint: "เขียนสั้นๆ หนึ่งบรรทัด ทุกคนในทีมเห็นได้",
+    /** The hint when the line starts from the project's ambition (the planted line replaces it). */
+    askHintPrefilled: TREE_IDEA_PREFILLED,
+    askPlaceholder: "เช่น แอปช่วยหาที่นั่งอ่านหนังสือใกล้บ้าน",
+    pick: TREE_SEED_PICK,
+    action: "เริ่มจากเมล็ดนี้",
+    planted: TREE_PLANTED,
+    needIdea: "เขียนก่อนว่าทีมอยากสร้างอะไร",
+    needSeed: "เลือกเมล็ดก่อน",
+  },
+  seeds: TREE_SEEDS,
+  slots: TREE_SLOTS,
+  gift: {
+    ...TREE_GIFT,
+    pick: "เลือกลุคนี้",
+    kept: "เก็บไว้แล้ว เพื่อนในทีมคนไหนก็เปิดได้ทีหลัง",
+    waiting: (n: number) => `มีของขวัญรออยู่ ${n} ชิ้น`,
+    open: "เปิดของขวัญ",
+    gone: "ของขวัญชิ้นนี้ถูกเลือกไปแล้ว",
+  },
+  wardrobe: {
+    ...TREE_WARDROBE,
+    using: "ใช้อยู่",
+    use: "ใช้ลุคนี้",
+    empty: "รับลุคใหม่ได้จากของขวัญหลังจบรอบ หรือหลังส่งเควสต์ครั้งแรก",
+  },
+  closeup: {
+    ...TREE_CLOSEUP,
+    /** The close-up sheet's title. */
+    title: "ต้นไม้ของทีม",
+    open: "ดูต้นไม้ใกล้ๆ",
+    close: "กลับไปที่เกาะ",
+  },
 };

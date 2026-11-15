@@ -4,10 +4,10 @@ import Link from "next/link";
 import { useId, type ReactNode } from "react";
 
 import { PixelIcon } from "@/components/shift/poster/pixel/PixelRects";
-import type { IslandPageData, IslandProject, ViewerCard } from "@/lib/supabase/shift-quests/types";
+import type { IslandPageData, IslandProject, MyTree, ViewerCard } from "@/lib/supabase/shift-quests/types";
 
 import { Avatar } from "./Avatar";
-import { FOOTER, HUD, ISLAND, NO_PROJECT, stageName } from "./copy";
+import { FOOTER, HUD, ISLAND, NO_PROJECT, treeStageName } from "./copy";
 import styles from "./island.module.css";
 import { IslandDiscordButton } from "./IslandDiscordButton";
 import { IslandFooter } from "./IslandFooter";
@@ -16,7 +16,7 @@ import { NEWS } from "./news/copy";
 import { PLAYER_MENU } from "./player/copy";
 import { PRIZES_UI } from "./prizes/copy";
 import { SeasonPanel } from "./SeasonPanel";
-import { PALETTE, WEB_SPRITES, treeGrid, type WebIcon } from "./sprites";
+import { PALETTE, WEB_SPRITES, styledTree, type WebIcon } from "./sprites";
 import world from "./world.module.css";
 
 interface SheetProps {
@@ -30,18 +30,20 @@ const closer = (onClose: () => void) => (open: boolean) => {
 
 interface ProjectBodyProps {
   project: Pick<IslandProject, "name" | "stage">;
+  /** The team's own tree (schema 13): its colours and seed. Absent draws the default tree. */
+  tree?: MyTree | null;
   season: IslandPageData["island"]["season"];
   /** The check-in card, built by the page so it keeps its handlers. */
   today: ReactNode;
 }
 
 /** The project's tree, today's check-in and the season: the project sheet, and the lower half of the character sheet. */
-export function ProjectBody({ project, season, today }: ProjectBodyProps) {
+export function ProjectBody({ project, tree, season, today }: ProjectBodyProps) {
   return (
     <div className={world.sheetStack}>
       <p className={world.myTree}>
-        <PixelIcon grid={treeGrid(project.stage)} palette={PALETTE} scale={1} />
-        <span>{HUD.myTree(stageName(project.stage))}</span>
+        <PixelIcon {...styledTree(project.stage, tree?.equipped, tree?.seed != null)} scale={1} />
+        <span>{HUD.myTree(treeStageName(project.stage, tree?.seed != null))}</span>
       </p>
       {today}
       {season ? <SeasonPanel season={season} /> : null}
@@ -50,10 +52,10 @@ export function ProjectBody({ project, season, today }: ProjectBodyProps) {
 }
 
 /** The student's tree, today's check-in and the season (the character sheet without its stats). */
-export function ProjectSheet({ open, onClose, project, season, today }: SheetProps & ProjectBodyProps) {
+export function ProjectSheet({ open, onClose, project, tree, season, today }: SheetProps & ProjectBodyProps) {
   return (
     <IslandSheet open={open} onOpenChange={closer(onClose)} title={project.name}>
-      <ProjectBody project={project} season={season} today={today} />
+      <ProjectBody project={project} tree={tree} season={season} today={today} />
     </IslandSheet>
   );
 }

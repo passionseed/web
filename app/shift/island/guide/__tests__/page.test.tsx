@@ -2,14 +2,18 @@ import { render, screen, within } from "@testing-library/react";
 
 import {
   GUIDE_CAMPFIRE,
+  GUIDE_CLOSEUP,
   GUIDE_COINS,
   GUIDE_HERO,
   GUIDE_SECTIONS,
+  GUIDE_SEED,
   GUIDE_START,
 } from "@/lib/content/shift-island-guide";
 
 import { ROOT_LEVELS, ROOTS_H, ROOTS_W, rootsGrid } from "../roots";
 import Page, { metadata } from "../page";
+import { SEED_TILE, STAGE_1_TILE } from "../parts";
+import { SPRITES } from "@/bot/assets/island/sprites";
 
 // The touch-glow replayer needs matchMedia, which jsdom lacks; it draws nothing.
 jest.mock("@/components/ui/in-view-animator", () => ({ InViewAnimator: () => null }));
@@ -38,6 +42,18 @@ describe("/shift/island/guide", () => {
     for (const step of GUIDE_CAMPFIRE.steps) expect(screen.getByText(step.label)).toBeInTheDocument();
     for (const c of GUIDE_COINS.commands) expect(screen.getByText(c.command)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: GUIDE_START.island })).toHaveAttribute("href", "/shift/island");
+  });
+
+  it("shows the seed and close-up buttons", () => {
+    render(<Page />);
+    for (const step of [...GUIDE_SEED.steps, ...GUIDE_CLOSEUP.steps]) expect(screen.getByText(step.label)).toBeInTheDocument();
+    for (const seed of GUIDE_SEED.seeds) expect(screen.getByText(seed.name)).toBeInTheDocument();
+  });
+
+  it("draws the pre-stage tile as the planted seed and stage 1 with its green pixel", () => {
+    expect(SEED_TILE.grid).toEqual(SPRITES.stage_seed);
+    expect(STAGE_1_TILE.grid).toEqual(SPRITES.stage_1);
+    expect(SEED_TILE.grid).not.toEqual(STAGE_1_TILE.grid);
   });
 
   it("is not indexed", () => {

@@ -85,6 +85,15 @@ function fakeAdmin() {
 /** The quest database: the link and the board, as shift_quest_* answers. */
 let link: Row | null;
 let board: Row;
+let schema: number;
+const TREE_ROW = {
+  seed: null,
+  stage: 1,
+  roots: { count: 0, recent: 0 },
+  gifts: [],
+  owned: ["shape:round", "leaf:forest", "bark:oak", "bloom:cream"],
+  equipped: { shape: "shape:round", leaf: "leaf:forest", bark: "bark:oak", bloom: "bloom:cream" },
+};
 function questDb() {
   call.mockImplementation(async (fn: string) => {
     switch (fn) {
@@ -99,6 +108,13 @@ function questDb() {
         return { instance_id: "i-main", submission_id: "s", revision: 1, version: 2, created: true };
       case "shift_quest_side_submit":
         return { instance_id: "i-side", submission_id: "s", revision: 2, version: 3, created: false };
+      // Before the tree (schema 13): a submit asks for no gift.
+      case "shift_quest_schema_version":
+        return schema;
+      case "shift_quest_quest_gift":
+        return { gift: { id: "7c1d2e3f-4a5b-4c6d-8e7f-000000000001", options: ["leaf:mint", "leaf:gold", "leaf:dusk"] } };
+      case "shift_quest_tree_get":
+        return TREE_ROW;
       default:
         throw new Error(`unexpected ${fn}`);
     }
@@ -123,6 +139,7 @@ beforeEach(() => {
   link = { board_id: BOARD_A, frame_id: "frame-1", canvas_project: "proj-1", linked_at: "2026-11-11T01:00:00Z" };
   board = { project: { id: "p1" }, main: [], side: [{ template_id: SIDE_TEMPLATE, slug: "side-outside-circle" }], proposed: [], help_open: [] };
   call.mockReset();
+  schema = 12;
   questDb();
   createAdminClient.mockReset().mockImplementation(fakeAdmin);
   resolveIslandViewer.mockReset().mockResolvedValue(viewerAs(OWNER));
@@ -345,7 +362,7 @@ describe("submitQuestCard", () => {
       slug: "anything",
       notes: notes.map((n) => ({ id: n.id, hash: n.hash })),
     });
-    expect(result).toEqual({ ok: true, data: { instanceId: "i-main", revision: 1, created: true } });
+    expect(result).toEqual({ ok: true, data: { instanceId: "i-main", revision: 1, created: true, gift: null, tree: null } });
     const evidence = buildSnapshot("Lamp project", notes).text;
     expect(call).toHaveBeenCalledWith("shift_quest_milestone_submit", ACTOR, 1, evidence, CARD_REFLECTION_FALLBACK, null);
     expect(evidence).toContain("ไม่มีเวลาอ่านหนังสือ");
@@ -362,7 +379,7 @@ describe("submitQuestCard", () => {
       line: "  เพื่อนกดผิดปุ่มบ่อย  ",
       link: "https://example.com/app",
     });
-    expect(result).toEqual({ ok: true, data: { instanceId: "i-side", revision: 2, created: false } });
+    expect(result).toEqual({ ok: true, data: { instanceId: "i-side", revision: 2, created: false, gift: null, tree: null } });
     expect(call).toHaveBeenCalledWith(
       "shift_quest_side_submit",
       ACTOR,
@@ -371,6 +388,20 @@ describe("submitQuestCard", () => {
       "เพื่อนกดผิดปุ่มบ่อย",
       "https://example.com/app"
     );
+  });
+
+  it("asks for the quest's gift after the card is saved (schema 13), by the submitted instance", async () => {
+    schema = 13;
+    const notes = picked(["n-problem"]);
+    const result = await actions.submitQuestCard({ ref: main1, slug: null, notes: notes.map((n) => ({ id: n.id, hash: n.hash })) });
+    expect(result).toMatchObject({
+      ok: true,
+      data: { instanceId: "i-main", gift: { id: "7c1d2e3f-4a5b-4c6d-8e7f-000000000001", options: ["leaf:mint", "leaf:gold", "leaf:dusk"] } },
+    });
+    expect(result.ok && result.data.tree?.stage).toBe(1);
+    const order = fnCalls();
+    expect(order.indexOf("shift_quest_quest_gift")).toBeGreaterThan(order.indexOf("shift_quest_milestone_submit"));
+    expect(call).toHaveBeenCalledWith("shift_quest_quest_gift", ACTOR, "i-main");
   });
 
   it("ignores the client's slug: a side quest's zones come from the server's board", async () => {

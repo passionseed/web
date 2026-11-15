@@ -9,6 +9,7 @@ import { QuestDbError, type QuestApi } from "../api";
 import { bkkDate } from "../copy";
 import { LIVE } from "../island/copy";
 import type { IslandPlot } from "../island/render";
+import { SEEDS } from "@/lib/shift-island/tree-style";
 import { parseCid } from "../ids";
 import {
   LIVE_GIF,
@@ -353,6 +354,8 @@ function fakeDb(initial: LivePostData) {
     failMark: false,
     /** Runs inside live_mark before it decides: another process writing first. */
     beforeMark: null as null | (() => void),
+    /** Other functions' answers (the schema version, the island styles); anything else answers null. */
+    answers: {} as Record<string, unknown>,
     calls: [] as unknown[][],
   };
   const api = {
@@ -370,7 +373,7 @@ function fakeDb(initial: LivePostData) {
         db.stored = { channel: ch, message: id };
         return id;
       }
-      return null;
+      return db.answers[fn] ?? null;
     }),
     rows: jest.fn(),
   };
@@ -546,6 +549,33 @@ describe("startLivePost", () => {
     expect(stamp(1) - stamp(0)).toBe(10 * 60);
     expect(w.live.channel.send).toHaveBeenCalledTimes(1);
   });
+
+  it("draws each shown tree in its team's look from schema 13, and a new look edits the post", async () => {
+    const styled = make();
+    styled.db.answers = {
+      shift_quest_schema_version: 13,
+      shift_quest_island_styles: [{ slot: 1, seed: "maple", equipped: SEEDS.maple.style }],
+    };
+    await ready(styled);
+    expect(styled.db.calls.filter((c) => c[0] === "shift_quest_island_styles").length).toBeGreaterThan(0);
+    const plain = make();
+    plain.db.answers = { shift_quest_schema_version: 13, shift_quest_island_styles: [] };
+    await ready(plain);
+    const pictureOf = (w: World) =>
+      (w.live.channel.send.mock.calls[0][0] as unknown as { files: AttachmentBuilder[] }).files[0].attachment as Buffer;
+    expect(pictureOf(styled).equals(pictureOf(plain))).toBe(false);
+
+    // The team switches a look: edited within the minute, like any other change the post shows.
+    styled.db.answers.shift_quest_island_styles = [{ slot: 1, seed: "maple", equipped: { ...SEEDS.maple.style, leaf: "leaf:sky" } }];
+    await minutes(1);
+    expect(styled.live.channel.messages.edit).toHaveBeenCalledTimes(1);
+
+    // Below schema 13 the styles are never read.
+    const old = make();
+    await ready(old);
+    expect(old.db.calls.filter((c) => c[0] === "shift_quest_island_styles")).toEqual([]);
+    // Four real GIFs (about 2 s alone): room for a loaded CI machine.
+  }, 30_000);
 
   it("edits on every gateway ready, even with nothing changed", async () => {
     const w = make();

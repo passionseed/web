@@ -79,14 +79,6 @@ describe("each action calls exactly one function with the server-side actor", ()
       { nameVisible: false },
     ],
     [
-      "submitMainQuest",
-      () => actions.submitMainQuest({ milestone: 2, ...proof }),
-      { instance_id: UUID, submission_id: "s", revision: 1, version: 2, created: true },
-      "shift_quest_milestone_submit",
-      [ACTOR, 2, "ทำต้นแบบแล้ว", "ได้เรียนรู้ว่า", null],
-      { instanceId: UUID, revision: 1, created: true },
-    ],
-    [
       "startMainQuest",
       () => actions.startMainQuest({ milestone: 4 }),
       { instance_id: "i3", version: 1, created: true },
@@ -111,28 +103,12 @@ describe("each action calls exactly one function with the server-side actor", ()
       { instanceId: "i1", version: 1, created: true },
     ],
     [
-      "submitSideQuest",
-      () => actions.submitSideQuest({ templateId: UUID, ...proof, artifactUrl: "https://example.com/x" }),
-      { instance_id: "i1", submission_id: "s", revision: 2, version: 4, created: false },
-      "shift_quest_side_submit",
-      [ACTOR, UUID, "ทำต้นแบบแล้ว", "ได้เรียนรู้ว่า", "https://example.com/x"],
-      { instanceId: "i1", revision: 2, created: false },
-    ],
-    [
       "proposeQuest",
       () => actions.proposeQuest({ title: "T", goal: "G", criteria: "C", nextStep: "N", why: null }),
       "i2",
       "shift_quest_propose",
       [ACTOR, "T", null, "G", "C", "N"],
       { instanceId: "i2" },
-    ],
-    [
-      "submitProposedQuest",
-      () => actions.submitProposedQuest({ instanceId: UUID, version: 3, ...proof }),
-      { submission_id: "s", revision: 1, version: 4 },
-      "shift_quest_submit",
-      [ACTOR, UUID, 3, "ทำต้นแบบแล้ว", "ได้เรียนรู้ว่า", null, "reviewers", null, []],
-      { instanceId: UUID, revision: 1, created: false },
     ],
     [
       "askForHelp",
@@ -149,6 +125,47 @@ describe("each action calls exactly one function with the server-side actor", ()
     await expect(run()).resolves.toEqual({ ok: true, data });
     expect(call).toHaveBeenCalledTimes(1);
     expect(call).toHaveBeenCalledWith(fn, ...args);
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+});
+
+/**
+ * The submits save with one function, then (schema 13 and up) ask for the
+ * quest's gift: app/shift/island/__tests__/quest-gift.test.ts. Here the
+ * database is schema 12, so the only other call is the version read.
+ */
+describe("each submit saves with exactly one function", () => {
+  const submits: Array<[string, () => Promise<unknown>, unknown, string, unknown[], unknown]> = [
+    [
+      "submitMainQuest",
+      () => actions.submitMainQuest({ milestone: 2, ...proof }),
+      { instance_id: UUID, submission_id: "s", revision: 1, version: 2, created: true },
+      "shift_quest_milestone_submit",
+      [ACTOR, 2, "ทำต้นแบบแล้ว", "ได้เรียนรู้ว่า", null],
+      { instanceId: UUID, revision: 1, created: true, gift: null, tree: null },
+    ],
+    [
+      "submitSideQuest",
+      () => actions.submitSideQuest({ templateId: UUID, ...proof, artifactUrl: "https://example.com/x" }),
+      { instance_id: "i1", submission_id: "s", revision: 2, version: 4, created: false },
+      "shift_quest_side_submit",
+      [ACTOR, UUID, "ทำต้นแบบแล้ว", "ได้เรียนรู้ว่า", "https://example.com/x"],
+      { instanceId: "i1", revision: 2, created: false, gift: null, tree: null },
+    ],
+    [
+      "submitProposedQuest",
+      () => actions.submitProposedQuest({ instanceId: UUID, version: 3, ...proof }),
+      { submission_id: "s", revision: 1, version: 4 },
+      "shift_quest_submit",
+      [ACTOR, UUID, 3, "ทำต้นแบบแล้ว", "ได้เรียนรู้ว่า", null, "reviewers", null, []],
+      { instanceId: UUID, revision: 1, created: false, gift: null, tree: null },
+    ],
+  ];
+
+  it.each(submits)("%s", async (_name, run, dbResult, fn, args, data) => {
+    call.mockImplementation(async (name: string) => (name === "shift_quest_schema_version" ? 12 : dbResult));
+    await expect(run()).resolves.toEqual({ ok: true, data });
+    expect(call.mock.calls.filter(([name]) => name !== "shift_quest_schema_version")).toEqual([[fn, ...args]]);
     expect(refresh).toHaveBeenCalledTimes(1);
   });
 });

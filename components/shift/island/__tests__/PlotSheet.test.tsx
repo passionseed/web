@@ -8,6 +8,8 @@ import { NEWS } from "../news/copy";
 import { PlotSheet } from "../PlotSheet";
 
 jest.mock("@/app/shift/island/news-actions", () => ({ hideTeamNews: jest.fn() }));
+// The close-up canvas (jsdom has no 2D canvas); what it draws is in tree-sheet.test.tsx.
+jest.mock("../tree/TreeCanvas", () => ({ TreeCanvas: () => null }));
 
 jest.mock("../IslandSheet", () => {
   const { createElement } = jest.requireActual<typeof import("react")>("react");

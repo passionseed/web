@@ -2076,6 +2076,128 @@
   text-underline-offset: 3px;
 }
 
+@media (hover: hover) {
+  .composeBack:hover,
+  .composeSwitch:hover {
+    color: var(--text-hi);
+  }
+}
+
+.composeBack:active,
+.composeSwitch:active {
+  color: var(--text-hi);
+  transform: translateY(1px);
+}
+
+/* The sheet's footer handed to a compose step or the sent screen (InSheetFooter puts their buttons in it). */
+.footerSlot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 48px;
+}
+
+/* เสร็จเมื่อ above a send form: one compact reminder, a line or two, never a gate. */
+.doneLine {
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text);
+  background: rgba(231, 205, 146, 0.06);
+  box-shadow: inset 2px 0 0 0 var(--isl-sand);
+}
+
+.doneLineHeading {
+  margin-right: 8px;
+  font-weight: 600;
+  color: var(--isl-sand-hi);
+}
+
+.doneLineList {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.doneLineList li {
+  display: inline;
+}
+
+.doneLineList li + li::before {
+  content: " · ";
+  color: var(--text-dim);
+}
+
+/* ---------------------------------------------------------------- quest sheet: sent */
+
+.sent {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.sentHead {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 16px 0 4px;
+  text-align: center;
+}
+
+/* The pixel tick on a leaf-green notched tile. */
+.sentMark {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 6px;
+  background: var(--isl-leaf);
+  box-shadow: inset 0 0 0 2px var(--isl-ink), inset 0 -4px 0 0 rgba(0, 0, 0, 0.18);
+  clip-path: var(--notch);
+}
+
+.sentTitle {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.35;
+  color: var(--text-hi);
+}
+
+/* Focused by script so screen readers start here; it is not a control. */
+.sentTitle:focus {
+  outline: none;
+}
+
+/* Balanced: the break lands between words, not inside a short last word. */
+.sentWhere {
+  max-width: 30em;
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text);
+  text-wrap: balance;
+}
+
+/* The gift: the same sand card as a waiting gift in the close-up. */
+.sentGift {
+  justify-items: stretch;
+}
+
+.sentGift h3,
+.sentGift p {
+  text-wrap: pretty;
+}
+
+/* After the pick: the team's tree wearing it. */
+.sentPicked {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  margin: 0;
+  text-align: center;
+}
+
 .plot {
   display: grid;
   gap: 8px;
@@ -2088,6 +2210,12 @@
 
 .plotTree svg {
   display: block;
+}
+
+/* Another team's tree up close (tree/TreeCanvas), in the same ink frame as the own close-up. */
+.plotCloseup {
+  justify-self: center;
+  box-shadow: 0 0 0 2px var(--isl-ink);
 }
 
 .plotSign {

@@ -31,15 +31,14 @@ export const LINK_SHEET = {
 };
 
 export const COMPOSER = {
-  heading: "การ์ดเควสต์",
-  pick: `เลือกโน้ตที่จะส่ง (สูงสุด ${CARD_LIMITS.notes} ใบ)`,
-  picked: (n: number) => `เลือกแล้ว ${n}/${CARD_LIMITS.notes}`,
   full: `ครบ ${CARD_LIMITS.notes} ใบแล้ว เอาใบไหนออกก่อนถึงจะเลือกใบใหม่ได้`,
   noNotes: "ช่องของเควสต์นี้ในแคนวาสยังไม่มีโน้ต เขียนโน้ตในแคนวาสก่อน แล้วกลับมาเลือกได้เลย",
   version: (v: number) => `v${v}`,
   why: (why: string) => `เปลี่ยนเพราะ ${why}`,
   editedSince: (v: number) => `แก้หลัง v${v}`,
-  outsider: "โน้ตจากคนนอกทีม ส่งเป็นของคุณไม่ได้",
+  /** One short tag on a dimmed note someone outside the canvas team wrote (it cannot be ticked). Thai reviewed (Cursor, Codex), 2026-11-14. */
+  outsider: "โน้ตจากคนนอกทีม",
+  /** The line field's hint on step 2: who never goes on the card. */
   privacy: "อย่าใส่ชื่อจริง เบอร์โทร หรือช่องทางติดต่อของคนที่ลองงานคุณ",
   pii: "โน้ตนี้อาจมีเบอร์โทร อีเมล หรือไอดีของใครบางคน แก้ในแคนวาสก่อนส่งดีกว่า",
   piiLine: "ข้อความนี้อาจมีเบอร์โทร อีเมล หรือไอดีของใครบางคน ลบออกก่อนส่งดีกว่า",
@@ -51,20 +50,31 @@ export const COMPOSER = {
   submit: "ส่งให้พี่เลี้ยงดู",
   resubmit: "ส่งฉบับใหม่",
   sending: "กำลังส่ง",
-  back: "กลับ",
-  writeInstead: "เขียนเองแทน",
-  sent: "ส่งแล้ว พี่เลี้ยงจะดูใน Discord แล้วแจ้งผลในกล่องข้อความของบอท",
   failed: "ส่งไม่สำเร็จ ลองอีกครั้ง",
-  /** A note's own link to the whiteboard (a new tab, so the ticks stay). */
-  openNote: "ดูบนแคนวาส",
+};
+
+/** The quest submission sheet in two steps, then the sent screen. Thai reviewed (agy, Codex, Cursor), then again (Cursor, Codex), 2026-11-14. */
+export const SUBMIT = {
+  steps: ["เลือกหลักฐาน", "ตรวจแล้วส่ง"],
+  pickHint: "ติ๊กโน้ตบนแคนวาสที่เป็นหลักฐานของเควสต์นี้",
+  next: (n: number) => `ต่อไป (เลือกแล้ว ${n} ใบ)`,
+  needOne: "เลือกโน้ตอย่างน้อย 1 ใบ",
+  editNotes: "แก้โน้ต",
+  openCanvas: "เปิดแคนวาส",
+  reviewHint: "นี่คือการ์ดที่พี่เลี้ยงจะได้รับ จะเพิ่มข้อความสั้นๆ หรือลิงก์ก็ได้",
+  sentTitle: "ส่งถึงพี่เลี้ยงแล้ว",
+  sentWhere: "พี่เลี้ยงจะดูใน Discord แล้วแจ้งผลในกล่องข้อความของบอท",
+  backToIsland: "กลับไปที่เกาะ",
+  seeTree: "ดูต้นไม้ของทีม",
 };
 
 export const PREVIEW = {
+  /** The preview's accessible name (step 2 says it in SUBMIT.reviewHint). */
   heading: "หน้าตาที่พี่เลี้ยงจะเห็น",
   meter: (n: number) => `${n}/${CARD_LIMITS.evidence}`,
   cut: "บางโน้ตยาวเกิน จะถูกตัดท้าย",
+  /** Next to the send button. */
   frozen: "ส่งแล้วการ์ดนี้จะไม่เปลี่ยน ถึงจะแก้โน้ตในแคนวาสทีหลัง",
-  empty: "ติ๊กโน้ตอย่างน้อย 1 ใบ แล้วการ์ดจะขึ้นตรงนี้",
   /** The exact stored text, folded. */
   raw: "ดูข้อความที่พี่เลี้ยงจะได้",
 };

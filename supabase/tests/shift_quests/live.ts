@@ -140,8 +140,8 @@ async function main(): Promise<void> {
     scalar<string>(db, "select ((now() at time zone 'Asia/Bangkok')::date + $1::int)::text", [offset]);
 
   // --- Schema, privileges, row security ------------------------------------------------
-  check(Number(await call(bot, "shift_quest_schema_version")) === 12, "the bot reads schema version 12 (the live post starts from 8)");
-  check(Number(await call(web, "shift_quest_schema_version")) === 12, "the website reads schema version 12 (it needs 6 or more)");
+  check(Number(await call(bot, "shift_quest_schema_version")) === 13, "the bot reads schema version 13 (the live post starts from 8)");
+  check(Number(await call(web, "shift_quest_schema_version")) === 13, "the website reads schema version 13 (it needs 6 or more)");
 
   for (const fn of [LIVE_READER, LIVE_WRITER, LINKS]) {
     const grants: Json = (await db.query(

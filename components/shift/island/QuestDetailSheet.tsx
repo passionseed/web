@@ -35,16 +35,19 @@ import {
   ownershipSnapshot,
 } from "@/lib/shift-island/ownership";
 import type { BoardRef } from "@/lib/supabase/shift-quests/board";
-import { TEXT_LIMITS, type QuestBoard } from "@/lib/supabase/shift-quests/types";
+import { TEXT_LIMITS, type QuestBoard, type QuestSubmitResult } from "@/lib/supabase/shift-quests/types";
 import { SHIFT_CARDS } from "@/lib/whiteboard/shift-cards";
 
 import { refreshIsland } from "./useIslandRefresh";
-import { SYNC } from "./copy";
-import { QuestCardComposer, useQuestCanvas } from "./canvas";
-import { BOARD, CANVAS, COMMON, DETAIL, QUEST, questFlavor, tileChip } from "./copy";
+import { QuestCardComposer, useQuestCanvas, type CardStep } from "./canvas";
+import { SUBMIT } from "./canvas/copy";
+import { BOARD, CANVAS, COMMON, DETAIL, QUEST, SYNC, questFlavor, tileChip } from "./copy";
+import { doneWhenItems } from "./DoneWhenLine";
+import { InSheetFooter } from "./InSheetFooter";
 import styles from "./island.module.css";
 import { IslandSheet } from "./IslandSheet";
 import { canStart, detailAction, mentorFeedback, questView, refKey, sameRef, type DetailAction, type QuestView } from "./model";
+import { SentScreen } from "./SentScreen";
 import { PALETTE, iconGrid, iconScale, type IconKey } from "./sprites";
 import { SubmitForm } from "./SubmitForm";
 import { useOwnership, type OwnershipState } from "./useOwnership";
@@ -61,6 +64,10 @@ interface QuestDetailSheetProps {
   onStuck: (quest: { instanceId: string | null; title: string }) => void;
   /** Open the canvas picker for this quest (link a canvas, or pick again after it is gone). */
   onLinkCanvas: (ref: BoardRef) => void;
+  /** The sent screen's กลับไปที่เกาะ: back to the world (onClose when not given). */
+  onIsland?: () => void;
+  /** The sent screen's ดูต้นไม้ของทีม; give it only where the island has the team's tree (schema 13). */
+  onTree?: () => void;
 }
 
 /** "card" builds a quest card from canvas notes; "text" is the written form (SubmitForm). */
@@ -74,9 +81,21 @@ const NO_GUIDE: QuestGuide = { zones: [], checklist: [], examples: [] };
  * One quest without a wall of text: what it is, one line of why, the
  * student's own canvas notes for it, what "done" looks like, and a sticky
  * bar to send or ask for help. Sending swaps the body for the quest card
- * composer (notes from the canvas) or the written form.
+ * composer (notes from the canvas, in two steps) or the written form, each
+ * with its button in the same sticky bar; a saved send ends on the sent
+ * screen, with the quest's gift when it earned one.
  */
-export function QuestDetailSheet({ board, target, keynote, canvasLink, onClose, onStuck, onLinkCanvas }: QuestDetailSheetProps) {
+export function QuestDetailSheet({
+  board,
+  target,
+  keynote,
+  canvasLink,
+  onClose,
+  onStuck,
+  onLinkCanvas,
+  onIsland = onClose,
+  onTree,
+}: QuestDetailSheetProps) {
   // The last quest shown stays in the sheet while it slides closed, so it never closes empty.
   const [last, setLast] = useState<BoardRef | null>(target);
   if (target && target !== last) setLast(target);
@@ -86,11 +105,16 @@ export function QuestDetailSheet({ board, target, keynote, canvasLink, onClose, 
 
   // Compose mode belongs to one quest state; reopening the sheet starts on the quest again.
   const [compose, setCompose] = useState<{ key: string; form: ComposeForm } | null>(null);
+  // The sent screen belongs to the quest, not its state: the page refreshes into a new state right after the send.
+  const [sent, setSent] = useState<{ ref: string; result: QuestSubmitResult } | null>(null);
   const [wasOpen, setWasOpen] = useState(open);
   if (open !== wasOpen) {
     setWasOpen(open);
     if (open && compose) setCompose(null);
+    if (open && sent) setSent(null);
   }
+  // The sheet's footer as an element, so compose steps and the sent screen can put their buttons in it.
+  const [footerSlot, setFooterSlot] = useState<HTMLDivElement | null>(null);
 
   const ref = quest?.ref ?? null;
   const kind = quest?.kind ?? null;
@@ -109,6 +133,9 @@ export function QuestDetailSheet({ board, target, keynote, canvasLink, onClose, 
   const bodyKey = quest ? `${refKey(quest.ref)}:${quest.instanceId ?? ""}:${quest.status}` : "";
   if (compose && compose.key !== bodyKey) setCompose(null);
   const composing = compose && compose.key === bodyKey ? compose.form : null;
+  const sentKey = quest ? refKey(quest.ref) : "";
+  if (sent && sent.ref !== sentKey) setSent(null);
+  const sentResult = sent && sent.ref === sentKey ? sent.result : null;
 
   // Back from compose: focus returns to the send button it came from.
   const sendRef = useRef<HTMLButtonElement>(null);
@@ -119,7 +146,9 @@ export function QuestDetailSheet({ board, target, keynote, canvasLink, onClose, 
   }, [composing, open]);
 
   const footer =
-    quest && action && !composing && hasBar(action) ? (
+    quest && action && (sentResult || composing) ? (
+      <div ref={setFooterSlot} className={styles.footerSlot} />
+    ) : quest && action && hasBar(action) ? (
       <QuestActionBar
         quest={quest}
         action={action}
@@ -128,6 +157,12 @@ export function QuestDetailSheet({ board, target, keynote, canvasLink, onClose, 
         onStuck={onStuck}
       />
     ) : null;
+
+  function onSent(result: QuestSubmitResult) {
+    if (!quest) return;
+    setSent({ ref: refKey(quest.ref), result });
+    setCompose(null);
+  }
 
   return (
     <IslandSheet
@@ -141,18 +176,22 @@ export function QuestDetailSheet({ board, target, keynote, canvasLink, onClose, 
       footer={footer}
     >
       {quest && action ? (
-        composing ? (
+        sentResult ? (
+          <SentScreen key={sentKey} result={sentResult} footer={footerSlot} onIsland={onIsland} onTree={onTree} />
+        ) : composing ? (
           <QuestCompose
             key={bodyKey}
             quest={quest}
             action={action}
             form={composing}
+            guide={guide}
             hasZones={hasZones}
             canvas={canvas}
             ownership={ownership}
+            footer={footerSlot}
             onForm={(form) => setCompose({ key: bodyKey, form })}
             onBack={() => setCompose(null)}
-            onClose={onClose}
+            onSent={onSent}
           />
         ) : (
           <QuestDetailBody
@@ -714,40 +753,50 @@ function QuestActionBar({
 // ---------------------------------------------------------------- compose
 
 /**
- * Sending: the quest card composer when the canvas is ready (it brings its
- * own action row), otherwise the written form, with "เขียนเองแทน" between them.
+ * Sending: the quest card composer when the canvas is ready (step 1 picks the
+ * notes, step 2 checks the card and sends it), otherwise the written form,
+ * with "เขียนเองแทน" between them. Back is always top left: to the quest, or
+ * from step 2 to step 1 with the ticks kept. Each step's button sits in the
+ * sheet's footer.
  */
 function QuestCompose({
   quest,
   action,
   form,
+  guide,
   hasZones,
   canvas,
   ownership,
+  footer,
   onForm,
   onBack,
-  onClose,
+  onSent,
 }: {
   quest: QuestView;
   action: DetailAction;
   form: ComposeForm;
+  guide: QuestGuide;
   hasZones: boolean;
   canvas: CanvasState;
   ownership: OwnershipState | null;
+  footer: HTMLElement | null;
   onForm: (form: ComposeForm) => void;
   onBack: () => void;
-  onClose: () => void;
+  onSent: (result: QuestSubmitResult) => void;
 }) {
-  // Focus (and scroll) to the top on entering, and again on switching forms: the switch button itself goes away.
+  const [step, setStep] = useState<CardStep>("pick");
+  // Focus (and scroll) to the top on entering, on switching forms and on each step: the button pressed goes away.
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    box.current?.focus();
-  }, [form]);
+    toTop(box.current);
+  }, [form, step]);
 
   const ready = canvas.context?.state === "ready" ? canvas.context : null;
   const resubmit = action.kind === "form" ? action.resubmit : false;
   const card = form === "card" && hasZones && ready ? ready : null;
   const cardLoading = form === "card" && hasZones && !ready && (canvas.loading || !canvas.context);
+  const reviewing = !!card && step === "review";
+  const doneWhen = doneWhenItems(guide, quest.evidence);
   // Quest 5: the server adds the checklist under the proof, so the proof leaves room for it.
   const ownRows = ownership?.state === "ready" ? (ownership.rows ?? []) : [];
   const attach = ownership
@@ -760,7 +809,9 @@ function QuestCompose({
     <SubmitForm
       quest={quest}
       resubmit={resubmit}
-      onSubmitted={onClose}
+      footer={footer}
+      doneWhen={doneWhen}
+      onSubmitted={onSent}
       note={attach?.note}
       proofMax={attach?.proofMax}
     />
@@ -769,14 +820,19 @@ function QuestCompose({
   return (
     <div ref={box} tabIndex={-1} className={styles.compose}>
       <div className={styles.composeTop}>
-        {card ? null : (
-          <button type="button" className={styles.composeBack} onClick={onBack}>
-            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-            <span>{QUEST.back}</span>
-          </button>
-        )}
-        {card || cardLoading ? (
-          <button type="button" className={styles.composeSwitch} onClick={() => onForm("text")}>
+        <button type="button" className={styles.composeBack} onClick={reviewing ? () => setStep("pick") : onBack}>
+          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+          <span>{reviewing ? SUBMIT.editNotes : QUEST.back}</span>
+        </button>
+        {reviewing ? null : card || cardLoading ? (
+          <button
+            type="button"
+            className={styles.composeSwitch}
+            onClick={() => {
+              setStep("pick");
+              onForm("text");
+            }}
+          >
             {QUEST.writeInstead}
           </button>
         ) : form === "text" && hasZones && ready ? (
@@ -799,17 +855,41 @@ function QuestCompose({
             context={card}
             loading={canvas.loading}
             onReload={canvas.reload}
-            onSubmitted={onClose}
-            onCancel={onBack}
+            step={step}
+            onStep={setStep}
+            footer={footer}
+            doneWhen={doneWhen}
+            onSubmitted={onSent}
           />
         </CanvasBoundary>
       ) : cardLoading ? (
-        <ContextSkeleton />
+        <>
+          <ContextSkeleton />
+          {/* The bar keeps its place while the notes load. */}
+          <InSheetFooter slot={footer}>
+            <button type="button" className={`ei-button-dawn ${styles.primary} ${styles.barButton}`} disabled>
+              <span>{QUEST.context.loading}</span>
+            </button>
+          </InSheetFooter>
+        </>
       ) : (
         textForm
       )}
     </div>
   );
+}
+
+/**
+ * Focus a step's top without the browser picking a scroll position, then
+ * scroll the sheet (its body in the drawer, the dialog itself) back to the
+ * top: a new step starts there.
+ */
+function toTop(node: HTMLElement | null): void {
+  if (!node) return;
+  node.focus({ preventScroll: true });
+  for (let el = node.parentElement; el && el !== document.body; el = el.parentElement) {
+    if (el.scrollTop > 0) el.scrollTop = 0;
+  }
 }
 
 // ---------------------------------------------------------------- shared

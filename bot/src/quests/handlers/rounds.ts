@@ -17,13 +17,15 @@ import { MessageFlags } from "discord.js";
 import { QuestDbError, QuestError, type QuestApi } from "../api";
 import { requireStudent } from "../context";
 import { cid } from "../ids";
-import { I } from "../island/copy";
+import { I, TREE } from "../island/copy";
+import { TREE_SCHEMA } from "../island/tree";
 import { encounterAt } from "../rounds";
 import { schemaOf } from "../schema";
 import { R } from "../rounds-copy";
 import { ButtonStyle, button, buttonRows, modal, show, textValue, type View } from "../ui";
 import { pickSide, readBoard, sideView } from "./board";
 import { reflectionModal, reflectionSavedView } from "./reflection";
+import { giftFrom, offerGift, type Gift } from "./tree";
 import type { HandlerSet } from "./types";
 
 const oneLine = (text: string, max: number) => {
@@ -137,7 +139,16 @@ export const rounds: HandlerSet = {
       const stuck = textValue(i, "stuck");
       await i.deferReply({ flags: MessageFlags.Ephemeral });
       let id: string;
-      if ((await schemaOf(ctx.api)) >= 12) {
+      let gift: Gift | null = null;
+      const version = await schemaOf(ctx.api);
+      if (version >= TREE_SCHEMA) {
+        // The same close, plus at most one gift for the team (never rolls the close back).
+        const closed = await ctx.api.call<{ id?: unknown; gift?: unknown } | null>(
+          "shift_quest_round_close_gift", ctx.userId, sessionId || null, learned, stuck
+        );
+        id = typeof closed?.id === "string" ? closed.id : "";
+        gift = giftFrom(closed?.gift);
+      } else if (version >= 12) {
         // Empty (or a pre-upgrade modal with no argument) means journal only.
         id = await ctx.api.call<string>("shift_quest_round_close", ctx.userId, sessionId || null, learned, stuck);
       } else {
@@ -148,6 +159,8 @@ export const rounds: HandlerSet = {
         );
       }
       await show(i, reflectionSavedView(id, stuck));
+      // Then the gift, as its own private message: picking it never touches the saved reply.
+      if (gift) await offerGift(i, ctx, gift, TREE.gift.roundHeading, "rd_close_go");
     },
   },
 };

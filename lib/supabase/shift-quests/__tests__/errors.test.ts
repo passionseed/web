@@ -2,6 +2,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import { errorText } from "@/bot/src/quests/copy";
 import { lintText } from "@/lib/marketing/copyRules";
 
 import { hasQuestErrorText, questErrorText } from "../errors";
@@ -53,6 +54,14 @@ describe("questErrorText", () => {
     expect(hasQuestErrorText("toString")).toBe(false);
     expect(questErrorText("toString")).toBe(questErrorText("unknown"));
   });
+
+  it.each(["seed_unknown", "seed_planted", "gift_gone", "item_not_offered", "item_not_owned"])(
+    "has the bot's own words for the tree code %s (20261114120000)",
+    (code) => {
+      expect(hasQuestErrorText(code)).toBe(true);
+      expect(questErrorText(code)).toBe(errorText(code));
+    },
+  );
 
   it("uses the exact words for the side quest codes", () => {
     expect(questErrorText("quest_locked")).toBe("เควสต์นี้ยังล็อกอยู่ ทำเควสต์ที่ปลดล็อกมันให้ผ่านก่อน");

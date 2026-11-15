@@ -7,6 +7,7 @@
  */
 import type { Session } from "@/bot/src/quests/api";
 import type { CanvasLinkState } from "@/lib/shift-island/quest-canvas";
+import type { TreeStyle } from "@/lib/shift-island/tree-style";
 
 import type { CharacterStats, IslandConsent, IslandNews } from "./playerTypes";
 
@@ -127,6 +128,26 @@ export interface IslandMapPlot {
   plain: boolean;
   /** Roots level 1..3 (shift_quest_island_roots, schema 10, merged by slot); absent is 0. Schema 11 overrides the member plot with its own roots. Never on a plain plot. */
   roots?: number;
+  /** The team's tree colours (shift_quest_island_styles, schema 13, merged by slot; the caller's own plot uses their live tree). Only on a plot whose name is visible; absent draws the default tree. */
+  style?: TreeStyle;
+  /** A seed is planted (stage 0 draws a planted seed instead of bare soil). */
+  seeded?: boolean;
+}
+
+/** shift_quest_tree_get(actor): the caller's team tree (schema 13). */
+export interface MyTree {
+  seed: string | null;
+  equipped: TreeStyle;
+  owned: string[];
+  gifts: { id: string; options: string[] }[];
+  roots: { count: number; recent: number };
+  stage: number;
+  /**
+   * The project's current ambition (its own team only), or null: the seed
+   * pickers prefill their line with it, and the planted line becomes it.
+   * Absent reads as none.
+   */
+  ambition?: string | null;
 }
 /** shift_quest_island_map(actor) */
 export interface IslandMapData {
@@ -245,6 +266,8 @@ export interface IslandPageData {
   unread: number;
   island: IslandView;
   map: IslandMapData;
+  /** The caller's own tree (schema 13); null below it, without a project, or when the read fails. */
+  tree?: MyTree | null;
   /** null when island.project is null */
   board: QuestBoard | null;
   /** only loaded when island.project is null, else [] */
@@ -320,6 +343,14 @@ export interface QuestSubmitResult {
   instanceId: string;
   revision: number;
   created: boolean;
+  /**
+   * The quest's gift for the team's tree (schema 13): the first submit of each
+   * quest gives one, ever. Null below schema 13, on a resubmit, with nothing
+   * left to own, or when asking for it failed (the submit is saved either way).
+   */
+  gift?: { id: string; options: string[] } | null;
+  /** The team's tree to draw the gift's options on; null whenever gift is null. */
+  tree?: MyTree | null;
 }
 
 export type TileStatus =

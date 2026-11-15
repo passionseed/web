@@ -232,7 +232,9 @@ describe("quest cards", () => {
 
     const go = interaction("button");
     await ACTION_HANDLERS.get("sub_go")!(go.i, c, [key, "team"]);
-    expect(calls(c).at(-1)).toEqual([
+    // After the submit, only the schema read for a quest gift (none below schema 13).
+    expect(calls(c).at(-1)).toEqual(["shift_quest_schema_version"]);
+    expect(calls(c).at(-2)).toEqual([
       "shift_quest_submit",
       USER,
       QID,

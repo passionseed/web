@@ -19,11 +19,23 @@
  * ISLAND_STAGES. The round and roots rules below must match the bot.
  */
 
-import { FOCUS_MINUTES, REFLECTION_MIN_CHARS, REFLECTIONS_PER_DAY, REST_MINUTES, ROOT_LEVELS } from "@/lib/shift-island/rounds-rules";
+import {
+  FOCUS_MINUTES,
+  REFLECTION_MIN_CHARS,
+  REFLECTIONS_PER_DAY,
+  REST_MINUTES,
+  ROOT_LEVELS,
+  ROUND_GIFTS_PER_DAY,
+} from "@/lib/shift-island/rounds-rules";
 import { ISLAND_STAGES } from "@/lib/content/shift-island";
+import { PRE_STAGE } from "@/components/shift/island/copy";
+import { TREE_SEEDS } from "@/lib/shift-island/tree-copy";
 
 /** Growth stages after the empty plot (ISLAND_STAGES[0] is the empty plot). */
 export const GUIDE_STAGE_COUNT = ISLAND_STAGES.length - 1;
+
+/** The stages as the game names them: the seed the team chooses, then stages 1 to 7 (STAGE_NAMES without the empty plot). */
+export const GUIDE_STAGE_NAMES = [PRE_STAGE, ...ISLAND_STAGES.slice(1)] as const;
 
 /** Campfire rounds, from the spec: the bot starts a round at :00 and :30 Bangkok time. */
 export const CAMPFIRE_ROUND = { focusMinutes: FOCUS_MINUTES, restMinutes: REST_MINUTES, startsAt: [":00", ":30"] } as const;
@@ -43,7 +55,7 @@ export interface GuideSectionHead {
 
 export const GUIDE_META = {
   title: "คู่มือเกาะ SHIFT High",
-  description: "เกาะนี้คืออะไร ต้นไม้โตยังไง รากมาจากไหน รอบกองไฟเป็นยังไง และเหรียญได้มาจากอะไร",
+  description: "เกาะนี้คืออะไร เลือกเมล็ดยังไง ต้นไม้โตยังไง รากมาจากไหน รอบกองไฟเป็นยังไง และเหรียญได้มาจากอะไร",
 } as const;
 
 export const GUIDE_HERO = {
@@ -71,12 +83,29 @@ export const GUIDE_ISLAND = {
   caption: "ภาพตัวอย่าง: หนึ่งแปลงคือหนึ่งโปรเจกต์ ชื่อโปรเจกต์ขึ้นป้ายบนเกาะเมื่อทุกคนในทีมมีความยินยอมจากผู้ปกครองแล้ว ทีมซ่อนป้ายได้ทุกเมื่อ",
 } as const;
 
+export const GUIDE_SEED = {
+  id: "seed",
+  toc: "เลือกเมล็ด",
+  title: "เลือกเมล็ด",
+  badge: NEW,
+  lines: [
+    "ก้าวแรกของทีมคือเลือกเมล็ด ไม่ต้องรอพี่เลี้ยงตรวจ",
+    "เขียนหนึ่งบรรทัดว่าทีมอยากสร้างอะไร แล้วเลือกเมล็ด 1 จาก 4 แบบ",
+    "เมล็ดลงแปลงทันที เป็นเมล็ดอยู่ก่อนขั้น 1 พอพี่เลี้ยงยืนยันงานหลักข้อแรกที่ทีมทำ เมล็ดก็งอก",
+  ],
+  seedsLabel: "เมล็ด 4 แบบ",
+  seeds: [TREE_SEEDS.oak, TREE_SEEDS.sakura, TREE_SEEDS.pine, TREE_SEEDS.maple],
+  steps: [
+    { label: "🌰 เลือกเมล็ด", button: true, body: "กดใน /island หรือเปิดเกาะบนเว็บ แล้วเขียนว่าทีมอยากสร้างอะไร และเลือกเมล็ด" },
+  ],
+} as const;
+
 export const GUIDE_GROWTH = {
   id: "growth",
   toc: "ต้นไม้โตยังไง",
   title: "ต้นไม้โตยังไง",
   lines: [
-    `ต้นไม้มี ${GUIDE_STAGE_COUNT} ขั้น ตั้งแต่เมล็ดจนผลิดอก`,
+    `ต้นไม้เริ่มจากเมล็ดที่ทีมเลือก แล้วโตอีก ${GUIDE_STAGE_COUNT} ขั้นจนผลิดอก`,
     "ทำงานหลักข้อไหนได้แล้ว ก็กด 🌟 แล้วส่งหลักฐานสั้นๆ",
     "งานหลักแต่ละข้อที่พี่เลี้ยงยืนยัน ทำให้ต้นไม้โตขึ้นหนึ่งขั้น ทำข้อไหนก่อนก็ได้",
   ],
@@ -84,7 +113,9 @@ export const GUIDE_GROWTH = {
   rest: "พักได้นานเท่าที่ต้องการ ต้นไม้ไม่เหี่ยว และไม่เล็กลง",
   /** Under each stage sprite: "ขั้น 3" and the stage name from ISLAND_STAGES. */
   stageLabel: (n: number) => `ขั้น ${n}`,
-  stagesLabel: `${GUIDE_STAGE_COUNT} ขั้นของต้นไม้`,
+  stagesLabel: `เมล็ดและ ${GUIDE_STAGE_COUNT} ขั้นของต้นไม้`,
+  /** Under the seed, which comes before stage 1. */
+  preStageLabel: "เริ่มต้น",
 } as const;
 
 export const GUIDE_ROOTS = {
@@ -104,6 +135,31 @@ export const GUIDE_ROOTS = {
   level: (n: number) => `ระดับ ${n}`,
   rule: "รากไม่ทำให้ขั้นของต้นไม้เปลี่ยน และไม่ใช้ปลดล็อกของใน /rewards ขั้นยังมาจากงานที่พี่เลี้ยงยืนยันเท่านั้น",
   pictureLabel: `ต้นไม้ต้นเดียวกัน กับราก ${ROOTS_RULE.levels} ระดับ`,
+} as const;
+
+export const GUIDE_CLOSEUP = {
+  id: "closeup",
+  toc: "ดูต้นไม้ใกล้ๆ",
+  title: "ดูต้นไม้ใกล้ๆ และของขวัญ",
+  badge: NEW,
+  lines: [
+    "เปิดดูต้นไม้ของทีมใกล้ๆ ได้ เหนือดินคือต้นไม้ ใต้ดินคือราก",
+    "รากแต่ละเส้นมาจากบันทึกที่ทีมเขียนหลังจบรอบ และเรืองแสงอยู่ 7 วันหลังจากนั้น",
+    // The round gift cap, said once (shift_quest_round_close_gift). Thai reviewed (Cursor, Codex), 2026-11-14.
+    `ปิดรอบกองไฟด้วยบันทึก ทีมได้ของขวัญหนึ่งชิ้น (คนละไม่เกิน ${ROUND_GIFTS_PER_DAY} ชิ้นต่อวัน)`,
+    "ส่งเควสต์แต่ละข้อครั้งแรก ทีมได้ของขวัญอีกหนึ่งชิ้น",
+    // Up to 3 options, and no "everyone sees it": a plot that does not show its name shows no look to others.
+    // Thai reviewed twice (Cursor, Codex), 2026-11-14.
+    "ของขวัญคือลุคใหม่ที่ทีมยังไม่มี เลือก 1 จากไม่เกิน 3 แบบ เช่น ทรงพุ่ม สีใบ เปลือกไม้ หรือดอก ต้นไม้ของทีมจะเปลี่ยนเป็นลุคที่เลือกทันที",
+    "ถ้ายังไม่อยากเลือก กดเก็บไว้ก่อน เพื่อนในทีมคนไหนก็เปิดได้ทีหลัง",
+    "ลุคเป็นของทั้งทีม ใครในทีมก็สลับไปใช้ลุคที่ทีมมีได้",
+  ],
+  steps: [
+    { label: "🔍 ดูต้นไม้ใกล้ๆ", button: true, body: "ใน /island กดปุ่มนี้ หรือบนเว็บแตะแปลงของทีมหรือป้ายต้นไม้ด้านบน" },
+    { label: "🎁 เปิดของขวัญ", button: true, body: "เลือกลุค 1 จาก 3 แบบ หรือเก็บไว้ก่อน" },
+    { label: "👗 ลุคของต้นไม้", button: true, body: "สลับไปใช้ลุคไหนที่ทีมมีก็ได้" },
+  ],
+  rule: "ของขวัญและลุคไม่ทำให้ขั้นของต้นไม้เปลี่ยน ขั้นยังมาจากงานที่พี่เลี้ยงยืนยันเท่านั้น",
 } as const;
 
 export const GUIDE_CAMPFIRE = {
@@ -187,8 +243,10 @@ export const GUIDE_FOOTER = {
 /** The sections in page order, for the table of contents. */
 export const GUIDE_SECTIONS: readonly GuideSectionHead[] = [
   GUIDE_ISLAND,
+  GUIDE_SEED,
   GUIDE_GROWTH,
   GUIDE_ROOTS,
+  GUIDE_CLOSEUP,
   GUIDE_CAMPFIRE,
   GUIDE_COINS,
   GUIDE_START,
@@ -200,8 +258,10 @@ export const GUIDE_ALL = {
   GUIDE_META,
   GUIDE_HERO,
   GUIDE_ISLAND,
+  GUIDE_SEED,
   GUIDE_GROWTH,
   GUIDE_ROOTS,
+  GUIDE_CLOSEUP,
   GUIDE_CAMPFIRE,
   GUIDE_COINS,
   GUIDE_START,

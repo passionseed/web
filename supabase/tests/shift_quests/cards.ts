@@ -45,3 +45,26 @@ export function readCard(payload: { content?: string | null; components?: unknow
   const legacy = typeof payload?.content === "string" ? payload.content : "";
   return { content: [legacy, ...text].filter(Boolean).join("\n"), components };
 }
+
+const PICK = /^sq\|tr_pick\|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\|[0-2]$/;
+
+/** The gift pick buttons of a card (sq|tr_pick|<gift>|<index>), in order. */
+export function giftPicks(card: { components: CardComponent[] }): string[] {
+  return card.components.map((c) => c.custom_id).filter((id) => typeof id === "string" && id.startsWith("sq|tr_pick|"));
+}
+
+/**
+ * A gift card (handlers/tree.ts): "### 🎁 <heading>", then three picks of one
+ * gift by index 0, 1, 2 and keep for later (sq|tr_later). The picture is the
+ * caller's to check (the suites record files differently).
+ */
+export function isGiftCard(card: { content: string; components: CardComponent[] }, heading: string): boolean {
+  const picks = giftPicks(card);
+  return (
+    card.content.startsWith(`### 🎁 ${heading}\n`) &&
+    picks.length === 3 &&
+    picks.every((id, k) => PICK.test(id) && id.endsWith(`|${k}`)) &&
+    new Set(picks.map((id) => id.split("|")[2])).size === 1 &&
+    card.components.some((c) => c.custom_id === "sq|tr_later")
+  );
+}

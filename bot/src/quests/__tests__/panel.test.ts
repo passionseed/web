@@ -174,7 +174,8 @@ function expectPostUntouched(calls: Call[]) {
 /** The card a target opens, and the database calls behind it. */
 const OPENS: Record<string, { title: string; db: string[] }> = {
   // The schema version: roots are read only from schema 10, and this fake database does not answer it (no roots).
-  me: { title: I.header, db: ["shift_quest_island", "shift_quest_island_map", "shift_quest_schema_version"] },
+  // Roots and tree looks share that read; the team's own tree (schema 13) asks once more after it failed.
+  me: { title: I.header, db: ["shift_quest_island", "shift_quest_island_map", "shift_quest_schema_version", "shift_quest_schema_version"] },
   quests: { title: QB.title, db: ["shift_quest_board"] },
   checkin: { title: I.tappedTitle, db: ["shift_quest_island", "shift_quest_checkin"] },
   rewards: { title: T.rewardsTitle, db: ["shift_quest_catalog_list"] },
