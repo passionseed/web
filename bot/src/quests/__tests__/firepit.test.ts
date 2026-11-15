@@ -35,9 +35,11 @@ describe("the campfire's actors", () => {
     expect(campfireActors(scene, undefined)).toEqual([]);
   });
 
-  it("draws a cold pit and nobody while nobody sits there", () => {
+  it("keeps the fire lit without seated people while the room is empty", () => {
     const actors = campfireActors(scene, { count: 0 });
-    expect(actors.map((a) => a.frames)).toEqual([["campfire_pit_cold"]]);
+    expect(named(actors, "campfire_pit")).toHaveLength(1);
+    expect(named(actors, "campfire_flame_0")).toHaveLength(1);
+    expect(sitters(actors)).toHaveLength(0);
     const c = plazaCentre(scene);
     expect([actors[0].x, actors[0].y]).toEqual([c.x + PLAZA_LAYOUT.pit[0], c.y + PLAZA_LAYOUT.pit[1]]);
   });
