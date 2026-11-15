@@ -23,6 +23,8 @@ import {
 } from "@/lib/shift-island/tree-copy";
 import { REFLECTION_MIN_CHARS, REFLECTIONS_PER_DAY } from "@/lib/shift-island/rounds-rules";
 import type { ProjectRoute, SeasonUnlock, TileStatus } from "@/lib/supabase/shift-quests/types";
+
+import type { IconKey } from "./sprites";
 import type { ShiftDiscordAuthError } from "@/lib/shift/discordAuth";
 
 /**
@@ -181,7 +183,7 @@ export const NO_PROJECT = {
   body: "สร้างโปรเจกต์เรื่องที่คุณใส่ใจ แล้วต้นไม้ของคุณจะเริ่มจากเมล็ด หรือรอเพื่อนชวนเข้าโปรเจกต์ของเขาก็ได้",
   nameLabel: "ชื่อโปรเจกต์",
   routeLabel: "เส้นทาง",
-  ambitionLabel: "อยากให้มันไปถึงไหน (ไม่บังคับ)",
+  ambitionLabel: "อยากแก้ปัญหาอะไร ให้ใคร (ไม่บังคับ)",
   action: "จับจองที่ดิน",
   created: "จับจองที่ดินแล้ว ต้นไม้ของคุณเริ่มจากเมล็ด",
   nameRequired: "ตั้งชื่อโปรเจกต์ก่อน",
@@ -385,9 +387,9 @@ export const QUEST = {
     count: (count: number) => `${count} ใบ`,
     version: (version: number) => `v${version}`,
     unlinked: {
-      // The button is the one "เชื่อมแคนวาส"; the heading stays the box's own.
-      heading: "สำหรับโปรเจกต์คุณ",
-      body: "เลือกแคนวาสโปรเจกต์ของคุณบนไวท์บอร์ด แล้วเควสต์จะดึงโน้ตของคุณมาให้",
+      // The canvas is a reference, never a gate: one quiet row under the quest.
+      heading: "แคนวาสของทีม",
+      body: "ไม่บังคับ เชื่อมไว้แล้วโน้ตของทีมจะขึ้นตรงนี้ให้ดูประกอบ",
       action: "เชื่อมแคนวาส",
     },
     notYours: "คุณยังไม่ได้อยู่ในทีมของแคนวาสนี้ ขอให้เจ้าของแคนวาสเพิ่มคุณในทีมก่อน",
@@ -414,7 +416,8 @@ export const QUEST = {
   details: "รายละเอียดทั้งหมด",
   /** A long purpose in full, under the details. */
   why: "ทำไมเควสต์นี้",
-  send: "ส่งเควสต์",
+  /** The main action on every quest: write or show the work right here (the canvas card is optional). */
+  send: "เขียนหรือแนบงาน",
   resend: "ส่งฉบับใหม่",
   stuck: "ติด",
   writeInstead: "เขียนเองแทน",
@@ -593,6 +596,8 @@ export function questFlavor(kind: "main" | "side" | "proposed", slug: string | n
 
 /** One pitfall on a quest page: its name, the warning sign a student can check alone, and how to avoid it. */
 export interface QuestPitfall {
+  /** The pixel picture of the pitfall itself (sprites.ts), so the copy and its art stay together. */
+  icon: IconKey;
   name: string;
   sign: string;
   avoid: string;
@@ -606,11 +611,13 @@ export interface QuestPitfall {
 export const QUEST_PITFALLS: Readonly<Record<string, readonly QuestPitfall[]>> = {
   "meet-one-real-person": [
     {
+      icon: "fog",
       name: "เป้าหมายคือทุกคน",
       sign: "คุณเรียกผู้ใช้ว่า \"นักเรียน\" หรือ \"คนทั่วไป\" และบอกไม่ได้ว่าจะเจอเขาที่ไหนในสัปดาห์นี้",
       avoid: "บอกให้ได้ว่าเขาเป็นใคร อยู่ที่ไหน เจอได้เมื่อไหร่ เช่น \"แม่ค้าข้าวมันไก่หน้าโรงเรียนที่ขายถึงสองทุ่ม\"",
     },
     {
+      icon: "lockdoor",
       name: "กลัวเจอคนจริง",
       sign: "ส่งแบบฟอร์มไปแล้วแต่ยังไม่ได้คุยกับใคร หรือคิดว่า \"ทำเสร็จก่อนค่อยไปให้ดู\"",
       avoid: "เริ่มจากคนที่อยู่ห่างคุณแค่ก้าวเดียว เช่น ครู ร้านของญาติ รุ่นพี่ ชวนเพื่อนไปด้วย เตรียม 3 คำถาม แล้วคุยแค่ 10 นาที",
@@ -618,6 +625,7 @@ export const QUEST_PITFALLS: Readonly<Record<string, readonly QuestPitfall[]>> =
   ],
   "real-stories-not-compliments": [
     {
+      icon: "praise",
       name: "กับดักคำชม",
       sign: "ได้ยินแค่ \"ดีนะ\" \"น่าสนใจ\" \"ใช้แน่นอน\" คุณพูดมากกว่าเขา หรือยังไม่มีใครเล่าว่าครั้งล่าสุดที่เจอปัญหานี้เกิดอะไรขึ้น",
       avoid: "ถามถึงครั้งล่าสุดที่มันเกิดขึ้นจริง เขาทำยังไง เสียอะไรไปบ้าง เก็บไอเดียของคุณไว้เล่าตอนท้าย",
@@ -625,6 +633,7 @@ export const QUEST_PITFALLS: Readonly<Record<string, readonly QuestPitfall[]>> =
   ],
   "first-partner": [
     {
+      icon: "nodate",
       name: "เยสแบบสุภาพ",
       sign: "เขาบอกว่า \"ดีนะ ส่งมาดูได้\" แต่ไม่มีวันนัดถัดไป หรือคุณยังไม่ได้ทักเขาอีกเลยหลังคุยครั้งแรก",
       avoid: "ขอสิ่งเล็กแต่ชัด เช่น นัดลองชิ้นแรกสัปดาห์หน้า ขอดูข้อมูลหรือตัวอย่างจริง ขอให้แนะนำคนอีก 2 คน หรือขอลองในร้าน ชมรม หรือห้องเรียนของเขา แล้วทักกลับภายใน 2 วัน",
@@ -632,6 +641,7 @@ export const QUEST_PITFALLS: Readonly<Record<string, readonly QuestPitfall[]>> =
   ],
   "in-their-hands": [
     {
+      icon: "cave",
       name: "สร้างในถ้ำ",
       sign: "ผ่านไปเกิน 7 วันแล้วยังไม่มีใครได้ลอง หรือรายการฟีเจอร์ยาวขึ้นเรื่อยๆ ทั้งที่ยังไม่มีใครขอ",
       avoid: "ตัดให้เหลือเรื่องเดียวที่เขาเล่า ให้เขาลองเองต่อหน้าคุณ แล้วดูโดยไม่ช่วยอธิบาย",
@@ -639,6 +649,7 @@ export const QUEST_PITFALLS: Readonly<Record<string, readonly QuestPitfall[]>> =
   ],
   "run-the-loop": [
     {
+      icon: "shield",
       name: "ปกป้องงาน หรือแก้ทุกอย่าง",
       sign: "คุณเถียงกับคำติ หรืองานรอบใหม่เปลี่ยนไปสิบอย่าง แต่ไม่มีข้อไหนที่เขาเจอจริง",
       avoid: "แก้ทีละเรื่อง เริ่มจากเรื่องที่เห็นซ้ำที่สุด แล้วดูก่อนกับหลัง ผลที่ไม่ดีขึ้นก็นับ",
@@ -646,6 +657,7 @@ export const QUEST_PITFALLS: Readonly<Record<string, readonly QuestPitfall[]>> =
   ],
   "what-we-learned": [
     {
+      icon: "loop",
       name: "ทำไปเรื่อยๆ โดยไม่หยุดคิด",
       sign: "ตอบไม่ได้ว่าสัปดาห์นี้รู้อะไรเพิ่ม หรือแผนยังเหมือนวันแรกทุกอย่าง",
       avoid: "หยุด 20 นาที เขียน 3 บรรทัด: เคยเชื่อ เจอจริง จะทำต่อ แล้วเล่าให้คนหนึ่งคนฟัง",
@@ -653,6 +665,7 @@ export const QUEST_PITFALLS: Readonly<Record<string, readonly QuestPitfall[]>> =
   ],
   "beyond-the-first": [
     {
+      icon: "anchor",
       name: "ใช้ได้แค่ตอนคุณอยู่",
       sign: "ทุกคนที่ใช้รู้จักคุณ หรือต้องให้คุณอธิบายก่อนทุกครั้ง",
       avoid: "ส่งลิงก์หรือของให้คนกลุ่มใหม่ที่ไม่เคยคุยกับคุณ แล้วดูว่าเขาเริ่มเองได้ไหม และมีใครกลับมาเองไหม",
@@ -666,11 +679,44 @@ export function questPitfalls(kind: "main" | "side" | "proposed", slug: string |
   return Object.hasOwn(QUEST_PITFALLS, slug) ? QUEST_PITFALLS[slug] : [];
 }
 
-/** DRAFT: the หลุมพราง block on a quest page. */
+/** DRAFT: the หลุมพราง block on a quest page. Each row has its own icon: warn (heading), eye (sign), signpost (avoid). */
 export const PITFALL = {
   heading: "หลุมพราง",
   sign: "สัญญาณเตือน",
   avoid: "เลี่ยงยังไง",
+};
+
+/**
+ * DRAFT: the team's problem on the first act's quests, from planting (the
+ * project's ambition). A starting point, not an answer: talking to real
+ * people sharpens it.
+ */
+export const TEAM_PROBLEM = {
+  heading: "ปัญหาที่ทีมเลือก",
+  note: "เป็นจุดตั้งต้น คุยกับคนจริงแล้วจะชัดขึ้นเอง",
+  empty: "ทีมยังไม่ได้เลือกว่าอยากแก้ปัญหาอะไร ให้ใคร",
+  plant: "ไปเลือกที่ต้นไม้ของทีม",
+};
+
+/**
+ * DRAFT: ตัวช่วย on a quest page: the side quests that branch off it, and on
+ * the first act (meeting people) the safety line from the quest map.
+ */
+export const HELPERS = {
+  heading: "ตัวช่วย",
+  safety: "ก่อนไปเจอใคร บอกพ่อแม่หรือครูว่าจะไปคุยกับใคร และนัดในที่ที่มีคนอื่นอยู่ด้วย",
+  locked: "ยังล็อกอยู่",
+  done: "ผ่านแล้ว",
+};
+
+/**
+ * DRAFT: who checks a quest. One line in the layout, kept apart on purpose:
+ * how a peer check and a mentor check work is still being decided, and will
+ * come as its own change. Today every quest is checked by a mentor.
+ */
+export const WHO_CHECKS = {
+  label: "ใครตรวจ",
+  mentor: "พี่เลี้ยงตรวจ",
 };
 
 /**
@@ -719,15 +765,15 @@ export const SYNC = {
 export const TREE = {
   seed: {
     title: "เลือกเมล็ดของทีม",
-    ask: "ทีมอยากสร้างอะไร",
-    askHint: "เขียนสั้นๆ หนึ่งบรรทัด ทุกคนในทีมเห็นได้",
+    ask: "ทีมอยากแก้ปัญหาอะไร ให้ใคร",
+    askHint: "เขียนจากที่รู้ตอนนี้ ยังไม่ต้องถูกเป๊ะ คุยกับคนจริงแล้วจะชัดขึ้น",
     /** The hint when the line starts from the project's ambition (the planted line replaces it). */
     askHintPrefilled: TREE_IDEA_PREFILLED,
-    askPlaceholder: "เช่น แอปช่วยหาที่นั่งอ่านหนังสือใกล้บ้าน",
+    askPlaceholder: "เช่น แม่ค้าหน้าโรงเรียนขายไม่ทันตอนเที่ยง",
     pick: TREE_SEED_PICK,
     action: "เริ่มจากเมล็ดนี้",
     planted: TREE_PLANTED,
-    needIdea: "เขียนก่อนว่าทีมอยากสร้างอะไร",
+    needIdea: "เขียนก่อนว่าทีมอยากแก้ปัญหาอะไร ให้ใคร",
     needSeed: "เลือกเมล็ดก่อน",
   },
   seeds: TREE_SEEDS,

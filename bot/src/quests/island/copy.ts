@@ -318,8 +318,8 @@ export const TREE = {
   btnKeep: "เก็บไว้ก่อน",
   btnWardrobe: "👗 ลุคของต้นไม้",
   modalTitle: "เลือกเมล็ดของทีม",
-  ideaLabel: "ทีมอยากสร้างอะไร",
-  ideaPlaceholder: "เขียนสั้นๆ หนึ่งบรรทัด",
+  ideaLabel: "ทีมอยากแก้ปัญหาอะไร ให้ใคร",
+  ideaPlaceholder: "เขียนจากที่รู้ตอนนี้ ยังไม่ต้องถูกเป๊ะ",
   /** The idea field's description when it starts from the project's ambition (the planted line replaces it). */
   ideaPrefilled: TREE_IDEA_PREFILLED,
   seedLabel: "เมล็ด",

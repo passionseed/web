@@ -18,7 +18,7 @@
   --story-text-hi: #fef9e7;
   --story-text: #e2e8f0;
   --story-text-dim: #94a3b8;
-  --story-action-soft: #93c5fd;
+  --story-action-soft: #9fd19a;
   /* The one gold element on the overlay: the current dot. */
   --story-gold: #fed95c;
   /* Pixel corners: a 2px notch instead of a border radius (same as the island). */
@@ -303,17 +303,17 @@
   font: inherit;
   font-size: 16px;
   font-weight: 600;
-  color: #bfdbfe;
-  background: rgba(59, 130, 246, 0.1);
+  color: #e3f2dc;
+  background: rgba(120, 184, 128, 0.1);
   border: 0;
-  box-shadow: inset 0 0 0 1px rgba(147, 197, 253, 0.3);
+  box-shadow: inset 0 0 0 1px rgba(159, 209, 154, 0.3);
   clip-path: var(--story-notch);
   cursor: pointer;
   transition: background-color var(--story-snap) var(--story-ease-snap);
 }
 
 .next:hover {
-  background: rgba(59, 130, 246, 0.18);
+  background: rgba(120, 184, 128, 0.18);
 }
 
 /* ---------------------------------------------------------------- start card */
@@ -341,7 +341,7 @@
   min-height: 44px;
   font-size: 15px;
   font-weight: 600;
-  color: #bfdbfe;
+  color: #e3f2dc;
   cursor: pointer;
   list-style: none;
 }

@@ -168,7 +168,16 @@ beforeEach(() => {
 function open(
   target: BoardRef,
   link: CanvasLinkState = UNLINKED,
-  { board = makeBoard(), ...extra }: { onTree?: () => void; board?: QuestBoard } = {},
+  {
+    board = makeBoard(),
+    ...extra
+  }: {
+    onTree?: () => void;
+    board?: QuestBoard;
+    team?: { ambition: string | null; planted: boolean } | null;
+    onPlant?: () => void;
+    onOpenQuest?: (ref: BoardRef) => void;
+  } = {},
 ) {
   const onClose = jest.fn();
   const onStuck = jest.fn();
@@ -191,12 +200,19 @@ function open(
 /** Open a quest and press ส่งเควสต์ in the bar. */
 function openForm(target: BoardRef, link: CanvasLinkState = UNLINKED, extra: { onTree?: () => void } = {}) {
   const handlers = open(target, link, extra);
-  fireEvent.click(within(footer()).getByRole("button", { name: "ส่งเควสต์" }));
+  fireEvent.click(within(footer()).getByRole("button", { name: "เขียนหรือแนบงาน" }));
   return handlers;
 }
 
 const body = () => screen.getByTestId("sheet-body");
 const footer = () => screen.getByTestId("sheet-footer");
+
+/** Write-first: the main action opens the written form; the quest card is the switch inside it. */
+function openCard(target: BoardRef, link: CanvasLinkState = UNLINKED, extra: { onTree?: () => void } = {}) {
+  const handles = openForm(target, link, extra);
+  fireEvent.click(screen.getByRole("button", { name: "ใช้โน้ตจากแคนวาส" }));
+  return handles;
+}
 
 function fill({ proof, url, reflection }: { proof?: string; url?: string; reflection?: string }) {
   if (proof !== undefined) fireEvent.change(screen.getByLabelText("หลักฐาน (ลิงก์หรือเล่าสั้นๆ)"), { target: { value: proof } });
@@ -240,8 +256,8 @@ describe("QuestDetailSheet: the quest page", () => {
     open({ kind: "main", milestone: 3 });
     const box = within(body()).getByRole("heading", { name: "หลุมพราง" }).closest("section") as HTMLElement;
     expect(within(box).getByText("เยสแบบสุภาพ")).toBeInTheDocument();
-    expect(within(box).getByText("สัญญาณเตือน:", { exact: false })).toBeInTheDocument();
-    expect(within(box).getByText("เลี่ยงยังไง:", { exact: false })).toBeInTheDocument();
+    expect(within(box).getByText("สัญญาณเตือน")).toBeInTheDocument();
+    expect(within(box).getByText("เลี่ยงยังไง")).toBeInTheDocument();
     cleanup();
     open({ kind: "main", milestone: 1 });
     const first = within(body()).getByRole("heading", { name: "หลุมพราง" }).closest("section") as HTMLElement;
@@ -257,11 +273,11 @@ describe("QuestDetailSheet: the quest page", () => {
     expect(within(body()).queryByRole("heading", { name: "หลุมพราง" })).toBeNull();
   });
 
-  it("asks to link a canvas when none is linked, and hands the quest up to open the picker", () => {
+  it("offers the canvas as an optional reference when none is linked, and hands the quest up to open the picker", () => {
     const { onLinkCanvas } = open({ kind: "main", milestone: 1 });
     expect(mocked.useQuestCanvas).toHaveBeenLastCalledWith({ ref: { kind: "main", milestone: 1 }, slug: MAIN_SLUGS[0] }, UNLINKED);
-    expect(within(body()).getByRole("heading", { name: "สำหรับโปรเจกต์คุณ" })).toBeInTheDocument();
-    expect(within(body()).getByText("เลือกแคนวาสโปรเจกต์ของคุณบนไวท์บอร์ด แล้วเควสต์จะดึงโน้ตของคุณมาให้")).toBeInTheDocument();
+    expect(within(body()).getByRole("heading", { name: "แคนวาสของทีม" })).toBeInTheDocument();
+    expect(within(body()).getByText("ไม่บังคับ เชื่อมไว้แล้วโน้ตของทีมจะขึ้นตรงนี้ให้ดูประกอบ")).toBeInTheDocument();
     // The button is the one "เชื่อมแคนวาส" on the page.
     expect(within(body()).getAllByText("เชื่อมแคนวาส")).toHaveLength(1);
     fireEvent.click(within(body()).getByRole("button", { name: "เชื่อมแคนวาส" }));
@@ -357,7 +373,7 @@ describe("QuestDetailSheet: the quest page", () => {
     canvasAnswer = { context: { state: "error" }, loading: false };
     open({ kind: "main", milestone: 1 }, LINKED);
     expect(within(body()).getByText("โหลดโน้ตจากแคนวาสไม่ได้ตอนนี้ ส่งแบบเขียนเองได้เลย")).toBeInTheDocument();
-    expect(within(footer()).getByRole("button", { name: "ส่งเควสต์" })).toBeInTheDocument();
+    expect(within(footer()).getByRole("button", { name: "เขียนหรือแนบงาน" })).toBeInTheDocument();
   });
 
   it("does not read the canvas for a quest without zones", () => {
@@ -383,7 +399,7 @@ describe("QuestDetailSheet: the quest page", () => {
     expect(items[2]).not.toHaveAttribute("data-hinted");
     expect(within(list).getByText("ติ๊กให้จากโน้ตในแคนวาส พี่เลี้ยงเป็นคนดูและตัดสิน")).toBeInTheDocument();
     // A hint never gates sending.
-    expect(within(footer()).getByRole("button", { name: "ส่งเควสต์" })).toBeEnabled();
+    expect(within(footer()).getByRole("button", { name: "เขียนหรือแนบงาน" })).toBeEnabled();
   });
 
   it("leaves every check unlit without a ready canvas", () => {
@@ -402,11 +418,11 @@ describe("QuestDetailSheet: the quest page", () => {
     expect(within(list).queryByText("ติ๊กให้จากโน้ตในแคนวาส พี่เลี้ยงเป็นคนดูและตัดสิน")).toBeNull();
   });
 
-  it("keeps examples and the full details in collapsed rows", () => {
+  it("shows examples open, each with a picture, and keeps the full details in a collapsed row", () => {
     open({ kind: "main", milestone: 1 });
     const guide = questGuide({ kind: "main", slug: MAIN_SLUGS[0] });
-    const examples = within(body()).getByText("ตัวอย่างที่ผ่าน").closest("details") as HTMLElement;
-    expect(examples).not.toHaveAttribute("open");
+    const examples = within(body()).getByRole("heading", { name: "ตัวอย่างที่ผ่าน" }).closest("section") as HTMLElement;
+    expect(examples.closest("details")).toBeNull();
     expect(within(examples).getByText(guide.examples[0])).toBeInTheDocument();
     const details = within(body()).getByText("รายละเอียดทั้งหมด").closest("details") as HTMLElement;
     expect(details).not.toHaveAttribute("open");
@@ -418,8 +434,75 @@ describe("QuestDetailSheet: the quest page", () => {
 
   it("uses the board's examples for a side quest", () => {
     open({ kind: "side", templateId: IDS.sideVoices });
-    const examples = within(body()).getByText("ตัวอย่างที่ผ่าน").closest("details") as HTMLElement;
+    const examples = within(body()).getByRole("heading", { name: "ตัวอย่างที่ผ่าน" }).closest("section") as HTMLElement;
     expect(within(examples).getByText("เช่น คุยกับเพื่อนต่างห้อง")).toBeInTheDocument();
+  });
+});
+
+describe("QuestDetailSheet: pictures, the team's problem and ตัวช่วย", () => {
+  it("gives every pitfall its own picture, with the sign and the way around as two different rows", () => {
+    open({ kind: "main", milestone: 1 });
+    const box = within(body()).getByRole("heading", { name: "หลุมพราง" }).closest("section") as HTMLElement;
+    const cards = box.querySelectorAll("article");
+    expect(cards).toHaveLength(2);
+    cards.forEach((card) => {
+      expect(card.querySelector("svg")).not.toBeNull();
+      expect(card.querySelector('[data-tone="sign"]')).toHaveTextContent("สัญญาณเตือน");
+      expect(card.querySelector('[data-tone="avoid"]')).toHaveTextContent("เลี่ยงยังไง");
+    });
+  });
+
+  it("puts a picture beside every เสร็จเมื่อ item and names who checks in its own slot", () => {
+    open({ kind: "main", milestone: 3 });
+    const box = within(body()).getByRole("heading", { name: "เสร็จเมื่อ" }).closest("section") as HTMLElement;
+    const items = within(box).getAllByRole("listitem");
+    expect(items).toHaveLength(3);
+    items.forEach((item) => expect(item.querySelectorAll("svg").length).toBeGreaterThan(0));
+    expect(box.querySelector('[data-slot="who-checks"]')).toHaveTextContent("ใครตรวจพี่เลี้ยงตรวจ");
+  });
+
+  it("leads the first act with the problem the team planted, and not the later acts", () => {
+    const team = { ambition: "แม่ค้าหน้าโรงเรียนขายไม่ทันตอนเที่ยง", planted: true };
+    open({ kind: "main", milestone: 1 }, UNLINKED, { team });
+    const box = within(body()).getByRole("heading", { name: "ปัญหาที่ทีมเลือก" }).closest("section") as HTMLElement;
+    expect(within(box).getByText(team.ambition)).toBeInTheDocument();
+    cleanup();
+    open({ kind: "main", milestone: 4 }, UNLINKED, { team });
+    expect(within(body()).queryByRole("heading", { name: "ปัญหาที่ทีมเลือก" })).toBeNull();
+  });
+
+  it("offers the team's tree when no problem is planted yet", () => {
+    const onPlant = jest.fn();
+    open({ kind: "main", milestone: 2 }, UNLINKED, { team: { ambition: null, planted: false }, onPlant });
+    expect(within(body()).getByText("ทีมยังไม่ได้เลือกว่าอยากแก้ปัญหาอะไร ให้ใคร")).toBeInTheDocument();
+    fireEvent.click(within(body()).getByRole("button", { name: "ไปเลือกที่ต้นไม้ของทีม" }));
+    expect(onPlant).toHaveBeenCalledTimes(1);
+  });
+
+  it("lists the side quests off a main quest as ตัวช่วย and opens one in place", () => {
+    const onOpenQuest = jest.fn();
+    open({ kind: "main", milestone: 1 }, UNLINKED, { onOpenQuest });
+    const box = within(body()).getByRole("heading", { name: "ตัวช่วย" }).closest("section") as HTMLElement;
+    fireEvent.click(within(box).getByRole("button", { name: "ฟังเสียงจริงอีก 5 คน" }));
+    expect(onOpenQuest).toHaveBeenCalledWith({ kind: "side", templateId: IDS.sideVoices });
+    cleanup();
+    open({ kind: "main", milestone: 2 }, UNLINKED, { onOpenQuest });
+    const locked = within(body()).getByRole("button", { name: /ให้คนอื่นเปิดได้จากมือถือ/ });
+    expect(locked).toHaveTextContent("ยังล็อกอยู่");
+  });
+
+  it("says to tell someone at home before meeting anyone, on the first act only", () => {
+    const safety = "ก่อนไปเจอใคร บอกพ่อแม่หรือครูว่าจะไปคุยกับใคร และนัดในที่ที่มีคนอื่นอยู่ด้วย";
+    open({ kind: "main", milestone: 2 });
+    expect(within(body()).getByText(safety)).toBeInTheDocument();
+    cleanup();
+    open({ kind: "main", milestone: 5 });
+    expect(within(body()).queryByText(safety)).toBeNull();
+  });
+
+  it("shows where the quest sits in the seven stages for a main quest", () => {
+    open({ kind: "main", milestone: 5 });
+    expect(within(body()).getByText("สร้างสิ่งที่สำคัญ")).toBeInTheDocument();
   });
 });
 
@@ -570,7 +653,7 @@ describe("QuestDetailSheet: the action bar", () => {
   it("offers ส่งเควสต์ and ติด on an open quest", () => {
     open({ kind: "main", milestone: 1 });
     const bar = footer();
-    expect(within(bar).getByRole("button", { name: "ส่งเควสต์" })).toBeInTheDocument();
+    expect(within(bar).getByRole("button", { name: "เขียนหรือแนบงาน" })).toBeInTheDocument();
     expect(within(bar).getByRole("button", { name: "ติด" })).toBeInTheDocument();
     expect(within(body()).queryByRole("textbox")).toBeNull();
   });
@@ -594,7 +677,7 @@ describe("QuestDetailSheet: the action bar", () => {
   it("shows who holds a teammate's quest, with ติด but nothing to send", () => {
     open({ kind: "main", milestone: 4 });
     expect(screen.getByText("มิ้นต์ ถืองานขั้นนี้อยู่ ช่วยกันในงานนั้นได้")).toBeInTheDocument();
-    expect(within(footer()).queryByRole("button", { name: "ส่งเควสต์" })).toBeNull();
+    expect(within(footer()).queryByRole("button", { name: "เขียนหรือแนบงาน" })).toBeNull();
     expect(within(footer()).getByRole("button", { name: "ติด" })).toBeInTheDocument();
     expect(screen.queryByRole("textbox")).toBeNull();
   });
@@ -606,9 +689,12 @@ describe("QuestDetailSheet: the action bar", () => {
     expect(screen.queryByRole("textbox")).toBeNull();
   });
 
-  it("opens the quest card composer when the canvas is ready, on step 1 with the sheet's own bar", () => {
+  it("opens the written form first, with the quest card one tap away when the canvas is ready", () => {
     canvasAnswer = { context: READY, loading: false };
     openForm({ kind: "main", milestone: 1 }, LINKED);
+    expect(screen.queryByTestId("composer")).toBeNull();
+    expect(screen.getByLabelText("หลักฐาน (ลิงก์หรือเล่าสั้นๆ)")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "ใช้โน้ตจากแคนวาส" }));
     expect(screen.getByTestId("composer")).toHaveTextContent(`composer:${MAIN_TITLES[0]}`);
     expect(screen.getByTestId("composer")).toHaveAttribute("data-step", "pick");
     // The composer's button sits in the sheet's footer, in place of ส่งเควสต์ and ติด.
@@ -631,17 +717,17 @@ describe("QuestDetailSheet: the action bar", () => {
 
   it("goes back to the quest from step 1 with กลับ, top left, with the bar back", () => {
     canvasAnswer = { context: READY, loading: false };
-    openForm({ kind: "main", milestone: 1 }, LINKED);
+    openCard({ kind: "main", milestone: 1 }, LINKED);
     const back = within(body()).getAllByRole("button")[0];
     expect(back).toHaveAccessibleName("กลับ");
     fireEvent.click(back);
     expect(screen.queryByTestId("composer")).toBeNull();
-    expect(within(footer()).getByRole("button", { name: "ส่งเควสต์" })).toHaveFocus();
+    expect(within(footer()).getByRole("button", { name: "เขียนหรือแนบงาน" })).toHaveFocus();
   });
 
   it("goes back from step 2 to step 1 with แก้โน้ต, in the same top left place", () => {
     canvasAnswer = { context: READY, loading: false };
-    openForm({ kind: "main", milestone: 1 }, LINKED);
+    openCard({ kind: "main", milestone: 1 }, LINKED);
     fireEvent.click(screen.getByRole("button", { name: "composer-next" }));
     expect(screen.getByTestId("composer")).toHaveAttribute("data-step", "review");
     expect(within(footer()).getByRole("button", { name: "composer-footer:review" })).toBeInTheDocument();
@@ -655,7 +741,7 @@ describe("QuestDetailSheet: the action bar", () => {
 
   it("stays open on the sent screen when the composer has sent the card", () => {
     canvasAnswer = { context: READY, loading: false };
-    const { onClose } = openForm({ kind: "main", milestone: 1 }, LINKED);
+    const { onClose } = openCard({ kind: "main", milestone: 1 }, LINKED);
     fireEvent.click(screen.getByRole("button", { name: "composer-sent" }));
     expect(onClose).not.toHaveBeenCalled();
     expect(screen.queryByTestId("composer")).toBeNull();
@@ -666,7 +752,7 @@ describe("QuestDetailSheet: the action bar", () => {
 
   it("switches from the composer to writing it out with เขียนเองแทน, and back", () => {
     canvasAnswer = { context: READY, loading: false };
-    openForm({ kind: "main", milestone: 1 }, LINKED);
+    openCard({ kind: "main", milestone: 1 }, LINKED);
     fireEvent.click(screen.getByRole("button", { name: "เขียนเองแทน" }));
     expect(screen.queryByTestId("composer")).toBeNull();
     expect(screen.getByLabelText("หลักฐาน (ลิงก์หรือเล่าสั้นๆ)")).toBeInTheDocument();
@@ -681,29 +767,28 @@ describe("QuestDetailSheet: the action bar", () => {
     expect(screen.queryByRole("button", { name: "เขียนเองแทน" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "กลับ" }));
     expect(screen.queryByLabelText("หลักฐาน (ลิงก์หรือเล่าสั้นๆ)")).toBeNull();
-    expect(within(footer()).getByRole("button", { name: "ส่งเควสต์" })).toBeInTheDocument();
+    expect(within(footer()).getByRole("button", { name: "เขียนหรือแนบงาน" })).toBeInTheDocument();
   });
 
-  it("waits for the notes with a skeleton, keeping เขียนเองแทน one tap away", () => {
+  it("never waits for the canvas: the written form opens at once while the notes still load", () => {
     canvasAnswer = { context: null, loading: true };
     openForm({ kind: "main", milestone: 1 }, LINKED);
-    expect(within(body()).getByRole("status")).toHaveTextContent("กำลังดึงโน้ตจากแคนวาส");
-    // The bar keeps its place, with nothing to press yet.
-    expect(within(footer()).getByRole("button")).toBeDisabled();
-    fireEvent.click(screen.getByRole("button", { name: "เขียนเองแทน" }));
     expect(screen.getByLabelText("หลักฐาน (ลิงก์หรือเล่าสั้นๆ)")).toBeInTheDocument();
+    expect(screen.queryByTestId("composer")).toBeNull();
+    // The card switch shows once the notes are ready, never before.
+    expect(screen.queryByRole("button", { name: "ใช้โน้ตจากแคนวาส" })).toBeNull();
   });
 
   it("starts on the quest again when the sheet reopens", () => {
     const board = makeBoard();
     const props = { board, keynote: null, canvasLink: UNLINKED, onClose: jest.fn(), onStuck: jest.fn(), onLinkCanvas: jest.fn() };
     const { rerender } = render(<QuestDetailSheet {...props} target={{ kind: "main", milestone: 1 }} />);
-    fireEvent.click(within(footer()).getByRole("button", { name: "ส่งเควสต์" }));
+    fireEvent.click(within(footer()).getByRole("button", { name: "เขียนหรือแนบงาน" }));
     expect(screen.getByLabelText("หลักฐาน (ลิงก์หรือเล่าสั้นๆ)")).toBeInTheDocument();
     rerender(<QuestDetailSheet {...props} target={null} />);
     rerender(<QuestDetailSheet {...props} target={{ kind: "main", milestone: 1 }} />);
     expect(screen.queryByLabelText("หลักฐาน (ลิงก์หรือเล่าสั้นๆ)")).toBeNull();
-    expect(within(footer()).getByRole("button", { name: "ส่งเควสต์" })).toBeInTheDocument();
+    expect(within(footer()).getByRole("button", { name: "เขียนหรือแนบงาน" })).toBeInTheDocument();
   });
 });
 
@@ -779,14 +864,14 @@ describe("QuestDetailSheet: the sent screen", () => {
     rerender(<QuestDetailSheet {...props} target={null} />);
     rerender(<QuestDetailSheet {...props} target={{ kind: "main", milestone: 1 }} />);
     expect(screen.queryByRole("heading", { name: "ส่งถึงพี่เลี้ยงแล้ว" })).toBeNull();
-    expect(within(footer()).getByRole("button", { name: "ส่งเควสต์" })).toBeInTheDocument();
+    expect(within(footer()).getByRole("button", { name: "เขียนหรือแนบงาน" })).toBeInTheDocument();
   });
 
   it("offers the gift, 1 of 3 as the team's tree wearing each, and puts the pick on the tree", async () => {
     mockSent = withGift;
     mocked.pickGift.mockResolvedValue({ ok: true, data: { tree: PICKED } });
     canvasAnswer = { context: READY, loading: false };
-    openForm({ kind: "main", milestone: 1 }, LINKED, { onTree: jest.fn() });
+    openCard({ kind: "main", milestone: 1 }, LINKED, { onTree: jest.fn() });
     fireEvent.click(screen.getByRole("button", { name: "composer-sent" }));
     expect(within(body()).getByRole("heading", { name: "ส่งเควสต์นี้ครั้งแรกแล้ว ทีมได้ของขวัญหนึ่งชิ้น" })).toBeInTheDocument();
     const options = within(screen.getByRole("group", { name: "เลือกลุคให้ต้นไม้ของทีม 1 จาก 3 แบบ" })).getAllByRole("button");
@@ -810,7 +895,7 @@ describe("QuestDetailSheet: the sent screen", () => {
     mockSent = withGift;
     mocked.pickGift.mockResolvedValue({ ok: false, code: "gift_gone", error: "ของขวัญชิ้นนี้ถูกเลือกไปแล้ว ดูลุคที่ทีมมีได้ในลุคของต้นไม้" });
     canvasAnswer = { context: READY, loading: false };
-    const { onClose } = openForm({ kind: "main", milestone: 1 }, LINKED, { onTree: jest.fn() });
+    const { onClose } = openCard({ kind: "main", milestone: 1 }, LINKED, { onTree: jest.fn() });
     fireEvent.click(screen.getByRole("button", { name: "composer-sent" }));
     fireEvent.click(within(screen.getByRole("group", { name: "เลือกลุคให้ต้นไม้ของทีม 1 จาก 3 แบบ" })).getAllByRole("button")[0]);
     expect(await within(body()).findByRole("status")).toHaveTextContent("ของขวัญชิ้นนี้ถูกเลือกไปแล้ว");
@@ -825,7 +910,7 @@ describe("QuestDetailSheet: the sent screen", () => {
   it("keeps the gift for later: the sheet closes and the gift waits in the close-up", () => {
     mockSent = withGift;
     canvasAnswer = { context: READY, loading: false };
-    const { onClose } = openForm({ kind: "main", milestone: 1 }, LINKED);
+    const { onClose } = openCard({ kind: "main", milestone: 1 }, LINKED);
     fireEvent.click(screen.getByRole("button", { name: "composer-sent" }));
     fireEvent.click(within(footer()).getByRole("button", { name: "เก็บไว้ก่อน" }));
     expect(mocked.pickGift).not.toHaveBeenCalled();
@@ -836,7 +921,7 @@ describe("QuestDetailSheet: the sent screen", () => {
   it("shows no gift it cannot draw (no tree came with it)", () => {
     mockSent = { ...withGift, tree: null };
     canvasAnswer = { context: READY, loading: false };
-    openForm({ kind: "main", milestone: 1 }, LINKED);
+    openCard({ kind: "main", milestone: 1 }, LINKED);
     fireEvent.click(screen.getByRole("button", { name: "composer-sent" }));
     expect(screen.queryByRole("group", { name: /เลือกลุค/ })).toBeNull();
     expect(within(footer()).getByRole("button", { name: "กลับไปที่เกาะ" })).toBeInTheDocument();
@@ -915,7 +1000,7 @@ describe("QuestDetailSheet: the written form and quest states", () => {
   it("sends a side quest by template id and shows the mentor's feedback", async () => {
     open({ kind: "side", templateId: IDS.sideVoices });
     expect(screen.getByText("พี่เลี้ยงบอกว่า: ขอรูปหรือโน้ตเพิ่มอีกนิด")).toBeInTheDocument();
-    fireEvent.click(within(footer()).getByRole("button", { name: "ส่งเควสต์" }));
+    fireEvent.click(within(footer()).getByRole("button", { name: "เขียนหรือแนบงาน" }));
     fill({ proof: "คุยกับ ม.4 สามคน", reflection: "ประโยคที่ว่าไม่มีเวลา" });
     fireEvent.click(screen.getByRole("button", { name: "ส่งฉบับใหม่" }));
     await waitFor(() =>
@@ -956,7 +1041,7 @@ describe("QuestDetailSheet: the written form and quest states", () => {
   it("lets a done main quest be sent again to keep learning", () => {
     open({ kind: "main", milestone: 3 });
     expect(screen.getByText("ผ่านแล้ว ส่งซ้ำเพื่อเรียนรู้ต่อได้")).toBeInTheDocument();
-    fireEvent.click(within(footer()).getByRole("button", { name: "ส่งเควสต์" }));
+    fireEvent.click(within(footer()).getByRole("button", { name: "เขียนหรือแนบงาน" }));
     expect(screen.getByRole("button", { name: "ส่งให้พี่เลี้ยงดู" })).toBeInTheDocument();
   });
 
@@ -975,7 +1060,7 @@ describe("QuestDetailSheet: the written form and quest states", () => {
     open({ kind: "main", milestone: 7 });
     expect(screen.getByText("เควสต์นี้พักไว้อยู่ ทำต่อเมื่อพร้อม")).toBeInTheDocument();
     expect(screen.queryByRole("textbox")).toBeNull();
-    expect(within(footer()).queryByRole("button", { name: "ส่งเควสต์" })).toBeNull();
+    expect(within(footer()).queryByRole("button", { name: "เขียนหรือแนบงาน" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "ทำต่อเควสต์นี้" }));
     await waitFor(() => expect(mocked.resumeQuest).toHaveBeenCalledWith({ instanceId: IDS.m7Instance }));
   });
@@ -997,11 +1082,11 @@ describe("QuestDetailSheet: the written form and quest states", () => {
     const board = makeBoard();
     const props = { board, keynote: null, canvasLink: UNLINKED, onClose: jest.fn(), onStuck: jest.fn(), onLinkCanvas: jest.fn() };
     const { rerender } = render(<QuestDetailSheet {...props} target={{ kind: "main", milestone: 1 }} />);
-    fireEvent.click(within(footer()).getByRole("button", { name: "ส่งเควสต์" }));
+    fireEvent.click(within(footer()).getByRole("button", { name: "เขียนหรือแนบงาน" }));
     fill({ proof: "หลักฐานยาวๆ ที่พิมพ์ไว้" });
     rerender(<QuestDetailSheet {...props} target={null} />);
     rerender(<QuestDetailSheet {...props} target={{ kind: "main", milestone: 1 }} />);
-    fireEvent.click(within(footer()).getByRole("button", { name: "ส่งเควสต์" }));
+    fireEvent.click(within(footer()).getByRole("button", { name: "เขียนหรือแนบงาน" }));
     expect(screen.getByLabelText("หลักฐาน (ลิงก์หรือเล่าสั้นๆ)")).toHaveValue("หลักฐานยาวๆ ที่พิมพ์ไว้");
   });
 

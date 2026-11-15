@@ -174,7 +174,7 @@
   width: 18px;
   height: 18px;
   margin-top: 3px;
-  accent-color: var(--action, #3b82f6);
+  accent-color: var(--action, #3b6a48);
 }
 
 /* The link the student copies: a read-only field (long-press works when the clipboard does not) and a copy button. */
@@ -224,7 +224,7 @@
   padding: 8px 14px;
   font-size: 15px;
   font-weight: 600;
-  color: var(--action-soft, #93c5fd);
+  color: var(--action-soft, #9fd19a);
   cursor: pointer;
   list-style: none;
 }
@@ -244,7 +244,7 @@
 }
 
 .summary:focus-visible {
-  outline: 2px solid var(--action-soft, #93c5fd);
+  outline: 2px solid var(--action-soft, #9fd19a);
   outline-offset: -4px;
 }
 

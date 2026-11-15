@@ -578,6 +578,11 @@ function IslandHome({
         onLinkCanvas={openLinking}
         onIsland={leaveQuest}
         onTree={tree ? openTreeFromQuest : undefined}
+        // The first act's quests start from the problem the team planted with its seed (schema 13).
+        team={tree ? { ambition: tree.ambition ?? null, planted: tree.seed != null } : null}
+        onPlant={tree ? openTreeFromQuest : undefined}
+        // A ตัวช่วย side quest opens in the same sheet; closing it goes where this quest would have.
+        onOpenQuest={setDetail}
       />
       <StuckSheet
         open={stuck.open}
