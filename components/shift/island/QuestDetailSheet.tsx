@@ -39,9 +39,10 @@ import type { BoardRef } from "@/lib/supabase/shift-quests/board";
 import { TEXT_LIMITS, type QuestBoard, type QuestSubmitResult } from "@/lib/supabase/shift-quests/types";
 import { SHIFT_CARDS } from "@/lib/whiteboard/shift-cards";
 
+import { refreshIsland } from "./useIslandRefresh";
 import { QuestCardComposer, useQuestCanvas, type CardStep } from "./canvas";
 import { SUBMIT } from "./canvas/copy";
-import { BOARD, CANVAS, COMMON, DETAIL, PITFALL, QUEST, questFlavor, questPitfalls, tileChip, type QuestPitfall } from "./copy";
+import { BOARD, CANVAS, COMMON, DETAIL, PITFALL, QUEST, SYNC, questFlavor, questPitfalls, tileChip, type QuestPitfall } from "./copy";
 import { doneWhenItems } from "./DoneWhenLine";
 import { InSheetFooter } from "./InSheetFooter";
 import styles from "./island.module.css";
@@ -316,6 +317,9 @@ function QuestDetailBody({
       {hasZones ? (
         <CanvasBoundary fallback={<p className={styles.hint}>{QUEST.context.error}</p>}>
           <CanvasContextBox context={canvas.context} loading={canvas.loading} onLink={onLinkCanvas} />
+          <button type="button" className={`${styles.quietButton} ${styles.contextAction}`} onClick={refreshIsland} disabled={canvas.loading} aria-busy={canvas.loading}>
+            {canvas.loading ? SYNC.refreshing : SYNC.refresh}
+          </button>
         </CanvasBoundary>
       ) : null}
 

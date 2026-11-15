@@ -2397,14 +2397,19 @@
 
 /* ---------------------------------------------------------------- HUD: canvas, notice board */
 
-/*
- * 360px first: the note button joins the top row, so the round buttons
- * close up and the chip keeps about 120px (four buttons with the envelope).
- * Doubled class: wins over world.module.css's .hudButtons in any load order.
- */
-@media (max-width: 400px) {
+/* Keep the name chip readable with sound and refresh controls on phones.
+ * Doubled class wins over world.module.css in any load order. */
+@media (max-width: 600px) {
   .hudButtonsTight.hudButtonsTight {
+    display: grid;
+    grid-template-columns: repeat(3, 48px);
     gap: 4px;
+  }
+
+  .hudButtonsTight > button,
+  .hudButtonsTight > a {
+    width: 48px;
+    height: 48px;
   }
 }
 

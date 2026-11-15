@@ -11,6 +11,8 @@ import { keynoteQuest, starterQuest, type BoardRef } from "@/lib/supabase/shift-
 import type { LightPhase } from "@/lib/shift-island/live/types";
 import type { CampfireSummary, IslandPageData } from "@/lib/supabase/shift-quests/types";
 
+import { IslandRefresh } from "./IslandRefresh";
+import { CampfireSound } from "./CampfireSound";
 import { CampfireSheet } from "./CampfireSheet";
 import { CanvasLinkSheet } from "./canvas";
 import { ConsentSheet } from "./consent/ConsentSheet";
@@ -243,6 +245,8 @@ function Unclaimed({ page, picture, initialPhase, demoDay }: IslandAppProps & { 
               onOpenChange={setStoryOpen}
               className={hudRoundClass}
             />
+            <IslandRefresh className={hudRoundClass} />
+            <CampfireSound className={hudRoundClass} />
             <MenuRound page={page} onOpen={() => setPanel("menu")} />
           </>
         }
@@ -470,6 +474,8 @@ function IslandHome({
             {page.unread > 0 ? (
               <HudRound icon="mail" label={HUD.inbox(page.unread)} badge={page.unread} onClick={() => setPanel("inbox")} />
             ) : null}
+            <IslandRefresh className={hudRoundClass} />
+            <CampfireSound className={hudRoundClass} />
             <MenuRound page={page} onOpen={() => setPanel("menu")} />
           </>
         }

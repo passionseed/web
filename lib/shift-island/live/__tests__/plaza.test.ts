@@ -395,10 +395,11 @@ describe("plazaWorld content", () => {
       expect(world.labels).toEqual([]);
     });
 
-    it("is an unlit pit with no label when nobody is in the channel", () => {
+    it("keeps the fire lit without inventing coworkers when the channel is empty", () => {
       for (const count of [0, -3, Number.NaN]) {
         const world = plazaWorld(scene, { festival: null, pins: null, campfire: { count } });
-        expect(names(world)).toEqual(["campfire_pit_cold"]);
+        expect(names(world)).toEqual(["campfire_pit", "campfire_flame_0"]);
+        expect(seats(world)).toHaveLength(0);
         expect(world.spots.map((s) => s.id)).toEqual(["campfire"]);
         expect(world.labels).toEqual([]);
       }

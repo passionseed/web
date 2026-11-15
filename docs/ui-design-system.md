@@ -2154,3 +2154,12 @@ OAuth and show an inline retry message on failure. The globe retains its CSS
 fallback and pauses off screen; reduced motion disables the entrance and
 loading spinner. Login-specific layout lives in
 `components/auth/login.module.css`.
+
+### Island quest and canvas refresh
+
+The island re-reads server data and any open quest's canvas notes when its tab
+becomes visible, its window regains focus, or connectivity returns. Coalesce
+focus and visibility events from the same return. The toolbar and quest canvas
+section also offer an explicit refresh with a busy state. Keep the open sheet,
+unsent text and valid note selections while fresh data loads; never reload the
+whole document or treat a canvas edit as an approved quest.

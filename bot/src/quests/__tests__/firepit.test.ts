@@ -35,9 +35,11 @@ describe("the campfire's actors", () => {
     expect(campfireActors(scene, undefined)).toEqual([]);
   });
 
-  it("draws a cold pit and nobody while nobody sits there", () => {
+  it("keeps the fire lit without seated people while the room is empty", () => {
     const actors = campfireActors(scene, { count: 0 });
-    expect(actors.map((a) => a.frames)).toEqual([["campfire_pit_cold"]]);
+    expect(named(actors, "campfire_pit")).toHaveLength(1);
+    expect(named(actors, "campfire_flame_0")).toHaveLength(1);
+    expect(sitters(actors)).toHaveLength(0);
     const c = plazaCentre(scene);
     expect([actors[0].x, actors[0].y]).toEqual([c.x + PLAZA_LAYOUT.pit[0], c.y + PLAZA_LAYOUT.pit[1]]);
   });
@@ -91,13 +93,14 @@ describe("the campfire in the GIF loop", () => {
     }
   });
 
-  it("flickers only when lit", () => {
+  it("flickers even when the configured campfire has no coworkers", () => {
     const none = renderIslandGif(plots(12), { festival: true });
-    const unlit = renderIslandGif(plots(12), { festival: true, campfire: { count: 0 } });
+    const empty = renderIslandGif(plots(12), { festival: true, campfire: { count: 0 } });
     const lit = renderIslandGif(plots(12), { festival: true, campfire: { count: 3 } });
-    expect(unlit.frames).toBe(none.frames);
-    expect(unlit.gif.equals(none.gif)).toBe(false);
-    expect(lit.frames).toBeGreaterThan(unlit.frames);
+    expect(empty.frames).toBeGreaterThan(none.frames);
+    expect(empty.gif.equals(none.gif)).toBe(false);
+    expect(lit.frames).toBeGreaterThanOrEqual(empty.frames);
+    expect(lit.gif.equals(empty.gif)).toBe(false);
   });
 
   it("stays small enough for the live post on a big island with a full campfire", () => {

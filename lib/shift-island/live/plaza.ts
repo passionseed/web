@@ -237,8 +237,8 @@ export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
 
   if (campfire) {
     const people = count(campfire.count);
-    // Nobody at the fire: a cold pit (no embers, no glow at night); the lit pit only under a flame.
-    actors.push(still(people > 0 ? "campfire_pit" : "campfire_pit_cold", at(L.pit)));
+    // The fire welcomes visitors even when Discord has no seated coworkers.
+    actors.push(still("campfire_pit", at(L.pit)));
     if (people > 0) {
       const seated = Math.min(people, MAX_SEATS);
       const seat = (i: number): LiveActor => {
@@ -254,6 +254,7 @@ export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
       labels.push(labelOf("campfireCount", at(L.campfireCount), "bottom", scene));
       if (people > MAX_SEATS) labels.push(labelOf("campfireMore", at(L.campfireMore), "left", scene));
     }
+    if (people === 0) actors.push({ frames: ACTOR_FRAMES.campfireFlame, ...at(L.flame), frameMs: FLAME_MS });
     spots.push(spotOf("campfire", box(L.campfireSpot), scene));
   }
 
