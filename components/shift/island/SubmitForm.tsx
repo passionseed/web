@@ -5,15 +5,17 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { submitMainQuest, submitProposedQuest, submitSideQuest } from "@/app/shift/island/actions";
+import { setPeerOpen } from "@/app/shift/island/peer-actions";
 import { TEXT_LIMITS, type IslandActionResult, type QuestSubmitResult } from "@/lib/supabase/shift-quests/types";
 
-import { COMMON, DETAIL, PHOTOS } from "./copy";
+import { COMMON, DETAIL, PEER, PHOTOS } from "./copy";
 import { DoneWhenLine } from "./DoneWhenLine";
 import { Field } from "./Field";
 import { useDraft } from "./drafts";
 import { InSheetFooter } from "./InSheetFooter";
 import styles from "./island.module.css";
 import { refKey, type QuestView } from "./model";
+import peerStyles from "./peer/peer.module.css";
 import { PhotoPicker } from "./photos/PhotoPicker";
 import { dropPhoto, uploadPhotos, type PickedPhoto } from "./photos/upload";
 
@@ -33,6 +35,8 @@ interface SubmitFormProps {
   proofMax?: number;
   /** Photos can go with the work (schema 14): the picker shows and the photos upload after the save. */
   photos?: boolean;
+  /** The peer check (schema 15): a tick (on by default) opens the saved work to peers. */
+  peer?: boolean;
 }
 
 interface Draft {
@@ -103,6 +107,7 @@ export function SubmitForm({
   note,
   proofMax = TEXT_LIMITS.proof,
   photos = false,
+  peer = false,
 }: SubmitFormProps) {
   const formId = useId();
   const ids = { proof: useId(), url: useId(), reflection: useId() };
@@ -112,6 +117,7 @@ export function SubmitForm({
   const [pending, startTransition] = useTransition();
   const [picked, setPicked] = useState<PickedPhoto[]>([]);
   const [uploading, setUploading] = useState<string | null>(null);
+  const [peerOpen, setPeerOpenTick] = useState(true);
   const reflectionLabel = quest.reflectionPrompt.trim() || DETAIL.reflectionFallback;
 
   function update(field: keyof Draft, value: string) {
@@ -130,8 +136,13 @@ export function SubmitForm({
       const result = await send(quest, draft.proof.trim(), draft.reflection.trim(), url ? url : null);
       if (result.ok) {
         clearDraft();
-        // The written work is saved; photos follow it onto the same submission, one by one.
+        // The written work is saved; peers and photos follow it onto the same submission.
         const submissionId = result.data.submissionId;
+        if (peer && peerOpen && submissionId) {
+          const opened = await setPeerOpen({ submissionId, open: true }).catch(() => null);
+          // The work is saved either way; peers simply do not see it.
+          if (!opened?.ok) toast.error(opened && !opened.ok ? opened.error : COMMON.failed);
+        }
         if (photos && picked.length > 0 && submissionId) {
           setUploading(PHOTOS.uploading(0, picked.length));
           const outcome = await uploadPhotos(submissionId, picked, (done) => setUploading(PHOTOS.uploading(done, picked.length)));
@@ -187,6 +198,15 @@ export function SubmitForm({
         ) : null}
       </div>
       {photos ? <PhotoPicker photos={picked} onChange={setPicked} disabled={pending} /> : null}
+      {peer ? (
+        <label className={peerStyles.toggle}>
+          <input type="checkbox" checked={peerOpen} onChange={(event) => setPeerOpenTick(event.target.checked)} disabled={pending} />
+          <span className={peerStyles.toggleText}>
+            <span>{PEER.openLabel}</span>
+            <span className={peerStyles.toggleHint}>{PEER.openHint}</span>
+          </span>
+        </label>
+      ) : null}
       <Field
         id={ids.reflection}
         label={reflectionLabel}

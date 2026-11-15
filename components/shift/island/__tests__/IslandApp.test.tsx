@@ -17,6 +17,14 @@ import type { IslandViewport } from "../IslandViewport";
 import { CHARACTER as CHARACTER_COPY, PLAYER, PLAYER_MENU, WALLET } from "../player/copy";
 import { PRIZES_UI } from "../prizes/copy";
 
+jest.mock("@/app/shift/island/peer-actions", () => ({
+  loadPeerQueue: jest.fn(async () => ({ ok: true, data: [] })),
+  loadPeerCheck: jest.fn(),
+  sendPeerCheck: jest.fn(),
+  loadPeerChecks: jest.fn(async () => ({ ok: true, data: null })),
+  setPeerOpen: jest.fn(async () => ({ ok: true, data: { open: true } })),
+  hidePeerCheck: jest.fn(),
+}));
 jest.mock("@/app/shift/island/evidence-actions", () => ({
   uploadEvidencePhoto: jest.fn(async () => ({ ok: true, data: { id: "p", count: 1 } })),
   removeEvidencePhoto: jest.fn(async () => ({ ok: true, data: null })),

@@ -15,6 +15,14 @@ import { useQuestCanvas } from "../canvas/useQuestCanvas";
 import { clearAllDrafts } from "../drafts";
 import { QuestDetailSheet } from "../QuestDetailSheet";
 
+jest.mock("@/app/shift/island/peer-actions", () => ({
+  loadPeerQueue: jest.fn(async () => ({ ok: true, data: [] })),
+  loadPeerCheck: jest.fn(),
+  sendPeerCheck: jest.fn(),
+  loadPeerChecks: jest.fn(async () => ({ ok: true, data: null })),
+  setPeerOpen: jest.fn(async () => ({ ok: true, data: { open: true } })),
+  hidePeerCheck: jest.fn(),
+}));
 jest.mock("@/app/shift/island/evidence-actions", () => ({
   uploadEvidencePhoto: jest.fn(async () => ({ ok: true, data: { id: "p", count: 1 } })),
   removeEvidencePhoto: jest.fn(async () => ({ ok: true, data: null })),

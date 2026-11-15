@@ -54,6 +54,7 @@ import { SentScreen } from "./SentScreen";
 import { PALETTE, iconGrid, iconScale, type IconKey } from "./sprites";
 import { SubmitForm } from "./SubmitForm";
 import { useOwnership, type OwnershipState } from "./useOwnership";
+import { PeerChecks } from "./peer/PeerChecks";
 import { QuestPhotos } from "./photos/QuestPhotos";
 import { ProblemEditor } from "./ProblemEditor";
 
@@ -86,6 +87,8 @@ interface QuestDetailSheetProps {
   photos?: boolean;
   /** The caller's current project, for changing its problem line (the database checks membership). */
   projectId?: string | null;
+  /** The peer check (schema 15): the who-checks line, เพื่อนเช็กแล้ว, and the form's open-to-peers tick. */
+  peer?: boolean;
 }
 
 /** "card" builds a quest card from canvas notes; "text" is the written form (SubmitForm). */
@@ -118,6 +121,7 @@ export function QuestDetailSheet({
   onOpenQuest,
   photos = false,
   projectId = null,
+  peer = false,
 }: QuestDetailSheetProps) {
   // The last quest shown stays in the sheet while it slides closed, so it never closes empty.
   const [last, setLast] = useState<BoardRef | null>(target);
@@ -214,6 +218,7 @@ export function QuestDetailSheet({
             ownership={ownership}
             footer={footerSlot}
             photos={photos}
+            peer={peer}
             onForm={(form) => setCompose({ key: bodyKey, form })}
             onBack={() => setCompose(null)}
             onSent={onSent}
@@ -227,6 +232,7 @@ export function QuestDetailSheet({
             onOpenQuest={onOpenQuest}
             photos={photos}
             projectId={projectId}
+            peer={peer}
             quest={quest}
             action={action}
             total={board.main.length}
@@ -279,6 +285,7 @@ function QuestDetailBody({
   onOpenQuest,
   photos,
   projectId,
+  peer,
   quest,
   action,
   total,
@@ -296,6 +303,7 @@ function QuestDetailBody({
   onOpenQuest?: (ref: BoardRef) => void;
   photos: boolean;
   projectId: string | null;
+  peer: boolean;
   quest: QuestView;
   action: DetailAction;
   total: number;
@@ -363,6 +371,10 @@ function QuestDetailBody({
 
       {/* The work this student sent, with its photos (schema 14); more can go on until a mentor looks. */}
       {photos && quest.instanceId && quest.mine?.latest_submission ? <QuestPhotos instanceId={quest.instanceId} own /> : null}
+      {/* What peers said about it (schema 15): feedback only, the mentor decides. */}
+      {peer && quest.instanceId && quest.mine?.latest_submission ? (
+        <PeerChecks instanceId={quest.instanceId} quest={{ kind: quest.kind, slug: quest.slug, criteria: quest.evidence }} />
+      ) : null}
 
       {showProblem && team ? (
         <TeamProblem
@@ -380,7 +392,7 @@ function QuestDetailBody({
       {ownership ? <OwnershipBox ownership={ownership} /> : null}
 
       {/* The tick hint only means something once notes can light it: a linked canvas, or the ownership checklist. */}
-      <DoneWhen guide={guide} hints={hints} evidence={quest.evidence} hinting={(hasZones && !!ready) || !!ownRows} />
+      <DoneWhen guide={guide} hints={hints} evidence={quest.evidence} hinting={(hasZones && !!ready) || !!ownRows} peer={peer} />
 
       <Examples lines={examples} />
 
@@ -617,11 +629,13 @@ function DoneWhen({
   hints,
   evidence,
   hinting,
+  peer,
 }: {
   guide: QuestGuide;
   hints: ChecklistHint[];
   evidence: string;
   hinting: boolean;
+  peer: boolean;
 }) {
   const headingId = useId();
   const guided = guide.checklist.length > 0;
@@ -654,7 +668,7 @@ function DoneWhen({
         })}
       </ul>
       {hinting && guided ? <p className={styles.hint}>{QUEST.doneWhen.hint}</p> : null}
-      <WhoChecks />
+      <WhoChecks peer={peer} />
     </section>
   );
 }
@@ -834,6 +848,7 @@ function QuestCompose({
   ownership,
   footer,
   photos,
+  peer,
   onForm,
   onBack,
   onSent,
@@ -847,6 +862,7 @@ function QuestCompose({
   ownership: OwnershipState | null;
   footer: HTMLElement | null;
   photos: boolean;
+  peer: boolean;
   onForm: (form: ComposeForm) => void;
   onBack: () => void;
   onSent: (result: QuestSubmitResult) => void;
@@ -882,6 +898,7 @@ function QuestCompose({
       note={attach?.note}
       proofMax={attach?.proofMax}
       photos={photos}
+      peer={peer}
     />
   );
 

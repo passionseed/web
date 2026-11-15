@@ -194,7 +194,9 @@ WITH fns0 AS (
       -- 20261115130000_shift_quest_evidence_photos: photos, the web review page, the trash job, the problem line.
       OR p.proname IN ('shift_quest_evidence_add', 'shift_quest_evidence_remove', 'shift_quest_evidence_list',
         'shift_quest_review_view', 'shift_quest_storage_trash_claim', 'shift_quest_storage_trash_done',
-        'shift_quest_project_set_ambition') AS web_only
+        'shift_quest_project_set_ambition')
+      -- 20261115140000_shift_quest_peer_check: the peer check is the website's.
+      OR p.proname LIKE 'shift\_quest\_peer\_%' AS web_only
   FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
   WHERE n.nspname = 'public' AND p.proname LIKE 'shift\_quest\_%'
 ), fns AS (
@@ -267,7 +269,14 @@ web_allow(sig) AS (VALUES
   ('shift_quest_review_view(text,uuid)'),
   ('shift_quest_storage_trash_claim(integer)'),
   ('shift_quest_storage_trash_done(text[])'),
-  ('shift_quest_project_set_ambition(text,uuid,text)')
+  ('shift_quest_project_set_ambition(text,uuid,text)'),
+  -- 20261115140000_shift_quest_peer_check.
+  ('shift_quest_peer_open(text,uuid,boolean)'),
+  ('shift_quest_peer_queue(text)'),
+  ('shift_quest_peer_view(text,uuid)'),
+  ('shift_quest_peer_check(text,uuid,text[],text)'),
+  ('shift_quest_peer_list(text,uuid)'),
+  ('shift_quest_peer_hide(text,uuid,boolean)')
 ), web_applied AS (
   SELECT to_regprocedure('public.shift_quest_board(text)') IS NOT NULL AS yes
 )
@@ -330,7 +339,7 @@ echo "# migrations"
 for f in "${MIGRATIONS[@]}"; do echo "apply $(basename "$f")"; done
 new_db once
 apply once "single pass" "${MIGRATIONS[@]}"
-for DB in rules island flows islandflows board canvas campfire live player roots tree reset evidence; do
+for DB in rules island flows islandflows board canvas campfire live player roots tree reset evidence peer; do
   new_db "$DB"
   apply "$DB" "first pass" "${MIGRATIONS[@]}"
   apply "$DB" "second pass" "${MIGRATIONS[@]}"
@@ -406,6 +415,7 @@ suite "roots" roots roots.ts
 suite "tree" tree tree.ts
 suite "admin reset" reset reset.ts
 suite "photo evidence and the team's problem" evidence evidence.ts
+suite "peer check" peer peer.ts
 # island_rules.ts runs against wave 1 alone once it knows to skip season cases.
 if [ "${#WAVE1[@]}" -lt "${#MIGRATIONS[@]}" ] && grep -q SHIFT_QUESTS_WAVE "$HERE/island_rules.ts"; then
   export SHIFT_QUESTS_WAVE=1

@@ -6,7 +6,7 @@ import { PixelIcon } from "@/components/shift/poster/pixel/PixelRects";
 import type { BoardRef } from "@/lib/supabase/shift-quests/board";
 import type { MyTree, QuestBoard as QuestBoardData, SeasonGoal } from "@/lib/supabase/shift-quests/types";
 
-import { BOARD, PARTNER_FIRST, QUEST_ACTS, thaiShortDate, TREE, treeStageName } from "./copy";
+import { BOARD, PARTNER_FIRST, PEER, QUEST_ACTS, thaiShortDate, TREE, treeStageName } from "./copy";
 import { useDraft } from "./drafts";
 import styles from "./island.module.css";
 import { COMMUNITY_SLUGS, mainTitle, partnerFirst, questView, refKey, type QuestView } from "./model";
@@ -67,6 +67,8 @@ interface QuestBoardProps {
   tree?: MyTree | null;
   /** Opens the close-up, where the team chooses its seed. */
   onSeed?: () => void;
+  /** ช่วยเพื่อนเช็ก (schema 15): opens the peer check; absent below it. */
+  onPeerCheck?: () => void;
 }
 
 /**
@@ -76,7 +78,7 @@ interface QuestBoardProps {
  * student's own quests, and the island's shared ones. Every lane stays in the
  * DOM and the accessibility tree; only the strip's scroll position changes.
  */
-export function QuestBoard({ board, stage, goal, keynote, onOpen, onPropose, tree, onSeed }: QuestBoardProps) {
+export function QuestBoard({ board, stage, goal, keynote, onOpen, onPropose, tree, onSeed, onPeerCheck }: QuestBoardProps) {
   const [lane, setLane] = useDraft<BoardLane>(LANE_DRAFT, startLane(board, keynote));
   const active = Math.max(LANES.indexOf(lane), 0);
   const reduced = useReducedMotion();
@@ -144,6 +146,16 @@ export function QuestBoard({ board, stage, goal, keynote, onOpen, onPropose, tre
     <div className={styles.board}>
       {/* The team's first step, before any quest: choose the seed. */}
       {tree && tree.seed == null && onSeed ? <SeedCard onOpen={onSeed} /> : null}
+      {/* Schema 15: check a peer's work (feedback only; a mentor decides). */}
+      {onPeerCheck ? (
+        <button type="button" className={styles.peerEntry} aria-haspopup="dialog" onClick={onPeerCheck}>
+          <PixelIcon grid={iconGrid("peers")} palette={PALETTE} scale={2} className={styles.peerEntryIcon} />
+          <span className={styles.peerEntryText}>
+            <span className={styles.peerEntryTitle}>{PEER.entry}</span>
+            <span className={styles.peerEntrySub}>{PEER.entrySub}</span>
+          </span>
+        </button>
+      ) : null}
       <div role="group" aria-label={BOARD.lanes} className={styles.laneNav}>
         {LANES.map((id, index) => (
           <button

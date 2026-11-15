@@ -42,6 +42,7 @@ import { TodayCard } from "./TodayCard";
 import treeStyles from "./tree/tree.module.css";
 import { TreePill } from "./tree/TreePill";
 import { TreeSheet } from "./tree/TreeSheet";
+import { PeerSheet } from "./peer/PeerSheet";
 import { useBangkokDay } from "./useBangkokDay";
 import { useCampfire } from "./useCampfire";
 import world from "./world.module.css";
@@ -311,6 +312,8 @@ function IslandHome({
   const keynote = useMemo(() => keynoteQuest(board), [board]);
   const hasAction = useMemo(() => (keynote ?? starterQuest(board)) != null, [keynote, board]);
   const [panel, setPanel] = useState<Panel>(initialPanel ?? null);
+  // ช่วยเพื่อนเช็ก (schema 15) opens over the board, so the board stays where it was.
+  const [peerOpen, setPeerOpen] = useState(false);
   const [detail, setDetail] = useState<BoardRef | null>(null);
   // A quest opened from the board goes back to the board when it closes.
   const [detailFromBoard, setDetailFromBoard] = useState(false);
@@ -510,8 +513,11 @@ function IslandHome({
           onPropose={openPropose}
           tree={tree}
           onSeed={() => setPanel("tree")}
+          // Schema 15: ช่วยเพื่อนเช็ก opens the peer check over the board.
+          onPeerCheck={page.peer === true ? () => setPeerOpen(true) : undefined}
         />
       </BoardSheet>
+      {page.peer === true ? <PeerSheet open={peerOpen} onClose={() => setPeerOpen(false)} /> : null}
       {tree ? (
         <TreeSheet
           open={panel === "tree"}
@@ -594,6 +600,7 @@ function IslandHome({
         // Schema 14: photos with the work, and เปลี่ยน on the team's problem line.
         photos={page.photos === true}
         projectId={project?.id ?? null}
+        peer={page.peer === true}
       />
       <StuckSheet
         open={stuck.open}

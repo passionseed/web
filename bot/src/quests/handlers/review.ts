@@ -57,12 +57,18 @@ export interface ReviewDetail {
  */
 export interface ReviewExtras {
   photos: number;
+  /** Schema 15: how many peers checked it (hidden checks not counted); 0 below it. */
+  peerChecks?: number;
 }
 
 async function reviewExtras(ctx: Ctx, submissionId: string): Promise<ReviewExtras | null> {
   try {
-    const raw = await ctx.api.call<{ photos?: unknown } | null>("shift_quest_review_extras", ctx.userId, submissionId);
-    return raw && typeof raw === "object" ? { photos: Number(raw.photos) || 0 } : null;
+    const raw = await ctx.api.call<{ photos?: unknown; peer_checks?: unknown } | null>(
+      "shift_quest_review_extras",
+      ctx.userId,
+      submissionId,
+    );
+    return raw && typeof raw === "object" ? { photos: Number(raw.photos) || 0, peerChecks: Number(raw.peer_checks) || 0 } : null;
   } catch {
     return null;
   }
@@ -139,6 +145,7 @@ export const RV = {
   appealReason: "เหตุผลอุทธรณ์",
   fullFile: "ข้อความยาวถูกตัด ฉบับเต็มอยู่ในไฟล์นี้",
   photos: (n: number) => `📷 แนบรูปมา **${n}** รูป ดูได้บนเว็บ (เฉพาะพี่เลี้ยง)`,
+  peerChecks: (n: number) => `👥 เพื่อนช่วยเช็กแล้ว **${n}** คน อ่านได้บนเว็บ คุณยังเป็นคนตัดสิน`,
   coinsOff: "🪙 ระบบเหรียญปิดอยู่: อนุมัติได้ แต่จะไม่มีเหรียญ",
   coins: (amount: number, team: string | null) =>
     `🪙 อนุมัติแล้วได้ **${amount}** เหรียญ${team === null ? "" : ` (งานทีม: ${team})`}`,
@@ -466,9 +473,11 @@ export function reviewCard(d: ReviewDetail, extras: ReviewExtras | null = null):
   };
   group(agreed);
   group(work);
-  // Schema 14: photos live on the web review page (Discord never gets the images).
-  const photoLink = extras && extras.photos > 0 ? reviewLinkButton(d.submission_id) : null;
+  // Schema 14 and 15: photos and peer checks live on the web review page (Discord never gets the images).
+  const peers = extras?.peerChecks ?? 0;
+  const photoLink = extras && (extras.photos > 0 || peers > 0) ? reviewLinkButton(d.submission_id) : null;
   if (extras && extras.photos > 0) blocks.push({ kind: "subtext", text: RV.photos(extras.photos) });
+  if (peers > 0) blocks.push({ kind: "subtext", text: RV.peerChecks(peers) });
   if (files.length) blocks.push({ kind: "subtext", text: RV.fullFile }, { kind: "file", name: SUBMISSION_TXT });
   group(past);
   blocks.push({ kind: "divider", line: false }, { kind: "subtext", text: RV.rubric });

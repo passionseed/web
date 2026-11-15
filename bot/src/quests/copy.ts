@@ -538,6 +538,9 @@ const ERRORS: Record<string, string> = {
   reset_blocked: "รีเซ็ตไม่ได้ เพราะมีเควสต์ที่ได้เหรียญไปแล้ว หรือมีเพื่อนต่อเควสต์จากเควสต์ของคุณ ยังไม่ได้ลบอะไร",
   // Photo evidence (20261115130000) is website-only; the bot never adds photos, but every code needs words.
   too_many_photos: "แนบรูปได้ไม่เกิน 3 รูปต่อการส่งหนึ่งครั้ง",
+  // The peer check (20261115140000) is website-only too.
+  already_checked: "คุณเช็กงานนี้ไปแล้ว ขอบคุณที่ช่วยเพื่อน",
+  peer_limit: "วันนี้เช็กงานเพื่อนครบ 10 งานแล้ว พรุ่งนี้มาช่วยต่อได้",
   // The campfire writers (20261111093000) refuse an ID that is not a Discord snowflake. Only the bot calls them.
   invalid: "ข้อมูลไม่ถูกต้อง ลองใหม่อีกครั้ง",
   bad_route: "เลือกเส้นทางจากตัวเลือกที่มี",
