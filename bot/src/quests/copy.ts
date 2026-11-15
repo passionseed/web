@@ -534,6 +534,8 @@ const ERRORS: Record<string, string> = {
   not_started: T.notStarted,
   not_authorized: T.staffOnly,
   bad_input: "ข้อมูลไม่ถูกต้อง ลองใหม่อีกครั้ง",
+  // The admin self-reset (20261115120000) is web-only; the bot never calls it, but every code needs words.
+  reset_blocked: "รีเซ็ตไม่ได้ เพราะมีเควสต์ที่ได้เหรียญไปแล้ว หรือมีเพื่อนต่อเควสต์จากเควสต์ของคุณ ยังไม่ได้ลบอะไร",
   // The campfire writers (20261111093000) refuse an ID that is not a Discord snowflake. Only the bot calls them.
   invalid: "ข้อมูลไม่ถูกต้อง ลองใหม่อีกครั้ง",
   bad_route: "เลือกเส้นทางจากตัวเลือกที่มี",
