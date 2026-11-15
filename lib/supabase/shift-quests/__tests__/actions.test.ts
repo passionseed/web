@@ -132,7 +132,8 @@ describe("each action calls exactly one function with the server-side actor", ()
 /**
  * The submits save with one function, then (schema 13 and up) ask for the
  * quest's gift: app/shift/island/__tests__/quest-gift.test.ts. Here the
- * database is schema 12, so the only other call is the version read.
+ * database is schema 12, so the only other calls are the version read and,
+ * for a side quest, the board read that tells ถือกุญแจเอง apart.
  */
 describe("each submit saves with exactly one function", () => {
   const submits: Array<[string, () => Promise<unknown>, unknown, string, unknown[], unknown]> = [
@@ -163,9 +164,12 @@ describe("each submit saves with exactly one function", () => {
   ];
 
   it.each(submits)("%s", async (_name, run, dbResult, fn, args, data) => {
-    call.mockImplementation(async (name: string) => (name === "shift_quest_schema_version" ? 12 : dbResult));
+    call.mockImplementation(async (name: string) =>
+      name === "shift_quest_schema_version" ? 12 : name === "shift_quest_board" ? { side: [] } : dbResult
+    );
     await expect(run()).resolves.toEqual({ ok: true, data });
-    expect(call.mock.calls.filter(([name]) => name !== "shift_quest_schema_version")).toEqual([[fn, ...args]]);
+    const reads = new Set(["shift_quest_schema_version", "shift_quest_board"]);
+    expect(call.mock.calls.filter(([name]) => !reads.has(name))).toEqual([[fn, ...args]]);
     expect(refresh).toHaveBeenCalledTimes(1);
   });
 });
@@ -213,34 +217,52 @@ describe("validation", () => {
     await expect(actions.submitMainQuest({ milestone: 7, proof: atCap, reflection: atCap })).resolves.toMatchObject({ ok: true });
   });
 
-  it("adds quest 5's ownership checklist, read on the server, under the proof", async () => {
+  const KEYS_BOARD = { side: [{ template_id: UUID, slug: "side-take-the-keys" }] };
+
+  it("adds the ถือกุญแจเอง side quest's ownership checklist, read on the server, under the proof", async () => {
     call.mockImplementation(async (fn: string) =>
-      fn === "shift_quest_ownership_get"
-        ? [
-            { item: "access", state: "demonstrated", mentor_held: false, updated_at: "x" },
-            { item: "export", state: "not_checked", mentor_held: true, updated_at: "x" },
-          ]
-        : { instance_id: UUID, revision: 2, created: false }
+      fn === "shift_quest_board"
+        ? KEYS_BOARD
+        : fn === "shift_quest_ownership_get"
+          ? [
+              { item: "access", state: "demonstrated", mentor_held: false, updated_at: "x" },
+              { item: "export", state: "not_checked", mentor_held: true, updated_at: "x" },
+            ]
+          : { instance_id: UUID, revision: 2, created: false }
     );
-    await expect(actions.submitMainQuest({ milestone: 5, ...proof })).resolves.toMatchObject({ ok: true });
-    expect(call).toHaveBeenNthCalledWith(1, "shift_quest_ownership_get", ACTOR);
-    const [fn, actor, milestone, evidence] = call.mock.calls[1];
-    expect([fn, actor, milestone]).toEqual(["shift_quest_milestone_submit", ACTOR, 5]);
+    await expect(actions.submitSideQuest({ templateId: UUID, ...proof })).resolves.toMatchObject({ ok: true });
+    expect(call).toHaveBeenNthCalledWith(1, "shift_quest_board", ACTOR);
+    expect(call).toHaveBeenNthCalledWith(2, "shift_quest_ownership_get", ACTOR);
+    const [fn, actor, template, evidence] = call.mock.calls[2];
+    expect([fn, actor, template]).toEqual(["shift_quest_side_submit", ACTOR, UUID]);
     expect(evidence).toBe(
       "ทำต้นแบบแล้ว\n\nเช็กลิสต์ /project ownership ตอนส่ง\n✅ เข้าถึงงานได้เอง: ทำได้แล้ว\n⬜ สำรองหรือส่งออกได้: ยังไม่ได้เช็ก (งานอยู่ในบัญชีที่พี่เลี้ยงถือ)"
     );
   });
 
-  it("refuses quest 5 rather than cut the proof when proof and checklist pass the cap", async () => {
+  it("refuses ถือกุญแจเอง rather than cut the proof when proof and checklist pass the cap", async () => {
     call.mockImplementation(async (fn: string) =>
-      fn === "shift_quest_ownership_get" ? [{ item: "access", state: "demonstrated", mentor_held: false }] : null
+      fn === "shift_quest_board"
+        ? KEYS_BOARD
+        : fn === "shift_quest_ownership_get"
+          ? [{ item: "access", state: "demonstrated", mentor_held: false }]
+          : null
     );
-    const result = await actions.submitMainQuest({ milestone: 5, ...proof, proof: "ก".repeat(TEXT_LIMITS.proof) });
+    const result = await actions.submitSideQuest({ templateId: UUID, ...proof, proof: "ก".repeat(TEXT_LIMITS.proof) });
     expect(result).toMatchObject({ ok: false, code: "text_too_long" });
-    expect(call).toHaveBeenCalledTimes(1);
+    expect(call.mock.calls.map(([fn]) => fn)).toEqual(["shift_quest_board", "shift_quest_ownership_get"]);
   });
 
-  it("reads quest 5's checklist without refreshing the page", async () => {
+  it("adds no checklist to any other quest, main quest 5 included", async () => {
+    call.mockImplementation(async (fn: string) =>
+      fn === "shift_quest_board" ? { side: [{ template_id: UUID, slug: "side-readme" }] } : { instance_id: UUID, revision: 1, created: true }
+    );
+    await expect(actions.submitSideQuest({ templateId: UUID, ...proof })).resolves.toMatchObject({ ok: true });
+    await expect(actions.submitMainQuest({ milestone: 5, ...proof })).resolves.toMatchObject({ ok: true });
+    expect(call.mock.calls.map(([fn]) => fn)).not.toContain("shift_quest_ownership_get");
+  });
+
+  it("reads the ownership checklist without refreshing the page", async () => {
     call.mockResolvedValue([{ item: "team", state: "needs_help", mentor_held: false }, { item: "bogus", state: "x" }]);
     await expect(actions.loadOwnership()).resolves.toEqual({
       ok: true,

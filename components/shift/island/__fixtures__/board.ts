@@ -31,15 +31,15 @@ export const MAIN_TITLES = [
   "จุดตะเกียงให้คนอื่น",
 ];
 
-/** The starter templates' real slugs (migration 20261111090500), so questGuide finds each main quest. */
+/** The main quests' real slugs (the pitfall quest map, migration 20261115090000), so questGuide finds each one. */
 export const MAIN_SLUGS = [
-  "find-something-worth-fixing",
-  "make-it-exist",
-  "let-reality-surprise-you",
-  "give-them-a-reason-to-return",
-  "take-the-keys",
-  "help-another-builder-move",
-  "improve-our-community",
+  "meet-one-real-person",
+  "real-stories-not-compliments",
+  "first-partner",
+  "in-their-hands",
+  "run-the-loop",
+  "what-we-learned",
+  "beyond-the-first",
 ];
 
 function mine(instance: string, state: QuestMine["state"], extra: Partial<QuestMine> = {}): QuestMine {

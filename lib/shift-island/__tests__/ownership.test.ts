@@ -2,7 +2,6 @@
 import { OWNERSHIP_ICON as BOT_ICON, OWNERSHIP_ITEM, OWNERSHIP_STATE } from "@/bot/src/quests/copy";
 
 import {
-  MAIN_MILESTONE_TAKE_THE_KEYS,
   OWNERSHIP_ICON,
   OWNERSHIP_ITEMS,
   OWNERSHIP_LABEL,
@@ -14,8 +13,9 @@ import {
   ownershipSnapshot,
   proofWithOwnership,
   TAKE_THE_KEYS,
+  TAKE_THE_KEYS_CHECKED,
 } from "../ownership";
-import { MAIN_SLUGS } from "../quest-canvas";
+import { MAIN_SLUGS, questGuideSpec } from "../quest-canvas";
 
 describe("ownership", () => {
   it("uses the bot's labels, states and icons, so Discord and the web say the same", () => {
@@ -28,8 +28,9 @@ describe("ownership", () => {
     }
   });
 
-  it("is quest 5", () => {
-    expect(MAIN_SLUGS[MAIN_MILESTONE_TAKE_THE_KEYS]).toBe(TAKE_THE_KEYS);
+  it("is a side quest since the pitfall quest map, whose first item the checklist lights", () => {
+    expect(Object.values(MAIN_SLUGS)).not.toContain(TAKE_THE_KEYS);
+    expect(questGuideSpec({ kind: "side", slug: TAKE_THE_KEYS }).checklist[0].id).toBe(TAKE_THE_KEYS_CHECKED);
   });
 
   it("parses the database's rows in the bot's order and drops anything unknown", () => {

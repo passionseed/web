@@ -42,6 +42,8 @@ const F = "790000000000000006"; // too young at 20, adult at 18; erased at the e
 const G = "790000000000000007"; // check-in run cases; consent imported while waiting
 const H = "790000000000000008"; // check-in run cases; a parent declines, an import does not override
 const NOBODY = "799999999999999999";
+/** The community quests since the pitfall quest map (COMMUNITY_RULE_SLUGS in lib/content/shift-island-economy.ts). */
+const COMMUNITY_SLUGS = ["side-help-a-builder", "side-improve-community"];
 const CELEB = "793000000000000001";
 const LIVE = "793000000000000002";
 const M1 = "794000000000000001";
@@ -553,9 +555,9 @@ async function main(): Promise<void> {
   await rule("taught-next-shift", 3000, 1, null);
   const slugs: Json[] = (await db.query(
     "select slug, milestone from public.shift_quest_templates where status = 'published' and milestone is not null order by milestone")).rows;
-  for (const t of slugs) {
-    await call(bot, "shift_quest_admin_template_rule", ADMIN, t.slug, t.milestone >= 6 ? "community-quest" : "main-quest");
-  }
+  // The pitfall quest map (20261115090000): all seven main quests are main; the community quests are two side quests.
+  for (const t of slugs) await call(bot, "shift_quest_admin_template_rule", ADMIN, t.slug, "main-quest");
+  for (const slug of COMMUNITY_SLUGS) await call(bot, "shift_quest_admin_template_rule", ADMIN, slug, "community-quest");
   for (const key of ["taught-next-shift", "helped-most"]) {
     check(await code(call(bot, "shift_quest_admin_template_rule", ADMIN, slugs[0].slug, key)) === "bad_input",
       `a staff key (${key}) can never pay for a quest (bad_input)`);
@@ -686,6 +688,15 @@ async function main(): Promise<void> {
   await reach(B, 5);
   check(await code(redeem(A, matcha, randomUUID())) === "community_required", "stage 5 without a community quest: community_required");
   await reach(A, 6);
+  const communityDone = async (who: string) =>
+    (await scalar(db, "select public.shift_quest__community_done($1)", [await memberId(who)])) === true;
+  check(await code(redeem(A, matcha, randomUUID())) === "community_required" && !(await communityDone(A)),
+    "an approved main quest 6 (what-we-learned) is not a community quest: still community_required");
+  const helped = await call<Json>(web, "shift_quest_side_submit", A,
+    await scalar(db, "select id from public.shift_quest_templates where slug = 'side-help-a-builder' and status = 'published'"),
+    "Helped Bee fix the login page", "Bee can do it alone now", null);
+  await call(bot, "shift_quest_review_decide", R1, helped.submission_id, "approved", null, false);
+  check(await communityDone(A), "an approved side-help-a-builder is the community quest the gate asks for");
   await call(bot, "shift_quest_admin_catalog", ADMIN, matcha.id, null, null, null, -5, null);
   check(await code(redeem(A, matcha, randomUUID())) === "out_of_stock", "the gates pass: then stock");
   await call(bot, "shift_quest_admin_catalog", ADMIN, matcha.id, null, null, null, 5, null);
@@ -929,6 +940,11 @@ async function main(): Promise<void> {
       await count("select count(*) from public.shift_quest_members where onboarded_at is not null and erased_at is null"),
     "the counts add up to the students", island.consent);
   check(await code(call(bot, "shift_quest_admin_island_status", R1)) === "not_authorized", "admins only");
+
+  // --- Main quest 7 is no community quest either (the pitfall quest map) ---------------------------------
+  await reach(C, 7);
+  check((await scalar(db, "select public.shift_quest__community_done($1)", [await memberId(C)])) === false,
+    "an approved main quest 7 (beyond-the-first) does not open the community gate");
 
   // --- Erasure takes the consent row --------------------------------------------------------------------
   check((await consentRow(F)) !== undefined, "Eff has a consent row");

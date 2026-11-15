@@ -75,9 +75,7 @@ describe("QuestBoard", () => {
 
   it("puts the seven main quests first, as cards with no numbers, then the tree", () => {
     const { container } = renderBoard();
-    // The lane buttons are not a list: the main lane's cards are the first list on the board.
-    const main = container.querySelector("ul") as HTMLElement;
-    expect(main.closest("section")).toHaveAttribute("id", "island-lane-main");
+    const main = container.querySelector("#island-lane-main") as HTMLElement;
     const cards = within(main).getAllByRole("button");
     expect(cards).toHaveLength(7);
     expect(cards.map((card) => card.getAttribute("aria-label")?.split(", ")[0])).toEqual(MAIN_TITLES);
@@ -92,11 +90,43 @@ describe("QuestBoard", () => {
     expect(within(cells[7]).queryByRole("button")).toBeNull();
   });
 
-  it("marks the community quests, main 6 and 7, with words in their description", () => {
+  it("groups the main quests by act: find your partner, build what matters, scale", () => {
+    const { container } = renderBoard();
+    const main = container.querySelector("#island-lane-main") as HTMLElement;
+    const acts = within(main).getAllByRole("heading", { level: 3 });
+    expect(acts.map((h) => h.textContent)).toEqual(["หาคนที่ใช่", "สร้างสิ่งที่สำคัญ", "ขยาย"]);
+    const lists = main.querySelectorAll("ul");
+    expect([...lists].map((ul) => within(ul as HTMLElement).queryAllByRole("button").length)).toEqual([3, 3, 1]);
+    // The tree closes the last act.
+    expect(lists[2]).toHaveTextContent("ต้นไม้ขั้น 1 จาก 7");
+  });
+
+  it("suggests the build and scale quests after the first partner, without locking them", () => {
+    const fresh = makeBoard();
+    const board = {
+      ...fresh,
+      project: { ...fresh.project!, stage: 0, milestones_done: [] },
+      main: fresh.main.map((m) => ({ ...m, done: false, in_flight: null, mine: null })),
+    };
+    const { unmount } = renderBoard({ board, keynote: null });
+    for (const title of MAIN_TITLES.slice(0, 3)) expect(tile(title, "ทำได้เลย")).not.toHaveAccessibleDescription();
+    for (const title of MAIN_TITLES.slice(3)) {
+      const card = tile(title, "ทำได้เลย");
+      expect(card).toHaveAccessibleDescription("แนะนำหลังได้พันธมิตร");
+      expect(card).toHaveAttribute("data-status", "available");
+    }
+    unmount();
+    // With the first partner found (main quest 3), the hint goes.
+    renderBoard({ board: { ...board, project: { ...board.project, stage: 1, milestones_done: [3] } }, keynote: null });
+    expect(screen.queryByText("แนะนำหลังได้พันธมิตร")).toBeNull();
+  });
+
+  it("marks the community side quests in the ทั้งเกาะ lane, and no main quest", () => {
     renderBoard();
-    expect(tile(MAIN_TITLES[5], "ลองส่งใหม่ได้")).toHaveAccessibleDescription("เควสต์ชุมชน: ช่วยเพื่อน หรือพัฒนาชุมชน");
-    expect(tile(MAIN_TITLES[6], "พักไว้")).toHaveAccessibleDescription("เควสต์ชุมชน: ช่วยเพื่อน หรือพัฒนาชุมชน");
-    expect(tile(MAIN_TITLES[0], "ทำได้เลย")).not.toHaveAccessibleDescription();
+    for (const m of MAIN_TITLES) {
+      const card = screen.getAllByRole("button").find((b) => b.getAttribute("aria-label")?.startsWith(`${m}, `));
+      expect(card).not.toHaveAccessibleDescription("เควสต์ชุมชน: ช่วยเพื่อน หรือพัฒนาชุมชน");
+    }
   });
 
   it("pins each card in the colour of the plaza's notes", () => {

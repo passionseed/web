@@ -11,13 +11,34 @@ import {
   sideTileStatus,
   type BoardRef,
 } from "@/lib/supabase/shift-quests/board";
+import { COMMUNITY_RULE_SLUGS } from "@/lib/content/shift-island-economy";
 import type { QuestBoard, QuestMine, TileStatus } from "@/lib/supabase/shift-quests/types";
 
-import { BOARD } from "./copy";
+import { BOARD, PARTNER_MILESTONE, QUEST_ACTS } from "./copy";
 import { mainIcon, sideIcon, type IconKey } from "./sprites";
 
+/**
+ * The community quests (ช่วยเพื่อน, พัฒนาชุมชน): main quests 6 and 7 until the
+ * pitfall quest map (20261115090000) made them side quests. A small heart on
+ * their card; the same slugs the economy and the shop's community gate read.
+ */
+export const COMMUNITY_QUESTS: ReadonlySet<string> = new Set(COMMUNITY_RULE_SLUGS);
+
 /** Side quests that belong to the whole island, shown in the ทั้งเกาะ lane instead of a branch. */
-export const COMMUNITY_SLUGS: ReadonlySet<string> = new Set(["side-review-a-friend"]);
+export const COMMUNITY_SLUGS: ReadonlySet<string> = new Set(["side-review-a-friend", ...COMMUNITY_QUESTS]);
+
+/**
+ * The soft order of the pitfall quest map: an Act 2 or 3 main quest not
+ * started yet, while the project has no first partner (main quest 3), says
+ * PARTNER_FIRST. Never a lock: any main quest can be started.
+ */
+export function partnerFirst(board: QuestBoard, view: Pick<QuestView, "ref" | "status">): boolean {
+  const { ref } = view;
+  if (ref.kind !== "main" || view.status !== "available") return false;
+  const act = QUEST_ACTS.findIndex((a) => a.milestones.includes(ref.milestone));
+  if (act <= 0) return false;
+  return !(board.project?.milestones_done ?? []).includes(PARTNER_MILESTONE);
+}
 
 export type QuestKind = BoardRef["kind"];
 

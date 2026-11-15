@@ -91,6 +91,7 @@ describe("a saved submit asks for the quest's gift (schema 13)", () => {
   it("asks for a side quest's gift by the instance the side submit answered", async () => {
     db({
       shift_quest_side_submit: { instance_id: "i-side", revision: 2, created: false },
+      shift_quest_board: { side: [] },
       shift_quest_schema_version: 13,
       shift_quest_quest_gift: { gift: GIFT },
       shift_quest_tree_get: TREE_ROW,
@@ -162,6 +163,7 @@ describe("the gift never fails the submit", () => {
   it("answers ok with gift null on a refusal from the gift (logged by its code)", async () => {
     db({
       shift_quest_side_submit: { instance_id: "i-side", revision: 1, created: true },
+      shift_quest_board: { side: [] },
       shift_quest_schema_version: 13,
       shift_quest_quest_gift: new QuestError("no_project"),
     });

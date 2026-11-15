@@ -17,7 +17,7 @@ import { QuestDbError, QuestError, type QuestApi } from "@/bot/src/quests/api";
 import { readMyTree, TREE_SCHEMA } from "@/bot/src/quests/island/tree";
 import { schemaOf } from "@/bot/src/quests/schema";
 import { REFLECT } from "@/components/shift/island/copy";
-import { MAIN_MILESTONE_TAKE_THE_KEYS, ownershipRows, proofWithOwnership, type OwnershipRow } from "@/lib/shift-island/ownership";
+import { TAKE_THE_KEYS, ownershipRows, proofWithOwnership, type OwnershipRow } from "@/lib/shift-island/ownership";
 import {
   CARD_REFLECTION_FALLBACK,
   MAIN_SLUGS,
@@ -220,13 +220,7 @@ async function ownershipOf(api: QuestApi, actor: string): Promise<OwnershipRow[]
   return ownershipRows(await api.call<unknown>("shift_quest_ownership_get", actor));
 }
 
-/**
- * One of the seven main quests: proof plus one reflection, for a mentor to
- * confirm. Quest 5 (ถือกุญแจเอง) carries the ownership checklist as it is at
- * this moment, read here on the server and added under the student's proof,
- * so the evidence cannot change after review. Too long together: text_too_long,
- * never a cut.
- */
+/** One of the seven main quests: proof plus one reflection, for a mentor to confirm. */
 export async function submitMainQuest(input: {
   milestone: number;
   proof: string;
@@ -235,18 +229,11 @@ export async function submitMainQuest(input: {
 }): Promise<IslandActionResult<QuestSubmitResult>> {
   return withReadyViewer("submitMainQuest", submitMainQuestSchema, input, async ({ actor }, v) => {
     const api = questApi();
-    let proof = v.proof;
-    if (v.milestone === MAIN_MILESTONE_TAKE_THE_KEYS) {
-      const rows = await ownershipOf(api, actor);
-      const withChecklist = proofWithOwnership(v.proof, rows ?? [], TEXT_LIMITS.proof);
-      if (withChecklist == null) throw new QuestError("text_too_long");
-      proof = withChecklist;
-    }
     const row = await api.call<SubmitRow>(
       "shift_quest_milestone_submit",
       actor,
       v.milestone,
-      proof,
+      v.proof,
       v.reflection,
       v.artifactUrl
     );
@@ -254,7 +241,7 @@ export async function submitMainQuest(input: {
   });
 }
 
-/** Quest 5's checklist for the quest page, read-only (it is ticked in Discord). Null without a project. */
+/** The ถือกุญแจเอง checklist for the quest page, read-only (it is ticked in Discord). Null without a project. */
 export async function loadOwnership(): Promise<IslandActionResult<OwnershipRow[] | null>> {
   return withReader("loadOwnership", noInput, undefined, async ({ actor }) => ownershipOf(questApi(), actor));
 }
@@ -280,6 +267,14 @@ export async function chooseSideQuest(input: { templateId: string }): Promise<Is
   });
 }
 
+/**
+ * One side quest: proof plus one reflection, for a mentor to confirm. The
+ * ถือกุญแจเอง side quest (TAKE_THE_KEYS, known from the caller's board, never
+ * from the client) carries the ownership checklist as it is at this moment,
+ * read here on the server and added under the student's proof, so the
+ * evidence cannot change after review. Too long together: text_too_long,
+ * never a cut.
+ */
 export async function submitSideQuest(input: {
   templateId: string;
   proof: string;
@@ -288,11 +283,18 @@ export async function submitSideQuest(input: {
 }): Promise<IslandActionResult<QuestSubmitResult>> {
   return withReadyViewer("submitSideQuest", submitSideQuestSchema, input, async ({ actor }, v) => {
     const api = questApi();
+    let proof = v.proof;
+    if ((await sideSlugOf(api, actor, v.templateId)) === TAKE_THE_KEYS) {
+      const rows = await ownershipOf(api, actor);
+      const withChecklist = proofWithOwnership(v.proof, rows ?? [], TEXT_LIMITS.proof);
+      if (withChecklist == null) throw new QuestError("text_too_long");
+      proof = withChecklist;
+    }
     const row = await api.call<SubmitRow>(
       "shift_quest_side_submit",
       actor,
       v.templateId,
-      v.proof,
+      proof,
       v.reflection,
       v.artifactUrl
     );
@@ -416,6 +418,13 @@ function canvasUnavailable(action: string, error: unknown): QuestError {
   return new QuestError("canvas_unavailable");
 }
 
+/** A side quest's template slug from the caller's board; null when it is not on the board. */
+async function sideSlugOf(api: QuestApi, actor: string, templateId: string): Promise<string | null> {
+  const board = await api.call<QuestBoard>("shift_quest_board", actor);
+  const side = (Array.isArray(board?.side) ? board.side : []).find((s) => s.template_id === templateId);
+  return side ? side.slug : null;
+}
+
 /**
  * The quest's template slug, from the server's own data: a main quest's from
  * its milestone, a side quest's from the caller's board. Proposed quests take
@@ -426,10 +435,9 @@ async function questSlug(api: QuestApi, actor: string, ref: BoardRef): Promise<s
     case "main":
       return MAIN_SLUGS[ref.milestone];
     case "side": {
-      const board = await api.call<QuestBoard>("shift_quest_board", actor);
-      const side = (Array.isArray(board?.side) ? board.side : []).find((s) => s.template_id === ref.templateId);
-      if (!side) throw new QuestError("template_unavailable");
-      return side.slug;
+      const slug = await sideSlugOf(api, actor, ref.templateId);
+      if (!slug) throw new QuestError("template_unavailable");
+      return slug;
     }
     case "proposed":
       throw new QuestError("note_not_allowed");
