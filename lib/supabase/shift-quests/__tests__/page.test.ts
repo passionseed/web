@@ -158,6 +158,8 @@ describe("getIslandPage", () => {
       ["shift_quest_schema_version", []],
       // Tree styles (schema 13): the same unanswered version read, retried by each optional reader.
       ["shift_quest_schema_version", []],
+      // Photos (schema 14): asked once more; unanswered, so no photos.
+      ["shift_quest_schema_version", []],
       ["shift_quest_board", [ACTOR]],
       ["shift_quest_canvas_get", [ACTOR]],
       ["shift_quest_campfire", [ACTOR, false]],
@@ -165,6 +167,7 @@ describe("getIslandPage", () => {
       ["shift_quest_schema_version", []],
     ]);
     expect(page.canvasLink).toEqual({ linked: false });
+    expect(page.photos).toBe(false);
     expect(page.campfire).toEqual({ count: 2, joinUrl: JOIN_URL });
     expect(page.suggestUrl).toBe(SUGGEST_URL);
     expect(page.character).toEqual(CHARACTER);

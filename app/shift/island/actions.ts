@@ -65,6 +65,7 @@ interface SubmitRow {
   instance_id: string;
   revision: number | string;
   created?: boolean;
+  submission_id?: string | null;
 }
 
 interface StartRow {
@@ -79,7 +80,13 @@ type StartResult = { instanceId: string; version: number; created: boolean };
 const noInput = z.unknown().transform(() => null);
 
 function submitted(row: SubmitRow): QuestSubmitResult {
-  return { instanceId: row.instance_id, revision: Number(row.revision), created: row.created === true };
+  return {
+    instanceId: row.instance_id,
+    revision: Number(row.revision),
+    created: row.created === true,
+    // Photos go onto this submission after the save (schema 14).
+    ...(typeof row.submission_id === "string" ? { submissionId: row.submission_id } : {}),
+  };
 }
 
 type QuestGift = Pick<QuestSubmitResult, "gift" | "tree">;
@@ -334,7 +341,7 @@ export async function submitProposedQuest(input: {
   return withReadyViewer("submitProposedQuest", submitProposedQuestSchema, input, async ({ actor }, v) => {
     // Visible to reviewers only, no contributors: the same submit the bot's milestone flow makes.
     const api = questApi();
-    const row = await api.call<{ revision: number | string }>(
+    const row = await api.call<{ revision: number | string; submission_id?: string | null }>(
       "shift_quest_submit",
       actor,
       v.instanceId,
@@ -346,7 +353,9 @@ export async function submitProposedQuest(input: {
       null,
       []
     );
-    return withGift(api, actor, { instanceId: v.instanceId, revision: Number(row.revision), created: false }, "submitProposedQuest");
+    const saved: QuestSubmitResult = { instanceId: v.instanceId, revision: Number(row.revision), created: false };
+    if (typeof row.submission_id === "string") saved.submissionId = row.submission_id;
+    return withGift(api, actor, saved, "submitProposedQuest");
   });
 }
 

@@ -17,6 +17,7 @@
  * All identities are synthetic.
  */
 import { Client } from "pg";
+import { LATEST_SCHEMA } from "./schema";
 
 const adminUrl = process.env.SHIFT_QUESTS_TEST_DATABASE_URL;
 const botUrl = process.env.SHIFT_QUESTS_BOT_DATABASE_URL;
@@ -112,8 +113,8 @@ async function main(): Promise<void> {
   const slotOf = (project: string) => scalar<number>(db, "select slot from public.shift_quest_plots where project_id = $1", [project]);
 
   // --- Schema, privileges ------------------------------------------------------------------
-  check(Number(await call(bot, "shift_quest_schema_version")) === 13, "the bot reads schema version 13 (roots start from 10)");
-  check(Number(await call(web, "shift_quest_schema_version")) === 13, "the website reads schema version 13");
+  check(Number(await call(bot, "shift_quest_schema_version")) === LATEST_SCHEMA, "the bot reads the latest schema version (roots start from 10)");
+  check(Number(await call(web, "shift_quest_schema_version")) === LATEST_SCHEMA, "the website reads the latest schema version");
   const grants: Json = (await db.query(
     `select has_function_privilege('shift_quest_bot', $1::regprocedure, 'EXECUTE') as bot,
             has_function_privilege('shift_quest_web', $1::regprocedure, 'EXECUTE') as web,

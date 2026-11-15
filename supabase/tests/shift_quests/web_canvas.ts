@@ -12,6 +12,7 @@
  */
 import { Client } from "pg";
 import { randomUUID } from "node:crypto";
+import { LATEST_SCHEMA } from "./schema";
 
 const adminUrl = process.env.SHIFT_QUESTS_TEST_DATABASE_URL;
 const botUrl = process.env.SHIFT_QUESTS_BOT_DATABASE_URL;
@@ -90,6 +91,14 @@ const WEB_ALLOWLIST = [
   "shift_quest_island_styles()",
   // 20261115120000_shift_quest_admin_reset_self (admins only; refuses everyone else).
   "shift_quest_admin_reset_self(text)",
+  // 20261115130000_shift_quest_evidence_photos.
+  "shift_quest_evidence_add(text,uuid,integer,integer,integer)",
+  "shift_quest_evidence_remove(text,uuid)",
+  "shift_quest_evidence_list(text,uuid)",
+  "shift_quest_review_view(text,uuid)",
+  "shift_quest_storage_trash_claim(integer)",
+  "shift_quest_storage_trash_done(text[])",
+  "shift_quest_project_set_ambition(text,uuid,text)",
 ];
 
 let failures = 0;
@@ -155,7 +164,7 @@ async function main(): Promise<void> {
   const count = async (sql: string, args: unknown[] = []) => Number(await scalar(db, sql, args));
 
   // --- Schema, privileges, row security ------------------------------------------------
-  check(Number(await call(web, "shift_quest_schema_version")) === 13, "the website reads schema version 13 (it needs 6 or more)");
+  check(Number(await call(web, "shift_quest_schema_version")) === LATEST_SCHEMA, "the website reads the latest schema version (it needs 6 or more)");
 
   const executable: string[] = (await db.query(`
     select p.oid::regprocedure::text as sig

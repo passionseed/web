@@ -9,7 +9,7 @@ import { TEXT_LIMITS } from "@/lib/supabase/shift-quests/types";
 import { COMMON, DETAIL, TODAY } from "./copy";
 import styles from "./island.module.css";
 import { ReflectionForm } from "./ReflectionForm";
-import { Field } from "./SubmitForm";
+import { Field } from "./Field";
 
 interface TodayCardProps {
   /** From shift_quest_island; only "any today" matters, the count is never shown. */

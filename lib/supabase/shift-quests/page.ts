@@ -23,6 +23,8 @@ import type {
   QuestBoard,
   ReadyViewer,
 } from "./types";
+import { schemaOf } from "@/bot/src/quests/schema";
+import { PHOTO_SCHEMA } from "@/lib/shift-island/photos";
 
 /** One row of shift_quest_project_list. */
 interface ProjectListRow {
@@ -169,6 +171,8 @@ export async function getIslandPage(viewer: ReadyViewer): Promise<IslandPageData
     readStyles(api, ROOTS_LOG),
   ]);
   const island = normalizeIsland(islandRaw);
+  // Schema 14: photo evidence and the problem line's เปลี่ยน. A failed read means no.
+  const photos = await schemaOf(api).then((v) => v >= PHOTO_SCHEMA, () => false);
   // Schema 13: the caller's own tree (colours, seed, owned items). Null without a project or on any failure.
   const tree = island.project ? await soft(readMyTree(api, viewer.actor, ROOTS_LOG)) : null;
 
@@ -210,6 +214,7 @@ export async function getIslandPage(viewer: ReadyViewer): Promise<IslandPageData
     character,
     consent,
     news,
+    photos,
   };
 }
 

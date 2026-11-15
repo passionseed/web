@@ -143,7 +143,7 @@ describe("each submit saves with exactly one function", () => {
       { instance_id: UUID, submission_id: "s", revision: 1, version: 2, created: true },
       "shift_quest_milestone_submit",
       [ACTOR, 2, "ทำต้นแบบแล้ว", "ได้เรียนรู้ว่า", null],
-      { instanceId: UUID, revision: 1, created: true, gift: null, tree: null },
+      { instanceId: UUID, revision: 1, created: true, submissionId: "s", gift: null, tree: null },
     ],
     [
       "submitSideQuest",
@@ -151,7 +151,7 @@ describe("each submit saves with exactly one function", () => {
       { instance_id: "i1", submission_id: "s", revision: 2, version: 4, created: false },
       "shift_quest_side_submit",
       [ACTOR, UUID, "ทำต้นแบบแล้ว", "ได้เรียนรู้ว่า", "https://example.com/x"],
-      { instanceId: "i1", revision: 2, created: false, gift: null, tree: null },
+      { instanceId: "i1", revision: 2, created: false, submissionId: "s", gift: null, tree: null },
     ],
     [
       "submitProposedQuest",
@@ -159,7 +159,7 @@ describe("each submit saves with exactly one function", () => {
       { submission_id: "s", revision: 1, version: 4 },
       "shift_quest_submit",
       [ACTOR, UUID, 3, "ทำต้นแบบแล้ว", "ได้เรียนรู้ว่า", null, "reviewers", null, []],
-      { instanceId: UUID, revision: 1, created: false, gift: null, tree: null },
+      { instanceId: UUID, revision: 1, created: false, submissionId: "s", gift: null, tree: null },
     ],
   ];
 

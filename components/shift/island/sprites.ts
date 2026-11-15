@@ -51,7 +51,9 @@ export type WebIcon =
   | "calendar"
   | "bulb"
   | "home"
-  | "tree";
+  | "tree"
+  | "camera"
+  | "peers";
 
 export const WEB_SPRITES: Record<WebIcon, string[]> = {
   compass: [
@@ -797,6 +799,44 @@ export const WEB_SPRITES: Record<WebIcon, string[]> = {
     "..offffobbofo...",
     "..offffobbofo...",
     "..oooooooooooo..",
+    "................",
+  ],
+  // Photo evidence (20261115130000): a camera with a lens and a flash.
+  camera: [
+    "................",
+    "................",
+    ".....oooo.......",
+    "....oaaaao......",
+    ".ooooooooooooo..",
+    ".ozzzzzzzzzzyo..",
+    ".ozaaaooooaazo..",
+    ".ozaaowwwoaazo..",
+    ".ozaowwvvwoazo..",
+    ".ozaowwvuwoazo..",
+    ".ozaowwwwwoazo..",
+    ".ozaaowwwoaazo..",
+    ".ozaaaooooaazo..",
+    ".ooooooooooooo..",
+    "................",
+    "................",
+  ],
+  // The peer check (20261115140000): two islanders side by side.
+  peers: [
+    "................",
+    "...ooo....ooo...",
+    "..okkko..obbbo..",
+    "..okkko..okkko..",
+    "..okkko..okkko..",
+    "...ooo....ooo...",
+    "..owwwo..orrro..",
+    ".owwwwwooorrrro.",
+    ".owwwwwo.orrrro.",
+    ".owwwwwo.orrrro.",
+    ".oowwwoo.oorrro.",
+    "..owowo...orooo.",
+    "..owowo...oroo..",
+    "..oo.oo...oo.o..",
+    "................",
     "................",
   ],
 };

@@ -12,6 +12,7 @@ import { STATE, awardReason, bkkDate, safe } from "../copy";
 import { cid, isUuid } from "../ids";
 import { I } from "../island/copy";
 import { ButtonStyle, button, buttonRows, modal, selectRow, show, textFile, textValue, type Block, type Row, type View } from "../ui";
+import { reviewLinkButton } from "../weblink";
 import { picked, type HandlerSet } from "./types";
 
 const REVIEWERS = ["reviewer", "admin"];
@@ -47,6 +48,24 @@ export interface ReviewDetail {
   awards_live: boolean;
   contributions: { name: string | null; contribution: string | null; status: string }[];
   history: { revision: number; outcome: string; feedback: string | null; created_at: string }[];
+}
+
+/**
+ * What the web review page adds to a submission (shift_quest_review_extras,
+ * schema 14): how many photos it carries. Null on an older database or when
+ * the read fails: the card then looks as before.
+ */
+export interface ReviewExtras {
+  photos: number;
+}
+
+async function reviewExtras(ctx: Ctx, submissionId: string): Promise<ReviewExtras | null> {
+  try {
+    const raw = await ctx.api.call<{ photos?: unknown } | null>("shift_quest_review_extras", ctx.userId, submissionId);
+    return raw && typeof raw === "object" ? { photos: Number(raw.photos) || 0 } : null;
+  } catch {
+    return null;
+  }
 }
 
 interface HelpItem {
@@ -119,6 +138,7 @@ export const RV = {
   earlierLine: (revision: number, outcome: string) => `ครั้งที่ ${revision}: **${outcome}**`,
   appealReason: "เหตุผลอุทธรณ์",
   fullFile: "ข้อความยาวถูกตัด ฉบับเต็มอยู่ในไฟล์นี้",
+  photos: (n: number) => `📷 แนบรูปมา **${n}** รูป ดูได้บนเว็บ (เฉพาะพี่เลี้ยง)`,
   coinsOff: "🪙 ระบบเหรียญปิดอยู่: อนุมัติได้ แต่จะไม่มีเหรียญ",
   coins: (amount: number, team: string | null) =>
     `🪙 อนุมัติแล้วได้ **${amount}** เหรียญ${team === null ? "" : ` (งานทีม: ${team})`}`,
@@ -380,7 +400,7 @@ const LISTS = new Map<string, (ctx: Ctx) => Promise<View>>([
  * earlier rounds, then the rubric. Long text is cut on the card and sent
  * whole in a private file.
  */
-export function reviewCard(d: ReviewDetail): View {
+export function reviewCard(d: ReviewDetail, extras: ReviewExtras | null = null): View {
   let cut = false;
   const field = (label: string, text: string | null | undefined, max: number): string => {
     if (tidy(text).length > max) cut = true;
@@ -446,6 +466,9 @@ export function reviewCard(d: ReviewDetail): View {
   };
   group(agreed);
   group(work);
+  // Schema 14: photos live on the web review page (Discord never gets the images).
+  const photoLink = extras && extras.photos > 0 ? reviewLinkButton(d.submission_id) : null;
+  if (extras && extras.photos > 0) blocks.push({ kind: "subtext", text: RV.photos(extras.photos) });
   if (files.length) blocks.push({ kind: "subtext", text: RV.fullFile }, { kind: "file", name: SUBMISSION_TXT });
   group(past);
   blocks.push({ kind: "divider", line: false }, { kind: "subtext", text: RV.rubric });
@@ -460,7 +483,7 @@ export function reviewCard(d: ReviewDetail): View {
     tone: "staff",
     title: RV.reviewTitle(safe(d.title, 80), d.appeal),
     blocks,
-    rows: [...(d.is_latest ? buttonRows(decide) : []), ...buttonRows([toQueue()])],
+    rows: [...(d.is_latest ? buttonRows(decide) : []), ...buttonRows([toQueue(), ...(photoLink ? [photoLink] : [])])],
     files,
   };
 }
@@ -556,7 +579,7 @@ export const review: HandlerSet = {
       const id = picked(i, args);
       if (!isUuid(id)) return;
       const d = await ctx.api.call<ReviewDetail>("shift_quest_review_get", ctx.userId, id);
-      await show(i, reviewCard(d), { replace: true });
+      await show(i, reviewCard(d, await reviewExtras(ctx, id)), { replace: true });
     },
 
     async rv_dec(i, ctx, [submissionId, outcome, distinct]) {

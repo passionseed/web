@@ -8,6 +8,8 @@ import type { MyTree } from "@/lib/supabase/shift-quests/types";
 import { PLOT, TREE } from "../copy";
 import island from "../island.module.css";
 import { IslandSheet } from "../IslandSheet";
+import { ProblemEditor } from "../ProblemEditor";
+import { TeamProblem } from "../QuestSections";
 import { GiftPicker } from "./GiftPicker";
 import { ownCloseup, treeStageName } from "./model";
 import { SeedPicker } from "./SeedPicker";
@@ -22,6 +24,8 @@ interface TreeSheetProps {
   tree: MyTree;
   /** Close and open the quest board: the own plot used to lead there, and still can. */
   onBoard?: () => void;
+  /** The team's project, for เปลี่ยน on its problem line (schema 14); null hides the change. */
+  projectId?: string | null;
 }
 
 /**
@@ -30,7 +34,7 @@ interface TreeSheetProps {
  * wardrobe. A pick or a new look shows at once from the action's answer; a
  * newer tree from the page (after a refresh) replaces it.
  */
-export function TreeSheet({ open, onClose, tree: given, onBoard }: TreeSheetProps) {
+export function TreeSheet({ open, onClose, tree: given, onBoard, projectId = null }: TreeSheetProps) {
   const giftHeadingId = useId();
   const [tree, setTree] = useState(given);
   const [last, setLast] = useState(given);
@@ -58,6 +62,23 @@ export function TreeSheet({ open, onClose, tree: given, onBoard }: TreeSheetProp
     >
       <div className={`${styles.stack} ${styles.layout}`}>
         {tree.seed == null ? <SeedPicker ambition={tree.ambition} onPlanted={setTree} /> : null}
+
+        {/* Planted: the team's problem line, and (schema 14) เปลี่ยน, because talking to people changes it. */}
+        {tree.seed != null && tree.ambition?.trim() ? (
+          <TeamProblem
+            ambition={tree.ambition}
+            planted
+            editor={
+              projectId ? (
+                <ProblemEditor
+                  projectId={projectId}
+                  current={tree.ambition.trim()}
+                  onSaved={(ambition) => setTree((current) => ({ ...current, ambition }))}
+                />
+              ) : null
+            }
+          />
+        ) : null}
 
         {gift ? (
           <section aria-labelledby={giftHeadingId} className={styles.card}>

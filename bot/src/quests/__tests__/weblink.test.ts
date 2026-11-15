@@ -13,6 +13,8 @@ import {
   islandGuideUrl,
   islandLinkButton,
   islandWebUrl,
+  reviewLinkButton,
+  reviewWebUrl,
 } from "../weblink";
 
 /** The island on the website: the bot's link button reads its address from the environment only. */
@@ -147,5 +149,34 @@ describe("islandBoardUrl", () => {
     expect(b.url).toBe("https://www.passionseed.org/shift/island?at=board");
     expect(b.custom_id).toBeUndefined();
     expect(boardLinkButton(env({}))).toBeNull();
+  });
+});
+
+describe("reviewWebUrl (schema 14: a submission's photos for mentors)", () => {
+  const SUB = "33333333-3333-4333-8333-333333333333";
+
+  it("is the island address plus /review/<submission>", () => {
+    expect(reviewWebUrl(SUB, env({ NEXT_PUBLIC_SITE_URL: "https://www.passionseed.org/" }))).toBe(
+      `https://www.passionseed.org/shift/island/review/${SUB}`,
+    );
+    expect(reviewWebUrl(SUB.toUpperCase(), env({ SHIFT_ISLAND_URL: "https://island.example/play" }))).toBe(
+      `https://island.example/play/review/${SUB}`,
+    );
+  });
+
+  it("is null without an address, for an address with a query, or for an id that is not a submission id", () => {
+    expect(reviewWebUrl(SUB, env({}))).toBeNull();
+    expect(reviewWebUrl(SUB, env({ SHIFT_ISLAND_URL: "https://island.example/?x=1" }))).toBeNull();
+    expect(reviewWebUrl("../../admin", env({ NEXT_PUBLIC_SITE_URL: "https://www.passionseed.org" }))).toBeNull();
+  });
+
+  it("makes a link button only with an address", () => {
+    expect(reviewLinkButton(SUB, env({}))).toBeNull();
+    const button = reviewLinkButton(SUB, env({ NEXT_PUBLIC_SITE_URL: "https://www.passionseed.org" }))!.toJSON() as {
+      style: number;
+      url: string;
+    };
+    expect(button.style).toBe(ButtonStyle.Link);
+    expect(button.url).toBe(`https://www.passionseed.org/shift/island/review/${SUB}`);
   });
 });

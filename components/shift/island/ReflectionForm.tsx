@@ -8,7 +8,7 @@ import { TEXT_LIMITS } from "@/lib/supabase/shift-quests/types";
 
 import { COMMON, DETAIL, REFLECT } from "./copy";
 import styles from "./island.module.css";
-import { Field } from "./SubmitForm";
+import { Field } from "./Field";
 
 /** A private journal entry. Saving does not send a help request. */
 export function ReflectionForm() {

@@ -11,7 +11,7 @@ import { COMMON, DETAIL, STUCK } from "./copy";
 import { useDraft } from "./drafts";
 import styles from "./island.module.css";
 import { IslandSheet } from "./IslandSheet";
-import { Field } from "./SubmitForm";
+import { Field } from "./Field";
 
 export interface StuckTarget {
   /** The caller's own quest instance, or null for a general request. */

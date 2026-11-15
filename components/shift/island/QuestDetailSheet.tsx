@@ -54,6 +54,8 @@ import { SentScreen } from "./SentScreen";
 import { PALETTE, iconGrid, iconScale, type IconKey } from "./sprites";
 import { SubmitForm } from "./SubmitForm";
 import { useOwnership, type OwnershipState } from "./useOwnership";
+import { QuestPhotos } from "./photos/QuestPhotos";
+import { ProblemEditor } from "./ProblemEditor";
 
 interface QuestDetailSheetProps {
   board: QuestBoard;
@@ -80,6 +82,10 @@ interface QuestDetailSheetProps {
   onPlant?: () => void;
   /** Open another quest in this sheet (a ตัวช่วย side quest). */
   onOpenQuest?: (ref: BoardRef) => void;
+  /** Photos and the problem line's เปลี่ยน (schema 14). */
+  photos?: boolean;
+  /** The caller's current project, for changing its problem line (the database checks membership). */
+  projectId?: string | null;
 }
 
 /** "card" builds a quest card from canvas notes; "text" is the written form (SubmitForm). */
@@ -110,6 +116,8 @@ export function QuestDetailSheet({
   team = null,
   onPlant,
   onOpenQuest,
+  photos = false,
+  projectId = null,
 }: QuestDetailSheetProps) {
   // The last quest shown stays in the sheet while it slides closed, so it never closes empty.
   const [last, setLast] = useState<BoardRef | null>(target);
@@ -205,6 +213,7 @@ export function QuestDetailSheet({
             canvas={canvas}
             ownership={ownership}
             footer={footerSlot}
+            photos={photos}
             onForm={(form) => setCompose({ key: bodyKey, form })}
             onBack={() => setCompose(null)}
             onSent={onSent}
@@ -216,6 +225,8 @@ export function QuestDetailSheet({
             team={team}
             onPlant={onPlant}
             onOpenQuest={onOpenQuest}
+            photos={photos}
+            projectId={projectId}
             quest={quest}
             action={action}
             total={board.main.length}
@@ -266,6 +277,8 @@ function QuestDetailBody({
   team,
   onPlant,
   onOpenQuest,
+  photos,
+  projectId,
   quest,
   action,
   total,
@@ -281,6 +294,8 @@ function QuestDetailBody({
   team: QuestDetailSheetProps["team"];
   onPlant?: () => void;
   onOpenQuest?: (ref: BoardRef) => void;
+  photos: boolean;
+  projectId: string | null;
   quest: QuestView;
   action: DetailAction;
   total: number;
@@ -346,7 +361,19 @@ function QuestDetailBody({
         </blockquote>
       ) : null}
 
-      {showProblem && team ? <TeamProblem ambition={team.ambition} planted={team.planted} onPlant={onPlant} /> : null}
+      {/* The work this student sent, with its photos (schema 14); more can go on until a mentor looks. */}
+      {photos && quest.instanceId && quest.mine?.latest_submission ? <QuestPhotos instanceId={quest.instanceId} own /> : null}
+
+      {showProblem && team ? (
+        <TeamProblem
+          ambition={team.ambition}
+          planted={team.planted}
+          onPlant={onPlant}
+          editor={
+            photos && projectId && team.ambition?.trim() ? <ProblemEditor projectId={projectId} current={team.ambition.trim()} /> : null
+          }
+        />
+      ) : null}
 
       <Pitfalls pitfalls={questPitfalls(quest.kind, quest.slug)} />
 
@@ -806,6 +833,7 @@ function QuestCompose({
   canvas,
   ownership,
   footer,
+  photos,
   onForm,
   onBack,
   onSent,
@@ -818,6 +846,7 @@ function QuestCompose({
   canvas: CanvasState;
   ownership: OwnershipState | null;
   footer: HTMLElement | null;
+  photos: boolean;
   onForm: (form: ComposeForm) => void;
   onBack: () => void;
   onSent: (result: QuestSubmitResult) => void;
@@ -852,6 +881,7 @@ function QuestCompose({
       onSubmitted={onSent}
       note={attach?.note}
       proofMax={attach?.proofMax}
+      photos={photos}
     />
   );
 

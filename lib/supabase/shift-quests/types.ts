@@ -317,6 +317,12 @@ export interface IslandPageData {
    * missing, failed, or the digest is off; no news menu row, no team cards.
    */
   news?: IslandNews | null;
+  /**
+   * Photo evidence and changing the team's problem line (schema 14). False
+   * or absent on an older database or when the version read fails: no photo
+   * picker, no เปลี่ยน.
+   */
+  photos?: boolean;
 }
 
 /** Page payload for the voice campfire: no names, no ids. */
@@ -349,6 +355,8 @@ export interface QuestSubmitResult {
   instanceId: string;
   revision: number;
   created: boolean;
+  /** The saved submission, for attaching photos to it (schema 14); null when the database did not say. */
+  submissionId?: string | null;
   /**
    * The quest's gift for the team's tree (schema 13): the first submit of each
    * quest gives one, ever. Null below schema 13, on a resubmit, with nothing

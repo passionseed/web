@@ -18,6 +18,8 @@ export const GUIDE_LINK_LABEL = "📖 คู่มือเกาะ";
 export const BOARD_LINK_LABEL = "🌐 กระดานบนเว็บ";
 /** The island page's query that opens its quest board sheet (app/shift/island/page.tsx). */
 export const BOARD_QUERY = "at=board";
+/** The web review page's link button, on the bot's review card (DRAFT for the Thai review). */
+export const REVIEW_LINK_LABEL = "🖼️ ดูรูปบนเว็บ";
 
 /** Discord's limit for a link button's URL. */
 const MAX_URL = 512;
@@ -97,5 +99,33 @@ export function guideLinkButton(env: NodeJS.ProcessEnv = process.env, label: str
 /** "🌐 เปิดเกาะบนเว็บ" (or another label) opening the island page, or null when no address is configured. */
 export function islandLinkButton(env: NodeJS.ProcessEnv = process.env, label: string = ISLAND_LINK_LABEL): ButtonBuilder | null {
   const url = islandWebUrl(env);
+  return url ? new ButtonBuilder().setStyle(ButtonStyle.Link).setURL(url).setLabel(label) : null;
+}
+
+const SUBMISSION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * The web review page of one submission (/shift/island/review/<id>, schema
+ * 14), or null when the island has no address, its address carries a query
+ * or a fragment, or the id is not a submission id.
+ */
+export function reviewWebUrl(submissionId: string, env: NodeJS.ProcessEnv = process.env): string | null {
+  if (!SUBMISSION_ID.test(submissionId)) return null;
+  const base = islandWebUrl(env);
+  if (!base) return null;
+  const url = new URL(base);
+  if (url.search || url.hash) return null;
+  url.pathname = `${url.pathname.replace(/\/+$/, "")}/review/${submissionId.toLowerCase()}`;
+  const href = url.toString();
+  return href.length > MAX_URL ? null : href;
+}
+
+/** "🖼️ ดูรูปบนเว็บ" opening a submission's web review page, or null when no address is configured. */
+export function reviewLinkButton(
+  submissionId: string,
+  env: NodeJS.ProcessEnv = process.env,
+  label: string = REVIEW_LINK_LABEL,
+): ButtonBuilder | null {
+  const url = reviewWebUrl(submissionId, env);
   return url ? new ButtonBuilder().setStyle(ButtonStyle.Link).setURL(url).setLabel(label) : null;
 }

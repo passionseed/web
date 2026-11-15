@@ -88,6 +88,15 @@ Not stored: message content, voice time, screen share, audio, passwords,
 tokens, contact details, test users' identities. Browsing the bot stores
 nothing; only `/start` creates a member.
 
+Photo evidence (schema 14, `20261115130000_shift_quest_evidence_photos.sql`):
+up to 3 photos per submission revision, re-encoded to WebP with no metadata
+(no EXIF or GPS), in the private Storage bucket `shift-quest-evidence`. The
+database stores only each photo's path, byte size and pixel size; the image
+lives in Storage. Seen by the submitter, team-visible teammates, reviewers and
+admins (and from schema 15 the peers checking it). The export lists them;
+erasure and every other removal queue the objects for the website's daily
+deletion job (`/api/cron/shift-island-trash`).
+
 The one thing the bot notices on its own (from schema 7,
 `20261111093000_shift_quest_campfire.sql`) is who is in the coworking voice
 channel right now, for the island's campfire:
@@ -757,6 +766,24 @@ Pre-upgrade forms without a captured UUID also journal only on schema 12.
 Below schema 12 the bot keeps the legacy two-call close path. Schema reads are
 cached per API instance, so restart the bot after the maintainer applies
 `20261114090000_shift_quest_round_close.sql`. This change does not apply it.
+
+### Photo evidence and the team's problem (schema 14)
+
+`20261115130000_shift_quest_evidence_photos.sql` adds photos on a submission
+and changing a project's ambition later; the plan is in
+[`docs/designs/shift-high-quest-pitfalls.md`](../designs/shift-high-quest-pitfalls.md)
+("Show work and peer check"). Website-only: `shift_quest_evidence_add`
+(reserve a path: the submitter, a pending latest revision, 3 at most),
+`shift_quest_evidence_remove`, `shift_quest_evidence_list` (one quest's latest
+submission), `shift_quest_review_view` (the reviewers-only web page
+`/shift/island/review/<submission>`), `shift_quest_storage_trash_claim` and
+`_done` (the daily job) and `shift_quest_project_set_ambition`. The bot gets
+`shift_quest_review_extras` (the photo count on its review card, with a link
+to the web page). A trigger on the photo table queues every removed photo's
+object in `shift_quest_storage_trash`, whatever removed it. The bucket is made
+by `20261115130100_shift_island_evidence_bucket.sql`, kept outside the
+`*shift_quest*` names because the sandbox has no storage schema. Tested in
+`supabase/tests/shift_quests/evidence.ts`.
 
 ## Admin: reset my own island (testing)
 

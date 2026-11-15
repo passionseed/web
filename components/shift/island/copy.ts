@@ -719,6 +719,75 @@ export const TEAM_PROBLEM = {
   note: "เป็นจุดตั้งต้น คุยกับคนจริงแล้วจะชัดขึ้นเอง",
   empty: "ทีมยังไม่ได้เลือกว่าอยากแก้ปัญหาอะไร ให้ใคร",
   plant: "ไปเลือกที่ต้นไม้ของทีม",
+  /** Changing the line later (schema 14): any teammate, any time. */
+  change: "เปลี่ยน",
+  editLabel: "ทีมอยากแก้ปัญหาอะไร ให้ใคร",
+  editHint: "เปลี่ยนได้เสมอ คุยกับคนจริงแล้วปัญหาเปลี่ยนไป เป็นเรื่องปกติ",
+  save: "บันทึก",
+  saving: "กำลังบันทึก",
+  cancel: "ยกเลิก",
+  saved: "เปลี่ยนปัญหาของทีมแล้ว",
+  required: "เขียนปัญหาที่ทีมอยากแก้ก่อน",
+};
+
+/**
+ * DRAFT: the web review page (/shift/island/review/<submission>), reviewers
+ * and admins only. Mentors decide in Discord; this page shows what Discord
+ * cannot: the photos (and from schema 15, peer checks).
+ */
+export const REVIEW_PAGE = {
+  title: "งานที่ส่งมาให้ดู",
+  staffOnly: "หน้านี้สำหรับพี่เลี้ยงและแอดมินเท่านั้น",
+  signIn: "เข้าสู่ระบบด้วยบัญชี Discord ที่ใช้บนเกาะก่อน",
+  notFound: "ไม่พบงานนี้",
+  unavailable: "หน้านี้ยังไม่เปิด ลองใหม่อีกครั้งภายหลัง",
+  revision: (n: number) => `ครั้งที่ ${n}`,
+  older: "ไม่ใช่ฉบับล่าสุด มีฉบับใหม่กว่านี้แล้ว",
+  goal: "เป้าหมาย",
+  criteria: "เสร็จเมื่อ",
+  evidence: "สิ่งที่ทำ",
+  reflection: "สะท้อนคิด",
+  link: "ลิงก์",
+  photos: "รูปที่แนบ",
+  noPhotos: "ไม่มีรูปแนบ",
+  redacted: "เนื้อหาถูกลบตามคำขอของนักเรียน",
+  decideInDiscord: "ตัดสินใจในการ์ดรีวิวบน Discord ตามเดิม",
+  status: {
+    pending: "รอพี่เลี้ยงดู",
+    clarification: "ขอให้เพิ่มเติม",
+    approved: "ผ่านแล้ว",
+    declined: "ยังไม่ผ่าน",
+    withdrawn: "ถอนแล้ว",
+    superseded: "มีฉบับใหม่แทน",
+  } as Record<string, string>,
+};
+
+/**
+ * DRAFT: photos on a quest (schema 14). Up to 3 per send, shrunk in the
+ * browser and re-encoded on the server with no location or camera data.
+ * Students meet real people: the rules come before the button.
+ */
+export const PHOTOS = {
+  label: "แนบรูปหรือภาพหน้าจอ (ไม่บังคับ)",
+  rulesLead: "ก่อนแนบ เช็กว่าในรูป",
+  rules: ["ไม่มีหน้าคน", "ไม่มีชื่อจริง", "ไม่มีเบอร์โทรหรือที่อยู่"],
+  crop: "ภาพหน้าจอ: ครอปให้เหลือแค่ส่วนที่เกี่ยวกับงาน",
+  add: "เพิ่มรูป",
+  count: (n: number, max: number) => `${n}/${max} รูป`,
+  full: (max: number) => `แนบได้สูงสุด ${max} รูป`,
+  remove: (n: number) => `เอารูปที่ ${n} ออก`,
+  alt: (n: number) => `รูปที่ ${n} ที่แนบกับงาน`,
+  shrinking: "กำลังเตรียมรูป",
+  uploading: (done: number, total: number) => `กำลังอัปโหลดรูป ${done}/${total}`,
+  tooBig: "รูปนี้ใหญ่เกิน 8 MB ลองแคปหน้าจอหรือครอปให้เล็กลง",
+  unreadable: "เปิดรูปนี้ไม่ได้ ลองแคปหน้าจอแล้วแนบใหม่",
+  someFailed: (n: number) => `ส่งงานแล้ว แต่รูป ${n} รูปยังอัปโหลดไม่ขึ้น แนบใหม่ได้จากหน้าเควสต์`,
+  heading: "รูปที่แนบ",
+  addMore: "แนบรูปเพิ่ม",
+  loading: "กำลังโหลดรูป",
+  loadFailed: "โหลดรูปไม่ได้ตอนนี้",
+  waiting: "แนบเพิ่มหรือเอาออกได้จนกว่าพี่เลี้ยงจะดู",
+  open: (n: number) => `เปิดรูปที่ ${n}`,
 };
 
 /**
