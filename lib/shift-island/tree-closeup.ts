@@ -1,8 +1,14 @@
 /**
- * The SHIFT Island tree close-up: the team's tree large, sky above, the ground
- * cut open below with one root per root reflection. One pixel grid for the
- * web canvas, the Discord bot's PNG and the promo renderer. Pure and
+ * The SHIFT Island tree close-up: the team's tree large on a plain backdrop,
+ * the ground cut open below with one root per root reflection. One pixel grid
+ * for the web canvas, the Discord bot's PNG and the promo renderer. Pure and
  * deterministic (seeded RNG): no DOM, Node or Discord imports.
+ *
+ * The look is soft, painterly pixel art with no outlines. A canopy is a few
+ * round lobes with a ragged edge, lit from the top left like a heap of
+ * spheres, and painted in small leaf clusters, each a touch lighter on its own
+ * top left. Every item colour becomes five tones: shadows cooler and duller,
+ * highlights warmer and lighter.
  */
 import { PALETTE, SPRITES } from "@/bot/assets/island/sprites";
 
@@ -10,15 +16,11 @@ import { mapTreeColor, resolveStyle, treeItem, type TreeItem, type TreeSlot, typ
 
 export interface CloseupInput {
   style: TreeStyle;
-  /** Tree stage, 0 (empty plot) to 7 (blossom). */
   stage: number;
-  /** Stage 0 only: the team picked a seed, so it is in the ground. */
   seeded: boolean;
-  /** Root reflections: all of them, and how many of those are recent (their tips glow). */
   roots: { count: number; recent: number };
 }
 
-/** Hex colours, row-major; null is transparent. */
 export type PixelGrid = (string | null)[][];
 
 export const CLOSEUP_SIZE: Readonly<{ w: number; h: number; ground: number }> = { w: 96, h: 150, ground: 96 };
@@ -28,58 +30,93 @@ type Pt = [number, number];
 type Rng = () => number;
 
 const { w: W, h: H, ground: GROUND } = CLOSEUP_SIZE;
-/** The plot centre column: trunk, seed and camera all centre on it. */
 const CX = 48;
-/** Tree size per stage; stages 0 to 2 have no tree yet. */
 const TREE_SCALE = [0, 0, 0, 0.34, 0.56, 0.78, 1, 1];
-/** Stages up to this one are seen at ZOOM about the plot centre, so a seed or sprout fills the frame. */
 const ZOOM_LAST_STAGE = 2;
 const ZOOM = 2;
-/** The top roots level: more reflections than this draw no more roots. */
 const MAX_ROOTS = 15;
-/** Map sprites are 32 wide with soil from row 30: the stake's sprite column 16 sits on CX. */
 const SPRITE_CENTRE = 16;
 const SPRITE_SOIL_ROW = 30;
+/** Light from the top left and a little toward the viewer. */
+const LIGHT = unit(-0.5, -0.72, 0.48);
+/** The same light flat on the picture: which side of a leaf cluster is lit. */
+const LX = -0.6;
+const LY = -0.8;
 
 const COLOR = {
-  skyHigh: "#BFE3E6",
-  skyLow: "#D6EEE6",
-  sun: "#FFE9A8",
-  soil: "#5A4232",
-  soilDeep: "#4E3829",
-  soilFleck: "#6E523D",
-  seed: "#8B5E3C",
+  bg: "#E9DFC9",
+  grassHi: "#B3C46B",
+  grass: "#8FA957",
+  grassMid: "#759349",
+  grassDark: "#5C7A3E",
+  grassShade: "#6A8744",
+  topsoil: "#6E5743",
+  soil: "#5F4A3A",
+  soilDeep: "#503F33",
+  fleck: "#7A6450",
+  fleckLo: "#4A3A2E",
+  pebble: "#8E8070",
+  pebbleHi: "#B3A591",
+  pebbleLo: "#4A3C31",
+  seed: "#8B6343",
+  seedHi: "#B58C62",
+  seedOut: "#45311F",
+  root: "#AC8C69",
+  rootHi: "#CBAE86",
+  rootLo: "#806650",
 };
 
-/** Canopy blobs of the full-size tree: [x, y, radius]. */
-const BLOBS: [number, number, number][] = [
-  [48, 34, 24],
-  [30, 44, 17],
-  [66, 44, 17],
-  [40, 22, 15],
-  [58, 24, 15],
-  [48, 52, 15],
-];
-const FLOWER: Pt[] = [[0, -2], [-1, -1], [0, -1], [1, -1], [-2, 0], [-1, 0], [1, 0], [2, 0], [-1, 1], [0, 1], [1, 1], [0, 2]];
-const FRUIT: Pt[] = [[0, -1], [-1, 0], [0, 0], [1, 0], [0, 1], [1, 1], [-1, 1], [1, -1]];
-const NEIGHBOURS: Pt[] = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+/** The plain backdrop behind the tree: everything above the ground that is not the plant. */
+export const CLOSEUP_BACKDROP = COLOR.bg;
 
-/** The resolved colours and leaf stamp of a style. */
+/** Blossoms row by row: p petal, h lit petal, c centre, s petal in shadow; fruit f, F in shadow, H lit. */
+/** Blossoms come in small bunches of petals, lit on top, a few showing their centre, and single buds. */
+const BLOSSOMS = [
+  ["hh.", "hpp", ".ps"],
+  [".hp", "hcp", "ps."],
+  ["hp.", "pps"],
+  [".h.", "hpp", "ps."],
+  ["hp", "ps"],
+  ["h", "s"],
+];
+const FRUIT = [".Hf.", "Hfff", "ffFF", ".FF."];
+const NEIGHBOURS: Pt[] = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+
+/** Five tones per item, and a faint one for stray leaves against the sky. */
+interface Ramp {
+  deep: string;
+  dark: string;
+  mid: string;
+  light: string;
+  hi: string;
+  ghost: string;
+}
+type Tone = "deep" | "dark" | "mid" | "light" | "hi";
+
 interface Look {
   shape: string;
-  stamp: string[];
-  leaf: Trio;
-  bark: Trio;
+  leaf: Ramp;
+  bark: Ramp;
   bloom: Trio;
+  bloomLo: string;
 }
 
-/** The plant in world pixels, before the camera: colours, plus the solid mask the outline wraps. */
-interface Layer {
-  px: PixelGrid;
-  solid: boolean[][];
+interface Lobe {
+  x: number;
+  y: number;
+  r: number;
 }
 
-/** The close-up as a 96 x 150 grid: sky above CLOSEUP_SIZE.ground, cut-open soil below. */
+/** A canopy before it is painted: which pixels are leaves, the light on each, and the size and stretch of its leaf clusters. */
+interface Field {
+  inside: boolean[][];
+  light: number[][];
+  cell: number;
+  stretch: Pt;
+  /** Willow strands: no stray leaves around them. */
+  hang?: boolean[][];
+}
+
 export function closeupGrid(input: CloseupInput): PixelGrid {
   const style = resolveStyle(input.style);
   const look = lookOf(style);
@@ -89,20 +126,18 @@ export function closeupGrid(input: CloseupInput): PixelGrid {
   const count = planted ? clampInt(input.roots.count, 0, MAX_ROOTS) : 0;
   const recent = clampInt(input.roots.recent, 0, count);
 
-  const layer: Layer = { px: grid<string | null>(null), solid: grid(false) };
-  if (stage >= 3) drawTree(layer, look, stage);
-  else if (stage === 2) drawSprout(layer, look.leaf);
-  else if (stage === 1) drawShoot(layer, look.leaf);
-  else drawStake(layer, style);
-  outline(layer);
-  if (planted && stage <= ZOOM_LAST_STAGE) drawSeed(layer.px, stage);
+  const px = grid<string | null>(null);
+  if (stage >= 3) drawTree(px, look, stage);
+  else if (stage === 2) drawSprout(px, look.leaf);
+  else if (stage === 1) drawShoot(px, look.leaf);
+  else drawStake(px, style);
+  if (planted && stage <= ZOOM_LAST_STAGE) drawSeed(px, stage);
 
-  const out = compose(backdrop(), layer.px, zoom);
+  const out = compose(backdrop(), px, zoom);
   drawRoots(out, stage, count, recent);
   return out;
 }
 
-/** The grid scaled up by a whole number into RGBA bytes (transparent where the grid is null). */
 export function gridToRgba(grid: PixelGrid, scale: number): { width: number; height: number; data: Uint8Array } {
   const s = Math.max(1, Math.floor(scale));
   const width = (grid[0]?.length ?? 0) * s;
@@ -126,36 +161,21 @@ export function gridToRgba(grid: PixelGrid, scale: number): { width: number; hei
   return { width, height, data };
 }
 
-/**
- * "full": sky, tree and the cut-open ground. "tree": a square around the
- * tree, for small previews. "canopy": a small square of the leaves (show it
- * at twice the scale), where the leaf shapes can be told apart.
- */
 export type CloseupView = "full" | "tree" | "canopy";
 
-/** Each view's window on the 96 x 150 close-up: [top, bottom) rows and [left, right) columns. */
 export const CLOSEUP_WINDOWS: Readonly<Record<CloseupView, { rows: readonly [number, number]; cols: readonly [number, number] }>> = {
   full: { rows: [0, H], cols: [0, W] },
-  // From just under the top of the sky to just under the grass.
   tree: { rows: [4, 100], cols: [0, W] },
-  // The top of a stage 5 canopy, or the middle of a bigger one.
   canopy: { rows: [14, 62], cols: [24, 72] },
 };
 
-/** One view's window of a close-up grid. */
 export function cropGrid(grid: PixelGrid, view: CloseupView): PixelGrid {
   const { rows, cols } = CLOSEUP_WINDOWS[view];
   return grid.slice(...rows).map((row) => row.slice(...cols));
 }
 
-/**
- * The first stage where an item of each slot shows in the close-up: a canopy
- * for shape, leaves and bark at a size where they read, the flowers for a
- * blossom. A preview of a younger tree is drawn at that stage instead.
- */
 export const SHOWS_FROM: Readonly<Record<TreeSlot, number>> = { shape: 5, leaf: 5, bark: 5, bloom: 7 };
 
-/** A tree wearing one item, at a stage where the item shows: for gift options and wardrobe tiles. Null for an id the catalog does not have. */
 export function wearItem(base: CloseupInput, itemId: string): CloseupInput | null {
   const item = treeItem(itemId);
   if (!item) return null;
@@ -167,37 +187,102 @@ export function wearItem(base: CloseupInput, itemId: string): CloseupInput | nul
   };
 }
 
-/** How a look is previewed: a leaf shape as a close look at the leaves (shown at twice the scale), anything else as the whole tree. */
 export function previewView(slot: TreeSlot): { view: CloseupView; scale: number } {
   return slot === "shape" ? { view: "canopy", scale: 2 } : { view: "tree", scale: 1 };
 }
 
-function lookOf(style: TreeStyle): Look {
+// ---------------------------------------------------------------- colour
+
+function hexToHsl(hex: string): [number, number, number] {
+  const n = parseInt(hex.slice(1), 16);
+  const r = ((n >> 16) & 255) / 255;
+  const g = ((n >> 8) & 255) / 255;
+  const b = (n & 255) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, l];
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  const h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [h * 60, s, l];
+}
+
+function hslToHex(h: number, s: number, l: number): string {
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    const c = l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+    return Math.round(Math.min(1, Math.max(0, c)) * 255)
+      .toString(16)
+      .padStart(2, "0");
+  };
+  return `#${f(0)}${f(8)}${f(4)}`.toUpperCase();
+}
+
+/** Move a colour's hue toward `target` by up to `by` degrees, and set its lightness and saturation. */
+function shift(hex: string, target: number, by: number, light: (l: number) => number, sat = 1): string {
+  const [h, s, l] = hexToHsl(hex);
+  const diff = ((target - h + 540) % 360) - 180;
+  const nh = (h + Math.sign(diff) * Math.min(Math.abs(diff), by) + 360) % 360;
+  return hslToHex(nh, Math.min(1, s * sat), Math.min(0.96, Math.max(0.04, light(l))));
+}
+
+function mix(a: string, b: string, t: number): string {
+  const p = parseInt(a.slice(1), 16);
+  const q = parseInt(b.slice(1), 16);
+  const ch = (sh: number) => Math.round(((p >> sh) & 255) * (1 - t) + ((q >> sh) & 255) * t);
+  return `#${[16, 8, 0].map((sh) => ch(sh).toString(16).padStart(2, "0")).join("")}`.toUpperCase();
+}
+
+/** An item's three colours as five tones: the deepest cooler and duller, the highlight warmer and lighter. */
+function rampOf([dark, mid, light]: Trio): Ramp {
   return {
-    shape: style.shape,
-    stamp: drawingOf(style.shape, "stamp"),
-    leaf: drawingOf(style.leaf, "colors"),
-    bark: drawingOf(style.bark, "colors"),
-    bloom: drawingOf(style.bloom, "colors"),
+    deep: shift(dark, 235, 18, (l) => l * 0.74, 0.9),
+    dark,
+    mid,
+    light,
+    hi: shift(light, 50, 30, (l) => l + (1 - l) * 0.32, 1.25),
+    ghost: mix(mid, COLOR.bg, 0.55),
   };
 }
 
-/** A resolved item's drawing: every shape has a stamp, every leaf, bark and bloom three colours. */
+function lookOf(style: TreeStyle): Look {
+  const bloom = drawingOf(style.bloom, "colors");
+  return {
+    shape: style.shape,
+    leaf: rampOf(drawingOf(style.leaf, "colors")),
+    bark: rampOf(drawingOf(style.bark, "colors")),
+    bloom,
+    bloomLo: shift(bloom[2], 300, 10, (l) => l * 0.8, 1.05),
+  };
+}
+
 function drawingOf<K extends "stamp" | "colors">(id: string, key: K): NonNullable<TreeItem[K]> {
   const drawing = treeItem(id)?.[key];
   if (!drawing) throw new Error(`tree-closeup: ${id} has no ${key}`);
   return drawing;
 }
 
+// ---------------------------------------------------------------- grid basics
+
 function clampInt(v: number, lo: number, hi: number): number {
   return Number.isFinite(v) ? Math.min(hi, Math.max(lo, Math.floor(v))) : lo;
+}
+
+function clamp01(v: number): number {
+  return Math.min(1, Math.max(0, v));
+}
+
+function unit(x: number, y: number, z: number): [number, number, number] {
+  const n = Math.hypot(x, y, z);
+  return [x / n, y / n, z / n];
 }
 
 function grid<T>(fill: T): T[][] {
   return Array.from({ length: H }, () => Array<T>(W).fill(fill));
 }
 
-/** Mulberry32: the mockup's seeded RNG. */
 function rng(seed: number): Rng {
   let s = seed;
   return () => {
@@ -208,7 +293,35 @@ function rng(seed: number): Rng {
   };
 }
 
-/** Set one pixel, rounding and clipping to the grid; false when it fell outside. */
+/** A stable 0..1 value per pixel, for texture that must not shift between renders. */
+function hash(x: number, y: number, salt = 0): number {
+  let h = Math.imul(x * 374761393 + y * 668265263 + salt * 2246822519, 3266489917);
+  h = Math.imul(h ^ (h >>> 15), 2246822519);
+  return ((h ^ (h >>> 13)) >>> 0) / 4294967296;
+}
+
+/** The leaf cluster a pixel belongs to: the nearest of a jittered grid of points, `size` apart and stretched by `stretch`. */
+function cellAt(x: number, y: number, size: number, [sx, sy]: Pt): { i: number; j: number; x: number; y: number } {
+  const w = size * sx;
+  const h = size * sy;
+  const gi = Math.floor(x / w);
+  const gj = Math.floor(y / h);
+  let best = { i: 0, j: 0, x: 0, y: 0 };
+  let bd = Infinity;
+  for (let j = gj - 1; j <= gj + 1; j++) {
+    for (let i = gi - 1; i <= gi + 1; i++) {
+      const cx = (i + 0.15 + 0.7 * hash(i, j, 41)) * w;
+      const cy = (j + 0.15 + 0.7 * hash(i, j, 43)) * h;
+      const d = ((x - cx) / sx) ** 2 + ((y - cy) / sy) ** 2;
+      if (d < bd) {
+        bd = d;
+        best = { i, j, x: cx, y: cy };
+      }
+    }
+  }
+  return best;
+}
+
 function put(px: PixelGrid, x: number, y: number, color: string): boolean {
   const c = Math.round(x);
   const r = Math.round(y);
@@ -217,158 +330,306 @@ function put(px: PixelGrid, x: number, y: number, color: string): boolean {
   return true;
 }
 
-/** Set a plant pixel; solid ones get the outline. */
-function paint(layer: Layer, x: number, y: number, color: string, solid = true): void {
-  if (put(layer.px, x, y, color) && solid) layer.solid[Math.round(y)][Math.round(x)] = true;
-}
+// ---------------------------------------------------------------- backdrop
 
-/** Sky in two bands with a sun, grass, then soil darkening with depth. Screen space: the camera never moves it. */
 function backdrop(): PixelGrid {
   const g = grid<string | null>(null);
-  for (let y = 0; y < H; y++) {
-    for (let x = 0; x < W; x++) g[y][x] = y < GROUND ? (y < GROUND / 2 ? COLOR.skyHigh : COLOR.skyLow) : soilAt(x, y);
-  }
-  for (let dy = -5; dy <= 5; dy++) {
-    for (let dx = -5; dx <= 5; dx++) if (dx * dx + dy * dy <= 25) g[12 + dy][80 + dx] = COLOR.sun;
-  }
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) g[y][x] = y < GROUND ? COLOR.bg : soilAt(x, y);
+  drawGrass(g);
+  drawPebbles(g);
   return g;
+}
+
+/** The grass strip: a few tufts standing up, then three rows down to the cut soil. */
+function drawGrass(g: PixelGrid): void {
+  for (let x = 0; x < W; x++) {
+    g[GROUND][x] = hash(x, 1) < 0.55 ? COLOR.grassHi : COLOR.grass;
+    g[GROUND + 1][x] = hash(x, 2) < 0.65 ? COLOR.grass : COLOR.grassMid;
+    g[GROUND + 2][x] = hash(x, 3) < 0.55 ? COLOR.grassMid : COLOR.grassDark;
+    g[GROUND + 3][x] = hash(x, 4) < 0.4 ? COLOR.grassDark : COLOR.topsoil;
+  }
+  // Tufts in small clumps, a blade or two tall, the left blades lit.
+  for (let c = 0; c < W; c += 6) {
+    if (hash(c, 7) < 0.45) continue;
+    const at = c + Math.floor(hash(c, 8) * 4);
+    for (let i = 0; i < 3; i++) {
+      const x = at + i;
+      if (x >= W || hash(x, 9) < 0.3) continue;
+      g[GROUND - 1][x] = i === 0 ? COLOR.grassHi : COLOR.grass;
+      if (i === 1 && hash(c, 10) < 0.6) g[GROUND - 2][x] = COLOR.grassHi;
+    }
+  }
 }
 
 function soilAt(x: number, y: number): string {
   const q = y - GROUND;
-  if (q < 2) return x % 3 ? PALETTE.g : PALETTE.h;
-  if (q < 3) return PALETTE.h;
-  if ((x * 13 + y * 7) % 11 === 0) return COLOR.soilFleck;
-  return y > GROUND + 30 ? COLOR.soilDeep : COLOR.soil;
+  let c: string;
+  if (q < 7) c = COLOR.topsoil;
+  else if (q < 9) c = (x + y) % 2 ? COLOR.topsoil : COLOR.soil;
+  else if (q < 32) c = COLOR.soil;
+  else if (q < 34) c = (x + y) % 2 ? COLOR.soil : COLOR.soilDeep;
+  else c = COLOR.soilDeep;
+  // Short flecks of grit, lighter near the top.
+  const f = hash(Math.floor(x / 2), y, 61);
+  if (q > 4 && f < 0.022) return COLOR.fleckLo;
+  if (q > 4 && f > 0.986) return COLOR.fleck;
+  return c;
 }
 
-/** The plant over the backdrop, magnified by zoom about (CX, GROUND). */
+/** A few small stones in the soil, lit from the top left. */
+function drawPebbles(g: PixelGrid): void {
+  const R = rng(91);
+  for (let i = 0; i < 12; i++) {
+    const x = 3 + Math.floor(R() * (W - 8));
+    const y = GROUND + 8 + Math.floor(R() * (H - GROUND - 11));
+    const wide = R() < 0.5;
+    g[y][x] = COLOR.pebbleHi;
+    g[y][x + 1] = COLOR.pebble;
+    g[y + 1][x] = COLOR.pebble;
+    g[y + 1][x + 1] = COLOR.pebbleLo;
+    if (wide) {
+      g[y][x + 2] = COLOR.pebble;
+      g[y + 1][x + 2] = COLOR.pebbleLo;
+    }
+  }
+}
+
 function compose(back: PixelGrid, world: PixelGrid, zoom: number): PixelGrid {
   return back.map((row, y) =>
     row.map((c, x) => world[GROUND + Math.floor((y - GROUND) / zoom)][CX + Math.floor((x - CX) / zoom)] ?? c),
   );
 }
 
-/** A 1px dark outline around everything solid above the ground. */
-function outline(layer: Layer): void {
-  const edge: Pt[] = [];
-  for (let y = 0; y < GROUND; y++) {
-    for (let x = 0; x < W; x++) {
-      if (!layer.solid[y][x] && NEIGHBOURS.some(([dx, dy]) => layer.solid[y + dy]?.[x + dx])) edge.push([x, y]);
-    }
-  }
-  for (const [x, y] of edge) layer.px[y][x] = PALETTE.o;
-}
+// ---------------------------------------------------------------- young plants
 
-/** Stage 0: the map's marker post (sprite stage_0), bark-coloured like the map tree. */
-function drawStake(layer: Layer, style: TreeStyle): void {
+function drawStake(px: PixelGrid, style: TreeStyle): void {
   SPRITES.stage_0.slice(0, SPRITE_SOIL_ROW).forEach((line, row) =>
     [...line].forEach((ch, col) => {
       if (ch === ".") return;
-      const color = mapTreeColor(style, ch, row) ?? PALETTE[ch];
-      paint(layer, CX + col - SPRITE_CENTRE, GROUND - SPRITE_SOIL_ROW + row, color, ch !== "o");
+      put(px, CX + col - SPRITE_CENTRE, GROUND - SPRITE_SOIL_ROW + row, mapTreeColor(style, ch, row) ?? PALETTE[ch]);
     }),
   );
 }
 
-/** Stage 1: a sprout tip just breaking the surface. */
-function drawShoot(layer: Layer, leaf: Trio): void {
-  paint(layer, CX, GROUND - 1, leaf[2]);
-  paint(layer, CX + 1, GROUND - 2, leaf[2]);
+/** Stage 1: a curled shoot with one folded leaf, just out of the soil. */
+function drawShoot(px: PixelGrid, leaf: Ramp): void {
+  const pixels: [number, number, Tone][] = [
+    [0, -1, "dark"],
+    [0, -2, "mid"],
+    [0, -3, "mid"],
+    [1, -4, "light"],
+    [2, -4, "dark"],
+    [1, -5, "hi"],
+    [2, -5, "light"],
+    [3, -5, "mid"],
+    [3, -4, "deep"],
+  ];
+  for (const [dx, dy, t] of pixels) put(px, CX + dx, GROUND + dy, leaf[t]);
 }
 
-/** Stage 2: a stem with two leaves. */
-function drawSprout(layer: Layer, leaf: Trio): void {
-  for (let y = GROUND - 1; y >= GROUND - 9; y--) paint(layer, CX, y, leaf[1]);
+/** Stage 2: a stem with two seed leaves, the left one in the light. */
+function drawSprout(px: PixelGrid, leaf: Ramp): void {
+  for (let y = GROUND - 1; y >= GROUND - 9; y--) put(px, CX, y, y > GROUND - 4 ? leaf.dark : leaf.mid);
+  // Each leaf: rows of [from, to] columns out from the stem, top row first.
+  const rows: [number, number][] = [
+    [3, 5],
+    [1, 6],
+    [1, 6],
+    [2, 4],
+  ];
   for (const dir of [-1, 1]) {
-    for (let i = 0; i < 5; i++) {
-      for (let j = 0; j < 3; j++) {
-        if ((i === 0 || i === 4) && j !== 1) continue;
-        paint(layer, CX + dir * (1 + i), GROUND - 10 - j + (i > 2 ? 1 : 0), j === 0 ? leaf[2] : leaf[1]);
+    const lit = dir < 0;
+    rows.forEach(([a, b], r) => {
+      for (let i = a; i <= b; i++) {
+        let tone: Tone = r === 0 ? (lit ? "hi" : "light") : r === rows.length - 1 ? (lit ? "dark" : "deep") : lit ? "light" : "mid";
+        if (r === 1 && i === b) tone = lit ? "mid" : "dark";
+        put(px, CX + dir * i, GROUND - 11 + r - Math.floor(i / 2), leaf[tone]);
       }
-    }
+    });
   }
-  paint(layer, CX, GROUND - 10, leaf[2]);
+  put(px, CX, GROUND - 10, leaf.light);
 }
 
-/** The seed underground (stages 0 to 2), with its stem and taproot once it sprouts. */
 function drawSeed(px: PixelGrid, stage: number): void {
   const sy = seedY(stage);
-  for (let a = -3; a <= 3; a++) {
-    for (let b = -2; b <= 2; b++) {
-      if ((a * a) / 9 + (b * b) / 4 <= 1) put(px, CX + a, sy + b, a < 0 && b < 0 ? PALETTE.e : COLOR.seed);
+  for (let a = -4; a <= 4; a++) {
+    for (let b = -3; b <= 3; b++) {
+      const d = (a * a) / 16 + (b * b) / 9;
+      if (d > 1) continue;
+      const rimPx = (a * a) / 9 + (b * b) / 4 > 1;
+      put(px, CX + a, sy + b, rimPx ? COLOR.seedOut : a < 0 && b < 0 ? COLOR.seedHi : COLOR.seed);
     }
   }
+  put(px, CX - 2, sy - 1, PALETTE.e);
   if (stage === 0) return;
-  for (let y = GROUND + 2; y < sy - 2; y++) put(px, CX, y, PALETTE.i);
-  for (let y = sy + 3; y < sy + 3 + stage * 3; y++) put(px, CX + (y % 3 ? 0 : 1), y, PALETTE.i);
+  for (let y = GROUND + 2; y < sy - 3; y++) put(px, CX, y, COLOR.rootHi);
+  for (let y = sy + 4; y < sy + 4 + stage * 3; y++) put(px, CX + (y % 3 ? 0 : 1), y, COLOR.rootHi);
 }
 
-/** The seed's centre row, before the camera. */
 function seedY(stage: number): number {
   return GROUND + (stage === 2 ? 5 : 7);
 }
 
-/** Stages 3 to 7: branches, trunk, canopy of leaf stamps, then fruit (6) or flowers (7). */
-function drawTree(layer: Layer, look: Look, stage: number): void {
+// ---------------------------------------------------------------- the tree
+
+/** The canopy of each lobed shape, full size: lobes [x, y, radius]. */
+const LOBES: Record<string, [number, number, number][]> = {
+  "shape:round": [
+    [35, 53, 11],
+    [61, 53, 11],
+    [24, 44, 10],
+    [72, 44, 10],
+    [48, 44, 14],
+    [33, 33, 12],
+    [63, 33, 12],
+    [48, 26, 14],
+    [38, 18, 10],
+    [58, 18, 10],
+  ],
+  "shape:maple": [
+    [38, 56, 9],
+    [58, 56, 9],
+    [16, 44, 6],
+    [80, 44, 6],
+    [26, 48, 10],
+    [70, 48, 10],
+    [48, 44, 13],
+    [24, 33, 7],
+    [72, 33, 7],
+    [35, 35, 11],
+    [61, 35, 11],
+    [48, 26, 12],
+    [48, 15, 10],
+  ],
+  "shape:willow": [
+    [22, 44, 9],
+    [74, 44, 9],
+    [34, 40, 12],
+    [62, 40, 12],
+    [48, 38, 14],
+    [36, 27, 12],
+    [60, 27, 12],
+    [48, 20, 12],
+  ],
+};
+
+/** Branch ends per shape, full size: where the trunk forks into the canopy. */
+const BRANCHES: Record<string, Pt[]> = {
+  "shape:round": [[30, 50], [64, 48], [50, 36]],
+  "shape:maple": [[28, 48], [68, 46], [50, 34]],
+  "shape:willow": [[28, 42], [68, 40], [50, 30]],
+  "shape:heart": [[34, 46], [62, 46], [50, 40]],
+  "shape:star": [[36, 50], [60, 50], [50, 40]],
+  "shape:pine": [],
+};
+
+function drawTree(px: PixelGrid, look: Look, stage: number): void {
   const k = TREE_SCALE[stage];
   const R = rng(7);
   const T = (x: number, y: number): Pt => [CX + (x - CX) * k, GROUND + (y - GROUND) * k];
-  const inside = (x: number, y: number) => inCanopy(look.shape, CX + (x - CX) / k, GROUND + (y - GROUND) / k);
+  const shape = look.shape in BRANCHES ? look.shape : "shape:round";
 
-  const bt = Math.max(1, Math.round(3 * k));
-  drawBranch(layer, T(CX - 1, 64), T(CX - 17, 44), bt, look.bark);
-  drawBranch(layer, T(CX + 1, 64), T(CX + 16, 46), bt, look.bark);
-  drawBranch(layer, T(CX, 58), T(CX + 3, 38), Math.max(1, bt - 1), look.bark);
-  drawTrunk(layer, k, T(0, 52)[1], look.bark);
-  drawCanopy(layer, look, k, inside, R);
-  if (look.shape === "shape:willow") drawStrands(layer, look.leaf, k, inside, R);
-  if (stage >= 6) drawBlossoms(layer, look.bloom, stage === 7, T, inside, R);
+  let field: Field;
+  if (shape === "shape:pine") field = pineField(k);
+  else if (shape === "shape:heart" || shape === "shape:star") field = topiaryField(k, shape, R);
+  else {
+    const lobes = LOBES[shape].map(([x, y, r]) => {
+      const [cx, cy] = T(x, y);
+      return { x: cx, y: cy, r: Math.max(2.4, r * k) };
+    });
+    field = lobeField(lobes, k, shape === "shape:maple" ? 2.6 + 1.8 * k : 2.2 + 1.6 * k);
+    if (shape === "shape:willow") addCurtain(field, lobes, k, R);
+  }
+
+  const top = shape === "shape:pine" ? T(0, 72)[1] : T(0, 60)[1];
+  drawGroundShadow(px, field);
+  const fork = T(0, 68)[1];
+  for (const end of BRANCHES[shape]) drawBranch(px, [trunkX(fork, k, top), fork], T(...end), Math.max(1.5, 4 * k), 1, look.bark);
+  drawTrunk(px, k, top, look.bark, field);
+  drawTufts(px, k);
+  paintCanopy(px, field, look.leaf);
+  if (stage >= 6) drawBlossoms(px, look, stage === 7, k, field, rng(11));
+}
+
+function newField(cell: number, stretch: Pt): Field {
+  return { inside: grid(false), light: grid(0), cell, stretch };
 }
 
 /**
- * Canopy membership in full-size tree coordinates (stage 6 and 7 size; the
- * sky is rows 0 to 95): each shape's own outline. Round and willow are the
- * blobs (the willow adds its strands), pine is stacked tiers, heart two lobes
- * over a point, star five points, maple five pointed lobes with notches
- * between them. Every outline covers the branch tips (drawTree) and leaves
- * the trunk showing below it.
+ * A canopy of lobes seen as a heap of spheres: each pixel takes the light of
+ * the lobe nearest the viewer there, the creases where two lobes meet go
+ * dark, and the whole canopy darkens toward its bottom right. The edge is
+ * ragged by whole leaf clusters, up to `rag` pixels in or out.
  */
-function inCanopy(shape: string, x: number, y: number): boolean {
-  switch (shape) {
-    case "shape:pine":
-      return inPine(x, y);
-    case "shape:heart":
-      return inHeart(x, y);
-    case "shape:star":
-      return inStar(x, y);
-    case "shape:maple":
-      return inMaple(x, y);
-    default:
-      return BLOBS.some(([bx, by, br]) => (x - bx) ** 2 + (y - by) ** 2 <= br * br);
+function lobeField(lobes: Lobe[], k: number, rag: number, clip?: (x: number, y: number) => boolean): Field {
+  const f = newField(2 + 0.9 * k, [1, 1]);
+  const top = Math.min(...lobes.map((l) => l.y - l.r));
+  const bottom = Math.max(...lobes.map((l) => l.y + l.r));
+  const half = Math.max(...lobes.map((l) => Math.abs(l.x - CX) + l.r));
+  for (let y = 0; y < GROUND; y++) {
+    for (let x = 0; x < W; x++) {
+      let z1 = -1;
+      let z2 = -1;
+      let best = -1;
+      let near = 0;
+      let gap = Infinity;
+      lobes.forEach((l, i) => {
+        const d = Math.hypot(x - l.x, y - l.y);
+        if (d - l.r < gap) {
+          gap = d - l.r;
+          near = i;
+        }
+        if (d >= l.r) return;
+        const z = Math.sqrt(l.r * l.r - d * d);
+        if (z > z1) {
+          z2 = z1;
+          z1 = z;
+          best = i;
+        } else if (z > z2) z2 = z;
+      });
+      const c = cellAt(x, y, f.cell, [1, 1]);
+      const jag = (hash(c.i, c.j, 5) - 0.5) * rag + (hash(x, y, 9) - 0.5) * 0.8;
+      if (gap > jag) continue;
+      if (clip && !clip(x + (hash(x, y, 11) - 0.5) * 1.4, y + (hash(x, y, 12) - 0.5) * 1.4)) continue;
+      const l = lobes[best >= 0 ? best : near];
+      const d = Math.max(0.01, Math.hypot(x - l.x, y - l.y));
+      const n: [number, number, number] = best >= 0 ? [(x - l.x) / l.r, (y - l.y) / l.r, z1 / l.r] : [(x - l.x) / d, (y - l.y) / d, 0];
+      const lam = clamp01(n[0] * LIGHT[0] + n[1] * LIGHT[1] + n[2] * LIGHT[2]);
+      const crease = best >= 0 && z2 > 0 ? clamp01(1 - (z1 - z2) / (0.35 * l.r)) : 0;
+      const slope = clamp01(1 - (0.85 * (y - top)) / (bottom - top) - (0.25 * (x - CX)) / half);
+      f.inside[y][x] = true;
+      f.light[y][x] = 0.42 * lam + 0.58 * slope - 0.12 * crease;
+    }
   }
+  return f;
 }
 
-function inPine(x: number, y: number): boolean {
-  return [0, 1, 2, 3].some((q) => {
-    const y0 = 6 + q * 13;
-    const y1 = y0 + 22;
-    return y >= y0 && y <= y1 && Math.abs(x - CX) <= ((y - y0) / (y1 - y0)) * (13 + q * 6);
-  });
+/** Heart and star: a trimmed hedge in that outline, made of lobes clipped to it. */
+function topiaryField(k: number, shape: string, R: Rng): Field {
+  const full = shape === "shape:heart" ? inHeart : inStar;
+  const clip = (x: number, y: number) => full(CX + (x - CX) / k, GROUND + (y - GROUND) / k);
+  const step = 11;
+  const lobes: Lobe[] = [];
+  for (let y = 2, row = 0; y < 80; y += step * 0.78, row++) {
+    for (let x = 2 + (row % 2) * (step / 2); x < 94; x += step) {
+      const jx = x + (R() - 0.5) * 3;
+      const jy = y + (R() - 0.5) * 3;
+      if (!full(jx, jy) && !full(jx, jy + 4)) continue;
+      lobes.push({ x: CX + (jx - CX) * k, y: GROUND + (jy - GROUND) * k, r: Math.max(2.4, 9 * k) });
+    }
+  }
+  return lobeField(lobes, k, 1.2, clip);
 }
 
-/** The heart curve (u² + v² - 1)³ ≤ u²v³: two lobes with a notch between them, over a point. */
 const HEART = { cy: 39, sx: 31, sy: 23 };
 function inHeart(x: number, y: number): boolean {
   const u = (x - CX) / HEART.sx;
   const v = (HEART.cy - y) / HEART.sy;
-  // Pulling the middle down a little deepens the notch so it still reads on a small tree.
   const w = v + 0.28 * Math.exp(-((u / 0.32) ** 2));
   return (u * u + w * w - 1) ** 3 - u * u * w ** 3 <= 0;
 }
 
-/** A five-pointed star, one point up: 10 corners between an outer and an inner radius. */
-const STAR = { cx: CX, cy: 40, outer: 34, inner: 19 };
+const STAR = { cx: CX, cy: 40, outer: 35, inner: 17 };
 const STAR_CORNERS: Pt[] = Array.from({ length: 10 }, (_, i) => {
   const r = i % 2 === 0 ? STAR.outer : STAR.inner;
   const a = -Math.PI / 2 + (i * Math.PI) / 5;
@@ -385,174 +646,317 @@ function inStar(x: number, y: number): boolean {
 }
 
 /**
- * A maple leaf: around a centre, the outline reaches out to five lobes (one
- * up, two to the sides, two smaller ones low) with deep notches between them,
- * a gap at the bottom where the trunk comes out, and small teeth along each
- * lobe. [angle in degrees, up is 90, how far the lobe reaches].
+ * Pine: five tiers, widest at the bottom, each a skirt of fronds fanning from
+ * its tip: lit on the left, dark grooves between fronds, a dark underside,
+ * and each tier in the shadow of the one above.
  */
-const MAPLE = { cy: 46, core: 20, reach: 38, width: 32, teeth: 2.5, toothEvery: 12 };
-const MAPLE_LOBES: [number, number][] = [
-  [90, 1],
-  [30, 0.9],
-  [150, 0.9],
-  [-25, 0.62],
-  [205, 0.62],
-];
-function inMaple(x: number, y: number): boolean {
-  const dx = x - CX;
-  const dy = MAPLE.cy - y;
-  const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
-  let lobe = 0;
-  for (const [at, reach] of MAPLE_LOBES) {
-    const off = Math.abs((((angle - at) % 360) + 540) % 360 - 180);
-    lobe = Math.max(lobe, reach * Math.max(0, 1 - off / MAPLE.width));
-  }
-  const phase = (((angle % MAPLE.toothEvery) + MAPLE.toothEvery) % MAPLE.toothEvery) / MAPLE.toothEvery;
-  const tooth = lobe > 0.2 ? MAPLE.teeth * (1 - Math.abs(phase * 2 - 1)) : 0;
-  return Math.hypot(dx, dy) <= MAPLE.core + (MAPLE.reach - MAPLE.core) * lobe + tooth;
-}
-
-function drawBranch(layer: Layer, [x0, y0]: Pt, [x1, y1]: Pt, thick: number, bark: Trio): void {
-  const n = Math.max(1, Math.ceil(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0))));
-  for (let i = 0; i <= n; i++) {
-    const x = x0 + ((x1 - x0) * i) / n;
-    const y = y0 + ((y1 - y0) * i) / n;
-    for (let d = 0; d < thick; d++) paint(layer, x + d, y, d === 0 ? bark[0] : bark[1]);
-  }
-}
-
-/** A trunk that widens to a flared base, lit on the left, with bark marks once it is big enough. */
-function drawTrunk(layer: Layer, k: number, top: number, bark: Trio): void {
-  for (let y = Math.round(top); y < GROUND; y++) {
-    const t = (y - top) / (GROUND - top);
-    const flare = y > GROUND - 7 * k ? (y - (GROUND - 7 * k)) * 1.2 : 0;
-    const half = (3 + t * 4) * Math.max(k, 0.3) + flare;
-    for (let x = Math.round(CX - half); x <= Math.round(CX + half); x++) {
-      const rel = (x - (CX - half)) / (2 * half || 1);
-      let c = rel < 0.28 ? bark[2] : rel > 0.72 ? bark[0] : bark[1];
-      if (k > 0.5 && rel > 0.22 && rel < 0.8 && (x * 7 + Math.floor(y / 3) * 3) % 5 === 0) c = bark[0];
-      paint(layer, x, y, c);
+function pineField(k: number): Field {
+  const f = newField(2 + 0.9 * k, [1.5, 0.75]);
+  const T = (y: number) => GROUND + (y - GROUND) * k;
+  const tiers = [0, 1, 2, 3, 4].map((i) => {
+    const top = T(6 + i * 11);
+    const height = (18 + i * 2.5) * k;
+    const halfW = (8 + i * 5.6) * k;
+    const fronds = 3 + i;
+    const frondAt = (side: number) => ((side + 1) / 2) * fronds;
+    const bottomAt = (x: number) => {
+      const u = frondAt((x - CX) / halfW);
+      const tip = 1 - Math.abs((u - Math.floor(u)) * 2 - 1);
+      return top + height + (Math.abs(x - CX) / halfW) * 3 * k + (tip - 0.5) * Math.max(1, 3 * k);
+    };
+    return { top, height, halfW, frondAt, bottomAt };
+  });
+  for (let y = 0; y < GROUND; y++) {
+    for (let x = 0; x < W; x++) {
+      const c = cellAt(x, y, f.cell, f.stretch);
+      const jag = (hash(c.i, c.j, 5) - 0.5) * (1 + 1.4 * k);
+      for (let i = 0; i < tiers.length; i++) {
+        const s = tiers[i];
+        const w = s.halfW * Math.min(1, (y - s.top) / s.height);
+        if (y < s.top || y > s.bottomAt(x) + jag * 0.6 || Math.abs(x - CX) > w + 0.5 + jag) continue;
+        const side = Math.max(-1, Math.min(1, (x - CX) / Math.max(0.5, w)));
+        const deep = (y - s.top) / s.height;
+        const u = s.frondAt(side);
+        const frac = u - Math.floor(u);
+        let v = 0.7 - 0.36 * side - 0.3 * deep * deep + 0.12 * (1 - i / 4);
+        if (s.bottomAt(x) - y < Math.max(1.2, 2.2 * k)) v -= 0.2;
+        if (deep > 0.35 && (frac < 0.1 || frac > 0.92) && k > 0.4) v -= 0.16;
+        const above = i > 0 ? tiers[i - 1].bottomAt(x) : -Infinity;
+        if (y > above && y - above < 3.2 * k) v -= 0.24;
+        f.inside[y][x] = true;
+        f.light[y][x] = v;
+        break;
+      }
     }
   }
-}
-
-/** Dark canopy fill, then leaf stamps lit from the top left, painted back to front. */
-function drawCanopy(layer: Layer, look: Look, k: number, inside: (x: number, y: number) => boolean, R: Rng): void {
-  for (let y = 0; y < GROUND; y++) for (let x = 0; x < W; x++) if (inside(x, y)) paint(layer, x, y, look.leaf[0]);
-  const stamps: [number, number, number][] = [];
-  for (let y = 1; y < GROUND; y += 3) {
-    for (let x = 1; x < W; x += 3) {
-      const sx = x + Math.floor(R() * 3) - 1;
-      const sy = y + Math.floor(R() * 3) - 1;
-      if (!inside(sx, sy)) continue;
-      const ox = CX + (sx - CX) / k;
-      const oy = GROUND + (sy - GROUND) / k;
-      stamps.push([sx, sy, (ox - 24 + (oy - 8)) / 110 + R() * 0.28]);
-    }
-  }
-  stamps.sort((a, b) => b[2] - a[2]);
-  for (const [sx, sy, d] of stamps) {
-    const c = look.leaf[d < 0.42 ? 2 : d < 0.75 ? 1 : 0];
-    look.stamp.forEach((row, r) =>
-      [...row].forEach((ch, q) => {
-        const x = sx + q - 1;
-        const y = sy + r - 1;
-        if (ch === "#" && (inside(x, y) || inside(x, y + 1))) paint(layer, x, y, c);
-      }),
-    );
-  }
-}
-
-/** Willow: leafy strands hanging from the canopy's lower edge, clear of the trunk. Not outlined. */
-function drawStrands(layer: Layer, leaf: Trio, k: number, inside: (x: number, y: number) => boolean, R: Rng): void {
-  for (let x = 1; x < W; x += 2) {
-    let bottom = -1;
-    for (let y = GROUND - 1; y >= 0 && bottom < 0; y--) if (inside(x, y)) bottom = y;
-    const len = Math.round((6 + R() * 10) * k);
-    if (bottom < 0 || Math.abs(x - CX) <= 6 * k) continue;
-    for (let i = 1; i <= len && bottom + i < GROUND - 2; i++) {
-      paint(layer, x, bottom + i, (bottom + i + x) % 3 ? leaf[1] : leaf[2], false);
-    }
-  }
-}
-
-/** Stage 6 fruit or stage 7 flowers in the bloom colours, each fully inside the canopy. */
-function drawBlossoms(
-  layer: Layer,
-  bloom: Trio,
-  flowers: boolean,
-  T: (x: number, y: number) => Pt,
-  inside: (x: number, y: number) => boolean,
-  R: Rng,
-): void {
-  const want = flowers ? 10 : 7;
-  for (let n = 0, tries = 0; n < want && tries < 600; tries++) {
-    const [x, y] = T(10 + Math.floor(R() * 76), 6 + Math.floor(R() * 56)).map((v) => Math.round(v));
-    if (!inside(x - 2, y) || !inside(x + 2, y) || !inside(x, y - 2) || !inside(x, y + 2)) continue;
-    if (flowers) {
-      for (const [a, b] of FLOWER) paint(layer, x + a, y + b, b < 0 && a <= 0 ? bloom[0] : bloom[2]);
-      paint(layer, x, y, bloom[1]);
-    } else {
-      for (const [a, b] of FRUIT) paint(layer, x + a, y + b, bloom[1]);
-      paint(layer, x - 1, y - 1, bloom[0]);
-      paint(layer, x, y - 2, PALETTE.b);
-    }
-    n++;
-  }
+  return f;
 }
 
 /**
- * One root per reflection, branching twice, drawn after the camera so they
- * stay fine lines at every stage. Each root keeps its place and shape as more
- * are added (slots fill the fan evenly, one RNG per root); the newest `recent`
- * end in glowing tips. They grow from the trunk base, or from the bottom of
- * the magnified seed as far as a stage 3 tree's roots reach.
+ * Willow: strands hanging from under the dome, two or three columns wide with
+ * a gap between, swaying a little, a leaf poking out every few rows, thinning
+ * at the tip. Short in the middle so the trunk shows. In the dome's shade.
  */
+function addCurtain(f: Field, lobes: Lobe[], k: number, R: Rng): void {
+  f.stretch = [1, 2.6];
+  const hang = grid(false);
+  f.hang = hang;
+  const half = Math.max(...lobes.map((l) => Math.abs(l.x - CX) + l.r));
+  const bottoms = Array.from({ length: W }, (_, x) => {
+    for (let y = GROUND - 1; y >= 0; y--) if (f.inside[y][x]) return y;
+    return -1;
+  });
+  const mark = (x: number, y: number, i: number, len: number) => {
+    if (x < 0 || x >= W || y >= GROUND - 3 || (f.inside[y][x] && !hang[y][x])) return;
+    f.inside[y][x] = true;
+    hang[y][x] = true;
+    f.light[y][x] = 0.58 - (0.3 * (x - CX)) / half - (0.22 * i) / len - (i < 3 ? 0.18 : 0);
+  };
+  for (let x = 1; x < W; ) {
+    const width = R() < 0.4 ? 3 : 2;
+    const middle = Math.abs(x - CX) < 8 * k;
+    const len = Math.round((middle ? 2 + R() * 4 : 9 + R() * 24) * k);
+    const phase = R() * 6;
+    const tops = bottoms.slice(x, x + width).filter((b) => b >= 0);
+    if (tops.length === width) {
+      const start = Math.min(...tops);
+      for (let i = 1; i <= len + (Math.max(...tops) - start); i++) {
+        const y = start + i;
+        const sway = Math.round(Math.sin(y / 6 + phase) * 0.8 * Math.min(1, i / 6));
+        const tip = i > len - 3;
+        for (let j = tip ? 1 : 0; j < (tip ? 2 : width); j++) mark(x + j + sway, y, i, len);
+        if (i % 3 === 0 && !tip && hash(x, y, 91) < 0.7) mark(hash(x, y, 92) < 0.5 ? x - 1 + sway : x + width + sway, y, i, len);
+      }
+    }
+    x += width + 1 + (R() < 0.3 ? 1 : 0);
+  }
+}
+
+/** Paint a canopy in leaf clusters: each cluster shifts the light a little, and is lit on its own top left. */
+function paintCanopy(px: PixelGrid, f: Field, leaf: Ramp): void {
+  const ins = (x: number, y: number) => f.inside[y]?.[x] ?? false;
+  const stretch = Math.hypot(f.stretch[0], f.stretch[1]) / Math.SQRT2;
+  for (let y = 0; y < GROUND; y++) {
+    for (let x = 0; x < W; x++) {
+      if (!f.inside[y][x]) continue;
+      const c = cellAt(x, y, f.cell, f.stretch);
+      const hole = hash(c.i, c.j, 31);
+      if (hole < 0.05 && x === Math.round(c.x) && (y === Math.round(c.y) || (hole < 0.02 && y === Math.round(c.y) + 1))) {
+        if (ins(x - 2, y) && ins(x + 2, y) && ins(x, y - 2) && ins(x, y + 3)) continue;
+      }
+      let v = f.light[y][x] + 0.34 * (hash(c.i, c.j, 21) - 0.5) + (0.22 * ((x - c.x) * LX + (y - c.y) * LY)) / (f.cell * stretch);
+      if (!ins(x, y + 1)) v -= 0.12;
+      if (!ins(x, y - 1) && x < CX + 6) v += 0.08;
+      px[y][x] = leaf[toneOf(v)];
+    }
+  }
+  // A few stray leaves just off the edge, faint against the sky.
+  for (let y = 1; y < GROUND - 3; y++) {
+    for (let x = 1; x < W - 1; x++) {
+      if (f.inside[y][x] || hash(x, y, 51) > 0.07) continue;
+      if (NEIGHBOURS.some(([dx, dy]) => f.hang?.[y + dy]?.[x + dx])) continue;
+      if (NEIGHBOURS.some(([dx, dy]) => ins(x + dx, y + dy))) px[y][x] = leaf.ghost;
+    }
+  }
+}
+
+function toneOf(v: number): Tone {
+  return v < 0.2 ? "deep" : v < 0.38 ? "dark" : v < 0.56 ? "mid" : v < 0.76 ? "light" : "hi";
+}
+
+/** The canopy's shadow on the grass, as wide as the canopy, darkest near the trunk. */
+function drawGroundShadow(px: PixelGrid, f: Field): void {
+  let left = W;
+  let right = 0;
+  f.inside.forEach((row) => row.forEach((on, x) => on && ((left = Math.min(left, x)), (right = Math.max(right, x)))));
+  if (left > right) return;
+  const half = ((right - left) / 2) * 0.85;
+  const mid = (left + right) / 2 + 2;
+  for (let x = Math.round(mid - half); x <= Math.round(mid + half); x++) {
+    const t = Math.abs(x - mid) / half;
+    put(px, x, GROUND, t < 0.45 ? COLOR.grassMid : COLOR.grassShade);
+    if (t < 0.7) put(px, x, GROUND + 1, COLOR.grassMid);
+  }
+}
+
+/** Where the trunk's middle is at row y: it leans a little to the right as it rises. */
+function trunkX(y: number, k: number, top: number): number {
+  const t = clamp01((y - top) / (GROUND - top));
+  return CX + k * (2.2 * (1 - t) - 1.6 * t) + Math.sin(t * Math.PI) * 0.8 * k;
+}
+
+/** A branch from p0 to p1, tapering, lit on its upper side. */
+function drawBranch(px: PixelGrid, [x0, y0]: Pt, [x1, y1]: Pt, t0: number, t1: number, bark: Ramp): void {
+  const len = Math.hypot(x1 - x0, y1 - y0);
+  const n = Math.max(1, Math.ceil(len * 2));
+  const nx = -(y1 - y0) / (len || 1);
+  const ny = (x1 - x0) / (len || 1);
+  for (let i = 0; i <= n; i++) {
+    const f = i / n;
+    const t = t0 + (t1 - t0) * f;
+    const cx = x0 + (x1 - x0) * f;
+    const cy = y0 + (y1 - y0) * f;
+    for (let o = -t / 2; o <= t / 2; o += 0.5) {
+      const up = ny * o < 0 || (ny === 0 && nx * o < 0);
+      const tone = Math.abs(o) < t / 2 - 0.9 ? bark.mid : up ? bark.light : bark.dark;
+      put(px, cx + nx * o, cy + ny * o, tone);
+    }
+  }
+}
+
+/** A tapered, leaning trunk with a root flare: lit on the left, in the canopy's shadow at the top, with bark texture. */
+function drawTrunk(px: PixelGrid, k: number, top: number, bark: Ramp, f: Field): void {
+  const pale = hexToHsl(bark.mid)[2] > 0.66;
+  const flareRows = Math.max(2, 6 * k);
+  const span = GROUND - top;
+  for (let y = Math.round(top); y < GROUND; y++) {
+    const t = (y - top) / span;
+    const fl = Math.max(0, y - (GROUND - flareRows)) / flareRows;
+    const half = (2.8 + 1.5 * t) * k + 0.8 + fl * fl * 4.5 * k;
+    const mid = trunkX(y, k, top);
+    const left = Math.round(mid - half);
+    const right = Math.round(mid + half);
+    for (let x = left; x <= right; x++) {
+      const rel = (x - left) / Math.max(1, right - left);
+      let v = 0.86 - rel * 0.78;
+      if (k > 0.5) {
+        if (pale) {
+          // Pale bark: short dark bands across it, like birch.
+          const c = cellAt(x, y, 2, [1.8, 0.7]);
+          if (hash(c.i, c.j, 71) < 0.24 && rel > 0.1) v -= 0.5;
+        } else {
+          // Dark bark: long cracks running down it.
+          const c = cellAt(x, y, 2, [0.8, 2.6]);
+          v += (hash(c.i, c.j, 71) - 0.5) * 0.36;
+        }
+      }
+      for (let d = 1; d <= 4; d++) if (f.inside[y - d]?.[x]) v -= 0.08;
+      const tone: Tone = v < 0.14 ? "deep" : v < 0.36 ? "dark" : v < 0.66 ? "mid" : "light";
+      put(px, x, y, bark[tone]);
+    }
+  }
+}
+
+/** Grass blades in front of the trunk's foot. */
+function drawTufts(px: PixelGrid, k: number): void {
+  const reach = Math.round(9 * k + 3);
+  for (let x = CX - reach; x <= CX + reach; x++) {
+    const h = hash(x, 5, 81);
+    if (h < 0.45) continue;
+    put(px, x, GROUND - 1, h > 0.8 ? COLOR.grassHi : COLOR.grass);
+    if (h > 0.88 && k > 0.5) put(px, x, GROUND - 2, COLOR.grassHi);
+  }
+}
+
+/** Stage 6 fruit or stage 7 flowers, on the canopy, clear of its edge. */
+function drawBlossoms(px: PixelGrid, look: Look, flowers: boolean, k: number, f: Field, R: Rng): void {
+  const want = Math.round((flowers ? 24 : 9) * Math.max(0.5, k));
+  const placed: Pt[] = [];
+  const [hi, centre, petal] = look.bloom;
+  const fruitLo = shift(centre, 330, 10, (l) => l * 0.72, 1.05);
+  const tone: Record<string, string> = { p: petal, h: mix(petal, hi, 0.5), c: centre, s: look.bloomLo, f: centre, F: fruitLo, H: hi };
+  const ins = (x: number, y: number) => f.inside[y]?.[x] ?? false;
+  for (let tries = 0; placed.length < want && tries < 900; tries++) {
+    const x = Math.round(6 + R() * 84);
+    const y = Math.round(4 + R() * 84);
+    if (![[-2, 0], [2, 0], [0, -2], [0, 3], [0, 0]].every(([dx, dy]) => ins(x + dx, y + dy))) continue;
+    if (placed.some(([px, py]) => Math.abs(px - x) < 4 && Math.abs(py - y) < 4)) continue;
+    placed.push([x, y]);
+    const rows = flowers ? BLOSSOMS[Math.floor(R() * BLOSSOMS.length)] : FRUIT;
+    const o = Math.floor((rows.length - 1) / 2);
+    const mine = new Set<string>();
+    rows.forEach((row, r) =>
+      [...row].forEach((ch, q) => {
+        if (ch === ".") return;
+        put(px, x + q - o, y + r - o, tone[ch]);
+        mine.add(`${x + q - o},${y + r - o}`);
+      }),
+    );
+    // A soft shadow on the leaves below and to the right.
+    for (const key of mine) {
+      const [mx, my] = key.split(",").map(Number);
+      const spots: Pt[] = flowers ? [[1, 1]] : [[0, 1], [1, 0]];
+      for (const [dx, dy] of spots) if (!mine.has(`${mx + dx},${my + dy}`) && ins(mx + dx, my + dy)) put(px, mx + dx, my + dy, look.leaf.deep);
+    }
+    if (!flowers) put(px, x + 1 - o, y - 1 - o, look.leaf.deep);
+  }
+}
+
+// ---------------------------------------------------------------- roots
+
 function drawRoots(px: PixelGrid, stage: number, count: number, recent: number): void {
   const tree = stage > ZOOM_LAST_STAGE;
   const k = TREE_SCALE[tree ? stage : ZOOM_LAST_STAGE + 1];
-  // The seed's bottom row (seedY + 2) ends on screen just above where row seedY + 3 would start.
-  const top = tree ? GROUND + 3 : GROUND + (seedY(stage) + 3 - GROUND) * ZOOM - 1;
-  const spread = tree ? 18 * k : 12;
+  const top = tree ? GROUND + 4 : GROUND + (seedY(stage) + 4 - GROUND) * ZOOM - 1;
   const reach = 0.4 + 0.6 * k;
+  const thick = tree ? Math.max(2, Math.round(3 * k)) : 2;
+  const crown = tree ? drawRootCrown(px, k) : null;
   const tips: Pt[] = [];
   for (let i = 0; i < count; i++) {
     const p = rootSlot(i);
     const R = rng(3 + i);
-    const ends = growRoot(px, R, [CX + (p - 0.5) * spread, top], Math.PI * (0.18 + 0.64 * p), (16 + R() * 8) * reach, 0);
+    // From the crown's edge: the outer roots leave high and sideways, the middle ones low and down.
+    const from: Pt = crown
+      ? [CX + (p - 0.5) * 2 * crown.half * 0.8, crown.top + crown.depth * (0.25 + 0.75 * (1 - Math.abs(p - 0.5) * 2))]
+      : [CX + (p - 0.5) * 10, top];
+    const ends = growRoot(px, R, from, Math.PI * (0.06 + 0.88 * p), (20 + R() * 10) * reach, 0, thick);
     if (i >= count - recent) tips.push(...ends);
   }
   for (const [x, y] of tips) {
-    put(px, x, y, PALETTE.y);
-    put(px, x + 1, y, PALETTE.y);
-    put(px, x, y + 1, PALETTE.f);
+    put(px, x, y, PALETTE.f);
+    for (const [dx, dy] of NEIGHBOURS) put(px, x + dx, y + dy, PALETTE.y);
   }
 }
 
-/** Where root i sits in the fan, in (0, 1): 1/2, 1/4, 3/4, 1/8, ... so any first n spread out. */
+/** Under a tree: the trunk's base carried on into the soil, narrowing, lit on the left. */
+function drawRootCrown(px: PixelGrid, k: number): { top: number; depth: number; half: number } {
+  const top = GROUND + 3;
+  const depth = Math.max(3, Math.round(5 * k));
+  const half = 8 * k + 1;
+  for (let i = 0; i < depth; i++) {
+    const f = i / depth;
+    const h = Math.max(1, half * (1 - f) ** 1.6 * 0.85 + 1.5 * k);
+    for (let x = Math.round(CX - h); x <= Math.round(CX + h); x++) {
+      const rel = (x - (CX - h)) / (2 * h);
+      put(px, x, top + i, rel < 0.2 ? COLOR.rootHi : rel > 0.6 ? COLOR.rootLo : COLOR.root);
+    }
+  }
+  return { top, depth, half };
+}
+
 function rootSlot(i: number): number {
   let p = 0;
   for (let n = i + 1, f = 0.5; n > 0; n >>= 1, f /= 2) if (n & 1) p += f;
   return p;
 }
 
-/** Walk a wandering root until it leaves the soil, split it twice, and return its tips. */
-function growRoot(px: PixelGrid, R: Rng, [x0, y0]: Pt, ang0: number, len: number, depth: number): Pt[] {
+/** A wandering root, thick at its base and thinning to its tips: lit along its upper edge. Returns its tips. */
+function growRoot(px: PixelGrid, R: Rng, [x0, y0]: Pt, ang0: number, len: number, depth: number, thick: number): Pt[] {
   let x = x0;
   let y = y0;
   let ang = ang0;
   for (let i = 0; i < len; i++) {
     const nx = x + Math.cos(ang);
     const ny = y + Math.sin(ang);
-    ang += (R() - 0.5) * 0.35;
-    if (ny >= H - 1 || ny < GROUND + 3) break;
+    ang += (R() - 0.5) * 0.22;
+    if (ny >= H - 2 || ny < GROUND + 4) break;
     x = nx;
     y = ny;
-    put(px, x, y, PALETTE.i);
+    const t = Math.max(1, Math.round(thick * (1 - (0.5 * i) / len)));
+    const ox = -Math.sin(ang);
+    const oy = Math.cos(ang);
+    for (let o = 0; o < t; o++) {
+      const off = o - (t - 1) / 2;
+      const c = t === 1 ? COLOR.root : o === 0 ? COLOR.rootHi : o === t - 1 ? COLOR.rootLo : COLOR.root;
+      put(px, x + ox * off, y + oy * off, c);
+    }
   }
-  if (depth >= 2) return [[x, y]];
+  if (depth >= 1) return [[x, y]];
+  // One fork at the end: the root goes on, and a shorter side root splits off.
+  const side = R() < 0.5 ? -1 : 1;
+  const next = Math.max(1, thick - 1);
   return [
-    ...growRoot(px, R, [x, y], ang - 0.5, len * 0.6, depth + 1),
-    ...growRoot(px, R, [x, y], ang + 0.5, len * 0.55, depth + 1),
+    ...growRoot(px, R, [x, y], ang - side * 0.25, len * 0.7, depth + 1, next),
+    ...growRoot(px, R, [x, y], ang + side * 0.7, len * 0.45, depth + 1, 1),
   ];
 }

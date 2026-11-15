@@ -1,4 +1,5 @@
 import {
+  CLOSEUP_BACKDROP,
   CLOSEUP_SIZE,
   CLOSEUP_WINDOWS,
   closeupGrid,
@@ -9,7 +10,7 @@ import {
   type CloseupInput,
   type PixelGrid,
 } from "@/lib/shift-island/tree-closeup";
-import { DEFAULT_STYLE, SEEDS, TREE_ITEMS, resolveStyle } from "@/lib/shift-island/tree-style";
+import { DEFAULT_STYLE, SEEDS, TREE_ITEMS, resolveStyle, treeItem } from "@/lib/shift-island/tree-style";
 
 const { ground } = CLOSEUP_SIZE;
 
@@ -67,7 +68,7 @@ describe("closeupGrid", () => {
   it("paints the leaves in the leaf colours", () => {
     const grid = closeupGrid(input({ style: { ...DEFAULT_STYLE, leaf: "leaf:autumn" } }));
     expect(has(grid, "#C9603A")).toBe(true);
-    expect(has(grid, "#50976B")).toBe(false);
+    expect(has(grid, treeItem("leaf:forest")?.colors?.[1] ?? "")).toBe(false);
   });
 
   it("draws one root per reflection, up to 15", () => {
@@ -91,11 +92,11 @@ describe("closeupGrid", () => {
     expect(JSON.stringify(closeupGrid(input({ style: raw })))).toBe(round);
   });
 
-  /** The plant's silhouette above the ground: every pixel that is not sky or sun. */
+  /** The plant's silhouette above the ground: every pixel that is not the backdrop. */
   const silhouette = (shape: string, stage: number) =>
     closeupGrid(input({ style: { ...DEFAULT_STYLE, shape }, stage, roots: { count: 0, recent: 0 } }))
       .slice(0, ground)
-      .map((row) => row.map((c) => !["#BFE3E6", "#D6EEE6", "#FFE9A8"].includes(c ?? "")));
+      .map((row) => row.map((c) => c !== CLOSEUP_BACKDROP));
   const SHAPES = TREE_ITEMS.filter((i) => i.slot === "shape").map((i) => i.id);
 
   it.each([5, 7])("gives each of the six shapes its own canopy outline at stage %s", (stage) => {

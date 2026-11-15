@@ -30,7 +30,7 @@ export const TREE_ITEMS: readonly TreeItem[] = [
   { id: "shape:willow", slot: "shape", name: "หลิว", stamp: ["#", "#", "#"] },
   { id: "shape:star", slot: "shape", name: "ดาว", stamp: [".#.", "###", ".#."] },
 
-  { id: "leaf:forest", slot: "leaf", name: "ป่าเขียว", colors: ["#39775D", "#50976B", "#78B880"] },
+  { id: "leaf:forest", slot: "leaf", name: "ป่าเขียว", colors: ["#3B6A48", "#55894F", "#8AB65E"] },
   { id: "leaf:autumn", slot: "leaf", name: "ใบไม้แดง", colors: ["#8E3B2E", "#C9603A", "#EFA052"] },
   { id: "leaf:mint", slot: "leaf", name: "มิ้นต์", colors: ["#2F6F73", "#3F9C96", "#86D1C0"] },
   { id: "leaf:gold", slot: "leaf", name: "ทอง", colors: ["#9C7A22", "#C9A23A", "#F0D36A"] },

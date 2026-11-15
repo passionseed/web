@@ -21,7 +21,7 @@ import {
 import { I, TREE, PRE_STAGE, PENDING_SLOT, SQ, STAGE_NAMES, WIP_CORNER, nextUnlock, pendingSlot, seasonLines, type SeasonView } from "../island/copy";
 
 /** sha256 of the decoded RGBA pixels of renderIsland(plots(6), { markMine, festival }). Update only with a sprite or layout change you meant. */
-const PINNED_6 = "c763498f1351ca17485e76264c996dcae5a91bbe38b5fae89192e839e8d426ab";
+const PINNED_6 = "4fb4b2dee7045bdced39d60127745ce6f135c30d9886d6093f357467fab1c2cb";
 
 function plots(n: number): IslandPlot[] {
   return Array.from({ length: n }, (_, k) => ({
