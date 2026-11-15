@@ -7,12 +7,15 @@ import { toast } from "sonner";
 import { submitMainQuest, submitProposedQuest, submitSideQuest } from "@/app/shift/island/actions";
 import { TEXT_LIMITS, type IslandActionResult, type QuestSubmitResult } from "@/lib/supabase/shift-quests/types";
 
-import { COMMON, DETAIL } from "./copy";
+import { COMMON, DETAIL, PHOTOS } from "./copy";
 import { DoneWhenLine } from "./DoneWhenLine";
+import { Field } from "./Field";
 import { useDraft } from "./drafts";
 import { InSheetFooter } from "./InSheetFooter";
 import styles from "./island.module.css";
 import { refKey, type QuestView } from "./model";
+import { PhotoPicker } from "./photos/PhotoPicker";
+import { dropPhoto, uploadPhotos, type PickedPhoto } from "./photos/upload";
 
 interface SubmitFormProps {
   quest: QuestView;
@@ -28,6 +31,8 @@ interface SubmitFormProps {
   note?: string;
   /** A lower cap for the proof, when the server adds text under it (quest 5's checklist). */
   proofMax?: number;
+  /** Photos can go with the work (schema 14): the picker shows and the photos upload after the save. */
+  photos?: boolean;
 }
 
 interface Draft {
@@ -39,6 +44,9 @@ interface Draft {
 type FieldErrors = Partial<Record<keyof Draft, string>>;
 
 const EMPTY: Draft = { proof: "", url: "", reflection: "" };
+
+/** Field moved to ./Field so forms without photos do not load the photo upload; re-exported for older imports. */
+export { Field };
 
 /** Same rules as the database (__check_len / __check_url): required text, caps, https only. */
 export function validateSubmission(draft: Draft, proofMax: number = TEXT_LIMITS.proof): FieldErrors {
@@ -94,6 +102,7 @@ export function SubmitForm({
   doneWhen = NONE,
   note,
   proofMax = TEXT_LIMITS.proof,
+  photos = false,
 }: SubmitFormProps) {
   const formId = useId();
   const ids = { proof: useId(), url: useId(), reflection: useId() };
@@ -101,6 +110,8 @@ export function SubmitForm({
   const [draft, setDraft, clearDraft] = useDraft<Draft>(`submit:${refKey(quest.ref)}`, EMPTY);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [pending, startTransition] = useTransition();
+  const [picked, setPicked] = useState<PickedPhoto[]>([]);
+  const [uploading, setUploading] = useState<string | null>(null);
   const reflectionLabel = quest.reflectionPrompt.trim() || DETAIL.reflectionFallback;
 
   function update(field: keyof Draft, value: string) {
@@ -119,6 +130,16 @@ export function SubmitForm({
       const result = await send(quest, draft.proof.trim(), draft.reflection.trim(), url ? url : null);
       if (result.ok) {
         clearDraft();
+        // The written work is saved; photos follow it onto the same submission, one by one.
+        const submissionId = result.data.submissionId;
+        if (photos && picked.length > 0 && submissionId) {
+          setUploading(PHOTOS.uploading(0, picked.length));
+          const outcome = await uploadPhotos(submissionId, picked, (done) => setUploading(PHOTOS.uploading(done, picked.length)));
+          setUploading(null);
+          if (outcome.failed > 0) toast.error(PHOTOS.someFailed(outcome.failed));
+          picked.forEach(dropPhoto);
+          setPicked([]);
+        }
         onSubmitted(result.data);
       } else {
         toast.error(result.error || COMMON.failed);
@@ -165,6 +186,7 @@ export function SubmitForm({
           </p>
         ) : null}
       </div>
+      {photos ? <PhotoPicker photos={picked} onChange={setPicked} disabled={pending} /> : null}
       <Field
         id={ids.reflection}
         label={reflectionLabel}
@@ -184,62 +206,9 @@ export function SubmitForm({
           aria-busy={pending}
         >
           {pending ? <Loader2 className="h-4 w-4 motion-safe:animate-spin" aria-hidden="true" /> : null}
-          <span>{pending ? COMMON.sending : resubmit ? DETAIL.resubmit : DETAIL.submit}</span>
+          <span>{uploading ?? (pending ? COMMON.sending : resubmit ? DETAIL.resubmit : DETAIL.submit)}</span>
         </button>
       </InSheetFooter>
     </form>
-  );
-}
-
-interface FieldProps {
-  id: string;
-  label: string;
-  hint?: string;
-  placeholder?: string;
-  value: string;
-  max: number;
-  error?: string;
-  rows: number;
-  onChange: (value: string) => void;
-}
-
-/** A labelled textarea with a counter that appears near the cap. */
-export function Field({ id, label, hint, placeholder, value, max, error, rows, onChange }: FieldProps) {
-  const near = value.length >= Math.floor(max * 0.8);
-  const describedBy = [hint ? `${id}-hint` : null, error ? `${id}-error` : null, near ? `${id}-count` : null]
-    .filter(Boolean)
-    .join(" ");
-  return (
-    <div className={styles.field}>
-      <label htmlFor={id} className={styles.label}>
-        {label}
-      </label>
-      {hint ? (
-        <p id={`${id}-hint`} className={styles.hint}>
-          {hint}
-        </p>
-      ) : null}
-      <textarea
-        id={id}
-        rows={rows}
-        className={`ei-input ${styles.input} ${styles.textarea}`}
-        placeholder={placeholder}
-        value={value}
-        maxLength={max}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={describedBy || undefined}
-        onChange={(event) => onChange(event.target.value)}
-      />
-      {near ? (
-        <p id={`${id}-count`} className={styles.counter} data-over={value.length > max ? "true" : undefined}>
-          {COMMON.counter(value.length, max)}
-        </p>
-      ) : null}
-      {error ? (
-        <p id={`${id}-error`} role="alert" className={styles.fieldError}>
-          {error}
-        </p>
-      ) : null}
-    </div>
   );
 }

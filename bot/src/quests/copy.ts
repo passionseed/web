@@ -536,6 +536,8 @@ const ERRORS: Record<string, string> = {
   bad_input: "ข้อมูลไม่ถูกต้อง ลองใหม่อีกครั้ง",
   // The admin self-reset (20261115120000) is web-only; the bot never calls it, but every code needs words.
   reset_blocked: "รีเซ็ตไม่ได้ เพราะมีเควสต์ที่ได้เหรียญไปแล้ว หรือมีเพื่อนต่อเควสต์จากเควสต์ของคุณ ยังไม่ได้ลบอะไร",
+  // Photo evidence (20261115130000) is website-only; the bot never adds photos, but every code needs words.
+  too_many_photos: "แนบรูปได้ไม่เกิน 3 รูปต่อการส่งหนึ่งครั้ง",
   // The campfire writers (20261111093000) refuse an ID that is not a Discord snowflake. Only the bot calls them.
   invalid: "ข้อมูลไม่ถูกต้อง ลองใหม่อีกครั้ง",
   bad_route: "เลือกเส้นทางจากตัวเลือกที่มี",

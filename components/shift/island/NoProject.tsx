@@ -10,7 +10,7 @@ import { PROJECT_ROUTES, TEXT_LIMITS, type ProjectInvite, type ProjectRoute } fr
 import { COMMON, DETAIL, NO_PROJECT, ROUTE_NAMES } from "./copy";
 import styles from "./island.module.css";
 import { IslandDiscordButton } from "./IslandDiscordButton";
-import { Field } from "./SubmitForm";
+import { Field } from "./Field";
 
 /** The claim form's anchor. */
 export const CLAIM_FORM_ID = "island-claim";

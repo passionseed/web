@@ -262,6 +262,50 @@ the canvas not leading the first quest.
   `ei-button-dawn`'s motion; in-progress stamps and chips are a warm apricot.
   Gold stays the keynote's alone.
 
+## Show work and peer check (2026-11-15, founder decision)
+
+The founder decided how students show work and who checks it:
+
+- **Show work** by writing it (the written form), a photo or screenshot, or a
+  canvas notes card. Links stay as they are.
+- **Peer check is feedback only.** Another island student (never the
+  submitter, never someone on the submitter's project) ticks the done-when
+  items they think are met and leaves one line. A mentor still approves, and
+  only a mentor's approval grows the tree. Built in its own change
+  (20261115140000, schema 15).
+
+### Photos (20261115130000, schema 14)
+
+- Up to 3 photos per submission revision, added by the student who submitted
+  it while it waits for a mentor (pending, latest revision). They can take one
+  back, or add more, until a mentor decides; that is also how a photo that
+  failed during the send gets another try (รูปที่แนบ on the quest page).
+- **Privacy (students are minors).** The browser shrinks every pick to
+  1600 px and re-encodes JPEG; the server decodes and re-encodes again to WebP
+  with sharp and keeps no metadata (no EXIF, no GPS). The original bytes are
+  never stored. The rules sit above the picker: no faces, no real names, no
+  phone numbers or addresses; crop screenshots.
+- **Storage.** A private bucket, `shift-quest-evidence`, made by
+  `20261115130100_shift_island_evidence_bucket.sql` (a restrictive guard keeps
+  anon and authenticated out even if a broad policy is added later). The
+  website reads and writes it with the service role only, after the quest
+  database says yes, and shows photos through 10-minute signed links. Paths
+  are `<submission>/<photo>.webp`, chosen by the database.
+- **Who sees them:** the submitter, teammates when the submission is
+  team-visible (the website's own submits are reviewers-only), reviewers and
+  admins, and from schema 15 the peers allowed to check that submission.
+- **Mentors** see a photo count on the Discord review card and a link button
+  to `/shift/island/review/<submission>`, a reviewers-only web page with the
+  submission and its photos. Decisions stay in Discord.
+- **Deletion.** Every photo row that goes (taken back, an admin erase, a
+  deleted submission, the admin self-reset of PR #298 deleting submissions)
+  queues its object in `shift_quest_storage_trash` by trigger; the daily job
+  `/api/cron/shift-island-trash` deletes the objects and clears the queue.
+  The data export lists the member's photos (size and when, never the image).
+- **The team's problem, changed later.** `shift_quest_project_set_ambition`
+  lets any active teammate rewrite ปัญหาที่ทีมเลือก. The quest page and the
+  team's tree show เปลี่ยน, with the line "changing it is normal".
+
 ## Open items
 
 - **Economy (DRAFT, coins off).** The community gate and counts now key on
@@ -271,10 +315,11 @@ the canvas not leading the first quest.
   An approved main quest 6 or 7 no longer opens the gate. The draft main-quest
   rule now covers all seven main quests (cap still 5); the amounts and cap are
   the founder's to confirm before coins switch on.
-- **Changing the team's problem later.** Planting writes the ambition once
-  (`shift_quest_seed_plant` refuses a second plant). Editing it after a pivot
-  needs a new database function; until then the page calls it a starting
-  point and offers no change link.
+- **Changing the team's problem later.** Done in 20261115130000 (schema
+  14): เปลี่ยน on the quest page and the team's tree.
+- **Photos and the canvas card.** Photos go with the written form only; the
+  canvas quest card sends notes, not photos. A student who wants both sends
+  the card, then adds photos from รูปที่แนบ while it waits.
 - **Thai review.** The copy here is a draft: run the three-reviewer pass in
   AGENTS.md before Season 2.
 

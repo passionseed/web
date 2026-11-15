@@ -1,0 +1,190 @@
+/*
+ * Photo evidence on a quest (schema 14): the picker in the written form and
+ * the strip on the quest page. Island colours only (leaf for actions, coral
+ * for the rules' warning edge), pixel notches instead of radii.
+ */
+
+.picker,
+.strip {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.rules {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  padding: 10px 12px;
+  background: rgba(222, 121, 108, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(222, 121, 108, 0.38);
+  clip-path: var(--notch);
+}
+
+.rulesText {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.ruleList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text-hi);
+  font-weight: 600;
+}
+
+.ruleList li::before {
+  content: "✕ ";
+  color: var(--isl-coral);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.thumb {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: rgba(18, 14, 19, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(255, 241, 214, 0.22);
+  clip-path: var(--notch);
+}
+
+.thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.thumbLink {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.thumbLink:focus-visible {
+  outline: 2px solid var(--action-soft);
+  outline-offset: -4px;
+}
+
+.remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--isl-cream);
+  background: rgba(18, 14, 19, 0.78);
+  border: 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 241, 214, 0.4);
+  clip-path: var(--notch);
+  cursor: pointer;
+  transition: background-color var(--snap) var(--ease-snap);
+}
+
+.remove:hover {
+  background: rgba(222, 121, 108, 0.85);
+}
+
+.remove:focus-visible {
+  outline: 2px solid var(--action-soft);
+  outline-offset: -4px;
+}
+
+.add {
+  position: relative;
+  display: grid;
+  place-items: center;
+  gap: 4px;
+  aspect-ratio: 1;
+  padding: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--isl-cream);
+  text-align: center;
+  background: rgba(80, 151, 107, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(120, 184, 128, 0.5);
+  clip-path: var(--notch);
+  cursor: pointer;
+  transition: background-color var(--snap) var(--ease-snap);
+}
+
+.add:hover {
+  background: rgba(80, 151, 107, 0.26);
+}
+
+.add:focus-within {
+  outline: 2px solid var(--action-soft);
+  outline-offset: -4px;
+}
+
+.add[data-disabled="true"] {
+  cursor: default;
+  opacity: 0.55;
+}
+
+/* The real input stays in the label for the keyboard and screen readers, out of sight. */
+.fileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.count {
+  font-family: var(--font-space-mono), monospace;
+  font-size: 12px;
+}
+
+.heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-family: var(--font-kodchasan), var(--font-bai-jamjuree), sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--isl-sand-hi);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .remove,
+  .add {
+    transition: none;
+  }
+}

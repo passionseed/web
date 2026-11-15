@@ -164,3 +164,21 @@ export const plantSeedSchema = z.object({ seed: z.enum(SEED_IDS), idea: required
 export const pickGiftSchema = z.object({ giftId: id, item: treeItemId });
 
 export const equipItemSchema = z.object({ item: treeItemId });
+
+// ---------------------------------------------------------------------------
+// Photo evidence and the team's problem (schema 14)
+// ---------------------------------------------------------------------------
+
+/** One photo upload: the submission it belongs to (the database checks it is the caller's). The file is checked apart. */
+export const uploadPhotoSchema = z.object({ submissionId: id });
+
+export const removePhotoSchema = z.object({ photoId: id });
+
+/** The photos of one quest's latest submission. */
+export const loadPhotosSchema = z.object({ instanceId: id });
+
+/** ปัญหาที่ทีมเลือก, changed: the project (the database checks the caller is on it) and the new line. */
+export const setTeamProblemSchema = z.object({
+  projectId: id,
+  ambition: requiredText(TEXT_LIMITS.ambition),
+});

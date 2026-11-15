@@ -11,7 +11,7 @@ import { COMMON, DETAIL, PROPOSE } from "./copy";
 import { useDraft } from "./drafts";
 import styles from "./island.module.css";
 import { IslandSheet } from "./IslandSheet";
-import { Field } from "./SubmitForm";
+import { Field } from "./Field";
 
 interface ProposeSheetProps {
   open: boolean;

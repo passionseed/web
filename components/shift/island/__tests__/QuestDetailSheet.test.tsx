@@ -21,6 +21,12 @@ import { QUEST_FLAVOR } from "../copy";
 import { clearAllDrafts } from "../drafts";
 import { QuestDetailSheet } from "../QuestDetailSheet";
 
+jest.mock("@/app/shift/island/evidence-actions", () => ({
+  uploadEvidencePhoto: jest.fn(async () => ({ ok: true, data: { id: "p", count: 1 } })),
+  removeEvidencePhoto: jest.fn(async () => ({ ok: true, data: null })),
+  loadEvidencePhotos: jest.fn(async () => ({ ok: true, data: null })),
+  setTeamProblem: jest.fn(async () => ({ ok: true, data: { ambition: "x" } })),
+}));
 jest.mock("@/app/shift/island/actions", () => ({
   submitMainQuest: jest.fn(),
   submitSideQuest: jest.fn(),

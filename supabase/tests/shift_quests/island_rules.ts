@@ -21,6 +21,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 import { Client } from "pg";
+import { LATEST_SCHEMA } from "./schema";
 
 const adminUrl = process.env.SHIFT_QUESTS_TEST_DATABASE_URL;
 const botUrl = process.env.SHIFT_QUESTS_BOT_DATABASE_URL;
@@ -178,7 +179,7 @@ async function main(): Promise<void> {
     "bot cannot call island helpers");
   check((await code(bot.query("select public.shift_quest__plot_json($1, null)", [randomUUID()]))).includes("permission denied"),
     "bot cannot call the privacy helper");
-  check(Number(await call(bot, "shift_quest_schema_version")) === (WAVE1 ? 1 : 13),
+  check(Number(await call(bot, "shift_quest_schema_version")) === (WAVE1 ? 1 : LATEST_SCHEMA),
     `the bot reads the island schema version (${WAVE1 ? 1 : 13})`);
 
   // --- Fixtures --------------------------------------------------------------------

@@ -362,7 +362,7 @@ describe("submitQuestCard", () => {
       slug: "anything",
       notes: notes.map((n) => ({ id: n.id, hash: n.hash })),
     });
-    expect(result).toEqual({ ok: true, data: { instanceId: "i-main", revision: 1, created: true, gift: null, tree: null } });
+    expect(result).toEqual({ ok: true, data: { instanceId: "i-main", revision: 1, created: true, submissionId: "s", gift: null, tree: null } });
     const evidence = buildSnapshot("Lamp project", notes).text;
     expect(call).toHaveBeenCalledWith("shift_quest_milestone_submit", ACTOR, 1, evidence, CARD_REFLECTION_FALLBACK, null);
     expect(evidence).toContain("ไม่มีเวลาอ่านหนังสือ");
@@ -379,7 +379,7 @@ describe("submitQuestCard", () => {
       line: "  เพื่อนกดผิดปุ่มบ่อย  ",
       link: "https://example.com/app",
     });
-    expect(result).toEqual({ ok: true, data: { instanceId: "i-side", revision: 2, created: false, gift: null, tree: null } });
+    expect(result).toEqual({ ok: true, data: { instanceId: "i-side", revision: 2, created: false, submissionId: "s", gift: null, tree: null } });
     expect(call).toHaveBeenCalledWith(
       "shift_quest_side_submit",
       ACTOR,

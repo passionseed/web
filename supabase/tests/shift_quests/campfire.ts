@@ -11,6 +11,7 @@
  * All identities are synthetic.
  */
 import { Client } from "pg";
+import { LATEST_SCHEMA } from "./schema";
 
 const adminUrl = process.env.SHIFT_QUESTS_TEST_DATABASE_URL;
 const botUrl = process.env.SHIFT_QUESTS_BOT_DATABASE_URL;
@@ -133,8 +134,8 @@ async function main(): Promise<void> {
   const joinedAt = async (id: string) => (await row(id))?.joined_at?.toISOString();
 
   // --- Schema, privileges, row security ------------------------------------------------
-  check(Number(await call(web, "shift_quest_schema_version")) === 13, "the website reads schema version 13");
-  check(Number(await call(bot, "shift_quest_schema_version")) === 13, "the bot reads schema version 13 (the campfire starts from 7)");
+  check(Number(await call(web, "shift_quest_schema_version")) === LATEST_SCHEMA, "the website reads the latest schema version");
+  check(Number(await call(bot, "shift_quest_schema_version")) === LATEST_SCHEMA, "the bot reads the latest schema version (the campfire starts from 7)");
 
   for (const fn of [...WRITERS, READER]) {
     const grants: Json = (await db.query(

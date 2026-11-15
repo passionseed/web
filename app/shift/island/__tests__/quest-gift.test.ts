@@ -79,7 +79,7 @@ describe("a saved submit asks for the quest's gift (schema 13)", () => {
     });
     await expect(submitMainQuest({ milestone: 2, ...proof })).resolves.toEqual({
       ok: true,
-      data: { instanceId: "i-main", revision: 1, created: true, gift: GIFT, tree: TREE },
+      data: { instanceId: "i-main", revision: 1, created: true, submissionId: "s", gift: GIFT, tree: TREE },
     });
     expect(fns()[0]).toBe("shift_quest_milestone_submit");
     expect(fns().indexOf("shift_quest_quest_gift")).toBeGreaterThan(0);
@@ -117,7 +117,7 @@ describe("a saved submit asks for the quest's gift (schema 13)", () => {
     db({ shift_quest_milestone_submit: MAIN_ROW, shift_quest_schema_version: 13, shift_quest_quest_gift: { gift: null } });
     await expect(submitMainQuest({ milestone: 2, ...proof })).resolves.toEqual({
       ok: true,
-      data: { instanceId: "i-main", revision: 1, created: true, gift: null, tree: null },
+      data: { instanceId: "i-main", revision: 1, created: true, submissionId: "s", gift: null, tree: null },
     });
     expect(fns()).not.toContain("shift_quest_tree_get");
   });
@@ -152,7 +152,7 @@ describe("the gift never fails the submit", () => {
     });
     await expect(submitMainQuest({ milestone: 2, proof: secret, reflection: secret })).resolves.toEqual({
       ok: true,
-      data: { instanceId: "i-main", revision: 1, created: true, gift: null, tree: null },
+      data: { instanceId: "i-main", revision: 1, created: true, submissionId: "s", gift: null, tree: null },
     });
     expect(logged()).toContain("42883");
     expect(logged()).not.toContain(secret);

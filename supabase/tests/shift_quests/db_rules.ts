@@ -124,7 +124,13 @@ async function main(): Promise<void> {
       "shift_quest_character", "shift_quest_wallet", "shift_quest_consent_get", "shift_quest_consent_adult",
       "shift_quest_consent_link", "shift_quest_consent_import", "shift_quest_consent_parent_view",
       "shift_quest_consent_parent_answer", "shift_quest_consent_parent_withdraw", "shift_quest_island_news",
-      "shift_quest_digest_inputs", "shift_quest_digest_save", "shift_quest_admin_reset_self"].includes(f.proname);
+      "shift_quest_digest_inputs", "shift_quest_digest_save",
+      // 20261115120000_shift_quest_admin_reset_self.
+      "shift_quest_admin_reset_self",
+      // 20261115130000_shift_quest_evidence_photos.
+      "shift_quest_evidence_add", "shift_quest_evidence_remove", "shift_quest_evidence_list", "shift_quest_review_view",
+      "shift_quest_storage_trash_claim", "shift_quest_storage_trash_done", "shift_quest_project_set_ambition",
+    ].includes(f.proname);
   const missing = fns.filter((f) => !internal(f) && !webOnly(f) && !f.bot).map((f) => f.sig);
   check(missing.length === 0, "the bot can execute every shift_quest entry point but the website-only ones", missing);
   const leaked = fns.filter((f) => internal(f) && f.bot).map((f) => f.sig);

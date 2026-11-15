@@ -22,6 +22,7 @@
 import { Client } from "pg";
 import { randomUUID } from "node:crypto";
 import { DEFAULT_STYLE, SEEDS, TREE_ITEMS } from "../../../lib/shift-island/tree-style";
+import { LATEST_SCHEMA } from "./schema";
 
 const adminUrl = process.env.SHIFT_QUESTS_TEST_DATABASE_URL;
 const botUrl = process.env.SHIFT_QUESTS_BOT_DATABASE_URL;
@@ -172,8 +173,8 @@ async function main(): Promise<void> {
   };
 
   // --- Schema, privileges, row security ------------------------------------------------------------
-  check(Number(await call(bot, "shift_quest_schema_version")) === 13, "the bot reads schema version 13 (tree style)");
-  check(Number(await call(web, "shift_quest_schema_version")) === 13, "the website reads schema version 13");
+  check(Number(await call(bot, "shift_quest_schema_version")) === LATEST_SCHEMA, "the bot reads the latest schema version (tree style)");
+  check(Number(await call(web, "shift_quest_schema_version")) === LATEST_SCHEMA, "the website reads the latest schema version");
 
   for (const fn of PUBLIC_FNS) {
     const g: Json = (await db.query(

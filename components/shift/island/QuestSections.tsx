@@ -6,7 +6,7 @@
  * line carries a pixel icon (questArt.ts), so the page reads at a glance.
  * QuestDetailSheet composes them; each one returns null when it has nothing.
  */
-import { useId } from "react";
+import { useId, type ReactNode } from "react";
 
 import { PixelIcon } from "@/components/shift/poster/pixel/PixelRects";
 import type { BoardRef } from "@/lib/supabase/shift-quests/board";
@@ -128,10 +128,13 @@ export function TeamProblem({
   ambition,
   planted,
   onPlant,
+  editor,
 }: {
   ambition: string | null;
   planted: boolean;
   onPlant?: () => void;
+  /** เปลี่ยน (schema 14): the ProblemEditor, under a planted line. */
+  editor?: ReactNode;
 }) {
   const headingId = useId();
   const line = ambition?.trim() ? ambition.trim() : null;
@@ -149,6 +152,7 @@ export function TeamProblem({
           <>
             <p className={styles.teamProblemLine}>{line}</p>
             <p className={styles.hint}>{TEAM_PROBLEM.note}</p>
+            {editor}
           </>
         ) : (
           <p className={styles.hint}>{TEAM_PROBLEM.empty}</p>

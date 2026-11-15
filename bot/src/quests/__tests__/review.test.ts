@@ -214,6 +214,24 @@ describe("a submission under review", () => {
     expect(mediaUrls(p)).toEqual([]);
   });
 
+  it("says how many photos came with it and links mentors to them on the web (schema 14)", () => {
+    const saved = process.env.NEXT_PUBLIC_SITE_URL;
+    process.env.NEXT_PUBLIC_SITE_URL = "https://www.passionseed.org";
+    try {
+      const p = renderView(reviewCard(detail(), { photos: 2 }));
+      expect(bodyText(p)).toContain(RV.photos(2));
+      expect(JSON.stringify(p)).toContain(`https://www.passionseed.org/shift/island/review/${SUB}`);
+      const none = renderView(reviewCard(detail(), { photos: 0 }));
+      expect(bodyText(none)).not.toContain("📷");
+      expect(JSON.stringify(none)).not.toContain("/review/");
+      // An older database (no extras): the card is as it was.
+      expect(JSON.stringify(renderView(reviewCard(detail(), null)))).not.toContain("/review/");
+    } finally {
+      if (saved === undefined) delete process.env.NEXT_PUBLIC_SITE_URL;
+      else process.env.NEXT_PUBLIC_SITE_URL = saved;
+    }
+  });
+
   it("offers the repeat approval only for a repeat, and no decisions on an older revision", () => {
     const repeat = renderView(reviewCard(detail({ repeatable: true, prior_approved: 2 })));
     expect(bodyText(repeat)).toContain("นักเรียนเคยผ่านเควสต์นี้ **2** ครั้ง");

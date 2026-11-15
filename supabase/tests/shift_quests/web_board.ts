@@ -15,6 +15,7 @@ import { Client } from "pg";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { LATEST_SCHEMA } from "./schema";
 
 const PITFALL_MAP = resolve(__dirname, "../../migrations/20261115090000_shift_quests_pitfall_map.sql");
 const adminUrl = process.env.SHIFT_QUESTS_TEST_DATABASE_URL;
@@ -105,6 +106,14 @@ const WEB_ALLOWLIST = [
   "shift_quest_island_styles()",
   // 20261115120000_shift_quest_admin_reset_self (admins only; refuses everyone else).
   "shift_quest_admin_reset_self(text)",
+  // 20261115130000_shift_quest_evidence_photos.
+  "shift_quest_evidence_add(text,uuid,integer,integer,integer)",
+  "shift_quest_evidence_remove(text,uuid)",
+  "shift_quest_evidence_list(text,uuid)",
+  "shift_quest_review_view(text,uuid)",
+  "shift_quest_storage_trash_claim(integer)",
+  "shift_quest_storage_trash_done(text[])",
+  "shift_quest_project_set_ambition(text,uuid,text)",
 ];
 
 /**
@@ -222,8 +231,8 @@ async function main(): Promise<void> {
   check(role && role.rolinherit === false && role.rolconnlimit === 20 && (role.rolconfig ?? []).includes("statement_timeout=8s"),
     "shift_quest_web: NOINHERIT, 20 connections, statement_timeout 8s", role);
   check((await scalar<string>(web, "show statement_timeout")) === "8s", "a web session runs with the 8s statement timeout");
-  check(Number(await call(web, "shift_quest_schema_version")) === 13, "the website reads schema version 13 (it needs 6 or more)");
-  check(Number(await call(bot, "shift_quest_schema_version")) === 13, "the bot reads schema version 13 (it needs 2 or more)");
+  check(Number(await call(web, "shift_quest_schema_version")) === LATEST_SCHEMA, "the website reads the latest schema version (it needs 6 or more)");
+  check(Number(await call(bot, "shift_quest_schema_version")) === LATEST_SCHEMA, "the bot reads the latest schema version (it needs 2 or more)");
 
   const executable: string[] = (await db.query(`
     select p.oid::regprocedure::text as sig
@@ -294,6 +303,16 @@ async function main(): Promise<void> {
       "not_started"],
     ["tree_equip", "select public.shift_quest_tree_equip($1::text, $2::text)", [NOBODY, "leaf:mint"], "not_started"],
     ["island_styles", "select public.shift_quest_island_styles()", [], "ok"],
+    // 20261115130000_shift_quest_evidence_photos: an unknown caller is refused or sees nothing; the trash job has no caller.
+    ["evidence_add", "select public.shift_quest_evidence_add($1::text, $2::uuid, $3::integer, $4::integer, $5::integer)",
+      [NOBODY, randomUUID(), 1, 1, 1], "not_started"],
+    ["evidence_remove", "select public.shift_quest_evidence_remove($1::text, $2::uuid)", [NOBODY, randomUUID()], "not_started"],
+    ["evidence_list", "select public.shift_quest_evidence_list($1::text, $2::uuid)", [NOBODY, randomUUID()], "not_started"],
+    ["review_view", "select public.shift_quest_review_view($1::text, $2::uuid)", [NOBODY, randomUUID()], "not_authorized"],
+    ["storage_trash_claim", "select public.shift_quest_storage_trash_claim($1::integer)", [10], "ok"],
+    ["storage_trash_done", "select public.shift_quest_storage_trash_done($1::text[])", [[]], "ok"],
+    ["project_set_ambition", "select public.shift_quest_project_set_ambition($1::text, $2::uuid, $3::text)",
+      [NOBODY, randomUUID(), "x"], "not_started"],
     // 20261111095000_shift_quest_player: an unknown caller or an unknown link stores nothing.
     ["character", "select public.shift_quest_character($1::text)", [NOBODY], "not_started"],
     ["wallet", "select public.shift_quest_wallet($1::text)", [NOBODY], "not_started"],
@@ -330,6 +349,7 @@ async function main(): Promise<void> {
   // Everything else is refused by Postgres itself (42501).
   const denied: [string, string, unknown[]][] = [
     ["the review queue", "select public.shift_quest_review_queue($1)", [R1]],
+    ["the review card's photo count (the bot's)", "select public.shift_quest_review_extras($1, $2)", [R1, randomUUID()]],
     ["review decisions", "select public.shift_quest_review_decide($1, $2, 'approved', null, false)", [R1, randomUUID()]],
     ["admin status", "select public.shift_quest_admin_status($1)", [ADMIN]],
     ["template publishing", "select public.shift_quest_admin_template_state($1, 'side-readme', true)", [ADMIN]],

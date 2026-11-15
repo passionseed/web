@@ -30,6 +30,9 @@
     "app/api/cron/shift-island-digest/route.ts": {
       "maxDuration": 60
     },
+    "app/api/cron/shift-island-trash/route.ts": {
+      "maxDuration": 60
+    },
     "app/api/cron/meta-marketing-sync/route.ts": {
       "maxDuration": 60
     },
@@ -61,6 +64,10 @@
     {
       "path": "/api/cron/shift-island-digest",
       "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/cron/shift-island-trash",
+      "schedule": "30 19 * * *"
     },
     {
       "path": "/api/cron/meta-marketing-sync",

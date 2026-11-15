@@ -12,6 +12,7 @@
  * All identities are synthetic.
  */
 import { Client } from "pg";
+import { LATEST_SCHEMA } from "./schema";
 
 const adminUrl = process.env.SHIFT_QUESTS_TEST_DATABASE_URL;
 const botUrl = process.env.SHIFT_QUESTS_BOT_DATABASE_URL;
@@ -140,8 +141,8 @@ async function main(): Promise<void> {
     scalar<string>(db, "select ((now() at time zone 'Asia/Bangkok')::date + $1::int)::text", [offset]);
 
   // --- Schema, privileges, row security ------------------------------------------------
-  check(Number(await call(bot, "shift_quest_schema_version")) === 13, "the bot reads schema version 13 (the live post starts from 8)");
-  check(Number(await call(web, "shift_quest_schema_version")) === 13, "the website reads schema version 13 (it needs 6 or more)");
+  check(Number(await call(bot, "shift_quest_schema_version")) === LATEST_SCHEMA, "the bot reads the latest schema version (the live post starts from 8)");
+  check(Number(await call(web, "shift_quest_schema_version")) === LATEST_SCHEMA, "the website reads the latest schema version (it needs 6 or more)");
 
   for (const fn of [LIVE_READER, LIVE_WRITER, LINKS]) {
     const grants: Json = (await db.query(

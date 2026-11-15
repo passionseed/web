@@ -512,7 +512,15 @@ function IslandHome({
           onSeed={() => setPanel("tree")}
         />
       </BoardSheet>
-      {tree ? <TreeSheet open={panel === "tree"} onClose={() => setPanel(null)} tree={tree} onBoard={() => setPanel("board")} /> : null}
+      {tree ? (
+        <TreeSheet
+          open={panel === "tree"}
+          onClose={() => setPanel(null)}
+          tree={tree}
+          onBoard={() => setPanel("board")}
+          projectId={page.photos === true ? (project?.id ?? null) : null}
+        />
+      ) : null}
       {/* From the chip: who you are, your stats and coins, then the project sheet as before (tree, today, season). */}
       <CharacterSheet
         open={panel === "character" || panel === "project"}
@@ -583,6 +591,9 @@ function IslandHome({
         onPlant={tree ? openTreeFromQuest : undefined}
         // A ตัวช่วย side quest opens in the same sheet; closing it goes where this quest would have.
         onOpenQuest={setDetail}
+        // Schema 14: photos with the work, and เปลี่ยน on the team's problem line.
+        photos={page.photos === true}
+        projectId={project?.id ?? null}
       />
       <StuckSheet
         open={stuck.open}
