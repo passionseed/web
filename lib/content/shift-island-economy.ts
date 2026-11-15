@@ -56,7 +56,7 @@ export const ECONOMY_RULES_DRAFT: readonly EconomyRuleDraft[] = [
     cap: 4,
     teamAllocation: "each_confirmed",
     target: "community",
-    eligibility: "เควสต์ชุมชนขั้น 6 ช่วยเพื่อนให้ไปต่อ และขั้น 7 ทำให้ชุมชนดีขึ้น ที่พี่เลี้ยงตรวจผ่าน ทำซ้ำได้จนถึงเพดาน",
+    eligibility: "เควสต์ชุมชน ช่วยเพื่อนให้ไปต่อ และทำให้ชุมชนดีขึ้น ที่พี่เลี้ยงตรวจผ่าน ทำซ้ำได้จนถึงเพดาน",
     review: "พี่เลี้ยงตรวจว่ามีคนได้ประโยชน์จริง และเพื่อนทำได้เองหลังได้รับความช่วยเหลือ",
     reversal: "ถ้าผลตรวจถูกถอนภายหลัง หรือพบว่าทำงานแทนเพื่อน ทีมงานหัก coin คืนพร้อมเขียนเหตุผล",
   },
@@ -105,7 +105,7 @@ export interface ShopItemDraft {
   stock: number;
   /** Tree stage 0..7 the student's project must reach first. */
   minStage: number;
-  /** At least one approved community quest (milestone 6 or 7) first. */
+  /** At least one approved community quest first (shift_quest__community_done still checks milestone 6 or 7: see docs/designs/shift-high-quest-pitfalls.md, open items). */
   requiresCommunity: boolean;
 }
 

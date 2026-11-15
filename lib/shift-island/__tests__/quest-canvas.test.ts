@@ -17,25 +17,29 @@ import {
   type HintRule,
 } from "../quest-canvas";
 
-/** The draft side quests of 20261111090900_shift_quests_board.sql. */
+/** The side quests of 20261111090900 and 20261115090000 (side-fix-one-thing is retired). */
 const SIDE_SLUGS = [
+  "side-stakeholder-map",
+  "side-practice-talk",
+  "side-question-check",
+  "side-warm-intro",
   "side-five-voices",
   "side-open-on-phone",
   "side-readme",
   "side-thirty-second-cut",
   "side-clear-offer",
   "side-outside-circle",
-  "side-fix-one-thing",
   "side-demo-three-minutes",
   "side-handoff-page",
   "side-review-a-friend",
   "side-share-a-lesson",
+  "side-help-a-builder",
+  "side-improve-community",
 ];
 
 const SIDE_ZONES: Record<string, string[]> = {
   "side-five-voices": ["interview", "target"],
   "side-outside-circle": ["test"],
-  "side-fix-one-thing": ["test", "pivot"],
   "side-open-on-phone": ["ship", "idea"],
   "side-thirty-second-cut": ["ship", "idea"],
   "side-clear-offer": ["ship", "idea"],
@@ -50,13 +54,13 @@ describe("questGuide", () => {
   });
 
   it.each([
-    ["find-something-worth-fixing", ["problem", "target", "interview"]],
-    ["make-it-exist", ["idea", "ship"]],
-    ["let-reality-surprise-you", ["test", "pivot"]],
-    ["give-them-a-reason-to-return", ["test", "pivot"]],
-    ["take-the-keys", []],
-    ["help-another-builder-move", []],
-    ["improve-our-community", []],
+    ["meet-one-real-person", ["target", "interview", "problem"]],
+    ["real-stories-not-compliments", ["interview", "problem", "pivot"]],
+    ["first-partner", ["target", "interview"]],
+    ["in-their-hands", ["idea", "ship", "test"]],
+    ["run-the-loop", ["test", "pivot", "ship"]],
+    ["what-we-learned", ["pivot", "problem"]],
+    ["beyond-the-first", ["test", "ship"]],
   ])("main %s reads zones %j, with 3 checklist items and examples", (slug, zones) => {
     const guide = questGuide({ kind: "main", slug });
     expect(guide.zones).toEqual(zones);
@@ -72,25 +76,34 @@ describe("questGuide", () => {
     expect(guide.examples).toEqual([]);
   });
 
+  it("gives the ถือกุญแจเอง side quest the ownership checklist, no zones and no examples", () => {
+    const guide = questGuide({ kind: "side", slug: "side-take-the-keys" });
+    expect(guide.zones).toEqual([]);
+    expect(guide.checklist.map((item) => item.id)).toEqual(["keys-checked", "keys-open", "keys-secrets"]);
+    expect(guide.examples).toEqual([]);
+    expect(questGuide({ kind: "main", slug: "side-take-the-keys" }).checklist).toEqual([]);
+  });
+
   it("lists exactly the side quests that read the canvas", () => {
     expect([...CANVAS_SIDE_SLUGS].sort()).toEqual(Object.keys(SIDE_ZONES).sort());
   });
 
   it("gives proposed quests, unknown slugs and a missing slug no zones", () => {
     const none = { zones: [], checklist: [], examples: [] };
-    expect(questGuide({ kind: "proposed", slug: "find-something-worth-fixing" })).toEqual(none);
+    expect(questGuide({ kind: "proposed", slug: "meet-one-real-person" })).toEqual(none);
     expect(questGuide({ kind: "main", slug: "nope" })).toEqual(none);
     expect(questGuide({ kind: "side", slug: null })).toEqual(none);
     expect(questGuide({ kind: "main", slug: "__proto__" })).toEqual(none);
-    expect(questGuide({ kind: "side", slug: "find-something-worth-fixing" })).toEqual(none);
+    expect(questGuide({ kind: "side", slug: "meet-one-real-person" })).toEqual(none);
+    expect(questGuide({ kind: "main", slug: "find-something-worth-fixing" })).toEqual(none);
   });
 
   it("never lets the caller change the shared config", () => {
-    const guide = questGuide({ kind: "main", slug: "make-it-exist" });
+    const guide = questGuide({ kind: "main", slug: "first-partner" });
     guide.zones.push("daily");
     guide.checklist.pop();
-    expect(questGuide({ kind: "main", slug: "make-it-exist" }).zones).toEqual(["idea", "ship"]);
-    expect(questGuide({ kind: "main", slug: "make-it-exist" }).checklist).toHaveLength(3);
+    expect(questGuide({ kind: "main", slug: "first-partner" }).zones).toEqual(["target", "interview"]);
+    expect(questGuide({ kind: "main", slug: "first-partner" }).checklist).toHaveLength(3);
   });
 });
 
@@ -109,31 +122,35 @@ describe("guide specs", () => {
 
   it("follows the plan's hint rules", () => {
     const hints = (slug: string) => questGuideSpec({ kind: "main", slug }).checklist.map((c) => c.hint);
-    expect(hints("find-something-worth-fixing")).toEqual([
-      { rule: "written", zone: "problem" },
+    expect(hints("meet-one-real-person")).toEqual([
       { rule: "written", zone: "target" },
       { rule: "count", zone: "interview", min: 1 },
-    ]);
-    expect(hints("make-it-exist")).toEqual([{ rule: "written", zone: "idea" }, { rule: "written", zone: "ship" }, null]);
-    expect(hints("let-reality-surprise-you")).toEqual([
-      { rule: "count", zone: "test", min: 1 },
       null,
-      { rule: "any", of: [{ rule: "count", zone: "pivot", min: 1 }, { rule: "version", zone: "idea", min: 2 }] },
     ]);
-    expect(hints("give-them-a-reason-to-return")).toEqual([
+    expect(hints("real-stories-not-compliments")).toEqual([
+      { rule: "count", zone: "interview", min: 3 },
+      null,
+      { rule: "any", of: [{ rule: "version", zone: "problem", min: 2 }, { rule: "count", zone: "pivot", min: 1 }] },
+    ]);
+    expect(hints("in-their-hands")).toEqual([
+      { rule: "written", zone: "idea" },
+      { rule: "written", zone: "ship" },
+      { rule: "count", zone: "test", min: 1 },
+    ]);
+    expect(hints("run-the-loop")).toEqual([
+      { rule: "count", zone: "test", min: 2 },
       { rule: "any", of: [{ rule: "count", zone: "pivot", min: 1 }, { rule: "version", zone: "ship", min: 2 }] },
-      { rule: "count", zone: "test", min: 1 },
       null,
     ]);
-    for (const slug of ["take-the-keys", "help-another-builder-move", "improve-our-community"]) {
+    for (const slug of ["first-partner", "what-we-learned", "beyond-the-first"]) {
       expect(hints(slug)).toEqual([null, null, null]);
     }
   });
 
   it("labels side rows with the whiteboard's own zone names", () => {
-    expect(questGuideSpec({ kind: "side", slug: "side-fix-one-thing" }).context).toEqual([
-      { zone: "test", label: shortTitle("test"), show: "note" },
-      { zone: "pivot", label: shortTitle("pivot"), show: "note" },
+    expect(questGuideSpec({ kind: "side", slug: "side-five-voices" }).context).toEqual([
+      { zone: "interview", label: shortTitle("interview"), show: "note" },
+      { zone: "target", label: shortTitle("target"), show: "note" },
     ]);
   });
 });
@@ -167,6 +184,9 @@ function strings(): [string, string][] {
   for (const slug of CANVAS_SIDE_SLUGS) {
     questGuideSpec({ kind: "side", slug }).context.forEach((r, i) => out.push([`${slug}.context[${i}]`, r.label]));
   }
+  questGuideSpec({ kind: "side", slug: "side-take-the-keys" }).checklist.forEach((c, i) =>
+    out.push([`side-take-the-keys.checklist[${i}]`, c.label]),
+  );
   for (const kind of SHIFT_CARD_KINDS) {
     out.push([`HINT_DETAIL.count(${kind})`, HINT_DETAIL.count(shortTitle(kind), 2)]);
     out.push([`HINT_DETAIL.version(${kind})`, HINT_DETAIL.version(shortTitle(kind), 2)]);

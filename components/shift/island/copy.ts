@@ -554,22 +554,28 @@ export const CAMPFIRE = {
  * student's own words. Unknown slugs show nothing.
  */
 export const QUEST_FLAVOR: Readonly<Record<string, string>> = {
-  // Main quests 1 to 7 (supabase/migrations/20261111090500_shift_quests_starter_templates.sql).
-  "find-something-worth-fixing": "ทุกต้นเริ่มจากเรื่องที่มีคนเจอจริง",
-  "make-it-exist": "จากไอเดียในหัว เป็นของที่คนอื่นจับต้องได้",
-  "let-reality-surprise-you": "คนจริงไม่เคยใช้งานตรงตามที่เราคิดไว้",
-  "give-them-a-reason-to-return": "ครั้งแรกคนลองเพราะอยากรู้ ครั้งที่สองเพราะมันมีค่า",
-  "take-the-keys": "กุญแจอยู่ในมือคุณ งานจึงเดินต่อได้หลัง SHIFT จบ",
-  "help-another-builder-move": "บนเกาะนี้ ไม่มีใครต้องติดอยู่คนเดียว",
-  "improve-our-community": "ทิ้งของดีๆ ไว้ให้คนที่มาทีหลัง",
-  // Side quests (supabase/migrations/20261111090900_shift_quests_board.sql).
+  // Main quests 1 to 7: the pitfall quest map (supabase/migrations/20261115090000_shift_quests_pitfall_map.sql).
+  "meet-one-real-person": "ทุกต้นเริ่มจากคนหนึ่งคนที่เจอปัญหาจริง",
+  "real-stories-not-compliments": "คำชมฟังแล้วชื่นใจ แต่เรื่องจริงพาไปถูกทาง",
+  "first-partner": "มีพันธมิตรหนึ่งคน งานของคุณก็มีที่ยืนในโลกจริง",
+  "in-their-hands": "จากเรื่องที่เขาเล่า เป็นของที่เขาจับได้",
+  "run-the-loop": "แก้ทีละอย่าง แล้วให้ความจริงตัดสินอีกรอบ",
+  "what-we-learned": "รากที่ลึก มาจากการหยุดคิดว่าได้เรียนรู้อะไร",
+  "beyond-the-first": "ต้นไม้ที่โตแล้ว ให้ร่มกับคนที่ไม่เคยรู้จักคุณ",
+  // Side quests (20261111090900, and 20261115090000 for the first-conversation and old main ones).
+  "side-stakeholder-map": "รู้ว่าใครอยู่รอบปัญหา ก็รู้ว่าควรเริ่มคุยกับใคร",
+  "side-practice-talk": "ซ้อมกับเพื่อนก่อน ครั้งจริงจะไม่น่ากลัวเท่าที่คิด",
+  "side-question-check": "คำถามที่ดี พาไปถึงเรื่องจริง",
+  "side-warm-intro": "คนแรกที่คุยด้วย ไม่ต้องหาเองคนเดียว",
+  "side-take-the-keys": "กุญแจอยู่ในมือคุณ งานจึงเดินต่อได้หลัง SHIFT จบ",
+  "side-help-a-builder": "บนเกาะนี้ ไม่มีใครต้องติดอยู่คนเดียว",
+  "side-improve-community": "ทิ้งของดีๆ ไว้ให้คนที่มาทีหลัง",
   "side-five-voices": "ห้าเสียงจริง ชัดกว่าการเดาคนเดียว",
   "side-open-on-phone": "งานที่เปิดได้จากลิงก์เดียว ไปถึงคนได้ไกลกว่า",
   "side-readme": "คู่มือที่ดี ทำให้งานเดินต่อได้แม้คุณไม่อยู่",
   "side-thirty-second-cut": "ถ้าคนเข้าใจใน 30 วินาที เขาจะอยากดูต่อ",
   "side-clear-offer": "คนจะเริ่มใช้ เมื่อเข้าใจว่าคุณช่วยอะไรเขา",
   "side-outside-circle": "คนนอกวงจะบอกสิ่งที่เพื่อนเกรงใจไม่พูด",
-  "side-fix-one-thing": "แก้ทีละอย่าง แล้วให้ความจริงตัดสินอีกรอบ",
   "side-demo-three-minutes": "คืนเทศกาล มีคนอยากฟังเรื่องงานของคุณ",
   "side-handoff-page": "งานที่ส่งต่อได้ คืองานที่อยู่ได้นาน",
   "side-review-a-friend": "คำติชมที่ดี ช่วยให้ต้นของเพื่อนโตต่อได้",
@@ -581,6 +587,102 @@ export function questFlavor(kind: "main" | "side" | "proposed", slug: string | n
   if (kind === "proposed" || !slug) return null;
   return Object.hasOwn(QUEST_FLAVOR, slug) ? QUEST_FLAVOR[slug] : null;
 }
+
+/** One pitfall on a quest page: its name, the warning sign a student can check alone, and how to avoid it. */
+export interface QuestPitfall {
+  name: string;
+  sign: string;
+  avoid: string;
+}
+
+/**
+ * DRAFT: the pitfall each main quest is built around, by template slug
+ * (docs/designs/shift-high-quest-pitfalls.md). Shown on the quest page as
+ * หลุมพราง; unknown slugs show nothing.
+ */
+export const QUEST_PITFALLS: Readonly<Record<string, readonly QuestPitfall[]>> = {
+  "meet-one-real-person": [
+    {
+      name: "เป้าหมายคือทุกคน",
+      sign: "คุณเรียกผู้ใช้ว่า \"นักเรียน\" หรือ \"คนทั่วไป\" และบอกไม่ได้ว่าจะเจอเขาที่ไหนในสัปดาห์นี้",
+      avoid: "บอกให้ได้ว่าเขาเป็นใคร อยู่ที่ไหน เจอได้เมื่อไหร่ เช่น \"แม่ค้าข้าวมันไก่หน้าโรงเรียนที่ขายถึงสองทุ่ม\"",
+    },
+    {
+      name: "กลัวเจอคนจริง",
+      sign: "ส่งแบบฟอร์มไปแล้วแต่ยังไม่ได้คุยกับใคร หรือคิดว่า \"ทำเสร็จก่อนค่อยไปให้ดู\"",
+      avoid: "เริ่มจากคนที่อยู่ห่างคุณแค่ก้าวเดียว เช่น ครู ร้านของญาติ รุ่นพี่ ชวนเพื่อนไปด้วย เตรียม 3 คำถาม แล้วคุยแค่ 10 นาที",
+    },
+  ],
+  "real-stories-not-compliments": [
+    {
+      name: "กับดักคำชม",
+      sign: "ได้ยินแค่ \"ดีนะ\" \"น่าสนใจ\" \"ใช้แน่นอน\" คุณพูดมากกว่าเขา หรือยังไม่มีใครเล่าว่าครั้งล่าสุดที่เจอปัญหานี้เกิดอะไรขึ้น",
+      avoid: "ถามถึงครั้งล่าสุดที่มันเกิดขึ้นจริง เขาทำยังไง เสียอะไรไปบ้าง เก็บไอเดียของคุณไว้เล่าตอนท้าย",
+    },
+  ],
+  "first-partner": [
+    {
+      name: "เยสแบบสุภาพ",
+      sign: "เขาบอกว่า \"ดีนะ ส่งมาดูได้\" แต่ไม่มีวันนัดถัดไป หรือคุณยังไม่ได้ทักเขาอีกเลยหลังคุยครั้งแรก",
+      avoid: "ขอสิ่งเล็กแต่ชัด เช่น นัดลองชิ้นแรกสัปดาห์หน้า ขอดูข้อมูลหรือตัวอย่างจริง ขอให้แนะนำคนอีก 2 คน หรือขอลองในร้าน ชมรม หรือห้องเรียนของเขา แล้วทักกลับภายใน 2 วัน",
+    },
+  ],
+  "in-their-hands": [
+    {
+      name: "สร้างในถ้ำ",
+      sign: "ผ่านไปเกิน 7 วันแล้วยังไม่มีใครได้ลอง หรือรายการฟีเจอร์ยาวขึ้นเรื่อยๆ ทั้งที่ยังไม่มีใครขอ",
+      avoid: "ตัดให้เหลือเรื่องเดียวที่เขาเล่า ให้เขาลองเองต่อหน้าคุณ แล้วดูโดยไม่ช่วยอธิบาย",
+    },
+  ],
+  "run-the-loop": [
+    {
+      name: "ปกป้องงาน หรือแก้ทุกอย่าง",
+      sign: "คุณเถียงกับคำติ หรืองานรอบใหม่เปลี่ยนไปสิบอย่าง แต่ไม่มีข้อไหนที่เขาเจอจริง",
+      avoid: "แก้ทีละเรื่อง เริ่มจากเรื่องที่เห็นซ้ำที่สุด แล้วดูก่อนกับหลัง ผลที่ไม่ดีขึ้นก็นับ",
+    },
+  ],
+  "what-we-learned": [
+    {
+      name: "ทำไปเรื่อยๆ โดยไม่หยุดคิด",
+      sign: "ตอบไม่ได้ว่าสัปดาห์นี้รู้อะไรเพิ่ม หรือแผนยังเหมือนวันแรกทุกอย่าง",
+      avoid: "หยุด 20 นาที เขียน 3 บรรทัด: เคยเชื่อ เจอจริง จะทำต่อ แล้วเล่าให้คนหนึ่งคนฟัง",
+    },
+  ],
+  "beyond-the-first": [
+    {
+      name: "ใช้ได้แค่ตอนคุณอยู่",
+      sign: "ทุกคนที่ใช้รู้จักคุณ หรือต้องให้คุณอธิบายก่อนทุกครั้ง",
+      avoid: "ส่งลิงก์หรือของให้คนกลุ่มใหม่ที่ไม่เคยคุยกับคุณ แล้วดูว่าเขาเริ่มเองได้ไหม และมีใครกลับมาเองไหม",
+    },
+  ],
+};
+
+/** The quest's pitfalls, or none for a proposed quest or a slug without any. */
+export function questPitfalls(kind: "main" | "side" | "proposed", slug: string | null | undefined): readonly QuestPitfall[] {
+  if (kind === "proposed" || !slug) return [];
+  return Object.hasOwn(QUEST_PITFALLS, slug) ? QUEST_PITFALLS[slug] : [];
+}
+
+/** DRAFT: the หลุมพราง block on a quest page. */
+export const PITFALL = {
+  heading: "หลุมพราง",
+  sign: "สัญญาณเตือน",
+  avoid: "เลี่ยงยังไง",
+};
+
+/**
+ * DRAFT: the pitfall quest map's three acts on the main lane, by milestone.
+ * The order is a suggestion, never a gate: Act 2 and 3 cards say
+ * partnerFirst until the project has main quest 3 (its first partner).
+ */
+export const QUEST_ACTS: readonly { title: string; milestones: readonly number[] }[] = [
+  { title: "หาคนที่ใช่", milestones: [1, 2, 3] },
+  { title: "สร้างสิ่งที่สำคัญ", milestones: [4, 5, 6] },
+  { title: "ขยาย", milestones: [7] },
+];
+/** The main quest that finds the first partner: Act 2 and 3 are suggested after it. */
+export const PARTNER_MILESTONE = 3;
+export const PARTNER_FIRST = "แนะนำหลังได้พันธมิตร";
 
 // Thai reviewed (agy, Codex, Cursor), 2026-11-14. stuckHint and the form labels are the bot's rounds copy.
 export const REFLECT = {

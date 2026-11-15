@@ -74,15 +74,19 @@ export interface IslandQuest {
   body: string;
 }
 
-/** The seven main quests. Each one a mentor confirms grows the tree a stage. */
+/**
+ * The seven main quests of the pitfall quest map (docs/designs/shift-high-quest-pitfalls.md).
+ * Each one a mentor confirms grows the tree a stage. 1 to 3 find a real
+ * stakeholder, 4 to 6 build what matters, 7 goes beyond the first.
+ */
 export const ISLAND_QUESTS: IslandQuest[] = [
-  { title: "หาปัญหาที่คุ้มค่าจะแก้", body: "เลือกปัญหาจริงที่เราใส่ใจ ก่อนลงมือสร้าง" },
-  { title: "ทำให้มันมีอยู่จริง", body: "สร้างชิ้นเล็กที่สุดที่คนอื่นลองใช้ได้" },
-  { title: "ให้คนจริงลองใช้", body: "ดูว่าเกิดอะไรขึ้น ผลที่ไม่เป็นไปตามคาดก็นับ" },
-  { title: "ทำให้เขาอยากกลับมา", body: "ปรับหนึ่งอย่าง แล้วดูว่าใครกลับมาใช้อีก" },
-  { title: "ถือกุญแจเอง", body: "เข้าถึงและสำรองไฟล์โปรเจกต์ได้เอง ทำต่อได้ด้วยตัวเอง" },
-  { title: "ช่วยเพื่อนให้ไปต่อ", body: "ช่วยเพื่อนผ่านจุดที่ติด โดยไม่ทำแทน" },
-  { title: "ทำให้ชุมชนดีขึ้น", body: "ปรับของที่ทุกคนใช้ร่วมกันให้ดีกว่าเดิม" },
+  { title: "เจอคนจริงคนแรก", body: "เลือกคนหนึ่งคนที่เจอปัญหานี้จริง แล้วไปคุยกับเขา" },
+  { title: "ฟังเรื่องจริง ไม่ใช่คำชม", body: "คุยอีก 3 คน ฟังเรื่องที่เกิดขึ้นจริง ไม่ใช่ความเห็นต่อไอเดีย" },
+  { title: "ได้พันธมิตรคนแรก", body: "ให้เขาตกลงทำขั้นต่อไปกับคุณ โดยมีวันที่ชัดเจน" },
+  { title: "ส่งชิ้นแรกถึงมือเขา", body: "สร้างชิ้นเล็กที่สุด แล้วให้เขาลองภายใน 7 วัน" },
+  { title: "วนรอบ: ฟัง แก้ ลองใหม่", body: "แก้เรื่องที่เห็นบ่อยที่สุด แล้วให้คนเดิมลองอีก 2 รอบ" },
+  { title: "สรุปสิ่งที่ได้เรียนรู้", body: "เคยเชื่ออะไร เจออะไรจริง และจะทำอะไรต่อ" },
+  { title: "ไปไกลกว่าคนแรก", body: "ให้คนที่ไม่รู้จักคุณใช้งานได้เอง โดยคุณไม่ต้องอธิบาย" },
 ];
 
 /** Sprite for a tree stage, 32x40 pixels, drawn by the island's own generator. */

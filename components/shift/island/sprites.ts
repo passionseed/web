@@ -537,14 +537,18 @@ const BOT_ICONS = ["visitor", "key_flag", "lantern", "path", "well"] as const;
 type BotIcon = (typeof BOT_ICONS)[number];
 export type IconKey = WebIcon | BotIcon;
 
-/** Main quest icons by milestone. No numbers on the board; the icon is the name. */
+/**
+ * Main quest icons by milestone (the pitfall quest map, 20261115090000). No
+ * numbers on the board; the icon is the name. No side quest wears one
+ * (supabase/tests/shift_quests/web_board.ts MAIN_ICON_KEYS).
+ */
 export const MAIN_ICONS: Record<number, IconKey> = {
-  1: "compass",
-  2: "hammer",
-  3: "visitor",
-  4: "door",
-  5: "key_flag",
-  6: "path",
+  1: "visitor",
+  2: "compass",
+  3: "door",
+  4: "hammer",
+  5: "path",
+  6: "book",
   7: "lantern",
 };
 

@@ -980,6 +980,64 @@
   image-rendering: pixelated;
 }
 
+/* PARTNER_FIRST on an Act 2 or 3 card: a quiet suggestion beside the stamp, never a lock. */
+.cardHint {
+  min-width: 0;
+  font-size: 11px;
+  line-height: 1.3;
+  text-align: right;
+  color: #4f5a5d;
+}
+
+/* The main lane's acts (QUEST_ACTS): a small label over each group of cards. */
+.act {
+  display: grid;
+  gap: 6px;
+}
+
+.actHeading {
+  margin: 4px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--isl-sand-hi);
+}
+
+/* หลุมพราง on a quest page: the pitfall, its warning sign and how to avoid it. */
+.pitfalls {
+  display: grid;
+  gap: 8px;
+}
+
+.pitfall {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 10px 12px;
+  background: rgba(222, 121, 108, 0.1);
+  border-left: 3px solid var(--isl-coral);
+}
+
+.pitfallName {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--text-hi);
+}
+
+.pitfallLine {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.pitfallLabel {
+  font-weight: 600;
+  color: var(--isl-sand-hi);
+}
+
 .tile:focus-visible {
   outline: 2px solid var(--action-soft);
   outline-offset: 4px;

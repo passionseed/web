@@ -1,20 +1,22 @@
 /**
- * Quest 5 (ถือกุญแจเอง) and the practical-ownership checklist.
+ * The ถือกุญแจเอง side quest and the practical-ownership checklist.
  *
  * Students tick the checklist in Discord (/project ownership). The quest page
  * shows the same five items read-only (shift_quest_ownership_get, migration
- * 20261111091200), lights quest 5's first "เสร็จเมื่อ" item as a hint when
+ * 20261111091200), lights the quest's first "เสร็จเมื่อ" item as a hint when
  * every item is done, and the submit snapshots the states as text into the
- * evidence, so what a mentor reviews cannot change afterwards.
+ * evidence, so what a mentor reviews cannot change afterwards. It was main
+ * quest 5 until the pitfall quest map (20261115090000) made it a side quest.
  *
  * Client-safe and pure. The labels repeat the bot's (bot/src/quests/copy.ts,
  * OWNERSHIP_ITEM and OWNERSHIP_STATE); a test keeps them equal. That file
  * imports discord.js, so it is not imported here.
  */
 
-export const TAKE_THE_KEYS = "take-the-keys";
-/** Its milestone (MAIN_SLUGS in quest-canvas.ts). */
-export const MAIN_MILESTONE_TAKE_THE_KEYS = 5;
+/** The side quest's template slug (SIDE_GUIDES in quest-canvas.ts). */
+export const TAKE_THE_KEYS = "side-take-the-keys";
+/** Its first "เสร็จเมื่อ" item, lit when every checklist item is done. */
+export const TAKE_THE_KEYS_CHECKED = "keys-checked";
 
 /** Where the checklist is ticked. */
 export const OWNERSHIP_COMMAND = "/project ownership";

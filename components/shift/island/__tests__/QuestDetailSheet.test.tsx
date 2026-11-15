@@ -13,7 +13,7 @@ import {
 import { pickGift } from "@/app/shift/island/tree-actions";
 import { questGuide, type CanvasLinkState, type QuestCanvasContext } from "@/lib/shift-island/quest-canvas";
 import { keynoteQuest, type BoardRef } from "@/lib/supabase/shift-quests/board";
-import type { MyTree, QuestSubmitResult } from "@/lib/supabase/shift-quests/types";
+import type { MyTree, QuestBoard, QuestSubmitResult } from "@/lib/supabase/shift-quests/types";
 
 import { IDS, MAIN_SLUGS, MAIN_TITLES, makeBoard } from "../__fixtures__/board";
 import { QuestCardComposer, useQuestCanvas } from "../canvas";
@@ -135,9 +135,9 @@ const READY: Extract<QuestCanvasContext, { state: "ready" }> = {
     { kind: "interview", label: "สัมภาษณ์", text: null, version: null, count: 3, noteId: null },
   ],
   hints: [
-    { id: "m1-problem", hinted: true, detail: null },
-    { id: "m1-target", hinted: false, detail: null },
+    { id: "m1-who", hinted: true, detail: null },
     { id: "m1-talked", hinted: true, detail: "สัมภาษณ์ 3 ใบ" },
+    { id: "m1-new", hinted: false, detail: null },
   ],
   notes: [],
 };
@@ -165,8 +165,11 @@ beforeEach(() => {
   mocked.loadOwnership.mockResolvedValue({ ok: true, data: null });
 });
 
-function open(target: BoardRef, link: CanvasLinkState = UNLINKED, extra: { onTree?: () => void } = {}) {
-  const board = makeBoard();
+function open(
+  target: BoardRef,
+  link: CanvasLinkState = UNLINKED,
+  { board = makeBoard(), ...extra }: { onTree?: () => void; board?: QuestBoard } = {},
+) {
   const onClose = jest.fn();
   const onStuck = jest.fn();
   const onLinkCanvas = jest.fn();
@@ -224,13 +227,34 @@ describe("QuestDetailSheet: the quest page", () => {
 
   it("shows the quest's one lore line on main and side quests, never on a proposed one", () => {
     open({ kind: "main", milestone: 1 });
-    expect(within(body()).getByText("ทุกต้นเริ่มจากเรื่องที่มีคนเจอจริง")).toBeInTheDocument();
+    expect(within(body()).getByText("ทุกต้นเริ่มจากคนหนึ่งคนที่เจอปัญหาจริง")).toBeInTheDocument();
     cleanup();
     open({ kind: "side", templateId: IDS.sideVoices });
     expect(within(body()).getByText("ห้าเสียงจริง ชัดกว่าการเดาคนเดียว")).toBeInTheDocument();
     cleanup();
     open({ kind: "proposed", instanceId: IDS.proposed });
     for (const line of Object.values(QUEST_FLAVOR)) expect(within(body()).queryByText(line)).toBeNull();
+  });
+
+  it("names the main quest's pitfall, its warning sign and how to avoid it", () => {
+    open({ kind: "main", milestone: 3 });
+    const box = within(body()).getByRole("heading", { name: "หลุมพราง" }).closest("section") as HTMLElement;
+    expect(within(box).getByText("เยสแบบสุภาพ")).toBeInTheDocument();
+    expect(within(box).getByText("สัญญาณเตือน:", { exact: false })).toBeInTheDocument();
+    expect(within(box).getByText("เลี่ยงยังไง:", { exact: false })).toBeInTheDocument();
+    cleanup();
+    open({ kind: "main", milestone: 1 });
+    const first = within(body()).getByRole("heading", { name: "หลุมพราง" }).closest("section") as HTMLElement;
+    expect(within(first).getByText("เป้าหมายคือทุกคน")).toBeInTheDocument();
+    expect(within(first).getByText("กลัวเจอคนจริง")).toBeInTheDocument();
+  });
+
+  it("has no หลุมพราง on side and proposed quests", () => {
+    open({ kind: "side", templateId: IDS.sideVoices });
+    expect(within(body()).queryByRole("heading", { name: "หลุมพราง" })).toBeNull();
+    cleanup();
+    open({ kind: "proposed", instanceId: IDS.proposed });
+    expect(within(body()).queryByRole("heading", { name: "หลุมพราง" })).toBeNull();
   });
 
   it("asks to link a canvas when none is linked, and hands the quest up to open the picker", () => {
@@ -297,7 +321,7 @@ describe("QuestDetailSheet: the quest page", () => {
   });
 
   it("opens the canvas on a quest without canvas zones too", () => {
-    open({ kind: "main", milestone: 6 }, LINKED);
+    open({ kind: "side", templateId: IDS.sideFriend }, LINKED);
     expect(within(body()).queryByRole("heading", { name: "สำหรับโปรเจกต์คุณ" })).toBeNull();
     expect(within(body()).getByRole("link", { name: "เปิดแคนวาส" })).toHaveAttribute("href", "/shift/island/canvas");
   });
@@ -309,9 +333,9 @@ describe("QuestDetailSheet: the quest page", () => {
   });
 
   it("offers to link a canvas on a quest without zones when none is linked", () => {
-    const { onLinkCanvas } = open({ kind: "main", milestone: 6 });
+    const { onLinkCanvas } = open({ kind: "side", templateId: IDS.sideFriend });
     fireEvent.click(within(body()).getByRole("button", { name: "เชื่อมแคนวาส" }));
-    expect(onLinkCanvas).toHaveBeenCalledWith({ kind: "main", milestone: 6 });
+    expect(onLinkCanvas).toHaveBeenCalledWith({ kind: "side", templateId: IDS.sideFriend });
   });
 
   it("says when the student is not on the canvas team", () => {
@@ -337,7 +361,7 @@ describe("QuestDetailSheet: the quest page", () => {
   });
 
   it("does not read the canvas for a quest without zones", () => {
-    open({ kind: "main", milestone: 6 });
+    open({ kind: "side", templateId: IDS.sideFriend });
     expect(mocked.useQuestCanvas).toHaveBeenLastCalledWith(null, UNLINKED);
     expect(within(body()).queryByRole("heading", { name: "สำหรับโปรเจกต์คุณ" })).toBeNull();
     expect(within(body()).queryByRole("heading", { name: "เชื่อมแคนวาส" })).toBeNull();
@@ -354,9 +378,9 @@ describe("QuestDetailSheet: the quest page", () => {
     expect(items[0]).toHaveAttribute("data-hinted", "true");
     // A written note needs no extra line: the lit check and the context row say it.
     expect(items[0].querySelector(".doneDetail")).toBeNull();
-    expect(items[2]).toHaveTextContent("สัมภาษณ์ 3 ใบ");
-    expect(items[1]).not.toHaveAttribute("data-hinted");
-    expect(items[2]).toHaveAttribute("data-hinted", "true");
+    expect(items[1]).toHaveTextContent("สัมภาษณ์ 3 ใบ");
+    expect(items[1]).toHaveAttribute("data-hinted", "true");
+    expect(items[2]).not.toHaveAttribute("data-hinted");
     expect(within(list).getByText("ติ๊กให้จากโน้ตในแคนวาส พี่เลี้ยงเป็นคนดูและตัดสิน")).toBeInTheDocument();
     // A hint never gates sending.
     expect(within(footer()).getByRole("button", { name: "ส่งเควสต์" })).toBeEnabled();
@@ -432,7 +456,37 @@ describe("QuestDetailSheet: less repeated text", () => {
   });
 });
 
-describe("QuestDetailSheet: quest 5 and the ownership checklist", () => {
+describe("QuestDetailSheet: the ถือกุญแจเอง side quest and the ownership checklist", () => {
+  const KEYS = "22222222-2222-4222-8222-000000000005";
+  const keys: BoardRef = { kind: "side", templateId: KEYS };
+  /** The fixture board with the ถือกุญแจเอง side quest on it, sent once already. */
+  const withKeys = (): QuestBoard => {
+    const board = makeBoard();
+    const friend = board.side.find((s) => s.template_id === IDS.sideFriend)!;
+    board.side = [
+      ...board.side,
+      {
+        ...friend,
+        template_id: KEYS,
+        slug: "side-take-the-keys",
+        title: "ถือกุญแจเอง",
+        icon: "key",
+        branch_of: 7,
+        repeatable: false,
+        sort_order: 220,
+        mine: {
+          instance_id: "33333333-3333-4333-8333-000000000005",
+          state: "submitted",
+          version: 3,
+          updated_at: "2026-11-10T08:00:00Z",
+          latest_submission: null,
+          latest_review: null,
+        },
+      },
+    ];
+    return board;
+  };
+
   const ROWS = [
     { item: "access" as const, state: "demonstrated" as const, mentorHeld: false },
     { item: "export" as const, state: "not_checked" as const, mentorHeld: false },
@@ -443,7 +497,7 @@ describe("QuestDetailSheet: quest 5 and the ownership checklist", () => {
 
   it("shows the checklist from Discord, read-only, and where to change it", async () => {
     mocked.loadOwnership.mockResolvedValue({ ok: true, data: ROWS });
-    open({ kind: "main", milestone: 5 });
+    open(keys, UNLINKED, { board: withKeys() });
     const box = within(body()).getByRole("heading", { name: "สำหรับโปรเจกต์คุณ" }).closest("section") as HTMLElement;
     await waitFor(() => expect(within(box).getByText("เข้าถึงงานได้เอง:")).toBeInTheDocument());
     const rows = within(box).getAllByRole("listitem");
@@ -463,14 +517,14 @@ describe("QuestDetailSheet: quest 5 and the ownership checklist", () => {
       ok: true,
       data: ROWS.map((row) => ({ ...row, state: "demonstrated" as const, mentorHeld: false })),
     });
-    open({ kind: "main", milestone: 5 });
+    open(keys, UNLINKED, { board: withKeys() });
     const list = within(body()).getByRole("heading", { name: "เสร็จเมื่อ" }).closest("section") as HTMLElement;
     await waitFor(() => expect(within(list).getAllByRole("listitem")[0]).toHaveAttribute("data-hinted", "true"));
   });
 
   it("points to Discord when the checklist cannot load", async () => {
     mocked.loadOwnership.mockResolvedValue({ ok: false, code: "unknown", error: "x" });
-    open({ kind: "main", milestone: 5 });
+    open(keys, UNLINKED, { board: withKeys() });
     await waitFor(() =>
       expect(within(body()).getByText("เช็กลิสต์อยู่ใน Discord: พิมพ์ /project ownership แล้วเช็กทีละข้อ")).toBeInTheDocument(),
     );
@@ -478,7 +532,7 @@ describe("QuestDetailSheet: quest 5 and the ownership checklist", () => {
 
   it("says the checklist goes with the work, and leaves room for it in the proof", async () => {
     mocked.loadOwnership.mockResolvedValue({ ok: true, data: ROWS });
-    open({ kind: "main", milestone: 5 });
+    open(keys, UNLINKED, { board: withKeys() });
     await waitFor(() => expect(within(body()).getByText("เข้าถึงงานได้เอง:")).toBeInTheDocument());
     fireEvent.click(within(footer()).getByRole("button", { name: "ส่งฉบับใหม่" }));
     expect(screen.getByText("ตอนกดส่ง เช็กลิสต์ /project ownership จะแนบไปกับงานนี้ให้เอง")).toBeInTheDocument();
@@ -487,8 +541,10 @@ describe("QuestDetailSheet: quest 5 and the ownership checklist", () => {
     expect(max).toBeGreaterThan(1500);
   });
 
-  it("reads no checklist on any other quest", () => {
+  it("reads no checklist on any other quest, main quest 5 included", () => {
     open({ kind: "main", milestone: 1 });
+    cleanup();
+    open({ kind: "main", milestone: 5 });
     expect(mocked.loadOwnership).not.toHaveBeenCalled();
   });
 });

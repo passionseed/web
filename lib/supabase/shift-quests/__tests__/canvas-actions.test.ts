@@ -282,7 +282,7 @@ describe("loadQuestCanvas", () => {
   };
 
   it("needs no read for a quest without zones", async () => {
-    await expect(data(load({ kind: "main", milestone: 5 }, "take-the-keys"))).resolves.toEqual({ state: "no_zones" });
+    await expect(data(load({ kind: "side", templateId: SIDE_TEMPLATE }, "side-take-the-keys"))).resolves.toEqual({ state: "no_zones" });
     await expect(data(load({ kind: "proposed", instanceId: SIDE_TEMPLATE }, null))).resolves.toEqual({ state: "no_zones" });
     expect(call).not.toHaveBeenCalled();
     expect(createAdminClient).not.toHaveBeenCalled();
@@ -290,15 +290,15 @@ describe("loadQuestCanvas", () => {
 
   it("is unlinked without a link, before touching the whiteboard", async () => {
     link = null;
-    await expect(data(load({ kind: "main", milestone: 1 }, "find-something-worth-fixing"))).resolves.toEqual({ state: "unlinked" });
+    await expect(data(load({ kind: "main", milestone: 1 }, "meet-one-real-person"))).resolves.toEqual({ state: "unlinked" });
     expect(createAdminClient).not.toHaveBeenCalled();
   });
 
   it("reads the linked canvas: context rows, hints and the quest's notes, with no ids", async () => {
-    const context = await data(load({ kind: "main", milestone: 1 }, "find-something-worth-fixing"));
+    const context = await data(load({ kind: "main", milestone: 1 }, "meet-one-real-person"));
     const elements = frameElements(boardA(), "frame-1");
     const expected = buildContext(
-      questGuideSpec({ kind: "main", slug: "find-something-worth-fixing" }),
+      questGuideSpec({ kind: "main", slug: "meet-one-real-person" }),
       summarizeElements(elements),
       elements,
       "frame-1",
@@ -317,13 +317,13 @@ describe("loadQuestCanvas", () => {
 
   it("is not_yours once the student is off the canvas team", async () => {
     tables.whiteboards[0].elements = boardA({ owner: EDITOR, editors: [] });
-    await expect(data(load({ kind: "main", milestone: 3 }, "let-reality-surprise-you"))).resolves.toEqual({ state: "not_yours" });
+    await expect(data(load({ kind: "main", milestone: 3 }, "first-partner"))).resolves.toEqual({ state: "not_yours" });
   });
 
   it("is gone with candidates of the same project when the linked canvas moved, never re-pointing it", async () => {
     tables.whiteboards[0].elements = boardA({ deleted: true });
     tables.whiteboards[1].elements = canvasElements({ frameId: "frame-moved", project: "proj-1", editors: [], notes: [] });
-    const context = await data(load({ kind: "main", milestone: 3 }, "let-reality-surprise-you"));
+    const context = await data(load({ kind: "main", milestone: 3 }, "first-partner"));
     expect(context).toEqual({
       state: "gone",
       candidates: [expect.objectContaining({ boardId: BOARD_B, frameId: "frame-moved", role: "owner", linked: false })],
@@ -333,12 +333,12 @@ describe("loadQuestCanvas", () => {
 
   it("treats a re-tagged canvas as gone", async () => {
     tables.whiteboards[0].elements = boardA({ project: "proj-new" });
-    await expect(data(load({ kind: "main", milestone: 3 }, "let-reality-surprise-you"))).resolves.toMatchObject({ state: "gone" });
+    await expect(data(load({ kind: "main", milestone: 3 }, "first-partner"))).resolves.toMatchObject({ state: "gone" });
   });
 
   it("is an error state (not a failure) when the whiteboard cannot be read, logging a code only", async () => {
     adminError = { code: "PGRST000" };
-    await expect(data(load({ kind: "main", milestone: 1 }, "find-something-worth-fixing"))).resolves.toEqual({ state: "error" });
+    await expect(data(load({ kind: "main", milestone: 1 }, "meet-one-real-person"))).resolves.toEqual({ state: "error" });
     expect(logged()).toContain("PGRST000");
     expect(logged()).not.toContain("ไม่มีเวลา");
   });
@@ -414,7 +414,6 @@ describe("submitQuestCard", () => {
 
   it.each([
     ["a proposed quest", { kind: "proposed" as const, instanceId: SIDE_TEMPLATE }, "note_not_allowed"],
-    ["a main quest without zones", { kind: "main" as const, milestone: 5 }, "note_not_allowed"],
     ["a side quest not on the board", { kind: "side" as const, templateId: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee" }, "template_unavailable"],
   ])("refuses %s", async (_label, ref, code) => {
     const result = await actions.submitQuestCard({ ref, slug: null, notes: [{ id: "n-test", hash: "a" }] });
