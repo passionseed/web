@@ -7,6 +7,8 @@ import type { CharacterStats, IslandConsent } from "@/lib/supabase/shift-quests/
 import type { IslandPageData, IslandProject, MyTree, ViewerCard } from "@/lib/supabase/shift-quests/types";
 
 import { ConsentBanner } from "../consent/ConsentBanner";
+import { InviteFriends } from "../InviteFriends";
+import { ProjectInvites } from "../NoProject";
 import { ProjectBody } from "../HudSheets";
 import { IslandSheet } from "../IslandSheet";
 import { PALETTE, WEB_SPRITES, iconGrid, type IconKey } from "../sprites";
@@ -23,6 +25,8 @@ interface CharacterSheetProps {
   stats: CharacterStats | null;
   project: Pick<IslandProject, "name" | "stage">;
   tree?: MyTree | null;
+  projectId?: string;
+  invites?: IslandPageData["invites"];
   season: IslandPageData["island"]["season"];
   /** The check-in card, built by the page so it keeps its handlers. */
   today: ReactNode;
@@ -71,6 +75,8 @@ export function CharacterSheet({
   me,
   stats,
   project,
+  projectId,
+  invites,
   tree,
   season,
   today,
@@ -81,6 +87,12 @@ export function CharacterSheet({
   const onOpenChange = (next: boolean) => {
     if (!next) onClose();
   };
+  const team = (
+    <>
+      {invites?.length ? <ProjectInvites invites={invites} /> : null}
+      {projectId && !me.staff ? <InviteFriends key={projectId} projectId={projectId} /> : null}
+    </>
+  );
   const body = <ProjectBody project={project} tree={tree} season={season} today={today} />;
   const restOfProject = <ProjectBody project={project} tree={tree} season={season} today={null} />;
 
@@ -88,6 +100,7 @@ export function CharacterSheet({
     return (
       <IslandSheet open={open} onOpenChange={onOpenChange} title={project.name}>
         {body}
+        {team}
       </IslandSheet>
     );
   }
@@ -146,6 +159,7 @@ export function CharacterSheet({
         </button>
 
         <h3 className={styles.projectHeading}>{project.name}</h3>
+        {team}
         {restOfProject}
       </div>
     </IslandSheet>

@@ -127,6 +127,7 @@ async function main(): Promise<void> {
       "shift_quest_digest_inputs", "shift_quest_digest_save",
       // 20261115120000_shift_quest_admin_reset_self.
       "shift_quest_admin_reset_self",
+      "shift_quest_project_friends", "shift_quest_project_invite_friend",
       // 20261115130000_shift_quest_evidence_photos.
       "shift_quest_evidence_add", "shift_quest_evidence_remove", "shift_quest_evidence_list", "shift_quest_review_view",
       "shift_quest_storage_trash_claim", "shift_quest_storage_trash_done", "shift_quest_project_set_ambition",

@@ -196,6 +196,7 @@ WITH fns0 AS (
         'shift_quest_review_view', 'shift_quest_storage_trash_claim', 'shift_quest_storage_trash_done',
         'shift_quest_project_set_ambition')
       -- 20261115140000_shift_quest_peer_check: the peer check is the website's.
+      OR p.proname IN ('shift_quest_project_friends', 'shift_quest_project_invite_friend')
       OR p.proname LIKE 'shift\_quest\_peer\_%' AS web_only
   FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
   WHERE n.nspname = 'public' AND p.proname LIKE 'shift\_quest\_%'
@@ -276,7 +277,9 @@ web_allow(sig) AS (VALUES
   ('shift_quest_peer_view(text,uuid)'),
   ('shift_quest_peer_check(text,uuid,text[],text)'),
   ('shift_quest_peer_list(text,uuid)'),
-  ('shift_quest_peer_hide(text,uuid,boolean)')
+  ('shift_quest_peer_hide(text,uuid,boolean)'),
+  ('shift_quest_project_friends(text,uuid,text)'),
+  ('shift_quest_project_invite_friend(text,uuid,uuid)')
 ), web_applied AS (
   SELECT to_regprocedure('public.shift_quest_board(text)') IS NOT NULL AS yes
 )

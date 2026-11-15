@@ -44,6 +44,8 @@ import {
   checkInSchema,
   chooseSideQuestSchema,
   createProjectSchema,
+  findProjectFriendsSchema,
+  inviteFriendSchema,
   linkCanvasSchema,
   loadQuestCanvasSchema,
   proposeQuestSchema,
@@ -162,6 +164,20 @@ export async function createProject(input: {
   return withReadyViewer("createProject", createProjectSchema, input, async ({ actor }, v) => {
     const projectId = await questApi().call<string>("shift_quest_project_create", actor, v.name, v.route, v.ambition);
     return { projectId };
+  });
+}
+
+/** Search only started student teammates by name; Discord IDs stay in the database. */
+export async function findProjectFriends(input: { projectId: string; query: string }): Promise<IslandActionResult<Array<{ id: string; name: string }>>> {
+  return withReader("findProjectFriends", findProjectFriendsSchema, input, async ({ actor }, v) => {
+    return questApi().call<Array<{ id: string; name: string }>>("shift_quest_project_friends", actor, v.projectId, v.query);
+  });
+}
+
+export async function inviteFriend(input: { projectId: string; friendId: string }): Promise<IslandActionResult> {
+  return withReadyViewer("inviteFriend", inviteFriendSchema, input, async ({ actor }, v) => {
+    await questApi().call("shift_quest_project_invite_friend", actor, v.projectId, v.friendId);
+    return null;
   });
 }
 

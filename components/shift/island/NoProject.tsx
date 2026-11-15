@@ -30,7 +30,7 @@ interface NoProjectProps {
 export function NoProject({ invites, nameInput, invitesHeading }: NoProjectProps) {
   return (
     <div className={styles.noProject}>
-      {invites.length > 0 ? <Invites invites={invites} heading={invitesHeading} /> : null}
+      {invites.length > 0 ? <ProjectInvites invites={invites} heading={invitesHeading} /> : null}
       <CreateProject nameInput={nameInput} />
       <p className={styles.hint}>{NO_PROJECT.joinFriend}</p>
       <IslandDiscordButton label={NO_PROJECT.switchAccount} switchAccount variant="quiet" />
@@ -38,7 +38,7 @@ export function NoProject({ invites, nameInput, invitesHeading }: NoProjectProps
   );
 }
 
-function Invites({ invites, heading }: { invites: ProjectInvite[]; heading?: Ref<HTMLHeadingElement> }) {
+export function ProjectInvites({ invites, heading }: { invites: ProjectInvite[]; heading?: Ref<HTMLHeadingElement> }) {
   return (
     <section className={`ei-card ei-card--static ${styles.card}`} aria-labelledby="island-invites-heading">
       <h2 id="island-invites-heading" ref={heading} tabIndex={-1} className={styles.sectionHeading}>

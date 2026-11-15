@@ -534,6 +534,9 @@ const ERRORS: Record<string, string> = {
   not_started: T.notStarted,
   not_authorized: T.staffOnly,
   bad_input: "ข้อมูลไม่ถูกต้อง ลองใหม่อีกครั้ง",
+  // Website project invitations use the same refusal vocabulary as the web gate.
+  invalid_input: "ข้อมูลไม่ถูกต้อง ลองใหม่อีกครั้ง",
+  not_eligible: "การชวนเข้าทีมบนเกาะเปิดให้เฉพาะนักเรียนที่มีสิทธิ์เข้าร่วม",
   // The admin self-reset (20261115120000) is web-only; the bot never calls it, but every code needs words.
   reset_blocked: "รีเซ็ตไม่ได้ เพราะมีเควสต์ที่ได้เหรียญไปแล้ว หรือมีเพื่อนต่อเควสต์จากเควสต์ของคุณ ยังไม่ได้ลบอะไร",
   // Photo evidence (20261115130000) is website-only; the bot never adds photos, but every code needs words.
