@@ -114,6 +114,13 @@ const WEB_ALLOWLIST = [
   "shift_quest_storage_trash_claim(integer)",
   "shift_quest_storage_trash_done(text[])",
   "shift_quest_project_set_ambition(text,uuid,text)",
+  // 20261115140000_shift_quest_peer_check.
+  "shift_quest_peer_open(text,uuid,boolean)",
+  "shift_quest_peer_queue(text)",
+  "shift_quest_peer_view(text,uuid)",
+  "shift_quest_peer_check(text,uuid,text[],text)",
+  "shift_quest_peer_list(text,uuid)",
+  "shift_quest_peer_hide(text,uuid,boolean)",
 ];
 
 /**
@@ -313,6 +320,15 @@ async function main(): Promise<void> {
     ["storage_trash_done", "select public.shift_quest_storage_trash_done($1::text[])", [[]], "ok"],
     ["project_set_ambition", "select public.shift_quest_project_set_ambition($1::text, $2::uuid, $3::text)",
       [NOBODY, randomUUID(), "x"], "not_started"],
+    // 20261115140000_shift_quest_peer_check: an unknown caller is refused or sees nothing.
+    ["peer_open", "select public.shift_quest_peer_open($1::text, $2::uuid, $3::boolean)", [NOBODY, randomUUID(), true], "not_started"],
+    ["peer_queue", "select public.shift_quest_peer_queue($1::text)", [NOBODY], "not_started"],
+    ["peer_view", "select public.shift_quest_peer_view($1::text, $2::uuid)", [NOBODY, randomUUID()], "not_started"],
+    ["peer_check", "select public.shift_quest_peer_check($1::text, $2::uuid, $3::text[], $4::text)",
+      [NOBODY, randomUUID(), [], "ดีมาก"], "not_started"],
+    ["peer_list", "select public.shift_quest_peer_list($1::text, $2::uuid)", [NOBODY, randomUUID()], "not_started"],
+    ["peer_hide", "select public.shift_quest_peer_hide($1::text, $2::uuid, $3::boolean)", [NOBODY, randomUUID(), true],
+      "not_authorized"],
     // 20261111095000_shift_quest_player: an unknown caller or an unknown link stores nothing.
     ["character", "select public.shift_quest_character($1::text)", [NOBODY], "not_started"],
     ["wallet", "select public.shift_quest_wallet($1::text)", [NOBODY], "not_started"],

@@ -224,6 +224,10 @@ describe("a submission under review", () => {
       const none = renderView(reviewCard(detail(), { photos: 0 }));
       expect(bodyText(none)).not.toContain("📷");
       expect(JSON.stringify(none)).not.toContain("/review/");
+      // Schema 15: peer checks alone also link to the page, and say the mentor decides.
+      const peers = renderView(reviewCard(detail(), { photos: 0, peerChecks: 2 }));
+      expect(bodyText(peers)).toContain(RV.peerChecks(2));
+      expect(JSON.stringify(peers)).toContain(`/shift/island/review/${SUB}`);
       // An older database (no extras): the card is as it was.
       expect(JSON.stringify(renderView(reviewCard(detail(), null)))).not.toContain("/review/");
     } finally {

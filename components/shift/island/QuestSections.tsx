@@ -313,12 +313,13 @@ export function Helpers({
  * decided and will come as a separate change; that change replaces this
  * line's words, not the layout.
  */
-export function WhoChecks() {
+export function WhoChecks({ peer = false }: { peer?: boolean }) {
   return (
     <p className={styles.whoChecks} data-slot="who-checks">
-      <HintIcon name={HELPER_ICONS.whoChecks} size={16} />
+      <HintIcon name={peer ? "peers" : HELPER_ICONS.whoChecks} size={16} />
       <span className={styles.whoChecksLabel}>{WHO_CHECKS.label}</span>
-      <span>{WHO_CHECKS.mentor}</span>
+      {/* Schema 15: peers give feedback, a mentor decides (and only a mentor grows the tree). */}
+      <span>{peer ? WHO_CHECKS.peer : WHO_CHECKS.mentor}</span>
     </p>
   );
 }

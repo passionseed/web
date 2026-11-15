@@ -99,6 +99,13 @@ const WEB_ALLOWLIST = [
   "shift_quest_storage_trash_claim(integer)",
   "shift_quest_storage_trash_done(text[])",
   "shift_quest_project_set_ambition(text,uuid,text)",
+  // 20261115140000_shift_quest_peer_check.
+  "shift_quest_peer_open(text,uuid,boolean)",
+  "shift_quest_peer_queue(text)",
+  "shift_quest_peer_view(text,uuid)",
+  "shift_quest_peer_check(text,uuid,text[],text)",
+  "shift_quest_peer_list(text,uuid)",
+  "shift_quest_peer_hide(text,uuid,boolean)",
 ];
 
 let failures = 0;

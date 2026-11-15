@@ -7,6 +7,8 @@ import { schemaOf } from "@/bot/src/quests/schema";
 import { MAX_SIDE, MAX_UPLOAD_BYTES, PHOTO_SCHEMA } from "@/lib/shift-island/photos";
 import { createAdminClient } from "@/utils/supabase/admin";
 
+import type { EvidencePhotoView } from "./evidenceTypes";
+
 export { MAX_PHOTOS, MAX_SIDE, MAX_UPLOAD_BYTES, PHOTO_SCHEMA } from "@/lib/shift-island/photos";
 
 /**
@@ -106,12 +108,7 @@ export interface PhotoRow {
 }
 
 /** A photo the browser can show. No path: only the signed link. */
-export interface EvidencePhoto {
-  id: string;
-  url: string;
-  width: number;
-  height: number;
-}
+export type EvidencePhoto = EvidencePhotoView;
 
 /** The database's photo list, checked: rows with an id and a path only. */
 export function photoRows(raw: unknown): PhotoRow[] {

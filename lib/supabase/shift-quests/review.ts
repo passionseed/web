@@ -4,6 +4,8 @@ import { QuestError } from "@/bot/src/quests/api";
 
 import { questApi } from "./db";
 import { photoRows, photosAvailable, signedPhotos, type EvidencePhoto } from "./evidence";
+import { checkRows } from "./peer";
+import type { PeerCheckRow } from "./peerTypes";
 
 /** One submission as the web review page shows it (shift_quest_review_view, schema 14). */
 export interface ReviewView {
@@ -20,6 +22,10 @@ export interface ReviewView {
   artifactUrl: string | null;
   redacted: boolean;
   photos: EvidencePhoto[];
+  /** Schema 15: whether the database has the peer check, whether the student opened it to peers, and every check (hidden ones marked). */
+  peerEnabled: boolean;
+  peerOpen: boolean;
+  peerChecks: PeerCheckRow[];
 }
 
 export type ReviewRead =
@@ -58,6 +64,9 @@ export async function loadReview(actor: string, submissionId: string): Promise<R
         artifactUrl: text(raw.artifact_url),
         redacted: raw.redacted === true,
         photos: await signedPhotos(photoRows(raw.photos)),
+        peerEnabled: Array.isArray(raw.peer_checks),
+        peerOpen: raw.peer_open === true,
+        peerChecks: checkRows(raw.peer_checks),
       },
     };
   } catch (error) {

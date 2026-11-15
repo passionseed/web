@@ -168,6 +168,7 @@ describe("getIslandPage", () => {
     ]);
     expect(page.canvasLink).toEqual({ linked: false });
     expect(page.photos).toBe(false);
+    expect(page.peer).toBe(false);
     expect(page.campfire).toEqual({ count: 2, joinUrl: JOIN_URL });
     expect(page.suggestUrl).toBe(SUGGEST_URL);
     expect(page.character).toEqual(CHARACTER);

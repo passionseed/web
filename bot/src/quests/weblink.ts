@@ -18,8 +18,8 @@ export const GUIDE_LINK_LABEL = "📖 คู่มือเกาะ";
 export const BOARD_LINK_LABEL = "🌐 กระดานบนเว็บ";
 /** The island page's query that opens its quest board sheet (app/shift/island/page.tsx). */
 export const BOARD_QUERY = "at=board";
-/** The web review page's link button, on the bot's review card (DRAFT for the Thai review). */
-export const REVIEW_LINK_LABEL = "🖼️ ดูรูปบนเว็บ";
+/** The web review page's link button, on the bot's review card: photos and peer checks (DRAFT for the Thai review). */
+export const REVIEW_LINK_LABEL = "🌐 ดูงานบนเว็บ";
 
 /** Discord's limit for a link button's URL. */
 const MAX_URL = 512;
@@ -120,7 +120,7 @@ export function reviewWebUrl(submissionId: string, env: NodeJS.ProcessEnv = proc
   return href.length > MAX_URL ? null : href;
 }
 
-/** "🖼️ ดูรูปบนเว็บ" opening a submission's web review page, or null when no address is configured. */
+/** "🌐 ดูงานบนเว็บ" opening a submission's web review page, or null when no address is configured. */
 export function reviewLinkButton(
   submissionId: string,
   env: NodeJS.ProcessEnv = process.env,

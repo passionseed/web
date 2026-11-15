@@ -785,6 +785,23 @@ by `20261115130100_shift_island_evidence_bucket.sql`, kept outside the
 `*shift_quest*` names because the sandbox has no storage schema. Tested in
 `supabase/tests/shift_quests/evidence.ts`.
 
+### Peer check (schema 15)
+
+`20261115140000_shift_quest_peer_check.sql` adds the peer check: feedback
+only, a mentor still decides. `shift_quest_submissions.peer_open` (the
+submitter's opt-in, set by the website after a send),
+`shift_quest_peer_checks` (one per peer per revision: ticked item ids, one
+line, a mentor's hide) and website-only `shift_quest_peer_open`, `_queue`,
+`_view`, `_check`, `_list` and `_hide`. A peer is an onboarded non-staff
+student who is not conflicted with the quest (`shift_quest__conflicted`, as
+for reviewers); the submitter's consent must allow it; ten checks a Bangkok
+day. Peers never see the submitter's name or team; a peer's own name shows
+to the team only with that peer's consent on file. Peers allowed to check a
+submission may see its photos. `shift_quest_review_view` and
+`shift_quest_review_extras` add the checks and their count. Export lists a
+member's checks, erasure deletes them. Tested in
+`supabase/tests/shift_quests/peer.ts`.
+
 ## Admin: reset my own island (testing)
 
 `20261115120000_shift_quest_admin_reset_self.sql` adds

@@ -137,6 +137,10 @@ const ERRORS: Record<string, string> = {
   photo_too_big: "รูปนี้ใหญ่เกินไป ลองแคปหน้าจอหรือครอปให้เล็กลงแล้วแนบใหม่",
   photo_upload_failed: "อัปโหลดรูปไม่สำเร็จ งานที่เขียนส่งไปแล้ว ลองแนบรูปใหม่อีกครั้ง",
   feature_unavailable: "ส่วนนี้ยังไม่เปิดบนเกาะ ลองใหม่อีกครั้งภายหลัง",
+
+  // The peer check (20261115140000)
+  already_checked: "คุณเช็กงานนี้ไปแล้ว ขอบคุณที่ช่วยเพื่อน",
+  peer_limit: "วันนี้เช็กงานเพื่อนครบ 10 งานแล้ว พรุ่งนี้มาช่วยต่อได้",
 };
 
 /** Thai, user-facing words for a refusal code; an unknown code gets the generic line. */

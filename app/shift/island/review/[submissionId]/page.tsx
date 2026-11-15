@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { IslandShell } from "@/components/shift/island/IslandShell";
 import { REVIEW_PAGE } from "@/components/shift/island/copy";
+import { ReviewPeerChecks } from "@/components/shift/island/review/ReviewPeerChecks";
 import { ReviewSubmission } from "@/components/shift/island/review/ReviewSubmission";
 import styles from "@/components/shift/island/review/review.module.css";
 import { loadReview } from "@/lib/supabase/shift-quests/review";
@@ -10,7 +11,8 @@ import { resolveIslandViewer } from "@/lib/supabase/shift-quests/viewer";
 
 /**
  * /shift/island/review/<submission>: one quest submission for a mentor, with
- * the photos the Discord review card cannot show (schema 14). Reviewers and
+ * the photos the Discord review card cannot show (schema 14) and the peer
+ * checks, which a mentor can hide here (schema 15). Reviewers and
  * admins only: the quest database refuses everyone else, so a student who
  * opens the link sees a short note and nothing of anyone's work. Decisions
  * stay in Discord. Reads the session, so it renders per request; nothing here
@@ -55,7 +57,10 @@ export default async function ReviewPage({ params }: { params: Promise<{ submiss
   return (
     <IslandShell>
       <div className={styles.wrap}>
-        <ReviewSubmission view={read.view} />
+        <ReviewSubmission
+          view={read.view}
+          extra={read.view.peerEnabled ? <ReviewPeerChecks open={read.view.peerOpen} checks={read.view.peerChecks} /> : null}
+        />
       </div>
     </IslandShell>
   );

@@ -809,6 +809,56 @@ export const HELPERS = {
 export const WHO_CHECKS = {
   label: "ใครตรวจ",
   mentor: "พี่เลี้ยงตรวจ",
+  /** Schema 15: peers give feedback, a mentor decides. */
+  peer: "เพื่อนช่วยเช็ก พี่เลี้ยงตัดสิน",
+};
+
+/**
+ * DRAFT: the peer check (schema 15). Feedback only: a peer ticks what they
+ * think is done and leaves one line; a mentor still decides. Peers never see
+ * the submitter's name or team.
+ */
+export const PEER = {
+  entry: "ช่วยเพื่อนเช็ก",
+  entrySub: "ดูงานที่เพื่อนบนเกาะส่ง ติ๊กข้อที่เห็นว่าทำได้แล้ว แล้วฝากหนึ่งบรรทัด",
+  title: "ช่วยเพื่อนเช็กงาน",
+  loading: "กำลังโหลดงานที่รอเช็ก",
+  empty: "ตอนนี้ยังไม่มีงานรอให้เช็ก แวะมาใหม่ได้",
+  loadFailed: "โหลดงานไม่ได้ตอนนี้",
+  queueCount: (n: number) => `${n} งานรอเช็ก`,
+  revision: (n: number) => `ครั้งที่ ${n}`,
+  photos: (n: number) => `รูป ${n}`,
+  checks: (n: number) => (n > 0 ? `เพื่อนเช็กแล้ว ${n}` : "ยังไม่มีใครเช็ก"),
+  back: "กลับไปที่รายการ",
+  anonymous: "งานของเพื่อนบนเกาะ ไม่บอกชื่อและทีม",
+  goal: "เป้าหมาย",
+  criteria: "เสร็จเมื่อ",
+  evidence: "สิ่งที่ทำ",
+  reflection: "สะท้อนคิด",
+  link: "ลิงก์",
+  tickHeading: "ข้อไหนที่คุณเห็นว่าทำได้แล้ว",
+  lineLabel: "ฝากหนึ่งบรรทัดถึงเพื่อน",
+  lineHint: "บอกสิ่งที่เห็นว่าดี และคำถามหนึ่งข้อที่อาจช่วยให้ไปต่อ ใจดี เจาะจง และไม่ทำแทน",
+  linePlaceholder: "เช่น คุยกับคนจริงแล้วดีมาก ลองถามเขาเพิ่มว่าครั้งล่าสุดเสียเวลาไปเท่าไหร่",
+  mentorDecides: "พี่เลี้ยงเป็นคนตัดสินสุดท้าย คุณช่วยดูและให้กำลังใจ",
+  send: "ส่งให้เพื่อน",
+  sending: "กำลังส่ง",
+  sent: "ส่งแล้ว ขอบคุณที่ช่วยเพื่อน",
+  yours: "คุณเช็กงานนี้แล้ว",
+  yoursHidden: "พี่เลี้ยงซ่อนข้อความนี้ไว้",
+  lineRequired: "เขียนหนึ่งบรรทัดถึงเพื่อนก่อน",
+  heading: "เพื่อนเช็กแล้ว",
+  someone: "เพื่อนบนเกาะ",
+  ticked: (n: number) => `ติ๊กว่าทำได้แล้ว ${n} ข้อ`,
+  noneYet: "ยังไม่มีเพื่อนเช็ก",
+  openLabel: "ให้เพื่อนบนเกาะช่วยเช็กงานนี้",
+  openHint: "เพื่อนจะเห็นงานและรูปที่แนบ แต่ไม่เห็นชื่อคุณและทีม พี่เลี้ยงยังเป็นคนตัดสิน",
+  reviewHeading: "เพื่อนเช็ก",
+  reviewNone: "ยังไม่มีเพื่อนเช็ก",
+  reviewClosed: "นักเรียนไม่ได้เปิดงานนี้ให้เพื่อนเช็ก",
+  hide: "ซ่อน",
+  show: "แสดงอีกครั้ง",
+  hiddenTag: "ซ่อนอยู่",
 };
 
 /**

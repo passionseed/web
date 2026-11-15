@@ -182,3 +182,22 @@ export const setTeamProblemSchema = z.object({
   projectId: id,
   ambition: requiredText(TEXT_LIMITS.ambition),
 });
+
+// ---------------------------------------------------------------------------
+// The peer check (schema 15)
+// ---------------------------------------------------------------------------
+
+/** A peer's check: ticked item ids as the database accepts them, and one line of at most 280 characters. */
+export const sendPeerCheckSchema = z.object({
+  submissionId: id,
+  ticked: z.array(z.string().regex(/^[a-z0-9-]{1,40}$/)).max(10),
+  line: requiredText(280),
+});
+
+export const loadPeerCheckSchema = z.object({ submissionId: id });
+
+export const loadPeerChecksSchema = z.object({ instanceId: id });
+
+export const setPeerOpenSchema = z.object({ submissionId: id, open: z.boolean() });
+
+export const hidePeerCheckSchema = z.object({ checkId: id, hide: z.boolean() });

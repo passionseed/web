@@ -306,6 +306,35 @@ The founder decided how students show work and who checks it:
   lets any active teammate rewrite ปัญหาที่ทีมเลือก. The quest page and the
   team's tree show เปลี่ยน, with the line "changing it is normal".
 
+### Peer check (20261115140000, schema 15)
+
+- **Feedback only.** A peer ticks the done-when items they think are met
+  (the quest page's own checklist for main quests, else the quest's criteria
+  lines) and leaves one line of up to 280 characters. The sheet says a
+  mentor makes the final call; only a mentor's approval grows the tree.
+- **Who is a peer:** an onboarded student who is not staff, not the
+  submitter, and not conflicted with the quest the way a reviewer would be
+  (its project in any status, a contribution, or any project shared with its
+  owner). One check per peer per revision, ten a Bangkok day.
+- **What a peer sees:** the quest, the work and its photos. Never the
+  submitter's name or team.
+- **Opt-in by the submitter.** The written form has a tick, on by default:
+  ให้เพื่อนบนเกาะช่วยเช็กงานนี้. Only opened, pending, latest revisions are
+  checkable, and only when the submitter's consent allows it
+  (`shift_quest__consent_ok`): with consent required, a student without
+  consent on file is never in anyone's queue.
+- **Who reads the checks:** the submitter and the quest project's active
+  teammates (เพื่อนเช็กแล้ว on the quest page), and reviewers and admins (the
+  web review page, where they can hide a check; hidden checks disappear for
+  the team). A peer's name shows only with that peer's consent on file;
+  otherwise เพื่อนบนเกาะ. Group-visible only: nothing is posted publicly and
+  no private channel opens between anyone.
+- **Where:** ช่วยเพื่อนเช็ก at the top of the quest board opens the queue
+  (oldest first, 20 at most); the Discord review card counts peer checks and
+  links to the web review page. The who-checks line reads เพื่อนช่วยเช็ก
+  พี่เลี้ยงตัดสิน.
+- Export lists the checks a member wrote; erasure deletes them.
+
 ## Open items
 
 - **Economy (DRAFT, coins off).** The community gate and counts now key on
@@ -320,6 +349,14 @@ The founder decided how students show work and who checks it:
 - **Photos and the canvas card.** Photos go with the written form only; the
   canvas quest card sends notes, not photos. A student who wants both sends
   the card, then adds photos from รูปที่แนบ while it waits.
+- **Peer checks and ช่วยเพื่อนให้ไปต่อ.** Checking peers does not count
+  toward the side quest `side-help-a-builder` yet: that quest is reviewed by
+  a mentor from the student's own account of the help, and counting checks
+  would need a rule for what "helped" means (a mentor's say, a minimum
+  number, the peer's line). Founder's call.
+- **Peer check notifications.** The submitter sees checks on the quest page
+  only; no Discord notice is sent yet (it would need a new inbox kind and its
+  bot copy).
 - **Thai review.** The copy here is a draft: run the three-reviewer pass in
   AGENTS.md before Season 2.
 

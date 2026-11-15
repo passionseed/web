@@ -1,0 +1,256 @@
+/*
+ * The peer check (schema 15): the queue and the check form in a sheet, and
+ * เพื่อนเช็กแล้ว on a quest page. Island colours: leaf for actions, sand for
+ * the peer's words, coral for a hidden check. Pixel notches, no radii.
+ */
+
+.stack {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.queue {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 12px;
+  font: inherit;
+  text-align: left;
+  color: var(--text-hi);
+  background: rgba(255, 241, 214, 0.06);
+  border: 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 241, 214, 0.22);
+  clip-path: var(--notch);
+  cursor: pointer;
+  transition: background-color var(--snap) var(--ease-snap);
+}
+
+.item:hover {
+  background: rgba(80, 151, 107, 0.18);
+}
+
+.item:focus-visible {
+  outline: 2px solid var(--action-soft);
+  outline-offset: -4px;
+}
+
+.itemIcon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(18, 14, 19, 0.55);
+  clip-path: var(--notch);
+}
+
+.itemBody {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.itemTitle {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.itemMeta {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.anon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.block {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.label {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--isl-sand-hi);
+}
+
+.text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.link {
+  color: var(--isl-leaf-hi);
+  overflow-wrap: anywhere;
+}
+
+.ticks {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.tick {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  min-height: 44px;
+  padding: 10px 12px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-hi);
+  background: rgba(255, 241, 214, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(255, 241, 214, 0.2);
+  clip-path: var(--notch);
+  cursor: pointer;
+}
+
+.tick:has(input:checked) {
+  background: rgba(80, 151, 107, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(120, 184, 128, 0.6);
+}
+
+.tick input {
+  width: 20px;
+  height: 20px;
+  margin: 2px 0 0;
+  accent-color: var(--isl-leaf);
+}
+
+.mentor {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text);
+  background: rgba(244, 197, 106, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(244, 197, 106, 0.35);
+  clip-path: var(--notch);
+}
+
+/* เพื่อนเช็กแล้ว on a quest page: each peer's words as a note pinned to the work. */
+.checks {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.check {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  background: rgba(231, 205, 146, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(231, 205, 146, 0.35);
+  clip-path: var(--notch);
+}
+
+.check[data-hidden="true"] {
+  background: rgba(222, 121, 108, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(222, 121, 108, 0.4);
+}
+
+.checkWho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--isl-sand-hi);
+}
+
+.checkTicks {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.checkLine {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text-hi);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.hiddenTag {
+  padding: 0 6px;
+  font-size: 12px;
+  color: #fecaca;
+  box-shadow: inset 0 0 0 1px rgba(222, 121, 108, 0.6);
+}
+
+.toggle {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-hi);
+  background: rgba(255, 241, 214, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(255, 241, 214, 0.2);
+  clip-path: var(--notch);
+  cursor: pointer;
+}
+
+.toggle input {
+  width: 20px;
+  height: 20px;
+  margin: 2px 0 0;
+  accent-color: var(--isl-leaf);
+}
+
+.toggleText {
+  display: grid;
+  gap: 2px;
+}
+
+.toggleHint {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item {
+    transition: none;
+  }
+}

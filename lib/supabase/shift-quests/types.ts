@@ -323,6 +323,8 @@ export interface IslandPageData {
    * picker, no เปลี่ยน.
    */
   photos?: boolean;
+  /** The peer check (schema 15). False or absent on an older database or when the version read fails. */
+  peer?: boolean;
 }
 
 /** Page payload for the voice campfire: no names, no ids. */
