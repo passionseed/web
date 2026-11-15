@@ -757,3 +757,35 @@ Pre-upgrade forms without a captured UUID also journal only on schema 12.
 Below schema 12 the bot keeps the legacy two-call close path. Schema reads are
 cached per API instance, so restart the bot after the maintainer applies
 `20261114090000_shift_quest_round_close.sql`. This change does not apply it.
+
+## Admin: reset my own island (testing)
+
+`20261115120000_shift_quest_admin_reset_self.sql` adds
+`shift_quest_admin_reset_self(actor)`, website-only (`shift_quest_web` and
+`service_role`; never the bot, `anon`, `authenticated` or `PUBLIC`). An admin
+uses it from the island menu ("ทดสอบ (แอดมิน)", shown only when
+`session.roles` holds `admin`) to replay onboarding and the quests from the
+start. Anyone else gets `not_authorized`. It only touches the caller's rows:
+
+- **Removed:** their quests and what hangs off them (submissions with their
+  contributions, reviews, appeals), their help requests and shares, their
+  own notices about those, their journal (taps, notes, the roots) and work
+  sessions. Queued messages about them are set to `dropped` with
+  `last_error = 'reset'`; sent ones stay.
+- **Their current project, when they are its only active member:** they
+  leave it, it is archived, its plot row is deleted (the slot is free), and
+  its tree style, gifts, canvas link and ownership checks are cleared, so the
+  island shows planting again (`{project: 'archived'}`).
+- **Kept:** a project anyone else is still on, with its plot and tree, and
+  the caller's approved quests on any project not being archived (a team's
+  tree stage); the ledger (append-only), consent, season unlocks earned,
+  recognitions, squads and the member row itself. Other members' rows are
+  never written, except by the foreign keys' own `ON DELETE SET NULL` (a
+  teammate's journal entry or help request that named a removed quest loses
+  only the link).
+- **Refused, nothing changed (`reset_blocked`):** a quest an award or
+  reversal points at, or another member's follow-up quest built on one.
+
+One audit row (`admin_reset_self`). The menu control then clears the
+browser's island keys (`shift-island-story-v1`) and reloads. Tested in
+`supabase/tests/shift_quests/reset.ts`.
