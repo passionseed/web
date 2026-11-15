@@ -188,15 +188,27 @@ async function main(): Promise<void> {
   for (const id of [A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, Q, S1, S2, S3]) await call(bot, "shift_quest_start", id, NAMES[id], false);
 
   const templates: Json[] = await call(bot, "shift_quest_templates", A);
-  const bySlug = (slug: string) => templates.find((t) => t.slug === slug)!;
+  // The pitfall quest map (20261115090000) renamed the main quests; wave 1
+  // alone still has the first seven, at the same milestones.
+  const FIRST_MAP: Record<string, string> = {
+    "meet-one-real-person": "find-something-worth-fixing",
+    "real-stories-not-compliments": "make-it-exist",
+    "first-partner": "let-reality-surprise-you",
+    "in-their-hands": "give-them-a-reason-to-return",
+    "run-the-loop": "take-the-keys",
+    "what-we-learned": "help-another-builder-move",
+    "beyond-the-first": "improve-our-community",
+  };
+  const slugOf = (slug: string) => (WAVE1 ? FIRST_MAP[slug] ?? slug : slug);
+  const bySlug = (slug: string) => templates.find((t) => t.slug === slugOf(slug))!;
   check(
-    bySlug("find-something-worth-fixing").milestone === 1 && bySlug("make-it-exist").milestone === 2 &&
-      bySlug("let-reality-surprise-you").milestone === 3 && bySlug("give-them-a-reason-to-return").milestone === 4 &&
-      bySlug("take-the-keys").milestone === 5 && bySlug("help-another-builder-move").milestone === 6 &&
-      bySlug("improve-our-community").milestone === 7,
+    bySlug("meet-one-real-person").milestone === 1 && bySlug("real-stories-not-compliments").milestone === 2 &&
+      bySlug("first-partner").milestone === 3 && bySlug("in-their-hands").milestone === 4 &&
+      bySlug("run-the-loop").milestone === 5 && bySlug("what-we-learned").milestone === 6 &&
+      bySlug("beyond-the-first").milestone === 7,
     "the seven starter quests are milestones 1 to 7"
   );
-  check((await code(db.query("update public.shift_quest_templates set milestone = 1 where slug = 'make-it-exist'"))).includes("duplicate key"),
+  check((await code(db.query("update public.shift_quest_templates set milestone = 1 where slug = $1", [slugOf("real-stories-not-compliments")]))).includes("duplicate key"),
     "a milestone belongs to one published template");
 
   /** Submits a milestone for the student and approves it (reviewer R1 unless given). */
@@ -381,7 +393,7 @@ async function main(): Promise<void> {
   const ms1 = await call(bot, "shift_quest_milestone_submit", A, 3, "Three classmates tried it", "They skipped onboarding", "https://example.org/a");
   check(ms1.created === true && ms1.revision === 1 && typeof ms1.submission_id === "string", "the first submit creates the quest", ms1);
   const q3 = (await db.query("select * from public.shift_quest_instances where id = $1", [ms1.instance_id])).rows[0];
-  const t3 = bySlug("let-reality-surprise-you");
+  const t3 = bySlug("first-partner");
   check(q3.project_id === p1 && q3.state === "submitted" && q3.goal === t3.purpose && q3.next_step === "-" &&
     q3.criteria === t3.evidence_criteria && q3.milestone === 3,
     "created exactly like choosing the template, with its milestone", q3);
@@ -442,7 +454,7 @@ async function main(): Promise<void> {
   check(a2b.created === false && a2b.instance_id === a2.instance_id && a2b.revision === 2, "a paused milestone quest is resumed and resubmitted", a2b);
 
   // One open quest per project and milestone, on every path.
-  check(await code(call(bot, "shift_quest_choose", B, bySlug("make-it-exist").id, "Goal", "Next", null, null)) === "milestone_open",
+  check(await code(call(bot, "shift_quest_choose", B, bySlug("real-stories-not-compliments").id, "Goal", "Next", null, null)) === "milestone_open",
     "choosing the template is refused while a teammate's quest for it is open");
   check(await code(call(bot, "shift_quest_appeal", B, b2.instance_id, "It works now")) === "milestone_open",
     "an appeal cannot reopen a milestone a teammate already reopened");
@@ -468,16 +480,16 @@ async function main(): Promise<void> {
     "the database itself holds one open quest per project and milestone");
   const NOPLOT = "520000000000000099";
   await call(bot, "shift_quest_start", NOPLOT, "No Plot", false);
-  check(await code(call(bot, "shift_quest_choose", NOPLOT, bySlug("make-it-exist").id, "g", "n", null, null)) === "no_project",
+  check(await code(call(bot, "shift_quest_choose", NOPLOT, bySlug("real-stories-not-compliments").id, "g", "n", null, null)) === "no_project",
     "a milestone quest needs a current project, even through the old choose path");
 
   // A non-repeatable milestone done on the project is refused for every teammate.
-  await db.query("update public.shift_quest_templates set repeatable = false where slug = 'give-them-a-reason-to-return'");
+  await db.query("update public.shift_quest_templates set repeatable = false where slug = $1", [slugOf("in-their-hands")]);
   const e4 = await reach(E, 4);
   check(e4.review.island.stage === 1, "milestone 4 approved on plot four");
   check(await code(call(bot, "shift_quest_milestone_submit", F, 4, "p", "r", null)) === "milestone_done",
     "a non-repeatable milestone already done is refused");
-  await db.query("update public.shift_quest_templates set repeatable = true where slug = 'give-them-a-reason-to-return'");
+  await db.query("update public.shift_quest_templates set repeatable = true where slug = $1", [slugOf("in-their-hands")]);
 
   // --- Privacy of the map ---------------------------------------------------------------
   // Plot one: both members shown. Plot four (E, F): grown, E hid it.
@@ -500,8 +512,8 @@ async function main(): Promise<void> {
 
   // --- Rest -----------------------------------------------------------------------------
   const ledgerBeforeRest = await ledgerCount();
-  const r1q: string = await call(bot, "shift_quest_choose", D, bySlug("make-it-exist").id, "Build", "Start", null, null);
-  const r2q: string = await call(bot, "shift_quest_choose", D, bySlug("take-the-keys").id, "Own it", "Check", null, null);
+  const r1q: string = await call(bot, "shift_quest_choose", D, bySlug("real-stories-not-compliments").id, "Build", "Start", null, null);
+  const r2q: string = await call(bot, "shift_quest_choose", D, bySlug("run-the-loop").id, "Own it", "Check", null, null);
   const r3 = await call(bot, "shift_quest_milestone_submit", D, 1, "Interviews", "Learned", null);
   const versions = async () => (await db.query("select id, state, version from public.shift_quest_instances where member_id = $1 order by id", [await memberId(D)])).rows;
   const before = await versions();
@@ -565,8 +577,8 @@ async function main(): Promise<void> {
     await call(bot, "shift_quest_project_invite", S1, pl, who);
     await call(bot, "shift_quest_project_respond", who, pl, true);
   }
-  const lActive: string = await call(bot, "shift_quest_choose", S2, bySlug("make-it-exist").id, "Build", "Start", null, null);
-  const lPaused: string = await call(bot, "shift_quest_choose", S2, bySlug("take-the-keys").id, "Own it", "Check", null, null);
+  const lActive: string = await call(bot, "shift_quest_choose", S2, bySlug("real-stories-not-compliments").id, "Build", "Start", null, null);
+  const lPaused: string = await call(bot, "shift_quest_choose", S2, bySlug("run-the-loop").id, "Own it", "Check", null, null);
   await call(bot, "shift_quest_set_state", S2, lPaused, null, "pause");
   const lClar = await call(bot, "shift_quest_milestone_submit", S2, 4, "Two came back", "Learned", null);
   await call(bot, "shift_quest_review_decide", R1, lClar.submission_id, "clarification", "Who came back?", false);
@@ -578,7 +590,7 @@ async function main(): Promise<void> {
   const held = [lActive, lPaused, lClar.instance_id];
   const beforeLeave = await Promise.all(held.map(questRow));
   const subBefore = await questRow(lSub.instance_id);
-  check(await code(call(bot, "shift_quest_choose", S1, bySlug("make-it-exist").id, "g", "n", null, null)) === "milestone_open",
+  check(await code(call(bot, "shift_quest_choose", S1, bySlug("real-stories-not-compliments").id, "g", "n", null, null)) === "milestone_open",
     "while a teammate works on a milestone, it is theirs");
   await call(bot, "shift_quest_project_leave", S2, pl);
   const afterLeave = await Promise.all(held.map(questRow));
@@ -588,29 +600,29 @@ async function main(): Promise<void> {
   check(subAfter.state === "submitted" && subAfter.version === subBefore.version &&
     (await scalar(db, "select status from public.shift_quest_submissions where id = $1", [lSub.submission_id])) === "pending",
     "work already with the reviewers stays there", subAfter);
-  const freed = await Promise.all(["make-it-exist", "take-the-keys", "give-them-a-reason-to-return"].map((slug) =>
+  const freed = await Promise.all(["real-stories-not-compliments", "run-the-loop", "in-their-hands"].map((slug) =>
     code(call(bot, "shift_quest_choose", S1, bySlug(slug).id, "Take it on", "Next", null, null))));
   check(freed.every((c) => c === "ok"), "the rest of the team can take those milestones at once", freed);
-  check(await code(call(bot, "shift_quest_choose", S1, bySlug("find-something-worth-fixing").id, "g", "n", null, null)) === "milestone_open",
+  check(await code(call(bot, "shift_quest_choose", S1, bySlug("meet-one-real-person").id, "g", "n", null, null)) === "milestone_open",
     "a milestone with the reviewers is still held");
   await call(bot, "shift_quest_review_decide", R1, lSub.submission_id, "declined", "Talk to two more people", false);
-  check(await code(call(bot, "shift_quest_choose", S1, bySlug("find-something-worth-fixing").id, "Talk to people", "Ask", null, null)) === "ok",
+  check(await code(call(bot, "shift_quest_choose", S1, bySlug("meet-one-real-person").id, "Talk to people", "Ask", null, null)) === "ok",
     "deciding it frees the milestone");
   await call(bot, "shift_quest_review_decide", R1, lClarLater.submission_id, "clarification", "Who tried it?", false);
   check((await questRow(lClarLater.instance_id)).state === "archived" &&
-    await code(call(bot, "shift_quest_choose", S1, bySlug("let-reality-surprise-you").id, "Test it", "Book", null, null)) === "ok",
+    await code(call(bot, "shift_quest_choose", S1, bySlug("first-partner").id, "Test it", "Book", null, null)) === "ok",
     "asking a departed member for more archives their milestone quest, so the team can take it");
   await call(bot, "shift_quest_withdraw", S2, lWithdrawLater.instance_id, lWithdrawLater.version);
   check((await questRow(lWithdrawLater.instance_id)).state === "archived" &&
-    await code(call(bot, "shift_quest_choose", S1, bySlug("help-another-builder-move").id, "Help", "Ask", null, null)) === "ok",
+    await code(call(bot, "shift_quest_choose", S1, bySlug("what-we-learned").id, "Help", "Ask", null, null)) === "ok",
     "a departed member withdrawing a milestone frees it for the team");
   // Erasure frees what the erased member held too.
-  const l7: string = await call(bot, "shift_quest_choose", S3, bySlug("improve-our-community").id, "Host a demo night", "Book a room", null, null);
+  const l7: string = await call(bot, "shift_quest_choose", S3, bySlug("beyond-the-first").id, "Host a demo night", "Book a room", null, null);
   const l7Before = await questRow(l7);
   await call(bot, "shift_quest_admin_erase", ADMIN, await call(bot, "shift_quest_data_request", S3, "erasure", null));
   const l7After = await questRow(l7);
   check(l7After.state === "archived" && l7After.version === l7Before.version + 1, "erasure archives the erased member's open quests (version + 1)", l7After);
-  check(await code(call(bot, "shift_quest_choose", S1, bySlug("improve-our-community").id, "Demo night", "Book", null, null)) === "ok",
+  check(await code(call(bot, "shift_quest_choose", S1, bySlug("beyond-the-first").id, "Demo night", "Book", null, null)) === "ok",
     "and their teammates can take the milestone");
 
   if (!WAVE1) await seasonTests();

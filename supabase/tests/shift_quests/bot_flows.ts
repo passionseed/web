@@ -201,7 +201,7 @@ async function main(): Promise<void> {
   await run("modal", { ...A, customId: r.modal!.custom_id, fields: { text: "Coins for reviewed quests." } });
   r = await run("command", { ...A, command: "admin", sub: "rule", options: { key: "learn", amount: 5 } });
   await run("modal", { ...A, customId: r.modal!.custom_id, fields: { eligibility: "e", review: "r", reversal: "v" } });
-  await run("command", { ...A, command: "admin", sub: "template-rule", options: { template: "make-it-exist", rule: "learn" } });
+  await run("command", { ...A, command: "admin", sub: "template-rule", options: { template: "real-stories-not-compliments", rule: "learn" } });
   r = await run("command", { ...A, command: "admin", sub: "feature", options: { name: "awards", state: "on" } });
   check(r.content.includes("✅ เหรียญ: เปิด ใช้งานอยู่"), "awards go live once configured", r.content);
 
@@ -233,13 +233,13 @@ async function main(): Promise<void> {
   // Choose a quest from the library.
   r = await run("command", { ...S, command: "quest", sub: "browse" });
   const pick = find(r, (c) => c.custom_id === "sq|tpl");
-  const make = pick.options!.find((o) => o.label === "ทำให้มันมีอยู่จริง")!;
+  const make = pick.options!.find((o) => o.label === "ฟังเรื่องจริง ไม่ใช่คำชม")!;
   r = await run("select", { ...S, customId: "sq|tpl", values: [make.value] });
   check(r.content.includes("5 Passioncoin"), "template shows the published reward", r.content);
   r = await run("button", { ...S, customId: find(r, (c) => c.label === T.btnChoose).custom_id });
   check(r.modal?.fields.includes("criteria") ?? false, "choose modal asks for criteria");
   r = await run("modal", { ...S, customId: r.modal!.custom_id, fields: { goal: "Split one trip", next: "Sketch", criteria: "A demo", date: "" } });
-  check(r.content.includes("ทำให้มันมีอยู่จริง"), "quest chosen");
+  check(r.content.includes("ฟังเรื่องจริง ไม่ใช่คำชม"), "quest chosen");
 
   // Progress: private first, then shared.
   r = await run("command", { ...S, command: "progress", sub: "add" });

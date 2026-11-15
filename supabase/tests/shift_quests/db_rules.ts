@@ -188,7 +188,7 @@ async function main(): Promise<void> {
   const t = (slug: string) => templates.find((x) => x.slug === slug)!.id as string;
 
   // --- Manage without penalty -------------------------------------------------
-  const i1: string = await call(bot, "shift_quest_choose", A, t("make-it-exist"), "Ship a calculator", "Sketch screens", null, null);
+  const i1: string = await call(bot, "shift_quest_choose", A, t("real-stories-not-compliments"), "Ship a calculator", "Sketch screens", null, null);
   check(await code(call(bot, "shift_quest_update", A, i1, 99, "x", null, null, null, false)) === "stale_version",
     "an edit against an old version is refused");
   let v: number = await call(bot, "shift_quest_set_state", A, i1, 1, "pause");
@@ -231,15 +231,15 @@ async function main(): Promise<void> {
   check(err === "config_incomplete", "awards refuse to switch on without terms and a rule", err);
   await call(bot, "shift_quest_admin_set", ADMIN, "reward_terms", "Published terms for the pilot.");
   await call(bot, "shift_quest_admin_rule", ADMIN, "build", 10, 3, null, "Agreed quest done", "Human review", "Reversals explained privately");
-  await call(bot, "shift_quest_admin_template_rule", ADMIN, "let-reality-surprise-you", "build");
-  await call(bot, "shift_quest_admin_template_rule", ADMIN, "make-it-exist", "build");
+  await call(bot, "shift_quest_admin_template_rule", ADMIN, "first-partner", "build");
+  await call(bot, "shift_quest_admin_template_rule", ADMIN, "real-stories-not-compliments", "build");
   await call(bot, "shift_quest_admin_set", ADMIN, "awards", "on");
 
   res = await call(bot, "shift_quest_issue_award", R1, i1);
   check(res.issued === false && res.reason === "no_reward_rule", "a quest keeps the (absent) rule it was chosen under", res);
 
   // Rule version pinning.
-  const i2: string = await call(bot, "shift_quest_choose", A, t("let-reality-surprise-you"), "Let 3 classmates try", "Book a slot", null, null);
+  const i2: string = await call(bot, "shift_quest_choose", A, t("first-partner"), "Let 3 classmates try", "Book a slot", null, null);
   await call(bot, "shift_quest_admin_rule", ADMIN, "build", 20, 3, null, "v2", "v2", "v2");
   sub = await call(bot, "shift_quest_submit", A, i2, 1, "Nobody finished the flow", "My onboarding was confusing; I will cut a step", null, "reviewers", null, []);
 
@@ -257,7 +257,7 @@ async function main(): Promise<void> {
   check((await call(bot, "shift_quest_coins", A)).balance === 10, "negative user test with a credible reflection earns the award");
 
   // --- Team credit ----------------------------------------------------------------
-  const i3: string = await call(bot, "shift_quest_choose", A, t("make-it-exist"), "Second slice", "Pair with Bee", null, null);
+  const i3: string = await call(bot, "shift_quest_choose", A, t("real-stories-not-compliments"), "Second slice", "Pair with Bee", null, null);
   sub = await call(bot, "shift_quest_submit", A, i3, 1, "Export to sheet", "Learned CSV", null, "team", "Backend", [B]);
   res = await call(bot, "shift_quest_review_decide", R1, sub.submission_id, "approved", null, true);
   check(res.award.reason === "contributions_pending", "team award waits for every teammate's confirmation", res.award);
@@ -268,13 +268,13 @@ async function main(): Promise<void> {
   check(res.reason === "team_allocation_missing", "no team split is inferred without a configured rule", res);
 
   await call(bot, "shift_quest_admin_rule", ADMIN, "build", 10, 3, "each_confirmed", "v3", "v3", "v3");
-  const i4: string = await call(bot, "shift_quest_choose", A, t("make-it-exist"), "Third slice", "Pair again", null, null);
+  const i4: string = await call(bot, "shift_quest_choose", A, t("real-stories-not-compliments"), "Third slice", "Pair again", null, null);
   sub = await call(bot, "shift_quest_submit", A, i4, 1, "Share link", "Learned URLs", null, "team", "Backend", [B]);
   await call(bot, "shift_quest_contribution_respond", B, sub.submission_id, true, "Copy and testing");
   res = await call(bot, "shift_quest_review_decide", R2, sub.submission_id, "approved", null, false);
   check(res.award.reason === "distinct_not_confirmed", "a repeat needs a reviewer to confirm distinct learning", res.award);
   // The approval stands; the reviewer confirms distinctness by retrying after a fresh submission.
-  const i5: string = await call(bot, "shift_quest_choose", A, t("make-it-exist"), "Fourth slice", "Pair again", null, null);
+  const i5: string = await call(bot, "shift_quest_choose", A, t("real-stories-not-compliments"), "Fourth slice", "Pair again", null, null);
   sub = await call(bot, "shift_quest_submit", A, i5, 1, "Offline mode", "Learned caching", null, "team", "Backend", [B]);
   await call(bot, "shift_quest_contribution_respond", B, sub.submission_id, true, "Testing offline");
   res = await call(bot, "shift_quest_review_decide", R2, sub.submission_id, "approved", null, true);
@@ -282,7 +282,7 @@ async function main(): Promise<void> {
   check((await call(bot, "shift_quest_coins", B)).balance === 10, "teammate received their own credit");
 
   // --- Clarification, decline, appeal --------------------------------------------
-  const i6: string = await call(bot, "shift_quest_choose", B, t("find-something-worth-fixing"), "Interview 3 people", "Write questions", null, null);
+  const i6: string = await call(bot, "shift_quest_choose", B, t("meet-one-real-person"), "Interview 3 people", "Write questions", null, null);
   sub = await call(bot, "shift_quest_submit", B, i6, 1, "Talked to two", "Hmm", null, "reviewers", null, []);
   check(await code(call(bot, "shift_quest_review_decide", R1, sub.submission_id, "clarification", "  ", false)) === "feedback_required",
     "clarification needs a specific next step");
@@ -304,7 +304,7 @@ async function main(): Promise<void> {
   await call(bot, "shift_quest_start", R1, "Rev One", false);
   // Island milestones need a current project.
   await call(bot, "shift_quest_project_create", R1, "Mentor guide", "other", null);
-  const i7: string = await call(bot, "shift_quest_choose", R1, t("improve-our-community"), "Write a guide", "Outline", null, null);
+  const i7: string = await call(bot, "shift_quest_choose", R1, t("beyond-the-first"), "Write a guide", "Outline", null, null);
   sub = await call(bot, "shift_quest_submit", R1, i7, 1, "Guide", "Learned", null, "reviewers", null, []);
   check(await code(call(bot, "shift_quest_review_decide", R1, sub.submission_id, "approved", null, false)) === "conflict_of_interest",
     "a reviewer cannot approve their own quest");
@@ -552,7 +552,7 @@ async function main(): Promise<void> {
   await call(bot, "shift_quest_project_invite", D, shared, R3);
   await call(bot, "shift_quest_project_respond", R3, shared, true);
   const solo: string = await call(bot, "shift_quest_project_create", D, "Solo", "creative", null);
-  const dq: string = await call(bot, "shift_quest_choose", D, t("make-it-exist"), "Goal", "Next", null, null);
+  const dq: string = await call(bot, "shift_quest_choose", D, t("real-stories-not-compliments"), "Goal", "Next", null, null);
   const ds = await call(bot, "shift_quest_submit", D, dq, 1, "Evidence", "Reflection", null, "reviewers", null, []);
   check(await code(call(bot, "shift_quest_review_decide", R3, ds.submission_id, "approved", null, false)) === "conflict_of_interest",
     "a teammate from another project cannot approve");
@@ -573,7 +573,7 @@ async function main(): Promise<void> {
   await call(bot, "shift_quest_help_create", E, "zebra-secret deploy question", "community", "student", null);
   const recE: string = await call(bot, "shift_quest_share_create", E, "recognition", "zebra-secret thanks", null, D);
   await call(bot, "shift_quest_share_confirm", E, recE);
-  const dq2: string = await call(bot, "shift_quest_choose", D, t("make-it-exist"), "Goal 2", "Next", null, null);
+  const dq2: string = await call(bot, "shift_quest_choose", D, t("real-stories-not-compliments"), "Goal 2", "Next", null, null);
   const ds2 = await call(bot, "shift_quest_submit", D, dq2, 1, "Evidence", "Reflection", null, "team", "Backend", [E]);
   const eraseE: string = await call(bot, "shift_quest_data_request", E, "erasure", null);
   await call(bot, "shift_quest_admin_erase", ADMIN, eraseE);
@@ -619,13 +619,13 @@ async function main(): Promise<void> {
 
   // A fully reversed award no longer counts toward the cap.
   await call(bot, "shift_quest_admin_rule", ADMIN, "tiny", 2, 1, null, "e", "r", "v");
-  await call(bot, "shift_quest_admin_template_rule", ADMIN, "help-another-builder-move", "tiny");
-  const h1: string = await call(bot, "shift_quest_choose", D, t("help-another-builder-move"), "Help Eee", "Ask", null, null);
+  await call(bot, "shift_quest_admin_template_rule", ADMIN, "what-we-learned", "tiny");
+  const h1: string = await call(bot, "shift_quest_choose", D, t("what-we-learned"), "Help Eee", "Ask", null, null);
   let hs = await call(bot, "shift_quest_submit", D, h1, 1, "Helped", "Learned", null, "reviewers", null, []);
   await call(bot, "shift_quest_review_decide", R1, hs.submission_id, "approved", null, false);
   const h1Entry = await scalar(db, "select id from public.shift_quest_ledger where instance_id = $1", [h1]);
   await call(bot, "shift_quest_admin_reverse", ADMIN, h1Entry, 2, "Wrong quest", randomUUID());
-  const h2: string = await call(bot, "shift_quest_choose", D, t("help-another-builder-move"), "Help again", "Ask", null, null);
+  const h2: string = await call(bot, "shift_quest_choose", D, t("what-we-learned"), "Help again", "Ask", null, null);
   hs = await call(bot, "shift_quest_submit", D, h2, 1, "Helped someone else", "Learned more", null, "reviewers", null, []);
   res = await call(bot, "shift_quest_review_decide", R1, hs.submission_id, "approved", null, true);
   check(res.award.issued === true, "a fully reversed award frees its place under the cap", res.award);
