@@ -184,11 +184,13 @@ export async function getIslandPage(viewer: ReadyViewer): Promise<IslandPageData
   let canvasLink: CanvasLinkState = UNLINKED;
   let fire: CampfireNames | null = null;
   if (island.project) {
-    const [boardRaw, link, campfireRead] = await Promise.all([
+    const [boardRaw, link, campfireRead, projectsRaw] = await Promise.all([
       api.call<QuestBoard>("shift_quest_board", viewer.actor),
       canvasLinkOf(api, viewer.actor),
       campfireOf(api, viewer.actor, false),
+      api.call<ProjectListRow[]>("shift_quest_project_list", viewer.actor),
     ]);
+    invites = list(projectsRaw).filter((p) => p.status === "invited").map(toInvite);
     board = normalizeBoard(boardRaw);
     canvasLink = link;
     fire = campfireRead;

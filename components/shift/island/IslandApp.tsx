@@ -563,6 +563,8 @@ function IslandHome({
         onClose={() => setPanel(null)}
         me={page.me}
         stats={page.character ?? null}
+        projectId={project.id}
+        invites={page.invites}
         project={project}
         tree={page.tree ?? null}
         season={season}

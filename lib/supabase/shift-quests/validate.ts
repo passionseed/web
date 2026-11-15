@@ -50,6 +50,13 @@ export const createProjectSchema = z.object({
   ambition: optionalText(TEXT_LIMITS.ambition),
 });
 
+export const findProjectFriendsSchema = z.object({
+  projectId: id,
+  query: requiredText(80).refine((v) => chars(v) >= 2),
+});
+
+export const inviteFriendSchema = z.object({ projectId: id, friendId: id });
+
 export const respondInviteSchema = z.object({
   projectId: id,
   accept: z.boolean(),

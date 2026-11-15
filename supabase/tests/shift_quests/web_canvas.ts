@@ -106,6 +106,8 @@ const WEB_ALLOWLIST = [
   "shift_quest_peer_check(text,uuid,text[],text)",
   "shift_quest_peer_list(text,uuid)",
   "shift_quest_peer_hide(text,uuid,boolean)",
+  "shift_quest_project_friends(text,uuid,text)",
+  "shift_quest_project_invite_friend(text,uuid,uuid)",
 ];
 
 let failures = 0;

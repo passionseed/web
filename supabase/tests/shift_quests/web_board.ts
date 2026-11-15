@@ -121,6 +121,8 @@ const WEB_ALLOWLIST = [
   "shift_quest_peer_check(text,uuid,text[],text)",
   "shift_quest_peer_list(text,uuid)",
   "shift_quest_peer_hide(text,uuid,boolean)",
+  "shift_quest_project_friends(text,uuid,text)",
+  "shift_quest_project_invite_friend(text,uuid,uuid)",
 ];
 
 /**
@@ -262,6 +264,8 @@ async function main(): Promise<void> {
 
   // Every allowlisted function runs for the web role (an unknown caller is refused by the function, not by Postgres).
   const allowCalls: [string, string, unknown[], string][] = [
+    ["project_friends", "select public.shift_quest_project_friends($1::text, $2::uuid, $3::text)", [NOBODY, randomUUID(), "friend"], "not_started"],
+    ["project_invite_friend", "select public.shift_quest_project_invite_friend($1::text, $2::uuid, $3::uuid)", [NOBODY, randomUUID(), randomUUID()], "not_started"],
     ["schema_version", "select public.shift_quest_schema_version()", [], "ok"],
     ["session", "select public.shift_quest_session($1::text, $2::text)", [NOBODY, null], "ok"],
     ["start", "select public.shift_quest_start($1::text, $2::text, $3::boolean)", ["not-a-snowflake", null, false], "not_started"],
@@ -907,6 +911,35 @@ async function main(): Promise<void> {
   check(readme3.created === true, "and it can be started there (not_repeatable counts this project only)", readme3);
   const readme3Sent = await sideSubmit(A, tpl["side-readme"], "README for project three", "Wrote it faster");
   check(readme3Sent.created === false && readme3Sent.instance_id === readme3.instance_id, "and submitted", readme3Sent);
+
+  // Website invitations use opaque IDs and the same accept/decline rules as Discord.
+  const friendA = "630000000000000101";
+  const friendB = "630000000000000102";
+  const friendNew = "630000000000000103";
+  for (const [who, name] of [[friendA, "Web Invite Owner"], [friendB, "Web Invite Friend"]]) {
+    await call(web, "shift_quest_session", who, name);
+    await call(web, "shift_quest_start", who, name, false);
+  }
+  await call(web, "shift_quest_session", friendNew, "Web Invite New");
+  await call(web, "shift_quest_start", R1, "Web Invite Staff", false);
+  const friendPlot = await call<string>(web, "shift_quest_project_create", friendA, "Web Invitation", "software", null);
+  const friends = await call<Array<{ id: string; name: string }>>(web, "shift_quest_project_friends", friendA, friendPlot, "Web Invite");
+  check(await code(call(web, "shift_quest_project_friends", R1, friendPlot, "Web Invite")) === "not_eligible", "staff cannot search for students to invite");
+  const staffId = (await db.query("select id from public.shift_quest_members where discord_user_id = $1", [R1])).rows[0].id;
+  check(await code(call(web, "shift_quest_project_invite_friend", friendA, friendPlot, staffId)) === "invitee_not_started", "staff cannot be invited as student teammates");
+  check(friends.length === 1 && friends[0].name === "Web Invite Friend", "search excludes self and students who have not started", friends);
+  check(Object.keys(friends[0]).sort().join(",") === "id,name", "search exposes no Discord ID or other profile fields");
+  check(await code(call(web, "shift_quest_project_friends", friendB, friendPlot, "Web Invite")) === "not_project_member", "outsiders cannot search a plot's invite candidates");
+  check(await code(call(web, "shift_quest_project_friends", friendA, friendPlot, "W")) === "invalid_input", "search requires two characters");
+  check(await code(call(web, "shift_quest_project_invite_friend", friendB, friendPlot, friends[0].id)) === "not_project_member", "outsiders cannot invite");
+  await call(web, "shift_quest_project_invite_friend", friendA, friendPlot, friends[0].id);
+  check((await call<Array<unknown>>(web, "shift_quest_project_friends", friendA, friendPlot, "Web Invite")).length === 0, "pending invitations are excluded from search");
+  check(await code(call(web, "shift_quest_project_invite_friend", friendA, friendPlot, friends[0].id)) === "already_member", "duplicate invitation is refused");
+  const friendProjects = await call<Json[]>(web, "shift_quest_project_list", friendB);
+  check(friendProjects.some((p) => p.id === friendPlot && p.status === "invited"), "the website shows the invitation before membership exists");
+  await call(web, "shift_quest_project_respond", friendB, friendPlot, true);
+  check((await call<Json>(web, "shift_quest_island", friendB)).project.id === friendPlot, "accepting joins the invited plot");
+  check((await call<Array<unknown>>(web, "shift_quest_project_friends", friendA, friendPlot, "Web Invite")).length === 0, "active teammates are excluded too");
 
   console.log(`\n${passes} passed, ${failures} failed`);
   await Promise.all([db.end(), bot.end(), web.end(), web2.end()]);

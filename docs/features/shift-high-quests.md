@@ -833,3 +833,22 @@ start. Anyone else gets `not_authorized`. It only touches the caller's rows:
 One audit row (`admin_reset_self`). The menu control then clears the
 browser's island keys (`shift-island-story-v1`) and reloads. Tested in
 `supabase/tests/shift_quests/reset.ts`.
+
+### Project invitations on the island website
+
+Students can open their character/project panel on `/shift/island`, select
+**ชวนเพื่อน**, search by the name their friend uses on the island (at least two
+characters), and send an invitation. Search returns at most 20 started students,
+excluding staff, erased members, the caller, active teammates and pending
+invitees. It returns only opaque member IDs and display names, with no Discord
+IDs. A student must belong to the project to search or invite.
+
+The friend accepts or declines under **คำชวนเข้าทีม** on the island. Invitations
+appear in the claim panel for students without a plot and in the character panel
+for students who already have one. Sending an invitation does not add a member;
+acceptance uses the existing project response flow.
+
+Migration `20261115144204_shift_quest_web_invites.sql` adds the two website-only
+functions to the `shift_quest_web` allowlist. The invite function resolves the
+opaque ID internally and reuses `shift_quest_project_invite`, including its inbox
+notice and audit entry. Apply this migration before deploying the web flow.

@@ -480,3 +480,32 @@ describe("reflect", () => {
     expect(refresh).not.toHaveBeenCalled();
   });
 });
+
+describe("website friend invitations", () => {
+  it("searches using the session actor, trims the name and does not refresh", async () => {
+    call.mockResolvedValue([{ id: UUID, name: "Mint" }]);
+    expect(await actions.findProjectFriends({ projectId: UUID, query: "  Mint  " })).toEqual({ ok: true, data: [{ id: UUID, name: "Mint" }] });
+    expect(call).toHaveBeenCalledWith("shift_quest_project_friends", ACTOR, UUID, "Mint");
+    expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it("sends an invitation using the session actor and refreshes", async () => {
+    expect(await actions.inviteFriend({ projectId: UUID, friendId: UUID })).toEqual({ ok: true, data: null });
+    expect(call).toHaveBeenCalledWith("shift_quest_project_invite_friend", ACTOR, UUID, UUID);
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects invalid input before touching the database", async () => {
+    expect(await actions.findProjectFriends({ projectId: UUID, query: "a" })).toMatchObject({ ok: false, code: "invalid_input" });
+    expect(await actions.inviteFriend({ projectId: UUID, friendId: OTHER })).toMatchObject({ ok: false, code: "invalid_input" });
+    expect(call).not.toHaveBeenCalled();
+  });
+
+  it("requires a signed-in student and maps membership refusals", async () => {
+    resolveIslandViewer.mockResolvedValueOnce({ state: "signed_out" });
+    expect(await actions.inviteFriend({ projectId: UUID, friendId: UUID })).toMatchObject({ ok: false, code: "signed_out" });
+    expect(call).not.toHaveBeenCalled();
+    call.mockRejectedValueOnce(new QuestError("not_project_member"));
+    expect(await actions.inviteFriend({ projectId: UUID, friendId: UUID })).toMatchObject({ ok: false, code: "not_project_member" });
+  });
+});

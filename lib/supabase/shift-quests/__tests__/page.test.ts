@@ -113,6 +113,7 @@ const PLAYER = { shift_quest_character: CHARACTER_ROW, shift_quest_consent_get: 
 
 function respond(responses: Record<string, unknown>) {
   call.mockImplementation(async (fn: string) => {
+    if (fn === "shift_quest_project_list" && !(fn in responses)) return [];
     if (!(fn in responses)) throw new Error(`unexpected ${fn}`);
     const value = responses[fn];
     if (value instanceof Error) throw value;
@@ -163,6 +164,7 @@ describe("getIslandPage", () => {
       ["shift_quest_board", [ACTOR]],
       ["shift_quest_canvas_get", [ACTOR]],
       ["shift_quest_campfire", [ACTOR, false]],
+      ["shift_quest_project_list", [ACTOR]],
       // Retry after the optional public roots schema read failed.
       ["shift_quest_schema_version", []],
     ]);
@@ -181,6 +183,22 @@ describe("getIslandPage", () => {
     expect(page.invites).toEqual([]);
     // plain defaults to false when the database leaves it out.
     expect(page.map.plots[0].plain).toBe(false);
+  });
+
+  it("keeps incoming invitations visible when the student already owns a plot", async () => {
+    respond({
+      shift_quest_island: { project, milestones: [] },
+      shift_quest_island_map: map,
+      shift_quest_board: { main: [], side: [], proposed: [] },
+      shift_quest_project_list: [{ id: "friend-plot", name: "Garden", route: "service", status: "invited", inviter: "Ploy" }],
+      shift_quest_canvas_get: null,
+      shift_quest_campfire: FIRE,
+      shift_quest_island_links: LINKS,
+      ...PLAYER,
+    });
+    expect((await getIslandPage(viewer)).invites).toEqual([
+      { projectId: "friend-plot", name: "Garden", route: "service", inviter: "Ploy" },
+    ]);
   });
 
   it("loads pending invites instead of a board when there is no project", async () => {
