@@ -456,7 +456,13 @@ async function main(): Promise<void> {
     code(call(bot, "shift_quest_redeem", A, sticker.id, randomUUID(), sticker.cost)),
     code(call(bot2, "shift_quest_redeem", B, sticker.id, randomUUID(), sticker.cost)),
   ]);
-  check(race.filter((r) => r === "ok").length === 1 && race.includes("out_of_stock"), "one unit cannot be reserved twice", race);
+  // If the winner commits before the loser checks catalog availability, the
+  // shop is already paused: the sticker was its last available item.
+  check(race.filter((r) => r === "ok").length === 1 &&
+    race.some((r) => r === "out_of_stock" || r === "redemption_paused"), "one unit cannot be reserved twice", race);
+  check(Number(await scalar(db, "select count(*) from public.shift_quest_redemptions where item_id = $1", [sticker.id])) === 1 &&
+    Number(await scalar(db, "select stock_available from public.shift_quest_catalog where id = $1", [sticker.id])) === 0,
+    "the last unit creates exactly one reservation and leaves zero stock");
 
   // One student fires two requests that together cost more than their balance.
   const spendA = (await call(bot, "shift_quest_coins", A)).balance as number;
