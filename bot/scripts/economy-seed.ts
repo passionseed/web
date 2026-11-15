@@ -24,7 +24,7 @@
  * bot/quests-sandbox.sh runs it by default (Season 1 coins on in the sandbox).
  */
 import {
-  COMMUNITY_RULE_MILESTONES,
+  COMMUNITY_RULE_SLUGS,
   ECONOMY_RULES_DRAFT,
   ECONOMY_TERMS_DRAFT,
   MAIN_RULE_MILESTONES,
@@ -108,6 +108,15 @@ function pinSql(rule: EconomyRuleDraft | null, filter: string): string[] {
   ];
 }
 
+function slugList(slugs: readonly string[]): string {
+  return slugs
+    .map((slug) => {
+      if (!/^[a-z0-9-]{2,60}$/.test(slug)) throw new Error(`economy seed: bad template slug: ${slug}`);
+      return sqlLiteral(slug);
+    })
+    .join(", ");
+}
+
 function milestoneList(milestones: readonly number[]): string {
   return milestones.map((m) => assertWhole(m, 1, 7, "milestone")).join(", ");
 }
@@ -138,9 +147,9 @@ function coreSql(): string[] {
     ...termsSql(),
     "-- Every reward rule, published again only when the DRAFT changed.",
     ...ECONOMY_RULES_DRAFT.map(ruleSql),
-    "-- Main quests (milestones 1 to 5) and community quests (6, 7) earn under their rules.",
+    "-- Main quests (milestones 1 to 7) and the community side quests (by slug) earn under their rules.",
     ...pinSql(ruleFor("main"), `milestone IN (${milestoneList(MAIN_RULE_MILESTONES)})`),
-    ...pinSql(ruleFor("community"), `milestone IN (${milestoneList(COMMUNITY_RULE_MILESTONES)})`),
+    ...pinSql(ruleFor("community"), `slug IN (${slugList(COMMUNITY_RULE_SLUGS)})`),
     "-- The sandbox's stand-in reviewer also handles redemptions.",
     `SELECT public.shift_quest_admin_role(:'admin', ${sqlLiteral(SANDBOX_FULFILLMENT_ID)}, 'Sandbox reviewer', 'fulfillment', true)`,
     `WHERE NOT EXISTS (SELECT 1 FROM public.shift_quest_members WHERE discord_user_id = ${sqlLiteral(SANDBOX_FULFILLMENT_ID)} AND 'fulfillment' = ANY (roles));`,
@@ -153,7 +162,10 @@ function coreSql(): string[] {
 }
 
 function sideSql(): string[] {
-  return ["-- Side quests earn under the side rule (after they are published).", ...pinSql(ruleFor("side"), "side")];
+  return [
+    "-- Other side quests earn under the side rule (after they are published); the community ones keep theirs.",
+    ...pinSql(ruleFor("side"), `side AND slug NOT IN (${slugList(COMMUNITY_RULE_SLUGS)})`),
+  ];
 }
 
 /** The seed SQL for one phase. Uses the psql variable :'admin' (the admin's Discord id). */

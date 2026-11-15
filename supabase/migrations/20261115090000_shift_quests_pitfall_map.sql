@@ -1,7 +1,7 @@
 -- SHIFT High Island: the pitfall quest map (Season 1).
 --
 -- Design: docs/designs/shift-high-quest-pitfalls.md (decided 2026-11-15).
--- Content only: no table, column or schema version changes.
+-- No table, column or schema version changes: content, plus four function bodies.
 --
 --   * The seven version-1 main quests are retired. Seven new main quests take
 --     milestones 1 to 7, grouped by act on the web: 1-3 find your stakeholder,
@@ -18,6 +18,9 @@
 --     side-fix-one-thing is retired (main quest 5 does the same thing).
 --   * shift_quest_admin_report counts feedback decisions from the new build
 --     quests (in-their-hands, run-the-loop); the body is otherwise unchanged.
+--   * The community gate and counts (shift_quest__community_done,
+--     shift_quest_character, shift_quest_wallet) key on the community side
+--     quests' slugs instead of milestones 6 and 7.
 --
 -- Prod-first and idempotent: retire before insert (one published template per
 -- slug and per milestone), inserts skip existing (slug, version), updates set
@@ -318,6 +321,278 @@ BEGIN
     ),
     -- Island and seasons (20261111090700_shift_quests_island): counts only.
     'island', public.shift_quest__island_report(v_since)
+  );
+END;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Community quests are the two side quests now, not milestones 6 and 7
+-- ---------------------------------------------------------------------------
+-- The bodies of 20261111095000_shift_quest_player (their latest definitions),
+-- changed only where milestones 6 and 7 meant "community": that is now the
+-- template slug, side-help-a-builder or side-improve-community (kept in step
+-- with COMMUNITY_RULE_SLUGS in lib/content/shift-island-economy.ts). Those
+-- two are left out of the side counts and the side earn rate, so a quest is
+-- counted once. The main earn rate reads every milestone, 1 to 7. Same
+-- signatures, security and search_path: CREATE OR REPLACE keeps the grants.
+
+/** The member is a confirmed contributor of an approved community quest (side-help-a-builder or side-improve-community). */
+CREATE OR REPLACE FUNCTION public.shift_quest__community_done(p_member uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.shift_quest_contributions c
+    JOIN public.shift_quest_submissions s ON s.id = c.submission_id
+    JOIN public.shift_quest_instances i ON i.id = s.instance_id
+    JOIN public.shift_quest_templates t ON t.id = i.template_id
+    WHERE c.member_id = p_member AND c.status = 'confirmed' AND s.status = 'approved'
+      AND t.slug IN ('side-help-a-builder', 'side-improve-community')
+  );
+$$;
+
+/**
+ * The character sheet: progress counts for the caller, never anyone else's,
+ * no ids and no names. Same gate as shift_quest_island (a member who finished
+ * /start). Counts:
+ *   stage: the current project's tree stage (0..7), the level.
+ *   main: team = stage; mine = distinct milestones where the caller is a
+ *     confirmed contributor of an approved submission.
+ *   side: team = distinct approved side quest slugs in the project (the
+ *     community quests apart) plus the caller's own approved proposed quests;
+ *     mine = approved side or proposed quests the caller contributed to.
+ *   community: milestones = how many of the two community quests the project
+ *     has approved (the key keeps its name); mine = the caller's approved
+ *     contributions on them (repeats count); thanks = accepted peer
+ *     recognitions received plus admin recognitions.
+ *   checkins: days_active = distinct Bangkok days with a tap or a note;
+ *     this_week = those since Monday (Bangkok); run = the active days in the
+ *     latest run, where one empty day in between does not end it, and 0 once
+ *     two days have passed with nothing (resting is never punished harder).
+ *   coins: {live, shop_live, balance, reserved}.
+ */
+CREATE OR REPLACE FUNCTION public.shift_quest_character(p_actor text)
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_member public.shift_quest_members := public.shift_quest__student(p_actor);
+  v_project uuid := public.shift_quest__current_project(v_member);
+  v_done smallint[] := '{}';
+  v_today date := public.shift_quest__bkk_today();
+  v_monday date;
+  v_checkins jsonb;
+BEGIN
+  IF v_project IS NOT NULL THEN
+    v_done := public.shift_quest__milestones(v_project);
+  END IF;
+  v_monday := v_today - (extract(isodow FROM v_today)::integer - 1);
+
+  WITH days AS (
+    SELECT DISTINCT (created_at AT TIME ZONE 'Asia/Bangkok')::date AS d
+    FROM public.shift_quest_progress
+    WHERE member_id = v_member.id AND kind IN ('tap', 'note')
+  ), marked AS (
+    SELECT d, CASE WHEN d - lag(d) OVER (ORDER BY d) > 2 THEN 1 ELSE 0 END AS brk FROM days
+  ), grouped AS (
+    SELECT d, sum(brk) OVER (ORDER BY d) AS g FROM marked
+  ), latest AS (
+    SELECT count(*) AS n, max(d) AS last_day FROM grouped WHERE g = (SELECT max(g) FROM grouped)
+  )
+  SELECT jsonb_build_object(
+    'days_active', (SELECT count(*) FROM days),
+    'this_week', (SELECT count(*) FROM days WHERE d >= v_monday AND d <= v_today),
+    -- Rest mode (every open quest paused, as shift_quest_island's 'resting')
+    -- freezes the run: resting never costs anything.
+    'run', (SELECT CASE WHEN last_day >= v_today - 2 OR (
+                          EXISTS (SELECT 1 FROM public.shift_quest_instances
+                                  WHERE member_id = v_member.id AND state = 'paused')
+                          AND NOT EXISTS (SELECT 1 FROM public.shift_quest_instances
+                                          WHERE member_id = v_member.id AND state IN ('active', 'clarification'))
+                        ) THEN n ELSE 0 END FROM latest)
+  ) INTO v_checkins;
+
+  RETURN jsonb_build_object(
+    'stage', cardinality(v_done),
+    'main', jsonb_build_object(
+      'team', cardinality(v_done),
+      'mine', (
+        SELECT count(DISTINCT i.milestone)
+        FROM public.shift_quest_instances i
+        JOIN public.shift_quest_submissions s ON s.instance_id = i.id AND s.status = 'approved'
+        JOIN public.shift_quest_contributions c ON c.submission_id = s.id
+        WHERE c.member_id = v_member.id AND c.status = 'confirmed' AND i.milestone IS NOT NULL
+      )
+    ),
+    'side', jsonb_build_object(
+      'team', (
+        SELECT count(DISTINCT t.slug)
+        FROM public.shift_quest_instances i JOIN public.shift_quest_templates t ON t.id = i.template_id
+        WHERE v_project IS NOT NULL AND i.project_id = v_project AND i.state = 'approved' AND t.side
+          AND t.slug NOT IN ('side-help-a-builder', 'side-improve-community')
+      ) + (
+        SELECT count(*) FROM public.shift_quest_instances
+        WHERE member_id = v_member.id AND template_id IS NULL AND state = 'approved'
+      ),
+      'mine', (
+        SELECT count(DISTINCT i.id)
+        FROM public.shift_quest_instances i
+        LEFT JOIN public.shift_quest_templates t ON t.id = i.template_id
+        JOIN public.shift_quest_submissions s ON s.instance_id = i.id AND s.status = 'approved'
+        JOIN public.shift_quest_contributions c ON c.submission_id = s.id
+        WHERE c.member_id = v_member.id AND c.status = 'confirmed' AND i.state = 'approved'
+          AND (i.template_id IS NULL OR (t.side AND t.slug NOT IN ('side-help-a-builder', 'side-improve-community')))
+      )
+    ),
+    'community', jsonb_build_object(
+      'milestones', (
+        SELECT count(DISTINCT t.slug)
+        FROM public.shift_quest_instances i JOIN public.shift_quest_templates t ON t.id = i.template_id
+        WHERE v_project IS NOT NULL AND i.project_id = v_project AND i.state = 'approved'
+          AND t.slug IN ('side-help-a-builder', 'side-improve-community')
+      ),
+      'mine', (
+        SELECT count(DISTINCT i.id)
+        FROM public.shift_quest_instances i
+        JOIN public.shift_quest_templates t ON t.id = i.template_id
+        JOIN public.shift_quest_submissions s ON s.instance_id = i.id AND s.status = 'approved'
+        JOIN public.shift_quest_contributions c ON c.submission_id = s.id
+        WHERE c.member_id = v_member.id AND c.status = 'confirmed' AND t.slug IN ('side-help-a-builder', 'side-improve-community')
+      ),
+      'thanks', (
+        SELECT count(*) FROM public.shift_quest_shares
+        WHERE peer_member_id = v_member.id AND kind = 'recognition' AND status = 'queued'
+      ) + (
+        SELECT count(*) FROM public.shift_quest_recognitions WHERE member_id = v_member.id
+      )
+    ),
+    'checkins', v_checkins,
+    'coins', jsonb_build_object(
+      'live', public.shift_quest__awards_live(),
+      'shop_live', public.shift_quest__redemption_live(),
+      'balance', public.shift_quest__balance(v_member.id),
+      'reserved', COALESCE((
+        SELECT sum(cost) FROM public.shift_quest_redemptions
+        WHERE member_id = v_member.id AND status IN ('reserved', 'processing')
+      ), 0)
+    )
+  );
+END;
+$$;
+
+/**
+ * The wallet sheet: the balance, the published earn rates (main: the best
+ * rule pinned on a published main quest; community: on a published community
+ * quest; side: on any other published side template; taught and helped: the
+ * staff award rules), the 10 newest ledger entries without ids, and the shop
+ * with each item's lock reason for the caller. Items only while redemption is
+ * live.
+ */
+CREATE OR REPLACE FUNCTION public.shift_quest_wallet(p_actor text)
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_member public.shift_quest_members := public.shift_quest__student(p_actor);
+  v_settings public.shift_quest_settings := public.shift_quest__settings();
+  v_awards boolean := public.shift_quest__awards_live();
+  v_live boolean := public.shift_quest__redemption_live();
+  v_balance integer := public.shift_quest__balance(v_member.id);
+BEGIN
+  RETURN jsonb_build_object(
+    'awards_live', v_awards,
+    'redemption_live', v_live,
+    'balance', v_balance,
+    'reserved', COALESCE((
+      SELECT sum(cost) FROM public.shift_quest_redemptions
+      WHERE member_id = v_member.id AND status IN ('reserved', 'processing')
+    ), 0),
+    'reward_terms', CASE WHEN v_awards THEN v_settings.reward_terms END,
+    'entries', COALESCE((
+      SELECT jsonb_agg(jsonb_build_object(
+        'amount', l.amount, 'kind', l.kind, 'title', i.title, 'rule_key', rr.key, 'category', g.category,
+        'created_at', l.created_at
+      ) ORDER BY l.created_at DESC)
+      FROM (
+        SELECT * FROM public.shift_quest_ledger WHERE member_id = v_member.id
+        ORDER BY created_at DESC LIMIT 10
+      ) l
+      LEFT JOIN public.shift_quest_instances i ON i.id = l.instance_id
+      LEFT JOIN public.shift_quest_reward_rules rr ON rr.id = l.reward_rule_id
+      LEFT JOIN public.shift_quest_recognitions g ON g.ledger_entry_id = l.id
+    ), '[]'::jsonb),
+    'earn', jsonb_build_object(
+      'main', (
+        SELECT jsonb_build_object('amount', r.amount, 'cap', r.cap_per_member)
+        FROM public.shift_quest_reward_rules r
+        WHERE r.status = 'published' AND r.key IN (
+          SELECT t.reward_rule_key FROM public.shift_quest_templates t
+          WHERE t.status = 'published' AND t.milestone IS NOT NULL
+        )
+        ORDER BY r.amount DESC, r.key LIMIT 1
+      ),
+      'side', (
+        SELECT jsonb_build_object('amount', r.amount, 'cap', r.cap_per_member)
+        FROM public.shift_quest_reward_rules r
+        WHERE r.status = 'published' AND r.key IN (
+          SELECT t.reward_rule_key FROM public.shift_quest_templates t
+          WHERE t.status = 'published' AND t.side AND t.slug NOT IN ('side-help-a-builder', 'side-improve-community')
+        )
+        ORDER BY r.amount DESC, r.key LIMIT 1
+      ),
+      'community', (
+        SELECT jsonb_build_object('amount', r.amount, 'cap', r.cap_per_member)
+        FROM public.shift_quest_reward_rules r
+        WHERE r.status = 'published' AND r.key IN (
+          SELECT t.reward_rule_key FROM public.shift_quest_templates t
+          WHERE t.status = 'published' AND t.slug IN ('side-help-a-builder', 'side-improve-community')
+        )
+        ORDER BY r.amount DESC, r.key LIMIT 1
+      ),
+      'taught', (
+        SELECT jsonb_build_object('amount', r.amount, 'cap', r.cap_per_member)
+        FROM public.shift_quest_reward_rules r WHERE r.status = 'published' AND r.key = 'taught-next-shift'
+      ),
+      'helped', (
+        SELECT jsonb_build_object('amount', r.amount, 'cap', r.cap_per_member)
+        FROM public.shift_quest_reward_rules r WHERE r.status = 'published' AND r.key = 'helped-most'
+      )
+    ),
+    'stage', public.shift_quest__member_stage(v_member.id),
+    'community_done', public.shift_quest__community_done(v_member.id),
+    'consent_ok', public.shift_quest__consent_ok(v_member.id),
+    'shop', jsonb_build_object(
+      'live', v_live,
+      'terms', CASE WHEN v_live THEN v_settings.redemption_terms END,
+      'items', CASE WHEN v_live THEN COALESCE((
+        SELECT jsonb_agg(jsonb_build_object(
+          'id', c.id, 'name', c.name, 'description', c.description, 'cost', c.cost,
+          'in_stock', c.stock_available > 0,
+          'min_stage', c.min_stage, 'requires_community', c.requires_community,
+          'locked', public.shift_quest__item_lock(v_member.id, c),
+          'affordable', v_balance >= c.cost
+        ) ORDER BY c.cost, c.name)
+        FROM public.shift_quest_catalog c WHERE c.active
+      ), '[]'::jsonb) ELSE '[]'::jsonb END,
+      'mine', COALESCE((
+        SELECT jsonb_agg(jsonb_build_object(
+          'id', r.id, 'item', c.name, 'cost', r.cost, 'status', r.status, 'created_at', r.created_at
+        ) ORDER BY r.created_at DESC)
+        FROM public.shift_quest_redemptions r JOIN public.shift_quest_catalog c ON c.id = r.item_id
+        WHERE r.member_id = v_member.id
+          AND (r.status IN ('reserved', 'processing') OR r.closed_at > now() - interval '30 days')
+      ), '[]'::jsonb)
+    )
   );
 END;
 $$;

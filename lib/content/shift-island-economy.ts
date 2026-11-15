@@ -19,7 +19,7 @@
 
 export const ECONOMY_STATUS = "DRAFT" as const;
 
-/** What a rule pays for: main quests 1 to 5, community quests 6 and 7, side quests, or a staff award. */
+/** What a rule pays for: main quests 1 to 7, the two community side quests, other side quests, or a staff award. */
 export type RuleTarget = "main" | "community" | "side" | "staff";
 
 export interface EconomyRuleDraft {
@@ -46,7 +46,7 @@ export const ECONOMY_RULES_DRAFT: readonly EconomyRuleDraft[] = [
     cap: 5,
     teamAllocation: "each_confirmed",
     target: "main",
-    eligibility: "เควสต์หลักขั้น 1 ถึง 5 ที่พี่เลี้ยงตรวจผ่าน จ่ายให้ทุกคนที่ทีมยืนยันว่าร่วมทำ",
+    eligibility: "เควสต์หลักทั้ง 7 ขั้นที่พี่เลี้ยงตรวจผ่าน จ่ายให้ทุกคนที่ทีมยืนยันว่าร่วมทำ",
     review: "พี่เลี้ยงตรวจหลักฐานบนการ์ดเควสต์ตามเกณฑ์ของเควสต์นั้น",
     reversal: "ถ้าผลตรวจถูกถอนภายหลัง หรือพบว่าหลักฐานไม่ตรงกับงานจริง ทีมงานหัก coin คืนพร้อมเขียนเหตุผล",
   },
@@ -66,7 +66,7 @@ export const ECONOMY_RULES_DRAFT: readonly EconomyRuleDraft[] = [
     cap: 11,
     teamAllocation: "each_confirmed",
     target: "side",
-    eligibility: "เควสต์เสริมที่เผยแพร่แล้ว และพี่เลี้ยงตรวจผ่าน จ่ายให้ทุกคนที่ทีมยืนยันว่าร่วมทำ",
+    eligibility: "เควสต์เสริมที่เผยแพร่แล้ว (นอกจากเควสต์ชุมชน) และพี่เลี้ยงตรวจผ่าน จ่ายให้ทุกคนที่ทีมยืนยันว่าร่วมทำ",
     review: "พี่เลี้ยงตรวจหลักฐานบนการ์ดเควสต์ตามเกณฑ์ของเควสต์นั้น",
     reversal: "ถ้าผลตรวจถูกถอนภายหลัง ทีมงานหัก coin คืนพร้อมเขียนเหตุผล",
   },
@@ -92,10 +92,15 @@ export const ECONOMY_RULES_DRAFT: readonly EconomyRuleDraft[] = [
   },
 ];
 
-/** Main milestones paid by "main-quest". */
-export const MAIN_RULE_MILESTONES = [1, 2, 3, 4, 5] as const;
-/** Community milestones paid by "community-quest": 6 help another builder, 7 improve our community. */
-export const COMMUNITY_RULE_MILESTONES = [6, 7] as const;
+/** Main milestones paid by "main-quest": all seven main quests of the pitfall quest map. */
+export const MAIN_RULE_MILESTONES = [1, 2, 3, 4, 5, 6, 7] as const;
+/**
+ * Community quests paid by "community-quest", by template slug: the side
+ * quests ช่วยเพื่อนให้ไปต่อ and ทำให้ชุมชนดีขึ้น (main quests 6 and 7 until
+ * 20261115090000). The shop's community gate (shift_quest__community_done)
+ * and the wallet read the same two slugs.
+ */
+export const COMMUNITY_RULE_SLUGS = ["side-help-a-builder", "side-improve-community"] as const;
 
 export interface ShopItemDraft {
   /** At most 80 characters (shift_quest_admin_catalog). */
@@ -105,7 +110,7 @@ export interface ShopItemDraft {
   stock: number;
   /** Tree stage 0..7 the student's project must reach first. */
   minStage: number;
-  /** At least one approved community quest first (shift_quest__community_done still checks milestone 6 or 7: see docs/designs/shift-high-quest-pitfalls.md, open items). */
+  /** At least one approved community quest first (COMMUNITY_RULE_SLUGS, shift_quest__community_done). */
   requiresCommunity: boolean;
 }
 

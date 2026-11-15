@@ -11,6 +11,7 @@ import {
   sideTileStatus,
   type BoardRef,
 } from "@/lib/supabase/shift-quests/board";
+import { COMMUNITY_RULE_SLUGS } from "@/lib/content/shift-island-economy";
 import type { QuestBoard, QuestMine, TileStatus } from "@/lib/supabase/shift-quests/types";
 
 import { BOARD, PARTNER_MILESTONE, QUEST_ACTS } from "./copy";
@@ -19,9 +20,9 @@ import { mainIcon, sideIcon, type IconKey } from "./sprites";
 /**
  * The community quests (ช่วยเพื่อน, พัฒนาชุมชน): main quests 6 and 7 until the
  * pitfall quest map (20261115090000) made them side quests. A small heart on
- * their card.
+ * their card; the same slugs the economy and the shop's community gate read.
  */
-export const COMMUNITY_QUESTS: ReadonlySet<string> = new Set(["side-help-a-builder", "side-improve-community"]);
+export const COMMUNITY_QUESTS: ReadonlySet<string> = new Set(COMMUNITY_RULE_SLUGS);
 
 /** Side quests that belong to the whole island, shown in the ทั้งเกาะ lane instead of a branch. */
 export const COMMUNITY_SLUGS: ReadonlySet<string> = new Set(["side-review-a-friend", ...COMMUNITY_QUESTS]);

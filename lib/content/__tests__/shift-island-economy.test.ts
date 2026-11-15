@@ -1,7 +1,10 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { lintText } from "@/lib/marketing/copyRules";
 
 import {
-  COMMUNITY_RULE_MILESTONES,
+  COMMUNITY_RULE_SLUGS,
   ECONOMY_RULES_DRAFT,
   ECONOMY_STATUS,
   ECONOMY_TERMS_DRAFT,
@@ -71,9 +74,17 @@ describe("shift island economy content", () => {
     }
   });
 
-  it("pays main quests 1 to 5 and community quests 6 and 7", () => {
-    expect([...MAIN_RULE_MILESTONES]).toEqual([1, 2, 3, 4, 5]);
-    expect([...COMMUNITY_RULE_MILESTONES]).toEqual([6, 7]);
+  it("pays all seven main quests, and the two community side quests by slug", () => {
+    expect([...MAIN_RULE_MILESTONES]).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    expect([...COMMUNITY_RULE_SLUGS]).toEqual(["side-help-a-builder", "side-improve-community"]);
+  });
+
+  it("names the same community slugs as the database's gate", () => {
+    const sql = readFileSync(join(process.cwd(), "supabase/migrations/20261115090000_shift_quests_pitfall_map.sql"), "utf8");
+    const list = `(${COMMUNITY_RULE_SLUGS.map((s) => `'${s}'`).join(", ")})`;
+    const body = sql.slice(sql.indexOf("FUNCTION public.shift_quest__community_done"));
+    expect(body).toContain(`t.slug IN ${list}`);
+    for (const slug of COMMUNITY_RULE_SLUGS) expect(sql).toContain(`'${slug}'`);
   });
 
   it("ladders the shop from the sticker to the shirt, gating money-value items by progress and community value", () => {

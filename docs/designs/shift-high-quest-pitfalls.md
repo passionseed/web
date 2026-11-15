@@ -227,11 +227,13 @@ quest hangs off one of the quests it needs, a rule the board tests check.)
 
 ## Open items
 
-- **Community gate for the shop.** `shift_quest__community_done`
-  (20261111095000) still counts an approved main quest 6 or 7, which are now
-  สรุปสิ่งที่ได้เรียนรู้ and ไปไกลกว่าคนแรก. Redemption is off and no item
-  requires it yet; before switching redemption on, point the gate at
-  `side-help-a-builder` and `side-improve-community` (or drop it).
+- **Economy (DRAFT, coins off).** The community gate and counts now key on
+  the two community side quests' slugs (`shift_quest__community_done`,
+  `shift_quest_character`, `shift_quest_wallet`, replaced in the same
+  migration; `COMMUNITY_RULE_SLUGS` in `lib/content/shift-island-economy.ts`).
+  An approved main quest 6 or 7 no longer opens the gate. The draft main-quest
+  rule now covers all seven main quests (cap still 5); the amounts and cap are
+  the founder's to confirm before coins switch on.
 - **Thai review.** The copy here is a draft: run the three-reviewer pass in
   AGENTS.md before Season 2.
 

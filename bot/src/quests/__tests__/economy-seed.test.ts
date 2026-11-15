@@ -9,7 +9,7 @@
  */
 import { economySeedSql, sqlLiteral, SANDBOX_FULFILLMENT_ID } from "../../../scripts/economy-seed";
 import {
-  COMMUNITY_RULE_MILESTONES,
+  COMMUNITY_RULE_SLUGS,
   ECONOMY_RULES_DRAFT,
   ECONOMY_TERMS_DRAFT,
   MAIN_RULE_MILESTONES,
@@ -54,13 +54,15 @@ describe("economy seed", () => {
     expect([byKey["helped-most"].target, byKey["helped-most"].teamAllocation]).toEqual(["staff", null]);
   });
 
-  it("pins main and community rules on their milestones in core, and the side rule in side only", () => {
+  it("pins main rules on their milestones and community rules on their slugs in core, and the side rule in side only", () => {
     expect(core).toContain(`'main-quest')\nFROM (SELECT DISTINCT slug FROM public.shift_quest_templates`);
     expect(core).toContain(`milestone IN (${MAIN_RULE_MILESTONES.join(", ")}) AND reward_rule_key IS DISTINCT FROM 'main-quest'`);
-    expect(core).toContain(`milestone IN (${COMMUNITY_RULE_MILESTONES.join(", ")}) AND reward_rule_key IS DISTINCT FROM 'community-quest'`);
+    const community = COMMUNITY_RULE_SLUGS.map((slug) => `'${slug}'`).join(", ");
+    expect(core).toContain(`slug IN (${community}) AND reward_rule_key IS DISTINCT FROM 'community-quest'`);
     expect(core).not.toContain("admin_template_rule(:'admin', t.slug, 'side-quest')");
     expect(side).toContain("admin_template_rule(:'admin', t.slug, 'side-quest')");
-    expect(side).toContain("AND side AND reward_rule_key IS DISTINCT FROM 'side-quest'");
+    // The side rule never re-pins a community side quest.
+    expect(side).toContain(`AND side AND slug NOT IN (${community}) AND reward_rule_key IS DISTINCT FROM 'side-quest'`);
     expect(side).not.toContain("shift_quest_admin_rule(");
     expect(all.indexOf("'main-quest')\nFROM")).toBeLessThan(all.indexOf("'side-quest')\nFROM"));
   });
