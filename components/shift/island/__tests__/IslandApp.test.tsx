@@ -42,6 +42,7 @@ jest.mock("@/app/shift/island/consent-actions", () => ({
   requestParentLink: jest.fn(),
 }));
 jest.mock("@/app/shift/island/news-actions", () => ({ hideTeamNews: jest.fn() }));
+jest.mock("@/app/shift/island/admin-actions", () => ({ resetMyIsland: jest.fn() }));
 jest.mock("@/app/shift/island/tree-actions", () => ({ plantSeed: jest.fn(), pickGift: jest.fn(), equipItem: jest.fn() }));
 // The close-up canvas (jsdom has no 2D canvas): only that it is there.
 jest.mock("../tree/TreeCanvas", () => {

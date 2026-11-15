@@ -103,6 +103,8 @@ const WEB_ALLOWLIST = [
   "shift_quest_tree_pick(text,uuid,text)",
   "shift_quest_tree_equip(text,text)",
   "shift_quest_island_styles()",
+  // 20261115120000_shift_quest_admin_reset_self (admins only; refuses everyone else).
+  "shift_quest_admin_reset_self(text)",
 ];
 
 /**
@@ -315,6 +317,8 @@ async function main(): Promise<void> {
     ["digest_save", "select public.shift_quest_digest_save($1::date, $2::text, $3::jsonb)", ["2026-11-11", "day", "[]"], "ok"],
     ["digest_hide", "select public.shift_quest_digest_hide($1::text, $2::integer, $3::boolean, $4::text)",
       [NOBODY, 1, true, null], "not_authorized"],
+    // 20261115120000_shift_quest_admin_reset_self: only an admin resets, and only their own island.
+    ["admin_reset_self", "select public.shift_quest_admin_reset_self($1::text)", [NOBODY], "not_authorized"],
   ];
   check(allowCalls.length === WEB_ALLOWLIST.length, "every allowlisted function is called below");
   for (const [name, sql, args, expected] of allowCalls) {

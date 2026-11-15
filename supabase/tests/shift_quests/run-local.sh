@@ -183,14 +183,14 @@ check_privileges() {
 WITH fns0 AS (
   SELECT p.oid, p.oid::regprocedure::text AS sig,
     p.proname LIKE 'shift\_quest\_\_%' OR p.proname = 'shift_quest_bootstrap_admin' AS helper,
-    -- Website-only entry points (091100, 091200, 093000, 094000, 095000): the bot never runs them.
+    -- Website-only entry points (091100, 091200, 093000, 094000, 095000, 20261115120000): the bot never runs them.
     p.proname LIKE 'shift\_quest\_canvas\_%'
       OR p.proname IN ('shift_quest_ownership_get', 'shift_quest_campfire', 'shift_quest_island_links')
       OR p.proname IN ('shift_quest_character', 'shift_quest_wallet', 'shift_quest_consent_get',
         'shift_quest_consent_adult', 'shift_quest_consent_link', 'shift_quest_consent_import',
         'shift_quest_consent_parent_view', 'shift_quest_consent_parent_answer',
         'shift_quest_consent_parent_withdraw', 'shift_quest_island_news', 'shift_quest_digest_inputs',
-        'shift_quest_digest_save') AS web_only
+        'shift_quest_digest_save', 'shift_quest_admin_reset_self') AS web_only
   FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
   WHERE n.nspname = 'public' AND p.proname LIKE 'shift\_quest\_%'
 ), fns AS (
@@ -253,7 +253,9 @@ web_allow(sig) AS (VALUES
   ('shift_quest_quest_gift(text,uuid)'),
   ('shift_quest_tree_pick(text,uuid,text)'),
   ('shift_quest_tree_equip(text,text)'),
-  ('shift_quest_island_styles()')
+  ('shift_quest_island_styles()'),
+  -- 20261115120000_shift_quest_admin_reset_self.
+  ('shift_quest_admin_reset_self(text)')
 ), web_applied AS (
   SELECT to_regprocedure('public.shift_quest_board(text)') IS NOT NULL AS yes
 )
@@ -316,7 +318,7 @@ echo "# migrations"
 for f in "${MIGRATIONS[@]}"; do echo "apply $(basename "$f")"; done
 new_db once
 apply once "single pass" "${MIGRATIONS[@]}"
-for DB in rules island flows islandflows board canvas campfire live player roots tree; do
+for DB in rules island flows islandflows board canvas campfire live player roots tree reset; do
   new_db "$DB"
   apply "$DB" "first pass" "${MIGRATIONS[@]}"
   apply "$DB" "second pass" "${MIGRATIONS[@]}"
@@ -390,6 +392,7 @@ suite "live post" live live.ts
 suite "player, economy, news and consent" player player.ts
 suite "roots" roots roots.ts
 suite "tree" tree tree.ts
+suite "admin reset" reset reset.ts
 # island_rules.ts runs against wave 1 alone once it knows to skip season cases.
 if [ "${#WAVE1[@]}" -lt "${#MIGRATIONS[@]}" ] && grep -q SHIFT_QUESTS_WAVE "$HERE/island_rules.ts"; then
   export SHIFT_QUESTS_WAVE=1

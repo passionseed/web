@@ -218,6 +218,29 @@ export const ISLAND = {
  * DRAFT: the HUD over the full-screen island (a chip, round buttons, one
  * bottom action and the sheets they open).
  */
+/**
+ * The admin's own reset, in the menu (admins only; the database checks the
+ * role again). For testing: it wipes the admin's own island so onboarding
+ * and the quests can be played again from the start. DRAFT copy.
+ */
+export const ADMIN_RESET = {
+  heading: "ทดสอบ (แอดมิน)",
+  open: "รีเซ็ตความคืบหน้าของฉัน",
+  hint: "สำหรับทดสอบเท่านั้น ลบความคืบหน้าบนเกาะของคุณเอง แล้วเริ่มเล่นใหม่ตั้งแต่ต้น",
+  confirmTitle: "จะลบสิ่งเหล่านี้ของคุณ",
+  removes: [
+    "เควสต์ทั้งหมดของคุณ พร้อมงานที่ส่ง ผลรีวิว และคำอุทธรณ์",
+    "บันทึก เช็กอิน รากของต้นไม้ และรอบทำงานของคุณ",
+    "คำขอความช่วยเหลือและการแชร์ของคุณ",
+    "ถ้าคุณอยู่ในโปรเจกต์คนเดียว: ออกจากโปรเจกต์ ปิดโปรเจกต์ คืนแปลง และล้างเมล็ด ของขวัญ แคนวาสที่ลิงก์ไว้ และเช็กลิสต์ความเป็นเจ้าของ",
+  ],
+  keeps: "ถ้ามีเพื่อนอยู่ในโปรเจกต์ด้วย โปรเจกต์ ต้นไม้ และเควสต์ที่ผ่านแล้วยังอยู่ เหรียญ ความยินยอม และข้อมูลของคนอื่นไม่ถูกแตะ",
+  confirm: "รีเซ็ตเลย",
+  pending: "กำลังรีเซ็ต",
+  cancel: "ยกเลิก",
+  done: "รีเซ็ตแล้ว กำลังโหลดเกาะใหม่",
+};
+
 export const HUD = {
   /** The top-left chip's accessible name: the project, its tree, and what the tap opens. */
   chip: (name: string, stage: string) => `${name}, ${stage}, ดูวันนี้ของโปรเจกต์`,

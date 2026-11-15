@@ -19,6 +19,7 @@ jest.mock("@/app/shift/island/wallet-actions", () => ({
   cancelRedemption: jest.fn(),
 }));
 jest.mock("@/app/shift/island/actions", () => ({ setShowName: jest.fn() }));
+jest.mock("@/app/shift/island/admin-actions", () => ({ resetMyIsland: jest.fn() }));
 jest.mock("sonner", () => ({ toast: { success: jest.fn(), error: jest.fn() } }));
 jest.mock("../IslandDiscordButton", () => ({ IslandDiscordButton: () => null }));
 jest.mock("../IslandSheet", () => {

@@ -116,15 +116,15 @@ async function main(): Promise<void> {
     fns.some((f) => f.proname === "shift_quest_schema_version"), "the privilege check sees every shift_quest function", fns.length);
   const open = fns.filter((f) => f.public || f.anon || f.authenticated).map((f) => f.sig);
   check(open.length === 0, "no shift_quest function is executable by PUBLIC, anon or authenticated", open);
-  // Website-only entry points (091100, 091200, 093000, 094000, 095000): only the website can check a canvas, it alone
-  // reads ownership this way, only it reads the campfire's names and the menu links, and the player's character,
-  // wallet, consent, island news and the digest job are the website's.
+  // Website-only entry points (091100, 091200, 093000, 094000, 095000, 20261115120000): only the website can check a
+  // canvas, it alone reads ownership this way, only it reads the campfire's names and the menu links, and the
+  // player's character, wallet, consent, island news, the digest job and an admin's own reset are the website's.
   const webOnly = (f: Json) => f.proname.startsWith("shift_quest_canvas_") ||
     ["shift_quest_ownership_get", "shift_quest_campfire", "shift_quest_island_links",
       "shift_quest_character", "shift_quest_wallet", "shift_quest_consent_get", "shift_quest_consent_adult",
       "shift_quest_consent_link", "shift_quest_consent_import", "shift_quest_consent_parent_view",
       "shift_quest_consent_parent_answer", "shift_quest_consent_parent_withdraw", "shift_quest_island_news",
-      "shift_quest_digest_inputs", "shift_quest_digest_save"].includes(f.proname);
+      "shift_quest_digest_inputs", "shift_quest_digest_save", "shift_quest_admin_reset_self"].includes(f.proname);
   const missing = fns.filter((f) => !internal(f) && !webOnly(f) && !f.bot).map((f) => f.sig);
   check(missing.length === 0, "the bot can execute every shift_quest entry point but the website-only ones", missing);
   const leaked = fns.filter((f) => internal(f) && f.bot).map((f) => f.sig);

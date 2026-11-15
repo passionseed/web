@@ -56,7 +56,12 @@ function normalizeSession(raw: Session | null | undefined): Session | null {
 }
 
 async function eligibleViewer(discord: DiscordActor, session: Session, userId: string): Promise<IslandViewer> {
-  const me: ViewerCard = { name: discord.name, avatarUrl: discord.avatarUrl, staff: isStaff(session.roles) };
+  const me: ViewerCard = {
+    name: discord.name,
+    avatarUrl: discord.avatarUrl,
+    staff: isStaff(session.roles),
+    admin: session.roles.includes("admin"),
+  };
   const ready = (card: ViewerCard): IslandViewer =>
     session.onboarded
       ? { state: "ready", me: card, actor: discord.actor, userId, session }

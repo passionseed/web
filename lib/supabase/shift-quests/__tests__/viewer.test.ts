@@ -84,7 +84,7 @@ describe("resolveIslandViewer", () => {
     const viewer = await resolveIslandViewer();
     expect(viewer).toEqual({
       state: "ready",
-      me: { name: "mint", avatarUrl: IDENTITY_SHOWN, staff: false },
+      me: { name: "mint", avatarUrl: IDENTITY_SHOWN, staff: false, admin: false },
       actor: ACTOR,
       userId: "user-1",
       session: expect.objectContaining({ onboarded: true, unread: 2 }),
@@ -220,7 +220,16 @@ describe("resolveIslandViewer", () => {
     it("in the server need no student role", async () => {
       call.mockResolvedValue(session({ roles: ["reviewer"] }));
       fetchShiftGuildMember.mockResolvedValue({ ok: true, roles: ["staff-only"], nick: "Coach" });
-      await expect(resolveIslandViewer()).resolves.toMatchObject({ state: "ready", me: { staff: true, name: "Coach" } });
+      await expect(resolveIslandViewer()).resolves.toMatchObject({
+        state: "ready",
+        me: { staff: true, admin: false, name: "Coach" },
+      });
+    });
+
+    it("carry the admin flag only when they hold the admin role", async () => {
+      call.mockResolvedValue(session({ roles: ["admin"] }));
+      fetchShiftGuildMember.mockResolvedValue({ ok: true, roles: [], nick: "Big" });
+      await expect(resolveIslandViewer()).resolves.toMatchObject({ state: "ready", me: { staff: true, admin: true } });
     });
 
     it("in the server are let in while the pilot is closed", async () => {
@@ -245,7 +254,7 @@ describe("resolveIslandViewer", () => {
     fetchShiftGuildMember.mockResolvedValue({ ok: true, roles: ["other"], nick: "Mint" });
     await expect(resolveIslandViewer()).resolves.toEqual({
       state: "not_eligible",
-      me: { name: "Mint", avatarUrl: IDENTITY_SHOWN, staff: false },
+      me: { name: "Mint", avatarUrl: IDENTITY_SHOWN, staff: false, admin: false },
       reason: "no_role",
     });
   });

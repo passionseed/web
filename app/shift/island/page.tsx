@@ -63,7 +63,7 @@ export const viewport: Viewport = {
 
 /** Copies only the fields a client card shows, so nothing else on the server object can leak. */
 function card(me: ViewerCard): ViewerCard {
-  return { name: me.name, avatarUrl: me.avatarUrl, staff: me.staff };
+  return { name: me.name, avatarUrl: me.avatarUrl, staff: me.staff, admin: me.admin === true };
 }
 
 /** The gate states rebuilt field by field: no actor, no session. */
