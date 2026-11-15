@@ -93,13 +93,14 @@ describe("the campfire in the GIF loop", () => {
     }
   });
 
-  it("flickers only when lit", () => {
+  it("flickers even when the configured campfire has no coworkers", () => {
     const none = renderIslandGif(plots(12), { festival: true });
-    const unlit = renderIslandGif(plots(12), { festival: true, campfire: { count: 0 } });
+    const empty = renderIslandGif(plots(12), { festival: true, campfire: { count: 0 } });
     const lit = renderIslandGif(plots(12), { festival: true, campfire: { count: 3 } });
-    expect(unlit.frames).toBe(none.frames);
-    expect(unlit.gif.equals(none.gif)).toBe(false);
-    expect(lit.frames).toBeGreaterThan(unlit.frames);
+    expect(empty.frames).toBeGreaterThan(none.frames);
+    expect(empty.gif.equals(none.gif)).toBe(false);
+    expect(lit.frames).toBeGreaterThanOrEqual(empty.frames);
+    expect(lit.gif.equals(empty.gif)).toBe(false);
   });
 
   it("stays small enough for the live post on a big island with a full campfire", () => {
