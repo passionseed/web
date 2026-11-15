@@ -332,6 +332,10 @@ BEGIN
     PERFORM public.shift_quest__fail('not_found');
   END IF;
   PERFORM 1 FROM public.shift_quest_instances WHERE id = v_instance FOR NO KEY UPDATE;
+  -- The daily cap counts this peer's checks across every quest, so one peer's
+  -- checks take turns: lock the peer's member row (quest, then member: the
+  -- documented lock order), or two checks on two quests could both pass at 9.
+  PERFORM 1 FROM public.shift_quest_members WHERE id = v_member.id FOR NO KEY UPDATE;
   SELECT * INTO v_sub FROM public.shift_quest_submissions WHERE id = p_submission;
   IF EXISTS (
     SELECT 1 FROM public.shift_quest_peer_checks WHERE submission_id = v_sub.id AND peer_id = v_member.id
