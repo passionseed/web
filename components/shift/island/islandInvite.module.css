@@ -1527,6 +1527,33 @@
   outline-color: var(--isl-gold);
 }
 
+/* "ขึ้นเรือไปเกาะ": the ticket's one big action, with room under it for the quiet Discord link. */
+.boardCta {
+  align-self: stretch;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.quietLink {
+  padding: 6px 0;
+  color: var(--isl-text-dim);
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 160ms var(--isl-ease-snap);
+}
+
+.quietLink:focus-visible {
+  outline: 2px solid var(--isl-gold);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .quietLink:hover {
+    color: var(--isl-text);
+  }
+}
+
 @keyframes isl-ticket-in {
   from {
     clip-path: inset(0 100% 0 0);

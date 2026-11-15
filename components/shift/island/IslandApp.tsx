@@ -44,6 +44,7 @@ import { TreePill } from "./tree/TreePill";
 import { TreeSheet } from "./tree/TreeSheet";
 import { useBangkokDay } from "./useBangkokDay";
 import { useCampfire } from "./useCampfire";
+import { IslandVoyage, useVoyage, VoyageCover, type Voyage } from "./voyage";
 import world from "./world.module.css";
 
 interface IslandAppProps {
@@ -56,6 +57,8 @@ interface IslandAppProps {
   discordUrl?: string | null;
   /** A sheet to open on arrival: "board" from the bot's 🌐 board link (`?at=board`). Only with a plot. */
   initialPanel?: "board";
+  /** `?at=voyage` from the ticket: sail across even on a browser that has crossed before. */
+  voyage?: boolean;
 }
 
 /** About as long as a sheet takes to slide away (vaul's drawer is the slower one). */
@@ -188,11 +191,11 @@ function PlayerSheets({ page, panel, onPanel }: { page: IslandPageData; panel: P
  * (board, quest, stuck, propose, canvas link, claim) as a sheet over the
  * island, which stays in view, dimmed and still, behind it.
  */
-export function IslandApp({ page, picture, initialPhase, discordUrl, initialPanel }: IslandAppProps) {
+export function IslandApp({ page, picture, initialPhase, discordUrl, initialPanel, voyage }: IslandAppProps) {
   const project = page.island.project;
   const demoDay = page.island.season?.demo_day ?? null;
   if (!project) {
-    return <Unclaimed page={page} picture={picture} initialPhase={initialPhase} demoDay={demoDay} />;
+    return <Unclaimed page={page} picture={picture} initialPhase={initialPhase} demoDay={demoDay} voyage={voyage} />;
   }
   if (!page.board) {
     return <GateCard heading={GATE.unavailable.heading} body={GATE.unavailable.body} />;
@@ -206,12 +209,28 @@ export function IslandApp({ page, picture, initialPhase, discordUrl, initialPane
       initialPhase={initialPhase}
       discordUrl={discordUrl}
       initialPanel={initialPanel}
+      voyage={voyage}
     />
   );
 }
 
+/**
+ * The crossing from the invite's beach, over the island on a first arrival
+ * (or when the ticket sent the student here). The story waits for it, and the
+ * island holds still underneath until the closing circle shows it.
+ */
+function Crossing({ page, voyage }: { page: IslandPageData; voyage: Voyage }) {
+  return (
+    <>
+      {voyage.holding ? <VoyageCover /> : null}
+      <IslandVoyage open={voyage.open} name={page.me.name} onReveal={voyage.reveal} onDone={voyage.close} />
+    </>
+  );
+}
+
 /** No project yet: the island to look at, and one action, claiming a plot (or answering an invite). */
-function Unclaimed({ page, picture, initialPhase, demoDay }: IslandAppProps & { demoDay: string | null }) {
+function Unclaimed({ page, picture, initialPhase, demoDay, voyage: forcedVoyage = false }: IslandAppProps & { demoDay: string | null }) {
+  const voyage = useVoyage(forcedVoyage);
   const [storyOpen, setStoryOpen] = useState(false);
   const [claiming, setClaiming] = useState(false);
   const [panel, setPanel] = useState<UnclaimedPanel>(null);
@@ -219,7 +238,7 @@ function Unclaimed({ page, picture, initialPhase, demoDay }: IslandAppProps & { 
   const nameInput = useRef<HTMLInputElement>(null);
   const invitesHeading = useRef<HTMLHeadingElement>(null);
   const invites = page.invites.length;
-  const paused = storyOpen || claiming || panel != null;
+  const paused = storyOpen || claiming || panel != null || voyage.holding;
   const onPanel = (next: Panel) => setPanel(next as UnclaimedPanel);
   // The plaza to look at: the festival and the campfire, no notice board and nothing to tap.
   const today = useBangkokDay();
@@ -244,6 +263,7 @@ function Unclaimed({ page, picture, initialPhase, demoDay }: IslandAppProps & { 
               onCta={() => setClaiming(true)}
               onOpenChange={setStoryOpen}
               className={hudRoundClass}
+              autoOpen={!voyage.open}
             />
             <IslandRefresh className={hudRoundClass} />
             <CampfireSound className={hudRoundClass} />
@@ -292,6 +312,7 @@ function Unclaimed({ page, picture, initialPhase, demoDay }: IslandAppProps & { 
         {...menuRows(page, onPanel)}
       />
       <PlayerSheets page={page} panel={panel} onPanel={onPanel} />
+      <Crossing page={page} voyage={voyage} />
     </>
   );
 }
@@ -304,10 +325,12 @@ function IslandHome({
   initialPhase,
   discordUrl,
   initialPanel,
+  voyage: forcedVoyage = false,
 }: IslandAppProps & {
   board: NonNullable<IslandPageData["board"]>;
   project: NonNullable<IslandPageData["island"]["project"]>;
 }) {
+  const voyage = useVoyage(forcedVoyage);
   const keynote = useMemo(() => keynoteQuest(board), [board]);
   const hasAction = useMemo(() => (keynote ?? starterQuest(board)) != null, [keynote, board]);
   const [panel, setPanel] = useState<Panel>(initialPanel ?? null);
@@ -338,7 +361,8 @@ function IslandHome({
   const todayOpen = page.island.taps_today === 0 && !page.island.resting;
   const goal = season?.goal ?? page.map.goal ?? null;
   // Any sheet or the story over the island stops its animation: nobody is looking at it.
-  const paused = panel != null || detail != null || stuck.open || proposing || plot != null || linking || storyOpen;
+  const paused =
+    panel != null || detail != null || stuck.open || proposing || plot != null || linking || storyOpen || voyage.holding;
   // The notice board is on screen in the living island, big enough to tap: it takes the board button's place.
   const [noticeSeen, setNoticeSeen] = useState(false);
 
@@ -464,7 +488,13 @@ function IslandHome({
         }
         buttons={
           <>
-            <StoryLauncher demoDay={season?.demo_day ?? null} cta="island" onOpenChange={setStoryOpen} className={hudRoundClass} />
+            <StoryLauncher
+              demoDay={season?.demo_day ?? null}
+              cta="island"
+              onOpenChange={setStoryOpen}
+              className={hudRoundClass}
+              autoOpen={!voyage.open}
+            />
             {/* The team's canvas: the redirect route finds it on the server (no board id on this page). */}
             {page.canvasLink.linked ? (
               <HudLinkRound icon="note" label={CANVAS.open} href={CANVAS_ROUTE} />
@@ -594,6 +624,7 @@ function IslandHome({
         staff={page.me.staff}
       />
       <CanvasLinkSheet open={linking} link={page.canvasLink} onClose={closeLinking} onLinked={closeLinking} />
+      <Crossing page={page} voyage={voyage} />
     </>
   );
 }

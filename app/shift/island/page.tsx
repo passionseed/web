@@ -6,6 +6,7 @@ import { IslandGate, type GateViewer } from "@/components/shift/island/IslandGat
 import { IslandInvite } from "@/components/shift/island/IslandInvite";
 import { IslandShell } from "@/components/shift/island/IslandShell";
 import { StartCard } from "@/components/shift/island/StartCard";
+import { VOYAGE_PARAM } from "@/components/shift/island/voyage/link";
 import { SHIFT_ISLAND } from "@/lib/content/shift-island";
 import { festivalLine } from "@/lib/content/shift-island-invite";
 import { bangkokPhaseNow } from "@/lib/shift-island/live/lighting";
@@ -184,6 +185,8 @@ export default async function Page({
             discordUrl={shiftDiscordUrls().server}
             // The bot's 🌐 board link (bot/src/quests/weblink.ts) opens the quest board sheet.
             initialPanel={at === "board" ? "board" : undefined}
+            // The ticket's "ขึ้นเรือไปเกาะ" (`?at=voyage`): the crossing plays even if this browser has seen it.
+            voyage={at === VOYAGE_PARAM}
           />
         </IslandShell>
       );

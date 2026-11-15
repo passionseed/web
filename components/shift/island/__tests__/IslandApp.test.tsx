@@ -16,6 +16,8 @@ import { IslandApp } from "../IslandApp";
 import type { IslandViewport } from "../IslandViewport";
 import { CHARACTER as CHARACTER_COPY, PLAYER, PLAYER_MENU, WALLET } from "../player/copy";
 import { PRIZES_UI } from "../prizes/copy";
+import { STORY_SEEN_KEY } from "../story/useStorySeen";
+import { VOYAGE_SEEN_KEY } from "../voyage/useVoyage";
 
 jest.mock("next/navigation", () => ({ useRouter: () => ({ refresh: jest.fn() }) }));
 
@@ -180,18 +182,27 @@ jest.mock("../story/StoryLauncher", () => {
       cta,
       onCta,
       onOpenChange,
+      autoOpen = true,
     }: {
       demoDay: string | null;
       cta: string;
       onCta?: () => void;
       onOpenChange?: (open: boolean) => void;
+      autoOpen?: boolean;
     }) =>
       createElement(
         "div",
         null,
         createElement(
           "button",
-          { type: "button", "data-testid": "story", "data-cta": cta, "data-demo": demoDay ?? "", onClick: () => onCta?.() },
+          {
+            type: "button",
+            "data-testid": "story",
+            "data-cta": cta,
+            "data-demo": demoDay ?? "",
+            "data-auto": String(autoOpen),
+            onClick: () => onCta?.(),
+          },
           "story",
         ),
         createElement("button", { type: "button", onClick: () => onOpenChange?.(true) }, "story-open"),
@@ -199,6 +210,28 @@ jest.mock("../story/StoryLauncher", () => {
       ),
   };
 });
+
+// The crossing (a canvas cutscene in a Radix dialog): open or not, and its two ways out.
+jest.mock("../voyage/IslandVoyage", () => {
+  const { createElement } = jest.requireActual<typeof import("react")>("react");
+  const actual = jest.requireActual<typeof import("../voyage/IslandVoyage")>("../voyage/IslandVoyage");
+  return {
+    VoyageCover: actual.VoyageCover,
+    IslandVoyage: ({ open, name, onReveal, onDone }: { open: boolean; name: string; onReveal?: () => void; onDone: () => void }) =>
+      open
+        ? createElement(
+            "div",
+            { "data-testid": "voyage", "data-name": name },
+            createElement("button", { type: "button", onClick: () => onReveal?.() }, "voyage-reveal"),
+            createElement("button", { type: "button", onClick: () => onDone() }, "voyage-done"),
+          )
+        : null,
+  };
+});
+
+// Every test but the crossing's own starts on a browser that has crossed already.
+beforeEach(() => window.localStorage.setItem(VOYAGE_SEEN_KEY, "seen"));
+afterEach(() => window.localStorage.clear());
 
 const LINK = { linked: true as const, linkedAt: "2026-11-11T08:00:00Z" };
 const SUGGEST_URL = "https://discord.com/channels/444444444444444444/555555555555555555";
@@ -875,3 +908,57 @@ function makeSeason(): NonNullable<IslandPageData["island"]["season"]> {
     unlocks: [],
   };
 }
+
+describe("IslandApp voyage", () => {
+  const voyage = () => screen.queryByTestId("voyage");
+  const cover = () => document.querySelector("[data-voyage-cover]");
+
+  beforeEach(() => window.localStorage.clear());
+
+  it("sails a first arrival across before the story, the island held still under the night", () => {
+    render(<IslandApp page={page()} picture={null} />);
+    expect(voyage()).toHaveAttribute("data-name", page().me.name);
+    expect(screen.getByTestId("story")).toHaveAttribute("data-auto", "false");
+    expect(viewport()).toHaveAttribute("data-paused", "true");
+    expect(cover()).not.toBeNull();
+
+    // The circle opens on the island: it comes alive, and the night lifts.
+    fireEvent.click(screen.getByRole("button", { name: "voyage-reveal" }));
+    expect(viewport()).toHaveAttribute("data-paused", "false");
+    expect(cover()).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "voyage-done" }));
+    expect(voyage()).toBeNull();
+    expect(screen.getByTestId("story")).toHaveAttribute("data-auto", "true");
+    expect(window.localStorage.getItem(VOYAGE_SEEN_KEY)).toBe("seen");
+  });
+
+  it("sails a first arrival without a plot across too", () => {
+    render(<IslandApp page={unclaimed()} picture={null} />);
+    expect(voyage()).not.toBeNull();
+    expect(screen.getByTestId("story")).toHaveAttribute("data-auto", "false");
+    fireEvent.click(screen.getByRole("button", { name: "voyage-done" }));
+    expect(voyage()).toBeNull();
+    expect(screen.getByTestId("story")).toHaveAttribute("data-auto", "true");
+  });
+
+  it("leaves a student who was on the island before the crossing existed on the island", () => {
+    window.localStorage.setItem(STORY_SEEN_KEY, "seen");
+    render(<IslandApp page={page()} picture={null} />);
+    expect(voyage()).toBeNull();
+    expect(cover()).toBeNull();
+    expect(viewport()).toHaveAttribute("data-paused", "false");
+  });
+
+  it("sails across again when the ticket sent the student here, then drops ?at=voyage", () => {
+    window.localStorage.setItem(STORY_SEEN_KEY, "seen");
+    window.localStorage.setItem(VOYAGE_SEEN_KEY, "seen");
+    window.history.replaceState(null, "", "/shift/island?at=voyage");
+    render(<IslandApp page={page()} picture={null} voyage />);
+    expect(voyage()).not.toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "voyage-done" }));
+    expect(voyage()).toBeNull();
+    expect(window.location.search).toBe("");
+    window.history.replaceState(null, "", "/");
+  });
+});

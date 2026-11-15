@@ -6,7 +6,7 @@
  * move, so they are drawn once per resize onto an offscreen layer.
  */
 
-type Rgb = readonly [number, number, number];
+export type Rgb = readonly [number, number, number];
 
 export type Sea = {
   /** Size of one sea pixel, in device pixels. */
@@ -44,11 +44,11 @@ function token(el: Element, name: string, fallback: string): Rgb {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
-function mix(a: Rgb, b: Rgb, t: number): Rgb {
+export function mix(a: Rgb, b: Rgb, t: number): Rgb {
   return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
 }
 
-function css([r, g, b]: Rgb, alpha = 1): string {
+export function css([r, g, b]: Rgb, alpha = 1): string {
   return `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${alpha})`;
 }
 
@@ -60,8 +60,8 @@ function banded(stops: readonly Rgb[], t: number, bands: number): Rgb {
   return mix(stops[i], stops[i + 1], scaled - i);
 }
 
-/** Fills rows [from, to) with banded colour and a checker dither at each step. */
-function paintBands(
+/** Fills rows [from, to) with banded colour and a checker dither at each step. Also paints the voyage's sky. */
+export function paintBands(
   ctx: CanvasRenderingContext2D,
   sea: Pick<Sea, "px" | "cols">,
   from: number,

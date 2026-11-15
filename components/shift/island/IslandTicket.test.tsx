@@ -1,8 +1,11 @@
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 
 import { ISLAND_DOOR, TICKET } from "@/lib/content/shift-island-invite";
 
 import { IslandTicket } from "./IslandTicket";
+import { BOARDING_MS, boarding } from "./voyage/BoardLink";
+import { VOYAGE_COPY } from "./voyage/copy";
+import { VOYAGE_HREF } from "./voyage/link";
 
 const TICKET_DATA = { nickname: "มายด์", cohort: "SHIFT[1]" };
 const FESTIVAL = "เทศกาลเปิดอยู่ตอนนี้";
@@ -56,4 +59,46 @@ it.each(["waiting", "closed"] as const)("says why the island is not open yet (%s
   render(<IslandTicket ticket={TICKET_DATA} discordUrl={null} confirmed festival={FESTIVAL} door={door} />);
   expect(screen.getByText(ISLAND_DOOR[door])).toBeInTheDocument();
   expect(screen.queryByRole("button")).not.toBeInTheDocument();
+});
+
+describe("boarding the ship", () => {
+  it("offers the ship first once the seal is pressed, the Discord room as a quiet link", () => {
+    render(
+      <IslandTicket ticket={TICKET_DATA} discordUrl="https://discord.com/channels/123" confirmed festival={FESTIVAL} board />,
+    );
+    const links = screen.getAllByRole("link");
+    expect(links[0]).toHaveAccessibleName(VOYAGE_COPY.board);
+    expect(links[0]).toHaveAttribute("href", VOYAGE_HREF);
+    expect(links[1]).toHaveAccessibleName(TICKET.discordCta);
+    expect(links[1]).not.toHaveClass("ei-button-dawn");
+  });
+
+  it("offers no ship unless asked", () => {
+    render(<IslandTicket ticket={TICKET_DATA} discordUrl={null} confirmed festival={FESTIVAL} door="waiting" />);
+    expect(screen.queryByRole("link", { name: VOYAGE_COPY.board })).toBeNull();
+  });
+
+  it("falls into night, then leaves for the ship", () => {
+    jest.useFakeTimers();
+    const assign = jest.spyOn(boarding, "leave").mockImplementation(() => {});
+    try {
+      render(<IslandTicket ticket={TICKET_DATA} discordUrl={null} confirmed festival={FESTIVAL} board />);
+      fireEvent.click(screen.getByRole("link", { name: VOYAGE_COPY.board }));
+      expect(screen.getByRole("link", { name: VOYAGE_COPY.boarding })).toHaveAttribute("aria-busy", "true");
+      expect(assign).not.toHaveBeenCalled();
+      act(() => void jest.advanceTimersByTime(BOARDING_MS));
+      expect(assign).toHaveBeenCalledWith(VOYAGE_HREF);
+    } finally {
+      assign.mockRestore();
+      jest.useRealTimers();
+    }
+  });
+
+  it("leaves new-tab clicks to the browser", () => {
+    render(<IslandTicket ticket={TICKET_DATA} discordUrl={null} confirmed festival={FESTIVAL} board />);
+    const link = screen.getByRole("link", { name: VOYAGE_COPY.board });
+    const event = new MouseEvent("click", { bubbles: true, cancelable: true, metaKey: true });
+    link.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(false);
+  });
 });

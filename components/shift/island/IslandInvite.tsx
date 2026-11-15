@@ -88,6 +88,8 @@ export function IslandInvite({
               festival={festival}
               focusHeading={going.justSealed}
               door={door}
+              // Just sealed: the page has not asked the game about this visitor yet, so offer the ship.
+              board={going.justSealed && door == null}
             />
           ) : (
             <>
