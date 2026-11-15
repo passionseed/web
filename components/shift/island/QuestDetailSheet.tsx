@@ -38,6 +38,8 @@ import type { BoardRef } from "@/lib/supabase/shift-quests/board";
 import { TEXT_LIMITS, type QuestBoard } from "@/lib/supabase/shift-quests/types";
 import { SHIFT_CARDS } from "@/lib/whiteboard/shift-cards";
 
+import { refreshIsland } from "./useIslandRefresh";
+import { SYNC } from "./copy";
 import { QuestCardComposer, useQuestCanvas } from "./canvas";
 import { BOARD, CANVAS, COMMON, DETAIL, QUEST, questFlavor, tileChip } from "./copy";
 import styles from "./island.module.css";
@@ -273,6 +275,9 @@ function QuestDetailBody({
       {hasZones ? (
         <CanvasBoundary fallback={<p className={styles.hint}>{QUEST.context.error}</p>}>
           <CanvasContextBox context={canvas.context} loading={canvas.loading} onLink={onLinkCanvas} />
+          <button type="button" className={`${styles.quietButton} ${styles.contextAction}`} onClick={refreshIsland} disabled={canvas.loading} aria-busy={canvas.loading}>
+            {canvas.loading ? SYNC.refreshing : SYNC.refresh}
+          </button>
         </CanvasBoundary>
       ) : null}
 

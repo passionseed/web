@@ -17,6 +17,8 @@ import type { IslandViewport } from "../IslandViewport";
 import { CHARACTER as CHARACTER_COPY, PLAYER, PLAYER_MENU, WALLET } from "../player/copy";
 import { PRIZES_UI } from "../prizes/copy";
 
+jest.mock("next/navigation", () => ({ useRouter: () => ({ refresh: jest.fn() }) }));
+
 type ViewportProps = ComponentProps<typeof IslandViewport>;
 
 jest.mock("@/app/shift/island/actions", () => ({

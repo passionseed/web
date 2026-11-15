@@ -6,6 +6,8 @@ import { loadQuestCanvas } from "@/app/shift/island/actions";
 import { questGuide, type CanvasLinkState, type QuestCanvasContext } from "@/lib/shift-island/quest-canvas";
 import type { BoardRef } from "@/lib/supabase/shift-quests/board";
 
+import { useIslandRefresh } from "../useIslandRefresh";
+
 type Target = { ref: BoardRef; slug: string | null };
 
 const NO_ZONES: QuestCanvasContext = { state: "no_zones" };
@@ -61,6 +63,8 @@ export function useQuestCanvas(
   }, [key, nonce]);
 
   const reload = useCallback(() => setNonce((n) => n + 1), []);
+
+  useIslandRefresh(reload, key !== null);
 
   if (local) return { context: local, loading: false, reload };
   const fresh = answer && answer.key === key ? answer : null;

@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { loadOwnership } from "@/app/shift/island/actions";
 import type { OwnershipRow } from "@/lib/shift-island/ownership";
+
+import { useIslandRefresh } from "./useIslandRefresh";
 
 /** Quest 5's ownership checklist on the quest page: loading, loaded (null without a project) or failed. */
 export type OwnershipState =
@@ -26,6 +28,8 @@ export function useOwnership(active: boolean): OwnershipState | null {
     setWasActive(active);
     if (active) setOpening((n) => n + 1);
   }
+  const reload = useCallback(() => setOpening((n) => n + 1), []);
+  useIslandRefresh(reload, active);
   const [answer, setAnswer] = useState<{ opening: number; value: OwnershipState } | null>(null);
 
   useEffect(() => {

@@ -518,6 +518,9 @@ export const CAMPFIRE = {
   title: PLACES.campfire,
   /** DRAFT */
   body: "ห้องเสียง coworking ของ SHIFT มานั่งทำงานเป็นเพื่อนกันได้",
+  soundOn: "เปิดเสียงกองไฟ",
+  soundOff: "ปิดเสียงกองไฟ",
+  soundError: "เปิดเสียงไม่ได้ ลองอีกครั้ง",
   listLabel: "คนที่อยู่ในห้องตอนนี้",
   loading: "กำลังโหลดรายชื่อ",
   empty: "ตอนนี้ยังไม่มีใครในห้อง เข้าไปเริ่มก่อนได้",
@@ -575,4 +578,10 @@ export const REFLECT = {
   private: `รากนับได้คนละไม่เกิน ${REFLECTIONS_PER_DAY} บันทึกต่อวัน · บันทึกนี้เป็นส่วนตัว`,
   discordHelp: "อยากให้พี่เลี้ยงช่วยไหม? ใน Discord พิมพ์ /island แล้วกด 🧱 ติด",
   tooShort: `เขียนว่าได้เรียนรู้อะไร อย่างน้อย ${REFLECTION_MIN_CHARS} ตัวอักษร`,
+};
+
+/** Island and canvas reads, on return or by request. */
+export const SYNC = {
+  refresh: "รีเฟรชเควสต์และแคนวาส",
+  refreshing: "กำลังรีเฟรช",
 };

@@ -4,6 +4,7 @@ import { loadQuestCanvas } from "@/app/shift/island/actions";
 import type { CanvasLinkState, QuestCanvasContext } from "@/lib/shift-island/quest-canvas";
 import type { BoardRef } from "@/lib/supabase/shift-quests/board";
 
+import { refreshIsland } from "../../useIslandRefresh";
 import { useQuestCanvas } from "../useQuestCanvas";
 
 jest.mock("@/app/shift/island/actions", () => ({ loadQuestCanvas: jest.fn() }));
@@ -95,4 +96,23 @@ describe("useQuestCanvas", () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.context).toEqual({ state: "error" });
   });
+});
+
+
+it("re-reads an open quest after editing in another tab and on manual refresh", async () => {
+  Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
+  mockedLoad.mockResolvedValueOnce({ ok: true, data: ready("Before edit") });
+  const { result } = renderHook(() => useQuestCanvas(m1, LINKED));
+  await waitFor(() => expect(result.current.context).toEqual(ready("Before edit")));
+  mockedLoad.mockResolvedValueOnce({ ok: true, data: ready("After edit") });
+  act(() => {
+    document.dispatchEvent(new Event("visibilitychange"));
+    window.dispatchEvent(new Event("focus"));
+  });
+  await waitFor(() => expect(result.current.context).toEqual(ready("After edit")));
+  expect(mockedLoad).toHaveBeenCalledTimes(2);
+  mockedLoad.mockResolvedValueOnce({ ok: true, data: ready("Manual update") });
+  act(refreshIsland);
+  await waitFor(() => expect(result.current.context).toEqual(ready("Manual update")));
+  expect(mockedLoad).toHaveBeenCalledTimes(3);
 });
