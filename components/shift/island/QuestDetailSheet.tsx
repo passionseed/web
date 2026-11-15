@@ -710,7 +710,8 @@ function MoreDetails({ quest, guide }: { quest: QuestView; guide: QuestGuide }) 
   return (
     <div className={styles.moreRows}>
       {evidence || goal || prompt ? (
-        <details className={styles.more}>
+        // Open by default: the goal, the criteria and the question are what a student reads first.
+        <details className={styles.more} open>
           <summary className={styles.moreSummary}>
             <span>{QUEST.details}</span>
             <ChevronDown className={styles.moreCaret} aria-hidden="true" />

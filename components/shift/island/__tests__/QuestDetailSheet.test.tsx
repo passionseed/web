@@ -439,7 +439,7 @@ describe("QuestDetailSheet: the quest page", () => {
     expect(examples.closest("details")).toBeNull();
     expect(within(examples).getByText(guide.examples[0])).toBeInTheDocument();
     const details = within(body()).getByText("รายละเอียดทั้งหมด").closest("details") as HTMLElement;
-    expect(details).not.toHaveAttribute("open");
+    expect(details).toHaveAttribute("open");
     expect(within(details).getByRole("heading", { name: "ส่งอะไร" })).toBeInTheDocument();
     expect(within(details).getByText("หลักฐานของขั้นที่ 1")).toBeInTheDocument();
     expect(within(details).getByRole("heading", { name: "คำถามหนึ่งข้อ" })).toBeInTheDocument();
