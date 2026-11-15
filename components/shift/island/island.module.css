@@ -1658,14 +1658,27 @@
   background: linear-gradient(165deg, rgba(34, 26, 20, 0.97) 0%, rgba(20, 16, 20, 0.98) 48%, rgba(12, 10, 18, 0.99) 100%);
 }
 
+/*
+ * A column, like the drawer: the title and the action bar stay put and only
+ * the body scrolls. The dialog used to scroll as a whole around a body that
+ * was itself a scroll box (overflow-y: auto, overscroll-behavior: contain)
+ * that never overflowed; Chrome ended the wheel's scroll chain at that body,
+ * so the mouse wheel over a quest did nothing and only the scrollbar moved.
+ */
 .sheetDialog {
+  display: flex;
+  flex-direction: column;
   max-width: 560px;
   max-height: 86svh;
   gap: 0;
   padding: 0;
-  overflow-y: auto;
+  overflow: hidden;
   border: 0;
   border-radius: 16px;
+}
+
+.sheetDialog > .sheetHead {
+  flex: none;
 }
 
 .sheetHead {
@@ -2015,6 +2028,206 @@
   line-height: 1.6;
   color: var(--isl-ink);
   background: var(--isl-sand);
+}
+
+/* A skill quest's how-to: its picture, its steps and its English words. */
+.mapSection,
+.steps,
+.terms {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* แผนที่คนรอบปัญหา: two roles, the problem across the middle, two roles; the one to talk to first in lamp. */
+.map {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 12px;
+  list-style: none;
+  background: rgba(121, 88, 63, 0.35);
+  box-shadow: inset 0 0 0 1px rgba(246, 228, 181, 0.2);
+  clip-path: var(--notch);
+}
+
+.mapRole {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 12px 8px 10px;
+  text-align: center;
+  background: rgba(18, 14, 19, 0.45);
+  box-shadow: inset 0 0 0 1px rgba(255, 241, 214, 0.18);
+}
+
+.mapRole[data-first="true"] {
+  background: rgba(244, 197, 106, 0.14);
+  box-shadow: inset 0 0 0 2px var(--isl-lamp);
+}
+
+.mapTerm {
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--isl-sand-hi);
+}
+
+.mapQuestion {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-dim);
+}
+
+.mapWho {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--text-hi);
+}
+
+.mapFirst {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.6;
+  color: var(--isl-ink);
+  background: var(--isl-lamp);
+}
+
+.mapCenter {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 12px;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--isl-ink);
+  background: var(--isl-cream);
+  box-shadow: inset 0 0 0 2px var(--isl-ink);
+  clip-path: var(--notch);
+}
+
+/* ทำยังไง: numbered rows in leaf, each with its picture on a dark tile. */
+.stepList,
+.termList {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 8px 12px 8px 8px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text);
+  background: rgba(120, 184, 128, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(120, 184, 128, 0.25);
+}
+
+.stepArt {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  background: rgba(18, 14, 19, 0.6);
+  box-shadow: inset 0 0 0 2px rgba(120, 184, 128, 0.55);
+}
+
+.stepNumber {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  min-width: 16px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  color: var(--isl-ink);
+  background: var(--isl-leaf-hi);
+}
+
+/* คำศัพท์: the English word, its Thai beside it, the meaning one tap down. Sea blue: words, not warnings. */
+.termsNote {
+  margin-left: auto;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-dim);
+}
+
+.term {
+  background: rgba(67, 142, 172, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(67, 142, 172, 0.4);
+}
+
+.termSummary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 10px;
+  min-height: 44px;
+  padding: 10px 12px;
+  list-style: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.termSummary::-webkit-details-marker {
+  display: none;
+}
+
+.termSummary::marker {
+  content: "";
+}
+
+.termSummary:focus-visible {
+  outline: 2px solid var(--action-soft);
+  outline-offset: -2px;
+}
+
+.termWord {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--text-hi);
+  text-decoration: underline dotted rgba(254, 249, 231, 0.5);
+  text-underline-offset: 4px;
+}
+
+.term[open] .termWord {
+  text-decoration: none;
+}
+
+.termThai {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--isl-sand-hi);
+}
+
+.termMeaning {
+  margin: 0;
+  padding: 0 12px 12px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text);
 }
 
 /* ตัวช่วย: the side quests off this one, a tap each. */
@@ -2576,7 +2789,7 @@ a.canvasRow:focus-visible,
 
 /* ---------------------------------------------------------------- quest sheet: action bar and compose */
 
-/* Drawer: below the scrolling body. Dialog (which scrolls as a whole): stuck to its bottom edge. */
+/* Below the scrolling body, in the drawer and the dialog alike. */
 .sheetFooter {
   flex: none;
   padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
@@ -2585,9 +2798,6 @@ a.canvasRow:focus-visible,
 }
 
 .sheetDialog .sheetFooter {
-  position: sticky;
-  bottom: 0;
-  z-index: 2;
   padding-bottom: 16px;
 }
 

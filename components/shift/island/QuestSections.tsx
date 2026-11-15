@@ -2,7 +2,8 @@
 
 /**
  * The quest page's sections, top to bottom after the header: the team's
- * problem (first act), หลุมพราง, examples, ตัวช่วย and who checks. Every hint
+ * problem (first act), a skill quest's picture, steps and words, หลุมพราง,
+ * examples, ตัวช่วย and who checks. Every hint
  * line carries a pixel icon (questArt.ts), so the page reads at a glance.
  * QuestDetailSheet composes them; each one returns null when it has nothing.
  */
@@ -17,9 +18,13 @@ import {
   PITFALL,
   QUEST,
   QUEST_ACTS,
+  QUEST_GUIDE_COPY,
+  STAKEHOLDER_MAP,
   TEAM_PROBLEM,
   WHO_CHECKS,
   type QuestPitfall,
+  type QuestStep,
+  type QuestTerm,
 } from "./copy";
 import styles from "./island.module.css";
 import type { QuestView } from "./model";
@@ -164,6 +169,114 @@ export function TeamProblem({
           </button>
         ) : null}
       </div>
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------- how-to
+
+/**
+ * แผนที่คนรอบปัญหา as a picture: the problem in the middle, the four roles
+ * around it (the English word over the Thai question, then who it is in the
+ * example), and the one to talk to first ringed. Shown only on that quest.
+ */
+export function StakeholderMap({ slug }: { slug: string | null }) {
+  const headingId = useId();
+  if (slug !== STAKEHOLDER_MAP.slug) return null;
+  // Two roles above the problem, two below.
+  const above = STAKEHOLDER_MAP.roles.slice(0, 2);
+  const below = STAKEHOLDER_MAP.roles.slice(2);
+  return (
+    <section className={styles.mapSection} aria-labelledby={headingId}>
+      <h3 id={headingId} className={styles.sectionLabel}>
+        <HintIcon name="scroll" size={20} />
+        <span>{STAKEHOLDER_MAP.heading}</span>
+      </h3>
+      <ul className={styles.map} aria-label={STAKEHOLDER_MAP.label}>
+        {above.map((role) => (
+          <MapRole key={role.key} role={role} />
+        ))}
+        <li className={styles.mapCenter}>
+          <HintIcon name="seed" size={24} />
+          <span>{STAKEHOLDER_MAP.center}</span>
+        </li>
+        {below.map((role) => (
+          <MapRole key={role.key} role={role} />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/** One role on the map: its picture, the English word, the Thai question, who it is in the example. */
+function MapRole({ role }: { role: (typeof STAKEHOLDER_MAP.roles)[number] }) {
+  return (
+    <li className={styles.mapRole} data-first={role.first ? "true" : undefined}>
+      <HintIcon name={role.icon} size={32} />
+      <span className={styles.mapTerm} lang="en">
+        {role.term}
+      </span>
+      <span className={styles.mapQuestion}>{role.role}</span>
+      <span className={styles.mapWho}>{role.who}</span>
+      {role.first ? <span className={styles.mapFirst}>{STAKEHOLDER_MAP.first}</span> : null}
+    </li>
+  );
+}
+
+/** ทำยังไง: a skill quest's steps, numbered, each with its own picture. */
+export function Steps({ steps }: { steps: readonly QuestStep[] }) {
+  const headingId = useId();
+  if (steps.length === 0) return null;
+  return (
+    <section className={styles.steps} aria-labelledby={headingId}>
+      <h3 id={headingId} className={styles.sectionLabel}>
+        <HintIcon name="signpost" size={20} />
+        <span>{QUEST_GUIDE_COPY.steps}</span>
+      </h3>
+      <ol className={styles.stepList}>
+        {steps.map((step, i) => (
+          <li key={step.text} className={styles.step}>
+            <span className={styles.stepArt} aria-hidden="true">
+              <HintIcon name={step.icon} size={32} />
+              <span className={styles.stepNumber}>{i + 1}</span>
+            </span>
+            <span>{step.text}</span>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+/**
+ * คำศัพท์: the English words the quest uses, kept in English (the words
+ * students will meet again), each one tap from its Thai meaning.
+ */
+export function Terms({ terms }: { terms: readonly QuestTerm[] }) {
+  const headingId = useId();
+  if (terms.length === 0) return null;
+  return (
+    <section className={styles.terms} aria-labelledby={headingId}>
+      <h3 id={headingId} className={styles.sectionLabel}>
+        <HintIcon name="book" size={20} />
+        <span>{QUEST_GUIDE_COPY.terms}</span>
+        <span className={styles.termsNote}>{QUEST_GUIDE_COPY.termsNote}</span>
+      </h3>
+      <ul className={styles.termList}>
+        {terms.map((t) => (
+          <li key={t.term}>
+            <details className={styles.term}>
+              <summary className={styles.termSummary}>
+                <span className={styles.termWord} lang="en">
+                  {t.term}
+                </span>
+                <span className={styles.termThai}>{t.thai}</span>
+              </summary>
+              <p className={styles.termMeaning}>{t.meaning}</p>
+            </details>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

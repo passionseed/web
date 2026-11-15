@@ -1120,3 +1120,67 @@ describe("QuestDetailSheet: the written form and quest states", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 });
+
+describe("QuestDetailSheet: a skill quest's picture, steps and English words", () => {
+  /** The first side quest, renamed to แผนที่คนรอบปัญหา (side-stakeholder-map). */
+  function stakeholderBoard(): QuestBoard {
+    const board = makeBoard();
+    board.side[0] = { ...board.side[0], slug: "side-stakeholder-map", title: "แผนที่คนรอบปัญหา", mine: null };
+    return board;
+  }
+  const stakeholder: BoardRef = { kind: "side", templateId: IDS.sideVoices };
+
+  it("draws the stakeholder map: four roles around the problem, the one to talk to first marked", () => {
+    open(stakeholder, UNLINKED, { board: stakeholderBoard() });
+    const map = within(body()).getByRole("list", { name: /ตัวอย่างแผนที่คนรอบปัญหา/ });
+    const items = within(map).getAllByRole("listitem");
+    expect(items).toHaveLength(5);
+    for (const term of ["User", "Payer", "Decision maker", "Blocker"]) expect(within(map).getByText(term)).toBeInTheDocument();
+    expect(within(map).getByText("ระบบสั่งข้าวล่วงหน้า")).toBeInTheDocument();
+    const first = map.querySelectorAll('[data-first="true"]');
+    expect(first).toHaveLength(1);
+    expect(first[0]).toHaveTextContent("แม่ค้า");
+    expect(first[0]).toHaveTextContent("คุยก่อน");
+  });
+
+  it("gives every step a number and a picture", () => {
+    open(stakeholder, UNLINKED, { board: stakeholderBoard() });
+    const box = within(body()).getByRole("heading", { name: "ทำยังไง" }).closest("section") as HTMLElement;
+    const steps = within(box).getAllByRole("listitem");
+    expect(steps).toHaveLength(4);
+    steps.forEach((step, i) => {
+      expect(step.querySelector("svg")).not.toBeNull();
+      expect(step).toHaveTextContent(String(i + 1));
+    });
+  });
+
+  it("keeps the English word, shows its Thai beside it, and opens the meaning on a tap", () => {
+    open(stakeholder, UNLINKED, { board: stakeholderBoard() });
+    const box = within(body()).getByRole("heading", { name: /คำศัพท์/ }).closest("section") as HTMLElement;
+    const word = within(box).getByText("Stakeholder");
+    expect(word).toHaveAttribute("lang", "en");
+    const details = word.closest("details") as HTMLDetailsElement;
+    expect(details).toHaveTextContent("ผู้มีส่วนได้ส่วนเสีย");
+    expect(details.open).toBe(false);
+    fireEvent.click(word.closest("summary") as HTMLElement);
+    expect(details.open).toBe(true);
+    expect(details).toHaveTextContent("ทุกคนที่ได้หรือเสียอะไรจากปัญหานี้");
+  });
+
+  it("warns about its own pitfalls", () => {
+    open(stakeholder, UNLINKED, { board: stakeholderBoard() });
+    const box = within(body()).getByRole("heading", { name: "หลุมพราง" }).closest("section") as HTMLElement;
+    expect(box.querySelectorAll("article")).toHaveLength(2);
+    expect(box).toHaveTextContent("มีแต่คนใช้");
+  });
+
+  it("shows a main quest's words but no map or steps, and nothing of the kind on a proposed quest", () => {
+    open({ kind: "main", milestone: 4 });
+    expect(within(body()).getByText("Prototype")).toBeInTheDocument();
+    expect(within(body()).queryByRole("heading", { name: "ทำยังไง" })).toBeNull();
+    expect(within(body()).queryByRole("list", { name: /ตัวอย่างแผนที่คนรอบปัญหา/ })).toBeNull();
+    cleanup();
+    open({ kind: "proposed", instanceId: IDS.proposed });
+    expect(within(body()).queryByRole("heading", { name: /คำศัพท์/ })).toBeNull();
+  });
+});
