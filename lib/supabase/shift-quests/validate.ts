@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { CARD_LIMITS } from "@/lib/shift-island/quest-canvas";
 import { REFLECTION_MIN_CHARS } from "@/lib/shift-island/rounds-rules";
+import { treeItem, type SeedId } from "@/lib/shift-island/tree-style";
 
 import { TEXT_LIMITS, type ProjectRoute } from "./types";
 
@@ -147,3 +148,19 @@ export const submitQuestCardSchema = z.object({
   line: optionalText(CARD_LIMITS.line),
   link: optionalUrl,
 });
+
+// ---------------------------------------------------------------------------
+// The team's tree (schema 13): seed, gifts and looks
+// ---------------------------------------------------------------------------
+
+const SEED_IDS = ["oak", "sakura", "pine", "maple"] as const satisfies readonly SeedId[];
+
+/** A catalog item id (`leaf:autumn`); the database checks again that it is offered or owned. */
+const treeItemId = z.string().refine((v) => treeItem(v) !== null, { message: "unknown item" });
+
+/** The planted idea becomes the project's ambition (the pickers prefill it), so it has the ambition's cap. */
+export const plantSeedSchema = z.object({ seed: z.enum(SEED_IDS), idea: requiredText(TEXT_LIMITS.ambition) });
+
+export const pickGiftSchema = z.object({ giftId: id, item: treeItemId });
+
+export const equipItemSchema = z.object({ item: treeItemId });

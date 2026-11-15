@@ -17,3 +17,9 @@ export const REFLECTION_MIN_CHARS = 10;
 export const REFLECTIONS_PER_DAY = 3;
 /** Root levels drawn on a tree (0 is none). */
 export const ROOT_LEVELS = 3;
+/**
+ * Most campfire round gifts per person per Bangkok day, while the team still
+ * has looks to get; quest gifts never count. The database's copy is in
+ * shift_quest_round_close_gift (20261114120000_shift_quest_tree_style.sql).
+ */
+export const ROUND_GIFTS_PER_DAY = 2;

@@ -13,6 +13,9 @@
 import { MOTION_SPRITES } from "@/bot/assets/island/motion-sprites";
 import { PALETTE, SPRITES } from "@/bot/assets/island/sprites";
 
+import { styleKey } from "@/bot/src/quests/island/tree";
+import { mapTreeColor, type TreeStyle } from "@/lib/shift-island/tree-style";
+
 import { paletteRgb, tint, type RGB } from "./lighting";
 import type { LightPhase } from "./types";
 
@@ -67,8 +70,27 @@ export function allSprites(): Record<string, string[]> {
   return out;
 }
 
+/** The tree sprites a style recolours: the stages, their sway frames and the planted seed. */
+const TREE_SPRITE = /^stage_(\d|seed)(_b)?$/;
+
+export { styleKey };
+
+/** The atlas name of a tree sprite as drawn: its own, or the recoloured copy for a style. */
+export function treeSpriteKey(sprite: string, style?: TreeStyle): string {
+  return style ? `${sprite}|${styleKey(style)}` : sprite;
+}
+
+/** The distinct styles a scene's trees use, in first-seen order. */
+export function stylesOf(trees: readonly { style?: TreeStyle }[]): TreeStyle[] {
+  const seen = new Map<string, TreeStyle>();
+  for (const t of trees) if (t.style && !seen.has(styleKey(t.style))) seen.set(styleKey(t.style), t.style);
+  return [...seen.values()];
+}
+
 interface Placed {
   name: string;
+  /** The style this copy of a tree sprite is recoloured with. */
+  style?: TreeStyle;
   rows: string[];
   w: number;
   h: number;
@@ -78,7 +100,7 @@ interface Placed {
 }
 
 /** Shelf packing, tallest first; the same input always packs the same way, in every phase. */
-function pack(sprites: Record<string, string[]>): { placed: Placed[]; height: number } {
+function pack(sprites: Record<string, string[]>, styles: readonly TreeStyle[]): { placed: Placed[]; height: number } {
   const items: Omit<Placed, "x" | "y">[] = [];
   for (const name of Object.keys(sprites).sort()) {
     const rows = sprites[name];
@@ -87,6 +109,12 @@ function pack(sprites: Record<string, string[]>): { placed: Placed[]; height: nu
     const h = rows.length;
     items.push({ name, rows, w, h, flip: false });
     if (!GROUND.test(name)) items.push({ name, rows, w, h, flip: true });
+    if (TREE_SPRITE.test(name)) {
+      for (const style of styles) {
+        items.push({ name: treeSpriteKey(name, style), style, rows, w, h, flip: false });
+        items.push({ name: treeSpriteKey(name, style), style, rows, w, h, flip: true });
+      }
+    }
   }
   items.sort((a, b) => b.h - a.h || b.w - a.w || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0) || Number(a.flip) - Number(b.flip));
   const placed: Placed[] = [];
@@ -110,7 +138,6 @@ function pack(sprites: Record<string, string[]>): { placed: Placed[]; height: nu
 function colourTables(phase: LightPhase): { tinted: Uint32Array; day: Uint32Array } {
   const tinted = new Uint32Array(128);
   const day = new Uint32Array(128);
-  const word = ([r, g, b]: RGB) => ((255 << 24) | (b << 16) | (g << 8) | r) >>> 0;
   for (const key of Object.keys(PALETTE)) {
     const rgb = paletteRgb(key);
     const code = key.charCodeAt(0);
@@ -121,9 +148,16 @@ function colourTables(phase: LightPhase): { tinted: Uint32Array; day: Uint32Arra
   return { tinted, day };
 }
 
+const word = ([r, g, b]: RGB) => ((255 << 24) | (b << 16) | (g << 8) | r) >>> 0;
+
+function hexRgb(hex: string): RGB | null {
+  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i.exec(hex);
+  return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : null;
+}
+
 /** The atlas for one phase. Day is the identity: its pixels are the palette's own. */
-export function buildAtlasData(phase: LightPhase, sprites: Record<string, string[]> = allSprites()): AtlasData {
-  const { placed, height } = pack(sprites);
+export function buildAtlasData(phase: LightPhase, sprites: Record<string, string[]> = allSprites(), styles: readonly TreeStyle[] = []): AtlasData {
+  const { placed, height } = pack(sprites, styles);
   const width = ATLAS_WIDTH;
   const rowsTall = Math.max(1, height);
   const data = new Uint8ClampedArray(width * rowsTall * 4);
@@ -145,8 +179,11 @@ export function buildAtlasData(phase: LightPhase, sprites: Record<string, string
       const row = item.rows[j];
       const base = (item.y + j) * width + item.x;
       for (let i = 0; i < item.w; i++) {
-        const code = row.charCodeAt(item.flip ? item.w - 1 - i : i);
-        const v = code < 128 ? table[code] : 0;
+        const ch = row[item.flip ? item.w - 1 - i : i];
+        const code = ch.charCodeAt(0);
+        const override = item.style ? mapTreeColor(item.style, ch, j) : null;
+        const rgb = override ? hexRgb(override) : null;
+        const v = rgb ? word(tint(rgb, phase)) : code < 128 ? table[code] : 0;
         if (v !== 0) words[base + i] = v;
       }
     }

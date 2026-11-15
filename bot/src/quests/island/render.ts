@@ -17,7 +17,10 @@ import { deflateSync } from "node:zlib";
 import { motionGrid } from "../../../assets/island/motion-sprites";
 import { PALETTE } from "../../../assets/island/sprites";
 
+import { mapTreeColor, type TreeStyle } from "@/lib/shift-island/tree-style";
+
 import { campfireActors, type CampfireView } from "./firepit";
+import { styleKey } from "./tree";
 import { DIGITS, MAX_WIDTH, RenderError, TILE_BY_CODE, buildScene, markerAt, type IslandPlot, type SceneRect } from "./scene";
 
 export * from "./scene";
@@ -46,15 +49,18 @@ export interface RenderedIsland {
 type RGBA = [number, number, number, number];
 
 const colorCache = new Map<string, RGBA>();
+function hexRgba(hex: string): RGBA | null {
+  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})?$/i.exec(hex);
+  return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16), m[4] ? parseInt(m[4], 16) : 255] : null;
+}
+
 function rgba(ch: string): RGBA | null {
   if (ch === "." || ch === " ") return null;
   const cached = colorCache.get(ch);
   if (cached) return cached;
   const hex = PALETTE[ch];
-  if (!hex) return null;
-  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})?$/i.exec(hex);
-  if (!m) return null;
-  const value: RGBA = [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16), m[4] ? parseInt(m[4], 16) : 255];
+  const value = hex ? hexRgba(hex) : null;
+  if (!value) return null;
   colorCache.set(ch, value);
   return value;
 }
@@ -126,21 +132,34 @@ interface Bitmap {
 
 /** Sprites (the island's and the live island's motion ones) decoded once into packed pixels, so drawing is one write per pixel. */
 const bitmaps = new Map<string, Bitmap>();
-function bitmap(name: string): Bitmap {
+const treeColors = new Map<string, RGBA | null>();
+/** A recoloured pixel (mapTreeColor's hex), decoded once. */
+function treeRgba(hex: string): RGBA | null {
+  if (!treeColors.has(hex)) treeColors.set(hex, hexRgba(hex));
+  return treeColors.get(hex) ?? null;
+}
+/** The tree sprites a style recolours: the stages, their sway frames and the planted seed. */
+const TREE_SPRITE = /^stage_(\d|seed)(_b)?$/;
+
+/** Cached by sprite and style: a styled tree is its sprite with leaf, bark and blossom pixels recoloured. */
+function bitmap(name: string, style?: TreeStyle): Bitmap {
   const rows = motionGrid(name);
   if (!rows?.length) throw new RenderError("missing_sprite", name);
-  const cached = bitmaps.get(name);
+  const styled = style && TREE_SPRITE.test(name) ? style : undefined;
+  const key = styled ? `${name}|${styleKey(styled)}` : name;
+  const cached = bitmaps.get(key);
   if (cached && cached.rows === rows) return cached;
   const w = rows[0].length;
   const px = new Uint32Array(w * rows.length);
   rows.forEach((row, j) => {
     for (let i = 0; i < w; i++) {
-      const c = rgba(row[i]);
+      const override = styled ? mapTreeColor(styled, row[i], j) : null;
+      const c = (override ? treeRgba(override) : null) ?? rgba(row[i]);
       if (c) px[j * w + i] = pack(c);
     }
   });
   const value = { rows, w, h: rows.length, px };
-  bitmaps.set(name, value);
+  bitmaps.set(key, value);
   return value;
 }
 
@@ -190,8 +209,8 @@ class Canvas {
   }
 
   /** Draws a sprite with its top-left at (x, y), each source pixel as a k x k block. */
-  sprite(name: string, x: number, y: number, k = 1): void {
-    const b = bitmap(name);
+  sprite(name: string, x: number, y: number, k = 1, style?: TreeStyle): void {
+    const b = bitmap(name, style);
     if (k === 1) {
       for (let j = 0; j < b.h; j++) {
         const ty = y + j;
@@ -279,7 +298,7 @@ export function renderIsland(plots: IslandPlot[], options: RenderOptions = {}): 
 
   // Trees first, then every tag on top, so no tree hides a neighbour's number.
   for (const tree of scene.trees) {
-    canvas.sprite(tree.sprite, tree.left, tree.top);
+    canvas.sprite(tree.sprite, tree.left, tree.top, 1, tree.style);
     if (tree.roots) canvas.sprite(tree.roots.sprite, tree.roots.x, tree.roots.y);
     if (tree.key) canvas.sprite("key_flag", tree.key.x, tree.key.y);
     if (tree.visitor) canvas.sprite("visitor", tree.visitor.x, tree.visitor.y);

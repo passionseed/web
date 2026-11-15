@@ -16,6 +16,7 @@ import { project, newProjectModal } from "./handlers/project";
 import { browse, proposeModal, quest } from "./handlers/quest";
 import { review } from "./handlers/review";
 import { student } from "./handlers/student";
+import { tree } from "./handlers/tree";
 import type { ActionHandler, AutocompleteHandler, CommandHandler, HandlerSet } from "./handlers/types";
 import { parseCid } from "./ids";
 import { digestFor, startDigestPost } from "./digest";
@@ -27,7 +28,7 @@ import { startOutbox } from "./outbox";
 
 export { registerQuestCommands } from "./commands";
 
-const SETS: HandlerSet[] = [student, project, quest, journal, review, admin, island, squad, panel, rounds, board];
+const SETS: HandlerSet[] = [student, project, quest, journal, review, admin, island, squad, panel, rounds, board, tree];
 
 function merge<T>(pick: (set: HandlerSet) => Record<string, T> | undefined): Map<string, T> {
   const map = new Map<string, T>();
@@ -115,6 +116,9 @@ export async function handleInteraction(api: QuestApi, guildId: string, i: Inter
  * also optional: below 9 the bot runs without it (DIGEST_SCHEMA).
  * 10 (20261113090000_shift_quest_roots) adds tree roots from reflections;
  * also optional: below 10 every tree is drawn without roots (ROOTS_SCHEMA).
+ * 13 (20261114120000_shift_quest_tree_style) adds seeds, tree looks and gifts
+ * (handlers/tree.ts); also optional: below 13 there are no tree buttons and
+ * no gifts, and a round closes with shift_quest_round_close (TREE_SCHEMA).
  */
 export const REQUIRED_SCHEMA = 2;
 

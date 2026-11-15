@@ -1,0 +1,543 @@
+/*
+ * The team's tree: the close-up, the seed choice, gifts, the wardrobe and the
+ * HUD's tree pill. Every class here sits inside the island page or an island
+ * sheet (.page / .sheet in island.module.css), which carry the --isl-*
+ * tokens, the notch and the motion contract (reduced motion turns every
+ * transition and animation there off).
+ */
+
+/* One canvas pixel per close-up pixel, scaled by a whole number: never smoothed. */
+.canvas {
+  display: block;
+  flex: none;
+  max-width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+}
+
+/*
+ * The dialog (1024px and up): the tree on the left, what to choose on the
+ * right, so a gift or a look is picked with the tree in view. 192 + 16 + 312
+ * fills the 560px dialog; three 100px tiles fit the right column.
+ */
+@media (min-width: 1024px) {
+  .layout {
+    grid-template-columns: 192px minmax(0, 1fr);
+    column-gap: 16px;
+    align-items: start;
+  }
+
+  .layout > .closeup {
+    grid-column: 1;
+    grid-row: 1 / span 4;
+  }
+
+  .layout > :not(.closeup) {
+    grid-column: 2;
+  }
+
+  .layout .tiles {
+    gap: 6px;
+  }
+
+  .layout .card {
+    padding: 12px 6px;
+  }
+}
+
+.heading {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.4;
+  color: var(--text-hi);
+}
+
+.line {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+/* ---------------------------------------------------------------- close-up */
+
+.closeup {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  margin: 0;
+}
+
+.closeupFrame {
+  padding: 2px;
+  background: var(--isl-ink);
+  clip-path: var(--notch);
+}
+
+.caption {
+  display: grid;
+  gap: 2px;
+  max-width: 34em;
+  text-align: center;
+}
+
+.caption p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+
+.caption .roots {
+  font-weight: 600;
+  color: var(--isl-cream);
+}
+
+/* ---------------------------------------------------------------- cards */
+
+/* The seed card and a waiting gift: something to do, framed in warm sand like the canvas prompt. */
+.card {
+  display: grid;
+  gap: 12px;
+  padding: 14px 12px;
+  background: linear-gradient(160deg, rgba(231, 205, 146, 0.1) 0%, rgba(231, 205, 146, 0.05) 60%, rgba(231, 205, 146, 0.02) 100%);
+  outline: 2px dashed rgba(231, 205, 146, 0.45);
+  outline-offset: -2px;
+}
+
+.gift {
+  display: grid;
+  gap: 12px;
+}
+
+.gone {
+  margin: 0;
+  font-size: 14px;
+  color: var(--isl-sand-hi);
+}
+
+/* ---------------------------------------------------------------- tiles */
+
+/* Gift options and wardrobe looks: three across on a phone. */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tile {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 2px;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 4px 2px 8px;
+  font: inherit;
+  color: var(--text-hi);
+  background: rgba(255, 255, 255, 0.04);
+  border: 0;
+  box-shadow: inset 0 0 0 1px rgba(246, 228, 181, 0.22);
+  clip-path: var(--notch);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--snap) var(--ease-snap), transform var(--press) var(--ease-snap);
+}
+
+.tile:focus-visible {
+  /* The notch clips anything outside the box: the ring goes inside. */
+  outline: 2px solid var(--action-soft);
+  outline-offset: -4px;
+}
+
+/* Pointer devices brighten on hover; touch gets the same lift on press (:active below). */
+@media (hover: hover) {
+  .tile:hover:not(:disabled) {
+    background: rgba(246, 228, 181, 0.1);
+  }
+}
+
+.tile:active:not(:disabled) {
+  background: rgba(246, 228, 181, 0.1);
+  transform: translateY(1px);
+}
+
+.tile:disabled {
+  cursor: default;
+}
+
+.tile:disabled:not([aria-busy="true"]):not([aria-pressed="true"]) {
+  opacity: 0.55;
+}
+
+/* The look the tree wears now: the lamp outline. */
+.tile[aria-pressed="true"] {
+  background: rgba(244, 197, 106, 0.1);
+  box-shadow: inset 0 0 0 2px var(--isl-lamp);
+  cursor: default;
+}
+
+.tileCanvas {
+  margin-bottom: 4px;
+  box-shadow: 0 0 0 1px rgba(52, 68, 71, 0.9);
+}
+
+.tileSlot {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-dim);
+}
+
+.tileName {
+  max-width: 100%;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.tileTag {
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.7;
+  color: var(--isl-ink);
+  background: var(--isl-lamp);
+}
+
+.tileTag[data-tone="busy"] {
+  color: var(--text-hi);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.later {
+  justify-self: center;
+}
+
+/* ---------------------------------------------------------------- seed choice */
+
+.form {
+  display: grid;
+  gap: 16px;
+}
+
+.seeds {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.seeds > legend {
+  margin-bottom: 8px;
+}
+
+.seedGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.seed {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 4px;
+  min-width: 0;
+  padding: 8px 8px 10px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(246, 228, 181, 0.22);
+  clip-path: var(--notch);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--snap) var(--ease-snap), transform var(--press) var(--ease-snap);
+}
+
+@media (hover: hover) {
+  .seed:hover {
+    background: rgba(246, 228, 181, 0.1);
+  }
+}
+
+.seed:active {
+  transform: translateY(1px);
+}
+
+.seed:focus-within {
+  outline: 2px solid var(--action-soft);
+  outline-offset: -4px;
+}
+
+.seed[data-checked="true"] {
+  background: rgba(244, 197, 106, 0.12);
+  box-shadow: inset 0 0 0 2px var(--isl-lamp);
+}
+
+/* The native radio stays for keyboards and screen readers; the whole card is its label. */
+.seedInput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.seedName {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text-hi);
+}
+
+.seedBlurb {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+/* ---------------------------------------------------------------- wardrobe */
+
+.wardrobe {
+  display: grid;
+  gap: 10px;
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.tab {
+  min-width: 0;
+  min-height: 44px;
+  padding: 6px 2px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--isl-sand-hi);
+  background: transparent;
+  border: 0;
+  box-shadow: inset 0 0 0 1px rgba(246, 228, 181, 0.3);
+  clip-path: var(--notch);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--snap) var(--ease-snap), transform var(--press) var(--ease-snap);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--action-soft);
+  outline-offset: -4px;
+}
+
+@media (hover: hover) {
+  .tab:hover {
+    background: rgba(246, 228, 181, 0.08);
+  }
+}
+
+.tab:active {
+  transform: translateY(1px);
+}
+
+.tab[data-state="active"] {
+  color: var(--isl-ink);
+  background: var(--isl-cream);
+  box-shadow: inset 0 0 0 2px var(--isl-ink);
+}
+
+.tab[data-state="active"]:focus-visible {
+  outline-color: #1d4ed8;
+}
+
+.panel {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* Radix keeps the other slots' panels as empty, hidden divs: display: grid must not show them. */
+.panel[hidden] {
+  display: none;
+}
+
+.panel:focus-visible {
+  outline: 2px solid var(--action-soft);
+  outline-offset: 2px;
+}
+
+.hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+
+/* ---------------------------------------------------------------- the board's seed card */
+
+.seedCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 64px;
+  padding: 10px 12px;
+  font: inherit;
+  text-align: left;
+  color: var(--text-hi);
+  background: linear-gradient(160deg, rgba(231, 205, 146, 0.14) 0%, rgba(231, 205, 146, 0.07) 60%, rgba(231, 205, 146, 0.03) 100%);
+  border: 0;
+  outline: 2px dashed rgba(231, 205, 146, 0.55);
+  outline-offset: -2px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--snap) var(--ease-snap), transform var(--press) var(--ease-snap);
+}
+
+@media (hover: hover) {
+  .seedCard:hover {
+    background: rgba(231, 205, 146, 0.18);
+  }
+}
+
+.seedCard:active {
+  background: rgba(231, 205, 146, 0.18);
+  transform: translateY(1px);
+}
+
+.seedCard:focus-visible {
+  outline: 2px solid var(--action-soft);
+  outline-offset: -2px;
+}
+
+.seedCardIcon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  background: var(--isl-sand);
+  box-shadow: inset 0 0 0 2px var(--isl-ink);
+  clip-path: var(--notch);
+}
+
+.seedCardText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.seedCardTitle {
+  font-family: var(--font-kodchasan), var(--font-bai-jamjuree), sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.seedCardLine {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+/* ---------------------------------------------------------------- HUD: the tree pill */
+
+/* The coin pill's shape (player.module.css): a 44px tap area around a 32px glass pill. */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pillFace {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--isl-cream);
+  clip-path: var(--notch);
+  transition: transform var(--press) var(--ease-snap), background-color var(--snap) var(--ease-snap);
+}
+
+.pillFace svg {
+  display: block;
+  flex: none;
+}
+
+.pill:active .pillFace {
+  transform: translateY(1px);
+}
+
+.pill:focus-visible {
+  outline: none;
+}
+
+.pill:focus-visible .pillFace {
+  outline: 2px solid var(--isl-cream);
+  outline-offset: -4px;
+}
+
+@media (hover: hover) {
+  .pill:hover .pillFace {
+    background: rgba(40, 32, 38, 0.86);
+  }
+}
+
+/* Something waits behind the pill (a gift, the seed): the chip's lamp dot. */
+.pillDot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  background: var(--isl-lamp);
+  box-shadow: 0 0 0 2px var(--isl-ink);
+}
+
+/* The coin pill and the tree pill side by side under the chip; only the pills take taps. */
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.pills.pills {
+  pointer-events: none;
+}
+
+.pills > * {
+  pointer-events: auto;
+}

@@ -549,3 +549,36 @@
     transition: none;
   }
 }
+
+/* ---------------------------------------------------------------- seeds */
+
+.stageSeed {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.seeds {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.seed {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-dim);
+  background: rgba(67, 142, 172, 0.12);
+  clip-path: var(--notch);
+}
+
+.seedName {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-hi);
+}

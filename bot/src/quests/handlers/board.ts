@@ -29,6 +29,7 @@ import { ButtonStyle, button, buttonRows, modal, selectRow, show, textValue, typ
 import { boardLinkButton } from "../weblink";
 import { proofLink } from "./island";
 import { questDetail } from "./quest";
+import { offerQuestGift } from "./tree";
 import { picked, type HandlerSet } from "./types";
 
 /** Community quests: main quests 6 and 7 (the economy's community rule). */
@@ -271,7 +272,9 @@ export const board: HandlerSet = {
       if (!i.isModalSubmit()) return;
       await i.deferReply({ flags: MessageFlags.Ephemeral });
       const proof = textValue(i, "proof");
-      await ctx.api.call("shift_quest_side_submit", ctx.userId, templateId, proof, textValue(i, "note"), proofLink(proof));
+      const row = await ctx.api.call<{ instance_id?: unknown } | null>(
+        "shift_quest_side_submit", ctx.userId, templateId, proof, textValue(i, "note"), proofLink(proof)
+      );
       await show(i, {
         tone: "success",
         title: I.sentTitle,
@@ -281,6 +284,7 @@ export const board: HandlerSet = {
         ],
         rows: buttonRows([button(cid("is_board"), I.btnBoard), button(cid("is_view"), I.btnBack)]),
       });
+      await offerQuestGift(i, ctx, row?.instance_id, "qb_send");
     },
   },
 };

@@ -19,7 +19,7 @@ import { NO_PLAZA, plazaWorld, type PlazaInput, type PlazaLabelId, type PlazaSpo
 import type { LightPhase } from "@/lib/shift-island/live/types";
 import { HUD_RESERVE, scrollToCentre, worldLayout, type Insets } from "@/lib/shift-island/live/world";
 
-import { COMMON, HUD, ISLAND, stageName } from "./copy";
+import { COMMON, HUD, ISLAND, treeStageName } from "./copy";
 import islandStyles from "./island.module.css";
 import { IslandLive } from "./live/IslandLive";
 import liveStyles from "./live/live.module.css";
@@ -75,7 +75,7 @@ const HUD_MARGIN = `-${HUD_RESERVE.top}px 0px -${HUD_RESERVE.bottom}px 0px`;
 const NOTICE_SEEN = 0.6;
 
 export function hotspotLabel(hotspot: IslandHotspot): string {
-  return hotspot.mine ? ISLAND.myPlot(hotspot.slot, stageName(hotspot.stage)) : ISLAND.plot(hotspot.slot);
+  return hotspot.mine ? ISLAND.myPlot(hotspot.slot, treeStageName(hotspot.stage, hotspot.seeded === true)) : ISLAND.plot(hotspot.slot);
 }
 
 /** The server and the first client render use 2x; the device's own ratio follows after hydration. */

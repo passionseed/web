@@ -18,7 +18,7 @@
  */
 import type { IslandScene } from "@/bot/src/quests/island/scene";
 
-import { buildAtlasData, type AtlasData } from "./atlas";
+import { allSprites, buildAtlasData, styleKey, stylesOf, type AtlasData } from "./atlas";
 import { TICK_MS, motionAt, nextTickAt, type Motion } from "./clock";
 import { dirtyRects, paintLand, paintOverlay, redrawRect, sceneModel, seaRectsFor, type DrawContext, type Layers, type SceneModel } from "./draw";
 import { area, exposed, intersect, visibleRect, type Rect } from "./geometry";
@@ -79,7 +79,7 @@ const actorsKey = (actors: readonly LiveActor[]) => JSON.stringify(actors);
  * Atlases by phase, shared by every island on the page (the viewport and the
  * story panels): built and uploaded once, never drawn into afterwards.
  */
-const sharedAtlases = new Map<LightPhase, { data: AtlasData; image: HTMLCanvasElement }>();
+const sharedAtlases = new Map<string, { data: AtlasData; image: HTMLCanvasElement }>();
 
 export class LiveIsland {
   private readonly ctx: Ctx | null;
@@ -420,14 +420,18 @@ export class LiveIsland {
   // ------------------------------------------------------------- layers
 
   private atlas(phase: LightPhase): { data: AtlasData; image: HTMLCanvasElement } {
-    let entry = sharedAtlases.get(phase);
+    // One atlas per phase and set of tree styles; a few at most, so the oldest is dropped past 6.
+    const styles = stylesOf(this.props.scene.trees);
+    const cacheKey = `${phase}|${styles.map(styleKey).sort().join(";")}`;
+    let entry = sharedAtlases.get(cacheKey);
     if (!entry) {
-      const data = buildAtlasData(phase);
+      const data = buildAtlasData(phase, allSprites(), styles);
       const image = newCanvas(data.width, data.height);
       // Once per phase, never in the loop.
       context(image).putImageData(new ImageData(new Uint8ClampedArray(data.data), data.width, data.height), 0, 0);
       entry = { data, image };
-      sharedAtlases.set(phase, entry);
+      if (sharedAtlases.size >= 6) sharedAtlases.delete(sharedAtlases.keys().next().value as string);
+      sharedAtlases.set(cacheKey, entry);
     }
     return entry;
   }

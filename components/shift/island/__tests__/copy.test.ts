@@ -78,10 +78,16 @@ describe("island copy", () => {
 
   it("names all eight stages and clamps out-of-range ones", () => {
     expect(copy.STAGE_NAMES).toHaveLength(8);
+    expect(copy.STAGE_NAMES[1]).toBe("เมล็ดงอก");
+    expect(copy.PRE_STAGE).toBe("เมล็ด");
     expect(copy.stageName(0)).toBe("ที่ดินว่าง");
     expect(copy.stageName(7)).toBe("ผลิดอก");
     expect(copy.stageName(12)).toBe("ผลิดอก");
     expect(copy.stageName(-1)).toBe("ที่ดินว่าง");
+    // A planted seed is the seed at stage 0, never an empty plot; later stages keep their names.
+    expect(copy.treeStageName(0, true)).toBe(copy.PRE_STAGE);
+    expect(copy.treeStageName(0, false)).toBe("ที่ดินว่าง");
+    expect(copy.treeStageName(1, true)).toBe("เมล็ดงอก");
   });
 
   it("prints Bangkok short dates and tolerates bad input", () => {
@@ -165,5 +171,17 @@ describe("island sprites", () => {
     expect(sideIcon("well")).toBe("well");
     expect(sideIcon("nope")).toBe("seed");
     expect(sideIcon(null)).toBe("seed");
+  });
+
+  it("words the tree: seeds, gifts, wardrobe and the close-up in the house style", () => {
+    const tree: [string, string][] = [];
+    collect(copy.TREE, "TREE", tree);
+    expect(tree.length).toBeGreaterThan(25);
+    for (const [path, text] of tree) {
+      expect([path, /—|–|น้องๆ|ปลูก|สตรีค|streak|เหี่ยว|อันดับ/i.test(text)]).toEqual([path, false]);
+    }
+    expect(Object.keys(copy.TREE.seeds).sort()).toEqual(["maple", "oak", "pine", "sakura"]);
+    expect(copy.TREE.seeds.oak.name).toBe("ต้นโอ๊ก");
+    expect(copy.TREE.gift.keep).toBe("เก็บไว้ก่อน");
   });
 });

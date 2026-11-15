@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 
 import { PixelIcon } from "@/components/shift/poster/pixel/PixelRects";
 import type { CharacterStats, IslandConsent } from "@/lib/supabase/shift-quests/playerTypes";
-import type { IslandPageData, IslandProject, ViewerCard } from "@/lib/supabase/shift-quests/types";
+import type { IslandPageData, IslandProject, MyTree, ViewerCard } from "@/lib/supabase/shift-quests/types";
 
 import { ConsentBanner } from "../consent/ConsentBanner";
 import { ProjectBody } from "../HudSheets";
@@ -22,6 +22,7 @@ interface CharacterSheetProps {
   /** null: the stats could not be read; the sheet is the project sheet as before. */
   stats: CharacterStats | null;
   project: Pick<IslandProject, "name" | "stage">;
+  tree?: MyTree | null;
   season: IslandPageData["island"]["season"];
   /** The check-in card, built by the page so it keeps its handlers. */
   today: ReactNode;
@@ -70,6 +71,7 @@ export function CharacterSheet({
   me,
   stats,
   project,
+  tree,
   season,
   today,
   consent,
@@ -79,8 +81,8 @@ export function CharacterSheet({
   const onOpenChange = (next: boolean) => {
     if (!next) onClose();
   };
-  const body = <ProjectBody project={project} season={season} today={today} />;
-  const restOfProject = <ProjectBody project={project} season={season} today={null} />;
+  const body = <ProjectBody project={project} tree={tree} season={season} today={today} />;
+  const restOfProject = <ProjectBody project={project} tree={tree} season={season} today={null} />;
 
   if (!stats) {
     return (

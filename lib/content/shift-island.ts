@@ -39,7 +39,7 @@ import { formatThaiDate } from "@/lib/content/shift-cohort";
 /** Tree stage names, index = number of confirmed quests. Same as the bot. */
 export const ISLAND_STAGES = [
   "ที่ดินว่าง",
-  "เมล็ด",
+  "เมล็ดงอก",
   "ต้นกล้า",
   "ต้นอ่อน",
   "ต้นไม้",

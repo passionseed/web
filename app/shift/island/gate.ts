@@ -63,6 +63,10 @@ export const STALE_CODES: ReadonlySet<string> = new Set([
   "stage_required",
   "community_required",
   "consent_required",
+  // The team's tree changed under the close-up: a teammate picked this gift or chose the seed first.
+  "gift_gone",
+  "seed_planted",
+  "item_not_owned",
 ]);
 
 export function refused(code: string, textCode: string = code): Failure {

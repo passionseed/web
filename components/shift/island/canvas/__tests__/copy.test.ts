@@ -44,8 +44,20 @@ describe("canvas copy", () => {
     expect(copy.LINK_SHEET.title).toBe("เชื่อมแคนวาส");
     expect(copy.LINK_SHEET.description).toBe("เห็นเฉพาะแคนวาสที่คุณเป็นเจ้าของหรืออยู่ในทีม");
     expect(copy.LINK_SHEET.meta("ห้อง 5/1", "12 พ.ย.", 4)).toBe("บอร์ด ห้อง 5/1 · แก้ล่าสุด 12 พ.ย. · โน้ต 4 ใบ");
-    expect(copy.COMPOSER.pick).toBe("เลือกโน้ตที่จะส่ง (สูงสุด 8 ใบ)");
     expect(copy.PREVIEW.meter(812)).toBe("812/2000");
+  });
+
+  it("words the two-step submission with the plan's exact lines", () => {
+    expect(copy.SUBMIT.steps).toEqual(["เลือกหลักฐาน", "ตรวจแล้วส่ง"]);
+    expect(copy.SUBMIT.next(3)).toBe("ต่อไป (เลือกแล้ว 3 ใบ)");
+    expect(copy.SUBMIT.needOne).toBe("เลือกโน้ตอย่างน้อย 1 ใบ");
+    expect(copy.SUBMIT.editNotes).toBe("แก้โน้ต");
+    expect(copy.SUBMIT.openCanvas).toBe("เปิดแคนวาส");
+    expect(copy.SUBMIT.sentTitle).toBe("ส่งถึงพี่เลี้ยงแล้ว");
+    expect(copy.SUBMIT.sentWhere).toContain("Discord");
+    expect(copy.SUBMIT.backToIsland).toBe("กลับไปที่เกาะ");
+    expect(copy.SUBMIT.seeTree).toBe("ดูต้นไม้ของทีม");
+    expect(copy.SUBMIT.sentWhere).toContain("กล่องข้อความของบอท");
   });
 
   it("prints Bangkok short dates and tolerates nothing", () => {

@@ -1,10 +1,18 @@
+import { ROUND_GIFTS_PER_DAY } from "@/lib/shift-island/rounds-rules";
 import { ISLAND_STAGES } from "@/lib/content/shift-island";
+import { PRE_STAGE, STAGE_NAMES } from "@/components/shift/island/copy";
+
+// The bot's TREE buttons (bot/src/quests/island/copy.ts). Not imported: that file pulls in discord.js.
+const BOT_TREE = { btnSeed: "🌰 เลือกเมล็ด", btnClose: "🔍 ดูต้นไม้ใกล้ๆ", btnGift: "🎁 เปิดของขวัญ", btnWardrobe: "👗 ลุคของต้นไม้" };
 import {
   CAMPFIRE_ROUND,
   GUIDE_ALL,
   GUIDE_CAMPFIRE,
+  GUIDE_CLOSEUP,
   GUIDE_GROWTH,
   GUIDE_ROOTS,
+  GUIDE_SEED,
+  GUIDE_STAGE_NAMES,
   GUIDE_SECTIONS,
   GUIDE_STAGE_COUNT,
   ROOTS_RULE,
@@ -75,11 +83,34 @@ describe("shift island guide copy", () => {
     expect(privacy).toContain("🙋");
   });
 
-  it("lists seven sections in order with unique anchors", () => {
+  it("lists the stages as the game names them, with the seed before stage 1", () => {
+    expect([...GUIDE_STAGE_NAMES]).toEqual([PRE_STAGE, ...STAGE_NAMES.slice(1)]);
+  });
+
+  it("explains the seed, the close-up, gifts and the wardrobe with the bot's button names", () => {
+    expect(GUIDE_SEED.steps.map((s) => s.label)).toContain(BOT_TREE.btnSeed);
+    const seed = GUIDE_SEED.lines.join(" ");
+    expect(seed).toContain("พี่เลี้ยง");
+    const closeup = GUIDE_CLOSEUP.steps.map((s) => s.label);
+    expect(closeup).toEqual(expect.arrayContaining([BOT_TREE.btnClose, BOT_TREE.btnGift, BOT_TREE.btnWardrobe]));
+    expect(BOT_TREE.btnClose).toContain("🔍");
+    const text = GUIDE_CLOSEUP.lines.join(" ");
+    expect(text).toContain("ปิดรอบ");
+    expect(text).toContain("ครั้งแรก");
+    expect(text).toContain("1 จากไม่เกิน 3");
+    // Never "everyone sees it": a plot that does not show its name shows no look to others.
+    expect(text).not.toContain("ทุกคนเห็น");
+    expect(text).toContain(`ไม่เกิน ${ROUND_GIFTS_PER_DAY} ชิ้นต่อวัน`);
+    expect(GUIDE_SEED.seeds).toHaveLength(4);
+  });
+
+  it("lists nine sections in order with unique anchors", () => {
     expect(GUIDE_SECTIONS.map((s) => s.id)).toEqual([
       "island",
+      "seed",
       "growth",
       "roots",
+      "closeup",
       "campfire",
       "coins",
       "start",

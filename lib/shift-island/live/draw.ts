@@ -15,7 +15,7 @@
 import { SHORE_FRAMES, SWAY_FRAMES, WATER_FRAMES } from "@/bot/assets/island/motion-sprites";
 import { DIGITS, TILE_BY_CODE, openWaterTile, type IslandScene, type ScenePoint, type SceneTree } from "@/bot/src/quests/island/scene";
 
-import type { AtlasRect } from "./atlas";
+import { treeSpriteKey, type AtlasRect } from "./atlas";
 import type { Motion, Mover } from "./clock";
 import { cellSpan, intersect, overlaps, union, type Rect } from "./geometry";
 import type { LiveActor } from "./types";
@@ -252,7 +252,7 @@ export function redrawRect<Img>(ctx: DrawContext<Img>, r: Rect, model: SceneMode
   model.trees.forEach((m, i) => {
     if (!overlaps(m.bounds, r)) return;
     const { tree } = m;
-    blit(ctx, atlas, rects.get(motion.sway[i] && m.b ? m.b : tree.sprite), tree.left, tree.top);
+    blit(ctx, atlas, rects.get(treeSpriteKey(motion.sway[i] && m.b ? m.b : tree.sprite, tree.style)), tree.left, tree.top);
     // Roots sit on the soil, inside the tree's rect: a sway repaint redraws them too.
     if (tree.roots) blit(ctx, atlas, rects.get(tree.roots.sprite), tree.roots.x, tree.roots.y);
     if (tree.key) blit(ctx, atlas, rects.get("key_flag"), tree.key.x, tree.key.y);

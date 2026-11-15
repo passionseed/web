@@ -2,12 +2,25 @@
  * SHIFT Island words. Thai first, one place, same house rules as ../copy.ts:
  * no em dashes, never talk down, never promise rewards that are not live.
  */
+import {
+  TREE_CLOSEUP,
+  TREE_GIFT,
+  TREE_IDEA_PREFILLED,
+  TREE_PLANTED,
+  TREE_SEED_PICK,
+  TREE_SEEDS,
+  TREE_SLOTS,
+  TREE_WARDROBE,
+} from "@/lib/shift-island/tree-copy";
 import { FOCUS_MINUTES, REFLECTIONS_PER_DAY, REST_MINUTES } from "@/lib/shift-island/rounds-rules";
 
 import { bkkDate, meter, safe } from "../copy";
 
 /** Tree stage = number of milestones a mentor has confirmed (0..7). */
-export const STAGE_NAMES = ["ที่ดินว่าง", "เมล็ด", "ต้นกล้า", "ต้นอ่อน", "ต้นไม้", "ต้นใหญ่", "ออกผล", "ผลิดอก"];
+/** Before stage 1: the team has a seed but no confirmed quest yet. */
+export const PRE_STAGE = "เมล็ด";
+
+export const STAGE_NAMES = ["ที่ดินว่าง", "เมล็ดงอก", "ต้นกล้า", "ต้นอ่อน", "ต้นไม้", "ต้นใหญ่", "ออกผล", "ผลิดอก"];
 
 /** A stage as a bar: ▰▰▱▱▱▱▱ for 2 of 7. */
 export function stageBar(stage: number, total = 7): string {
@@ -20,8 +33,11 @@ export const I = {
   header: "🏝️ เกาะ SHIFT",
   noPlot:
     "🌱 **คุณยังไม่มีที่ดินบนเกาะ**\nสร้างโปรเจกต์เรื่องที่คุณใส่ใจเพื่อจับจองที่ดิน หรือให้เพื่อนชวนเข้าโปรเจกต์ของเขาก็ได้ ต้นไม้จะเริ่มจากเมล็ด",
-  plot: (n: number | undefined, stage: number, name: string) =>
-    `🌳 **${safe(name, 60)}**${n ? ` · แปลง #${n}` : ""}\n${stageBar(stage)} ${STAGE_NAMES[stage] ?? STAGE_NAMES[7]} **${stage}**/7`,
+  /** seeded: the team planted its seed, so stage 0 is the seed (PRE_STAGE), not an empty plot. */
+  plot: (n: number | undefined, stage: number, name: string, seeded = false) =>
+    `🌳 **${safe(name, 60)}**${n ? ` · แปลง #${n}` : ""}\n${stageBar(stage)} ${
+      stage === 0 && seeded ? PRE_STAGE : (STAGE_NAMES[stage] ?? STAGE_NAMES[7])
+    } **${stage}**/7`,
   next: (title: string) => `➡️ ขั้นต่อไป: **${safe(title, 80)}** (ทำขั้นไหนก่อนก็ได้)`,
   allDone: "ครบ 7 ขั้นแล้ว ต้นไม้ผลิดอกเต็มต้น ทำขั้นไหนซ้ำเพื่อเรียนรู้ต่อก็ได้",
   inFlight: (title: string, state: string) => `⏳ ${safe(title, 80)}: ${state}`,
@@ -287,6 +303,39 @@ export const SQ = {
   btnLeave: "ออกจากสควอด",
   left: "🚪 ออกจากสควอดแล้ว",
   leftKeeps: "โปรเจกต์และต้นไม้ของคุณยังอยู่ครบ",
+};
+
+/**
+ * The team's tree in Discord: the seed modal, the gift reply, the close-up.
+ * Same words as the website's TREE. Gifts belong to the team; nothing here
+ * names a student. Thai reviewed (agy, Codex, Cursor), then again (Cursor,
+ * Codex), 2026-11-14.
+ */
+export const TREE = {
+  btnSeed: "🌰 เลือกเมล็ด",
+  btnClose: "🔍 ดูต้นไม้ใกล้ๆ",
+  btnGift: "🎁 เปิดของขวัญ",
+  btnKeep: "เก็บไว้ก่อน",
+  btnWardrobe: "👗 ลุคของต้นไม้",
+  modalTitle: "เลือกเมล็ดของทีม",
+  ideaLabel: "ทีมอยากสร้างอะไร",
+  ideaPlaceholder: "เขียนสั้นๆ หนึ่งบรรทัด",
+  /** The idea field's description when it starts from the project's ambition (the planted line replaces it). */
+  ideaPrefilled: TREE_IDEA_PREFILLED,
+  seedLabel: "เมล็ด",
+  seedPlaceholder: "เลือกเมล็ดหนึ่งแบบ",
+  /** Above the four seeds (tr_seed). */
+  pick: TREE_SEED_PICK,
+  seeds: TREE_SEEDS,
+  planted: TREE_PLANTED,
+  /** A gift option's button and the picked line: the part of the tree, then the look's name. */
+  slots: TREE_SLOTS,
+  gift: {
+    ...TREE_GIFT,
+    kept: "เก็บไว้แล้ว เพื่อนในทีมคนไหนก็เปิดได้ทีหลังจากปุ่ม 🎁 เปิดของขวัญ",
+  },
+  wardrobe: TREE_WARDROBE,
+  closeup: TREE_CLOSEUP,
 };
 
 export interface SeasonUnlock {

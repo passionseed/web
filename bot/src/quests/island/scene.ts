@@ -34,6 +34,21 @@ export interface IslandPlot {
    * the tree's soil; never on a plain plot.
    */
   roots?: number;
+  /**
+   * The team's tree colours (island/tree.ts merges shift_quest_island_styles,
+   * schema 13, by slot). Absent draws the default tree. Never on a plain plot.
+   */
+  style?: TreeStyle;
+  /** A seed is planted: stage 0 is drawn as a planted seed ("stage_seed"). */
+  seeded?: boolean;
+}
+
+/** A tree's item ids per slot: structurally lib/shift-island/tree-style's TreeStyle, spelled out so this pure file imports only sprites. */
+export interface TreeStyle {
+  shape: string;
+  leaf: string;
+  bark: string;
+  bloom: string;
 }
 
 /** Why a render failed. The detail is a sprite key or a slot, never student text. */
@@ -312,7 +327,7 @@ function arrange(plots: IslandPlot[]): Arrangement {
   // decorations and no roots for one; drawing it empty here too keeps that
   // true for any input.
   const ordered = plots
-    .map((p) => (p.plain ? { ...p, stage: 0, visitor: false, key: false, helper: false, lantern: false, roots: 0 } : p))
+    .map((p) => (p.plain ? { ...p, stage: 0, visitor: false, key: false, helper: false, lantern: false, roots: 0, style: undefined, seeded: false } : p))
     .sort((a, b) => a.slot - b.slot);
   const layout = layoutFor(ordered.length ? ordered[ordered.length - 1].slot : 0);
   return { spots, ordered, layout };
@@ -345,7 +360,7 @@ function placeTrees({ spots, ordered, layout }: Arrangement): PlacedTree[] {
     const sx = layout.pcx + spot.x;
     const sy = layout.pcy + spot.y;
     const stage = Math.min(Math.max(Math.round(plot.stage), 0), 7);
-    const sprite = `stage_${stage}`;
+    const sprite = stage === 0 && plot.seeded && !plot.plain ? "stage_seed" : `stage_${stage}`;
     const size = spriteSize(sprite);
     const left = sx * TILE + TILE - Math.floor(size.w / 2);
     const top = (sy + 1) * TILE - size.h;
@@ -407,7 +422,7 @@ export interface SceneTree {
   slot: number;
   /** 0..7, after rounding and clamping (a plain plot is 0). */
   stage: number;
-  /** "stage_N". */
+  /** "stage_N", or "stage_seed" for a planted seed at stage 0. */
   sprite: string;
   left: number;
   top: number;
@@ -424,6 +439,8 @@ export interface SceneTree {
    * roots (treat as null).
    */
   roots?: { sprite: string; x: number; y: number } | null;
+  /** The tree's colours; absent draws the sprite's own palette. Never on a plain plot. */
+  style?: TreeStyle;
   mine: boolean;
 }
 
@@ -540,6 +557,7 @@ export function buildScene(plots: IslandPlot[], options: { markMine?: boolean; f
     visitor: plot.visitor ? { x: left + size.w - 2, y: top + size.h - 18 } : null,
     lantern: plot.lantern ? { x: left + size.w + 6, y: top + size.h - 20 } : null,
     roots: rootsSprite(plot, left, top),
+    ...(plot.style && !plot.plain ? { style: plot.style } : {}),
     mine: plot.mine,
   }));
   const tags: SceneTag[] = placed.map((tree) => ({ slot: tree.plot.slot, ...treeTag(tree, glyph) }));
