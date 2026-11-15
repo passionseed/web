@@ -628,8 +628,9 @@ export interface QuestPitfall {
 
 /**
  * DRAFT: the pitfall each main quest is built around, by template slug
- * (docs/designs/shift-high-quest-pitfalls.md). Shown on the quest page as
- * หลุมพราง; unknown slugs show nothing.
+ * (docs/designs/shift-high-quest-pitfalls.md), and the ones the first act's
+ * ตัวช่วย side quests guard against. Shown on the quest page as หลุมพราง;
+ * unknown slugs show nothing.
  */
 export const QUEST_PITFALLS: Readonly<Record<string, readonly QuestPitfall[]>> = {
   "meet-one-real-person": [
@@ -694,6 +695,171 @@ export const QUEST_PITFALLS: Readonly<Record<string, readonly QuestPitfall[]>> =
       avoid: "ส่งลิงก์หรือของให้คนกลุ่มใหม่ที่ไม่เคยคุยกับคุณ แล้วดูว่าเขาเริ่มเองได้ไหม และมีใครกลับมาเองไหม",
     },
   ],
+  // The first act's ตัวช่วย side quests (20261115090000).
+  "side-stakeholder-map": [
+    {
+      icon: "peers",
+      name: "มีแต่คนใช้",
+      sign: "แผนที่มีแค่คนที่ใช้ ไม่มีใครจ่าย ใครตัดสินใจ หรือใครอาจขวาง",
+      avoid: "ถามต่อว่า ถ้าเขาอยากใช้ ใครต้องอนุญาต ใครต้องจ่าย และใครจะเดือดร้อนถ้ามีของนี้",
+    },
+    {
+      icon: "mail",
+      name: "วาดเสร็จแต่ไม่ได้คุย",
+      sign: "แผนที่สวยแล้ว แต่ยังไม่ได้ทักคนที่วงไว้เลย",
+      avoid: "ทักคนที่วงไว้ภายในวันนี้ ถ้ายังไม่รู้จักใครแบบนั้น ใช้เควสต์ ขอให้พี่ช่วยแนะนำ",
+    },
+  ],
+  "side-practice-talk": [
+    {
+      icon: "heart",
+      name: "ซ้อมแล้วชมกัน",
+      sign: "เพื่อนตอบว่า \"ดีนะ\" \"ใช้แน่นอน\" ทุกข้อ เพราะเกรงใจ",
+      avoid: "ให้เพื่อนเล่นเป็นคนที่ไม่ค่อยว่าง และตอบแค่เรื่องที่เคยเกิดขึ้นจริง ห้ามชม",
+    },
+  ],
+  "side-question-check": [
+    {
+      icon: "moon",
+      name: "ถามถึงอนาคต",
+      sign: "คำถามขึ้นต้นด้วย \"ถ้ามี...จะใช้ไหม\" หรือ \"คิดว่า...ดีไหม\"",
+      avoid: "ถามถึงครั้งล่าสุดที่เกิดขึ้นจริง: เกิดอะไร ทำยังไง เสียอะไรไป",
+    },
+  ],
+};
+
+/**
+ * DRAFT: an English word a quest uses, kept in English because it is the
+ * word students will meet in startup talks, courses and job posts, with its
+ * Thai meaning one tap away. Unknown slugs show nothing.
+ */
+export interface QuestTerm {
+  term: string;
+  thai: string;
+  meaning: string;
+}
+
+export const QUEST_TERMS: Readonly<Record<string, readonly QuestTerm[]>> = {
+  "meet-one-real-person": [
+    { term: "Target user", thai: "ผู้ใช้เป้าหมาย", meaning: "คนที่เจอปัญหานี้จริงและชี้ตัวได้ ไม่ใช่ \"ทุกคน\"" },
+  ],
+  "real-stories-not-compliments": [
+    { term: "User interview", thai: "การคุยกับผู้ใช้", meaning: "ฟังเรื่องที่เกิดขึ้นจริงกับเขา ไม่ใช่ขอให้เขาชมไอเดีย" },
+  ],
+  "first-partner": [
+    { term: "Partner", thai: "พันธมิตร", meaning: "คนที่ยอมลงมือกับคุณ เช่น ให้ลองในร้าน ให้ข้อมูล หรือแนะนำคนต่อ" },
+  ],
+  "in-their-hands": [
+    { term: "Prototype", thai: "ต้นแบบ", meaning: "ชิ้นแรกที่หยาบแต่ลองได้จริง ทำมาเพื่อเรียนรู้ ไม่ใช่เพื่อให้สมบูรณ์" },
+    { term: "User test", thai: "ให้ผู้ใช้ลอง", meaning: "ให้เขาใช้เองต่อหน้าคุณ แล้วคุณดูเงียบๆ ไม่ช่วยอธิบาย" },
+  ],
+  "run-the-loop": [
+    { term: "Feedback loop", thai: "วงจรฟังแล้วแก้", meaning: "ให้ลอง ฟัง แก้ทีละเรื่อง แล้วให้ลองใหม่ วนไปเรื่อยๆ" },
+    { term: "Iteration", thai: "รอบการแก้", meaning: "งานหนึ่งรอบที่แก้จากสิ่งที่ได้ยินมา" },
+  ],
+  "what-we-learned": [
+    { term: "Assumption", thai: "สิ่งที่เราเดาไว้", meaning: "เรื่องที่เชื่อว่าจริงแต่ยังไม่เคยเช็กกับคนจริง" },
+  ],
+  "beyond-the-first": [
+    { term: "Scale", thai: "ขยายให้ไปถึงคนมากขึ้น", meaning: "ให้คนที่ไม่รู้จักคุณเริ่มใช้เองได้ โดยไม่ต้องให้คุณอยู่ด้วยทุกครั้ง" },
+  ],
+  "side-stakeholder-map": [
+    { term: "Stakeholder", thai: "ผู้มีส่วนได้ส่วนเสีย", meaning: "ทุกคนที่ได้หรือเสียอะไรจากปัญหานี้ หรือจากสิ่งที่คุณจะทำ" },
+    { term: "Stakeholder map", thai: "แผนที่คนรอบปัญหา", meaning: "ภาพเดียวที่บอกว่าใครเกี่ยวกับปัญหานี้ แต่ละคนมีบทบาทอะไร และควรคุยกับใครก่อน" },
+    { term: "User", thai: "คนใช้", meaning: "คนที่เจอปัญหานี้เองและจะใช้ของที่คุณทำ" },
+    { term: "Payer", thai: "คนจ่าย", meaning: "คนที่จ่ายเงินหรือเวลา อาจไม่ใช่คนเดียวกับคนใช้" },
+    { term: "Decision maker", thai: "คนตัดสินใจ", meaning: "คนที่บอกได้ว่า \"ลองได้\" หรือ \"ไม่เอา\"" },
+    { term: "Blocker", thai: "คนที่อาจขวาง", meaning: "คนที่ไม่ได้ใช้ แต่หยุดเรื่องนี้ได้ เช่น ฝ่ายอาคาร หรือกฎของโรงเรียน" },
+  ],
+  "side-practice-talk": [
+    { term: "Role-play", thai: "ซ้อมแบบสวมบทบาท", meaning: "เพื่อนเล่นเป็นคนที่คุณจะไปคุยด้วย แล้วคุณซ้อมถามจริง" },
+  ],
+  "side-question-check": [
+    { term: "Open question", thai: "คำถามปลายเปิด", meaning: "คำถามที่ตอบแค่ \"ใช่\" หรือ \"ไม่\" ไม่ได้ ต้องเล่า" },
+    { term: "Leading question", thai: "คำถามชี้นำ", meaning: "คำถามที่ใส่คำตอบที่อยากได้ไว้แล้ว เช่น \"แอปนี้ช่วยได้ใช่ไหม\"" },
+  ],
+  "side-warm-intro": [
+    { term: "Warm intro", thai: "การแนะนำผ่านคนรู้จัก", meaning: "มีคนกลางที่ทั้งสองฝั่งรู้จักช่วยแนะนำให้ อีกฝ่ายจึงเปิดใจคุยง่ายกว่าทักไปเอง" },
+  ],
+};
+
+/** The quest's English terms, or none for a proposed quest or a slug without any. */
+export function questTerms(kind: "main" | "side" | "proposed", slug: string | null | undefined): readonly QuestTerm[] {
+  if (kind === "proposed" || !slug) return [];
+  return Object.hasOwn(QUEST_TERMS, slug) ? QUEST_TERMS[slug] : [];
+}
+
+/** DRAFT: one step of a quest's how-to, with its pixel picture. */
+export interface QuestStep {
+  icon: IconKey;
+  text: string;
+}
+
+/** DRAFT: ทำยังไง on the side quests that are a skill to learn, step by step. Unknown slugs show nothing. */
+export const QUEST_STEPS: Readonly<Record<string, readonly QuestStep[]>> = {
+  "side-stakeholder-map": [
+    { icon: "seed", text: "เขียนปัญหาของทีมไว้ตรงกลาง" },
+    { icon: "peers", text: "รอบๆ เขียนคนสี่แบบ: ใครใช้ ใครจ่าย ใครตัดสินใจ ใครอาจขวาง คนเดียวเป็นได้หลายแบบ" },
+    { icon: "eye", text: "บอกแค่บทบาทให้ชัด เช่น \"แม่ค้าร้านข้าวหน้าโรงเรียน\" ไม่ต้องใส่ชื่อจริง" },
+    { icon: "compass", text: "วงคนที่ควรคุยก่อน แล้วเขียนเหตุผลหนึ่งบรรทัด" },
+  ],
+  "side-practice-talk": [
+    { icon: "peers", text: "หาเพื่อนหนึ่งคนที่กองไฟหรือในห้อง help" },
+    { icon: "bubble", text: "บอกเพื่อนว่าให้เล่นเป็นใคร เช่น \"แม่ค้าที่ยุ่งตอนเที่ยง\"" },
+    { icon: "calendar", text: "ถาม 10 นาที แล้วสลับกันเป็นคนตอบ" },
+    { icon: "note", text: "จดว่าคำถามไหนได้เรื่องจริง คำถามไหนได้แต่คำชม" },
+  ],
+  "side-question-check": [
+    { icon: "note", text: "เขียน 3 คำถามที่จะใช้คุยจริง" },
+    { icon: "eye", text: "เช็กทีละข้อ: ถามถึงเรื่องที่เกิดขึ้นแล้ว หรือถามถึงอนาคต" },
+    { icon: "send", text: "โพสต์ในห้อง help ให้พี่เลี้ยงช่วยดู" },
+    { icon: "check", text: "แก้ตามที่ได้ แล้วเก็บไว้ทั้งก่อนและหลังแก้" },
+  ],
+  "side-warm-intro": [
+    { icon: "eye", text: "เขียนว่าอยากคุยกับคนแบบไหน บอกแค่บทบาท" },
+    { icon: "bulb", text: "บอกเหตุผลหนึ่งบรรทัดว่าทำไมอยากคุยกับเขา" },
+    { icon: "send", text: "โพสต์ในห้อง help แล้วพี่จะแนะนำในห้องรวม" },
+    { icon: "handshake", text: "ก่อนเจอ บอกพ่อแม่หรือครู และนัดในที่ที่มีคนอื่นอยู่ด้วย" },
+  ],
+};
+
+/** The quest's how-to steps, or none for a proposed quest or a slug without any. */
+export function questSteps(kind: "main" | "side" | "proposed", slug: string | null | undefined): readonly QuestStep[] {
+  if (kind === "proposed" || !slug) return [];
+  return Object.hasOwn(QUEST_STEPS, slug) ? QUEST_STEPS[slug] : [];
+}
+
+/**
+ * DRAFT: the picture on แผนที่คนรอบปัญหา, from the quest's own example (the
+ * pre-order lunch). The four roles sit around the problem; the one to talk to
+ * first is ringed.
+ */
+export const STAKEHOLDER_MAP = {
+  slug: "side-stakeholder-map",
+  heading: "ภาพตัวอย่าง",
+  label: "ตัวอย่างแผนที่คนรอบปัญหา: ระบบสั่งข้าวล่วงหน้า",
+  center: "ระบบสั่งข้าวล่วงหน้า",
+  first: "คุยก่อน",
+  roles: [
+    { key: "user", icon: "peers", term: "User", role: "ใครใช้", who: "นักเรียน", first: false },
+    { key: "payer", icon: "coin", term: "Payer", role: "ใครจ่าย", who: "ผู้ปกครอง", first: false },
+    { key: "decider", icon: "check", term: "Decision maker", role: "ใครตัดสินใจ", who: "แม่ค้า", first: true },
+    { key: "blocker", icon: "lockdoor", term: "Blocker", role: "ใครอาจขวาง", who: "ฝ่ายอาคาร", first: false },
+  ],
+} as const satisfies {
+  slug: string;
+  heading: string;
+  label: string;
+  center: string;
+  first: string;
+  roles: readonly { key: string; icon: IconKey; term: string; role: string; who: string; first: boolean }[];
+};
+
+/** DRAFT: the section headings for the how-to and the words. */
+export const QUEST_GUIDE_COPY = {
+  steps: "ทำยังไง",
+  terms: "คำศัพท์",
+  termsNote: "แตะคำเพื่อดูความหมาย",
 };
 
 /** The quest's pitfalls, or none for a proposed quest or a slug without any. */

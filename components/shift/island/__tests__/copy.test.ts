@@ -112,7 +112,9 @@ describe("island copy", () => {
   });
 
   it("names one pitfall or two, with a warning sign and a way around it, for every main quest", () => {
-    expect(Object.keys(copy.QUEST_PITFALLS).sort()).toEqual(Object.values(MAIN_SLUGS).sort());
+    // Every main quest, plus the first act's skill side quests (20261115090000).
+    const sides = ["side-practice-talk", "side-question-check", "side-stakeholder-map"];
+    expect(Object.keys(copy.QUEST_PITFALLS).sort()).toEqual([...Object.values(MAIN_SLUGS), ...sides].sort());
     for (const pitfalls of Object.values(copy.QUEST_PITFALLS)) {
       expect(pitfalls.length).toBeGreaterThanOrEqual(1);
       expect(pitfalls.length).toBeLessThanOrEqual(2);
@@ -127,6 +129,27 @@ describe("island copy", () => {
     expect(copy.questPitfalls("proposed", "first-partner")).toEqual([]);
     expect(copy.questPitfalls("side", "side-readme")).toEqual([]);
     expect(copy.questPitfalls("main", "toString")).toEqual([]);
+  });
+
+  it("keeps every quest's English words in English, with Thai beside them and a meaning, house rules kept", () => {
+    const known = new Set([...Object.values(MAIN_SLUGS), "side-stakeholder-map", "side-practice-talk", "side-question-check", "side-warm-intro"]);
+    for (const [slug, terms] of Object.entries(copy.QUEST_TERMS)) {
+      expect(known.has(slug)).toBe(true);
+      for (const t of terms) {
+        expect(t.term).toMatch(/^[A-Za-z][A-Za-z -]*$/);
+        for (const text of [t.thai, t.meaning]) {
+          expect(text.trim().length).toBeGreaterThan(0);
+          expect(text).not.toMatch(/[—–]|น้อง/);
+        }
+      }
+    }
+    for (const [slug, steps] of Object.entries(copy.QUEST_STEPS)) {
+      expect(known.has(slug)).toBe(true);
+      for (const step of steps) expect(step.text).not.toMatch(/[—–]|น้อง/);
+    }
+    expect(copy.questTerms("side", "side-stakeholder-map").map((t) => t.term)).toContain("Stakeholder");
+    expect(copy.questTerms("proposed", "side-stakeholder-map")).toEqual([]);
+    expect(copy.questSteps("side", "toString")).toEqual([]);
   });
 
   it("puts every main quest in exactly one act, in order", () => {

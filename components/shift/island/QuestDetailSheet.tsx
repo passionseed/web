@@ -42,14 +42,14 @@ import { SHIFT_CARDS } from "@/lib/whiteboard/shift-cards";
 import { refreshIsland } from "./useIslandRefresh";
 import { QuestCardComposer, useQuestCanvas, type CardStep } from "./canvas";
 import { SUBMIT } from "./canvas/copy";
-import { BOARD, CANVAS, COMMON, DETAIL, QUEST, SYNC, questFlavor, questPitfalls, tileChip } from "./copy";
+import { BOARD, CANVAS, COMMON, DETAIL, QUEST, SYNC, questFlavor, questPitfalls, questSteps, questTerms, tileChip } from "./copy";
 import { doneWhenItems } from "./DoneWhenLine";
 import { InSheetFooter } from "./InSheetFooter";
 import styles from "./island.module.css";
 import { IslandSheet } from "./IslandSheet";
 import { canStart, detailAction, mentorFeedback, questView, refKey, sameRef, type DetailAction, type QuestView } from "./model";
 import { checkIcon, HELPER_ICONS } from "./questArt";
-import { Examples, Helpers, HintIcon, inFirstAct, Pitfalls, QuestHeader, TeamProblem, WhoChecks } from "./QuestSections";
+import { Examples, Helpers, HintIcon, inFirstAct, Pitfalls, QuestHeader, StakeholderMap, Steps, TeamProblem, Terms, WhoChecks } from "./QuestSections";
 import { SentScreen } from "./SentScreen";
 import { PALETTE, iconGrid, iconScale, type IconKey } from "./sprites";
 import { SubmitForm } from "./SubmitForm";
@@ -363,6 +363,9 @@ function QuestDetailBody({
         {flavor ? <p className={styles.detailFlavor}>{flavor}</p> : null}
       </div>
 
+      {/* The rest of the goal, the criteria and the question: right under the goal, not after the whole page. */}
+      <MoreDetails quest={quest} guide={guide} />
+
       {feedback ? (
         <blockquote className={styles.feedback}>
           <p>{DETAIL.feedback(feedback)}</p>
@@ -386,6 +389,11 @@ function QuestDetailBody({
           }
         />
       ) : null}
+
+      {/* A skill quest teaches by showing: its picture, its steps, then the English words it uses. */}
+      <StakeholderMap slug={quest.kind === "side" ? quest.slug : null} />
+      <Steps steps={questSteps(quest.kind, quest.slug)} />
+      <Terms terms={questTerms(quest.kind, quest.slug)} />
 
       <Pitfalls pitfalls={questPitfalls(quest.kind, quest.slug)} />
 
@@ -419,8 +427,6 @@ function QuestDetailBody({
       ) : !hasZones ? (
         <CanvasLinkRow onLink={onLinkCanvas} />
       ) : null}
-
-      <MoreDetails quest={quest} guide={guide} />
 
       <DetailNotice quest={quest} action={action} />
     </div>
@@ -692,7 +698,7 @@ const LONG_PURPOSE = 120;
 /**
  * One collapsed row: the details not already on the page (the criteria when
  * เสร็จเมื่อ has its own checklist, a long purpose in full, the question).
- * Examples have their own open section above (Examples).
+ * Examples have their own open section further down (Examples).
  */
 function MoreDetails({ quest, guide }: { quest: QuestView; guide: QuestGuide }) {
   // Without a guide checklist, เสร็จเมื่อ already shows the criteria as its one item.
