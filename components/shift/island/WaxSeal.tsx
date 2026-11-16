@@ -14,7 +14,7 @@ import { useReducedMotion } from "./useReducedMotion";
 const LOGIN_HREF = "/login?next=%2Fshift%2Fisland%3Fat%3Dseal";
 const APPLY_HREF = "/shift/apply";
 /** Alumni with no record yet confirm themselves here first. */
-const ALUMNI_BOARD_HREF = "/shift/alumni/board";
+const ALUMNI_VERIFY_HREF = "/shift/island/verify";
 /** The wax lifts, presses down and settles, then the ticket takes its place. */
 const STAMP_MS = 720;
 /** A request that has not answered by now is treated as failed. */
@@ -62,7 +62,7 @@ export function WaxSeal({
           <p className={styles.sealLine}>{SEAL.notAlumni}</p>
           <SealLink href={APPLY_HREF}>{SEAL.applyCta}</SealLink>
           <p className={styles.sealLine}>{SEAL.alumniHint}</p>
-          <SealLink href={ALUMNI_BOARD_HREF}>{SEAL.alumniCta}</SealLink>
+          <SealLink href={ALUMNI_VERIFY_HREF}>{SEAL.alumniCta}</SealLink>
         </div>
       );
     case "closed":
