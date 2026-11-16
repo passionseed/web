@@ -180,6 +180,9 @@ describe("getIslandPage", () => {
     expect(page.consent).toEqual(CONSENT);
     expect(page.news).toEqual(NEWS);
     expect(page.me).toBe(viewer.me);
+    // The member uuid keys the private day intention on this device; never the Discord id.
+    expect(page.memberId).toBe("m1");
+    expect(JSON.stringify(page)).not.toContain(ACTOR);
     expect(page.unread).toBe(3);
     expect(page.island.project?.name).toBe("Lamp");
     expect(page.board).toEqual(board);

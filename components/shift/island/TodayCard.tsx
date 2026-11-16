@@ -30,6 +30,12 @@ interface TodayCardProps {
   onStuck: (target: StuckTarget) => void;
   /** Opens today's quest. */
   onOpenQuest: (quest: TodayQuest) => void;
+  /**
+   * The viewer's quest member uuid (page.memberId): keys the private
+   * intention kept on this browser, so a shared device shows it back only to
+   * the student who wrote it. null keeps nothing on the device.
+   */
+  viewerKey?: string | null;
 }
 
 /**
@@ -42,7 +48,7 @@ interface TodayCardProps {
  * heatmaps, ever, and no day count here: the only one is the character
  * sheet's days shown up, which never resets (CHARACTER.days).
  */
-export function TodayCard({ tapsToday, resting, quest, onSaved, onStuck, onOpenQuest }: TodayCardProps) {
+export function TodayCard({ tapsToday, resting, quest, onSaved, onStuck, onOpenQuest, viewerKey = null }: TodayCardProps) {
   // Set when the action succeeds, so the flip holds even before the refreshed props arrive.
   const [confirmed, setConfirmed] = useState(false);
   const [tapped, setOptimisticTapped] = useOptimistic(tapsToday > 0 || confirmed, (_current, next: boolean) => next);
@@ -51,7 +57,7 @@ export function TodayCard({ tapsToday, resting, quest, onSaved, onStuck, onOpenQ
   const [restPending, startRest] = useTransition();
   const intentionId = useId();
   const [intention, setIntention] = useState("");
-  const intended = useDayIntention();
+  const intended = useDayIntention(viewerKey);
   const instanceId = quest?.instanceId ?? null;
   // A quest the student has not started has no instance: their help request is a general one.
   const stuckTarget: StuckTarget = { instanceId, title: instanceId ? (quest?.title ?? null) : null };
@@ -64,7 +70,7 @@ export function TodayCard({ tapsToday, resting, quest, onSaved, onStuck, onOpenQ
       const result = await checkIn({ intention: text || null, instanceId });
       if (result.ok) {
         setConfirmed(true);
-        if (text) keepDayIntention(text);
+        if (text) keepDayIntention(text, viewerKey);
         setIntention("");
         onSaved?.();
         // Checked in: straight to the work.

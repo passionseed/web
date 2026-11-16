@@ -8,7 +8,7 @@ import type { IslandPageData, IslandProject, MyTree, ViewerCard } from "@/lib/su
 
 import { AdminReset } from "./AdminReset";
 import { Avatar } from "./Avatar";
-import { FOOTER, HUD, ISLAND, NO_PROJECT, treeStageName } from "./copy";
+import { ADMIN_OVERVIEW, FOOTER, HUD, ISLAND, NO_PROJECT, treeStageName } from "./copy";
 import styles from "./island.module.css";
 import { IslandDiscordButton } from "./IslandDiscordButton";
 import { IslandFooter } from "./IslandFooter";
@@ -162,7 +162,7 @@ export function MenuSheet({
         ) : null}
         {/* Admins only: the database checks the role again on every reset. */}
         {me.admin ? <>
-          {onAdmin ? <button type="button" className={styles.quietButton} aria-haspopup="dialog" onClick={onAdmin}>ภาพรวมเกาะ · Admin</button> : null}
+          {onAdmin ? <button type="button" className={styles.quietButton} aria-haspopup="dialog" onClick={onAdmin}>{ADMIN_OVERVIEW.title}</button> : null}
           <AdminReset />
         </> : null}
         {project ? (

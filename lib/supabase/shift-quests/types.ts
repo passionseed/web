@@ -271,6 +271,13 @@ export interface IslandPageData {
   /** Loaded only for an application admin, with a second role check in Postgres. */
   adminOverview?: import("./adminTypes").AdminIslandOverview | null;
   me: ViewerCard;
+  /**
+   * session.member_id: the quest member uuid (never the Discord id). The
+   * client keys this browser's private day intention on it, so a shared
+   * device never shows one student's intention to another. Optional so older
+   * fixtures keep compiling; absent or null keeps nothing on the device.
+   */
+  memberId?: string | null;
   /** session.unread */
   unread: number;
   island: IslandView;

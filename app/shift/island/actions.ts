@@ -192,20 +192,33 @@ export async function respondInvite(input: { projectId: string; accept: boolean 
  * The day's check-in, made before the work: the day's tap and, when given, a
  * private intention (what the student means to do), saved as the journal's
  * next step under their own quest instance. It never grows the tree's stage.
+ *
+ * Two calls, not one transaction, so the order keeps a retry safe: the tap
+ * first, and the intention only once the tap is in. A refused tap saves
+ * nothing, so trying again cannot leave a stray or doubled intention. Once
+ * the tap is in, the check-in counts even if the intention then fails: that
+ * failure is logged by its code and answered as intentionSaved: false, which
+ * the card may ignore (the card shows the day as done, so there is no retry
+ * that could tap twice).
  */
 export async function checkIn(input?: {
   intention?: string | null;
   instanceId?: string | null;
-}): Promise<IslandActionResult<{ tapsToday: number }>> {
+}): Promise<IslandActionResult<{ tapsToday: number; intentionSaved?: boolean }>> {
   return withReadyViewer("checkIn", checkInSchema, input, async ({ actor }, v) => {
-    // The intention first: when it fails nothing is saved, and the whole check-in can be tried again.
-    if (v.intention) {
-      await questApi().call(
+    const api = questApi();
+    const row = await api.call<{ taps_today: number }>("shift_quest_checkin", actor, null);
+    const tapsToday = Number(row.taps_today) || 0;
+    if (!v.intention) return { tapsToday };
+    try {
+      await api.call(
         "shift_quest_progress_add", actor, REFLECT.changed, null, v.intention, null, null, "private", v.instanceId
       );
+      return { tapsToday, intentionSaved: true };
+    } catch (error) {
+      console.error(`[shift-island] checkIn: intention not saved, the tap stands (${failureCode(error)})`);
+      return { tapsToday, intentionSaved: false };
     }
-    const row = await questApi().call<{ taps_today: number }>("shift_quest_checkin", actor, null);
-    return { tapsToday: Number(row.taps_today) || 0 };
   });
 }
 

@@ -17,7 +17,7 @@ import { CampfireSound } from "./CampfireSound";
 import { CampfireSheet } from "./CampfireSheet";
 import { CanvasLinkSheet } from "./canvas";
 import { ConsentSheet } from "./consent/ConsentSheet";
-import { CAMPFIRE, CANVAS, FESTIVAL, GATE, HUD, NOTICE, NO_PROJECT, SEASON, thaiShortDate } from "./copy";
+import { ADMIN_OVERVIEW, CAMPFIRE, CANVAS, FESTIVAL, GATE, HUD, NOTICE, NO_PROJECT, SEASON, thaiShortDate } from "./copy";
 import { FestivalSheet } from "./FestivalSheet";
 import { BoardSheet, InboxSheet, MenuSheet } from "./HudSheets";
 import { NewsSheet } from "./news/NewsSheet";
@@ -159,7 +159,7 @@ function menuRows(page: IslandPageData, onPanel: (panel: Panel) => void) {
 function MenuRound({ page, onOpen, onAdmin }: { page: IslandPageData; onOpen: () => void; onAdmin: () => void }) {
   const pending = page.consent != null && !page.consent.ok;
   return <>
-    {page.me.admin ? <HudRound icon="news" label="ภาพรวมเกาะ · Admin" onClick={onAdmin} /> : null}
+    {page.me.admin ? <HudRound icon="news" label={ADMIN_OVERVIEW.title} onClick={onAdmin} /> : null}
     <HudRound icon="menu" label={pending ? HUD.menuConsent : HUD.menu} dot={pending} onClick={onOpen} />
   </>;
 }
@@ -437,6 +437,7 @@ function IslandHome({
       onSaved={checkedIn}
       onStuck={openStuck}
       onOpenQuest={(quest) => openQuest(quest.ref, false)}
+      viewerKey={page.memberId ?? null}
     />
   );
 

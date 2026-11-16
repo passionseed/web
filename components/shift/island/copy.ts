@@ -243,6 +243,32 @@ export const ADMIN_RESET = {
   done: "รีเซ็ตแล้ว กำลังโหลดเกาะใหม่",
 };
 
+/**
+ * DRAFT: the admin overview of the whole island (admins only; Postgres checks
+ * the role again): every team's name, members and progress, from the HUD and
+ * the ⋯ menu.
+ */
+export const ADMIN_OVERVIEW = {
+  /** The sheet's title and the HUD / menu button that opens it. */
+  title: "ภาพรวมเกาะ · Admin",
+  intro: "ข้อมูลสำหรับแอดมิน: ชื่อทีม สมาชิก และความคืบหน้าของทุกแปลง",
+  summary: (teams: number, waiting: number, help: number) =>
+    `${teams} ทีม · ${waiting} งานรอตรวจ · ${help} คำขอความช่วยเหลือ`,
+  search: "ค้นหาทีม สมาชิก หรือเลขแปลง",
+  plot: (slot: number, name: string) => `แปลง ${slot} · ${name}`,
+  members: "สมาชิก:",
+  noMembers: "ยังไม่มีสมาชิก",
+  milestones: "ผ่านหมุดหมาย",
+  milestonesOf: (done: number) => `${done}/7`,
+  waitingReview: "รอตรวจงาน",
+  openHelp: "รอความช่วยเหลือ",
+  checkinsWeek: "เช็กอิน 7 วัน",
+  updated: "อัปเดตล่าสุด:",
+  noMatch: "ไม่พบทีมที่ค้นหา",
+  empty: "ยังไม่มีทีมบนเกาะ",
+  failed: "ยังโหลดข้อมูลแอดมินไม่ได้ ลองรีเฟรชหน้าอีกครั้ง",
+};
+
 export const HUD = {
   /** The top-left chip's accessible name: the project, its tree, and what the tap opens. */
   chip: (name: string, stage: string) => `${name}, ${stage}, ดูวันนี้ของโปรเจกต์`,

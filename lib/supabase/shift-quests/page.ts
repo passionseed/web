@@ -224,6 +224,7 @@ export async function getIslandPage(viewer: ReadyViewer): Promise<IslandPageData
 
   return {
     me: viewer.me,
+    memberId: viewer.session.member_id ?? null,
     adminOverview,
     unread: Number(viewer.session.unread) || 0,
     island,

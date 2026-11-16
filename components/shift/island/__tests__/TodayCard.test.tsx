@@ -2,12 +2,14 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { toast } from "sonner";
 
 import { checkIn, reflect, setResting } from "@/app/shift/island/actions";
+import { bangkokDay } from "@/lib/shift-island/festival";
 import { REFLECTION_MIN_CHARS, REFLECTIONS_PER_DAY } from "@/lib/shift-island/rounds-rules";
 import type { IslandActionResult } from "@/lib/supabase/shift-quests/types";
 
 import { KEYNOTE, REFLECT, TODAY } from "../copy";
 import type { TodayQuest } from "../model";
 import { TodayCard } from "../TodayCard";
+import { DAY_INTENTION_KEY } from "../useDayIntention";
 
 jest.mock("@/app/shift/island/actions", () => ({ checkIn: jest.fn(), reflect: jest.fn(), setResting: jest.fn() }));
 jest.mock("sonner", () => ({ toast: { success: jest.fn(), error: jest.fn(), info: jest.fn() } }));
@@ -22,13 +24,15 @@ const ACTIVE: TodayQuest = { ref: { kind: "main", milestone: 1 }, title: "เจ
 const STARTER: TodayQuest = { ref: { kind: "main", milestone: 1 }, title: "เจอคนจริงคนแรก", mode: "start", instanceId: null };
 const LINE = "คุยกับแม่ค้าหน้าโรงเรียนสิบนาที";
 const INTENTION = "ไปคุยกับแม่ค้าหน้าโรงเรียน";
+const MEMBER = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+const OTHER_MEMBER = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 
 beforeEach(() => window.localStorage.clear());
 
 function card(props: Partial<React.ComponentProps<typeof TodayCard>> = {}) {
   const handlers = { onSaved: jest.fn(), onStuck: jest.fn(), onOpenQuest: jest.fn() };
-  render(<TodayCard tapsToday={0} resting={false} quest={ACTIVE} {...handlers} {...props} />);
-  return handlers;
+  const view = render(<TodayCard tapsToday={0} resting={false} quest={ACTIVE} viewerKey={MEMBER} {...handlers} {...props} />);
+  return { ...handlers, unmount: view.unmount };
 }
 
 /** A check-in whose answer the test decides, to look at the screen while it is in flight. */
@@ -87,6 +91,44 @@ describe("TodayCard", () => {
     fireEvent.click(screen.getByRole("button", { name: TODAY.go }));
     expect(await screen.findByText(TODAY.intended(INTENTION))).toBeInTheDocument();
     expect(mockedCheckIn).toHaveBeenCalledWith({ intention: INTENTION, instanceId: INSTANCE });
+    const kept = JSON.parse(window.localStorage.getItem(DAY_INTENTION_KEY) ?? "null");
+    expect(kept).toMatchObject({ text: INTENTION, who: MEMBER });
+  });
+
+  it("never shows one student's intention to another on a shared device", async () => {
+    mockedCheckIn.mockResolvedValueOnce({ ok: true, data: { tapsToday: 1 } });
+    const { unmount } = card();
+    fireEvent.change(screen.getByLabelText(TODAY.ask), { target: { value: INTENTION } });
+    fireEvent.click(screen.getByRole("button", { name: TODAY.go }));
+    expect(await screen.findByText(TODAY.intended(INTENTION))).toBeInTheDocument();
+    unmount();
+
+    // Student B on the same browser, also checked in today.
+    const other = card({ tapsToday: 1, viewerKey: OTHER_MEMBER });
+    expect(screen.getByText(TODAY.tapped)).toBeInTheDocument();
+    expect(screen.queryByText(TODAY.intended(INTENTION))).toBeNull();
+    other.unmount();
+
+    // Without a viewer key nothing is shown either.
+    card({ tapsToday: 1, viewerKey: null });
+    expect(screen.queryByText(TODAY.intended(INTENTION))).toBeNull();
+  });
+
+  it("keeps nothing on the device without a viewer key", async () => {
+    mockedCheckIn.mockResolvedValueOnce({ ok: true, data: { tapsToday: 1 } });
+    card({ viewerKey: null });
+    fireEvent.change(screen.getByLabelText(TODAY.ask), { target: { value: INTENTION } });
+    fireEvent.click(screen.getByRole("button", { name: TODAY.go }));
+    expect(await screen.findByText(TODAY.tapped)).toBeInTheDocument();
+    await waitFor(() => expect(mockedCheckIn).toHaveBeenCalledWith({ intention: INTENTION, instanceId: INSTANCE }));
+    expect(window.localStorage.getItem(DAY_INTENTION_KEY)).toBeNull();
+    expect(screen.queryByText(TODAY.intended(INTENTION))).toBeNull();
+  });
+
+  it("ignores an intention kept before it was tied to a viewer", () => {
+    window.localStorage.setItem(DAY_INTENTION_KEY, JSON.stringify({ day: bangkokDay(Date.now()), text: INTENTION }));
+    card({ tapsToday: 1 });
+    expect(screen.queryByText(TODAY.intended(INTENTION))).toBeNull();
   });
 
   it("checks in on a quest not started yet without filing under it", async () => {

@@ -425,28 +425,42 @@ describe("loadCampfire", () => {
 
 
 describe("checkIn with an intention", () => {
-  it("saves the intention under the quest before the day's tap", async () => {
-    call.mockResolvedValueOnce(UUID).mockResolvedValueOnce({ kind: "tap", taps_today: 1, progress_id: "x" });
+  it("taps first, then saves the intention under the quest", async () => {
+    call.mockResolvedValueOnce({ kind: "tap", taps_today: 1, progress_id: "x" }).mockResolvedValueOnce(UUID);
     await expect(actions.checkIn({ intention: "  คุยกับแม่ค้าหน้าโรงเรียน  ", instanceId: UUID })).resolves.toEqual({
       ok: true,
-      data: { tapsToday: 1 },
+      data: { tapsToday: 1, intentionSaved: true },
     });
     expect(call.mock.calls).toEqual([
-      ["shift_quest_progress_add", ACTOR, "บันทึกจากเกาะ", null, "คุยกับแม่ค้าหน้าโรงเรียน", null, null, "private", UUID],
       ["shift_quest_checkin", ACTOR, null],
+      ["shift_quest_progress_add", ACTOR, "บันทึกจากเกาะ", null, "คุยกับแม่ค้าหน้าโรงเรียน", null, null, "private", UUID],
     ]);
   });
 
   it.each([undefined, "", "   "])("is a plain tap without an intention (%j)", async (intention) => {
     call.mockResolvedValue({ kind: "tap", taps_today: 1, progress_id: "x" });
-    await actions.checkIn({ intention, instanceId: UUID });
+    await expect(actions.checkIn({ intention, instanceId: UUID })).resolves.toEqual({ ok: true, data: { tapsToday: 1 } });
     expect(call.mock.calls).toEqual([["shift_quest_checkin", ACTOR, null]]);
   });
 
-  it("saves no tap when the intention is refused, so the whole check-in can be tried again", async () => {
+  it("saves no intention when the tap is refused, so a retry cannot leave a stray or doubled one", async () => {
     call.mockRejectedValueOnce(new QuestError("not_found"));
     expect(await actions.checkIn({ intention: "คุย", instanceId: UUID })).toMatchObject({ ok: false });
-    expect(call).toHaveBeenCalledTimes(1);
+    expect(call.mock.calls).toEqual([["shift_quest_checkin", ACTOR, null]]);
+  });
+
+  it("keeps the tap when the intention then fails, flagged and logged by its code only", async () => {
+    const log = jest.spyOn(console, "error").mockImplementation(() => {});
+    call.mockResolvedValueOnce({ kind: "tap", taps_today: 1, progress_id: "x" }).mockRejectedValueOnce(new QuestError("not_found"));
+    await expect(actions.checkIn({ intention: "คุยกับแม่ค้า", instanceId: UUID })).resolves.toEqual({
+      ok: true,
+      data: { tapsToday: 1, intentionSaved: false },
+    });
+    expect(call).toHaveBeenCalledTimes(2);
+    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("sq:not_found"));
+    expect(String(log.mock.calls[0][0])).not.toContain("คุยกับแม่ค้า");
+    log.mockRestore();
   });
 });
 
