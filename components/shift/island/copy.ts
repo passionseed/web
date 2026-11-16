@@ -904,6 +904,9 @@ export const TEAM_PROBLEM = {
 export const REVIEW_PAGE = {
   title: "งานที่ส่งมาให้ดู",
   staffOnly: "หน้านี้สำหรับพี่เลี้ยงและแอดมินเท่านั้น",
+  /** DRAFT: the reviewer is the student, a teammate (now or before) or a contributor (20261116080000). */
+  conflict:
+    "คุณเปิดงานนี้ไม่ได้ เพราะเป็นงานของคุณเอง ของคนที่อยู่หรือเคยอยู่ทีมเดียวกับคุณ หรืองานที่คุณมีส่วนร่วม ให้พี่เลี้ยงคนอื่นดูแทน",
   signIn: "เข้าสู่ระบบด้วยบัญชี Discord ที่ใช้บนเกาะก่อน",
   notFound: "ไม่พบงานนี้",
   unavailable: "หน้านี้ยังไม่เปิด ลองใหม่อีกครั้งภายหลัง",
