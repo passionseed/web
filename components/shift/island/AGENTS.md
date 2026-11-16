@@ -6,7 +6,8 @@ migrations. Before designing or changing a feature, the PassionSeed team uses
 the internal `seedwork` skill and its island reference (the goal that breaks
 ties, the season metric, the workflow), and everyone reads
 [`docs/designs/shift-island-core-loop.md`](../../../docs/designs/shift-island-core-loop.md)
-(decisions already made). These rules never bend:
+(the proposed design; the founder's decisions are recorded in its decision
+table). These rules never bend:
 
 - **Only a mentor grows the tree.** A tree's stage rises only when a mentor
   approves a main quest. Check-ins, reflections, roots, side quests, coins and

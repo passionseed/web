@@ -6,9 +6,9 @@ needs the three-model review in `AGENTS.md` before it ships.
 ## Why
 
 The founder's core experience is **a quest done in the real world grows the
-team's tree**. On production two days into Season 1 (14 to 28 Nov, demo day
-28 Nov): 8 students, 8 solo projects, 1 main quest started, 0 submissions,
-0 reviews, 3 check-in taps on one day. The loop has never closed once.
+team's tree**. Early in Season 1 (14 to 28 Nov, demo day 28 Nov) the loop
+had not closed once: few main quests started, no submissions or reviews yet,
+and only a handful of check-in taps.
 
 An audit of the code found the quest half careful and the reward half
 missing:
@@ -301,8 +301,8 @@ the four seeds (`SeedChoice`, pulled out of `SeedPicker`). Button
 `จับจองที่ดินและปลูกเมล็ด`. `createProject` calls `shift_quest_project_create`
 then `shift_quest_seed_plant` (already granted); a failed plant still claims
 and falls back to the tree pill. Own unplanted plots read `รอปลูกเมล็ด`
-instead of `ที่ดินว่าง`. Note: all 8 current students already claimed, so this
-helps new students only.
+instead of `ที่ดินว่าง`. Note: the current students have already claimed, so
+this helps new students only.
 
 ---
 
@@ -327,7 +327,8 @@ helps new students only.
 | B2 | Full web inbox and DM toggle (`inbox_list`, `update_prefs` grants) | 1 to 1.5 d |
 | B3 | Overdue review nudge (new function) | 0.5 d |
 
-Each migration is timestamped after `20261115144409` and applied with
+Each migration is timestamped after the newest `shift_quest` migration on
+main (`20261115144409` once PR #318 lands) and applied with
 `supabase db push` before its web code deploys.
 
 ## Decisions for the founder
@@ -343,8 +344,13 @@ Each migration is timestamped after `20261115144409` and applied with
 | 7 | Require the problem line and seed at claim? | Yes, new claims only |
 | 8 | Switch on reminders (opt-in) and sharing (weekly island post) for Season 1? | Reminders yes; sharing after the Thai review |
 | 9 | Board icons clash with island decorations (board: visitor = 1, path = 5; island: visitor = 3, path = 6) | Pick one mapping before A1 ships |
-| 10 | Teammates also get the approval notice (needs a migration)? | Later: every team is solo today |
+| 10 | Teammates also get the approval notice (needs a migration)? | Later: most teams are solo today |
 | 11 | At stage 7, does "next" lead to the Demo Day festival? | Yes |
+
+**Founder decision, 2026-11-16:** the Discord bot becomes notify-only. Every
+student and staff flow, including review decisions and appeals, moves to the
+web. This supersedes decision 3's "appeals stay in Discord" and widens B1 to
+cover appeals as well as pending work.
 
 ## Tests (summary)
 
