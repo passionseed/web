@@ -118,8 +118,8 @@ function FeedbackDone({ comingBack, joining }: { comingBack: boolean; joining: b
       <p className={styles.doneNote}>ทุกคำตอบพี่อ่านเองหมด และจะเอาไปปรับ SHIFT รอบหน้า</p>
       {comingBack && <p className={styles.doneNote}>รายละเอียด SHIFT High พี่จะส่งในกลุ่มนะ แล้วเจอกัน</p>}
       {joining && <p className={styles.doneNote}>ขอบคุณที่สมัคร SHIFT High นะ รายละเอียดกับวิธีจ่าย พี่จะส่งในกลุ่ม</p>}
-      <Link href="/shift/alumni" className={`${space.cta} mt-6`}>
-        <span>รู้จัก SHIFT High และดูนัดต่อไป</span><ArrowRight className="h-4 w-4" aria-hidden="true" />
+      <Link href="/shift/island" className={`${space.cta} mt-6`}>
+        <span>เข้าเกาะ SHIFT High Island</span><ArrowRight className="h-4 w-4" aria-hidden="true" />
       </Link>
     </div>
   );

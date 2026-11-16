@@ -81,6 +81,8 @@ export async function joinBoardAction(input: { nickname: string; cohort: string 
       await createAlumniMember(user.id, parsed.data);
     }
     revalidatePath(BOARD_PATH, "layout");
+    revalidatePath("/shift/island/verify");
+    revalidatePath("/shift/island");
     return { ok: true };
   } catch (error) {
     console.error("Alumni board join failed:", error);
