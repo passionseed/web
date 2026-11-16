@@ -14,7 +14,8 @@ import { resolveIslandViewer } from "@/lib/supabase/shift-quests/viewer";
  * the photos the Discord review card cannot show (schema 14) and the peer
  * checks, which a mentor can hide here (schema 15). Reviewers and
  * admins only: the quest database refuses everyone else, so a student who
- * opens the link sees a short note and nothing of anyone's work. Decisions
+ * opens the link sees a short note and nothing of anyone's work, and so does a
+ * reviewer too close to it (their own, a teammate's, one they contributed to). Decisions
  * stay in Discord. Reads the session, so it renders per request; nothing here
  * runs at build time.
  */
@@ -52,6 +53,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ submiss
   const read = await loadReview(viewer.actor, submissionId);
   if (read.state === "not_found") notFound();
   if (read.state === "not_authorized") return <Note text={REVIEW_PAGE.staffOnly} />;
+  if (read.state === "conflict") return <Note text={REVIEW_PAGE.conflict} />;
   if (read.state === "unavailable") return <Note text={REVIEW_PAGE.unavailable} />;
 
   return (
