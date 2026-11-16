@@ -24,7 +24,10 @@ Where facts live:
 `main` is protected and every merge to it deploys to production on Vercel.
 
 1. **Never push to `main`.** Create a branch (`fix/...`, `feat/...`, `docs/...`) and open a pull request.
-   Start its description with a **TL;DR**: one or two plain sentences on what changed and why, before any detail.
+   Write its description for a person reading on a phone, in the order of
+   [`.github/pull_request_template.md`](.github/pull_request_template.md): a one-sentence **TL;DR**,
+   before → after, how to try it, why, what to look at closely, then everything else folded away.
+   Say what changed for the person using it, not which files moved.
 2. **CI must pass before merging.** The `build` check runs lint, tests, and `pnpm build`. Run `pnpm lint && pnpm test && pnpm build` locally before pushing.
 3. **Check the Vercel preview** linked on the pull request for any UI change.
 4. **Squash-merge.** The branch is deleted automatically after merging.
