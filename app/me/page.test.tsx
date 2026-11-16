@@ -2,6 +2,8 @@ import { render, screen } from "@testing-library/react";
 
 import PortalPage from "./page";
 import { loadFeaturedRadars } from "@/lib/radar/featured";
+import { loadPersistedMyPathResult } from "@/lib/my-path/server-read";
+import { buildMyPathSummary } from "@/lib/my-path/summary";
 import { redirect } from "next/navigation";
 import { SHIFT_ISLAND } from "@/lib/content/shift-island";
 import { SEAL } from "@/lib/content/shift-island-invite";
@@ -27,6 +29,20 @@ jest.mock("@/lib/supabase/shift-island-viewer", () => ({
   loadIslandViewer: jest.fn(),
 }));
 
+jest.mock("@/lib/my-path/server-read", () => ({
+  loadPersistedMyPathResult: jest.fn(),
+}));
+
+jest.mock("@/lib/my-path/summary", () => ({
+  buildMyPathSummary: jest.fn(),
+}));
+
+jest.mock("@/components/my-path/MyPathSummaryCard", () => ({
+  MyPathSummaryCard: ({ summary }: { summary: { plan: { headline: string } } }) => (
+    <section>Saved plan: {summary.plan.headline}</section>
+  ),
+}));
+
 jest.mock("@/components/ui/in-view-animator", () => ({ InViewAnimator: () => null }));
 
 const viewerIs = (kind: string) =>
@@ -45,6 +61,8 @@ beforeEach(() => {
   getUser.mockResolvedValue({ data: { user: { id: "user-a" } } });
   (loadFeaturedRadars as jest.Mock).mockResolvedValue([cyber]);
   viewerIs("going");
+  (loadPersistedMyPathResult as jest.Mock).mockResolvedValue({ status: "ready", state: null });
+  (buildMyPathSummary as jest.Mock).mockReturnValue(null);
 });
 
 test("sends a signed-out visitor to login", async () => {
@@ -108,4 +126,26 @@ test("keeps the My Path fragment target on the Dawn landmark", async () => {
 
   expect(screen.getByRole("main")).toHaveAttribute("id", "my-path");
   expect(screen.getByRole("main")).toHaveClass("dawn-theme");
+});
+
+test("shows the plan saved from /plan, which promises it lives at /me#my-path", async () => {
+  (loadPersistedMyPathResult as jest.Mock).mockResolvedValue({
+    status: "ready",
+    state: { hasPersistedPath: true, draft: { answers: {}, possibilities: [] }, evidence: [] },
+  });
+  (buildMyPathSummary as jest.Mock).mockReturnValue({ plan: { headline: "แผน 4 เดือน" } });
+  render(await PortalPage());
+
+  expect(screen.getByRole("main")).toHaveTextContent("Saved plan: แผน 4 เดือน");
+});
+
+test("shows no plan card when nothing was saved, or the plan can't be read", async () => {
+  render(await PortalPage());
+  expect(screen.queryByText(/Saved plan/)).not.toBeInTheDocument();
+
+  (loadPersistedMyPathResult as jest.Mock).mockRejectedValue(new Error("db down"));
+  jest.spyOn(console, "error").mockImplementation(() => {});
+  render(await PortalPage());
+  expect(screen.queryByText(/Saved plan/)).not.toBeInTheDocument();
+  expect(screen.getAllByRole("link", { name: /เข้าเกาะ/ }).length).toBeGreaterThan(0);
 });

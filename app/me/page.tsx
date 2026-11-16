@@ -2,7 +2,10 @@ import { redirect } from "next/navigation";
 
 import { FeaturedRadars } from "@/components/me/FeaturedRadars";
 import { IslandLinkCard } from "@/components/me/IslandLinkCard";
+import { MyPathSummaryCard, type MyPathSummary } from "@/components/my-path/MyPathSummaryCard";
 import { InViewAnimator } from "@/components/ui/in-view-animator";
+import { loadPersistedMyPathResult, type MyPathReadClient } from "@/lib/my-path/server-read";
+import { buildMyPathSummary } from "@/lib/my-path/summary";
 import { loadFeaturedRadars } from "@/lib/radar/featured";
 import type { IslandViewer } from "@/lib/shift/islandInvite";
 import { loadIslandViewer } from "@/lib/supabase/shift-island-viewer";
@@ -13,7 +16,8 @@ export const dynamic = "force-dynamic";
 /**
  * /me: for now a door to the SHIFT High Island, the feature we push, plus a
  * few Radar careers. The My Path dashboard (components/my-path) is parked,
- * not deleted.
+ * not deleted. A plan saved from /plan still shows here, because /plan
+ * promises it can be found again at /me#my-path.
  */
 
 /** Where the visitor stands with the island; null sends them to the island's own gate. */
@@ -25,6 +29,17 @@ async function islandViewerKind(): Promise<IslandViewer["kind"] | null> {
     return null;
   }
 }
+/** The plan saved from /plan, or null when there is none (or it can't be read). */
+async function savedPlanSummary(client: MyPathReadClient): Promise<MyPathSummary | null> {
+  try {
+    const draft = (await loadPersistedMyPathResult(client)).state?.draft;
+    return draft?.answers && draft.possibilities ? buildMyPathSummary(draft) : null;
+  } catch (error) {
+    console.error("[me] saved plan unavailable", error instanceof Error ? error.message : "");
+    return null;
+  }
+}
+
 export default async function PortalPage() {
   const supabase = await createClient();
   const {
@@ -35,7 +50,11 @@ export default async function PortalPage() {
     redirect("/login");
   }
 
-  const [viewer, radars] = await Promise.all([islandViewerKind(), loadFeaturedRadars()]);
+  const [viewer, radars, planSummary] = await Promise.all([
+    islandViewerKind(),
+    loadFeaturedRadars(),
+    savedPlanSummary(supabase as unknown as MyPathReadClient),
+  ]);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[linear-gradient(180deg,#020617_0%,#0f172a_50%,#0f2942_100%)] antialiased">
@@ -47,6 +66,11 @@ export default async function PortalPage() {
       <main id="my-path" className="dawn-theme relative z-10 flex-1" lang="th">
         <div className="container mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-10 lg:py-14">
           <IslandLinkCard viewer={viewer} />
+          {planSummary && (
+            <div className="mt-12 [&>section]:mb-0">
+              <MyPathSummaryCard summary={planSummary} />
+            </div>
+          )}
           <FeaturedRadars radars={radars} />
         </div>
       </main>
