@@ -161,7 +161,7 @@ function checkin(question: string): ExcalidrawElementSkeleton[] {
     heading(
       1184,
       boardBottom + 110,
-      "เรื่องที่ภูมิใจจากวันนี้ เขียนสั้น ๆ\nแปะไว้ตรงนี้ แล้วโพสต์ในฟีด\npassionseed.org/shift/alumni/board/feed",
+      "เรื่องที่ภูมิใจจากวันนี้ เขียนสั้น ๆ\nแปะไว้ตรงนี้ แล้วโพสต์ในฟีด\npassionseed.org/shift/island",
       22,
     ),
     sticky(1184, boardBottom + 230, fill("Blue"), "", 160),

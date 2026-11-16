@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition, type FormEvent } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -17,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { BOARD_PATH, QUIET_DAYS, statusLabel } from "@/lib/shift/alumniBoard";
+import { QUIET_DAYS, statusLabel } from "@/lib/shift/alumniBoard";
 import type { MentorRow } from "@/lib/supabase/shift-alumni-board/mentor";
 import type { Team } from "@/lib/supabase/shift-alumni-board/team";
 
@@ -188,13 +187,8 @@ export function MentorTeams({ teams }: { teams: Team[] }) {
       ) : (
         <ul className="flex flex-wrap gap-2">
           {teams.map((t) => (
-            <li key={t.id}>
-              <Link
-                href={`${BOARD_PATH}/team?id=${t.id}`}
-                className="inline-block rounded-md border px-3 py-1.5 text-sm hover:bg-muted"
-              >
-                {t.name}
-              </Link>
+            <li key={t.id} className="inline-block rounded-md border px-3 py-1.5 text-sm">
+              {t.name}
             </li>
           ))}
         </ul>

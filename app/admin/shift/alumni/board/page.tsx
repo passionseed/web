@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { ShiftAdminTabs } from "@/components/admin/ShiftAdminTabs";
 import { MentorMembersTable, MentorTeams, StartRoundButton } from "@/components/admin/shift-alumni/AlumniBoardMentor";
 import { AlumniMembers, type AlumniMemberRow } from "@/components/admin/shift-alumni/AlumniMembers";
@@ -7,7 +5,7 @@ import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
 import { AdminErrorState } from "@/components/admin/shared/AdminStates";
 import { adminMetadata } from "@/lib/admin/metadata";
 import { requireAdmin } from "@/lib/admin/requireAdmin";
-import { BOARD_PATH, formatBangkok, QUIET_DAYS } from "@/lib/shift/alumniBoard";
+import { formatBangkok, QUIET_DAYS } from "@/lib/shift/alumniBoard";
 import { currentRound } from "@/lib/supabase/shift-alumni-board/core";
 import { mentorOverview, type MentorOverview, type MentorStats } from "@/lib/supabase/shift-alumni-board/mentor";
 import { listAlumniMembers } from "@/lib/supabase/shift-alumni-members";
@@ -57,28 +55,6 @@ function RoundStats({ stats }: { stats: MentorStats }) {
   );
 }
 
-const BOARD_LINKS = [
-  { href: BOARD_PATH, label: "Student board" },
-  { href: `${BOARD_PATH}/team`, label: "Teams and standups" },
-  { href: `${BOARD_PATH}/feed`, label: "Progress feed" },
-];
-
-function BoardLinks() {
-  return (
-    <nav aria-label="Alumni board views" className="flex flex-wrap gap-x-4 text-sm">
-      {BOARD_LINKS.map((link) => (
-        <Link
-          key={link.href}
-          href={link.href}
-          className="inline-flex min-h-11 items-center underline decoration-muted-foreground underline-offset-4 hover:decoration-foreground active:decoration-foreground"
-        >
-          {link.label}
-        </Link>
-      ))}
-    </nav>
-  );
-}
-
 export default async function AdminAlumniBoardPage() {
   // The admin layout also checks, but this page reads with the service-role client.
   await requireAdmin();
@@ -92,7 +68,6 @@ export default async function AdminAlumniBoardPage() {
         title="Alumni board"
         description="Goal cards, team standups and help on stuck for every alumni account that is not declined (pending included). Admins are the mentors: you see every team."
       />
-      <BoardLinks />
 
       {overview === null ? (
         <AdminErrorState

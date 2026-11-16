@@ -11,5 +11,5 @@ export const metadata: Metadata = { title: "ยืนยันศิษย์เ
 export default async function VerifyAlumniPage() {
   const access = await boardAccessFor("/shift/island/verify");
   if (access.kind === "ok") redirect("/shift/island?at=seal");
-  return <BoardShell><BoardGate access={access} /></BoardShell>;
+  return <BoardShell nav={false}><BoardGate access={access} /></BoardShell>;
 }
