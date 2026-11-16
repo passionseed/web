@@ -136,6 +136,16 @@ export interface RoundDeps {
   /** The coworking voice channel's chat, or null when the bot cannot post there. */
   channelOf?: (id: string) => RoundChannel | null;
   botId?: () => string | undefined;
+  /** Plays the round's chime in the voice channel (chime.ts); fire and forget. */
+  chime?: (channelId: string, kind: Phase) => void;
+}
+
+/** A phase change older than this is not chimed: someone sat down mid-round, or the bot restarted. */
+export const CHIME_FRESH_MS = 60_000;
+
+/** When the phase a round is in began, in unix seconds. */
+export function phaseStartedAt(at: RoundAt): number {
+  return at.phase === "focus" ? at.restAt - FOCUS_MIN * 60 : at.restAt;
 }
 
 function codeOf(error: unknown): string {
@@ -146,6 +156,11 @@ function codeOf(error: unknown): string {
 export function startRounds(client: Client, campfire: Pick<Campfire, "status">, deps: RoundDeps = {}): Rounds & { tick: () => Promise<void> } {
   const now = deps.now ?? Date.now;
   const botId = deps.botId ?? (() => client.user?.id);
+  /** Chimes only at the start of a phase, never for a late arrival or a restart mid-phase. */
+  const chime = (room: string, at: RoundAt) => {
+    if (!deps.chime || now() - phaseStartedAt(at) * 1000 > CHIME_FRESH_MS) return;
+    deps.chime(room, at.phase);
+  };
   const channelOf =
     deps.channelOf ??
     ((id: string): RoundChannel | null => {
@@ -208,6 +223,7 @@ export function startRounds(client: Client, campfire: Pick<Campfire, "status">, 
       try {
         await current.message.edit(renderView(roundView(at), { ephemeral: false }));
         current.phase = at.phase;
+        chime(room, at);
       } catch (error) {
         warnOnce(`edit:${codeOf(error)}`, `[shift-quests] rounds: edit failed (${codeOf(error)})`);
         // The message is gone (deleted by hand): post anew next tick. Any other
@@ -223,6 +239,7 @@ export function startRounds(client: Client, campfire: Pick<Campfire, "status">, 
       const message = await channel.send({ ...renderView(roundView(at), { ephemeral: false }), allowedMentions: { parse: [] } });
       current = { message, channel: room, round: at.round, phase: at.phase };
       warned = "";
+      chime(room, at);
     } catch (error) {
       warnOnce(`send:${codeOf(error)}`, `[shift-quests] rounds: post failed (${codeOf(error)})`);
     }

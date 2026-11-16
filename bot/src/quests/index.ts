@@ -22,6 +22,7 @@ import { parseCid } from "./ids";
 import { digestFor, startDigestPost } from "./digest";
 import { liveFor, startLivePost } from "./live";
 import { startRounds } from "./rounds";
+import { chimeEnabled, createChime } from "./chime";
 import { warmStory } from "./story";
 import { commandIdMap, setCommandIds, showError } from "./ui";
 import { startOutbox } from "./outbox";
@@ -222,7 +223,10 @@ export async function registerShiftQuests(client: Client, env: ShiftQuestsEnv): 
   // Started only on a database that has the campfire functions (schema 7).
   campfire = campfireFor(version, () => startCampfire(client, api, env.guildId, () => connected));
   // Focus and rest rounds in the campfire's chat, only while someone sits at it (rounds.ts).
-  const roundLoop = campfire ? startRounds(client, campfire) : null;
+  // A short chime in the voice channel as each focus and rest starts (chime.ts; SHIFT_ROUND_CHIME=off to mute).
+  const roundLoop = campfire
+    ? startRounds(client, campfire, { chime: chimeEnabled() ? createChime(client) : undefined })
+    : null;
   // Started only on a database that has the live post functions (schema 8).
   const live = liveFor(version, () => startLivePost(client, api, env.guildId, () => connected));
   // Started only on a database that has the island news functions (schema 9): one post a day, no pings.

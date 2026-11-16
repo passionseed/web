@@ -160,11 +160,18 @@ function world(start = TEN) {
     },
     messages: { fetch: async () => new Map([[leftover.id, leftover as never], [other.id, other as never]]) },
   };
-  const deps: RoundDeps = { now: () => now, channelOf: (id) => (id === channel.id ? (channel as never) : null), botId: () => "bot" };
+  const chimes: string[] = [];
+  const deps: RoundDeps = {
+    now: () => now,
+    channelOf: (id) => (id === channel.id ? (channel as never) : null),
+    botId: () => "bot",
+    chime: (id, kind) => chimes.push(`${kind} ${id}`),
+  };
   const loop = startRounds({} as Client, { status: () => ({ channel: room, sitters }) }, deps);
   return {
     loop,
     log,
+    chimes,
     posted,
     leftover,
     other,
@@ -185,6 +192,34 @@ describe("startRounds", () => {
     open.push(w);
     return w;
   };
+
+  it("chimes as a focus and a rest start, never for a late arrival, and never with nobody at the fire", async () => {
+    const w = make();
+    w.at(0);
+    await w.loop.tick();
+    expect(w.chimes).toEqual([]);
+    w.sit(1);
+    w.at(0.5);
+    await w.loop.tick();
+    expect(w.chimes).toEqual(["focus 700000000000000001"]);
+    w.at(10);
+    await w.loop.tick();
+    w.at(25.2);
+    await w.loop.tick();
+    expect(w.chimes).toEqual(["focus 700000000000000001", "rest 700000000000000001"]);
+    w.at(27);
+    await w.loop.tick();
+    expect(w.chimes).toHaveLength(2);
+  });
+
+  it("does not chime for someone who sits down mid-round", async () => {
+    const w = make();
+    w.sit(1);
+    w.at(7);
+    await w.loop.tick();
+    expect(w.log.at(-1)).toMatch(/^send /);
+    expect(w.chimes).toEqual([]);
+  });
 
   it("posts nothing while nobody sits at the fire", async () => {
     const w = make();

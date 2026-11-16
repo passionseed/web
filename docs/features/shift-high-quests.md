@@ -481,6 +481,19 @@ counted from the progress journal at read time.
   because of it. Tested in `supabase/tests/shift_quests/roots.ts` and
   `bot/src/quests/__tests__/roots.test.ts`.
 
+### Campfire chime (Discord voice)
+
+As each 🔥 focus and 🌊 rest starts (`bot/src/quests/rounds.ts`) while someone
+sits at the fire, the bot joins the coworking voice channel, plays a short
+chime (`bot/assets/sounds/focus.ogg` rising, `rest.ogg` falling) and leaves
+(`bot/src/quests/chime.ts`, `@discordjs/voice`). Ogg Opus goes to Discord as
+is, so the image needs no encoder or ffmpeg. It chimes only within a minute of
+a phase starting, so a late arrival or a restart mid-round stays silent, and
+one chime plays at a time. The bot is never counted as a sitter. It says
+nothing; the round message's 🎯 ตั้งเป้ารอบนี้ carries the goal. Needs Connect
+and Speak in the channel (warns once without them). `SHIFT_ROUND_CHIME=off`
+mutes it.
+
 ### Quest card and campfire encounters (Discord)
 
 Phases 4 and 5 of
