@@ -88,6 +88,7 @@ export function MenuSheet({
   onPrizes,
   onConsent,
   consentAiOnly = false,
+  onAdmin,
 }: SheetProps & {
   me: ViewerCard;
   project: Pick<IslandProject, "id" | "show_name" | "name_visible"> | null;
@@ -103,6 +104,7 @@ export function MenuSheet({
   onConsent?: () => void;
   /** Consent is on file and only the AI news line waits: the row says so. */
   consentAiOnly?: boolean;
+  onAdmin?: () => void;
 }) {
   const suggestHintId = useId();
   const consentHintId = useId();
@@ -159,7 +161,10 @@ export function MenuSheet({
           </section>
         ) : null}
         {/* Admins only: the database checks the role again on every reset. */}
-        {me.admin ? <AdminReset /> : null}
+        {me.admin ? <>
+          {onAdmin ? <button type="button" className={styles.quietButton} aria-haspopup="dialog" onClick={onAdmin}>ภาพรวมเกาะ · Admin</button> : null}
+          <AdminReset />
+        </> : null}
         {project ? (
           <IslandFooter project={project} me={me} avatar={<Avatar me={me} />} />
         ) : (

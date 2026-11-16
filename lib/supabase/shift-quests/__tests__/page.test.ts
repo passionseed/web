@@ -602,3 +602,33 @@ describe("tree styles on web", () => {
     expect(page.map.plots.every((p) => !("style" in p) && !("seeded" in p))).toBe(true);
   });
 });
+
+describe("admin oversight privacy", () => {
+  const privateMap = { ...map, plots: [{ ...map.plots[0], mine: false, plain: true, stage: 0 }] };
+  const overview = { projects: [{ slot: 4, name: "Private team", route: "software", ambition: "Build a lamp", milestones: [1, 3], members: ["Mint"], waitingReview: 1, openHelp: 0, checkinsWeek: 2, lastActivity: "2026-11-15T12:00:00Z" }] };
+  const answers = { shift_quest_island: {}, shift_quest_island_map: privateMap, shift_quest_admin_island: overview };
+
+  it.each([false, undefined])("never reads admin data for non-admins (%s)", async (admin) => {
+    respond(answers);
+    const result = await getIslandPage({ ...viewer, me: { ...viewer.me, staff: true, admin } });
+    expect(result.adminOverview).toBeNull();
+    expect(result.map.plots[0]).toMatchObject({ name: null, plain: true, stage: 0 });
+    expect(call).not.toHaveBeenCalledWith("shift_quest_admin_island", ACTOR);
+  });
+
+  it("shows admin names and actual progress without mutating the shared map", async () => {
+    respond(answers);
+    const result = await getIslandPage({ ...viewer, me: { ...viewer.me, staff: true, admin: true } });
+    expect(result.adminOverview).toEqual(overview);
+    expect(result.map.plots[0]).toMatchObject({ name: "Private team", stage: 2, plain: false, visitor: true });
+    expect(privateMap.plots[0]).toMatchObject({ name: null, plain: true, stage: 0 });
+    expect((await getIslandMap(ACTOR)).plots[0]).toMatchObject({ name: null, plain: true, stage: 0 });
+  });
+
+  it("keeps the restricted map if the database refuses the admin read", async () => {
+    respond({ ...answers, shift_quest_admin_island: new QuestError("not_authorized") });
+    const result = await getIslandPage({ ...viewer, me: { ...viewer.me, admin: true } });
+    expect(result.adminOverview).toBeNull();
+    expect(result.map.plots[0]).toMatchObject({ name: null, plain: true, stage: 0 });
+  });
+});

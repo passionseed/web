@@ -188,28 +188,39 @@ export async function respondInvite(input: { projectId: string; accept: boolean 
   });
 }
 
-/** The daily tap (no note), or a private one-line note. Neither grows the tree. */
+/**
+ * The day's check-in, made before the work: the day's tap and, when given, a
+ * private intention (what the student means to do), saved as the journal's
+ * next step under their own quest instance. It never grows the tree's stage.
+ */
 export async function checkIn(input?: {
-  note?: string | null;
-}): Promise<IslandActionResult<{ kind: "tap" | "note"; tapsToday: number }>> {
+  intention?: string | null;
+  instanceId?: string | null;
+}): Promise<IslandActionResult<{ tapsToday: number }>> {
   return withReadyViewer("checkIn", checkInSchema, input, async ({ actor }, v) => {
-    const row = await questApi().call<{ kind: "tap" | "note"; taps_today: number }>(
-      "shift_quest_checkin",
-      actor,
-      v.note
-    );
-    return { kind: row.kind === "note" ? "note" : "tap", tapsToday: Number(row.taps_today) || 0 };
+    // The intention first: when it fails nothing is saved, and the whole check-in can be tried again.
+    if (v.intention) {
+      await questApi().call(
+        "shift_quest_progress_add", actor, REFLECT.changed, null, v.intention, null, null, "private", v.instanceId
+      );
+    }
+    const row = await questApi().call<{ taps_today: number }>("shift_quest_checkin", actor, null);
+    return { tapsToday: Number(row.taps_today) || 0 };
   });
 }
 
-/** A private reflection, counted toward roots by the existing Bangkok-day rules. */
+/**
+ * A private reflection, counted toward roots by the existing Bangkok-day rules,
+ * filed under the caller's own quest instance when one is given.
+ */
 export async function reflect(input: {
   learned: string;
   stuck?: string | null;
+  instanceId?: string | null;
 }): Promise<IslandActionResult> {
   return withReadyViewer("reflect", reflectSchema, input, async ({ actor }, v) => {
     await questApi().call(
-      "shift_quest_progress_add", actor, REFLECT.changed, v.learned, null, v.stuck, null, "private", null
+      "shift_quest_progress_add", actor, REFLECT.changed, v.learned, null, v.stuck, null, "private", v.instanceId
     );
     return null;
   });

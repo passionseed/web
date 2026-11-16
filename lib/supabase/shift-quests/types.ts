@@ -33,7 +33,8 @@ export const TEXT_LIMITS = {
   proof: 2000,
   reflection: 2000,
   artifactUrl: 500,
-  note: 300,
+  /** The check-in's intention (what the student means to do today); the database allows 500. */
+  intention: 300,
   projectName: 80,
   ambition: 500,
   helpSummary: 1000,
@@ -267,6 +268,8 @@ export type ReadyViewer = Extract<IslandViewer, { state: "ready" }>;
 // client component.
 
 export interface IslandPageData {
+  /** Loaded only for an application admin, with a second role check in Postgres. */
+  adminOverview?: import("./adminTypes").AdminIslandOverview | null;
   me: ViewerCard;
   /** session.unread */
   unread: number;

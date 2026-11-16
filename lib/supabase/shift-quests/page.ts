@@ -27,6 +27,7 @@ import type {
 import { schemaOf } from "@/bot/src/quests/schema";
 import { PEER_SCHEMA } from "@/lib/shift-island/peer";
 import { PHOTO_SCHEMA } from "@/lib/shift-island/photos";
+import type { AdminIslandOverview } from "./adminTypes";
 
 /** One row of shift_quest_project_list. */
 interface ProjectListRow {
@@ -174,6 +175,22 @@ export async function getIslandPage(viewer: ReadyViewer): Promise<IslandPageData
     readStyles(api, ROOTS_LOG),
   ]);
   const island = normalizeIsland(islandRaw);
+  // The database checks the application role again. Fail closed if unavailable.
+  const adminOverview = viewer.me.admin === true
+    ? await soft(api.call<AdminIslandOverview>("shift_quest_admin_island", viewer.actor))
+    : null;
+  let visibleMap = mapRaw;
+  if (adminOverview && mapRaw?.plots) {
+    const bySlot = new Map(adminOverview.projects.map((p) => [p.slot, p]));
+    visibleMap = { ...mapRaw, plots: mapRaw.plots.map((plot) => {
+      const project = bySlot.get(plot.slot);
+      return project ? {
+        ...plot, name: project.name, stage: project.milestones.length, plain: false,
+        visitor: project.milestones.includes(3), key: project.milestones.includes(5),
+        helper: project.milestones.includes(6), lantern: project.milestones.includes(7),
+      } : plot;
+    }) };
+  }
   // Schema 14: photo evidence and the problem line's เปลี่ยน; schema 15: the peer check. A failed read means no.
   const schema = await schemaOf(api).catch(() => 0);
   const photos = schema >= PHOTO_SCHEMA;
@@ -207,9 +224,10 @@ export async function getIslandPage(viewer: ReadyViewer): Promise<IslandPageData
 
   return {
     me: viewer.me,
+    adminOverview,
     unread: Number(viewer.session.unread) || 0,
     island,
-    map: normalizeMap(mapRaw, roots, island.project && mapRaw?.plots?.some((p) => p.mine && !p.plain)
+    map: normalizeMap(visibleMap, roots, island.project && visibleMap?.plots?.some((p) => p.mine && !p.plain)
       ? await readMyRoots(api, viewer.actor, ROOTS_LOG) : null, styles, tree),
     tree,
     board,

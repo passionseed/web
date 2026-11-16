@@ -8,7 +8,7 @@ import type { QuestBoard } from "@/lib/supabase/shift-quests/types";
 
 import { KEYNOTE, tileChip } from "./copy";
 import styles from "./island.module.css";
-import { questView } from "./model";
+import { keynoteMode, questView } from "./model";
 import { PALETTE, iconGrid, iconScale } from "./sprites";
 
 interface KeynoteCardProps {
@@ -29,11 +29,7 @@ export function KeynoteCard({ board, keynote, onOpen }: KeynoteCardProps) {
   const view = questView(board, target);
   if (!view) return null;
   const grid = iconGrid(view.icon);
-  const headline = !keynote
-    ? KEYNOTE.start(view.title)
-    : view.status === "submitted"
-      ? KEYNOTE.waiting(view.title)
-      : KEYNOTE.next(view.title);
+  const headline = KEYNOTE[keynoteMode(keynote, view.status)](view.title);
   // The chip only when the headline does not already say where the quest stands.
   const chip = keynote && view.status !== "submitted" ? tileChip(view.status, view.owner) : null;
 

@@ -190,7 +190,7 @@ WITH fns0 AS (
         'shift_quest_consent_adult', 'shift_quest_consent_link', 'shift_quest_consent_import',
         'shift_quest_consent_parent_view', 'shift_quest_consent_parent_answer',
         'shift_quest_consent_parent_withdraw', 'shift_quest_island_news', 'shift_quest_digest_inputs',
-        'shift_quest_digest_save', 'shift_quest_admin_reset_self')
+        'shift_quest_digest_save', 'shift_quest_admin_reset_self', 'shift_quest_admin_island')
       -- 20261115130000_shift_quest_evidence_photos: photos, the web review page, the trash job, the problem line.
       OR p.proname IN ('shift_quest_evidence_add', 'shift_quest_evidence_remove', 'shift_quest_evidence_list',
         'shift_quest_review_view', 'shift_quest_storage_trash_claim', 'shift_quest_storage_trash_done',
@@ -263,6 +263,7 @@ web_allow(sig) AS (VALUES
   ('shift_quest_island_styles()'),
   -- 20261115120000_shift_quest_admin_reset_self.
   ('shift_quest_admin_reset_self(text)'),
+  ('shift_quest_admin_island(text)'),
   -- 20261115130000_shift_quest_evidence_photos.
   ('shift_quest_evidence_add(text,uuid,integer,integer,integer)'),
   ('shift_quest_evidence_remove(text,uuid)'),

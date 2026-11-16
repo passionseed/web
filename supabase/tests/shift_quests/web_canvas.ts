@@ -91,6 +91,7 @@ const WEB_ALLOWLIST = [
   "shift_quest_island_styles()",
   // 20261115120000_shift_quest_admin_reset_self (admins only; refuses everyone else).
   "shift_quest_admin_reset_self(text)",
+  "shift_quest_admin_island(text)",
   // 20261115130000_shift_quest_evidence_photos.
   "shift_quest_evidence_add(text,uuid,integer,integer,integer)",
   "shift_quest_evidence_remove(text,uuid)",

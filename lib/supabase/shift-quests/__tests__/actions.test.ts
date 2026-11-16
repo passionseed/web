@@ -59,15 +59,7 @@ describe("each action calls exactly one function with the server-side actor", ()
       { kind: "tap", taps_today: 1, progress_id: "x" },
       "shift_quest_checkin",
       [ACTOR, null],
-      { kind: "tap", tapsToday: 1 },
-    ],
-    [
-      "checkIn (note)",
-      () => actions.checkIn({ note: " a note " }),
-      { kind: "note", taps_today: 1 },
-      "shift_quest_checkin",
-      [ACTOR, "a note"],
-      { kind: "note", tapsToday: 1 },
+      { tapsToday: 1 },
     ],
     ["setResting", () => actions.setResting({ on: true }), { paused: 2, resumed: 0 }, "shift_quest_rest", [ACTOR, true], { paused: 2, resumed: 0 }],
     [
@@ -182,7 +174,8 @@ describe("validation", () => {
     ["empty project name", () => actions.createProject({ name: "   ", route: "software" })],
     ["unknown route", () => actions.createProject({ name: "A", route: "games" as never })],
     ["ambition over 500", () => actions.createProject({ name: "A", route: "other", ambition: over(TEXT_LIMITS.ambition) })],
-    ["note over 300", () => actions.checkIn({ note: over(TEXT_LIMITS.note) })],
+    ["intention over 300", () => actions.checkIn({ intention: over(TEXT_LIMITS.intention) })],
+    ["check-in on a bad instance id", () => actions.checkIn({ intention: "คุย", instanceId: "not-a-uuid" })],
     ["milestone 0", () => actions.submitMainQuest({ milestone: 0, ...proof })],
     ["milestone 8", () => actions.submitMainQuest({ milestone: 8, ...proof })],
     ["milestone 2.5", () => actions.submitMainQuest({ milestone: 2.5, ...proof })],
@@ -431,6 +424,32 @@ describe("loadCampfire", () => {
 });
 
 
+describe("checkIn with an intention", () => {
+  it("saves the intention under the quest before the day's tap", async () => {
+    call.mockResolvedValueOnce(UUID).mockResolvedValueOnce({ kind: "tap", taps_today: 1, progress_id: "x" });
+    await expect(actions.checkIn({ intention: "  คุยกับแม่ค้าหน้าโรงเรียน  ", instanceId: UUID })).resolves.toEqual({
+      ok: true,
+      data: { tapsToday: 1 },
+    });
+    expect(call.mock.calls).toEqual([
+      ["shift_quest_progress_add", ACTOR, "บันทึกจากเกาะ", null, "คุยกับแม่ค้าหน้าโรงเรียน", null, null, "private", UUID],
+      ["shift_quest_checkin", ACTOR, null],
+    ]);
+  });
+
+  it.each([undefined, "", "   "])("is a plain tap without an intention (%j)", async (intention) => {
+    call.mockResolvedValue({ kind: "tap", taps_today: 1, progress_id: "x" });
+    await actions.checkIn({ intention, instanceId: UUID });
+    expect(call.mock.calls).toEqual([["shift_quest_checkin", ACTOR, null]]);
+  });
+
+  it("saves no tap when the intention is refused, so the whole check-in can be tried again", async () => {
+    call.mockRejectedValueOnce(new QuestError("not_found"));
+    expect(await actions.checkIn({ intention: "คุย", instanceId: UUID })).toMatchObject({ ok: false });
+    expect(call).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("reflect", () => {
   it.each([undefined, null, "", "   ", " ติดเรื่องลิงก์ "])("saves private learned text with optional blocker %s", async (stuck) => {
     call.mockResolvedValue(UUID);
@@ -440,9 +459,16 @@ describe("reflect", () => {
     expect(refresh).toHaveBeenCalledTimes(1);
   });
 
+  it("files the line under the caller's quest instance when one is given", async () => {
+    call.mockResolvedValue(UUID);
+    await expect(actions.reflect({ learned: "ได้ลองทดสอบกับเพื่อนแล้ว", instanceId: UUID })).resolves.toEqual({ ok: true, data: null });
+    expect(call).toHaveBeenCalledWith("shift_quest_progress_add", ACTOR, "บันทึกจากเกาะ", "ได้ลองทดสอบกับเพื่อนแล้ว", null, null, null, "private", UUID);
+  });
+
   it.each([
     { learned: "" }, { learned: "   " }, { learned: "ก".repeat(9) },
     { learned: "ก".repeat(1001) }, { learned: "ก".repeat(10), stuck: "ก".repeat(1001) },
+    { learned: "ก".repeat(10), instanceId: "not-a-uuid" },
   ])("rejects invalid reflection before calling the database", async (input) => {
     expect(await actions.reflect(input)).toMatchObject({ ok: false, code: "invalid_input" });
     expect(call).not.toHaveBeenCalled();

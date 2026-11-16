@@ -314,6 +314,16 @@ async function main(): Promise<void> {
       await count("select count(*) from public.shift_quest_ledger where member_id = $1", [admin]) === 1,
     "and nothing changed: the quest and the ledger row are there");
 
+  // Oversight exposes names only to application admins, even for private plots.
+  check(await code(call(web, "shift_quest_admin_island", S)) === "not_authorized", "students cannot read admin oversight");
+  check(await code(call(web, "shift_quest_admin_island", R1)) === "not_authorized", "reviewers cannot read admin oversight");
+  const overview = await call<Json>(web, "shift_quest_admin_island", ADMIN);
+  const oversightTeam = overview.projects.find((p: Json) => p.name === "Admin Team");
+  check(!!oversightTeam && oversightTeam.members.includes(NAMES[T]) && oversightTeam.milestones.includes(1),
+    "an admin sees team names, members and actual progress without public opt-in", oversightTeam);
+  check(!JSON.stringify(overview).includes(T) && !JSON.stringify(overview).includes(ADMIN), "oversight never returns Discord IDs");
+  check(!overview.projects.some((p: Json) => p.name === "Admin Project"), "archived plots are excluded from oversight");
+
   await Promise.all([db.end(), bot.end(), web.end()]);
   console.log(`# ${passes} passed, ${failures} failed`);
   if (failures > 0) process.exit(1);
