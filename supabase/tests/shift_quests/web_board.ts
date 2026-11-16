@@ -106,6 +106,7 @@ const WEB_ALLOWLIST = [
   "shift_quest_island_styles()",
   // 20261115120000_shift_quest_admin_reset_self (admins only; refuses everyone else).
   "shift_quest_admin_reset_self(text)",
+  "shift_quest_admin_island(text)",
   // 20261115130000_shift_quest_evidence_photos.
   "shift_quest_evidence_add(text,uuid,integer,integer,integer)",
   "shift_quest_evidence_remove(text,uuid)",
@@ -358,6 +359,7 @@ async function main(): Promise<void> {
       [NOBODY, 1, true, null], "not_authorized"],
     // 20261115120000_shift_quest_admin_reset_self: only an admin resets, and only their own island.
     ["admin_reset_self", "select public.shift_quest_admin_reset_self($1::text)", [NOBODY], "not_authorized"],
+    ["admin_island", "select public.shift_quest_admin_island($1::text)", [NOBODY], "not_authorized"],
   ];
   check(allowCalls.length === WEB_ALLOWLIST.length, "every allowlisted function is called below");
   for (const [name, sql, args, expected] of allowCalls) {

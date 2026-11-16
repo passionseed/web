@@ -59,15 +59,7 @@ describe("each action calls exactly one function with the server-side actor", ()
       { kind: "tap", taps_today: 1, progress_id: "x" },
       "shift_quest_checkin",
       [ACTOR, null],
-      { kind: "tap", tapsToday: 1 },
-    ],
-    [
-      "checkIn (note)",
-      () => actions.checkIn({ note: " a note " }),
-      { kind: "note", taps_today: 1 },
-      "shift_quest_checkin",
-      [ACTOR, "a note"],
-      { kind: "note", tapsToday: 1 },
+      { tapsToday: 1 },
     ],
     ["setResting", () => actions.setResting({ on: true }), { paused: 2, resumed: 0 }, "shift_quest_rest", [ACTOR, true], { paused: 2, resumed: 0 }],
     [
@@ -182,7 +174,8 @@ describe("validation", () => {
     ["empty project name", () => actions.createProject({ name: "   ", route: "software" })],
     ["unknown route", () => actions.createProject({ name: "A", route: "games" as never })],
     ["ambition over 500", () => actions.createProject({ name: "A", route: "other", ambition: over(TEXT_LIMITS.ambition) })],
-    ["note over 300", () => actions.checkIn({ note: over(TEXT_LIMITS.note) })],
+    ["intention over 300", () => actions.checkIn({ intention: over(TEXT_LIMITS.intention) })],
+    ["check-in on a bad instance id", () => actions.checkIn({ intention: "คุย", instanceId: "not-a-uuid" })],
     ["milestone 0", () => actions.submitMainQuest({ milestone: 0, ...proof })],
     ["milestone 8", () => actions.submitMainQuest({ milestone: 8, ...proof })],
     ["milestone 2.5", () => actions.submitMainQuest({ milestone: 2.5, ...proof })],
@@ -431,6 +424,46 @@ describe("loadCampfire", () => {
 });
 
 
+describe("checkIn with an intention", () => {
+  it("taps first, then saves the intention under the quest", async () => {
+    call.mockResolvedValueOnce({ kind: "tap", taps_today: 1, progress_id: "x" }).mockResolvedValueOnce(UUID);
+    await expect(actions.checkIn({ intention: "  คุยกับแม่ค้าหน้าโรงเรียน  ", instanceId: UUID })).resolves.toEqual({
+      ok: true,
+      data: { tapsToday: 1, intentionSaved: true },
+    });
+    expect(call.mock.calls).toEqual([
+      ["shift_quest_checkin", ACTOR, null],
+      ["shift_quest_progress_add", ACTOR, "บันทึกจากเกาะ", null, "คุยกับแม่ค้าหน้าโรงเรียน", null, null, "private", UUID],
+    ]);
+  });
+
+  it.each([undefined, "", "   "])("is a plain tap without an intention (%j)", async (intention) => {
+    call.mockResolvedValue({ kind: "tap", taps_today: 1, progress_id: "x" });
+    await expect(actions.checkIn({ intention, instanceId: UUID })).resolves.toEqual({ ok: true, data: { tapsToday: 1 } });
+    expect(call.mock.calls).toEqual([["shift_quest_checkin", ACTOR, null]]);
+  });
+
+  it("saves no intention when the tap is refused, so a retry cannot leave a stray or doubled one", async () => {
+    call.mockRejectedValueOnce(new QuestError("not_found"));
+    expect(await actions.checkIn({ intention: "คุย", instanceId: UUID })).toMatchObject({ ok: false });
+    expect(call.mock.calls).toEqual([["shift_quest_checkin", ACTOR, null]]);
+  });
+
+  it("keeps the tap when the intention then fails, flagged and logged by its code only", async () => {
+    const log = jest.spyOn(console, "error").mockImplementation(() => {});
+    call.mockResolvedValueOnce({ kind: "tap", taps_today: 1, progress_id: "x" }).mockRejectedValueOnce(new QuestError("not_found"));
+    await expect(actions.checkIn({ intention: "คุยกับแม่ค้า", instanceId: UUID })).resolves.toEqual({
+      ok: true,
+      data: { tapsToday: 1, intentionSaved: false },
+    });
+    expect(call).toHaveBeenCalledTimes(2);
+    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("sq:not_found"));
+    expect(String(log.mock.calls[0][0])).not.toContain("คุยกับแม่ค้า");
+    log.mockRestore();
+  });
+});
+
 describe("reflect", () => {
   it.each([undefined, null, "", "   ", " ติดเรื่องลิงก์ "])("saves private learned text with optional blocker %s", async (stuck) => {
     call.mockResolvedValue(UUID);
@@ -440,9 +473,16 @@ describe("reflect", () => {
     expect(refresh).toHaveBeenCalledTimes(1);
   });
 
+  it("files the line under the caller's quest instance when one is given", async () => {
+    call.mockResolvedValue(UUID);
+    await expect(actions.reflect({ learned: "ได้ลองทดสอบกับเพื่อนแล้ว", instanceId: UUID })).resolves.toEqual({ ok: true, data: null });
+    expect(call).toHaveBeenCalledWith("shift_quest_progress_add", ACTOR, "บันทึกจากเกาะ", "ได้ลองทดสอบกับเพื่อนแล้ว", null, null, null, "private", UUID);
+  });
+
   it.each([
     { learned: "" }, { learned: "   " }, { learned: "ก".repeat(9) },
     { learned: "ก".repeat(1001) }, { learned: "ก".repeat(10), stuck: "ก".repeat(1001) },
+    { learned: "ก".repeat(10), instanceId: "not-a-uuid" },
   ])("rejects invalid reflection before calling the database", async (input) => {
     expect(await actions.reflect(input)).toMatchObject({ ok: false, code: "invalid_input" });
     expect(call).not.toHaveBeenCalled();

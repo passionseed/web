@@ -9,6 +9,7 @@ import {
   missingTitles,
   proposedTileStatus,
   sideTileStatus,
+  starterQuest,
   type BoardRef,
 } from "@/lib/supabase/shift-quests/board";
 import { COMMUNITY_RULE_SLUGS } from "@/lib/content/shift-island-economy";
@@ -160,6 +161,30 @@ export function questView(board: QuestBoard, ref: BoardRef): QuestView | null {
     version: p.version,
     help: !!helpFor(board, p.instance_id),
   };
+}
+
+/** Which KEYNOTE line a quest gets: start (nothing open yet), waiting (with a mentor), or next. */
+export type KeynoteMode = "start" | "waiting" | "next";
+
+export function keynoteMode(keynote: BoardRef | null, status: TileStatus): KeynoteMode {
+  if (!keynote) return "start";
+  return status === "submitted" ? "waiting" : "next";
+}
+
+/** The quest a day's check-in is about: the keynote quest, or with nothing open the starter. */
+export interface TodayQuest {
+  ref: BoardRef;
+  title: string;
+  mode: KeynoteMode;
+  /** The caller's own instance, so the day's line is filed under it. Null before anything is started. */
+  instanceId: string | null;
+}
+
+export function todayQuest(board: QuestBoard, keynote: BoardRef | null): TodayQuest | null {
+  const ref = keynote ?? starterQuest(board);
+  const view = ref ? questView(board, ref) : null;
+  if (!ref || !view) return null;
+  return { ref, title: view.title, mode: keynoteMode(keynote, view.status), instanceId: keynote ? view.instanceId : null };
 }
 
 /** What the detail sheet shows under the quest: a submit form, or a reason there is none. */

@@ -457,9 +457,18 @@ counted from the progress journal at read time.
   a work session. It saves a private `shift_quest_progress_add` note; a filled
   blocker offers the separate help choice. A missing project at submit time
   shows the existing claim-plot card, so the note is not saved without a tree.
-  The web TodayCard remains a check-in only: `shift_quest_web` has no EXECUTE
-  grant for `shift_quest_progress_add` in the migration allowlists. Enabling
-  web reflections needs an explicit grant migration and privilege tests first.
+  On the web (`20261114100000_shift_quest_web_reflect` grants
+  `shift_quest_progress_add` to `shift_quest_web`), the check-in card
+  (`TodayCard`) comes before the work and is about the student's current
+  quest (the keynote, else the starter). "วันนี้จะลงมือทำอะไร" takes an
+  optional private intention, saved as a note's `next_step` under the
+  student's own quest instance (not counted toward roots); เช็กอิน แล้วลุยเลย
+  saves it, then the day's tap, then opens the quest. Back later the same day,
+  the card shows the intention (kept on the browser), the way back to the
+  quest, and one optional line on how it went, saved with `learned` so it
+  counts toward roots. ติด opens the help sheet on that quest. The card shows
+  in the character sheet and, while the day is open, first in the tree sheet
+  that tapping your own tree opens. It never changes the tree's stage.
 - **What is shown.** `shift_quest_island_roots()` (bot and website, no
   caller) returns `[{slot, roots}]` for drawn plots with roots above 0: level
   1 (1 to 4 counted), 2 (5 to 14) or 3 (15 or more). Never a count, a name,

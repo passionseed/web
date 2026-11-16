@@ -5,6 +5,7 @@ import { AdminReset, clearIslandKeys } from "../AdminReset";
 import { ADMIN_RESET, HUD } from "../copy";
 import { MenuSheet } from "../HudSheets";
 import { STORY_SEEN_KEY } from "../story/useStorySeen";
+import { DAY_INTENTION_KEY } from "../useDayIntention";
 
 const resetMyIsland = jest.fn();
 jest.mock("@/app/shift/island/admin-actions", () => ({ resetMyIsland: () => resetMyIsland() }));
@@ -63,8 +64,9 @@ describe("AdminReset", () => {
     expect(screen.getByRole("button", { name: ADMIN_RESET.open })).toBeInTheDocument();
   });
 
-  it("resets, forgets the story and reloads", async () => {
+  it("resets, forgets the story and the day's intention, and reloads", async () => {
     window.localStorage.setItem(STORY_SEEN_KEY, "seen");
+    window.localStorage.setItem(DAY_INTENTION_KEY, JSON.stringify({ day: 1, text: "คุย", who: "m1" }));
     resetMyIsland.mockResolvedValue({ ok: true, data: { project: "archived", quests: 2, keptQuests: 0 } });
     const reload = jest.fn();
     render(<AdminReset reload={reload} />);
@@ -74,6 +76,7 @@ describe("AdminReset", () => {
     });
     expect(resetMyIsland).toHaveBeenCalledTimes(1);
     expect(window.localStorage.getItem(STORY_SEEN_KEY)).toBeNull();
+    expect(window.localStorage.getItem(DAY_INTENTION_KEY)).toBeNull();
     expect(reload).toHaveBeenCalledTimes(1);
     expect(screen.getByRole("status")).toHaveTextContent(ADMIN_RESET.done);
   });

@@ -243,6 +243,32 @@ export const ADMIN_RESET = {
   done: "รีเซ็ตแล้ว กำลังโหลดเกาะใหม่",
 };
 
+/**
+ * DRAFT: the admin overview of the whole island (admins only; Postgres checks
+ * the role again): every team's name, members and progress, from the HUD and
+ * the ⋯ menu.
+ */
+export const ADMIN_OVERVIEW = {
+  /** The sheet's title and the HUD / menu button that opens it. */
+  title: "ภาพรวมเกาะ · Admin",
+  intro: "ข้อมูลสำหรับแอดมิน: ชื่อทีม สมาชิก และความคืบหน้าของทุกแปลง",
+  summary: (teams: number, waiting: number, help: number) =>
+    `${teams} ทีม · ${waiting} งานรอตรวจ · ${help} คำขอความช่วยเหลือ`,
+  search: "ค้นหาทีม สมาชิก หรือเลขแปลง",
+  plot: (slot: number, name: string) => `แปลง ${slot} · ${name}`,
+  members: "สมาชิก:",
+  noMembers: "ยังไม่มีสมาชิก",
+  milestones: "ผ่านหมุดหมาย",
+  milestonesOf: (done: number) => `${done}/7`,
+  waitingReview: "รอตรวจงาน",
+  openHelp: "รอความช่วยเหลือ",
+  checkinsWeek: "เช็กอิน 7 วัน",
+  updated: "อัปเดตล่าสุด:",
+  noMatch: "ไม่พบทีมที่ค้นหา",
+  empty: "ยังไม่มีทีมบนเกาะ",
+  failed: "ยังโหลดข้อมูลแอดมินไม่ได้ ลองรีเฟรชหน้าอีกครั้ง",
+};
+
 export const HUD = {
   /** The top-left chip's accessible name: the project, its tree, and what the tap opens. */
   chip: (name: string, stage: string) => `${name}, ${stage}, ดูวันนี้ของโปรเจกต์`,
@@ -283,15 +309,24 @@ export const PLOT = {
 
 export const TODAY = {
   heading: "วันนี้",
-  /** DRAFT: the daily check-in; never "ทำต่อ", which belongs to the keynote card. */
-  tap: "เช็กอินวันนี้",
-  tapped: "วันนี้คุณลงมือแล้ว",
-  addNote: "เพิ่มโน้ตสั้นๆ",
-  noteHint: "เห็นแค่คุณ",
-  noteLabel: "โน้ตของวันนี้ (เห็นแค่คุณ)",
-  saveNote: "บันทึกโน้ต",
-  noteSaved: "บันทึกโน้ตแล้ว",
-  noteRequired: "เขียนโน้ตสั้นๆ ก่อนบันทึก",
+  /** DRAFT: above the question, the quest the student is on (KEYNOTE.waiting while it is with a mentor). */
+  about: (title: string) => `เควสต์ที่ทำอยู่: ${title}`,
+  /** DRAFT: the check-in comes before the work: what the student means to do today (optional, private). */
+  ask: "วันนี้จะลงมือทำอะไร",
+  askHint: "ไม่บังคับ · เห็นแค่คุณ",
+  /** DRAFT: checks in, then opens the quest. Checking in never grows the tree's stage; only a mentor's approval does. */
+  go: "เช็กอิน แล้วลุยเลย",
+  /** DRAFT: the check-in with no quest to open. Never "ทำต่อ", which belongs to the keynote card. */
+  tap: "เช็กอิน",
+  tapped: "วันนี้เช็กอินแล้ว",
+  intended: (text: string) => `วันนี้ตั้งใจว่า: ${text}`,
+  /** DRAFT: after the work, one private line filed under the quest; long enough, it counts toward the roots. */
+  lineLabel: "ทำแล้วเป็นยังไง ได้เรียนรู้อะไร (ไม่บังคับ)",
+  lineHint: `อย่างน้อย ${REFLECTION_MIN_CHARS} ตัวอักษร ช่วยให้รากต้นไม้งอก · เห็นแค่คุณ`,
+  lineTooShort: `เขียนอีกนิด อย่างน้อย ${REFLECTION_MIN_CHARS} ตัวอักษร`,
+  lineSave: "เก็บไว้",
+  lineSaved: "เก็บไว้แล้ว",
+  lineAgain: "เขียนเพิ่ม",
   stuck: "ติด",
   rest: "ขอพัก",
   resting: "กำลังพัก ต้นไม้ไม่เหี่ยว ไม่มีอะไรหาย",
@@ -1044,20 +1079,11 @@ export const QUEST_ACTS: readonly { title: string; milestones: readonly number[]
 export const PARTNER_MILESTONE = 3;
 export const PARTNER_FIRST = "แนะนำหลังได้พันธมิตร";
 
-// Thai reviewed (agy, Codex, Cursor), 2026-11-14. stuckHint and the form labels are the bot's rounds copy.
+// Thai reviewed (agy, Codex, Cursor), 2026-11-14. The day's line itself is TODAY.line*.
 export const REFLECT = {
-  entry: "✍️ ได้เรียนรู้อะไร",
+  /** The journal row's required "what changed", for a line written on the island. */
   changed: "บันทึกจากเกาะ",
-  learned: "ได้เรียนรู้อะไร",
-  learnedHint: `ลองอะไรแล้วพบอะไร หรือเพิ่งเข้าใจอะไร อย่างน้อย ${REFLECTION_MIN_CHARS} ตัวอักษร`,
-  stuck: "ติดตรงไหน (ไม่บังคับ)",
-  stuckHint: "เขียนไว้ก่อน แล้วค่อยส่งให้พี่เลี้ยงช่วยดูได้",
-  save: "บันทึกสิ่งที่ได้เรียนรู้",
-  saved: "เก็บสิ่งที่คุณได้เรียนรู้ไว้แล้ว",
-  again: "เขียนบันทึกเพิ่ม",
   private: `รากนับได้คนละไม่เกิน ${REFLECTIONS_PER_DAY} บันทึกต่อวัน · บันทึกนี้เป็นส่วนตัว`,
-  discordHelp: "อยากให้พี่เลี้ยงช่วยไหม? ใน Discord พิมพ์ /island แล้วกด 🧱 ติด",
-  tooShort: `เขียนว่าได้เรียนรู้อะไร อย่างน้อย ${REFLECTION_MIN_CHARS} ตัวอักษร`,
 };
 
 /** Island and canvas reads, on return or by request. */
