@@ -137,7 +137,8 @@ async function main(): Promise<void> {
     f.proname.startsWith("shift_quest_peer_") ||
     // 20261116090000_shift_quest_web_everything: the website's wrappers over member uuids.
     ["shift_quest_project_teammates", "shift_quest_islanders", "shift_quest_share_draft",
-      "shift_quest_milestone_submit_team", "shift_quest_side_submit_team", "shift_quest_admin_setting",
+      "shift_quest_milestone_submit_team", "shift_quest_side_submit_team", "shift_quest_admin_web_status",
+      "shift_quest_admin_setting",
       "shift_quest_admin_members", "shift_quest_admin_member", "shift_quest_admin_member_role",
       "shift_quest_admin_member_recognize", "shift_quest_admin_member_award",
       "shift_quest_admin_member_consent_reset", "shift_quest_admin_seasons",

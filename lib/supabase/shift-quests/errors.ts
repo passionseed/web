@@ -144,6 +144,7 @@ const ERRORS: Record<string, string> = {
 
   // The website does everything but Discord (20261116090000). DRAFT for the Thai review.
   share_limit: "ร่างโพสต์ฉลองหรือขอบคุณครบ 5 ครั้งใน 24 ชั่วโมงแล้ว ยังไม่มีอะไรถูกโพสต์ ลองใหม่พรุ่งนี้ได้",
+  help_conflict: "รับเรื่องนี้ไม่ได้ เพราะเป็นคำขอของคุณเองหรือของทีมที่คุณอยู่ ให้พี่เลี้ยงคนอื่นช่วยแทน",
 };
 
 /** Thai, user-facing words for a refusal code; an unknown code gets the generic line. */

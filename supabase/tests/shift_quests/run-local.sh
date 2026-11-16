@@ -208,7 +208,8 @@ WITH fns0 AS (
       OR p.proname LIKE 'shift\_quest\_peer\_%'
       -- 20261116090000_shift_quest_web_everything: the website's wrappers over member uuids.
       OR p.proname IN ('shift_quest_project_teammates', 'shift_quest_islanders', 'shift_quest_share_draft',
-        'shift_quest_milestone_submit_team', 'shift_quest_side_submit_team', 'shift_quest_admin_setting',
+        'shift_quest_milestone_submit_team', 'shift_quest_side_submit_team', 'shift_quest_admin_web_status',
+        'shift_quest_admin_setting',
         'shift_quest_admin_members', 'shift_quest_admin_member', 'shift_quest_admin_member_role',
         'shift_quest_admin_member_recognize', 'shift_quest_admin_member_award',
         'shift_quest_admin_member_consent_reset', 'shift_quest_admin_seasons') AS web_only
@@ -323,7 +324,7 @@ web_allow(sig) AS (VALUES
   ('shift_quest_issue_award(text,uuid)'),
   ('shift_quest_fulfill_queue(text)'),
   ('shift_quest_fulfill_update(text,uuid,text,text)'),
-  ('shift_quest_admin_status(text)'),
+  ('shift_quest_admin_web_status(text)'),
   ('shift_quest_admin_setting(text,text,text)'),
   ('shift_quest_admin_members(text,text)'),
   ('shift_quest_admin_member(text,uuid)'),

@@ -839,15 +839,17 @@ island.
   ARRAY['admin'])`), so a stranger or a non-admin gets the same refusal for a
   real and an unknown uuid. Two helpers nobody may call resolve the uuids:
   `shift_quest__discord_of` (a live, linked member, else `not_found`) and
-  `shift_quest__contributors_of` (duplicates removed, at most 8 or
-  `bad_input`, any miss `contributor_not_teammate`).
+  `shift_quest__contributors_of` (the caller and duplicates removed, then at
+  most 8 or `bad_input`, any miss `contributor_not_teammate`; 8 teammates
+  plus the caller's own uuid is accepted).
 - **Students.** `shift_quest_project_teammates` (the picker: active, started,
   non-staff teammates of the current project, not the caller),
   `shift_quest_islanders` (who to thank: started non-staff students, teammates
   first, a 2 to 80 character search, 20 at most; staff callers are
   `not_eligible`), `shift_quest_share_draft` (celebrate an approved quest or
-  thank a started student; `intention` stays with the campfire; 5 drafts in 24
-  hours, then `share_limit`), `shift_quest_milestone_submit_team` and
+  thank a started student; `intention` stays with the campfire; 5
+  celebration or thank-you drafts in 24 hours, cancelled ones included, then
+  `share_limit`; the campfire's intentions from Discord do not count), `shift_quest_milestone_submit_team` and
   `shift_quest_side_submit_team` (the caller's own part plus teammates who
   helped: named teammates make the proof visible to the team, none means
   reviewers only; on side quests only `side-help-a-builder` and
@@ -861,10 +863,15 @@ island.
   `_help_update`, `_awards_pending`, `_issue_award`, `_fulfill_queue`,
   `_fulfill_update`. The web review page calls `_review_get` first (it
   refuses a conflicted reviewer and audits), then `_review_view`.
-- **Admins.** `shift_quest_admin_setting` (the switches `awards`,
+- **Admins.** `shift_quest_admin_web_status` (`_admin_status` with every
+  Discord id in `settings` replaced: `help_channel_id` becomes
+  `help_channel: true|false`, and so on for each `*_channel_id`, and
+  `student_role_ids` becomes the count `student_roles`; the rest unchanged),
+  `shift_quest_admin_setting` (the switches `awards`,
   `redemption`, `sharing`, `reminders` and the four published terms; channels
   and Discord student roles stay with `/admin channel` and
-  `/admin student-role`, squads are dropped; anything else is `bad_input`),
+  `/admin student-role`, squads are dropped; anything else is `bad_input`,
+  after the admin check; it returns the web status),
   `shift_quest_admin_members` (search, staff included, `{id, name, roles,
   started}`), `shift_quest_admin_member` (roles, started, current project,
   consent, balance and 25 ledger entries), `shift_quest_admin_member_role`
@@ -873,8 +880,7 @@ island.
   `shift_quest_admin_member_recognize`, `shift_quest_admin_member_award`,
   `shift_quest_admin_member_consent_reset` and `shift_quest_admin_seasons`
   (draft and active seasons with their unlocks, for `_admin_unlock`, without
-  the island lock). Granted as they are: `_admin_status` (the website shows
-  each channel only as set or not set), `_admin_reverse`, `_admin_report`,
+  the island lock). Granted as they are: `_admin_reverse`, `_admin_report`,
   `_admin_rule`, `_admin_rule_retire`, `_admin_templates`,
   `_admin_template_state`, `_admin_template_rule`, `_admin_catalog_list`,
   `_admin_catalog`, `_admin_catalog_gate`, `_admin_season`, `_admin_unlock`,
@@ -887,9 +893,14 @@ island.
   bot's keys (`recog:`, `award:`) never collide with them.
 - **Body changes, same signatures and grants.** `shift_quest_data_request`
   keeps one open request per kind per member and returns it on a second
-  click, so staff get one alert. `shift_quest_help_queue` leaves out, and
+  click, so staff get one alert. The note is checked first (a correction
+  still needs one), and a new note is added to the open request, separated
+  by `---`, and audited as `data_request_<kind>_more`; the same note twice
+  adds nothing, and notes that no longer fit in 1000 characters are
+  `text_too_long`. `shift_quest_help_queue` leaves out, and
   `shift_quest_help_update` refuses to claim or resolve
-  (`conflict_of_interest`), a help request from the reviewer's own team, now
+  (`help_conflict`, with its own words in `errors.ts` and the bot's
+  `ERRORS`), a help request from the reviewer's own team, now
   or before (`shift_quest__help_conflicted`, the review rule); releasing stays
   open. `shift_quest_contribution_respond`: when the last pending teammate
   answers on an approved submission whose award waited for them
@@ -900,7 +911,8 @@ island.
 - **Stays in Discord or the bot.** The raw Discord-id functions
   (`_admin_set`, `_admin_role`, `_admin_recognize`, `_admin_staff_award`,
   `_admin_ledger`, `_admin_consent_reset`, `_share_create`,
-  `_project_invite`), the outbox and reminders, the live and digest posts,
+  `_project_invite`), `_admin_status` (it carries channel and role ids; the
+  website reads `_admin_web_status`), the outbox and reminders, the live and digest posts,
   voice presence, the campfire rounds and `_bootstrap_admin`. Dropped student
   flows are not granted: ownership ticking (`_ownership_set`),
   `_project_select`, `_project_leave`, `_set_state`, `_update`, `_appeal`,

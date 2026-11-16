@@ -6,22 +6,26 @@
 -- allowlist of shift_quest_* functions. This file gives the website what it
 -- needs and changes nothing a user sees until the website ships pages for it.
 --
---   * Two helpers nobody may call: shift_quest__discord_of (a live member's
---     Discord id, else not_found) and shift_quest__contributors_of (member
---     uuids to Discord ids: duplicates removed, at most 8, any miss is
---     contributor_not_teammate), plus shift_quest__help_conflicted (the review
---     conflict rule for a help request).
+--   * Three helpers nobody may call: shift_quest__discord_of (a live
+--     member's Discord id, else not_found), shift_quest__contributors_of
+--     (member uuids to Discord ids: the caller and duplicates removed, then at
+--     most 8, any miss is contributor_not_teammate) and
+--     shift_quest__help_conflicted (the review conflict rule for a help
+--     request).
 --   * Website-only wrappers. Each is SECURITY DEFINER with search_path
 --     public, checks the actor FIRST (so a stranger or a non-admin learns
 --     nothing about a member uuid), takes opaque member uuids and never
 --     returns a Discord id. The website only ever holds the signed-in user's
 --     own Discord id.
 --       Students: shift_quest_project_teammates, shift_quest_islanders,
---       shift_quest_share_draft (5 drafts a day, 'share_limit'),
+--       shift_quest_share_draft (5 celebration or thank-you drafts a day,
+--       'share_limit'; the campfire's intentions do not count),
 --       shift_quest_milestone_submit_team, shift_quest_side_submit_team
 --       (teammates who helped: visibility 'team' when any are named, else
 --       'reviewers'; on side quests only the two community quests take them).
---       Admins: shift_quest_admin_setting (no Discord keys),
+--       Admins: shift_quest_admin_web_status (shift_quest_admin_status with
+--       every Discord channel and role id replaced by a yes/no or a count),
+--       shift_quest_admin_setting (no Discord keys, returns the web status),
 --       shift_quest_admin_members (search), shift_quest_admin_member (detail
 --       with the ledger), shift_quest_admin_member_role (members who already
 --       have a row; new staff are added in Discord with /admin role),
@@ -30,15 +34,18 @@
 --       shift_quest_admin_member_consent_reset, shift_quest_admin_seasons.
 --   * Body changes, same signatures and grants:
 --       shift_quest_data_request: one open request per kind per member (a
---       second click returns the open one, so staff get one alert).
+--       second click returns the open one, so staff get one alert; a new
+--       note is added to the open request, never dropped).
 --       shift_quest_help_queue and shift_quest_help_update: a reviewer never
---       sees or takes the help request of their own team (the review rule).
+--       sees or takes the help request of their own team (the review rule,
+--       refused as 'help_conflict').
 --       shift_quest_contribution_respond: the last answer on an approved
 --       submission issues the award it withheld ('contributions_pending').
 --   * Existing staff and student functions granted to the website (the bot
 --     keeps them while both work). Never granted: the raw Discord-id
 --     functions (admin_set, admin_role, admin_recognize, admin_staff_award,
---     admin_ledger, admin_consent_reset, share_create, project_invite), the
+--     admin_ledger, admin_consent_reset, share_create, project_invite) and
+--     admin_status (it carries Discord channel and role ids), the
 --     outbox, live, digest, voice and campfire-round functions, the dropped
 --     student flows (ownership_set, project_select, appeals, squads).
 --   * shift_quest_schema_version() = 16.
@@ -78,11 +85,12 @@ $$;
 
 /**
  * Teammates named on a website submit, as the Discord ids shift_quest_submit
- * takes: duplicates removed, at most 8 ('bad_input'), and a null, unknown,
+ * takes: the caller (p_self, whose own part is the submit's contribution) and
+ * duplicates removed, then at most 8 ('bad_input'), and a null, unknown,
  * erased or unlinked id is 'contributor_not_teammate'. shift_quest_submit
  * still checks each one is an active, started teammate.
  */
-CREATE OR REPLACE FUNCTION public.shift_quest__contributors_of(p_members uuid[])
+CREATE OR REPLACE FUNCTION public.shift_quest__contributors_of(p_members uuid[], p_self uuid)
 RETURNS text[]
 LANGUAGE plpgsql
 STABLE
@@ -99,7 +107,10 @@ BEGIN
   IF array_position(p_members, NULL) IS NOT NULL THEN
     PERFORM public.shift_quest__fail('contributor_not_teammate');
   END IF;
-  SELECT array_agg(DISTINCT x ORDER BY x) INTO v_ids FROM unnest(p_members) x;
+  SELECT array_agg(DISTINCT x ORDER BY x) INTO v_ids FROM unnest(p_members) x WHERE x IS DISTINCT FROM p_self;
+  IF v_ids IS NULL THEN
+    RETURN '{}'::text[];
+  END IF;
   IF cardinality(v_ids) > 8 THEN
     PERFORM public.shift_quest__fail('bad_input');
   END IF;
@@ -217,9 +228,10 @@ $$;
 /**
  * Celebrate an approved quest, or thank a started student (p_peer, a member
  * uuid). Returns a draft share id; shift_quest_share_confirm sends it. The
- * campfire's 'intention' stays in Discord. At most 5 drafts in 24 hours
- * ('share_limit'), so the celebrate channel and peers' inboxes cannot be
- * flooded.
+ * campfire's 'intention' stays in Discord. At most 5 celebration or thank-you
+ * drafts in 24 hours, cancelled ones included ('share_limit'), so the
+ * celebrate channel and peers' inboxes cannot be flooded; the campfire's
+ * intentions are not counted.
  */
 CREATE OR REPLACE FUNCTION public.shift_quest_share_draft(p_actor text, p_kind text, p_body text, p_instance uuid, p_peer uuid)
 RETURNS uuid
@@ -243,7 +255,8 @@ BEGIN
   -- One draft at a time per member, so a double click cannot pass the cap twice.
   PERFORM pg_advisory_xact_lock(hashtext('shift_quest_share_draft:' || v_member.id));
   IF (SELECT count(*) FROM public.shift_quest_shares
-      WHERE member_id = v_member.id AND created_at > now() - interval '24 hours') >= 5 THEN
+      WHERE member_id = v_member.id AND kind IN ('celebration', 'recognition')
+        AND created_at > now() - interval '24 hours') >= 5 THEN
     PERFORM public.shift_quest__fail('share_limit');
   END IF;
 
@@ -278,7 +291,7 @@ AS $$
 DECLARE
   v_member public.shift_quest_members := public.shift_quest__student(p_actor);
   -- The caller's own part is p_contribution; naming themselves adds nobody.
-  v_ids text[] := array_remove(public.shift_quest__contributors_of(p_contributors), p_actor);
+  v_ids text[] := public.shift_quest__contributors_of(p_contributors, v_member.id);
   v_open jsonb;
   v_id uuid;
   v_result jsonb;
@@ -316,7 +329,7 @@ AS $$
 DECLARE
   v_member public.shift_quest_members := public.shift_quest__student(p_actor);
   -- The caller's own part is p_contribution; naming themselves adds nobody.
-  v_ids text[] := array_remove(public.shift_quest__contributors_of(p_contributors), p_actor);
+  v_ids text[] := public.shift_quest__contributors_of(p_contributors, v_member.id);
   v_open jsonb;
   v_id uuid;
   v_result jsonb;
@@ -343,7 +356,12 @@ BEGIN
 END;
 $$;
 
-/** The body of 20261111090100 plus: one open request per kind per member (a second click returns it). */
+/**
+ * The body of 20261111090100 plus: one open request per kind per member. A
+ * second request returns the open one (staff get one alert), and its note,
+ * checked as before, is added to the open request so staff see it too
+ * ('text_too_long' when the two no longer fit in 1000 characters).
+ */
 CREATE OR REPLACE FUNCTION public.shift_quest_data_request(p_actor text, p_kind text, p_note text)
 RETURNS uuid
 LANGUAGE plpgsql
@@ -353,20 +371,32 @@ AS $$
 DECLARE
   v_member public.shift_quest_members := public.shift_quest__member(p_actor);
   v_id uuid;
+  v_note text;
+  v_open_note text;
 BEGIN
-  IF p_kind NOT IN ('correction', 'erasure') THEN
+  IF p_kind IS NULL OR p_kind NOT IN ('correction', 'erasure') THEN
     PERFORM public.shift_quest__fail('bad_input');
   END IF;
+  v_note := public.shift_quest__check_len(p_note, 1000, p_kind = 'correction');
   -- 20261116090000: an open request of this kind already reached staff.
   PERFORM pg_advisory_xact_lock(hashtext('shift_quest_data_request:' || v_member.id || ':' || p_kind));
-  SELECT id INTO v_id FROM public.shift_quest_data_requests
+  SELECT id, note INTO v_id, v_open_note FROM public.shift_quest_data_requests
   WHERE member_id = v_member.id AND kind = p_kind AND status = 'open'
   ORDER BY created_at, id LIMIT 1;
   IF v_id IS NOT NULL THEN
+    -- A new note joins the open request; the same note again (a double click) adds nothing.
+    IF v_note IS NOT NULL AND (v_open_note IS NULL OR strpos(v_open_note, v_note) = 0) THEN
+      v_note := concat_ws(E'\n---\n', v_open_note, v_note);
+      IF char_length(v_note) > 1000 THEN
+        PERFORM public.shift_quest__fail('text_too_long');
+      END IF;
+      UPDATE public.shift_quest_data_requests SET note = v_note WHERE id = v_id;
+      PERFORM public.shift_quest__audit(v_member.id, 'data_request_' || p_kind || '_more', 'data_request', v_id);
+    END IF;
     RETURN v_id;
   END IF;
   INSERT INTO public.shift_quest_data_requests (member_id, kind, note)
-  VALUES (v_member.id, p_kind, public.shift_quest__check_len(p_note, 1000, p_kind = 'correction'))
+  VALUES (v_member.id, p_kind, v_note)
   RETURNING id INTO v_id;
   -- Staff see that a request exists; the note stays in the database.
   PERFORM public.shift_quest__post('data:' || v_id, 'staff', 'data_request',
@@ -479,7 +509,10 @@ BEGIN
 END;
 $$;
 
-/** The body of 20261111090200 plus: a conflicted reviewer cannot claim or resolve (release stays open to all). */
+/**
+ * The body of 20261111090200 plus: a conflicted reviewer cannot claim or
+ * resolve ('help_conflict'); release stays open to every reviewer.
+ */
 CREATE OR REPLACE FUNCTION public.shift_quest_help_update(p_actor text, p_help uuid, p_action text, p_note text)
 RETURNS void
 LANGUAGE plpgsql
@@ -499,7 +532,7 @@ BEGIN
   END IF;
   -- 20261116090000: the review rule, for help too.
   IF p_action <> 'release' AND public.shift_quest__help_conflicted(v_me.id, v_help) THEN
-    PERFORM public.shift_quest__fail('conflict_of_interest');
+    PERFORM public.shift_quest__fail('help_conflict');
   END IF;
 
   UPDATE public.shift_quest_help_requests
@@ -530,10 +563,42 @@ $$;
 -- ---------------------------------------------------------------------------
 
 /**
+ * shift_quest_admin_status for the website: every Discord id in its settings
+ * (a '*_channel_id' or student_role_ids) becomes a yes/no ('help_channel':
+ * true) or a count ('student_roles': 2). The website has no use for Discord
+ * configuration, which stays in Discord, and never holds a Discord id but
+ * the signed-in user's own.
+ */
+CREATE OR REPLACE FUNCTION public.shift_quest_admin_web_status(p_actor text)
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_me public.shift_quest_members := public.shift_quest__staff(p_actor, ARRAY['admin']);
+  v_status jsonb := public.shift_quest_admin_status(p_actor);
+BEGIN
+  RETURN jsonb_set(v_status, '{settings}', COALESCE((
+    SELECT jsonb_object_agg(
+      CASE WHEN e.key LIKE '%\_channel\_id' THEN left(e.key, -3)
+           WHEN e.key = 'student_role_ids' THEN 'student_roles'
+           ELSE e.key END,
+      CASE WHEN e.key LIKE '%\_channel\_id' THEN to_jsonb(jsonb_typeof(e.value) <> 'null')
+           WHEN e.key = 'student_role_ids' THEN to_jsonb(CASE WHEN jsonb_typeof(e.value) = 'array'
+                                                          THEN jsonb_array_length(e.value) ELSE 0 END)
+           ELSE e.value END)
+    FROM jsonb_each(v_status -> 'settings') e
+  ), '{}'::jsonb));
+END;
+$$;
+
+/**
  * shift_quest_admin_set for the website: the feature switches and the
  * published terms only. Channels and Discord student roles stay with
  * '/admin channel' and '/admin student-role'; squads are dropped. Any other
- * key is 'bad_input'. Returns shift_quest_admin_status.
+ * key is 'bad_input'. Returns shift_quest_admin_web_status (no Discord ids).
  */
 CREATE OR REPLACE FUNCTION public.shift_quest_admin_setting(p_actor text, p_key text, p_value text)
 RETURNS jsonb
@@ -548,7 +613,8 @@ BEGIN
                                     'redemption_terms', 'fulfillment_process', 'fulfillment_owner') THEN
     PERFORM public.shift_quest__fail('bad_input');
   END IF;
-  RETURN public.shift_quest_admin_set(p_actor, p_key, p_value);
+  PERFORM public.shift_quest_admin_set(p_actor, p_key, p_value);
+  RETURN public.shift_quest_admin_web_status(p_actor);
 END;
 $$;
 
@@ -732,7 +798,7 @@ AS $$ SELECT 16; $$;
 -- Helpers: nobody. shift_quest_web is a LOGIN role and so a member of PUBLIC.
 REVOKE ALL ON FUNCTION public.shift_quest__discord_of(uuid)
   FROM PUBLIC, anon, authenticated, service_role, shift_quest_bot;
-REVOKE ALL ON FUNCTION public.shift_quest__contributors_of(uuid[])
+REVOKE ALL ON FUNCTION public.shift_quest__contributors_of(uuid[], uuid)
   FROM PUBLIC, anon, authenticated, service_role, shift_quest_bot;
 REVOKE ALL ON FUNCTION public.shift_quest__help_conflicted(uuid, public.shift_quest_help_requests)
   FROM PUBLIC, anon, authenticated, service_role, shift_quest_bot;
@@ -745,6 +811,7 @@ REVOKE ALL ON FUNCTION public.shift_quest_milestone_submit_team(text, smallint, 
   FROM PUBLIC, anon, authenticated, shift_quest_bot;
 REVOKE ALL ON FUNCTION public.shift_quest_side_submit_team(text, uuid, text, text, text, text, uuid[])
   FROM PUBLIC, anon, authenticated, shift_quest_bot;
+REVOKE ALL ON FUNCTION public.shift_quest_admin_web_status(text) FROM PUBLIC, anon, authenticated, shift_quest_bot;
 REVOKE ALL ON FUNCTION public.shift_quest_admin_setting(text, text, text) FROM PUBLIC, anon, authenticated, shift_quest_bot;
 REVOKE ALL ON FUNCTION public.shift_quest_admin_members(text, text) FROM PUBLIC, anon, authenticated, shift_quest_bot;
 REVOKE ALL ON FUNCTION public.shift_quest_admin_member(text, uuid) FROM PUBLIC, anon, authenticated, shift_quest_bot;
@@ -760,6 +827,7 @@ GRANT EXECUTE ON FUNCTION public.shift_quest_islanders(text, text) TO service_ro
 GRANT EXECUTE ON FUNCTION public.shift_quest_share_draft(text, text, text, uuid, uuid) TO service_role;
 GRANT EXECUTE ON FUNCTION public.shift_quest_milestone_submit_team(text, smallint, text, text, text, text, uuid[]) TO service_role;
 GRANT EXECUTE ON FUNCTION public.shift_quest_side_submit_team(text, uuid, text, text, text, text, uuid[]) TO service_role;
+GRANT EXECUTE ON FUNCTION public.shift_quest_admin_web_status(text) TO service_role;
 GRANT EXECUTE ON FUNCTION public.shift_quest_admin_setting(text, text, text) TO service_role;
 GRANT EXECUTE ON FUNCTION public.shift_quest_admin_members(text, text) TO service_role;
 GRANT EXECUTE ON FUNCTION public.shift_quest_admin_member(text, uuid) TO service_role;
@@ -808,8 +876,8 @@ DECLARE
     -- Fulfillment.
     'public.shift_quest_fulfill_queue(text)',
     'public.shift_quest_fulfill_update(text,uuid,text,text)',
-    -- Admins.
-    'public.shift_quest_admin_status(text)',
+    -- Admins. Never shift_quest_admin_status: it carries Discord ids.
+    'public.shift_quest_admin_web_status(text)',
     'public.shift_quest_admin_setting(text,text,text)',
     'public.shift_quest_admin_members(text,text)',
     'public.shift_quest_admin_member(text,uuid)',
@@ -846,7 +914,7 @@ BEGIN
     RETURN;
   END IF;
   REVOKE ALL ON FUNCTION public.shift_quest__discord_of(uuid) FROM shift_quest_web;
-  REVOKE ALL ON FUNCTION public.shift_quest__contributors_of(uuid[]) FROM shift_quest_web;
+  REVOKE ALL ON FUNCTION public.shift_quest__contributors_of(uuid[], uuid) FROM shift_quest_web;
   REVOKE ALL ON FUNCTION public.shift_quest__help_conflicted(uuid, public.shift_quest_help_requests) FROM shift_quest_web;
   FOREACH v_sig IN ARRAY v_web LOOP
     v_proc := to_regprocedure(v_sig);

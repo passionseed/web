@@ -137,7 +137,7 @@ const WEB_ALLOWLIST = [
   "shift_quest_issue_award(text,uuid)",
   "shift_quest_fulfill_queue(text)",
   "shift_quest_fulfill_update(text,uuid,text,text)",
-  "shift_quest_admin_status(text)",
+  "shift_quest_admin_web_status(text)",
   "shift_quest_admin_setting(text,text,text)",
   "shift_quest_admin_members(text,text)",
   "shift_quest_admin_member(text,uuid)",

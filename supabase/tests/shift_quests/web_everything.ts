@@ -11,10 +11,12 @@
  * non-admin learns nothing about a member uuid), the teammate picker and the
  * contributor checks, the award that waits for teammates and is issued by
  * the last answer, community credit, celebrating and thanking a peer with its
- * daily cap, data rights with one open request per kind, the admin wrappers
- * over member uuids (settings without Discord keys, search, detail, roles,
- * recognition and staff-award keys, consent reset, seasons), and the review
- * conflict rule on help requests.
+ * daily cap (the campfire's intentions not counted), data rights with one
+ * open request per kind (a second note joins it), the admin wrappers over
+ * member uuids (a status and settings without Discord ids or keys, search,
+ * detail, roles, recognition and staff-award keys, consent reset, seasons),
+ * the review conflict rule on help requests ('help_conflict'), the award held
+ * when awards are paused, and the 8-teammate cap that never counts the caller.
  *
  * Needs a disposable database with the shift_quest migrations applied (the
  * runner makes one). Refuses anything else: it writes committed rows.
@@ -62,6 +64,7 @@ const WEB_FNS = [
   "shift_quest_share_draft(text,text,text,uuid,uuid)",
   "shift_quest_milestone_submit_team(text,smallint,text,text,text,text,uuid[])",
   "shift_quest_side_submit_team(text,uuid,text,text,text,text,uuid[])",
+  "shift_quest_admin_web_status(text)",
   "shift_quest_admin_setting(text,text,text)",
   "shift_quest_admin_members(text,text)",
   "shift_quest_admin_member(text,uuid)",
@@ -80,7 +83,7 @@ const SHARED_FNS = [
 ];
 const HELPERS = [
   "shift_quest__discord_of(uuid)",
-  "shift_quest__contributors_of(uuid[])",
+  "shift_quest__contributors_of(uuid[],uuid)",
   "shift_quest__help_conflicted(uuid,shift_quest_help_requests)",
 ];
 
@@ -137,10 +140,15 @@ async function scalar<T = any>(c: Client, sql: string, args: unknown[] = []): Pr
   return Object.values(rows[0])[0] as T;
 }
 
-/** True when a payload carries none of the synthetic Discord ids. */
+/** Synthetic Discord channel and role ids the suite configures through the bot. */
+const HELP_CHANNEL = "700000000000000001";
+const STUDENT_ROLE = "700000000000000002";
+const CELEBRATE_CHANNEL = "930000000000000001";
+
+/** True when a payload carries none of the synthetic Discord ids: members, channels or roles. */
 const noDiscord = (value: unknown) => {
   const text = JSON.stringify(value);
-  return DISCORD_IDS.every((id) => !text.includes(id));
+  return [...DISCORD_IDS, HELP_CHANNEL, STUDENT_ROLE, CELEBRATE_CHANNEL].every((id) => !text.includes(id));
 };
 
 async function main(): Promise<void> {
@@ -191,6 +199,7 @@ async function main(): Promise<void> {
     ["raw staff awards", "select public.shift_quest_admin_staff_award($1, $2, 'helped-most', 'x', 'request-key-1')", [ADMIN, A]],
     ["the raw ledger", "select public.shift_quest_admin_ledger($1, $2)", [ADMIN, A]],
     ["raw consent resets", "select public.shift_quest_admin_consent_reset($1, $2)", [ADMIN, A]],
+    ["the raw admin status (Discord channel and role ids)", "select public.shift_quest_admin_status($1)", [ADMIN]],
     ["raw shares", "select public.shift_quest_share_create($1, 'recognition', 'x', null, $2)", [A, B]],
     ["ownership ticking (dropped)", "select public.shift_quest_ownership_set($1, $2, 'x', 'done', null, false, null)", [A, randomUUID()]],
   ] as [string, string, unknown[]][]) {
@@ -200,6 +209,7 @@ async function main(): Promise<void> {
     ["shift_quest_project_teammates", [A]],
     ["shift_quest_admin_member", [ADMIN, randomUUID()]],
     ["shift_quest_admin_setting", [ADMIN, "awards", "on"]],
+    ["shift_quest_admin_web_status", [ADMIN]],
   ] as [string, unknown[]][]) {
     check((await sqlstate(call(bot, fn, ...args))) === "42501", `the bot cannot call ${fn} (42501)`);
   }
@@ -245,9 +255,13 @@ async function main(): Promise<void> {
   for (const [fn, args] of [
     ["shift_quest_admin_members", [R1, "every"]],
     ["shift_quest_admin_setting", [R1, "awards", "on"]],
+    // Actor first: a non-admin sending a Discord key learns nothing about which keys exist.
+    ["shift_quest_admin_setting", [R1, "help_channel", "x"]],
+    ["shift_quest_admin_setting", [A, "no_such_key", "x"]],
+    ["shift_quest_admin_web_status", [R1]],
     ["shift_quest_admin_seasons", [A]],
   ] as [string, unknown[]][]) {
-    check(await code(w(fn, ...args)) === "not_authorized", `${fn}: only admins`);
+    check(await code(w(fn, ...args)) === "not_authorized", `${fn}(${String(args[1] ?? "")}): only admins`);
   }
   for (const [fn, args] of [
     ["shift_quest_project_teammates", [NOBODY]],
@@ -280,6 +294,23 @@ async function main(): Promise<void> {
       noDiscord(found),
     "started non-staff students, teammates first, never the caller or staff, never a Discord id", found);
 
+  // --- The admin status without Discord ids ------------------------------------------------------
+  // Channels and student roles are still set in Discord, with /admin channel and /admin student-role.
+  await call(bot, "shift_quest_admin_set", ADMIN, "help_channel", HELP_CHANNEL);
+  await call(bot, "shift_quest_admin_set", ADMIN, "student_role_add", STUDENT_ROLE);
+  const webStatus = await w<Json>("shift_quest_admin_web_status", ADMIN);
+  check(webStatus.settings?.help_channel === true && webStatus.settings?.staff_channel === false &&
+      webStatus.settings?.student_roles === 1 && !Object.keys(webStatus.settings).some((k) => k.endsWith("_id") || k.endsWith("_ids")) &&
+      noDiscord(webStatus),
+    "the website's admin status says which channels and roles are set, never their Discord ids", webStatus.settings);
+  const rawStatus = await call<Json>(bot, "shift_quest_admin_status", ADMIN);
+  const { settings: rawSettings, ...rawRest } = rawStatus;
+  const { settings: webSettings, ...webRest } = webStatus;
+  check(JSON.stringify(rawRest) === JSON.stringify(webRest) &&
+      ["awards_enabled", "redemption_enabled", "sharing_enabled", "reminders_enabled", "reward_terms", "squads_enabled"]
+        .every((k) => JSON.stringify(rawSettings[k]) === JSON.stringify(webSettings[k])),
+    "and everything else is the bot's admin status unchanged", { rawRest, webRest });
+
   // --- Rewards set up through the website ---------------------------------------------------------
   check(await code(w("shift_quest_admin_setting", ADMIN, "awards", "on")) === "config_incomplete",
     "awards refuse to switch on without terms and a rule");
@@ -289,8 +320,9 @@ async function main(): Promise<void> {
       `admin_setting refuses '${key}' (Discord configuration stays in Discord)`);
   }
   const status = await w<Json>("shift_quest_admin_setting", ADMIN, "reward_terms", "เหรียญตามกติกาที่ประกาศ");
-  check(status.settings?.reward_terms === true && Array.isArray(status.blockers?.awards),
-    "a term saves and returns the admin status", status.settings);
+  check(status.settings?.reward_terms === true && Array.isArray(status.blockers?.awards) &&
+      status.settings?.help_channel === true && noDiscord(status),
+    "a term saves and returns the admin status, without Discord ids", status.settings);
   await w("shift_quest_admin_rule", ADMIN, "build", 10, 3, "each_confirmed", "ทำเควสต์เสร็จ", "พี่เลี้ยงรีวิว", "อธิบายเป็นการส่วนตัว");
   await w("shift_quest_admin_template_rule", ADMIN, "meet-one-real-person", "build");
   check((await w<Json>("shift_quest_admin_setting", ADMIN, "awards", "on")).settings.awards_enabled === true,
@@ -393,6 +425,24 @@ async function main(): Promise<void> {
       await count("select count(*) from public.shift_quest_ledger where instance_id = $1", [sub3.instance_id]) === 0,
     "a rule with no team split records team_allocation_missing and issues nothing");
 
+  // Awards paused after the approval: the last answer records awards_paused, as a staff retry would.
+  await w("shift_quest_admin_template_rule", ADMIN, "in-their-hands", "build");
+  const sub4 = await w<Json>("shift_quest_milestone_submit_team", A, 4, "ให้ลองใช้หนึ่งสัปดาห์", "ใช้จริง", null, "ทำหน้าเว็บ", [mB]);
+  const held = await w<Json>("shift_quest_review_decide", R1, sub4.submission_id, "approved", null, false);
+  check(held.award?.reason === "contributions_pending", "the approval holds the award for the teammate", held.award);
+  await w("shift_quest_admin_setting", ADMIN, "awards", "off");
+  await w("shift_quest_contribution_respond", B, sub4.submission_id, true, "หาคนลอง");
+  check(await scalar(db, "select award_note from public.shift_quest_instances where id = $1", [sub4.instance_id]) === "awards_paused" &&
+      await scalar(db, "select award_status from public.shift_quest_instances where id = $1", [sub4.instance_id]) === "not_issued" &&
+      await count("select count(*) from public.shift_quest_ledger where instance_id = $1", [sub4.instance_id]) === 0,
+    "with awards paused the last answer issues nothing and records awards_paused");
+  check(await count(
+    "select count(*) from public.shift_quest_audit where action = 'award_after_contributions' and resource_id = $1 and outcome = 'awards_paused'",
+    [sub4.instance_id]) === 1, "and audits the attempt with its reason");
+  check((await w<Json[]>("shift_quest_awards_pending", R1)).some((a) => a.instance_id === sub4.instance_id),
+    "so the quest stays on the awards page for a staff retry");
+  await w("shift_quest_admin_setting", ADMIN, "awards", "on");
+
   // --- Teammates on side quests: the community quests only ---------------------------------------
   const tpl = async (slug: string): Promise<string> =>
     scalar(db, "select id from public.shift_quest_templates where slug = $1 and status = 'published'", [slug]);
@@ -403,6 +453,16 @@ async function main(): Promise<void> {
   const solo = await w<Json>("shift_quest_side_submit_team", A, practice, "ซ้อมพูด", "มั่นใจขึ้น", null, null, []);
   check(await scalar(db, "select visibility from public.shift_quest_submissions where id = $1", [solo.submission_id]) === "reviewers",
     "with nobody named a side quest is sent to reviewers only");
+  const improve = await tpl("side-improve-community");
+  for (const [label, list] of [["another project's student", [mC]], ["an unknown uuid", [randomUUID()]]] as [string, string[]][]) {
+    const got = await code(w("shift_quest_side_submit_team", A, improve, "ปรับห้องรวม", "ฟังทุกคน", null, "จัดห้อง", list));
+    check(got === "contributor_not_teammate", `a community quest refuses ${label} (contributor_not_teammate)`, got);
+  }
+  const improved = await w<Json>("shift_quest_side_submit_team", A, improve, "ปรับห้องรวม", "ฟังทุกคน", null, "จัดห้อง", [mB]);
+  check(await scalar(db, "select visibility from public.shift_quest_submissions where id = $1", [improved.submission_id]) === "team" &&
+      await count("select count(*) from public.shift_quest_contributions where submission_id = $1 and member_id = $2 and status = 'pending'",
+        [improved.submission_id, mB]) === 1,
+    "the second community quest takes a teammate too, visible to the team");
   const community = await w<Json>("shift_quest_side_submit_team", A, helpBuilder, "ช่วยทีมสองตั้งหน้าแรก", "สอนแล้วเข้าใจเอง", null,
     "สอนตั้งหน้าเว็บ", [mB]);
   await w("shift_quest_review_decide", R1, community.submission_id, "approved", null, false);
@@ -413,8 +473,11 @@ async function main(): Promise<void> {
     "once confirmed, the community quest counts for the teammate");
 
   // --- Celebrate and thank a peer ------------------------------------------------------------------------
-  await call(bot, "shift_quest_admin_set", ADMIN, "celebrate_channel", "930000000000000001");
+  await call(bot, "shift_quest_admin_set", ADMIN, "celebrate_channel", CELEBRATE_CHANNEL);
+  await call(bot, "shift_quest_admin_set", ADMIN, "coworking_channel", "930000000000000002");
   await w("shift_quest_admin_setting", ADMIN, "sharing", "on");
+  // The campfire's intentions, posted from Discord, never use up the website's drafts.
+  for (let i = 0; i < 5; i += 1) await call(bot, "shift_quest_share_create", A, "intention", `วันนี้จะทำ ${i}`, null, null);
   for (const [label, args, expected] of [
     ["a celebration naming a peer", [A, "celebration", "เย้", inst1, mB], "bad_input"],
     ["a thank-you without a peer", [A, "recognition", "ขอบคุณ", null, null], "bad_input"],
@@ -444,8 +507,9 @@ async function main(): Promise<void> {
   }
   check(await code(w("shift_quest_share_draft", A, "celebration", "อีกครั้ง", inst1, null)) === "share_limit",
     "the sixth draft in 24 hours is refused (share_limit), cancelled drafts included");
-  check(await count("select count(*) from public.shift_quest_shares where member_id = $1", [mA]) === 5,
-    "and stores nothing");
+  check(await count("select count(*) from public.shift_quest_shares where member_id = $1 and kind <> 'intention'", [mA]) === 5 &&
+      await count("select count(*) from public.shift_quest_shares where member_id = $1 and kind = 'intention'", [mA]) === 5,
+    "and stores nothing; the five campfire intentions did not count toward it");
   check(await code(w("shift_quest_share_draft", B, "recognition", "ขอบคุณเช่นกัน", null, mA)) === "ok",
     "the cap is per student");
 
@@ -462,6 +526,14 @@ async function main(): Promise<void> {
   const fix1: string = await w("shift_quest_data_request", D, "correction", "ชื่อสะกดผิด");
   check(fix1 !== erase1 && await w("shift_quest_data_request", D, "correction", "อีกเรื่อง") === fix1,
     "one open request per kind: a correction is its own, and deduplicated too");
+  check(await code(w("shift_quest_data_request", D, "correction", "  ")) === "missing_text",
+    "a second correction still needs a note");
+  await w("shift_quest_data_request", D, "correction", "อีกเรื่อง");
+  check(await scalar(db, "select note from public.shift_quest_data_requests where id = $1", [fix1]) === "ชื่อสะกดผิด\n---\nอีกเรื่อง" &&
+      await count("select count(*) from public.shift_quest_audit where action = 'data_request_correction_more' and resource_id = $1", [fix1]) === 1,
+    "the second note joins the open request for staff, once (a repeat adds nothing), and is audited");
+  check(await code(w("shift_quest_data_request", D, "correction", "ก".repeat(990))) === "text_too_long",
+    "a note that no longer fits is refused, not dropped");
   const open = await w<Json[]>("shift_quest_admin_data_requests", ADMIN);
   check(open.length === 2 && noDiscord(open), "admins see the two open requests", open);
   await w("shift_quest_admin_data_close", ADMIN, erase1, false);
@@ -470,7 +542,7 @@ async function main(): Promise<void> {
   // An erased member drops out of every picker.
   const eraseG: string = await w("shift_quest_data_request", G, "erasure", null);
   await w("shift_quest_admin_erase", ADMIN, eraseG);
-  check(await code(w("shift_quest_milestone_submit_team", A, 4, "ให้ลองใช้", "ใช้จริง", null, null, [mG])) === "contributor_not_teammate",
+  check(await code(w("shift_quest_milestone_submit_team", A, 5, "วนรอบ", "ฟังแล้วแก้", null, null, [mG])) === "contributor_not_teammate",
     "an erased member cannot be named");
   check(!(await w<Json[]>("shift_quest_islanders", A, "every")).some((f) => f.id === mG) &&
       !(await w<Json[]>("shift_quest_project_teammates", A)).some((f) => f.id === mG),
@@ -485,12 +557,16 @@ async function main(): Promise<void> {
   check(qR1.some((h) => h.id === helpA) && qR1.some((h) => h.id === helpC), "a reviewer outside the team sees both");
   check(!qR2.some((h) => h.id === helpA) && qR2.some((h) => h.id === helpC),
     "a reviewer on the student's team does not see their help request", qR2.map((h) => h.id));
-  check(await code(w("shift_quest_help_update", R2, helpA, "claim", null)) === "conflict_of_interest" &&
-      await code(w("shift_quest_help_update", R2, helpA, "resolve", "ช่วยแล้ว")) === "conflict_of_interest",
-    "and cannot claim or resolve it");
+  check(await code(w("shift_quest_help_update", R2, helpA, "claim", null)) === "help_conflict" &&
+      await code(w("shift_quest_help_update", R2, helpA, "resolve", "ช่วยแล้ว")) === "help_conflict",
+    "and cannot claim or resolve it (help_conflict, words of its own)");
   await w("shift_quest_help_update", R1, helpA, "claim", null);
   check((await w<Json[]>("shift_quest_help_mine", A)).some((h) => h.id === helpA && h.status === "claimed"),
     "another reviewer claims it and the student sees that");
+  check(await code(w("shift_quest_help_update", R2, helpA, "release", null)) === "ok" &&
+      await scalar(db, "select status from public.shift_quest_help_requests where id = $1", [helpA]) === "open",
+    "releasing stays open to every reviewer, the conflicted one included");
+  await w("shift_quest_help_update", R1, helpA, "claim", null);
   await w("shift_quest_help_update", R2, helpC, "claim", null);
   check(await scalar(db, "select status from public.shift_quest_help_requests where id = $1", [helpC]) === "claimed",
     "the conflicted reviewer still helps other teams");
@@ -566,6 +642,24 @@ async function main(): Promise<void> {
     "a rule retires from the website");
   check(await code(w("shift_quest_fulfill_queue", R1)) === "not_authorized", "the fulfillment queue is for fulfillment staff");
   check(typeof (await w<Json>("shift_quest_admin_report", ADMIN, 7)) === "object", "the report runs from the website");
+
+  // --- The 8-teammate cap never counts the caller ---------------------------------------------------
+  // A crew of ten (names without "Every", so the searches above are unchanged): a lead and nine others.
+  const CREW = Array.from({ length: 10 }, (_, i) => `95000000000000000${i}`);
+  for (const [i, id] of CREW.entries()) await w("shift_quest_start", id, `Crew ${i}`, false);
+  const crewProject: string = await w("shift_quest_project_create", CREW[0], "Crew", "software", null);
+  for (const id of CREW.slice(1)) {
+    await call(bot, "shift_quest_project_invite", CREW[0], crewProject, id);
+    await w("shift_quest_project_respond", id, crewProject, true);
+  }
+  const crew = await Promise.all(CREW.map((id) => idOf(id)));
+  check(await code(w("shift_quest_milestone_submit_team", CREW[0], 1, "คุยกับคนจริง", "ได้เรียนรู้", null, "นัดคุย", crew.slice(1))) === "bad_input",
+    "nine teammates are refused (bad_input)");
+  const crewSub = await w<Json>("shift_quest_milestone_submit_team", CREW[0], 1, "คุยกับคนจริง", "ได้เรียนรู้", null, "นัดคุย",
+    [crew[0], ...crew.slice(1, 9)]);
+  check(await count("select count(*) from public.shift_quest_contributions where submission_id = $1 and status = 'pending'",
+      [crewSub.submission_id]) === 8,
+    "eight teammates plus the caller's own uuid are accepted: the caller is not one of the eight");
 
   await Promise.all([db.end(), bot.end(), web.end()]);
   console.log(`\n${passes} passed, ${failures} failed`);
