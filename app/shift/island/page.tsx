@@ -184,7 +184,7 @@ export default async function Page({
             initialPhase={bangkokPhaseNow()}
             discordUrl={shiftDiscordUrls().server}
             // The bot's 🌐 board link (bot/src/quests/weblink.ts) opens the quest board sheet.
-            initialPanel={at === "board" ? "board" : undefined}
+            initialPanel={at === "board" || at === "canvas" ? at : undefined}
             // The ticket's "ขึ้นเรือไปเกาะ" (`?at=voyage`): the crossing plays even if this browser has seen it.
             voyage={at === VOYAGE_PARAM}
           />

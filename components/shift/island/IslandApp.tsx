@@ -56,8 +56,8 @@ interface IslandAppProps {
   initialPhase?: LightPhase;
   /** The SHIFT Discord server's URL (from the server's env), for the inbox's "open Discord". */
   discordUrl?: string | null;
-  /** A sheet to open on arrival: "board" from the bot's 🌐 board link (`?at=board`). Only with a plot. */
-  initialPanel?: "board";
+  /** A sheet to open on arrival: the quest board or the canvas picker for a stale link. Only with a plot. */
+  initialPanel?: "board" | "canvas";
   /** `?at=voyage` from the ticket: sail across even on a browser that has crossed before. */
   voyage?: boolean;
 }
@@ -334,7 +334,7 @@ function IslandHome({
   const voyage = useVoyage(forcedVoyage);
   const keynote = useMemo(() => keynoteQuest(board), [board]);
   const hasAction = useMemo(() => (keynote ?? starterQuest(board)) != null, [keynote, board]);
-  const [panel, setPanel] = useState<Panel>(initialPanel ?? null);
+  const [panel, setPanel] = useState<Panel>(initialPanel === "board" ? "board" : null);
   // ช่วยเพื่อนเช็ก (schema 15) opens over the board, so the board stays where it was.
   const [peerOpen, setPeerOpen] = useState(false);
   const [detail, setDetail] = useState<BoardRef | null>(null);
@@ -356,7 +356,7 @@ function IslandHome({
   const puffTimer = useRef<number | undefined>(undefined);
   useEffect(() => () => window.clearTimeout(puffTimer.current), []);
   // The canvas picker, opened from a quest; the quest reopens once a canvas is linked.
-  const [linking, setLinking] = useState(false);
+  const [linking, setLinking] = useState(initialPanel === "canvas");
   const [relinkRef, setRelinkRef] = useState<BoardRef | null>(null);
   const [storyOpen, setStoryOpen] = useState(false);
   const [whole, setWhole] = useState(false);

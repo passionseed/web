@@ -567,6 +567,13 @@ describe("IslandApp: the team's tree", () => {
 });
 
 describe("IslandApp: the canvas button", () => {
+  it("opens the reconnect picker on arrival from a stale canvas link", () => {
+    render(<IslandApp page={page({ canvasLink: { linked: false } })} picture={null} initialPanel="canvas" />);
+    expect(screen.getByTestId("picker")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "picker-linked" }));
+    expect(screen.queryByTestId("picker")).toBeNull();
+    expect(screen.queryByTestId("detail")).toBeNull();
+  });
   it("opens the linked canvas on the whiteboard from the top bar, without the board's id", () => {
     render(<IslandApp page={page()} picture={null} />);
     const link = screen.getByRole("link", { name: "เปิดแคนวาส" });
