@@ -8,9 +8,11 @@ import type { IslandViewer } from "@/lib/supabase/shift-quests/types";
 
 const mockViewer = jest.fn<Promise<IslandViewer>, []>();
 const call = jest.fn();
+const available = jest.fn();
 
 jest.mock("@/lib/supabase/shift-quests/viewer", () => ({ resolveIslandViewer: () => mockViewer() }));
 jest.mock("@/lib/supabase/shift-quests/db", () => ({ questApi: () => ({ call, rows: jest.fn() }) }));
+jest.mock("@/lib/supabase/shift-quests/canvas", () => ({ linkedCanvasAvailable: (...args: unknown[]) => available(...args) }));
 
 import { dynamic, GET } from "../canvas/route";
 
@@ -35,6 +37,7 @@ let errorLog: jest.SpyInstance;
 beforeEach(() => {
   mockViewer.mockReset().mockResolvedValue(READY);
   call.mockReset().mockResolvedValue(LINK);
+  available.mockReset().mockResolvedValue(true);
   errorLog = jest.spyOn(console, "error").mockImplementation(() => {});
 });
 afterEach(() => errorLog.mockRestore());
@@ -71,6 +74,20 @@ describe("GET /shift/island/canvas", () => {
 
   it("opens the board focused on the canvas frame", async () => {
     expectRedirect(await GET(request()), `/whiteboard/${BOARD}?focus=frame-1`);
+    expect(available).toHaveBeenCalledWith(READY.userId, {
+      board_id: BOARD, frame_id: LINK.frame_id, canvas_project: LINK.canvas_project,
+    });
+  });
+
+  it.each(["", "?note=n-1"])("opens the picker for a missing board or canvas, including old note links (%s)", async (query) => {
+    available.mockResolvedValue(false);
+    expectRedirect(await GET(request(query)), "/shift/island?at=canvas");
+  });
+
+  it("opens the picker when canvas verification fails without leaking the error message", async () => {
+    available.mockRejectedValue(new Error("student text"));
+    expectRedirect(await GET(request()), "/shift/island?at=canvas");
+    expect(errorLog.mock.calls.flat().join("\n")).not.toContain("student text");
   });
 
   it("never sends the browser to the dev server's bind address", async () => {
@@ -87,9 +104,9 @@ describe("GET /shift/island/canvas", () => {
     expectRedirect(await GET(request(`?note=${note}`)), `/whiteboard/${BOARD}?focus=frame-1`);
   });
 
-  it("opens the board alone when the stored frame id does not look valid", async () => {
+  it("opens the picker when the stored frame id does not look valid", async () => {
     call.mockResolvedValue({ ...LINK, frame_id: "x?y" });
-    expectRedirect(await GET(request()), `/whiteboard/${BOARD}`);
+    expectRedirect(await GET(request()), "/shift/island?at=canvas");
   });
 
   it("sends a link with a board id that is not a uuid back to the island", async () => {

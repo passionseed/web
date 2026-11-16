@@ -6,6 +6,7 @@ import { readMyTree, readStyles, withStyles, type StylesBySlot } from "@/bot/src
 import type { CanvasLinkState } from "@/lib/shift-island/quest-canvas";
 
 import { campfireOf } from "./campfire";
+import { linkedCanvasAvailable } from "./canvas";
 import { characterOf } from "./character";
 import { consentOf } from "./consent";
 import { questApi } from "./db";
@@ -120,15 +121,16 @@ interface CanvasLinkRow {
 const UNLINKED: CanvasLinkState = { linked: false };
 
 /**
- * Whether the quest project is linked to a SHIFT canvas. Only the time leaves
+ * Whether the quest project is linked to an available SHIFT canvas. Only the time leaves
  * the server (never the board or frame id: the island opens the canvas through
  * CANVAS_ROUTE, which resolves the link on the server). Any failure reads as
  * unlinked and logs a code: the island never breaks because of the link.
  */
-async function canvasLinkOf(api: QuestApi, actor: string): Promise<CanvasLinkState> {
+async function canvasLinkOf(api: QuestApi, actor: string, userId: string): Promise<CanvasLinkState> {
   try {
     const row = await api.call<CanvasLinkRow | null>("shift_quest_canvas_get", actor);
     if (!row || typeof row !== "object" || typeof row.linked_at !== "string") return UNLINKED;
+    if (!(await linkedCanvasAvailable(userId, row))) return UNLINKED;
     return { linked: true, linkedAt: row.linked_at };
   } catch (error) {
     const code =
@@ -186,7 +188,7 @@ export async function getIslandPage(viewer: ReadyViewer): Promise<IslandPageData
   if (island.project) {
     const [boardRaw, link, campfireRead] = await Promise.all([
       api.call<QuestBoard>("shift_quest_board", viewer.actor),
-      canvasLinkOf(api, viewer.actor),
+      canvasLinkOf(api, viewer.actor, viewer.userId),
       campfireOf(api, viewer.actor, false),
     ]);
     board = normalizeBoard(boardRaw);

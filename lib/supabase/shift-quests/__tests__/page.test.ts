@@ -1,5 +1,7 @@
 /** @jest-environment node */
 const call = jest.fn();
+const available = jest.fn();
+jest.mock("../canvas", () => ({ linkedCanvasAvailable: (...args: unknown[]) => available(...args) }));
 
 jest.mock("../db", () => ({
   questApi: () => ({ call, rows: jest.fn() }),
@@ -122,6 +124,7 @@ function respond(responses: Record<string, unknown>) {
 
 beforeEach(() => {
   call.mockReset();
+  available.mockReset().mockResolvedValue(true);
   importShiftConsent.mockReset().mockResolvedValue(null);
   process.env.DISCORD_SHIFT_GUILD_ID = ENV_GUILD;
   jest.spyOn(console, "error").mockImplementation(() => undefined);
@@ -220,6 +223,17 @@ describe("getIslandPage", () => {
       shift_quest_island_map: map,
       shift_quest_board: board,
     };
+
+    it("offers reconnecting when the saved board or canvas is gone", async () => {
+      available.mockResolvedValue(false);
+      respond({ ...base, shift_quest_canvas_get: {
+        board_id: "deleted-board", frame_id: "deleted-frame", canvas_project: "proj-1", linked_at: "2026-11-11T08:00:00Z",
+      } });
+      const result = await getIslandPage(viewer);
+      expect(result.canvasLink).toEqual({ linked: false });
+      expect(result.board).toEqual(board);
+      expect(available).toHaveBeenCalledWith(USER_ID, expect.objectContaining({ board_id: "deleted-board" }));
+    });
 
     it("is linked with only the time, never the board, frame or canvas project id", async () => {
       const boardId = "9d1f2c3b-4a5e-4f60-8a7b-1c2d3e4f5a6b";
