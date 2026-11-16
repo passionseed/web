@@ -677,18 +677,26 @@ reads and writes through `20261111090900_shift_quests_board.sql` and
 **The web role.** `shift_quest_web` is a login like `shift_quest_bot`:
 `NOINHERIT`, `statement_timeout` 8s, 20 connections, `USAGE` on `public`, no
 table privilege, no helper. Among the `shift_quest_*` functions it executes
-exactly this allowlist: `shift_quest_schema_version`, `_session`, `_start`,
-`_island`, `_island_map`, `_board`, `_checkin`, `_rest`, `_resume`,
-`_island_optin`, `_milestone_start`, `_milestone_submit`, `_side_choose`,
-`_side_submit`, `_propose`, `_submit`, `_help_create`, `_project_create`,
-`_project_list`, `_project_respond`, `_canvas_get`, `_canvas_link`,
-`_canvas_unlink`, `_ownership_get`, `_campfire` (schema 7),
-`_island_links` (schema 8), the player functions (schema 9) and
-`_island_roots` (schema 10), and `_island_my_roots` (schema 11). No review, staff, admin, outbox or data
-function. The migrations revoke every `shift_quest_*` function from it, then
-grant the list by full signature and stop if one is missing. `run-local.sh`
-(`check_privileges`), `web_board.ts` and `web_canvas.ts` hold the same list
-and fail on any extra or missing grant.
+exactly an allowlist. Up to schema 11 that was the student board:
+`shift_quest_schema_version`, `_session`, `_start`, `_island`, `_island_map`,
+`_board`, `_checkin`, `_rest`, `_resume`, `_island_optin`, `_milestone_start`,
+`_milestone_submit`, `_side_choose`, `_side_submit`, `_propose`, `_submit`,
+`_help_create`, `_project_create`, `_project_list`, `_project_respond`,
+`_canvas_get`, `_canvas_link`, `_canvas_unlink`, `_ownership_get`,
+`_campfire` (schema 7), `_island_links` (schema 8), the player functions
+(schema 9), `_island_roots` (schema 10) and `_island_my_roots` (schema 11).
+Later files added the tree style, the admin's own reset and island overview,
+photos and the web review page, the peer check and project invitations. From
+schema 16 (`20261116090000_shift_quest_web_everything.sql`, below) it also
+runs the inbox, settings, sharing, data rights, review, help, fulfillment and
+admin functions: the website does every flow but Discord's. Never: a helper
+(`shift_quest__*`), a raw function that takes someone else's Discord id, the
+outbox, the live and digest posts, voice presence or the campfire rounds.
+Each migration grants by full signature and stops if one is missing; the
+early ones revoked every `shift_quest_*` function from the role first, later
+ones grant only. `run-local.sh` (`check_privileges`), `web_board.ts`,
+`web_canvas.ts` and `docs/runbooks/shift-high-island-checks.sql` hold the
+same list and fail on any extra or missing grant.
 
 **Outside `shift_quest_*` it is not closed by default.** A LOGIN role is
 always a member of `PUBLIC`, and the role has `USAGE` on `public`, so it can
@@ -810,6 +818,103 @@ submission may see its photos. `shift_quest_review_view` and
 `shift_quest_review_extras` add the checks and their count. Export lists a
 member's checks, erasure deletes them. Tested in
 `supabase/tests/shift_quests/peer.ts`.
+
+### The website does everything but Discord (schema 16)
+
+The founder decided (2026-11-16) that the SHIFT Island bot becomes
+notify-only and every student and staff flow moves to the website.
+`20261116090000_shift_quest_web_everything.sql` gives the website the database
+side of that; nothing changes for users until the pages ship. The website
+gates every new surface on `WEB_EVERYTHING_SCHEMA = 16`
+(`lib/shift-island/web-everything.ts`, `webEverythingAvailable(api)`);
+`REQUIRED_SCHEMA` in `lib/supabase/shift-quests/db.ts` stays the island's
+floor, so a missing migration hides the new pages instead of closing the
+island.
+
+- **Member uuids in, never Discord ids out.** The website only holds the
+  signed-in user's own Discord id. Every function that used to take someone
+  else's Discord id gets a website-only wrapper over the member uuid. Each
+  wrapper is `SECURITY DEFINER` with `search_path = public` and checks the
+  caller first (`shift_quest__student`, or `shift_quest__staff(actor,
+  ARRAY['admin'])`), so a stranger or a non-admin gets the same refusal for a
+  real and an unknown uuid. Two helpers nobody may call resolve the uuids:
+  `shift_quest__discord_of` (a live, linked member, else `not_found`) and
+  `shift_quest__contributors_of` (duplicates removed, at most 8 or
+  `bad_input`, any miss `contributor_not_teammate`).
+- **Students.** `shift_quest_project_teammates` (the picker: active, started,
+  non-staff teammates of the current project, not the caller),
+  `shift_quest_islanders` (who to thank: started non-staff students, teammates
+  first, a 2 to 80 character search, 20 at most; staff callers are
+  `not_eligible`), `shift_quest_share_draft` (celebrate an approved quest or
+  thank a started student; `intention` stays with the campfire; 5 drafts in 24
+  hours, then `share_limit`), `shift_quest_milestone_submit_team` and
+  `shift_quest_side_submit_team` (the caller's own part plus teammates who
+  helped: named teammates make the proof visible to the team, none means
+  reviewers only; on side quests only `side-help-a-builder` and
+  `side-improve-community` take teammates, else `bad_input`; proposed quests
+  keep the plain submit). Granted as they are: `_inbox_list`, `_help_mine`,
+  `_help_withdraw`, `_update_prefs`, `_contribution_respond`, `_share_get`,
+  `_share_confirm`, `_share_cancel`, `_share_respond`, `_data_export`,
+  `_data_request`.
+- **Reviewers and fulfillment.** `_review_queue`, `_review_get`,
+  `_review_decide`, `_proposal_get`, `_proposal_agree`, `_help_queue`,
+  `_help_update`, `_awards_pending`, `_issue_award`, `_fulfill_queue`,
+  `_fulfill_update`. The web review page calls `_review_get` first (it
+  refuses a conflicted reviewer and audits), then `_review_view`.
+- **Admins.** `shift_quest_admin_setting` (the switches `awards`,
+  `redemption`, `sharing`, `reminders` and the four published terms; channels
+  and Discord student roles stay with `/admin channel` and
+  `/admin student-role`, squads are dropped; anything else is `bad_input`),
+  `shift_quest_admin_members` (search, staff included, `{id, name, roles,
+  started}`), `shift_quest_admin_member` (roles, started, current project,
+  consent, balance and 25 ledger entries), `shift_quest_admin_member_role`
+  (members who already have a row; **new staff are added in Discord with
+  `/admin role`**, the only verified way to map a new Discord user),
+  `shift_quest_admin_member_recognize`, `shift_quest_admin_member_award`,
+  `shift_quest_admin_member_consent_reset` and `shift_quest_admin_seasons`
+  (draft and active seasons with their unlocks, for `_admin_unlock`, without
+  the island lock). Granted as they are: `_admin_status` (the website shows
+  each channel only as set or not set), `_admin_reverse`, `_admin_report`,
+  `_admin_rule`, `_admin_rule_retire`, `_admin_templates`,
+  `_admin_template_state`, `_admin_template_rule`, `_admin_catalog_list`,
+  `_admin_catalog`, `_admin_catalog_gate`, `_admin_season`, `_admin_unlock`,
+  `_admin_island_status`, `_admin_island_set`, `_admin_data_requests`,
+  `_admin_data_close`, `_admin_erase`.
+- **Request keys.** The browser makes one uuid per form open (never per
+  click); the wrappers store `web-recog:<uuid>` (recognitions) and
+  `web-award:<uuid>` (staff awards, so `staff:web-award:<uuid>` in the
+  ledger), and the website sends `web-rev:<uuid>` to `_admin_reverse`. The
+  bot's keys (`recog:`, `award:`) never collide with them.
+- **Body changes, same signatures and grants.** `shift_quest_data_request`
+  keeps one open request per kind per member and returns it on a second
+  click, so staff get one alert. `shift_quest_help_queue` leaves out, and
+  `shift_quest_help_update` refuses to claim or resolve
+  (`conflict_of_interest`), a help request from the reviewer's own team, now
+  or before (`shift_quest__help_conflicted`, the review rule); releasing stays
+  open. `shift_quest_contribution_respond`: when the last pending teammate
+  answers on an approved submission whose award waited for them
+  (`contributions_pending`), the award is issued then, as the approving
+  reviewer, in the approval's lock order, and audited as
+  `award_after_contributions`; another reason (no team split, awards paused)
+  is recorded on the quest as a staff retry would.
+- **Stays in Discord or the bot.** The raw Discord-id functions
+  (`_admin_set`, `_admin_role`, `_admin_recognize`, `_admin_staff_award`,
+  `_admin_ledger`, `_admin_consent_reset`, `_share_create`,
+  `_project_invite`), the outbox and reminders, the live and digest posts,
+  voice presence, the campfire rounds and `_bootstrap_admin`. Dropped student
+  flows are not granted: ownership ticking (`_ownership_set`),
+  `_project_select`, `_project_leave`, `_set_state`, `_update`, `_appeal`,
+  `_withdraw`, `_progress_list`, `_progress_edit` and squads.
+- **The bot keeps every function it had**, so both work during the move. A
+  later migration revokes the moved ones from the bot once it only notifies;
+  it must move them into `run-local.sh`'s website-only list and `db_rules.ts`
+  in the same change. Any migration that repeats the bot's grant loop must
+  keep excluding the website-only wrappers above.
+
+Apply with `supabase db push` before any website page that calls these
+deploys, then run the runbook checks. Tested in
+`supabase/tests/shift_quests/web_everything.ts` (every wrapper as
+`shift_quest_web`) and the allowlists in `web_board.ts` and `web_canvas.ts`.
 
 ## Admin: reset my own island (testing)
 

@@ -141,6 +141,9 @@ const ERRORS: Record<string, string> = {
   // The peer check (20261115140000)
   already_checked: "คุณเช็กงานนี้ไปแล้ว ขอบคุณที่ช่วยเพื่อน",
   peer_limit: "วันนี้เช็กงานเพื่อนครบ 10 งานแล้ว พรุ่งนี้มาช่วยต่อได้",
+
+  // The website does everything but Discord (20261116090000). DRAFT for the Thai review.
+  share_limit: "ร่างโพสต์ฉลองหรือขอบคุณครบ 5 ครั้งใน 24 ชั่วโมงแล้ว ยังไม่มีอะไรถูกโพสต์ ลองใหม่พรุ่งนี้ได้",
 };
 
 /** Thai, user-facing words for a refusal code; an unknown code gets the generic line. */
