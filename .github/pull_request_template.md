@@ -8,12 +8,14 @@
 |---|---|
 |  |  |
 
-### Try it
+### Preview
 
-<!-- Two or three steps in the Vercel preview, each ending in what the reviewer should see. -->
+<!-- The Vercel preview link, then a direct link to each changed page or state, so a reviewer lands on the change. Then one to three steps, each ending in what they should see. -->
 
-1.
-2.
+Preview:
+
+-
+-
 
 ### Why
 
