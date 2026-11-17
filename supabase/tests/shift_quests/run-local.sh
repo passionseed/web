@@ -39,6 +39,9 @@
 #             17, 20261118100000: every new website wrapper as
 #             shift_quest_web, the data request dedupe, the help conflict
 #             filter and the award after the last teammate answers)
+#   visitors  every migration applied twice, then visitors.ts (schema 18,
+#             20261118110000: the plaza's count of today's check-ins and the
+#             caller's own team's), with consent off
 #
 #   supabase/tests/shift_quests/run-local.sh       # or: pnpm test:db:quests
 #   PG_BIN=/usr/lib/postgresql/15/bin supabase/tests/shift_quests/run-local.sh
@@ -215,7 +218,9 @@ WITH fns0 AS (
         'shift_quest_admin_setting',
         'shift_quest_admin_members', 'shift_quest_admin_member', 'shift_quest_admin_member_role',
         'shift_quest_admin_member_recognize', 'shift_quest_admin_member_award',
-        'shift_quest_admin_member_consent_reset', 'shift_quest_admin_seasons') AS web_only
+        'shift_quest_admin_member_consent_reset', 'shift_quest_admin_seasons')
+      -- 20261118110000_shift_quest_island_visitors: the plaza's visitors are the website's.
+      OR p.proname = 'shift_quest_island_visitors' AS web_only
   FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
   WHERE n.nspname = 'public' AND p.proname LIKE 'shift\_quest\_%'
 ), fns AS (
@@ -352,7 +357,9 @@ web_allow(sig) AS (VALUES
   ('shift_quest_admin_island_set(text,text,text)'),
   ('shift_quest_admin_data_requests(text)'),
   ('shift_quest_admin_data_close(text,uuid,boolean)'),
-  ('shift_quest_admin_erase(text,uuid)')
+  ('shift_quest_admin_erase(text,uuid)'),
+  -- 20261118110000_shift_quest_island_visitors.
+  ('shift_quest_island_visitors(text)')
 ), web_applied AS (
   SELECT to_regprocedure('public.shift_quest_board(text)') IS NOT NULL AS yes
 )
@@ -415,7 +422,7 @@ echo "# migrations"
 for f in "${MIGRATIONS[@]}"; do echo "apply $(basename "$f")"; done
 new_db once
 apply once "single pass" "${MIGRATIONS[@]}"
-for DB in rules island flows islandflows board canvas campfire live player roots tree reset evidence peer treepost webeverything; do
+for DB in rules island flows islandflows board canvas campfire live player roots tree reset evidence peer treepost webeverything visitors; do
   new_db "$DB"
   apply "$DB" "first pass" "${MIGRATIONS[@]}"
   apply "$DB" "second pass" "${MIGRATIONS[@]}"
@@ -494,6 +501,7 @@ suite "photo evidence and the team's problem" evidence evidence.ts
 suite "peer check" peer peer.ts
 suite "tree grew post" treepost tree_post.ts
 suite "web does everything but Discord" webeverything web_everything.ts
+suite "plaza visitors" visitors visitors.ts
 # island_rules.ts runs against wave 1 alone once it knows to skip season cases.
 if [ "${#WAVE1[@]}" -lt "${#MIGRATIONS[@]}" ] && grep -q SHIFT_QUESTS_WAVE "$HERE/island_rules.ts"; then
   export SHIFT_QUESTS_WAVE=1

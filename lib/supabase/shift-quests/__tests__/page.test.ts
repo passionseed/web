@@ -635,3 +635,50 @@ describe("admin oversight privacy", () => {
     expect(result.map.plots[0]).toMatchObject({ name: null, plain: true, stage: 0 });
   });
 });
+
+describe("today's visitors (schema 18)", () => {
+  // No project: the island, the map, roots and styles answered, today's visitors on top.
+  const answers = {
+    shift_quest_island: {},
+    shift_quest_island_map: map,
+    shift_quest_island_roots: [],
+    shift_quest_island_styles: [],
+    shift_quest_campfire: FIRE,
+  };
+
+  it("reads the island's count and the team's for the viewer, two integers only", async () => {
+    respond({ ...answers, shift_quest_schema_version: 18, shift_quest_island_visitors: { count: 7, team: 2 } });
+    const page = await getIslandPage(viewer);
+    expect(call).toHaveBeenCalledWith("shift_quest_island_visitors", ACTOR);
+    expect(page.visitors).toEqual({ count: 7, team: 2 });
+    expect(JSON.stringify(page.visitors)).not.toContain(ACTOR);
+  });
+
+  it.each([15, 16, 17])("never asks before schema 18 (%s): no figures, and the page loads", async (version) => {
+    respond({ ...answers, shift_quest_schema_version: version });
+    const page = await getIslandPage(viewer);
+    expect(call).not.toHaveBeenCalledWith("shift_quest_island_visitors", ACTOR);
+    expect(page.visitors).toBeNull();
+    expect(page.campfire).toEqual({ count: 2, joinUrl: JOIN_URL });
+  });
+
+  it.each([
+    ["the function missing", new QuestDbError("shift_quest_island_visitors", "42883")],
+    ["no grant", new QuestDbError("shift_quest_island_visitors", "42501")],
+    ["a refusal", new QuestError("not_started")],
+    ["malformed data", { count: "seven" }],
+    ["no answer", null],
+  ])("is null on %s, and the rest of the page still loads", async (_, failure) => {
+    respond({ ...answers, shift_quest_schema_version: 18, shift_quest_island_visitors: failure });
+    const page = await getIslandPage(viewer);
+    expect(page.visitors).toBeNull();
+    expect(page.map.plots).toHaveLength(1);
+  });
+
+  it("is null when the schema version cannot be read", async () => {
+    respond({ ...answers, shift_quest_schema_version: new QuestDbError("shift_quest_schema_version", "08006") });
+    const page = await getIslandPage(viewer);
+    expect(call).not.toHaveBeenCalledWith("shift_quest_island_visitors", ACTOR);
+    expect(page.visitors).toBeNull();
+  });
+});

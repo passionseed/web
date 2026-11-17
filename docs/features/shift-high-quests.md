@@ -952,6 +952,20 @@ deploys, then run the runbook checks. Tested in
 `supabase/tests/shift_quests/web_everything.ts` (every wrapper as
 `shift_quest_web`) and the allowlists in `web_board.ts` and `web_canvas.ts`.
 
+### Plaza visitors (schema 18)
+
+`20261118110000_shift_quest_island_visitors.sql` adds website-only
+`shift_quest_island_visitors(actor)`: `{count, team}`, how many members have a
+check-in (a `tap`) on today's Bangkok date, and how many of the caller's
+active teammates on their current project did, the caller left out. Two
+integers, never an id, name, project or time; same gate as
+`shift_quest_campfire`; erased members never count. Schema 16 is #324's
+(`20261118090000_shift_quest_tree_grew_post.sql`) and 17 is #321's
+(`20261118100000_shift_quest_web_everything.sql`): apply those first, so the
+version only goes up. The plan is in
+[`docs/designs/shift-island-plaza-visitors.md`](../designs/shift-island-plaza-visitors.md).
+Tested in `supabase/tests/shift_quests/visitors.ts`.
+
 ## Admin: reset my own island (testing)
 
 `20261115120000_shift_quest_admin_reset_self.sql` adds

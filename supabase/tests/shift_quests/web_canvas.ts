@@ -163,6 +163,8 @@ const WEB_ALLOWLIST = [
   "shift_quest_admin_data_requests(text)",
   "shift_quest_admin_data_close(text,uuid,boolean)",
   "shift_quest_admin_erase(text,uuid)",
+  // 20261118110000_shift_quest_island_visitors.
+  "shift_quest_island_visitors(text)",
 ];
 
 let failures = 0;

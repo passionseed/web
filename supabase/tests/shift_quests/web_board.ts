@@ -178,6 +178,8 @@ const WEB_ALLOWLIST = [
   "shift_quest_admin_data_requests(text)",
   "shift_quest_admin_data_close(text,uuid,boolean)",
   "shift_quest_admin_erase(text,uuid)",
+  // 20261118110000_shift_quest_island_visitors.
+  "shift_quest_island_visitors(text)",
 ];
 
 /**
@@ -495,6 +497,8 @@ async function main(): Promise<void> {
     ["admin_data_close", "select public.shift_quest_admin_data_close($1::text, $2::uuid, $3::boolean)",
       [NOBODY, randomUUID(), true], "not_authorized"],
     ["admin_erase", "select public.shift_quest_admin_erase($1::text, $2::uuid)", [NOBODY, randomUUID()], "not_authorized"],
+    // 20261118110000_shift_quest_island_visitors: an unknown caller is refused.
+    ["island_visitors", "select public.shift_quest_island_visitors($1::text)", [NOBODY], "not_started"],
   ];
   check(allowCalls.length === WEB_ALLOWLIST.length, "every allowlisted function is called below");
   for (const [name, sql, args, expected] of allowCalls) {

@@ -142,7 +142,9 @@ async function main(): Promise<void> {
       "shift_quest_admin_members", "shift_quest_admin_member", "shift_quest_admin_member_role",
       "shift_quest_admin_member_recognize", "shift_quest_admin_member_award",
       "shift_quest_admin_member_consent_reset", "shift_quest_admin_seasons",
-    ].includes(f.proname);
+    ].includes(f.proname) ||
+    // 20261118110000_shift_quest_island_visitors.
+    f.proname === "shift_quest_island_visitors";
   const missing = fns.filter((f) => !internal(f) && !webOnly(f) && !f.bot).map((f) => f.sig);
   check(missing.length === 0, "the bot can execute every shift_quest entry point but the website-only ones", missing);
   const leaked = fns.filter((f) => internal(f) && f.bot).map((f) => f.sig);

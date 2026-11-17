@@ -208,6 +208,40 @@
   transform: translate(0, -50%);
 }
 
+/* Today's visitors: the count, and for the viewer's own team a second, longer line. */
+.plazaLabel[data-label="visitors"] {
+  max-width: 176px;
+}
+
+/* The viewer's own figure: their picture and "คุณ", one short line over their head. */
+.plazaLabel[data-label="me"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px 2px 2px;
+}
+
+.plazaTagAvatar {
+  flex: none;
+}
+
+/* The tag waits for the arrival walk (its delay is set inline), then appears. */
+@media (prefers-reduced-motion: no-preference) {
+  .plazaLabel[data-delayed="true"] {
+    animation: plaza-tag-in 200ms steps(2, end) both;
+  }
+}
+
+@keyframes plaza-tag-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
 /* The light of the hour over the whole screen, on top of the tinted canvas. */
 .shade {
   position: fixed;
