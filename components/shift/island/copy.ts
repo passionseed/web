@@ -345,6 +345,76 @@ export const KEYNOTE = {
   start: (title: string) => `เริ่มที่: ${title}`,
 };
 
+/**
+ * DRAFT: the next-step card, the island's one gold element (NextStepCard).
+ * The headline says what to do next; the line under it says why or where the
+ * quest stands. The day's first tap on it is the check-in (CheckInSheet).
+ */
+export const NEXT_STEP = {
+  start: KEYNOTE.start,
+  retry: (title: string) => `ลองอีกครั้ง: ${title}`,
+  go: KEYNOTE.next,
+  answer: (title: string) => `ตอบพี่เลี้ยง: ${title}`,
+  /** Waiting on a mentor, with a main quest the student can start meanwhile. */
+  meanwhile: (title: string) => `ระหว่างรอ เริ่มที่: ${title}`,
+  waiting: KEYNOTE.waiting,
+  resting: "กำลังพัก",
+  /** The line under the headline. */
+  main: (milestone: number) => `เควสต์หลัก ${milestone} จาก 7`,
+  side: "เควสต์เสริม",
+  proposed: "เควสต์ที่ฉันเสนอ",
+  said: (text: string) => `พี่เลี้ยงบอกว่า: ${text}`,
+  sent: (title: string) => `ส่ง ${title} แล้ว รอพี่เลี้ยงดู`,
+  sentOnly: "ส่งแล้ว ผลจะขึ้นที่ซองจดหมาย",
+  intended: (text: string) => `วันนี้ตั้งใจว่า: ${text}`,
+  restingLine: "ต้นไม้ไม่เหี่ยว ไม่มีอะไรหาย แตะเพื่อกลับมาทำต่อ",
+  /** Read after the headline while the day's check-in is still open (a lamp dot on the icon). */
+  checkIn: "แตะเพื่อเช็กอินวันนี้",
+  /** The quiet link under the card. */
+  board: "ดูเควสต์ทั้งหมด",
+};
+
+/** DRAFT: the check-in sheet the next-step card opens on the day's first tap. */
+export const CHECK_IN = {
+  title: "วันนี้",
+  about: (title: string) => `เควสต์ต่อไป: ${title}`,
+};
+
+/**
+ * DRAFT: the envelope (ResultsSheet): what mentors said about the student's
+ * own work, read from the board, newest first. Never a teammate's feedback.
+ */
+export const RESULTS = {
+  title: "ผลจากพี่เลี้ยง",
+  hud: (fresh: number) => (fresh > 0 ? `ผลจากพี่เลี้ยง มีใหม่ ${fresh}` : "ผลจากพี่เลี้ยง"),
+  approved: "ผ่านแล้ว",
+  clarification: "พี่เลี้ยงขอข้อมูลเพิ่ม",
+  declined: "ยังไม่ผ่าน ลองใหม่ได้",
+  fresh: "ใหม่",
+  empty: "ยังไม่มีผล ส่งงานแล้ว ผลจากพี่เลี้ยงจะขึ้นที่นี่",
+  /** The bot's own inbox (invites, coins, help replies) still lives in Discord. */
+  discord: (count: number) => `ข้อความอื่นจากบอท ${count} ข้อความ อ่านได้ใน Discord`,
+};
+
+/** DRAFT: the menu's grid of places (MenuSheet). Every screen that left the HUD is one tap from here. */
+export const MENU = {
+  places: "ที่ต่างๆ บนเกาะ",
+  tree: "ต้นไม้ของทีม",
+  team: "ทีมของฉัน",
+  canvas: "แคนวาส",
+  coins: "เหรียญ",
+  campfire: PLACES.campfire,
+  stage: "Demo Day",
+  story: "เรื่องเล่า",
+  guide: "คู่มือ",
+  soundOn: "เปิดเสียง",
+  soundOff: "ปิดเสียง",
+  rest: "ขอพัก",
+  refresh: "รีเฟรช",
+  consent: "ความยินยอม",
+  admin: "ภาพรวม (แอดมิน)",
+};
+
 export const BOARD = {
   mainHeading: "เควสต์หลัก",
   mainSub: "7 ขั้นของต้นไม้ ทำขั้นไหนก่อนก็ได้",
@@ -413,6 +483,8 @@ export const DETAIL = {
   stuck: "ติด",
   start: "เริ่มเควสต์นี้",
   started: "เริ่มแล้ว เควสต์นี้จะขึ้นในการ์ดทำต่อ",
+  /** DRAFT: under an untouched quest, for work already done before starting it here. */
+  sendDone: "ทำไปแล้ว? ส่งงานได้เลย",
   /** DRAFT */
   paused: "เควสต์นี้พักไว้อยู่ ทำต่อเมื่อพร้อม",
   resume: "ทำต่อเควสต์นี้",

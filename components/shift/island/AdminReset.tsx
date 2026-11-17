@@ -9,6 +9,7 @@ import { ADMIN_RESET } from "./copy";
 import island from "./island.module.css";
 import { STORY_SEEN_KEY } from "./story/useStorySeen";
 import { DAY_INTENTION_KEY } from "./useDayIntention";
+import { RESULTS_SEEN_KEY } from "./useResultsSeen";
 import world from "./world.module.css";
 
 /** Forgets what this browser remembers about the island, so the story and planting play again. */
@@ -16,6 +17,7 @@ export function clearIslandKeys(storage: Pick<Storage, "removeItem"> = window.lo
   try {
     storage.removeItem(STORY_SEEN_KEY);
     storage.removeItem(DAY_INTENTION_KEY);
+    storage.removeItem(RESULTS_SEEN_KEY);
   } catch {
     // Storage that throws (private mode) holds nothing to clear.
   }

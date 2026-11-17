@@ -28,6 +28,8 @@ interface TreeSheetProps {
   projectId?: string | null;
   /** Today's check-in, first: tapping your own tree is a way in to it. Null when the day is already done. */
   today?: ReactNode;
+  /** One line on how the work went, under the roots it grows (RootsLine). */
+  roots?: ReactNode;
 }
 
 /**
@@ -36,7 +38,7 @@ interface TreeSheetProps {
  * wardrobe. A pick or a new look shows at once from the action's answer; a
  * newer tree from the page (after a refresh) replaces it.
  */
-export function TreeSheet({ open, onClose, tree: given, onBoard, projectId = null, today = null }: TreeSheetProps) {
+export function TreeSheet({ open, onClose, tree: given, onBoard, projectId = null, today = null, roots = null }: TreeSheetProps) {
   const giftHeadingId = useId();
   const [tree, setTree] = useState(given);
   const [last, setLast] = useState(given);
@@ -106,6 +108,8 @@ export function TreeSheet({ open, onClose, tree: given, onBoard, projectId = nul
             {planted ? <p className={styles.roots}>{TREE.closeup.roots(closeup.roots.count)}</p> : null}
           </figcaption>
         </figure>
+
+        {roots}
 
         <Wardrobe tree={tree} onChanged={setTree} />
 

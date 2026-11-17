@@ -1,8 +1,8 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ComponentProps } from "react";
 
-import { HUD, PRE_STAGE, stageName } from "../copy";
-import { MenuSheet, ProjectBody } from "../HudSheets";
+import { HUD, MENU, PRE_STAGE, stageName } from "../copy";
+import { MenuSheet, ProjectBody, type MenuTile } from "../HudSheets";
 import { NEWS } from "../news/copy";
 import { PLAYER_MENU } from "../player/copy";
 import { PRIZES_UI } from "../prizes/copy";
@@ -31,6 +31,7 @@ function menu(props: Partial<ComponentProps<typeof MenuSheet>> = {}) {
       project={PROJECT}
       whole={false}
       onToggleWhole={jest.fn()}
+      tiles={[]}
       {...props}
     />,
   );
@@ -47,14 +48,8 @@ describe("MenuSheet: the suggestions link", () => {
     expect(link).toHaveAttribute("href", SUGGEST_URL);
     expect(link).toHaveAttribute("target", "_blank");
     expect(link).toHaveAttribute("rel", "noopener noreferrer");
-    expect(link).toHaveTextContent("💡 เสนอไอเดีย / แจ้งบั๊ก");
+    expect(link).toHaveTextContent("เสนอไอเดีย / แจ้งบั๊ก");
     expect(link).toHaveAccessibleDescription(HUD.suggestHint);
-  });
-
-  it("keeps the bulb out of the accessible name", () => {
-    menu({ suggestUrl: SUGGEST_URL });
-    const bulb = screen.getByText("💡", { exact: false });
-    expect(bulb).toHaveAttribute("aria-hidden", "true");
   });
 
   it.each([
@@ -64,8 +59,7 @@ describe("MenuSheet: the suggestions link", () => {
   ])("is hidden when the link is %s", (_label, suggestUrl) => {
     menu({ suggestUrl });
     expect(screen.getByRole("dialog", { name: HUD.menu })).toBeInTheDocument();
-    // Only the guide is linked.
-    expect(screen.getAllByRole("link").map((a) => a.getAttribute("href"))).toEqual(["/shift/island/guide"]);
+    expect(screen.queryAllByRole("link")).toHaveLength(0);
     expect(screen.queryByText(HUD.suggestHint)).toBeNull();
     expect(screen.queryByText(/เสนอไอเดีย/)).toBeNull();
   });
@@ -78,43 +72,54 @@ describe("MenuSheet: the suggestions link", () => {
   });
 });
 
-describe("MenuSheet: the player rows", () => {
-  it("shows a row for each sheet it is given, each opening its own", () => {
-    const onNews = jest.fn();
-    const onPrizes = jest.fn();
-    const onConsent = jest.fn();
-    menu({ onNews, onPrizes, onConsent });
-    const sheet = screen.getByRole("dialog", { name: HUD.menu });
-    const consent = within(sheet).getByRole("button", { name: PLAYER_MENU.consent });
-    expect(consent).toHaveAccessibleDescription(PLAYER_MENU.consentHint);
-    expect(consent).toHaveAttribute("aria-haspopup", "dialog");
-    fireEvent.click(consent);
-    fireEvent.click(within(sheet).getByRole("button", { name: NEWS.menu }));
-    fireEvent.click(within(sheet).getByRole("button", { name: PRIZES_UI.menu }));
-    expect(onConsent).toHaveBeenCalledTimes(1);
-    expect(onNews).toHaveBeenCalledTimes(1);
-    expect(onPrizes).toHaveBeenCalledTimes(1);
+describe("MenuSheet: the places", () => {
+  const tiles = (): MenuTile[] => [
+    { id: "news", icon: "news", label: NEWS.menu, onClick: jest.fn() },
+    { id: "prizes", icon: "trophy", label: PRIZES_UI.menu, onClick: jest.fn() },
+    { id: "guide", icon: "signpost", label: MENU.guide, href: "/shift/island/guide" },
+    { id: "canvas", icon: "note", label: MENU.canvas, href: "/shift/island/canvas", external: true },
+    { id: "sound", icon: "megaphone", label: MENU.soundOff, pressed: true, onClick: jest.fn() },
+  ];
+
+  it("lays out every place it is given as a tile, each doing its own thing", () => {
+    const given = tiles();
+    menu({ tiles: given });
+    const grid = screen.getByRole("list", { name: MENU.places });
+    expect(within(grid).getAllByRole("listitem")).toHaveLength(given.length);
+    fireEvent.click(within(grid).getByRole("button", { name: NEWS.menu }));
+    fireEvent.click(within(grid).getByRole("button", { name: PRIZES_UI.menu }));
+    expect(given[0].onClick).toHaveBeenCalledTimes(1);
+    expect(given[1].onClick).toHaveBeenCalledTimes(1);
+    expect(within(grid).getByRole("button", { name: NEWS.menu })).toHaveAttribute("aria-haspopup", "dialog");
   });
 
-  it("puts the consent step first, then the news, then the prizes, under the view switch", () => {
-    menu({ onNews: jest.fn(), onPrizes: jest.fn(), onConsent: jest.fn() });
-    const order = ["ดูทั้งเกาะ", PLAYER_MENU.consent, NEWS.menu, PRIZES_UI.menu].map((name) => screen.getByRole("button", { name }));
+  it("links a page in place, the canvas in a new tab, and says whether a switch is on", () => {
+    menu({ tiles: tiles() });
+    expect(screen.getByRole("link", { name: MENU.guide })).toHaveAttribute("href", "/shift/island/guide");
+    const canvas = screen.getByRole("link", { name: MENU.canvas });
+    expect(canvas).toHaveAttribute("target", "_blank");
+    const sound = screen.getByRole("button", { name: MENU.soundOff });
+    expect(sound).toHaveAttribute("aria-pressed", "true");
+    expect(sound).not.toHaveAttribute("aria-haspopup");
+  });
+
+  it("puts the consent step first, with its reason, above the places and the view switch", () => {
+    const onConsent = jest.fn();
+    menu({ tiles: tiles(), onConsent });
+    const consent = screen.getByRole("button", { name: PLAYER_MENU.consent });
+    expect(consent).toHaveAccessibleDescription(PLAYER_MENU.consentHint);
+    fireEvent.click(consent);
+    expect(onConsent).toHaveBeenCalledTimes(1);
+    const order = [consent, screen.getByRole("list", { name: MENU.places }), screen.getByRole("button", { name: "ดูทั้งเกาะ" })];
     for (let i = 1; i < order.length; i++) {
       expect(order[i - 1].compareDocumentPosition(order[i]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     }
   });
 
-  it("leaves out the rows it is not given", () => {
-    menu({ onPrizes: jest.fn() });
-    expect(screen.getByRole("button", { name: PRIZES_UI.menu })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: NEWS.menu })).toBeNull();
-    expect(screen.queryByRole("button", { name: PLAYER_MENU.consent })).toBeNull();
-    expect(screen.queryByText(PLAYER_MENU.consentHint)).toBeNull();
-  });
-
-  it("has no player rows at all when none are given", () => {
+  it("has no grid and no consent row when given none", () => {
     menu({ project: null });
-    expect(screen.queryByRole("button", { name: PRIZES_UI.menu })).toBeNull();
+    expect(screen.queryByRole("list", { name: MENU.places })).toBeNull();
+    expect(screen.queryByRole("button", { name: PLAYER_MENU.consent })).toBeNull();
     expect(screen.getByRole("button", { name: "ดูทั้งเกาะ" })).toBeInTheDocument();
   });
 });

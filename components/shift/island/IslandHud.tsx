@@ -169,3 +169,13 @@ export function BoardButton({ wide, concealed = false, onClick }: { wide: boolea
     </button>
   );
 }
+
+/** Under the next-step card: one quiet way to the whole quest board. */
+export function BoardLink({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button type="button" className={`${styles.boardLink} ${styles.glass} ${styles.press}`} aria-haspopup="dialog" onClick={onClick}>
+      <PixelIcon grid={WEB_SPRITES.scroll} palette={PALETTE} scale={1} />
+      <span>{label}</span>
+    </button>
+  );
+}

@@ -6,8 +6,19 @@ import { Volume2, VolumeX } from "lucide-react";
 import { createCampfireAudio } from "./campfireAudio";
 import { CAMPFIRE } from "./copy";
 
-/** Opt-in island ambience, independent of Discord presence or the campfire read. */
-export function CampfireSound({ className }: { className: string }) {
+export interface CampfireSoundState {
+  playing: boolean;
+  pending: boolean;
+  failed: boolean;
+  toggle: () => void;
+}
+
+/**
+ * Opt-in island ambience, independent of Discord presence or the campfire
+ * read. A hook, so the sound keeps playing while the control that toggles it
+ * (the menu's tile) comes and goes.
+ */
+export function useCampfireSound(): CampfireSoundState {
   const audio = useRef<AudioContext | null>(null);
   const [playing, setPlaying] = useState(false);
   const [pending, setPending] = useState(false);
@@ -66,6 +77,12 @@ export function CampfireSound({ className }: { className: string }) {
     }
   }
 
+  return { playing, pending, failed, toggle };
+}
+
+/** The ambience as one round button (the island before a plot is claimed). */
+export function CampfireSound({ className }: { className: string }) {
+  const { playing, pending, failed, toggle } = useCampfireSound();
   const label = failed ? CAMPFIRE.soundError : playing ? CAMPFIRE.soundOff : CAMPFIRE.soundOn;
   const Icon = playing ? Volume2 : VolumeX;
   return (

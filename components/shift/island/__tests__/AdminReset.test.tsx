@@ -6,6 +6,7 @@ import { ADMIN_RESET, HUD } from "../copy";
 import { MenuSheet } from "../HudSheets";
 import { STORY_SEEN_KEY } from "../story/useStorySeen";
 import { DAY_INTENTION_KEY } from "../useDayIntention";
+import { RESULTS_SEEN_KEY } from "../useResultsSeen";
 
 const resetMyIsland = jest.fn();
 jest.mock("@/app/shift/island/admin-actions", () => ({ resetMyIsland: () => resetMyIsland() }));
@@ -24,7 +25,7 @@ const PROJECT = { id: "55555555-5555-4555-8555-000000000001", show_name: false, 
 
 function menu(me: ComponentProps<typeof MenuSheet>["me"]) {
   return render(
-    <MenuSheet open onClose={jest.fn()} me={me} project={PROJECT} whole={false} onToggleWhole={jest.fn()} />,
+    <MenuSheet open onClose={jest.fn()} me={me} project={PROJECT} whole={false} onToggleWhole={jest.fn()} tiles={[]} />,
   );
 }
 
@@ -64,9 +65,10 @@ describe("AdminReset", () => {
     expect(screen.getByRole("button", { name: ADMIN_RESET.open })).toBeInTheDocument();
   });
 
-  it("resets, forgets the story and the day's intention, and reloads", async () => {
+  it("resets, forgets the story, the day's intention and the envelope's mark, and reloads", async () => {
     window.localStorage.setItem(STORY_SEEN_KEY, "seen");
     window.localStorage.setItem(DAY_INTENTION_KEY, JSON.stringify({ day: 1, text: "คุย", who: "m1" }));
+    window.localStorage.setItem(RESULTS_SEEN_KEY, JSON.stringify({ who: "m1", at: 1 }));
     resetMyIsland.mockResolvedValue({ ok: true, data: { project: "archived", quests: 2, keptQuests: 0 } });
     const reload = jest.fn();
     render(<AdminReset reload={reload} />);
@@ -77,6 +79,7 @@ describe("AdminReset", () => {
     expect(resetMyIsland).toHaveBeenCalledTimes(1);
     expect(window.localStorage.getItem(STORY_SEEN_KEY)).toBeNull();
     expect(window.localStorage.getItem(DAY_INTENTION_KEY)).toBeNull();
+    expect(window.localStorage.getItem(RESULTS_SEEN_KEY)).toBeNull();
     expect(reload).toHaveBeenCalledTimes(1);
     expect(screen.getByRole("status")).toHaveTextContent(ADMIN_RESET.done);
   });

@@ -1,0 +1,87 @@
+"use client";
+
+import { ChevronRight } from "lucide-react";
+
+import { PixelIcon } from "@/components/shift/poster/pixel/PixelRects";
+import type { BoardRef } from "@/lib/supabase/shift-quests/board";
+
+import { ISLAND, RESULTS } from "./copy";
+import styles from "./island.module.css";
+import { IslandSheet } from "./IslandSheet";
+import { isFresh, type QuestResult, type ResultOutcome } from "./results";
+import { PALETTE, WEB_SPRITES, type WebIcon } from "./sprites";
+
+const OUTCOME_ICON: Record<ResultOutcome, WebIcon> = {
+  approved: "check",
+  clarification: "bubble",
+  declined: "loop",
+};
+
+interface ResultsSheetProps {
+  open: boolean;
+  onClose: () => void;
+  results: readonly QuestResult[];
+  /** When the envelope was last opened before this time (captured on open), for the ใหม่ marks; null: never. */
+  since: number | null;
+  /** The time the sheet was opened, so the marks hold while it is open. */
+  openedAt: number;
+  /** Opens a result's quest. */
+  onOpen: (ref: BoardRef) => void;
+  /** Unread notices in the bot's own inbox (invites, coins, help replies): they still live in Discord. */
+  unread: number;
+  discordUrl?: string | null;
+}
+
+/**
+ * The envelope: what mentors said about the student's own work, newest
+ * first, each one a way back to its quest. The bot's other notices stay in
+ * Discord, with a link there.
+ */
+export function ResultsSheet({ open, onClose, results, since, openedAt, onOpen, unread, discordUrl }: ResultsSheetProps) {
+  return (
+    <IslandSheet
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
+      title={RESULTS.title}
+    >
+      <div className={styles.results}>
+        {results.length === 0 ? (
+          <p className={styles.quiet}>{RESULTS.empty}</p>
+        ) : (
+          <ul className={styles.resultList}>
+            {results.map((result) => (
+              <li key={result.key}>
+                <button type="button" className={styles.result} data-outcome={result.outcome} onClick={() => onOpen(result.ref)}>
+                  <span className={styles.resultIcon} aria-hidden="true">
+                    <PixelIcon grid={WEB_SPRITES[OUTCOME_ICON[result.outcome]]} palette={PALETTE} scale={2} />
+                  </span>
+                  <span className={styles.resultText}>
+                    <span className={styles.resultTitle}>{result.title}</span>
+                    <span className={styles.resultOutcome}>
+                      {RESULTS[result.outcome]}
+                      {isFresh(result, since, openedAt) ? <span className={styles.resultFresh}>{RESULTS.fresh}</span> : null}
+                    </span>
+                    {result.feedback ? <span className={styles.resultQuote}>{result.feedback}</span> : null}
+                  </span>
+                  <ChevronRight className={styles.resultArrow} aria-hidden="true" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {unread > 0 ? (
+          <div className={styles.resultsDiscord}>
+            <p className={styles.hint}>{RESULTS.discord(unread)}</p>
+            {discordUrl ? (
+              <a className={styles.quietButton} href={discordUrl} target="_blank" rel="noopener noreferrer">
+                {ISLAND.openDiscord}
+              </a>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    </IslandSheet>
+  );
+}

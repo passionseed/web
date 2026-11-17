@@ -243,6 +243,7 @@ export function QuestDetailSheet({
             ownership={ownership}
             openHref={canvasLink.linked ? CANVAS_ROUTE : null}
             onLinkCanvas={() => onLinkCanvas(quest.ref)}
+            onSend={() => setCompose({ key: bodyKey, form: "text" })}
           />
         )
       ) : null}
@@ -296,6 +297,7 @@ function QuestDetailBody({
   ownership,
   openHref,
   onLinkCanvas,
+  onSend,
 }: {
   board: QuestBoard;
   team: QuestDetailSheetProps["team"];
@@ -320,6 +322,8 @@ function QuestDetailBody({
    */
   openHref: string | null;
   onLinkCanvas: () => void;
+  /** Opens the written form: on an untouched quest, the quiet "done it already" way past starting. */
+  onSend: () => void;
 }) {
   const feedback = mentorFeedback(quest);
   const chip = tileChip(quest.status, quest.owner);
@@ -428,7 +432,7 @@ function QuestDetailBody({
         <CanvasLinkRow onLink={onLinkCanvas} />
       ) : null}
 
-      <DetailNotice quest={quest} action={action} />
+      <DetailNotice quest={quest} action={action} onSend={onSend} />
     </div>
   );
 }
@@ -743,7 +747,7 @@ function MoreDetails({ quest, guide }: { quest: QuestView; guide: QuestGuide }) 
 }
 
 /** The quest's state in words (locked, held, waiting...), plus start or resume where they apply. */
-function DetailNotice({ quest, action }: { quest: QuestView; action: DetailAction }) {
+function DetailNotice({ quest, action, onSend }: { quest: QuestView; action: DetailAction; onSend: () => void }) {
   switch (action.kind) {
     case "locked":
       return (
@@ -785,13 +789,18 @@ function DetailNotice({ quest, action }: { quest: QuestView; action: DetailActio
               {DETAIL.doneRepeat}
             </p>
           ) : null}
-          {canStart(quest) ? <StartQuest quest={quest} /> : null}
+          {/* Starting is the bar's main button; work already done can still go straight to a mentor. */}
+          {canStart(quest) && quest.ref.kind !== "proposed" ? (
+            <button type="button" className={styles.linkButton} onClick={onSend}>
+              {DETAIL.sendDone}
+            </button>
+          ) : null}
         </>
       );
   }
 }
 
-/** The sticky bar: ส่งเควสต์ (or ส่งฉบับใหม่ while a mentor has it) and ติด. */
+/** The sticky bar: เริ่มเควสต์นี้ on an untouched quest, else ส่งเควสต์ (or ส่งฉบับใหม่ while a mentor has it), and ติด. */
 function QuestActionBar({
   quest,
   action,
@@ -805,12 +814,15 @@ function QuestActionBar({
   onSend: () => void;
   onStuck: QuestDetailSheetProps["onStuck"];
 }) {
-  const send = action.kind === "form";
+  // Untouched: starting is the one next step (the card said เริ่มที่); sending stays a quiet link in the page.
+  const start = action.kind === "form" && canStart(quest) && quest.ref.kind !== "proposed";
+  const send = action.kind === "form" && !start;
   // With the work already at a mentor, a new version stays a quiet choice.
   const waiting = action.kind === "form" && action.note === "submittedWaiting";
   const stuck = action.kind !== "locked";
   return (
-    <div className={styles.actionBar} data-single={send && stuck ? undefined : "true"}>
+    <div className={styles.actionBar} data-single={(send || start) && stuck ? undefined : "true"}>
+      {start ? <StartQuest quest={quest} buttonRef={sendRef} /> : null}
       {send ? (
         <button
           ref={sendRef}
@@ -1010,14 +1022,16 @@ class CanvasBoundary extends Component<{ fallback: ReactNode; children: ReactNod
  * Mark a main or side quest as started without sending anything yet, so it
  * shows as the student's active quest (the keynote) and as held to teammates.
  */
-function StartQuest({ quest }: { quest: QuestView }) {
+/** The bar's main button on an untouched quest: takes it on, and the page flips to sending once it is started. */
+function StartQuest({ quest, buttonRef }: { quest: QuestView; buttonRef?: RefObject<HTMLButtonElement | null> }) {
   const [pending, startTransition] = useTransition();
   const ref = quest.ref;
   if (ref.kind === "proposed") return null;
   return (
     <button
+      ref={buttonRef}
       type="button"
-      className={styles.quietButton}
+      className={`ei-button-dawn ${styles.primary} ${styles.barButton}`}
       disabled={pending}
       aria-busy={pending}
       onClick={() =>
@@ -1031,7 +1045,8 @@ function StartQuest({ quest }: { quest: QuestView }) {
         })
       }
     >
-      {DETAIL.start}
+      <Icon name="compass" />
+      <span>{DETAIL.start}</span>
     </button>
   );
 }

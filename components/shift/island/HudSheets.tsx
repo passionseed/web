@@ -8,14 +8,12 @@ import type { IslandPageData, IslandProject, MyTree, ViewerCard } from "@/lib/su
 
 import { AdminReset } from "./AdminReset";
 import { Avatar } from "./Avatar";
-import { ADMIN_OVERVIEW, FOOTER, HUD, ISLAND, NO_PROJECT, treeStageName } from "./copy";
+import { FOOTER, HUD, ISLAND, MENU, NO_PROJECT, treeStageName } from "./copy";
 import styles from "./island.module.css";
 import { IslandDiscordButton } from "./IslandDiscordButton";
 import { IslandFooter } from "./IslandFooter";
 import { IslandSheet } from "./IslandSheet";
-import { NEWS } from "./news/copy";
 import { PLAYER_MENU } from "./player/copy";
-import { PRIZES_UI } from "./prizes/copy";
 import { SeasonPanel } from "./SeasonPanel";
 import { PALETTE, WEB_SPRITES, styledTree, type WebIcon } from "./sprites";
 import world from "./world.module.css";
@@ -72,9 +70,82 @@ function MenuRow({ icon, label, describedBy, onClick }: { icon: WebIcon; label: 
 }
 
 /**
- * From ⋯: how the island is shown, the island news (when the digest is on),
- * the prizes, the consent step (until it is on file), the suggestions link
- * (when an admin set the channel), the show-name switch and the account.
+ * One place in the menu's grid: a sheet to open (onClick), a page to go to
+ * (href), or a switch (pressed). The page builds the list, so each tile only
+ * shows when its place exists (news while the digest is on, the tree from
+ * schema 13, ...).
+ */
+export interface MenuTile {
+  id: string;
+  icon: WebIcon;
+  label: string;
+  onClick?: () => void;
+  href?: string;
+  /** Opens in a new tab (the canvas on the whiteboard). */
+  external?: boolean;
+  /** A switch (the campfire sound): its state, read by screen readers. */
+  pressed?: boolean;
+  /** Something waits behind it: a lamp dot, and these words for screen readers. */
+  dot?: boolean;
+  waiting?: string | null;
+  disabled?: boolean;
+}
+
+function TileFace({ tile }: { tile: MenuTile }) {
+  return (
+    <>
+      <span className={world.tileIcon} aria-hidden="true">
+        <PixelIcon grid={WEB_SPRITES[tile.icon]} palette={PALETTE} scale={2} />
+        {tile.dot ? <span className={world.tileDot} /> : null}
+      </span>
+      <span className={world.tileLabel}>{tile.label}</span>
+    </>
+  );
+}
+
+/** The menu's places as a grid of pixel tiles, four to a row on a phone. */
+export function MenuGrid({ tiles, label }: { tiles: readonly MenuTile[]; label: string }) {
+  if (tiles.length === 0) return null;
+  // What waits behind a tile is read after its name; the dot alone says nothing to a screen reader.
+  const name = (tile: MenuTile) => (tile.waiting ? `${tile.label}, ${tile.waiting}` : undefined);
+  return (
+    <ul className={world.menuGrid} aria-label={label}>
+      {tiles.map((tile) => (
+        <li key={tile.id}>
+          {tile.href ? (
+            tile.external ? (
+              <a className={`${world.menuTile} ${world.press}`} href={tile.href} target="_blank" rel="noopener" aria-label={name(tile)}>
+                <TileFace tile={tile} />
+              </a>
+            ) : (
+              <Link className={`${world.menuTile} ${world.press}`} href={tile.href} aria-label={name(tile)}>
+                <TileFace tile={tile} />
+              </Link>
+            )
+          ) : (
+            <button
+              type="button"
+              className={`${world.menuTile} ${world.press}`}
+              aria-label={name(tile)}
+              aria-pressed={tile.pressed}
+              aria-haspopup={tile.pressed === undefined ? "dialog" : undefined}
+              disabled={tile.disabled}
+              onClick={tile.onClick}
+            >
+              <TileFace tile={tile} />
+            </button>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/**
+ * From ≡: every place that is not the next step, as a grid of tiles (the page
+ * builds them), then the consent step while it waits, how the island is
+ * shown, the suggestions link (when an admin set the channel), the admin's
+ * own reset, the show-name switch and the account.
  */
 export function MenuSheet({
   open,
@@ -84,11 +155,9 @@ export function MenuSheet({
   whole,
   onToggleWhole,
   suggestUrl,
-  onNews,
-  onPrizes,
+  tiles,
   onConsent,
   consentAiOnly = false,
-  onAdmin,
 }: SheetProps & {
   me: ViewerCard;
   project: Pick<IslandProject, "id" | "show_name" | "name_visible"> | null;
@@ -96,52 +165,36 @@ export function MenuSheet({
   onToggleWhole: () => void;
   /** https://discord.com/channels/<guild>/<suggest channel>; hidden when unset. */
   suggestUrl?: string | null;
-  /** Opens ข่าวเกาะ; the row shows only when given (the digest is on). */
-  onNews?: () => void;
-  /** Opens the Demo Day prizes. */
-  onPrizes?: () => void;
+  /** The places on the island, built by the page. */
+  tiles: readonly MenuTile[];
   /** Opens the consent sheet; the row shows only when given (consent not on file yet, or the AI news line not). */
   onConsent?: () => void;
   /** Consent is on file and only the AI news line waits: the row says so. */
   consentAiOnly?: boolean;
-  onAdmin?: () => void;
 }) {
   const suggestHintId = useId();
   const consentHintId = useId();
-  const rows = onNews || onPrizes || onConsent;
   return (
     <IslandSheet open={open} onOpenChange={closer(onClose)} title={HUD.menu}>
       <div className={world.sheetStack}>
+        {onConsent ? (
+          <section className={world.menuList}>
+            <MenuRow
+              icon="letter"
+              label={consentAiOnly ? PLAYER_MENU.aiNews : PLAYER_MENU.consent}
+              describedBy={consentHintId}
+              onClick={onConsent}
+            />
+            <p id={consentHintId} className={styles.hint}>
+              {consentAiOnly ? PLAYER_MENU.aiNewsHint : PLAYER_MENU.consentHint}
+            </p>
+          </section>
+        ) : null}
+        <MenuGrid tiles={tiles} label={MENU.places} />
         <section className={world.menuList} aria-label={HUD.viewHeading}>
-          <h3 className={styles.detailHeading}>{HUD.viewHeading}</h3>
           <button type="button" className={styles.quietButton} onClick={onToggleWhole}>
             {whole ? ISLAND.viewClose : ISLAND.viewWhole}
           </button>
-        </section>
-        {rows ? (
-          <section className={world.menuList}>
-            {onConsent ? (
-              <>
-                <MenuRow
-                  icon="letter"
-                  label={consentAiOnly ? PLAYER_MENU.aiNews : PLAYER_MENU.consent}
-                  describedBy={consentHintId}
-                  onClick={onConsent}
-                />
-                <p id={consentHintId} className={styles.hint}>
-                  {consentAiOnly ? PLAYER_MENU.aiNewsHint : PLAYER_MENU.consentHint}
-                </p>
-              </>
-            ) : null}
-            {onNews ? <MenuRow icon="news" label={NEWS.menu} onClick={onNews} /> : null}
-            {onPrizes ? <MenuRow icon="trophy" label={PRIZES_UI.menu} onClick={onPrizes} /> : null}
-          </section>
-        ) : null}
-        <section className={world.menuList}>
-          <Link className={styles.quietButton} href="/shift/island/guide">
-            <span aria-hidden="true">📖 </span>
-            {HUD.guide}
-          </Link>
         </section>
         {suggestUrl ? (
           <section className={world.menuList}>
@@ -152,7 +205,7 @@ export function MenuSheet({
               rel="noopener noreferrer"
               aria-describedby={suggestHintId}
             >
-              <span aria-hidden="true">💡 </span>
+              <PixelIcon grid={WEB_SPRITES.bulb} palette={PALETTE} scale={1} />
               {HUD.suggest}
             </a>
             <p id={suggestHintId} className={styles.hint}>
@@ -161,10 +214,7 @@ export function MenuSheet({
           </section>
         ) : null}
         {/* Admins only: the database checks the role again on every reset. */}
-        {me.admin ? <>
-          {onAdmin ? <button type="button" className={styles.quietButton} aria-haspopup="dialog" onClick={onAdmin}>{ADMIN_OVERVIEW.title}</button> : null}
-          <AdminReset />
-        </> : null}
+        {me.admin ? <AdminReset /> : null}
         {project ? (
           <IslandFooter project={project} me={me} avatar={<Avatar me={me} />} />
         ) : (
@@ -176,27 +226,6 @@ export function MenuSheet({
             <IslandDiscordButton label={NO_PROJECT.switchAccount} switchAccount variant="quiet" />
           </div>
         )}
-      </div>
-    </IslandSheet>
-  );
-}
-
-/** From the envelope: new messages wait in the bot's inbox on Discord, one tap away when the server is known. */
-export function InboxSheet({
-  open,
-  onClose,
-  unread,
-  discordUrl,
-}: SheetProps & { unread: number; discordUrl?: string | null }) {
-  return (
-    <IslandSheet open={open} onOpenChange={closer(onClose)} title={HUD.inboxHeading}>
-      <div className={world.sheetStack}>
-        <p className={styles.quiet}>{ISLAND.unread(unread)}</p>
-        {discordUrl ? (
-          <a className={styles.quietButton} href={discordUrl} target="_blank" rel="noopener noreferrer">
-            {ISLAND.openDiscord}
-          </a>
-        ) : null}
       </div>
     </IslandSheet>
   );
