@@ -547,13 +547,19 @@ describe("IslandApp HUD", () => {
     expect(screen.getByRole("button", { name: "ขยายดูใกล้ๆ" })).toBeInTheDocument();
   });
 
-  it("keeps the menu a short list: what stands on the island is not in it", () => {
+  it("keeps the menu a short list: what stands on the island is not in it, the sound is folded under ตั้งค่า, ขอพัก is up top", () => {
     render(<IslandApp page={page({ me: { ...page().me, admin: false } })} picture={null} />);
     openMenu();
     const sheet = screen.getByRole("dialog");
-    const lines = within(within(sheet).getByRole("list", { name: "เมนู" })).getAllByRole("listitem");
-    expect(lines.map((line) => line.textContent)).toEqual([MENU.guide, MENU.story, `${MENU.sound}${MENU.off}`, MENU.rest]);
-    expect(within(within(sheet).getByRole("list", { name: "เมนู" })).queryByRole("switch")).toBeNull();
+    const list = within(sheet).getByRole("list", { name: "เมนู" });
+    expect(within(list).getAllByRole("listitem").map((line) => line.textContent)).toEqual([MENU.guide, MENU.story]);
+    const fold = within(sheet).getByText(MENU.settings).closest("details") as HTMLElement;
+    expect(fold).not.toHaveAttribute("open");
+    expect(within(fold).getByRole("button", { name: MENU.sound })).toHaveAttribute("aria-pressed", "false");
+    expect(within(fold).getByRole("button", { name: "ดูทั้งเกาะ" })).toBeInTheDocument();
+    const rest = within(sheet).getByRole("button", { name: MENU.rest });
+    expect(rest.compareDocumentPosition(list) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(sheet).queryByRole("button", { name: MENU.admin })).toBeNull();
   });
 
   it("keeps the show-name switch in the team sheet", () => {
@@ -952,7 +958,7 @@ describe("IslandApp: the player", () => {
     const chip = screen.getByRole("button", { name: (name) => name.startsWith(label) });
     expect(chip.closest("header")).not.toBeNull();
     fireEvent.click(chip);
-    const sheet = screen.getByRole("dialog", { name: CHARACTER_COPY.title });
+    const sheet = screen.getByRole("dialog", { name: "แอปจองห้องสมุด" });
     expect(within(sheet).getByText("พลอย")).toBeInTheDocument();
     expect(within(sheet).getByText(CHARACTER_COPY.level(1))).toBeInTheDocument();
     expect(viewport()).toHaveAttribute("data-paused", "true");
@@ -962,7 +968,6 @@ describe("IslandApp: the player", () => {
     render(<IslandApp page={page({ character: null })} picture={null} />);
     fireEvent.click(screen.getByRole("button", { name: /ดูตัวละคร/ }));
     expect(screen.getByRole("dialog", { name: "แอปจองห้องสมุด" })).toBeInTheDocument();
-    expect(screen.queryByRole("dialog", { name: CHARACTER_COPY.title })).toBeNull();
   });
 
   it.each([
@@ -984,7 +989,7 @@ describe("IslandApp: the player", () => {
     expect(screen.queryByRole("button", { name: pillName(2300) })).toBeNull();
     expect(mockedLoadWallet).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: /ดูตัวละคร/ }));
-    fireEvent.click(within(screen.getByRole("dialog", { name: CHARACTER_COPY.title })).getByRole("button", { name: /ดูกระเป๋า/ }));
+    fireEvent.click(within(screen.getByRole("dialog", { name: "แอปจองห้องสมุด" })).getByRole("button", { name: /ดูกระเป๋า/ }));
     const sheet = screen.getByRole("dialog", { name: WALLET.title });
     expect(mockedLoadWallet).toHaveBeenCalledTimes(1);
     expect(await within(sheet).findByText(WALLET.notHours)).toBeInTheDocument();
@@ -994,16 +999,16 @@ describe("IslandApp: the player", () => {
   it("opens the wallet from the character sheet's coin row", () => {
     render(<IslandApp page={page({ character: stats() })} picture={null} />);
     fireEvent.click(screen.getByRole("button", { name: /ดูตัวละคร/ }));
-    const sheet = screen.getByRole("dialog", { name: CHARACTER_COPY.title });
+    const sheet = screen.getByRole("dialog", { name: "แอปจองห้องสมุด" });
     fireEvent.click(within(sheet).getByRole("button", { name: /ดูกระเป๋า/ }));
-    expect(screen.queryByRole("dialog", { name: CHARACTER_COPY.title })).toBeNull();
+    expect(screen.queryByRole("dialog", { name: "แอปจองห้องสมุด" })).toBeNull();
     expect(screen.getByRole("dialog", { name: WALLET.title })).toBeInTheDocument();
   });
 
   it("shows the consent step in the character sheet and opens the consent sheet from it", () => {
     render(<IslandApp page={page({ character: stats(), consent: waiting })} picture={null} />);
     fireEvent.click(screen.getByRole("button", { name: /ดูตัวละคร/ }));
-    const sheet = screen.getByRole("dialog", { name: CHARACTER_COPY.title });
+    const sheet = screen.getByRole("dialog", { name: "แอปจองห้องสมุด" });
     fireEvent.click(within(sheet).getByRole("button", { name: "ดูขั้นตอน" }));
     expect(screen.getByRole("dialog", { name: "ก่อนทีมขึ้นบนเกาะ" })).toBeInTheDocument();
   });

@@ -411,6 +411,8 @@ export const MENU = {
   admin: "ภาพรวม (แอดมิน)",
   /** DRAFT: the admin's reset, folded under this line. */
   adminTools: "เครื่องมือแอดมิน",
+  /** DRAFT: the sound, the island view, suggestions and the account, folded under this line at the foot of the chip's sheet. */
+  settings: "ตั้งค่า",
 };
 
 export const BOARD = {
@@ -663,8 +665,6 @@ export const FESTIVAL = {
   lanterns: (count: number, target: number) => `โคมที่ลานสว่างขึ้นทีละดวง ตามเป้าหมายของทั้งเกาะ ${count}/${target}`,
   /** Appended to the table and stage legend lines: other teams' flags show only when they show their name. */
   shownOnly: "เห็นเฉพาะทีมที่โชว์ชื่อบนเกาะ",
-  /** To the project sheet, where the season's meter and unlocks live. */
-  unlocks: "ดูของปลดล็อกในหน้าตัวละครของฉัน",
 };
 
 /**

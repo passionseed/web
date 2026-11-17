@@ -151,42 +151,50 @@ interface MenuFootProps {
   suggestUrl?: string | null;
   /** The menu's lines, built by the page. */
   items: readonly MenuItem[];
+  /** Switches nobody needs every day (the campfire sound): folded under ตั้งค่า with the view, suggestions and the account. */
+  settings?: readonly MenuItem[];
 }
 
 /**
  * What has no place on the island, at the foot of the chip's sheet: a short
- * list (the guide, the story again, the news, the sound, rest), then the
- * island view and the suggestions link as quiet words, the admin's tools
- * folded away, and who is signed in.
+ * list (the guide, the story again, the news), then one closed ตั้งค่า fold
+ * (the sound, the island view, the suggestions link, who is signed in), and
+ * the admin's tools folded away.
  */
-export function MenuFoot({ me, claimed, whole, onToggleWhole, suggestUrl, items }: MenuFootProps) {
+export function MenuFoot({ me, claimed, whole, onToggleWhole, suggestUrl, items, settings = [] }: MenuFootProps) {
   const suggestHintId = useId();
   return (
     <>
       <MenuList items={items} label={HUD.menu} />
-      <div className={world.menuQuiet}>
-        <button type="button" className={styles.linkButton} onClick={onToggleWhole}>
-          {whole ? ISLAND.viewClose : ISLAND.viewWhole}
-        </button>
-        {suggestUrl ? (
-          <>
-            <a className={styles.linkButton} href={suggestUrl} target="_blank" rel="noopener noreferrer" aria-describedby={suggestHintId}>
-              {HUD.suggest}
-            </a>
-            <span id={suggestHintId} className="sr-only">
-              {HUD.suggestHint}
-            </span>
-          </>
-        ) : null}
-      </div>
+      <details className={world.fold}>
+        <summary>{MENU.settings}</summary>
+        <div className={world.foldBody}>
+          <MenuList items={settings} label={MENU.settings} />
+          <div className={world.menuQuiet}>
+            <button type="button" className={styles.linkButton} onClick={onToggleWhole}>
+              {whole ? ISLAND.viewClose : ISLAND.viewWhole}
+            </button>
+            {suggestUrl ? (
+              <>
+                <a className={styles.linkButton} href={suggestUrl} target="_blank" rel="noopener noreferrer" aria-describedby={suggestHintId}>
+                  {HUD.suggest}
+                </a>
+                <span id={suggestHintId} className="sr-only">
+                  {HUD.suggestHint}
+                </span>
+              </>
+            ) : null}
+          </div>
+          <IslandFooter me={me} avatar={<Avatar me={me} />} switchLabel={claimed ? FOOTER.switchAccount : NO_PROJECT.switchAccount} />
+        </div>
+      </details>
       {/* Admins only, folded: the database checks the role again on every reset. */}
       {me.admin ? (
-        <details className={world.adminTools}>
+        <details className={world.fold}>
           <summary>{MENU.adminTools}</summary>
           <AdminReset />
         </details>
       ) : null}
-      <IslandFooter me={me} avatar={<Avatar me={me} />} switchLabel={claimed ? FOOTER.switchAccount : NO_PROJECT.switchAccount} />
     </>
   );
 }

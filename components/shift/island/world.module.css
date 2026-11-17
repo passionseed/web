@@ -786,7 +786,8 @@
 }
 
 /* The admin's own tools, folded under one quiet line. */
-.adminTools > summary {
+/* A closed fold at the foot of a sheet (ตั้งค่า, the admin's tools): one quiet line until opened. */
+.fold > summary {
   min-height: 44px;
   padding: 10px 0;
   font-size: 15px;
@@ -794,8 +795,14 @@
   cursor: pointer;
 }
 
-.adminTools[open] > summary {
+.fold[open] > summary {
   margin-bottom: 8px;
+}
+
+.foldBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
 }
 
 /* A menu row that opens another sheet: its pixel icon, then the words. */

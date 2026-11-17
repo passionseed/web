@@ -9,7 +9,9 @@ import type { IslandPageData, IslandProject, MyTree, ViewerCard } from "@/lib/su
 import { ConsentBanner } from "../consent/ConsentBanner";
 import { InviteFriends } from "../InviteFriends";
 import { ProjectInvites } from "../NoProject";
-import { ProjectBody } from "../HudSheets";
+import { MENU } from "../copy";
+import { MenuList, ProjectBody } from "../HudSheets";
+import island from "../island.module.css";
 import { ShowNameSwitch } from "../IslandFooter";
 import { IslandSheet } from "../IslandSheet";
 import { PALETTE, WEB_SPRITES } from "../sprites";
@@ -40,6 +42,10 @@ interface CharacterSheetProps {
   results?: ReactNode;
   /** What has no place on the island (MenuFoot): the last thing in the sheet. */
   foot?: ReactNode;
+  /** Admins only: the overview, the sheet's first line (the founder's way in, never on a student's screen). */
+  onOpenAdmin?: () => void;
+  /** ขอพัก, a quiet button under the tree's stage; absent while the team rests (the home card wakes it). */
+  onRest?: () => void;
 }
 
 /** A pixel progress bar: `total` cells, the first `filled` lit. Decorative; the line beside it says the number. */
@@ -56,10 +62,11 @@ export function Cells({ filled, total, tone, size }: { filled: number; total: nu
 
 /**
  * From the HUD chip, the island's one door to everything that is not the next
- * step: who you are and the tree's stage, the consent step while it waits,
- * what mentors said (ResultsList), the tree, coins, the team, then the short
- * menu (MenuFoot) and who is signed in. Progress only: no ranking, no
- * comparison with anyone.
+ * step, titled with the team's name like the chip: the consent step while it
+ * waits, who you are and the tree's stage (with a quiet ขอพัก), the admin's
+ * overview for admins, what mentors said (ResultsList), the tree, coins, the
+ * team, then the short menu with its closed ตั้งค่า fold (MenuFoot).
+ * Progress only: no ranking, no comparison with anyone.
  */
 export function CharacterSheet({
   open,
@@ -77,6 +84,8 @@ export function CharacterSheet({
   showName = null,
   results = null,
   foot = null,
+  onOpenAdmin,
+  onRest,
 }: CharacterSheetProps) {
   const onOpenChange = (next: boolean) => {
     if (!next) onClose();
@@ -84,7 +93,7 @@ export function CharacterSheet({
   const waiting = onOpenTree && tree ? treeWaiting(tree) : null;
   const stage = stats?.stage ?? project.stage;
   return (
-    <IslandSheet open={open} onOpenChange={onOpenChange} title={stats ? CHARACTER.title : project.name}>
+    <IslandSheet open={open} onOpenChange={onOpenChange} title={project.name}>
       <div className={world.sheetStack}>
         <ConsentBanner consent={consent} onOpen={onOpenConsent} />
 
@@ -96,8 +105,15 @@ export function CharacterSheet({
             {/* One line of progress: the team's tree, which only a mentor's approval grows. */}
             <p className={styles.charLevel}>{CHARACTER.level(stage)}</p>
             <Cells filled={stage} total={7} />
+            {onRest ? (
+              <button type="button" className={`${island.linkButton} ${styles.restButton}`} onClick={onRest}>
+                {MENU.rest}
+              </button>
+            ) : null}
           </div>
         </div>
+
+        {onOpenAdmin ? <MenuList items={[{ id: "admin", icon: "eye", label: MENU.admin, onClick: onOpenAdmin }]} label={MENU.admin} /> : null}
 
         {results}
 
@@ -115,7 +131,6 @@ export function CharacterSheet({
           </button>
         ) : null}
 
-        <h3 className={styles.projectHeading}>{project.name}</h3>
         {invites?.length ? <ProjectInvites invites={invites} /> : null}
         {projectId && !me.staff ? <InviteFriends key={projectId} projectId={projectId} /> : null}
         {showName ? <ShowNameSwitch project={showName} /> : null}

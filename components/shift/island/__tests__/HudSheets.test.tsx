@@ -69,6 +69,24 @@ describe("MenuSheet: the suggestions link", () => {
   });
 });
 
+describe("MenuSheet: the ตั้งค่า fold", () => {
+  it("folds the switches, the island view, suggestions and the account under one closed line after the list", () => {
+    const sound: MenuItem = { id: "sound", icon: "megaphone", label: MENU.sound, state: MENU.off, pressed: false, onClick: jest.fn() };
+    menu({ items: [{ id: "guide", icon: "signpost", label: MENU.guide, href: "/shift/island/guide" }], settings: [sound], suggestUrl: SUGGEST_URL });
+    const sheet = screen.getByRole("dialog", { name: HUD.menu });
+    const fold = within(sheet).getByText(MENU.settings).closest("details") as HTMLElement;
+    expect(fold).not.toHaveAttribute("open");
+    expect(within(sheet).getByRole("list", { name: HUD.menu }).compareDocumentPosition(fold) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    fireEvent.click(within(fold).getByRole("button", { name: MENU.sound }));
+    expect(sound.onClick).toHaveBeenCalledTimes(1);
+    expect(within(fold).getByRole("button", { name: "ดูทั้งเกาะ" })).toBeInTheDocument();
+    expect(within(fold).getByRole("link", { name: "เสนอไอเดีย / แจ้งบั๊ก" })).toBeInTheDocument();
+    expect(within(fold).getByText(/พลอย/)).toBeInTheDocument();
+    // The short list itself holds only what it is given.
+    expect(within(within(sheet).getByRole("list", { name: HUD.menu })).queryByRole("button", { name: MENU.sound })).toBeNull();
+  });
+});
+
 describe("MenuSheet: the short list", () => {
   const items = (): MenuItem[] => [
     { id: "guide", icon: "signpost", label: MENU.guide, href: "/shift/island/guide" },

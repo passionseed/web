@@ -307,11 +307,10 @@
   color: var(--action-soft);
 }
 
-.projectHeading {
-  margin: 0;
-  font-size: 15px;
-  line-height: 1.5;
-  color: var(--isl-sand-hi);
+/* ขอพัก under the tree's stage: quiet words, still a full-height tap target. */
+.restButton {
+  justify-self: start;
+  font-size: 14px;
 }
 
 /* ---------------------------------------------------------------- wallet */

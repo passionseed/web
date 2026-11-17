@@ -173,6 +173,7 @@ function consentPending(page: IslandPageData): boolean {
 function sharedItems(page: IslandPageData, onPanel: (panel: Panel) => void, story: () => void, sound: CampfireSoundState): {
   admin: MenuItem[];
   places: MenuItem[];
+  settings: MenuItem[];
 } {
   const admin: MenuItem[] = page.me.admin ? [{ id: "admin", icon: "eye", label: MENU.admin, onClick: () => onPanel("admin") }] : [];
   const places: MenuItem[] = [
@@ -180,7 +181,8 @@ function sharedItems(page: IslandPageData, onPanel: (panel: Panel) => void, stor
     { id: "story", icon: "book", label: MENU.story, onClick: story },
   ];
   if (page.news?.enabled) places.push({ id: "news", icon: "news", label: NEWS.menu, onClick: () => onPanel("news") });
-  places.push({
+  // Folded under ตั้งค่า (MenuFoot): nobody needs it every day.
+  const settings: MenuItem[] = [{
     id: "sound",
     icon: "megaphone",
     label: sound.failed ? CAMPFIRE.soundError : MENU.sound,
@@ -188,8 +190,8 @@ function sharedItems(page: IslandPageData, onPanel: (panel: Panel) => void, stor
     pressed: sound.playing,
     disabled: sound.pending,
     onClick: sound.toggle,
-  });
-  return { admin, places };
+  }];
+  return { admin, places, settings };
 }
 
 /**
@@ -363,6 +365,7 @@ function Unclaimed({ page, picture, initialPhase, demoDay, voyage: forcedVoyage 
         }}
         suggestUrl={page.suggestUrl ?? null}
         items={unclaimedItems}
+        settings={shared.settings}
         {...consentRow(page, onPanel)}
       />
       <PlayerSheets page={page} panel={panel} onPanel={onPanel} />
@@ -610,12 +613,8 @@ function IslandHome({
   const consent = consentRow(page, setPanel);
   const aiConsent: MenuItem[] =
     consent.onConsent && consent.consentAiOnly ? [{ id: "consent", icon: "letter", label: PLAYER_MENU.aiNews, onClick: consent.onConsent }] : [];
-  const homeItems: MenuItem[] = [
-    ...shared.admin,
-    ...aiConsent,
-    ...shared.places,
-    ...(page.island.resting ? [] : [{ id: "rest", icon: "moon", label: MENU.rest, action: true, onClick: () => rest(true) } satisfies MenuItem]),
-  ];
+  // The admin's overview and ขอพัก sit at the top of the sheet (CharacterSheet), not in this list.
+  const homeItems: MenuItem[] = [...aiConsent, ...shared.places];
   // The chip's lamp dot: consent waits, a mentor's result is new, something waits at the tree, or the bot left notices.
   const chipWaiting =
     (consentPending(page) ? HUD.menuConsent : null) ??
@@ -720,6 +719,8 @@ function IslandHome({
         onOpenConsent={() => setPanel("consent")}
         onOpenTree={tree ? openTree : undefined}
         showName={project}
+        onOpenAdmin={page.me.admin ? () => setPanel("admin") : undefined}
+        onRest={page.island.resting ? undefined : () => rest(true)}
         results={
           <ResultsList
             results={results}
@@ -741,6 +742,7 @@ function IslandHome({
             }}
             suggestUrl={page.suggestUrl ?? null}
             items={homeItems}
+            settings={shared.settings}
           />
         }
       />
@@ -752,7 +754,6 @@ function IslandHome({
           season={season}
           festival={festival}
           goal={goal}
-          onOpenProject={openCharacter}
         />
       ) : null}
       {campfire.summary ? (

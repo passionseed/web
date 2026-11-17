@@ -4,7 +4,7 @@ import type { ComponentProps } from "react";
 import { cancelRedemption, loadWallet, redeemItem } from "@/app/shift/island/wallet-actions";
 import type { CharacterStats, IslandConsent, ShopItem, WalletDetail } from "@/lib/supabase/shift-quests/playerTypes";
 
-import { FOOTER, TREE } from "../copy";
+import { FOOTER, MENU, TREE } from "../copy";
 import { HudChip } from "../IslandHud";
 import { CharacterSheet } from "../player/CharacterSheet";
 import { CoinPill, showCoinPill } from "../player/CoinPill";
@@ -271,9 +271,9 @@ describe("CharacterSheet", () => {
     return handlers;
   }
 
-  it("shows who the student is and the tree as one line of progress, then results, the tree, coins, the team and the menu", () => {
+  it("is titled with the team, like the chip, and shows who the student is and the tree as one line of progress, then results, the tree, coins and the menu", () => {
     sheet();
-    const dialog = screen.getByRole("dialog", { name: CHARACTER.title });
+    const dialog = screen.getByRole("dialog", { name: "แอปจองห้องสมุด" });
     expect(within(dialog).getByText("มิ้นต์")).toBeInTheDocument();
     expect(within(dialog).getByText(CHARACTER.level(3))).toBeInTheDocument();
     // One line of progress: no stats grid (side quests, community, check-ins).
@@ -287,12 +287,37 @@ describe("CharacterSheet", () => {
       within(dialog).getByText("results-list"),
       within(dialog).getByText(/ต้นไม้ของคุณ/),
       within(dialog).getByText(CHARACTER.coinRow(coinNumber(2300))),
-      within(dialog).getByRole("heading", { name: "แอปจองห้องสมุด" }),
       within(dialog).getByText("menu-foot"),
     ];
     for (let i = 1; i < order.length; i++) {
       expect(order[i - 1].compareDocumentPosition(order[i]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     }
+  });
+
+  it("puts ขอพัก as quiet words under the tree's stage, before the results", () => {
+    const onRest = jest.fn();
+    sheet({ onRest });
+    const dialog = screen.getByRole("dialog", { name: "แอปจองห้องสมุด" });
+    const rest = within(dialog).getByRole("button", { name: MENU.rest });
+    expect(rest.compareDocumentPosition(within(dialog).getByText("results-list")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    fireEvent.click(rest);
+    expect(onRest).toHaveBeenCalledTimes(1);
+  });
+
+  it("has no ขอพัก while the team rests (no onRest)", () => {
+    sheet();
+    expect(screen.queryByRole("button", { name: MENU.rest })).toBeNull();
+  });
+
+  it("gives an admin the overview as the first line under who they are, and a student none", () => {
+    const onOpenAdmin = jest.fn();
+    sheet({ onOpenAdmin });
+    const dialog = screen.getByRole("dialog", { name: "แอปจองห้องสมุด" });
+    const admin = within(dialog).getByRole("button", { name: MENU.admin });
+    expect(within(dialog).getByText("มิ้นต์").compareDocumentPosition(admin) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(admin.compareDocumentPosition(within(dialog).getByText("results-list")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    fireEvent.click(admin);
+    expect(onOpenAdmin).toHaveBeenCalledTimes(1);
   });
 
   it("never ranks the student against anyone", () => {
@@ -313,7 +338,7 @@ describe("CharacterSheet", () => {
 
   it("shows the consent step first while consent is not on file", () => {
     const { onOpenConsent } = sheet({ consent: waiting });
-    const dialog = screen.getByRole("dialog", { name: CHARACTER.title });
+    const dialog = screen.getByRole("dialog", { name: "แอปจองห้องสมุด" });
     const banner = within(dialog).getByRole("region", { name: "ความยินยอม" });
     expect(banner.compareDocumentPosition(within(dialog).getByText("มิ้นต์")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     fireEvent.click(within(banner).getByRole("button"));
@@ -331,7 +356,7 @@ describe("CharacterSheet", () => {
       stage: 3,
     };
     sheet({ tree: { ...tree, seed: null }, onOpenTree, showName: { id: KEY, show_name: false, name_visible: false } });
-    const dialog = screen.getByRole("dialog", { name: CHARACTER.title });
+    const dialog = screen.getByRole("dialog", { name: "แอปจองห้องสมุด" });
     const line = within(dialog).getByRole("button", { name: (name) => name.startsWith("ต้นไม้ของคุณ") && name.endsWith(TREE.seed.title) });
     expect(within(line).getByTestId("tree-line-dot")).toBeInTheDocument();
     fireEvent.click(line);
@@ -341,7 +366,7 @@ describe("CharacterSheet", () => {
 
   it("keeps the tree a plain line and leaves the switch out when not given them", () => {
     sheet();
-    const dialog = screen.getByRole("dialog", { name: CHARACTER.title });
+    const dialog = screen.getByRole("dialog", { name: "แอปจองห้องสมุด" });
     expect(within(dialog).queryByRole("button", { name: /ต้นไม้ของคุณ/ })).toBeNull();
     expect(within(dialog).getByText(/ต้นไม้ของคุณ/)).toBeInTheDocument();
     expect(within(dialog).queryByRole("switch")).toBeNull();
