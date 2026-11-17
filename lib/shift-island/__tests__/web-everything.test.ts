@@ -26,12 +26,12 @@ describe("the website-does-everything gate", () => {
   });
 
   it("is open from schema 17", async () => {
-    await expect(webEverythingAvailable(api(async () => 16))).resolves.toBe(true);
-    await expect(webEverythingAvailable(api(async () => "17"))).resolves.toBe(true);
+    await expect(webEverythingAvailable(api(async () => 17))).resolves.toBe(true);
+    await expect(webEverythingAvailable(api(async () => "18"))).resolves.toBe(true);
   });
 
-  it("stays shut below 16 or when the version cannot be read", async () => {
-    await expect(webEverythingAvailable(api(async () => 15))).resolves.toBe(false);
+  it("stays shut below 17 or when the version cannot be read", async () => {
+    await expect(webEverythingAvailable(api(async () => 16))).resolves.toBe(false);
     await expect(webEverythingAvailable(api(async () => {
       throw new Error("down");
     }))).resolves.toBe(false);
