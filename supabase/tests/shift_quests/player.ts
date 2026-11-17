@@ -906,6 +906,13 @@ async function main(): Promise<void> {
   check(pn!.entries.every((x: Json) => keys(x) === "name,slot,summary") &&
       JSON.stringify(pn!.entries.map((x: Json) => x.slot)) === JSON.stringify([s2]),
     "entries: eligible teams with a summary only (no_update teams are left out)", pn!.entries);
+  // 20261118130000_shift_quest_island_news_daily: with a news channel the AI lines go into the nightly card only.
+  await call(bot, "shift_quest_admin_set", ADMIN, "news_channel", "930000000000000077");
+  check((await postNext()) === null, "a news channel set: the digest posts nothing (the nightly card carries the AI lines)");
+  check((await call<Json>(bot, "shift_quest_admin_island_status", ADMIN)).digest.channel === "news",
+    "and /admin island says the AI news goes to the news channel");
+  await call(bot, "shift_quest_admin_set", ADMIN, "news_channel", "");
+  check(canon(await postNext()) === canon(pn), "the news channel cleared: the digest answers as before");
   await save([{ project_id: p2, summary: null, no_update: true, model: "m" }]);
   if (isodow !== 7) check((await postNext()) === null, "no summaries today: nothing to post");
   await save([{ project_id: p2, summary: "ทีมทำต้นแบบกระดาษ", no_update: false, model: "m" }]);
@@ -936,8 +943,9 @@ async function main(): Promise<void> {
   check(slotsNow(await current()) === postedSlots, "and comes back when shown again");
   island = await call<Json>(bot, "shift_quest_admin_island_status", ADMIN);
   check(keys(island) === "consent,digest" && keys(island.consent) === "adult_age,granted,none,required,waiting" &&
-      keys(island.digest) === "channel,enabled,hidden,last_day" && island.digest.last_day === today && island.digest.channel === "live",
-    "/admin island status: counts and the digest", island);
+      keys(island.digest) === "channel,enabled,hidden,last_day,today_summaries" && island.digest.last_day === today &&
+      island.digest.channel === "live" && island.digest.today_summaries === 1,
+    "/admin island status: counts, the digest and today's stored summaries (one team, its day and week rows counted once)", island);
   check(island.consent.granted + island.consent.waiting + island.consent.none ===
       await count("select count(*) from public.shift_quest_members where onboarded_at is not null and erased_at is null"),
     "the counts add up to the students", island.consent);

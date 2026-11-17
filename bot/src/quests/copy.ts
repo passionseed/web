@@ -91,8 +91,9 @@ export const T = {
   pilotClosed: "ตอนนี้ SHIFT High quests ยังไม่เปิดให้ใช้",
   notStarted: "เริ่มด้วย /start ก่อนนะ ใช้เวลาไม่ถึงนาที",
   staffOnly: "คำสั่งนี้สำหรับทีมพี่เลี้ยงที่ได้รับสิทธิ์เท่านั้น",
+  /** DRAFT for the Thai review (news added with schema 19). */
   adminVoiceCoworkingOnly:
-    "ห้องเสียงใช้ได้กับ coworking เท่านั้น ห้อง help, staff, celebrate และ live ต้องเป็นห้องข้อความ ห้อง suggest เป็นฟอรัมหรือห้องข้อความ",
+    "ห้องเสียงใช้ได้กับ coworking เท่านั้น ห้อง help, staff, celebrate, live และ news ต้องเป็นห้องข้อความ (news เป็นห้องประกาศได้) ห้อง suggest เป็นฟอรัมหรือห้องข้อความ",
   adminCoworkingPrivate:
     "นักเรียนยังมองไม่เห็นหรือเข้าห้องเสียงนี้ไม่ได้ เลือกห้องที่นักเรียนเข้าได้ กองไฟบนเกาะจะได้ไม่โชว์คนในห้องส่วนตัว",
   /** /admin channel kind:live: the bot keeps one post there, so it must be a plain text channel. */
@@ -103,6 +104,11 @@ export const T = {
   adminForumSuggestOnly: "ฟอรัมใช้ได้กับ suggest เท่านั้น ห้องอื่นเลือกห้องข้อความ (coworking เป็นห้องเสียงได้)",
   adminLiveBotPerms:
     "บอทยังโพสต์ในห้องนี้ไม่ได้ ให้บอทมีสิทธิ์ดูห้อง ส่งข้อความ แนบไฟล์ และอ่านประวัติข้อความในห้องนี้ก่อน (ปักหมุดข้อความได้ด้วยจะดีที่สุด)",
+  // /admin channel kind:news, the nightly island news card (schema 19, news.ts). DRAFT for the Thai review.
+  adminNewsType: "ห้องข่าวเกาะต้องเป็นห้องข้อความหรือห้องประกาศ",
+  adminAnnouncementNewsOnly: "ห้องประกาศใช้ได้กับ news เท่านั้น ห้องอื่นเลือกห้องข้อความ",
+  adminNewsPrivate: "นักเรียนยังมองไม่เห็นห้องนี้ เลือกห้องที่นักเรียนเปิดอ่านได้",
+  adminNewsBotPerms: "บอทยังโพสต์ในห้องนี้ไม่ได้ ให้บอทมีสิทธิ์ดูห้อง ส่งข้อความ แนบไฟล์ และอ่านประวัติข้อความในห้องนี้ก่อน",
   done: "เรียบร้อย",
   cancelled: "ยกเลิกแล้ว ไม่มีอะไรถูกบันทึกหรือโพสต์",
 
@@ -502,10 +508,22 @@ export const T = {
     `ยินยอมแล้ว **${granted}** · รอผู้ปกครอง ${waiting} · ยังไม่มี ${none}`,
   adminConsentOffWarn:
     "ความยินยอมปิดอยู่: ทุกคนนับว่ายินยอมแล้ว ชื่อทีม คำชมในห้อง และการแลกของขึ้นได้โดยไม่มีผู้ปกครองยินยอม ใช้เฉพาะตอนทดสอบ (ข่าวเกาะ AI ยังต้องมีการยินยอมเรื่อง AI ของทุกคนเสมอ)",
+  /** 'news' (schema 19): the AI lines go into the nightly island news card. DRAFT for the Thai review. */
   adminDigestLine: (on: boolean, channel: string | null) =>
     `${on ? "✅" : "⚪"} ข่าวเกาะ AI: **${on ? "เปิด" : "ปิด"}** · โพสต์วันละครั้งที่${
-      channel === "live" ? "ห้องเกาะสด" : channel === "celebrate" ? "ห้องโพสต์ความสำเร็จ" : "ห้องที่ยังไม่ตั้ง (/admin channel live)"
+      channel === "news"
+        ? "ห้องข่าวเกาะ (รวมในข่าวเกาะ 2 ทุ่ม)"
+        : channel === "live"
+          ? "ห้องเกาะสด"
+          : channel === "celebrate"
+            ? "ห้องโพสต์ความสำเร็จ"
+            : "ห้องที่ยังไม่ตั้ง (/admin channel live)"
     }`,
+  /** The nightly island news card (schema 19): on while a news channel is set. DRAFT for the Thai review. */
+  adminNewsLine: (set: boolean) =>
+    set ? "✅ ข่าวเกาะคืนนี้: โพสต์ทุกคืนราว 2 ทุ่มในห้องข่าวเกาะ" : "⚪ ข่าวเกาะคืนนี้: ยังไม่ตั้งห้อง (/admin channel kind:news)",
+  /** How many teams have an AI summary stored for today: 0 every day means the website's job or its key is not working. DRAFT. */
+  adminDigestToday: (n: number) => `🤖 สรุป AI ที่เก็บไว้วันนี้: ${n} ทีม`,
   adminDigestLast: (day: string | null) => `โพสต์ล่าสุด: ${day ?? "ยังไม่เคย"}`,
   adminDigestHidden: (teams: string) => `ซ่อนสรุปอยู่: ${teams || "ไม่มี"}`,
   adminIslandFine:

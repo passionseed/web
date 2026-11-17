@@ -17,8 +17,8 @@ export const DIGEST = {
   removed: "ข่าวนี้ถูกนำออกแล้ว ดูข่าวล่าสุดบนเว็บเกาะ",
 } as const;
 
-/** "12 พ.ย. 2569" for "2026-11-12" (a Bangkok calendar day). */
-function thaiDay(day: string): string {
+/** "12 พ.ย. 2569" for "2026-11-12" (a Bangkok calendar day). The nightly card's issue line uses it too (newsCopy.ts). */
+export function thaiDay(day: string): string {
   const date = new Date(`${day}T12:00:00+07:00`);
   if (Number.isNaN(date.getTime())) return day;
   return date.toLocaleDateString("th-TH", { timeZone: "Asia/Bangkok", day: "numeric", month: "short", year: "numeric" });

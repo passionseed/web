@@ -34,6 +34,12 @@ import { ISLAND_LINK_LABEL, islandWebUrl } from "./weblink";
  * message whose teams changed: staff hid a team, a parent withdrew, or a
  * member stopped showing the name. A post with no team left says it was
  * taken down.
+ *
+ * From schema 19 (20261118130000_shift_quest_island_news_daily), once a news
+ * channel is set (/admin channel kind:news), shift_quest_digest_post_next
+ * answers null: the AI lines then go only into the nightly island news card
+ * (news.ts), which reuses entriesOf and digestLines from here. This loop keeps
+ * running to keep its own earlier posts true.
  */
 
 /** The island schema that adds the digest functions (20261111095000_shift_quest_player.sql). */
@@ -97,8 +103,8 @@ function headOf(raw: unknown): Omit<DigestPostData, "entries"> | null {
   return { day: r.day, kind: r.kind === "week" ? "week" : "day", channel_id: r.channel_id };
 }
 
-/** Teams with a slot, a name and a summary, in plot order. */
-function entriesOf(raw: unknown): DigestPostEntry[] {
+/** Teams with a slot, a name and a summary, in plot order (the nightly card's AI section reads them the same way). */
+export function entriesOf(raw: unknown): DigestPostEntry[] {
   return (Array.isArray(raw) ? raw : [])
     .map((e): DigestPostEntry | null => {
       if (!e || typeof e !== "object") return null;

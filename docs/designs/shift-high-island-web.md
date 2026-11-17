@@ -1481,7 +1481,8 @@ in the menu. No new HUD round button (no room at 360px).
 Data flow:
 
 ```
-Vercel cron 20:00 Bangkok  ->  app/api/cron/shift-island-digest (CRON_SECRET)
+Vercel cron 18:00 Bangkok  ->  app/api/cron/shift-island-digest (CRON_SECRET)
+  (20:00 until 2026-11-18; moved so the bot's nightly card at 20:00 carries it)
   -> shift_quest_digest_inputs(day, 'day')       (web role; only eligible teams)
   -> scrub (names from `redact`, emails, phones, URLs, @handles, LINE ids)
   -> no facts in the window: store no_update, no model call

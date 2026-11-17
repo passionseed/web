@@ -136,13 +136,19 @@ export function questCommands(): RESTPostAPIChatInputApplicationCommandsJSONBody
               { name: "celebrate (โพสต์ความสำเร็จ)", value: "celebrate" },
               { name: "coworking (ห้องข้อความหรือห้องเสียง)", value: "coworking" },
               { name: "live (โพสต์เกาะสด บอทแก้โพสต์เดียว)", value: "live" },
-              { name: "suggest (ฟอรัมเสนอไอเดีย แจ้งบั๊ก)", value: "suggest" }
+              { name: "suggest (ฟอรัมเสนอไอเดีย แจ้งบั๊ก)", value: "suggest" },
+              // DRAFT for the Thai review: the nightly island news card (news.ts, schema 19).
+              { name: "news (ข่าวเกาะทุกคืน 2 ทุ่ม ห้องประกาศได้)", value: "news" }
             )
         )
         // coworking may be a voice channel: its people sit at the island's campfire, and intention posts land in its text chat.
-        // suggest may be a forum: the web island's ⋯ menu links to it. The handler checks each kind's type.
+        // suggest may be a forum: the web island's ⋯ menu links to it. news may be an announcement channel (students
+        // read, only the bot posts; never published to other servers). The handler checks each kind's type.
         .addChannelOption((o) =>
-          o.setName("channel").setDescription("ห้อง").addChannelTypes(ChannelType.GuildText, ChannelType.GuildVoice, ChannelType.GuildForum)
+          o
+            .setName("channel")
+            .setDescription("ห้อง")
+            .addChannelTypes(ChannelType.GuildText, ChannelType.GuildVoice, ChannelType.GuildForum, ChannelType.GuildAnnouncement)
         )
     )
     .addSubcommand((s) =>

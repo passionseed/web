@@ -295,8 +295,11 @@ post uses `shift_quest_island_post_map()`.
 
 **Check-ins.** `shift_quest_progress.kind` is `tap` (no words, one per member
 per Bangkok day, a second tap returns the first) or `note` (`changed`
-required). The journal (`/progress`) lists and edits notes only. The report
-counts taps; nothing else reads them.
+required). The journal (`/progress`) lists and edits notes only. Taps are
+only ever counted, never listed: by the report, by the plaza's visitors
+(schema 18) and by the nightly island news (schema 19), which shows how many
+members checked in island-wide, with no number for 1 or 2. A tap never grows
+a tree.
 
 **Season counting (wave 2).** One helper, `shift_quest__season_approvals`,
 decides every season number: demo-day bars, dated unlocks, the island goal,
@@ -965,6 +968,33 @@ integers, never an id, name, project or time; same gate as
 version only goes up. The plan is in
 [`docs/designs/shift-island-plaza-visitors.md`](../designs/shift-island-plaza-visitors.md).
 Tested in `supabase/tests/shift_quests/visitors.ts`.
+
+### Nightly island news (schema 19)
+
+`20261118130000_shift_quest_island_news_daily.sql` adds the nightly card the
+bot posts at 20:00 Bangkok in the news channel (`/admin channel kind:news`, a
+text or announcement channel; `settings.news_channel_id`). One card a night:
+the night island picture (the live post's outsider view), island-wide totals
+over 20:00 the day before to 20:00 (`shift_quest__news_totals`: members who
+checked in, quests approved, tree stages grown, campfire rounds started with
+an intention; people counts of 1 or 2 show without a number; **round counts
+only, never minutes**), the Demo Day countdown, a lore line and link
+buttons. When a team passes `shift_quest__digest_eligible`, the same card
+carries its AI line (`shift_quest__news_ai`). Approvals and growth count
+every team while sharing is on and name-visible teams only while it is off.
+The bot-only `shift_quest_news_post_next`, `_claim`, `_mark` and
+`_post_current` keep it to one message per Bangkok day (claim, send,
+compare-and-set mark; a new card only before 22:30, a stale claim recovered
+until midnight, never a catch-up) and re-check the AI lines for 7 days, by
+edit. The totals freeze at claim time. While a news channel is set,
+`shift_quest_digest_post_next` answers null, so the AI news appears only in
+the card. `/admin island` gains `today_summaries` (teams with an AI summary
+stored today). Never crossposted, never a DM, never a ping. The bot needs
+View Channel, Send Messages, Attach Files and Read Message History there.
+Decisions and copy:
+[`docs/designs/shift-island-daily-news.md`](../designs/shift-island-daily-news.md).
+Tested in `supabase/tests/shift_quests/news.ts` and
+`bot/src/quests/__tests__/news.test.ts`.
 
 ## Admin: reset my own island (testing)
 

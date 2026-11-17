@@ -6,6 +6,7 @@ import { ChannelType, MessageFlags, type Client } from "discord.js";
 import { QuestDbError, QuestError, type QuestApi } from "../api";
 import { DIGEST_SCHEMA, digestFor, digestLines, digestView, normalizeDigestPost, startDigestPost, type DigestPost, type DigestPostData } from "../digest";
 import { DIGEST } from "../digestCopy";
+import { NEWS } from "../newsCopy";
 import { renderView } from "../view";
 import { bodyText, customIds, viewText } from "../test-helpers/view";
 
@@ -141,6 +142,14 @@ describe("digest copy", () => {
     expect(text).not.toMatch(/\p{Extended_Pictographic}/u);
     expect(text).not.toMatch(/\*\*|__|`|^#/);
     expect(text).not.toMatch(/น้อง|ลูก(?!ค้า)|เด็ก/);
+  });
+
+  it("never carries the nightly card's issue line, so neither loop can adopt the other's post", () => {
+    const json = JSON.stringify(renderView(digestView(post({ day: DAY }), WEB), { ephemeral: false }).components);
+    expect(json).toContain(DIGEST.dayLine(DAY));
+    expect(json).not.toContain(NEWS.dayLine(DAY));
+    expect(NEWS.dayLine(DAY)).not.toContain(DIGEST.dayLine(DAY));
+    expect(DIGEST.dayLine(DAY)).not.toContain(NEWS.dayLine(DAY));
   });
 
   it("labels every post as written by AI", () => {

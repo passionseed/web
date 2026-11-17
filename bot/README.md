@@ -391,8 +391,19 @@ The short version for whoever runs the bot:
     the live channel or the celebrate channel when live is unset, no pings,
     only teams that opted in and have consent, while `digest-on`. The
     summaries come from the website's cron (`/api/cron/shift-island-digest`,
-    20:00 Bangkok), which needs `CRON_SECRET`, `SHIFT_QUEST_DATABASE_URL` and
+    18:00 Bangkok), which needs `CRON_SECRET`, `SHIFT_QUEST_DATABASE_URL` and
     `ANTHROPIC_API_KEY` on Vercel. Below schema 9 the bot runs without it.
+    Once a news channel is set (schema 19) it posts nothing of its own.
+  - The nightly island news (`bot/src/quests/news.ts`, schema 19): one card
+    every evening at 20:00 Bangkok in the news channel (`/admin channel
+    kind:news`, a text or announcement channel): the night island picture,
+    island-wide totals (check-ins and campfire rounds with no number for 1 or
+    2, approvals and stages grown, never minutes), the Demo Day countdown, a
+    lore line, and the AI lines of eligible teams when there are any. It
+    needs no website, cron or key. Claimed, sent and marked once a day; the
+    AI lines are kept true for 7 days by edits that re-attach the same
+    picture. Never a ping, a DM or a crosspost. Below schema 19 the bot runs
+    without it.
 - Campfire rounds (`bot/src/quests/rounds.ts`, buttons in
   `handlers/rounds.ts`, rules in `lib/shift-island/rounds-rules.ts`): while
   anyone sits in the coworking voice channel (the campfire), the bot keeps one

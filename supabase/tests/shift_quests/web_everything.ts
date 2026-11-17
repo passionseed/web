@@ -303,6 +303,13 @@ async function main(): Promise<void> {
       webStatus.settings?.student_roles === 1 && !Object.keys(webStatus.settings).some((k) => k.endsWith("_id") || k.endsWith("_ids")) &&
       noDiscord(webStatus),
     "the website's admin status says which channels and roles are set, never their Discord ids", webStatus.settings);
+  // 20261118130000_shift_quest_island_news_daily: the news channel shows as set or not, never its id.
+  check(webStatus.settings?.news_channel === false, "the news channel shows as not set", webStatus.settings);
+  await call(bot, "shift_quest_admin_set", ADMIN, "news_channel", "930000000000000077");
+  const withNews = await w<Json>("shift_quest_admin_web_status", ADMIN);
+  check(withNews.settings?.news_channel === true && !JSON.stringify(withNews).includes("930000000000000077"),
+    "once set in Discord, the website sees news_channel: true and never the id", withNews.settings);
+  await call(bot, "shift_quest_admin_set", ADMIN, "news_channel", "");
   const rawStatus = await call<Json>(bot, "shift_quest_admin_status", ADMIN);
   const { settings: rawSettings, ...rawRest } = rawStatus;
   const { settings: webSettings, ...webRest } = webStatus;
@@ -315,7 +322,7 @@ async function main(): Promise<void> {
   check(await code(w("shift_quest_admin_setting", ADMIN, "awards", "on")) === "config_incomplete",
     "awards refuse to switch on without terms and a rule");
   for (const key of ["help_channel", "staff_channel", "celebrate_channel", "live_channel", "suggest_channel",
-    "coworking_channel", "student_role_add", "student_role_remove", "squads", "no_such_key"]) {
+    "coworking_channel", "news_channel", "student_role_add", "student_role_remove", "squads", "no_such_key"]) {
     check(await code(w("shift_quest_admin_setting", ADMIN, key, "700000000000000001")) === "bad_input",
       `admin_setting refuses '${key}' (Discord configuration stays in Discord)`);
   }

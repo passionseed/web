@@ -524,6 +524,11 @@ async function main(): Promise<void> {
     ["the digest post's writer", "select public.shift_quest_digest_mark($1::date, $2, $3)", ["2026-11-11", "700000000000000001", "700000000000000002"]],
     ["the digest post's claim", "select public.shift_quest_digest_claim($1::date, $2, 'day')", ["2026-11-11", "700000000000000001"]],
     ["the digest post's re-render", "select public.shift_quest_digest_post_current()", []],
+    // 20261118130000_shift_quest_island_news_daily: the nightly card is the bot's.
+    ["the nightly card's reader", "select public.shift_quest_news_post_next()", []],
+    ["the nightly card's claim", "select public.shift_quest_news_claim($1::date, $2)", ["2026-11-18", "700000000000000001"]],
+    ["the nightly card's writer", "select public.shift_quest_news_mark($1::date, $2, $3)", ["2026-11-18", "700000000000000001", "700000000000000002"]],
+    ["the nightly card's re-render", "select public.shift_quest_news_post_current()", []],
     // The raw functions that take a Discord id for someone else, and the flows that stay in Discord or were
     // dropped (20261118100000): the website reaches members through the uuid wrappers only.
     ["raw consent resets", "select public.shift_quest_admin_consent_reset($1, $2)", [ADMIN, A]],
@@ -562,6 +567,8 @@ async function main(): Promise<void> {
     ["helper shift_quest__consent_ok", "select public.shift_quest__consent_ok($1)", [randomUUID()]],
     ["helper shift_quest__digest_eligible", "select public.shift_quest__digest_eligible($1)", [randomUUID()]],
     ["reading shift_quest_live_state", "select * from public.shift_quest_live_state", []],
+    ["reading shift_quest_news_posts", "select * from public.shift_quest_news_posts", []],
+    ["helper shift_quest__news_totals", "select public.shift_quest__news_totals($1::date)", ["2026-11-18"]],
     ["reading shift_quest_voice_presence", "select * from public.shift_quest_voice_presence", []],
     ["reading shift_quest_voice_state", "select * from public.shift_quest_voice_state", []],
     ["helper shift_quest__fail", "select public.shift_quest__fail('x')", []],
