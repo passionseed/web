@@ -352,6 +352,14 @@ student and staff flow, including review decisions and appeals, moves to the
 web. This supersedes decision 3's "appeals stay in Discord" and widens B1 to
 cover appeals as well as pending work.
 
+**Founder decisions, 2026-11-17** (see
+[shift-island-one-next-step.md](shift-island-one-next-step.md)): mentor review
+stays in Discord for now, so B1 waits; students are promised no turnaround
+time (decision 2). The gold card of Part 4 is built as the next-step card,
+with the check-in inside it; an untouched quest's bar starts it (decision 5,
+first half). The rest of the quest page is redesigned next, from the
+best-designed games.
+
 ## Tests (summary)
 
 - `tree/growth.test.ts`: first visit with and without the 48 h rule, +1, +2,

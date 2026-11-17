@@ -50,7 +50,7 @@ const NAMES: Record<string, string> = { [A]: "Board Aye", [B]: "Board Bee", [C]:
  * 20261111095000_shift_quest_player.sql and the roots read of 20261113090000_shift_quest_roots.sql
  * plus the own-tree roots read of 20261113173515_shift_quest_own_roots.sql, the web reflection of
  * 20261114100000_shift_quest_web_reflect.sql and the tree style of 20261114120000_shift_quest_tree_style.sql,
- * through every later grant up to 20261116090000_shift_quest_web_everything.sql (regprocedure text).
+ * through every later grant up to 20261118100000_shift_quest_web_everything.sql (regprocedure text).
  */
 const WEB_ALLOWLIST = [
   "shift_quest_board(text)",
@@ -124,7 +124,7 @@ const WEB_ALLOWLIST = [
   "shift_quest_peer_hide(text,uuid,boolean)",
   "shift_quest_project_friends(text,uuid,text)",
   "shift_quest_project_invite_friend(text,uuid,uuid)",
-  // 20261116090000_shift_quest_web_everything: every flow but Discord's.
+  // 20261118100000_shift_quest_web_everything: every flow but Discord's.
   "shift_quest_inbox_list(text,boolean)",
   "shift_quest_help_mine(text)",
   "shift_quest_help_withdraw(text,uuid)",
@@ -414,7 +414,7 @@ async function main(): Promise<void> {
     // 20261115120000_shift_quest_admin_reset_self: only an admin resets, and only their own island.
     ["admin_reset_self", "select public.shift_quest_admin_reset_self($1::text)", [NOBODY], "not_authorized"],
     ["admin_island", "select public.shift_quest_admin_island($1::text)", [NOBODY], "not_authorized"],
-    // 20261116090000_shift_quest_web_everything: an unknown caller is refused before anything is looked up.
+    // 20261118100000_shift_quest_web_everything: an unknown caller is refused before anything is looked up.
     ["inbox_list", "select public.shift_quest_inbox_list($1::text, $2::boolean)", [NOBODY, true], "not_started"],
     ["help_mine", "select public.shift_quest_help_mine($1::text)", [NOBODY], "not_started"],
     ["help_withdraw", "select public.shift_quest_help_withdraw($1::text, $2::uuid)", [NOBODY, randomUUID()], "not_started"],
@@ -521,7 +521,7 @@ async function main(): Promise<void> {
     ["the digest post's claim", "select public.shift_quest_digest_claim($1::date, $2, 'day')", ["2026-11-11", "700000000000000001"]],
     ["the digest post's re-render", "select public.shift_quest_digest_post_current()", []],
     // The raw functions that take a Discord id for someone else, and the flows that stay in Discord or were
-    // dropped (20261116090000): the website reaches members through the uuid wrappers only.
+    // dropped (20261118100000): the website reaches members through the uuid wrappers only.
     ["raw consent resets", "select public.shift_quest_admin_consent_reset($1, $2)", [ADMIN, A]],
     ["raw settings (channels and Discord roles)", "select public.shift_quest_admin_set($1, 'help_channel', '700000000000000001')", [ADMIN]],
     ["the raw admin status (Discord channel and role ids)", "select public.shift_quest_admin_status($1)", [ADMIN]],

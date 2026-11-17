@@ -56,7 +56,7 @@ export function HudChip({
   me,
   name,
   stage,
-  todayOpen = false,
+  waiting = null,
   onOpen,
 }: {
   /** The viewer's own card: their name and their own avatar URL only. */
@@ -64,8 +64,8 @@ export function HudChip({
   /** The project's name. */
   name: string;
   stage: number;
-  /** Today's check-in is still open (lives in the character sheet): a small lamp dot says so. */
-  todayOpen?: boolean;
+  /** What waits at the team's tree (a gift, the seed; its line is in the team sheet): a lamp dot, and these words. */
+  waiting?: string | null;
   onOpen: () => void;
 }) {
   const filled = Math.min(Math.max(Math.trunc(stage) || 0, 0), STAGES);
@@ -74,13 +74,13 @@ export function HudChip({
     <button
       type="button"
       className={`${styles.chip} ${styles.glass} ${styles.press}`}
-      aria-label={todayOpen ? `${label}, ${HUD.chipTodayOpen}` : label}
+      aria-label={waiting ? `${label}, ${waiting}` : label}
       aria-haspopup="dialog"
       onClick={onOpen}
     >
       <span className={styles.chipFace} aria-hidden="true">
         <PixelAvatar name={me.name} url={me.avatarUrl} size={40} decorative />
-        {todayOpen ? <span className={styles.chipDot} data-testid="chip-today-open" /> : null}
+        {waiting ? <span className={styles.chipDot} data-testid="chip-dot" /> : null}
       </span>
       <span className={styles.chipText} aria-hidden="true">
         <span className={styles.chipName}>{name}</span>
@@ -94,60 +94,55 @@ export function HudChip({
   );
 }
 
-/** Top left before a plot is claimed: your picture and the island's line, nothing to open. */
-export function HudLabel({ me, text }: { me: Pick<ViewerCard, "name" | "avatarUrl">; text: string }) {
-  return (
-    <div className={`${styles.chip} ${styles.glass}`} data-static="true">
+/**
+ * Top left before a plot is claimed: your picture and the island's line. With
+ * `onOpen` it is the island's one door to the menu (the guide, the story, the
+ * consent step, who is signed in), with a lamp dot while consent waits.
+ */
+export function HudLabel({
+  me,
+  text,
+  label,
+  dot = false,
+  onOpen,
+}: {
+  me: Pick<ViewerCard, "name" | "avatarUrl">;
+  text: string;
+  /** The button's accessible name (what the tap opens). */
+  label?: string;
+  dot?: boolean;
+  onOpen?: () => void;
+}) {
+  const face = (
+    <>
       <span className={styles.chipFace} aria-hidden="true">
         <PixelAvatar name={me.name} url={me.avatarUrl} size={40} decorative />
+        {dot ? <span className={styles.chipDot} data-testid="chip-dot" /> : null}
       </span>
-      <span className={styles.chipText}>
+      <span className={styles.chipText} aria-hidden={onOpen ? "true" : undefined}>
         <span className={styles.chipName}>{text}</span>
       </span>
-    </div>
+    </>
   );
-}
-
-/** A round pixel button for the top right, with an optional count. */
-/** `dot`: a small lamp dot, as on the chip, for a next step waiting behind this button (the menu's consent row). */
-export function HudRound({
-  icon,
-  label,
-  badge,
-  dot = false,
-  onClick,
-}: {
-  icon: WebIcon;
-  label: string;
-  badge?: number;
-  dot?: boolean;
-  onClick: () => void;
-}) {
+  if (!onOpen) {
+    return (
+      <div className={`${styles.chip} ${styles.glass}`} data-static="true">
+        {face}
+      </div>
+    );
+  }
   return (
-    <button type="button" className={`${styles.round} ${styles.glass} ${styles.press}`} aria-label={label} aria-haspopup="dialog" onClick={onClick}>
-      <PixelIcon grid={WEB_SPRITES[icon]} palette={PALETTE} scale={2} />
-      {badge && badge > 0 ? (
-        <span className={styles.badge} aria-hidden="true">
-          {badge > 9 ? "9+" : badge}
-        </span>
-      ) : dot ? (
-        <span className={styles.chipDot} aria-hidden="true" data-testid="round-dot" />
-      ) : null}
+    <button
+      type="button"
+      className={`${styles.chip} ${styles.glass} ${styles.press}`}
+      aria-label={label ? `${text}, ${label}` : text}
+      aria-haspopup="dialog"
+      onClick={onOpen}
+    >
+      {face}
     </button>
   );
 }
-
-/** A round pixel link for the top right: leaves the island in a new tab (the canvas on the whiteboard). */
-export function HudLinkRound({ icon, label, href }: { icon: WebIcon; label: string; href: string }) {
-  return (
-    <a className={`${styles.round} ${styles.glass} ${styles.press}`} aria-label={label} title={label} href={href} target="_blank" rel="noopener">
-      <PixelIcon grid={WEB_SPRITES[icon]} palette={PALETTE} scale={2} />
-    </a>
-  );
-}
-
-/** The story book, the envelope and the menu share this look. */
-export const hudRoundClass = `${styles.round} ${styles.glass} ${styles.press}`;
 
 /**
  * Bottom: the quest board. Narrow beside the keynote, wide when there is no
@@ -166,6 +161,16 @@ export function BoardButton({ wide, concealed = false, onClick }: { wide: boolea
     >
       <PixelIcon grid={WEB_SPRITES.scroll} palette={PALETTE} scale={2} />
       <span>{HUD.board}</span>
+    </button>
+  );
+}
+
+/** Under the next-step card: one quiet way to the whole quest board. */
+export function BoardLink({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button type="button" className={`${styles.boardLink} ${styles.glass} ${styles.press}`} aria-haspopup="dialog" onClick={onClick}>
+      <PixelIcon grid={WEB_SPRITES.scroll} palette={PALETTE} scale={1} />
+      <span>{label}</span>
     </button>
   );
 }

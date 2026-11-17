@@ -27,7 +27,7 @@ WITH fns0 AS (
       -- 20261115140000_shift_quest_peer_check: the peer check is the website's.
       OR p.proname IN ('shift_quest_project_friends', 'shift_quest_project_invite_friend')
       OR p.proname LIKE 'shift\_quest\_peer\_%'
-      -- 20261116090000_shift_quest_web_everything: the website's wrappers over member uuids.
+      -- 20261118100000_shift_quest_web_everything: the website's wrappers over member uuids.
       OR p.proname IN ('shift_quest_project_teammates', 'shift_quest_islanders', 'shift_quest_share_draft',
         'shift_quest_milestone_submit_team', 'shift_quest_side_submit_team', 'shift_quest_admin_web_status',
         'shift_quest_admin_setting',
@@ -118,7 +118,7 @@ web_allow(sig) AS (VALUES
   ('shift_quest_peer_hide(text,uuid,boolean)'),
   ('shift_quest_project_friends(text,uuid,text)'),
   ('shift_quest_project_invite_friend(text,uuid,uuid)'),
-  -- 20261116090000_shift_quest_web_everything.
+  -- 20261118100000_shift_quest_web_everything.
   ('shift_quest_inbox_list(text,boolean)'),
   ('shift_quest_help_mine(text)'),
   ('shift_quest_help_withdraw(text,uuid)'),
@@ -173,12 +173,12 @@ web_allow(sig) AS (VALUES
   ('shift_quest_admin_data_close(text,uuid,boolean)'),
   ('shift_quest_admin_erase(text,uuid)')
 )
--- The schema: 16 is every migration on this branch (the website does everything
--- but Discord, 20261116090000).
-SELECT 'schema: shift_quest_schema_version() is ' || coalesce(v::text, 'missing') || ', expected 16' AS problem
+-- The schema: 17 is every migration on this branch (the website does everything
+-- but Discord, 20261118100000).
+SELECT 'schema: shift_quest_schema_version() is ' || coalesce(v::text, 'missing') || ', expected 17' AS problem
 FROM (SELECT CASE WHEN to_regprocedure('public.shift_quest_schema_version()') IS NULL THEN NULL
   ELSE public.shift_quest_schema_version() END AS v) s
-WHERE v IS DISTINCT FROM 16
+WHERE v IS DISTINCT FROM 17
 UNION ALL
 -- The two logins: they exist, NOINHERIT, member of no role, their connection
 -- limit and statement_timeout. LOGIN itself is step D, so it is not checked here.

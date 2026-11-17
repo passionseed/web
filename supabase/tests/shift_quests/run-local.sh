@@ -28,12 +28,15 @@
 #   tree      every migration applied twice, then tree.ts (schema 13,
 #             20261114120000: seeds, tree style, round and quest gifts, the
 #             own tree read and other teams' styles), with consent off
+#   treepost  every migration applied twice, then tree_post.ts (schema 16,
+#             20261118090000: the celebrate post when a mentor's approval
+#             grows a tree, and the bot's send-time read), consent on and off
 #   reset, evidence, peer
 #             every migration applied twice, then reset.ts, evidence.ts and
 #             peer.ts (the admin self-reset, photo evidence, the peer check)
 #   webeverything
 #             every migration applied twice, then web_everything.ts (schema
-#             16, 20261116090000: every new website wrapper as
+#             17, 20261118100000: every new website wrapper as
 #             shift_quest_web, the data request dedupe, the help conflict
 #             filter and the award after the last teammate answers)
 #
@@ -181,7 +184,7 @@ SQL
 # never the bot's; the campfire writers (093000) and the live post's reader
 # and writer (094000) are the bot's like every other entry point.
 # And the web allowlist (20261111090900, 091000, 091100, 091200, 093000, 094000, and every later file
-# that grants shift_quest_web, up to 20261116090000's website-does-everything allowlist): shift_quest_web executes exactly the
+# that grants shift_quest_web, up to 20261118100000's website-does-everything allowlist): shift_quest_web executes exactly the
 # functions listed below (nothing before that file is applied), never a
 # helper, and holds no privilege on any table or sequence. The list repeats
 # the migration's on purpose: a new grant must change both.
@@ -206,7 +209,7 @@ WITH fns0 AS (
       -- 20261115140000_shift_quest_peer_check: the peer check is the website's.
       OR p.proname IN ('shift_quest_project_friends', 'shift_quest_project_invite_friend')
       OR p.proname LIKE 'shift\_quest\_peer\_%'
-      -- 20261116090000_shift_quest_web_everything: the website's wrappers over member uuids.
+      -- 20261118100000_shift_quest_web_everything: the website's wrappers over member uuids.
       OR p.proname IN ('shift_quest_project_teammates', 'shift_quest_islanders', 'shift_quest_share_draft',
         'shift_quest_milestone_submit_team', 'shift_quest_side_submit_team', 'shift_quest_admin_web_status',
         'shift_quest_admin_setting',
@@ -296,7 +299,7 @@ web_allow(sig) AS (VALUES
   ('shift_quest_peer_hide(text,uuid,boolean)'),
   ('shift_quest_project_friends(text,uuid,text)'),
   ('shift_quest_project_invite_friend(text,uuid,uuid)'),
-  -- 20261116090000_shift_quest_web_everything.
+  -- 20261118100000_shift_quest_web_everything.
   ('shift_quest_inbox_list(text,boolean)'),
   ('shift_quest_help_mine(text)'),
   ('shift_quest_help_withdraw(text,uuid)'),
@@ -412,7 +415,7 @@ echo "# migrations"
 for f in "${MIGRATIONS[@]}"; do echo "apply $(basename "$f")"; done
 new_db once
 apply once "single pass" "${MIGRATIONS[@]}"
-for DB in rules island flows islandflows board canvas campfire live player roots tree reset evidence peer webeverything; do
+for DB in rules island flows islandflows board canvas campfire live player roots tree reset evidence peer treepost webeverything; do
   new_db "$DB"
   apply "$DB" "first pass" "${MIGRATIONS[@]}"
   apply "$DB" "second pass" "${MIGRATIONS[@]}"
@@ -489,6 +492,7 @@ suite "tree" tree tree.ts
 suite "admin reset" reset reset.ts
 suite "photo evidence and the team's problem" evidence evidence.ts
 suite "peer check" peer peer.ts
+suite "tree grew post" treepost tree_post.ts
 suite "web does everything but Discord" webeverything web_everything.ts
 # island_rules.ts runs against wave 1 alone once it knows to skip season cases.
 if [ "${#WAVE1[@]}" -lt "${#MIGRATIONS[@]}" ] && grep -q SHIFT_QUESTS_WAVE "$HERE/island_rules.ts"; then

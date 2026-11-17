@@ -1,6 +1,6 @@
 /**
  * SHIFT High Island: the website does everything but Discord
- * (20261116090000_shift_quest_web_everything, schema 16). Every call below
+ * (20261118100000_shift_quest_web_everything, schema 17). Every call below
  * goes through shift_quest_web, as the website makes it; the bot is used only
  * for what stays in Discord (channels, new staff, project invites by Discord
  * id) and to check what it can no longer reach.
@@ -57,7 +57,7 @@ const NAMES: Record<string, string> = {
 };
 const DISCORD_IDS = Object.keys(NAMES);
 
-/** The website-only wrappers of 20261116090000 (regprocedure text). */
+/** The website-only wrappers of 20261118100000 (regprocedure text). */
 const WEB_FNS = [
   "shift_quest_project_teammates(text)",
   "shift_quest_islanders(text,text)",
@@ -74,7 +74,7 @@ const WEB_FNS = [
   "shift_quest_admin_member_consent_reset(text,uuid)",
   "shift_quest_admin_seasons(text)",
 ];
-/** Existing functions 20261116090000 grants to the website; the bot keeps them while both work. */
+/** Existing functions 20261118100000 grants to the website; the bot keeps them while both work. */
 const SHARED_FNS = [
   "shift_quest_inbox_list(text,boolean)", "shift_quest_contribution_respond(text,uuid,boolean,text)",
   "shift_quest_data_request(text,text,text)", "shift_quest_review_decide(text,uuid,text,text,boolean)",
@@ -161,8 +161,8 @@ async function main(): Promise<void> {
   const w = <T = any>(fn: string, ...args: unknown[]) => call<T>(web, fn, ...args);
 
   // --- Schema and privileges -------------------------------------------------------------------
-  check(Number(await w("shift_quest_schema_version")) === LATEST_SCHEMA && LATEST_SCHEMA >= 16,
-    "the website reads the latest schema version (every flow but Discord starts from 16)");
+  check(Number(await w("shift_quest_schema_version")) === LATEST_SCHEMA && LATEST_SCHEMA >= 17,
+    "the website reads the latest schema version (every flow but Discord starts from 17)");
   for (const fn of WEB_FNS) {
     const g: Json = (await db.query(
       `select has_function_privilege('shift_quest_bot', $1::regprocedure, 'EXECUTE') as bot,

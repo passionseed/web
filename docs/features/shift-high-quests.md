@@ -40,7 +40,9 @@ reply is ephemeral. Channel posts happen only for: help requests (the
 community help channel, or the staff channel for mentors-only requests),
 review and proposal notices (staff channel, title only), and celebrations,
 peer recognitions and coworking intentions after the author confirms a
-preview (and, for a recognition, after the peer accepts).
+preview (and, for a recognition, after the peer accepts). From schema 16 the
+celebrate channel also hears, unasked, when a mentor's approval of a main
+quest grows a team's tree (see "Tree grew post" below).
 
 The seven starter quests from the spec were seeded in Thai
 (`20261111090500_shift_quests_starter_templates.sql`) with no reward rule.
@@ -458,17 +460,19 @@ counted from the progress journal at read time.
   blocker offers the separate help choice. A missing project at submit time
   shows the existing claim-plot card, so the note is not saved without a tree.
   On the web (`20261114100000_shift_quest_web_reflect` grants
-  `shift_quest_progress_add` to `shift_quest_web`), the check-in card
-  (`TodayCard`) comes before the work and is about the student's current
-  quest (the keynote, else the starter). "วันนี้จะลงมือทำอะไร" takes an
-  optional private intention, saved as a note's `next_step` under the
-  student's own quest instance (not counted toward roots); เช็กอิน แล้วลุยเลย
-  saves it, then the day's tap, then opens the quest. Back later the same day,
-  the card shows the intention (kept on the browser), the way back to the
-  quest, and one optional line on how it went, saved with `learned` so it
-  counts toward roots. ติด opens the help sheet on that quest. The card shows
-  in the character sheet and, while the day is open, first in the tree sheet
-  that tapping your own tree opens. It never changes the tree's stage.
+  `shift_quest_progress_add` to `shift_quest_web`), the check-in comes before
+  the work and is the next-step card's tap (`NextStepCard`, the island's gold
+  card): while the day is open, the first tap that leads to work saves the
+  day's tap quietly (`checkIn`) and opens the quest, with no screen in
+  between. Inside the quest the student is working on, a folded, optional
+  "วันนี้จะลงมือทำอะไร" (`DayIntention`, the `keepIntention` action) saves a
+  private intention as a note's `next_step` under their own quest instance
+  (not counted toward roots, and never a second tap). Back later the same day,
+  the card shows the intention (kept on the browser). One optional line on how
+  the work went (`RootsLine`), saved with `learned` so it counts toward roots,
+  sits in the tree sheet that tapping your own tree opens, under the roots.
+  ติดตรงไหน? is a quiet line under the quest page's checklist. A check-in never
+  changes the tree's stage.
 - **What is shown.** `shift_quest_island_roots()` (bot and website, no
   caller) returns `[{slot, roots}]` for drawn plots with roots above 0: level
   1 (1 to 4 counted), 2 (5 to 14) or 3 (15 or more). Never a count, a name,
@@ -687,7 +691,7 @@ exactly an allowlist. Up to schema 11 that was the student board:
 (schema 9), `_island_roots` (schema 10) and `_island_my_roots` (schema 11).
 Later files added the tree style, the admin's own reset and island overview,
 photos and the web review page, the peer check and project invitations. From
-schema 16 (`20261116090000_shift_quest_web_everything.sql`, below) it also
+schema 17 (`20261118100000_shift_quest_web_everything.sql`, below) it also
 runs the inbox, settings, sharing, data rights, review, help, fulfillment and
 admin functions: the website does every flow but Discord's. Never: a helper
 (`shift_quest__*`), a raw function that takes someone else's Discord id, the
@@ -819,13 +823,33 @@ submission may see its photos. `shift_quest_review_view` and
 member's checks, erasure deletes them. Tested in
 `supabase/tests/shift_quests/peer.ts`.
 
-### The website does everything but Discord (schema 16)
+### Tree grew post (schema 16)
+
+`20261118090000_shift_quest_tree_grew_post.sql` replaces the hook
+`shift_quest__after_approval` (same body, plus one call) so that an approval
+of a main quest that grows the project's tree queues one `tree_grew` post to
+the celebrate channel: params `{project_id, instance_id, milestone, stage}`,
+dedupe key `tree:<project>:<milestone>`. "Needs more", "not passed", side
+quests, retries and repeats of a counted milestone queue nothing, and no
+mentor's words are ever in it. At send time the bot calls the bot-only
+`shift_quest_tree_post(project, instance)`, `{slot, title, name,
+team_user_ids}`, where the name and the members' Discord ids are there only
+while `shift_quest__name_visible` holds; otherwise the post says
+"ทีมปริศนา" with the plot number. A named team's members are pinged unless
+`PING_NAMED_TEAMS` (`bot/src/quests/outbox.ts`) is false. The bot adds 🎉 and
+🌱 under the post (it needs Add Reactions there). Held while sharing is off,
+like every celebrate post. **Deploy the bot before applying the migration.**
+Design and decisions:
+[`docs/designs/shift-island-tree-grew-post.md`](../designs/shift-island-tree-grew-post.md).
+Tested in `supabase/tests/shift_quests/tree_post.ts`.
+
+### The website does everything but Discord (schema 17)
 
 The founder decided (2026-11-16) that the SHIFT Island bot becomes
 notify-only and every student and staff flow moves to the website.
-`20261116090000_shift_quest_web_everything.sql` gives the website the database
+`20261118100000_shift_quest_web_everything.sql` gives the website the database
 side of that; nothing changes for users until the pages ship. The website
-gates every new surface on `WEB_EVERYTHING_SCHEMA = 16`
+gates every new surface on `WEB_EVERYTHING_SCHEMA = 17`
 (`lib/shift-island/web-everything.ts`, `webEverythingAvailable(api)`);
 `REQUIRED_SCHEMA` in `lib/supabase/shift-quests/db.ts` stays the island's
 floor, so a missing migration hides the new pages instead of closing the

@@ -2,12 +2,21 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
+import { ShiftAttributedLink } from "@/components/shift/ShiftAttributedLink";
+
 /**
  * Floating top bar for the /shift pages: the logo goes home, the back pill
  * goes one level up (round page to gallery, apply form to round page).
  * Both sit on dark glass so they stay legible over every round's hero, from
  * the pale pixel sky to the riso night.
+ *
+ * A back pill that stays inside /shift carries the visitor's channel
+ * (utm_source) in its URL once the page has hydrated, so going back and
+ * applying again keeps the channel even in a new tab or a browser that blocks
+ * storage, where the tab's remembered channel isn't available.
  */
+
+const staysInShift = (href: string) => /^\/shift(?:[/?#]|$)/.test(href);
 
 const PILL =
   "inline-flex items-center gap-2 rounded-full border border-white/15 bg-[rgba(12,8,24,0.55)] px-3 py-1.5 text-sm font-semibold text-[#f8f5ec] backdrop-blur-md transition-colors hover:bg-[rgba(12,8,24,0.75)]";
@@ -22,6 +31,7 @@ export function ShiftTopBar({
    *  ink for pages where going back is the point (apply form to details). */
   back?: { href: string; label: string; solid?: boolean };
 }) {
+  const BackLink = back && staysInShift(back.href) ? ShiftAttributedLink : Link;
   return (
     <div className="absolute inset-x-0 top-0 z-30 flex items-center justify-between gap-3 px-4 pt-4 sm:px-8 sm:pt-6">
       <Link
@@ -40,10 +50,10 @@ export function ShiftTopBar({
         <span className="font-kodchasan">PassionSeed</span>
       </Link>
       {back && (
-        <Link href={back.href} className={back.solid ? PILL_SOLID : PILL}>
+        <BackLink href={back.href} className={back.solid ? PILL_SOLID : PILL}>
           <ArrowLeft className="h-4 w-4" />
           {back.label}
-        </Link>
+        </BackLink>
       )}
     </div>
   );

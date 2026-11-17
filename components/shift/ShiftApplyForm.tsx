@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { ArrowRight, ChevronDown } from "lucide-react";
 
-import { getShiftSource, normalizeShiftSource } from "@/lib/shift/attribution";
+import { getShiftSource, normalizeShiftSource, withShiftSource } from "@/lib/shift/attribution";
 import { trackMetaEvent } from "@/components/shift/MetaPixel";
 import { INK } from "@/components/shift/poster/riso";
 import {
@@ -103,7 +103,7 @@ function CharCount({ length }: { length: number }) {
 }
 
 /** "Some days" is fine, but a whole other week may fit better. */
-function SomeDaysNote({ otherRounds }: { otherRounds: ShiftCohort[] }) {
+function SomeDaysNote({ otherRounds, source }: { otherRounds: ShiftCohort[]; source: string | null }) {
   if (otherRounds.length === 0) return null;
   return (
     <p className="mt-3 text-sm leading-relaxed" style={{ color: paper("b3") }}>
@@ -112,7 +112,7 @@ function SomeDaysNote({ otherRounds }: { otherRounds: ShiftCohort[] }) {
         <span key={other.round}>
           {i > 0 && " / "}
           <a
-            href={other.applyUrl}
+            href={withShiftSource(other.applyUrl, source)}
             className="font-semibold underline underline-offset-4"
             style={{ color: INK.yellow }}
           >
@@ -151,6 +151,13 @@ export function ShiftApplyForm({
   const needsParent = applicantNeedsParent(values.birthDate);
 
   useApplyDraft(values, (draft) => setValues((prev) => ({ ...prev, ...draft })));
+
+  // The channel that links to another round carry: from the request, else the
+  // one remembered in this tab. Without it a switch would be filed "direct".
+  const [linkSource, setLinkSource] = useState(() => normalizeShiftSource(source));
+  useEffect(() => {
+    setLinkSource(normalizeShiftSource(source) ?? getShiftSource());
+  }, [source]);
 
   // Back from an abandoned Discord sign-in reloads this page: show the done
   // screen again instead of a blank form. After mount, like the draft.
@@ -331,7 +338,7 @@ export function ShiftApplyForm({
           onChange={(v) => set("availability", v)}
         />
         {values.availability === "some_days" && (
-          <SomeDaysNote otherRounds={otherRounds} />
+          <SomeDaysNote otherRounds={otherRounds} source={linkSource} />
         )}
       </Question>
 

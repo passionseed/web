@@ -74,7 +74,7 @@ const SHARED = [
   "shift_quest_digest_hide(text,integer,boolean,text)",
   "shift_quest_redeem(text,uuid,text,integer)",
   "shift_quest_redeem_cancel(text,uuid)",
-  // 20261116090000_shift_quest_web_everything: the admin pages move to the website; the bot keeps them for now.
+  // 20261118100000_shift_quest_web_everything: the admin pages move to the website; the bot keeps them for now.
   "shift_quest_admin_island_status(text)",
   "shift_quest_admin_island_set(text,text,text)",
   "shift_quest_admin_catalog_gate(text,uuid,smallint,boolean)",

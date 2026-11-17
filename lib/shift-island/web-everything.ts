@@ -1,6 +1,6 @@
 /**
- * The website does everything but Discord (schema 16,
- * 20261116090000_shift_quest_web_everything): the inbox, settings, teammates
+ * The website does everything but Discord (schema 17,
+ * 20261118100000_shift_quest_web_everything): the inbox, settings, teammates
  * on a submit, celebrating and thanking a peer, data rights, and the mentor,
  * fulfillment and admin pages, all through shift_quest_web. One gate for every
  * one of those surfaces: they show only once the database is at 16, so a
@@ -11,7 +11,7 @@ import type { QuestApi } from "@/bot/src/quests/api";
 import { schemaOf } from "@/bot/src/quests/schema";
 
 /** The quest schema where the website reaches every flow but Discord's. */
-export const WEB_EVERYTHING_SCHEMA = 16;
+export const WEB_EVERYTHING_SCHEMA = 17;
 /** Teammates a student may name on one submit, not counting themselves (shift_quest__contributors_of). */
 export const MAX_CONTRIBUTORS = 8;
 /**

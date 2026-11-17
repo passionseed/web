@@ -1,4 +1,4 @@
--- SHIFT High Island: the website does everything but Discord (schema 16).
+-- SHIFT High Island: the website does everything but Discord (schema 17).
 --
 -- The founder decided (2026-11-16): the SHIFT Island Discord bot becomes
 -- notify-only, and every student and staff flow moves to the website, which
@@ -48,7 +48,7 @@
 --     admin_status (it carries Discord channel and role ids), the
 --     outbox, live, digest, voice and campfire-round functions, the dropped
 --     student flows (ownership_set, project_select, appeals, squads).
---   * shift_quest_schema_version() = 16.
+--   * shift_quest_schema_version() = 17.
 --
 -- Prod-first apply: additive and idempotent (CREATE OR REPLACE, REVOKE and
 -- GRANT only). The grant block grants by full signature and stops if one is
@@ -378,7 +378,7 @@ BEGIN
     PERFORM public.shift_quest__fail('bad_input');
   END IF;
   v_note := public.shift_quest__check_len(p_note, 1000, p_kind = 'correction');
-  -- 20261116090000: an open request of this kind already reached staff.
+  -- 20261118100000: an open request of this kind already reached staff.
   PERFORM pg_advisory_xact_lock(hashtext('shift_quest_data_request:' || v_member.id || ':' || p_kind));
   SELECT id, note INTO v_id, v_open_note FROM public.shift_quest_data_requests
   WHERE member_id = v_member.id AND kind = p_kind AND status = 'open'
@@ -452,7 +452,7 @@ BEGIN
   PERFORM public.shift_quest__audit(v_member.id, 'contribution_' || CASE WHEN p_accept THEN 'confirm' ELSE 'decline' END,
                                     'submission', p_submission);
 
-  -- 20261116090000: the last answer issues the award that waited for it.
+  -- 20261118100000: the last answer issues the award that waited for it.
   IF v_status = 'approved' THEN
     SELECT i.* INTO v_instance FROM public.shift_quest_instances i
     JOIN public.shift_quest_submissions s ON s.instance_id = i.id
@@ -503,7 +503,7 @@ BEGIN
     LEFT JOIN public.shift_quest_members c ON c.id = h.claimed_by
     LEFT JOIN public.shift_quest_projects p ON p.id = h.project_id
     WHERE h.status IN ('open', 'claimed')
-      -- 20261116090000: the review rule, for help too.
+      -- 20261118100000: the review rule, for help too.
       AND NOT public.shift_quest__help_conflicted(v_me.id, h)
   ), '[]'::jsonb);
 END;
@@ -530,7 +530,7 @@ BEGIN
   IF p_action NOT IN ('claim', 'resolve', 'release') THEN
     PERFORM public.shift_quest__fail('bad_input');
   END IF;
-  -- 20261116090000: the review rule, for help too.
+  -- 20261118100000: the review rule, for help too.
   IF p_action <> 'release' AND public.shift_quest__help_conflicted(v_me.id, v_help) THEN
     PERFORM public.shift_quest__fail('help_conflict');
   END IF;
@@ -784,12 +784,12 @@ BEGIN
 END;
 $$;
 
-/** Island schema 16: the website does everything but Discord. */
+/** Island schema 17: the website does everything but Discord. */
 CREATE OR REPLACE FUNCTION public.shift_quest_schema_version()
 RETURNS integer
 LANGUAGE sql
 IMMUTABLE
-AS $$ SELECT 16; $$;
+AS $$ SELECT 17; $$;
 
 -- ---------------------------------------------------------------------------
 -- Privileges
