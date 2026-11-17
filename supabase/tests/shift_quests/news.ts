@@ -165,8 +165,8 @@ async function main(): Promise<void> {
   }
   for (const sig of HELPERS) {
     const g = await fnInfo(sig);
-    check(g.bot === false && g.web === false && !g.anon && !g.authenticated && !g.public && g.definer && g.pinned,
-      `${sig}: a helper no login can run`, g);
+    check(g.bot === false && g.web === false && !g.anon && !g.authenticated && !g.public && !g.service_role && g.definer && g.pinned,
+      `${sig}: a helper no login can run, service_role included`, g);
   }
   for (const [label, sql, args] of [
     ["the card's reader", "select public.shift_quest_news_post_next()", []],
@@ -306,23 +306,25 @@ async function main(): Promise<void> {
 
   // --- The totals ----------------------------------------------------------------------------------------------
   let t = await totalsOf(T);
-  check(keys(t) === "approved,checked_in,demo,grew,rounds", "the totals' keys are exactly checked_in, approved, grew, rounds and demo", t);
+  check(keys(t) === "approved,checked_in,demo,grew,rounders,rounds",
+    "the totals' keys are exactly checked_in, approved, grew, rounds, rounders and demo", t);
   check(t.checked_in === 3, "checked_in: A once (two taps), B at 20:00 sharp, F; not C before the window, not D at 20:00 after it, not a note", t);
   check(t.approved === 3, "approved (sharing off): project one's milestone 1, its repeat and its side quest; not the quiet team, not the archived one, not 20:00 sharp", t);
   check(t.grew === 1, "grew: one stage (milestone 1); its repeat, the side quest and milestone 2 decided before the window add nothing", t);
   check(t.rounds === 4, "rounds: the four started in the window, the one at 20:00 sharp is the next window's", t);
+  check(t.rounders === 3, "rounders: the people behind those rounds (A's two count once), so the card floors by people", t);
   check(t.demo === null, "no active season: no Demo Day");
   const erase = (id: string) => db.query(
     "update public.shift_quest_members set erased_at = now(), discord_user_id = null, display_name = null where id = $1", [id]);
   await erase(await memberId(F));
   t = await totalsOf(T);
-  check(t.checked_in === 2 && t.rounds === 3, "an erased member is never counted, in check-ins or rounds", t);
+  check(t.checked_in === 2 && t.rounds === 3 && t.rounders === 2, "an erased member is never counted, in check-ins, rounds or rounders", t);
   await db.query("update public.shift_quest_settings set sharing_enabled = true where id");
   t = await totalsOf(T);
   check(t.approved === 4 && t.grew === 2, "sharing on: the quiet team counts too (as its tree_grew post already shows); the archived one never", t);
   await db.query("update public.shift_quest_settings set sharing_enabled = false where id");
   const next = await totalsOf("2026-03-11");
-  check(next.checked_in === 1 && next.approved === 1 && next.grew === 1 && next.rounds === 1,
+  check(next.checked_in === 1 && next.approved === 1 && next.grew === 1 && next.rounds === 1 && next.rounders === 1,
     "20:00 sharp belongs to the next day's window: D's tap, milestone 3 and C's round", next);
   const text = JSON.stringify(await totalsOf(T));
   check(!/[0-9a-f]{8}-[0-9a-f]{4}-/.test(text) && ![...Object.values(NAMES), A, B, C, "News One", "News Two", NEWS_CH].some((s) => text.includes(s)) &&
@@ -416,7 +418,7 @@ async function main(): Promise<void> {
   const row = async () => (await db.query("select * from public.shift_quest_news_posts where day = $1::date", [today])).rows[0];
   let r = await row();
   check(r?.channel_id === NEWS_CH && r.message_id === null && r.claimed_at instanceof Date &&
-      keys(r.totals) === "approved,checked_in,demo,grew,rounds" && canon(r.totals) === canon(await totalsOf(today)),
+      keys(r.totals) === "approved,checked_in,demo,grew,rounders,rounds" && canon(r.totals) === canon(await totalsOf(today)),
     "the claim freezes tonight's totals", r);
   check(await claim() === null, "a fresh claim: nobody else sends");
   await db.query("update public.shift_quest_news_posts set claimed_at = now() - interval '20 minutes', totals = null where day = $1::date", [today]);

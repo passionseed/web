@@ -486,8 +486,11 @@ export const admin: HandlerSet = {
         // The nightly island news card: a text or announcement channel every student can read, where the bot can
         // post the card with its picture and find it again. The bot never publishes it to other servers.
         if (chosen.type !== ChannelType.GuildText && chosen.type !== ChannelType.GuildAnnouncement) throw new GateError(T.adminNewsType);
+        // Read Message History too: without it a student sees only what is posted while they have the channel
+        // open, so a card posted at 20:00 is gone for anyone who opens the channel later.
         const full = i.guild?.channels.cache.get(chosen.id) ?? chosen;
-        if (!openToStudents(full as never, ctx.session.settings.student_role_ids, i.guildId ?? "", [PermissionFlagsBits.ViewChannel])) {
+        const seeAndRead = [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory];
+        if (!openToStudents(full as never, ctx.session.settings.student_role_ids, i.guildId ?? "", seeAndRead)) {
           throw new GateError(T.adminNewsPrivate);
         }
         if (!botCanKeepLivePost(i, chosen.id)) throw new GateError(T.adminNewsBotPerms);

@@ -44,7 +44,7 @@ const WEB = "https://www.passionseed.org/shift/island";
 const V2 = MessageFlags.IsComponentsV2;
 
 function totals(over: Partial<NewsTotals> = {}): NewsTotals {
-  return { checked_in: 12, approved: 5, grew: 3, rounds: 8, demo: { day: "2026-11-28", days: 10 }, ...over };
+  return { checked_in: 12, approved: 5, grew: 3, rounds: 8, rounders: 5, demo: { day: "2026-11-28", days: 10 }, ...over };
 }
 
 const NO_AI: NewsAi = { kind: "day", entries: [] };
@@ -97,7 +97,7 @@ describe("normalizeNews", () => {
       day: DAY,
       channel_id: NEWS_CH,
       coworking_channel_id: "not-a-snowflake",
-      totals: { checked_in: "7", approved: -2, grew: 2.7, rounds: null, demo: { day: "2026-11-28", days: 10 } },
+      totals: { checked_in: "7", approved: -2, grew: 2.7, rounds: null, rounders: "4", demo: { day: "2026-11-28", days: 10 } },
       ai: {
         kind: "week",
         entries: [
@@ -112,7 +112,7 @@ describe("normalizeNews", () => {
       day: DAY,
       channel_id: NEWS_CH,
       coworking_channel_id: null,
-      totals: { checked_in: 7, approved: 0, grew: 2, rounds: 0, demo: { day: "2026-11-28", days: 10 } },
+      totals: { checked_in: 7, approved: 0, grew: 2, rounds: 0, rounders: 4, demo: { day: "2026-11-28", days: 10 } },
       ai: {
         kind: "week",
         entries: [
@@ -126,7 +126,7 @@ describe("normalizeNews", () => {
   it("takes an answer with no AI lines and no Demo Day (most nights)", () => {
     const d = normalizeNews({ day: DAY, channel_id: NEWS_CH, totals: { checked_in: 0 }, ai: { kind: "day", entries: [] } });
     expect(d?.ai).toEqual(NO_AI);
-    expect(d?.totals).toEqual({ checked_in: 0, approved: 0, grew: 0, rounds: 0, demo: null });
+    expect(d?.totals).toEqual({ checked_in: 0, approved: 0, grew: 0, rounds: 0, rounders: 0, demo: null });
   });
 
   it.each([
@@ -169,7 +169,7 @@ describe("newsView: the totals and the small-number floor", () => {
   });
 
   it("leaves 0 lines out, and shows the quiet line when nothing happened", () => {
-    expect(totalsLines(totals({ approved: 0, grew: 0 }))).toEqual([NEWS.checkedIn(12), NEWS.rounds(8)]);
+    expect(totalsLines(totals({ approved: 0, grew: 0 }))).toEqual([NEWS.checkedIn(12), NEWS.rounds(8, 5)]);
     expect(totalsLines(totals({ checked_in: 0, approved: 0, grew: 0, rounds: 0 }))).toEqual([NEWS.quiet]);
     const body = bodyText(card(news({ totals: totals({ checked_in: 0, approved: 0, grew: 0, rounds: 0, demo: null }) })));
     expect(body).toContain(NEWS.quiet);
@@ -179,14 +179,30 @@ describe("newsView: the totals and the small-number floor", () => {
   it("shows people counts of 1 or 2 without a number, and 3 with it", () => {
     expect(PEOPLE_FLOOR).toBe(3);
     for (const n of [1, 2]) {
-      const lines = totalsLines(totals({ checked_in: n, rounds: n, approved: 0, grew: 0 }));
+      const lines = totalsLines(totals({ checked_in: n, rounds: n, rounders: n, approved: 0, grew: 0 }));
       expect(lines).toEqual(["👣 มีเพื่อนแวะมาเช็กอินแล้ว", "🔥 มีคนมาตั้งเป้าทำงานที่กองไฟ"]);
       expect(lines.join("\n")).not.toMatch(/\d/);
     }
-    expect(totalsLines(totals({ checked_in: 3, rounds: 3, approved: 0, grew: 0 }))).toEqual([
+    expect(totalsLines(totals({ checked_in: 3, rounds: 3, rounders: 3, approved: 0, grew: 0 }))).toEqual([
       "👣 แวะมาเช็กอิน **3** คน",
       "🔥 ตั้งเป้าทำงานรอบกองไฟ **3** รอบ",
     ]);
+  });
+
+  it("floors the campfire line by people, not rounds: one or two people's rounds never show as a number", () => {
+    // One student who aimed four rounds (four 25-minute focus rounds): a number would show their focus time.
+    for (const [rounds, rounders] of [
+      [4, 1],
+      [9, 2],
+    ]) {
+      const lines = totalsLines(totals({ checked_in: 0, approved: 0, grew: 0, rounds, rounders }));
+      expect(lines).toEqual(["🔥 มีคนมาตั้งเป้าทำงานที่กองไฟ"]);
+      expect(lines.join("\n")).not.toMatch(/\d/);
+    }
+    expect(totalsLines(totals({ checked_in: 0, approved: 0, grew: 0, rounds: 7, rounders: 3 }))).toEqual(["🔥 ตั้งเป้าทำงานรอบกองไฟ **7** รอบ"]);
+    // A card frozen without the people count (none in production) floors too.
+    expect(normalizeNews({ ...news(), totals: { rounds: 6 } })?.totals.rounders).toBe(0);
+    expect(totalsLines(normalizeNews({ ...news(), totals: { rounds: 6 } })!.totals)).toEqual(["🔥 มีคนมาตั้งเป้าทำงานที่กองไฟ"]);
   });
 
   it("always shows approvals and stages grown with their exact number", () => {
@@ -197,7 +213,7 @@ describe("newsView: the totals and the small-number floor", () => {
   });
 
   it("never shows minutes or time for the campfire", () => {
-    for (const n of [1, 2, 3, 40]) expect(NEWS.rounds(n)).not.toMatch(/นาที|ชั่วโมง|ชม\.|เวลา|min/);
+    for (const n of [1, 2, 3, 40]) expect(NEWS.rounds(n, n)).not.toMatch(/นาที|ชั่วโมง|ชม\.|เวลา|min/);
     expect(bodyText(card(news()))).not.toMatch(/นาที|ชั่วโมง|ชม\./);
   });
 });
@@ -298,8 +314,8 @@ describe("the card's Thai copy (DRAFT)", () => {
     NEWS.checkedIn(12),
     NEWS.approved(1),
     NEWS.grew(1),
-    NEWS.rounds(2),
-    NEWS.rounds(9),
+    NEWS.rounds(2, 2),
+    NEWS.rounds(9, 4),
     NEWS.quiet,
     ...NEWS.moments,
     NEWS.aiHeading,
@@ -503,37 +519,75 @@ interface FakeMessage {
   crosspost: jest.Mock;
 }
 
-/** The attachments a send or an edit leaves on a message, as Discord would: the new files, else nothing when attachments: []. */
-function attachmentsOf(payload: Record<string, unknown>, before: Map<string, FakeAttachment>, msgId: string) {
-  const files = (payload.files as AttachmentBuilder[] | undefined) ?? undefined;
-  if (files === undefined && payload.attachments === undefined) return before;
-  const out = new Map<string, FakeAttachment>();
-  for (const [k, f] of (files ?? []).entries()) {
-    const id = `${msgId}${k}`;
-    out.set(id, { id, name: f.name!, url: `https://cdn.discordapp.com/attachments/${NEWS_CH}/${id}/${f.name}`, description: f.description ?? null });
-  }
-  return out;
+/** A file on a message as Discord holds it (its link is signed when handed out). */
+interface LiveFile {
+  id: string;
+  name: string;
+  description: string | null;
 }
 
+/** A message as Discord shows it now: what an edit changes and a forced fetch reads. */
+interface LiveCard {
+  components: unknown[];
+  files: LiveFile[];
+}
+
+/** The files a send or an edit leaves on a message, as Discord would: the new files, else nothing when attachments: []. */
+function filesOf(payload: Record<string, unknown>, before: LiveFile[], prefix: string): LiveFile[] {
+  const files = (payload.files as AttachmentBuilder[] | undefined) ?? undefined;
+  if (files === undefined && payload.attachments === undefined) return before;
+  return (files ?? []).map((f, k) => ({ id: `${prefix}${k}`, name: f.name!, description: f.description ?? null }));
+}
+
+const DISCORD_UNKNOWN_MESSAGE = () => new DiscordAPIError({ message: "Unknown Message", code: 10008 }, 10008, 404, "GET", "/x", {});
+
+/**
+ * A channel that behaves as discord.js 14.27 does over Discord:
+ * - send caches the message it gets back (TextBasedChannel.send);
+ * - message.edit changes the message in Discord and returns a patched clone,
+ *   leaving the cached object as it was (MessageManager.edit);
+ * - messages.fetch(id) answers from that cache, so it can be stale; with
+ *   { message, force: true } (or a fetch of many) it reads Discord and patches
+ *   the cache (CachedManager._add);
+ * - attachment links are signed and stop working a day later (expire()), and a
+ *   file an edit replaced is gone from the CDN (serves()).
+ */
 function fakeChannel(id: string, over: Record<string, unknown> = {}) {
+  /** Every message made, for the tests to reach (not what discord.js caches). */
   const sent: FakeMessage[] = [];
+  const live = new Map<string, LiveCard>();
+  const cached = new Set<string>();
   let next = 1;
+  let signedOn = 1;
+  const urlOf = (f: LiveFile) => `https://cdn.discordapp.com/attachments/${id}/${f.id}/${f.name}?ex=${signedOn}`;
+  /** The message's text and files as a fetch from Discord returns them now, with freshly signed links. */
+  const snapshot = (msgId: string) => {
+    const card = live.get(msgId)!;
+    return {
+      components: JSON.parse(JSON.stringify(card.components)),
+      attachments: new Map(card.files.map((f) => [f.id, { id: f.id, name: f.name, url: urlOf(f), description: f.description }])),
+    };
+  };
   const make = (payload: Record<string, unknown>, author = BOT_ID): FakeMessage => {
     const msgId = `90000000000000${String(next++).padStart(4, "0")}`;
+    let edits = 0;
+    live.set(msgId, { components: JSON.parse(JSON.stringify(payload.components ?? [])), files: filesOf(payload, [], msgId) });
     const m: FakeMessage = {
       id: msgId,
       payload,
-      // As discord.js gives them back: the components as JSON.
-      components: JSON.parse(JSON.stringify(payload.components ?? [])),
-      attachments: attachmentsOf(payload, new Map(), msgId),
+      ...snapshot(msgId),
       author: { id: author },
-      delete: jest.fn(async () => undefined),
+      delete: jest.fn(async () => {
+        live.delete(msgId);
+      }),
       crosspost: jest.fn(async () => m),
       edit: jest.fn(async (p: Record<string, unknown>) => {
-        m.payload = p;
-        m.components = JSON.parse(JSON.stringify(p.components ?? []));
-        m.attachments = attachmentsOf(p, m.attachments, `${msgId}e`);
-        return m;
+        const card = live.get(msgId);
+        if (!card) throw DISCORD_UNKNOWN_MESSAGE();
+        card.components = JSON.parse(JSON.stringify(p.components ?? []));
+        card.files = filesOf(p, card.files, `${msgId}e${++edits}`);
+        // discord.js: a patched clone; the cached message keeps what it had.
+        return { ...m, payload: p, ...snapshot(msgId) };
       }),
     };
     return m;
@@ -545,21 +599,52 @@ function fakeChannel(id: string, over: Record<string, unknown> = {}) {
     send: jest.fn(async (payload: Record<string, unknown>) => {
       const m = make(payload);
       sent.push(m);
+      cached.add(m.id);
       return m;
     }),
     messages: {
       fetch: jest.fn(async (arg: unknown) => {
-        if (typeof arg === "string") {
-          const found = sent.find((m) => m.id === arg);
-          if (!found) throw new DiscordAPIError({ message: "Unknown Message", code: 10008 }, 10008, 404, "GET", "/x", {});
-          return found;
+        const one =
+          typeof arg === "string"
+            ? { message: arg, force: false }
+            : arg && typeof arg === "object" && "message" in arg
+              ? (arg as { message: string; force?: boolean })
+              : null;
+        if (one) {
+          const m = sent.find((s) => s.id === one.message);
+          if (m && cached.has(m.id) && !one.force) return m;
+          if (!m || !live.has(m.id)) throw DISCORD_UNKNOWN_MESSAGE();
+          Object.assign(m, snapshot(m.id));
+          cached.add(m.id);
+          return m;
         }
-        return new Map(sent.map((m) => [m.id, m]));
+        const found = sent.filter((m) => live.has(m.id));
+        for (const m of found) {
+          Object.assign(m, snapshot(m.id));
+          cached.add(m.id);
+        }
+        return new Map(found.map((m) => [m.id, m]));
       }),
     },
     ...over,
   };
-  return { channel, sent, make };
+  return {
+    channel,
+    sent,
+    make,
+    /** What Discord shows for the message now (not the cached copy). */
+    liveOf: (msgId: string) => live.get(msgId),
+    /** A day passes: every attachment link handed out so far stops working. */
+    expire: () => {
+      signedOn += 1;
+    },
+    /** Whether Discord's CDN still serves this link: a file still on a message, signed in the current day. */
+    serves: (url: string) => [...live.values()].some((c) => c.files.some((f) => urlOf(f) === url)),
+    /** A restart: discord.js starts with an empty message cache. */
+    coldCache: () => cached.clear(),
+    /** Staff delete a message in Discord. */
+    remove: (msgId: string) => live.delete(msgId),
+  };
 }
 
 /** shift_quest_news_post_next, _claim, _mark and _post_current as the database answers them. */
@@ -574,11 +659,18 @@ function fakeDb(answer: NewsData | null) {
     claim: "new" as string | null,
     /** The AI section the posted card should show now; null: as posted. */
     currentAi: null as NewsAi | null,
+    /** The posted cards to re-check, when a test sets them itself (several days). */
+    current: null as unknown[] | null,
+    /** Thrown by news_post_next (a timeout, a lost connection). */
+    nextError: null as Error | null,
     calls: [] as unknown[][],
   };
   const call = jest.fn(async (fn: string, ...args: unknown[]) => {
     db.calls.push([fn, ...args]);
-    if (fn === "shift_quest_news_post_next") return db.stored ? null : db.answer;
+    if (fn === "shift_quest_news_post_next") {
+      if (db.nextError) throw db.nextError;
+      return db.stored ? null : db.answer;
+    }
     if (fn === "shift_quest_news_claim") {
       const a = db.claim;
       if (a === "new") db.claim = null;
@@ -591,6 +683,7 @@ function fakeDb(answer: NewsData | null) {
       return db.stored;
     }
     if (fn === "shift_quest_news_post_current") {
+      if (db.current) return db.current;
       if (!db.stored || !db.answer) return [];
       return [{ ...db.answer, message_id: db.stored, ai: db.currentAi ?? db.answer.ai }];
     }
@@ -612,17 +705,25 @@ function world(answer: NewsData | null = news(), channels: Record<string, unknow
   };
   const state = { connected: true };
   const draw = jest.fn(async () => [new AttachmentBuilder(GIF_BYTES, { name: NEWS_GIF, description: NEWS.pictureAlt })]);
-  const download = jest.fn(async (_url: string): Promise<Buffer | null> => GIF_BYTES);
+  // Discord's CDN: only a link to a file still on a message, signed today, downloads.
+  const download = jest.fn(async (url: string): Promise<Buffer | null> => (ch.serves(url) ? GIF_BYTES : null));
   const start = () => {
     const p = startNewsPost(client as unknown as Client, api, { guildId: GUILD, connected: () => state.connected, draw, download });
     posters.push(p);
     return p;
   };
-  return { db, api, ch, client, state, draw, download, poster: start(), restart: start };
+  /** A new process: nothing remembered, and discord.js's message cache empty. */
+  const restart = () => {
+    ch.coldCache();
+    return start();
+  };
+  return { db, api, ch, client, state, draw, download, poster: start(), restart };
 }
 
 const fnCalls = (w: ReturnType<typeof world>, fn: string) => w.db.calls.filter((c) => c[0] === fn);
-const idFetches = (w: ReturnType<typeof world>) => w.ch.channel.messages.fetch.mock.calls.filter((c) => typeof c[0] === "string").length;
+/** Fetches of one message (by id, or { message } with or without force), not the stale claim's fetch of many. */
+const idFetches = (w: ReturnType<typeof world>) =>
+  w.ch.channel.messages.fetch.mock.calls.filter((c) => typeof c[0] === "string" || (c[0] && typeof c[0] === "object" && "message" in c[0])).length;
 
 function missingPermissions(): DiscordAPIError {
   return new DiscordAPIError({ message: "Missing Permissions", code: 50013 }, 50013, 403, "POST", "/channels/x/messages", {});
@@ -815,8 +916,8 @@ describe("startNewsPost: keeping the last 7 days' cards true", () => {
     expect(bodyText(edit)).toContain("แปลง 2 เกมฝึกภาษา");
     expect(bodyText(edit)).not.toContain(NEWS.pictureFailed);
     expect(edit.allowedMentions).toEqual({ parse: [] });
-    // The card still has its picture, and nothing changes on the next check.
-    expect([...m.attachments.values()].map((a) => a.name)).toEqual([NEWS_GIF]);
+    // The card in Discord still has its picture, and nothing changes on the next check.
+    expect(w.ch.liveOf(m.id)!.files.map((f) => f.name)).toEqual([NEWS_GIF]);
     await w.poster.poll();
     expect(m.edit).toHaveBeenCalledTimes(1);
     expect(m.crosspost).not.toHaveBeenCalled();
@@ -842,6 +943,84 @@ describe("startNewsPost: keeping the last 7 days' cards true", () => {
     expect(bodyText(off)).not.toContain(NEWS.aiHeading);
     expect(bodyText(off)).toContain(NEWS.dayLine(DAY));
     expect(bodyText(off)).not.toContain(DIGEST.removed);
+    // The second edit downloads the picture the first one attached, so the card keeps it.
+    expect((off.files as AttachmentBuilder[]).map((f) => f.name)).toEqual([NEWS_GIF]);
+    expect(bodyText(off)).not.toContain(NEWS.pictureFailed);
+    expect(w.ch.liveOf(m.id)!.files.map((f) => f.name)).toEqual([NEWS_GIF]);
+  });
+
+  it("takes out a line an earlier edit put in, keeping the picture (discord.js caches the card as it was sent)", async () => {
+    const w = world();
+    const m = await posted(w);
+    // A late summary: edited in.
+    w.db.currentAi = AI;
+    await w.poster.poll();
+    expect(m.edit).toHaveBeenCalledTimes(1);
+    expect(bodyText({ components: w.ch.liveOf(m.id)!.components })).toContain("เกมฝึกภาษา");
+    // Then the team's AI consent is withdrawn (or the AI switched off): the card must go back to no AI lines.
+    w.db.currentAi = NO_AI;
+    await w.poster.poll();
+    expect(m.edit).toHaveBeenCalledTimes(2);
+    const back = m.edit.mock.calls[1][0] as Record<string, unknown>;
+    expect(bodyText(back)).not.toContain(NEWS.aiHeading);
+    expect((back.files as AttachmentBuilder[]).map((f) => f.name)).toEqual([NEWS_GIF]);
+    const shown = bodyText({ components: w.ch.liveOf(m.id)!.components });
+    expect(shown).not.toContain("เกมฝึกภาษา");
+    expect(shown).not.toContain(NEWS.aiHeading);
+    expect(w.ch.liveOf(m.id)!.files.map((f) => f.name)).toEqual([NEWS_GIF]);
+  });
+
+  it("a take-down a day after posting downloads the picture from the card as Discord gives it now, not the link it was sent with", async () => {
+    const w = world(news({ ai: AI }));
+    const m = await posted(w);
+    const sentUrl = [...m.attachments.values()][0].url;
+    w.ch.expire();
+    w.db.currentAi = { kind: "day", entries: [AI.entries[1]] };
+    await w.poster.poll();
+    expect(m.edit).toHaveBeenCalledTimes(1);
+    expect(w.download).not.toHaveBeenCalledWith(sentUrl);
+    const edit = m.edit.mock.calls[0][0] as Record<string, unknown>;
+    expect(bodyText(edit)).not.toContain("เกมฝึกภาษา");
+    expect((edit.files as AttachmentBuilder[]).map((f) => f.name)).toEqual([NEWS_GIF]);
+    expect(bodyText(edit)).not.toContain(NEWS.pictureFailed);
+    expect(console.warn).not.toHaveBeenCalledWith(expect.stringContaining("lost its picture"));
+  });
+
+  it("one card Discord keeps refusing never holds back a take-down on another day's card", async () => {
+    const w = world(null);
+    const day = (d: string, ai: NewsAi) => news({ day: d, ai });
+    const newer = w.ch.make(card(day("2026-11-17", NO_AI)) as never);
+    const older = w.ch.make(card(day("2026-11-16", AI)) as never);
+    w.ch.sent.push(newer, older);
+    // Yesterday's card gets a late summary (an edit that only adds), which Discord keeps refusing (lost Attach Files).
+    newer.edit.mockRejectedValue(missingPermissions());
+    // The day before's card must lose a team whose consent was withdrawn.
+    w.db.current = [
+      { ...day("2026-11-17", AI), message_id: newer.id },
+      { ...day("2026-11-16", { kind: "day", entries: [AI.entries[1]] }), message_id: older.id },
+    ];
+    await w.poster.poll();
+    expect(newer.edit).toHaveBeenCalledTimes(1);
+    expect(older.edit).toHaveBeenCalledTimes(1);
+    expect(bodyText({ components: w.ch.liveOf(older.id)!.components })).not.toContain("เกมฝึกภาษา");
+    await w.poster.poll();
+    await w.poster.poll();
+    // The refused card is tried again each check, logged once, by code only.
+    expect(newer.edit).toHaveBeenCalledTimes(3);
+    const refusals = (console.warn as jest.Mock).mock.calls.filter((c) => String(c[0]).includes("discord 50013"));
+    expect(refusals).toHaveLength(1);
+    expect(String(refusals[0][0])).not.toContain("เกมฝึกภาษา");
+  });
+
+  it("a failure before tonight's claim never holds back a take-down in the same check", async () => {
+    const w = world(news({ ai: AI }));
+    const m = await posted(w);
+    w.db.nextError = new QuestDbError("shift_quest_news_post_next", "57014");
+    w.db.currentAi = { kind: "day", entries: [AI.entries[1]] };
+    await w.poster.poll();
+    expect(m.edit).toHaveBeenCalledTimes(1);
+    expect(bodyText(m.edit.mock.calls[0][0])).not.toContain("เกมฝึกภาษา");
+    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining("SQLSTATE 57014"));
   });
 
   it("drops the picture only for a take-down whose picture cannot be kept", async () => {
@@ -893,7 +1072,7 @@ describe("startNewsPost: keeping the last 7 days' cards true", () => {
     await w.poster.poll();
     expect(m.edit).toHaveBeenCalledTimes(1);
     expect(console.warn).toHaveBeenCalledWith(expect.stringContaining("discord 50013"));
-    expect([...m.attachments.values()].map((a) => a.name)).toEqual([NEWS_GIF]);
+    expect(w.ch.liveOf(m.id)!.files.map((f) => f.name)).toEqual([NEWS_GIF]);
   });
 
   it("edits a card that went without a picture with no file at all", async () => {
@@ -934,8 +1113,8 @@ describe("startNewsPost: keeping the last 7 days' cards true", () => {
 
   it("remembers a card staff deleted (10008) and stops fetching it", async () => {
     const w = world();
-    await posted(w);
-    w.ch.sent.length = 0;
+    const m = await posted(w);
+    w.ch.remove(m.id);
     w.db.currentAi = AI;
     await w.poster.poll();
     await w.poster.poll();

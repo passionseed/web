@@ -977,8 +977,9 @@ text or announcement channel; `settings.news_channel_id`). One card a night:
 the night island picture (the live post's outsider view), island-wide totals
 over 20:00 the day before to 20:00 (`shift_quest__news_totals`: members who
 checked in, quests approved, tree stages grown, campfire rounds started with
-an intention; people counts of 1 or 2 show without a number; **round counts
-only, never minutes**), the Demo Day countdown, a lore line and link
+an intention; people counts of 1 or 2 show without a number, and the round
+count shows only once 3 or more people made the rounds (`rounders`); **round
+counts only, never minutes**), the Demo Day countdown, a lore line and link
 buttons. When a team passes `shift_quest__digest_eligible`, the same card
 carries its AI line (`shift_quest__news_ai`). Approvals and growth count
 every team while sharing is on and name-visible teams only while it is off.
@@ -990,7 +991,9 @@ edit. The totals freeze at claim time. While a news channel is set,
 `shift_quest_digest_post_next` answers null, so the AI news appears only in
 the card. `/admin island` gains `today_summaries` (teams with an AI summary
 stored today). Never crossposted, never a DM, never a ping. The bot needs
-View Channel, Send Messages, Attach Files and Read Message History there.
+View Channel, Send Messages, Attach Files and Read Message History there;
+students need View Channel and Read Message History (without it they see only
+what is posted while they have the channel open).
 Decisions and copy:
 [`docs/designs/shift-island-daily-news.md`](../designs/shift-island-daily-news.md).
 Tested in `supabase/tests/shift_quests/news.ts` and

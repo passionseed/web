@@ -389,18 +389,23 @@ describe("admin status card", () => {
       PermissionFlagsBits.AttachFiles,
       PermissionFlagsBits.ReadMessageHistory,
     ];
+    /** What students need there: see the channel and read the cards posted before they open it. */
+    const STUDENT_PERMS = [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory];
     /**
-     * A channel students (role 555) can read, and a guild whose cache holds it with the bot (a member object)
-     * allowed `bot` there. permissionsFor takes a role id (students) or the bot member.
+     * A channel students (role 555) can read (`students`, by default seeing it and its history), and a guild whose
+     * cache holds it with the bot (a member object) allowed `bot` there. permissionsFor takes a role id (students)
+     * or the bot member.
      */
-    const setup = (o: { type?: ChannelType; studentsSee?: boolean; bot?: bigint[] } = {}) => {
+    const setup = (o: { type?: ChannelType; studentsSee?: boolean; students?: bigint[]; bot?: bigint[] } = {}) => {
       const me = { id: "bot" };
       const channel = {
         id: NEWS_CH,
         type: o.type ?? ChannelType.GuildAnnouncement,
         permissionsFor: (who: string | { id: string }) => ({
           has: (wanted: bigint[]) =>
-            who === me ? wanted.every((p) => (o.bot ?? BOT_PERMS).includes(p)) : who === "555" && (o.studentsSee ?? true) && wanted.every((p) => p === PermissionFlagsBits.ViewChannel),
+            who === me
+              ? wanted.every((p) => (o.bot ?? BOT_PERMS).includes(p))
+              : who === "555" && (o.studentsSee ?? true) && wanted.every((p) => (o.students ?? STUDENT_PERMS).includes(p)),
         }),
       };
       const guild = { members: { me }, channels: { cache: new Map([[NEWS_CH, channel]]) } };
@@ -438,6 +443,10 @@ describe("admin status card", () => {
       await expect(run("news", { id: NEWS_CH, type: ChannelType.GuildStageVoice })).rejects.toThrow(T.adminNewsType);
       const hidden = setup({ studentsSee: false });
       await expect(run("news", hidden.channel, hidden.guild)).rejects.toThrow(T.adminNewsPrivate);
+      // Seeing the channel without Read Message History shows only what is posted while a student has it open:
+      // a card posted at 20:00 would be gone for anyone who opens the channel later.
+      const noHistory = setup({ students: [PermissionFlagsBits.ViewChannel] });
+      await expect(run("news", noHistory.channel, noHistory.guild)).rejects.toThrow(T.adminNewsPrivate);
       // Nothing to read the permissions from counts as private.
       await expect(run("news", { id: "811", type: ChannelType.GuildAnnouncement })).rejects.toThrow(T.adminNewsPrivate);
       for (const missing of BOT_PERMS) {

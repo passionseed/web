@@ -29,7 +29,7 @@
 --         and mark) offered until midnight. Never a catch-up after midnight.
 --       shift_quest__news_totals(day): over [20:00 the day before, 20:00 the
 --         day), so each event counts once. {checked_in, approved, grew,
---         rounds, demo}: no id, name, slot, minute or time of day.
+--         rounds, rounders, demo}: no id, name, slot, minute or time of day.
 --       shift_quest__news_ai(day): {kind, entries}, the AI lines of teams
 --         eligible now (shift_quest__digest_eligible) while digest_enabled.
 --       shift_quest__news_next(now): what news_post_next answers at that
@@ -62,7 +62,8 @@
 -- is on (as the tree_grew celebrations already show them), name-visible teams
 -- only while it is off (the live post's rule). Campfire rounds are a count of
 -- rounds started with an intention, never minutes: every focus round tells
--- students nobody counts their time.
+-- students nobody counts their time. rounders (how many people) lets the card
+-- hide the round number while fewer than 3 people made the rounds.
 --
 -- Grants are per function, no grant loop. Mirrored in
 -- supabase/tests/shift_quests/run-local.sh (check_privileges), db_rules.ts,
@@ -174,6 +175,9 @@ $$;
  *     projects never.
  *   rounds: campfire rounds started with an intention (work sessions), a
  *     count only. No duration, ever.
+ *   rounders: the people behind those rounds (distinct members). The card
+ *     floors the round line by people: one student's rounds never show as a
+ *     number, so nobody's focus time can be read off the card.
  *   demo: {day, days} to Demo Day of the active season, counted from p_day,
  *     while it is today or ahead; null otherwise.
  * No id, name, slot or time of day.
@@ -194,6 +198,7 @@ DECLARE
   v_approved integer := 0;
   v_grew integer := 0;
   v_rounds integer := 0;
+  v_rounders integer := 0;
 BEGIN
   IF p_day IS NULL THEN
     RETURN NULL;
@@ -225,7 +230,7 @@ BEGIN
      JOIN public.shift_quest_plots pl ON pl.project_id = a.project_id)
   INTO v_approved, v_grew;
 
-  SELECT count(*)::integer INTO v_rounds
+  SELECT count(*)::integer, count(DISTINCT w.member_id)::integer INTO v_rounds, v_rounders
   FROM public.shift_quest_work_sessions w
   JOIN public.shift_quest_members m ON m.id = w.member_id
   WHERE w.started_at >= v_from AND w.started_at < v_to
@@ -236,6 +241,7 @@ BEGIN
     'approved', v_approved,
     'grew', GREATEST(v_grew, 0),
     'rounds', v_rounds,
+    'rounders', v_rounders,
     'demo', CASE WHEN v_season.id IS NOT NULL AND v_season.demo_day >= p_day
                  THEN jsonb_build_object('day', v_season.demo_day::text, 'days', v_season.demo_day - p_day) END
   );
@@ -713,22 +719,16 @@ AS $$ SELECT 19; $$;
 -- Privileges, per function (no grant loop here)
 -- ---------------------------------------------------------------------------
 
--- Helpers: no login runs them. Supabase's default privileges grant every new
--- function to anon and authenticated, and Postgres to PUBLIC: take those back.
+-- Helpers: no login runs them, service_role included (as every helper since
+-- 20261113173515). Supabase's default privileges grant every new function to
+-- anon, authenticated and service_role, and Postgres to PUBLIC: take those back.
 REVOKE ALL ON FUNCTION
   public.shift_quest__news_at(date),
   public.shift_quest__news_due(date, timestamptz),
   public.shift_quest__news_totals(date),
   public.shift_quest__news_ai(date),
   public.shift_quest__news_next(timestamptz)
-FROM PUBLIC, anon, authenticated, shift_quest_bot;
-GRANT EXECUTE ON FUNCTION
-  public.shift_quest__news_at(date),
-  public.shift_quest__news_due(date, timestamptz),
-  public.shift_quest__news_totals(date),
-  public.shift_quest__news_ai(date),
-  public.shift_quest__news_next(timestamptz)
-TO service_role;
+FROM PUBLIC, anon, authenticated, service_role, shift_quest_bot;
 
 -- The bot's only.
 REVOKE ALL ON FUNCTION

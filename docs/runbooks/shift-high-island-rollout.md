@@ -355,8 +355,8 @@ The bot runs on its own host (`bot/deploy.sh`), not on Vercel.
         - **never press Publish** on a card and set up no followers: a
           published copy leaves the SHIFT server, and later edits (a team's
           AI line taken down) may not reach it.
-        `/admin channel` refuses the channel if students cannot see it or the
-        bot cannot post the picture there. `/admin status` then shows
+        `/admin channel` refuses the channel if students cannot see it or
+        read its history, or the bot cannot post the picture there. `/admin status` then shows
         `✅ ห้องข่าวเกาะ`, and `/admin island` shows
         `✅ ข่าวเกาะคืนนี้` and `สรุป AI ที่เก็บไว้วันนี้: N ทีม`. From then
         on the AI news goes only into this card, never the live channel.

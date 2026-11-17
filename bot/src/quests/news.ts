@@ -59,9 +59,12 @@ import { ISLAND_LINK_LABEL, islandWebUrl } from "./weblink";
  * Kept true afterwards: every check reads the cards of the last 7 days as
  * they should read now (shift_quest_news_post_current) and edits one whose AI
  * lines changed (a late summary, a hidden team, a withdrawn consent, the AI
- * switched off). An edit keeps the picture by attaching the same bytes again,
- * downloaded from the message's own attachment: Discord removes an attachment
- * an edit does not carry. When the bytes cannot be had, an edit that only
+ * switched off). A card is always read from Discord, never discord.js's cache
+ * (which keeps it as first sent). Each card is checked on its own, and apart
+ * from tonight's post, so no failure holds back a take-down. An edit keeps
+ * the picture by attaching the same bytes again, downloaded from the
+ * message's own attachment: Discord removes an attachment an edit does not
+ * carry. When the bytes cannot be had, an edit that only
  * adds waits for the next check; one that takes a line out (privacy) goes
  * without the picture, because a take-down always wins. After a restart the
  * bot compares each card's text with what it would render and edits only on
@@ -102,6 +105,8 @@ export interface NewsTotals {
   approved: number;
   grew: number;
   rounds: number;
+  /** The people behind the rounds: the campfire line shows its number only from PEOPLE_FLOOR people. */
+  rounders: number;
   demo: { day: string; days: number } | null;
 }
 
@@ -166,6 +171,7 @@ function totalsOf(raw: unknown): NewsTotals {
     approved: count(r.approved),
     grew: count(r.grew),
     rounds: count(r.rounds),
+    rounders: count(r.rounders),
     demo: typeof demo.day === "string" && DAY.test(demo.day) && Number.isInteger(days) && days >= 0 ? { day: demo.day, days } : null,
   };
 }
@@ -213,15 +219,16 @@ export function normalizePostedNews(raw: unknown): PostedNews[] {
 
 /**
  * The totals block: check-ins, approvals with the stages grown on the same
- * line, campfire rounds. A 0 line is left out; with nothing at all, the quiet
- * line instead. No comparisons, no rankings.
+ * line, campfire rounds (floored by the people who made them). A 0 line is
+ * left out; with nothing at all, the quiet line instead. No comparisons, no
+ * rankings.
  */
 export function totalsLines(t: NewsTotals): string[] {
   const lines: string[] = [];
   if (t.checked_in > 0) lines.push(NEWS.checkedIn(t.checked_in));
   if (t.approved > 0) lines.push(t.grew > 0 ? `${NEWS.approved(t.approved)} · ${NEWS.grew(t.grew)}` : NEWS.approved(t.approved));
   else if (t.grew > 0) lines.push(NEWS.grew(t.grew));
-  if (t.rounds > 0) lines.push(NEWS.rounds(t.rounds));
+  if (t.rounds > 0) lines.push(NEWS.rounds(t.rounds, t.rounders));
   return lines.length > 0 ? lines : [NEWS.quiet];
 }
 
@@ -453,8 +460,12 @@ interface Seen {
 export function startNewsPost(client: Client, api: QuestApi, options: NewsOptions = {}): NewsPost {
   let stopped = false;
   let running: Promise<void> | null = null;
-  /** The last failure, so each cause is logged once until a card goes out. */
-  let problem = "";
+  /**
+   * The last failure of each job, so each cause is logged once until that job
+   * works again: "post" (tonight's card), "sync" (reading the cards to
+   * re-check) and one per posted card ("card <message id>").
+   */
+  const problems = new Map<string, string>();
   let attachWarned = false;
   /** Sent, but the mark failed: the next check retries the mark before anything else. */
   let unmarked: Unmarked | null = null;
@@ -468,21 +479,21 @@ export function startNewsPost(client: Client, api: QuestApi, options: NewsOption
   const sigOf = (d: NewsData, picture: string | false) =>
     cardSignature(renderView(viewOf(d, picture), { ephemeral: false, action: "news_sig" }).components);
 
-  function warnOnce(reason: string): void {
-    if (problem === reason) return;
-    problem = reason;
+  function warnOnce(job: string, reason: string): void {
+    if (problems.get(job) === reason) return;
+    problems.set(job, reason);
     console.warn(`[shift-quests] nightly island news: ${reason}; trying again in 5 minutes`);
   }
 
-  /** A text or announcement channel of the SHIFT server, or null (logged once). Never a DM or a thread. */
-  async function target(channelId: string): Promise<Sendable | null> {
+  /** A text or announcement channel of the SHIFT server, or null (logged once for `job`). Never a DM or a thread. */
+  async function target(channelId: string, job: string): Promise<Sendable | null> {
     const channel = await client.channels.fetch(channelId);
     const ok =
       !!channel &&
       (channel.type === ChannelType.GuildText || channel.type === ChannelType.GuildAnnouncement) &&
       (!options.guildId || channel.guildId === options.guildId);
     if (!ok) {
-      warnOnce(`channel ${channelId} is not a text or announcement channel of the SHIFT server`);
+      warnOnce(job, `channel ${channelId} is not a text or announcement channel of the SHIFT server`);
       return null;
     }
     return channel as unknown as Sendable;
@@ -513,7 +524,7 @@ export function startNewsPost(client: Client, api: QuestApi, options: NewsOption
       await post.message.delete().catch(() => undefined);
       return;
     }
-    problem = "";
+    problems.delete("post");
     console.log(`[shift-quests] nightly island news posted for ${post.day} (${post.teams} AI teams)`);
   }
 
@@ -528,7 +539,7 @@ export function startNewsPost(client: Client, api: QuestApi, options: NewsOption
         if (JSON.stringify(m.components ?? []).includes(marker)) return m;
       }
     } catch (error) {
-      warnOnce(`could not read the channel for a stale claim: ${reasonOf(error)}`);
+      warnOnce("post", `could not read the channel for a stale claim: ${reasonOf(error)}`);
     }
     return null;
   }
@@ -562,10 +573,10 @@ export function startNewsPost(client: Client, api: QuestApi, options: NewsOption
   async function postToday(): Promise<void> {
     const d = normalizeNews(await api.call<unknown>("shift_quest_news_post_next"));
     if (!d) {
-      problem = "";
+      problems.delete("post");
       return;
     }
-    const channel = await target(d.channel_id);
+    const channel = await target(d.channel_id, "post");
     if (!channel || stopped) return;
     const claim = await api.call<string | null>("shift_quest_news_claim", d.day, d.channel_id);
     if (claim !== "new" && claim !== "stale") return;
@@ -586,7 +597,7 @@ export function startNewsPost(client: Client, api: QuestApi, options: NewsOption
    * attached again. Without them, an edit that only adds waits for the next
    * check; a take-down goes out without the picture. Returns whether it edited.
    */
-  async function edit(message: Message, p: PostedNews): Promise<boolean> {
+  async function edit(message: Message, p: PostedNews, job: string): Promise<boolean> {
     const kept = pictureOn(message);
     if (!kept) {
       await message.edit(newsEdit(viewOf(p, false), []));
@@ -605,7 +616,7 @@ export function startNewsPost(client: Client, api: QuestApi, options: NewsOption
         if (!takeDown || !isPictureRefused(error)) throw error;
       }
     } else if (!takeDown) {
-      warnOnce(`could not download the picture of the card for ${p.day} to keep it; the edit waits`);
+      warnOnce(job, `could not download the picture of the card for ${p.day} to keep it; the edit waits`);
       return false;
     }
     // A take-down for privacy wins over keeping the picture.
@@ -615,50 +626,86 @@ export function startNewsPost(client: Client, api: QuestApi, options: NewsOption
     return true;
   }
 
-  /** Brings the cards of the last 7 days up to date; a card whose text is unchanged is never fetched again. */
+  /**
+   * Brings the cards of the last 7 days up to date; a card whose text is
+   * unchanged is never fetched again. Each card on its own: one that keeps
+   * failing (an edit Discord refuses, a channel the bot lost) is logged once
+   * and tried again next check, and never holds back another card's take-down.
+   */
   async function syncPosted(): Promise<void> {
     const posts = normalizePostedNews(await api.call<unknown>("shift_quest_news_post_current"));
+    problems.delete("sync");
     for (const p of posts) {
       if (stopped) return;
       const known = seen.get(p.message_id);
       if (known && known.sig === sigOf(p, known.picture)) continue;
-      const channel = await target(p.channel_id);
-      if (!channel?.messages) continue;
+      const job = `card ${p.message_id}`;
       try {
-        const message = (await channel.messages.fetch(p.message_id)) as Message;
-        const picture = pictureOn(message)?.name ?? false;
-        const want = sigOf(p, picture);
-        // A cold cache (a restart): edit only when the card in Discord reads differently.
-        if (cardSignature(message.components) === want) {
-          seen.set(p.message_id, { sig: want, picture });
+        if (await syncOne(p, job)) problems.delete(job);
+      } catch (error) {
+        if (isUnknownMessage(error)) {
+          // A card staff deleted (10008) stays gone: remember it so it is not fetched every 5 minutes.
+          seen.set(p.message_id, { sig: sigOf(p, known?.picture ?? false), picture: known?.picture ?? false });
+          problems.delete(job);
           continue;
         }
-        if (await edit(message, p)) {
-          console.log(`[shift-quests] nightly island news for ${p.day} brought up to date (${p.ai.entries.length} AI teams)`);
-        }
-      } catch (error) {
-        // A card staff deleted (10008) stays gone: remember it so it is not fetched every 5 minutes.
-        if (!isUnknownMessage(error)) throw error;
-        seen.set(p.message_id, { sig: sigOf(p, known?.picture ?? false), picture: known?.picture ?? false });
+        warnOnce(job, `the card for ${p.day} is not up to date (${reasonOf(error)})`);
       }
     }
   }
 
+  /**
+   * One card: read it as Discord shows it now, and edit it when it reads
+   * differently. False when it is not settled yet (an edit that waits).
+   */
+  async function syncOne(p: PostedNews, job: string): Promise<boolean> {
+    const channel = await target(p.channel_id, job);
+    if (!channel?.messages) return false;
+    // Always from Discord (force), never discord.js's cache. The cache keeps a
+    // card as it was sent: an edit returns a patched copy and leaves the
+    // cached one as it was, and this bot gets no message events to update it.
+    // A stale copy could read as already taken down, and its picture links
+    // expire after a day or point at a file an earlier edit replaced.
+    const message = (await channel.messages.fetch({ message: p.message_id, force: true })) as Message;
+    const picture = pictureOn(message)?.name ?? false;
+    const want = sigOf(p, picture);
+    // After a restart (nothing seen yet): edit only when the card in Discord reads differently.
+    if (cardSignature(message.components) === want) {
+      seen.set(p.message_id, { sig: want, picture });
+      return true;
+    }
+    if (!(await edit(message, p, job))) return false;
+    console.log(`[shift-quests] nightly island news for ${p.day} brought up to date (${p.ai.entries.length} AI teams)`);
+    return true;
+  }
+
+  /**
+   * Tonight's card, then the 7-day re-check, each on its own: a failure in
+   * one (a database timeout, a channel the bot cannot read, a mark being
+   * retried) never holds back the other, so a take-down never waits for
+   * tonight's card.
+   */
   async function tick(): Promise<void> {
     if (stopped || (options.connected && !options.connected())) return;
-    if (unmarked) {
-      await mark(unmarked);
-      return;
+    try {
+      if (unmarked) await mark(unmarked);
+      else await postToday();
+    } catch (error) {
+      warnOnce("post", reasonOf(error));
     }
-    await postToday();
-    await syncPosted();
+    if (stopped) return;
+    try {
+      await syncPosted();
+    } catch (error) {
+      warnOnce("sync", reasonOf(error));
+    }
   }
 
   function poll(): Promise<void> {
     if (stopped) return Promise.resolve();
     if (running) return running;
     running = tick()
-      .catch((error) => warnOnce(reasonOf(error)))
+      .catch((error) => warnOnce("post", reasonOf(error)))
       .finally(() => {
         running = null;
       });

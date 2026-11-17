@@ -10,7 +10,9 @@ import { thaiDay } from "./digestCopy";
 
 /**
  * People counts (check-ins and campfire rounds) below this show with no
- * number: in a small cohort a 1 or a 2 could point at one person. Approvals
+ * number: in a small cohort a 1 or a 2 could point at one person. The
+ * campfire line is floored by the people behind the rounds, never by the
+ * rounds: one student's four rounds would show their focus time. Approvals
  * and stages grown always show their exact number.
  */
 export const PEOPLE_FLOOR = 3;
@@ -23,8 +25,12 @@ export const NEWS = {
   approved: (n: number) => `✅ พี่เลี้ยงผ่านงาน **${n}** เควสต์`,
   /** Tree stages risen (exact), after the approvals on the same line. */
   grew: (n: number) => `🌱 ต้นไม้โตขึ้น **${n}** ขั้น`,
-  /** Campfire rounds started with an intention (a people count: floored). Never minutes. */
-  rounds: (n: number) => (n >= PEOPLE_FLOOR ? `🔥 ตั้งเป้าทำงานรอบกองไฟ **${n}** รอบ` : "🔥 มีคนมาตั้งเป้าทำงานที่กองไฟ"),
+  /**
+   * Campfire rounds started with an intention, by `people` different people:
+   * the number shows only once that many people made them. Never minutes.
+   */
+  rounds: (n: number, people: number) =>
+    people >= PEOPLE_FLOOR ? `🔥 ตั้งเป้าทำงานรอบกองไฟ **${n}** รอบ` : "🔥 มีคนมาตั้งเป้าทำงานที่กองไฟ",
   /** Nothing to count tonight: the island rests, warmly. */
   quiet: "🌙 วันนี้เกาะได้พัก ตะเกียงยังจุดรอทุกคนอยู่",
   /**

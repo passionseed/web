@@ -28,7 +28,7 @@ the AI switch, not sharing.
 | 2 | What it says | The AI island news when any team can be featured, otherwise a plain island bulletin. Built as one card every night: the totals always, plus the AI section when entries exist. |
 | 3 | When | 20:00 Bangkok. A new card only before 22:30; a stalled one is recovered until midnight; never a "yesterday" card. The AI cron moves to 18:00 Bangkok so its summaries are usually in the first send. |
 | 4 | Counting window | 20:00 yesterday to 20:00 today, so every event counts once. The totals freeze when the card is claimed. |
-| 5 | Small numbers | People counts (check-ins, campfire rounds) of 1 or 2 show without a number. Approvals and stages grown always show their exact number. A 0 line is left out; nothing at all is the quiet line. |
+| 5 | Small numbers | People counts (check-ins, campfire rounds) of 1 or 2 show without a number. The campfire line counts rounds but is floored by the people who made them (`rounders`), so one or two students' rounds never show as a number (each focus round is 25 minutes, so a number would show their time). Approvals and stages grown always show their exact number. A 0 line is left out; nothing at all is the quiet line. |
 | 6 | Campfire | Rounds started with an intention, never minutes: every focus round promises ไม่มีใครนับเวลาของคุณ. The campfire join button stays. |
 | 7 | The picture on edits | An edit keeps the picture: the bot downloads the posted picture back from Discord's CDN and attaches the same bytes again. Only a privacy take-down may drop it, as the last fallback. |
 | 8 | Kept from the plan | The 7-day re-check of the AI lines, the lore lines (DRAFT), no crosspost. |
@@ -62,7 +62,7 @@ the AI switch, not sharing.
 | Title | 🗞️ ข่าวเกาะคืนนี้ |
 | Check-ins | 👣 แวะมาเช็กอิน **12** คน · 1 or 2: 👣 มีเพื่อนแวะมาเช็กอินแล้ว |
 | Approvals and growth | ✅ พี่เลี้ยงผ่านงาน **5** เควสต์ · 🌱 ต้นไม้โตขึ้น **3** ขั้น |
-| Campfire | 🔥 ตั้งเป้าทำงานรอบกองไฟ **8** รอบ · 1 or 2: 🔥 มีคนมาตั้งเป้าทำงานที่กองไฟ |
+| Campfire | 🔥 ตั้งเป้าทำงานรอบกองไฟ **8** รอบ · 1 or 2 people (however many rounds): 🔥 มีคนมาตั้งเป้าทำงานที่กองไฟ |
 | Quiet night | 🌙 วันนี้เกาะได้พัก ตะเกียงยังจุดรอทุกคนอยู่ |
 | Demo Day | 🎤 Demo Day (the active season's date) · อีก **N** วัน (the live post's line, only during an active season) |
 | Lore (one a night, by the day) | 🏮 ตะเกียงตามต้นไม้ติดไฟครบแล้ว เกาะยามค่ำสว่างกำลังดี · ⛵ เรือจอดนิ่งอยู่ที่ท่า คืนนี้ไม่มีใครต้องรีบไปไหน · 🪶 นกนางนวลกลับรังไปแล้ว เหลือแต่เสียงคลื่นรอบเกาะ · 🌊 คืนนี้คลื่นเบา ได้ยินเสียงทะเลชัดเลย · 🪣 บ่อน้ำกลางเกาะสะท้อนแสงจันทร์ · 🔥 กองไฟกลางลานยังอุ่นอยู่ อยากนั่งทำงานกับเพื่อน เข้ามาได้เลย · 🧭 ติดตรงไหน ถามในห้อง SHIFT High ได้ ไม่ต้องรอให้พร้อม |
@@ -84,13 +84,18 @@ the AI switch, not sharing.
 - **Bot** (`bot/src/quests/news.ts`, copy in `newsCopy.ts`): a check every 5
   minutes, from schema 19 only (`NEWS_SCHEMA`). The picture is
   `shift_quest_live_post`'s outsider island drawn at night (GIF, else PNG,
-  else none; a picture Discord refuses goes once more without it). Edits
-  re-attach the downloaded picture with `attachments: []`; after a restart a
-  card is fetched once and edited only if its text differs. Tested in
-  `bot/src/quests/__tests__/news.test.ts`.
+  else none; a picture Discord refuses goes once more without it). The
+  re-check always reads a card from Discord (`force: true`), never from
+  discord.js's cache, which keeps the card as it was sent and its expiring
+  picture links. Edits re-attach the downloaded picture with
+  `attachments: []`; after a restart a card is fetched once and edited only
+  if its text differs. Each card is re-checked on its own, and tonight's card
+  and the re-check fail separately, so one failure never holds back a
+  take-down. Tested in `bot/src/quests/__tests__/news.test.ts`.
 - **Admin** (`handlers/admin.ts`): `kind:news` takes a text or announcement
-  channel students can see, where the bot can view, send, attach and read
-  history; an announcement channel is refused for every other kind.
+  channel students can see and read the history of, where the bot can view,
+  send, attach and read history; an announcement channel is refused for
+  every other kind.
 
 ## Open questions
 
@@ -99,6 +104,13 @@ the AI switch, not sharing.
 - The 7-day re-check: a nightly card accumulates names faster than the
   digest did. Extend it to 30 days?
 - Approve the seven lore lines, or supply lines from
-  `docs/designs/shift-high-island-lore.md`.
+  `docs/designs/shift-high-island-lore.md`. With seven lines picked by the
+  day, each line falls on the same weekday every week (the campfire line is
+  always the same evening). Keep that, shift the pick each week, or add lines
+  so the count is not 7?
+- The campfire line counts every work session started with an intention,
+  including `/work start` ("ทำที่ไหนก็ได้"), not only rounds aimed at the
+  campfire: the table does not tell them apart. Keep "รอบกองไฟ" (the
+  campfire is the island's word for coworking), or reword the line?
 - Confirm on a test server that an edit with the re-attached picture shows the
   GIF and that a restart edits nothing.
