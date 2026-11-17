@@ -12,14 +12,28 @@
 WITH fns0 AS (
   SELECT p.oid, p.oid::regprocedure::text AS sig,
     p.proname LIKE 'shift\_quest\_\_%' OR p.proname = 'shift_quest_bootstrap_admin' AS helper,
-    -- Website-only entry points (091100, 091200, 093000, 094000, 095000): the bot never runs them.
+    -- Website-only entry points (091100, 091200, 093000, 094000, 095000, 20261115120000): the bot never runs them.
     p.proname LIKE 'shift\_quest\_canvas\_%'
       OR p.proname IN ('shift_quest_ownership_get', 'shift_quest_campfire', 'shift_quest_island_links')
       OR p.proname IN ('shift_quest_character', 'shift_quest_wallet', 'shift_quest_consent_get',
         'shift_quest_consent_adult', 'shift_quest_consent_link', 'shift_quest_consent_import',
         'shift_quest_consent_parent_view', 'shift_quest_consent_parent_answer',
         'shift_quest_consent_parent_withdraw', 'shift_quest_island_news', 'shift_quest_digest_inputs',
-        'shift_quest_digest_save') AS web_only
+        'shift_quest_digest_save', 'shift_quest_admin_reset_self', 'shift_quest_admin_island')
+      -- 20261115130000_shift_quest_evidence_photos: photos, the web review page, the trash job, the problem line.
+      OR p.proname IN ('shift_quest_evidence_add', 'shift_quest_evidence_remove', 'shift_quest_evidence_list',
+        'shift_quest_review_view', 'shift_quest_storage_trash_claim', 'shift_quest_storage_trash_done',
+        'shift_quest_project_set_ambition')
+      -- 20261115140000_shift_quest_peer_check: the peer check is the website's.
+      OR p.proname IN ('shift_quest_project_friends', 'shift_quest_project_invite_friend')
+      OR p.proname LIKE 'shift\_quest\_peer\_%'
+      -- 20261118100000_shift_quest_web_everything: the website's wrappers over member uuids.
+      OR p.proname IN ('shift_quest_project_teammates', 'shift_quest_islanders', 'shift_quest_share_draft',
+        'shift_quest_milestone_submit_team', 'shift_quest_side_submit_team', 'shift_quest_admin_web_status',
+        'shift_quest_admin_setting',
+        'shift_quest_admin_members', 'shift_quest_admin_member', 'shift_quest_admin_member_role',
+        'shift_quest_admin_member_recognize', 'shift_quest_admin_member_award',
+        'shift_quest_admin_member_consent_reset', 'shift_quest_admin_seasons') AS web_only
   FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
   WHERE n.nspname = 'public' AND p.proname LIKE 'shift\_quest\_%'
 ), fns AS (
@@ -56,7 +70,6 @@ web_allow(sig) AS (VALUES
   ('shift_quest_canvas_unlink(text)'),
   ('shift_quest_ownership_get(text)'),
   ('shift_quest_campfire(text,boolean)'),
-  -- 20261111094000_shift_quest_live.
   ('shift_quest_island_links(text)'),
   -- 20261111095000_shift_quest_player.
   ('shift_quest_character(text)'),
@@ -75,13 +88,97 @@ web_allow(sig) AS (VALUES
   ('shift_quest_digest_save(date,text,jsonb)'),
   ('shift_quest_digest_hide(text,integer,boolean,text)'),
   -- 20261113090000_shift_quest_roots.
-  ('shift_quest_island_roots()')
+  ('shift_quest_island_roots()'),
+  ('shift_quest_island_my_roots(text)'),
+  ('shift_quest_progress_add(text,text,text,text,text,text,text,uuid)'),
+  -- 20261114120000_shift_quest_tree_style.
+  ('shift_quest_tree_get(text)'),
+  ('shift_quest_seed_plant(text,text,text)'),
+  ('shift_quest_quest_gift(text,uuid)'),
+  ('shift_quest_tree_pick(text,uuid,text)'),
+  ('shift_quest_tree_equip(text,text)'),
+  ('shift_quest_island_styles()'),
+  -- 20261115120000_shift_quest_admin_reset_self.
+  ('shift_quest_admin_reset_self(text)'),
+  ('shift_quest_admin_island(text)'),
+  -- 20261115130000_shift_quest_evidence_photos.
+  ('shift_quest_evidence_add(text,uuid,integer,integer,integer)'),
+  ('shift_quest_evidence_remove(text,uuid)'),
+  ('shift_quest_evidence_list(text,uuid)'),
+  ('shift_quest_review_view(text,uuid)'),
+  ('shift_quest_storage_trash_claim(integer)'),
+  ('shift_quest_storage_trash_done(text[])'),
+  ('shift_quest_project_set_ambition(text,uuid,text)'),
+  -- 20261115140000_shift_quest_peer_check.
+  ('shift_quest_peer_open(text,uuid,boolean)'),
+  ('shift_quest_peer_queue(text)'),
+  ('shift_quest_peer_view(text,uuid)'),
+  ('shift_quest_peer_check(text,uuid,text[],text)'),
+  ('shift_quest_peer_list(text,uuid)'),
+  ('shift_quest_peer_hide(text,uuid,boolean)'),
+  ('shift_quest_project_friends(text,uuid,text)'),
+  ('shift_quest_project_invite_friend(text,uuid,uuid)'),
+  -- 20261118100000_shift_quest_web_everything.
+  ('shift_quest_inbox_list(text,boolean)'),
+  ('shift_quest_help_mine(text)'),
+  ('shift_quest_help_withdraw(text,uuid)'),
+  ('shift_quest_update_prefs(text,boolean,smallint[],smallint,boolean)'),
+  ('shift_quest_contribution_respond(text,uuid,boolean,text)'),
+  ('shift_quest_share_get(text,uuid)'),
+  ('shift_quest_share_confirm(text,uuid)'),
+  ('shift_quest_share_cancel(text,uuid)'),
+  ('shift_quest_share_respond(text,uuid,boolean)'),
+  ('shift_quest_data_export(text)'),
+  ('shift_quest_data_request(text,text,text)'),
+  ('shift_quest_project_teammates(text)'),
+  ('shift_quest_islanders(text,text)'),
+  ('shift_quest_share_draft(text,text,text,uuid,uuid)'),
+  ('shift_quest_milestone_submit_team(text,smallint,text,text,text,text,uuid[])'),
+  ('shift_quest_side_submit_team(text,uuid,text,text,text,text,uuid[])'),
+  ('shift_quest_review_queue(text)'),
+  ('shift_quest_review_get(text,uuid)'),
+  ('shift_quest_review_decide(text,uuid,text,text,boolean)'),
+  ('shift_quest_proposal_get(text,uuid)'),
+  ('shift_quest_proposal_agree(text,uuid,text,text)'),
+  ('shift_quest_help_queue(text)'),
+  ('shift_quest_help_update(text,uuid,text,text)'),
+  ('shift_quest_awards_pending(text)'),
+  ('shift_quest_issue_award(text,uuid)'),
+  ('shift_quest_fulfill_queue(text)'),
+  ('shift_quest_fulfill_update(text,uuid,text,text)'),
+  ('shift_quest_admin_web_status(text)'),
+  ('shift_quest_admin_setting(text,text,text)'),
+  ('shift_quest_admin_members(text,text)'),
+  ('shift_quest_admin_member(text,uuid)'),
+  ('shift_quest_admin_member_role(text,uuid,text,boolean)'),
+  ('shift_quest_admin_member_recognize(text,uuid,integer,text,text,uuid)'),
+  ('shift_quest_admin_member_award(text,uuid,text,text,uuid)'),
+  ('shift_quest_admin_member_consent_reset(text,uuid)'),
+  ('shift_quest_admin_reverse(text,uuid,integer,text,text)'),
+  ('shift_quest_admin_report(text,integer)'),
+  ('shift_quest_admin_rule(text,text,integer,integer,text,text,text,text)'),
+  ('shift_quest_admin_rule_retire(text,text)'),
+  ('shift_quest_admin_templates(text)'),
+  ('shift_quest_admin_template_state(text,text,boolean)'),
+  ('shift_quest_admin_template_rule(text,text,text)'),
+  ('shift_quest_admin_catalog_list(text)'),
+  ('shift_quest_admin_catalog(text,uuid,text,text,integer,integer,boolean)'),
+  ('shift_quest_admin_catalog_gate(text,uuid,smallint,boolean)'),
+  ('shift_quest_admin_seasons(text)'),
+  ('shift_quest_admin_season(text,text,date,date,date,smallint,smallint,smallint,integer,date,text,boolean,boolean,smallint)'),
+  ('shift_quest_admin_unlock(text,uuid,text,smallint,date,text)'),
+  ('shift_quest_admin_island_status(text)'),
+  ('shift_quest_admin_island_set(text,text,text)'),
+  ('shift_quest_admin_data_requests(text)'),
+  ('shift_quest_admin_data_close(text,uuid,boolean)'),
+  ('shift_quest_admin_erase(text,uuid)')
 )
--- The schema: 10 is every migration on this branch (roots, 20261113090000).
-SELECT 'schema: shift_quest_schema_version() is ' || coalesce(v::text, 'missing') || ', expected 10' AS problem
+-- The schema: 17 is every migration on this branch (the website does everything
+-- but Discord, 20261118100000).
+SELECT 'schema: shift_quest_schema_version() is ' || coalesce(v::text, 'missing') || ', expected 17' AS problem
 FROM (SELECT CASE WHEN to_regprocedure('public.shift_quest_schema_version()') IS NULL THEN NULL
   ELSE public.shift_quest_schema_version() END AS v) s
-WHERE v IS DISTINCT FROM 10
+WHERE v IS DISTINCT FROM 17
 UNION ALL
 -- The two logins: they exist, NOINHERIT, member of no role, their connection
 -- limit and statement_timeout. LOGIN itself is step D, so it is not checked here.

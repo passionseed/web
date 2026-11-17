@@ -544,6 +544,10 @@ const ERRORS: Record<string, string> = {
   // The peer check (20261115140000) is website-only too.
   already_checked: "คุณเช็กงานนี้ไปแล้ว ขอบคุณที่ช่วยเพื่อน",
   peer_limit: "วันนี้เช็กงานเพื่อนครบ 10 งานแล้ว พรุ่งนี้มาช่วยต่อได้",
+  // The share draft (20261118100000) is website-only too. DRAFT for the Thai review.
+  share_limit: "ร่างโพสต์ฉลองหรือขอบคุณครบ 5 ครั้งใน 24 ชั่วโมงแล้ว ยังไม่มีอะไรถูกโพสต์ ลองใหม่พรุ่งนี้ได้",
+  // A reviewer claiming their own team's help request (20261118100000), from the bot or the website. DRAFT for the Thai review.
+  help_conflict: "รับเรื่องนี้ไม่ได้ เพราะเป็นคำขอของคุณเองหรือของทีมที่คุณอยู่ ให้พี่เลี้ยงคนอื่นช่วยแทน",
   // The campfire writers (20261111093000) refuse an ID that is not a Discord snowflake. Only the bot calls them.
   invalid: "ข้อมูลไม่ถูกต้อง ลองใหม่อีกครั้ง",
   bad_route: "เลือกเส้นทางจากตัวเลือกที่มี",

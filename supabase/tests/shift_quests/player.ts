@@ -74,6 +74,10 @@ const SHARED = [
   "shift_quest_digest_hide(text,integer,boolean,text)",
   "shift_quest_redeem(text,uuid,text,integer)",
   "shift_quest_redeem_cancel(text,uuid)",
+  // 20261118100000_shift_quest_web_everything: the admin pages move to the website; the bot keeps them for now.
+  "shift_quest_admin_island_status(text)",
+  "shift_quest_admin_island_set(text,text,text)",
+  "shift_quest_admin_catalog_gate(text,uuid,smallint,boolean)",
 ];
 const BOT_ONLY = [
   "shift_quest_digest_post_next()",
@@ -81,9 +85,6 @@ const BOT_ONLY = [
   "shift_quest_digest_claim(date,text,text)",
   "shift_quest_digest_post_current()",
   "shift_quest_admin_consent_reset(text,text)",
-  "shift_quest_admin_island_status(text)",
-  "shift_quest_admin_island_set(text,text,text)",
-  "shift_quest_admin_catalog_gate(text,uuid,smallint,boolean)",
   "shift_quest_admin_staff_award(text,text,text,text,text)",
 ];
 const HELPERS = [
