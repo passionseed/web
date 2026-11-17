@@ -10,8 +10,10 @@ import { ConsentBanner } from "../consent/ConsentBanner";
 import { InviteFriends } from "../InviteFriends";
 import { ProjectInvites } from "../NoProject";
 import { ProjectBody } from "../HudSheets";
+import { ShowNameSwitch } from "../IslandFooter";
 import { IslandSheet } from "../IslandSheet";
 import { PALETTE, WEB_SPRITES, iconGrid, type IconKey } from "../sprites";
+import { treeWaiting } from "../tree/TreePill";
 import world from "../world.module.css";
 import { CHARACTER, coinNumber } from "./copy";
 import { PixelAvatar } from "./PixelAvatar";
@@ -33,6 +35,10 @@ interface CharacterSheetProps {
   consent?: IslandConsent | null;
   onOpenWallet: () => void;
   onOpenConsent: () => void;
+  /** Opens the team's tree up close: the tree line becomes a button, with a lamp dot while a gift or the seed waits. */
+  onOpenTree?: () => void;
+  /** The project's show-name switch (team consent), moved here from the menu. */
+  showName?: Pick<IslandProject, "id" | "show_name" | "name_visible"> | null;
 }
 
 /** A pixel progress bar: `total` cells, the first `filled` lit. Decorative; the line beside it says the number. */
@@ -83,6 +89,8 @@ export function CharacterSheet({
   consent,
   onOpenWallet,
   onOpenConsent,
+  onOpenTree,
+  showName = null,
 }: CharacterSheetProps) {
   const onOpenChange = (next: boolean) => {
     if (!next) onClose();
@@ -93,14 +101,17 @@ export function CharacterSheet({
       {projectId && !me.staff ? <InviteFriends key={projectId} projectId={projectId} /> : null}
     </>
   );
-  const body = <ProjectBody project={project} tree={tree} season={season} today={today} />;
-  const restOfProject = <ProjectBody project={project} tree={tree} season={season} today={null} />;
+  const waiting = onOpenTree && tree ? treeWaiting(tree) : null;
+  const body = <ProjectBody project={project} tree={tree} season={season} today={today} onTree={onOpenTree} waiting={waiting} />;
+  const restOfProject = <ProjectBody project={project} tree={tree} season={season} today={null} onTree={onOpenTree} waiting={waiting} />;
+  const nameSwitch = showName ? <ShowNameSwitch project={showName} /> : null;
 
   if (!stats) {
     return (
       <IslandSheet open={open} onOpenChange={onOpenChange} title={project.name}>
         {body}
         {team}
+        {nameSwitch}
       </IslandSheet>
     );
   }
@@ -159,8 +170,9 @@ export function CharacterSheet({
         </button>
 
         <h3 className={styles.projectHeading}>{project.name}</h3>
-        {team}
         {restOfProject}
+        {team}
+        {nameSwitch}
       </div>
     </IslandSheet>
   );

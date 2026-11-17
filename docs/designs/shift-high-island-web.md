@@ -1302,7 +1302,7 @@ founder edits: `lib/content/shift-island-economy.ts`.
    the bottom half); the check-in moved to the next-step card on 2026-11-17
    (`shift-island-one-next-step.md`). No ranking, no percentiles, no "better
    than" wording, ever.
-3. **Coins on the HUD.** (Moved into the menu as a tile on 2026-11-17; see
+3. **Coins on the HUD.** (Moved to the chip's sheet, its coin row, on 2026-11-17; see
    `shift-island-one-next-step.md`.) A small glass pill under the chip: pixel coin and
    the balance. Shown only when coins are live or the balance is above 0.
    Tap: the wallet sheet (balance, how to earn, recent earnings, shop).

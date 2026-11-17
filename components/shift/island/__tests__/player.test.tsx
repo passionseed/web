@@ -4,6 +4,7 @@ import type { ComponentProps } from "react";
 import { cancelRedemption, loadWallet, redeemItem } from "@/app/shift/island/wallet-actions";
 import type { CharacterStats, IslandConsent, ShopItem, WalletDetail } from "@/lib/supabase/shift-quests/playerTypes";
 
+import { FOOTER, TREE } from "../copy";
 import { HudChip } from "../IslandHud";
 import { CharacterSheet } from "../player/CharacterSheet";
 import { CoinPill, showCoinPill } from "../player/CoinPill";
@@ -203,10 +204,10 @@ describe("HudChip", () => {
     expect(chip.querySelectorAll("[data-filled='true']")).toHaveLength(7);
   });
 
-  it("says today's check-in is still open", () => {
-    render(<HudChip me={{ name: "มิ้นต์", avatarUrl: null }} name="ทีม" stage={1} todayOpen onOpen={jest.fn()} />);
-    expect(screen.getByRole("button", { name: /^มิ้นต์, ทีม, ต้นไม้ขั้น 1 จาก 7, ดูตัวละคร, / })).toBeInTheDocument();
-    expect(screen.getByTestId("chip-today-open")).toBeInTheDocument();
+  it("says what waits at the team's tree, with a lamp dot", () => {
+    render(<HudChip me={{ name: "มิ้นต์", avatarUrl: null }} name="ทีม" stage={1} waiting="มีของขวัญรออยู่" onOpen={jest.fn()} />);
+    expect(screen.getByRole("button", { name: `${PLAYER.chip("มิ้นต์", "ทีม", 1)}, มีของขวัญรออยู่` })).toBeInTheDocument();
+    expect(screen.getByTestId("chip-dot")).toBeInTheDocument();
   });
 });
 
@@ -332,6 +333,33 @@ describe("CharacterSheet", () => {
     expect(banner.compareDocumentPosition(within(dialog).getByText("มิ้นต์")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     fireEvent.click(within(banner).getByRole("button"));
     expect(onOpenConsent).toHaveBeenCalledTimes(1);
+  });
+
+  it("holds the team's tree line, with what waits there, and the show-name switch", () => {
+    const onOpenTree = jest.fn();
+    const tree = {
+      seed: "oak",
+      equipped: { shape: "shape:round", leaf: "leaf:forest", bark: "bark:oak", bloom: "bloom:cream" },
+      owned: [],
+      gifts: [],
+      roots: { count: 0, recent: 0 },
+      stage: 3,
+    };
+    sheet({ tree: { ...tree, seed: null }, onOpenTree, showName: { id: KEY, show_name: false, name_visible: false } });
+    const dialog = screen.getByRole("dialog", { name: CHARACTER.title });
+    const line = within(dialog).getByRole("button", { name: (name) => name.startsWith("ต้นไม้ของคุณ") && name.endsWith(TREE.seed.title) });
+    expect(within(line).getByTestId("tree-line-dot")).toBeInTheDocument();
+    fireEvent.click(line);
+    expect(onOpenTree).toHaveBeenCalledTimes(1);
+    expect(within(dialog).getByRole("switch", { name: FOOTER.showName })).not.toBeChecked();
+  });
+
+  it("keeps the tree a plain line and leaves the switch out when not given them", () => {
+    sheet();
+    const dialog = screen.getByRole("dialog", { name: CHARACTER.title });
+    expect(within(dialog).queryByRole("button", { name: /ต้นไม้ของคุณ/ })).toBeNull();
+    expect(within(dialog).getByText(/ต้นไม้ของคุณ/)).toBeInTheDocument();
+    expect(within(dialog).queryByRole("switch")).toBeNull();
   });
 
   it("is the project sheet as before when the stats cannot be read", () => {

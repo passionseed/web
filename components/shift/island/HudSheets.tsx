@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useId, type ReactNode } from "react";
 
@@ -10,7 +11,6 @@ import { AdminReset } from "./AdminReset";
 import { Avatar } from "./Avatar";
 import { FOOTER, HUD, ISLAND, MENU, NO_PROJECT, treeStageName } from "./copy";
 import styles from "./island.module.css";
-import { IslandDiscordButton } from "./IslandDiscordButton";
 import { IslandFooter } from "./IslandFooter";
 import { IslandSheet } from "./IslandSheet";
 import { PLAYER_MENU } from "./player/copy";
@@ -34,16 +34,39 @@ interface ProjectBodyProps {
   season: IslandPageData["island"]["season"];
   /** The check-in card, built by the page so it keeps its handlers. */
   today: ReactNode;
+  /** Opens the team's tree up close: the tree line becomes a button. */
+  onTree?: () => void;
+  /** What waits at the tree (a gift, the seed): a lamp dot, and these words for screen readers. */
+  waiting?: string | null;
 }
 
 /** The project's tree, today's check-in and the season: the project sheet, and the lower half of the character sheet. */
-export function ProjectBody({ project, tree, season, today }: ProjectBodyProps) {
+export function ProjectBody({ project, tree, season, today, onTree, waiting = null }: ProjectBodyProps) {
+  const name = HUD.myTree(treeStageName(project.stage, tree?.seed != null));
+  const icon = <PixelIcon {...styledTree(project.stage, tree?.equipped, tree?.seed != null)} scale={1} />;
   return (
     <div className={world.sheetStack}>
-      <p className={world.myTree}>
-        <PixelIcon {...styledTree(project.stage, tree?.equipped, tree?.seed != null)} scale={1} />
-        <span>{HUD.myTree(treeStageName(project.stage, tree?.seed != null))}</span>
-      </p>
+      {onTree ? (
+        <button
+          type="button"
+          className={`${world.menuItem} ${world.treeLine}`}
+          aria-haspopup="dialog"
+          aria-label={waiting ? `${name}, ${waiting}` : undefined}
+          onClick={onTree}
+        >
+          <span className={world.itemIcon} aria-hidden="true">
+            {icon}
+            {waiting ? <span className={world.itemDot} data-testid="tree-line-dot" /> : null}
+          </span>
+          <span className={world.itemLabel}>{name}</span>
+          <ChevronRight className={world.itemArrow} aria-hidden="true" />
+        </button>
+      ) : (
+        <p className={world.myTree}>
+          {icon}
+          <span>{name}</span>
+        </p>
+      )}
       {today}
       {season ? <SeasonPanel season={season} /> : null}
     </div>
@@ -70,69 +93,65 @@ function MenuRow({ icon, label, describedBy, onClick }: { icon: WebIcon; label: 
 }
 
 /**
- * One place in the menu's grid: a sheet to open (onClick), a page to go to
- * (href), or a switch (pressed). The page builds the list, so each tile only
- * shows when its place exists (news while the digest is on, the tree from
- * schema 13, ...).
+ * One line of the menu: a sheet to open (onClick), a page to go to (href), a
+ * switch (pressed) or something done right there (action). The page builds
+ * the list, so a line only shows when its place exists (the news while the
+ * digest is on, ...). Places that stand on the island are not lines here.
  */
-export interface MenuTile {
+export interface MenuItem {
   id: string;
   icon: WebIcon;
   label: string;
   onClick?: () => void;
   href?: string;
-  /** Opens in a new tab (the canvas on the whiteboard). */
-  external?: boolean;
   /** A switch (the campfire sound): its state, read by screen readers. */
   pressed?: boolean;
-  /** Something waits behind it: a lamp dot, and these words for screen readers. */
-  dot?: boolean;
-  waiting?: string | null;
+  /** A switch's state in short words at the end of the line (screen readers hear `pressed`). */
+  state?: string;
+  /** Done right there, nothing opens (ขอพัก): no arrow. */
+  action?: boolean;
   disabled?: boolean;
 }
 
-function TileFace({ tile }: { tile: MenuTile }) {
+function ItemFace({ item }: { item: MenuItem }) {
+  const opens = item.pressed === undefined && !item.action;
   return (
     <>
-      <span className={world.tileIcon} aria-hidden="true">
-        <PixelIcon grid={WEB_SPRITES[tile.icon]} palette={PALETTE} scale={2} />
-        {tile.dot ? <span className={world.tileDot} /> : null}
+      <span className={world.itemIcon} aria-hidden="true">
+        <PixelIcon grid={WEB_SPRITES[item.icon]} palette={PALETTE} scale={1} />
       </span>
-      <span className={world.tileLabel}>{tile.label}</span>
+      <span className={world.itemLabel}>{item.label}</span>
+      {item.state ? (
+        <span className={world.itemState} aria-hidden="true">
+          {item.state}
+        </span>
+      ) : null}
+      {opens ? <ChevronRight className={world.itemArrow} aria-hidden="true" /> : null}
     </>
   );
 }
 
-/** The menu's places as a grid of pixel tiles, four to a row on a phone. */
-export function MenuGrid({ tiles, label }: { tiles: readonly MenuTile[]; label: string }) {
-  if (tiles.length === 0) return null;
-  // What waits behind a tile is read after its name; the dot alone says nothing to a screen reader.
-  const name = (tile: MenuTile) => (tile.waiting ? `${tile.label}, ${tile.waiting}` : undefined);
+/** The menu as a short list, one line per thing, like a game's pause menu. */
+export function MenuList({ items, label }: { items: readonly MenuItem[]; label: string }) {
+  if (items.length === 0) return null;
   return (
-    <ul className={world.menuGrid} aria-label={label}>
-      {tiles.map((tile) => (
-        <li key={tile.id}>
-          {tile.href ? (
-            tile.external ? (
-              <a className={`${world.menuTile} ${world.press}`} href={tile.href} target="_blank" rel="noopener" aria-label={name(tile)}>
-                <TileFace tile={tile} />
-              </a>
-            ) : (
-              <Link className={`${world.menuTile} ${world.press}`} href={tile.href} aria-label={name(tile)}>
-                <TileFace tile={tile} />
-              </Link>
-            )
+    <ul className={world.menuItems} aria-label={label}>
+      {items.map((item) => (
+        <li key={item.id}>
+          {item.href ? (
+            <Link className={world.menuItem} href={item.href}>
+              <ItemFace item={item} />
+            </Link>
           ) : (
             <button
               type="button"
-              className={`${world.menuTile} ${world.press}`}
-              aria-label={name(tile)}
-              aria-pressed={tile.pressed}
-              aria-haspopup={tile.pressed === undefined ? "dialog" : undefined}
-              disabled={tile.disabled}
-              onClick={tile.onClick}
+              className={world.menuItem}
+              aria-pressed={item.pressed}
+              aria-haspopup={item.pressed === undefined && !item.action ? "dialog" : undefined}
+              disabled={item.disabled}
+              onClick={item.onClick}
             >
-              <TileFace tile={tile} />
+              <ItemFace item={item} />
             </button>
           )}
         </li>
@@ -142,31 +161,33 @@ export function MenuGrid({ tiles, label }: { tiles: readonly MenuTile[]; label: 
 }
 
 /**
- * From ≡: every place that is not the next step, as a grid of tiles (the page
- * builds them), then the consent step while it waits, how the island is
- * shown, the suggestions link (when an admin set the channel), the admin's
- * own reset, the show-name switch and the account.
+ * From ≡: a short list of what has no place on the island (the guide, the
+ * story again, the news, the sound, rest), then the island view and the
+ * suggestions link as quiet words, the admin's tools folded away, and who is
+ * signed in. The team, the tree, coins, prizes, the campfire and Demo Day
+ * live on the island itself (the chip, the plot, the plaza).
  */
 export function MenuSheet({
   open,
   onClose,
   me,
-  project,
+  claimed,
   whole,
   onToggleWhole,
   suggestUrl,
-  tiles,
+  items,
   onConsent,
   consentAiOnly = false,
 }: SheetProps & {
   me: ViewerCard;
-  project: Pick<IslandProject, "id" | "show_name" | "name_visible"> | null;
+  /** The viewer has a plot: the footer's switch-account words differ before one. */
+  claimed: boolean;
   whole: boolean;
   onToggleWhole: () => void;
   /** https://discord.com/channels/<guild>/<suggest channel>; hidden when unset. */
   suggestUrl?: string | null;
-  /** The places on the island, built by the page. */
-  tiles: readonly MenuTile[];
+  /** The menu's lines, built by the page. */
+  items: readonly MenuItem[];
   /** Opens the consent sheet; the row shows only when given (consent not on file yet, or the AI news line not). */
   onConsent?: () => void;
   /** Consent is on file and only the AI news line waits: the row says so. */
@@ -190,42 +211,30 @@ export function MenuSheet({
             </p>
           </section>
         ) : null}
-        <MenuGrid tiles={tiles} label={MENU.places} />
-        <section className={world.menuList} aria-label={HUD.viewHeading}>
-          <button type="button" className={styles.quietButton} onClick={onToggleWhole}>
+        <MenuList items={items} label={HUD.menu} />
+        <div className={world.menuQuiet}>
+          <button type="button" className={styles.linkButton} onClick={onToggleWhole}>
             {whole ? ISLAND.viewClose : ISLAND.viewWhole}
           </button>
-        </section>
-        {suggestUrl ? (
-          <section className={world.menuList}>
-            <a
-              className={styles.quietButton}
-              href={suggestUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-describedby={suggestHintId}
-            >
-              <PixelIcon grid={WEB_SPRITES.bulb} palette={PALETTE} scale={1} />
-              {HUD.suggest}
-            </a>
-            <p id={suggestHintId} className={styles.hint}>
-              {HUD.suggestHint}
-            </p>
-          </section>
+          {suggestUrl ? (
+            <>
+              <a className={styles.linkButton} href={suggestUrl} target="_blank" rel="noopener noreferrer" aria-describedby={suggestHintId}>
+                {HUD.suggest}
+              </a>
+              <span id={suggestHintId} className="sr-only">
+                {HUD.suggestHint}
+              </span>
+            </>
+          ) : null}
+        </div>
+        {/* Admins only, folded: the database checks the role again on every reset. */}
+        {me.admin ? (
+          <details className={world.adminTools}>
+            <summary>{MENU.adminTools}</summary>
+            <AdminReset />
+          </details>
         ) : null}
-        {/* Admins only: the database checks the role again on every reset. */}
-        {me.admin ? <AdminReset /> : null}
-        {project ? (
-          <IslandFooter project={project} me={me} avatar={<Avatar me={me} />} />
-        ) : (
-          <div className={world.account}>
-            <p className={`${styles.hint} ${styles.footerWho}`}>
-              <Avatar me={me} />
-              <span>{FOOTER.signedInAs(me.name)}</span>
-            </p>
-            <IslandDiscordButton label={NO_PROJECT.switchAccount} switchAccount variant="quiet" />
-          </div>
-        )}
+        <IslandFooter me={me} avatar={<Avatar me={me} />} switchLabel={claimed ? FOOTER.switchAccount : NO_PROJECT.switchAccount} />
       </div>
     </IslandSheet>
   );

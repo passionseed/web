@@ -667,71 +667,77 @@
 }
 
 /*
- * The menu's places: pixel tiles, four to a row on a 360px phone. Each is a
- * notched sand-edged square with its icon and a short name under it.
+ * The menu: a short list, like a game's pause menu. One notched panel, one
+ * line per thing (pixel icon, words, then a switch's state or an arrow),
+ * hairlines between. The team's tree line in the team sheet uses the same line.
  */
-.menuGrid {
+.menuItems {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
-}
-
-.menuTile {
-  display: grid;
-  justify-items: center;
-  align-content: start;
-  gap: 6px;
-  width: 100%;
-  min-height: 84px;
-  padding: 10px 4px 8px;
-  font: inherit;
-  text-align: center;
-  text-decoration: none;
-  color: var(--isl-cream);
-  background: rgba(255, 241, 214, 0.06);
-  border: 0;
+  background: rgba(255, 241, 214, 0.04);
   box-shadow: inset 0 0 0 1px rgba(255, 241, 214, 0.12);
   clip-path: var(--notch);
+}
+
+.menuItems > li + li {
+  border-top: 1px solid rgba(255, 241, 214, 0.1);
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 14px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: left;
+  text-decoration: none;
+  color: var(--isl-cream);
+  background: transparent;
+  border: 0;
   cursor: pointer;
+  transition: background-color var(--snap) var(--ease-snap);
 }
 
-.menuTile:focus-visible {
+.menuItem:focus-visible {
   outline: 2px solid var(--isl-lamp);
-  outline-offset: -2px;
+  outline-offset: -3px;
 }
 
-.menuTile:disabled {
+.menuItem:active:not(:disabled) {
+  background: rgba(255, 241, 214, 0.1);
+}
+
+.menuItem:disabled {
   cursor: default;
   opacity: 0.55;
 }
 
-.menuTile[aria-pressed="true"] {
-  background: rgba(254, 217, 92, 0.14);
-  box-shadow: inset 0 0 0 1px rgba(254, 217, 92, 0.4);
-}
-
 @media (hover: hover) {
-  .menuTile:hover:not(:disabled) {
-    background: rgba(255, 241, 214, 0.12);
+  .menuItem:hover:not(:disabled) {
+    background: rgba(255, 241, 214, 0.08);
   }
 }
 
-.tileIcon {
+.itemIcon {
   position: relative;
   display: grid;
+  flex: none;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  min-width: 28px;
+  min-height: 28px;
 }
 
-.tileIcon svg {
+.itemIcon svg {
   display: block;
 }
 
-.tileDot {
+.itemDot {
   position: absolute;
   top: 0;
   right: 0;
@@ -741,10 +747,55 @@
   box-shadow: 0 0 0 2px var(--isl-ink);
 }
 
-.tileLabel {
-  font-size: 13px;
-  line-height: 1.35;
+.itemLabel {
+  flex: 1;
+  min-width: 0;
   overflow-wrap: anywhere;
+}
+
+.itemState {
+  flex: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-dim);
+}
+
+.menuItem[aria-pressed="true"] .itemState {
+  color: var(--isl-lamp);
+}
+
+.itemArrow {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--text-dim);
+}
+
+/* The tree line in the team sheet: one line on its own, in the same notched panel. */
+.treeLine {
+  background: rgba(255, 241, 214, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(255, 241, 214, 0.12);
+  clip-path: var(--notch);
+}
+
+/* Under the list: the island view and the suggestions link, as quiet words on one line. */
+.menuQuiet {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 20px;
+}
+
+/* The admin's own tools, folded under one quiet line. */
+.adminTools > summary {
+  min-height: 44px;
+  padding: 10px 0;
+  font-size: 15px;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.adminTools[open] > summary {
+  margin-bottom: 8px;
 }
 
 /* A menu row that opens another sheet: its pixel icon, then the words. */

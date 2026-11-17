@@ -56,7 +56,7 @@ export function HudChip({
   me,
   name,
   stage,
-  todayOpen = false,
+  waiting = null,
   onOpen,
 }: {
   /** The viewer's own card: their name and their own avatar URL only. */
@@ -64,8 +64,8 @@ export function HudChip({
   /** The project's name. */
   name: string;
   stage: number;
-  /** Today's check-in is still open (lives in the character sheet): a small lamp dot says so. */
-  todayOpen?: boolean;
+  /** What waits at the team's tree (a gift, the seed; its line is in the team sheet): a lamp dot, and these words. */
+  waiting?: string | null;
   onOpen: () => void;
 }) {
   const filled = Math.min(Math.max(Math.trunc(stage) || 0, 0), STAGES);
@@ -74,13 +74,13 @@ export function HudChip({
     <button
       type="button"
       className={`${styles.chip} ${styles.glass} ${styles.press}`}
-      aria-label={todayOpen ? `${label}, ${HUD.chipTodayOpen}` : label}
+      aria-label={waiting ? `${label}, ${waiting}` : label}
       aria-haspopup="dialog"
       onClick={onOpen}
     >
       <span className={styles.chipFace} aria-hidden="true">
         <PixelAvatar name={me.name} url={me.avatarUrl} size={40} decorative />
-        {todayOpen ? <span className={styles.chipDot} data-testid="chip-today-open" /> : null}
+        {waiting ? <span className={styles.chipDot} data-testid="chip-dot" /> : null}
       </span>
       <span className={styles.chipText} aria-hidden="true">
         <span className={styles.chipName}>{name}</span>

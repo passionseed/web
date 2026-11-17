@@ -26,7 +26,7 @@ An audit on 2026-11-17 (read only) found:
 
 | # | Question | Answer |
 |---|---|---|
-| 1 | What a student sees over the island | The next-step card, the team chip, the results envelope and the menu. Everything else moves into the menu; nothing is deleted. |
+| 1 | What a student sees over the island | The next-step card, the team chip, the results envelope and the menu. Everything else moves off the top bar. After the first play ("so much menu"), the menu keeps only what has no place on the island; the rest is where it stands (below). Only the manual refresh button is gone. |
 | 2 | Where the check-in lives | Inside the gold card: the day's first tap opens it, then the quest. It leaves the chip and the tree sheet. |
 | 3 | The quest page | "Take inspiration from the best designed, for the game aspects too." Its redesign is the next branch (below). This branch only makes starting the bar's main button. |
 | 4 | Mentor review on the web | Not now: reviews stay in Discord for Season 1, and students are promised no turnaround time. Part 3, Wave B (B1) of the core-loop design waits. |
@@ -57,14 +57,31 @@ tap that leads to work opens `CheckInSheet` first: วันนี้จะล�
 that waits on a mentor never asks for a check-in. A check-in never grows the
 tree's stage.
 
-**The menu** is a grid of pixel tiles, four to a row: the admin overview
-(admins), ต้นไม้ของทีม, ทีมของฉัน, แคนวาส, เหรียญ, รางวัล, ข่าวเกาะ, กองไฟ,
-Demo Day, เรื่องเล่า, คู่มือ, the campfire sound, ขอพัก and รีเฟรช. Each tile
-shows only when its place exists. A gift or the seed waiting at the tree puts
-a lamp dot on the tree tile and on the menu button. The consent step keeps its
-full row above the grid while it waits. The island still reads itself again
-on return (`IslandAutoRefresh`), the story still opens on a first visit, and
-the sound keeps playing while the menu is closed (`useCampfireSound`).
+**The menu** is a short list, like a game's pause menu, with only what has
+no place on the island: คู่มือ, เรื่องเล่า, ข่าวเกาะ (while the digest is on),
+เสียงกองไฟ (with its state at the end of the line) and ขอพัก, plus the admin
+overview on top for admins. Under it, ดูทั้งเกาะ and the suggestions link are
+quiet words, the admin's reset is folded under เครื่องมือแอดมิน, and the
+footer says who is signed in. The consent step keeps its full row above the
+list while it waits.
+
+Everything else lives where it stands on the island (founder's first play,
+2026-11-17: "so much menu bro ... like bmw console now"; a first build had all
+fourteen places as a grid of tiles):
+
+| Place | Where it is |
+|---|---|
+| The team, coins | The chip: its sheet holds the coin row |
+| The tree | The team's plot, and a line in the chip's sheet. A gift or the seed waiting puts a lamp dot on the chip and on that line |
+| The show-name switch | The chip's sheet, under the project |
+| Prizes, the campfire, Demo Day | Their spots in the plaza |
+| The canvas | The quest page, where the work is |
+| Refresh | Gone as a button: the island reads itself again on return (`IslandAutoRefresh`) and after every action |
+
+Before a plot is claimed nothing on the island can be tapped yet, so that
+menu also lists the coins and the prizes. The story still opens on a first
+visit, and the sound keeps playing while the menu is closed
+(`useCampfireSound`).
 
 **Results on the web.** The envelope (`ResultsSheet`) lists what mentors said
 about the student's own work, newest first, read from each quest's

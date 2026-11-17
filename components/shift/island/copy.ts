@@ -272,8 +272,6 @@ export const ADMIN_OVERVIEW = {
 export const HUD = {
   /** The top-left chip's accessible name: the project, its tree, and what the tap opens. */
   chip: (name: string, stage: string) => `${name}, ${stage}, ดูวันนี้ของโปรเจกต์`,
-  /** Read after the chip's name while today's check-in is still open. */
-  chipTodayOpen: "วันนี้ยังไม่ได้เช็กอิน",
   /** The chip before a plot is claimed. */
   noPlot: "ยังไม่มีที่ดิน",
   meter: (stage: number) => `ต้นไม้ขั้น ${stage} จาก 7`,
@@ -396,23 +394,21 @@ export const RESULTS = {
   discord: (count: number) => `ข้อความอื่นจากบอท ${count} ข้อความ อ่านได้ใน Discord`,
 };
 
-/** DRAFT: the menu's grid of places (MenuSheet). Every screen that left the HUD is one tap from here. */
+/** DRAFT: the menu's short list (MenuSheet): only what has no place on the island itself. */
 export const MENU = {
-  places: "ที่ต่างๆ บนเกาะ",
-  tree: "ต้นไม้ของทีม",
-  team: "ทีมของฉัน",
-  canvas: "แคนวาส",
-  coins: "เหรียญ",
-  campfire: PLACES.campfire,
-  stage: "Demo Day",
   story: "เรื่องเล่า",
   guide: "คู่มือ",
-  soundOn: "เปิดเสียง",
-  soundOff: "ปิดเสียง",
+  /** DRAFT: the sound switch's line, and its state at the end of the line. */
+  sound: "เสียงกองไฟ",
+  on: "เปิดอยู่",
+  off: "ปิดอยู่",
   rest: "ขอพัก",
-  refresh: "รีเฟรช",
+  /** DRAFT: before a plot is claimed only; with a plot, coins live in the team sheet. */
+  coins: "เหรียญ",
   consent: "ความยินยอม",
   admin: "ภาพรวม (แอดมิน)",
+  /** DRAFT: the admin's reset, folded under this line. */
+  adminTools: "เครื่องมือแอดมิน",
 };
 
 export const BOARD = {

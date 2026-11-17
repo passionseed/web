@@ -1,11 +1,10 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ComponentProps } from "react";
 
-import { HUD, MENU, PRE_STAGE, stageName } from "../copy";
-import { MenuSheet, ProjectBody, type MenuTile } from "../HudSheets";
+import { FOOTER, HUD, MENU, PRE_STAGE, stageName } from "../copy";
+import { MenuSheet, ProjectBody, type MenuItem } from "../HudSheets";
 import { NEWS } from "../news/copy";
 import { PLAYER_MENU } from "../player/copy";
-import { PRIZES_UI } from "../prizes/copy";
 
 jest.mock("@/app/shift/island/actions", () => ({ setShowName: jest.fn() }));
 jest.mock("@/app/shift/island/admin-actions", () => ({ resetMyIsland: jest.fn() }));
@@ -20,18 +19,16 @@ jest.mock("../IslandSheet", () => {
 });
 
 const SUGGEST_URL = "https://discord.com/channels/444444444444444444/555555555555555555";
-const PROJECT = { id: "55555555-5555-4555-8555-000000000001", show_name: false, name_visible: false };
-
 function menu(props: Partial<ComponentProps<typeof MenuSheet>> = {}) {
   return render(
     <MenuSheet
       open
       onClose={jest.fn()}
       me={{ name: "พลอย", avatarUrl: null, staff: false }}
-      project={PROJECT}
+      claimed
       whole={false}
       onToggleWhole={jest.fn()}
-      tiles={[]}
+      items={[]}
       {...props}
     />,
   );
@@ -39,10 +36,10 @@ function menu(props: Partial<ComponentProps<typeof MenuSheet>> = {}) {
 
 describe("MenuSheet: the suggestions link", () => {
   it.each([
-    ["with a project", PROJECT],
-    ["before a plot is claimed", null],
-  ])("opens the suggestions channel on Discord in a new tab %s", (_label, project) => {
-    menu({ suggestUrl: SUGGEST_URL, project });
+    ["with a project", true],
+    ["before a plot is claimed", false],
+  ])("opens the suggestions channel on Discord in a new tab %s", (_label, claimed) => {
+    menu({ suggestUrl: SUGGEST_URL, claimed });
     const sheet = screen.getByRole("dialog", { name: HUD.menu });
     const link = within(sheet).getByRole("link", { name: "เสนอไอเดีย / แจ้งบั๊ก" });
     expect(link).toHaveAttribute("href", SUGGEST_URL);
@@ -72,55 +69,65 @@ describe("MenuSheet: the suggestions link", () => {
   });
 });
 
-describe("MenuSheet: the places", () => {
-  const tiles = (): MenuTile[] => [
-    { id: "news", icon: "news", label: NEWS.menu, onClick: jest.fn() },
-    { id: "prizes", icon: "trophy", label: PRIZES_UI.menu, onClick: jest.fn() },
+describe("MenuSheet: the short list", () => {
+  const items = (): MenuItem[] => [
     { id: "guide", icon: "signpost", label: MENU.guide, href: "/shift/island/guide" },
-    { id: "canvas", icon: "note", label: MENU.canvas, href: "/shift/island/canvas", external: true },
-    { id: "sound", icon: "megaphone", label: MENU.soundOff, pressed: true, onClick: jest.fn() },
+    { id: "news", icon: "news", label: NEWS.menu, onClick: jest.fn() },
+    { id: "sound", icon: "megaphone", label: MENU.sound, state: MENU.on, pressed: true, onClick: jest.fn() },
+    { id: "rest", icon: "moon", label: MENU.rest, action: true, onClick: jest.fn() },
   ];
 
-  it("lays out every place it is given as a tile, each doing its own thing", () => {
-    const given = tiles();
-    menu({ tiles: given });
-    const grid = screen.getByRole("list", { name: MENU.places });
-    expect(within(grid).getAllByRole("listitem")).toHaveLength(given.length);
-    fireEvent.click(within(grid).getByRole("button", { name: NEWS.menu }));
-    fireEvent.click(within(grid).getByRole("button", { name: PRIZES_UI.menu }));
-    expect(given[0].onClick).toHaveBeenCalledTimes(1);
+  it("lists every line it is given, one under the other, each doing its own thing", () => {
+    const given = items();
+    menu({ items: given });
+    const list = screen.getByRole("list", { name: HUD.menu });
+    expect(within(list).getAllByRole("listitem")).toHaveLength(given.length);
+    const news = within(list).getByRole("button", { name: NEWS.menu });
+    expect(news).toHaveAttribute("aria-haspopup", "dialog");
+    fireEvent.click(news);
     expect(given[1].onClick).toHaveBeenCalledTimes(1);
-    expect(within(grid).getByRole("button", { name: NEWS.menu })).toHaveAttribute("aria-haspopup", "dialog");
+    expect(within(list).getByRole("link", { name: MENU.guide })).toHaveAttribute("href", "/shift/island/guide");
   });
 
-  it("links a page in place, the canvas in a new tab, and says whether a switch is on", () => {
-    menu({ tiles: tiles() });
-    expect(screen.getByRole("link", { name: MENU.guide })).toHaveAttribute("href", "/shift/island/guide");
-    const canvas = screen.getByRole("link", { name: MENU.canvas });
-    expect(canvas).toHaveAttribute("target", "_blank");
-    const sound = screen.getByRole("button", { name: MENU.soundOff });
+  it("says whether a switch is on, and opens nothing from a switch or an action", () => {
+    const given = items();
+    menu({ items: given });
+    const sound = screen.getByRole("button", { name: MENU.sound });
     expect(sound).toHaveAttribute("aria-pressed", "true");
     expect(sound).not.toHaveAttribute("aria-haspopup");
+    expect(sound).toHaveTextContent(MENU.on);
+    const rest = screen.getByRole("button", { name: MENU.rest });
+    expect(rest).not.toHaveAttribute("aria-haspopup");
+    expect(rest).not.toHaveAttribute("aria-pressed");
+    fireEvent.click(rest);
+    expect(given[3].onClick).toHaveBeenCalledTimes(1);
   });
 
-  it("puts the consent step first, with its reason, above the places and the view switch", () => {
+  it("puts the consent step first, with its reason, above the list and the view switch", () => {
     const onConsent = jest.fn();
-    menu({ tiles: tiles(), onConsent });
+    menu({ items: items(), onConsent });
     const consent = screen.getByRole("button", { name: PLAYER_MENU.consent });
     expect(consent).toHaveAccessibleDescription(PLAYER_MENU.consentHint);
     fireEvent.click(consent);
     expect(onConsent).toHaveBeenCalledTimes(1);
-    const order = [consent, screen.getByRole("list", { name: MENU.places }), screen.getByRole("button", { name: "ดูทั้งเกาะ" })];
+    const order = [consent, screen.getByRole("list", { name: HUD.menu }), screen.getByRole("button", { name: "ดูทั้งเกาะ" })];
     for (let i = 1; i < order.length; i++) {
       expect(order[i - 1].compareDocumentPosition(order[i]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     }
   });
 
-  it("has no grid and no consent row when given none", () => {
-    menu({ project: null });
-    expect(screen.queryByRole("list", { name: MENU.places })).toBeNull();
+  it("has no list and no consent row when given none", () => {
+    menu({ claimed: false });
+    expect(screen.queryByRole("list", { name: HUD.menu })).toBeNull();
     expect(screen.queryByRole("button", { name: PLAYER_MENU.consent })).toBeNull();
     expect(screen.getByRole("button", { name: "ดูทั้งเกาะ" })).toBeInTheDocument();
+  });
+
+  it("leaves the show-name switch to the team sheet", () => {
+    menu({ items: items() });
+    expect(screen.queryByRole("switch")).toBeNull();
+    expect(screen.queryByText(FOOTER.showName)).toBeNull();
+    expect(screen.getByText(FOOTER.signedInAs("พลอย"))).toBeInTheDocument();
   });
 });
 
@@ -133,5 +140,19 @@ describe("ProjectBody: the team's tree", () => {
     unmount();
     render(<ProjectBody project={{ name: "แอป", stage: 0 }} tree={{ ...tree, seed: null }} season={null} today={null} />);
     expect(screen.getByText(HUD.myTree(stageName(0)))).toBeInTheDocument();
+  });
+
+  it("becomes a button to the close-up when given one, with what waits there", () => {
+    const onTree = jest.fn();
+    const { unmount } = render(<ProjectBody project={{ name: "แอป", stage: 0 }} tree={tree} season={null} today={null} onTree={onTree} />);
+    const line = screen.getByRole("button", { name: HUD.myTree(PRE_STAGE) });
+    expect(line).toHaveAttribute("aria-haspopup", "dialog");
+    expect(screen.queryByTestId("tree-line-dot")).toBeNull();
+    fireEvent.click(line);
+    expect(onTree).toHaveBeenCalledTimes(1);
+    unmount();
+    render(<ProjectBody project={{ name: "แอป", stage: 0 }} tree={tree} season={null} today={null} onTree={onTree} waiting="มีของขวัญรออยู่" />);
+    expect(screen.getByRole("button", { name: `${HUD.myTree(PRE_STAGE)}, มีของขวัญรออยู่` })).toBeInTheDocument();
+    expect(screen.getByTestId("tree-line-dot")).toBeInTheDocument();
   });
 });
