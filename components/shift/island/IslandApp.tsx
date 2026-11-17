@@ -5,13 +5,16 @@ import { toast } from "sonner";
 
 import { checkIn, setResting } from "@/app/shift/island/actions";
 
-import { festivalOf, type Festival } from "@/lib/shift-island/festival";
-import { MAX_SEATS, type PlazaInput, type PlazaLabelId, type PlazaSpotId } from "@/lib/shift-island/live/plaza";
-import { noticePins, type NoticePin } from "@/lib/shift-island/notice";
+import { festivalOf } from "@/lib/shift-island/festival";
+import { ARRIVE_MS } from "@/lib/shift-island/live/crowd";
+import { teamShirt } from "@/lib/shift-island/live/crowdSprites";
+import type { PlazaSpotId } from "@/lib/shift-island/live/plaza";
+import { noticePins } from "@/lib/shift-island/notice";
 import type { IslandHotspot, IslandPicture } from "@/lib/shift-island/picture";
 import { keynoteQuest, type BoardRef } from "@/lib/supabase/shift-quests/board";
 import type { LightPhase } from "@/lib/shift-island/live/types";
-import type { CampfireSummary, IslandPageData } from "@/lib/supabase/shift-quests/types";
+import { visitorsNow } from "@/lib/shift-island/visitors";
+import type { IslandPageData } from "@/lib/supabase/shift-quests/types";
 
 import { IslandAutoRefresh } from "./IslandRefresh";
 import { AdminOverview } from "./AdminOverview";
@@ -19,7 +22,7 @@ import { useCampfireSound, type CampfireSoundState } from "./CampfireSound";
 import { CampfireSheet } from "./CampfireSheet";
 import { CanvasLinkSheet } from "./canvas";
 import { ConsentSheet } from "./consent/ConsentSheet";
-import { CAMPFIRE, COMMON, FESTIVAL, GATE, HUD, MENU, NEXT_STEP, NOTICE, NO_PROJECT, RESULTS, SEASON, TODAY, thaiShortDate } from "./copy";
+import { CAMPFIRE, COMMON, GATE, HUD, MENU, NEXT_STEP, NO_PROJECT, RESULTS, TODAY } from "./copy";
 import { FestivalSheet } from "./FestivalSheet";
 import { BoardSheet, MenuFoot, MenuSheet, type MenuItem } from "./HudSheets";
 import { NewsSheet } from "./news/NewsSheet";
@@ -34,6 +37,7 @@ import { BoardButton, BoardLink, Hud, HudChip, HudLabel } from "./IslandHud";
 import styles from "./island.module.css";
 import { IslandSheet } from "./IslandSheet";
 import { IslandViewport } from "./IslandViewport";
+import { plazaProps } from "./plazaProps";
 import { NextStepCard } from "./NextStepCard";
 import { nextStep, type NextStep } from "./nextStep";
 import { NoProject } from "./NoProject";
@@ -97,48 +101,6 @@ type Panel =
 
 /** The sheets a student without a plot can open: the menu and what it leads to, and the wallet. */
 type UnclaimedPanel = Extract<Panel, "admin" | "menu" | "wallet" | "prizes" | "news" | "consent"> | null;
-
-/** The plaza in the world: what it draws, its labels and its tap targets (IslandViewport's `plaza`). */
-interface PlazaProps {
-  input: PlazaInput;
-  labels: Partial<Record<PlazaLabelId, string>>;
-  names: Partial<Record<PlazaSpotId, string>>;
-  onSpot?: (id: PlazaSpotId) => void;
-}
-
-/**
- * The plaza for the world: the Demo Day festival, the notice board's pins
- * (null: no board) and the campfire's count. Labels over the canvas are
- * aria-hidden; each spot's accessible name carries the same words. Without
- * `onSpot` there is nothing to tap, so no names either.
- */
-function plazaProps(
-  festival: Festival | null,
-  pins: NoticePin[] | null,
-  campfire: CampfireSummary | null,
-  onSpot?: (id: PlazaSpotId) => void,
-): PlazaProps {
-  const count = campfire ? Math.max(0, Math.trunc(campfire.count) || 0) : 0;
-  const date = festival ? thaiShortDate(festival.demoDay) : "";
-  const labels: PlazaProps["labels"] = {};
-  if (festival) labels.sign = FESTIVAL.sign(date, festival.daysToDemo);
-  if (count > 0) labels.campfireCount = CAMPFIRE.count(count);
-  if (count > MAX_SEATS) labels.campfireMore = CAMPFIRE.more(count - MAX_SEATS);
-  const names: PlazaProps["names"] = {};
-  if (onSpot) {
-    if (pins) names.notice = pins.length > 0 ? NOTICE.pinned(pins.map((pin) => pin.title)) : NOTICE.board;
-    if (festival) names.stage = FESTIVAL.stage(`${date} · ${SEASON.daysLeft(festival.daysToDemo)}`);
-    if (campfire) names.campfire = CAMPFIRE.spot(count);
-    names.prizes = PRIZES_UI.spot;
-  }
-  return {
-    // The Demo Day prize board always stands in the plaza.
-    input: { festival, pins: pins ? pins.map((pin) => pin.kind) : null, campfire: campfire ? { count } : null, prizes: true },
-    labels,
-    names,
-    onSpot,
-  };
-}
 
 /**
  * A consent step waits: consent is not on file, or it is but the AI news line
@@ -285,7 +247,9 @@ function Unclaimed({ page, picture, initialPhase, demoDay, voyage: forcedVoyage 
     [page.island.season, page.map.goal, page.map.plots, today],
   );
   const campfire = useCampfire(page.campfire ?? null, !paused);
-  const plaza = useMemo(() => plazaProps(festival, null, campfire.summary), [festival, campfire.summary]);
+  // Today's visitors, anonymous: without a plot the viewer has no check-in and no team of their own.
+  const visitors = useMemo(() => visitorsNow(page.visitors, { me: false, counted: false }), [page.visitors]);
+  const plaza = useMemo(() => plazaProps(festival, null, campfire.summary, undefined, visitors), [festival, campfire.summary, visitors]);
   const shared = sharedItems(page, onPanel, () => {
     setPanel(null);
     setStoryKey((key) => key + 1);
@@ -438,6 +402,11 @@ function IslandHome({
   useEffect(() => () => window.clearTimeout(puffTimer.current), []);
   // A saved check-in waits for the island to be in view again before the dust puff plays.
   const puffQueued = useRef(false);
+  // The viewer's own figure in the plaza: it walks in with the dust puff of a check-in made on this
+  // page ("walking"), then stays ("here"). A check-in made before the page loaded is already there.
+  const [arrival, setArrival] = useState<"none" | "walking" | "here">("none");
+  const arriveTimer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(arriveTimer.current), []);
   // The canvas picker, opened from a quest; the quest reopens once a canvas is linked.
   const [linking, setLinking] = useState(initialPanel === "canvas");
   const [relinkRef, setRelinkRef] = useState<BoardRef | null>(null);
@@ -459,7 +428,12 @@ function IslandHome({
     if (paused || !puffQueued.current) return;
     puffQueued.current = false;
     window.clearTimeout(puffTimer.current);
-    puffTimer.current = window.setTimeout(() => setPuffKey((key) => key + 1), SHEET_CLOSE_MS);
+    puffTimer.current = window.setTimeout(() => {
+      setPuffKey((key) => key + 1);
+      setArrival("walking");
+      window.clearTimeout(arriveTimer.current);
+      arriveTimer.current = window.setTimeout(() => setArrival("here"), ARRIVE_MS);
+    }, SHEET_CLOSE_MS);
   }, [paused]);
   // The plaza: the next quests on the notice board, Demo Day, and who is at the campfire.
   const pins = useMemo(() => noticePins(board), [board]);
@@ -483,7 +457,18 @@ function IslandHome({
     },
     [loadNames],
   );
-  const plaza = useMemo(() => plazaProps(festival, pins, campfire.summary, openSpot), [festival, pins, campfire.summary, openSpot]);
+  // Today's visitors: the viewer's own figure once their check-in is in, their teammates in the team's colour.
+  const counted = page.island.taps_today > 0;
+  const meHere = arrival !== "none" || (counted && !tappedHere);
+  const shirt = teamShirt(tree?.equipped.leaf);
+  const visitors = useMemo(() => {
+    const now = visitorsNow(page.visitors, { me: meHere, counted });
+    return now ? { ...now, arriving: arrival === "walking", shirt } : null;
+  }, [page.visitors, meHere, counted, arrival, shirt]);
+  const plaza = useMemo(
+    () => plazaProps(festival, pins, campfire.summary, openSpot, visitors),
+    [festival, pins, campfire.summary, openSpot, visitors],
+  );
 
   /** The team's tree up close. */
   function openTree() {

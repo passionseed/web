@@ -76,6 +76,22 @@ function context(c: HTMLCanvasElement, alpha = true): Ctx {
 const actorsKey = (actors: readonly LiveActor[]) => JSON.stringify(actors);
 
 /**
+ * The tick each new actor appeared on: an actor equal to one already shown
+ * keeps that one's tick (a campfire count changing never replays an arrival),
+ * anything new starts now.
+ */
+export function sinceFor(prev: readonly LiveActor[], prevSince: readonly number[], next: readonly LiveActor[], now: number): number[] {
+  const free = new Map<string, number[]>();
+  prev.forEach((actor, i) => {
+    const key = JSON.stringify(actor);
+    const list = free.get(key);
+    if (list) list.push(prevSince[i] ?? 0);
+    else free.set(key, [prevSince[i] ?? 0]);
+  });
+  return next.map((actor) => free.get(JSON.stringify(actor))?.shift() ?? now);
+}
+
+/**
  * Atlases by phase, shared by every island on the page (the viewport and the
  * story panels): built and uploaded once, never drawn into afterwards.
  */
@@ -115,6 +131,8 @@ export class LiveIsland {
   private nextPhaseCheck = 0;
   private swaying: boolean[] = [];
   private actorsKey: string;
+  /** Per actor, the tick it appeared on: a `once` actor (an arrival) plays from there. */
+  private actorsSince: number[];
   private readonly cleanup: (() => void)[] = [];
   private scrollerCleanup: (() => void) | null = null;
 
@@ -125,6 +143,7 @@ export class LiveIsland {
   ) {
     this.props = props;
     this.actorsKey = actorsKey(props.actors);
+    this.actorsSince = props.actors.map(() => 0);
     let ctx: Ctx | null = null;
     try {
       ctx = canvas.getContext("2d", { alpha: false });
@@ -150,6 +169,7 @@ export class LiveIsland {
       const key = actorsKey(next.actors);
       const actorsChanged = key !== this.actorsKey;
       this.actorsKey = key;
+      if (actorsChanged) this.actorsSince = sinceFor(prev.actors, this.actorsSince, next.actors, this.currentTick());
       if (!this.ready) return;
       const cropChanged = JSON.stringify(next.crop) !== JSON.stringify(prev.crop);
       // A refreshed page sends an equal scene as a new object: only a real change rebuilds.
@@ -520,6 +540,7 @@ export class LiveIsland {
       scene: model.scene,
       swaying: this.swaying,
       actors: this.props.actors,
+      actorsSince: this.actorsSince,
       ambient: this.props.ambient,
       still: this.isStill(),
       lowDetail: this.lowDetail,

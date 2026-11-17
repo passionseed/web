@@ -109,6 +109,8 @@ const WEB_ALLOWLIST = [
   "shift_quest_peer_hide(text,uuid,boolean)",
   "shift_quest_project_friends(text,uuid,text)",
   "shift_quest_project_invite_friend(text,uuid,uuid)",
+  // 20261118100000_shift_quest_island_visitors.
+  "shift_quest_island_visitors(text)",
 ];
 
 let failures = 0;

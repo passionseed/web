@@ -825,6 +825,35 @@ describe("IslandApp: the plaza", () => {
     }
   });
 
+  it("hands the world today's visitors: the viewer already checked in, teammates in the team's colour", () => {
+    const tree = { seed: null, equipped: { shape: "shape:round", leaf: "leaf:dusk", bark: "bark:oak", bloom: "bloom:cream" }, owned: [], gifts: [], roots: { count: 0, recent: 0 }, stage: 1 };
+    render(<IslandApp page={festive({ visitors: { count: 5, team: 2 }, tree })} picture={null} />);
+    expect(plaza().input.visitors).toEqual({ count: 5, team: 2, me: true, arriving: false, shirt: "w" });
+    expect(plaza().labels).toMatchObject({ visitors: "วันนี้มีคนแวะเกาะ 5 คน\nเพื่อนร่วมทีมแวะมาแล้ว 2 คน", me: "คุณ" });
+    expect(plaza().labels.visitorsMore).toBeUndefined();
+  });
+
+  it("draws nobody before the migration (no count), not even the viewer", () => {
+    render(<IslandApp page={festive()} picture={null} />);
+    expect(plaza().input.visitors).toBeNull();
+    expect(plaza().labels).not.toHaveProperty("visitors");
+    expect(plaza().labels).not.toHaveProperty("me");
+  });
+
+  it("walks the viewer in when today's check-in lands, adding them to the count once", async () => {
+    (checkIn as jest.Mock).mockClear();
+    render(<IslandApp page={festive({ island: { ...page().island, taps_today: 0 }, visitors: { count: 2, team: 0 } })} picture={null} />);
+    expect(plaza().input.visitors).toMatchObject({ count: 2, me: false, arriving: false });
+    fireEvent.click(cardButton());
+    await waitFor(() => expect(checkIn).toHaveBeenCalled());
+    // Under the quest sheet nothing moves yet: the figure waits for the island to be in view again.
+    expect(plaza().input.visitors).toMatchObject({ count: 2, me: false });
+    fireEvent.click(screen.getByRole("button", { name: "close-detail" }));
+    await waitFor(() => expect(plaza().input.visitors).toMatchObject({ count: 3, me: true, arriving: true }), { timeout: 2000 });
+    expect(viewport()).toHaveAttribute("data-puff", "1");
+    expect(plaza().labels.me).toBe("คุณ");
+  });
+
   it("draws eight at the fire and says how many more", () => {
     render(<IslandApp page={festive({ campfire: { count: 11, joinUrl: JOIN } })} picture={null} />);
     expect(plaza().labels).toMatchObject({ campfireCount: "11 คนกำลังทำงานอยู่", campfireMore: "+3" });

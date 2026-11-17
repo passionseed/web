@@ -31,6 +31,9 @@
 #   treepost  every migration applied twice, then tree_post.ts (schema 16,
 #             20261118090000: the celebrate post when a mentor's approval
 #             grows a tree, and the bot's send-time read), consent on and off
+#   visitors  every migration applied twice, then visitors.ts (schema 17,
+#             20261118100000: the plaza's count of today's check-ins and the
+#             caller's own team's), with consent off
 #
 #   supabase/tests/shift_quests/run-local.sh       # or: pnpm test:db:quests
 #   PG_BIN=/usr/lib/postgresql/15/bin supabase/tests/shift_quests/run-local.sh
@@ -200,7 +203,9 @@ WITH fns0 AS (
         'shift_quest_project_set_ambition')
       -- 20261115140000_shift_quest_peer_check: the peer check is the website's.
       OR p.proname IN ('shift_quest_project_friends', 'shift_quest_project_invite_friend')
-      OR p.proname LIKE 'shift\_quest\_peer\_%' AS web_only
+      OR p.proname LIKE 'shift\_quest\_peer\_%'
+      -- 20261118100000_shift_quest_island_visitors: the plaza's visitors are the website's.
+      OR p.proname = 'shift_quest_island_visitors' AS web_only
   FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
   WHERE n.nspname = 'public' AND p.proname LIKE 'shift\_quest\_%'
 ), fns AS (
@@ -283,7 +288,9 @@ web_allow(sig) AS (VALUES
   ('shift_quest_peer_list(text,uuid)'),
   ('shift_quest_peer_hide(text,uuid,boolean)'),
   ('shift_quest_project_friends(text,uuid,text)'),
-  ('shift_quest_project_invite_friend(text,uuid,uuid)')
+  ('shift_quest_project_invite_friend(text,uuid,uuid)'),
+  -- 20261118100000_shift_quest_island_visitors.
+  ('shift_quest_island_visitors(text)')
 ), web_applied AS (
   SELECT to_regprocedure('public.shift_quest_board(text)') IS NOT NULL AS yes
 )
@@ -346,7 +353,7 @@ echo "# migrations"
 for f in "${MIGRATIONS[@]}"; do echo "apply $(basename "$f")"; done
 new_db once
 apply once "single pass" "${MIGRATIONS[@]}"
-for DB in rules island flows islandflows board canvas campfire live player roots tree reset evidence peer treepost; do
+for DB in rules island flows islandflows board canvas campfire live player roots tree reset evidence peer treepost visitors; do
   new_db "$DB"
   apply "$DB" "first pass" "${MIGRATIONS[@]}"
   apply "$DB" "second pass" "${MIGRATIONS[@]}"
@@ -424,6 +431,7 @@ suite "admin reset" reset reset.ts
 suite "photo evidence and the team's problem" evidence evidence.ts
 suite "peer check" peer peer.ts
 suite "tree grew post" treepost tree_post.ts
+suite "plaza visitors" visitors visitors.ts
 # island_rules.ts runs against wave 1 alone once it knows to skip season cases.
 if [ "${#WAVE1[@]}" -lt "${#MIGRATIONS[@]}" ] && grep -q SHIFT_QUESTS_WAVE "$HERE/island_rules.ts"; then
   export SHIFT_QUESTS_WAVE=1

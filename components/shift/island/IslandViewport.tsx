@@ -511,6 +511,7 @@ export function IslandViewport({
                 world={plazaView}
                 labels={plaza.labels}
                 names={plaza.names}
+                me={me}
                 onSpot={
                   plaza.onSpot
                     ? (id) => {

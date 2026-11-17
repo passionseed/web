@@ -693,6 +693,22 @@ export const CAMPFIRE = {
 };
 
 /**
+ * DRAFT: today's visitors in the plaza (docs/designs/shift-island-plaza-visitors.md).
+ * The figures carry no names; the team line goes only to the viewer's own
+ * team, and the tag only over the viewer's own figure, on their own screen.
+ */
+export const VISITORS = {
+  /** DRAFT: the plaza's label, how many checked in on the Bangkok day (the viewer included). */
+  count: (count: number) => `วันนี้มีคนแวะเกาะ ${count} คน`,
+  /** DRAFT: a second line for the viewer's own team only. */
+  team: (count: number) => `เพื่อนร่วมทีมแวะมาแล้ว ${count} คน`,
+  /** More people than figures, as at the campfire. */
+  more: (count: number) => `+${count}`,
+  /** DRAFT: the tag over the viewer's own figure, beside their picture. */
+  me: "คุณ",
+};
+
+/**
  * DRAFT: one quiet line per quest above its purpose on the quest page, by
  * template slug (lore bible, "หนึ่งบรรทัดต่อเควสต์"). Why the quest matters on
  * the island, never how to do it. A proposed quest has none: its goal is the

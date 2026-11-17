@@ -335,6 +335,13 @@ export interface IslandPageData {
   photos?: boolean;
   /** The peer check (schema 15). False or absent on an older database or when the version read fails. */
   peer?: boolean;
+  /**
+   * Today's visitors for the plaza (shift_quest_island_visitors, schema 17):
+   * how many checked in on the Bangkok day and how many of the viewer's own
+   * team did. Two integers, never a name. Optional so older fixtures keep
+   * compiling. null: an older database or a failed read; no figures drawn.
+   */
+  visitors?: import("@/lib/shift-island/visitors").IslandVisitors | null;
 }
 
 /** Page payload for the voice campfire: no names, no ids. */
