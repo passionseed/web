@@ -124,7 +124,7 @@ const WEB_ALLOWLIST = [
   "shift_quest_peer_hide(text,uuid,boolean)",
   "shift_quest_project_friends(text,uuid,text)",
   "shift_quest_project_invite_friend(text,uuid,uuid)",
-  // 20261118100000_shift_quest_island_visitors.
+  // 20261118110000_shift_quest_island_visitors.
   "shift_quest_island_visitors(text)",
 ];
 
@@ -362,7 +362,7 @@ async function main(): Promise<void> {
     // 20261115120000_shift_quest_admin_reset_self: only an admin resets, and only their own island.
     ["admin_reset_self", "select public.shift_quest_admin_reset_self($1::text)", [NOBODY], "not_authorized"],
     ["admin_island", "select public.shift_quest_admin_island($1::text)", [NOBODY], "not_authorized"],
-    // 20261118100000_shift_quest_island_visitors: an unknown caller is refused.
+    // 20261118110000_shift_quest_island_visitors: an unknown caller is refused.
     ["island_visitors", "select public.shift_quest_island_visitors($1::text)", [NOBODY], "not_started"],
   ];
   check(allowCalls.length === WEB_ALLOWLIST.length, "every allowlisted function is called below");

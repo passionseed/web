@@ -22,7 +22,7 @@ function logFailure(code: string): void {
 /**
  * Today's visitors for one ready viewer (shift_quest_island_visitors): the
  * island's count and the viewer's own team's, two integers. Soft both ways:
- * before schema 17 the function is never called, and any refusal, database
+ * before schema 18 the function is never called, and any refusal, database
  * error or malformed answer gives null (logged once, as a code). null draws
  * no figures; the island works the same without them.
  */

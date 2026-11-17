@@ -1,6 +1,6 @@
 /**
  * SHIFT High Island on the web: the plaza's visitors
- * (20261118100000_shift_quest_island_visitors, schema 17). How many members
+ * (20261118110000_shift_quest_island_visitors, schema 18). How many members
  * checked in on today's Bangkok date, and how many of the caller's own active
  * teammates did: two integers, never an id, a name, a project or a time.
  * Every student call goes through shift_quest_web, as the website makes it.
@@ -112,8 +112,8 @@ async function main(): Promise<void> {
   };
 
   // --- Schema, privileges --------------------------------------------------------------------------
-  check(Number(await call(web, "shift_quest_schema_version")) === LATEST_SCHEMA && LATEST_SCHEMA >= 17,
-    "the website reads schema 17 or later (the plaza's visitors)");
+  check(Number(await call(web, "shift_quest_schema_version")) === LATEST_SCHEMA && LATEST_SCHEMA >= 18,
+    "the website reads schema 18 or later (the plaza's visitors)");
   const grants: Json = (await db.query(
     `select has_function_privilege('shift_quest_bot', $1::regprocedure, 'EXECUTE') as bot,
             has_function_privilege('shift_quest_web', $1::regprocedure, 'EXECUTE') as web,

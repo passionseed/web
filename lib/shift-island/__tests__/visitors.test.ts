@@ -25,8 +25,8 @@ describe("visitorsFrom", () => {
     expect(Object.keys(visitorsFrom({ count: 4, team: 1, names: ["x"], member_id: "m" })!).sort()).toEqual(["count", "team"]);
   });
 
-  it("is read from schema 17", () => {
-    expect(VISITORS_SCHEMA).toBe(17);
+  it("is read from schema 18", () => {
+    expect(VISITORS_SCHEMA).toBe(18);
   });
 });
 

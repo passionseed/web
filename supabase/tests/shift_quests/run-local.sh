@@ -31,8 +31,8 @@
 #   treepost  every migration applied twice, then tree_post.ts (schema 16,
 #             20261118090000: the celebrate post when a mentor's approval
 #             grows a tree, and the bot's send-time read), consent on and off
-#   visitors  every migration applied twice, then visitors.ts (schema 17,
-#             20261118100000: the plaza's count of today's check-ins and the
+#   visitors  every migration applied twice, then visitors.ts (schema 18,
+#             20261118110000: the plaza's count of today's check-ins and the
 #             caller's own team's), with consent off
 #
 #   supabase/tests/shift_quests/run-local.sh       # or: pnpm test:db:quests
@@ -204,7 +204,7 @@ WITH fns0 AS (
       -- 20261115140000_shift_quest_peer_check: the peer check is the website's.
       OR p.proname IN ('shift_quest_project_friends', 'shift_quest_project_invite_friend')
       OR p.proname LIKE 'shift\_quest\_peer\_%'
-      -- 20261118100000_shift_quest_island_visitors: the plaza's visitors are the website's.
+      -- 20261118110000_shift_quest_island_visitors: the plaza's visitors are the website's.
       OR p.proname = 'shift_quest_island_visitors' AS web_only
   FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
   WHERE n.nspname = 'public' AND p.proname LIKE 'shift\_quest\_%'
@@ -289,7 +289,7 @@ web_allow(sig) AS (VALUES
   ('shift_quest_peer_hide(text,uuid,boolean)'),
   ('shift_quest_project_friends(text,uuid,text)'),
   ('shift_quest_project_invite_friend(text,uuid,uuid)'),
-  -- 20261118100000_shift_quest_island_visitors.
+  -- 20261118110000_shift_quest_island_visitors.
   ('shift_quest_island_visitors(text)')
 ), web_applied AS (
   SELECT to_regprocedure('public.shift_quest_board(text)') IS NOT NULL AS yes

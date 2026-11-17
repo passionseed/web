@@ -336,7 +336,7 @@ export interface IslandPageData {
   /** The peer check (schema 15). False or absent on an older database or when the version read fails. */
   peer?: boolean;
   /**
-   * Today's visitors for the plaza (shift_quest_island_visitors, schema 17):
+   * Today's visitors for the plaza (shift_quest_island_visitors, schema 18):
    * how many checked in on the Bangkok day and how many of the viewer's own
    * team did. Two integers, never a name. Optional so older fixtures keep
    * compiling. null: an older database or a failed read; no figures drawn.

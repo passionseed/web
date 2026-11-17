@@ -636,7 +636,7 @@ describe("admin oversight privacy", () => {
   });
 });
 
-describe("today's visitors (schema 17)", () => {
+describe("today's visitors (schema 18)", () => {
   // No project: the island, the map, roots and styles answered, today's visitors on top.
   const answers = {
     shift_quest_island: {},
@@ -647,14 +647,14 @@ describe("today's visitors (schema 17)", () => {
   };
 
   it("reads the island's count and the team's for the viewer, two integers only", async () => {
-    respond({ ...answers, shift_quest_schema_version: 17, shift_quest_island_visitors: { count: 7, team: 2 } });
+    respond({ ...answers, shift_quest_schema_version: 18, shift_quest_island_visitors: { count: 7, team: 2 } });
     const page = await getIslandPage(viewer);
     expect(call).toHaveBeenCalledWith("shift_quest_island_visitors", ACTOR);
     expect(page.visitors).toEqual({ count: 7, team: 2 });
     expect(JSON.stringify(page.visitors)).not.toContain(ACTOR);
   });
 
-  it.each([15, 16])("never asks before schema 17 (%s): no figures, and the page loads", async (version) => {
+  it.each([15, 16, 17])("never asks before schema 18 (%s): no figures, and the page loads", async (version) => {
     respond({ ...answers, shift_quest_schema_version: version });
     const page = await getIslandPage(viewer);
     expect(call).not.toHaveBeenCalledWith("shift_quest_island_visitors", ACTOR);
@@ -669,7 +669,7 @@ describe("today's visitors (schema 17)", () => {
     ["malformed data", { count: "seven" }],
     ["no answer", null],
   ])("is null on %s, and the rest of the page still loads", async (_, failure) => {
-    respond({ ...answers, shift_quest_schema_version: 17, shift_quest_island_visitors: failure });
+    respond({ ...answers, shift_quest_schema_version: 18, shift_quest_island_visitors: failure });
     const page = await getIslandPage(viewer);
     expect(page.visitors).toBeNull();
     expect(page.map.plots).toHaveLength(1);

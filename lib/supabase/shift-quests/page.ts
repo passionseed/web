@@ -158,7 +158,7 @@ async function canvasLinkOf(api: QuestApi, actor: string, userId: string): Promi
  * drawn, no link in the menu), the character sheet, consent and island
  * news, which fall back to null too (no stats or coin pill, nothing gated,
  * no news), public roots (schema 10), which fall back to none, and today's
- * visitors (schema 17), which fall back to null (no figures in the plaza). Own
+ * visitors (schema 18), which fall back to null (no figures in the plaza). Own
  * roots (schema 11) override only the member plot, falling back to its outsider value.
  */
 export async function getIslandPage(viewer: ReadyViewer): Promise<IslandPageData> {

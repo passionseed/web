@@ -135,7 +135,7 @@ async function main(): Promise<void> {
     ].includes(f.proname) ||
     // 20261115140000_shift_quest_peer_check.
     f.proname.startsWith("shift_quest_peer_") ||
-    // 20261118100000_shift_quest_island_visitors.
+    // 20261118110000_shift_quest_island_visitors.
     f.proname === "shift_quest_island_visitors";
   const missing = fns.filter((f) => !internal(f) && !webOnly(f) && !f.bot).map((f) => f.sig);
   check(missing.length === 0, "the bot can execute every shift_quest entry point but the website-only ones", missing);

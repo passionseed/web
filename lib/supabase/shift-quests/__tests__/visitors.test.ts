@@ -21,13 +21,13 @@ beforeEach(() => {
 afterEach(() => jest.restoreAllMocks());
 
 describe("visitorsOf", () => {
-  it("reads two integers for the actor from schema 17", async () => {
-    const { api: a, call } = api({ shift_quest_schema_version: 17, shift_quest_island_visitors: { count: 4, team: 1 } });
+  it("reads two integers for the actor from schema 18", async () => {
+    const { api: a, call } = api({ shift_quest_schema_version: 18, shift_quest_island_visitors: { count: 4, team: 1 } });
     expect(await visitorsOf(a, ACTOR)).toEqual({ count: 4, team: 1 });
     expect(call).toHaveBeenCalledWith("shift_quest_island_visitors", ACTOR);
   });
 
-  it("never calls before schema 17", async () => {
+  it("never calls before schema 18", async () => {
     const { api: a, call } = api({ shift_quest_schema_version: 16 });
     expect(await visitorsOf(a, ACTOR)).toBeNull();
     expect(call).not.toHaveBeenCalledWith("shift_quest_island_visitors", ACTOR);
@@ -36,7 +36,7 @@ describe("visitorsOf", () => {
   it("fails soft, logging a code once and never a message or the actor", async () => {
     const errors = [new QuestDbError("shift_quest_island_visitors", "42501"), new QuestError("not_started"), new Error(ACTOR)];
     for (const error of errors) {
-      const { api: a } = api({ shift_quest_schema_version: 17, shift_quest_island_visitors: error });
+      const { api: a } = api({ shift_quest_schema_version: 18, shift_quest_island_visitors: error });
       expect(await visitorsOf(a, ACTOR)).toBeNull();
     }
     const logged = (console.error as jest.Mock).mock.calls.map((c) => String(c[0]));

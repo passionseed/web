@@ -2,8 +2,8 @@
 
 Status: built on `feat/shift-island-plaza-visitors`, 2026-11-18, stacked on
 [shift-island-one-next-step.md](shift-island-one-next-step.md). The migration
-(`20261118100000_shift_quest_island_visitors.sql`, schema 17) is **not
-applied**: it waits for the founder's go, after #324's schema 16. Until it is
+(`20261118110000_shift_quest_island_visitors.sql`, schema 18) is **not
+applied**: it waits for the founder's go, after #324's schema 16 (applied) and #321's 17. Until it is
 applied the island draws no figures and works as before. Thai copy is DRAFT
 and needs the three-model review in the root `AGENTS.md`.
 
@@ -56,7 +56,7 @@ Nobody checked in today: nothing is drawn. More people than eight figures:
   login only. Erased members are never counted.
 - **The campfire stays honest.** Visitors sit only in seats the coworking
   room leaves empty, and the campfire's own count and "+N" stay the room's.
-- **It never breaks the island.** Before schema 17 the website never calls the
+- **It never breaks the island.** Before schema 18 the website never calls the
   function; any failure is no figures. Nothing in the bot's picture changes.
 
 ## What was rejected
@@ -71,15 +71,15 @@ Nobody checked in today: nothing is drawn. More people than eight figures:
 
 ## How it works
 
-- **Database** (`supabase/migrations/20261118100000_shift_quest_island_visitors.sql`):
+- **Database** (`supabase/migrations/20261118110000_shift_quest_island_visitors.sql`):
   `shift_quest_island_visitors(p_actor) → {count, team}`, STABLE, SECURITY
   DEFINER, `search_path` pinned, revoked from PUBLIC, anon, authenticated and
   the bot, granted to `shift_quest_web` and `service_role`. A partial index on
-  the Bangkok date of taps keeps the count to one day's rows. Schema 17.
+  the Bangkok date of taps keeps the count to one day's rows. Schema 18.
   Tested in `supabase/tests/shift_quests/visitors.ts` (the Bangkok day's edges,
   repeat taps, notes, invited and departed teammates, erased members, grants).
 - **Page data**: `lib/supabase/shift-quests/visitors.ts` reads it from schema
-  17 (`VISITORS_SCHEMA`), soft both ways, into `IslandPageData.visitors`.
+  18 (`VISITORS_SCHEMA`), soft both ways, into `IslandPageData.visitors`.
   `visitorsNow` (`lib/shift-island/visitors.ts`) adds the viewer once when
   their check-in landed after the page loaded.
 - **The crowd** (`lib/shift-island/live/crowd.ts`): `crowdPlan` (the viewer,

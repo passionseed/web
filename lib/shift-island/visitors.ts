@@ -1,5 +1,5 @@
 /**
- * The plaza's visitors (schema 17, 20261118100000_shift_quest_island_visitors),
+ * The plaza's visitors (schema 18, 20261118110000_shift_quest_island_visitors),
  * shared by the browser and the server: one small figure in the plaza for each
  * person who checked in today (the Bangkok day). The database returns two
  * integers only, the island's count and how many of the viewer's own team
@@ -10,7 +10,7 @@
  */
 
 /** The quest schema with shift_quest_island_visitors. */
-export const VISITORS_SCHEMA = 17;
+export const VISITORS_SCHEMA = 18;
 
 /** shift_quest_island_visitors, checked: never negative, never fractional. */
 export interface IslandVisitors {

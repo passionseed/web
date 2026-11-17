@@ -18,12 +18,13 @@
 --     members are not counted. STABLE: it writes nothing and audits nothing.
 --   * shift_quest_progress_tap_day: a partial index on the Bangkok date of
 --     taps, so the island-wide count reads one day's rows, not every tap.
---   * shift_quest_schema_version() = 17. 16 is taken by
---     20261118090000_shift_quest_tree_grew_post (pull request #324): apply
---     that file first, or both together in timestamp order, so the version
---     only ever goes up. If a file that says 16 were applied after this one,
---     the website would hide the figures until the version said 17 again (it
---     fails soft, never breaks). The website reads the visitors only from 17
+--   * shift_quest_schema_version() = 18. 16 is taken by
+--     20261118090000_shift_quest_tree_grew_post (pull request #324, applied)
+--     and 17 by 20261118100000_shift_quest_web_everything (pull request
+--     #321): apply those first, or together in timestamp order, so the
+--     version only ever goes up. If a file that says 17 were applied after
+--     this one, the website would hide the figures until the version said 18
+--     again (it fails soft, never breaks). The website reads the visitors only from 18
 --     (VISITORS_SCHEMA in lib/shift-island/visitors.ts) and still needs 6;
 --     the bot never calls this function.
 --
@@ -89,12 +90,12 @@ BEGIN
 END;
 $$;
 
-/** Island schema 17: the plaza's visitors (16 is 20261118090000_shift_quest_tree_grew_post). */
+/** Island schema 18: the plaza's visitors (16 is 20261118090000_shift_quest_tree_grew_post, 17 is 20261118100000_shift_quest_web_everything). */
 CREATE OR REPLACE FUNCTION public.shift_quest_schema_version()
 RETURNS integer
 LANGUAGE sql
 IMMUTABLE
-AS $$ SELECT 17; $$;
+AS $$ SELECT 18; $$;
 
 -- ---------------------------------------------------------------------------
 -- Privileges
