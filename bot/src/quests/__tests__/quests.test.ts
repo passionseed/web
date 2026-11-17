@@ -10,6 +10,7 @@ import { questCommands } from "../commands";
 import { isEligible, type Ctx } from "../context";
 import { DAY_NAMES, T, errorText, renderInbox, renderOutbox, safe } from "../copy";
 import { dropDraft, getDraft, putDraft } from "../drafts";
+import { renderDelivery } from "../outbox";
 import { cid, isUuid, parseCid } from "../ids";
 import { parseDate } from "../ui";
 
@@ -190,11 +191,13 @@ describe("copy", () => {
     for (const match of sql.matchAll(/shift_quest__post\(\s*[^,]+,\s*'[a-z]+',\s*'([a-z_]+)'\s*,/g)) kinds.add(match[1]);
     expect(kinds.has("review_needed")).toBe(true);
     for (const kind of kinds) {
-      const rendered = renderOutbox(kind, { title: "t", summary: "s", body: "b", item: "i", revision: 1 }, "111", "222");
+      // renderDelivery is what the outbox loop renders with (tree_grew is laid out in ../outbox).
+      const rendered = renderDelivery(kind, { title: "t", summary: "s", body: "b", item: "i", revision: 1 }, "111", "222");
       expect([kind, rendered?.title.length ?? 0]).not.toEqual([kind, 0]);
       expect([rendered!.title, rendered!.body, rendered!.note].join("\n").length).toBeLessThanOrEqual(2000);
     }
     expect(renderOutbox("mystery", {}, null, null)).toBeNull();
+    expect(renderDelivery("mystery", {}, null, null)).toBeNull();
   });
 
   it("renders every private notice the database writes", () => {

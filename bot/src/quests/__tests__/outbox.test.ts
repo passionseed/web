@@ -7,9 +7,19 @@ import path from "node:path";
 import { MessageFlags, type Client } from "discord.js";
 
 import type { QuestApi } from "../api";
-import { T, renderOutbox } from "../copy";
+import { T, TREE_GREW, renderOutbox } from "../copy";
+import { STAGE_NAMES } from "../island/copy";
 import type { IslandPlot } from "../island/render";
-import { deliver, outboxView, type Claimed } from "../outbox";
+import {
+  PING_NAMED_TEAMS,
+  TREE_GREW_REACTIONS,
+  deliver,
+  outboxView,
+  renderDelivery,
+  renderTreeGrew,
+  treeGrewParams,
+  type Claimed,
+} from "../outbox";
 import { LIMITS, NO_MENTIONS, TONE_COLORS, renderView, setCommandIds } from "../ui";
 import { accentColor, bodyText, cardsOf, componentCount, mediaUrls, textLength, viewText } from "../test-helpers/view";
 
@@ -76,7 +86,7 @@ describe("outbox cards", () => {
     try {
       const long = "ก".repeat(2000);
       for (const kind of queuedKinds()) {
-        const post = renderOutbox(
+        const post = renderDelivery(
           kind,
           { title: long, summary: long, body: long, item: long, revision: 2, goal_count: 3, goal_target: 10, open_quests: 2 },
           "111",
@@ -228,5 +238,179 @@ describe("deliver", () => {
     await expect(deliver(client, fakeApi(), claimed({ kind: "mystery" }))).rejects.toMatchObject({ permanent: true });
     expect(channelSend).not.toHaveBeenCalled();
     expect(userSend).not.toHaveBeenCalled();
+  });
+});
+
+describe("tree_grew: the celebrate post when a mentor's approval grows a tree", () => {
+  // Synthetic ids and a made-up team.
+  const A = "100000000000000001";
+  const B = "100000000000000002";
+  const PROJECT = "11111111-1111-4111-8111-111111111111";
+  const QUEST = "22222222-2222-4222-8222-222222222222";
+  const queued = { project_id: PROJECT, instance_id: QUEST, milestone: 3, stage: 3 };
+  const named = { slot: 4, title: "ได้พันธมิตรคนแรก", name: "ร้านขนมปังของเรา", team_user_ids: [A, B] };
+  const mystery = { slot: 4, title: "ได้พันธมิตรคนแรก", name: null, team_user_ids: [] };
+  const WEB = "https://island.example/shift/island";
+  const savedIsland = process.env.SHIFT_ISLAND_URL;
+
+  function treeApi(read: unknown): QuestApi {
+    return { call: jest.fn(async (fn: string) => (fn === "shift_quest_tree_post" ? read : null)), rows: jest.fn() } as unknown as QuestApi;
+  }
+
+  function reactingClient(react: jest.Mock = jest.fn(async () => undefined)) {
+    const channelSend = jest.fn(async (_payload: unknown) => ({ id: "post-1", react }));
+    const client = { users: { fetch: jest.fn() }, channels: { fetch: jest.fn(async () => ({ isSendable: () => true, send: channelSend })) } };
+    return { client: client as unknown as Client, channelSend, react };
+  }
+
+  /** Link buttons' URLs in a sent card. */
+  function linkUrls(payload: unknown): string[] {
+    const urls: string[] = [];
+    const visit = (c: { url?: string; components?: unknown[] }) => {
+      if (typeof c.url === "string") urls.push(c.url);
+      for (const child of c.components ?? []) visit(child as { url?: string; components?: unknown[] });
+    };
+    for (const card of cardsOf(payload)) visit(card as { url?: string; components?: unknown[] });
+    return urls;
+  }
+
+  beforeEach(() => {
+    process.env.SHIFT_ISLAND_URL = WEB;
+  });
+  afterEach(() => {
+    if (savedIsland === undefined) delete process.env.SHIFT_ISLAND_URL;
+    else process.env.SHIFT_ISLAND_URL = savedIsland;
+  });
+
+  it("names a team that shows its name, says which main quest and the new stage, and pings its members", () => {
+    const post = renderTreeGrew({ ...queued, ...named });
+    expect(post.title).toBe("🎉 ต้นไม้โตอีกขั้น");
+    expect(post.body).toBe(
+      [
+        "**ร้านขนมปังของเรา** · แปลง #4",
+        "ผ่านเควสต์หลักที่ 3 **ได้พันธมิตรคนแรก** แล้ว",
+        "🌿 ▰▰▰▱▱▱▱ ต้นอ่อน **3**/7",
+        `<@${A}> <@${B}> ยินดีด้วย! ต้นนี้โตจากงานจริงของทีม`,
+      ].join("\n")
+    );
+    expect(post.note).toBe("");
+    expect(post.mentionUserIds).toEqual([A, B]);
+  });
+
+  it("calls a team that has not shown its name ทีมปริศนา with its plot, pings nobody and invites it lightly", () => {
+    const post = renderTreeGrew({ ...queued, ...mystery, team_user_ids: [A] });
+    expect(post.body).toBe(
+      [
+        "**ทีมปริศนา** · แปลง #4",
+        "ผ่านเควสต์หลักที่ 3 **ได้พันธมิตรคนแรก** แล้ว",
+        "🌿 ▰▰▰▱▱▱▱ ต้นอ่อน **3**/7",
+        "ยินดีด้วย! ต้นนี้โตจากงานจริงของทีม",
+      ].join("\n")
+    );
+    expect(post.note).toBe(TREE_GREW.showName);
+    expect(post.mentionUserIds).toEqual([]);
+    expect(post.body).not.toContain("<@");
+  });
+
+  it("shows every stage by its name, with the bar full only at 7", () => {
+    for (let stage = 1; stage <= 7; stage += 1) {
+      const line = renderTreeGrew({ ...queued, ...named, stage }).body.split("\n")[2];
+      expect(line).toBe(`${TREE_GREW.stageEmoji[stage]} ${"▰".repeat(stage)}${"▱".repeat(7 - stage)} ${STAGE_NAMES[stage]} **${stage}**/7`);
+    }
+  });
+
+  it("escapes the team's name and the title, and pings only real Discord ids, once each", () => {
+    const post = renderTreeGrew({
+      ...queued,
+      name: "# ทีม [ลิงก์](https://evil.example) @everyone",
+      title: "**ตัวหนา**",
+      team_user_ids: [A, A, "<@&123>", "everyone", 42, B],
+    });
+    const text = bodyText(renderView(outboxView("tree_grew", post), { ephemeral: false }));
+    expect(text).toContain("\\# ทีม \\[ลิงก์](https://evil.example) @\u200beveryone");
+    expect(text).toContain("**\\*\\*ตัวหนา\\*\\***");
+    expect(text.split("\n").filter((line) => /^(> )?#{1,3} /.test(line))).toEqual(["### 🎉 ต้นไม้โตอีกขั้น"]);
+    expect(post.mentionUserIds).toEqual([A, B]);
+  });
+
+  it("still reads well with missing parts", () => {
+    const post = renderTreeGrew({ stage: 99, milestone: "x" });
+    expect(post.body.split("\n").slice(0, 3)).toEqual(["**ทีมปริศนา**", "ผ่านเควสต์หลัก แล้ว", "🟫 ▱▱▱▱▱▱▱ ที่ดินว่าง **0**/7"]);
+  });
+
+  it("keeps the house copy rules: no em dash, no น้องๆ, no 'not passed' or 'needs more', no mentor words", () => {
+    const words = [renderTreeGrew({ ...queued, ...named }), renderTreeGrew({ ...queued, ...mystery })]
+      .map((p) => [p.title, p.body, p.note].join("\n"))
+      .join("\n");
+    for (const banned of ["—", "น้องๆ", "น้อง ๆ", "ยังไม่ผ่าน", "ขอข้อมูลเพิ่ม", "ความเห็น", "feedback"]) {
+      expect([banned, words.includes(banned)]).toEqual([banned, false]);
+    }
+  });
+
+  it("reads the plot, title, name and members when it sends, keeping the members only for a named team", async () => {
+    const api = treeApi(named);
+    const params = await treeGrewParams(api, queued);
+    expect(api.call).toHaveBeenCalledWith("shift_quest_tree_post", PROJECT, QUEST);
+    expect(params).toEqual({ ...queued, ...named });
+    expect((await treeGrewParams(treeApi(named), queued, false)).team_user_ids).toEqual([]);
+    expect((await treeGrewParams(treeApi({ ...mystery, team_user_ids: [A] }), queued)).team_user_ids).toEqual([]);
+    expect(PING_NAMED_TEAMS).toBe(true);
+  });
+
+  it("posts the card with the island link, pings only the team, and adds its own 🎉 and 🌱", async () => {
+    const { client, channelSend, react } = reactingClient();
+    const id = await deliver(client, treeApi(named), claimed({ kind: "tree_grew", params: queued }));
+    expect(id).toBe("post-1");
+    const payload = sentPayload(channelSend);
+    expect(payload.flags).toBe(MessageFlags.IsComponentsV2);
+    expect(payload.allowedMentions).toEqual({ users: [A, B], parse: [] });
+    expect(accentColor(payload)).toBe(TONE_COLORS.success);
+    expect(bodyText(payload).startsWith("### 🎉 ต้นไม้โตอีกขั้น\n**ร้านขนมปังของเรา** · แปลง #4\n")).toBe(true);
+    expect(linkUrls(payload)).toEqual([WEB]);
+    expect(react.mock.calls.map((c) => c[0])).toEqual([...TREE_GREW_REACTIONS]);
+    expect(TREE_GREW_REACTIONS).toEqual(["🎉", "🌱"]);
+  });
+
+  it("pings nobody for a mystery team and leaves the link out when the island has no address", async () => {
+    delete process.env.SHIFT_ISLAND_URL;
+    const site = process.env.NEXT_PUBLIC_SITE_URL;
+    delete process.env.NEXT_PUBLIC_SITE_URL;
+    try {
+      const { client, channelSend } = reactingClient();
+      await deliver(client, treeApi(mystery), claimed({ kind: "tree_grew", params: queued }));
+      const payload = sentPayload(channelSend);
+      expect(payload.allowedMentions).toEqual({ users: [], parse: [] });
+      expect(bodyText(payload)).toContain("**ทีมปริศนา** · แปลง #4");
+      expect(bodyText(payload)).toContain(`-# ${TREE_GREW.showName}`);
+      expect(linkUrls(payload)).toEqual([]);
+    } finally {
+      if (site !== undefined) process.env.NEXT_PUBLIC_SITE_URL = site;
+    }
+  });
+
+  it("never fails a sent post because a reaction failed (a retry would cheer twice)", async () => {
+    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      const react = jest.fn(async () => {
+        throw new Error("Missing Permissions");
+      });
+      const { client } = reactingClient(react);
+      await expect(deliver(client, treeApi(named), claimed({ kind: "tree_grew", params: queued }))).resolves.toBe("post-1");
+      expect(react).toHaveBeenCalledTimes(1);
+      expect(error).toHaveBeenCalledWith("[shift-quests] reactions skipped: Missing Permissions");
+    } finally {
+      error.mockRestore();
+    }
+  });
+
+  it("fails permanently, sending nothing, when the project is gone", async () => {
+    const { client, channelSend } = reactingClient();
+    await expect(deliver(client, treeApi(null), claimed({ kind: "tree_grew", params: queued }))).rejects.toMatchObject({ permanent: true });
+    expect(channelSend).not.toHaveBeenCalled();
+  });
+
+  it("is not a kind the plain renderer knows, so nothing renders it without the send-time read", () => {
+    expect(renderOutbox("tree_grew", queued, null, null)).toBeNull();
+    expect(renderDelivery("tree_grew", queued, null, null)?.title).toBe(TREE_GREW.title);
   });
 });
