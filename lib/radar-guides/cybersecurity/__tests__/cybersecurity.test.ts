@@ -38,12 +38,27 @@ function thaiStrings(value: unknown, at: string, out: string[] = []): string[] {
 }
 
 describe("cybersecurity guide", () => {
-  it("is live with 11 levels in order, and a live guide never requires an unrecorded clip", () => {
+  it("is live with 12 levels in order (Level 1: 5, Level 2: 7), and a live guide never requires an unrecorded clip", () => {
     // `pnpm radar:check` fails a live guide whose required clip is missing.
     expect(guide.meta.status).toBe("live");
     const recorded = clips as Record<string, unknown>;
     for (const page of guide.pages) if (page.clip?.required) expect(recorded[page.key]).toBeTruthy();
-    expect(guide.pages.map((p) => p.order)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+    expect(guide.pages.map((p) => p.order)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+    const tiers = guide.meta.pages.map((p) => `${p.key}:${p.tier}`);
+    expect(tiers).toEqual([
+      "mythos:1",
+      "scam:1",
+      "round1:1",
+      "tonight:1",
+      "next:1",
+      "doors:2",
+      "triage:2",
+      "firstjob:2",
+      "money:2",
+      "fit:2",
+      "tcas:2",
+      "terminal:2",
+    ]);
   });
 
   describe("tcas.json (mytcas snapshot)", () => {

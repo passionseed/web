@@ -19,6 +19,8 @@ export interface PixelSceneProps {
   /** 1-based level number, shown as "LV 3". */
   level?: number;
   total?: number;
+  /** Which part of the run the level is in, e.g. "Level 2". Shown before the number. */
+  partLabel?: string;
   titleTh?: string;
   /** One short quest line under the title (the page question), never a paragraph. */
   questTh?: string;
@@ -34,6 +36,7 @@ export function PixelScene({
   src,
   level,
   total,
+  partLabel,
   titleTh,
   questTh,
   variant = "header",
@@ -69,7 +72,11 @@ export function PixelScene({
       {variant === "header" && (titleTh || level) ? (
         <div className="rgs-scene__plate">
           {level ? (
-            <span className="rgs-scene__lv" aria-label={total ? `ด่าน ${level} จาก ${total}` : `ด่าน ${level}`}>
+            <span
+              className="rgs-scene__lv"
+              aria-label={`${partLabel ? `${partLabel} ` : ""}${total ? `ด่าน ${level} จาก ${total}` : `ด่าน ${level}`}`}
+            >
+              {partLabel ? <span className="rgs-scene__part">{partLabel} · </span> : null}
               LV {level}
               {total ? <span className="rgs-scene__lvtotal">/{total}</span> : null}
             </span>

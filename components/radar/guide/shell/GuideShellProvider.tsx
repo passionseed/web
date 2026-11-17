@@ -31,6 +31,7 @@ import { GuideStickyNav } from "./GuideStickyNav";
 import { PageMapSheet } from "./PageMapSheet";
 import { BadgeToastHost } from "./BadgeToastHost";
 import { LandingChip } from "./ResumeChip";
+import { levelOnePages } from "@/lib/radar-guide/tiers";
 import "./shell.css";
 
 /** Presses of "ต่อ" one dialogue absorbs (finish line, next box) before the level moves on anyway. */
@@ -298,7 +299,7 @@ export function GuideShellProvider({
           style={{ "--radar-accent": index.accent } as CSSProperties}
         >
           {chrome ? <GuideTopRail xpPop={xpPop} xpPopId={xpPopId} /> : null}
-          {showLandingChip && firstKey ? <LandingChip slug={slug} firstKey={firstKey} total={pages.length} /> : null}
+          {showLandingChip && firstKey ? <LandingChip slug={slug} firstKey={firstKey} total={levelOnePages(pages).length} /> : null}
           <div className="rg-shell__main">{children}</div>
           {chrome ? <GuideStickyNav /> : null}
           {chrome ? <PageMapSheet open={mapOpen} onOpenChange={setMapOpen} /> : null}

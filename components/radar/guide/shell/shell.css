@@ -840,6 +840,45 @@ body:has([data-site-chrome="off"]) .site-header {
   align-self: center;
 }
 
+/* ── Level 1 / Level 2 (TieredLevelMap, outro door) ─────────────────────── */
+
+.rg-tiers {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rg-tiers__heading {
+  margin: 8px 0 0;
+  font-family: var(--rg-display, sans-serif);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--rg-accent, #5cff5c);
+}
+
+.rg-tiers__door {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 3px solid rgb(255 241 230 / 25%);
+  background: var(--rg-ink-2, #1d1226);
+  color: var(--rg-cream, #fff1e6);
+  text-decoration: none;
+}
+
+.rg-tiers__doortext {
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.rg-tiers__door:focus-visible {
+  outline: 3px solid var(--rg-accent, #5cff5c);
+  outline-offset: 2px;
+}
+
 /* ── Reduced motion ────────────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {

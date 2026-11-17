@@ -78,10 +78,10 @@ describe("/radar/[slug]/[page]", () => {
 
   it("lists every level of a visible guide, and leaves drafts out on production", () => {
     process.env.VERCEL_ENV = "preview";
-    const params = levelRoute.generateStaticParams();
-    expect(params).toHaveLength(11);
+    const params = levelRoute.generateStaticParams().filter((p: { slug: string }) => p.slug === "cybersecurity");
+    expect(params).toHaveLength(12);
     expect(params[0]).toEqual({ slug: "cybersecurity", page: "mythos" });
-    expect(params.at(-1)).toEqual({ slug: "cybersecurity", page: "next" });
+    expect(params.at(-1)).toEqual({ slug: "cybersecurity", page: "terminal" });
 
     process.env.VERCEL_ENV = "production"; // the fixture guide is a draft
     expect(levelRoute.generateStaticParams()).toEqual([]);
@@ -135,7 +135,7 @@ describe("/radar/[slug] cover or deck", () => {
   it("shows the deck for a career without a guide, and for a draft guide on production", async () => {
     getCachedPublishedRadarField.mockResolvedValue(null);
     process.env.VERCEL_ENV = "preview";
-    await expect(call("data-scientist")).rejects.toThrow("NEXT_NOT_FOUND");
+    await expect(call("product-designer")).rejects.toThrow("NEXT_NOT_FOUND");
     process.env.VERCEL_ENV = "production";
     await expect(call("cybersecurity")).rejects.toThrow("NEXT_NOT_FOUND");
     expect(getCachedPublishedRadarField).toHaveBeenCalledTimes(2);
@@ -144,7 +144,7 @@ describe("/radar/[slug] cover or deck", () => {
   it("cover metadata comes from code with an absolute title", async () => {
     process.env.VERCEL_ENV = "preview";
     const md = await fieldRoute.generateMetadata({ params: Promise.resolve({ slug: "cybersecurity" }) });
-    expect(md.title).toEqual({ absolute: "ไซเบอร์ซีเคียวริตี้ ลองเล่น 11 ด่าน | Career Radar" });
+    expect(md.title).toEqual({ absolute: "ไซเบอร์ซีเคียวริตี้ ลองเล่น 5 ด่าน | Career Radar" });
     expect(md.alternates.canonical).toBe("/radar/cybersecurity");
     expect(getCachedPublishedRadarField).not.toHaveBeenCalled();
   });

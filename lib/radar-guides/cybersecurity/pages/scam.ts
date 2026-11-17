@@ -12,7 +12,7 @@ const POLICE = "f.fake-police" as const;
 
 export const scam: GuidePage = {
   key: "scam",
-  order: 4,
+  order: 2,
   titleTh: "แชตบ้านเธอ คือสนามจริง",
   questionTh: "ภัยไซเบอร์ในไทยตอนนี้หน้าตาเป็นยังไง แล้วใครเป็นคนหยุดมัน",
   navLabelTh: "แชตบ้านเธอ",

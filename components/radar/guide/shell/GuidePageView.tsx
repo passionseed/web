@@ -11,6 +11,7 @@ import Link from "next/link";
 import { PixelScene } from "@/components/radar/guide/story";
 import type { Fact, GuideIndexEntry, GuidePage } from "@/lib/radar-guide/guide-types";
 import { levelSceneSrc, nextLevelKey } from "@/lib/radar-guide/story";
+import { endsPartOfRun, levelTwoPages, positionInTier } from "@/lib/radar-guide/tiers";
 import { StaticFactList, StepView } from "./BlockRenderer";
 import { DemoPlayer } from "./DemoPlayer";
 import type { GuideClipData } from "./GuideClip";
@@ -29,8 +30,10 @@ export interface GuidePageViewProps {
 }
 
 export function GuidePageView({ index, page, clip, facts }: GuidePageViewProps) {
-  const ordered = [...index.pages].sort((a, b) => a.order - b.order);
-  const final = ordered[ordered.length - 1]?.key === page.key;
+  // The profile card closes Level 1 and the whole run (the last page overall).
+  const final = endsPartOfRun(index.pages, page.key);
+  const position = positionInTier(index.pages, page.key);
+  const hasLevelTwoPages = levelTwoPages(index.pages).length > 0;
   const steps = buildLevelSteps(page, { final }).filter((s) => s.kind !== "clip" || clip);
   const indexPage = index.pages.find((p) => p.key === page.key);
   const scene = indexPage?.scene ?? levelSceneSrc(index.slug, page.key);
@@ -40,8 +43,9 @@ export function GuidePageView({ index, page, clip, facts }: GuidePageViewProps) 
     <article className="rg-level" data-page={page.key}>
       <PixelScene
         src={scene}
-        level={page.order}
-        total={index.pages.length}
+        level={position?.index ?? page.order}
+        total={position?.total ?? index.pages.length}
+        partLabel={hasLevelTwoPages && position ? `Level ${position.tier}` : undefined}
         titleTh={page.titleTh}
         questTh={page.questionTh}
       />

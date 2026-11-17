@@ -14,8 +14,10 @@ import { recordFieldIntent } from "@/lib/radar/record-intent";
 import { detectUaApp } from "@/lib/radar-guide/attribution";
 import { radarProfileShortLink } from "@/lib/radar-guide/social";
 import { buildProfileCard } from "@/lib/radar-guide/story";
-import { GuideIntentButton, GuideOutro, GuideProgramLine } from "../GuideOutro";
+import { levelTwoPages, levelTwoTarget, pageTier } from "@/lib/radar-guide/tiers";
+import { GuideIntentButton, GuideLevelTwoDoor, GuideOutro, GuideProgramLine } from "../GuideOutro";
 import { MidShareCard } from "../MidShareCard";
+import { deckHref, levelHref } from "./guide-routes";
 import { useGuideShell } from "./shell-context";
 
 export interface GuideLinkButtonProps {
@@ -64,9 +66,21 @@ function useBangkokToday(): string | null {
 }
 
 export function GuideOutroStep() {
-  const { slug, index, tracker, attribution } = useGuideShell();
+  const { slug, index, tracker, attribution, pageKey } = useGuideShell();
   const today = useBangkokToday();
   const program = useMemo(() => (today ? radarProgramLine(slug, today) : null), [slug, today]);
+  // Level 1's outro opens the door to Level 2 (more levels, or the full deck).
+  const page = index.pages.find((p) => p.key === pageKey);
+  const target = levelTwoTarget(index.pages);
+  const levelTwoSlot =
+    page && pageTier(page) === 2 ? undefined : (
+      <GuideLevelTwoDoor
+        tracker={tracker}
+        kind={target.kind}
+        href={target.kind === "pages" ? levelHref(slug, target.firstKey) : deckHref(slug)}
+        levels={levelTwoPages(index.pages).length}
+      />
+    );
   return (
     <GuideOutro
       fieldSlug={slug}
@@ -91,6 +105,7 @@ export function GuideOutroStep() {
           }}
         />
       }
+      levelTwoSlot={levelTwoSlot}
       programSlot={
         program ? (
           <GuideProgramLine tracker={tracker} lineTh={program.body} linkLabelTh={program.cta} href={program.href} />

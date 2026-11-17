@@ -72,8 +72,14 @@ export function clipScriptHash(lines: readonly string[]): string {
 // ---------------------------------------------------------------- numbers
 const THAI_DIGITS = "๐๑๒๓๔๕๖๗๘๙";
 const NUMBER_TOKEN = /[0-9๐-๙]+(?:[.,][0-9๐-๙]+)*/g;
-/** Never need a fact: grade labels, round names, template placeholders. */
-const EXEMPT_PATTERNS = [/ม\.\s?[0-9๐-๙]/g, /TCAS\s?[67][0-9]/gi, /รอบ(?:ที่)?\s?[0-9๐-๙]/g, /\{[^}]*\}/g];
+/** Never need a fact: grade labels, round names, Level 1 and Level 2 of the run, template placeholders. */
+const EXEMPT_PATTERNS = [
+  /ม\.\s?[0-9๐-๙]/g,
+  /TCAS\s?[67][0-9]/gi,
+  /รอบ(?:ที่)?\s?[0-9๐-๙]/g,
+  /Level\s?[12](?![0-9])/g,
+  /\{[^}]*\}/g,
+];
 
 function toArabic(text: string): string {
   return text.replace(/[๐-๙]/g, (d) => String(THAI_DIGITS.indexOf(d)));
@@ -460,9 +466,13 @@ function checkNumbers(ref: TextRef, facts: Map<string, Fact>, issues: LintIssue[
   }
 }
 
+/** Bangkok is UTC+7 all year: guide dates are Thai calendar dates. */
+const BANGKOK_OFFSET_MS = 7 * 3_600_000;
+
 function daysBetween(from: string, to: Date): number {
   const start = Date.UTC(Number(from.slice(0, 4)), Number(from.slice(5, 7)) - 1, Number(from.slice(8, 10)));
-  const end = Date.UTC(to.getUTCFullYear(), to.getUTCMonth(), to.getUTCDate());
+  const bkk = new Date(to.getTime() + BANGKOK_OFFSET_MS);
+  const end = Date.UTC(bkk.getUTCFullYear(), bkk.getUTCMonth(), bkk.getUTCDate());
   return Math.round((end - start) / 86_400_000);
 }
 

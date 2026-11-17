@@ -72,7 +72,7 @@ const FEATURED_COUNT = TCAS_PROGRAMMES.filter((p) => FEATURED_ORDER.includes(p.i
 
 export const tcas: GuidePage = {
   key: "tcas",
-  order: 8,
+  order: 11,
   titleTh: "สมัครที่ไหน เมื่อไหร่",
   questionTh: "ถ้าจะไปทางนี้ ต้องยื่นที่ไหน รอบไหน ภายในวันไหน",
   navLabelTh: "สมัครที่ไหน",

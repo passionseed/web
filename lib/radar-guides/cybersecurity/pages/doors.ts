@@ -11,7 +11,7 @@ const CVP = "f.cvp-tiers" as const;
 
 export const doors: GuidePage = {
   key: "doors",
-  order: 2,
+  order: 6,
   titleTh: "AI ตัวเดียวกัน สองประตู",
   questionTh: "ใครได้ใช้ AI สายไซเบอร์ที่ถูกล็อกไว้ แล้วทำไมความน่าเชื่อถือถึงกลายเป็นทักษะ",
   navLabelTh: "สองประตู",

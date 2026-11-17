@@ -1,0 +1,226 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`software engineer guide matches the Thai copy snapshot (diff this in the Thai review) 1`] = `
+[
+  "dream.titleTh: แอปที่เริ่มจากคนตกรถ
+dream.questionTh: แอปในมือถือเธอ ใครเป็นคนทำ แล้วเขาเริ่มจากตรงไหน
+dream.navLabelTh: คนตกรถ
+dream.og.headlineTh: แอปที่คนใช้กว่า 10 ล้านคน ดันเริ่มจากเด็กปี 1 ที่ตกรถบ่อย
+dream.og.stat.th: ViaBus มีคนใช้กว่า 10 ล้านคนแล้ว
+dream.blocks[0].lines[0].text.th: เริ่มรันสายโค้ดเลย ด่านแรกมีแค่เรื่องเดียว
+dream.blocks[0].lines[1].text.th: เรื่องของคนที่ตกรถบ่อยจนทนไม่ไหวแล้ว
+dream.blocks[0].lines[2].text.th: ตกรถมันเกี่ยวอะไรกับการเขียนโค้ด
+dream.blocks[1].text.th: นักศึกษาวิศวะจุฬาฯ ปี 1 ตกรถป๊อปในมหาวิทยาลัยบ่อยมาก เพราะไม่รู้ว่ารถจะมาถึงป้ายตอนไหน เลยทำแอปชื่อ Chula Pop Bus ไว้ใช้เอง
+dream.blocks[1].titleTh: จุดเริ่มต้น
+dream.blocks[2].lines[0].text.th: ไม่มีใครจ้าง ไม่มีใครสั่ง แค่เบื่อที่ต้องยืนรอแบบไม่รู้อะไรเลย
+dream.blocks[2].lines[1].text.th: ต่อมาเขากับเพื่อนอีก 2 คน ลุยทำต่อจนกลายเป็น ViaBus
+dream.blocks[2].lines[2].text.th: แอปที่บอกว่าตอนนี้รถเมล์คันที่เธอรออยู่ตรงไหนแล้ว
+dream.blocks[3].unlockLabelTh: ลองทาย
+dream.blocks[3].blocks[0].lines[0].text.th: ลองทายดู วันนี้แอปที่เริ่มจากคนตกรถคนเดียว มีคนใช้กี่คนแล้ว
+dream.blocks[3].blocks[1].game.data.promptTh: ตอนนี้ ViaBus มีคนใช้กี่คนแล้วนะ
+dream.blocks[3].blocks[1].game.data.chart.bars[0].labelTh: ยอดคนใช้ ViaBus (ข้อมูล ส.ค. 2569)
+dream.blocks[3].blocks[1].game.data.nearTh: เกือบเป๊ะ
+dream.blocks[3].blocks[1].game.data.overTh: เธอเดาสูงไป {d} คน
+dream.blocks[3].blocks[1].game.data.underTh: เธอเดาต่ำไป {d} คน
+dream.blocks[3].blocks[1].game.data.revealTh: เธอเดา {g} คน ของจริงคือกว่า 10,000,000 คน
+dream.blocks[3].blocks[1].answersTh[0]: ส.ค. 2569 มีรายงานว่า ViaBus มีคนใช้กว่า 10 ล้านคน (ตัวเลขจากบริษัทเอง)
+dream.blocks[3].blocks[1].answersTh[1]: แอปนี้เริ่มจาก Chula Pop Bus ที่นักศึกษาปี 1 ทำไว้แก้ปัญหาตกรถของตัวเอง
+dream.blocks[3].blocks[2].text.th: ViaBus บอกว่ามีคนใช้กว่า 10 ล้านคนแล้ว
+dream.blocks[3].blocks[2].titleTh: คนใช้วันนี้
+dream.blocks[3].blocks[2].metaTh: ส.ค. 2569
+dream.blocks[3].blocks[3].text.th: BTS เปิดให้เช็กรถไฟฟ้าสายสีเขียว สีเหลือง และสีชมพู แบบเรียลไทม์ในแอปนี้แล้ว
+dream.blocks[3].blocks[3].titleTh: อัปเดต
+dream.blocks[3].blocks[3].metaTh: 6 ส.ค. 2569
+dream.blocks[3].blocks[4].text.th: จากแอปดูรถป๊อปในมหาวิทยาลัย ตอนนี้เช็กได้ทั้งรถเมล์ เรือ รถไฟฟ้า มีในหลายจังหวัด แถมไปถึงอีก 3 ประเทศ ทั้งมาเลเซีย ลาว และฟิลิปปินส์
+dream.blocks[3].blocks[4].titleTh: ไปไกลแค่ไหน
+dream.blocks[4].lines[0].text.th: เขาไม่ได้เริ่มจากความเก่งโค้ด แต่เริ่มจากปัญหาที่เจอเองทุกวัน
+dream.blocks[4].lines[1].text.th: แล้วปัญหาที่เธอบ่นทุกวันล่ะ มีอะไรบ้าง
+dream.blocks[4].lines[2].text.th: ด่านต่อไป: งานจริงของคนสายนี้เป็นยังไงกันแน่
+dream.reel.hook.th: แอปที่คนใช้กว่า 10 ล้านคน ดันเริ่มจากเด็กปี 1 ที่ตกรถบ่อย
+dream.reel.variantsTh[0]: ตกรถบ่อยจนต้องเขียนแอปใช้เอง
+dream.reel.variantsTh[1]: แอปในมือถือเธอ อาจเริ่มจากคนที่เจอปัญหาเดียวกับเธอก็ได้
+dream.reel.sendToFriendTh: ส่งต่อให้เพื่อนที่ตกรถเมล์บ่อย
+dream.reel.visual[0]: ป้ายรถเมล์ตอนเช้า รถเพิ่งออกไปต่อหน้า
+dream.reel.visual[1]: มือถือเปิดแอปเล็กๆ จุดรถป๊อปขยับบนแผนที่มหาวิทยาลัย
+dream.reel.visual[2]: แผนที่ซูมออก จุดรถเพิ่มเป็นทั้งเมือง แล้วตัวนับคนใช้วิ่งถึง 10,000,000",
+  "work.titleTh: งานจริง คือฟังคนใช้ แล้วแก้ที่พัง
+work.questionTh: คนสายนี้นั่งพิมพ์โค้ดทั้งวันจริงเหรอ
+work.navLabelTh: งานจริง
+work.og.headlineTh: งานจริงของสายโค้ด ไม่ใช่พิมพ์ทั้งวัน แต่คือรู้ว่าอะไรต้องแก้ก่อน
+work.og.stat.th: คนแจ้งปัญหามา 7 ข้อความ ข้อไหนต้องแก้ก่อน
+work.blocks[0].lines[0].text.th: ในหนัง โปรแกรมเมอร์ใส่หูฟัง นั่งพิมพ์โค้ดรัวๆ คนเดียวทั้งคืน
+work.blocks[0].lines[1].text.th: แต่ของจริง งานใหญ่คือฟังว่าคนใช้เจออะไร แล้วแก้จุดที่มันพัง
+work.blocks[1].text.th: ฐานข้อมูลอาชีพของสหรัฐฯ เขียนงานข้อแรกของสายนี้ไว้ว่า วิเคราะห์ว่าผู้ใช้ต้องการอะไร และอีกข้อคือแก้ซอฟต์แวร์ที่มีอยู่ให้หายพัง
+work.blocks[1].titleTh: งานจริงตามเอกสาร
+work.blocks[2].unlockLabelTh: ลองเปิดกล่องแจ้งปัญหา
+work.blocks[2].blocks[0].lines[0].text.th: สมมติเธอดูแลแอปของโรงเรียน ที่ใช้ดูตารางสอบ ส่งการบ้าน และดูคะแนน
+work.blocks[2].blocks[0].lines[1].text.th: เช้านี้มีแจ้งปัญหาเข้ามา 7 ข้อความ แต่เธอแก้ได้แค่ทีละอย่าง
+work.blocks[2].blocks[0].lines[2].text.th: อันไหนแก้ก่อน อันไหนรอได้ แล้วอันไหนไม่ใช่บั๊กเลย
+work.blocks[2].blocks[1].game.data.goalTh: กล่องแจ้งปัญหา: แอปของโรงเรียน
+work.blocks[2].blocks[1].game.data.bins[0].labelTh: แก้ก่อน
+work.blocks[2].blocks[1].game.data.bins[1].labelTh: แก้ทีหลัง
+work.blocks[2].blocks[1].game.data.bins[2].labelTh: ไม่ใช่บั๊ก
+work.blocks[2].blocks[1].game.data.simulated.watermarkTh: ตัวอย่างจำลอง
+work.blocks[2].blocks[1].game.data.items[0].labelTh: กดส่งการบ้านไปแล้ว แอปขึ้นว่าส่งแล้ว แต่ครูบอกว่าไม่เห็นงานของหนูเลย
+work.blocks[2].blocks[1].game.data.items[0].meta.sender: นักเรียน ม.4
+work.blocks[2].blocks[1].game.data.items[0].nearTh.later: ลองคิดอีกที ถ้าครูไม่เห็นงาน เพื่อนอาจโดนหักคะแนนทั้งห้องเลยนะ
+work.blocks[2].blocks[1].game.data.items[0].revealTh: แก้ก่อนเลย งานคนใช้หายจริง แถมไม่รู้ตัวด้วย นี่แหละบั๊กที่หนักสุด
+work.blocks[2].blocks[1].game.data.items[1].labelTh: อยากให้เปลี่ยนแอปเป็นสีชมพูทั้งแอปเลยค่ะ
+work.blocks[2].blocks[1].game.data.items[1].meta.sender: นักเรียน ม.6
+work.blocks[2].blocks[1].game.data.items[1].revealTh: ไม่ใช่บั๊ก แค่คำขอ จดไว้ก่อนได้ ไม่ต้องรีบ ไม่มีอะไรพัง
+work.blocks[2].blocks[1].game.data.items[2].labelTh: ตารางสอบ ม.5/3 ดันขึ้นเป็นของ ม.5/2 ครับ สอบพรุ่งนี้แล้วด้วย
+work.blocks[2].blocks[1].game.data.items[2].meta.sender: นักเรียน ม.5
+work.blocks[2].blocks[1].game.data.items[2].revealTh: แก้ก่อนเลย ข้อมูลผิดแบบนี้ เดี๋ยวไปผิดห้องสอบกันทั้งห้อง พรุ่งนี้สอบแล้วด้วย
+work.blocks[2].blocks[1].game.data.items[3].labelTh: ตัวหนังสือโหมดมืดออกเทาไปหน่อย อ่านยาก
+work.blocks[2].blocks[1].game.data.items[3].meta.sender: นักเรียน ม.4
+work.blocks[2].blocks[1].game.data.items[3].nearTh.notbug: เกือบใช่ แต่นี่ทำมาไม่ดีจริง แค่ยังไม่มีใครเดือดร้อน
+work.blocks[2].blocks[1].game.data.items[3].revealTh: แก้ทีหลัง มันใช้ยากจริง แต่ยังไม่มีใครเสียหาย จดไว้ทำรอบหน้า
+work.blocks[2].blocks[1].game.data.items[4].labelTh: หน้าอันดับคะแนนสอบย่อย คนได้ 100 ดันไปอยู่ล่างสุด ใต้คนได้ 95 กับ 80
+work.blocks[2].blocks[1].game.data.items[4].meta.sender: ครูประจำชั้น
+work.blocks[2].blocks[1].game.data.items[4].detailTh: ฟีเจอร์นี้เพิ่งให้ AI เขียนเมื่อวาน ยังไม่มีใครลองกับคะแนนเต็มเลย
+work.blocks[2].blocks[1].game.data.items[4].nearTh.later: ลองคิดใหม่ คะแนนโชว์ผิดก็คือข้อมูลผิดนะ ทุกคนในห้องเห็นกันอยู่
+work.blocks[2].blocks[1].game.data.items[4].revealTh: แก้ก่อนเลย โค้ดดันเรียงเลขแบบตัวอักษร ดูแค่ตัวแรก 100 เลยหล่นไปท้ายสุด AI เขียนไวจริง แต่คนต้องเป็นคนลอง
+work.blocks[2].blocks[1].game.data.items[5].labelTh: ปุ่มส่งการบ้านวิชาสังคมหายไปเฉยเลย
+work.blocks[2].blocks[1].game.data.items[5].meta.sender: นักเรียน ม.6
+work.blocks[2].blocks[1].game.data.items[5].detailTh: ครูปิดรับงานชิ้นนี้ไปตั้งแต่เมื่อคืน ตามกำหนดส่งเลย
+work.blocks[2].blocks[1].game.data.items[5].nearTh.later: เกือบถูก ระบบทำงานถูกแล้ว แค่ข้อความยังไม่ชัด ค่อยปรับทีหลังได้
+work.blocks[2].blocks[1].game.data.items[5].revealTh: ไม่ใช่บั๊ก ครูปิดรับงานแล้วแต่คนใช้ไม่รู้ แปลว่าแอปต้องบอกให้ชัดว่าปิดรับแล้ว
+work.blocks[2].blocks[1].game.data.items[6].labelTh: รูปโปรไฟล์โหลดช้ามากเวลาใช้เน็ตมือถือ
+work.blocks[2].blocks[1].game.data.items[6].meta.sender: นักเรียน ม.5
+work.blocks[2].blocks[1].game.data.items[6].revealTh: แก้ทีหลัง น่ารำคาญจริงแหละ แต่ส่วนหลักยังใช้ได้ปกติ
+work.blocks[2].blocks[1].game.data.resultTh: จัดลำดับถูก {score}/{total}
+work.blocks[2].blocks[1].answersTh[0]: แก้ก่อน: ส่งการบ้านแล้วงานหาย, ตารางสอบสลับห้อง, อันดับคะแนนเรียงผิดจากโค้ดที่ AI เขียน
+work.blocks[2].blocks[1].answersTh[1]: แก้ทีหลัง: ตัวหนังสือโหมดมืดอ่านยาก, รูปโปรไฟล์โหลดช้า
+work.blocks[2].blocks[1].answersTh[2]: ไม่ใช่บั๊ก: อยากได้สีชมพู, ปุ่มส่งงานหายเพราะครูปิดรับแล้ว (แต่แอปควรบอกให้ชัด)
+work.blocks[3].unlockLabelTh: แล้ว AI ล่ะ
+work.blocks[3].blocks[0].lines[0].text.th: ถ้า AI เขียนโค้ดได้แล้ว เรายังต้องใช้คนอีกเหรอ
+work.blocks[3].blocks[0].lines[1].text.th: ดูข้อความที่ 5 เมื่อกี้สิ AI เขียนไวมาก แต่ไม่มีใครลองกับเลข 100
+work.blocks[3].blocks[1].text.th: ผลสำรวจนักพัฒนาทั่วโลกปี 2569: คนตอบ 73% ใช้ AI ช่วยเขียนโค้ดทุกวัน
+work.blocks[3].blocks[2].text.th: 48% บอกว่าไว้ใจ AI ได้เมื่อเช็กคำตอบเองได้ง่าย มีแค่ 16% ที่ไว้ใจมันกับงานส่วนใหญ่ที่ไม่ใช่เรื่องตัดสินใจสำคัญ
+work.blocks[3].blocks[3].lines[0].text.th: คนในวงการใช้ AI ทุกวันจริง แต่ไม่ได้เชื่อมันทุกบรรทัดหรอก
+work.blocks[3].blocks[3].lines[1].text.th: งานของคนเลยย้ายมาที่การตัดสิน ว่าอะไรถูก อะไรพัง อะไรต้องทำก่อน
+work.blocks[3].blocks[3].lines[2].text.th: เหมือนที่เธอเพิ่งทำในกล่องข้อความเมื่อกี้เลย
+work.blocks[3].blocks[4].text.th: 71% ของคนสายนี้ในสหรัฐฯ บอกว่าการทำงานเป็นทีม สำคัญอย่างยิ่ง
+work.blocks[3].blocks[4].titleTh: ไม่ได้ลุยคนเดียวหรอก
+work.blocks[4].lines[0].text.th: ถ้าเธอชอบจัดลำดับว่าอะไรสำคัญ แถมอยากรู้ว่าทำไมของมันพัง
+work.blocks[4].lines[1].text.th: สายนี้มีที่ให้เธอ
+work.blocks[4].lines[2].text.th: ด่านต่อไป: ทางเข้ามหาวิทยาลัยที่หลายคนยังไม่รู้
+work.reel.hook.th: ปัญหาเด้งเข้ามา 7 ข้อความ เธอจะแก้อันไหนก่อน
+work.reel.variantsTh[0]: โปรแกรมเมอร์ไม่ได้นั่งพิมพ์โค้ดทั้งวัน งานจริงคือนี่ต่างหาก
+work.reel.variantsTh[1]: AI เขียนโค้ดเร็ว แต่ใครเป็นคนลอง
+work.reel.sendToFriendTh: ส่งให้เพื่อนที่คิดว่าโปรแกรมเมอร์วันๆ แค่นั่งพิมพ์โค้ดดูเลย
+work.reel.visual[0]: หน้าจอแชตแจ้งปัญหาเด้งขึ้นทีละข้อความ
+work.reel.visual[1]: ข้อความแต่ละอันบินลงช่อง แก้ก่อน แก้ทีหลัง ไม่ใช่บั๊ก
+work.reel.visual[2]: ตาราง 95, 80, 100 สลับกลับเป็น 100, 95, 80",
+  "round1.titleTh: รอบ 1 มีพื้นที่ให้ผลงานเธอ
+round1.questionTh: เข้ามหาลัยด้วยสิ่งที่ทำเอง ไม่ใช่แค่คะแนนสอบ จริงเหรอ
+round1.navLabelTh: รอบ 1
+round1.og.headlineTh: TCAS รอบ 1 ใช้ผลงานของเธอยื่นได้ เริ่มเก็บตั้งแต่ตอนนี้เลย
+round1.og.stat.th: TCAS70 มี 4 รอบ รอบแรกคือ Portfolio
+round1.blocks[0].lines[0].text.th: ก่อนไปต่อ มีเรื่องหนึ่งที่แทบไม่มีใครเคยบอก
+round1.blocks[0].lines[1].text.th: เข้ามหาลัยไม่ได้มีแค่ทางสอบอย่างเดียวนะ
+round1.blocks[1].text.th: TCAS70 มี 4 รอบ รอบแรกชื่อ Portfolio มหาลัยดูจากสิ่งที่เธอทำมา
+round1.blocks[2].lines[0].text.th: ถ้าเธอเคยลองทำอะไรในสายโค้ด ด้วยตัวเอง นั่นแหละ เอาไปใส่ได้เลย
+round1.blocks[2].lines[1].text.th: ปีนี้ ทปอ. มีระบบ TCASfolio ให้ทำแฟ้มผลงานได้สูงสุด 40 รายการ
+round1.blocks[3].unlockLabelTh: ลองจัดแฟ้มดู
+round1.blocks[3].blocks[0].lines[0].text.th: ลองดูสิ ของพวกนี้ควรไปอยู่ช่องไหนในแฟ้ม
+round1.blocks[3].blocks[1].game.data.tagTh: จัดแฟ้มผลงาน
+round1.blocks[3].blocks[1].game.data.goalTh: จัดของใส่แฟ้ม TCASfolio
+round1.blocks[3].blocks[1].game.data.bins[0].labelTh: โครงงาน
+round1.blocks[3].blocks[1].game.data.bins[1].labelTh: กิจกรรม
+round1.blocks[3].blocks[1].game.data.bins[2].labelTh: เกียรติบัตร รางวัล
+round1.blocks[3].blocks[1].game.data.items[0].labelTh: ทำเว็บตารางสอบให้ห้อง แล้วเพื่อนใช้จริง
+round1.blocks[3].blocks[1].game.data.items[0].revealTh: โครงงาน เธอสร้างเอง และมีคนใช้จริง ยิ่งเล่าได้ว่าแก้อะไรตามที่เพื่อนบอก ยิ่งดี
+round1.blocks[3].blocks[1].game.data.items[1].labelTh: เขียนโปรแกรมเล็กๆ ช่วยเหรัญญิกห้องเก็บเงิน
+round1.blocks[3].blocks[1].game.data.items[1].revealTh: โครงงาน ของเล็กแต่แก้ปัญหาจริง กรรมการอยากเห็นแบบนี้
+round1.blocks[3].blocks[1].game.data.items[2].labelTh: สอนรุ่นน้องในชมรมคอมพิวเตอร์เขียนโค้ด
+round1.blocks[3].blocks[1].game.data.items[2].revealTh: กิจกรรม บอกว่าเธอทำงานกับคนอื่นเป็น และอธิบายเรื่องยากให้เข้าใจได้
+round1.blocks[3].blocks[1].game.data.items[3].labelTh: เข้าค่ายเขียนโปรแกรมช่วงปิดเทอม
+round1.blocks[3].blocks[1].game.data.items[3].revealTh: กิจกรรม ใส่ได้ แต่จะเด่นกว่าถ้ามีของที่ทำเสร็จจากค่ายติดมาด้วย
+round1.blocks[3].blocks[1].game.data.items[4].labelTh: รางวัลจากงานแข่งเขียนโปรแกรมระดับโรงเรียน
+round1.blocks[3].blocks[1].game.data.items[4].revealTh: เกียรติบัตร รางวัล ใส่ได้เลย แต่ไม่ต้องรอรางวัลถึงจะเริ่มเก็บแฟ้ม
+round1.blocks[3].blocks[1].game.data.resultTh: จัดถูก {score}/{total}
+round1.blocks[3].blocks[1].answersTh[0]: โครงงาน: ทำเว็บตารางสอบให้ห้อง แล้วเพื่อนใช้จริง, เขียนโปรแกรมเล็กๆ ช่วยเหรัญญิกห้องเก็บเงิน
+round1.blocks[3].blocks[1].answersTh[1]: กิจกรรม: สอนรุ่นน้องในชมรมคอมพิวเตอร์เขียนโค้ด, เข้าค่ายเขียนโปรแกรมช่วงปิดเทอม
+round1.blocks[3].blocks[1].answersTh[2]: เกียรติบัตร รางวัล: รางวัลจากงานแข่งเขียนโปรแกรมระดับโรงเรียน
+round1.blocks[3].blocks[2].lines[0].text.th: เห็นไหม ของที่เธอลงมือทำเองนับได้จริง
+round1.blocks[3].blocks[2].lines[1].text.th: ไม่ต้องรอใครมาจัดค่าย หรือออกใบเกียรติบัตรให้ก่อนเลย
+round1.blocks[4].unlockLabelTh: แล้วตอนนี้ฉันอยู่ ม.ไหนล่ะ
+round1.blocks[4].blocks[0].lines[0].text.th: ถ้าอยู่ ม.6 รอบ 1 ปีนี้บางที่ยังเปิดรับอยู่ แต่ละคณะปิดไม่พร้อมกันนะ
+round1.blocks[4].blocks[0].lines[1].text.th: ถ้าอยู่ ม.5 เธอยังมีเวลาอีกเกือบปี ลองทำชิ้นแรกให้เสร็จก่อนเลย
+round1.blocks[4].blocks[0].lines[2].text.th: ถ้าอยู่ ม.4 เวลาเยอะสุด ลองได้หลายอย่างเลย ไม่ต้องรีบเลือก
+round1.blocks[4].blocks[1].text.th: อย่างเช่น สวนสุนันทาเปิดรับรอบ 1 ถึง 9 ก.พ. 2570
+round1.blocks[4].blocks[1].titleTh: ยังเปิดอยู่
+round1.blocks[4].blocks[2].text.th: รอบ 1 ไม่ได้ง่ายกว่ารอบอื่น แต่ละคณะมีเกณฑ์อย่างเกรดขั้นต่ำ เช็กประกาศของคณะที่สนใจทุกครั้งนะ
+round1.blocks[4].blocks[2].titleTh: พูดตรงๆ
+round1.blocks[4].blocks[3].labelTh: ดูหลักสูตร วิศวะคอม วิทย์คอม ใน mytcas
+round1.blocks[5].lines[0].text.th: ผลงานชิ้นแรกไม่ต้องใหญ่โตเลย
+round1.blocks[5].lines[1].text.th: ด่านต่อไป เริ่มลุยได้คืนนี้เลย",
+  "tonight.titleTh: คืนนี้ ทำเว็บหน้าเดียวให้เพื่อนใช้
+tonight.questionTh: คืนนี้ลองทำอะไรสักอย่าง ที่จบแล้วมีของจริงใส่พอร์ตได้เลย
+tonight.navLabelTh: ภารกิจคืนนี้
+tonight.og.headlineTh: คืนนี้ทำเว็บหน้าเดียวที่เพื่อนใช้ได้จริง แล้วเธอจะมีผลงานสายโค้ดชิ้นแรกเลย
+tonight.blocks[0].lines[0].text.th: ด่านนี้ไม่ได้เล่นในจอ เป็นภารกิจจริงคืนนี้
+tonight.blocks[0].lines[1].text.th: ทำเว็บหน้าเดียวไว้ช่วยแก้ปัญหาเล็กๆ ให้เพื่อนสักคน
+tonight.blocks[0].lines[2].text.th: เหมือนคนตกรถในด่านแรกนั่นแหละ เริ่มจากปัญหาที่เจอจริง
+tonight.blocks[1].text.th: หน้ารวมลิงก์ที่ห้องเธอหาไม่เคยเจอ ตารางสอบห้อง สูตรที่เพื่อนถามซ้ำทุกคาบ หรือลิสต์ว่าใครยืมอะไรไป
+tonight.blocks[1].titleTh: ไอเดียตั้งต้น
+tonight.blocks[2].lineTh: เว็บนี้ใครในอินเทอร์เน็ตก็เปิดดูได้ อย่าใส่ชื่อจริง เบอร์โทร รูป หรือข้อมูลส่วนตัวของเธอและเพื่อนลงไป
+tonight.blocks[3].text.th: GitHub Pages เอาไฟล์ index.html ของเธอขึ้นเป็นเว็บจริงได้ฟรี ถ้าเก็บโค้ดแบบสาธารณะ แก้แล้วอาจรอถึง 10 นาทีกว่าเว็บจะอัปเดต
+tonight.blocks[3].titleTh: ที่ฝากเว็บ: GitHub Pages
+tonight.blocks[4].game.data.room.titleTh: GitHub Pages · คู่มือเริ่มใช้
+tonight.blocks[4].game.data.room.badgeTh: ฟรีตามคู่มือของ GitHub ณ 18 พ.ย. 2569 เช็กอีกครั้งก่อนสมัคร
+tonight.blocks[4].game.data.room.subTh: GitHub รับคนอายุ 13 ปีขึ้นไป เช็กเกณฑ์อายุของเว็บก่อน ถ้าต้องมีผู้ปกครอง ให้สมัครด้วยกัน
+tonight.blocks[4].game.data.checklistTh[0]: หยิบปัญหาเล็กๆ ที่เพื่อนเจอจริง
+tonight.blocks[4].game.data.checklistTh[1]: เขียนเว็บหน้าเดียว ตั้งชื่อไฟล์ index.html
+tonight.blocks[4].game.data.checklistTh[2]: อัปขึ้น GitHub Pages ตามคู่มือ
+tonight.blocks[4].game.data.checklistTh[3]: ส่งลิงก์ให้เพื่อนลองใช้ แล้วนั่งดูเขาใช้จริง
+tonight.blocks[4].game.data.checklistTh[4]: จดไว้ว่าเพื่อนพูดอะไร ติดตรงไหน
+tonight.blocks[4].game.data.fields[0].placeholderTh: ปัญหาคืออะไร ใครเจอ
+tonight.blocks[4].game.data.fields[1].placeholderTh: สิ่งที่ฉันทำออกมา (ลิงก์)
+tonight.blocks[4].game.data.fields[2].placeholderTh: เพื่อนว่ายังไงบ้าง ติดตรงไหน
+tonight.blocks[4].game.data.fields[3].placeholderTh: รอบหน้าจะแก้อะไรเป็นอย่างแรก เพราะอะไร
+tonight.blocks[4].game.data.fields[4].placeholderTh: ส่วนไหนเขียนเอง ส่วนไหนให้คนหรือเครื่องมือช่วย
+tonight.blocks[4].game.data.fixedLinesTh[0]: บนหน้าเว็บไม่มีข้อมูลส่วนตัวของใคร
+tonight.blocks[4].game.data.privacyTh: เก็บไว้ในเครื่องนี้เท่านั้น ไม่ส่งไปที่ไหน
+tonight.blocks[4].answersTh[0]: เลือกปัญหาเล็กๆ ที่เพื่อนเจอจริง แล้วเขียนหน้าเว็บหน้าเดียว (index.html)
+tonight.blocks[4].answersTh[1]: เอาขึ้น GitHub Pages ตามคู่มือ (เช็กเกณฑ์อายุของเว็บก่อน ถ้าต้องมีผู้ปกครอง ให้สมัครด้วยกัน)
+tonight.blocks[4].answersTh[2]: ส่งลิงก์ให้เพื่อนลองใช้ แล้วเขียนสรุป: ปัญหาอะไร ทำอะไรออกมา เพื่อนว่ายังไง รอบหน้าจะแก้อะไร
+tonight.blocks[4].demoScript[1].text: เพื่อนในห้องหาลิงก์ส่งงานแต่ละวิชาไม่เจอ
+tonight.blocks[4].demoScript[2].text: เพื่อนบอกว่าปุ่มเล็กไป กดบนมือถือยาก
+tonight.blocks[5].labelTh: ไม่เคยเขียน HTML มาก่อน เริ่มที่คู่มือนี้เลย (ภาษาอังกฤษ ไม่ต้องสมัคร)
+tonight.blocks[6].lines[0].text.th: ไม่อยากสมัครอะไรเลยก็ยังได้นะ
+tonight.blocks[6].lines[1].text.th: เขียนไฟล์ไว้ในเครื่อง แล้วเปิดให้เพื่อนลองบนเครื่องเธอเลย
+tonight.blocks[6].lines[2].text.th: จุดสำคัญคือมีคนจริงได้ลองใช้ ไม่ใช่ว่าเว็บอยู่ที่ไหน
+tonight.blocks[7].lines[0].text.th: ที่มีค่ากว่าตัวเว็บ คือสิ่งที่เพื่อนพูดตอนลองใช้
+tonight.blocks[7].lines[1].text.th: จำด่านงานจริงได้ไหม งานสายนี้คือฟังคนใช้ แล้วตามแก้จุดที่พัง
+tonight.blocks[7].lines[2].text.th: ทีมเราคิดว่าช่องรอบหน้าจะแก้อะไรก่อน มีค่าที่สุด อย่าข้ามนะ
+tonight.blocks[8].lines[0].text.th: write-up นี้ใส่แฟ้มรอบ 1 ได้เลย เป็นโครงงานที่มีคนใช้จริง
+tonight.blocks[8].lines[1].text.th: ถ้าสนุก พรุ่งนี้แก้ตามที่เพื่อนบอกต่อเลย
+tonight.blocks[8].lines[2].text.th: ถ้าไม่สนุก ก็รู้ตัวก่อนเลือกคณะ ไม่เสียอะไร
+tonight.blocks[8].lines[3].text.th: ถ้าใช้โค้ดหรือรูปของคนอื่น แปะเครดิตไว้ในหน้าเว็บด้วย",
+  "next.titleTh: แล้วเธอล่ะ
+next.questionTh: สายนี้ใช่ทางเธอไหม แล้วจะดูอะไรต่อดี
+next.navLabelTh: แล้วเธอล่ะ
+next.og.headlineTh: สายโค้ดใช่ทางเธอไหม เล่นให้จบแล้วค่อยตัดสินใจ
+next.blocks[0].lines[0].text.th: มาถึงด่านสุดท้ายของ Level 1 แล้ว
+next.blocks[0].lines[1].text.th: เล่นมาทั้งหมด เธอชอบส่วนไหนที่สุด
+next.blocks[1].game.data.lines.dream: เห็นแล้วนะว่าแอปที่คนใช้ทั้งเมือง เริ่มจากคนตกรถแค่คนเดียว
+next.blocks[1].game.data.lines.work: จัดลำดับแจ้งปัญหาถูก {score}/{total}
+next.blocks[1].game.data.lines.round1: จัดแฟ้มรอบ 1 ถูก {score}/{total}
+next.blocks[1].game.data.lines.tonight: เตรียม write-up ชิ้นแรกไว้แล้ว
+next.blocks[1].game.data.favourites.dream: สายที่เธอเลือกเอง: นักพัฒนาแอป งานจริงคือเจอปัญหาของคน แล้วสร้างของมาแก้มัน
+next.blocks[1].game.data.favourites.work: สายที่เธอเลือกเอง: วิศวกรทดสอบซอฟต์แวร์ (QA) งานจริงคือจับจุดพังให้เจอก่อนคนใช้ รวมถึงโค้ดที่ AI เขียน
+next.blocks[1].game.data.cardLineTh: นี่ไม่ใช่คำทำนาย มันคือจุดเริ่ม เธอตัดสินใจเอง
+next.blocks[1].answersTh[0]: เลือกเกมที่สนุกที่สุด แล้วดูว่ามันตรงกับงานจริงสายไหน
+next.blocks[1].answersTh[1]: นักพัฒนาแอป หรือวิศวกรทดสอบซอฟต์แวร์ (QA)
+next.blocks[1].answersTh[2]: นี่ไม่ใช่คำทำนาย มันคือจุดเริ่ม เธอตัดสินใจเอง
+next.blocks[2].lines[0].text.th: กดบอกเราหน่อยว่าสายนี้ใช่ไหม เราจะได้รู้ว่าควรทำสายนี้ให้ลึกขึ้นไหม
+next.blocks[2].lines[1].text.th: ไม่ว่าจะกดอันไหน ถือว่าได้ข้อมูล
+next.blocks[2].lines[2].text.th: ลองแล้วรู้ว่าไม่ใช่ ก็ได้คำตอบเร็วกว่าคนที่ไม่เคยลอง
+next.blocks[4].lines[0].text.th: ถ้าสนใจ มีแค่อย่างเดียวที่ต้องทำต่อ
+next.blocks[4].lines[1].text.th: คือแก้เว็บตามที่เพื่อนบอก แล้วเอาไปให้เขาลองอีกรอบ
+next.blocks[5].text.th: ไม่ชอบนั่งไล่หาว่าของพังเพราะอะไร ไม่ชอบเรียนเครื่องมือใหม่เรื่อยๆ หรือไม่อยากคุยกับคนใช้ เพราะงานส่วนใหญ่คือฟังเขาแล้วแก้ซ้ำหลายรอบ
+next.blocks[5].titleTh: สายนี้อาจไม่ใช่ทาง ถ้า...",
+]
+`;

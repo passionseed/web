@@ -149,7 +149,7 @@ test("lands on the code guide when the database is unavailable, and swallows log
   );
   await expect(pending[0]()).resolves.toBeUndefined();
   // Careers without a code guide still fall back to the hub.
-  const other = await get("/r/software-engineer");
+  const other = await get("/r/product-designer");
   expect(other.headers.get("location")?.startsWith("https://passionseed.org/radar?")).toBe(true);
   log.mockRestore();
 });

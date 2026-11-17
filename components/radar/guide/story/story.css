@@ -382,6 +382,9 @@
   letter-spacing: 0.04em;
   color: var(--rgs-accent);
 }
+.rgs-scene__part {
+  color: color-mix(in srgb, var(--rgs-cream) 70%, var(--rgs-ink));
+}
 .rgs-scene__lvtotal {
   /* Opaque: Tiny5 glyphs are overlapping squares, so a translucent colour shows seams. */
   color: color-mix(in srgb, var(--rgs-cream) 55%, var(--rgs-ink));

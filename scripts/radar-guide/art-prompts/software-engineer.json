@@ -1,0 +1,17 @@
+{
+  "slug": "software-engineer",
+  "style": "16-bit pixel art game art, crisp hard-edged pixels, limited night palette: plum black, deep plum, violet glow, cream, sunset orange, warm orange and gold window lights, the career accent colour only on screens and small glows. Dusk City at night: a skyline made of lit window dots, a few still stars",
+  "suffix": "no people, no faces, no text, no letters, no numbers, no logos, no watermark, no sunburst rays, no perspective floor grid, no scanlines, no grain, no glowing particles",
+  "assets": [
+    {"id": "dream", "kind": "scene", "out": "software-engineer/dream.webp", "size": [160, 100], "prompt": "a rooftop under a wide night sky, one big gold star rising over the lit city, a small telescope on the roof", "source": "pixel"},
+    {"id": "work", "kind": "scene", "out": "software-engineer/work.webp", "size": [160, 100], "prompt": "a desk at night with a pile of blank cards and three trays, one card flying into a glowing tray", "source": "pixel"},
+    {"id": "round1", "kind": "scene", "out": "software-engineer/round1.webp", "size": [160, 100], "prompt": "an open orange portfolio folder on a desk at night, a small screen, a star and a blank card floating into it, a small university gate on a far hill", "source": "pixel"},
+    {"id": "tonight", "kind": "scene", "out": "software-engineer/tonight.webp", "size": [160, 100], "prompt": "a laptop open on a desk at night with green code bars, a warm desk lamp, the moon in the window, a small orange flag planted beside the laptop", "source": "pixel"},
+    {"id": "next", "kind": "scene", "out": "software-engineer/next.webp", "size": [160, 100], "prompt": "a rooftop at the edge of the city just before sunrise, a thin orange band of first light on the horizon, a path of glowing tiles leading toward it, a small green flag", "source": "pixel"},
+    {"id": "map", "kind": "map", "out": "software-engineer/map.webp", "size": [108, 192], "prompt": "a vertical top-down game world map at night: five small dark islands in a deep plum sea, tiny lit windows on each island, no path, no labels", "source": "pixel"},
+    {"id": "frame", "kind": "frame", "out": "software-engineer/frame.webp", "size": [108, 135], "prompt": "a chunky pixel picture frame, green outer border, orange corner studs, deep plum dithered interior with a few stars, empty centre", "source": "pixel"},
+    {"id": "host-idle", "kind": "host", "out": "host/host-idle.webp", "size": [48, 64], "prompt": "a generic friendly pixel game guide character, full body, violet hoodie, orange headset with a small mic, dark hair, standing, transparent background (not a likeness of any real person)", "source": "pixel"},
+    {"id": "host-talk", "kind": "host", "out": "host/host-talk.webp", "size": [48, 64], "prompt": "the same generic pixel guide character, mouth open mid-sentence, transparent background", "source": "pixel"},
+    {"id": "host-cheer", "kind": "host", "out": "host/host-cheer.webp", "size": [48, 64], "prompt": "the same generic pixel guide character cheering with both fists up and eyes closed happily, transparent background", "source": "pixel"}
+  ]
+}

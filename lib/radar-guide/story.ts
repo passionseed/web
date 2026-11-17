@@ -336,11 +336,17 @@ export function prevLevelKey(pages: readonly GuideIndexPage[], key: string): str
   return i > 0 ? sorted[i - 1].key : null;
 }
 
-/** Minutes left in the run from `key` on (inclusive), for "เหลือราว N นาที". */
+/**
+ * Minutes left from `key` on (inclusive), for "เหลือราว N นาที". Counts only
+ * the page's own Level (1 or 2): Level 1 is a run of its own.
+ */
 export function minutesLeft(pages: readonly GuideIndexPage[], key: string): number {
   const page = pages.find((p) => p.key === key);
   if (!page) return pages.reduce((s, p) => s + p.minutes, 0);
-  return pages.filter((p) => p.order >= page.order).reduce((s, p) => s + p.minutes, 0);
+  const tier = page.tier === 2 ? 2 : 1;
+  return pages
+    .filter((p) => p.order >= page.order && (p.tier === 2 ? 2 : 1) === tier)
+    .reduce((s, p) => s + p.minutes, 0);
 }
 
 // ---------------------------------------------------------------- progress (persisted state)

@@ -48,6 +48,13 @@ export interface GuideIndexPage {
   games?: number;
   /** DERIVED, never authored: the page has a clip slot (a cutscene). */
   cutscene?: boolean;
+  /**
+   * Which part of the run the level belongs to. Level 1 (default) is the short
+   * run for a student who hasn't chosen anything yet: dream, real work, TCAS
+   * round 1, one step tonight. Level 2 goes deep. A guide with no tier-2
+   * pages uses the career's DB deck (?view=deck) as its Level 2.
+   */
+  tier?: 1 | 2;
 }
 export interface GuideIndexEntry {
   slug: string; // = radar_fields.slug (must exist and be published, see 5.3)
@@ -208,6 +215,8 @@ export interface SortItem {
 }
 export interface SortGameData {
   layout: "cards" | "queue" | "chat";
+  /** The label above the game; default per layout ("แตะการ์ด แล้วแตะประตู", "ตรวจงาน AI", "แยกข้อความ"). */
+  tagTh?: string;
   goalTh?: string;
   bins: readonly { id: string; labelTh: string }[];
   items: readonly SortItem[];

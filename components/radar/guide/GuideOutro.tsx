@@ -197,6 +197,8 @@ export interface GuideOutroProps {
   firstStep?: ReactNode;
   /** The intent action, normally GuideIntentButton. */
   intentSlot?: ReactNode;
+  /** The door to Level 2 (GuideLevelTwoDoor), right after the intent. */
+  levelTwoSlot?: ReactNode;
   /** One short line about the paid program; nothing when no round is open. */
   programSlot?: ReactNode;
   /** The CtaCard resource links, shown below the program line (deck). */
@@ -217,6 +219,7 @@ export function GuideOutro({
   pageKey,
   firstStep,
   intentSlot,
+  levelTwoSlot,
   programSlot,
   resourcesSlot,
   requestSuggestionsTh,
@@ -254,6 +257,8 @@ export function GuideOutro({
       ) : null}
 
       {intentSlot ? <div className={block}>{intentSlot}</div> : null}
+
+      {levelTwoSlot ? <div className={block}>{levelTwoSlot}</div> : null}
 
       <GuideRequestSection {...shared} suggestionsTh={requestSuggestionsTh} />
 
@@ -462,6 +467,53 @@ export function GuideProgramLine({ tracker, lineTh, linkLabelTh, href, pageKey, 
           {content}
         </Link>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Level 2 door
+// ---------------------------------------------------------------------------
+
+export const LEVEL_TWO_DOOR_HEADING_TH = "ลุยต่อ Level 2";
+export const LEVEL_TWO_DOOR_PAGES_TH = "เจาะลึกทั้งงานจริง เงินเดือน และที่เรียน";
+export const LEVEL_TWO_DOOR_DECK_TH = "ข้อมูลจัดเต็มของสายนี้ ทั้งเงินเดือน ตลาดงาน และทางเรียน";
+export const LEVEL_TWO_DOOR_CTA_TH = "ไป Level 2";
+
+export interface GuideLevelTwoDoorProps {
+  tracker: GuideTracker;
+  /** The first Level 2 page, or the deck (/radar/<slug>?view=deck). */
+  href: string;
+  /** Level 2 is more levels of the guide, or the career's full deck. */
+  kind: "pages" | "deck";
+  /** Number of Level 2 levels, when kind is "pages". */
+  levels?: number;
+  pageKey?: string | null;
+  look?: FunnelLook;
+}
+
+/** The door from the end of Level 1 to Level 2. Sends `cta_click` `level-two`. */
+export function GuideLevelTwoDoor({ tracker, href, kind, levels, pageKey, look: lookProp }: GuideLevelTwoDoorProps) {
+  const { look, shellPageKey } = useFunnelContext(lookProp);
+  const eventPage = pageKey ?? shellPageKey;
+  const pixel = look === "pixel";
+  const lineTh =
+    kind === "pages"
+      ? `${LEVEL_TWO_DOOR_PAGES_TH}${levels ? ` อีก ${levels} ด่าน` : ""}`
+      : LEVEL_TWO_DOOR_DECK_TH;
+  return (
+    <div className={pixel ? "rgf rgf-program" : "radar-guide-program"} data-testid="level-two-door">
+      <p className={pixel ? "rgf-heading" : "radar-guide-outro__heading"}>{LEVEL_TWO_DOOR_HEADING_TH}</p>
+      <p className={pixel ? "rgf-line" : "radar-guide-program__line"}>{lineTh}</p>
+      <Link
+        href={href}
+        className={pixel ? "rgf-follow mt-2" : "radar-guide-program__link"}
+        data-demo="level-two"
+        onClick={() => tracker.track({ type: "cta_click", ...eventPageFields(eventPage), target: "level-two" })}
+      >
+        {pixel ? <span>{LEVEL_TWO_DOOR_CTA_TH}</span> : LEVEL_TWO_DOOR_CTA_TH}{" "}
+        <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+      </Link>
     </div>
   );
 }

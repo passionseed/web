@@ -11,7 +11,7 @@ const ROOM_URL = "https://tryhackme.com/room/offensivesecurityintro" as const;
 
 export const tonight: GuidePage = {
   key: "tonight",
-  order: 10,
+  order: 4,
   titleTh: "คืนนี้ ห้องเดียว ได้ผลงานชิ้นแรก",
   questionTh: "คืนนี้ทำอะไรได้เลย ที่จบด้วยของจริงในพอร์ต",
   navLabelTh: "ภารกิจคืนนี้",
@@ -88,8 +88,8 @@ export const tonight: GuidePage = {
     ),
     dialogue(
       "callback",
-      host("จำประตูที่สองได้ไหม มันเปิดให้คนที่มีผลงานตรวจสอบได้", { mood: "wink" }),
-      host("write-up นี้คือบรรทัดแรกของประวัตินั้น"),
+      host("จำรอบ 1 ได้ไหม ของที่เธอลงมือทำเองนับเป็นโครงงานได้นะ", { mood: "wink" }),
+      host("write-up ชิ้นนี้แหละ คือผลงานแรกในแฟ้มเธอ"),
       host("ถ้าสนุก ทำห้องถัดไปพรุ่งนี้ ถ้าไม่สนุก ก็รู้ก่อนเลือกคณะ ไม่เสียอะไร"),
       sys("เช็กกติกาของห้องก่อนโพสต์ write-up สาธารณะ")
     ),

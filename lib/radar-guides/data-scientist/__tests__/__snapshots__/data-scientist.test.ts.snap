@@ -1,0 +1,254 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`data-scientist guide matches the Thai copy snapshot (diff this in the Thai review) 1`] = `
+[
+  "dream.titleTh: ตัวเลขฝุ่นทุกเช้า มีคนทำขึ้นมา
+dream.questionTh: ตัวเลขที่เธอเห็นทุกวัน ใครทำขึ้นมา แล้วมันเปลี่ยนอะไรได้บ้าง
+dream.navLabelTh: ตัวเลขฝุ่น
+dream.og.headlineTh: ค่าฝุ่นที่เธอเช็กทุกเช้า เริ่มจากมีคนตั้งคำถาม
+dream.og.stat.th: 24 ม.ค. 2568 กทม. สั่งปิดโรงเรียน 352 จาก 437 แห่งเพราะฝุ่น
+dream.blocks[0].lines[0].text.th: เช้านี้เธอเปิดแอปเช็กสีฝุ่นก่อนออกจากบ้านหรือยัง
+dream.blocks[0].lines[1].text.th: ส้ม แดง ม่วง เลขพวกนั้นไม่ได้โผล่มาเองนะ
+dream.blocks[0].lines[2].text.th: เบื้องหลังมีทั้งคนเก็บข้อมูล คนคำนวณ และคนตั้งคำถาม
+dream.blocks[1].unlockLabelTh: ตัวเลขนี้มีพลังแค่ไหน
+dream.blocks[1].blocks[0].lines[0].text.th: 24 ม.ค. 2568 กรุงเทพฯ เจอฝุ่นหนักมาก
+dream.blocks[1].blocks[0].lines[1].text.th: โรงเรียนสังกัด กทม. มี 437 แห่ง ลองทายสิว่าวันนั้นปิดไปกี่แห่ง
+dream.blocks[1].blocks[1].game.data.promptTh: 24 ม.ค. 2568 กทม. สั่งปิดโรงเรียนในสังกัดเพราะฝุ่นไปกี่แห่ง (จาก 437)
+dream.blocks[1].blocks[1].game.data.chart.bars[0].labelTh: โรงเรียนสังกัด กทม. ทั้งหมด
+dream.blocks[1].blocks[1].game.data.chart.bars[1].labelTh: สั่งปิดเพราะฝุ่น 24 ม.ค. 2568
+dream.blocks[1].blocks[1].game.data.nearTh: เกือบเป๊ะเลย
+dream.blocks[1].blocks[1].game.data.overTh: เธอทายเกินไป {d} แห่ง
+dream.blocks[1].blocks[1].game.data.underTh: เธอทายน้อยไป {d} แห่ง
+dream.blocks[1].blocks[1].game.data.revealTh: เธอทาย {g} แต่ของจริงคือ 352 แห่ง หรือ 81%
+dream.blocks[1].blocks[1].answersTh[0]: 24 ม.ค. 2568 กทม. ปิดโรงเรียนในสังกัด 352 จาก 437 แห่ง หรือ 81% เพราะฝุ่น PM2.5
+dream.blocks[1].blocks[1].answersTh[1]: เช้าวันนั้นค่าฝุ่นเฉลี่ยทั้งกรุงเทพฯ 88.4 มคก./ลบ.ม. และ 48 เขตเป็นสีแดง
+dream.blocks[1].blocks[2].text.th: เช้าวันนั้นค่าฝุ่นเฉลี่ยทั้งกรุงเทพฯ อยู่ที่ 88.4 มคก./ลบ.ม. แถมเป็นสีแดงถึง 48 เขต
+dream.blocks[1].blocks[2].titleTh: ไทยพีบีเอส 24 ม.ค. 2568
+dream.blocks[1].blocks[3].lines[0].text.th: แค่ตัวเลขชุดเดียว ทำเอาโรงเรียนเกือบทั้งเมืองต้องปิด
+dream.blocks[1].blocks[3].lines[1].text.th: แต่ย้อนไปไม่กี่ปีก่อน ตัวเลขฝุ่นที่เธอเช็กทุกวันนี้ยังไม่มีด้วยซ้ำ
+dream.blocks[2].unlockLabelTh: แล้วใครเป็นคนทำตัวเลขนี้
+dream.blocks[2].blocks[0].lines[0].text.th: ลองพลิกการ์ดดูทีละใบสิ
+dream.blocks[2].blocks[0].lines[1].text.th: ทุกใบมีบางอย่างเหมือนกันอยู่
+dream.blocks[2].blocks[1].game.data.highlightTh: เริ่มจากมีคนถามว่า
+dream.blocks[2].blocks[1].game.data.cards[0].frontTh: เชียงใหม่ ปีที่ฟ้ากลายเป็นสีเทา
+dream.blocks[2].blocks[1].game.data.cards[0].dateTh: มี.ค. 2561
+dream.blocks[2].blocks[1].game.data.cards[0].backTh: ทั้งจังหวัดมีสถานีวัดอากาศของรัฐแค่ 2 สถานี แถมค่าที่ประกาศก็ยังไม่นับ PM2.5 เรื่องนี้เริ่มจากมีคนถามว่า อากาศที่เราหายใจอยู่ตอนนี้เป็นยังไงกันแน่ ทีมนักวิจัย มช. กับกลุ่มเมกเกอร์เลยสร้างเครื่องวัดฝุ่นชื่อ DustBoy ที่รายงานผลแบบเรียลไทม์ขึ้นมา
+dream.blocks[2].blocks[1].game.data.cards[1].frontTh: สีในแอปที่เธอเปิดดูทุกเช้า
+dream.blocks[2].blocks[1].game.data.cards[1].dateTh: 1 ต.ค. 2561
+dream.blocks[2].blocks[1].game.data.cards[1].backTh: ก่อนหน้านั้น ดัชนีคุณภาพอากาศไทยคิดจากสาร 5 ชนิด แต่ไม่มี PM2.5 พอเจอวิกฤตฝุ่นในกรุงเทพฯ ช่วงหน้าหนาว เรื่องนี้เริ่มจากมีคนถามว่า ทำไมไม่เตือนเรื่องฝุ่นจิ๋วด้วย คนเรียกร้องกันเยอะจนกรมควบคุมมลพิษต้องเพิ่ม PM2.5 เข้ามาคำนวณ
+dream.blocks[2].blocks[1].game.data.cards[2].frontTh: ถ้าแถวบ้านไม่มีสถานีวัดฝุ่น
+dream.blocks[2].blocks[1].game.data.cards[2].dateTh: ธ.ค. 2564
+dream.blocks[2].blocks[1].game.data.cards[2].backTh: แต่แอปเช็คฝุ่นของ GISTDA ก็ยังบอกค่าได้ทุกชั่วโมง เรื่องนี้เริ่มจากมีคนถามว่า ถ้าจับข้อมูลดาวเทียม สถานีตรวจวัด กรมควบคุมมลพิษ และกรมอุตุฯ มารวมกัน จะประมาณค่าฝุ่นตรงจุดที่เธอยืนอยู่ได้ไหม
+dream.blocks[2].blocks[1].answersTh[0]: มี.ค. 2561 เชียงใหม่มีสถานีของรัฐแค่ 2 สถานี และค่าที่ประกาศยังไม่นับ PM2.5 ทีมจาก มช. กับเมกเกอร์จึงสร้าง DustBoy
+dream.blocks[2].blocks[1].answersTh[1]: 1 ต.ค. 2561 กรมควบคุมมลพิษเพิ่ม PM2.5 เข้าไปในดัชนีคุณภาพอากาศ หลังมีคนเรียกร้องให้เตือนเรื่องฝุ่นจิ๋ว
+dream.blocks[2].blocks[1].answersTh[2]: ธ.ค. 2564 แอปเช็คฝุ่นของ GISTDA เอาข้อมูลดาวเทียมและข้อมูลจากหลายหน่วยงานมารวมกัน เพื่อบอกค่าฝุ่นรายชั่วโมงตรงที่เธออยู่
+dream.blocks[2].blocks[2].text.th: ปี 2565 DustBoy ถูกติดตั้งไปกว่า 1,000 เครื่องทั่วประเทศ หลายเครื่องอยู่ในโรงเรียนด้วย
+dream.blocks[2].blocks[2].titleTh: จากเครื่องแรกที่เชียงใหม่
+dream.blocks[2].blocks[3].text.th: การที่มีเครื่องตรวจวัดที่สามารถรู้ค่ามลพิษฝุ่นละออง และมีช่องทางรับข้อมูลข่าวสาร เป็นจุดเริ่มต้นเท่านั้น
+dream.blocks[2].blocks[3].titleTh: รศ.ดร.เศรษฐ์ สัมภัตตะกุล มช.
+dream.blocks[2].blocks[3].metaTh: วันเปิดตัว DustBoy
+dream.blocks[2].blocks[4].lines[0].text.th: นี่แหละงานสายข้อมูล
+dream.blocks[2].blocks[4].lines[1].text.th: ตั้งคำถามดีๆ หาข้อมูลมาตอบ แล้วเล่าให้คนทั่วไปเข้าใจ
+dream.blocks[2].blocks[4].lines[2].text.th: ด่านต่อไป: งานจริงไม่ได้สวยเหมือนกราฟ
+dream.reel.hook.th: 24 ม.ค. 2568 ตัวเลขฝุ่นสั่งปิดโรงเรียน 352 แห่ง ใครเป็นคนทำตัวเลขนี้
+dream.reel.variantsTh[0]: ค่าฝุ่นที่เธอเช็กทุกเช้า ตอนปี 2561 ยังไม่นับ PM2.5 ด้วยซ้ำ
+dream.reel.variantsTh[1]: เครื่องวัดฝุ่นที่เริ่มจากคำถามเดียวในเชียงใหม่
+dream.reel.sendToFriendTh: ส่งต่อให้เพื่อนที่เช็กสีฝุ่นทุกเช้า
+dream.reel.visual[0]: หน้าจอแอปสีฝุ่นเปลี่ยนจากส้มเป็นแดงเป็นม่วง
+dream.reel.visual[1]: ไอคอนโรงเรียน 437 หลัง ดับไฟทีละหลังจนเหลือ 85 หลังที่ยังเปิด
+dream.reel.visual[2]: การ์ดสามใบพลิก ประโยค เริ่มจากมีคนถามว่า เรืองแสงทุกใบ",
+  "work.titleTh: งานจริง เริ่มจากตารางรกๆ
+work.questionTh: วันทำงานจริงของคนสายข้อมูล เขาทำอะไรกันแน่
+work.navLabelTh: ตารางรก
+work.og.headlineTh: กว่าจะได้กราฟสวยๆ ต้องเคลียร์ตารางรกๆ กันก่อน
+work.og.stat.th: ตารางฝุ่น 8 แถว มี 5 แถวที่เอาไปใช้เลยไม่ได้ เธอหาเจอไหม
+work.blocks[0].lines[0].text.th: ในหนัง นักข้อมูลจิ้มปุ่มเดียว AI ก็ทำนายอนาคตได้แล้ว
+work.blocks[0].lines[1].text.th: แต่ของจริง กว่าจะได้กราฟสักรูป ต้องทำสองอย่างก่อน
+work.blocks[0].lines[2].text.th: ตั้งคำถามให้ถูก แล้วเคลียร์ข้อมูลให้สะอาด
+work.blocks[1].text.th: งานหลักของอาชีพนี้ มีทั้งคุยหาโจทย์กับคนที่เกี่ยวข้อง คลีนข้อมูลดิบ แล้วเล่าผลให้คนไม่ได้เรียนสถิติฟังรู้เรื่อง
+work.blocks[1].titleTh: ฐานข้อมูลอาชีพ O*NET
+work.blocks[2].unlockLabelTh: รับโจทย์
+work.blocks[2].blocks[0].lines[0].text.th: ครูฝ่ายกิจกรรมส่งไฟล์มา: ค่าฝุ่นจากเครื่องวัดในโรงเรียน หนึ่งสัปดาห์
+work.blocks[2].blocks[0].lines[1].text.th: มีเครื่องวัดสองจุด หน้าเสาธงกับห้องเรียนปลอดฝุ่น
+work.blocks[2].blocks[0].lines[2].text.th: ก่อนเปิดไฟล์ ลองเช็กดูว่ามีคำถามไหนที่ข้อมูลนี้ตอบได้จริงบ้าง
+work.blocks[2].blocks[1].game.data.tagTh: เช็กคำถาม
+work.blocks[2].blocks[1].game.data.goalTh: คำถามไหนที่ไฟล์นี้ตอบได้
+work.blocks[2].blocks[1].game.data.bins[0].labelTh: ไฟล์นี้ตอบได้
+work.blocks[2].blocks[1].game.data.bins[1].labelTh: ต้องหาข้อมูลเพิ่ม
+work.blocks[2].blocks[1].game.data.simulated.watermarkTh: ตัวอย่างจำลอง
+work.blocks[2].blocks[1].game.data.items[0].labelTh: ห้องเรียนปลอดฝุ่น ฝุ่นน้อยกว่าหน้าเสาธงจริงไหม
+work.blocks[2].blocks[1].game.data.items[0].revealTh: ตอบได้ เพราะมีค่าจากทั้งสองจุดในเวลาเดียวกัน
+work.blocks[2].blocks[1].game.data.items[1].labelTh: ช่วงไหนของวันที่ฝุ่นหน้าเสาธงหนักสุด
+work.blocks[2].blocks[1].game.data.items[1].revealTh: ตอบได้ เพราะไฟล์มีค่าวัดทุกชั่วโมง ถ้าเช้าหนักสุด อาจย้ายไปเข้าแถวในหอประชุมแทนได้
+work.blocks[2].blocks[1].game.data.items[2].labelTh: ฝุ่นทำให้เพื่อนลาป่วยบ่อยขึ้นไหม
+work.blocks[2].blocks[1].game.data.items[2].revealTh: ต้องมีข้อมูลการลาป่วยด้วย แล้วต่อให้มี แค่สองอย่างขึ้นพร้อมกัน ก็ไม่ได้แปลว่าอย่างหนึ่งทำให้เกิดอีกอย่างเสมอไป
+work.blocks[2].blocks[1].game.data.items[3].labelTh: ฝุ่นที่โรงเรียนมาจากไหน
+work.blocks[2].blocks[1].game.data.items[3].revealTh: เครื่องบอกได้แค่ว่าฝุ่นมีเท่าไหร่ แต่บอกไม่ได้ว่ามาจากไหน ต้องหาข้อมูลลม การเผา หรือการจราจรมาเพิ่ม
+work.blocks[2].blocks[1].game.data.resultTh: เลือกคำถามถูก {score}/{total}
+work.blocks[2].blocks[1].answersTh[0]: ไฟล์นี้ตอบได้: ห้องปลอดฝุ่นช่วยจริงไหม, ช่วงไหนของวันที่ฝุ่นหนักสุด
+work.blocks[2].blocks[1].answersTh[1]: ต้องหาข้อมูลเพิ่ม: ฝุ่นทำให้ลาป่วยบ่อยขึ้นไหม (ต้องมีข้อมูลการลา), ฝุ่นมาจากไหน (ต้องมีข้อมูลลม การเผา การจราจร)
+work.blocks[2].blocks[2].lines[0].text.th: คำถามที่ดี ต้องเป็นคำถามที่ข้อมูลตอบได้
+work.blocks[2].blocks[2].lines[1].text.th: และพอตอบได้แล้ว มีคนเอาไปทำอะไรต่อได้จริง
+work.blocks[3].unlockLabelTh: เปิดไฟล์
+work.blocks[3].blocks[0].lines[0].text.th: เปิดไฟล์แล้ว แต่ข้อมูลจริงไม่เคยเรียบร้อยหรอก
+work.blocks[3].blocks[0].lines[1].text.th: เช็กทีละแถว ว่าจะเก็บ แก้ก่อน หรือถามคนเก็บข้อมูล
+work.blocks[3].blocks[1].game.data.tagTh: เคลียร์ข้อมูล
+work.blocks[3].blocks[1].game.data.goalTh: เคลียร์ตารางฝุ่นของโรงเรียน
+work.blocks[3].blocks[1].game.data.bins[0].labelTh: ใช้ได้เลย
+work.blocks[3].blocks[1].game.data.bins[1].labelTh: แก้ก่อนใช้
+work.blocks[3].blocks[1].game.data.bins[2].labelTh: ถามคนเก็บข้อมูล
+work.blocks[3].blocks[1].game.data.simulated.watermarkTh: ตัวอย่างจำลอง
+work.blocks[3].blocks[1].game.data.items[0].labelTh: จ. 07:00 | หน้าเสาธง | 62
+work.blocks[3].blocks[1].game.data.items[0].detailTh: ค่าปกติของเช้าวันฝุ่นหนัก เครื่องอื่นในเขตก็ขึ้นพอๆ กัน
+work.blocks[3].blocks[1].game.data.items[0].revealTh: สมเหตุสมผล ใช้ได้เลย
+work.blocks[3].blocks[1].game.data.items[1].labelTh: จ. 07:00 | หน้าเสาธง | 62
+work.blocks[3].blocks[1].game.data.items[1].detailTh: เหมือนแถวบนทุกช่อง เวลาเดียวกันเป๊ะ
+work.blocks[3].blocks[1].game.data.items[1].revealTh: แถวซ้ำนะ ถ้าไม่ลบ เช้าวันจันทร์จะโดนนับสองรอบจนค่าเฉลี่ยเพี้ยน ลบให้เหลือแถวเดียวพอ
+work.blocks[3].blocks[1].game.data.items[2].labelTh: จ. 08:00 | ห้องปลอดฝุ่น | 999
+work.blocks[3].blocks[1].game.data.items[2].detailTh: ชั่วโมงก่อนหน้ากับถัดไป วัดได้ราว 15 ถึง 20
+work.blocks[3].blocks[1].game.data.items[2].revealTh: เครื่องหลายรุ่นใช้ 999 แทนคำว่าวัดไม่ได้ ถามคนดูแลเครื่องก่อน ห้ามเอาไปคิดค่าเฉลี่ยเด็ดขาด
+work.blocks[3].blocks[1].game.data.items[3].labelTh: อ. 09:00 | หน้าเสาธง | (ว่าง)
+work.blocks[3].blocks[1].game.data.items[3].detailTh: ช่องนี้ว่างเปล่า ไม่มีใครจดไว้เลยว่าทำไม
+work.blocks[3].blocks[1].game.data.items[3].nearTh.fix: ใกล้แล้ว ปล่อยว่างไว้น่ะถูกแล้ว แต่ถามก่อนดีกว่าว่าหายไปเพราะอะไร
+work.blocks[3].blocks[1].game.data.items[3].revealTh: ถามก่อนว่าเครื่องดับหรือมีคนถอดปลั๊ก ระหว่างนี้ปล่อยว่างไว้ อย่าใส่ 0 เพราะ 0 แปลว่าอากาศดีมาก
+work.blocks[3].blocks[1].game.data.items[4].labelTh: อ. 10:00 | หน้าเสาธง | 41 มคก./ลบ.ม.
+work.blocks[3].blocks[1].game.data.items[4].detailTh: แถวอื่นเป็นตัวเลขเปล่าๆ แต่แถวนี้ดันมีหน่วยพิมพ์ติดมาด้วย
+work.blocks[3].blocks[1].game.data.items[4].revealTh: โปรแกรมจะมองเป็นตัวหนังสือแล้วคำนวณไม่ได้ ตัดหน่วยทิ้งให้เหลือแค่ 41
+work.blocks[3].blocks[1].game.data.items[5].labelTh: พ. 07:00 | หน้าเสาธง | 158
+work.blocks[3].blocks[1].game.data.items[5].detailTh: สูงสุดของสัปดาห์ วันนั้นข่าวก็บอกว่าหลายเขตเป็นสีแดง
+work.blocks[3].blocks[1].game.data.items[5].nearTh.ask: ถามไว้ก็ไม่เสียหาย แต่ค่านี้ตรงกับข่าววันนั้น เก็บไว้ได้เลย
+work.blocks[3].blocks[1].game.data.items[5].revealTh: ค่าสูงผิดปกติไม่ได้แปลว่าผิดเสมอไปนะ ถ้าลบทิ้ง เท่ากับลบวันที่สำคัญสุดในตารางไปเลย
+work.blocks[3].blocks[1].game.data.items[6].labelTh: พ. 07:00 | ห้องปลอดฝุ่น | 14
+work.blocks[3].blocks[1].game.data.items[6].detailTh: ตอนนั้นข้างนอกวัดได้ 158 แต่ในห้องเปิดเครื่องฟอกอยู่
+work.blocks[3].blocks[1].game.data.items[6].revealTh: เก็บไว้เลย แถวนี้แหละคำตอบของคำถามครู
+work.blocks[3].blocks[1].game.data.items[7].labelTh: 28/1/2026 07:00 | หน้าเสาธง | 55
+work.blocks[3].blocks[1].game.data.items[7].meta.place: ไฟล์จากอีกเครื่อง
+work.blocks[3].blocks[1].game.data.items[7].detailTh: แถวอื่นลงวันเป็น จ. อ. พ. แต่แถวนี้ดันเป็นวันที่แบบ ค.ศ.
+work.blocks[3].blocks[1].game.data.items[7].revealTh: แปลงให้เหมือนกันก่อน ไม่งั้นพอเรียงวัน แถวนี้จะหลุดไปอยู่ผิดที่
+work.blocks[3].blocks[1].game.data.resultTh: เคลียร์แถวถูก {score}/{total}
+work.blocks[3].blocks[1].answersTh[0]: ใช้ได้เลย: ค่าปกติตอนเช้า, ค่า 158 ในวันที่ฝุ่นหนักจริง, ค่า 14 ในห้องปลอดฝุ่น
+work.blocks[3].blocks[1].answersTh[1]: แก้ก่อนใช้: ลบแถวซ้ำ, ตัดหน่วยที่พิมพ์ติดมา, แปลงวันที่ให้เป็นแบบเดียวกัน
+work.blocks[3].blocks[1].answersTh[2]: ถามคนเก็บข้อมูล: ค่า 999 ที่อาจเป็นรหัสเครื่องเสีย, ช่องว่างที่ไม่รู้ว่าหายไปเพราะอะไร
+work.blocks[3].blocks[2].text.th: เคลียร์เสร็จแล้ว: เช้าวันพุธ หน้าเสาธงวัดได้ 158 ส่วนห้องปลอดฝุ่นวัดได้ 14
+work.blocks[3].blocks[2].titleTh: คำตอบสำหรับครู
+work.blocks[3].blocks[3].lines[0].text.th: เห็นไหม ยังไม่มีโมเดล ไม่มี AI สักตัวเลย
+work.blocks[3].blocks[3].lines[1].text.th: แต่ถ้าแถว 999 หลุดเข้าไป ค่าเฉลี่ยของห้องพุ่งปรี๊ดแน่
+work.blocks[3].blocks[3].lines[2].text.th: แล้วครูจะสรุปผิดทันทีว่าห้องปลอดฝุ่นไม่ได้ช่วยอะไรเลย
+work.blocks[3].blocks[3].lines[3].text.th: คนสายนี้เคลียร์แบบนี้ก่อนทุกครั้ง แล้วค่อยไปทำกราฟกับโมเดล
+work.blocks[4].lines[0].text.th: งานแบบที่เธอเพิ่งทำ เริ่มได้เลยตั้งแต่ ม.ปลาย
+work.blocks[4].lines[1].text.th: แถมเอาใส่แฟ้มผลงานได้ด้วย ด่านต่อไปจะเล่าให้ฟัง
+work.reel.hook.th: ตารางฝุ่น 8 แถว มี 5 แถวที่เอาไปใช้เลยไม่ได้ เธอหาเจอไหม
+work.reel.variantsTh[0]: งานจริงสายข้อมูล ไม่ได้เริ่มที่ AI แต่เริ่มที่ตารางรกๆ นี่แหละ
+work.reel.variantsTh[1]: เจอค่า 999 ในตาราง อย่าเพิ่งเอาไปหาค่าเฉลี่ย
+work.reel.sendToFriendTh: ส่งต่อให้เพื่อนที่ชอบจับผิด
+work.reel.visual[0]: ตารางฝุ่นเลื่อนขึ้นทีละแถว แถวเพี้ยนกะพริบ
+work.reel.visual[1]: ป้ายใช้ได้เลย แก้ก่อนใช้ ถามคนเก็บข้อมูล ประทับลงทีละแถว
+work.reel.visual[2]: แท่งกราฟสองแท่ง หน้าเสาธงกับห้องปลอดฝุ่น โผล่ขึ้นตอนจบ",
+  "round1.titleTh: รอบ 1 มีพื้นที่ให้ผลงานเธอ
+round1.questionTh: เข้ามหาลัยด้วยสิ่งที่ทำเอง ไม่ใช่แค่คะแนนสอบ จริงเหรอ
+round1.navLabelTh: รอบ 1
+round1.og.headlineTh: TCAS รอบ 1 ใช้ผลงานของเธอยื่นได้ เริ่มเก็บตั้งแต่ตอนนี้เลย
+round1.og.stat.th: TCAS70 มี 4 รอบ รอบแรกคือ Portfolio
+round1.blocks[0].lines[0].text.th: ก่อนไปต่อ มีเรื่องหนึ่งที่แทบไม่มีใครเคยบอก
+round1.blocks[0].lines[1].text.th: เข้ามหาลัยไม่ได้มีแค่ทางสอบอย่างเดียวนะ
+round1.blocks[1].text.th: TCAS70 มี 4 รอบ รอบแรกชื่อ Portfolio มหาลัยดูจากสิ่งที่เธอทำมา
+round1.blocks[2].lines[0].text.th: ถ้าเธอเคยลองทำอะไรในสายข้อมูล ด้วยตัวเอง นั่นแหละ เอาไปใส่ได้เลย
+round1.blocks[2].lines[1].text.th: ปีนี้ ทปอ. มีระบบ TCASfolio ให้ทำแฟ้มผลงานได้สูงสุด 40 รายการ
+round1.blocks[3].unlockLabelTh: ลองจัดแฟ้มดู
+round1.blocks[3].blocks[0].lines[0].text.th: ลองดูสิ ของพวกนี้ควรไปอยู่ช่องไหนในแฟ้ม
+round1.blocks[3].blocks[1].game.data.tagTh: จัดแฟ้มผลงาน
+round1.blocks[3].blocks[1].game.data.goalTh: จัดของใส่แฟ้ม TCASfolio
+round1.blocks[3].blocks[1].game.data.bins[0].labelTh: โครงงาน
+round1.blocks[3].blocks[1].game.data.bins[1].labelTh: กิจกรรม
+round1.blocks[3].blocks[1].game.data.bins[2].labelTh: เกียรติบัตร รางวัล
+round1.blocks[3].blocks[1].game.data.items[0].labelTh: ทำกราฟค่าฝุ่นจังหวัดตัวเอง จากข้อมูลเปิดของรัฐ แล้วเขียนเล่าว่าเจออะไร
+round1.blocks[3].blocks[1].game.data.items[0].revealTh: โครงงาน เธอตั้งคำถามเอง หาข้อมูลเอง สรุปเอง ครบทุกขั้นตอน
+round1.blocks[3].blocks[1].game.data.items[1].labelTh: เก็บข้อมูลว่าโรงอาหารขายเมนูไหนหมดก่อน แล้วลองเสนอวิธีลดของเหลือ
+round1.blocks[3].blocks[1].game.data.items[1].revealTh: โครงงาน ยิ่งมีคนเอาผลไปใช้ต่อได้จริง ยิ่งดีเลย
+round1.blocks[3].blocks[1].game.data.items[2].labelTh: ไปเข้าค่ายวิทยาการข้อมูลของมหาวิทยาลัย
+round1.blocks[3].blocks[1].game.data.items[2].revealTh: กิจกรรม ถ้าในค่ายมีชิ้นงานออกมา อย่าลืมเก็บไว้ด้วยนะ
+round1.blocks[3].blocks[1].game.data.items[3].labelTh: เป็นทีมทำแบบสอบถามงานวันวิทยาศาสตร์ของโรงเรียน
+round1.blocks[3].blocks[1].game.data.items[3].revealTh: กิจกรรม ถ้าเธอช่วยสรุปผลแบบสอบถามด้วย ก็เล่าต่อเป็นโครงงานได้เลย
+round1.blocks[3].blocks[1].game.data.items[4].labelTh: เกียรติบัตรจากการแข่งคณิตศาสตร์หรือสถิติ
+round1.blocks[3].blocks[1].game.data.items[4].revealTh: เกียรติบัตร รางวัล ช่วยยืนยันว่าเธอสนใจด้านนี้จริงๆ
+round1.blocks[3].blocks[1].game.data.resultTh: จัดถูก {score}/{total}
+round1.blocks[3].blocks[1].answersTh[0]: โครงงาน: ทำกราฟค่าฝุ่นจังหวัดตัวเอง จากข้อมูลเปิดของรัฐ แล้วเขียนเล่าว่าเจออะไร, เก็บข้อมูลว่าโรงอาหารขายเมนูไหนหมดก่อน แล้วลองเสนอวิธีลดของเหลือ
+round1.blocks[3].blocks[1].answersTh[1]: กิจกรรม: ไปเข้าค่ายวิทยาการข้อมูลของมหาวิทยาลัย, เป็นทีมทำแบบสอบถามงานวันวิทยาศาสตร์ของโรงเรียน
+round1.blocks[3].blocks[1].answersTh[2]: เกียรติบัตร รางวัล: เกียรติบัตรจากการแข่งคณิตศาสตร์หรือสถิติ
+round1.blocks[3].blocks[2].lines[0].text.th: เห็นไหม ของที่เธอลงมือทำเองนับได้จริง
+round1.blocks[3].blocks[2].lines[1].text.th: ไม่ต้องรอใครมาจัดค่าย หรือออกใบเกียรติบัตรให้ก่อนเลย
+round1.blocks[4].unlockLabelTh: แล้วตอนนี้ฉันอยู่ ม.ไหนล่ะ
+round1.blocks[4].blocks[0].lines[0].text.th: ถ้าอยู่ ม.6 รอบ 1 ปีนี้บางที่ยังเปิดรับอยู่ แต่ละคณะปิดไม่พร้อมกันนะ
+round1.blocks[4].blocks[0].lines[1].text.th: ถ้าอยู่ ม.5 เธอยังมีเวลาอีกเกือบปี ลองทำชิ้นแรกให้เสร็จก่อนเลย
+round1.blocks[4].blocks[0].lines[2].text.th: ถ้าอยู่ ม.4 เวลาเยอะสุด ลองได้หลายอย่างเลย ไม่ต้องรีบเลือก
+round1.blocks[4].blocks[1].text.th: อย่างเช่น สวนสุนันทาเปิดรับรอบ 1 ถึง 9 ก.พ. 2570
+round1.blocks[4].blocks[1].titleTh: ยังเปิดอยู่
+round1.blocks[4].blocks[2].text.th: รอบ 1 ไม่ได้ง่ายกว่ารอบอื่น แต่ละคณะมีเกณฑ์อย่างเกรดขั้นต่ำ เช็กประกาศของคณะที่สนใจทุกครั้งนะ
+round1.blocks[4].blocks[2].titleTh: พูดตรงๆ
+round1.blocks[4].blocks[3].labelTh: ดูหลักสูตร สถิติ วิทยาการข้อมูล วิทย์คอม ใน mytcas
+round1.blocks[5].lines[0].text.th: ผลงานชิ้นแรกไม่ต้องใหญ่โตเลย
+round1.blocks[5].lines[1].text.th: ด่านต่อไป เริ่มลุยได้คืนนี้เลย",
+  "tonight.titleTh: คืนนี้ ข้อมูลฝุ่นจริง หนึ่งกราฟ หนึ่งข้อค้นพบ
+tonight.questionTh: คืนนี้ทำอะไรได้เลย ที่จบด้วยผลงานจริงในแฟ้ม
+tonight.navLabelTh: ภารกิจคืนนี้
+tonight.og.headlineTh: คืนนี้ลองเปิดข้อมูลฝุ่นจริงของรัฐ แล้วเธอจะได้งานข้อมูลชิ้นแรก
+tonight.blocks[0].lines[0].text.th: ด่านนี้ไม่ได้เล่นในจอ แต่เป็นภารกิจจริงคืนนี้
+tonight.blocks[0].lines[1].text.th: ใช้ข้อมูลฝุ่นของจริงจากเว็บข้อมูลเปิดของรัฐ ฟรี ไม่ต้องสมัคร
+tonight.blocks[1].text.th: สำนักงานทรัพยากรธรรมชาติและสิ่งแวดล้อมจังหวัดนนทบุรี เปิดไฟล์ CSV ค่าฝุ่น PM2.5 รายวันจาก 2 สถานี ให้ทุกคนโหลดไปใช้ได้ ไม่ต้องมีบัญชี
+tonight.blocks[1].titleTh: ชุดข้อมูล: ฝุ่นนนทบุรี
+tonight.blocks[2].lines[0].text.th: ใบ้ให้เลย บางช่องในไฟล์นี้เขียนว่า n/a
+tonight.blocks[2].lines[1].text.th: จำด่านตารางรกได้ไหม นั่นแหละงานแรกของเธอ
+tonight.blocks[3].game.data.room.titleTh: data.go.th · รายงานคุณภาพอากาศ (pm2.5) จังหวัดนนทบุรี
+tonight.blocks[3].game.data.room.badgeTh: ข้อมูลเปิดของรัฐ โหลดได้ไม่ต้องสมัคร (เช็กเมื่อ 18 พ.ย. 2569)
+tonight.blocks[3].game.data.room.subTh: อยู่จังหวัดอื่น? ลองค้นคำว่า PM2.5 ตามด้วยชื่อจังหวัดใน data.go.th ได้เลย
+tonight.blocks[3].game.data.checklistTh[0]: โหลดไฟล์ CSV
+tonight.blocks[3].game.data.checklistTh[1]: เปิดในโปรแกรมตาราง เช่น Google Sheets หรือ Excel (ถ้าต้องสมัครบัญชี เช็กเกณฑ์อายุของเว็บก่อน ถ้าต้องมีผู้ปกครอง ให้สมัครด้วยกัน)
+tonight.blocks[3].game.data.checklistTh[2]: ตั้งคำถามหนึ่งข้อก่อนเริ่มทำกราฟ
+tonight.blocks[3].game.data.checklistTh[3]: เคลียร์ช่อง n/a แล้วทำกราฟหนึ่งรูป
+tonight.blocks[3].game.data.checklistTh[4]: เขียน write-up
+tonight.blocks[3].game.data.fields[0].placeholderTh: คำถามของฉัน (เช่น เดือนไหนฝุ่นหนักสุด)
+tonight.blocks[3].game.data.fields[1].placeholderTh: ใช้ข้อมูลอะไร ช่วงไหน
+tonight.blocks[3].game.data.fields[2].placeholderTh: เจออะไรแปลกๆ ในไฟล์ แล้วเธอจัดการยังไง
+tonight.blocks[3].game.data.fields[3].placeholderTh: หนึ่งเรื่องที่กราฟนี้บอก
+tonight.blocks[3].game.data.fields[4].placeholderTh: สิ่งที่ข้อมูลนี้ยังบอกไม่ได้
+tonight.blocks[3].game.data.fixedLinesTh[0]: ที่มาข้อมูล: data.go.th ข้อมูลเปิดภาครัฐ (แปะชื่อชุดข้อมูลกับลิงก์ไว้ด้วย)
+tonight.blocks[3].game.data.privacyTh: เก็บไว้ในเครื่องนี้เท่านั้น ไม่ส่งไปที่ไหน
+tonight.blocks[3].answersTh[0]: เปิดชุดข้อมูลฝุ่นนนทบุรีใน data.go.th แล้วโหลดไฟล์ CSV ไม่ต้องสมัคร
+tonight.blocks[3].answersTh[1]: เปิดในโปรแกรมตาราง (ถ้าต้องสมัครบัญชี เช็กเกณฑ์อายุของเว็บก่อน ถ้าต้องมีผู้ปกครอง ให้สมัครด้วยกัน) ตั้งคำถามหนึ่งข้อ จัดการช่อง n/a แล้วทำกราฟหนึ่งรูป
+tonight.blocks[3].answersTh[2]: เขียน write-up: คำถามของฉัน ใช้ข้อมูลอะไร เจออะไรแปลกๆ ในไฟล์ ข้อค้นพบหนึ่งข้อ และข้อมูลนี้ยังบอกอะไรไม่ได้
+tonight.blocks[3].demoScript[1].text: เดือนไหนฝุ่นที่ปากเกร็ดหนักสุด
+tonight.blocks[3].demoScript[2].text: มีแค่สองสถานี บอกไม่ได้ว่าทั้งจังหวัดเป็นแบบนี้
+tonight.blocks[4].lines[0].text.th: ช่องที่สำคัญสุด คือสิ่งที่ข้อมูลนี้ยังบอกไม่ได้
+tonight.blocks[4].lines[1].text.th: เช่น ไฟล์นี้มีแค่ 2 สถานี เลยเหมารวมทั้งจังหวัดไม่ได้
+tonight.blocks[4].lines[2].text.th: คนที่บอกข้อจำกัดของข้อมูลตัวเองได้ คือคนที่คนอื่นเชื่อใจ
+tonight.blocks[5].lines[0].text.th: จำการ์ดเชียงใหม่ได้ไหม ทุกอย่างเริ่มจากคำถามเดียวเลย
+tonight.blocks[5].lines[1].text.th: กราฟนี้กับ write-up คือผลงานชิ้นแรกในแฟ้มของเธอ
+tonight.blocks[5].lines[2].text.th: ถ้าสนุก พรุ่งนี้ลองถามคำถามที่สองกับไฟล์เดิมดู
+tonight.blocks[5].lines[3].text.th: ถ้าไม่สนุก ก็ได้รู้ตัวก่อนเลือกคณะ ไม่เสียอะไรเลย
+tonight.blocks[5].lines[4].text.th: ถ้าจะเอาไปโพสต์ แปะที่มาของข้อมูลไว้ด้วยทุกครั้งนะ",
+  "next.titleTh: แล้วเธอล่ะ
+next.questionTh: สายข้อมูลใช่ทางเธอไหม แล้วจะไปต่อทางไหนดี
+next.navLabelTh: แล้วเธอล่ะ
+next.og.headlineTh: สายข้อมูลใช่ทางเธอไหม ลองเล่นให้จบก่อนค่อยตัดสินใจ
+next.blocks[0].lines[0].text.th: มาถึงด่านสุดท้ายของ Level 1 แล้ว
+next.blocks[0].lines[1].text.th: ที่เล่นมาทั้งหมด เธอชอบส่วนไหนที่สุด
+next.blocks[1].game.data.lines.dream: ทายไว้ว่าโรงเรียนปิดเพราะฝุ่น {schools} แห่ง || รู้แล้วว่าตัวเลขฝุ่นเริ่มจากคำถาม
+next.blocks[1].game.data.lines.work: จัดการข้อมูลถูก {score}/{total}
+next.blocks[1].game.data.lines.round1: จัดแฟ้มถูก {score}/{total}
+next.blocks[1].game.data.lines.tonight: เตรียม write-up งานข้อมูลชิ้นแรกไว้แล้ว
+next.blocks[1].game.data.favourites.dream: สายที่เธอเลือกเอง: ข้อมูลเพื่อส่วนรวม งานจริงคือแปลงข้อมูลดิบเป็นตัวเลขที่คนทั้งเมืองใช้ตัดสินใจ
+next.blocks[1].game.data.favourites.work: สายที่เธอเลือกเอง: นักวิเคราะห์ข้อมูล งานจริงคือตั้งคำถามให้ตรงจุด เคลียร์ข้อมูล แล้วเล่าผลให้คนอื่นฟังรู้เรื่อง
+next.blocks[1].game.data.cardLineTh: นี่ไม่ใช่คำทำนาย แค่จุดเริ่มต้น เธอตัดสินใจเองได้
+next.blocks[1].answersTh[0]: เลือกด่านที่สนุกที่สุด แล้วดูว่ามันตรงกับงานจริงสายไหน
+next.blocks[1].answersTh[1]: ข้อมูลเพื่อส่วนรวม หรือ นักวิเคราะห์ข้อมูล
+next.blocks[1].answersTh[2]: นี่ไม่ใช่คำทำนาย แค่จุดเริ่มต้น เธอตัดสินใจเองได้
+next.blocks[2].lines[0].text.th: กดบอกหน่อยว่าสายนี้ใช่เธอไหม
+next.blocks[2].lines[1].text.th: เราจะได้รู้ว่าควรทำสายนี้ให้ลึกกว่านี้ไหม
+next.blocks[2].lines[2].text.th: กดอันไหนก็ได้ ถือเป็นข้อมูลหมดเลย
+next.blocks[2].lines[3].text.th: ลองแล้วรู้ว่าไม่ใช่ ก็ยังได้คำตอบไวกว่าคนที่ไม่เคยลอง
+next.blocks[4].lines[0].text.th: ถ้าสนใจ มีแค่อย่างเดียวที่ต้องทำต่อ
+next.blocks[4].lines[1].text.th: คือพรุ่งนี้ลองถามคำถามที่สองกับไฟล์เดิม แล้วเขียนเพิ่มอีกชิ้น
+next.blocks[5].text.th: ไม่ชอบงานจุกจิก เบื่อเวลาต้องไล่ดูตารางทีละแถว หรือไม่ถนัดอธิบายให้คนอื่นฟัง เพราะงานจริงส่วนหนึ่งคือเคลียร์ข้อมูล แล้วเล่าให้คนไม่ได้เรียนสถิติเข้าใจ
+next.blocks[5].titleTh: สายนี้อาจไม่เหมาะกับเธอ ถ้า...",
+]
+`;
