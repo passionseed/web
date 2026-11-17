@@ -522,7 +522,7 @@ export const T = {
   /** The nightly island news card (schema 19): on while a news channel is set. DRAFT for the Thai review. */
   adminNewsLine: (set: boolean) =>
     set ? "✅ ข่าวเกาะคืนนี้: โพสต์ทุกคืนราว 2 ทุ่มในห้องข่าวเกาะ" : "⚪ ข่าวเกาะคืนนี้: ยังไม่ตั้งห้อง (/admin channel kind:news)",
-  /** How many teams have an AI summary stored for today: 0 every day means the website's job or its key is not working. DRAFT. */
+  /** How many teams have an AI summary stored for today. 0 while the AI news is off or no team has agreed to AI summaries; 0 with both on points at the website's job or its key. DRAFT. */
   adminDigestToday: (n: number) => `🤖 สรุป AI ที่เก็บไว้วันนี้: ${n} ทีม`,
   adminDigestLast: (day: string | null) => `โพสต์ล่าสุด: ${day ?? "ยังไม่เคย"}`,
   adminDigestHidden: (teams: string) => `ซ่อนสรุปอยู่: ${teams || "ไม่มี"}`,

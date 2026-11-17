@@ -101,8 +101,6 @@ the AI switch, not sharing.
 
 - Who reads #island-news: SHIFT High students only, or parents and adults in
   the wider server too? The default is never to crosspost.
-- The 7-day re-check: a nightly card accumulates names faster than the
-  digest did. Extend it to 30 days?
 - Approve the seven lore lines, or supply lines from
   `docs/designs/shift-high-island-lore.md`. With seven lines picked by the
   day, each line falls on the same weekday every week (the campfire line is
