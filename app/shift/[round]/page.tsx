@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, ShieldCheck } from "lucide-react";
 import { ShiftApplyButton } from "@/components/shift/ShiftApplyButton";
+import { ShiftAttributedLink } from "@/components/shift/ShiftAttributedLink";
 import { ShiftSeatsRemaining } from "@/components/shift/ShiftSeatsRemaining";
 import { ShiftParentShare } from "@/components/shift/ShiftParentShare";
 import { MetaPixel } from "@/components/shift/MetaPixel";
@@ -118,10 +119,10 @@ function ApplyButton({
 }) {
   if (cohortStatus(cohort) !== "open") {
     return (
-      <Link href="/shift" className={`shift-button ${className}`}>
+      <ShiftAttributedLink href="/shift" className={`shift-button ${className}`}>
         <span>ปิดรับสมัครแล้ว · ดูรุ่นอื่น</span>
         <ArrowRight className="h-4 w-4" />
-      </Link>
+      </ShiftAttributedLink>
     );
   }
   return (

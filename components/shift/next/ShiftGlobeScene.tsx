@@ -1,9 +1,11 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
+
+import { ShiftAttributedLink } from "@/components/shift/ShiftAttributedLink";
+import { getShiftSource, withShiftSource } from "@/lib/shift/attribution";
 
 import styles from "./shiftNext.module.css";
 
@@ -42,7 +44,8 @@ export function ShiftGlobeScene({ children }: { children: ReactNode }) {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     navigationTimer.current = setTimeout(() => {
       navigationTimer.current = null;
-      router.push("/shift/next");
+      // Carry the visitor's channel, so next-round interest isn't filed without one.
+      router.push(withShiftSource("/shift/next", getShiftSource()));
     }, reduced ? 0 : 240);
   }, [router]);
 
@@ -71,5 +74,5 @@ export function ShiftJourneyLink({ children, className }: { children: ReactNode;
     event.preventDefault();
     scene.navigateToNext();
   };
-  return <Link href="/shift/next" className={className} onClick={onClick}>{children}</Link>;
+  return <ShiftAttributedLink href="/shift/next" className={className} onClick={onClick}>{children}</ShiftAttributedLink>;
 }
