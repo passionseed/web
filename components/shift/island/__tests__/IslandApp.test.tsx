@@ -611,6 +611,12 @@ describe("IslandApp HUD", () => {
     }
   });
 
+  it("puts the lamp dot on the chip for the bot's notices that wait in Discord", () => {
+    render(<IslandApp page={page({ unread: 2 })} picture={null} />);
+    expect(door()).toHaveAccessibleName(expect.stringContaining(RESULTS.discord(2)));
+    expect(within(door()).getByTestId("chip-dot")).toBeInTheDocument();
+  });
+
   it("shows no results at all before there are any", () => {
     const board = makeBoard();
     board.side = board.side.map((side) => ({ ...side, mine: null }));
@@ -633,9 +639,9 @@ describe("IslandApp HUD", () => {
                 instance_id: IDS.m6Instance,
                 state: "approved",
                 version: 1,
-                updated_at: "2026-11-10T10:00:00Z",
+                updated_at: "2026-11-10T08:30:00Z",
                 latest_submission: null,
-                latest_review: { outcome: "approved", feedback: null, created_at: "2026-11-10T10:00:00Z" },
+                latest_review: { outcome: "approved", feedback: null, created_at: "2026-11-10T08:30:00Z" },
               },
             }
           : m,
@@ -649,6 +655,8 @@ describe("IslandApp HUD", () => {
       // Seen: the card goes back to the student's next step.
       expect(screen.queryByRole("region", { name: headline })).toBeNull();
       expect(screen.getByRole("region", { name: KEYNOTE })).toBeInTheDocument();
+      // Seen up to the approval only: the newer mentor reply still lights the chip.
+      expect(door()).toHaveAccessibleName(expect.stringContaining(RESULTS.hud(1)));
     } finally {
       now.mockRestore();
     }

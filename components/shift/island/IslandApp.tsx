@@ -275,6 +275,7 @@ function Unclaimed({ page, picture, initialPhase, demoDay, voyage: forcedVoyage 
   const invites = page.invites.length;
   const paused = storyOpen || claiming || panel != null || voyage.holding;
   const onPanel = (next: Panel) => setPanel(next as UnclaimedPanel);
+  const pending = consentPending(page);
   // The plaza to look at: the festival and the campfire, no notice board and nothing to tap.
   const today = useBangkokDay();
   const festival = useMemo(
@@ -303,8 +304,8 @@ function Unclaimed({ page, picture, initialPhase, demoDay, voyage: forcedVoyage 
           <HudLabel
             me={page.me}
             text={HUD.noPlot}
-            label={consentPending(page) ? HUD.menuConsent : HUD.menu}
-            dot={consentPending(page)}
+            label={pending ? HUD.menuConsent : HUD.menu}
+            dot={pending}
             onOpen={() => setPanel("menu")}
           />
         }
@@ -399,6 +400,11 @@ function IslandHome({
     () => nextStep(board, { tapsToday, resting: page.island.resting, approved: approved?.ref ?? null }),
     [board, tapsToday, page.island.resting, approved],
   );
+  // The quest page's ไปเควสต์ถัดไป: the student's work, never a result to look at or work waiting on a mentor.
+  const nextWork = useMemo(() => {
+    const work = nextStep(board, { tapsToday, resting: page.island.resting });
+    return work && (work.action === "start" || work.action === "open") ? work.ref : null;
+  }, [board, tapsToday, page.island.resting]);
   const intended = useDayIntention(memberId);
   const [resting, startRest] = useTransition();
   const quest = useStartQuest();
@@ -489,9 +495,10 @@ function IslandHome({
   function checkInQuietly(next: NextStep) {
     if (!next.checksIn) return;
     setTappedHere(true);
-    puffQueued.current = true;
     void checkIn({ instanceId: next.instanceId }).then((result) => {
-      if (!result.ok) setTappedHere(false);
+      // The dust puff only for a check-in that is in; a failed one leaves the next tap to try again.
+      if (result.ok) puffQueued.current = true;
+      else setTappedHere(false);
     });
   }
 
@@ -503,7 +510,8 @@ function IslandHome({
   async function tapNext(next: NextStep) {
     if (next.action === "wake") return rest(false);
     if (!next.ref) return;
-    if (next.kind === "reviewed") markResultsSeen(memberId);
+    // Seen up to this approval only: anything newer stays new in the chip's sheet.
+    if (next.kind === "reviewed" && approved) markResultsSeen(memberId, Date.parse(approved.at));
     if (next.action === "start" && !(await quest.start(next.ref))) return;
     openQuest(next.ref, false);
     checkInQuietly(next);
@@ -599,18 +607,21 @@ function IslandHome({
     setStoryKey((key) => key + 1);
   }, sound);
   // Consent itself has its banner at the top of the sheet; only the AI news line needs a line here.
+  const consent = consentRow(page, setPanel);
   const aiConsent: MenuItem[] =
-    consentStep(page) && page.consent?.ok
-      ? [{ id: "consent", icon: "letter", label: PLAYER_MENU.aiNews, onClick: () => setPanel("consent") }]
-      : [];
+    consent.onConsent && consent.consentAiOnly ? [{ id: "consent", icon: "letter", label: PLAYER_MENU.aiNews, onClick: consent.onConsent }] : [];
   const homeItems: MenuItem[] = [
     ...shared.admin,
     ...aiConsent,
     ...shared.places,
     ...(page.island.resting ? [] : [{ id: "rest", icon: "moon", label: MENU.rest, action: true, onClick: () => rest(true) } satisfies MenuItem]),
   ];
-  // The chip's lamp dot: consent waits, a mentor's result is new, or something waits at the tree.
-  const chipWaiting = consentPending(page) ? HUD.menuConsent : fresh > 0 ? RESULTS.hud(fresh) : tree ? treeWaiting(tree) : null;
+  // The chip's lamp dot: consent waits, a mentor's result is new, something waits at the tree, or the bot left notices.
+  const chipWaiting =
+    (consentPending(page) ? HUD.menuConsent : null) ??
+    (fresh > 0 ? RESULTS.hud(fresh) : null) ??
+    (tree ? treeWaiting(tree) : null) ??
+    (page.unread > 0 ? RESULTS.discord(page.unread) : null);
 
   return (
     <>
@@ -772,8 +783,8 @@ function IslandHome({
         photos={page.photos === true}
         projectId={project?.id ?? null}
         peer={page.peer === true}
-        // ไปเควสต์ถัดไป: the card's quest, whatever the card says next.
-        next={step && step.action !== "wake" ? step.ref : null}
+        // ไปเควสต์ถัดไป: the student's next work (nextWork), never a result or work waiting on a mentor.
+        next={nextWork}
         viewerKey={memberId}
       />
       <StuckSheet

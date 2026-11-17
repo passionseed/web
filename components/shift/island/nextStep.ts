@@ -6,7 +6,7 @@
 import { keynoteQuest, mainTileStatus, starterQuest, type BoardRef } from "@/lib/supabase/shift-quests/board";
 import type { QuestBoard } from "@/lib/supabase/shift-quests/types";
 
-import { canStart, questView, type QuestKind } from "./model";
+import { canStart, questView, type QuestKind, type QuestView } from "./model";
 
 export type NextStepKind =
   /** Nothing open: the first main quest the student can start. */
@@ -82,9 +82,9 @@ function stepFor(
   checksIn: boolean,
   extra: Partial<Pick<NextStep, "waitingTitle">> = {},
 ): NextStep | null {
-  const action = actionFor(board, ref, kind, extra.waitingTitle ?? null);
   const view = questView(board, ref);
   if (!view) return null;
+  const action = actionFor(view, kind, extra.waitingTitle ?? null);
   const review = view.mine?.latest_review ?? null;
   const feedback = (kind === "answer" || kind === "retry") && review?.feedback?.trim() ? review.feedback.trim() : null;
   return {
@@ -103,11 +103,10 @@ function stepFor(
 }
 
 /** The card's button for a step: an untouched quest starts on the tap, waiting alone has none. */
-function actionFor(board: QuestBoard, ref: BoardRef, kind: NextStepKind, waitingTitle: string | null): NextAction | null {
+function actionFor(view: QuestView, kind: NextStepKind, waitingTitle: string | null): NextAction | null {
   if (kind === "resting") return "wake";
   if (kind === "waiting" && !waitingTitle) return null;
-  const view = questView(board, ref);
-  if ((kind === "start" || kind === "waiting") && view && canStart(view)) return "start";
+  if ((kind === "start" || kind === "waiting") && canStart(view)) return "start";
   return "open";
 }
 

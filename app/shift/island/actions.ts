@@ -212,9 +212,7 @@ export async function checkIn(input?: {
     const tapsToday = Number(row.taps_today) || 0;
     if (!v.intention) return { tapsToday };
     try {
-      await api.call(
-        "shift_quest_progress_add", actor, REFLECT.changed, null, v.intention, null, null, "private", v.instanceId
-      );
+      await fileIntention(api, actor, v.intention, v.instanceId);
       return { tapsToday, intentionSaved: true };
     } catch (error) {
       console.error(`[shift-island] checkIn: intention not saved, the tap stands (${failureCode(error)})`);
@@ -233,11 +231,14 @@ export async function keepIntention(input: {
   instanceId?: string | null;
 }): Promise<IslandActionResult> {
   return withReadyViewer("keepIntention", intentionSchema, input, async ({ actor }, v) => {
-    await questApi().call(
-      "shift_quest_progress_add", actor, REFLECT.changed, null, v.intention, null, null, "private", v.instanceId ?? null
-    );
+    await fileIntention(questApi(), actor, v.intention, v.instanceId ?? null);
     return null;
   });
+}
+
+/** The day's intention as a private note's next_step, under the caller's own instance (never counted toward roots). */
+async function fileIntention(api: QuestApi, actor: string, intention: string, instanceId: string | null): Promise<void> {
+  await api.call("shift_quest_progress_add", actor, REFLECT.changed, null, intention, null, null, "private", instanceId);
 }
 
 /**

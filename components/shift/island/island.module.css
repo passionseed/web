@@ -436,11 +436,6 @@
   gap: 12px;
 }
 
-.tapButton {
-  min-height: 56px;
-  font-size: 18px;
-}
-
 .todayDone {
   display: grid;
   gap: 4px;
@@ -2520,8 +2515,7 @@ a.canvasRow:hover {
 }
 
 a.canvasRow:focus-visible,
-.canvasRowAction:focus-visible,
-.canvasRefresh:focus-visible {
+.canvasRowAction:focus-visible {
   outline: 2px solid var(--action-soft);
   outline-offset: 2px;
 }
@@ -2561,25 +2555,6 @@ a.canvasRow:focus-visible,
 
 .canvasRowAction:hover {
   background: rgba(255, 241, 214, 0.12);
-}
-
-.canvasRefresh {
-  justify-self: start;
-  min-height: 40px;
-  padding: 6px 0;
-  font: inherit;
-  font-size: 13px;
-  color: var(--action-soft);
-  background: none;
-  border: 0;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
-}
-
-.canvasRefresh:disabled {
-  opacity: 0.6;
-  cursor: progress;
 }
 
 /* A proposed quest's goal is the student's own: shown whole. */
@@ -2885,13 +2860,7 @@ a.canvasRow:focus-visible,
   }
 }
 
-/* Collapsed rows: examples and the full details, one tap each. */
-.moreRows {
-  display: grid;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
+/* Collapsed rows (รายละเอียดและตัวช่วย, the day's intention), one tap each. */
 .more + .more {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -2986,6 +2955,11 @@ a.canvasRow:focus-visible,
 .barButton {
   min-height: 48px;
   gap: 8px;
+}
+
+/* The sent screen's quiet second button (ดูต้นไม้ของทีม) beside its main one. */
+.barStuck {
+  padding: 8px 18px;
 }
 
 /* The bar while the work is with a mentor: words where the button would be, never a dead end. */
