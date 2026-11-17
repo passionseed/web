@@ -45,6 +45,7 @@ import {
   chooseSideQuestSchema,
   createProjectSchema,
   findProjectFriendsSchema,
+  intentionSchema,
   inviteFriendSchema,
   linkCanvasSchema,
   loadQuestCanvasSchema,
@@ -219,6 +220,23 @@ export async function checkIn(input?: {
       console.error(`[shift-island] checkIn: intention not saved, the tap stands (${failureCode(error)})`);
       return { tapsToday, intentionSaved: false };
     }
+  });
+}
+
+/**
+ * What the student means to do today, private, filed under their own quest
+ * instance: the optional box inside the quest. The next-step card's tap is
+ * the check-in itself, so this never taps again.
+ */
+export async function keepIntention(input: {
+  intention: string;
+  instanceId?: string | null;
+}): Promise<IslandActionResult> {
+  return withReadyViewer("keepIntention", intentionSchema, input, async ({ actor }, v) => {
+    await questApi().call(
+      "shift_quest_progress_add", actor, REFLECT.changed, null, v.intention, null, null, "private", v.instanceId ?? null
+    );
+    return null;
   });
 }
 

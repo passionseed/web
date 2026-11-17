@@ -14,6 +14,7 @@ import type { BoardRef } from "@/lib/supabase/shift-quests/board";
 import type { QuestBoard } from "@/lib/supabase/shift-quests/types";
 
 import {
+  DETAIL,
   HELPERS,
   PITFALL,
   QUEST,
@@ -69,6 +70,7 @@ export function QuestHeader({
   chip,
   keynote,
   help,
+  stage = null,
 }: {
   quest: QuestView;
   board: QuestBoard;
@@ -76,6 +78,8 @@ export function QuestHeader({
   chip: string;
   keynote: boolean;
   help: string | null;
+  /** Where the student's work stands (questStage): five dots instead of the status chip. Null: the chip. */
+  stage?: number | null;
 }) {
   const milestone = quest.ref.kind === "main" ? quest.ref.milestone : null;
   const act = milestone != null ? QUEST_ACTS.find((a) => a.milestones.includes(milestone)) : null;
@@ -89,14 +93,37 @@ export function QuestHeader({
           <span className={styles.questBadge} data-kind={quest.kind}>
             {badge}
           </span>
-          <span className={styles.chip} data-status={quest.status} data-keynote={keynote ? "true" : undefined}>
-            {chip}
-          </span>
+          {stage == null ? (
+            <span className={styles.chip} data-status={quest.status} data-keynote={keynote ? "true" : undefined}>
+              {chip}
+            </span>
+          ) : null}
           {help ? <span className={styles.helpText}>{help}</span> : null}
         </div>
+        {stage != null ? <QuestStepper stage={stage} /> : null}
         {milestone != null && act ? <ActMeter board={board} current={milestone} act={act.title} /> : null}
       </div>
     </div>
+  );
+}
+
+/** Five dots under the title: เริ่ม · ทำ · ส่ง · พี่เลี้ยงดู · ผ่าน, the ones behind lit, this one bright. */
+export function QuestStepper({ stage }: { stage: number }) {
+  const current = Math.min(Math.max(stage, 0), DETAIL.stepper.length - 1);
+  return (
+    <ol className={styles.stepper} aria-label={DETAIL.stepperLabel(DETAIL.stepper[current])}>
+      {DETAIL.stepper.map((label, index) => (
+        <li
+          key={label}
+          className={styles.stepperStep}
+          data-state={index < current || stage >= DETAIL.stepper.length - 1 ? "done" : index === current ? "current" : undefined}
+          aria-current={index === current ? "step" : undefined}
+        >
+          <span className={styles.stepperDot} aria-hidden="true" />
+          <span className={styles.stepperLabel}>{label}</span>
+        </li>
+      ))}
+    </ol>
   );
 }
 

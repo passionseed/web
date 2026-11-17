@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useId, type ReactNode } from "react";
 
 import { PixelIcon } from "@/components/shift/poster/pixel/PixelRects";
-import type { IslandPageData, IslandProject, MyTree, ViewerCard } from "@/lib/supabase/shift-quests/types";
+import type { IslandProject, MyTree, ViewerCard } from "@/lib/supabase/shift-quests/types";
 
 import { AdminReset } from "./AdminReset";
 import { Avatar } from "./Avatar";
@@ -14,7 +14,6 @@ import styles from "./island.module.css";
 import { IslandFooter } from "./IslandFooter";
 import { IslandSheet } from "./IslandSheet";
 import { PLAYER_MENU } from "./player/copy";
-import { SeasonPanel } from "./SeasonPanel";
 import { PALETTE, WEB_SPRITES, styledTree, type WebIcon } from "./sprites";
 import world from "./world.module.css";
 
@@ -31,54 +30,36 @@ interface ProjectBodyProps {
   project: Pick<IslandProject, "name" | "stage">;
   /** The team's own tree (schema 13): its colours and seed. Absent draws the default tree. */
   tree?: MyTree | null;
-  season: IslandPageData["island"]["season"];
-  /** The check-in card, built by the page so it keeps its handlers. */
-  today: ReactNode;
   /** Opens the team's tree up close: the tree line becomes a button. */
   onTree?: () => void;
   /** What waits at the tree (a gift, the seed): a lamp dot, and these words for screen readers. */
   waiting?: string | null;
 }
 
-/** The project's tree, today's check-in and the season: the project sheet, and the lower half of the character sheet. */
-export function ProjectBody({ project, tree, season, today, onTree, waiting = null }: ProjectBodyProps) {
+/** The project's tree, as one line: in the chip's sheet, a way to the tree up close. Demo Day stands in the plaza. */
+export function ProjectBody({ project, tree, onTree, waiting = null }: ProjectBodyProps) {
   const name = HUD.myTree(treeStageName(project.stage, tree?.seed != null));
   const icon = <PixelIcon {...styledTree(project.stage, tree?.equipped, tree?.seed != null)} scale={1} />;
-  return (
-    <div className={world.sheetStack}>
-      {onTree ? (
-        <button
-          type="button"
-          className={`${world.menuItem} ${world.treeLine}`}
-          aria-haspopup="dialog"
-          aria-label={waiting ? `${name}, ${waiting}` : undefined}
-          onClick={onTree}
-        >
-          <span className={world.itemIcon} aria-hidden="true">
-            {icon}
-            {waiting ? <span className={world.itemDot} data-testid="tree-line-dot" /> : null}
-          </span>
-          <span className={world.itemLabel}>{name}</span>
-          <ChevronRight className={world.itemArrow} aria-hidden="true" />
-        </button>
-      ) : (
-        <p className={world.myTree}>
-          {icon}
-          <span>{name}</span>
-        </p>
-      )}
-      {today}
-      {season ? <SeasonPanel season={season} /> : null}
-    </div>
-  );
-}
-
-/** The student's tree, today's check-in and the season (the character sheet without its stats). */
-export function ProjectSheet({ open, onClose, project, tree, season, today }: SheetProps & ProjectBodyProps) {
-  return (
-    <IslandSheet open={open} onOpenChange={closer(onClose)} title={project.name}>
-      <ProjectBody project={project} tree={tree} season={season} today={today} />
-    </IslandSheet>
+  return onTree ? (
+    <button
+      type="button"
+      className={`${world.menuItem} ${world.treeLine}`}
+      aria-haspopup="dialog"
+      aria-label={waiting ? `${name}, ${waiting}` : undefined}
+      onClick={onTree}
+    >
+      <span className={world.itemIcon} aria-hidden="true">
+        {icon}
+        {waiting ? <span className={world.itemDot} data-testid="tree-line-dot" /> : null}
+      </span>
+      <span className={world.itemLabel}>{name}</span>
+      <ChevronRight className={world.itemArrow} aria-hidden="true" />
+    </button>
+  ) : (
+    <p className={world.myTree}>
+      {icon}
+      <span>{name}</span>
+    </p>
   );
 }
 
@@ -160,25 +141,7 @@ export function MenuList({ items, label }: { items: readonly MenuItem[]; label: 
   );
 }
 
-/**
- * From ≡: a short list of what has no place on the island (the guide, the
- * story again, the news, the sound, rest), then the island view and the
- * suggestions link as quiet words, the admin's tools folded away, and who is
- * signed in. The team, the tree, coins, prizes, the campfire and Demo Day
- * live on the island itself (the chip, the plot, the plaza).
- */
-export function MenuSheet({
-  open,
-  onClose,
-  me,
-  claimed,
-  whole,
-  onToggleWhole,
-  suggestUrl,
-  items,
-  onConsent,
-  consentAiOnly = false,
-}: SheetProps & {
+interface MenuFootProps {
   me: ViewerCard;
   /** The viewer has a plot: the footer's switch-account words differ before one. */
   claimed: boolean;
@@ -188,12 +151,64 @@ export function MenuSheet({
   suggestUrl?: string | null;
   /** The menu's lines, built by the page. */
   items: readonly MenuItem[];
-  /** Opens the consent sheet; the row shows only when given (consent not on file yet, or the AI news line not). */
-  onConsent?: () => void;
-  /** Consent is on file and only the AI news line waits: the row says so. */
-  consentAiOnly?: boolean;
-}) {
+}
+
+/**
+ * What has no place on the island, at the foot of the chip's sheet: a short
+ * list (the guide, the story again, the news, the sound, rest), then the
+ * island view and the suggestions link as quiet words, the admin's tools
+ * folded away, and who is signed in.
+ */
+export function MenuFoot({ me, claimed, whole, onToggleWhole, suggestUrl, items }: MenuFootProps) {
   const suggestHintId = useId();
+  return (
+    <>
+      <MenuList items={items} label={HUD.menu} />
+      <div className={world.menuQuiet}>
+        <button type="button" className={styles.linkButton} onClick={onToggleWhole}>
+          {whole ? ISLAND.viewClose : ISLAND.viewWhole}
+        </button>
+        {suggestUrl ? (
+          <>
+            <a className={styles.linkButton} href={suggestUrl} target="_blank" rel="noopener noreferrer" aria-describedby={suggestHintId}>
+              {HUD.suggest}
+            </a>
+            <span id={suggestHintId} className="sr-only">
+              {HUD.suggestHint}
+            </span>
+          </>
+        ) : null}
+      </div>
+      {/* Admins only, folded: the database checks the role again on every reset. */}
+      {me.admin ? (
+        <details className={world.adminTools}>
+          <summary>{MENU.adminTools}</summary>
+          <AdminReset />
+        </details>
+      ) : null}
+      <IslandFooter me={me} avatar={<Avatar me={me} />} switchLabel={claimed ? FOOTER.switchAccount : NO_PROJECT.switchAccount} />
+    </>
+  );
+}
+
+/**
+ * Before a plot is claimed, from the picture chip: the consent step while it
+ * waits, then the menu's foot (MenuFoot). With a plot, the same foot sits at
+ * the bottom of the chip's own sheet (CharacterSheet) and no menu opens.
+ */
+export function MenuSheet({
+  open,
+  onClose,
+  onConsent,
+  consentAiOnly = false,
+  ...foot
+}: SheetProps &
+  MenuFootProps & {
+    /** Opens the consent sheet; the row shows only when given (consent not on file yet, or the AI news line not). */
+    onConsent?: () => void;
+    /** Consent is on file and only the AI news line waits: the row says so. */
+    consentAiOnly?: boolean;
+  }) {
   const consentHintId = useId();
   return (
     <IslandSheet open={open} onOpenChange={closer(onClose)} title={HUD.menu}>
@@ -211,30 +226,7 @@ export function MenuSheet({
             </p>
           </section>
         ) : null}
-        <MenuList items={items} label={HUD.menu} />
-        <div className={world.menuQuiet}>
-          <button type="button" className={styles.linkButton} onClick={onToggleWhole}>
-            {whole ? ISLAND.viewClose : ISLAND.viewWhole}
-          </button>
-          {suggestUrl ? (
-            <>
-              <a className={styles.linkButton} href={suggestUrl} target="_blank" rel="noopener noreferrer" aria-describedby={suggestHintId}>
-                {HUD.suggest}
-              </a>
-              <span id={suggestHintId} className="sr-only">
-                {HUD.suggestHint}
-              </span>
-            </>
-          ) : null}
-        </div>
-        {/* Admins only, folded: the database checks the role again on every reset. */}
-        {me.admin ? (
-          <details className={world.adminTools}>
-            <summary>{MENU.adminTools}</summary>
-            <AdminReset />
-          </details>
-        ) : null}
-        <IslandFooter me={me} avatar={<Avatar me={me} />} switchLabel={claimed ? FOOTER.switchAccount : NO_PROJECT.switchAccount} />
+        <MenuFoot {...foot} />
       </div>
     </IslandSheet>
   );

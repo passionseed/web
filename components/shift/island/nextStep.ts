@@ -6,7 +6,7 @@
 import { keynoteQuest, mainTileStatus, starterQuest, type BoardRef } from "@/lib/supabase/shift-quests/board";
 import type { QuestBoard } from "@/lib/supabase/shift-quests/types";
 
-import { questView, type QuestKind } from "./model";
+import { canStart, questView, type QuestKind } from "./model";
 
 export type NextStepKind =
   /** Nothing open: the first main quest the student can start. */
@@ -20,7 +20,15 @@ export type NextStepKind =
   /** The only open work is with a mentor; `ref` may point at a quest to start meanwhile. */
   | "waiting"
   /** The student is resting: a tap wakes them. */
-  | "resting";
+  | "resting"
+  /** A mentor passed the student's work since they last looked: a tap shows the result. */
+  | "reviewed";
+
+/**
+ * What the card's one button does: start the quest and open it, open it, or
+ * wake the student. Null: nothing to do but wait (the card is plain text).
+ */
+export type NextAction = "start" | "open" | "wake";
 
 export interface NextStep {
   kind: NextStepKind;
@@ -37,10 +45,12 @@ export interface NextStep {
   feedback: string | null;
   /** waiting: the quest that is with a mentor, when the card points at another one to start meanwhile. */
   waitingTitle: string | null;
+  /** The card's one button; null when there is nothing to tap (waiting, nothing free). */
+  action: NextAction | null;
   /**
    * The day's check-in is still open and the tap leads to work, so the tap
-   * opens the check-in first. Never while resting, and never just to look at
-   * work that is waiting on a mentor.
+   * counts as the day's check-in. Never while resting, and never just to look
+   * at work that is waiting on a mentor or at a result.
    */
   checksIn: boolean;
 }
@@ -49,6 +59,11 @@ export interface IslandDay {
   /** From shift_quest_island: only "any today" matters. */
   tapsToday: number;
   resting: boolean;
+  /**
+   * The newest approval of the student's own work that they have not seen on
+   * this browser yet (results.ts, useResultsSeen). Null or absent: none.
+   */
+  approved?: BoardRef | null;
 }
 
 /** The student's own declined main quest with the lowest milestone, if nothing else is open. */
@@ -67,6 +82,7 @@ function stepFor(
   checksIn: boolean,
   extra: Partial<Pick<NextStep, "waitingTitle">> = {},
 ): NextStep | null {
+  const action = actionFor(board, ref, kind, extra.waitingTitle ?? null);
   const view = questView(board, ref);
   if (!view) return null;
   const review = view.mine?.latest_review ?? null;
@@ -81,13 +97,23 @@ function stepFor(
     instanceId: kind === "retry" ? null : view.instanceId,
     feedback,
     waitingTitle: extra.waitingTitle ?? null,
+    action,
     checksIn,
   };
 }
 
+/** The card's button for a step: an untouched quest starts on the tap, waiting alone has none. */
+function actionFor(board: QuestBoard, ref: BoardRef, kind: NextStepKind, waitingTitle: string | null): NextAction | null {
+  if (kind === "resting") return "wake";
+  if (kind === "waiting" && !waitingTitle) return null;
+  const view = questView(board, ref);
+  if ((kind === "start" || kind === "waiting") && view && canStart(view)) return "start";
+  return "open";
+}
+
 /**
  * The one next step, first match wins:
- * resting → a mentor asked for more → a quest in progress → waiting on a
+ * resting → a fresh approval to see → a mentor asked for more → a quest in progress → waiting on a
  * mentor (and a main quest to start meanwhile) → a declined main quest to try
  * again → the first main quest to start. Null when there is nothing left to
  * do (all seven passed, nothing open): the page shows the board instead.
@@ -108,9 +134,15 @@ export function nextStep(board: QuestBoard, day: IslandDay): NextStep | null {
         instanceId: null,
         feedback: null,
         waitingTitle: null,
+        action: "wake",
         checksIn: false,
       }
     );
+  }
+
+  if (day.approved) {
+    const seen = stepFor(board, day.approved, "reviewed", false);
+    if (seen) return seen;
   }
 
   if (keynote) {

@@ -135,23 +135,23 @@ describe("ProjectBody: the team's tree", () => {
   const tree = { seed: "oak", equipped: { shape: "shape:round", leaf: "leaf:forest", bark: "bark:oak", bloom: "bloom:cream" }, owned: [], gifts: [], roots: { count: 0, recent: 0 }, stage: 0 };
 
   it("calls a planted seed at stage 0 the seed, never an empty plot", () => {
-    const { unmount } = render(<ProjectBody project={{ name: "แอป", stage: 0 }} tree={tree} season={null} today={null} />);
+    const { unmount } = render(<ProjectBody project={{ name: "แอป", stage: 0 }} tree={tree} />);
     expect(screen.getByText(HUD.myTree(PRE_STAGE))).toBeInTheDocument();
     unmount();
-    render(<ProjectBody project={{ name: "แอป", stage: 0 }} tree={{ ...tree, seed: null }} season={null} today={null} />);
+    render(<ProjectBody project={{ name: "แอป", stage: 0 }} tree={{ ...tree, seed: null }} />);
     expect(screen.getByText(HUD.myTree(stageName(0)))).toBeInTheDocument();
   });
 
   it("becomes a button to the close-up when given one, with what waits there", () => {
     const onTree = jest.fn();
-    const { unmount } = render(<ProjectBody project={{ name: "แอป", stage: 0 }} tree={tree} season={null} today={null} onTree={onTree} />);
+    const { unmount } = render(<ProjectBody project={{ name: "แอป", stage: 0 }} tree={tree} onTree={onTree} />);
     const line = screen.getByRole("button", { name: HUD.myTree(PRE_STAGE) });
     expect(line).toHaveAttribute("aria-haspopup", "dialog");
     expect(screen.queryByTestId("tree-line-dot")).toBeNull();
     fireEvent.click(line);
     expect(onTree).toHaveBeenCalledTimes(1);
     unmount();
-    render(<ProjectBody project={{ name: "แอป", stage: 0 }} tree={tree} season={null} today={null} onTree={onTree} waiting="มีของขวัญรออยู่" />);
+    render(<ProjectBody project={{ name: "แอป", stage: 0 }} tree={tree} onTree={onTree} waiting="มีของขวัญรออยู่" />);
     expect(screen.getByRole("button", { name: `${HUD.myTree(PRE_STAGE)}, มีของขวัญรออยู่` })).toBeInTheDocument();
     expect(screen.getByTestId("tree-line-dot")).toBeInTheDocument();
   });

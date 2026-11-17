@@ -12,7 +12,7 @@ import { ProjectInvites } from "../NoProject";
 import { ProjectBody } from "../HudSheets";
 import { ShowNameSwitch } from "../IslandFooter";
 import { IslandSheet } from "../IslandSheet";
-import { PALETTE, WEB_SPRITES, iconGrid, type IconKey } from "../sprites";
+import { PALETTE, WEB_SPRITES } from "../sprites";
 import { treeWaiting } from "../tree/TreePill";
 import world from "../world.module.css";
 import { CHARACTER, coinNumber } from "./copy";
@@ -23,22 +23,23 @@ interface CharacterSheetProps {
   open: boolean;
   onClose: () => void;
   me: ViewerCard;
-  /** null: the stats could not be read; the sheet is the project sheet as before. */
+  /** null: the stats could not be read; the sheet keeps the tree, the team and the foot. */
   stats: CharacterStats | null;
   project: Pick<IslandProject, "name" | "stage">;
   tree?: MyTree | null;
   projectId?: string;
   invites?: IslandPageData["invites"];
-  season: IslandPageData["island"]["season"];
-  /** The check-in card, built by the page so it keeps its handlers. */
-  today: ReactNode;
   consent?: IslandConsent | null;
   onOpenWallet: () => void;
   onOpenConsent: () => void;
   /** Opens the team's tree up close: the tree line becomes a button, with a lamp dot while a gift or the seed waits. */
   onOpenTree?: () => void;
-  /** The project's show-name switch (team consent), moved here from the menu. */
+  /** The project's show-name switch (team consent). */
   showName?: Pick<IslandProject, "id" | "show_name" | "name_visible"> | null;
+  /** ผลจากพี่เลี้ยง (ResultsList), right under the header; built by the page so it keeps its handlers. */
+  results?: ReactNode;
+  /** What has no place on the island (MenuFoot): the last thing in the sheet. */
+  foot?: ReactNode;
 }
 
 /** A pixel progress bar: `total` cells, the first `filled` lit. Decorative; the line beside it says the number. */
@@ -53,27 +54,12 @@ export function Cells({ filled, total, tone, size }: { filled: number; total: nu
   );
 }
 
-/** The quest board's lane icons (QuestBoard.tsx LANE), so a stat and its lane look the same. */
-function Stat({ icon, heading, children }: { icon: IconKey; heading: string; children: ReactNode }) {
-  return (
-    <section className={styles.stat}>
-      <h3 className={styles.statHeading}>
-        <PixelIcon grid={iconGrid(icon)} palette={PALETTE} scale={1} />
-        <span>{heading}</span>
-      </h3>
-      {children}
-    </section>
-  );
-}
-
 /**
- * From the HUD chip: "ตัวละครของฉัน". The student's own picture and name,
- * the tree stage as the level (the team's main quests), today's check-in
- * right under it (the one daily action, never two screens down), then
- * progress for the real work: the main quests the student took part in,
- * side quests, community value and days of making. Progress only: no
- * ranking, no comparison with anyone. A coin row opens the wallet; the tree
- * and the season stay underneath.
+ * From the HUD chip, the island's one door to everything that is not the next
+ * step: who you are and the tree's stage, the consent step while it waits,
+ * what mentors said (ResultsList), the tree, coins, the team, then the short
+ * menu (MenuFoot) and who is signed in. Progress only: no ranking, no
+ * comparison with anyone.
  */
 export function CharacterSheet({
   open,
@@ -84,41 +70,21 @@ export function CharacterSheet({
   projectId,
   invites,
   tree,
-  season,
-  today,
   consent,
   onOpenWallet,
   onOpenConsent,
   onOpenTree,
   showName = null,
+  results = null,
+  foot = null,
 }: CharacterSheetProps) {
   const onOpenChange = (next: boolean) => {
     if (!next) onClose();
   };
-  const team = (
-    <>
-      {invites?.length ? <ProjectInvites invites={invites} /> : null}
-      {projectId && !me.staff ? <InviteFriends key={projectId} projectId={projectId} /> : null}
-    </>
-  );
   const waiting = onOpenTree && tree ? treeWaiting(tree) : null;
-  const body = <ProjectBody project={project} tree={tree} season={season} today={today} onTree={onOpenTree} waiting={waiting} />;
-  const restOfProject = <ProjectBody project={project} tree={tree} season={season} today={null} onTree={onOpenTree} waiting={waiting} />;
-  const nameSwitch = showName ? <ShowNameSwitch project={showName} /> : null;
-
-  if (!stats) {
-    return (
-      <IslandSheet open={open} onOpenChange={onOpenChange} title={project.name}>
-        {body}
-        {team}
-        {nameSwitch}
-      </IslandSheet>
-    );
-  }
-
-  const stage = stats.stage;
+  const stage = stats?.stage ?? project.stage;
   return (
-    <IslandSheet open={open} onOpenChange={onOpenChange} title={CHARACTER.title}>
+    <IslandSheet open={open} onOpenChange={onOpenChange} title={stats ? CHARACTER.title : project.name}>
       <div className={world.sheetStack}>
         <ConsentBanner consent={consent} onOpen={onOpenConsent} />
 
@@ -127,52 +93,34 @@ export function CharacterSheet({
           <PixelAvatar name={me.name} url={me.avatarUrl} size={64} decorative />
           <div className={styles.charWho}>
             <p className={styles.charName}>{me.name}</p>
+            {/* One line of progress: the team's tree, which only a mentor's approval grows. */}
             <p className={styles.charLevel}>{CHARACTER.level(stage)}</p>
             <Cells filled={stage} total={7} />
           </div>
         </div>
 
-        {today}
+        {results}
 
-        <p className={styles.statSub}>{CHARACTER.teamVsMine}</p>
+        <ProjectBody project={project} tree={tree} onTree={onOpenTree} waiting={waiting} />
 
-        <div className={styles.stats}>
-          <Stat icon="seed" heading={CHARACTER.mainHeading}>
-            <p className={styles.statLine}>{CHARACTER.mainMine(stats.main.mine)}</p>
-            <Cells filled={stats.main.mine} total={7} />
-          </Stat>
-          <Stat icon="star" heading={CHARACTER.sideHeading}>
-            <p className={styles.statLine}>{CHARACTER.sideTeam(stats.side.team)}</p>
-            <p className={styles.statSub}>{CHARACTER.mine(stats.side.mine)}</p>
-          </Stat>
-          <Stat icon="heart" heading={CHARACTER.communityHeading}>
-            <p className={styles.statLine}>{CHARACTER.communityTeam(stats.community.milestones)}</p>
-            <Cells filled={stats.community.milestones} total={2} size="pip" />
-            <p className={styles.statSub}>{CHARACTER.communityMine(stats.community.mine)}</p>
-            <p className={styles.statSub}>{CHARACTER.thanks(stats.community.thanks)}</p>
-          </Stat>
-          <Stat icon="check" heading={CHARACTER.checkinHeading}>
-            <p className={styles.statLine}>{CHARACTER.week(stats.checkins.thisWeek)}</p>
-            <p className={styles.statSub}>{CHARACTER.days(stats.checkins.daysActive)}</p>
-            {/* No run: it drops to 0 after missed days, and on the island a missed day never resets a count. */}
-            <p className={styles.statSub}>{CHARACTER.daysKept}</p>
-          </Stat>
-        </div>
-
-        <button type="button" className={styles.coinRow} aria-haspopup="dialog" onClick={onOpenWallet}>
-          <span className={styles.coinRowMain}>
-            <PixelIcon grid={WEB_SPRITES.coin} palette={PALETTE} scale={2} />
-            <span>
-              {stats.coins.live || stats.coins.balance !== 0 ? CHARACTER.coinRow(coinNumber(stats.coins.balance)) : CHARACTER.coinsOff}
+        {stats ? (
+          <button type="button" className={styles.coinRow} aria-haspopup="dialog" onClick={onOpenWallet}>
+            <span className={styles.coinRowMain}>
+              <PixelIcon grid={WEB_SPRITES.coin} palette={PALETTE} scale={2} />
+              <span>
+                {stats.coins.live || stats.coins.balance !== 0 ? CHARACTER.coinRow(coinNumber(stats.coins.balance)) : CHARACTER.coinsOff}
+              </span>
             </span>
-          </span>
-          <span className={styles.coinRowAction}>{CHARACTER.coinOpen}</span>
-        </button>
+            <span className={styles.coinRowAction}>{CHARACTER.coinOpen}</span>
+          </button>
+        ) : null}
 
         <h3 className={styles.projectHeading}>{project.name}</h3>
-        {restOfProject}
-        {team}
-        {nameSwitch}
+        {invites?.length ? <ProjectInvites invites={invites} /> : null}
+        {projectId && !me.staff ? <InviteFriends key={projectId} projectId={projectId} /> : null}
+        {showName ? <ShowNameSwitch project={showName} /> : null}
+
+        {foot}
       </div>
     </IslandSheet>
   );

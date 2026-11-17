@@ -71,3 +71,20 @@ export function useFreshResults(results: readonly QuestResult[], who: string | n
   }, [results, who]);
   return useSyncExternalStore(subscribe, read, () => 0);
 }
+
+/**
+ * The newest approval of the student's own work that is new to them on this
+ * browser (the next-step card's ผ่านแล้ว), by its result key; null when there
+ * is none. Null on the server, while hydrating and without a viewer key.
+ */
+export function useFreshApproval(results: readonly QuestResult[], who: string | null): QuestResult | null {
+  const read = useCallback(() => {
+    if (!who) return null;
+    const seenAt = readResultsSeen(who);
+    const now = Date.now();
+    // results are newest first.
+    return results.find((result) => result.outcome === "approved" && isFresh(result, seenAt, now))?.key ?? null;
+  }, [results, who]);
+  const key = useSyncExternalStore(subscribe, read, () => null);
+  return key ? (results.find((result) => result.key === key) ?? null) : null;
+}

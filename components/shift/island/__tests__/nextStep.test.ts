@@ -1,7 +1,7 @@
 import type { BoardMain, QuestBoard, QuestMine } from "@/lib/supabase/shift-quests/types";
 
 import { IDS, MAIN_TITLES, makeBoard } from "../__fixtures__/board";
-import { nextLine, nextHeadline } from "../NextStepCard";
+import { nextAction, nextLine, nextHeadline } from "../NextStepCard";
 import { nextStep } from "../nextStep";
 
 const OPEN_DAY = { tapsToday: 0, resting: false };
@@ -84,9 +84,11 @@ describe("nextStep", () => {
     for (const m of [2, 3, 4, 5, 6, 7]) board = withMain(board, m, { done: true });
     board = active(board, 1, IDS.m5Instance, "submitted");
     const step = nextStep(board, OPEN_DAY);
-    expect(step).toMatchObject({ kind: "waiting", ref: { kind: "main", milestone: 1 }, waitingTitle: null, checksIn: false });
+    expect(step).toMatchObject({ kind: "waiting", ref: { kind: "main", milestone: 1 }, waitingTitle: null, checksIn: false, action: null });
     expect(nextHeadline(step!)).toBe(`รอพี่เลี้ยงดู: ${MAIN_TITLES[0]}`);
-    expect(nextLine(step!)).toBe("ส่งแล้ว ผลจะขึ้นที่ซองจดหมาย");
+    expect(nextLine(step!)).toBe("ส่งแล้ว ผลจะขึ้นตรงนี้");
+    // Nothing to do but wait: no button at all.
+    expect(nextAction(step!)).toBeNull();
   });
 
   it("offers a declined main quest again before a new one, as a new round", () => {
@@ -108,10 +110,11 @@ describe("nextStep", () => {
   it("while resting, wakes first and never asks for a check-in", () => {
     const board = active(fresh(), 1, IDS.m2Instance, "paused");
     const step = nextStep(board, { tapsToday: 0, resting: true });
-    expect(step).toMatchObject({ kind: "resting", checksIn: false });
+    expect(step).toMatchObject({ kind: "resting", checksIn: false, action: "wake" });
     expect(nextHeadline(step!)).toBe("กำลังพัก");
-    expect(nextLine(step!)).toBe("ต้นไม้ไม่เหี่ยว ไม่มีอะไรหาย แตะเพื่อกลับมาทำต่อ");
-    expect(nextStep(fresh(), { tapsToday: 0, resting: true })).toMatchObject({ kind: "resting", ref: null });
+    expect(nextLine(step!)).toBe("ต้นไม้ไม่เหี่ยว ไม่มีอะไรหาย");
+    expect(nextAction(step!)).toBe("กลับมาทำต่อ");
+    expect(nextStep(fresh(), { tapsToday: 0, resting: true })).toMatchObject({ kind: "resting", ref: null, action: "wake" });
   });
 
   it("is null once all seven are passed and nothing is open", () => {
@@ -126,5 +129,62 @@ describe("nextStep", () => {
     const step = nextStep(board, DONE_DAY);
     expect(step).toMatchObject({ kind: "answer", ref: { kind: "side", templateId: IDS.sideVoices }, milestone: null });
     expect(nextLine({ ...step!, feedback: null })).toBe("เควสต์เสริม");
+  });
+
+  describe("one button per state", () => {
+    it("starts an untouched quest on the tap: เริ่มเลย", () => {
+      const step = nextStep(fresh(), OPEN_DAY)!;
+      expect(step.action).toBe("start");
+      expect(nextAction(step)).toBe("เริ่มเลย");
+    });
+
+    it("opens a quest in progress: ทำต่อ", () => {
+      const step = nextStep(active(fresh(), 1, IDS.m2Instance), DONE_DAY)!;
+      expect(step).toMatchObject({ kind: "go", action: "open" });
+      expect(nextAction(step)).toBe("ทำต่อ");
+    });
+
+    it("opens what a mentor said: ดูสิ่งที่พี่เลี้ยงบอก", () => {
+      const board = active(fresh(), 2, IDS.m4Instance, "clarification");
+      const step = nextStep(board, DONE_DAY)!;
+      expect(step).toMatchObject({ kind: "answer", action: "open" });
+      expect(nextAction(step)).toBe("ดูสิ่งที่พี่เลี้ยงบอก");
+    });
+
+    it("offers a declined main quest again: ลองอีกครั้ง", () => {
+      const board = withMain(fresh(), 2, { mine: mine(IDS.m6Instance, "declined") });
+      const step = nextStep(board, DONE_DAY)!;
+      expect(step).toMatchObject({ kind: "retry", action: "open" });
+      expect(nextAction(step)).toBe("ลองอีกครั้ง");
+    });
+
+    it("while waiting with a main quest free, starts that one: เริ่มเลย", () => {
+      const step = nextStep(active(fresh(), 1, IDS.m5Instance, "submitted"), OPEN_DAY)!;
+      expect(step).toMatchObject({ kind: "waiting", action: "start" });
+      expect(nextAction(step)).toBe("เริ่มเลย");
+    });
+  });
+
+  describe("a fresh approval", () => {
+    it("shows the result first, after resting only, and never as a check-in", () => {
+      const board = active(fresh(), 2, IDS.m4Instance);
+      const step = nextStep(board, { ...OPEN_DAY, approved: { kind: "main", milestone: 1 } })!;
+      expect(step).toMatchObject({ kind: "reviewed", ref: { kind: "main", milestone: 1 }, action: "open", checksIn: false });
+      expect(nextHeadline(step)).toBe(`ผ่านแล้ว: ${MAIN_TITLES[0]}`);
+      // Only a mentor's approval of a main quest grows the tree.
+      expect(nextLine(step)).toBe("พี่เลี้ยงให้ผ่าน ต้นไม้ของทีมโตขึ้น 1 ขั้น");
+      expect(nextAction(step)).toBe("ดูผล");
+      expect(nextStep(board, { tapsToday: 0, resting: true, approved: { kind: "main", milestone: 1 } })).toMatchObject({ kind: "resting" });
+    });
+
+    it("says a side quest passed without promising the tree grows", () => {
+      const step = nextStep(fresh(), { ...OPEN_DAY, approved: { kind: "side", templateId: IDS.sideVoices } })!;
+      expect(step).toMatchObject({ kind: "reviewed", milestone: null });
+      expect(nextLine(step)).toBe("พี่เลี้ยงให้ผ่านแล้ว");
+    });
+
+    it("moves on once there is none", () => {
+      expect(nextStep(fresh(), { ...OPEN_DAY, approved: null })).toMatchObject({ kind: "start" });
+    });
   });
 });

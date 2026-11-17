@@ -1,19 +1,18 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { toast } from "sonner";
 
-import { checkIn, reflect } from "@/app/shift/island/actions";
+import { checkIn, keepIntention, reflect } from "@/app/shift/island/actions";
 import { REFLECTION_MIN_CHARS, REFLECTIONS_PER_DAY } from "@/lib/shift-island/rounds-rules";
-import type { IslandActionResult } from "@/lib/supabase/shift-quests/types";
 
 import { IDS, makeBoard } from "../__fixtures__/board";
-import { CheckInSheet } from "../CheckInSheet";
-import { CHECK_IN, NEXT_STEP, REFLECT, TODAY } from "../copy";
+import { DETAIL, NEXT_STEP, REFLECT, TODAY } from "../copy";
+import { DayIntention } from "../DayIntention";
 import { NextStepCard } from "../NextStepCard";
 import type { NextStep } from "../nextStep";
 import { RootsLine } from "../RootsLine";
 import { DAY_INTENTION_KEY } from "../useDayIntention";
 
-jest.mock("@/app/shift/island/actions", () => ({ checkIn: jest.fn(), reflect: jest.fn() }));
+jest.mock("@/app/shift/island/actions", () => ({ checkIn: jest.fn(), keepIntention: jest.fn(), reflect: jest.fn() }));
 jest.mock("sonner", () => ({ toast: { success: jest.fn(), error: jest.fn(), info: jest.fn() } }));
 jest.mock("../IslandSheet", () => {
   const { createElement } = jest.requireActual<typeof import("react")>("react");
@@ -23,8 +22,8 @@ jest.mock("../IslandSheet", () => {
   };
 });
 
-type CheckInResult = IslandActionResult<{ tapsToday: number }>;
 const mockedCheckIn = checkIn as jest.MockedFunction<typeof checkIn>;
+const mockedKeep = keepIntention as jest.MockedFunction<typeof keepIntention>;
 const mockedReflect = reflect as jest.MockedFunction<typeof reflect>;
 
 const TITLE = "หาเรื่องที่อยากแก้";
@@ -41,28 +40,43 @@ const GO: NextStep = {
   instanceId: IDS.m2Instance,
   feedback: null,
   waitingTitle: null,
+  action: "open",
   checksIn: true,
 };
-const START: NextStep = { ...GO, kind: "start", instanceId: null };
+const START: NextStep = { ...GO, kind: "start", instanceId: null, action: "start" };
 
 beforeEach(() => window.localStorage.clear());
 
 describe("NextStepCard", () => {
-  it("is one gold button: what to do next, and which quest it is", () => {
+  it("says what to do next and which quest it is, with one verb button", () => {
     const onTap = jest.fn();
     render(<NextStepCard board={makeBoard()} step={{ ...GO, checksIn: false }} onTap={onTap} />);
-    const card = screen.getByRole("button", { name: /ทำต่อ: หาเรื่องที่อยากแก้/ });
+    const card = screen.getByRole("region", { name: `ทำต่อ: ${TITLE}` });
     expect(card).toHaveClass("dawn-keynote");
     expect(card).toHaveTextContent(NEXT_STEP.main(1));
-    expect(screen.queryByTestId("next-check-in")).toBeNull();
-    fireEvent.click(card);
+    const buttons = within(card).getAllByRole("button");
+    expect(buttons).toHaveLength(1);
+    expect(buttons[0]).toHaveTextContent(NEXT_STEP.action.go);
+    expect(buttons[0]).toHaveClass("ei-button-dawn");
+    fireEvent.click(buttons[0]);
     expect(onTap).toHaveBeenCalledWith({ ...GO, checksIn: false });
   });
 
-  it("carries a lamp dot and says so while the day's check-in is open", () => {
-    render(<NextStepCard board={makeBoard()} step={GO} onTap={jest.fn()} />);
-    expect(screen.getByTestId("next-check-in")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: new RegExp(NEXT_STEP.checkIn) })).toBeInTheDocument();
+  it("says เริ่มเลย on a quest it starts", () => {
+    render(<NextStepCard board={makeBoard()} step={START} onTap={jest.fn()} />);
+    expect(screen.getByRole("button", { name: NEXT_STEP.action.start })).toBeInTheDocument();
+  });
+
+  it("is plain words with nothing to tap while the work waits on a mentor", () => {
+    const step: NextStep = { ...GO, kind: "waiting", action: null, checksIn: false };
+    render(<NextStepCard board={makeBoard()} step={step} onTap={jest.fn()} />);
+    expect(screen.getByRole("region", { name: `รอพี่เลี้ยงดู: ${TITLE}` })).toHaveTextContent(NEXT_STEP.sentOnly);
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  it("waits while the tap is on its way", () => {
+    render(<NextStepCard board={makeBoard()} step={START} pending onTap={jest.fn()} />);
+    expect(screen.getByRole("button", { name: NEXT_STEP.action.start })).toBeDisabled();
   });
 
   it("shows back today's intention once checked in", () => {
@@ -73,90 +87,58 @@ describe("NextStepCard", () => {
   it("quotes the mentor on work they asked more about", () => {
     const step: NextStep = { ...GO, kind: "answer", feedback: "ขอรูปอีกนิด", checksIn: false };
     render(<NextStepCard board={makeBoard()} step={step} onTap={jest.fn()} />);
-    expect(screen.getByRole("button", { name: /ตอบพี่เลี้ยง: หาเรื่องที่อยากแก้/ })).toHaveTextContent("พี่เลี้ยงบอกว่า: ขอรูปอีกนิด");
+    expect(screen.getByRole("region", { name: `ตอบพี่เลี้ยง: ${TITLE}` })).toHaveTextContent("พี่เลี้ยงบอกว่า: ขอรูปอีกนิด");
+    expect(screen.getByRole("button", { name: NEXT_STEP.action.answer })).toBeInTheDocument();
   });
 });
 
-/** A check-in whose answer the test decides, to look at the screen while it is in flight. */
-function deferCheckIn() {
-  let resolve!: (value: CheckInResult) => void;
-  mockedCheckIn.mockImplementationOnce(() => new Promise<CheckInResult>((r) => (resolve = r)));
-  return (value: CheckInResult) => act(async () => resolve(value));
+/** The intention box inside the quest, opened. */
+function intention(props: Partial<React.ComponentProps<typeof DayIntention>> = {}) {
+  const view = render(<DayIntention instanceId={IDS.m2Instance} viewerKey={MEMBER} {...props} />);
+  fireEvent.click(screen.getByText(DETAIL.intention));
+  return view;
 }
 
-function sheet(props: Partial<React.ComponentProps<typeof CheckInSheet>> = {}) {
-  const handlers = { onClose: jest.fn(), onCheckedIn: jest.fn() };
-  const view = render(<CheckInSheet step={GO} viewerKey={MEMBER} {...handlers} {...props} />);
-  return { ...handlers, ...view };
-}
-
-describe("CheckInSheet", () => {
-  it("comes before the work: asks what the student will do today, optional and private", () => {
-    sheet();
-    expect(screen.getByRole("dialog", { name: CHECK_IN.title })).toHaveAttribute("aria-description", `ทำต่อ: ${TITLE}`);
+describe("DayIntention", () => {
+  it("is optional and private, folded inside the quest", () => {
+    intention();
     expect(screen.getByLabelText(TODAY.ask)).toHaveAttribute("maxLength", "300");
     expect(screen.getByText(TODAY.askHint)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: TODAY.go })).toHaveClass("ei-button-dawn");
+    expect(screen.getByRole("button", { name: DETAIL.intentionSave })).toBeDisabled();
   });
 
-  it("stays closed without a step", () => {
-    sheet({ step: null });
-    expect(screen.queryByRole("dialog")).toBeNull();
-  });
-
-  it("goes to the quest only once the database has the check-in", async () => {
-    const answer = deferCheckIn();
-    const { onCheckedIn } = sheet();
-    fireEvent.click(screen.getByRole("button", { name: TODAY.go }));
-    await waitFor(() => expect(mockedCheckIn).toHaveBeenCalledWith({ intention: null, instanceId: IDS.m2Instance }));
-    expect(screen.getByRole("button", { name: TODAY.go })).toBeDisabled();
-    expect(onCheckedIn).not.toHaveBeenCalled();
-    await answer({ ok: true, data: { tapsToday: 1 } });
-    expect(onCheckedIn).toHaveBeenCalledWith(GO);
-    expect(toast.error).not.toHaveBeenCalled();
-  });
-
-  it("keeps what the student means to do on this browser, for them only", async () => {
-    mockedCheckIn.mockResolvedValueOnce({ ok: true, data: { tapsToday: 1 } });
-    const { onCheckedIn } = sheet();
+  it("keeps what the student means to do on this browser, for them only, filed under their quest", async () => {
+    mockedKeep.mockResolvedValueOnce({ ok: true, data: null });
+    intention();
     fireEvent.change(screen.getByLabelText(TODAY.ask), { target: { value: `  ${INTENTION}  ` } });
-    fireEvent.click(screen.getByRole("button", { name: TODAY.go }));
-    await waitFor(() => expect(onCheckedIn).toHaveBeenCalled());
-    expect(mockedCheckIn).toHaveBeenCalledWith({ intention: INTENTION, instanceId: IDS.m2Instance });
+    fireEvent.click(screen.getByRole("button", { name: DETAIL.intentionSave }));
+    await waitFor(() => expect(screen.getByText(TODAY.intended(INTENTION))).toBeInTheDocument());
+    expect(mockedKeep).toHaveBeenCalledWith({ intention: INTENTION, instanceId: IDS.m2Instance });
+    expect(mockedCheckIn).not.toHaveBeenCalled();
     expect(JSON.parse(window.localStorage.getItem(DAY_INTENTION_KEY) ?? "null")).toMatchObject({ text: INTENTION, who: MEMBER });
   });
 
   it("keeps nothing on the device without a viewer key", async () => {
-    mockedCheckIn.mockResolvedValueOnce({ ok: true, data: { tapsToday: 1 } });
-    const { onCheckedIn } = sheet({ viewerKey: null });
+    mockedKeep.mockResolvedValueOnce({ ok: true, data: null });
+    intention({ viewerKey: null });
     fireEvent.change(screen.getByLabelText(TODAY.ask), { target: { value: INTENTION } });
-    fireEvent.click(screen.getByRole("button", { name: TODAY.go }));
-    await waitFor(() => expect(onCheckedIn).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole("button", { name: DETAIL.intentionSave }));
+    await waitFor(() => expect(toast.success).toHaveBeenCalled());
     expect(window.localStorage.getItem(DAY_INTENTION_KEY)).toBeNull();
   });
 
-  it("checks in on a quest not started yet without filing under it", async () => {
-    mockedCheckIn.mockResolvedValueOnce({ ok: true, data: { tapsToday: 1 } });
-    const { onCheckedIn } = sheet({ step: START });
-    fireEvent.click(screen.getByRole("button", { name: TODAY.go }));
-    await waitFor(() => expect(onCheckedIn).toHaveBeenCalledWith(START));
-    expect(mockedCheckIn).toHaveBeenCalledWith({ intention: null, instanceId: null });
-  });
-
-  it("keeps the writing and says why when the check-in fails", async () => {
-    mockedCheckIn.mockResolvedValueOnce({ ok: false, code: "unavailable", error: "เกาะปิดปรับปรุงชั่วคราว" });
-    const { onCheckedIn } = sheet();
+  it("keeps the writing and says why when saving fails", async () => {
+    mockedKeep.mockResolvedValueOnce({ ok: false, code: "unavailable", error: "เกาะปิดปรับปรุงชั่วคราว" });
+    intention();
     fireEvent.change(screen.getByLabelText(TODAY.ask), { target: { value: INTENTION } });
-    fireEvent.click(screen.getByRole("button", { name: TODAY.go }));
+    fireEvent.click(screen.getByRole("button", { name: DETAIL.intentionSave }));
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("เกาะปิดปรับปรุงชั่วคราว"));
-    expect(onCheckedIn).not.toHaveBeenCalled();
     expect(screen.getByLabelText(TODAY.ask)).toHaveValue(INTENTION);
-    expect(screen.getByRole("button", { name: TODAY.go })).toBeEnabled();
   });
 
   it("never counts anything: no streak, no day number", () => {
-    sheet();
-    expect(screen.getByRole("dialog").textContent ?? "").not.toMatch(/\d+ วัน/);
+    const { container } = intention();
+    expect(container.textContent ?? "").not.toMatch(/\d+ วัน/);
   });
 });
 

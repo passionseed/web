@@ -67,6 +67,9 @@ export const checkInSchema = z
   .nullish()
   .transform((v) => ({ intention: v?.intention ?? null, instanceId: v?.instanceId ?? null }));
 
+/** The day's intention on its own, from the quest page (the card's tap already checked in). */
+export const intentionSchema = z.object({ intention: requiredText(TEXT_LIMITS.intention), instanceId: id.nullish() });
+
 export const reflectSchema = z.object({
   learned: requiredText(TEXT_LIMITS.learned).refine((v) => chars(v) >= REFLECTION_MIN_CHARS),
   stuck: optionalText(TEXT_LIMITS.stuck),

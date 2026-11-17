@@ -262,8 +262,8 @@ describe("CharacterSheet", () => {
         me={me}
         stats={stats()}
         project={{ name: "แอปจองห้องสมุด", stage: 3 }}
-        season={null}
-        today={<p>today-card</p>}
+        results={<p>results-list</p>}
+        foot={<p>menu-foot</p>}
         {...handlers}
         {...props}
       />,
@@ -271,43 +271,28 @@ describe("CharacterSheet", () => {
     return handlers;
   }
 
-  it("shows who the student is, the tree as the level, and the real work as bars", () => {
+  it("shows who the student is and the tree as one line of progress, then results, the tree, coins, the team and the menu", () => {
     sheet();
     const dialog = screen.getByRole("dialog", { name: CHARACTER.title });
-    for (const line of [
-      "มิ้นต์",
-      CHARACTER.level(3),
-      CHARACTER.teamVsMine,
-      CHARACTER.mainMine(2),
-      CHARACTER.sideTeam(4),
-      CHARACTER.communityTeam(1),
-      CHARACTER.communityMine(2),
-      CHARACTER.thanks(5),
-      CHARACTER.week(3),
-      CHARACTER.days(12),
-      CHARACTER.daysKept,
-    ]) {
-      expect(within(dialog).getByText(line)).toBeInTheDocument();
+    expect(within(dialog).getByText("มิ้นต์")).toBeInTheDocument();
+    expect(within(dialog).getByText(CHARACTER.level(3))).toBeInTheDocument();
+    // One line of progress: no stats grid (side quests, community, check-ins).
+    for (const gone of [CHARACTER.teamVsMine, CHARACTER.mainMine(2), CHARACTER.sideTeam(4), CHARACTER.week(3), CHARACTER.days(12)]) {
+      expect(within(dialog).queryByText(gone)).toBeNull();
     }
-    // The database's run (4 here) resets after missed days, so the sheet never shows it.
+    // The database's run resets after missed days, so the sheet never shows it.
     expect(within(dialog).queryByText(/จังหวะ/)).toBeNull();
-    // The team's main quests are the level; the main stat is the viewer's own share, and side shows theirs too.
-    expect(within(dialog).queryByText(CHARACTER.mainTeam(3))).toBeNull();
-    expect(within(dialog).getByText(CHARACTER.mine(1))).toBeInTheDocument();
-    // The bars: level 3/7, the viewer's main 2/7, community 1/2 pips (this week is text only).
-    const filled = [...dialog.querySelectorAll("[aria-hidden='true']")]
-      .filter((el) => el.children.length > 0 && [...el.children].every((cell) => cell.tagName === "SPAN" && cell.children.length === 0))
-      .map((bar) => [bar.querySelectorAll("[data-filled='true']").length, bar.children.length]);
-    expect(filled).toEqual([
-      [3, 7],
-      [2, 7],
-      [1, 2],
-    ]);
-    // Today's check-in right under the head, before the stats; the project underneath.
-    const todayCard = within(dialog).getByText("today-card");
-    expect(within(dialog).getByText("มิ้นต์").compareDocumentPosition(todayCard) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(todayCard.compareDocumentPosition(within(dialog).getByText(CHARACTER.teamVsMine)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(within(dialog).getByRole("heading", { name: "แอปจองห้องสมุด" })).toBeInTheDocument();
+    const order = [
+      within(dialog).getByText("มิ้นต์"),
+      within(dialog).getByText("results-list"),
+      within(dialog).getByText(/ต้นไม้ของคุณ/),
+      within(dialog).getByText(CHARACTER.coinRow(coinNumber(2300))),
+      within(dialog).getByRole("heading", { name: "แอปจองห้องสมุด" }),
+      within(dialog).getByText("menu-foot"),
+    ];
+    for (let i = 1; i < order.length; i++) {
+      expect(order[i - 1].compareDocumentPosition(order[i]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
   });
 
   it("never ranks the student against anyone", () => {
@@ -362,11 +347,13 @@ describe("CharacterSheet", () => {
     expect(within(dialog).queryByRole("switch")).toBeNull();
   });
 
-  it("is the project sheet as before when the stats cannot be read", () => {
+  it("keeps the tree, the results and the menu when the stats cannot be read, with no coin row", () => {
     sheet({ stats: null });
     const dialog = screen.getByRole("dialog", { name: "แอปจองห้องสมุด" });
-    expect(within(dialog).getByText("today-card")).toBeInTheDocument();
-    expect(within(dialog).queryByText(CHARACTER.level(3))).toBeNull();
+    expect(within(dialog).getByText(CHARACTER.level(3))).toBeInTheDocument();
+    expect(within(dialog).getByText("results-list")).toBeInTheDocument();
+    expect(within(dialog).getByText("menu-foot")).toBeInTheDocument();
+    expect(within(dialog).queryByText(CHARACTER.coinOpen)).toBeNull();
   });
 });
 

@@ -1,8 +1,8 @@
 # SHIFT High Island: one next step
 
-Status: built on `feat/shift-island-one-next-step`, 2026-11-17. Thai copy is
-DRAFT and needs the three-model review in the root `AGENTS.md` before it
-ships. Builds on [shift-island-core-loop.md](shift-island-core-loop.md).
+Status: built on `feat/shift-island-one-next-step`, 2026-11-17; decluttered
+2026-11-18. Thai copy is DRAFT and needs the three-model review in the root
+`AGENTS.md` before it ships. Builds on [shift-island-core-loop.md](shift-island-core-loop.md).
 
 ## Why
 
@@ -22,94 +22,101 @@ An audit on 2026-11-17 (read only) found:
 - In the season's first days almost no main quests had been started and none
   had been sent, so the loop had not closed once.
 
-## Decisions (founder, 2026-11-17)
+## Decisions (founder)
 
 | # | Question | Answer |
 |---|---|---|
-| 1 | What a student sees over the island | The next-step card, the team chip, the results envelope and the menu. Everything else moves off the top bar. After the first play ("so much menu"), the menu keeps only what has no place on the island; the rest is where it stands (below). Only the manual refresh button is gone. |
-| 2 | Where the check-in lives | Inside the gold card: the day's first tap opens it, then the quest. It leaves the chip and the tree sheet. |
-| 3 | The quest page | "Take inspiration from the best designed, for the game aspects too." Its redesign is the next branch (below). This branch only makes starting the bar's main button. |
+| 1 | What a student sees over the island | **2026-11-18:** the team chip, the next-step card with one verb button, and the ดูเควสต์ทั้งหมด text link: three things to tap, nothing floating over the canvas. The envelope and ≡ are gone from home; results and the menu's lines live in the chip's sheet. ("I don't want the BMW dashboard button menu. So much visual clutter. Make everything intuitive.") *Replaces 2026-11-17: chip, envelope and menu in the top bar.* |
+| 2 | Where the check-in lives | **2026-11-18:** the card's tap is the check-in. The day's first tap that leads to work saves it quietly and opens the work; no screen in between. What the student means to do today is an optional, folded box inside the quest they are on. *Replaces 2026-11-16/17: a check-in sheet before the work.* |
+| 3 | The quest page | "Take inspiration from the best designed, for the game aspects too." **2026-11-18:** five dots for where the work stands, the mentor's words first, the checklist right under the goal, everything else (details, the lore line, steps, words, pitfalls, examples, helper quests) folded into one closed รายละเอียดและตัวช่วย, and exactly one thing in the sticky bar per state. ติด leaves the bar for a quiet ติดตรงไหน? line under the checklist. |
 | 4 | Mentor review on the web | Not now: reviews stay in Discord for Season 1, and students are promised no turnaround time. Part 3, Wave B (B1) of the core-loop design waits. |
+| 5 | The chip's sheet | **2026-11-18:** one line of progress (the tree's stage), no stats grid (side quests, community, check-ins; the data stays in the database), and no season panel (Demo Day stands in the plaza). |
 
 ## What changed
 
-**The home screen.** The top bar is the chip (opens the team sheet), the
-envelope and the menu. At the bottom sits one gold card, `NextStepCard`, and
-under it one quiet link, ดูเควสต์ทั้งหมด. Once all seven main quests are passed
-and nothing is open, the board button takes the card's place.
+**The home screen** (375px): the team chip top left, and at the bottom one
+gold card, `NextStepCard`, with one verb button, then one plain link,
+ดูเควสต์ทั้งหมด. Once all seven main quests are passed and nothing is open, the
+board button takes the card's place. Before a plot is claimed, the picture
+chip opens the menu (the old ≡) and the claim button sits at the bottom.
 
-**The card follows the student** (`nextStep.ts`, first match wins):
+**The card follows the student** (`nextStep.ts`, first match wins). Each state
+has one button (`step.action`: start, open or wake), or none:
 
-| State | Headline | Line under it | A tap |
-|---|---|---|---|
-| Resting | กำลังพัก | ต้นไม้ไม่เหี่ยว ไม่มีอะไรหาย แตะเพื่อกลับมาทำต่อ | Wakes them |
-| A mentor asked for more | ตอบพี่เลี้ยง: X | พี่เลี้ยงบอกว่า: … | Opens X |
-| A quest in progress | ทำต่อ: X | Today's intention, else เควสต์หลัก n จาก 7 | Opens X |
-| Waiting, a main quest free | ระหว่างรอ เริ่มที่: Y | ส่ง X แล้ว รอพี่เลี้ยงดู | Opens Y |
-| Waiting, nothing free | รอพี่เลี้ยงดู: X | ส่งแล้ว ผลจะขึ้นที่ซองจดหมาย | Opens X |
-| A main quest declined | ลองอีกครั้ง: X | พี่เลี้ยงบอกว่า: … | Opens X |
-| Nothing open | เริ่มที่: X | เควสต์หลัก n จาก 7 | Opens X |
+| State | Headline | Line under it | Button | The tap |
+|---|---|---|---|---|
+| Resting | กำลังพัก | ต้นไม้ไม่เหี่ยว ไม่มีอะไรหาย | กลับมาทำต่อ | Wakes them |
+| A fresh approval (new) | ผ่านแล้ว: X | พี่เลี้ยงให้ผ่าน ต้นไม้ของทีมโตขึ้น 1 ขั้น (main) | ดูผล | Marks results seen, opens X |
+| A mentor asked for more | ตอบพี่เลี้ยง: X | พี่เลี้ยงบอกว่า: … | ดูสิ่งที่พี่เลี้ยงบอก | Opens X |
+| A quest in progress | ทำต่อ: X | Today's intention, else เควสต์หลัก n จาก 7 | ทำต่อ | Opens X |
+| Waiting, a main quest free | ระหว่างรอ เริ่มที่: Y | ส่ง X แล้ว รอพี่เลี้ยงดู | เริ่มเลย | Starts Y, opens it |
+| Waiting, nothing free | รอพี่เลี้ยงดู: X | ส่งแล้ว ผลจะขึ้นตรงนี้ | none | Nothing: plain words |
+| A main quest declined | ลองอีกครั้ง: X | พี่เลี้ยงบอกว่า: … | ลองอีกครั้ง | Opens X |
+| Nothing open | เริ่มที่: X | เควสต์หลัก n จาก 7 | เริ่มเลย | Starts X (`useStartQuest`), opens it |
 
-While the day's check-in is open, a lamp dot sits on the card's icon and a
-tap that leads to work opens `CheckInSheet` first: วันนี้จะลงมือทำอะไร
-(optional, private, kept on the browser for that student), then
-เช็กอิน แล้วลุยเลย, which saves the tap and opens the quest. Looking at work
-that waits on a mentor never asks for a check-in. A check-in never grows the
-tree's stage.
+A fresh approval is the newest approved result of the student's own work that
+is newer than the last time they looked on this browser
+(`useFreshApproval`); a side quest's line says พี่เลี้ยงให้ผ่านแล้ว, never that
+the tree grows. While the day is open, the first tap that leads to work is the
+check-in (`checkIn`, quiet, no screen); a failed check-in never blocks the
+work, and the next tap tries again. Looking at a result or at work waiting on
+a mentor is never a check-in. A check-in never grows the tree's stage.
 
-**The menu** is a short list, like a game's pause menu, with only what has
-no place on the island: คู่มือ, เรื่องเล่า, ข่าวเกาะ (while the digest is on),
-เสียงกองไฟ (with its state at the end of the line) and ขอพัก, plus the admin
-overview on top for admins. Under it, ดูทั้งเกาะ and the suggestions link are
-quiet words, the admin's reset is folded under เครื่องมือแอดมิน, and the
-footer says who is signed in. The consent step keeps its full row above the
-list while it waits.
+**The chip's sheet** is the island's one door to everything that is not the
+next step, top to bottom: the consent banner while consent waits, the student
+and the tree's stage as one line, ผลจากพี่เลี้ยง (`ResultsList`, only when there
+is something), the tree line, coins, the team (invites, invite friends, the
+show-name switch), then the menu's short list (`MenuFoot`: คู่มือ, เรื่องเล่า,
+ข่าวเกาะ while the digest is on, เสียงกองไฟ, ขอพัก, the AI news line while it
+waits, the admin overview for admins), ดูทั้งเกาะ and the suggestions link as
+quiet words, the admin reset folded, and who is signed in. The chip carries a
+lamp dot while consent waits, a mentor's result is new, or a gift or the seed
+waits at the tree. Opening the sheet marks results seen; new ones stay marked
+ใหม่ while it is open.
 
 Everything else lives where it stands on the island (founder's first play,
-2026-11-17: "so much menu bro ... like bmw console now"; a first build had all
-fourteen places as a grid of tiles):
+2026-11-17: "so much menu bro ... like bmw console now"):
 
 | Place | Where it is |
 |---|---|
-| The team, coins | The chip: its sheet holds the coin row |
-| The tree | The team's plot, and a line in the chip's sheet. A gift or the seed waiting puts a lamp dot on the chip and on that line |
-| The show-name switch | The chip's sheet, under the project |
+| The tree | The team's plot, and a line in the chip's sheet |
 | Prizes, the campfire, Demo Day | Their spots in the plaza |
 | The canvas | The quest page, where the work is |
 | Refresh | Gone as a button: the island reads itself again on return (`IslandAutoRefresh`) and after every action |
 
-Before a plot is claimed nothing on the island can be tapped yet, so that
-menu also lists the coins and the prizes. The story still opens on a first
-visit, and the sound keeps playing while the menu is closed
-(`useCampfireSound`).
+**The quest page** (`QuestDetailSheet`): the header with five dots
+(เริ่ม, ทำ, ส่ง, พี่เลี้ยงดู, ผ่าน; `questStage`) in place of the status chip,
+the mentor's words, one line of goal, the เสร็จเมื่อ checklist, a quiet
+ติดตรงไหน? ขอความช่วยเหลือ line, the folded intention box on work in progress,
+photos and peer checks once sent, the team's problem on first-act quests, the
+canvas (refresh now inside its notes box), the quest's state in words, and
+one closed รายละเอียดและตัวช่วย fold for the rest. The sticky bar
+(`questBar`) holds exactly one thing:
 
-**Results on the web.** The envelope (`ResultsSheet`) lists what mentors said
-about the student's own work, newest first, read from each quest's
-`mine.latest_review` on the board, so no migration is needed. Each row opens
-its quest. New results (newer than the last time the envelope was opened on
-this browser, or from the last week without a mark) show a count on the
-envelope and ใหม่ on the row. The bot's other notices stay in Discord, with a
-link. A teammate's feedback is never listed.
+| State | Bar |
+|---|---|
+| Untouched | เริ่มเควสต์นี้ (stays on the page, no toast; the page refreshes into the started quest) |
+| Started | เขียนหรือแนบงาน |
+| A mentor asked for more | ส่งฉบับใหม่ |
+| Sent, or in appeal | Words: ส่งแล้ว รอพี่เลี้ยงดู (a new version is a quiet link in the page) |
+| Paused | ทำต่อเควสต์นี้ |
+| Passed, or a closed proposal | ไปเควสต์ถัดไป (the card's quest), else กลับไปที่เกาะ |
+| Locked, or a teammate holds it | ไปเควสต์ที่เปิดอยู่, else กลับไปที่เกาะ |
 
-**The quest page.** On an untouched main or side quest, the sticky bar's main
-button is เริ่มเควสต์นี้; work already done can still go to a mentor through a
-quiet ทำไปแล้ว? ส่งงานได้เลย link at the bottom of the page.
-
-**The roots line** (how the work went) moved from the check-in card to the
-tree sheet, under the roots it grows (`RootsLine`).
+**The roots line** (how the work went) is in the tree sheet, under the roots
+it grows (`RootsLine`).
 
 Browser keys: `shift-island-results-seen-v1` (`{ who, at }`, the member uuid,
 never the Discord id) joins `clearIslandKeys`.
 
 ## Next
 
-1. **The quest page, from the best-designed games** (decision 3): objective
-   first and the quest log's lore folded, one tracked quest, a short stepper
-   of where the work stands (เริ่ม, ทำ, ส่ง, พี่เลี้ยงดู, ผ่าน), and the growth
-   moment from the core-loop design (Part 1) when a mentor approves. Its own
-   branch.
-2. **Thai review** of every DRAFT string in `NEXT_STEP`, `CHECK_IN`,
-   `RESULTS`, `MENU` and `DETAIL.sendDone`.
+1. **The growth moment** from the core-loop design (Part 1) when a mentor
+   approves: today the card says ผ่านแล้ว and opens the quest; the tree
+   growing on screen is still to come.
+2. **Thai review** of every DRAFT string in `NEXT_STEP` (with `action`),
+   `RESULTS`, `MENU`, and `DETAIL` (`stepper`, `helpers`, `next`, `toOpen`,
+   `home`, `waiting`, `stuckLine`, `intention*`, `sendDone`).
 3. **Mentors, still in Discord:** the core-loop design's Wave A4 (a ดูงาน button
    on the staff post, decided cards without buttons, queue age) speeds review
    up without moving it to the web. It needs a bot deploy and a founder go.
