@@ -1,12 +1,13 @@
 import fs from "node:fs";
 
-import { AttachmentBuilder, DiscordAPIError, type Client } from "discord.js";
+import { ActionRowBuilder, AttachmentBuilder, DiscordAPIError, type ButtonBuilder, type Client, type Message } from "discord.js";
 
 import type { QuestApi } from "./api";
-import { renderOutbox, safePost, type OutboxRender } from "./copy";
-import { I } from "./island/copy";
+import { TREE_GREW, renderOutbox, safePost, type OutboxRender } from "./copy";
+import { I, STAGE_NAMES, stageBar } from "./island/copy";
 import { renderIsland, type IslandPlot } from "./island/render";
-import { renderView, type Block, type Tone, type View } from "./view";
+import { renderView, type Block, type Row, type Tone, type View } from "./view";
+import { islandLinkButton } from "./weblink";
 
 /**
  * Delivers queued channel posts and DMs. The database decides what is due,
@@ -21,6 +22,23 @@ const BATCH = 10;
 
 /** Errors no retry can fix: the person blocks DMs, or the kind is unknown. */
 const PERMANENT_CODES = new Set([50007, 10013]);
+
+/**
+ * The founder's call (2026-11-18): when a team shows its name on the island
+ * (every active member opted in and has consent), its tree_grew post in the
+ * celebrate channel also pings the team's members, so they hear the cheer.
+ * The ping shows who is in the team. false: name the team, ping nobody.
+ * A team that does not show its name is never pinged either way.
+ */
+export const PING_NAMED_TEAMS = true;
+
+/** The bot's own reactions under a tree_grew post, so others pile on. */
+export const TREE_GREW_REACTIONS = ["🎉", "🌱"] as const;
+
+/** At most this many members pinged in one post (a team is far smaller). */
+const MAX_TEAM_PINGS = 10;
+
+const SNOWFLAKE = /^\d{15,22}$/;
 
 /** Same file as shift-voice: Docker's HEALTHCHECK reads its age. */
 const HEALTH_FILE = "/tmp/shift-voice-healthy";
@@ -55,6 +73,7 @@ const OUTBOX_TONE: Record<string, Tone> = {
   redemption_requested: "staff",
   data_request: "staff",
   celebration: "success",
+  tree_grew: "success",
   recognition: "success",
   island_weekly: "island",
 };
@@ -105,22 +124,123 @@ async function islandPost(api: QuestApi): Promise<IslandPost> {
   }
 }
 
+/** What shift_quest_tree_post says when a tree_grew post is sent (schema 16). */
+interface TreePostRead {
+  slot: number | null;
+  title: string | null;
+  /** Only while the team shows its name; null otherwise. */
+  name: string | null;
+  /** The active members' Discord ids, only while the team shows its name. */
+  team_user_ids: string[];
+}
+
+/**
+ * A tree_grew post's queued ids plus what the database says now: the plot,
+ * the quest's title, and the team's name and members only while the team
+ * shows its name. Read at send time, so a team that hid its name after the
+ * approval is not named. The members are kept only with PING_NAMED_TEAMS.
+ * A project that is gone fails the post permanently.
+ */
+export async function treeGrewParams(
+  api: QuestApi,
+  params: Record<string, unknown>,
+  ping: boolean = PING_NAMED_TEAMS
+): Promise<Record<string, unknown>> {
+  const read = await api.call<TreePostRead | null>("shift_quest_tree_post", params.project_id ?? null, params.instance_id ?? null);
+  if (!read) throw Object.assign(new Error("project gone"), { permanent: true });
+  return {
+    ...params,
+    slot: read.slot,
+    title: read.title,
+    name: read.name,
+    team_user_ids: ping && read.name ? read.team_user_ids ?? [] : [],
+  };
+}
+
+function wholeNumber(value: unknown, min: number, max: number): number | null {
+  const n = Number(value);
+  return Number.isInteger(n) && n >= min && n <= max ? n : null;
+}
+
+/**
+ * The tree_grew card: which team (its name only when shown, else
+ * "ทีมปริศนา" with the plot number), which main quest, the new stage, a
+ * cheer that pings the members of a named team, and for a mystery team a
+ * light invitation to show its name. Words in TREE_GREW (./copy).
+ */
+export function renderTreeGrew(params: Record<string, any>): OutboxRender {
+  const name = typeof params.name === "string" && params.name.trim() ? safePost(params.name, 60) : null;
+  const title = typeof params.title === "string" && params.title.trim() ? safePost(params.title, 80) : null;
+  const stage = wholeNumber(params.stage, 0, 7) ?? 0;
+  const team = name && Array.isArray(params.team_user_ids)
+    ? [...new Set(params.team_user_ids.filter((id: unknown): id is string => typeof id === "string" && SNOWFLAKE.test(id)))].slice(0, MAX_TEAM_PINGS)
+    : [];
+  const cheer = team.length ? `${team.map((id) => `<@${id}>`).join(" ")} ${TREE_GREW.cheer}` : TREE_GREW.cheer;
+  return {
+    title: TREE_GREW.title,
+    body: [
+      TREE_GREW.team(name, wholeNumber(params.slot, 1, Number.MAX_SAFE_INTEGER)),
+      TREE_GREW.quest(wholeNumber(params.milestone, 1, 7), title),
+      `${TREE_GREW.stageEmoji[stage]} ${stageBar(stage)} ${STAGE_NAMES[stage]} **${stage}**/7`,
+      cheer,
+    ].join("\n"),
+    note: name ? "" : TREE_GREW.showName,
+    mentionUserIds: team,
+  };
+}
+
+/** Renders any queued kind; null for one the bot does not know (it fails permanently). */
+export function renderDelivery(
+  kind: string,
+  params: Record<string, any>,
+  memberUserId: string | null,
+  peerUserId: string | null
+): OutboxRender | null {
+  return kind === "tree_grew" ? renderTreeGrew(params) : renderOutbox(kind, params, memberUserId, peerUserId);
+}
+
+/** "🌐 เปิดเกาะบนเว็บ" under a tree_grew post, when the island has an address. */
+function islandRows(): Row[] {
+  const button = islandLinkButton();
+  return button ? [new ActionRowBuilder<ButtonBuilder>().addComponents(button)] : [];
+}
+
+/**
+ * Adds the bot's reactions under a post it just sent. The post already went
+ * out, so a failure (no Add Reactions permission, a rate limit) is logged and
+ * never fails the delivery: a retry would post the cheer twice.
+ */
+export async function addReactions(message: Pick<Message, "react">, emojis: readonly string[]): Promise<void> {
+  for (const emoji of emojis) {
+    try {
+      await message.react(emoji);
+    } catch (error) {
+      const reason = error instanceof DiscordAPIError ? `discord ${error.code} (${error.status})` : (error as Error).message;
+      console.error(`[shift-quests] reactions skipped: ${reason}`);
+      return;
+    }
+  }
+}
+
 /**
  * The card for one delivery: a heading, the facts, the fine print. The
- * weekly island post adds the picture above the heading and the signs below.
+ * weekly island post adds the picture above the heading and the signs below;
+ * rows (link buttons) sit at the bottom.
  */
-export function outboxView(kind: string, post: OutboxRender, island: IslandPost | null = null): View {
+export function outboxView(kind: string, post: OutboxRender, island: IslandPost | null = null, rows: Row[] = []): View {
   const blocks: Block[] = [];
   if (island?.files.length) blocks.push({ kind: "image", name: ISLAND_PNG, alt: "เกาะ SHIFT" });
   if (post.body) blocks.push({ kind: "text", text: post.body });
   if (island?.signs.length) blocks.push({ kind: "subtext", text: signsLine(island.signs) });
   if (post.note) blocks.push({ kind: "subtext", text: post.note });
-  return { tone: OUTBOX_TONE[kind] ?? "neutral", title: post.title, blocks, files: island?.files ?? [] };
+  return { tone: OUTBOX_TONE[kind] ?? "neutral", title: post.title, blocks, rows, files: island?.files ?? [] };
 }
 
 /** Sends one claimed delivery as a card and returns the Discord message ID. */
 export async function deliver(client: Client, api: QuestApi, msg: Claimed): Promise<string> {
-  const post = renderOutbox(msg.kind, msg.params, msg.member_user_id, msg.peer_user_id);
+  const tree = msg.kind === "tree_grew";
+  const params = tree ? await treeGrewParams(api, msg.params) : msg.params;
+  const post = renderDelivery(msg.kind, params, msg.member_user_id, msg.peer_user_id);
   if (!post) throw Object.assign(new Error(`unknown kind ${msg.kind}`), { permanent: true });
   const island = msg.kind === "island_weekly" ? await islandPost(api) : null;
 
@@ -136,13 +256,14 @@ export async function deliver(client: Client, api: QuestApi, msg: Claimed): Prom
   const channel = await client.channels.fetch(msg.channel_id);
   if (!channel || !channel.isSendable()) throw new Error("channel not sendable");
   const sent = await channel.send(
-    renderView(outboxView(msg.kind, post, island), {
+    renderView(outboxView(msg.kind, post, island, tree ? islandRows() : []), {
       ephemeral: false,
       action: msg.kind,
-      // Only the people the post is about (help, celebration); never everyone or a role.
+      // Only the people the post is about (help, celebration, a named team); never everyone or a role.
       allowedMentions: { users: post.mentionUserIds, parse: [] },
     })
   );
+  if (tree) await addReactions(sent, TREE_GREW_REACTIONS);
   return sent.id;
 }
 

@@ -327,7 +327,10 @@ The bot runs on its own host (`bot/deploy.sh`), not on Vercel.
       Send Messages in each:
       - `kind:help` the group help channel
       - `kind:staff` the mentors' channel
-      - `kind:celebrate` where approved work and the weekly island are posted
+      - `kind:celebrate` where approved work and the weekly island are posted;
+        from schema 16 the bot also cheers there when a mentor's approval
+        grows a team's tree, and adds 🎉 and 🌱 under that post, so give it
+        Add Reactions and Read Message History here too
       - `kind:coworking` the coworking **voice** channel (it lights the
         island's campfire; the bot only needs View Channel there, it never
         joins voice)

@@ -28,6 +28,9 @@
 #   tree      every migration applied twice, then tree.ts (schema 13,
 #             20261114120000: seeds, tree style, round and quest gifts, the
 #             own tree read and other teams' styles), with consent off
+#   treepost  every migration applied twice, then tree_post.ts (schema 16,
+#             20261118090000: the celebrate post when a mentor's approval
+#             grows a tree, and the bot's send-time read), consent on and off
 #
 #   supabase/tests/shift_quests/run-local.sh       # or: pnpm test:db:quests
 #   PG_BIN=/usr/lib/postgresql/15/bin supabase/tests/shift_quests/run-local.sh
@@ -343,7 +346,7 @@ echo "# migrations"
 for f in "${MIGRATIONS[@]}"; do echo "apply $(basename "$f")"; done
 new_db once
 apply once "single pass" "${MIGRATIONS[@]}"
-for DB in rules island flows islandflows board canvas campfire live player roots tree reset evidence peer; do
+for DB in rules island flows islandflows board canvas campfire live player roots tree reset evidence peer treepost; do
   new_db "$DB"
   apply "$DB" "first pass" "${MIGRATIONS[@]}"
   apply "$DB" "second pass" "${MIGRATIONS[@]}"
@@ -420,6 +423,7 @@ suite "tree" tree tree.ts
 suite "admin reset" reset reset.ts
 suite "photo evidence and the team's problem" evidence evidence.ts
 suite "peer check" peer peer.ts
+suite "tree grew post" treepost tree_post.ts
 # island_rules.ts runs against wave 1 alone once it knows to skip season cases.
 if [ "${#WAVE1[@]}" -lt "${#MIGRATIONS[@]}" ] && grep -q SHIFT_QUESTS_WAVE "$HERE/island_rules.ts"; then
   export SHIFT_QUESTS_WAVE=1

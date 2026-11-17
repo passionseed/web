@@ -697,6 +697,29 @@ export function meter(count: number, target: number): string {
   return `${"▰".repeat(done)}${"▱".repeat(width - done)}`;
 }
 
+/**
+ * The celebrate channel's post when a mentor's approval grows a team's tree
+ * (kind tree_grew, schema 16). bot/src/quests/outbox.ts lays it out and
+ * escapes the team's name and the quest's title before they reach these.
+ * Never a mentor's words, never a student's name. DRAFT for the three-model
+ * Thai review.
+ */
+export const TREE_GREW = {
+  title: "🎉 ต้นไม้โตอีกขั้น",
+  /** A team that has not shown its name on the island: a playful handle, never a bare number. */
+  mystery: "ทีมปริศนา",
+  /** "**ร้านขนม** · แปลง #4", or "**ทีมปริศนา** · แปลง #4". */
+  team: (name: string | null, slot: number | null) => `**${name ?? TREE_GREW.mystery}**${slot ? ` · แปลง #${slot}` : ""}`,
+  /** "ผ่านเควสต์หลักที่ 3 **ได้พันธมิตรคนแรก** แล้ว". */
+  quest: (milestone: number | null, title: string | null) =>
+    `ผ่านเควสต์หลัก${milestone ? `ที่ ${milestone}` : ""}${title ? ` **${title}**` : ""} แล้ว`,
+  cheer: "ยินดีด้วย! ต้นนี้โตจากงานจริงของทีม",
+  /** Fine print under a mystery team's post: an invitation, never pressure. "" leaves it out. */
+  showName: "อยากให้ชื่อทีมขึ้นแทนทีมปริศนาไหม ทุกคนในทีมเลือกโชว์ชื่อได้บนเกาะ ไม่บังคับ",
+  /** One emoji per stage, 0 to 7 (the names are STAGE_NAMES in ./island/copy). */
+  stageEmoji: ["🟫", "🌱", "🌱", "🌿", "🌳", "🌳", "🍎", "🌸"],
+};
+
 /** Renders a queued message. Returns null for an unknown kind (it fails permanently). */
 export function renderOutbox(
   kind: string,

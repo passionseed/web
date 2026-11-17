@@ -40,7 +40,9 @@ reply is ephemeral. Channel posts happen only for: help requests (the
 community help channel, or the staff channel for mentors-only requests),
 review and proposal notices (staff channel, title only), and celebrations,
 peer recognitions and coworking intentions after the author confirms a
-preview (and, for a recognition, after the peer accepts).
+preview (and, for a recognition, after the peer accepts). From schema 16 the
+celebrate channel also hears, unasked, when a mentor's approval of a main
+quest grows a team's tree (see "Tree grew post" below).
 
 The seven starter quests from the spec were seeded in Thai
 (`20261111090500_shift_quests_starter_templates.sql`) with no reward rule.
@@ -810,6 +812,26 @@ submission may see its photos. `shift_quest_review_view` and
 `shift_quest_review_extras` add the checks and their count. Export lists a
 member's checks, erasure deletes them. Tested in
 `supabase/tests/shift_quests/peer.ts`.
+
+### Tree grew post (schema 16)
+
+`20261118090000_shift_quest_tree_grew_post.sql` replaces the hook
+`shift_quest__after_approval` (same body, plus one call) so that an approval
+of a main quest that grows the project's tree queues one `tree_grew` post to
+the celebrate channel: params `{project_id, instance_id, milestone, stage}`,
+dedupe key `tree:<project>:<milestone>`. "Needs more", "not passed", side
+quests, retries and repeats of a counted milestone queue nothing, and no
+mentor's words are ever in it. At send time the bot calls the bot-only
+`shift_quest_tree_post(project, instance)`, `{slot, title, name,
+team_user_ids}`, where the name and the members' Discord ids are there only
+while `shift_quest__name_visible` holds; otherwise the post says
+"ทีมปริศนา" with the plot number. A named team's members are pinged unless
+`PING_NAMED_TEAMS` (`bot/src/quests/outbox.ts`) is false. The bot adds 🎉 and
+🌱 under the post (it needs Add Reactions there). Held while sharing is off,
+like every celebrate post. **Deploy the bot before applying the migration.**
+Design and decisions:
+[`docs/designs/shift-island-tree-grew-post.md`](../designs/shift-island-tree-grew-post.md).
+Tested in `supabase/tests/shift_quests/tree_post.ts`.
 
 ## Admin: reset my own island (testing)
 

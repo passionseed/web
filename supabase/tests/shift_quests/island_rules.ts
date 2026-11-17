@@ -1170,7 +1170,13 @@ async function main(): Promise<void> {
     const postText = JSON.stringify(post.params);
     check(![...Object.values(NAMES), "Plot One", ...memberIds].some((s) => postText.includes(s)), "the post's params name nobody");
     check(Number(await call(bot, "shift_quest_enqueue_island_post", "2026-11-23T11:05:00Z")) === 1, "next Monday queues the next week");
-    const claimed = (await bot.query("select * from public.shift_quest_outbox_claim(50)")).rows;
+    // Every approval that grew a tree above queued a tree_grew post (schema 16), older than this one:
+    // claim batches until the queue is empty, as the bot's loop would.
+    const claimed: Json[] = [];
+    for (let batch = (await bot.query("select * from public.shift_quest_outbox_claim(50)")).rows; batch.length;
+      batch = (await bot.query("select * from public.shift_quest_outbox_claim(50)")).rows) {
+      claimed.push(...batch);
+    }
     check(claimed.some((r) => r.kind === "island_weekly" && r.channel_id === "910000000000000001"), "the bot picks it up for the channel");
     m = await postMap();
     check(m.goal?.target === 2 && m.season?.name === "Season 1" && isPlain(plotAt(m, 4)) && plotAt(m, 1).stage >= 3,
