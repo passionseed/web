@@ -1298,10 +1298,12 @@ founder edits: `lib/content/shift-island-economy.ts`.
 2. **Character sheet.** Tapping the chip opens "ตัวละครของฉัน": avatar, name,
    level (tree stage x/7), progress bars for main quests, side quests,
    community value, days active and the rest-tolerant run, and a coin row that
-   opens the wallet. TodayCard and SeasonPanel stay under it (the old project
-   sheet becomes the bottom half). No ranking, no percentiles, no "better
+   opens the wallet. SeasonPanel stays under it (the old project sheet becomes
+   the bottom half); the check-in moved to the next-step card on 2026-11-17
+   (`shift-island-one-next-step.md`). No ranking, no percentiles, no "better
    than" wording, ever.
-3. **Coins on the HUD.** A small glass pill under the chip: pixel coin and
+3. **Coins on the HUD.** (Moved to the chip's sheet, its coin row, on 2026-11-17; see
+   `shift-island-one-next-step.md`.) A small glass pill under the chip: pixel coin and
    the balance. Shown only when coins are live or the balance is above 0.
    Tap: the wallet sheet (balance, how to earn, recent earnings, shop).
 4. **Quest board as a cork board.** Four lanes the student swipes between
@@ -1449,7 +1451,7 @@ away or starts a count over. So the stat is a gentle count of days shown up
 that only goes up, with that promise under it. The copy avoids the banned
 "สตรีค / streak / ติดต่อกัน N วัน" words, so `copy.test.ts` stays as it is.
 This updates "no streaks or day counts" above (Screens: Island) for the
-character sheet only; TodayCard shows no count.
+character sheet only; the check-in shows no count.
 
 Reachability (for the founder, open decision): one student earns at most
 1,500 (main, cap 5) + 2,000 (community, cap 4) + 1,100 (side, cap 11) + 200

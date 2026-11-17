@@ -272,8 +272,6 @@ export const ADMIN_OVERVIEW = {
 export const HUD = {
   /** The top-left chip's accessible name: the project, its tree, and what the tap opens. */
   chip: (name: string, stage: string) => `${name}, ${stage}, ดูวันนี้ของโปรเจกต์`,
-  /** Read after the chip's name while today's check-in is still open. */
-  chipTodayOpen: "วันนี้ยังไม่ได้เช็กอิน",
   /** The chip before a plot is claimed. */
   noPlot: "ยังไม่มีที่ดิน",
   meter: (stage: number) => `ต้นไม้ขั้น ${stage} จาก 7`,
@@ -314,10 +312,6 @@ export const TODAY = {
   /** DRAFT: the check-in comes before the work: what the student means to do today (optional, private). */
   ask: "วันนี้จะลงมือทำอะไร",
   askHint: "ไม่บังคับ · เห็นแค่คุณ",
-  /** DRAFT: checks in, then opens the quest. Checking in never grows the tree's stage; only a mentor's approval does. */
-  go: "เช็กอิน แล้วลุยเลย",
-  /** DRAFT: the check-in with no quest to open. Never "ทำต่อ", which belongs to the keynote card. */
-  tap: "เช็กอิน",
   tapped: "วันนี้เช็กอินแล้ว",
   intended: (text: string) => `วันนี้ตั้งใจว่า: ${text}`,
   /** DRAFT: after the work, one private line filed under the quest; long enough, it counts toward the roots. */
@@ -343,6 +337,82 @@ export const KEYNOTE = {
   waiting: (title: string) => `รอพี่เลี้ยงดู: ${title}`,
   /** DRAFT: nothing started yet; the first main quest that is free. */
   start: (title: string) => `เริ่มที่: ${title}`,
+};
+
+/**
+ * DRAFT: the next-step card, the island's one gold element (NextStepCard).
+ * The headline says what to do next; the line under it says why or where the
+ * quest stands, and its one button says what the tap does. The day's first
+ * tap that leads to work counts as the day's check-in.
+ */
+export const NEXT_STEP = {
+  start: KEYNOTE.start,
+  retry: (title: string) => `ลองอีกครั้ง: ${title}`,
+  go: KEYNOTE.next,
+  answer: (title: string) => `ตอบพี่เลี้ยง: ${title}`,
+  /** Waiting on a mentor, with a main quest the student can start meanwhile. */
+  meanwhile: (title: string) => `ระหว่างรอ เริ่มที่: ${title}`,
+  waiting: KEYNOTE.waiting,
+  resting: "กำลังพัก",
+  /** The line under the headline. */
+  main: (milestone: number) => `เควสต์หลัก ${milestone} จาก 7`,
+  side: "เควสต์เสริม",
+  proposed: "เควสต์ที่ฉันเสนอ",
+  said: (text: string) => `พี่เลี้ยงบอกว่า: ${text}`,
+  sent: (title: string) => `ส่ง ${title} แล้ว รอพี่เลี้ยงดู`,
+  sentOnly: "ส่งแล้ว ผลจะขึ้นตรงนี้",
+  intended: (text: string) => `วันนี้ตั้งใจว่า: ${text}`,
+  restingLine: "ต้นไม้ไม่เหี่ยว ไม่มีอะไรหาย",
+  /** DRAFT: a mentor passed the student's work since they last looked. */
+  reviewed: (title: string) => `ผ่านแล้ว: ${title}`,
+  /** DRAFT: only a mentor's approval of a main quest grows the tree, one stage. */
+  grew: "พี่เลี้ยงให้ผ่าน ต้นไม้ของทีมโตขึ้น 1 ขั้น",
+  passed: "พี่เลี้ยงให้ผ่านแล้ว",
+  /** DRAFT: the card's one button, per state. */
+  action: {
+    start: "เริ่มเลย",
+    go: "ทำต่อ",
+    answer: "ดูสิ่งที่พี่เลี้ยงบอก",
+    retry: "ลองอีกครั้ง",
+    reviewed: "ดูผล",
+    wake: "กลับมาทำต่อ",
+  },
+  /** The quiet link under the card. */
+  board: "ดูเควสต์ทั้งหมด",
+};
+
+/**
+ * DRAFT: ผลจากพี่เลี้ยง (ResultsList, in the chip's sheet): what mentors said about the student's
+ * own work, read from the board, newest first. Never a teammate's feedback.
+ */
+export const RESULTS = {
+  title: "ผลจากพี่เลี้ยง",
+  hud: (fresh: number) => (fresh > 0 ? `ผลจากพี่เลี้ยง มีใหม่ ${fresh}` : "ผลจากพี่เลี้ยง"),
+  approved: "ผ่านแล้ว",
+  clarification: "พี่เลี้ยงขอข้อมูลเพิ่ม",
+  declined: "ยังไม่ผ่าน ลองใหม่ได้",
+  fresh: "ใหม่",
+  /** The bot's own inbox (invites, coins, help replies) still lives in Discord. */
+  discord: (count: number) => `ข้อความอื่นจากบอท ${count} ข้อความ อ่านได้ใน Discord`,
+};
+
+/** DRAFT: the menu's short list (MenuFoot, at the foot of the chip's sheet): only what has no place on the island itself. */
+export const MENU = {
+  story: "เรื่องเล่า",
+  guide: "คู่มือ",
+  /** DRAFT: the sound switch's line, and its state at the end of the line. */
+  sound: "เสียงกองไฟ",
+  on: "เปิดอยู่",
+  off: "ปิดอยู่",
+  rest: "ขอพัก",
+  /** DRAFT: before a plot is claimed only; with a plot, coins live in the team sheet. */
+  coins: "เหรียญ",
+  consent: "ความยินยอม",
+  admin: "ภาพรวม (แอดมิน)",
+  /** DRAFT: the admin's reset, folded under this line. */
+  adminTools: "เครื่องมือแอดมิน",
+  /** DRAFT: the sound, the island view, suggestions and the account, folded under this line at the foot of the chip's sheet. */
+  settings: "ตั้งค่า",
 };
 
 export const BOARD = {
@@ -408,11 +478,26 @@ export const DETAIL = {
   reflectionPlaceholder: "ตอบสั้นๆ ข้อเดียว เก็บไว้ใช้ในพอร์ตได้",
   submit: "ส่งให้พี่เลี้ยงดู",
   resubmit: "ส่งฉบับใหม่",
-  /** DRAFT */
-  submittedWaiting: "ส่งแล้ว รอพี่เลี้ยงดูอยู่ ถ้าแก้งานแล้วส่งฉบับใหม่ได้",
-  stuck: "ติด",
   start: "เริ่มเควสต์นี้",
-  started: "เริ่มแล้ว เควสต์นี้จะขึ้นในการ์ดทำต่อ",
+  /** DRAFT: under an untouched quest, for work already done before starting it here. */
+  sendDone: "ทำไปแล้ว? ส่งงานได้เลย",
+  /** DRAFT: where the quest stands, as five dots under its title. */
+  stepper: ["เริ่ม", "ทำ", "ส่ง", "พี่เลี้ยงดู", "ผ่าน"] as const,
+  stepperLabel: (step: string) => `ขั้นของเควสต์นี้: ${step}`,
+  /** DRAFT: the one fold for everything that helps but is not the task (steps, examples, words, lore). */
+  helpers: "รายละเอียดและตัวช่วย",
+  /** DRAFT: the bar's one button once this quest needs nothing more from the student. */
+  next: "ไปเควสต์ถัดไป",
+  toOpen: "ไปเควสต์ที่เปิดอยู่",
+  home: "กลับไปที่เกาะ",
+  /** DRAFT: the bar while the work is with a mentor: words, no button. */
+  waiting: "ส่งแล้ว รอพี่เลี้ยงดู",
+  /** DRAFT: a quiet line under the checklist, opens the stuck sheet (friends or mentors, in group spaces). */
+  stuckLine: "ติดตรงไหน? ขอความช่วยเหลือ",
+  /** DRAFT: the day's intention, optional, inside the quest (the card's tap is the check-in). */
+  intention: "วันนี้จะลงมือทำอะไร (ไม่บังคับ)",
+  intentionSave: "เก็บไว้",
+  intentionSaved: "เก็บไว้แล้ว เห็นแค่คุณ",
   /** DRAFT */
   paused: "เควสต์นี้พักไว้อยู่ ทำต่อเมื่อพร้อม",
   resume: "ทำต่อเควสต์นี้",
@@ -471,13 +556,11 @@ export const QUEST = {
     attached: "ตอนกดส่ง เช็กลิสต์ /project ownership จะแนบไปกับงานนี้ให้เอง",
   },
   examples: "ตัวอย่างที่ผ่าน",
-  details: "รายละเอียดทั้งหมด",
   /** A long purpose in full, under the details. */
   why: "ทำไมเควสต์นี้",
   /** The main action on every quest: write or show the work right here (the canvas card is optional). */
   send: "เขียนหรือแนบงาน",
   resend: "ส่งฉบับใหม่",
-  stuck: "ติด",
   writeInstead: "เขียนเองแทน",
   useCanvas: "ใช้โน้ตจากแคนวาส",
   back: "กลับ",
@@ -582,8 +665,6 @@ export const FESTIVAL = {
   lanterns: (count: number, target: number) => `โคมที่ลานสว่างขึ้นทีละดวง ตามเป้าหมายของทั้งเกาะ ${count}/${target}`,
   /** Appended to the table and stage legend lines: other teams' flags show only when they show their name. */
   shownOnly: "เห็นเฉพาะทีมที่โชว์ชื่อบนเกาะ",
-  /** To the project sheet, where the season's meter and unlocks live. */
-  unlocks: "ดูของปลดล็อกในหน้าตัวละครของฉัน",
 };
 
 /**

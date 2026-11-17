@@ -11,15 +11,8 @@ import { COMMON, FOOTER } from "./copy";
 import styles from "./island.module.css";
 import { IslandDiscordButton } from "./IslandDiscordButton";
 
-interface IslandFooterProps {
-  project: Pick<IslandProject, "id" | "show_name" | "name_visible">;
-  me: ViewerCard;
-  /** Shown beside the signed-in line (the HUD menu passes the avatar). */
-  avatar?: ReactNode;
-}
-
-/** The show-name switch (team consent), the growth rule, and who is signed in. */
-export function IslandFooter({ project, me, avatar }: IslandFooterProps) {
+/** The show-name switch (team consent) and the growth rule: in the team sheet, beside the project. */
+export function ShowNameSwitch({ project }: { project: Pick<IslandProject, "id" | "show_name" | "name_visible"> }) {
   const switchId = useId();
   const [show, setOptimisticShow] = useOptimistic(project.show_name, (_current, next: boolean) => next);
   const [pending, startTransition] = useTransition();
@@ -34,7 +27,7 @@ export function IslandFooter({ project, me, avatar }: IslandFooterProps) {
   }
 
   return (
-    <footer className={styles.footer}>
+    <div className={styles.footer}>
       <div className={styles.footerRow}>
         <label htmlFor={switchId} className={styles.footerLabel}>
           {FOOTER.showName}
@@ -52,13 +45,19 @@ export function IslandFooter({ project, me, avatar }: IslandFooterProps) {
         {show && !project.name_visible ? FOOTER.showNameWaiting : FOOTER.showNameFine}
       </p>
       <p className={styles.growth}>{FOOTER.growth}</p>
-      <div className={styles.footerRow}>
-        <p className={`${styles.hint} ${styles.footerWho}`}>
-          {avatar}
-          <span>{FOOTER.signedInAs(me.name)}</span>
-        </p>
-        <IslandDiscordButton label={FOOTER.switchAccount} switchAccount variant="quiet" />
-      </div>
+    </div>
+  );
+}
+
+/** Who is signed in, and the way to switch account: the foot of the menu. */
+export function IslandFooter({ me, avatar, switchLabel = FOOTER.switchAccount }: { me: ViewerCard; avatar?: ReactNode; switchLabel?: string }) {
+  return (
+    <footer className={`${styles.footer} ${styles.footerRow}`}>
+      <p className={`${styles.hint} ${styles.footerWho}`}>
+        {avatar}
+        <span>{FOOTER.signedInAs(me.name)}</span>
+      </p>
+      <IslandDiscordButton label={switchLabel} switchAccount variant="quiet" />
     </footer>
   );
 }

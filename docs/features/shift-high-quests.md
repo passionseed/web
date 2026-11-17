@@ -458,17 +458,19 @@ counted from the progress journal at read time.
   blocker offers the separate help choice. A missing project at submit time
   shows the existing claim-plot card, so the note is not saved without a tree.
   On the web (`20261114100000_shift_quest_web_reflect` grants
-  `shift_quest_progress_add` to `shift_quest_web`), the check-in card
-  (`TodayCard`) comes before the work and is about the student's current
-  quest (the keynote, else the starter). "วันนี้จะลงมือทำอะไร" takes an
-  optional private intention, saved as a note's `next_step` under the
-  student's own quest instance (not counted toward roots); เช็กอิน แล้วลุยเลย
-  saves it, then the day's tap, then opens the quest. Back later the same day,
-  the card shows the intention (kept on the browser), the way back to the
-  quest, and one optional line on how it went, saved with `learned` so it
-  counts toward roots. ติด opens the help sheet on that quest. The card shows
-  in the character sheet and, while the day is open, first in the tree sheet
-  that tapping your own tree opens. It never changes the tree's stage.
+  `shift_quest_progress_add` to `shift_quest_web`), the check-in comes before
+  the work and is the next-step card's tap (`NextStepCard`, the island's gold
+  card): while the day is open, the first tap that leads to work saves the
+  day's tap quietly (`checkIn`) and opens the quest, with no screen in
+  between. Inside the quest the student is working on, a folded, optional
+  "วันนี้จะลงมือทำอะไร" (`DayIntention`, the `keepIntention` action) saves a
+  private intention as a note's `next_step` under their own quest instance
+  (not counted toward roots, and never a second tap). Back later the same day,
+  the card shows the intention (kept on the browser). One optional line on how
+  the work went (`RootsLine`), saved with `learned` so it counts toward roots,
+  sits in the tree sheet that tapping your own tree opens, under the roots.
+  ติดตรงไหน? is a quiet line under the quest page's checklist. A check-in never
+  changes the tree's stage.
 - **What is shown.** `shift_quest_island_roots()` (bot and website, no
   caller) returns `[{slot, roots}]` for drawn plots with roots above 0: level
   1 (1 to 4 counted), 2 (5 to 14) or 3 (15 or more). Never a count, a name,

@@ -2,10 +2,11 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ComponentProps } from "react";
 
 import { AdminReset, clearIslandKeys } from "../AdminReset";
-import { ADMIN_RESET, HUD } from "../copy";
+import { ADMIN_RESET, HUD, MENU } from "../copy";
 import { MenuSheet } from "../HudSheets";
 import { STORY_SEEN_KEY } from "../story/useStorySeen";
 import { DAY_INTENTION_KEY } from "../useDayIntention";
+import { RESULTS_SEEN_KEY } from "../useResultsSeen";
 
 const resetMyIsland = jest.fn();
 jest.mock("@/app/shift/island/admin-actions", () => ({ resetMyIsland: () => resetMyIsland() }));
@@ -20,11 +21,10 @@ jest.mock("../IslandSheet", () => {
   };
 });
 
-const PROJECT = { id: "55555555-5555-4555-8555-000000000001", show_name: false, name_visible: false };
 
 function menu(me: ComponentProps<typeof MenuSheet>["me"]) {
   return render(
-    <MenuSheet open onClose={jest.fn()} me={me} project={PROJECT} whole={false} onToggleWhole={jest.fn()} />,
+    <MenuSheet open onClose={jest.fn()} me={me} claimed whole={false} onToggleWhole={jest.fn()} items={[]} />,
   );
 }
 
@@ -45,10 +45,14 @@ describe("MenuSheet: the admin's own reset", () => {
     expect(within(sheet).queryByText(ADMIN_RESET.heading)).toBeNull();
   });
 
-  it("shows to an admin, with the testing-only hint", () => {
+  it("shows to an admin, folded under its own line, with the testing-only hint", () => {
     menu({ name: "บิ๊ก", avatarUrl: null, staff: true, admin: true });
     const button = screen.getByRole("button", { name: ADMIN_RESET.open });
     expect(button).toHaveAccessibleDescription(ADMIN_RESET.hint);
+    const fold = button.closest("details");
+    expect(fold).not.toBeNull();
+    expect(fold).not.toHaveAttribute("open");
+    expect(fold?.querySelector("summary")).toHaveTextContent(MENU.adminTools);
   });
 });
 
@@ -64,9 +68,10 @@ describe("AdminReset", () => {
     expect(screen.getByRole("button", { name: ADMIN_RESET.open })).toBeInTheDocument();
   });
 
-  it("resets, forgets the story and the day's intention, and reloads", async () => {
+  it("resets, forgets the story, the day's intention and the envelope's mark, and reloads", async () => {
     window.localStorage.setItem(STORY_SEEN_KEY, "seen");
     window.localStorage.setItem(DAY_INTENTION_KEY, JSON.stringify({ day: 1, text: "คุย", who: "m1" }));
+    window.localStorage.setItem(RESULTS_SEEN_KEY, JSON.stringify({ who: "m1", at: 1 }));
     resetMyIsland.mockResolvedValue({ ok: true, data: { project: "archived", quests: 2, keptQuests: 0 } });
     const reload = jest.fn();
     render(<AdminReset reload={reload} />);
@@ -77,6 +82,7 @@ describe("AdminReset", () => {
     expect(resetMyIsland).toHaveBeenCalledTimes(1);
     expect(window.localStorage.getItem(STORY_SEEN_KEY)).toBeNull();
     expect(window.localStorage.getItem(DAY_INTENTION_KEY)).toBeNull();
+    expect(window.localStorage.getItem(RESULTS_SEEN_KEY)).toBeNull();
     expect(reload).toHaveBeenCalledTimes(1);
     expect(screen.getByRole("status")).toHaveTextContent(ADMIN_RESET.done);
   });

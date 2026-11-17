@@ -26,7 +26,6 @@ export const PLAYER = {
 };
 
 export const CHARACTER = {
-  title: "ตัวละครของฉัน",
   level: (stage: number) => `ต้นไม้ขั้น ${stage} จาก 7`,
   /** Says once what "team" and "mine" count, so no number reads as a comparison. */
   teamVsMine: "ต้นไม้นับงานทั้งทีม ส่วน \"ที่คุณร่วมทำ\" นับงานที่มีชื่อคุณ",

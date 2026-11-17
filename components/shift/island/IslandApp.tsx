@@ -1,37 +1,41 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { toast } from "sonner";
 
-import { CANVAS_ROUTE } from "@/lib/shift-island/canvas-link";
+import { checkIn, setResting } from "@/app/shift/island/actions";
+
 import { festivalOf, type Festival } from "@/lib/shift-island/festival";
 import { MAX_SEATS, type PlazaInput, type PlazaLabelId, type PlazaSpotId } from "@/lib/shift-island/live/plaza";
 import { noticePins, type NoticePin } from "@/lib/shift-island/notice";
 import type { IslandHotspot, IslandPicture } from "@/lib/shift-island/picture";
-import { keynoteQuest, starterQuest, type BoardRef } from "@/lib/supabase/shift-quests/board";
+import { keynoteQuest, type BoardRef } from "@/lib/supabase/shift-quests/board";
 import type { LightPhase } from "@/lib/shift-island/live/types";
 import type { CampfireSummary, IslandPageData } from "@/lib/supabase/shift-quests/types";
 
-import { IslandRefresh } from "./IslandRefresh";
+import { IslandAutoRefresh } from "./IslandRefresh";
 import { AdminOverview } from "./AdminOverview";
-import { CampfireSound } from "./CampfireSound";
+import { useCampfireSound, type CampfireSoundState } from "./CampfireSound";
 import { CampfireSheet } from "./CampfireSheet";
 import { CanvasLinkSheet } from "./canvas";
 import { ConsentSheet } from "./consent/ConsentSheet";
-import { ADMIN_OVERVIEW, CAMPFIRE, CANVAS, FESTIVAL, GATE, HUD, NOTICE, NO_PROJECT, SEASON, thaiShortDate } from "./copy";
+import { CAMPFIRE, COMMON, FESTIVAL, GATE, HUD, MENU, NEXT_STEP, NOTICE, NO_PROJECT, RESULTS, SEASON, TODAY, thaiShortDate } from "./copy";
 import { FestivalSheet } from "./FestivalSheet";
-import { BoardSheet, InboxSheet, MenuSheet } from "./HudSheets";
+import { BoardSheet, MenuFoot, MenuSheet, type MenuItem } from "./HudSheets";
 import { NewsSheet } from "./news/NewsSheet";
 import { CharacterSheet } from "./player/CharacterSheet";
-import { CoinPill, showCoinPill } from "./player/CoinPill";
+import { showCoinPill } from "./player/CoinPill";
 import { WalletSheet } from "./player/WalletSheet";
+import { NEWS } from "./news/copy";
 import { PRIZES_UI } from "./prizes/copy";
 import { PrizeSheet } from "./prizes/PrizeSheet";
 import { GateCard } from "./IslandGate";
-import { BoardButton, Hud, HudChip, HudLabel, HudLinkRound, HudRound, hudRoundClass } from "./IslandHud";
+import { BoardButton, BoardLink, Hud, HudChip, HudLabel } from "./IslandHud";
 import styles from "./island.module.css";
 import { IslandSheet } from "./IslandSheet";
 import { IslandViewport } from "./IslandViewport";
-import { KeynoteCard } from "./KeynoteCard";
+import { NextStepCard } from "./NextStepCard";
+import { nextStep, type NextStep } from "./nextStep";
 import { NoProject } from "./NoProject";
 import { PlotSheet } from "./PlotSheet";
 import { ProposeSheet } from "./ProposeSheet";
@@ -40,13 +44,18 @@ import { QuestDetailSheet } from "./QuestDetailSheet";
 import { StoryLauncher } from "./story/StoryLauncher";
 import { StuckSheet, type StuckTarget } from "./StuckSheet";
 import { todayQuest } from "./model";
-import { TodayCard } from "./TodayCard";
-import treeStyles from "./tree/tree.module.css";
-import { TreePill } from "./tree/TreePill";
+import { questResults } from "./results";
+import { ResultsList } from "./ResultsList";
+import { RootsLine } from "./RootsLine";
+import { treeWaiting } from "./tree/TreePill";
 import { TreeSheet } from "./tree/TreeSheet";
 import { PeerSheet } from "./peer/PeerSheet";
 import { useBangkokDay } from "./useBangkokDay";
 import { useCampfire } from "./useCampfire";
+import { useDayIntention } from "./useDayIntention";
+import { PLAYER_MENU } from "./player/copy";
+import { markResultsSeen, readResultsSeen, useFreshApproval, useFreshResults } from "./useResultsSeen";
+import { useStartQuest } from "./useStartQuest";
 import { IslandVoyage, useVoyage, VoyageCover, type Voyage } from "./voyage";
 import world from "./world.module.css";
 
@@ -68,15 +77,14 @@ interface IslandAppProps {
 const SHEET_CLOSE_MS = 450;
 
 /**
- * The sheets opened from the HUD itself, the menu or the plaza; at most one
- * at a time. The chip opens "character" (which holds the old project sheet).
+ * The sheets opened from the HUD itself, the chip's sheet or the plaza; at
+ * most one at a time. With a plot the chip opens "character", which holds the
+ * mentors' results and the menu's lines; before one, the chip opens "menu".
  */
 type Panel =
   | "admin"
   | "board"
-  | "project"
   | "menu"
-  | "inbox"
   | "festival"
   | "campfire"
   | "character"
@@ -144,29 +152,46 @@ function consentStep(page: IslandPageData): boolean {
   return consent.state === "granted" && !consent.ai && consent.basis !== "adult";
 }
 
-/** The menu's rows for the player round: news while the digest is on, the prizes always, consent while a step waits. */
-function menuRows(page: IslandPageData, onPanel: (panel: Panel) => void) {
+/** The menu's consent row while a step waits (consent itself, or only the AI news line). */
+function consentRow(page: IslandPageData, onPanel: (panel: Panel) => void) {
   return {
-    onAdmin: page.me.admin ? () => onPanel("admin") : undefined,
-    onNews: page.news?.enabled ? () => onPanel("news") : undefined,
-    onPrizes: () => onPanel("prizes"),
     onConsent: consentStep(page) ? () => onPanel("consent") : undefined,
     consentAiOnly: page.consent?.ok === true,
   };
 }
 
-/** The menu button, with a lamp dot while consent itself (not only the AI line) still waits. */
-function MenuRound({ page, onOpen, onAdmin }: { page: IslandPageData; onOpen: () => void; onAdmin: () => void }) {
-  const pending = page.consent != null && !page.consent.ok;
-  return <>
-    {page.me.admin ? <HudRound icon="news" label={ADMIN_OVERVIEW.title} onClick={onAdmin} /> : null}
-    <HudRound icon="menu" label={pending ? HUD.menuConsent : HUD.menu} dot={pending} onClick={onOpen} />
-  </>;
+/** Consent itself (not only the AI news line) still waits: the chip carries a lamp dot. */
+function consentPending(page: IslandPageData): boolean {
+  return page.consent != null && !page.consent.ok;
 }
 
-/** The coin pill under the chip, when coins are live or the wallet has any. */
-function coinPill(page: IslandPageData, onOpen: () => void) {
-  return showCoinPill(page.character) ? <CoinPill balance={page.character.coins.balance} onOpen={onOpen} /> : null;
+/**
+ * The menu's lines both islands share, for what has no place on the island:
+ * the admin overview (admins), then the guide, the story again, the island
+ * news (while the digest is on) and the campfire's sound.
+ */
+function sharedItems(page: IslandPageData, onPanel: (panel: Panel) => void, story: () => void, sound: CampfireSoundState): {
+  admin: MenuItem[];
+  places: MenuItem[];
+  settings: MenuItem[];
+} {
+  const admin: MenuItem[] = page.me.admin ? [{ id: "admin", icon: "eye", label: MENU.admin, onClick: () => onPanel("admin") }] : [];
+  const places: MenuItem[] = [
+    { id: "guide", icon: "signpost", label: MENU.guide, href: "/shift/island/guide" },
+    { id: "story", icon: "book", label: MENU.story, onClick: story },
+  ];
+  if (page.news?.enabled) places.push({ id: "news", icon: "news", label: NEWS.menu, onClick: () => onPanel("news") });
+  // Folded under ตั้งค่า (MenuFoot): nobody needs it every day.
+  const settings: MenuItem[] = [{
+    id: "sound",
+    icon: "megaphone",
+    label: sound.failed ? CAMPFIRE.soundError : MENU.sound,
+    state: sound.failed ? undefined : sound.playing ? MENU.on : MENU.off,
+    pressed: sound.playing,
+    disabled: sound.pending,
+    onClick: sound.toggle,
+  }];
+  return { admin, places, settings };
 }
 
 /**
@@ -241,6 +266,9 @@ function Crossing({ page, voyage }: { page: IslandPageData; voyage: Voyage }) {
 function Unclaimed({ page, picture, initialPhase, demoDay, voyage: forcedVoyage = false }: IslandAppProps & { demoDay: string | null }) {
   const voyage = useVoyage(forcedVoyage);
   const [storyOpen, setStoryOpen] = useState(false);
+  // The menu's เรื่องเล่า line plays the story again.
+  const [storyKey, setStoryKey] = useState(0);
+  const sound = useCampfireSound();
   const [claiming, setClaiming] = useState(false);
   const [panel, setPanel] = useState<UnclaimedPanel>(null);
   const [whole, setWhole] = useState(page.me.admin === true);
@@ -249,6 +277,7 @@ function Unclaimed({ page, picture, initialPhase, demoDay, voyage: forcedVoyage 
   const invites = page.invites.length;
   const paused = storyOpen || claiming || panel != null || voyage.holding;
   const onPanel = (next: Panel) => setPanel(next as UnclaimedPanel);
+  const pending = consentPending(page);
   // The plaza to look at: the festival and the campfire, no notice board and nothing to tap.
   const today = useBangkokDay();
   const festival = useMemo(
@@ -257,13 +286,31 @@ function Unclaimed({ page, picture, initialPhase, demoDay, voyage: forcedVoyage 
   );
   const campfire = useCampfire(page.campfire ?? null, !paused);
   const plaza = useMemo(() => plazaProps(festival, null, campfire.summary), [festival, campfire.summary]);
+  const shared = sharedItems(page, onPanel, () => {
+    setPanel(null);
+    setStoryKey((key) => key + 1);
+  }, sound);
+  // Nothing on this island is tapped yet (no plot, no plaza spots), so the coins and the prizes are lines here.
+  const unclaimedItems: MenuItem[] = [
+    ...shared.admin,
+    ...(showCoinPill(page.character) ? [{ id: "coins", icon: "coin", label: MENU.coins, onClick: () => onPanel("wallet") } satisfies MenuItem] : []),
+    { id: "prizes", icon: "trophy", label: PRIZES_UI.menu, onClick: () => onPanel("prizes") },
+    ...shared.places,
+  ];
 
   return (
     <>
       {/* The HUD first: keyboards and screen readers reach its controls before the island. */}
       <Hud
-        chip={<HudLabel me={page.me} text={HUD.noPlot} />}
-        pill={coinPill(page, () => setPanel("wallet"))}
+        chip={
+          <HudLabel
+            me={page.me}
+            text={HUD.noPlot}
+            label={pending ? HUD.menuConsent : HUD.menu}
+            dot={pending}
+            onOpen={() => setPanel("menu")}
+          />
+        }
         buttons={
           <>
             <StoryLauncher
@@ -271,12 +318,11 @@ function Unclaimed({ page, picture, initialPhase, demoDay, voyage: forcedVoyage 
               cta="claim"
               onCta={() => setClaiming(true)}
               onOpenChange={setStoryOpen}
-              className={hudRoundClass}
               autoOpen={!voyage.open}
+              button={false}
+              openKey={storyKey}
             />
-            <IslandRefresh className={hudRoundClass} />
-            <CampfireSound className={hudRoundClass} />
-            <MenuRound page={page} onOpen={() => setPanel("menu")} onAdmin={() => setPanel("admin")} />
+            <IslandAutoRefresh />
           </>
         }
         bottom={
@@ -311,14 +357,16 @@ function Unclaimed({ page, picture, initialPhase, demoDay, voyage: forcedVoyage 
         open={panel === "menu"}
         onClose={() => setPanel(null)}
         me={page.me}
-        project={null}
+        claimed={false}
         whole={whole}
         onToggleWhole={() => {
           setWhole((current) => !current);
           setPanel(null);
         }}
         suggestUrl={page.suggestUrl ?? null}
-        {...menuRows(page, onPanel)}
+        items={unclaimedItems}
+        settings={shared.settings}
+        {...consentRow(page, onPanel)}
       />
       <PlayerSheets page={page} panel={panel} onPanel={onPanel} />
       <Crossing page={page} voyage={voyage} />
@@ -341,9 +389,32 @@ function IslandHome({
 }) {
   const voyage = useVoyage(forcedVoyage);
   const keynote = useMemo(() => keynoteQuest(board), [board]);
-  // The quest today's check-in is about: the keynote, or with nothing open the first one to start.
+  // The quest the day's line (the roots) is filed under: the keynote, or with nothing open none.
   const dayQuest = useMemo(() => todayQuest(board, keynote), [board, keynote]);
-  const hasAction = useMemo(() => (keynote ?? starterQuest(board)) != null, [keynote, board]);
+  // Set once the day's check-in is in, so the card stops asking before the refreshed page arrives.
+  const [tappedHere, setTappedHere] = useState(false);
+  const tapsToday = page.island.taps_today > 0 || tappedHere ? Math.max(page.island.taps_today, 1) : 0;
+  const memberId = page.memberId ?? null;
+  // Mentors' results on the student's own work, read from the board: in the chip's sheet, and a fresh approval on the card.
+  const results = useMemo(() => questResults(board), [board]);
+  const fresh = useFreshResults(results, memberId);
+  const approved = useFreshApproval(results, memberId);
+  const step = useMemo(
+    () => nextStep(board, { tapsToday, resting: page.island.resting, approved: approved?.ref ?? null }),
+    [board, tapsToday, page.island.resting, approved],
+  );
+  // The quest page's ไปเควสต์ถัดไป: the student's work, never a result to look at or work waiting on a mentor.
+  const nextWork = useMemo(() => {
+    const work = nextStep(board, { tapsToday, resting: page.island.resting });
+    return work && (work.action === "start" || work.action === "open") ? work.ref : null;
+  }, [board, tapsToday, page.island.resting]);
+  const intended = useDayIntention(memberId);
+  const [resting, startRest] = useTransition();
+  const quest = useStartQuest();
+  const [resultsSeen, setResultsSeen] = useState<{ since: number | null; at: number }>({ since: null, at: 0 });
+  // The menu's เรื่องเล่า line plays the story again.
+  const [storyKey, setStoryKey] = useState(0);
+  const sound = useCampfireSound();
   const [panel, setPanel] = useState<Panel>(initialPanel === "board" ? "board" : null);
   // ช่วยเพื่อนเช็ก (schema 15) opens over the board, so the board stays where it was.
   const [peerOpen, setPeerOpen] = useState(false);
@@ -367,28 +438,29 @@ function IslandHome({
   useEffect(() => () => window.clearTimeout(puffTimer.current), []);
   // A saved check-in waits for the island to be in view again before the dust puff plays.
   const puffQueued = useRef(false);
-  // The tree sheet opens with today's check-in when the day was still open, and keeps it for that visit.
-  const [treeToday, setTreeToday] = useState(false);
   // The canvas picker, opened from a quest; the quest reopens once a canvas is linked.
   const [linking, setLinking] = useState(initialPanel === "canvas");
   const [relinkRef, setRelinkRef] = useState<BoardRef | null>(null);
   const [storyOpen, setStoryOpen] = useState(false);
   const [whole, setWhole] = useState(page.me.admin === true);
   const season = page.island.season;
-  const todayOpen = page.island.taps_today === 0 && !page.island.resting;
   const goal = season?.goal ?? page.map.goal ?? null;
   // Any sheet or the story over the island stops its animation: nobody is looking at it.
   const paused =
-    panel != null || detail != null || stuck.open || proposing || plot != null || linking || storyOpen || voyage.holding;
+    panel != null ||
+    detail != null ||
+    stuck.open ||
+    proposing ||
+    plot != null ||
+    linking ||
+    storyOpen ||
+    voyage.holding;
   useEffect(() => {
     if (paused || !puffQueued.current) return;
     puffQueued.current = false;
     window.clearTimeout(puffTimer.current);
     puffTimer.current = window.setTimeout(() => setPuffKey((key) => key + 1), SHEET_CLOSE_MS);
   }, [paused]);
-  // The notice board is on screen in the living island, big enough to tap: it takes the board button's place.
-  const [noticeSeen, setNoticeSeen] = useState(false);
-
   // The plaza: the next quests on the notice board, Demo Day, and who is at the campfire.
   const pins = useMemo(() => noticePins(board), [board]);
   // The countdown and the stage roll over at Bangkok midnight on a page left open.
@@ -413,33 +485,59 @@ function IslandHome({
   );
   const plaza = useMemo(() => plazaProps(festival, pins, campfire.summary, openSpot), [festival, pins, campfire.summary, openSpot]);
 
-  /**
-   * The check-in is saved. The card stays open on its done state (the day's
-   * line, the way back to the quest); the dust puff plays at the tree once the
-   * island is in view again.
-   */
-  function checkedIn() {
-    puffQueued.current = true;
-  }
-
-  /** The team's tree up close, with today's check-in first while the day is still open. */
+  /** The team's tree up close. */
   function openTree() {
-    setTreeToday(todayOpen);
     setPanel("tree");
   }
 
-  // One check-in, shown in the character sheet (the chip's dot) and in the tree sheet (tap your tree).
-  const todayCard = (
-    <TodayCard
-      tapsToday={page.island.taps_today}
-      resting={page.island.resting}
-      quest={dayQuest}
-      onSaved={checkedIn}
-      onStuck={openStuck}
-      onOpenQuest={(quest) => openQuest(quest.ref, false)}
-      viewerKey={page.memberId ?? null}
-    />
-  );
+  /**
+   * The day's first tap that leads to work is the day's check-in: saved
+   * quietly, never a screen between the student and the work. If it fails
+   * the work still opens; the next tap tries again.
+   */
+  function checkInQuietly(next: NextStep) {
+    if (!next.checksIn) return;
+    setTappedHere(true);
+    void checkIn({ instanceId: next.instanceId }).then((result) => {
+      // The dust puff only for a check-in that is in; a failed one leaves the next tap to try again.
+      if (result.ok) puffQueued.current = true;
+      else setTappedHere(false);
+    });
+  }
+
+  /**
+   * The card's one button (step.action): wake up; start an untouched quest and
+   * open it; or open the quest (a fresh result is marked seen first, so the
+   * card moves on).
+   */
+  async function tapNext(next: NextStep) {
+    if (next.action === "wake") return rest(false);
+    if (!next.ref) return;
+    // Seen up to this approval only: anything newer stays new in the chip's sheet.
+    if (next.kind === "reviewed" && approved) markResultsSeen(memberId, Date.parse(approved.at));
+    if (next.action === "start" && !(await quest.start(next.ref))) return;
+    openQuest(next.ref, false);
+    checkInQuietly(next);
+  }
+
+  /** ขอพัก from the chip's sheet, กลับมาทำต่อ from the card. Nothing wilts and nothing is lost either way. */
+  function rest(on: boolean) {
+    setPanel(null);
+    startRest(async () => {
+      const result = await setResting({ on });
+      if (!result.ok) toast.error(result.error || COMMON.failed);
+      else if (!on) toast.success(TODAY.woke);
+      else if (result.data.paused > 0) toast.success(TODAY.rested(result.data.paused));
+      else toast.info(TODAY.nothingToPause);
+    });
+  }
+
+  /** The chip's sheet: mentors' results new since the last look stay marked ใหม่ while it is open, and the dot clears. */
+  function openCharacter() {
+    setResultsSeen({ since: readResultsSeen(memberId), at: Date.now() });
+    markResultsSeen(memberId);
+    setPanel("character");
+  }
 
   /** A quest, from the bottom bar (back to the world on close) or from the board (back to the board). */
   function openQuest(ref: BoardRef, fromBoard: boolean) {
@@ -497,13 +595,6 @@ function IslandHome({
     setLinking(true);
   }
 
-  /** From the HUD's note button with no canvas linked yet: the picker, and back to the world after. */
-  function openCanvasLink() {
-    setPanel(null);
-    setRelinkRef(null);
-    setLinking(true);
-  }
-
   /** Picker done (linked or dismissed): back to the quest it was opened from, or the world. */
   function closeLinking() {
     setLinking(false);
@@ -511,52 +602,70 @@ function IslandHome({
     setRelinkRef(null);
   }
 
+  // The menu's lines, at the foot of the chip's sheet: only what has no place on the island. The tree is
+  // the team's plot (and a line in the same sheet), the prizes, the campfire and Demo Day stand in the
+  // plaza, and the canvas opens from a quest.
+  const shared = sharedItems(page, setPanel, () => {
+    setPanel(null);
+    setStoryKey((key) => key + 1);
+  }, sound);
+  // Consent itself has its banner at the top of the sheet; only the AI news line needs a line here.
+  const consent = consentRow(page, setPanel);
+  const aiConsent: MenuItem[] =
+    consent.onConsent && consent.consentAiOnly ? [{ id: "consent", icon: "letter", label: PLAYER_MENU.aiNews, onClick: consent.onConsent }] : [];
+  // The admin's overview and ขอพัก sit at the top of the sheet (CharacterSheet), not in this list.
+  const homeItems: MenuItem[] = [...aiConsent, ...shared.places];
+  // The chip's lamp dot: consent waits, a mentor's result is new, something waits at the tree, or the bot left notices.
+  const chipWaiting =
+    (consentPending(page) ? HUD.menuConsent : null) ??
+    (fresh > 0 ? RESULTS.hud(fresh) : null) ??
+    (tree ? treeWaiting(tree) : null) ??
+    (page.unread > 0 ? RESULTS.discord(page.unread) : null);
+
   return (
     <>
       {/* The HUD first: keyboards and screen readers reach its controls before the plots. Both are fixed layers. */}
       <Hud
-        chip={<HudChip me={page.me} name={project.name} stage={project.stage} todayOpen={todayOpen} onOpen={() => setPanel("character")} />}
-        pill={
-          tree ? (
-            // The team's tree beside the coins (schema 13 only): the top row is full on a 360px phone.
-            <div className={treeStyles.pills}>
-              {coinPill(page, () => setPanel("wallet"))}
-              <TreePill tree={tree} onOpen={openTree} />
-            </div>
-          ) : (
-            coinPill(page, () => setPanel("wallet"))
-          )
+        chip={
+          <HudChip
+            me={page.me}
+            name={project.name}
+            stage={project.stage}
+            waiting={chipWaiting}
+            onOpen={openCharacter}
+          />
         }
         buttons={
           <>
+            {/* No button of its own: the story still opens on a first visit, and the chip sheet's line plays it again. */}
             <StoryLauncher
               demoDay={season?.demo_day ?? null}
               cta="island"
               onOpenChange={setStoryOpen}
-              className={hudRoundClass}
               autoOpen={!voyage.open}
+              button={false}
+              openKey={storyKey}
             />
-            {/* The team's canvas: the redirect route finds it on the server (no board id on this page). */}
-            {page.canvasLink.linked ? (
-              <HudLinkRound icon="note" label={CANVAS.open} href={CANVAS_ROUTE} />
-            ) : (
-              <HudRound icon="note" label={CANVAS.link} onClick={openCanvasLink} />
-            )}
-            {page.unread > 0 ? (
-              <HudRound icon="mail" label={HUD.inbox(page.unread)} badge={page.unread} onClick={() => setPanel("inbox")} />
-            ) : null}
-            <IslandRefresh className={hudRoundClass} />
-            <CampfireSound className={hudRoundClass} />
-            <MenuRound page={page} onOpen={() => setPanel("menu")} onAdmin={() => setPanel("admin")} />
+            <IslandAutoRefresh />
           </>
         }
         bottom={
-          <>
-            {/* The keynote: the one gold element and the one main call to action. */}
-            <KeynoteCard board={board} keynote={keynote} onOpen={(ref) => openQuest(ref, false)} />
-            {/* Out of sight while the notice board is on screen (close view) next to a keynote; keyboards and screen readers keep it. */}
-            <BoardButton wide={!hasAction} concealed={noticeSeen && hasAction && !whole} onClick={() => setPanel("board")} />
-          </>
+          step ? (
+            <div className={world.nextStack}>
+              {/* The one gold element and the one main action: the next step. */}
+              <NextStepCard
+                board={board}
+                step={step}
+                intended={intended}
+                pending={quest.pending || resting}
+                onTap={(next) => void tapNext(next)}
+              />
+              <BoardLink label={NEXT_STEP.board} onClick={() => setPanel("board")} />
+            </div>
+          ) : (
+            // Nothing left to do next (all seven passed): the board is the bottom action.
+            <BoardButton wide onClick={() => setPanel("board")} />
+          )
         }
       />
       <IslandViewport
@@ -567,7 +676,6 @@ function IslandHome({
         whole={whole}
         initialPhase={initialPhase}
         plaza={plaza}
-        onNoticeVisible={setNoticeSeen}
         me={page.me}
       />
 
@@ -593,12 +701,12 @@ function IslandHome({
           tree={tree}
           onBoard={() => setPanel("board")}
           projectId={page.photos === true ? (project?.id ?? null) : null}
-          today={treeToday ? todayCard : null}
+          roots={<RootsLine instanceId={dayQuest?.instanceId ?? null} />}
         />
       ) : null}
-      {/* From the chip: who you are, your stats and coins, then the project sheet as before (tree, today, season). */}
+      {/* From the chip: the one door to everything that is not the next step. */}
       <CharacterSheet
-        open={panel === "character" || panel === "project"}
+        open={panel === "character"}
         onClose={() => setPanel(null)}
         me={page.me}
         stats={page.character ?? null}
@@ -606,27 +714,39 @@ function IslandHome({
         invites={page.invites}
         project={project}
         tree={page.tree ?? null}
-        season={season}
         consent={page.consent}
         onOpenWallet={() => setPanel("wallet")}
         onOpenConsent={() => setPanel("consent")}
-        today={todayCard}
-      />
-      <MenuSheet
-        open={panel === "menu"}
-        onClose={() => setPanel(null)}
-        me={page.me}
-        project={project}
-        whole={whole}
-        onToggleWhole={() => {
-          setWhole((current) => !current);
-          setPanel(null);
-        }}
-        suggestUrl={page.suggestUrl ?? null}
-        {...menuRows(page, setPanel)}
+        onOpenTree={tree ? openTree : undefined}
+        showName={project}
+        onOpenAdmin={page.me.admin ? () => setPanel("admin") : undefined}
+        onRest={page.island.resting ? undefined : () => rest(true)}
+        results={
+          <ResultsList
+            results={results}
+            since={resultsSeen.since}
+            openedAt={resultsSeen.at}
+            onOpen={(ref) => openQuest(ref, false)}
+            unread={page.unread}
+            discordUrl={discordUrl}
+          />
+        }
+        foot={
+          <MenuFoot
+            me={page.me}
+            claimed
+            whole={whole}
+            onToggleWhole={() => {
+              setWhole((current) => !current);
+              setPanel(null);
+            }}
+            suggestUrl={page.suggestUrl ?? null}
+            items={homeItems}
+            settings={shared.settings}
+          />
+        }
       />
       <PlayerSheets page={page} panel={panel} onPanel={setPanel} />
-      <InboxSheet open={panel === "inbox"} onClose={() => setPanel(null)} unread={page.unread} discordUrl={discordUrl} />
       {season && festival ? (
         <FestivalSheet
           open={panel === "festival"}
@@ -634,7 +754,6 @@ function IslandHome({
           season={season}
           festival={festival}
           goal={goal}
-          onOpenProject={() => setPanel("character")}
         />
       ) : null}
       {campfire.summary ? (
@@ -665,6 +784,9 @@ function IslandHome({
         photos={page.photos === true}
         projectId={project?.id ?? null}
         peer={page.peer === true}
+        // ไปเควสต์ถัดไป: the student's next work (nextWork), never a result or work waiting on a mentor.
+        next={nextWork}
+        viewerKey={memberId}
       />
       <StuckSheet
         open={stuck.open}

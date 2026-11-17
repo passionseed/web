@@ -7,6 +7,14 @@ import { RefreshCw } from "lucide-react";
 import { SYNC } from "./copy";
 import { refreshIsland, useIslandRefresh } from "./useIslandRefresh";
 
+/** Reads the island again on return (focus, a tab shown again, back online) or refreshIsland(); nothing to see. */
+export function IslandAutoRefresh(): null {
+  const router = useRouter();
+  const refresh = useCallback(() => router.refresh(), [router]);
+  useIslandRefresh(refresh);
+  return null;
+}
+
 /** Refresh the server payload without remounting the island or discarding drafts. */
 export function IslandRefresh({ className }: { className: string }) {
   const router = useRouter();

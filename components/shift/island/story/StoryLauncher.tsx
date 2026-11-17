@@ -27,6 +27,10 @@ export interface StoryLauncherProps {
    * button cannot be real yet: the first run then waits for the island.
    */
   autoOpen?: boolean;
+  /** False: no book button (the island's menu has a tile for it); the story still opens on a first visit. */
+  button?: boolean;
+  /** Each new value above 0 plays the story again (the menu's tile). */
+  openKey?: number;
 }
 
 /**
@@ -34,7 +38,7 @@ export interface StoryLauncherProps {
  * not seen the story it opens the story by itself, decided after mount; skip,
  * Escape and the last button all mark it seen. Mount one per screen.
  */
-export function StoryLauncher({ demoDay, cta, onCta, onOpenChange, className, autoOpen = true }: StoryLauncherProps): JSX.Element {
+export function StoryLauncher({ demoDay, cta, onCta, onOpenChange, className, autoOpen = true, button: showButton = true, openKey = 0 }: StoryLauncherProps): JSX.Element {
   const seen = useStorySeen();
   const [reopened, setReopened] = useState(false);
   // Remembered for this page too, so storage that throws (private mode) does not reopen it at once.
@@ -42,6 +46,12 @@ export function StoryLauncher({ demoDay, cta, onCta, onOpenChange, className, au
   const button = useRef<HTMLButtonElement>(null);
   const closedVia = useRef<StoryCloseVia | null>(null);
   const open = reopened || (autoOpen && !seen && !dismissed);
+  // Asked to play again from elsewhere (the menu's tile): each new key opens it once.
+  const [lastKey, setLastKey] = useState(openKey);
+  if (openKey !== lastKey) {
+    setLastKey(openKey);
+    if (openKey > 0) setReopened(true);
+  }
 
   // Repeating the same value is harmless: the parent's setState bails out.
   useEffect(() => {
@@ -66,6 +76,7 @@ export function StoryLauncher({ demoDay, cta, onCta, onOpenChange, className, au
 
   return (
     <>
+      {showButton ? (
       <button
         ref={button}
         type="button"
@@ -76,6 +87,7 @@ export function StoryLauncher({ demoDay, cta, onCta, onOpenChange, className, au
       >
         <PixelIcon grid={WEB_SPRITES.book} palette={PALETTE} scale={2} />
       </button>
+      ) : null}
       <StoryOverlay open={open} demoDay={demoDay} cta={cta} onClose={close} onCloseAutoFocus={onCloseAutoFocus} />
     </>
   );

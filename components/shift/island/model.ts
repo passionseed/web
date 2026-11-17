@@ -249,3 +249,59 @@ export function sideGroups<T extends { branch_of: number | null }>(side: T[]): {
     .sort(([a], [b]) => (a ?? 99) - (b ?? 99))
     .map(([branchOf, items]) => ({ branchOf, items }));
 }
+
+/**
+ * Where the student's own work on a quest stands, for the quest page's five
+ * dots (DETAIL.stepper: เริ่ม, ทำ, ส่ง, พี่เลี้ยงดู, ผ่าน), as the index of the
+ * current dot. Null where the dots would mislead: a locked quest, one a
+ * teammate holds, a closed proposal.
+ */
+export function questStage(q: QuestView): number | null {
+  switch (q.status) {
+    case "available":
+      return q.mine ? 1 : 0;
+    case "active":
+    case "paused":
+    case "clarification":
+    case "declined":
+      return q.kind === "proposed" && q.status === "declined" ? null : 1;
+    case "submitted":
+    case "appealed":
+      return 3;
+    case "done":
+      return 4;
+    default:
+      return null;
+  }
+}
+
+/**
+ * The quest page's sticky bar: always exactly one thing, so every state has a
+ * way forward. start: take the quest on. send / resend: write or show the
+ * work (resend after a mentor asked for more). resume: wake a paused quest.
+ * waiting: words only, the work is with a mentor or in appeal. next: this
+ * quest needs nothing more (passed, closed). open: this quest cannot be done
+ * now (locked, a teammate holds it), so go to the one that can.
+ */
+export type QuestBar = "start" | "send" | "resend" | "resume" | "waiting" | "next" | "open";
+
+export function questBar(q: QuestView, action: DetailAction): QuestBar {
+  switch (action.kind) {
+    case "form":
+      if (action.note === "submittedWaiting") return "waiting";
+      // Passed and repeatable: moving on is the step; sending again stays a quiet link in the page.
+      if (action.note === "doneRepeat") return "next";
+      if (canStart(q) && q.ref.kind !== "proposed") return "start";
+      return action.resubmit ? "resend" : "send";
+    case "paused":
+      return "resume";
+    case "appealed":
+      return "waiting";
+    case "done":
+    case "closed":
+      return "next";
+    case "locked":
+    case "held":
+      return "open";
+  }
+}
