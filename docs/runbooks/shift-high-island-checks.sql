@@ -179,13 +179,14 @@ web_allow(sig) AS (VALUES
   -- 20261118110000_shift_quest_island_visitors.
   ('shift_quest_island_visitors(text)')
 )
--- The schema: 20 is every migration on this branch (the missed-night staff
--- note, 20261118140000). run-local.sh runs this file on its single pass, so a
--- new migration that moves the version fails there until this line follows.
-SELECT 'schema: shift_quest_schema_version() is ' || coalesce(v::text, 'missing') || ', expected 20' AS problem
+-- The schema: 21 is every migration on this branch (the campfire call and
+-- the evening guest, 20261118150000). run-local.sh runs this file on its
+-- single pass, so a new migration that moves the version fails there until
+-- this line follows.
+SELECT 'schema: shift_quest_schema_version() is ' || coalesce(v::text, 'missing') || ', expected 21' AS problem
 FROM (SELECT CASE WHEN to_regprocedure('public.shift_quest_schema_version()') IS NULL THEN NULL
   ELSE public.shift_quest_schema_version() END AS v) s
-WHERE v IS DISTINCT FROM 20
+WHERE v IS DISTINCT FROM 21
 UNION ALL
 -- The two logins: they exist, NOINHERIT, member of no role, their connection
 -- limit and statement_timeout. LOGIN itself is step D, so it is not checked here.

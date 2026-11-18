@@ -164,13 +164,19 @@ function botCanKeepLivePost(i: ChatInputCommandInteraction, channelId: string): 
   return channel.permissionsFor(me)?.has(LIVE_PERMISSIONS) ?? false;
 }
 
-/** The switches /admin feature turns on and off, with the blocker list each one has. */
-const FEATURES: { key: string; label: string; setting: string }[] = [
+/**
+ * The switches /admin feature turns on and off, with the blocker list each
+ * one has. An optional switch is left out on a database too old to have it.
+ */
+const FEATURES: { key: string; label: string; setting: string; optional?: boolean }[] = [
   { key: "awards", label: "เหรียญ", setting: "awards_enabled" },
   { key: "redemption", label: "แลกของ", setting: "redemption_enabled" },
   { key: "sharing", label: "แชร์สาธารณะ", setting: "sharing_enabled" },
   { key: "reminders", label: "การเตือน", setting: "reminders_enabled" },
   { key: "squads", label: "สควอด", setting: "squads_enabled" },
+  // 20261118150000_shift_quest_campfire_call (schema 21). Thai reviewed (Gemini, Codex, Claude), 2026-11-18.
+  { key: "campfire_call", label: "เรียกรวมกองไฟ 18:50", setting: "campfire_call_enabled", optional: true },
+  { key: "campfire_call_ping", label: "แท็กนักเรียนตอนเรียกรวม", setting: "campfire_call_ping", optional: true },
 ];
 
 /**
@@ -231,7 +237,7 @@ export function statusView(s: Status, saved = false): View {
   if (channelMissing) blocks.push({ kind: "subtext", text: "ตั้งห้อง: /admin channel" });
   blocks.push(
     { kind: "divider" },
-    { kind: "text", text: FEATURES.flatMap((f) => featureLines(s, f)).join("\n") },
+    { kind: "text", text: FEATURES.filter((f) => !f.optional || f.setting in st).flatMap((f) => featureLines(s, f)).join("\n") },
     { kind: "divider", line: false },
     { kind: "subtext", text: fine.join("\n") }
   );

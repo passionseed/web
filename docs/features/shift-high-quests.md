@@ -139,6 +139,19 @@ channel right now, for the island's campfire:
   make the channel private later, the campfire is synced empty at once,
   nothing per person is written while it stays closed, and the bot logs one
   warning with no names.
+- **The evening guest (schema 21)**: on every check of the guest's rest
+  (19:25 to 19:30 Bangkok) the bot passes the ids in the room to the
+  database; it keeps only which teams were there and, once settled, each
+  team's roll (one row per team and night: the team, the guest, the look or
+  none), never who sat there or when, and deletes those rows the next day
+  (for a team of one, the row is that student's until then). A won look is a
+  team gift kept with its date; an erasure that leaves the team empty deletes
+  both. `/data` exports the tree gifts the member earned, the team's guest
+  gifts (never a teammate's own gift) and its guest rows. On a
+  night the founder or a mentor sat at the fire during the rest, they are
+  the guest, and the night keeps up to two staff display names (never a
+  student's) until the next day or that staff member's erasure. See "The
+  campfire call and the evening guest" below.
 
 `/data` exports everything about the caller as JSON. An approved erasure
 (`/admin data`) deletes the journal, help requests, shares and notices,
@@ -1024,6 +1037,78 @@ unknown kind permanently), so deploy the bot first, then apply this file;
 below schema 20 the bot reads the version again on each check, so no restart
 is needed. Tested in `supabase/tests/shift_quests/news_missed.ts`,
 `bot/src/quests/__tests__/news.test.ts` and `outbox.test.ts`.
+
+### The campfire call and the evening guest (schema 21)
+
+`20261118150000_shift_quest_campfire_call.sql` (not applied yet) adds the
+call the bot posts every day at 18:50 Bangkok in the news channel
+(`bot/src/quests/call.ts`), while `/admin feature campfire_call` is on (the
+default), a news and a coworking channel are set, and no SHIFT cohort round
+is in session (`cohortWeek`, from `lib/shift/voiceWindow.ts`
+`roundsInSession`: shift-voice counts voice time in every channel then, so
+the bot sends no call, makes no drop and edits the latest call into the
+paused note): the fire lights at 19:00, a live countdown, a floored count of
+who sits at the fire (everyone there, staff included, never a name) and a
+button into the voice channel.
+It pings the student roles (`settings.student_role_ids`, at most 5) once,
+when it is first sent, while `/admin feature campfire_call_ping` is on (the
+default): the send allows exactly those roles, never users, `@everyone` or
+`@here`; edits allow nothing. It is edited through the evening (invite, lit
+at 19:00, the guest at 19:25, embers at 21:00), at most once a minute and
+only when its text changes, and the previous day's call (the bot's own) is
+deleted once today's is recorded. One call a day without doubles:
+`shift_quest_call_claim` and `_mark` on `shift_quest_call_posts`; due only
+from 18:50 to 19:15 (a stale claim until 19:30), never a late one; after a
+stale claim the bot looks for its own call (`CALL.dayLine`) and sends nothing
+when it cannot read the channel, so nobody is pinged twice. Before sending,
+the bot checks that students can see and join the voice channel and that it
+can post in its chat. Below schema 21 the loop reads the version again on
+every 30-second check.
+
+During an active season an evening guest (boat, gull, fireflies, turtle, in a
+fixed rotation by season day, `shift_quest__guest_of`) comes for the first
+rest (19:25 to 19:30). On every check in that rest that can read the room,
+the bot passes the Discord ids in the campfire voice room
+(`campfire.present()`, the gateway voice cache, bots left out; empty when
+nobody sits there) to `shift_quest_campfire_seen`: anyone there at any check
+counts, so nobody is rewarded for sitting down first. The database links
+them to started, non-staff members and their current teams and keeps one
+row per team and night in `shift_quest_guest_drops` (no member, no time).
+A check the bot sent in the rest still counts when it reaches the database
+up to 15 seconds after 19:30, and the bot's first check from 19:30 passes
+the room too when the database is not at 19:30 yet. The night records the
+bot's latest check and whether it missed more than a minute of the rest
+(`gap`); then 🎁 tells a team it never saw `unseen` (the bot could not see
+the fire for a while), never `away`.
+The bot's first check at or after 19:30 calls `shift_quest_campfire_drop`,
+which settles the night once (a lock, `shift_quest_guest_nights.settled_at`):
+each team seen gets one roll (`shift_quest__guest_drop_chance()`, 1 in 2),
+however many teammates were there. A win is a one-option gift of one of the
+guest's two looks the team does not have (`source drop:<day>`, `member_id`
+null). Staff at the fire are the guest (founder decision, 2026-11-18): when
+an admin or reviewer member is among the ids of any check of the rest, the
+night's guest becomes `mentor` from that check on (never back), the call
+and the round messages name them by display name ("คืนนี้ <name>
+มาเป็นแขกที่กองไฟ", two at most), and the drop gives the 2 looks only staff
+nights give (`leaf:ember`, `bloom:starlit`), by the same rules; staff never
+win. `shift_quest_guest_nights.staff_names` keeps those names so edits and
+a restart show the same guest. Earlier days' rows (and staff names) are deleted the next day (the bot's reads, every
+presence check and drop call, and pg_cron's `shift_quest__voice_purge` every
+5 minutes, so no bot is needed): no member, no Discord id, no presence
+history. An approved erasure that leaves a team with no active member
+deletes its rows and drop gifts (`shift_quest__island_erase`). The round
+messages and the call always say how many teams got a look once the night
+is settled (`shift_quest__guest_reveal`; a friendly line for none), never
+which; 🎁 (`rd_guest`, `shift_quest_guest_status`) answers privately about
+the presser's own team. The send carries a nonce Discord enforces, so a
+retried POST never posts or pings twice. Switched off, the latest call is
+edited once into a paused note. `/settings` explains how to stop the ping
+only while the call pings (`shift_quest_call_pings`).
+Round and quest gifts never offer guest looks. No coins, no stage, no
+ledger. Design and the founder's decisions:
+[`docs/designs/shift-island-campfire-call.md`](../designs/shift-island-campfire-call.md).
+Tested in `supabase/tests/shift_quests/campfire_call.ts`,
+`bot/src/quests/__tests__/call.test.ts` and `rounds.test.ts`.
 
 ## Admin: reset my own island (testing)
 

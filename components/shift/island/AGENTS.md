@@ -14,6 +14,10 @@ table). These rules never bend:
   gifts never change it, and copy never says they do.
 - **No pressure mechanics.** No leaderboards, streaks, speed or volume rewards,
   random prizes, guilt, or "you missed" copy. Nothing ever wilts or is lost.
+  One exception to "random prizes", approved by the founder on 2026-11-18:
+  the campfire guest's nightly drop (one 1-in-2 roll per team per night, a
+  cosmetic tree look with no cash value, nothing to buy, nothing lost for
+  skipping). No other random prize.
 - **Minors.** No private channel between an adult and a student. A mentor's
   words never travel in a DM; bot DMs are content-free nudges. Evidence and
   forms never ask for a real name, phone number or address. A team's name

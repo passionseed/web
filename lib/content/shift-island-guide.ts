@@ -171,6 +171,12 @@ export const GUIDE_CAMPFIRE = {
     "เข้าห้องเสียงกองไฟใน Discord ของ SHIFT แล้วทำงานไปพร้อมกับเพื่อนๆ",
     `บอทเปิดรอบให้ทุกคนพร้อมกัน ชั่วโมงละสองรอบ เริ่มนาทีที่ ${CAMPFIRE_ROUND.startsAt.join(" และ ")}`,
     "มีคนนั่งที่กองไฟเมื่อไหร่ รอบก็เริ่ม แม้มีแค่คนเดียว",
+    // 20261118150000_shift_quest_campfire_call: the 18:50 call and the evening guest's drop.
+    // Thai reviewed (Gemini, Codex, Claude), 2026-11-18
+    "ทุกเย็นก่อน 1 ทุ่ม บอทเรียกรวมในห้องข่าวเกาะ (เว้นสัปดาห์ที่มีรอบ SHIFT) แล้วรอบแรกเริ่ม 1 ทุ่ม มาตอนไหนก็นั่งได้",
+    // The guest pauses with the call in SHIFT cohort weeks (bot/src/quests/call.ts cohortWeek).
+    "ช่วงซีซัน จะมีแขกแวะมาที่กองไฟตอนพักรอบแรก 19:25 ถึง 19:30 (เว้นสัปดาห์ที่มีรอบ SHIFT) ทีมที่มีคนมานั่งที่กองไฟช่วงพักนั้นได้ลุ้นลุคใหม่ให้ต้นไม้ ทีมละครั้ง มากี่คนก็ลุ้นเท่ากัน",
+    "แขกแต่ละรายมีลุคของตัวเอง ได้จากแขกเท่านั้น บอทบอกแค่ว่ามีกี่ทีมที่ได้ของ และไม่ประกาศว่าทีมไหนได้",
   ],
   rhythmLabel: "หนึ่งชั่วโมงของกองไฟ",
   focus: `🔥 โฟกัส ${CAMPFIRE_ROUND.focusMinutes} นาที`,
@@ -187,10 +193,15 @@ export const GUIDE_CAMPFIRE = {
   ],
   privacyTitle: "ที่กองไฟ",
   privacy: [
-    "ไม่มีใครนับหรือเห็นว่าคุณนั่งไปกี่นาที",
+    // Exception (20261118150000): in a SHIFT cohort week shift-voice records voice time in every
+    // voice channel, the campfire included, for that round's students only (bot/src/shift/voice.ts).
+    // Thai reviewed (Gemini, Codex, Claude), 2026-11-18
+    "ไม่มีใครนับหรือเห็นว่าคุณนั่งไปกี่นาที (ยกเว้นสัปดาห์ที่มีรอบ SHIFT ซึ่งระบบของ SHIFT จะบันทึกเวลาในห้องเสียงของผู้เรียนรอบนั้น)",
     // Thai reviewed (agy, Codex, Cursor), 2026-11-14
     "บันทึกสิ่งที่ได้เรียนรู้เป็นส่วนตัว ถ้าเขียนว่าติดตรงไหน จะกด 🙋 ส่งเรื่องที่ติดให้พี่เลี้ยงช่วยก็ได้",
-    "รอบกองไฟไม่ส่ง DM: บอทโพสต์แค่ในห้องกองไฟ และตอบแบบที่คุณเห็นคนเดียว",
+    // The call is one group post a day in the news channel (20261118150000).
+    // Thai reviewed (Gemini, Codex, Claude), 2026-11-18
+    "รอบกองไฟจะไม่ทัก DM: บอทโพสต์แค่ในห้องกองไฟ เรียกรวมวันละครั้งในห้องข่าวเกาะ และเวลากดปุ่มจะตอบกลับแบบที่คุณเห็นคนเดียว",
   ],
   pictureLabel: "กองไฟบนเกาะ มีคนนั่งรอบๆ",
 } as const;
@@ -232,6 +243,11 @@ export const GUIDE_PRIVACY = {
     "ป้ายบนเกาะบอกแค่ชื่อโปรเจกต์ ไม่มีชื่อนักเรียน ป้ายขึ้นเมื่อทุกคนในทีมมีผู้ปกครองยินยอมแล้ว (ยินยอมตอนสมัคร SHIFT นับด้วย ส่วนอายุ 20 ปีขึ้นไปยืนยันอายุเองได้) และทีมซ่อนป้ายได้ทุกเมื่อ",
     "ไม่มีการอัดเสียง และไม่มีการอัดหน้าจอ",
     "กองไฟเก็บแค่ว่าตอนนี้ใครอยู่ในห้อง และลบทันทีเมื่อคุณออก",
+    // 20261118150000: the guest keeps which teams sat at the fire in its rest and each roll (for a
+    // team of one, that student's), never who or when; a won look is a gift that stays with the team, with its date.
+    // "ใครในทีม": a night's staff guest (the founder or a mentor) is kept by display name until the next day.
+    // Thai reviewed (Gemini, Codex, Claude), 2026-11-18
+    "ตอนแขกแวะมาที่กองไฟ ระบบจะเก็บว่าทีมไหนมีคนนั่งช่วงพักนั้นและผลลุ้นของทีม แล้วลบในวันถัดไป ไม่เก็บว่าใครในทีมนั่งหรือนั่งตอนไหน (ถ้าทีมมีคุณคนเดียว ข้อมูลของทีมก็คือของคุณ) ลุคที่ทีมได้จะเป็นของขวัญของทีม เก็บไว้พร้อมวันที่ได้",
   ],
 } as const;
 

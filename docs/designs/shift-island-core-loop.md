@@ -360,6 +360,19 @@ with the check-in inside it; an untouched quest's bar starts it (decision 5,
 first half). The rest of the quest page is redesigned next, from the
 best-designed games.
 
+**Founder decisions, 2026-11-18** (see
+[shift-island-campfire-call.md](shift-island-campfire-call.md)): a daily
+campfire call at 18:50 Bangkok in #island-news pings the student role once
+when it is first sent (the island's first role ping; edits never ping; staff
+can switch the ping off; the bot pauses the call by itself while a SHIFT
+cohort round is in session). During a season an evening guest comes to the
+fire for the 19:25 to 19:30 rest, and every team with a student there at any
+moment of it gets one 1-in-2 roll for one of that guest's cosmetic looks, one
+roll per team per night; the call always says how many teams got one, never
+which. This is a random prize: the founder approved it on 2026-11-18 as the
+one exception to the island rule against random prizes
+(`components/shift/island/AGENTS.md`, amended the same day).
+
 ## Tests (summary)
 
 - `tree/growth.test.ts`: first visit with and without the 48 h rule, +1, +2,

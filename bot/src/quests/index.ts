@@ -19,6 +19,7 @@ import { student } from "./handlers/student";
 import { tree } from "./handlers/tree";
 import type { ActionHandler, AutocompleteHandler, CommandHandler, HandlerSet } from "./handlers/types";
 import { parseCid } from "./ids";
+import { startCall, type CallLoop } from "./call";
 import { digestFor, startDigestPost } from "./digest";
 import { liveFor, startLivePost } from "./live";
 import { newsFor, startNewsPost } from "./news";
@@ -126,6 +127,10 @@ export async function handleInteraction(api: QuestApi, guildId: string, i: Inter
  * 20 (20261118140000_shift_quest_island_news_missed) adds the staff note when
  * the card did not post by 22:30; also optional: below 20 the card runs
  * without it, and reads the version again each check (NEWS_MISSED_SCHEMA).
+ * 21 (20261118150000_shift_quest_campfire_call) adds the 18:50 campfire call
+ * in the news channel and the evening guest's drop; also optional: below 21
+ * the call loop only reads the version again each check and starts by itself
+ * once the migration is applied (CALL_SCHEMA in call.ts).
  */
 export const REQUIRED_SCHEMA = 2;
 
@@ -228,8 +233,13 @@ export async function registerShiftQuests(client: Client, env: ShiftQuestsEnv): 
   const outbox = startOutbox(client, api, () => connected);
   // Started only on a database that has the campfire functions (schema 7).
   campfire = campfireFor(version, () => startCampfire(client, api, env.guildId, () => connected));
+  /** The 18:50 campfire call; the rounds read tonight's evening guest from it. */
+  let call: CallLoop | null = null;
   // Focus and rest rounds in the campfire's chat, only while someone sits at it (rounds.ts).
-  const roundLoop = campfire ? startRounds(client, campfire) : null;
+  const roundLoop = campfire ? startRounds(client, campfire, { evening: (nowMs) => call?.evening(nowMs) ?? null }) : null;
+  // The campfire call in the news channel and the evening guest (schema 21): one call a day, one role ping at most.
+  // Started with the campfire; below schema 21 it only reads the version again each check.
+  call = campfire ? startCall(client, api, { guildId: env.guildId, connected: () => connected, campfire, schema: version }) : null;
   // Started only on a database that has the live post functions (schema 8).
   const live = liveFor(version, () => startLivePost(client, api, env.guildId, () => connected));
   // Started only on a database that has the island news functions (schema 9): one post a day, no pings.
@@ -242,6 +252,8 @@ export async function registerShiftQuests(client: Client, env: ShiftQuestsEnv): 
 
   return {
     async stop() {
+      // The campfire call: it waits for a running check, then sends and edits nothing more.
+      await call?.stop();
       // The nightly island news card: it waits for a running check, then sends nothing more.
       await news?.stop();
       // The island news post: it waits for a running check, then posts nothing more.
