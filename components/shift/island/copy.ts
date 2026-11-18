@@ -313,7 +313,7 @@ export const TODAY = {
   ask: "วันนี้จะลงมือทำอะไร",
   askHint: "ไม่บังคับ · เห็นแค่คุณ",
   tapped: "วันนี้เช็กอินแล้ว",
-  intended: (text: string) => `วันนี้ตั้งใจว่า: ${text}`,
+  intended: (text: string) => `เป้าวันนี้: ${text}`,
   /** DRAFT: after the work, one private line filed under the quest; long enough, it counts toward the roots. */
   lineLabel: "ทำแล้วเป็นยังไง ได้เรียนรู้อะไร (ไม่บังคับ)",
   lineHint: `อย่างน้อย ${REFLECTION_MIN_CHARS} ตัวอักษร ช่วยให้รากต้นไม้งอก · เห็นแค่คุณ`,
@@ -438,7 +438,7 @@ export const BOARD = {
   /** DRAFT: side quests may not be published yet. */
   sideNone: "เควสต์เสริมยังไม่เปิด ระหว่างนี้ทำเควสต์หลักต่อได้เลย",
   unlockWhen: (titles: string[]) => `ปลดล็อกเมื่อผ่าน ${titles.join(", ")}`,
-  proposedHeading: "เควสต์ที่ฉันเสนอ",
+  proposedHeading: "เควสต์ที่คุณเสนอ",
   proposedEmpty: "มีเรื่องที่อยากทำเองไหม เสนอเป็นเควสต์ของคุณได้",
   propose: "เสนอเควสต์ของฉัน",
   islandHeading: "ทั้งเกาะ",
@@ -455,7 +455,7 @@ export const BOARD = {
 };
 
 export const DETAIL = {
-  kind: { main: "เควสต์หลัก", side: "เควสต์เสริม", proposed: "เควสต์ที่ฉันเสนอ" },
+  kind: { main: "เควสต์หลัก", side: "เควสต์เสริม", proposed: "เควสต์ที่คุณเสนอ" },
   evidence: "ส่งอะไร",
   reflection: "คำถามหนึ่งข้อ",
   /** The reflection label for a quest with no prompt of its own (a proposed quest). */
