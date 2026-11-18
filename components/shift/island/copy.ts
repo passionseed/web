@@ -396,8 +396,11 @@ export const RESULTS = {
 
 /** The menu's short list (MenuFoot, at the foot of the chip's sheet): only what has no place on the island itself. */
 export const MENU = {
-  /** DRAFT: the whole quest board, first in the chip sheet's short list (the plaza's notice board opens it too). */
-  board: "เควสต์ทั้งหมด",
+  /**
+   * The whole quest board, first in the chip sheet's short list: the place's
+   * one name, as on the plaza's notice board, the sheet it opens and the bot.
+   */
+  board: PLACES.board,
   story: "เรื่องเล่า",
   guide: "คู่มือ",
   /** The sound switch's line, and its state at the end of the line. */
@@ -749,12 +752,18 @@ export const FIGURES = {
   builder: ["คนที่ลงมือสร้างงานจริง ทีละชิ้น"],
   /** The story's tester, phone in hand beside the grown tree. */
   tester: ["คนนอกทีม มาลองงานที่ทำจริง"],
-  /** The plaza's people button (the day's count, or hidden until focused): each press greets the next person. */
+  /** The plaza's people button (the day's count, or hidden until focused): each press greets the next of today's visitors. */
   turn: "ทักทายทีละคน",
   /** Its name when no count is on screen. */
   people: "คนบนเกาะ",
-  /** Read before a line reached by that button. */
-  nth: (n: number, total: number) => `คนที่ ${n} จาก ${total}`,
+  /**
+   * Read before a line reached by that button. No total: some of the day's
+   * count sit at the campfire or are only a "+N", so a total would never
+   * match the count the button names. Back at 1 means round again.
+   */
+  nth: (n: number) => `คนที่ ${n}`,
+  /** After a plot's name where its team's first partner stands by the tree: the keyboard's way to what a tap on that figure says. */
+  plotPartner: "มีพันธมิตรคนแรกแล้ว",
 };
 
 /**

@@ -71,6 +71,30 @@ export interface PlazaLabel {
   delayMs?: number;
 }
 
+/**
+ * The place each label names: where that place has a tap target, its label is
+ * part of that door (PlazaLayer draws it inside the spot's button), so a tap
+ * on the words opens the place as a tap on the picture does.
+ */
+export const LABEL_DOOR: Partial<Record<PlazaLabelId, PlazaSpotId>> = {
+  notice: "notice",
+  sign: "stage",
+  campfireCount: "campfire",
+  campfireMore: "campfire",
+};
+
+/**
+ * A label's point inside its door, in percent of the spot's box (the button
+ * the label is drawn in). Exact while the button is the spot's own box, as in
+ * the close view, where every door is wider and taller than the 48px floor.
+ */
+export function labelInDoor(label: Pick<PlazaLabel, "x" | "y">, spot: Pick<PlazaSpot, "x" | "y" | "w" | "h">): { x: number; y: number } {
+  return {
+    x: round4(spot.w > 0 ? ((label.x - spot.x) / spot.w) * 100 : 50),
+    y: round4(spot.h > 0 ? ((label.y - spot.y) / spot.h) * 100 : 50),
+  };
+}
+
 export interface PlazaWorld {
   actors: LiveActor[];
   spots: PlazaSpot[];

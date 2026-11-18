@@ -7,8 +7,12 @@ import { LiveIsland, type LiveIslandProps } from "@/lib/shift-island/live/engine
 import type { Rect } from "@/lib/shift-island/live/geometry";
 import type { LightPhase, LiveActor } from "@/lib/shift-island/live/types";
 
-/** Reads where each actor stands on screen now (LiveIsland.actorBoxes), for taps on the people. */
-export type ActorBoxes = () => readonly (Rect | null)[];
+/**
+ * Reads where each actor stands on screen now (LiveIsland.actorBoxes), for
+ * taps on the people. Given the actors the caller's indexes point into, it
+ * answers null until the engine draws that same list.
+ */
+export type ActorBoxes = (actors?: readonly LiveActor[]) => readonly (Rect | null)[] | null;
 
 export interface IslandCanvasProps {
   scene: IslandScene;
@@ -99,7 +103,7 @@ export default function IslandCanvas({
     });
     engine.current = live;
     const boxes = actorBoxes;
-    if (boxes) boxes.current = () => live.actorBoxes();
+    if (boxes) boxes.current = (actors) => live.actorBoxes(actors);
     return () => {
       live.destroy();
       engine.current = null;

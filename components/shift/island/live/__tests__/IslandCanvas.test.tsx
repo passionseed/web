@@ -4,7 +4,7 @@ import { buildScene, type IslandPlot } from "@/bot/src/quests/island/scene";
 
 import { waterColor } from "@/lib/shift-island/live/lighting";
 
-import IslandCanvas from "../IslandCanvas";
+import IslandCanvas, { type ActorBoxes } from "../IslandCanvas";
 
 /** jsdom has no canvas: a context that records what it is asked to do. */
 function fakeContext() {
@@ -287,7 +287,7 @@ describe("IslandCanvas", () => {
       frameMs: 125,
       steps: [0, 1, 2, 3].map((dx) => ({ dx, dy: 0 })),
     };
-    const holder: { current: (() => readonly ({ x: number; y: number; w: number; h: number } | null)[]) | null } = { current: null };
+    const holder: { current: ActorBoxes | null } = { current: null };
     const { unmount } = render(<IslandCanvas scene={scene} actors={[walker]} actorBoxes={holder} />);
     // Nothing drawn yet: nobody to hit.
     expect(holder.current?.()).toEqual([]);
@@ -296,11 +296,41 @@ describe("IslandCanvas", () => {
     act(() => {
       jest.advanceTimersByTime(260);
     });
-    const [box] = holder.current!();
+    const [box] = holder.current!()!;
     expect(box!.x).toBeGreaterThan(40);
     expect(box).toMatchObject({ y: 50, w: 10, h: 14 });
     unmount();
     expect(holder.current).toBeNull();
+  });
+
+  it("hands a reader polling every frame the same boxes until the next paint, and nothing for actors it does not draw yet", () => {
+    const walker = {
+      frames: ["crowd_stand_of", "crowd_stride_of", "crowd_stand_of", "crowd_stride_of"],
+      x: 40,
+      y: 50,
+      frameMs: 125,
+      steps: [0, 1, 2, 3].map((dx) => ({ dx, dy: 0 })),
+    };
+    const actors = [walker];
+    const holder: { current: ActorBoxes | null } = { current: null };
+    const { rerender } = render(<IslandCanvas scene={scene} actors={actors} actorBoxes={holder} />);
+    firstFrame();
+    const first = holder.current!(actors);
+    // Nothing painted in between: the very same array, so a follower knows nobody moved.
+    expect(holder.current!(actors)).toBe(first);
+    expect(holder.current!()).toBe(first);
+    act(() => {
+      jest.advanceTimersByTime(130);
+    });
+    const next = holder.current!(actors);
+    expect(next).not.toBe(first);
+    expect(next![0]!.x).toBeGreaterThan(first![0]!.x);
+    // A new list the engine has not been handed yet: no answer, rather than the boxes of whoever stood at those indexes.
+    const more = [{ frames: ["crowd_stand_of"], x: 10, y: 10 }, walker];
+    expect(holder.current!(more)).toBeNull();
+    rerender(<IslandCanvas scene={scene} actors={more} actorBoxes={holder} />);
+    expect(holder.current!(more)).toHaveLength(2);
+    expect(holder.current!(actors)).toBeNull();
   });
 
   it("cleans up every timer when unmounted", () => {

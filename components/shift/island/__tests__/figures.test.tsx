@@ -3,28 +3,41 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { buildScene, type IslandPlot } from "@/bot/src/quests/island/scene";
 import type { IslandCanvasProps } from "@/components/shift/island/live/IslandCanvas";
 import type { Rect } from "@/lib/shift-island/live/geometry";
+import type { LiveActor } from "@/lib/shift-island/live/types";
 import type { NoticePin } from "@/lib/shift-island/notice";
 import { plazaWorld, type PlazaInput, type PlazaSpotId } from "@/lib/shift-island/live/plaza";
 import type { IslandPicture } from "@/lib/shift-island/picture";
 
 import { FIGURES } from "../copy";
 import { IslandViewport } from "../IslandViewport";
-import { BUBBLE_MS } from "../live/FigureBubble";
+import { BUBBLE_MS, fitBubble } from "../live/FigureBubble";
 import { figureLine, turnOrder } from "../live/figureLine";
 import { PlazaLayer } from "../live/PlazaLayer";
 import { plazaProps } from "../plazaProps";
 
-/** The living island, mocked: it draws at once and reads its actors' boxes from mockLive.boxes. */
-const mockLive: { boxes: (Rect | null)[] } = { boxes: [] };
+/**
+ * The living island, mocked: it draws at once ("fail": it cannot draw at all)
+ * and reads its actors' boxes from mockLive.boxes, or (null) where its actors
+ * stand. Like the real engine it is handed new actors in a passive effect,
+ * after every layout effect, and answers null for a list it does not draw yet.
+ */
+const mockLive: { boxes: (Rect | null)[] | null; drawn: readonly LiveActor[]; mode: "ready" | "fail" } = { boxes: [], drawn: [], mode: "ready" };
 
 jest.mock("../live/IslandLive", () => {
   const { useEffect } = jest.requireActual<typeof import("react")>("react");
   return {
     IslandLive: function MockIslandLive(props: IslandCanvasProps) {
       useEffect(() => {
+        mockLive.drawn = props.actors ?? [];
+      }, [props.actors]);
+      useEffect(() => {
         const holder = props.actorBoxes;
-        if (holder) holder.current = () => mockLive.boxes;
-        props.onReady?.();
+        if (holder) {
+          holder.current = (actors) =>
+            actors && actors !== mockLive.drawn ? null : (mockLive.boxes ?? mockLive.drawn.map((a) => ({ x: a.x, y: a.y, w: 10, h: 14 })));
+        }
+        if (mockLive.mode === "fail") props.onFail?.();
+        else props.onReady?.();
         return () => {
           if (holder) holder.current = null;
         };
@@ -94,6 +107,8 @@ const spoken = () => document.querySelector('p[aria-live="polite"]')?.textConten
 
 beforeEach(() => {
   mockLive.boxes = [];
+  mockLive.drawn = [];
+  mockLive.mode = "ready";
 });
 
 describe("figure lines", () => {
@@ -122,15 +137,18 @@ describe("figure lines", () => {
     }
   });
 
-  it("goes round the viewer first, then the team, everyone else and the trees' partners", () => {
+  it("goes round today's visitors only: the viewer first, then the team, then everyone else", () => {
     const order = turnOrder([
       { kind: "partner", n: 2 },
       { kind: "crowd", n: 1 },
       { kind: "me", n: 0 },
       { kind: "crowd", n: 0 },
       { kind: "team", n: 0 },
+      { kind: "builder", n: 0 },
     ]);
-    expect(order).toEqual([2, 4, 3, 1, 0]);
+    // The day's count names today's check-ins: a tree's partner and the story's people are not in its turn.
+    expect(order).toEqual([2, 4, 3, 1]);
+    expect(turnOrder([{ kind: "partner", n: 1 }])).toEqual([]);
   });
 });
 
@@ -166,7 +184,7 @@ describe("tapping people on the island", () => {
   it("leaves a key press on a plot to the plot, and over a plot's own button counts only the figure itself", () => {
     const onPlot = jest.fn();
     render(<IslandViewport picture={picture} onPlot={onPlot} />);
-    const plotButton = screen.getByRole("button", { name: "แปลง #1" });
+    const plotButton = screen.getByRole("button", { name: `แปลง #1, ${FIGURES.plotPartner}` });
     // Enter or Space on the button: a click with no pointer.
     fireEvent.click(plotButton, { detail: 0, clientX: (partner.x + 5) * S, clientY: (partner.y + 7) * S });
     expect(onPlot).toHaveBeenCalledTimes(1);
@@ -202,6 +220,78 @@ describe("tapping people on the island", () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+
+  it("names a tree's partner in its plot's name, the keyboard's way to it, and only where one stands", () => {
+    render(<IslandViewport picture={picture} onPlot={jest.fn()} />);
+    expect(screen.getByRole("button", { name: `แปลง #1, ${FIGURES.plotPartner}` })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: new RegExp(`^แปลงของคุณ #2, .*, ${FIGURES.plotPartner}$`) })).toHaveAttribute("data-slot", "2");
+    expect(screen.getByRole("button", { name: "แปลง #3" })).toBeInTheDocument();
+    // Nobody greets in turn here: the partners are not today's visitors, so there is no people button.
+    expect(screen.queryByRole("button", { name: new RegExp(FIGURES.turn) })).toBeNull();
+  });
+
+  it("closes the bubble when it is tapped, instead of opening what it covers", () => {
+    const onPlot = jest.fn();
+    render(<IslandViewport picture={picture} onPlot={onPlot} />);
+    tap(partner.x + 5, partner.y + 7);
+    const words = bubble()!.firstElementChild as HTMLElement;
+    // The bubble's box on screen, over the head; plot 1's button lies under it.
+    const top = (partner.y - 14) * S;
+    words.getBoundingClientRect = () => ({ left: (partner.x - 20) * S, right: (partner.x + 30) * S, top, bottom: top + 12 * S, width: 50 * S, height: 12 * S, x: 0, y: 0 }) as DOMRect;
+    const plotButton = screen.getByRole("button", { name: `แปลง #1, ${FIGURES.plotPartner}` });
+    tap(partner.x + 5, partner.y - 8, plotButton);
+    expect(onPlot).not.toHaveBeenCalled();
+    expect(bubble()).toBeNull();
+    // With the bubble gone, the same tap reaches the plot.
+    tap(partner.x + 5, partner.y - 8, plotButton);
+    expect(onPlot).toHaveBeenCalledTimes(1);
+  });
+
+  it("maps a tap through the picture's box as measured on screen: scrolled away from the corner, at 3x", () => {
+    render(<IslandViewport picture={picture} onPlot={jest.fn()} />);
+    const box = screen.getByRole("group", { name: "แปลงบนเกาะ" }).parentElement!;
+    // The world scrolled right and down: the picture starts above and left of the screen.
+    const left = -300;
+    const top = -120;
+    const k = 3;
+    box.getBoundingClientRect = () =>
+      ({ left, top, x: left, y: top, width: scene.width * k, height: scene.height * k, right: left + scene.width * k, bottom: top + scene.height * k }) as DOMRect;
+    const at = (x: number, y: number) => ({ detail: 1, clientX: left + x * k, clientY: top + y * k });
+    // Where the partner would be with no scroll, or at 2x: open ground.
+    fireEvent.click(box, { detail: 1, clientX: (partner.x + 5) * k, clientY: (partner.y + 7) * k });
+    expect(bubble()).toBeNull();
+    fireEvent.click(box, { detail: 1, clientX: left + (partner.x + 5) * S, clientY: top + (partner.y + 7) * S });
+    expect(bubble()).toBeNull();
+    fireEvent.click(box, at(partner.x + 5, partner.y + 7));
+    expect(bubble()).toHaveAttribute("data-bubble", "partner");
+    expect(spoken()).toBe(FIGURES.partner[1]);
+  });
+
+  it("counts only the figure itself on the whole island, as the plots drop their 48px floor there", () => {
+    const { rerender } = render(<IslandViewport picture={picture} onPlot={jest.fn()} whole />);
+    // 5 native px left of the figure, on open ground: too far on the whole island.
+    tap(partner.x - 5, partner.y + 7);
+    expect(bubble()).toBeNull();
+    tap(partner.x + 1, partner.y + 7);
+    expect(bubble()).not.toBeNull();
+    // Close up, the fingertip's margin reaches it.
+    rerender(<IslandViewport picture={picture} onPlot={jest.fn()} />);
+    tap(2, 2);
+    expect(bubble()).toBeNull();
+    tap(partner.x - 5, partner.y + 7);
+    expect(bubble()).not.toBeNull();
+  });
+
+  it("still hears taps after the picture failed and came back on retry", () => {
+    mockLive.mode = "fail";
+    render(<IslandViewport picture={picture} onPlot={jest.fn()} />);
+    fireEvent.error(screen.getByRole("img", { name: /ภาพเกาะ/ }));
+    expect(screen.queryByRole("group", { name: "แปลงบนเกาะ" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "ลองอีกครั้ง" }));
+    // A new picture box: the partner still talks when tapped.
+    tap(partner.x + 5, partner.y + 7);
+    expect(bubble()).toHaveAttribute("data-bubble", "partner");
   });
 
   it("says nothing on an island that only shows the place", () => {
@@ -282,17 +372,125 @@ describe("the plaza's people", () => {
     render(<IslandViewport picture={picture} onPlot={jest.fn()} plaza={props} />);
     const people = screen.getByRole("button", { name: `${props.labels.visitors!.replace("\n", " ")}, ${FIGURES.turn}` });
     expect(screen.getByRole("group", { name: "ลานกลางเกาะ" })).toContainElement(people);
-    const total = world.figures.length + 2;
     fireEvent.click(people);
     expect(bubble()).toHaveAttribute("data-bubble", "me");
-    expect(spoken()).toBe(`${FIGURES.nth(1, total)}: ${FIGURES.me[0]}`);
+    expect(spoken()).toBe(`${FIGURES.nth(1)}: ${FIGURES.me[0]}`);
     fireEvent.click(people);
     expect(bubble()).toHaveAttribute("data-bubble", "team");
-    expect(spoken()).toBe(`${FIGURES.nth(2, total)}: ${FIGURES.team[0]}`);
+    expect(spoken()).toBe(`${FIGURES.nth(2)}: ${FIGURES.team[0]}`);
     // A tap on someone in between, then the button again: the turn starts over from the first.
     tap(partner.x + 5, partner.y + 7);
     fireEvent.click(people);
     expect(bubble()).toHaveAttribute("data-bubble", "me");
+  });
+
+  it("keeps the day's count to the people it counts: round today's visitors and back, never off to a tree, never a total", () => {
+    mockLive.boxes = walked;
+    render(<IslandViewport picture={picture} onPlot={jest.fn()} plaza={props} />);
+    const people = screen.getByRole("button", { name: new RegExp(FIGURES.turn) });
+    const today = world.figures.length;
+    const kinds: string[] = [];
+    for (let i = 0; i < today + 1; i++) {
+      fireEvent.click(people);
+      kinds.push(bubble()!.dataset.bubble!);
+      expect(spoken()).not.toMatch(/จาก/);
+    }
+    expect(kinds.slice(0, today)).toEqual(["me", "team", ...Array(today - 2).fill("crowd")]);
+    // Round again from the viewer, with no partner on the way.
+    expect(kinds[today]).toBe("me");
+    expect(spoken()).toBe(`${FIGURES.nth(1)}: ${FIGURES.me[0]}`);
+  });
+
+  it("keeps a walker's bubble on them while the plaza's actors shift under it (someone sat down by the fire)", () => {
+    jest.useFakeTimers();
+    try {
+      // Boxes where the engine stands each actor of the list it was handed.
+      mockLive.boxes = null;
+      const base = { ...props.input, campfire: { count: 1 } };
+      const busier = { ...props.input, campfire: { count: 2 } };
+      const before = plazaWorld(scene, base);
+      const after = plazaWorld(scene, busier);
+      const meBefore = before.figures.find((f) => f.kind === "me")!;
+      const meAfter = after.figures.find((f) => f.kind === "me")!;
+      // The same people, each one actor further along: a seat was drawn before them.
+      expect(after.figures.map((f) => [f.kind, f.n])).toEqual(before.figures.map((f) => [f.kind, f.n]));
+      expect(meAfter.actor).toBe(meBefore.actor! + 1);
+      const { rerender } = render(<IslandViewport picture={picture} onPlot={jest.fn()} plaza={{ ...props, input: base }} />);
+      const start = before.actors[meBefore.actor!];
+      tap(start.x + 5, start.y + 7);
+      expect(bubble()).toHaveAttribute("data-bubble", "me");
+      const left = bubble()!.style.left;
+      rerender(<IslandViewport picture={picture} onPlot={jest.fn()} plaza={{ ...props, input: busier }} />);
+      act(() => void jest.advanceTimersByTime(40));
+      // Still open, still over the viewer (who did not move), not over whoever took their old index.
+      expect(bubble()).toHaveAttribute("data-bubble", "me");
+      expect(bubble()!.style.left).toBe(left);
+      expect(spoken()).toBe(FIGURES.me[0]);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("brings a person reached by the keyboard into view with their bubble, above the next-step card", () => {
+    mockLive.boxes = walked;
+    const real = window.getComputedStyle;
+    const offsetHeight = jest.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(40);
+    const offsetWidth = jest.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(160);
+    try {
+      const { container } = render(<IslandViewport picture={picture} onPlot={jest.fn()} plaza={props} />);
+      const world = container.querySelector<HTMLElement>("[data-live]")!;
+      // The world scrolls under the HUD: its padding keeps clear of the chip above and the card below.
+      jest.spyOn(window, "getComputedStyle").mockImplementation((el, pseudo) => {
+        if (el !== world) return real(el, pseudo);
+        return { overflowX: "auto", overflowY: "auto", scrollPaddingTop: "104px", scrollPaddingBottom: "180px", scrollPaddingLeft: "12px", scrollPaddingRight: "12px" } as CSSStyleDeclaration;
+      });
+      world.getBoundingClientRect = () => ({ left: 0, top: 0, right: 375, bottom: 812, width: 375, height: 812, x: 0, y: 0 }) as DOMRect;
+      const box = overlay();
+      // The viewer's figure stands low on the screen, behind the card (which starts 180px from the bottom).
+      const mine = walked[me.actor!];
+      const top = 760 - mine.y * S;
+      box.getBoundingClientRect = () =>
+        ({ left: 0, top, x: 0, y: top, width: scene.width * S, height: scene.height * S, right: scene.width * S, bottom: top + scene.height * S }) as DOMRect;
+      fireEvent.click(screen.getByRole("button", { name: new RegExp(FIGURES.turn) }));
+      expect(bubble()).toHaveAttribute("data-bubble", "me");
+      // Scrolled the least way that shows the figure and its bubble above the card.
+      const feet = 760 + 14 * S;
+      expect(world.scrollTop).toBe(feet - (812 - 180));
+    } finally {
+      offsetHeight.mockRestore();
+      offsetWidth.mockRestore();
+      jest.restoreAllMocks();
+    }
+  });
+});
+
+describe("where a bubble goes", () => {
+  const screenEdges = { left: 0, top: 0, right: 375, bottom: 812 };
+  const size = { w: 200, h: 58 };
+
+  it("sits over the head when there is room, centred on the figure", () => {
+    expect(fitBubble({ x: 180, top: 300, bottom: 328 }, size, screenEdges)).toEqual({ below: false, shift: 0 });
+  });
+
+  it("hangs under the feet when the top of what is on screen would cut it (the top of a story panel)", () => {
+    // A story frame 46px above the partner's head: a two-line bubble needs 58px.
+    const frame = { left: 16, top: 120, right: 359, bottom: 361 };
+    expect(fitBubble({ x: 60, top: 166, bottom: 194 }, size, frame).below).toBe(true);
+    // With the room it needs, it stays over the head.
+    expect(fitBubble({ x: 60, top: 120 + 8 + 58 + 2, bottom: 216 }, size, frame).below).toBe(false);
+    // No room under the feet either: whichever side has more.
+    expect(fitBubble({ x: 60, top: 150, bottom: 340 }, size, frame).below).toBe(false);
+  });
+
+  it("slides sideways to stay on screen, but never so far its tail leaves the text", () => {
+    expect(fitBubble({ x: 40, top: 300, bottom: 328 }, size, screenEdges).shift).toBe(68);
+    expect(fitBubble({ x: 340, top: 300, bottom: 328 }, size, screenEdges).shift).toBe(-73);
+    expect(fitBubble({ x: -500, top: 300, bottom: 328 }, size, screenEdges).shift).toBe(92);
+  });
+
+  it("leaves a bubble it cannot measure where it is", () => {
+    expect(fitBubble({ x: 0, top: 0, bottom: 0 }, { w: 0, h: 0 }, screenEdges)).toEqual({ below: false, shift: 0 });
+    expect(fitBubble({ x: 0, top: 0, bottom: 0 }, size, { left: 0, top: 0, right: 0, bottom: 0 })).toEqual({ below: false, shift: 0 });
   });
 });
 

@@ -918,11 +918,12 @@ describe("IslandApp: the plaza", () => {
     fireEvent.click(screen.getByRole("button", { name: /^กระดานเควสต์/ }));
     expect(screen.getByRole("dialog", { name: "กระดานเควสต์" })).toBeInTheDocument();
     fireEvent.keyDown(screen.getByRole("dialog", { name: "กระดานเควสต์" }), { key: "Escape" });
-    // The chip's sheet: เควสต์ทั้งหมด heads its short list.
+    // The chip's sheet: the board heads its short list, by the one name students meet everywhere else.
     const sheet = openMenu();
     const list = within(sheet).getByRole("list", { name: "เมนู" });
-    expect(within(list).getAllByRole("listitem")[0]).toHaveTextContent(MENU.board);
-    fireEvent.click(within(list).getByRole("button", { name: MENU.board }));
+    expect(MENU.board).toBe("กระดานเควสต์");
+    expect(within(list).getAllByRole("listitem")[0]).toHaveTextContent("กระดานเควสต์");
+    fireEvent.click(within(list).getByRole("button", { name: "กระดานเควสต์" }));
     expect(screen.getByRole("dialog", { name: "กระดานเควสต์" })).toBeInTheDocument();
   });
 

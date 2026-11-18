@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 
 import { PixelIcon } from "@/components/shift/poster/pixel/PixelRects";
 import type { ViewerCard } from "@/lib/supabase/shift-quests/types";
@@ -14,6 +14,36 @@ import styles from "./world.module.css";
 
 /** Tree stages counted on the chip's meter. */
 const STAGES = 7;
+
+/** CSS px the HUD's bottom bar covers, from the screen's bottom edge: the world's scroll-padding reads it. */
+export const HUD_BOTTOM_VAR = "--isl-hud-bottom";
+
+/**
+ * Measures how much of the screen the bottom bar covers (the next-step card
+ * is taller than the world's fixed 96px reserve) into HUD_BOTTOM_VAR, so what
+ * the world scrolls to (a plot focused by keyboard, a person who speaks)
+ * lands above the card, not behind it.
+ */
+function useHudBottom(bar: RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    const element = bar.current;
+    if (!element) return;
+    const root = document.documentElement;
+    const read = () => {
+      const covered = Math.max(0, Math.round(window.innerHeight - element.getBoundingClientRect().top));
+      root.style.setProperty(HUD_BOTTOM_VAR, `${covered}px`);
+    };
+    read();
+    const observer = typeof ResizeObserver === "function" ? new ResizeObserver(read) : null;
+    observer?.observe(element);
+    window.addEventListener("resize", read);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", read);
+      root.style.removeProperty(HUD_BOTTOM_VAR);
+    };
+  }, [bar]);
+}
 
 /**
  * The HUD over the full-screen island: a top row (the chip on the left, round
@@ -32,6 +62,8 @@ export function Hud({
   buttons: ReactNode;
   bottom: ReactNode;
 }) {
+  const bar = useRef<HTMLDivElement>(null);
+  useHudBottom(bar);
   return (
     <div className={styles.hud}>
       <header className={styles.hudTop}>
@@ -42,7 +74,9 @@ export function Hud({
         </div>
         <div className={`${styles.hudButtons} ${island.hudButtonsTight}`}>{buttons}</div>
       </header>
-      <div className={styles.hudBottom}>{bottom}</div>
+      <div ref={bar} className={styles.hudBottom}>
+        {bottom}
+      </div>
     </div>
   );
 }

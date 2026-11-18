@@ -28,8 +28,13 @@
   /* Native panning, and pinch-zoom stays on for anyone who needs bigger text or art. */
   touch-action: pan-x pan-y pinch-zoom;
   scrollbar-width: none;
-  /* Focus and scrollIntoView keep a plot clear of the HUD bars (the chip and the coin pill under it). */
-  scroll-padding: calc(env(safe-area-inset-top) + 104px) 12px calc(env(safe-area-inset-bottom) + 96px);
+  /*
+   * Focus and scrollIntoView keep a plot (or a person who speaks) clear of the HUD bars: the chip and
+   * the coin pill above, and below whatever the bottom bar holds now (the next-step card is taller
+   * than 96px), as the HUD measures it in --isl-hud-bottom.
+   */
+  scroll-padding: calc(env(safe-area-inset-top) + 104px) 12px
+    max(calc(env(safe-area-inset-bottom) + 96px), calc(var(--isl-hud-bottom, 0px) + 8px));
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -172,6 +177,12 @@
 }
 
 .plazaSpot {
+  font-family: inherit;
+  pointer-events: auto;
+}
+
+/* A place's name drawn in its own door (the notice board's, the sign, the campfire's count): the words open the place too. */
+.plazaSpot > .plazaLabel {
   pointer-events: auto;
 }
 
@@ -336,10 +347,29 @@
   clip-path: polygon(0 0, 100% 0, 100% 50%, 75% 50%, 75% 100%, 25% 100%, 25% 50%, 0 50%);
 }
 
+/* Not shown until it stands on its figure (a walker's list the engine has not drawn yet waits a frame). */
+.bubble:not([data-placed]) {
+  visibility: hidden;
+}
+
+/* No room over the head (the top of a story panel or of the screen): under the feet, the tail pointing up. */
+.bubble[data-below="true"] {
+  transform: translate(-50%, 2px);
+}
+
+.bubble[data-below="true"]::after {
+  order: -1;
+  clip-path: polygon(25% 0, 75% 0, 75% 50%, 100% 50%, 100% 100%, 0 100%, 0 50%, 25% 50%);
+}
+
 /* A short pop, in two steps like the rest of the island; under reduced motion it is simply there. */
 @media (prefers-reduced-motion: no-preference) {
   .bubble {
     animation: bubble-in 160ms steps(2, end) both;
+  }
+
+  .bubble[data-below="true"] {
+    animation-name: bubble-in-below;
   }
 }
 
@@ -352,6 +382,18 @@
   to {
     opacity: 1;
     transform: translate(-50%, calc(-100% - 2px));
+  }
+}
+
+@keyframes bubble-in-below {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 2px);
   }
 }
 

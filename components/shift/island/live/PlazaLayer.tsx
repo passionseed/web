@@ -2,7 +2,7 @@
 
 import type { CSSProperties } from "react";
 
-import type { PlazaLabel, PlazaLabelId, PlazaSpotId, PlazaWorld } from "@/lib/shift-island/live/plaza";
+import { LABEL_DOOR, labelInDoor, type PlazaLabel, type PlazaLabelId, type PlazaSpotId, type PlazaWorld } from "@/lib/shift-island/live/plaza";
 
 import { FIGURES } from "../copy";
 import { PixelAvatar } from "../player/PixelAvatar";
@@ -40,20 +40,34 @@ export interface PlazaLayerProps {
 
 const round4 = (v: number) => Math.round(v * 10_000) / 10_000;
 
-function labelStyle(label: PlazaLabel): CSSProperties {
-  const style: CSSProperties = { left: `${label.x}%`, top: `${label.y}%` };
+/** Placed at its point in the picture, or at `at` (percent of the door it is drawn in). */
+function labelStyle(label: PlazaLabel, at: { x: number; y: number } = label): CSSProperties {
+  const style: CSSProperties = { left: `${at.x}%`, top: `${at.y}%` };
   // The viewer's tag waits for their arrival walk (CSS shows it at once under reduced motion).
   if (label.delayMs) style.animationDelay = `${label.delayMs}ms`;
   return style;
 }
 
+/** A label's words (and the viewer's picture beside "คุณ"), the same wherever the label is drawn. */
+function LabelText({ id, labels, me }: { id: PlazaLabelId; labels: PlazaLayerProps["labels"]; me: PlazaLayerProps["me"] }) {
+  return (
+    <>
+      {id === "me" && me ? <PixelAvatar name={me.name} url={me.avatarUrl} size={16} decorative className={styles.plazaTagAvatar} /> : null}
+      {labels[id]}
+    </>
+  );
+}
+
 /**
  * The plaza's DOM over the living island, inside the picture's box: one
  * transparent button per tap target (the notice board, the stage, the
- * campfire) and the short labels the canvas cannot draw crisply (the Demo Day
- * sign, how many people are at the campfire, today's visitors, the viewer's
- * own tag). Labels are decoration for sighted users only: each button
- * carries the same words in its name, and the visitors' line is read out once.
+ * campfire) and the short labels the canvas cannot draw crisply (the notice
+ * board's name, the Demo Day sign, how many people are at the campfire,
+ * today's visitors, the viewer's own tag). A label that names a place with a
+ * button (LABEL_DOOR) is drawn inside that button, so a tap on the words opens
+ * the place as a tap on its picture does. Labels are decoration for sighted
+ * users only: each button carries the same words in its name, and the
+ * visitors' line is read out once.
  * Where the people can talk (`onPeople`), the day's count is a button too:
  * the keyboard's and screen reader's way to what a tap on a person says.
  */
@@ -62,8 +76,13 @@ export function PlazaLayer({ world, labels, names, onSpot, interactive, showLabe
   const people = interactive ? onPeople : undefined;
   const all = showLabels ? world.labels.filter((label) => labels[label.id]) : [];
   const count = all.find((label) => label.id === "visitors") ?? null;
-  // With people to greet, the day's count is their button (below), not a label.
-  const shown = people ? all.filter((label) => label !== count) : all;
+  const doors = new Set(spots.map((spot) => spot.id));
+  const doorOf = (label: PlazaLabel) => {
+    const door = LABEL_DOOR[label.id];
+    return door != null && doors.has(door) ? door : null;
+  };
+  // With people to greet, the day's count is their button (below); a place's name goes in its door. Neither is a loose label.
+  const shown = all.filter((label) => !(people && label === count) && doorOf(label) == null);
   // Otherwise the visitors' line is said once, for screen readers, while the figures show.
   const visitorsLine = count && !people ? labels.visitors : null;
   const countLine = count ? labels.visitors!.replace("\n", " ") : null;
@@ -87,7 +106,22 @@ export function PlazaLayer({ world, labels, names, onSpot, interactive, showLabe
               }}
               aria-label={names[spot.id]}
               onClick={() => onSpot?.(spot.id)}
-            />
+            >
+              {all
+                .filter((label) => doorOf(label) === spot.id)
+                .map((label) => (
+                  <span
+                    key={label.id}
+                    className={styles.plazaLabel}
+                    data-label={label.id}
+                    data-anchor={label.anchor}
+                    style={labelStyle(label, labelInDoor(label, spot))}
+                    aria-hidden="true"
+                  >
+                    <LabelText id={label.id} labels={labels} me={me} />
+                  </span>
+                ))}
+            </button>
           ))}
           {people && count ? (
             <button
@@ -120,10 +154,7 @@ export function PlazaLayer({ world, labels, names, onSpot, interactive, showLabe
               data-delayed={label.delayMs ? "true" : undefined}
               style={labelStyle(label)}
             >
-              {label.id === "me" && me ? (
-                <PixelAvatar name={me.name} url={me.avatarUrl} size={16} decorative className={styles.plazaTagAvatar} />
-              ) : null}
-              {labels[label.id]}
+              <LabelText id={label.id} labels={labels} me={me} />
             </span>
           ))}
         </div>

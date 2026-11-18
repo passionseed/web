@@ -10,10 +10,12 @@ import { allSprites } from "../atlas";
 import { lampRects, sceneModel } from "../draw";
 import { overlaps, union, type Rect } from "../geometry";
 import {
+  LABEL_DOOR,
   MAX_SEATS,
   NO_PLAZA,
   PLAZA_LAYOUT,
   boothFlagAt,
+  labelInDoor,
   plazaCentre,
   plazaWorld,
   type PlazaInput,
@@ -349,6 +351,28 @@ describe("plazaWorld content", () => {
     expect(more).toEqual({ id: "campfireMore", x: pct(c.x - 24, scene.width), y: pct(c.y + 46, scene.height), anchor: "left" });
     // An empty board still stands and can be tapped.
     expect(names(world)).toContain("notice_board");
+  });
+
+  it("gives every place's name a door it lands on exactly: each door is past the 48px floor close up, so the button is the spot itself", () => {
+    for (const n of SIZES) {
+      const big = buildScene(plots(n, 1, 1), { markMine: true, festival: true });
+      const world = plazaWorld(big, fullInput(big));
+      const named = world.labels.filter((label) => LABEL_DOOR[label.id]);
+      expect(named.map((label) => label.id)).toEqual(["notice", "sign", "campfireCount", "campfireMore"]);
+      for (const label of named) {
+        const door = world.spots.find((spot) => spot.id === LABEL_DOOR[label.id])!;
+        expect(door).toBeDefined();
+        const at = labelInDoor(label, door);
+        expect(door.x + (at.x / 100) * door.w).toBeCloseTo(label.x, 3);
+        expect(door.y + (at.y / 100) * door.h).toBeCloseTo(label.y, 3);
+        // TAP native px is 48 CSS px at 2x, the closest view there is.
+        const box = nativeSpot(big, door);
+        expect(Math.min(box.w, box.h)).toBeGreaterThanOrEqual(TAP);
+      }
+    }
+    // The visitors' count and the viewer's tag name people, not a place.
+    expect(LABEL_DOOR.visitors).toBeUndefined();
+    expect(LABEL_DOOR.me).toBeUndefined();
   });
 
   describe("prize board", () => {

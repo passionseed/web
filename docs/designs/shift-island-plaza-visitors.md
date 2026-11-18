@@ -124,20 +124,32 @@ that points to a student:
   a fingertip (44 CSS px) round the figure, plus a pixel for a step taken;
   on the whole island only the figure itself. Over a plot's or the plaza's own
   button only the figure itself counts, so the plot still opens. The bubble
-  follows a walker without a React render per frame and slides sideways to
-  stay on screen. It closes after 5 s, on Escape, on a tap elsewhere and when
-  a sheet opens. A tapped story figure holds its panel while it talks.
+  follows a walker with style writes only on a frame the engine painted (it
+  hands back the same boxes until it paints again), slides sideways to stay
+  on screen, and hangs under the feet when there is no room over the head (the
+  top of a story panel, the top of the screen). It closes after 5 s, on
+  Escape, on a tap on the bubble itself (which opens nothing under it), on a
+  tap elsewhere and when a sheet opens. A tapped story figure holds its panel
+  while it talks; a figure a narrow screen's crop cuts off is not tapped or
+  described.
 - **Keyboard and screen readers.** The day's count under the crowd is a
-  button: each press has the next person say their line (the viewer, the team,
-  everyone else, then the trees' partners), and a live region reads it as
-  "คนที่ 2 จาก 7: ...". Without a count on screen the same button waits out of
-  sight until a keyboard focuses it. The story's panel describes who is in the
-  picture. Reduced motion: nobody walks, so the bubble holds still and does
-  not animate in.
+  button: each press has the next of today's visitors say their line (the
+  viewer, the team, everyone else, then round again), and a live region reads
+  it as "คนที่ 2: ...". No total: some of the day's count sit at the campfire
+  or are only a "+N". The person who speaks is scrolled into view with their
+  bubble, above the next-step card (the HUD measures its bottom bar into the
+  world's scroll-padding, which also keeps keyboard-focused plots clear of
+  it). A tree's partner is named in its plot's button (มีพันธมิตรคนแรกแล้ว).
+  Without a count on screen the same button waits out of sight until a
+  keyboard focuses it. The story's panel describes who is in the picture.
+  Reduced motion: nobody walks, so the bubble holds still and does not
+  animate in.
 - **Adding a figure** (the campfire's evening guest, PR #331): a kind in
   `figures.ts`, its lines in `FIGURES`, and one entry in `plazaWorld` with its
-  actor's index. The tap, the bubble, the keyboard's turn and the live region
-  come with it. A guest at the campfire wins a tap on itself over the
+  actor's index. The tap, the bubble and the live region come with it; the
+  people button's turn takes it only with a rank in `figureLine.ts`
+  `TURN_RANK` (today's visitors), otherwise its words go in the name of the
+  button it stands on (the campfire's), as a tree's partner's do. A guest at the campfire wins a tap on itself over the
   campfire's own tap target, as a tree's partner does over its plot.
 
 ## Next step, not built: โชว์ตัวฉันบนเกาะ

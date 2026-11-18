@@ -55,6 +55,8 @@ export interface LiveIslandEvents {
 const PHASE_CHECK_MS = 60_000;
 /** Native px added around the visible part, so rounding never leaves a seam. */
 const VIEW_MARGIN = 2;
+/** No actor boxes yet (nothing drawn), one shared value. */
+const NO_BOXES: readonly (Rect | null)[] = [];
 
 type Img = CanvasImageSource;
 type Ctx = CanvasRenderingContext2D;
@@ -131,6 +133,8 @@ export class LiveIsland {
   private nextPhaseCheck = 0;
   private swaying: boolean[] = [];
   private actorsKey: string;
+  /** The actor boxes last read (actorBoxes), with the frame, actors and atlas they were read from. */
+  private boxes: { at: Motion | number; actors: readonly LiveActor[]; rects: Layers<Img>["rects"]; list: readonly (Rect | null)[] } | null = null;
   /** Per actor, the tick it appeared on: a `once` actor (an arrival) plays from there. */
   private actorsSince: number[];
   private readonly cleanup: (() => void)[] = [];
@@ -193,12 +197,27 @@ export class LiveIsland {
    * Where each actor stands on screen now, native px: the frame last painted,
    * so a tap meets what the eye sees. Null for an actor not drawn; empty
    * before the first frame and after a failure. A read, never a repaint.
+   * The same array comes back until another frame is painted or the actors
+   * change, so a reader polling every frame (a bubble following a walker)
+   * allocates nothing and can tell that nobody moved.
+   *
+   * `actors` is the list the caller's indexes point into. React hands the
+   * engine a new list only after the caller's layout effects have run; until
+   * then the answer is null (ask again next frame), never the boxes of
+   * whoever stood at that index before.
    */
-  actorBoxes(): (Rect | null)[] {
+  actorBoxes(actors?: readonly LiveActor[]): readonly (Rect | null)[] | null {
+    if (actors && actors !== this.props.actors) return null;
     const layers = this.layers;
-    if (!this.ready || this.failed || this.destroyed || !this.model || !layers) return [];
-    const motion = this.drawn ?? this.motion(this.currentTick());
-    return this.props.actors.map((actor, i) => actorRect(actor, motion.actors[i] ?? 0, layers.rects));
+    if (!this.ready || this.failed || this.destroyed || !this.model || !layers) return NO_BOXES;
+    // The frame on the canvas, or (before the loop's first frame) the tick it is about to paint.
+    const at = this.drawn ?? this.currentTick();
+    const kept = this.boxes;
+    if (kept && kept.at === at && kept.actors === this.props.actors && kept.rects === layers.rects) return kept.list;
+    const motion = typeof at === "number" ? this.motion(at) : at;
+    const list = this.props.actors.map((actor, i) => actorRect(actor, motion.actors[i] ?? 0, layers.rects));
+    this.boxes = { at, actors: this.props.actors, rects: layers.rects, list };
+    return list;
   }
 
   destroy(): void {

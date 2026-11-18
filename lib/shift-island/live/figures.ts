@@ -12,8 +12,10 @@
  * Adding a figure (the campfire's evening guest, say): give it a kind here
  * and its lines in copy.ts FIGURES, then list it where its actor is made
  * (plaza.ts plazaWorld, with the actor's index). The tap, the bubble that
- * follows it, the keyboard's turn through the island and the screen reader's
- * line all come with that.
+ * follows it and the screen reader's line come with that. The people
+ * button's turn goes round today's visitors only (figureLine.ts TURN_RANK):
+ * a figure that is one of them gets a rank there; any other gets its words
+ * into the name of the button it stands on, as a tree's partner does.
  */
 import type { IslandScene } from "@/bot/src/quests/island/scene";
 

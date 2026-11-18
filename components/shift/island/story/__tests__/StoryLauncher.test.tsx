@@ -209,14 +209,17 @@ describe("StoryLauncher", () => {
   it("has the builder and the tester say what they stand for when tapped, holding the panel while they talk", () => {
     renderLauncher();
     fireEvent.click(panel(1));
-    // The current panel's frame, as laid out at the test's 320 x 240 box: the tree view (48, 64, 160, 112) at 2x.
+    // The current panel's frame, as laid out at the test's 320 x 240 box: the tree view (48, 64, 160, 112) at 2x,
+    // centred on the screen below the skip row (not at the page's corner).
     const frame = () => screen.getByRole("group", { name: /^ภาพ/ }).querySelector<HTMLElement>("[data-phase]:not([aria-hidden])")!;
+    const left = 28;
+    const top = 140;
     const measure = () => {
-      frame().getBoundingClientRect = () => ({ left: 0, top: 0, x: 0, y: 0, width: 320, height: 224, right: 320, bottom: 224 }) as DOMRect;
+      frame().getBoundingClientRect = () => ({ left, top, x: left, y: top, width: 320, height: 224, right: left + 320, bottom: top + 224 }) as DOMRect;
     };
     const tapAt = (group: HTMLElement, x: number, y: number) => {
       measure();
-      fireEvent.click(group, { detail: 1, clientX: (x - 48) * 2, clientY: (y - 64) * 2 });
+      fireEvent.click(group, { detail: 1, clientX: left + (x - 48) * 2, clientY: top + (y - 64) * 2 });
     };
     const bubble = () => document.querySelector<HTMLElement>("[data-bubble]");
     // Screen readers hear who is in the picture.
@@ -239,6 +242,59 @@ describe("StoryLauncher", () => {
     tapAt(panel(3), 60, 70);
     expect(panel(4)).toBeInTheDocument();
     expect(bubble()).toBeNull();
+  });
+
+  describe("the festival's partners", () => {
+    // At the test's 320 x 240 box the festival shows native (112, 64) to (432, 304) at 1x.
+    const crop = { x: 112, y: 64 };
+    const frameAt = { left: 28, top: 140 };
+    const frame = () => screen.getByRole("group", { name: /^ภาพ/ }).querySelector<HTMLElement>("[data-phase]:not([aria-hidden])")!;
+    const tapAt = (x: number, y: number) => {
+      frame().getBoundingClientRect = () =>
+        ({ ...frameAt, x: frameAt.left, y: frameAt.top, width: 320, height: 240, right: frameAt.left + 320, bottom: frameAt.top + 240 }) as DOMRect;
+      fireEvent.click(panel(4), { detail: 1, clientX: frameAt.left + (x - crop.x), clientY: frameAt.top + (y - crop.y) });
+    };
+    const bubble = () => document.querySelector<HTMLElement>("[data-bubble]");
+
+    it("hangs a partner's line under its feet when the top of the panel would cut it off", () => {
+      const real = window.getComputedStyle;
+      // The frame clips (overflow: hidden); a two-line bubble is 58px tall and 220px wide.
+      const style = jest.spyOn(window, "getComputedStyle").mockImplementation((el, pseudo) =>
+        el instanceof HTMLElement && el.classList.contains("frame") ? ({ overflowX: "hidden", overflowY: "hidden" } as CSSStyleDeclaration) : real(el, pseudo),
+      );
+      const height = jest.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(58);
+      const width = jest.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(220);
+      try {
+        renderLauncher();
+        toLast();
+        // The partner of slot 7 stands at (142, 110): its head 46px under the frame's top.
+        tapAt(147, 117);
+        expect(bubble()).toHaveAttribute("data-bubble", "partner");
+        expect(bubble()).toHaveAttribute("data-below", "true");
+        // Placed at its feet, (110 + 14 - 64) of 240.
+        expect(parseFloat(bubble()!.style.top)).toBeCloseTo(25, 3);
+        // The one by slot 1, lower in the panel, talks over its head.
+        tapAt(179, 165);
+        expect(bubble()).not.toHaveAttribute("data-below");
+        expect(parseFloat(bubble()!.style.top)).toBeCloseTo(((158 - 64) / 240) * 100, 3);
+      } finally {
+        style.mockRestore();
+        height.mockRestore();
+        width.mockRestore();
+      }
+    });
+
+    it("leaves out a partner the panel's crop cuts off: not described, not tapped", () => {
+      renderLauncher();
+      toLast();
+      // Slot 3's partner stands at x 430 to 440: only its edge is inside the crop, which ends at 432.
+      const described = panel(4).querySelector(".sr-only")!.textContent!.split(" · ");
+      expect(described).toHaveLength(2);
+      tapAt(431, 165);
+      expect(bubble()).toBeNull();
+      tapAt(147, 117);
+      expect(bubble()).toHaveAttribute("data-bubble", "partner");
+    });
   });
 
   it("closes on Escape and remembers it", () => {

@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { buildScene } from "@/bot/src/quests/island/scene";
 import type { IslandCanvasProps } from "@/components/shift/island/live/IslandCanvas";
 import { waterColor } from "@/lib/shift-island/live/lighting";
-import { plazaWorld, type PlazaInput, type PlazaLabelId, type PlazaSpotId } from "@/lib/shift-island/live/plaza";
+import { LABEL_DOOR, labelInDoor, plazaWorld, type PlazaInput, type PlazaLabelId, type PlazaSpotId } from "@/lib/shift-island/live/plaza";
 import type { IslandPicture } from "@/lib/shift-island/picture";
 
 import { ISLAND, PRE_STAGE, stageName } from "../copy";
@@ -446,15 +446,40 @@ describe("IslandViewport", () => {
         ["campfireMore", "left", labels.campfireMore],
       ]);
       // A label without text (here the notice board's, which this test leaves out) is not shown.
-      const points = new Map(plazaWorld(live.scene!, input).labels.map((label) => [label.id, label]));
+      const world = plazaWorld(live.scene!, input);
+      const points = new Map(world.labels.map((label) => [label.id, label]));
       shown.forEach((el) => {
         const point = points.get(el.dataset.label as PlazaLabelId)!;
-        expect(el.style.left).toBe(`${point.x}%`);
-        expect(el.style.top).toBe(`${point.y}%`);
+        // Each names a place with a button, so it is drawn in that button, at the same point of the picture.
+        const door = world.spots.find((spot) => spot.id === LABEL_DOOR[point.id])!;
+        expect(el.closest("button")).toHaveAttribute("data-spot", door.id);
+        const at = labelInDoor(point, door);
+        expect(el.style.left).toBe(`${at.x}%`);
+        expect(el.style.top).toBe(`${at.y}%`);
+        expect(door.x + (at.x / 100) * door.w).toBeCloseTo(point.x, 3);
+        expect(door.y + (at.y / 100) * door.h).toBeCloseTo(point.y, 3);
         expect(el.closest("[aria-hidden='true']")).not.toBeNull();
       });
       rerender(<IslandViewport picture={live} onPlot={jest.fn()} plaza={plaza(jest.fn())} whole />);
       expect(container.querySelector("[data-label]")).toBeNull();
+    });
+
+    it("makes a place's name part of its door: a tap on the words opens the place, and the button's name stays its own", () => {
+      mockLive.mode = "ready";
+      const onSpot = jest.fn();
+      const named = { ...labels, notice: "กระดานเควสต์" };
+      const { container } = render(<IslandViewport picture={live} onPlot={jest.fn()} plaza={{ ...plaza(onSpot), labels: named }} />);
+      const words = container.querySelector<HTMLElement>('[data-label="notice"]')!;
+      expect(words).toHaveTextContent("กระดานเควสต์");
+      const board = screen.getByRole("button", { name: names.notice });
+      expect(board).toContainElement(words);
+      fireEvent.click(words);
+      fireEvent.click(container.querySelector<HTMLElement>('[data-label="sign"]')!);
+      fireEvent.click(container.querySelector<HTMLElement>('[data-label="campfireMore"]')!);
+      expect(onSpot.mock.calls).toEqual([["notice"], ["stage"], ["campfire"]]);
+      // Without a door (nobody listens), the words are a picture label again, out of every button.
+      const { container: still } = render(<IslandViewport picture={live} onPlot={jest.fn()} plaza={{ ...plaza(), labels: named }} />);
+      expect(still.querySelector('[data-label="notice"]')!.closest("button")).toBeNull();
     });
 
     describe("the notice board on screen", () => {

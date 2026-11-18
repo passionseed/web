@@ -7,7 +7,8 @@ import { BUBBLE_MS, FigureBubble } from "@/components/shift/island/live/FigureBu
 import { figureLine } from "@/components/shift/island/live/figureLine";
 import { IslandLive } from "@/components/shift/island/live/IslandLive";
 import { PixelIcon } from "@/components/shift/poster/pixel/PixelRects";
-import { hitFigure, hitSlop } from "@/lib/shift-island/live/figures";
+import { hitFigure, hitSlop, type Figure } from "@/lib/shift-island/live/figures";
+import type { Rect } from "@/lib/shift-island/live/geometry";
 
 import { PALETTE, treeGrid } from "../sprites";
 import { STORY, storyLine, type StoryCta } from "./copy";
@@ -85,7 +86,7 @@ function StoryBody({
   const panels = useMemo(() => storyPanels(), []);
   const last = panels.length - 1;
   const [index, setIndex] = useState(0);
-  /** A person talking on the current panel: their index in its figures, and a key per tap. */
+  /** A person talking on the current panel: their index among the people its crop shows, and a key per tap. */
   const [talk, setTalk] = useState<{ panel: number; figure: number; key: number } | null>(null);
   const frame = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState<ReadonlySet<number>>(() => new Set());
@@ -96,6 +97,8 @@ function StoryBody({
   const foot = useRef<HTMLDivElement>(null);
   const box = useStageBox(column, head, foot);
   const fits = useMemo(() => panels.map((p) => fitPanel(p.view, p.focus, box, box.dpr)), [panels, box]);
+  // Only the people the panel's crop shows can be tapped or are described: a narrow screen may cut one off.
+  const people = useMemo(() => panels.map((p, i) => p.figures.filter((figure) => inCrop(figure, fits[i].crop))), [panels, fits]);
   // One height for every panel, so the line under the picture never moves on a cut.
   const stageHeight = Math.max(...fits.map((fit) => fit.height));
 
@@ -124,9 +127,10 @@ function StoryBody({
     const crop = fits[index].crop;
     // Only people the canvas drew can talk: a panel showing its fallback tree just moves on.
     const drawn = panel.scene !== null && !failed.has(index);
-    if (event.detail !== 0 && drawn && panel.figures.length > 0 && box && box.width > 0 && box.height > 0) {
+    const shown = people[index];
+    if (event.detail !== 0 && drawn && shown.length > 0 && box && box.width > 0 && box.height > 0) {
       const point = { x: crop.x + ((event.clientX - box.left) / box.width) * crop.w, y: crop.y + ((event.clientY - box.top) / box.height) * crop.h };
-      const hit = hitFigure(panel.figures, [], point, hitSlop(box.width / crop.w, false));
+      const hit = hitFigure(shown, [], point, hitSlop(box.width / crop.w, false));
       if (hit) {
         setTalk({ panel: index, figure: hit.index, key: Date.now() });
         return;
@@ -180,15 +184,13 @@ function StoryBody({
               failed={failed.has(i) || panel.scene === null}
               onFail={() => fail(i)}
               frameRef={i === index ? frame : undefined}
-              talking={i === index && talking ? talking : null}
+              speaker={i === index && talking ? { figure: people[i][talking.figure], key: talking.key } : null}
               onQuiet={() => setTalk(null)}
             />
           ) : null,
         )}
         {/* Who is in the picture, for screen readers: what a tap on each person says. */}
-        {panels[index].figures.length > 0 ? (
-          <p className="sr-only">{panels[index].figures.map((figure) => figureLine(figure)).join(" · ")}</p>
-        ) : null}
+        {people[index].length > 0 ? <p className="sr-only">{people[index].map((figure) => figureLine(figure)).join(" · ")}</p> : null}
       </div>
 
       <div ref={foot} className={styles.foot}>
@@ -228,14 +230,14 @@ interface PanelProps {
   onFail: () => void;
   /** The current panel's box: taps are measured against it. */
   frameRef?: RefObject<HTMLDivElement | null>;
-  /** A person on this panel says their line. */
-  talking?: { figure: number; key: number } | null;
+  /** A person on this panel says their line (a key per tap). */
+  speaker?: { figure: Figure | undefined; key: number } | null;
   onQuiet?: () => void;
 }
 
-function Panel({ panel, fit, current, still, failed, onFail, frameRef, talking = null, onQuiet }: PanelProps) {
+function Panel({ panel, fit, current, still, failed, onFail, frameRef, speaker = null, onQuiet }: PanelProps) {
   const size: CSSProperties = { width: `${fit.width}px`, height: `${fit.height}px` };
-  const figure = talking ? panel.figures[talking.figure] : undefined;
+  const figure = speaker?.figure;
   return (
     <div ref={frameRef} className={styles.frame} style={size} data-phase={panel.phase} aria-hidden={current ? undefined : true}>
       {failed || !panel.scene ? (
@@ -259,11 +261,19 @@ function Panel({ panel, fit, current, still, failed, onFail, frameRef, talking =
           onFail={onFail}
         />
       )}
-      {figure && talking && !failed ? (
-        <FigureBubble key={talking.key} figure={figure} view={fit.crop} follow={false} onGone={() => onQuiet?.()} />
+      {figure && speaker && !failed ? (
+        <FigureBubble key={speaker.key} figure={figure} view={fit.crop} follow={false} onGone={() => onQuiet?.()} />
       ) : null}
     </div>
   );
+}
+
+/** The panel shows this person: the middle of their box is inside its crop. */
+function inCrop(figure: Figure, crop: Rect): boolean {
+  if (!figure.box) return false;
+  const x = figure.box.x + figure.box.w / 2;
+  const y = figure.box.y + figure.box.h / 2;
+  return x >= crop.x && x < crop.x + crop.w && y >= crop.y && y < crop.y + crop.h;
 }
 
 /** The fallback tree fills about two thirds of the panel's height, in whole CSS pixels per sprite pixel. */
