@@ -64,6 +64,22 @@ describe("story scenes", () => {
     expect(third.actors.map((a) => a.flip)).toEqual([false, false]);
   });
 
+  it("names who a tap can ask in each panel, each at its sprite's box: the builder, the tester, the festival's partners", () => {
+    const [first, second, third, fourth] = panels;
+    expect(first.figures).toEqual([]);
+    const box = (a: { x: number; y: number }) => ({ x: a.x, y: a.y, w: MOTION_SIZES.builder_0[0], h: MOTION_SIZES.builder_0[1] });
+    expect(second.figures).toEqual([{ kind: "builder", n: 0, box: box(second.actors[0]) }]);
+    expect(third.figures).toEqual([
+      { kind: "builder", n: 0, box: box(third.actors[0]) },
+      { kind: "tester", n: 0, box: box(third.actors[1]) },
+    ]);
+    // A partner by every made-up tree that passed main quest 3, where the scene draws its visitor.
+    expect(fourth.figures.map((f) => [f.kind, f.n])).toEqual(
+      FESTIVAL_PLOTS.filter((p) => p.visitor).map((p) => ["partner", p.slot]),
+    );
+    for (const figure of fourth.figures) expect(inside(figure.box!, fourth.view)).toBe(true);
+  });
+
   it("every actor frame exists and every actor stands inside its panel's view", () => {
     for (const panel of panels) {
       for (const actor of panel.actors) {

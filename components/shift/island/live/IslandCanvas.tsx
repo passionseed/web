@@ -4,7 +4,11 @@ import { useEffect, useRef, type RefObject } from "react";
 
 import type { IslandScene } from "@/bot/src/quests/island/scene";
 import { LiveIsland, type LiveIslandProps } from "@/lib/shift-island/live/engine";
+import type { Rect } from "@/lib/shift-island/live/geometry";
 import type { LightPhase, LiveActor } from "@/lib/shift-island/live/types";
+
+/** Reads where each actor stands on screen now (LiveIsland.actorBoxes), for taps on the people. */
+export type ActorBoxes = () => readonly (Rect | null)[];
 
 export interface IslandCanvasProps {
   scene: IslandScene;
@@ -33,6 +37,8 @@ export interface IslandCanvasProps {
   fit?: boolean;
   /** Gives the canvas role="img" with this name; without it the canvas is hidden from assistive tech. */
   label?: string;
+  /** Filled with a reader of the actors' boxes while the engine lives (null otherwise): taps hit-test the people with it. */
+  actorBoxes?: { current: ActorBoxes | null };
 }
 
 const NO_ACTORS: LiveActor[] = [];
@@ -58,6 +64,7 @@ export default function IslandCanvas({
   scroller,
   fit = false,
   label,
+  actorBoxes,
 }: IslandCanvasProps) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const engine = useRef<LiveIsland | null>(null);
@@ -91,10 +98,15 @@ export default function IslandCanvas({
       onPhase: (p, water) => events.current.onPhase?.(p, water),
     });
     engine.current = live;
+    const boxes = actorBoxes;
+    if (boxes) boxes.current = () => live.actorBoxes();
     return () => {
       live.destroy();
       engine.current = null;
+      if (boxes) boxes.current = null;
     };
+    // One engine per canvas; the reader's holder is fixed for its life too.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

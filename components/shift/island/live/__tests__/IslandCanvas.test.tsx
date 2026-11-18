@@ -278,6 +278,31 @@ describe("IslandCanvas", () => {
     expect(canvas).not.toHaveAttribute("aria-hidden");
   });
 
+  it("lets taps read where its walkers stand, from the frame last painted, while it lives", () => {
+    // One native px a frame to the right, a frame every tick.
+    const walker = {
+      frames: ["crowd_stand_of", "crowd_stride_of", "crowd_stand_of", "crowd_stride_of"],
+      x: 40,
+      y: 50,
+      frameMs: 125,
+      steps: [0, 1, 2, 3].map((dx) => ({ dx, dy: 0 })),
+    };
+    const holder: { current: (() => readonly ({ x: number; y: number; w: number; h: number } | null)[]) | null } = { current: null };
+    const { unmount } = render(<IslandCanvas scene={scene} actors={[walker]} actorBoxes={holder} />);
+    // Nothing drawn yet: nobody to hit.
+    expect(holder.current?.()).toEqual([]);
+    firstFrame();
+    expect(holder.current?.()).toEqual([{ x: 40, y: 50, w: 10, h: 14 }]);
+    act(() => {
+      jest.advanceTimersByTime(260);
+    });
+    const [box] = holder.current!();
+    expect(box!.x).toBeGreaterThan(40);
+    expect(box).toMatchObject({ y: 50, w: 10, h: 14 });
+    unmount();
+    expect(holder.current).toBeNull();
+  });
+
   it("cleans up every timer when unmounted", () => {
     const { unmount } = render(<IslandCanvas scene={scene} />);
     firstFrame();

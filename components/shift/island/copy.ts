@@ -377,8 +377,6 @@ export const NEXT_STEP = {
     reviewed: "ดูผล",
     wake: "กลับมาทำต่อ",
   },
-  /** The quiet link under the card. */
-  board: "ดูเควสต์ทั้งหมด",
 };
 
 /**
@@ -398,6 +396,8 @@ export const RESULTS = {
 
 /** The menu's short list (MenuFoot, at the foot of the chip's sheet): only what has no place on the island itself. */
 export const MENU = {
+  /** DRAFT: the whole quest board, first in the chip sheet's short list (the plaza's notice board opens it too). */
+  board: "เควสต์ทั้งหมด",
   story: "เรื่องเล่า",
   guide: "คู่มือ",
   /** The sound switch's line, and its state at the end of the line. */
@@ -645,6 +645,8 @@ export const CANVAS = {
 export const NOTICE = {
   board: HUD.board,
   pinned: (titles: string[]) => `${HUD.board}: ${titles.join(" · ")}`,
+  /** DRAFT: the board's name on the island, always shown over it so it reads as a place to tap. */
+  label: PLACES.board,
 };
 
 /**
@@ -706,6 +708,53 @@ export const VISITORS = {
   more: (count: number) => `+${count}`,
   /** The tag over the viewer's own figure, beside their picture. */
   me: "คุณ",
+};
+
+/**
+ * DRAFT: what a person on the island says when tapped, in a small bubble over
+ * them (live/FigureBubble.tsx). One short, true line each: never a name, and
+ * nothing that points to a student. A figure is only a kind and a number
+ * (lib/shift-island/live/figures.ts) and its line is picked from those, so
+ * the same figure always says the same thing. A new kind (the campfire's
+ * evening guest) adds its lines here.
+ */
+export const FIGURES = {
+  /** The viewer's own figure, drawn only once they checked in today. */
+  me: ["นี่คือคุณ วันนี้เช็กอินบนเกาะแล้ว"],
+  /** A teammate who checked in today (the viewer's own team only, in the team's colour). */
+  team: [
+    "เพื่อนร่วมทีมของคุณ วันนี้เช็กอินแล้ว",
+    "ทีมเดียวกับคุณ วันนี้แวะมาที่เกาะแล้ว",
+    "เพื่อนร่วมทีมของคุณ วันนี้มาที่เกาะแล้ว",
+  ],
+  /** Anyone else who checked in today: all the page knows is that they came. */
+  crowd: [
+    "สวัสดี วันนี้แวะมาที่เกาะแล้ว",
+    "วันนี้เช็กอินแล้ว ขอให้วันนี้ไปได้ดี",
+    "อีกหนึ่งคนที่มาเกาะวันนี้",
+    "แวะมาทักทาย วันนี้เช็กอินแล้ว",
+    "สวัสดี เจอกันบนเกาะวันนี้",
+  ],
+  /** Beside another team's tree: the team passed main quest 3, its first partner (ได้พันธมิตรคนแรก). */
+  partner: [
+    "ยืนแทนพันธมิตรคนแรกของทีมนี้ คนที่ยอมลงมือกับทีม",
+    "พันธมิตรคนแรกของทีมนี้ ตกลงทำขั้นต่อไปกับทีมแล้ว",
+  ],
+  /** The same, beside the viewer's own team's tree. */
+  partnerMine: [
+    "ยืนแทนพันธมิตรคนแรกของทีมคุณ คนที่ยอมลงมือกับทีม",
+    "พันธมิตรคนแรกของทีมคุณ ตกลงทำขั้นต่อไปกับทีมแล้ว",
+  ],
+  /** The story's builder, hammer in hand beside the young tree. */
+  builder: ["คนที่ลงมือสร้างงานจริง ทีละชิ้น"],
+  /** The story's tester, phone in hand beside the grown tree. */
+  tester: ["คนนอกทีม มาลองงานที่ทำจริง"],
+  /** The plaza's people button (the day's count, or hidden until focused): each press greets the next person. */
+  turn: "ทักทายทีละคน",
+  /** Its name when no count is on screen. */
+  people: "คนบนเกาะ",
+  /** Read before a line reached by that button. */
+  nth: (n: number, total: number) => `คนที่ ${n} จาก ${total}`,
 };
 
 /**

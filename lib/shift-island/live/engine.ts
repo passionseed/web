@@ -20,7 +20,7 @@ import type { IslandScene } from "@/bot/src/quests/island/scene";
 
 import { allSprites, buildAtlasData, styleKey, stylesOf, type AtlasData } from "./atlas";
 import { TICK_MS, motionAt, nextTickAt, type Motion } from "./clock";
-import { dirtyRects, paintLand, paintOverlay, redrawRect, sceneModel, seaRectsFor, type DrawContext, type Layers, type SceneModel } from "./draw";
+import { actorRect, dirtyRects, paintLand, paintOverlay, redrawRect, sceneModel, seaRectsFor, type DrawContext, type Layers, type SceneModel } from "./draw";
 import { area, exposed, intersect, visibleRect, type Rect } from "./geometry";
 import { bangkokPhase, waterColor } from "./lighting";
 import type { LightPhase, LiveActor } from "./types";
@@ -187,6 +187,18 @@ export class LiveIsland {
       if (repaint) this.paintAll();
       this.sync();
     });
+  }
+
+  /**
+   * Where each actor stands on screen now, native px: the frame last painted,
+   * so a tap meets what the eye sees. Null for an actor not drawn; empty
+   * before the first frame and after a failure. A read, never a repaint.
+   */
+  actorBoxes(): (Rect | null)[] {
+    const layers = this.layers;
+    if (!this.ready || this.failed || this.destroyed || !this.model || !layers) return [];
+    const motion = this.drawn ?? this.motion(this.currentTick());
+    return this.props.actors.map((actor, i) => actorRect(actor, motion.actors[i] ?? 0, layers.rects));
   }
 
   destroy(): void {

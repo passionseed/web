@@ -84,6 +84,15 @@ function labelBox(scene: IslandScene, label: PlazaLabel): Rect {
   return label.anchor === "bottom" ? { x: x - 32, y: y - 20, w: 64, h: 20 } : { x, y: y - 10, w: 64, h: 20 };
 }
 
+/**
+ * The notice board's name names the board, so it sits right over it: its
+ * point is closer than 40 px to the ring of tags above the plaza. Its box is
+ * checked instead, at its real size (wider, to spare): "กระดานเควสต์" on one
+ * line is 95 x 21 CSS px at 375px (48 x 11 native at 2x).
+ */
+const ON_ITS_PLACE = new Set<PlazaLabel["id"]>(["notice"]);
+const NOTICE_LABEL = { w: 56, h: 11 };
+
 function grow(r: Rect, min: number): Rect {
   const w = Math.max(min, r.w);
   const h = Math.max(min, r.h);
@@ -204,6 +213,17 @@ describe("plazaWorld placement", () => {
     const tags = list.filter((o) => o.what.startsWith("tag "));
     const trees = list.filter((o) => o.what.startsWith("tree "));
     for (const label of world.labels) {
+      if (ON_ITS_PLACE.has(label.id)) {
+        const x = (label.x / 100) * scene.width;
+        const y = (label.y / 100) * scene.height;
+        const box = { x: x - NOTICE_LABEL.w / 2, y: y - NOTICE_LABEL.h, ...NOTICE_LABEL };
+        // Clear of trees, tags (every glyph size), the well, and the pieces of the plaza other than its own board.
+        const hit = hits(box, [...tags, ...trees, ...list.filter((o) => o.what === "well")]);
+        if (hit.length) problems.push(`label ${label.id}: ${hit.join(", ")}`);
+        const own = world.actors.filter((a) => !a.frames[0].startsWith("notice_") && overlaps(actorRect(a), box));
+        if (own.length) problems.push(`label ${label.id} over ${own.map((a) => a.frames[0]).join(", ")}`);
+        continue;
+      }
       const box = labelBox(scene, label);
       const hit = hits(box, [...tags, ...trees]);
       if (hit.length) problems.push(`label ${label.id}: ${hit.join(", ")}`);
@@ -260,7 +280,7 @@ describe("plazaWorld content", () => {
 
   it("is NO_PLAZA when there is nothing to show", () => {
     expect(plazaWorld(scene, { festival: null, pins: null, campfire: null })).toBe(NO_PLAZA);
-    expect(NO_PLAZA).toEqual({ actors: [], spots: [], labels: [] });
+    expect(NO_PLAZA).toEqual({ actors: [], spots: [], labels: [], figures: [] });
   });
 
   it("centres on the well", () => {
@@ -292,6 +312,7 @@ describe("plazaWorld content", () => {
     ]);
     expect(world.spots.map((s) => s.id)).toEqual(["notice", "stage", "campfire"]);
     expect(world.labels.map((l) => [l.id, l.anchor])).toEqual([
+      ["notice", "bottom"],
       ["sign", "bottom"],
       ["campfireCount", "bottom"],
     ]);
@@ -392,7 +413,8 @@ describe("plazaWorld content", () => {
       const world = plazaWorld(scene, { festival: null, pins: [], campfire: null });
       expect(names(world).some((n) => n.startsWith("campfire") || n.startsWith("sit_"))).toBe(false);
       expect(world.spots.map((s) => s.id)).toEqual(["notice"]);
-      expect(world.labels).toEqual([]);
+      // Only the notice board's own name.
+      expect(world.labels.map((l) => l.id)).toEqual(["notice"]);
     });
 
     it("keeps the fire lit without inventing coworkers when the channel is empty", () => {

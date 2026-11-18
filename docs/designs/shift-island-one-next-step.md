@@ -31,13 +31,15 @@ An audit on 2026-11-17 (read only) found:
 | 3 | The quest page | "Take inspiration from the best designed, for the game aspects too." **2026-11-18:** five dots for where the work stands, the mentor's words first, the checklist right under the goal, everything else (details, the lore line, steps, words, pitfalls, examples, helper quests) folded into one closed รายละเอียดและตัวช่วย, and exactly one thing in the sticky bar per state. ติด leaves the bar for a quiet ติดตรงไหน? line under the checklist. |
 | 4 | Mentor review on the web | Not now: reviews stay in Discord for Season 1, and students are promised no turnaround time. Part 3, Wave B (B1) of the core-loop design waits. |
 | 5 | The chip's sheet | **2026-11-18:** one line of progress (the tree's stage), no stats grid (side quests, community, check-ins; the data stays in the database), and no season panel (Demo Day stands in the plaza). |
+| 6 | The whole quest board | **2026-11-18 (later):** off home. The ดูเควสต์ทั้งหมด link under the card is gone: home is the chip and the card. The board opens from the plaza's notice board, which now carries an always-shown กระดานเควสต์ label so it reads as a place to tap, and from a เควสต์ทั้งหมด line at the head of the chip sheet's short list. The wide board button stays only when there is no next step. *Narrows decision 1 to two things to tap.* |
 
 ## What changed
 
 **The home screen** (375px): the team chip top left, and at the bottom one
-gold card, `NextStepCard`, with one verb button, then one plain link,
-ดูเควสต์ทั้งหมด. Once all seven main quests are passed and nothing is open, the
-board button takes the card's place. Before a plot is claimed, the picture
+gold card, `NextStepCard`, with one verb button. The whole board is the
+plaza's named notice board, or เควสต์ทั้งหมด in the chip's sheet (decision 6).
+Once all seven main quests are passed and nothing is open, the board button
+takes the card's place. Before a plot is claimed, the picture
 chip opens the menu (the old ≡) and the claim button sits at the bottom.
 
 **The card follows the student** (`nextStep.ts`, first match wins). Each state

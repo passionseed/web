@@ -100,6 +100,46 @@ Nobody checked in today: nothing is drawn. More people than eight figures:
   head, held back until their arrival walk ends. The count is read out once
   for screen readers.
 
+## Tap anyone (founder decision, 2026-11-18)
+
+Every walking or standing person on the web island can be tapped, and says
+one short, true line in a small speech bubble over their head (DRAFT copy,
+`FIGURES` in `components/shift/island/copy.ts`). Never a name, and nothing
+that points to a student:
+
+| Who | What they stand for | What they say |
+|---|---|---|
+| The viewer's own figure | They checked in today | นี่คือคุณ ... |
+| A teammate (team colour) | A teammate who checked in today | เพื่อนร่วมทีมของคุณ วันนี้เช็กอินแล้ว (3 variants) |
+| A stranger | Someone who checked in today | A friendly hello that they came (5 variants) |
+| The visitor beside a tree | The team passed main quest 3, its first partner (ได้พันธมิตรคนแรก) | ยืนแทนพันธมิตรคนแรกของทีมนี้ ... (ทีมคุณ by the viewer's own tree) |
+| The story's builder | The team building real work | คนที่ลงมือสร้างงานจริง ทีละชิ้น |
+| The story's tester | Someone outside the team trying the work | คนนอกทีม มาลองงานที่ทำจริง |
+
+- **Same figure, same line.** A figure is a kind and a number only
+  (`lib/shift-island/live/figures.ts`: figure order in the crowd, a tree's
+  slot), and the line is picked from those.
+- **Easy to hit while it walks.** The page asks the living island where each
+  actor stands on the frame last painted (`LiveIsland.actorBoxes`) and counts
+  a fingertip (44 CSS px) round the figure, plus a pixel for a step taken;
+  on the whole island only the figure itself. Over a plot's or the plaza's own
+  button only the figure itself counts, so the plot still opens. The bubble
+  follows a walker without a React render per frame and slides sideways to
+  stay on screen. It closes after 5 s, on Escape, on a tap elsewhere and when
+  a sheet opens. A tapped story figure holds its panel while it talks.
+- **Keyboard and screen readers.** The day's count under the crowd is a
+  button: each press has the next person say their line (the viewer, the team,
+  everyone else, then the trees' partners), and a live region reads it as
+  "คนที่ 2 จาก 7: ...". Without a count on screen the same button waits out of
+  sight until a keyboard focuses it. The story's panel describes who is in the
+  picture. Reduced motion: nobody walks, so the bubble holds still and does
+  not animate in.
+- **Adding a figure** (the campfire's evening guest, PR #331): a kind in
+  `figures.ts`, its lines in `FIGURES`, and one entry in `plazaWorld` with its
+  actor's index. The tap, the bubble, the keyboard's turn and the live region
+  come with it. A guest at the campfire wins a tap on itself over the
+  campfire's own tap target, as a tree's partner does over its plot.
+
 ## Next step, not built: โชว์ตัวฉันบนเกาะ
 
 An opt-in for a student to let their own figure carry their Discord name or

@@ -242,6 +242,119 @@
   }
 }
 
+/* The day's count as the people's button: each press has the next person say their line. */
+.plazaPeople {
+  margin: 0;
+  border: 0;
+  font-family: inherit;
+  cursor: pointer;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.plazaPeople:focus-visible {
+  outline: 2px solid var(--isl-cream);
+  outline-offset: -4px;
+}
+
+/* No count on screen: the same button, out of sight until a keyboard reaches it, then over the plaza. */
+.peopleHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.peopleHidden:focus-visible {
+  left: 50%;
+  top: 50%;
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 6px 12px;
+  overflow: visible;
+  clip: auto;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--isl-cream);
+  background: rgba(18, 14, 20, 0.9);
+  clip-path: var(--notch);
+  outline: 2px solid var(--isl-cream);
+  outline-offset: -4px;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+}
+
+/*
+ * A person's line (live/FigureBubble.tsx): a small speech bubble over their
+ * head, cream on the dark notch like the labels, with a stepped pixel tail.
+ * Placed in percent of the picture by the bubble itself, which follows a
+ * walker. It never takes a tap.
+ */
+.bubble {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  width: max-content;
+  max-width: min(240px, calc(100vw - 48px));
+  transform: translate(-50%, calc(-100% - 2px));
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.bubbleText {
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+  text-align: center;
+  /* The story overlay portals out of the island's tokens: its own notch, the same cream. */
+  color: var(--isl-cream, #fff1d6);
+  background: rgba(18, 14, 20, 0.9);
+  clip-path: var(--notch, var(--story-notch));
+}
+
+/* A line breaks between its phrases only: Thai has no spaces inside a word, so a phrase never splits. */
+.phrase {
+  white-space: nowrap;
+}
+
+/* The tail: two pixel steps down to the speaker's head. */
+.bubble::after {
+  content: "";
+  width: 8px;
+  height: 6px;
+  background: rgba(18, 14, 20, 0.9);
+  clip-path: polygon(0 0, 100% 0, 100% 50%, 75% 50%, 75% 100%, 25% 100%, 25% 50%, 0 50%);
+}
+
+/* A short pop, in two steps like the rest of the island; under reduced motion it is simply there. */
+@media (prefers-reduced-motion: no-preference) {
+  .bubble {
+    animation: bubble-in 160ms steps(2, end) both;
+  }
+}
+
+@keyframes bubble-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -100%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, calc(-100% - 2px));
+  }
+}
+
 /* The light of the hour over the whole screen, on top of the tinted canvas. */
 .shade {
   position: fixed;
@@ -629,44 +742,6 @@
 
 .boardButton svg {
   display: block;
-}
-
-/* The bottom: the next-step card, and under it one quiet way to the whole board. */
-.nextStack {
-  flex: 1;
-  min-width: 0;
-  display: grid;
-  gap: 6px;
-  justify-items: stretch;
-  pointer-events: none;
-}
-
-.nextStack > * {
-  pointer-events: auto;
-}
-
-.boardLink {
-  justify-self: center;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 36px;
-  padding: 4px 14px;
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  border: 0;
-  clip-path: var(--notch);
-  cursor: pointer;
-}
-
-.boardLink svg {
-  display: block;
-}
-
-.boardLink:focus-visible {
-  outline: 2px solid var(--isl-lamp);
-  outline-offset: 2px;
 }
 
 .claim {

@@ -9,7 +9,7 @@ import { HUD, ISLAND } from "./copy";
 import island from "./island.module.css";
 import { PLAYER } from "./player/copy";
 import { PixelAvatar } from "./player/PixelAvatar";
-import { PALETTE, WEB_SPRITES, type WebIcon } from "./sprites";
+import { PALETTE, WEB_SPRITES } from "./sprites";
 import styles from "./world.module.css";
 
 /** Tree stages counted on the chip's meter. */
@@ -161,16 +161,6 @@ export function BoardButton({ wide, concealed = false, onClick }: { wide: boolea
     >
       <PixelIcon grid={WEB_SPRITES.scroll} palette={PALETTE} scale={2} />
       <span>{HUD.board}</span>
-    </button>
-  );
-}
-
-/** Under the next-step card: one quiet way to the whole quest board. */
-export function BoardLink({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <button type="button" className={`${styles.boardLink} ${styles.glass} ${styles.press}`} aria-haspopup="dialog" onClick={onClick}>
-      <PixelIcon grid={WEB_SPRITES.scroll} palette={PALETTE} scale={1} />
-      <span>{label}</span>
     </button>
   );
 }

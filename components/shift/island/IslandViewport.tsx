@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -13,6 +14,7 @@ import {
 } from "react";
 
 import type { IslandHotspot, IslandPicture } from "@/lib/shift-island/picture";
+import { hitFigure, hitSlop, treeFigures, type Figure } from "@/lib/shift-island/live/figures";
 import { pxPerNativeFor, type Rect } from "@/lib/shift-island/live/geometry";
 import { PHASE_TINT, waterColor } from "@/lib/shift-island/live/lighting";
 import { NO_PLAZA, plazaWorld, type PlazaInput, type PlazaLabelId, type PlazaSpotId } from "@/lib/shift-island/live/plaza";
@@ -21,10 +23,13 @@ import { HUD_RESERVE, scrollToCentre, worldLayout, type Insets } from "@/lib/shi
 
 import { COMMON, HUD, ISLAND, treeStageName } from "./copy";
 import islandStyles from "./island.module.css";
+import { FigureBubble, useFigureTalk } from "./live/FigureBubble";
+import type { ActorBoxes } from "./live/IslandCanvas";
 import { IslandLive } from "./live/IslandLive";
 import liveStyles from "./live/live.module.css";
 import { PlazaLayer } from "./live/PlazaLayer";
 import { PlotMarker } from "./player/PlotMarker";
+import { useReducedMotion } from "./useReducedMotion";
 import styles from "./world.module.css";
 
 interface IslandViewportProps {
@@ -232,6 +237,45 @@ function useMouseDragPan(world: RefObject<HTMLDivElement | null>) {
   }, [world]);
 }
 
+/**
+ * A tap on a person (figures.ts) says their line instead of reaching what is
+ * under them; a tap anywhere else closes the bubble and goes on as before.
+ * Over a plot's or the plaza's own button only the figure itself counts, not
+ * its slop. A capture listener inside the world, so a mouse drag that panned
+ * (useMouseDragPan swallows its click first) never says anything, and a key
+ * press on a button (a click with no pointer, detail 0) is left alone.
+ */
+function useFigureTaps(
+  overlay: RefObject<HTMLDivElement | null>,
+  hitAt: (clientX: number, clientY: number, overButton: boolean) => number | null,
+  say: (index: number | null) => void,
+  on: boolean,
+) {
+  const latest = useRef({ hitAt, say });
+  useEffect(() => {
+    latest.current = { hitAt, say };
+  });
+  useEffect(() => {
+    const element = overlay.current;
+    if (!element || !on) return;
+    const click = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.detail === 0) return;
+      const overButton = event.target instanceof Element && event.target.closest("button, a") != null;
+      const index = latest.current.hitAt(event.clientX, event.clientY, overButton);
+      if (index == null) {
+        // A button tapped while someone talks does its own thing (a sheet that opens closes the bubble).
+        if (!overButton) latest.current.say(null);
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      latest.current.say(index);
+    };
+    element.addEventListener("click", click, true);
+    return () => element.removeEventListener("click", click, true);
+  }, [overlay, on]);
+}
+
 const px = (r: Rect): CSSProperties => ({ left: r.x, top: r.y, width: r.w, height: r.h });
 
 /**
@@ -257,6 +301,11 @@ export function IslandViewport({
 }: IslandViewportProps) {
   const world = useRef<HTMLDivElement>(null);
   const probe = useRef<HTMLDivElement>(null);
+  /** The picture's box over the canvas: plots, the plaza and the people's taps. */
+  const overlay = useRef<HTMLDivElement>(null);
+  /** The living island's actor boxes, while it draws: where the walking people are now. */
+  const actorBoxes = useRef<ActorBoxes | null>(null);
+  const reduced = useReducedMotion();
   const zoom = usePxPerNative();
   const box = useScreenBox(world, probe);
   useMouseDragPan(world);
@@ -300,6 +349,14 @@ export function IslandViewport({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [scene, plazaKey]
   );
+
+  // The people to tap: the plaza's walkers while the canvas draws them, and each tree's partner (the PNG draws those too).
+  const figures = useMemo<Figure[]>(
+    () => [...(live ? plazaView.figures : []), ...treeFigures(scene)],
+    [live, plazaView, scene],
+  );
+  const talk = useFigureTalk(figures, paused);
+  const readBoxes = useCallback(() => actorBoxes.current?.() ?? [], []);
 
   const liveChange = useRef(onLiveChange);
   useEffect(() => {
@@ -358,6 +415,18 @@ export function IslandViewport({
     // The key stands for the layout, the box and the plot.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [centreKey]);
+
+  // Taps on people: a fingertip-sized target round each one close up, the figure itself on the whole island.
+  const figureHit = (clientX: number, clientY: number, overButton: boolean): number | null => {
+    const element = overlay.current;
+    if (!element || !picture) return null;
+    const rect = element.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return null;
+    const point = { x: ((clientX - rect.left) / rect.width) * picture.width, y: ((clientY - rect.top) / rect.height) * picture.height };
+    const hit = hitFigure(figures, readBoxes(), point, hitSlop(scale, whole));
+    return hit && (hit.tight || !overButton) ? hit.index : null;
+  };
+  useFigureTaps(overlay, figureHit, talk.say, interactive && figures.length > 0);
 
   const sea = light?.sea ?? DAY_SEA;
   const shade = light?.phase;
@@ -452,6 +521,7 @@ export function IslandViewport({
                 crop={layout?.frame}
                 scroller={world}
                 actors={plazaView.actors}
+                actorBoxes={actorBoxes}
                 className={liveStyles.live}
                 onReady={() => setLiveReady(true)}
                 onFail={() => setLiveFailed(true)}
@@ -459,7 +529,7 @@ export function IslandViewport({
               />
             </div>
           ) : null}
-          <div className={styles.islandBox} style={islandRect}>
+          <div ref={overlay} className={styles.islandBox} style={islandRect}>
             {live ? <span role="img" aria-label={ISLAND.pictureAlt} className={liveStyles.label} /> : null}
             {/* Your own picture over your own pin: decorative, never takes a tap. */}
             {me && mine ? <PlotMarker picture={picture} me={me} /> : null}
@@ -524,7 +594,25 @@ export function IslandViewport({
                 interactive={interactive && liveOn}
                 showLabels={live && !whole}
                 whole={whole}
+                onPeople={interactive && figures.length > 0 ? talk.turn : undefined}
               />
+            ) : null}
+            {talk.said ? (
+              <FigureBubble
+                key={talk.said.key}
+                figure={figures[talk.said.index]}
+                view={{ x: 0, y: 0, w: picture.width, h: picture.height }}
+                read={readBoxes}
+                follow={!reduced && !paused}
+                reveal={talk.said.via === "turn"}
+                onGone={() => talk.say(null)}
+              />
+            ) : null}
+            {/* What a person said, for screen readers: the bubble itself is decoration. */}
+            {interactive ? (
+              <p className="sr-only" aria-live="polite">
+                {talk.spoken}
+              </p>
             ) : null}
           </div>
         </div>

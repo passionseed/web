@@ -2,6 +2,8 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 
 import type { IslandCanvasProps } from "@/components/shift/island/live/IslandCanvas";
 
+import { FIGURES } from "../../copy";
+import { BUBBLE_MS } from "../../live/FigureBubble";
 import { StoryLauncher, type StoryLauncherProps } from "../StoryLauncher";
 import { PANEL_MS } from "../StoryOverlay";
 import { STORY_SEEN_KEY } from "../useStorySeen";
@@ -202,6 +204,41 @@ describe("StoryLauncher", () => {
     expect(panel(3)).toBeInTheDocument();
     fireEvent.keyDown(dialog, { key: "ArrowLeft" });
     expect(panel(2)).toBeInTheDocument();
+  });
+
+  it("has the builder and the tester say what they stand for when tapped, holding the panel while they talk", () => {
+    renderLauncher();
+    fireEvent.click(panel(1));
+    // The current panel's frame, as laid out at the test's 320 x 240 box: the tree view (48, 64, 160, 112) at 2x.
+    const frame = () => screen.getByRole("group", { name: /^ภาพ/ }).querySelector<HTMLElement>("[data-phase]:not([aria-hidden])")!;
+    const measure = () => {
+      frame().getBoundingClientRect = () => ({ left: 0, top: 0, x: 0, y: 0, width: 320, height: 224, right: 320, bottom: 224 }) as DOMRect;
+    };
+    const tapAt = (group: HTMLElement, x: number, y: number) => {
+      measure();
+      fireEvent.click(group, { detail: 1, clientX: (x - 48) * 2, clientY: (y - 64) * 2 });
+    };
+    const bubble = () => document.querySelector<HTMLElement>("[data-bubble]");
+    // Screen readers hear who is in the picture.
+    expect(panel(2)).toHaveTextContent(FIGURES.builder[0]);
+    // The builder stands at (104, 126), 10 x 14.
+    tapAt(panel(2), 109, 133);
+    expect(bubble()).toHaveAttribute("data-bubble", "builder");
+    expect(bubble()).toHaveTextContent(FIGURES.builder[0]);
+    // The panel holds while the builder talks, then carries on.
+    tick(PANEL_MS + 100);
+    expect(panel(2)).toBeInTheDocument();
+    tick(BUBBLE_MS);
+    expect(bubble()).toBeNull();
+    tick(PANEL_MS);
+    expect(panel(3)).toBeInTheDocument();
+    expect(panel(3)).toHaveTextContent(FIGURES.tester[0]);
+    // The tester, at (142, 126); a tap on open ground goes on to the next panel.
+    tapAt(panel(3), 147, 133);
+    expect(bubble()).toHaveAttribute("data-bubble", "tester");
+    tapAt(panel(3), 60, 70);
+    expect(panel(4)).toBeInTheDocument();
+    expect(bubble()).toBeNull();
   });
 
   it("closes on Escape and remembers it", () => {

@@ -137,7 +137,8 @@ const LABEL_SIZE: Partial<Record<PlazaLabel["id"], { w: number; h: number }>> = 
   visitors: { w: 88, h: 20 },
   me: { w: 28, h: 11 },
   visitorsMore: { w: 24, h: 11 },
-  // The plaza's own, as drawn at 375px: the Demo Day sign's two lines, the campfire's count and "+N".
+  // The plaza's own, as drawn at 375px: the notice board's name, the Demo Day sign's two lines, the campfire's count and "+N".
+  notice: { w: 48, h: 11 },
   sign: { w: 62, h: 18 },
   campfireCount: { w: 66, h: 11 },
   campfireMore: { w: 19, h: 11 },
@@ -225,7 +226,7 @@ describe("the plaza's people in the world", () => {
     expect(crowd(world)).toHaveLength(plan.strollers + plan.team + 1);
     // Three coworkers and two guests sit at the fire.
     expect(world.actors.filter((a) => a.frames[0].startsWith("sit_"))).toHaveLength(3 + plan.sitters);
-    expect(world.labels.map((l) => l.id)).toEqual(["sign", "campfireCount", "visitors", "visitorsMore", "me"]);
+    expect(world.labels.map((l) => l.id)).toEqual(["notice", "sign", "campfireCount", "visitors", "visitorsMore", "me"]);
     // The campfire's own count stays the coworking room's.
     expect(world.labels.map((l) => l.id)).not.toContain("campfireMore");
   });

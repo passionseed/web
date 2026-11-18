@@ -8,7 +8,8 @@
  * path when their check-in lands. Their teammates (a count from the
  * database, shown only to their own team) stand beside them in the team's
  * colour. Everyone else is anonymous: outfit, route and pose go by figure
- * order, never by person, and the actors carry no id, name or team.
+ * order, never by person, and the actors carry no id, name or team. A tap
+ * on any of them gets one short line (figures.ts), picked the same way.
  *
  * Life: strollers walk a short route, pause, wave or look at a phone, and
  * walk back, each out of step with the others; when the plaza is busy a few
@@ -19,6 +20,7 @@
  * Plan: docs/designs/shift-island-plaza-visitors.md.
  */
 import { CROWD_OUTFITS, TEAM_HAIRS, crowdSprite, type CrowdPose, type Outfit } from "./crowdSprites";
+import type { Figure } from "./figures";
 import type { LiveActor, LiveStep } from "./types";
 
 /** Figures drawn at most, the viewer and their teammates included; more people show as "+N". */
@@ -234,28 +236,37 @@ export const ARRIVE_MS = (() => {
   return s.frames.length * STEP_MS;
 })();
 
-export interface CrowdActors {
+export interface CrowdCast {
   /** Strollers, teammates and the viewer, in draw order (back to front). */
   actors: LiveActor[];
-  plan: CrowdPlan;
+  /** Who each actor is, by the same index: a kind and a number, never a person (figures.ts). */
+  figures: Figure[];
 }
 
 /**
- * The crowd's actors for a plan, at `c` (the plaza centre, native px). The
- * campfire's sitters are plaza.ts's: they take the seats there.
+ * The crowd's actors for a plan, at `c` (the plaza centre, native px), and
+ * who each one stands for. The campfire's sitters are plaza.ts's: they take
+ * the seats there.
  */
-export function crowdActors(c: { x: number; y: number }, input: VisitorsInput, plan: CrowdPlan): LiveActor[] {
+export function crowdActors(c: { x: number; y: number }, input: VisitorsInput, plan: CrowdPlan): CrowdCast {
   const at = ([dx, dy]: Point) => ({ x: c.x + dx, y: c.y + dy });
   const outfits = crowdOutfits(input.shirt);
   const strollers = Array.from({ length: plan.strollers }, (_, i) => stroller(i, outfits[i % outfits.length], at));
-  // Back to front: the routes behind the well and the stage first, the meadow (route 0) with the team.
-  const back = strollers.slice(1);
-  const front = strollers.slice(0, 1);
   const shirt = input.shirt ?? null;
   const team = Array.from({ length: plan.team }, (_, i) =>
     teammate(i, shirt ? teamOutfit(shirt, i + 1) : outfits[(plan.strollers + i) % outfits.length], at),
   );
   const own = shirt ? teamOutfit(shirt, 0) : outfits[(plan.strollers + plan.team) % outfits.length];
   const me = plan.me ? [input.arriving ? meArriving(own, at) : meAtHome(own, at)] : [];
-  return [...back, ...front, ...team, ...me];
+  // Back to front: the routes behind the well and the stage first, the meadow (route 0) with the team.
+  const cast: { actor: LiveActor; kind: Figure["kind"]; n: number }[] = [
+    ...strollers.slice(1).map((actor, i) => ({ actor, kind: "crowd" as const, n: i + 1 })),
+    ...strollers.slice(0, 1).map((actor) => ({ actor, kind: "crowd" as const, n: 0 })),
+    ...team.map((actor, n) => ({ actor, kind: "team" as const, n })),
+    ...me.map((actor) => ({ actor, kind: "me" as const, n: 0 })),
+  ];
+  return {
+    actors: cast.map((c) => c.actor),
+    figures: cast.map(({ kind, n }, actor) => ({ kind, n, actor })),
+  };
 }

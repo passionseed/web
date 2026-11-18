@@ -40,7 +40,7 @@ function pictures(): Picture[] {
   let dusk: StoryPanel | null = null;
   try {
     const scene = buildScene([], { festival: false });
-    dusk = { n: 0, scene, phase: "dusk", ambient: false, view: { x: 0, y: 0, w: scene.width, h: scene.height }, focus: { x: 0, y: 0 }, actors: [], fallback: 0 };
+    dusk = { n: 0, scene, phase: "dusk", ambient: false, view: { x: 0, y: 0, w: scene.width, h: scene.height }, focus: { x: 0, y: 0 }, actors: [], figures: [], fallback: 0 };
   } catch {
     dusk = null;
   }

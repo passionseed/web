@@ -32,6 +32,8 @@ export function plazaProps(
   const count = campfire ? Math.max(0, Math.trunc(campfire.count) || 0) : 0;
   const date = festival ? thaiShortDate(festival.demoDay) : "";
   const labels: PlazaProps["labels"] = {};
+  // The notice board is named on the island, so it reads as the way to the whole quest board.
+  if (pins) labels.notice = NOTICE.label;
   if (festival) labels.sign = FESTIVAL.sign(date, festival.daysToDemo);
   if (count > 0) labels.campfireCount = CAMPFIRE.count(count);
   if (count > MAX_SEATS) labels.campfireMore = CAMPFIRE.more(count - MAX_SEATS);

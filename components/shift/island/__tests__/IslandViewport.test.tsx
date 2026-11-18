@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { buildScene } from "@/bot/src/quests/island/scene";
 import type { IslandCanvasProps } from "@/components/shift/island/live/IslandCanvas";
 import { waterColor } from "@/lib/shift-island/live/lighting";
-import { plazaWorld, type PlazaInput, type PlazaSpotId } from "@/lib/shift-island/live/plaza";
+import { plazaWorld, type PlazaInput, type PlazaLabelId, type PlazaSpotId } from "@/lib/shift-island/live/plaza";
 import type { IslandPicture } from "@/lib/shift-island/picture";
 
 import { ISLAND, PRE_STAGE, stageName } from "../copy";
@@ -445,10 +445,12 @@ describe("IslandViewport", () => {
         ["campfireCount", "bottom", labels.campfireCount],
         ["campfireMore", "left", labels.campfireMore],
       ]);
-      const points = plazaWorld(live.scene!, input).labels;
-      shown.forEach((el, i) => {
-        expect(el.style.left).toBe(`${points[i].x}%`);
-        expect(el.style.top).toBe(`${points[i].y}%`);
+      // A label without text (here the notice board's, which this test leaves out) is not shown.
+      const points = new Map(plazaWorld(live.scene!, input).labels.map((label) => [label.id, label]));
+      shown.forEach((el) => {
+        const point = points.get(el.dataset.label as PlazaLabelId)!;
+        expect(el.style.left).toBe(`${point.x}%`);
+        expect(el.style.top).toBe(`${point.y}%`);
         expect(el.closest("[aria-hidden='true']")).not.toBeNull();
       });
       rerender(<IslandViewport picture={live} onPlot={jest.fn()} plaza={plaza(jest.fn())} whole />);

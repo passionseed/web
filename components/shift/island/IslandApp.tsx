@@ -22,7 +22,7 @@ import { useCampfireSound, type CampfireSoundState } from "./CampfireSound";
 import { CampfireSheet } from "./CampfireSheet";
 import { CanvasLinkSheet } from "./canvas";
 import { ConsentSheet } from "./consent/ConsentSheet";
-import { CAMPFIRE, COMMON, GATE, HUD, MENU, NEXT_STEP, NO_PROJECT, RESULTS, TODAY } from "./copy";
+import { CAMPFIRE, COMMON, GATE, HUD, MENU, NO_PROJECT, RESULTS, TODAY } from "./copy";
 import { FestivalSheet } from "./FestivalSheet";
 import { BoardSheet, MenuFoot, MenuSheet, type MenuItem } from "./HudSheets";
 import { NewsSheet } from "./news/NewsSheet";
@@ -33,7 +33,7 @@ import { NEWS } from "./news/copy";
 import { PRIZES_UI } from "./prizes/copy";
 import { PrizeSheet } from "./prizes/PrizeSheet";
 import { GateCard } from "./IslandGate";
-import { BoardButton, BoardLink, Hud, HudChip, HudLabel } from "./IslandHud";
+import { BoardButton, Hud, HudChip, HudLabel } from "./IslandHud";
 import styles from "./island.module.css";
 import { IslandSheet } from "./IslandSheet";
 import { IslandViewport } from "./IslandViewport";
@@ -598,8 +598,10 @@ function IslandHome({
   const consent = consentRow(page, setPanel);
   const aiConsent: MenuItem[] =
     consent.onConsent && consent.consentAiOnly ? [{ id: "consent", icon: "letter", label: PLAYER_MENU.aiNews, onClick: consent.onConsent }] : [];
-  // The admin's overview and ขอพัก sit at the top of the sheet (CharacterSheet), not in this list.
-  const homeItems: MenuItem[] = [...aiConsent, ...shared.places];
+  // The admin's overview and ขอพัก sit at the top of the sheet (CharacterSheet), not in this list. The whole
+  // quest board heads it: off home since the next-step card is home's one action, and in the plaza too.
+  const boardItem: MenuItem = { id: "board", icon: "scroll", label: MENU.board, onClick: () => setPanel("board") };
+  const homeItems: MenuItem[] = [boardItem, ...aiConsent, ...shared.places];
   // The chip's lamp dot: consent waits, a mentor's result is new, something waits at the tree, or the bot left notices.
   const chipWaiting =
     (consentPending(page) ? HUD.menuConsent : null) ??
@@ -636,17 +638,15 @@ function IslandHome({
         }
         bottom={
           step ? (
-            <div className={world.nextStack}>
-              {/* The one gold element and the one main action: the next step. */}
-              <NextStepCard
-                board={board}
-                step={step}
-                intended={intended}
-                pending={quest.pending || resting}
-                onTap={(next) => void tapNext(next)}
-              />
-              <BoardLink label={NEXT_STEP.board} onClick={() => setPanel("board")} />
-            </div>
+            // The one gold element and the one main action: the next step. The whole board stands in the
+            // plaza (the notice board) and heads the chip sheet's list.
+            <NextStepCard
+              board={board}
+              step={step}
+              intended={intended}
+              pending={quest.pending || resting}
+              onTap={(next) => void tapNext(next)}
+            />
           ) : (
             // Nothing left to do next (all seven passed): the board is the bottom action.
             <BoardButton wide onClick={() => setPanel("board")} />

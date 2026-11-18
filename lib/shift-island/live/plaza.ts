@@ -25,6 +25,7 @@ import type { Festival } from "@/lib/shift-island/festival";
 import type { NoticeKind } from "@/lib/shift-island/notice";
 
 import { ARRIVE_MS, CROWD_LAYOUT, crowdActors, crowdPlan, type CrowdPlan, type VisitorsInput } from "./crowd";
+import type { Figure } from "./figures";
 import type { LiveActor } from "./types";
 
 /** Seats drawn round the campfire; more people show as a "+N" label. */
@@ -58,7 +59,7 @@ export interface PlazaSpot {
   h: number;
 }
 
-export type PlazaLabelId = "sign" | "campfireCount" | "campfireMore" | "visitors" | "visitorsMore" | "me";
+export type PlazaLabelId = "notice" | "sign" | "campfireCount" | "campfireMore" | "visitors" | "visitorsMore" | "me";
 
 /** A DOM label's anchor point, percent of the picture. bottom = translate(-50%, -100%), left = translate(0, -50%). */
 export interface PlazaLabel {
@@ -74,10 +75,12 @@ export interface PlazaWorld {
   actors: LiveActor[];
   spots: PlazaSpot[];
   labels: PlazaLabel[];
+  /** The people among the actors, each with its actor's index: what a tap on one says (figures.ts). */
+  figures: Figure[];
 }
 
 /** Nothing on the plaza: one shared value, so the engine's actors never change. */
-export const NO_PLAZA: PlazaWorld = { actors: [], spots: [], labels: [] };
+export const NO_PLAZA: PlazaWorld = { actors: [], spots: [], labels: [], figures: [] };
 
 type Point = readonly [number, number];
 
@@ -90,6 +93,11 @@ export const PLAZA_LAYOUT = {
   noticeBoard: [-38, -24] as Point,
   notes: [[-35, -21], [-29, -22], [-22, -21]] as readonly Point[],
   noticeSpot: { x: -40, y: -28, w: 28, h: 30 },
+  /**
+   * "กระดานเควสต์" over the board, centred on it and bottom anchored 4 px
+   * above its top edge: clear of the stroller who walks above the well.
+   */
+  noticeLabel: [-26, -28] as Point,
   sign: [36, -12] as Point,
   stage: [50, -16] as Point,
   stageSpot: { x: 36, y: -16, w: 58, h: 31 },
@@ -184,7 +192,9 @@ export function boothFlagAt(tree: Pick<SceneTree, "left" | "top" | "mine">, scen
  * booth flags, prize board, campfire pit, the seats behind the fire, the
  * flame, the seats in front, then today's visitors (crowd.ts: strollers,
  * teammates, the viewer). Spots: notice, stage, prizes, campfire. Labels:
- * sign, campfire count and "+N", visitors and "+N", the viewer's tag.
+ * the notice board's name, the sign, campfire count and "+N", visitors and
+ * "+N", the viewer's tag. Figures: today's visitors standing or walking
+ * (the campfire's sitters belong to the campfire's own tap target).
  */
 export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
   const { festival, pins, campfire } = input;
@@ -202,6 +212,7 @@ export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
   const actors: LiveActor[] = [];
   const spots: PlazaSpot[] = [];
   const labels: PlazaLabel[] = [];
+  const figures: Figure[] = [];
   const L = PLAZA_LAYOUT;
 
   // The island goal, over the banner (the night festoon's own spot), lit bulb by bulb.
@@ -228,6 +239,8 @@ export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
       if (name) actors.push(still(name, at(L.notes[i])));
     });
     spots.push(spotOf("notice", box(L.noticeSpot), scene));
+    // Always named on the island, like the stage's sign: a place to tap, not a picture.
+    labels.push(labelOf("notice", at(L.noticeLabel), "bottom", scene));
   }
 
   if (festival) {
@@ -274,7 +287,10 @@ export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
 
   if (visitors) {
     const C = CROWD_LAYOUT;
-    actors.push(...crowdActors(c, input.visitors!, crowd));
+    const cast = crowdActors(c, input.visitors!, crowd);
+    const first = actors.length;
+    actors.push(...cast.actors);
+    figures.push(...cast.figures.map((f) => ({ ...f, actor: first + f.actor! })));
     labels.push(labelOf("visitors", at(C.label), "bottom", scene));
     if (crowd.more > 0) labels.push(labelOf("visitorsMore", at(C.more), "left", scene));
     if (crowd.me) {
@@ -283,7 +299,7 @@ export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
     }
   }
 
-  return { actors, spots, labels };
+  return { actors, spots, labels, figures };
 }
 
 /**

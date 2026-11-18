@@ -260,7 +260,8 @@ const LINK = { linked: true as const, linkedAt: "2026-11-11T08:00:00Z" };
 const SUGGEST_URL = "https://discord.com/channels/444444444444444444/555555555555555555";
 // The fixture's next step: a mentor asked for more on a side quest.
 const KEYNOTE = "ตอบพี่เลี้ยง: ฟังเสียงจริงอีก 5 คน";
-const BOARD_LINK = NEXT_STEP.board;
+/** The link that used to sit under the next-step card (founder decision 2026-11-18: off home). */
+const OLD_BOARD_LINK = "ดูเควสต์ทั้งหมด";
 
 function page(overrides: Partial<IslandPageData> = {}): IslandPageData {
   return {
@@ -301,6 +302,12 @@ const door = () => screen.getByRole("button", { name: /ดูตัวละค�
 function openMenu() {
   fireEvent.click(door());
   return screen.getByRole("dialog");
+}
+
+/** The whole quest board, from the first line of the chip's sheet. */
+function openBoard() {
+  fireEvent.click(within(openMenu()).getByRole("button", { name: MENU.board }));
+  return screen.getByRole("dialog", { name: "กระดานเควสต์" });
 }
 
 describe("IslandApp", () => {
@@ -402,7 +409,9 @@ describe("IslandApp HUD", () => {
     expect(screen.queryByLabelText(TODAY.ask)).toBeNull();
     expect(screen.getByRole("button", { name: /แอปจองห้องสมุด/ })).toBeInTheDocument();
     expect(cardButton()).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: BOARD_LINK })).toBeInTheDocument();
+    // The whole board is not on home: it stands in the plaza and heads the chip's sheet.
+    expect(screen.queryByRole("button", { name: OLD_BOARD_LINK })).toBeNull();
+    expect(screen.queryByRole("button", { name: "กระดานเควสต์" })).toBeNull();
     // No envelope and no menu button: results and the menu's lines live in the chip's sheet.
     expect(screen.queryByRole("button", { name: /ผลตรวจจากพี่เลี้ยง/ })).toBeNull();
     expect(screen.queryByRole("button", { name: HUD.menu })).toBeNull();
@@ -424,20 +433,19 @@ describe("IslandApp HUD", () => {
     expect(within(header).queryByRole("button", { name: /เสียงกองไฟ/ })).toBeNull();
   });
 
-  it("shows at most three things to tap over the island: the chip, the card's one button and the board link", () => {
+  it("shows two things to tap over the island: the chip and the card's one button", () => {
     render(<IslandApp page={page({ tree: null })} picture={null} />);
     const hud = screen.getByRole("heading", { level: 1, name: "เกาะ SHIFT" }).closest("header")!.parentElement!;
     const controls = within(hud)
       .queryAllByRole("button")
       .concat(within(hud).queryAllByRole("link"))
       .filter((el) => !/^story/.test(el.textContent ?? ""));
-    expect(controls).toEqual([door(), cardButton(), screen.getByRole("button", { name: BOARD_LINK })]);
+    expect(controls).toEqual([door(), cardButton()]);
   });
 
   it("opens the quest board over the island, and a quest from it returns to the board", () => {
     render(<IslandApp page={page()} picture={null} />);
-    fireEvent.click(screen.getByRole("button", { name: BOARD_LINK }));
-    const boardSheet = screen.getByRole("dialog", { name: "กระดานเควสต์" });
+    const boardSheet = openBoard();
     expect(viewport()).toHaveAttribute("data-paused", "true");
     fireEvent.click(within(boardSheet).getAllByRole("button", { name: /ฟังเสียงจริงอีก 5 คน/ })[0]);
     expect(screen.queryByRole("dialog", { name: "กระดานเควสต์" })).toBeNull();
@@ -458,7 +466,7 @@ describe("IslandApp HUD", () => {
     render(<IslandApp page={page()} picture={null} />);
     const heading = screen.getByRole("heading", { level: 1, name: "เกาะ SHIFT" });
     expect(heading.compareDocumentPosition(viewport()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(screen.getByRole("button", { name: BOARD_LINK }).compareDocumentPosition(viewport()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(cardButton().compareDocumentPosition(viewport()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("counts the day's first tap as the check-in: no screen between the student and the work", async () => {
@@ -552,7 +560,7 @@ describe("IslandApp HUD", () => {
     openMenu();
     const sheet = screen.getByRole("dialog");
     const list = within(sheet).getByRole("list", { name: "เมนู" });
-    expect(within(list).getAllByRole("listitem").map((line) => line.textContent)).toEqual([MENU.guide, MENU.story]);
+    expect(within(list).getAllByRole("listitem").map((line) => line.textContent)).toEqual([MENU.board, MENU.guide, MENU.story]);
     const fold = within(sheet).getByText(MENU.settings).closest("details") as HTMLElement;
     expect(fold).not.toHaveAttribute("open");
     expect(within(fold).getByRole("button", { name: MENU.sound })).toHaveAttribute("aria-pressed", "false");
@@ -691,8 +699,7 @@ describe("IslandApp: the team's tree", () => {
   it("has no tree button, no close-up and no seed card below schema 13", () => {
     render(<IslandApp page={page({ tree: null })} picture={null} />);
     expect(treeButton()).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: BOARD_LINK }));
-    expect(screen.getByRole("dialog", { name: "กระดานเควสต์" })).toBeInTheDocument();
+    expect(openBoard()).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: new RegExp(TREE.seed.title) })).toBeNull();
     expect(screen.queryByTestId("tree-canvas")).toBeNull();
   });
@@ -755,8 +762,7 @@ describe("IslandApp: the team's tree", () => {
 
   it("opens the seed choice from the board's seed card", () => {
     render(<IslandApp page={page({ tree: { ...TREE_DATA, seed: null, stage: 0 } })} picture={null} />);
-    fireEvent.click(screen.getByRole("button", { name: BOARD_LINK }));
-    const board = screen.getByRole("dialog", { name: "กระดานเควสต์" });
+    const board = openBoard();
     fireEvent.click(within(board).getByRole("button", { name: new RegExp(TREE.seed.title) }));
     const sheet = screen.getByRole("dialog", { name: TREE.closeup.title });
     expect(within(sheet).getByRole("region", { name: TREE.seed.title })).toBeInTheDocument();
@@ -805,7 +811,7 @@ describe("IslandApp: the plaza", () => {
     expect(input.pins).toEqual(pins.map((pin) => pin.kind));
     expect(input.campfire).toEqual({ count: 3 });
     expect(input.prizes).toBe(true);
-    expect(labels).toEqual({ sign: "Demo Day 28 พ.ย.\nอีก 17 วัน", campfireCount: "3 คนกำลังทำงานอยู่" });
+    expect(labels).toEqual({ notice: "กระดานเควสต์", sign: "Demo Day 28 พ.ย.\nอีก 17 วัน", campfireCount: "3 คนกำลังทำงานอยู่" });
     expect(names).toEqual({
       notice: `กระดานเควสต์: ${pins.map((pin) => pin.title).join(" · ")}`,
       stage: "เวที Demo Day: 28 พ.ย. · อีก 17 วัน",
@@ -864,7 +870,8 @@ describe("IslandApp: the plaza", () => {
     const { input, labels, names } = plaza();
     expect(input.festival).toBeNull();
     expect(input.campfire).toBeNull();
-    expect(labels).toEqual({});
+    // Only the notice board's name: it is the way to the whole quest board.
+    expect(labels).toEqual({ notice: "กระดานเควสต์" });
     // The Demo Day prize board always stands in the plaza.
     expect(Object.keys(names)).toEqual(["notice", "prizes"]);
     expect(input.prizes).toBe(true);
@@ -903,17 +910,29 @@ describe("IslandApp: the plaza", () => {
     expect(within(sheet).getByRole("link", { name: "เข้าห้อง" })).toHaveAttribute("href", JOIN);
   });
 
-  it("keeps one quiet way to the whole board under the card, and the board alone once nothing is next", () => {
-    const { unmount } = render(<IslandApp page={festive()} picture={null} />);
-    fireEvent.click(screen.getByRole("button", { name: BOARD_LINK }));
+  it("keeps the whole board off home: the plaza's named notice board opens it, and the chip sheet's first line", () => {
+    render(<IslandApp page={festive()} picture={null} />);
+    expect(screen.queryByRole("button", { name: OLD_BOARD_LINK })).toBeNull();
+    // The notice board stands in the plaza with its name over it, so it reads as a place to tap.
+    expect(plaza().labels.notice).toBe("กระดานเควสต์");
+    fireEvent.click(screen.getByRole("button", { name: /^กระดานเควสต์/ }));
     expect(screen.getByRole("dialog", { name: "กระดานเควสต์" })).toBeInTheDocument();
-    unmount();
+    fireEvent.keyDown(screen.getByRole("dialog", { name: "กระดานเควสต์" }), { key: "Escape" });
+    // The chip's sheet: เควสต์ทั้งหมด heads its short list.
+    const sheet = openMenu();
+    const list = within(sheet).getByRole("list", { name: "เมนู" });
+    expect(within(list).getAllByRole("listitem")[0]).toHaveTextContent(MENU.board);
+    fireEvent.click(within(list).getByRole("button", { name: MENU.board }));
+    expect(screen.getByRole("dialog", { name: "กระดานเควสต์" })).toBeInTheDocument();
+  });
+
+  it("keeps the wide board button only once nothing is next, so home always has one action", () => {
     const board = makeBoard();
     board.main = board.main.map((m) => ({ ...m, done: true, in_flight: null, mine: null }));
     board.side = board.side.map((side) => ({ ...side, mine: null }));
     board.proposed = [];
     render(<IslandApp page={page({ board })} picture={null} />);
-    expect(screen.queryByRole("button", { name: BOARD_LINK })).toBeNull();
+    expect(screen.queryByRole("region", { name: /./ })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "กระดานเควสต์" }));
     expect(screen.getByRole("dialog", { name: "กระดานเควสต์" })).toBeInTheDocument();
   });
