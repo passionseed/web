@@ -62,7 +62,9 @@ import { ISLAND_LINK_LABEL, islandWebUrl } from "./weblink";
  * coming first is never rewarded, and the database keeps only which teams
  * were there. The first check at or after 19:30 calls
  * shift_quest_campfire_drop, which settles the night once (one roll per team,
- * restart-safe in the database). This module keeps the public count of teams
+ * restart-safe in the database); when the database's clock is still a
+ * moment before 19:30, that check hands over the room as the rest's last
+ * (drop). This module keeps the public count of teams
  * that got a look for the call and the round messages (evening()), and logs
  * nothing about anyone.
  *
@@ -102,6 +104,12 @@ const TICK_MS = 30_000;
 const FIRST_DELAY_MS = 30_000;
 /** At most one edit a minute. */
 export const EDIT_EVERY_MS = 60_000;
+/**
+ * Seconds after drop_end (19:30) in which a check the database answers is not
+ * settled yet (its clock a moment behind) still hands over who sits at the
+ * fire. Within the database's own seen_end (19:30:15).
+ */
+const LATE_CHECK_S = 15;
 /** How many of the channel's latest messages a stale claim looks through for its own call. */
 const FIND_LIMIT = 50;
 /** Discord: the message was deleted. */
@@ -621,40 +629,55 @@ export function startCall(client: Client, api: QuestApi, options: CallOptions): 
   }
 
   /**
+   * One check of the guest's rest: the ids in the room now go to the
+   * database (an empty room included: the bot watched). Unknown (the room is
+   * closed or not seen yet): nobody counted from this check. The answer says
+   * tonight's guest: on a staff night, the staff and their names, shown from
+   * this check on.
+   */
+  async function seen(d: CallData, ids: string[] | null): Promise<void> {
+    if (!ids) return;
+    const answer = record(await api.call<unknown>("shift_quest_campfire_seen", d.day, ids));
+    problems.delete("drop");
+    if (answer.guest === STAFF_GUEST) {
+      d.guest = STAFF_GUEST;
+      d.staffNames = staffNamesOf(answer.staff_names);
+      if (staffDay !== d.day) {
+        staffDay = d.day;
+        // A count only: names never go to logs.
+        console.log(`[shift-quests] campfire guest for ${d.day}: staff at the fire (${d.staffNames.length} name(s) shown)`);
+      }
+    }
+  }
+
+  /**
    * The evening guest's drop. During its rest (guest_from to drop_end), every
-   * check that can read the room hands the ids there to the database (an
-   * empty room included: the bot watched): anyone who sits there at any
-   * check counts, so nobody is rewarded for coming first, and the database
-   * keeps only which teams were there. From drop_end, the first check
-   * settles the night (the database rolls once per team, once). Nothing
-   * about anyone is kept here. The presence answer says tonight's guest: on
-   * a staff night, the staff and their names, shown from this check on.
+   * check that can read the room hands the ids there to the database
+   * (seen): anyone who sits there at any check counts, so nobody is rewarded
+   * for coming first, and the database keeps only which teams were there.
+   * From drop_end, the first check settles the night (the database rolls
+   * once per team, once). The two clocks differ by a moment: when the
+   * database answers that it is not 19:30 there yet, a check within
+   * LATE_CHECK_S of drop_end still hands over the room, as the rest's last
+   * (the database takes it until its seen_end, 19:30:15, while the night is
+   * not settled). Nothing about anyone is kept here.
    */
   async function drop(d: CallData): Promise<void> {
     if (!d.guest || d.drop) return;
     const t = now() / 1000;
     if (t < d.guestFrom) return;
+    const ids = options.campfire.present();
     if (t < d.dropEnd) {
-      const ids = options.campfire.present();
-      // Unknown (the room is closed or not seen yet): nobody counted from this check.
-      if (!ids) return;
-      const seen = record(await api.call<unknown>("shift_quest_campfire_seen", d.day, ids));
-      problems.delete("drop");
-      if (seen.guest === STAFF_GUEST) {
-        d.guest = STAFF_GUEST;
-        d.staffNames = staffNamesOf(seen.staff_names);
-        if (staffDay !== d.day) {
-          staffDay = d.day;
-          // A count only: names never go to logs.
-          console.log(`[shift-quests] campfire guest for ${d.day}: staff at the fire (${d.staffNames.length} name(s) shown)`);
-        }
-      }
+      await seen(d, ids);
       return;
     }
     const r = record(await api.call<unknown>("shift_quest_campfire_drop", d.day));
     problems.delete("drop");
     const teams = teamsOf(r.teams);
-    if (r.done !== true || teams === null) return;
+    if (r.done !== true || teams === null) {
+      if (r.done !== true && t < d.dropEnd + LATE_CHECK_S) await seen(d, ids);
+      return;
+    }
     d.drop = { teams };
     if (r.fresh === true) console.log(`[shift-quests] campfire guest's drop for ${d.day} settled (${teams} team(s) got a look)`);
   }

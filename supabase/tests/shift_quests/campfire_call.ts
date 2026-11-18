@@ -33,11 +33,15 @@
  *     two, cleared the next day and on that staff member's erasure;
  *   * the call switched off: the latest recorded call comes back to be
  *     retired, and tonight's settled drop still answers the private check;
- *   * the private check: gone, arriving, quiet, away, won (with the waiting
+ *   * the private check: gone, arriving, quiet, away, unseen (the bot missed
+ *     more than a minute of the rest: never "away"), won (with the waiting
  *     gift), lost, full, noplot, about the caller's own team only;
+ *   * the two clocks: a check the bot sent in the rest that arrives a moment
+ *     after 19:30 still counts until the night is settled;
  *   * whether the call pings (for /settings): the call, its ping and a
  *     student role;
- *   * /data: the team's tree gifts (the guest's included) and its guest rows;
+ *   * /data: the member's own tree gifts, the team's guest gifts (never a
+ *     teammate's own gift) and its guest rows;
  *   * the grants: the seven entry points are the bot's (and service_role's),
  *     never the website's or the Data API's; the helpers nobody's; the new
  *     tables have row level security and no grants.
@@ -271,8 +275,8 @@ async function main(): Promise<void> {
   const nightColumns = (await db.query(
     "select column_name from information_schema.columns where table_schema = 'public' and table_name = 'shift_quest_guest_nights' order by ordinal_position",
   )).rows.map((r) => r.column_name);
-  check(JSON.stringify(nightColumns) === JSON.stringify(["day", "guest", "watched", "settled_at", "staff_names"]),
-    "a night row has no student and no team: only the staff names of a staff night", nightColumns);
+  check(JSON.stringify(nightColumns) === JSON.stringify(["day", "guest", "watched", "checked_at", "gap", "settled_at", "staff_names"]),
+    "a night row has no student and no team: the bot's checks, and only the staff names of a staff night", nightColumns);
 
   // --- The catalog: the guests' 10 looks -----------------------------------------------------------------
   const catalog = (await db.query("select id, slot, guest from public.shift_quest_tree_items where guest is not null order by sort")).rows;
@@ -396,15 +400,21 @@ async function main(): Promise<void> {
   const END = (day: string) => bkk(day, "19:30:05");
   const all = [A, B, C, M, N, NOBODY, "not-a-snowflake"];
   const nightRow = (day: string) =>
-    db.query("select guest, watched, settled_at from public.shift_quest_guest_nights where day = $1::date", [day]).then((r) => r.rows[0] ?? null);
-  /** A whole guest night: the ids seen at the first check of the rest, then the settling. */
+    db.query("select guest, watched, gap, settled_at from public.shift_quest_guest_nights where day = $1::date", [day]).then((r) => r.rows[0] ?? null);
+  /** A Bangkok time on a day, `s` seconds after 19:25:00. */
+  const restAt = (day: string, s: number) => bkk(day, `19:${String(25 + Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`);
+  /** The bot's checks every 30 seconds all rest long (19:25:05 to 19:29:35), each seeing the same ids. */
+  const watchRest = async (day: string, ids: string[]) => {
+    for (let s = 5; s < 300; s += 30) await seen(db, restAt(day, s), ids);
+  };
+  /** A whole guest night: the ids seen at every check of the rest, then the settling. */
   const wholeNight = async (day: string, ids: string[], chance: number) => {
-    await seen(db, IN(day), ids);
+    await watchRest(day, ids);
     return settle(db, END(day), chance);
   };
 
   check(await seen(db, bkk(D, "19:24:59"), all) === null, "19:24:59: the guest has not come, nobody is read");
-  check(await seen(db, bkk(D, "19:30:00"), all) === null, "19:30: the rest is over, nobody more is read");
+  check(await seen(db, bkk(D, "19:30:15"), all) === null, "19:30:15: the rest is over (and a late check's moment too), nobody more is read");
   check(await settle(db, bkk(D, "19:29:59"), 1) === null, "19:29:59: the rest is on, nothing is settled yet");
   await adminSet("campfire_call", "off");
   check(await seen(db, IN(D), all) === null && await settle(db, END(D), 1) === null, "the call off: no presence, no drop");
@@ -542,8 +552,49 @@ async function main(): Promise<void> {
     "the bot back at 21:40 after missing the whole rest: the night is settled with nobody, recorded as never watched", { r, nr });
   check((await status(A, bkk(NI, "21:41:00"))).state === "quiet",
     "and the private check says the guest only stopped by, not that the team was away");
-  check((await status(A, bkk(NE, "20:00:00"))).state === "away",
-    "a watched night with nobody's team at the fire: the team was away");
+  check((await status(A, bkk(NE, "20:00:00"))).state === "away" && (await nightRow(NE))?.gap === false,
+    "a night watched every 30 seconds all rest long, nobody's team at the fire: no gap, the team was away");
+
+  // Two clocks: the bot reads the room at 19:29:59 by its own clock and the check reaches the database after 19:30.
+  const NL = dayAfter(STARTS, 76); // a boat night
+  await watchRest(NL, [A]);
+  r = await seen(db, bkk(NL, "19:30:05"), [C]);
+  check(r?.open === true && (await dropRows(NL)).some((x) => x.project_id === p2),
+    "a check that reaches the database at 19:30:05 still counts while the night is not settled (C sat there only at the end)", r);
+  check(await seen(db, bkk(NL, "19:30:15"), [E]) === null && !(await dropRows(NL)).some((x) => x.project_id === p4),
+    "15 seconds after the rest a check is too late");
+  await settle(db, bkk(NL, "19:30:10"), 0);
+  check(await seen(db, bkk(NL, "19:30:12"), [E]) === null && !(await dropRows(NL)).some((x) => x.project_id === p4),
+    "and once the night is settled nothing more counts, however soon");
+  check((await nightRow(NL))?.gap === false, "a late check is no hole in the bot's watch");
+
+  // The bot away for part of the rest (a restart, the gateway down): a team it never saw may have sat there unseen.
+  for (const p of [p1, p2]) {
+    await db.query("delete from public.shift_quest_tree_gifts where project_id = $1", [p]);
+    await setOwned(p, []);
+  }
+  const NR = dayAfter(STARTS, 80); // a boat night
+  await seen(db, restAt(NR, 5), [A]);
+  await seen(db, restAt(NR, 35), [A]);
+  // Restarted at 19:26: nothing read until 19:27:30, while C sat at the fire from 19:26:15 to 19:27:20 only.
+  for (let s = 150; s < 300; s += 30) await seen(db, restAt(NR, s), [A]);
+  await settle(db, END(NR), 1);
+  check((await nightRow(NR))?.gap === true, "almost two minutes of the rest with no check: the night has a gap", await nightRow(NR));
+  let su = await status(C, bkk(NR, "20:00:00"));
+  check(su.state === "unseen" && su.guest === "boat",
+    "a team the bot never saw on a night with a gap: unseen, never told it was away", su);
+  check((await status(A, bkk(NR, "20:00:00"))).state === "won", "a team it saw rolls as every night");
+  const NR2 = dayAfter(STARTS, 84); // a boat night: the bot's first check at 19:26:30
+  for (let s = 90; s < 300; s += 30) await seen(db, restAt(NR2, s), [A]);
+  await settle(db, END(NR2), 0);
+  su = await status(C, bkk(NR2, "20:00:00"));
+  check(su.state === "unseen", "the first check 90 seconds into the rest: a gap at the start", su);
+  const NR3 = dayAfter(STARTS, 88); // a boat night: the bot's last check at 19:27:35
+  for (let s = 5; s < 180; s += 30) await seen(db, restAt(NR3, s), [A]);
+  await settle(db, bkk(NR3, "19:31:00"), 0);
+  su = await status(C, bkk(NR3, "20:00:00"));
+  check(su.state === "unseen" && (await nightRow(NR3))?.gap === true, "the last check more than a minute before 19:30: a gap at the end", su);
+  check((await status(A, bkk(NR3, "20:00:00"))).state === "lost", "and a team it saw still gets its own answer");
 
   // Staff at the fire are the guest (founder decision, later on 2026-11-18).
   for (const p of [p1, p2]) {
@@ -633,7 +684,7 @@ async function main(): Promise<void> {
   check((await status(A, bkk(N6, "19:24:59"))).state === "gone", "before the guest: gone");
   check((await status(A, bkk(N6, "19:26:00"))).state === "arriving", "the guest here, nothing settled: arriving");
   check((await status(N, bkk(N6, "19:26:00"))).state === "noplot", "no project: noplot");
-  await seen(db, IN(N6), [A]);
+  await watchRest(N6, [A]);
   check((await status(A, bkk(N6, "19:31:00"))).state === "arriving", "the rest over but not settled yet (the bot's next check): still arriving");
   await settle(db, END(N6), 1);
   let s = await status(B, bkk(N6, "20:00:00"));
@@ -649,12 +700,24 @@ async function main(): Promise<void> {
   check(s.state === "won" && s.gift === null, "once picked, the win shows with no gift waiting", s);
   check((await status(C, bkk(N6, "20:00:00"))).state === "away", "C's team never sat at the fire during the rest: away");
 
-  // /data: the team's tree gifts (the guest's included) and tonight's guest rows, naming nobody.
+  // /data: the member's own tree gifts, the team's guest gifts and tonight's guest rows, naming nobody.
+  // A round gift each for A and for teammate B: B's says which work session B closed, and when.
+  const SESSION_A = "0a0a0a0a-0000-4000-8000-00000000000a";
+  const SESSION_B = "0b0b0b0b-0000-4000-8000-00000000000b";
+  for (const [who, session] of [[A, SESSION_A], [B, SESSION_B]]) {
+    await db.query(
+      "insert into public.shift_quest_tree_gifts (project_id, member_id, source, options) values ($1, $2, $3, array['leaf:sky'])",
+      [p1, await memberId(who), `round:${session}`]);
+  }
   const exportA = await call<Json>(bot, "shift_quest_data_export", A);
   const exportText = JSON.stringify(exportA);
   check(Array.isArray(exportA.tree_gifts) &&
       exportA.tree_gifts.some((g: Json) => g.source === `drop:${N6}` && g.project === "Call One" && g.picked === giftNow.options[0]),
-    "/data exports the team's tree gifts, the evening guest's included, with what was picked", exportA.tree_gifts);
+    "/data exports the team's evening guest gifts, with what was picked", exportA.tree_gifts);
+  check(exportA.tree_gifts.some((g: Json) => g.source === `round:${SESSION_A}`), "and the gifts the member earned", exportA.tree_gifts);
+  check(!exportText.includes(SESSION_B) && !exportA.tree_gifts.some((g: Json) => String(g.source).startsWith("round:") && g.source !== `round:${SESSION_A}`),
+    "never a teammate's own gift: its work session and times are the teammate's activity", exportA.tree_gifts);
+  await db.query("delete from public.shift_quest_tree_gifts where source in ($1, $2)", [`round:${SESSION_A}`, `round:${SESSION_B}`]);
   check(Array.isArray(exportA.campfire_guest) &&
       exportA.campfire_guest.some((d: Json) => d.day === N6 && d.project === "Call One" && d.guest === "boat"),
     "/data exports the guest rows of the member's team", exportA.campfire_guest);

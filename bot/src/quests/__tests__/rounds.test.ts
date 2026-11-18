@@ -33,6 +33,14 @@ describe("roundAt", () => {
 });
 
 describe("roundView", () => {
+  it("focus in a SHIFT cohort week: never 'nobody counts your time' (shift-voice records voice time for that round's students)", () => {
+    expect(viewText(renderView(roundView(roundAt(TEN)), { ephemeral: false }))).toContain("ไม่มีใครนับเวลาของคุณ");
+    const cohort = viewText(renderView(roundView(roundAt(TEN), null, { cohortWeek: true }), { ephemeral: false }));
+    expect(cohort).not.toContain("นับเวลา");
+    expect(cohort).toContain("ทุกอย่างที่เขียนเห็นแค่คุณ");
+    expect(cohort).toContain(ROUND_MARKER);
+  });
+
   it("focus: when the rest starts, 🎯, the marker, nobody's minutes", () => {
     const p = renderView(roundView(roundAt(TEN)), { ephemeral: false });
     expect(p.flags).toBe(MessageFlags.IsComponentsV2);
@@ -220,8 +228,12 @@ describe("the evening guest on the rounds", () => {
   });
 });
 
-/** A voice channel's chat that records what the loop does. */
-function world(start = TEN, evening?: () => Evening | null) {
+/**
+ * A voice channel's chat that records what the loop does. Never the real
+ * cohort calendar here (TEN falls in a SHIFT round's week): a test day is no
+ * SHIFT round unless a test says so.
+ */
+function world(start = TEN, evening?: () => Evening | null, inSession: (day: string) => boolean = () => false) {
   let now = start;
   let sitters = 0;
   let room: string | null = "700000000000000001";
@@ -271,6 +283,7 @@ function world(start = TEN, evening?: () => Evening | null) {
     channelOf: (id) => (id === channel.id ? (channel as never) : null),
     botId: () => "bot",
     ...(evening ? { evening } : {}),
+    inSession,
   };
   const loop = startRounds({} as Client, { status: () => ({ channel: room, sitters }) }, deps);
   return {
@@ -296,6 +309,20 @@ describe("startRounds", () => {
     open.push(w);
     return w;
   };
+
+  it("in a SHIFT cohort week the round it posts never says nobody counts your time", async () => {
+    const days: string[] = [];
+    const w = world(TEN, undefined, (day) => {
+      days.push(day);
+      return true;
+    });
+    open.push(w);
+    w.sit(1);
+    await w.loop.tick();
+    expect(days).toContain("2026-11-13");
+    expect(w.posted[0].text).toContain(R.focusTitle);
+    expect(w.posted[0].text).not.toContain("นับเวลา");
+  });
 
   it("posts nothing while nobody sits at the fire", async () => {
     const w = make();
@@ -707,6 +734,8 @@ describe("the evening guest's 🎁 check", () => {
     ["lost", REVEAL.lostTitle(GUESTS.boat), REVEAL.lost],
     ["full", REVEAL.fullTitle(GUESTS.boat), REVEAL.full(GUESTS.boat)],
     ["away", REVEAL.awayTitle(GUESTS.boat), REVEAL.away],
+    // Settled, the bot missed more than a minute of the rest, and never saw the team: never "away".
+    ["unseen", REVEAL.unseenTitle(GUESTS.boat), REVEAL.unseen],
     ["arriving", REVEAL.arrivingTitle, REVEAL.arriving],
     // Settled with the room never read during the rest (the bot was away): never "your team was not there".
     ["quiet", REVEAL.quietTitle(GUESTS.boat), REVEAL.quiet],
@@ -735,6 +764,13 @@ describe("the evening guest's 🎁 check", () => {
     expect(lost).toContain(REVEAL.looks(["สีใบ ถ่านไฟ", "ดอก แสงดาว"]));
     // Unnamed staff (no display name on record): still the staff's night.
     expect(viewText(renderView(guestReveal(staff({ state: "away", staff_names: [] }), DAY)))).toContain("พี่จากทีม SHIFT");
+  });
+
+  it("unseen never reads as away: the bot says it could not see the fire for a while", () => {
+    const text = viewText(renderView(guestReveal(status({ state: "unseen" }), DAY)));
+    expect(text).toContain(REVEAL.unseen);
+    expect(text).not.toContain(REVEAL.away);
+    expect(text).toContain(REVEAL.looks(["สีใบ แก้วทะเล", "เปลือกไม้ ไม้ลอยน้ำ"]));
   });
 
   it("lists what the guest brought on a night without a look", () => {

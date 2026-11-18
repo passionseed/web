@@ -105,6 +105,16 @@ describe("shift island guide copy", () => {
     expect(GUIDE_PRIVACY.lines.join(" ")).toContain("ไม่เก็บว่าใครในทีมนั่งหรือนั่งตอนไหน");
   });
 
+  it("keeps SHIFT weeks out of its promises: no guest then, and voice time is recorded for that round's students", () => {
+    // The bot pauses the call and the guest while a SHIFT round is in session (bot/src/quests/call.ts cohortWeek).
+    const guest = GUIDE_CAMPFIRE.lines.find((line) => line.includes("19:25 ถึง 19:30"));
+    expect(guest).toContain("เว้นสัปดาห์ที่มีรอบ SHIFT");
+    // shift-voice records voice time in every channel for that round's students, the campfire included.
+    const minutes = GUIDE_CAMPFIRE.privacy.find((line) => line.includes("กี่นาที"));
+    expect(minutes).toContain("สัปดาห์ที่มีรอบ SHIFT");
+    expect(minutes).toContain("บันทึกเวลาในห้องเสียง");
+  });
+
   it("never promises more privacy than the guest's drop keeps", () => {
     const privacy = GUIDE_PRIVACY.lines.join(" ");
     // A team of one: the team's result is that student's, until the next day.

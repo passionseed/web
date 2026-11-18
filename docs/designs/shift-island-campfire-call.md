@@ -46,10 +46,10 @@ evening, except while a SHIFT cohort round is in session. **What they see:**
 | 2 | Where and when | #island-news (the news channel slot), 18:50 Bangkok. Yesterday's call is deleted when today's is recorded. |
 | 3 | Which days | Every day, all year, weekends included; it does not stop after Demo Day. The guest pauses when no season is active; the call itself runs. **Off by itself in SHIFT cohort weeks** (see "Cohort weeks"). Staff off switch: `/admin feature campfire_call`, **on by default**. |
 | 4 | The prize | **A random drop for being there**, not "aim and close a round". The founder approved it as the one exception to the island's no-random-prizes rule (`components/shift/island/AGENTS.md`, amended 2026-11-18). |
-| 4a | Who counts | Anyone who sits at the fire at any moment of the guest's rest (19:25 to 19:30). On every check in that window the bot passes the Discord ids in the campfire voice room (gateway voice cache, bots left out) to `shift_quest_campfire_seen`. Students are linked through the member table; unknown, not started and erased ids are ignored; staff and mentors never win. |
+| 4a | Who counts | Anyone who sits at the fire at any moment of the guest's rest (19:25 to 19:30). On every check in that window the bot passes the Discord ids in the campfire voice room (gateway voice cache, bots left out) to `shift_quest_campfire_seen`. Students are linked through the member table; unknown, not started and erased ids are ignored; staff and mentors never win. The bot's clock and the database's differ by a moment: a check the bot sent in the rest still counts when it reaches the database up to 15 seconds after 19:30 (`shift_quest__call_at(day, 'seen_end')`), and when the first check from 19:30 by the bot's clock finds the database not yet at 19:30, it passes the room too, while the night is not settled. |
 | 4b | The roll | Settled once, at the bot's first check at or after 19:30 (`shift_quest_campfire_drop`): one roll per team seen, restart-safe (a lock per night, `settled_at`, one row per team and night, one gift per team and source). A win gives one of tonight's guest's looks the team does not own (2 per guest: 8 colour-only looks for the rotation, 2 more for staff nights). A team that owns both is recorded with no look and gets a friendly no-prize line. |
 | 4c | The chance | 1 in 2 per team, in one constant: `shift_quest__guest_drop_chance()`. |
-| 4d | What is kept | Per team and night only: `shift_quest_guest_drops (day, project_id, guest, look or null)`: which teams were at the fire, and each roll. Never a member id, a Discord id, a time or a count of people. Per night: `shift_quest_guest_nights (day, guest, watched, settled_at, staff_names)`; `staff_names` holds up to two staff display names on a staff night (decision 8), never a student's, cleared the next day and on that staff member's erasure. Rows of earlier days are deleted the next day: on the bot's reads, on every presence check and drop call, and by pg_cron's 5-minute voice purge (no bot needed). For a team of one, the team's row is that student's until then, and the copy says so. A win is a gift row on the team (`source drop:<day>`, `member_id` null) that stays with its date like every gift; an erasure that leaves the team with no member deletes the team's rows and drop gifts. `/data` exports the team's tree gifts (the guest's included) and its guest rows. Live presence stays as it was: who is in the room now, deleted on leave. |
+| 4d | What is kept | Per team and night only: `shift_quest_guest_drops (day, project_id, guest, look or null)`: which teams were at the fire, and each roll. Never a member id, a Discord id, a time or a count of people. Per night: `shift_quest_guest_nights (day, guest, watched, checked_at, gap, settled_at, staff_names)`: `checked_at` is the bot's latest check of the rest (the bot's clock, never anyone's) and `gap` whether it missed more than a minute of the rest; `staff_names` holds up to two staff display names on a staff night (decision 8), never a student's, cleared the next day and on that staff member's erasure. Rows of earlier days are deleted the next day: on the bot's reads, on every presence check and drop call, and by pg_cron's 5-minute voice purge (no bot needed). For a team of one, the team's row is that student's until then, and the copy says so. A win is a gift row on the team (`source drop:<day>`, `member_id` null) that stays with its date like every gift; an erasure that leaves the team with no member deletes the team's rows and drop gifts. `/data` exports the tree gifts the member earned, the guest's gifts of the member's teams and the team's guest rows, never a teammate's own gift (its source names their work session, and its times say when they closed a round). Live presence stays as it was: who is in the room now, deleted on leave. |
 | 4e | The reveal | **Always the number** once at least one team won: "แขกทิ้งของไว้ให้ N ทีม" (`shift_quest__guest_reveal`), a friendly line for 0. Never which team. 🎁 answers privately (ephemeral, never a DM) about the presser's own team; a win also waits on the team's tree on the web and in Discord (the normal gift flow). Who sits at the fire is public, so with one team there the number says that team won; the founder chose to show it anyway. |
 | 4f | Limits | No coins, no stage change, no quest pass, nothing lost for skipping a night, no streaks, no "first to arrive", no reward for bringing more people. |
 | 5 | Deploy order | Schema 21, migration 20261118150000 (after #329's 20261118140000, schema 20, applied 2026-11-18). The bot reads the schema version on every call tick, so it can deploy before the migration with no restart. Merge, deploy the bot, then the migration on the founder's go. |
@@ -65,8 +65,11 @@ records voice time in every voice channel for that round's students, the
 campfire included. On those days the bot sends no call, reads nobody for the
 guest and makes no drop, the rounds show no guest, and the latest call is
 edited once into the paused note (with no fine print, since "ไม่มีใครนับเวลา
-ของคุณ" would not hold that week). The call comes back by itself the day after
-the round ends. No staff switch is needed.
+ของคุณ" would not hold that week). For the same reason the focus round's
+message drops that line those days (`R.focusFineCohort`), and the web guide
+says the guest skips SHIFT weeks and that shift-voice records voice time for
+that round's students then (DRAFT, for the Thai review). The call comes back
+by itself the day after the round ends. No staff switch is needed.
 
 ## Why it is shaped like this
 
@@ -125,7 +128,11 @@ drafts, Cursor proofreads, Codex checks the logic.
   the rest", never "a moment is enough".
 - If the bot is offline for the whole rest, nobody is counted that night: the
   first check after 19:30 settles it with no team, and 🎁 says the guest only
-  stopped by (`quiet`), never "your team was not there". If it is offline
+  stopped by (`quiet`), never "your team was not there". If it misses more
+  than a minute of the rest (a restart, the gateway down), the night has a
+  gap: teams it saw roll as usual, and 🎁 tells a team it never saw that the
+  bot could not see the fire for a while (`unseen`), never that the team was
+  away. Such a team gets no roll that night. If it is offline
   from 19:30 until midnight, that night is never settled and its team rows
   go the next day with no roll. If it is offline from 18:50 to 19:30 there is
   no call that night, and no late one.

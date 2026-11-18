@@ -146,7 +146,8 @@ channel right now, for the island's campfire:
   none), never who sat there or when, and deletes those rows the next day
   (for a team of one, the row is that student's until then). A won look is a
   team gift kept with its date; an erasure that leaves the team empty deletes
-  both. `/data` exports the team's tree gifts and its guest rows. On a
+  both. `/data` exports the tree gifts the member earned, the team's guest
+  gifts (never a teammate's own gift) and its guest rows. On a
   night the founder or a mentor sat at the fire during the rest, they are
   the guest, and the night keeps up to two staff display names (never a
   student's) until the next day or that staff member's erasure. See "The
@@ -1073,6 +1074,12 @@ nobody sits there) to `shift_quest_campfire_seen`: anyone there at any check
 counts, so nobody is rewarded for sitting down first. The database links
 them to started, non-staff members and their current teams and keeps one
 row per team and night in `shift_quest_guest_drops` (no member, no time).
+A check the bot sent in the rest still counts when it reaches the database
+up to 15 seconds after 19:30, and the bot's first check from 19:30 passes
+the room too when the database is not at 19:30 yet. The night records the
+bot's latest check and whether it missed more than a minute of the rest
+(`gap`); then 🎁 tells a team it never saw `unseen` (the bot could not see
+the fire for a while), never `away`.
 The bot's first check at or after 19:30 calls `shift_quest_campfire_drop`,
 which settles the night once (a lock, `shift_quest_guest_nights.settled_at`):
 each team seen gets one roll (`shift_quest__guest_drop_chance()`, 1 in 2),

@@ -15,7 +15,8 @@
 -- During an active season an evening guest comes to the fire for the first
 -- rest (19:25 to 19:30 Bangkok): a trader's boat, a gull, fireflies or a sea
 -- turtle, in a fixed rotation by season day. Each guest brings 2 colour looks
--- of its own (8 tree items only guests give). On every check in that rest
+-- of its own (8 tree items only these guests give, and 2 more for a staff
+-- night, below). On every check in that rest
 -- the bot passes the Discord ids in the campfire voice room (its gateway
 -- voice cache, bots left out) to shift_quest_campfire_seen: anyone who sits
 -- at the fire at any moment of the rest counts, so arriving first is never
@@ -54,8 +55,10 @@
 --     history is kept. For a team of one, the team's row is that student's,
 --     until the next day.
 --   * shift_quest_guest_nights: one row per guest night (day, guest, whether
---     the bot read the room during the rest, when the rolls were made, and
---     on a staff night up to two staff display names). No student, no team.
+--     the bot read the room during the rest, its latest check there and
+--     whether it missed more than a minute of the rest, when the rolls were
+--     made, and on a staff night up to two staff display names). No student,
+--     no team. The check time is the bot's clock, never anyone's.
 --     The staff names are cleared the next day (shift_quest__guest_purge) and
 --     on that staff member's erasure (shift_quest__island_erase).
 --   * shift_quest_tree_gifts: a winning team's gift, source 'drop:<day>', with
@@ -63,7 +66,8 @@
 --     at the fire, and stays with the team like every gift (with its date).
 --     An erasure that leaves the team with no member deletes it. Picking it
 --     is the normal tree_pick (audited as before). /data now exports the
---     tree gifts of the member's teams and tonight's guest rows.
+--     tree gifts the member earned, the guest's gifts of the member's teams
+--     (never a teammate's own gift) and tonight's guest rows.
 --   * shift_quest_call_posts: one row per Bangkok day, the call's ledger
 --     (claim, send, compare-and-set mark), with whether it pinged. No person.
 --   The live presence table (shift_quest_voice_presence) is untouched: still
@@ -192,6 +196,13 @@ CREATE TABLE IF NOT EXISTS public.shift_quest_guest_nights (
   -- rest (19:25 to 19:30). False: it was away, so the guest only stopped by
   -- for everyone (never "your team was not there").
   watched boolean NOT NULL DEFAULT false,
+  -- The bot's latest check of the room during the rest: the bot's clock,
+  -- never anyone's (every check writes it, an empty room included).
+  checked_at timestamptz NULL,
+  -- Whether the bot could not read the room for more than a minute at some
+  -- point of the rest (a restart, the gateway down): a team it never saw may
+  -- have sat there unseen, so the private check never says it was away.
+  gap boolean NOT NULL DEFAULT false,
   -- When the night's rolls were made (the bot's first check at or after
   -- 19:30); null while the rest is on. Set once: a night is never settled twice.
   settled_at timestamptz NULL,
@@ -207,7 +218,7 @@ CREATE TABLE IF NOT EXISTS public.shift_quest_guest_nights (
 );
 
 COMMENT ON TABLE public.shift_quest_guest_nights IS
-  'SHIFT High campfire: the nights the evening guest came (day, guest, whether the bot read the room during its rest, when the rolls were made, and on a staff night up to two staff display names, cleared the next day). No student, no team.';
+  'SHIFT High campfire: the nights the evening guest came (day, guest, whether the bot read the room during its rest, its latest check and whether it missed more than a minute of the rest, when the rolls were made, and on a staff night up to two staff display names, cleared the next day). No student, no team.';
 
 CREATE TABLE IF NOT EXISTS public.shift_quest_guest_drops (
   day date NOT NULL,
@@ -244,8 +255,11 @@ GRANT ALL ON public.shift_quest_guest_drops TO service_role;
  * 'lit' 19:00 (the first focus round), 'guest' 19:25 (the first rest: the
  * guest arrives, and everyone at the fire from now counts), 'drop_end' 19:30
  * (that rest ends: the night's rolls are made at the bot's first check from
- * then), 'until' 21:00 (the guest leaves, the fire's embers). Null for
- * anything else. The bot reads these times from shift_quest_call_today (unix
+ * then), 'seen_end' 19:30:15 (the last moment a check the bot took during
+ * the rest is still taken: the bot's clock and the database's differ by a
+ * request's time, so a check sent at 19:29:59 may arrive after 19:30),
+ * 'until' 21:00 (the guest leaves, the fire's embers). Null for anything
+ * else. The bot reads these times from shift_quest_call_today (unix
  * seconds), never its own copy.
  */
 CREATE OR REPLACE FUNCTION public.shift_quest__call_at(p_day date, p_what text)
@@ -260,6 +274,7 @@ AS $$
     WHEN 'lit' THEN interval '19 hours'
     WHEN 'guest' THEN interval '19 hours 25 minutes'
     WHEN 'drop_end' THEN interval '19 hours 30 minutes'
+    WHEN 'seen_end' THEN interval '19 hours 30 minutes 15 seconds'
     WHEN 'until' THEN interval '21 hours'
   END;
 $$;
@@ -524,7 +539,15 @@ $$;
  *     settling gives that guest's looks), and the staff display names are
  *     kept, up to two, the first seen first (a later one fills a free place
  *     only). A staff night never goes back to the rotation's guest;
- *   * the night is recorded as watched: the bot read the room.
+ *   * the night is recorded as watched: the bot read the room. Its check
+ *     time is kept (checked_at, the latest), and the night has a gap once
+ *     more than 60 seconds of the rest went unread: from 19:25 to the first
+ *     check, or between two checks (the bot checks every 30 seconds; a
+ *     restart or a lost gateway leaves a hole). shift_quest__guest_settle
+ *     adds the hole from the last check to 19:30.
+ * A check that arrives a moment after 19:30 (until 'seen_end', 19:30:15) is
+ * still taken while the night is not settled: the bot sent it during the
+ * rest by its own clock (the night's lock orders it against the settling).
  * Returns {guest, staff_names, open: true}; null outside the rest, without a
  * guest (no active season: staff at the fire make no guest either), with the
  * call off, or once the night is settled. p_ids are never stored, and neither
@@ -545,10 +568,12 @@ DECLARE
   v_seen_names text[];
   v_names text[];
   v_name text;
+  v_at timestamptz;
+  v_gap boolean;
 BEGIN
   IF p_now IS NULL OR NOT public.shift_quest__call_on()
      OR p_now < public.shift_quest__call_at(v_day, 'guest')
-     OR p_now >= public.shift_quest__call_at(v_day, 'drop_end') THEN
+     OR p_now >= public.shift_quest__call_at(v_day, 'seen_end') THEN
     RETURN NULL;
   END IF;
   -- The night's lock: a presence check and the settling never interleave.
@@ -584,9 +609,19 @@ BEGIN
     END LOOP;
   END IF;
 
+  -- What the bot could not read: more than 60 seconds of the rest since its
+  -- start or the latest check (a check from another process may come in
+  -- late: it never moves checked_at back).
+  v_at := LEAST(p_now, public.shift_quest__call_at(v_day, 'drop_end'));
+  v_gap := COALESCE(v_night.gap, false)
+    OR v_at - COALESCE(v_night.checked_at, public.shift_quest__call_at(v_day, 'guest')) > interval '60 seconds';
+
   PERFORM public.shift_quest__guest_purge(v_day);
-  INSERT INTO public.shift_quest_guest_nights (day, guest, watched, staff_names) VALUES (v_day, v_guest, true, v_names)
-  ON CONFLICT (day) DO UPDATE SET watched = true, guest = EXCLUDED.guest, staff_names = EXCLUDED.staff_names;
+  INSERT INTO public.shift_quest_guest_nights (day, guest, watched, checked_at, gap, staff_names)
+  VALUES (v_day, v_guest, true, GREATEST(v_at, v_night.checked_at), v_gap, v_names)
+  ON CONFLICT (day) DO UPDATE
+  SET watched = true, guest = EXCLUDED.guest, checked_at = EXCLUDED.checked_at, gap = EXCLUDED.gap,
+      staff_names = EXCLUDED.staff_names;
   -- The teams seen before the staff came roll for the same guest as everyone tonight.
   UPDATE public.shift_quest_guest_drops SET guest = v_guest WHERE day = v_day AND guest <> v_guest;
 
@@ -614,8 +649,10 @@ $$;
  * random() < p_chance gives it one of those (at random) as a one-option
  * gift, source 'drop:<day>', member null; otherwise no look. A
  * night the bot never watched (no check during the rest) is settled with no
- * team. Never twice: the night's lock, settled_at, the (day, project) key
- * and the gift's (project, source) key.
+ * team. A watched night whose latest check was more than 60 seconds before
+ * 19:30 has a gap (the bot stopped reading the room before the rest ended).
+ * Never twice: the night's lock, settled_at, the (day, project) key and the
+ * gift's (project, source) key.
  * Returns {guest, done: true, fresh, teams}: teams is the public count
  * (shift_quest__guest_reveal); fresh is false when the night was already
  * settled. Null before 19:30, without a guest, or with the call off.
@@ -690,7 +727,11 @@ BEGIN
     END IF;
   END LOOP;
 
-  UPDATE public.shift_quest_guest_nights SET settled_at = p_now WHERE day = v_day AND settled_at IS NULL;
+  -- The last hole: more than 60 seconds from the bot's latest check to 19:30 (shift_quest__guest_seen has the rest).
+  UPDATE public.shift_quest_guest_nights
+  SET settled_at = p_now,
+      gap = gap OR (watched AND public.shift_quest__call_at(v_day, 'drop_end') - checked_at > interval '60 seconds')
+  WHERE day = v_day AND settled_at IS NULL;
   RETURN jsonb_build_object('guest', v_guest, 'done', true, 'fresh', true,
                             'teams', public.shift_quest__guest_reveal(v_day) -> 'teams');
 END;
@@ -709,8 +750,11 @@ $$;
  *               the bot's first check from 19:30)
  *   'quiet'     settled, but the bot never read the room during the rest (it
  *               was away): the guest only stopped by, for every team
- *   'away'      no roll for the caller's team tonight (nobody from it sat at
- *               the fire during the rest)
+ *   'away'      no roll for the caller's team tonight: the bot read the room
+ *               all rest long and never saw anyone from it
+ *   'unseen'    no roll for the caller's team tonight, and the bot could not
+ *               read the room for more than a minute of the rest (gap): the
+ *               team may have sat there unseen, so never "away"
  *   'won'       {look, gift: {id, options} while it waits to be picked, else null}
  *   'full'      no look tonight, and the team has every look this guest brings
  *   'lost'      no look tonight
@@ -759,7 +803,7 @@ BEGIN
   END IF;
   SELECT * INTO v_drop FROM public.shift_quest_guest_drops WHERE day = v_day AND project_id = v_project;
   IF NOT FOUND THEN
-    RETURN v_base || jsonb_build_object('state', 'away');
+    RETURN v_base || jsonb_build_object('state', CASE WHEN v_night.gap THEN 'unseen' ELSE 'away' END);
   END IF;
   IF v_drop.look IS NOT NULL THEN
     SELECT * INTO v_gift FROM public.shift_quest_tree_gifts
@@ -899,10 +943,12 @@ $$;
 /**
  * Who sits at the fire now, during the evening guest's rest: p_ids are the
  * Discord ids in the campfire voice room right now (the bot's gateway voice
- * cache, bots left out), passed on every check from 19:25 to 19:30 Bangkok.
- * Keeps only which teams were there, and on a staff night up to two staff
- * display names (shift_quest__guest_seen). Null unless
- * p_day is today in Bangkok (an old tick) and the rest is on. Non-snowflakes
+ * cache, bots left out), passed on every check from 19:25 to 19:30 Bangkok
+ * by the bot's clock (and on a check from 19:30 the database answers is not
+ * settled yet). Keeps only which teams were there, and on a staff night up
+ * to two staff display names (shift_quest__guest_seen). Null unless p_day is
+ * today in Bangkok (an old tick) and the rest is on (a check arriving up to
+ * 15 seconds after 19:30 still counts until the night is settled). Non-snowflakes
  * are dropped, at most 200 ids are read, none is stored. Every call deletes
  * earlier nights' rows.
  */
@@ -1293,11 +1339,12 @@ $$;
 
 /**
  * 20261115140000_shift_quest_peer_check's export hook, plus (20261118150000)
- * the tree gifts of the member's teams, the evening guest's included (a
- * guest's gift has no member: it is the team's, with its date), and the
- * gifts the member earned on any team; and tonight's guest rows of the
- * member's teams (earlier nights' are deleted). No member id, no Discord id,
- * no teammate's name.
+ * the tree gifts the member earned on any team and the evening guest's gifts
+ * of the member's teams (a guest's gift has no member: it is the team's,
+ * with its date), never a teammate's own gift (its source and times are that
+ * teammate's activity); and tonight's guest rows of the member's teams
+ * (earlier nights' are deleted). No member id, no Discord id, no teammate's
+ * name.
  */
 CREATE OR REPLACE FUNCTION public.shift_quest__island_export(p_member uuid)
 RETURNS jsonb
@@ -1350,9 +1397,11 @@ BEGIN
       JOIN public.shift_quest_instances i ON i.id = s.instance_id
       WHERE c.peer_id = p_member
     ), '[]'::jsonb),
-    -- 20261118150000_shift_quest_campfire_call: tree gifts (a campfire round's,
-    -- a quest's, an evening guest's drop:<day>) of the member's active teams,
-    -- and those the member earned on any team.
+    -- 20261118150000_shift_quest_campfire_call: the tree gifts the member
+    -- earned (a campfire round's, a quest's) on any team, and the evening
+    -- guest's drop:<day> gifts of the member's active teams (no member: the
+    -- team's). Never a teammate's own gift: its source names their work
+    -- session and its times say when they closed a round.
     'tree_gifts', COALESCE((
       SELECT jsonb_agg(jsonb_build_object('project', p.name, 'source', g.source, 'options', to_jsonb(g.options),
                                           'picked', g.picked, 'created_at', g.created_at, 'picked_at', g.picked_at)
@@ -1360,10 +1409,10 @@ BEGIN
       FROM public.shift_quest_tree_gifts g
       JOIN public.shift_quest_projects p ON p.id = g.project_id
       WHERE g.member_id = p_member
-         OR g.project_id IN (
+         OR (g.member_id IS NULL AND g.source LIKE 'drop:%' AND g.project_id IN (
            SELECT pm.project_id FROM public.shift_quest_project_members pm
            WHERE pm.member_id = p_member AND pm.status = 'active'
-         )
+         ))
     ), '[]'::jsonb),
     -- Tonight's evening guest rows of the member's active teams: which team
     -- sat at the fire during the guest's rest and its roll (deleted the next day).

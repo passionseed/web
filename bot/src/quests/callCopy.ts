@@ -275,9 +275,17 @@ export const REVEAL = {
   fullTitle: (g: Guest) => named(g, `${g.emoji} ทีมคุณมีของจาก`, "ครบแล้ว"),
   full: (g: Guest) => named(g, "คืนนี้", "เลยแวะมานั่งพักข้างกองไฟด้วยกัน"),
   awayTitle: (g: Guest) => named(g, `${g.emoji} `, "แวะมาที่กองไฟคืนนี้"),
-  away: "ของจากแขกตกถึงทีมที่มีคนนั่งที่กองไฟช่วงพักแรกหลัง 1 ทุ่ม (19:25 ถึง 19:30) แขกเวียนกันมาเรื่อยๆ ไม่ต้องรีบ",
+  /**
+   * Settled, the team never seen, and the bot could not read the room for
+   * more than a minute of the rest (a restart, the gateway down): the team
+   * may have sat there then, so never "away". DRAFT.
+   */
+  unseenTitle: (g: Guest) => named(g, `${g.emoji} `, "แวะมาที่กองไฟคืนนี้"),
+  unseen: "คืนนี้บอทหลุดไปช่วงหนึ่งระหว่างพัก 19:25 ถึง 19:30 ถ้าทีมคุณนั่งอยู่ที่กองไฟตอนนั้น บอทมองไม่เห็น ขอโทษด้วยนะ แขกเวียนกันมาเรื่อยๆ ไม่ต้องรีบ",
+  /** A roll, never a promise (1 in 2): the same "ได้ลุ้น ทีมละครั้ง" as the call's rule (sitDuring). DRAFT. */
+  away: "ทีมที่มีคนนั่งที่กองไฟช่วงพักแรกหลัง 1 ทุ่ม (19:25 ถึง 19:30) ได้ลุ้นของจากแขก ทีมละครั้ง แขกเวียนกันมาเรื่อยๆ ไม่ต้องรีบ",
   arrivingTitle: "👀 แขกกำลังวางของ",
-  arriving: "แขกวางของให้ทุกทีมที่มีคนนั่งที่กองไฟช่วงพัก 19:25 ถึง 19:30 ลองกดอีกครั้งหลัง 19:30",
+  arriving: "ทุกทีมที่มีคนนั่งที่กองไฟช่วงพัก 19:25 ถึง 19:30 ได้ลุ้นของจากแขก ทีมละครั้ง ลองกดอีกครั้งหลัง 19:30",
   /** Settled, but the bot never read the room during the guest's rest (it was away): no team got anything, never "your team was not there". */
   quietTitle: (g: Guest) => named(g, `${g.emoji} คืนนี้`, "แค่แวะมานั่งพัก"),
   quiet: "คืนนี้แขกไม่ได้ทิ้งของไว้ให้ทีมไหน แขกเวียนกันมาที่กองไฟ แต่ละตัวมีของของตัวเอง",

@@ -432,7 +432,7 @@ describe("the call's mentions", () => {
 describe("the call's Thai copy (DRAFT)", () => {
   const guests = [...GUEST_KEYS.map((k) => GUESTS[k]), staffGuest(["Ann"]), staffGuest(["Ann", "Ben"]), staffGuest([])];
   const all = JSON.stringify({ CALL, GUESTS, ROUND_GUEST, REVEAL, staff: guests.slice(GUEST_KEYS.length) }) + [
-    ...guests.flatMap((g) => [CALL.dropped(g, 0), CALL.dropped(g, 4), CALL.stay(g, 1), REVEAL.wonTitle(g), REVEAL.lostTitle(g), REVEAL.fullTitle(g), REVEAL.full(g), REVEAL.awayTitle(g), REVEAL.quietTitle(g), REVEAL.heading(g)]),
+    ...guests.flatMap((g) => [CALL.dropped(g, 0), CALL.dropped(g, 4), CALL.stay(g, 1), REVEAL.wonTitle(g), REVEAL.lostTitle(g), REVEAL.fullTitle(g), REVEAL.full(g), REVEAL.awayTitle(g), REVEAL.unseenTitle(g), REVEAL.quietTitle(g), REVEAL.heading(g)]),
     CALL.round(1), CALL.teaser(1), CALL.drop(1, 2), ROUND_GUEST.sit(2), CALL.people(0), CALL.people(1), CALL.people(5), CALL.dayLine(DAY), REVEAL.won("x"), REVEAL.looks(["a", "b"]),
   ].join("\n");
 
@@ -469,6 +469,7 @@ describe("the call's Thai copy (DRAFT)", () => {
       REVEAL.fullTitle(g),
       REVEAL.full(g),
       REVEAL.awayTitle(g),
+      REVEAL.unseenTitle(g),
       REVEAL.quietTitle(g),
       REVEAL.heading(g),
       g.here,
@@ -495,6 +496,22 @@ describe("the call's Thai copy (DRAFT)", () => {
     // The comment cites where the Thai labels come from.
     const file = readFileSync(join(__dirname, "..", "callCopy.ts"), "utf8");
     expect(file).toContain("form_label_suppress_roles");
+  });
+
+  it("never promises a look for sitting at the fire: the private answers say each team there gets a roll, once", () => {
+    for (const line of [REVEAL.away, REVEAL.arriving]) {
+      expect(line).toContain("ได้ลุ้น");
+      expect(line).toContain("ทีมละครั้ง");
+      expect(line).not.toMatch(/วางของให้ทุกทีม|ตกถึงทีมที่/);
+    }
+  });
+
+  it("when the bot missed part of the rest, never tells a team it was away: it says the bot could not see then", () => {
+    expect(REVEAL.unseen).toContain("19:25 ถึง 19:30");
+    expect(REVEAL.unseen).toContain("บอท");
+    expect(REVEAL.unseen).not.toBe(REVEAL.away);
+    expect(REVEAL.unseenTitle(GUESTS.boat)).toBe(REVEAL.awayTitle(GUESTS.boat));
+    expect(REVEAL.unseenTitle(staffGuest(["Ann"]))).toMatch(/(^|\s)Ann(\s|$)/);
   });
 
   it("never says nobody can see which team got a look: a picked look shows on a shown team's tree", () => {
@@ -1230,6 +1247,36 @@ describe("startCall: the evening guest's drop", () => {
     await o.loop.poll();
     expect(o.loop.evening(o.clock.now)?.drop).toEqual({ teams: 0 });
     expect(console.log).not.toHaveBeenCalled();
+  });
+
+  it("a check just past 19:30 by its own clock, which the database says is still the rest, still passes who sits at the fire", async () => {
+    const w = world();
+    const call = w.api.call as jest.Mock;
+    const real = call.getMockImplementation()!;
+    // The database's clock a moment behind the bot's: not 19:30 there yet, so no settling and the rest still on.
+    let behind = true;
+    call.mockImplementation(async (fn: string, ...args: unknown[]) => {
+      if (behind && fn === "shift_quest_campfire_drop") return w.db.calls.push([fn, ...args]), null;
+      if (behind && fn === "shift_quest_campfire_seen") return w.db.calls.push([fn, ...args]), { guest: "boat", staff_names: [], open: true };
+      return real(fn, ...args);
+    });
+    // C sat down at 19:29:31: this is the only check that can see them in the rest.
+    w.room.present = [C];
+    w.clock.now = at(40) + 200;
+    await w.loop.poll();
+    expect(fnCalls(w, "shift_quest_campfire_drop")).toEqual([["shift_quest_campfire_drop", DAY]]);
+    expect(fnCalls(w, "shift_quest_campfire_seen")).toEqual([["shift_quest_campfire_seen", DAY, [C]]]);
+    expect(w.loop.evening(w.clock.now)?.drop).toBeNull();
+    // Half a minute on, still not settled there: too late for a check of the rest, so none is sent.
+    w.clock.now = at(40.5);
+    await w.loop.poll();
+    expect(fnCalls(w, "shift_quest_campfire_drop")).toHaveLength(2);
+    expect(fnCalls(w, "shift_quest_campfire_seen")).toHaveLength(1);
+    behind = false;
+    w.clock.now = at(41);
+    await w.loop.poll();
+    expect(w.loop.evening(w.clock.now)?.drop).toEqual({ teams: 2 });
+    expect(fnCalls(w, "shift_quest_campfire_seen")).toHaveLength(1);
   });
 
   it("makes no drop on a night without a guest, or once the database has it", async () => {

@@ -131,6 +131,9 @@ export function guestReveal(raw: unknown, day: string): View {
       return { tone: "island", title: REVEAL.fullTitle(g), blocks: [{ kind: "text", text: REVEAL.full(g) }, ...looksLine, fine], rows: tree };
     case "lost":
       return { tone: "island", title: REVEAL.lostTitle(g), blocks: [{ kind: "text", text: REVEAL.lost }, ...looksLine, fine], rows: tree };
+    case "unseen":
+      // The bot missed more than a minute of the rest and never saw the team: it may have sat there then, never "away".
+      return { tone: "island", title: REVEAL.unseenTitle(g), blocks: [{ kind: "text", text: REVEAL.unseen }, ...looksLine, fine] };
     default:
       // away, and anything newer than this bot: nobody from the team sat at the fire during the guest's rest.
       return { tone: "island", title: REVEAL.awayTitle(g), blocks: [{ kind: "text", text: REVEAL.away }, ...looksLine, fine] };

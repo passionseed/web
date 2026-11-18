@@ -32,6 +32,7 @@
 import type { Client, Message } from "discord.js";
 
 import { FOCUS_MINUTES, REST_MINUTES } from "@/lib/shift-island/rounds-rules";
+import { roundsInSession } from "@/lib/shift/voiceWindow";
 
 import { ROUND_GUEST, CALL, guestOf, type GuestKey } from "./callCopy";
 import type { Campfire } from "./campfire";
@@ -175,8 +176,13 @@ function guestLines(part: Extract<GuestPart, { kind: "guest" }>): { text: string
   return { text: lines.join("\n"), button: part.drop ? button(cid("rd_guest", part.day), CALL.btnCheck) : null };
 }
 
-/** The round's message: the same for everyone at the fire. */
-export function roundView(at: RoundAt, evening: Evening | null = null): View {
+/**
+ * The round's message: the same for everyone at the fire. In a SHIFT cohort
+ * week (opts.cohortWeek) shift-voice records voice time in every voice
+ * channel for that round's students, the campfire included, so the focus
+ * round drops "nobody counts your time" (R.focusFineCohort).
+ */
+export function roundView(at: RoundAt, evening: Evening | null = null, opts: { cohortWeek?: boolean } = {}): View {
   const part = guestPart(at, evening);
   const guest = part?.kind === "guest" ? guestLines(part) : null;
   if (at.phase === "focus") {
@@ -189,7 +195,7 @@ export function roundView(at: RoundAt, evening: Evening | null = null): View {
         { kind: "text", text: R.focus(at.restAt) },
         ...(part?.kind === "teaser" ? [{ kind: "text", text: ROUND_GUEST.teaser } as const] : []),
         ...(guest ? [{ kind: "divider" } as const, { kind: "text", text: guest.text } as const] : []),
-        { kind: "subtext", text: `${guest ? `${ROUND_GUEST.fine}\n` : ""}${R.focusFine}\n${ROUND_MARKER}` },
+        { kind: "subtext", text: `${guest ? `${ROUND_GUEST.fine}\n` : ""}${opts.cohortWeek ? R.focusFineCohort : R.focusFine}\n${ROUND_MARKER}` },
       ],
       rows: buttonRows(buttons),
     };
@@ -233,6 +239,8 @@ export interface RoundDeps {
   botId?: () => string | undefined;
   /** Tonight's evening (the call loop's cache, call.ts), or null: the guest on the round messages. */
   evening?: (nowMs: number) => Evening | null;
+  /** Whether a SHIFT cohort round is in session on a Bangkok day (default: the calendar shift-voice uses, roundsInSession). */
+  inSession?: (day: string) => boolean;
 }
 
 function codeOf(error: unknown): string {
@@ -243,6 +251,9 @@ function codeOf(error: unknown): string {
 export function startRounds(client: Client, campfire: Pick<Campfire, "status">, deps: RoundDeps = {}): Rounds & { tick: () => Promise<void> } {
   const now = deps.now ?? Date.now;
   const botId = deps.botId ?? (() => client.user?.id);
+  const inSession = deps.inSession ?? ((day: string) => roundsInSession(day).size > 0);
+  /** Whether nowMs falls in a SHIFT cohort week (Bangkok day): a round starts on :00 or :30, so never changes within one. */
+  const cohortAt = (nowMs: number): boolean => inSession(new Date(nowMs + 7 * 3600_000).toISOString().slice(0, 10));
   const eveningAt = (nowMs: number): Evening | null => {
     try {
       return deps.evening?.(nowMs) ?? null;
@@ -314,7 +325,7 @@ export function startRounds(client: Client, campfire: Pick<Campfire, "status">, 
       // The same round: an edit only when it shows something new (the rest, or the guest learned late).
       if (current.key === key) return;
       try {
-        await current.message.edit({ ...renderView(roundView(at, evening), { ephemeral: false }), allowedMentions: { parse: [] } });
+        await current.message.edit({ ...renderView(roundView(at, evening, { cohortWeek: cohortAt(nowMs) }), { ephemeral: false }), allowedMentions: { parse: [] } });
         current.key = key;
       } catch (error) {
         warnOnce(`edit:${codeOf(error)}`, `[shift-quests] rounds: edit failed (${codeOf(error)})`);
@@ -328,7 +339,7 @@ export function startRounds(client: Client, campfire: Pick<Campfire, "status">, 
     await remove();
     await sweep(channel);
     try {
-      const message = await channel.send({ ...renderView(roundView(at, evening), { ephemeral: false }), allowedMentions: { parse: [] } });
+      const message = await channel.send({ ...renderView(roundView(at, evening, { cohortWeek: cohortAt(nowMs) }), { ephemeral: false }), allowedMentions: { parse: [] } });
       current = { message, channel: room, round: at.round, key };
       warned = "";
     } catch (error) {

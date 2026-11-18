@@ -432,7 +432,10 @@ The short version for whoever runs the bot:
     cache; empty when nobody sits there) to `shift_quest_campfire_seen`, and
     the database keeps which teams were there (no member, no time). The
     first check from 19:30 calls `shift_quest_campfire_drop`, which settles
-    the night once: one roll per team, rows deleted the next day. When the
+    the night once: one roll per team, rows deleted the next day (when the
+    database is not at 19:30 yet, that check passes the room as the rest's
+    last). A night the bot missed more than a minute of answers a team it
+    never saw `unseen`, never `away`. When the
     founder or a mentor (an admin or reviewer member) is in the room at any
     check of the rest, they are that night's guest: the call and the round
     messages name them (`คืนนี้ <name> มาเป็นแขกที่กองไฟ`, two at most) and
