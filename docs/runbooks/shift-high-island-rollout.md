@@ -358,7 +358,7 @@ The bot runs on its own host (`bot/deploy.sh`), not on Vercel.
         `/admin channel` refuses the channel if students cannot see it or
         read its history, or the bot cannot post the picture there. `/admin status` then shows
         `✅ ห้องข่าวเกาะ`, and `/admin island` shows
-        `✅ ข่าวเกาะคืนนี้` and `สรุป AI ที่เก็บไว้วันนี้: N ทีม`. From then
+        `✅ ข่าวเกาะคืนนี้` and `สรุปจาก AI วันนี้: N ทีม`. From then
         on the AI news goes only into this card, never the live channel.
         Clearing the channel (`/admin channel kind:news` with no channel)
         stops the card and brings the old digest behaviour back.

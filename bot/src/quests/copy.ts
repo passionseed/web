@@ -91,9 +91,9 @@ export const T = {
   pilotClosed: "ตอนนี้ SHIFT High quests ยังไม่เปิดให้ใช้",
   notStarted: "เริ่มด้วย /start ก่อนนะ ใช้เวลาไม่ถึงนาที",
   staffOnly: "คำสั่งนี้สำหรับทีมพี่เลี้ยงที่ได้รับสิทธิ์เท่านั้น",
-  /** DRAFT for the Thai review (news added with schema 19). */
+  /** News added with schema 19. */
   adminVoiceCoworkingOnly:
-    "ห้องเสียงใช้ได้กับ coworking เท่านั้น ห้อง help, staff, celebrate, live และ news ต้องเป็นห้องข้อความ (news เป็นห้องประกาศได้) ห้อง suggest เป็นฟอรัมหรือห้องข้อความ",
+    "ใช้ห้องเสียงได้แค่ coworking ส่วน help, staff, celebrate, live และ news ต้องเป็นห้องข้อความ (news ใช้ห้องประกาศได้) และ suggest ต้องเป็นฟอรัมหรือห้องข้อความ",
   adminCoworkingPrivate:
     "นักเรียนยังมองไม่เห็นหรือเข้าห้องเสียงนี้ไม่ได้ เลือกห้องที่นักเรียนเข้าได้ กองไฟบนเกาะจะได้ไม่โชว์คนในห้องส่วนตัว",
   /** /admin channel kind:live: the bot keeps one post there, so it must be a plain text channel. */
@@ -104,11 +104,11 @@ export const T = {
   adminForumSuggestOnly: "ฟอรัมใช้ได้กับ suggest เท่านั้น ห้องอื่นเลือกห้องข้อความ (coworking เป็นห้องเสียงได้)",
   adminLiveBotPerms:
     "บอทยังโพสต์ในห้องนี้ไม่ได้ ให้บอทมีสิทธิ์ดูห้อง ส่งข้อความ แนบไฟล์ และอ่านประวัติข้อความในห้องนี้ก่อน (ปักหมุดข้อความได้ด้วยจะดีที่สุด)",
-  // /admin channel kind:news, the nightly island news card (schema 19, news.ts). DRAFT for the Thai review.
+  // /admin channel kind:news, the nightly island news card (schema 19, news.ts).
   adminNewsType: "ห้องข่าวเกาะต้องเป็นห้องข้อความหรือห้องประกาศ",
   adminAnnouncementNewsOnly: "ห้องประกาศใช้ได้กับ news เท่านั้น ห้องอื่นเลือกห้องข้อความ",
-  adminNewsPrivate: "นักเรียนยังมองไม่เห็นห้องนี้หรืออ่านข้อความย้อนหลังไม่ได้ ให้นักเรียนมีสิทธิ์ดูห้องและอ่านประวัติข้อความในห้องนี้ก่อน",
-  adminNewsBotPerms: "บอทยังโพสต์ในห้องนี้ไม่ได้ ให้บอทมีสิทธิ์ดูห้อง ส่งข้อความ แนบไฟล์ และอ่านประวัติข้อความในห้องนี้ก่อน",
+  adminNewsPrivate: "นักเรียนยังมองไม่เห็นห้องนี้หรืออ่านแชตย้อนหลังไม่ได้ เปิดสิทธิ์ดูห้องและอ่านประวัติข้อความให้นักเรียนก่อน",
+  adminNewsBotPerms: "บอทยังโพสต์ในห้องนี้ไม่ได้ เปิดสิทธิ์ดูห้อง ส่งข้อความ แนบไฟล์ และอ่านประวัติข้อความให้บอทก่อน",
   done: "เรียบร้อย",
   cancelled: "ยกเลิกแล้ว ไม่มีอะไรถูกบันทึกหรือโพสต์",
 
@@ -508,7 +508,7 @@ export const T = {
     `ยินยอมแล้ว **${granted}** · รอผู้ปกครอง ${waiting} · ยังไม่มี ${none}`,
   adminConsentOffWarn:
     "ความยินยอมปิดอยู่: ทุกคนนับว่ายินยอมแล้ว ชื่อทีม คำชมในห้อง และการแลกของขึ้นได้โดยไม่มีผู้ปกครองยินยอม ใช้เฉพาะตอนทดสอบ (ข่าวเกาะ AI ยังต้องมีการยินยอมเรื่อง AI ของทุกคนเสมอ)",
-  /** 'news' (schema 19): the AI lines go into the nightly island news card. DRAFT for the Thai review. */
+  /** 'news' (schema 19): the AI lines go into the nightly island news card. */
   adminDigestLine: (on: boolean, channel: string | null) =>
     `${on ? "✅" : "⚪"} ข่าวเกาะ AI: **${on ? "เปิด" : "ปิด"}** · โพสต์วันละครั้งที่${
       channel === "news"
@@ -517,13 +517,13 @@ export const T = {
           ? "ห้องเกาะสด"
           : channel === "celebrate"
             ? "ห้องโพสต์ความสำเร็จ"
-            : "ห้องที่ยังไม่ตั้ง (/admin channel live)"
+            : "ห้องที่ยังไม่ตั้ง (/admin channel kind:live)"
     }`,
-  /** The nightly island news card (schema 19): on while a news channel is set. DRAFT for the Thai review. */
+  /** The nightly island news card (schema 19): on while a news channel is set. */
   adminNewsLine: (set: boolean) =>
     set ? "✅ ข่าวเกาะคืนนี้: โพสต์ทุกคืนราว 2 ทุ่มในห้องข่าวเกาะ" : "⚪ ข่าวเกาะคืนนี้: ยังไม่ตั้งห้อง (/admin channel kind:news)",
-  /** How many teams have an AI summary stored for today. 0 while the AI news is off or no team has agreed to AI summaries; 0 with both on points at the website's job or its key. DRAFT. */
-  adminDigestToday: (n: number) => `🤖 สรุป AI ที่เก็บไว้วันนี้: ${n} ทีม`,
+  /** How many teams have an AI summary stored for today. 0 while the AI news is off or no team has agreed to AI summaries; 0 with both on points at the website's job or its key. */
+  adminDigestToday: (n: number) => `🤖 สรุปจาก AI วันนี้: ${n} ทีม`,
   adminDigestLast: (day: string | null) => `โพสต์ล่าสุด: ${day ?? "ยังไม่เคย"}`,
   adminDigestHidden: (teams: string) => `ซ่อนสรุปอยู่: ${teams || "ไม่มี"}`,
   adminIslandFine:
@@ -562,10 +562,10 @@ const ERRORS: Record<string, string> = {
   // The peer check (20261115140000) is website-only too.
   already_checked: "คุณเช็กงานนี้ไปแล้ว ขอบคุณที่ช่วยเพื่อน",
   peer_limit: "วันนี้เช็กงานเพื่อนครบ 10 งานแล้ว พรุ่งนี้มาช่วยต่อได้",
-  // The share draft (20261118100000) is website-only too. DRAFT for the Thai review.
-  share_limit: "ร่างโพสต์ฉลองหรือขอบคุณครบ 5 ครั้งใน 24 ชั่วโมงแล้ว ยังไม่มีอะไรถูกโพสต์ ลองใหม่พรุ่งนี้ได้",
-  // A reviewer claiming their own team's help request (20261118100000), from the bot or the website. DRAFT for the Thai review.
-  help_conflict: "รับเรื่องนี้ไม่ได้ เพราะเป็นคำขอของคุณเองหรือของทีมที่คุณอยู่ ให้พี่เลี้ยงคนอื่นช่วยแทน",
+  // The share draft (20261118100000) is website-only too.
+  share_limit: "ร่างโพสต์ฉลองหรือขอบคุณครบ 5 ครั้งใน 24 ชั่วโมงที่ผ่านมาแล้ว โพสต์นี้ยังไม่ได้ส่ง ลองใหม่ได้เมื่อร่างแรกพ้น 24 ชั่วโมง",
+  // A reviewer claiming their own team's help request (20261118100000), from the bot or the website.
+  help_conflict: "รับเรื่องนี้ไม่ได้ เพราะเป็นคำขอของคุณหรือทีมตัวเอง ให้พี่เลี้ยงคนอื่นช่วยดูแทน",
   // The campfire writers (20261111093000) refuse an ID that is not a Discord snowflake. Only the bot calls them.
   invalid: "ข้อมูลไม่ถูกต้อง ลองใหม่อีกครั้ง",
   bad_route: "เลือกเส้นทางจากตัวเลือกที่มี",
@@ -723,8 +723,7 @@ export function meter(count: number, target: number): string {
  * The celebrate channel's post when a mentor's approval grows a team's tree
  * (kind tree_grew, schema 16). bot/src/quests/outbox.ts lays it out and
  * escapes the team's name and the quest's title before they reach these.
- * Never a mentor's words, never a student's name. DRAFT for the three-model
- * Thai review.
+ * Never a mentor's words, never a student's name.
  */
 export const TREE_GREW = {
   title: "🎉 ต้นไม้โตอีกขั้น",
@@ -732,12 +731,12 @@ export const TREE_GREW = {
   mystery: "ทีมปริศนา",
   /** "**ร้านขนม** · แปลง #4", or "**ทีมปริศนา** · แปลง #4". */
   team: (name: string | null, slot: number | null) => `**${name ?? TREE_GREW.mystery}**${slot ? ` · แปลง #${slot}` : ""}`,
-  /** "ผ่านเควสต์หลักที่ 3 **ได้พันธมิตรคนแรก** แล้ว". */
+  /** "ผ่านเควสต์หลักที่ 3 **ได้พันธมิตรคนแรก** แล้ว"; with neither a number nor a title, "ผ่านเควสต์หลักแล้ว" (no space before แล้ว). */
   quest: (milestone: number | null, title: string | null) =>
-    `ผ่านเควสต์หลัก${milestone ? `ที่ ${milestone}` : ""}${title ? ` **${title}**` : ""} แล้ว`,
-  cheer: "ยินดีด้วย! ต้นนี้โตจากงานจริงของทีม",
+    `ผ่านเควสต์หลัก${milestone ? `ที่ ${milestone}` : ""}${title ? ` **${title}**` : ""}${milestone || title ? " " : ""}แล้ว`,
+  cheer: "ยินดีด้วย! ต้นไม้โตขึ้นจากงานที่ทีมลงมือทำจริง",
   /** Fine print under a mystery team's post: an invitation, never pressure. "" leaves it out. */
-  showName: "อยากให้ชื่อทีมขึ้นแทนทีมปริศนาไหม ทุกคนในทีมเลือกโชว์ชื่อได้บนเกาะ ไม่บังคับ",
+  showName: "อยากให้ชื่อทีมขึ้นแทนทีมปริศนาไหม ถ้าทุกคนในทีมเปิดโชว์ชื่อบนเกาะ ชื่อทีมจะขึ้นเอง ไม่บังคับ",
   /** One emoji per stage, 0 to 7 (the names are STAGE_NAMES in ./island/copy). */
   stageEmoji: ["🟫", "🌱", "🌱", "🌿", "🌳", "🌳", "🍎", "🌸"],
 };

@@ -56,7 +56,7 @@ describe("nextStep", () => {
 
   it("shows back what the student meant to do today, after the check-in only", () => {
     const board = active(fresh(), 1, IDS.m2Instance);
-    expect(nextLine(nextStep(board, DONE_DAY)!, "คุยกับแม่ค้า")).toBe("วันนี้ตั้งใจว่า: คุยกับแม่ค้า");
+    expect(nextLine(nextStep(board, DONE_DAY)!, "คุยกับแม่ค้า")).toBe("เป้าวันนี้: คุยกับแม่ค้า");
     expect(nextLine(nextStep(board, OPEN_DAY)!, "คุยกับแม่ค้า")).toBe("เควสต์หลัก 1 จาก 7");
   });
 
@@ -86,7 +86,7 @@ describe("nextStep", () => {
     const step = nextStep(board, OPEN_DAY);
     expect(step).toMatchObject({ kind: "waiting", ref: { kind: "main", milestone: 1 }, waitingTitle: null, checksIn: false, action: null });
     expect(nextHeadline(step!)).toBe(`รอพี่เลี้ยงดู: ${MAIN_TITLES[0]}`);
-    expect(nextLine(step!)).toBe("ส่งแล้ว ผลจะขึ้นตรงนี้");
+    expect(nextLine(step!)).toBe("ส่งแล้ว รอดูผลตรงนี้ได้เลย");
     // Nothing to do but wait: no button at all.
     expect(nextAction(step!)).toBeNull();
   });
@@ -144,11 +144,11 @@ describe("nextStep", () => {
       expect(nextAction(step)).toBe("ทำต่อ");
     });
 
-    it("opens what a mentor said: ดูสิ่งที่พี่เลี้ยงบอก", () => {
+    it("opens what a mentor said: ดูคอมเมนต์พี่เลี้ยง", () => {
       const board = active(fresh(), 2, IDS.m4Instance, "clarification");
       const step = nextStep(board, DONE_DAY)!;
       expect(step).toMatchObject({ kind: "answer", action: "open" });
-      expect(nextAction(step)).toBe("ดูสิ่งที่พี่เลี้ยงบอก");
+      expect(nextAction(step)).toBe("ดูคอมเมนต์พี่เลี้ยง");
     });
 
     it("offers a declined main quest again: ลองอีกครั้ง", () => {
@@ -172,7 +172,7 @@ describe("nextStep", () => {
       expect(step).toMatchObject({ kind: "reviewed", ref: { kind: "main", milestone: 1 }, action: "open", checksIn: false });
       expect(nextHeadline(step)).toBe(`ผ่านแล้ว: ${MAIN_TITLES[0]}`);
       // Only a mentor's approval of a main quest grows the tree.
-      expect(nextLine(step)).toBe("พี่เลี้ยงให้ผ่าน ต้นไม้ของทีมโตขึ้น 1 ขั้น");
+      expect(nextLine(step)).toBe("พี่เลี้ยงให้ผ่านแล้ว ต้นไม้ของทีมโตขึ้นอีก 1 ขั้น");
       expect(nextAction(step)).toBe("ดูผล");
       expect(nextStep(board, { tapsToday: 0, resting: true, approved: { kind: "main", milestone: 1 } })).toMatchObject({ kind: "resting" });
     });
