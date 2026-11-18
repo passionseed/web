@@ -241,7 +241,8 @@ then read and write students' real quest data.
 - [ ] `DISCORD_SHIFT_INVITE_URL` (optional): the invite link shown to
       students who are not in the server yet.
 - [ ] AI island news (ข่าวเกาะ): the daily job `/api/cron/shift-island-digest`
-      (`vercel.json`, 20:00 Bangkok) needs two variables on Production:
+      (`vercel.json`, 18:00 Bangkok, so its summaries are stored before the
+      bot's nightly island news card at 20:00) needs two variables on Production:
       - `ANTHROPIC_API_KEY`: the model call (`lib/shift-island/digest/claude.ts`).
         Without it the job logs why and stores nothing; the island, the bot
         and everything else keep working.
@@ -298,8 +299,12 @@ The bot runs on its own host (`bot/deploy.sh`), not on Vercel.
       ssh <bot host> docker logs --tail 50 passionseed-discord-bot | grep shift-quests
       ```
 
-      Expect `[shift-quests] database schema 10 (bot needs 2)`. From 8 the bot
-      runs the live post, from 9 the island news post, from 10 it draws roots.
+      Expect `[shift-quests] database schema 19 (bot needs 2)` once every
+      migration is applied. From 8 the bot runs the live post, from 9 the
+      island news post, from 10 it draws roots, from 19 it posts the nightly
+      island news card. Below 19 it logs
+      `[shift-quests] nightly island news off (schema N < 19)`; the schema is
+      read at start, so restart the bot after applying the migration.
 - [ ] Register the slash commands (REST calls only; it never starts a second
       bot):
 
@@ -335,10 +340,28 @@ The bot runs on its own host (`bot/deploy.sh`), not on Vercel.
         island's campfire; the bot only needs View Channel there, it never
         joins voice)
       - `kind:live` the live island channel: the bot keeps **one** post there
-        and edits it as the island changes (schema 8), and posts the island
-        news there when it is on (schema 9)
+        and edits it as the island changes (schema 8), and posts the AI
+        island news there when it is on (schema 9) and no news channel is set
       - `kind:suggest` the ideas and bug reports channel, a forum or a text
         channel: the web island's ⋯ menu links to it
+      - `kind:news` #island-news, an announcement (or text) channel: the
+        nightly island news card at 20:00 Bangkok (schema 19). Re-register
+        the slash commands first (step F) so the choice and the
+        announcement channel type appear. Before setting it:
+        - the bot role gets View Channel, Send Messages, Attach Files and
+          Read Message History there, and **not** Manage Messages;
+        - student roles get View Channel and Read Message History and do
+          not post;
+        - **never press Publish** on a card and set up no followers: a
+          published copy leaves the SHIFT server, and later edits (a team's
+          AI line taken down) may not reach it.
+        `/admin channel` refuses the channel if students cannot see it or
+        read its history, or the bot cannot post the picture there. `/admin status` then shows
+        `✅ ห้องข่าวเกาะ`, and `/admin island` shows
+        `✅ ข่าวเกาะคืนนี้` and `สรุป AI ที่เก็บไว้วันนี้: N ทีม`. From then
+        on the AI news goes only into this card, never the live channel.
+        Clearing the channel (`/admin channel kind:news` with no channel)
+        stops the card and brings the old digest behaviour back.
       Every channel is a group space. The bot never opens a private channel
       between a mentor and a student.
 - [ ] Reviewers: `/admin role user:@<mentor> role:reviewer action:grant` for
@@ -370,7 +393,18 @@ The bot runs on its own host (`bot/deploy.sh`), not on Vercel.
       `/admin island action:digest-on` starts generation, the feed and the
       Discord post; `digest-off` stops all three; `digest-hide plot:<n>`
       hides one team's summaries. A team only ever gets news while every
-      active member shows their name and has consent and AI consent.
+      active member shows their name and has consent and AI consent. With a
+      news channel set (schema 19) the AI lines go into the nightly card
+      instead of a post of their own; the card itself posts every night with
+      or without them.
+- [ ] The nightly island news (schema 19), the first night: between 20:00
+      and 20:05 Bangkok there is one card in #island-news, the bot log has
+      `[shift-quests] nightly island news posted for <day> (N AI teams)`, and
+      `select day, message_id is not null from shift_quest_news_posts order by day desc limit 1`
+      shows today with a message. The next morning there is still one card.
+      A rollback (`bot/deploy.sh --rollback`) leaves the posted cards as they
+      are and posts nothing until the redeploy; clearing the news channel
+      brings the old digest behaviour back.
 - [ ] Island invitation RSVPs: every RSVP should lead to the Discord role
       `SHIFT high`. Nothing grants it automatically yet: until it does, staff
       read the new RSVPs (`shift_island_rsvps`, newest first, in the SQL

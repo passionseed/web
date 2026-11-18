@@ -21,6 +21,7 @@ import type { ActionHandler, AutocompleteHandler, CommandHandler, HandlerSet } f
 import { parseCid } from "./ids";
 import { digestFor, startDigestPost } from "./digest";
 import { liveFor, startLivePost } from "./live";
+import { newsFor, startNewsPost } from "./news";
 import { startRounds } from "./rounds";
 import { warmStory } from "./story";
 import { commandIdMap, setCommandIds, showError } from "./ui";
@@ -119,6 +120,9 @@ export async function handleInteraction(api: QuestApi, guildId: string, i: Inter
  * 13 (20261114120000_shift_quest_tree_style) adds seeds, tree looks and gifts
  * (handlers/tree.ts); also optional: below 13 there are no tree buttons and
  * no gifts, and a round closes with shift_quest_round_close (TREE_SCHEMA).
+ * 19 (20261118130000_shift_quest_island_news_daily) adds the nightly island
+ * news card in the news channel; also optional: below 19 the bot runs without
+ * it (NEWS_SCHEMA).
  */
 export const REQUIRED_SCHEMA = 2;
 
@@ -227,9 +231,13 @@ export async function registerShiftQuests(client: Client, env: ShiftQuestsEnv): 
   const live = liveFor(version, () => startLivePost(client, api, env.guildId, () => connected));
   // Started only on a database that has the island news functions (schema 9): one post a day, no pings.
   const digest = digestFor(version, () => startDigestPost(client, api, { guildId: env.guildId, connected: () => connected }));
+  // Started only on a database that has the nightly island news functions (schema 19): one card a night, no pings.
+  const news = newsFor(version, () => startNewsPost(client, api, { guildId: env.guildId, connected: () => connected }));
 
   return {
     async stop() {
+      // The nightly island news card: it waits for a running check, then sends nothing more.
+      await news?.stop();
       // The island news post: it waits for a running check, then posts nothing more.
       await digest?.stop();
       // The live post: it leaves its message as it is, so it only waits for a running edit.

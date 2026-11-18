@@ -133,9 +133,15 @@ const CHANNELS: { key: string; label: string; hint?: string; optional?: boolean 
   // Schema 8: the live island post (../live.ts) and the suggestions forum the web island links to.
   { key: "live_channel_id", label: "ห้องเกาะสด", hint: "บอทแก้โพสต์เดียวในห้องนี้ ไม่โพสต์ซ้ำ", optional: true },
   { key: "suggest_channel_id", label: "ห้องเสนอไอเดีย", hint: "ฟอรัมได้ ลิงก์อยู่ในเมนู ⋯ บนเว็บ", optional: true },
+  // Schema 19: the nightly island news card (../news.ts). DRAFT hint for the Thai review.
+  { key: "news_channel_id", label: "ห้องข่าวเกาะ", hint: "โพสต์ทุกคืน 2 ทุ่ม ห้องประกาศได้", optional: true },
 ];
 
-/** What the bot needs in the live channel to keep its one post there: see it, post, attach the picture, find it again. */
+/**
+ * What the bot needs in the live channel to keep its one post there, and in
+ * the news channel for its nightly card: see it, post, attach the picture,
+ * find it again.
+ */
 const LIVE_PERMISSIONS = [
   PermissionFlagsBits.ViewChannel,
   PermissionFlagsBits.SendMessages,
@@ -349,12 +355,28 @@ export function reportView(r: Record<string, any>): View {
 /** shift_quest_admin_island_status (schema 9): counts and switches only, never a name of a person. */
 export interface IslandStatus {
   consent: { required: boolean; adult_age: number; granted: number; waiting: number; none: number };
-  digest: { enabled: boolean; channel: "live" | "celebrate" | null; last_day: string | null; hidden: { slot: number; name: string }[] };
+  digest: {
+    enabled: boolean;
+    /** 'news' from schema 19, while a news channel is set: the AI lines go into the nightly card. */
+    channel: "news" | "live" | "celebrate" | null;
+    last_day: string | null;
+    /** Schema 19: how many teams have an AI summary stored for today (absent on an older database). */
+    today_summaries?: number;
+    hidden: { slot: number; name: string }[];
+  };
 }
 
-/** /admin island: the consent switch and counts, then the AI island news switch, channel and hidden teams. */
+/**
+ * /admin island: the consent switch and counts, then (schema 19) the nightly
+ * island news card and today's stored AI summaries, then the AI island news
+ * switch, channel and hidden teams.
+ */
 export function islandStatusView(s: IslandStatus, saved = false): View {
   const hidden = s.digest.hidden.map((t) => `แปลง ${t.slot} ${safe(t.name, 40)}`).join(" · ");
+  const nightly =
+    typeof s.digest.today_summaries === "number"
+      ? [T.adminNewsLine(s.digest.channel === "news"), T.adminDigestToday(s.digest.today_summaries)]
+      : [];
   return {
     tone: "staff",
     title: saved ? "✅ บันทึกแล้ว" : T.adminIslandTitle,
@@ -370,9 +392,12 @@ export function islandStatusView(s: IslandStatus, saved = false): View {
       { kind: "divider" },
       {
         kind: "text",
-        text: [T.adminDigestLine(s.digest.enabled, s.digest.channel), T.adminDigestLast(s.digest.last_day), T.adminDigestHidden(hidden)].join(
-          "\n"
-        ),
+        text: [
+          ...nightly,
+          T.adminDigestLine(s.digest.enabled, s.digest.channel),
+          T.adminDigestLast(s.digest.last_day),
+          T.adminDigestHidden(hidden),
+        ].join("\n"),
       },
       { kind: "divider", line: false },
       { kind: "subtext", text: T.adminIslandFine },
@@ -426,6 +451,10 @@ export const admin: HandlerSet = {
       requireStaff(ctx, ADMIN);
       const kind = i.options.getString("kind", true);
       const chosen = i.options.getChannel("channel");
+      if (chosen && chosen.type === ChannelType.GuildAnnouncement && kind !== "news") {
+        // Only news may be an announcement channel: students cannot post there, which the other kinds need.
+        throw new GateError(T.adminAnnouncementNewsOnly);
+      }
       if (chosen && chosen.type === ChannelType.GuildForum && kind !== "suggest") {
         // Only suggest may be a forum: the bot never posts there, the web only links to it.
         throw new GateError(T.adminForumSuggestOnly);
@@ -452,6 +481,19 @@ export const admin: HandlerSet = {
         // The bot keeps one post there and edits it: a plain text channel only.
         if (chosen.type !== ChannelType.GuildText) throw new GateError(T.adminLiveText);
         if (!botCanKeepLivePost(i, chosen.id)) throw new GateError(T.adminLiveBotPerms);
+      }
+      if (chosen && kind === "news") {
+        // The nightly island news card: a text or announcement channel every student can read, where the bot can
+        // post the card with its picture and find it again. The bot never publishes it to other servers.
+        if (chosen.type !== ChannelType.GuildText && chosen.type !== ChannelType.GuildAnnouncement) throw new GateError(T.adminNewsType);
+        // Read Message History too: without it a student sees only what is posted while they have the channel
+        // open, so a card posted at 20:00 is gone for anyone who opens the channel later.
+        const full = i.guild?.channels.cache.get(chosen.id) ?? chosen;
+        const seeAndRead = [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory];
+        if (!openToStudents(full as never, ctx.session.settings.student_role_ids, i.guildId ?? "", seeAndRead)) {
+          throw new GateError(T.adminNewsPrivate);
+        }
+        if (!botCanKeepLivePost(i, chosen.id)) throw new GateError(T.adminNewsBotPerms);
       }
       const status = await ctx.api.call<Status>("shift_quest_admin_set", ctx.userId, `${kind}_channel`, chosen?.id ?? "");
       await show(i, statusView(status, true));
