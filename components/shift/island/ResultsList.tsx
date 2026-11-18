@@ -31,7 +31,7 @@ interface ResultsListProps {
 }
 
 /**
- * ผลตรวจจากพี่เลี้ยง, near the top of the chip's sheet: what mentors said about
+ * ผลจากพี่เลี้ยง, near the top of the chip's sheet: what mentors said about
  * the student's own work, newest first, each one a way back to its quest. The
  * bot's other notices stay in Discord, with a link there. Nothing at all
  * while there is nothing to show: a new result also reaches the next-step

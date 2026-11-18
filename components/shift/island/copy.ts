@@ -382,7 +382,7 @@ export const NEXT_STEP = {
 };
 
 /**
- * ผลตรวจจากพี่เลี้ยง (ResultsList, in the chip's sheet): what mentors said about the student's
+ * ผลจากพี่เลี้ยง (ResultsList, in the chip's sheet): what mentors said about the student's
  * own work, read from the board, newest first. Never a teammate's feedback.
  */
 export const RESULTS = {
