@@ -13,7 +13,7 @@
  * side quest pays only through its normal mentor review.
  *
  * The evening guest's 🎁 (rd_guest|<day>, on the round messages and the
- * campfire call from the guest's arrival, schema 21): a new private reply,
+ * campfire call once the night is settled, schema 21): a new private reply,
  * acknowledged first, about the presser's own team only
  * (shift_quest_guest_status): what tonight's guest left for the team, or a
  * warm line when nothing, never a name and never which teammate was there. A
@@ -110,7 +110,7 @@ export function guestReveal(raw: unknown, day: string): View {
     case "arriving":
       return { tone: "island", title: REVEAL.arrivingTitle, blocks: [{ kind: "text", text: REVEAL.arriving }] };
     case "quiet":
-      // The guest's first rest passed with no drop: nobody got anything tonight, never "your team was not there".
+      // Settled with the room never read during the guest's rest (the bot was away): nobody got anything, never "your team was not there".
       return { tone: "island", title: REVEAL.quietTitle(g), blocks: [{ kind: "text", text: REVEAL.quiet }, ...looksLine, fine] };
     case "won": {
       const item = typeof status.look === "string" ? treeItem(status.look) : null;
@@ -131,7 +131,7 @@ export function guestReveal(raw: unknown, day: string): View {
     case "lost":
       return { tone: "island", title: REVEAL.lostTitle(g), blocks: [{ kind: "text", text: REVEAL.lost }, ...looksLine, fine], rows: tree };
     default:
-      // away, and anything newer than this bot: the team had nobody at the fire when the guest arrived.
+      // away, and anything newer than this bot: nobody from the team sat at the fire during the guest's rest.
       return { tone: "island", title: REVEAL.awayTitle(g), blocks: [{ kind: "text", text: REVEAL.away }, ...looksLine, fine] };
   }
 }

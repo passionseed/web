@@ -79,8 +79,8 @@ export interface Campfire {
   /**
    * The Discord ids of the people in the coworking voice channel right now,
    * bots left out, read from the gateway's voice cache: for the evening
-   * guest's drop (call.ts), which passes them to the database once and keeps
-   * nothing. Null while that is unknown (no channel set or seen yet, the bot
+   * guest's drop (call.ts), which passes them to the database on each check
+   * of the guest's rest and keeps nothing. Null while that is unknown (no channel set or seen yet, the bot
    * cannot see it, or it is not open to students): no drop is made then.
    */
   present: () => string[] | null;

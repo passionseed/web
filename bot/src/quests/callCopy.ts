@@ -7,12 +7,14 @@
  * House rules, checked by call.test.ts: no em or en dashes, never น้องๆ or
  * เด็กๆ, no streak wording, no "you missed" (พลาด, ยังไม่ได้), nothing about
  * yesterday, other students or how many nights anyone came, no coins, never
- * anyone's minutes. The call never names a student; counts of people are
- * floored at PEOPLE_FLOOR and count everyone at the fire (staff too). The
- * count of teams that got a look comes from the database only when it cannot
- * tell anyone's result (shift_quest__guest_reveal), else it is withheld
- * (null) and the line has no number. A look never grows a tree, and the copy
- * says so. 1 ทุ่ม is 19:00, 3 ทุ่ม 21:00.
+ * anyone's minutes, and no promise that a later night may break ("พรุ่งนี้").
+ * The call never names a student; counts of people are floored at
+ * PEOPLE_FLOOR and count everyone at the fire (staff too). Who counts for the
+ * guest: anyone who sits at the fire during its rest (19:25 to 19:30). The
+ * count of teams that got a look always shows once the night is settled
+ * (founder decision, 2026-11-18), never which team; each student checks their
+ * own team privately. A look never grows a tree, and the copy says so. 1 ทุ่ม
+ * is 19:00, 3 ทุ่ม 21:00.
  */
 import { FOCUS_MINUTES, REST_MINUTES } from "@/lib/shift-island/rounds-rules";
 
@@ -77,16 +79,24 @@ export function isGuestKey(value: unknown): value is GuestKey {
 }
 
 /**
- * The guest's drop, as everyone may read it: how many teams got a look, never
- * which. Null: withheld (1 or 2 teams at the fire, or all or none of them
- * won, would tell who won), so no number. 0: no team was there to roll. The
- * button answers about the presser's own team only.
+ * The guest's drop, as everyone may read it once the night is settled: how
+ * many teams got a look, never which (founder decision, 2026-11-18: always
+ * the number). 0: nobody's team got one tonight, a warm line with no number.
+ * The button answers about the presser's own team only.
  */
-function dropped(g: Guest, teams: number | null): string {
-  if (teams === null) return `🎁 ${g.name}แวะมาที่กองไฟแล้ว ทีมคุณได้อะไรไหม กดดูได้ที่ปุ่มด้านล่าง เห็นแค่คุณ`;
+function dropped(g: Guest, teams: number): string {
   return teams > 0
     ? `🎁 ${g.name}ทิ้งของไว้ให้ **${teams}** ทีม ทีมคุณได้อะไร กดดูได้ที่ปุ่มด้านล่าง เห็นแค่คุณ`
     : `🌙 คืนนี้${g.name}แค่แวะมานั่งพักข้างกองไฟ`;
+}
+
+/**
+ * Who counts for the guest's drop, before it is settled: anyone who sits at
+ * the fire during the guest's rest (from, to: unix seconds, 19:25 and 19:30
+ * Bangkok), one roll per team however many come.
+ */
+function sitDuring(from: number, to: number): string {
+  return `🎁 ทุกทีมที่มีคนมานั่งที่กองไฟช่วงพัก <t:${from}:t> ถึง <t:${to}:t> ได้ลุ้นลุคใหม่ให้ต้นไม้ ทีมละครั้ง มากี่คนก็ลุ้นเท่ากัน`;
 }
 
 /**
@@ -108,17 +118,27 @@ export const CALL = {
     `รอบแรกเริ่ม <t:${lit}:t> (<t:${lit}:R>) · โฟกัส ${FOCUS_MINUTES} นาที พัก ${REST_MINUTES} นาที · มาตอนไหนก็นั่งได้`,
   /** Before the guest arrives (a season night only): something is coming, never what. */
   teaser: (at: number) => `🔭 ไกลๆ ที่ขอบทะเลมีอะไรกำลังมาทางเกาะ จะถึงกองไฟตอนพักรอบแรก <t:${at}:t>`,
-  /** How the drop works, before the guest arrives: one roll per team, however many come. */
-  drop: "🎁 ตอนแขกมาถึง ทุกทีมที่มีคนนั่งอยู่ที่กองไฟได้ลุ้นลุคใหม่ให้ต้นไม้ ทีมละครั้ง มากี่คนก็ลุ้นเท่ากัน",
+  /** How the drop works until it is settled: sit at the fire during the guest's rest; one roll per team, however many come. */
+  drop: sitDuring,
   litTitle: "🔥 ไฟติดแล้ว",
   lit: "รอบโฟกัสแรกเริ่มแล้ว เข้ามาตอนไหนก็ได้ นั่งลงแล้วเริ่มงานของตัวเองเลย",
-  /** Once the drop is made: how many teams got a look (or a warm line for none). */
+  /** Once the night is settled: how many teams got a look (or a warm line for none). */
   dropped,
   /** While the guest stays (until 21:00). */
   stay: (g: Guest, until: number) => `${g.name}อยู่ถึง <t:${until}:t> มานั่งทำงานด้วยกันต่อได้`,
   embersTitle: "🌙 กองไฟคืนนี้มอดแล้ว",
-  embers: "พรุ่งนี้จุดใหม่ 1 ทุ่ม ห้องกองไฟเปิดอยู่ตลอด อยากนั่งทำงานตอนไหนก็เข้ามาได้",
-  /** Staff switched the call off (/admin feature campfire_call off): the last call, edited once. Never a promise of tomorrow. */
+  /**
+   * Never "tomorrow": the embers stay up past midnight. True while it shows:
+   * a switched-off call and a SHIFT cohort week turn it into the paused note.
+   */
+  embers: "กองไฟจุดทุกเย็นตอน 1 ทุ่ม ห้องกองไฟเปิดอยู่ตลอด อยากนั่งทำงานตอนไหนก็เข้ามาได้",
+  /**
+   * The call is paused: staff switched it off (/admin feature campfire_call
+   * off) or a SHIFT cohort round is in session (call.ts). The last call,
+   * edited once. Never a promise of tomorrow, and no fine print (in a cohort
+   * week shift-voice does count voice time, so "nobody counts your time"
+   * would not hold).
+   */
   offTitle: "🌙 กองไฟพักก่อน",
   off: "ช่วงนี้งดเรียกรวมตอน 1 ทุ่มไปก่อน ห้องกองไฟเปิดอยู่ตลอด อยากนั่งทำงานตอนไหนก็เข้ามาได้",
   /** Everyone at the fire now (staff too), floored: 1 or 2 could point at one person. Never a name. */
@@ -126,13 +146,20 @@ export const CALL = {
     n >= PEOPLE_FLOOR ? `👥 รอบกองไฟตอนนี้ **${n}** คน` : n > 0 ? "👥 มีคนนั่งอยู่ที่กองไฟแล้ว" : "👥 กองไฟยังว่าง มานั่งเป็นคนแรกได้",
   fine: "ไม่บังคับ · ไม่มีใครนับเวลาของคุณ · ลุคไม่ทำให้ต้นไม้โต ต้นไม้โตเมื่อพี่เลี้ยงยืนยันเควสต์เท่านั้น",
   /**
-   * Only on a call that pinged: how to stop it. Muting the channel is not
-   * enough: Discord still notifies a muted channel's mentions, a role
-   * mention included. "Suppress All Role @mentions" (server notification
-   * settings) stops it, for every role in the server. Test on a phone before
-   * the three-model review.
+   * Only on a call that pinged: how to stop it, with the server setting
+   * named as Thai-language Discord shows it and its English name in
+   * parentheses: ตั้งค่าการแจ้งเตือน (Notification Settings) and ระงับทุกตำแหน่ง
+   * @mentions (Suppress All Role @mentions). Source for the Thai labels:
+   * Discord's Android app strings notification_settings and
+   * form_label_suppress_roles, values-th, as copied in
+   * github.com/l6t9/Lampcord (commit 2c8e7fc,
+   * shared/src/commonMain/composeResources/values-th/strings.xml). The
+   * current app may word it differently: check on a Thai-language phone
+   * before the three-model review. It stops every role ping in the server,
+   * not only this one, and the line says so. No claim about any channel
+   * setting: nothing sourced says which channel setting stops a role ping.
    */
-  mute: "ไม่อยากได้แจ้งเตือนทุกวัน: ปิดเสียงห้องนี้อย่างเดียวยังเด้งอยู่ ให้เปิด Suppress All Role @mentions ในการแจ้งเตือนของเซิร์ฟเวอร์ (ปิดการแท็กบทบาททั้งเซิร์ฟเวอร์)",
+  mute: "ไม่อยากได้แจ้งเตือนนี้: กดชื่อเซิร์ฟเวอร์ แล้วเข้า ตั้งค่าการแจ้งเตือน (Notification Settings) เปิด ระงับทุกตำแหน่ง @mentions (Suppress All Role @mentions) จะปิดการแท็กบทบาททั้งเซิร์ฟเวอร์",
   /** The issue line, also how a restarted bot finds its own call. Never the news card's "ฉบับ" or the digest's "ข่าวของ". */
   dayLine: (day: string) => `เรียกรวมกองไฟ ${thaiDay(day)}`,
   /** The private check button, on the call and the round messages once the guest is here. */
@@ -144,9 +171,11 @@ export const CALL = {
 export const ROUND_GUEST = {
   /** On the 19:00 focus round of a guest night. */
   teaser: "🔭 พักรอบนี้จะมีแขกแวะมาที่กองไฟ",
+  /** On the guest's rest (19:25), until the night is settled: sit here until it ends and your team rolls. */
+  sit: (to: number) => `🎁 นั่งอยู่ที่กองไฟถึง <t:${to}:t> ทีมคุณก็ได้ลุ้นลุคใหม่ ทีมละครั้ง มากี่คนก็ลุ้นเท่ากัน`,
   dropped,
   /** Never "nobody sees which team": a picked look shows on a shown team's tree (shift_quest_island_styles). */
-  fine: "ทุกทีมที่อยู่ที่กองไฟตอนแขกมาถึงลุ้นเท่ากัน ทีมละครั้ง · บอทไม่ประกาศว่าทีมไหนได้ · ลุคไม่ทำให้ต้นไม้โต",
+  fine: "ทุกทีมที่มีคนนั่งที่กองไฟช่วงพักแรกลุ้นเท่ากัน ทีมละครั้ง · บอทบอกแค่จำนวนทีม ไม่ประกาศว่าทีมไหนได้ · ลุคไม่ทำให้ต้นไม้โต",
 };
 
 /** The guest's private answer to 🎁 (handlers/rounds.ts rd_guest), about the presser's own team only. */
@@ -160,10 +189,10 @@ export const REVEAL = {
   fullTitle: (g: Guest) => `${g.emoji} ทีมคุณมีของจาก${g.name}ครบแล้ว`,
   full: (g: Guest) => `คืนนี้${g.name}เลยแวะมานั่งพักข้างกองไฟด้วยกัน`,
   awayTitle: (g: Guest) => `${g.emoji} ${g.name}แวะมาที่กองไฟคืนนี้`,
-  away: "ของจากแขกตกถึงทีมที่มีคนนั่งอยู่ที่กองไฟตอนแขกมาถึง ตอนพักรอบแรกหลัง 1 ทุ่ม แขกเวียนกันมาเรื่อยๆ ไม่ต้องรีบ",
-  arrivingTitle: "👀 แขกเพิ่งมาถึง",
-  arriving: "กำลังวางของอยู่ ลองกดอีกครั้งในอีกสักครู่",
-  /** The guest's first rest passed with no drop (the bot was away): no team got anything, never "your team was not there". */
+  away: "ของจากแขกตกถึงทีมที่มีคนนั่งที่กองไฟช่วงพักแรกหลัง 1 ทุ่ม (19:25 ถึง 19:30) แขกเวียนกันมาเรื่อยๆ ไม่ต้องรีบ",
+  arrivingTitle: "👀 แขกกำลังวางของ",
+  arriving: "แขกวางของให้ทุกทีมที่มีคนนั่งที่กองไฟช่วงพัก 19:25 ถึง 19:30 ลองกดอีกครั้งหลัง 19:30",
+  /** Settled, but the bot never read the room during the guest's rest (it was away): no team got anything, never "your team was not there". */
   quietTitle: (g: Guest) => `${g.emoji} คืนนี้${g.name}แค่แวะมานั่งพัก`,
   quiet: "คืนนี้แขกไม่ได้ทิ้งของไว้ให้ทีมไหน แขกเวียนกันมาที่กองไฟ แต่ละตัวมีของของตัวเอง",
   noPlot: "ของจากแขกเป็นลุคแต่งต้นไม้ของทีม จับจองที่ดินก่อน แล้วทีมของคุณก็ได้ลุ้นด้วย",

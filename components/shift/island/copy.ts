@@ -690,12 +690,12 @@ export const CAMPFIRE = {
   error: "ตอนนี้โหลดรายชื่อไม่ได้",
   join: "เข้าห้อง",
   /**
-   * What the campfire keeps. DRAFT (20261118150000): the evening guest's drop
-   * keeps one result per team and night (no member, deleted the next day),
-   * which for a team of one is that student's; a won look is the team's gift,
-   * kept with its date.
+   * What the campfire keeps. DRAFT (20261118150000): the evening guest keeps
+   * which teams had someone at the fire during its rest and each team's roll
+   * (no member, no time, deleted the next day), which for a team of one is
+   * that student's; a won look is the team's gift, kept with its date.
    */
-  fine: "กองไฟบนเกาะเก็บแค่ว่าใครอยู่ในห้องตอนนี้ และลบทันทีเมื่อออก ตอนแขกมาถึง เก็บผลลุ้นเป็นรายทีม ไม่เก็บว่าใครนั่ง และลบวันถัดไป (ทีมที่มีคุณคนเดียว ผลของทีมก็คือของคุณ) ลุคที่ทีมได้เป็นของขวัญของทีม เก็บไว้พร้อมวันที่ได้",
+  fine: "กองไฟบนเกาะเก็บแค่ว่าใครอยู่ในห้องตอนนี้ และลบทันทีเมื่อออก ตอนแขกแวะมาที่กองไฟ เก็บว่าทีมไหนมีคนนั่งช่วงพักนั้นและผลลุ้นของทีม ไม่เก็บว่าใครนั่งหรือนั่งตอนไหน และลบวันถัดไป (ทีมที่มีคุณคนเดียว ข้อมูลของทีมก็คือของคุณ) ลุคที่ทีมได้เป็นของขวัญของทีม เก็บไว้พร้อมวันที่ได้",
 };
 
 /**

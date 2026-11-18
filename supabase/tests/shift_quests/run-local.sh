@@ -60,13 +60,14 @@
 #             20261118150000: the 18:50 campfire call and the evening guest, at
 #             fixed times: when the call is due, claim and mark, the frozen
 #             ping, the previous call, the switched-off call to retire; the
-#             guest rotation; the drop only in the guest's first rest, decided
-#             at its first call even with nobody there, one roll per team per
-#             night under repeated and concurrent calls, staff never win, no
-#             member id or presence stored, earlier nights deleted (also by
-#             the voice purge, and a lone member's erasure), guest looks only
-#             from guests; the public count withheld when it could tell who
-#             won; the private check; the grants: the bot's, never the
+#             guest rotation; who counts (anyone at the fire at any check of
+#             the guest's rest, only which teams kept), one settling from
+#             19:30 under repeated and concurrent calls, one roll per team,
+#             staff never win, no member id, time or presence stored, earlier
+#             nights deleted (also by the voice purge, and a lone member's
+#             erasure), guest looks only from guests; the public count always
+#             shown once settled; the private check; whether the call pings;
+#             /data's tree gifts; the grants: the bot's, never the
 #             website's), with consent off
 #
 #   supabase/tests/shift_quests/run-local.sh       # or: pnpm test:db:quests
@@ -214,10 +215,11 @@ SQL
 # and writer (094000), the nightly island news card's four functions
 # (20261118130000), its missed-night check (20261118140000,
 # shift_quest_enqueue_news_missed) and the campfire call's and evening
-# guest's five (20261118150000: shift_quest_call_today, _call_claim,
-# _call_mark, shift_quest_campfire_drop, shift_quest_guest_status) are the
-# bot's like every other entry point, and never the website's (their
-# helpers, shift_quest__news_*, __call_* and __guest_*, are nobody's).
+# guest's seven (20261118150000: shift_quest_call_today, _call_claim,
+# _call_mark, _call_pings, shift_quest_campfire_seen, _campfire_drop,
+# shift_quest_guest_status) are the bot's like every other entry point, and
+# never the website's (their helpers, shift_quest__news_*, __call_* and
+# __guest_*, are nobody's).
 # And the web allowlist (20261111090900, 091000, 091100, 091200, 093000, 094000, and every later file
 # that grants shift_quest_web, up to 20261118100000's website-does-everything allowlist): shift_quest_web executes exactly the
 # functions listed below (nothing before that file is applied), never a

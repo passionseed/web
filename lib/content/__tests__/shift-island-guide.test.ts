@@ -95,6 +95,16 @@ describe("shift island guide copy", () => {
     expect(privacy).toContain("ลบทันทีเมื่อคุณออก");
   });
 
+  it("says who counts for the guest (anyone at the fire during its rest), that the count of teams shows, and that the call pauses in SHIFT weeks", () => {
+    const campfire = GUIDE_CAMPFIRE.lines.join(" ");
+    expect(campfire).toContain("19:25 ถึง 19:30");
+    expect(campfire).not.toContain("ตอนแขกมาถึง");
+    expect(campfire).toContain("กี่ทีม");
+    expect(campfire).toContain("เว้นสัปดาห์ที่มีรอบ SHIFT");
+    // The database keeps which teams sat there, never who or when.
+    expect(GUIDE_PRIVACY.lines.join(" ")).toContain("ไม่เก็บว่าใครนั่งหรือนั่งตอนไหน");
+  });
+
   it("never promises more privacy than the guest's drop keeps", () => {
     const privacy = GUIDE_PRIVACY.lines.join(" ");
     // A team of one: the team's result is that student's, until the next day.

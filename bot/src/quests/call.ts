@@ -9,7 +9,7 @@ import {
   type Message,
 } from "discord.js";
 
-import { REST_MINUTES } from "@/lib/shift-island/rounds-rules";
+import { roundsInSession } from "@/lib/shift/voiceWindow";
 
 import { QuestDbError, QuestError, type QuestApi } from "./api";
 import { CALL, GUESTS, isGuestKey, type GuestKey } from "./callCopy";
@@ -44,16 +44,26 @@ import { ISLAND_LINK_LABEL, islandWebUrl } from "./weblink";
  * today's call is recorded, the bot deletes the previous day's call (its own
  * message only), so the channel shows one call. Switched off, the latest call
  * is edited once into a paused note (no people line, no "tomorrow"), so
- * nothing stale stays up for a cohort week.
+ * nothing stale stays up.
  *
- * The evening guest's drop: during the guest's first rest (19:25 to 19:30),
- * the first tick that can read the room passes the Discord ids in the
- * campfire voice room (campfire.present(), the gateway's voice cache; empty
- * when nobody sits there) to shift_quest_campfire_drop once: that moment is
- * the guest's arrival, so coming first is never rewarded. The database rolls
- * once per team and keeps the result per team and night only; this module
- * keeps the public count of teams that got a look (null when the database
- * withholds it), for the call and the round messages (evening()), and logs
+ * SHIFT cohort weeks: while a SHIFT round is in session
+ * (lib/shift/voiceWindow.ts roundsInSession, the cohort calendar that
+ * shift-voice uses), shift-voice records voice time in every voice channel
+ * for that round's students, the campfire included. So on those days the
+ * bot sends no call, reads nobody for the guest and makes no drop, and the
+ * latest call is edited once into the same paused note: the call's
+ * "ไม่มีใครนับเวลาของคุณ" stays true. No staff switch is needed.
+ *
+ * The evening guest's drop: on every check during the guest's rest (19:25 to
+ * 19:30, the database's guest_from and drop_end) that can read the room, the
+ * bot passes the Discord ids in the campfire voice room (campfire.present(),
+ * the gateway's voice cache; empty when nobody sits there) to
+ * shift_quest_campfire_seen: anyone who sits there at any check counts, so
+ * coming first is never rewarded, and the database keeps only which teams
+ * were there. The first check at or after 19:30 calls
+ * shift_quest_campfire_drop, which settles the night once (one roll per team,
+ * restart-safe in the database). This module keeps the public count of teams
+ * that got a look for the call and the round messages (evening()), and logs
  * nothing about anyone.
  *
  * Once a day, restart-safe, as news.ts: claim (shift_quest_call_claim), send,
@@ -86,8 +96,6 @@ const FIRST_DELAY_MS = 30_000;
 export const EDIT_EVERY_MS = 60_000;
 /** How many of the channel's latest messages a stale claim looks through for its own call. */
 const FIND_LIMIT = 50;
-/** The drop's window after the guest arrives: its first rest (the database's 'drop_end' decides). */
-const DROP_WINDOW_S = REST_MINUTES * 60;
 /** Discord: the message was deleted. */
 const UNKNOWN_MESSAGE = 10008;
 /** At most this many roles are mentioned. */
@@ -103,6 +111,8 @@ export interface CallData {
   callAt: number;
   litAt: number;
   guestFrom: number;
+  /** 19:30 Bangkok: the guest's rest ends; the night's rolls are made at the first check from then. */
+  dropEnd: number;
   guestUntil: number;
   /** The news channel, where a new call goes. */
   channelId: string;
@@ -113,14 +123,10 @@ export interface CallData {
   /** Tonight's recorded call, and the channel it is in. */
   messageId: string | null;
   messageChannelId: string | null;
-  /** The previous day's recorded call, to delete once tonight's is recorded. */
-  previous: { channelId: string; messageId: string } | null;
-  /**
-   * Once the guest's drop is decided (made, or its rest over without one):
-   * how many teams got a look, or null when the database withholds the count
-   * (it would tell who won). Null before.
-   */
-  drop: { teams: number | null } | null;
+  /** The previous day's recorded call: deleted once tonight's is recorded, or paused in a SHIFT cohort week. */
+  previous: { day: string | null; channelId: string; messageId: string } | null;
+  /** Once the night is settled: how many teams got a look (founder decision: always the number, never which). Null before. */
+  drop: { teams: number } | null;
   /** The call is switched off: this is only the latest recorded call, to retire (normalizeOff). */
   off: boolean;
 }
@@ -143,6 +149,17 @@ export interface CallOptions {
   /** The database's island schema at start; below CALL_SCHEMA each check reads it again. */
   schema?: number;
   now?: () => number;
+  /** Whether a SHIFT cohort round is in session on a Bangkok day (default: cohortWeek). */
+  inSession?: (day: string) => boolean;
+}
+
+/**
+ * Whether a SHIFT cohort round is in session on `day` (Bangkok, YYYY-MM-DD):
+ * the calendar shift-voice records voice time by (roundsInSession). The call
+ * and the guest pause on those days.
+ */
+export function cohortWeek(day: string): boolean {
+  return roundsInSession(day).size > 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -167,20 +184,22 @@ export function normalizeCall(raw: unknown): CallData | null {
   const r = record(raw);
   if (typeof r.day !== "string" || !DAY.test(r.day)) return null;
   const channelId = snowflake(r.channel_id);
-  const [callAt, litAt, guestFrom, guestUntil] = [r.call_at, r.lit_at, r.guest_from, r.guest_until].map(seconds);
-  if (!channelId || !callAt || !litAt || !guestFrom || !guestUntil) return null;
+  const [callAt, litAt, guestFrom, dropEnd, guestUntil] = [r.call_at, r.lit_at, r.guest_from, r.drop_end, r.guest_until].map(seconds);
+  if (!channelId || !callAt || !litAt || !guestFrom || !dropEnd || !guestUntil) return null;
   const roles = Array.isArray(r.ping_role_ids) ? r.ping_role_ids.map(snowflake).filter((id): id is string => !!id) : [];
   const previous = record(r.previous);
   const prevChannel = snowflake(previous.channel_id);
   const prevMessage = snowflake(previous.message_id);
+  const prevDay = typeof previous.day === "string" && DAY.test(previous.day) ? previous.day : null;
   const messageId = snowflake(r.message_id);
-  const drop = r.drop && typeof r.drop === "object" ? { teams: teamsOf(record(r.drop).teams) } : null;
+  const teams = r.drop && typeof r.drop === "object" ? teamsOf(record(r.drop).teams) : null;
   return {
     day: r.day,
     guest: isGuestKey(r.guest) ? r.guest : null,
     callAt,
     litAt,
     guestFrom,
+    dropEnd,
     guestUntil,
     channelId,
     coworkingId: snowflake(r.coworking_channel_id),
@@ -188,13 +207,13 @@ export function normalizeCall(raw: unknown): CallData | null {
     due: r.due === true,
     messageId,
     messageChannelId: messageId ? (snowflake(r.message_channel_id) ?? channelId) : null,
-    previous: prevChannel && prevMessage ? { channelId: prevChannel, messageId: prevMessage } : null,
-    drop,
+    previous: prevChannel && prevMessage ? { day: prevDay, channelId: prevChannel, messageId: prevMessage } : null,
+    drop: teams === null ? null : { teams },
     off: false,
   };
 }
 
-/** The public count of teams that got a look: a whole number, or null when withheld (or unreadable). */
+/** The public count of teams that got a look: a whole number, or null when unreadable (then the night reads as not settled). */
 function teamsOf(value: unknown): number | null {
   if (value === null || value === undefined || value === "") return null;
   const n = Number(value);
@@ -213,12 +232,18 @@ export function normalizeOff(raw: unknown): CallData | null {
   const messageId = snowflake(r.message_id);
   const channelId = snowflake(r.message_channel_id);
   if (!messageId || !channelId) return null;
+  return pausedCall(r.day, channelId, messageId);
+}
+
+/** A recorded call as the paused note (stage "off"): only edited, never sent. */
+function pausedCall(day: string, channelId: string, messageId: string): CallData {
   return {
-    day: r.day,
+    day,
     guest: null,
     callAt: 0,
     litAt: 0,
     guestFrom: 0,
+    dropEnd: 0,
     guestUntil: 0,
     channelId,
     coworkingId: null,
@@ -230,6 +255,17 @@ export function normalizeOff(raw: unknown): CallData | null {
     drop: null,
     off: true,
   };
+}
+
+/**
+ * In a SHIFT cohort week, the call to edit into the paused note: tonight's
+ * recorded call, else the latest earlier one (previous), each under its own
+ * day so its issue line stays its own. Null when there is none.
+ */
+export function pausedFrom(d: CallData): CallData | null {
+  if (d.messageId && d.messageChannelId) return pausedCall(d.day, d.messageChannelId, d.messageId);
+  if (d.previous?.day) return pausedCall(d.previous.day, d.previous.channelId, d.previous.messageId);
+  return null;
 }
 
 /**
@@ -295,20 +331,22 @@ export function callView(d: CallData, o: CallViewOptions): View {
       title = CALL.title;
       blocks.push({ kind: "text", text: [openerOf(d.day), CALL.invite].join("\n") });
       blocks.push({ kind: "text", text: CALL.round(d.litAt) });
-      if (guest) blocks.push({ kind: "text", text: [CALL.teaser(d.guestFrom), CALL.drop].join("\n") });
+      if (guest) blocks.push({ kind: "text", text: [CALL.teaser(d.guestFrom), CALL.drop(d.guestFrom, d.dropEnd)].join("\n") });
       blocks.push(people);
       break;
     case "lit":
       title = CALL.litTitle;
       blocks.push({ kind: "text", text: CALL.lit });
-      if (guest) blocks.push({ kind: "text", text: [CALL.teaser(d.guestFrom), CALL.drop].join("\n") });
+      if (guest) blocks.push({ kind: "text", text: [CALL.teaser(d.guestFrom), CALL.drop(d.guestFrom, d.dropEnd)].join("\n") });
       blocks.push(people);
       break;
     case "guest":
       title = guest ? guest.here : CALL.litTitle;
       if (guest) {
         blocks.push({ kind: "text", text: guest.arrive });
-        blocks.push({ kind: "text", text: [d.drop ? CALL.dropped(guest, d.drop.teams) : CALL.drop, CALL.stay(guest, d.guestUntil)].join("\n") });
+        // Until the night is settled: who counts (anyone at the fire during the rest); then how many teams got a look.
+        const drop = d.drop ? CALL.dropped(guest, d.drop.teams) : CALL.drop(d.guestFrom, d.dropEnd);
+        blocks.push({ kind: "text", text: [drop, CALL.stay(guest, d.guestUntil)].join("\n") });
       } else {
         blocks.push({ kind: "text", text: CALL.lit });
       }
@@ -320,12 +358,14 @@ export function callView(d: CallData, o: CallViewOptions): View {
       if (guest && d.drop) blocks.push({ kind: "text", text: CALL.dropped(guest, d.drop.teams) });
       break;
     case "off":
-      // Switched off: no people line, no promise of tomorrow, no guest.
+      // Paused (switched off, or a SHIFT cohort week): no people line, no promise of tomorrow, no guest.
       title = CALL.offTitle;
       blocks.push({ kind: "text", text: CALL.off });
       break;
   }
-  const fine = [CALL.fine, ...(d.pingRoleIds.length > 0 ? [CALL.mute] : []), CALL.dayLine(d.day)];
+  // Paused: only the issue line. In a cohort week shift-voice counts voice time, so CALL.fine would not hold.
+  const fine =
+    o.stage === "off" ? [CALL.dayLine(d.day)] : [CALL.fine, ...(d.pingRoleIds.length > 0 ? [CALL.mute] : []), CALL.dayLine(d.day)];
   blocks.push({ kind: "subtext", text: fine.join("\n") });
 
   const buttons: ButtonBuilder[] = [];
@@ -446,6 +486,9 @@ export function startCall(client: Client, api: QuestApi, options: CallOptions): 
   let shown: Shown | null = null;
   /** The day whose previous call this process has dealt with. */
   let previousDone: string | null = null;
+  const inSession = options.inSession ?? cohortWeek;
+  /** The last Bangkok day logged as a SHIFT cohort day (the call paused), so it is said once a day. */
+  let pausedDay: string | null = null;
 
   function warnOnce(job: string, reason: string): void {
     if (problems.get(job) === reason) return;
@@ -561,26 +604,49 @@ export function startCall(client: Client, api: QuestApi, options: CallOptions): 
   }
 
   /**
-   * The evening guest's drop: in its first rest, the first check that can
-   * read the room hands the ids there to the database, once, an empty room
-   * included: that moment is the guest's arrival, so nobody is rewarded for
-   * coming first. The database decides (and holds) everything; nothing about
-   * anyone is kept here.
+   * The evening guest's drop. During its rest (guest_from to drop_end), every
+   * check that can read the room hands the ids there to the database (an
+   * empty room included: the bot watched): anyone who sits there at any
+   * check counts, so nobody is rewarded for coming first, and the database
+   * keeps only which teams were there. From drop_end, the first check
+   * settles the night (the database rolls once per team, once). Nothing
+   * about anyone is kept here.
    */
   async function drop(d: CallData): Promise<void> {
     if (!d.guest || d.drop) return;
     const t = now() / 1000;
-    if (t < d.guestFrom || t >= d.guestFrom + DROP_WINDOW_S) return;
-    const ids = options.campfire.present();
-    // Unknown (the room is closed or not seen yet): no drop from this check.
-    if (!ids) return;
-    const r = record(await api.call<unknown>("shift_quest_campfire_drop", d.day, ids));
+    if (t < d.guestFrom) return;
+    if (t < d.dropEnd) {
+      const ids = options.campfire.present();
+      // Unknown (the room is closed or not seen yet): nobody counted from this check.
+      if (!ids) return;
+      await api.call<unknown>("shift_quest_campfire_seen", d.day, ids);
+      problems.delete("drop");
+      return;
+    }
+    const r = record(await api.call<unknown>("shift_quest_campfire_drop", d.day));
     problems.delete("drop");
-    if (r.done !== true) return;
-    d.drop = { teams: teamsOf(r.teams) };
-    if (r.fresh === true) {
-      const told = d.drop.teams === null ? "count withheld" : `${d.drop.teams} team(s) got a look`;
-      console.log(`[shift-quests] campfire guest's drop for ${d.day} made (${told})`);
+    const teams = teamsOf(r.teams);
+    if (r.done !== true || teams === null) return;
+    d.drop = { teams };
+    if (r.fresh === true) console.log(`[shift-quests] campfire guest's drop for ${d.day} settled (${teams} team(s) got a look)`);
+  }
+
+  /**
+   * A SHIFT cohort day: no call, no guest, no drop. The latest call (tonight's,
+   * else the previous one) is edited once into the paused note.
+   */
+  async function pause(d: CallData): Promise<void> {
+    if (pausedDay !== d.day) {
+      pausedDay = d.day;
+      console.log(`[shift-quests] campfire call paused for ${d.day}: a SHIFT round is in session (shift-voice counts voice time)`);
+    }
+    const latest = pausedFrom(d);
+    if (!latest) return;
+    try {
+      await keep(latest);
+    } catch (error) {
+      warnOnce("edit", `edit failed: ${reasonOf(error)}`);
     }
   }
 
@@ -677,6 +743,12 @@ export function startCall(client: Client, api: QuestApi, options: CallOptions): 
       today = null;
       return;
     }
+    if (inSession(d.day)) {
+      // shift-voice counts voice time in every channel this week: no evening for the rounds either.
+      today = null;
+      await pause(d);
+      return;
+    }
     // Keep what this process learned today (the drop, the recorded message) until the database says it too.
     if (today?.day === d.day) {
       d.drop ??= today.drop;
@@ -724,7 +796,15 @@ export function startCall(client: Client, api: QuestApi, options: CallOptions): 
     evening(nowMs: number): Evening | null {
       const d = today;
       if (!d || d.day !== bangkokDay(nowMs)) return null;
-      return { day: d.day, guest: d.guest, litAt: d.litAt, guestFrom: d.guestFrom, guestUntil: d.guestUntil, drop: d.drop ? { ...d.drop } : null };
+      return {
+        day: d.day,
+        guest: d.guest,
+        litAt: d.litAt,
+        guestFrom: d.guestFrom,
+        dropEnd: d.dropEnd,
+        guestUntil: d.guestUntil,
+        drop: d.drop ? { ...d.drop } : null,
+      };
     },
     async stop() {
       stopped = true;

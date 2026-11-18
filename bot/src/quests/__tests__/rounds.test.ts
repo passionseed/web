@@ -128,9 +128,12 @@ const EVENING: Evening = {
   guest: "gull",
   litAt: LIT / 1000,
   guestFrom: LIT / 1000 + 25 * 60,
+  dropEnd: LIT / 1000 + 30 * 60,
   guestUntil: LIT / 1000 + 120 * 60,
   drop: null,
 };
+/** The same evening once the night is settled (2 teams got a look). */
+const SETTLED: Evening = { ...EVENING, drop: { teams: 2 } };
 /** The round at a Bangkok time on NIGHT ("19:25"). */
 const roundAtTime = (hhmm: string) => {
   const [h, m] = hhmm.split(":").map(Number);
@@ -146,13 +149,22 @@ describe("the evening guest on the rounds", () => {
     expect(customIds(p)).toEqual(["sq|rd_aim"]);
   });
 
-  it("each rest of the stay carries the guest instead of any encounter: arrival first, then still here, with the private check", () => {
+  it("the guest's rest says who counts (anyone at the fire until 19:30), with no check yet: nothing is settled", () => {
+    const p = shown("19:25");
+    expect(viewText(p)).toContain(GUESTS.gull.arrive);
+    expect(viewText(p)).toContain(ROUND_GUEST.sit(EVENING.dropEnd));
+    expect(viewText(p)).toContain(ROUND_GUEST.fine);
+    expect(customIds(p)).toEqual(["sq|rd_close", "sq|rd_aim"]);
+  });
+
+  it("each rest of the stay carries the guest instead of any encounter: arrival first, then still here, with the private check once settled", () => {
     for (const time of ["19:25", "19:55", "20:25", "20:55"]) {
-      const p = shown(time);
+      const p = shown(time, SETTLED);
       const g = GUESTS.gull;
       expect(viewText(p)).toContain(time === "19:25" ? g.arrive : g.still);
       expect(viewText(p)).toContain(ROUND_GUEST.fine);
       expect(viewText(p)).not.toContain(R.encounterFine);
+      expect(viewText(p)).not.toContain(ROUND_GUEST.sit(EVENING.dropEnd));
       expect(customIds(p)).toEqual(["sq|rd_close", "sq|rd_aim", `sq|rd_guest|${NIGHT}`]);
       for (const e of R.encounters) expect(viewText(p)).not.toContain(e.text);
     }
@@ -160,23 +172,23 @@ describe("the evening guest on the rounds", () => {
 
   it("the focus rounds of the stay carry the guest's still line and the check, so someone arriving mid-focus can meet it", () => {
     for (const time of ["19:30", "20:00", "20:30"]) {
-      const p = shown(time);
+      const p = shown(time, SETTLED);
       expect(viewText(p)).toContain(GUESTS.gull.still);
       expect(customIds(p)).toEqual(["sq|rd_aim", `sq|rd_guest|${NIGHT}`]);
     }
+    // 19:30 before the bot's settling check: the guest, no check yet.
+    expect(customIds(shown("19:30"))).toEqual(["sq|rd_aim"]);
   });
 
-  it("shows how many teams got a look once the drop is made, never which", () => {
-    const p = shown("19:25", { ...EVENING, drop: { teams: 3 } });
-    expect(viewText(p)).toContain(ROUND_GUEST.dropped(GUESTS.gull, 3));
-    expect(viewText(shown("20:25", { ...EVENING, drop: { teams: 0 } }))).toContain(ROUND_GUEST.dropped(GUESTS.gull, 0));
-  });
-
-  it("a withheld count (1 or 2 teams at the fire, or all or none won) shows no number, only the private check", () => {
-    const p = shown("19:25", { ...EVENING, drop: { teams: null } });
-    expect(viewText(p)).toContain(ROUND_GUEST.dropped(GUESTS.gull, null));
-    expect(viewText(p)).not.toContain(ROUND_GUEST.dropped(GUESTS.gull, 0));
-    expect(customIds(p)).toEqual(["sq|rd_close", "sq|rd_aim", `sq|rd_guest|${NIGHT}`]);
+  it("always shows how many teams got a look once the night is settled (never which), and a friendly line for none", () => {
+    for (const n of [1, 3]) {
+      const p = shown("19:30", { ...EVENING, drop: { teams: n } });
+      expect(viewText(p)).toContain(ROUND_GUEST.dropped(GUESTS.gull, n));
+      expect(viewText(p)).toContain(`**${n}** ทีม`);
+    }
+    const none = shown("20:25", { ...EVENING, drop: { teams: 0 } });
+    expect(viewText(none)).toContain(ROUND_GUEST.dropped(GUESTS.gull, 0));
+    expect(customIds(none)).toEqual(["sq|rd_close", "sq|rd_aim", `sq|rd_guest|${NIGHT}`]);
   });
 
   it("leaves 18:55, 21:00 onward, guest-less nights and no evening exactly as before", () => {
@@ -676,7 +688,7 @@ describe("the evening guest's 🎁 check", () => {
     ["full", REVEAL.fullTitle(GUESTS.boat), REVEAL.full(GUESTS.boat)],
     ["away", REVEAL.awayTitle(GUESTS.boat), REVEAL.away],
     ["arriving", REVEAL.arrivingTitle, REVEAL.arriving],
-    // The guest's first rest passed with no drop (the bot was away): never "your team was not there".
+    // Settled with the room never read during the rest (the bot was away): never "your team was not there".
     ["quiet", REVEAL.quietTitle(GUESTS.boat), REVEAL.quiet],
     ["noplot", REVEAL.awayTitle(GUESTS.boat), REVEAL.noPlot],
   ])("%s: a warm private line about the presser's own team, never a name", async (state, title, line) => {

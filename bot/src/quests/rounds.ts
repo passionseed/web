@@ -19,10 +19,11 @@
  * On a night with an evening guest (schema 21, call.ts), the 19:00 focus
  * round carries a teaser, and from the first rest (19:25) to 21:00 the round
  * messages carry the guest instead of any encounter: its arrival on that
- * rest, then that it is still here, how many teams it left a look for once
- * the drop is decided (no number when the database withholds it), and the
- * private 🎁 check (rd_guest). The evening comes from the call loop's cache
- * (deps.evening); without it the rounds are as before.
+ * rest with who counts (anyone who sits at the fire until 19:30), then that
+ * it is still here, and once the night is settled how many teams it left a
+ * look for (never which) with the private 🎁 check (rd_guest). The evening
+ * comes from the call loop's cache (deps.evening); without it the rounds are
+ * as before.
  *
  * Design: docs/superpowers/specs/2026-11-13-shift-campfire-rounds-roots-design.md.
  */
@@ -101,9 +102,9 @@ export function encounterAt(round: number): Encounter | null {
 
 /**
  * Tonight's evening, as the call loop last read it (call.ts evening()): the
- * Bangkok day, its guest, the clock in unix seconds, and once the drop is
- * decided how many teams got a look (null teams: withheld). Null on a night
- * without a call.
+ * Bangkok day, its guest, the clock in unix seconds, and once the night is
+ * settled how many teams got a look. Null on a night without a call (or a
+ * SHIFT cohort day, when the call pauses).
  */
 export interface Evening {
   day: string;
@@ -111,18 +112,20 @@ export interface Evening {
   guest: GuestKey | null;
   /** 19:00 Bangkok: the first focus round. */
   litAt: number;
-  /** 19:25 Bangkok: the first rest, when the guest arrives. */
+  /** 19:25 Bangkok: the first rest, when the guest arrives; anyone at the fire from now counts. */
   guestFrom: number;
+  /** 19:30 Bangkok: that rest ends, and the night's rolls are made. */
+  dropEnd: number;
   /** 21:00 Bangkok: the guest leaves. */
   guestUntil: number;
-  /** Once the drop is decided: teams the guest left a look for (null: withheld). Null before. */
-  drop: { teams: number | null } | null;
+  /** Once the night is settled: how many teams the guest left a look for. Null before. */
+  drop: { teams: number } | null;
 }
 
 /** What a round shows of the evening: the teaser, the guest, or nothing. */
 type GuestPart =
   | { kind: "teaser" }
-  | { kind: "guest"; key: GuestKey; arriving: boolean; day: string; drop: { teams: number | null } | null }
+  | { kind: "guest"; key: GuestKey; arriving: boolean; day: string; dropEnd: number; drop: { teams: number } | null }
   | null;
 
 /** The evening's part of a round, by when the round's own phase starts. */
@@ -131,7 +134,14 @@ export function guestPart(at: RoundAt, evening: Evening | null | undefined): Gue
   const startsAt = at.phase === "focus" ? at.restAt - FOCUS_MIN * 60 : at.restAt;
   if (at.phase === "focus" && startsAt === evening.litAt) return { kind: "teaser" };
   if (startsAt < evening.guestFrom || startsAt >= evening.guestUntil) return null;
-  return { kind: "guest", key: evening.guest, arriving: startsAt === evening.guestFrom, day: evening.day, drop: evening.drop ?? null };
+  return {
+    kind: "guest",
+    key: evening.guest,
+    arriving: startsAt === evening.guestFrom,
+    day: evening.day,
+    dropEnd: evening.dropEnd,
+    drop: evening.drop ?? null,
+  };
 }
 
 /** What makes a round's message change: its round, its phase, and the evening's part of it. */
@@ -139,12 +149,17 @@ export function roundKey(at: RoundAt, evening: Evening | null | undefined): stri
   return JSON.stringify([at.round, at.phase, guestPart(at, evening)]);
 }
 
-/** The guest's lines on a round message, and its private 🎁 check. */
-function guestLines(part: Extract<GuestPart, { kind: "guest" }>): { text: string; button: ReturnType<typeof button> } {
+/**
+ * The guest's lines on a round message: on its rest, who counts until the
+ * night is settled; once settled, how many teams got a look and the private
+ * 🎁 check (no button before: there is nothing to check yet).
+ */
+function guestLines(part: Extract<GuestPart, { kind: "guest" }>): { text: string; button: ReturnType<typeof button> | null } {
   const g = GUESTS[part.key];
   const lines = [part.arriving ? g.arrive : g.still];
   if (part.drop) lines.push(ROUND_GUEST.dropped(g, part.drop.teams));
-  return { text: lines.join("\n"), button: button(cid("rd_guest", part.day), CALL.btnCheck) };
+  else if (part.arriving) lines.push(ROUND_GUEST.sit(part.dropEnd));
+  return { text: lines.join("\n"), button: part.drop ? button(cid("rd_guest", part.day), CALL.btnCheck) : null };
 }
 
 /** The round's message: the same for everyone at the fire. */
@@ -153,7 +168,7 @@ export function roundView(at: RoundAt, evening: Evening | null = null): View {
   const guest = part?.kind === "guest" ? guestLines(part) : null;
   if (at.phase === "focus") {
     const buttons = [button(cid("rd_aim"), R.btnAim, ButtonStyle.Primary)];
-    if (guest) buttons.push(guest.button);
+    if (guest?.button) buttons.push(guest.button);
     return {
       tone: "island",
       title: R.focusTitle,
@@ -171,7 +186,7 @@ export function roundView(at: RoundAt, evening: Evening | null = null): View {
   const encounter = guest ? null : encounterAt(at.round);
   const buttons = [button(cid("rd_close"), R.btnClose, ButtonStyle.Success), button(cid("rd_aim"), R.btnAim)];
   if (encounter) buttons.push(button(cid("rd_enc", at.round), encounter.button));
-  if (guest) buttons.push(guest.button);
+  if (guest?.button) buttons.push(guest.button);
   const moment = guest?.text ?? encounter?.text;
   const fine = guest ? `${ROUND_GUEST.fine}\n` : encounter ? `${R.encounterFine}\n` : "";
   return {

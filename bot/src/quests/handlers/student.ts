@@ -447,7 +447,22 @@ function ledgerLine(e: Coins["entries"][number]): string {
   return `\`${e.amount > 0 ? "+" : ""}${e.amount}\` ${ledgerReason(e.kind, e.reason, e.title, e.category, e.rule_key)} · ${bkkDate(e.created_at)}`;
 }
 
-function settingsView(prefs: Session["prefs"], remindersLive: boolean): View {
+/**
+ * Whether the 18:50 campfire call pings the student roles now
+ * (shift_quest_call_pings, schema 21): the call and its ping switched on and a
+ * student role set. False on an older database (the function is missing) or
+ * when the check fails: the /settings line on stopping the ping is shown only
+ * while there is a ping to stop, and a failed check never fails /settings.
+ */
+async function callPings(ctx: Ctx): Promise<boolean> {
+  try {
+    return (await ctx.api.call<boolean>("shift_quest_call_pings")) === true;
+  } catch {
+    return false;
+  }
+}
+
+function settingsView(prefs: Session["prefs"], remindersLive: boolean, callPing: boolean): View {
   const blocks: Block[] = [{ kind: "subtext", text: T.onlyYou }];
   if (prefs?.reminders_opt_in && prefs.reminder_hour !== null) {
     blocks.push({ kind: "text", text: T.remindersOn(prefs.reminder_days.map((d) => DAY_NAMES[d]).join(" "), prefs.reminder_hour) });
@@ -456,8 +471,8 @@ function settingsView(prefs: Session["prefs"], remindersLive: boolean): View {
     blocks.push({ kind: "text", text: T.remindersOff });
   }
   blocks.push({ kind: "text", text: prefs?.notify_dm ? T.dmOn : T.dmOff });
-  // The 18:50 campfire call's role ping is not a reminder: how to stop it (call.ts).
-  blocks.push({ kind: "subtext", text: T.callPing });
+  // The 18:50 campfire call's role ping is not a reminder: how to stop it (call.ts), only while it pings.
+  if (callPing) blocks.push({ kind: "subtext", text: T.callPing });
   return {
     tone: "neutral",
     title: T.settingsTitle,
@@ -516,7 +531,7 @@ export const student: HandlerSet = {
 
     async settings(i, ctx) {
       requireStudent(ctx);
-      await show(i, settingsView(ctx.session.prefs, ctx.session.settings.reminders));
+      await show(i, settingsView(ctx.session.prefs, ctx.session.settings.reminders, await callPings(ctx)));
     },
 
     async data(i, ctx) {
@@ -695,7 +710,7 @@ export const student: HandlerSet = {
         const days = selectValues(i, "days").map(Number);
         const hour = Number(selectValues(i, "hour")[0]);
         const session = await ctx.api.call<Session>("shift_quest_update_prefs", ctx.userId, true, days, hour, null);
-        await show(i, settingsView(session.prefs, session.settings.reminders));
+        await show(i, settingsView(session.prefs, session.settings.reminders, await callPings(ctx)));
         return;
       }
       const prefs = ctx.session.prefs;
@@ -726,13 +741,13 @@ export const student: HandlerSet = {
     async rem_off(i, ctx) {
       requireStudent(ctx);
       const session = await ctx.api.call<Session>("shift_quest_update_prefs", ctx.userId, false, null, null, null);
-      await show(i, settingsView(session.prefs, session.settings.reminders), { replace: true });
+      await show(i, settingsView(session.prefs, session.settings.reminders, await callPings(ctx)), { replace: true });
     },
 
     async dm(i, ctx, [state]) {
       requireStudent(ctx);
       const session = await ctx.api.call<Session>("shift_quest_update_prefs", ctx.userId, null, null, null, state === "on");
-      await show(i, settingsView(session.prefs, session.settings.reminders), { replace: true });
+      await show(i, settingsView(session.prefs, session.settings.reminders, await callPings(ctx)), { replace: true });
     },
 
     // --- Personal data -------------------------------------------------------------

@@ -423,18 +423,22 @@ The short version for whoever runs the bot:
     deleted when today's is recorded. Claimed, sent and marked once a day; a
     stale claim it cannot check (no Read Message History) sends nothing, so
     nobody is pinged twice. It posts only when students can see and join the
-    campfire voice channel and the bot can post in its chat. During a season
-    an evening guest arrives at 19:25: the first 30-second check that can
+    campfire voice channel and the bot can post in its chat. While a SHIFT
+    cohort round is in session (`roundsInSession` in
+    `lib/shift/voiceWindow.ts`) it sends no call and makes no drop, and the
+    latest call becomes the paused note. During a season an evening guest
+    comes for the 19:25 to 19:30 rest: every 30-second check in it that can
     read the room passes the ids there (`campfire.present()`, the voice
-    cache; empty when nobody sits there) to `shift_quest_campfire_drop`
-    once, and that moment decides the night; the database rolls once per
-    team and keeps one row per team and night (no member), deleted the next
-    day. The round messages show the guest and, only when it cannot tell
-    who won, how many teams got a look; 🎁 (`rd_guest`) answers privately
-    about the presser's own team. The send carries a nonce Discord enforces
-    (`callNonce`), so a POST discord.js retries never posts or pings twice.
-    `/admin feature campfire_call off` edits the latest call into a paused
-    note within 30 seconds. Below schema 21 the loop only
+    cache; empty when nobody sits there) to `shift_quest_campfire_seen`, and
+    the database keeps which teams were there (no member, no time). The
+    first check from 19:30 calls `shift_quest_campfire_drop`, which settles
+    the night once: one roll per team, rows deleted the next day. The round
+    messages show the guest and how many teams got a look (never which); 🎁
+    (`rd_guest`) answers privately about the presser's own team. The send
+    carries a nonce Discord enforces (`callNonce`), so a POST discord.js
+    retries never posts or pings twice. `/admin feature campfire_call off`
+    edits the latest call into a paused note within 30 seconds. Below
+    schema 21 the loop only
     re-reads the version each check, so deploy the bot first, then apply the
     migration; no restart needed. The bot needs, in the news channel, View
     Channel, Send Messages, Read Message History and (unless the student role

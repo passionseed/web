@@ -535,9 +535,12 @@ async function main(): Promise<void> {
     ["the campfire call's reader", "select public.shift_quest_call_today()", []],
     ["the campfire call's claim", "select public.shift_quest_call_claim($1::date, $2)", ["2026-11-18", "700000000000000001"]],
     ["the campfire call's writer", "select public.shift_quest_call_mark($1::date, $2, $3)", ["2026-11-18", "700000000000000001", "700000000000000002"]],
-    ["the evening guest's drop", "select public.shift_quest_campfire_drop($1::date, $2::text[])", ["2026-11-18", [A]]],
+    ["the campfire call's ping check", "select public.shift_quest_call_pings()", []],
+    ["the evening guest's presence check", "select public.shift_quest_campfire_seen($1::date, $2::text[])", ["2026-11-18", [A]]],
+    ["the evening guest's drop", "select public.shift_quest_campfire_drop($1::date)", ["2026-11-18"]],
     ["the evening guest's check", "select public.shift_quest_guest_status($1)", [A]],
-    ["helper shift_quest__guest_drop", "select public.shift_quest__guest_drop(now(), $1::text[], 1)", [[A]]],
+    ["helper shift_quest__guest_seen", "select public.shift_quest__guest_seen(now(), $1::text[])", [[A]]],
+    ["helper shift_quest__guest_settle", "select public.shift_quest__guest_settle(now(), 1)", []],
     // The raw functions that take a Discord id for someone else, and the flows that stay in Discord or were
     // dropped (20261118100000): the website reaches members through the uuid wrappers only.
     ["raw consent resets", "select public.shift_quest_admin_consent_reset($1, $2)", [ADMIN, A]],

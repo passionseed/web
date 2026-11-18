@@ -9,15 +9,19 @@ import { ChannelType, DiscordAPIError, MessageFlags, PermissionFlagsBits, type C
 import { FOCUS_MINUTES, REST_MINUTES } from "@/lib/shift-island/rounds-rules";
 
 import { QuestDbError, QuestError, type QuestApi } from "../api";
+import { SHIFT_COHORTS } from "@/lib/content/shift-cohort";
+
 import {
   CALL_SCHEMA,
   EDIT_EVERY_MS,
   callNonce,
   callPayload,
   callView,
+  cohortWeek,
   normalizeCall,
   normalizeOff,
   openerOf,
+  pausedFrom,
   pingHeard,
   roomProblem,
   stageAt,
@@ -50,6 +54,7 @@ const CALL_MS = Date.UTC(2026, 10, 18, 11, 50, 0);
 const CALL_AT = CALL_MS / 1000;
 const LIT_AT = CALL_AT + 10 * 60;
 const GUEST_FROM = CALL_AT + 35 * 60;
+const DROP_END = CALL_AT + 40 * 60;
 const GUEST_UNTIL = CALL_AT + 130 * 60;
 const MIN = 60_000;
 /** ms at a number of minutes after 18:50 Bangkok. */
@@ -63,6 +68,7 @@ function raw(over: Record<string, unknown> = {}): Record<string, unknown> {
     call_at: CALL_AT,
     lit_at: LIT_AT,
     guest_from: GUEST_FROM,
+    drop_end: DROP_END,
     guest_until: GUEST_UNTIL,
     channel_id: NEWS_CH,
     coworking_channel_id: ROOM,
@@ -104,7 +110,7 @@ describe("normalizeCall", () => {
         ping_role_ids: [ROLE, "everyone", ROLE, "@here", ROLE2, "400000000000000003", "400000000000000004", "400000000000000005", "400000000000000006"],
         message_id: "900000000000000001",
         message_channel_id: OTHER_CH,
-        previous: { channel_id: NEWS_CH, message_id: YESTERDAY_MSG },
+        previous: { day: "2026-11-17", channel_id: NEWS_CH, message_id: YESTERDAY_MSG },
         drop: { teams: "3" },
       })
     );
@@ -114,6 +120,7 @@ describe("normalizeCall", () => {
       callAt: CALL_AT,
       litAt: LIT_AT,
       guestFrom: GUEST_FROM,
+      dropEnd: DROP_END,
       guestUntil: GUEST_UNTIL,
       channelId: NEWS_CH,
       coworkingId: ROOM,
@@ -121,17 +128,26 @@ describe("normalizeCall", () => {
       due: true,
       messageId: "900000000000000001",
       messageChannelId: OTHER_CH,
-      previous: { channelId: NEWS_CH, messageId: YESTERDAY_MSG },
+      previous: { day: "2026-11-17", channelId: NEWS_CH, messageId: YESTERDAY_MSG },
       drop: { teams: 3 },
       off: false,
     });
   });
 
-  it("keeps a withheld count (null) apart from no drop yet, and from 0", () => {
-    expect(normalizeCall(raw({ drop: { teams: null } }))?.drop).toEqual({ teams: null });
-    expect(normalizeCall(raw({ drop: {} }))?.drop).toEqual({ teams: null });
+  it("reads the settled count as a whole number (0 included); anything unreadable is a night not settled yet", () => {
     expect(normalizeCall(raw({ drop: { teams: 0 } }))?.drop).toEqual({ teams: 0 });
-    expect(normalizeCall(raw({ drop: null }))?.drop).toBeNull();
+    expect(normalizeCall(raw({ drop: { teams: 2 } }))?.drop).toEqual({ teams: 2 });
+    for (const drop of [null, {}, { teams: null }, { teams: "many" }, { teams: -1 }]) {
+      expect(normalizeCall(raw({ drop }))?.drop).toBeNull();
+    }
+  });
+
+  it("keeps the previous call's own day, and none when it is unreadable", () => {
+    expect(normalizeCall(raw({ previous: { channel_id: NEWS_CH, message_id: YESTERDAY_MSG } }))?.previous).toEqual({
+      day: null,
+      channelId: NEWS_CH,
+      messageId: YESTERDAY_MSG,
+    });
   });
 
   it("reads the switched-off answer only as the call to retire, never as tonight's call", () => {
@@ -164,6 +180,7 @@ describe("normalizeCall", () => {
     ["a bad day", raw({ day: "tonight" })],
     ["a channel that is not a snowflake", raw({ channel_id: "#island-news" })],
     ["no times", raw({ lit_at: null })],
+    ["no end to the guest's rest", raw({ drop_end: null })],
     ["an array", [raw()]],
   ])("is null for %s", (_label, value) => {
     expect(normalizeCall(value)).toBeNull();
@@ -205,7 +222,8 @@ describe("callView", () => {
     expect(body).toContain(`<t:${LIT_AT}:t> (<t:${LIT_AT}:R>)`);
     expect(body).toContain(`โฟกัส ${FOCUS_MINUTES} นาที พัก ${REST_MINUTES} นาที`);
     expect(body).toContain(CALL.teaser(GUEST_FROM));
-    expect(body).toContain(CALL.drop);
+    expect(body).toContain(CALL.drop(GUEST_FROM, DROP_END));
+    expect(body).toContain(`<t:${GUEST_FROM}:t> ถึง <t:${DROP_END}:t>`);
     expect(body).toContain(CALL.people(0));
     expect(body).toContain(`-# ${CALL.mute}`);
     expect(body).toContain(`-# ${CALL.dayLine(DAY)}`);
@@ -229,41 +247,48 @@ describe("callView", () => {
     expect(body).toContain(CALL.people(2));
   });
 
-  it("guest: its arrival and stay; the drop's rule until it is made, then how many teams (never which) and the private check", () => {
+  it("guest: its arrival and stay; who counts (the whole rest) until the night is settled, then how many teams (never which) and the private check", () => {
     const before = sent(data(), "guest", 3);
     expect(bodyText(before).startsWith(`### ${GUESTS.boat.here}\n`)).toBe(true);
     expect(bodyText(before)).toContain(GUESTS.boat.arrive);
-    expect(bodyText(before)).toContain(CALL.drop);
+    expect(bodyText(before)).toContain(CALL.drop(GUEST_FROM, DROP_END));
     expect(bodyText(before)).toContain(CALL.stay(GUESTS.boat, GUEST_UNTIL));
     expect(customIds(before)).toEqual([]);
 
-    const after = sent(data({ drop: { teams: 3 } }), "guest", 3);
-    expect(bodyText(after)).toContain(CALL.dropped(GUESTS.boat, 3));
-    expect(bodyText(after)).not.toContain(CALL.drop);
+    const after = sent(data({ drop: { teams: 1 } }), "guest", 3);
+    expect(bodyText(after)).toContain(CALL.dropped(GUESTS.boat, 1));
+    expect(bodyText(after)).not.toContain(CALL.drop(GUEST_FROM, DROP_END));
     expect(customIds(after)).toEqual([`sq|rd_guest|${DAY}`]);
 
     const none = sent(data({ drop: { teams: 0 } }), "guest", 3);
     expect(bodyText(none)).toContain(CALL.dropped(GUESTS.boat, 0));
-
-    // 1 or 2 teams, or all or none of them won: the database withholds the count.
-    const withheld = sent(data({ drop: { teams: null } }), "guest", 3);
-    expect(bodyText(withheld)).toContain(CALL.dropped(GUESTS.boat, null));
-    expect(bodyText(withheld)).not.toContain(CALL.dropped(GUESTS.boat, 0));
-    expect(customIds(withheld)).toEqual([`sq|rd_guest|${DAY}`]);
+    expect(customIds(none)).toEqual([`sq|rd_guest|${DAY}`]);
   });
 
-  it("the public count never tells a team's result: no number when withheld, and it asks about your own team", () => {
+  it("the public count always shows the number once any team won (founder decision), never which, and asks about your own team", () => {
     for (const g of Object.values(GUESTS)) {
-      expect(CALL.dropped(g, null)).not.toMatch(/\d/);
-      expect(CALL.dropped(g, null)).not.toBe(CALL.dropped(g, 0));
-      expect(CALL.dropped(g, null)).toContain("ทีมคุณ");
-      expect(CALL.dropped(g, 3)).toContain("ทีมคุณได้อะไร");
+      for (const n of [1, 2, 3, 7]) {
+        expect(CALL.dropped(g, n)).toContain(`${g.name}ทิ้งของไว้ให้ **${n}** ทีม`);
+        expect(CALL.dropped(g, n)).toContain("ทีมคุณได้อะไร");
+      }
+      // 0: a friendly line with no number.
+      expect(CALL.dropped(g, 0)).not.toMatch(/\d/);
+      expect(CALL.dropped(g, 0)).toContain(g.name);
       // "ทีมไหนได้อะไร" reads as "see which team got what": the button only answers for the presser's own team.
-      for (const n of [null, 0, 3]) expect(CALL.dropped(g, n)).not.toContain("ทีมไหน");
+      for (const n of [0, 1, 3]) expect(CALL.dropped(g, n)).not.toContain("ทีมไหน");
     }
   });
 
-  it("off: a paused note with no people line, no ping line, no tomorrow promise and no guest check", () => {
+  it("says who counts: anyone at the fire during the guest's rest, one roll per team", () => {
+    expect(CALL.drop(GUEST_FROM, DROP_END)).toContain("ช่วงพัก");
+    expect(CALL.drop(GUEST_FROM, DROP_END)).toContain("ทีมละครั้ง");
+    expect(CALL.drop(GUEST_FROM, DROP_END)).not.toContain("ตอนแขกมาถึง");
+    expect(ROUND_GUEST.sit(DROP_END)).toContain(`<t:${DROP_END}:t>`);
+    expect(ROUND_GUEST.fine).not.toContain("ตอนแขกมาถึง");
+    expect(REVEAL.away).toContain("19:25 ถึง 19:30");
+  });
+
+  it("off: a paused note with no people line, no ping line, no tomorrow promise, no fine print and no guest check", () => {
     const d = normalizeOff({ off: true, day: DAY, message_id: "900000000000000001", message_channel_id: NEWS_CH })!;
     const p = callPayload(view(d, "off", 5), d, "edit");
     const body = bodyText(p);
@@ -275,16 +300,22 @@ describe("callView", () => {
     expect(body).not.toContain("พรุ่งนี้");
     expect(body).not.toContain("<@&");
     expect(body).not.toContain(CALL.mute);
+    // In a SHIFT cohort week shift-voice counts voice time: the paused note never says nobody counts it.
+    expect(body).not.toContain(CALL.fine);
+    expect(body).not.toContain("ไม่มีใครนับเวลา");
     expect(customIds(p)).toEqual([]);
     expect(p.allowedMentions).toEqual({ parse: [] });
     expect(stageAt(d, at(35))).toBe("off");
   });
 
-  it("embers: no people line, the drop's count stays, the check stays", () => {
+  it("embers: no people line, the drop's count stays, the check stays, and nothing promises 'tomorrow'", () => {
     const p = sent(data({ drop: { teams: 2 } }), "embers", 7);
     const body = bodyText(p);
     expect(body.startsWith(`### ${CALL.embersTitle}\n`)).toBe(true);
     expect(body).toContain(CALL.embers);
+    // Still true after midnight: the fire is lit every evening.
+    expect(CALL.embers).not.toContain("พรุ่งนี้");
+    expect(CALL.embers).toContain("ทุกเย็น");
     expect(body).toContain(CALL.dropped(GUESTS.boat, 2));
     for (const n of [0, 1, 7]) expect(body).not.toContain(CALL.people(n));
     expect(customIds(p)).toEqual([`sq|rd_guest|${DAY}`]);
@@ -294,7 +325,7 @@ describe("callView", () => {
     const d = data({ guest: null });
     for (const stage of ["invite", "lit", "guest", "embers"] as const) {
       const body = bodyText(sent(d, stage, 3));
-      expect(body).not.toContain(CALL.drop);
+      expect(body).not.toContain(CALL.drop(GUEST_FROM, DROP_END));
       expect(body).not.toContain("🔭");
     }
     expect(bodyText(sent(d, "guest", 3)).startsWith(`### ${CALL.litTitle}\n`)).toBe(true);
@@ -352,12 +383,13 @@ describe("the call's mentions", () => {
 
 describe("the call's Thai copy (DRAFT)", () => {
   const all = JSON.stringify({ CALL, GUESTS, ROUND_GUEST, REVEAL }) + [
-    ...GUEST_KEYS.flatMap((k) => [CALL.dropped(GUESTS[k], 0), CALL.dropped(GUESTS[k], 4), CALL.dropped(GUESTS[k], null), CALL.stay(GUESTS[k], 1), REVEAL.wonTitle(GUESTS[k]), REVEAL.lostTitle(GUESTS[k]), REVEAL.fullTitle(GUESTS[k]), REVEAL.full(GUESTS[k]), REVEAL.awayTitle(GUESTS[k]), REVEAL.quietTitle(GUESTS[k]), REVEAL.heading(GUESTS[k])]),
-    CALL.round(1), CALL.teaser(1), CALL.people(0), CALL.people(1), CALL.people(5), CALL.dayLine(DAY), REVEAL.won("x"), REVEAL.looks(["a", "b"]),
+    ...GUEST_KEYS.flatMap((k) => [CALL.dropped(GUESTS[k], 0), CALL.dropped(GUESTS[k], 4), CALL.stay(GUESTS[k], 1), REVEAL.wonTitle(GUESTS[k]), REVEAL.lostTitle(GUESTS[k]), REVEAL.fullTitle(GUESTS[k]), REVEAL.full(GUESTS[k]), REVEAL.awayTitle(GUESTS[k]), REVEAL.quietTitle(GUESTS[k]), REVEAL.heading(GUESTS[k])]),
+    CALL.round(1), CALL.teaser(1), CALL.drop(1, 2), ROUND_GUEST.sit(2), CALL.people(0), CALL.people(1), CALL.people(5), CALL.dayLine(DAY), REVEAL.won("x"), REVEAL.looks(["a", "b"]),
   ].join("\n");
 
-  it("follows the house rules: no dashes, no talking down, no streaks, no 'you missed', no coins", () => {
+  it("follows the house rules: no dashes, no talking down, no streaks, no 'you missed', no coins, no 'tomorrow'", () => {
     expect(all).not.toMatch(/[—–]/);
+    expect(all).not.toContain("พรุ่งนี้");
     expect(all).not.toMatch(/น้องๆ|น้อง ๆ|เด็กๆ|เด็ก ๆ/);
     expect(all).not.toMatch(/สตรีค|streak|ติดต่อกัน/i);
     expect(all).not.toMatch(/ยังไม่ได้|พลาด|เมื่อวาน/);
@@ -375,16 +407,23 @@ describe("the call's Thai copy (DRAFT)", () => {
     expect(REVEAL.fine).toContain("ลุคไม่ทำให้ต้นไม้โต");
   });
 
-  it("tells how to stop the ping with a setting that stops a role mention (a muted channel still notifies on mentions)", () => {
-    expect(CALL.mute).not.toContain("ปิดเสียงห้องนี้ได้เลย");
-    expect(CALL.mute).toContain("Suppress All Role @mentions");
-    expect(T.callPing).toContain("Suppress All Role @mentions");
+  it("tells how to stop the ping by the server setting's Thai name, English in parentheses, and claims nothing about channel settings", () => {
+    for (const line of [CALL.mute, T.callPing]) {
+      expect(line).toContain("ระงับทุกตำแหน่ง @mentions (Suppress All Role @mentions)");
+      expect(line).toContain("ตั้งค่าการแจ้งเตือน (Notification Settings)");
+      expect(line).toContain("ทั้งเซิร์ฟเวอร์");
+      // No sourced claim says what a channel's own setting does to a role ping.
+      expect(line).not.toMatch(/ปิดเสียงห้อง|ห้องนี้/);
+    }
+    // The comment cites where the Thai labels come from.
+    const file = readFileSync(join(__dirname, "..", "callCopy.ts"), "utf8");
+    expect(file).toContain("form_label_suppress_roles");
   });
 
   it("never says nobody can see which team got a look: a picked look shows on a shown team's tree", () => {
     for (const line of [ROUND_GUEST.fine, REVEAL.fine]) {
       expect(line).not.toContain("ไม่มีใครเห็นว่าทีมไหนได้");
-      expect(line).toContain("บอทไม่ประกาศว่าทีมไหนได้");
+      expect(line).toContain("ไม่ประกาศว่าทีมไหนได้");
     }
   });
 
@@ -490,7 +529,7 @@ function fakeChannel(id: string, over: Record<string, unknown> = {}) {
   return { channel, sent, make, state };
 }
 
-/** The database as shift_quest_call_today, _claim, _mark and _campfire_drop answer, on a clock the test moves. */
+/** The database as shift_quest_call_today, _claim, _mark, _campfire_seen and _campfire_drop answer, on a clock the test moves. */
 function fakeDb(clock: { now: number }) {
   const db = {
     version: CALL_SCHEMA as number,
@@ -500,9 +539,9 @@ function fakeDb(clock: { now: number }) {
     storedChannel: NEWS_CH,
     claimedAt: null as number | null,
     pingRoles: [ROLE] as string[],
-    previous: null as null | { channel_id: string; message_id: string },
-    drop: null as null | { teams: number | null },
-    dropTeams: 2 as number | null,
+    previous: null as null | { day?: string; channel_id: string; message_id: string },
+    drop: null as null | { teams: number },
+    dropTeams: 2,
     markError: null as Error | null,
     beforeMark: null as null | (() => void),
     /** Forces the claim's answer (else: 'new' when no claim, 'stale' for one 3 minutes old, else null). */
@@ -554,9 +593,16 @@ function fakeDb(clock: { now: number }) {
       }
       return db.stored;
     }
+    if (fn === "shift_quest_campfire_seen") {
+      const t = clock.now / 1000;
+      return t >= GUEST_FROM && t < DROP_END ? { guest: "boat", open: true } : null;
+    }
     if (fn === "shift_quest_campfire_drop") {
+      // The database settles from 19:30 only (its own clock decides).
+      if (clock.now / 1000 < DROP_END) return null;
+      const fresh = db.drop === null;
       db.drop = { teams: db.dropTeams };
-      return { guest: "boat", done: true, fresh: true, teams: db.dropTeams };
+      return { guest: "boat", done: true, fresh, teams: db.dropTeams };
     }
     throw new Error(`unexpected ${fn}`);
   });
@@ -568,7 +614,7 @@ afterEach(async () => {
   while (loops.length) await loops.pop()!.stop();
 });
 
-function world(opts: { schema?: number } = {}) {
+function world(opts: { schema?: number; inSession?: (day: string) => boolean } = {}) {
   const clock = { now: at(0) };
   const { db, api } = fakeDb(clock);
   const news = fakeChannel(NEWS_CH);
@@ -592,6 +638,8 @@ function world(opts: { schema?: number } = {}) {
       campfire,
       schema: opts.schema ?? CALL_SCHEMA,
       now: () => clock.now,
+      // Never the real cohort calendar here: a test day is no SHIFT round unless a test says so.
+      inSession: opts.inSession ?? (() => false),
     });
     loops.push(loop);
     return loop;
@@ -931,84 +979,139 @@ describe("startCall: the call through the evening", () => {
 });
 
 describe("startCall: the evening guest's drop", () => {
-  it("at the guest's arrival hands the ids at the fire to the database once, and remembers how many teams got a look", async () => {
+  const A = "600000000000000001";
+  const B = "600000000000000002";
+  const C = "600000000000000003";
+
+  it("passes who sits at the fire on every check of the guest's rest, then settles the night once at the first check from 19:30", async () => {
     const w = world();
     await w.loop.poll();
-    w.room.present = ["600000000000000001", "600000000000000002"];
+    w.room.present = [A, B];
     w.clock.now = at(34.9);
     await w.loop.poll();
-    expect(fnCalls(w, "shift_quest_campfire_drop")).toEqual([]);
+    expect(fnCalls(w, "shift_quest_campfire_seen")).toEqual([]);
     expect(w.loop.evening(w.clock.now)).toEqual({
       day: DAY,
       guest: "boat",
       litAt: LIT_AT,
       guestFrom: GUEST_FROM,
+      dropEnd: DROP_END,
       guestUntil: GUEST_UNTIL,
       drop: null,
     });
     w.clock.now = at(35);
     await w.loop.poll();
-    expect(fnCalls(w, "shift_quest_campfire_drop")).toEqual([["shift_quest_campfire_drop", DAY, ["600000000000000001", "600000000000000002"]]]);
+    // Someone who sits down later in the rest counts too: no reward for coming first.
+    w.room.present = [C];
+    w.clock.now = at(37);
+    await w.loop.poll();
+    w.room.present = [];
+    w.clock.now = at(39.5);
+    await w.loop.poll();
+    expect(fnCalls(w, "shift_quest_campfire_seen")).toEqual([
+      ["shift_quest_campfire_seen", DAY, [A, B]],
+      ["shift_quest_campfire_seen", DAY, [C]],
+      ["shift_quest_campfire_seen", DAY, []],
+    ]);
+    expect(fnCalls(w, "shift_quest_campfire_drop")).toEqual([]);
+    expect(w.loop.evening(w.clock.now)?.drop).toBeNull();
+    expect(bodyText(w.news.sent[0].edits.at(-1))).toContain(CALL.drop(GUEST_FROM, DROP_END));
+
+    w.clock.now = at(40);
+    await w.loop.poll();
+    // The settle takes no ids: who counts was decided during the rest.
+    expect(fnCalls(w, "shift_quest_campfire_drop")).toEqual([["shift_quest_campfire_drop", DAY]]);
+    expect(fnCalls(w, "shift_quest_campfire_seen")).toHaveLength(3);
     expect(w.loop.evening(w.clock.now)?.drop).toEqual({ teams: 2 });
-    expect(console.log).toHaveBeenCalledWith(`[shift-quests] campfire guest's drop for ${DAY} made (2 team(s) got a look)`);
-    // Never the ids in a log line.
+    expect(console.log).toHaveBeenCalledWith(`[shift-quests] campfire guest's drop for ${DAY} settled (2 team(s) got a look)`);
+    // Never an id in a log line.
     for (const [line] of (console.log as jest.Mock).mock.calls) expect(String(line)).not.toContain("6000000000000000");
-    w.clock.now = at(36);
+    w.room.present = [A];
+    w.clock.now = at(41);
     await w.loop.poll();
     expect(fnCalls(w, "shift_quest_campfire_drop")).toHaveLength(1);
+    expect(fnCalls(w, "shift_quest_campfire_seen")).toHaveLength(3);
     expect(bodyText(w.news.sent[0].edits.at(-1))).toContain(CALL.dropped(GUESTS.boat, 2));
   });
 
-  it("an empty fire at the guest's arrival is still the moment: the drop is made then, so nobody is rewarded for coming first", async () => {
+  it("an empty fire is still a check (the bot watched); a room it cannot read is no check at all", async () => {
     const w = world();
     w.clock.now = at(35);
     await w.loop.poll();
-    expect(fnCalls(w, "shift_quest_campfire_drop")).toEqual([["shift_quest_campfire_drop", DAY, []]]);
-    w.room.present = ["600000000000000001"];
+    expect(fnCalls(w, "shift_quest_campfire_seen")).toEqual([["shift_quest_campfire_seen", DAY, []]]);
+    w.room.open = false;
     w.clock.now = at(36);
     await w.loop.poll();
-    expect(fnCalls(w, "shift_quest_campfire_drop")).toHaveLength(1);
+    expect(fnCalls(w, "shift_quest_campfire_seen")).toHaveLength(1);
   });
 
-  it("waits only while the room is unknown or closed, and stops at the end of the first rest", async () => {
+  it("after a restart past 19:30 the first check still settles the night (the database kept which teams sat there)", async () => {
     const w = world();
-    w.room.open = false;
-    w.clock.now = at(35);
+    w.room.present = [A];
+    w.clock.now = at(36);
     await w.loop.poll();
-    w.room.open = true;
-    w.room.present = ["600000000000000001"];
+    await w.loop.stop();
+    const fresh = w.start();
+    w.clock.now = at(41);
+    await fresh.poll();
+    expect(fnCalls(w, "shift_quest_campfire_drop")).toEqual([["shift_quest_campfire_drop", DAY]]);
+    expect(fnCalls(w, "shift_quest_campfire_seen")).toHaveLength(1);
+    expect(fresh.evening(w.clock.now)?.drop).toEqual({ teams: 2 });
+  });
+
+  it("asks again next check while the database is not ready to settle, and logs only a fresh settle", async () => {
+    const w = world();
+    const call = w.api.call as jest.Mock;
+    const real = call.getMockImplementation()!;
+    let ready = false;
+    call.mockImplementation(async (fn: string, ...args: unknown[]) =>
+      fn === "shift_quest_campfire_drop" && !ready ? (w.db.calls.push([fn, ...args]), null) : real(fn, ...args)
+    );
     w.clock.now = at(40);
     await w.loop.poll();
-    expect(fnCalls(w, "shift_quest_campfire_drop")).toEqual([]);
-    w.clock.now = at(39.9);
+    expect(w.loop.evening(w.clock.now)?.drop).toBeNull();
+    ready = true;
+    w.clock.now = at(40.5);
     await w.loop.poll();
-    expect(fnCalls(w, "shift_quest_campfire_drop")).toHaveLength(1);
-  });
+    expect(fnCalls(w, "shift_quest_campfire_drop")).toHaveLength(2);
+    expect(w.loop.evening(w.clock.now)?.drop).toEqual({ teams: 2 });
 
-  it("keeps a withheld count as withheld, and logs no number for it", async () => {
-    const w = world();
-    w.db.dropTeams = null;
-    w.room.present = ["600000000000000001"];
-    w.clock.now = at(35);
-    await w.loop.poll();
-    expect(w.loop.evening(w.clock.now)?.drop).toEqual({ teams: null });
-    expect(console.log).toHaveBeenCalledWith(`[shift-quests] campfire guest's drop for ${DAY} made (count withheld)`);
+    // Another process settled first: the same count, no log line.
+    const o = world();
+    o.db.drop = null;
+    o.clock.now = at(40);
+    (o.api.call as jest.Mock).mockImplementation(async (fn: string, ...args: unknown[]) => {
+      o.db.calls.push([fn, ...args]);
+      if (fn === "shift_quest_campfire_drop") return { guest: "boat", done: true, fresh: false, teams: 0 };
+      if (fn === "shift_quest_call_today") return raw({ due: false, message_id: null });
+      return null;
+    });
+    (console.log as jest.Mock).mockClear();
+    await o.loop.poll();
+    expect(o.loop.evening(o.clock.now)?.drop).toEqual({ teams: 0 });
+    expect(console.log).not.toHaveBeenCalled();
   });
 
   it("makes no drop on a night without a guest, or once the database has it", async () => {
     const w = world();
-    w.room.present = ["600000000000000001"];
+    w.room.present = [A];
     w.db.drop = { teams: 1 };
     w.clock.now = at(35);
     await w.loop.poll();
+    w.clock.now = at(40);
+    await w.loop.poll();
+    expect(fnCalls(w, "shift_quest_campfire_seen")).toEqual([]);
     expect(fnCalls(w, "shift_quest_campfire_drop")).toEqual([]);
     expect(w.loop.evening(w.clock.now)?.drop).toEqual({ teams: 1 });
 
     const n = world();
-    n.room.present = ["600000000000000001"];
+    n.room.present = [A];
     n.db.guest = null;
-    n.clock.now = at(35);
-    await n.loop.poll();
+    for (const minutes of [35, 40]) {
+      n.clock.now = at(minutes);
+      await n.loop.poll();
+    }
+    expect(fnCalls(n, "shift_quest_campfire_seen")).toEqual([]);
     expect(fnCalls(n, "shift_quest_campfire_drop")).toEqual([]);
     expect(n.loop.evening(n.clock.now)?.guest).toBeNull();
   });
@@ -1019,5 +1122,68 @@ describe("startCall: the evening guest's drop", () => {
     expect(w.loop.evening(at(-19 * 60))).toBeNull();
     expect(w.loop.evening(at(6 * 60))).toBeNull();
     expect(w.loop.evening(at(0))?.day).toBe(DAY);
+  });
+});
+
+describe("SHIFT cohort weeks: the call pauses by itself", () => {
+  it("cohortWeek follows the cohort calendar shift-voice uses (roundsInSession)", () => {
+    for (const c of SHIFT_COHORTS.filter((x) => !x.completed)) {
+      expect(cohortWeek(c.startDate)).toBe(true);
+      expect(cohortWeek(c.endDate)).toBe(true);
+    }
+    for (const c of SHIFT_COHORTS.filter((x) => x.completed)) expect(cohortWeek(c.startDate)).toBe(false);
+    expect(cohortWeek("2000-01-01")).toBe(false);
+  });
+
+  it("sends no call, reads nobody, settles nothing and gives the rounds no evening while a round is in session", async () => {
+    const w = world({ inSession: (day) => day === DAY });
+    w.room.present = ["600000000000000001"];
+    for (const minutes of [0, 5, 35, 37, 40, 130]) {
+      w.clock.now = at(minutes);
+      await w.loop.poll();
+      expect(w.loop.evening(w.clock.now)).toBeNull();
+    }
+    expect(fnCalls(w, "shift_quest_call_claim")).toEqual([]);
+    expect(fnCalls(w, "shift_quest_campfire_seen")).toEqual([]);
+    expect(fnCalls(w, "shift_quest_campfire_drop")).toEqual([]);
+    expect(w.news.channel.send).not.toHaveBeenCalled();
+    const paused = (console.log as jest.Mock).mock.calls.filter(([line]) => String(line).includes("campfire call paused"));
+    expect(paused).toEqual([[`[shift-quests] campfire call paused for ${DAY}: a SHIFT round is in session (shift-voice counts voice time)`]]);
+  });
+
+  it("edits the latest call once into the paused note (under its own day, with no fine print), and runs again after the round", async () => {
+    let inRound = true;
+    const w = world({ inSession: () => inRound });
+    const mine = w.news.make(sent(data({ day: "2026-11-17" }), "embers") as never);
+    w.news.sent.push(mine);
+    w.db.previous = { day: "2026-11-17", channel_id: NEWS_CH, message_id: mine.id };
+    await w.loop.poll();
+    expect(mine.edit).toHaveBeenCalledTimes(1);
+    const body = bodyText(mine.edits[0]);
+    expect(body).toContain(CALL.offTitle);
+    expect(body).toContain(CALL.dayLine("2026-11-17"));
+    expect(body).not.toContain(CALL.embers);
+    expect(body).not.toContain("ไม่มีใครนับเวลา");
+    expect(mine.edits[0].allowedMentions).toEqual({ parse: [] });
+    w.clock.now = at(5);
+    await w.loop.poll();
+    expect(mine.edit).toHaveBeenCalledTimes(1);
+    expect(mine.delete).not.toHaveBeenCalled();
+
+    // The round is over: tonight's call goes out as usual and the paused note is deleted.
+    inRound = false;
+    w.clock.now = at(6);
+    await w.loop.poll();
+    expect(w.news.channel.send).toHaveBeenCalledTimes(1);
+    expect(mine.delete).toHaveBeenCalledTimes(1);
+  });
+
+  it("pausedFrom: tonight's recorded call, else the previous one under its own day, else nothing", () => {
+    const tonight = pausedFrom(data({ message_id: "900000000000000001", message_channel_id: NEWS_CH }))!;
+    expect([tonight.off, tonight.day, tonight.messageId]).toEqual([true, DAY, "900000000000000001"]);
+    const prev = pausedFrom(data({ previous: { day: "2026-11-17", channel_id: OTHER_CH, message_id: YESTERDAY_MSG } }))!;
+    expect([prev.off, prev.day, prev.messageId, prev.messageChannelId]).toEqual([true, "2026-11-17", YESTERDAY_MSG, OTHER_CH]);
+    expect(pausedFrom(data({ previous: { channel_id: OTHER_CH, message_id: YESTERDAY_MSG } }))).toBeNull();
+    expect(pausedFrom(data())).toBeNull();
   });
 });
