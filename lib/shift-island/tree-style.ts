@@ -23,9 +23,11 @@ export interface TreeItem {
   /**
    * The evening guest who brings this look (shift_quest_tree_items.guest):
    * only that guest's drop at the campfire gives it, never a round or quest
-   * gift. Undefined for the common catalog.
+   * gift. "mentor": a staff night, when the founder or a mentor sat at the
+   * fire during the guest's rest and was the guest. Undefined for the common
+   * catalog.
    */
-  guest?: "boat" | "gull" | "fireflies" | "turtle";
+  guest?: "boat" | "gull" | "fireflies" | "turtle" | "mentor";
 }
 
 export const TREE_ITEMS: readonly TreeItem[] = [
@@ -55,8 +57,9 @@ export const TREE_ITEMS: readonly TreeItem[] = [
   { id: "bloom:frost", slot: "bloom", name: "น้ำแข็ง", colors: ["#FFFFFF", "#7FB7E8", "#CFE8FF"] },
   { id: "bloom:peach", slot: "bloom", name: "พีช", colors: ["#FFE3D0", "#F5A35C", "#F7B98E"] },
 
-  // The evening guests' looks (20261118150000_shift_quest_campfire_call, sort 23 to 30): colours only,
-  // two per guest, given only by that guest's drop at the campfire. Names DRAFT for the Thai review.
+  // The evening guests' looks (20261118150000_shift_quest_campfire_call, sort 23 to 32): colours only,
+  // two per guest, given only by that guest's drop at the campfire; the last two only on a night the
+  // founder or a mentor sat at the fire and was the guest. Names DRAFT for the Thai review.
   { id: "leaf:seaglass", slot: "leaf", name: "แก้วทะเล", colors: ["#2E6B66", "#4FA39A", "#A8E0D2"], guest: "boat" },
   { id: "bark:driftwood", slot: "bark", name: "ไม้ลอยน้ำ", colors: ["#6B6258", "#A39A8C", "#D9D1C3"], guest: "boat" },
   { id: "bloom:shell", slot: "bloom", name: "เปลือกหอย", colors: ["#FFF6EE", "#F2C9A0", "#F6D5DA"], guest: "gull" },
@@ -65,6 +68,8 @@ export const TREE_ITEMS: readonly TreeItem[] = [
   { id: "bark:moonlit", slot: "bark", name: "แสงจันทร์", colors: ["#2E3550", "#59618A", "#9CA6CF"], guest: "fireflies" },
   { id: "bloom:pearl", slot: "bloom", name: "มุก", colors: ["#FFFFFF", "#E6DCEB", "#F4EEF2"], guest: "turtle" },
   { id: "leaf:kelp", slot: "leaf", name: "สาหร่าย", colors: ["#3A4A22", "#5C7330", "#8FA552"], guest: "turtle" },
+  { id: "leaf:ember", slot: "leaf", name: "ถ่านไฟ", colors: ["#4A2620", "#A8452C", "#F2A14A"], guest: "mentor" },
+  { id: "bloom:starlit", slot: "bloom", name: "แสงดาว", colors: ["#FFFFFF", "#F6D86B", "#BFD3F2"], guest: "mentor" },
 ];
 
 export const DEFAULT_STYLE: TreeStyle = {

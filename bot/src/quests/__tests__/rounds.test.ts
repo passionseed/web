@@ -9,8 +9,8 @@ import type { Ctx } from "../context";
 import { T } from "../copy";
 import { LEARNED_MIN, R } from "../rounds-copy";
 import { I } from "../island/copy";
-import { ENCOUNTER_EVERY, ROUND_MARKER, encounterAt, roundAt, roundView, startRounds, type Evening, type RoundAt, type RoundDeps } from "../rounds";
-import { CALL, GUESTS, REVEAL, ROUND_GUEST } from "../callCopy";
+import { ENCOUNTER_EVERY, ROUND_MARKER, encounterAt, roundAt, roundKey, roundView, startRounds, type Evening, type RoundAt, type RoundDeps } from "../rounds";
+import { CALL, GUESTS, REVEAL, ROUND_GUEST, STAFF_GUEST, staffGuest } from "../callCopy";
 import { guestReveal } from "../handlers/rounds";
 import { boardFixture, side, SIDE_IDS } from "../test-helpers/board";
 import { renderView } from "../ui";
@@ -189,6 +189,26 @@ describe("the evening guest on the rounds", () => {
     const none = shown("20:25", { ...EVENING, drop: { teams: 0 } });
     expect(viewText(none)).toContain(ROUND_GUEST.dropped(GUESTS.gull, 0));
     expect(customIds(none)).toEqual(["sq|rd_close", "sq|rd_aim", `sq|rd_guest|${NIGHT}`]);
+  });
+
+  it("a staff night: the rest names the staff who are the guest, then says they came tonight (never that they are still here)", () => {
+    const staff: Evening = { ...EVENING, guest: STAFF_GUEST, staffNames: ["Ann", "Ben"] };
+    const g = staffGuest(["Ann", "Ben"]);
+    const arriving = viewText(shown("19:25", staff));
+    expect(arriving).toContain("🌟 คืนนี้ Ann และ Ben มาเป็นแขกที่กองไฟ");
+    expect(arriving).toContain(g.brought!);
+    expect(arriving).toContain(ROUND_GUEST.sit(EVENING.dropEnd));
+    for (const k of Object.values(GUESTS)) expect(arriving).not.toContain(k.arrive);
+    const later = viewText(shown("20:25", { ...staff, drop: { teams: 1 } }));
+    expect(later).toContain(g.still);
+    expect(later).toContain("🎁 Ann และ Ben ทิ้งของไว้ให้ **1** ทีม");
+  });
+
+  it("a guest that turns into staff mid-rest is a new key: the round message is edited to name them", () => {
+    const at = roundAtTime("19:25");
+    const staff: Evening = { ...EVENING, guest: STAFF_GUEST, staffNames: ["Ann"] };
+    expect(roundKey(at, staff)).not.toBe(roundKey(at, EVENING));
+    expect(roundKey(at, { ...staff, staffNames: ["Ann", "Ben"] })).not.toBe(roundKey(at, staff));
   });
 
   it("leaves 18:55, 21:00 onward, guest-less nights and no evening exactly as before", () => {
@@ -699,6 +719,22 @@ describe("the evening guest's 🎁 check", () => {
     expect(text).not.toMatch(/พลาด|ยังไม่ได้/);
     expect(b.sent.map((x) => x.how)).toEqual(["deferReply", "editReply"]);
     if (state === "noplot") expect(customIds(b.sent[1].payload as never)).toEqual(["sq|is_claim"]);
+  });
+
+  it("a staff night: the private answer and the gift card name the staff who were the guest, and their looks", async () => {
+    const staff = (over: Record<string, unknown>) =>
+      status({ guest: STAFF_GUEST, staff_names: ["Ann"], looks: ["leaf:ember", "bloom:starlit"], ...over });
+    const { b } = await press(staff({ state: "won", look: "leaf:ember", gift: { id: GIFT, options: ["leaf:ember"] } }));
+    const reveal = viewText(b.sent[1].payload as never);
+    expect(reveal).toContain("🎁 Ann ทิ้งของไว้ให้ทีมคุณ");
+    expect(reveal).toContain("ถ่านไฟ");
+    expect(reveal).toContain(REVEAL.fine);
+    expect(viewText(b.sent[2].payload as never)).toContain("ของจาก Ann");
+    const lost = viewText(renderView(guestReveal(staff({ state: "lost" }), DAY)));
+    expect(lost).toContain("🌟 คืนนี้ Ann แค่แวะมาทักทายทีมคุณ");
+    expect(lost).toContain(REVEAL.looks(["สีใบ ถ่านไฟ", "ดอก แสงดาว"]));
+    // Unnamed staff (no display name on record): still the staff's night.
+    expect(viewText(renderView(guestReveal(staff({ state: "away", staff_names: [] }), DAY)))).toContain("พี่จากทีม SHIFT");
   });
 
   it("lists what the guest brought on a night without a look", () => {

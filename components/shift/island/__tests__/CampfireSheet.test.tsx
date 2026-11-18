@@ -83,7 +83,7 @@ describe("CampfireSheet", () => {
     expect(CAMPFIRE.fine).toContain("ทีมที่มีคุณคนเดียว");
     expect(CAMPFIRE.fine).toContain("พร้อมวันที่ได้");
     // The guest keeps which teams sat at the fire during its rest, never who or when.
-    expect(CAMPFIRE.fine).toContain("ไม่เก็บว่าใครนั่งหรือนั่งตอนไหน");
+    expect(CAMPFIRE.fine).toContain("ไม่เก็บว่าใครในทีมนั่งหรือนั่งตอนไหน");
   });
 
   it("shows names only: no avatars, no Discord ids, no plots", () => {

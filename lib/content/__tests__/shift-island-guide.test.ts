@@ -91,7 +91,7 @@ describe("shift island guide copy", () => {
     expect(campfire).toContain("มากี่คนก็ลุ้นเท่ากัน");
     expect(campfire).not.toMatch(/พลาด|ยังไม่ได้/);
     const privacy = GUIDE_PRIVACY.lines.join(" ");
-    expect(privacy).toContain("ไม่เก็บว่าใครนั่ง");
+    expect(privacy).toContain("ไม่เก็บว่าใครในทีมนั่ง");
     expect(privacy).toContain("ลบทันทีเมื่อคุณออก");
   });
 
@@ -102,7 +102,7 @@ describe("shift island guide copy", () => {
     expect(campfire).toContain("กี่ทีม");
     expect(campfire).toContain("เว้นสัปดาห์ที่มีรอบ SHIFT");
     // The database keeps which teams sat there, never who or when.
-    expect(GUIDE_PRIVACY.lines.join(" ")).toContain("ไม่เก็บว่าใครนั่งหรือนั่งตอนไหน");
+    expect(GUIDE_PRIVACY.lines.join(" ")).toContain("ไม่เก็บว่าใครในทีมนั่งหรือนั่งตอนไหน");
   });
 
   it("never promises more privacy than the guest's drop keeps", () => {

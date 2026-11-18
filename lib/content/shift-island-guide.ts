@@ -239,7 +239,8 @@ export const GUIDE_PRIVACY = {
     "กองไฟเก็บแค่ว่าตอนนี้ใครอยู่ในห้อง และลบทันทีเมื่อคุณออก",
     // DRAFT (20261118150000): the guest keeps which teams sat at the fire in its rest and each roll (for a
     // team of one, that student's), never who or when; a won look is a gift that stays with the team, with its date.
-    "ตอนแขกแวะมาที่กองไฟ เก็บว่าทีมไหนมีคนนั่งช่วงพักนั้นและผลลุ้นของทีม ไม่เก็บว่าใครนั่งหรือนั่งตอนไหน และลบวันถัดไป (ทีมที่มีคุณคนเดียว ข้อมูลของทีมก็คือของคุณ) ลุคที่ทีมได้เป็นของขวัญของทีม เก็บไว้พร้อมวันที่ได้",
+    // "ใครในทีม": a night's staff guest (the founder or a mentor) is kept by display name until the next day.
+    "ตอนแขกแวะมาที่กองไฟ เก็บว่าทีมไหนมีคนนั่งช่วงพักนั้นและผลลุ้นของทีม ไม่เก็บว่าใครในทีมนั่งหรือนั่งตอนไหน และลบวันถัดไป (ทีมที่มีคุณคนเดียว ข้อมูลของทีมก็คือของคุณ) ลุคที่ทีมได้เป็นของขวัญของทีม เก็บไว้พร้อมวันที่ได้",
   ],
 } as const;
 

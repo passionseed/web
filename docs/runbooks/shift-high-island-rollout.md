@@ -430,7 +430,7 @@ The bot runs on its own host (`bot/deploy.sh`), not on Vercel.
       queued note permanently (status `failed`); nothing else is lost.
 - [ ] The campfire call and the evening guest (schema 21,
       `20261118150000_shift_quest_campfire_call`). Order: merge (Vercel
-      ships the 8 guest looks), deploy the bot, then the migration on the
+      ships the 10 guest looks), deploy the bot, then the migration on the
       founder's go. The bot re-reads the version every 30 seconds, so no
       restart. **Applying the migration turns the call on that evening, with
       the role ping** (both switches default on), within 30 seconds of the
@@ -460,7 +460,12 @@ The bot runs on its own host (`bot/deploy.sh`), not on Vercel.
       account with **ระงับทุกตำแหน่ง @mentions** (Suppress All Role
       @mentions) on gets none; on a Thai-language phone, check that the card
       names the setting as the app shows it. A team that won sees a 🎁
-      waiting on its tree. SHIFT cohort weeks need nothing: while a round is
+      waiting on its tree. On a night the founder or a mentor sits at the
+      fire between 19:25 and 19:30, they become the guest within 30 seconds
+      (log `campfire guest for <day>: staff at the fire (N name(s) shown)`;
+      the call's title reads `คืนนี้ <their display name> มาเป็นแขกที่กองไฟ`);
+      a staff member who should not be named that night stays out of the
+      room during that rest. SHIFT cohort weeks need nothing: while a round is
       in session (the cohort calendar in `lib/content/shift-cohort.ts`, read
       through `roundsInSession`) the bot sends no call and makes no drop, and
       the latest call becomes the paused note (log `campfire call paused for

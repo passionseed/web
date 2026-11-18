@@ -12,7 +12,7 @@ import {
 import { roundsInSession } from "@/lib/shift/voiceWindow";
 
 import { QuestDbError, QuestError, type QuestApi } from "./api";
-import { CALL, GUESTS, isGuestKey, type GuestKey } from "./callCopy";
+import { CALL, STAFF_GUEST, guestOf, isGuestKey, staffNamesOf, type GuestKey } from "./callCopy";
 import type { Campfire } from "./campfire";
 import { cid } from "./ids";
 import { LIVE } from "./island/copy";
@@ -66,6 +66,14 @@ import { ISLAND_LINK_LABEL, islandWebUrl } from "./weblink";
  * that got a look for the call and the round messages (evening()), and logs
  * nothing about anyone.
  *
+ * Staff at the fire are the guest (founder decision, later on 2026-11-18):
+ * when the founder or a mentor (an admin or reviewer member) is among the
+ * ids of a check during the rest, the database makes the night a staff night
+ * (guest STAFF_GUEST) and keeps up to two staff display names on it. The
+ * presence answer and every later read of the call carry both, so the call
+ * and the round messages name them from that check on, and a restarted bot
+ * names the same staff. Students are never named.
+ *
  * Once a day, restart-safe, as news.ts: claim (shift_quest_call_claim), send,
  * then record (shift_quest_call_mark, compare-and-set). A process that loses
  * the mark deletes its own message; a refused mark takes it back; a failed
@@ -107,7 +115,10 @@ const DAY = /^\d{4}-\d{2}-\d{2}$/;
 /** shift_quest_call_today's answer, checked. Times are unix seconds. */
 export interface CallData {
   day: string;
+  /** Tonight's guest: the rotation's, or STAFF_GUEST once staff sat at the fire during the rest; null without a season. */
   guest: GuestKey | null;
+  /** On a staff night, the display names of up to two staff who were the guest (adults: shown); else none. */
+  staffNames: string[];
   callAt: number;
   litAt: number;
   guestFrom: number;
@@ -193,9 +204,11 @@ export function normalizeCall(raw: unknown): CallData | null {
   const prevDay = typeof previous.day === "string" && DAY.test(previous.day) ? previous.day : null;
   const messageId = snowflake(r.message_id);
   const teams = r.drop && typeof r.drop === "object" ? teamsOf(record(r.drop).teams) : null;
+  const guest = isGuestKey(r.guest) ? r.guest : null;
   return {
     day: r.day,
-    guest: isGuestKey(r.guest) ? r.guest : null,
+    guest,
+    staffNames: guest === STAFF_GUEST ? staffNamesOf(r.staff_names) : [],
     callAt,
     litAt,
     guestFrom,
@@ -240,6 +253,7 @@ function pausedCall(day: string, channelId: string, messageId: string): CallData
   return {
     day,
     guest: null,
+    staffNames: [],
     callAt: 0,
     litAt: 0,
     guestFrom: 0,
@@ -323,7 +337,7 @@ function linkButton(url: string, label: string): ButtonBuilder {
 export function callView(d: CallData, o: CallViewOptions): View {
   const blocks: Block[] = [];
   if (d.pingRoleIds.length > 0) blocks.push({ kind: "text", text: d.pingRoleIds.map((id) => `<@&${id}>`).join(" ") });
-  const guest = d.guest ? GUESTS[d.guest] : null;
+  const guest = d.guest ? guestOf(d.guest, d.staffNames) : null;
   const people = { kind: "text", text: CALL.people(Math.max(0, Math.floor(o.sitters))) } as const;
   let title: string;
   switch (o.stage) {
@@ -343,7 +357,8 @@ export function callView(d: CallData, o: CallViewOptions): View {
     case "guest":
       title = guest ? guest.here : CALL.litTitle;
       if (guest) {
-        blocks.push({ kind: "text", text: guest.arrive });
+        // A staff night's title already names them: under it, what they brought.
+        blocks.push({ kind: "text", text: guest.brought ?? guest.arrive });
         // Until the night is settled: who counts (anyone at the fire during the rest); then how many teams got a look.
         const drop = d.drop ? CALL.dropped(guest, d.drop.teams) : CALL.drop(d.guestFrom, d.dropEnd);
         blocks.push({ kind: "text", text: [drop, CALL.stay(guest, d.guestUntil)].join("\n") });
@@ -489,6 +504,8 @@ export function startCall(client: Client, api: QuestApi, options: CallOptions): 
   const inSession = options.inSession ?? cohortWeek;
   /** The last Bangkok day logged as a SHIFT cohort day (the call paused), so it is said once a day. */
   let pausedDay: string | null = null;
+  /** The last Bangkok day logged as a staff night (staff were the guest), so it is said once a day. */
+  let staffDay: string | null = null;
 
   function warnOnce(job: string, reason: string): void {
     if (problems.get(job) === reason) return;
@@ -610,7 +627,8 @@ export function startCall(client: Client, api: QuestApi, options: CallOptions): 
    * check counts, so nobody is rewarded for coming first, and the database
    * keeps only which teams were there. From drop_end, the first check
    * settles the night (the database rolls once per team, once). Nothing
-   * about anyone is kept here.
+   * about anyone is kept here. The presence answer says tonight's guest: on
+   * a staff night, the staff and their names, shown from this check on.
    */
   async function drop(d: CallData): Promise<void> {
     if (!d.guest || d.drop) return;
@@ -620,8 +638,17 @@ export function startCall(client: Client, api: QuestApi, options: CallOptions): 
       const ids = options.campfire.present();
       // Unknown (the room is closed or not seen yet): nobody counted from this check.
       if (!ids) return;
-      await api.call<unknown>("shift_quest_campfire_seen", d.day, ids);
+      const seen = record(await api.call<unknown>("shift_quest_campfire_seen", d.day, ids));
       problems.delete("drop");
+      if (seen.guest === STAFF_GUEST) {
+        d.guest = STAFF_GUEST;
+        d.staffNames = staffNamesOf(seen.staff_names);
+        if (staffDay !== d.day) {
+          staffDay = d.day;
+          // A count only: names never go to logs.
+          console.log(`[shift-quests] campfire guest for ${d.day}: staff at the fire (${d.staffNames.length} name(s) shown)`);
+        }
+      }
       return;
     }
     const r = record(await api.call<unknown>("shift_quest_campfire_drop", d.day));
@@ -752,6 +779,11 @@ export function startCall(client: Client, api: QuestApi, options: CallOptions): 
     // Keep what this process learned today (the drop, the recorded message) until the database says it too.
     if (today?.day === d.day) {
       d.drop ??= today.drop;
+      // A staff night never goes back to the rotation's guest (the database's rule too).
+      if (today.guest === STAFF_GUEST && d.guest && d.guest !== STAFF_GUEST) {
+        d.guest = STAFF_GUEST;
+        d.staffNames = [...today.staffNames];
+      }
       if (!d.messageId && today.messageId) {
         d.messageId = today.messageId;
         d.messageChannelId = today.messageChannelId;
@@ -799,6 +831,7 @@ export function startCall(client: Client, api: QuestApi, options: CallOptions): 
       return {
         day: d.day,
         guest: d.guest,
+        staffNames: [...d.staffNames],
         litAt: d.litAt,
         guestFrom: d.guestFrom,
         dropEnd: d.dropEnd,

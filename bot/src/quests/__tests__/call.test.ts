@@ -30,7 +30,7 @@ import {
   type CallLoop,
   type CallStage,
 } from "../call";
-import { CALL, GUESTS, GUEST_KEYS, REVEAL, ROUND_GUEST } from "../callCopy";
+import { CALL, GUESTS, GUEST_KEYS, REVEAL, ROUND_GUEST, STAFF_GUEST, staffGuest } from "../callCopy";
 import { T } from "../copy";
 import { LIVE } from "../island/copy";
 import { NEWS } from "../newsCopy";
@@ -117,6 +117,7 @@ describe("normalizeCall", () => {
     expect(d).toEqual({
       day: DAY,
       guest: "boat",
+      staffNames: [],
       callAt: CALL_AT,
       litAt: LIT_AT,
       guestFrom: GUEST_FROM,
@@ -168,6 +169,14 @@ describe("normalizeCall", () => {
     expect(normalizeOff({ ...off, message_id: null })).toBeNull();
     expect(normalizeOff({ ...off, day: "today" })).toBeNull();
     expect(normalizeOff(null)).toBeNull();
+  });
+
+  it("reads a staff night: the guest is the staff, with up to two display names (strings with something in them)", () => {
+    const d = normalizeCall(raw({ guest: STAFF_GUEST, staff_names: ["Ann", "", 7, "  ", "Ben", "Cid"] }))!;
+    expect([d.guest, d.staffNames]).toEqual([STAFF_GUEST, ["Ann", "Ben"]]);
+    expect(normalizeCall(raw({ guest: STAFF_GUEST, staff_names: "Ann" }))?.staffNames).toEqual([]);
+    // Names belong to a staff night only: a rotation guest never carries any.
+    expect(normalizeCall(raw({ guest: "boat", staff_names: ["Ann"] }))?.staffNames).toEqual([]);
   });
 
   it("reads an unknown guest as no guest, and a bad coworking channel as none", () => {
@@ -279,6 +288,45 @@ describe("callView", () => {
     }
   });
 
+  it("a staff night names the staff who sat at the fire, in the title and the count, and promises nothing about them staying", () => {
+    const d = data({ guest: STAFF_GUEST, staff_names: ["Ann"] });
+    const before = bodyText(sent(d, "guest", 4));
+    expect(before.startsWith("### 🌟 คืนนี้ Ann มาเป็นแขกที่กองไฟ\n")).toBe(true);
+    expect(before).toContain(staffGuest(["Ann"]).brought!);
+    expect(before).toContain(CALL.drop(GUEST_FROM, DROP_END));
+    // Staff may leave: no "until 21:00" for them.
+    expect(before).toContain(CALL.stay(staffGuest(["Ann"]), GUEST_UNTIL));
+    expect(CALL.stay(staffGuest(["Ann"]), GUEST_UNTIL)).not.toContain("<t:");
+    for (const g of Object.values(GUESTS)) expect(before).not.toContain(g.name);
+
+    const after = bodyText(sent({ ...d, drop: { teams: 2 } }, "guest", 4));
+    expect(after).toContain("🎁 Ann ทิ้งของไว้ให้ **2** ทีม");
+    expect(bodyText(sent({ ...d, drop: { teams: 0 } }, "embers"))).toContain("🌙 คืนนี้ Ann แค่แวะมานั่งพักข้างกองไฟ");
+
+    const two = bodyText(sent(data({ guest: STAFF_GUEST, staff_names: ["Ann", "Ben"] }), "guest", 4));
+    expect(two.startsWith("### 🌟 คืนนี้ Ann และ Ben มาเป็นแขกที่กองไฟ\n")).toBe(true);
+    // A staff member with no display name on record: still a staff night, unnamed.
+    expect(bodyText(sent(data({ guest: STAFF_GUEST, staff_names: [] }), "guest", 4))).toContain("🌟 คืนนี้ พี่จากทีม SHIFT มาเป็นแขกที่กองไฟ");
+  });
+
+  it("escapes a staff display name: no Markdown, no mention, one line, at most 32 characters", () => {
+    const g = staffGuest(["**Ann** @everyone <@123456789012345678>\n# big", "x".repeat(60)]);
+    expect(g.name).not.toContain("**Ann**");
+    expect(g.name).not.toContain("@everyone");
+    expect(g.name).not.toContain("<@1");
+    expect(g.here.split("\n")).toHaveLength(1);
+    expect(g.name).toContain(`${"x".repeat(31)}…`);
+    expect(g.name).not.toContain("x".repeat(32));
+    const p = callPayload(view(data({ guest: STAFF_GUEST, staff_names: ["Ann @everyone"] }), "guest"), data(), "edit");
+    expect(p.allowedMentions).toEqual({ parse: [] });
+  });
+
+  it("never names staff before the rest: the invite and the lit call only tease", () => {
+    // Before 19:25 the database answers the rotation's guest; even a staff answer is never named before it arrives.
+    const d = data({ guest: STAFF_GUEST, staff_names: ["Ann"] });
+    for (const stage of ["invite", "lit"] as const) expect(bodyText(sent(d, stage, 4))).not.toContain("Ann");
+  });
+
   it("says who counts: anyone at the fire during the guest's rest, one roll per team", () => {
     expect(CALL.drop(GUEST_FROM, DROP_END)).toContain("ช่วงพัก");
     expect(CALL.drop(GUEST_FROM, DROP_END)).toContain("ทีมละครั้ง");
@@ -382,8 +430,9 @@ describe("the call's mentions", () => {
 });
 
 describe("the call's Thai copy (DRAFT)", () => {
-  const all = JSON.stringify({ CALL, GUESTS, ROUND_GUEST, REVEAL }) + [
-    ...GUEST_KEYS.flatMap((k) => [CALL.dropped(GUESTS[k], 0), CALL.dropped(GUESTS[k], 4), CALL.stay(GUESTS[k], 1), REVEAL.wonTitle(GUESTS[k]), REVEAL.lostTitle(GUESTS[k]), REVEAL.fullTitle(GUESTS[k]), REVEAL.full(GUESTS[k]), REVEAL.awayTitle(GUESTS[k]), REVEAL.quietTitle(GUESTS[k]), REVEAL.heading(GUESTS[k])]),
+  const guests = [...GUEST_KEYS.map((k) => GUESTS[k]), staffGuest(["Ann"]), staffGuest(["Ann", "Ben"]), staffGuest([])];
+  const all = JSON.stringify({ CALL, GUESTS, ROUND_GUEST, REVEAL, staff: guests.slice(GUEST_KEYS.length) }) + [
+    ...guests.flatMap((g) => [CALL.dropped(g, 0), CALL.dropped(g, 4), CALL.stay(g, 1), REVEAL.wonTitle(g), REVEAL.lostTitle(g), REVEAL.fullTitle(g), REVEAL.full(g), REVEAL.awayTitle(g), REVEAL.quietTitle(g), REVEAL.heading(g)]),
     CALL.round(1), CALL.teaser(1), CALL.drop(1, 2), ROUND_GUEST.sit(2), CALL.people(0), CALL.people(1), CALL.people(5), CALL.dayLine(DAY), REVEAL.won("x"), REVEAL.looks(["a", "b"]),
   ].join("\n");
 
@@ -405,6 +454,34 @@ describe("the call's Thai copy (DRAFT)", () => {
     expect(CALL.fine).toContain("ไม่มีใครนับเวลาของคุณ");
     expect(CALL.fine).toContain("ลุคไม่ทำให้ต้นไม้โต");
     expect(REVEAL.fine).toContain("ลุคไม่ทำให้ต้นไม้โต");
+  });
+
+  it("a staff night reads as luck, never a mentor's approval, and sets a name off by spaces", () => {
+    const g = staffGuest(["Ann"]);
+    expect(g.brought).toContain("ทุกทีมลุ้นเท่ากัน");
+    expect(g.arrive).toContain(g.here);
+    expect(g.arrive).toContain(g.brought!);
+    for (const line of [
+      CALL.dropped(g, 2),
+      CALL.dropped(g, 0),
+      REVEAL.wonTitle(g),
+      REVEAL.lostTitle(g),
+      REVEAL.fullTitle(g),
+      REVEAL.full(g),
+      REVEAL.awayTitle(g),
+      REVEAL.quietTitle(g),
+      REVEAL.heading(g),
+      g.here,
+      g.still,
+    ]) {
+      expect(line).toMatch(/(^|\s)Ann(\s|$)/);
+      expect(line).not.toMatch(/ {2}/);
+    }
+    // The still line stays true after they leave: "came tonight", never "is still sitting here".
+    expect(g.still).not.toContain("ยัง");
+    // A rotation guest's Thai name still runs into its sentence.
+    expect(REVEAL.wonTitle(GUESTS.boat)).toBe("🎁 เรือเร่ทิ้งของไว้ให้ทีมคุณ");
+    expect(REVEAL.heading(GUESTS.boat)).toBe("ของจากเรือเร่");
   });
 
   it("tells how to stop the ping by the server setting's Thai name, English in parentheses, and claims nothing about channel settings", () => {
@@ -546,6 +623,9 @@ function fakeDb(clock: { now: number }) {
     beforeMark: null as null | (() => void),
     /** Forces the claim's answer (else: 'new' when no claim, 'stale' for one 3 minutes old, else null). */
     claim: undefined as string | null | undefined,
+    /** Staff by Discord id and display name: one of them seen during the rest makes the night a staff night. */
+    staff: {} as Record<string, string>,
+    staffNames: [] as string[],
     calls: [] as unknown[][],
   };
   const due = () => {
@@ -564,6 +644,7 @@ function fakeDb(clock: { now: number }) {
       if (db.off) return db.stored ? { off: true, day: DAY, message_id: db.stored, message_channel_id: db.storedChannel } : null;
       return raw({
         guest: db.guest,
+        staff_names: db.staffNames,
         ping_role_ids: db.pingRoles,
         due: due(),
         message_id: db.stored,
@@ -595,14 +676,21 @@ function fakeDb(clock: { now: number }) {
     }
     if (fn === "shift_quest_campfire_seen") {
       const t = clock.now / 1000;
-      return t >= GUEST_FROM && t < DROP_END ? { guest: "boat", open: true } : null;
+      if (!(t >= GUEST_FROM && t < DROP_END)) return null;
+      // Staff at the fire: tonight's guest is them, names kept (up to two, the first seen first).
+      const names = (args[1] as string[]).filter((id) => id in db.staff).map((id) => db.staff[id]).sort();
+      if (names.length > 0 || db.guest === "mentor") {
+        db.guest = "mentor";
+        for (const n of names) if (db.staffNames.length < 2 && !db.staffNames.includes(n)) db.staffNames.push(n);
+      }
+      return { guest: db.guest, staff_names: [...db.staffNames], open: true };
     }
     if (fn === "shift_quest_campfire_drop") {
       // The database settles from 19:30 only (its own clock decides).
       if (clock.now / 1000 < DROP_END) return null;
       const fresh = db.drop === null;
       db.drop = { teams: db.dropTeams };
-      return { guest: "boat", done: true, fresh, teams: db.dropTeams };
+      return { guest: db.guest, done: true, fresh, teams: db.dropTeams };
     }
     throw new Error(`unexpected ${fn}`);
   });
@@ -993,6 +1081,7 @@ describe("startCall: the evening guest's drop", () => {
     expect(w.loop.evening(w.clock.now)).toEqual({
       day: DAY,
       guest: "boat",
+      staffNames: [],
       litAt: LIT_AT,
       guestFrom: GUEST_FROM,
       dropEnd: DROP_END,
@@ -1032,6 +1121,57 @@ describe("startCall: the evening guest's drop", () => {
     expect(fnCalls(w, "shift_quest_campfire_drop")).toHaveLength(1);
     expect(fnCalls(w, "shift_quest_campfire_seen")).toHaveLength(3);
     expect(bodyText(w.news.sent[0].edits.at(-1))).toContain(CALL.dropped(GUESTS.boat, 2));
+  });
+
+  it("staff at the fire during the rest are tonight's guest: named from that check on, never going back, the same after a restart", async () => {
+    const STAFF = "600000000000000009";
+    const w = world();
+    w.db.staff = { [STAFF]: "Ann" };
+    await w.loop.poll();
+    w.room.present = [A];
+    w.clock.now = at(35);
+    await w.loop.poll();
+    // Nobody from the staff yet: the rotation's guest arrives.
+    expect(bodyText(w.news.sent[0].edits.at(-1)).startsWith(`### ${GUESTS.boat.here}\n`)).toBe(true);
+    expect(w.loop.evening(w.clock.now)?.guest).toBe("boat");
+
+    // A mentor sits down at 19:27: from this check the guest is them.
+    w.room.present = [A, STAFF];
+    w.clock.now = at(37);
+    await w.loop.poll();
+    expect(w.loop.evening(w.clock.now)).toMatchObject({ guest: STAFF_GUEST, staffNames: ["Ann"] });
+    const named = bodyText(w.news.sent[0].edits.at(-1));
+    expect(named.startsWith("### 🌟 คืนนี้ Ann มาเป็นแขกที่กองไฟ\n")).toBe(true);
+    expect(named).not.toContain(GUESTS.boat.arrive);
+    expect(console.log).toHaveBeenCalledWith(`[shift-quests] campfire guest for ${DAY}: staff at the fire (1 name(s) shown)`);
+
+    // They leave before 19:30, and a read of the call says the rotation's guest: a staff night stays one.
+    w.room.present = [A];
+    w.db.guest = "boat";
+    w.db.staffNames = [];
+    w.clock.now = at(39);
+    await w.loop.poll();
+    expect(w.loop.evening(w.clock.now)).toMatchObject({ guest: STAFF_GUEST, staffNames: ["Ann"] });
+    w.db.guest = STAFF_GUEST;
+    w.db.staffNames = ["Ann"];
+
+    w.clock.now = at(40);
+    await w.loop.poll();
+    expect(bodyText(w.news.sent[0].edits.at(-1))).toContain("🎁 Ann ทิ้งของไว้ให้ **2** ทีม");
+    // Never a name or an id in a log line.
+    for (const [line] of (console.log as jest.Mock).mock.calls) {
+      expect(String(line)).not.toContain("Ann");
+      expect(String(line)).not.toContain("6000000000000000");
+    }
+
+    // A restarted bot names the same staff (the database kept the night's guest) and edits nothing that already reads so.
+    await w.loop.stop();
+    const edits = w.news.sent[0].edits.length;
+    const fresh = w.start();
+    w.clock.now = at(45);
+    await fresh.poll();
+    expect(fresh.evening(w.clock.now)).toMatchObject({ guest: STAFF_GUEST, staffNames: ["Ann"], drop: { teams: 2 } });
+    expect(w.news.sent[0].edits).toHaveLength(edits);
   });
 
   it("an empty fire is still a check (the bot watched); a room it cannot read is no check at all", async () => {

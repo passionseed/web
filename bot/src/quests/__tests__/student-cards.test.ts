@@ -824,7 +824,7 @@ describe("/data's campfire line", () => {
     expect(T.dataBody).toContain("ทีมที่มีคุณคนเดียว");
     expect(T.dataBody).toContain("พร้อมวันที่ได้");
     expect(T.dataBody).toContain("ลบวันถัดไป");
-    expect(T.dataBody).toContain("ไม่เก็บว่าใครนั่งหรือนั่งตอนไหน");
+    expect(T.dataBody).toContain("ไม่เก็บว่าใครในทีมนั่งหรือนั่งตอนไหน");
   });
 });
 

@@ -15,38 +15,63 @@
  * (founder decision, 2026-11-18), never which team; each student checks their
  * own team privately. A look never grows a tree, and the copy says so. 1 ทุ่ม
  * is 19:00, 3 ทุ่ม 21:00.
+ *
+ * Staff at the fire are the guest (founder decision, later on 2026-11-18):
+ * when the founder or a mentor sits at the fire during the guest's rest, the
+ * night's guest is them (STAFF_GUEST), named by their display names (adults:
+ * they may be shown; up to two). Students are never named. Their lines never
+ * promise the staff stay (they may leave), and their gift never reads like a
+ * mentor's approval: every team at the fire rolls the same, by luck.
  */
 import { FOCUS_MINUTES, REST_MINUTES } from "@/lib/shift-island/rounds-rules";
 
+import { safePost } from "./copy";
 import { thaiDay } from "./digestCopy";
 import { PEOPLE_FLOOR } from "./newsCopy";
 
-/** The evening guests, in the database's rotation order (shift_quest__guest_of). */
+/** The evening guests of the rotation, in the database's order (shift_quest__guest_of). */
 export const GUEST_KEYS = ["boat", "gull", "fireflies", "turtle"] as const;
-export type GuestKey = (typeof GUEST_KEYS)[number];
+export type RotationGuestKey = (typeof GUEST_KEYS)[number];
+/**
+ * The guest of a staff night: the founder or a mentor (an admin or reviewer
+ * member) sat at the fire during the guest's rest (shift_quest__guest_seen).
+ * Its looks are lib/shift-island/tree-style.ts TREE_ITEMS with guest "mentor".
+ */
+export const STAFF_GUEST = "mentor";
+export type GuestKey = RotationGuestKey | typeof STAFF_GUEST;
+
+/** At most this many staff are named as the night's guest (the database keeps two). */
+export const STAFF_NAMES_SHOWN = 2;
+/** A staff name in a message: Discord's display name limit. */
+const STAFF_NAME_MAX = 32;
 
 export interface Guest {
   emoji: string;
   /** The guest's name, used inside sentences ("เรือเร่ทิ้งของไว้ให้ 3 ทีม"). */
   name: string;
+  /** A person's display name (a staff night): set off by spaces inside a Thai sentence ("คืนนี้ Ann มาเป็นแขก"). */
+  person: boolean;
   /** The call's title once the guest is here. */
   here: string;
   /** The arrival, on the first rest's round message and in the call. */
   arrive: string;
+  /** In the call under its title, when it differs from the arrival (a staff night: the title already names them). */
+  brought?: string;
   /** On the round messages after the first rest, while the guest stays. */
   still: string;
 }
 
 /**
  * Real island creatures and a trader's boat from the lore
- * (docs/designs/shift-high-island-lore.md): no magic, and never a mentor, so
- * a gift never reads like an approval. Each brings two looks of its own
- * (lib/shift-island/tree-style.ts TREE_ITEMS, guest).
+ * (docs/designs/shift-high-island-lore.md): no magic. Each brings two looks
+ * of its own (lib/shift-island/tree-style.ts TREE_ITEMS, guest). The only
+ * people who are ever a guest are staff, on their own night (staffGuest).
  */
-export const GUESTS: Record<GuestKey, Guest> = {
+export const GUESTS: Record<RotationGuestKey, Guest> = {
   boat: {
     emoji: "⛵",
     name: "เรือเร่",
+    person: false,
     here: "⛵ เรือเร่แวะเข้าท่าแล้ว",
     arrive: "⛵ เรือเร่ลำเล็กแวะเข้าท่า คนเรือยกลังไม้มาวางข้างกองไฟ ในลังมีของจากทะเลไกล",
     still: "⛵ เรือเร่ยังจอดอยู่ที่ท่า",
@@ -54,6 +79,7 @@ export const GUESTS: Record<GuestKey, Guest> = {
   gull: {
     emoji: "🪶",
     name: "นกนางนวล",
+    person: false,
     here: "🪶 นกนางนวลร่อนลงข้างกองไฟแล้ว",
     arrive: "🪶 นกนางนวลตัวหนึ่งร่อนลงข้างกองไฟ คาบของที่เก็บมาจากชายหาดมาเต็มปาก",
     still: "🪶 นกนางนวลยังเกาะอยู่ข้างกองไฟ",
@@ -61,6 +87,7 @@ export const GUESTS: Record<GuestKey, Guest> = {
   fireflies: {
     emoji: "✨",
     name: "หิ่งห้อย",
+    person: false,
     here: "✨ หิ่งห้อยมาวนรอบกองไฟแล้ว",
     arrive: "✨ หิ่งห้อยฝูงหนึ่งบินออกมาจากพุ่มไม้หลังลาน มาวนอยู่รอบกองไฟ",
     still: "✨ หิ่งห้อยยังวนอยู่รอบกองไฟ",
@@ -68,6 +95,7 @@ export const GUESTS: Record<GuestKey, Guest> = {
   turtle: {
     emoji: "🐢",
     name: "เต่าทะเล",
+    person: false,
     here: "🐢 เต่าทะเลขึ้นหาดมาแล้ว",
     arrive: "🐢 เต่าทะเลค่อยๆ คลานขึ้นหาดใต้แสงจันทร์ ห่างกองไฟไปไม่ไกล ตามรอยบนทรายมีของเล็กๆ ที่ทะเลพัดมา",
     still: "🐢 เต่าทะเลยังนอนพักอยู่ริมหาด",
@@ -75,7 +103,64 @@ export const GUESTS: Record<GuestKey, Guest> = {
 };
 
 export function isGuestKey(value: unknown): value is GuestKey {
-  return typeof value === "string" && (GUEST_KEYS as readonly string[]).includes(value);
+  return typeof value === "string" && (value === STAFF_GUEST || (GUEST_KEYS as readonly string[]).includes(value));
+}
+
+/**
+ * The staff names of a database answer (staff_names): strings with something
+ * in them, at most STAFF_NAMES_SHOWN, as given. Anything else is none.
+ */
+export function staffNamesOf(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((n): n is string => typeof n === "string" && n.trim().length > 0)
+    .slice(0, STAFF_NAMES_SHOWN);
+}
+
+/** A staff display name as a message shows it: one line, at most 32 characters, Markdown and mentions escaped. */
+export function staffName(raw: string): string {
+  return safePost(raw.replace(/\s+/g, " ").trim(), STAFF_NAME_MAX);
+}
+
+/** The words for a staff guest with no display name on record. */
+const STAFF_UNNAMED = "พี่จากทีม SHIFT";
+
+/**
+ * A staff night's guest: the staff who sat at the fire during the rest, by
+ * display name (one, or "A และ B"). DRAFT. Never "still sitting here" (they
+ * may have left), and the looks come by the same luck as every night.
+ */
+export function staffGuest(names: readonly string[]): Guest {
+  const shown = names.map(staffName).filter((n) => n.length > 0).slice(0, STAFF_NAMES_SHOWN);
+  const who = shown.length > 0 ? shown.join(" และ ") : STAFF_UNNAMED;
+  const here = `🌟 คืนนี้ ${who} มาเป็นแขกที่กองไฟ`;
+  const brought = "🎒 พกลุคพิเศษมาด้วย ลุคแบบนี้ได้จากแขกตัวจริงเท่านั้น ทุกทีมลุ้นเท่ากันเหมือนทุกคืน";
+  return {
+    emoji: "🌟",
+    name: who,
+    person: true,
+    here,
+    arrive: `${here}\n${brought}`,
+    brought,
+    still: `🌟 คืนนี้ ${who} แวะมาเป็นแขกที่กองไฟ`,
+  };
+}
+
+/** Tonight's guest by its key: one of the rotation, or on a staff night the staff by name. */
+export function guestOf(key: GuestKey, staffNames: readonly string[] = []): Guest {
+  return key === STAFF_GUEST ? staffGuest(staffNames) : GUESTS[key];
+}
+
+/**
+ * A sentence around the guest's name. A rotation guest's Thai name runs into
+ * the words around it ("คืนนี้เรือเร่แค่แวะมา"); a person's display name is
+ * set off by spaces ("คืนนี้ Ann แค่แวะมา").
+ */
+function named(g: Guest, before: string, after: string): string {
+  if (!g.person) return `${before}${g.name}${after}`;
+  const b = before && !/\s$/.test(before) ? `${before} ` : before;
+  const a = after && !/^\s/.test(after) ? ` ${after}` : after;
+  return `${b}${g.name}${a}`;
 }
 
 /**
@@ -86,8 +171,8 @@ export function isGuestKey(value: unknown): value is GuestKey {
  */
 function dropped(g: Guest, teams: number): string {
   return teams > 0
-    ? `🎁 ${g.name}ทิ้งของไว้ให้ **${teams}** ทีม ทีมคุณได้อะไร กดดูได้ที่ปุ่มด้านล่าง เห็นแค่คุณ`
-    : `🌙 คืนนี้${g.name}แค่แวะมานั่งพักข้างกองไฟ`;
+    ? named(g, "🎁 ", `ทิ้งของไว้ให้ **${teams}** ทีม ทีมคุณได้อะไร กดดูได้ที่ปุ่มด้านล่าง เห็นแค่คุณ`)
+    : named(g, "🌙 คืนนี้", "แค่แวะมานั่งพักข้างกองไฟ");
 }
 
 /**
@@ -124,8 +209,9 @@ export const CALL = {
   lit: "รอบโฟกัสแรกเริ่มแล้ว เข้ามาตอนไหนก็ได้ นั่งลงแล้วเริ่มงานของตัวเองเลย",
   /** Once the night is settled: how many teams got a look (or a warm line for none). */
   dropped,
-  /** While the guest stays (until 21:00). */
-  stay: (g: Guest, until: number) => `${g.name}อยู่ถึง <t:${until}:t> มานั่งทำงานด้วยกันต่อได้`,
+  /** While the guest stays (until 21:00). Staff may leave: their night never promises they stay. */
+  stay: (g: Guest, until: number) =>
+    g.person ? "กองไฟยังเปิดอยู่ มานั่งทำงานด้วยกันต่อได้" : `${g.name}อยู่ถึง <t:${until}:t> มานั่งทำงานด้วยกันต่อได้`,
   embersTitle: "🌙 กองไฟคืนนี้มอดแล้ว",
   /**
    * Never "tomorrow": the embers stay up past midnight. True while it shows:
@@ -180,20 +266,20 @@ export const ROUND_GUEST = {
 
 /** The guest's private answer to 🎁 (handlers/rounds.ts rd_guest), about the presser's own team only. */
 export const REVEAL = {
-  wonTitle: (g: Guest) => `🎁 ${g.name}ทิ้งของไว้ให้ทีมคุณ`,
+  wonTitle: (g: Guest) => named(g, "🎁 ", "ทิ้งของไว้ให้ทีมคุณ"),
   won: (look: string) => `ในของมี **${look}** สำหรับต้นไม้ของทีม`,
   wonWaiting: "รับได้เลยด้านล่าง หรือเพื่อนในทีมคนไหนก็เปิดได้จากปุ่ม 🎁 เปิดของขวัญ",
   wonTaken: "ทีมรับไปแล้ว ลุคนี้อยู่กับต้นไม้ของทีม",
-  lostTitle: (g: Guest) => `${g.emoji} คืนนี้${g.name}แค่แวะมาทักทายทีมคุณ`,
+  lostTitle: (g: Guest) => named(g, `${g.emoji} คืนนี้`, "แค่แวะมาทักทายทีมคุณ"),
   lost: "คืนนี้ของไม่ได้ตกถึงทีมคุณ แขกเวียนกันมาที่กองไฟ แต่ละตัวมีของของตัวเอง",
-  fullTitle: (g: Guest) => `${g.emoji} ทีมคุณมีของจาก${g.name}ครบแล้ว`,
-  full: (g: Guest) => `คืนนี้${g.name}เลยแวะมานั่งพักข้างกองไฟด้วยกัน`,
-  awayTitle: (g: Guest) => `${g.emoji} ${g.name}แวะมาที่กองไฟคืนนี้`,
+  fullTitle: (g: Guest) => named(g, `${g.emoji} ทีมคุณมีของจาก`, "ครบแล้ว"),
+  full: (g: Guest) => named(g, "คืนนี้", "เลยแวะมานั่งพักข้างกองไฟด้วยกัน"),
+  awayTitle: (g: Guest) => named(g, `${g.emoji} `, "แวะมาที่กองไฟคืนนี้"),
   away: "ของจากแขกตกถึงทีมที่มีคนนั่งที่กองไฟช่วงพักแรกหลัง 1 ทุ่ม (19:25 ถึง 19:30) แขกเวียนกันมาเรื่อยๆ ไม่ต้องรีบ",
   arrivingTitle: "👀 แขกกำลังวางของ",
   arriving: "แขกวางของให้ทุกทีมที่มีคนนั่งที่กองไฟช่วงพัก 19:25 ถึง 19:30 ลองกดอีกครั้งหลัง 19:30",
   /** Settled, but the bot never read the room during the guest's rest (it was away): no team got anything, never "your team was not there". */
-  quietTitle: (g: Guest) => `${g.emoji} คืนนี้${g.name}แค่แวะมานั่งพัก`,
+  quietTitle: (g: Guest) => named(g, `${g.emoji} คืนนี้`, "แค่แวะมานั่งพัก"),
   quiet: "คืนนี้แขกไม่ได้ทิ้งของไว้ให้ทีมไหน แขกเวียนกันมาที่กองไฟ แต่ละตัวมีของของตัวเอง",
   noPlot: "ของจากแขกเป็นลุคแต่งต้นไม้ของทีม จับจองที่ดินก่อน แล้วทีมของคุณก็ได้ลุ้นด้วย",
   goneTitle: "🌙 แขกกลับไปแล้ว",
@@ -201,6 +287,6 @@ export const REVEAL = {
   /** What the guest brought, by the looks' names. */
   looks: (names: string[]) => `ของที่แขกพกมา: ${names.join(" · ")}`,
   /** The gift card's heading (handlers/tree.ts offerGift). */
-  heading: (g: Guest) => `ของจาก${g.name}`,
+  heading: (g: Guest) => named(g, "ของจาก", ""),
   fine: ROUND_GUEST.fine,
 };

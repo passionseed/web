@@ -1,7 +1,7 @@
 # SHIFT High Island: the campfire call and the evening guest (เรียกรวมกองไฟ)
 
 Status: built on `feat/shift-campfire-call`, 2026-11-18, revised the same day
-with the founder's answers. Its migration
+with the founder's answers (staff at the fire are the guest: decision 8). Its migration
 (`20261118150000_shift_quest_campfire_call.sql`, schema 21) is **not
 applied** and waits for the founder's go, after the bot deploy. Thai copy is
 DRAFT and needs the three-model review in the root `AGENTS.md`.
@@ -23,7 +23,10 @@ evening, except while a SHIFT cohort round is in session. **What they see:**
   arrives: a trader's boat, a gull, fireflies or a sea turtle, in a fixed
   rotation by season day. Anyone who sits in the campfire voice room at any
   moment of that rest counts (the bot reads the room on every 30-second
-  check), and the database keeps only which teams were there.
+  check), and the database keeps only which teams were there. **If the
+  founder or a mentor sits at the fire at any moment of that rest, they are
+  the guest instead**: "คืนนี้ <name> มาเป็นแขกที่กองไฟ" (up to two names), and
+  the drop gives 2 looks only such a night gives.
 - **19:30, the first check after the rest**: the night is settled once. Every
   team seen gets **one roll**, however many teammates came. A winning roll
   leaves the team one of that guest's two looks it does not have yet, on its
@@ -44,14 +47,15 @@ evening, except while a SHIFT cohort round is in session. **What they see:**
 | 3 | Which days | Every day, all year, weekends included; it does not stop after Demo Day. The guest pauses when no season is active; the call itself runs. **Off by itself in SHIFT cohort weeks** (see "Cohort weeks"). Staff off switch: `/admin feature campfire_call`, **on by default**. |
 | 4 | The prize | **A random drop for being there**, not "aim and close a round". The founder approved it as the one exception to the island's no-random-prizes rule (`components/shift/island/AGENTS.md`, amended 2026-11-18). |
 | 4a | Who counts | Anyone who sits at the fire at any moment of the guest's rest (19:25 to 19:30). On every check in that window the bot passes the Discord ids in the campfire voice room (gateway voice cache, bots left out) to `shift_quest_campfire_seen`. Students are linked through the member table; unknown, not started and erased ids are ignored; staff and mentors never win. |
-| 4b | The roll | Settled once, at the bot's first check at or after 19:30 (`shift_quest_campfire_drop`): one roll per team seen, restart-safe (a lock per night, `settled_at`, one row per team and night, one gift per team and source). A win gives one of tonight's guest's looks the team does not own (2 per guest, 8 colour-only looks). A team that owns both is recorded with no look and gets a friendly no-prize line. |
+| 4b | The roll | Settled once, at the bot's first check at or after 19:30 (`shift_quest_campfire_drop`): one roll per team seen, restart-safe (a lock per night, `settled_at`, one row per team and night, one gift per team and source). A win gives one of tonight's guest's looks the team does not own (2 per guest: 8 colour-only looks for the rotation, 2 more for staff nights). A team that owns both is recorded with no look and gets a friendly no-prize line. |
 | 4c | The chance | 1 in 2 per team, in one constant: `shift_quest__guest_drop_chance()`. |
-| 4d | What is kept | Per team and night only: `shift_quest_guest_drops (day, project_id, guest, look or null)`: which teams were at the fire, and each roll. Never a member id, a Discord id, a time or a count of people. Per night: `shift_quest_guest_nights (day, guest, watched, settled_at)`. Rows of earlier days are deleted the next day: on the bot's reads, on every presence check and drop call, and by pg_cron's 5-minute voice purge (no bot needed). For a team of one, the team's row is that student's until then, and the copy says so. A win is a gift row on the team (`source drop:<day>`, `member_id` null) that stays with its date like every gift; an erasure that leaves the team with no member deletes the team's rows and drop gifts. `/data` exports the team's tree gifts (the guest's included) and its guest rows. Live presence stays as it was: who is in the room now, deleted on leave. |
+| 4d | What is kept | Per team and night only: `shift_quest_guest_drops (day, project_id, guest, look or null)`: which teams were at the fire, and each roll. Never a member id, a Discord id, a time or a count of people. Per night: `shift_quest_guest_nights (day, guest, watched, settled_at, staff_names)`; `staff_names` holds up to two staff display names on a staff night (decision 8), never a student's, cleared the next day and on that staff member's erasure. Rows of earlier days are deleted the next day: on the bot's reads, on every presence check and drop call, and by pg_cron's 5-minute voice purge (no bot needed). For a team of one, the team's row is that student's until then, and the copy says so. A win is a gift row on the team (`source drop:<day>`, `member_id` null) that stays with its date like every gift; an erasure that leaves the team with no member deletes the team's rows and drop gifts. `/data` exports the team's tree gifts (the guest's included) and its guest rows. Live presence stays as it was: who is in the room now, deleted on leave. |
 | 4e | The reveal | **Always the number** once at least one team won: "แขกทิ้งของไว้ให้ N ทีม" (`shift_quest__guest_reveal`), a friendly line for 0. Never which team. 🎁 answers privately (ephemeral, never a DM) about the presser's own team; a win also waits on the team's tree on the web and in Discord (the normal gift flow). Who sits at the fire is public, so with one team there the number says that team won; the founder chose to show it anyway. |
 | 4f | Limits | No coins, no stage change, no quest pass, nothing lost for skipping a night, no streaks, no "first to arrive", no reward for bringing more people. |
 | 5 | Deploy order | Schema 21, migration 20261118150000 (after #329's 20261118140000, schema 20, applied 2026-11-18). The bot reads the schema version on every call tick, so it can deploy before the migration with no restart. Merge, deploy the bot, then the migration on the founder's go. |
 | 6 | Copy | DRAFT, no em or en dashes, never น้องๆ or เด็กๆ, lively and short for phones, never "พรุ่งนี้" (a promise a later night may break). |
 | 7 | The opt-out line | Names the server setting as Thai-language Discord shows it, English in parentheses: ตั้งค่าการแจ้งเตือน (Notification Settings), ระงับทุกตำแหน่ง @mentions (Suppress All Role @mentions); source in `callCopy.ts`. No claim about any channel setting. `/settings` shows it only while the call pings (`shift_quest_call_pings`, schema 21). |
+| 8 | Staff at the fire are the guest (founder, later on 2026-11-18) | If the founder or a mentor (a non-erased admin or reviewer member; the staff the drop already never lets win) is among the ids of any check of the 19:25 to 19:30 rest, that night's guest is them (`mentor`) instead of the rotation's, from that check on and never back (`shift_quest__guest_seen`). The call's title and the round messages name them, `คืนนี้ <display name> มาเป็นแขกที่กองไฟ`, two at most (`<A> และ <B>`, the first seen first); staff are adults, so their display names may be shown. A staff member with no display name is `พี่จากทีม SHIFT`. The drop that night gives 2 looks only staff nights give (`leaf:ember`, `bloom:starlit`), with the same rules: one roll per team seen during the rest, settled at 19:30, 1 in 2, a look the team does not own, staff never win. The night's row (`shift_quest_guest_nights.guest`, `staff_names`) keeps the guest and the names, so every edit and a restarted bot show the same guest; the names are cleared the next day and on that staff member's erasure. No season, no guest, staff or not. Nights with no staff at the fire keep the rotation. |
 
 ## Cohort weeks
 
@@ -78,9 +82,14 @@ the round ends. No staff switch is needed.
   settling, the purge and the private answer are all SQL. The bot renders,
   passes who is in the room, and asks. The cohort pause is the bot's, from
   the same calendar shift-voice uses.
-- **Nothing that names anyone.** The ids the bot passes are matched and
-  dropped; the team row has no member column and no time. Logs carry counts
-  only.
+- **Nothing that names a student.** The ids the bot passes are matched and
+  dropped; the team row has no member column and no time. The only names
+  kept are staff display names on a staff night, until the next day. Logs
+  carry counts only.
+- **A staff guest is luck, not approval.** The copy says every team at the
+  fire rolls the same, as every night; the staff choose nothing, and a look
+  never grows a tree. Their lines never promise they stay ("came tonight",
+  never "is still here"; no "until 21:00").
 - **Restart-safe and never twice.** The call has its own ledger
   (`shift_quest_call_posts`): claim, send, compare-and-set mark. A stale claim
   is recovered by finding the bot's own call (its issue line) in the channel;
@@ -99,7 +108,8 @@ the round ends. No staff switch is needed.
 - No count of nights attended, no "you missed", no last chance: guests rotate
   and come back every 4 nights during a season.
 - No public line about which team won.
-- No DM, no user mention, no names in the call.
+- No DM, no user mention, no student's name in the call (only the staff
+  who are the night's guest, by display name).
 - No coins, no stage, nothing with value.
 
 ## The copy (DRAFT)
@@ -128,3 +138,10 @@ drafts, Cursor proofreads, Codex checks the logic.
   decision.
 - The /settings line does not know about cohort weeks: it shows while the
   call's switches are on, even on a day the bot pauses the call.
+- Staff who sit down at 19:25 are seen at the call loop's first check of the
+  rest (within 30 seconds); until then the round message may show the
+  rotation's guest, then it is edited to name them. Staff who sit down later
+  in the rest replace the rotation's guest the same way, mid-rest.
+- The name shown is the staff member's display name as the bot last saw it
+  (updated on each of their interactions with the bot), not a live read from
+  Discord.

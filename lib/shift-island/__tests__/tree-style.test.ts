@@ -49,7 +49,7 @@ describe("catalog", () => {
     }
   });
 
-  it("has the evening guests' 8 looks at the end: 2 per guest, colours only, never a default or a seed's", () => {
+  it("has the evening guests' 10 looks at the end: 2 per guest (staff nights' 2 last), colours only, never a default or a seed's", () => {
     const guests = TREE_ITEMS.filter((i) => i.guest);
     expect(guests.map((i) => i.id)).toEqual([
       "leaf:seaglass",
@@ -60,10 +60,14 @@ describe("catalog", () => {
       "bark:moonlit",
       "bloom:pearl",
       "leaf:kelp",
+      "leaf:ember",
+      "bloom:starlit",
     ]);
     // After the 22 common items, in the database's sort order (20261118150000).
     expect(TREE_ITEMS.slice(22)).toEqual(guests);
-    for (const key of ["boat", "gull", "fireflies", "turtle"]) expect(guests.filter((i) => i.guest === key)).toHaveLength(2);
+    for (const key of ["boat", "gull", "fireflies", "turtle", "mentor"]) expect(guests.filter((i) => i.guest === key)).toHaveLength(2);
+    // A staff night's looks are only theirs: no rotation guest brings them.
+    expect(guests.filter((i) => i.guest === "mentor").map((i) => i.id)).toEqual(["leaf:ember", "bloom:starlit"]);
     for (const i of guests) {
       expect(i.slot).not.toBe("shape");
       expect(i.stamp).toBeUndefined();

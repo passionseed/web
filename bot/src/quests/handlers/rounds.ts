@@ -26,7 +26,7 @@ import { MessageFlags } from "discord.js";
 import { treeItem, type TreeItem } from "@/lib/shift-island/tree-style";
 
 import { QuestDbError, QuestError, type QuestApi } from "../api";
-import { GUESTS, REVEAL, isGuestKey } from "../callCopy";
+import { REVEAL, guestOf, isGuestKey, staffNamesOf } from "../callCopy";
 import { requireStudent } from "../context";
 import { cid } from "../ids";
 import { I, TREE } from "../island/copy";
@@ -83,8 +83,9 @@ function lookName(item: TreeItem): string {
 /**
  * The guest's private answer for the presser's team, from
  * shift_quest_guest_status, for the button of `day`. A button of another day
- * (or an answer without a known guest) is the guest gone. Pure: the gift
- * itself follows as its own card (rd_guest).
+ * (or an answer without a known guest) is the guest gone. On a staff night
+ * the guest is the staff, by the display names the call shows. Pure: the
+ * gift itself follows as its own card (rd_guest).
  */
 export function guestReveal(raw: unknown, day: string): View {
   const status = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
@@ -92,7 +93,7 @@ export function guestReveal(raw: unknown, day: string): View {
   if (state === "gone" || status.day !== day || !isGuestKey(status.guest)) {
     return { tone: "island", title: REVEAL.goneTitle, blocks: [{ kind: "text", text: REVEAL.gone }] };
   }
-  const g = GUESTS[status.guest];
+  const g = guestOf(status.guest, staffNamesOf(status.staff_names));
   const looks = (Array.isArray(status.looks) ? status.looks : [])
     .map((id) => (typeof id === "string" ? treeItem(id) : null))
     .filter((item): item is TreeItem => !!item);
@@ -177,7 +178,9 @@ export const rounds: HandlerSet = {
       await show(i, guestReveal(status, day));
       const s = status && typeof status === "object" ? (status as Record<string, unknown>) : {};
       const gift = s.state === "won" && s.day === day && isGuestKey(s.guest) ? giftFrom(s.gift) : null;
-      if (gift && isGuestKey(s.guest)) await offerGift(i, ctx, gift, REVEAL.heading(GUESTS[s.guest]), "rd_guest");
+      if (gift && isGuestKey(s.guest)) {
+        await offerGift(i, ctx, gift, REVEAL.heading(guestOf(s.guest, staffNamesOf(s.staff_names))), "rd_guest");
+      }
     },
 
     async rd_aim(i, ctx) {

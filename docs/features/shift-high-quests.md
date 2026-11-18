@@ -146,7 +146,10 @@ channel right now, for the island's campfire:
   none), never who sat there or when, and deletes those rows the next day
   (for a team of one, the row is that student's until then). A won look is a
   team gift kept with its date; an erasure that leaves the team empty deletes
-  both. `/data` exports the team's tree gifts and its guest rows. See "The
+  both. `/data` exports the team's tree gifts and its guest rows. On a
+  night the founder or a mentor sat at the fire during the rest, they are
+  the guest, and the night keeps up to two staff display names (never a
+  student's) until the next day or that staff member's erasure. See "The
   campfire call and the evening guest" below.
 
 `/data` exports everything about the caller as JSON. An approved erasure
@@ -1075,7 +1078,14 @@ which settles the night once (a lock, `shift_quest_guest_nights.settled_at`):
 each team seen gets one roll (`shift_quest__guest_drop_chance()`, 1 in 2),
 however many teammates were there. A win is a one-option gift of one of the
 guest's two looks the team does not have (`source drop:<day>`, `member_id`
-null). Earlier days' rows are deleted the next day (the bot's reads, every
+null). Staff at the fire are the guest (founder decision, 2026-11-18): when
+an admin or reviewer member is among the ids of any check of the rest, the
+night's guest becomes `mentor` from that check on (never back), the call
+and the round messages name them by display name ("คืนนี้ <name>
+มาเป็นแขกที่กองไฟ", two at most), and the drop gives the 2 looks only staff
+nights give (`leaf:ember`, `bloom:starlit`), by the same rules; staff never
+win. `shift_quest_guest_nights.staff_names` keeps those names so edits and
+a restart show the same guest. Earlier days' rows (and staff names) are deleted the next day (the bot's reads, every
 presence check and drop call, and pg_cron's `shift_quest__voice_purge` every
 5 minutes, so no bot is needed): no member, no Discord id, no presence
 history. An approved erasure that leaves a team with no active member

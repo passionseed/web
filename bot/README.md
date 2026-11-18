@@ -432,7 +432,12 @@ The short version for whoever runs the bot:
     cache; empty when nobody sits there) to `shift_quest_campfire_seen`, and
     the database keeps which teams were there (no member, no time). The
     first check from 19:30 calls `shift_quest_campfire_drop`, which settles
-    the night once: one roll per team, rows deleted the next day. The round
+    the night once: one roll per team, rows deleted the next day. When the
+    founder or a mentor (an admin or reviewer member) is in the room at any
+    check of the rest, they are that night's guest: the call and the round
+    messages name them (`คืนนี้ <name> มาเป็นแขกที่กองไฟ`, two at most) and
+    the drop gives the 2 staff-night looks; logs say only how many names.
+    The round
     messages show the guest and how many teams got a look (never which); 🎁
     (`rd_guest`) answers privately about the presser's own team. The send
     carries a nonce Discord enforces (`callNonce`), so a POST discord.js

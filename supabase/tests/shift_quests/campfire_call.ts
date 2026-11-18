@@ -24,6 +24,13 @@
  *     ledger, the stage or the voice tables;
  *   * the public count: always how many teams got a look once settled
  *     (founder decision, 2026-11-18), 0 when none did, unknown before;
+ *   * staff at the fire are the guest (founder decision, later on
+ *     2026-11-18): an admin or reviewer seen at any check of the rest makes
+ *     the night a staff night ('mentor'), named by display name (up to two,
+ *     the first seen first; unnamed when empty), never going back; the teams
+ *     seen roll for its 2 own looks; the call and the private check read the
+ *     same guest; no season, no guest; the names are staff only, at most
+ *     two, cleared the next day and on that staff member's erasure;
  *   * the call switched off: the latest recorded call comes back to be
  *     retired, and tonight's settled drop still answers the private check;
  *   * the private check: gone, arriving, quiet, away, won (with the waiting
@@ -67,8 +74,9 @@ const C = "951100000000000003"; // team two
 const E = "951100000000000005"; // team four, never at the fire
 const M = "951100000000000006"; // a mentor with a team of their own
 const N = "951100000000000007"; // started, no project
+const M2 = "951100000000000008"; // a second mentor, no team
 const NOBODY = "951199999999999999";
-const NAMES = ["Call Admin", "Call Aye", "Call Bee", "Call Cee", "Call Eee", "Call Mentor", "Call Enn"];
+const NAMES = ["Call Admin", "Call Aye", "Call Bee", "Call Cee", "Call Eee", "Call Mentor", "Call Enn", "Call Mentor Two"];
 const NEWS_CH = "961100000000000001";
 const ROOM = "961100000000000002";
 const ROLE = "971100000000000001";
@@ -95,6 +103,7 @@ const HELPERS = [
   "shift_quest__call_at(date,text)",
   "shift_quest__call_on()",
   "shift_quest__guest_of(date)",
+  "shift_quest__staff_name(text)",
   "shift_quest__guest_tonight(date)",
   "shift_quest__call_due(date,timestamp with time zone)",
   "shift_quest__call_today(timestamp with time zone)",
@@ -111,6 +120,8 @@ const GUEST_LOOKS: Record<string, string[]> = Object.fromEntries(
   GUESTS.map((g) => [g, TREE_ITEMS.filter((i) => i.guest === g).map((i) => i.id)])
 );
 const COMMON = TREE_ITEMS.filter((i) => !i.guest).map((i) => i.id);
+/** The 2 looks only a staff night gives. */
+const MENTOR_LOOKS = TREE_ITEMS.filter((i) => i.guest === "mentor").map((i) => i.id);
 
 let failures = 0;
 let passes = 0;
@@ -260,13 +271,15 @@ async function main(): Promise<void> {
   const nightColumns = (await db.query(
     "select column_name from information_schema.columns where table_schema = 'public' and table_name = 'shift_quest_guest_nights' order by ordinal_position",
   )).rows.map((r) => r.column_name);
-  check(JSON.stringify(nightColumns) === JSON.stringify(["day", "guest", "watched", "settled_at"]), "a night row names no one and no team", nightColumns);
+  check(JSON.stringify(nightColumns) === JSON.stringify(["day", "guest", "watched", "settled_at", "staff_names"]),
+    "a night row has no student and no team: only the staff names of a staff night", nightColumns);
 
-  // --- The catalog: the guests' 8 looks ------------------------------------------------------------------
+  // --- The catalog: the guests' 10 looks -----------------------------------------------------------------
   const catalog = (await db.query("select id, slot, guest from public.shift_quest_tree_items where guest is not null order by sort")).rows;
   check(JSON.stringify(catalog.map((r) => [r.id, r.guest])) ===
       JSON.stringify(TREE_ITEMS.filter((i) => i.guest).map((i) => [i.id, i.guest])),
-    "shift_quest_tree_items holds the guests' 8 looks with their guests, as TREE_ITEMS", catalog);
+    "shift_quest_tree_items holds the guests' 10 looks with their guests, as TREE_ITEMS", catalog);
+  check(JSON.stringify(MENTOR_LOOKS) === JSON.stringify(["leaf:ember", "bloom:starlit"]), "2 of them only a staff night gives", MENTOR_LOOKS);
   check(catalog.every((r) => r.slot !== "shape"), "colour looks only: no new canopy shape");
   check(Number(await scalar(db, "select public.shift_quest__guest_drop_chance()")) === 0.5, "the win chance is one constant: 1 in 2");
 
@@ -284,6 +297,8 @@ async function main(): Promise<void> {
   const p4: string = await call(web, "shift_quest_project_create", E, "Call Four", "service", null);
   const p3: string = await call(web, "shift_quest_project_create", M, "Call Three", "software", null);
   await call(bot, "shift_quest_admin_role", ADMIN, M, NAMES[5], "reviewer", true);
+  await call(bot, "shift_quest_start", M2, NAMES[7], false);
+  await call(bot, "shift_quest_admin_role", ADMIN, M2, NAMES[7], "reviewer", true);
 
   // --- The call: when it runs ------------------------------------------------------------------------------
   const D = dayAfter(STARTS, 8); // a boat night once the season exists
@@ -397,9 +412,9 @@ async function main(): Promise<void> {
 
   // Who counts: anyone at the fire at any check of the rest. No reward for coming first.
   const N0 = dayAfter(STARTS, 4); // a boat night
-  let r = await seen(db, IN(N0), [M, N, NOBODY]);
-  check(r?.open === true && r.guest === "boat" && (await dropRows(N0)).length === 0,
-    "19:25: only a mentor, someone with no team and an unknown id at the fire: no team counted yet", r);
+  let r = await seen(db, IN(N0), [N, NOBODY]);
+  check(r?.open === true && r.guest === "boat" && JSON.stringify(r.staff_names) === "[]" && (await dropRows(N0)).length === 0,
+    "19:25: only someone with no team and an unknown id at the fire: the rotation's guest, no team counted yet", r);
   let nr = await nightRow(N0);
   check(nr?.watched === true && nr.settled_at === null && nr.guest === "boat", "the night is watched (the bot read the room), not settled", nr);
   await seen(db, bkk(N0, "19:28:30"), [A, C]);
@@ -434,8 +449,9 @@ async function main(): Promise<void> {
 
   const NE = dayAfter(STARTS, 32); // a boat night
   r = await wholeNight(NE, [M, N, NOBODY], 1);
-  check(r?.fresh === true && r.teams === 0 && (await dropRows(NE)).length === 0 && (await nightRow(NE))?.watched === true,
-    "only a mentor, someone with no team and an unknown id all rest long: settled with no roll", r);
+  check(r?.fresh === true && r.guest === "mentor" && r.teams === 0 && (await dropRows(NE)).length === 0 &&
+      (await nightRow(NE))?.watched === true,
+    "only a mentor (tonight's guest), someone with no team and an unknown id all rest long: settled with no roll", r);
   const NW = dayAfter(STARTS, 56); // a boat night
   r = await wholeNight(NW, [], 1);
   check(r?.teams === 0 && (await nightRow(NW))?.watched === true, "an empty fire all rest long: watched, settled, nobody rolls", r);
@@ -529,6 +545,77 @@ async function main(): Promise<void> {
   check((await status(A, bkk(NE, "20:00:00"))).state === "away",
     "a watched night with nobody's team at the fire: the team was away");
 
+  // Staff at the fire are the guest (founder decision, later on 2026-11-18).
+  for (const p of [p1, p2]) {
+    await db.query("delete from public.shift_quest_tree_gifts where project_id = $1", [p]);
+    await setOwned(p, []);
+  }
+  const staffNight = (day: string) =>
+    db.query("select guest, staff_names from public.shift_quest_guest_nights where day = $1::date", [day]).then((x) => x.rows[0] ?? null);
+  const NS = dayAfter(STARTS, 24); // a boat night by the rotation
+  r = await seen(db, IN(NS), [A]);
+  check(r?.guest === "boat" && JSON.stringify(r.staff_names) === "[]", "19:25 with no staff at the fire: the rotation's guest", r);
+  r = await seen(db, bkk(NS, "19:27:00"), [C, M]);
+  check(r?.guest === "mentor" && JSON.stringify(r.staff_names) === JSON.stringify([NAMES[5]]),
+    "19:27, a mentor sits down: tonight's guest is them, by display name", r);
+  rows = await dropRows(NS);
+  check(JSON.stringify(rows.map((x) => x.project_id).sort()) === JSON.stringify([p1, p2].sort()) && rows.every((x) => x.guest === "mentor"),
+    "the teams seen before and after both roll for the staff guest; the mentor's own team never counts (staff never win)", rows);
+  t = await today(bkk(NS, "19:28:00"));
+  check(t?.guest === "mentor" && JSON.stringify(t.staff_names) === JSON.stringify([NAMES[5]]),
+    "the call reads the staff guest and their name, so every edit and a restarted bot show the same", t);
+  r = await seen(db, bkk(NS, "19:29:30"), [A, C]);
+  check(r?.guest === "mentor" && JSON.stringify(r.staff_names) === JSON.stringify([NAMES[5]]),
+    "the mentor gone again before 19:30: the night stays theirs", r);
+  r = await settle(db, END(NS), 1);
+  rows = await dropRows(NS);
+  check(r?.guest === "mentor" && r.teams === 2 && rows.every((x) => MENTOR_LOOKS.includes(x.look)) &&
+      (await gifts(p1)).every((g) => g.member_id === null && MENTOR_LOOKS.includes(g.options[0])),
+    "settled at 19:30 as every night (one roll per team, at chance 1 both win), with one of the 2 looks only staff nights give", { r, rows });
+  const sn = await status(B, bkk(NS, "20:00:00"));
+  check(sn.state === "won" && sn.guest === "mentor" && JSON.stringify(sn.staff_names) === JSON.stringify([NAMES[5]]) &&
+      JSON.stringify(sn.looks) === JSON.stringify(MENTOR_LOOKS) && MENTOR_LOOKS.includes(sn.look),
+    "the private check names the staff guest and their looks", sn);
+  const snText = JSON.stringify(sn);
+  check(![A, B, C, M, NAMES[1], NAMES[2], NAMES[3]].some((x) => snText.includes(x)), "and no student, and no Discord id", snText);
+  const nightText = JSON.stringify(await staffNight(NS));
+  check(![A, B, C, M, NAMES[1], NAMES[2], NAMES[3], "Call One", "Call Two"].some((x) => nightText.includes(x)),
+    "the night's row keeps the staff name only: no student, no Discord id, no team", nightText);
+  check(await settle(db, bkk(NS, "19:31:00"), 1).then((x) => x?.fresh === false && x.guest === "mentor"), "settled once, still the staff's night");
+  check(await seen(db, bkk(NS, "19:29:50"), [M2]) === null &&
+      JSON.stringify((await staffNight(NS))?.staff_names) === JSON.stringify([NAMES[5]]),
+    "a presence check after the settling (a stale clock) adds no staff name");
+
+  // Two staff and more: up to two names, the first seen first, then by name; a third never.
+  const NS2 = dayAfter(STARTS, 28); // a boat night by the rotation
+  await seen(db, IN(NS2), [M2]);
+  await seen(db, bkk(NS2, "19:26:00"), [ADMIN, M, M2, A]);
+  check(JSON.stringify(await staffNight(NS2)) === JSON.stringify({ guest: "mentor", staff_names: [NAMES[7], NAMES[0]] }),
+    "two names at most: the founder and a mentor arrive after another mentor; the first seen keeps first place", await staffNight(NS2));
+  await seen(db, bkk(NS2, "19:28:00"), [M]);
+  check(JSON.stringify((await staffNight(NS2))?.staff_names) === JSON.stringify([NAMES[7], NAMES[0]]), "a third never joins the names");
+  r = await settle(db, END(NS2), 0);
+  check(r?.guest === "mentor" && r.teams === 0, "chance 0 on a staff night: the count is 0, as any night", r);
+
+  // Staff with no display name: still a staff night, unnamed (the bot words it).
+  const NS3 = dayAfter(STARTS, 68); // a boat night by the rotation
+  await db.query("update public.shift_quest_members set display_name = '   ' where discord_user_id = $1", [M2]);
+  r = await seen(db, IN(NS3), [M2]);
+  check(r?.guest === "mentor" && JSON.stringify(r.staff_names) === "[]", "a mentor with an empty display name: a staff night with no name", r);
+  await db.query("update public.shift_quest_members set display_name = $2 where discord_user_id = $1", [M2, NAMES[7]]);
+  await settle(db, END(NS3), 0);
+
+  // No season: no guest at all, staff at the fire or not.
+  await db.query("update public.shift_quest_seasons set status = 'closed' where name = 'Call Season'");
+  check(await seen(db, IN(dayAfter(STARTS, 72)), [M, A]) === null, "no active season: staff at the fire make no guest either");
+  await db.query("update public.shift_quest_seasons set status = 'active' where name = 'Call Season'");
+
+  // The table refuses more than two names, and names on a rotation night.
+  check(await sqlstate(db.query("update public.shift_quest_guest_nights set staff_names = array['a', 'b', 'c'] where day = $1::date", [NS])) === "23514",
+    "never more than two staff names on a night (23514)");
+  check(await sqlstate(db.query("update public.shift_quest_guest_nights set staff_names = array['a'] where day = $1::date", [N0])) === "23514",
+    "never a name on a rotation guest's night (23514)");
+
   // Nothing else moves.
   check(await count("select count(*) from public.shift_quest_ledger") === ledger0, "the drop never writes the ledger (no coins)");
   check(await count("select count(*) from public.shift_quest_voice_presence") === voice0 &&
@@ -608,10 +695,19 @@ async function main(): Promise<void> {
   const oldRoll = () => db.query(
     "insert into public.shift_quest_guest_drops (day, project_id, guest, look) values ($1::date - 1, $2, 'boat', null) on conflict do nothing",
     [todayBkk, p1]);
+  const pastNames = () => count("select count(*) from public.shift_quest_guest_nights where day < $1::date and cardinality(staff_names) > 0", [todayBkk]);
   check(await pastRolls() > 0, "rolls of past nights exist before the purge", await pastRolls());
+  // Later nights of this suite already cleared NS's name (every presence check purges earlier nights): put one back.
+  await db.query("update public.shift_quest_guest_nights set staff_names = array[$2] where day = $1::date", [NS, NAMES[5]]);
+  check(await pastNames() > 0, "and staff names of past staff nights", await pastNames());
   // pg_cron runs the voice purge every 5 minutes in production: no bot needed, an old or stopped one included.
   await db.query("select public.shift_quest__voice_purge()");
   check(await pastRolls() === 0, "the 5-minute voice purge (pg_cron) deletes every earlier night's rolls, with no bot running");
+  check(await pastNames() === 0 && (await staffNight(NS))?.guest === "mentor",
+    "and clears earlier nights' staff names (the night stays a staff night, unnamed)");
+  await db.query("update public.shift_quest_guest_nights set staff_names = array[$2] where day = $1::date", [NS, NAMES[5]]);
+  await call(bot, "shift_quest_call_today");
+  check(await pastNames() === 0, "so does the bot's read of the call");
   await oldRoll();
   await call(bot, "shift_quest_call_today");
   check(await pastRolls() === 0, "so does the bot's read of the call (wins stay as the team's gifts)");
@@ -650,6 +746,16 @@ async function main(): Promise<void> {
     "erasing the only member of a team deletes the team's drop gifts and rolls: no dated record that they sat at the fire");
   await call(bot, "shift_quest_admin_erase", ADMIN, await call(bot, "shift_quest_data_request", B, "erasure", null));
   check(await dropGifts(p1) > 0, "erasing one of two teammates leaves the team's gifts (they name no one, and the team goes on)");
+
+  // An erased staff member's name leaves tonight's staff night (the guest stays the staff's).
+  await db.query(
+    "insert into public.shift_quest_guest_nights (day, guest, watched, staff_names) values ($1::date, 'mentor', true, $2) " +
+      "on conflict (day) do update set guest = 'mentor', staff_names = excluded.staff_names",
+    [todayBkk, [NAMES[7], NAMES[0]]]);
+  await call(bot, "shift_quest_admin_erase", ADMIN, await call(bot, "shift_quest_data_request", M2, "erasure", null));
+  check(JSON.stringify(await staffNight(todayBkk)) === JSON.stringify({ guest: "mentor", staff_names: [NAMES[0]] }),
+    "erasing a mentor who was tonight's guest takes their name off the night; the other staff name stays", await staffNight(todayBkk));
+  await db.query("delete from public.shift_quest_guest_nights where day = $1::date", [todayBkk]);
 
   await Promise.all([db.end(), db2.end(), bot.end(), web.end()]);
   console.log(`# ${passes} passed, ${failures} failed`);

@@ -66,7 +66,9 @@
 #             staff never win, no member id, time or presence stored, earlier
 #             nights deleted (also by the voice purge, and a lone member's
 #             erasure), guest looks only from guests; the public count always
-#             shown once settled; the private check; whether the call pings;
+#             shown once settled; staff at the fire are the guest (named, up
+#             to two, staff only, their own 2 looks, names cleared the next
+#             day and on erasure); the private check; whether the call pings;
 #             /data's tree gifts; the grants: the bot's, never the
 #             website's), with consent off
 #
