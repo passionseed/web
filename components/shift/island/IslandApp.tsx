@@ -41,6 +41,7 @@ import { plazaProps } from "./plazaProps";
 import { NextStepCard } from "./NextStepCard";
 import { nextStep, type NextStep } from "./nextStep";
 import { NoProject } from "./NoProject";
+import { InviteFriends } from "./InviteFriends";
 import { PlotSheet } from "./PlotSheet";
 import { ProposeSheet } from "./ProposeSheet";
 import { QuestBoard } from "./QuestBoard";
@@ -687,6 +688,7 @@ function IslandHome({
           onBoard={() => setPanel("board")}
           projectId={page.photos === true ? (project?.id ?? null) : null}
           roots={<RootsLine instanceId={dayQuest?.instanceId ?? null} />}
+          invite={project && !page.me.staff ? <InviteFriends key={project.id} projectId={project.id} /> : null}
         />
       ) : null}
       {/* From the chip: the one door to everything that is not the next step. */}

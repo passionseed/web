@@ -30,6 +30,8 @@ interface TreeSheetProps {
   today?: ReactNode;
   /** One line on how the work went, under the roots it grows (RootsLine). */
   roots?: ReactNode;
+  /** ชวนเพื่อน (InviteFriends): the team's own place, so a teammate can be invited where the team lives. */
+  invite?: ReactNode;
 }
 
 /**
@@ -38,7 +40,7 @@ interface TreeSheetProps {
  * wardrobe. A pick or a new look shows at once from the action's answer; a
  * newer tree from the page (after a refresh) replaces it.
  */
-export function TreeSheet({ open, onClose, tree: given, onBoard, projectId = null, today = null, roots = null }: TreeSheetProps) {
+export function TreeSheet({ open, onClose, tree: given, onBoard, projectId = null, today = null, roots = null, invite = null }: TreeSheetProps) {
   const giftHeadingId = useId();
   const [tree, setTree] = useState(given);
   const [last, setLast] = useState(given);
@@ -84,6 +86,8 @@ export function TreeSheet({ open, onClose, tree: given, onBoard, projectId = nul
             }
           />
         ) : null}
+
+        {invite}
 
         {gift ? (
           <section aria-labelledby={giftHeadingId} className={styles.card}>
