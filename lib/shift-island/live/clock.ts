@@ -148,11 +148,22 @@ export function glowFrame(tick: number, slot: number): 0 | 1 {
   return ((Math.floor(tick / 6) + slot) % 2) as 0 | 1;
 }
 
-/** A story actor's frame index. */
-export function actorFrame(tick: number, actor: Pick<LiveActor, "frames" | "frameMs">): number {
+/**
+ * An actor's frame index. A looping actor plays from the clock's start; a
+ * `once` actor plays from `since` (the tick it appeared) and then holds its
+ * last frame.
+ */
+export function actorFrame(tick: number, actor: Pick<LiveActor, "frames" | "frameMs" | "once">, since = 0): number {
   const n = actor.frames.length;
   if (n <= 1) return 0;
-  return Math.floor((tick * TICK_MS) / Math.max(TICK_MS, actor.frameMs ?? 500)) % n;
+  const ms = Math.max(TICK_MS, actor.frameMs ?? 500);
+  if (actor.once) return Math.min(n - 1, Math.max(0, Math.floor(((tick - since) * TICK_MS) / ms)));
+  return Math.floor((tick * TICK_MS) / ms) % n;
+}
+
+/** The one frame a still island shows of an actor: the first, or the last of a `once` actor (where it ends up). */
+export function stillFrame(actor: Pick<LiveActor, "frames" | "once">): number {
+  return actor.once ? Math.max(0, actor.frames.length - 1) : 0;
 }
 
 /** The first tick due after `ms` of running time, stepping `step` ticks at a time. */
@@ -180,6 +191,8 @@ export interface MotionInput {
   /** Trees with a sway frame (stage 2 and up), by scene tree index. */
   swaying: readonly boolean[];
   actors: readonly LiveActor[];
+  /** Per actor, the tick it appeared on (its `once` frames play from there); absent is 0. */
+  actorsSince?: readonly number[];
   /** Boat, gulls and clouds. */
   ambient: boolean;
   /** One frame, nothing moving: sea and foam frame 0, sway A, boat at boatStill, no gulls or clouds. */
@@ -206,7 +219,7 @@ export function motionAt(tick: number, input: MotionInput): Motion {
     });
   }
   const actors = new Uint8Array(input.actors.length);
-  if (!still) input.actors.forEach((actor, i) => (actors[i] = actorFrame(tick, actor)));
+  input.actors.forEach((actor, i) => (actors[i] = still ? stillFrame(actor) : actorFrame(tick, actor, input.actorsSince?.[i] ?? 0)));
   let boat: Mover | null = null;
   if (ambient) boat = still ? { name: "boat", x: scene.boatStill.x, y: scene.boatStill.y, flip: false } : boatAt(tick, scene, span);
   // Gulls roost and cloud shadows fade at night.

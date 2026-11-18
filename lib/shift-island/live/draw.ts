@@ -208,10 +208,19 @@ export function moverRect(m: Mover, rects: ReadonlyMap<string, AtlasRect>): Rect
   return a ? { x: Math.round(m.x), y: Math.round(m.y), w: a.w, h: a.h } : null;
 }
 
-/** A story actor's rectangle at its current frame. */
+/** Where an actor stands on a frame: its x and y plus that frame's step, and whether that frame is mirrored. */
+export function actorAt(actor: LiveActor, frame: number): { x: number; y: number; flip: boolean } {
+  const step = actor.steps?.[frame];
+  if (!step) return { x: Math.round(actor.x), y: Math.round(actor.y), flip: actor.flip === true };
+  return { x: Math.round(actor.x + step.dx), y: Math.round(actor.y + step.dy), flip: step.flip ?? actor.flip === true };
+}
+
+/** An actor's rectangle at its current frame (a walker's moves with its step). */
 export function actorRect(actor: LiveActor, frame: number, rects: ReadonlyMap<string, AtlasRect>): Rect | null {
   const a = rects.get(actor.frames[frame] ?? actor.frames[0]);
-  return a ? { x: Math.round(actor.x), y: Math.round(actor.y), w: a.w, h: a.h } : null;
+  if (!a) return null;
+  const at = actorAt(actor, frame);
+  return { x: at.x, y: at.y, w: a.w, h: a.h };
 }
 
 function drawMover<Img>(ctx: DrawContext<Img>, layers: Layers<Img>, m: Mover, r: Rect): void {
@@ -280,7 +289,7 @@ export function redrawRect<Img>(ctx: DrawContext<Img>, r: Rect, model: SceneMode
     const rect = actorRect(actor, frame, rects);
     if (!rect || !overlaps(rect, r)) return;
     const name = actor.frames[frame] ?? actor.frames[0];
-    blit(ctx, atlas, (actor.flip ? layers.flipped : rects).get(name), actor.x, actor.y);
+    blit(ctx, atlas, (actorAt(actor, frame).flip ? layers.flipped : rects).get(name), rect.x, rect.y);
   });
 
   for (const g of motion.gulls) drawMover(ctx, layers, g, r);

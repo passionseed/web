@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowDown, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 import { AlumniCalendar } from "@/components/shift/alumni/AlumniCalendar";
 import { AlumniShowcase } from "@/components/shift/alumni/AlumniShowcase";
@@ -16,7 +16,6 @@ import { ALUMNI_PAGE_URL, alumniCalendar, longThaiDate, sessionDetails, timeRang
 import { AFTERSHIFT_PROMISE, AFTERSHIFT_SUPPORT } from "@/lib/content/aftershift";
 import { bangkokToday } from "@/lib/content/shift-cohort";
 import { currentShiftAdmin } from "@/lib/shift/admin";
-import { BOARD_PATH } from "@/lib/shift/alumniBoard";
 import { loadAlumniCalendar } from "@/lib/supabase/shift-alumni-calendar";
 import { countAlumniRsvps, listAlumniRsvps, type AlumniRsvp } from "@/lib/supabase/shift-alumni-rsvps";
 
@@ -98,11 +97,11 @@ export default async function ShiftAlumniPage() {
               {AFTERSHIFT_PROMISE}
             </p>
             <div className={space.ctaRow}>
-              <a href={next ? "#rsvp" : "#calendar"} className={space.cta}>
-                <span>{next ? "เจอกันนัดต่อไป" : "ดูตารางนัด"}</span>
-                <ArrowDown className="h-4 w-4" aria-hidden="true" />
-              </a>
-              <a href="#aftershift" className={space.ghost}>รู้จัก SHIFT High</a>
+              <Link href="/shift/island" className={space.cta}>
+                <span>เข้าเกาะ SHIFT High Island</span>
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+              <a href="#calendar" className={space.ghost}>ดูตารางนัด</a>
             </div>
             <p className={space.preorder}>สำหรับทุกคนที่จบ SHIFT แล้ว ลิงก์เข้าห้องอยู่ในกลุ่มของรุ่น</p>
           </div>
@@ -136,10 +135,10 @@ export default async function ShiftAlumniPage() {
             ))}
           </ol>
           <p className={styles.introCopy}>ลงมือทำผ่านเป้าหมายรายสัปดาห์ อัปเดตกับทีมเล็ก ๆ และเอาสิ่งที่ติดมาคุยกับเพื่อนและพี่เมนเทอร์ใน Discord</p>
-          <Link href={BOARD_PATH} className={styles.boardLink}>
-            เปิดบอร์ดเป้าหมายและทีมของเรา <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          <Link href="/shift/island" className={styles.boardLink}>
+            เข้าเกาะ SHIFT High Island <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
-          <p className={styles.accessNote}>เข้าบอร์ดด้วยบัญชีที่ได้รับเชิญจากทีม PassionSeed</p>
+          <p className={styles.accessNote}>เข้าเกาะด้วยบัญชี Discord ที่ใช้ในกลุ่ม SHIFT</p>
         </section>
         <div id="calendar" className={styles.calendar}>
           <AlumniCalendar
@@ -155,10 +154,10 @@ export default async function ShiftAlumniPage() {
         <AlumniShowcase />
 
         <Link
-          href={BOARD_PATH}
+          href="/shift/island"
           className="mt-14 flex items-center justify-center gap-2 text-base font-semibold underline underline-offset-4"
         >
-          ศิษย์เก่า: เปิดการ์ดเป้าหมาย ทีม และฟีดความคืบหน้า
+          เข้าเกาะ: ดูทีม เควสต์ และความคืบหน้า
           <ArrowRight className="h-4 w-4" aria-hidden="true" />
         </Link>
 

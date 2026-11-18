@@ -148,10 +148,10 @@ it("sends a reader who is not an alumnus to apply", () => {
   expect(screen.getByRole("link", { name: SEAL.applyCta })).toHaveAttribute("href", "/shift/apply");
 });
 
-it("gives an alumnus without a record a way in through the alumni board", () => {
+it("gives an alumnus without a record a way in through Island verification", () => {
   render(<WaxSeal viewer={{ kind: "notAlumni" }} onGoing={jest.fn()} />);
   expect(screen.getByText(SEAL.alumniHint)).toBeInTheDocument();
-  expect(screen.getByRole("link", { name: SEAL.alumniCta })).toHaveAttribute("href", "/shift/alumni/board");
+  expect(screen.getByRole("link", { name: SEAL.alumniCta })).toHaveAttribute("href", "/shift/island/verify");
 });
 
 it("shows the closed line with no seal once the season is over", () => {

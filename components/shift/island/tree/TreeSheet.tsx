@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useState, type ReactNode } from "react";
 
 import { openGifts } from "@/lib/shift-island/tree-style";
 import type { MyTree } from "@/lib/supabase/shift-quests/types";
@@ -26,15 +26,19 @@ interface TreeSheetProps {
   onBoard?: () => void;
   /** The team's project, for เปลี่ยน on its problem line (schema 14); null hides the change. */
   projectId?: string | null;
+  /** Today's check-in, first: tapping your own tree is a way in to it. Null when the day is already done. */
+  today?: ReactNode;
+  /** One line on how the work went, under the roots it grows (RootsLine). */
+  roots?: ReactNode;
 }
 
 /**
- * The team's tree up close (ต้นไม้ของทีม): what to do first (choose the
- * seed, open a waiting gift), then the cutaway with the roots, then the
+ * The team's tree up close (ต้นไม้ของทีม): what to do first (today's
+ * check-in, choose the seed, open a waiting gift), then the cutaway with the roots, then the
  * wardrobe. A pick or a new look shows at once from the action's answer; a
  * newer tree from the page (after a refresh) replaces it.
  */
-export function TreeSheet({ open, onClose, tree: given, onBoard, projectId = null }: TreeSheetProps) {
+export function TreeSheet({ open, onClose, tree: given, onBoard, projectId = null, today = null, roots = null }: TreeSheetProps) {
   const giftHeadingId = useId();
   const [tree, setTree] = useState(given);
   const [last, setLast] = useState(given);
@@ -61,6 +65,7 @@ export function TreeSheet({ open, onClose, tree: given, onBoard, projectId = nul
       description={stageLine}
     >
       <div className={`${styles.stack} ${styles.layout}`}>
+        {today}
         {tree.seed == null ? <SeedPicker ambition={tree.ambition} onPlanted={setTree} /> : null}
 
         {/* Planted: the team's problem line, and (schema 14) เปลี่ยน, because talking to people changes it. */}
@@ -103,6 +108,8 @@ export function TreeSheet({ open, onClose, tree: given, onBoard, projectId = nul
             {planted ? <p className={styles.roots}>{TREE.closeup.roots(closeup.roots.count)}</p> : null}
           </figcaption>
         </figure>
+
+        {roots}
 
         <Wardrobe tree={tree} onChanged={setTree} />
 

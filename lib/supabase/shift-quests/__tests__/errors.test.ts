@@ -13,7 +13,7 @@ const MIGRATIONS = path.resolve(__dirname, "../../../../supabase/migrations");
 function migrationCodes(): string[] {
   const codes = new Set<string>();
   for (const file of fs.readdirSync(MIGRATIONS)) {
-    if (!/^2026111109\d{4}_shift_quest.*\.sql$/.test(file)) continue;
+    if (!/^\d{14}_shift_quest.*\.sql$/.test(file)) continue;
     const sql = fs.readFileSync(path.join(MIGRATIONS, file), "utf8");
     for (const match of sql.matchAll(/sq:([a-z_]+)/g)) codes.add(match[1]);
     for (const match of sql.matchAll(/__fail\('([a-z_]+)'/g)) codes.add(match[1]);

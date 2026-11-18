@@ -4,7 +4,7 @@
 import { MessageFlags } from "discord.js";
 
 import { ACTION_HANDLERS, COMMAND_HANDLERS } from "..";
-import type { QuestApi, Session } from "../api";
+import { QuestDbError, type QuestApi, type Session } from "../api";
 import type { Ctx } from "../context";
 import { DAY_NAMES, T } from "../copy";
 import { I } from "../island/copy";
@@ -730,7 +730,40 @@ describe("/settings", () => {
     expect(body).toContain(`-# ${T.remindersPaused}`);
     expect(body).toContain(T.dmOn);
     expect(customIds(p)).toEqual(["sq|rem_on", "sq|rem_off", "sq|dm|off", "sq|is_view"]);
-    expect(calls(c)).toEqual([]);
+    // One read: whether the 18:50 campfire call pings now (schema 21).
+    expect(calls(c)).toEqual([["shift_quest_call_pings"]]);
+  });
+
+  it("says how to stop the 18:50 campfire call's role ping only while the call pings", async () => {
+    const pings = ctx((fn) => (fn === "shift_quest_call_pings" ? true : null), session());
+    const shown = interaction("command");
+    await COMMAND_HANDLERS.get("settings")!(shown.i, pings);
+    expect(bodyText(shown.sent[0].payload)).toContain(`-# ${T.callPing}`);
+    expect(T.callPing).toContain("**ระงับทุกตำแหน่ง @mentions** (Suppress All Role @mentions)");
+    expect(T.callPing).not.toMatch(/[\u2014\u2013]/);
+
+    // The call or its ping switched off (or no student role): false. A database below schema 21: no such function.
+    // Any other failure: no line, and /settings still answers.
+    for (const answer of [false, new QuestDbError("shift_quest_call_pings", "42883"), new QuestDbError("shift_quest_call_pings", "08006")]) {
+      const c = ctx((fn) => {
+        if (fn !== "shift_quest_call_pings") return null;
+        if (answer instanceof Error) throw answer;
+        return answer;
+      }, session());
+      const { i, sent } = interaction("command");
+      await COMMAND_HANDLERS.get("settings")!(i, c);
+      expect(bodyText(sent[0].payload)).toContain(T.settingsTitle);
+      expect(bodyText(sent[0].payload)).not.toContain(T.callPing);
+    }
+  });
+
+  it("keeps the ping line after a reminder or DM change while the call pings", async () => {
+    const c = ctx((fn) => (fn === "shift_quest_call_pings" ? true : fn === "shift_quest_update_prefs" ? session() : null), session());
+    for (const [handler, args] of [["rem_off", []], ["dm", ["on"]]] as [string, string[]][]) {
+      const { i, sent } = interaction("button");
+      await ACTION_HANDLERS.get(handler)!(i, c, args);
+      expect(bodyText(sent[0].payload)).toContain(T.callPing);
+    }
   });
 });
 
@@ -782,6 +815,16 @@ describe("/data", () => {
     await ACTION_HANDLERS.get("data_erase_go")!(b.i, c, []);
     expect(calls(c)).toEqual([["shift_quest_data_request", "1111111111", "erasure", null]]);
     expect(bodyText(b.sent[0].payload)).toBe(`✅ ${T.requestSent}`);
+  });
+});
+
+describe("/data's campfire line", () => {
+  it("is true about the evening guest: a team of one's result is that student's, and a won look stays with its date", () => {
+    expect(T.dataBody).not.toContain("เก็บแค่ว่าทีมไหนได้ลุ้น");
+    expect(T.dataBody).toContain("ถ้าทีมมีคุณคนเดียว");
+    expect(T.dataBody).toContain("พร้อมวันที่ได้");
+    expect(T.dataBody).toContain("ลบในวันถัดไป");
+    expect(T.dataBody).toContain("ไม่เก็บว่าใครในทีมนั่งหรือนั่งตอนไหน");
   });
 });
 

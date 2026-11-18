@@ -13,6 +13,13 @@ export const R = {
   focusTitle: `🔥 รอบโฟกัส ${FOCUS_MINUTES} นาที`,
   focus: (end: number) => `ตั้งเป้าไว้หนึ่งอย่าง แล้วลงมือเลย\nพักตอน <t:${end}:t> (<t:${end}:R>)`,
   focusFine: "ทำพร้อมกันรอบกองไฟ · ไม่มีใครนับเวลาของคุณ · ทุกอย่างที่เขียนเห็นแค่คุณ",
+  /**
+   * The focus line in a SHIFT cohort week (rounds.ts roundView): shift-voice
+   * records voice time in every voice channel for that round's students, the
+   * campfire included, so "nobody counts your time" would not hold. The rest
+   * of focusFine as reviewed.
+   */
+  focusFineCohort: "ทำพร้อมกันรอบกองไฟ · ทุกอย่างที่เขียนเห็นแค่คุณ",
   restTitle: `🌊 พัก ${REST_MINUTES} นาที`,
   rest: (tip: string, next: number) => `พักสมองสักครู่ (diffuse mode): ${tip}\nรอบใหม่เริ่ม <t:${next}:t>`,
   restFine: "ตอนพัก สมองอาจยังคิดต่ออยู่เงียบๆ กับเรื่องที่ค้างไว้ · กด ✍️ ปิดรอบ เพื่อบันทึกสิ่งที่ได้เรียนรู้",

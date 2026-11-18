@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 
 import { festivalOf } from "@/lib/shift-island/festival";
 import type { SeasonGoal, SeasonView } from "@/lib/supabase/shift-quests/types";
@@ -76,16 +76,6 @@ describe("FestivalSheet", () => {
       const glyph = line.querySelector("[aria-hidden='true']");
       expect(glyph?.querySelector("svg")).not.toBeNull();
     }
-  });
-
-  it("links to the project sheet for the unlocks", () => {
-    const view = season();
-    const festival = festivalOf(view, null, []);
-    if (!festival) throw new Error("no festival");
-    const onOpenProject = jest.fn();
-    render(<FestivalSheet open onClose={jest.fn()} season={view} festival={festival} goal={view.goal} onOpenProject={onOpenProject} />);
-    fireEvent.click(screen.getByRole("button", { name: "ดูของปลดล็อกในหน้าตัวละครของฉัน" }));
-    expect(onOpenProject).toHaveBeenCalledTimes(1);
   });
 
   it("never ranks or names anyone", () => {

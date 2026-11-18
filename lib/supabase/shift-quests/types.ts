@@ -33,7 +33,8 @@ export const TEXT_LIMITS = {
   proof: 2000,
   reflection: 2000,
   artifactUrl: 500,
-  note: 300,
+  /** The check-in's intention (what the student means to do today); the database allows 500. */
+  intention: 300,
   projectName: 80,
   ambition: 500,
   helpSummary: 1000,
@@ -267,7 +268,16 @@ export type ReadyViewer = Extract<IslandViewer, { state: "ready" }>;
 // client component.
 
 export interface IslandPageData {
+  /** Loaded only for an application admin, with a second role check in Postgres. */
+  adminOverview?: import("./adminTypes").AdminIslandOverview | null;
   me: ViewerCard;
+  /**
+   * session.member_id: the quest member uuid (never the Discord id). The
+   * client keys this browser's private day intention on it, so a shared
+   * device never shows one student's intention to another. Optional so older
+   * fixtures keep compiling; absent or null keeps nothing on the device.
+   */
+  memberId?: string | null;
   /** session.unread */
   unread: number;
   island: IslandView;
@@ -325,6 +335,13 @@ export interface IslandPageData {
   photos?: boolean;
   /** The peer check (schema 15). False or absent on an older database or when the version read fails. */
   peer?: boolean;
+  /**
+   * Today's visitors for the plaza (shift_quest_island_visitors, schema 18):
+   * how many checked in on the Bangkok day and how many of the viewer's own
+   * team did. Two integers, never a name. Optional so older fixtures keep
+   * compiling. null: an older database or a failed read; no figures drawn.
+   */
+  visitors?: import("@/lib/shift-island/visitors").IslandVisitors | null;
 }
 
 /** Page payload for the voice campfire: no names, no ids. */

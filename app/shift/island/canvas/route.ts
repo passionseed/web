@@ -2,6 +2,8 @@ import type { NextRequest } from "next/server";
 
 import { QuestDbError, QuestError } from "@/bot/src/quests/api";
 import { ELEMENT_ID, whiteboardFocusHref } from "@/lib/shift-island/canvas-link";
+import { linkedCanvasAvailable } from "@/lib/supabase/shift-quests/canvas";
+import type { CanvasLinkRow as StoredCanvasLink } from "@/lib/supabase/shift-quests/canvas-snapshot";
 import { questApi } from "@/lib/supabase/shift-quests/db";
 import { resolveIslandViewer } from "@/lib/supabase/shift-quests/viewer";
 
@@ -13,7 +15,8 @@ import { resolveIslandViewer } from "@/lib/supabase/shift-quests/viewer";
  * 307 to /whiteboard/<board>?focus=<note or frame id>; a note id that is not a
  * plain element id is dropped (the frame is focused instead).
  *
- * The whiteboard is not read here: its own page enforces access (openBoard).
+ * The saved canvas is re-checked before redirecting. A stale link opens the
+ * island's picker instead; the whiteboard page still enforces access (openBoard).
  * The board and frame ids only ever ride in this redirect, never in the island
  * page payload. Every answer is private and never stored; logs carry a code.
  */
@@ -26,6 +29,7 @@ const BOARD_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
 interface CanvasLinkRow {
   board_id: unknown;
   frame_id: unknown;
+  canvas_project: unknown;
 }
 
 /**
@@ -64,6 +68,14 @@ export async function GET(request: NextRequest): Promise<Response> {
     return redirectTo(ISLAND);
   }
   const frameId = typeof row.frame_id === "string" && ELEMENT_ID.test(row.frame_id) ? row.frame_id : null;
+  if (!frameId || typeof row.canvas_project !== "string") return redirectTo(`${ISLAND}?at=canvas`);
+  const link: StoredCanvasLink = { board_id: boardId, frame_id: frameId, canvas_project: row.canvas_project };
+  try {
+    if (!(await linkedCanvasAvailable(viewer.userId, link))) return redirectTo(`${ISLAND}?at=canvas`);
+  } catch (error) {
+    console.error(`[shift-island] canvas redirect failed: ${failureCode(error)}`);
+    return redirectTo(`${ISLAND}?at=canvas`);
+  }
   const note = request.nextUrl.searchParams.get("note");
   const focus = note && ELEMENT_ID.test(note) ? note : frameId;
   return redirectTo(whiteboardFocusHref(boardId, focus));

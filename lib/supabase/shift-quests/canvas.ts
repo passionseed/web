@@ -186,6 +186,12 @@ export type LinkedCanvas =
   | { state: "not_yours" }
   | { state: "gone"; candidates: CanvasChoice[] };
 
+/** Check the saved pointer without summarizing notes or loading replacement candidates. */
+export async function linkedCanvasAvailable(userId: string, link: CanvasLinkRow): Promise<boolean> {
+  const [board, isMember] = await Promise.all([readBoard(link.board_id), isBoardMember(link.board_id, userId)]);
+  return verifyLink({ board, isMember, userId, link }) === "ok";
+}
+
 /**
  * The linked canvas, re-verified: the board and the user's membership row in
  * parallel, verifyLink, then the canvas cut out of the board and summarized.

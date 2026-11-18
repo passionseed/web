@@ -253,6 +253,24 @@ async function main(): Promise<void> {
       view.status === "pending" && view.photos.length === 3 && view.evidence.includes("แม่ค้า") && view.redacted === false &&
       !("student" in view),
     "a reviewer reads the submission with its photos, and no student name", view);
+  // 20261116080000: a reviewer too close to the work (here A's teammate, made a reviewer) is refused,
+  // as the Discord review card refuses them; the student themself, made a reviewer, too.
+  await call(bot, "shift_quest_admin_role", ADMIN, B, NAMES[B], "reviewer", true);
+  check(await code(call(web, "shift_quest_review_view", B, sub1)) === "conflict_of_interest",
+    "a teammate who is also a reviewer cannot open the review page (conflict_of_interest)");
+  check(await code(call(bot, "shift_quest_review_get", B, sub1)) === "conflict_of_interest",
+    "the same rule as the Discord review card");
+  check(await code(call(web, "shift_quest_review_view", B, randomUUID())) === "not_found",
+    "an unknown submission is still not found for them");
+  await call(bot, "shift_quest_admin_role", ADMIN, B, NAMES[B], "reviewer", false);
+  await call(bot, "shift_quest_admin_role", ADMIN, A, NAMES[A], "reviewer", true);
+  check(await code(call(web, "shift_quest_review_view", A, sub1)) === "conflict_of_interest",
+    "a student made a reviewer cannot open their own submission");
+  await call(bot, "shift_quest_admin_role", ADMIN, A, NAMES[A], "reviewer", false);
+  check(await code(call(web, "shift_quest_review_view", B, sub1)) === "not_authorized",
+    "without the role the teammate is refused as a student again");
+  check((await call<Json>(web, "shift_quest_review_view", R1, sub1)).submission_id === sub1,
+    "an unrelated reviewer still reads it");
   check(await code(call(bot, "shift_quest_review_extras", A, sub1)) === "not_authorized", "a student cannot read the count");
   const extras = await call<Json>(bot, "shift_quest_review_extras", R1, sub1);
   check(extras.instance_id === inst1 && Number(extras.photos) === 3, "the bot's review card counts 3 photos", extras);

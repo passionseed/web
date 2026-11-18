@@ -24,6 +24,7 @@ import { summarizeElements } from "@/lib/whiteboard/summary";
 
 import { BOARD_OWNER, canvasElements, EDITOR, noise, OUTSIDER, OWNER } from "../__fixtures__/canvas-board";
 import { buildContext, buildSnapshot, canvasNotes, frameElements, liveFrame, pickNotes } from "../canvas-snapshot";
+import { linkedCanvasAvailable } from "../canvas";
 import { questErrorText } from "../errors";
 
 const ACTOR = "123456789012345678";
@@ -162,6 +163,34 @@ function picked(ids: string[], elements = boardA()) {
   const notes = canvasNotes(summarizeElements(cut), cut, "frame-1", accessOf(liveFrame(cut, "frame-1")!));
   return pickNotes(notes, ids);
 }
+
+describe("linkedCanvasAvailable", () => {
+  const saved = { board_id: BOARD_A, frame_id: "frame-1", canvas_project: "proj-1" };
+
+  it("accepts a live canvas on the student's team", async () => {
+    expect(await linkedCanvasAvailable(OWNER, saved)).toBe(true);
+  });
+
+  it("rejects a deleted whiteboard without searching other boards", async () => {
+    tables.whiteboards = tables.whiteboards.filter((b) => b.id !== BOARD_A);
+    expect(await linkedCanvasAvailable(OWNER, saved)).toBe(false);
+    expect(reads).toHaveLength(2);
+  });
+
+  it.each(["deleted", "removed", "retagged"])("rejects a %s canvas", async (change) => {
+    const elements = tables.whiteboards[0].elements as { id: string; isDeleted?: boolean; customData?: Record<string, unknown> }[];
+    const frame = elements.find((e) => e.id === saved.frame_id)!;
+    if (change === "deleted") frame.isDeleted = true;
+    else if (change === "removed") tables.whiteboards[0].elements = elements.filter((e) => e !== frame);
+    else frame.customData!.project = "other-project";
+    expect(await linkedCanvasAvailable(OWNER, saved)).toBe(false);
+  });
+
+  it("rejects a student who lost board access", async () => {
+    tables.whiteboard_members = [];
+    expect(await linkedCanvasAvailable(OWNER, saved)).toBe(false);
+  });
+});
 
 describe("validation", () => {
   const ref = { kind: "main" as const, milestone: 1 };

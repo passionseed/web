@@ -63,7 +63,7 @@
     },
     {
       "path": "/api/cron/shift-island-digest",
-      "schedule": "0 13 * * *"
+      "schedule": "0 11 * * *"
     },
     {
       "path": "/api/cron/shift-island-trash",

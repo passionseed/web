@@ -12,15 +12,19 @@
  *
  * Privacy: people sit only at the campfire, one figure per seat, the variant
  * chosen by seat order (never by person). Booths carry a slot and a kind only.
+ * Today's visitors (crowd.ts) are anonymous figures except the viewer's own
+ * and, for the viewer's team only, their teammates; when the plaza is busy a
+ * few of them sit in the campfire seats the coworking room leaves empty.
  *
  * Plan: docs/designs/shift-high-island-web.md, "Festival, notice board, voice
- * campfire, canvas link".
+ * campfire, canvas link", and docs/designs/shift-island-plaza-visitors.md.
  */
 import { ACTOR_FRAMES, GOAL_BULB_SPOTS, MOTION_SIZES, type MotionSpriteName } from "@/bot/assets/island/motion-sprites";
 import type { IslandScene, SceneRect, SceneTree } from "@/bot/src/quests/island/scene";
 import type { Festival } from "@/lib/shift-island/festival";
 import type { NoticeKind } from "@/lib/shift-island/notice";
 
+import { ARRIVE_MS, CROWD_LAYOUT, crowdActors, crowdPlan, type CrowdPlan, type VisitorsInput } from "./crowd";
 import type { LiveActor } from "./types";
 
 /** Seats drawn round the campfire; more people show as a "+N" label. */
@@ -34,6 +38,8 @@ export interface PlazaInput {
   campfire: { count: number } | null;
   /** true draws the Demo Day prize board and its tap target; it carries no data. */
   prizes?: boolean;
+  /** Today's visitors (crowd.ts); null, absent or a count of 0 draws nobody. */
+  visitors?: VisitorsInput | null;
 }
 
 export type PlazaSpotId = "notice" | "stage" | "campfire" | "prizes";
@@ -52,7 +58,7 @@ export interface PlazaSpot {
   h: number;
 }
 
-export type PlazaLabelId = "sign" | "campfireCount" | "campfireMore";
+export type PlazaLabelId = "sign" | "campfireCount" | "campfireMore" | "visitors" | "visitorsMore" | "me";
 
 /** A DOM label's anchor point, percent of the picture. bottom = translate(-50%, -100%), left = translate(0, -50%). */
 export interface PlazaLabel {
@@ -60,6 +66,8 @@ export interface PlazaLabel {
   x: number;
   y: number;
   anchor: "bottom" | "left";
+  /** Shown only after this long (the viewer's tag waits for their arrival walk); absent shows at once. */
+  delayMs?: number;
 }
 
 export interface PlazaWorld {
@@ -174,12 +182,16 @@ export function boothFlagAt(tree: Pick<SceneTree, "left" | "top" | "mine">, scen
  * The plaza's actors, tap targets and label points for this scene. Actors are
  * in draw order: goal string, lit bulbs, stage, sign, notice board, notes,
  * booth flags, prize board, campfire pit, the seats behind the fire, the
- * flame, the seats in front. Spots: notice, stage, prizes, campfire.
+ * flame, the seats in front, then today's visitors (crowd.ts: strollers,
+ * teammates, the viewer). Spots: notice, stage, prizes, campfire. Labels:
+ * sign, campfire count and "+N", visitors and "+N", the viewer's tag.
  */
 export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
   const { festival, pins, campfire } = input;
   const prizes = input.prizes === true;
-  if (!festival && !pins && !campfire && !prizes) return NO_PLAZA;
+  const crowd = plazaCrowd(input);
+  const visitors = crowd.me || crowd.team + crowd.strollers + crowd.sitters + crowd.more > 0;
+  if (!festival && !pins && !campfire && !prizes && !visitors) return NO_PLAZA;
 
   const c = plazaCentre(scene);
   const at = ([dx, dy]: Point) => ({ x: c.x + dx, y: c.y + dy });
@@ -239,8 +251,9 @@ export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
     const people = count(campfire.count);
     // The fire welcomes visitors even when Discord has no seated coworkers.
     actors.push(still("campfire_pit", at(L.pit)));
-    if (people > 0) {
-      const seated = Math.min(people, MAX_SEATS);
+    // Seats the coworking room leaves empty may take a few of today's visitors (crowd.sitters).
+    const seated = Math.min(people, MAX_SEATS) + crowd.sitters;
+    if (seated > 0) {
       const seat = (i: number): LiveActor => {
         const [dx, dy] = L.seats[i];
         const frames = SITTERS[i % SITTERS.length];
@@ -251,12 +264,34 @@ export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
       for (const i of order) if (L.seats[i][1] < FRONT_Y) actors.push(seat(i));
       actors.push({ frames: ACTOR_FRAMES.campfireFlame, ...at(L.flame), frameMs: FLAME_MS });
       for (const i of order) if (L.seats[i][1] >= FRONT_Y) actors.push(seat(i));
-      labels.push(labelOf("campfireCount", at(L.campfireCount), "bottom", scene));
-      if (people > MAX_SEATS) labels.push(labelOf("campfireMore", at(L.campfireMore), "left", scene));
+    } else {
+      actors.push({ frames: ACTOR_FRAMES.campfireFlame, ...at(L.flame), frameMs: FLAME_MS });
     }
-    if (people === 0) actors.push({ frames: ACTOR_FRAMES.campfireFlame, ...at(L.flame), frameMs: FLAME_MS });
+    if (people > 0) labels.push(labelOf("campfireCount", at(L.campfireCount), "bottom", scene));
+    if (people > MAX_SEATS) labels.push(labelOf("campfireMore", at(L.campfireMore), "left", scene));
     spots.push(spotOf("campfire", box(L.campfireSpot), scene));
   }
 
+  if (visitors) {
+    const C = CROWD_LAYOUT;
+    actors.push(...crowdActors(c, input.visitors!, crowd));
+    labels.push(labelOf("visitors", at(C.label), "bottom", scene));
+    if (crowd.more > 0) labels.push(labelOf("visitorsMore", at(C.more), "left", scene));
+    if (crowd.me) {
+      const tag = labelOf("me", at(C.meTag), "bottom", scene);
+      labels.push(input.visitors?.arriving ? { ...tag, delayMs: ARRIVE_MS } : tag);
+    }
+  }
+
   return { actors, spots, labels };
+}
+
+/**
+ * Who of today's visitors the plaza draws for this input: the campfire lends
+ * its empty seats (none without a campfire). The page uses it too, for the
+ * "+N" label's number.
+ */
+export function plazaCrowd(input: Pick<PlazaInput, "campfire" | "visitors">): CrowdPlan {
+  const free = input.campfire ? MAX_SEATS - Math.min(count(input.campfire.count), MAX_SEATS) : 0;
+  return crowdPlan(input.visitors, free);
 }

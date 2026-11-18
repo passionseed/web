@@ -132,7 +132,9 @@ it("picks notes, checks the card, sends it once and ends on the gift for the tea
       onTree={jest.fn()}
     />,
   );
-  fireEvent.click(within(screen.getByTestId("sheet-footer")).getByRole("button", { name: "เขียนหรือแนบงาน" }));
+  // An untouched quest: its bar starts it, and work already done goes through the quiet link.
+  expect(within(screen.getByTestId("sheet-footer")).getByRole("button", { name: "เริ่มเควสต์นี้" })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "ทำเสร็จแล้ว? ส่งงานได้เลย" }));
   // Write-first: the written form opens; the quest card is one tap away with the canvas ready.
   fireEvent.click(screen.getByRole("button", { name: "ใช้โน้ตจากแคนวาส" }));
 

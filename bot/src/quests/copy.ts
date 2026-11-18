@@ -7,6 +7,8 @@
  */
 import { escapeHeading, escapeMarkdown } from "discord.js";
 
+import { NEWS_MISSED } from "./newsCopy";
+
 /** A web address, left exactly as written so it still opens in full. */
 const WEB_ADDRESS = /(https?:\/\/\S+)/;
 
@@ -91,8 +93,9 @@ export const T = {
   pilotClosed: "ตอนนี้ SHIFT High quests ยังไม่เปิดให้ใช้",
   notStarted: "เริ่มด้วย /start ก่อนนะ ใช้เวลาไม่ถึงนาที",
   staffOnly: "คำสั่งนี้สำหรับทีมพี่เลี้ยงที่ได้รับสิทธิ์เท่านั้น",
+  /** News added with schema 19. */
   adminVoiceCoworkingOnly:
-    "ห้องเสียงใช้ได้กับ coworking เท่านั้น ห้อง help, staff, celebrate และ live ต้องเป็นห้องข้อความ ห้อง suggest เป็นฟอรัมหรือห้องข้อความ",
+    "ใช้ห้องเสียงได้แค่ coworking ส่วน help, staff, celebrate, live และ news ต้องเป็นห้องข้อความ (news ใช้ห้องประกาศได้) และ suggest ต้องเป็นฟอรัมหรือห้องข้อความ",
   adminCoworkingPrivate:
     "นักเรียนยังมองไม่เห็นหรือเข้าห้องเสียงนี้ไม่ได้ เลือกห้องที่นักเรียนเข้าได้ กองไฟบนเกาะจะได้ไม่โชว์คนในห้องส่วนตัว",
   /** /admin channel kind:live: the bot keeps one post there, so it must be a plain text channel. */
@@ -103,6 +106,11 @@ export const T = {
   adminForumSuggestOnly: "ฟอรัมใช้ได้กับ suggest เท่านั้น ห้องอื่นเลือกห้องข้อความ (coworking เป็นห้องเสียงได้)",
   adminLiveBotPerms:
     "บอทยังโพสต์ในห้องนี้ไม่ได้ ให้บอทมีสิทธิ์ดูห้อง ส่งข้อความ แนบไฟล์ และอ่านประวัติข้อความในห้องนี้ก่อน (ปักหมุดข้อความได้ด้วยจะดีที่สุด)",
+  // /admin channel kind:news, the nightly island news card (schema 19, news.ts).
+  adminNewsType: "ห้องข่าวเกาะต้องเป็นห้องข้อความหรือห้องประกาศ",
+  adminAnnouncementNewsOnly: "ห้องประกาศใช้ได้กับ news เท่านั้น ห้องอื่นเลือกห้องข้อความ",
+  adminNewsPrivate: "นักเรียนยังมองไม่เห็นห้องนี้หรืออ่านแชตย้อนหลังไม่ได้ เปิดสิทธิ์ดูห้องและอ่านประวัติข้อความให้นักเรียนก่อน",
+  adminNewsBotPerms: "บอทยังโพสต์ในห้องนี้ไม่ได้ เปิดสิทธิ์ดูห้อง ส่งข้อความ แนบไฟล์ และอ่านประวัติข้อความให้บอทก่อน",
   done: "เรียบร้อย",
   cancelled: "ยกเลิกแล้ว ไม่มีอะไรถูกบันทึกหรือโพสต์",
 
@@ -464,9 +472,19 @@ export const T = {
   remindersDays: "วัน",
   remindersHour: "เวลา (เวลาไทย)",
   remindersPaused: "ทีมปิดการเตือนทั้งระบบไว้ชั่วคราว",
+  /**
+   * 20261118150000: the 18:50 campfire call's role ping is not a
+   * reminder, so the switches above do not stop it. Shown only while the call
+   * pings (shift_quest_call_pings). The server setting is named as
+   * Thai-language Discord shows it, English in parentheses; the source of
+   * the Thai labels is in CALL.mute's comment (callCopy.ts). Thai reviewed
+   * (Gemini, Codex, Claude), 2026-11-18.
+   */
+  callPing:
+    "🔥 ไม่อยากได้รับแจ้งเตือนเรียกรวมกองไฟ (18:50): ปุ่มการเตือนตรงนี้ปิดไม่ได้ ให้กดชื่อเซิร์ฟเวอร์ เข้า **ตั้งค่าการแจ้งเตือน** (Notification Settings) แล้วเปิด **ระงับทุกตำแหน่ง @mentions** (Suppress All Role @mentions) ซึ่งจะปิดการแท็กบทบาททั้งเซิร์ฟเวอร์",
   dataTitle: "🔒 ข้อมูลของคุณ",
   dataBody:
-    "**เราเก็บเฉพาะสิ่งที่คุณบันทึกในบอทนี้**\nไม่เก็บข้อความแชท เสียง หรือหน้าจอ\nกองไฟบนเกาะเก็บแค่ว่าใครอยู่ในห้อง coworking ตอนนี้ และลบทันทีเมื่อออก\nในรอบ SHIFT บอทบันทึกการเข้าห้องเสียง (เวลา ไมค์ กล้อง แชร์จอ) ตามนโยบายที่ประกาศไว้",
+    "**เราเก็บเฉพาะสิ่งที่คุณบันทึกในบอทนี้**\nไม่เก็บข้อความแชท เสียง หรือหน้าจอ\nกองไฟบนเกาะเก็บแค่ว่าใครอยู่ในห้องกองไฟตอนนี้ และลบทันทีเมื่อออก\nตอนแขกแวะมาที่กองไฟ ระบบจะเก็บว่าทีมไหนมีคนนั่งช่วงพักนั้นและผลลุ้นของทีม แล้วลบในวันถัดไป ไม่เก็บว่าใครในทีมนั่งหรือนั่งตอนไหน (ถ้าทีมมีคุณคนเดียว ข้อมูลของทีมก็คือของคุณ) ลุคที่ทีมได้จะเป็นของขวัญของทีม เก็บไว้พร้อมวันที่ได้\nในรอบ SHIFT บอทบันทึกการเข้าห้องเสียง (เวลา ไมค์ กล้อง แชร์จอ) ตามนโยบายที่ประกาศไว้",
   dataRights: "ส่งออกได้ทันที ขอแก้ไขหรือลบได้ ทีมจะดำเนินการตามนโยบายที่ประกาศไว้",
   btnExport: "📦 ส่งออกข้อมูลของฉัน",
   btnCorrection: "✏️ ขอแก้ไขข้อมูล",
@@ -502,10 +520,22 @@ export const T = {
     `ยินยอมแล้ว **${granted}** · รอผู้ปกครอง ${waiting} · ยังไม่มี ${none}`,
   adminConsentOffWarn:
     "ความยินยอมปิดอยู่: ทุกคนนับว่ายินยอมแล้ว ชื่อทีม คำชมในห้อง และการแลกของขึ้นได้โดยไม่มีผู้ปกครองยินยอม ใช้เฉพาะตอนทดสอบ (ข่าวเกาะ AI ยังต้องมีการยินยอมเรื่อง AI ของทุกคนเสมอ)",
+  /** 'news' (schema 19): the AI lines go into the nightly island news card. */
   adminDigestLine: (on: boolean, channel: string | null) =>
     `${on ? "✅" : "⚪"} ข่าวเกาะ AI: **${on ? "เปิด" : "ปิด"}** · โพสต์วันละครั้งที่${
-      channel === "live" ? "ห้องเกาะสด" : channel === "celebrate" ? "ห้องโพสต์ความสำเร็จ" : "ห้องที่ยังไม่ตั้ง (/admin channel live)"
+      channel === "news"
+        ? "ห้องข่าวเกาะ (รวมในข่าวเกาะ 2 ทุ่ม)"
+        : channel === "live"
+          ? "ห้องเกาะสด"
+          : channel === "celebrate"
+            ? "ห้องโพสต์ความสำเร็จ"
+            : "ห้องที่ยังไม่ตั้ง (/admin channel kind:live)"
     }`,
+  /** The nightly island news card (schema 19): on while a news channel is set. */
+  adminNewsLine: (set: boolean) =>
+    set ? "✅ ข่าวเกาะคืนนี้: โพสต์ทุกคืนราว 2 ทุ่มในห้องข่าวเกาะ" : "⚪ ข่าวเกาะคืนนี้: ยังไม่ตั้งห้อง (/admin channel kind:news)",
+  /** How many teams have an AI summary stored for today. 0 while the AI news is off or no team has agreed to AI summaries; 0 with both on points at the website's job or its key. */
+  adminDigestToday: (n: number) => `🤖 สรุปจาก AI วันนี้: ${n} ทีม`,
   adminDigestLast: (day: string | null) => `โพสต์ล่าสุด: ${day ?? "ยังไม่เคย"}`,
   adminDigestHidden: (teams: string) => `ซ่อนสรุปอยู่: ${teams || "ไม่มี"}`,
   adminIslandFine:
@@ -544,6 +574,10 @@ const ERRORS: Record<string, string> = {
   // The peer check (20261115140000) is website-only too.
   already_checked: "คุณเช็กงานนี้ไปแล้ว ขอบคุณที่ช่วยเพื่อน",
   peer_limit: "วันนี้เช็กงานเพื่อนครบ 10 งานแล้ว พรุ่งนี้มาช่วยต่อได้",
+  // The share draft (20261118100000) is website-only too.
+  share_limit: "ร่างโพสต์ฉลองหรือขอบคุณครบ 5 ครั้งใน 24 ชั่วโมงที่ผ่านมาแล้ว โพสต์นี้ยังไม่ได้ส่ง ลองใหม่ได้เมื่อร่างแรกพ้น 24 ชั่วโมง",
+  // A reviewer claiming their own team's help request (20261118100000), from the bot or the website.
+  help_conflict: "รับเรื่องนี้ไม่ได้ เพราะเป็นคำขอของคุณหรือทีมตัวเอง ให้พี่เลี้ยงคนอื่นช่วยดูแทน",
   // The campfire writers (20261111093000) refuse an ID that is not a Discord snowflake. Only the bot calls them.
   invalid: "ข้อมูลไม่ถูกต้อง ลองใหม่อีกครั้ง",
   bad_route: "เลือกเส้นทางจากตัวเลือกที่มี",
@@ -697,6 +731,28 @@ export function meter(count: number, target: number): string {
   return `${"▰".repeat(done)}${"▱".repeat(width - done)}`;
 }
 
+/**
+ * The celebrate channel's post when a mentor's approval grows a team's tree
+ * (kind tree_grew, schema 16). bot/src/quests/outbox.ts lays it out and
+ * escapes the team's name and the quest's title before they reach these.
+ * Never a mentor's words, never a student's name.
+ */
+export const TREE_GREW = {
+  title: "🎉 ต้นไม้โตอีกขั้น",
+  /** A team that has not shown its name on the island: a playful handle, never a bare number. */
+  mystery: "ทีมปริศนา",
+  /** "**ร้านขนม** · แปลง #4", or "**ทีมปริศนา** · แปลง #4". */
+  team: (name: string | null, slot: number | null) => `**${name ?? TREE_GREW.mystery}**${slot ? ` · แปลง #${slot}` : ""}`,
+  /** "ผ่านเควสต์หลักที่ 3 **ได้พันธมิตรคนแรก** แล้ว"; with neither a number nor a title, "ผ่านเควสต์หลักแล้ว" (no space before แล้ว). */
+  quest: (milestone: number | null, title: string | null) =>
+    `ผ่านเควสต์หลัก${milestone ? `ที่ ${milestone}` : ""}${title ? ` **${title}**` : ""}${milestone || title ? " " : ""}แล้ว`,
+  cheer: "ยินดีด้วย! ต้นไม้โตขึ้นจากงานที่ทีมลงมือทำจริง",
+  /** Fine print under a mystery team's post: an invitation, never pressure. "" leaves it out. */
+  showName: "อยากให้ชื่อทีมขึ้นแทนทีมปริศนาไหม ถ้าทุกคนในทีมเปิดโชว์ชื่อบนเกาะ ชื่อทีมจะขึ้นเอง ไม่บังคับ",
+  /** One emoji per stage, 0 to 7 (the names are STAGE_NAMES in ./island/copy). */
+  stageEmoji: ["🟫", "🌱", "🌱", "🌿", "🌳", "🌳", "🍎", "🌸"],
+};
+
 /** Renders a queued message. Returns null for an unknown kind (it fails permanently). */
 export function renderOutbox(
   kind: string,
@@ -770,6 +826,14 @@ export function renderOutbox(
         title: `🔒 คำขอ${params.kind === "erasure" ? "ลบ" : "แก้ไข"}ข้อมูลใหม่`,
         body: "",
         note: "ดูที่ /admin data",
+        mentionUserIds: [],
+      };
+    case "news_missed":
+      // Staff channel only (schema 20): tonight's island news card did not post by 22:30. Params are {day} only.
+      return {
+        title: NEWS_MISSED.title,
+        body: `${NEWS_MISSED.body(params.day)}\n${NEWS_MISSED.check}`,
+        note: NEWS_MISSED.note,
         mentionUserIds: [],
       };
     case "nudge":

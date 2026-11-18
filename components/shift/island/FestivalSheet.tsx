@@ -20,8 +20,6 @@ interface FestivalSheetProps {
   festival: Festival;
   /** The island goal the lanterns follow (the season's, else the map's); null hides that line. */
   goal: SeasonGoal | null;
-  /** The project sheet, which has the season's meter and unlocks. */
-  onOpenProject?: () => void;
 }
 
 /** One legend line, with the piece of the plaza it explains drawn beside it. */
@@ -35,10 +33,9 @@ interface LegendLine {
 /**
  * From the stage (or its sign): the sign's line, the student's own Demo Day
  * notice if they have one, and at most three legend lines for what the plaza
- * draws. The season's meter and unlocks stay in the project sheet, one tap
- * away. No names, no ranking.
+ * draws. No names, no ranking.
  */
-export function FestivalSheet({ open, onClose, season, festival, goal, onOpenProject }: FestivalSheetProps) {
+export function FestivalSheet({ open, onClose, season, festival, goal }: FestivalSheetProps) {
   const headingId = useId();
   const lanterns = goal ?? (festival.lanterns ? { count: festival.lanterns.count, target: festival.lanterns.target } : null);
   const lines: LegendLine[] = [
@@ -78,11 +75,6 @@ export function FestivalSheet({ open, onClose, season, festival, goal, onOpenPro
             ))}
           </ul>
         </section>
-        {onOpenProject ? (
-          <button type="button" className={styles.linkButton} onClick={onOpenProject}>
-            {FESTIVAL.unlocks}
-          </button>
-        ) : null}
       </div>
     </IslandSheet>
   );

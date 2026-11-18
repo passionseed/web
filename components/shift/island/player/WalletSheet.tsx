@@ -137,6 +137,9 @@ function WalletBody({
         {!wallet.live ? <p className={island.quiet}>{WALLET.off}</p> : null}
       </section>
 
+      {consent && !consent.ok ? <ConsentBanner consent={consent} onOpen={onOpenConsent} compact /> : null}
+      <ShopList wallet={wallet} onChanged={onChanged} />
+
       <section className={styles.section} aria-label={WALLET.earnHeading}>
         <h3 className={island.detailHeading}>{WALLET.earnHeading}</h3>
         {rates.length > 0 ? (
@@ -187,8 +190,6 @@ function WalletBody({
         ) : null}
       </section>
 
-      {consent && !consent.ok ? <ConsentBanner consent={consent} onOpen={onOpenConsent} compact /> : null}
-      <ShopList wallet={wallet} onChanged={onChanged} />
     </>
   );
 }

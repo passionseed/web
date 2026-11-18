@@ -5,8 +5,10 @@
  * Source: the SHIFT High Island brief of 2026-11-11 (goal, quests, season
  * dates and prize tracks) and the bot's own words in
  * `bot/src/quests/island/copy.ts` on the island branch (stage names, button
- * labels). The island runs for SHIFT High members; this page only describes
- * it and never links into it.
+ * labels). The island runs for SHIFT High members; the home page only
+ * describes it and never links into it. /me (components/me/IslandLinkCard.tsx)
+ * reuses the eyebrow, heading, lede, sample and stages as the hero of a door
+ * into the island, for every signed-in user.
  *
  * The home page shows a teaser only: the sample picture, the eight tree
  * sprites in a row (the empty plot, then seven stages of growth) and the

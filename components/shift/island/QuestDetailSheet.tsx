@@ -15,7 +15,7 @@ import {
 import { ChevronDown, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 
-import { chooseSideQuest, resumeQuest, startMainQuest } from "@/app/shift/island/actions";
+import { resumeQuest } from "@/app/shift/island/actions";
 import { PixelIcon } from "@/components/shift/poster/pixel/PixelRects";
 import { CANVAS_ROUTE, canvasHref } from "@/lib/shift-island/canvas-link";
 import {
@@ -47,7 +47,18 @@ import { doneWhenItems } from "./DoneWhenLine";
 import { InSheetFooter } from "./InSheetFooter";
 import styles from "./island.module.css";
 import { IslandSheet } from "./IslandSheet";
-import { canStart, detailAction, mentorFeedback, questView, refKey, sameRef, type DetailAction, type QuestView } from "./model";
+import {
+  canStart,
+  detailAction,
+  mentorFeedback,
+  questBar,
+  questStage,
+  questView,
+  refKey,
+  sameRef,
+  type DetailAction,
+  type QuestView,
+} from "./model";
 import { checkIcon, HELPER_ICONS } from "./questArt";
 import { Examples, Helpers, HintIcon, inFirstAct, Pitfalls, QuestHeader, StakeholderMap, Steps, TeamProblem, Terms, WhoChecks } from "./QuestSections";
 import { SentScreen } from "./SentScreen";
@@ -57,6 +68,8 @@ import { useOwnership, type OwnershipState } from "./useOwnership";
 import { PeerChecks } from "./peer/PeerChecks";
 import { QuestPhotos } from "./photos/QuestPhotos";
 import { ProblemEditor } from "./ProblemEditor";
+import { DayIntention } from "./DayIntention";
+import { useStartQuest } from "./useStartQuest";
 
 interface QuestDetailSheetProps {
   board: QuestBoard;
@@ -89,6 +102,14 @@ interface QuestDetailSheetProps {
   projectId?: string | null;
   /** The peer check (schema 15): the who-checks line, เพื่อนเช็กแล้ว, and the form's open-to-peers tick. */
   peer?: boolean;
+  /**
+   * The island's next step (nextStep's quest): where ไปเควสต์ถัดไป goes once
+   * this quest needs nothing more, or when it cannot be done now. Null, or
+   * this same quest: the bar goes back to the island instead.
+   */
+  next?: BoardRef | null;
+  /** The viewer's quest member uuid: keys the day's intention kept on this browser. */
+  viewerKey?: string | null;
 }
 
 /** "card" builds a quest card from canvas notes; "text" is the written form (SubmitForm). */
@@ -122,6 +143,8 @@ export function QuestDetailSheet({
   photos = false,
   projectId = null,
   peer = false,
+  next = null,
+  viewerKey = null,
 }: QuestDetailSheetProps) {
   // The last quest shown stays in the sheet while it slides closed, so it never closes empty.
   const [last, setLast] = useState<BoardRef | null>(target);
@@ -175,14 +198,16 @@ export function QuestDetailSheet({
   const footer =
     quest && action && (sentResult || composing) ? (
       <div ref={setFooterSlot} className={styles.footerSlot} />
-    ) : quest && action && hasBar(action) ? (
+    ) : quest && action ? (
       <QuestActionBar
         quest={quest}
         action={action}
         sendRef={sendRef}
         // Write or show the work right here first; the canvas card stays one tap away inside the form.
         onSend={() => setCompose({ key: bodyKey, form: "text" })}
-        onStuck={onStuck}
+        next={next && !sameRef(next, quest.ref) ? next : null}
+        onOpenQuest={onOpenQuest}
+        onIsland={onIsland}
       />
     ) : null;
 
@@ -243,6 +268,9 @@ export function QuestDetailSheet({
             ownership={ownership}
             openHref={canvasLink.linked ? CANVAS_ROUTE : null}
             onLinkCanvas={() => onLinkCanvas(quest.ref)}
+            onSend={() => setCompose({ key: bodyKey, form: "text" })}
+            onStuck={() => onStuck({ instanceId: quest.instanceId, title: quest.title })}
+            viewerKey={viewerKey}
           />
         )
       ) : null}
@@ -260,15 +288,6 @@ export function badgeText(quest: QuestView, total: number): string {
     case "proposed":
       return QUEST.badge.proposed;
   }
-}
-
-/**
- * The sticky bar while there is something to send or to be stuck on: none on
- * a locked quest (no form yet), a finished one or a closed one. A quest held
- * by a teammate or in appeal keeps a lone ติด: help may still be needed there.
- */
-function hasBar(action: DetailAction): boolean {
-  return action.kind !== "locked" && action.kind !== "done" && action.kind !== "closed";
 }
 
 function Icon({ name, size = 16 }: { name: IconKey; size?: number }) {
@@ -296,6 +315,9 @@ function QuestDetailBody({
   ownership,
   openHref,
   onLinkCanvas,
+  onSend,
+  onStuck,
+  viewerKey,
 }: {
   board: QuestBoard;
   team: QuestDetailSheetProps["team"];
@@ -320,6 +342,11 @@ function QuestDetailBody({
    */
   openHref: string | null;
   onLinkCanvas: () => void;
+  /** Opens the written form: the quiet "done it already" and "send a new version" ways. */
+  onSend: () => void;
+  /** Opens the stuck sheet for this quest. */
+  onStuck: () => void;
+  viewerKey: string | null;
 }) {
   const feedback = mentorFeedback(quest);
   const chip = tileChip(quest.status, quest.owner);
@@ -340,6 +367,17 @@ function QuestDetailBody({
       : quest.kind === "side" && quest.examples
         ? quest.examples.split("\n")
         : [];
+  const steps = questSteps(quest.kind, quest.slug);
+  const terms = questTerms(quest.kind, quest.slug);
+  const pitfalls = questPitfalls(quest.kind, quest.slug);
+  const more = moreDetails(quest, guide);
+  // Help is for work that can still move: not a locked, passed or closed quest.
+  const canAsk = action.kind !== "locked" && action.kind !== "done" && action.kind !== "closed";
+  // The day's intention belongs to work the student is doing now.
+  const working = !!quest.instanceId && !!quest.mine && (quest.status === "active" || quest.status === "clarification");
+  // Main and side quests always bring something (steps, words, the side quests that help); a proposal may not.
+  const hasHelpers =
+    quest.kind !== "proposed" || !!more || !!flavor || steps.length + terms.length + pitfalls.length + examples.length > 0;
 
   return (
     <div className={styles.detail}>
@@ -350,27 +388,35 @@ function QuestDetailBody({
         chip={chip}
         keynote={keynote}
         help={quest.help ? BOARD.help : null}
+        stage={questStage(quest)}
       />
 
-      <div className={styles.detailLead}>
-        {/* A proposed quest's goal is the student's own words: never cut. */}
-        {why ? (
-          <p className={styles.detailWhy} data-full={quest.kind === "proposed" ? "true" : undefined}>
-            {why}
-          </p>
-        ) : null}
-        {/* DRAFT lore: one quiet line on why the quest matters on the island (none on a proposed quest). */}
-        {flavor ? <p className={styles.detailFlavor}>{flavor}</p> : null}
-      </div>
-
-      {/* The rest of the goal, the criteria and the question: right under the goal, not after the whole page. */}
-      <MoreDetails quest={quest} guide={guide} />
-
+      {/* What a mentor said comes first: it is the reason the student is here. */}
       {feedback ? (
         <blockquote className={styles.feedback}>
           <p>{DETAIL.feedback(feedback)}</p>
         </blockquote>
       ) : null}
+
+      {/* A proposed quest's goal is the student's own words: never cut. */}
+      {why ? (
+        <div className={styles.detailLead}>
+          <p className={styles.detailWhy} data-full={quest.kind === "proposed" ? "true" : undefined}>
+            {why}
+          </p>
+        </div>
+      ) : null}
+
+      {/* The tick hint only means something once notes can light it: a linked canvas, or the ownership checklist. */}
+      <DoneWhen guide={guide} hints={hints} evidence={quest.evidence} hinting={(hasZones && !!ready) || !!ownRows} peer={peer} />
+
+      {canAsk ? (
+        <button type="button" className={`${styles.linkButton} ${styles.stuckLine}`} aria-haspopup="dialog" onClick={onStuck}>
+          {DETAIL.stuckLine}
+        </button>
+      ) : null}
+
+      {working && quest.instanceId ? <DayIntention instanceId={quest.instanceId} viewerKey={viewerKey} /> : null}
 
       {/* The work this student sent, with its photos (schema 14); more can go on until a mentor looks. */}
       {photos && quest.instanceId && quest.mine?.latest_submission ? <QuestPhotos instanceId={quest.instanceId} own /> : null}
@@ -390,31 +436,10 @@ function QuestDetailBody({
         />
       ) : null}
 
-      {/* A skill quest teaches by showing: its picture, its steps, then the English words it uses. */}
-      <StakeholderMap slug={quest.kind === "side" ? quest.slug : null} />
-      <Steps steps={questSteps(quest.kind, quest.slug)} />
-      <Terms terms={questTerms(quest.kind, quest.slug)} />
-
-      <Pitfalls pitfalls={questPitfalls(quest.kind, quest.slug)} />
-
-      {ownership ? <OwnershipBox ownership={ownership} /> : null}
-
-      {/* The tick hint only means something once notes can light it: a linked canvas, or the ownership checklist. */}
-      <DoneWhen guide={guide} hints={hints} evidence={quest.evidence} hinting={(hasZones && !!ready) || !!ownRows} peer={peer} />
-
-      <Examples lines={examples} />
-
-      <Helpers board={board} quest={quest} onOpenQuest={onOpenQuest} />
-
       {/* The canvas is a reference on every quest, never a gate: the team's notes when linked, else one quiet row. */}
       {hasZones ? (
         <CanvasBoundary fallback={<p className={styles.hint}>{QUEST.context.error}</p>}>
           <CanvasContextBox context={canvas.context} loading={canvas.loading} onLink={onLinkCanvas} />
-          {canvas.context?.state === "ready" ? (
-            <button type="button" className={styles.canvasRefresh} onClick={refreshIsland} disabled={canvas.loading} aria-busy={canvas.loading}>
-              {canvas.loading ? SYNC.refreshing : SYNC.refresh}
-            </button>
-          ) : null}
         </CanvasBoundary>
       ) : null}
       {/* On every quest: open the linked canvas, else (where the notes box does not already ask) link one. */}
@@ -428,7 +453,30 @@ function QuestDetailBody({
         <CanvasLinkRow onLink={onLinkCanvas} />
       ) : null}
 
-      <DetailNotice quest={quest} action={action} />
+      <DetailNotice quest={quest} action={action} onSend={onSend} />
+
+      {/* Everything that helps but is not the task, folded: one tap away, never in the way. */}
+      {hasHelpers ? (
+        <details className={styles.more}>
+          <summary className={styles.moreSummary}>
+            <span>{DETAIL.helpers}</span>
+            <ChevronDown className={styles.moreCaret} aria-hidden="true" />
+          </summary>
+          <div className={`${styles.moreBody} ${styles.helpersBody}`}>
+            {more}
+            {/* DRAFT lore: one quiet line on why the quest matters on the island (none on a proposed quest). */}
+            {flavor ? <p className={styles.detailFlavor}>{flavor}</p> : null}
+            {/* A skill quest teaches by showing: its picture, its steps, then the English words it uses. */}
+            <StakeholderMap slug={quest.kind === "side" ? quest.slug : null} />
+            <Steps steps={steps} />
+            <Terms terms={terms} />
+            <Pitfalls pitfalls={pitfalls} />
+            {ownership ? <OwnershipBox ownership={ownership} /> : null}
+            <Examples lines={examples} />
+            <Helpers board={board} quest={quest} onOpenQuest={onOpenQuest} />
+          </div>
+        </details>
+      ) : null}
     </div>
   );
 }
@@ -521,6 +569,9 @@ function CanvasContextBox({
             </ul>
             <p className={styles.contextFoot}>
               <span className={styles.contextFrom}>{QUEST.context.from(context.canvas.title)}</span>
+              <button type="button" className={styles.contextChange} onClick={refreshIsland} disabled={loading} aria-busy={loading}>
+                {loading ? SYNC.refreshing : SYNC.refresh}
+              </button>
               <button type="button" className={styles.contextChange} onClick={onLink}>
                 {QUEST.context.change}
               </button>
@@ -696,11 +747,11 @@ function PixelCheck({ lit }: { lit: boolean }) {
 const LONG_PURPOSE = 120;
 
 /**
- * One collapsed row: the details not already on the page (the criteria when
- * เสร็จเมื่อ has its own checklist, a long purpose in full, the question).
- * Examples have their own open section further down (Examples).
+ * The details not already on the page (the criteria when เสร็จเมื่อ has its
+ * own checklist, a long purpose in full, the question), at the top of the
+ * ตัวช่วย fold. Null when there are none.
  */
-function MoreDetails({ quest, guide }: { quest: QuestView; guide: QuestGuide }) {
+function moreDetails(quest: QuestView, guide: QuestGuide): ReactNode {
   // Without a guide checklist, เสร็จเมื่อ already shows the criteria as its one item.
   const evidence = guide.checklist.length > 0 ? quest.evidence.trim() : "";
   const purpose = quest.purpose.trim();
@@ -708,42 +759,31 @@ function MoreDetails({ quest, guide }: { quest: QuestView; guide: QuestGuide }) 
   const prompt = quest.reflectionPrompt.trim();
   if (!evidence && !goal && !prompt) return null;
   return (
-    <div className={styles.moreRows}>
-      {evidence || goal || prompt ? (
-        // Open by default: the goal, the criteria and the question are what a student reads first.
-        <details className={styles.more} open>
-          <summary className={styles.moreSummary}>
-            <span>{QUEST.details}</span>
-            <ChevronDown className={styles.moreCaret} aria-hidden="true" />
-          </summary>
-          <div className={styles.moreBody}>
-            {goal ? (
-              <div className={styles.detailBlock}>
-                <h4 className={styles.detailSubheading}>{QUEST.why}</h4>
-                <p>{goal}</p>
-              </div>
-            ) : null}
-            {evidence ? (
-              <div className={styles.detailBlock}>
-                <h4 className={styles.detailSubheading}>{DETAIL.evidence}</h4>
-                <p>{evidence}</p>
-              </div>
-            ) : null}
-            {prompt ? (
-              <div className={styles.detailBlock}>
-                <h4 className={styles.detailSubheading}>{DETAIL.reflection}</h4>
-                <p>{prompt}</p>
-              </div>
-            ) : null}
-          </div>
-        </details>
+    <>
+      {goal ? (
+        <div className={styles.detailBlock}>
+          <h4 className={styles.detailSubheading}>{QUEST.why}</h4>
+          <p>{goal}</p>
+        </div>
       ) : null}
-    </div>
+      {evidence ? (
+        <div className={styles.detailBlock}>
+          <h4 className={styles.detailSubheading}>{DETAIL.evidence}</h4>
+          <p>{evidence}</p>
+        </div>
+      ) : null}
+      {prompt ? (
+        <div className={styles.detailBlock}>
+          <h4 className={styles.detailSubheading}>{DETAIL.reflection}</h4>
+          <p>{prompt}</p>
+        </div>
+      ) : null}
+    </>
   );
 }
 
 /** The quest's state in words (locked, held, waiting...), plus start or resume where they apply. */
-function DetailNotice({ quest, action }: { quest: QuestView; action: DetailAction }) {
+function DetailNotice({ quest, action, onSend }: { quest: QuestView; action: DetailAction; onSend: () => void }) {
   switch (action.kind) {
     case "locked":
       return (
@@ -754,7 +794,8 @@ function DetailNotice({ quest, action }: { quest: QuestView; action: DetailActio
     case "held":
       return <p className={styles.notice}>{DETAIL.held(quest.owner)}</p>;
     case "appealed":
-      return <p className={styles.notice}>{DETAIL.appealed}</p>;
+      // The bar says it: the work is in appeal.
+      return null;
     case "done":
       return (
         <p className={styles.notice} data-tone="done">
@@ -764,74 +805,102 @@ function DetailNotice({ quest, action }: { quest: QuestView; action: DetailActio
     case "closed":
       return <p className={styles.notice}>{DETAIL.declinedProposed}</p>;
     case "paused":
-      return (
-        <>
-          <p className={styles.notice}>{DETAIL.paused}</p>
-          {quest.instanceId ? <ResumeQuest instanceId={quest.instanceId} /> : null}
-        </>
-      );
+      return <p className={styles.notice}>{DETAIL.paused}</p>;
     case "form":
+      // The bar says it is with a mentor; a new version stays a quiet choice here.
       if (action.note === "submittedWaiting") {
         return (
-          <p className={styles.notice} role="status">
-            {DETAIL.submittedWaiting}
-          </p>
+          <button type="button" className={styles.linkButton} onClick={onSend}>
+            {QUEST.resend}
+          </button>
         );
       }
       return (
         <>
           {action.note === "doneRepeat" ? (
-            <p className={styles.notice} data-tone="done">
-              {DETAIL.doneRepeat}
-            </p>
+            <>
+              <p className={styles.notice} data-tone="done">
+                {DETAIL.doneRepeat}
+              </p>
+              <button type="button" className={styles.linkButton} onClick={onSend}>
+                {QUEST.send}
+              </button>
+            </>
           ) : null}
-          {canStart(quest) ? <StartQuest quest={quest} /> : null}
+          {/* Starting is the bar's main button; work already done can still go straight to a mentor. */}
+          {canStart(quest) && quest.ref.kind !== "proposed" ? (
+            <button type="button" className={styles.linkButton} onClick={onSend}>
+              {DETAIL.sendDone}
+            </button>
+          ) : null}
         </>
       );
   }
 }
 
-/** The sticky bar: ส่งเควสต์ (or ส่งฉบับใหม่ while a mentor has it) and ติด. */
+/**
+ * The sticky bar: exactly one thing per state (questBar), so every state has
+ * a way forward and nothing competes with it. Help (ติด) is a quiet line
+ * under the checklist, not a second button here.
+ */
 function QuestActionBar({
   quest,
   action,
   sendRef,
   onSend,
-  onStuck,
+  next,
+  onOpenQuest,
+  onIsland,
 }: {
   quest: QuestView;
   action: DetailAction;
   sendRef: RefObject<HTMLButtonElement | null>;
   onSend: () => void;
-  onStuck: QuestDetailSheetProps["onStuck"];
+  /** The island's next step, when it is another quest. */
+  next: BoardRef | null;
+  onOpenQuest?: (ref: BoardRef) => void;
+  onIsland: () => void;
 }) {
-  const send = action.kind === "form";
-  // With the work already at a mentor, a new version stays a quiet choice.
-  const waiting = action.kind === "form" && action.note === "submittedWaiting";
-  const stuck = action.kind !== "locked";
-  return (
-    <div className={styles.actionBar} data-single={send && stuck ? undefined : "true"}>
-      {send ? (
-        <button
-          ref={sendRef}
-          type="button"
-          className={waiting ? `${styles.quietButton} ${styles.barButton}` : `ei-button-dawn ${styles.primary} ${styles.barButton}`}
-          onClick={onSend}
-        >
+  const bar = questBar(quest, action);
+  const primary = `ei-button-dawn ${styles.primary} ${styles.barButton}`;
+  let body: ReactNode;
+  switch (bar) {
+    case "start":
+      body = <StartQuest quest={quest} buttonRef={sendRef} />;
+      break;
+    case "send":
+    case "resend":
+      body = (
+        <button ref={sendRef} type="button" className={primary} onClick={onSend}>
           <Icon name="send" />
-          <span>{waiting ? QUEST.resend : QUEST.send}</span>
+          <span>{bar === "resend" ? QUEST.resend : QUEST.send}</span>
         </button>
-      ) : null}
-      {stuck ? (
-        <button
-          type="button"
-          className={`${styles.quietButton} ${styles.barButton} ${styles.barStuck}`}
-          onClick={() => onStuck({ instanceId: quest.instanceId, title: quest.title })}
-        >
-          <Icon name="sos" />
-          <span>{QUEST.stuck}</span>
+      );
+      break;
+    case "resume":
+      body = quest.instanceId ? <ResumeQuest instanceId={quest.instanceId} /> : null;
+      break;
+    case "waiting":
+      body = (
+        <p className={styles.barWaiting} role="status">
+          {action.kind === "appealed" ? DETAIL.appealed : DETAIL.waiting}
+        </p>
+      );
+      break;
+    case "next":
+    case "open": {
+      const go = next && onOpenQuest ? () => onOpenQuest(next) : onIsland;
+      body = (
+        <button type="button" className={primary} onClick={go}>
+          <span>{next && onOpenQuest ? (bar === "next" ? DETAIL.next : DETAIL.toOpen) : DETAIL.home}</span>
         </button>
-      ) : null}
+      );
+      break;
+    }
+  }
+  return (
+    <div className={styles.actionBar} data-single="true" data-bar={bar}>
+      {body}
     </div>
   );
 }
@@ -1007,31 +1076,24 @@ class CanvasBoundary extends Component<{ fallback: ReactNode; children: ReactNod
 }
 
 /**
- * Mark a main or side quest as started without sending anything yet, so it
- * shows as the student's active quest (the keynote) and as held to teammates.
+ * The bar's main button on an untouched quest: takes it on (useStartQuest).
+ * The page stays here and refreshes into the started quest, so the bar turns
+ * into sending and the dots move to ทำ. No toast to read.
  */
-function StartQuest({ quest }: { quest: QuestView }) {
-  const [pending, startTransition] = useTransition();
-  const ref = quest.ref;
-  if (ref.kind === "proposed") return null;
+function StartQuest({ quest, buttonRef }: { quest: QuestView; buttonRef?: RefObject<HTMLButtonElement | null> }) {
+  const { pending, start } = useStartQuest();
+  if (quest.ref.kind === "proposed") return null;
   return (
     <button
+      ref={buttonRef}
       type="button"
-      className={styles.quietButton}
+      className={`ei-button-dawn ${styles.primary} ${styles.barButton}`}
       disabled={pending}
       aria-busy={pending}
-      onClick={() =>
-        startTransition(async () => {
-          const result =
-            ref.kind === "main"
-              ? await startMainQuest({ milestone: ref.milestone })
-              : await chooseSideQuest({ templateId: ref.templateId });
-          if (result.ok) toast.success(DETAIL.started);
-          else toast.error(result.error || COMMON.failed);
-        })
-      }
+      onClick={() => void start(quest.ref)}
     >
-      {DETAIL.start}
+      <Icon name="compass" />
+      <span>{DETAIL.start}</span>
     </button>
   );
 }
@@ -1042,7 +1104,7 @@ function ResumeQuest({ instanceId }: { instanceId: string }) {
   return (
     <button
       type="button"
-      className={`ei-button-dawn ${styles.primary}`}
+      className={`ei-button-dawn ${styles.primary} ${styles.barButton}`}
       disabled={pending}
       aria-busy={pending}
       onClick={() =>

@@ -1,5 +1,7 @@
 /** @jest-environment node */
 const call = jest.fn();
+const available = jest.fn();
+jest.mock("../canvas", () => ({ linkedCanvasAvailable: (...args: unknown[]) => available(...args) }));
 
 jest.mock("../db", () => ({
   questApi: () => ({ call, rows: jest.fn() }),
@@ -123,6 +125,7 @@ function respond(responses: Record<string, unknown>) {
 
 beforeEach(() => {
   call.mockReset();
+  available.mockReset().mockResolvedValue(true);
   importShiftConsent.mockReset().mockResolvedValue(null);
   process.env.DISCORD_SHIFT_GUILD_ID = ENV_GUILD;
   jest.spyOn(console, "error").mockImplementation(() => undefined);
@@ -177,6 +180,9 @@ describe("getIslandPage", () => {
     expect(page.consent).toEqual(CONSENT);
     expect(page.news).toEqual(NEWS);
     expect(page.me).toBe(viewer.me);
+    // The member uuid keys the private day intention on this device; never the Discord id.
+    expect(page.memberId).toBe("m1");
+    expect(JSON.stringify(page)).not.toContain(ACTOR);
     expect(page.unread).toBe(3);
     expect(page.island.project?.name).toBe("Lamp");
     expect(page.board).toEqual(board);
@@ -238,6 +244,17 @@ describe("getIslandPage", () => {
       shift_quest_island_map: map,
       shift_quest_board: board,
     };
+
+    it("offers reconnecting when the saved board or canvas is gone", async () => {
+      available.mockResolvedValue(false);
+      respond({ ...base, shift_quest_canvas_get: {
+        board_id: "deleted-board", frame_id: "deleted-frame", canvas_project: "proj-1", linked_at: "2026-11-11T08:00:00Z",
+      } });
+      const result = await getIslandPage(viewer);
+      expect(result.canvasLink).toEqual({ linked: false });
+      expect(result.board).toEqual(board);
+      expect(available).toHaveBeenCalledWith(USER_ID, expect.objectContaining({ board_id: "deleted-board" }));
+    });
 
     it("is linked with only the time, never the board, frame or canvas project id", async () => {
       const boardId = "9d1f2c3b-4a5e-4f60-8a7b-1c2d3e4f5a6b";
@@ -586,5 +603,82 @@ describe("tree styles on web", () => {
     expect(call).not.toHaveBeenCalledWith("shift_quest_tree_get", ACTOR);
     expect(page.tree).toBeNull();
     expect(page.map.plots.every((p) => !("style" in p) && !("seeded" in p))).toBe(true);
+  });
+});
+
+describe("admin oversight privacy", () => {
+  const privateMap = { ...map, plots: [{ ...map.plots[0], mine: false, plain: true, stage: 0 }] };
+  const overview = { projects: [{ slot: 4, name: "Private team", route: "software", ambition: "Build a lamp", milestones: [1, 3], members: ["Mint"], waitingReview: 1, openHelp: 0, checkinsWeek: 2, lastActivity: "2026-11-15T12:00:00Z" }] };
+  const answers = { shift_quest_island: {}, shift_quest_island_map: privateMap, shift_quest_admin_island: overview };
+
+  it.each([false, undefined])("never reads admin data for non-admins (%s)", async (admin) => {
+    respond(answers);
+    const result = await getIslandPage({ ...viewer, me: { ...viewer.me, staff: true, admin } });
+    expect(result.adminOverview).toBeNull();
+    expect(result.map.plots[0]).toMatchObject({ name: null, plain: true, stage: 0 });
+    expect(call).not.toHaveBeenCalledWith("shift_quest_admin_island", ACTOR);
+  });
+
+  it("shows admin names and actual progress without mutating the shared map", async () => {
+    respond(answers);
+    const result = await getIslandPage({ ...viewer, me: { ...viewer.me, staff: true, admin: true } });
+    expect(result.adminOverview).toEqual(overview);
+    expect(result.map.plots[0]).toMatchObject({ name: "Private team", stage: 2, plain: false, visitor: true });
+    expect(privateMap.plots[0]).toMatchObject({ name: null, plain: true, stage: 0 });
+    expect((await getIslandMap(ACTOR)).plots[0]).toMatchObject({ name: null, plain: true, stage: 0 });
+  });
+
+  it("keeps the restricted map if the database refuses the admin read", async () => {
+    respond({ ...answers, shift_quest_admin_island: new QuestError("not_authorized") });
+    const result = await getIslandPage({ ...viewer, me: { ...viewer.me, admin: true } });
+    expect(result.adminOverview).toBeNull();
+    expect(result.map.plots[0]).toMatchObject({ name: null, plain: true, stage: 0 });
+  });
+});
+
+describe("today's visitors (schema 18)", () => {
+  // No project: the island, the map, roots and styles answered, today's visitors on top.
+  const answers = {
+    shift_quest_island: {},
+    shift_quest_island_map: map,
+    shift_quest_island_roots: [],
+    shift_quest_island_styles: [],
+    shift_quest_campfire: FIRE,
+  };
+
+  it("reads the island's count and the team's for the viewer, two integers only", async () => {
+    respond({ ...answers, shift_quest_schema_version: 18, shift_quest_island_visitors: { count: 7, team: 2 } });
+    const page = await getIslandPage(viewer);
+    expect(call).toHaveBeenCalledWith("shift_quest_island_visitors", ACTOR);
+    expect(page.visitors).toEqual({ count: 7, team: 2 });
+    expect(JSON.stringify(page.visitors)).not.toContain(ACTOR);
+  });
+
+  it.each([15, 16, 17])("never asks before schema 18 (%s): no figures, and the page loads", async (version) => {
+    respond({ ...answers, shift_quest_schema_version: version });
+    const page = await getIslandPage(viewer);
+    expect(call).not.toHaveBeenCalledWith("shift_quest_island_visitors", ACTOR);
+    expect(page.visitors).toBeNull();
+    expect(page.campfire).toEqual({ count: 2, joinUrl: JOIN_URL });
+  });
+
+  it.each([
+    ["the function missing", new QuestDbError("shift_quest_island_visitors", "42883")],
+    ["no grant", new QuestDbError("shift_quest_island_visitors", "42501")],
+    ["a refusal", new QuestError("not_started")],
+    ["malformed data", { count: "seven" }],
+    ["no answer", null],
+  ])("is null on %s, and the rest of the page still loads", async (_, failure) => {
+    respond({ ...answers, shift_quest_schema_version: 18, shift_quest_island_visitors: failure });
+    const page = await getIslandPage(viewer);
+    expect(page.visitors).toBeNull();
+    expect(page.map.plots).toHaveLength(1);
+  });
+
+  it("is null when the schema version cannot be read", async () => {
+    respond({ ...answers, shift_quest_schema_version: new QuestDbError("shift_quest_schema_version", "08006") });
+    const page = await getIslandPage(viewer);
+    expect(call).not.toHaveBeenCalledWith("shift_quest_island_visitors", ACTOR);
+    expect(page.visitors).toBeNull();
   });
 });

@@ -13,8 +13,9 @@ Where facts live:
 
 | Need | Source |
 |---|---|
-| Company facts: programs, prices, numbers, team, decisions | [passionseed/company-brain](https://github.com/passionseed/company-brain) (Claude: the `company-brain` skill). Never hardcode a price or count from memory. |
+| Company facts: programs, prices, numbers, team, decisions, who our customers are and the job they hire us for | [passionseed/company-brain](https://github.com/passionseed/company-brain) through the `company-brain` skill (missing? `npx skills add https://brain.passionseed.org -g`). Never hardcode a price or count from memory. |
 | Product doctrine, audiences, tone | [`PRODUCT.md`](PRODUCT.md) |
+| How the team builds product: the feature workflow, prompts, which skill fits | the internal `seedwork` skill (PassionSeed team; company-brain `private/seedwork`) |
 | UI and animation rules | [`docs/ui-design-system.md`](docs/ui-design-system.md) |
 | Feature specs and plans | `docs/` (see [`docs/README.md`](docs/README.md)) |
 
@@ -23,6 +24,11 @@ Where facts live:
 `main` is protected and every merge to it deploys to production on Vercel.
 
 1. **Never push to `main`.** Create a branch (`fix/...`, `feat/...`, `docs/...`) and open a pull request.
+   Write its description for a person reading on a phone, in the order of
+   [`.github/pull_request_template.md`](.github/pull_request_template.md): a one-sentence **TL;DR**,
+   before → after, a **Preview** with the preview link and a direct link to each changed page,
+   why, what to look at closely, then everything else folded away. Say what changed for the
+   person using it, not which files moved. No tool footer such as "Generated with Claude Code".
 2. **CI must pass before merging.** The `build` check runs lint, tests, and `pnpm build`. Run `pnpm lint && pnpm test && pnpm build` locally before pushing.
 3. **Check the Vercel preview** linked on the pull request for any UI change.
 4. **Squash-merge.** The branch is deleted automatically after merging.
@@ -75,6 +81,7 @@ between adults and students; work happens in visible group spaces.
 - `supabase/migrations/`: schema migrations.
 - `lib/supabase/__tests__/` and colocated `*.test.ts`: Jest tests.
 - `components/whiteboard/` and `app/whiteboard/`: the multiplayer whiteboard. Read [`docs/features/whiteboard.md`](docs/features/whiteboard.md) first; `pnpm whiteboard:read <id>` prints a board as Markdown.
+- `components/shift/island/`, `app/shift/island/`, `lib/supabase/shift-quests/` and `bot/src/quests/`: SHIFT High Island, the alumni quest game. Read [`components/shift/island/AGENTS.md`](components/shift/island/AGENTS.md) first.
 
 Keep code modular: split large components and functions into small, named
 pieces, and follow the patterns already in the neighbouring files.

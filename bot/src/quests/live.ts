@@ -154,8 +154,12 @@ export function pictureCampfire(d: LivePostData): { count: number } | null {
   return snowflake(d.coworking_channel_id) ? { count: campers(d) } : null;
 }
 
-/** The database's answer with every field checked, so a surprise shape never reaches Discord. */
-function normalize(raw: unknown): LivePostData | null {
+/**
+ * The database's answer with every field checked, so a surprise shape never
+ * reaches Discord. The nightly island news (news.ts) reads the same answer
+ * for its picture.
+ */
+export function normalizeLivePost(raw: unknown): LivePostData | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, any>;
   const goal = r.goal && typeof r.goal === "object" && whole(r.goal.target) > 0 ? r.goal : null;
@@ -304,7 +308,8 @@ function isUnknownMessage(error: unknown): boolean {
   return error instanceof DiscordAPIError && Number(error.code) === UNKNOWN_MESSAGE;
 }
 
-function isPictureRefused(error: unknown): boolean {
+/** Discord refused a send or edit because of its picture (50013 or 40005). The nightly island news (news.ts) checks it too. */
+export function isPictureRefused(error: unknown): boolean {
   return error instanceof DiscordAPIError && PICTURE_REFUSED.has(Number(error.code));
 }
 
@@ -489,7 +494,7 @@ export function startLivePost(client: Client, api: QuestApi, guildId: string, co
 
   async function tick(force: boolean): Promise<void> {
     if (stopped || !connected()) return;
-    const d = normalize(await api.call<unknown>("shift_quest_live_post"));
+    const d = normalizeLivePost(await api.call<unknown>("shift_quest_live_post"));
     const channelId = d?.channel_id ?? null;
     // Schema 10: the shown trees' roots; schema 13: their looks. Both merged by slot, only on shown plots
     // (readRoots and readStyles never throw: no roots or the default look on failure or an older schema).

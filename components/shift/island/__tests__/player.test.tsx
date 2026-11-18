@@ -4,6 +4,7 @@ import type { ComponentProps } from "react";
 import { cancelRedemption, loadWallet, redeemItem } from "@/app/shift/island/wallet-actions";
 import type { CharacterStats, IslandConsent, ShopItem, WalletDetail } from "@/lib/supabase/shift-quests/playerTypes";
 
+import { FOOTER, MENU, TREE } from "../copy";
 import { HudChip } from "../IslandHud";
 import { CharacterSheet } from "../player/CharacterSheet";
 import { CoinPill, showCoinPill } from "../player/CoinPill";
@@ -203,10 +204,10 @@ describe("HudChip", () => {
     expect(chip.querySelectorAll("[data-filled='true']")).toHaveLength(7);
   });
 
-  it("says today's check-in is still open", () => {
-    render(<HudChip me={{ name: "มิ้นต์", avatarUrl: null }} name="ทีม" stage={1} todayOpen onOpen={jest.fn()} />);
-    expect(screen.getByRole("button", { name: /^มิ้นต์, ทีม, ต้นไม้ขั้น 1 จาก 7, ดูตัวละคร, / })).toBeInTheDocument();
-    expect(screen.getByTestId("chip-today-open")).toBeInTheDocument();
+  it("says what waits at the team's tree, with a lamp dot", () => {
+    render(<HudChip me={{ name: "มิ้นต์", avatarUrl: null }} name="ทีม" stage={1} waiting="มีของขวัญรออยู่" onOpen={jest.fn()} />);
+    expect(screen.getByRole("button", { name: `${PLAYER.chip("มิ้นต์", "ทีม", 1)}, มีของขวัญรออยู่` })).toBeInTheDocument();
+    expect(screen.getByTestId("chip-dot")).toBeInTheDocument();
   });
 });
 
@@ -261,8 +262,8 @@ describe("CharacterSheet", () => {
         me={me}
         stats={stats()}
         project={{ name: "แอปจองห้องสมุด", stage: 3 }}
-        season={null}
-        today={<p>today-card</p>}
+        results={<p>results-list</p>}
+        foot={<p>menu-foot</p>}
         {...handlers}
         {...props}
       />,
@@ -270,43 +271,53 @@ describe("CharacterSheet", () => {
     return handlers;
   }
 
-  it("shows who the student is, the tree as the level, and the real work as bars", () => {
+  it("is titled with the team, like the chip, and shows who the student is and the tree as one line of progress, then results, the tree, coins and the menu", () => {
     sheet();
-    const dialog = screen.getByRole("dialog", { name: CHARACTER.title });
-    for (const line of [
-      "มิ้นต์",
-      CHARACTER.level(3),
-      CHARACTER.teamVsMine,
-      CHARACTER.mainMine(2),
-      CHARACTER.sideTeam(4),
-      CHARACTER.communityTeam(1),
-      CHARACTER.communityMine(2),
-      CHARACTER.thanks(5),
-      CHARACTER.week(3),
-      CHARACTER.days(12),
-      CHARACTER.daysKept,
-    ]) {
-      expect(within(dialog).getByText(line)).toBeInTheDocument();
+    const dialog = screen.getByRole("dialog", { name: "แอปจองห้องสมุด" });
+    expect(within(dialog).getByText("มิ้นต์")).toBeInTheDocument();
+    expect(within(dialog).getByText(CHARACTER.level(3))).toBeInTheDocument();
+    // One line of progress: no stats grid (side quests, community, check-ins).
+    for (const gone of [CHARACTER.teamVsMine, CHARACTER.mainMine(2), CHARACTER.sideTeam(4), CHARACTER.week(3), CHARACTER.days(12)]) {
+      expect(within(dialog).queryByText(gone)).toBeNull();
     }
-    // The database's run (4 here) resets after missed days, so the sheet never shows it.
+    // The database's run resets after missed days, so the sheet never shows it.
     expect(within(dialog).queryByText(/จังหวะ/)).toBeNull();
-    // The team's main quests are the level; the main stat is the viewer's own share, and side shows theirs too.
-    expect(within(dialog).queryByText(CHARACTER.mainTeam(3))).toBeNull();
-    expect(within(dialog).getByText(CHARACTER.mine(1))).toBeInTheDocument();
-    // The bars: level 3/7, the viewer's main 2/7, community 1/2 pips (this week is text only).
-    const filled = [...dialog.querySelectorAll("[aria-hidden='true']")]
-      .filter((el) => el.children.length > 0 && [...el.children].every((cell) => cell.tagName === "SPAN" && cell.children.length === 0))
-      .map((bar) => [bar.querySelectorAll("[data-filled='true']").length, bar.children.length]);
-    expect(filled).toEqual([
-      [3, 7],
-      [2, 7],
-      [1, 2],
-    ]);
-    // Today's check-in right under the head, before the stats; the project underneath.
-    const todayCard = within(dialog).getByText("today-card");
-    expect(within(dialog).getByText("มิ้นต์").compareDocumentPosition(todayCard) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(todayCard.compareDocumentPosition(within(dialog).getByText(CHARACTER.teamVsMine)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(within(dialog).getByRole("heading", { name: "แอปจองห้องสมุด" })).toBeInTheDocument();
+    const order = [
+      within(dialog).getByText("มิ้นต์"),
+      within(dialog).getByText("results-list"),
+      within(dialog).getByText(/ต้นไม้ของคุณ/),
+      within(dialog).getByText(CHARACTER.coinRow(coinNumber(2300))),
+      within(dialog).getByText("menu-foot"),
+    ];
+    for (let i = 1; i < order.length; i++) {
+      expect(order[i - 1].compareDocumentPosition(order[i]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+  });
+
+  it("puts ขอพัก as quiet words under the tree's stage, before the results", () => {
+    const onRest = jest.fn();
+    sheet({ onRest });
+    const dialog = screen.getByRole("dialog", { name: "แอปจองห้องสมุด" });
+    const rest = within(dialog).getByRole("button", { name: MENU.rest });
+    expect(rest.compareDocumentPosition(within(dialog).getByText("results-list")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    fireEvent.click(rest);
+    expect(onRest).toHaveBeenCalledTimes(1);
+  });
+
+  it("has no ขอพัก while the team rests (no onRest)", () => {
+    sheet();
+    expect(screen.queryByRole("button", { name: MENU.rest })).toBeNull();
+  });
+
+  it("gives an admin the overview as the first line under who they are, and a student none", () => {
+    const onOpenAdmin = jest.fn();
+    sheet({ onOpenAdmin });
+    const dialog = screen.getByRole("dialog", { name: "แอปจองห้องสมุด" });
+    const admin = within(dialog).getByRole("button", { name: MENU.admin });
+    expect(within(dialog).getByText("มิ้นต์").compareDocumentPosition(admin) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(admin.compareDocumentPosition(within(dialog).getByText("results-list")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    fireEvent.click(admin);
+    expect(onOpenAdmin).toHaveBeenCalledTimes(1);
   });
 
   it("never ranks the student against anyone", () => {
@@ -327,18 +338,47 @@ describe("CharacterSheet", () => {
 
   it("shows the consent step first while consent is not on file", () => {
     const { onOpenConsent } = sheet({ consent: waiting });
-    const dialog = screen.getByRole("dialog", { name: CHARACTER.title });
+    const dialog = screen.getByRole("dialog", { name: "แอปจองห้องสมุด" });
     const banner = within(dialog).getByRole("region", { name: "ความยินยอม" });
     expect(banner.compareDocumentPosition(within(dialog).getByText("มิ้นต์")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     fireEvent.click(within(banner).getByRole("button"));
     expect(onOpenConsent).toHaveBeenCalledTimes(1);
   });
 
-  it("is the project sheet as before when the stats cannot be read", () => {
+  it("holds the team's tree line, with what waits there, and the show-name switch", () => {
+    const onOpenTree = jest.fn();
+    const tree = {
+      seed: "oak",
+      equipped: { shape: "shape:round", leaf: "leaf:forest", bark: "bark:oak", bloom: "bloom:cream" },
+      owned: [],
+      gifts: [],
+      roots: { count: 0, recent: 0 },
+      stage: 3,
+    };
+    sheet({ tree: { ...tree, seed: null }, onOpenTree, showName: { id: KEY, show_name: false, name_visible: false } });
+    const dialog = screen.getByRole("dialog", { name: "แอปจองห้องสมุด" });
+    const line = within(dialog).getByRole("button", { name: (name) => name.startsWith("ต้นไม้ของคุณ") && name.endsWith(TREE.seed.title) });
+    expect(within(line).getByTestId("tree-line-dot")).toBeInTheDocument();
+    fireEvent.click(line);
+    expect(onOpenTree).toHaveBeenCalledTimes(1);
+    expect(within(dialog).getByRole("switch", { name: FOOTER.showName })).not.toBeChecked();
+  });
+
+  it("keeps the tree a plain line and leaves the switch out when not given them", () => {
+    sheet();
+    const dialog = screen.getByRole("dialog", { name: "แอปจองห้องสมุด" });
+    expect(within(dialog).queryByRole("button", { name: /ต้นไม้ของคุณ/ })).toBeNull();
+    expect(within(dialog).getByText(/ต้นไม้ของคุณ/)).toBeInTheDocument();
+    expect(within(dialog).queryByRole("switch")).toBeNull();
+  });
+
+  it("keeps the tree, the results and the menu when the stats cannot be read, with no coin row", () => {
     sheet({ stats: null });
     const dialog = screen.getByRole("dialog", { name: "แอปจองห้องสมุด" });
-    expect(within(dialog).getByText("today-card")).toBeInTheDocument();
-    expect(within(dialog).queryByText(CHARACTER.level(3))).toBeNull();
+    expect(within(dialog).getByText(CHARACTER.level(3))).toBeInTheDocument();
+    expect(within(dialog).getByText("results-list")).toBeInTheDocument();
+    expect(within(dialog).getByText("menu-foot")).toBeInTheDocument();
+    expect(within(dialog).queryByText(CHARACTER.coinOpen)).toBeNull();
   });
 });
 

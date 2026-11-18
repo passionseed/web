@@ -29,6 +29,9 @@ const FEATURES = [
   { name: "reminders (การเตือน)", value: "reminders" },
   // Off until founder decision 5 picks the island for squads; needs nothing published first.
   { name: "squads (สควอด)", value: "squads" },
+  // Schema 21: the 18:50 campfire call in #island-news, and its one role ping. Both on by default.
+  { name: "campfire_call (เรียกรวมกองไฟ 18:50)", value: "campfire_call" },
+  { name: "campfire_call_ping (แท็กนักเรียนตอนเรียกรวม)", value: "campfire_call_ping" },
 ];
 
 export function questCommands(): RESTPostAPIChatInputApplicationCommandsJSONBody[] {
@@ -136,13 +139,19 @@ export function questCommands(): RESTPostAPIChatInputApplicationCommandsJSONBody
               { name: "celebrate (โพสต์ความสำเร็จ)", value: "celebrate" },
               { name: "coworking (ห้องข้อความหรือห้องเสียง)", value: "coworking" },
               { name: "live (โพสต์เกาะสด บอทแก้โพสต์เดียว)", value: "live" },
-              { name: "suggest (ฟอรัมเสนอไอเดีย แจ้งบั๊ก)", value: "suggest" }
+              { name: "suggest (ฟอรัมเสนอไอเดีย แจ้งบั๊ก)", value: "suggest" },
+              // DRAFT for the Thai review: the nightly island news card (news.ts, schema 19).
+              { name: "news (ข่าวเกาะทุกคืน 2 ทุ่ม ห้องประกาศได้)", value: "news" }
             )
         )
         // coworking may be a voice channel: its people sit at the island's campfire, and intention posts land in its text chat.
-        // suggest may be a forum: the web island's ⋯ menu links to it. The handler checks each kind's type.
+        // suggest may be a forum: the web island's ⋯ menu links to it. news may be an announcement channel (students
+        // read, only the bot posts; never published to other servers). The handler checks each kind's type.
         .addChannelOption((o) =>
-          o.setName("channel").setDescription("ห้อง").addChannelTypes(ChannelType.GuildText, ChannelType.GuildVoice, ChannelType.GuildForum)
+          o
+            .setName("channel")
+            .setDescription("ห้อง")
+            .addChannelTypes(ChannelType.GuildText, ChannelType.GuildVoice, ChannelType.GuildForum, ChannelType.GuildAnnouncement)
         )
     )
     .addSubcommand((s) =>

@@ -19,8 +19,10 @@ import { student } from "./handlers/student";
 import { tree } from "./handlers/tree";
 import type { ActionHandler, AutocompleteHandler, CommandHandler, HandlerSet } from "./handlers/types";
 import { parseCid } from "./ids";
+import { startCall, type CallLoop } from "./call";
 import { digestFor, startDigestPost } from "./digest";
 import { liveFor, startLivePost } from "./live";
+import { newsFor, startNewsPost } from "./news";
 import { startRounds } from "./rounds";
 import { chimeEnabled, createCampfireVoice, restMusicEnabled } from "./chime";
 import { warmStory } from "./story";
@@ -120,6 +122,16 @@ export async function handleInteraction(api: QuestApi, guildId: string, i: Inter
  * 13 (20261114120000_shift_quest_tree_style) adds seeds, tree looks and gifts
  * (handlers/tree.ts); also optional: below 13 there are no tree buttons and
  * no gifts, and a round closes with shift_quest_round_close (TREE_SCHEMA).
+ * 19 (20261118130000_shift_quest_island_news_daily) adds the nightly island
+ * news card in the news channel; also optional: below 19 the bot runs without
+ * it (NEWS_SCHEMA).
+ * 20 (20261118140000_shift_quest_island_news_missed) adds the staff note when
+ * the card did not post by 22:30; also optional: below 20 the card runs
+ * without it, and reads the version again each check (NEWS_MISSED_SCHEMA).
+ * 21 (20261118150000_shift_quest_campfire_call) adds the 18:50 campfire call
+ * in the news channel and the evening guest's drop; also optional: below 21
+ * the call loop only reads the version again each check and starts by itself
+ * once the migration is applied (CALL_SCHEMA in call.ts).
  */
 export const REQUIRED_SCHEMA = 2;
 
@@ -222,21 +234,38 @@ export async function registerShiftQuests(client: Client, env: ShiftQuestsEnv): 
   const outbox = startOutbox(client, api, () => connected);
   // Started only on a database that has the campfire functions (schema 7).
   campfire = campfireFor(version, () => startCampfire(client, api, env.guildId, () => connected));
+  /** The 18:50 campfire call; the rounds read tonight's evening guest from it. */
+  let call: CallLoop | null = null;
   // Focus and rest rounds in the campfire's chat, only while someone sits at it (rounds.ts).
   // Sound in the voice channel (chime.ts): a chime as each focus starts, and
   // music that fades in before each rest. SHIFT_ROUND_CHIME=off mutes all of
   // it, SHIFT_REST_MUSIC=off only the music.
   const voice = chimeEnabled() ? createCampfireVoice(client, { music: restMusicEnabled() }) : null;
   const roundLoop = campfire
-    ? startRounds(client, campfire, voice ? { chime: voice.chime, restMusic: voice.restMusic } : {})
+    ? startRounds(client, campfire, {
+        evening: (nowMs) => call?.evening(nowMs) ?? null,
+        ...(voice ? { chime: voice.chime, restMusic: voice.restMusic } : {}),
+      })
     : null;
+  // The campfire call in the news channel and the evening guest (schema 21): one call a day, one role ping at most.
+  // Started with the campfire; below schema 21 it only reads the version again each check.
+  call = campfire ? startCall(client, api, { guildId: env.guildId, connected: () => connected, campfire, schema: version }) : null;
   // Started only on a database that has the live post functions (schema 8).
   const live = liveFor(version, () => startLivePost(client, api, env.guildId, () => connected));
   // Started only on a database that has the island news functions (schema 9): one post a day, no pings.
   const digest = digestFor(version, () => startDigestPost(client, api, { guildId: env.guildId, connected: () => connected }));
+  // Started only on a database that has the nightly island news functions (schema 19): one card a night, no pings.
+  // From schema 20 each check also queues the staff note for a missed night (it reads the version again until then).
+  const news = newsFor(version, () =>
+    startNewsPost(client, api, { guildId: env.guildId, connected: () => connected, schema: version })
+  );
 
   return {
     async stop() {
+      // The campfire call: it waits for a running check, then sends and edits nothing more.
+      await call?.stop();
+      // The nightly island news card: it waits for a running check, then sends nothing more.
+      await news?.stop();
       // The island news post: it waits for a running check, then posts nothing more.
       await digest?.stop();
       // The live post: it leaves its message as it is, so it only waits for a running edit.

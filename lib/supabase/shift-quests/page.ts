@@ -6,11 +6,13 @@ import { readMyTree, readStyles, withStyles, type StylesBySlot } from "@/bot/src
 import type { CanvasLinkState } from "@/lib/shift-island/quest-canvas";
 
 import { campfireOf } from "./campfire";
+import { linkedCanvasAvailable } from "./canvas";
 import { characterOf } from "./character";
 import { consentOf } from "./consent";
 import { questApi } from "./db";
 import { suggestUrlOf } from "./links";
 import { newsOf } from "./news";
+import { visitorsOf } from "./visitors";
 import type {
   CampfireNames,
   IslandMapData,
@@ -26,6 +28,7 @@ import type {
 import { schemaOf } from "@/bot/src/quests/schema";
 import { PEER_SCHEMA } from "@/lib/shift-island/peer";
 import { PHOTO_SCHEMA } from "@/lib/shift-island/photos";
+import type { AdminIslandOverview } from "./adminTypes";
 
 /** One row of shift_quest_project_list. */
 interface ProjectListRow {
@@ -120,15 +123,16 @@ interface CanvasLinkRow {
 const UNLINKED: CanvasLinkState = { linked: false };
 
 /**
- * Whether the quest project is linked to a SHIFT canvas. Only the time leaves
+ * Whether the quest project is linked to an available SHIFT canvas. Only the time leaves
  * the server (never the board or frame id: the island opens the canvas through
  * CANVAS_ROUTE, which resolves the link on the server). Any failure reads as
  * unlinked and logs a code: the island never breaks because of the link.
  */
-async function canvasLinkOf(api: QuestApi, actor: string): Promise<CanvasLinkState> {
+async function canvasLinkOf(api: QuestApi, actor: string, userId: string): Promise<CanvasLinkState> {
   try {
     const row = await api.call<CanvasLinkRow | null>("shift_quest_canvas_get", actor);
     if (!row || typeof row !== "object" || typeof row.linked_at !== "string") return UNLINKED;
+    if (!(await linkedCanvasAvailable(userId, row))) return UNLINKED;
     return { linked: true, linkedAt: row.linked_at };
   } catch (error) {
     const code =
@@ -153,12 +157,13 @@ async function canvasLinkOf(api: QuestApi, actor: string): Promise<CanvasLinkSta
  * campfire and the suggestions link, which fall back to null (no campfire
  * drawn, no link in the menu), the character sheet, consent and island
  * news, which fall back to null too (no stats or coin pill, nothing gated,
- * no news), and public roots (schema 10), which fall back to none. Own roots (schema 11)
- * override only the member plot, falling back to its outsider value.
+ * no news), public roots (schema 10), which fall back to none, and today's
+ * visitors (schema 18), which fall back to null (no figures in the plaza). Own
+ * roots (schema 11) override only the member plot, falling back to its outsider value.
  */
 export async function getIslandPage(viewer: ReadyViewer): Promise<IslandPageData> {
   const api = questApi();
-  const [islandRaw, mapRaw, suggestUrl, character, consent, news, roots, styles] = await Promise.all([
+  const [islandRaw, mapRaw, suggestUrl, character, consent, news, roots, styles, visitors] = await Promise.all([
     api.call<IslandView>("shift_quest_island", viewer.actor),
     api.call<IslandMapData>("shift_quest_island_map", viewer.actor),
     suggestUrlOf(api, viewer.actor),
@@ -170,8 +175,26 @@ export async function getIslandPage(viewer: ReadyViewer): Promise<IslandPageData
     readRoots(api, ROOTS_LOG),
     // Schema 13: the shown trees' colours. Never throws: default trees on failure, logged once.
     readStyles(api, ROOTS_LOG),
+    // Schema 17: today's visitors for the plaza, two integers. Null before it or on any failure: no figures.
+    soft(visitorsOf(api, viewer.actor)),
   ]);
   const island = normalizeIsland(islandRaw);
+  // The database checks the application role again. Fail closed if unavailable.
+  const adminOverview = viewer.me.admin === true
+    ? await soft(api.call<AdminIslandOverview>("shift_quest_admin_island", viewer.actor))
+    : null;
+  let visibleMap = mapRaw;
+  if (adminOverview && mapRaw?.plots) {
+    const bySlot = new Map(adminOverview.projects.map((p) => [p.slot, p]));
+    visibleMap = { ...mapRaw, plots: mapRaw.plots.map((plot) => {
+      const project = bySlot.get(plot.slot);
+      return project ? {
+        ...plot, name: project.name, stage: project.milestones.length, plain: false,
+        visitor: project.milestones.includes(3), key: project.milestones.includes(5),
+        helper: project.milestones.includes(6), lantern: project.milestones.includes(7),
+      } : plot;
+    }) };
+  }
   // Schema 14: photo evidence and the problem line's เปลี่ยน; schema 15: the peer check. A failed read means no.
   const schema = await schemaOf(api).catch(() => 0);
   const photos = schema >= PHOTO_SCHEMA;
@@ -186,7 +209,7 @@ export async function getIslandPage(viewer: ReadyViewer): Promise<IslandPageData
   if (island.project) {
     const [boardRaw, link, campfireRead, projectsRaw] = await Promise.all([
       api.call<QuestBoard>("shift_quest_board", viewer.actor),
-      canvasLinkOf(api, viewer.actor),
+      canvasLinkOf(api, viewer.actor, viewer.userId),
       campfireOf(api, viewer.actor, false),
       api.call<ProjectListRow[]>("shift_quest_project_list", viewer.actor),
     ]);
@@ -205,9 +228,11 @@ export async function getIslandPage(viewer: ReadyViewer): Promise<IslandPageData
 
   return {
     me: viewer.me,
+    memberId: viewer.session.member_id ?? null,
+    adminOverview,
     unread: Number(viewer.session.unread) || 0,
     island,
-    map: normalizeMap(mapRaw, roots, island.project && mapRaw?.plots?.some((p) => p.mine && !p.plain)
+    map: normalizeMap(visibleMap, roots, island.project && visibleMap?.plots?.some((p) => p.mine && !p.plain)
       ? await readMyRoots(api, viewer.actor, ROOTS_LOG) : null, styles, tree),
     tree,
     board,
@@ -221,6 +246,7 @@ export async function getIslandPage(viewer: ReadyViewer): Promise<IslandPageData
     news,
     photos,
     peer,
+    visitors,
   };
 }
 

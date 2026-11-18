@@ -63,13 +63,18 @@ export const respondInviteSchema = z.object({
 });
 
 export const checkInSchema = z
-  .object({ note: optionalText(TEXT_LIMITS.note) })
+  .object({ intention: optionalText(TEXT_LIMITS.intention), instanceId: id.nullish() })
   .nullish()
-  .transform((v) => ({ note: v?.note ?? null }));
+  .transform((v) => ({ intention: v?.intention ?? null, instanceId: v?.instanceId ?? null }));
+
+/** The day's intention on its own, from the quest page (the card's tap already checked in). */
+export const intentionSchema = z.object({ intention: requiredText(TEXT_LIMITS.intention), instanceId: id.nullish() });
 
 export const reflectSchema = z.object({
   learned: requiredText(TEXT_LIMITS.learned).refine((v) => chars(v) >= REFLECTION_MIN_CHARS),
   stuck: optionalText(TEXT_LIMITS.stuck),
+  /** The caller's own quest instance to file the line under; the database checks it is theirs. */
+  instanceId: id.nullish().transform((v) => v ?? null),
 });
 
 export const setRestingSchema = z.object({ on: z.boolean() });

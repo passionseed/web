@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { BOARD_PATH, formatBangkok, statusLabel } from "@/lib/shift/alumniBoard";
+import { formatBangkok, statusLabel } from "@/lib/shift/alumniBoard";
 import type { Team, TeamMember } from "@/lib/supabase/shift-alumni-board/team";
 import type { TeamTests } from "@/lib/supabase/shift-alumni-board/tests";
 
@@ -56,9 +56,7 @@ export function TeamList({ teams }: { teams: Team[] }) {
         <ul className={board.list}>
           {teams.map((t) => (
             <li key={t.id}>
-              <Link href={`${BOARD_PATH}/team?id=${t.id}`} className={board.link}>
-                {t.name}
-              </Link>
+              {t.name}
             </li>
           ))}
         </ul>

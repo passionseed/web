@@ -253,7 +253,7 @@ describe("QuestBoard lanes", () => {
     expect(screen.queryByRole("tablist")).toBeNull();
     expect(screen.queryByRole("tab")).toBeNull();
 
-    const regions = ["เควสต์หลัก", "เควสต์เสริม", "เควสต์ที่ฉันเสนอ", "ทั้งเกาะ"].map((name) => screen.getByRole("region", { name }));
+    const regions = ["เควสต์หลัก", "เควสต์เสริม", "เควสต์ที่คุณเสนอ", "ทั้งเกาะ"].map((name) => screen.getByRole("region", { name }));
     expect(buttons.map((b) => b.getAttribute("aria-controls"))).toEqual(regions.map((r) => r.id));
     expect(pressed()).toEqual([buttons[0]]);
   });
@@ -261,7 +261,7 @@ describe("QuestBoard lanes", () => {
   it("keeps every lane in the DOM and the accessibility tree, whichever is pressed", () => {
     renderBoard({ keynote: null });
     fireEvent.click(laneButton("ของฉัน"));
-    for (const name of ["เควสต์หลัก", "เควสต์เสริม", "เควสต์ที่ฉันเสนอ", "ทั้งเกาะ"]) {
+    for (const name of ["เควสต์หลัก", "เควสต์เสริม", "เควสต์ที่คุณเสนอ", "ทั้งเกาะ"]) {
       const region = screen.getByRole("region", { name });
       expect(region).not.toHaveAttribute("hidden");
       expect(region).not.toHaveAttribute("aria-hidden");

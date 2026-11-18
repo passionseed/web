@@ -31,6 +31,8 @@ export interface ReviewView {
 export type ReviewRead =
   | { state: "ok"; view: ReviewView }
   | { state: "not_authorized" }
+  /** The reviewer is the student, a teammate (now or before) or a contributor (20261116080000). */
+  | { state: "conflict" }
   | { state: "not_found" }
   | { state: "unavailable" };
 
@@ -38,7 +40,8 @@ const text = (v: unknown): string | null => (typeof v === "string" && v ? v : nu
 
 /**
  * The web review page's read, for a reviewer or admin. The database refuses
- * everyone else ('not_authorized'); photos come back as short-lived links.
+ * everyone else ('not_authorized') and a reviewer too close to the work
+ * ('conflict', from 20261116080000); photos come back as short-lived links.
  * Never throws: a database before schema 14 or any failure is 'unavailable'
  * (logged by code only).
  */
@@ -71,6 +74,7 @@ export async function loadReview(actor: string, submissionId: string): Promise<R
     };
   } catch (error) {
     if (error instanceof QuestError && error.code === "not_authorized") return { state: "not_authorized" };
+    if (error instanceof QuestError && error.code === "conflict_of_interest") return { state: "conflict" };
     if (error instanceof QuestError && error.code === "not_found") return { state: "not_found" };
     console.error(`[shift-island] loadReview failed (${error instanceof QuestError ? `sq:${error.code}` : error instanceof Error ? error.name : "unknown"})`);
     return { state: "unavailable" };

@@ -15,12 +15,16 @@ import {
   encounterAt,
   isLongRounds,
   roundAt,
+  roundKey,
   roundView,
   setLongRounds,
   startRounds,
+  type Evening,
   type RoundAt,
   type RoundDeps,
 } from "../rounds";
+import { CALL, GUESTS, REVEAL, ROUND_GUEST, STAFF_GUEST, staffGuest } from "../callCopy";
+import { guestReveal } from "../handlers/rounds";
 import { boardFixture, side, SIDE_IDS } from "../test-helpers/board";
 import { renderView } from "../ui";
 import { bodyText, customIds, viewText } from "../test-helpers/view";
@@ -52,6 +56,14 @@ describe("roundAt, long", () => {
 });
 
 describe("roundView", () => {
+  it("focus in a SHIFT cohort week: never 'nobody counts your time' (shift-voice records voice time for that round's students)", () => {
+    expect(viewText(renderView(roundView(roundAt(TEN)), { ephemeral: false }))).toContain("ไม่มีใครนับเวลาของคุณ");
+    const cohort = viewText(renderView(roundView(roundAt(TEN), null, { cohortWeek: true }), { ephemeral: false }));
+    expect(cohort).not.toContain("นับเวลา");
+    expect(cohort).toContain("ทุกอย่างที่เขียนเห็นแค่คุณ");
+    expect(cohort).toContain(ROUND_MARKER);
+  });
+
   it("focus: when the rest starts, 🎯, the marker, nobody's minutes", () => {
     const p = renderView(roundView(roundAt(TEN)), { ephemeral: false });
     expect(p.flags).toBe(MessageFlags.IsComponentsV2);
@@ -135,8 +147,116 @@ describe("encounters", () => {
   });
 });
 
-/** A voice channel's chat that records what the loop does. */
-function world(start = TEN) {
+// ---------------------------------------------------------------------------
+// The evening guest (schema 21, call.ts)
+// ---------------------------------------------------------------------------
+
+/** 2026-11-13 Bangkok: 19:00 is 12:00 UTC. */
+const NIGHT = "2026-11-13";
+const LIT = Date.UTC(2026, 10, 13, 12, 0, 0);
+const EVENING: Evening = {
+  day: NIGHT,
+  guest: "gull",
+  litAt: LIT / 1000,
+  guestFrom: LIT / 1000 + 25 * 60,
+  dropEnd: LIT / 1000 + 30 * 60,
+  guestUntil: LIT / 1000 + 120 * 60,
+  drop: null,
+};
+/** The same evening once the night is settled (2 teams got a look). */
+const SETTLED: Evening = { ...EVENING, drop: { teams: 2 } };
+/** The round at a Bangkok time on NIGHT ("19:25"). */
+const roundAtTime = (hhmm: string) => {
+  const [h, m] = hhmm.split(":").map(Number);
+  return roundAt(LIT + ((h - 19) * 60 + m) * MIN + 30_000);
+};
+const shown = (hhmm: string, evening: Evening | null = EVENING) => renderView(roundView(roundAtTime(hhmm), evening), { ephemeral: false });
+
+describe("the evening guest on the rounds", () => {
+  it("19:00 is the round the 18:50 call promised (round % 48 = 24 on the Bangkok clock), and it carries the teaser", () => {
+    expect(roundAtTime("19:00").round % 48).toBe(24);
+    const p = shown("19:00");
+    expect(viewText(p)).toContain(ROUND_GUEST.teaser);
+    expect(customIds(p)).toEqual(["sq|rd_aim", "sq|rd_long|1"]);
+  });
+
+  it("the guest's rest says who counts (anyone at the fire until 19:30), with no check yet: nothing is settled", () => {
+    const p = shown("19:25");
+    expect(viewText(p)).toContain(GUESTS.gull.arrive);
+    expect(viewText(p)).toContain(ROUND_GUEST.sit(EVENING.dropEnd));
+    expect(viewText(p)).toContain(ROUND_GUEST.fine);
+    expect(customIds(p)).toEqual(["sq|rd_close", "sq|rd_aim", "sq|rd_long|1"]);
+  });
+
+  it("each rest of the stay carries the guest instead of any encounter: arrival first, then still here, with the private check once settled", () => {
+    for (const time of ["19:25", "19:55", "20:25", "20:55"]) {
+      const p = shown(time, SETTLED);
+      const g = GUESTS.gull;
+      expect(viewText(p)).toContain(time === "19:25" ? g.arrive : g.still);
+      expect(viewText(p)).toContain(ROUND_GUEST.fine);
+      expect(viewText(p)).not.toContain(R.encounterFine);
+      expect(viewText(p)).not.toContain(ROUND_GUEST.sit(EVENING.dropEnd));
+      expect(customIds(p)).toEqual(["sq|rd_close", "sq|rd_aim", `sq|rd_guest|${NIGHT}`, "sq|rd_long|1"]);
+      for (const e of R.encounters) expect(viewText(p)).not.toContain(e.text);
+    }
+  });
+
+  it("the focus rounds of the stay carry the guest's still line and the check, so someone arriving mid-focus can meet it", () => {
+    for (const time of ["19:30", "20:00", "20:30"]) {
+      const p = shown(time, SETTLED);
+      expect(viewText(p)).toContain(GUESTS.gull.still);
+      expect(customIds(p)).toEqual(["sq|rd_aim", `sq|rd_guest|${NIGHT}`, "sq|rd_long|1"]);
+    }
+    // 19:30 before the bot's settling check: the guest, no check yet.
+    expect(customIds(shown("19:30"))).toEqual(["sq|rd_aim", "sq|rd_long|1"]);
+  });
+
+  it("always shows how many teams got a look once the night is settled (never which), and a friendly line for none", () => {
+    for (const n of [1, 3]) {
+      const p = shown("19:30", { ...EVENING, drop: { teams: n } });
+      expect(viewText(p)).toContain(ROUND_GUEST.dropped(GUESTS.gull, n));
+      expect(viewText(p)).toContain(`**${n}** ทีม`);
+    }
+    const none = shown("20:25", { ...EVENING, drop: { teams: 0 } });
+    expect(viewText(none)).toContain(ROUND_GUEST.dropped(GUESTS.gull, 0));
+    expect(customIds(none)).toEqual(["sq|rd_close", "sq|rd_aim", `sq|rd_guest|${NIGHT}`, "sq|rd_long|1"]);
+  });
+
+  it("a staff night: the rest names the staff who are the guest, then says they came tonight (never that they are still here)", () => {
+    const staff: Evening = { ...EVENING, guest: STAFF_GUEST, staffNames: ["Ann", "Ben"] };
+    const g = staffGuest(["Ann", "Ben"]);
+    const arriving = viewText(shown("19:25", staff));
+    expect(arriving).toContain("🌟 คืนนี้ Ann และ Ben มาเป็นแขกที่กองไฟ");
+    expect(arriving).toContain(g.brought!);
+    expect(arriving).toContain(ROUND_GUEST.sit(EVENING.dropEnd));
+    for (const k of Object.values(GUESTS)) expect(arriving).not.toContain(k.arrive);
+    const later = viewText(shown("20:25", { ...staff, drop: { teams: 1 } }));
+    expect(later).toContain(g.still);
+    expect(later).toContain("🎁 Ann และ Ben ทิ้งของไว้ให้ **1** ทีม");
+  });
+
+  it("a guest that turns into staff mid-rest is a new key: the round message is edited to name them", () => {
+    const at = roundAtTime("19:25");
+    const staff: Evening = { ...EVENING, guest: STAFF_GUEST, staffNames: ["Ann"] };
+    expect(roundKey(at, staff)).not.toBe(roundKey(at, EVENING));
+    expect(roundKey(at, { ...staff, staffNames: ["Ann", "Ben"] })).not.toBe(roundKey(at, staff));
+  });
+
+  it("leaves 18:55, 21:00 onward, guest-less nights and no evening exactly as before", () => {
+    for (const time of ["18:30", "18:55", "21:00", "21:25", "21:30"]) {
+      expect(shown(time)).toEqual(shown(time, null));
+    }
+    expect(shown("19:25", { ...EVENING, guest: null })).toEqual(shown("19:25", null));
+    expect(viewText(shown("19:00", null))).not.toContain(ROUND_GUEST.teaser);
+  });
+});
+
+/**
+ * A voice channel's chat that records what the loop does. Never the real
+ * cohort calendar here (TEN falls in a SHIFT round's week): a test day is no
+ * SHIFT round unless a test says so.
+ */
+function world(start = TEN, evening?: () => Evening | null, inSession: (day: string) => boolean = () => false) {
   let now = start;
   let sitters = 0;
   let room: string | null = "700000000000000001";
@@ -198,6 +318,8 @@ function world(start = TEN) {
       }
       return true;
     },
+    ...(evening ? { evening } : {}),
+    inSession,
   };
   const loop = startRounds({} as Client, { status: () => ({ channel: room, sitters }) }, deps);
   return {
@@ -394,6 +516,20 @@ describe("startRounds", () => {
     expect(isLongRounds()).toBe(false);
   });
 
+  it("in a SHIFT cohort week the round it posts never says nobody counts your time", async () => {
+    const days: string[] = [];
+    const w = world(TEN, undefined, (day) => {
+      days.push(day);
+      return true;
+    });
+    open.push(w);
+    w.sit(1);
+    await w.loop.tick();
+    expect(days).toContain("2026-11-13");
+    expect(w.posted[0].text).toContain(R.focusTitle);
+    expect(w.posted[0].text).not.toContain("นับเวลา");
+  });
+
   it("posts nothing while nobody sits at the fire", async () => {
     const w = make();
     await w.loop.tick();
@@ -463,6 +599,36 @@ describe("startRounds", () => {
     await w.loop.stop();
     expect(w.log.at(-1)).toBe("delete m3");
   });
+
+  it("a guest learned late (the drop's count, or the call loop's first read after a restart) costs exactly one edit", async () => {
+    let evening: Evening | null = null;
+    const w = world(LIT + 25 * MIN + 10_000, () => evening);
+    open.push(w);
+    w.sit(1);
+    await w.loop.tick();
+    expect(w.log).toEqual(["delete m1", "send m3"]);
+    evening = EVENING;
+    await w.loop.tick();
+    await w.loop.tick();
+    expect(w.log.slice(2)).toEqual(["edit m3"]);
+    evening = { ...EVENING, drop: { teams: 2 } };
+    await w.loop.tick();
+    await w.loop.tick();
+    expect(w.log.slice(2)).toEqual(["edit m3", "edit m3"]);
+    expect(w.posted[0].text).toContain(ROUND_GUEST.dropped(GUESTS.gull, 2));
+    // Round messages never ping, sent or edited.
+    expect(w.posted[0].text).toContain('"allowedMentions":{"parse":[]}');
+  });
+
+  it("an evening that throws is no evening: the rounds go on", async () => {
+    const w = world(TEN, () => {
+      throw new Error("boom");
+    });
+    open.push(w);
+    w.sit(1);
+    await w.loop.tick();
+    expect(w.log).toEqual(["delete m1", "send m3"]);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -520,6 +686,7 @@ function interaction(kind: "button" | "modal", fields: Record<string, string> = 
       sent.push({ how: "deferReply", payload });
     },
     editReply: async (payload: unknown) => sent.push({ how: "editReply", payload }),
+    followUp: async (payload: unknown) => sent.push({ how: "followUp", payload }),
     update: async (payload: unknown) => sent.push({ how: "update", payload }),
     deferUpdate: async () => sent.push({ how: "deferUpdate", payload: null }),
     showModal: async (m: { toJSON: () => { custom_id?: string } }) => modals.push(m.toJSON()),
@@ -741,6 +908,132 @@ describe("the encounter's button", () => {
   });
 });
 
+
+describe("the evening guest's 🎁 check", () => {
+  const DAY = "2026-11-18";
+  const GIFT = "3f1c2a64-1d2b-4c3d-9e8f-0a1b2c3d4e53";
+  const status = (over: Record<string, unknown>) => ({ day: DAY, guest: "boat", looks: ["leaf:seaglass", "bark:driftwood"], ...over });
+  const press = async (answer: unknown, day = DAY) => {
+    const c = ctx((fn) => {
+      if (fn === "shift_quest_schema_version") return 21;
+      if (fn === "shift_quest_guest_status") {
+        if (answer instanceof Error) throw answer;
+        return answer;
+      }
+      if (fn === "shift_quest_tree_get") {
+        return {
+          seed: "oak",
+          equipped: {},
+          owned: ["shape:round", "leaf:forest", "bark:oak", "bloom:cream"],
+          gifts: [{ id: GIFT, options: ["leaf:seaglass"] }],
+          roots: {},
+          stage: 1,
+        };
+      }
+      return null;
+    });
+    const b = interaction("button");
+    await ACTION_HANDLERS.get("rd_guest")!(b.i, c, [day]);
+    return { b, c };
+  };
+
+  it("won, with the gift waiting: says what the guest left, privately, then the team's gift card to take it", async () => {
+    const { b, c } = await press(status({ state: "won", look: "leaf:seaglass", gift: { id: GIFT, options: ["leaf:seaglass"] } }));
+    expect(calls(c)[0]).toEqual(["shift_quest_guest_status", "1111111111"]);
+    expect(b.sent.map((x) => x.how)).toEqual(["deferReply", "editReply", "followUp"]);
+    expect((b.sent[0].payload as { flags: number }).flags & MessageFlags.Ephemeral).toBeTruthy();
+    const reveal = viewText(b.sent[1].payload as never);
+    expect(reveal).toContain(REVEAL.wonTitle(GUESTS.boat));
+    expect(reveal).toContain("แก้วทะเล");
+    expect(reveal).toContain(REVEAL.wonWaiting);
+    const card = b.sent[2].payload as never;
+    expect(viewText(card)).toContain(REVEAL.heading(GUESTS.boat));
+    expect(customIds(card)).toContain(`sq|tr_pick|${GIFT}|0`);
+    expect((card as { flags: number }).flags & MessageFlags.Ephemeral).toBeTruthy();
+  });
+
+  it("won and already taken: says so, no gift card", async () => {
+    const { b } = await press(status({ state: "won", look: "leaf:seaglass", gift: null }));
+    expect(b.sent.map((x) => x.how)).toEqual(["deferReply", "editReply"]);
+    expect(viewText(b.sent[1].payload as never)).toContain(REVEAL.wonTaken);
+  });
+
+  it.each([
+    ["lost", REVEAL.lostTitle(GUESTS.boat), REVEAL.lost],
+    ["full", REVEAL.fullTitle(GUESTS.boat), REVEAL.full(GUESTS.boat)],
+    ["away", REVEAL.awayTitle(GUESTS.boat), REVEAL.away],
+    // Settled, the bot missed more than a minute of the rest, and never saw the team: never "away".
+    ["unseen", REVEAL.unseenTitle(GUESTS.boat), REVEAL.unseen],
+    ["arriving", REVEAL.arrivingTitle, REVEAL.arriving],
+    // Settled with the room never read during the rest (the bot was away): never "your team was not there".
+    ["quiet", REVEAL.quietTitle(GUESTS.boat), REVEAL.quiet],
+    ["noplot", REVEAL.awayTitle(GUESTS.boat), REVEAL.noPlot],
+  ])("%s: a warm private line about the presser's own team, never a name", async (state, title, line) => {
+    const { b } = await press(status({ state }));
+    const text = viewText(b.sent[1].payload as never);
+    expect(text).toContain(title);
+    expect(text).toContain(line);
+    expect(text).not.toMatch(/พลาด|ยังไม่ได้/);
+    expect(b.sent.map((x) => x.how)).toEqual(["deferReply", "editReply"]);
+    if (state === "noplot") expect(customIds(b.sent[1].payload as never)).toEqual(["sq|is_claim"]);
+  });
+
+  it("a staff night: the private answer and the gift card name the staff who were the guest, and their looks", async () => {
+    const staff = (over: Record<string, unknown>) =>
+      status({ guest: STAFF_GUEST, staff_names: ["Ann"], looks: ["leaf:ember", "bloom:starlit"], ...over });
+    const { b } = await press(staff({ state: "won", look: "leaf:ember", gift: { id: GIFT, options: ["leaf:ember"] } }));
+    const reveal = viewText(b.sent[1].payload as never);
+    expect(reveal).toContain("🎁 Ann ทิ้งของไว้ให้ทีมคุณ");
+    expect(reveal).toContain("ถ่านไฟแดง");
+    expect(reveal).toContain(REVEAL.fine);
+    expect(viewText(b.sent[2].payload as never)).toContain("ของจาก Ann");
+    const lost = viewText(renderView(guestReveal(staff({ state: "lost" }), DAY)));
+    expect(lost).toContain("🌟 คืนนี้ Ann แค่แวะมาทักทายทีมคุณ");
+    expect(lost).toContain(REVEAL.looks(["สีใบ ถ่านไฟแดง", "ดอก แสงดาว"]));
+    // Unnamed staff (no display name on record): still the staff's night.
+    expect(viewText(renderView(guestReveal(staff({ state: "away", staff_names: [] }), DAY)))).toContain("พี่ทีม SHIFT");
+  });
+
+  it("unseen never reads as away: the bot says it could not see the fire for a while", () => {
+    const text = viewText(renderView(guestReveal(status({ state: "unseen" }), DAY)));
+    expect(text).toContain(REVEAL.unseen);
+    expect(text).not.toContain(REVEAL.away);
+    expect(text).toContain(REVEAL.looks(["สีใบ แก้วทะเล", "เปลือกไม้ ไม้ลอยน้ำ"]));
+  });
+
+  it("lists what the guest brought on a night without a look", () => {
+    expect(viewText(renderView(guestReveal(status({ state: "lost" }), DAY)))).toContain(REVEAL.looks(["สีใบ แก้วทะเล", "เปลือกไม้ ไม้ลอยน้ำ"]));
+  });
+
+  it("answers that the guest has gone: an old button, a gone night, or a database without the guest (42883)", async () => {
+    const answers: [unknown, string][] = [
+      [status({ state: "won", look: "leaf:seaglass" }), "2026-11-17"],
+      [{ state: "gone", day: DAY }, DAY],
+      [new QuestDbError("shift_quest_guest_status", "42883"), DAY],
+      [status({ state: "won", guest: "dragon" }), DAY],
+    ];
+    for (const [answer, day] of answers) {
+      const { b } = await press(answer, day);
+      expect(viewText(b.sent[1].payload as never)).toContain(REVEAL.goneTitle);
+      expect(b.sent.map((x) => x.how)).toEqual(["deferReply", "editReply"]);
+    }
+    await expect(press(new QuestDbError("shift_quest_guest_status", "08006"))).rejects.toThrow();
+  });
+
+  it("ignores a forged day, and is for students who have started", async () => {
+    for (const day of ["", "tonight", "2026-11-1"]) {
+      const { b, c } = await press(status({ state: "lost" }), day);
+      expect([b.sent, calls(c)]).toEqual([[], []]);
+    }
+    const c = ctx();
+    c.session = { ...c.session, member_id: null, onboarded: false };
+    await expect(ACTION_HANDLERS.get("rd_guest")!(interaction("button").i, c, [DAY])).rejects.toThrow(T.notStarted);
+  });
+
+  it("keeps the check's button under Discord's limits", () => {
+    expect(CALL.btnCheck.length).toBeLessThanOrEqual(80);
+  });
+});
 
 describe("island reflections", () => {
   it("opens the shared learned and optional stuck form", async () => {

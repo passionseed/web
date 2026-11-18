@@ -9,6 +9,7 @@ import {
   missingTitles,
   proposedTileStatus,
   sideTileStatus,
+  starterQuest,
   type BoardRef,
 } from "@/lib/supabase/shift-quests/board";
 import { COMMUNITY_RULE_SLUGS } from "@/lib/content/shift-island-economy";
@@ -162,6 +163,30 @@ export function questView(board: QuestBoard, ref: BoardRef): QuestView | null {
   };
 }
 
+/** Which KEYNOTE line a quest gets: start (nothing open yet), waiting (with a mentor), or next. */
+export type KeynoteMode = "start" | "waiting" | "next";
+
+export function keynoteMode(keynote: BoardRef | null, status: TileStatus): KeynoteMode {
+  if (!keynote) return "start";
+  return status === "submitted" ? "waiting" : "next";
+}
+
+/** The quest a day's check-in is about: the keynote quest, or with nothing open the starter. */
+export interface TodayQuest {
+  ref: BoardRef;
+  title: string;
+  mode: KeynoteMode;
+  /** The caller's own instance, so the day's line is filed under it. Null before anything is started. */
+  instanceId: string | null;
+}
+
+export function todayQuest(board: QuestBoard, keynote: BoardRef | null): TodayQuest | null {
+  const ref = keynote ?? starterQuest(board);
+  const view = ref ? questView(board, ref) : null;
+  if (!ref || !view) return null;
+  return { ref, title: view.title, mode: keynoteMode(keynote, view.status), instanceId: keynote ? view.instanceId : null };
+}
+
 /** What the detail sheet shows under the quest: a submit form, or a reason there is none. */
 export type DetailAction =
   /** submittedWaiting: the work is with a mentor; the form stays behind a quiet "send a new version". */
@@ -223,4 +248,60 @@ export function sideGroups<T extends { branch_of: number | null }>(side: T[]): {
   return [...groups.entries()]
     .sort(([a], [b]) => (a ?? 99) - (b ?? 99))
     .map(([branchOf, items]) => ({ branchOf, items }));
+}
+
+/**
+ * Where the student's own work on a quest stands, for the quest page's five
+ * dots (DETAIL.stepper: เริ่ม, ทำ, ส่ง, พี่เลี้ยงดู, ผ่าน), as the index of the
+ * current dot. Null where the dots would mislead: a locked quest, one a
+ * teammate holds, a closed proposal.
+ */
+export function questStage(q: QuestView): number | null {
+  switch (q.status) {
+    case "available":
+      return q.mine ? 1 : 0;
+    case "active":
+    case "paused":
+    case "clarification":
+    case "declined":
+      return q.kind === "proposed" && q.status === "declined" ? null : 1;
+    case "submitted":
+    case "appealed":
+      return 3;
+    case "done":
+      return 4;
+    default:
+      return null;
+  }
+}
+
+/**
+ * The quest page's sticky bar: always exactly one thing, so every state has a
+ * way forward. start: take the quest on. send / resend: write or show the
+ * work (resend after a mentor asked for more). resume: wake a paused quest.
+ * waiting: words only, the work is with a mentor or in appeal. next: this
+ * quest needs nothing more (passed, closed). open: this quest cannot be done
+ * now (locked, a teammate holds it), so go to the one that can.
+ */
+export type QuestBar = "start" | "send" | "resend" | "resume" | "waiting" | "next" | "open";
+
+export function questBar(q: QuestView, action: DetailAction): QuestBar {
+  switch (action.kind) {
+    case "form":
+      if (action.note === "submittedWaiting") return "waiting";
+      // Passed and repeatable: moving on is the step; sending again stays a quiet link in the page.
+      if (action.note === "doneRepeat") return "next";
+      if (canStart(q) && q.ref.kind !== "proposed") return "start";
+      return action.resubmit ? "resend" : "send";
+    case "paused":
+      return "resume";
+    case "appealed":
+      return "waiting";
+    case "done":
+    case "closed":
+      return "next";
+    case "locked":
+    case "held":
+      return "open";
+  }
 }

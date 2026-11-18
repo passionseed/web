@@ -16,12 +16,25 @@
  * and which moment, follow from the round number alone, so a restart shows
  * the same one and everyone at the fire sees the same lines.
  *
+ * On a night with an evening guest (schema 21, call.ts), the 19:00 focus
+ * round carries a teaser, and from the first rest (19:25) to 21:00 the round
+ * messages carry the guest instead of any encounter: its arrival on that
+ * rest with who counts (anyone who sits at the fire until 19:30), then that
+ * it is still here, and once the night is settled how many teams it left a
+ * look for (never which) with the private 🎁 check (rd_guest). On a staff
+ * night (the founder or a mentor sat at the fire during the rest) the guest
+ * is them, by display name, from the check that saw them on: the message is
+ * edited when the guest changes. The evening comes from the call loop's
+ * cache (deps.evening); without it the rounds are as before.
+ *
  * Design: docs/superpowers/specs/2026-11-13-shift-campfire-rounds-roots-design.md.
  */
 import type { Client, Message } from "discord.js";
 
 import { FOCUS_MINUTES, REST_MINUTES } from "@/lib/shift-island/rounds-rules";
+import { roundsInSession } from "@/lib/shift/voiceWindow";
 
+import { ROUND_GUEST, CALL, guestOf, type GuestKey } from "./callCopy";
 import type { Campfire } from "./campfire";
 import { MUSIC_LATE_MS } from "./chime";
 import { cid } from "./ids";
@@ -136,31 +149,120 @@ function longButton(at: RoundAt) {
   return button(cid("rd_long", at.long ? 0 : 1), at.long ? R.btnShort : R.btnLong);
 }
 
-/** The round's message: the same for everyone at the fire. */
-export function roundView(at: RoundAt): View {
+/**
+ * Tonight's evening, as the call loop last read it (call.ts evening()): the
+ * Bangkok day, its guest, the clock in unix seconds, and once the night is
+ * settled how many teams got a look. Null on a night without a call (or a
+ * SHIFT cohort day, when the call pauses).
+ */
+export interface Evening {
+  day: string;
+  /** Null on a night without a guest (no active season): the call runs, the rounds stay as they are. */
+  guest: GuestKey | null;
+  /** On a staff night: the display names of up to two staff who are the guest. */
+  staffNames?: readonly string[];
+  /** 19:00 Bangkok: the first focus round. */
+  litAt: number;
+  /** 19:25 Bangkok: the first rest, when the guest arrives; anyone at the fire from now counts. */
+  guestFrom: number;
+  /** 19:30 Bangkok: that rest ends, and the night's rolls are made. */
+  dropEnd: number;
+  /** 21:00 Bangkok: the guest leaves. */
+  guestUntil: number;
+  /** Once the night is settled: how many teams the guest left a look for. Null before. */
+  drop: { teams: number } | null;
+}
+
+/** What a round shows of the evening: the teaser, the guest, or nothing. */
+type GuestPart =
+  | { kind: "teaser" }
+  | {
+      kind: "guest";
+      key: GuestKey;
+      names: string[];
+      arriving: boolean;
+      day: string;
+      dropEnd: number;
+      drop: { teams: number } | null;
+    }
+  | null;
+
+/** The evening's part of a round, by when the round's own phase starts. */
+export function guestPart(at: RoundAt, evening: Evening | null | undefined): GuestPart {
+  if (!evening?.guest) return null;
+  const startsAt = phaseStartedAt(at);
+  if (at.phase === "focus" && startsAt === evening.litAt) return { kind: "teaser" };
+  if (startsAt < evening.guestFrom || startsAt >= evening.guestUntil) return null;
+  return {
+    kind: "guest",
+    key: evening.guest,
+    names: [...(evening.staffNames ?? [])],
+    arriving: startsAt === evening.guestFrom,
+    day: evening.day,
+    dropEnd: evening.dropEnd,
+    drop: evening.drop ?? null,
+  };
+}
+
+/** What makes a round's message change: its round, its phase, its rhythm, and the evening's part of it. */
+export function roundKey(at: RoundAt, evening: Evening | null | undefined): string {
+  return JSON.stringify([at.round, at.phase, at.long, guestPart(at, evening)]);
+}
+
+/**
+ * The guest's lines on a round message: on its rest, who counts until the
+ * night is settled; once settled, how many teams got a look and the private
+ * 🎁 check (no button before: there is nothing to check yet).
+ */
+function guestLines(part: Extract<GuestPart, { kind: "guest" }>): { text: string; button: ReturnType<typeof button> | null } {
+  const g = guestOf(part.key, part.names);
+  const lines = [part.arriving ? g.arrive : g.still];
+  if (part.drop) lines.push(ROUND_GUEST.dropped(g, part.drop.teams));
+  else if (part.arriving) lines.push(ROUND_GUEST.sit(part.dropEnd));
+  return { text: lines.join("\n"), button: part.drop ? button(cid("rd_guest", part.day), CALL.btnCheck) : null };
+}
+
+/**
+ * The round's message: the same for everyone at the fire. In a SHIFT cohort
+ * week (opts.cohortWeek) shift-voice records voice time in every voice
+ * channel for that round's students, the campfire included, so the focus
+ * round drops "nobody counts your time" (R.focusFineCohort).
+ */
+export function roundView(at: RoundAt, evening: Evening | null = null, opts: { cohortWeek?: boolean } = {}): View {
+  const part = guestPart(at, evening);
+  const guest = part?.kind === "guest" ? guestLines(part) : null;
   if (at.phase === "focus") {
+    const buttons = [button(cid("rd_aim"), R.btnAim, ButtonStyle.Primary)];
+    if (guest?.button) buttons.push(guest.button);
+    buttons.push(longButton(at));
     return {
       tone: "island",
       title: at.long ? R.focusTitleLong : R.focusTitle,
       blocks: [
         { kind: "text", text: R.focus(at.restAt) },
-        { kind: "subtext", text: `${R.focusFine}${at.long ? `\n${R.longFine}` : ""}\n${ROUND_MARKER}` },
+        ...(part?.kind === "teaser" ? [{ kind: "text", text: ROUND_GUEST.teaser } as const] : []),
+        ...(guest ? [{ kind: "divider" } as const, { kind: "text", text: guest.text } as const] : []),
+        { kind: "subtext", text: `${guest ? `${ROUND_GUEST.fine}\n` : ""}${opts.cohortWeek ? R.focusFineCohort : R.focusFine}${at.long ? `\n${R.longFine}` : ""}\n${ROUND_MARKER}` },
       ],
-      rows: buttonRows([button(cid("rd_aim"), R.btnAim, ButtonStyle.Primary), longButton(at)]),
+      rows: buttonRows(buttons),
     };
   }
   const tip = R.tips[((at.round % R.tips.length) + R.tips.length) % R.tips.length];
-  const encounter = encounterAt(at.round);
+  // The guest's stay replaces the encounters: one moment per rest.
+  const encounter = guest ? null : encounterAt(at.round);
   const buttons = [button(cid("rd_close"), R.btnClose, ButtonStyle.Success), button(cid("rd_aim"), R.btnAim)];
   if (encounter) buttons.push(button(cid("rd_enc", at.round), encounter.button));
+  if (guest?.button) buttons.push(guest.button);
   buttons.push(longButton(at));
+  const moment = guest?.text ?? encounter?.text;
+  const fine = guest ? `${ROUND_GUEST.fine}\n` : encounter ? `${R.encounterFine}\n` : "";
   return {
     tone: "island",
     title: at.long ? R.restTitleLong : R.restTitle,
     blocks: [
       { kind: "text", text: R.rest(tip, at.nextAt) },
-      ...(encounter ? [{ kind: "divider" } as const, { kind: "text", text: encounter.text } as const] : []),
-      { kind: "subtext", text: `${encounter ? `${R.encounterFine}\n` : ""}${R.restFine}\n${ROUND_MARKER}` },
+      ...(moment ? [{ kind: "divider" } as const, { kind: "text", text: moment } as const] : []),
+      { kind: "subtext", text: `${fine}${R.restFine}\n${ROUND_MARKER}` },
     ],
     rows: buttonRows(buttons),
   };
@@ -187,6 +289,10 @@ export interface RoundDeps {
   chime?: (channelId: string, kind: Phase) => void;
   /** Starts the rest music in the voice channel (chime.ts); fire and forget. False: not taken, try again next tick. */
   restMusic?: (plan: { channelId: string; startAt: number; endAt: number; long: boolean; stillWanted: () => boolean }) => boolean | void;
+  /** Tonight's evening (the call loop's cache, call.ts), or null: the guest on the round messages. */
+  evening?: (nowMs: number) => Evening | null;
+  /** Whether a SHIFT cohort round is in session on a Bangkok day (default: the calendar shift-voice uses, roundsInSession). */
+  inSession?: (day: string) => boolean;
 }
 
 /** A phase change older than this is not chimed: someone sat down mid-round, or the bot restarted. */
@@ -210,6 +316,16 @@ export function startRounds(client: Client, campfire: Pick<Campfire, "status">, 
     if (!deps.chime || now() - phaseStartedAt(at) * 1000 > CHIME_FRESH_MS) return;
     deps.chime(room, at.phase);
   };
+  const inSession = deps.inSession ?? ((day: string) => roundsInSession(day).size > 0);
+  /** Whether nowMs falls in a SHIFT cohort week (Bangkok day): a round starts on :00 or :30, so never changes within one. */
+  const cohortAt = (nowMs: number): boolean => inSession(new Date(nowMs + 7 * 3600_000).toISOString().slice(0, 10));
+  const eveningAt = (nowMs: number): Evening | null => {
+    try {
+      return deps.evening?.(nowMs) ?? null;
+    } catch {
+      return null;
+    }
+  };
   const channelOf =
     deps.channelOf ??
     ((id: string): RoundChannel | null => {
@@ -218,8 +334,8 @@ export function startRounds(client: Client, campfire: Pick<Campfire, "status">, 
       return found as unknown as RoundChannel;
     });
 
-  /** The round message this process posted, and what it shows. */
-  let current: { message: Message; channel: string; round: number; phase: Phase; long: boolean } | null = null;
+  /** The round message this process posted, and what it shows (key: roundKey). */
+  let current: { message: Message; channel: string; round: number; phase: Phase; long: boolean; key: string } | null = null;
   /** The rest whose music was started ("channel:long:round"), so it starts once. */
   let musicFor = "";
   /** When the fire was last seen empty, for going back to the normal rhythm. */
@@ -261,16 +377,17 @@ export function startRounds(client: Client, campfire: Pick<Campfire, "status">, 
   async function step(): Promise<void> {
     if (stopped) return;
     const { channel: room, sitters } = campfire.status();
+    const nowMs = now();
     const pressed = longPressed;
     longPressed = false;
     if (!room || sitters === 0) {
       // A press while the fire is empty counts as someone there just now.
-      emptySince = pressed ? now() : (emptySince ?? now());
-      if (longFire && now() - emptySince >= LONG_RESET_MS) longFire = false;
+      emptySince = pressed ? nowMs : (emptySince ?? nowMs);
+      if (longFire && nowMs - emptySince >= LONG_RESET_MS) longFire = false;
     } else {
       emptySince = null;
     }
-    const at = roundAt(now(), longFire);
+    const at = roundAt(nowMs, longFire);
     if (!room || sitters === 0) {
       // Nobody at the fire: the round's message goes once the round it shows is over.
       if (current && (current.round !== at.round || current.channel !== room)) await remove();
@@ -282,14 +399,17 @@ export function startRounds(client: Client, campfire: Pick<Campfire, "status">, 
       return;
     }
     music(room, at);
+    const evening = eveningAt(nowMs);
+    const key = roundKey(at, evening);
+    const view = () => ({ ...renderView(roundView(at, evening, { cohortWeek: cohortAt(nowMs) }), { ephemeral: false }), allowedMentions: { parse: [] } });
     if (current && current.channel === room && current.long !== at.long) {
       // The rhythm changed (⏳): redraw the same message. No chime, unless the
       // switch itself moved the fire into another phase: that is a phase start.
       // No music for a rest begun this way: the track would be cut off mid-way.
       try {
         const was = current.phase;
-        await current.message.edit(renderView(roundView(at), { ephemeral: false }));
-        Object.assign(current, { round: at.round, phase: at.phase, long: at.long });
+        await current.message.edit(view());
+        Object.assign(current, { round: at.round, phase: at.phase, long: at.long, key });
         if (was !== at.phase) deps.chime?.(room, at.phase);
       } catch (error) {
         warnOnce(`edit:${codeOf(error)}`, `[shift-quests] rounds: edit failed (${codeOf(error)})`);
@@ -298,11 +418,13 @@ export function startRounds(client: Client, campfire: Pick<Campfire, "status">, 
       return;
     }
     if (current && current.channel === room && current.round === at.round) {
-      if (current.phase === at.phase) return;
+      // The same round: an edit only when it shows something new (the rest, or the guest learned late).
+      if (current.key === key) return;
       try {
-        await current.message.edit(renderView(roundView(at), { ephemeral: false }));
-        current.phase = at.phase;
-        chime(room, at);
+        const was = current.phase;
+        await current.message.edit(view());
+        Object.assign(current, { phase: at.phase, key });
+        if (was !== at.phase) chime(room, at);
       } catch (error) {
         warnOnce(`edit:${codeOf(error)}`, `[shift-quests] rounds: edit failed (${codeOf(error)})`);
         // The message is gone (deleted by hand): post anew next tick. Any other
@@ -315,8 +437,8 @@ export function startRounds(client: Client, campfire: Pick<Campfire, "status">, 
     await remove();
     await sweep(channel);
     try {
-      const message = await channel.send({ ...renderView(roundView(at), { ephemeral: false }), allowedMentions: { parse: [] } });
-      current = { message, channel: room, round: at.round, phase: at.phase, long: at.long };
+      const message = await channel.send(view());
+      current = { message, channel: room, round: at.round, phase: at.phase, long: at.long, key };
       warned = "";
       chime(room, at);
     } catch (error) {

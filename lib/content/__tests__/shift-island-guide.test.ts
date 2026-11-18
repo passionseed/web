@@ -10,6 +10,7 @@ import {
   GUIDE_CAMPFIRE,
   GUIDE_CLOSEUP,
   GUIDE_GROWTH,
+  GUIDE_PRIVACY,
   GUIDE_ROOTS,
   GUIDE_SEED,
   GUIDE_STAGE_NAMES,
@@ -81,6 +82,50 @@ describe("shift island guide copy", () => {
     expect(privacy).not.toContain("แชร์กับทีม");
     // The real help button (🙋, T.btnSendBlocker in the bot), not the ownership checklist's 🆘.
     expect(privacy).toContain("🙋");
+  });
+
+  it("explains the campfire call and the evening guest truthfully: once per team, never who sat there", () => {
+    const campfire = GUIDE_CAMPFIRE.lines.join(" ");
+    expect(campfire).toContain("ห้องข่าวเกาะ");
+    expect(campfire).toContain("ทีมละครั้ง");
+    expect(campfire).toContain("มากี่คนก็ลุ้นเท่ากัน");
+    expect(campfire).not.toMatch(/พลาด|ยังไม่ได้/);
+    const privacy = GUIDE_PRIVACY.lines.join(" ");
+    expect(privacy).toContain("ไม่เก็บว่าใครในทีมนั่ง");
+    expect(privacy).toContain("ลบทันทีเมื่อคุณออก");
+  });
+
+  it("says who counts for the guest (anyone at the fire during its rest), that the count of teams shows, and that the call pauses in SHIFT weeks", () => {
+    const campfire = GUIDE_CAMPFIRE.lines.join(" ");
+    expect(campfire).toContain("19:25 ถึง 19:30");
+    expect(campfire).not.toContain("ตอนแขกมาถึง");
+    expect(campfire).toContain("กี่ทีม");
+    expect(campfire).toContain("เว้นสัปดาห์ที่มีรอบ SHIFT");
+    // The database keeps which teams sat there, never who or when.
+    expect(GUIDE_PRIVACY.lines.join(" ")).toContain("ไม่เก็บว่าใครในทีมนั่งหรือนั่งตอนไหน");
+  });
+
+  it("keeps SHIFT weeks out of its promises: no guest then, and voice time is recorded for that round's students", () => {
+    // The bot pauses the call and the guest while a SHIFT round is in session (bot/src/quests/call.ts cohortWeek).
+    const guest = GUIDE_CAMPFIRE.lines.find((line) => line.includes("19:25 ถึง 19:30"));
+    expect(guest).toContain("เว้นสัปดาห์ที่มีรอบ SHIFT");
+    // shift-voice records voice time in every channel for that round's students, the campfire included.
+    const minutes = GUIDE_CAMPFIRE.privacy.find((line) => line.includes("กี่นาที"));
+    expect(minutes).toContain("สัปดาห์ที่มีรอบ SHIFT");
+    expect(minutes).toContain("บันทึกเวลาในห้องเสียง");
+  });
+
+  it("never promises more privacy than the guest's drop keeps", () => {
+    const privacy = GUIDE_PRIVACY.lines.join(" ");
+    // A team of one: the team's result is that student's, until the next day.
+    expect(privacy).not.toContain("เก็บแค่ว่าทีมไหนได้ลุ้น");
+    expect(privacy).toContain("ถ้าทีมมีคุณคนเดียว");
+    // A won look is a gift that stays with the team, with its date.
+    expect(privacy).toContain("พร้อมวันที่ได้");
+    // A picked look shows on a shown team's tree: the bot only never announces which team.
+    const campfire = GUIDE_CAMPFIRE.lines.join(" ");
+    expect(campfire).not.toContain("ไม่มีใครเห็นว่าทีมไหนได้");
+    expect(campfire).toContain("ไม่ประกาศว่าทีมไหนได้");
   });
 
   it("lists the stages as the game names them, with the seed before stage 1", () => {

@@ -12,12 +12,17 @@ export const maxDuration = 60;
 const RUN_BUDGET_MS = 30_000;
 
 /**
- * Daily at 20:00 Bangkok (vercel.json): the AI island news (ข่าวเกาะ) for
- * SHIFT High. Writes one short Thai summary per eligible team for today,
- * plus the weekly recap on Sundays, through the web role's
+ * Daily at 18:00 Bangkok (vercel.json, "0 11 * * *" UTC): the AI island news
+ * (ข่าวเกาะ) for SHIFT High. Writes one short Thai summary per eligible team
+ * for today, plus the weekly recap on Sundays, through the web role's
  * shift_quest_digest_inputs and shift_quest_digest_save. Nothing runs while
  * digest_enabled is off. Without ANTHROPIC_API_KEY it logs why and stores
  * nothing; the island, the bot and everything else keep working.
+ *
+ * 18:00 so the summaries are stored before the bot's nightly island news card
+ * goes out at 20:00 (bot/src/quests/news.ts): a Hobby cron fires anywhere in
+ * its hour. A late or re-run job is edited into that same card within 5
+ * minutes, never a second post.
  */
 export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;

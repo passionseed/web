@@ -45,6 +45,7 @@ import {
   chooseSideQuestSchema,
   createProjectSchema,
   findProjectFriendsSchema,
+  intentionSchema,
   inviteFriendSchema,
   linkCanvasSchema,
   loadQuestCanvasSchema,
@@ -188,28 +189,70 @@ export async function respondInvite(input: { projectId: string; accept: boolean 
   });
 }
 
-/** The daily tap (no note), or a private one-line note. Neither grows the tree. */
+/**
+ * The day's check-in, made before the work: the day's tap and, when given, a
+ * private intention (what the student means to do), saved as the journal's
+ * next step under their own quest instance. It never grows the tree's stage.
+ *
+ * Two calls, not one transaction, so the order keeps a retry safe: the tap
+ * first, and the intention only once the tap is in. A refused tap saves
+ * nothing, so trying again cannot leave a stray or doubled intention. Once
+ * the tap is in, the check-in counts even if the intention then fails: that
+ * failure is logged by its code and answered as intentionSaved: false, which
+ * the card may ignore (the card shows the day as done, so there is no retry
+ * that could tap twice).
+ */
 export async function checkIn(input?: {
-  note?: string | null;
-}): Promise<IslandActionResult<{ kind: "tap" | "note"; tapsToday: number }>> {
+  intention?: string | null;
+  instanceId?: string | null;
+}): Promise<IslandActionResult<{ tapsToday: number; intentionSaved?: boolean }>> {
   return withReadyViewer("checkIn", checkInSchema, input, async ({ actor }, v) => {
-    const row = await questApi().call<{ kind: "tap" | "note"; taps_today: number }>(
-      "shift_quest_checkin",
-      actor,
-      v.note
-    );
-    return { kind: row.kind === "note" ? "note" : "tap", tapsToday: Number(row.taps_today) || 0 };
+    const api = questApi();
+    const row = await api.call<{ taps_today: number }>("shift_quest_checkin", actor, null);
+    const tapsToday = Number(row.taps_today) || 0;
+    if (!v.intention) return { tapsToday };
+    try {
+      await fileIntention(api, actor, v.intention, v.instanceId);
+      return { tapsToday, intentionSaved: true };
+    } catch (error) {
+      console.error(`[shift-island] checkIn: intention not saved, the tap stands (${failureCode(error)})`);
+      return { tapsToday, intentionSaved: false };
+    }
   });
 }
 
-/** A private reflection, counted toward roots by the existing Bangkok-day rules. */
+/**
+ * What the student means to do today, private, filed under their own quest
+ * instance: the optional box inside the quest. The next-step card's tap is
+ * the check-in itself, so this never taps again.
+ */
+export async function keepIntention(input: {
+  intention: string;
+  instanceId?: string | null;
+}): Promise<IslandActionResult> {
+  return withReadyViewer("keepIntention", intentionSchema, input, async ({ actor }, v) => {
+    await fileIntention(questApi(), actor, v.intention, v.instanceId ?? null);
+    return null;
+  });
+}
+
+/** The day's intention as a private note's next_step, under the caller's own instance (never counted toward roots). */
+async function fileIntention(api: QuestApi, actor: string, intention: string, instanceId: string | null): Promise<void> {
+  await api.call("shift_quest_progress_add", actor, REFLECT.changed, null, intention, null, null, "private", instanceId);
+}
+
+/**
+ * A private reflection, counted toward roots by the existing Bangkok-day rules,
+ * filed under the caller's own quest instance when one is given.
+ */
 export async function reflect(input: {
   learned: string;
   stuck?: string | null;
+  instanceId?: string | null;
 }): Promise<IslandActionResult> {
   return withReadyViewer("reflect", reflectSchema, input, async ({ actor }, v) => {
     await questApi().call(
-      "shift_quest_progress_add", actor, REFLECT.changed, v.learned, null, v.stuck, null, "private", null
+      "shift_quest_progress_add", actor, REFLECT.changed, v.learned, null, v.stuck, null, "private", v.instanceId
     );
     return null;
   });

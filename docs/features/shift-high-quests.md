@@ -40,7 +40,9 @@ reply is ephemeral. Channel posts happen only for: help requests (the
 community help channel, or the staff channel for mentors-only requests),
 review and proposal notices (staff channel, title only), and celebrations,
 peer recognitions and coworking intentions after the author confirms a
-preview (and, for a recognition, after the peer accepts).
+preview (and, for a recognition, after the peer accepts). From schema 16 the
+celebrate channel also hears, unasked, when a mentor's approval of a main
+quest grows a team's tree (see "Tree grew post" below).
 
 The seven starter quests from the spec were seeded in Thai
 (`20261111090500_shift_quests_starter_templates.sql`) with no reward rule.
@@ -137,6 +139,19 @@ channel right now, for the island's campfire:
   make the channel private later, the campfire is synced empty at once,
   nothing per person is written while it stays closed, and the bot logs one
   warning with no names.
+- **The evening guest (schema 21)**: on every check of the guest's rest
+  (19:25 to 19:30 Bangkok) the bot passes the ids in the room to the
+  database; it keeps only which teams were there and, once settled, each
+  team's roll (one row per team and night: the team, the guest, the look or
+  none), never who sat there or when, and deletes those rows the next day
+  (for a team of one, the row is that student's until then). A won look is a
+  team gift kept with its date; an erasure that leaves the team empty deletes
+  both. `/data` exports the tree gifts the member earned, the team's guest
+  gifts (never a teammate's own gift) and its guest rows. On a
+  night the founder or a mentor sat at the fire during the rest, they are
+  the guest, and the night keeps up to two staff display names (never a
+  student's) until the next day or that staff member's erasure. See "The
+  campfire call and the evening guest" below.
 
 `/data` exports everything about the caller as JSON. An approved erasure
 (`/admin data`) deletes the journal, help requests, shares and notices,
@@ -293,8 +308,11 @@ post uses `shift_quest_island_post_map()`.
 
 **Check-ins.** `shift_quest_progress.kind` is `tap` (no words, one per member
 per Bangkok day, a second tap returns the first) or `note` (`changed`
-required). The journal (`/progress`) lists and edits notes only. The report
-counts taps; nothing else reads them.
+required). The journal (`/progress`) lists and edits notes only. Taps are
+only ever counted, never listed: by the report, by the plaza's visitors
+(schema 18) and by the nightly island news (schema 19), which shows how many
+members checked in island-wide, with no number for 1 or 2. A tap never grows
+a tree.
 
 **Season counting (wave 2).** One helper, `shift_quest__season_approvals`,
 decides every season number: demo-day bars, dated unlocks, the island goal,
@@ -457,9 +475,20 @@ counted from the progress journal at read time.
   a work session. It saves a private `shift_quest_progress_add` note; a filled
   blocker offers the separate help choice. A missing project at submit time
   shows the existing claim-plot card, so the note is not saved without a tree.
-  The web TodayCard remains a check-in only: `shift_quest_web` has no EXECUTE
-  grant for `shift_quest_progress_add` in the migration allowlists. Enabling
-  web reflections needs an explicit grant migration and privilege tests first.
+  On the web (`20261114100000_shift_quest_web_reflect` grants
+  `shift_quest_progress_add` to `shift_quest_web`), the check-in comes before
+  the work and is the next-step card's tap (`NextStepCard`, the island's gold
+  card): while the day is open, the first tap that leads to work saves the
+  day's tap quietly (`checkIn`) and opens the quest, with no screen in
+  between. Inside the quest the student is working on, a folded, optional
+  "วันนี้จะลงมือทำอะไร" (`DayIntention`, the `keepIntention` action) saves a
+  private intention as a note's `next_step` under their own quest instance
+  (not counted toward roots, and never a second tap). Back later the same day,
+  the card shows the intention (kept on the browser). One optional line on how
+  the work went (`RootsLine`), saved with `learned` so it counts toward roots,
+  sits in the tree sheet that tapping your own tree opens, under the roots.
+  ติดตรงไหน? is a quiet line under the quest page's checklist. A check-in never
+  changes the tree's stage.
 - **What is shown.** `shift_quest_island_roots()` (bot and website, no
   caller) returns `[{slot, roots}]` for drawn plots with roots above 0: level
   1 (1 to 4 counted), 2 (5 to 14) or 3 (15 or more). Never a count, a name,
@@ -702,18 +731,26 @@ reads and writes through `20261111090900_shift_quests_board.sql` and
 **The web role.** `shift_quest_web` is a login like `shift_quest_bot`:
 `NOINHERIT`, `statement_timeout` 8s, 20 connections, `USAGE` on `public`, no
 table privilege, no helper. Among the `shift_quest_*` functions it executes
-exactly this allowlist: `shift_quest_schema_version`, `_session`, `_start`,
-`_island`, `_island_map`, `_board`, `_checkin`, `_rest`, `_resume`,
-`_island_optin`, `_milestone_start`, `_milestone_submit`, `_side_choose`,
-`_side_submit`, `_propose`, `_submit`, `_help_create`, `_project_create`,
-`_project_list`, `_project_respond`, `_canvas_get`, `_canvas_link`,
-`_canvas_unlink`, `_ownership_get`, `_campfire` (schema 7),
-`_island_links` (schema 8), the player functions (schema 9) and
-`_island_roots` (schema 10), and `_island_my_roots` (schema 11). No review, staff, admin, outbox or data
-function. The migrations revoke every `shift_quest_*` function from it, then
-grant the list by full signature and stop if one is missing. `run-local.sh`
-(`check_privileges`), `web_board.ts` and `web_canvas.ts` hold the same list
-and fail on any extra or missing grant.
+exactly an allowlist. Up to schema 11 that was the student board:
+`shift_quest_schema_version`, `_session`, `_start`, `_island`, `_island_map`,
+`_board`, `_checkin`, `_rest`, `_resume`, `_island_optin`, `_milestone_start`,
+`_milestone_submit`, `_side_choose`, `_side_submit`, `_propose`, `_submit`,
+`_help_create`, `_project_create`, `_project_list`, `_project_respond`,
+`_canvas_get`, `_canvas_link`, `_canvas_unlink`, `_ownership_get`,
+`_campfire` (schema 7), `_island_links` (schema 8), the player functions
+(schema 9), `_island_roots` (schema 10) and `_island_my_roots` (schema 11).
+Later files added the tree style, the admin's own reset and island overview,
+photos and the web review page, the peer check and project invitations. From
+schema 17 (`20261118100000_shift_quest_web_everything.sql`, below) it also
+runs the inbox, settings, sharing, data rights, review, help, fulfillment and
+admin functions: the website does every flow but Discord's. Never: a helper
+(`shift_quest__*`), a raw function that takes someone else's Discord id, the
+outbox, the live and digest posts, voice presence or the campfire rounds.
+Each migration grants by full signature and stops if one is missing; the
+early ones revoked every `shift_quest_*` function from the role first, later
+ones grant only. `run-local.sh` (`check_privileges`), `web_board.ts`,
+`web_canvas.ts` and `docs/runbooks/shift-high-island-checks.sql` hold the
+same list and fail on any extra or missing grant.
 
 **Outside `shift_quest_*` it is not closed by default.** A LOGIN role is
 always a member of `PUBLIC`, and the role has `USAGE` on `public`, so it can
@@ -835,6 +872,277 @@ submission may see its photos. `shift_quest_review_view` and
 `shift_quest_review_extras` add the checks and their count. Export lists a
 member's checks, erasure deletes them. Tested in
 `supabase/tests/shift_quests/peer.ts`.
+
+### Tree grew post (schema 16)
+
+`20261118090000_shift_quest_tree_grew_post.sql` replaces the hook
+`shift_quest__after_approval` (same body, plus one call) so that an approval
+of a main quest that grows the project's tree queues one `tree_grew` post to
+the celebrate channel: params `{project_id, instance_id, milestone, stage}`,
+dedupe key `tree:<project>:<milestone>`. "Needs more", "not passed", side
+quests, retries and repeats of a counted milestone queue nothing, and no
+mentor's words are ever in it. At send time the bot calls the bot-only
+`shift_quest_tree_post(project, instance)`, `{slot, title, name,
+team_user_ids}`, where the name and the members' Discord ids are there only
+while `shift_quest__name_visible` holds; otherwise the post says
+"ทีมปริศนา" with the plot number. A named team's members are pinged unless
+`PING_NAMED_TEAMS` (`bot/src/quests/outbox.ts`) is false. The bot adds 🎉 and
+🌱 under the post (it needs Add Reactions there). Held while sharing is off,
+like every celebrate post. **Deploy the bot before applying the migration.**
+Design and decisions:
+[`docs/designs/shift-island-tree-grew-post.md`](../designs/shift-island-tree-grew-post.md).
+Tested in `supabase/tests/shift_quests/tree_post.ts`.
+
+### The website does everything but Discord (schema 17)
+
+The founder decided (2026-11-16) that the SHIFT Island bot becomes
+notify-only and every student and staff flow moves to the website.
+`20261118100000_shift_quest_web_everything.sql` gives the website the database
+side of that; nothing changes for users until the pages ship. The website
+gates every new surface on `WEB_EVERYTHING_SCHEMA = 17`
+(`lib/shift-island/web-everything.ts`, `webEverythingAvailable(api)`);
+`REQUIRED_SCHEMA` in `lib/supabase/shift-quests/db.ts` stays the island's
+floor, so a missing migration hides the new pages instead of closing the
+island.
+
+- **Member uuids in, never Discord ids out.** The website only holds the
+  signed-in user's own Discord id. Every function that used to take someone
+  else's Discord id gets a website-only wrapper over the member uuid. Each
+  wrapper is `SECURITY DEFINER` with `search_path = public` and checks the
+  caller first (`shift_quest__student`, or `shift_quest__staff(actor,
+  ARRAY['admin'])`), so a stranger or a non-admin gets the same refusal for a
+  real and an unknown uuid. Two helpers nobody may call resolve the uuids:
+  `shift_quest__discord_of` (a live, linked member, else `not_found`) and
+  `shift_quest__contributors_of` (the caller and duplicates removed, then at
+  most 8 or `bad_input`, any miss `contributor_not_teammate`; 8 teammates
+  plus the caller's own uuid is accepted).
+- **Students.** `shift_quest_project_teammates` (the picker: active, started,
+  non-staff teammates of the current project, not the caller),
+  `shift_quest_islanders` (who to thank: started non-staff students, teammates
+  first, a 2 to 80 character search, 20 at most; staff callers are
+  `not_eligible`), `shift_quest_share_draft` (celebrate an approved quest or
+  thank a started student; `intention` stays with the campfire; 5
+  celebration or thank-you drafts in 24 hours, cancelled ones included, then
+  `share_limit`; the campfire's intentions from Discord do not count), `shift_quest_milestone_submit_team` and
+  `shift_quest_side_submit_team` (the caller's own part plus teammates who
+  helped: named teammates make the proof visible to the team, none means
+  reviewers only; on side quests only `side-help-a-builder` and
+  `side-improve-community` take teammates, else `bad_input`; proposed quests
+  keep the plain submit). Granted as they are: `_inbox_list`, `_help_mine`,
+  `_help_withdraw`, `_update_prefs`, `_contribution_respond`, `_share_get`,
+  `_share_confirm`, `_share_cancel`, `_share_respond`, `_data_export`,
+  `_data_request`.
+- **Reviewers and fulfillment.** `_review_queue`, `_review_get`,
+  `_review_decide`, `_proposal_get`, `_proposal_agree`, `_help_queue`,
+  `_help_update`, `_awards_pending`, `_issue_award`, `_fulfill_queue`,
+  `_fulfill_update`. The web review page calls `_review_get` first (it
+  refuses a conflicted reviewer and audits), then `_review_view`.
+- **Admins.** `shift_quest_admin_web_status` (`_admin_status` with every
+  Discord id in `settings` replaced: `help_channel_id` becomes
+  `help_channel: true|false`, and so on for each `*_channel_id`, and
+  `student_role_ids` becomes the count `student_roles`; the rest unchanged),
+  `shift_quest_admin_setting` (the switches `awards`,
+  `redemption`, `sharing`, `reminders` and the four published terms; channels
+  and Discord student roles stay with `/admin channel` and
+  `/admin student-role`, squads are dropped; anything else is `bad_input`,
+  after the admin check; it returns the web status),
+  `shift_quest_admin_members` (search, staff included, `{id, name, roles,
+  started}`), `shift_quest_admin_member` (roles, started, current project,
+  consent, balance and 25 ledger entries), `shift_quest_admin_member_role`
+  (members who already have a row; **new staff are added in Discord with
+  `/admin role`**, the only verified way to map a new Discord user),
+  `shift_quest_admin_member_recognize`, `shift_quest_admin_member_award`,
+  `shift_quest_admin_member_consent_reset` and `shift_quest_admin_seasons`
+  (draft and active seasons with their unlocks, for `_admin_unlock`, without
+  the island lock). Granted as they are: `_admin_reverse`, `_admin_report`,
+  `_admin_rule`, `_admin_rule_retire`, `_admin_templates`,
+  `_admin_template_state`, `_admin_template_rule`, `_admin_catalog_list`,
+  `_admin_catalog`, `_admin_catalog_gate`, `_admin_season`, `_admin_unlock`,
+  `_admin_island_status`, `_admin_island_set`, `_admin_data_requests`,
+  `_admin_data_close`, `_admin_erase`.
+- **Request keys.** The browser makes one uuid per form open (never per
+  click); the wrappers store `web-recog:<uuid>` (recognitions) and
+  `web-award:<uuid>` (staff awards, so `staff:web-award:<uuid>` in the
+  ledger), and the website sends `web-rev:<uuid>` to `_admin_reverse`. The
+  bot's keys (`recog:`, `award:`) never collide with them.
+- **Body changes, same signatures and grants.** `shift_quest_data_request`
+  keeps one open request per kind per member and returns it on a second
+  click, so staff get one alert. The note is checked first (a correction
+  still needs one), and a new note is added to the open request, separated
+  by `---`, and audited as `data_request_<kind>_more`; the same note twice
+  adds nothing, and notes that no longer fit in 1000 characters are
+  `text_too_long`. `shift_quest_help_queue` leaves out, and
+  `shift_quest_help_update` refuses to claim or resolve
+  (`help_conflict`, with its own words in `errors.ts` and the bot's
+  `ERRORS`), a help request from the reviewer's own team, now
+  or before (`shift_quest__help_conflicted`, the review rule); releasing stays
+  open. `shift_quest_contribution_respond`: when the last pending teammate
+  answers on an approved submission whose award waited for them
+  (`contributions_pending`), the award is issued then, as the approving
+  reviewer, in the approval's lock order, and audited as
+  `award_after_contributions`; another reason (no team split, awards paused)
+  is recorded on the quest as a staff retry would.
+- **Stays in Discord or the bot.** The raw Discord-id functions
+  (`_admin_set`, `_admin_role`, `_admin_recognize`, `_admin_staff_award`,
+  `_admin_ledger`, `_admin_consent_reset`, `_share_create`,
+  `_project_invite`), `_admin_status` (it carries channel and role ids; the
+  website reads `_admin_web_status`), the outbox and reminders, the live and digest posts,
+  voice presence, the campfire rounds and `_bootstrap_admin`. Dropped student
+  flows are not granted: ownership ticking (`_ownership_set`),
+  `_project_select`, `_project_leave`, `_set_state`, `_update`, `_appeal`,
+  `_withdraw`, `_progress_list`, `_progress_edit` and squads.
+- **The bot keeps every function it had**, so both work during the move. A
+  later migration revokes the moved ones from the bot once it only notifies;
+  it must move them into `run-local.sh`'s website-only list and `db_rules.ts`
+  in the same change. Any migration that repeats the bot's grant loop must
+  keep excluding the website-only wrappers above.
+
+Apply with `supabase db push` before any website page that calls these
+deploys, then run the runbook checks. Tested in
+`supabase/tests/shift_quests/web_everything.ts` (every wrapper as
+`shift_quest_web`) and the allowlists in `web_board.ts` and `web_canvas.ts`.
+
+### Plaza visitors (schema 18)
+
+`20261118110000_shift_quest_island_visitors.sql` adds website-only
+`shift_quest_island_visitors(actor)`: `{count, team}`, how many members have a
+check-in (a `tap`) on today's Bangkok date, and how many of the caller's
+active teammates on their current project did, the caller left out. Two
+integers, never an id, name, project or time; same gate as
+`shift_quest_campfire`; erased members never count. Schema 16 is #324's
+(`20261118090000_shift_quest_tree_grew_post.sql`) and 17 is #321's
+(`20261118100000_shift_quest_web_everything.sql`): apply those first, so the
+version only goes up. The plan is in
+[`docs/designs/shift-island-plaza-visitors.md`](../designs/shift-island-plaza-visitors.md).
+Tested in `supabase/tests/shift_quests/visitors.ts`.
+
+### Nightly island news (schema 19)
+
+`20261118130000_shift_quest_island_news_daily.sql` adds the nightly card the
+bot posts at 20:00 Bangkok in the news channel (`/admin channel kind:news`, a
+text or announcement channel; `settings.news_channel_id`). One card a night:
+the night island picture (the live post's outsider view), island-wide totals
+over 20:00 the day before to 20:00 (`shift_quest__news_totals`: members who
+checked in, quests approved, tree stages grown, campfire rounds started with
+an intention; people counts of 1 or 2 show without a number, and the round
+count shows only once 3 or more people made the rounds (`rounders`); **round
+counts only, never minutes**), the Demo Day countdown, a lore line and link
+buttons. When a team passes `shift_quest__digest_eligible`, the same card
+carries its AI line (`shift_quest__news_ai`). Approvals and growth count
+every team while sharing is on and name-visible teams only while it is off.
+The bot-only `shift_quest_news_post_next`, `_claim`, `_mark` and
+`_post_current` keep it to one message per Bangkok day (claim, send,
+compare-and-set mark; a new card only before 22:30, a stale claim recovered
+until midnight, never a catch-up) and re-check the AI lines for 7 days, by
+edit. The totals freeze at claim time. While a news channel is set,
+`shift_quest_digest_post_next` answers null, so the AI news appears only in
+the card. `/admin island` gains `today_summaries` (teams with an AI summary
+stored today). Never crossposted, never a DM, never a ping. The bot needs
+View Channel, Send Messages, Attach Files and Read Message History there;
+students need View Channel and Read Message History (without it they see only
+what is posted while they have the channel open).
+Decisions and copy:
+[`docs/designs/shift-island-daily-news.md`](../designs/shift-island-daily-news.md).
+Tested in `supabase/tests/shift_quests/news.ts` and
+`bot/src/quests/__tests__/news.test.ts`.
+
+### A missed night: the staff note (schema 20)
+
+`20261118140000_shift_quest_island_news_missed.sql` adds the bot-only
+`shift_quest_enqueue_news_missed()`, which the nightly news check calls every
+5 minutes after its own try at tonight's card, and the helper
+`shift_quest__news_missed(now)` (no login runs it). When a news channel and a
+staff channel are set, it is 22:30 to midnight Bangkok, no card is recorded
+for the day and no other bot process is sending one (no claim under 2
+minutes old: a failed send keeps its claim and is claimed again every 15 to
+20 minutes until midnight, just before the bot's own check), and the news
+channel was not set or changed from 22:24 that night (one 5-minute tick
+before 22:30, and a margin), it queues one
+outbox row for the staff channel slot: kind `news_missed`, params `{day}`,
+dedupe key `news_missed:<day>`, so at most one note per Bangkok day across
+restarts and bot processes. No student data, never a student channel. The
+outbox delivers it like every staff post, by about 22:40: tonight's card did
+not post, check the bot's View Channel and Send Messages in the news channel,
+else ask whoever runs the bot for its `nightly island news` log lines (the
+bot offline at 20:00); fixed before midnight, the stale retries may still
+post tonight's card. The bot
+renders the kind from the deploy before this file (an older bot fails an
+unknown kind permanently), so deploy the bot first, then apply this file;
+below schema 20 the bot reads the version again on each check, so no restart
+is needed. Tested in `supabase/tests/shift_quests/news_missed.ts`,
+`bot/src/quests/__tests__/news.test.ts` and `outbox.test.ts`.
+
+### The campfire call and the evening guest (schema 21)
+
+`20261118150000_shift_quest_campfire_call.sql` (not applied yet) adds the
+call the bot posts every day at 18:50 Bangkok in the news channel
+(`bot/src/quests/call.ts`), while `/admin feature campfire_call` is on (the
+default), a news and a coworking channel are set, and no SHIFT cohort round
+is in session (`cohortWeek`, from `lib/shift/voiceWindow.ts`
+`roundsInSession`: shift-voice counts voice time in every channel then, so
+the bot sends no call, makes no drop and edits the latest call into the
+paused note): the fire lights at 19:00, a live countdown, a floored count of
+who sits at the fire (everyone there, staff included, never a name) and a
+button into the voice channel.
+It pings the student roles (`settings.student_role_ids`, at most 5) once,
+when it is first sent, while `/admin feature campfire_call_ping` is on (the
+default): the send allows exactly those roles, never users, `@everyone` or
+`@here`; edits allow nothing. It is edited through the evening (invite, lit
+at 19:00, the guest at 19:25, embers at 21:00), at most once a minute and
+only when its text changes, and the previous day's call (the bot's own) is
+deleted once today's is recorded. One call a day without doubles:
+`shift_quest_call_claim` and `_mark` on `shift_quest_call_posts`; due only
+from 18:50 to 19:15 (a stale claim until 19:30), never a late one; after a
+stale claim the bot looks for its own call (`CALL.dayLine`) and sends nothing
+when it cannot read the channel, so nobody is pinged twice. Before sending,
+the bot checks that students can see and join the voice channel and that it
+can post in its chat. Below schema 21 the loop reads the version again on
+every 30-second check.
+
+During an active season an evening guest (boat, gull, fireflies, turtle, in a
+fixed rotation by season day, `shift_quest__guest_of`) comes for the first
+rest (19:25 to 19:30). On every check in that rest that can read the room,
+the bot passes the Discord ids in the campfire voice room
+(`campfire.present()`, the gateway voice cache, bots left out; empty when
+nobody sits there) to `shift_quest_campfire_seen`: anyone there at any check
+counts, so nobody is rewarded for sitting down first. The database links
+them to started, non-staff members and their current teams and keeps one
+row per team and night in `shift_quest_guest_drops` (no member, no time).
+A check the bot sent in the rest still counts when it reaches the database
+up to 15 seconds after 19:30, and the bot's first check from 19:30 passes
+the room too when the database is not at 19:30 yet. The night records the
+bot's latest check and whether it missed more than a minute of the rest
+(`gap`); then 🎁 tells a team it never saw `unseen` (the bot could not see
+the fire for a while), never `away`.
+The bot's first check at or after 19:30 calls `shift_quest_campfire_drop`,
+which settles the night once (a lock, `shift_quest_guest_nights.settled_at`):
+each team seen gets one roll (`shift_quest__guest_drop_chance()`, 1 in 2),
+however many teammates were there. A win is a one-option gift of one of the
+guest's two looks the team does not have (`source drop:<day>`, `member_id`
+null). Staff at the fire are the guest (founder decision, 2026-11-18): when
+an admin or reviewer member is among the ids of any check of the rest, the
+night's guest becomes `mentor` from that check on (never back), the call
+and the round messages name them by display name ("คืนนี้ <name>
+มาเป็นแขกที่กองไฟ", two at most), and the drop gives the 2 looks only staff
+nights give (`leaf:ember`, `bloom:starlit`), by the same rules; staff never
+win. `shift_quest_guest_nights.staff_names` keeps those names so edits and
+a restart show the same guest. Earlier days' rows (and staff names) are deleted the next day (the bot's reads, every
+presence check and drop call, and pg_cron's `shift_quest__voice_purge` every
+5 minutes, so no bot is needed): no member, no Discord id, no presence
+history. An approved erasure that leaves a team with no active member
+deletes its rows and drop gifts (`shift_quest__island_erase`). The round
+messages and the call always say how many teams got a look once the night
+is settled (`shift_quest__guest_reveal`; a friendly line for none), never
+which; 🎁 (`rd_guest`, `shift_quest_guest_status`) answers privately about
+the presser's own team. The send carries a nonce Discord enforces, so a
+retried POST never posts or pings twice. Switched off, the latest call is
+edited once into a paused note. `/settings` explains how to stop the ping
+only while the call pings (`shift_quest_call_pings`).
+Round and quest gifts never offer guest looks. No coins, no stage, no
+ledger. Design and the founder's decisions:
+[`docs/designs/shift-island-campfire-call.md`](../designs/shift-island-campfire-call.md).
+Tested in `supabase/tests/shift_quests/campfire_call.ts`,
+`bot/src/quests/__tests__/call.test.ts` and `rounds.test.ts`.
 
 ## Admin: reset my own island (testing)
 

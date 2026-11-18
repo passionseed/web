@@ -436,11 +436,6 @@
   gap: 12px;
 }
 
-.tapButton {
-  min-height: 56px;
-  font-size: 18px;
-}
-
 .todayDone {
   display: grid;
   gap: 4px;
@@ -469,21 +464,20 @@
 
 .keynote {
   position: relative;
-  display: flex;
-  align-items: center;
-  gap: 14px;
+  display: grid;
+  gap: 10px;
   width: 100%;
-  min-height: 76px;
   overflow: hidden;
   font: inherit;
   text-align: left;
   color: var(--text-hi);
-  cursor: pointer;
-  transition: transform var(--press) var(--ease-snap);
 }
 
-.keynote:active {
-  transform: translateY(1px);
+/* The headline row: the quest's icon and its words. */
+.keynoteHead {
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
 .keynote > :not(.keynoteGlow) {
@@ -535,11 +529,132 @@
   color: var(--gold);
 }
 
-.keynoteArrow {
+/* The next-step card's one line under the headline: the mentor's words, where the quest stands, or which one it is. */
+.keynoteLine {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--isl-cream);
+  opacity: 0.86;
+}
+
+/* ---------------------------------------------------------------- results (the envelope) */
+
+.results {
+  display: grid;
+  gap: 16px;
+}
+
+.resultList {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.result {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  min-height: 64px;
+  padding: 12px;
+  font: inherit;
+  text-align: left;
+  color: var(--text);
+  background: rgba(255, 241, 214, 0.05);
+  border: 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 241, 214, 0.12);
+  clip-path: var(--notch);
+  cursor: pointer;
+  transition: background-color var(--snap) var(--ease-snap);
+}
+
+.result:focus-visible {
+  outline: 2px solid var(--isl-lamp);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .result:hover {
+    background: rgba(255, 241, 214, 0.1);
+  }
+}
+
+.resultIcon {
   flex: none;
-  width: 20px;
-  height: 20px;
-  color: var(--gold);
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  background: var(--isl-sand);
+  box-shadow: inset 0 0 0 2px var(--isl-ink);
+  clip-path: var(--notch);
+}
+
+.resultText {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.resultTitle {
+  font-family: var(--font-kodchasan), var(--font-bai-jamjuree), sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 1.4;
+  color: var(--text-hi);
+}
+
+.resultOutcome {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.result[data-outcome="approved"] .resultOutcome {
+  color: var(--isl-leaf-hi);
+}
+
+.resultFresh {
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 20px;
+  color: var(--isl-ink);
+  background: var(--isl-lamp);
+  clip-path: var(--notch);
+}
+
+.resultQuote {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+
+.resultArrow {
+  flex: none;
+  align-self: center;
+  width: 18px;
+  height: 18px;
+  color: var(--text-dim);
+}
+
+.resultsDiscord {
+  display: grid;
+  gap: 8px;
 }
 
 /* ---------------------------------------------------------------- board */
@@ -1523,7 +1638,7 @@
 
 .form {
   display: grid;
-  gap: 16px;
+  gap: 22px;
 }
 
 .field {
@@ -1875,6 +1990,57 @@
   display: grid;
   gap: 8px;
   min-width: 0;
+}
+
+/* The quest page's five dots: where the student's own work stands. */
+.stepper {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stepperStep {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.stepperDot {
+  width: 12px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.24);
+}
+
+.stepperStep[data-state="done"] .stepperDot {
+  background: var(--isl-leaf-hi);
+  box-shadow: inset 0 0 0 2px var(--isl-ink);
+}
+
+.stepperStep[data-state="current"] .stepperDot {
+  background: var(--isl-sand-hi);
+  box-shadow: inset 0 0 0 2px var(--isl-ink), 0 0 0 2px rgba(246, 228, 181, 0.5);
+}
+
+.stepperLabel {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--isl-cream);
+  opacity: 0.7;
+}
+
+.stepperStep[data-state="current"] .stepperLabel {
+  font-weight: 600;
+  color: var(--isl-sand-hi);
+  opacity: 1;
 }
 
 .actMeter {
@@ -2349,8 +2515,7 @@ a.canvasRow:hover {
 }
 
 a.canvasRow:focus-visible,
-.canvasRowAction:focus-visible,
-.canvasRefresh:focus-visible {
+.canvasRowAction:focus-visible {
   outline: 2px solid var(--action-soft);
   outline-offset: 2px;
 }
@@ -2390,25 +2555,6 @@ a.canvasRow:focus-visible,
 
 .canvasRowAction:hover {
   background: rgba(255, 241, 214, 0.12);
-}
-
-.canvasRefresh {
-  justify-self: start;
-  min-height: 40px;
-  padding: 6px 0;
-  font: inherit;
-  font-size: 13px;
-  color: var(--action-soft);
-  background: none;
-  border: 0;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
-}
-
-.canvasRefresh:disabled {
-  opacity: 0.6;
-  cursor: progress;
 }
 
 /* A proposed quest's goal is the student's own: shown whole. */
@@ -2714,13 +2860,7 @@ a.canvasRow:focus-visible,
   }
 }
 
-/* Collapsed rows: examples and the full details, one tap each. */
-.moreRows {
-  display: grid;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
+/* Collapsed rows (รายละเอียดและตัวช่วย, the day's intention), one tap each. */
 .more + .more {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -2817,8 +2957,33 @@ a.canvasRow:focus-visible,
   gap: 8px;
 }
 
+/* The sent screen's quiet second button (ดูต้นไม้ของทีม) beside its main one. */
 .barStuck {
   padding: 8px 18px;
+}
+
+/* The bar while the work is with a mentor: words where the button would be, never a dead end. */
+.barWaiting {
+  display: grid;
+  place-items: center;
+  min-height: 48px;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  color: var(--isl-sand-hi);
+}
+
+/* ติดตรงไหน? under the checklist: a quiet way to ask for help, not a second bar button. */
+.stuckLine {
+  justify-self: start;
+}
+
+/* Inside ตัวช่วย: the folded sections keep their own spacing. */
+.helpersBody {
+  display: grid;
+  gap: 16px;
 }
 
 .compose {
@@ -2880,37 +3045,95 @@ a.canvasRow:focus-visible,
   min-height: 48px;
 }
 
-/* เสร็จเมื่อ above a send form: one compact reminder, a line or two, never a gate. */
+/* เสร็จเมื่อ above a send form: a short checklist reminder, one item a line, never a gate. No box. */
 .doneLine {
+  display: grid;
+  gap: 6px;
   margin: 0;
-  padding: 8px 12px;
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: 14px;
+  line-height: 1.55;
   color: var(--text);
-  background: rgba(231, 205, 146, 0.06);
-  box-shadow: inset 2px 0 0 0 var(--isl-sand);
 }
 
 .doneLineHeading {
-  margin-right: 8px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--isl-sand-hi);
 }
 
 .doneLineList {
-  display: inline;
+  display: grid;
+  gap: 4px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .doneLineList li {
-  display: inline;
+  display: grid;
+  grid-template-columns: 6px minmax(0, 1fr);
+  gap: 10px;
+  align-items: baseline;
 }
 
-.doneLineList li + li::before {
-  content: " · ";
+/* A pixel square, not a bullet. */
+.doneLineList li::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  background: var(--isl-sand);
+  transform: translateY(-2px);
+}
+
+/* The send form's link and photos: one quiet group under the required answers. */
+.formOptional {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.formOptionalHeading {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
   color: var(--text-dim);
+}
+
+/*
+ * The send form writes on a line, not in a box: no fill, no frame, one
+ * underline that turns leaf on focus. Beats .ei-input's own hover and focus.
+ */
+.form .write,
+.form .write:hover,
+.form .write:focus {
+  padding: 8px 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 241, 214, 0.24);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.form .write:hover {
+  border-bottom-color: rgba(255, 241, 214, 0.4);
+}
+
+.form .write:focus {
+  border-bottom-color: var(--isl-leaf);
+  box-shadow: 0 1px 0 0 var(--isl-leaf);
+}
+
+/* The 2px leaf underline is the focus mark; a ring would put the box back. */
+.form .write:focus-visible {
+  outline: none;
+}
+
+/* Grows with the text where the browser can; rows set the start elsewhere. */
+.form .write.textarea {
+  min-height: calc(1.5em * 2 + 16px);
+  resize: none;
+  field-sizing: content;
 }
 
 /* ---------------------------------------------------------------- quest sheet: sent */

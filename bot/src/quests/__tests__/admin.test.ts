@@ -202,6 +202,31 @@ describe("admin status card", () => {
     expect(viewText(terms.sent[0])).toContain("✅ บันทึกแล้ว");
   });
 
+  it("lists the campfire call's two switches (schema 21) and hides them on an older database", () => {
+    const s = status();
+    expect(bodyText(renderView(statusView(s as never)))).not.toContain("เรียกรวมกองไฟ");
+    Object.assign(s.settings, { campfire_call_enabled: true, campfire_call_ping: false });
+    const body = bodyText(renderView(statusView(s as never)));
+    expect(body).toContain("✅ เรียกรวมกองไฟ 18:50: เปิด");
+    expect(body).toContain("⚪ แท็กนักเรียนตอนเรียกรวม: ปิด");
+  });
+
+  it("/admin feature passes the campfire switches through admin_set, and offers them as choices", async () => {
+    const c = ctx(() => status());
+    for (const name of ["campfire_call", "campfire_call_ping"]) {
+      const set = interaction("command", { options: options({ name, state: "off" }) });
+      await COMMAND_HANDLERS.get("admin feature")!(set.i, c);
+      expect((c.api.call as jest.Mock).mock.calls.at(-1)).toEqual(["shift_quest_admin_set", "1111111111", name, "off"]);
+    }
+    const feature = JSON.stringify(
+      questCommands()
+        .find((cmd) => cmd.name === "admin")!
+        .options!.find((o) => o.name === "feature")
+    );
+    expect(feature).toContain('"value":"campfire_call"');
+    expect(feature).toContain('"value":"campfire_call_ping"');
+  });
+
   describe("/admin channel with a voice channel", () => {
     const GUILD = "900000000000000000";
     /** A voice channel whose permissions open to the given roles only. */
@@ -323,8 +348,11 @@ describe("admin status card", () => {
       for (const kind of ["live", "suggest"]) {
         await expect(run(kind, { id: "804", type: ChannelType.GuildVoice })).rejects.toThrow(T.adminVoiceCoworkingOnly);
       }
-      await expect(run("live", { id: "808", type: ChannelType.GuildAnnouncement })).rejects.toThrow(T.adminLiveText);
-      await expect(run("suggest", { id: "808", type: ChannelType.GuildAnnouncement })).rejects.toThrow(T.adminSuggestType);
+      // An announcement channel is the news card's only: students cannot post there.
+      await expect(run("live", { id: "808", type: ChannelType.GuildAnnouncement })).rejects.toThrow(T.adminAnnouncementNewsOnly);
+      await expect(run("suggest", { id: "808", type: ChannelType.GuildAnnouncement })).rejects.toThrow(T.adminAnnouncementNewsOnly);
+      await expect(run("live", { id: "808", type: ChannelType.GuildStageVoice })).rejects.toThrow(T.adminLiveText);
+      await expect(run("suggest", { id: "808", type: ChannelType.GuildStageVoice })).rejects.toThrow(T.adminSuggestType);
       expect(c.api.call).not.toHaveBeenCalled();
     });
 
@@ -356,8 +384,10 @@ describe("admin status card", () => {
         "coworking",
         "live",
         "suggest",
+        "news",
       ]);
       expect(sub.options?.find((o) => o.name === "channel")?.channel_types).toContain(ChannelType.GuildForum);
+      expect(sub.options?.find((o) => o.name === "channel")?.channel_types).toContain(ChannelType.GuildAnnouncement);
     });
 
     it("shows both on the status card once the database has them: set, unset, or not at all", () => {
@@ -370,6 +400,101 @@ describe("admin status card", () => {
       const older = bodyText(renderView(statusView(status() as never)));
       expect(older).not.toContain("ห้องเกาะสด");
       expect(older).not.toContain("ห้องเสนอไอเดีย");
+    });
+  });
+
+  describe("/admin channel for the nightly island news (schema 19)", () => {
+    const GUILD = "900000000000000000";
+    const NEWS_CH = "810";
+    let c: Ctx;
+    const last = () => (c.api.call as jest.Mock).mock.calls.at(-1);
+    const BOT_PERMS = [
+      PermissionFlagsBits.ViewChannel,
+      PermissionFlagsBits.SendMessages,
+      PermissionFlagsBits.AttachFiles,
+      PermissionFlagsBits.ReadMessageHistory,
+    ];
+    /** What students need there: see the channel and read the cards posted before they open it. */
+    const STUDENT_PERMS = [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory];
+    /**
+     * A channel students (role 555) can read (`students`, by default seeing it and its history), and a guild whose
+     * cache holds it with the bot (a member object) allowed `bot` there. permissionsFor takes a role id (students)
+     * or the bot member.
+     */
+    const setup = (o: { type?: ChannelType; studentsSee?: boolean; students?: bigint[]; bot?: bigint[] } = {}) => {
+      const me = { id: "bot" };
+      const channel = {
+        id: NEWS_CH,
+        type: o.type ?? ChannelType.GuildAnnouncement,
+        permissionsFor: (who: string | { id: string }) => ({
+          has: (wanted: bigint[]) =>
+            who === me
+              ? wanted.every((p) => (o.bot ?? BOT_PERMS).includes(p))
+              : who === "555" && (o.studentsSee ?? true) && wanted.every((p) => (o.students ?? STUDENT_PERMS).includes(p)),
+        }),
+      };
+      const guild = { members: { me }, channels: { cache: new Map([[NEWS_CH, channel]]) } };
+      return { channel, guild };
+    };
+    const run = (kind: string, channel: unknown, guild?: unknown) =>
+      COMMAND_HANDLERS.get("admin channel")!(interaction("command", { guildId: GUILD, guild, options: options({ kind, channel }) }).i, c);
+
+    beforeEach(() => {
+      c = ctx(() => status());
+    });
+
+    it("takes an announcement or a text channel students can read, as 'news_channel'", async () => {
+      const a = setup();
+      await run("news", a.channel, a.guild);
+      expect(last()).toEqual(["shift_quest_admin_set", "1111111111", "news_channel", NEWS_CH]);
+      const t = setup({ type: ChannelType.GuildText });
+      await run("news", t.channel, t.guild);
+      expect(last()).toEqual(["shift_quest_admin_set", "1111111111", "news_channel", NEWS_CH]);
+      await run("news", null);
+      expect(last()).toEqual(["shift_quest_admin_set", "1111111111", "news_channel", ""]);
+    });
+
+    it("refuses an announcement channel for every other kind, before any database call", async () => {
+      const a = setup();
+      for (const kind of ["help", "staff", "celebrate", "coworking", "live", "suggest"]) {
+        await expect(run(kind, a.channel, a.guild)).rejects.toThrow(T.adminAnnouncementNewsOnly);
+      }
+      expect(c.api.call).not.toHaveBeenCalled();
+    });
+
+    it("refuses a news channel of the wrong type, students cannot see, or the bot cannot post in", async () => {
+      await expect(run("news", { id: NEWS_CH, type: ChannelType.GuildVoice })).rejects.toThrow(T.adminVoiceCoworkingOnly);
+      await expect(run("news", { id: NEWS_CH, type: ChannelType.GuildForum })).rejects.toThrow(T.adminForumSuggestOnly);
+      await expect(run("news", { id: NEWS_CH, type: ChannelType.GuildStageVoice })).rejects.toThrow(T.adminNewsType);
+      const hidden = setup({ studentsSee: false });
+      await expect(run("news", hidden.channel, hidden.guild)).rejects.toThrow(T.adminNewsPrivate);
+      // Seeing the channel without Read Message History shows only what is posted while a student has it open:
+      // a card posted at 20:00 would be gone for anyone who opens the channel later.
+      const noHistory = setup({ students: [PermissionFlagsBits.ViewChannel] });
+      await expect(run("news", noHistory.channel, noHistory.guild)).rejects.toThrow(T.adminNewsPrivate);
+      // Nothing to read the permissions from counts as private.
+      await expect(run("news", { id: "811", type: ChannelType.GuildAnnouncement })).rejects.toThrow(T.adminNewsPrivate);
+      for (const missing of BOT_PERMS) {
+        const s = setup({ bot: BOT_PERMS.filter((p) => p !== missing) });
+        await expect(run("news", s.channel, s.guild)).rejects.toThrow(T.adminNewsBotPerms);
+      }
+      expect(c.api.call).not.toHaveBeenCalled();
+    });
+
+    it("checks @everyone for the news channel while no student role is set", async () => {
+      c.session.settings.student_role_ids = [];
+      const a = setup();
+      await expect(run("news", a.channel, a.guild)).rejects.toThrow(T.adminNewsPrivate);
+    });
+
+    it("shows the news channel on the status card only once the database has it", () => {
+      const s = status();
+      Object.assign(s.settings, { live_channel_id: "805", suggest_channel_id: null, news_channel_id: NEWS_CH });
+      const body = bodyText(renderView(statusView(s as never)));
+      expect(body).toContain(`✅ ห้องข่าวเกาะ: <#${NEWS_CH}> (โพสต์ทุกคืน 2 ทุ่ม ห้องประกาศได้)`);
+      Object.assign(s.settings, { news_channel_id: null });
+      expect(bodyText(renderView(statusView(s as never)))).toContain("⚪ ห้องข่าวเกาะ: ยังไม่ตั้ง (โพสต์ทุกคืน 2 ทุ่ม ห้องประกาศได้)");
+      expect(bodyText(renderView(statusView(status() as never)))).not.toContain("ห้องข่าวเกาะ");
     });
   });
 
@@ -768,6 +893,26 @@ describe("admin island, staff awards and shop gates (schema 9)", () => {
     expect(body).toContain("✅ ข่าวเกาะ AI: **เปิด** · โพสต์วันละครั้งที่ห้องเกาะสด");
     expect(body).toContain("แปลง 3 \\*\\*ทีมสาม\\*\\*");
     expect(body).not.toContain(T.adminConsentOffWarn);
+    // A schema 9 to 18 database has no nightly card: nothing is said about it.
+    expect(body).not.toContain("ข่าวเกาะคืนนี้");
+    expect(body).not.toContain("สรุปจาก AI วันนี้");
+  });
+
+  it("shows the nightly island news card and today's stored AI summaries (schema 19)", async () => {
+    const on = ctx(() => islandStatus({ digest: { channel: "news", today_summaries: 3 } }));
+    const cmd = interaction("command", { options: options({ action: "status" }) });
+    await COMMAND_HANDLERS.get("admin island")!(cmd.i, on);
+    expectCard(cmd.sent[0]);
+    const body = bodyText(cmd.sent[0]);
+    expect(body).toContain("✅ ข่าวเกาะคืนนี้: โพสต์ทุกคืนราว 2 ทุ่มในห้องข่าวเกาะ\n🤖 สรุปจาก AI วันนี้: 3 ทีม\n");
+    expect(body).toContain("✅ ข่าวเกาะ AI: **เปิด** · โพสต์วันละครั้งที่ห้องข่าวเกาะ (รวมในข่าวเกาะ 2 ทุ่ม)");
+
+    const off = ctx(() => islandStatus({ digest: { channel: "live", today_summaries: 0 } }));
+    const cmd2 = interaction("command", { options: options({ action: "status" }) });
+    await COMMAND_HANDLERS.get("admin island")!(cmd2.i, off);
+    const body2 = bodyText(cmd2.sent[0]);
+    expect(body2).toContain("⚪ ข่าวเกาะคืนนี้: ยังไม่ตั้งห้อง (/admin channel kind:news)");
+    expect(body2).toContain("🤖 สรุปจาก AI วันนี้: 0 ทีม");
   });
 
   it("flips a switch through admin_island_set and warns while consent is off", async () => {

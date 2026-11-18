@@ -15,8 +15,11 @@ import { TeamCard } from "./news/TeamCard";
 import { styledTree } from "./sprites";
 import { publicRoots, treeStageName } from "./tree/model";
 import { TreeCanvas } from "./tree/TreeCanvas";
+import { AdminProjectDetails } from "./AdminOverview";
+import type { AdminIslandProject } from "@/lib/supabase/shift-quests/adminTypes";
 
 interface PlotSheetProps {
+  adminProject?: AdminIslandProject;
   hotspot: IslandHotspot | null;
   onClose: () => void;
   /** The student's own plot: close and go to their quest board. */
@@ -42,7 +45,7 @@ interface PlotSheetProps {
  * gets its AI team card under the plot info: the team's stored summary,
  * never a person.
  */
-export function PlotSheet({ hotspot, onClose, onBoard, team, staff = false }: PlotSheetProps) {
+export function PlotSheet({ hotspot, onClose, onBoard, team, staff = false, adminProject }: PlotSheetProps) {
   // The last plot stays in the sheet while it slides closed, so it never closes empty.
   const [last, setLast] = useState<IslandHotspot | null>(hotspot);
   if (hotspot && hotspot !== last) setLast(hotspot);
@@ -81,6 +84,7 @@ export function PlotSheet({ hotspot, onClose, onBoard, team, staff = false }: Pl
             </>
           )}
           {name ? <p className={styles.plotSign}>{PLOT.sign(name)}</p> : <p className={styles.hint}>{PLOT.noSign}</p>}
+          {adminProject && adminProject.slot === shown.slot ? <AdminProjectDetails project={adminProject} /> : null}
           {shown.mine && onBoard ? (
             <button type="button" className={`ei-button-dawn ${styles.primary}`} onClick={onBoard}>
               <span>{PLOT.toBoard}</span>

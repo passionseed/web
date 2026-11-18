@@ -713,6 +713,32 @@ describe("startCampfire", () => {
     s.failNext.add("shift_quest_voice_sync");
     await expect(s.campfire.stop()).resolves.toBeUndefined();
   });
+
+  it("present(): who is in the room right now from the voice cache, bots left out; null while unknown or closed", async () => {
+    const s = await started();
+    s.seat("30", ROOM, "Ploy");
+    s.seat("10", ROOM, null);
+    s.seat("20", OTHER, "Elsewhere");
+    s.seat("40", ROOM, "Some Bot", true);
+    // Before the first heartbeat the bot does not know which channel counts.
+    expect(s.campfire.present()).toBeNull();
+    s.client.emit(Events.ShardReady, 0);
+    await flush();
+    const calls = s.calls.length;
+    expect(s.campfire.present()).toEqual(["10", "30"]);
+    // A read of the cache only: nothing is written or kept for it.
+    expect(s.calls).toHaveLength(calls);
+    s.move("50", ROOM, "Mek");
+    await flush();
+    expect(s.campfire.present()).toEqual(["10", "30", "50"]);
+    // Staff close the room to students: who sits there is not the island's to use.
+    s.permit(ROOM, [STAFF], { silent: true });
+    expect(s.campfire.present()).toBeNull();
+    s.permit(ROOM, [GUILD], { silent: true });
+    expect(s.campfire.present()).toEqual(["10", "30", "50"]);
+    await s.campfire.stop();
+    expect(s.campfire.present()).toBeNull();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -720,11 +746,11 @@ describe("startCampfire", () => {
 // ---------------------------------------------------------------------------
 
 describe("/admin channel", () => {
-  it("accepts a text or a voice channel (and a forum, for suggest only)", () => {
+  it("accepts a text or a voice channel (and a forum, for suggest only; an announcement channel, for news only)", () => {
     const adminCommand = questCommands().find((c) => c.name === "admin");
     const sub = adminCommand?.options?.find((o) => o.name === "channel") as { options?: { name: string; channel_types?: number[] }[] } | undefined;
     const option = sub?.options?.find((o) => o.name === "channel");
-    expect(option?.channel_types).toEqual([ChannelType.GuildText, ChannelType.GuildVoice, ChannelType.GuildForum]);
+    expect(option?.channel_types).toEqual([ChannelType.GuildText, ChannelType.GuildVoice, ChannelType.GuildForum, ChannelType.GuildAnnouncement]);
   });
 
   it("tells an admin a voice channel lights the campfire, set or not", () => {

@@ -393,8 +393,67 @@ The short version for whoever runs the bot:
     the live channel or the celebrate channel when live is unset, no pings,
     only teams that opted in and have consent, while `digest-on`. The
     summaries come from the website's cron (`/api/cron/shift-island-digest`,
-    20:00 Bangkok), which needs `CRON_SECRET`, `SHIFT_QUEST_DATABASE_URL` and
+    18:00 Bangkok), which needs `CRON_SECRET`, `SHIFT_QUEST_DATABASE_URL` and
     `ANTHROPIC_API_KEY` on Vercel. Below schema 9 the bot runs without it.
+    Once a news channel is set (schema 19) it posts nothing of its own.
+  - The nightly island news (`bot/src/quests/news.ts`, schema 19): one card
+    every evening at 20:00 Bangkok in the news channel (`/admin channel
+    kind:news`, a text or announcement channel): the night island picture,
+    island-wide totals (check-ins and campfire rounds with no number for 1 or
+    2, approvals and stages grown, never minutes), the Demo Day countdown, a
+    lore line, and the AI lines of eligible teams when there are any. It
+    needs no website, cron or key. Claimed, sent and marked once a day; the
+    AI lines are kept true for 7 days by edits that re-attach the same
+    picture. Never a ping, a DM or a crosspost. Below schema 19 the bot runs
+    without it. From schema 20, when no card is recorded by 22:30 Bangkok,
+    the database queues one note a night for the staff channel (outbox kind
+    `news_missed`, the day only), by about 22:40: what to check is the bot's
+    View Channel and Send Messages in the news channel, else the bot's
+    `nightly island news` log lines (the bot offline at 20:00). A failed
+    send is retried until midnight, so a fix before then may still post the
+    card. Below 20 the check re-reads the
+    schema every 5 minutes, so deploy the bot first, then apply
+    `20261118140000_shift_quest_island_news_missed.sql`; no restart needed.
+  - The campfire call (`bot/src/quests/call.ts`, copy in `callCopy.ts`,
+    schema 21, `20261118150000_shift_quest_campfire_call`): every day at
+    18:50 Bangkok, one call in the news channel: the fire lights at 19:00.
+    It pings the student roles once, on the send only (never users,
+    `@everyone` or `@here`; edits never ping), while `/admin feature
+    campfire_call_ping` is on; `/admin feature campfire_call` switches the
+    whole call off (both on by default). It is edited through the evening
+    (lit, the guest, embers) at most once a minute, and yesterday's call is
+    deleted when today's is recorded. Claimed, sent and marked once a day; a
+    stale claim it cannot check (no Read Message History) sends nothing, so
+    nobody is pinged twice. It posts only when students can see and join the
+    campfire voice channel and the bot can post in its chat. While a SHIFT
+    cohort round is in session (`roundsInSession` in
+    `lib/shift/voiceWindow.ts`) it sends no call and makes no drop, and the
+    latest call becomes the paused note. During a season an evening guest
+    comes for the 19:25 to 19:30 rest: every 30-second check in it that can
+    read the room passes the ids there (`campfire.present()`, the voice
+    cache; empty when nobody sits there) to `shift_quest_campfire_seen`, and
+    the database keeps which teams were there (no member, no time). The
+    first check from 19:30 calls `shift_quest_campfire_drop`, which settles
+    the night once: one roll per team, rows deleted the next day (when the
+    database is not at 19:30 yet, that check passes the room as the rest's
+    last). A night the bot missed more than a minute of answers a team it
+    never saw `unseen`, never `away`. When the
+    founder or a mentor (an admin or reviewer member) is in the room at any
+    check of the rest, they are that night's guest: the call and the round
+    messages name them (`คืนนี้ <name> มาเป็นแขกที่กองไฟ`, two at most) and
+    the drop gives the 2 staff-night looks; logs say only how many names.
+    The round
+    messages show the guest and how many teams got a look (never which); 🎁
+    (`rd_guest`) answers privately about the presser's own team. The send
+    carries a nonce Discord enforces (`callNonce`), so a POST discord.js
+    retries never posts or pings twice. `/admin feature campfire_call off`
+    edits the latest call into a paused note within 30 seconds. Below
+    schema 21 the loop only
+    re-reads the version each check, so deploy the bot first, then apply the
+    migration; no restart needed. The bot needs, in the news channel, View
+    Channel, Send Messages, Read Message History and (unless the student role
+    is mentionable) Mention @everyone, @here and All Roles; in the campfire
+    voice channel's chat, View Channel and Send Messages.
 - Campfire rounds (`bot/src/quests/rounds.ts`, buttons in
   `handlers/rounds.ts`, rules in `lib/shift-island/rounds-rules.ts`): while
   anyone sits in the coworking voice channel (the campfire), the bot keeps one

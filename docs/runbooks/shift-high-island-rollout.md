@@ -128,7 +128,9 @@ these files. The migrations are additive and idempotent.
       supabase db query --linked -o table -f docs/runbooks/shift-high-island-checks.sql
       ```
 
-      Expect **no rows**. It checks: `shift_quest_schema_version()` is 9;
+      Expect **no rows**. It checks: `shift_quest_schema_version()` is 20
+      (every migration on `main`; before the last one is applied it prints
+      the version it found, which is expected until then);
       both logins exist, `NOINHERIT`, connection limits 5 (bot) and 20
       (web), a `statement_timeout`, member of no role; the Data API (`anon`,
       `authenticated`) can run no `shift_quest_*` function; the bot can run
@@ -241,7 +243,8 @@ then read and write students' real quest data.
 - [ ] `DISCORD_SHIFT_INVITE_URL` (optional): the invite link shown to
       students who are not in the server yet.
 - [ ] AI island news (ข่าวเกาะ): the daily job `/api/cron/shift-island-digest`
-      (`vercel.json`, 20:00 Bangkok) needs two variables on Production:
+      (`vercel.json`, 18:00 Bangkok, so its summaries are stored before the
+      bot's nightly island news card at 20:00) needs two variables on Production:
       - `ANTHROPIC_API_KEY`: the model call (`lib/shift-island/digest/claude.ts`).
         Without it the job logs why and stores nothing; the island, the bot
         and everything else keep working.
@@ -298,8 +301,19 @@ The bot runs on its own host (`bot/deploy.sh`), not on Vercel.
       ssh <bot host> docker logs --tail 50 passionseed-discord-bot | grep shift-quests
       ```
 
-      Expect `[shift-quests] database schema 10 (bot needs 2)`. From 8 the bot
-      runs the live post, from 9 the island news post, from 10 it draws roots.
+      Expect `[shift-quests] database schema 20 (bot needs 2)` once every
+      migration is applied. From 8 the bot runs the live post, from 9 the
+      island news post, from 10 it draws roots, from 19 it posts the nightly
+      island news card, from 20 it sends the staff channel a note when that
+      card did not post by 22:30. Below 19 it logs
+      `[shift-quests] nightly island news off (schema N < 19)`; the schema is
+      read at start, so restart the bot after applying the migration. The
+      one exception is schema 20: deploy the bot **before** applying
+      `20261118140000_shift_quest_island_news_missed.sql` (an older bot
+      fails the note's kind permanently); the running bot reads the version
+      again every 5 minutes and logs
+      `[shift-quests] nightly island news: missed-night staff note on (schema 20)`,
+      no restart needed.
 - [ ] Register the slash commands (REST calls only; it never starts a second
       bot):
 
@@ -327,15 +341,36 @@ The bot runs on its own host (`bot/deploy.sh`), not on Vercel.
       Send Messages in each:
       - `kind:help` the group help channel
       - `kind:staff` the mentors' channel
-      - `kind:celebrate` where approved work and the weekly island are posted
+      - `kind:celebrate` where approved work and the weekly island are posted;
+        from schema 16 the bot also cheers there when a mentor's approval
+        grows a team's tree, and adds 🎉 and 🌱 under that post, so give it
+        Add Reactions and Read Message History here too
       - `kind:coworking` the coworking **voice** channel (it lights the
         island's campfire; the bot only needs View Channel there, it never
         joins voice)
       - `kind:live` the live island channel: the bot keeps **one** post there
-        and edits it as the island changes (schema 8), and posts the island
-        news there when it is on (schema 9)
+        and edits it as the island changes (schema 8), and posts the AI
+        island news there when it is on (schema 9) and no news channel is set
       - `kind:suggest` the ideas and bug reports channel, a forum or a text
         channel: the web island's ⋯ menu links to it
+      - `kind:news` #island-news, an announcement (or text) channel: the
+        nightly island news card at 20:00 Bangkok (schema 19). Re-register
+        the slash commands first (step F) so the choice and the
+        announcement channel type appear. Before setting it:
+        - the bot role gets View Channel, Send Messages, Attach Files and
+          Read Message History there, and **not** Manage Messages;
+        - student roles get View Channel and Read Message History and do
+          not post;
+        - **never press Publish** on a card and set up no followers: a
+          published copy leaves the SHIFT server, and later edits (a team's
+          AI line taken down) may not reach it.
+        `/admin channel` refuses the channel if students cannot see it or
+        read its history, or the bot cannot post the picture there. `/admin status` then shows
+        `✅ ห้องข่าวเกาะ`, and `/admin island` shows
+        `✅ ข่าวเกาะคืนนี้` and `สรุปจาก AI วันนี้: N ทีม`. From then
+        on the AI news goes only into this card, never the live channel.
+        Clearing the channel (`/admin channel kind:news` with no channel)
+        stops the card and brings the old digest behaviour back.
       Every channel is a group space. The bot never opens a private channel
       between a mentor and a student.
 - [ ] Reviewers: `/admin role user:@<mentor> role:reviewer action:grant` for
@@ -367,7 +402,79 @@ The bot runs on its own host (`bot/deploy.sh`), not on Vercel.
       `/admin island action:digest-on` starts generation, the feed and the
       Discord post; `digest-off` stops all three; `digest-hide plot:<n>`
       hides one team's summaries. A team only ever gets news while every
-      active member shows their name and has consent and AI consent.
+      active member shows their name and has consent and AI consent. With a
+      news channel set (schema 19) the AI lines go into the nightly card
+      instead of a post of their own; the card itself posts every night with
+      or without them.
+- [ ] The nightly island news (schema 19), the first night: between 20:00
+      and 20:05 Bangkok there is one card in #island-news, the bot log has
+      `[shift-quests] nightly island news posted for <day> (N AI teams)`, and
+      `select day, message_id is not null from shift_quest_news_posts order by day desc limit 1`
+      shows today with a message. The next morning there is still one card.
+      A rollback (`bot/deploy.sh --rollback`) leaves the posted cards as they
+      are and posts nothing until the redeploy; clearing the news channel
+      brings the old digest behaviour back.
+- [ ] A missed night (schema 20): when no card is recorded by 22:30
+      Bangkok, the staff channel gets one note
+      (`⚠️ ข่าวเกาะคืนนี้ยังไม่ได้โพสต์`) and the bot log has
+      `no card recorded for tonight by 22:30; a note is queued for the staff channel`.
+      It comes at the first or second 5-minute check from 22:30, so by about
+      22:40. Check the bot's View Channel and Send Messages in #island-news
+      (those two stop a post; without Attach Files the card goes out without
+      its picture), then the bot log
+      lines that start `[shift-quests] nightly island news:`. One note per
+      Bangkok day at most:
+      `select dedupe_key, status from shift_quest_outbox where kind = 'news_missed' order by created_at desc limit 5`.
+      It needs a staff channel (`/admin channel kind:staff`); without one
+      nothing is queued. A rollback to a bot older than the note fails a
+      queued note permanently (status `failed`); nothing else is lost.
+- [ ] The campfire call and the evening guest (schema 21,
+      `20261118150000_shift_quest_campfire_call`). Order: merge (Vercel
+      ships the 10 guest looks), deploy the bot, then the migration on the
+      founder's go. The bot re-reads the version every 30 seconds, so no
+      restart. **Applying the migration turns the call on that evening, with
+      the role ping** (both switches default on), within 30 seconds of the
+      apply. **Apply it outside 18:45 to 21:00 Bangkok**: inside that window
+      a call can go out at once (it is due until 19:15) or the guest's rest
+      can start counting with no call posted (19:25 to 19:30), before anyone
+      has checked the permissions below. If the first evening should wait, run
+      `/admin feature campfire_call off` right after applying (the switch
+      does not exist before the migration). Before applying, in Discord:
+      - #island-news: the bot has View Channel, Send Messages, Read Message
+        History, and Mention @everyone, @here and All Roles (or the student
+        role is set to "allow anyone to @mention this role"). Without Read
+        Message History a call whose send stalled is not retried that night
+        (never a second ping).
+      - '🔥 กองไฟ coworking': the student role can View Channel and Connect,
+        and the bot can View Channel and Send Messages in the voice channel's
+        chat. Smoke-test a real round first: someone sits at the fire at :00
+        or :30 and the round message appears in the voice chat. Without it
+        the bot logs `campfire call: ... no call until it is fixed` and sends
+        no call.
+      The first evening: at 18:50 one call in #island-news (bot log
+      `[shift-quests] campfire call posted for <day> (pinged the student roles)`),
+      it edits to lit at 19:00, the guest at 19:25, and after 19:30 the
+      count (log `campfire guest's drop for <day> settled (N team(s) got a
+      look)`), embers at 21:00, and the next evening yesterday's call is
+      gone. Check that students got the notification, and that a test
+      account with **ระงับทุกตำแหน่ง @mentions** (Suppress All Role
+      @mentions) on gets none; on a Thai-language phone, check that the card
+      names the setting as the app shows it. A team that won sees a 🎁
+      waiting on its tree. On a night the founder or a mentor sits at the
+      fire between 19:25 and 19:30, they become the guest within 30 seconds
+      (log `campfire guest for <day>: staff at the fire (N name(s) shown)`;
+      the call's title reads `คืนนี้ <their display name> มาเป็นแขกที่กองไฟ`);
+      a staff member who should not be named that night stays out of the
+      room during that rest. SHIFT cohort weeks need nothing: while a round is
+      in session (the cohort calendar in `lib/content/shift-cohort.ts`, read
+      through `roundsInSession`) the bot sends no call and makes no drop, and
+      the latest call becomes the paused note (log `campfire call paused for
+      <day>`). Off without a deploy: `/admin feature campfire_call off` (the
+      whole call: within 30 seconds the latest call is edited into a paused
+      note with no people line) or `/admin feature campfire_call_ping off`
+      (the same call, no ping). The guest's rolls of earlier nights are deleted by
+      pg_cron's 5-minute voice purge, so a rollback to an older bot keeps the
+      "deleted the next day" promise.
 - [ ] Island invitation RSVPs: every RSVP should lead to the Discord role
       `SHIFT high`. Nothing grants it automatically yet: until it does, staff
       read the new RSVPs (`shift_island_rsvps`, newest first, in the SQL

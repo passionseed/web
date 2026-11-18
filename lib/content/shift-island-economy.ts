@@ -19,6 +19,20 @@
 
 export const ECONOMY_STATUS = "DRAFT" as const;
 
+/**
+ * Suggested display prices for the merch previews, requested before stock
+ * is arranged. These are not catalog rules and never enter a redeem call.
+ * A live database catalog item's price always replaces its preview.
+ * All fit within the draft ordinary-quest budget, without staff awards.
+ */
+export const MERCH_PRICES_DRAFT = {
+  stickers: 300,
+  cap: 900,
+  deskMat: 1200,
+  tee: 1500,
+  hoodie: 2500,
+} as const;
+
 /** What a rule pays for: main quests 1 to 7, the two community side quests, other side quests, or a staff award. */
 export type RuleTarget = "main" | "community" | "side" | "staff";
 

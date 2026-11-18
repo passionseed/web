@@ -76,6 +76,14 @@ export interface Campfire {
    * campfire rounds (rounds.ts), which post only while someone sits there.
    */
   status: () => { channel: string | null; sitters: number };
+  /**
+   * The Discord ids of the people in the coworking voice channel right now,
+   * bots left out, read from the gateway's voice cache: for the evening
+   * guest's drop (call.ts), which passes them to the database on each check
+   * of the guest's rest and keeps nothing. Null while that is unknown (no channel set or seen yet, the bot
+   * cannot see it, or it is not open to students): no drop is made then.
+   */
+  present: () => string[] | null;
 }
 
 /** A failure as a code only: messages can carry names, which never go to logs. */
@@ -314,6 +322,18 @@ export function startCampfire(client: Client, api: QuestApi, guildId: string, co
   return {
     status() {
       return { channel: channel ?? null, sitters: open && !stopped ? names.size : 0 };
+    },
+    present() {
+      if (stopped || !channel) return null;
+      const { guild, voice, open: isOpen } = look(channel);
+      if (!guild || !voice || !isOpen) return null;
+      const members: VoiceMember[] = [...guild.voiceStates.cache.values()].map((state) => ({
+        id: state.id,
+        channelId: state.channelId,
+        bot: state.member?.user.bot ?? false,
+        name: null,
+      }));
+      return campersIn(members, channel).ids;
     },
     async stop() {
       stopped = true;

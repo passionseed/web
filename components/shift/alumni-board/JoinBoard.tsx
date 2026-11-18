@@ -15,8 +15,8 @@ export function JoinBoard({ suggested }: { suggested: { nickname: string; cohort
   const [cohort, setCohort] = useState(suggested?.cohort ?? "");
   return (
     <section className={board.card}>
-      <h1 className={board.title}>เข้าบอร์ดศิษย์เก่า SHIFT</h1>
-      <p className={`${board.muted} mt-1`}>ตั้งเป้า เจอทีม เล่าความคืบหน้า ใส่ชื่อเล่นกับรุ่นครั้งเดียวแล้วเริ่มได้เลย</p>
+      <h1 className={board.title}>ยืนยันศิษย์เก่า SHIFT</h1>
+      <p className={`${board.muted} mt-1`}>ใส่ชื่อเล่นกับรุ่นที่เคยลง SHIFT แล้วไปตอบรับคำเชิญเข้าเกาะ</p>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -55,7 +55,7 @@ export function JoinBoard({ suggested }: { suggested: { nickname: string; cohort
           ))}
         </select>
         <button type="submit" className={`${board.button} mt-4`} disabled={pending}>
-          เข้าบอร์ด
+          บันทึกแล้วไปเกาะ
         </button>
       </form>
     </section>

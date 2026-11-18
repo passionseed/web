@@ -28,6 +28,49 @@
 #   tree      every migration applied twice, then tree.ts (schema 13,
 #             20261114120000: seeds, tree style, round and quest gifts, the
 #             own tree read and other teams' styles), with consent off
+#   treepost  every migration applied twice, then tree_post.ts (schema 16,
+#             20261118090000: the celebrate post when a mentor's approval
+#             grows a tree, and the bot's send-time read), consent on and off
+#   reset, evidence, peer
+#             every migration applied twice, then reset.ts, evidence.ts and
+#             peer.ts (the admin self-reset, photo evidence, the peer check)
+#   webeverything
+#             every migration applied twice, then web_everything.ts (schema
+#             17, 20261118100000: every new website wrapper as
+#             shift_quest_web, the data request dedupe, the help conflict
+#             filter and the award after the last teammate answers)
+#   visitors  every migration applied twice, then visitors.ts (schema 18,
+#             20261118110000: the plaza's count of today's check-ins and the
+#             caller's own team's), with consent off
+#   news      every migration applied twice, then news.ts (schema 19,
+#             20261118130000: the nightly island news card: when it is due,
+#             at fixed times, what its totals count over 20:00 to 20:00, the
+#             AI lines it may show, claim, mark and the 7-day re-check, the
+#             news channel setting, the grants), with consent off
+#   newsmissed
+#             every migration applied twice, then news_missed.ts (schema 20,
+#             20261118140000: the staff note when tonight's card did not post
+#             by 22:30, at fixed times: one outbox row per Bangkok day for the
+#             staff channel, {day} only, none with a card, a card another
+#             process is sending, no news or staff channel or a channel set
+#             from 22:24; a night of failing sends ticked as the bot does
+#             gets exactly one note by 22:40; the grants), with consent off
+#   campfirecall
+#             every migration applied twice, then campfire_call.ts (schema 21,
+#             20261118150000: the 18:50 campfire call and the evening guest, at
+#             fixed times: when the call is due, claim and mark, the frozen
+#             ping, the previous call, the switched-off call to retire; the
+#             guest rotation; who counts (anyone at the fire at any check of
+#             the guest's rest, only which teams kept), one settling from
+#             19:30 under repeated and concurrent calls, one roll per team,
+#             staff never win, no member id, time or presence stored, earlier
+#             nights deleted (also by the voice purge, and a lone member's
+#             erasure), guest looks only from guests; the public count always
+#             shown once settled; staff at the fire are the guest (named, up
+#             to two, staff only, their own 2 looks, names cleared the next
+#             day and on erasure); the private check; whether the call pings;
+#             /data's tree gifts; the grants: the bot's, never the
+#             website's), with consent off
 #
 #   supabase/tests/shift_quests/run-local.sh       # or: pnpm test:db:quests
 #   PG_BIN=/usr/lib/postgresql/15/bin supabase/tests/shift_quests/run-local.sh
@@ -170,10 +213,17 @@ SQL
 # can execute none and touch no table, and every table has row level security.
 # The website-only functions (the canvas link, 091100, the ownership read,
 # 091200, the campfire read, 093000, and the menu links read, 094000) are
-# never the bot's; the campfire writers (093000) and the live post's reader
-# and writer (094000) are the bot's like every other entry point.
+# never the bot's; the campfire writers (093000), the live post's reader
+# and writer (094000), the nightly island news card's four functions
+# (20261118130000), its missed-night check (20261118140000,
+# shift_quest_enqueue_news_missed) and the campfire call's and evening
+# guest's seven (20261118150000: shift_quest_call_today, _call_claim,
+# _call_mark, _call_pings, shift_quest_campfire_seen, _campfire_drop,
+# shift_quest_guest_status) are the bot's like every other entry point, and
+# never the website's (their helpers, shift_quest__news_*, __call_* and
+# __guest_*, are nobody's).
 # And the web allowlist (20261111090900, 091000, 091100, 091200, 093000, 094000, and every later file
-# that grants shift_quest_web, up to 20261114120000's tree style): shift_quest_web executes exactly the
+# that grants shift_quest_web, up to 20261118100000's website-does-everything allowlist): shift_quest_web executes exactly the
 # functions listed below (nothing before that file is applied), never a
 # helper, and holds no privilege on any table or sequence. The list repeats
 # the migration's on purpose: a new grant must change both.
@@ -190,14 +240,23 @@ WITH fns0 AS (
         'shift_quest_consent_adult', 'shift_quest_consent_link', 'shift_quest_consent_import',
         'shift_quest_consent_parent_view', 'shift_quest_consent_parent_answer',
         'shift_quest_consent_parent_withdraw', 'shift_quest_island_news', 'shift_quest_digest_inputs',
-        'shift_quest_digest_save', 'shift_quest_admin_reset_self')
+        'shift_quest_digest_save', 'shift_quest_admin_reset_self', 'shift_quest_admin_island')
       -- 20261115130000_shift_quest_evidence_photos: photos, the web review page, the trash job, the problem line.
       OR p.proname IN ('shift_quest_evidence_add', 'shift_quest_evidence_remove', 'shift_quest_evidence_list',
         'shift_quest_review_view', 'shift_quest_storage_trash_claim', 'shift_quest_storage_trash_done',
         'shift_quest_project_set_ambition')
       -- 20261115140000_shift_quest_peer_check: the peer check is the website's.
       OR p.proname IN ('shift_quest_project_friends', 'shift_quest_project_invite_friend')
-      OR p.proname LIKE 'shift\_quest\_peer\_%' AS web_only
+      OR p.proname LIKE 'shift\_quest\_peer\_%'
+      -- 20261118100000_shift_quest_web_everything: the website's wrappers over member uuids.
+      OR p.proname IN ('shift_quest_project_teammates', 'shift_quest_islanders', 'shift_quest_share_draft',
+        'shift_quest_milestone_submit_team', 'shift_quest_side_submit_team', 'shift_quest_admin_web_status',
+        'shift_quest_admin_setting',
+        'shift_quest_admin_members', 'shift_quest_admin_member', 'shift_quest_admin_member_role',
+        'shift_quest_admin_member_recognize', 'shift_quest_admin_member_award',
+        'shift_quest_admin_member_consent_reset', 'shift_quest_admin_seasons')
+      -- 20261118110000_shift_quest_island_visitors: the plaza's visitors are the website's.
+      OR p.proname = 'shift_quest_island_visitors' AS web_only
   FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
   WHERE n.nspname = 'public' AND p.proname LIKE 'shift\_quest\_%'
 ), fns AS (
@@ -263,6 +322,7 @@ web_allow(sig) AS (VALUES
   ('shift_quest_island_styles()'),
   -- 20261115120000_shift_quest_admin_reset_self.
   ('shift_quest_admin_reset_self(text)'),
+  ('shift_quest_admin_island(text)'),
   -- 20261115130000_shift_quest_evidence_photos.
   ('shift_quest_evidence_add(text,uuid,integer,integer,integer)'),
   ('shift_quest_evidence_remove(text,uuid)'),
@@ -279,7 +339,63 @@ web_allow(sig) AS (VALUES
   ('shift_quest_peer_list(text,uuid)'),
   ('shift_quest_peer_hide(text,uuid,boolean)'),
   ('shift_quest_project_friends(text,uuid,text)'),
-  ('shift_quest_project_invite_friend(text,uuid,uuid)')
+  ('shift_quest_project_invite_friend(text,uuid,uuid)'),
+  -- 20261118100000_shift_quest_web_everything.
+  ('shift_quest_inbox_list(text,boolean)'),
+  ('shift_quest_help_mine(text)'),
+  ('shift_quest_help_withdraw(text,uuid)'),
+  ('shift_quest_update_prefs(text,boolean,smallint[],smallint,boolean)'),
+  ('shift_quest_contribution_respond(text,uuid,boolean,text)'),
+  ('shift_quest_share_get(text,uuid)'),
+  ('shift_quest_share_confirm(text,uuid)'),
+  ('shift_quest_share_cancel(text,uuid)'),
+  ('shift_quest_share_respond(text,uuid,boolean)'),
+  ('shift_quest_data_export(text)'),
+  ('shift_quest_data_request(text,text,text)'),
+  ('shift_quest_project_teammates(text)'),
+  ('shift_quest_islanders(text,text)'),
+  ('shift_quest_share_draft(text,text,text,uuid,uuid)'),
+  ('shift_quest_milestone_submit_team(text,smallint,text,text,text,text,uuid[])'),
+  ('shift_quest_side_submit_team(text,uuid,text,text,text,text,uuid[])'),
+  ('shift_quest_review_queue(text)'),
+  ('shift_quest_review_get(text,uuid)'),
+  ('shift_quest_review_decide(text,uuid,text,text,boolean)'),
+  ('shift_quest_proposal_get(text,uuid)'),
+  ('shift_quest_proposal_agree(text,uuid,text,text)'),
+  ('shift_quest_help_queue(text)'),
+  ('shift_quest_help_update(text,uuid,text,text)'),
+  ('shift_quest_awards_pending(text)'),
+  ('shift_quest_issue_award(text,uuid)'),
+  ('shift_quest_fulfill_queue(text)'),
+  ('shift_quest_fulfill_update(text,uuid,text,text)'),
+  ('shift_quest_admin_web_status(text)'),
+  ('shift_quest_admin_setting(text,text,text)'),
+  ('shift_quest_admin_members(text,text)'),
+  ('shift_quest_admin_member(text,uuid)'),
+  ('shift_quest_admin_member_role(text,uuid,text,boolean)'),
+  ('shift_quest_admin_member_recognize(text,uuid,integer,text,text,uuid)'),
+  ('shift_quest_admin_member_award(text,uuid,text,text,uuid)'),
+  ('shift_quest_admin_member_consent_reset(text,uuid)'),
+  ('shift_quest_admin_reverse(text,uuid,integer,text,text)'),
+  ('shift_quest_admin_report(text,integer)'),
+  ('shift_quest_admin_rule(text,text,integer,integer,text,text,text,text)'),
+  ('shift_quest_admin_rule_retire(text,text)'),
+  ('shift_quest_admin_templates(text)'),
+  ('shift_quest_admin_template_state(text,text,boolean)'),
+  ('shift_quest_admin_template_rule(text,text,text)'),
+  ('shift_quest_admin_catalog_list(text)'),
+  ('shift_quest_admin_catalog(text,uuid,text,text,integer,integer,boolean)'),
+  ('shift_quest_admin_catalog_gate(text,uuid,smallint,boolean)'),
+  ('shift_quest_admin_seasons(text)'),
+  ('shift_quest_admin_season(text,text,date,date,date,smallint,smallint,smallint,integer,date,text,boolean,boolean,smallint)'),
+  ('shift_quest_admin_unlock(text,uuid,text,smallint,date,text)'),
+  ('shift_quest_admin_island_status(text)'),
+  ('shift_quest_admin_island_set(text,text,text)'),
+  ('shift_quest_admin_data_requests(text)'),
+  ('shift_quest_admin_data_close(text,uuid,boolean)'),
+  ('shift_quest_admin_erase(text,uuid)'),
+  -- 20261118110000_shift_quest_island_visitors.
+  ('shift_quest_island_visitors(text)')
 ), web_applied AS (
   SELECT to_regprocedure('public.shift_quest_board(text)') IS NOT NULL AS yes
 )
@@ -342,7 +458,7 @@ echo "# migrations"
 for f in "${MIGRATIONS[@]}"; do echo "apply $(basename "$f")"; done
 new_db once
 apply once "single pass" "${MIGRATIONS[@]}"
-for DB in rules island flows islandflows board canvas campfire live player roots tree reset evidence peer; do
+for DB in rules island flows islandflows board canvas campfire live player roots tree reset evidence peer treepost webeverything visitors news newsmissed campfirecall; do
   new_db "$DB"
   apply "$DB" "first pass" "${MIGRATIONS[@]}"
   apply "$DB" "second pass" "${MIGRATIONS[@]}"
@@ -361,6 +477,17 @@ fi
 
 echo "# single pass"
 check_privileges once
+# The runbook's read-only production checks (step C, run after every
+# `supabase db push`) on the same single pass: every row they print is a
+# problem, so a migration that moves the schema version or adds a function
+# without updating them fails here, not on production after the push.
+prod_checks="$("${PSQL[@]}" -d once -At -f "$ROOT/docs/runbooks/shift-high-island-checks.sql")"
+if [ -n "$prod_checks" ]; then
+  echo "FAIL: docs/runbooks/shift-high-island-checks.sql reports problems on the single pass:" >&2
+  echo "$prod_checks" | sed 's/^/  /' >&2
+  exit 1
+fi
+echo "ok - once: the runbook's production checks (docs/runbooks/shift-high-island-checks.sql) print no row"
 catalog once >"$DATA/catalog-once.txt"
 catalog rules >"$DATA/catalog-twice.txt"
 if ! diff -u "$DATA/catalog-once.txt" "$DATA/catalog-twice.txt" >"$DATA/catalog.diff"; then
@@ -419,6 +546,12 @@ suite "tree" tree tree.ts
 suite "admin reset" reset reset.ts
 suite "photo evidence and the team's problem" evidence evidence.ts
 suite "peer check" peer peer.ts
+suite "tree grew post" treepost tree_post.ts
+suite "web does everything but Discord" webeverything web_everything.ts
+suite "plaza visitors" visitors visitors.ts
+suite "island news daily" news news.ts
+suite "island news missed-night note" newsmissed news_missed.ts
+suite "campfire call and evening guest" campfirecall campfire_call.ts
 # island_rules.ts runs against wave 1 alone once it knows to skip season cases.
 if [ "${#WAVE1[@]}" -lt "${#MIGRATIONS[@]}" ] && grep -q SHIFT_QUESTS_WAVE "$HERE/island_rules.ts"; then
   export SHIFT_QUESTS_WAVE=1

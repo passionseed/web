@@ -243,11 +243,35 @@ export const ADMIN_RESET = {
   done: "รีเซ็ตแล้ว กำลังโหลดเกาะใหม่",
 };
 
+/**
+ * DRAFT: the admin overview of the whole island (admins only; Postgres checks
+ * the role again): every team's name, members and progress, from the HUD and
+ * the ⋯ menu.
+ */
+export const ADMIN_OVERVIEW = {
+  /** The sheet's title and the HUD / menu button that opens it. */
+  title: "ภาพรวมเกาะ · Admin",
+  intro: "ข้อมูลสำหรับแอดมิน: ชื่อทีม สมาชิก และความคืบหน้าของทุกแปลง",
+  summary: (teams: number, waiting: number, help: number) =>
+    `${teams} ทีม · ${waiting} งานรอตรวจ · ${help} คำขอความช่วยเหลือ`,
+  search: "ค้นหาทีม สมาชิก หรือเลขแปลง",
+  plot: (slot: number, name: string) => `แปลง ${slot} · ${name}`,
+  members: "สมาชิก:",
+  noMembers: "ยังไม่มีสมาชิก",
+  milestones: "ผ่านหมุดหมาย",
+  milestonesOf: (done: number) => `${done}/7`,
+  waitingReview: "รอตรวจงาน",
+  openHelp: "รอความช่วยเหลือ",
+  checkinsWeek: "เช็กอิน 7 วัน",
+  updated: "อัปเดตล่าสุด:",
+  noMatch: "ไม่พบทีมที่ค้นหา",
+  empty: "ยังไม่มีทีมบนเกาะ",
+  failed: "ยังโหลดข้อมูลแอดมินไม่ได้ ลองรีเฟรชหน้าอีกครั้ง",
+};
+
 export const HUD = {
   /** The top-left chip's accessible name: the project, its tree, and what the tap opens. */
   chip: (name: string, stage: string) => `${name}, ${stage}, ดูวันนี้ของโปรเจกต์`,
-  /** Read after the chip's name while today's check-in is still open. */
-  chipTodayOpen: "วันนี้ยังไม่ได้เช็กอิน",
   /** The chip before a plot is claimed. */
   noPlot: "ยังไม่มีที่ดิน",
   meter: (stage: number) => `ต้นไม้ขั้น ${stage} จาก 7`,
@@ -283,15 +307,20 @@ export const PLOT = {
 
 export const TODAY = {
   heading: "วันนี้",
-  /** DRAFT: the daily check-in; never "ทำต่อ", which belongs to the keynote card. */
-  tap: "เช็กอินวันนี้",
-  tapped: "วันนี้คุณลงมือแล้ว",
-  addNote: "เพิ่มโน้ตสั้นๆ",
-  noteHint: "เห็นแค่คุณ",
-  noteLabel: "โน้ตของวันนี้ (เห็นแค่คุณ)",
-  saveNote: "บันทึกโน้ต",
-  noteSaved: "บันทึกโน้ตแล้ว",
-  noteRequired: "เขียนโน้ตสั้นๆ ก่อนบันทึก",
+  /** DRAFT: above the question, the quest the student is on (KEYNOTE.waiting while it is with a mentor). */
+  about: (title: string) => `เควสต์ที่ทำอยู่: ${title}`,
+  /** DRAFT: the check-in comes before the work: what the student means to do today (optional, private). */
+  ask: "วันนี้จะลงมือทำอะไร",
+  askHint: "ไม่บังคับ · เห็นแค่คุณ",
+  tapped: "วันนี้เช็กอินแล้ว",
+  intended: (text: string) => `เป้าวันนี้: ${text}`,
+  /** DRAFT: after the work, one private line filed under the quest; long enough, it counts toward the roots. */
+  lineLabel: "ทำแล้วเป็นยังไง ได้เรียนรู้อะไร (ไม่บังคับ)",
+  lineHint: `อย่างน้อย ${REFLECTION_MIN_CHARS} ตัวอักษร ช่วยให้รากต้นไม้งอก · เห็นแค่คุณ`,
+  lineTooShort: `เขียนอีกนิด อย่างน้อย ${REFLECTION_MIN_CHARS} ตัวอักษร`,
+  lineSave: "เก็บไว้",
+  lineSaved: "เก็บไว้แล้ว",
+  lineAgain: "เขียนเพิ่ม",
   stuck: "ติด",
   rest: "ขอพัก",
   resting: "กำลังพัก ต้นไม้ไม่เหี่ยว ไม่มีอะไรหาย",
@@ -308,6 +337,82 @@ export const KEYNOTE = {
   waiting: (title: string) => `รอพี่เลี้ยงดู: ${title}`,
   /** DRAFT: nothing started yet; the first main quest that is free. */
   start: (title: string) => `เริ่มที่: ${title}`,
+};
+
+/**
+ * The next-step card, the island's one gold element (NextStepCard).
+ * The headline says what to do next; the line under it says why or where the
+ * quest stands, and its one button says what the tap does. The day's first
+ * tap that leads to work counts as the day's check-in.
+ */
+export const NEXT_STEP = {
+  start: KEYNOTE.start,
+  retry: (title: string) => `ลองอีกครั้ง: ${title}`,
+  go: KEYNOTE.next,
+  answer: (title: string) => `ตอบพี่เลี้ยง: ${title}`,
+  /** DRAFT: waiting on a mentor, with a main quest the student can start meanwhile. Its wording waits on the open waiting-state change. */
+  meanwhile: (title: string) => `ระหว่างรอ เริ่มที่: ${title}`,
+  waiting: KEYNOTE.waiting,
+  resting: "กำลังพัก",
+  /** The line under the headline. */
+  main: (milestone: number) => `เควสต์หลัก ${milestone} จาก 7`,
+  side: "เควสต์เสริม",
+  proposed: "เควสต์ที่คุณเสนอ",
+  said: (text: string) => `พี่เลี้ยงบอกว่า: ${text}`,
+  sent: (title: string) => `ส่ง ${title} แล้ว รอพี่เลี้ยงดู`,
+  sentOnly: "ส่งแล้ว รอดูผลตรงนี้ได้เลย",
+  intended: (text: string) => `เป้าวันนี้: ${text}`,
+  restingLine: "ต้นไม้ไม่เหี่ยว ไม่มีอะไรหาย",
+  /** A mentor passed the student's work since they last looked. */
+  reviewed: (title: string) => `ผ่านแล้ว: ${title}`,
+  /** Only a mentor's approval of a main quest grows the tree, one stage. */
+  grew: "พี่เลี้ยงให้ผ่านแล้ว ต้นไม้ของทีมโตขึ้นอีก 1 ขั้น",
+  passed: "พี่เลี้ยงให้ผ่านแล้ว",
+  /** The card's one button, per state. */
+  action: {
+    start: "เริ่มเลย",
+    go: "ทำต่อ",
+    answer: "ดูคอมเมนต์พี่เลี้ยง",
+    retry: "ลองอีกครั้ง",
+    reviewed: "ดูผล",
+    wake: "กลับมาทำต่อ",
+  },
+  /** The quiet link under the card. */
+  board: "ดูเควสต์ทั้งหมด",
+};
+
+/**
+ * ผลจากพี่เลี้ยง (ResultsList, in the chip's sheet): what mentors said about the student's
+ * own work, read from the board, newest first. Never a teammate's feedback.
+ */
+export const RESULTS = {
+  title: "ผลตรวจจากพี่เลี้ยง",
+  hud: (fresh: number) => (fresh > 0 ? `ผลตรวจจากพี่เลี้ยง (ใหม่ ${fresh} รายการ)` : "ผลตรวจจากพี่เลี้ยง"),
+  approved: "ผ่านแล้ว",
+  clarification: "พี่เลี้ยงขอข้อมูลเพิ่ม",
+  declined: "ยังไม่ผ่าน ลองใหม่ได้",
+  fresh: "ใหม่",
+  /** The bot's own inbox (invites, coins, help replies) still lives in Discord. */
+  discord: (count: number) => `ข้อความอื่นจากบอทอีก ${count} รายการ อ่านต่อใน Discord`,
+};
+
+/** The menu's short list (MenuFoot, at the foot of the chip's sheet): only what has no place on the island itself. */
+export const MENU = {
+  story: "เรื่องเล่า",
+  guide: "คู่มือ",
+  /** The sound switch's line, and its state at the end of the line. */
+  sound: "เสียงกองไฟ",
+  on: "เปิดอยู่",
+  off: "ปิดอยู่",
+  rest: "ขอพัก",
+  /** Before a plot is claimed only; with a plot, coins live in the team sheet. */
+  coins: "เหรียญ",
+  consent: "ความยินยอม",
+  admin: "ภาพรวม (แอดมิน)",
+  /** The admin's reset, folded under this line. */
+  adminTools: "เครื่องมือแอดมิน",
+  /** The sound, the island view, suggestions and the account, folded under this line at the foot of the chip's sheet. */
+  settings: "ตั้งค่า",
 };
 
 export const BOARD = {
@@ -333,7 +438,7 @@ export const BOARD = {
   /** DRAFT: side quests may not be published yet. */
   sideNone: "เควสต์เสริมยังไม่เปิด ระหว่างนี้ทำเควสต์หลักต่อได้เลย",
   unlockWhen: (titles: string[]) => `ปลดล็อกเมื่อผ่าน ${titles.join(", ")}`,
-  proposedHeading: "เควสต์ที่ฉันเสนอ",
+  proposedHeading: "เควสต์ที่คุณเสนอ",
   proposedEmpty: "มีเรื่องที่อยากทำเองไหม เสนอเป็นเควสต์ของคุณได้",
   propose: "เสนอเควสต์ของฉัน",
   islandHeading: "ทั้งเกาะ",
@@ -350,7 +455,7 @@ export const BOARD = {
 };
 
 export const DETAIL = {
-  kind: { main: "เควสต์หลัก", side: "เควสต์เสริม", proposed: "เควสต์ที่ฉันเสนอ" },
+  kind: { main: "เควสต์หลัก", side: "เควสต์เสริม", proposed: "เควสต์ที่คุณเสนอ" },
   evidence: "ส่งอะไร",
   reflection: "คำถามหนึ่งข้อ",
   /** The reflection label for a quest with no prompt of its own (a proposed quest). */
@@ -364,20 +469,41 @@ export const DETAIL = {
   done: "ผ่านแล้ว",
   doneRepeat: "ผ่านแล้ว ส่งซ้ำเพื่อเรียนรู้ต่อได้",
   declinedProposed: "เควสต์นี้ปิดไปแล้ว เสนอเควสต์ใหม่ได้เสมอ",
-  proofLabel: "หลักฐาน (ลิงก์หรือเล่าสั้นๆ)",
+  /** DRAFT: the link has its own field now, so the label is just the noun; the placeholder still says a link works here too. */
+  proofLabel: "หลักฐาน",
   proofHint: "ไม่ต้องใส่ชื่อจริง เบอร์โทร หรือข้อมูลส่วนตัวของใคร",
   /** Thai reviewed (Cursor, Codex), 2026-11-14. */
   proofPlaceholder: "วางลิงก์ หรือเล่าสั้นๆ ว่าทำอะไรไป แล้วเจออะไร",
-  urlLabel: "ลิงก์งาน (ไม่บังคับ, ขึ้นต้นด้วย https://)",
+  /** DRAFT: the send form's optional group (link and photos), under the two required answers. */
+  optional: "แนบเพิ่ม (ไม่บังคับ)",
+  /** DRAFT: the link's label once opened; "ไม่บังคับ" lives in the group heading, the https rule stays in the label. */
+  urlShort: "ลิงก์งาน (ขึ้นต้นด้วย https://)",
+  /** DRAFT: the text button that opens the link field. */
+  addLink: "เพิ่มลิงก์",
   /** The bot's reviewed portfolio hint (bot/src/quests/island/copy.ts portfolioHint), word for word. */
   reflectionPlaceholder: "ตอบสั้นๆ ข้อเดียว เก็บไว้ใช้ในพอร์ตได้",
   submit: "ส่งให้พี่เลี้ยงดู",
   resubmit: "ส่งฉบับใหม่",
-  /** DRAFT */
-  submittedWaiting: "ส่งแล้ว รอพี่เลี้ยงดูอยู่ ถ้าแก้งานแล้วส่งฉบับใหม่ได้",
-  stuck: "ติด",
   start: "เริ่มเควสต์นี้",
-  started: "เริ่มแล้ว เควสต์นี้จะขึ้นในการ์ดทำต่อ",
+  /** Under an untouched quest, for work already done before starting it here. */
+  sendDone: "ทำเสร็จแล้ว? ส่งงานได้เลย",
+  /** Where the quest stands, as five dots under its title. */
+  stepper: ["เริ่ม", "ทำ", "ส่ง", "พี่เลี้ยงดู", "ผ่าน"] as const,
+  stepperLabel: (step: string) => `สถานะเควสต์นี้: ${step}`,
+  /** The one fold for everything that helps but is not the task (steps, examples, words, lore). */
+  helpers: "รายละเอียดและตัวช่วย",
+  /** The bar's one button once this quest needs nothing more from the student. */
+  next: "ไปเควสต์ถัดไป",
+  toOpen: "ไปเควสต์ที่ทำได้ตอนนี้",
+  home: "กลับไปที่เกาะ",
+  /** The bar while the work is with a mentor: words, no button. */
+  waiting: "ส่งแล้ว รอพี่เลี้ยงดู",
+  /** A quiet line under the checklist, opens the stuck sheet (friends or mentors, in group spaces). */
+  stuckLine: "ติดตรงไหน? ขอความช่วยเหลือ",
+  /** The day's intention, optional, inside the quest (the card's tap is the check-in). */
+  intention: "วันนี้จะลงมือทำอะไร (ไม่บังคับ)",
+  intentionSave: "จดไว้",
+  intentionSaved: "จดไว้แล้ว เห็นแค่คุณ",
   /** DRAFT */
   paused: "เควสต์นี้พักไว้อยู่ ทำต่อเมื่อพร้อม",
   resume: "ทำต่อเควสต์นี้",
@@ -436,13 +562,11 @@ export const QUEST = {
     attached: "ตอนกดส่ง เช็กลิสต์ /project ownership จะแนบไปกับงานนี้ให้เอง",
   },
   examples: "ตัวอย่างที่ผ่าน",
-  details: "รายละเอียดทั้งหมด",
   /** A long purpose in full, under the details. */
   why: "ทำไมเควสต์นี้",
   /** The main action on every quest: write or show the work right here (the canvas card is optional). */
   send: "เขียนหรือแนบงาน",
   resend: "ส่งฉบับใหม่",
-  stuck: "ติด",
   writeInstead: "เขียนเองแทน",
   useCanvas: "ใช้โน้ตจากแคนวาส",
   back: "กลับ",
@@ -547,8 +671,6 @@ export const FESTIVAL = {
   lanterns: (count: number, target: number) => `โคมที่ลานสว่างขึ้นทีละดวง ตามเป้าหมายของทั้งเกาะ ${count}/${target}`,
   /** Appended to the table and stage legend lines: other teams' flags show only when they show their name. */
   shownOnly: "เห็นเฉพาะทีมที่โชว์ชื่อบนเกาะ",
-  /** To the project sheet, where the season's meter and unlocks live. */
-  unlocks: "ดูของปลดล็อกในหน้าตัวละครของฉัน",
 };
 
 /**
@@ -573,7 +695,32 @@ export const CAMPFIRE = {
   empty: "ตอนนี้ยังไม่มีใครในห้อง เข้าไปเริ่มก่อนได้",
   error: "ตอนนี้โหลดรายชื่อไม่ได้",
   join: "เข้าห้อง",
-  fine: "กองไฟบนเกาะเก็บแค่ว่าใครอยู่ในห้องตอนนี้ และลบทันทีเมื่อออก",
+  /**
+   * What the campfire keeps (20261118150000): the evening guest keeps
+   * which teams had someone at the fire during its rest and each team's roll
+   * (no member, no time, deleted the next day), which for a team of one is
+   * that student's; a won look is the team's gift, kept with its date. "ใคร
+   * ในทีม": on a night the founder or a mentor is the guest, their display
+   * name is kept until the next day (staff, never a team member). Thai
+   * reviewed (Gemini, Codex, Claude), 2026-11-18.
+   */
+  fine: "กองไฟบนเกาะเก็บแค่ว่าใครอยู่ในห้องตอนนี้ และลบทันทีเมื่อออก ส่วนตอนแขกแวะมาที่กองไฟ ระบบจะเก็บว่าทีมไหนมีคนนั่งช่วงพักนั้นและผลลุ้นของทีม แล้วลบในวันถัดไป ไม่เก็บว่าใครในทีมนั่งหรือนั่งตอนไหน (ถ้าทีมมีคุณคนเดียว ข้อมูลของทีมก็คือของคุณ) ลุคที่ทีมได้จะเป็นของขวัญของทีม เก็บไว้พร้อมวันที่ได้",
+};
+
+/**
+ * Today's visitors in the plaza (docs/designs/shift-island-plaza-visitors.md).
+ * The figures carry no names; the team line goes only to the viewer's own
+ * team, and the tag only over the viewer's own figure, on their own screen.
+ */
+export const VISITORS = {
+  /** The plaza's label, how many checked in on the Bangkok day (the viewer included). */
+  count: (count: number) => `วันนี้มีคนเช็กอินบนเกาะแล้ว ${count} คน`,
+  /** A second line for the viewer's own team only. */
+  team: (count: number) => `วันนี้เพื่อนร่วมทีมเช็กอินแล้ว ${count} คน`,
+  /** More people than figures, as at the campfire. */
+  more: (count: number) => `+${count}`,
+  /** The tag over the viewer's own figure, beside their picture. */
+  me: "คุณ",
 };
 
 /**
@@ -904,6 +1051,9 @@ export const TEAM_PROBLEM = {
 export const REVIEW_PAGE = {
   title: "งานที่ส่งมาให้ดู",
   staffOnly: "หน้านี้สำหรับพี่เลี้ยงและแอดมินเท่านั้น",
+  /** DRAFT: the reviewer is the student, a teammate (now or before) or a contributor (20261116080000). */
+  conflict:
+    "คุณเปิดงานนี้ไม่ได้ เพราะเป็นงานของคุณเอง ของคนที่อยู่หรือเคยอยู่ทีมเดียวกับคุณ หรืองานที่คุณมีส่วนร่วม ให้พี่เลี้ยงคนอื่นดูแทน",
   signIn: "เข้าสู่ระบบด้วยบัญชี Discord ที่ใช้บนเกาะก่อน",
   notFound: "ไม่พบงานนี้",
   unavailable: "หน้านี้ยังไม่เปิด ลองใหม่อีกครั้งภายหลัง",
@@ -935,6 +1085,8 @@ export const REVIEW_PAGE = {
  */
 export const PHOTOS = {
   label: "แนบรูปหรือภาพหน้าจอ (ไม่บังคับ)",
+  /** DRAFT: the photos' label inside the send form's optional group. */
+  formLabel: "รูปหรือภาพหน้าจอ",
   rulesLead: "ก่อนแนบ เช็กว่าในรูป",
   rules: ["ไม่มีหน้าคน", "ไม่มีชื่อจริง", "ไม่มีเบอร์โทรหรือที่อยู่"],
   crop: "ภาพหน้าจอ: ครอปให้เหลือแค่ส่วนที่เกี่ยวกับงาน",
@@ -1041,20 +1193,11 @@ export const QUEST_ACTS: readonly { title: string; milestones: readonly number[]
 export const PARTNER_MILESTONE = 3;
 export const PARTNER_FIRST = "แนะนำหลังได้พันธมิตร";
 
-// Thai reviewed (agy, Codex, Cursor), 2026-11-14. stuckHint and the form labels are the bot's rounds copy.
+// Thai reviewed (agy, Codex, Cursor), 2026-11-14. The day's line itself is TODAY.line*.
 export const REFLECT = {
-  entry: "✍️ ได้เรียนรู้อะไร",
+  /** The journal row's required "what changed", for a line written on the island. */
   changed: "บันทึกจากเกาะ",
-  learned: "ได้เรียนรู้อะไร",
-  learnedHint: `ลองอะไรแล้วพบอะไร หรือเพิ่งเข้าใจอะไร อย่างน้อย ${REFLECTION_MIN_CHARS} ตัวอักษร`,
-  stuck: "ติดตรงไหน (ไม่บังคับ)",
-  stuckHint: "เขียนไว้ก่อน แล้วค่อยส่งให้พี่เลี้ยงช่วยดูได้",
-  save: "บันทึกสิ่งที่ได้เรียนรู้",
-  saved: "เก็บสิ่งที่คุณได้เรียนรู้ไว้แล้ว",
-  again: "เขียนบันทึกเพิ่ม",
   private: `รากนับได้คนละไม่เกิน ${REFLECTIONS_PER_DAY} บันทึกต่อวัน · บันทึกนี้เป็นส่วนตัว`,
-  discordHelp: "อยากให้พี่เลี้ยงช่วยไหม? ใน Discord พิมพ์ /island แล้วกด 🧱 ติด",
-  tooShort: `เขียนว่าได้เรียนรู้อะไร อย่างน้อย ${REFLECTION_MIN_CHARS} ตัวอักษร`,
 };
 
 /** Island and canvas reads, on return or by request. */
