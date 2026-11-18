@@ -14,7 +14,7 @@ import { IDS, MAIN_TITLES, makeBoard } from "../__fixtures__/board";
 import { HUD, MENU, NEXT_STEP, PLOT, RESULTS, TODAY, TREE } from "../copy";
 import { IslandApp } from "../IslandApp";
 import type { IslandViewport } from "../IslandViewport";
-import { CHARACTER as CHARACTER_COPY, PLAYER, PLAYER_MENU, WALLET } from "../player/copy";
+import { CHARACTER as CHARACTER_COPY, PLAYER, PLAYER_MENU, SHOP, WALLET } from "../player/copy";
 import { PRIZES_UI } from "../prizes/copy";
 import { STORY_SEEN_KEY } from "../story/useStorySeen";
 import { VOYAGE_SEEN_KEY } from "../voyage/useVoyage";
@@ -552,7 +552,7 @@ describe("IslandApp HUD", () => {
     openMenu();
     const sheet = screen.getByRole("dialog");
     const list = within(sheet).getByRole("list", { name: "เมนู" });
-    expect(within(list).getAllByRole("listitem").map((line) => line.textContent)).toEqual([MENU.guide, MENU.story]);
+    expect(within(list).getAllByRole("listitem").map((line) => line.textContent)).toEqual([SHOP.heading, MENU.guide, MENU.story]);
     const fold = within(sheet).getByText(MENU.settings).closest("details") as HTMLElement;
     expect(fold).not.toHaveAttribute("open");
     expect(within(fold).getByRole("button", { name: MENU.sound })).toHaveAttribute("aria-pressed", "false");
@@ -1006,6 +1006,15 @@ describe("IslandApp: the player", () => {
     render(<IslandApp page={page({ character })} picture={null} />);
     expect(screen.queryByRole("button", { name: /Passioncoin/ })).toBeNull();
     expect(within(openMenu()).queryByRole("button", { name: MENU.coins })).toBeNull();
+  });
+
+  it("opens the merchandise shop even while coins are off and the wallet is empty", async () => {
+    mockedLoadWallet.mockResolvedValue({ ok: true, data: { ...wallet, live: false, shopLive: false, balance: 0, shop: { ...wallet.shop, live: false } } });
+    render(<IslandApp page={page({ character: stats({ live: false, balance: 0 }) })} picture={null} />);
+    fireEvent.click(within(openMenu()).getByRole("button", { name: SHOP.heading }));
+    expect(await screen.findByText(SHOP.merch.tee)).toBeInTheDocument();
+    expect(screen.getByText(SHOP.merch.hoodie)).toBeInTheDocument();
+    expect(screen.getAllByText(SHOP.comingSoon)).toHaveLength(2);
   });
 
   it("keeps coins off the menu with a plot: they live in the team sheet", () => {

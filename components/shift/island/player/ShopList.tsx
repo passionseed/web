@@ -3,12 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 
 import { cancelRedemption, redeemItem } from "@/app/shift/island/wallet-actions";
+import { ISLAND_MERCH, merchArtwork } from "@/lib/content/shift-island-merch";
 import type { MyRedemption, ShopItem, WalletDetail } from "@/lib/supabase/shift-quests/playerTypes";
 
 import { thaiShortDate } from "../copy";
 import island from "../island.module.css";
 import { coinNumber, SHOP } from "./copy";
 import styles from "./player.module.css";
+import { MerchArtwork } from "./MerchArtwork";
 
 /** A fresh idempotency key for one confirm step (a v4 UUID, as redeemItem expects). */
 export function newRequestKey(): string {
@@ -96,6 +98,9 @@ export function ShopList({ wallet, onChanged }: ShopListProps) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<Message>(null);
   const { shop, balance } = wallet;
+  const previews = ISLAND_MERCH.filter(
+    (product) => !shop.live || !shop.items.some((item) => merchArtwork(item.name)?.key === product.key),
+  );
   const confirmYes = useRef<HTMLButtonElement>(null);
   const redeemButtons = useRef(new Map<string, HTMLButtonElement>());
   /** The item whose "แลก" gets focus back after "ยังไม่แลก". */
@@ -144,6 +149,22 @@ export function ShopList({ wallet, onChanged }: ShopListProps) {
   return (
     <section className={styles.section} aria-label={SHOP.heading}>
       <h3 className={island.detailHeading}>{SHOP.heading}</h3>
+      {previews.length > 0 ? (
+        <ul className={styles.merchPreviews}>
+          {previews.map((product) => (
+            <li key={product.key} className={styles.merchPreview}>
+              <MerchArtwork src={product.image} />
+              <div className={styles.merchCaption}>
+                <div>
+                  <p className={styles.itemName}>{SHOP.merch[product.key]}</p>
+                  <p className={styles.itemText}>{product.catalogName}</p>
+                </div>
+                <span className={styles.merchStatus}>{SHOP.comingSoon}</span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : null}
       {message ? (
         <p className={styles.message} data-tone={message.tone} role={message.tone === "error" ? "alert" : "status"}>
           {message.text}
@@ -151,17 +172,19 @@ export function ShopList({ wallet, onChanged }: ShopListProps) {
       ) : null}
       {!shop.live ? (
         <p className={island.hint}>{SHOP.closed}</p>
-      ) : shop.items.length === 0 ? (
+      ) : shop.items.length === 0 && previews.length === 0 ? (
         <p className={island.hint}>{SHOP.empty}</p>
-      ) : (
+      ) : shop.items.length > 0 ? (
         <ul className={styles.list}>
           {shop.items.map((item) => {
+            const artwork = merchArtwork(item.name);
             const reason = lockReason(item, balance);
             const reasonId = `shop-lock-${item.id}`;
             const open = confirm?.itemId === item.id;
             const needs = requirements(item, wallet);
             return (
               <li key={item.id} className={styles.item}>
+                {artwork ? <MerchArtwork src={artwork.image} /> : null}
                 <div className={styles.itemHead}>
                   <p className={styles.itemName}>{item.name}</p>
                   <span className={styles.amount}>{SHOP.cost(coinNumber(item.cost))}</span>
@@ -233,7 +256,7 @@ export function ShopList({ wallet, onChanged }: ShopListProps) {
             );
           })}
         </ul>
-      )}
+      ) : null}
       {shop.mine.length > 0 ? (
         <div className={styles.section}>
           <h4 className={island.detailHeading}>{SHOP.mineHeading}</h4>

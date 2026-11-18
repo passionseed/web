@@ -97,6 +97,12 @@ export const WALLET_LABELS = {
 
 export const SHOP = {
   heading: "ร้านค้า",
+  /** DRAFT: physical merch preview; price and stock are not promised. */
+  comingSoon: "เร็วๆ นี้",
+  merch: {
+    tee: "เสื้อยืด PassionSeed",
+    hoodie: "ฮู้ดดี้ PassionSeed",
+  },
   closed: "ร้านยังไม่เปิด เมื่อเปิด จะประกาศกติกาและของที่มีจริงให้ทราบก่อน",
   empty: "ยังไม่มีของในร้านตอนนี้",
   cost: (n: string) => `${n} coin`,
