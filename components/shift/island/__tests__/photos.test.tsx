@@ -41,6 +41,15 @@ describe("PhotoPicker", () => {
     expect(screen.getByText(PHOTOS.count(0, 3))).toBeInTheDocument();
   });
 
+  it("inline (the send form): a text button beside the form's own, the rules still shown before any pick", () => {
+    render(<PhotoPicker photos={[]} onChange={jest.fn()} label={PHOTOS.formLabel} inline leading={<button type="button">เพิ่มลิงก์</button>} />);
+    expect(screen.getByRole("group", { name: PHOTOS.formLabel })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "เพิ่มลิงก์" })).toBeInTheDocument();
+    expect(screen.getByLabelText(new RegExp(PHOTOS.add))).toHaveAttribute("accept", "image/*");
+    for (const rule of PHOTOS.rules) expect(screen.getByText(rule)).toBeInTheDocument();
+    expect(screen.getByText(PHOTOS.count(0, 3))).toBeInTheDocument();
+  });
+
   it("has no add tile once three are picked", () => {
     const picked = [1, 2, 3].map((n) => ({ key: `k${n}`, blob: new Blob(), preview: `blob:${n}`, width: 10, height: 10 }));
     render(<PhotoPicker photos={picked} onChange={jest.fn()} />);

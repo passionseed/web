@@ -222,16 +222,11 @@
   grid-template-columns: 24px minmax(0, 1fr);
   gap: 10px;
   align-items: start;
-  padding: 10px 12px;
   font-size: 14px;
   line-height: 1.5;
   color: var(--text-hi);
-  background: rgba(255, 241, 214, 0.05);
-  box-shadow: inset 0 0 0 1px rgba(255, 241, 214, 0.2);
-  clip-path: var(--notch);
   cursor: pointer;
 }
-
 .toggle input {
   width: 20px;
   height: 20px;
