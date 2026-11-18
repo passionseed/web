@@ -7,6 +7,8 @@
  */
 import { escapeHeading, escapeMarkdown } from "discord.js";
 
+import { NEWS_MISSED } from "./newsCopy";
+
 /** A web address, left exactly as written so it still opens in full. */
 const WEB_ADDRESS = /(https?:\/\/\S+)/;
 
@@ -814,6 +816,14 @@ export function renderOutbox(
         title: `🔒 คำขอ${params.kind === "erasure" ? "ลบ" : "แก้ไข"}ข้อมูลใหม่`,
         body: "",
         note: "ดูที่ /admin data",
+        mentionUserIds: [],
+      };
+    case "news_missed":
+      // Staff channel only (schema 20): tonight's island news card did not post by 22:30. Params are {day} only.
+      return {
+        title: NEWS_MISSED.title,
+        body: `${NEWS_MISSED.body(params.day)}\n${NEWS_MISSED.check}`,
+        note: NEWS_MISSED.note,
         mentionUserIds: [],
       };
     case "nudge":

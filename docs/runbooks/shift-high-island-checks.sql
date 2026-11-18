@@ -9,6 +9,8 @@
 -- Same rules as check_privileges in supabase/tests/shift_quests/run-local.sh
 -- (keep the web allowlist below in step with it) plus the PUBLIC exposure
 -- query in docs/features/shift-high-quests.md ("Web board and shift_quest_web").
+-- run-local.sh also runs this file on its single-pass database and fails on
+-- any row, so the expected schema version and the lists stay current.
 WITH fns0 AS (
   SELECT p.oid, p.oid::regprocedure::text AS sig,
     p.proname LIKE 'shift\_quest\_\_%' OR p.proname = 'shift_quest_bootstrap_admin' AS helper,
@@ -33,7 +35,9 @@ WITH fns0 AS (
         'shift_quest_admin_setting',
         'shift_quest_admin_members', 'shift_quest_admin_member', 'shift_quest_admin_member_role',
         'shift_quest_admin_member_recognize', 'shift_quest_admin_member_award',
-        'shift_quest_admin_member_consent_reset', 'shift_quest_admin_seasons') AS web_only
+        'shift_quest_admin_member_consent_reset', 'shift_quest_admin_seasons')
+      -- 20261118110000_shift_quest_island_visitors: the plaza's visitors are the website's.
+      OR p.proname = 'shift_quest_island_visitors' AS web_only
   FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
   WHERE n.nspname = 'public' AND p.proname LIKE 'shift\_quest\_%'
 ), fns AS (
@@ -171,14 +175,17 @@ web_allow(sig) AS (VALUES
   ('shift_quest_admin_island_set(text,text,text)'),
   ('shift_quest_admin_data_requests(text)'),
   ('shift_quest_admin_data_close(text,uuid,boolean)'),
-  ('shift_quest_admin_erase(text,uuid)')
+  ('shift_quest_admin_erase(text,uuid)'),
+  -- 20261118110000_shift_quest_island_visitors.
+  ('shift_quest_island_visitors(text)')
 )
--- The schema: 17 is every migration on this branch (the website does everything
--- but Discord, 20261118100000).
-SELECT 'schema: shift_quest_schema_version() is ' || coalesce(v::text, 'missing') || ', expected 17' AS problem
+-- The schema: 20 is every migration on this branch (the missed-night staff
+-- note, 20261118140000). run-local.sh runs this file on its single pass, so a
+-- new migration that moves the version fails there until this line follows.
+SELECT 'schema: shift_quest_schema_version() is ' || coalesce(v::text, 'missing') || ', expected 20' AS problem
 FROM (SELECT CASE WHEN to_regprocedure('public.shift_quest_schema_version()') IS NULL THEN NULL
   ELSE public.shift_quest_schema_version() END AS v) s
-WHERE v IS DISTINCT FROM 17
+WHERE v IS DISTINCT FROM 20
 UNION ALL
 -- The two logins: they exist, NOINHERIT, member of no role, their connection
 -- limit and statement_timeout. LOGIN itself is step D, so it is not checked here.

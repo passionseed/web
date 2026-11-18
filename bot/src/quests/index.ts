@@ -123,6 +123,9 @@ export async function handleInteraction(api: QuestApi, guildId: string, i: Inter
  * 19 (20261118130000_shift_quest_island_news_daily) adds the nightly island
  * news card in the news channel; also optional: below 19 the bot runs without
  * it (NEWS_SCHEMA).
+ * 20 (20261118140000_shift_quest_island_news_missed) adds the staff note when
+ * the card did not post by 22:30; also optional: below 20 the card runs
+ * without it, and reads the version again each check (NEWS_MISSED_SCHEMA).
  */
 export const REQUIRED_SCHEMA = 2;
 
@@ -232,7 +235,10 @@ export async function registerShiftQuests(client: Client, env: ShiftQuestsEnv): 
   // Started only on a database that has the island news functions (schema 9): one post a day, no pings.
   const digest = digestFor(version, () => startDigestPost(client, api, { guildId: env.guildId, connected: () => connected }));
   // Started only on a database that has the nightly island news functions (schema 19): one card a night, no pings.
-  const news = newsFor(version, () => startNewsPost(client, api, { guildId: env.guildId, connected: () => connected }));
+  // From schema 20 each check also queues the staff note for a missed night (it reads the version again until then).
+  const news = newsFor(version, () =>
+    startNewsPost(client, api, { guildId: env.guildId, connected: () => connected, schema: version })
+  );
 
   return {
     async stop() {

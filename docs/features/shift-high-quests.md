@@ -999,6 +999,32 @@ Decisions and copy:
 Tested in `supabase/tests/shift_quests/news.ts` and
 `bot/src/quests/__tests__/news.test.ts`.
 
+### A missed night: the staff note (schema 20)
+
+`20261118140000_shift_quest_island_news_missed.sql` adds the bot-only
+`shift_quest_enqueue_news_missed()`, which the nightly news check calls every
+5 minutes after its own try at tonight's card, and the helper
+`shift_quest__news_missed(now)` (no login runs it). When a news channel and a
+staff channel are set, it is 22:30 to midnight Bangkok, no card is recorded
+for the day and no other bot process is sending one (no claim under 2
+minutes old: a failed send keeps its claim and is claimed again every 15 to
+20 minutes until midnight, just before the bot's own check), and the news
+channel was not set or changed from 22:24 that night (one 5-minute tick
+before 22:30, and a margin), it queues one
+outbox row for the staff channel slot: kind `news_missed`, params `{day}`,
+dedupe key `news_missed:<day>`, so at most one note per Bangkok day across
+restarts and bot processes. No student data, never a student channel. The
+outbox delivers it like every staff post, by about 22:40: tonight's card did
+not post, check the bot's View Channel and Send Messages in the news channel,
+else ask whoever runs the bot for its `nightly island news` log lines (the
+bot offline at 20:00); fixed before midnight, the stale retries may still
+post tonight's card. The bot
+renders the kind from the deploy before this file (an older bot fails an
+unknown kind permanently), so deploy the bot first, then apply this file;
+below schema 20 the bot reads the version again on each check, so no restart
+is needed. Tested in `supabase/tests/shift_quests/news_missed.ts`,
+`bot/src/quests/__tests__/news.test.ts` and `outbox.test.ts`.
+
 ## Admin: reset my own island (testing)
 
 `20261115120000_shift_quest_admin_reset_self.sql` adds
