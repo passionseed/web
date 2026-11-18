@@ -47,6 +47,8 @@ const UNTINTED = new Set([
   "campfire_flame_1",
   "campfire_flame_2",
   "goal_bulb",
+  // The Demo Day countdown's glyphs: lit like the marquee's lights.
+  ...["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "d", "dash", "a", "y"].map((g) => `count_${g}`),
 ]);
 /** Palette keys that stay untinted in these sprites: their light. */
 const LIT_KEYS: Readonly<Record<string, string>> = {
@@ -55,6 +57,7 @@ const LIT_KEYS: Readonly<Record<string, string>> = {
   festoon: "yifrp",
   campfire_pit: "yi",
   fest_stage_3: "y",
+  fest_count: "f",
 };
 
 /** Ground tiles are never mirrored. */

@@ -24,7 +24,6 @@ describe("today's visitors: copy", () => {
   it("says how many came today, and the team's line, in Thai with no em dash or น้อง", () => {
     expect(VISITORS.count(7)).toBe("วันนี้มีคนเช็กอินบนเกาะแล้ว 7 คน");
     expect(VISITORS.team(2)).toBe("วันนี้เพื่อนร่วมทีมเช็กอินแล้ว 2 คน");
-    expect(VISITORS.more(4)).toBe("+4");
     expect(VISITORS.me).toBe("คุณ");
     for (const line of [VISITORS.count(1), VISITORS.team(1), VISITORS.me]) {
       expect(line).not.toMatch(/[—–]/);
@@ -52,11 +51,11 @@ describe("today's visitors: plazaProps", () => {
     expect(props.labels).toEqual({ visitors: "วันนี้มีคนเช็กอินบนเกาะแล้ว 5 คน\nวันนี้เพื่อนร่วมทีมเช็กอินแล้ว 2 คน", me: "คุณ" });
   });
 
-  it("shows +N past the figures it can draw, with guests counted at the campfire", () => {
-    // 20 people, a campfire of 2: the viewer, 3 teammates, 2 strollers and 2 guests by the fire.
+  it("says the whole count past the figures it can draw: no +N label", () => {
+    // 20 people, a campfire of 2: the viewer, 3 teammates, 2 strollers and 2 guests by the fire; the line says 20.
     const props = plazaProps(null, null, { count: 2, joinUrl: "" }, undefined, { count: 20, team: 4, me: true, shirt: "l" });
-    expect(props.labels.visitorsMore).toBe("+12");
-    expect(props.labels.campfireCount).toBeDefined();
+    expect(Object.keys(props.labels).sort()).toEqual(["campfireCount", "me", "visitors"]);
+    expect(props.labels.visitors).toContain("20 คน");
   });
 });
 

@@ -131,16 +131,13 @@ function onLand(scene: IslandScene, r: Rect): boolean {
 /**
  * A label's text box in native px (CSS px / 2 at the usual 2x), from its
  * longest text: the visitors' two lines up to 176px wide, the viewer's tag
- * (a 16px picture and คุณ) about 56px, "+N" up to "+99" about 48px.
+ * (a 16px picture and คุณ) about 56px.
  */
 const LABEL_SIZE: Partial<Record<PlazaLabel["id"], { w: number; h: number }>> = {
   visitors: { w: 88, h: 20 },
   me: { w: 28, h: 11 },
-  visitorsMore: { w: 24, h: 11 },
-  // The plaza's own, as drawn at 375px: the Demo Day sign's two lines, the campfire's count and "+N".
-  sign: { w: 62, h: 18 },
+  // The plaza's own, as drawn at 375px: the campfire's count.
   campfireCount: { w: 66, h: 11 },
-  campfireMore: { w: 19, h: 11 },
 };
 function labelBox(scene: IslandScene, label: PlazaLabel): Rect {
   const { w, h } = LABEL_SIZE[label.id] ?? { w: 64, h: 20 };
@@ -225,9 +222,8 @@ describe("the plaza's people in the world", () => {
     expect(crowd(world)).toHaveLength(plan.strollers + plan.team + 1);
     // Three coworkers and two guests sit at the fire.
     expect(world.actors.filter((a) => a.frames[0].startsWith("sit_"))).toHaveLength(3 + plan.sitters);
-    expect(world.labels.map((l) => l.id)).toEqual(["sign", "campfireCount", "visitors", "visitorsMore", "me"]);
-    // The campfire's own count stays the coworking room's.
-    expect(world.labels.map((l) => l.id)).not.toContain("campfireMore");
+    // The counts say how many: no "+N" for figures not drawn.
+    expect(world.labels.map((l) => l.id)).toEqual(["campfireCount", "visitors", "me"]);
   });
 
   it("lights the fire's seats for guests even when the coworking room is empty, with no campfire count", () => {
@@ -348,8 +344,8 @@ describe("the plaza's people: placement on every island", () => {
         blocked.push({ what: `tag ${tree.slot}`, rect });
       }
     }
-    const ours = world.labels.filter((l) => l.id === "visitors" || l.id === "visitorsMore" || l.id === "me");
-    expect(ours).toHaveLength(3);
+    const ours = world.labels.filter((l) => l.id === "visitors" || l.id === "me");
+    expect(ours).toHaveLength(2);
     const problems: string[] = [];
     for (const label of ours) {
       const box = labelBox(scene, label);

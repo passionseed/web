@@ -805,7 +805,8 @@ describe("IslandApp: the plaza", () => {
     expect(input.pins).toEqual(pins.map((pin) => pin.kind));
     expect(input.campfire).toEqual({ count: 3 });
     expect(input.prizes).toBe(true);
-    expect(labels).toEqual({ sign: "Demo Day 28 พ.ย.\nอีก 17 วัน", campfireCount: "3 คนกำลังทำงานอยู่" });
+    // The countdown board over the stage draws the days itself; the stage's name says them in words.
+    expect(labels).toEqual({ campfireCount: "3 คนกำลังทำงานอยู่" });
     expect(names).toEqual({
       notice: `กระดานเควสต์: ${pins.map((pin) => pin.title).join(" · ")}`,
       stage: "เวที Demo Day: 28 พ.ย. · อีก 17 วัน",
@@ -818,7 +819,7 @@ describe("IslandApp: the plaza", () => {
     mockToday.day = Math.round(Date.UTC(2026, 10, 28) / 86_400_000);
     try {
       render(<IslandApp page={festive()} picture={null} />);
-      expect(plaza().labels.sign).toBe("Demo Day 28 พ.ย.\nวันนี้");
+      expect(plaza().input.festival?.daysToDemo).toBe(0);
       expect(plaza().names.stage).toBe("เวที Demo Day: 28 พ.ย. · วันนี้");
     } finally {
       mockToday.day = null;
@@ -830,7 +831,6 @@ describe("IslandApp: the plaza", () => {
     render(<IslandApp page={festive({ visitors: { count: 5, team: 2 }, tree })} picture={null} />);
     expect(plaza().input.visitors).toEqual({ count: 5, team: 2, me: true, arriving: false, shirt: "w" });
     expect(plaza().labels).toMatchObject({ visitors: "วันนี้มีคนเช็กอินบนเกาะแล้ว 5 คน\nวันนี้เพื่อนร่วมทีมเช็กอินแล้ว 2 คน", me: "คุณ" });
-    expect(plaza().labels.visitorsMore).toBeUndefined();
   });
 
   it("draws nobody before the migration (no count), not even the viewer", () => {
@@ -854,9 +854,9 @@ describe("IslandApp: the plaza", () => {
     expect(plaza().labels.me).toBe("คุณ");
   });
 
-  it("draws eight at the fire and says how many more", () => {
+  it("draws eight at the fire and its count says how many are in the room", () => {
     render(<IslandApp page={festive({ campfire: { count: 11, joinUrl: JOIN } })} picture={null} />);
-    expect(plaza().labels).toMatchObject({ campfireCount: "11 คนกำลังทำงานอยู่", campfireMore: "+3" });
+    expect(plaza().labels).toEqual({ campfireCount: "11 คนกำลังทำงานอยู่" });
   });
 
   it("draws no campfire and no stage when there is no coworking room and no season", () => {

@@ -23,7 +23,8 @@ under the crowd says so:
 > เพื่อนร่วมทีมแวะมาแล้ว 2 คน
 
 Nobody checked in today: nothing is drawn. More people than eight figures:
-"+N", as at the campfire.
+the line's count already says how many (the "+N" label was dropped on
+2026-11-18 with the plaza's new layout).
 
 ## Decisions (founder, 2026-11-18)
 
@@ -55,7 +56,7 @@ Nobody checked in today: nothing is drawn. More people than eight figures:
   name, a project or a time. Same gate as the campfire read; the website's
   login only. Erased members are never counted.
 - **The campfire stays honest.** Visitors sit only in seats the coworking
-  room leaves empty, and the campfire's own count and "+N" stay the room's.
+  room leaves empty, and the campfire's own count stays the room's.
 - **It never breaks the island.** Before schema 18 the website never calls the
   function; any failure is no figures. Nothing in the bot's picture changes.
 
@@ -83,8 +84,8 @@ Nobody checked in today: nothing is drawn. More people than eight figures:
   `visitorsNow` (`lib/shift-island/visitors.ts`) adds the viewer once when
   their check-in landed after the page loaded.
 - **The crowd** (`lib/shift-island/live/crowd.ts`): `crowdPlan` (the viewer,
-  up to 3 teammates, up to 5 strollers and 2 guests at the fire, 8 at most,
-  the rest "+N") and the actors. Positions are fixed offsets from the plaza
+  up to 3 teammates, up to 5 strollers and 2 guests at the fire, 8 at most;
+  the line's count covers the rest) and the actors. Positions are fixed offsets from the plaza
   centre; the tests walk every frame of every figure past every tree, tag,
   pin, lamp and plaza piece, on land, for islands of 1 to 150 plots.
 - **The sprites** (`crowdSprites.ts`): the plot visitor (standing, a stride
@@ -96,7 +97,7 @@ Nobody checked in today: nothing is drawn. More people than eight figures:
   arrival) play from when they appear and then hold their last frame. Under
   reduced motion every figure stands still and the viewer is already home.
 - **The labels** (`PlazaLayer`): the day's count (and the team's line) under
-  the crowd, "+N" by the campfire, and the viewer's picture with คุณ over their
+  the crowd and the viewer's picture with คุณ over their
   head, held back until their arrival walk ends. The count is read out once
   for screen readers.
 

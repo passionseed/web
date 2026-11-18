@@ -207,6 +207,8 @@ export const ISLAND = {
   viewClose: "ขยายดูใกล้ๆ",
   myPlot: (slot: number, stage: string) => `แปลงของคุณ #${slot}, ${stage}`,
   plot: (slot: number) => `แปลง #${slot}`,
+  /** A plot's tap target when its sign shows the project name: "แปลง #4, สวนผักดาดฟ้า". */
+  signed: (plot: string, name: string) => `${plot}, ${name}`,
   pictureAlt: "ภาพเกาะ SHIFT ที่มีต้นไม้ของแต่ละโปรเจกต์",
   pictureFailed: "ตอนนี้วาดภาพเกาะไม่ได้ งานของคุณยังอยู่ครบ",
   /** DRAFT */
@@ -682,7 +684,6 @@ export const CAMPFIRE = {
   spot: (count: number) =>
     count > 0 ? `${PLACES.campfire}: ห้อง coworking มี ${count} คน` : `${PLACES.campfire}: ห้อง coworking`,
   count: (count: number) => `${count} คนกำลังทำงานอยู่`,
-  more: (count: number) => `+${count}`,
   /** DRAFT (lore: the campfire is where builders keep each other company). */
   title: PLACES.campfire,
   /** DRAFT */
@@ -717,8 +718,6 @@ export const VISITORS = {
   count: (count: number) => `วันนี้มีคนเช็กอินบนเกาะแล้ว ${count} คน`,
   /** A second line for the viewer's own team only. */
   team: (count: number) => `วันนี้เพื่อนร่วมทีมเช็กอินแล้ว ${count} คน`,
-  /** More people than figures, as at the campfire. */
-  more: (count: number) => `+${count}`,
   /** The tag over the viewer's own figure, beside their picture. */
   me: "คุณ",
 };

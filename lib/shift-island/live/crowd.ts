@@ -41,35 +41,32 @@ type Point = readonly [number, number];
  * plaza piece for islands of every size.
  */
 export const CROWD_LAYOUT = {
-  /** The viewer's place: below the plaza, by the path in from the island. */
-  home: [-4, 35] as Point,
-  /** Where the viewer's arrival starts: up the path, above the trees below. */
-  enter: [-4, 57] as Point,
+  /** The viewer's place: the front of the plaza, where the path comes in from the island. */
+  home: [2, 34] as Point,
+  /** Where the viewer's arrival starts: down the path, above the trees below. */
+  enter: [2, 57] as Point,
   /** Teammates, in fill order, to the viewer's right. */
-  team: [[8, 35], [20, 35], [32, 35]] as readonly Point[],
+  team: [[13, 34], [24, 34], [35, 34]] as readonly Point[],
   /**
    * Strollers' routes, in fill order: from, to. Clear of the plaza's labels
-   * too (the Demo Day sign's two lines, the campfire's count), so no figure
-   * walks under one.
+   * too (the campfire's count), so no figure walks under one.
    */
   routes: [
-    // The meadow below the stage.
-    [[44, 35], [80, 35]],
-    // The path along the stage's foot.
-    [[50, 18], [84, 18]],
-    // The grass left of the notice board.
-    [[-92, -4], [-56, -4]],
-    // Above the well, under the bunting, short of the Demo Day sign's label.
+    // In front of the stage, short of the prize board.
+    [[22, 12], [38, 12]],
+    // The meadow below the campfire, left of the path in.
+    [[-60, 52], [-30, 52]],
+    // The grass right of the stage, between the two paths in.
+    [[82, -12], [82, 4]],
+    // Above the well, under the bunting.
     [[-12, -27], [0, -27]],
-    // Down the plaza's left edge, beside the notice board.
-    [[-52, -24], [-52, 0]],
+    // Beside the notice board, between it and the well.
+    [[-36, -31], [-36, -17]],
   ] as readonly (readonly [Point, Point])[],
   /** The day's count (and the team's line), bottom anchored under the crowd. */
   label: [50, 70] as Point,
-  /** "+N", left anchored below the campfire's right edge. */
-  more: [-24, 64] as Point,
   /** The viewer's tag, bottom anchored over their head. */
-  meTag: [1, 34] as Point,
+  meTag: [7, 33] as Point,
 } as const;
 
 /** The plaza's input for the people (plaza.ts PlazaInput.visitors). */

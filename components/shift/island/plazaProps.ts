@@ -1,6 +1,6 @@
 import type { Festival } from "@/lib/shift-island/festival";
 import type { VisitorsInput } from "@/lib/shift-island/live/crowd";
-import { MAX_SEATS, plazaCrowd, type PlazaInput, type PlazaLabelId, type PlazaSpotId } from "@/lib/shift-island/live/plaza";
+import { plazaCrowd, type PlazaInput, type PlazaLabelId, type PlazaSpotId } from "@/lib/shift-island/live/plaza";
 import type { NoticePin } from "@/lib/shift-island/notice";
 import type { CampfireSummary } from "@/lib/supabase/shift-quests/types";
 
@@ -32,15 +32,12 @@ export function plazaProps(
   const count = campfire ? Math.max(0, Math.trunc(campfire.count) || 0) : 0;
   const date = festival ? thaiShortDate(festival.demoDay) : "";
   const labels: PlazaProps["labels"] = {};
-  if (festival) labels.sign = FESTIVAL.sign(date, festival.daysToDemo);
   if (count > 0) labels.campfireCount = CAMPFIRE.count(count);
-  if (count > MAX_SEATS) labels.campfireMore = CAMPFIRE.more(count - MAX_SEATS);
   const crowd = plazaCrowd({ campfire: campfire ? { count } : null, visitors });
   if (visitors && visitors.count > 0) {
     const team = crowd.team > 0 ? `\n${VISITORS.team(visitors.team)}` : "";
     labels.visitors = `${VISITORS.count(visitors.count)}${team}`;
   }
-  if (crowd.more > 0) labels.visitorsMore = VISITORS.more(crowd.more);
   if (crowd.me) labels.me = VISITORS.me;
   const names: PlazaProps["names"] = {};
   if (onSpot) {

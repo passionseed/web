@@ -1,6 +1,6 @@
 /**
  * The plaza as a place to gather: the quest notice board, the Demo Day
- * festival (sign, stage, lantern string, booth flags and stars), the Demo
+ * festival (the stage under its D-10 countdown, lantern string, booth flags and stars), the Demo
  * Day prize board and the voice campfire, as LiveActors the existing engine draws above the trees, plus
  * where the DOM tap targets and labels go. Pure and client-safe.
  *
@@ -27,7 +27,7 @@ import type { NoticeKind } from "@/lib/shift-island/notice";
 import { ARRIVE_MS, CROWD_LAYOUT, crowdActors, crowdPlan, type CrowdPlan, type VisitorsInput } from "./crowd";
 import type { LiveActor } from "./types";
 
-/** Seats drawn round the campfire; more people show as a "+N" label. */
+/** Seats drawn round the campfire; the count label says how many are in the room. */
 export const MAX_SEATS = 8;
 
 export interface PlazaInput {
@@ -58,7 +58,7 @@ export interface PlazaSpot {
   h: number;
 }
 
-export type PlazaLabelId = "sign" | "campfireCount" | "campfireMore" | "visitors" | "visitorsMore" | "me";
+export type PlazaLabelId = "campfireCount" | "visitors" | "me";
 
 /** A DOM label's anchor point, percent of the picture. bottom = translate(-50%, -100%), left = translate(0, -50%). */
 export interface PlazaLabel {
@@ -83,35 +83,57 @@ type Point = readonly [number, number];
 
 /**
  * Where everything goes, in native px from the plaza centre (top-left corners
- * and sizes). Spot boxes keep inside the 32 px band between the helper path
- * rows above and below the plaza, and off the corner lamp posts.
+ * and sizes). The plaza is 160 x 80 px (x -80..80, y -32..48) with the well in
+ * its middle: the everyday pieces stand left of the well (notice board at the
+ * back, campfire at the front), Demo Day's right of it (the stage under its
+ * countdown at the back, the prize board at the front). Spot boxes keep off
+ * the corner lamp posts, the well and each other.
  */
 export const PLAZA_LAYOUT = {
-  noticeBoard: [-38, -24] as Point,
-  notes: [[-35, -21], [-29, -22], [-22, -21]] as readonly Point[],
-  noticeSpot: { x: -40, y: -28, w: 28, h: 30 },
-  sign: [36, -12] as Point,
-  stage: [50, -16] as Point,
-  stageSpot: { x: 36, y: -16, w: 58, h: 31 },
-  signLabel: [43, -14] as Point,
+  noticeBoard: [-68, -26] as Point,
+  notes: [[-65, -23], [-59, -24], [-52, -23]] as readonly Point[],
+  noticeSpot: { x: -70, y: -30, w: 28, h: 30 },
+  /** The countdown board stands behind the stage; its posts go down behind the stage's back. */
+  countdown: [24, -40] as Point,
+  stage: [24, -22] as Point,
+  stageSpot: { x: 24, y: -40, w: 44, h: 50 },
   /** The goal string's bulbs sit on the festival banner (the festoon spot); booth flags from each tree's corner. */
   boothFlag: [4, 22] as Point,
-  pit: [-63, 46] as Point,
-  flame: [-61, 38] as Point,
+  pit: [-42, 26] as Point,
+  flame: [-40, 18] as Point,
   /** In fill order: front pair, back pair, outer front pair, outer back pair. */
-  seats: [[-73, 54], [-47, 54], [-71, 34], [-49, 34], [-87, 52], [-33, 52], [-85, 36], [-35, 36]] as readonly Point[],
-  campfireSpot: { x: -92, y: 32, w: 72, h: 32 },
-  campfireCount: [-56, 32] as Point,
-  campfireMore: [-24, 46] as Point,
-  /** Lower right of the plaza: right of the well, left of the sign and stage, above the plaza's bottom edge. */
-  prizeBoard: [15, 10] as Point,
-  prizeSpot: { x: 12, y: 8, w: 23, h: 24 },
+  seats: [[-52, 34], [-26, 34], [-50, 14], [-28, 14], [-66, 32], [-12, 32], [-64, 16], [-14, 16]] as readonly Point[],
+  campfireSpot: { x: -71, y: 12, w: 72, h: 32 },
+  /** Over the fire, between the back seats and the notice board, clear of the well. */
+  campfireCount: [-44, 12] as Point,
+  /** Front right of the plaza, under the stage, off the bottom right lamp. */
+  prizeBoard: [50, 14] as Point,
+  prizeSpot: { x: 47, y: 12, w: 24, h: 24 },
 } as const;
 
+/** The countdown's glyphs stand on the board's dark face: 40 x 12 px from (2, 2), glyphs 6 x 10 with 2 px between. */
+const COUNT_FACE = { x: 2, y: 2, w: 40, h: 12 } as const;
+const GLYPH_W = 6;
+const GLYPH_GAP = 2;
+const GLYPH_H = 10;
+/** The most days the board shows; a longer wait reads 999. */
+const MAX_COUNT = 999;
+
+/**
+ * The countdown board's text as glyph sprites: "D-10" before Demo Day,
+ * "D-DAY" on it, nothing after it (or for a count that is not a number).
+ */
+export function countdownGlyphs(daysToDemo: number): MotionSpriteName[] {
+  if (!Number.isFinite(daysToDemo) || daysToDemo < 0) return [];
+  if (Math.floor(daysToDemo) === 0) return ["count_d", "count_dash", "count_d", "count_a", "count_y"];
+  const digits = String(Math.min(MAX_COUNT, Math.floor(daysToDemo))).split("");
+  return ["count_d", "count_dash", ...digits.map((d) => `count_${d}` as MotionSpriteName)];
+}
+
 /** Seats right of this (native px from the plaza centre) face left, towards the fire. */
-const FIRE_X = -56;
+const FIRE_X = -35;
 /** Seats with their top above this sit behind the fire (drawn before the flame). */
-const FRONT_Y = 45;
+const FRONT_Y = 25;
 const FLAME_MS = 250;
 const SIT_MS = 1100;
 const SITTERS = [ACTOR_FRAMES.sitA, ACTOR_FRAMES.sitB, ACTOR_FRAMES.sitC, ACTOR_FRAMES.sitD] as const;
@@ -180,11 +202,11 @@ export function boothFlagAt(tree: Pick<SceneTree, "left" | "top" | "mine">, scen
 
 /**
  * The plaza's actors, tap targets and label points for this scene. Actors are
- * in draw order: goal string, lit bulbs, stage, sign, notice board, notes,
+ * in draw order: goal string, lit bulbs, countdown board and its glyphs, stage, notice board, notes,
  * booth flags, prize board, campfire pit, the seats behind the fire, the
  * flame, the seats in front, then today's visitors (crowd.ts: strollers,
  * teammates, the viewer). Spots: notice, stage, prizes, campfire. Labels:
- * sign, campfire count and "+N", visitors and "+N", the viewer's tag.
+ * the campfire count, the visitors' line, the viewer's tag.
  */
 export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
   const { festival, pins, campfire } = input;
@@ -216,9 +238,16 @@ export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
   }
 
   if (festival) {
+    // The countdown first: the stage covers the foot of its posts.
+    const board = at(L.countdown);
+    actors.push(still("fest_count", board));
+    const glyphs = countdownGlyphs(festival.daysToDemo);
+    const width = glyphs.length * GLYPH_W + Math.max(0, glyphs.length - 1) * GLYPH_GAP;
+    const left = board.x + COUNT_FACE.x + Math.floor((COUNT_FACE.w - width) / 2);
+    const top = board.y + COUNT_FACE.y + Math.floor((COUNT_FACE.h - GLYPH_H) / 2);
+    glyphs.forEach((glyph, i) => actors.push(still(glyph, { x: left + i * (GLYPH_W + GLYPH_GAP), y: top })));
     const step = count(festival.stageStep, STAGES.length - 1);
     actors.push(still(STAGES[step], at(L.stage)));
-    actors.push(still("fest_sign", at(L.sign)));
   }
 
   if (pins) {
@@ -239,7 +268,6 @@ export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
       actors.push(still(booth.kind === "stage" ? "star_flag" : "booth_flag", boothFlagAt(tree, scene)));
     }
     spots.push(spotOf("stage", box(L.stageSpot), scene));
-    labels.push(labelOf("sign", at(L.signLabel), "bottom", scene));
   }
 
   if (prizes) {
@@ -268,7 +296,6 @@ export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
       actors.push({ frames: ACTOR_FRAMES.campfireFlame, ...at(L.flame), frameMs: FLAME_MS });
     }
     if (people > 0) labels.push(labelOf("campfireCount", at(L.campfireCount), "bottom", scene));
-    if (people > MAX_SEATS) labels.push(labelOf("campfireMore", at(L.campfireMore), "left", scene));
     spots.push(spotOf("campfire", box(L.campfireSpot), scene));
   }
 
@@ -276,7 +303,6 @@ export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
     const C = CROWD_LAYOUT;
     actors.push(...crowdActors(c, input.visitors!, crowd));
     labels.push(labelOf("visitors", at(C.label), "bottom", scene));
-    if (crowd.more > 0) labels.push(labelOf("visitorsMore", at(C.more), "left", scene));
     if (crowd.me) {
       const tag = labelOf("me", at(C.meTag), "bottom", scene);
       labels.push(input.visitors?.arriving ? { ...tag, delayMs: ARRIVE_MS } : tag);

@@ -25,6 +25,7 @@ import { IslandLive } from "./live/IslandLive";
 import liveStyles from "./live/live.module.css";
 import { PlazaLayer } from "./live/PlazaLayer";
 import { PlotMarker } from "./player/PlotMarker";
+import { PlotSigns, signName } from "./PlotSigns";
 import styles from "./world.module.css";
 
 interface IslandViewportProps {
@@ -74,8 +75,11 @@ const HUD_MARGIN = `-${HUD_RESERVE.top}px 0px -${HUD_RESERVE.bottom}px 0px`;
 /** How much of the notice board's tap target must be in that area to count. */
 const NOTICE_SEEN = 0.6;
 
+/** A plot's tap target: its number (and stage, for your own), then the name its sign shows, if any. */
 export function hotspotLabel(hotspot: IslandHotspot): string {
-  return hotspot.mine ? ISLAND.myPlot(hotspot.slot, treeStageName(hotspot.stage, hotspot.seeded === true)) : ISLAND.plot(hotspot.slot);
+  const plot = hotspot.mine ? ISLAND.myPlot(hotspot.slot, treeStageName(hotspot.stage, hotspot.seeded === true)) : ISLAND.plot(hotspot.slot);
+  const name = signName(hotspot);
+  return name ? ISLAND.signed(plot, name) : plot;
 }
 
 /** The server and the first client render use 2x; the device's own ratio follows after hydration. */
@@ -461,6 +465,8 @@ export function IslandViewport({
           ) : null}
           <div className={styles.islandBox} style={islandRect}>
             {live ? <span role="img" aria-label={ISLAND.pictureAlt} className={liveStyles.label} /> : null}
+            {/* Project names under the trees; the whole island puts plots too close for a line of text. */}
+            {whole ? null : <PlotSigns hotspots={picture.hotspots} />}
             {/* Your own picture over your own pin: decorative, never takes a tap. */}
             {me && mine ? <PlotMarker picture={picture} me={me} /> : null}
             {interactive ? (
