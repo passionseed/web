@@ -99,6 +99,8 @@ export const SHOP = {
   heading: "ร้านค้า",
   /** DRAFT: physical merch preview; price and stock are not promised. */
   comingSoon: "เร็วๆ นี้",
+  /** DRAFT: display prices only, never an offer to redeem unconfirmed stock. */
+  previewPrices: "ราคาเบื้องต้น ยังไม่เปิดให้แลก",
   merch: {
     tee: "เสื้อยืด PassionSeed",
     hoodie: "ฮู้ดดี้ PassionSeed",

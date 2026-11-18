@@ -26,6 +26,11 @@ describe("PassionSeed physical merch", () => {
     expect(screen.getByText(SHOP.merch.cap)).toBeInTheDocument();
     expect(screen.getByText(SHOP.merch.deskMat)).toBeInTheDocument();
     expect(screen.getAllByText(SHOP.comingSoon)).toHaveLength(5);
+    expect(screen.getByText(SHOP.previewPrices)).toBeInTheDocument();
+    for (const price of ["300", "900", "1,200", "1,500", "2,500"]) {
+      expect(screen.getByText(SHOP.cost(price))).toBeInTheDocument();
+    }
+    expect(screen.getAllByRole("listitem")[0]).toHaveTextContent(SHOP.merch.stickers);
     expect(screen.queryByRole("button", { name: /^แลก / })).not.toBeInTheDocument();
   });
 
@@ -46,6 +51,7 @@ describe("PassionSeed physical merch", () => {
     expect(screen.getAllByText(product.catalogName)).toHaveLength(1);
     expect(screen.getAllByText(SHOP.comingSoon)).toHaveLength(4);
     expect(screen.getByText(SHOP.cost("1,234"))).toBeInTheDocument();
+    expect(screen.queryByText(SHOP.cost("1,500"))).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: SHOP.redeemLabel(product.catalogName) }));
     expect(screen.getByText(SHOP.confirm(product.catalogName, "1,234"))).toBeInTheDocument();
   });

@@ -442,6 +442,13 @@
   color: var(--text-dim);
 }
 
+.merchOffer {
+  display: grid;
+  justify-items: end;
+  flex: none;
+  gap: 2px;
+}
+
 .item {
   display: grid;
   gap: 8px;

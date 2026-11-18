@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { cancelRedemption, redeemItem } from "@/app/shift/island/wallet-actions";
 import { ISLAND_MERCH, merchArtwork } from "@/lib/content/shift-island-merch";
+import { MERCH_PRICES_DRAFT } from "@/lib/content/shift-island-economy";
 import type { MyRedemption, ShopItem, WalletDetail } from "@/lib/supabase/shift-quests/playerTypes";
 
 import { thaiShortDate } from "../copy";
@@ -100,7 +101,7 @@ export function ShopList({ wallet, onChanged }: ShopListProps) {
   const { shop, balance } = wallet;
   const previews = ISLAND_MERCH.filter(
     (product) => !shop.live || !shop.items.some((item) => merchArtwork(item.name)?.key === product.key),
-  );
+  ).sort((a, b) => MERCH_PRICES_DRAFT[a.key] - MERCH_PRICES_DRAFT[b.key]);
   const confirmYes = useRef<HTMLButtonElement>(null);
   const redeemButtons = useRef(new Map<string, HTMLButtonElement>());
   /** The item whose "แลก" gets focus back after "ยังไม่แลก". */
@@ -149,6 +150,7 @@ export function ShopList({ wallet, onChanged }: ShopListProps) {
   return (
     <section className={styles.section} aria-label={SHOP.heading}>
       <h3 className={island.detailHeading}>{SHOP.heading}</h3>
+      {previews.length > 0 ? <p className={island.hint}>{SHOP.previewPrices}</p> : null}
       {previews.length > 0 ? (
         <ul className={styles.merchPreviews}>
           {previews.map((product) => (
@@ -159,7 +161,10 @@ export function ShopList({ wallet, onChanged }: ShopListProps) {
                   <p className={styles.itemName}>{SHOP.merch[product.key]}</p>
                   <p className={styles.itemText}>{product.catalogName}</p>
                 </div>
-                <span className={styles.merchStatus}>{SHOP.comingSoon}</span>
+                <div className={styles.merchOffer}>
+                  <span className={styles.amount}>{SHOP.cost(coinNumber(MERCH_PRICES_DRAFT[product.key]))}</span>
+                  <span className={styles.merchStatus}>{SHOP.comingSoon}</span>
+                </div>
               </div>
             </li>
           ))}
