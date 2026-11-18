@@ -23,8 +23,9 @@ evening. **What they see:**
   and every team with a student there gets **one roll**, however many
   teammates came. A winning roll leaves the team one of that guest's two
   looks it does not have yet, on its tree. The round message and the call say
-  "the guest left something for N teams"; never which. A 🎁 button answers
-  each student privately about their own team.
+  "the guest left something for N teams" when 3 or more teams rolled and
+  some but not all won; otherwise no number (it would tell who won). Never
+  which. A 🎁 button answers each student privately about their own team.
 - **21:00**: the guest leaves; the call edits to embers. Yesterday's call is
   deleted when today's is posted, so #island-news holds one call.
 
@@ -37,8 +38,8 @@ evening. **What they see:**
 | 3 | Which days | Every day, all year, weekends included; it does not stop after Demo Day. The guest pauses when no season is active; the call itself runs. Off switch for SHIFT cohort weeks: `/admin feature campfire_call`, **on by default**. |
 | 4 | The prize | **A random drop for being there**, not "aim and close a round". At the guest's arrival (19:25, the first rest) the bot passes the Discord ids in the campfire voice room (gateway voice cache, bots left out) to one bot-only function. Students are linked through the member table; unknown, not started and erased ids are ignored; staff and mentors never win. Each team with at least one student present gets exactly one roll that night, restart-safe (one row per team and night). A win gives one of tonight's guest's looks the team does not own (2 per guest, 8 colour-only looks). A team that owns both is recorded with no look and gets a friendly no-prize line. |
 | 4a | The chance | 1 in 2 per team (generous for a small cohort: about half the teams at the fire get a look each night), in one constant: `shift_quest__guest_drop_chance()`. |
-| 4b | What is kept | Per team and night only: `shift_quest_guest_drops (day, project_id, guest, look or null)`. Never a member id, a Discord id, a time or a count of people; rows of earlier days are deleted on the next day's first read. A win is a gift row on the team (`source drop:<day>`, `member_id` null). Live presence stays as it was: who is in the room now, deleted on leave. |
-| 4c | The reveal | The round message at 19:25 in the voice chat and the edited call say how many teams got a look ("แขกทิ้งของไว้ให้ N ทีม"), never which teams or people. 🎁 answers privately (ephemeral, never a DM) about the presser's own team; a win also waits on the team's tree on the web and in Discord (the normal gift flow). |
+| 4b | What is kept | Per team and night only: `shift_quest_guest_drops (day, project_id, guest, look or null)`. Never a member id, a Discord id, a time or a count of people. Rows of earlier days are deleted the next day: on the bot's reads, on every drop call, and by pg_cron's 5-minute voice purge (no bot needed). For a team of one, the team's row is that student's until then, and the copy says so. A win is a gift row on the team (`source drop:<day>`, `member_id` null) that stays with its date like every gift; an erasure that leaves the team with no member deletes the team's rolls and drop gifts. Live presence stays as it was: who is in the room now, deleted on leave. |
+| 4c | The reveal | The round message at 19:25 in the voice chat and the edited call say how many teams got a look ("แขกทิ้งของไว้ให้ N ทีม"), never which teams or people. Who sits at the fire is public, so the number shows only when 3 or more teams rolled and some but not all won (`shift_quest__guest_reveal`); otherwise the line has no number ("แขกแวะมาที่กองไฟแล้ว ทีมคุณได้อะไรไหม"). 🎁 answers privately (ephemeral, never a DM) about the presser's own team; a win also waits on the team's tree on the web and in Discord (the normal gift flow). A picked look shows on a shown team's tree, so the copy says the bot never announces which team, not that nobody can see it. |
 | 4d | Limits | No coins, no stage change, no quest pass, nothing lost for skipping a night, no streaks, no "first to arrive", no reward for bringing more people. |
 | 5 | Deploy order | Schema 21, migration 20261118150000 (after #329's 20261118140000, schema 20). The bot reads the schema version on every call tick, so it can deploy before the migration with no restart. Merge, deploy the bot, then the migration on the founder's go. |
 | 6 | Copy | DRAFT, no em or en dashes, never น้องๆ or เด็กๆ, lively and short for phones. |
@@ -62,9 +63,12 @@ evening. **What they see:**
 ## Why it is shaped like this
 
 - **One moment, one roll per team.** "Being there when the guest arrives" is
-  a single check at 19:25, not time at the fire: nobody's minutes are
-  counted, so `ไม่มีใครนับเวลาของคุณ` stays true. A team of one and a team of
-  four roll the same once, so there is no pressure to bring people.
+  a single check at 19:25 (the bot's first check in that rest), not time at
+  the fire: nobody's minutes are counted, so `ไม่มีใครนับเวลาของคุณ` stays
+  true. The check decides the night even when nobody's team is there, so
+  sitting down first later in the rest wins nothing (decision 4d). A team of
+  one and a team of four roll the same once, so there is no pressure to bring
+  people.
 - **The database decides.** The clock (`shift_quest__call_at`), the call's
   days (`shift_quest__call_on`), the rotation (`shift_quest__guest_of`), the
   window (19:25 to 19:30), the roll, the one row per team and night, the
@@ -105,4 +109,11 @@ drafts, Cursor proofreads, Codex checks the logic.
 - `tree_gifts` are not yet in `/data` export; a follow-up adds them.
 - If the bot is offline from 18:50 to 19:30 there is no call that night, and
   no late one. If it is offline during 19:25 to 19:30 there is no drop that
-  night.
+  night: from 19:30 the call and the rounds say the guest only stopped by,
+  and 🎁 answers the same for everyone.
+- Switched off, the latest call is edited once into a paused note; tonight's
+  drop, if made, still answers 🎁.
+- The call's mute line points at "Suppress All Role @mentions", which stops
+  every role ping in the server, not only this one. A self-assigned call
+  role (remove it to opt out) would be finer; that needs a Discord role and a
+  founder decision.

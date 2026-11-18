@@ -456,6 +456,8 @@ function settingsView(prefs: Session["prefs"], remindersLive: boolean): View {
     blocks.push({ kind: "text", text: T.remindersOff });
   }
   blocks.push({ kind: "text", text: prefs?.notify_dm ? T.dmOn : T.dmOff });
+  // The 18:50 campfire call's role ping is not a reminder: how to stop it (call.ts).
+  blocks.push({ kind: "subtext", text: T.callPing });
   return {
     tone: "neutral",
     title: T.settingsTitle,

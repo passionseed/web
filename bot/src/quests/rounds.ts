@@ -20,9 +20,9 @@
  * round carries a teaser, and from the first rest (19:25) to 21:00 the round
  * messages carry the guest instead of any encounter: its arrival on that
  * rest, then that it is still here, how many teams it left a look for once
- * the drop is made, and the private 🎁 check (rd_guest). The evening comes
- * from the call loop's cache (deps.evening); without it the rounds are as
- * before.
+ * the drop is decided (no number when the database withholds it), and the
+ * private 🎁 check (rd_guest). The evening comes from the call loop's cache
+ * (deps.evening); without it the rounds are as before.
  *
  * Design: docs/superpowers/specs/2026-11-13-shift-campfire-rounds-roots-design.md.
  */
@@ -102,7 +102,8 @@ export function encounterAt(round: number): Encounter | null {
 /**
  * Tonight's evening, as the call loop last read it (call.ts evening()): the
  * Bangkok day, its guest, the clock in unix seconds, and once the drop is
- * made how many teams got a look. Null on a night without a call.
+ * decided how many teams got a look (null teams: withheld). Null on a night
+ * without a call.
  */
 export interface Evening {
   day: string;
@@ -114,12 +115,15 @@ export interface Evening {
   guestFrom: number;
   /** 21:00 Bangkok: the guest leaves. */
   guestUntil: number;
-  /** Teams the guest left a look for, once the drop is made; null before. */
-  teams: number | null;
+  /** Once the drop is decided: teams the guest left a look for (null: withheld). Null before. */
+  drop: { teams: number | null } | null;
 }
 
 /** What a round shows of the evening: the teaser, the guest, or nothing. */
-type GuestPart = { kind: "teaser" } | { kind: "guest"; key: GuestKey; arriving: boolean; day: string; teams: number | null } | null;
+type GuestPart =
+  | { kind: "teaser" }
+  | { kind: "guest"; key: GuestKey; arriving: boolean; day: string; drop: { teams: number | null } | null }
+  | null;
 
 /** The evening's part of a round, by when the round's own phase starts. */
 export function guestPart(at: RoundAt, evening: Evening | null | undefined): GuestPart {
@@ -127,7 +131,7 @@ export function guestPart(at: RoundAt, evening: Evening | null | undefined): Gue
   const startsAt = at.phase === "focus" ? at.restAt - FOCUS_MIN * 60 : at.restAt;
   if (at.phase === "focus" && startsAt === evening.litAt) return { kind: "teaser" };
   if (startsAt < evening.guestFrom || startsAt >= evening.guestUntil) return null;
-  return { kind: "guest", key: evening.guest, arriving: startsAt === evening.guestFrom, day: evening.day, teams: evening.teams };
+  return { kind: "guest", key: evening.guest, arriving: startsAt === evening.guestFrom, day: evening.day, drop: evening.drop ?? null };
 }
 
 /** What makes a round's message change: its round, its phase, and the evening's part of it. */
@@ -139,7 +143,7 @@ export function roundKey(at: RoundAt, evening: Evening | null | undefined): stri
 function guestLines(part: Extract<GuestPart, { kind: "guest" }>): { text: string; button: ReturnType<typeof button> } {
   const g = GUESTS[part.key];
   const lines = [part.arriving ? g.arrive : g.still];
-  if (part.teams !== null) lines.push(ROUND_GUEST.dropped(g, part.teams));
+  if (part.drop) lines.push(ROUND_GUEST.dropped(g, part.drop.teams));
   return { text: lines.join("\n"), button: button(cid("rd_guest", part.day), CALL.btnCheck) };
 }
 

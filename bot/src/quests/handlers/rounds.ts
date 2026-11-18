@@ -109,6 +109,9 @@ export function guestReveal(raw: unknown, day: string): View {
       };
     case "arriving":
       return { tone: "island", title: REVEAL.arrivingTitle, blocks: [{ kind: "text", text: REVEAL.arriving }] };
+    case "quiet":
+      // The guest's first rest passed with no drop: nobody got anything tonight, never "your team was not there".
+      return { tone: "island", title: REVEAL.quietTitle(g), blocks: [{ kind: "text", text: REVEAL.quiet }, ...looksLine, fine] };
     case "won": {
       const item = typeof status.look === "string" ? treeItem(status.look) : null;
       const waiting = status.gift && typeof status.gift === "object";

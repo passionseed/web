@@ -129,7 +129,7 @@ const EVENING: Evening = {
   litAt: LIT / 1000,
   guestFrom: LIT / 1000 + 25 * 60,
   guestUntil: LIT / 1000 + 120 * 60,
-  teams: null,
+  drop: null,
 };
 /** The round at a Bangkok time on NIGHT ("19:25"). */
 const roundAtTime = (hhmm: string) => {
@@ -167,9 +167,16 @@ describe("the evening guest on the rounds", () => {
   });
 
   it("shows how many teams got a look once the drop is made, never which", () => {
-    const p = shown("19:25", { ...EVENING, teams: 3 });
+    const p = shown("19:25", { ...EVENING, drop: { teams: 3 } });
     expect(viewText(p)).toContain(ROUND_GUEST.dropped(GUESTS.gull, 3));
-    expect(viewText(shown("20:25", { ...EVENING, teams: 0 }))).toContain(ROUND_GUEST.dropped(GUESTS.gull, 0));
+    expect(viewText(shown("20:25", { ...EVENING, drop: { teams: 0 } }))).toContain(ROUND_GUEST.dropped(GUESTS.gull, 0));
+  });
+
+  it("a withheld count (1 or 2 teams at the fire, or all or none won) shows no number, only the private check", () => {
+    const p = shown("19:25", { ...EVENING, drop: { teams: null } });
+    expect(viewText(p)).toContain(ROUND_GUEST.dropped(GUESTS.gull, null));
+    expect(viewText(p)).not.toContain(ROUND_GUEST.dropped(GUESTS.gull, 0));
+    expect(customIds(p)).toEqual(["sq|rd_close", "sq|rd_aim", `sq|rd_guest|${NIGHT}`]);
   });
 
   it("leaves 18:55, 21:00 onward, guest-less nights and no evening exactly as before", () => {
@@ -339,7 +346,7 @@ describe("startRounds", () => {
     await w.loop.tick();
     await w.loop.tick();
     expect(w.log.slice(2)).toEqual(["edit m3"]);
-    evening = { ...EVENING, teams: 2 };
+    evening = { ...EVENING, drop: { teams: 2 } };
     await w.loop.tick();
     await w.loop.tick();
     expect(w.log.slice(2)).toEqual(["edit m3", "edit m3"]);
@@ -669,6 +676,8 @@ describe("the evening guest's 🎁 check", () => {
     ["full", REVEAL.fullTitle(GUESTS.boat), REVEAL.full(GUESTS.boat)],
     ["away", REVEAL.awayTitle(GUESTS.boat), REVEAL.away],
     ["arriving", REVEAL.arrivingTitle, REVEAL.arriving],
+    // The guest's first rest passed with no drop (the bot was away): never "your team was not there".
+    ["quiet", REVEAL.quietTitle(GUESTS.boat), REVEAL.quiet],
     ["noplot", REVEAL.awayTitle(GUESTS.boat), REVEAL.noPlot],
   ])("%s: a warm private line about the presser's own team, never a name", async (state, title, line) => {
     const { b } = await press(status({ state }));

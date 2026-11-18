@@ -59,12 +59,15 @@
 #             every migration applied twice, then campfire_call.ts (schema 21,
 #             20261118150000: the 18:50 campfire call and the evening guest, at
 #             fixed times: when the call is due, claim and mark, the frozen
-#             ping, the previous call; the guest rotation; the drop only in the
-#             guest's first rest, one roll per team per night under repeated
-#             and concurrent calls, staff never win, no member id or presence
-#             stored, earlier nights deleted, guest looks only from guests;
-#             the private check; the grants: the bot's, never the website's),
-#             with consent off
+#             ping, the previous call, the switched-off call to retire; the
+#             guest rotation; the drop only in the guest's first rest, decided
+#             at its first call even with nobody there, one roll per team per
+#             night under repeated and concurrent calls, staff never win, no
+#             member id or presence stored, earlier nights deleted (also by
+#             the voice purge, and a lone member's erasure), guest looks only
+#             from guests; the public count withheld when it could tell who
+#             won; the private check; the grants: the bot's, never the
+#             website's), with consent off
 #
 #   supabase/tests/shift_quests/run-local.sh       # or: pnpm test:db:quests
 #   PG_BIN=/usr/lib/postgresql/15/bin supabase/tests/shift_quests/run-local.sh

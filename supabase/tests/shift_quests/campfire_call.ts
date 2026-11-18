@@ -10,16 +10,24 @@
  *   * the guest: a fixed rotation by season day (boat, gull, fireflies,
  *     turtle), never the same two nights running, none without an active
  *     season;
- *   * the drop: only in the guest's first rest (19:25 to 19:30); one roll per
+ *   * the drop: only in the guest's first rest (19:25 to 19:30), decided by
+ *     who sits there at the first call (the guest's arrival), even with no
+ *     team there, so nobody is rewarded for arriving first; one roll per
  *     team per night however many teammates sit there and however often it is
  *     called (two processes at once included); staff and mentors never win;
  *     no member id, Discord id or presence stored (one row per team and
- *     night, deleted the next day); a win is a one-option gift of the guest's
- *     own looks with no member; a team with both looks is recorded with none;
- *     round and quest gifts never offer a guest look; the chance is 1 in 2;
- *     nothing touches the ledger, the stage or the voice tables;
- *   * the private check: gone, arriving, away, won (with the waiting gift),
- *     lost, full, noplot, about the caller's own team only;
+ *     night, deleted the next day, also by pg_cron's voice purge and on an
+ *     erasure); a win is a one-option gift of the guest's own looks with no
+ *     member; a team with both looks is recorded with none; round and quest
+ *     gifts never offer a guest look; the chance is 1 in 2; nothing touches
+ *     the ledger, the stage or the voice tables;
+ *   * the public count: how many teams got a look shows only when 3 or more
+ *     teams rolled and neither all nor none won (else withheld), 0 when no
+ *     team rolled or the drop's rest passed with no drop;
+ *   * the call switched off: the latest recorded call comes back to be
+ *     retired, and tonight's drop still answers the private check;
+ *   * the private check: gone, arriving, quiet, away, won (with the waiting
+ *     gift), lost, full, noplot, about the caller's own team only;
  *   * the grants: the five entry points are the bot's (and service_role's),
  *     never the website's or the Data API's; the helpers nobody's; the new
  *     tables have row level security and no grants.
@@ -88,6 +96,7 @@ const HELPERS = [
   "shift_quest__call_claim(date,text,timestamp with time zone)",
   "shift_quest__guest_drop_chance()",
   "shift_quest__guest_purge(date)",
+  "shift_quest__guest_reveal(date,timestamp with time zone)",
   "shift_quest__guest_drop(timestamp with time zone,text[],double precision)",
   "shift_quest__guest_status(uuid,timestamp with time zone)",
 ];
@@ -362,15 +371,27 @@ async function main(): Promise<void> {
   await adminSet("campfire_call", "off");
   check(await drop(db, AT(D), all, 1) === null, "the call off: no drop");
   await adminSet("campfire_call", "on");
-  let r = await drop(db, AT(D), [M, N, NOBODY], 1);
-  check(r?.done === false && r.teams === 0 && await count("select count(*) from public.shift_quest_guest_nights") === 0,
-    "only a mentor, someone with no team and an unknown id at the fire: nothing rolls, nothing is recorded, the drop waits", r);
-  check(await drop(db, AT(D), [], 1).then((x) => x?.done) === false, "nobody at the fire: the drop waits");
+  // The moment is the guest's arrival (the first call in its rest), never the first student to come.
+  const N0 = dayAfter(STARTS, 4); // a boat night
+  let r = await drop(db, AT(N0), [M, N, NOBODY], 1);
+  check(r?.done === true && r.fresh === true && r.teams === 0 && (await dropRows(N0)).length === 0 &&
+      await count("select count(*) from public.shift_quest_guest_nights where day = $1::date", [N0]) === 1,
+    "only a mentor, someone with no team and an unknown id at the fire when the guest arrives: the night is recorded, nobody rolls", r);
+  r = await drop(db, bkk(N0, "19:26:40"), [A, C], 1);
+  check(r?.fresh === false && (await dropRows(N0)).length === 0 && (await gifts(p1)).length === 0 && (await gifts(p2)).length === 0,
+    "students who sit down after the guest arrived get no roll that night: no reward for being first", r);
+  const NE = dayAfter(STARTS, 32); // a boat night
+  r = await drop(db, AT(NE), [], 1);
+  check(r?.done === true && r.teams === 0 && await count("select count(*) from public.shift_quest_guest_nights where day = $1::date", [NE]) === 1,
+    "nobody at the fire when the guest arrives: the night is recorded with no roll", r);
 
   r = await drop(db, AT(D), all, 1);
-  check(r?.done === true && r.fresh === true && r.guest === "boat" && r.teams === 2,
-    "the guest arrives with A, B (one team), C, a mentor and others at the fire: 2 teams roll, both win at chance 1", r);
+  check(r?.done === true && r.fresh === true && r.guest === "boat" && r.teams === null,
+    "the guest arrives with A, B (one team), C, a mentor and others at the fire: 2 teams roll; fewer than 3, so the count is withheld", r);
   let rows = await dropRows(D);
+  check(rows.length === 2 && rows.every((x) => x.look !== null), "both teams won at chance 1", rows);
+  check(JSON.stringify((await today(bkk(D, "19:40:00")))?.drop) === JSON.stringify({ teams: null }),
+    "the call's count is withheld too: with 1 or 2 teams it would point at who won", (await today(bkk(D, "19:40:00")))?.drop);
   check(JSON.stringify(rows.map((x) => x.project_id).sort()) === JSON.stringify([p1, p2].sort()),
     "one row per team: A and B sitting together give their team one roll; the mentor's team and the unknown ids none", rows);
   check(rows.every((x) => x.guest === "boat" && GUEST_LOOKS.boat.includes(x.look)), "each won one of the boat's own looks", rows);
@@ -382,7 +403,7 @@ async function main(): Promise<void> {
 
   // Called again (a restart, another tick) with other people now at the fire: the night is done.
   r = await drop(db, bkk(D, "19:28:00"), [E, A], 1);
-  check(r?.done === true && r.fresh === false && r.teams === 2 && (await dropRows(D)).length === 2 && (await gifts(p4)).length === 0,
+  check(r?.done === true && r.fresh === false && r.teams === null && (await dropRows(D)).length === 2 && (await gifts(p4)).length === 0,
     "called again that night (E's team now there too): nothing new, the same answer", r);
   check(await count("select count(*) from public.shift_quest_guest_nights where day = $1::date", [D]) === 1, "one night row");
 
@@ -402,7 +423,7 @@ async function main(): Promise<void> {
   const N3 = dayAfter(STARTS, 13); // a gull night
   r = await drop(db, AT(N3), [A, C], 0);
   rows = await dropRows(N3);
-  check(r?.teams === 0 && rows.length === 2 && rows.every((x) => x.look === null && x.guest === "gull"),
+  check(r?.teams === null && rows.length === 2 && rows.every((x) => x.look === null && x.guest === "gull"),
     "chance 0: each team rolls once and gets nothing, recorded as no look", rows);
 
   // A team with both of tonight's guest's looks: recorded, no look, even at chance 1; a held look is never offered twice.
@@ -436,12 +457,41 @@ async function main(): Promise<void> {
       await db.query("delete from public.shift_quest_tree_gifts where project_id = $1", [p]);
       await setOwned(p, []);
     }
-    const x = await scalar<Json>(db, "select public.shift_quest__guest_drop($1::timestamptz, $2::text[], public.shift_quest__guest_drop_chance())",
+    await scalar<Json>(db, "select public.shift_quest__guest_drop($1::timestamptz, $2::text[], public.shift_quest__guest_drop_chance())",
       [AT(night), [A, C]]);
-    wins += Number(x.teams);
+    wins += (await dropRows(night)).filter((x) => x.look !== null).length;
     rolls += 2;
   }
   check(rolls === 200 && wins >= 60 && wins <= 140, "at the real chance about half of 200 rolls win (60 to 140)", { wins, rolls });
+
+  // The public count: exact only when 3 or more teams rolled and some, not all, won.
+  for (const p of [p1, p2, p4]) {
+    await db.query("delete from public.shift_quest_tree_gifts where project_id = $1", [p]);
+    await setOwned(p, []);
+  }
+  await setOwned(p4, GUEST_LOOKS.boat);
+  const NF = dayAfter(STARTS, 36); // a boat night
+  r = await drop(db, AT(NF), [A, C, E], 1);
+  check(r?.teams === 2 && JSON.stringify((await today(bkk(NF, "20:00:00")))?.drop) === JSON.stringify({ teams: 2 }),
+    "3 teams rolled and 2 won: the count shows (nobody can tell which 2)", r);
+  await setOwned(p4, []);
+  const NG = dayAfter(STARTS, 40); // a boat night
+  r = await drop(db, AT(NG), [A, C, E], 1);
+  check(r?.teams === null && JSON.stringify((await today(bkk(NG, "20:00:00")))?.drop) === JSON.stringify({ teams: null }),
+    "3 teams rolled and all 3 won: withheld, it would tell each of them", r);
+  const NH = dayAfter(STARTS, 44); // a boat night
+  r = await drop(db, AT(NH), [A, C, E], 0);
+  check(r?.teams === null, "3 teams rolled and none won: withheld too", r);
+  const NI = dayAfter(STARTS, 48); // a boat night
+  check(await today(bkk(NI, "19:29:59")).then((x) => x?.drop) === null,
+    "before the rest is over with no drop made: no count yet");
+  check(JSON.stringify((await today(bkk(NI, "19:30:00")))?.drop) === JSON.stringify({ teams: 0 }) &&
+      JSON.stringify((await today(bkk(NI, "21:30:00")))?.drop) === JSON.stringify({ teams: 0 }),
+    "the guest's first rest over with no drop (the bot was away): the drop is closed, nobody got a look");
+  check((await status(A, bkk(NI, "19:31:00"))).state === "quiet",
+    "and the private check says the guest only stopped by, not that the team was away");
+  check((await status(A, bkk(NE, "20:00:00"))).state === "away",
+    "a night recorded with nobody's team at the fire: the team was away");
 
   // Nothing else moves.
   check(await count("select count(*) from public.shift_quest_ledger") === ledger0, "the drop never writes the ledger (no coins)");
@@ -459,7 +509,8 @@ async function main(): Promise<void> {
   }
   check((await status(A, bkk(N6, "19:24:59"))).state === "gone", "before the guest: gone");
   check((await status(A, bkk(N6, "19:26:00"))).state === "arriving", "the guest here, no drop yet: arriving");
-  check((await status(A, bkk(N6, "19:31:00"))).state === "away", "no drop by 19:30 (nobody at the fire): away");
+  check((await status(A, bkk(N6, "19:31:00"))).state === "quiet",
+    "no drop by 19:30 (the bot was away): the guest only stopped by, never 'your team was away'");
   check((await status(N, bkk(N6, "19:26:00"))).state === "noplot", "no project: noplot");
   await drop(db, AT(N6), [A], 1);
   await setOwned(p2, GUEST_LOOKS.boat);
@@ -482,18 +533,32 @@ async function main(): Promise<void> {
   check((await status(A, bkk(N7, "20:00:00"))).state === "lost", "no look, something left to give: lost");
   check((await status(A, bkk(dayAfter(N7, 1), "01:00:00"))).state === "gone", "the next day: gone");
   await adminSet("campfire_call", "off");
-  check((await status(A, bkk(N7, "20:00:00"))).state === "gone", "the call off: gone");
+  check((await status(A, bkk(N7, "20:00:00"))).state === "lost",
+    "the call switched off after tonight's drop: the private check still answers about it");
+  check((await status(A, bkk(dayAfter(STARTS, 52), "20:00:00"))).state === "gone", "the call off on a night with no drop: gone");
+  t = await today(bkk(N7, "20:00:00"));
+  check(JSON.stringify(t) === JSON.stringify({ day: D, off: true, message_id: MSG1, message_channel_id: NEWS_CH }),
+    "the call off: the latest recorded call comes back only to be retired (no times, no roles, no guest)", t);
   await adminSet("campfire_call", "on");
   check(await code(call(bot, "shift_quest_guest_status", NOBODY)) === "not_started", "the bot's check is for started members");
   check(typeof (await call<Json>(bot, "shift_quest_guest_status", A)).state === "string", "the bot can run the check now");
 
   // --- Earlier nights' rolls do not stay ---------------------------------------------------------------------------------
-  const before = await count("select count(*) from public.shift_quest_guest_drops");
-  check(before > 0, "rolls of past nights exist before the purge", before);
-  await call(bot, "shift_quest_call_today");
   const todayBkk: string = await scalar(db, "select public.shift_quest__bkk_today()::text");
-  check(await count("select count(*) from public.shift_quest_guest_drops where day < $1::date", [todayBkk]) === 0,
-    "the bot's next read of the call deletes every earlier night's rolls (wins stay as the team's gifts)");
+  const pastRolls = () => count("select count(*) from public.shift_quest_guest_drops where day < $1::date", [todayBkk]);
+  const oldRoll = () => db.query(
+    "insert into public.shift_quest_guest_drops (day, project_id, guest, look) values ($1::date - 1, $2, 'boat', null) on conflict do nothing",
+    [todayBkk, p1]);
+  check(await pastRolls() > 0, "rolls of past nights exist before the purge", await pastRolls());
+  // pg_cron runs the voice purge every 5 minutes in production: no bot needed, an old or stopped one included.
+  await db.query("select public.shift_quest__voice_purge()");
+  check(await pastRolls() === 0, "the 5-minute voice purge (pg_cron) deletes every earlier night's rolls, with no bot running");
+  await oldRoll();
+  await call(bot, "shift_quest_call_today");
+  check(await pastRolls() === 0, "so does the bot's read of the call (wins stay as the team's gifts)");
+  await oldRoll();
+  await call(bot, "shift_quest_campfire_drop", "2026-03-02", [A]);
+  check(await pastRolls() === 0, "and any call of the drop, even one for another day");
   check(await count("select count(*) from public.shift_quest_tree_gifts where source like 'drop:%'") > 0, "the won gifts stay");
 
   // --- The bot's entry points on the real clock ---------------------------------------------------------------------------
@@ -503,6 +568,22 @@ async function main(): Promise<void> {
   check(await code(call(bot, "shift_quest_call_claim", todayBkk, "#news")) === "bad_input", "the bot's claim checks the channel");
   check(["ok"].includes(await sqlstate(call(bot, "shift_quest_call_claim", dayAfter(todayBkk, 1), NEWS_CH))),
     "the bot can claim (a day that is not today: none)");
+
+  // --- An erasure takes a one-person team's drops ------------------------------------------------------------------------
+  // Team two is C alone: its rolls and its drop gifts say C sat at the fire on those nights.
+  const dropGifts = (p: string) => count("select count(*) from public.shift_quest_tree_gifts where project_id = $1 and source like 'drop:%'", [p]);
+  await db.query("insert into public.shift_quest_guest_drops (day, project_id, guest, look) values ($1::date, $2, 'boat', null)", [todayBkk, p2]);
+  for (const p of [p1, p2]) {
+    await db.query(
+      "insert into public.shift_quest_tree_gifts (project_id, member_id, source, options) values ($1, null, $2, array['bloom:shell']) on conflict do nothing",
+      [p, `drop:${dayAfter(STARTS, 57)}`]);
+  }
+  check(await dropGifts(p2) > 0 && await dropGifts(p1) > 0, "teams one and two hold drop gifts before the erasures");
+  await call(bot, "shift_quest_admin_erase", ADMIN, await call(bot, "shift_quest_data_request", C, "erasure", null));
+  check(await dropGifts(p2) === 0 && await count("select count(*) from public.shift_quest_guest_drops where project_id = $1", [p2]) === 0,
+    "erasing the only member of a team deletes the team's drop gifts and rolls: no dated record that they sat at the fire");
+  await call(bot, "shift_quest_admin_erase", ADMIN, await call(bot, "shift_quest_data_request", B, "erasure", null));
+  check(await dropGifts(p1) > 0, "erasing one of two teammates leaves the team's gifts (they name no one, and the team goes on)");
 
   await Promise.all([db.end(), db2.end(), bot.end(), web.end()]);
   console.log(`# ${passes} passed, ${failures} failed`);

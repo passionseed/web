@@ -691,10 +691,11 @@ export const CAMPFIRE = {
   join: "เข้าห้อง",
   /**
    * What the campfire keeps. DRAFT (20261118150000): the evening guest's drop
-   * keeps one result per team and night (no member, deleted the next day);
-   * a won look is the team's, on its tree.
+   * keeps one result per team and night (no member, deleted the next day),
+   * which for a team of one is that student's; a won look is the team's gift,
+   * kept with its date.
    */
-  fine: "กองไฟบนเกาะเก็บแค่ว่าใครอยู่ในห้องตอนนี้ และลบทันทีเมื่อออก ตอนแขกมาถึง เก็บแค่ว่าทีมไหนได้ลุ้น ไม่เก็บว่าใครนั่ง และลบวันถัดไป ลุคที่แขกทิ้งไว้ให้อยู่กับต้นไม้ของทีม",
+  fine: "กองไฟบนเกาะเก็บแค่ว่าใครอยู่ในห้องตอนนี้ และลบทันทีเมื่อออก ตอนแขกมาถึง เก็บผลลุ้นเป็นรายทีม ไม่เก็บว่าใครนั่ง และลบวันถัดไป (ทีมที่มีคุณคนเดียว ผลของทีมก็คือของคุณ) ลุคที่ทีมได้เป็นของขวัญของทีม เก็บไว้พร้อมวันที่ได้",
 };
 
 /**

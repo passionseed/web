@@ -95,6 +95,19 @@ describe("shift island guide copy", () => {
     expect(privacy).toContain("ลบทันทีเมื่อคุณออก");
   });
 
+  it("never promises more privacy than the guest's drop keeps", () => {
+    const privacy = GUIDE_PRIVACY.lines.join(" ");
+    // A team of one: the team's result is that student's, until the next day.
+    expect(privacy).not.toContain("เก็บแค่ว่าทีมไหนได้ลุ้น");
+    expect(privacy).toContain("ทีมที่มีคุณคนเดียว");
+    // A won look is a gift that stays with the team, with its date.
+    expect(privacy).toContain("พร้อมวันที่ได้");
+    // A picked look shows on a shown team's tree: the bot only never announces which team.
+    const campfire = GUIDE_CAMPFIRE.lines.join(" ");
+    expect(campfire).not.toContain("ไม่มีใครเห็นว่าทีมไหนได้");
+    expect(campfire).toContain("บอทไม่ประกาศว่าทีมไหนได้");
+  });
+
   it("lists the stages as the game names them, with the seed before stage 1", () => {
     expect([...GUIDE_STAGE_NAMES]).toEqual([PRE_STAGE, ...STAGE_NAMES.slice(1)]);
   });

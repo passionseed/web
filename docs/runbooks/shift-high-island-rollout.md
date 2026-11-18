@@ -433,7 +433,13 @@ The bot runs on its own host (`bot/deploy.sh`), not on Vercel.
       ships the 8 guest looks), deploy the bot, then the migration on the
       founder's go. The bot re-reads the version every 30 seconds, so no
       restart. **Applying the migration turns the call on that evening, with
-      the role ping** (both switches default on). Before applying, in Discord:
+      the role ping** (both switches default on), within 30 seconds of the
+      apply. **Apply it outside 18:45 to 21:00 Bangkok**: inside that window
+      a call can go out at once (it is due until 19:15) or the guest's drop
+      can roll with no call posted (19:25 to 19:30), before anyone has
+      checked the permissions below. If the first evening should wait, run
+      `/admin feature campfire_call off` right after applying (the switch
+      does not exist before the migration). Before applying, in Discord:
       - #island-news: the bot has View Channel, Send Messages, Read Message
         History, and Mention @everyone, @here and All Roles (or the student
         role is set to "allow anyone to @mention this role"). Without Read
@@ -448,13 +454,21 @@ The bot runs on its own host (`bot/deploy.sh`), not on Vercel.
       The first evening: at 18:50 one call in #island-news (bot log
       `[shift-quests] campfire call posted for <day> (pinged the student roles)`),
       it edits to lit at 19:00, the guest at 19:25 (log
-      `campfire guest's drop for <day>: N team(s) got a look`), embers at
-      21:00, and the next evening yesterday's call is gone. Check that
-      students got the notification. A team that won sees a 🎁 waiting on its
-      tree. Off without a deploy: `/admin feature campfire_call off` (the
-      whole call, e.g. a SHIFT cohort week, when shift-voice records voice
-      time in every channel) or `/admin feature campfire_call_ping off` (the
-      same call, no ping). Tonight's message stays as it is.
+      `campfire guest's drop for <day> made (N team(s) got a look)`, or
+      `(count withheld)` when fewer than 3 teams rolled or all or none won:
+      the public count would tell who won), embers at 21:00, and the next
+      evening yesterday's call is gone. Check that students got the
+      notification, and that a test account with **Suppress All Role
+      @mentions** on gets none (the card tells students to use it: a muted
+      channel still notifies on a role mention). A team that won sees a 🎁
+      waiting on its tree. Off without a deploy: `/admin feature
+      campfire_call off` (the whole call, e.g. a SHIFT cohort week, when
+      shift-voice records voice time in every channel: within 30 seconds the
+      latest call is edited into a paused note with no people line and no
+      "tomorrow at 1 ทุ่ม") or `/admin feature campfire_call_ping off` (the
+      same call, no ping). The guest's rolls of earlier nights are deleted by
+      pg_cron's 5-minute voice purge, so a rollback to an older bot keeps the
+      "deleted the next day" promise.
 - [ ] Island invitation RSVPs: every RSVP should lead to the Discord role
       `SHIFT high`. Nothing grants it automatically yet: until it does, staff
       read the new RSVPs (`shift_island_rsvps`, newest first, in the SQL

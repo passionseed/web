@@ -732,6 +732,15 @@ describe("/settings", () => {
     expect(customIds(p)).toEqual(["sq|rem_on", "sq|rem_off", "sq|dm|off", "sq|is_view"]);
     expect(calls(c)).toEqual([]);
   });
+
+  it("says how to stop the 18:50 campfire call's role ping, which the reminder switch does not cover", async () => {
+    const c = ctx(() => null, session());
+    const { i, sent } = interaction("command");
+    await COMMAND_HANDLERS.get("settings")!(i, c);
+    expect(bodyText(sent[0].payload)).toContain(`-# ${T.callPing}`);
+    expect(T.callPing).toContain("Suppress All Role @mentions");
+    expect(T.callPing).not.toMatch(/[\u2014\u2013]/);
+  });
 });
 
 describe("/data", () => {
@@ -782,6 +791,15 @@ describe("/data", () => {
     await ACTION_HANDLERS.get("data_erase_go")!(b.i, c, []);
     expect(calls(c)).toEqual([["shift_quest_data_request", "1111111111", "erasure", null]]);
     expect(bodyText(b.sent[0].payload)).toBe(`✅ ${T.requestSent}`);
+  });
+});
+
+describe("/data's campfire line", () => {
+  it("is true about the evening guest: a team of one's result is that student's, and a won look stays with its date", () => {
+    expect(T.dataBody).not.toContain("เก็บแค่ว่าทีมไหนได้ลุ้น");
+    expect(T.dataBody).toContain("ทีมที่มีคุณคนเดียว");
+    expect(T.dataBody).toContain("พร้อมวันที่ได้");
+    expect(T.dataBody).toContain("ลบวันถัดไป");
   });
 });
 

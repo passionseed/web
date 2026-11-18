@@ -142,8 +142,10 @@ channel right now, for the island's campfire:
 - **The evening guest (schema 21)**: once a night, at 19:25 Bangkok, the bot
   passes the ids in the room to the database for the guest's drop; it keeps
   one row per team and night (the team, the guest, the look or none), never
-  who sat there, and deletes those rows the next day. See "The campfire call
-  and the evening guest" below.
+  who sat there, and deletes those rows the next day (for a team of one, the
+  row is that student's until then). A won look is a team gift kept with its
+  date; an erasure that leaves the team empty deletes both. See "The campfire
+  call and the evening guest" below.
 
 `/data` exports everything about the caller as JSON. An approved erasure
 (`/admin data`) deletes the journal, help requests, shares and notices,
@@ -1055,19 +1057,28 @@ every 30-second check.
 
 During an active season an evening guest (boat, gull, fireflies, turtle, in a
 fixed rotation by season day, `shift_quest__guest_of`) arrives at 19:25. In
-that first rest the first check with someone at the fire passes the Discord
+that first rest the first check that can read the room passes the Discord
 ids in the campfire voice room (`campfire.present()`, the gateway voice
-cache, bots left out) to `shift_quest_campfire_drop`. The database links them
+cache, bots left out; empty when nobody sits there) to
+`shift_quest_campfire_drop`, and that call decides the night: nobody is
+rewarded for sitting down first later in the rest. The database links them
 to started, non-staff members and their current teams; each team gets one
 roll that night (`shift_quest__guest_drop_chance()`, 1 in 2), however many
 teammates are there and however often it is called (a lock and
 `shift_quest_guest_nights`). A win is a one-option gift of one of the guest's
 two looks the team does not have (`source drop:<day>`, `member_id` null). Only
 `(day, project_id, guest, look)` is kept per team, in
-`shift_quest_guest_drops`, and earlier days' rows are deleted on the next
-read: no member, no Discord id, no presence history. The round messages and
-the call say how many teams got a look, never which; 🎁 (`rd_guest`,
-`shift_quest_guest_status`) answers privately about the presser's own team.
+`shift_quest_guest_drops`, and earlier days' rows are deleted the next day
+(the bot's reads, every drop call, and pg_cron's `shift_quest__voice_purge`
+every 5 minutes, so no bot is needed): no member, no Discord id, no presence
+history. An approved erasure that leaves a team with no active member
+deletes its rolls and drop gifts (`shift_quest__island_erase`). The round
+messages and the call say how many teams got a look only when 3 or more
+teams rolled and some but not all won (`shift_quest__guest_reveal`; else no
+number), never which; 🎁 (`rd_guest`, `shift_quest_guest_status`) answers
+privately about the presser's own team. The send carries a nonce Discord
+enforces, so a retried POST never posts or pings twice. Switched off, the
+latest call is edited once into a paused note.
 Round and quest gifts never offer guest looks. No coins, no stage, no
 ledger. Design and the founder's decisions:
 [`docs/designs/shift-island-campfire-call.md`](../designs/shift-island-campfire-call.md).

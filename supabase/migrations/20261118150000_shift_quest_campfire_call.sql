@@ -14,11 +14,15 @@
 -- a fixed rotation by season day. Each guest brings 2 colour looks of its own
 -- (8 tree items only guests give). When it arrives, the bot reads who sits in
 -- the campfire voice room from its gateway voice cache and passes their
--- Discord ids to shift_quest_campfire_drop once. Every team with at least one
--- student there gets exactly one roll, however many teammates came; a winning
--- roll gives the team one of the guest's looks it does not have yet, as a
--- one-option gift on its tree. Staff and mentors never win. The chance is one
--- constant, shift_quest__guest_drop_chance() (1 in 2).
+-- Discord ids to shift_quest_campfire_drop: the first call in that rest
+-- decides the night, even with no team there, so arriving first is never
+-- rewarded. Every team with at least one student there gets exactly one
+-- roll, however many teammates came; a winning roll gives the team one of the
+-- guest's looks it does not have yet, as a one-option gift on its tree. Staff
+-- and mentors never win. The chance is one constant,
+-- shift_quest__guest_drop_chance() (1 in 2). Everyone sees how many teams got
+-- a look only when that cannot tell anyone's result (shift_quest__guest_reveal:
+-- 3 or more teams rolled, some but not all won); never which.
 --
 -- What the database keeps (minimised on purpose):
 --   * shift_quest_guest_drops: one row per team that was at the fire when the
@@ -26,13 +30,18 @@
 --     a member, a Discord id, a count of people or a time. It answers the
 --     private "did my team get something tonight" button, and the one roll
 --     per team per night (its primary key). Rows of earlier days are deleted
---     the next day (shift_quest__guest_purge, on every call read): no
---     presence history is kept.
+--     the next day (shift_quest__guest_purge: on every call read and drop,
+--     and in pg_cron's 5-minute shift_quest__voice_purge, so no bot is
+--     needed), and a one-person team's go with its member's erasure
+--     (shift_quest__island_erase): no presence history is kept. For a team of
+--     one, the team's row is that student's, until the next day.
 --   * shift_quest_guest_nights: one row per night the drop happened (day,
 --     guest, when). No person, no team.
 --   * shift_quest_tree_gifts: a winning team's gift, source 'drop:<day>', with
 --     member_id null (made nullable here): it says which team, never who sat
---     at the fire. Picking it is the normal tree_pick (audited as before).
+--     at the fire, and stays with the team like every gift (with its date).
+--     An erasure that leaves the team with no member deletes it. Picking it
+--     is the normal tree_pick (audited as before).
 --   * shift_quest_call_posts: one row per Bangkok day, the call's ledger
 --     (claim, send, compare-and-set mark), with whether it pinged. No person.
 --   The live presence table (shift_quest_voice_presence) is untouched: still
@@ -57,16 +66,19 @@
 --     shift_quest__guest_tonight(day), shift_quest__call_due(day, now),
 --     shift_quest__call_today(now), shift_quest__call_claim(day, channel,
 --     now), shift_quest__guest_drop_chance(),
---     shift_quest__guest_purge(day), shift_quest__guest_drop(now, ids,
---     chance), shift_quest__guest_status(member, now). The times are
---     parameters so the tests can pass fixed times and chances.
+--     shift_quest__guest_purge(day), shift_quest__guest_reveal(day, now),
+--     shift_quest__guest_drop(now, ids, chance),
+--     shift_quest__guest_status(member, now). The times are parameters so
+--     the tests can pass fixed times and chances.
 --   * The bot's functions: shift_quest_call_today(),
 --     shift_quest_call_claim(day, channel), shift_quest_call_mark(day,
 --     channel, message), shift_quest_campfire_drop(day, ids),
 --     shift_quest_guest_status(actor). Never the website's.
 --   * shift_quest__set_feature (20261111090800 plus two keys),
 --     shift_quest_admin_status (20261118130000 plus two settings),
---     shift_quest__gift_create (20261114120000 plus one predicate).
+--     shift_quest__gift_create (20261114120000 plus one predicate),
+--     shift_quest__voice_purge (20261111093000 plus the guest's purge) and
+--     shift_quest__island_erase (20261115140000 plus a lone member's drops).
 --   * shift_quest_schema_version() = 21. 20 is
 --     20261118140000_shift_quest_island_news_missed (#329): apply it first,
 --     so the version only goes up.
@@ -75,7 +87,9 @@
 -- the founder's go. The bot reads the schema version on every call tick, so
 -- the call starts by itself once this is applied, with no restart. Applying
 -- it turns the call on (both switches default on): check the bot's
--- permissions in #island-news and the campfire voice chat first
+-- permissions in #island-news and the campfire voice chat first, and apply
+-- it outside 18:45 to 21:00 Bangkok (within 30 seconds a call is due until
+-- 19:15 and a drop until 19:30), or switch the call off right after
 -- (docs/runbooks/shift-high-island-rollout.md).
 --
 -- Grants are per function, no grant loop. Mirrored in
@@ -292,16 +306,20 @@ AS $$
 $$;
 
 /**
- * What shift_quest_call_today answers at p_now: null while the call is off;
- * else {day, guest, call_at, lit_at, guest_from, guest_until (unix seconds),
- * channel_id (news), coworking_channel_id, ping_role_ids, due, message_id and
- * message_channel_id (tonight's recorded call, or null), previous:
- * {channel_id, message_id} | null, drop: {teams} | null}.
+ * What shift_quest_call_today answers at p_now. While the call is off (the
+ * switch, or no news or coworking channel): {off: true, day, message_id,
+ * message_channel_id} for the latest recorded call, so the bot edits it once
+ * into a paused note (no stale "lit" or "tomorrow at 19:00" left up), or null
+ * when there is none. Else {day, guest, call_at, lit_at, guest_from,
+ * guest_until (unix seconds), channel_id (news), coworking_channel_id,
+ * ping_role_ids, due, message_id and message_channel_id (tonight's recorded
+ * call, or null), previous: {channel_id, message_id} | null, drop: {teams} |
+ * null}.
  *   ping_role_ids: the student roles (at most 5) while the call pings: the
  *     value frozen at the claim once there is one, else the switch now.
  *   previous: the latest earlier day's recorded call, for the bot to delete.
- *   drop: once the guest's drop was made tonight, how many teams got a look
- *     (never which). Null before.
+ *   drop: on a guest night, once the drop is decided (made, or the guest's
+ *     first rest over without one): shift_quest__guest_reveal. Null before.
  * No member, no name, no count of people.
  */
 CREATE OR REPLACE FUNCTION public.shift_quest__call_today(p_now timestamptz)
@@ -318,8 +336,22 @@ DECLARE
   v_prev public.shift_quest_call_posts;
   v_ping boolean;
 BEGIN
-  IF p_now IS NULL OR NOT public.shift_quest__call_on() THEN
+  IF p_now IS NULL THEN
     RETURN NULL;
+  END IF;
+  IF NOT public.shift_quest__call_on() THEN
+    SELECT * INTO v_prev FROM public.shift_quest_call_posts
+    WHERE day <= v_day AND message_id IS NOT NULL
+    ORDER BY day DESC LIMIT 1;
+    IF v_prev.day IS NULL THEN
+      RETURN NULL;
+    END IF;
+    RETURN jsonb_build_object(
+      'off', true,
+      'day', v_prev.day::text,
+      'message_id', v_prev.message_id,
+      'message_channel_id', v_prev.channel_id
+    );
   END IF;
   SELECT * INTO v_row FROM public.shift_quest_call_posts WHERE day = v_day;
   SELECT * INTO v_prev FROM public.shift_quest_call_posts
@@ -342,10 +374,8 @@ BEGIN
     'message_channel_id', CASE WHEN v_row.message_id IS NOT NULL THEN v_row.channel_id END,
     'previous', CASE WHEN v_prev.day IS NULL THEN NULL
                      ELSE jsonb_build_object('channel_id', v_prev.channel_id, 'message_id', v_prev.message_id) END,
-    'drop', CASE WHEN EXISTS (SELECT 1 FROM public.shift_quest_guest_nights n WHERE n.day = v_day)
-                 THEN jsonb_build_object('teams', (
-                   SELECT count(*) FROM public.shift_quest_guest_drops d WHERE d.day = v_day AND d.look IS NOT NULL
-                 )) END
+    'drop', CASE WHEN public.shift_quest__guest_tonight(v_day) IS NOT NULL
+                 THEN public.shift_quest__guest_reveal(v_day, p_now) END
   );
 END;
 $$;
@@ -373,21 +403,63 @@ AS $$
 $$;
 
 /**
+ * The guest's drop on p_day as everyone may read it at p_now (the call in
+ * #island-news and the round messages in the voice chat): {teams}, or null
+ * while it is not decided (no drop made and the guest's first rest not over).
+ * Who sits at the fire is public (Discord's voice list, the web campfire), so
+ * the count never tells a team's result:
+ *   * 0 when no team rolled: nobody's team was at the fire when the guest
+ *     arrived, or its first rest passed with no drop (the bot was away);
+ *   * how many teams got a look, only when 3 or more teams rolled
+ *     (PEOPLE_FLOOR in bot/src/quests/newsCopy.ts) and some but not all of
+ *     them won: then nobody can tell which;
+ *   * else null (withheld): 1 or 2 teams, or all or none of them won.
+ * Never which team.
+ */
+CREATE OR REPLACE FUNCTION public.shift_quest__guest_reveal(p_day date, p_now timestamptz)
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_rolled integer;
+  v_won integer;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.shift_quest_guest_nights WHERE day = p_day) THEN
+    IF p_now IS NOT NULL AND p_now >= public.shift_quest__call_at(p_day, 'drop_end') THEN
+      RETURN jsonb_build_object('teams', 0);
+    END IF;
+    RETURN NULL;
+  END IF;
+  SELECT count(*), count(*) FILTER (WHERE look IS NOT NULL) INTO v_rolled, v_won
+  FROM public.shift_quest_guest_drops WHERE day = p_day;
+  RETURN jsonb_build_object('teams', CASE
+    WHEN v_rolled = 0 THEN 0
+    WHEN v_rolled >= 3 AND v_won > 0 AND v_won < v_rolled THEN v_won
+  END);
+END;
+$$;
+
+/**
  * The evening guest's drop at p_now, for the people p_ids (Discord ids) at
  * the fire. Only during the guest's first rest (19:25 to 19:30 Bangkok) on a
- * night with a guest, once per night (a lock and shift_quest_guest_nights):
+ * night with a guest, once per night (a lock and shift_quest_guest_nights).
+ * The first call in that rest is the guest's arrival and decides the night,
+ * even with nobody's team there: a student who sits down later in the rest
+ * gets nothing extra, so arriving first is never rewarded.
  *   * the teams: the current projects (not archived) of started, non-erased
  *     members among p_ids who hold no staff role (staff and mentors never
- *     win) and are active teammates. Unknown ids are ignored. With no such
- *     team, nothing is recorded and {guest, done: false, teams: 0} comes
- *     back, so the drop waits for the first student in that rest;
+ *     win) and are active teammates. Unknown ids are ignored;
  *   * each team gets exactly one roll, however many teammates sit there:
  *     when the team has a guest look it neither owns nor waits on in an
  *     unpicked gift, random() < p_chance gives it one of those (at random) as
  *     a one-option gift, source 'drop:<day>', member null; otherwise no look;
  *   * one row per team (day, project, guest, look or null).
- * Returns {guest, done: true, fresh, teams}: teams is how many teams got a
- * look (never which); fresh is false when the night was already done.
+ * Returns {guest, done: true, fresh, teams}: teams is the public count
+ * (shift_quest__guest_reveal: withheld as null when it could tell anyone's
+ * result, never which); fresh is false when the night was already done.
  * Null outside the window, without a guest, or with the call off. p_ids are
  * never stored.
  */
@@ -405,7 +477,6 @@ DECLARE
   v_project uuid;
   v_open text[];
   v_look text;
-  v_teams integer := 0;
 BEGIN
   IF p_now IS NULL OR NOT public.shift_quest__call_on()
      OR p_now < public.shift_quest__call_at(v_day, 'guest')
@@ -419,7 +490,7 @@ BEGIN
       'guest', (SELECT guest FROM public.shift_quest_guest_nights WHERE day = v_day),
       'done', true,
       'fresh', false,
-      'teams', (SELECT count(*) FROM public.shift_quest_guest_drops WHERE day = v_day AND look IS NOT NULL)
+      'teams', public.shift_quest__guest_reveal(v_day, p_now) -> 'teams'
     );
   END IF;
   v_guest := public.shift_quest__guest_of(v_day);
@@ -435,15 +506,12 @@ BEGIN
     AND m.erased_at IS NULL
     AND cardinality(m.roles) = 0
     AND public.shift_quest__is_teammate(p.id, m.id);
-  IF v_projects IS NULL THEN
-    -- Nobody's team at the fire yet: wait for the first student in this rest.
-    RETURN jsonb_build_object('guest', v_guest, 'done', false, 'fresh', false, 'teams', 0);
-  END IF;
 
   PERFORM public.shift_quest__guest_purge(v_day);
+  -- The guest has arrived: the night is decided now, with or without a team there.
   INSERT INTO public.shift_quest_guest_nights (day, guest, dropped_at) VALUES (v_day, v_guest, p_now);
 
-  FOREACH v_project IN ARRAY v_projects LOOP
+  FOREACH v_project IN ARRAY COALESCE(v_projects, '{}'::uuid[]) LOOP
     -- The same lock as shift_quest__gift_create: gift decisions of one team take turns.
     PERFORM pg_advisory_xact_lock(hashtext('shift_quest_tree_gift_project:' || v_project));
     v_open := ARRAY(
@@ -469,23 +537,25 @@ BEGIN
     END IF;
     INSERT INTO public.shift_quest_guest_drops (day, project_id, guest, look)
     VALUES (v_day, v_project, v_guest, v_look);
-    IF v_look IS NOT NULL THEN
-      v_teams := v_teams + 1;
-    END IF;
   END LOOP;
 
-  RETURN jsonb_build_object('guest', v_guest, 'done', true, 'fresh', true, 'teams', v_teams);
+  RETURN jsonb_build_object('guest', v_guest, 'done', true, 'fresh', true,
+                            'teams', public.shift_quest__guest_reveal(v_day, p_now) -> 'teams');
 END;
 $$;
 
 /**
  * What the private "did my team get something" button answers for p_member at
  * p_now: {state, day} plus, once the guest has come, {guest, looks}:
- *   'gone'      no guest tonight, the call off, or before 19:25 (an old button)
+ *   'gone'      no guest tonight (or the call off before its drop), or before
+ *               19:25 (an old button). A drop made tonight still answers after
+ *               the call is switched off.
  *   'noplot'    the caller has no current project
  *   'arriving'  the guest is here but the drop is not made yet (19:25 to 19:30)
+ *   'quiet'     the guest's first rest passed with no drop (the bot was away):
+ *               the guest only stopped by, for every team
  *   'away'      no roll for the caller's team tonight (nobody from it was at
- *               the fire when the guest arrived, or nobody at all)
+ *               the fire when the guest arrived)
  *   'won'       {look, gift: {id, options} while it waits to be picked, else null}
  *   'full'      no look tonight, and the team has every look this guest brings
  *   'lost'      no look tonight
@@ -509,7 +579,8 @@ DECLARE
   v_base jsonb;
   v_left integer;
 BEGIN
-  IF v_guest IS NULL OR NOT public.shift_quest__call_on() OR p_now < public.shift_quest__call_at(v_day, 'guest') THEN
+  -- v_guest: the night's drop when made, else the rotation's (null while the call is off).
+  IF v_guest IS NULL OR p_now < public.shift_quest__call_at(v_day, 'guest') THEN
     RETURN jsonb_build_object('state', 'gone', 'day', v_day::text);
   END IF;
   v_base := jsonb_build_object(
@@ -524,7 +595,7 @@ BEGIN
   END IF;
   IF NOT EXISTS (SELECT 1 FROM public.shift_quest_guest_nights WHERE day = v_day) THEN
     RETURN v_base || jsonb_build_object(
-      'state', CASE WHEN p_now < public.shift_quest__call_at(v_day, 'drop_end') THEN 'arriving' ELSE 'away' END);
+      'state', CASE WHEN p_now < public.shift_quest__call_at(v_day, 'drop_end') THEN 'arriving' ELSE 'quiet' END);
   END IF;
   SELECT * INTO v_drop FROM public.shift_quest_guest_drops WHERE day = v_day AND project_id = v_project;
   IF NOT FOUND THEN
@@ -558,9 +629,10 @@ $$;
 
 /**
  * Tonight's call as the bot should show it now (shift_quest__call_today at
- * now()), or null while the call is off. Also deletes the guest's rolls of
- * earlier days (shift_quest__guest_purge): the bot reads this every 30
- * seconds, so no roll outlives its night by more than a moment.
+ * now()): the latest call to retire while the call is off, or null. Also
+ * deletes the guest's rolls of earlier days (shift_quest__guest_purge): the
+ * bot reads this every 30 seconds, and pg_cron's voice purge does the same
+ * every 5 minutes without any bot.
  */
 CREATE OR REPLACE FUNCTION public.shift_quest_call_today()
 RETURNS jsonb
@@ -669,7 +741,7 @@ $$;
  * the campfire voice room right now (the bot's gateway voice cache, bots
  * left out). Null unless p_day is today in Bangkok (an old tick) or the drop
  * is open (shift_quest__guest_drop). Non-snowflakes are dropped, at most 200
- * ids are read, none is stored.
+ * ids are read, none is stored. Every call deletes earlier nights' rolls.
  */
 CREATE OR REPLACE FUNCTION public.shift_quest_campfire_drop(p_day date, p_ids text[])
 RETURNS jsonb
@@ -679,6 +751,7 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
+  PERFORM public.shift_quest__guest_purge(public.shift_quest__bkk_today());
   IF p_day IS NULL OR p_day <> public.shift_quest__bkk_today() THEN
     RETURN NULL;
   END IF;
@@ -907,6 +980,97 @@ BEGIN
 END;
 $$;
 
+/**
+ * 20261111093000_shift_quest_campfire's purge, plus the evening guest's rolls
+ * of earlier nights (shift_quest__guest_purge). pg_cron runs this every 5
+ * minutes in production (20261111093000 schedules it), so those rows go the
+ * next day even with no bot of schema 21 running (a rollback, a bot down for
+ * days). Returns how many presence rows it deleted, as before.
+ */
+CREATE OR REPLACE FUNCTION public.shift_quest__voice_purge()
+RETURNS integer
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_count integer := 0;
+BEGIN
+  -- 20261118150000: the guest's rolls of earlier nights, whatever the bot.
+  PERFORM public.shift_quest__guest_purge(public.shift_quest__bkk_today());
+  PERFORM 1 FROM public.shift_quest_voice_state WHERE id FOR UPDATE;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.shift_quest_voice_state
+    WHERE id AND beat_at > now() - interval '10 minutes'
+  ) THEN
+    DELETE FROM public.shift_quest_voice_presence WHERE true;
+    GET DIAGNOSTICS v_count = ROW_COUNT;
+  END IF;
+  RETURN v_count;
+END;
+$$;
+
+/**
+ * 20261115140000_shift_quest_peer_check's erasure hook, plus the evening
+ * guest's drops (20261118150000): a team the erased member leaves with no
+ * active member (a team of one) loses its rolls and its drop gifts, which
+ * would say on which nights that student sat at the campfire. A team that
+ * goes on keeps its gifts: they name no one.
+ */
+CREATE OR REPLACE FUNCTION public.shift_quest__island_erase(p_member uuid)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  UPDATE public.shift_quest_squad_members SET status = 'left', responded_at = now()
+  WHERE member_id = p_member AND status IN ('active', 'invited');
+  UPDATE public.shift_quest_squads SET name = '[erased]', target = '[erased]'
+  WHERE created_by = p_member AND (name <> '[erased]' OR target <> '[erased]');
+  UPDATE public.shift_quest_inbox SET params = params || '{"name": "[erased]"}'::jsonb
+  WHERE kind = 'squad_invite'
+    AND ref_id IN (SELECT id FROM public.shift_quest_squads WHERE created_by = p_member);
+  -- 20261111095000_shift_quest_player: the consent row, and every AI summary
+  -- of a project the member was ever on or contributed to (they were written
+  -- from evidence the erasure clears, and go back to the model as 'previous').
+  DELETE FROM public.shift_quest_consents WHERE member_id = p_member;
+  DELETE FROM public.shift_quest_digests
+  WHERE project_id IN (
+    SELECT project_id FROM public.shift_quest_project_members WHERE member_id = p_member
+    UNION
+    SELECT i.project_id
+    FROM public.shift_quest_contributions c
+    JOIN public.shift_quest_submissions s ON s.id = c.submission_id
+    JOIN public.shift_quest_instances i ON i.id = s.instance_id
+    WHERE c.member_id = p_member AND i.project_id IS NOT NULL
+    UNION
+    SELECT i.project_id
+    FROM public.shift_quest_submissions s
+    JOIN public.shift_quest_instances i ON i.id = s.instance_id
+    WHERE s.submitted_by = p_member AND i.project_id IS NOT NULL
+  );
+  -- 20261115130000_shift_quest_evidence_photos: the member's photos.
+  DELETE FROM public.shift_quest_evidence_photos WHERE member_id = p_member;
+  -- 20261115140000_shift_quest_peer_check: the checks the member wrote (their words about others' work).
+  DELETE FROM public.shift_quest_peer_checks WHERE peer_id = p_member;
+  -- 20261118150000_shift_quest_campfire_call: the evening guest's rolls and
+  -- drop gifts of the teams they leave empty (shift_quest_admin_erase sets
+  -- their memberships to 'left' before this runs).
+  DELETE FROM public.shift_quest_guest_drops d
+  WHERE d.project_id IN (SELECT pm.project_id FROM public.shift_quest_project_members pm WHERE pm.member_id = p_member)
+    AND NOT EXISTS (
+      SELECT 1 FROM public.shift_quest_project_members pm WHERE pm.project_id = d.project_id AND pm.status = 'active'
+    );
+  DELETE FROM public.shift_quest_tree_gifts g
+  WHERE g.source LIKE 'drop:%'
+    AND g.project_id IN (SELECT pm.project_id FROM public.shift_quest_project_members pm WHERE pm.member_id = p_member)
+    AND NOT EXISTS (
+      SELECT 1 FROM public.shift_quest_project_members pm WHERE pm.project_id = g.project_id AND pm.status = 'active'
+    );
+END;
+$$;
+
 /** Island schema 21: the campfire call and the evening guest (20 is 20261118140000_shift_quest_island_news_missed). */
 CREATE OR REPLACE FUNCTION public.shift_quest_schema_version()
 RETURNS integer
@@ -931,6 +1095,7 @@ REVOKE ALL ON FUNCTION
   public.shift_quest__call_claim(date, text, timestamptz),
   public.shift_quest__guest_drop_chance(),
   public.shift_quest__guest_purge(date),
+  public.shift_quest__guest_reveal(date, timestamptz),
   public.shift_quest__guest_drop(timestamptz, text[], double precision),
   public.shift_quest__guest_status(uuid, timestamptz)
 FROM PUBLIC, anon, authenticated, service_role, shift_quest_bot;
@@ -952,7 +1117,8 @@ GRANT EXECUTE ON FUNCTION
 TO service_role, shift_quest_bot;
 
 -- The replaced functions (shift_quest__gift_create, shift_quest__set_feature,
--- shift_quest_admin_status) and the schema version keep the grants they
+-- shift_quest_admin_status, shift_quest__voice_purge,
+-- shift_quest__island_erase) and the schema version keep the grants they
 -- already have: CREATE OR REPLACE leaves them as they are.
 
 -- Skipped where the web role does not exist (it is made by
@@ -970,6 +1136,7 @@ BEGIN
       public.shift_quest__call_claim(date, text, timestamptz),
       public.shift_quest__guest_drop_chance(),
       public.shift_quest__guest_purge(date),
+      public.shift_quest__guest_reveal(date, timestamptz),
       public.shift_quest__guest_drop(timestamptz, text[], double precision),
       public.shift_quest__guest_status(uuid, timestamptz),
       public.shift_quest_call_today(),

@@ -32,21 +32,28 @@ import { ISLAND_LINK_LABEL, islandWebUrl } from "./weblink";
  * call's first line mentions the student roles (settings.student_role_ids, at
  * most 5) and the send allows exactly those roles: never a user, @everyone or
  * @here. Every edit allows nothing, and Discord never pings on an edit. The
- * card says how to mute the channel.
+ * send carries a nonce Discord enforces (callNonce), so a POST discord.js
+ * retries after a timeout, a reset or a 5xx returns the same message instead
+ * of a second call and ping. The card says how to stop the ping (a muted
+ * channel still notifies on mentions).
  *
  * Edited through the evening as the fire goes (at most once a minute, only
  * when its text changes): invite (18:50), lit (19:00), the evening guest
  * (19:25, during a season), embers (21:00). The people line is the campfire's
  * own count (campfire.ts), floored like the news card, never a name. When
  * today's call is recorded, the bot deletes the previous day's call (its own
- * message only), so the channel shows one call.
+ * message only), so the channel shows one call. Switched off, the latest call
+ * is edited once into a paused note (no people line, no "tomorrow"), so
+ * nothing stale stays up for a cohort week.
  *
  * The evening guest's drop: during the guest's first rest (19:25 to 19:30),
- * the first tick with someone at the fire passes the Discord ids in the
- * campfire voice room (campfire.present(), the gateway's voice cache) to
- * shift_quest_campfire_drop once. The database rolls once per team and keeps
- * the result per team and night only; this module keeps the count of teams
- * that got a look, for the call and the round messages (evening()), and logs
+ * the first tick that can read the room passes the Discord ids in the
+ * campfire voice room (campfire.present(), the gateway's voice cache; empty
+ * when nobody sits there) to shift_quest_campfire_drop once: that moment is
+ * the guest's arrival, so coming first is never rewarded. The database rolls
+ * once per team and keeps the result per team and night only; this module
+ * keeps the public count of teams that got a look (null when the database
+ * withholds it), for the call and the round messages (evening()), and logs
  * nothing about anyone.
  *
  * Once a day, restart-safe, as news.ts: claim (shift_quest_call_claim), send,
@@ -108,11 +115,17 @@ export interface CallData {
   messageChannelId: string | null;
   /** The previous day's recorded call, to delete once tonight's is recorded. */
   previous: { channelId: string; messageId: string } | null;
-  /** Once the guest's drop is made: how many teams got a look. */
-  drop: { teams: number } | null;
+  /**
+   * Once the guest's drop is decided (made, or its rest over without one):
+   * how many teams got a look, or null when the database withholds the count
+   * (it would tell who won). Null before.
+   */
+  drop: { teams: number | null } | null;
+  /** The call is switched off: this is only the latest recorded call, to retire (normalizeOff). */
+  off: boolean;
 }
 
-export type CallStage = "invite" | "lit" | "guest" | "embers";
+export type CallStage = "invite" | "lit" | "guest" | "embers" | "off";
 
 export interface CallLoop {
   /** One check now (tests, and the timer). Never throws: failures are logged by code. */
@@ -149,12 +162,6 @@ function seconds(value: unknown): number | null {
   return Number.isSafeInteger(n) && n > 0 ? n : null;
 }
 
-/** A non-negative whole number; anything else is 0. */
-function count(value: unknown): number {
-  const n = Number(value);
-  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
-}
-
 /** shift_quest_call_today's answer with every field checked; null when there is no call today (or it is malformed). */
 export function normalizeCall(raw: unknown): CallData | null {
   const r = record(raw);
@@ -167,7 +174,7 @@ export function normalizeCall(raw: unknown): CallData | null {
   const prevChannel = snowflake(previous.channel_id);
   const prevMessage = snowflake(previous.message_id);
   const messageId = snowflake(r.message_id);
-  const drop = r.drop && typeof r.drop === "object" ? { teams: count(record(r.drop).teams) } : null;
+  const drop = r.drop && typeof r.drop === "object" ? { teams: teamsOf(record(r.drop).teams) } : null;
   return {
     day: r.day,
     guest: isGuestKey(r.guest) ? r.guest : null,
@@ -183,7 +190,57 @@ export function normalizeCall(raw: unknown): CallData | null {
     messageChannelId: messageId ? (snowflake(r.message_channel_id) ?? channelId) : null,
     previous: prevChannel && prevMessage ? { channelId: prevChannel, messageId: prevMessage } : null,
     drop,
+    off: false,
   };
+}
+
+/** The public count of teams that got a look: a whole number, or null when withheld (or unreadable). */
+function teamsOf(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? Math.floor(n) : null;
+}
+
+/**
+ * shift_quest_call_today's answer while the call is switched off: the latest
+ * recorded call ({off: true, day, message_id, message_channel_id}), as a
+ * CallData the loop only edits into the paused note (stage "off"). Null for
+ * anything else.
+ */
+export function normalizeOff(raw: unknown): CallData | null {
+  const r = record(raw);
+  if (r.off !== true || typeof r.day !== "string" || !DAY.test(r.day)) return null;
+  const messageId = snowflake(r.message_id);
+  const channelId = snowflake(r.message_channel_id);
+  if (!messageId || !channelId) return null;
+  return {
+    day: r.day,
+    guest: null,
+    callAt: 0,
+    litAt: 0,
+    guestFrom: 0,
+    guestUntil: 0,
+    channelId,
+    coworkingId: null,
+    pingRoleIds: [],
+    due: false,
+    messageId,
+    messageChannelId: channelId,
+    previous: null,
+    drop: null,
+    off: true,
+  };
+}
+
+/**
+ * The send's nonce: one per Bangkok day, at most 25 characters (Discord's
+ * limit). With enforceNonce, Discord returns the message already created with
+ * it (same author, the last few minutes) instead of a second one: a POST that
+ * discord.js retries (a 15-second timeout, a reset, a 5xx) never posts or
+ * pings twice.
+ */
+export function callNonce(day: string): string {
+  return `sqcall${day.replace(/-/g, "")}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -191,7 +248,8 @@ export function normalizeCall(raw: unknown): CallData | null {
 // ---------------------------------------------------------------------------
 
 /** Where the evening is at nowMs: before 19:00, the fire lit, the guest here (a guest night only), embers from 21:00. */
-export function stageAt(d: Pick<CallData, "litAt" | "guestFrom" | "guestUntil" | "guest">, nowMs: number): CallStage {
+export function stageAt(d: Pick<CallData, "litAt" | "guestFrom" | "guestUntil" | "guest"> & { off?: boolean }, nowMs: number): CallStage {
+  if (d.off) return "off";
   const t = nowMs / 1000;
   if (t >= d.guestUntil) return "embers";
   if (d.guest && t >= d.guestFrom) return "guest";
@@ -222,8 +280,8 @@ function linkButton(url: string, label: string): ButtonBuilder {
 /**
  * The call as it should read at a stage. The role mention line first (only
  * on a pinging call), then the stage's lines, the people line (not in
- * embers), the fine print with the mute line (pinging calls only) and the
- * issue line. Buttons: the private 🎁 check once the guest's drop is made,
+ * embers or off), the fine print with the mute line (pinging calls only) and
+ * the issue line. Buttons: the private 🎁 check once the guest's drop is made,
  * then links to the campfire voice channel and the web island.
  */
 export function callView(d: CallData, o: CallViewOptions): View {
@@ -260,6 +318,11 @@ export function callView(d: CallData, o: CallViewOptions): View {
       title = CALL.embersTitle;
       blocks.push({ kind: "text", text: CALL.embers });
       if (guest && d.drop) blocks.push({ kind: "text", text: CALL.dropped(guest, d.drop.teams) });
+      break;
+    case "off":
+      // Switched off: no people line, no promise of tomorrow, no guest.
+      title = CALL.offTitle;
+      blocks.push({ kind: "text", text: CALL.off });
       break;
   }
   const fine = [CALL.fine, ...(d.pingRoleIds.length > 0 ? [CALL.mute] : []), CALL.dayLine(d.day)];
@@ -490,29 +553,35 @@ export function startCall(client: Client, api: QuestApi, options: CallOptions): 
     if (!message) {
       const nowMs = now();
       const payload = callPayload(viewOf(d, nowMs), d, "send");
-      message = await channel.send(payload);
+      // The nonce makes a retried POST return this call, never a second one (callNonce).
+      message = await channel.send({ ...payload, nonce: callNonce(d.day), enforceNonce: true });
       shown = { day: d.day, messageId: message.id, sig: cardSignature(payload.components), at: nowMs, gone: false, message };
     }
     await mark({ day: d.day, channelId: d.channelId, message, pinged: sending && d.pingRoleIds.length > 0 });
   }
 
   /**
-   * The evening guest's drop: in its first rest, the first check with
-   * someone at the fire hands their ids to the database, once. The database
-   * decides (and holds) everything; nothing about anyone is kept here.
+   * The evening guest's drop: in its first rest, the first check that can
+   * read the room hands the ids there to the database, once, an empty room
+   * included: that moment is the guest's arrival, so nobody is rewarded for
+   * coming first. The database decides (and holds) everything; nothing about
+   * anyone is kept here.
    */
   async function drop(d: CallData): Promise<void> {
     if (!d.guest || d.drop) return;
     const t = now() / 1000;
     if (t < d.guestFrom || t >= d.guestFrom + DROP_WINDOW_S) return;
     const ids = options.campfire.present();
-    // Unknown (the room is closed or not seen) or nobody there yet: no drop from this check.
-    if (!ids || ids.length === 0) return;
+    // Unknown (the room is closed or not seen yet): no drop from this check.
+    if (!ids) return;
     const r = record(await api.call<unknown>("shift_quest_campfire_drop", d.day, ids));
     problems.delete("drop");
     if (r.done !== true) return;
-    d.drop = { teams: count(r.teams) };
-    if (r.fresh === true) console.log(`[shift-quests] campfire guest's drop for ${d.day}: ${d.drop.teams} team(s) got a look`);
+    d.drop = { teams: teamsOf(r.teams) };
+    if (r.fresh === true) {
+      const told = d.drop.teams === null ? "count withheld" : `${d.drop.teams} team(s) got a look`;
+      console.log(`[shift-quests] campfire guest's drop for ${d.day} made (${told})`);
+    }
   }
 
   /**
@@ -590,8 +659,20 @@ export function startCall(client: Client, api: QuestApi, options: CallOptions): 
         warnOnce("post", reasonOf(error));
       }
     }
-    const d = normalizeCall(await api.call<unknown>("shift_quest_call_today"));
+    const raw = await api.call<unknown>("shift_quest_call_today");
     problems.delete("read");
+    const off = normalizeOff(raw);
+    if (off) {
+      // Switched off: no evening for the rounds; the latest call becomes the paused note, once.
+      today = null;
+      try {
+        await keep(off);
+      } catch (error) {
+        warnOnce("edit", `edit failed: ${reasonOf(error)}`);
+      }
+      return;
+    }
+    const d = normalizeCall(raw);
     if (!d) {
       today = null;
       return;
@@ -643,7 +724,7 @@ export function startCall(client: Client, api: QuestApi, options: CallOptions): 
     evening(nowMs: number): Evening | null {
       const d = today;
       if (!d || d.day !== bangkokDay(nowMs)) return null;
-      return { day: d.day, guest: d.guest, litAt: d.litAt, guestFrom: d.guestFrom, guestUntil: d.guestUntil, teams: d.drop?.teams ?? null };
+      return { day: d.day, guest: d.guest, litAt: d.litAt, guestFrom: d.guestFrom, guestUntil: d.guestUntil, drop: d.drop ? { ...d.drop } : null };
     },
     async stop() {
       stopped = true;
