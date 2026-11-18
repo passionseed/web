@@ -870,7 +870,7 @@ describe("admin island, staff awards and shop gates (schema 9)", () => {
     expect(body).not.toContain(T.adminConsentOffWarn);
     // A schema 9 to 18 database has no nightly card: nothing is said about it.
     expect(body).not.toContain("ข่าวเกาะคืนนี้");
-    expect(body).not.toContain("สรุป AI ที่เก็บไว้วันนี้");
+    expect(body).not.toContain("สรุปจาก AI วันนี้");
   });
 
   it("shows the nightly island news card and today's stored AI summaries (schema 19)", async () => {
@@ -879,7 +879,7 @@ describe("admin island, staff awards and shop gates (schema 9)", () => {
     await COMMAND_HANDLERS.get("admin island")!(cmd.i, on);
     expectCard(cmd.sent[0]);
     const body = bodyText(cmd.sent[0]);
-    expect(body).toContain("✅ ข่าวเกาะคืนนี้: โพสต์ทุกคืนราว 2 ทุ่มในห้องข่าวเกาะ\n🤖 สรุป AI ที่เก็บไว้วันนี้: 3 ทีม\n");
+    expect(body).toContain("✅ ข่าวเกาะคืนนี้: โพสต์ทุกคืนราว 2 ทุ่มในห้องข่าวเกาะ\n🤖 สรุปจาก AI วันนี้: 3 ทีม\n");
     expect(body).toContain("✅ ข่าวเกาะ AI: **เปิด** · โพสต์วันละครั้งที่ห้องข่าวเกาะ (รวมในข่าวเกาะ 2 ทุ่ม)");
 
     const off = ctx(() => islandStatus({ digest: { channel: "live", today_summaries: 0 } }));
@@ -887,7 +887,7 @@ describe("admin island, staff awards and shop gates (schema 9)", () => {
     await COMMAND_HANDLERS.get("admin island")!(cmd2.i, off);
     const body2 = bodyText(cmd2.sent[0]);
     expect(body2).toContain("⚪ ข่าวเกาะคืนนี้: ยังไม่ตั้งห้อง (/admin channel kind:news)");
-    expect(body2).toContain("🤖 สรุป AI ที่เก็บไว้วันนี้: 0 ทีม");
+    expect(body2).toContain("🤖 สรุปจาก AI วันนี้: 0 ทีม");
   });
 
   it("flips a switch through admin_island_set and warns while consent is off", async () => {

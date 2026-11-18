@@ -38,7 +38,7 @@ interface CharacterSheetProps {
   onOpenTree?: () => void;
   /** The project's show-name switch (team consent). */
   showName?: Pick<IslandProject, "id" | "show_name" | "name_visible"> | null;
-  /** ผลจากพี่เลี้ยง (ResultsList), right under the header; built by the page so it keeps its handlers. */
+  /** ผลตรวจจากพี่เลี้ยง (ResultsList), right under the header; built by the page so it keeps its handlers. */
   results?: ReactNode;
   /** What has no place on the island (MenuFoot): the last thing in the sheet. */
   foot?: ReactNode;

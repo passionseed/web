@@ -290,7 +290,7 @@ describe("tree_grew: the celebrate post when a mentor's approval grows a tree", 
         "**ร้านขนมปังของเรา** · แปลง #4",
         "ผ่านเควสต์หลักที่ 3 **ได้พันธมิตรคนแรก** แล้ว",
         "🌿 ▰▰▰▱▱▱▱ ต้นอ่อน **3**/7",
-        `<@${A}> <@${B}> ยินดีด้วย! ต้นนี้โตจากงานจริงของทีม`,
+        `<@${A}> <@${B}> ยินดีด้วย! ต้นไม้โตขึ้นจากงานที่ทีมลงมือทำจริง`,
       ].join("\n")
     );
     expect(post.note).toBe("");
@@ -304,7 +304,7 @@ describe("tree_grew: the celebrate post when a mentor's approval grows a tree", 
         "**ทีมปริศนา** · แปลง #4",
         "ผ่านเควสต์หลักที่ 3 **ได้พันธมิตรคนแรก** แล้ว",
         "🌿 ▰▰▰▱▱▱▱ ต้นอ่อน **3**/7",
-        "ยินดีด้วย! ต้นนี้โตจากงานจริงของทีม",
+        "ยินดีด้วย! ต้นไม้โตขึ้นจากงานที่ทีมลงมือทำจริง",
       ].join("\n")
     );
     expect(post.note).toBe(TREE_GREW.showName);
@@ -335,7 +335,16 @@ describe("tree_grew: the celebrate post when a mentor's approval grows a tree", 
 
   it("still reads well with missing parts", () => {
     const post = renderTreeGrew({ stage: 99, milestone: "x" });
-    expect(post.body.split("\n").slice(0, 3)).toEqual(["**ทีมปริศนา**", "ผ่านเควสต์หลัก แล้ว", "🟫 ▱▱▱▱▱▱▱ ที่ดินว่าง **0**/7"]);
+    expect(post.body.split("\n").slice(0, 3)).toEqual(["**ทีมปริศนา**", "ผ่านเควสต์หลักแล้ว", "🟫 ▱▱▱▱▱▱▱ ที่ดินว่าง **0**/7"]);
+  });
+
+  it("puts a space before แล้ว only after a quest number or a title", () => {
+    expect(TREE_GREW.quest(3, "ได้พันธมิตรคนแรก")).toBe("ผ่านเควสต์หลักที่ 3 **ได้พันธมิตรคนแรก** แล้ว");
+    expect(TREE_GREW.quest(3, null)).toBe("ผ่านเควสต์หลักที่ 3 แล้ว");
+    expect(TREE_GREW.quest(null, "ได้พันธมิตรคนแรก")).toBe("ผ่านเควสต์หลัก **ได้พันธมิตรคนแรก** แล้ว");
+    // Neither: no stray space before แล้ว.
+    expect(TREE_GREW.quest(null, null)).toBe("ผ่านเควสต์หลักแล้ว");
+    expect(TREE_GREW.quest(0, "")).toBe("ผ่านเควสต์หลักแล้ว");
   });
 
   it("keeps the house copy rules: no em dash, no น้องๆ, no 'not passed' or 'needs more', no mentor words", () => {

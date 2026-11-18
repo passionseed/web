@@ -163,8 +163,8 @@ describe("newsView: the totals and the small-number floor", () => {
   it("shows a busy night with every number", () => {
     expect(totalsLines(totals())).toEqual([
       "👣 แวะมาเช็กอิน **12** คน",
-      "✅ พี่เลี้ยงผ่านงาน **5** เควสต์ · 🌱 ต้นไม้โตขึ้น **3** ขั้น",
-      "🔥 ตั้งเป้าทำงานรอบกองไฟ **8** รอบ",
+      "✅ พี่เลี้ยงให้ผ่าน **5** เควสต์ · 🌱 ต้นไม้โตขึ้น **3** ขั้น",
+      "🔥 ล้อมวงทำงานที่กองไฟ **8** รอบ",
     ]);
   });
 
@@ -173,19 +173,19 @@ describe("newsView: the totals and the small-number floor", () => {
     expect(totalsLines(totals({ checked_in: 0, approved: 0, grew: 0, rounds: 0 }))).toEqual([NEWS.quiet]);
     const body = bodyText(card(news({ totals: totals({ checked_in: 0, approved: 0, grew: 0, rounds: 0, demo: null }) })));
     expect(body).toContain(NEWS.quiet);
-    expect(body).not.toMatch(/👣|✅|🌱|🔥 ตั้งเป้า/);
+    expect(body).not.toMatch(/👣|✅|🌱|🔥 ล้อมวง|🔥 มีคนมานั่ง/);
   });
 
   it("shows people counts of 1 or 2 without a number, and 3 with it", () => {
     expect(PEOPLE_FLOOR).toBe(3);
     for (const n of [1, 2]) {
       const lines = totalsLines(totals({ checked_in: n, rounds: n, rounders: n, approved: 0, grew: 0 }));
-      expect(lines).toEqual(["👣 มีเพื่อนแวะมาเช็กอินแล้ว", "🔥 มีคนมาตั้งเป้าทำงานที่กองไฟ"]);
+      expect(lines).toEqual(["👣 มีเพื่อนแวะมาเช็กอินแล้ว", "🔥 มีคนมานั่งทำงานที่กองไฟ"]);
       expect(lines.join("\n")).not.toMatch(/\d/);
     }
     expect(totalsLines(totals({ checked_in: 3, rounds: 3, rounders: 3, approved: 0, grew: 0 }))).toEqual([
       "👣 แวะมาเช็กอิน **3** คน",
-      "🔥 ตั้งเป้าทำงานรอบกองไฟ **3** รอบ",
+      "🔥 ล้อมวงทำงานที่กองไฟ **3** รอบ",
     ]);
   });
 
@@ -196,25 +196,27 @@ describe("newsView: the totals and the small-number floor", () => {
       [9, 2],
     ]) {
       const lines = totalsLines(totals({ checked_in: 0, approved: 0, grew: 0, rounds, rounders }));
-      expect(lines).toEqual(["🔥 มีคนมาตั้งเป้าทำงานที่กองไฟ"]);
+      expect(lines).toEqual(["🔥 มีคนมานั่งทำงานที่กองไฟ"]);
       expect(lines.join("\n")).not.toMatch(/\d/);
     }
-    expect(totalsLines(totals({ checked_in: 0, approved: 0, grew: 0, rounds: 7, rounders: 3 }))).toEqual(["🔥 ตั้งเป้าทำงานรอบกองไฟ **7** รอบ"]);
+    expect(totalsLines(totals({ checked_in: 0, approved: 0, grew: 0, rounds: 7, rounders: 3 }))).toEqual(["🔥 ล้อมวงทำงานที่กองไฟ **7** รอบ"]);
     // A card frozen without the people count (none in production) floors too.
     expect(normalizeNews({ ...news(), totals: { rounds: 6 } })?.totals.rounders).toBe(0);
-    expect(totalsLines(normalizeNews({ ...news(), totals: { rounds: 6 } })!.totals)).toEqual(["🔥 มีคนมาตั้งเป้าทำงานที่กองไฟ"]);
+    expect(totalsLines(normalizeNews({ ...news(), totals: { rounds: 6 } })!.totals)).toEqual(["🔥 มีคนมานั่งทำงานที่กองไฟ"]);
   });
 
   it("always shows approvals and stages grown with their exact number", () => {
     expect(totalsLines(totals({ checked_in: 0, rounds: 0, approved: 1, grew: 1 }))).toEqual([
-      "✅ พี่เลี้ยงผ่านงาน **1** เควสต์ · 🌱 ต้นไม้โตขึ้น **1** ขั้น",
+      "✅ พี่เลี้ยงให้ผ่าน **1** เควสต์ · 🌱 ต้นไม้โตขึ้น **1** ขั้น",
     ]);
-    expect(totalsLines(totals({ checked_in: 0, rounds: 0, approved: 2, grew: 0 }))).toEqual(["✅ พี่เลี้ยงผ่านงาน **2** เควสต์"]);
+    expect(totalsLines(totals({ checked_in: 0, rounds: 0, approved: 2, grew: 0 }))).toEqual(["✅ พี่เลี้ยงให้ผ่าน **2** เควสต์"]);
   });
 
   it("never shows minutes or time for the campfire", () => {
     for (const n of [1, 2, 3, 40]) expect(NEWS.rounds(n, n)).not.toMatch(/นาที|ชั่วโมง|ชม\.|เวลา|min/);
-    expect(bodyText(card(news()))).not.toMatch(/นาที|ชั่วโมง|ชม\./);
+    // The fine print names the card's window (24 ชั่วโมงจนถึง 2 ทุ่ม), never anyone's time; nothing else on the card speaks of hours.
+    expect(NEWS.fine).not.toMatch(/นาที|min/);
+    expect(bodyText(card(news())).replace(NEWS.fine, "")).not.toMatch(/นาที|ชั่วโมง|ชม\./);
   });
 });
 

@@ -404,7 +404,7 @@ describe("IslandApp HUD", () => {
     expect(cardButton()).toBeInTheDocument();
     expect(screen.getByRole("button", { name: BOARD_LINK })).toBeInTheDocument();
     // No envelope and no menu button: results and the menu's lines live in the chip's sheet.
-    expect(screen.queryByRole("button", { name: /ผลจากพี่เลี้ยง/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /ผลตรวจจากพี่เลี้ยง/ })).toBeNull();
     expect(screen.queryByRole("button", { name: HUD.menu })).toBeNull();
     expect(screen.getByRole("heading", { level: 1, name: "เกาะ SHIFT" })).toBeInTheDocument();
   });
@@ -829,7 +829,7 @@ describe("IslandApp: the plaza", () => {
     const tree = { seed: null, equipped: { shape: "shape:round", leaf: "leaf:dusk", bark: "bark:oak", bloom: "bloom:cream" }, owned: [], gifts: [], roots: { count: 0, recent: 0 }, stage: 1 };
     render(<IslandApp page={festive({ visitors: { count: 5, team: 2 }, tree })} picture={null} />);
     expect(plaza().input.visitors).toEqual({ count: 5, team: 2, me: true, arriving: false, shirt: "w" });
-    expect(plaza().labels).toMatchObject({ visitors: "วันนี้มีคนแวะเกาะ 5 คน\nเพื่อนร่วมทีมแวะมาแล้ว 2 คน", me: "คุณ" });
+    expect(plaza().labels).toMatchObject({ visitors: "วันนี้มีคนเช็กอินบนเกาะแล้ว 5 คน\nวันนี้เพื่อนร่วมทีมเช็กอินแล้ว 2 คน", me: "คุณ" });
     expect(plaza().labels.visitorsMore).toBeUndefined();
   });
 

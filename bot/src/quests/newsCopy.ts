@@ -1,7 +1,6 @@
 /**
  * Words for the nightly island news card in #island-news (ข่าวเกาะคืนนี้,
- * news.ts). DRAFT COPY for the three-model Thai review in the root
- * AGENTS.md. No em or en dashes, never น้องๆ or เด็กๆ, no ranking, no streaks,
+ * news.ts). No em or en dashes, never น้องๆ or เด็กๆ, no ranking, no streaks,
  * no "you missed", nothing that says a check-in grows a tree, and never a
  * minute: the campfire is a count of rounds (every focus round promises
  * ไม่มีใครนับเวลาของคุณ, rounds-copy.ts).
@@ -22,7 +21,7 @@ export const NEWS = {
   /** Members who checked in during the card's window (a people count: floored). */
   checkedIn: (n: number) => (n >= PEOPLE_FLOOR ? `👣 แวะมาเช็กอิน **${n}** คน` : "👣 มีเพื่อนแวะมาเช็กอินแล้ว"),
   /** Quests a mentor approved (exact). */
-  approved: (n: number) => `✅ พี่เลี้ยงผ่านงาน **${n}** เควสต์`,
+  approved: (n: number) => `✅ พี่เลี้ยงให้ผ่าน **${n}** เควสต์`,
   /** Tree stages risen (exact), after the approvals on the same line. */
   grew: (n: number) => `🌱 ต้นไม้โตขึ้น **${n}** ขั้น`,
   /**
@@ -30,7 +29,7 @@ export const NEWS = {
    * the number shows only once that many people made them. Never minutes.
    */
   rounds: (n: number, people: number) =>
-    people >= PEOPLE_FLOOR ? `🔥 ตั้งเป้าทำงานรอบกองไฟ **${n}** รอบ` : "🔥 มีคนมาตั้งเป้าทำงานที่กองไฟ",
+    people >= PEOPLE_FLOOR ? `🔥 ล้อมวงทำงานที่กองไฟ **${n}** รอบ` : "🔥 มีคนมานั่งทำงานที่กองไฟ",
   /** Nothing to count tonight: the island rests, warmly. */
   quiet: "🌙 วันนี้เกาะได้พัก ตะเกียงยังจุดรอทุกคนอยู่",
   /**
@@ -38,22 +37,22 @@ export const NEWS = {
    * same line). Only things the island draws or its lore already has.
    */
   moments: [
-    "🏮 ตะเกียงตามต้นไม้ติดไฟครบแล้ว เกาะยามค่ำสว่างกำลังดี",
+    "🏮 ตะเกียงตามต้นไม้จุดครบทุกดวงแล้ว เกาะตอนค่ำสว่างกำลังดี",
     "⛵ เรือจอดนิ่งอยู่ที่ท่า คืนนี้ไม่มีใครต้องรีบไปไหน",
     "🪶 นกนางนวลกลับรังไปแล้ว เหลือแต่เสียงคลื่นรอบเกาะ",
     "🌊 คืนนี้คลื่นเบา ได้ยินเสียงทะเลชัดเลย",
     "🪣 บ่อน้ำกลางเกาะสะท้อนแสงจันทร์",
     "🔥 กองไฟกลางลานยังอุ่นอยู่ อยากนั่งทำงานกับเพื่อน เข้ามาได้เลย",
-    "🧭 ติดตรงไหน ถามในห้อง SHIFT High ได้ ไม่ต้องรอให้พร้อม",
+    "🧭 ติดตรงไหน ทักถามในห้อง shift-high ได้เลย ไม่ต้องรอให้งานเสร็จก่อน",
   ],
   /** Above the AI team lines (only when a team can be featured). */
-  aiHeading: "📣 เรื่องจากแปลง (สรุปโดย AI)",
+  aiHeading: "📣 เรื่องเล่าจากแปลง (AI สรุปให้)",
   /** The same on a Bangkok Sunday, when the lines are the week recaps. */
-  weekHeading: "📣 สรุปสัปดาห์จากแปลง (สรุปโดย AI)",
+  weekHeading: "📣 เรื่องเด่นประจำสัปดาห์จากแปลง (AI สรุปให้)",
   /** The card's fine print: what the numbers cover. 2 ทุ่ม is 20:00. */
-  fine: "ตัวเลขรวมทั้งเกาะ ตั้งแต่ 2 ทุ่มเมื่อวานถึง 2 ทุ่มคืนนี้ ไม่บอกว่าใครเป็นใคร",
+  fine: "นับรวมทั้งเกาะ 24 ชั่วโมงจนถึง 2 ทุ่ม ไม่ระบุชื่อ",
   /** The issue line, e.g. "ฉบับ 18 พ.ย. 2569": also how a restarted bot finds its own card. Never the digest's "ข่าวของ". */
   dayLine: (day: string) => `ฉบับ ${thaiDay(day)}`,
   pictureAlt: "เกาะ SHIFT คืนนี้",
-  pictureFailed: "🖼️ คืนนี้รูปเกาะวาดไม่ขึ้น",
+  pictureFailed: "🖼️ คืนนี้โหลดภาพเกาะไม่ขึ้น",
 };

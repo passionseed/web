@@ -22,8 +22,8 @@ const scene = buildScene(plots, { markMine: true, festival: false });
 
 describe("today's visitors: copy", () => {
   it("says how many came today, and the team's line, in Thai with no em dash or น้อง", () => {
-    expect(VISITORS.count(7)).toBe("วันนี้มีคนแวะเกาะ 7 คน");
-    expect(VISITORS.team(2)).toBe("เพื่อนร่วมทีมแวะมาแล้ว 2 คน");
+    expect(VISITORS.count(7)).toBe("วันนี้มีคนเช็กอินบนเกาะแล้ว 7 คน");
+    expect(VISITORS.team(2)).toBe("วันนี้เพื่อนร่วมทีมเช็กอินแล้ว 2 คน");
     expect(VISITORS.more(4)).toBe("+4");
     expect(VISITORS.me).toBe("คุณ");
     for (const line of [VISITORS.count(1), VISITORS.team(1), VISITORS.me]) {
@@ -44,12 +44,12 @@ describe("today's visitors: plazaProps", () => {
 
   it("labels the day's count; a viewer without a team gets no team line and no tag", () => {
     const props = plazaProps(null, null, null, undefined, { count: 5, team: 0, me: false });
-    expect(props.labels).toEqual({ visitors: "วันนี้มีคนแวะเกาะ 5 คน" });
+    expect(props.labels).toEqual({ visitors: "วันนี้มีคนเช็กอินบนเกาะแล้ว 5 คน" });
   });
 
   it("adds the team's line and the viewer's tag for the viewer's own island", () => {
     const props = plazaProps(null, null, null, undefined, { count: 5, team: 2, me: true, shirt: "l" });
-    expect(props.labels).toEqual({ visitors: "วันนี้มีคนแวะเกาะ 5 คน\nเพื่อนร่วมทีมแวะมาแล้ว 2 คน", me: "คุณ" });
+    expect(props.labels).toEqual({ visitors: "วันนี้มีคนเช็กอินบนเกาะแล้ว 5 คน\nวันนี้เพื่อนร่วมทีมเช็กอินแล้ว 2 คน", me: "คุณ" });
   });
 
   it("shows +N past the figures it can draw, with guests counted at the campfire", () => {
@@ -71,11 +71,11 @@ describe("today's visitors: PlazaLayer", () => {
     const tag = container.querySelector<HTMLElement>('[data-label="me"]')!;
     expect(tag.textContent).toBe("Mคุณ");
     expect(tag.dataset.delayed).toBeUndefined();
-    expect(container.querySelector('[data-label="visitors"]')!.textContent).toBe("วันนี้มีคนแวะเกาะ 3 คน\nเพื่อนร่วมทีมแวะมาแล้ว 1 คน");
+    expect(container.querySelector('[data-label="visitors"]')!.textContent).toBe("วันนี้มีคนเช็กอินบนเกาะแล้ว 3 คน\nวันนี้เพื่อนร่วมทีมเช็กอินแล้ว 1 คน");
     // The labels are decoration; the line is said once, as one sentence.
     const said = container.querySelectorAll(".sr-only");
-    expect([...said].map((el) => el.textContent)).toEqual(["วันนี้มีคนแวะเกาะ 3 คน เพื่อนร่วมทีมแวะมาแล้ว 1 คน"]);
-    expect(screen.getAllByText(/วันนี้มีคนแวะเกาะ 3 คน/)).toHaveLength(2);
+    expect([...said].map((el) => el.textContent)).toEqual(["วันนี้มีคนเช็กอินบนเกาะแล้ว 3 คน วันนี้เพื่อนร่วมทีมเช็กอินแล้ว 1 คน"]);
+    expect(screen.getAllByText(/วันนี้มีคนเช็กอินบนเกาะแล้ว 3 คน/)).toHaveLength(2);
   });
 
   it("holds the tag back while the viewer walks in", () => {

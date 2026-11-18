@@ -215,7 +215,7 @@ function open(
 
 /**
  * Open a quest and go to sending: ส่งเควสต์ in the bar on a started quest,
- * or on an untouched one (whose bar starts it) the quiet ทำไปแล้ว? link.
+ * or on an untouched one (whose bar starts it) the quiet ทำเสร็จแล้ว? link.
  */
 function openForm(target: BoardRef, link: CanvasLinkState = UNLINKED, extra: { onTree?: () => void } = {}) {
   const handlers = open(target, link, extra);
@@ -262,7 +262,7 @@ describe("QuestDetailSheet: the quest page", () => {
 
   it("keeps the status chip, no dots, on a quest that cannot be worked on now", () => {
     open({ kind: "side", templateId: IDS.sidePhone });
-    expect(within(body()).queryByRole("list", { name: /ขั้นของเควสต์นี้/ })).toBeNull();
+    expect(within(body()).queryByRole("list", { name: /สถานะเควสต์นี้/ })).toBeNull();
   });
 
   it("names side and proposed quests in the badge", () => {
