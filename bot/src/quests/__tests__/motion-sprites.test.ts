@@ -163,9 +163,11 @@ describe("motion sprites", () => {
     expect(new Set([...ACTOR_FRAMES.sitA, ...ACTOR_FRAMES.sitB, ...ACTOR_FRAMES.sitC, ...ACTOR_FRAMES.sitD].map(sizeOf))).toEqual(new Set(["8x10"]));
     expect(new Set(ACTOR_FRAMES.campfireFlame.map(sizeOf))).toEqual(new Set(["10x10"]));
     expect([sizeOf("booth_flag"), sizeOf("star_flag")]).toEqual(["7x12", "7x12"]);
-    expect([sizeOf("notice_board"), sizeOf("fest_sign"), sizeOf("goal_string"), sizeOf("goal_bulb"), sizeOf("campfire_pit")]).toEqual([
+    // The countdown board is as wide as the stage it stands behind; its glyphs share one size.
+    expect(new Set(["d", "dash", "a", "y", ..."0123456789"].map((g) => sizeOf(`count_${g}` as MotionSpriteName)))).toEqual(new Set(["6x10"]));
+    expect([sizeOf("notice_board"), sizeOf("fest_count"), sizeOf("goal_string"), sizeOf("goal_bulb"), sizeOf("campfire_pit")]).toEqual([
       "24x22",
-      "14x12",
+      "44x20",
       "48x8",
       "3x3",
       "14x10",

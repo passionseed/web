@@ -400,7 +400,7 @@ review**; it lives in `components/shift/island/copy.ts` and must pass
 
 1. **Top bar** (56px, sticky): เกาะ SHIFT, the project name, a small avatar.
 2. **Season strip** (48px, only when `island.season` is set): "{season name} · Demo Day {d MMM} · อีก {n} วัน" and a 7-cell pixel meter of `stage_at_cutoff`, with a small flag at `table_bar` and `stage_bar`. Tap opens a sheet: โต๊ะโชว์งานเมื่อนับได้ {table_bar} ขั้น / ขึ้นเวทีเมื่อนับได้ {stage_bar} ขั้น / เป้าหมายของทั้งเกาะ {count}/{target} / ของปลดล็อก (list). No ranking, no names.
-3. **Island viewport** (about 45svh): the PNG at 2x (`image-rendering: pixelated`), horizontally pannable, scrolled so the student's plot is centred. Transparent button hotspots at least 48px: own plot aria-label "แปลงของคุณ #{n}, {stage name}"; others "แปลง #{n}". Tapping another plot opens a small sheet with only what the database returned: แปลง #{n}, stage name unless plain, ป้าย: {name} when named. Never a member, a profile or a contact path. Toggle "ดูทั้งเกาะ" fits to width.
+3. **Island viewport** (about 45svh): the PNG at 2x (`image-rendering: pixelated`), horizontally pannable, scrolled so the student's plot is centred. Transparent button hotspots at least 48px: own plot aria-label "แปลงของคุณ #{n}, {stage name}"; others "แปลง #{n}"; a named plot adds ", {name}". In the close view a named plot also gets a sign under its number tag: the project name in DOM text (one line, ends in "…"), only when the database returned the name, so never more than the sheet shows and never a student's name. Tapping another plot opens a small sheet with only what the database returned: แปลง #{n}, stage name unless plain, ป้าย: {name} when named. Never a member, a profile or a contact path. Toggle "ดูทั้งเกาะ" fits to width.
 4. **Today card** (below the keynote card): before the tap, a quiet button เช็กอินวันนี้ (min-h-12) and quiet buttons ติด and ขอพัก. After the tap (optimistic): วันนี้คุณลงมือแล้ว and a link เพิ่มโน้ตสั้นๆ (เห็นแค่คุณ, max 300). Resting: กำลังพัก ต้นไม้ไม่เหี่ยว ไม่มีอะไรหาย with button กลับมาแล้ว. No counts of days, no streaks, no heatmap.
 5. **Keynote card** (the one gold element, above the Today card): the caller's open quest that needs them most (clarification first, then active, then paused, then submitted), "ทำต่อ: {title}" and its state chip ("รอพี่เลี้ยงดู: {title}" for a submitted one). With none open, the lowest available main quest: "เริ่มที่: {title}".
 6. **Quest board**: a notice board that fits a phone, not a long scroll. A row of four lane buttons (a plain `role=group` of `aria-pressed` toggles, not tabs: เควสต์หลัก with "ผ่าน x/7", เควสต์เสริม, ของฉัน, ทั้งเกาะ) over a wooden board whose lanes the student swipes between with scroll snap, one lane per swipe. Each lane scrolls down on its own and is a 2-column grid of flat pinned cards (icon, two-line title, state stamp; 3 columns in the desktop dialog). Every lane stays in the DOM and the accessibility tree. The board opens on the keynote's lane, and the lane and route chip survive closing the sheet.
@@ -1172,11 +1172,18 @@ midnight plus a check when the tab shows), so a page left open says "วัน�
 on Demo Day; the server's `days_to_demo` stands until then and when
 `demo_day` does not parse.
 
-- **Sign** next to the stage: a blank pixel plank (14x12) plus a DOM label
-  above it, two lines: "Demo Day 28 พ.ย." and "อีก 17 วัน" (on the day "วันนี้",
-  after it "ผ่านไปแล้ว", from `SEASON.daysLeft`). The label is aria-hidden; the
-  stage hotspot carries the same text.
-- **Stage** (44x32, right of the plaza) builds in four steps, by **days
+- **Plaza layout** (2026-11-18): the plaza is 10 x 5 tiles (it was 6 x 4),
+  inside the ring the plot spots already keep free, so no tree, tag or path
+  moves. Everyday pieces stand left of the well (notice board at the back,
+  campfire at the front), Demo Day's right of it (the stage under its
+  countdown at the back, the prize board at the front). Offsets live in
+  `PLAZA_LAYOUT` (`lib/shift-island/live/plaza.ts`).
+- **Countdown** over the stage: a pixel marquee as wide as the stage (44x20,
+  eight lights) reading "D-17" in the plot tags' digits drawn 2x, "D-DAY" on
+  the day, blank after it (`countdownGlyphs`). Lights and glyphs stay lit at
+  night. No DOM label: the stage hotspot's name carries the date and the days
+  in words ("เวที Demo Day: 28 พ.ย. · อีก 17 วัน").
+- **Stage** (44x32, right of the well, under the countdown) builds in four steps, by **days
   elapsed**, not goal progress: the lanterns already show the goal, days never
   go backwards, and the goal can be null or drop before it latches.
   `today = demo_day - days_to_demo`, `span = demo_day - starts_on`,
@@ -1196,7 +1203,7 @@ on Demo Day; the server's `days_to_demo` stands until then and when
   table_bar`. Plain plots never get one. This is a proxy (all-time tree
   stage, milestone 2 not visible), so the copy says "ต้นโตถึงขั้น", never
   "ได้โต๊ะแล้ว", for other teams. No names, no counts, no order.
-- **Festival sheet** (tap the stage or the sign): a short header (the sign's
+- **Festival sheet** (tap the stage or its countdown): a short header (the
   line "Demo Day 28 พ.ย. · อีก 17 วัน", plus the student's own "ได้โต๊ะ/ได้ขึ้นเวที"
   notice when set), at most three legend lines, and a link "ดูของปลดล็อกในหน้าโปรเจกต์"
   to the project sheet (the meter and unlocks live there, not repeated here). Draft copy:
@@ -1206,10 +1213,10 @@ on Demo Day; the server's `days_to_demo` stands until then and when
 
 ### 4. Discord voice campfire
 
-- A campfire (pit 14x10, flame 3 frames) below-left of the plaza. One sitting
+- A campfire (pit 14x10, flame 3 frames) on the plaza's front left. One sitting
   figure (4 variants, 2 frames) per person in the SHIFT coworking voice
-  channel, seats filled in a fixed order, at most 8, then a DOM "+N". Above the
-  fire a DOM label "3 คนกำลังทำงานอยู่". Zero people: an unlit pit, no label.
+  channel, seats filled in a fixed order, at most 8. Above the fire a DOM
+  label "3 คนกำลังทำงานอยู่" with the room's whole count (no "+N"). Zero people: an unlit pit, no label.
   Channel unset or campfire data missing: nothing at all.
 - Tap: the campfire sheet, title "ห้อง coworking", body "ทำงานไปด้วยกันในห้องเสียงของ
   SHIFT", the names as Discord shows them in the server, a button "เข้าห้อง"

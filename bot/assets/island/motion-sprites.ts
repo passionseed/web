@@ -15,7 +15,9 @@ export type MotionSpriteName =
   | "lantern_glow_0" | "lantern_glow_1" | "lamp_post" | "festoon"
   | "builder_0" | "builder_1" | "tester_0" | "tester_1"
   | "notice_board" | "notice_note_active" | "notice_note_main" | "notice_note_side" | "prize_board"
-  | "fest_stage_0" | "fest_stage_1" | "fest_stage_2" | "fest_stage_3" | "fest_sign"
+  | "fest_stage_0" | "fest_stage_1" | "fest_stage_2" | "fest_stage_3" | "fest_count"
+  | "count_0" | "count_1" | "count_2" | "count_3" | "count_4" | "count_5" | "count_6" | "count_7" | "count_8" | "count_9"
+  | "count_d" | "count_dash" | "count_a" | "count_y"
   | "goal_string" | "goal_bulb" | "booth_flag" | "star_flag"
   | "campfire_pit" | "campfire_pit_cold" | "campfire_flame_0" | "campfire_flame_1" | "campfire_flame_2"
   | "sit_a_0" | "sit_a_1" | "sit_b_0" | "sit_b_1" | "sit_c_0" | "sit_c_1" | "sit_d_0" | "sit_d_1";
@@ -27,6 +29,7 @@ const NOTE: [number, number] = [5, 6];
 const FEST_STAGE: [number, number] = [44, 32];
 const FLAG: [number, number] = [7, 12];
 const FLAME: [number, number] = [10, 10];
+const GLYPH: [number, number] = [6, 10];
 const SITTER: [number, number] = [8, 10];
 
 /** [width, height] in native pixels. */
@@ -40,10 +43,13 @@ export const MOTION_SIZES: Record<MotionSpriteName, [number, number]> = {
   builder_0: PERSON, builder_1: PERSON, tester_0: PERSON, tester_1: PERSON,
   notice_board: [24, 22], notice_note_active: NOTE, notice_note_main: NOTE, notice_note_side: NOTE, prize_board: [18, 20],
   fest_stage_0: FEST_STAGE, fest_stage_1: FEST_STAGE, fest_stage_2: FEST_STAGE, fest_stage_3: FEST_STAGE,
-  fest_sign: [14, 12], goal_string: [48, 8], goal_bulb: [3, 3], booth_flag: FLAG, star_flag: FLAG,
+  fest_count: [44, 20], goal_string: [48, 8], goal_bulb: [3, 3], booth_flag: FLAG, star_flag: FLAG,
   campfire_pit: [14, 10], campfire_pit_cold: [14, 10], campfire_flame_0: FLAME, campfire_flame_1: FLAME, campfire_flame_2: FLAME,
   sit_a_0: SITTER, sit_a_1: SITTER, sit_b_0: SITTER, sit_b_1: SITTER,
   sit_c_0: SITTER, sit_c_1: SITTER, sit_d_0: SITTER, sit_d_1: SITTER,
+  count_0: GLYPH, count_1: GLYPH, count_2: GLYPH, count_3: GLYPH, count_4: GLYPH,
+  count_5: GLYPH, count_6: GLYPH, count_7: GLYPH, count_8: GLYPH, count_9: GLYPH,
+  count_d: GLYPH, count_dash: GLYPH, count_a: GLYPH, count_y: GLYPH,
 };
 
 export const MOTION_SPRITES: Record<MotionSpriteName, string[]> = {
@@ -926,21 +932,45 @@ export const MOTION_SPRITES: Record<MotionSpriteName, string[]> = {
     "..oco..........occcccccccccco..........oco..",
     "..ooo..........oooooooooooooo..........ooo..",
   ],
-  // Blank plank on two posts; the Thai text is a DOM label above it.
-  fest_sign: [
-    "...o......o...",
-    "..oco....oco..",
-    "oooooooooooooo",
-    "oeeeeeeeeeeeeo",
-    "oeeeeeeeeeeeeo",
-    "oeeeeeeeeeeeeo",
-    "occcccccccccco",
-    "oooooooooooooo",
-    "..oco....oco..",
-    "..oco....oco..",
-    "..oco....oco..",
-    ".ooooo..ooooo.",
+  // Demo Day countdown over the stage: a dark marquee face in a wood frame with eight
+  // lights; the count_* glyphs ("D-10", "D-DAY") stand on its face. Lights and glyphs stay lit at night.
+  fest_count: [
+    ".oooooooooooooooooooooooooooooooooooooooooo.",
+    "oeeefeeeefeeeefeeeefeeeefeeeefeeeefeeeefeeeo",
+    "ocooooooooooooooooooooooooooooooooooooooooco",
+    "ocooooooooooooooooooooooooooooooooooooooooco",
+    "ocooooooooooooooooooooooooooooooooooooooooco",
+    "ocooooooooooooooooooooooooooooooooooooooooco",
+    "ocooooooooooooooooooooooooooooooooooooooooco",
+    "ocooooooooooooooooooooooooooooooooooooooooco",
+    "ocooooooooooooooooooooooooooooooooooooooooco",
+    "ocooooooooooooooooooooooooooooooooooooooooco",
+    "ocooooooooooooooooooooooooooooooooooooooooco",
+    "ocooooooooooooooooooooooooooooooooooooooooco",
+    "ocooooooooooooooooooooooooooooooooooooooooco",
+    "ocooooooooooooooooooooooooooooooooooooooooco",
+    "obbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbo",
+    ".oooooooooooooooooooooooooooooooooooooooooo.",
+    ".....oco............................oco.....",
+    ".....oco............................oco.....",
+    ".....oco............................oco.....",
+    ".....ooo............................ooo.....",
   ],
+  // Countdown glyphs: the plot tags' 3 x 5 digits (scene.ts DIGITS) and D, -, A, Y, drawn 2x.
+  count_0: ["yyyyyy", "yyyyyy", "yy..yy", "yy..yy", "yy..yy", "yy..yy", "yy..yy", "yy..yy", "yyyyyy", "yyyyyy"],
+  count_1: ["..yy..", "..yy..", "yyyy..", "yyyy..", "..yy..", "..yy..", "..yy..", "..yy..", "yyyyyy", "yyyyyy"],
+  count_2: ["yyyyyy", "yyyyyy", "....yy", "....yy", "yyyyyy", "yyyyyy", "yy....", "yy....", "yyyyyy", "yyyyyy"],
+  count_3: ["yyyyyy", "yyyyyy", "....yy", "....yy", "yyyyyy", "yyyyyy", "....yy", "....yy", "yyyyyy", "yyyyyy"],
+  count_4: ["yy..yy", "yy..yy", "yy..yy", "yy..yy", "yyyyyy", "yyyyyy", "....yy", "....yy", "....yy", "....yy"],
+  count_5: ["yyyyyy", "yyyyyy", "yy....", "yy....", "yyyyyy", "yyyyyy", "....yy", "....yy", "yyyyyy", "yyyyyy"],
+  count_6: ["yyyyyy", "yyyyyy", "yy....", "yy....", "yyyyyy", "yyyyyy", "yy..yy", "yy..yy", "yyyyyy", "yyyyyy"],
+  count_7: ["yyyyyy", "yyyyyy", "....yy", "....yy", "..yy..", "..yy..", "..yy..", "..yy..", "..yy..", "..yy.."],
+  count_8: ["yyyyyy", "yyyyyy", "yy..yy", "yy..yy", "yyyyyy", "yyyyyy", "yy..yy", "yy..yy", "yyyyyy", "yyyyyy"],
+  count_9: ["yyyyyy", "yyyyyy", "yy..yy", "yy..yy", "yyyyyy", "yyyyyy", "....yy", "....yy", "yyyyyy", "yyyyyy"],
+  count_d: ["yyyy..", "yyyy..", "yy..yy", "yy..yy", "yy..yy", "yy..yy", "yy..yy", "yy..yy", "yyyy..", "yyyy.."],
+  count_dash: ["......", "......", "......", "......", "yyyyyy", "yyyyyy", "......", "......", "......", "......"],
+  count_a: ["..yy..", "..yy..", "yy..yy", "yy..yy", "yyyyyy", "yyyyyy", "yy..yy", "yy..yy", "yy..yy", "yy..yy"],
+  count_y: ["yy..yy", "yy..yy", "yy..yy", "yy..yy", "..yy..", "..yy..", "..yy..", "..yy..", "..yy..", "..yy.."],
   // Island goal lights: the festoon's wire with 8 unlit bulbs. A lit `goal_bulb` (untinted) covers
   // bulb i exactly at GOAL_BULB_SPOTS[i].
   goal_string: [

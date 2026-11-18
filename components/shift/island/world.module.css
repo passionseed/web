@@ -175,6 +175,32 @@
   pointer-events: auto;
 }
 
+/* Plot signs (PlotSigns): the project name under a tree's number tag, close view only. */
+.plotSigns {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* One line in the plaza labels' notch; narrower than the gap to the next row's tree, a long name ends in "…". */
+.plotSign {
+  position: absolute;
+  max-width: 96px;
+  padding: 1px 6px;
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--isl-cream);
+  background: rgba(18, 14, 20, 0.8);
+  clip-path: var(--notch);
+  transform: translate(-50%, 2px);
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 /* A short line the canvas cannot draw crisply: cream on the dark notch, like the tap hint. */
 .plazaLabel {
   position: absolute;

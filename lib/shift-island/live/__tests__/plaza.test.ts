@@ -267,7 +267,7 @@ describe("plazaWorld content", () => {
     expect(c).toEqual({ x: scene.well.x + 12, y: scene.well.y + 12 });
   });
 
-  it("draws in order: goal string, bulbs, stage, sign, board, notes, flags, pit, seats behind, flame, seats in front", () => {
+  it("draws in order: goal string, bulbs, countdown and its glyphs, stage, board, notes, flags, pit, seats behind, flame, seats in front", () => {
     const world = plazaWorld(scene, {
       festival: festival({ lanterns: { total: 8, lit: 2, reached: false, count: 3, target: 12 }, booths: [{ slot: 2, kind: "table" }], stageStep: 1 }),
       pins: ["active", "side"],
@@ -277,8 +277,12 @@ describe("plazaWorld content", () => {
       "goal_string",
       "goal_bulb",
       "goal_bulb",
+      "fest_count",
+      "count_d",
+      "count_dash",
+      "count_1",
+      "count_7",
       "fest_stage_1",
-      "fest_sign",
       "notice_board",
       "notice_note_active",
       "notice_note_side",
@@ -291,26 +295,31 @@ describe("plazaWorld content", () => {
       "sit_b_1",
     ]);
     expect(world.spots.map((s) => s.id)).toEqual(["notice", "stage", "campfire"]);
-    expect(world.labels.map((l) => [l.id, l.anchor])).toEqual([
-      ["sign", "bottom"],
-      ["campfireCount", "bottom"],
-    ]);
+    // The countdown board says the days itself: the only label is the campfire's count.
+    expect(world.labels.map((l) => [l.id, l.anchor])).toEqual([["campfireCount", "bottom"]]);
   });
 
-  it("puts the board, notes, stage, sign and campfire at their offsets from the plaza centre", () => {
+  it("puts the board, notes, countdown, stage and campfire at their offsets from the plaza centre", () => {
     const world = plazaWorld(scene, { festival: festival({ stageStep: 2 }), pins: ["main", "main", "active", "side"], campfire: { count: 1 } });
     const at = (name: string) => world.actors.filter((a) => a.frames[0] === name).map((a) => [a.x - c.x, a.y - c.y]);
-    expect(at("notice_board")).toEqual([[-38, -24]]);
+    expect(at("notice_board")).toEqual([[-68, -26]]);
     // At most three notes, in pin order.
     expect(world.actors.filter((a) => a.frames[0].startsWith("notice_note_")).map((a) => [a.frames[0], a.x - c.x, a.y - c.y])).toEqual([
-      ["notice_note_main", -35, -21],
-      ["notice_note_main", -29, -22],
-      ["notice_note_active", -22, -21],
+      ["notice_note_main", -65, -23],
+      ["notice_note_main", -59, -24],
+      ["notice_note_active", -52, -23],
     ]);
-    expect(at("fest_stage_2")).toEqual([[50, -16]]);
-    expect(at("fest_sign")).toEqual([[36, -12]]);
-    expect(at("campfire_pit")).toEqual([[-63, 46]]);
-    expect(at("campfire_flame_0")).toEqual([[-61, 38]]);
+    expect(at("fest_stage_2")).toEqual([[24, -22]]);
+    expect(at("fest_count")).toEqual([[24, -40]]);
+    // "D-17" centred on the board's face: four 6 px glyphs, 2 px apart.
+    expect(world.actors.filter((a) => a.frames[0].startsWith("count_")).map((a) => [a.frames[0], a.x - c.x, a.y - c.y])).toEqual([
+      ["count_d", 31, -37],
+      ["count_dash", 39, -37],
+      ["count_1", 47, -37],
+      ["count_7", 55, -37],
+    ]);
+    expect(at("campfire_pit")).toEqual([[-42, 26]]);
+    expect(at("campfire_flame_0")).toEqual([[-40, 18]]);
     expect(world.actors.find((a) => a.frames[0] === "campfire_flame_0")).toMatchObject({ frames: ACTOR_FRAMES.campfireFlame, frameMs: 250 });
   });
 
@@ -324,8 +333,8 @@ describe("plazaWorld content", () => {
     expect(notice.w).toBeCloseTo(pct(box.w, scene.width), 3);
     expect(notice.h).toBeCloseTo(pct(box.h, scene.height), 3);
     for (const v of [notice.x, notice.y, notice.w, notice.h]) expect(Math.round(v * 10_000) / 10_000).toBe(v);
-    const more = world.labels.find((l) => l.id === "campfireMore")!;
-    expect(more).toEqual({ id: "campfireMore", x: pct(c.x - 24, scene.width), y: pct(c.y + 46, scene.height), anchor: "left" });
+    const count = world.labels.find((l) => l.id === "campfireCount")!;
+    expect(count).toEqual({ id: "campfireCount", x: pct(c.x - 44, scene.width), y: pct(c.y + 12, scene.height), anchor: "bottom" });
     // An empty board still stands and can be tapped.
     expect(names(world)).toContain("notice_board");
   });
@@ -343,7 +352,7 @@ describe("plazaWorld content", () => {
     it("stands alone on an otherwise empty plaza, with its spot and no label", () => {
       const world = plazaWorld(scene, { festival: null, pins: null, campfire: null, prizes: true });
       expect(world).not.toBe(NO_PLAZA);
-      expect(world.actors).toEqual([{ frames: ["prize_board"], x: c.x + 15, y: c.y + 10 }]);
+      expect(world.actors).toEqual([{ frames: ["prize_board"], x: c.x + 50, y: c.y + 14 }]);
       expect(world.spots.map((s) => s.id)).toEqual(["prizes"]);
       expect(world.labels).toEqual([]);
     });
@@ -414,12 +423,12 @@ describe("plazaWorld content", () => {
       expect(names(one)).toContain("campfire_flame_0");
     });
 
-    it("seats one figure per person, at most eight, then a +N label", () => {
+    it("seats one figure per person, at most eight; the count label says how many", () => {
       for (const [count, drawn] of [[1, 1], [3, 3], [8, 8], [9, 8], [40, 8]]) {
         const world = plazaWorld(scene, { festival: null, pins: null, campfire: { count } });
         expect(seats(world)).toHaveLength(drawn);
         expect(world.actors.filter((a) => a.frames[0] === "campfire_flame_0")).toHaveLength(1);
-        expect(world.labels.map((l) => l.id)).toEqual(count > MAX_SEATS ? ["campfireCount", "campfireMore"] : ["campfireCount"]);
+        expect(world.labels.map((l) => l.id)).toEqual(["campfireCount"]);
       }
     });
 
@@ -441,7 +450,7 @@ describe("plazaWorld content", () => {
 
     it("turns the seats right of the fire to face it", () => {
       const world = plazaWorld(scene, { festival: null, pins: null, campfire: { count: 8 } });
-      for (const actor of seats(world)) expect([actor.x - c.x, actor.flip === true]).toEqual([actor.x - c.x, actor.x - c.x > -56]);
+      for (const actor of seats(world)) expect([actor.x - c.x, actor.flip === true]).toEqual([actor.x - c.x, actor.x - c.x > -35]);
       expect(seats(world).filter((a) => a.flip)).toHaveLength(4);
     });
   });
@@ -452,7 +461,7 @@ describe("plazaWorld content", () => {
       const festive = names(world).filter((n) => n.startsWith("fest_") || n.startsWith("goal_") || FLAGS.has(n));
       expect(festive).toEqual([]);
       expect(world.spots.map((s) => s.id)).not.toContain("stage");
-      expect(world.labels.map((l) => l.id)).not.toContain("sign");
+      expect(names(world).filter((n) => n.startsWith("count_"))).toEqual([]);
     });
 
     it("lights as many bulbs as the goal says, on the string's own bulbs", () => {

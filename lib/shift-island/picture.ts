@@ -30,7 +30,7 @@ import type { IslandMapData, IslandMapPlot } from "@/lib/supabase/shift-quests/t
 const MIN_HOTSPOT = 12;
 
 /** Bump when the renderer's pixels change for the same map, so open pages fetch the new picture. */
-const RENDER_REVISION = "island-1";
+const RENDER_REVISION = "island-2";
 
 export interface IslandHotspot {
   slot: number;
