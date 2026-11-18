@@ -8,10 +8,10 @@ import type { NoticePin } from "@/lib/shift-island/notice";
 import { plazaWorld, type PlazaInput, type PlazaSpotId } from "@/lib/shift-island/live/plaza";
 import type { IslandPicture } from "@/lib/shift-island/picture";
 
-import { FIGURES } from "../copy";
+import { FIGURES, VISITORS } from "../copy";
 import { IslandViewport } from "../IslandViewport";
-import { BUBBLE_MS, fitBubble } from "../live/FigureBubble";
-import { figureLine, turnOrder } from "../live/figureLine";
+import { BUBBLE_MS, fitBubble, phrases } from "../live/FigureBubble";
+import { figureLine, figureWords, turnOrder } from "../live/figureLine";
 import { PlazaLayer } from "../live/PlazaLayer";
 import { plazaProps } from "../plazaProps";
 
@@ -135,6 +135,24 @@ describe("figure lines", () => {
       expect(line).not.toMatch(/น้อง|เด็ก/);
       expect(line.length).toBeLessThanOrEqual(60);
     }
+  });
+
+  it("has today's visitors say the day's count after their line, since the island prints none: a teammate the team's", () => {
+    const today = { count: 7, team: 2 };
+    expect(figureWords({ kind: "crowd", n: 1 }, today)).toEqual([FIGURES.crowd[1], VISITORS.count(7)]);
+    expect(figureWords({ kind: "me", n: 0 }, today)).toEqual([FIGURES.me[0], VISITORS.count(7)]);
+    expect(figureWords({ kind: "team", n: 0 }, today)).toEqual([FIGURES.team[0], VISITORS.team(2)]);
+    expect(figureLine({ kind: "crowd", n: 1 }, today)).toBe(`${FIGURES.crowd[1]} ${VISITORS.count(7)}`);
+    // Nobody else is one of today's visitors; no count, no count line; without the day, the line alone.
+    for (const kind of ["partner", "builder", "tester"] as const) expect(figureWords({ kind, n: 0 }, today)).toHaveLength(1);
+    expect(figureWords({ kind: "team", n: 0 }, { count: 7, team: 0 })).toEqual([FIGURES.team[0]]);
+    expect(figureWords({ kind: "crowd", n: 0 }, { count: Number.NaN, team: 0 })).toEqual([FIGURES.crowd[0]]);
+    expect(figureWords({ kind: "crowd", n: 0 })).toEqual([FIGURES.crowd[0]]);
+  });
+
+  it("breaks a bubble's line between phrases only, a number kept with the word after it", () => {
+    expect(phrases(VISITORS.count(12))).toEqual(["วันนี้มีคนเช็กอินบนเกาะแล้ว", "12 คน"]);
+    expect(phrases(FIGURES.crowd[0])).toEqual(FIGURES.crowd[0].split(" "));
   });
 
   it("goes round today's visitors only: the viewer first, then the team, then everyone else", () => {
@@ -320,8 +338,10 @@ describe("the plaza's people", () => {
     const start = world.actors[me.actor!];
     tap(start.x + 30 + 5, start.y + 7);
     expect(bubble()).toHaveAttribute("data-bubble", "me");
-    expect(bubble()).toHaveTextContent(FIGURES.me[0]);
-    expect(spoken()).toBe(FIGURES.me[0]);
+    // The line, then the day's count on a line of its own: the island prints no count.
+    const sentences = [...bubble()!.querySelectorAll<HTMLElement>(".sentence")].map((el) => el.textContent);
+    expect(sentences).toEqual([FIGURES.me[0], VISITORS.count(4)]);
+    expect(spoken()).toBe(`${FIGURES.me[0]} ${VISITORS.count(4)}`);
   });
 
   it("follows a walker frame by frame, and closes when it is no longer drawn", () => {
@@ -367,17 +387,21 @@ describe("the plaza's people", () => {
     }
   });
 
-  it("makes the day's count the keyboard's way round: each press has the next person say their line", () => {
+  it("gives the keyboard a people button named with the day's count: each press has the next person say their line", () => {
     mockLive.boxes = walked;
-    render(<IslandViewport picture={picture} onPlot={jest.fn()} plaza={props} />);
-    const people = screen.getByRole("button", { name: `${props.labels.visitors!.replace("\n", " ")}, ${FIGURES.turn}` });
+    const { container } = render(<IslandViewport picture={picture} onPlot={jest.fn()} plaza={props} />);
+    expect(props.people).toBe(`${VISITORS.count(4)} ${VISITORS.team(1)}`);
+    const people = screen.getByRole("button", { name: `${props.people}, ${FIGURES.turn}` });
     expect(screen.getByRole("group", { name: "ลานกลางเกาะ" })).toContainElement(people);
+    // Out of sight until a keyboard focuses it; the count is printed nowhere on the island.
+    expect(people).toHaveClass("peopleHidden");
+    expect(container.querySelector('[data-label="visitors"]')).toBeNull();
     fireEvent.click(people);
     expect(bubble()).toHaveAttribute("data-bubble", "me");
-    expect(spoken()).toBe(`${FIGURES.nth(1)}: ${FIGURES.me[0]}`);
+    expect(spoken()).toBe(`${FIGURES.nth(1)}: ${FIGURES.me[0]} ${VISITORS.count(4)}`);
     fireEvent.click(people);
     expect(bubble()).toHaveAttribute("data-bubble", "team");
-    expect(spoken()).toBe(`${FIGURES.nth(2)}: ${FIGURES.team[0]}`);
+    expect(spoken()).toBe(`${FIGURES.nth(2)}: ${FIGURES.team[0]} ${VISITORS.team(1)}`);
     // A tap on someone in between, then the button again: the turn starts over from the first.
     tap(partner.x + 5, partner.y + 7);
     fireEvent.click(people);
@@ -398,7 +422,7 @@ describe("the plaza's people", () => {
     expect(kinds.slice(0, today)).toEqual(["me", "team", ...Array(today - 2).fill("crowd")]);
     // Round again from the viewer, with no partner on the way.
     expect(kinds[today]).toBe("me");
-    expect(spoken()).toBe(`${FIGURES.nth(1)}: ${FIGURES.me[0]}`);
+    expect(spoken()).toBe(`${FIGURES.nth(1)}: ${FIGURES.me[0]} ${VISITORS.count(4)}`);
   });
 
   it("keeps a walker's bubble on them while the plaza's actors shift under it (someone sat down by the fire)", () => {
@@ -425,7 +449,7 @@ describe("the plaza's people", () => {
       // Still open, still over the viewer (who did not move), not over whoever took their old index.
       expect(bubble()).toHaveAttribute("data-bubble", "me");
       expect(bubble()!.style.left).toBe(left);
-      expect(spoken()).toBe(FIGURES.me[0]);
+      expect(spoken()).toBe(`${FIGURES.me[0]} ${VISITORS.count(4)}`);
     } finally {
       jest.useRealTimers();
     }
@@ -499,26 +523,40 @@ describe("PlazaLayer's people button", () => {
   const props = plazaProps(null, [PIN], null, jest.fn() as (id: PlazaSpotId) => void, visitors);
   const world = plazaWorld(scene, props.input as PlazaInput);
 
-  it("is the day's count where people can talk, said once as its name", () => {
+  it("waits out of sight for a keyboard where people can talk, named with the day's count, which it says once", () => {
     const onPeople = jest.fn();
     const { container } = render(
-      <PlazaLayer world={world} labels={props.labels} names={props.names} onSpot={jest.fn()} interactive showLabels whole={false} onPeople={onPeople} />,
+      <PlazaLayer
+        world={world}
+        labels={props.labels}
+        names={props.names}
+        onSpot={jest.fn()}
+        interactive
+        showLabels
+        whole={false}
+        onPeople={onPeople}
+        people={props.people}
+      />,
     );
     const button = screen.getByRole("button", { name: `วันนี้มีคนเช็กอินบนเกาะแล้ว 3 คน, ${FIGURES.turn}` });
-    expect(button).toHaveAttribute("data-label", "visitors");
-    expect(button).toHaveTextContent("วันนี้มีคนเช็กอินบนเกาะแล้ว 3 คน");
+    expect(button).toHaveClass("peopleHidden");
+    expect(button).not.toHaveAttribute("data-label");
+    // Nothing printed over the plaza: no count, no name over the notice board.
+    expect(container.querySelector("[data-label]")).toBeNull();
     // No second copy for screen readers: the button's name carries the line.
     expect(container.querySelectorAll(".sr-only")).toHaveLength(0);
     fireEvent.click(button);
     expect(onPeople).toHaveBeenCalledTimes(1);
   });
 
-  it("waits out of sight for a keyboard when no count is on screen, and is not there on an island that only shows the place", () => {
+  it("is the same out of sight on the whole island, with a plain name without a count, and is not there on an island that only shows the place", () => {
     const { rerender } = render(
       <PlazaLayer world={world} labels={props.labels} names={props.names} onSpot={jest.fn()} interactive showLabels={false} whole onPeople={jest.fn()} />,
     );
-    expect(screen.getByRole("button", { name: `${FIGURES.people}, ${FIGURES.turn}` })).not.toHaveAttribute("data-label");
-    rerender(<PlazaLayer world={world} labels={props.labels} names={props.names} interactive={false} showLabels whole={false} onPeople={jest.fn()} />);
+    expect(screen.getByRole("button", { name: `${FIGURES.people}, ${FIGURES.turn}` })).toHaveClass("peopleHidden");
+    rerender(
+      <PlazaLayer world={world} labels={props.labels} names={props.names} interactive={false} showLabels whole={false} onPeople={jest.fn()} people={props.people} />,
+    );
     expect(screen.queryByRole("button", { name: new RegExp(FIGURES.turn) })).toBeNull();
   });
 });

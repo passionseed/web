@@ -352,7 +352,7 @@ describe("IslandViewport", () => {
       campfire: { count: 11 },
       prizes: true,
     };
-    const labels = { sign: "Demo Day 28 พ.ย.\nอีก 17 วัน", campfireCount: "11 คนกำลังทำงานอยู่", campfireMore: "+3" };
+    const labels = { sign: "Demo Day 28 พ.ย.\nอีก 17 วัน" };
     const names: Record<PlazaSpotId, string> = {
       notice: "กระดานเควสต์: ตั้งชื่อปัญหา",
       stage: "Demo Day 28 พ.ย. อีก 17 วัน",
@@ -433,19 +433,17 @@ describe("IslandViewport", () => {
     it("shows no labels before the living island draws (the PNG has no plaza)", () => {
       const { container } = render(<IslandViewport picture={live} onPlot={jest.fn()} plaza={plaza(jest.fn())} />);
       expect(container.querySelector("[data-label]")).toBeNull();
-      expect(screen.queryByText("+3")).toBeNull();
     });
 
-    it("labels the sign and the campfire over the living island, hidden from assistive tech", () => {
+    it("prints only the sign over the living island, in the stage's door, hidden from assistive tech", () => {
       mockLive.mode = "ready";
       const { container, rerender } = render(<IslandViewport picture={live} onPlot={jest.fn()} plaza={plaza(jest.fn())} />);
       const shown = [...container.querySelectorAll<HTMLElement>("[data-label]")];
-      expect(shown.map((el) => [el.dataset.label, el.dataset.anchor, el.textContent])).toEqual([
-        ["sign", "bottom", labels.sign],
-        ["campfireCount", "bottom", labels.campfireCount],
-        ["campfireMore", "left", labels.campfireMore],
-      ]);
-      // A label without text (here the notice board's, which this test leaves out) is not shown.
+      expect(shown.map((el) => [el.dataset.label, el.dataset.anchor, el.textContent])).toEqual([["sign", "bottom", labels.sign]]);
+      // No words over the notice board, the prize board or the campfire (11 people, more than its seats): a tap opens each.
+      for (const id of ["notice", "prizes", "campfire"]) {
+        expect(container.querySelector(`[data-spot="${id}"]`)).toBeEmptyDOMElement();
+      }
       const world = plazaWorld(live.scene!, input);
       const points = new Map(world.labels.map((label) => [label.id, label]));
       shown.forEach((el) => {
@@ -464,22 +462,18 @@ describe("IslandViewport", () => {
       expect(container.querySelector("[data-label]")).toBeNull();
     });
 
-    it("makes a place's name part of its door: a tap on the words opens the place, and the button's name stays its own", () => {
+    it("makes the sign part of the stage's door: a tap on the words opens the stage, and the button's name stays its own", () => {
       mockLive.mode = "ready";
       const onSpot = jest.fn();
-      const named = { ...labels, notice: "กระดานเควสต์" };
-      const { container } = render(<IslandViewport picture={live} onPlot={jest.fn()} plaza={{ ...plaza(onSpot), labels: named }} />);
-      const words = container.querySelector<HTMLElement>('[data-label="notice"]')!;
-      expect(words).toHaveTextContent("กระดานเควสต์");
-      const board = screen.getByRole("button", { name: names.notice });
-      expect(board).toContainElement(words);
+      const { container } = render(<IslandViewport picture={live} onPlot={jest.fn()} plaza={plaza(onSpot)} />);
+      const words = container.querySelector<HTMLElement>('[data-label="sign"]')!;
+      const stage = screen.getByRole("button", { name: names.stage });
+      expect(stage).toContainElement(words);
       fireEvent.click(words);
-      fireEvent.click(container.querySelector<HTMLElement>('[data-label="sign"]')!);
-      fireEvent.click(container.querySelector<HTMLElement>('[data-label="campfireMore"]')!);
-      expect(onSpot.mock.calls).toEqual([["notice"], ["stage"], ["campfire"]]);
+      expect(onSpot.mock.calls).toEqual([["stage"]]);
       // Without a door (nobody listens), the words are a picture label again, out of every button.
-      const { container: still } = render(<IslandViewport picture={live} onPlot={jest.fn()} plaza={{ ...plaza(), labels: named }} />);
-      expect(still.querySelector('[data-label="notice"]')!.closest("button")).toBeNull();
+      const { container: still } = render(<IslandViewport picture={live} onPlot={jest.fn()} plaza={plaza()} />);
+      expect(still.querySelector('[data-label="sign"]')!.closest("button")).toBeNull();
     });
 
     describe("the notice board on screen", () => {

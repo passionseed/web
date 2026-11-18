@@ -23,7 +23,7 @@ import { CROWD_OUTFITS, TEAM_HAIRS, crowdSprite, type CrowdPose, type Outfit } f
 import type { Figure } from "./figures";
 import type { LiveActor, LiveStep } from "./types";
 
-/** Figures drawn at most, the viewer and their teammates included; more people show as "+N". */
+/** Figures drawn at most, the viewer and their teammates included; the rest are only in the day's count. */
 export const MAX_VISITORS = 8;
 /** Teammates drawn beside the viewer at most. */
 export const MAX_TEAM = 3;
@@ -50,9 +50,8 @@ export const CROWD_LAYOUT = {
   /** Teammates, in fill order, to the viewer's right. */
   team: [[8, 35], [20, 35], [32, 35]] as readonly Point[],
   /**
-   * Strollers' routes, in fill order: from, to. Clear of the plaza's labels
-   * too (the Demo Day sign's two lines, the campfire's count), so no figure
-   * walks under one.
+   * Strollers' routes, in fill order: from, to. Clear of the Demo Day sign's
+   * two lines too, so no figure walks under it.
    */
   routes: [
     // The meadow below the stage.
@@ -66,11 +65,7 @@ export const CROWD_LAYOUT = {
     // Down the plaza's left edge, beside the notice board.
     [[-52, -24], [-52, 0]],
   ] as readonly (readonly [Point, Point])[],
-  /** The day's count (and the team's line), bottom anchored under the crowd. */
-  label: [50, 70] as Point,
-  /** "+N", left anchored below the campfire's right edge. */
-  more: [-24, 64] as Point,
-  /** The viewer's tag, bottom anchored over their head. */
+  /** The viewer's small คุณ tag, bottom anchored over their head. */
   meTag: [1, 34] as Point,
 } as const;
 
@@ -88,7 +83,7 @@ export interface VisitorsInput {
   shirt?: string | null;
 }
 
-/** How many of each kind are drawn, and how many are left over for "+N". */
+/** How many of each kind are drawn, and how many are left over (counted, not drawn). */
 export interface CrowdPlan {
   me: boolean;
   team: number;
@@ -108,7 +103,7 @@ const whole = (v: unknown): number => {
  * Who is drawn for this input, with `freeSeats` empty campfire seats: the
  * viewer first, then up to three teammates, then everyone else (strolling,
  * and from the fourth of them two sit by the fire when seats are free), at
- * most eight in all; the rest is "+N". Zero people: nothing at all.
+ * most eight in all; the rest is `more`. Zero people: nothing at all.
  */
 export function crowdPlan(input: VisitorsInput | null | undefined, freeSeats: number): CrowdPlan {
   if (!input) return NO_CROWD;

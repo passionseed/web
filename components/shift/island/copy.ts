@@ -398,7 +398,7 @@ export const RESULTS = {
 export const MENU = {
   /**
    * The whole quest board, first in the chip sheet's short list: the place's
-   * one name, as on the plaza's notice board, the sheet it opens and the bot.
+   * one name, as in the notice board's button, the sheet it opens and the bot.
    */
   board: PLACES.board,
   story: "เรื่องเล่า",
@@ -654,8 +654,6 @@ export const CANVAS = {
 export const NOTICE = {
   board: HUD.board,
   pinned: (titles: string[]) => `${HUD.board}: ${titles.join(" · ")}`,
-  /** DRAFT: the board's name on the island, always shown over it so it reads as a place to tap. */
-  label: PLACES.board,
 };
 
 /**
@@ -686,8 +684,8 @@ export const CAMPFIRE = {
   /** The campfire's accessible name on the island. */
   spot: (count: number) =>
     count > 0 ? `${PLACES.campfire}: ห้อง coworking มี ${count} คน` : `${PLACES.campfire}: ห้อง coworking`,
+  /** The sheet's count line: the island prints no count over the fire. */
   count: (count: number) => `${count} คนกำลังทำงานอยู่`,
-  more: (count: number) => `+${count}`,
   /** DRAFT (lore: the campfire is where builders keep each other company). */
   title: PLACES.campfire,
   /** DRAFT */
@@ -716,15 +714,15 @@ export const CAMPFIRE = {
  * Today's visitors in the plaza (docs/designs/shift-island-plaza-visitors.md).
  * The figures carry no names; the team line goes only to the viewer's own
  * team, and the tag only over the viewer's own figure, on their own screen.
+ * No count is printed on the island: a tap on a person says it (FIGURES),
+ * and the people button carries it in its name.
  */
 export const VISITORS = {
-  /** The plaza's label, how many checked in on the Bangkok day (the viewer included). */
+  /** How many checked in on the Bangkok day (the viewer included): what the viewer and everyone else say after their line. */
   count: (count: number) => `วันนี้มีคนเช็กอินบนเกาะแล้ว ${count} คน`,
-  /** A second line for the viewer's own team only. */
+  /** The same for the viewer's own team only: what a teammate says after their line. */
   team: (count: number) => `วันนี้เพื่อนร่วมทีมเช็กอินแล้ว ${count} คน`,
-  /** More people than figures, as at the campfire. */
-  more: (count: number) => `+${count}`,
-  /** The tag over the viewer's own figure, beside their picture. */
+  /** The small tag over the viewer's own figure: the only word over a person that stays. */
   me: "คุณ",
 };
 
@@ -733,8 +731,10 @@ export const VISITORS = {
  * them (live/FigureBubble.tsx). One short, true line each: never a name, and
  * nothing that points to a student. A figure is only a kind and a number
  * (lib/shift-island/live/figures.ts) and its line is picked from those, so
- * the same figure always says the same thing. A new kind (the campfire's
- * evening guest) adds its lines here.
+ * the same figure always says the same thing. Today's visitors add the day's
+ * count under their line (VISITORS.count, a teammate VISITORS.team): the
+ * island prints no count of its own. A new kind (the campfire's evening
+ * guest) adds its lines here.
  */
 export const FIGURES = {
   /** The viewer's own figure, drawn only once they checked in today. */
@@ -767,13 +767,13 @@ export const FIGURES = {
   builder: ["คนที่ลงมือสร้างงานจริง ทีละชิ้น"],
   /** The story's tester, phone in hand beside the grown tree. */
   tester: ["คนนอกทีม มาลองงานที่ทำจริง"],
-  /** The plaza's people button (the day's count, or hidden until focused): each press greets the next of today's visitors. */
+  /** The plaza's people button (out of sight until a keyboard focuses it): each press greets the next of today's visitors. */
   turn: "ทักทายทีละคน",
-  /** Its name when no count is on screen. */
+  /** Its name without a day's count. */
   people: "คนบนเกาะ",
   /**
    * Read before a line reached by that button. No total: some of the day's
-   * count sit at the campfire or are only a "+N", so a total would never
+   * count sit at the campfire or are not drawn at all, so a total would never
    * match the count the button names. Back at 1 means round again.
    */
   nth: (n: number) => `คนที่ ${n}`,

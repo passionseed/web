@@ -7,7 +7,7 @@ import type { Rect } from "@/lib/shift-island/live/geometry";
 
 import { FIGURES } from "../copy";
 import styles from "../world.module.css";
-import { figureLine, turnOrder } from "./figureLine";
+import { figureLine, figureWords, turnOrder, type Today } from "./figureLine";
 
 /** How long a line stays up: long enough to read twice, then the island is clear again. */
 export const BUBBLE_MS = 5000;
@@ -17,6 +17,17 @@ const NO_BOXES: readonly (Rect | null)[] = [];
 const EDGE = 8;
 /** CSS px between the bubble's tail and the figure: over its head, or under its feet. */
 const GAP = 2;
+
+/** A sentence's phrases, split at its spaces, a number kept with the word after it ("5 คน"). */
+export function phrases(sentence: string): string[] {
+  const out: string[] = [];
+  for (const word of sentence.split(" ")) {
+    const last = out.length - 1;
+    if (last >= 0 && /\d$/.test(out[last])) out[last] = `${out[last]} ${word}`;
+    else out.push(word);
+  }
+  return out;
+}
 
 /** Who the figures are, without where they stand: a new cast resets the talk, a seat shifting an index does not. */
 const castKey = (figures: readonly Figure[]) => figures.map((f) => `${f.kind}:${f.n}:${f.mine ? 1 : 0}`).join(",");
@@ -126,9 +137,10 @@ export interface FigureTalk {
 /**
  * Which figure is talking. One bubble at a time; it closes after BUBBLE_MS,
  * on Escape, on a tap anywhere else, while `paused` (a sheet is open), and
- * whenever the figures change (someone arrived, the island redrew).
+ * whenever the figures change (someone arrived, the island redrew). With
+ * `today`, today's visitors add the day's count to what they say.
  */
-export function useFigureTalk(figures: readonly Figure[], paused: boolean): FigureTalk {
+export function useFigureTalk(figures: readonly Figure[], paused: boolean, today?: Today | null): FigureTalk {
   const [said, setSaid] = useState<Said | null>(null);
   const next = useRef(0);
   const order = useMemo(() => turnOrder(figures), [figures]);
@@ -175,7 +187,7 @@ export function useFigureTalk(figures: readonly Figure[], paused: boolean): Figu
   const figure = said ? figures[said.index] : undefined;
   let spoken = "";
   if (said && figure) {
-    const line = figureLine(figure);
+    const line = figureLine(figure, today);
     spoken = said.via === "turn" ? `${FIGURES.nth(order.indexOf(said.index) + 1)}: ${line}` : line;
   }
   return { said: figure ? said : null, say, turn: order.length > 0 ? turn : undefined, spoken };
@@ -197,6 +209,8 @@ export interface FigureBubbleProps {
   reveal?: boolean;
   /** The figure is no longer drawn: close the bubble. */
   onGone: () => void;
+  /** The day's numbers: today's visitors say the count on a second line (figureLine.ts). */
+  today?: Today | null;
 }
 
 /**
@@ -205,11 +219,12 @@ export interface FigureBubbleProps {
  * the head (the top of a story panel, the top of the screen) it hangs under
  * the feet instead, its tail pointing up. It follows a walker (style writes
  * only on a frame where the figure moved, no React render per frame) and
- * slides sideways to stay on screen. Lines break only between their phrases,
+ * slides sideways to stay on screen. Each sentence (the line, then the day's
+ * count) starts a line of its own, and lines break only between phrases,
  * never inside a Thai word. Decoration only: the live region beside it says
  * the same words.
  */
-export function FigureBubble({ figure, view, read, follow, reveal = false, onGone }: FigureBubbleProps) {
+export function FigureBubble({ figure, view, read, follow, reveal = false, onGone, today }: FigureBubbleProps) {
   const element = useRef<HTMLSpanElement>(null);
   const text = useRef<HTMLSpanElement>(null);
   const gone = useRef(onGone);
@@ -295,14 +310,16 @@ export function FigureBubble({ figure, view, read, follow, reveal = false, onGon
   return (
     <span ref={element} className={styles.bubble} data-bubble={figure.kind} aria-hidden="true">
       <span ref={text} className={styles.bubbleText}>
-        {figureLine(figure)
-          .split(" ")
-          .map((phrase, i) => (
-            <Fragment key={i}>
-              {i > 0 ? " " : null}
-              <span className={styles.phrase}>{phrase}</span>
-            </Fragment>
-          ))}
+        {figureWords(figure, today).map((sentence, s) => (
+          <span key={s} className={styles.sentence}>
+            {phrases(sentence).map((phrase, i) => (
+              <Fragment key={i}>
+                {i > 0 ? " " : null}
+                <span className={styles.phrase}>{phrase}</span>
+              </Fragment>
+            ))}
+          </span>
+        ))}
       </span>
     </span>
   );

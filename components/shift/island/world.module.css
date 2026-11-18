@@ -165,9 +165,10 @@
 }
 
 /*
- * The plaza (live/PlazaLayer.tsx): the notice board, the stage and the
- * campfire as tap targets over the canvas, sized like .hotspot. The group
- * itself lets taps through to the plots under it.
+ * The plaza (live/PlazaLayer.tsx): the notice board, the stage, the prize
+ * board and the campfire as tap targets over the canvas, sized like .hotspot.
+ * The group itself lets taps through to the plots under it. The only words
+ * it prints are the Demo Day sign and the viewer's small คุณ tag.
  */
 .plaza,
 .plazaLabels {
@@ -181,7 +182,7 @@
   pointer-events: auto;
 }
 
-/* A place's name drawn in its own door (the notice board's, the sign, the campfire's count): the words open the place too. */
+/* The sign drawn in the stage's own door: a tap on the words opens the stage too. */
 .plazaSpot > .plazaLabel {
   pointer-events: auto;
 }
@@ -189,7 +190,7 @@
 /* A short line the canvas cannot draw crisply: cream on the dark notch, like the tap hint. */
 .plazaLabel {
   position: absolute;
-  /* Two lines at most: the sign's "\n" splits date and days; a long count wraps instead of losing words. */
+  /* Two lines at most: the sign's "\n" splits date and days. */
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -219,21 +220,11 @@
   transform: translate(0, -50%);
 }
 
-/* Today's visitors: the count, and for the viewer's own team a second, longer line. */
-.plazaLabel[data-label="visitors"] {
-  max-width: 176px;
-}
-
-/* The viewer's own figure: their picture and "คุณ", one short line over their head. */
+/* The viewer's own figure: "คุณ" alone, small, one word over their head. */
 .plazaLabel[data-label="me"] {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 6px 2px 2px;
-}
-
-.plazaTagAvatar {
-  flex: none;
+  padding: 0 5px;
+  font-size: 11px;
+  line-height: 1.5;
 }
 
 /* The tag waits for the arrival walk (its delay is set inline), then appears. */
@@ -253,22 +244,10 @@
   }
 }
 
-/* The day's count as the people's button: each press has the next person say their line. */
-.plazaPeople {
-  margin: 0;
-  border: 0;
-  font-family: inherit;
-  cursor: pointer;
-  pointer-events: auto;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.plazaPeople:focus-visible {
-  outline: 2px solid var(--isl-cream);
-  outline-offset: -4px;
-}
-
-/* No count on screen: the same button, out of sight until a keyboard reaches it, then over the plaza. */
+/*
+ * The people button: out of sight until a keyboard reaches it, then over the
+ * plaza with the day's count. Each press has the next person say their line.
+ */
 .peopleHidden {
   position: absolute;
   width: 1px;
@@ -284,12 +263,15 @@
 .peopleHidden:focus-visible {
   left: 50%;
   top: 50%;
-  width: auto;
+  width: max-content;
+  max-width: min(240px, calc(100vw - 48px));
   height: auto;
   margin: 0;
   padding: 6px 12px;
   overflow: visible;
   clip: auto;
+  white-space: normal;
+  text-align: center;
   font: inherit;
   font-size: 13px;
   font-weight: 600;
@@ -331,6 +313,16 @@
   color: var(--isl-cream, #fff1d6);
   background: rgba(18, 14, 20, 0.9);
   clip-path: var(--notch, var(--story-notch));
+}
+
+/* Each sentence on its own line: the figure's line, then (today's visitors) the day's count, a little quieter. */
+.sentence {
+  display: block;
+}
+
+.sentence + .sentence {
+  font-size: 12px;
+  font-weight: 500;
 }
 
 /* A line breaks between its phrases only: Thai has no spaces inside a word, so a phrase never splits. */

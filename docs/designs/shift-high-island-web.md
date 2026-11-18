@@ -1208,8 +1208,9 @@ on Demo Day; the server's `days_to_demo` stands until then and when
 
 - A campfire (pit 14x10, flame 3 frames) below-left of the plaza. One sitting
   figure (4 variants, 2 frames) per person in the SHIFT coworking voice
-  channel, seats filled in a fixed order, at most 8, then a DOM "+N". Above the
-  fire a DOM label "3 คนกำลังทำงานอยู่". Zero people: an unlit pit, no label.
+  channel, seats filled in a fixed order, at most 8. No words over the fire
+  (2026-11-18, "dont clutter"): the count is in the campfire's button name and
+  at the top of its sheet ("3 คนกำลังทำงานอยู่").
   Channel unset or campfire data missing: nothing at all.
 - Tap: the campfire sheet, title "ห้อง coworking", body "ทำงานไปด้วยกันในห้องเสียงของ
   SHIFT", the names as Discord shows them in the server, a button "เข้าห้อง"

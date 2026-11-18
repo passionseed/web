@@ -24,6 +24,7 @@ import { HUD_RESERVE, scrollToCentre, worldLayout, type Insets } from "@/lib/shi
 import { COMMON, FIGURES, HUD, ISLAND, treeStageName } from "./copy";
 import islandStyles from "./island.module.css";
 import { FigureBubble, useFigureTalk } from "./live/FigureBubble";
+import type { Today } from "./live/figureLine";
 import type { ActorBoxes } from "./live/IslandCanvas";
 import { IslandLive } from "./live/IslandLive";
 import liveStyles from "./live/live.module.css";
@@ -50,13 +51,16 @@ interface IslandViewportProps {
   initialPhase?: LightPhase;
   /**
    * The plaza (notice board, Demo Day festival, campfire), drawn by the
-   * living island; labels are their DOM text, names the tap targets' aria-labels.
+   * living island; labels are its only DOM text (the sign, the viewer's
+   * tag), names the tap targets' aria-labels, people the day's count for the
+   * people button (plazaProps).
    */
   plaza?: {
     input: PlazaInput;
     labels: Partial<Record<PlazaLabelId, string>>;
     names: Partial<Record<PlazaSpotId, string>>;
     onSpot?: (id: PlazaSpotId) => void;
+    people?: string;
   };
   /** The living island became (true) or stopped being (false) the picture on screen. */
   onLiveChange?: (live: boolean) => void;
@@ -375,7 +379,11 @@ export function IslandViewport({
     () => [...(live ? plazaView.figures : []), ...treeFigures(scene)],
     [live, plazaView, scene],
   );
-  const talk = useFigureTalk(figures, paused);
+  // The day's numbers, which today's visitors say when tapped: the island prints no count.
+  const dayCount = plazaInput?.visitors?.count ?? 0;
+  const dayTeam = plazaInput?.visitors?.team ?? 0;
+  const today = useMemo<Today | null>(() => (dayCount > 0 ? { count: dayCount, team: dayTeam } : null), [dayCount, dayTeam]);
+  const talk = useFigureTalk(figures, paused, today);
   // The walkers' boxes for the actors these figures were counted from: null until the engine draws that same list.
   const plazaActors = plazaView.actors;
   const readBoxes = useCallback(() => {
@@ -607,7 +615,7 @@ export function IslandViewport({
                 world={plazaView}
                 labels={plaza.labels}
                 names={plaza.names}
-                me={me}
+                people={plaza.people}
                 onSpot={
                   plaza.onSpot
                     ? (id) => {
@@ -631,6 +639,7 @@ export function IslandViewport({
                 read={readBoxes}
                 follow={!reduced && !paused}
                 reveal={talk.said.via === "turn"}
+                today={today}
                 onGone={() => talk.say(null)}
               />
             ) : null}

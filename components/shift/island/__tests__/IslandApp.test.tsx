@@ -811,7 +811,8 @@ describe("IslandApp: the plaza", () => {
     expect(input.pins).toEqual(pins.map((pin) => pin.kind));
     expect(input.campfire).toEqual({ count: 3 });
     expect(input.prizes).toBe(true);
-    expect(labels).toEqual({ notice: "กระดานเควสต์", sign: "Demo Day 28 พ.ย.\nอีก 17 วัน", campfireCount: "3 คนกำลังทำงานอยู่" });
+    // The sign is the only words printed: the board and the campfire are named in their buttons.
+    expect(labels).toEqual({ sign: "Demo Day 28 พ.ย.\nอีก 17 วัน" });
     expect(names).toEqual({
       notice: `กระดานเควสต์: ${pins.map((pin) => pin.title).join(" · ")}`,
       stage: "เวที Demo Day: 28 พ.ย. · อีก 17 วัน",
@@ -835,14 +836,15 @@ describe("IslandApp: the plaza", () => {
     const tree = { seed: null, equipped: { shape: "shape:round", leaf: "leaf:dusk", bark: "bark:oak", bloom: "bloom:cream" }, owned: [], gifts: [], roots: { count: 0, recent: 0 }, stage: 1 };
     render(<IslandApp page={festive({ visitors: { count: 5, team: 2 }, tree })} picture={null} />);
     expect(plaza().input.visitors).toEqual({ count: 5, team: 2, me: true, arriving: false, shirt: "w" });
-    expect(plaza().labels).toMatchObject({ visitors: "วันนี้มีคนเช็กอินบนเกาะแล้ว 5 คน\nวันนี้เพื่อนร่วมทีมเช็กอินแล้ว 2 คน", me: "คุณ" });
-    expect(plaza().labels.visitorsMore).toBeUndefined();
+    // The small คุณ tag is drawn; the day's count is not, only said (the people button, a tap on someone).
+    expect(plaza().labels).toEqual({ sign: "Demo Day 28 พ.ย.\nอีก 17 วัน", me: "คุณ" });
+    expect(plaza().people).toBe("วันนี้มีคนเช็กอินบนเกาะแล้ว 5 คน วันนี้เพื่อนร่วมทีมเช็กอินแล้ว 2 คน");
   });
 
   it("draws nobody before the migration (no count), not even the viewer", () => {
     render(<IslandApp page={festive()} picture={null} />);
     expect(plaza().input.visitors).toBeNull();
-    expect(plaza().labels).not.toHaveProperty("visitors");
+    expect(plaza().people).toBeUndefined();
     expect(plaza().labels).not.toHaveProperty("me");
   });
 
@@ -860,9 +862,11 @@ describe("IslandApp: the plaza", () => {
     expect(plaza().labels.me).toBe("คุณ");
   });
 
-  it("draws eight at the fire and says how many more", () => {
+  it("draws eight at the fire and prints no count over it: its button and its sheet say how many", () => {
     render(<IslandApp page={festive({ campfire: { count: 11, joinUrl: JOIN } })} picture={null} />);
-    expect(plaza().labels).toMatchObject({ campfireCount: "11 คนกำลังทำงานอยู่", campfireMore: "+3" });
+    expect(plaza().input.campfire).toEqual({ count: 11 });
+    expect(plaza().labels).toEqual({ sign: "Demo Day 28 พ.ย.\nอีก 17 วัน" });
+    expect(plaza().names.campfire).toBe("กองไฟ: ห้อง coworking มี 11 คน");
   });
 
   it("draws no campfire and no stage when there is no coworking room and no season", () => {
@@ -870,8 +874,8 @@ describe("IslandApp: the plaza", () => {
     const { input, labels, names } = plaza();
     expect(input.festival).toBeNull();
     expect(input.campfire).toBeNull();
-    // Only the notice board's name: it is the way to the whole quest board.
-    expect(labels).toEqual({ notice: "กระดานเควสต์" });
+    // No words at all: the notice board is the way to the whole quest board, named in its button only.
+    expect(labels).toEqual({});
     // The Demo Day prize board always stands in the plaza.
     expect(Object.keys(names)).toEqual(["notice", "prizes"]);
     expect(input.prizes).toBe(true);
@@ -907,14 +911,16 @@ describe("IslandApp: the plaza", () => {
     expect(mockedLoadCampfire).toHaveBeenCalledWith({ names: true });
     expect(viewport()).toHaveAttribute("data-paused", "true");
     expect(await within(sheet).findByText("มิ้นต์")).toBeInTheDocument();
+    // The count the island no longer prints over the fire (here the room's newest, as loaded).
+    expect(within(sheet).getByText(/^\d+ คนกำลังทำงานอยู่$/)).toBeInTheDocument();
     expect(within(sheet).getByRole("link", { name: "เข้าห้อง" })).toHaveAttribute("href", JOIN);
   });
 
-  it("keeps the whole board off home: the plaza's named notice board opens it, and the chip sheet's first line", () => {
+  it("keeps the whole board off home: the plaza's notice board opens it, and the chip sheet's first line", () => {
     render(<IslandApp page={festive()} picture={null} />);
     expect(screen.queryByRole("button", { name: OLD_BOARD_LINK })).toBeNull();
-    // The notice board stands in the plaza with its name over it, so it reads as a place to tap.
-    expect(plaza().labels.notice).toBe("กระดานเควสต์");
+    // The notice board stands in the plaza with no words over it; its button carries the board's name.
+    expect(Object.keys(plaza().labels)).not.toContain("notice");
     fireEvent.click(screen.getByRole("button", { name: /^กระดานเควสต์/ }));
     expect(screen.getByRole("dialog", { name: "กระดานเควสต์" })).toBeInTheDocument();
     fireEvent.keyDown(screen.getByRole("dialog", { name: "กระดานเควสต์" }), { key: "Escape" });

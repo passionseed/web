@@ -2,7 +2,8 @@
  * The plaza as a place to gather: the quest notice board, the Demo Day
  * festival (sign, stage, lantern string, booth flags and stars), the Demo
  * Day prize board and the voice campfire, as LiveActors the existing engine draws above the trees, plus
- * where the DOM tap targets and labels go. Pure and client-safe.
+ * where the DOM tap targets go and the two labels the island still prints
+ * (the Demo Day sign, the viewer's small คุณ tag). Pure and client-safe.
  *
  * Opt-in: with nothing to show it returns NO_PLAZA, so the canvas stays the
  * bot's PNG by day. Everything sits at fixed offsets from the plaza centre,
@@ -28,7 +29,7 @@ import { ARRIVE_MS, CROWD_LAYOUT, crowdActors, crowdPlan, type CrowdPlan, type V
 import type { Figure } from "./figures";
 import type { LiveActor } from "./types";
 
-/** Seats drawn round the campfire; more people show as a "+N" label. */
+/** Seats drawn round the campfire; the campfire's sheet counts everyone in the room. */
 export const MAX_SEATS = 8;
 
 export interface PlazaInput {
@@ -59,7 +60,13 @@ export interface PlazaSpot {
   h: number;
 }
 
-export type PlazaLabelId = "notice" | "sign" | "campfireCount" | "campfireMore" | "visitors" | "visitorsMore" | "me";
+/**
+ * The only words always on the island: the Demo Day sign over the stage and
+ * the viewer's small คุณ tag. Everything else is said on a tap (founder,
+ * 2026-11-18, "dont clutter"): the notice board opens the board, the campfire
+ * its sheet with the count, and a person says the day's count.
+ */
+export type PlazaLabelId = "sign" | "me";
 
 /** A DOM label's anchor point, percent of the picture. bottom = translate(-50%, -100%), left = translate(0, -50%). */
 export interface PlazaLabel {
@@ -77,10 +84,7 @@ export interface PlazaLabel {
  * on the words opens the place as a tap on the picture does.
  */
 export const LABEL_DOOR: Partial<Record<PlazaLabelId, PlazaSpotId>> = {
-  notice: "notice",
   sign: "stage",
-  campfireCount: "campfire",
-  campfireMore: "campfire",
 };
 
 /**
@@ -117,11 +121,6 @@ export const PLAZA_LAYOUT = {
   noticeBoard: [-38, -24] as Point,
   notes: [[-35, -21], [-29, -22], [-22, -21]] as readonly Point[],
   noticeSpot: { x: -40, y: -28, w: 28, h: 30 },
-  /**
-   * "กระดานเควสต์" over the board, centred on it and bottom anchored 4 px
-   * above its top edge: clear of the stroller who walks above the well.
-   */
-  noticeLabel: [-26, -28] as Point,
   sign: [36, -12] as Point,
   stage: [50, -16] as Point,
   stageSpot: { x: 36, y: -16, w: 58, h: 31 },
@@ -133,8 +132,6 @@ export const PLAZA_LAYOUT = {
   /** In fill order: front pair, back pair, outer front pair, outer back pair. */
   seats: [[-73, 54], [-47, 54], [-71, 34], [-49, 34], [-87, 52], [-33, 52], [-85, 36], [-35, 36]] as readonly Point[],
   campfireSpot: { x: -92, y: 32, w: 72, h: 32 },
-  campfireCount: [-56, 32] as Point,
-  campfireMore: [-24, 46] as Point,
   /** Lower right of the plaza: right of the well, left of the sign and stage, above the plaza's bottom edge. */
   prizeBoard: [15, 10] as Point,
   prizeSpot: { x: 12, y: 8, w: 23, h: 24 },
@@ -216,9 +213,9 @@ export function boothFlagAt(tree: Pick<SceneTree, "left" | "top" | "mine">, scen
  * booth flags, prize board, campfire pit, the seats behind the fire, the
  * flame, the seats in front, then today's visitors (crowd.ts: strollers,
  * teammates, the viewer). Spots: notice, stage, prizes, campfire. Labels:
- * the notice board's name, the sign, campfire count and "+N", visitors and
- * "+N", the viewer's tag. Figures: today's visitors standing or walking
- * (the campfire's sitters belong to the campfire's own tap target).
+ * the sign and the viewer's tag only (PlazaLabelId). Figures: today's
+ * visitors standing or walking (the campfire's sitters belong to the
+ * campfire's own tap target).
  */
 export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
   const { festival, pins, campfire } = input;
@@ -263,8 +260,6 @@ export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
       if (name) actors.push(still(name, at(L.notes[i])));
     });
     spots.push(spotOf("notice", box(L.noticeSpot), scene));
-    // Always named on the island, like the stage's sign: a place to tap, not a picture.
-    labels.push(labelOf("notice", at(L.noticeLabel), "bottom", scene));
   }
 
   if (festival) {
@@ -304,21 +299,17 @@ export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
     } else {
       actors.push({ frames: ACTOR_FRAMES.campfireFlame, ...at(L.flame), frameMs: FLAME_MS });
     }
-    if (people > 0) labels.push(labelOf("campfireCount", at(L.campfireCount), "bottom", scene));
-    if (people > MAX_SEATS) labels.push(labelOf("campfireMore", at(L.campfireMore), "left", scene));
     spots.push(spotOf("campfire", box(L.campfireSpot), scene));
   }
 
   if (visitors) {
-    const C = CROWD_LAYOUT;
     const cast = crowdActors(c, input.visitors!, crowd);
     const first = actors.length;
     actors.push(...cast.actors);
     figures.push(...cast.figures.map((f) => ({ ...f, actor: first + f.actor! })));
-    labels.push(labelOf("visitors", at(C.label), "bottom", scene));
-    if (crowd.more > 0) labels.push(labelOf("visitorsMore", at(C.more), "left", scene));
+    // The day's count is no label: a tap on anyone says it (figureLine.ts), and the people button names it.
     if (crowd.me) {
-      const tag = labelOf("me", at(C.meTag), "bottom", scene);
+      const tag = labelOf("me", at(CROWD_LAYOUT.meTag), "bottom", scene);
       labels.push(input.visitors?.arriving ? { ...tag, delayMs: ARRIVE_MS } : tag);
     }
   }
@@ -328,8 +319,8 @@ export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
 
 /**
  * Who of today's visitors the plaza draws for this input: the campfire lends
- * its empty seats (none without a campfire). The page uses it too, for the
- * "+N" label's number.
+ * its empty seats (none without a campfire). The page uses it too, to know
+ * whether teammates stand in the plaza.
  */
 export function plazaCrowd(input: Pick<PlazaInput, "campfire" | "visitors">): CrowdPlan {
   const free = input.campfire ? MAX_SEATS - Math.min(count(input.campfire.count), MAX_SEATS) : 0;
