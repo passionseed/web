@@ -2,7 +2,7 @@
 
 import type { CSSProperties } from "react";
 
-import { LABEL_DOOR, labelInDoor, type PlazaLabel, type PlazaLabelId, type PlazaSpotId, type PlazaWorld } from "@/lib/shift-island/live/plaza";
+import { LABEL_DOOR, QUIET_WHILE_TALKING, labelInDoor, type PlazaLabel, type PlazaLabelId, type PlazaSpotId, type PlazaWorld } from "@/lib/shift-island/live/plaza";
 
 import { FIGURES } from "../copy";
 import styles from "../world.module.css";
@@ -31,13 +31,21 @@ export interface PlazaLayerProps {
   onPeople?: () => void;
   /** The day's count in words (plazaProps): the people button's name, never drawn on the island. */
   people?: string;
+  /** Someone's speech bubble is open (FigureBubble): the labels in QUIET_WHILE_TALKING (the viewer's คุณ tag) step out of sight. */
+  talking?: boolean;
 }
 
-/** Placed at its point in the picture, or at `at` (percent of the door it is drawn in). */
-function labelStyle(label: PlazaLabel, at: { x: number; y: number } = label): CSSProperties {
+/**
+ * Placed at its point in the picture, or at `at` (percent of the door it is
+ * drawn in). A quiet label keeps its place, only out of sight, so it comes
+ * back at once when the bubble closes, without waiting out the arrival walk
+ * again (display: none would replay its fade in).
+ */
+function labelStyle(label: PlazaLabel, at: { x: number; y: number } = label, quiet = false): CSSProperties {
   const style: CSSProperties = { left: `${at.x}%`, top: `${at.y}%` };
   // The viewer's tag waits for their arrival walk (CSS shows it at once under reduced motion).
   if (label.delayMs) style.animationDelay = `${label.delayMs}ms`;
+  if (quiet) style.visibility = "hidden";
   return style;
 }
 
@@ -55,13 +63,16 @@ const round4 = (v: number) => Math.round(v * 10_000) / 10_000;
  * Where the people can talk (`onPeople`), a button out of sight until a
  * keyboard focuses it is the keyboard's and screen reader's way to what a tap
  * on a person says, named with the day's count. Where they cannot, the day's
- * count is read out once while the figures show.
+ * count is read out once while the figures show. While anyone's speech
+ * bubble is open (`talking`), the คุณ tag steps out of sight so the bubble
+ * never overlaps it, and comes back when the bubble closes.
  */
-export function PlazaLayer({ world, labels, names, onSpot, interactive, showLabels, whole, onPeople, people }: PlazaLayerProps) {
+export function PlazaLayer({ world, labels, names, onSpot, interactive, showLabels, whole, onPeople, people, talking = false }: PlazaLayerProps) {
   const spots = interactive && onSpot ? world.spots.filter((spot) => names[spot.id]) : [];
   const turn = interactive ? onPeople : undefined;
   const all = showLabels ? world.labels.filter((label) => labels[label.id]) : [];
   const doors = new Set(spots.map((spot) => spot.id));
+  const quiet = (label: PlazaLabel) => talking && QUIET_WHILE_TALKING.has(label.id);
   const doorOf = (label: PlazaLabel) => {
     const door = LABEL_DOOR[label.id];
     return door != null && doors.has(door) ? door : null;
@@ -99,7 +110,7 @@ export function PlazaLayer({ world, labels, names, onSpot, interactive, showLabe
                     className={styles.plazaLabel}
                     data-label={label.id}
                     data-anchor={label.anchor}
-                    style={labelStyle(label, labelInDoor(label, spot))}
+                    style={labelStyle(label, labelInDoor(label, spot), quiet(label))}
                     aria-hidden="true"
                   >
                     {labels[label.id]}
@@ -123,7 +134,7 @@ export function PlazaLayer({ world, labels, names, onSpot, interactive, showLabe
               data-label={label.id}
               data-anchor={label.anchor}
               data-delayed={label.delayMs ? "true" : undefined}
-              style={labelStyle(label)}
+              style={labelStyle(label, label, quiet(label))}
             >
               {labels[label.id]}
             </span>

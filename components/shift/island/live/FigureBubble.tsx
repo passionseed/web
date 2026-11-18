@@ -222,7 +222,8 @@ export interface FigureBubbleProps {
  * slides sideways to stay on screen. Each sentence (the line, then the day's
  * count) starts a line of its own, and lines break only between phrases,
  * never inside a Thai word. Decoration only: the live region beside it says
- * the same words.
+ * the same words. While it is up, the viewer's คุณ tag steps out of sight
+ * (PlazaLayer's `talking`), so the bubble never overlaps it.
  */
 export function FigureBubble({ figure, view, read, follow, reveal = false, onGone, today }: FigureBubbleProps) {
   const element = useRef<HTMLSpanElement>(null);

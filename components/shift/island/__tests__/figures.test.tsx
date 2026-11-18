@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 
 import { buildScene, type IslandPlot } from "@/bot/src/quests/island/scene";
 import type { IslandCanvasProps } from "@/components/shift/island/live/IslandCanvas";
+import type { Festival } from "@/lib/shift-island/festival";
 import type { Rect } from "@/lib/shift-island/live/geometry";
 import type { LiveActor } from "@/lib/shift-island/live/types";
 import type { NoticePin } from "@/lib/shift-island/notice";
@@ -455,6 +456,38 @@ describe("the plaza's people", () => {
     }
   });
 
+  it("hides the viewer's คุณ tag while anyone's bubble is open, so no bubble overlaps it, and brings it back when the bubble closes", () => {
+    // Boxes where the engine stands each actor: nobody has walked.
+    mockLive.boxes = null;
+    const festival: Festival = { demoDay: "2026-11-28", daysToDemo: 10, stageStep: 1, tableBar: 2, stageBar: 3, lanterns: null, booths: [] };
+    const withSign = plazaProps(festival, [PIN], null, jest.fn() as (id: PlazaSpotId) => void, visitors);
+    const signed = plazaWorld(scene, withSign.input);
+    const { container } = render(<IslandViewport picture={picture} onPlot={jest.fn()} plaza={withSign} />);
+    const tag = container.querySelector<HTMLElement>('[data-label="me"]')!;
+    const sign = container.querySelector<HTMLElement>('[data-label="sign"]')!;
+    expect(tag).toHaveTextContent(VISITORS.me);
+    expect(tag).toBeVisible();
+    // The viewer's own bubble opens over their head, where the tag stands.
+    const mine = signed.actors[signed.figures.find((f) => f.kind === "me")!.actor!];
+    tap(mine.x + 5, mine.y + 7);
+    expect(bubble()).toHaveAttribute("data-bubble", "me");
+    expect(tag).not.toBeVisible();
+    // Only the tag steps aside: the Demo Day sign stays.
+    expect(sign).toBeVisible();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(bubble()).toBeNull();
+    // Back at once, the same tag kept in place, so its arrival wait does not play again.
+    expect(container.querySelector('[data-label="me"]')).toBe(tag);
+    expect(tag).toBeVisible();
+    // Anyone else's bubble too, until a tap elsewhere closes it.
+    tap(partner.x + 5, partner.y + 7);
+    expect(bubble()).toHaveAttribute("data-bubble", "partner");
+    expect(tag).not.toBeVisible();
+    tap(2, 2);
+    expect(bubble()).toBeNull();
+    expect(tag).toBeVisible();
+  });
+
   it("brings a person reached by the keyboard into view with their bubble, above the next-step card", () => {
     mockLive.boxes = walked;
     const real = window.getComputedStyle;
@@ -549,14 +582,15 @@ describe("PlazaLayer's people button", () => {
     expect(onPeople).toHaveBeenCalledTimes(1);
   });
 
-  it("is the same out of sight on the whole island, with a plain name without a count, and is not there on an island that only shows the place", () => {
-    const { rerender } = render(
-      <PlazaLayer world={world} labels={props.labels} names={props.names} onSpot={jest.fn()} interactive showLabels={false} whole onPeople={jest.fn()} />,
-    );
-    expect(screen.getByRole("button", { name: `${FIGURES.people}, ${FIGURES.turn}` })).toHaveClass("peopleHidden");
-    rerender(
-      <PlazaLayer world={world} labels={props.labels} names={props.names} interactive={false} showLabels whole={false} onPeople={jest.fn()} people={props.people} />,
-    );
+  it("is the same on the whole island, out of sight and named with the day's count, and is not there on an island that only shows the place", () => {
+    // As the island draws it: the whole island hands PlazaLayer the same day's count as the close view.
+    const { container, rerender } = render(<IslandViewport picture={picture} onPlot={jest.fn()} plaza={props} whole />);
+    const button = screen.getByRole("button", { name: `${VISITORS.count(3)}, ${FIGURES.turn}` });
+    expect(button).toHaveClass("peopleHidden");
+    expect(screen.getByRole("group", { name: "ลานกลางเกาะ" })).toContainElement(button);
+    // Nothing printed over the plaza there either.
+    expect(container.querySelector("[data-label]")).toBeNull();
+    rerender(<IslandViewport picture={picture} onPlot={jest.fn()} plaza={props} whole interactive={false} />);
     expect(screen.queryByRole("button", { name: new RegExp(FIGURES.turn) })).toBeNull();
   });
 });

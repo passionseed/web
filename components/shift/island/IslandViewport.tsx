@@ -629,6 +629,8 @@ export function IslandViewport({
                 showLabels={live && !whole}
                 whole={whole}
                 onPeople={interactive ? talk.turn : undefined}
+                // The viewer's คุณ tag steps aside while anyone talks, so their bubble never overlaps it.
+                talking={talk.said != null}
               />
             ) : null}
             {talk.said ? (

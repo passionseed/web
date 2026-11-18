@@ -68,6 +68,13 @@ export interface PlazaSpot {
  */
 export type PlazaLabelId = "sign" | "me";
 
+/**
+ * Labels out of sight while anyone's speech bubble is open (FigureBubble):
+ * the viewer's คุณ tag stands over their head, where a bubble opens, so a
+ * bubble never overlaps it. It comes back when the bubble closes.
+ */
+export const QUIET_WHILE_TALKING: ReadonlySet<PlazaLabelId> = new Set<PlazaLabelId>(["me"]);
+
 /** A DOM label's anchor point, percent of the picture. bottom = translate(-50%, -100%), left = translate(0, -50%). */
 export interface PlazaLabel {
   id: PlazaLabelId;
