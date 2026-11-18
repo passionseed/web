@@ -13,32 +13,28 @@
 
 .rules {
   display: grid;
-  grid-template-columns: 20px minmax(0, 1fr);
+  grid-template-columns: 16px minmax(0, 1fr);
   gap: 8px;
   align-items: start;
-  padding: 10px 12px;
-  background: rgba(222, 121, 108, 0.1);
-  box-shadow: inset 0 0 0 1px rgba(222, 121, 108, 0.38);
-  clip-path: var(--notch);
 }
 
 .rulesText {
   display: grid;
-  gap: 4px;
+  gap: 2px;
   margin: 0;
   font-size: 13px;
   line-height: 1.55;
-  color: var(--text);
+  color: var(--text-dim);
 }
 
 .ruleList {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 12px;
+  gap: 2px 12px;
   margin: 0;
   padding: 0;
   list-style: none;
-  color: var(--text-hi);
+  color: var(--text);
   font-weight: 600;
 }
 
@@ -117,9 +113,10 @@
   position: relative;
   display: grid;
   place-items: center;
+  align-content: center;
   gap: 4px;
   aspect-ratio: 1;
-  padding: 8px;
+  padding: 6px;
   font-size: 13px;
   font-weight: 600;
   color: var(--isl-cream);
@@ -155,19 +152,10 @@
   white-space: nowrap;
 }
 
-.meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin: 0;
-  font-size: 13px;
-  color: var(--text-dim);
-}
-
 .count {
   font-family: var(--font-space-mono), monospace;
   font-size: 12px;
+  color: var(--text-dim);
 }
 
 .heading {
@@ -180,6 +168,86 @@
   font-weight: 600;
   line-height: 1.4;
   color: var(--isl-sand-hi);
+}
+
+/* The picker's add tile stays small: an empty picker is one tile, not a wall. Viewers keep the full-width grid. */
+.pickerGrid {
+  grid-template-columns: repeat(3, minmax(0, 96px));
+}
+
+/* The send form's inline picker: text buttons in a row, small thumbnails under the rules. */
+.inline {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.attachRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 24px;
+}
+
+.attach {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--action-soft);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.attach:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.attach:active {
+  color: var(--text-hi);
+}
+
+.attach:focus-visible,
+.attach:focus-within {
+  outline: 2px solid var(--action-soft);
+  outline-offset: 2px;
+}
+
+.attach[data-disabled="true"] {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.thumbRow {
+  display: grid;
+  grid-template-columns: repeat(3, 72px);
+  gap: 8px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The picker's label reads like the form's other labels; the count sits at its end. */
+.pickerHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pickerLabel {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--text-hi);
 }
 
 @media (prefers-reduced-motion: reduce) {

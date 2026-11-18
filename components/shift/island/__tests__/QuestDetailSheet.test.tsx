@@ -234,10 +234,18 @@ function openCard(target: BoardRef, link: CanvasLinkState = UNLINKED, extra: { o
   return handles;
 }
 
+const LINK_LABEL = "ลิงก์งาน (ขึ้นต้นด้วย https://)";
+
 function fill({ proof, url, reflection }: { proof?: string; url?: string; reflection?: string }) {
-  if (proof !== undefined) fireEvent.change(screen.getByLabelText("หลักฐาน (ลิงก์หรือเล่าสั้นๆ)"), { target: { value: proof } });
-  if (url !== undefined) fireEvent.change(screen.getByLabelText("ลิงก์งาน (ไม่บังคับ, ขึ้นต้นด้วย https://)"), { target: { value: url } });
-  if (reflection !== undefined) fireEvent.change(screen.getAllByRole("textbox").at(-1) as HTMLElement, { target: { value: reflection } });
+  if (proof !== undefined) fireEvent.change(screen.getByLabelText("หลักฐาน"), { target: { value: proof } });
+  if (url !== undefined) {
+    // The link is a text button until it is wanted.
+    const add = screen.queryByRole("button", { name: "เพิ่มลิงก์" });
+    if (add) fireEvent.click(add);
+    fireEvent.change(screen.getByLabelText(LINK_LABEL), { target: { value: url } });
+  }
+  // Required answers first (proof, then the reflection); the optional link comes after them.
+  if (reflection !== undefined) fireEvent.change(screen.getAllByRole("textbox")[1] as HTMLElement, { target: { value: reflection } });
 }
 
 describe("QuestDetailSheet: the quest page", () => {
@@ -657,7 +665,7 @@ describe("QuestDetailSheet: the ถือกุญแจเอง side quest and
     // With the work at a mentor, a new version is the quiet link in the page.
     fireEvent.click(within(body()).getByRole("button", { name: "ส่งฉบับใหม่" }));
     expect(screen.getByText("ตอนกดส่ง เช็กลิสต์ /project ownership จะแนบไปกับงานนี้ให้เอง")).toBeInTheDocument();
-    const max = Number(screen.getByLabelText("หลักฐาน (ลิงก์หรือเล่าสั้นๆ)").getAttribute("maxLength"));
+    const max = Number(screen.getByLabelText("หลักฐาน").getAttribute("maxLength"));
     expect(max).toBeLessThan(2000);
     expect(max).toBeGreaterThan(1500);
   });
@@ -701,7 +709,7 @@ describe("QuestDetailSheet: the action bar", () => {
     const checklist = within(body()).getByRole("heading", { name: "เสร็จเมื่อ" }).closest("section") as HTMLElement;
     const stuck = within(body()).getByRole("button", { name: DETAIL.stuckLine });
     expect(checklist.compareDocumentPosition(stuck) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(within(body()).queryByLabelText("หลักฐาน (ลิงก์หรือเล่าสั้นๆ)")).toBeNull();
+    expect(within(body()).queryByLabelText("หลักฐาน")).toBeNull();
     // The day's intention is optional and folded inside the quest: the card's tap was the check-in.
     expect(within(body()).getByText(DETAIL.intention).closest("details")).not.toHaveAttribute("open");
   });
@@ -718,7 +726,7 @@ describe("QuestDetailSheet: the action bar", () => {
     // It stays on the quest: no toast to read, the page refreshes into the started quest.
     expect(toast.success).not.toHaveBeenCalled();
     fireEvent.click(within(body()).getByRole("button", { name: DETAIL.sendDone }));
-    expect(screen.getByLabelText("หลักฐาน (ลิงก์หรือเล่าสั้นๆ)")).toBeInTheDocument();
+    expect(screen.getByLabelText("หลักฐาน")).toBeInTheDocument();
   });
 
   it("opens the stuck sheet with the caller's own instance", () => {
@@ -770,13 +778,13 @@ describe("QuestDetailSheet: the action bar", () => {
     canvasAnswer = { context: READY, loading: false };
     openForm({ kind: "main", milestone: 1 }, LINKED);
     expect(screen.queryByTestId("composer")).toBeNull();
-    expect(screen.getByLabelText("หลักฐาน (ลิงก์หรือเล่าสั้นๆ)")).toBeInTheDocument();
+    expect(screen.getByLabelText("หลักฐาน")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "ใช้โน้ตจากแคนวาส" }));
     expect(screen.getByTestId("composer")).toHaveTextContent(`composer:${MAIN_TITLES[0]}`);
     expect(screen.getByTestId("composer")).toHaveAttribute("data-step", "pick");
     // The composer's button sits in the sheet's footer, in place of ส่งเควสต์ and ติด.
     expect(within(footer()).getAllByRole("button").map((b) => b.textContent)).toEqual(["composer-footer:pick"]);
-    expect(screen.queryByLabelText("หลักฐาน (ลิงก์หรือเล่าสั้นๆ)")).toBeNull();
+    expect(screen.queryByLabelText("หลักฐาน")).toBeNull();
     const props = mocked.QuestCardComposer.mock.calls.at(-1)[0];
     expect(props.target).toEqual({
       ref: { kind: "main", milestone: 1 },
@@ -832,7 +840,7 @@ describe("QuestDetailSheet: the action bar", () => {
     openCard({ kind: "main", milestone: 1 }, LINKED);
     fireEvent.click(screen.getByRole("button", { name: "เขียนเองแทน" }));
     expect(screen.queryByTestId("composer")).toBeNull();
-    expect(screen.getByLabelText("หลักฐาน (ลิงก์หรือเล่าสั้นๆ)")).toBeInTheDocument();
+    expect(screen.getByLabelText("หลักฐาน")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "ใช้โน้ตจากแคนวาส" }));
     expect(screen.getByTestId("composer")).toBeInTheDocument();
   });
@@ -840,17 +848,17 @@ describe("QuestDetailSheet: the action bar", () => {
   it("opens the written form when the canvas is not ready", () => {
     openForm({ kind: "main", milestone: 1 });
     expect(screen.queryByTestId("composer")).toBeNull();
-    expect(screen.getByLabelText("หลักฐาน (ลิงก์หรือเล่าสั้นๆ)")).toBeInTheDocument();
+    expect(screen.getByLabelText("หลักฐาน")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "เขียนเองแทน" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "กลับ" }));
-    expect(screen.queryByLabelText("หลักฐาน (ลิงก์หรือเล่าสั้นๆ)")).toBeNull();
+    expect(screen.queryByLabelText("หลักฐาน")).toBeNull();
     expect(within(footer()).getByRole("button", { name: DETAIL.start })).toBeInTheDocument();
   });
 
   it("never waits for the canvas: the written form opens at once while the notes still load", () => {
     canvasAnswer = { context: null, loading: true };
     openForm({ kind: "main", milestone: 1 }, LINKED);
-    expect(screen.getByLabelText("หลักฐาน (ลิงก์หรือเล่าสั้นๆ)")).toBeInTheDocument();
+    expect(screen.getByLabelText("หลักฐาน")).toBeInTheDocument();
     expect(screen.queryByTestId("composer")).toBeNull();
     // The card switch shows once the notes are ready, never before.
     expect(screen.queryByRole("button", { name: "ใช้โน้ตจากแคนวาส" })).toBeNull();
@@ -861,10 +869,10 @@ describe("QuestDetailSheet: the action bar", () => {
     const props = { board, keynote: null, canvasLink: UNLINKED, onClose: jest.fn(), onStuck: jest.fn(), onLinkCanvas: jest.fn() };
     const { rerender } = render(<QuestDetailSheet {...props} target={{ kind: "main", milestone: 1 }} />);
     fireEvent.click(within(body()).getByRole("button", { name: DETAIL.sendDone }));
-    expect(screen.getByLabelText("หลักฐาน (ลิงก์หรือเล่าสั้นๆ)")).toBeInTheDocument();
+    expect(screen.getByLabelText("หลักฐาน")).toBeInTheDocument();
     rerender(<QuestDetailSheet {...props} target={null} />);
     rerender(<QuestDetailSheet {...props} target={{ kind: "main", milestone: 1 }} />);
-    expect(screen.queryByLabelText("หลักฐาน (ลิงก์หรือเล่าสั้นๆ)")).toBeNull();
+    expect(screen.queryByLabelText("หลักฐาน")).toBeNull();
     expect(within(footer()).getByRole("button", { name: DETAIL.start })).toBeInTheDocument();
   });
 });
@@ -1008,8 +1016,12 @@ describe("QuestDetailSheet: the sent screen", () => {
 describe("QuestDetailSheet: the written form and quest states", () => {
   it("caps the written form like the database", () => {
     openForm({ kind: "main", milestone: 1 });
-    expect(screen.getByLabelText("หลักฐาน (ลิงก์หรือเล่าสั้นๆ)")).toHaveAttribute("maxLength", "2000");
-    expect(screen.getByLabelText("ลิงก์งาน (ไม่บังคับ, ขึ้นต้นด้วย https://)")).toHaveAttribute("maxLength", "500");
+    expect(screen.getByLabelText("หลักฐาน")).toHaveAttribute("maxLength", "2000");
+    // The link opens from its text button, focused, with the https rule in its label.
+    expect(screen.queryByLabelText(LINK_LABEL)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "เพิ่มลิงก์" }));
+    expect(screen.getByLabelText(LINK_LABEL)).toHaveAttribute("maxLength", "500");
+    expect(screen.getByLabelText(LINK_LABEL)).toHaveFocus();
     expect(screen.getByLabelText("คำถามของขั้นที่ 1")).toHaveAttribute("maxLength", "2000");
     expect(screen.getByRole("button", { name: "ส่งให้พี่เลี้ยงดู" })).toBeInTheDocument();
   });
@@ -1018,8 +1030,8 @@ describe("QuestDetailSheet: the written form and quest states", () => {
     openForm({ kind: "main", milestone: 1 });
     const reminder = within(body()).getByRole("list", { name: "เสร็จเมื่อ" });
     expect(within(reminder).getAllByRole("listitem")).toHaveLength(3);
-    expect(reminder.compareDocumentPosition(screen.getByLabelText("หลักฐาน (ลิงก์หรือเล่าสั้นๆ)")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(screen.getByLabelText("หลักฐาน (ลิงก์หรือเล่าสั้นๆ)")).toHaveAttribute("placeholder", "วางลิงก์ หรือเล่าสั้นๆ ว่าทำอะไรไป แล้วเจออะไร");
+    expect(reminder.compareDocumentPosition(screen.getByLabelText("หลักฐาน")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByLabelText("หลักฐาน")).toHaveAttribute("placeholder", "วางลิงก์ หรือเล่าสั้นๆ ว่าทำอะไรไป แล้วเจออะไร");
     expect(screen.getByLabelText("คำถามของขั้นที่ 1")).toHaveAttribute("placeholder", "ตอบสั้นๆ ข้อเดียว เก็บไว้ใช้ในพอร์ตได้");
     const send = within(footer()).getByRole("button", { name: "ส่งให้พี่เลี้ยงดู" });
     expect(send).toHaveAttribute("type", "submit");
@@ -1134,7 +1146,7 @@ describe("QuestDetailSheet: the written form and quest states", () => {
     const resend = within(body()).getByRole("button", { name: "ส่งฉบับใหม่" });
     expect(resend).not.toHaveClass("ei-button-dawn");
     fireEvent.click(resend);
-    expect(screen.getByLabelText("หลักฐาน (ลิงก์หรือเล่าสั้นๆ)")).toBeInTheDocument();
+    expect(screen.getByLabelText("หลักฐาน")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "ส่งฉบับใหม่" })).toHaveAttribute("type", "submit");
   });
 
@@ -1169,7 +1181,7 @@ describe("QuestDetailSheet: the written form and quest states", () => {
     rerender(<QuestDetailSheet {...props} target={null} />);
     rerender(<QuestDetailSheet {...props} target={{ kind: "main", milestone: 1 }} />);
     fireEvent.click(within(body()).getByRole("button", { name: DETAIL.sendDone }));
-    expect(screen.getByLabelText("หลักฐาน (ลิงก์หรือเล่าสั้นๆ)")).toHaveValue("หลักฐานยาวๆ ที่พิมพ์ไว้");
+    expect(screen.getByLabelText("หลักฐาน")).toHaveValue("หลักฐานยาวๆ ที่พิมพ์ไว้");
   });
 
   it("renders nothing without a target", () => {

@@ -12,11 +12,13 @@ interface FieldProps {
   max: number;
   error?: string;
   rows: number;
+  /** Extra class on the textarea (the send form writes on a line instead of in a box). */
+  className?: string;
   onChange: (value: string) => void;
 }
 
 /** A labelled textarea with a counter that appears near the cap. */
-export function Field({ id, label, hint, placeholder, value, max, error, rows, onChange }: FieldProps) {
+export function Field({ id, label, hint, placeholder, value, max, error, rows, className, onChange }: FieldProps) {
   const near = value.length >= Math.floor(max * 0.8);
   const describedBy = [hint ? `${id}-hint` : null, error ? `${id}-error` : null, near ? `${id}-count` : null]
     .filter(Boolean)
@@ -34,7 +36,7 @@ export function Field({ id, label, hint, placeholder, value, max, error, rows, o
       <textarea
         id={id}
         rows={rows}
-        className={`ei-input ${styles.input} ${styles.textarea}`}
+        className={`ei-input ${styles.input} ${styles.textarea}${className ? ` ${className}` : ""}`}
         placeholder={placeholder}
         value={value}
         maxLength={max}
