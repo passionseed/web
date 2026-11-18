@@ -158,12 +158,17 @@ describe("outbox cards", () => {
       [
         "### ⚠️ ข่าวเกาะคืนนี้ยังไม่ได้โพสต์",
         "ถึง 4 ทุ่มครึ่งแล้ว การ์ดข่าวเกาะวันที่ 18 พ.ย. 2569 ยังไม่ขึ้นในห้องข่าวเกาะ",
-        "เช็กสิทธิ์ของบอทในห้องข่าวเกาะ: ดูห้อง ส่งข้อความ แนบไฟล์ และอ่านประวัติข้อความ แล้วดู /admin island",
-        "-# หลัง 4 ทุ่มครึ่งบอทไม่เริ่มการ์ดใหม่ของคืนนี้แล้ว พรุ่งนี้ 2 ทุ่มบอทจะลองใหม่เอง",
+        "เช็กสิทธิ์ของบอทในห้องข่าวเกาะ: ดูห้อง และส่งข้อความ ถ้าครบแล้ว บอทอาจออฟไลน์ช่วง 2 ทุ่ม แจ้งคนดูแลบอทให้ดู log คำว่า nightly island news",
+        "-# แก้ก่อนเที่ยงคืน บอทอาจยังโพสต์การ์ดฉบับนี้ได้ ถ้าไม่ทัน การ์ดคืนถัดไปจะโพสต์ 2 ทุ่มเมื่อแก้แล้ว",
       ].join("\n")
     );
     expect(accentColor(card)).toBe(TONE_COLORS.staff);
     expect(viewText(card)).not.toMatch(/[—–]/);
+    // The bot retries a failed card until midnight: never "nothing more tonight", never a relative "tomorrow"
+    // (staff often read it the next morning), never a command that cannot show why (/admin island).
+    expect(viewText(card)).not.toMatch(/พรุ่งนี้|ลองใหม่เอง|ไม่เริ่มการ์ดใหม่|\/admin island/);
+    // Only the permissions that stop a post: without Attach Files the card goes out without its picture.
+    expect(viewText(card)).not.toMatch(/แนบไฟล์|อ่านประวัติข้อความ/);
     // Never the card's issue line or the digest's: the bot finds its own card of the day by those.
     expect(viewText(card)).not.toContain(NEWS.dayLine("2026-11-18"));
     expect(viewText(card)).not.toContain(DIGEST.dayLine("2026-11-18"));

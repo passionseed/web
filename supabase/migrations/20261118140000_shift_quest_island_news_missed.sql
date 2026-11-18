@@ -21,11 +21,20 @@
 --       - it is 22:30 Bangkok or later, before midnight (never a note about
 --         yesterday);
 --       - no card is recorded for the day (shift_quest_news_posts.message_id)
---         and no bot process claimed it in the last 15 minutes (a card
---         being sent right now: the same 15 minutes as shift_quest__news_due);
---       - the news channel was not set or changed at 22:30 or later that day
---         (shift_quest_admin_set audits 'settings_news_channel'): a channel
---         set after the window never had a card to post, so it is no alarm;
+--         and no bot process claimed it in the last 2 minutes (another
+--         process sending it right now). Not the 15 minutes of
+--         shift_quest__news_due: a failed send keeps its claim, and the bot
+--         claims that stale row again every 15 to 20 minutes until midnight,
+--         each time just before its own check in the same tick (news.ts:
+--         tonight's card, then this check). A send takes seconds, so the
+--         bot's own claim is finished, posted or failed, by its check; a
+--         2-minute window, shorter than the 5-minute tick, lets the next
+--         tick queue the note whichever tick reclaims;
+--       - the news channel was not set or changed from 22:24 that day
+--         (shift_quest_admin_set audits 'settings_news_channel'): the bot
+--         tries a new card only on its 5-minute ticks and none after 22:30,
+--         so a channel set from 6 minutes before (one tick and a margin)
+--         may never have had a card to post, which is no alarm;
 --       - no note was queued for the day yet.
 --     Returns 1 when it queued the note, else 0. The time is a parameter so
 --     the tests can pass fixed times.
@@ -38,6 +47,10 @@
 --   * shift_quest_schema_version() = 20. 19 is
 --     20261118130000_shift_quest_island_news_daily (#328, applied): the
 --     version only goes up.
+--
+-- After a failed send the bot keeps claiming the stale row until midnight
+-- (shift_quest__news_due), so a card can still post after the note, once
+-- staff fix what blocked it: the note says so (NEWS_MISSED.note).
 --
 -- Deploy order: the bot first, then this file. A bot older than the one that
 -- knows kind 'news_missed' would fail such a row permanently (an unknown
@@ -62,10 +75,10 @@
 /**
  * Queues the staff note for p_now's Bangkok day when tonight's card was
  * missed: a news channel and a staff channel set, 22:30 to midnight Bangkok,
- * no card recorded and none being sent (no claim under 15 minutes old), the
- * news channel not set or changed from 22:30 that day, and no note queued for
- * the day. Returns 1 when it queued the note, else 0. The note's params are
- * {day} only.
+ * no card recorded and none being sent by another bot process (no claim
+ * under 2 minutes old), the news channel not set or changed from 22:24 that
+ * day, and no note queued for the day. Returns 1 when it queued the note,
+ * else 0. The note's params are {day} only.
  */
 CREATE OR REPLACE FUNCTION public.shift_quest__news_missed(p_now timestamptz)
 RETURNS integer
@@ -92,18 +105,21 @@ BEGIN
   IF EXISTS (SELECT 1 FROM public.shift_quest_outbox WHERE dedupe_key = v_key) THEN
     RETURN 0;
   END IF;
-  -- Posted, or a bot process is sending it right now.
+  -- Posted, or another bot process is sending it right now. A send takes
+  -- seconds and the bot checks after its own try, so an older claim without a
+  -- message is a send that failed (its stale retries keep the claim fresh).
   IF EXISTS (
     SELECT 1 FROM public.shift_quest_news_posts np
-    WHERE np.day = v_day AND (np.message_id IS NOT NULL OR np.claimed_at > p_now - interval '15 minutes')
+    WHERE np.day = v_day AND (np.message_id IS NOT NULL OR np.claimed_at > p_now - interval '2 minutes')
   ) THEN
     RETURN 0;
   END IF;
-  -- The news channel was set or changed after the window closed: no card was missed.
+  -- The news channel was set or changed too late for a 5-minute tick before
+  -- 22:30 (from 22:24: one tick and a margin): no card was missed.
   IF EXISTS (
     SELECT 1 FROM public.shift_quest_audit a
     WHERE a.resource_type = 'settings' AND a.action = 'settings_news_channel'
-      AND a.created_at >= v_from AND a.created_at <= p_now
+      AND a.created_at >= v_from - interval '6 minutes' AND a.created_at <= p_now
   ) THEN
     RETURN 0;
   END IF;

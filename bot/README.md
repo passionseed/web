@@ -405,8 +405,11 @@ The short version for whoever runs the bot:
     picture. Never a ping, a DM or a crosspost. Below schema 19 the bot runs
     without it. From schema 20, when no card is recorded by 22:30 Bangkok,
     the database queues one note a night for the staff channel (outbox kind
-    `news_missed`, the day only): what to check is the bot's permissions in
-    the news channel and `/admin island`. Below 20 the check re-reads the
+    `news_missed`, the day only), by about 22:40: what to check is the bot's
+    View Channel and Send Messages in the news channel, else the bot's
+    `nightly island news` log lines (the bot offline at 20:00). A failed
+    send is retried until midnight, so a fix before then may still post the
+    card. Below 20 the check re-reads the
     schema every 5 minutes, so deploy the bot first, then apply
     `20261118140000_shift_quest_island_news_missed.sql`; no restart needed.
 - Campfire rounds (`bot/src/quests/rounds.ts`, buttons in

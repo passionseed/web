@@ -34,7 +34,7 @@ the AI switch, not sharing.
 | 7 | The picture on edits | An edit keeps the picture: the bot downloads the posted picture back from Discord's CDN and attaches the same bytes again. Only a privacy take-down may drop it, as the last fallback. |
 | 8 | Kept from the plan | The 7-day re-check of the AI lines, the lore lines (DRAFT), no crosspost. |
 | 9 | Hard lines | No student names (team names only under `shift_quest__name_visible`), AI summaries only for AI-consented teams (`shift_quest__digest_eligible`), totals only for the bulletin, never a DM between adults and students, never a crosspost. |
-| 10 | A missed night (founder, 2026-11-18, schema 20) | When a news channel is set and no card is recorded for today's Bangkok day by 22:30 (the end of the new-claim window), one short note goes to the staff channel slot (#ai-staff): tonight's card did not post, and what to check (the bot's permissions in the news channel, `/admin island`). At most one note per Bangkok day, through the outbox (dedupe key `news_missed:<day>`). It carries the day only and never goes to a student channel. |
+| 10 | A missed night (founder, 2026-11-18, schema 20) | When a news channel is set and no card is recorded for today's Bangkok day by 22:30 (the end of the new-claim window), one short note goes to the staff channel slot (#ai-staff): tonight's card did not post, and what to check (the bot's View Channel and Send Messages in the news channel, else the bot's log). At most one note per Bangkok day, through the outbox (dedupe key `news_missed:<day>`). It carries the day only and never goes to a student channel. |
 
 ## Why it is shaped like this
 
@@ -72,7 +72,7 @@ the AI switch, not sharing.
 | Fine print | ตัวเลขรวมทั้งเกาะ ตั้งแต่ 2 ทุ่มเมื่อวานถึง 2 ทุ่มคืนนี้ ไม่บอกว่าใครเป็นใคร · ฉบับ 18 พ.ย. 2569 |
 | No picture | 🖼️ คืนนี้รูปเกาะวาดไม่ขึ้น |
 | /admin | ✅ ข่าวเกาะคืนนี้: โพสต์ทุกคืนราว 2 ทุ่มในห้องข่าวเกาะ · 🤖 สรุป AI ที่เก็บไว้วันนี้: 3 ทีม |
-| Missed night (staff channel only) | ⚠️ ข่าวเกาะคืนนี้ยังไม่ได้โพสต์ · ถึง 4 ทุ่มครึ่งแล้ว การ์ดข่าวเกาะวันที่ 18 พ.ย. 2569 ยังไม่ขึ้นในห้องข่าวเกาะ · เช็กสิทธิ์ของบอทในห้องข่าวเกาะ: ดูห้อง ส่งข้อความ แนบไฟล์ และอ่านประวัติข้อความ แล้วดู /admin island · fine print: หลัง 4 ทุ่มครึ่งบอทไม่เริ่มการ์ดใหม่ของคืนนี้แล้ว พรุ่งนี้ 2 ทุ่มบอทจะลองใหม่เอง |
+| Missed night (staff channel only) | ⚠️ ข่าวเกาะคืนนี้ยังไม่ได้โพสต์ · ถึง 4 ทุ่มครึ่งแล้ว การ์ดข่าวเกาะวันที่ 18 พ.ย. 2569 ยังไม่ขึ้นในห้องข่าวเกาะ · เช็กสิทธิ์ของบอทในห้องข่าวเกาะ: ดูห้อง และส่งข้อความ ถ้าครบแล้ว บอทอาจออฟไลน์ช่วง 2 ทุ่ม แจ้งคนดูแลบอทให้ดู log คำว่า nightly island news · fine print: แก้ก่อนเที่ยงคืน บอทอาจยังโพสต์การ์ดฉบับนี้ได้ ถ้าไม่ทัน การ์ดคืนถัดไปจะโพสต์ 2 ทุ่มเมื่อแก้แล้ว |
 
 ## How it works
 
@@ -105,8 +105,15 @@ the AI switch, not sharing.
   staff note (outbox kind `news_missed`, `channel_key` `staff`, params
   `{day}`, dedupe key `news_missed:<day>`) only when a news channel and a
   staff channel are set, it is 22:30 to midnight Bangkok, no card is
-  recorded and none is being sent (no claim under 15 minutes old), and the
-  news channel was not set or changed from 22:30 that night. The outbox
+  recorded and no other bot process is sending one (no claim under 2
+  minutes old: a failed send keeps its claim, and the bot claims that stale
+  row again every 15 to 20 minutes until midnight, just before its own
+  check), and the news channel was not set or changed from 22:24 that night
+  (6 minutes before 22:30: one 5-minute tick and a margin, so a channel set
+  too late for a tick before 22:30 is no alarm). The note comes at the first
+  or second check from 22:30, so by about 22:40. Those stale retries can
+  still post the card after the note, once staff fix the cause; the note
+  says so. The outbox
   delivers it like every staff post; the bot renders it (`NEWS_MISSED` in
   `newsCopy.ts`). Below schema 20 the bot reads the version again on each
   check, so the migration can follow the deploy without a restart. A bot

@@ -51,9 +51,10 @@
 #             every migration applied twice, then news_missed.ts (schema 20,
 #             20261118140000: the staff note when tonight's card did not post
 #             by 22:30, at fixed times: one outbox row per Bangkok day for the
-#             staff channel, {day} only, none with a card, a card being sent,
-#             no news or staff channel or a channel set after 22:30; the
-#             grants), with consent off
+#             staff channel, {day} only, none with a card, a card another
+#             process is sending, no news or staff channel or a channel set
+#             from 22:24; a night of failing sends ticked as the bot does
+#             gets exactly one note by 22:40; the grants), with consent off
 #
 #   supabase/tests/shift_quests/run-local.sh       # or: pnpm test:db:quests
 #   PG_BIN=/usr/lib/postgresql/15/bin supabase/tests/shift_quests/run-local.sh
@@ -457,6 +458,17 @@ fi
 
 echo "# single pass"
 check_privileges once
+# The runbook's read-only production checks (step C, run after every
+# `supabase db push`) on the same single pass: every row they print is a
+# problem, so a migration that moves the schema version or adds a function
+# without updating them fails here, not on production after the push.
+prod_checks="$("${PSQL[@]}" -d once -At -f "$ROOT/docs/runbooks/shift-high-island-checks.sql")"
+if [ -n "$prod_checks" ]; then
+  echo "FAIL: docs/runbooks/shift-high-island-checks.sql reports problems on the single pass:" >&2
+  echo "$prod_checks" | sed 's/^/  /' >&2
+  exit 1
+fi
+echo "ok - once: the runbook's production checks (docs/runbooks/shift-high-island-checks.sql) print no row"
 catalog once >"$DATA/catalog-once.txt"
 catalog rules >"$DATA/catalog-twice.txt"
 if ! diff -u "$DATA/catalog-once.txt" "$DATA/catalog-twice.txt" >"$DATA/catalog.diff"; then

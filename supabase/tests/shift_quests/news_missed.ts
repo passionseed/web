@@ -3,8 +3,11 @@
  * card did not post (20261118140000_shift_quest_island_news_missed, schema
  * 20). At fixed times: nothing before 22:30 Bangkok; after 22:30 with no card,
  * exactly one outbox row for the staff channel ({day} only); none with a card
- * or one being sent, without a news or staff channel, after midnight, or when
- * the news channel was set after 22:30; never a second row. The outbox hands
+ * or one another bot process is sending (a claim under 2 minutes old), without
+ * a news or staff channel, after midnight, or when the news channel was set
+ * from 22:24; never a second row. A night when every send fails, ticked as the
+ * bot does (the stale claim again and again until midnight): exactly one
+ * note, by 22:40. The outbox hands
  * it to the bot for the staff channel only. The grants: the bot's entry
  * point, never the website's; the helper nobody's.
  *
@@ -47,6 +50,10 @@ const D4 = "2026-03-13"; // no staff channel
 const D5 = "2026-03-14"; // the news channel set after 22:30
 const D6 = "2026-03-15"; // the news channel set before 22:30
 const D7 = "2026-03-16"; // no news channel
+const D8 = "2026-03-17"; // every send fails all night, ticks on the dot: a stale claim every 20 minutes
+const D9 = "2026-03-18"; // every send fails all night, ticks drifting: a stale claim every 15 minutes
+const D10 = "2026-03-19"; // the news channel set at 22:27: maybe no tick left before 22:30
+const D11 = "2026-03-20"; // the news channel set at 22:23: a tick surely fell before 22:30
 
 const BOT_FN = "shift_quest_enqueue_news_missed()";
 const HELPER = "shift_quest__news_missed(timestamp with time zone)";
@@ -193,10 +200,42 @@ async function main(): Promise<void> {
   await card(D2, `${D2} 20:01:00+07`, M1);
   check(await missedAt(`${D2} 22:40:00+07`) === 0 && await notes(D2) === 0, "tonight's card was posted: no note");
 
-  // --- A card being sent: none; the same claim, stalled: the note ---------------------------------------------
-  await card(D3, `${D3} 22:25:00+07`, null);
-  check(await missedAt(`${D3} 22:31:00+07`) === 0, "a claim under 15 minutes old (a card being sent right now): no note yet");
-  check(await missedAt(`${D3} 22:41:00+07`) === 1 && await notes(D3) === 1, "the claim is 16 minutes old and no card recorded: the note");
+  // --- A card being sent by another bot process: none; the same claim minutes later, no card: the note ---------
+  await card(D3, `${D3} 22:29:30+07`, null);
+  check(await missedAt(`${D3} 22:31:00+07`) === 0,
+    "a claim 90 seconds old (another bot process is sending it right now): no note yet");
+  check(await missedAt(`${D3} 22:32:00+07`) === 1 && await notes(D3) === 1,
+    "the claim is 2 minutes 30 old and no card recorded (a send takes seconds, so it failed): the note");
+
+  // --- The bot itself on a night when every send fails (the bot lost Send Messages in the news channel) -----------
+  // Each 5-minute tick does what news.ts does: shift_quest_news_post_next (shift_quest__news_due), then the claim
+  // (claimed_at = now(), the stale claim again from 15 minutes on, until midnight), the send fails and the claim
+  // stays, then the check. The tick's own claim is seconds old when it checks, so a "being sent" claim must not
+  // hide the miss for long. On the dot the claim comes back every 20 minutes; with setInterval's drift it can come
+  // back every 15, so the check must not depend on which tick reclaims.
+  const failingNight = async (day: string, tickSeconds: number) => {
+    const fired: string[] = [];
+    let claims = 0;
+    const start = Date.parse(`${day}T20:00:00+07:00`);
+    for (let at = start; at < start + 4 * 3600_000; at += tickSeconds * 1000) {
+      const iso = (ms: number) => new Date(ms).toISOString();
+      if (await scalar<boolean>(db, "select public.shift_quest__news_due($1::date, $2::timestamptz)", [day, iso(at + 200)])) {
+        claims += 1;
+        await db.query(
+          "insert into public.shift_quest_news_posts (day, channel_id, claimed_at) values ($1::date, $2, $3::timestamptz) " +
+          "on conflict (day) do update set claimed_at = excluded.claimed_at",
+          [day, NEWS_CH, iso(at + 500)]);
+      }
+      if (await missedAt(iso(at + 800)) === 1) fired.push(new Date(at + 7 * 3600_000).toISOString().slice(11, 19));
+    }
+    return { fired, claims };
+  };
+  for (const [day, tick, label] of [[D8, 300, "ticks on the dot"], [D9, 301, "ticks drifting 1 s"]] as const) {
+    const night = await failingNight(day, tick);
+    check(night.claims >= 8, `${label}: the bot claimed and failed again and again until midnight`, night.claims);
+    check(night.fired.length === 1 && night.fired[0] >= "22:30:00" && night.fired[0] < "22:40:00" && await notes(day) === 1,
+      `${label}: exactly one note, at the first or second check from 22:30`, night.fired);
+  }
 
   // --- No staff channel: none (a note parked for days would turn up stale) ------------------------------------------
   await adminSet("staff_channel", "");
@@ -213,6 +252,13 @@ async function main(): Promise<void> {
   await audit(`${D6} 21:00:00+07`);
   check(await missedAt(`${D6} 22:45:00+07`) === 1 && await notes(D6) === 1,
     "set at 21:00 (the card still had its window) and no card: the note");
+  // The bot only tries a new card on its 5-minute ticks: a channel set at 22:27 may see no tick before 22:30.
+  await audit(`${D10} 22:27:00+07`);
+  check(await missedAt(`${D10} 22:33:00+07`) === 0 && await missedAt(`${D10} 23:30:00+07`) === 0 && await notes(D10) === 0,
+    "the news channel set at 22:27 (the next tick may fall after 22:30): no note that night");
+  await audit(`${D11} 22:23:00+07`);
+  check(await missedAt(`${D11} 22:33:00+07`) === 1 && await notes(D11) === 1,
+    "set at 22:23 (a tick fell before 22:30, so the card had its chance) and no card: the note");
 
   // --- The bot's entry point, on the real clock -----------------------------------------------------------------
   const today: string = await scalar(db, "select public.shift_quest__bkk_today()::text");

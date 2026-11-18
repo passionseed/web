@@ -73,11 +73,13 @@ import { ISLAND_LINK_LABEL, islandWebUrl } from "./weblink";
  * The missed night (schema 20, 20261118140000_shift_quest_island_news_missed):
  * every check, after its own try at tonight's card, the bot asks the database
  * to queue the staff note (shift_quest_enqueue_news_missed). The database
- * decides: from 22:30 Bangkok, while no card is recorded or being sent, once
- * per Bangkok day by the outbox's dedupe key, never a student channel. The
- * outbox delivers it to the staff channel (kind news_missed, copy.ts). Below
- * schema 20 the bot reads the version again on each check, so the alert
- * starts on its own once the migration is applied after the deploy.
+ * decides: from 22:30 Bangkok, while no card is recorded and no other process
+ * is sending one (a claim under 2 minutes old: this process's own try is over
+ * by its check, sent or failed), once per Bangkok day by the outbox's dedupe
+ * key, never a student channel. The outbox delivers it to the staff channel
+ * (kind news_missed, copy.ts). Below schema 20 the bot reads the version
+ * again on each check, so the alert starts on its own once the migration is
+ * applied after the deploy.
  */
 
 /** The island schema that adds the nightly card's functions (20261118130000_shift_quest_island_news_daily.sql). */

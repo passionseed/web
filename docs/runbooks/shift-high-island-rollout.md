@@ -128,7 +128,9 @@ these files. The migrations are additive and idempotent.
       supabase db query --linked -o table -f docs/runbooks/shift-high-island-checks.sql
       ```
 
-      Expect **no rows**. It checks: `shift_quest_schema_version()` is 9;
+      Expect **no rows**. It checks: `shift_quest_schema_version()` is 20
+      (every migration on `main`; before the last one is applied it prints
+      the version it found, which is expected until then);
       both logins exist, `NOINHERIT`, connection limits 5 (bot) and 20
       (web), a `statement_timeout`, member of no role; the Data API (`anon`,
       `authenticated`) can run no `shift_quest_*` function; the bot can run
@@ -416,8 +418,10 @@ The bot runs on its own host (`bot/deploy.sh`), not on Vercel.
       Bangkok, the staff channel gets one note
       (`⚠️ ข่าวเกาะคืนนี้ยังไม่ได้โพสต์`) and the bot log has
       `no card recorded for tonight by 22:30; a note is queued for the staff channel`.
-      Check the bot's View Channel, Send Messages, Attach Files and Read
-      Message History in #island-news, `/admin island`, and the bot log
+      It comes at the first or second 5-minute check from 22:30, so by about
+      22:40. Check the bot's View Channel and Send Messages in #island-news
+      (those two stop a post; without Attach Files the card goes out without
+      its picture), then the bot log
       lines that start `[shift-quests] nightly island news:`. One note per
       Bangkok day at most:
       `select dedupe_key, status from shift_quest_outbox where kind = 'news_missed' order by created_at desc limit 5`.
