@@ -22,7 +22,7 @@ import { parseCid } from "./ids";
 import { digestFor, startDigestPost } from "./digest";
 import { liveFor, startLivePost } from "./live";
 import { startRounds } from "./rounds";
-import { chimeEnabled, createChime } from "./chime";
+import { chimeEnabled, createCampfireVoice, restMusicEnabled } from "./chime";
 import { warmStory } from "./story";
 import { commandIdMap, setCommandIds, showError } from "./ui";
 import { startOutbox } from "./outbox";
@@ -223,9 +223,12 @@ export async function registerShiftQuests(client: Client, env: ShiftQuestsEnv): 
   // Started only on a database that has the campfire functions (schema 7).
   campfire = campfireFor(version, () => startCampfire(client, api, env.guildId, () => connected));
   // Focus and rest rounds in the campfire's chat, only while someone sits at it (rounds.ts).
-  // A short chime in the voice channel as each focus and rest starts (chime.ts; SHIFT_ROUND_CHIME=off to mute).
+  // Sound in the voice channel (chime.ts): a chime as each focus starts, and
+  // music that fades in before each rest. SHIFT_ROUND_CHIME=off mutes all of
+  // it, SHIFT_REST_MUSIC=off only the music.
+  const voice = chimeEnabled() ? createCampfireVoice(client, { music: restMusicEnabled() }) : null;
   const roundLoop = campfire
-    ? startRounds(client, campfire, { chime: chimeEnabled() ? createChime(client) : undefined })
+    ? startRounds(client, campfire, voice ? { chime: voice.chime, restMusic: voice.restMusic } : {})
     : null;
   // Started only on a database that has the live post functions (schema 8).
   const live = liveFor(version, () => startLivePost(client, api, env.guildId, () => connected));

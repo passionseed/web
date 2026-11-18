@@ -19,7 +19,7 @@ import { requireStudent } from "../context";
 import { cid } from "../ids";
 import { I, TREE } from "../island/copy";
 import { TREE_SCHEMA } from "../island/tree";
-import { encounterAt } from "../rounds";
+import { encounterAt, isLongRounds, setLongRounds } from "../rounds";
 import { schemaOf } from "../schema";
 import { R } from "../rounds-copy";
 import { ButtonStyle, button, buttonRows, modal, show, textValue, type View } from "../ui";
@@ -81,6 +81,21 @@ export const rounds: HandlerSet = {
         i,
         side ? sideView(board, side, { intro: encounter.found, fine: R.encounterNoteFine }) : emptyNote(encounter.found, Boolean(board.project))
       );
+    },
+
+    /**
+     * ⏳ on the round message: switches the whole fire between the normal
+     * rhythm and the long one. One rhythm for everyone, so the message
+     * changes for all; the answer goes only to the person who pressed.
+     */
+    async rd_long(i, ctx, [target]) {
+      requireStudent(ctx);
+      if (!i.isButton()) return;
+      // The button names the rhythm it asks for; a message posted before that toggles.
+      const on = target === "1" ? true : target === "0" ? false : !isLongRounds();
+      await i.deferReply({ flags: MessageFlags.Ephemeral });
+      const long = on === isLongRounds() ? on : await setLongRounds(on);
+      await i.editReply({ content: long ? R.longOn : R.longOff });
     },
 
     async rd_aim(i, ctx) {

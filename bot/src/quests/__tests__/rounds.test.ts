@@ -9,7 +9,18 @@ import type { Ctx } from "../context";
 import { T } from "../copy";
 import { LEARNED_MIN, R } from "../rounds-copy";
 import { I } from "../island/copy";
-import { ENCOUNTER_EVERY, ROUND_MARKER, encounterAt, roundAt, roundView, startRounds, type RoundAt, type RoundDeps } from "../rounds";
+import {
+  ENCOUNTER_EVERY,
+  ROUND_MARKER,
+  encounterAt,
+  isLongRounds,
+  roundAt,
+  roundView,
+  setLongRounds,
+  startRounds,
+  type RoundAt,
+  type RoundDeps,
+} from "../rounds";
 import { boardFixture, side, SIDE_IDS } from "../test-helpers/board";
 import { renderView } from "../ui";
 import { bodyText, customIds, viewText } from "../test-helpers/view";
@@ -30,6 +41,16 @@ describe("roundAt", () => {
   });
 });
 
+describe("roundAt, long", () => {
+  it("runs one round an hour: focus :00 to :50, rest :50 to :00", () => {
+    const at = (m: number) => roundAt(TEN + m * MIN + 30_000, true);
+    expect([0, 49, 50, 59].map((m) => at(m).phase)).toEqual(["focus", "focus", "rest", "rest"]);
+    expect(at(10).restAt).toBe((TEN + 50 * MIN) / 1000);
+    expect(at(10).nextAt).toBe((TEN + 60 * MIN) / 1000);
+    expect(at(10).long).toBe(true);
+  });
+});
+
 describe("roundView", () => {
   it("focus: when the rest starts, 🎯, the marker, nobody's minutes", () => {
     const p = renderView(roundView(roundAt(TEN)), { ephemeral: false });
@@ -37,7 +58,7 @@ describe("roundView", () => {
     expect(bodyText(p).startsWith(`### ${R.focusTitle}\n`)).toBe(true);
     expect(viewText(p)).toContain(`<t:${(TEN + 25 * MIN) / 1000}:t>`);
     expect(viewText(p)).toContain(ROUND_MARKER);
-    expect(customIds(p)).toEqual(["sq|rd_aim"]);
+    expect(customIds(p)).toEqual(["sq|rd_aim", "sq|rd_long|1"]);
   });
 
   it("rest: a diffuse-mode tip that changes each round, ✍️ first", () => {
@@ -59,7 +80,7 @@ describe("roundView", () => {
 });
 
 /** The rest of a round, by its number. */
-const restOf = (round: number): RoundAt => ({ round, phase: "rest", restAt: 0, nextAt: 60 });
+const restOf = (round: number): RoundAt => ({ round, phase: "rest", restAt: 0, nextAt: 60, long: false });
 /** The first rounds from TEN's whose rest carries an encounter, and one whose rest does not. */
 const FIRST = roundAt(TEN).round;
 const withEncounter = Array.from({ length: 200 }, (_, k) => FIRST + k).filter((r) => encounterAt(r));
@@ -89,7 +110,7 @@ describe("encounters", () => {
     expect(bodyText(p)).toContain(R.encounterFine);
     expect(viewText(p)).toContain(ROUND_MARKER);
     expect(viewText(p)).toContain(encounter.button);
-    expect(customIds(p)).toEqual(["sq|rd_close", "sq|rd_aim", `sq|rd_enc|${round}`]);
+    expect(customIds(p)).toEqual(["sq|rd_close", "sq|rd_aim", `sq|rd_enc|${round}`, "sq|rd_long|1"]);
     // A restart draws the same message.
     expect(JSON.stringify(renderView(roundView(restOf(round)), { ephemeral: false }))).toBe(JSON.stringify(p));
     // Nobody is named or pinged.
@@ -99,10 +120,10 @@ describe("encounters", () => {
 
   it("leaves most rests, and every focus, without one", () => {
     const rest = renderView(roundView(restOf(without)), { ephemeral: false });
-    expect(customIds(rest)).toEqual(["sq|rd_close", "sq|rd_aim"]);
+    expect(customIds(rest)).toEqual(["sq|rd_close", "sq|rd_aim", "sq|rd_long|1"]);
     expect(bodyText(rest)).not.toContain(R.encounterFine);
     const focus = renderView(roundView({ ...restOf(withEncounter[0]), phase: "focus" }), { ephemeral: false });
-    expect(customIds(focus)).toEqual(["sq|rd_aim"]);
+    expect(customIds(focus)).toEqual(["sq|rd_aim", "sq|rd_long|1"]);
   });
 
   it("has one to two lines each, in the house style", () => {
@@ -161,23 +182,36 @@ function world(start = TEN) {
     messages: { fetch: async () => new Map([[leftover.id, leftover as never], [other.id, other as never]]) },
   };
   const chimes: string[] = [];
+  /** How many rest music plans the voice refuses next (something still playing). */
+  let refusals = 0;
+  const music: { channelId: string; startAt: number; endAt: number; long: boolean; stillWanted: () => boolean }[] = [];
   const deps: RoundDeps = {
     now: () => now,
     channelOf: (id) => (id === channel.id ? (channel as never) : null),
     botId: () => "bot",
     chime: (id, kind) => chimes.push(`${kind} ${id}`),
+    restMusic: (plan) => {
+      music.push(plan);
+      if (refusals > 0) {
+        refusals--;
+        return false;
+      }
+      return true;
+    },
   };
   const loop = startRounds({} as Client, { status: () => ({ channel: room, sitters }) }, deps);
   return {
     loop,
     log,
     chimes,
+    music,
     posted,
     leftover,
     other,
     at: (minutes: number) => (now = start + minutes * MIN),
     sit: (n: number) => (sitters = n),
     failEdits: (...codes: number[]) => editFailures.push(...codes),
+    refuseMusic: (n: number) => (refusals = n),
     close: () => (room = null),
   };
 }
@@ -186,6 +220,7 @@ describe("startRounds", () => {
   const open: { loop: { stop: () => Promise<void> } }[] = [];
   afterEach(async () => {
     for (const w of open.splice(0)) await w.loop.stop();
+    await setLongRounds(false);
   });
   const make = () => {
     const w = world();
@@ -219,6 +254,144 @@ describe("startRounds", () => {
     await w.loop.tick();
     expect(w.log.at(-1)).toMatch(/^send /);
     expect(w.chimes).toEqual([]);
+  });
+
+  it("starts the rest music once, a minute before the rest, and stops wanting it when the fire empties", async () => {
+    const w = make();
+    w.sit(1);
+    w.at(1);
+    await w.loop.tick();
+    w.at(23.5);
+    await w.loop.tick();
+    expect(w.music).toEqual([]);
+    w.at(23.7);
+    await w.loop.tick();
+    w.at(24.2);
+    await w.loop.tick();
+    expect(w.music).toHaveLength(1);
+    expect(w.music[0]).toMatchObject({ channelId: "700000000000000001", startAt: TEN + 24 * MIN, endAt: TEN + 30 * MIN, long: false });
+    expect(w.music[0].stillWanted()).toBe(true);
+    w.sit(0);
+    expect(w.music[0].stillWanted()).toBe(false);
+  });
+
+  it("⏳ switches the whole fire to 50 and 10, redraws the message without a chime, and the music follows", async () => {
+    const w = make();
+    w.sit(2);
+    w.at(0.2);
+    await w.loop.tick();
+    expect(w.chimes).toHaveLength(1);
+    w.at(10);
+    await setLongRounds(true);
+    expect(isLongRounds()).toBe(true);
+    expect(w.log.at(-1)).toBe("edit m3");
+    expect(w.posted[0].text).toContain(R.focusTitleLong);
+    expect(w.posted[0].text).toContain("sq|rd_long");
+    w.at(26);
+    await w.loop.tick();
+    expect(w.posted[0].text).toContain(R.focusTitleLong);
+    expect(w.chimes).toHaveLength(1);
+    w.at(48.8);
+    await w.loop.tick();
+    expect(w.music.at(-1)).toMatchObject({ startAt: TEN + 49 * MIN, endAt: TEN + 60 * MIN, long: true });
+    await setLongRounds(false);
+    expect(w.music.at(-1)!.stillWanted()).toBe(false);
+  });
+
+  it("on the long rhythm, does not chime for someone who sits down mid-focus", async () => {
+    const w = make();
+    await setLongRounds(true);
+    w.sit(1);
+    w.at(10);
+    await w.loop.tick();
+    expect(w.posted[0].text).toContain(R.focusTitleLong);
+    expect(w.chimes).toEqual([]);
+  });
+
+  it("chimes the rest when a switch moves the fire into its rest, with no music for that rest", async () => {
+    const w = make();
+    w.sit(1);
+    w.at(30.2);
+    await w.loop.tick();
+    expect(w.chimes).toEqual(["focus 700000000000000001"]);
+    w.at(50.2);
+    await setLongRounds(true);
+    expect(w.posted.at(-1)!.text).toContain(R.restTitleLong);
+    expect(w.chimes).toEqual(["focus 700000000000000001", "rest 700000000000000001"]);
+    expect(w.music).toEqual([]);
+  });
+
+  it("tries the rest music again when the voice was still busy", async () => {
+    const w = make();
+    w.sit(1);
+    w.at(1);
+    await w.loop.tick();
+    w.refuseMusic(1);
+    w.at(23.7);
+    await w.loop.tick();
+    w.at(23.8);
+    await w.loop.tick();
+    w.at(23.9);
+    await w.loop.tick();
+    expect(w.music).toHaveLength(2);
+  });
+
+  it("plans the rest music again after ⏳ there and back inside the music window", async () => {
+    const w = make();
+    w.sit(1);
+    w.at(1);
+    await w.loop.tick();
+    w.at(23.7);
+    await w.loop.tick();
+    w.at(24);
+    await setLongRounds(true);
+    w.at(24.05);
+    await setLongRounds(false);
+    expect(w.music.map((m) => m.long)).toEqual([false, false]);
+    expect(w.music[1].stillWanted()).toBe(true);
+  });
+
+  it("leaves the music out when it is too late to start it on time", async () => {
+    const w = make();
+    w.sit(1);
+    w.at(24.5);
+    await w.loop.tick();
+    expect(w.music).toEqual([]);
+  });
+
+  it("a ⏳ press while the fire is empty holds the long rhythm for another 5 minutes", async () => {
+    const w = make();
+    w.sit(1);
+    w.at(1);
+    await w.loop.tick();
+    w.sit(0);
+    w.at(3);
+    await w.loop.tick();
+    w.at(7);
+    expect(await setLongRounds(true)).toBe(true);
+    w.at(11);
+    await w.loop.tick();
+    expect(isLongRounds()).toBe(true);
+    w.at(12.1);
+    await w.loop.tick();
+    expect(isLongRounds()).toBe(false);
+  });
+
+  it("goes back to the normal rhythm after the fire has been empty for 5 minutes", async () => {
+    const w = make();
+    w.sit(1);
+    w.at(1);
+    await w.loop.tick();
+    await setLongRounds(true);
+    w.sit(0);
+    w.at(3);
+    await w.loop.tick();
+    w.at(7);
+    await w.loop.tick();
+    expect(isLongRounds()).toBe(true);
+    w.at(8.1);
+    await w.loop.tick();
+    expect(isLongRounds()).toBe(false);
   });
 
   it("posts nothing while nobody sits at the fire", async () => {
@@ -355,6 +528,28 @@ function interaction(kind: "button" | "modal", fields: Record<string, string> = 
 }
 
 describe("round buttons", () => {
+  afterEach(async () => {
+    await setLongRounds(false);
+  });
+
+  it("⏳ sets the rhythm the button names, so two quick presses agree", async () => {
+    for (const _ of [1, 2]) {
+      const b = interaction("button");
+      await ACTION_HANDLERS.get("rd_long")!(b.i, ctx(), ["1"]);
+      expect(b.sent.at(-1)).toEqual({ how: "editReply", payload: { content: R.longOn } });
+    }
+    expect(isLongRounds()).toBe(true);
+    const back = interaction("button");
+    await ACTION_HANDLERS.get("rd_long")!(back.i, ctx(), ["0"]);
+    expect(back.sent.at(-1)).toEqual({ how: "editReply", payload: { content: R.longOff } });
+    expect(isLongRounds()).toBe(false);
+  });
+
+  it("⏳ on a message from before the button named its rhythm toggles", async () => {
+    await ACTION_HANDLERS.get("rd_long")!(interaction("button").i, ctx(), []);
+    expect(isLongRounds()).toBe(true);
+  });
+
   it("🎯 opens the intention form and starts a work session with it, privately", async () => {
     const a = interaction("button");
     await ACTION_HANDLERS.get("rd_aim")!(a.i, ctx(), []);

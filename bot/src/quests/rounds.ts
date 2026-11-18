@@ -23,6 +23,7 @@ import type { Client, Message } from "discord.js";
 import { FOCUS_MINUTES, REST_MINUTES } from "@/lib/shift-island/rounds-rules";
 
 import type { Campfire } from "./campfire";
+import { MUSIC_LATE_MS } from "./chime";
 import { cid } from "./ids";
 import { R, type Encounter } from "./rounds-copy";
 import { ButtonStyle, button, buttonRows, renderView, type View } from "./ui";
@@ -32,6 +33,18 @@ const MINUTE = 60_000;
 export const FOCUS_MIN = FOCUS_MINUTES;
 export const REST_MIN = REST_MINUTES;
 const ROUND_MIN = FOCUS_MIN + REST_MIN;
+/** The long rhythm anyone at the fire can switch to (⏳): one round an hour. */
+export const LONG_FOCUS_MIN = 50;
+export const LONG_REST_MIN = 10;
+const LONG_ROUND_MIN = LONG_FOCUS_MIN + LONG_REST_MIN;
+/** The fire goes back to the normal rhythm after it has been empty this long. */
+const LONG_RESET_MS = 5 * MINUTE;
+/** The rest music starts this long before a rest: its fade in. */
+export const MUSIC_LEAD_MS = MINUTE;
+/** The bot steps into the channel this long before the music, so joining never delays it. */
+const MUSIC_JOIN_MS = 20_000;
+/** How soon the loop tries the rest music again when the voice was still busy. */
+const MUSIC_RETRY_MS = 3_000;
 /** How often the loop looks at the clock and the campfire. */
 const TICK_MS = 15_000;
 /** Discord's "Unknown Message" error code: the message no longer exists. */
@@ -49,22 +62,49 @@ export interface RoundAt {
   restAt: number;
   /** When the next round starts, in unix seconds. */
   nextAt: number;
+  /** The long rhythm (50 and 10) rather than the normal one (25 and 5). */
+  long: boolean;
+}
+
+/**
+ * Whether the fire runs the long rhythm. One rhythm for everyone at the fire,
+ * held only in this process: a restart, or the fire staying empty for a few
+ * minutes, goes back to the normal one.
+ */
+let longFire = false;
+/** Set by a ⏳ press, so a press while the fire is empty restarts the countdown back to the normal rhythm. */
+let longPressed = false;
+let refreshRounds: (() => Promise<void>) | null = null;
+
+export function isLongRounds(): boolean {
+  return longFire;
+}
+
+/** Switches the fire's rhythm, redraws the round message at once and returns the rhythm the fire now has. */
+export async function setLongRounds(on: boolean): Promise<boolean> {
+  longFire = on;
+  longPressed = true;
+  await refreshRounds?.();
+  return longFire;
 }
 
 /**
  * The round at a moment. Bangkok is a whole number of hours from UTC, so
  * :00 and :30 on the Bangkok clock are :00 and :30 in UTC.
  */
-export function roundAt(nowMs: number): RoundAt {
+export function roundAt(nowMs: number, long = false): RoundAt {
+  const focus = long ? LONG_FOCUS_MIN : FOCUS_MIN;
+  const length = long ? LONG_ROUND_MIN : ROUND_MIN;
   const minutes = Math.floor(nowMs / MINUTE);
-  const round = Math.floor(minutes / ROUND_MIN);
-  const start = round * ROUND_MIN * 60;
-  const into = minutes - round * ROUND_MIN;
+  const round = Math.floor(minutes / length);
+  const start = round * length * 60;
+  const into = minutes - round * length;
   return {
     round,
-    phase: into < FOCUS_MIN ? "focus" : "rest",
-    restAt: start + FOCUS_MIN * 60,
-    nextAt: start + ROUND_MIN * 60,
+    phase: into < focus ? "focus" : "rest",
+    restAt: start + focus * 60,
+    nextAt: start + length * 60,
+    long,
   };
 }
 
@@ -90,26 +130,33 @@ export function encounterAt(round: number): Encounter | null {
   return R.encounters[roundHash(round, 1) % R.encounters.length];
 }
 
+/** ⏳ switches the whole fire to the long rhythm, or back. */
+function longButton(at: RoundAt) {
+  // The button carries the rhythm it asks for (1 long, 0 normal), so two quick presses agree instead of undoing each other.
+  return button(cid("rd_long", at.long ? 0 : 1), at.long ? R.btnShort : R.btnLong);
+}
+
 /** The round's message: the same for everyone at the fire. */
 export function roundView(at: RoundAt): View {
   if (at.phase === "focus") {
     return {
       tone: "island",
-      title: R.focusTitle,
+      title: at.long ? R.focusTitleLong : R.focusTitle,
       blocks: [
         { kind: "text", text: R.focus(at.restAt) },
-        { kind: "subtext", text: `${R.focusFine}\n${ROUND_MARKER}` },
+        { kind: "subtext", text: `${R.focusFine}${at.long ? `\n${R.longFine}` : ""}\n${ROUND_MARKER}` },
       ],
-      rows: buttonRows([button(cid("rd_aim"), R.btnAim, ButtonStyle.Primary)]),
+      rows: buttonRows([button(cid("rd_aim"), R.btnAim, ButtonStyle.Primary), longButton(at)]),
     };
   }
   const tip = R.tips[((at.round % R.tips.length) + R.tips.length) % R.tips.length];
   const encounter = encounterAt(at.round);
   const buttons = [button(cid("rd_close"), R.btnClose, ButtonStyle.Success), button(cid("rd_aim"), R.btnAim)];
   if (encounter) buttons.push(button(cid("rd_enc", at.round), encounter.button));
+  buttons.push(longButton(at));
   return {
     tone: "island",
-    title: R.restTitle,
+    title: at.long ? R.restTitleLong : R.restTitle,
     blocks: [
       { kind: "text", text: R.rest(tip, at.nextAt) },
       ...(encounter ? [{ kind: "divider" } as const, { kind: "text", text: encounter.text } as const] : []),
@@ -138,6 +185,8 @@ export interface RoundDeps {
   botId?: () => string | undefined;
   /** Plays the round's chime in the voice channel (chime.ts); fire and forget. */
   chime?: (channelId: string, kind: Phase) => void;
+  /** Starts the rest music in the voice channel (chime.ts); fire and forget. False: not taken, try again next tick. */
+  restMusic?: (plan: { channelId: string; startAt: number; endAt: number; long: boolean; stillWanted: () => boolean }) => boolean | void;
 }
 
 /** A phase change older than this is not chimed: someone sat down mid-round, or the bot restarted. */
@@ -145,7 +194,7 @@ export const CHIME_FRESH_MS = 60_000;
 
 /** When the phase a round is in began, in unix seconds. */
 export function phaseStartedAt(at: RoundAt): number {
-  return at.phase === "focus" ? at.restAt - FOCUS_MIN * 60 : at.restAt;
+  return at.phase === "focus" ? at.restAt - (at.long ? LONG_FOCUS_MIN : FOCUS_MIN) * 60 : at.restAt;
 }
 
 function codeOf(error: unknown): string {
@@ -170,7 +219,12 @@ export function startRounds(client: Client, campfire: Pick<Campfire, "status">, 
     });
 
   /** The round message this process posted, and what it shows. */
-  let current: { message: Message; channel: string; round: number; phase: Phase } | null = null;
+  let current: { message: Message; channel: string; round: number; phase: Phase; long: boolean } | null = null;
+  /** The rest whose music was started ("channel:long:round"), so it starts once. */
+  let musicFor = "";
+  /** When the fire was last seen empty, for going back to the normal rhythm. */
+  let emptySince: number | null = null;
+  let retry: ReturnType<typeof setTimeout> | null = null;
   /** Channels already swept for an earlier process's leftovers. */
   const swept = new Set<string>();
   let warned = "";
@@ -207,7 +261,16 @@ export function startRounds(client: Client, campfire: Pick<Campfire, "status">, 
   async function step(): Promise<void> {
     if (stopped) return;
     const { channel: room, sitters } = campfire.status();
-    const at = roundAt(now());
+    const pressed = longPressed;
+    longPressed = false;
+    if (!room || sitters === 0) {
+      // A press while the fire is empty counts as someone there just now.
+      emptySince = pressed ? now() : (emptySince ?? now());
+      if (longFire && now() - emptySince >= LONG_RESET_MS) longFire = false;
+    } else {
+      emptySince = null;
+    }
+    const at = roundAt(now(), longFire);
     if (!room || sitters === 0) {
       // Nobody at the fire: the round's message goes once the round it shows is over.
       if (current && (current.round !== at.round || current.channel !== room)) await remove();
@@ -216,6 +279,22 @@ export function startRounds(client: Client, campfire: Pick<Campfire, "status">, 
     const channel = channelOf(room);
     if (!channel) {
       warnOnce(`${room}:send`, `[shift-quests] rounds: cannot post in the coworking channel's chat (${room}); rounds are off there`);
+      return;
+    }
+    music(room, at);
+    if (current && current.channel === room && current.long !== at.long) {
+      // The rhythm changed (⏳): redraw the same message. No chime, unless the
+      // switch itself moved the fire into another phase: that is a phase start.
+      // No music for a rest begun this way: the track would be cut off mid-way.
+      try {
+        const was = current.phase;
+        await current.message.edit(renderView(roundView(at), { ephemeral: false }));
+        Object.assign(current, { round: at.round, phase: at.phase, long: at.long });
+        if (was !== at.phase) deps.chime?.(room, at.phase);
+      } catch (error) {
+        warnOnce(`edit:${codeOf(error)}`, `[shift-quests] rounds: edit failed (${codeOf(error)})`);
+        if (codeOf(error) === String(UNKNOWN_MESSAGE)) current = null;
+      }
       return;
     }
     if (current && current.channel === room && current.round === at.round) {
@@ -237,11 +316,46 @@ export function startRounds(client: Client, campfire: Pick<Campfire, "status">, 
     await sweep(channel);
     try {
       const message = await channel.send({ ...renderView(roundView(at), { ephemeral: false }), allowedMentions: { parse: [] } });
-      current = { message, channel: room, round: at.round, phase: at.phase };
+      current = { message, channel: room, round: at.round, phase: at.phase, long: at.long };
       warned = "";
       chime(room, at);
     } catch (error) {
       warnOnce(`send:${codeOf(error)}`, `[shift-quests] rounds: post failed (${codeOf(error)})`);
+    }
+  }
+
+  /** Starts the rest music once per rest, a little before its fade in begins. */
+  function music(room: string, at: RoundAt): void {
+    if (!deps.restMusic || at.phase !== "focus") return;
+    // The rhythm or the room changed since: the old rest's session has left, so plan anew.
+    if (!musicFor.startsWith(`${room}:${at.long}:`)) musicFor = "";
+    const startAt = at.restAt * 1000 - MUSIC_LEAD_MS;
+    if (now() < startAt - MUSIC_JOIN_MS || now() > startAt + MUSIC_LATE_MS) return;
+    const key = `${room}:${at.long}:${at.round}`;
+    if (musicFor === key) return;
+    const long = at.long;
+    const taken = deps.restMusic({
+      channelId: room,
+      startAt,
+      endAt: at.nextAt * 1000,
+      long,
+      stillWanted: () => {
+        const status = campfire.status();
+        return status.channel === room && status.sitters > 0 && longFire === long;
+      },
+    });
+    if (taken !== false) {
+      musicFor = key;
+      return;
+    }
+    // Not taken: most likely the previous rhythm's music is still leaving (it
+    // notices within a couple of seconds). Look again soon, inside the start window.
+    if (!retry) {
+      retry = setTimeout(() => {
+        retry = null;
+        void tick();
+      }, MUSIC_RETRY_MS);
+      retry.unref?.();
     }
   }
 
@@ -254,12 +368,15 @@ export function startRounds(client: Client, campfire: Pick<Campfire, "status">, 
 
   const timer = setInterval(() => void tick(), TICK_MS);
   timer.unref?.();
+  refreshRounds = tick;
 
   return {
     tick,
     async stop() {
       stopped = true;
       clearInterval(timer);
+      if (retry) clearTimeout(retry);
+      if (refreshRounds === tick) refreshRounds = null;
       await running;
       // The message would go stale while no bot keeps it: remove it; the next process posts anew.
       await remove();
