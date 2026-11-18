@@ -10,7 +10,7 @@ import { PRIZES_UI } from "./prizes/copy";
 /** The plaza in the world: what it draws, its labels and its tap targets (IslandViewport's `plaza`). */
 export interface PlazaProps {
   input: PlazaInput;
-  /** The only words drawn on the island: the Demo Day sign and the viewer's คุณ tag. */
+  /** The only word drawn over the island's plaza: the viewer's คุณ tag (the countdown board draws its own days). */
   labels: Partial<Record<PlazaLabelId, string>>;
   names: Partial<Record<PlazaSpotId, string>>;
   onSpot?: (id: PlazaSpotId) => void;
@@ -25,12 +25,12 @@ export interface PlazaProps {
 /**
  * The plaza for the world: the Demo Day festival, the notice board's pins
  * (null: no board), the campfire's count and today's visitors (null: none
- * drawn). Only the sign and the viewer's tag are drawn over the canvas
- * (aria-hidden; the stage's accessible name carries the sign's words). The
- * notice board, the campfire and the day's count are not printed on the
- * island: a tap opens the board, the campfire's sheet with its count, or has
- * a person say the day's count. Without `onSpot` there is nothing to tap, so
- * no names either.
+ * drawn). Only the viewer's tag is drawn over the canvas (aria-hidden). The
+ * stage's countdown board is pixel art; its accessible name says the date and
+ * the days in words. The notice board, the campfire and the day's count are
+ * not printed on the island: a tap opens the board, the campfire's sheet with
+ * its count, or has a person say the day's count. Without `onSpot` there is
+ * nothing to tap, so no names either.
  */
 export function plazaProps(
   festival: Festival | null,
@@ -42,7 +42,6 @@ export function plazaProps(
   const count = campfire ? Math.max(0, Math.trunc(campfire.count) || 0) : 0;
   const date = festival ? thaiShortDate(festival.demoDay) : "";
   const labels: PlazaProps["labels"] = {};
-  if (festival) labels.sign = FESTIVAL.sign(date, festival.daysToDemo);
   const crowd = plazaCrowd({ campfire: campfire ? { count } : null, visitors });
   if (crowd.me) labels.me = VISITORS.me;
   let people: string | undefined;

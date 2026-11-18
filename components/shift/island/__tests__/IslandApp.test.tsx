@@ -811,8 +811,9 @@ describe("IslandApp: the plaza", () => {
     expect(input.pins).toEqual(pins.map((pin) => pin.kind));
     expect(input.campfire).toEqual({ count: 3 });
     expect(input.prizes).toBe(true);
-    // The sign is the only words printed: the board and the campfire are named in their buttons.
-    expect(labels).toEqual({ sign: "Demo Day 28 พ.ย.\nอีก 17 วัน" });
+    // No words printed: the countdown board over the stage draws the days itself, and the board, the stage
+    // and the campfire are named in their buttons.
+    expect(labels).toEqual({});
     expect(names).toEqual({
       notice: `กระดานเควสต์: ${pins.map((pin) => pin.title).join(" · ")}`,
       stage: "เวที Demo Day: 28 พ.ย. · อีก 17 วัน",
@@ -825,7 +826,7 @@ describe("IslandApp: the plaza", () => {
     mockToday.day = Math.round(Date.UTC(2026, 10, 28) / 86_400_000);
     try {
       render(<IslandApp page={festive()} picture={null} />);
-      expect(plaza().labels.sign).toBe("Demo Day 28 พ.ย.\nวันนี้");
+      expect(plaza().input.festival?.daysToDemo).toBe(0);
       expect(plaza().names.stage).toBe("เวที Demo Day: 28 พ.ย. · วันนี้");
     } finally {
       mockToday.day = null;
@@ -837,7 +838,7 @@ describe("IslandApp: the plaza", () => {
     render(<IslandApp page={festive({ visitors: { count: 5, team: 2 }, tree })} picture={null} />);
     expect(plaza().input.visitors).toEqual({ count: 5, team: 2, me: true, arriving: false, shirt: "w" });
     // The small คุณ tag is drawn; the day's count is not, only said (the people button, a tap on someone).
-    expect(plaza().labels).toEqual({ sign: "Demo Day 28 พ.ย.\nอีก 17 วัน", me: "คุณ" });
+    expect(plaza().labels).toEqual({ me: "คุณ" });
     expect(plaza().people).toBe("วันนี้มีคนเช็กอินบนเกาะแล้ว 5 คน วันนี้เพื่อนร่วมทีมเช็กอินแล้ว 2 คน");
   });
 
@@ -865,7 +866,7 @@ describe("IslandApp: the plaza", () => {
   it("draws eight at the fire and prints no count over it: its button and its sheet say how many", () => {
     render(<IslandApp page={festive({ campfire: { count: 11, joinUrl: JOIN } })} picture={null} />);
     expect(plaza().input.campfire).toEqual({ count: 11 });
-    expect(plaza().labels).toEqual({ sign: "Demo Day 28 พ.ย.\nอีก 17 วัน" });
+    expect(plaza().labels).toEqual({});
     expect(plaza().names.campfire).toBe("กองไฟ: ห้อง coworking มี 11 คน");
   });
 

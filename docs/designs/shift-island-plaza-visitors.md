@@ -24,7 +24,7 @@ team's):
 > วันนี้มีคนเช็กอินบนเกาะแล้ว 7 คน
 
 Nobody checked in today: nothing is drawn. More people than eight figures:
-eight are drawn, and the count they say is the whole day's.
+eight are drawn, and the count they say is the whole day's (no "+N").
 
 ## Decisions (founder, 2026-11-18)
 
@@ -36,7 +36,7 @@ eight are drawn, and the count they say is the whole day's.
 | 4 | Your team | The database also tells the caller how many of their own team checked in today. Those figures wear the team's colour and gather with the viewer; a tapped teammate says the team's count. Only that team sees it: teammates already know each other. |
 | 5 | A crowd, not clones | Each figure gets its own hair and shirt colours and some idle life: walk, pause, wave, a look at the phone, a few sit by the fire when there are many. |
 | 6 | Next step, not built | An opt-in โชว์ตัวฉันบนเกาะ (below). |
-| 7 | Words on the island | **2026-11-18, later ("dont clutter"):** no always-on text over the map but the Demo Day sign and the small คุณ. No count under the crowd, no "+N", no name over the notice board, no count over the campfire: a tapped person says the day's count, the campfire opens its sheet with the room's count, the notice board opens the board. |
+| 7 | Words on the island | **2026-11-18, later ("dont clutter"):** no always-on text over the plaza but the small คุณ. No count under the crowd, no "+N", no name over the notice board, no count over the campfire: a tapped person says the day's count, the campfire opens its sheet with the room's count, the notice board opens the board. The Demo Day sign's two-line label went with the rearranged plaza (#336): a pixel countdown board over the stage reads D-10 on its own. The plot signs from #336 (a project's name under its tree, close view only) stay: they belong to the plots, not the plaza. |
 
 ## Why it is shaped like this
 
@@ -100,8 +100,9 @@ eight are drawn, and the count they say is the whole day's.
   arrival) play from when they appear and then hold their last frame. Under
   reduced motion every figure stands still and the viewer is already home.
 - **Words on the island** (`PlazaLayer`, decision 7): only a small คุณ over
-  the viewer's head, held back until their arrival walk ends, and the Demo
-  Day sign. The day's count (and the team's line) is never drawn: today's
+  the viewer's head, held back until their arrival walk ends. The Demo Day
+  stage's countdown board is pixel art with the days on its face, and the plot
+  signs under named plots belong to the plots (close view only). The day's count (and the team's line) is never drawn: today's
   visitors say it when tapped (`figureLine.ts`), and screen readers get it in
   the people button's name, or read once where nobody can be greeted.
 

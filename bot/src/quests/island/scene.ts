@@ -70,9 +70,16 @@ export const TILE = 16;
 export const MAX_WIDTH = 1600;
 const MIN_COLS = 30;
 const MAX_COLS = MAX_WIDTH / TILE;
-/** Plaza size in tiles, centred on the island. */
-const PLAZA_W = 6;
-const PLAZA_H = 4;
+/**
+ * Plaza size in tiles, centred on the island: wide enough for the plaza's
+ * pieces on the web (notice board and campfire left of the well, the Demo Day
+ * stage and prize board right of it) and one row deeper below the well. It
+ * stays inside the ring SPOTS keeps free, so no tree, tag or path moves.
+ */
+const PLAZA_W = 10;
+const PLAZA_H = 5;
+/** Plaza rows above the centre row (the rest are the centre row and below), so the banner's row never moves. */
+const PLAZA_UP = 2;
 /** The land is an ellipse this many columns and rows wide (as a share of the image). */
 const LAND_X = 0.44;
 const LAND_Y = 0.4;
@@ -226,7 +233,7 @@ export function layoutFor(maxSlot: number): Layout {
       land.push([]);
       for (let x = 0; x < cols; x++) land[y].push(isLand(cols, rows, x - pcx, y - pcy));
     }
-    const layout = { cols, rows, land, plaza: { x: pcx - PLAZA_W / 2, y: pcy - PLAZA_H / 2, w: PLAZA_W, h: PLAZA_H }, pcx, pcy };
+    const layout = { cols, rows, land, plaza: { x: pcx - PLAZA_W / 2, y: pcy - PLAZA_UP, w: PLAZA_W, h: PLAZA_H }, pcx, pcy };
     layouts.set(cols, layout);
     return layout;
   }

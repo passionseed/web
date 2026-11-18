@@ -341,7 +341,8 @@ const STRIPS: Record<string, string[]> = {
   builder: [...ACTOR_FRAMES.builder],
   tester: [...ACTOR_FRAMES.tester],
   notice: ["notice_board", "notice_note_active", "notice_note_main", "notice_note_side", "prize_board"],
-  fest_stage: ["fest_stage_0", "fest_stage_1", "fest_stage_2", "fest_stage_3", "fest_sign"],
+  fest_stage: ["fest_stage_0", "fest_stage_1", "fest_stage_2", "fest_stage_3", "fest_count"],
+  countdown: ["count_d", "count_dash", "count_a", "count_y", ..."0123456789".split("").map((d) => `count_${d}`)],
   goal: ["goal_string", "goal_bulb", "festoon"],
   flags: ["booth_flag", "star_flag", "key_flag", "visitor"],
   campfire: ["campfire_pit", ...ACTOR_FRAMES.campfireFlame.slice(0, 3)],
@@ -431,27 +432,39 @@ setInterval(() => { if (!document.getElementById("pause").checked) draw(tick++);
 /**
  * Review copies of what lib/shift-island/live owns (atlas.ts UNTINTED and
  * LIT_KEYS, lighting.ts night multiply, plaza.ts offsets from the plaza
- * centre). The bot cannot import the web, so these mirror the plan's contract;
+ * centre and its countdown glyphs). The bot cannot import the web, so these mirror the plan's contract;
  * the world's own tests pin the real values.
  */
 const NIGHT: readonly [number, number, number] = [0.4, 0.47, 0.72];
 const PREVIEW_UNTINTED = new Set([
   "marker", "lantern_glow_0", "lantern_glow_1", "goal_bulb", ...ACTOR_FRAMES.campfireFlame,
+  ...["d", "dash", "a", "y", ..."0123456789"].map((g) => `count_${g}`),
 ]);
 const PREVIEW_LIT: Readonly<Record<string, string>> = {
-  lantern: "yif", lamp_post: "yif", festoon: "yifrp", campfire_pit: "yi", fest_stage_3: "y",
+  lantern: "yif", lamp_post: "yif", festoon: "yifrp", campfire_pit: "yi", fest_stage_3: "y", fest_count: "f",
 };
 type Offset = readonly [number, number];
 const PLAZA_PREVIEW = {
-  noticeBoard: [-38, -24] as Offset,
-  notes: [[-35, -21], [-29, -22], [-22, -21]] as readonly Offset[],
-  sign: [36, -12] as Offset,
-  stage: [50, -16] as Offset,
-  prizeBoard: [15, 10] as Offset,
-  pit: [-63, 46] as Offset,
-  flame: [-61, 38] as Offset,
-  seats: [[-73, 54], [-47, 54], [-71, 34], [-49, 34], [-87, 52], [-33, 52], [-85, 36], [-35, 36]] as readonly Offset[],
+  /** The plaza's tiles around its centre (scene.ts PLAZA_W, PLAZA_H, PLAZA_UP), for the night lamps. */
+  rect: { x: -80, y: -32, w: 160, h: 80 },
+  noticeBoard: [-68, -26] as Offset,
+  notes: [[-65, -23], [-59, -24], [-52, -23]] as readonly Offset[],
+  countdown: [24, -40] as Offset,
+  stage: [24, -22] as Offset,
+  prizeBoard: [50, 14] as Offset,
+  pit: [-42, 26] as Offset,
+  flame: [-40, 18] as Offset,
+  seats: [[-52, 34], [-26, 34], [-50, 14], [-28, 14], [-66, 32], [-12, 32], [-64, 16], [-14, 16]] as readonly Offset[],
+  /** Seats right of this face left; seats above FRONT sit behind the fire. */
+  fireX: -35,
+  front: 25,
 };
+/** plaza.ts countdownGlyphs and its face: glyphs centred on the board's 40 x 12 face at (2, 2). */
+function previewCountdown(days: number): string[] {
+  if (days < 0) return [];
+  if (days === 0) return ["count_d", "count_dash", "count_d", "count_a", "count_y"];
+  return ["count_d", "count_dash", ...String(Math.min(999, days)).split("").map((d) => `count_${d}`)];
+}
 const SITTER_FAMILIES = [ACTOR_FRAMES.sitA, ACTOR_FRAMES.sitB, ACTOR_FRAMES.sitC, ACTOR_FRAMES.sitD] as const;
 
 interface PlazaPanel {
@@ -460,6 +473,8 @@ interface PlazaPanel {
   lit: number;
   people: number;
   pins: ("active" | "main" | "side")[];
+  /** Days to Demo Day on the countdown board. */
+  days: number;
   /** Which frame of each animation (0 = the reduced-motion still). */
   frame: number;
 }
@@ -519,7 +534,8 @@ function drawPlaza(layer: Layer, scene: IslandScene, origin: { x: number; y: num
   const py = scene.well.y + 12;
   const at = ([dx, dy]: Offset): [number, number] => [px + dx, py + dy];
   if (night) {
-    const plaza = { x: px - 48, y: py - 32, w: 96, h: 64 };
+    const r = PLAZA_PREVIEW.rect;
+    const plaza = { x: px + r.x, y: py + r.y, w: r.w, h: r.h };
     const [lw, lh] = MOTION_SIZES.lamp_post;
     put("lamp_post", plaza.x + 2, plaza.y - 10);
     put("lamp_post", plaza.x + plaza.w - 2 - lw, plaza.y - 10);
@@ -532,8 +548,12 @@ function drawPlaza(layer: Layer, scene: IslandScene, origin: { x: number; y: num
     put("goal_string", scene.banner.x, scene.banner.y);
     for (let i = 0; i < panel.lit; i++) put("goal_bulb", scene.banner.x + GOAL_BULB_SPOTS[i][0], scene.banner.y + GOAL_BULB_SPOTS[i][1]);
   }
+  const [bx, by] = at(PLAZA_PREVIEW.countdown);
+  put("fest_count", bx, by);
+  const glyphs = previewCountdown(panel.days);
+  const width = glyphs.length * 8 - 2;
+  glyphs.forEach((g, i) => put(g, bx + 2 + Math.floor((40 - width) / 2) + i * 8, by + 3));
   put(`fest_stage_${panel.step}`, ...at(PLAZA_PREVIEW.stage));
-  put("fest_sign", ...at(PLAZA_PREVIEW.sign));
   put("notice_board", ...at(PLAZA_PREVIEW.noticeBoard));
   panel.pins.forEach((kind, i) => put(`notice_note_${kind}`, ...at(PLAZA_PREVIEW.notes[i])));
   for (const tree of scene.trees) {
@@ -547,11 +567,11 @@ function drawPlaza(layer: Layer, scene: IslandScene, origin: { x: number; y: num
     const frames = SITTER_FAMILIES[i % 4];
     const order = i % 2 === 1 ? [...frames].reverse() : [...frames];
     const [dx, dy] = PLAZA_PREVIEW.seats[i];
-    put(order[panel.frame % 2], ...at([dx, dy]), dx > -56);
+    put(order[panel.frame % 2], ...at([dx, dy]), dx > PLAZA_PREVIEW.fireX);
   };
-  for (let i = 0; i < seated; i++) if (PLAZA_PREVIEW.seats[i][1] < 45) seat(i);
+  for (let i = 0; i < seated; i++) if (PLAZA_PREVIEW.seats[i][1] < PLAZA_PREVIEW.front) seat(i);
   if (panel.people > 0) put(ACTOR_FRAMES.campfireFlame[panel.frame % 4], ...at(PLAZA_PREVIEW.flame));
-  for (let i = 0; i < seated; i++) if (PLAZA_PREVIEW.seats[i][1] >= 45) seat(i);
+  for (let i = 0; i < seated; i++) if (PLAZA_PREVIEW.seats[i][1] >= PLAZA_PREVIEW.front) seat(i);
 }
 
 /** The plaza in a real scene: stage steps 0-3, lanterns 0/3/6/8, campfire 0/3/5/11, by day and at night. */
@@ -561,10 +581,10 @@ function plazaComposite(all: Record<string, string[]>, rgb: Record<string, RGB>,
   const cy = scene.well.y + 12;
   const crop = { x: cx - 112, y: cy - 72, w: 224, h: 152 };
   const panels: PlazaPanel[] = [
-    { title: "step 0", step: 0, lit: 0, people: 0, pins: ["main"], frame },
-    { title: "step 1", step: 1, lit: 3, people: 3, pins: ["active", "main", "side"], frame },
-    { title: "step 2", step: 2, lit: 6, people: 5, pins: ["main", "side", "side"], frame },
-    { title: "step 3", step: 3, lit: 8, people: 11, pins: ["active", "active", "main"], frame },
+    { title: "step 0", step: 0, lit: 0, people: 0, pins: ["main"], days: 41, frame },
+    { title: "step 1", step: 1, lit: 3, people: 3, pins: ["active", "main", "side"], days: 17, frame },
+    { title: "step 2", step: 2, lit: 6, people: 5, pins: ["main", "side", "side"], days: 3, frame },
+    { title: "step 3", step: 3, lit: 8, people: 11, pins: ["active", "active", "main"], days: 0, frame },
   ];
   const gap = 8;
   const out = blank(panels.length * (crop.w * scale + gap) + gap, 2 * (crop.h * scale + gap) + gap, [40, 44, 46]);

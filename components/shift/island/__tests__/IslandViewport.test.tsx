@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { buildScene } from "@/bot/src/quests/island/scene";
 import type { IslandCanvasProps } from "@/components/shift/island/live/IslandCanvas";
 import { waterColor } from "@/lib/shift-island/live/lighting";
-import { LABEL_DOOR, labelInDoor, plazaWorld, type PlazaInput, type PlazaLabelId, type PlazaSpotId } from "@/lib/shift-island/live/plaza";
+import { plazaWorld, type PlazaInput, type PlazaSpotId } from "@/lib/shift-island/live/plaza";
 import type { IslandPicture } from "@/lib/shift-island/picture";
 
 import { ISLAND, PRE_STAGE, stageName } from "../copy";
@@ -61,19 +61,50 @@ describe("IslandViewport", () => {
     expect(image).toHaveAttribute("width", "960");
     expect(image).toHaveAttribute("height", "576");
     expect(screen.getByRole("button", { name: "แปลงของคุณ #3, ต้นกล้า" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "แปลง #4" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "แปลง #4, สวนผักดาดฟ้า" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "แปลง #9" })).toBeInTheDocument();
   });
 
-  it("names only the slot on other plots, whatever the database sent", () => {
+  it("puts a sign with the project name under each named plot, and none on the rest", () => {
     render(<IslandViewport picture={picture} onPlot={jest.fn()} />);
-    expect(screen.queryByRole("button", { name: /สวนผักดาดฟ้า/ })).toBeNull();
+    const signs = screen.getByTestId("plot-signs");
+    expect(signs).toHaveAttribute("aria-hidden", "true");
+    expect(signs.children).toHaveLength(1);
+    const sign = within(signs).getByText("สวนผักดาดฟ้า");
+    expect(sign).toHaveAttribute("data-slot", "4");
+    // Centred under the plot's box: x + w / 2, y + h.
+    expect(sign).toHaveStyle({ left: "23%", top: "40%" });
+  });
+
+  it("never signs a plain plot or a blank name, whatever the database sent", () => {
+    const odd: IslandPicture = {
+      ...picture,
+      hotspots: [
+        { ...picture.hotspots[1], slot: 5, name: "   " },
+        { ...picture.hotspots[2], name: "ไม่ควรขึ้น" },
+      ],
+      mine: null,
+    };
+    render(<IslandViewport picture={odd} onPlot={jest.fn()} />);
+    expect(screen.queryByTestId("plot-signs")).toBeNull();
+    expect(screen.getByRole("button", { name: "แปลง #5" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "แปลง #9" })).toBeInTheDocument();
+  });
+
+  it("drops the signs on the whole island, where plots sit too close", () => {
+    render(<IslandViewport picture={picture} onPlot={jest.fn()} whole />);
+    expect(screen.queryByTestId("plot-signs")).toBeNull();
+  });
+
+  it("keeps the signs on the no-project island, which takes no taps", () => {
+    render(<IslandViewport picture={picture} interactive={false} />);
+    expect(within(screen.getByTestId("plot-signs")).getByText("สวนผักดาดฟ้า")).toBeInTheDocument();
   });
 
   it("hands the tapped plot up", () => {
     const onPlot = jest.fn();
     render(<IslandViewport picture={picture} onPlot={onPlot} />);
-    fireEvent.click(screen.getByRole("button", { name: "แปลง #4" }));
+    fireEvent.click(screen.getByRole("button", { name: "แปลง #4, สวนผักดาดฟ้า" }));
     expect(onPlot).toHaveBeenCalledWith(picture.hotspots[1]);
   });
 
@@ -117,7 +148,7 @@ describe("IslandViewport", () => {
 
   it("drops the 48px tap floor when the whole island is shown, so plots do not overlap", () => {
     const { rerender } = render(<IslandViewport picture={picture} onPlot={jest.fn()} />);
-    const plot = screen.getByRole("button", { name: "แปลง #4" });
+    const plot = screen.getByRole("button", { name: "แปลง #4, สวนผักดาดฟ้า" });
     expect(plot.style.width).toBe("max(48px, 6%)");
     rerender(<IslandViewport picture={picture} onPlot={jest.fn()} whole />);
     expect(plot.style.width).toBe("6%");
@@ -139,7 +170,7 @@ describe("IslandViewport", () => {
     expect(named.tagName).toBe("SPAN");
     expect(container.querySelector("img")).toHaveStyle({ visibility: "hidden" });
     // Plots still answer taps above the canvas.
-    expect(screen.getByRole("button", { name: "แปลง #4" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "แปลง #4, สวนผักดาดฟ้า" })).toBeInTheDocument();
     // The sea around the picture takes the light of the hour.
     const viewport = container.firstElementChild as HTMLElement;
     const [r, g, b] = [1, 3, 5].map((i) => parseInt(waterColor("night").slice(i, i + 2), 16));
@@ -210,7 +241,7 @@ describe("IslandViewport", () => {
       expect(crop!.w).toBeGreaterThan(live.width);
       expect(crop!.h).toBeGreaterThan(live.height);
       // Plots stay on the picture's own box.
-      const plot = screen.getByRole("button", { name: "แปลง #4" });
+      const plot = screen.getByRole("button", { name: "แปลง #4, สวนผักดาดฟ้า" });
       expect((plot.parentElement!.parentElement as HTMLElement).style.width).toBe("960px");
     });
 
@@ -257,7 +288,7 @@ describe("IslandViewport", () => {
       first.unmount();
 
       render(<IslandViewport picture={picture} onPlot={jest.fn()} />);
-      fireEvent.click(screen.getByRole("button", { name: "แปลง #4" }));
+      fireEvent.click(screen.getByRole("button", { name: "แปลง #4, สวนผักดาดฟ้า" }));
       expect(screen.queryByText("เลือกต้นไม้เพื่อดูแปลง")).toBeNull();
     } finally {
       jest.useRealTimers();
@@ -268,7 +299,7 @@ describe("IslandViewport", () => {
     render(<IslandViewport picture={picture} onPlot={jest.fn()} />);
     const group = screen.getByRole("group", { name: "แปลงบนเกาะ" });
     const mine = screen.getByRole("button", { name: "แปลงของคุณ #3, ต้นกล้า" });
-    const four = screen.getByRole("button", { name: "แปลง #4" });
+    const four = screen.getByRole("button", { name: "แปลง #4, สวนผักดาดฟ้า" });
     const nine = screen.getByRole("button", { name: "แปลง #9" });
     expect(group).toContainElement(mine);
     expect([mine, four, nine].map((b) => b.tabIndex)).toEqual([0, -1, -1]);
@@ -352,7 +383,8 @@ describe("IslandViewport", () => {
       campfire: { count: 11 },
       prizes: true,
     };
-    const labels = { sign: "Demo Day 28 พ.ย.\nอีก 17 วัน" };
+    // The only word the plaza prints; it shows only over the viewer's own figure (visiting below).
+    const labels = { me: "คุณ" };
     const names: Record<PlazaSpotId, string> = {
       notice: "กระดานเควสต์: ตั้งชื่อปัญหา",
       stage: "Demo Day 28 พ.ย. อีก 17 วัน",
@@ -360,6 +392,8 @@ describe("IslandViewport", () => {
       prizes: "ป้ายรางวัล Demo Day",
     };
     const plaza = (onSpot?: (id: PlazaSpotId) => void) => ({ input, labels, names, onSpot });
+    /** The same plaza with the viewer checked in today: their figure, and their คุณ tag over it. */
+    const visiting = () => ({ ...plaza(jest.fn()), input: { ...input, visitors: { count: 3, team: 0, me: true } } });
 
     it("hands the living island the plaza's sprites, and the same empty list without a plaza", () => {
       const { rerender } = render(<IslandViewport picture={live} onPlot={jest.fn()} />);
@@ -389,7 +423,7 @@ describe("IslandViewport", () => {
       mockLive.mode = "fail";
       render(<IslandViewport picture={live} onPlot={jest.fn()} plaza={plaza(jest.fn())} />);
       expect(screen.queryByRole("group", { name: "ลานกลางเกาะ" })).toBeNull();
-      expect(screen.getByRole("button", { name: "แปลง #4" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "แปลง #4, สวนผักดาดฟ้า" })).toBeInTheDocument();
     });
 
     it("puts a named button on each plaza spot, at its place on the picture, apart from the plots", () => {
@@ -431,49 +465,28 @@ describe("IslandViewport", () => {
     });
 
     it("shows no labels before the living island draws (the PNG has no plaza)", () => {
-      const { container } = render(<IslandViewport picture={live} onPlot={jest.fn()} plaza={plaza(jest.fn())} />);
+      const { container } = render(<IslandViewport picture={live} onPlot={jest.fn()} plaza={visiting()} />);
       expect(container.querySelector("[data-label]")).toBeNull();
     });
 
-    it("prints only the sign over the living island, in the stage's door, hidden from assistive tech", () => {
+    it("prints no words over the places, only the viewer's คุณ tag over their own figure, hidden from assistive tech", () => {
       mockLive.mode = "ready";
-      const { container, rerender } = render(<IslandViewport picture={live} onPlot={jest.fn()} plaza={plaza(jest.fn())} />);
+      const { container, rerender } = render(<IslandViewport picture={live} onPlot={jest.fn()} plaza={visiting()} />);
       const shown = [...container.querySelectorAll<HTMLElement>("[data-label]")];
-      expect(shown.map((el) => [el.dataset.label, el.dataset.anchor, el.textContent])).toEqual([["sign", "bottom", labels.sign]]);
-      // No words over the notice board, the prize board or the campfire (11 people, more than its seats): a tap opens each.
-      for (const id of ["notice", "prizes", "campfire"]) {
+      expect(shown.map((el) => [el.dataset.label, el.dataset.anchor, el.textContent])).toEqual([["me", "bottom", "คุณ"]]);
+      // No words over the notice board, the stage (its countdown board draws the days), the prize board or the
+      // campfire (11 people, more than its seats): a tap opens each.
+      for (const id of ["notice", "stage", "prizes", "campfire"]) {
         expect(container.querySelector(`[data-spot="${id}"]`)).toBeEmptyDOMElement();
       }
-      const world = plazaWorld(live.scene!, input);
-      const points = new Map(world.labels.map((label) => [label.id, label]));
-      shown.forEach((el) => {
-        const point = points.get(el.dataset.label as PlazaLabelId)!;
-        // Each names a place with a button, so it is drawn in that button, at the same point of the picture.
-        const door = world.spots.find((spot) => spot.id === LABEL_DOOR[point.id])!;
-        expect(el.closest("button")).toHaveAttribute("data-spot", door.id);
-        const at = labelInDoor(point, door);
-        expect(el.style.left).toBe(`${at.x}%`);
-        expect(el.style.top).toBe(`${at.y}%`);
-        expect(door.x + (at.x / 100) * door.w).toBeCloseTo(point.x, 3);
-        expect(door.y + (at.y / 100) * door.h).toBeCloseTo(point.y, 3);
+      const points = plazaWorld(live.scene!, visiting().input).labels;
+      shown.forEach((el, i) => {
+        expect(el.style.left).toBe(`${points[i].x}%`);
+        expect(el.style.top).toBe(`${points[i].y}%`);
         expect(el.closest("[aria-hidden='true']")).not.toBeNull();
       });
-      rerender(<IslandViewport picture={live} onPlot={jest.fn()} plaza={plaza(jest.fn())} whole />);
+      rerender(<IslandViewport picture={live} onPlot={jest.fn()} plaza={visiting()} whole />);
       expect(container.querySelector("[data-label]")).toBeNull();
-    });
-
-    it("makes the sign part of the stage's door: a tap on the words opens the stage, and the button's name stays its own", () => {
-      mockLive.mode = "ready";
-      const onSpot = jest.fn();
-      const { container } = render(<IslandViewport picture={live} onPlot={jest.fn()} plaza={plaza(onSpot)} />);
-      const words = container.querySelector<HTMLElement>('[data-label="sign"]')!;
-      const stage = screen.getByRole("button", { name: names.stage });
-      expect(stage).toContainElement(words);
-      fireEvent.click(words);
-      expect(onSpot.mock.calls).toEqual([["stage"]]);
-      // Without a door (nobody listens), the words are a picture label again, out of every button.
-      const { container: still } = render(<IslandViewport picture={live} onPlot={jest.fn()} plaza={plaza()} />);
-      expect(still.querySelector('[data-label="sign"]')!.closest("button")).toBeNull();
     });
 
     describe("the notice board on screen", () => {
@@ -580,7 +593,14 @@ describe("IslandViewport", () => {
 describe("hotspotLabel", () => {
   it("names the own plot's planted seed at stage 0 as the seed, never an empty plot", () => {
     const spot = { slot: 3, mine: true, plain: false, stage: 0, name: "แอป", x: 0, y: 0, w: 1, h: 1 };
-    expect(hotspotLabel({ ...spot, seeded: true })).toBe(ISLAND.myPlot(3, PRE_STAGE));
-    expect(hotspotLabel(spot)).toBe(ISLAND.myPlot(3, stageName(0)));
+    expect(hotspotLabel({ ...spot, seeded: true })).toBe(ISLAND.signed(ISLAND.myPlot(3, PRE_STAGE), "แอป"));
+    expect(hotspotLabel(spot)).toBe(ISLAND.signed(ISLAND.myPlot(3, stageName(0)), "แอป"));
+  });
+
+  it("adds the sign's name after the plot, and only a sign's name", () => {
+    const spot = { slot: 4, mine: false, plain: false, stage: 2, name: " สวนผักดาดฟ้า ", x: 0, y: 0, w: 1, h: 1 };
+    expect(hotspotLabel(spot)).toBe("แปลง #4, สวนผักดาดฟ้า");
+    expect(hotspotLabel({ ...spot, name: null })).toBe("แปลง #4");
+    expect(hotspotLabel({ ...spot, plain: true })).toBe("แปลง #4");
   });
 });

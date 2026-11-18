@@ -108,7 +108,7 @@ function obstacles(scene: IslandScene, world: PlazaWorld): Obstacle[] {
   out.push({ what: "well", rect: { x: scene.well.x, y: scene.well.y, w: 24, h: 24 } });
   lampRects(model).forEach((rect, i) => out.push({ what: `lamp ${i}`, rect }));
   if (scene.banner) out.push({ what: "banner", rect: { x: scene.banner.x, y: scene.banner.y, w: 48, h: 20 } });
-  // The plaza's own pieces (board, notes, stage, sign, prize board, campfire, its seats and flame).
+  // The plaza's own pieces (board, notes, countdown, stage, prize board, campfire, its seats and flame).
   for (const a of world.actors) {
     if (isCrowd(a)) continue;
     const [w, h] = MOTION_SIZES[a.frames[0] as MotionSpriteName];
@@ -129,13 +129,13 @@ function onLand(scene: IslandScene, r: Rect): boolean {
 }
 
 /**
+/**
  * A label's text box in native px (CSS px / 2 at the usual 2x), as drawn at
  * 375px with room to spare: the viewer's small คุณ tag (11px text, about
- * 32 x 17 CSS px) and the Demo Day sign's two lines. Nothing else is printed.
+ * 32 x 17 CSS px). Nothing else is printed over the plaza.
  */
 const LABEL_SIZE: Record<PlazaLabel["id"], { w: number; h: number }> = {
   me: { w: 20, h: 10 },
-  sign: { w: 62, h: 18 },
 };
 function labelBox(scene: IslandScene, label: PlazaLabel): Rect {
   const { w, h } = LABEL_SIZE[label.id];
@@ -214,15 +214,15 @@ describe("the plaza's people in the world", () => {
     expect(world.spots).toEqual([]);
   });
 
-  it("matches the plan: strollers, teammates, the viewer, guests in the campfire's empty seats, and only the sign and the tag in words", () => {
+  it("matches the plan: strollers, teammates, the viewer, guests in the campfire's empty seats, and only the viewer's tag in words", () => {
     const input = busy(scene);
     const world = plazaWorld(scene, input);
     const plan = plazaCrowd(input);
     expect(crowd(world)).toHaveLength(plan.strollers + plan.team + 1);
     // Three coworkers and two guests sit at the fire.
     expect(world.actors.filter((a) => a.frames[0].startsWith("sit_"))).toHaveLength(3 + plan.sitters);
-    // No count anywhere (the day's, the campfire's, "+N"), no name over the notice board.
-    expect(world.labels.map((l) => l.id)).toEqual(["sign", "me"]);
+    // No count anywhere (the day's, the campfire's, "+N"), no name over the notice board, no sign over the stage.
+    expect(world.labels.map((l) => l.id)).toEqual(["me"]);
   });
 
   it("lights the fire's seats for guests even when the coworking room is empty", () => {
@@ -330,7 +330,7 @@ describe("the plaza's people: placement on every island", () => {
     expect(problems).toEqual([]);
   });
 
-  it.each(cases)("the viewer's tag stays off trees and tags, and off the sign ($n plots, mine $mine)", ({ n, mine, shift, decorated }) => {
+  it.each(cases)("the viewer's tag stays off trees and tags ($n plots, mine $mine)", ({ n, mine, shift, decorated }) => {
     const scene = buildScene(plots(n, mine, shift, decorated), { markMine: true, festival: true });
     const world = plazaWorld(scene, busy(scene));
     const model = sceneModel(scene);

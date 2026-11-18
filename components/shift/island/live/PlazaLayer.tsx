@@ -2,7 +2,7 @@
 
 import type { CSSProperties } from "react";
 
-import { LABEL_DOOR, QUIET_WHILE_TALKING, labelInDoor, type PlazaLabel, type PlazaLabelId, type PlazaSpotId, type PlazaWorld } from "@/lib/shift-island/live/plaza";
+import { QUIET_WHILE_TALKING, type PlazaLabel, type PlazaLabelId, type PlazaSpotId, type PlazaWorld } from "@/lib/shift-island/live/plaza";
 
 import { FIGURES } from "../copy";
 import styles from "../world.module.css";
@@ -12,7 +12,7 @@ const PLAZA_GROUP = "ลานกลางเกาะ";
 
 export interface PlazaLayerProps {
   world: PlazaWorld;
-  /** Label text by id (the sign, the viewer's tag); a label without text is not shown. The sign's text has a "\n" between its two lines. */
+  /** Label text by id (the viewer's คุณ tag); a label without text is not shown. */
   labels: Partial<Record<PlazaLabelId, string>>;
   /** Accessible names by spot; a spot without a name has no button. */
   names: Partial<Record<PlazaSpotId, string>>;
@@ -36,13 +36,12 @@ export interface PlazaLayerProps {
 }
 
 /**
- * Placed at its point in the picture, or at `at` (percent of the door it is
- * drawn in). A quiet label keeps its place, only out of sight, so it comes
- * back at once when the bubble closes, without waiting out the arrival walk
- * again (display: none would replay its fade in).
+ * Placed at its point in the picture. A quiet label keeps its place, only out
+ * of sight, so it comes back at once when the bubble closes, without waiting
+ * out the arrival walk again (display: none would replay its fade in).
  */
-function labelStyle(label: PlazaLabel, at: { x: number; y: number } = label, quiet = false): CSSProperties {
-  const style: CSSProperties = { left: `${at.x}%`, top: `${at.y}%` };
+function labelStyle(label: PlazaLabel, quiet: boolean): CSSProperties {
+  const style: CSSProperties = { left: `${label.x}%`, top: `${label.y}%` };
   // The viewer's tag waits for their arrival walk (CSS shows it at once under reduced motion).
   if (label.delayMs) style.animationDelay = `${label.delayMs}ms`;
   if (quiet) style.visibility = "hidden";
@@ -54,12 +53,11 @@ const round4 = (v: number) => Math.round(v * 10_000) / 10_000;
 /**
  * The plaza's DOM over the living island, inside the picture's box: one
  * transparent button per tap target (the notice board, the stage, the prize
- * board, the campfire) and the only words the island prints: the Demo Day
- * sign, drawn inside the stage's button so a tap on it opens the stage
- * (LABEL_DOOR), and the viewer's small คุณ tag. Nothing else floats (founder,
- * 2026-11-18, "dont clutter"): the notice board, the campfire's count and the
- * day's count are a tap away. Labels are decoration for sighted users only:
- * the stage's button carries the sign's words in its name.
+ * board, the campfire) and the only word the plaza prints: the viewer's small
+ * คุณ tag. Nothing else floats (founder, 2026-11-18, "dont clutter"): the
+ * stage's countdown board draws its days in pixels, and the notice board, the
+ * campfire's count and the day's count are a tap away. The tag is decoration
+ * for sighted users only; each button carries its place's words in its name.
  * Where the people can talk (`onPeople`), a button out of sight until a
  * keyboard focuses it is the keyboard's and screen reader's way to what a tap
  * on a person says, named with the day's count. Where they cannot, the day's
@@ -70,15 +68,8 @@ const round4 = (v: number) => Math.round(v * 10_000) / 10_000;
 export function PlazaLayer({ world, labels, names, onSpot, interactive, showLabels, whole, onPeople, people, talking = false }: PlazaLayerProps) {
   const spots = interactive && onSpot ? world.spots.filter((spot) => names[spot.id]) : [];
   const turn = interactive ? onPeople : undefined;
-  const all = showLabels ? world.labels.filter((label) => labels[label.id]) : [];
-  const doors = new Set(spots.map((spot) => spot.id));
+  const shown = showLabels ? world.labels.filter((label) => labels[label.id]) : [];
   const quiet = (label: PlazaLabel) => talking && QUIET_WHILE_TALKING.has(label.id);
-  const doorOf = (label: PlazaLabel) => {
-    const door = LABEL_DOOR[label.id];
-    return door != null && doors.has(door) ? door : null;
-  };
-  // A place's name goes in its door; the rest float over the picture.
-  const shown = all.filter((label) => doorOf(label) == null);
   // Nobody to greet: the day's count is said once, for screen readers, while the figures show.
   const peopleLine = people && !turn && showLabels ? people : null;
 
@@ -101,22 +92,7 @@ export function PlazaLayer({ world, labels, names, onSpot, interactive, showLabe
               }}
               aria-label={names[spot.id]}
               onClick={() => onSpot?.(spot.id)}
-            >
-              {all
-                .filter((label) => doorOf(label) === spot.id)
-                .map((label) => (
-                  <span
-                    key={label.id}
-                    className={styles.plazaLabel}
-                    data-label={label.id}
-                    data-anchor={label.anchor}
-                    style={labelStyle(label, labelInDoor(label, spot), quiet(label))}
-                    aria-hidden="true"
-                  >
-                    {labels[label.id]}
-                  </span>
-                ))}
-            </button>
+            />
           ))}
           {turn ? (
             <button type="button" className={styles.peopleHidden} onClick={turn}>
@@ -134,7 +110,7 @@ export function PlazaLayer({ world, labels, names, onSpot, interactive, showLabe
               data-label={label.id}
               data-anchor={label.anchor}
               data-delayed={label.delayMs ? "true" : undefined}
-              style={labelStyle(label, label, quiet(label))}
+              style={labelStyle(label, quiet(label))}
             >
               {labels[label.id]}
             </span>

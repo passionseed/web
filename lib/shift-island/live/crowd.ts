@@ -43,30 +43,30 @@ type Point = readonly [number, number];
  * plaza piece for islands of every size.
  */
 export const CROWD_LAYOUT = {
-  /** The viewer's place: below the plaza, by the path in from the island. */
-  home: [-4, 35] as Point,
-  /** Where the viewer's arrival starts: up the path, above the trees below. */
-  enter: [-4, 57] as Point,
+  /** The viewer's place: the front of the plaza, where the path comes in from the island. */
+  home: [2, 34] as Point,
+  /** Where the viewer's arrival starts: down the path, above the trees below. */
+  enter: [2, 57] as Point,
   /** Teammates, in fill order, to the viewer's right. */
-  team: [[8, 35], [20, 35], [32, 35]] as readonly Point[],
+  team: [[13, 34], [24, 34], [35, 34]] as readonly Point[],
   /**
-   * Strollers' routes, in fill order: from, to. Clear of the Demo Day sign's
-   * two lines too, so no figure walks under it.
+   * Strollers' routes, in fill order: from, to. Clear of the plaza's pieces
+   * and the viewer's คุณ tag, the one word the plaza prints.
    */
   routes: [
-    // The meadow below the stage.
-    [[44, 35], [80, 35]],
-    // The path along the stage's foot.
-    [[50, 18], [84, 18]],
-    // The grass left of the notice board.
-    [[-92, -4], [-56, -4]],
-    // Above the well, under the bunting, short of the Demo Day sign's label.
+    // In front of the stage, short of the prize board.
+    [[22, 12], [38, 12]],
+    // The meadow below the campfire, left of the path in.
+    [[-60, 52], [-30, 52]],
+    // The grass right of the stage, between the two paths in.
+    [[82, -12], [82, 4]],
+    // Above the well, under the bunting.
     [[-12, -27], [0, -27]],
-    // Down the plaza's left edge, beside the notice board.
-    [[-52, -24], [-52, 0]],
+    // Beside the notice board, between it and the well.
+    [[-36, -31], [-36, -17]],
   ] as readonly (readonly [Point, Point])[],
   /** The viewer's small คุณ tag, bottom anchored over their head. */
-  meTag: [1, 34] as Point,
+  meTag: [7, 33] as Point,
 } as const;
 
 /** The plaza's input for the people (plaza.ts PlazaInput.visitors). */
@@ -253,7 +253,7 @@ export function crowdActors(c: { x: number; y: number }, input: VisitorsInput, p
   );
   const own = shirt ? teamOutfit(shirt, 0) : outfits[(plan.strollers + plan.team) % outfits.length];
   const me = plan.me ? [input.arriving ? meArriving(own, at) : meAtHome(own, at)] : [];
-  // Back to front: the routes behind the well and the stage first, the meadow (route 0) with the team.
+  // Back to front: routes 1 to 4 first, then route 0 (in front of the stage) with the team and the viewer.
   const cast: { actor: LiveActor; kind: Figure["kind"]; n: number }[] = [
     ...strollers.slice(1).map((actor, i) => ({ actor, kind: "crowd" as const, n: i + 1 })),
     ...strollers.slice(0, 1).map((actor) => ({ actor, kind: "crowd" as const, n: 0 })),

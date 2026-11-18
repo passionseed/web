@@ -207,6 +207,8 @@ export const ISLAND = {
   viewClose: "ขยายดูใกล้ๆ",
   myPlot: (slot: number, stage: string) => `แปลงของคุณ #${slot}, ${stage}`,
   plot: (slot: number) => `แปลง #${slot}`,
+  /** A plot's tap target when its sign shows the project name: "แปลง #4, สวนผักดาดฟ้า". */
+  signed: (plot: string, name: string) => `${plot}, ${name}`,
   pictureAlt: "ภาพเกาะ SHIFT ที่มีต้นไม้ของแต่ละโปรเจกต์",
   pictureFailed: "ตอนนี้วาดภาพเกาะไม่ได้ งานของคุณยังอยู่ครบ",
   /** DRAFT */
@@ -657,12 +659,15 @@ export const NOTICE = {
 };
 
 /**
- * DRAFT: Demo Day in the plaza: the sign, the stage that builds up, the
+ * DRAFT: Demo Day in the plaza: the countdown board, the stage that builds up, the
  * lanterns for the island goal, and the flags by the trees. No names, no
  * ranking; other teams' flags are read from the tree they already show.
  */
 export const FESTIVAL = {
-  /** The sign over the stage, two lines: "Demo Day 28 พ.ย." and "อีก 17 วัน". */
+  /**
+   * The date and the days, two lines: "Demo Day 28 พ.ย." and "อีก 17 วัน". The festival sheet's header
+   * (on one line); over the stage the pixel countdown board reads D-17 instead, with no words.
+   */
   sign: (date: string, days: number, separator = "\n") => `${SEASON.demoDay(date)}${separator}${SEASON.daysLeft(days)}`,
   /** The stage's accessible name, with the sign on one line. */
   stage: (sign: string) => `${PLACES.stage}: ${sign}`,

@@ -3,10 +3,12 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { buildScene, type IslandPlot } from "@/bot/src/quests/island/scene";
 import type { IslandCanvasProps } from "@/components/shift/island/live/IslandCanvas";
 import type { Festival } from "@/lib/shift-island/festival";
+import { CROWD_LAYOUT } from "@/lib/shift-island/live/crowd";
+import { TIGHT } from "@/lib/shift-island/live/figures";
 import type { Rect } from "@/lib/shift-island/live/geometry";
 import type { LiveActor } from "@/lib/shift-island/live/types";
 import type { NoticePin } from "@/lib/shift-island/notice";
-import { plazaWorld, type PlazaInput, type PlazaSpotId } from "@/lib/shift-island/live/plaza";
+import { plazaCentre, plazaWorld, type PlazaInput, type PlazaSpotId } from "@/lib/shift-island/live/plaza";
 import type { IslandPicture } from "@/lib/shift-island/picture";
 
 import { FIGURES, VISITORS } from "../copy";
@@ -345,6 +347,37 @@ describe("the plaza's people", () => {
     expect(spoken()).toBe(`${FIGURES.me[0]} ${VISITORS.count(4)}`);
   });
 
+  it("finds the viewer where the rearranged plaza stands them: beside the campfire's door, a tap on them is theirs and just off them the campfire's", () => {
+    // Boxes where the engine stands each actor: nobody has walked.
+    mockLive.boxes = null;
+    const onSpot = jest.fn();
+    const withFire = plazaProps(null, [PIN], { count: 2, joinUrl: "" }, onSpot, visitors);
+    const plaza = plazaWorld(scene, withFire.input);
+    const c = plazaCentre(scene);
+    const mine = plaza.actors[plaza.figures.find((f) => f.kind === "me")!.actor!];
+    // Home is the front of the plaza, where the path comes in, right of the campfire.
+    expect([mine.x - c.x, mine.y - c.y]).toEqual([...CROWD_LAYOUT.home]);
+    const fire = plaza.spots.find((s) => s.id === "campfire")!;
+    const inFire = (x: number, y: number) => {
+      const left = (fire.x / 100) * scene.width;
+      const top = (fire.y / 100) * scene.height;
+      return x >= left && x < left + (fire.w / 100) * scene.width && y >= top && y < top + (fire.h / 100) * scene.height;
+    };
+    const onThem = { x: mine.x - TIGHT + 0.5, y: mine.y + 7 };
+    const offThem = { x: mine.x - TIGHT - 4, y: mine.y + 7 };
+    // Both taps land on the campfire's button: the first on the viewer's own edge, the second only in their fingertip margin.
+    expect([inFire(onThem.x, onThem.y), inFire(offThem.x, offThem.y)]).toEqual([true, true]);
+    render(<IslandViewport picture={picture} onPlot={jest.fn()} plaza={withFire} />);
+    const door = screen.getByRole("button", { name: withFire.names.campfire });
+    tap(onThem.x, onThem.y, door);
+    expect(bubble()).toHaveAttribute("data-bubble", "me");
+    expect(onSpot).not.toHaveBeenCalled();
+    fireEvent.keyDown(document, { key: "Escape" });
+    tap(offThem.x, offThem.y, door);
+    expect(bubble()).toBeNull();
+    expect(onSpot).toHaveBeenCalledWith("campfire");
+  });
+
   it("follows a walker frame by frame, and closes when it is no longer drawn", () => {
     jest.useFakeTimers();
     try {
@@ -460,20 +493,19 @@ describe("the plaza's people", () => {
     // Boxes where the engine stands each actor: nobody has walked.
     mockLive.boxes = null;
     const festival: Festival = { demoDay: "2026-11-28", daysToDemo: 10, stageStep: 1, tableBar: 2, stageBar: 3, lanterns: null, booths: [] };
-    const withSign = plazaProps(festival, [PIN], null, jest.fn() as (id: PlazaSpotId) => void, visitors);
-    const signed = plazaWorld(scene, withSign.input);
-    const { container } = render(<IslandViewport picture={picture} onPlot={jest.fn()} plaza={withSign} />);
+    const festive = plazaProps(festival, [PIN], null, jest.fn() as (id: PlazaSpotId) => void, visitors);
+    const plaza = plazaWorld(scene, festive.input);
+    const { container } = render(<IslandViewport picture={picture} onPlot={jest.fn()} plaza={festive} />);
+    // The one word over the plaza, even on Demo Day's run-up: the stage's countdown board draws its days.
+    expect([...container.querySelectorAll<HTMLElement>("[data-label]")].map((el) => el.dataset.label)).toEqual(["me"]);
     const tag = container.querySelector<HTMLElement>('[data-label="me"]')!;
-    const sign = container.querySelector<HTMLElement>('[data-label="sign"]')!;
     expect(tag).toHaveTextContent(VISITORS.me);
     expect(tag).toBeVisible();
     // The viewer's own bubble opens over their head, where the tag stands.
-    const mine = signed.actors[signed.figures.find((f) => f.kind === "me")!.actor!];
+    const mine = plaza.actors[plaza.figures.find((f) => f.kind === "me")!.actor!];
     tap(mine.x + 5, mine.y + 7);
     expect(bubble()).toHaveAttribute("data-bubble", "me");
     expect(tag).not.toBeVisible();
-    // Only the tag steps aside: the Demo Day sign stays.
-    expect(sign).toBeVisible();
     fireEvent.keyDown(document, { key: "Escape" });
     expect(bubble()).toBeNull();
     // Back at once, the same tag kept in place, so its arrival wait does not play again.
