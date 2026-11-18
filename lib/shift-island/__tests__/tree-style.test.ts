@@ -49,6 +49,34 @@ describe("catalog", () => {
     }
   });
 
+  it("has the evening guests' 8 looks at the end: 2 per guest, colours only, never a default or a seed's", () => {
+    const guests = TREE_ITEMS.filter((i) => i.guest);
+    expect(guests.map((i) => i.id)).toEqual([
+      "leaf:seaglass",
+      "bark:driftwood",
+      "bloom:shell",
+      "leaf:seafoam",
+      "bloom:firefly",
+      "bark:moonlit",
+      "bloom:pearl",
+      "leaf:kelp",
+    ]);
+    // After the 22 common items, in the database's sort order (20261118150000).
+    expect(TREE_ITEMS.slice(22)).toEqual(guests);
+    for (const key of ["boat", "gull", "fireflies", "turtle"]) expect(guests.filter((i) => i.guest === key)).toHaveLength(2);
+    for (const i of guests) {
+      expect(i.slot).not.toBe("shape");
+      expect(i.stamp).toBeUndefined();
+      expect(i.colors).toHaveLength(3);
+      for (const c of i.colors!) expect(c).toMatch(/^#[0-9A-F]{6}$/);
+      expect(Object.values(DEFAULT_STYLE)).not.toContain(i.id);
+      for (const s of Object.values(SEEDS)) expect(Object.values(s.style)).not.toContain(i.id);
+    }
+    // A guest gift shows its look like any other: unowned, it is open.
+    expect(openOptions(Object.values(DEFAULT_STYLE), ["leaf:seaglass"]).map((o) => o.item.id)).toEqual(["leaf:seaglass"]);
+    expect(mapTreeColor({ ...DEFAULT_STYLE, leaf: "leaf:kelp" }, "m", 5)).toBe("#5C7330");
+  });
+
   it("has no em dashes in names", () => {
     for (const i of TREE_ITEMS) expect(i.name).not.toContain("—");
     for (const s of Object.values(SEEDS)) expect(s.name).not.toContain("—");

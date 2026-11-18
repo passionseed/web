@@ -10,6 +10,7 @@ import {
   GUIDE_CAMPFIRE,
   GUIDE_CLOSEUP,
   GUIDE_GROWTH,
+  GUIDE_PRIVACY,
   GUIDE_ROOTS,
   GUIDE_SEED,
   GUIDE_STAGE_NAMES,
@@ -81,6 +82,17 @@ describe("shift island guide copy", () => {
     expect(privacy).not.toContain("แชร์กับทีม");
     // The real help button (🙋, T.btnSendBlocker in the bot), not the ownership checklist's 🆘.
     expect(privacy).toContain("🙋");
+  });
+
+  it("explains the campfire call and the evening guest truthfully: once per team, never who sat there", () => {
+    const campfire = GUIDE_CAMPFIRE.lines.join(" ");
+    expect(campfire).toContain("ห้องข่าวเกาะ");
+    expect(campfire).toContain("ทีมละครั้ง");
+    expect(campfire).toContain("มากี่คนก็ลุ้นเท่ากัน");
+    expect(campfire).not.toMatch(/พลาด|ยังไม่ได้/);
+    const privacy = GUIDE_PRIVACY.lines.join(" ");
+    expect(privacy).toContain("ไม่เก็บว่าใครนั่ง");
+    expect(privacy).toContain("ลบทันทีเมื่อคุณออก");
   });
 
   it("lists the stages as the game names them, with the seed before stage 1", () => {

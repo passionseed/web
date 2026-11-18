@@ -689,7 +689,12 @@ export const CAMPFIRE = {
   empty: "ตอนนี้ยังไม่มีใครในห้อง เข้าไปเริ่มก่อนได้",
   error: "ตอนนี้โหลดรายชื่อไม่ได้",
   join: "เข้าห้อง",
-  fine: "กองไฟบนเกาะเก็บแค่ว่าใครอยู่ในห้องตอนนี้ และลบทันทีเมื่อออก",
+  /**
+   * What the campfire keeps. DRAFT (20261118150000): the evening guest's drop
+   * keeps one result per team and night (no member, deleted the next day);
+   * a won look is the team's, on its tree.
+   */
+  fine: "กองไฟบนเกาะเก็บแค่ว่าใครอยู่ในห้องตอนนี้ และลบทันทีเมื่อออก ตอนแขกมาถึง เก็บแค่ว่าทีมไหนได้ลุ้น ไม่เก็บว่าใครนั่ง และลบวันถัดไป ลุคที่แขกทิ้งไว้ให้อยู่กับต้นไม้ของทีม",
 };
 
 /**

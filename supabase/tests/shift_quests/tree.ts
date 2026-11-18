@@ -230,7 +230,7 @@ async function main(): Promise<void> {
   // The catalog in SQL is the catalog in code (lib/shift-island/tree-style.ts), in its order.
   const catalog: Json[] = (await db.query("select id, slot, is_default from public.shift_quest_tree_items order by sort")).rows;
   check(same(catalog.map((r) => [r.id, r.slot]), TREE_ITEMS.map((i) => [i.id, i.slot])),
-    "shift_quest_tree_items holds the code's 22 items with their slots, in catalog order", catalog.map((r) => r.id));
+    "shift_quest_tree_items holds the code's 30 items (22 common, 8 the evening guests'), with their slots, in catalog order", catalog.map((r) => r.id));
   check(same(sorted(catalog.filter((r) => r.is_default).map((r) => r.id)), sorted(DEFAULTS)),
     "the defaults are DEFAULT_STYLE's four items");
   for (const [seed, { style }] of Object.entries(SEEDS)) {

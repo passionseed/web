@@ -16,12 +16,21 @@
  * and which moment, follow from the round number alone, so a restart shows
  * the same one and everyone at the fire sees the same lines.
  *
+ * On a night with an evening guest (schema 21, call.ts), the 19:00 focus
+ * round carries a teaser, and from the first rest (19:25) to 21:00 the round
+ * messages carry the guest instead of any encounter: its arrival on that
+ * rest, then that it is still here, how many teams it left a look for once
+ * the drop is made, and the private 🎁 check (rd_guest). The evening comes
+ * from the call loop's cache (deps.evening); without it the rounds are as
+ * before.
+ *
  * Design: docs/superpowers/specs/2026-11-13-shift-campfire-rounds-roots-design.md.
  */
 import type { Client, Message } from "discord.js";
 
 import { FOCUS_MINUTES, REST_MINUTES } from "@/lib/shift-island/rounds-rules";
 
+import { GUESTS, ROUND_GUEST, CALL, type GuestKey } from "./callCopy";
 import type { Campfire } from "./campfire";
 import { cid } from "./ids";
 import { R, type Encounter } from "./rounds-copy";
@@ -90,30 +99,84 @@ export function encounterAt(round: number): Encounter | null {
   return R.encounters[roundHash(round, 1) % R.encounters.length];
 }
 
+/**
+ * Tonight's evening, as the call loop last read it (call.ts evening()): the
+ * Bangkok day, its guest, the clock in unix seconds, and once the drop is
+ * made how many teams got a look. Null on a night without a call.
+ */
+export interface Evening {
+  day: string;
+  /** Null on a night without a guest (no active season): the call runs, the rounds stay as they are. */
+  guest: GuestKey | null;
+  /** 19:00 Bangkok: the first focus round. */
+  litAt: number;
+  /** 19:25 Bangkok: the first rest, when the guest arrives. */
+  guestFrom: number;
+  /** 21:00 Bangkok: the guest leaves. */
+  guestUntil: number;
+  /** Teams the guest left a look for, once the drop is made; null before. */
+  teams: number | null;
+}
+
+/** What a round shows of the evening: the teaser, the guest, or nothing. */
+type GuestPart = { kind: "teaser" } | { kind: "guest"; key: GuestKey; arriving: boolean; day: string; teams: number | null } | null;
+
+/** The evening's part of a round, by when the round's own phase starts. */
+export function guestPart(at: RoundAt, evening: Evening | null | undefined): GuestPart {
+  if (!evening?.guest) return null;
+  const startsAt = at.phase === "focus" ? at.restAt - FOCUS_MIN * 60 : at.restAt;
+  if (at.phase === "focus" && startsAt === evening.litAt) return { kind: "teaser" };
+  if (startsAt < evening.guestFrom || startsAt >= evening.guestUntil) return null;
+  return { kind: "guest", key: evening.guest, arriving: startsAt === evening.guestFrom, day: evening.day, teams: evening.teams };
+}
+
+/** What makes a round's message change: its round, its phase, and the evening's part of it. */
+export function roundKey(at: RoundAt, evening: Evening | null | undefined): string {
+  return JSON.stringify([at.round, at.phase, guestPart(at, evening)]);
+}
+
+/** The guest's lines on a round message, and its private 🎁 check. */
+function guestLines(part: Extract<GuestPart, { kind: "guest" }>): { text: string; button: ReturnType<typeof button> } {
+  const g = GUESTS[part.key];
+  const lines = [part.arriving ? g.arrive : g.still];
+  if (part.teams !== null) lines.push(ROUND_GUEST.dropped(g, part.teams));
+  return { text: lines.join("\n"), button: button(cid("rd_guest", part.day), CALL.btnCheck) };
+}
+
 /** The round's message: the same for everyone at the fire. */
-export function roundView(at: RoundAt): View {
+export function roundView(at: RoundAt, evening: Evening | null = null): View {
+  const part = guestPart(at, evening);
+  const guest = part?.kind === "guest" ? guestLines(part) : null;
   if (at.phase === "focus") {
+    const buttons = [button(cid("rd_aim"), R.btnAim, ButtonStyle.Primary)];
+    if (guest) buttons.push(guest.button);
     return {
       tone: "island",
       title: R.focusTitle,
       blocks: [
         { kind: "text", text: R.focus(at.restAt) },
-        { kind: "subtext", text: `${R.focusFine}\n${ROUND_MARKER}` },
+        ...(part?.kind === "teaser" ? [{ kind: "text", text: ROUND_GUEST.teaser } as const] : []),
+        ...(guest ? [{ kind: "divider" } as const, { kind: "text", text: guest.text } as const] : []),
+        { kind: "subtext", text: `${guest ? `${ROUND_GUEST.fine}\n` : ""}${R.focusFine}\n${ROUND_MARKER}` },
       ],
-      rows: buttonRows([button(cid("rd_aim"), R.btnAim, ButtonStyle.Primary)]),
+      rows: buttonRows(buttons),
     };
   }
   const tip = R.tips[((at.round % R.tips.length) + R.tips.length) % R.tips.length];
-  const encounter = encounterAt(at.round);
+  // The guest's stay replaces the encounters: one moment per rest.
+  const encounter = guest ? null : encounterAt(at.round);
   const buttons = [button(cid("rd_close"), R.btnClose, ButtonStyle.Success), button(cid("rd_aim"), R.btnAim)];
   if (encounter) buttons.push(button(cid("rd_enc", at.round), encounter.button));
+  if (guest) buttons.push(guest.button);
+  const moment = guest?.text ?? encounter?.text;
+  const fine = guest ? `${ROUND_GUEST.fine}\n` : encounter ? `${R.encounterFine}\n` : "";
   return {
     tone: "island",
     title: R.restTitle,
     blocks: [
       { kind: "text", text: R.rest(tip, at.nextAt) },
-      ...(encounter ? [{ kind: "divider" } as const, { kind: "text", text: encounter.text } as const] : []),
-      { kind: "subtext", text: `${encounter ? `${R.encounterFine}\n` : ""}${R.restFine}\n${ROUND_MARKER}` },
+      ...(moment ? [{ kind: "divider" } as const, { kind: "text", text: moment } as const] : []),
+      { kind: "subtext", text: `${fine}${R.restFine}\n${ROUND_MARKER}` },
     ],
     rows: buttonRows(buttons),
   };
@@ -136,6 +199,8 @@ export interface RoundDeps {
   /** The coworking voice channel's chat, or null when the bot cannot post there. */
   channelOf?: (id: string) => RoundChannel | null;
   botId?: () => string | undefined;
+  /** Tonight's evening (the call loop's cache, call.ts), or null: the guest on the round messages. */
+  evening?: (nowMs: number) => Evening | null;
 }
 
 function codeOf(error: unknown): string {
@@ -146,6 +211,13 @@ function codeOf(error: unknown): string {
 export function startRounds(client: Client, campfire: Pick<Campfire, "status">, deps: RoundDeps = {}): Rounds & { tick: () => Promise<void> } {
   const now = deps.now ?? Date.now;
   const botId = deps.botId ?? (() => client.user?.id);
+  const eveningAt = (nowMs: number): Evening | null => {
+    try {
+      return deps.evening?.(nowMs) ?? null;
+    } catch {
+      return null;
+    }
+  };
   const channelOf =
     deps.channelOf ??
     ((id: string): RoundChannel | null => {
@@ -154,8 +226,8 @@ export function startRounds(client: Client, campfire: Pick<Campfire, "status">, 
       return found as unknown as RoundChannel;
     });
 
-  /** The round message this process posted, and what it shows. */
-  let current: { message: Message; channel: string; round: number; phase: Phase } | null = null;
+  /** The round message this process posted, and what it shows (key: roundKey). */
+  let current: { message: Message; channel: string; round: number; key: string } | null = null;
   /** Channels already swept for an earlier process's leftovers. */
   const swept = new Set<string>();
   let warned = "";
@@ -192,7 +264,8 @@ export function startRounds(client: Client, campfire: Pick<Campfire, "status">, 
   async function step(): Promise<void> {
     if (stopped) return;
     const { channel: room, sitters } = campfire.status();
-    const at = roundAt(now());
+    const nowMs = now();
+    const at = roundAt(nowMs);
     if (!room || sitters === 0) {
       // Nobody at the fire: the round's message goes once the round it shows is over.
       if (current && (current.round !== at.round || current.channel !== room)) await remove();
@@ -203,11 +276,14 @@ export function startRounds(client: Client, campfire: Pick<Campfire, "status">, 
       warnOnce(`${room}:send`, `[shift-quests] rounds: cannot post in the coworking channel's chat (${room}); rounds are off there`);
       return;
     }
+    const evening = eveningAt(nowMs);
+    const key = roundKey(at, evening);
     if (current && current.channel === room && current.round === at.round) {
-      if (current.phase === at.phase) return;
+      // The same round: an edit only when it shows something new (the rest, or the guest learned late).
+      if (current.key === key) return;
       try {
-        await current.message.edit(renderView(roundView(at), { ephemeral: false }));
-        current.phase = at.phase;
+        await current.message.edit({ ...renderView(roundView(at, evening), { ephemeral: false }), allowedMentions: { parse: [] } });
+        current.key = key;
       } catch (error) {
         warnOnce(`edit:${codeOf(error)}`, `[shift-quests] rounds: edit failed (${codeOf(error)})`);
         // The message is gone (deleted by hand): post anew next tick. Any other
@@ -220,8 +296,8 @@ export function startRounds(client: Client, campfire: Pick<Campfire, "status">, 
     await remove();
     await sweep(channel);
     try {
-      const message = await channel.send({ ...renderView(roundView(at), { ephemeral: false }), allowedMentions: { parse: [] } });
-      current = { message, channel: room, round: at.round, phase: at.phase };
+      const message = await channel.send({ ...renderView(roundView(at, evening), { ephemeral: false }), allowedMentions: { parse: [] } });
+      current = { message, channel: room, round: at.round, key };
       warned = "";
     } catch (error) {
       warnOnce(`send:${codeOf(error)}`, `[shift-quests] rounds: post failed (${codeOf(error)})`);

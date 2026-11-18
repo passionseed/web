@@ -139,6 +139,11 @@ channel right now, for the island's campfire:
   make the channel private later, the campfire is synced empty at once,
   nothing per person is written while it stays closed, and the bot logs one
   warning with no names.
+- **The evening guest (schema 21)**: once a night, at 19:25 Bangkok, the bot
+  passes the ids in the room to the database for the guest's drop; it keeps
+  one row per team and night (the team, the guest, the look or none), never
+  who sat there, and deletes those rows the next day. See "The campfire call
+  and the evening guest" below.
 
 `/data` exports everything about the caller as JSON. An approved erasure
 (`/admin data`) deletes the journal, help requests, shares and notices,
@@ -1024,6 +1029,50 @@ unknown kind permanently), so deploy the bot first, then apply this file;
 below schema 20 the bot reads the version again on each check, so no restart
 is needed. Tested in `supabase/tests/shift_quests/news_missed.ts`,
 `bot/src/quests/__tests__/news.test.ts` and `outbox.test.ts`.
+
+### The campfire call and the evening guest (schema 21)
+
+`20261118150000_shift_quest_campfire_call.sql` (not applied yet) adds the
+call the bot posts every day at 18:50 Bangkok in the news channel
+(`bot/src/quests/call.ts`), while `/admin feature campfire_call` is on (the
+default) and a news and a coworking channel are set: the fire lights at
+19:00, a live countdown, a floored count of who sits at the fire (everyone
+there, staff included, never a name) and a button into the voice channel.
+It pings the student roles (`settings.student_role_ids`, at most 5) once,
+when it is first sent, while `/admin feature campfire_call_ping` is on (the
+default): the send allows exactly those roles, never users, `@everyone` or
+`@here`; edits allow nothing. It is edited through the evening (invite, lit
+at 19:00, the guest at 19:25, embers at 21:00), at most once a minute and
+only when its text changes, and the previous day's call (the bot's own) is
+deleted once today's is recorded. One call a day without doubles:
+`shift_quest_call_claim` and `_mark` on `shift_quest_call_posts`; due only
+from 18:50 to 19:15 (a stale claim until 19:30), never a late one; after a
+stale claim the bot looks for its own call (`CALL.dayLine`) and sends nothing
+when it cannot read the channel, so nobody is pinged twice. Before sending,
+the bot checks that students can see and join the voice channel and that it
+can post in its chat. Below schema 21 the loop reads the version again on
+every 30-second check.
+
+During an active season an evening guest (boat, gull, fireflies, turtle, in a
+fixed rotation by season day, `shift_quest__guest_of`) arrives at 19:25. In
+that first rest the first check with someone at the fire passes the Discord
+ids in the campfire voice room (`campfire.present()`, the gateway voice
+cache, bots left out) to `shift_quest_campfire_drop`. The database links them
+to started, non-staff members and their current teams; each team gets one
+roll that night (`shift_quest__guest_drop_chance()`, 1 in 2), however many
+teammates are there and however often it is called (a lock and
+`shift_quest_guest_nights`). A win is a one-option gift of one of the guest's
+two looks the team does not have (`source drop:<day>`, `member_id` null). Only
+`(day, project_id, guest, look)` is kept per team, in
+`shift_quest_guest_drops`, and earlier days' rows are deleted on the next
+read: no member, no Discord id, no presence history. The round messages and
+the call say how many teams got a look, never which; 🎁 (`rd_guest`,
+`shift_quest_guest_status`) answers privately about the presser's own team.
+Round and quest gifts never offer guest looks. No coins, no stage, no
+ledger. Design and the founder's decisions:
+[`docs/designs/shift-island-campfire-call.md`](../designs/shift-island-campfire-call.md).
+Tested in `supabase/tests/shift_quests/campfire_call.ts`,
+`bot/src/quests/__tests__/call.test.ts` and `rounds.test.ts`.
 
 ## Admin: reset my own island (testing)
 

@@ -412,6 +412,29 @@ The short version for whoever runs the bot:
     card. Below 20 the check re-reads the
     schema every 5 minutes, so deploy the bot first, then apply
     `20261118140000_shift_quest_island_news_missed.sql`; no restart needed.
+  - The campfire call (`bot/src/quests/call.ts`, copy in `callCopy.ts`,
+    schema 21, `20261118150000_shift_quest_campfire_call`): every day at
+    18:50 Bangkok, one call in the news channel: the fire lights at 19:00.
+    It pings the student roles once, on the send only (never users,
+    `@everyone` or `@here`; edits never ping), while `/admin feature
+    campfire_call_ping` is on; `/admin feature campfire_call` switches the
+    whole call off (both on by default). It is edited through the evening
+    (lit, the guest, embers) at most once a minute, and yesterday's call is
+    deleted when today's is recorded. Claimed, sent and marked once a day; a
+    stale claim it cannot check (no Read Message History) sends nothing, so
+    nobody is pinged twice. It posts only when students can see and join the
+    campfire voice channel and the bot can post in its chat. During a season
+    an evening guest arrives at 19:25: the first 30-second check with someone
+    at the fire passes the ids in the room (`campfire.present()`, the voice
+    cache) to `shift_quest_campfire_drop` once; the database rolls once per
+    team and keeps one row per team and night (no member), deleted the next
+    day. The round messages show the guest, and 🎁 (`rd_guest`) answers
+    privately about the presser's own team. Below schema 21 the loop only
+    re-reads the version each check, so deploy the bot first, then apply the
+    migration; no restart needed. The bot needs, in the news channel, View
+    Channel, Send Messages, Read Message History and (unless the student role
+    is mentionable) Mention @everyone, @here and All Roles; in the campfire
+    voice channel's chat, View Channel and Send Messages.
 - Campfire rounds (`bot/src/quests/rounds.ts`, buttons in
   `handlers/rounds.ts`, rules in `lib/shift-island/rounds-rules.ts`): while
   anyone sits in the coworking voice channel (the campfire), the bot keeps one

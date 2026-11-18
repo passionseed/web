@@ -74,7 +74,11 @@ describe("CampfireSheet", () => {
     expect(join).toHaveAttribute("target", "_blank");
     expect(join).toHaveAttribute("rel", "noopener noreferrer");
     expect(join).toHaveClass("ei-button-dawn");
-    expect(within(sheet).getByText("กองไฟบนเกาะเก็บแค่ว่าใครอยู่ในห้องตอนนี้ และลบทันทีเมื่อออก")).toBeInTheDocument();
+    expect(
+      within(sheet).getByText(
+        "กองไฟบนเกาะเก็บแค่ว่าใครอยู่ในห้องตอนนี้ และลบทันทีเมื่อออก ตอนแขกมาถึง เก็บแค่ว่าทีมไหนได้ลุ้น ไม่เก็บว่าใครนั่ง และลบวันถัดไป ลุคที่แขกทิ้งไว้ให้อยู่กับต้นไม้ของทีม"
+      )
+    ).toBeInTheDocument();
   });
 
   it("shows names only: no avatars, no Discord ids, no plots", () => {

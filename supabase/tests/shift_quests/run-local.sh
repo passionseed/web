@@ -55,6 +55,16 @@
 #             process is sending, no news or staff channel or a channel set
 #             from 22:24; a night of failing sends ticked as the bot does
 #             gets exactly one note by 22:40; the grants), with consent off
+#   campfirecall
+#             every migration applied twice, then campfire_call.ts (schema 21,
+#             20261118150000: the 18:50 campfire call and the evening guest, at
+#             fixed times: when the call is due, claim and mark, the frozen
+#             ping, the previous call; the guest rotation; the drop only in the
+#             guest's first rest, one roll per team per night under repeated
+#             and concurrent calls, staff never win, no member id or presence
+#             stored, earlier nights deleted, guest looks only from guests;
+#             the private check; the grants: the bot's, never the website's),
+#             with consent off
 #
 #   supabase/tests/shift_quests/run-local.sh       # or: pnpm test:db:quests
 #   PG_BIN=/usr/lib/postgresql/15/bin supabase/tests/shift_quests/run-local.sh
@@ -199,10 +209,12 @@ SQL
 # 091200, the campfire read, 093000, and the menu links read, 094000) are
 # never the bot's; the campfire writers (093000), the live post's reader
 # and writer (094000), the nightly island news card's four functions
-# (20261118130000) and its missed-night check (20261118140000,
-# shift_quest_enqueue_news_missed) are the bot's like every other entry
-# point, and never the website's (their helpers, shift_quest__news_*, are
-# nobody's).
+# (20261118130000), its missed-night check (20261118140000,
+# shift_quest_enqueue_news_missed) and the campfire call's and evening
+# guest's five (20261118150000: shift_quest_call_today, _call_claim,
+# _call_mark, shift_quest_campfire_drop, shift_quest_guest_status) are the
+# bot's like every other entry point, and never the website's (their
+# helpers, shift_quest__news_*, __call_* and __guest_*, are nobody's).
 # And the web allowlist (20261111090900, 091000, 091100, 091200, 093000, 094000, and every later file
 # that grants shift_quest_web, up to 20261118100000's website-does-everything allowlist): shift_quest_web executes exactly the
 # functions listed below (nothing before that file is applied), never a
@@ -439,7 +451,7 @@ echo "# migrations"
 for f in "${MIGRATIONS[@]}"; do echo "apply $(basename "$f")"; done
 new_db once
 apply once "single pass" "${MIGRATIONS[@]}"
-for DB in rules island flows islandflows board canvas campfire live player roots tree reset evidence peer treepost webeverything visitors news newsmissed; do
+for DB in rules island flows islandflows board canvas campfire live player roots tree reset evidence peer treepost webeverything visitors news newsmissed campfirecall; do
   new_db "$DB"
   apply "$DB" "first pass" "${MIGRATIONS[@]}"
   apply "$DB" "second pass" "${MIGRATIONS[@]}"
@@ -532,6 +544,7 @@ suite "web does everything but Discord" webeverything web_everything.ts
 suite "plaza visitors" visitors visitors.ts
 suite "island news daily" news news.ts
 suite "island news missed-night note" newsmissed news_missed.ts
+suite "campfire call and evening guest" campfirecall campfire_call.ts
 # island_rules.ts runs against wave 1 alone once it knows to skip season cases.
 if [ "${#WAVE1[@]}" -lt "${#MIGRATIONS[@]}" ] && grep -q SHIFT_QUESTS_WAVE "$HERE/island_rules.ts"; then
   export SHIFT_QUESTS_WAVE=1

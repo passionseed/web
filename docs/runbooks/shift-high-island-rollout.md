@@ -428,6 +428,33 @@ The bot runs on its own host (`bot/deploy.sh`), not on Vercel.
       It needs a staff channel (`/admin channel kind:staff`); without one
       nothing is queued. A rollback to a bot older than the note fails a
       queued note permanently (status `failed`); nothing else is lost.
+- [ ] The campfire call and the evening guest (schema 21,
+      `20261118150000_shift_quest_campfire_call`). Order: merge (Vercel
+      ships the 8 guest looks), deploy the bot, then the migration on the
+      founder's go. The bot re-reads the version every 30 seconds, so no
+      restart. **Applying the migration turns the call on that evening, with
+      the role ping** (both switches default on). Before applying, in Discord:
+      - #island-news: the bot has View Channel, Send Messages, Read Message
+        History, and Mention @everyone, @here and All Roles (or the student
+        role is set to "allow anyone to @mention this role"). Without Read
+        Message History a call whose send stalled is not retried that night
+        (never a second ping).
+      - '🔥 กองไฟ coworking': the student role can View Channel and Connect,
+        and the bot can View Channel and Send Messages in the voice channel's
+        chat. Smoke-test a real round first: someone sits at the fire at :00
+        or :30 and the round message appears in the voice chat. Without it
+        the bot logs `campfire call: ... no call until it is fixed` and sends
+        no call.
+      The first evening: at 18:50 one call in #island-news (bot log
+      `[shift-quests] campfire call posted for <day> (pinged the student roles)`),
+      it edits to lit at 19:00, the guest at 19:25 (log
+      `campfire guest's drop for <day>: N team(s) got a look`), embers at
+      21:00, and the next evening yesterday's call is gone. Check that
+      students got the notification. A team that won sees a 🎁 waiting on its
+      tree. Off without a deploy: `/admin feature campfire_call off` (the
+      whole call, e.g. a SHIFT cohort week, when shift-voice records voice
+      time in every channel) or `/admin feature campfire_call_ping off` (the
+      same call, no ping). Tonight's message stays as it is.
 - [ ] Island invitation RSVPs: every RSVP should lead to the Discord role
       `SHIFT high`. Nothing grants it automatically yet: until it does, staff
       read the new RSVPs (`shift_island_rsvps`, newest first, in the SQL

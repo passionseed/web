@@ -20,6 +20,12 @@ export interface TreeItem {
   colors?: [string, string, string];
   /** Shape only: the leaf stamp rows, "#" is leaf. The canopy's outline per shape lives in tree-closeup.ts (inCanopy). */
   stamp?: string[];
+  /**
+   * The evening guest who brings this look (shift_quest_tree_items.guest):
+   * only that guest's drop at the campfire gives it, never a round or quest
+   * gift. Undefined for the common catalog.
+   */
+  guest?: "boat" | "gull" | "fireflies" | "turtle";
 }
 
 export const TREE_ITEMS: readonly TreeItem[] = [
@@ -48,6 +54,17 @@ export const TREE_ITEMS: readonly TreeItem[] = [
   { id: "bloom:lantern", slot: "bloom", name: "โคมไฟ", colors: ["#FFF4C4", "#E9782F", "#F4C56A"] },
   { id: "bloom:frost", slot: "bloom", name: "น้ำแข็ง", colors: ["#FFFFFF", "#7FB7E8", "#CFE8FF"] },
   { id: "bloom:peach", slot: "bloom", name: "พีช", colors: ["#FFE3D0", "#F5A35C", "#F7B98E"] },
+
+  // The evening guests' looks (20261118150000_shift_quest_campfire_call, sort 23 to 30): colours only,
+  // two per guest, given only by that guest's drop at the campfire. Names DRAFT for the Thai review.
+  { id: "leaf:seaglass", slot: "leaf", name: "แก้วทะเล", colors: ["#2E6B66", "#4FA39A", "#A8E0D2"], guest: "boat" },
+  { id: "bark:driftwood", slot: "bark", name: "ไม้ลอยน้ำ", colors: ["#6B6258", "#A39A8C", "#D9D1C3"], guest: "boat" },
+  { id: "bloom:shell", slot: "bloom", name: "เปลือกหอย", colors: ["#FFF6EE", "#F2C9A0", "#F6D5DA"], guest: "gull" },
+  { id: "leaf:seafoam", slot: "leaf", name: "ฟองคลื่น", colors: ["#3E7C86", "#76B8BF", "#D3F1EF"], guest: "gull" },
+  { id: "bloom:firefly", slot: "bloom", name: "หิ่งห้อย", colors: ["#FFFBD6", "#C9E04A", "#F3F08A"], guest: "fireflies" },
+  { id: "bark:moonlit", slot: "bark", name: "แสงจันทร์", colors: ["#2E3550", "#59618A", "#9CA6CF"], guest: "fireflies" },
+  { id: "bloom:pearl", slot: "bloom", name: "มุก", colors: ["#FFFFFF", "#E6DCEB", "#F4EEF2"], guest: "turtle" },
+  { id: "leaf:kelp", slot: "leaf", name: "สาหร่าย", colors: ["#3A4A22", "#5C7330", "#8FA552"], guest: "turtle" },
 ];
 
 export const DEFAULT_STYLE: TreeStyle = {
