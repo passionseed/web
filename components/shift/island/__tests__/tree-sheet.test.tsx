@@ -90,6 +90,11 @@ beforeEach(() => {
 });
 
 describe("TreeSheet", () => {
+  it("shows the invite slot so a teammate can be invited from the team's own tree", () => {
+    renderSheet(tree(), { invite: <button type="button">invite-slot</button> });
+    expect(within(screen.getByRole("dialog", { name: TREE.closeup.title })).getByRole("button", { name: "invite-slot" })).toBeInTheDocument();
+  });
+
   it("draws the team's own tree with its roots and the recent glow", () => {
     renderSheet(tree());
     const sheet = screen.getByRole("dialog", { name: TREE.closeup.title });
