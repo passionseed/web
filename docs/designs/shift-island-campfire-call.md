@@ -3,8 +3,9 @@
 Status: built on `feat/shift-campfire-call`, 2026-11-18, revised the same day
 with the founder's answers (staff at the fire are the guest: decision 8). Its migration
 (`20261118150000_shift_quest_campfire_call.sql`, schema 21) is **not
-applied** and waits for the founder's go, after the bot deploy. Thai copy is
-DRAFT and needs the three-model review in the root `AGENTS.md`.
+applied** and waits for the founder's go, after the bot deploy. Thai copy had
+the three-model review in the root `AGENTS.md` on 2026-11-18 (Gemini, Codex,
+and Claude standing in for Cursor).
 
 ## The moment
 
@@ -55,7 +56,7 @@ evening, except while a SHIFT cohort round is in session. **What they see:**
 | 5 | Deploy order | Schema 21, migration 20261118150000 (after #329's 20261118140000, schema 20, applied 2026-11-18). The bot reads the schema version on every call tick, so it can deploy before the migration with no restart. Merge, deploy the bot, then the migration on the founder's go. |
 | 6 | Copy | DRAFT, no em or en dashes, never น้องๆ or เด็กๆ, lively and short for phones, never "พรุ่งนี้" (a promise a later night may break). |
 | 7 | The opt-out line | Names the server setting as Thai-language Discord shows it, English in parentheses: ตั้งค่าการแจ้งเตือน (Notification Settings), ระงับทุกตำแหน่ง @mentions (Suppress All Role @mentions); source in `callCopy.ts`. No claim about any channel setting. `/settings` shows it only while the call pings (`shift_quest_call_pings`, schema 21). |
-| 8 | Staff at the fire are the guest (founder, later on 2026-11-18) | If the founder or a mentor (a non-erased admin or reviewer member; the staff the drop already never lets win) is among the ids of any check of the 19:25 to 19:30 rest, that night's guest is them (`mentor`) instead of the rotation's, from that check on and never back (`shift_quest__guest_seen`). The call's title and the round messages name them, `คืนนี้ <display name> มาเป็นแขกที่กองไฟ`, two at most (`<A> และ <B>`, the first seen first); staff are adults, so their display names may be shown. A staff member with no display name is `พี่จากทีม SHIFT`. The drop that night gives 2 looks only staff nights give (`leaf:ember`, `bloom:starlit`), with the same rules: one roll per team seen during the rest, settled at 19:30, 1 in 2, a look the team does not own, staff never win. The night's row (`shift_quest_guest_nights.guest`, `staff_names`) keeps the guest and the names, so every edit and a restarted bot show the same guest; the names are cleared the next day and on that staff member's erasure. No season, no guest, staff or not. Nights with no staff at the fire keep the rotation. |
+| 8 | Staff at the fire are the guest (founder, later on 2026-11-18) | If the founder or a mentor (a non-erased admin or reviewer member; the staff the drop already never lets win) is among the ids of any check of the 19:25 to 19:30 rest, that night's guest is them (`mentor`) instead of the rotation's, from that check on and never back (`shift_quest__guest_seen`). The call's title and the round messages name them, `คืนนี้ <display name> มาเป็นแขกที่กองไฟ`, two at most (`<A> และ <B>`, the first seen first); staff are adults, so their display names may be shown. A staff member with no display name is `พี่ทีม SHIFT`. The drop that night gives 2 looks only staff nights give (`leaf:ember`, `bloom:starlit`), with the same rules: one roll per team seen during the rest, settled at 19:30, 1 in 2, a look the team does not own, staff never win. The night's row (`shift_quest_guest_nights.guest`, `staff_names`) keeps the guest and the names, so every edit and a restarted bot show the same guest; the names are cleared the next day and on that staff member's erasure. No season, no guest, staff or not. Nights with no staff at the fire keep the rotation. |
 
 ## Cohort weeks
 
@@ -68,7 +69,7 @@ edited once into the paused note (with no fine print, since "ไม่มีใ�
 ของคุณ" would not hold that week). For the same reason the focus round's
 message drops that line those days (`R.focusFineCohort`), and the web guide
 says the guest skips SHIFT weeks and that shift-voice records voice time for
-that round's students then (DRAFT, for the Thai review). The call comes back
+that round's students then. The call comes back
 by itself the day after the round ends. No staff switch is needed.
 
 ## Why it is shaped like this
@@ -115,11 +116,13 @@ by itself the day after the round ends. No staff switch is needed.
   who are the night's guest, by display name).
 - No coins, no stage, nothing with value.
 
-## The copy (DRAFT)
+## The copy
 
 All in `bot/src/quests/callCopy.ts` (the call, the guests, the private
-answers) and the web's campfire and guide lines. Before shipping: Antigravity
-drafts, Cursor proofreads, Codex checks the logic.
+answers) and the web's campfire and guide lines. Reviewed on 2026-11-18:
+Gemini for natural Thai, Codex for the logic, Claude proofreading in place
+of Cursor. The Discord setting labels in the opt-out line still need a look
+on a Thai-language phone.
 
 ## Known limits
 

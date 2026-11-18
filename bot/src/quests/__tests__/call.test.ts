@@ -278,7 +278,7 @@ describe("callView", () => {
     for (const g of Object.values(GUESTS)) {
       for (const n of [1, 2, 3, 7]) {
         expect(CALL.dropped(g, n)).toContain(`${g.name}ทิ้งของไว้ให้ **${n}** ทีม`);
-        expect(CALL.dropped(g, n)).toContain("ทีมคุณได้อะไร");
+        expect(CALL.dropped(g, n)).toContain("ทีมคุณได้ไหม");
       }
       // 0: a friendly line with no number.
       expect(CALL.dropped(g, 0)).not.toMatch(/\d/);
@@ -301,12 +301,12 @@ describe("callView", () => {
 
     const after = bodyText(sent({ ...d, drop: { teams: 2 } }, "guest", 4));
     expect(after).toContain("🎁 Ann ทิ้งของไว้ให้ **2** ทีม");
-    expect(bodyText(sent({ ...d, drop: { teams: 0 } }, "embers"))).toContain("🌙 คืนนี้ Ann แค่แวะมานั่งพักข้างกองไฟ");
+    expect(bodyText(sent({ ...d, drop: { teams: 0 } }, "embers"))).toContain("🌙 คืนนี้ Ann แค่แวะมาพักข้างกองไฟ");
 
     const two = bodyText(sent(data({ guest: STAFF_GUEST, staff_names: ["Ann", "Ben"] }), "guest", 4));
     expect(two.startsWith("### 🌟 คืนนี้ Ann และ Ben มาเป็นแขกที่กองไฟ\n")).toBe(true);
     // A staff member with no display name on record: still a staff night, unnamed.
-    expect(bodyText(sent(data({ guest: STAFF_GUEST, staff_names: [] }), "guest", 4))).toContain("🌟 คืนนี้ พี่จากทีม SHIFT มาเป็นแขกที่กองไฟ");
+    expect(bodyText(sent(data({ guest: STAFF_GUEST, staff_names: [] }), "guest", 4))).toContain("🌟 คืนนี้ พี่ทีม SHIFT มาเป็นแขกที่กองไฟ");
   });
 
   it("escapes a staff display name: no Markdown, no mention, one line, at most 32 characters", () => {
@@ -361,9 +361,10 @@ describe("callView", () => {
     const body = bodyText(p);
     expect(body.startsWith(`### ${CALL.embersTitle}\n`)).toBe(true);
     expect(body).toContain(CALL.embers);
-    // Still true after midnight: the fire is lit every evening.
+    // Still true after midnight: when the fire usually starts, and that SHIFT cohort weeks pause it.
     expect(CALL.embers).not.toContain("พรุ่งนี้");
-    expect(CALL.embers).toContain("ทุกเย็น");
+    expect(CALL.embers).toContain("ปกติกองไฟเริ่มตอน 1 ทุ่ม");
+    expect(CALL.embers).toContain("เว้นสัปดาห์ที่มีรอบ SHIFT");
     expect(body).toContain(CALL.dropped(GUESTS.boat, 2));
     for (const n of [0, 1, 7]) expect(body).not.toContain(CALL.people(n));
     expect(customIds(p)).toEqual([`sq|rd_guest|${DAY}`]);
@@ -429,7 +430,7 @@ describe("the call's mentions", () => {
   });
 });
 
-describe("the call's Thai copy (DRAFT)", () => {
+describe("the call's Thai copy", () => {
   const guests = [...GUEST_KEYS.map((k) => GUESTS[k]), staffGuest(["Ann"]), staffGuest(["Ann", "Ben"]), staffGuest([])];
   const all = JSON.stringify({ CALL, GUESTS, ROUND_GUEST, REVEAL, staff: guests.slice(GUEST_KEYS.length) }) + [
     ...guests.flatMap((g) => [CALL.dropped(g, 0), CALL.dropped(g, 4), CALL.stay(g, 1), REVEAL.wonTitle(g), REVEAL.lostTitle(g), REVEAL.fullTitle(g), REVEAL.full(g), REVEAL.awayTitle(g), REVEAL.unseenTitle(g), REVEAL.quietTitle(g), REVEAL.heading(g)]),
@@ -458,7 +459,8 @@ describe("the call's Thai copy (DRAFT)", () => {
 
   it("a staff night reads as luck, never a mentor's approval, and sets a name off by spaces", () => {
     const g = staffGuest(["Ann"]);
-    expect(g.brought).toContain("ทุกทีมลุ้นเท่ากัน");
+    expect(g.brought).toContain("ได้ลุ้นเท่ากัน");
+    expect(g.brought).toContain("ทีมละครั้ง");
     expect(g.arrive).toContain(g.here);
     expect(g.arrive).toContain(g.brought!);
     for (const line of [
@@ -487,8 +489,8 @@ describe("the call's Thai copy (DRAFT)", () => {
 
   it("tells how to stop the ping by the server setting's Thai name, English in parentheses, and claims nothing about channel settings", () => {
     for (const line of [CALL.mute, T.callPing]) {
-      expect(line).toContain("ระงับทุกตำแหน่ง @mentions (Suppress All Role @mentions)");
-      expect(line).toContain("ตั้งค่าการแจ้งเตือน (Notification Settings)");
+      expect(line).toContain("**ระงับทุกตำแหน่ง @mentions** (Suppress All Role @mentions)");
+      expect(line).toContain("**ตั้งค่าการแจ้งเตือน** (Notification Settings)");
       expect(line).toContain("ทั้งเซิร์ฟเวอร์");
       // No sourced claim says what a channel's own setting does to a role ping.
       expect(line).not.toMatch(/ปิดเสียงห้อง|ห้องนี้/);
@@ -526,9 +528,10 @@ describe("the call's Thai copy (DRAFT)", () => {
     expect(CALL.dayLine(DAY)).not.toContain("ข่าวของ");
   });
 
-  it("is marked DRAFT for the three-model review, and every button fits Discord", () => {
+  it("records the three-model review, and every button fits Discord", () => {
     const file = readFileSync(join(__dirname, "..", "callCopy.ts"), "utf8");
-    expect(file).toContain("DRAFT");
+    expect(file).toContain("Thai reviewed by three models, 2026-11-18");
+    expect(file).not.toContain("DRAFT");
     expect(CALL.btnCheck.length).toBeLessThanOrEqual(80);
   });
 });

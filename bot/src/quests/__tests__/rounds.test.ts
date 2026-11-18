@@ -756,14 +756,14 @@ describe("the evening guest's 🎁 check", () => {
     const { b } = await press(staff({ state: "won", look: "leaf:ember", gift: { id: GIFT, options: ["leaf:ember"] } }));
     const reveal = viewText(b.sent[1].payload as never);
     expect(reveal).toContain("🎁 Ann ทิ้งของไว้ให้ทีมคุณ");
-    expect(reveal).toContain("ถ่านไฟ");
+    expect(reveal).toContain("ถ่านไฟแดง");
     expect(reveal).toContain(REVEAL.fine);
     expect(viewText(b.sent[2].payload as never)).toContain("ของจาก Ann");
     const lost = viewText(renderView(guestReveal(staff({ state: "lost" }), DAY)));
     expect(lost).toContain("🌟 คืนนี้ Ann แค่แวะมาทักทายทีมคุณ");
-    expect(lost).toContain(REVEAL.looks(["สีใบ ถ่านไฟ", "ดอก แสงดาว"]));
+    expect(lost).toContain(REVEAL.looks(["สีใบ ถ่านไฟแดง", "ดอก แสงดาว"]));
     // Unnamed staff (no display name on record): still the staff's night.
-    expect(viewText(renderView(guestReveal(staff({ state: "away", staff_names: [] }), DAY)))).toContain("พี่จากทีม SHIFT");
+    expect(viewText(renderView(guestReveal(staff({ state: "away", staff_names: [] }), DAY)))).toContain("พี่ทีม SHIFT");
   });
 
   it("unseen never reads as away: the bot says it could not see the fire for a while", () => {

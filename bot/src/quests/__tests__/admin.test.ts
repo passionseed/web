@@ -207,7 +207,7 @@ describe("admin status card", () => {
     expect(bodyText(renderView(statusView(s as never)))).not.toContain("เรียกรวมกองไฟ");
     Object.assign(s.settings, { campfire_call_enabled: true, campfire_call_ping: false });
     const body = bodyText(renderView(statusView(s as never)));
-    expect(body).toContain("✅ เรียกรวมกองไฟ 1 ทุ่ม: เปิด");
+    expect(body).toContain("✅ เรียกรวมกองไฟ 18:50: เปิด");
     expect(body).toContain("⚪ แท็กนักเรียนตอนเรียกรวม: ปิด");
   });
 

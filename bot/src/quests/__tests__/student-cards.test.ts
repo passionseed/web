@@ -739,7 +739,7 @@ describe("/settings", () => {
     const shown = interaction("command");
     await COMMAND_HANDLERS.get("settings")!(shown.i, pings);
     expect(bodyText(shown.sent[0].payload)).toContain(`-# ${T.callPing}`);
-    expect(T.callPing).toContain("ระงับทุกตำแหน่ง @mentions (Suppress All Role @mentions)");
+    expect(T.callPing).toContain("**ระงับทุกตำแหน่ง @mentions** (Suppress All Role @mentions)");
     expect(T.callPing).not.toMatch(/[\u2014\u2013]/);
 
     // The call or its ping switched off (or no student role): false. A database below schema 21: no such function.
@@ -821,9 +821,9 @@ describe("/data", () => {
 describe("/data's campfire line", () => {
   it("is true about the evening guest: a team of one's result is that student's, and a won look stays with its date", () => {
     expect(T.dataBody).not.toContain("เก็บแค่ว่าทีมไหนได้ลุ้น");
-    expect(T.dataBody).toContain("ทีมที่มีคุณคนเดียว");
+    expect(T.dataBody).toContain("ถ้าทีมมีคุณคนเดียว");
     expect(T.dataBody).toContain("พร้อมวันที่ได้");
-    expect(T.dataBody).toContain("ลบวันถัดไป");
+    expect(T.dataBody).toContain("ลบในวันถัดไป");
     expect(T.dataBody).toContain("ไม่เก็บว่าใครในทีมนั่งหรือนั่งตอนไหน");
   });
 });

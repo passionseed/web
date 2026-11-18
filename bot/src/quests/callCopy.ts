@@ -1,8 +1,8 @@
 /**
  * Words for the 18:50 campfire call in #island-news (call.ts), the evening
  * guest on the round messages (rounds.ts) and the guest's private answer
- * (handlers/rounds.ts rd_guest). DRAFT for the three-model Thai review
- * (AGENTS.md: Antigravity drafts, Cursor proofreads, Codex checks the logic).
+ * (handlers/rounds.ts rd_guest). Thai reviewed by three models, 2026-11-18
+ * (Gemini drafts, Claude proofreads standing in for Cursor, Codex checks the logic).
  *
  * House rules, checked by call.test.ts: no em or en dashes, never น้องๆ or
  * เด็กๆ, no streak wording, no "you missed" (พลาด, ยังไม่ได้), nothing about
@@ -73,7 +73,7 @@ export const GUESTS: Record<RotationGuestKey, Guest> = {
     name: "เรือเร่",
     person: false,
     here: "⛵ เรือเร่แวะเข้าท่าแล้ว",
-    arrive: "⛵ เรือเร่ลำเล็กแวะเข้าท่า คนเรือยกลังไม้มาวางข้างกองไฟ ในลังมีของจากทะเลไกล",
+    arrive: "⛵ เรือเร่ลำเล็กแวะเข้าท่า คนเรือยกลังไม้ที่ใส่ของจากทะเลไกลมาวางไว้ข้างกองไฟ",
     still: "⛵ เรือเร่ยังจอดอยู่ที่ท่า",
   },
   gull: {
@@ -81,7 +81,7 @@ export const GUESTS: Record<RotationGuestKey, Guest> = {
     name: "นกนางนวล",
     person: false,
     here: "🪶 นกนางนวลร่อนลงข้างกองไฟแล้ว",
-    arrive: "🪶 นกนางนวลตัวหนึ่งร่อนลงข้างกองไฟ คาบของที่เก็บมาจากชายหาดมาเต็มปาก",
+    arrive: "🪶 นกนางนวลตัวหนึ่งร่อนลงข้างกองไฟ ในปากคาบของที่เก็บจากชายหาดมาเต็มคำ",
     still: "🪶 นกนางนวลยังเกาะอยู่ข้างกองไฟ",
   },
   fireflies: {
@@ -89,7 +89,7 @@ export const GUESTS: Record<RotationGuestKey, Guest> = {
     name: "หิ่งห้อย",
     person: false,
     here: "✨ หิ่งห้อยมาวนรอบกองไฟแล้ว",
-    arrive: "✨ หิ่งห้อยฝูงหนึ่งบินออกมาจากพุ่มไม้หลังลาน มาวนอยู่รอบกองไฟ",
+    arrive: "✨ หิ่งห้อยฝูงหนึ่งบินออกจากพุ่มไม้หลังลาน ลอยวนส่องแสงอยู่รอบกองไฟ",
     still: "✨ หิ่งห้อยยังวนอยู่รอบกองไฟ",
   },
   turtle: {
@@ -123,18 +123,18 @@ export function staffName(raw: string): string {
 }
 
 /** The words for a staff guest with no display name on record. */
-const STAFF_UNNAMED = "พี่จากทีม SHIFT";
+const STAFF_UNNAMED = "พี่ทีม SHIFT";
 
 /**
  * A staff night's guest: the staff who sat at the fire during the rest, by
- * display name (one, or "A และ B"). DRAFT. Never "still sitting here" (they
+ * display name (one, or "A และ B"). Never "still sitting here" (they
  * may have left), and the looks come by the same luck as every night.
  */
 export function staffGuest(names: readonly string[]): Guest {
   const shown = names.map(staffName).filter((n) => n.length > 0).slice(0, STAFF_NAMES_SHOWN);
   const who = shown.length > 0 ? shown.join(" และ ") : STAFF_UNNAMED;
   const here = `🌟 คืนนี้ ${who} มาเป็นแขกที่กองไฟ`;
-  const brought = "🎒 พกลุคพิเศษมาด้วย ลุคแบบนี้ได้จากแขกตัวจริงเท่านั้น ทุกทีมลุ้นเท่ากันเหมือนทุกคืน";
+  const brought = "🎒 พกลุคพิเศษมาฝากด้วย ลุคนี้มีเฉพาะคืนที่พี่ทีม SHIFT มาเป็นแขก ทุกทีมที่มีคนอยู่ที่กองไฟช่วงพักได้ลุ้นเท่ากัน ทีมละครั้ง";
   return {
     emoji: "🌟",
     name: who,
@@ -171,8 +171,8 @@ function named(g: Guest, before: string, after: string): string {
  */
 function dropped(g: Guest, teams: number): string {
   return teams > 0
-    ? named(g, "🎁 ", `ทิ้งของไว้ให้ **${teams}** ทีม ทีมคุณได้อะไร กดดูได้ที่ปุ่มด้านล่าง เห็นแค่คุณ`)
-    : named(g, "🌙 คืนนี้", "แค่แวะมานั่งพักข้างกองไฟ");
+    ? named(g, "🎁 ", `ทิ้งของไว้ให้ **${teams}** ทีม กดปุ่มด้านล่างเช็กว่าทีมคุณได้ไหม เห็นแค่คุณ`)
+    : named(g, "🌙 คืนนี้", "แค่แวะมาพักข้างกองไฟ");
 }
 
 /**
@@ -193,31 +193,31 @@ export const CALL = {
   /** One line a day, picked by the day (call.ts openerOf): never the guest, so the reveal stays a surprise. */
   openers: [
     "🪵 ฟืนกองไว้พร้อมแล้ว คืนนี้จุดไฟตอน 1 ทุ่ม",
-    "🌅 ฟ้าเริ่มมืดแล้ว อีกเดี๋ยวลานกลางเกาะจะสว่างด้วยกองไฟ",
+    "🌅 ฟ้าเริ่มมืดแล้ว อีกเดี๋ยวไฟที่ลานกลางเกาะก็จะสว่างขึ้น",
     "🪶 ลมทะเลเริ่มเย็น ได้เวลาล้อมวงกันที่กองไฟ",
     "🌊 คลื่นเบาลงแล้ว คืนนี้นั่งทำงานข้างกองไฟกัน",
   ],
-  invite: "เอางานของตัวเองมานั่งทำข้างๆ เพื่อน ไม่ต้องเปิดไมค์ ไม่ต้องพูดก็ได้",
+  invite: "หยิบงานมานั่งทำข้างๆ เพื่อนได้เลย ไม่ต้องเปิดไมค์หรือคุยก็ได้",
   /** When the first round starts, as a Discord timestamp (each reader sees their own clock). */
   round: (lit: number) =>
     `รอบแรกเริ่ม <t:${lit}:t> (<t:${lit}:R>) · โฟกัส ${FOCUS_MINUTES} นาที พัก ${REST_MINUTES} นาที · มาตอนไหนก็นั่งได้`,
   /** Before the guest arrives (a season night only): something is coming, never what. */
-  teaser: (at: number) => `🔭 ไกลๆ ที่ขอบทะเลมีอะไรกำลังมาทางเกาะ จะถึงกองไฟตอนพักรอบแรก <t:${at}:t>`,
+  teaser: (at: number) => `🔭 ไกลออกไปที่ขอบทะเลมีบางอย่างกำลังมุ่งหน้ามาทางเกาะ น่าจะถึงกองไฟตอนพักรอบแรก <t:${at}:t>`,
   /** How the drop works until it is settled: sit at the fire during the guest's rest; one roll per team, however many come. */
   drop: sitDuring,
   litTitle: "🔥 ไฟติดแล้ว",
-  lit: "รอบโฟกัสแรกเริ่มแล้ว เข้ามาตอนไหนก็ได้ นั่งลงแล้วเริ่มงานของตัวเองเลย",
+  lit: "รอบโฟกัสแรกเริ่มแล้ว ตามเข้ามาตอนไหนก็ได้ เข้ามาแล้วลุยงานของตัวเองได้เลย",
   /** Once the night is settled: how many teams got a look (or a warm line for none). */
   dropped,
   /** While the guest stays (until 21:00). Staff may leave: their night never promises they stay. */
   stay: (g: Guest, until: number) =>
-    g.person ? "กองไฟยังเปิดอยู่ มานั่งทำงานด้วยกันต่อได้" : `${g.name}อยู่ถึง <t:${until}:t> มานั่งทำงานด้วยกันต่อได้`,
+    g.person ? "ไฟยังลุกอยู่ มานั่งทำงานด้วยกันต่อได้" : `${g.name}จะอยู่ถึง <t:${until}:t> มานั่งทำงานด้วยกันต่อได้`,
   embersTitle: "🌙 กองไฟคืนนี้มอดแล้ว",
   /**
    * Never "tomorrow": the embers stay up past midnight. True while it shows:
    * a switched-off call and a SHIFT cohort week turn it into the paused note.
    */
-  embers: "กองไฟจุดทุกเย็นตอน 1 ทุ่ม ห้องกองไฟเปิดอยู่ตลอด อยากนั่งทำงานตอนไหนก็เข้ามาได้",
+  embers: "ปกติกองไฟเริ่มตอน 1 ทุ่ม เว้นสัปดาห์ที่มีรอบ SHIFT ห้องกองไฟเปิดอยู่ตลอด อยากนั่งทำงานตอนไหนก็เข้ามาได้",
   /**
    * The call is paused: staff switched it off (/admin feature campfire_call
    * off) or a SHIFT cohort round is in session (call.ts). The last call,
@@ -226,10 +226,10 @@ export const CALL = {
    * would not hold).
    */
   offTitle: "🌙 กองไฟพักก่อน",
-  off: "ช่วงนี้งดเรียกรวมตอน 1 ทุ่มไปก่อน ห้องกองไฟเปิดอยู่ตลอด อยากนั่งทำงานตอนไหนก็เข้ามาได้",
+  off: "ช่วงนี้พักการเรียกรวมกองไฟไว้ก่อน แต่ห้องกองไฟยังเปิดตลอด แวะมานั่งทำงานเมื่อไหร่ก็ได้",
   /** Everyone at the fire now (staff too), floored: 1 or 2 could point at one person. Never a name. */
   people: (n: number) =>
-    n >= PEOPLE_FLOOR ? `👥 รอบกองไฟตอนนี้ **${n}** คน` : n > 0 ? "👥 มีคนนั่งอยู่ที่กองไฟแล้ว" : "👥 กองไฟยังว่าง มานั่งเป็นคนแรกได้",
+    n >= PEOPLE_FLOOR ? `👥 ตอนนี้มีคนอยู่ที่กองไฟ **${n}** คน` : n > 0 ? "👥 มีคนนั่งอยู่ที่กองไฟแล้ว" : "👥 กองไฟยังว่าง มานั่งเป็นคนแรกได้",
   fine: "ไม่บังคับ · ไม่มีใครนับเวลาของคุณ · ลุคไม่ทำให้ต้นไม้โต ต้นไม้โตเมื่อพี่เลี้ยงยืนยันเควสต์เท่านั้น",
   /**
    * Only on a call that pinged: how to stop it, with the server setting
@@ -241,11 +241,12 @@ export const CALL = {
    * github.com/l6t9/Lampcord (commit 2c8e7fc,
    * shared/src/commonMain/composeResources/values-th/strings.xml). The
    * current app may word it differently: check on a Thai-language phone
-   * before the three-model review. It stops every role ping in the server,
-   * not only this one, and the line says so. No claim about any channel
+   * (still open after the three-model review). The labels are bold so they
+   * read as names on screen. It stops every role ping in the server, not
+   * only this one, and the line says so. No claim about any channel
    * setting: nothing sourced says which channel setting stops a role ping.
    */
-  mute: "ไม่อยากได้แจ้งเตือนนี้: กดชื่อเซิร์ฟเวอร์ แล้วเข้า ตั้งค่าการแจ้งเตือน (Notification Settings) เปิด ระงับทุกตำแหน่ง @mentions (Suppress All Role @mentions) จะปิดการแท็กบทบาททั้งเซิร์ฟเวอร์",
+  mute: "ไม่อยากได้รับแจ้งเตือนนี้: กดชื่อเซิร์ฟเวอร์ เข้า **ตั้งค่าการแจ้งเตือน** (Notification Settings) แล้วเปิด **ระงับทุกตำแหน่ง @mentions** (Suppress All Role @mentions) ซึ่งจะปิดการแท็กบทบาททั้งเซิร์ฟเวอร์",
   /** The issue line, also how a restarted bot finds its own call. Never the news card's "ฉบับ" or the digest's "ข่าวของ". */
   dayLine: (day: string) => `เรียกรวมกองไฟ ${thaiDay(day)}`,
   /** The private check button, on the call and the round messages once the guest is here. */
@@ -257,41 +258,41 @@ export const CALL = {
 export const ROUND_GUEST = {
   /** On the 19:00 focus round of a guest night. */
   teaser: "🔭 พักรอบนี้จะมีแขกแวะมาที่กองไฟ",
-  /** On the guest's rest (19:25), until the night is settled: sit here until it ends and your team rolls. */
-  sit: (to: number) => `🎁 นั่งอยู่ที่กองไฟถึง <t:${to}:t> ทีมคุณก็ได้ลุ้นลุคใหม่ ทีมละครั้ง มากี่คนก็ลุ้นเท่ากัน`,
+  /** On the guest's rest (19:25), until the night is settled: come to the fire before it ends and your team rolls. */
+  sit: (to: number) => `🎁 แวะมาที่กองไฟช่วงพักก่อน <t:${to}:t> ทีมคุณได้ลุ้นลุคใหม่ ทีมละครั้ง มากี่คนก็ลุ้นเท่ากัน`,
   dropped,
   /** Never "nobody sees which team": a picked look shows on a shown team's tree (shift_quest_island_styles). */
-  fine: "ทุกทีมที่มีคนนั่งที่กองไฟช่วงพักแรกลุ้นเท่ากัน ทีมละครั้ง · บอทบอกแค่จำนวนทีม ไม่ประกาศว่าทีมไหนได้ · ลุคไม่ทำให้ต้นไม้โต",
+  fine: "ทุกทีมที่มีคนนั่งที่กองไฟช่วงพักแรกได้ลุ้นเท่ากัน ทีมละครั้ง · บอทบอกแค่จำนวนทีม ไม่ประกาศว่าทีมไหนได้ · ลุคไม่ทำให้ต้นไม้โต",
 };
 
 /** The guest's private answer to 🎁 (handlers/rounds.ts rd_guest), about the presser's own team only. */
 export const REVEAL = {
   wonTitle: (g: Guest) => named(g, "🎁 ", "ทิ้งของไว้ให้ทีมคุณ"),
-  won: (look: string) => `ในของมี **${look}** สำหรับต้นไม้ของทีม`,
-  wonWaiting: "รับได้เลยด้านล่าง หรือเพื่อนในทีมคนไหนก็เปิดได้จากปุ่ม 🎁 เปิดของขวัญ",
-  wonTaken: "ทีมรับไปแล้ว ลุคนี้อยู่กับต้นไม้ของทีม",
+  won: (look: string) => `ข้างในเป็น **${look}** สำหรับแต่งต้นไม้ของทีม`,
+  wonWaiting: "กดรับด้านล่างได้เลย หรือใครในทีมจะกดปุ่ม 🎁 เปิดของขวัญ ก็ได้เหมือนกัน",
+  wonTaken: "คนในทีมกดรับไปแล้ว ลุคนี้อยู่ที่ต้นไม้ของทีมเรียบร้อย",
   lostTitle: (g: Guest) => named(g, `${g.emoji} คืนนี้`, "แค่แวะมาทักทายทีมคุณ"),
-  lost: "คืนนี้ของไม่ได้ตกถึงทีมคุณ แขกเวียนกันมาที่กองไฟ แต่ละตัวมีของของตัวเอง",
+  lost: "คืนนี้ของไม่ได้มาตกที่ทีมคุณ แขกแวะเวียนมาที่กองไฟเรื่อยๆ และพกของมาไม่ซ้ำกัน",
   fullTitle: (g: Guest) => named(g, `${g.emoji} ทีมคุณมีของจาก`, "ครบแล้ว"),
-  full: (g: Guest) => named(g, "คืนนี้", "เลยแวะมานั่งพักข้างกองไฟด้วยกัน"),
+  full: (g: Guest) => named(g, "คืนนี้", "เลยแวะมาพักข้างกองไฟด้วยกัน"),
   awayTitle: (g: Guest) => named(g, `${g.emoji} `, "แวะมาที่กองไฟคืนนี้"),
   /**
    * Settled, the team never seen, and the bot could not read the room for
    * more than a minute of the rest (a restart, the gateway down): the team
-   * may have sat there then, so never "away". DRAFT.
+   * may have sat there then, so never "away".
    */
   unseenTitle: (g: Guest) => named(g, `${g.emoji} `, "แวะมาที่กองไฟคืนนี้"),
-  unseen: "คืนนี้บอทหลุดไปช่วงหนึ่งระหว่างพัก 19:25 ถึง 19:30 ถ้าทีมคุณนั่งอยู่ที่กองไฟตอนนั้น บอทมองไม่เห็น ขอโทษด้วยนะ แขกเวียนกันมาเรื่อยๆ ไม่ต้องรีบ",
-  /** A roll, never a promise (1 in 2): the same "ได้ลุ้น ทีมละครั้ง" as the call's rule (sitDuring). DRAFT. */
+  unseen: "คืนนี้บอทหลุดไปช่วงหนึ่งระหว่างพัก 19:25 ถึง 19:30 ถ้าทีมคุณนั่งอยู่ที่กองไฟตอนนั้นพอดี บอทอาจมองไม่เห็น ต้องขอโทษด้วยนะ แขกแวะเวียนมาเรื่อยๆ ไม่ต้องรีบ",
+  /** A roll, never a promise (1 in 2): the same "ได้ลุ้น ทีมละครั้ง" as the call's rule (sitDuring). */
   away: "ทีมที่มีคนนั่งที่กองไฟช่วงพักแรกหลัง 1 ทุ่ม (19:25 ถึง 19:30) ได้ลุ้นของจากแขก ทีมละครั้ง แขกเวียนกันมาเรื่อยๆ ไม่ต้องรีบ",
   arrivingTitle: "👀 แขกกำลังวางของ",
-  arriving: "ทุกทีมที่มีคนนั่งที่กองไฟช่วงพัก 19:25 ถึง 19:30 ได้ลุ้นของจากแขก ทีมละครั้ง ลองกดอีกครั้งหลัง 19:30",
+  arriving: "ทุกทีมที่มีคนนั่งที่กองไฟช่วงพัก 19:25 ถึง 19:30 ได้ลุ้นของจากแขก ทีมละครั้ง รอกดดูผลอีกทีหลัง 19:30 ได้เลย",
   /** Settled, but the bot never read the room during the guest's rest (it was away): no team got anything, never "your team was not there". */
-  quietTitle: (g: Guest) => named(g, `${g.emoji} คืนนี้`, "แค่แวะมานั่งพัก"),
-  quiet: "คืนนี้แขกไม่ได้ทิ้งของไว้ให้ทีมไหน แขกเวียนกันมาที่กองไฟ แต่ละตัวมีของของตัวเอง",
-  noPlot: "ของจากแขกเป็นลุคแต่งต้นไม้ของทีม จับจองที่ดินก่อน แล้วทีมของคุณก็ได้ลุ้นด้วย",
+  quietTitle: (g: Guest) => named(g, `${g.emoji} คืนนี้`, "แค่แวะมาพักข้างกองไฟ"),
+  quiet: "คืนนี้แขกไม่ได้วางของไว้ให้ทีมไหนเลย แวะเวียนมาที่กองไฟเรื่อยๆ และพกของมาไม่ซ้ำกัน",
+  noPlot: "ของจากแขกเป็นลุคไว้แต่งต้นไม้ของทีม กดจับจองที่ดินก่อน แล้วทีมคุณก็มาร่วมลุ้นได้เลย",
   goneTitle: "🌙 แขกกลับไปแล้ว",
-  gone: "แขกแวะมาที่กองไฟตอนพักรอบแรกหลัง 1 ทุ่ม ปุ่มนี้ดูได้ถึงเที่ยงคืนของคืนนั้น",
+  gone: "แขกแวะมาที่กองไฟช่วงพักรอบแรกหลัง 1 ทุ่ม ปุ่มนี้กดดูผลได้ก่อนเที่ยงคืนของวันนั้น",
   /** What the guest brought, by the looks' names. */
   looks: (names: string[]) => `ของที่แขกพกมา: ${names.join(" · ")}`,
   /** The gift card's heading (handlers/tree.ts offerGift). */

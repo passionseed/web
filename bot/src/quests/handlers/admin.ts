@@ -174,8 +174,8 @@ const FEATURES: { key: string; label: string; setting: string; optional?: boolea
   { key: "sharing", label: "แชร์สาธารณะ", setting: "sharing_enabled" },
   { key: "reminders", label: "การเตือน", setting: "reminders_enabled" },
   { key: "squads", label: "สควอด", setting: "squads_enabled" },
-  // 20261118150000_shift_quest_campfire_call (schema 21). DRAFT labels for the Thai review.
-  { key: "campfire_call", label: "เรียกรวมกองไฟ 1 ทุ่ม", setting: "campfire_call_enabled", optional: true },
+  // 20261118150000_shift_quest_campfire_call (schema 21). Thai reviewed (Gemini, Codex, Claude), 2026-11-18.
+  { key: "campfire_call", label: "เรียกรวมกองไฟ 18:50", setting: "campfire_call_enabled", optional: true },
   { key: "campfire_call_ping", label: "แท็กนักเรียนตอนเรียกรวม", setting: "campfire_call_ping", optional: true },
 ];
 

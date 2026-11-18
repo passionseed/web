@@ -80,7 +80,7 @@ describe("CampfireSheet", () => {
     // True for a team of one, and about the won look's date (20261118150000).
     expect(CAMPFIRE.fine).toContain("กองไฟบนเกาะเก็บแค่ว่าใครอยู่ในห้องตอนนี้ และลบทันทีเมื่อออก");
     expect(CAMPFIRE.fine).not.toContain("เก็บแค่ว่าทีมไหนได้ลุ้น");
-    expect(CAMPFIRE.fine).toContain("ทีมที่มีคุณคนเดียว");
+    expect(CAMPFIRE.fine).toContain("ถ้าทีมมีคุณคนเดียว");
     expect(CAMPFIRE.fine).toContain("พร้อมวันที่ได้");
     // The guest keeps which teams sat at the fire during its rest, never who or when.
     expect(CAMPFIRE.fine).toContain("ไม่เก็บว่าใครในทีมนั่งหรือนั่งตอนไหน");
