@@ -3,6 +3,7 @@ import { render, screen, within } from "@testing-library/react";
 import type { CampfireSummary } from "@/lib/supabase/shift-quests/types";
 
 import { CampfireSheet } from "../CampfireSheet";
+import { CAMPFIRE } from "../copy";
 import type { CampfireNamesState } from "../useCampfire";
 
 // vaul needs layout APIs jsdom lacks; the sheet only has to show its content when open.
@@ -74,7 +75,15 @@ describe("CampfireSheet", () => {
     expect(join).toHaveAttribute("target", "_blank");
     expect(join).toHaveAttribute("rel", "noopener noreferrer");
     expect(join).toHaveClass("ei-button-dawn");
-    expect(within(sheet).getByText("กองไฟบนเกาะเก็บแค่ว่าใครอยู่ในห้องตอนนี้ และลบทันทีเมื่อออก")).toBeInTheDocument();
+    const fine = within(sheet).getByText(CAMPFIRE.fine);
+    expect(fine).toBeInTheDocument();
+    // True for a team of one, and about the won look's date (20261118150000).
+    expect(CAMPFIRE.fine).toContain("กองไฟบนเกาะเก็บแค่ว่าใครอยู่ในห้องตอนนี้ และลบทันทีเมื่อออก");
+    expect(CAMPFIRE.fine).not.toContain("เก็บแค่ว่าทีมไหนได้ลุ้น");
+    expect(CAMPFIRE.fine).toContain("ถ้าทีมมีคุณคนเดียว");
+    expect(CAMPFIRE.fine).toContain("พร้อมวันที่ได้");
+    // The guest keeps which teams sat at the fire during its rest, never who or when.
+    expect(CAMPFIRE.fine).toContain("ไม่เก็บว่าใครในทีมนั่งหรือนั่งตอนไหน");
   });
 
   it("shows names only: no avatars, no Discord ids, no plots", () => {

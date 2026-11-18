@@ -472,11 +472,17 @@ export const DETAIL = {
   done: "ผ่านแล้ว",
   doneRepeat: "ผ่านแล้ว ส่งซ้ำเพื่อเรียนรู้ต่อได้",
   declinedProposed: "เควสต์นี้ปิดไปแล้ว เสนอเควสต์ใหม่ได้เสมอ",
-  proofLabel: "หลักฐาน (ลิงก์หรือเล่าสั้นๆ)",
+  /** DRAFT: the link has its own field now, so the label is just the noun; the placeholder still says a link works here too. */
+  proofLabel: "หลักฐาน",
   proofHint: "ไม่ต้องใส่ชื่อจริง เบอร์โทร หรือข้อมูลส่วนตัวของใคร",
   /** Thai reviewed (Cursor, Codex), 2026-11-14. */
   proofPlaceholder: "วางลิงก์ หรือเล่าสั้นๆ ว่าทำอะไรไป แล้วเจออะไร",
-  urlLabel: "ลิงก์งาน (ไม่บังคับ, ขึ้นต้นด้วย https://)",
+  /** DRAFT: the send form's optional group (link and photos), under the two required answers. */
+  optional: "แนบเพิ่ม (ไม่บังคับ)",
+  /** DRAFT: the link's label once opened; "ไม่บังคับ" lives in the group heading, the https rule stays in the label. */
+  urlShort: "ลิงก์งาน (ขึ้นต้นด้วย https://)",
+  /** DRAFT: the text button that opens the link field. */
+  addLink: "เพิ่มลิงก์",
   /** The bot's reviewed portfolio hint (bot/src/quests/island/copy.ts portfolioHint), word for word. */
   reflectionPlaceholder: "ตอบสั้นๆ ข้อเดียว เก็บไว้ใช้ในพอร์ตได้",
   submit: "ส่งให้พี่เลี้ยงดู",
@@ -694,7 +700,16 @@ export const CAMPFIRE = {
   empty: "ตอนนี้ยังไม่มีใครในห้อง เข้าไปเริ่มก่อนได้",
   error: "ตอนนี้โหลดรายชื่อไม่ได้",
   join: "เข้าห้อง",
-  fine: "กองไฟบนเกาะเก็บแค่ว่าใครอยู่ในห้องตอนนี้ และลบทันทีเมื่อออก",
+  /**
+   * What the campfire keeps (20261118150000): the evening guest keeps
+   * which teams had someone at the fire during its rest and each team's roll
+   * (no member, no time, deleted the next day), which for a team of one is
+   * that student's; a won look is the team's gift, kept with its date. "ใคร
+   * ในทีม": on a night the founder or a mentor is the guest, their display
+   * name is kept until the next day (staff, never a team member). Thai
+   * reviewed (Gemini, Codex, Claude), 2026-11-18.
+   */
+  fine: "กองไฟบนเกาะเก็บแค่ว่าใครอยู่ในห้องตอนนี้ และลบทันทีเมื่อออก ส่วนตอนแขกแวะมาที่กองไฟ ระบบจะเก็บว่าทีมไหนมีคนนั่งช่วงพักนั้นและผลลุ้นของทีม แล้วลบในวันถัดไป ไม่เก็บว่าใครในทีมนั่งหรือนั่งตอนไหน (ถ้าทีมมีคุณคนเดียว ข้อมูลของทีมก็คือของคุณ) ลุคที่ทีมได้จะเป็นของขวัญของทีม เก็บไว้พร้อมวันที่ได้",
 };
 
 /**
@@ -1128,6 +1143,8 @@ export const REVIEW_PAGE = {
  */
 export const PHOTOS = {
   label: "แนบรูปหรือภาพหน้าจอ (ไม่บังคับ)",
+  /** DRAFT: the photos' label inside the send form's optional group. */
+  formLabel: "รูปหรือภาพหน้าจอ",
   rulesLead: "ก่อนแนบ เช็กว่าในรูป",
   rules: ["ไม่มีหน้าคน", "ไม่มีชื่อจริง", "ไม่มีเบอร์โทรหรือที่อยู่"],
   crop: "ภาพหน้าจอ: ครอปให้เหลือแค่ส่วนที่เกี่ยวกับงาน",

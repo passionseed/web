@@ -202,6 +202,31 @@ describe("admin status card", () => {
     expect(viewText(terms.sent[0])).toContain("✅ บันทึกแล้ว");
   });
 
+  it("lists the campfire call's two switches (schema 21) and hides them on an older database", () => {
+    const s = status();
+    expect(bodyText(renderView(statusView(s as never)))).not.toContain("เรียกรวมกองไฟ");
+    Object.assign(s.settings, { campfire_call_enabled: true, campfire_call_ping: false });
+    const body = bodyText(renderView(statusView(s as never)));
+    expect(body).toContain("✅ เรียกรวมกองไฟ 18:50: เปิด");
+    expect(body).toContain("⚪ แท็กนักเรียนตอนเรียกรวม: ปิด");
+  });
+
+  it("/admin feature passes the campfire switches through admin_set, and offers them as choices", async () => {
+    const c = ctx(() => status());
+    for (const name of ["campfire_call", "campfire_call_ping"]) {
+      const set = interaction("command", { options: options({ name, state: "off" }) });
+      await COMMAND_HANDLERS.get("admin feature")!(set.i, c);
+      expect((c.api.call as jest.Mock).mock.calls.at(-1)).toEqual(["shift_quest_admin_set", "1111111111", name, "off"]);
+    }
+    const feature = JSON.stringify(
+      questCommands()
+        .find((cmd) => cmd.name === "admin")!
+        .options!.find((o) => o.name === "feature")
+    );
+    expect(feature).toContain('"value":"campfire_call"');
+    expect(feature).toContain('"value":"campfire_call_ping"');
+  });
+
   describe("/admin channel with a voice channel", () => {
     const GUILD = "900000000000000000";
     /** A voice channel whose permissions open to the given roles only. */

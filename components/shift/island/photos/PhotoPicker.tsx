@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type ChangeEvent } from "react";
+import { useId, useState, type ChangeEvent, type ReactNode } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -19,13 +19,20 @@ interface PhotoPickerProps {
   disabled?: boolean;
   /** Shown above the grid; the written form's own label by default. */
   label?: string;
+  /**
+   * The send form's way: a text button in a row (no tile, no heading), the
+   * rules as one quiet line under it, small thumbnails once picked.
+   */
+  inline?: boolean;
+  /** Inline only: another text button that shares the row (the send form's เพิ่มลิงก์). */
+  leading?: ReactNode;
 }
 
-/** The rules first (students meet real people), then up to three thumbnails and the add tile. */
+/** The rules first (students meet real people), as one quiet line by the photos rather than an alarm. */
 export function PhotoRules() {
   return (
     <div className={styles.rules}>
-      <HintIcon name="warn" size={20} />
+      <HintIcon name="warn" size={16} />
       <div className={styles.rulesText}>
         <span>{PHOTOS.rulesLead}</span>
         <ul className={styles.ruleList}>
@@ -44,11 +51,20 @@ export function PhotoRules() {
  * phone's 8 MB photo never travels), previewed, and removable before the
  * send. The form uploads them after the written work is saved.
  */
-export function PhotoPicker({ photos, onChange, max = MAX_PHOTOS, disabled = false, label = PHOTOS.label }: PhotoPickerProps) {
+export function PhotoPicker({
+  photos,
+  onChange,
+  max = MAX_PHOTOS,
+  disabled = false,
+  label = PHOTOS.label,
+  inline = false,
+  leading,
+}: PhotoPickerProps) {
   const inputId = useId();
   const labelId = useId();
   const [busy, setBusy] = useState(false);
   const room = Math.max(0, max - photos.length);
+  const count = <span className={styles.count}>{PHOTOS.count(photos.length, max)}</span>;
 
   async function onPick(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
@@ -73,55 +89,78 @@ export function PhotoPicker({ photos, onChange, max = MAX_PHOTOS, disabled = fal
     onChange(photos.filter((p) => p.key !== photo.key));
   }
 
+  const fileInput = (
+    <input
+      id={inputId}
+      className={styles.fileInput}
+      type="file"
+      accept={ACCEPT}
+      multiple
+      disabled={disabled || busy}
+      onChange={onPick}
+    />
+  );
+  const thumbs = photos.map((photo, index) => (
+    <li key={photo.key} className={styles.thumb}>
+      {/* A local preview of the shrunk photo; it is uploaded on send. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={photo.preview} alt={PHOTOS.alt(index + 1)} width={photo.width} height={photo.height} />
+      <button type="button" className={styles.remove} onClick={() => remove(photo)} disabled={disabled} aria-label={PHOTOS.remove(index + 1)}>
+        ×
+      </button>
+    </li>
+  ));
+
+  if (inline) {
+    return (
+      <div className={styles.inline} role="group" aria-labelledby={labelId}>
+        <span id={labelId} className="sr-only">
+          {label}
+        </span>
+        <div className={styles.attachRow}>
+          {leading}
+          {room > 0 ? (
+            <label htmlFor={inputId} className={styles.attach} data-disabled={disabled || busy ? "true" : undefined}>
+              {busy ? <Loader2 className="h-5 w-5 motion-safe:animate-spin" aria-hidden="true" /> : <HintIcon name="camera" size={20} />}
+              <span>{busy ? PHOTOS.shrinking : PHOTOS.add}</span>
+              {count}
+              {fileInput}
+            </label>
+          ) : (
+            count
+          )}
+        </div>
+        <PhotoRules />
+        {photos.length > 0 ? <ul className={styles.thumbRow}>{thumbs}</ul> : null}
+      </div>
+    );
+  }
+
   return (
     <div className={styles.picker} role="group" aria-labelledby={labelId}>
-      <p id={labelId} className={styles.heading}>
-        <HintIcon name="camera" size={20} />
-        <span>{label}</span>
-      </p>
+      <div className={styles.pickerHead}>
+        <p id={labelId} className={styles.pickerLabel}>
+          {label}
+        </p>
+        {count}
+      </div>
       <PhotoRules />
-      <ul className={styles.grid}>
-        {photos.map((photo, index) => (
-          <li key={photo.key} className={styles.thumb}>
-            {/* A local preview of the shrunk photo; it is uploaded on send. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={photo.preview} alt={PHOTOS.alt(index + 1)} width={photo.width} height={photo.height} />
-            <button
-              type="button"
-              className={styles.remove}
-              onClick={() => remove(photo)}
-              disabled={disabled}
-              aria-label={PHOTOS.remove(index + 1)}
-            >
-              ×
-            </button>
-          </li>
-        ))}
+      <ul className={`${styles.grid} ${styles.pickerGrid}`}>
+        {thumbs}
         {room > 0 ? (
           <li>
             <label htmlFor={inputId} className={styles.add} data-disabled={disabled || busy ? "true" : undefined}>
               {busy ? (
                 <Loader2 className="h-5 w-5 motion-safe:animate-spin" aria-hidden="true" />
               ) : (
-                <HintIcon name="camera" size={28} />
+                <HintIcon name="camera" size={24} />
               )}
               <span>{busy ? PHOTOS.shrinking : PHOTOS.add}</span>
-              <input
-                id={inputId}
-                className={styles.fileInput}
-                type="file"
-                accept={ACCEPT}
-                multiple
-                disabled={disabled || busy}
-                onChange={onPick}
-              />
+              {fileInput}
             </label>
           </li>
         ) : null}
       </ul>
-      <p className={styles.meta}>
-        <span className={styles.count}>{PHOTOS.count(photos.length, max)}</span>
-      </p>
     </div>
   );
 }

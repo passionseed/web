@@ -428,6 +428,53 @@ The bot runs on its own host (`bot/deploy.sh`), not on Vercel.
       It needs a staff channel (`/admin channel kind:staff`); without one
       nothing is queued. A rollback to a bot older than the note fails a
       queued note permanently (status `failed`); nothing else is lost.
+- [ ] The campfire call and the evening guest (schema 21,
+      `20261118150000_shift_quest_campfire_call`). Order: merge (Vercel
+      ships the 10 guest looks), deploy the bot, then the migration on the
+      founder's go. The bot re-reads the version every 30 seconds, so no
+      restart. **Applying the migration turns the call on that evening, with
+      the role ping** (both switches default on), within 30 seconds of the
+      apply. **Apply it outside 18:45 to 21:00 Bangkok**: inside that window
+      a call can go out at once (it is due until 19:15) or the guest's rest
+      can start counting with no call posted (19:25 to 19:30), before anyone
+      has checked the permissions below. If the first evening should wait, run
+      `/admin feature campfire_call off` right after applying (the switch
+      does not exist before the migration). Before applying, in Discord:
+      - #island-news: the bot has View Channel, Send Messages, Read Message
+        History, and Mention @everyone, @here and All Roles (or the student
+        role is set to "allow anyone to @mention this role"). Without Read
+        Message History a call whose send stalled is not retried that night
+        (never a second ping).
+      - '🔥 กองไฟ coworking': the student role can View Channel and Connect,
+        and the bot can View Channel and Send Messages in the voice channel's
+        chat. Smoke-test a real round first: someone sits at the fire at :00
+        or :30 and the round message appears in the voice chat. Without it
+        the bot logs `campfire call: ... no call until it is fixed` and sends
+        no call.
+      The first evening: at 18:50 one call in #island-news (bot log
+      `[shift-quests] campfire call posted for <day> (pinged the student roles)`),
+      it edits to lit at 19:00, the guest at 19:25, and after 19:30 the
+      count (log `campfire guest's drop for <day> settled (N team(s) got a
+      look)`), embers at 21:00, and the next evening yesterday's call is
+      gone. Check that students got the notification, and that a test
+      account with **ระงับทุกตำแหน่ง @mentions** (Suppress All Role
+      @mentions) on gets none; on a Thai-language phone, check that the card
+      names the setting as the app shows it. A team that won sees a 🎁
+      waiting on its tree. On a night the founder or a mentor sits at the
+      fire between 19:25 and 19:30, they become the guest within 30 seconds
+      (log `campfire guest for <day>: staff at the fire (N name(s) shown)`;
+      the call's title reads `คืนนี้ <their display name> มาเป็นแขกที่กองไฟ`);
+      a staff member who should not be named that night stays out of the
+      room during that rest. SHIFT cohort weeks need nothing: while a round is
+      in session (the cohort calendar in `lib/content/shift-cohort.ts`, read
+      through `roundsInSession`) the bot sends no call and makes no drop, and
+      the latest call becomes the paused note (log `campfire call paused for
+      <day>`). Off without a deploy: `/admin feature campfire_call off` (the
+      whole call: within 30 seconds the latest call is edited into a paused
+      note with no people line) or `/admin feature campfire_call_ping off`
+      (the same call, no ping). The guest's rolls of earlier nights are deleted by
+      pg_cron's 5-minute voice purge, so a rollback to an older bot keeps the
+      "deleted the next day" promise.
 - [ ] Island invitation RSVPs: every RSVP should lead to the Discord role
       `SHIFT high`. Nothing grants it automatically yet: until it does, staff
       read the new RSVPs (`shift_island_rsvps`, newest first, in the SQL

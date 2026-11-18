@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, useTransition, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, useTransition, type FormEvent } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -17,6 +17,9 @@ import styles from "./island.module.css";
 import { refKey, type QuestView } from "./model";
 import peerStyles from "./peer/peer.module.css";
 import { PhotoPicker } from "./photos/PhotoPicker";
+import photoStyles from "./photos/photos.module.css";
+import { HELPER_ICONS } from "./questArt";
+import { HintIcon } from "./QuestSections";
 import { dropPhoto, uploadPhotos, type PickedPhoto } from "./photos/upload";
 
 interface SubmitFormProps {
@@ -94,9 +97,10 @@ function send(quest: QuestView, proof: string, reflection: string, artifactUrl: 
 const NONE: string[] = [];
 
 /**
- * The written form: what the mentor looks for on top, then proof, an optional
- * https link and one reflection, sent for a mentor's review from the sheet's
- * bar.
+ * The written form: what the mentor looks for on top, then the two required
+ * answers (proof and one reflection), then the optional link and photos as one
+ * quiet group, and the peer tick last. Sent for a mentor's review from the
+ * sheet's bar.
  */
 export function SubmitForm({
   quest,
@@ -110,7 +114,7 @@ export function SubmitForm({
   peer = false,
 }: SubmitFormProps) {
   const formId = useId();
-  const ids = { proof: useId(), url: useId(), reflection: useId() };
+  const ids = { proof: useId(), reflection: useId(), optional: useId(), url: useId() };
   // Kept per quest across the sheet closing, so a stray swipe never loses the text.
   const [draft, setDraft, clearDraft] = useDraft<Draft>(`submit:${refKey(quest.ref)}`, EMPTY);
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -118,6 +122,13 @@ export function SubmitForm({
   const [picked, setPicked] = useState<PickedPhoto[]>([]);
   const [uploading, setUploading] = useState<string | null>(null);
   const [peerOpen, setPeerOpenTick] = useState(true);
+  // The link stays a text button until it is wanted (or already holds something).
+  const [linkWanted, setLinkWanted] = useState(false);
+  const showLink = linkWanted || !!draft.url || !!errors.url;
+  const urlRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (linkWanted) urlRef.current?.focus();
+  }, [linkWanted]);
   const reflectionLabel = quest.reflectionPrompt.trim() || DETAIL.reflectionFallback;
 
   function update(field: keyof Draft, value: string) {
@@ -158,10 +169,18 @@ export function SubmitForm({
     });
   }
 
+  const linkButton = showLink ? null : (
+    <button type="button" className={photoStyles.attach} onClick={() => setLinkWanted(true)} disabled={pending}>
+      <HintIcon name={HELPER_ICONS.link} size={20} />
+      <span>{DETAIL.addLink}</span>
+    </button>
+  );
+
   return (
     <form id={formId} className={styles.form} onSubmit={onSubmit} noValidate>
       <DoneWhenLine items={doneWhen} />
       {note ? <p className={styles.hint}>{note}</p> : null}
+      {/* The two answers a mentor needs come first; everything optional waits in one quiet group below. */}
       <Field
         id={ids.proof}
         label={DETAIL.proofLabel}
@@ -170,34 +189,58 @@ export function SubmitForm({
         value={draft.proof}
         max={proofMax}
         error={errors.proof}
-        rows={4}
+        rows={3}
+        className={styles.write}
         onChange={(value) => update("proof", value)}
       />
-      <div className={styles.field}>
-        <label htmlFor={ids.url} className={styles.label}>
-          {DETAIL.urlLabel}
-        </label>
-        <input
-          id={ids.url}
-          type="url"
-          inputMode="url"
-          autoComplete="off"
-          spellCheck={false}
-          placeholder="https://"
-          className={`ei-input ${styles.input}`}
-          value={draft.url}
-          maxLength={TEXT_LIMITS.artifactUrl}
-          aria-invalid={errors.url ? true : undefined}
-          aria-describedby={errors.url ? `${ids.url}-error` : undefined}
-          onChange={(event) => update("url", event.target.value)}
-        />
-        {errors.url ? (
-          <p id={`${ids.url}-error`} role="alert" className={styles.fieldError}>
-            {errors.url}
-          </p>
+      <Field
+        id={ids.reflection}
+        label={reflectionLabel}
+        placeholder={DETAIL.reflectionPlaceholder}
+        value={draft.reflection}
+        max={TEXT_LIMITS.reflection}
+        error={errors.reflection}
+        rows={2}
+        className={styles.write}
+        onChange={(value) => update("reflection", value)}
+      />
+      <div className={styles.formOptional} role="group" aria-labelledby={ids.optional}>
+        <p id={ids.optional} className={styles.formOptionalHeading}>
+          {DETAIL.optional}
+        </p>
+        {showLink ? (
+          <div className={styles.field}>
+            <label htmlFor={ids.url} className={styles.label}>
+              {DETAIL.urlShort}
+            </label>
+            <input
+              ref={urlRef}
+              id={ids.url}
+              type="url"
+              inputMode="url"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder="https://"
+              className={`ei-input ${styles.input} ${styles.write}`}
+              value={draft.url}
+              maxLength={TEXT_LIMITS.artifactUrl}
+              aria-invalid={errors.url ? true : undefined}
+              aria-describedby={errors.url ? `${ids.url}-error` : undefined}
+              onChange={(event) => update("url", event.target.value)}
+            />
+            {errors.url ? (
+              <p id={`${ids.url}-error`} role="alert" className={styles.fieldError}>
+                {errors.url}
+              </p>
+            ) : null}
+          </div>
         ) : null}
+        {photos ? (
+          <PhotoPicker photos={picked} onChange={setPicked} disabled={pending} label={PHOTOS.formLabel} inline leading={linkButton} />
+        ) : (
+          linkButton
+        )}
       </div>
-      {photos ? <PhotoPicker photos={picked} onChange={setPicked} disabled={pending} /> : null}
       {peer ? (
         <label className={peerStyles.toggle}>
           <input type="checkbox" checked={peerOpen} onChange={(event) => setPeerOpenTick(event.target.checked)} disabled={pending} />
@@ -207,16 +250,6 @@ export function SubmitForm({
           </span>
         </label>
       ) : null}
-      <Field
-        id={ids.reflection}
-        label={reflectionLabel}
-        placeholder={DETAIL.reflectionPlaceholder}
-        value={draft.reflection}
-        max={TEXT_LIMITS.reflection}
-        error={errors.reflection}
-        rows={3}
-        onChange={(value) => update("reflection", value)}
-      />
       <InSheetFooter slot={footer}>
         <button
           type="submit"

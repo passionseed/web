@@ -531,6 +531,16 @@ async function main(): Promise<void> {
     ["the nightly card's re-render", "select public.shift_quest_news_post_current()", []],
     // 20261118140000_shift_quest_island_news_missed: the missed-night staff note is the bot's.
     ["the missed-night check", "select public.shift_quest_enqueue_news_missed()", []],
+    // 20261118150000_shift_quest_campfire_call: the call and the evening guest are the bot's.
+    ["the campfire call's reader", "select public.shift_quest_call_today()", []],
+    ["the campfire call's claim", "select public.shift_quest_call_claim($1::date, $2)", ["2026-11-18", "700000000000000001"]],
+    ["the campfire call's writer", "select public.shift_quest_call_mark($1::date, $2, $3)", ["2026-11-18", "700000000000000001", "700000000000000002"]],
+    ["the campfire call's ping check", "select public.shift_quest_call_pings()", []],
+    ["the evening guest's presence check", "select public.shift_quest_campfire_seen($1::date, $2::text[])", ["2026-11-18", [A]]],
+    ["the evening guest's drop", "select public.shift_quest_campfire_drop($1::date)", ["2026-11-18"]],
+    ["the evening guest's check", "select public.shift_quest_guest_status($1)", [A]],
+    ["helper shift_quest__guest_seen", "select public.shift_quest__guest_seen(now(), $1::text[])", [[A]]],
+    ["helper shift_quest__guest_settle", "select public.shift_quest__guest_settle(now(), 1)", []],
     // The raw functions that take a Discord id for someone else, and the flows that stay in Discord or were
     // dropped (20261118100000): the website reaches members through the uuid wrappers only.
     ["raw consent resets", "select public.shift_quest_admin_consent_reset($1, $2)", [ADMIN, A]],
@@ -570,6 +580,9 @@ async function main(): Promise<void> {
     ["helper shift_quest__digest_eligible", "select public.shift_quest__digest_eligible($1)", [randomUUID()]],
     ["reading shift_quest_live_state", "select * from public.shift_quest_live_state", []],
     ["reading shift_quest_news_posts", "select * from public.shift_quest_news_posts", []],
+    ["reading shift_quest_call_posts", "select * from public.shift_quest_call_posts", []],
+    ["reading shift_quest_guest_drops", "select * from public.shift_quest_guest_drops", []],
+    ["reading shift_quest_guest_nights", "select * from public.shift_quest_guest_nights", []],
     ["helper shift_quest__news_totals", "select public.shift_quest__news_totals($1::date)", ["2026-11-18"]],
     ["reading shift_quest_voice_presence", "select * from public.shift_quest_voice_presence", []],
     ["reading shift_quest_voice_state", "select * from public.shift_quest_voice_state", []],

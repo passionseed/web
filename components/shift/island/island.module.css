@@ -1638,7 +1638,7 @@
 
 .form {
   display: grid;
-  gap: 16px;
+  gap: 22px;
 }
 
 .field {
@@ -3045,37 +3045,95 @@ a.canvasRow:focus-visible,
   min-height: 48px;
 }
 
-/* เสร็จเมื่อ above a send form: one compact reminder, a line or two, never a gate. */
+/* เสร็จเมื่อ above a send form: a short checklist reminder, one item a line, never a gate. No box. */
 .doneLine {
+  display: grid;
+  gap: 6px;
   margin: 0;
-  padding: 8px 12px;
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: 14px;
+  line-height: 1.55;
   color: var(--text);
-  background: rgba(231, 205, 146, 0.06);
-  box-shadow: inset 2px 0 0 0 var(--isl-sand);
 }
 
 .doneLineHeading {
-  margin-right: 8px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--isl-sand-hi);
 }
 
 .doneLineList {
-  display: inline;
+  display: grid;
+  gap: 4px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .doneLineList li {
-  display: inline;
+  display: grid;
+  grid-template-columns: 6px minmax(0, 1fr);
+  gap: 10px;
+  align-items: baseline;
 }
 
-.doneLineList li + li::before {
-  content: " · ";
+/* A pixel square, not a bullet. */
+.doneLineList li::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  background: var(--isl-sand);
+  transform: translateY(-2px);
+}
+
+/* The send form's link and photos: one quiet group under the required answers. */
+.formOptional {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.formOptionalHeading {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
   color: var(--text-dim);
+}
+
+/*
+ * The send form writes on a line, not in a box: no fill, no frame, one
+ * underline that turns leaf on focus. Beats .ei-input's own hover and focus.
+ */
+.form .write,
+.form .write:hover,
+.form .write:focus {
+  padding: 8px 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 241, 214, 0.24);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.form .write:hover {
+  border-bottom-color: rgba(255, 241, 214, 0.4);
+}
+
+.form .write:focus {
+  border-bottom-color: var(--isl-leaf);
+  box-shadow: 0 1px 0 0 var(--isl-leaf);
+}
+
+/* The 2px leaf underline is the focus mark; a ring would put the box back. */
+.form .write:focus-visible {
+  outline: none;
+}
+
+/* Grows with the text where the browser can; rows set the start elsewhere. */
+.form .write.textarea {
+  min-height: calc(1.5em * 2 + 16px);
+  resize: none;
+  field-sizing: content;
 }
 
 /* ---------------------------------------------------------------- quest sheet: sent */

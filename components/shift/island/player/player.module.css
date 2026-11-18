@@ -393,6 +393,62 @@
 
 /* ---------------------------------------------------------------- shop */
 
+.merchPreviews {
+  display: grid;
+  gap: 28px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.merchPreview {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(184, 199, 191, 0.2);
+}
+
+.merchArtwork {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 3 / 2;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.merchArtwork img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.merchArtworkPortrait {
+  aspect-ratio: 3 / 4;
+}
+
+.merchCaption {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.merchStatus {
+  flex: none;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+.merchOffer {
+  display: grid;
+  justify-items: end;
+  flex: none;
+  gap: 2px;
+}
+
 .item {
   display: grid;
   gap: 8px;

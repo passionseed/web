@@ -41,6 +41,7 @@ import { plazaProps } from "./plazaProps";
 import { NextStepCard } from "./NextStepCard";
 import { nextStep, type NextStep } from "./nextStep";
 import { NoProject } from "./NoProject";
+import { InviteFriends } from "./InviteFriends";
 import { PlotSheet } from "./PlotSheet";
 import { ProposeSheet } from "./ProposeSheet";
 import { QuestBoard } from "./QuestBoard";
@@ -57,7 +58,7 @@ import { PeerSheet } from "./peer/PeerSheet";
 import { useBangkokDay } from "./useBangkokDay";
 import { useCampfire } from "./useCampfire";
 import { useDayIntention } from "./useDayIntention";
-import { PLAYER_MENU } from "./player/copy";
+import { PLAYER_MENU, SHOP } from "./player/copy";
 import { markResultsSeen, readResultsSeen, useFreshApproval, useFreshResults } from "./useResultsSeen";
 import { useStartQuest } from "./useStartQuest";
 import { IslandVoyage, useVoyage, VoyageCover, type Voyage } from "./voyage";
@@ -139,6 +140,7 @@ function sharedItems(page: IslandPageData, onPanel: (panel: Panel) => void, stor
 } {
   const admin: MenuItem[] = page.me.admin ? [{ id: "admin", icon: "eye", label: MENU.admin, onClick: () => onPanel("admin") }] : [];
   const places: MenuItem[] = [
+    { id: "shop", icon: "coin", label: SHOP.heading, onClick: () => onPanel("wallet") },
     { id: "guide", icon: "signpost", label: MENU.guide, href: "/shift/island/guide" },
     { id: "story", icon: "book", label: MENU.story, onClick: story },
   ];
@@ -687,6 +689,7 @@ function IslandHome({
           onBoard={() => setPanel("board")}
           projectId={page.photos === true ? (project?.id ?? null) : null}
           roots={<RootsLine instanceId={dayQuest?.instanceId ?? null} />}
+          invite={project && !page.me.staff ? <InviteFriends key={project.id} projectId={project.id} /> : null}
         />
       ) : null}
       {/* From the chip: the one door to everything that is not the next step. */}

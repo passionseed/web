@@ -29,6 +29,9 @@ const FEATURES = [
   { name: "reminders (การเตือน)", value: "reminders" },
   // Off until founder decision 5 picks the island for squads; needs nothing published first.
   { name: "squads (สควอด)", value: "squads" },
+  // Schema 21: the 18:50 campfire call in #island-news, and its one role ping. Both on by default.
+  { name: "campfire_call (เรียกรวมกองไฟ 18:50)", value: "campfire_call" },
+  { name: "campfire_call_ping (แท็กนักเรียนตอนเรียกรวม)", value: "campfire_call_ping" },
 ];
 
 export function questCommands(): RESTPostAPIChatInputApplicationCommandsJSONBody[] {
