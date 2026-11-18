@@ -1014,7 +1014,10 @@ describe("IslandApp: the player", () => {
     fireEvent.click(within(openMenu()).getByRole("button", { name: SHOP.heading }));
     expect(await screen.findByText(SHOP.merch.tee)).toBeInTheDocument();
     expect(screen.getByText(SHOP.merch.hoodie)).toBeInTheDocument();
-    expect(screen.getAllByText(SHOP.comingSoon)).toHaveLength(2);
+    expect(screen.getByText(SHOP.merch.stickers)).toBeInTheDocument();
+    expect(screen.getByText(SHOP.merch.cap)).toBeInTheDocument();
+    expect(screen.getByText(SHOP.merch.deskMat)).toBeInTheDocument();
+    expect(screen.getAllByText(SHOP.comingSoon)).toHaveLength(5);
   });
 
   it("keeps coins off the menu with a plot: they live in the team sheet", () => {

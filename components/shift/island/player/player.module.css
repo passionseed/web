@@ -424,6 +424,10 @@
   object-fit: contain;
 }
 
+.merchArtworkPortrait {
+  aspect-ratio: 3 / 4;
+}
+
 .merchCaption {
   display: flex;
   align-items: baseline;

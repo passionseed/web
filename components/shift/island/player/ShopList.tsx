@@ -153,7 +153,7 @@ export function ShopList({ wallet, onChanged }: ShopListProps) {
         <ul className={styles.merchPreviews}>
           {previews.map((product) => (
             <li key={product.key} className={styles.merchPreview}>
-              <MerchArtwork src={product.image} />
+              <MerchArtwork src={product.image} portrait={product.key === "stickers"} />
               <div className={styles.merchCaption}>
                 <div>
                   <p className={styles.itemName}>{SHOP.merch[product.key]}</p>
@@ -184,7 +184,7 @@ export function ShopList({ wallet, onChanged }: ShopListProps) {
             const needs = requirements(item, wallet);
             return (
               <li key={item.id} className={styles.item}>
-                {artwork ? <MerchArtwork src={artwork.image} /> : null}
+                {artwork ? <MerchArtwork src={artwork.image} portrait={artwork.key === "stickers"} /> : null}
                 <div className={styles.itemHead}>
                   <p className={styles.itemName}>{item.name}</p>
                   <span className={styles.amount}>{SHOP.cost(coinNumber(item.cost))}</span>

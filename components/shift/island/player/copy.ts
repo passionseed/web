@@ -102,6 +102,9 @@ export const SHOP = {
   merch: {
     tee: "เสื้อยืด PassionSeed",
     hoodie: "ฮู้ดดี้ PassionSeed",
+    stickers: "แผ่นสติกเกอร์ PassionSeed",
+    cap: "หมวก PassionSeed",
+    deskMat: "แผ่นรองโต๊ะ PassionSeed",
   },
   closed: "ร้านยังไม่เปิด เมื่อเปิด จะประกาศกติกาและของที่มีจริงให้ทราบก่อน",
   empty: "ยังไม่มีของในร้านตอนนี้",

@@ -18,11 +18,14 @@ jest.mock("../IslandSheet", () => ({
 }));
 
 describe("PassionSeed physical merch", () => {
-  it("allows browsing both designs while redemption is off, without offering a purchase", () => {
+  it("shows all five merch products while redemption is off, without offering a purchase", () => {
     render(<ShopList wallet={{ balance: 0, shop: { live: false, items: [], mine: [], terms: null } }} onChanged={jest.fn()} />);
     expect(screen.getByText(SHOP.merch.tee)).toBeInTheDocument();
     expect(screen.getByText(SHOP.merch.hoodie)).toBeInTheDocument();
-    expect(screen.getAllByText(SHOP.comingSoon)).toHaveLength(2);
+    expect(screen.getByText(SHOP.merch.stickers)).toBeInTheDocument();
+    expect(screen.getByText(SHOP.merch.cap)).toBeInTheDocument();
+    expect(screen.getByText(SHOP.merch.deskMat)).toBeInTheDocument();
+    expect(screen.getAllByText(SHOP.comingSoon)).toHaveLength(5);
     expect(screen.queryByRole("button", { name: /^แลก / })).not.toBeInTheDocument();
   });
 
@@ -41,7 +44,7 @@ describe("PassionSeed physical merch", () => {
     };
     render(<ShopList wallet={{ balance: 2000, shop: { live: true, items: [item], mine: [], terms: null } }} onChanged={jest.fn()} />);
     expect(screen.getAllByText(product.catalogName)).toHaveLength(1);
-    expect(screen.getAllByText(SHOP.comingSoon)).toHaveLength(1);
+    expect(screen.getAllByText(SHOP.comingSoon)).toHaveLength(4);
     expect(screen.getByText(SHOP.cost("1,234"))).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: SHOP.redeemLabel(product.catalogName) }));
     expect(screen.getByText(SHOP.confirm(product.catalogName, "1,234"))).toBeInTheDocument();
