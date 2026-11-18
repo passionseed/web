@@ -47,6 +47,13 @@
 #             at fixed times, what its totals count over 20:00 to 20:00, the
 #             AI lines it may show, claim, mark and the 7-day re-check, the
 #             news channel setting, the grants), with consent off
+#   newsmissed
+#             every migration applied twice, then news_missed.ts (schema 20,
+#             20261118140000: the staff note when tonight's card did not post
+#             by 22:30, at fixed times: one outbox row per Bangkok day for the
+#             staff channel, {day} only, none with a card, a card being sent,
+#             no news or staff channel or a channel set after 22:30; the
+#             grants), with consent off
 #
 #   supabase/tests/shift_quests/run-local.sh       # or: pnpm test:db:quests
 #   PG_BIN=/usr/lib/postgresql/15/bin supabase/tests/shift_quests/run-local.sh
@@ -190,9 +197,11 @@ SQL
 # The website-only functions (the canvas link, 091100, the ownership read,
 # 091200, the campfire read, 093000, and the menu links read, 094000) are
 # never the bot's; the campfire writers (093000), the live post's reader
-# and writer (094000) and the nightly island news card's four functions
-# (20261118130000) are the bot's like every other entry point, and never the
-# website's (its helpers, shift_quest__news_*, are nobody's).
+# and writer (094000), the nightly island news card's four functions
+# (20261118130000) and its missed-night check (20261118140000,
+# shift_quest_enqueue_news_missed) are the bot's like every other entry
+# point, and never the website's (their helpers, shift_quest__news_*, are
+# nobody's).
 # And the web allowlist (20261111090900, 091000, 091100, 091200, 093000, 094000, and every later file
 # that grants shift_quest_web, up to 20261118100000's website-does-everything allowlist): shift_quest_web executes exactly the
 # functions listed below (nothing before that file is applied), never a
@@ -429,7 +438,7 @@ echo "# migrations"
 for f in "${MIGRATIONS[@]}"; do echo "apply $(basename "$f")"; done
 new_db once
 apply once "single pass" "${MIGRATIONS[@]}"
-for DB in rules island flows islandflows board canvas campfire live player roots tree reset evidence peer treepost webeverything visitors news; do
+for DB in rules island flows islandflows board canvas campfire live player roots tree reset evidence peer treepost webeverything visitors news newsmissed; do
   new_db "$DB"
   apply "$DB" "first pass" "${MIGRATIONS[@]}"
   apply "$DB" "second pass" "${MIGRATIONS[@]}"
@@ -510,6 +519,7 @@ suite "tree grew post" treepost tree_post.ts
 suite "web does everything but Discord" webeverything web_everything.ts
 suite "plaza visitors" visitors visitors.ts
 suite "island news daily" news news.ts
+suite "island news missed-night note" newsmissed news_missed.ts
 # island_rules.ts runs against wave 1 alone once it knows to skip season cases.
 if [ "${#WAVE1[@]}" -lt "${#MIGRATIONS[@]}" ] && grep -q SHIFT_QUESTS_WAVE "$HERE/island_rules.ts"; then
   export SHIFT_QUESTS_WAVE=1

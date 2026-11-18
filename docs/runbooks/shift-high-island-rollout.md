@@ -299,12 +299,19 @@ The bot runs on its own host (`bot/deploy.sh`), not on Vercel.
       ssh <bot host> docker logs --tail 50 passionseed-discord-bot | grep shift-quests
       ```
 
-      Expect `[shift-quests] database schema 19 (bot needs 2)` once every
+      Expect `[shift-quests] database schema 20 (bot needs 2)` once every
       migration is applied. From 8 the bot runs the live post, from 9 the
       island news post, from 10 it draws roots, from 19 it posts the nightly
-      island news card. Below 19 it logs
+      island news card, from 20 it sends the staff channel a note when that
+      card did not post by 22:30. Below 19 it logs
       `[shift-quests] nightly island news off (schema N < 19)`; the schema is
-      read at start, so restart the bot after applying the migration.
+      read at start, so restart the bot after applying the migration. The
+      one exception is schema 20: deploy the bot **before** applying
+      `20261118140000_shift_quest_island_news_missed.sql` (an older bot
+      fails the note's kind permanently); the running bot reads the version
+      again every 5 minutes and logs
+      `[shift-quests] nightly island news: missed-night staff note on (schema 20)`,
+      no restart needed.
 - [ ] Register the slash commands (REST calls only; it never starts a second
       bot):
 
@@ -405,6 +412,18 @@ The bot runs on its own host (`bot/deploy.sh`), not on Vercel.
       A rollback (`bot/deploy.sh --rollback`) leaves the posted cards as they
       are and posts nothing until the redeploy; clearing the news channel
       brings the old digest behaviour back.
+- [ ] A missed night (schema 20): when no card is recorded by 22:30
+      Bangkok, the staff channel gets one note
+      (`⚠️ ข่าวเกาะคืนนี้ยังไม่ได้โพสต์`) and the bot log has
+      `no card recorded for tonight by 22:30; a note is queued for the staff channel`.
+      Check the bot's View Channel, Send Messages, Attach Files and Read
+      Message History in #island-news, `/admin island`, and the bot log
+      lines that start `[shift-quests] nightly island news:`. One note per
+      Bangkok day at most:
+      `select dedupe_key, status from shift_quest_outbox where kind = 'news_missed' order by created_at desc limit 5`.
+      It needs a staff channel (`/admin channel kind:staff`); without one
+      nothing is queued. A rollback to a bot older than the note fails a
+      queued note permanently (status `failed`); nothing else is lost.
 - [ ] Island invitation RSVPs: every RSVP should lead to the Discord role
       `SHIFT high`. Nothing grants it automatically yet: until it does, staff
       read the new RSVPs (`shift_island_rsvps`, newest first, in the SQL

@@ -57,3 +57,23 @@ export const NEWS = {
   pictureAlt: "เกาะ SHIFT คืนนี้",
   pictureFailed: "🖼️ คืนนี้รูปเกาะวาดไม่ขึ้น",
 };
+
+const DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * The staff channel's note when tonight's card did not post by 22:30 Bangkok
+ * (kind news_missed, schema 20; copy.ts renders it). The day comes from the
+ * queue; nothing about a student or a team. 4 ทุ่มครึ่ง is 22:30, 2 ทุ่ม is
+ * 20:00. Never the card's issue line (NEWS.dayLine) or the digest's, which
+ * the bot searches for to find its own card. DRAFT for the three-model Thai
+ * review.
+ */
+export const NEWS_MISSED = {
+  title: "⚠️ ข่าวเกาะคืนนี้ยังไม่ได้โพสต์",
+  /** The card's day ("วันที่ 18 พ.ย. 2569") when the queue carries a date, else "คืนนี้". */
+  body: (day: unknown) =>
+    `ถึง 4 ทุ่มครึ่งแล้ว การ์ดข่าวเกาะ${typeof day === "string" && DAY.test(day) ? `วันที่ ${thaiDay(day)}` : "คืนนี้"} ยังไม่ขึ้นในห้องข่าวเกาะ`,
+  /** What to check: the bot's permissions in the news channel (as /admin channel kind:news asks), then /admin island. */
+  check: "เช็กสิทธิ์ของบอทในห้องข่าวเกาะ: ดูห้อง ส่งข้อความ แนบไฟล์ และอ่านประวัติข้อความ แล้วดู /admin island",
+  note: "หลัง 4 ทุ่มครึ่งบอทไม่เริ่มการ์ดใหม่ของคืนนี้แล้ว พรุ่งนี้ 2 ทุ่มบอทจะลองใหม่เอง",
+};

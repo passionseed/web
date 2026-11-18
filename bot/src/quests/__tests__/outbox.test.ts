@@ -8,7 +8,9 @@ import { MessageFlags, type Client } from "discord.js";
 
 import type { QuestApi } from "../api";
 import { T, TREE_GREW, renderOutbox } from "../copy";
+import { DIGEST } from "../digestCopy";
 import { STAGE_NAMES } from "../island/copy";
+import { NEWS } from "../newsCopy";
 import type { IslandPlot } from "../island/render";
 import {
   PING_NAMED_TEAMS,
@@ -147,6 +149,32 @@ describe("outbox cards", () => {
     expect(renderOutbox("recognition", { body: "ขอบคุณที่ช่วยทดสอบ" }, "111", "222")!.body).toBe("<@111> ขอบคุณ <@222>\n> ขอบคุณที่ช่วยทดสอบ");
   });
 
+  it("the missed-night note (schema 20): the day, what to check, staff colours, nobody pinged", () => {
+    expect(queuedKinds()).toContain("news_missed");
+    const post = renderOutbox("news_missed", { day: "2026-11-18" }, null, null)!;
+    expect(post.mentionUserIds).toEqual([]);
+    const card = renderView(outboxView("news_missed", post), { ephemeral: false });
+    expect(bodyText(card)).toBe(
+      [
+        "### ⚠️ ข่าวเกาะคืนนี้ยังไม่ได้โพสต์",
+        "ถึง 4 ทุ่มครึ่งแล้ว การ์ดข่าวเกาะวันที่ 18 พ.ย. 2569 ยังไม่ขึ้นในห้องข่าวเกาะ",
+        "เช็กสิทธิ์ของบอทในห้องข่าวเกาะ: ดูห้อง ส่งข้อความ แนบไฟล์ และอ่านประวัติข้อความ แล้วดู /admin island",
+        "-# หลัง 4 ทุ่มครึ่งบอทไม่เริ่มการ์ดใหม่ของคืนนี้แล้ว พรุ่งนี้ 2 ทุ่มบอทจะลองใหม่เอง",
+      ].join("\n")
+    );
+    expect(accentColor(card)).toBe(TONE_COLORS.staff);
+    expect(viewText(card)).not.toMatch(/[—–]/);
+    // Never the card's issue line or the digest's: the bot finds its own card of the day by those.
+    expect(viewText(card)).not.toContain(NEWS.dayLine("2026-11-18"));
+    expect(viewText(card)).not.toContain(DIGEST.dayLine("2026-11-18"));
+    // A missing or odd day still reads right.
+    for (const day of [undefined, null, "18/11/2026", 42]) {
+      expect(renderOutbox("news_missed", { day }, null, null)!.body.split("\n")[0]).toBe(
+        "ถึง 4 ทุ่มครึ่งแล้ว การ์ดข่าวเกาะคืนนี้ ยังไม่ขึ้นในห้องข่าวเกาะ"
+      );
+    }
+  });
+
   it("shows the island goal as a short bar, full only once reached", () => {
     const goal = (count: number, target: number) => renderOutbox("island_weekly", { goal_count: count, goal_target: target }, null, null)!.body;
     expect(goal(3, 10)).toBe("🎯 เป้าหมายของเกาะ ▰▰▰▱▱▱▱▱▱▱ **3**/10 โปรเจกต์");
@@ -216,6 +244,21 @@ describe("deliver", () => {
     expect(text).toContain("#31 ทีม31 · และอีก 4");
     expect(text).not.toContain("#32 ");
     expect(componentCount(payload)).toBeLessThanOrEqual(LIMITS.components);
+  });
+
+  it("sends the missed-night note to the channel the database resolved (the staff channel), pinging nobody", async () => {
+    const { client, channelSend, userSend } = fakeClient();
+    const api = fakeApi();
+    const id = await deliver(client, api, claimed({ kind: "news_missed", params: { day: "2026-11-18" }, channel_id: "901" }));
+    expect(id).toBe("post-1");
+    expect(client.channels.fetch).toHaveBeenCalledWith("901");
+    expect(userSend).not.toHaveBeenCalled();
+    const payload = sentPayload(channelSend);
+    expect(payload.allowedMentions).toEqual({ users: [], parse: [] });
+    expect(payload.files).toEqual([]);
+    expect(bodyText(payload)).toContain("การ์ดข่าวเกาะวันที่ 18 พ.ย. 2569");
+    // Nothing is read at send time: the day is all it needs.
+    expect(api.call).not.toHaveBeenCalled();
   });
 
   it("still posts the weekly island text when the picture cannot be drawn", async () => {

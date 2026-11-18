@@ -72,6 +72,7 @@ const OUTBOX_TONE: Record<string, Tone> = {
   help_mentors: "staff",
   redemption_requested: "staff",
   data_request: "staff",
+  news_missed: "staff",
   celebration: "success",
   tree_grew: "success",
   recognition: "success",

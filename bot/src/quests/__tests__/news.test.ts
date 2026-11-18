@@ -11,6 +11,7 @@ import { DIGEST } from "../digestCopy";
 import { LIVE } from "../island/copy";
 import {
   NEWS_GIF,
+  NEWS_MISSED_SCHEMA,
   NEWS_PNG,
   NEWS_SCHEMA,
   cardSignature,
@@ -499,6 +500,10 @@ describe("newsFor", () => {
     expect(newsFor(19, () => started)).toBe(started);
     expect(newsFor(20, () => started)).toBe(started);
   });
+
+  it("adds the missed-night staff note from schema 20", () => {
+    expect(NEWS_MISSED_SCHEMA).toBe(20);
+  });
 });
 
 interface FakeAttachment {
@@ -647,7 +652,10 @@ function fakeChannel(id: string, over: Record<string, unknown> = {}) {
   };
 }
 
-/** shift_quest_news_post_next, _claim, _mark and _post_current as the database answers them. */
+/**
+ * shift_quest_news_post_next, _claim, _mark and _post_current as the database
+ * answers them, plus the schema version and the missed-night check (schema 20).
+ */
 function fakeDb(answer: NewsData | null) {
   const db = {
     answer,
@@ -663,6 +671,12 @@ function fakeDb(answer: NewsData | null) {
     current: null as unknown[] | null,
     /** Thrown by news_post_next (a timeout, a lost connection). */
     nextError: null as Error | null,
+    /** shift_quest_schema_version's answer (the missed-night check reads it below schema 20). */
+    version: 20,
+    /** shift_quest_enqueue_news_missed's answer: 1 when it queued tonight's staff note. */
+    missed: 0,
+    /** Thrown by shift_quest_enqueue_news_missed. */
+    missedError: null as Error | null,
     calls: [] as unknown[][],
   };
   const call = jest.fn(async (fn: string, ...args: unknown[]) => {
@@ -687,6 +701,11 @@ function fakeDb(answer: NewsData | null) {
       if (!db.stored || !db.answer) return [];
       return [{ ...db.answer, message_id: db.stored, ai: db.currentAi ?? db.answer.ai }];
     }
+    if (fn === "shift_quest_schema_version") return db.version;
+    if (fn === "shift_quest_enqueue_news_missed") {
+      if (db.missedError) throw db.missedError;
+      return db.missed;
+    }
     return null;
   });
   return { db, api: { call, rows: jest.fn() } as unknown as QuestApi };
@@ -695,7 +714,8 @@ function fakeDb(answer: NewsData | null) {
 const posters: NewsPost[] = [];
 const GIF_BYTES = Buffer.from("GIF89a-tonight");
 
-function world(answer: NewsData | null = news(), channels: Record<string, unknown> = {}) {
+/** `schema`: the version the bot read at start (20 unless a test says otherwise, so the missed-night check runs). */
+function world(answer: NewsData | null = news(), channels: Record<string, unknown> = {}, schema: number = NEWS_MISSED_SCHEMA) {
   const { db, api } = fakeDb(answer);
   const ch = fakeChannel(NEWS_CH);
   const all = new Map<string, unknown>([[NEWS_CH, ch.channel], ...Object.entries(channels)]);
@@ -708,7 +728,7 @@ function world(answer: NewsData | null = news(), channels: Record<string, unknow
   // Discord's CDN: only a link to a file still on a message, signed today, downloads.
   const download = jest.fn(async (url: string): Promise<Buffer | null> => (ch.serves(url) ? GIF_BYTES : null));
   const start = () => {
-    const p = startNewsPost(client as unknown as Client, api, { guildId: GUILD, connected: () => state.connected, draw, download });
+    const p = startNewsPost(client as unknown as Client, api, { guildId: GUILD, connected: () => state.connected, draw, download, schema });
     posters.push(p);
     return p;
   };
@@ -1130,5 +1150,84 @@ describe("startNewsPost: keeping the last 7 days' cards true", () => {
     const edit = m.edit.mock.calls[0][0] as Record<string, unknown>;
     expect((edit.files as AttachmentBuilder[]).map((f) => f.name)).toEqual([NEWS_PNG]);
     expect(mediaUrls(edit)).toEqual([`attachment://${NEWS_PNG}`]);
+  });
+});
+
+describe("startNewsPost: the missed-night staff note (schema 20)", () => {
+  const order = (w: ReturnType<typeof world>) => w.db.calls.map((c) => c[0]);
+
+  it("asks the database on every check, after its own try at tonight's card and before the re-check", async () => {
+    const w = world();
+    await w.poster.poll();
+    expect(order(w)).toEqual([
+      "shift_quest_news_post_next",
+      "shift_quest_news_claim",
+      "shift_quest_news_mark",
+      "shift_quest_enqueue_news_missed",
+      "shift_quest_news_post_current",
+    ]);
+    await w.poster.poll();
+    expect(fnCalls(w, "shift_quest_enqueue_news_missed")).toEqual([["shift_quest_enqueue_news_missed"], ["shift_quest_enqueue_news_missed"]]);
+    // On schema 20 from the start it never reads the version again.
+    expect(fnCalls(w, "shift_quest_schema_version")).toEqual([]);
+  });
+
+  it("only asks: the note goes through the outbox, so the poster sends nothing of its own", async () => {
+    const w = world(null);
+    w.db.missed = 1;
+    await w.poster.poll();
+    expect(fnCalls(w, "shift_quest_enqueue_news_missed")).toHaveLength(1);
+    expect(w.client.channels.fetch).not.toHaveBeenCalled();
+    expect(w.ch.channel.send).not.toHaveBeenCalled();
+    expect(console.warn).toHaveBeenCalledWith(
+      "[shift-quests] nightly island news: no card recorded for tonight by 22:30; a note is queued for the staff channel"
+    );
+  });
+
+  it("logs nothing when there was nothing to queue", async () => {
+    const w = world(null);
+    await w.poster.poll();
+    await w.poster.poll();
+    expect(console.warn).not.toHaveBeenCalled();
+  });
+
+  it("below schema 20 reads the version each check and never calls the missing function, then starts by itself", async () => {
+    const w = world(null, {}, 19);
+    w.db.version = 19;
+    await w.poster.poll();
+    await w.poster.poll();
+    expect(fnCalls(w, "shift_quest_schema_version")).toHaveLength(2);
+    expect(fnCalls(w, "shift_quest_enqueue_news_missed")).toEqual([]);
+
+    // The migration is applied while the bot runs: no restart needed.
+    w.db.version = 20;
+    await w.poster.poll();
+    expect(fnCalls(w, "shift_quest_enqueue_news_missed")).toHaveLength(1);
+    expect(console.log).toHaveBeenCalledWith("[shift-quests] nightly island news: missed-night staff note on (schema 20)");
+    await w.poster.poll();
+    expect(fnCalls(w, "shift_quest_schema_version")).toHaveLength(3);
+    expect(fnCalls(w, "shift_quest_enqueue_news_missed")).toHaveLength(2);
+  });
+
+  it("a failing check is logged once by code and holds back neither tonight's card nor a take-down", async () => {
+    const w = world(news({ ai: AI }));
+    w.db.missedError = new QuestDbError("shift_quest_enqueue_news_missed", "57014");
+    await w.poster.poll();
+    expect(w.ch.channel.send).toHaveBeenCalledTimes(1);
+    const m = w.ch.sent[0];
+    w.db.currentAi = { kind: "day", entries: [AI.entries[1]] };
+    await w.poster.poll();
+    expect(m.edit).toHaveBeenCalledTimes(1);
+    expect(bodyText(m.edit.mock.calls[0][0])).not.toContain("เกมฝึกภาษา");
+    const warned = (console.warn as jest.Mock).mock.calls.filter((c) => String(c[0]).includes("missed-night check"));
+    expect(warned).toEqual([["[shift-quests] nightly island news: the missed-night check failed: SQLSTATE 57014; trying again in 5 minutes"]]);
+  });
+
+  it("still runs when tonight's card fails (that is when it matters)", async () => {
+    const w = world();
+    w.db.nextError = new QuestDbError("shift_quest_news_post_next", "57014");
+    w.db.missed = 1;
+    await w.poster.poll();
+    expect(fnCalls(w, "shift_quest_enqueue_news_missed")).toHaveLength(1);
   });
 });

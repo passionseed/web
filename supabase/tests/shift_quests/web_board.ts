@@ -529,6 +529,8 @@ async function main(): Promise<void> {
     ["the nightly card's claim", "select public.shift_quest_news_claim($1::date, $2)", ["2026-11-18", "700000000000000001"]],
     ["the nightly card's writer", "select public.shift_quest_news_mark($1::date, $2, $3)", ["2026-11-18", "700000000000000001", "700000000000000002"]],
     ["the nightly card's re-render", "select public.shift_quest_news_post_current()", []],
+    // 20261118140000_shift_quest_island_news_missed: the missed-night staff note is the bot's.
+    ["the missed-night check", "select public.shift_quest_enqueue_news_missed()", []],
     // The raw functions that take a Discord id for someone else, and the flows that stay in Discord or were
     // dropped (20261118100000): the website reaches members through the uuid wrappers only.
     ["raw consent resets", "select public.shift_quest_admin_consent_reset($1, $2)", [ADMIN, A]],

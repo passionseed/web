@@ -69,10 +69,22 @@ import { ISLAND_LINK_LABEL, islandWebUrl } from "./weblink";
  * without the picture, because a take-down always wins. After a restart the
  * bot compares each card's text with what it would render and edits only on
  * a difference, so a restart edits nothing.
+ *
+ * The missed night (schema 20, 20261118140000_shift_quest_island_news_missed):
+ * every check, after its own try at tonight's card, the bot asks the database
+ * to queue the staff note (shift_quest_enqueue_news_missed). The database
+ * decides: from 22:30 Bangkok, while no card is recorded or being sent, once
+ * per Bangkok day by the outbox's dedupe key, never a student channel. The
+ * outbox delivers it to the staff channel (kind news_missed, copy.ts). Below
+ * schema 20 the bot reads the version again on each check, so the alert
+ * starts on its own once the migration is applied after the deploy.
  */
 
 /** The island schema that adds the nightly card's functions (20261118130000_shift_quest_island_news_daily.sql). */
 export const NEWS_SCHEMA = 19;
+
+/** The island schema that adds the missed-night staff note (20261118140000_shift_quest_island_news_missed.sql). */
+export const NEWS_MISSED_SCHEMA = 20;
 
 /** The moving picture's attachment name. */
 export const NEWS_GIF = "shift-island-news.gif";
@@ -142,6 +154,12 @@ export interface NewsOptions {
   draw?: (api: QuestApi, nowMs: number) => Promise<AttachmentBuilder[]>;
   /** Downloads a posted picture back, to keep it on an edit (tests stub it). Null on any failure. */
   download?: (url: string) => Promise<Buffer | null>;
+  /**
+   * The database's island schema at start. From NEWS_MISSED_SCHEMA every
+   * check also runs the missed-night check; below it (or unknown) each check
+   * reads the version again until it is there.
+   */
+  schema?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -473,6 +491,8 @@ export function startNewsPost(client: Client, api: QuestApi, options: NewsOption
   const guildId = options.guildId ?? "";
   const draw = options.draw ?? drawNewsPicture;
   const download = options.download ?? downloadPicture;
+  /** Whether the database has the missed-night check (schema 20). */
+  let missedOn = (options.schema ?? 0) >= NEWS_MISSED_SCHEMA;
 
   const viewOf = (d: NewsData, picture: string | false) => newsView(d, { picture, webUrl: islandWebUrl(), guildId });
   /** What the card shows with or without its picture (text and links only). */
@@ -680,10 +700,30 @@ export function startNewsPost(client: Client, api: QuestApi, options: NewsOption
   }
 
   /**
-   * Tonight's card, then the 7-day re-check, each on its own: a failure in
-   * one (a database timeout, a channel the bot cannot read, a mark being
-   * retried) never holds back the other, so a take-down never waits for
-   * tonight's card.
+   * The missed night (schema 20): asks the database to queue the staff note
+   * when tonight's card did not post by 22:30. The database decides whether
+   * (and keeps it to one note a day); the outbox delivers it. Below schema 20
+   * it only reads the version again, so applying the migration after the
+   * deploy turns it on without a restart.
+   */
+  async function checkMissed(): Promise<void> {
+    if (!missedOn) {
+      const version = Number(await api.call<number>("shift_quest_schema_version"));
+      if (!(version >= NEWS_MISSED_SCHEMA)) return;
+      missedOn = true;
+      console.log(`[shift-quests] nightly island news: missed-night staff note on (schema ${version})`);
+    }
+    const queued = Number(await api.call<number | null>("shift_quest_enqueue_news_missed"));
+    problems.delete("missed");
+    if (queued > 0) console.warn("[shift-quests] nightly island news: no card recorded for tonight by 22:30; a note is queued for the staff channel");
+  }
+
+  /**
+   * Tonight's card, then the missed-night check, then the 7-day re-check,
+   * each on its own: a failure in one (a database timeout, a channel the bot
+   * cannot read, a mark being retried) never holds back the others, so a
+   * take-down never waits for tonight's card. The missed-night check comes
+   * after this process's own try at tonight's card.
    */
   async function tick(): Promise<void> {
     if (stopped || (options.connected && !options.connected())) return;
@@ -692,6 +732,12 @@ export function startNewsPost(client: Client, api: QuestApi, options: NewsOption
       else await postToday();
     } catch (error) {
       warnOnce("post", reasonOf(error));
+    }
+    if (stopped) return;
+    try {
+      await checkMissed();
+    } catch (error) {
+      warnOnce("missed", `the missed-night check failed: ${reasonOf(error)}`);
     }
     if (stopped) return;
     try {
