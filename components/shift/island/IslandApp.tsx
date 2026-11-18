@@ -57,7 +57,7 @@ import { PeerSheet } from "./peer/PeerSheet";
 import { useBangkokDay } from "./useBangkokDay";
 import { useCampfire } from "./useCampfire";
 import { useDayIntention } from "./useDayIntention";
-import { PLAYER_MENU } from "./player/copy";
+import { PLAYER_MENU, SHOP } from "./player/copy";
 import { markResultsSeen, readResultsSeen, useFreshApproval, useFreshResults } from "./useResultsSeen";
 import { useStartQuest } from "./useStartQuest";
 import { IslandVoyage, useVoyage, VoyageCover, type Voyage } from "./voyage";
@@ -139,6 +139,7 @@ function sharedItems(page: IslandPageData, onPanel: (panel: Panel) => void, stor
 } {
   const admin: MenuItem[] = page.me.admin ? [{ id: "admin", icon: "eye", label: MENU.admin, onClick: () => onPanel("admin") }] : [];
   const places: MenuItem[] = [
+    { id: "shop", icon: "coin", label: SHOP.heading, onClick: () => onPanel("wallet") },
     { id: "guide", icon: "signpost", label: MENU.guide, href: "/shift/island/guide" },
     { id: "story", icon: "book", label: MENU.story, onClick: story },
   ];

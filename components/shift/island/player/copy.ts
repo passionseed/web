@@ -97,6 +97,17 @@ export const WALLET_LABELS = {
 
 export const SHOP = {
   heading: "ร้านค้า",
+  /** DRAFT: physical merch preview; price and stock are not promised. */
+  comingSoon: "เร็วๆ นี้",
+  /** DRAFT: display prices only, never an offer to redeem unconfirmed stock. */
+  previewPrices: "ราคาเบื้องต้น ยังไม่เปิดให้แลก",
+  merch: {
+    tee: "เสื้อยืด PassionSeed",
+    hoodie: "ฮู้ดดี้ PassionSeed",
+    stickers: "แผ่นสติกเกอร์ PassionSeed",
+    cap: "หมวก PassionSeed",
+    deskMat: "แผ่นรองโต๊ะ PassionSeed",
+  },
   closed: "ร้านยังไม่เปิด เมื่อเปิด จะประกาศกติกาและของที่มีจริงให้ทราบก่อน",
   empty: "ยังไม่มีของในร้านตอนนี้",
   cost: (n: string) => `${n} coin`,
