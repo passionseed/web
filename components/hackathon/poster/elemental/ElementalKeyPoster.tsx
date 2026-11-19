@@ -2,7 +2,7 @@ import { Trirong } from "next/font/google";
 import type { ReactNode } from "react";
 
 import { EL, EL_FONT } from "./brand";
-import { ELEMENTAL, prizeTotal, thaiDateLine, thaiDayRange } from "./facts";
+import { ELEMENTAL, prizeTotal, thaiDayRange } from "./facts";
 
 /**
  * Elemental Hackathon key visual, 1080x1350.
@@ -129,7 +129,7 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey" }: { id?
 
       {/* Three facts: when, the prize, the price with the friend deal leading */}
       <div className="absolute inset-x-[56px] bottom-[44px] flex items-end justify-between">
-        <Fact big={thaiDayRange()} below={`${thaiDateLine().split(" ").pop()} · ${ELEMENTAL.days} วัน`} />
+        <Fact big={thaiDayRange()} below={`${ELEMENTAL.startDate.slice(0, 4)} · หยุดยาว ${ELEMENTAL.days} วัน`} />
         <Fact align="center" above="รางวัลรวมมูลค่า" big={`${prizeTotal()} บาท`} />
         <Fact align="right" above="มากับเพื่อน" big={`฿${ELEMENTAL.groupPriceBaht} / คน`} below={`คนเดียว ฿${ELEMENTAL.priceBaht}`} />
       </div>

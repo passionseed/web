@@ -35,9 +35,21 @@ const arg = (name) => (process.argv.includes(name) ? process.argv[process.argv.i
 const FRAMES = Number(arg("--frames") ?? 0);
 const FRAME = Number(arg("--frame") ?? 0);
 const PHASE = FRAMES ? FRAME / FRAMES : 0; // 0..1 around the loop
-const THETA = PHASE * Math.PI * 2;
-/** Offsets that walk a circle through noise space, so the last frame meets the first. */
-const loop = (r) => (FRAMES ? [Math.cos(THETA) * r - r, Math.sin(THETA) * r] : [0, 0]);
+/**
+ * Straight-line motion that still loops: sample the pattern moved by
+ * v * phase and by v * (phase - 1), and crossfade from one to the other.
+ * At the end of the loop the second copy sits exactly where the first one
+ * started, so it repeats without a jump, and nothing goes round in circles.
+ * `f(dx, dy)` samples the noise offset by (dx, dy) poster pixels; v is how
+ * far the pattern travels in one loop. The variance fix keeps contrast even.
+ */
+const flow = (f, vx, vy) => {
+  if (!FRAMES) return f(0, 0);
+  const a = f(-vx * PHASE, -vy * PHASE);
+  const b = f(-vx * (PHASE - 1), -vy * (PHASE - 1));
+  const n = (1 - PHASE) * a + PHASE * b;
+  return 0.5 + (n - 0.5) / Math.hypot(1 - PHASE, PHASE);
+};
 const OUT = arg("--out") ?? join(ROOT, `public/hackathon/poster/elemental/plate-key${SKY_BLUE ? "-blue" : ""}.png`);
 const W = 1080;
 const H = 1350;
@@ -190,14 +202,15 @@ function flameField(x, y) {
     { cx: FIRE.x + 10, w: 110, h: 520, lean: -70 },
   ];
   let best = 0;
-  const [wx, wy] = loop(0.9);
   for (const [i, g] of tongues.entries()) {
-    // Each tongue breathes a little on its own beat.
-    const gh = g.h * (1 + (FRAMES ? 0.07 * Math.sin(THETA * 2 + i * 1.7) : 0));
+    // Each tongue's height flickers on its own, never on a regular beat.
+    const flick = FRAMES ? flow((dx, dy) => vnoise(i * 13.7, dy * 0.012, 140), 0, -400) - 0.5 : 0;
+    const gh = g.h * (1 + 0.16 * flick);
     const t = (FIRE.base - y) / gh;
     if (t < -0.08 || t > 1) continue;
     const tt = Math.max(t, 0);
-    const wob = 46 * (fbm(x * 0.012 + wx, y * 0.02 + 3 + wy, 5, 3) - 0.5) * (0.3 + tt);
+    // The licks rise: the wobble pattern travels up the flame.
+    const wob = 46 * (flow((dx, dy) => fbm((x + dx) * 0.012, (y + dy) * 0.02 + 3, 5, 3), 0, -240) - 0.5) * (0.3 + tt);
     const c = g.cx + g.lean * Math.pow(tt, 1.6) + wob;
     const hw = (g.w / 2) * Math.pow(1 - tt, 0.7) * (t < 0 ? 1 + t * 6 : 1);
     const d = Math.abs(x - c) / Math.max(hw, 1);
@@ -276,8 +289,8 @@ const hillY = (x) => (x < 590 ? 398 + (x / 590) * 368 : 640 + Math.max(0, (x - 7
 /** Smog density 0..1: thick and low over the hill, thinning upward and to the right. */
 const smogField = (x, y) => {
   const above = hillY(x) - y; // distance above the skyline
-  const [sx, sy] = loop(0.6);
-  const n = fbm(x * 0.006 + sx, y * 0.018 + sy, 92, 4);
+  // The smog drifts with the wind, to the right and a little down the slope.
+  const n = flow((dx, dy) => fbm((x + dx) * 0.006, (y + dy) * 0.018, 92, 4), 90, 18);
   // Densest just above the ridge, thinning upward and down the slope.
   const thick = smooth(-110, 10, above) * (1 - smooth(20, 210 + 80 * n, above));
   const reach = 1 - smooth(380, 700, x + (n - 0.5) * 220);
@@ -373,7 +386,7 @@ for (let y = WATER.y0; y < WATER.y1; y++)
       const v = flameField(x, y);
       if (v < 0.1) continue;
       const h = clamp((FIRE.base - y) / 520);
-      const fil = fbm(x * 0.07 + loop(1.2)[0], y * 0.009 + 9 + loop(1.2)[1], 71, 3);
+      const fil = flow((dx, dy) => fbm((x + dx) * 0.07, (y + dy) * 0.009 + 9, 71, 3), 0, -320);
       const lick = v * (0.62 + 0.7 * fil) * (1 - 0.25 * h);
       const a = smooth(0.1, 0.42, lick) * (1 - 0.35 * h);
       // The edge is dithered on a 2px grid, not cut: it dissolves into the air.
@@ -393,7 +406,8 @@ for (let y = WATER.y0; y < WATER.y1; y++)
     for (let x = 24; x < WATER.x1 - 150; x += cell) {
       const m = waterMask[(y + 6) * W + x + 6];
       if (m < 0.5) continue;
-      const n = fbm(x * 0.012 + loop(0.8)[0], y * 0.03 + loop(0.8)[1], 31, 3);
+      // The toxic water flows along the river.
+      const n = flow((dx, dy) => fbm((x + dx) * 0.012, (y + dy) * 0.03, 31, 3), -70, 0);
       if (n < 0.58) continue;
       let l = 0;
       for (let yy = 0; yy < cell; yy++) for (let xx = 0; xx < cell; xx++) l += lum(get(x + xx, y + yy));
@@ -404,7 +418,7 @@ for (let y = WATER.y0; y < WATER.y1; y++)
   for (let y = WATER.y0 + 2; y < WATER.y0 + 40; y++)
     for (let x = 160; x < 470; x++) {
       if (waterMask[y * W + x] < 0.5) continue;
-      if (fbm(x * 0.02 + loop(1)[0], y * 0.05 + loop(1)[1], 32, 2) < 0.45) continue;
+      if (flow((dx, dy) => fbm((x + dx) * 0.02, (y + dy) * 0.05, 32, 2), -70, 0) < 0.45) continue;
       const l = lum(get(x, y));
       put(x, y, l * 1.25 > bayer(x, y) ? P.g3 : P.g0);
     }
@@ -582,7 +596,8 @@ for (let y = WATER.y0; y < WATER.y1; y++)
     for (let x = FIRE.x - 300; x < FIRE.x + 260; x += cell) {
       const v = flameField(x + 6, y + 6);
       const h = (FIRE.base - y) / 520;
-      const n = fbm(x * 0.03 + loop(1.5)[0], y * 0.03 + loop(1.5)[1], 61, 2);
+      // The flame's pixels rise with it.
+      const n = flow((dx, dy) => fbm((x + dx) * 0.03, (y + dy) * 0.03, 61, 2), 0, -260);
       // Crown: white steps along the flame's outer edge, low down.
       if (((v > 0.12 && v < 0.3 && h > 0.12 && h < 0.6) || (v > 0.5 && h > 0.14 && h < 0.34)) && n > 0.52) {
         rect(x, y, cell, P.white);

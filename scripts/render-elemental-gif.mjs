@@ -2,10 +2,10 @@
 /**
  * Animates the Elemental key visual: the fire flickers, sparks rise, the
  * smog drifts, the toxic water shimmers and the film grain moves, on a
- * seamless loop. The type stays still on top.
+ * seamless 3-second loop. The type stays still on top.
  *
  *   node scripts/render-elemental-gif.mjs --out <dir> [--sky blue|grey]
- *        [--frames 24] [--fps 12] [--width 720] [--base http://localhost:3010]
+ *        [--frames 36] [--fps 12] [--width 720] [--base http://localhost:3010]
  *
  * Needs the poster route running (scripts/studio-server.sh) and ffmpeg.
  * Writes <dir>/elemental-<sky>.gif and <dir>/elemental-<sky>.mp4 (the MP4
@@ -22,7 +22,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const arg = (name, fallback) => (process.argv.includes(name) ? process.argv[process.argv.indexOf(name) + 1] : fallback);
 const OUT = resolve(arg("--out", "output/marketing/elemental-gif"));
 const SKY = arg("--sky", "blue");
-const FRAMES = Number(arg("--frames", 24));
+const FRAMES = Number(arg("--frames", 36));
 const FPS = Number(arg("--fps", 12));
 const WIDTH = Number(arg("--width", 720));
 const BASE = arg("--base", "http://localhost:3010");
@@ -84,7 +84,7 @@ const gif = join(OUT, `elemental-${SKY}.gif`);
 const mp4 = join(OUT, `elemental-${SKY}.mp4`);
 const input = ["-y", "-framerate", String(FPS), "-i", join(TMP, "frame-%03d.png")];
 execFileSync("ffmpeg", [...input, "-vf", "split[a][b];[a]palettegen=max_colors=256:stats_mode=full[p];[b][p]paletteuse=dither=bayer:bayer_scale=3", "-loop", "0", gif], { stdio: "ignore" });
-// Loop the clip 6 times so the MP4 runs long enough to read.
-execFileSync("ffmpeg", ["-y", "-stream_loop", "5", "-framerate", String(FPS), "-i", join(TMP, "frame-%03d.png"), "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", "-movflags", "+faststart", mp4], { stdio: "ignore" });
+// Loop the clip 4 times so the MP4 runs long enough to read.
+execFileSync("ffmpeg", ["-y", "-stream_loop", "3", "-framerate", String(FPS), "-i", join(TMP, "frame-%03d.png"), "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", "-movflags", "+faststart", mp4], { stdio: "ignore" });
 rmSync(TMP, { recursive: true, force: true });
 console.log(`✅ ${gif}\n✅ ${mp4}`);
