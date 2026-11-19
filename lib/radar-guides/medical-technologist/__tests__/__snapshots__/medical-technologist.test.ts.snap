@@ -1,0 +1,294 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`medical-technologist guide matches the Thai copy snapshot (diff this in the Thai review) 1`] = `
+[
+  "dream.titleTh: คำตอบแรก มาจากแล็บ
+dream.questionTh: ผลเลือดที่หมอใช้ตัดสินใจ ใครเป็นคนตรวจ
+dream.navLabelTh: คำตอบจากแล็บ
+dream.og.headlineTh: ก่อนหมอตัดสินใจ คำตอบแรกมาจากแล็บ
+dream.og.stat.th: ม.ค. 2569 แล็บกรมวิทย์ฯ พร้อมรายงานผลนิปาห์ภายใน 8 ชั่วโมงหลังได้ตัวอย่าง
+dream.blocks[0].lines[0].text.th: เปิดรันสายแล็บกัน ขอถามเธอข้อเดียวก่อน
+dream.blocks[1].ask[0].text.th: ตอนหมอบอกผลเลือด เธอว่าใครเป็นคนตรวจ
+dream.blocks[1].options[0].labelTh: หมอตรวจเองแหละ
+dream.blocks[1].options[0].reply[0].text.th: หมอเป็นคนเอาผลไปใช้ แต่คนตรวจตัวจริงอยู่ในแล็บ
+dream.blocks[1].options[1].labelTh: เครื่องมันออกผลเองปะ
+dream.blocks[1].options[1].reply[0].text.th: เครื่องช่วยเยอะจริง แต่ต้องมีคนเช็กก่อนว่าผลเชื่อได้ไหม
+dream.blocks[1].options[1].reply[1].text.th: คนนั้นแหละ ที่รันนี้จะพาเธอไปรู้จัก
+dream.blocks[1].options[2].labelTh: ไม่เคยคิดเลยว่าใครตรวจ
+dream.blocks[1].options[2].reply[0].text.th: ไม่แปลกเลย เพราะเขาทำงานอยู่หลังประตูแล็บตลอด
+dream.blocks[1].options[2].reply[1].text.th: งั้นไปเปิดประตูดูกันเลย
+dream.blocks[2].text.th: นักเทคนิคการแพทย์คือคนตรวจเลือด ปัสสาวะ และสิ่งส่งตรวจจากร่างกาย แล้วรายงานผลให้หมอ จบแล้วต้องสอบใบอนุญาตที่สภาเทคนิคการแพทย์คุม
+dream.blocks[2].titleTh: แฟ้ม: นักเทคนิคการแพทย์
+dream.blocks[3].unlockLabelTh: ลองทายดู
+dream.blocks[3].blocks[0].lines[0].text.th: ม.ค. 2569 ไวรัสนิปาห์ระบาดที่อินเดีย ไทยต้องคุมเข้มที่สนามบินเลย
+dream.blocks[3].blocks[0].lines[1].text.th: ถ้ามีคนป่วยต้องสงสัย จะรู้ว่าติดหรือไม่ติด ต้องรอผลแล็บ
+dream.blocks[3].blocks[0].lines[2].text.th: ลองทายดิ แล็บใช้เวลากี่ชั่วโมงถึงรู้ผล
+dream.blocks[3].blocks[1].game.data.promptTh: แล็บกรมวิทย์ฯ รายงานผลนิปาห์ได้ภายในกี่ชั่วโมง หลังได้ตัวอย่าง
+dream.blocks[3].blocks[1].game.data.chart.bars[0].labelTh: ชั่วโมงจนรู้ผลนิปาห์ (ม.ค. 2569)
+dream.blocks[3].blocks[1].game.data.nearTh: เกือบเป๊ะ
+dream.blocks[3].blocks[1].game.data.overTh: เธอเดาช้าไป {d} ชั่วโมง
+dream.blocks[3].blocks[1].game.data.underTh: เธอเดาเร็วไป {d} ชั่วโมง
+dream.blocks[3].blocks[1].game.data.revealTh: เธอเดา {g} ชั่วโมง ของจริงคือภายใน 8 ชั่วโมง
+dream.blocks[3].blocks[1].answersTh[0]: ม.ค. 2569 แล็บของกรมวิทยาศาสตร์การแพทย์ รายงานผลนิปาห์ได้ภายใน 8 ชั่วโมงหลังได้ตัวอย่าง
+dream.blocks[3].blocks[1].answersTh[1]: ตรวจหาสารพันธุกรรมของไวรัส ด้วยวิธี real-time RT-PCR
+dream.blocks[3].blocks[2].text.th: รายงานผลได้ภายใน 8 ชั่วโมง หลังแล็บได้ตัวอย่าง
+dream.blocks[3].blocks[2].titleTh: กรมวิทยาศาสตร์การแพทย์
+dream.blocks[3].blocks[3].lines[0].text.th: คนที่รับมือตัวอย่างแบบนี้ ก็คือคนสายแล็บการแพทย์นี่แหละ
+dream.blocks[3].blocks[3].lines[1].text.th: ฉันจะเป็นคนให้คำตอบแบบนั้นได้จริงเหรอ
+dream.blocks[3].blocks[3].lines[2].text.th: นั่นแหละ โจทย์ของรันนี้เลย
+dream.blocks[3].blocks[4].text.th: ตอนนั้นไทยยังไม่พบผู้ติดเชื้อนิปาห์นะ 8 ชั่วโมงคือความพร้อมที่กรมวิทยาศาสตร์การแพทย์แจ้งไว้
+dream.blocks[3].blocks[4].titleTh: พูดตรงๆ
+dream.blocks[4].unlockLabelTh: ยังมีอีก
+dream.blocks[4].blocks[0].lines[0].text.th: ไม่ได้มีแค่ตอนโรคระบาดนะ ลองพลิกดูว่าแล็บอยู่เบื้องหลังอะไรอีก
+dream.blocks[4].blocks[1].game.data.highlightTh: ผ่านมือคนแล็บ
+dream.blocks[4].blocks[1].game.data.cards[0].frontTh: เด็กแรกเกิดในไทย
+dream.blocks[4].blocks[1].game.data.cards[0].backTh: เลือดหยดเล็กๆ บนกระดาษซับ ผ่านมือคนแล็บ คัดกรองโรคหายาก 24 โรค ฟรีทั่วประเทศ
+dream.blocks[4].blocks[1].game.data.cards[0].dateTh: ส.ค. 2566
+dream.blocks[4].blocks[1].game.data.cards[1].frontTh: เลือดที่คนบริจาค
+dream.blocks[4].blocks[1].game.data.cards[1].backTh: ทุกถุงต้องผ่านมือคนแล็บ ตรวจหาเชื้อ HIV ไวรัสตับอักเสบบี ซี และซิฟิลิส ก่อนถึงคนไข้
+dream.blocks[4].blocks[1].game.data.cards[1].dateTh: พ.ค. 2562
+dream.blocks[4].blocks[1].game.data.cards[2].frontTh: คลินิกตรวจแล็บใกล้บ้าน
+dream.blocks[4].blocks[1].game.data.cards[2].backTh: นโยบาย Lab Anywhere ยกการตรวจไปถึงคลินิกเทคนิคการแพทย์ชุมชน ผ่านมือคนแล็บแล้วส่งข้อมูลเข้าส่วนกลางแบบเรียลไทม์
+dream.blocks[4].blocks[1].game.data.cards[2].dateTh: พ.ย. 2569
+dream.blocks[4].blocks[1].answersTh[0]: เด็กแรกเกิด: เลือดบนกระดาษซับ ส่งแล็บคัดกรองโรคหายาก 24 โรค
+dream.blocks[4].blocks[1].answersTh[1]: เลือดบริจาค: ทุกถุงตรวจหาเชื้อ HIV ตับอักเสบบี ซี และซิฟิลิส
+dream.blocks[4].blocks[1].answersTh[2]: คลินิกใกล้บ้าน: Lab Anywhere พาการตรวจไปถึงคลินิกเทคนิคการแพทย์ชุมชน
+dream.blocks[4].blocks[1].answersTh[3]: ทุกอันผ่านมือคนแล็บ
+dream.blocks[4].blocks[2].lines[0].text.th: ตอนเธอเกิด เลือดหยดเล็กๆ ของเธอ ก็น่าจะเคยผ่านแล็บแบบนี้มาแล้วนะ
+dream.blocks[4].blocks[3].lines[0].text.th: แต่กว่าผลจะเชื่อได้ ต้องมีคนคอยจับผิดทุกขั้นเลยนะ
+dream.blocks[4].blocks[3].lines[1].text.th: คำถามต่อไป: ทั้งวันในแล็บ เขาทำอะไรกันบ้าง
+dream.reel.hook.th: ก่อนหมอตัดสินใจ คำตอบแรกมาจากแล็บ
+dream.reel.variantsTh[0]: ข่าวโรคใหม่มา แล็บไทยพร้อมบอกผลใน 8 ชั่วโมง
+dream.reel.variantsTh[1]: ตอนเธอเกิด เลือดหยดแรกๆ ก็น่าจะเคยผ่านแล็บมาแล้ว
+dream.reel.sendToFriendTh: ส่งให้เพื่อนที่ชอบชีวะ แต่ไม่ได้อยากเป็นหมอ
+dream.reel.visual[0]: หลอดเลือดหลอดเดียวเลื่อนผ่านประตูแล็บ ไฟเขียวมิ้นต์ติดขึ้น
+dream.reel.visual[1]: นาฬิกานับชั่วโมงวิ่ง แล้วหยุดที่ 8 พร้อมป้ายผลออกแล้ว
+dream.reel.visual[2]: การ์ดสามใบพลิกทีละใบ คำว่า ผ่านมือคนแล็บ สว่างขึ้นทุกใบ",
+  "work.titleTh: งานจริง คือทำให้ผลเชื่อได้
+work.questionTh: นักเทคนิคการแพทย์แค่กดเครื่องรอผลหรือเปล่า แล้วทั้งวันทำอะไร
+work.navLabelTh: เวรแรกในแล็บ
+work.og.headlineTh: เครื่องออกตัวเลขได้ แต่ใครบอกว่าตัวเลขนั้นเชื่อได้
+work.blocks[0].lines[0].text.th: ด่านนี้เธอได้ประเดิมเวรแรกในแล็บโรงพยาบาลแล้วนะ
+work.blocks[0].lines[1].text.th: ตัวอย่างจากหอผู้ป่วยกำลังส่งมา เธอคือด่านแรกเลย
+work.blocks[1].ask[0].text.th: ก่อนเริ่ม เธอว่างานหลักในแล็บคืออะไร
+work.blocks[1].options[0].labelTh: ใส่หลอดเข้าเครื่อง แล้วรอผลออก
+work.blocks[1].options[0].reply[0].text.th: เครื่องช่วยเยอะจริง แต่ก่อนเข้ากับหลังออก คืองานของคน
+work.blocks[1].options[0].reply[1].text.th: ผลจะเชื่อได้ไหม วัดกันตรงนั้นแหละ
+work.blocks[1].options[1].labelTh: ส่องกล้องทั้งวันเลยมั้ง
+work.blocks[1].options[1].reply[0].text.th: มีส่องจริง แต่ไม่ได้ส่องทั้งวันหรอก
+work.blocks[1].options[1].reply[1].text.th: งานจริงคือคอยจับผิดทุกขั้น ให้ผลมันเชื่อได้
+work.blocks[1].options[2].labelTh: เช็กว่าผลถูกก่อนส่งให้หมอ
+work.blocks[1].options[2].reply[0].text.th: เป๊ะเลย งานจริงคือทำให้ผลเชื่อได้ก่อนถึงมือหมอ
+work.blocks[2].lines[0].text.th: งานจะเรียงเป็นขั้น: รับตัวอย่าง ตรวจ แล้วเช็กก่อนปล่อยผล
+work.blocks[3].unlockLabelTh: ขั้นแรก: รับตัวอย่าง
+work.blocks[3].blocks[0].lines[0].text.th: มีงานวิจัยหนึ่งเจอว่า ผลผิดส่วนใหญ่เกิดก่อนหลอดถึงเครื่องอีก
+work.blocks[3].blocks[0].lines[1].text.th: งั้นเธอต้องคัดหลอดที่ใช้ไม่ได้ออกก่อนเลย
+work.blocks[3].blocks[1].game.data.tagTh: รับตัวอย่างเข้าแล็บ
+work.blocks[3].blocks[1].game.data.goalTh: คัดหลอดที่ใช้ไม่ได้ออก ก่อนเข้าเครื่อง
+work.blocks[3].blocks[1].game.data.bins[0].labelTh: รับเข้าแล็บ
+work.blocks[3].blocks[1].game.data.bins[1].labelTh: ขอเก็บใหม่
+work.blocks[3].blocks[1].game.data.simulated.watermarkTh: ตัวอย่างจำลอง
+work.blocks[3].blocks[1].game.data.items[0].labelTh: หลอดเลือด ชื่อตรงกับใบสั่งตรวจ เลือดถึงขีด
+work.blocks[3].blocks[1].game.data.items[0].revealTh: ครบเป๊ะ รับเข้าแล็บได้เลย
+work.blocks[3].blocks[1].game.data.items[1].labelTh: หลอดเลือดไม่มีสติกเกอร์ชื่อ
+work.blocks[3].blocks[1].game.data.items[1].revealTh: ไม่รู้เลือดใคร ต่อให้ตรวจแม่นแค่ไหนก็ใช้ไม่ได้อยู่ดี
+work.blocks[3].blocks[1].game.data.items[2].labelTh: ชื่อบนหลอดไม่ตรงกับใบสั่งตรวจ
+work.blocks[3].blocks[1].game.data.items[2].revealTh: เสี่ยงสลับคน ผลผิดคนอันตรายกว่าไม่มีผลอีกนะ
+work.blocks[3].blocks[1].game.data.items[3].labelTh: เลือดในหลอดไม่ถึงขีดที่กำหนด
+work.blocks[3].blocks[1].game.data.items[3].revealTh: เลือดน้อยไป สัดส่วนกับน้ำยาในหลอดเพี้ยน ผลก็เพี้ยนตามเลย
+work.blocks[3].blocks[1].game.data.items[4].labelTh: ปั่นแล้วน้ำเลือดเป็นสีแดง เพราะเม็ดเลือดแดงแตก
+work.blocks[3].blocks[1].game.data.items[4].revealTh: เม็ดเลือดแตกทำบางค่าในเลือดเพี้ยนได้ ต้องขอเก็บใหม่นะ
+work.blocks[3].blocks[1].game.data.items[5].labelTh: กระปุกปัสสาวะ ปิดฝาสนิท ชื่อครบ
+work.blocks[3].blocks[1].game.data.items[5].revealTh: ฉลากครบ ฝาสนิท รับเข้าแล็บได้เลย
+work.blocks[3].blocks[1].game.data.resultTh: คัดถูก {score}/{total}
+work.blocks[3].blocks[1].answersTh[0]: รับเข้าแล็บ: หลอดที่ชื่อตรงและเลือดถึงขีด, กระปุกปัสสาวะที่ฉลากครบ
+work.blocks[3].blocks[1].answersTh[1]: ขอเก็บใหม่: หลอดไม่มีชื่อ, ชื่อไม่ตรงใบสั่งตรวจ, เลือดไม่ถึงขีด, เม็ดเลือดแดงแตก
+work.blocks[3].blocks[2].lines[0].text.th: ถ้ารับหลอดที่ใช้ไม่ได้เข้ามา ผลก็ผิดตั้งแต่ยังไม่ทันตรวจ
+work.blocks[3].blocks[2].lines[1].text.th: คัดหลอดผ่านแล้ว ไปดูผลกันต่อ
+work.blocks[4].unlockLabelTh: ขั้นสอง: เช็กก่อนปล่อยผล
+work.blocks[4].blocks[0].lines[0].text.th: เครื่องตรวจเสร็จแล้ว แต่ผลยังไม่ถึงมือหมอหรอกนะ
+work.blocks[4].blocks[0].lines[1].text.th: มาดูกัน เคสไหนปล่อยได้ เคสไหนตรวจซ้ำ เคสไหนต้องรีบโทร
+work.blocks[4].blocks[1].game.data.tagTh: เช็กก่อนปล่อยผล
+work.blocks[4].blocks[1].game.data.goalTh: ตัดสินทีละเคส ว่าผลนี้ออกจากแล็บได้หรือยัง
+work.blocks[4].blocks[1].game.data.bins[0].labelTh: ปล่อยผล
+work.blocks[4].blocks[1].game.data.bins[1].labelTh: ตรวจซ้ำก่อน
+work.blocks[4].blocks[1].game.data.bins[2].labelTh: โทรแจ้งทันที
+work.blocks[4].blocks[1].game.data.simulated.watermarkTh: ตัวอย่างจำลอง
+work.blocks[4].blocks[1].game.data.items[0].labelTh: ผลเลือดคนไข้ A
+work.blocks[4].blocks[1].game.data.items[0].meta.sender: หอผู้ป่วยใน
+work.blocks[4].blocks[1].game.data.items[0].detailTh: QC เช้านี้ผ่าน · ผลอยู่ในช่วงปกติ · ใกล้เคียงผลครั้งก่อน
+work.blocks[4].blocks[1].game.data.items[0].revealTh: ทุกอย่างเข้าที่ ปล่อยผลให้หมอได้เลย
+work.blocks[4].blocks[1].game.data.items[1].labelTh: ผลทั้งชุดจากเครื่องเดียวกัน
+work.blocks[4].blocks[1].game.data.items[1].meta.sender: เครื่องตรวจเคมี
+work.blocks[4].blocks[1].game.data.items[1].detailTh: ตัวอย่างควบคุม (QC) ที่รู้คำตอบอยู่แล้ว ตรวจออกมาหลุดช่วง
+work.blocks[4].blocks[1].game.data.items[1].nearTh.call: ยังไม่ต้องโทร ผลชุดนี้ยังเชื่อไม่ได้เลย แก้เครื่องแล้วตรวจใหม่ก่อน
+work.blocks[4].blocks[1].game.data.items[1].flags[0]: QC ไม่ผ่าน
+work.blocks[4].blocks[1].game.data.items[1].revealTh: เครื่องอาจเพี้ยน ห้ามปล่อยชุดนี้เด็ดขาด แก้เครื่องแล้วตรวจใหม่
+work.blocks[4].blocks[1].game.data.items[2].labelTh: ผลเลือดคนไข้ B
+work.blocks[4].blocks[1].game.data.items[2].meta.sender: หอผู้ป่วยใน
+work.blocks[4].blocks[1].game.data.items[2].detailTh: ผลวันนี้โดดจากเมื่อวานมาก แบบไม่น่าเป็นไปได้
+work.blocks[4].blocks[1].game.data.items[2].flags[0]: ต่างจากผลเดิมมาก
+work.blocks[4].blocks[1].game.data.items[2].revealTh: อาจสลับหลอดหรือเก็บผิดวิธี ต้องตรวจซ้ำ หรือขอเก็บใหม่ก่อน
+work.blocks[4].blocks[1].game.data.items[3].labelTh: ผลนับเม็ดเลือดคนไข้ C
+work.blocks[4].blocks[1].game.data.items[3].meta.sender: ห้องฉุกเฉิน
+work.blocks[4].blocks[1].game.data.items[3].detailTh: เครื่องขึ้นเตือนว่าเจอเซลล์หน้าตาแปลกๆ
+work.blocks[4].blocks[1].game.data.items[3].flags[0]: เครื่องขึ้นเตือน
+work.blocks[4].blocks[1].game.data.items[3].revealTh: ต้องทำสไลด์ส่องกล้องดูเอง เครื่องเตือนได้ แต่คนต้องยืนยัน
+work.blocks[4].blocks[1].game.data.items[4].labelTh: ผลเลือดคนไข้ D
+work.blocks[4].blocks[1].game.data.items[4].meta.sender: ห้องฉุกเฉิน
+work.blocks[4].blocks[1].game.data.items[4].detailTh: ค่าเกลือแร่ในเลือดสูงเกินเส้นวิกฤตที่แล็บตั้งไว้ · QC ผ่าน · ตัวอย่างไม่มีปัญหา
+work.blocks[4].blocks[1].game.data.items[4].nearTh.release: ปล่อยผลเฉยๆ ไม่พอ ค่าวิกฤตต้องโทรบอกทันที
+work.blocks[4].blocks[1].game.data.items[4].nearTh.recheck: QC กับตัวอย่างผ่านแล้ว อย่าให้ช้า โทรบอกก่อนเลย
+work.blocks[4].blocks[1].game.data.items[4].flags[0]: ค่าวิกฤต
+work.blocks[4].blocks[1].game.data.items[4].revealTh: เจอค่าวิกฤตต้องโทรแจ้งหมอหรือพยาบาลทันที แล้วจดไว้ว่าแจ้งใคร กี่โมง
+work.blocks[4].blocks[1].game.data.items[5].labelTh: ผลเลือดคนไข้ E
+work.blocks[4].blocks[1].game.data.items[5].meta.sender: คลินิกผู้ป่วยนอก
+work.blocks[4].blocks[1].game.data.items[5].detailTh: QC ผ่าน · สูงกว่าช่วงปกตินิดหน่อย · ใกล้เคียงผลครั้งก่อน
+work.blocks[4].blocks[1].game.data.items[5].nearTh.call: ไม่ถึงเส้นวิกฤต ไม่ต้องโทรด่วน ปล่อยผลแล้วหมอจะดูเอง
+work.blocks[4].blocks[1].game.data.items[5].revealTh: ไม่ถึงเส้นวิกฤต แถมใกล้เคียงผลเดิม ปล่อยได้เลย หมอจะเป็นคนแปลผลเอง
+work.blocks[4].blocks[1].game.data.resultTh: ตัดสินถูก {score}/{total}
+work.blocks[4].blocks[1].answersTh[0]: ปล่อยผล: QC ผ่านและผลใกล้เคียงครั้งก่อน (คนไข้ A และ E)
+work.blocks[4].blocks[1].answersTh[1]: ตรวจซ้ำก่อน: QC หลุดช่วง, ผลโดดจากเมื่อวานมาก, เครื่องขึ้นเตือนเซลล์แปลก
+work.blocks[4].blocks[1].answersTh[2]: โทรแจ้งทันที: ค่าเกินเส้นวิกฤตที่แล็บตั้งไว้ แล้วจดว่าแจ้งใคร กี่โมง
+work.blocks[4].blocks[2].lines[0].text.th: ที่เธอเพิ่งทำเมื่อกี้ คืองานจริงของนักเทคนิคการแพทย์เลยนะ
+work.blocks[4].blocks[2].lines[1].text.th: รับตัวอย่าง เช็กเครื่อง ดูผล แล้วตัดสินใจว่าปล่อยได้ไหม
+work.blocks[4].blocks[2].lines[2].text.th: รู้ปะ แล็บก็ต้องสอบนะ
+work.blocks[4].blocks[2].lines[3].text.th: แล็บกว่า 1,200 แห่ง ตรวจตัวอย่างลับจากกรมวิทย์ฯ เพื่อเช็กความแม่น
+work.blocks[4].blocks[2].lines[4].text.th: ส่วนการบอกคนไข้ว่าผลแปลว่าอะไร อันนั้นเป็นงานของหมอนะ
+work.blocks[5].unlockLabelTh: สายนี้มีกี่แบบ
+work.blocks[5].blocks[0].lines[0].text.th: จริงๆ นักเทคนิคการแพทย์ เป็นชื่อเรียกกว้างๆ นะ ข้างในแยกได้อีกหลายสาย
+work.blocks[5].blocks[1].headTh: นักเทคนิคการแพทย์ มีสายไหนบ้าง
+work.blocks[5].blocks[1].tiles[0].titleTh: แล็บโรงพยาบาล
+work.blocks[5].blocks[1].tiles[0].lineTh: ตรวจเลือด ปัสสาวะ เช็กชัวร์ก่อนปล่อยผล แบบเวรเมื่อกี้
+work.blocks[5].blocks[1].tiles[1].titleTh: ธนาคารเลือด
+work.blocks[5].blocks[1].tiles[1].lineTh: ตรวจหาเชื้อในเลือดบริจาค ให้มั่นใจว่าทุกถุงปลอดภัย
+work.blocks[5].blocks[1].tiles[2].titleTh: ล่าเชื้อโรค
+work.blocks[5].blocks[1].tiles[2].lineTh: ตามล่าเชื้อตัวการ แบบแล็บที่พร้อมตรวจนิปาห์
+work.blocks[5].blocks[1].tiles[3].titleTh: แล็บยีน
+work.blocks[5].blocks[1].tiles[3].lineTh: อ่านสารพันธุกรรม สายที่สภาฯ บอกว่าต้องสร้างคนเพิ่ม
+work.blocks[5].blocks[1].tiles[4].titleTh: สายเครื่องมือ
+work.blocks[5].blocks[1].tiles[4].lineTh: บริษัทเครื่องมือแพทย์ สอนแล็บใช้ แก้ให้เครื่องเดินได้
+work.blocks[5].blocks[2].lines[0].text.th: ยังไม่ต้องรีบเลือกนะ ค่อยๆ ลองไปทีละสายก็ได้
+work.blocks[6].lines[0].text.th: ด่านต่อไป: คืนนี้มาเปิดแล็บบนโต๊ะของเธอเอง
+work.reel.hook.th: เครื่องออกตัวเลขได้ แต่ใครบอกว่าตัวเลขนั้นเชื่อได้
+work.reel.variantsTh[0]: หลอดเลือดไม่มีชื่อ ต่อให้ตรวจแม่นแค่ไหนก็ใช้ไม่ได้
+work.reel.variantsTh[1]: นักเทคนิคการแพทย์ไม่ได้แค่กดเครื่อง งานจริงคือนี่
+work.reel.sendToFriendTh: ส่งให้เพื่อนที่ละเอียดจนเพื่อนบ่น
+work.reel.visual[0]: หลอดเลือดไหลมาบนสายพาน หลอดไม่มีชื่อถูกดีดออก
+work.reel.visual[1]: ผลขึ้นจอทีละเคส ป้าย ปล่อยผล ตรวจซ้ำ โทรแจ้ง ประทับลง
+work.reel.visual[2]: โทรศัพท์ในแล็บดัง ไฟวิกฤตกะพริบ แล้วสมุดจดเวลาแจ้งพลิกเปิด",
+  "tonight.titleTh: คืนนี้ เปิดแล็บบนโต๊ะ
+tonight.questionTh: คืนนี้ทำอะไรได้บ้าง ที่จบแล้วได้ผลงานชิ้นแรกใส่พอร์ตเลย
+tonight.navLabelTh: ภารกิจคืนนี้
+tonight.og.headlineTh: คืนนี้เปลี่ยนมือถือเป็นกล้องส่อง แล้วจดบันทึกแบบคนแล็บ
+tonight.blocks[0].lines[0].text.th: ด่านนี้ไม่เล่นแค่ในจอนะ เป็นภารกิจจริงคืนนี้เลย
+tonight.blocks[0].lines[1].text.th: มาเปลี่ยนมือถือเป็นกล้องส่องของเล็กๆ ด้วยน้ำหยดเดียวกัน
+tonight.blocks[1].text.th: หยดน้ำบนเลนส์กล้องหลังมือถือแล้วคว่ำเครื่องลง หยดน้ำจะกลายเป็นเลนส์ขยาย พอน้ำเริ่มระเหย ภาพก็จะขยายน้อยลง
+tonight.blocks[1].titleTh: เครื่องมือ: เลนส์หยดน้ำ
+tonight.blocks[2].lineTh: ส่องแค่ของในครัว อย่างเกลือ น้ำตาล หรือเปลือกหอม ห้ามชิม ห้ามใช้เลือด น้ำลาย หรืออะไรจากร่างกายเด็ดขาด ใช้น้ำหยดเล็กๆ แค่บนกระจกเลนส์ แล้วเช็ดให้แห้งทุกครั้ง ถ้าต้องใช้มีด ให้ผู้ใหญ่ช่วย
+tonight.blocks[3].game.data.room.titleTh: แล็บบนโต๊ะ · เลนส์หยดน้ำ
+tonight.blocks[3].game.data.room.badgeTh: ใช้มือถือกับน้ำหยดเดียว ของในครัวเท่านั้น
+tonight.blocks[3].game.data.room.subTh: น้ำไม่ดีกับมือถือ ใช้หยดเล็กๆ แค่บนกระจกเลนส์ แล้ววางมือถือให้นิ่ง
+tonight.blocks[3].game.data.checklistTh[0]: ให้คนในบ้านตักเกลือกับน้ำตาลใส่ช้อนสองคัน ติดป้าย A กับ B โดยไม่บอกเธอ
+tonight.blocks[3].game.data.checklistTh[1]: หยดน้ำเล็กๆ บนเลนส์กล้องหลัง แล้วคว่ำมือถือลงเหนือช้อน
+tonight.blocks[3].game.data.checklistTh[2]: ส่องทีละช้อน ถ่ายรูปเก็บไว้ ห้ามชิมเด็ดขาด
+tonight.blocks[3].game.data.checklistTh[3]: ทายว่า A กับ B อันไหนเป็นอะไร แล้วค่อยถามเฉลย
+tonight.blocks[3].game.data.checklistTh[4]: จดบันทึกแล็บสั้นๆ
+tonight.blocks[3].game.data.fields[0].placeholderTh: ตัวอย่างคืออะไร ติดป้ายว่าอะไร
+tonight.blocks[3].game.data.fields[1].placeholderTh: เตรียมยังไง ส่องยังไง
+tonight.blocks[3].game.data.fields[2].placeholderTh: เห็นอะไร A กับ B ต่างกันตรงไหน
+tonight.blocks[3].game.data.fields[3].placeholderTh: มีอะไรหลอกตาไหม (ฟองอากาศ ฝุ่น รอยนิ้ว)
+tonight.blocks[3].game.data.fields[4].placeholderTh: ทายถูกไหม ถ้าจะให้แม่นขึ้นจะทำอะไรเพิ่ม
+tonight.blocks[3].game.data.fixedLinesTh[0]: ใช้ของในครัวเท่านั้น ไม่ชิม ไม่ใช้อะไรจากร่างกาย
+tonight.blocks[3].game.data.privacyTh: เก็บไว้ในเครื่องนี้เท่านั้น ไม่ส่งไปที่ไหน
+tonight.blocks[3].answersTh[0]: หยดน้ำเล็กๆ บนเลนส์กล้องหลังมือถือ แล้วคว่ำลงเหนือตัวอย่าง
+tonight.blocks[3].answersTh[1]: ให้คนในบ้านติดป้ายเกลือกับน้ำตาลเป็น A กับ B แล้วทายด้วยการส่อง ห้ามชิม
+tonight.blocks[3].answersTh[2]: ถ่ายรูป แล้วจดว่าเห็นอะไร อะไรหลอกตา ทายถูกไหม
+tonight.blocks[3].answersTh[3]: เขียนบันทึกแล็บ: ตัวอย่าง วิธีเตรียม สิ่งที่เห็น สิ่งที่หลอกตา จะทำให้แม่นขึ้นยังไง
+tonight.blocks[3].demoScript[1].text: เกลือกับน้ำตาล ติดป้าย A กับ B
+tonight.blocks[3].demoScript[2].text: ฟองอากาศในหยดน้ำ ดูเหมือนผลึก
+tonight.blocks[4].lines[0].text.th: ทีเด็ดคืนนี้ไม่ใช่รูปสวยนะ แต่คือบันทึกว่าเธอทำยังไง
+tonight.blocks[4].lines[1].text.th: ติดป้ายตัวอย่าง จดสิ่งที่หลอกตา ฟีลเดียวกับตอนคัดหลอดเลย
+tonight.blocks[4].lines[2].text.th: ทีมเราว่าช่องสุดท้าย: จะทำให้แม่นขึ้นยังไง สำคัญสุดเลย
+tonight.blocks[5].lines[0].text.th: บันทึกแล็บกับรูปที่ถ่าย นี่แหละชิ้นงานแรกในแฟ้มของเธอเลย
+tonight.blocks[6].text.th: TCAS70 มี 4 รอบ รอบแรกชื่อ Portfolio มหาลัยดูจากสิ่งที่เธอลงมือทำ งานแบบคืนนี้แหละ ใส่แฟ้มได้เลย
+tonight.blocks[6].titleTh: รู้ไหม รอบ 1 ใช้ผลงานยื่นได้นะ
+tonight.blocks[7].ask[0].text.th: ว่าแต่เธอจะลองเมื่อไหร่ดี
+tonight.blocks[7].options[0].labelTh: คืนนี้เลยดิ
+tonight.blocks[7].options[0].reply[0].text.th: ชอบความไวนี้แฮะ
+tonight.blocks[7].options[0].reply[1].text.th: ทำเสร็จแล้ว พรุ่งนี้ลองยืมกล้องจุลทรรศน์ห้องแล็บโรงเรียนส่องต่อดูดิ
+tonight.blocks[7].options[1].labelTh: ขอเป็นวันหยุดละกัน
+tonight.blocks[7].options[1].reply[0].text.th: ดีลเลย ปักลงปฏิทินไว้เลย จะได้ไม่ลืม
+tonight.blocks[7].options[2].labelTh: ยังไม่ชัวร์เลยว่าจะชอบไหม
+tonight.blocks[7].options[2].reply[0].text.th: ไม่ชัวร์ก็ลองดูก่อนได้นะ
+tonight.blocks[7].options[2].reply[1].text.th: ลองแล้วไม่สนุก ก็รู้ตัวก่อนเลือกคณะ ไม่เสียอะไรเลย",
+  "next.titleTh: แล้วเธอล่ะ
+next.questionTh: สายแล็บใช่เธอไหม แล้วจะไปต่อทางไหน
+next.navLabelTh: แล้วเธอล่ะ
+next.og.headlineTh: สายแล็บใช่เธอไหม เล่นจนจบแล้วค่อยตัดสินใจ
+next.blocks[0].lines[0].text.th: มาถึงด่านสุดท้ายของ Level 1 แล้ว
+next.blocks[0].lines[1].text.th: เล่นมาทั้งหมด เธอชอบส่วนไหนที่สุด
+next.blocks[1].game.data.lines.dream: เดาเวลารู้ผลนิปาห์ไว้ {nipah} ชั่วโมง || รู้แล้วว่าคำตอบแรกมาจากแล็บ
+next.blocks[1].game.data.lines.work: เวรแรกในแล็บ ทำถูก {score}/{total} || ผ่านเวรแรกในแล็บแล้ว
+next.blocks[1].game.data.lines.tonight: เตรียมบันทึกแล็บชิ้นแรกแล้ว
+next.blocks[1].game.data.favourites.dream: สายที่เธอเลือกเอง: สายล่าเชื้อโรค งานจริงคือหาคำตอบให้ไว ตอนมีโรคใหม่มา
+next.blocks[1].game.data.favourites.work: สายที่เธอเลือกเอง: สายแล็บโรงพยาบาล งานจริงคือทำให้ผลทุกหลอดเชื่อได้ ก่อนถึงมือหมอ
+next.blocks[1].game.data.cardLineTh: นี่ไม่ใช่คำทำนาย มันคือจุดเริ่ม เธอตัดสินใจเอง
+next.blocks[1].answersTh[0]: เลือกด่านที่สนุกที่สุด แล้วดูว่ามันตรงกับงานจริงสายไหน
+next.blocks[1].answersTh[1]: สายล่าเชื้อโรค หรือสายแล็บโรงพยาบาล
+next.blocks[1].answersTh[2]: นี่ไม่ใช่คำทำนาย มันคือจุดเริ่ม เธอตัดสินใจเอง
+next.blocks[2].lines[0].text.th: กดบอกเราหน่อยว่าสายนี้ใช่เธอไหม เราจะได้รู้ว่าควรเจาะลึกต่อหรือเปล่า
+next.blocks[2].lines[1].text.th: ไม่ว่าจะกดอันไหน ถือว่าได้ข้อมูล
+next.blocks[2].lines[2].text.th: ลองแล้วรู้ว่าไม่ใช่ ก็ยังได้คำตอบไวกว่าคนที่ไม่เคยลอง
+next.blocks[4].lines[0].text.th: ถ้าสนใจสายนี้ สิ่งเดียวที่ต้องทำต่อ
+next.blocks[4].lines[1].text.th: คือพรุ่งนี้ลองส่องตัวอย่างใหม่อีกอย่าง แล้วจดบันทึกแล็บอีกหน้า
+next.blocks[5].text.th: ไม่ชอบงานละเอียดที่ต้องเช็กซ้ำทุกขั้น ไม่โอเคกับการจับตัวอย่างเลือดทุกวัน หรือไม่อยากเข้าเวรดึก เพราะแล็บโรงพยาบาลหลายที่เปิดทั้งวันทั้งคืน
+next.blocks[5].titleTh: สายนี้อาจไม่เหมาะ ถ้า...",
+  "round1.titleTh: รอบ 1 มีพื้นที่ให้ผลงานเธอ
+round1.questionTh: เข้ามหาลัยด้วยสิ่งที่ทำเอง ไม่ใช่แค่คะแนนสอบ จริงเหรอ
+round1.navLabelTh: รอบ 1
+round1.og.headlineTh: TCAS รอบ 1 ใช้ผลงานของเธอยื่นได้ เริ่มเก็บตั้งแต่ตอนนี้เลย
+round1.og.stat.th: TCAS70 มี 4 รอบ รอบแรกคือ Portfolio
+round1.blocks[0].lines[0].text.th: ก่อนไปต่อ มีเรื่องหนึ่งที่แทบไม่มีใครเคยบอก
+round1.blocks[0].lines[1].text.th: เข้ามหาลัยไม่ได้มีแค่ทางสอบอย่างเดียวนะ
+round1.blocks[1].text.th: TCAS70 มี 4 รอบ รอบแรกชื่อ Portfolio มหาลัยดูจากสิ่งที่เธอทำมา
+round1.blocks[2].lines[0].text.th: ถ้าเธอเคยลองทำอะไรในสายแล็บ ด้วยตัวเอง นั่นแหละ เอาไปใส่ได้เลย
+round1.blocks[2].lines[1].text.th: ปีนี้ ทปอ. มีระบบ TCASfolio ให้ทำแฟ้มผลงานได้สูงสุด 40 รายการ
+round1.blocks[3].unlockLabelTh: ลองจัดแฟ้มดู
+round1.blocks[3].blocks[0].lines[0].text.th: ลองดูสิ ของพวกนี้ควรไปอยู่ช่องไหนในแฟ้ม
+round1.blocks[3].blocks[1].game.data.tagTh: จัดแฟ้มผลงาน
+round1.blocks[3].blocks[1].game.data.goalTh: จัดของใส่แฟ้ม TCASfolio
+round1.blocks[3].blocks[1].game.data.bins[0].labelTh: โครงงาน
+round1.blocks[3].blocks[1].game.data.bins[1].labelTh: กิจกรรม
+round1.blocks[3].blocks[1].game.data.bins[2].labelTh: เกียรติบัตร รางวัล
+round1.blocks[3].blocks[1].game.data.items[0].labelTh: ส่องเกลือกับน้ำตาลด้วยเลนส์หยดน้ำ แล้วเขียนบันทึกแล็บ
+round1.blocks[3].blocks[1].game.data.items[0].revealTh: โครงงาน: เธอทำเองทั้งหมด มีรูปกับบันทึกที่คนอื่นเปิดดูได้
+round1.blocks[3].blocks[1].game.data.items[1].labelTh: ทำอินโฟกราฟิกว่าหลอดเลือดหนึ่งหลอด เดินทางไปแล็บยังไง
+round1.blocks[3].blocks[1].game.data.items[1].revealTh: โครงงาน: อธิบายงานแล็บให้คนอื่นเข้าใจ ก็เป็นทักษะของสายนี้เหมือนกัน
+round1.blocks[3].blocks[1].game.data.items[2].labelTh: ไปค่ายหรือวันเปิดบ้านคณะเทคนิคการแพทย์
+round1.blocks[3].blocks[1].game.data.items[2].revealTh: กิจกรรม: เล่าด้วยว่าได้ลองทำอะไร ไม่ใช่แค่ไปเดินดู
+round1.blocks[3].blocks[1].game.data.items[3].labelTh: ช่วยโต๊ะลงทะเบียน วันรับบริจาคเลือดที่โรงเรียน
+round1.blocks[3].blocks[1].game.data.items[3].revealTh: กิจกรรม: ได้เห็นงานจริงใกล้ๆ เล่าด้วยว่าเห็นอะไร
+round1.blocks[3].blocks[1].game.data.items[4].labelTh: เกียรติบัตรจากการแข่งขันชีววิทยา
+round1.blocks[3].blocks[1].game.data.items[4].revealTh: เกียรติบัตร รางวัล: ใส่ได้นะ แต่เล่าด้วยว่าเธอได้อะไรจากมัน
+round1.blocks[3].blocks[1].game.data.resultTh: จัดถูก {score}/{total}
+round1.blocks[3].blocks[1].answersTh[0]: โครงงาน: ส่องเกลือกับน้ำตาลด้วยเลนส์หยดน้ำ แล้วเขียนบันทึกแล็บ, ทำอินโฟกราฟิกว่าหลอดเลือดหนึ่งหลอด เดินทางไปแล็บยังไง
+round1.blocks[3].blocks[1].answersTh[1]: กิจกรรม: ไปค่ายหรือวันเปิดบ้านคณะเทคนิคการแพทย์, ช่วยโต๊ะลงทะเบียน วันรับบริจาคเลือดที่โรงเรียน
+round1.blocks[3].blocks[1].answersTh[2]: เกียรติบัตร รางวัล: เกียรติบัตรจากการแข่งขันชีววิทยา
+round1.blocks[3].blocks[2].lines[0].text.th: เห็นไหม ของที่เธอลงมือทำเองนับได้จริง
+round1.blocks[3].blocks[2].lines[1].text.th: ไม่ต้องรอใครมาจัดค่าย หรือออกใบเกียรติบัตรให้ก่อนเลย
+round1.blocks[4].unlockLabelTh: แล้วตอนนี้ฉันอยู่ ม.ไหนล่ะ
+round1.blocks[4].blocks[0].lines[0].text.th: ถ้าอยู่ ม.6 รอบ 1 ปีนี้บางที่ยังเปิดรับอยู่ แต่ละคณะปิดไม่พร้อมกันนะ
+round1.blocks[4].blocks[0].lines[1].text.th: ถ้าอยู่ ม.5 เธอยังมีเวลาอีกเกือบปี ลองทำชิ้นแรกให้เสร็จก่อนเลย
+round1.blocks[4].blocks[0].lines[2].text.th: ถ้าอยู่ ม.4 เวลาเยอะสุด ลองได้หลายอย่างเลย ไม่ต้องรีบเลือก
+round1.blocks[4].blocks[1].text.th: อย่างเช่น สวนสุนันทาเปิดรับรอบ 1 ถึง 9 ก.พ. 2570
+round1.blocks[4].blocks[1].titleTh: ยังเปิดอยู่
+round1.blocks[4].blocks[2].text.th: รอบ 1 ไม่ได้ง่ายกว่ารอบอื่น แต่ละคณะมีเกณฑ์อย่างเกรดขั้นต่ำ เช็กประกาศของคณะที่สนใจทุกครั้งนะ
+round1.blocks[4].blocks[2].titleTh: พูดตรงๆ
+round1.blocks[4].blocks[3].labelTh: ดูหลักสูตร เทคนิคการแพทย์ สหเวชศาสตร์ ใน mytcas
+round1.blocks[5].lines[0].text.th: ผลงานชิ้นแรกไม่ต้องใหญ่โตเลย
+round1.blocks[5].lines[1].text.th: TCAS70 เทคนิคการแพทย์ใน mytcas มี 20 หลักสูตร มีรอบ 1 ถึง 17 หลักสูตร
+round1.blocks[5].lines[2].text.th: อยากรู้เรื่องเงินเดือนกับที่เรียนต่อใช่ไหม
+round1.blocks[5].lines[3].text.th: กด แผนที่ด่าน ข้างล่าง ไปดูข้อมูลเต็มของสายนี้ได้เลย",
+]
+`;
