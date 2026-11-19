@@ -91,10 +91,20 @@ eight are drawn, and the count they say is the whole day's (no "+N").
   the rest only counted) and the actors. Positions are fixed offsets from the plaza
   centre; the tests walk every frame of every figure past every tree, tag,
   pin, lamp and plaza piece, on land, for islands of 1 to 150 plots.
-- **The sprites** (`crowdSprites.ts`): the plot visitor (standing, a stride
-  frame, two wave frames) and the story's tester (on the phone), each
+- **The sprites** (`crowdSprites.ts`): the plot visitor (standing, a
+  four-frame walk with the body a pixel lower on each step, a breath, a
+  blink, two wave frames) and the story's tester (on the phone), each
   recoloured by swapping two palette keys. They live only in the web's atlas;
   the bot's sprites and picture are unchanged, so no bot deploy.
+- **Idle life** (`people.ts`, cozy art pass, 2026-11-19): whoever stands or
+  sits breathes (head and shoulders settle a pixel for about a second every
+  3.5 s) and now and then blinks, each on a clock of their own: the crowd
+  between walks (`crowd.ts`), the campfire's sitters, a tree's partner and
+  the story's builder (blink only, so the hammer stays put) and tester (the
+  web engine's `livelyActors` and `partnerSprite`). Every idle frame is the
+  person's own sprite with one row or one pixel moved, the same size, so a
+  tap's hit box stays on what is drawn. Reduced motion and still islands show
+  the plain first frame; the bot's GIF never asks for idle frames.
 - **The engine**: an actor may now carry one step per frame (`steps`: where it
   stands and which way it faces), so figures walk, and `once` actors (the
   arrival) play from when they appear and then hold their last frame. Under

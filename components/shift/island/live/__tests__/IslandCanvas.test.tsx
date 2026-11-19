@@ -309,7 +309,7 @@ describe("IslandCanvas", () => {
   it("lets taps read where its walkers stand, from the frame last painted, while it lives", () => {
     // One native px a frame to the right, a frame every tick.
     const walker = {
-      frames: ["crowd_stand_of", "crowd_stride_of", "crowd_stand_of", "crowd_stride_of"],
+      frames: ["crowd_walk0_of", "crowd_walk1_of", "crowd_walk2_of", "crowd_walk3_of"],
       x: 40,
       y: 50,
       frameMs: 125,
@@ -333,7 +333,7 @@ describe("IslandCanvas", () => {
 
   it("hands a reader polling every frame the same boxes until the next paint, and nothing for actors it does not draw yet", () => {
     const walker = {
-      frames: ["crowd_stand_of", "crowd_stride_of", "crowd_stand_of", "crowd_stride_of"],
+      frames: ["crowd_walk0_of", "crowd_walk1_of", "crowd_walk2_of", "crowd_walk3_of"],
       x: 40,
       y: 50,
       frameMs: 125,
@@ -359,6 +359,29 @@ describe("IslandCanvas", () => {
     rerender(<IslandCanvas scene={scene} actors={more} actorBoxes={holder} />);
     expect(holder.current!(more)).toHaveLength(2);
     expect(holder.current!(actors)).toBeNull();
+  });
+
+  it("keeps a breathing, blinking sitter's and builder's boxes on their sprites, frame after frame", () => {
+    const sitter = { frames: ["sit_a_0", "sit_a_1"], x: 30, y: 40, frameMs: 1100 };
+    const builder = { frames: ["builder_0", "builder_1"], x: 60, y: 40, frameMs: 600, flip: true };
+    const actors = [sitter, builder];
+    const holder: { current: ActorBoxes | null } = { current: null };
+    render(<IslandCanvas scene={scene} actors={actors} actorBoxes={holder} />);
+    firstFrame();
+    const seen = new Set<unknown>();
+    for (let k = 0; k < 40; k++) {
+      const boxes = holder.current!(actors);
+      seen.add(boxes);
+      expect(boxes).toEqual([
+        { x: 30, y: 40, w: 8, h: 10 },
+        { x: 60, y: 40, w: 10, h: 14 },
+      ]);
+      act(() => {
+        jest.advanceTimersByTime(125);
+      });
+    }
+    // They were repainted as they breathed (a new list per painted frame), always on the same boxes.
+    expect(seen.size).toBeGreaterThan(1);
   });
 
   it("cleans up every timer when unmounted", () => {

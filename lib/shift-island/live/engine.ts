@@ -13,6 +13,14 @@
  * - zero timers while off-screen, in a hidden tab, paused (a sheet is open),
  *   still, or under prefers-reduced-motion (then one still frame is drawn).
  *
+ * People idle (people.ts): whoever stands or sits breathes and now and then
+ * blinks, each new frame inside its own sprite's box, so a quiet island
+ * repaints a few small rects a second for them (about 18 x 22 native px each,
+ * with the shadow's margin). A new frame that draws the same sprite in the
+ * same place repaints nothing (draw.ts dirtyRects), so standing between
+ * breaths costs nothing. Reduced motion and a still island draw everyone
+ * plain and repaint nothing for them.
+ *
  * The clock counts running time only: after a pause the island carries on
  * where it stopped and never replays missed ticks.
  */
@@ -37,6 +45,7 @@ import { IslandFx, type FxMotion } from "./fx";
 import { area, exposed, intersect, visibleRect, type Rect } from "./geometry";
 import { gradeRgb, gradedWater } from "./grade";
 import { bangkokPhase } from "./lighting";
+import { livelyActors } from "./people";
 import { paintSignposts, signposts, wholeUnit, type Signpost } from "./signposts";
 import type { LightPhase, LiveActor } from "./types";
 
@@ -162,6 +171,12 @@ export class LiveIsland {
   private nextPhaseCheck = 0;
   private swaying: boolean[] = [];
   private actorsKey: string;
+  /**
+   * The actors as drawn: props.actors with the people's idle loops
+   * (people.ts livelyActors), index for index, so a tap's index and a box
+   * still name the same actor.
+   */
+  private cast: readonly LiveActor[];
   /** The actor boxes last read (actorBoxes), with the frame, actors and atlas they were read from. */
   private boxes: { at: Motion | number; actors: readonly LiveActor[]; rects: Layers<Img>["rects"]; list: readonly (Rect | null)[] } | null = null;
   /** Per actor, the tick it appeared on: a `once` actor (an arrival) plays from there. */
@@ -176,6 +191,7 @@ export class LiveIsland {
   ) {
     this.props = props;
     this.actorsKey = actorsKey(props.actors);
+    this.cast = livelyActors(props.actors);
     this.actorsSince = props.actors.map(() => 0);
     let ctx: Ctx | null = null;
     try {
@@ -202,7 +218,10 @@ export class LiveIsland {
       const key = actorsKey(next.actors);
       const actorsChanged = key !== this.actorsKey;
       this.actorsKey = key;
-      if (actorsChanged) this.actorsSince = sinceFor(prev.actors, this.actorsSince, next.actors, this.currentTick());
+      if (actorsChanged) {
+        this.actorsSince = sinceFor(prev.actors, this.actorsSince, next.actors, this.currentTick());
+        this.cast = livelyActors(next.actors);
+      }
       if (!this.ready) return;
       const cropChanged = cropKey(next.crop) !== cropKey(prev.crop);
       // A refreshed page sends an equal scene as a new object: only a real change rebuilds.
@@ -251,7 +270,7 @@ export class LiveIsland {
     const kept = this.boxes;
     if (kept && kept.at === at && kept.actors === this.props.actors && kept.rects === layers.rects) return kept.list;
     const motion = typeof at === "number" ? this.motion(at) : at;
-    const list = this.props.actors.map((actor, i) => actorRect(actor, motion.actors[i] ?? 0, layers.rects));
+    const list = this.cast.map((actor, i) => actorRect(actor, motion.actors[i] ?? 0, layers.rects));
     this.boxes = { at, actors: this.props.actors, rects: layers.rects, list };
     return list;
   }
@@ -580,7 +599,7 @@ export class LiveIsland {
     const land = context(this.landCanvas);
     land.clearRect(0, 0, model.scene.width, model.scene.height);
     paintLand(land as DrawContext<Img>, model, atlas.image, atlas.data.rects);
-    this.fx.bakeLand(land, model, this.phase, this.props.actors, atlas.image, atlas.data.rects, posts);
+    this.fx.bakeLand(land, model, this.phase, this.cast, atlas.image, atlas.data.rects, posts);
     // The signposts and the pin, in front of the trees and behind the plaza's people.
     this.overlayCanvas = this.sized(this.overlayCanvas, model.scene.width, model.scene.height);
     const overlay = context(this.overlayCanvas);
@@ -638,7 +657,7 @@ export class LiveIsland {
       span: this.span(),
       scene: model.scene,
       swaying: this.swaying,
-      actors: this.props.actors,
+      actors: this.cast,
       actorsSince: this.actorsSince,
       ambient: this.props.ambient,
       still: this.isStill(),
@@ -666,7 +685,7 @@ export class LiveIsland {
     const frame = this.frameRect();
     ctx.setTransform(1, 0, 0, 1, -frame.x, -frame.y);
     ctx.imageSmoothingEnabled = false;
-    const actors = this.props.actors;
+    const actors = this.cast;
     const fx = this.fx.hooks(ctx, model, layers, motion, actors, this.fxOptions());
     const state = { motion, night: this.phase === "night", actors, fx };
     for (const r of rects) {
@@ -695,7 +714,7 @@ export class LiveIsland {
       return;
     }
     const prev = this.drawn;
-    const dirty = dirtyRects(prev, motion, model, layers.rects, this.props.actors);
+    const dirty = dirtyRects(prev, motion, model, layers.rects, this.cast);
     this.drawn = motion;
     if (dirty === "all" || !prev) {
       this.paint([view], motion);

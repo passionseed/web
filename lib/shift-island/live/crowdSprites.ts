@@ -1,18 +1,24 @@
 /**
  * The plaza's people, made from the island's own figures: the plot visitor
- * (SPRITES.visitor) standing, mid-stride and waving, and the story's tester
- * (MOTION_SPRITES.tester_0/1) looking at a phone. Each outfit swaps two
- * palette keys (hair and shirt), so a crowd is a crowd and not clones, and
- * the picture stays in the island's palette in every light. The bot's sprites
- * are never changed: these exist only in the web's atlas (allSprites).
+ * (SPRITES.visitor) standing, breathing, blinking, walking (four frames) and
+ * waving, and the story's tester (MOTION_SPRITES.tester_0/1) looking at a
+ * phone. Each outfit swaps two palette keys (hair and shirt), so a crowd is a
+ * crowd and not clones, and the picture stays in the island's palette in
+ * every light. The bot's sprites are never changed: these exist only in the
+ * web's atlas (allSprites), and the bot never draws them.
  *
  * Pure and client-safe. Names: crowd_<pose>_<hair><shirt>, e.g. crowd_stand_of.
  */
 import { MOTION_SPRITES } from "@/bot/assets/island/motion-sprites";
 import { SPRITES } from "@/bot/assets/island/sprites";
 
-export type CrowdPose = "stand" | "stride" | "wave0" | "wave1" | "phone0" | "phone1";
-export const CROWD_POSES: readonly CrowdPose[] = ["stand", "stride", "wave0", "wave1", "phone0", "phone1"];
+import { blinkRows, settleRows } from "./people";
+
+export type CrowdPose = "stand" | "rest" | "blink" | WalkPose | "wave0" | "wave1" | "phone0" | "phone1";
+/** The walk cycle in order: a step (body down a pixel), passing (a foot up), the other step, passing again. */
+export type WalkPose = "walk0" | "walk1" | "walk2" | "walk3";
+export const WALK_CYCLE: readonly WalkPose[] = ["walk0", "walk1", "walk2", "walk3"];
+export const CROWD_POSES: readonly CrowdPose[] = ["stand", "rest", "blink", ...WALK_CYCLE, "wave0", "wave1", "phone0", "phone1"];
 
 /** Two palette keys: hair and shirt. */
 export interface Outfit {
@@ -64,8 +70,36 @@ export function crowdSprite(pose: CrowdPose, outfit: Outfit): string {
   return `crowd_${pose}_${outfit.hair}${outfit.shirt}`;
 }
 
-/** The visitor's legs apart, the back foot lifted: one walking frame. */
-const STRIDE_LEGS = ["...ozzo...", "..ozzzzo..", "..oz.ozo..", ".oo..oo..."];
+/**
+ * The visitor's legs (rows 10 to 13) through a walk, facing left as it does:
+ * the near foot out in front, passing with the back foot lifted, the other
+ * foot out in front, passing with the near foot lifted.
+ */
+const WALK_LEGS: Record<WalkPose, readonly string[]> = {
+  walk0: ["...ozzo...", "..ozzzzo..", "..oz.ozo..", ".oo..oo..."],
+  walk1: ["...ozzo...", "..ozzzo...", "..oz.zoo..", "..oo..o..."],
+  walk2: ["...ozzo...", "...ozzzo..", "..ozo.zo..", "..oo..oo.."],
+  walk3: ["...ozzo...", "..ozzzo...", "..oo.zo...", ".....oo..."],
+};
+
+/** The arms (rows 7 and 8) on each step: the hand on the side of the leading foot swings back out of sight. */
+const WALK_ARMS: Partial<Record<WalkPose, readonly string[]>> = {
+  walk0: [".okaaaao..", ".okaaaako."],
+  walk2: ["..oaaaako.", ".okaaaako."],
+};
+
+/** On a step (walk0, walk2) the body is a pixel lower: the shirt's hem (row 9) gives way. */
+const HEM = 9;
+/** The visitor's eye, which a blink closes. */
+const EYE = [4, 4] as const;
+
+function walkFrame(pose: WalkPose): string[] {
+  const rows = [...SPRITES.visitor.slice(0, 10), ...WALK_LEGS[pose]];
+  const arms = WALK_ARMS[pose];
+  if (!arms) return rows;
+  rows.splice(7, 2, ...arms);
+  return settleRows(rows, HEM);
+}
 
 /** The visitor's far arm raised, hand high (wave0) and a pixel lower (wave1), rows 0 to 9. */
 const WAVE_TOP: Record<"wave0" | "wave1", readonly string[]> = {
@@ -100,7 +134,12 @@ function baseGrids(): Record<CrowdPose, { rows: string[]; hair: string; shirt: s
   const visitor = SPRITES.visitor;
   return {
     stand: { rows: visitor, hair: "b", shirt: "a" },
-    stride: { rows: [...visitor.slice(0, 10), ...STRIDE_LEGS], hair: "b", shirt: "a" },
+    rest: { rows: settleRows(visitor, HEM), hair: "b", shirt: "a" },
+    blink: { rows: blinkRows(visitor, EYE), hair: "b", shirt: "a" },
+    ...(Object.fromEntries(WALK_CYCLE.map((pose) => [pose, { rows: walkFrame(pose), hair: "b", shirt: "a" }])) as Record<
+      WalkPose,
+      { rows: string[]; hair: string; shirt: string }
+    >),
     wave0: { rows: [...WAVE_TOP.wave0, ...visitor.slice(10)], hair: "b", shirt: "a" },
     wave1: { rows: [...WAVE_TOP.wave1, ...visitor.slice(10)], hair: "b", shirt: "a" },
     phone0: { rows: MOTION_SPRITES.tester_0, hair: "c", shirt: "v" },

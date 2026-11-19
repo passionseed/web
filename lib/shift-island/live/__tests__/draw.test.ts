@@ -10,6 +10,7 @@ import { buildAtlasData, type AtlasRect } from "../atlas";
 import { motionAt, type Motion } from "../clock";
 import { dirtyRects, paintLand, paintOverlay, redrawRect, sceneModel, seaRectsFor, type Layers, type SceneModel } from "../draw";
 import { intersect } from "../geometry";
+import { livelyActors, partnerRects, partnerSprite } from "../people";
 import type { LightPhase, LiveActor } from "../types";
 
 function plots(n: number): IslandPlot[] {
@@ -157,6 +158,66 @@ describe("incremental painting", () => {
     const s = setup(buildScene(plots(8), { markMine: false, festival: true }), "night");
     const actors: LiveActor[] = [{ frames: ["builder_0", "builder_1"], x: 120, y: 90, frameMs: 600, flip: true }];
     expect(replay(s, Array.from({ length: 40 }, (_, k) => k), actors)).toBeGreaterThan(5);
+  });
+
+  it("repaints an actor only when its frame draws something new: the same sprite in the same place costs nothing", () => {
+    const s = setup(buildScene(plots(4), { markMine: false, festival: false }), "day");
+    const actors: LiveActor[] = [
+      { frames: ["builder_0", "builder_0", "builder_1", "builder_1"], x: 50, y: 50, frameMs: 125 },
+      // Mirrored on its second frame: the same sprite, the other way round, is new.
+      {
+        frames: ["tester_0", "tester_0", "tester_0", "tester_0"],
+        x: 90,
+        y: 50,
+        frameMs: 125,
+        steps: [{ dx: 0, dy: 0 }, { dx: 0, dy: 0, flip: true }, { dx: 0, dy: 0, flip: true }, { dx: 0, dy: 0, flip: true }],
+      },
+    ];
+    // Only the actors move between these two motions: everything else is held where it was.
+    const at = (tick: number) => s.motion(tick, { actors });
+    const rectsFor = (a: number, b: number) => {
+      const before = at(a);
+      return dirtyRects(before, { ...before, actors: at(b).actors }, s.model, s.layers.rects, actors);
+    };
+    expect(rectsFor(12, 13)).toEqual([{ x: 90, y: 50, w: 10, h: 14 }]);
+    expect(rectsFor(13, 14)).toEqual([{ x: 50, y: 50, w: 10, h: 14 }]);
+    expect(rectsFor(14, 15)).toEqual([]);
+  });
+
+  it("does the same while the people breathe and blink: the web's idle loops and the trees' partners", () => {
+    const s = setup(buildScene(plots(8), { markMine: false, festival: true }), "day");
+    const actors = livelyActors([
+      { frames: ["sit_a_0", "sit_a_1"], x: 60, y: 60, frameMs: 1100 },
+      { frames: ["sit_c_1", "sit_c_0"], x: 74, y: 60, frameMs: 1100, flip: true },
+      { frames: ["tester_0", "tester_1"], x: 120, y: 90, frameMs: 600 },
+    ]);
+    const full = { x: 0, y: 0, w: s.scene.width, h: s.scene.height };
+    const frame = FakeImage.opaque(s.scene.width, s.scene.height);
+    const ctx = new FakeContext(frame);
+    const fxAt = (tick: number) => ({ partner: (i: number) => partnerSprite(tick, s.model.trees[i].tree.slot) });
+    let prev: Motion | null = null;
+    let prevTick = 0;
+    let partners = 0;
+    for (let tick = 0; tick < 120; tick++) {
+      const motion = s.motion(tick, { actors });
+      const state = { motion, night: s.night, actors, fx: fxAt(tick) };
+      const dirty = dirtyRects(prev, motion, s.model, s.layers.rects, actors);
+      if (dirty === "all") redrawRect(ctx, full, s.model, s.layers, state);
+      else {
+        const moved = partnerRects(prevTick, tick, s.scene.trees);
+        partners += moved.length;
+        for (const r of [...dirty, ...moved]) {
+          const part = intersect(r, full);
+          if (part) redrawRect(ctx, part, s.model, s.layers, state);
+        }
+        const fresh = FakeImage.opaque(s.scene.width, s.scene.height);
+        redrawRect(new FakeContext(fresh), full, s.model, s.layers, state);
+        expect([tick, differingFrames(frame, fresh)]).toEqual([tick, 0]);
+      }
+      prev = motion;
+      prevTick = tick;
+    }
+    expect(partners).toBeGreaterThan(0);
   });
 });
 
@@ -309,5 +370,21 @@ describe("the web's extra layers", () => {
     // The per-cell frames were used: the picture differs from the island-wide frame.
     expect(frames.size).toBe(3);
     expect(differingFrames(plain, hooked)).toBeGreaterThan(0);
+  });
+
+  it("draws each tree's partner as the web picks it: a blink is one pixel on each, nothing else moves", () => {
+    const s = setup(buildScene(plots(8), { markMine: true, festival: true }), "day");
+    const motion = s.motion(3);
+    const full = { x: 0, y: 0, w: s.scene.width, h: s.scene.height };
+    const paint = (partner?: (i: number) => string) => {
+      const img = FakeImage.opaque(s.scene.width, s.scene.height);
+      redrawRect(new FakeContext(img), full, s.model, s.layers, { motion, night: false, actors: [], fx: partner ? { partner } : undefined });
+      return img;
+    };
+    const plain = paint();
+    expect(differingFrames(plain, paint(() => "visitor"))).toBe(0);
+    const partners = s.scene.trees.filter((t) => t.visitor).length;
+    expect(partners).toBeGreaterThan(0);
+    expect(differingFrames(plain, paint(() => "visitor_blink"))).toBe(partners);
   });
 });

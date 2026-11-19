@@ -63,6 +63,7 @@ import { actorAt, actorRect, paintLand, type DrawContext, type DrawFx, type Laye
 import { cellSpan, overlaps, union, type Rect } from "./geometry";
 import { gradeKey, gradeRgb } from "./grade";
 import { paletteRgb, type RGB } from "./lighting";
+import { partnerRects, partnerSprite } from "./people";
 import type { Signpost } from "./signposts";
 import { inkColours, terrainFor, terrainSteps, type Terrain } from "./terrain";
 import type { LightPhase, LiveActor } from "./types";
@@ -641,6 +642,8 @@ export class IslandFx {
     // Each actor's warmth from the fire this frame, worked out the first time a rect draws it (NaN: not yet).
     const warm = fire && lit ? new Float32Array(actors.length).fill(NaN) : null;
     return {
+      // A tree's partner breathes and blinks on its own clock (people.ts); still, the visitor as drawn.
+      partner: frozen ? undefined : (i) => partnerSprite(tick, model.trees[i]?.tree.slot ?? i),
       seaFrame: frozen
         ? undefined
         : (col, row, kind) =>
@@ -731,7 +734,8 @@ export class IslandFx {
   /**
    * What the atmosphere changes between two frames that redrawRect's own
    * dirty list does not know about: the drifting petals, the gulls' shadows,
-   * the fire's breath (its pool and the people it lights) and its smoke.
+   * a tree partner's breath or blink, the fire's breath (its pool and the
+   * people it lights) and its smoke.
    * (Glints and the sea's frames change only on the sea's beat, when the
    * whole view repaints anyway; shadows move inside their actors' padded
    * boxes.)
@@ -747,6 +751,7 @@ export class IslandFx {
       if (boxes.length) out.push(boxes.reduce(union));
     }
     if (opts.frozen) return out;
+    out.push(...partnerRects(prev.tick, next.tick, scene.trees));
     const a = breezeAt(prev.tick, scene, opts.span, this.phase);
     const b = breezeAt(next.tick, scene, opts.span, this.phase);
     for (let k = 0; k < Math.min(a.length, b.length); k++) {

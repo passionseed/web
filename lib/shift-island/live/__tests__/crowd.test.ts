@@ -20,7 +20,7 @@ import {
   crowdPlan,
   type VisitorsInput,
 } from "../crowd";
-import { CROWD_OUTFITS, CROWD_POSES, TEAM_SHIRTS, allOutfits, crowdSprite, crowdSprites, teamShirt } from "../crowdSprites";
+import { CROWD_OUTFITS, CROWD_POSES, TEAM_SHIRTS, WALK_CYCLE, allOutfits, crowdSprite, crowdSprites, teamShirt } from "../crowdSprites";
 import { actorAt, actorRect, lampRects, sceneModel } from "../draw";
 import { sinceFor } from "../engine";
 import { overlaps, union, type Rect } from "../geometry";
@@ -469,6 +469,78 @@ describe("the plaza's people: sprites and frames", () => {
       if (next.dx > s.dx) expect(next.flip).toBe(true);
       if (next.dx < s.dx) expect(next.flip).toBe(false);
     });
+  });
+
+  it("makes its walk from the visitor itself: the same head and shirt, the body a pixel lower on each step", () => {
+    const all = crowdSprites();
+    const outfit = CROWD_OUTFITS[2];
+    const visitor = SPRITES.visitor.map((row) => row.replace(/b/g, outfit.hair).replace(/a/g, outfit.shirt));
+    for (const pose of WALK_CYCLE) {
+      const rows = all[crowdSprite(pose, outfit)];
+      // Feet on the ground: the last row is the feet, where the shadow goes.
+      expect(rows[PERSON.h - 1]).toMatch(/o/);
+      if (pose === "walk0" || pose === "walk2") {
+        expect(rows[0]).toBe(".".repeat(PERSON.w));
+        expect(rows.slice(1, 8)).toEqual(visitor.slice(0, 7));
+      } else expect(rows.slice(0, 10)).toEqual(visitor.slice(0, 10));
+    }
+    // A breath is the standing figure settled a pixel; a blink closes its eye.
+    expect(all[crowdSprite("rest", outfit)].slice(1, 10)).toEqual(visitor.slice(0, 9));
+    expect(all[crowdSprite("rest", outfit)].slice(10)).toEqual(visitor.slice(10));
+    expect(all[crowdSprite("blink", outfit)][4]).toBe(visitor[4].slice(0, 4) + "k" + visitor[4].slice(5));
+  });
+
+  it("steps through the four walking frames in order, two ticks each, and never stands mid-walk", () => {
+    for (const arriving of [false, true]) {
+      const world = plazaWorld(scene, busy(scene, { arriving }));
+      for (const actor of world.actors.filter(isCrowd)) {
+        const n = actor.frames.length;
+        const steps = actor.steps!;
+        const moves = (i: number) => {
+          const a = steps[(i - 1 + n) % n];
+          const b = steps[i];
+          return a.dx !== b.dx || a.dy !== b.dy;
+        };
+        let walks = 0;
+        for (let i = 0; i < n; i++) {
+          // Where a walk begins (an arrival's first frame has no frame before it).
+          if (!moves(i) || moves((i - 1 + n) % n) || (actor.once && i === 0)) continue;
+          for (let k = 0; moves((i + k) % n) && k < n; k++) {
+            expect(actor.frames[(i + k) % n]).toBe(actor.frames[(i + k) % n].replace(/walk\d/, WALK_CYCLE[Math.floor(k / 2) % 4]));
+            expect(actor.frames[(i + k) % n]).toMatch(/^crowd_walk\d_/);
+          }
+          walks++;
+        }
+        // Everyone who goes anywhere walks there (teammates and the viewer at home stay put).
+        if (steps.some((s) => s.dx !== steps[0].dx || s.dy !== steps[0].dy)) expect(walks).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("breathes and blinks only standing in place, and a still island shows everyone plain", () => {
+    for (const arriving of [false, true]) {
+      const world = plazaWorld(scene, busy(scene, { arriving }));
+      for (const [k, actor] of world.actors.filter(isCrowd).entries()) {
+        const n = actor.frames.length;
+        expect(actor.frames[stillFrame(actor)]).not.toMatch(/^crowd_(rest|blink)_/);
+        actor.frames.forEach((name, i) => {
+          if (!/^crowd_(rest|blink)_/.test(name)) return;
+          // The arrival stands plain: it ends on one held frame.
+          expect(actor.once).toBeFalsy();
+          // Standing where the frame before it stood: never a step.
+          const before = actor.steps![(i - 1 + n) % n];
+          expect([k, before.dx, before.dy]).toEqual([k, actor.steps![i].dx, actor.steps![i].dy]);
+        });
+        // Breathing runs are a breath long, never a one-tick twitch.
+        const rest = actor.frames.map((f) => f.startsWith("crowd_rest_"));
+        rest.forEach((r, i) => {
+          if (!r || rest[(i - 1 + n) % n]) return;
+          let len = 0;
+          while (rest[(i + len) % n] && len < n) len++;
+          expect(len).toBeGreaterThanOrEqual(4);
+        });
+      }
+    }
   });
 });
 

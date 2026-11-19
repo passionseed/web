@@ -18,6 +18,7 @@ import { mapTreeColor, type TreeStyle } from "@/lib/shift-island/tree-style";
 
 import { crowdSprites } from "./crowdSprites";
 import { paletteRgb, tint, type RGB } from "./lighting";
+import { peopleSprites } from "./people";
 import type { LightPhase } from "./types";
 
 export interface AtlasRect {
@@ -67,11 +68,16 @@ const ATLAS_WIDTH = 512;
 /** Empty pixels around each sprite, so neighbours never bleed into each other. */
 const PAD = 1;
 
-/** Every sprite the live island can draw, by name: SPRITES, then MOTION_SPRITES and the plaza's crowd, never shadowing it. */
+/**
+ * Every sprite the live island can draw, by name: SPRITES, then
+ * MOTION_SPRITES, the plaza's crowd and the people's idle frames (people.ts),
+ * never shadowing it.
+ */
 export function allSprites(): Record<string, string[]> {
   const out: Record<string, string[]> = { ...SPRITES };
   for (const [name, rows] of Object.entries(MOTION_SPRITES)) if (!(name in out)) out[name] = rows;
   for (const [name, rows] of Object.entries(crowdSprites())) if (!(name in out)) out[name] = rows;
+  for (const [name, rows] of Object.entries(peopleSprites())) if (!(name in out)) out[name] = rows;
   return out;
 }
 

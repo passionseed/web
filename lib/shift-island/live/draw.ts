@@ -229,6 +229,8 @@ export function paintMarker<Img>(ctx: DrawContext<Img>, model: SceneModel, atlas
 export interface DrawFx {
   /** A sea cell's frame (0..2) instead of the island-wide one: ripples that roll instead of pulsing. */
   seaFrame?: (col: number, row: number, kind: number) => number;
+  /** The sprite of scene tree `index`'s partner this frame (the visitor breathing or blinking); absent, "visitor". */
+  partner?: (index: number) => string;
   /** Over the sea and foam, under the land layer. */
   afterSea?: (r: Rect) => void;
   /** Over the land layer, under everything that stands on it (light that moves on the ground). */
@@ -318,7 +320,7 @@ export function redrawRect<Img>(ctx: DrawContext<Img>, r: Rect, model: SceneMode
     // Roots sit on the soil, inside the tree's rect: a sway repaint redraws them too.
     if (tree.roots) blit(ctx, atlas, rects.get(tree.roots.sprite), tree.roots.x, tree.roots.y);
     if (tree.key) blit(ctx, atlas, rects.get("key_flag"), tree.key.x, tree.key.y);
-    if (tree.visitor) blit(ctx, atlas, rects.get("visitor"), tree.visitor.x, tree.visitor.y);
+    if (tree.visitor) blit(ctx, atlas, rects.get(fx?.partner?.(i) ?? "visitor"), tree.visitor.x, tree.visitor.y);
     // Only an earned lantern glows, and only at night: behind the lantern, over the tree.
     if (night && m.glow) blit(ctx, atlas, rects.get(motion.glow[i] ? "lantern_glow_1" : "lantern_glow_0"), m.glow.x, m.glow.y);
     if (tree.lantern) blit(ctx, atlas, rects.get("lantern"), tree.lantern.x, tree.lantern.y);
@@ -383,10 +385,20 @@ export function dirtyRects(
     if (m.glow && prev.glow[i] !== next.glow[i]) out.push(m.glow);
   });
   actors.forEach((actor, i) => {
-    if (prev.actors[i] === next.actors[i]) return;
-    const a = actorRect(actor, prev.actors[i] ?? 0, rects);
-    const b = actorRect(actor, next.actors[i] ?? 0, rects);
-    if (a && b) out.push(union(a, b));
+    const fa = prev.actors[i] ?? 0;
+    const fb = next.actors[i] ?? 0;
+    if (fa === fb) return;
+    const a = actorRect(actor, fa, rects);
+    const b = actorRect(actor, fb, rects);
+    if (!a || !b) return;
+    // A new frame that draws the very same sprite in the same place (a figure standing between breaths): nothing to repaint.
+    if (a.x === b.x && a.y === b.y && sameSprite(actor, fa, fb)) return;
+    out.push(union(a, b));
   });
   return out;
+}
+
+/** Two frames of an actor draw the same pixels: the same sprite, the same way round. */
+function sameSprite(actor: LiveActor, fa: number, fb: number): boolean {
+  return (actor.frames[fa] ?? actor.frames[0]) === (actor.frames[fb] ?? actor.frames[0]) && actorAt(actor, fa).flip === actorAt(actor, fb).flip;
 }
