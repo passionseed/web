@@ -13,8 +13,8 @@ import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
  */
 
 export const metadata: Metadata = {
-  title: `${ELEMENTAL.series}: ${ELEMENTAL.edition} poster`,
-  description: `${ELEMENTAL.series}: ${ELEMENTAL.edition} hackathon key visual`,
+  title: `${ELEMENTAL.edition} Hackathon poster`,
+  description: `${ELEMENTAL.edition} Hackathon by ${ELEMENTAL.series} and PassionSeed: a calm river valley poisoned by pixel fire, smog, toxic water and an e-waste dump`,
   robots: { index: false, follow: false },
 };
 
@@ -28,14 +28,14 @@ export default async function ElementalPosterPage({ searchParams }: { searchPara
           id: "elemental-key",
           width: W,
           height: H,
-          alt: `${ELEMENTAL.series}: ${ELEMENTAL.edition}, a fire on open ground breaking into pixels, with the five elements marked`,
+          alt: `${ELEMENTAL.edition} Hackathon poster: a calm river valley under a grey sky, poisoned by pixels. A fire bursts out of the far bank, smog pours over the ridge, the river turns toxic green and an e-waste dump sits on the bank`,
           live: <ElementalKeyPoster />,
         },
         {
           id: "elemental-key-blue",
           width: W,
           height: H,
-          alt: `${ELEMENTAL.series}: ${ELEMENTAL.edition}, the same scene under a blue sky`,
+          alt: `${ELEMENTAL.edition} Hackathon poster, the same scene under a blue sky`,
           live: <ElementalKeyPoster id="elemental-key-blue" sky="blue" />,
         },
       ]}

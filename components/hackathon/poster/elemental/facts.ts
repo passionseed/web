@@ -5,8 +5,8 @@ import { formatThaiDate } from "@/lib/content/shift-cohort";
  * - Dates: 5 to 7 December 2026, 3 days over the long weekend (told by
  *   Angpao, 2026-11-19). This changes the 5 to 8 December in
  *   decisions/log.md, which needs a new entry there.
- * - Prices: told by Angpao on 2026-11-19 (company-brain PR #88). Big's
- *   draft in PR #87 says ฿199 alone; settle that before this ships.
+ * - Prices: ฿199 alone (told by Angpao, 2026-11-20; it replaces ฿190) and
+ *   ฿149 a person with others (company-brain numbers.md).
  * - Elements and theme: private/hackathon-december-2026.md (PR #87) and
  *   Angpao, 2026-11-19 (Aether is the fifth element).
  * - Prize total: told by Angpao, 2026-11-19 (not yet in company-brain).
@@ -20,7 +20,7 @@ export const ELEMENTAL = {
   days: 3,
   /** The dates fall on a 3-day long weekend (Sat 5 to Mon 7 Dec). */
   longWeekend: true,
-  priceBaht: 190,
+  priceBaht: 199,
   groupPriceBaht: 149,
   prizeTotalBaht: 20000,
   theme: "Environmental negligence",
