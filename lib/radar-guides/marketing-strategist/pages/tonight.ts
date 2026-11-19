@@ -1,8 +1,9 @@
 /**
  * Level 3 · tonight. One evening, free, no account: pick a real shop near
- * school, count the students who stop by after school, ask 3 friends why they
- * do or don't, and write a one-page plan to bring in 10 more with ideas that
- * cost nothing, including how to count whether it worked. The plan is the
+ * school, ask 3 friends why they do or don't stop by (no names), and write a
+ * one-page plan to bring in 10 more with ideas that cost nothing, including
+ * how to count whether it worked. Counting the students who stop by happens
+ * the next day after school, with a friend, numbers only. The plan is the
  * work level's loop (who, feel, where, then measure) on a real shop.
  *
  * Minors: no messaging the shop or strangers; the plan uses only what the
@@ -27,18 +28,18 @@ export const tonight: GuidePage = {
   asOf: "2026-11-20",
   minutes: 1,
   factIds: [PLAN, GOAL, ROUND_ONE_FACT],
-  og: { headlineTh: "คืนนี้เขียนแผนหน้าเดียว พานักเรียนแวะร้านหน้าโรงเรียนเพิ่ม 10 คน โดยไม่ใช้เงินเลย" },
+  og: { headlineTh: "คืนนี้เขียนแผนหน้าเดียว ตั้งเป้าชวนนักเรียนแวะร้านหน้าโรงเรียนเพิ่ม 10 คน โดยไม่ใช้เงินเลย" },
   blocks: [
     dialogue(
       "intro",
       host("ด่านนี้ไม่ได้เล่นแค่ในจอนะ เป็นภารกิจจริงคืนนี้", { mood: "wow" }),
       host("เลือกร้านจริงแถวโรงเรียน แล้ววางแผนดึงนักเรียนมาแวะเพิ่ม 10 คน", { facts: [GOAL] }),
-      host("กติกามีข้อเดียว: ไอเดียต้องไม่ใช้เงินเลย", { mood: "wink" })
+      host("กติกาสำคัญ: ไอเดียต้องไม่ใช้เงินเลย ทั้งเงินเธอและเงินร้าน", { mood: "wink" })
     ),
     item(
       "plan-parts",
       "intel",
-      "แผนการตลาดบอกว่า เป้าคืออะไร ลูกค้าคือใคร จะทำยังไง ใช้งบเท่าไหร่ และหวังผลแค่ไหน ส่วนวัดผลคือเอาผลจริงมาเทียบกับเป้า",
+      "แผนการตลาดต้องตอบได้ว่า เป้าคืออะไร ลูกค้าคือใคร จะทำยังไง ใช้งบเท่าไหร่ และหวังผลแค่ไหน ส่วนวัดผลคือเอาผลจริงมาเทียบกับเป้า",
       { title: "แผนการตลาดมีอะไรบ้าง", facts: [PLAN] }
     ),
     {
@@ -54,7 +55,7 @@ export const tonight: GuidePage = {
         engine: "EvidenceMaker",
         data: {
           room: {
-            titleTh: "Marketeer · แผนการตลาดต่างจากกลยุทธ์ยังไง",
+            titleTh: "Marketeer · กลยุทธ์การตลาดต่างจากแผนการตลาดอย่างไร",
             href: PLAN_URL,
             badgeTh: "อ่านฟรี ไม่ต้องสมัคร ณ 20 พ.ย. 2569",
             subTh: "บทความภาษาไทยสั้นๆ อ่านก่อนเขียนแผน แล้วค่อยลงมือ",
@@ -62,10 +63,10 @@ export const tonight: GuidePage = {
           },
           checklistTh: [
             "เลือกร้านจริงแถวโรงเรียน ที่เธอเดินผ่านทุกวัน",
-            "ช่วงเลิกเรียน ยืนดูจากข้างนอก นับว่ามีนักเรียนแวะกี่คน",
-            "ถามเพื่อน 3 คน ว่าทำไมแวะ หรือทำไมไม่แวะ",
+            "ถามเพื่อน 3 คน ว่าทำไมแวะ หรือทำไมไม่แวะ ไม่ต้องจดชื่อ",
             "เขียนแผนหน้าเดียวจากช่องข้างล่าง",
             "ใส่วิธีนับผลด้วย ว่าได้เพิ่ม 10 คนจริงไหม",
+            "พรุ่งนี้หลังเลิกเรียน ชวนเพื่อนไปนับว่ามีนักเรียนแวะกี่คน นับแค่จำนวน ไม่ถ่ายรูปใคร",
           ],
           fields: [
             { id: "shop", placeholderTh: "ร้านแบบไหน ขายอะไร" },
@@ -85,9 +86,9 @@ export const tonight: GuidePage = {
         milestones: { checklist: "tonight:checklist", copied: "tonight:writeup-copied" },
       },
       answersTh: [
-        "เลือกร้านจริงแถวโรงเรียน แล้วนับว่าช่วงเลิกเรียนมีนักเรียนแวะกี่คน",
-        "ถามเพื่อน 3 คน ว่าทำไมแวะหรือไม่แวะ",
+        "เลือกร้านจริงแถวโรงเรียน แล้วถามเพื่อน 3 คนว่าทำไมแวะหรือไม่แวะ",
         "เขียนแผนหน้าเดียว: ใคร รู้สึกอะไร เห็นที่ไหน ไอเดียที่ไม่ใช้เงิน และจะนับยังไงว่าได้เพิ่ม 10 คน",
+        "พรุ่งนี้หลังเลิกเรียน ชวนเพื่อนไปนับว่ามีนักเรียนแวะร้านกี่คน",
       ],
       demoScript: [
         { at: 600, action: "tap", target: "writeup.check-0" },
@@ -100,14 +101,14 @@ export const tonight: GuidePage = {
     dialogue(
       "writeup-why",
       host("ช่องที่สำคัญสุดคือช่องสุดท้าย: จะนับผลยังไง", { mood: "serious" }),
-      host("แผนที่วัดผลไม่ได้ ก็ไม่รู้ว่าเวิร์กจริงไหม แบบตอนนับผลให้ร้านปังเลย"),
-      host("ทีมเราว่าไม่ถึง 10 คนก็ไม่เป็นไร จดไว้ว่าทำไม นั่นแหละของมีค่า", { labels: ["teamView"] })
+      host("แผนที่วัดผลไม่ได้ ก็ไม่มีทางรู้ว่าเวิร์กจริงไหม"),
+      host("ถ้าได้ลองจริงแล้วไม่ถึง 10 คนก็ไม่เป็นไร จดไว้ว่าทำไม นั่นแหละของมีค่า", { labels: ["teamView"] })
     ),
     dialogue(
       "folio",
-      host("แผนหน้าเดียวกับผลที่นับได้ นี่แหละผลงานชิ้นแรกในแฟ้มของเธอ", { mood: "wink" })
+      host("แผนหน้าเดียวกับตัวเลขที่เธอนับเอง นี่แหละผลงานชิ้นแรกในแฟ้มของเธอ", { mood: "wink" })
     ),
     roundOneTeaser(),
-    whenChoice("ทำเสร็จแล้ว พรุ่งนี้ไปนับหน้าร้านอีกรอบ เทียบกับวันนี้ดู"),
+    whenChoice("คืนนี้ร่างแผน พรุ่งนี้หลังเลิกเรียนค่อยชวนเพื่อนไปนับหน้าร้าน"),
   ],
 };

@@ -17,7 +17,7 @@ export const UX_DESIGN_FACTS: readonly Fact[] = [
   {
     id: "f.ux-mayday",
     claimEn:
-      "Sanook Campus (Nov 10, 2017, 2560): Mayday is a Thai group of graphic designers, content writers and researchers. Its founder Van stood at a Bangkok bus stop and could not find the bus numbers he knew because the numbers on the sign were spaced wrongly (\"เพราะเขาเว้นวรรคผิดหมด\"); he opened the Mayday page to share ideas and get feedback. With TEDx Bangkok volunteers the team surveyed 160 existing bus signs, added colours for colour-blind people, and installed more than 100 new signs on Rattanakosin island, where they saw people, foreign tourists included, checking the signs all the time.",
+      "Sanook Campus (Nov 10, 2017, 2560): Mayday is a Thai group of graphic designers, content writers and researchers. Its founder Van stood at a Bangkok bus stop and could not find the bus numbers he knew because the numbers on the sign were spaced wrongly (\"เพราะเขาเว้นวรรคผิดหมด\"); he opened the Mayday page to share ideas and get feedback. With TEDx Bangkok volunteers the team surveyed 160 existing bus signs, added colours for colour-blind people, and installed more than 100 new signs on Rattanakosin island, where they saw people, foreigners included (\"ทั้งชาวต่างชาติ\"), checking the signs all the time.",
     values: ["160", "100", "2560"],
     sources: [{ outlet: "Sanook Campus", url: "https://www.sanook.com/campus/1387367/", publishedAt: "2017-11-10" }],
     asOf: AS_OF,
@@ -50,12 +50,12 @@ export const UX_DESIGN_FACTS: readonly Fact[] = [
   {
     id: "f.ux-lineman-intern",
     claimEn:
-      "Marketeer (Oct 9, 2026) reports that a person who says they were a UX/UI intern at LINE MAN in 2021 (2564) wrote that the first rider sticker set (about 8 Moon stickers) was their intern brief. The article gives no link to that post, and LINE MAN has not confirmed it.",
+      "Marketeer (Oct 9, 2026) reports that a person who says they were a UX/UI intern at LINE MAN in 2021 (2564) wrote that the first rider sticker set (about 8 Moon stickers) was their intern brief: the team had gathered the phrases riders typed most, and the intern put the Thai text on the Moon character and chose the font. The article gives no link to that post, and LINE MAN has not confirmed it.",
     values: ["2564"],
     sources: [{ outlet: "Marketeer", url: "https://marketeeronline.co/archives/491460", publishedAt: "2026-10-09" }],
     asOf: AS_OF,
     badge: "pending",
-    note: "One person's account retold by Marketeer. Always say it is unconfirmed (บริษัทยังไม่ได้ยืนยัน). Never name the person.",
+    note: "One person's account retold by Marketeer (\"เรื่องเล่าจากผู้ใช้อินเทอร์เน็ตคนหนึ่ง\"). Always say it is unconfirmed (บริษัทยังไม่ได้ยืนยัน), and the host never answers as if it were true. Never name the person. Re-read 2026-11-20.",
   },
 
   // ---------------------------------------------------------------- work
@@ -77,7 +77,7 @@ export const UX_DESIGN_FACTS: readonly Fact[] = [
   {
     id: "sim.ux-canteen",
     claimEn:
-      "Simulated: a school canteen pre-order app (invented for the game). Three friends try to order one dish while the student only watches; the student sorts six observations (fix first, note for later, no need to fix), then picks a fix for five problems (change size, colour or place; change the words; tell the user what happened). Problems are common usability failures: a small button below the fold, no confirmation after ordering (a double order), an unlabelled icon, a vague button label, low-contrast prices; plus one person's taste and one feature idea that block nothing.",
+      "Simulated: a school canteen pre-order app (invented for the game). Three friends try to order one dish while the student only watches; the student sorts six observations (fix first, note for later, no need to fix), then picks a fix for five problems (change size, colour or position; make the words clear; tell the user what happened). Problems are common usability failures: a small button below the fold, no confirmation after ordering (a double order), an unlabelled icon, a vague button label, low-contrast prices; plus one person's taste and one feature idea that block nothing.",
     sources: [],
     asOf: AS_OF,
     badge: "simulated",

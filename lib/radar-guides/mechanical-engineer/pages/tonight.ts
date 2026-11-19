@@ -1,11 +1,13 @@
 /**
  * Level 3 · tonight. One evening, free, under an hour: take apart something
- * at home that moves (a click pen, a stapler, a clothes peg, a wind-up toy),
+ * at home that moves (a click pen, a clothes peg, a soap-pump head, a toy car
+ * with no battery),
  * draw how it works, pick the part most likely to break or annoy, and draw
  * one fix (shape or material, as in the work level) plus how to test it. The
  * drawing and the write-up are a first engineering notebook page.
  *
- * Minors: only things with no plug and no battery; a fan is looked at from
+ * Minors: only things with no plug, no battery and nothing sharp; stop if it
+ * has to be forced or pried; watch for springs; a fan is looked at from
  * outside, unplugged, never opened; ask the owner first. Excalidraw is
  * optional (paper works); the write-up never leaves the device.
  */
@@ -20,7 +22,7 @@ const DRAW_URL = "https://excalidraw.com" as const;
 export const tonight: GuidePage = {
   key: "tonight",
   order: 3,
-  titleTh: "คืนนี้ แกะของในบ้าน แล้วแก้ให้ดีขึ้น",
+  titleTh: "คืนนี้ แกะของในบ้าน แล้วออกแบบให้ดีขึ้น",
   questionTh: "คืนนี้ทำอะไรได้บ้าง ที่จบแล้วได้ผลงานชิ้นแรกใส่พอร์ตเลย",
   navLabelTh: "ภารกิจคืนนี้",
   asOf: "2026-11-20",
@@ -31,24 +33,24 @@ export const tonight: GuidePage = {
     dialogue(
       "intro",
       host("ด่านนี้ไม่ได้เล่นในจอ เป็นภารกิจจริงคืนนี้", { mood: "wow" }),
-      host("รื้อของในบ้านที่ขยับได้ วาดว่ามันทำงานยังไง แล้วอัปเกรดสักจุด")
+      host("แกะของในบ้านที่ขยับได้ วาดว่ามันทำงานยังไง แล้วออกแบบให้ดีขึ้นสักจุด")
     ),
     item(
       "ideas",
       "intel",
-      "ปากกากด ที่เย็บกระดาษ ไม้หนีบผ้า รถของเล่นแบบไขลาน ข้างในมีสปริง คาน กับเฟือง ซ่อนอยู่ทั้งนั้น",
+      "ปากกากด ไม้หนีบผ้า หัวปั๊มขวดสบู่ รถของเล่นที่ไม่ใส่ถ่าน ข้างในมีสปริง คาน หรือเฟืองซ่อนอยู่",
       { title: "ของที่แกะได้" }
     ),
     {
       kind: "safety",
       id: "no-plug",
       lineTh:
-        "แกะเฉพาะของที่ไม่มีปลั๊กและไม่มีถ่าน พัดลมดูได้แค่ข้างนอกตอนถอดปลั๊กแล้ว ห้ามแกะตัวเครื่อง ถ้าไม่ใช่ของเธอ ขอเจ้าของก่อนนะ",
+        "แกะเฉพาะของที่ไม่มีปลั๊ก ไม่มีถ่าน ไม่มีของมีคม ถ้าต้องงัดหรือฝืนแรงๆ ให้หยุด ห้ามแกะพัดลมหรือเครื่องใช้ไฟฟ้า ดูจากข้างนอกตอนถอดปลั๊กแล้วได้อย่างเดียว ของที่ไม่ใช่ของเธอ ขอเจ้าของก่อนนะ",
     },
     item(
       "tool",
       "intel",
-      "Excalidraw กระดานวาดรูปในเบราว์เซอร์ ฟรีและเปิดโค้ด เซฟงานไว้ในเบราว์เซอร์ แล้วโหลดเป็นรูปเก็บได้ หรือวาดบนกระดาษก็ได้เหมือนกัน",
+      "Excalidraw กระดานวาดรูปบนเว็บ ฟรีและเปิดโค้ด เซฟงานไว้ในเบราว์เซอร์ โหลดเป็นรูปเก็บได้ หรือจะวาดบนกระดาษก็ได้เหมือนกัน",
       { title: "ที่วาดรูป: Excalidraw", facts: [DRAW] }
     ),
     {
@@ -65,9 +67,9 @@ export const tonight: GuidePage = {
             factIds: [DRAW],
           },
           checklistTh: [
-            "เลือกของที่ขยับได้ ไม่มีปลั๊ก ไม่มีถ่าน",
+            "เลือกของที่ขยับได้ ไม่มีปลั๊ก ไม่มีถ่าน ไม่มีของมีคม",
             "ถ่ายรูปก่อนแกะ จะได้ประกอบกลับได้",
-            "แกะทีละชิ้น วางเรียงตามลำดับที่ถอดออกมา",
+            "แกะทีละชิ้นบนถาด ระวังสปริงดีด วางเรียงตามลำดับที่ถอดออกมา",
             "วาดรูปแยกชิ้นส่วน ใส่ลูกศรว่าชิ้นไหนดันชิ้นไหน",
             "เลือกจุดเดียวที่อยากแก้ วาดแบบใหม่ แล้วประกอบของเดิมกลับ",
           ],
@@ -76,9 +78,9 @@ export const tonight: GuidePage = {
             { id: "how", placeholderTh: "มันขยับยังไง ชิ้นไหนดันชิ้นไหน" },
             { id: "weak", placeholderTh: "จุดไหนน่าจะพังก่อน หรือใช้แล้วหงุดหงิด" },
             { id: "fix", placeholderTh: "จะแก้รูปทรงหรือเปลี่ยนวัสดุ เพราะอะไร" },
-            { id: "test", placeholderTh: "จะทดสอบยังไง ว่าแบบใหม่ดีกว่าจริง" },
+            { id: "test", placeholderTh: "จะทดสอบยังไง ให้รู้ว่าแบบใหม่ดีกว่าจริง" },
           ],
-          fixedLinesTh: ["แกะเฉพาะของที่ไม่มีปลั๊กและไม่มีถ่าน"],
+          fixedLinesTh: ["แกะเฉพาะของที่ไม่มีปลั๊ก ไม่มีถ่าน ไม่มีของมีคม"],
           privacyTh: "เก็บไว้ในเครื่องนี้เท่านั้น ไม่ส่งไปที่ไหน",
         },
       },
@@ -88,9 +90,9 @@ export const tonight: GuidePage = {
         milestones: { checklist: "tonight:checklist", copied: "tonight:writeup-copied" },
       },
       answersTh: [
-        "เลือกของในบ้านที่ขยับได้ ไม่มีปลั๊ก ไม่มีถ่าน เช่น ปากกากด",
+        "เลือกของในบ้านที่ขยับได้ ไม่มีปลั๊ก ไม่มีถ่าน ไม่มีของมีคม เช่น ปากกากด",
         "ถ่ายรูปก่อนแกะ แกะทีละชิ้น แล้ววาดรูปแยกชิ้นส่วนพร้อมลูกศร",
-        "หาจุดที่น่าจะพังก่อน วาดแบบแก้ (รูปทรงหรือวัสดุ) แล้วประกอบของเดิมกลับ",
+        "หาจุดที่น่าจะพังก่อน วาดแบบที่แก้แล้ว (รูปทรงหรือวัสดุ) แล้วประกอบของเดิมกลับ",
         "เขียนสรุป: แกะอะไร มันขยับยังไง จุดอ่อนคืออะไร จะแก้ยังไง จะทดสอบยังไง",
       ],
       demoScript: [
@@ -105,9 +107,9 @@ export const tonight: GuidePage = {
       "writeup-why",
       host("ของที่มีค่าสุดคืนนี้ไม่ใช่รูปสวย แต่คือเหตุผลที่เธอเลือกแก้จุดนั้น"),
       host("เหมือนตอนทดสอบพัดลมแล้วจับจุดพังมาแก้เมื่อกี้เป๊ะ", { mood: "wink" }),
-      host("ทีมเราว่าช่องสุดท้าย จะทดสอบยังไง สำคัญสุดเลย อย่าข้ามนะ", { labels: ["teamView"] })
+      host("ช่องสุดท้าย จะทดสอบยังไง ทีมเราว่าสำคัญสุดเลย อย่าข้ามนะ", { labels: ["teamView"] })
     ),
-    dialogue("folio", host("เก็บไว้เลย รูปวาดกับ write-up นี่แหละ ผลงานชิ้นแรกในแฟ้มของเธอ", { mood: "wink" })),
+    dialogue("folio", host("เก็บไว้เลย รูปวาดกับบันทึกนี่แหละ ผลงานชิ้นแรกในแฟ้มของเธอ", { mood: "wink" })),
     roundOneTeaser(),
     whenChoice("ทำเสร็จแล้ว พรุ่งนี้ลองแกะอีกชิ้น แล้วเทียบกันดูว่ากลไกต่างกันยังไง"),
   ],

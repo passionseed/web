@@ -25,14 +25,14 @@ export const MECHANICAL_ENGINEER_META = {
   pages: [
     { key: "dream", order: 1, titleTh: "รถไฟที่วิศวกรไทยออกแบบเอง", navLabelTh: "รถไฟไทยทำ", minutes: 2, tier: 1 },
     { key: "work", order: 2, titleTh: "งานจริง คือทำให้เครื่องไม่พัง", navLabelTh: "ทดสอบพัดลม", minutes: 2.5, tier: 1 },
-    { key: "tonight", order: 3, titleTh: "คืนนี้ แกะของในบ้าน แล้วแก้ให้ดีขึ้น", navLabelTh: "ภารกิจคืนนี้", minutes: 1, tier: 1 },
+    { key: "tonight", order: 3, titleTh: "คืนนี้ แกะของในบ้าน แล้วออกแบบให้ดีขึ้น", navLabelTh: "ภารกิจคืนนี้", minutes: 1, tier: 1 },
     { key: "next", order: 4, titleTh: "แล้วเธอล่ะ", navLabelTh: "แล้วเธอล่ะ", minutes: 1, tier: 1 },
     { key: "round1", order: 5, titleTh: ROUND_ONE_TITLE_TH, navLabelTh: ROUND_ONE_NAV_TH, minutes: ROUND_ONE_MINUTES, tier: 2 },
   ],
   story: {
     profileTitleTh: "โปรไฟล์สายเครื่องกลของฉัน",
     badges: [
-      { id: "dream", nameTh: "รู้แล้วใครสร้าง", descTh: "เห็นแล้วว่าเครื่องจักรรอบตัว มีทีมในไทยออกแบบเอง", icon: "star", trigger: { on: "clear", pageKey: "dream" } },
+      { id: "dream", nameTh: "รู้แล้วว่าใครสร้าง", descTh: "เห็นแล้วว่าเครื่องจักรรอบตัว หลายอย่างทำในไทย", icon: "star", trigger: { on: "clear", pageKey: "dream" } },
       { id: "work", nameTh: "คนทดสอบพัดลม", descTh: "ทดสอบพัดลมห้องเรียนจนพร้อมผลิต", icon: "eye", trigger: { on: "clear", pageKey: "work" } },
       { id: "round1", nameTh: "แฟ้มพร้อมยื่น", descTh: "รู้แล้วว่าผลงานแบบไหนใส่แฟ้มรอบ 1 ได้", icon: "map", trigger: { on: "clear", pageKey: "round1" } },
       { id: "tonight", nameTh: "ภารกิจคืนนี้", descTh: "มีแผนแกะของชิ้นแรกแล้ว", icon: "flag", trigger: { on: "clear", pageKey: "tonight" } },

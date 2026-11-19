@@ -27,6 +27,14 @@ export const MARKETING_STRATEGIST_BANNED: readonly BannedClaim[] = [
   { pattern: /544|7,?441,?961/, reason: "Butterbear company revenue: money figures stay off Level 1" },
   { pattern: /(?:300|1,?500)\s*บาท/, reason: "Spend-per-bill figure has no primary source" },
   {
+    pattern: /พูดถึง[^\n]{0,24}13\.6|13\.6[^\n]{0,24}พูดถึง/,
+    reason: "Zanroo's 13.6 million is engagement (views, likes, shares, comments), not mentions or people",
+  },
+  {
+    pattern: /(?:อาจารย์|จุฬา)[^\n]{0,40}(?:โชค|ดวง)/,
+    reason: "The Chula lecturer said timing and opportunity, not luck (f.mkt-mascot-luck)",
+  },
+  {
     pattern: /(?:ร่วมกับ|พาร์ตเนอร์|สปอนเซอร์|สนับสนุนโดย|ได้รับการสนับสนุนจาก)\s*(?:แบรนด์\s*)?(?:Butterbear|หมีเนย)/i,
     reason: "We have no tie to Butterbear: never imply a partnership or endorsement",
   },

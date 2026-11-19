@@ -29,7 +29,7 @@ export const UX_DESIGN_META = {
     badges: [
       { id: "dream", nameTh: "เห็นคนออกแบบ", descTh: "รู้แล้วว่าของที่ใช้ง่าย มีคนตั้งใจออกแบบ", icon: "map", trigger: { on: "clear", pageKey: "dream" } },
       { id: "work", nameTh: "คนนั่งดู", descTh: "ดูเพื่อนใช้แอป แล้วแก้จุดที่ติดได้", icon: "eye", trigger: { on: "clear", pageKey: "work" } },
-      { id: "round1", nameTh: "แฟ้มพร้อมยื่น", descTh: "รู้แล้วว่าผลงานแบบไหนใส่แฟ้มรอบ 1 ได้", icon: "key", trigger: { on: "clear", pageKey: "round1" } },
+      { id: "round1", nameTh: "เริ่มจัดแฟ้ม", descTh: "รู้แล้วว่าผลงานแบบไหนใส่แฟ้มรอบ 1 ได้", icon: "key", trigger: { on: "clear", pageKey: "round1" } },
       { id: "tonight", nameTh: "ภารกิจคืนนี้", descTh: "มีแผนรีดีไซน์หน้าจอแรกแล้ว", icon: "flag", trigger: { on: "clear", pageKey: "tonight" } },
       { id: "next", nameTh: "จบรันแรก", descTh: "เล่นจนจบ Level 1", icon: "compass", trigger: { on: "clear", pageKey: "next" } },
       { id: "sharp-eye", nameTh: "ตาไวจับจุดติด", descTh: "แยกได้ครบว่าอะไรต้องแก้ก่อน", icon: "radar", trigger: { on: "game", game: "work:watch", perfect: true } },

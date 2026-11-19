@@ -3,7 +3,7 @@
  * toast shop in front of a school (invented) that wants more students after
  * school. Two steps of the marketing loop, as two quick sorts:
  * 1. pick ideas through the dream level's lens: right people and place, wrong
- *    people, or wrong place;
+ *    people, or wrong place or time;
  * 2. a week later, judge each idea's results: keep, tweak, or stop. Likes are
  *    not customers; an idea nobody sees can't work; measure against the goal.
  * Then the kinds of marketer, with this one (brand and campaigns) first.
@@ -29,7 +29,7 @@ export const work: GuidePage = {
   blocks: [
     dialogue(
       "intro",
-      host("ด่านนี้เธอได้ลูกค้าเจ้าแรกแล้วนะ", { mood: "wow" }),
+      host("สมมติว่าเธอได้ลูกค้าเจ้าแรกแล้วนะ", { mood: "wow" }),
       host("ร้านปังปิ้งหน้าโรงเรียน อยากให้นักเรียนแวะหลังเลิกเรียนเยอะขึ้น", { facts: [SIM] })
     ),
     choice(
@@ -39,7 +39,7 @@ export const work: GuidePage = {
         "ad",
         "คิดโฆษณาเจ๋งๆ ก่อนเลย",
         host("ไอเดียเจ๋งช่วยได้จริง แต่ถ้ายิงผิดคน ก็เสียของนะ"),
-        host("นักการตลาดเริ่มจากดูคนก่อนเสมอ", { mood: "wink" })
+        host("นักการตลาดมักเริ่มจากดูคนก่อน", { mood: "wink" })
       ),
       answer("look", "ไปส่องก่อนว่าใครเดินผ่านร้านบ้าง", host("เป๊ะเลย เริ่มจากคน ไม่ได้เริ่มจากโฆษณา", { mood: "wow" })),
       answer(
@@ -56,6 +56,7 @@ export const work: GuidePage = {
       dialogue(
         "ideas-intro",
         host("ไปยืนส่องหน้าร้านมาแล้ว นักเรียนเดินออกประตูหลังไปรอรถกัน", { facts: [SIM] }),
+        host("บางกลุ่มนั่งติวต่อ บางคนนั่งรอผู้ปกครองนานจนแบตใกล้หมด"),
         host("ไอเดียไหนตรงคน ตรงที่ อันไหนพลาด ลองแยกดูเลย")
       ),
       {
@@ -70,7 +71,7 @@ export const work: GuidePage = {
             bins: [
               { id: "fit", labelTh: "ใช่เลย" },
               { id: "who", labelTh: "ผิดคน" },
-              { id: "where", labelTh: "ผิดที่" },
+              { id: "where", labelTh: "ผิดที่ผิดเวลา" },
             ],
             simulated: { factId: SIM, watermarkTh: "ตัวอย่างจำลอง" },
             items: [
@@ -84,7 +85,8 @@ export const work: GuidePage = {
                 id: "flyers",
                 labelTh: "แจกใบปลิวที่ตลาดเช้า",
                 answer: "who",
-                revealTh: "ตลาดเช้ามีแต่ผู้ใหญ่ ไม่ใช่นักเรียนที่ร้านอยากได้",
+                nearTh: { where: "ตลาดเช้าก็ผิดที่จริง แต่ต้นเหตุคือคนแถวนั้นไม่ใช่นักเรียน" },
+                revealTh: "ตลาดเช้าส่วนใหญ่เป็นผู้ใหญ่ ไม่ใช่นักเรียนที่ร้านอยากได้",
               },
               {
                 id: "share-set",
@@ -96,8 +98,8 @@ export const work: GuidePage = {
                 id: "morning-post",
                 labelTh: "โพสต์ในเพจร้านตอน 10 โมงเช้าวันจันทร์",
                 answer: "where",
-                nearTh: { who: "คนดูเพจอาจใช่ แต่ตอนนั้นนักเรียนนั่งเรียนอยู่ ไม่มีใครเห็น" },
-                revealTh: "ถูกคน แต่ผิดเวลา ตอนนั้นนักเรียนอยู่ในห้องเรียน",
+                nearTh: { who: "คนดูเพจอาจใช่ แต่ตอนนั้นนักเรียนนั่งเรียนอยู่ กว่าจะได้ไถ โพสต์ก็จมไปแล้ว" },
+                revealTh: "ถูกคน แต่ผิดเวลา ตอนนั้นนักเรียนอยู่ในห้องเรียน กว่าจะได้ไถ โพสต์ก็จมฟีดไปแล้ว",
               },
               {
                 id: "charger",
@@ -119,7 +121,7 @@ export const work: GuidePage = {
         answersTh: [
           "ใช่เลย: ป้ายที่ประตูหลัง, ชุดแชร์สำหรับกลุ่มติว, มุมนั่งรอผู้ปกครองมีที่ชาร์จ",
           "ผิดคน: ใบปลิวที่ตลาดเช้า, ป้ายที่พูดกับผู้สูงอายุ",
-          "ผิดที่: โพสต์ตอน 10 โมงเช้าวันจันทร์ ที่นักเรียนยังเรียนอยู่",
+          "ผิดที่ผิดเวลา: โพสต์ตอน 10 โมงเช้าวันจันทร์ ที่นักเรียนยังเรียนอยู่",
         ],
         demoScript: [
           { at: 600, action: "tap", target: "ideas.item-back-gate" },
@@ -163,13 +165,13 @@ export const work: GuidePage = {
                 meta: { sender: "ผลสัปดาห์แรก" },
                 detailTh: "ก่อนติดป้าย: นักเรียนแวะวันละ 8 คน · หลังติด: วันละ 13 คน",
                 answer: "keep",
-                revealTh: "คนมาเพิ่มจริง แถมนับได้ด้วย แบบนี้ทำต่อเลย",
+                revealTh: "คนมาเพิ่มจริง แถมนับได้ด้วย ทำต่อ แล้วนับต่อไปเรื่อยๆ",
               },
               {
                 id: "cat-clip",
                 labelTh: "คลิปแมวประจำร้าน ลง TikTok",
                 meta: { sender: "ผลสัปดาห์แรก" },
-                detailTh: "ไลก์ 2,400 · นักเรียนที่แวะร้าน: ไม่เพิ่มเลย",
+                detailTh: "ไลก์ 2,400 · นักเรียนที่แวะร้าน: ไม่เพิ่มเลย · คอมเมนต์ถามว่าร้านอยู่ไหน",
                 answer: "tweak",
                 nearTh: { stop: "อย่าเพิ่งทิ้ง คนสนใจแล้ว แค่ยังไม่รู้ว่าร้านอยู่ตรงไหน" },
                 flags: ["ไลก์เยอะ แต่คนไม่มา"],
@@ -196,7 +198,7 @@ export const work: GuidePage = {
                 id: "birthday",
                 labelTh: "ของแถมวันเกิด",
                 meta: { sender: "ผลสัปดาห์แรก" },
-                detailTh: "มีคนมาใช้ 0 คน · ถามแล้ว ไม่มีใครรู้ว่ามีด้วย",
+                detailTh: "ไม่มีใครมาใช้เลย · ถามนักเรียนแล้ว ไม่มีใครรู้ว่ามีด้วย",
                 answer: "tweak",
                 nearTh: { stop: "ไอเดียไม่ได้แย่ แค่ยังไม่มีใครเห็น" },
                 flags: ["ไม่มีใครเห็น"],
@@ -244,10 +246,10 @@ export const work: GuidePage = {
   reel: {
     format: "motion",
     hook: { th: "ไอเดียเจ๋งใครก็คิดได้ แต่รู้ว่ามันได้ผลจริงไหม นั่นแหละงานนักการตลาด" },
-    variantsTh: ["ไลก์เยอะ ไม่ได้แปลว่าขายได้", "ใบปลิวแจกผิดคน ต่อให้สวยแค่ไหนก็ไม่มีใครมา"],
+    variantsTh: ["ไลก์เยอะ ไม่ได้แปลว่าขายได้", "ใบปลิวแจกผิดคน ต่อให้สวยแค่ไหนก็แทบไม่มีใครมา"],
     sendToFriendTh: "ส่งให้เพื่อนที่ชอบคิดแคมเปญ",
     visual: [
-      "ร้านปังปิ้งพิกเซลหน้าประตูโรงเรียนตอนเย็น การ์ดไอเดียบินลงช่อง ใช่เลย ผิดคน ผิดที่",
+      "ร้านปังปิ้งพิกเซลหน้าประตูโรงเรียนตอนเย็น การ์ดไอเดียบินลงช่อง ใช่เลย ผิดคน ผิดที่ผิดเวลา",
       "หัวใจไลก์พุ่งขึ้นเต็มจอ แต่ตัวนับคนเข้าร้านไม่ขยับ",
       "วงกลมหมุน ดูคน เลือกไอเดีย ลองจริง นับผล วนกลับมาที่เดิม",
     ],

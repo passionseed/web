@@ -1,5 +1,5 @@
 /**
- * Level 1 · work. What the job feels like: the student designs a desk fan for
+ * Level 1 · work. What the job feels like: the student designs a stand fan for
  * hot Thai classrooms the way mechanical engineers work, as two quick sorts:
  * 1. set the brief: which complaints the new fan must fix and which can wait
  *    (every extra feature is one more part that can break);
@@ -31,7 +31,7 @@ export const work: GuidePage = {
     dialogue(
       "intro",
       host("ด่านนี้เธอได้งานแรกแล้วนะ", { mood: "wow" }),
-      host("โจทย์คือพัดลมตั้งโต๊ะใหม่ สำหรับห้องเรียนร้อนๆ คนทำคือเธอเลย")
+      host("โจทย์คือพัดลมตั้งพื้นตัวใหม่ สำหรับห้องเรียนร้อนๆ คนทำคือเธอเลย")
     ),
     choice(
       "how",
@@ -96,7 +96,7 @@ export const work: GuidePage = {
                 id: "dust",
                 labelTh: "ฝุ่นเกาะใบพัดหนา แต่ถอดตะแกรงล้างยาก",
                 answer: "must",
-                revealTh: "ล้างไม่ได้ ฝุ่นก็เกาะจนลมอ่อน ต้องออกแบบให้ถอดง่าย",
+                revealTh: "ล้างยากก็ไม่มีใครล้าง ฝุ่นเกาะจนลมอ่อน ต้องถอดง่ายแต่ล็อกกลับได้แน่น",
               },
               {
                 id: "music",
@@ -169,7 +169,7 @@ export const work: GuidePage = {
                 detailTh: "ใบพัดร้าว รอยร้าวเริ่มตรงมุมแหลมที่โคนใบ",
                 answer: "shape",
                 flags: ["รอยร้าว"],
-                nearTh: { material: "วัสดุแข็งขึ้นก็ช่วยได้บ้าง แต่ต้นเหตุคือมุมแหลมที่แรงไปกองรวมกัน" },
+                nearTh: { material: "วัสดุที่ทนกว่าก็ช่วยได้บ้าง แต่ต้นเหตุคือมุมแหลมที่ทำให้แรงมากองที่จุดเดียว" },
                 revealTh: "มุมแหลมทำให้แรงไปกองที่จุดเดียว ทำโคนใบให้โค้งมนและหนาขึ้น",
               },
               {
@@ -180,7 +180,7 @@ export const work: GuidePage = {
                 answer: "material",
                 flags: ["แดดทำพลาสติกเสื่อม"],
                 nearTh: { shape: "เปลี่ยนรูปทรงยังไง พลาสติกก็ยังเสื่อมเพราะแดดอยู่ดี" },
-                revealTh: "เปลี่ยนไปใช้พลาสติกที่ทนแดด รูปทรงเดิมใช้ต่อได้เลย",
+                revealTh: "เปลี่ยนไปใช้พลาสติกที่ทนแดด รูปทรงเดิมใช้ต่อได้ แล้วตากแดดทดสอบซ้ำ",
               },
               {
                 id: "bump",
@@ -189,7 +189,8 @@ export const work: GuidePage = {
                 detailTh: "พัดลมล้มทั้งตัว",
                 answer: "shape",
                 flags: ["ล้มง่าย"],
-                revealTh: "ทำฐานให้กว้างขึ้น หรือถ่วงน้ำหนักไว้ที่ฐาน ให้ตั้งได้มั่นคง",
+                nearTh: { material: "ฐานที่หนักขึ้นก็ช่วยได้ แต่ต้นเหตุคือฐานแคบไป ขยายฐานก่อน" },
+                revealTh: "ทำฐานให้กว้างขึ้น ให้ตั้งได้มั่นคง แล้วลองเดินชนซ้ำ",
               },
               {
                 id: "finger",
@@ -199,7 +200,7 @@ export const work: GuidePage = {
                 answer: "shape",
                 flags: ["ความปลอดภัย"],
                 nearTh: { material: "เปลี่ยนวัสดุ ช่องก็ยังกว้างอยู่ดี นิ้วก็ยังลอดได้" },
-                revealTh: "ทำช่องตะแกรงให้ถี่ขึ้นจนนิ้วลอดไม่ได้ ข้อนี้ต้องผ่านก่อนขาย",
+                revealTh: "ทำช่องตะแกรงให้ถี่ขึ้นจนแท่งทดสอบลอดไม่ได้ ข้อนี้ต้องผ่านก่อนเสมอ",
               },
               {
                 id: "rust",
@@ -213,12 +214,12 @@ export const work: GuidePage = {
               },
               {
                 id: "hum",
-                labelTh: "เปิดเบาสุดในห้องเงียบ",
+                labelTh: "เปิดแรงสุดระหว่างครูสอน",
                 meta: { sender: "ห้องทดสอบ" },
-                detailTh: "มีเสียงหึ่งเบาๆ เบากว่าเสียงคนคุยกัน",
+                detailTh: "มีเสียงหึ่งเบาๆ แต่ครูพูดเสียงปกติ หลังห้องก็ยังได้ยินชัด",
                 answer: "ok",
-                nearTh: { shape: "จะให้เงียบสนิทต้องแลกกับของแพงขึ้น แค่นี้ไม่กวนใครแล้ว" },
-                revealTh: "ไม่ต้องเงียบสนิทก็ได้ แค่ไม่กวนห้องเรียนก็ผ่าน",
+                nearTh: { shape: "ครูไม่ต้องตะโกนแข่งแล้ว ตรงโจทย์ที่ตั้งไว้ ไม่ต้องแก้เพิ่ม" },
+                revealTh: "ไม่ต้องเงียบสนิทก็ได้ ขอแค่ครูไม่ต้องตะโกนแข่ง ก็ผ่านโจทย์แล้ว",
               },
             ],
             resultTh: "แก้ถูก {score}/{total}",
@@ -226,7 +227,7 @@ export const work: GuidePage = {
         },
         track: { done: "work:done", value: "score" },
         answersTh: [
-          "ผ่าน: เปิดแรงสุดทั้งวัน, เสียงหึ่งเบาๆ ตอนเปิดเบาสุด",
+          "ผ่าน: เปิดแรงสุดทั้งวัน, เสียงหึ่งเบาๆ ตอนครูสอน",
           "แก้รูปทรง: ใบพัดร้าวที่มุมแหลม, เดินชนแล้วล้ม, นิ้วลอดช่องตะแกรง",
           "เปลี่ยนวัสดุ: ใบพัดเปราะเพราะแดด, ตะแกรงเหล็กขึ้นสนิม",
         ],
@@ -242,7 +243,7 @@ export const work: GuidePage = {
         "debrief",
         host("ที่เธอเพิ่งทำ คืองานจริงของวิศวกรเครื่องกลเลยนะ", { mood: "wow" }),
         host("ตั้งโจทย์ ออกแบบ ทดสอบ แก้ แล้ววนจนผ่าน"),
-        host("ทีมรถไฟไทยทำก็ทำแบบนี้ วิ่งทดสอบกว่า 10,000 กม. ก่อนส่งมอบ", { facts: [TRAIN] }),
+        host("ทีมรถไฟไทยทำก็ทดสอบแบบนี้ วิ่งทดสอบกว่า 10,000 กม. ก่อนส่งมอบ", { facts: [TRAIN] }),
         host("ขายออกไปแล้วก็ยังไม่จบนะ ต้องคอยตามแก้จุดที่พังตอนใช้จริง", { mood: "serious" })
       ),
       { kind: "shareCard", id: "share-work" }
@@ -251,8 +252,8 @@ export const work: GuidePage = {
       nameTh: "วิศวกรเครื่องกล",
       facts: [CARS, AIRCON],
       tiles: [
-        { id: "cooling", icon: "fan", titleTh: "ทำความเย็น", lineTh: "แอร์ พัดลม ตู้เย็น เย็นฉ่ำแต่กินไฟน้อย แบบพัดลมเมื่อกี้", played: true },
-        { id: "auto", icon: "car", titleTh: "รถยนต์และ EV", lineTh: "ออกแบบรถยนต์กับรถ EV ที่โรงงานในไทยประกอบกันทุกวัน" },
+        { id: "cooling", icon: "fan", titleTh: "แอร์และพัดลม", lineTh: "ออกแบบแอร์ พัดลม ตู้เย็น ให้เย็นดีแต่กินไฟน้อย", played: true },
+        { id: "auto", icon: "car", titleTh: "รถยนต์และ EV", lineTh: "ออกแบบชิ้นส่วน ทดสอบ และผลิตรถยนต์กับรถ EV ในโรงงานไทย" },
         { id: "factory", icon: "gear", titleTh: "โรงงานผลิต", lineTh: "คุมเครื่องจักรในโรงงาน ให้ผลิตทุกชิ้นตรงตามแบบเป๊ะ" },
         { id: "robot", icon: "robot", titleTh: "หุ่นยนต์", lineTh: "สร้างแขนกลกับหุ่นยนต์ ที่ทำงานหนักหรืองานเสี่ยงแทนคน" },
         { id: "energy", icon: "bolt", titleTh: "พลังงาน", lineTh: "ดูแลโรงไฟฟ้า กังหัน ปั๊ม ให้เดินเครื่องได้ทุกวัน" },

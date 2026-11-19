@@ -3,10 +3,10 @@
 exports[`ux-design guide matches the Thai copy snapshot (diff this in the Thai review) 1`] = `
 [
   "dream.titleTh: ของที่ใช้ง่าย มีคนตั้งใจออกแบบ
-dream.questionTh: ป้ายกับแอปที่เธอใช้ทุกวัน ใครทำให้มันใช้ง่าย แล้วเขาเริ่มจากตรงไหน
+dream.questionTh: ป้ายกับแอปที่เธอใช้ทุกวัน ใครทำให้ใช้ง่าย แล้วเขาเริ่มจากตรงไหน
 dream.navLabelTh: ป้ายรถเมล์
 dream.og.headlineTh: ป้ายรถเมล์ที่เคยชวนงง มีคนตั้งใจแก้อยู่นะ
-dream.og.stat.th: ปี 2569 กทม. อัปเกรดป้ายรถเมล์กว่า 1,100 ป้าย ให้เข้าใจง่ายตั้งแต่แวบแรก
+dream.og.stat.th: ปี 2569 กทม. อัปเกรดป้ายรถเมล์กว่า 1,100 ป้าย ให้เข้าใจง่ายขึ้น
 dream.blocks[0].lines[0].text.th: เปิดรันสาย UX/UI กัน เริ่มจากเรื่องใกล้ตัวที่เธอน่าจะเคยเจอ
 dream.blocks[1].ask[0].text.th: เคยยืนงงหน้าป้ายรถเมล์ไหม หาเลขสายตัวเองไม่เจอสักที
 dream.blocks[1].options[0].labelTh: บ่อยเลย สุดท้ายก็เปิดแอปดูอยู่ดี
@@ -20,16 +20,16 @@ dream.blocks[2].titleTh: แฟ้ม: Mayday
 dream.blocks[2].metaTh: Sanook พ.ย. 2560
 dream.blocks[3].lines[0].text.th: แต่เขาไม่ได้เริ่มจากวาดป้ายใหม่ให้สวยเลยนะ
 dream.blocks[3].lines[1].text.th: ทีมลงไปเก็บข้อมูลป้ายจริง 160 ป้าย ดูว่าป้ายมีปัญหาตรงไหนบ้าง
-dream.blocks[3].lines[2].text.th: แถมเพิ่มสีให้คนตาบอดสีอ่านได้ด้วยนะ
-dream.blocks[4].text.th: ติดป้ายใหม่กว่า 100 ป้ายบนเกาะรัตนโกสินทร์ ทีมเห็นคนแวะดูตลอด รวมถึงนักท่องเที่ยวต่างชาติ
+dream.blocks[3].lines[2].text.th: แถมเพิ่มสีที่คิดเผื่อคนตาบอดสีด้วยนะ
+dream.blocks[4].text.th: ติดป้ายใหม่กว่า 100 ป้ายบนเกาะรัตนโกสินทร์ ทีมเห็นคนแวะดูตลอด รวมถึงชาวต่างชาติ
 dream.blocks[4].titleTh: ติดจริง ดูคนใช้จริง
 dream.blocks[5].unlockLabelTh: แล้ววันนี้ล่ะ
 dream.blocks[5].blocks[0].lines[0].text.th: ลองทายดูสิ ปีนี้ กทม. กำลังอัปเกรดป้ายรถเมล์กี่ป้าย
 dream.blocks[5].blocks[1].game.data.promptTh: ปี 2569 กทม. อัปเกรดป้ายรถเมล์กี่ป้าย
-dream.blocks[5].blocks[1].game.data.chart.bars[0].labelTh: ป้ายรถเมล์ที่ กทม. อัปเกรด (เม.ย. 2569)
+dream.blocks[5].blocks[1].game.data.chart.bars[0].labelTh: ป้ายที่ กทม. กำลังอัปเกรด (ข่าว เม.ย. 2569)
 dream.blocks[5].blocks[1].game.data.nearTh: เกือบเป๊ะ
-dream.blocks[5].blocks[1].game.data.overTh: เธอเดาสูงไป {d} ป้าย
-dream.blocks[5].blocks[1].game.data.underTh: เธอเดาต่ำไป {d} ป้าย
+dream.blocks[5].blocks[1].game.data.overTh: เธอเดาสูงไปราว {d} ป้าย
+dream.blocks[5].blocks[1].game.data.underTh: เธอเดาต่ำไปราว {d} ป้าย
 dream.blocks[5].blocks[1].game.data.revealTh: เธอเดา {g} ป้าย ของจริงคือกว่า 1,100 ป้าย
 dream.blocks[5].blocks[1].answersTh[0]: ปี 2569 กทม. อัปเกรดป้ายรถเมล์กว่า 1,100 ป้าย จากที่มีราว 5,199 ป้าย
 dream.blocks[5].blocks[1].answersTh[1]: เป็นป้ายแบบใหม่ 600 ป้าย กับป้ายดิจิทัล 500 ป้าย
@@ -47,8 +47,9 @@ dream.blocks[6].blocks[2].metaTh: Marketeer ต.ค. 2569
 dream.blocks[6].blocks[3].text.th: Marketeer เล่าว่าสติกเกอร์ชุดแรกเป็นงานของเด็กฝึกงาน UX/UI ที่ไลน์แมน ปี 2564 เรื่องนี้มาจากคนที่บอกว่าเคยฝึกงานที่นั่นเอง บริษัทยังไม่ได้ยืนยัน
 dream.blocks[6].blocks[3].titleTh: พูดตรงๆ
 dream.blocks[6].blocks[4].lines[0].text.th: เดี๋ยวนะ เด็กฝึกงานก็ทำของที่คนเห็นทุกวันได้จริงเหรอ
-dream.blocks[6].blocks[4].lines[1].text.th: ได้สิ ถ้าเริ่มจากปัญหาของคนใช้จริง
-dream.blocks[7].lines[0].text.th: สองเรื่องนี้เริ่มเหมือนกันเป๊ะ คือมีคนไปดูว่าคนใช้ติดตรงไหน
+dream.blocks[6].blocks[4].lines[1].text.th: อันนี้ยังไม่ชัวร์นะ แต่ที่ชัวร์คือทีมเริ่มจากคำที่ไรเดอร์พิมพ์บ่อยจริงๆ
+dream.blocks[6].blocks[4].lines[2].text.th: จุดเริ่มแบบนี้ เธอก็ลองได้ตั้งแต่คืนนี้เลย
+dream.blocks[7].lines[0].text.th: สองเรื่องนี้มีจุดร่วมกัน คือเริ่มจากปัญหาที่คนใช้เจอจริงๆ
 dream.blocks[7].lines[1].text.th: นั่นแหละ หัวใจของงานนักออกแบบ UX/UI เลย
 dream.blocks[7].lines[2].text.th: ด่านต่อไป: ลองนั่งดูคนใช้แอปด้วยตัวเอง
 dream.reel.hook.th: ป้ายรถเมล์ที่เคยชวนงง มีคนตั้งใจแก้อยู่นะ
@@ -61,7 +62,7 @@ dream.reel.visual[2]: ฟองแชต มาถึงแล้วครับ
   "work.titleTh: งานจริง คือดูคนใช้ แล้วแก้จุดที่ติด
 work.questionTh: นักออกแบบ UX/UI แค่วาดหน้าจอให้สวยหรือเปล่า แล้วทั้งวันทำอะไร
 work.navLabelTh: แก้แอปโรงอาหาร
-work.og.headlineTh: แอปสวยใครก็วาดได้ แต่ทำให้คนไม่งงนี่สิงานจริง
+work.og.headlineTh: แอปสวยแต่คนใช้งง งานยังไม่จบนะ
 work.blocks[0].lines[0].text.th: ด่านนี้เธอได้โจทย์งานแรกแล้วนะ
 work.blocks[0].lines[1].text.th: โรงเรียนเพิ่งออกแอปสั่งข้าวโรงอาหารล่วงหน้า แต่คนบ่นว่าใช้ยาก
 work.blocks[1].ask[0].text.th: ถ้าเป็นเธอ จะเริ่มแก้จากตรงไหนก่อนดี
@@ -76,7 +77,7 @@ work.blocks[1].options[2].reply[0].text.th: ใช่เลย นักออ�
 work.blocks[2].lines[0].text.th: งานจริงวนแบบนี้: ดูคนใช้ จดจุดที่ติด แก้ แล้วให้ลองใหม่
 work.blocks[3].unlockLabelTh: ขั้นแรก: นั่งดู
 work.blocks[3].blocks[0].lines[0].text.th: เพื่อนสามคนจะลองสั่งกะเพราไข่ดาว เธอแค่นั่งดู ห้ามช่วยนะ
-work.blocks[3].blocks[0].lines[1].text.th: คัดทีละข้อเลย ว่าต้องแก้ก่อน จดไว้ก่อน หรือไม่ต้องแก้
+work.blocks[3].blocks[0].lines[1].text.th: แยกทีละข้อเลย ว่าต้องแก้ก่อน จดไว้ก่อน หรือไม่ต้องแก้
 work.blocks[3].blocks[1].game.data.tagTh: นั่งดูเพื่อนลองใช้
 work.blocks[3].blocks[1].game.data.goalTh: ดูเพื่อนสั่งข้าว แล้วเลือกว่าจะทำยังไงกับแต่ละเรื่อง
 work.blocks[3].blocks[1].game.data.bins[0].labelTh: แก้ก่อน
@@ -88,7 +89,7 @@ work.blocks[3].blocks[1].game.data.items[0].meta.sender: เพื่อนค�
 work.blocks[3].blocks[1].game.data.items[0].detailTh: เพื่อนกดรูปกะเพราซ้ำหลายรอบ ไม่รู้ว่าต้องเลื่อนลงไปกดปุ่มเล็กๆ ข้างล่าง จนบ่นว่าสั่งไม่ได้อะ
 work.blocks[3].blocks[1].game.data.items[0].flags[0]: ทำงานหลักไม่ได้
 work.blocks[3].blocks[1].game.data.items[0].revealTh: สั่งข้าวไม่ได้เลย ทั้งที่เป็นงานหลักของแอป ข้อนี้ต้องแก้ก่อนอย่างอื่น
-work.blocks[3].blocks[1].game.data.items[1].labelTh: สั่งซ้ำ ได้ข้าวสองจาน
+work.blocks[3].blocks[1].game.data.items[1].labelTh: กดซ้ำ ได้ข้าวสองจาน
 work.blocks[3].blocks[1].game.data.items[1].meta.sender: เพื่อนคนที่สอง
 work.blocks[3].blocks[1].game.data.items[1].detailTh: กดสั่งแล้วหน้าจอนิ่ง ไม่ขึ้นบอกอะไรเลย เพื่อนเลยกดซ้ำอีกรอบ
 work.blocks[3].blocks[1].game.data.items[1].flags[0]: ทำพลาด เสียเงินจริง
@@ -96,12 +97,13 @@ work.blocks[3].blocks[1].game.data.items[1].revealTh: พลาดแบบน�
 work.blocks[3].blocks[1].game.data.items[2].labelTh: อยากได้สีชมพู
 work.blocks[3].blocks[1].game.data.items[2].meta.sender: เพื่อนคนที่สาม
 work.blocks[3].blocks[1].game.data.items[2].detailTh: เพื่อนบอกว่า ถ้าแอปเป็นสีชมพูจะน่ารักกว่านี้ แต่สั่งข้าวเสร็จเองแบบไม่ติดอะไรเลย
-work.blocks[3].blocks[1].game.data.items[2].nearTh.note: จดไว้ก็ไม่ผิด แต่ไม่มีใครติดเพราะสี ยังไม่ต้องรีบแก้
+work.blocks[3].blocks[1].game.data.items[2].nearTh.note: จดไว้ก็พอเข้าใจ แต่ไม่มีใครติดเพราะสี ข้อนี้ไม่ต้องแก้
 work.blocks[3].blocks[1].game.data.items[2].revealTh: เป็นความชอบของคนเดียว ไม่มีใครติดเพราะสี ยังไม่ต้องแก้
 work.blocks[3].blocks[1].game.data.items[3].labelTh: ปากบอกว่าง่ายมาก
 work.blocks[3].blocks[1].game.data.items[3].meta.sender: เพื่อนคนที่สาม
 work.blocks[3].blocks[1].game.data.items[3].detailTh: เพื่อนบอกว่า ง่ายมาก แต่ก่อนหน้านั้นกดหลงเข้าหน้าเติมเงินไปสองรอบ
 work.blocks[3].blocks[1].game.data.items[3].nearTh.skip: เขาบอกว่าง่ายก็จริง แต่มือหลงไปสองรอบนะ
+work.blocks[3].blocks[1].game.data.items[3].nearTh.note: จดไว้ก็พอเข้าใจ แต่หลงถึงสองรอบแปลว่ามีจุดชวนงงจริง แก้ก่อนดีกว่า
 work.blocks[3].blocks[1].game.data.items[3].flags[0]: พูดกับทำไม่ตรงกัน
 work.blocks[3].blocks[1].game.data.items[3].revealTh: ปากบอกง่าย แต่มือหลงไปสองรอบ เชื่อสิ่งที่เห็นเขาทำ มากกว่าสิ่งที่เขาพูด
 work.blocks[3].blocks[1].game.data.items[4].labelTh: อ่านราคายาก
@@ -113,8 +115,8 @@ work.blocks[3].blocks[1].game.data.items[5].meta.sender: เพื่อนค�
 work.blocks[3].blocks[1].game.data.items[5].detailTh: เพื่อนบอกว่า ถ้ามีมินิเกมให้เล่นตอนรอข้าวก็คงดีนะ
 work.blocks[3].blocks[1].game.data.items[5].nearTh.skip: ไม่ต้องแก้ตอนนี้ก็จริง แต่จดไว้ก่อน เผื่อมีอีกหลายคนขอ
 work.blocks[3].blocks[1].game.data.items[5].revealTh: เป็นแค่ไอเดีย ไม่ใช่จุดที่ทำให้ติด จดเก็บไว้ก่อน เผื่อมีหลายคนขอ
-work.blocks[3].blocks[1].game.data.resultTh: ดูขาด {score}/{total}
-work.blocks[3].blocks[1].answersTh[0]: แก้ก่อน: หาปุ่มสั่งไม่เจอ, สั่งซ้ำได้ข้าวสองจาน, ปากบอกง่ายแต่กดผิดสองรอบ
+work.blocks[3].blocks[1].game.data.resultTh: แยกถูก {score}/{total}
+work.blocks[3].blocks[1].answersTh[0]: แก้ก่อน: หาปุ่มสั่งไม่เจอ, กดซ้ำได้ข้าวสองจาน, ปากบอกง่ายแต่กดผิดสองรอบ
 work.blocks[3].blocks[1].answersTh[1]: จดไว้ก่อน: อยากมีเกมเล่นตอนรอข้าว, อ่านราคายาก (แก้เลยก็ได้)
 work.blocks[3].blocks[1].answersTh[2]: ไม่ต้องแก้: อยากได้สีชมพู
 work.blocks[3].blocks[2].lines[0].text.th: ฟังคนใช้ก็ดี แต่ดูสิ่งที่เขาทำจริง จะเห็นปัญหาชัดกว่าเยอะ
@@ -122,14 +124,14 @@ work.blocks[4].unlockLabelTh: ขั้นสอง: เลือกวิธี
 work.blocks[4].blocks[0].lines[0].text.th: เจอจุดที่ต้องแก้แล้ว ทีนี้มาเลือกวิธีแก้ทีละจุดกัน
 work.blocks[4].blocks[1].game.data.tagTh: เลือกวิธีแก้
 work.blocks[4].blocks[1].game.data.goalTh: เลือกวิธีแก้ให้แต่ละจุดที่เพื่อนติด
-work.blocks[4].blocks[1].game.data.bins[0].labelTh: ปรับขนาด สี ที่วาง
-work.blocks[4].blocks[1].game.data.bins[1].labelTh: เปลี่ยนคำ
+work.blocks[4].blocks[1].game.data.bins[0].labelTh: ปรับขนาด สี ตำแหน่ง
+work.blocks[4].blocks[1].game.data.bins[1].labelTh: ใช้คำให้ชัด
 work.blocks[4].blocks[1].game.data.bins[2].labelTh: บอกให้รู้ว่าเกิดอะไร
 work.blocks[4].blocks[1].game.data.simulated.watermarkTh: ตัวอย่างจำลอง
 work.blocks[4].blocks[1].game.data.items[0].labelTh: หาปุ่มสั่งไม่เจอ
 work.blocks[4].blocks[1].game.data.items[0].detailTh: ปุ่มสั่งเล็ก แถมอยู่ล่างสุด ต้องเลื่อนลงไปหา
 work.blocks[4].blocks[1].game.data.items[0].revealTh: ขยายปุ่มให้ใหญ่ขึ้นแล้วตรึงไว้ล่างจอ นิ้วโป้งกดถึงพอดี
-work.blocks[4].blocks[1].game.data.items[1].labelTh: สั่งซ้ำ ได้ข้าวสองจาน
+work.blocks[4].blocks[1].game.data.items[1].labelTh: กดซ้ำ ได้ข้าวสองจาน
 work.blocks[4].blocks[1].game.data.items[1].detailTh: กดสั่งแล้วหน้าจอนิ่ง ไม่ขึ้นบอกเลยว่าสั่งติดไหม
 work.blocks[4].blocks[1].game.data.items[1].revealTh: ขึ้นข้อความว่า สั่งแล้ว ทันทีที่กด คนจะได้ไม่เผลอกดซ้ำ
 work.blocks[4].blocks[1].game.data.items[2].labelTh: ปุ่มที่ไม่มีใครกล้ากด
@@ -138,13 +140,13 @@ work.blocks[4].blocks[1].game.data.items[2].revealTh: เปลี่ยนเ�
 work.blocks[4].blocks[1].game.data.items[3].labelTh: หลงเข้าหน้าเติมเงิน
 work.blocks[4].blocks[1].game.data.items[3].detailTh: ไอคอนเติมเงินกับไอคอนตะกร้าหน้าตาคล้ายกัน แถมไม่มีคำกำกับ
 work.blocks[4].blocks[1].game.data.items[3].nearTh.look: เปลี่ยนรูปไอคอนก็ช่วยได้ แต่ใส่คำกำกับไว้ด้วย ชัวร์กว่า
-work.blocks[4].blocks[1].game.data.items[3].revealTh: ใส่คำกำกับใต้ไอคอนด้วย ถ้ามีแค่ไอคอน แต่ละคนเดาไม่เหมือนกัน
-work.blocks[4].blocks[1].game.data.items[4].labelTh: อ่านราคาไม่ออก
+work.blocks[4].blocks[1].game.data.items[3].revealTh: ใส่คำกำกับใต้ไอคอนด้วย ถ้ามีแค่ไอคอน แต่ละคนก็เดาไม่เหมือนกัน
+work.blocks[4].blocks[1].game.data.items[4].labelTh: อ่านราคายาก
 work.blocks[4].blocks[1].game.data.items[4].detailTh: ตัวเลขราคาเล็ก แถมเป็นสีเทาอ่อนบนพื้นขาว
 work.blocks[4].blocks[1].game.data.items[4].revealTh: ขยายตัวเลขให้ใหญ่แล้วใช้สีเข้มขึ้น คนสายตาไม่ดีก็อ่านสบาย
 work.blocks[4].blocks[1].game.data.resultTh: แก้ตรงจุด {score}/{total}
-work.blocks[4].blocks[1].answersTh[0]: ปรับขนาด สี ที่วาง: ปุ่มสั่งที่หาไม่เจอ, ราคาที่อ่านไม่ออก
-work.blocks[4].blocks[1].answersTh[1]: เปลี่ยนคำ: ปุ่ม ดำเนินการ เป็น จ่ายเงิน, ใส่คำกำกับใต้ไอคอน
+work.blocks[4].blocks[1].answersTh[0]: ปรับขนาด สี ตำแหน่ง: ปุ่มสั่งที่หาไม่เจอ, ราคาที่อ่านยาก
+work.blocks[4].blocks[1].answersTh[1]: ใช้คำให้ชัด: ปุ่ม ดำเนินการ เป็น จ่ายเงิน, ใส่คำกำกับใต้ไอคอน
 work.blocks[4].blocks[1].answersTh[2]: บอกให้รู้ว่าเกิดอะไร: ขึ้นข้อความ สั่งแล้ว ทันทีที่กด
 work.blocks[4].blocks[2].lines[0].text.th: ที่เธอเพิ่งทำไปเมื่อกี้ คืองานจริงของนักออกแบบ UX/UI เลยนะ
 work.blocks[4].blocks[2].lines[1].text.th: ดูคนใช้ จดจุดที่ติด แก้ แล้วให้ลองใหม่ วนไปแบบนี้เรื่อยๆ
@@ -165,12 +167,12 @@ work.blocks[5].blocks[1].tiles[4].titleTh: ออกแบบบริการ
 work.blocks[5].blocks[1].tiles[4].lineTh: ออกแบบทั้งในจอและนอกจอ เหมือนป้ายรถเมล์ที่อ่านง่าย
 work.blocks[5].blocks[2].lines[0].text.th: ยังไม่ต้องรีบเลือกนะ ค่อยๆ ลองไปทีละสายก็ได้
 work.blocks[6].lines[0].text.th: ด่านต่อไป: คืนนี้ลองรีดีไซน์หน้าจอแรกของเธอเอง
-work.reel.hook.th: แอปสวยใครก็วาดได้ แต่ทำให้คนไม่งงนี่สิงานจริง
+work.reel.hook.th: แอปสวยแต่คนใช้งง งานยังไม่จบนะ
 work.reel.variantsTh[0]: ปากบอกง่าย แต่มือกดผิดสองรอบ เชื่ออะไรดี
 work.reel.variantsTh[1]: นักออกแบบ UX/UI ไม่ได้วาดสวยอย่างเดียว งานจริงคือนี่
 work.reel.sendToFriendTh: ส่งให้เพื่อนที่ชอบวาด แต่ยังไม่รู้จะเรียนอะไร
 work.reel.visual[0]: มือถือโชว์แอปสั่งข้าว นิ้วกดรูปซ้ำๆ ปุ่มสั่งเล็กๆ ซ่อนอยู่ล่างจอ
-work.reel.visual[1]: การ์ดสิ่งที่เห็นเด้งขึ้นทีละใบ ป้าย แก้ก่อน จดไว้ก่อน ไม่ต้องแก้ ประทับลง
+work.reel.visual[1]: การ์ดสิ่งที่เห็นเด้งขึ้นทีละใบ ติดป้ายว่า แก้ก่อน จดไว้ก่อน ไม่ต้องแก้ ประทับลง
 work.reel.visual[2]: หน้าจอเดิมเลื่อนเป็นหน้าใหม่ ปุ่มสั่งใหญ่ค้างล่างจอ ข้อความ สั่งแล้ว เด้งขึ้น",
   "tonight.titleTh: คืนนี้ รีดีไซน์หน้าจอเดียว
 tonight.questionTh: คืนนี้ทำอะไรได้บ้าง ที่จบแล้วได้ผลงานชิ้นแรกใส่พอร์ตเลย
@@ -179,24 +181,24 @@ tonight.og.headlineTh: คืนนี้หยิบหน้าจอเดี
 tonight.blocks[0].lines[0].text.th: ด่านนี้ไม่ได้เล่นในจอแล้วนะ เป็นภารกิจจริงคืนนี้เลย
 tonight.blocks[0].lines[1].text.th: หยิบหน้าเดียวในแอปที่เธอใช้ แล้วลองออกแบบใหม่ให้ใช้ง่ายขึ้น
 tonight.blocks[0].lines[2].text.th: ดูคนลองใช้ก่อนแก้ แบบตอนแก้แอปโรงอาหารเลย
-tonight.blocks[1].text.th: Excalidraw ใช้วาดแบบร่างหน้าจอในเบราว์เซอร์ ฟรีและเปิดโค้ด งานเซฟอยู่ในเบราว์เซอร์เครื่องเธอ ใช้กระดาษกับปากกาแทนก็ได้เหมือนกัน
+tonight.blocks[1].text.th: Excalidraw ใช้วาดแบบร่างหน้าจอในเบราว์เซอร์ ฟรีและเป็นโอเพนซอร์ส งานเซฟอยู่ในเบราว์เซอร์เครื่องเธอ ใช้กระดาษกับปากกาแทนก็ได้เหมือนกัน
 tonight.blocks[1].titleTh: เครื่องมือ: กระดาษ หรือ Excalidraw
-tonight.blocks[2].lineTh: แคปเฉพาะจอแอปของเธอเอง ปิดชื่อ เบอร์ ที่อยู่ และแชตก่อนทุกครั้ง ไม่ต้องถ่ายหน้าหรืออัดเสียงคนที่มาลอง จดแค่ว่าเขาติดตรงไหน
+tonight.blocks[2].lineTh: แคปเฉพาะจอแอปของเธอเอง ปิดชื่อ เบอร์ ที่อยู่ และแชตก่อนทุกครั้ง ให้คนที่มาลองหยุดก่อนกดจ่ายเงินหรือส่งอะไรจริง ไม่ต้องถ่ายหน้าหรืออัดเสียงเขา จดแค่ว่าเขาติดตรงไหน
 tonight.blocks[3].game.data.room.titleTh: Excalidraw · กระดานวาดแบบร่าง
-tonight.blocks[3].game.data.room.badgeTh: ฟรีและเปิดโค้ด ตาม GitHub ของ Excalidraw ณ 19 พ.ย. 2569
-tonight.blocks[3].game.data.room.subTh: งานเซฟไว้ในเบราว์เซอร์เครื่องเธอ ไม่อยากใช้เว็บไหนเลย ใช้กระดาษกับปากกาก็ได้
-tonight.blocks[3].game.data.checklistTh[0]: เลือกหน้าเดียวในแอปที่เธอใช้บ่อย แล้วเคยทำเอาหงุดหงิด
+tonight.blocks[3].game.data.room.badgeTh: ฟรีและเป็นโอเพนซอร์ส ตาม GitHub ของ Excalidraw ณ 19 พ.ย. 2569
+tonight.blocks[3].game.data.room.subTh: งานเซฟไว้ในเบราว์เซอร์เครื่องเธอ ถ้าไม่อยากใช้เว็บ ใช้กระดาษกับปากกาก็ได้
+tonight.blocks[3].game.data.checklistTh[0]: เลือกหน้าเดียวในแอปที่ใช้บ่อย ที่เคยทำให้เธอหงุดหงิด
 tonight.blocks[3].game.data.checklistTh[1]: แคปหน้าจอเก็บไว้เป็นภาพก่อน (ปิดข้อมูลส่วนตัวก่อนนะ)
 tonight.blocks[3].game.data.checklistTh[2]: ให้คนในบ้านหรือเพื่อนลองทำหนึ่งอย่างในหน้านั้น เธอแค่ดู ห้ามช่วยนะ
 tonight.blocks[3].game.data.checklistTh[3]: จดไว้ว่าเขาติดหรือลังเลตรงไหน
 tonight.blocks[3].game.data.checklistTh[4]: วาดหน้าใหม่ลงกระดาษหรือใน Excalidraw เป็นภาพหลัง
-tonight.blocks[3].game.data.checklistTh[5]: ให้เขาลองดูหน้าใหม่ แล้วจดไว้ว่าดีขึ้นไหม
+tonight.blocks[3].game.data.checklistTh[5]: ให้เขาลองทำอย่างเดิมบนหน้าใหม่ แล้วจดว่าคราวนี้เป็นยังไง
 tonight.blocks[3].game.data.fields[0].placeholderTh: หน้าจอไหน ของแอปอะไร
 tonight.blocks[3].game.data.fields[1].placeholderTh: ให้เขาลองทำอะไร
 tonight.blocks[3].game.data.fields[2].placeholderTh: เขาติดหรือลังเลตรงไหน
 tonight.blocks[3].game.data.fields[3].placeholderTh: เธอแก้อะไรไป เพราะอะไร
 tonight.blocks[3].game.data.fields[4].placeholderTh: ลองหน้าใหม่แล้วเป็นยังไงบ้าง
-tonight.blocks[3].game.data.fixedLinesTh[0]: ภาพแคปปิดชื่อ เบอร์ และแชตแล้ว ไม่มีรูปหน้าคนที่มาลอง
+tonight.blocks[3].game.data.fixedLinesTh[0]: ภาพแคปปิดชื่อ เบอร์ ที่อยู่ และแชตแล้ว ไม่มีรูปหน้าคนที่มาลอง
 tonight.blocks[3].game.data.privacyTh: เก็บไว้ในเครื่องนี้เท่านั้น ไม่ส่งไปที่ไหน
 tonight.blocks[3].answersTh[0]: เลือกหน้าเดียวในแอปที่ใช้บ่อย แคปเก็บไว้เป็นภาพก่อน (ปิดข้อมูลส่วนตัว)
 tonight.blocks[3].answersTh[1]: ให้คนในบ้านหรือเพื่อนลองทำหนึ่งอย่าง เธอแค่ดู ห้ามช่วย แล้วจดว่าเขาติดตรงไหน
@@ -206,7 +208,7 @@ tonight.blocks[3].demoScript[1].text: หน้าเติมเงินใน
 tonight.blocks[3].demoScript[2].text: แม่หาปุ่มยืนยันไม่เจอ เพราะมันอยู่ล่างสุด
 tonight.blocks[4].lines[0].text.th: ภาพสวยไม่ใช่ของที่มีค่าที่สุดคืนนี้หรอกนะ
 tonight.blocks[4].lines[1].text.th: ของเจ๋งจริงคือบันทึกว่าคนติดตรงไหน แล้วเธอแก้ยังไง
-tonight.blocks[4].lines[2].text.th: ทีมเราว่าช่อง เพราะอะไร สำคัญสุดเลย อย่าข้ามนะ
+tonight.blocks[4].lines[2].text.th: ทีมเราว่าช่องที่บอกว่าแก้เพราะอะไร สำคัญสุดเลย อย่าข้ามนะ
 tonight.blocks[5].lines[0].text.th: ภาพก่อนหลังกับบันทึกนี้ คือผลงานชิ้นแรกในแฟ้มของเธอเลย
 tonight.blocks[6].text.th: TCAS70 มี 4 รอบ รอบแรกชื่อ Portfolio มหาลัยดูจากสิ่งที่เธอลงมือทำ งานแบบคืนนี้แหละ ใส่แฟ้มได้เลย
 tonight.blocks[6].titleTh: รู้ไหม รอบ 1 ใช้ผลงานยื่นได้นะ
@@ -235,11 +237,11 @@ next.blocks[1].answersTh[0]: เลือกด่านที่สนุกท
 next.blocks[1].answersTh[1]: สายออกแบบบริการ หรือสายออกแบบแอป
 next.blocks[1].answersTh[2]: นี่ไม่ใช่คำทำนาย มันคือจุดเริ่ม เธอตัดสินใจเอง
 next.blocks[2].lines[0].text.th: กดบอกเราหน่อยว่าสายนี้ใช่เธอไหม เราจะได้รู้ว่าควรเจาะลึกต่อหรือเปล่า
-next.blocks[2].lines[1].text.th: ไม่ว่าจะกดอันไหน ถือว่าได้ข้อมูล
+next.blocks[2].lines[1].text.th: ไม่ว่าจะกดอันไหน ก็ไม่มีคำตอบผิดนะ
 next.blocks[2].lines[2].text.th: ลองแล้วรู้ว่าไม่ใช่ ก็ยังได้คำตอบไวกว่าคนที่ไม่เคยลอง
-next.blocks[4].lines[0].text.th: ถ้าสนใจ สิ่งเดียวที่ต้องทำต่อ
-next.blocks[4].lines[1].text.th: คือรีดีไซน์อีกสักหน้า แล้วให้คนลองใช้อีกสักคน
-next.blocks[5].text.th: ไม่ชอบโดนติงาน ไม่ชอบคุยกับคนอื่น หรืออยากวาดตามใจตัวเองอย่างเดียว เพราะงานจริงคือฟังคนใช้ คุยกับทีมและคนเขียนโค้ด แล้วแก้งานซ้ำหลายรอบ
+next.blocks[4].lines[0].text.th: ถ้าสนใจ ก้าวต่อไปง่ายมาก
+next.blocks[4].lines[1].text.th: รีดีไซน์อีกสักหน้า แล้วชวนอีกคนมาลองใช้
+next.blocks[5].text.th: ไม่ชอบให้ใครมาวิจารณ์งาน ไม่ชอบคุยกับคนอื่น หรืออยากวาดตามใจตัวเองอย่างเดียว เพราะงานจริงคือฟังคนใช้ คุยกับทีมและคนเขียนโค้ด แล้วแก้งานซ้ำหลายรอบ
 next.blocks[5].titleTh: สายนี้อาจไม่เหมาะ ถ้า...",
   "round1.titleTh: รอบ 1 มีพื้นที่ให้ผลงานเธอ
 round1.questionTh: เข้ามหาลัยด้วยสิ่งที่ทำเอง ไม่ใช่แค่คะแนนสอบ จริงเหรอ
@@ -259,17 +261,17 @@ round1.blocks[3].blocks[1].game.data.bins[0].labelTh: โครงงาน
 round1.blocks[3].blocks[1].game.data.bins[1].labelTh: กิจกรรม
 round1.blocks[3].blocks[1].game.data.bins[2].labelTh: เกียรติบัตร รางวัล
 round1.blocks[3].blocks[1].game.data.items[0].labelTh: รีดีไซน์หน้าจอแอปโรงเรียน มีภาพก่อนและหลัง กับบันทึกว่าเพื่อนติดตรงไหน
-round1.blocks[3].blocks[1].game.data.items[0].revealTh: โครงงาน: เธอทำเองทั้งหมด แถมมีหลักฐานว่าดูคนใช้จริงก่อนแก้
-round1.blocks[3].blocks[1].game.data.items[1].labelTh: นั่งดูคุณยายใช้แอปธนาคาร แล้วทำการ์ดสอนใช้ตัวใหญ่ที่ยายใช้ได้จริง
-round1.blocks[3].blocks[1].game.data.items[1].revealTh: โครงงาน: ออกแบบให้คนใช้จริงคนหนึ่ง แล้วดูว่ามันช่วยได้ไหม นี่แหละงาน UX
+round1.blocks[3].blocks[1].game.data.items[0].revealTh: โครงงาน: เธอลงมือทำเอง แถมมีหลักฐานว่าดูคนใช้จริงก่อนแก้
+round1.blocks[3].blocks[1].game.data.items[1].labelTh: นั่งดูคุณยายลองวิดีโอคอลหาหลาน แล้วทำการ์ดสอนใช้ตัวใหญ่ที่ยายใช้ได้จริง
+round1.blocks[3].blocks[1].game.data.items[1].revealTh: โครงงาน: ออกแบบให้คนจริงๆ สักคน แล้วดูว่ามันช่วยได้ไหม นี่แหละงาน UX
 round1.blocks[3].blocks[1].game.data.items[2].labelTh: อาสาทำป้ายบอกทางในงานกีฬาสี ให้รุ่นน้องหาจุดลงทะเบียนเจอ
 round1.blocks[3].blocks[1].game.data.items[2].revealTh: กิจกรรม: เล่าด้วยว่าก่อนมีป้าย คนหลงตรงไหน แล้วหลังมีป้ายเป็นยังไง
 round1.blocks[3].blocks[1].game.data.items[3].labelTh: เข้าชุมนุมศิลปะหรือคอม แล้วรับทำหน้าเพจของชุมนุม
 round1.blocks[3].blocks[1].game.data.items[3].revealTh: กิจกรรม: บอกด้วยว่าเธอทำส่วนไหนเอง ไม่ใช่แค่ว่าเป็นสมาชิก
 round1.blocks[3].blocks[1].game.data.items[4].labelTh: เกียรติบัตรจากเวทีแข่งออกแบบโปสเตอร์หรือแอป
-round1.blocks[3].blocks[1].game.data.items[4].revealTh: เกียรติบัตร รางวัล: ใส่ได้นะ แต่ชิ้นงานกับเหตุผลที่ออกแบบแบบนั้น สำคัญกว่าใบเกียรติบัตร
+round1.blocks[3].blocks[1].game.data.items[4].revealTh: เกียรติบัตร รางวัล: ใส่ได้นะ ถ้ามีชิ้นงานด้วย แนบไปพร้อมเหตุผลที่ออกแบบแบบนั้นเลย
 round1.blocks[3].blocks[1].game.data.resultTh: จัดถูก {score}/{total}
-round1.blocks[3].blocks[1].answersTh[0]: โครงงาน: รีดีไซน์หน้าจอแอปโรงเรียน มีภาพก่อนและหลัง กับบันทึกว่าเพื่อนติดตรงไหน, นั่งดูคุณยายใช้แอปธนาคาร แล้วทำการ์ดสอนใช้ตัวใหญ่ที่ยายใช้ได้จริง
+round1.blocks[3].blocks[1].answersTh[0]: โครงงาน: รีดีไซน์หน้าจอแอปโรงเรียน มีภาพก่อนและหลัง กับบันทึกว่าเพื่อนติดตรงไหน, นั่งดูคุณยายลองวิดีโอคอลหาหลาน แล้วทำการ์ดสอนใช้ตัวใหญ่ที่ยายใช้ได้จริง
 round1.blocks[3].blocks[1].answersTh[1]: กิจกรรม: อาสาทำป้ายบอกทางในงานกีฬาสี ให้รุ่นน้องหาจุดลงทะเบียนเจอ, เข้าชุมนุมศิลปะหรือคอม แล้วรับทำหน้าเพจของชุมนุม
 round1.blocks[3].blocks[1].answersTh[2]: เกียรติบัตร รางวัล: เกียรติบัตรจากเวทีแข่งออกแบบโปสเตอร์หรือแอป
 round1.blocks[3].blocks[2].lines[0].text.th: เห็นไหม ของที่เธอลงมือทำเองนับได้จริง

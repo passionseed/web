@@ -61,8 +61,8 @@ export const ACCOUNTANT_FACTS: readonly Fact[] = [
   {
     id: "f.acc-wef-2025",
     claimEn:
-      "World Economic Forum, Future of Jobs Report 2025 (January 2025): respondents expect the fastest-declining roles to include clerical roles such as cashiers and ticket clerks, administrative assistants and executive secretaries, printing workers, and accountants and auditors; broadening digital access, AI and information processing technologies, and robots are the primary drivers. The outlook runs to 2030.",
-    values: ["2025", "2568", "2030"],
+      "World Economic Forum, Future of Jobs Report 2025 (January 2025): respondents expect the fastest-declining roles to include clerical roles such as cashiers and ticket clerks, administrative assistants and executive secretaries, printing workers, and accountants and auditors; broadening digital access, AI and information processing technologies, and robots are the primary drivers. The outlook runs to 2030 (2573).",
+    values: ["2025", "2568", "2030", "2573"],
     sources: [
       {
         outlet: "World Economic Forum",
@@ -77,7 +77,7 @@ export const ACCOUNTANT_FACTS: readonly Fact[] = [
   {
     id: "sim.acc-shop-books",
     claimEn:
-      "Simulated: a bubble-tea shop near a school uses an app whose AI reads slips and receipts and records the entries itself. The student checks 7 entries from one week against the evidence and sorts each: it adds up (fresh milk 1,200 baht matches its receipt; rent 8,000 baht matches the lease), it doesn't add up (ice recorded twice at 350 baht from one slip; plastic cups recorded as 2,500 baht when the receipt says 250; Saturday sales 6,400 baht in the shop app but 5,200 baht reached the bank, a gap of 1,200; a 3,000 baht transfer from an unknown name with no order), or it is not the shop's money (a 299 baht mobile game top-up paid with the shop's card). Then the owner asks how the week went. Entries, names and amounts are invented for the game, based on common bookkeeping errors: duplicates, misread amounts, cash not yet counted, money with no source, and personal spending mixed with business spending.",
+      "Simulated: a bubble-tea shop near a school uses an app whose AI reads slips and receipts and records the entries itself. The student checks 7 entries from one week against the evidence and sorts each: it adds up (fresh milk 1,200 baht matches its receipt; rent 8,000 baht matches the lease), it doesn't add up (ice recorded twice at 350 baht from one slip; plastic cups recorded as 2,500 baht when the receipt says 250; Saturday sales 6,400 baht in the shop app but 5,200 baht reached the bank, a gap of 1,200; a 3,000 baht transfer from an unknown name with no order), or it is a personal expense, not a shop expense (a 299 baht mobile game top-up paid with the shop's card). Then the owner asks how the week went. Entries, names and amounts are invented for the game, based on common bookkeeping errors: duplicates, misread amounts, cash not yet counted, money with no source, and personal spending mixed with business spending.",
     values: ["7", "1,200", "8,000", "350", "700", "2,500", "250", "6,400", "5,200", "3,000", "299"],
     sources: [],
     asOf: AS_OF,
@@ -142,7 +142,7 @@ export const ACCOUNTANT_FACTS: readonly Fact[] = [
   {
     id: "f.acc-tcas-programmes",
     claimEn:
-      "mytcas TCAS70 programme feed (CUPT, courses.json, read Nov 20, 2026): 94 programmes (unique program_id) at 56 universities have บัญชี in the programme or field name. The most common faculties are คณะบริหารธุรกิจ, คณะวิทยาการจัดการ and คณะพาณิชยศาสตร์และการบัญชี.",
+      "mytcas TCAS70 programme feed (CUPT, courses.json, read Nov 20, 2026): 94 programmes (unique program_id) at 56 universities have บัญชี in the programme or field name (86 programmes at 52 universities by programme name alone), so the guide calls them หลักสูตรสายบัญชี. The most common faculties are คณะบริหารธุรกิจ, คณะวิทยาการจัดการ and คณะพาณิชยศาสตร์และการบัญชี.",
     values: ["94", "56", "70"],
     sources: [
       {

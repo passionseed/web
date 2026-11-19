@@ -2,7 +2,7 @@
  * Level 1 · work. What the job is now that software records the numbers: a
  * bubble-tea shop's app reads slips and receipts and books the week itself;
  * the student checks each entry against its evidence (adds up, doesn't add
- * up, not the shop's money), then tells the owner the truth about the week.
+ * up, a personal expense), then tells the owner the truth about the week.
  * The honest beat: employers worldwide expect accounting roles to shrink
  * (WEF 2025), and even an accounting-software company says AI can't do the
  * analysis and advice. Then the kinds of accountant, with this one first.
@@ -41,16 +41,16 @@ export const work: GuidePage = {
     item(
       "intel-tools",
       "intel",
-      "โปรแกรมบัญชีในไทยตอนนี้ใช้ AI อ่านใบเสร็จกับใบกำกับภาษี แล้วช่วยบันทึกรายการกับกระทบยอดบัญชีให้",
+      "โปรแกรมบัญชีบางตัวในไทยตอนนี้ใช้ AI อ่านใบเสร็จกับใบกำกับภาษี แล้วช่วยลงรายการกับเทียบยอดบัญชีให้",
       { title: "เครื่องมือจริงตอนนี้", meta: "FlowAccount", facts: [TOOLS], badge: "vendor" }
     ),
     beat(
       "beat-books",
-      "เปิดบัญชีร้าน",
+      "เปิดดูบัญชีร้าน",
       dialogue(
         "books-intro",
-        host("AI ลงให้ไวจริง แต่มันไม่รู้หรอกว่าอันไหนแปลก", { mood: "wink" }),
-        host("ไล่เช็กทีละรายการเลย อันไหนผ่าน อันไหนไม่ตรง อันไหนไม่ใช่เงินร้าน")
+        host("AI ลงให้ไวจริง แต่ตัวเลขไหนแปลก คนต้องเช็กกับหลักฐานเอง", { mood: "wink" }),
+        host("ไล่เช็กทีละรายการเลย อันไหนผ่าน อันไหนไม่ตรง อันไหนเป็นรายจ่ายส่วนตัว")
       ),
       {
         kind: "game",
@@ -64,7 +64,7 @@ export const work: GuidePage = {
             bins: [
               { id: "ok", labelTh: "ผ่าน" },
               { id: "check", labelTh: "ไม่ตรง ต้องเช็ก" },
-              { id: "personal", labelTh: "ไม่ใช่เงินร้าน" },
+              { id: "personal", labelTh: "รายจ่ายส่วนตัว" },
             ],
             simulated: { factId: SIM, watermarkTh: "ตัวอย่างจำลอง" },
             items: [
@@ -83,15 +83,15 @@ export const work: GuidePage = {
                 detailTh: "AI ลงไว้: ค่าน้ำแข็ง 350 บาท 2 รายการ · สลิปโอน: มีใบเดียว 350 บาท",
                 answer: "check",
                 flags: ["ลงซ้ำ"],
-                revealTh: "AI อ่านสลิปใบเดียวกันสองรอบ ถ้าไม่มีใครเช็ก ร้านจะคิดว่าจ่ายค่าน้ำแข็งไป 700",
+                revealTh: "AI อ่านสลิปใบเดียวกันสองรอบ ถ้าไม่มีใครเช็ก ร้านจะคิดว่าจ่ายค่าน้ำแข็งไป 700 บาท",
               },
               {
                 id: "game",
                 labelTh: "ค่าเติมเกมมือถือ",
                 meta: { day: "อังคาร" },
-                detailTh: "AI ลงไว้: ค่าใช้จ่ายร้าน 299 บาท · จ่ายด้วยบัตรของร้าน แต่เป็นเกมในมือถือเจ้าของ",
+                detailTh: "AI ลงไว้: ค่าใช้จ่ายร้าน 299 บาท · จ่ายด้วยบัตรของร้าน แต่เป็นเกมมือถือของเจ้าของ",
                 answer: "personal",
-                nearTh: { check: "ใกล้แล้ว ตัวเลขไม่ได้ผิด แต่เป็นเงินส่วนตัว ต้องแยกออกจากบัญชีร้าน" },
+                nearTh: { check: "ใกล้แล้ว ตัวเลขไม่ได้ผิด แต่เป็นรายจ่ายส่วนตัว ต้องแยกออกจากรายจ่ายร้าน" },
                 flags: ["เงินส่วนตัวปนเงินร้าน"],
                 revealTh: "เงินส่วนตัวปนกับเงินร้าน กำไรของร้านจะดูน้อยกว่าที่เป็นจริง ต้องแยกออกมา",
               },
@@ -130,7 +130,7 @@ export const work: GuidePage = {
                 answer: "check",
                 nearTh: { ok: "เงินเข้าก็จริง แต่ไม่มีออเดอร์ ลงเป็นยอดขายเลยไม่ได้" },
                 flags: ["ไม่รู้ที่มา"],
-                revealTh: "เงินเข้าไม่ได้แปลว่าขายได้ ต้องถามก่อนว่าเงินนี้มาจากไหน แบบเบาะแสในด่านแรกเลย",
+                revealTh: "เงินเข้าไม่ได้แปลว่าขายได้ ต้องถามก่อนว่าเงินนี้มาจากไหน เหมือนเบาะแสในด่านแรก",
               },
             ],
             resultTh: "เช็กถูก {score}/{total}",
@@ -140,7 +140,7 @@ export const work: GuidePage = {
         answersTh: [
           "ผ่าน: ค่านมสด, ค่าเช่าร้าน",
           "ไม่ตรง ต้องเช็ก: ค่าน้ำแข็งลงซ้ำ, ค่าแก้วที่ AI อ่านเลขผิด, ยอดขายวันเสาร์ที่เงินเข้าไม่ครบ, เงินโอนเข้าที่ไม่รู้ที่มา",
-          "ไม่ใช่เงินร้าน: ค่าเติมเกมมือถือของเจ้าของ",
+          "รายจ่ายส่วนตัว: ค่าเติมเกมมือถือของเจ้าของ",
         ],
         demoScript: [
           { at: 600, action: "tap", target: "books.item-ice" },
@@ -167,7 +167,7 @@ export const work: GuidePage = {
         answer(
           "good",
           "ร้านขายดีมาก ไม่ต้องห่วงเลย",
-          host("ขายดีจริงแหละ แต่เงินวันเสาร์ยังหาไม่เจออยู่นะ", { mood: "wink" }),
+          host("ยอดขายดูดีก็จริง แต่เงินวันเสาร์ยังเข้าไม่ครบเลยนะ", { mood: "wink" }),
           host("เรื่องที่ไม่สบายใจก็ต้องบอกนะ แค่พูดให้เขาเอาไปแก้ต่อได้")
         ),
         answer(
@@ -189,29 +189,29 @@ export const work: GuidePage = {
       item(
         "honesty",
         "intel",
-        "รายงาน Future of Jobs ปี 2568 ของ World Economic Forum: นายจ้างทั่วโลกคาดว่างานนักบัญชีและผู้สอบบัญชี จะอยู่ในกลุ่มที่ลดลงเร็ว เพราะ AI กับระบบดิจิทัล",
+        "รายงาน Future of Jobs ปี 2568 ของ World Economic Forum: นายจ้างทั่วโลกที่ตอบแบบสำรวจ คาดว่างานนักบัญชีและผู้สอบบัญชี จะอยู่ในกลุ่มที่ลดลงเร็วที่สุดภายในปี 2573 เพราะ AI กับระบบดิจิทัล",
         { title: "พูดตรงๆ", facts: [WEF] }
       ),
       dialogue(
         "ai-after",
         host("เราว่านะ คนที่แค่กรอกตัวเลขอย่างเดียวจะเหนื่อยขึ้นเรื่อยๆ", { labels: ["teamView"], mood: "serious" }),
         host("แต่ถ้าเช็กเป็น แล้วอธิบายให้คนอื่นเข้าใจได้ ยังไปต่อได้นะ", { labels: ["teamView"] }),
-        host("ขนาดบริษัททำโปรแกรมบัญชีเองยังบอกเลยนะ", { mood: "wink" }),
-        host("ว่า AI ยังวิเคราะห์กับให้คำปรึกษาแทนคนไม่ได้", { facts: [TOOLS] })
+        host("ขนาดบริษัทที่ทำโปรแกรมบัญชีเองยังบอกเลยนะ", { mood: "wink" }),
+        host("AI ยังวิเคราะห์และให้คำปรึกษาแทนคนไม่ได้", { facts: [TOOLS] })
       )
     ),
     careerKindsBeat({
       nameTh: "นักบัญชี",
       facts: [CPA_TA, FORENSIC, CFO],
       tiles: [
-        { id: "business", icon: "calculator", titleTh: "บัญชีธุรกิจ", lineTh: "ดูแลเงินของร้านหรือบริษัท เช็กที่ AI ลงให้ แบบเมื่อกี้", played: true },
-        { id: "audit", icon: "clipboard", titleTh: "ผู้สอบบัญชี", lineTh: "ตรวจงบของบริษัท แล้วเซ็นรับรองว่าเชื่อถือได้" },
+        { id: "business", icon: "calculator", titleTh: "บัญชีธุรกิจ", lineTh: "ดูแลเงินร้านหรือบริษัท เช็กบัญชีที่ AI ลงให้ แบบเมื่อกี้", played: true },
+        { id: "audit", icon: "clipboard", titleTh: "ผู้สอบบัญชี", lineTh: "ตรวจหลักฐานในงบของบริษัท แล้วเซ็นรับรองงบการเงิน" },
         { id: "forensic", icon: "magnifier", titleTh: "นักสืบบัญชี", lineTh: "ตามหาหลักฐานในคดีเรื่องเงิน แล้วไปอธิบายในศาล" },
-        { id: "tax", icon: "receipt", titleTh: "สายภาษี", lineTh: "ช่วยร้านกับบริษัทเสียภาษีให้ถูก บางคนเป็นผู้สอบบัญชีภาษี" },
+        { id: "tax", icon: "receipt", titleTh: "สายภาษี", lineTh: "ช่วยธุรกิจเสียภาษีให้ถูก บางคนเป็นผู้สอบบัญชีภาษีอากร" },
         { id: "cfo", icon: "trend", titleTh: "สาย CFO", lineTh: "ดูแลเงินทั้งบริษัท แล้วบอกผู้บริหารว่าควรไปทางไหน" },
       ],
     }),
-    dialogue("exit", sys("ด่านต่อไป: คืนนี้ลองเป็นนักบัญชีให้เงินตัวเอง")),
+    dialogue("exit", sys("ด่านต่อไป: คืนนี้ลองเป็นนักบัญชีให้ตัวเอง")),
   ],
   reel: {
     format: "motion",
@@ -220,7 +220,7 @@ export const work: GuidePage = {
     sendToFriendTh: "ส่งให้เพื่อนที่ตาไวเรื่องตัวเลขดูเลย",
     visual: [
       "สลิปกับใบเสร็จบินเข้าแอป ตัวเลขเรียงลงตาราง",
-      "บางบรรทัดกะพริบ ป้าย ผ่าน ไม่ตรง ไม่ใช่เงินร้าน ประทับลง",
+      "บางบรรทัดกะพริบ ป้าย ผ่าน ไม่ตรง รายจ่ายส่วนตัว ประทับลง",
       "ยอดขายในแอปกับเงินเข้าธนาคารวางคู่กัน ช่องว่างตรงกลางสว่างขึ้น",
     ],
   },

@@ -29,7 +29,7 @@ export const MEDICAL_TECHNOLOGIST_META = {
     badges: [
       { id: "dream", nameTh: "รู้แล้วใครตอบ", descTh: "รู้แล้วว่าตอนมีโรคใหม่ คำตอบแรกมาจากแล็บ", icon: "star", trigger: { on: "clear", pageKey: "dream" } },
       { id: "work", nameTh: "ผ่านเวรแรก", descTh: "คัดหลอดและเช็กผลจนจบเวรแรกในแล็บ", icon: "eye", trigger: { on: "clear", pageKey: "work" } },
-      { id: "round1", nameTh: "แฟ้มพร้อมยื่น", descTh: "รู้แล้วว่าผลงานแบบไหนใส่แฟ้มรอบ 1 ได้", icon: "map", trigger: { on: "clear", pageKey: "round1" } },
+      { id: "round1", nameTh: "เปิดแฟ้มแรก", descTh: "รู้แล้วว่าผลงานแบบไหนใส่แฟ้มรอบ 1 ได้", icon: "map", trigger: { on: "clear", pageKey: "round1" } },
       { id: "tonight", nameTh: "ภารกิจคืนนี้", descTh: "มีแผนทำบันทึกแล็บชิ้นแรกแล้ว", icon: "flag", trigger: { on: "clear", pageKey: "tonight" } },
       { id: "next", nameTh: "จบรันแรก", descTh: "เล่นจนจบ Level 1", icon: "compass", trigger: { on: "clear", pageKey: "next" } },
       { id: "sharp-tubes", nameTh: "ตาไวคัดหลอด", descTh: "คัดหลอดที่ใช้ไม่ได้ออกครบทุกหลอด", icon: "shield", trigger: { on: "game", game: "work:tubes", perfect: true } },

@@ -1,7 +1,7 @@
 /**
- * Level 1 · dream. The hook: the person who finds out the numbers aren't
+ * Level 1 · dream. The hook: the person who asks whether the numbers are
  * true. In 2023 a special audit of STARK, a listed Thai wire and cable
- * company, found 202 unusual sales that had been booked like real ones.
+ * company, found 202 unusual sales sitting in the books like normal ones.
  * Guess how many, then flip the four clues the checkers followed (ask the
  * customer, follow the payment, check the payer's name, see whose account
  * paid). Ends on the question the work level answers: if AI records
@@ -19,9 +19,9 @@ const TOOLS = "f.acc-ai-tools" as const;
 export const dream: GuidePage = {
   key: "dream",
   order: 1,
-  titleTh: "คนที่เจอว่าตัวเลขไม่จริง",
-  questionTh: "ถ้าตัวเลขในบัญชีโกหก ใครเป็นคนจับได้",
-  navLabelTh: "ตัวเลขไม่จริง",
+  titleTh: "คนที่ถามว่าตัวเลขจริงไหม",
+  questionTh: "ใครเป็นคนถามว่าตัวเลขในบัญชีจริงไหม",
+  navLabelTh: "ตัวเลขจริงไหม",
   asOf: "2026-11-20",
   minutes: 2,
   factIds: [AUDIT, SEC, TOOLS],
@@ -45,7 +45,7 @@ export const dream: GuidePage = {
         "unsure",
         "ไม่รู้เลย ยังไม่เคยเจอนักบัญชีตัวจริง",
         host("ไม่แปลกหรอก งานนี้อยู่เบื้องหลังตลอดเลย"),
-        host("แต่บางทีนี่แหละ คนที่ไปเจอความลับของบริษัทเลยนะ", { mood: "wink" })
+        host("แต่บางที นักบัญชีนี่แหละ ที่เจออะไรซ่อนอยู่ในตัวเลข", { mood: "wink" })
       )
     ),
     dialogue(
@@ -56,7 +56,7 @@ export const dream: GuidePage = {
     item(
       "intel-audit",
       "intel",
-      "ก.ล.ต. ให้ขยายขอบเขตการตรวจ ทีมตรวจพิเศษเลยไล่เช็กรายการขายย้อนหลังของ STARK ทีละรายการ",
+      "ก.ล.ต. ให้ขยายขอบเขตการตรวจ ทีมตรวจพิเศษเลยไล่เช็กรายการขายย้อนหลังของ STARK",
       { title: "แฟ้ม: ตรวจพิเศษ", facts: [AUDIT] }
     ),
     beat(
@@ -64,7 +64,7 @@ export const dream: GuidePage = {
       "ลองทายดู",
       dialogue(
         "guess-intro",
-        host("ทีมตรวจไล่เช็กรายการขายทีละอันเลย", { facts: [AUDIT] }),
+        host("แล้วผลตรวจก็ออกมา", { facts: [AUDIT] }),
         host("ลองทายดิ เขาเจอรายการขายผิดปกติกี่รายการ", { facts: [AUDIT], mood: "wink" })
       ),
       {
@@ -112,7 +112,7 @@ export const dream: GuidePage = {
       }),
       dialogue(
         "guess-after",
-        host("ทุกรายการลงบัญชีไว้ครบเลย ดูผ่านๆ ก็เหมือนขายได้จริง", { facts: [AUDIT], mood: "serious" }),
+        host("ทุกรายการอยู่ในบัญชีครบ ดูผ่านๆ ก็เหมือนยอดขายปกติ", { facts: [AUDIT], mood: "serious" }),
         me("อ้าว แล้วเขาจับได้ยังไงอะ"),
         host("มีเบาะแสอยู่สี่อย่าง ลองพลิกดูทีละใบเลย", { mood: "wink" })
       )
@@ -137,22 +137,22 @@ export const dream: GuidePage = {
               },
               {
                 id: "payment",
-                frontTh: "ดูว่าเงินค่าของเข้ามายังไง",
-                backTh: "ตรวจการรับชำระเงินทีละรายการ แล้วเจอการจ่ายเงินที่ไม่เหมือนลูกค้าปกติ",
+                frontTh: "ดูว่าลูกค้าจ่ายเงินเข้ามายังไง",
+                backTh: "ตรวจการรับชำระเงิน แล้วเจอว่าบางรายการจ่ายเงินแบบไม่ปกติ",
                 dateTh: "มิ.ย. 2566",
                 factIds: [AUDIT],
               },
               {
                 id: "name",
                 frontTh: "เช็กชื่อคนที่จ่ายเงิน",
-                backTh: "บางรายการ ชื่อผู้จ่ายเงินถูกปลอมขึ้นมา",
+                backTh: "ทีมตรวจเจอว่าบางรายการ ชื่อผู้จ่ายเงินถูกปลอมขึ้นมา",
                 dateTh: "มิ.ย. 2566",
                 factIds: [AUDIT],
               },
               {
                 id: "account",
                 frontTh: "เงินที่ลูกค้าควรจ่าย ใครเป็นคนโอน",
-                backTh: "บางรายการ เงินมาจากบัญชีของอดีตพนักงานบริษัท แทนที่จะมาจากลูกค้า",
+                backTh: "ทีมตรวจเจอว่าบางรายการ เงินมาจากบัญชีอดีตพนักงาน แทนที่จะมาจากลูกค้า",
                 dateTh: "มิ.ย. 2566",
                 factIds: [AUDIT],
               },
@@ -162,7 +162,7 @@ export const dream: GuidePage = {
         track: { done: "dream:clues", value: "count", milestones: { flip: "dream:flip" } },
         answersTh: [
           "ถามลูกค้าให้ยืนยันยอดซื้อ",
-          "ตรวจว่าเงินค่าของเข้ามายังไง แล้วเจอการจ่ายเงินที่ไม่ปกติ",
+          "ตรวจว่าลูกค้าจ่ายเงินเข้ามายังไง แล้วเจอการจ่ายเงินที่ไม่ปกติ",
           "เจอชื่อผู้จ่ายเงินที่ถูกปลอม",
           "เจอเงินที่โอนจากบัญชีอดีตพนักงาน แทนที่จะมาจากลูกค้า",
         ],
@@ -175,12 +175,12 @@ export const dream: GuidePage = {
       item(
         "honesty",
         "intel",
-        "ก.ล.ต. กล่าวโทษอดีตกรรมการและผู้บริหาร 10 ราย ต่อ DSI ตั้งแต่ปี 2566 ปี 2569 ยังส่งเรื่องผู้สอบบัญชีที่ตรวจงบรอบก่อนๆ ตามไปอีก เพราะ ก.ล.ต. ชี้ว่าตรวจไม่ได้มาตรฐาน คดียังไม่จบ",
+        "ก.ล.ต. กล่าวโทษอดีตกรรมการและผู้บริหาร 10 ราย ต่อ DSI ในปี 2566 แล้วปี 2569 ก็กล่าวโทษผู้สอบบัญชีที่ตรวจงบปีก่อนๆ ด้วย โดยชี้ว่าตรวจไม่ได้มาตรฐาน แต่นี่แค่จุดเริ่มต้นของคดี ใครผิดหรือไม่ ยังต้องรอการสอบสวนและศาล",
         { title: "พูดตรงๆ", facts: [SEC] }
       ),
       dialogue(
         "exit",
-        host("ไม่มีใครเห็นเลยนะ ถ้าไม่มีคนถามว่าตัวเลขนี้จริงไหม", { mood: "serious" }),
+        host("เบาะแสพวกนี้จะโผล่มา ก็ตอนที่มีคนถามว่าตัวเลขนี้จริงไหม", { mood: "serious" }),
         host("คำถามนี้แหละ หัวใจของงานบัญชีเลย", { mood: "wow" }),
         sys("คำถามต่อไป: ถ้า AI ลงบัญชีให้หมดแล้ว คนจะทำอะไร")
       )
@@ -189,7 +189,7 @@ export const dream: GuidePage = {
   reel: {
     format: "motion",
     hook: { th: "ยอดขายดูดีทุกบรรทัด จนมีคนถามว่ามันจริงไหม" },
-    variantsTh: ["ทีมตรวจเจอรายการขายผิดปกติ 202 รายการ จากเบาะแสแค่สี่อย่าง", "นักบัญชีไม่ได้แค่กดเครื่องคิดเลข บางคนคือคนที่จับได้ว่าตัวเลขไม่จริง"],
+    variantsTh: ["ทีมตรวจเจอรายการขายผิดปกติ 202 รายการ ลองดูว่าเขาจับได้ยังไง", "นักบัญชีไม่ได้แค่กดเครื่องคิดเลข บางคนคือคนที่เจอว่าตัวเลขผิดปกติ"],
     sendToFriendTh: "ส่งให้เพื่อนที่คิดว่านักบัญชีน่าเบื่อดูเลย",
     visual: [
       "บรรทัดยอดขายเรียงลงมาสวยๆ แล้วบางบรรทัดเริ่มกะพริบ",
