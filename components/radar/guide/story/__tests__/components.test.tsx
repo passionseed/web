@@ -4,6 +4,7 @@ import { emptyProgress, type BadgeDef, type ProfileCard as ProfileCardData } fro
 import { BadgeToast } from "../BadgeToast";
 import { Cutscene } from "../Cutscene";
 import { DialogueBox } from "../DialogueBox";
+import { GuideNPC } from "../GuideNPC";
 import { LevelMap } from "../LevelMap";
 import { PixelScene } from "../PixelScene";
 import { ProfileCard } from "../ProfileCard";
@@ -293,5 +294,36 @@ describe("ProfileCard", () => {
       fireEvent.click(screen.getByRole("button", { name: "คัดลอกลิงก์" }));
     });
     expect(screen.getByLabelText("ลิงก์สำหรับคัดลอก")).toHaveValue("https://passionseed.org/r/cyber");
+  });
+});
+
+describe("GuideNPC on a clock", () => {
+  const frameOf = (container: HTMLElement) => container.querySelector(".rgs-npc")!.getAttribute("data-frame");
+
+  it("takes its frame from the clock, not timers", () => {
+    jest.useFakeTimers();
+    const { container, rerender } = render(<GuideNPC mood="talk" talking clock={{ ms: 0, poseMs: 0 }} />);
+    expect(frameOf(container)).toBe("idle");
+    rerender(<GuideNPC mood="talk" talking clock={{ ms: 150, poseMs: 150 }} />);
+    expect(frameOf(container)).toBe("talk");
+    act(() => {
+      jest.advanceTimersByTime(1000);
+    });
+    expect(frameOf(container)).toBe("talk");
+    rerender(<GuideNPC mood="idle" clock={{ ms: 420, poseMs: 0 }} />);
+    expect(frameOf(container)).toBe("flick");
+    jest.useRealTimers();
+  });
+
+  it("holds its CSS animations at the clock's moment", () => {
+    const { container } = render(<GuideNPC mood="wow" clock={{ ms: 900, poseMs: 300 }} />);
+    const body = container.querySelector(".rgs-npc__body") as HTMLElement;
+    expect(body.style.animationPlayState).toBe("paused");
+    expect(body.style.animationDelay).toBe("-300ms, -900ms");
+  });
+
+  it("keeps its timers without a clock", () => {
+    const { container } = render(<GuideNPC mood="idle" />);
+    expect((container.querySelector(".rgs-npc__body") as HTMLElement).style.animationPlayState).toBe("");
   });
 });

@@ -174,7 +174,11 @@ export type KindIcon =
   | "box"
   // accountant
   | "calculator"
-  | "receipt";
+  | "receipt"
+  // content-creator
+  | "camera"
+  | "scissors"
+  | "mic";
 
 /** One tile in a career's job-select grid (the `kinds` block). */
 export interface CareerKindTile {
