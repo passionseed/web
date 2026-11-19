@@ -2,7 +2,7 @@
  * Level 1 · dream. The hook: Moo Deng, the pygmy hippo the whole world knew
  * in Sep 2024, was made famous by the keeper who looks after her, after about
  * five years of filming the animals in his care, and he said before she was
- * born that he would make her famous. Not luck: a plan. Guess how many people
+ * born that he would make her famous. Not only luck: a plan. Guess how many people
  * came to the zoo on a weekday after the clips, then flip what followed (an
  * award, a trademark, a 24-hour live feed, a 2nd birthday party). Honest end:
  * fame rises and falls; the storytelling skill stays. No pay, no market data.
@@ -20,15 +20,15 @@ const FADE = "f.cc-moodeng-fade" as const;
 export const dream: GuidePage = {
   key: "dream",
   order: 1,
-  titleTh: "หมูเด้งไม่ได้ดังเพราะดวง",
+  titleTh: "หมูเด้งไม่ได้ดังแค่เพราะดวง",
   questionTh: "หมูเด้งดังไปทั้งโลกได้ยังไง แล้วใครอยู่หลังคลิปพวกนั้น",
   navLabelTh: "หมูเด้ง",
   asOf: "2026-11-20",
   minutes: 2,
   factIds: [KEEPER, VISITORS, AWARD, BRAND, BIRTHDAY, FADE],
   og: {
-    headlineTh: "หมูเด้งไม่ได้ดังเพราะดวง คนเลี้ยงถือกล้องมาก่อนตั้งนานแล้ว",
-    stat: { th: "หลังคลิปหมูเด้งดัง วันธรรมดาคนมาสวนสัตว์จากราว 800 เป็นกว่า 4,000 คน", factIds: [VISITORS], badge: "vendor" },
+    headlineTh: "หมูเด้งไม่ได้ดังแค่เพราะดวง คนเลี้ยงถ่ายคลิปมาก่อนตั้งนานแล้ว",
+    stat: { th: "พอหมูเด้งดัง วันธรรมดามีคนมาสวนสัตว์จากราว 800 เป็นกว่า 4,000", factIds: [VISITORS], badge: "vendor" },
   },
   blocks: [
     dialogue("intro", host("ลุยรันสายคอนเทนต์กันเลย เปิดด้วยฮิปโปที่ทั้งโลกรู้จัก", { mood: "wow" })),
@@ -37,7 +37,7 @@ export const dream: GuidePage = {
       host("หมูเด้งดังไปทั่วโลกเลย เธอว่าเพราะอะไร"),
       answer("luck", "น่าจะดวงล้วนๆ อะ", host("ดวงก็มีส่วนจริง แต่ก่อนดวงจะมา ต้องมีคนถ่ายไว้ก่อนนะ", { mood: "wink" })),
       answer("cute", "ก็น่ารักซะขนาดนั้นอะ", host("จริงไม่เถียง แต่ฮิปโปน่ารักมีเยอะแยะ ตัวนี้มีคนถ่ายให้โลกเห็นไง")),
-      answer("filmed", "ต้องมีคนตั้งใจถ่ายไว้แน่ๆ เลย", host("ตาถึงนะเธอ มีคนตามถ่ายมาตั้งนานก่อนจะดังอีก", { mood: "wow" }))
+      answer("filmed", "ต้องมีคนตั้งใจถ่ายไว้แน่ๆ เลย", host("ตาถึงนะเธอ คนเลี้ยงถ่ายคลิปสัตว์มาหลายปี ก่อนหมูเด้งจะดังซะอีก", { mood: "wow" }))
     ),
     item(
       "intel-keeper",
@@ -55,8 +55,8 @@ export const dream: GuidePage = {
       "ลองทายดู",
       dialogue(
         "guess-intro",
-        host("ก่อนหมูเด้งจะดัง วันธรรมดาคนมาสวนสัตว์อยู่ราว 800 คน", { facts: [VISITORS] }),
-        host("พอคลิปไวรัล วันธรรมดาคนมาเที่ยวกี่คน ลองทายดูสิ", { mood: "wink" })
+        host("ผอ.สวนสัตว์เล่าว่า ก่อนหมูเด้งดัง วันธรรมดามีคนมาราว 800 คน", { facts: [VISITORS] }),
+        host("พอหมูเด้งไวรัล วันธรรมดามีคนมากี่คน ลองทายดูสิ", { mood: "wink" })
       ),
       {
         kind: "game",
@@ -88,8 +88,8 @@ export const dream: GuidePage = {
         },
         track: { done: "dream:visitors-guess", value: "bucket" },
         answersTh: [
-          "ก่อนหมูเด้งดัง วันธรรมดามีคนมาราว 800 คน หลังดังกว่า 4,000 คน",
-          "วันหยุดจากราว 3,000 เป็นกว่า 10,000 คน (ตัวเลขของสวนสัตว์ ที่ AP รายงาน ก.ย. 2567)",
+          "ก่อนหมูเด้งดัง วันธรรมดามีคนมาราว 800 คน หลังดังมีกว่า 4,000 คน",
+          "เสาร์อาทิตย์จากราว 3,000 เป็นกว่า 10,000 คน (ตัวเลขของ ผอ.สวนสัตว์ ที่ AP รายงาน ก.ย. 2567)",
         ],
         demoScript: [
           { at: 600, action: "tap", target: "visitors.plus" },
@@ -99,17 +99,17 @@ export const dream: GuidePage = {
           { at: 5000, action: "wait" },
         ],
       },
-      item("stat-visitors", "stat", "วันธรรมดา จากราว 800 เป็นกว่า 4,000 คน วันหยุด จากราว 3,000 เป็นกว่า 10,000 คน", {
+      item("stat-visitors", "stat", "วันธรรมดา จากราว 800 เป็นกว่า 4,000 คน เสาร์อาทิตย์ จากราว 3,000 เป็นกว่า 10,000 คน", {
         title: "คนมาสวนสัตว์ ก.ย. 2567",
-        meta: "ตัวเลขจากสวนสัตว์",
+        meta: "ตัวเลขของ ผอ.สวนสัตว์ ที่ AP รายงาน",
         facts: [VISITORS],
         badge: "vendor",
       }),
       dialogue(
         "who",
-        host("คลิปสั้นๆ ไม่กี่วิ พาคนจริงๆ มายืนถึงขอบบ่อได้เลยนะ", { mood: "wow" }),
+        host("พอหมูเด้งดังในโซเชียล คนจริงๆ ก็แห่มาหน้าบ่อกันเต็มเลยนะ", { mood: "wow" }),
         me("งั้นคลิปที่ฉันถ่ายเอง ก็ทำได้แบบนี้เหรอ"),
-        host("นั่นแหละ โจทย์ของรันนี้เลย", { mood: "wink" })
+        host("บอกตรงๆ ไม่มีใครรู้ว่าคลิปไหนจะปัง แต่สกิลเล่าเรื่องฝึกได้ ลองรันนี้เลย", { mood: "wink" })
       )
     ),
     beat(
@@ -130,8 +130,8 @@ export const dream: GuidePage = {
             cards: [
               {
                 id: "trademark",
-                frontTh: "สวนสัตว์รีบจดชื่อ หมูเด้ง",
-                backTh: "จดลิขสิทธิ์และเครื่องหมายการค้า กันคนอื่นเอาไปหากิน งานดูแลแบรนด์แบบนี้ มีคนทำงานอยู่เบื้องหลัง",
+                frontTh: "สวนสัตว์เริ่มจดชื่อ หมูเด้ง",
+                backTh: "เริ่มจดเครื่องหมายการค้า และดูแลลิขสิทธิ์ภาพหมูเด้ง กันคนอื่นเอาไปหาประโยชน์ งานดูแลแบรนด์แบบนี้ มีคนทำงานอยู่เบื้องหลัง",
                 dateTh: "ก.ย. 2567",
                 factIds: [BRAND],
               },
@@ -152,7 +152,7 @@ export const dream: GuidePage = {
               {
                 id: "birthday",
                 frontTh: "ปาร์ตี้วันเกิดครบ 2 ขวบ",
-                backTh: "งาน Moo Deng HAPPY Deng DAY วันที่ 10 ถึง 12 ก.ค. 2569 ผ่านมาสองปี ยังมีคนทำงานอยู่เบื้องหลัง",
+                backTh: "งาน หมูเด้ง HAPPY เด้ง DAY วันที่ 10 ถึง 12 ก.ค. 2569 ผ่านมาสองปีตั้งแต่หมูเด้งเกิด ก็ยังมีคนทำงานอยู่เบื้องหลัง",
                 dateTh: "ก.ค. 2569",
                 factIds: [BIRTHDAY],
               },
@@ -161,7 +161,7 @@ export const dream: GuidePage = {
         },
         track: { done: "dream:flipped", value: "count", milestones: { flip: "dream:flip" } },
         answersTh: [
-          "สวนสัตว์จดลิขสิทธิ์และเครื่องหมายการค้า หมูเด้ง (ก.ย. 2567)",
+          "สวนสัตว์เริ่มจดเครื่องหมายการค้า และดูแลลิขสิทธิ์ภาพหมูเด้ง (ก.ย. 2567)",
           "เปิดไลฟ์ให้ดูได้ 24 ชั่วโมง สำหรับคนที่มาไม่ได้ (ก.ย. 2567)",
           "คลิปของพี่เบนซ์ได้รางวัล TikTok Awards สาขา Video of the year (2 พ.ย. 2567)",
           "ฉลองวันเกิดครบ 2 ขวบ 10 ถึง 12 ก.ค. 2569",
@@ -176,7 +176,7 @@ export const dream: GuidePage = {
       item(
         "honesty",
         "intel",
-        "กระแสมีขึ้นมีลง กลางปี 2568 วันธรรมดาเหลือราว 2,000 คน ส่วนพี่เลี้ยงบอกไว้ตั้งแต่แรกว่า มีลูกสัตว์ตัวอื่นเตรียมเล่าเรื่องต่อ",
+        "กระแสมีขึ้นมีลง กลางปี 2568 ผอ.สวนสัตว์บอกว่าวันธรรมดาเหลือราว 2,000 คน ส่วนพี่เบนซ์บอกไว้ตั้งแต่ตอนที่หมูเด้งเพิ่งดังว่า ยังมีลูกสัตว์ตัวอื่นที่เขาเตรียมเล่าเรื่องต่อ",
         { title: "พูดตรงๆ", facts: [FADE], badge: "vendor" }
       ),
       dialogue(
@@ -188,7 +188,7 @@ export const dream: GuidePage = {
   ],
   reel: {
     format: "motion",
-    hook: { th: "หมูเด้งไม่ได้ดังเพราะดวง คนเลี้ยงถ่ายคลิปมาราว 5 ปีก่อนหน้านั้น", factIds: [KEEPER] },
+    hook: { th: "หมูเด้งไม่ได้ดังแค่เพราะดวง คนเลี้ยงถ่ายคลิปมาราว 5 ปีก่อนหน้านั้น", factIds: [KEEPER] },
     variantsTh: ["คนเลี้ยงบอกไว้ก่อนคลอด ว่าจะปั้นฮิปโปตัวนี้ให้ดัง", "คลิปไม่กี่วิ พาคนมายืนถึงขอบบ่อหมูเด้ง"],
     sendToFriendTh: "ส่งให้เพื่อนที่ชอบถ่ายคลิปดูเลย",
     visual: [

@@ -85,7 +85,7 @@ export const CONTENT_CREATOR_FACTS: readonly Fact[] = [
   {
     id: "f.cc-moodeng-birthday",
     claimEn:
-      "กรุงเทพธุรกิจ (Jul 2026): Khao Kheow Open Zoo held 'Moo Deng HAPPY Deng DAY' for Moo Deng's 2nd birthday on Jul 10 to 12, 2026 (10 ถึง 12 ก.ค. 2569), with free entry for children and older people for the 3 days.",
+      "กรุงเทพธุรกิจ (Jul 2026): Khao Kheow Open Zoo held 'หมูเด้ง HAPPY เด้ง DAY' for Moo Deng's 2nd birthday on Jul 10 to 12, 2026 (10 ถึง 12 ก.ค. 2569), with free entry for children and older people for the 3 days.",
     values: ["2", "10", "12", "2569"],
     sources: [{ outlet: "กรุงเทพธุรกิจ", url: "https://www.bangkokbiznews.com/news/news-update/1241866", publishedAt: "2026-07" }],
     asOf: AS_OF,
@@ -147,7 +147,7 @@ export const CONTENT_CREATOR_FACTS: readonly Fact[] = [
   {
     id: "sim.cc-roti-clip",
     claimEn:
-      "Simulated: the student's first job, a 15-second clip for a roti shop in front of school. They filmed 6 shots and pick which to keep (the roti close-up, the shop sign and a friend who agreed to be filmed, yes; a stranger at the next table, a blurry shot and a 10-second walk, no). After posting they read the results: viewers dropped at second 9 on a menu shot with tiny text, comments asking where the shop is, small subtitles, a mean comment, a stranger asking for their school and phone number, an idea for the next clip, and the owner asking to call the roti the best in the country. Shop, shots, numbers and comments are invented for the game.",
+      "Simulated: the student's first brief, a 15-second clip for their regular roti shop (deliberately not one at their school, so the clip does not show where they study). They filmed 6 shots and pick which to keep (the roti close-up, the shop sign and a friend who agreed to be filmed, yes; a stranger at the next table, a blurry shot and a 10-second walk from school, no). After posting they read the results: viewers dropped at second 9, where the shop-sign shot is held still too long, comments asking where the shop is, small subtitles, a mean comment, a stranger asking for their school and phone number, an idea for the next clip, and the owner asking to call the roti the best in the country. Shop, shots, numbers and comments are invented for the game.",
     sources: [],
     asOf: AS_OF,
     badge: "simulated",

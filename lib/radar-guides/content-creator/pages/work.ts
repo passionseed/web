@@ -1,6 +1,7 @@
 /**
  * Level 1 · work. What the job feels like: the student makes a 15-second
- * clip for the roti shop in front of school, the way most creator work goes.
+ * clip for their regular roti shop (not one at their school: the clip must not
+ * show where they study), the way most creator work goes.
  * Not luck, not only being on camera: a loop of planning, shooting, cutting,
  * posting and reading results. Played as one choice and two quick sorts:
  * 1. what the clip opens with (the hook), a dating-game choice;
@@ -8,7 +9,7 @@
  *    long for a 15-second clip);
  * 3. after posting, what to do with each result: fix the next clip, reply, or
  *    don't answer (a stranger asking for their school and phone number: don't
- *    answer, tell an adult they trust).
+ *    answer, block, tell an adult they trust; replying is wrong, never a near miss).
  * Then the kinds of content work, with this one first.
  */
 import type { GuidePage } from "@/lib/radar-guide/guide-types";
@@ -33,8 +34,8 @@ export const work: GuidePage = {
   blocks: [
     dialogue(
       "intro",
-      host("ด่านนี้เธอได้งานแรกแล้วนะ ลุยเลย", { mood: "wow" }),
-      host("ร้านโรตีหน้าโรงเรียนอยากได้คลิป 15 วิ เอาไว้ลงเพจร้าน", { facts: [SIM] })
+      host("ด่านนี้เธอได้โจทย์แรกแล้วนะ ลุยเลย", { mood: "wow" }),
+      host("ร้านโรตีเจ้าประจำของเธอ อยากได้คลิป 15 วิ เอาไว้ลงเพจร้าน", { facts: [SIM] })
     ),
     choice(
       "opening",
@@ -91,15 +92,15 @@ export const work: GuidePage = {
               },
               {
                 id: "friend",
-                labelTh: "เพื่อนกัดคำแรกแล้วทำหน้าฟิน (เพื่อนโอเคให้ลงแล้ว)",
+                labelTh: "เพื่อนกัดคำแรกแล้วทำหน้าฟิน (เพื่อนอนุญาตแล้ว)",
                 answer: "use",
-                revealTh: "เพื่อนโอเคแล้ว ใช้ได้เลย หน้าฟินของคนกินจริง เล่าได้ดีกว่าคำบรรยาย",
+                revealTh: "เพื่อนอนุญาตแล้ว ใช้ได้ หน้าฟินของคนกินจริงเล่าได้ดีกว่าคำบรรยาย แค่เช็กว่าไม่ติดชื่อโรงเรียนบนเสื้อ",
               },
               {
                 id: "face",
                 labelTh: "ลูกค้าโต๊ะข้างๆ ติดมาเต็มหน้า",
                 answer: "cut",
-                revealTh: "เขาไม่ได้อนุญาตให้ลง ตัดทิ้ง หรือถ่ายใหม่มุมที่ไม่ติดหน้าคนอื่น",
+                revealTh: "เขาไม่ได้อนุญาต ต้องตัดทิ้ง หรือถ่ายใหม่ให้ไม่ติดหน้าคนอื่น",
               },
               {
                 id: "blur",
@@ -111,7 +112,7 @@ export const work: GuidePage = {
                 id: "walk",
                 labelTh: "เดินจากโรงเรียนมาร้าน ยาว 10 วิ",
                 answer: "cut",
-                revealTh: "ทั้งคลิปมีแค่ 15 วิ เดินอย่างเดียวก็กินไป 10 วิแล้ว",
+                revealTh: "ทั้งคลิปมีแค่ 15 วิ เดินอย่างเดียวก็กินไป 10 วิ แถมยังบอกคนดูว่าเธอเรียนที่ไหนด้วย",
               },
             ],
             resultTh: "คัดถูก {score}/{total}",
@@ -119,8 +120,8 @@ export const work: GuidePage = {
         },
         track: { done: "work:shots", value: "score" },
         answersTh: [
-          "ใส่คลิป: โรตีราดนมถ่ายใกล้ๆ, ป้ายหน้าร้าน, เพื่อนกัดคำแรก (เพื่อนโอเคแล้ว)",
-          "ตัดทิ้ง: ลูกค้าที่ไม่ได้ขอ, ภาพเบลอ, เดินยาว 10 วิ",
+          "ใส่คลิป: โรตีราดนมถ่ายใกล้ๆ, ป้ายหน้าร้าน, เพื่อนกัดคำแรก (เพื่อนอนุญาตแล้ว)",
+          "ตัดทิ้ง: หน้าลูกค้าที่เราไม่ได้ขออนุญาต, ภาพเบลอ, เดินยาว 10 วิ",
         ],
         demoScript: [
           { at: 600, action: "tap", target: "shots.item-face" },
@@ -139,8 +140,8 @@ export const work: GuidePage = {
       "ขั้นสอง: อ่านผล",
       dialogue(
         "feedback-intro",
-        host("กดโพสต์ไปงานยังไม่จบนะ ต้องตามอ่านตัวเลขกับคอมเมนต์ต่อ"),
-        host("หลังบ้านมันฟ้องได้เลยนะ ว่าคนดูกดออกตรงช่วงไหน", { facts: [RETENTION] })
+        host("กดโพสต์แล้วงานยังไม่จบนะ ต้องตามอ่านตัวเลขกับคอมเมนต์ต่อ"),
+        host("หน้าสถิติหลังบ้านบอกได้เลยนะ ว่าคนดูข้ามหรือกดออกตรงช่วงไหน", { facts: [RETENTION] })
       ),
       {
         kind: "game",
@@ -162,16 +163,16 @@ export const work: GuidePage = {
                 id: "drop",
                 labelTh: "คนดูกดออกเยอะสุดตรงวินาทีที่ 9",
                 meta: { sender: "หลังบ้าน" },
-                detailTh: "วินาทีที่ 9: ช็อตเมนูทั้งแผ่น ตัวหนังสือเล็กจนอ่านไม่ออก",
+                detailTh: "วินาทีที่ 9: ช็อตป้ายร้านค้างนิ่งนานไป ไม่มีอะไรขยับ",
                 answer: "fix",
-                revealTh: "ตัวเลขบอกจุดพังให้แล้ว คลิปหน้าตัดช็อตเมนูออก หรือซูมให้อ่านง่าย",
+                revealTh: "ตัวเลขชี้จุดที่คนหลุดให้แล้ว คลิปหน้าตัดช็อตป้ายให้สั้นลง แล้วดูว่าคนอยู่นานขึ้นไหม",
               },
               {
                 id: "where",
                 labelTh: "ร้านอยู่ตรงไหนอะ อยากไปกิน",
                 meta: { sender: "คอมเมนต์" },
                 answer: "reply",
-                revealTh: "คนอยากไปจริง ตอบให้ชัดเลย คอมเมนต์แบบนี้ร้านอยากได้ที่สุด",
+                revealTh: "คนอยากไปจริง ตอบพิกัดร้านให้ชัดเลย คอมเมนต์แบบนี้ร้านอยากได้ที่สุด",
               },
               {
                 id: "subs",
@@ -194,7 +195,6 @@ export const work: GuidePage = {
                 labelTh: "อยู่โรงเรียนไหนอะ ขอเบอร์หน่อย",
                 meta: { sender: "บัญชีที่ไม่รู้จัก" },
                 answer: "skip",
-                nearTh: { reply: "อย่าบอกเรื่องส่วนตัวกับคนที่ไม่รู้จักเด็ดขาด" },
                 flags: ["ถามข้อมูลส่วนตัว"],
                 revealTh: "ไม่ตอบ ไม่บอกโรงเรียนหรือเบอร์ บล็อกได้เลย แล้วเล่าให้ผู้ใหญ่ที่ไว้ใจฟัง",
               },
@@ -203,7 +203,7 @@ export const work: GuidePage = {
                 labelTh: "ทำคลิปร้านน้ำปั่นข้างๆ ต่อได้ไหม",
                 meta: { sender: "คอมเมนต์" },
                 answer: "reply",
-                revealTh: "คนดูส่งไอเดียคลิปหน้ามาให้แล้ว ตอบรับแล้วจดไว้เลย",
+                revealTh: "คนดูส่งไอเดียคลิปหน้ามาให้แล้ว ตอบขอบคุณแล้วจดไว้เลย",
               },
               {
                 id: "owner",
@@ -212,7 +212,7 @@ export const work: GuidePage = {
                 answer: "reply",
                 nearTh: { fix: "ไม่ต้องแก้ตามทันที คุยกับเจ้าของร้านก่อนดีกว่า" },
                 flags: ["พูดเกินจริง"],
-                revealTh: "ตอบดีๆ ว่าคำเกินจริงใช้ไม่ได้ แล้วเสนอข้อมูลจริงแทน เช่น ขายหน้าโรงเรียนมานานแค่ไหน",
+                revealTh: "ตอบดีๆ ว่าคำเกินจริงใช้ไม่ได้ แล้วเสนอข้อมูลจริงแทน เช่น เปิดร้านมากี่ปีแล้ว",
               },
             ],
             resultTh: "เลือกถูก {score}/{total}",
@@ -220,9 +220,9 @@ export const work: GuidePage = {
         },
         track: { done: "work:done", value: "score" },
         answersTh: [
-          "แก้คลิปหน้า: ช็อตเมนูที่คนกดออก, ซับตัวเล็ก",
+          "แก้คลิปหน้า: ช็อตป้ายที่ค้างนานจนคนกดออก, ซับตัวเล็ก",
           "ตอบกลับ: ร้านอยู่ไหน, ไอเดียคลิปหน้า, เจ้าของร้านขอคำเกินจริง (ตอบดีๆ ว่าใช้ไม่ได้)",
-          "ไม่ตอบ: คอมเมนต์ด่าเฉยๆ, คนแปลกหน้าขอโรงเรียนกับเบอร์ (แล้วเล่าให้ผู้ใหญ่ที่ไว้ใจฟัง)",
+          "ไม่ตอบ: คอมเมนต์ด่าเฉยๆ, คนแปลกหน้าถามชื่อโรงเรียนกับขอเบอร์ (บล็อก แล้วเล่าให้ผู้ใหญ่ที่ไว้ใจฟัง)",
         ],
         demoScript: [
           { at: 600, action: "tap", target: "feedback.item-drop" },
@@ -237,7 +237,7 @@ export const work: GuidePage = {
         host("ที่เธอเพิ่งทำไปเมื่อกี้ นั่นแหละงานจริงของครีเอเตอร์เลย", { mood: "wow" }),
         host("วางแผน ถ่าย ตัด โพสต์ อ่านผล แล้วก็วนลูปไปทำคลิปใหม่"),
         host("คนดูเห็นแค่ตัวคลิป ไม่เห็นงานก่อนกับหลังกดถ่ายหรอกนะ"),
-        host("คนแปลกหน้าทักถามเรื่องส่วนตัว ไม่ต้องตอบนะ บอกผู้ใหญ่ที่ไว้ใจเสมอ", { mood: "serious" })
+        host("คนแปลกหน้าถามเรื่องส่วนตัว ไม่ต้องตอบ บล็อกเลย แล้วบอกผู้ใหญ่ที่ไว้ใจนะ", { mood: "serious" })
       ),
       { kind: "shareCard", id: "share-work" }
     ),
@@ -248,7 +248,7 @@ export const work: GuidePage = {
         { id: "brand", icon: "phone", titleTh: "ดูแลเพจแบรนด์", lineTh: "ทำคลิปให้ร้านหรือบริษัท วางแผนจนถึงอ่านผล แบบร้านโรตี", played: true },
         { id: "channel", icon: "camera", titleTh: "ช่องตัวเอง", lineTh: "เล่าเรื่องที่รู้ดีที่สุด ลงช่องตัวเองแบบสม่ำเสมอ" },
         { id: "script", icon: "clipboard", titleTh: "เขียนบท", lineTh: "คิดเรื่อง เขียนสคริปต์ วางลำดับช็อตให้ทีมถ่ายตาม" },
-        { id: "edit", icon: "scissors", titleTh: "ตัดต่อ", lineTh: "ตัดฟุตเทจยาวเป็นชั่วโมง ให้เหลือคลิปที่คนดูจนจบ" },
+        { id: "edit", icon: "scissors", titleTh: "ตัดต่อ", lineTh: "ตัดฟุตเทจยาวๆ ให้เหลือคลิปสั้นที่คนอยากดูจนจบ" },
         { id: "live", icon: "mic", titleTh: "พิธีกรไลฟ์", lineTh: "ไลฟ์แนะนำสินค้า ตอบคำถามสดๆ แล้วเอาผลมาปรับรอบหน้า" },
       ],
     }),
@@ -257,11 +257,11 @@ export const work: GuidePage = {
   reel: {
     format: "motion",
     hook: { th: "ครีเอเตอร์ไม่ได้แค่กดถ่าย งานจริงอยู่ก่อนกับหลังกดถ่าย" },
-    variantsTh: ["คลิปร้านโรตี ช็อตไหนใส่ ช็อตไหนห้ามใช้", "คนแปลกหน้าถามเรื่องส่วนตัวใต้คลิป ไม่ต้องตอบ"],
+    variantsTh: ["คลิปร้านโรตี ช็อตไหนใส่ ช็อตไหนห้ามใช้", "คนแปลกหน้าถามโรงเรียนกับขอเบอร์ใต้คลิป ไม่ตอบ บล็อก แล้วบอกผู้ใหญ่"],
     sendToFriendTh: "ส่งให้เพื่อนที่อยากเป็นครีเอเตอร์",
     visual: [
       "การ์ดช็อตบินเข้าไทม์ไลน์ ช็อตหน้าคนแปลกหน้าถูกเด้งออก",
-      "กราฟคนดูไหลลงตรงช็อตเมนู แล้วป้าย แก้คลิปหน้า ประทับลง",
+      "กราฟคนดูไหลลงตรงช็อตป้ายร้าน แล้วมีตราประทับ แก้คลิปหน้า ทับลงมา",
       "วงกลมหมุน วางแผน ถ่าย ตัด โพสต์ อ่านผล วนกลับมาที่เดิม",
     ],
   },

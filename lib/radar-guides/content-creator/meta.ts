@@ -18,7 +18,7 @@ export const CONTENT_CREATOR_META = {
   intentPathSlug: "interested",
   shareCardAfter: "work",
   pages: [
-    { key: "dream", order: 1, titleTh: "หมูเด้งไม่ได้ดังเพราะดวง", navLabelTh: "หมูเด้ง", minutes: 2, tier: 1 },
+    { key: "dream", order: 1, titleTh: "หมูเด้งไม่ได้ดังแค่เพราะดวง", navLabelTh: "หมูเด้ง", minutes: 2, tier: 1 },
     { key: "work", order: 2, titleTh: "งานจริง คือวางแผน ตัด แล้วอ่านผล", navLabelTh: "คลิปร้านโรตี", minutes: 2.5, tier: 1 },
     { key: "tonight", order: 3, titleTh: "คืนนี้ ถ่ายคลิปสั้นเรื่องที่เธอรู้ดี", navLabelTh: "ภารกิจคืนนี้", minutes: 1, tier: 1 },
     { key: "next", order: 4, titleTh: "แล้วเธอล่ะ", navLabelTh: "แล้วเธอล่ะ", minutes: 1, tier: 1 },
@@ -27,7 +27,7 @@ export const CONTENT_CREATOR_META = {
   story: {
     profileTitleTh: "โปรไฟล์สายคอนเทนต์ของฉัน",
     badges: [
-      { id: "dream", nameTh: "รู้แล้วไม่ใช่ดวง", descTh: "เห็นแล้วว่าหลังคลิปดัง มีคนวางแผนอยู่", icon: "star", trigger: { on: "clear", pageKey: "dream" } },
+      { id: "dream", nameTh: "มากกว่าแค่ดวง", descTh: "เห็นแล้วว่าหลังคลิปดัง มีคนวางแผนอยู่", icon: "star", trigger: { on: "clear", pageKey: "dream" } },
       { id: "work", nameTh: "ครีเอเตอร์มือใหม่", descTh: "ทำคลิปร้านโรตีจนโพสต์และอ่านผลได้", icon: "eye", trigger: { on: "clear", pageKey: "work" } },
       { id: "round1", nameTh: "เปิดแฟ้มแรก", descTh: "รู้แล้วว่าผลงานแบบไหนใส่แฟ้มรอบ 1 ได้", icon: "map", trigger: { on: "clear", pageKey: "round1" } },
       { id: "tonight", nameTh: "ภารกิจคืนนี้", descTh: "มีแผนถ่ายคลิปชิ้นแรกแล้ว", icon: "flag", trigger: { on: "clear", pageKey: "tonight" } },
