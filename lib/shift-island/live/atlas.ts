@@ -59,6 +59,9 @@ const LIT_KEYS: Readonly<Record<string, string>> = {
   campfire_pit: "yi",
   fest_stage_3: "y",
   fest_count: "f",
+  // The merchant ship's lantern, coin sign and portholes.
+  merchant_ship_0: "y",
+  merchant_ship_1: "y",
 };
 
 /** Ground tiles are never mirrored. */
