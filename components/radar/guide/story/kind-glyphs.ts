@@ -339,4 +339,20 @@ export const KIND_GLYPHS: Readonly<Record<KindIcon, PixelGrid>> = {
     "...#o..o#...",
     "..#o....o#..",
   ],
+  // ux-design
+  // A bus stop sign: designing a service people use outside a screen.
+  signpost: [
+    ".##########.",
+    ".#oooooooo#.",
+    ".#owwowwow#.",
+    ".#oooooooo#.",
+    ".#owwwwooo#.",
+    ".#oooooooo#.",
+    ".####oo####.",
+    ".....##.....",
+    ".....##.....",
+    ".....##.....",
+    ".....##.....",
+    "...######...",
+  ],
 };

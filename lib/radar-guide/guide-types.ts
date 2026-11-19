@@ -161,7 +161,9 @@ export type KindIcon =
   // medical-technologist
   | "microscope"
   | "droplet"
-  | "dna";
+  | "dna"
+  // ux-design
+  | "signpost";
 
 /** One tile in a career's job-select grid (the `kinds` block). */
 export interface CareerKindTile {
