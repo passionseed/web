@@ -406,25 +406,72 @@ for (let y = WATER.y0; y < WATER.y1; y++)
   }
 }
 
-// EARTH pixels: the mound becomes dumped waste and scorched ground,
-// drawn as dither and dot screens of the photo itself.
+// EARTH pixels: the mound itself is dying. Its grass turns to dry soil,
+// cracked into plates (a Voronoi field), drawn from the photo's own light
+// so it keeps the mound's shape, dissolving into the healthy grass at its
+// edge, with rust leaking down the bank into the water.
 {
-  // A pale waste heap: ordered dither, white on grey.
-  for (const [x0, y0] of blobCells(250, 912, 170, 52, 12, 41, 0.6))
-    for (let y = y0; y < y0 + 12; y++)
-      for (let x = x0; x < x0 + 12; x++) {
-        const l = lum(get(x, y));
-        const dot = x % 3 < 2 && y % 3 < 2;
-        put(x, y, dot ? (l < 0.3 ? P.ink : P.ash) : P.ashLight);
+  const cell = 6;
+  // The mound in the photo: top edge, right slope, the water's edge below.
+  const moundTop = (x) => (x < 470 ? 866 - (x / 470) * 8 : 858 + Math.max(0, x - 520) * 0.9);
+  const inMound = (x, y) => y > moundTop(x) && y < 1002 && x < 520 + (y - 857) * 1.05;
+  // Damage: strongest in the middle of the mound, ragged at the edge.
+  const damage = (x, y) => {
+    const dx = (x - 330) / 240;
+    const dy = (y - 940) / 80;
+    return clamp(1.15 - Math.sqrt(dx * dx + dy * dy) + (fbm(x * 0.01, y * 0.025, 101, 4) - 0.5) * 1.1);
+  };
+  const plates = [];
+  for (let i = 0; i < 26; i++) plates.push([60 + hash(i, 1, 102) * 560, 860 + hash(i, 2, 102) * 140]);
+  const crack = (x, y) => {
+    let f1 = Infinity;
+    let f2 = Infinity;
+    for (const [px, py] of plates) {
+      // Plates are flattened: the ground is seen at an angle.
+      const d = Math.hypot(x - px, (y - py) * 1.8);
+      if (d < f1) {
+        f2 = f1;
+        f1 = d;
+      } else if (d < f2) f2 = d;
+    }
+    return f2 - f1;
+  };
+  const soil = [hex("#2e1f14"), hex("#4f3622"), hex("#715033"), hex("#957048"), hex("#b8915f")];
+  for (let y = 848; y < 1008; y += cell)
+    for (let x = 0; x < 700; x += cell) {
+      const cx = x + cell / 2;
+      const cy = y + cell / 2;
+      if (!inMound(cx, cy)) continue;
+      const d = damage(cx, cy);
+      const t = bayer(x / cell, y / cell);
+      if (d < 0.25 || (d < 0.55 && t > (d - 0.25) / 0.3)) continue;
+      let l = 0;
+      for (const [ox, oy] of [[1, 1], [4, 1], [1, 4], [4, 4]]) l += lum(get(x + ox, y + oy)) / 4;
+      // Dead soil, lit like the grass it replaced.
+      const v = clamp(l * 1.7 + 0.02 + (t - 0.5) * 0.2);
+      let c = soil[clamp(Math.floor(v * 5), 0, 4)];
+      const k = crack(cx, cy);
+      if (k < 5) c = hex("#150d08");
+      else if (k < 9) c = soil[0];
+      else if (k < 18) c = soil[clamp(Math.floor(v * 5) + 1, 0, 4)]; // plates curl up: a lit rim
+      rect(x, y, cell, c);
+    }
+  // Rust leaking off the bank and spreading downstream into the water as
+  // dithered plumes, rust at the source, thinning into the toxic green.
+  for (const [sx, len, seed] of [
+    [190, 150, 1],
+    [350, 170, 2],
+  ]) {
+    for (let y = 996; y < 1070; y += 8)
+      for (let x = sx - 20; x < sx + len; x += 8) {
+        const along = (x - sx) / len;
+        const centre = 1004 + along * 34 + (fbm(x * 0.02, seed, 106, 2) - 0.5) * 16;
+        const w = 6 + along * 22;
+        const d = 1 - Math.abs(y - centre) / w - along * 0.55;
+        if (d <= 0 || d < bayer(x / 8, y / 8) * 0.45) continue;
+        rect(x, y, 8, along < 0.4 ? hex("#9c4119") : hex("#b9672e"), 0.85);
       }
-  // A dark, burnt mass: a dot matrix of the photo on black.
-  for (const [x0, y0] of blobCells(478, 930, 120, 62, 12, 42, 0.6))
-    for (let y = y0; y < y0 + 12; y++)
-      for (let x = x0; x < x0 + 12; x++) {
-        const l = lum(get(x, y));
-        const dot = x % 4 < 2 && y % 4 < 2;
-        put(x, y, dot ? [l * 1.5, l * 1.45, l * 1.4].map((v) => clamp(v)) : P.ink);
-      }
+  }
 }
 
 // AIR pixels: the haze as an ordered dither on an 8px grid, three smog
