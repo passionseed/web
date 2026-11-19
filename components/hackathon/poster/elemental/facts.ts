@@ -8,6 +8,7 @@ import { formatThaiDate } from "@/lib/content/shift-cohort";
  *   draft in PR #87 says ฿199 alone; settle that before this ships.
  * - Elements and theme: private/hackathon-december-2026.md (PR #87) and
  *   Angpao, 2026-11-19 (Aether is the fifth element).
+ * - Prize total: told by Angpao, 2026-11-19 (not yet in company-brain).
  * Change a fact here, never in a poster.
  */
 export const ELEMENTAL = {
@@ -18,6 +19,7 @@ export const ELEMENTAL = {
   days: 4,
   priceBaht: 190,
   groupPriceBaht: 149,
+  prizeTotalBaht: 20000,
   theme: "Environmental negligence",
   url: "passionseed.org/hackathon",
   elements: [
@@ -32,6 +34,17 @@ export const ELEMENTAL = {
 function parts(iso: string) {
   const [year, month, day] = iso.split("-").map(Number);
   return { year, month, day };
+}
+
+/** "5–8 ธ.ค.": the big date. */
+export function thaiDayRange(): string {
+  const s = parts(ELEMENTAL.startDate);
+  return `${s.day}–${formatThaiDate(ELEMENTAL.endDate, false)}`;
+}
+
+/** "20,000". */
+export function prizeTotal(): string {
+  return ELEMENTAL.prizeTotalBaht.toLocaleString("en-US");
 }
 
 /** "5 ถึง 8 ธ.ค. 2569": month once, Buddhist-era year. */

@@ -2,7 +2,7 @@ import { Trirong } from "next/font/google";
 import type { ReactNode } from "react";
 
 import { EL, EL_FONT } from "./brand";
-import { ELEMENTAL, thaiDateLine } from "./facts";
+import { ELEMENTAL, prizeTotal, thaiDateLine, thaiDayRange } from "./facts";
 
 /**
  * Elemental Hackathon key visual, 1080x1350.
@@ -48,11 +48,17 @@ function fireLetters() {
 }
 const LETTERS = fireLetters();
 
-function Detail({ tag, children }: { tag: string; children: ReactNode }) {
+/**
+ * One of the three facts at the bottom: a small line, the big number, a
+ * small line. Three facts, three sizes, so the eye knows what leads.
+ */
+function Fact({ above, big, below, align = "left" }: { above?: ReactNode; big: ReactNode; below?: ReactNode; align?: "left" | "center" | "right" }) {
   return (
-    <div className="flex flex-col gap-[2px]">
-      <span style={{ fontFamily: EL_FONT.mono, fontSize: 15, letterSpacing: "0.04em", color: EL.creamSoft }}>{tag}</span>
-      <span style={{ fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 27, lineHeight: "36px", color: EL.cream }}>{children}</span>
+    <div className="flex flex-col" style={{ textAlign: align, color: EL.cream, fontFamily: EL_FONT.display }}>
+      {/* Both small lines always take their space, so the three big numbers share one baseline. */}
+      <span style={{ fontWeight: 300, fontSize: 24, lineHeight: "32px", color: EL.creamSoft }}>{above ?? "\u00a0"}</span>
+      <span style={{ fontWeight: 300, fontSize: 58, lineHeight: "66px", letterSpacing: "-0.01em" }}>{big}</span>
+      <span style={{ fontWeight: 300, fontSize: 24, lineHeight: "32px", color: EL.creamSoft }}>{below ?? "\u00a0"}</span>
     </div>
   );
 }
@@ -69,7 +75,8 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey" }: { id?
         <defs>
           <linearGradient id="el-key-foot" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor="#0f0f0d" stopOpacity="0" />
-            <stop offset="1" stopColor="#0f0f0d" stopOpacity="0.7" />
+            <stop offset="0.55" stopColor="#0f0f0d" stopOpacity="0.55" />
+            <stop offset="1" stopColor="#0f0f0d" stopOpacity="0.85" />
           </linearGradient>
           <filter id="el-key-grain" x="0" y="0" width="100%" height="100%">
             <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="4" stitchTiles="stitch" />
@@ -91,12 +98,15 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey" }: { id?
             {l.ch}
           </text>
         ))}
-        <rect y={1160} width={W} height={H - 1160} fill="url(#el-key-foot)" />
+        <rect y={1040} width={W} height={H - 1040} fill="url(#el-key-foot)" />
       </svg>
 
-      {/* Title */}
-      <div className="absolute left-[56px] top-[62px]" style={{ color: EL.ink }}>
-        <h1 className="m-0" style={{ fontFamily: EL_FONT.display, lineHeight: 1.02, letterSpacing: "-0.01em" }}>
+      {/* Title lockup: series above, English title, the Thai elements as its second half */}
+      <div className="absolute left-[56px] top-[54px]" style={{ color: EL.ink }}>
+        <div style={{ fontFamily: EL_FONT.mono, fontSize: 17, letterSpacing: "0.22em", color: EL.inkSoft, marginLeft: 4 }}>
+          {ELEMENTAL.series.toUpperCase()}
+        </div>
+        <h1 className="m-0 mt-[6px]" style={{ fontFamily: EL_FONT.display, lineHeight: 1.02, letterSpacing: "-0.01em" }}>
           <span className="block" style={{ fontWeight: 200, fontSize: 124 }}>
             {ELEMENTAL.edition}
           </span>
@@ -104,19 +114,16 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey" }: { id?
             Hackathon
           </span>
         </h1>
-        <div className="mt-[14px] flex items-baseline gap-4" style={{ color: EL.inkSoft }}>
-          <span style={{ fontFamily: EL_FONT.mono, fontSize: 15, letterSpacing: "0.16em" }}>{ELEMENTAL.series.toUpperCase()}</span>
-          <span style={{ fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 28 }}>{thai.join(" · ")}</span>
+        <div className="mt-[8px]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 42, lineHeight: "56px", marginLeft: 4 }}>
+          {thai.join(" · ")}
         </div>
       </div>
 
-      {/* Details */}
-      <div className="absolute inset-x-[52px] top-[1252px] flex justify-between border-t pt-[14px]" style={{ borderColor: "rgba(243,239,230,0.35)" }}>
-        <Detail tag="[วันที่]">{thaiDateLine()}</Detail>
-        <Detail tag="[ค่าสมัคร]">
-          ฿{ELEMENTAL.priceBaht} / คน · มากับเพื่อน ฿{ELEMENTAL.groupPriceBaht}
-        </Detail>
-        <Detail tag="[สมัคร]">{ELEMENTAL.url}</Detail>
+      {/* Three facts: when, the prize, the price with the friend deal leading */}
+      <div className="absolute inset-x-[56px] bottom-[44px] flex items-end justify-between">
+        <Fact big={thaiDayRange()} below={`${thaiDateLine().split(" ").pop()} · ${ELEMENTAL.days} วัน`} />
+        <Fact align="center" above="รางวัลรวมมูลค่า" big={`${prizeTotal()} บาท`} />
+        <Fact align="right" above="มากับเพื่อน" big={`฿${ELEMENTAL.groupPriceBaht} / คน`} below={`คนเดียว ฿${ELEMENTAL.priceBaht}`} />
       </div>
 
       {/* Grain over the type too, so it sits in the same film */}
