@@ -34,13 +34,6 @@ function parts(iso: string) {
   return { year, month, day };
 }
 
-/** "5 – 8.12": the big date, in day.month like an exhibition poster. */
-export function bigDateRange(): string {
-  const s = parts(ELEMENTAL.startDate);
-  const e = parts(ELEMENTAL.endDate);
-  return `${s.day} – ${e.day}.${e.month}`;
-}
-
 /** "5 ถึง 8 ธ.ค. 2569": month once, Buddhist-era year. */
 export function thaiDateLine(): string {
   const s = parts(ELEMENTAL.startDate);

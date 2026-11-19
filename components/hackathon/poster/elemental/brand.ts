@@ -1,67 +1,70 @@
 /**
  * The Next Decade: Elemental, brand identity tokens.
  *
- * The idea: one real landscape, one element as the hero, and the image
- * breaking into pixels as it rises, as if a machine is reading it. Thin
- * boxes with small labels mark the five elements inside that one scene,
- * like a vision model's detections. The pixels are Aether, the fifth
- * element: what you can't see (information, missing traces, the digital
- * footprint).
+ * The idea (Angpao, 2026-11-19): the photo is a normal, peaceful, healthy
+ * place. All the pollution comes from the pixels, which corrupt that calm
+ * scene into something toxic. The damage isn't part of nature; someone
+ * added it.
  *
  * Rules for every Elemental piece:
- * - One scene per piece, photographic in feel: wide sky, low horizon, dry
- *   ground. One element is the hero (fire on the key visual).
- * - The hero dissolves upward into a pixel mosaic: real at the bottom,
- *   data at the top. Mosaic colours come from the hero plus one cool
- *   glitch colour (water blue).
- * - Translucent pixel blocks float in the sky. They are Aether.
- * - Thin 2px frames with a small label pair (English mono above, Thai
- *   below) mark the elements. Five at most, one per element.
- * - Thin display type: Bai Jamjuree 200 for the big Thai title and dates,
- *   300 for running text, Space Mono for [bracket] tags and // markers.
- * - Film grain over everything. Elemental is the one campaign allowed
- *   grain, against the key-art-poster rule (told by Angpao, 2026-11-19).
- * - Info sits low on the ground in two columns, every line led by a
- *   [Thai tag] or //, like an exhibition credit block.
+ * - Background: one real, grainy, faded-film photo of a calm, healthy place,
+ *   with a big quiet sky. Never a photo that already shows damage, people,
+ *   signs or a place someone could name.
+ * - The four elements are pixels, each corrupting its healthy part of the
+ *   photo: Fire bursts out of the land (the hero), Air is the pixel smoke
+ *   staining the sky, Water is a toxic spill down the river, Earth is
+ *   scorched, cracked ground. Aether is a few faint blocks in the sky.
+ * - Only the pixels are loud: hazard orange and red, toxic cyan, rust and
+ *   oil. The photo stays natural and muted.
+ * - No frames or labels on the image. The picture carries the idea.
+ * - Type: Trirong ExtraLight for the Thai title, Trirong Light Italic for
+ *   "Elemental", Space Mono for small [tags]. Ink on the pale sky, cream on
+ *   the dark ground.
+ * - Layout: one title at the top, one quiet strip of details at the bottom.
+ * - Film grain over everything (an exception to the key-art-poster rule for
+ *   this campaign only, told by Angpao, 2026-11-19).
+ *
+ * Background photo: Joana Abreu on Unsplash (Unsplash License),
+ * https://unsplash.com/photos/2i7x7OZ73gc
  */
 
 export const EL = {
-  // Sky, top to the haze at the horizon.
-  skyTop: "#6c8499",
-  skyMid: "#98aab8",
-  skyHaze: "#c9ceca",
-  // Dry ground, from the hazy horizon to the dark foreground.
-  groundFar: "#9a7c5e",
-  groundMid: "#6b513a",
-  groundNear: "#382a1e",
   // Fire, outside in.
-  ember: "#c23a1b",
-  flame: "#ec6a23",
-  flameLight: "#f8a03c",
-  flameCore: "#ffd98c",
-  flameWhite: "#fff5df",
-  // Glitch pixels.
-  pixelRed: "#e8521f",
-  pixelOrange: "#f39a4a",
-  pixelCream: "#fbe2b8",
-  pixelWhite: "#f5f2ea",
-  waterLight: "#9fd6ec",
-  water: "#5aa9d8",
-  waterDeep: "#2f6f9e",
-  char: "#1c1a1b",
-  charGrey: "#4a4646",
-  ash: "#d9d6d0",
-  // Aether blocks in the sky.
-  aetherPale: "#d9dfe4",
-  aetherGrey: "#9eabb6",
-  aetherOrange: "#f1a068",
+  ember: "#b8301a",
+  flame: "#ec6424",
+  flameLight: "#f99a3a",
+  flameCore: "#ffd57a",
+  flameWhite: "#fff4dc",
+  // Smoke (Air).
+  smokeDark: "#2a2826",
+  smoke: "#6b6761",
+  ash: "#c9c4bb",
+  toxicYellow: "#c9b452",
+  // Spill (Water).
+  toxicRust: "#c35a22",
+  toxicCyan: "#38c9c2",
+  toxicGreen: "#9cc23a",
+  oil: "#1b1d1f",
+  // Scorch (Earth).
+  char: "#1e1c1a",
+  burnt: "#5b3a22",
+  // Aether.
+  aetherGrey: "#7f8b94",
+  aetherOrange: "#d98a55",
   // Type.
-  text: "#f4f1ea",
-  textSoft: "rgba(244,241,234,0.78)",
-  frame: "rgba(250,248,242,0.85)",
+  ink: "#1d211f",
+  inkSoft: "rgba(29,33,31,0.72)",
+  cream: "#f3efe6",
+  creamSoft: "rgba(243,239,230,0.72)",
 } as const;
 
 export const EL_FONT = {
-  display: "var(--font-bai-jamjuree), 'Noto Sans Thai', sans-serif",
+  display: "var(--font-trirong), 'Noto Serif Thai', serif",
   mono: "var(--font-space-mono), ui-monospace, monospace",
+} as const;
+
+export const BACKGROUND = {
+  src: "/hackathon/poster/elemental/bg/river-joana-abreu-unsplash.jpg",
+  credit: "Joana Abreu on Unsplash",
+  url: "https://unsplash.com/photos/2i7x7OZ73gc",
 } as const;

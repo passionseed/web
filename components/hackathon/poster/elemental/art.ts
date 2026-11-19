@@ -1,8 +1,9 @@
 import { EL } from "./brand";
 
 /**
- * Pixel generators for the Elemental key visual. Everything is seeded, so
- * the server render and every export are identical.
+ * Pixel generators for Elemental. The photo underneath is a calm, healthy
+ * place; everything these functions draw is the damage. All seeded, so the
+ * server render and every export are identical.
  */
 
 export interface Cell {
@@ -11,15 +12,6 @@ export interface Cell {
   s: number;
   fill: string;
   o: number;
-}
-
-export interface Glyph {
-  x: number;
-  y: number;
-  ch: string;
-  size: number;
-  fill: string;
-  rotate: number;
 }
 
 /** mulberry32: small, fast, seeded. */
@@ -34,6 +26,13 @@ export function rng(seed: number) {
   };
 }
 
+/** Stable 0..1 noise per grid cell. */
+function hash(x: number, y: number, seed: number): number {
+  let h = Math.imul(x * 374761393 + y * 668265263 + seed * 2147483647, 1274126177);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+
 function pick<T>(r: () => number, weighted: [T, number][]): T {
   const total = weighted.reduce((s, [, w]) => s + w, 0);
   let n = r() * total;
@@ -44,97 +43,206 @@ function pick<T>(r: () => number, weighted: [T, number][]): T {
   return weighted[weighted.length - 1][0];
 }
 
-/** The spine the flame column follows as it rises and breaks up. */
-export interface Spine {
-  baseX: number;
-  baseY: number;
-  topY: number;
+/** One flame tongue: base centre, width at the base, height, lean at the tip. */
+export interface Tongue {
+  cx: number;
+  base: number;
+  w: number;
+  h: number;
   lean: number;
 }
 
-export function spineX(sp: Spine, t: number): number {
-  return sp.baseX + sp.lean * Math.pow(t, 1.4) + 18 * Math.sin(t * 6.2);
+function flameValue(tongues: Tongue[], x: number, y: number): { v: number; t: number } {
+  let best = { v: 0, t: 1 };
+  for (const g of tongues) {
+    const t = (g.base - y) / g.h;
+    if (t < 0 || t > 1) continue;
+    const c = g.cx + g.lean * Math.pow(t, 1.6) + 10 * Math.sin(t * 7 + g.cx);
+    const hw = (g.w / 2) * Math.pow(1 - t, 0.75);
+    const d = Math.abs(x - c) / hw;
+    if (d >= 1) continue;
+    const v = (1 - d) * Math.pow(1 - t, 0.35);
+    if (v > best.v) best = { v, t };
+  }
+  return best;
 }
 
 /**
- * The flame column as a pixel mosaic: dense and warm near the fire, sparse,
- * white and checkered (smoke, Air) near the top, with water-blue glitches.
+ * Fire made only of pixels: big blocks in the core, smaller ones at the
+ * edges, single sparks at the tips. Drawn big to small so it reads as a
+ * mosaic, not a grid.
  */
-export function flameColumn(sp: Spine, cell = 12, seed = 11): Cell[] {
+export function pixelFire(tongues: Tongue[], seed = 7): Cell[] {
   const r = rng(seed);
   const out: Cell[] = [];
-  const span = sp.baseY - sp.topY;
-  for (let y = sp.topY; y <= sp.baseY; y += cell) {
-    const t = (sp.baseY - y) / span;
-    const cx = spineX(sp, t);
-    const hw = 30 + 96 * Math.pow(1 - t, 1.3);
-    for (let x = cx - hw; x <= cx + hw; x += cell) {
-      const gx = Math.round(x / cell);
-      const gy = Math.round(y / cell);
-      const d = Math.abs(x - cx) / hw;
-      // Real fire at the base, pixels from about a fifth of the way up.
-      const rise = Math.min(1, Math.max(0, (t - 0.1) / 0.24));
-      const p = rise * (0.92 * Math.pow(1 - t, 0.5) * Math.pow(1 - d, 0.55) + 0.05);
-      if (r() > p) continue;
-      if (t > 0.55 && (gx + gy) % 2 === 0 && r() < 0.6) continue;
-      const fill =
-        t < 0.3
-          ? pick(r, [[EL.pixelOrange, 34], [EL.pixelRed, 20], [EL.pixelWhite, 22], [EL.pixelCream, 14], [EL.waterLight, 7], [EL.char, 3]])
-          : t < 0.65
-            ? pick(r, [[EL.pixelWhite, 36], [EL.pixelOrange, 24], [EL.waterLight, 18], [EL.pixelRed, 8], [EL.pixelCream, 14]])
-            : pick(r, [[EL.pixelWhite, 58], [EL.pixelCream, 12], [EL.pixelOrange, 18], [EL.waterLight, 12]]);
-      if (r() < 0.28) {
-        // Break some cells into four half-size pixels, so the mosaic has two grains.
-        const h = cell / 2;
-        for (const [ox, oy] of [[0, 0], [h, 0], [0, h], [h, h]]) {
-          if (r() < 0.62) out.push({ x: gx * cell + ox, y: gy * cell + oy, s: h, fill: r() < 0.7 ? fill : EL.pixelWhite, o: 0.85 });
-        }
-        continue;
+  const x0 = Math.min(...tongues.map((g) => g.cx - g.w)) - 40;
+  const x1 = Math.max(...tongues.map((g) => g.cx + g.w + g.lean)) + 40;
+  const y0 = Math.min(...tongues.map((g) => g.base - g.h)) - 20;
+  const y1 = Math.max(...tongues.map((g) => g.base));
+  const passes: [number, number][] = [
+    [20, 0.62],
+    [10, 0.34],
+    [5, 0.12],
+  ];
+  for (const [s, min] of passes) {
+    for (let y = Math.floor(y0 / s) * s; y < y1; y += s) {
+      for (let x = Math.floor(x0 / s) * s; x < x1; x += s) {
+        const { v, t } = flameValue(tongues, x + s / 2, y + s / 2);
+        const n = hash(x / s, y / s, seed + s);
+        const vv = v * (0.7 + 0.6 * n);
+        if (vv < min) continue;
+        if (s === 5 && r() < 0.45) continue;
+        const fill =
+          vv > 0.95
+            ? pick(r, [[EL.flameWhite, 60], [EL.flameCore, 40]])
+            : vv > 0.78
+              ? pick(r, [[EL.flameCore, 55], [EL.flameLight, 35], [EL.flameWhite, 10]])
+              : vv > 0.55
+                ? pick(r, [[EL.flameLight, 45], [EL.flame, 45], [EL.flameCore, 10]])
+                : t > 0.6
+                  ? pick(r, [[EL.ember, 40], [EL.smokeDark, 35], [EL.flame, 25]])
+                  : pick(r, [[EL.flame, 45], [EL.ember, 45], [EL.toxicCyan, 10]]);
+        out.push({ x, y, s, fill, o: 0.92 + r() * 0.08 });
       }
-      out.push({ x: gx * cell, y: gy * cell, s: cell, fill, o: 0.78 + r() * 0.22 });
+    }
+  }
+  // Sparks above the tips.
+  for (let i = 0; i < 60; i++) {
+    const g = tongues[Math.floor(r() * tongues.length)];
+    const t = 0.75 + r() * 0.6;
+    const x = g.cx + g.lean * Math.pow(Math.min(t, 1), 1.6) + (r() - 0.5) * 90;
+    const y = g.base - g.h * t;
+    out.push({ x: Math.round(x / 5) * 5, y: Math.round(y / 5) * 5, s: r() < 0.7 ? 5 : 10, fill: r() < 0.5 ? EL.flameCore : EL.flameLight, o: 0.9 });
+  }
+  return out;
+}
+
+/** Air: a pixel smoke plume from (x, y), drifting along (dx, dy) and widening. */
+export function smokePlume(x: number, y: number, dx: number, dy: number, seed = 17): Cell[] {
+  const r = rng(seed);
+  const out: Cell[] = [];
+  const steps = 70;
+  for (let i = 0; i < steps; i++) {
+    const s = i / steps;
+    // Rises first, then the wind bends it over.
+    const cx = x + dx * Math.pow(s, 1.7) + 22 * Math.sin(s * 8);
+    const cy = y + dy * (1 - Math.pow(1 - s, 3));
+    const w = 18 + 210 * Math.pow(s, 0.75);
+    const count = Math.round(7 + 18 * (1 - s));
+    for (let k = 0; k < count; k++) {
+      const cell = r() < 0.25 ? 24 : 12;
+      const ox = (r() - 0.5) * w * 2;
+      const oy = (r() - 0.5) * w * 0.9;
+      const edge = Math.hypot(ox / w, oy / (w * 0.45)) / 1.4;
+      if (r() < edge) continue;
+      const px = Math.round((cx + ox) / 12) * 12;
+      const py = Math.round((cy + oy) / 12) * 12;
+      const fill = pick(r, [
+        [EL.smokeDark, 38 * (1 - s) + 10],
+        [EL.smoke, 30],
+        [EL.ash, 18 * s + 6],
+        [EL.toxicYellow, 9],
+        [EL.flame, 6 * (1 - s)],
+      ]);
+      out.push({ x: px, y: py, s: cell, fill, o: (0.85 - 0.45 * s) * (0.6 + 0.4 * r()) });
     }
   }
   return out;
 }
 
-/** A solid blob of big pixels with a ragged edge (the red and blue shapes). */
-export function blob(cx: number, cy: number, rx: number, ry: number, cell: number, fill: string, seed: number): Cell[] {
+/** A band of river the spill follows. */
+export interface Band {
+  y0: number;
+  y1: number;
+  x0: number;
+  x1: number;
+}
+
+/**
+ * Water: a toxic spill in thin horizontal pixel streaks, strongest near the
+ * source and thinning downstream.
+ */
+export function toxicSpill(bands: Band[], sourceX: number, seed = 23): Cell[] {
   const r = rng(seed);
   const out: Cell[] = [];
+  const cell = 8;
+  for (const b of bands) {
+    const rows = Math.floor((b.y1 - b.y0) / cell);
+    for (let k = 0; k < rows * 2.2; k++) {
+      const y = b.y0 + Math.floor(r() * rows) * cell;
+      const start = sourceX + (r() - 0.6) * 260;
+      const len = 40 + Math.pow(r(), 1.6) * 520;
+      for (let x = Math.max(b.x0, start); x < Math.min(b.x1, start + len); x += cell) {
+        const fade = 1 - (x - start) / len;
+        if (r() > 0.35 + 0.6 * fade) continue;
+        const fill = pick(r, [
+          [EL.toxicRust, 40],
+          [EL.toxicCyan, 26],
+          [EL.toxicGreen, 16],
+          [EL.oil, 18],
+        ]);
+        out.push({ x: Math.round(x / cell) * cell, y, s: cell, fill, o: 0.55 + 0.4 * fade });
+      }
+    }
+  }
+  return out;
+}
+
+/** The fire's reflection on the water: short, broken vertical runs. */
+export function reflection(x: number, y: number, w: number, h: number, seed = 29): Cell[] {
+  const r = rng(seed);
+  const out: Cell[] = [];
+  const cell = 8;
+  for (let yy = y; yy < y + h; yy += cell) {
+    const t = (yy - y) / h;
+    for (let xx = x; xx < x + w; xx += cell) {
+      if (r() > 0.55 * (1 - t)) continue;
+      out.push({ x: xx, y: yy, s: cell, fill: pick(r, [[EL.flameLight, 50], [EL.flame, 35], [EL.flameCore, 15]]), o: 0.75 * (1 - t) + 0.2 });
+    }
+  }
+  return out;
+}
+
+/**
+ * Earth: scorched, poisoned ground spreading in a patch. Dense in the middle,
+ * ragged at the edge, with black crack runs leaving it.
+ */
+export function scorch(cx: number, cy: number, rx: number, ry: number, seed = 31, cracks = 4): Cell[] {
+  const r = rng(seed);
+  const out: Cell[] = [];
+  const cell = 10;
   for (let y = cy - ry; y <= cy + ry; y += cell) {
     for (let x = cx - rx; x <= cx + rx; x += cell) {
       const dx = (x - cx) / rx;
       const dy = (y - cy) / ry;
       const d = dx * dx + dy * dy;
-      if (d < 0.55 || (d < 1 && r() < 0.55)) {
-        out.push({ x: Math.round(x / cell) * cell, y: Math.round(y / cell) * cell, s: cell, fill, o: 0.95 });
-      }
+      const n = hash(Math.round(x / cell), Math.round(y / cell), seed);
+      if (d + 0.5 * (n - 0.5) > 1) continue;
+      if (r() < 0.2 + 0.5 * d) continue;
+      const fill = pick(r, [
+        [EL.char, 42],
+        [EL.burnt, 26],
+        [EL.toxicRust, 14],
+        [EL.ash, 10],
+        [EL.toxicGreen, 8],
+      ]);
+      out.push({ x: Math.round(x / cell) * cell, y: Math.round(y / cell) * cell, s: cell, fill, o: 0.88 });
+    }
+  }
+  for (let c = 0; c < cracks; c++) {
+    let x = cx + (r() - 0.5) * rx;
+    let y = cy + (r() - 0.5) * ry;
+    const ang = r() * Math.PI * 2;
+    for (let i = 0; i < 18 + r() * 14; i++) {
+      x += Math.cos(ang + (r() - 0.5) * 1.6) * cell;
+      y += Math.sin(ang + (r() - 0.5) * 1.6) * cell * 0.6;
+      out.push({ x: Math.round(x / 5) * 5, y: Math.round(y / 5) * 5, s: 5, fill: r() < 0.8 ? EL.char : EL.toxicRust, o: 0.9 });
     }
   }
   return out;
 }
 
-/** Charred wood and ash at the base: a dark checkered pixel mass. */
-export function charMass(x0: number, y0: number, w: number, h: number, cell: number, seed: number, light = false): Cell[] {
-  const r = rng(seed);
-  const out: Cell[] = [];
-  for (let y = y0; y < y0 + h; y += cell) {
-    for (let x = x0; x < x0 + w; x += cell) {
-      const edge = Math.min(x - x0, x0 + w - x, y - y0, y0 + h - y) / (cell * 3);
-      if (r() > Math.min(1, 0.35 + edge)) continue;
-      const fill = light
-        ? pick(r, [[EL.ash, 50], [EL.pixelWhite, 30], [EL.charGrey, 12], [EL.waterLight, 8]])
-        : pick(r, [[EL.char, 52], [EL.charGrey, 30], [EL.ash, 10], [EL.pixelOrange, 8]]);
-      out.push({ x, y, s: cell, fill, o: 1 });
-    }
-  }
-  return out;
-}
-
-/**
- * Translucent stepped blocks floating in the sky: Aether. A random walk of
- * big cells, so each cluster reads as one broken shape, not confetti.
- */
+/** Aether: faint stepped blocks, a random walk of big cells. */
 export function aetherCluster(x: number, y: number, cell: number, n: number, palette: string[], seed: number): Cell[] {
   const r = rng(seed);
   const seen = new Set<string>();
@@ -145,7 +253,7 @@ export function aetherCluster(x: number, y: number, cell: number, n: number, pal
     const key = `${gx},${gy}`;
     if (!seen.has(key)) {
       seen.add(key);
-      out.push({ x: x + gx * cell, y: y + gy * cell, s: cell, fill: palette[Math.floor(r() * palette.length)], o: 0.38 + r() * 0.3 });
+      out.push({ x: x + gx * cell, y: y + gy * cell, s: cell, fill: palette[Math.floor(r() * palette.length)], o: 0.16 + r() * 0.14 });
     }
     const step = r();
     if (step < 0.4) gx += 1;
@@ -154,37 +262,4 @@ export function aetherCluster(x: number, y: number, cell: number, n: number, pal
     else gy -= 1;
   }
   return out;
-}
-
-/** Element names breaking apart inside the fire, like the letters in a scan. */
-export function fireGlyphs(sp: Spine, seed = 5): Glyph[] {
-  const r = rng(seed);
-  const letters = "WATEREARTHAIRFIREAETHERELEMENTAL";
-  const out: Glyph[] = [];
-  for (let i = 0; i < 14; i++) {
-    const t = 0.04 + r() * 0.42;
-    const y = sp.baseY - t * (sp.baseY - sp.topY);
-    const x = spineX(sp, t) + (r() - 0.5) * 150 * (1 - t);
-    out.push({
-      x,
-      y,
-      ch: letters[Math.floor(r() * letters.length)],
-      size: 18 + Math.floor(r() * 22),
-      fill: pick(r, [[EL.pixelCream, 30], [EL.pixelOrange, 30], [EL.waterLight, 20], [EL.pixelWhite, 20]]),
-      rotate: (r() - 0.5) * 24,
-    });
-  }
-  return out;
-}
-
-/** "M ... Z" teardrop flame tongue, base centred at (cx, by). */
-export function tongue(cx: number, by: number, w: number, h: number, lean: number): string {
-  const l = cx - w / 2;
-  const rgt = cx + w / 2;
-  return [
-    `M ${l} ${by}`,
-    `C ${l} ${by - h * 0.42}, ${cx - w * 0.16 + lean * 0.5} ${by - h * 0.72}, ${cx + lean} ${by - h}`,
-    `C ${cx + w * 0.16 + lean * 0.5} ${by - h * 0.72}, ${rgt} ${by - h * 0.42}, ${rgt} ${by}`,
-    "Z",
-  ].join(" ");
 }
