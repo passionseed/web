@@ -4,7 +4,7 @@
  *
  *   sea and shore cells (animated frames) -> land layer (one blit) -> boat ->
  *   trees with roots, key, visitor, night glow and lantern -> night lamp posts ->
- *   festival festoon -> cloud shadows -> tags and pin (one blit, untinted) ->
+ *   festival festoon -> cloud shadows -> tags (the web: signposts) and pin (one blit) ->
  *   story actors -> gulls
  *
  * Every call is clipped to its rectangle and repaints all of it, so any part
@@ -148,7 +148,7 @@ export interface Layers<Img> {
   seaRects: (AtlasRect | undefined)[][];
   /** Land, paths, well and bunting at scene size, transparent over the sea and shore. */
   land: Img;
-  /** Tags and the pin at scene size, untinted, transparent elsewhere. */
+  /** The tags (the web: signposts) and the pin at scene size, transparent elsewhere. */
   overlay: Img;
 }
 
@@ -190,33 +190,19 @@ export function paintLand<Img>(ctx: DrawContext<Img>, model: SceneModel, atlas: 
   if (scene.banner) blit(ctx, atlas, rects.get("banner"), scene.banner.x, scene.banner.y);
 }
 
-/** A tag's box and digit colours; the PNG's own by default. */
-export interface TagInk {
-  fill: string;
-  digit: string;
-}
-
-const PNG_INK: TagInk = { fill: TAG_FILL, digit: "#ffffff" };
-
 /**
  * Paints the tags (dark box, white pixel digits) and the caller's pin, as the
- * PNG does. `ink` recolours the tags (the web's light of the hour); the bot
- * never passes it.
+ * PNG does: the bot's GIF overlay. The web stands a signpost by each plot
+ * instead (signposts.ts) and draws the same pin (paintMarker).
  */
-export function paintOverlay<Img>(
-  ctx: DrawContext<Img>,
-  model: SceneModel,
-  atlas: Img,
-  rects: ReadonlyMap<string, AtlasRect>,
-  ink: TagInk = PNG_INK
-): void {
+export function paintOverlay<Img>(ctx: DrawContext<Img>, model: SceneModel, atlas: Img, rects: ReadonlyMap<string, AtlasRect>): void {
   const { scene } = model;
   const g = scene.glyph;
   ctx.imageSmoothingEnabled = false;
   for (const tag of scene.tags) {
-    ctx.fillStyle = ink.fill;
+    ctx.fillStyle = TAG_FILL;
     ctx.fillRect(tag.x, tag.y, tag.w, tag.h);
-    ctx.fillStyle = ink.digit;
+    ctx.fillStyle = "#ffffff";
     [...String(tag.slot)].forEach((d, k) => {
       const bits = DIGITS[Number(d)];
       for (let j = 0; j < 5; j++) {
@@ -224,7 +210,14 @@ export function paintOverlay<Img>(
       }
     });
   }
-  if (scene.marker) blit(ctx, atlas, rects.get("marker"), scene.marker.x, scene.marker.y, scene.marker.scale);
+  paintMarker(ctx, model, atlas, rects);
+}
+
+/** The caller's pin over their tree, as the PNG draws it (untinted in every atlas). */
+export function paintMarker<Img>(ctx: DrawContext<Img>, model: SceneModel, atlas: Img, rects: ReadonlyMap<string, AtlasRect>): void {
+  const { marker } = model.scene;
+  ctx.imageSmoothingEnabled = false;
+  if (marker) blit(ctx, atlas, rects.get("marker"), marker.x, marker.y, marker.scale);
 }
 
 /**
@@ -240,7 +233,7 @@ export interface DrawFx {
   afterSea?: (r: Rect) => void;
   /** Over the land layer, under everything that stands on it (light that moves on the ground). */
   afterLand?: (r: Rect) => void;
-  /** Over the trees, lamps and clouds, under the tags and the plaza's actors (the glow round a light). */
+  /** Over the trees, lamps and clouds, under the tags or signposts and the plaza's actors (the glow round a light). */
   beforeTags?: (r: Rect) => void;
   /** Under the plaza's actors, over everything before them. */
   beforeActors?: (r: Rect) => void;

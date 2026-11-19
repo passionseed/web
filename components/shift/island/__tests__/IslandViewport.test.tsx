@@ -4,6 +4,7 @@ import { buildScene } from "@/bot/src/quests/island/scene";
 import type { IslandCanvasProps } from "@/components/shift/island/live/IslandCanvas";
 import { gradedWater } from "@/lib/shift-island/live/grade";
 import { plazaWorld, type PlazaInput, type PlazaSpotId } from "@/lib/shift-island/live/plaza";
+import { BOARD, boardInk, signpostFor } from "@/lib/shift-island/live/signposts";
 import type { IslandPicture } from "@/lib/shift-island/picture";
 
 import { ISLAND, PRE_STAGE, stageName } from "../copy";
@@ -93,6 +94,41 @@ describe("IslandViewport", () => {
 
   it("drops the signs on the whole island, where plots sit too close", () => {
     render(<IslandViewport picture={picture} onPlot={jest.fn()} whole />);
+    expect(screen.queryByTestId("plot-signs")).toBeNull();
+  });
+
+  it("hangs each name from its plot's signpost once the living island draws, in the post's own wood", () => {
+    mockLive.mode = "ready";
+    render(<IslandViewport picture={live} onPlot={jest.fn()} />);
+    // The canvas stands the posts and the ropes: only the named plot's carries a board.
+    expect(mockLive.props.at(-1)?.signs).toEqual([4]);
+    const signs = screen.getByTestId("plot-signs");
+    expect(signs).toHaveAttribute("aria-hidden", "true");
+    expect(signs).toHaveAttribute("data-hung", "true");
+    const board = within(signs).getByText("สวนผักดาดฟ้า");
+    expect(board).toHaveAttribute("data-slot", "4");
+    // Under the ropes of plot 4's post, centred on it, in a strip as wide as the widest board.
+    const scene = live.scene!;
+    const post = signpostFor(scene.trees.find((t) => t.slot === 4)!, 1, true);
+    const pct = (v: number, of: number) => `${(v / of) * 100}%`;
+    expect(board.parentElement).toHaveStyle({
+      left: pct(post.hang!.cx - BOARD.maxW / 2, scene.width),
+      top: pct(post.hang!.y, scene.height),
+      width: pct(BOARD.maxW, scene.width),
+    });
+    // Wood and paint of the hour (the mock draws at night), measured in the island's own pixels.
+    const ink = boardInk("night");
+    expect(signs.style.getPropertyValue("--sign-face")).toBe(ink.face);
+    expect(signs.style.getPropertyValue("--sign-ink")).toBe(ink.ink);
+    expect(signs.style.getPropertyValue("--sign-px")).toBe("2px");
+    // The plot's name for screen readers is unchanged.
+    expect(screen.getByRole("button", { name: "แปลง #4, สวนผักดาดฟ้า" })).toBeInTheDocument();
+  });
+
+  it("hangs no boards on the whole island, where the names do not show", () => {
+    mockLive.mode = "ready";
+    render(<IslandViewport picture={live} onPlot={jest.fn()} whole />);
+    expect(mockLive.props.at(-1)?.signs).toEqual([]);
     expect(screen.queryByTestId("plot-signs")).toBeNull();
   });
 

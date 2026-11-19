@@ -231,6 +231,53 @@
   user-select: none;
 }
 
+/*
+ * Over the living island, a name is a board hanging from its plot's signpost (the canvas draws the
+ * post and the ropes). Measured in native pixels (--sign-px), in the post's own graded wood and paint
+ * (set inline per hour): a 1 px outline with notched corners, a lit top edge, 8 px of text. Placed by
+ * layout only, never a transform, so the text and edges stay on the device pixel grid.
+ */
+.signHang {
+  position: absolute;
+  display: flex;
+  justify-content: center;
+}
+
+.signBoard {
+  box-sizing: border-box;
+  display: block;
+  max-width: 100%;
+  height: calc(var(--sign-px) * 10);
+  padding: 0 calc(var(--sign-px) * 3);
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: calc(var(--sign-px) * 8);
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--sign-ink);
+  background: var(--sign-face);
+  border: var(--sign-px) solid var(--sign-edge);
+  box-shadow: inset 0 var(--sign-px) 0 var(--sign-lip);
+  clip-path: polygon(
+    var(--sign-px) 0,
+    calc(100% - var(--sign-px)) 0,
+    calc(100% - var(--sign-px)) var(--sign-px),
+    100% var(--sign-px),
+    100% calc(100% - var(--sign-px)),
+    calc(100% - var(--sign-px)) calc(100% - var(--sign-px)),
+    calc(100% - var(--sign-px)) 100%,
+    var(--sign-px) 100%,
+    var(--sign-px) calc(100% - var(--sign-px)),
+    0 calc(100% - var(--sign-px)),
+    0 var(--sign-px),
+    var(--sign-px) var(--sign-px)
+  );
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 /* A short line the canvas cannot draw crisply: cream on the dark notch, like the tap hint. */
 .plazaLabel {
   position: absolute;

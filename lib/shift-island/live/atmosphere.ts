@@ -13,6 +13,7 @@ import { allSprites } from "./atlas";
 import type { Span } from "./clock";
 import type { SceneModel } from "./draw";
 import type { Rect } from "./geometry";
+import { signSprites } from "./signposts";
 import type { LightPhase, LiveActor } from "./types";
 
 // ------------------------------------------------------------------ noise
@@ -56,9 +57,9 @@ export const BREEZE_SPRITES: Readonly<Record<string, string[]>> = {
 
 const BLANK_16 = Array.from({ length: 16 }, () => ".".repeat(16));
 
-/** The web's sprite set: every island sprite, the breeze, and no dotted lantern ring. */
+/** The web's sprite set: every island sprite, the breeze, the plots' signposts, and no dotted lantern ring. */
 export function webSprites(): Record<string, string[]> {
-  return { ...allSprites(), ...BREEZE_SPRITES, lantern_glow_0: BLANK_16, lantern_glow_1: BLANK_16 };
+  return { ...allSprites(), ...BREEZE_SPRITES, ...signSprites(), lantern_glow_0: BLANK_16, lantern_glow_1: BLANK_16 };
 }
 
 // ------------------------------------------------------------------ water

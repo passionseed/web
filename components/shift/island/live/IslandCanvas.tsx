@@ -43,9 +43,12 @@ export interface IslandCanvasProps {
   label?: string;
   /** Filled with a reader of the actors' boxes while the engine lives (null otherwise): taps hit-test the people with it. */
   actorBoxes?: { current: ActorBoxes | null };
+  /** The slots whose signpost carries a name's board (PlotSigns hangs it there): close view only. */
+  signs?: readonly number[];
 }
 
 const NO_ACTORS: LiveActor[] = [];
+const NO_SIGNS: readonly number[] = [];
 
 /**
  * The living island: one pixelated canvas drawn from the scene (sea frames,
@@ -69,11 +72,13 @@ export default function IslandCanvas({
   fit = false,
   label,
   actorBoxes,
+  signs = NO_SIGNS,
 }: IslandCanvasProps) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const engine = useRef<LiveIsland | null>(null);
   const events = useRef({ onReady, onFail, onPhase });
   const cropKey = crop ? `${crop.x},${crop.y},${crop.w},${crop.h}` : "";
+  const signsKey = signs.join(",");
 
   const props = (): LiveIslandProps => ({
     scene,
@@ -85,6 +90,7 @@ export default function IslandCanvas({
     crop: crop ? { x: crop.x, y: crop.y, w: crop.w, h: crop.h } : null,
     fit,
     scroller: scroller?.current ?? null,
+    signs,
   });
   const latest = useRef(props);
 
@@ -115,8 +121,8 @@ export default function IslandCanvas({
 
   useEffect(() => {
     engine.current?.update(latest.current());
-    // cropKey stands for crop; the engine compares actors by value.
-  }, [scene, phase, paused, still, actors, ambient, cropKey, fit, scroller]);
+    // cropKey stands for crop and signsKey for signs; the engine compares actors by value.
+  },[scene, phase, paused, still, actors, ambient, cropKey, fit, scroller, signsKey]);
 
   return (
     <canvas

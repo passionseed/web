@@ -25,19 +25,19 @@ import {
   actorRect,
   dirtyRects,
   paintLand,
-  paintOverlay,
+  paintMarker,
   redrawRect,
   sceneModel,
   seaRectsFor,
   type DrawContext,
   type Layers,
   type SceneModel,
-  type TagInk,
 } from "./draw";
 import { IslandFx, type FxMotion } from "./fx";
 import { area, exposed, intersect, visibleRect, type Rect } from "./geometry";
 import { gradeRgb, gradedWater } from "./grade";
 import { bangkokPhase } from "./lighting";
+import { paintSignposts, signposts, wholeUnit, type Signpost } from "./signposts";
 import type { LightPhase, LiveActor } from "./types";
 
 export interface LiveIslandProps {
@@ -57,6 +57,12 @@ export interface LiveIslandProps {
   fit: boolean;
   /** The element that scrolls the picture, to repaint only what is on screen; null repaints the whole canvas. */
   scroller: HTMLElement | null;
+  /**
+   * The slots whose sign shows a name: their signpost carries the ropes its
+   * board hangs from (the board itself is DOM, PlotSigns). Close view only;
+   * absent is none.
+   */
+  signs?: readonly number[];
 }
 
 export interface LiveIslandEvents {
@@ -74,18 +80,6 @@ const VIEW_MARGIN = 2;
 const NO_BOXES: readonly (Rect | null)[] = [];
 /** Native px added round each dirty rect: a figure's contact shadow reaches just past its sprite. */
 const SHADOW_PAD = 4;
-
-/**
- * The plot tags in the hour's light: the PNG's own ink by day (the canvas
- * matches the picture), softer by dawn and dusk, and at night a navy plaque
- * with cream digits instead of the brightest white on the island.
- */
-const TAG_INK: Readonly<Record<LightPhase, TagInk | undefined>> = {
-  day: undefined,
-  dawn: { fill: "rgba(34,38,60,0.86)", digit: "#fff6e6" },
-  dusk: { fill: "rgba(46,30,52,0.86)", digit: "#ffe9c8" },
-  night: { fill: "rgba(18,24,48,0.84)", digit: "#d9d6c6" },
-};
 
 type Img = CanvasImageSource;
 type Ctx = CanvasRenderingContext2D;
@@ -105,6 +99,7 @@ function context(c: HTMLCanvasElement, alpha = true): Ctx {
 }
 
 const actorsKey = (actors: readonly LiveActor[]) => JSON.stringify(actors);
+const signsKey = (signs: readonly number[] | undefined) => (signs ?? []).join(",");
 
 /**
  * The tick each new actor appeared on: an actor equal to one already shown
@@ -215,8 +210,13 @@ export class LiveIsland {
         repaint = true;
       }
       if (next.phase !== prev.phase) this.checkPhase();
-      // The fire, the countdown board and the goal's bulbs light the ground round them.
-      if (actorsChanged && !sceneChanged && !cropChanged) this.buildLand();
+      // The fire, the countdown board and the goal's bulbs light the ground round them; the
+      // signposts follow the view (bigger on the whole island) and the names hung on them.
+      const postsChanged = next.fit !== prev.fit || signsKey(next.signs) !== signsKey(prev.signs);
+      if ((actorsChanged || postsChanged) && !sceneChanged && !cropChanged) {
+        this.buildLand();
+        repaint = true;
+      }
       if (actorsChanged || next.ambient !== prev.ambient || next.fit !== prev.fit) {
         this.measure();
         repaint = true;
@@ -544,20 +544,32 @@ export class LiveIsland {
     return c;
   }
 
+  /**
+   * Each plot's signpost: sprite-sized close up, bigger on the whole island
+   * (wholeUnit: about as big as the bot's tags, so the numbers still read),
+   * with the ropes for a name's board only close up, where the names show.
+   */
+  private posts(model: SceneModel): Signpost[] {
+    const fit = this.props.fit;
+    return signposts(model.scene, { unit: fit ? wholeUnit(model.scene) : 1, hung: fit ? [] : this.props.signs });
+  }
+
   private buildLand(): void {
     const model = this.model;
     if (!model) return;
     const atlas = this.atlas(this.phase);
+    const posts = this.posts(model);
     this.landCanvas = this.sized(this.landCanvas, model.scene.width, model.scene.height);
     const land = context(this.landCanvas);
     land.clearRect(0, 0, model.scene.width, model.scene.height);
     paintLand(land as DrawContext<Img>, model, atlas.image, atlas.data.rects);
-    this.fx.bakeLand(land, model, this.phase, this.props.actors, atlas.image, atlas.data.rects);
-    // Tags and the pin, the tags in the hour's light.
+    this.fx.bakeLand(land, model, this.phase, this.props.actors, atlas.image, atlas.data.rects, posts);
+    // The signposts and the pin, in front of the trees and behind the plaza's people.
     this.overlayCanvas = this.sized(this.overlayCanvas, model.scene.width, model.scene.height);
     const overlay = context(this.overlayCanvas);
     overlay.clearRect(0, 0, model.scene.width, model.scene.height);
-    paintOverlay(overlay as DrawContext<Img>, model, atlas.image, atlas.data.rects, TAG_INK[this.phase]);
+    paintSignposts(overlay as DrawContext<Img>, posts, atlas.image, atlas.data.rects);
+    paintMarker(overlay as DrawContext<Img>, model, atlas.image, atlas.data.rects);
     this.layers = {
       atlas: atlas.image,
       rects: atlas.data.rects,

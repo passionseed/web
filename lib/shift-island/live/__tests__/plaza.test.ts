@@ -11,6 +11,7 @@ import { lampRects, sceneModel } from "../draw";
 import { overlaps, union, type Rect } from "../geometry";
 import { CROWD_LAYOUT } from "../crowd";
 import { MAX_SEATS, NO_PLAZA, PLAZA_LAYOUT, boothFlagAt, plazaCentre, plazaWorld, type PlazaInput, type PlazaWorld } from "../plaza";
+import { signpostFor, wholeUnit } from "../signposts";
 import type { LiveActor } from "../types";
 
 const SIZES = [1, 3, 8, 12, 20, 40, 80, 150];
@@ -97,6 +98,11 @@ function obstacles(scene: IslandScene): Obstacle[] {
     out.push({ what: `tree ${slot}`, slot, rect: m.rect });
     const tags = tagsOf(scene, slot);
     tags.forEach((rect, i) => out.push({ what: `tag ${slot} (${i ? `glyph ${GLYPHS[i - 1]}` : "scene"})`, slot, rect }));
+    // The web's signposts in every view (close up, plain and with a board; the whole island), shadows at every lean.
+    for (const post of [signpostFor(tree, 1, false), signpostFor(tree, 1, true), signpostFor(tree, wholeUnit(scene), false)]) {
+      const shadow = { ...post.shadow, x: post.shadow.x - 2 * post.unit, w: post.shadow.w + 4 * post.unit };
+      out.push({ what: `signpost ${slot} (${post.sprite} x${post.unit})`, slot, rect: union(post.rect, shadow) });
+    }
     if (tree.key) out.push({ what: `key ${slot}`, slot, rect: { x: tree.key.x, y: tree.key.y, w: 10, h: 16 } });
     if (tree.visitor) out.push({ what: `visitor ${slot}`, slot, rect: { x: tree.visitor.x, y: tree.visitor.y, w: 10, h: 14 } });
     if (tree.lantern) out.push({ what: `lantern ${slot}`, slot, rect: { x: tree.lantern.x, y: tree.lantern.y, w: 8, h: 14 } });

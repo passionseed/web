@@ -31,7 +31,7 @@ import { IslandLive } from "./live/IslandLive";
 import liveStyles from "./live/live.module.css";
 import { PlazaLayer } from "./live/PlazaLayer";
 import { PlotMarker } from "./player/PlotMarker";
-import { PlotSigns, signName } from "./PlotSigns";
+import { PlotSigns, signName, signedSlots } from "./PlotSigns";
 import { useReducedMotion } from "./useReducedMotion";
 import styles from "./world.module.css";
 
@@ -397,6 +397,9 @@ export function IslandViewport({
   }, [plazaActors]);
   // A tree's partner, for the keyboard: its plot's name says it stands there (a tap on it says its line).
   const partnerSlots = useMemo(() => new Set(treeFigures(scene).map((figure) => figure.n)), [scene]);
+  // The plots whose signpost carries a name's board: close up only, where the names show.
+  const hotspotList = picture?.hotspots;
+  const signs = useMemo(() => (whole || !hotspotList ? [] : signedSlots(hotspotList)), [whole, hotspotList]);
 
   const liveChange = useRef(onLiveChange);
   useEffect(() => {
@@ -564,6 +567,7 @@ export function IslandViewport({
                 scroller={world}
                 actors={plazaView.actors}
                 actorBoxes={actorBoxes}
+                signs={signs}
                 className={liveStyles.live}
                 onReady={() => setLiveReady(true)}
                 onFail={() => setLiveFailed(true)}
@@ -579,8 +583,16 @@ export function IslandViewport({
           <div key={shade ?? "none"} className={styles.shade} data-phase={shade} aria-hidden="true" />
           <div ref={setOverlay} className={styles.islandBox} style={islandRect}>
             {live ? <span role="img" aria-label={ISLAND.pictureAlt} className={liveStyles.label} /> : null}
-            {/* Project names under the trees; the whole island puts plots too close for a line of text. */}
-            {whole ? null : <PlotSigns hotspots={picture.hotspots} />}
+            {/*
+              Project names: boards hanging from the living island's signposts, or a line under the PNG's
+              tags; the whole island puts plots too close for a line of text.
+            */}
+            {whole ? null : (
+              <PlotSigns
+                hotspots={picture.hotspots}
+                posts={live && picture.scene ? { scene: picture.scene, phase: shade ?? "day", scale } : null}
+              />
+            )}
             {/* Your own picture over your own pin: decorative, never takes a tap. */}
             {me && mine ? <PlotMarker picture={picture} me={me} /> : null}
             {interactive ? (

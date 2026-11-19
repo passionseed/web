@@ -10,7 +10,7 @@
  * per frame there are only small drawImage and fillRect calls, inside the
  * rect being repainted. No getImageData, no filters or shadows; the one
  * blend ("lighter", for the small glow round a lamp's or lantern's head)
- * covers only those lights' own boxes, under the tags and the plaza's people.
+ * covers only those lights' own boxes, under the signposts and the plaza's people.
  *
  * Light never paints over an object: the pools lie on the ground under every
  * sprite (baked into the land, or the fire's drawn just after it), and the
@@ -63,6 +63,7 @@ import { actorAt, actorRect, paintLand, type DrawContext, type DrawFx, type Laye
 import { cellSpan, overlaps, union, type Rect } from "./geometry";
 import { gradeKey } from "./grade";
 import type { RGB } from "./lighting";
+import type { Signpost } from "./signposts";
 import type { LightPhase, LiveActor } from "./types";
 
 type Ctx = CanvasRenderingContext2D;
@@ -203,11 +204,19 @@ export class IslandFx {
   /**
    * Everything static, into the land layer (already painted with the phase's
    * atlas): shallows and wet sand over the sea's edge, contact shadows under
-   * trees, lanterns, flags and the well, and the pools of warm light that do
-   * not move; plus the fire's breathing pool and its firelit sprites, ready
-   * for the loop. Once per phase, scene or set of lights.
+   * trees, lanterns, flags, signposts and the well, and the pools of warm
+   * light that do not move; plus the fire's breathing pool and its firelit
+   * sprites, ready for the loop. Once per phase, scene, view or set of lights.
    */
-  bakeLand(land: Ctx, model: SceneModel, phase: LightPhase, actors: readonly LiveActor[], atlas: Img, rects: ReadonlyMap<string, AtlasRect>): void {
+  bakeLand(
+    land: Ctx,
+    model: SceneModel,
+    phase: LightPhase,
+    actors: readonly LiveActor[],
+    atlas: Img,
+    rects: ReadonlyMap<string, AtlasRect>,
+    posts: readonly Signpost[] = []
+  ): void {
     // The figures' shadows lean with the sun of the hour.
     if (phase !== this.phase) this.feet.clear();
     this.phase = phase;
@@ -218,7 +227,7 @@ export class IslandFx {
     this.shadows.clear();
     this.halos.clear();
     this.bakeWater(land, model, phase);
-    this.bakeShadows(land, model, phase, atlas, rects);
+    this.bakeShadows(land, model, phase, atlas, rects, posts);
     this.bakePools(land, model);
   }
 
@@ -266,7 +275,14 @@ export class IslandFx {
     });
   }
 
-  private bakeShadows(land: Ctx, model: SceneModel, phase: LightPhase, atlas: Img, rects: ReadonlyMap<string, AtlasRect>): void {
+  private bakeShadows(
+    land: Ctx,
+    model: SceneModel,
+    phase: LightPhase,
+    atlas: Img,
+    rects: ReadonlyMap<string, AtlasRect>,
+    posts: readonly Signpost[]
+  ): void {
     const lean = SHADOW_LEAN[phase];
     const stamp = (box: Rect | null) => {
       if (box) land.drawImage(this.shadow(box.w, box.h), box.x, box.y);
@@ -279,6 +295,7 @@ export class IslandFx {
       if (t.key) stamp(shadowBox("key_flag", t.key.x, t.key.y, false, lean));
       if (t.visitor) stamp(shadowBox("visitor", t.visitor.x, t.visitor.y, false, lean));
     }
+    for (const post of posts) stamp({ ...post.shadow, x: post.shadow.x + lean * post.unit });
     stamp(shadowBox("well", scene.well.x, scene.well.y, false, lean));
     // The plaza's props and seated people never move: their shadows go in the land too, and only walkers' are drawn per frame.
     for (const actor of this.actors) {
