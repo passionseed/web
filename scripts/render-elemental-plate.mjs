@@ -170,7 +170,7 @@ const P = {
 
 // ---------- layout (poster pixels, tied to the photo's crop) ----------
 const FIRE = { x: 806, base: 908 };
-const SMOG = { x: 330, y: 500, rx: 520, ry: 120 };
+const SMOG = { x: 330, y: 480, rx: 520, ry: 120 };
 const WATER = { x0: 0, x1: 600, y0: 1006, y1: 1242 };
 
 function flameField(x, y) {
@@ -255,24 +255,32 @@ if (SKY_BLUE) {
     }
 }
 
-// AIR: a toxic smog over the hill, its own cloud, not the fire's smoke.
-const smogDensity = (x, y) => {
-  const dx = (x - SMOG.x) / SMOG.rx;
-  const dy = (y - SMOG.y) / SMOG.ry;
-  const r = dx * dx + dy * dy;
-  const n = fbm(x * 0.0055, y * 0.011, 11, 5);
-  return clamp(n * 1.55 - 0.32 - r * 0.85);
+// AIR: a poisoned cloud over the hill, its own cloud, not the fire's smoke.
+// Built like a real cumulus (puffs as a metaball field), lit on top and
+// shaded underneath, then turned into pixels in a sick yellow-brown, so it
+// reads as a cloud gone wrong next to the clean sky.
+// The hill's skyline in poster pixels (from the photo): the haze hugs it.
+const hillY = (x) => (x < 590 ? 398 + (x / 590) * 368 : 640 + Math.max(0, (x - 760) * -0.1));
+/** Smog density 0..1: thick and low over the hill, thinning upward and to the right. */
+const smogField = (x, y) => {
+  const above = hillY(x) - y; // distance above the skyline
+  const n = fbm(x * 0.006, y * 0.018, 92, 4);
+  // Densest just above the ridge, thinning upward and down the slope.
+  const thick = smooth(-110, 10, above) * (1 - smooth(20, 210 + 80 * n, above));
+  const reach = 1 - smooth(380, 700, x + (n - 0.5) * 220);
+  // Kept below the title block.
+  const belowTitle = smooth(390, 470, y + (n - 0.5) * 60);
+  return clamp(thick * reach * belowTitle * (0.45 + 0.7 * n));
 };
+// A faint haze behind it, so the pixels sit in the air.
 {
-  const layer = new Float32Array(W * H * 4);
-  for (let y = SMOG.y - SMOG.ry * 1.8; y < SMOG.y + SMOG.ry * 1.8; y++)
-    for (let x = 0; x < W; x++) {
-      const d = smogDensity(x, y | 0);
-      if (d <= 0) continue;
-      const c = [0, 1, 2].map((k) => mix(P.smogB[k], P.smogA[k], fbm(x * 0.01, y * 0.01, 12, 3)));
-      paint(layer, x, y | 0, c, smooth(0, 0.8, d) * 0.55);
+  const haze = new Float32Array(W * H * 4);
+  for (let y = 150; y < 820; y++)
+    for (let x = 0; x < 820; x++) {
+      const f = smogField(x, y);
+      if (f > 0.05) paint(haze, x, y, P.smogA, 0.3 * f);
     }
-  drawLayer(await blurLayer(layer, 9));
+  drawLayer(await blurLayer(haze, 18), "normal", P.smogA);
 }
 
 // WATER: the left bank of the river turns toxic green.
@@ -419,30 +427,26 @@ for (let y = WATER.y0; y < WATER.y1; y++)
       }
 }
 
-// AIR pixels: part of the smog breaks into stepped blocks and checker.
+// AIR pixels: the haze as an ordered dither on an 8px grid, three smog
+// tones by density, so it fades into the blue in a pattern, not a blur;
+// fine dust specks drift above it.
 {
-  const cell = 14;
-  const levels = [P.smogB, P.smogA, P.mustard, P.smogPale];
-  for (let y = SMOG.y - 200; y < SMOG.y + 200; y += cell)
-    for (let x = 0; x < W - 200; x += cell) {
-      const d = smogDensity(x + 7, y + 7);
-      const n = fbm(x * 0.008, y * 0.016, 51, 3);
-      if (d > 0.36 && n > 0.5) {
-        let l = 0;
-        for (let k = 0; k < 4; k++) l += lum(get(x + (k & 1) * 7 + 3, y + (k >> 1) * 7 + 3));
-        rect(x, y, cell, levels[clamp(Math.floor((l / 4) * 4.4 - 0.6), 0, 3)]);
-      } else if (d > 0.14 && d < 0.42 && n > 0.6 && ((x / cell + y / cell) & 1)) {
-        rect(x, y, cell, hash(x, y, 52) < 0.7 ? P.smogPale : P.mustard, 0.95);
-      }
+  const cell = 8;
+  const tones = [hex("#d8cb9c"), hex("#a89155"), hex("#6f5d3c")];
+  for (let y = 150; y < 820; y += cell)
+    for (let x = 0; x < 820; x += cell) {
+      const f = smogField(x + 4, y + 4);
+      const d = f * 2.6 + (bayer(x / cell, y / cell) - 0.5) * 1.1;
+      if (d < 0.75) continue;
+      rect(x, y, cell, tones[clamp(Math.floor(d - 0.75), 0, 2)], 0.92);
     }
-  // Dithered haze at the smog's lower edge.
-  for (let y = SMOG.y + 20; y < SMOG.y + 110; y++)
-    for (let x = 140; x < 560; x++) {
-      const d = smogDensity(x, y);
-      if (d < 0.12 || fbm(x * 0.02, y * 0.04, 53, 2) < 0.55) continue;
-      if (d * 1.6 > bayer(x >> 1, y >> 1)) put(x, y, P.smogB, 0.85);
-    }
-  for (const [x, y] of blobCells(470, 448, 40, 22, 14, 54)) rect(x, y, 14, P.mustard);
+  for (let k = 0; k < 60; k++) {
+    const x = Math.round((hash(k, 1, 93) * 600) / 6) * 6;
+    const base = hillY(x) - 120 - hash(k, 2, 93) * 230;
+    const y = Math.round(base / 6) * 6;
+    if (y < 430) continue;
+    rect(x, y, 6, hash(k, 3, 93) < 0.6 ? hex("#8a7748") : hex("#5a4b31"), 0.8);
+  }
 }
 
 // FIRE pixels: the upper flame quantized into a mosaic, a white stepped
