@@ -23,6 +23,7 @@ import { parseVtt, type VttCue } from "@/lib/radar-guide/vtt";
 import { aiEngineerGuide } from "./ai-engineer/guide";
 import { cybersecurityGuide } from "./cybersecurity/guide";
 import { dataScientistGuide } from "./data-scientist/guide";
+import { mechanicalEngineerGuide } from "./mechanical-engineer/guide";
 import { softwareEngineerGuide } from "./software-engineer/guide";
 import { mergeFacts, pickFacts } from "./facts";
 import { guideVisible } from "./index";
@@ -32,6 +33,7 @@ const GUIDES = {
   "ai-engineer": aiEngineerGuide,
   "data-scientist": dataScientistGuide,
   "software-engineer": softwareEngineerGuide,
+  "mechanical-engineer": mechanicalEngineerGuide,
 } satisfies Record<string, CareerGuide>;
 
 const GUIDES_DIR = path.join(process.cwd(), "lib", "radar-guides");
