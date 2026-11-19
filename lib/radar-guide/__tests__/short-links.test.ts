@@ -11,7 +11,8 @@ import {
   type ShortLinkRow,
 } from "../short-links";
 
-const PUBLISHED = new Set(Object.values(RADAR_LINK_ALIASES));
+/** Every alias target and every code guide slug (guides.test keeps code guides in KNOWN_PUBLISHED_RADAR_SLUGS). */
+const PUBLISHED = new Set<string>([...Object.values(RADAR_LINK_ALIASES), ...Object.keys(GUIDE_INDEX)]);
 const CYBER_PAGES = guidePageKeys("cybersecurity")!;
 
 /** Live guide pages per slug: cybersecurity from code, plus test-only pages. */
