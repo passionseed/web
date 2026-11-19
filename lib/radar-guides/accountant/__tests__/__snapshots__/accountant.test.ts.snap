@@ -129,16 +129,16 @@ work.blocks[2].blocks[1].answersTh[2]: ไม่ใช่เงินร้า�
 work.blocks[2].blocks[2].lines[0].text.th: ที่เธอเพิ่งทำไปเมื่อกี้ คืองานจริงของนักบัญชีเลยนะ
 work.blocks[2].blocks[2].lines[1].text.th: AI ช่วยลงตัวเลขให้ แต่คนนี่แหละที่ถามว่ามันจริงไหม
 work.blocks[3].unlockLabelTh: บอกเจ้าของร้าน
-work.blocks[3].blocks[0].ask[0].text.th: เจ้าของร้านทักมาถามแล้วว่า อาทิตย์นี้ร้านเป็นไงบ้าง
-work.blocks[3].blocks[0].ask[1].text.th: เธอจะบอกเขาเรื่องไหนก่อนดี
-work.blocks[3].blocks[0].options[0].labelTh: ร้านขายดีมาก ไม่ต้องห่วงเลย
-work.blocks[3].blocks[0].options[0].reply[0].text.th: ขายดีจริงแหละ แต่เงินวันเสาร์ยังหาไม่เจออยู่นะ
-work.blocks[3].blocks[0].options[0].reply[1].text.th: เรื่องที่ไม่สบายใจก็ต้องบอกนะ แค่พูดให้เขาเอาไปแก้ต่อได้
-work.blocks[3].blocks[0].options[1].labelTh: เงินวันเสาร์ไม่ตรง ต้องนับเงินสดดูก่อน
-work.blocks[3].blocks[0].options[1].reply[0].text.th: เป๊ะเลย บอกตรงๆ ว่าเจออะไร แล้วบอกว่าต้องเช็กอะไรต่อ
-work.blocks[3].blocks[0].options[2].labelTh: ขอเช็กให้ครบก่อน ค่อยบอกทีเดียว
-work.blocks[3].blocks[0].options[2].reply[0].text.th: รอบคอบดีนะ แต่เจ้าของร้านอยากรู้ตั้งแต่ตอนนี้เลยแหละ
-work.blocks[3].blocks[0].options[2].reply[1].text.th: บอกไปก่อนเลยว่าเจออะไร แล้วอัปเดตว่ากำลังเช็กอะไรอยู่
+work.blocks[3].blocks[0].lines[0].text.th: เจ้าของร้านทักมาถามแล้วว่า อาทิตย์นี้ร้านเป็นไงบ้าง
+work.blocks[3].blocks[1].ask[0].text.th: เธอจะบอกเขาเรื่องไหนก่อนดี
+work.blocks[3].blocks[1].options[0].labelTh: ร้านขายดีมาก ไม่ต้องห่วงเลย
+work.blocks[3].blocks[1].options[0].reply[0].text.th: ขายดีจริงแหละ แต่เงินวันเสาร์ยังหาไม่เจออยู่นะ
+work.blocks[3].blocks[1].options[0].reply[1].text.th: เรื่องที่ไม่สบายใจก็ต้องบอกนะ แค่พูดให้เขาเอาไปแก้ต่อได้
+work.blocks[3].blocks[1].options[1].labelTh: เงินวันเสาร์ไม่ตรง ต้องนับเงินสดดูก่อน
+work.blocks[3].blocks[1].options[1].reply[0].text.th: เป๊ะเลย บอกตรงๆ ว่าเจออะไร แล้วบอกว่าต้องเช็กอะไรต่อ
+work.blocks[3].blocks[1].options[2].labelTh: ขอเช็กให้ครบก่อน ค่อยบอกทีเดียว
+work.blocks[3].blocks[1].options[2].reply[0].text.th: รอบคอบดีนะ แต่เจ้าของร้านอยากรู้ตั้งแต่ตอนนี้เลยแหละ
+work.blocks[3].blocks[1].options[2].reply[1].text.th: บอกไปก่อนเลยว่าเจออะไร แล้วอัปเดตว่ากำลังเช็กอะไรอยู่
 work.blocks[4].unlockLabelTh: แล้ว AI ล่ะ
 work.blocks[4].blocks[0].text.th: รายงาน Future of Jobs ปี 2568 ของ World Economic Forum: นายจ้างทั่วโลกคาดว่างานนักบัญชีและผู้สอบบัญชี จะอยู่ในกลุ่มที่ลดลงเร็ว เพราะ AI กับระบบดิจิทัล
 work.blocks[4].blocks[0].titleTh: พูดตรงๆ
