@@ -128,7 +128,9 @@ export function roundOnePage(opts: RoundOneOptions): GuidePage {
             `เกียรติบัตร รางวัล: ${opts.items.filter((i) => i.answer === "award").map((i) => i.labelTh).join(", ")}`,
           ],
           demoScript: [
-            { at: 600, action: "tap", target: `folio.item-${opts.items[0].id}-bin-${opts.items[0].answer}` },
+            // Cards layout: tap the card, then its bin (SortGame's demo targets).
+            { at: 600, action: "tap", target: `folio.item-${opts.items[0].id}` },
+            { at: 1300, action: "tap", target: `folio.bin-${opts.items[0].answer}` },
             { at: 2400, action: "wait" },
           ],
         },

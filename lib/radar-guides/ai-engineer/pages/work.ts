@@ -120,7 +120,8 @@ export const work: GuidePage = {
           "ไม่ให้อ่าน: เกรดของนักเรียนทุกคน, ปฏิทินปีที่แล้ว, เบอร์โทรผู้ปกครอง, แชตกลุ่มครู",
         ],
         demoScript: [
-          { at: 600, action: "tap", target: "docs.item-doc-grades-bin-keep" },
+          { at: 600, action: "tap", target: "docs.item-doc-grades" },
+          { at: 1300, action: "tap", target: "docs.bin-keep" },
           { at: 2400, action: "wait" },
         ],
       },
