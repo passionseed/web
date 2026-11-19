@@ -293,4 +293,35 @@ export const KIND_GLYPHS: Readonly<Record<KindIcon, PixelGrid>> = {
     "..########..",
     "............",
   ],
+  // marketing-strategist
+  // A megaphone with sound coming out: what a brand says, and to whom.
+  megaphone: [
+    "............",
+    "........##..",
+    ".......#o#.w",
+    "......#oo#w.",
+    "###..#ooo#..",
+    "#o####ooo#ww",
+    "#o####ooo#ww",
+    "###..#ooo#..",
+    "......#oo#w.",
+    ".......#o#.w",
+    "........##..",
+    "............",
+  ],
+  // A gift box with a bow: a new product, launched.
+  box: [
+    "............",
+    "...ww..ww...",
+    "....wwww....",
+    ".....ww.....",
+    ".##########.",
+    ".#ooowwooo#.",
+    ".##########.",
+    "..#oowwoo#..",
+    "..#oowwoo#..",
+    "..#oowwoo#..",
+    "..########..",
+    "............",
+  ],
 };
