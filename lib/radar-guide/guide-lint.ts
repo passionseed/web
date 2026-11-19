@@ -833,6 +833,11 @@ function checkChoice(
   const err = (path: string, message: string) => issues.push({ level: "error", pageKey, path, message });
   if (ch.ask.some((l) => l.speaker !== "host")) err(`${ch.path}.ask`, "a choice is asked by the host");
   if (ch.options.length < 2 || ch.options.length > 3) err(`${ch.path}.options`, "a choice has 2 or 3 answers");
+  // The answers open once the question is read; a second box would hide them
+  // behind a tap while the sticky bar already says "pick an answer above".
+  if (ch.ask.length !== 1 || ch.ask.some((l) => l.text.th.length > DIALOGUE_BOX_MAX_CHARS)) {
+    err(`${ch.path}.ask`, `a choice's question is one dialogue box (one line, at most ${DIALOGUE_BOX_MAX_CHARS} chars)`);
+  }
   const ids = new Set<string>();
   ch.options.forEach((opt, j) => {
     const path = `${ch.path}.options[${j}]`;

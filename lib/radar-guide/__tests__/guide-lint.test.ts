@@ -96,7 +96,7 @@ describe("guide-lint", () => {
     expect(formatIssues(lintErrors(issues))).toBe("");
   });
 
-  it("checks a choice: host asks, 2 to 3 short answers with unique ids, and its copy is linted", () => {
+  it("checks a choice: host asks in one box, 2 to 3 short answers with unique ids, and its copy is linted", () => {
     const say = (th: string) => ({ speaker: "host" as const, text: { th } });
     const ok = run(guide([page({}, [
       { kind: "dialogue", id: "intro", lines: [say("สวัสดี")] },
@@ -112,7 +112,7 @@ describe("guide-lint", () => {
       { kind: "choice", id: "q", ask: [{ speaker: "player", text: { th: "ถามเอง" } }], options: [
         { id: "a", labelTh: "ก".repeat(60), reply: [say("ตอบ — ผิดกฎ")] },
       ] },
-      { kind: "choice", id: "r", ask: [say("อีกข้อ")], options: [
+      { kind: "choice", id: "r", ask: [say("อีกข้อ"), say("กล่องที่สอง")], options: [
         { id: "a", labelTh: "หนึ่ง", reply: [say("โอเค")] },
         { id: "a", labelTh: "สอง", reply: [say("โอเค")] },
       ] },
@@ -122,6 +122,7 @@ describe("guide-lint", () => {
     expect(hasError(bad, "keep it short")).toBe(true);
     expect(hasError(bad, "used twice")).toBe(true);
     expect(hasError(bad, "dash")).toBe(true);
+    expect(hasError(bad, "one dialogue box")).toBe(true);
   });
 
   it("checks a kinds grid: 3 to 6 tiles, unique ids, one played, short names and lines", () => {
