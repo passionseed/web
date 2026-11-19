@@ -406,25 +406,213 @@ for (let y = WATER.y0; y < WATER.y1; y++)
   }
 }
 
-// EARTH pixels: the mound becomes dumped waste and scorched ground,
-// drawn as dither and dot screens of the photo itself.
+// EARTH pixels: an e-waste dump on the bank. Circuit boards, cables,
+// cracked phone screens, keys and batteries piled into the same two heaps
+// the old dirt had, on a dot-screen of the photo so the pile sits in the
+// scene, with a dithered edge and a shadow on the grass.
 {
-  // A pale waste heap: ordered dither, white on grey.
-  for (const [x0, y0] of blobCells(250, 912, 170, 52, 12, 41, 0.6))
-    for (let y = y0; y < y0 + 12; y++)
-      for (let x = x0; x < x0 + 12; x++) {
-        const l = lum(get(x, y));
-        const dot = x % 3 < 2 && y % 3 < 2;
-        put(x, y, dot ? (l < 0.3 ? P.ink : P.ash) : P.ashLight);
+  const C4 = 4; // e-waste detail grid
+  const px = (x, y, c, a = 1) => rect(Math.round(x / C4) * C4, Math.round(y / C4) * C4, C4, c, a);
+  const heaps = [
+    { cx: 250, cy: 918, rx: 175, ry: 50, seed: 41 },
+    { cx: 480, cy: 935, rx: 125, ry: 58, seed: 42 },
+  ];
+  const inHeap = (x, y, h) => {
+    const dx = (x - h.cx) / h.rx;
+    const dy = (y - h.cy) / h.ry;
+    // A pile: domed on top, flat at the bottom.
+    const top = dy < 0 ? dx * dx + dy * dy : dx * dx + dy * dy * 0.35;
+    return top + 0.4 * (fbm(x * 0.03, y * 0.03, h.seed, 2) - 0.5) < 1;
+  };
+  // Shadow on the grass under each heap.
+  for (const h of heaps)
+    for (let y = h.cy; y < h.cy + h.ry + 20; y++)
+      for (let x = h.cx - h.rx - 20; x < h.cx + h.rx + 20; x++) {
+        const dx = (x - h.cx) / (h.rx + 20);
+        const dy = (y - (h.cy + h.ry * 0.6)) / 26;
+        const d = dx * dx + dy * dy;
+        if (d < 1) put(x, y, [0.05, 0.05, 0.04], 0.35 * (1 - d));
       }
-  // A dark, burnt mass: a dot matrix of the photo on black.
-  for (const [x0, y0] of blobCells(478, 930, 120, 62, 12, 42, 0.6))
-    for (let y = y0; y < y0 + 12; y++)
-      for (let x = x0; x < x0 + 12; x++) {
+  // Underlay: the old dot screen, so the pile keeps the photo's light.
+  for (const h of heaps)
+    for (let y = h.cy - h.ry; y < h.cy + h.ry; y++)
+      for (let x = h.cx - h.rx; x < h.cx + h.rx; x++) {
+        if (!inHeap(x, y, h)) continue;
         const l = lum(get(x, y));
-        const dot = x % 4 < 2 && y % 4 < 2;
-        put(x, y, dot ? [l * 1.5, l * 1.45, l * 1.4].map((v) => clamp(v)) : P.ink);
+        put(x, y, x % 3 < 2 && y % 3 < 2 ? [l * 0.9, l * 0.9, l * 0.85] : [0.16, 0.16, 0.15], 0.95);
       }
+  const PCB = hex("#33603e");
+  const PCB_D = hex("#1d4a29");
+  const TRACE = hex("#7aa266");
+  const GOLD = hex("#d2a63a");
+  const CHIP = hex("#141414");
+  const SCREEN = hex("#0f1418");
+  const GLASS = hex("#9fb6c4");
+  const PLASTIC = [hex("#c9c4b8"), hex("#8f8a80"), hex("#d9d4c6"), hex("#5c5a55")];
+  const WIRES = [hex("#141414"), hex("#c23a2a"), hex("#2f5fa8"), hex("#d8b23a"), hex("#e8e6de")];
+  const BATT = [hex("#2a2a2a"), hex("#c76a2a"), hex("#3a6fb0")];
+  const r = (k, i) => hash(k, i, 111);
+  // Items, back to front.
+  const items = [];
+  for (let k = 0; k < 80; k++) {
+    const h = heaps[k % 3 === 0 ? 1 : 0];
+    const x = h.cx + (r(k, 1) - 0.5) * 2 * h.rx * 0.9;
+    const y = h.cy + (r(k, 2) - 0.6) * 2 * h.ry * 0.9;
+    if (!inHeap(x, y, h)) continue;
+    const roll = r(k, 3);
+    // Mostly casings, monitors and cables; boards are the accent.
+    const type = roll < 0.18 ? 0 : roll < 0.3 ? 2 : roll < 0.48 ? 3 : roll < 0.6 ? 4 : roll < 0.68 ? 5 : 6;
+    items.push({ k, x, y, h, type });
+  }
+  items.sort((a, b) => a.y - b.y);
+  for (const it of items) {
+    const { k, x, y, h, type } = it;
+    const clip = (xx, yy) => inHeap(xx, yy, h);
+    // Lower in the heap is in shadow.
+    const shade = (yy) => clamp((yy - (h.cy - h.ry)) / (h.ry * 2));
+    const dot = (xx, yy, c, a) => clip(xx, yy) && px(xx, yy, c.map((v) => v * (1 - 0.45 * shade(yy))), a);
+    if (type === 0) {
+      // Circuit board, slightly tilted, with traces, pads and a chip.
+      const w = 10 + Math.floor(r(k, 4) * 8);
+      const hh = 5 + Math.floor(r(k, 5) * 5);
+      const tilt = (r(k, 6) - 0.5) * 0.5;
+      for (let j = 0; j < hh; j++)
+        for (let i = 0; i < w; i++) {
+          const xx = x + (i - w / 2) * C4;
+          const yy = y + (j - hh / 2) * C4 + (i - w / 2) * tilt * C4;
+          let c = (i + j) % 7 === 0 ? PCB_D : PCB;
+          if (j === Math.floor(hh / 2) || i % 5 === 2) c = TRACE;
+          if ((i * 3 + j * 5) % 11 === 0) c = GOLD;
+          if (i > w / 2 - 2 && i < w / 2 + 2 && j > 0 && j < hh - 1) c = CHIP;
+          dot(xx, yy, c, 1);
+        }
+    } else if (type === 2) {
+      // Phone with a cracked screen.
+      const w = 6;
+      const hh = 10;
+      for (let j = 0; j < hh; j++)
+        for (let i = 0; i < w; i++) {
+          const edge = i === 0 || j === 0 || i === w - 1 || j === hh - 1;
+          const crack = Math.abs(i - (j * 0.6 + 1)) < 0.6 || Math.abs(i - (hh - j) * 0.5) < 0.5;
+          dot(x + i * C4, y + j * C4 * 0.7, edge ? PLASTIC[3] : crack ? GLASS : SCREEN, 1);
+        }
+    } else if (type === 3) {
+      // A loop of cable.
+      const c = WIRES[Math.floor(r(k, 7) * WIRES.length)];
+      const rad = 8 + r(k, 8) * 14;
+      for (let t = 0; t < Math.PI * 1.7; t += 0.12) dot(x + Math.cos(t + k) * rad, y + Math.sin(t + k) * rad * 0.45, c, 1);
+    } else if (type === 4) {
+      // Keyboard keys / casing.
+      const c = PLASTIC[Math.floor(r(k, 9) * 3)];
+      for (let j = 0; j < 3; j++)
+        for (let i = 0; i < 7; i++) dot(x + i * C4 * 1.5, y + j * C4 * 1.5, (i + j) % 2 ? c : PLASTIC[1], 1);
+    } else if (type === 6) {
+      // A monitor or casing: a plastic box, a dark screen with a glare.
+      const w = 9 + Math.floor(r(k, 11) * 6);
+      const hh = 6 + Math.floor(r(k, 12) * 4);
+      const shell = PLASTIC[Math.floor(r(k, 13) * 4)];
+      const screen = r(k, 14) < 0.6;
+      for (let j = 0; j < hh; j++)
+        for (let i = 0; i < w; i++) {
+          const inner = screen && i > 0 && j > 0 && i < w - 1 && j < hh - 1;
+          const glare = inner && i === j + 1;
+          dot(x + i * C4, y + j * C4, glare ? GLASS : inner ? SCREEN : (i + j) % 6 === 0 ? PLASTIC[1] : shell, 1);
+        }
+    } else {
+      // A battery.
+      const c = BATT[Math.floor(r(k, 10) * BATT.length)];
+      for (let i = 0; i < 6; i++) for (let j = 0; j < 3; j++) dot(x + i * C4, y + j * C4, i === 5 ? GOLD : j === 0 ? PLASTIC[2] : c, 1);
+    }
+  }
+  // Loose wires trailing off the pile.
+  for (let k = 0; k < 6; k++) {
+    const h = heaps[k % 2];
+    let x = h.cx + (r(k, 20) - 0.5) * h.rx * 1.6;
+    let y = h.cy + h.ry * 0.4;
+    const c = WIRES[k % WIRES.length];
+    for (let i = 0; i < 18; i++) {
+      x += (r(k, 30 + i) - 0.3) * 8;
+      y += r(k, 60 + i) * 3;
+      px(x, y, c, 0.95);
+    }
+  }
+}
+
+// WATER, again: a mutant fish swimming in the toxic water. Original pixel
+// art (a dark catfish covered in pink growths), drawn on a 6px grid,
+// tinted by the water so it sits under the surface.
+{
+  const C6 = 9;
+  const FX = 70; // tail end
+  const FY = 1078; // centre line
+  const LEN = 36; // cells
+  const body = hex("#1b2318");
+  const back = hex("#0c110b");
+  const belly = hex("#66744f");
+  const rim = hex("#8a9c70");
+  const fin = hex("#3b3a2b");
+  const growth = [hex("#8a3329"), hex("#d0705f"), hex("#f6c2b2")];
+  const water = hex("#2f5a1c");
+  const cells = new Map();
+  const set = (gx, gy, c) => cells.set(`${gx},${gy}`, c);
+  for (let i = 0; i < LEN; i++) {
+    const t = i / (LEN - 1);
+    let hh = 0.8 + 3.6 * smooth(0.05, 0.6, t);
+    if (t > 0.88) hh *= Math.sqrt(Math.max(0, 1 - ((t - 0.88) / 0.12) ** 2));
+    for (let j = -Math.ceil(hh); j <= Math.ceil(hh); j++) {
+      if (Math.abs(j) > hh) continue;
+      set(i, j, j === -Math.ceil(hh) || (j < 0 && j - 1 < -hh) ? rim : j < -hh * 0.35 ? back : j > hh * 0.45 ? belly : body);
+    }
+  }
+  // Tail fin, forked.
+  for (let i = -5; i < 2; i++) for (const sgn of [-1, 1]) for (let j = 1; j <= 2 - i * 0.6; j++) set(i, sgn * j, fin);
+  // Dorsal fin and spread pectoral fins (where the growths cluster).
+  for (let i = 0; i < 6; i++) for (let j = 0; j < 3 - i * 0.4; j++) set(20 + i, -5 - j, fin);
+  const pecs = [];
+  for (const sgn of [-1, 1])
+    for (let i = 0; i < 6; i++) {
+      const gx = 26 - i;
+      const gy = sgn * (4 + i);
+      set(gx, gy, fin);
+      set(gx + 1, gy, fin);
+      pecs.push([gx, gy]);
+    }
+  // Barbels.
+  for (const sgn of [-1, 1]) for (let i = 0; i < 6; i++) set(LEN + i, sgn * (1 + Math.floor(i * 0.7)), back);
+  // Eye.
+  set(LEN - 5, -2, hex("#e6e3d6"));
+  set(LEN - 4, -2, hex("#0b0b0b"));
+  // Growths: clusters on fin tips, the head and along the back.
+  const spots = [...pecs.filter((_, n) => n % 3 === 2), [LEN - 1, 1], [22, -8], [10, -3], [-3, -3], [LEN + 5, 4]];
+  // Each growth is a round bulb: dark base, pink body, a pale highlight.
+  for (const [gx, gy] of spots) {
+    for (const [dx, dy] of [[0, 0], [1, 0], [0, -1], [1, -1], [-1, 0], [0, 1], [1, 1], [2, 0], [2, -1]]) set(gx + dx, gy + dy, growth[1]);
+    for (const [dx, dy] of [[1, 1], [2, 0], [-1, 0], [0, 1]]) set(gx + dx, gy + dy, growth[0]);
+    set(gx, gy - 1, growth[2]);
+  }
+  // A dark shadow in the water under the fish, so it separates from the mosaic.
+  for (let y = FY - 90; y < FY + 100; y++)
+    for (let x = FX - 60; x < FX + (LEN + 10) * C6; x++) {
+      const dx = (x - (FX + LEN * C6 * 0.5)) / (LEN * C6 * 0.62);
+      const dy = (y - FY) / 80;
+      const d = dx * dx + dy * dy;
+      if (d < 1) put(x, y, hex("#10240a"), 0.55 * (1 - d));
+    }
+  // Draw it, tinted by the water, the tail fading under the surface.
+  for (const [key, c] of cells) {
+    const [gx, gy] = key.split(",").map(Number);
+    const x = FX + gx * C6;
+    const y = FY + gy * C6;
+    const under = 0.06 + 0.3 * smooth(8, -5, gx);
+    rect(Math.round(x), Math.round(y), C6, c.map((v, k) => mix(v, water[k], under)), 0.97);
+  }
+  // A wake behind it and a few bubbles above.
+  for (let k = 0; k < 14; k++) {
+    const x = FX - 30 - hash(k, 1, 122) * 120;
+    const y = FY + (hash(k, 2, 122) - 0.5) * 30;
+    rect(Math.round(x / 6) * 6, Math.round(y / 6) * 6, 6, P.g3, 0.55);
+  }
+  for (let k = 0; k < 6; k++) rect(FX + 140 + k * 10, FY - 50 - k * 9, 6, P.g3, 0.7);
 }
 
 // AIR pixels: the haze as an ordered dither on an 8px grid, three smog
