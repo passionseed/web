@@ -1,0 +1,284 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`accountant guide matches the Thai copy snapshot (diff this in the Thai review) 1`] = `
+[
+  "dream.titleTh: คนที่เจอว่าตัวเลขไม่จริง
+dream.questionTh: ถ้าตัวเลขในบัญชีโกหก ใครเป็นคนจับได้
+dream.navLabelTh: ตัวเลขไม่จริง
+dream.og.headlineTh: ยอดขายดูดีทุกบรรทัด จนมีคนถามว่ามันจริงไหม
+dream.og.stat.th: ทีมตรวจพิเศษเจอรายการขายผิดปกติ 202 รายการ ในบริษัทเดียว
+dream.blocks[0].lines[0].text.th: เปิดรันสายบัญชีกันเลย ขอถามข้อเดียวก่อนนะ
+dream.blocks[1].ask[0].text.th: พอพูดถึงนักบัญชี ภาพแรกในหัวเธอคืออะไรอะ
+dream.blocks[1].options[0].labelTh: นั่งกดเครื่องคิดเลขทั้งวัน
+dream.blocks[1].options[0].reply[0].text.th: ภาพนั้นกำลังเปลี่ยนนะ เดี๋ยวนี้โปรแกรมช่วยลงตัวเลขให้เพียบเลย
+dream.blocks[1].options[0].reply[1].text.th: ส่วนงานที่เหลือให้คนทำ สนุกกว่าที่คิดเยอะเลย
+dream.blocks[1].options[1].labelTh: ทำภาษีให้บริษัทมั้ง
+dream.blocks[1].options[1].reply[0].text.th: ก็ใช่ส่วนหนึ่งนะ แต่ยังมีอีกงานที่คนไม่ค่อยรู้
+dream.blocks[1].options[2].labelTh: ไม่รู้เลย ยังไม่เคยเจอนักบัญชีตัวจริง
+dream.blocks[1].options[2].reply[0].text.th: ไม่แปลกหรอก งานนี้อยู่เบื้องหลังตลอดเลย
+dream.blocks[1].options[2].reply[1].text.th: แต่บางทีนี่แหละ คนที่ไปเจอความลับของบริษัทเลยนะ
+dream.blocks[2].lines[0].text.th: ปี 2566 มีบริษัทใหญ่ในตลาดหุ้นไทยชื่อ STARK ทำสายไฟเป็นหลัก
+dream.blocks[2].lines[1].text.th: ดูจากงบก็เหมือนขายดีนะ แต่มีทีมตรวจพิเศษเข้าไปไล่เช็กละเอียด
+dream.blocks[3].text.th: ก.ล.ต. ให้ขยายขอบเขตการตรวจ ทีมตรวจพิเศษเลยไล่เช็กรายการขายย้อนหลังของ STARK ทีละรายการ
+dream.blocks[3].titleTh: แฟ้ม: ตรวจพิเศษ
+dream.blocks[4].unlockLabelTh: ลองทายดู
+dream.blocks[4].blocks[0].lines[0].text.th: ทีมตรวจไล่เช็กรายการขายทีละอันเลย
+dream.blocks[4].blocks[0].lines[1].text.th: ลองทายดิ เขาเจอรายการขายผิดปกติกี่รายการ
+dream.blocks[4].blocks[1].game.data.promptTh: ทีมตรวจพิเศษเจอรายการขายผิดปกติใน STARK กี่รายการ
+dream.blocks[4].blocks[1].game.data.chart.bars[0].labelTh: รายการขายผิดปกติที่ทีมตรวจเจอ
+dream.blocks[4].blocks[1].game.data.nearTh: เกือบเป๊ะ
+dream.blocks[4].blocks[1].game.data.overTh: เธอทายเกินไป {d} รายการ
+dream.blocks[4].blocks[1].game.data.underTh: เธอทายน้อยไป {d} รายการ
+dream.blocks[4].blocks[1].game.data.revealTh: เธอทาย {g} แต่ของจริงคือ 202 รายการ
+dream.blocks[4].blocks[1].answersTh[0]: ทีมตรวจพิเศษเจอรายการขายผิดปกติ 202 รายการ
+dream.blocks[4].blocks[1].answersTh[1]: มูลค่า 8,063 ล้านบาทในปี 2565 และ 3,593 ล้านบาทในปี 2564
+dream.blocks[4].blocks[2].text.th: 202 รายการ มูลค่า 8,063 ล้านบาทในปี 2565 และ 3,593 ล้านบาทในปี 2564
+dream.blocks[4].blocks[2].titleTh: ฐานเศรษฐกิจ มิ.ย. 2566
+dream.blocks[4].blocks[3].lines[0].text.th: ทุกรายการลงบัญชีไว้ครบเลย ดูผ่านๆ ก็เหมือนขายได้จริง
+dream.blocks[4].blocks[3].lines[1].text.th: อ้าว แล้วเขาจับได้ยังไงอะ
+dream.blocks[4].blocks[3].lines[2].text.th: มีเบาะแสอยู่สี่อย่าง ลองพลิกดูทีละใบเลย
+dream.blocks[5].unlockLabelTh: เขาจับได้ยังไง
+dream.blocks[5].blocks[0].game.data.highlightTh: เบาะแส
+dream.blocks[5].blocks[0].game.data.cards[0].frontTh: ถามลูกค้าตรงๆ ว่าซื้อไปจริงไหม
+dream.blocks[5].blocks[0].game.data.cards[0].backTh: ทีมตรวจขอให้ลูกค้ายืนยันยอดซื้อ ยอดที่ลูกค้าไม่ยืนยัน คือจุดแรกที่ต้องไล่ต่อ
+dream.blocks[5].blocks[0].game.data.cards[0].dateTh: มิ.ย. 2566
+dream.blocks[5].blocks[0].game.data.cards[1].frontTh: ดูว่าเงินค่าของเข้ามายังไง
+dream.blocks[5].blocks[0].game.data.cards[1].backTh: ตรวจการรับชำระเงินทีละรายการ แล้วเจอการจ่ายเงินที่ไม่เหมือนลูกค้าปกติ
+dream.blocks[5].blocks[0].game.data.cards[1].dateTh: มิ.ย. 2566
+dream.blocks[5].blocks[0].game.data.cards[2].frontTh: เช็กชื่อคนที่จ่ายเงิน
+dream.blocks[5].blocks[0].game.data.cards[2].backTh: บางรายการ ชื่อผู้จ่ายเงินถูกปลอมขึ้นมา
+dream.blocks[5].blocks[0].game.data.cards[2].dateTh: มิ.ย. 2566
+dream.blocks[5].blocks[0].game.data.cards[3].frontTh: เงินที่ลูกค้าควรจ่าย ใครเป็นคนโอน
+dream.blocks[5].blocks[0].game.data.cards[3].backTh: บางรายการ เงินมาจากบัญชีของอดีตพนักงานบริษัท แทนที่จะมาจากลูกค้า
+dream.blocks[5].blocks[0].game.data.cards[3].dateTh: มิ.ย. 2566
+dream.blocks[5].blocks[0].answersTh[0]: ถามลูกค้าให้ยืนยันยอดซื้อ
+dream.blocks[5].blocks[0].answersTh[1]: ตรวจว่าเงินค่าของเข้ามายังไง แล้วเจอการจ่ายเงินที่ไม่ปกติ
+dream.blocks[5].blocks[0].answersTh[2]: เจอชื่อผู้จ่ายเงินที่ถูกปลอม
+dream.blocks[5].blocks[0].answersTh[3]: เจอเงินที่โอนจากบัญชีอดีตพนักงาน แทนที่จะมาจากลูกค้า
+dream.blocks[5].blocks[1].text.th: ก.ล.ต. กล่าวโทษอดีตกรรมการและผู้บริหาร 10 ราย ต่อ DSI ตั้งแต่ปี 2566 ปี 2569 ยังส่งเรื่องผู้สอบบัญชีที่ตรวจงบรอบก่อนๆ ตามไปอีก เพราะ ก.ล.ต. ชี้ว่าตรวจไม่ได้มาตรฐาน คดียังไม่จบ
+dream.blocks[5].blocks[1].titleTh: พูดตรงๆ
+dream.blocks[5].blocks[2].lines[0].text.th: ไม่มีใครเห็นเลยนะ ถ้าไม่มีคนถามว่าตัวเลขนี้จริงไหม
+dream.blocks[5].blocks[2].lines[1].text.th: คำถามนี้แหละ หัวใจของงานบัญชีเลย
+dream.blocks[5].blocks[2].lines[2].text.th: คำถามต่อไป: ถ้า AI ลงบัญชีให้หมดแล้ว คนจะทำอะไร
+dream.reel.hook.th: ยอดขายดูดีทุกบรรทัด จนมีคนถามว่ามันจริงไหม
+dream.reel.variantsTh[0]: ทีมตรวจเจอรายการขายผิดปกติ 202 รายการ จากเบาะแสแค่สี่อย่าง
+dream.reel.variantsTh[1]: นักบัญชีไม่ได้แค่กดเครื่องคิดเลข บางคนคือคนที่จับได้ว่าตัวเลขไม่จริง
+dream.reel.sendToFriendTh: ส่งให้เพื่อนที่คิดว่านักบัญชีน่าเบื่อดูเลย
+dream.reel.visual[0]: บรรทัดยอดขายเรียงลงมาสวยๆ แล้วบางบรรทัดเริ่มกะพริบ
+dream.reel.visual[1]: ตัวนับวิ่งถึง 202
+dream.reel.visual[2]: การ์ดเบาะแสสี่ใบพลิกทีละใบ ลูกค้า เงิน ชื่อ บัญชี",
+  "work.titleTh: AI ลงบัญชีให้ คนเช็กว่าจริงไหม
+work.questionTh: ถ้าโปรแกรมลงบัญชีให้เองได้แล้ว นักบัญชีทำอะไร
+work.navLabelTh: เช็กบัญชีร้าน
+work.og.headlineTh: AI ลงบัญชีให้ไวมาก แต่ใครเป็นคนเช็กว่าตัวเลขจริง
+work.og.stat.th: บัญชีร้านชานม 7 รายการ มีกี่รายการที่ไม่ตรง
+work.blocks[0].lines[0].text.th: ด่านนี้เธอได้งานแรกแล้วนะ
+work.blocks[0].lines[1].text.th: ร้านชานมหน้าโรงเรียนใช้แอป AI อ่านสลิปกับใบเสร็จ แล้วลงบัญชีให้เอง
+work.blocks[0].lines[2].text.th: เจ้าของร้านอยากรู้ว่าอาทิตย์นี้เงินไปไหนหมด คนเช็กคือเธอเลย
+work.blocks[1].text.th: โปรแกรมบัญชีในไทยตอนนี้ใช้ AI อ่านใบเสร็จกับใบกำกับภาษี แล้วช่วยบันทึกรายการกับกระทบยอดบัญชีให้
+work.blocks[1].titleTh: เครื่องมือจริงตอนนี้
+work.blocks[2].unlockLabelTh: เปิดบัญชีร้าน
+work.blocks[2].blocks[0].lines[0].text.th: AI ลงให้ไวจริง แต่มันไม่รู้หรอกว่าอันไหนแปลก
+work.blocks[2].blocks[0].lines[1].text.th: ไล่เช็กทีละรายการเลย อันไหนผ่าน อันไหนไม่ตรง อันไหนไม่ใช่เงินร้าน
+work.blocks[2].blocks[1].game.data.tagTh: เช็กบัญชีที่ AI ลงให้
+work.blocks[2].blocks[1].game.data.goalTh: เทียบทุกรายการกับหลักฐาน แล้วเลือกทีละข้อ
+work.blocks[2].blocks[1].game.data.bins[0].labelTh: ผ่าน
+work.blocks[2].blocks[1].game.data.bins[1].labelTh: ไม่ตรง ต้องเช็ก
+work.blocks[2].blocks[1].game.data.bins[2].labelTh: ไม่ใช่เงินร้าน
+work.blocks[2].blocks[1].game.data.simulated.watermarkTh: ตัวอย่างจำลอง
+work.blocks[2].blocks[1].game.data.items[0].labelTh: ค่านมสด
+work.blocks[2].blocks[1].game.data.items[0].meta.day: จันทร์
+work.blocks[2].blocks[1].game.data.items[0].detailTh: AI ลงไว้: ค่าวัตถุดิบ 1,200 บาท · ใบเสร็จ: นมสด 1,200 บาท
+work.blocks[2].blocks[1].game.data.items[0].revealTh: ตัวเลขตรงใบเสร็จ หมวดก็ถูก ผ่านได้เลย
+work.blocks[2].blocks[1].game.data.items[1].labelTh: ค่าน้ำแข็ง
+work.blocks[2].blocks[1].game.data.items[1].meta.day: จันทร์
+work.blocks[2].blocks[1].game.data.items[1].detailTh: AI ลงไว้: ค่าน้ำแข็ง 350 บาท 2 รายการ · สลิปโอน: มีใบเดียว 350 บาท
+work.blocks[2].blocks[1].game.data.items[1].flags[0]: ลงซ้ำ
+work.blocks[2].blocks[1].game.data.items[1].revealTh: AI อ่านสลิปใบเดียวกันสองรอบ ถ้าไม่มีใครเช็ก ร้านจะคิดว่าจ่ายค่าน้ำแข็งไป 700
+work.blocks[2].blocks[1].game.data.items[2].labelTh: ค่าเติมเกมมือถือ
+work.blocks[2].blocks[1].game.data.items[2].meta.day: อังคาร
+work.blocks[2].blocks[1].game.data.items[2].detailTh: AI ลงไว้: ค่าใช้จ่ายร้าน 299 บาท · จ่ายด้วยบัตรของร้าน แต่เป็นเกมในมือถือเจ้าของ
+work.blocks[2].blocks[1].game.data.items[2].nearTh.check: ใกล้แล้ว ตัวเลขไม่ได้ผิด แต่เป็นเงินส่วนตัว ต้องแยกออกจากบัญชีร้าน
+work.blocks[2].blocks[1].game.data.items[2].flags[0]: เงินส่วนตัวปนเงินร้าน
+work.blocks[2].blocks[1].game.data.items[2].revealTh: เงินส่วนตัวปนกับเงินร้าน กำไรของร้านจะดูน้อยกว่าที่เป็นจริง ต้องแยกออกมา
+work.blocks[2].blocks[1].game.data.items[3].labelTh: ค่าแก้วพลาสติก
+work.blocks[2].blocks[1].game.data.items[3].meta.day: พุธ
+work.blocks[2].blocks[1].game.data.items[3].detailTh: AI ลงไว้: 2,500 บาท · ใบเสร็จ: 250 บาท
+work.blocks[2].blocks[1].game.data.items[3].flags[0]: AI อ่านเลขผิด
+work.blocks[2].blocks[1].game.data.items[3].revealTh: AI อ่านเลขเกินมาหนึ่งหลัก ตัวเลขไหนดูแปลก คนต้องเทียบกับใบเสร็จจริง
+work.blocks[2].blocks[1].game.data.items[4].labelTh: ค่าเช่าร้าน
+work.blocks[2].blocks[1].game.data.items[4].meta.day: พฤหัสบดี
+work.blocks[2].blocks[1].game.data.items[4].detailTh: AI ลงไว้: ค่าเช่า 8,000 บาท · สัญญาเช่า: 8,000 บาท
+work.blocks[2].blocks[1].game.data.items[4].revealTh: ตรงสัญญาเช่า หมวดก็ถูก แบบนี้ผ่าน
+work.blocks[2].blocks[1].game.data.items[5].labelTh: ยอดขายวันเสาร์
+work.blocks[2].blocks[1].game.data.items[5].meta.day: เสาร์
+work.blocks[2].blocks[1].game.data.items[5].detailTh: แอปร้านบันทึกยอดขาย 6,400 บาท · เงินเข้าบัญชีธนาคาร 5,200 บาท
+work.blocks[2].blocks[1].game.data.items[5].nearTh.ok: ยอดขายในแอปดูดีก็จริง แต่เงินเข้าบัญชีไม่ถึง ต้องหาส่วนที่ขาดให้เจอก่อน
+work.blocks[2].blocks[1].game.data.items[5].flags[0]: ยอดไม่ตรง
+work.blocks[2].blocks[1].game.data.items[5].revealTh: ต่างกัน 1,200 บาท อาจเป็นเงินสดในลิ้นชัก หรืออาจหายจริง ต้องนับเงินสดก่อนสรุป
+work.blocks[2].blocks[1].game.data.items[6].labelTh: เงินโอนเข้า
+work.blocks[2].blocks[1].game.data.items[6].meta.day: อาทิตย์
+work.blocks[2].blocks[1].game.data.items[6].detailTh: AI ลงไว้: ยอดขาย 3,000 บาท · ชื่อผู้โอน: ไม่รู้จัก ไม่มีออเดอร์ไหนตรงเลย
+work.blocks[2].blocks[1].game.data.items[6].nearTh.ok: เงินเข้าก็จริง แต่ไม่มีออเดอร์ ลงเป็นยอดขายเลยไม่ได้
+work.blocks[2].blocks[1].game.data.items[6].flags[0]: ไม่รู้ที่มา
+work.blocks[2].blocks[1].game.data.items[6].revealTh: เงินเข้าไม่ได้แปลว่าขายได้ ต้องถามก่อนว่าเงินนี้มาจากไหน แบบเบาะแสในด่านแรกเลย
+work.blocks[2].blocks[1].game.data.resultTh: เช็กถูก {score}/{total}
+work.blocks[2].blocks[1].answersTh[0]: ผ่าน: ค่านมสด, ค่าเช่าร้าน
+work.blocks[2].blocks[1].answersTh[1]: ไม่ตรง ต้องเช็ก: ค่าน้ำแข็งลงซ้ำ, ค่าแก้วที่ AI อ่านเลขผิด, ยอดขายวันเสาร์ที่เงินเข้าไม่ครบ, เงินโอนเข้าที่ไม่รู้ที่มา
+work.blocks[2].blocks[1].answersTh[2]: ไม่ใช่เงินร้าน: ค่าเติมเกมมือถือของเจ้าของ
+work.blocks[2].blocks[2].lines[0].text.th: ที่เธอเพิ่งทำไปเมื่อกี้ คืองานจริงของนักบัญชีเลยนะ
+work.blocks[2].blocks[2].lines[1].text.th: AI ช่วยลงตัวเลขให้ แต่คนนี่แหละที่ถามว่ามันจริงไหม
+work.blocks[3].unlockLabelTh: บอกเจ้าของร้าน
+work.blocks[3].blocks[0].ask[0].text.th: เจ้าของร้านทักมาถามแล้วว่า อาทิตย์นี้ร้านเป็นไงบ้าง
+work.blocks[3].blocks[0].ask[1].text.th: เธอจะบอกเขาเรื่องไหนก่อนดี
+work.blocks[3].blocks[0].options[0].labelTh: ร้านขายดีมาก ไม่ต้องห่วงเลย
+work.blocks[3].blocks[0].options[0].reply[0].text.th: ขายดีจริงแหละ แต่เงินวันเสาร์ยังหาไม่เจออยู่นะ
+work.blocks[3].blocks[0].options[0].reply[1].text.th: เรื่องที่ไม่สบายใจก็ต้องบอกนะ แค่พูดให้เขาเอาไปแก้ต่อได้
+work.blocks[3].blocks[0].options[1].labelTh: เงินวันเสาร์ไม่ตรง ต้องนับเงินสดดูก่อน
+work.blocks[3].blocks[0].options[1].reply[0].text.th: เป๊ะเลย บอกตรงๆ ว่าเจออะไร แล้วบอกว่าต้องเช็กอะไรต่อ
+work.blocks[3].blocks[0].options[2].labelTh: ขอเช็กให้ครบก่อน ค่อยบอกทีเดียว
+work.blocks[3].blocks[0].options[2].reply[0].text.th: รอบคอบดีนะ แต่เจ้าของร้านอยากรู้ตั้งแต่ตอนนี้เลยแหละ
+work.blocks[3].blocks[0].options[2].reply[1].text.th: บอกไปก่อนเลยว่าเจออะไร แล้วอัปเดตว่ากำลังเช็กอะไรอยู่
+work.blocks[4].unlockLabelTh: แล้ว AI ล่ะ
+work.blocks[4].blocks[0].text.th: รายงาน Future of Jobs ปี 2568 ของ World Economic Forum: นายจ้างทั่วโลกคาดว่างานนักบัญชีและผู้สอบบัญชี จะอยู่ในกลุ่มที่ลดลงเร็ว เพราะ AI กับระบบดิจิทัล
+work.blocks[4].blocks[0].titleTh: พูดตรงๆ
+work.blocks[4].blocks[1].lines[0].text.th: เราว่านะ คนที่แค่กรอกตัวเลขอย่างเดียวจะเหนื่อยขึ้นเรื่อยๆ
+work.blocks[4].blocks[1].lines[1].text.th: แต่ถ้าเช็กเป็น แล้วอธิบายให้คนอื่นเข้าใจได้ ยังไปต่อได้นะ
+work.blocks[4].blocks[1].lines[2].text.th: ขนาดบริษัททำโปรแกรมบัญชีเองยังบอกเลยนะ
+work.blocks[4].blocks[1].lines[3].text.th: ว่า AI ยังวิเคราะห์กับให้คำปรึกษาแทนคนไม่ได้
+work.blocks[5].unlockLabelTh: สายนี้มีกี่แบบ
+work.blocks[5].blocks[0].lines[0].text.th: จริงๆ นักบัญชี เป็นชื่อเรียกกว้างๆ นะ ข้างในแยกได้อีกหลายสาย
+work.blocks[5].blocks[1].headTh: นักบัญชี มีสายไหนบ้าง
+work.blocks[5].blocks[1].tiles[0].titleTh: บัญชีธุรกิจ
+work.blocks[5].blocks[1].tiles[0].lineTh: ดูแลเงินของร้านหรือบริษัท เช็กที่ AI ลงให้ แบบเมื่อกี้
+work.blocks[5].blocks[1].tiles[1].titleTh: ผู้สอบบัญชี
+work.blocks[5].blocks[1].tiles[1].lineTh: ตรวจงบของบริษัท แล้วเซ็นรับรองว่าเชื่อถือได้
+work.blocks[5].blocks[1].tiles[2].titleTh: นักสืบบัญชี
+work.blocks[5].blocks[1].tiles[2].lineTh: ตามหาหลักฐานในคดีเรื่องเงิน แล้วไปอธิบายในศาล
+work.blocks[5].blocks[1].tiles[3].titleTh: สายภาษี
+work.blocks[5].blocks[1].tiles[3].lineTh: ช่วยร้านกับบริษัทเสียภาษีให้ถูก บางคนเป็นผู้สอบบัญชีภาษี
+work.blocks[5].blocks[1].tiles[4].titleTh: สาย CFO
+work.blocks[5].blocks[1].tiles[4].lineTh: ดูแลเงินทั้งบริษัท แล้วบอกผู้บริหารว่าควรไปทางไหน
+work.blocks[5].blocks[2].lines[0].text.th: ยังไม่ต้องรีบเลือกนะ ค่อยๆ ลองไปทีละสายก็ได้
+work.blocks[6].lines[0].text.th: ด่านต่อไป: คืนนี้ลองเป็นนักบัญชีให้เงินตัวเอง
+work.reel.hook.th: AI ลงบัญชีให้ไวมาก แต่ใครเป็นคนเช็กว่าตัวเลขจริง
+work.reel.variantsTh[0]: ร้านชานมขายดี แต่เงินวันเสาร์หายไปไหน
+work.reel.variantsTh[1]: นักบัญชียุคนี้ไม่ได้แค่กรอกตัวเลข แต่เช็กว่าตัวเลขโกหกไหม
+work.reel.sendToFriendTh: ส่งให้เพื่อนที่ตาไวเรื่องตัวเลขดูเลย
+work.reel.visual[0]: สลิปกับใบเสร็จบินเข้าแอป ตัวเลขเรียงลงตาราง
+work.reel.visual[1]: บางบรรทัดกะพริบ ป้าย ผ่าน ไม่ตรง ไม่ใช่เงินร้าน ประทับลง
+work.reel.visual[2]: ยอดขายในแอปกับเงินเข้าธนาคารวางคู่กัน ช่องว่างตรงกลางสว่างขึ้น",
+  "tonight.titleTh: คืนนี้ ทำบัญชีเงินตัวเอง แล้วหาเรื่องที่ไม่คาดคิด
+tonight.questionTh: คืนนี้ทำอะไรได้บ้าง ที่จบแล้วได้ผลงานชิ้นแรกใส่แฟ้มเลย
+tonight.navLabelTh: ภารกิจคืนนี้
+tonight.og.headlineTh: คืนนี้ลองเป็นนักบัญชีให้เงินตัวเอง แล้วหาให้เจอว่าเงินแอบไปไหน
+tonight.blocks[0].lines[0].text.th: ด่านนี้ไม่ได้เล่นในจอนะ แต่เป็นภารกิจจริงคืนนี้เลย
+tonight.blocks[0].lines[1].text.th: ลองเป็นนักบัญชีให้เงินตัวเอง ย้อนดูว่าอาทิตย์ที่แล้วเงินไปไหน
+tonight.blocks[1].text.th: LibreOffice เป็นโปรแกรมฟรี มี Calc ไว้ทำตาราง โหลดลงคอมได้เลย ถ้ามีบัญชี Google อยู่แล้วจะใช้ Google Sheets ก็ได้ หรือใช้สมุดกับปากกาก็ยังได้
+tonight.blocks[1].titleTh: เครื่องมือ: ตารางอะไรก็ได้
+tonight.blocks[2].lineTh: ใช้เงินของตัวเอง หรือเงินชุมนุมที่ครูที่ปรึกษาอนุญาตแล้วเท่านั้น ยอดเงินจริงไม่ต้องโพสต์ที่ไหน ถ้าจะใส่แฟ้ม เล่าวิธีทำกับสิ่งที่เจอก็พอ
+tonight.blocks[3].game.data.room.titleTh: ตารางรายรับรายจ่ายของฉัน
+tonight.blocks[3].game.data.room.badgeTh: LibreOffice ฟรี ตามเว็บของ LibreOffice ณ 20 พ.ย. 2569
+tonight.blocks[3].game.data.room.subTh: มีบัญชี Google อยู่แล้ว ใช้ Google Sheets แทนได้ ไม่ต้องสมัครอะไรใหม่
+tonight.blocks[3].game.data.checklistTh[0]: ทำช่อง วันที่ รายการ หมวด จำนวนเงิน
+tonight.blocks[3].game.data.checklistTh[1]: ย้อนดูเงินที่ใช้อาทิตย์ที่แล้ว จากสลิปในแอปธนาคาร ใบเสร็จ หรือความจำ
+tonight.blocks[3].game.data.checklistTh[2]: แบ่งหมวด เช่น ของกิน เดินทาง เติมเกม ของใช้
+tonight.blocks[3].game.data.checklistTh[3]: ใช้สูตร SUM รวมเงินแต่ละหมวด
+tonight.blocks[3].game.data.checklistTh[4]: หาเรื่องที่ไม่คาดคิดให้เจอ แล้วเขียนสรุป
+tonight.blocks[3].game.data.fields[0].placeholderTh: บัญชีของใคร (ของฉันเอง หรือของชุมนุม)
+tonight.blocks[3].game.data.fields[1].placeholderTh: หมวดไหนใช้เงินเยอะสุด
+tonight.blocks[3].game.data.fields[2].placeholderTh: เรื่องที่ไม่คาดคิด (เช่น ค่าขนมเล็กๆ รวมแล้วเยอะกว่าค่าเดินทาง)
+tonight.blocks[3].game.data.fields[3].placeholderTh: มีรายการไหนจำไม่ได้ หรือยอดไม่ตรงบ้าง
+tonight.blocks[3].game.data.fields[4].placeholderTh: ถ้าต้องบอกเจ้าของเงินหนึ่งเรื่อง จะบอกว่าอะไร
+tonight.blocks[3].game.data.fixedLinesTh[0]: ทำจากเงินของฉันเอง หรือเงินชุมนุมที่ครูที่ปรึกษาอนุญาตแล้ว
+tonight.blocks[3].game.data.privacyTh: เก็บไว้ในเครื่องนี้เท่านั้น ไม่ส่งไปที่ไหน
+tonight.blocks[3].answersTh[0]: เปิด LibreOffice Calc ที่ฟรี หรือใช้สมุดก็ได้ ถ้ามีบัญชี Google อยู่แล้วใช้ Google Sheets ได้
+tonight.blocks[3].answersTh[1]: ย้อนดูเงินที่ใช้อาทิตย์ที่แล้ว ลงวันที่ รายการ หมวด จำนวนเงิน แล้วใช้ SUM รวมแต่ละหมวด
+tonight.blocks[3].answersTh[2]: เขียนสรุป: บัญชีของใคร หมวดไหนเยอะสุด เรื่องที่ไม่คาดคิด รายการที่ไม่ตรง และจะบอกเจ้าของเงินว่าอะไร
+tonight.blocks[3].demoScript[1].text: ของกิน เยอะกว่าที่คิดไว้มาก
+tonight.blocks[3].demoScript[2].text: ชานมหลังเลิกเรียน รวมแล้วเยอะกว่าค่ารถทั้งอาทิตย์
+tonight.blocks[4].lines[0].text.th: ช่องที่สำคัญสุดเลยนะ คือเรื่องที่เธอไม่คาดคิด
+tonight.blocks[4].lines[1].text.th: เพราะงานนักบัญชีจริงๆ คือหาสิ่งที่ตัวเลขไม่ได้บอกตรงๆ แหละ
+tonight.blocks[4].lines[2].text.th: ช่องสุดท้าย จะบอกเจ้าของเงินว่าอะไร เราว่าอย่าข้ามเลยนะ
+tonight.blocks[5].lines[0].text.th: ถ้าลองทำกับเงินชุมนุมยิ่งดีเลย ตารางกับสรุปนี้ใส่แฟ้มได้เลย
+tonight.blocks[6].text.th: TCAS70 มี 4 รอบ รอบแรกชื่อ Portfolio มหาลัยดูจากสิ่งที่เธอลงมือทำ งานแบบคืนนี้แหละ ใส่แฟ้มได้เลย
+tonight.blocks[6].titleTh: รู้ไหม รอบ 1 ใช้ผลงานยื่นได้นะ
+tonight.blocks[7].ask[0].text.th: ว่าแต่เธอจะลองเมื่อไหร่ดี
+tonight.blocks[7].options[0].labelTh: คืนนี้เลยดิ
+tonight.blocks[7].options[0].reply[0].text.th: ชอบความไวนี้แฮะ
+tonight.blocks[7].options[0].reply[1].text.th: ทำเสร็จแล้ว อาทิตย์หน้าลองจดสดทุกวัน แล้วเทียบกับที่จำได้
+tonight.blocks[7].options[1].labelTh: ขอเป็นวันหยุดละกัน
+tonight.blocks[7].options[1].reply[0].text.th: ดีลเลย ปักลงปฏิทินไว้เลย จะได้ไม่ลืม
+tonight.blocks[7].options[2].labelTh: ยังไม่ชัวร์เลยว่าจะชอบไหม
+tonight.blocks[7].options[2].reply[0].text.th: ไม่ชัวร์ก็ลองดูก่อนได้นะ
+tonight.blocks[7].options[2].reply[1].text.th: ลองแล้วไม่สนุก ก็รู้ตัวก่อนเลือกคณะ ไม่เสียอะไรเลย",
+  "next.titleTh: แล้วเธอล่ะ
+next.questionTh: สายบัญชีใช่เธอไหม แล้วจะไปต่อทางไหน
+next.navLabelTh: แล้วเธอล่ะ
+next.og.headlineTh: สายบัญชีใช่เธอไหม เล่นจนจบแล้วค่อยตัดสินใจ
+next.blocks[0].lines[0].text.th: มาถึงด่านสุดท้ายของ Level 1 แล้วนะ
+next.blocks[0].lines[1].text.th: เล่นมาทั้งหมด เธอชอบช่วงไหนที่สุดอะ
+next.blocks[1].game.data.lines.dream: ทายรายการขายผิดปกติไว้ {sales} รายการ || รู้แล้วว่าทีมตรวจจับได้ยังไง
+next.blocks[1].game.data.lines.work: เช็กบัญชีร้านชานม ถูก {score}/{total} || เช็กบัญชีร้านชานมจนครบ
+next.blocks[1].game.data.lines.tonight: เตรียมบัญชีเงินตัวเองไว้แล้ว
+next.blocks[1].game.data.favourites.dream: สายที่เธอเลือกเอง: นักสืบบัญชี งานจริงคือตามรอยเงินที่ผิดปกติ จนรู้ว่าความจริงคืออะไร
+next.blocks[1].game.data.favourites.work: สายที่เธอเลือกเอง: บัญชีธุรกิจ งานจริงคือเช็กตัวเลขที่ AI ลงให้ แล้วบอกเจ้าของว่าเงินไปไหน
+next.blocks[1].game.data.cardLineTh: นี่ไม่ใช่คำทำนาย มันคือจุดเริ่ม เธอตัดสินใจเอง
+next.blocks[1].answersTh[0]: เลือกด่านที่สนุกที่สุด แล้วดูว่ามันตรงกับงานจริงสายไหน
+next.blocks[1].answersTh[1]: นักสืบบัญชี หรือ บัญชีธุรกิจ
+next.blocks[1].answersTh[2]: นี่ไม่ใช่คำทำนาย มันคือจุดเริ่ม เธอตัดสินใจเอง
+next.blocks[2].lines[0].text.th: กดบอกเราหน่อยว่าสายนี้ใช่เธอไหม เราจะได้รู้ว่าควรเจาะลึกต่อหรือเปล่า
+next.blocks[2].lines[1].text.th: ไม่ว่าจะกดอันไหน ถือว่าได้ข้อมูล
+next.blocks[2].lines[2].text.th: ลองแล้วรู้ว่าไม่ใช่ ก็ยังได้คำตอบไวกว่าคนที่ไม่เคยลอง
+next.blocks[4].lines[0].text.th: ถ้าเริ่มสนใจ สิ่งเดียวที่ต้องทำต่อ
+next.blocks[4].lines[1].text.th: คือลองทำบัญชีอีกหนึ่งอาทิตย์ แล้วเขียนสรุปอีกหนึ่งชิ้นนะ
+next.blocks[5].text.th: ไม่ชอบงานละเอียด ไม่ชอบเช็กซ้ำ หรือไม่อยากเป็นคนบอกความจริงที่คนอื่นไม่อยากฟัง เพราะงานจริงคือไล่หาที่มาของเงินทุกก้อน แล้วพูดตรงๆ
+next.blocks[5].titleTh: สายนี้อาจไม่เหมาะ ถ้า...",
+  "round1.titleTh: รอบ 1 มีพื้นที่ให้ผลงานเธอ
+round1.questionTh: เข้ามหาลัยด้วยสิ่งที่ทำเอง ไม่ใช่แค่คะแนนสอบ จริงเหรอ
+round1.navLabelTh: รอบ 1
+round1.og.headlineTh: TCAS รอบ 1 ใช้ผลงานของเธอยื่นได้ เริ่มเก็บตั้งแต่ตอนนี้เลย
+round1.og.stat.th: TCAS70 มี 4 รอบ รอบแรกคือ Portfolio
+round1.blocks[0].lines[0].text.th: ก่อนไปต่อ มีเรื่องหนึ่งที่แทบไม่มีใครเคยบอก
+round1.blocks[0].lines[1].text.th: เข้ามหาลัยไม่ได้มีแค่ทางสอบอย่างเดียวนะ
+round1.blocks[1].text.th: TCAS70 มี 4 รอบ รอบแรกชื่อ Portfolio มหาลัยดูจากสิ่งที่เธอทำมา
+round1.blocks[2].lines[0].text.th: ถ้าเธอเคยลองทำอะไรในสายบัญชี ด้วยตัวเอง นั่นแหละ เอาไปใส่ได้เลย
+round1.blocks[2].lines[1].text.th: ปีนี้ ทปอ. มีระบบ TCASfolio ให้ทำแฟ้มผลงานได้สูงสุด 40 รายการ
+round1.blocks[3].unlockLabelTh: ลองจัดแฟ้มดู
+round1.blocks[3].blocks[0].lines[0].text.th: ลองดูสิ ของพวกนี้ควรไปอยู่ช่องไหนในแฟ้ม
+round1.blocks[3].blocks[1].game.data.tagTh: จัดแฟ้มผลงาน
+round1.blocks[3].blocks[1].game.data.goalTh: จัดของใส่แฟ้ม TCASfolio
+round1.blocks[3].blocks[1].game.data.bins[0].labelTh: โครงงาน
+round1.blocks[3].blocks[1].game.data.bins[1].labelTh: กิจกรรม
+round1.blocks[3].blocks[1].game.data.bins[2].labelTh: เกียรติบัตร รางวัล
+round1.blocks[3].blocks[1].game.data.items[0].labelTh: ทำบัญชีรายรับรายจ่ายของชุมนุม แล้วสรุปให้ทุกคนดูท้ายเทอม
+round1.blocks[3].blocks[1].game.data.items[0].revealTh: โครงงาน: ตารางกับสรุปที่เธอทำเอง คือหลักฐานว่าเธอทำบัญชีเป็นจริง
+round1.blocks[3].blocks[1].game.data.items[1].labelTh: คิดต้นทุนร้านในงานโรงเรียน ว่าต้องขายแก้วละเท่าไหร่ถึงไม่ขาดทุน
+round1.blocks[3].blocks[1].game.data.items[1].revealTh: โครงงาน: ตั้งคำถามจริง แล้วตอบด้วยตัวเลข นี่แหละงานบัญชีที่ช่วยร้านตัดสินใจ
+round1.blocks[3].blocks[1].game.data.items[2].labelTh: เป็นเหรัญญิกสภานักเรียน หรือเหรัญญิกชุมนุม
+round1.blocks[3].blocks[1].game.data.items[2].revealTh: กิจกรรม: เล่าด้วยว่าเธอดูแลเงินยังไง ให้ทุกคนตรวจดูได้
+round1.blocks[3].blocks[1].game.data.items[3].labelTh: ไปค่ายบัญชีที่มหาลัยจัดให้นักเรียน ม.ปลาย
+round1.blocks[3].blocks[1].game.data.items[3].revealTh: กิจกรรม: เล่าว่าในค่ายเธอลงมือทำอะไร ไม่ใช่แค่ไปนั่งฟังเฉยๆ
+round1.blocks[3].blocks[1].game.data.items[4].labelTh: เกียรติบัตรจากการแข่งตอบปัญหาบัญชี
+round1.blocks[3].blocks[1].game.data.items[4].revealTh: เกียรติบัตร รางวัล: ใส่ได้นะ แต่สิ่งที่เธอลงมือทำเองสำคัญกว่าใบเกียรติบัตรเยอะ
+round1.blocks[3].blocks[1].game.data.resultTh: จัดถูก {score}/{total}
+round1.blocks[3].blocks[1].answersTh[0]: โครงงาน: ทำบัญชีรายรับรายจ่ายของชุมนุม แล้วสรุปให้ทุกคนดูท้ายเทอม, คิดต้นทุนร้านในงานโรงเรียน ว่าต้องขายแก้วละเท่าไหร่ถึงไม่ขาดทุน
+round1.blocks[3].blocks[1].answersTh[1]: กิจกรรม: เป็นเหรัญญิกสภานักเรียน หรือเหรัญญิกชุมนุม, ไปค่ายบัญชีที่มหาลัยจัดให้นักเรียน ม.ปลาย
+round1.blocks[3].blocks[1].answersTh[2]: เกียรติบัตร รางวัล: เกียรติบัตรจากการแข่งตอบปัญหาบัญชี
+round1.blocks[3].blocks[2].lines[0].text.th: เห็นไหม ของที่เธอลงมือทำเองนับได้จริง
+round1.blocks[3].blocks[2].lines[1].text.th: ไม่ต้องรอใครมาจัดค่าย หรือออกใบเกียรติบัตรให้ก่อนเลย
+round1.blocks[4].unlockLabelTh: แล้วตอนนี้ฉันอยู่ ม.ไหนล่ะ
+round1.blocks[4].blocks[0].lines[0].text.th: ถ้าอยู่ ม.6 รอบ 1 ปีนี้บางที่ยังเปิดรับอยู่ แต่ละคณะปิดไม่พร้อมกันนะ
+round1.blocks[4].blocks[0].lines[1].text.th: ถ้าอยู่ ม.5 เธอยังมีเวลาอีกเกือบปี ลองทำชิ้นแรกให้เสร็จก่อนเลย
+round1.blocks[4].blocks[0].lines[2].text.th: ถ้าอยู่ ม.4 เวลาเยอะสุด ลองได้หลายอย่างเลย ไม่ต้องรีบเลือก
+round1.blocks[4].blocks[1].text.th: อย่างเช่น สวนสุนันทาเปิดรับรอบ 1 ถึง 9 ก.พ. 2570
+round1.blocks[4].blocks[1].titleTh: ยังเปิดอยู่
+round1.blocks[4].blocks[2].text.th: รอบ 1 ไม่ได้ง่ายกว่ารอบอื่น แต่ละคณะมีเกณฑ์อย่างเกรดขั้นต่ำ เช็กประกาศของคณะที่สนใจทุกครั้งนะ
+round1.blocks[4].blocks[2].titleTh: พูดตรงๆ
+round1.blocks[4].blocks[3].labelTh: ดูหลักสูตร บัญชี บริหารธุรกิจ ใน mytcas
+round1.blocks[5].lines[0].text.th: ผลงานชิ้นแรกไม่ต้องใหญ่โตเลย
+round1.blocks[5].lines[1].text.th: ใน mytcas ปีนี้ มีหลักสูตรที่ชื่อมีคำว่าบัญชี 94 หลักสูตร ใน 56 มหาลัย
+round1.blocks[5].lines[2].text.th: อยากรู้เรื่องเงินเดือนกับที่เรียนต่อใช่ไหม
+round1.blocks[5].lines[3].text.th: กด แผนที่ด่าน ข้างล่าง ไปดูข้อมูลเต็มของสายนี้ได้เลย",
+]
+`;
