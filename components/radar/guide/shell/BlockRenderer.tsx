@@ -12,6 +12,7 @@ import { FactChips } from "./FactChips";
 import { GameIsland } from "./GameIsland";
 import { GuideClip, type GuideClipData } from "./GuideClip";
 import { ItemCard, SafetyCard } from "./ItemCard";
+import { KindsStep } from "./KindsStep";
 import { copySpeaker, dialogueGroups, type LevelStep } from "./level-steps";
 import { GuideLinkButton, GuideOutroStep, MidShareStep, ProfileStep } from "./OutroSteps";
 
@@ -50,6 +51,13 @@ export function StepView({ step, pageKey, titleTh, clip }: StepViewProps) {
         <>
           <ChoiceStep pageKey={pageKey} stepId={block.id} ask={block.ask} options={block.options} />
           {textChips([...block.ask, ...block.options.flatMap((o) => o.reply)].map((l) => l.text))}
+        </>
+      );
+    case "kinds":
+      return (
+        <>
+          <KindsStep pageKey={pageKey} stepId={block.id} headTh={block.headTh} tiles={block.tiles} />
+          <FactChips factIds={block.factIds ?? []} />
         </>
       );
     case "copy":

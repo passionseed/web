@@ -115,16 +115,19 @@ work.blocks[3].blocks[3].lines[2].text.th: เหมือนที่เธอ�
 work.blocks[3].blocks[4].text.th: 71% ของคนสายนี้ในสหรัฐฯ บอกว่าการทำงานเป็นทีม สำคัญอย่างยิ่ง
 work.blocks[3].blocks[4].titleTh: ไม่ได้ลุยคนเดียวหรอก
 work.blocks[4].unlockLabelTh: สายนี้มีกี่แบบ
-work.blocks[4].blocks[0].lines[0].text.th: นักพัฒนาซอฟต์แวร์ เป็นชื่อเรียกกว้างๆ นะ
-work.blocks[4].blocks[0].lines[1].text.th: งานจริงแยกได้อีกหลายแบบ แต่ละแบบทำไม่เหมือนกันเลย
-work.blocks[4].blocks[1].text.th: สายเว็บและแอป: ทำของที่คนเปิดใช้ทุกวัน แล้วแก้ตามที่คนใช้บอก แบบแอปโรงเรียนเมื่อกี้
-สายหลังบ้าน: ทำระบบเบื้องหลังคอยเก็บและส่งข้อมูล เช่น ให้แอปรู้ว่ารถเมล์อยู่ตรงไหน
-สายเกม: สร้างเกม ตั้งแต่ระบบการเล่นยันฉากในเกม
-สายอุปกรณ์: เขียนโค้ดฝังในเครื่องใช้ไฟฟ้า รถยนต์ หรือหุ่นยนต์
-สายดูแลระบบ: กันเว็บกับแอปไม่ให้ล่ม ต่อให้คนแห่เข้าพร้อมกันเยอะแค่ไหน
-work.blocks[4].blocks[1].titleTh: นักพัฒนาซอฟต์แวร์ มีหลายแบบ
-work.blocks[4].blocks[2].lines[0].text.th: ที่เธอเพิ่งลองไป คือแบบแรก
-work.blocks[4].blocks[2].lines[1].text.th: ยังไม่ต้องรีบเลือกตอนนี้ ค่อยๆ ลองไปทีละแบบก็ได้
+work.blocks[4].blocks[0].lines[0].text.th: จริงๆ นักพัฒนาซอฟต์แวร์ เป็นชื่อเรียกกว้างๆ นะ ข้างในแยกได้อีกหลายสาย
+work.blocks[4].blocks[1].headTh: นักพัฒนาซอฟต์แวร์ มีสายไหนบ้าง
+work.blocks[4].blocks[1].tiles[0].titleTh: เว็บและแอป
+work.blocks[4].blocks[1].tiles[0].lineTh: ทำแอปที่คนเปิดทุกวัน แก้ตามคนใช้ แบบเมื่อกี้
+work.blocks[4].blocks[1].tiles[1].titleTh: หลังบ้าน
+work.blocks[4].blocks[1].tiles[1].lineTh: ทำระบบเบื้องหลัง เช่น ให้แอปรู้ว่ารถเมล์อยู่ตรงไหน
+work.blocks[4].blocks[1].tiles[2].titleTh: เกม
+work.blocks[4].blocks[1].tiles[2].lineTh: สร้างเกม ตั้งแต่ระบบการเล่นยันฉากในเกม
+work.blocks[4].blocks[1].tiles[3].titleTh: อุปกรณ์
+work.blocks[4].blocks[1].tiles[3].lineTh: เขียนโค้ดลงเครื่องใช้ไฟฟ้า รถยนต์ ยันหุ่นยนต์
+work.blocks[4].blocks[1].tiles[4].titleTh: ดูแลระบบ
+work.blocks[4].blocks[1].tiles[4].lineTh: กันเว็บไม่ให้ล่ม ต่อให้คนแห่เข้ามาพร้อมกัน
+work.blocks[4].blocks[2].lines[0].text.th: ยังไม่ต้องรีบเลือกนะ ค่อยๆ ลองไปทีละสายก็ได้
 work.blocks[5].lines[0].text.th: ถ้าเธอชอบจัดลำดับว่าอะไรสำคัญ แถมอยากรู้ว่าทำไมของมันพัง
 work.blocks[5].lines[1].text.th: สายนี้มีที่ให้เธอ
 work.blocks[5].lines[2].text.th: ด่านต่อไป: คืนนี้ลองทำเว็บหน้าแรกของเธอเอง

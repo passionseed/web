@@ -159,16 +159,19 @@ work.blocks[4].blocks[2].lines[1].text.th: ป้อนข้อมูล ลอ
 work.blocks[4].blocks[2].lines[2].text.th: ขั้นลองถาม ทีม AI เรียกว่า eval แต่นี่แค่ส่วนหนึ่งของงาน
 work.blocks[4].blocks[2].lines[3].text.th: เปิดใช้แล้วก็ยังต้องคอยเช็ก ว่ามีคนถามอะไรที่บอทยังตอบไม่ได้
 work.blocks[5].unlockLabelTh: สายนี้มีกี่แบบ
-work.blocks[5].blocks[0].lines[0].text.th: วิศวกร AI เป็นชื่อเรียกกว้างๆ นะ
-work.blocks[5].blocks[0].lines[1].text.th: งานจริงแยกได้อีกหลายแบบ แต่ละแบบทำไม่เหมือนกันเลย
-work.blocks[5].blocks[1].text.th: สายสร้างแอป AI: หยิบโมเดลที่มีอยู่ มาทำเป็นของที่คนใช้จริง แบบบอทโรงเรียนเมื่อกี้
-สายโมเดลภาษา: สอนโมเดลให้เก่งภาษาไทย แล้ววัดผลด้วยข้อสอบอย่าง O-NET แบบทีม Typhoon
-สายภาพ: สอน AI ให้ดูรูปเป็น แบบ Inspectra ที่ช่วยหมออ่านเอกซเรย์ปอด
-สายระบบ: คุมให้ AI รันลื่นทุกวัน คนใช้เยอะแค่ไหนก็ไม่ล่ม
-สายวิจัย: คิดวิธีใหม่ๆ ให้ AI เก่งขึ้น ในแล็บมหาลัยหรือบริษัทใหญ่
-work.blocks[5].blocks[1].titleTh: วิศวกร AI มีหลายแบบ
-work.blocks[5].blocks[2].lines[0].text.th: ที่เธอเพิ่งลองไป คือแบบแรก
-work.blocks[5].blocks[2].lines[1].text.th: ยังไม่ต้องรีบเลือกตอนนี้ ค่อยๆ ลองไปทีละแบบก็ได้
+work.blocks[5].blocks[0].lines[0].text.th: จริงๆ วิศวกร AI เป็นชื่อเรียกกว้างๆ นะ ข้างในแยกได้อีกหลายสาย
+work.blocks[5].blocks[1].headTh: วิศวกร AI มีสายไหนบ้าง
+work.blocks[5].blocks[1].tiles[0].titleTh: สร้างแอป AI
+work.blocks[5].blocks[1].tiles[0].lineTh: เอาโมเดลที่มีอยู่ มาทำของให้คนใช้จริง แบบบอทเมื่อกี้
+work.blocks[5].blocks[1].tiles[1].titleTh: สอนภาษา
+work.blocks[5].blocks[1].tiles[1].lineTh: สอน AI ให้เก่งภาษาไทย แบบทีม Typhoon
+work.blocks[5].blocks[1].tiles[2].titleTh: สอนดูรูป
+work.blocks[5].blocks[1].tiles[2].lineTh: สอน AI ให้ดูรูปเป็น แบบ Inspectra ที่ช่วยหมออ่านเอกซเรย์
+work.blocks[5].blocks[1].tiles[3].titleTh: คุมระบบ
+work.blocks[5].blocks[1].tiles[3].lineTh: คุมไม่ให้ AI ล่ม ต่อให้คนแห่มาใช้พร้อมกัน
+work.blocks[5].blocks[1].tiles[4].titleTh: วิจัย
+work.blocks[5].blocks[1].tiles[4].lineTh: คิดวิธีใหม่ให้ AI เก่งขึ้น ในแล็บมหาลัยหรือบริษัท
+work.blocks[5].blocks[2].lines[0].text.th: ยังไม่ต้องรีบเลือกนะ ค่อยๆ ลองไปทีละสายก็ได้
 work.blocks[6].lines[0].text.th: ด่านต่อไป: คืนนี้มาลองสอน AI ตัวแรกของเธอเอง
 work.reel.hook.th: ทำบอทให้โรงเรียน ใครก็ทำได้ แต่ทำให้มันตอบถูกนี่สิของจริง
 work.reel.variantsTh[0]: วิศวกร AI ไม่ได้สร้าง AI จากศูนย์ทุกครั้ง งานจริงคือนี่

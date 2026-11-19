@@ -1,3 +1,4 @@
+import { KIND_GLYPHS } from "../kind-glyphs";
 import { BADGE_GLYPHS, gridRuns, gridSize, HOST_GRID, HOST_GRIDS, HOST_PALETTE, avatarPalette } from "../pixel-art";
 
 const BADGE_ICONS = [
@@ -49,6 +50,13 @@ describe("badge glyphs", () => {
   it.each(BADGE_ICONS)("%s is 8x8", (icon) => {
     expect(gridSize(BADGE_GLYPHS[icon])).toEqual({ w: 8, h: 8 });
     expect(BADGE_GLYPHS[icon].join("")).toMatch(/[#o]/);
+  });
+});
+
+describe("kind glyphs", () => {
+  it.each(Object.keys(KIND_GLYPHS) as (keyof typeof KIND_GLYPHS)[])("%s is 12x12 in the three tile colours", (icon) => {
+    expect(gridSize(KIND_GLYPHS[icon])).toEqual({ w: 12, h: 12 });
+    expect(KIND_GLYPHS[icon].join("")).toMatch(/^[#ow.]+$/);
   });
 });
 

@@ -185,9 +185,13 @@ export function GuideShellProvider({
     !(cleared ?? []).includes(pageKey ?? "") &&
     (currentStep?.kind === "game" || currentStep?.kind === "bespoke"
       ? !progress.games[gameKey]?.done
-      : currentStep?.kind === "choice" && progress.choices[gameKey] === undefined);
+      : (currentStep?.kind === "choice" || currentStep?.kind === "kinds") && progress.choices[gameKey] === undefined);
   const waitingHintTh =
-    currentStep?.kind === "choice" ? "เลือกคำตอบด้านบนก่อน แล้วไปต่อได้เลย" : "เล่นเกมด้านบนให้จบ แล้วไปต่อได้เลย";
+    currentStep?.kind === "choice"
+      ? "เลือกคำตอบด้านบนก่อน แล้วไปต่อได้เลย"
+      : currentStep?.kind === "kinds"
+        ? "แตะดูสักสายก่อน แล้วไปต่อได้เลย"
+        : "เล่นเกมด้านบนให้จบ แล้วไปต่อได้เลย";
 
   const [advanceSeq, setAdvanceSeq] = useState(0);
   const [dialogueNudge, setDialogueNudge] = useState<{ key: string; seq: number } | null>(null);

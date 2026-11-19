@@ -17,10 +17,13 @@ import { parseVtt } from "./vtt";
 import {
   CHOICE_LABEL_MAX_CHARS,
   GUIDE_PAGE_KEY_PATTERN,
+  KIND_LINE_MAX_CHARS,
+  KIND_TITLE_MAX_CHARS,
   RESERVED_GUIDE_SLUGS,
   RESERVED_PAGE_KEYS,
   type BannedClaim,
   type CareerGuide,
+  type CareerKindTile,
   type ChoiceOption,
   type ClipManifest,
   type CopyText,
@@ -226,6 +229,7 @@ interface Collected {
   deadlines: { path: string; at: unknown }[];
   dialogues: { path: string; lines: number }[];
   choices: { path: string; ask: readonly DialogueLine[]; options: readonly ChoiceOption[] }[];
+  kinds: { path: string; tiles: readonly CareerKindTile[] }[];
 }
 
 function collectDeadlines(value: unknown, path: string, out: Collected["deadlines"]): void {
@@ -332,6 +336,17 @@ function collectBlocks(page: GuidePage, blocks: readonly GuideBlock[], base: str
         });
         c.choices.push({ path, ask: block.ask, options: block.options });
         break;
+      case "kinds": {
+        (block.factIds ?? []).forEach((id, j) => c.factRefs.push({ pageKey, path: `${path}.factIds[${j}]`, id, copyLevel: true }));
+        const backing = [...page.factIds, ...(block.factIds ?? [])];
+        addString(block.headTh, `${path}.headTh`, backing);
+        block.tiles.forEach((t, j) => {
+          addString(t.titleTh, `${path}.tiles[${j}].titleTh`, backing);
+          addString(t.lineTh, `${path}.tiles[${j}].lineTh`, backing);
+        });
+        c.kinds.push({ path, tiles: block.tiles });
+        break;
+      }
       case "item": {
         const simulated = Boolean(block.simulated);
         addCopy(block.text, `${path}.text`, simulated);
@@ -361,6 +376,7 @@ function collectPage(page: GuidePage): Collected {
     deadlines: [],
     dialogues: [],
     choices: [],
+    kinds: [],
   };
   const pageKey = page.key;
   const add = (text: string, path: string, scope: Scope, backing: readonly FactId[] | null, spelled: TextRef["spelled"] = "warn") =>
@@ -781,6 +797,7 @@ export function lintGuide(guide: CareerGuide, opts: GuideLintOptions = {}): Lint
       if (d.lines === 0) issues.push({ level: "error", pageKey: page.key, path: d.path, message: "dialogue block has no lines" });
     }
     for (const ch of c.choices) checkChoice(page.key, ch, issues);
+    for (const k of c.kinds) checkKinds(page.key, k, issues);
   }
   texts.push(...checkStory(guide, issues));
 
@@ -824,6 +841,25 @@ function checkChoice(
     ids.add(opt.id);
     if (opt.labelTh.length > CHOICE_LABEL_MAX_CHARS) {
       err(`${path}.labelTh`, `answer is ${opt.labelTh.length} chars (max ${CHOICE_LABEL_MAX_CHARS}): the student says it, keep it short`);
+    }
+  });
+}
+
+function checkKinds(pageKey: string, k: { path: string; tiles: readonly CareerKindTile[] }, issues: LintIssue[]): void {
+  const err = (path: string, message: string) => issues.push({ level: "error", pageKey, path, message });
+  if (k.tiles.length < 3 || k.tiles.length > 6) err(`${k.path}.tiles`, "a kinds grid has 3 to 6 tiles");
+  if (k.tiles.filter((t) => t.played).length > 1) err(`${k.path}.tiles`, "at most one tile is the kind the level just played");
+  const ids = new Set<string>();
+  k.tiles.forEach((t, j) => {
+    const path = `${k.path}.tiles[${j}]`;
+    if (!/^[a-z0-9][a-z0-9-]{0,23}$/.test(t.id)) err(`${path}.id`, `tile id ${t.id} must be [a-z0-9-], at most 24 chars`);
+    if (ids.has(t.id)) err(`${path}.id`, `tile id ${t.id} is used twice`);
+    ids.add(t.id);
+    if (t.titleTh.length > KIND_TITLE_MAX_CHARS) {
+      err(`${path}.titleTh`, `tile name is ${t.titleTh.length} chars (max ${KIND_TITLE_MAX_CHARS}): a few words on a small tile`);
+    }
+    if (t.lineTh.length > KIND_LINE_MAX_CHARS) {
+      err(`${path}.lineTh`, `tile line is ${t.lineTh.length} chars (max ${KIND_LINE_MAX_CHARS}): one short line, read in a glance`);
     }
   });
 }

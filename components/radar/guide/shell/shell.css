@@ -482,6 +482,126 @@
   cursor: default;
 }
 
+/* ── Kinds (job-select grid) ───────────────────────────────────────────── */
+
+.rg-kinds {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rg-kinds__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.rg-kinds__title {
+  margin: 0;
+  font-family: var(--rg-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.rg-kinds__count {
+  flex: none;
+  margin: 0;
+  color: var(--rg-accent);
+  font-family: var(--rg-display);
+  font-size: 0.85rem;
+}
+
+.rg-kinds__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.rg-kinds__grid[data-count="4"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.rg-kinds__tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 104px;
+  padding: 16px 6px 10px;
+  background: var(--rg-ink-2);
+  color: var(--rg-accent);
+  border: 0;
+  box-shadow: 0 0 0 var(--rg-px) var(--rg-ink-3);
+  cursor: pointer;
+  transition: transform 120ms steps(2);
+}
+
+.rg-kinds__icon {
+  display: block;
+}
+
+.rg-kinds__name {
+  color: var(--rg-cream);
+  font-family: var(--rg-display);
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.rg-kinds__tag {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 1px 8px;
+  background: var(--rg-sunset);
+  color: var(--rg-ink);
+  font-family: var(--rg-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.rg-kinds__tile[data-seen="true"] {
+  box-shadow: 0 0 0 var(--rg-px) var(--rg-cream-dim);
+}
+
+.rg-kinds__tile[data-open="true"] {
+  background: var(--rg-ink-3);
+  box-shadow:
+    0 0 0 var(--rg-px) var(--rg-accent),
+    0 6px 0 0 var(--rg-ink);
+  transform: translateY(-3px);
+}
+
+.rg-kinds__tile:focus-visible {
+  outline: 2px solid var(--rg-cream);
+  outline-offset: 4px;
+}
+
+@media (hover: hover) {
+  .rg-kinds__tile:not([data-open="true"]):hover {
+    box-shadow: 0 0 0 var(--rg-px) var(--rg-accent);
+  }
+}
+
+.rg-kinds__tile:active {
+  transform: translateY(1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rg-kinds__tile,
+  .rg-kinds__tile[data-open="true"] {
+    transition: none;
+    transform: none;
+  }
+}
+
 .rg-dialogue__static p {
   margin: 0 0 6px;
   line-height: 1.6;

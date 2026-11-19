@@ -124,6 +124,27 @@ describe("guide-lint", () => {
     expect(hasError(bad, "dash")).toBe(true);
   });
 
+  it("checks a kinds grid: 3 to 6 tiles, unique ids, one played, short names and lines", () => {
+    const tile = (id: string, over: Record<string, unknown> = {}) => ({ id, icon: "bug" as const, titleTh: "เจาะระบบ", lineTh: "หาช่องโหว่ก่อนคนร้าย", ...over });
+    const ok = run(guide([page({}, [
+      { kind: "kinds", id: "k", headTh: "มีสายไหนบ้าง", tiles: [tile("a", { played: true }), tile("b"), tile("c")] },
+    ])]));
+    expect(formatIssues(lintErrors(ok))).toBe("");
+
+    const bad = run(guide([page({}, [
+      { kind: "kinds", id: "k", headTh: "มีสายไหนบ้าง", tiles: [tile("a", { played: true }), tile("a", { played: true })] },
+      { kind: "kinds", id: "m", headTh: "อีกชุด", tiles: [
+        tile("a", { titleTh: "ก".repeat(20) }), tile("b", { lineTh: "ข".repeat(70) }), tile("c", { lineTh: "หา — ช่อง" }),
+      ] },
+    ])]));
+    expect(hasError(bad, "3 to 6 tiles")).toBe(true);
+    expect(hasError(bad, "used twice")).toBe(true);
+    expect(hasError(bad, "at most one tile")).toBe(true);
+    expect(hasError(bad, "small tile")).toBe(true);
+    expect(hasError(bad, "read in a glance")).toBe(true);
+    expect(hasError(bad, "dash")).toBe(true);
+  });
+
   it("flags an em dash and น้องๆ", () => {
     const issues = run(guide([page({ questionTh: "AI เก่งแค่ไหน — จริงๆ" }, [
       { kind: "copy", id: "b", role: "body", text: { th: "สวัสดีน้องๆ ทุกคน" } },

@@ -248,12 +248,12 @@ export const work: GuidePage = {
     careerKindsBeat({
       nameTh: "วิศวกร AI",
       facts: [THAIEXAM, INSPECTRA],
-      kinds: [
-        { titleTh: "สายสร้างแอป AI", bodyTh: "หยิบโมเดลที่มีอยู่ มาทำเป็นของที่คนใช้จริง แบบบอทโรงเรียนเมื่อกี้" },
-        { titleTh: "สายโมเดลภาษา", bodyTh: "สอนโมเดลให้เก่งภาษาไทย แล้ววัดผลด้วยข้อสอบอย่าง O-NET แบบทีม Typhoon" },
-        { titleTh: "สายภาพ", bodyTh: "สอน AI ให้ดูรูปเป็น แบบ Inspectra ที่ช่วยหมออ่านเอกซเรย์ปอด" },
-        { titleTh: "สายระบบ", bodyTh: "คุมให้ AI รันลื่นทุกวัน คนใช้เยอะแค่ไหนก็ไม่ล่ม" },
-        { titleTh: "สายวิจัย", bodyTh: "คิดวิธีใหม่ๆ ให้ AI เก่งขึ้น ในแล็บมหาลัยหรือบริษัทใหญ่" },
+      tiles: [
+        { id: "app", icon: "phone", titleTh: "สร้างแอป AI", lineTh: "เอาโมเดลที่มีอยู่ มาทำของให้คนใช้จริง แบบบอทเมื่อกี้", played: true },
+        { id: "lang", icon: "speech", titleTh: "สอนภาษา", lineTh: "สอน AI ให้เก่งภาษาไทย แบบทีม Typhoon" },
+        { id: "vision", icon: "eye", titleTh: "สอนดูรูป", lineTh: "สอน AI ให้ดูรูปเป็น แบบ Inspectra ที่ช่วยหมออ่านเอกซเรย์" },
+        { id: "infra", icon: "server", titleTh: "คุมระบบ", lineTh: "คุมไม่ให้ AI ล่ม ต่อให้คนแห่มาใช้พร้อมกัน" },
+        { id: "research", icon: "flask", titleTh: "วิจัย", lineTh: "คิดวิธีใหม่ให้ AI เก่งขึ้น ในแล็บมหาลัยหรือบริษัท" },
       ],
     }),
     dialogue("exit", sys("ด่านต่อไป: คืนนี้มาลองสอน AI ตัวแรกของเธอเอง")),
