@@ -74,6 +74,8 @@ interface ShoreMask {
   water: Uint8Array;
   /** Sand in all three frames, next to where the wash reaches: wet. */
   wet: Uint8Array;
+  /** Sand in all three frames, out of the wash's reach: dry beach (terrain.ts may set a pebble there). */
+  dry: Uint8Array;
 }
 
 let shoreMasks: ShoreMask[] | null = null;
@@ -114,9 +116,15 @@ function masks(): ShoreMask[] {
         wet[y * 16 + x] = near ? 1 : 0;
       }
     }
-    return { water, wet };
+    const dry = sand.map((v, i) => (v && !wet[i] ? 1 : 0));
+    return { water, wet, dry };
   });
   return shoreMasks;
+}
+
+/** Per shore kind (draw.ts numbering less 2: shore_n, shore_s, shore_e, shore_w), 16 x 16: the dry beach, sand in every frame and never wet. */
+export function dryShore(): readonly Uint8Array[] {
+  return masks().map((m) => m.dry);
 }
 
 /**

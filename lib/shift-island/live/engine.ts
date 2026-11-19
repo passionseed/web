@@ -100,6 +100,7 @@ function context(c: HTMLCanvasElement, alpha = true): Ctx {
 
 const actorsKey = (actors: readonly LiveActor[]) => JSON.stringify(actors);
 const signsKey = (signs: readonly number[] | undefined) => (signs ?? []).join(",");
+const cropKey = (crop: Rect | null) => JSON.stringify(crop);
 
 /**
  * The tick each new actor appeared on: an actor equal to one already shown
@@ -151,6 +152,8 @@ export class LiveIsland {
   private reduced = false;
   private stillShown = false;
   private view: Rect | null = null;
+  /** The crop the layers were last built for (cropKey). */
+  private builtCrop = "";
   private drawn: FxMotion | null = null;
   /** The atmosphere: water light, shadows, lamplight, glints and the breeze (web only). */
   private readonly fx = new IslandFx({ canvas: newCanvas, context: (c) => context(c) });
@@ -201,7 +204,7 @@ export class LiveIsland {
       this.actorsKey = key;
       if (actorsChanged) this.actorsSince = sinceFor(prev.actors, this.actorsSince, next.actors, this.currentTick());
       if (!this.ready) return;
-      const cropChanged = JSON.stringify(next.crop) !== JSON.stringify(prev.crop);
+      const cropChanged = cropKey(next.crop) !== cropKey(prev.crop);
       // A refreshed page sends an equal scene as a new object: only a real change rebuilds.
       const sceneChanged = next.scene !== prev.scene && JSON.stringify(next.scene) !== JSON.stringify(prev.scene);
       let repaint = false;
@@ -340,19 +343,32 @@ export class LiveIsland {
     this.scrollerCleanup = () => scroller.removeEventListener("scroll", onScroll);
   }
 
-  /** First build: atlas and layers in one animation frame, the first frame in the next (each well under 16 ms). */
+  /**
+   * First build: atlas and layers in one animation frame; then the heavy
+   * part (the shallows' distance field, the terrain) a slice per frame; then
+   * the bake and the first frame. Each frame stays short; the picture under
+   * the canvas shows until the first frame is drawn.
+   */
   private init(): void {
     this.initRaf = 0;
     this.phase = this.wantedPhase();
     this.nextPhaseCheck = performance.now() + PHASE_CHECK_MS;
-    // The shallows' distance field waits for the first frame's turn, so neither frame carries it all.
-    this.fx.deferWater = true;
+    this.fx.defer = true;
     this.prepareScene();
-    this.fx.deferWater = false;
+    this.fx.defer = false;
     const first = () =>
       this.guard(() => {
         this.initRaf = 0;
-        if (this.fx.waterPending) this.buildLand();
+        const model = this.model;
+        if (model && this.fx.pending && this.fx.prepare(model, this.phase)) {
+          this.initRaf = requestAnimationFrame(first);
+          return;
+        }
+        // A scene or crop that really changed while it built (update() waits for ready) is built now, at once.
+        const scene = this.props.scene;
+        const moved = !model || (scene !== model.scene && JSON.stringify(scene) !== JSON.stringify(model.scene));
+        if (moved || cropKey(this.props.crop) !== this.builtCrop) this.prepareScene();
+        else if (this.fx.pending) this.buildLand();
         this.paintAll();
         this.stillShown = this.isStill();
         this.ready = true;
@@ -529,6 +545,7 @@ export class LiveIsland {
   private prepareScene(): void {
     const { scene } = this.props;
     this.model = sceneModel(scene);
+    this.builtCrop = cropKey(this.props.crop);
     this.swaying = this.model.trees.map((t) => t.b != null);
     const frame = this.frameRect();
     if (this.canvas.width !== frame.w) this.canvas.width = frame.w;

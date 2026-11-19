@@ -61,9 +61,10 @@ import {
 import type { Motion, Span } from "./clock";
 import { actorAt, actorRect, paintLand, type DrawContext, type DrawFx, type Layers, type SceneModel } from "./draw";
 import { cellSpan, overlaps, union, type Rect } from "./geometry";
-import { gradeKey } from "./grade";
-import type { RGB } from "./lighting";
+import { gradeKey, gradeRgb } from "./grade";
+import { paletteRgb, type RGB } from "./lighting";
 import type { Signpost } from "./signposts";
+import { inkColours, terrainFor, terrainSteps, type Terrain } from "./terrain";
 import type { LightPhase, LiveActor } from "./types";
 
 type Ctx = CanvasRenderingContext2D;
@@ -193,9 +194,17 @@ export class IslandFx {
   private fire: FirePool | null = null;
   private lit: LitAtlas | null = null;
   private smokeFrom: { x: number; y: number } | null = null;
-  /** While set, a scene's first bake leaves the water out (the engine's build frame); waterPending then says so. */
-  deferWater = false;
-  waterPending = false;
+  /** The scene's terrain (terrain.ts), and its ink baked in the colours of one hour: the ground, and the pieces that stand. */
+  private terrain: BakedTerrain | null = null;
+  /** A new layout's terrain while prepare() builds it, a step per call. */
+  private building: { scene: IslandScene; steps: Generator<void, Terrain, void> } | null = null;
+  /**
+   * While set, a new scene's bake leaves out the shallows and the terrain
+   * (the heavy part); `pending` then says so, and prepare() builds them a
+   * slice per frame before the next bake (the engine's first frames).
+   */
+  defer = false;
+  pending = false;
 
   constructor(private readonly kit: FxCanvasKit) {}
 
@@ -203,10 +212,13 @@ export class IslandFx {
 
   /**
    * Everything static, into the land layer (already painted with the phase's
-   * atlas): shallows and wet sand over the sea's edge, contact shadows under
-   * trees, lanterns, flags, signposts and the well, and the pools of warm
-   * light that do not move; plus the fire's breathing pool and its firelit
-   * sprites, ready for the loop. Once per phase, scene, view or set of lights.
+   * atlas): shallows and wet sand over the sea's edge, the terrain's ground
+   * (terrain.ts: the grass's tones, footpaths, flowers, pebbles), contact
+   * shadows under trees, lanterns, flags, signposts, the well and the
+   * terrain's hedges, fences, rocks and driftwood, those pieces over their
+   * shadows, and the pools of warm light that do not move; plus the fire's
+   * breathing pool and its firelit sprites, ready for the loop. Once per
+   * phase, scene, view or set of lights.
    */
   bakeLand(
     land: Ctx,
@@ -226,21 +238,89 @@ export class IslandFx {
     this.glintSheet = null;
     this.shadows.clear();
     this.halos.clear();
+    this.pending = false;
     this.bakeWater(land, model, phase);
-    this.bakeShadows(land, model, phase, atlas, rects, posts);
+    // The terrain: its ground under every shadow, its hedges, fences, rocks and driftwood over their own.
+    const terrain = this.terrainOf(model, phase);
+    if (terrain?.ground) land.drawImage(terrain.ground.canvas, terrain.ground.box.x, terrain.ground.box.y);
+    this.bakeShadows(land, model, phase, atlas, rects, posts, terrain?.data.shadows ?? []);
+    if (terrain?.props) land.drawImage(terrain.props.canvas, terrain.props.box.x, terrain.props.box.y);
     this.bakePools(land, model);
+  }
+
+  /**
+   * One slice of what a deferred bake left out: the shallows' distance
+   * field, then the terrain a step at a time, then its ink in the hour's
+   * colours. True when it did a slice (call again next frame); false when
+   * nothing was left, so the next bakeLand has everything and builds none of it.
+   */
+  prepare(model: SceneModel, phase: LightPhase): boolean {
+    const { scene } = model;
+    if (!this.water || this.water.scene !== scene) {
+      this.water = { scene, field: waterField(scene, model.sea) };
+      return true;
+    }
+    if (!this.terrain || this.terrain.scene !== scene) {
+      if (!this.building || this.building.scene !== scene) this.building = { scene, steps: terrainSteps(model) };
+      const step = this.building.steps.next();
+      if (step.done) {
+        this.building = null;
+        this.keepTerrain(scene, step.value);
+      }
+      return true;
+    }
+    if (this.terrain.phase !== phase) {
+      this.inkTerrain(this.terrain, phase);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * The scene's terrain with its ink in this hour's colours: built once per
+   * layout, baked once per phase. Left out (pending) while deferred.
+   */
+  private terrainOf(model: SceneModel, phase: LightPhase): BakedTerrain | null {
+    if (!this.terrain || this.terrain.scene !== model.scene) {
+      if (this.defer) {
+        this.pending = true;
+        return null;
+      }
+      // A scene after the first (a plot joins while the page is open): its terrain at once, in this bake.
+      this.keepTerrain(model.scene, terrainFor(model));
+    }
+    const t = this.terrain!;
+    if (t.phase !== phase) this.inkTerrain(t, phase);
+    return t;
+  }
+
+  /** The terrain for a scene: the ink already baked carries over when only the plots' stages or flags changed. */
+  private keepTerrain(scene: IslandScene, data: Terrain): void {
+    if (this.terrain?.data === data) this.terrain.scene = scene;
+    else this.terrain = { scene, data, phase: null, ground: null, props: null };
+  }
+
+  /** The terrain's two layers in a phase's colours, each a canvas over just its box. */
+  private inkTerrain(t: BakedTerrain, phase: LightPhase): void {
+    const colours = inkColours(
+      (key) => gradeKey(key, phase),
+      (rgb) => gradeRgb(rgb, phase)
+    );
+    const bake = (layer: "ground" | "props", box: Rect | null) => (box ? { canvas: this.upload(inkWords(t.data, [layer], box, colours), box.w, box.h), box } : null);
+    t.ground = bake("ground", t.data.groundBox);
+    t.props = bake("props", t.data.propsBox);
+    t.phase = phase;
   }
 
   private bakeWater(land: Ctx, model: SceneModel, phase: LightPhase): void {
     if (!this.water || this.water.scene !== model.scene) {
-      // The first build of a scene leaves the water for the next frame (waterPending), so no frame does it all.
-      if (this.deferWater) {
-        this.waterPending = true;
+      // A new scene's first bake leaves the water for prepare(), so no frame does it all.
+      if (this.defer) {
+        this.pending = true;
         return;
       }
       this.water = { scene: model.scene, field: waterField(model.scene, model.sea) };
     }
-    this.waterPending = false;
     const { rect, level, cells } = this.water.field;
     if (cells.length === 0) return;
     const colour = new Uint32Array(WET + 1);
@@ -281,7 +361,8 @@ export class IslandFx {
     phase: LightPhase,
     atlas: Img,
     rects: ReadonlyMap<string, AtlasRect>,
-    posts: readonly Signpost[]
+    posts: readonly Signpost[],
+    pieces: readonly Rect[]
   ): void {
     const lean = SHADOW_LEAN[phase];
     const stamp = (box: Rect | null) => {
@@ -296,6 +377,8 @@ export class IslandFx {
       if (t.visitor) stamp(shadowBox("visitor", t.visitor.x, t.visitor.y, false, lean));
     }
     for (const post of posts) stamp({ ...post.shadow, x: post.shadow.x + lean * post.unit });
+    // The terrain's standing pieces (drawn over their shadows after this).
+    for (const box of pieces) stamp({ ...box, x: box.x + lean });
     stamp(shadowBox("well", scene.well.x, scene.well.y, false, lean));
     // The plaza's props and seated people never move: their shadows go in the land too, and only walkers' are drawn per frame.
     for (const actor of this.actors) {
@@ -363,11 +446,22 @@ export class IslandFx {
       }
     }
     // The ground in the lamp's light, just the cells the pools touch.
-    const lamp = this.lampAtlas(pools.some((p) => p.light.kind === "fire") ? "fire" : "lamp");
+    const light = pools.some((p) => p.light.kind === "fire") ? "fire" : "lamp";
+    const lamp = this.lampAtlas(light);
     const ground = this.kit.canvas(box.w, box.h);
     const gctx = this.kit.context(ground);
     gctx.setTransform(1, 0, 0, 1, -box.x, -box.y);
     paintLand(gctx as DrawContext<Img>, model, lamp.image, lamp.rects, box);
+    // The terrain in the same light, so a path or a hedge never drops out where a lamp falls on it.
+    const terrain = this.terrain?.scene === model.scene ? this.terrain.data : null;
+    if (terrain) {
+      const warm = light === "fire" ? FIRE_WARM : LAMP_WARM;
+      const colours = inkColours(
+        (key) => lamplight(paletteRgb(key) ?? [0, 0, 0], warm),
+        (rgb) => lamplight(rgb, warm)
+      );
+      gctx.drawImage(this.upload(inkWords(terrain, ["ground", "props"], box, colours), box.w, box.h), box.x, box.y);
+    }
     const canvases = gains.map((gain) => {
       const words = new Uint32Array(alpha.length);
       for (let i = 0; i < alpha.length; i++) if (alpha[i] > 0) words[i] = word([255, 255, 255], alpha[i] * gain);
@@ -675,6 +769,35 @@ export class IslandFx {
     if (this.smokeFrom && smokeStep(prev.tick) !== smokeStep(next.tick)) out.push(smokeBounds(this.smokeFrom));
     return out;
   }
+}
+
+/** The terrain of a scene, with its ink baked for one phase (each layer null when it has none). */
+interface BakedTerrain {
+  scene: IslandScene;
+  data: Terrain;
+  phase: LightPhase | null;
+  ground: { canvas: HTMLCanvasElement; box: Rect } | null;
+  props: { canvas: HTMLCanvasElement; box: Rect } | null;
+}
+
+/** RGBA words for the terrain's ink inside `box` (later layers over earlier ones), in these colours. */
+function inkWords(data: Terrain, layers: readonly ("ground" | "props")[], box: Rect, colours: ReadonlyMap<number, RGB>): Uint32Array<ArrayBuffer> {
+  const table = new Uint32Array(128);
+  for (const [code, rgb] of colours) if (code < 128) table[code] = word(rgb, 1);
+  const words = new Uint32Array(box.w * box.h);
+  const W = data.width;
+  for (const layer of layers) {
+    const ink = data[layer];
+    for (let y = Math.max(0, box.y); y < Math.min(data.height, box.y + box.h); y++) {
+      const from = y * W;
+      const to = (y - box.y) * box.w - box.x;
+      for (let x = Math.max(0, box.x); x < Math.min(W, box.x + box.w); x++) {
+        const v = ink[from + x];
+        if (v) words[to + x] = table[v];
+      }
+    }
+  }
+  return words;
 }
 
 /** A gull's shadow on the water: a small soft dash well below it. */

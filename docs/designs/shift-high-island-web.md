@@ -845,6 +845,19 @@ that replaces the work, no lecturing.
   and lantern, lantern glow at night (earned lanterns only), plaza lamp posts at
   night, festoon in festival, cloud shadows (`cloud_a/b` at globalAlpha 0.14),
   tags and marker (untinted), gulls.
+- **Terrain** (web only, `lib/shift-island/live/terrain.ts`): baked into the
+  land layer once per layout and hour, never per frame. Grass in two extra
+  tones with fewer repeating marks, a turf edge that steps down to the beach,
+  worn footpaths from each plot's signpost to the plaza (in the helper path's
+  earth, whose edges it softens to match), and a sparse scatter of tufts,
+  flower patches, rocks, a few low hedges and fence pieces, and pebbles, shells
+  and driftwood on the beach. Seeded by place relative to the plaza centre, so
+  it depends only on the layout (never a stage, a flag, the viewer or the day)
+  and never jumps between visits. No piece stands on a plot, its signpost or
+  name board, a tap target (with the 48px floor and a figure's slop at the
+  smallest close-up scale), a plaza piece, a lamp, a walk the plaza's people
+  take, a helper path or a footpath. A new layout is built a slice per frame
+  before the first frame, so no frame carries it all.
 - **Clock** (pure functions of elapsed ms, tick 125 ms): sea ping-pong 0-1-2-1
   every 3 ticks, foam every 4, boat 1 px per 2 ticks along `lanes.boatY`
   (the sprite faces left, so mirror it when sailing right; about 90 s across, wraps off-screen), 2 gulls 1 px

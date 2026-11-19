@@ -92,11 +92,24 @@ afterEach(() => {
   Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
 });
 
-/** Two animation frames: the build, then the first frame. */
-function firstFrame() {
+/** The most animation frames the build may take: the layers, the shallows, the terrain a slice at a time and its ink. */
+const BUILD_FRAMES = 30;
+
+/**
+ * Animation frames until the first frame is painted (the visible canvas's
+ * first transform): the build, a slice per frame, then the first frame.
+ * Returns how many frames that took; stops at BUILD_FRAMES if it never paints.
+ */
+function firstFrame(): number {
+  let frames = 0;
+  const painted = () => (contexts[0]?.setTransform.mock.calls.length ?? 0) > 0;
   act(() => {
-    jest.advanceTimersByTime(40);
+    while (!painted() && frames < BUILD_FRAMES) {
+      jest.advanceTimersByTime(16);
+      frames++;
+    }
   });
+  return frames;
 }
 
 const visible = (on: boolean) =>
@@ -155,6 +168,21 @@ describe("IslandCanvas", () => {
     });
     expect(visibleCtx.drawImage.mock.calls.length).toBeGreaterThan(drawn);
     expect(jest.getTimerCount()).toBeGreaterThan(0);
+  });
+
+  it("spreads the build over a few frames and paints nothing before its first frame", () => {
+    const onReady = jest.fn();
+    render(<IslandCanvas scene={scene} onReady={onReady} />);
+    act(() => {
+      jest.advanceTimersByTime(40);
+    });
+    // Two frames in: the layers and the shallows are built, the terrain is on its way, nothing is on screen yet.
+    expect(onReady).not.toHaveBeenCalled();
+    expect(contexts[0].setTransform).not.toHaveBeenCalled();
+    const frames = firstFrame();
+    expect(onReady).toHaveBeenCalledTimes(1);
+    expect(frames).toBeGreaterThan(0);
+    expect(frames).toBeLessThan(BUILD_FRAMES);
   });
 
   it("takes a fixed light when given one", () => {
