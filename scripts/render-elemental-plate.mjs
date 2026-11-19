@@ -29,7 +29,16 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const BG = join(ROOT, "public/hackathon/poster/elemental/bg/river-joana-abreu-unsplash.jpg");
 // --sky blue turns the overcast sky blue and writes plate-key-blue.png.
 const SKY_BLUE = process.argv.includes("--sky") && process.argv[process.argv.indexOf("--sky") + 1] === "blue";
-const OUT = join(ROOT, `public/hackathon/poster/elemental/plate-key${SKY_BLUE ? "-blue" : ""}.png`);
+const arg = (name) => (process.argv.includes(name) ? process.argv[process.argv.indexOf(name) + 1] : undefined);
+// Animation: --frame f --frames n draws frame f of a seamless loop, --out
+// overrides the file. Without them the plate is the still poster.
+const FRAMES = Number(arg("--frames") ?? 0);
+const FRAME = Number(arg("--frame") ?? 0);
+const PHASE = FRAMES ? FRAME / FRAMES : 0; // 0..1 around the loop
+const THETA = PHASE * Math.PI * 2;
+/** Offsets that walk a circle through noise space, so the last frame meets the first. */
+const loop = (r) => (FRAMES ? [Math.cos(THETA) * r - r, Math.sin(THETA) * r] : [0, 0]);
+const OUT = arg("--out") ?? join(ROOT, `public/hackathon/poster/elemental/plate-key${SKY_BLUE ? "-blue" : ""}.png`);
 const W = 1080;
 const H = 1350;
 
@@ -181,11 +190,14 @@ function flameField(x, y) {
     { cx: FIRE.x + 10, w: 110, h: 520, lean: -70 },
   ];
   let best = 0;
-  for (const g of tongues) {
-    const t = (FIRE.base - y) / g.h;
+  const [wx, wy] = loop(0.9);
+  for (const [i, g] of tongues.entries()) {
+    // Each tongue breathes a little on its own beat.
+    const gh = g.h * (1 + (FRAMES ? 0.07 * Math.sin(THETA * 2 + i * 1.7) : 0));
+    const t = (FIRE.base - y) / gh;
     if (t < -0.08 || t > 1) continue;
     const tt = Math.max(t, 0);
-    const wob = 46 * (fbm(x * 0.012, y * 0.02 + 3, 5, 3) - 0.5) * (0.3 + tt);
+    const wob = 46 * (fbm(x * 0.012 + wx, y * 0.02 + 3 + wy, 5, 3) - 0.5) * (0.3 + tt);
     const c = g.cx + g.lean * Math.pow(tt, 1.6) + wob;
     const hw = (g.w / 2) * Math.pow(1 - tt, 0.7) * (t < 0 ? 1 + t * 6 : 1);
     const d = Math.abs(x - c) / Math.max(hw, 1);
@@ -264,7 +276,8 @@ const hillY = (x) => (x < 590 ? 398 + (x / 590) * 368 : 640 + Math.max(0, (x - 7
 /** Smog density 0..1: thick and low over the hill, thinning upward and to the right. */
 const smogField = (x, y) => {
   const above = hillY(x) - y; // distance above the skyline
-  const n = fbm(x * 0.006, y * 0.018, 92, 4);
+  const [sx, sy] = loop(0.6);
+  const n = fbm(x * 0.006 + sx, y * 0.018 + sy, 92, 4);
   // Densest just above the ridge, thinning upward and down the slope.
   const thick = smooth(-110, 10, above) * (1 - smooth(20, 210 + 80 * n, above));
   const reach = 1 - smooth(380, 700, x + (n - 0.5) * 220);
@@ -360,7 +373,7 @@ for (let y = WATER.y0; y < WATER.y1; y++)
       const v = flameField(x, y);
       if (v < 0.1) continue;
       const h = clamp((FIRE.base - y) / 520);
-      const fil = fbm(x * 0.07, y * 0.009 + 9, 71, 3);
+      const fil = fbm(x * 0.07 + loop(1.2)[0], y * 0.009 + 9 + loop(1.2)[1], 71, 3);
       const lick = v * (0.62 + 0.7 * fil) * (1 - 0.25 * h);
       const a = smooth(0.1, 0.42, lick) * (1 - 0.35 * h);
       // The edge is dithered on a 2px grid, not cut: it dissolves into the air.
@@ -380,7 +393,7 @@ for (let y = WATER.y0; y < WATER.y1; y++)
     for (let x = 24; x < WATER.x1 - 150; x += cell) {
       const m = waterMask[(y + 6) * W + x + 6];
       if (m < 0.5) continue;
-      const n = fbm(x * 0.012, y * 0.03, 31, 3);
+      const n = fbm(x * 0.012 + loop(0.8)[0], y * 0.03 + loop(0.8)[1], 31, 3);
       if (n < 0.58) continue;
       let l = 0;
       for (let yy = 0; yy < cell; yy++) for (let xx = 0; xx < cell; xx++) l += lum(get(x + xx, y + yy));
@@ -391,7 +404,7 @@ for (let y = WATER.y0; y < WATER.y1; y++)
   for (let y = WATER.y0 + 2; y < WATER.y0 + 40; y++)
     for (let x = 160; x < 470; x++) {
       if (waterMask[y * W + x] < 0.5) continue;
-      if (fbm(x * 0.02, y * 0.05, 32, 2) < 0.45) continue;
+      if (fbm(x * 0.02 + loop(1)[0], y * 0.05 + loop(1)[1], 32, 2) < 0.45) continue;
       const l = lum(get(x, y));
       put(x, y, l * 1.25 > bayer(x, y) ? P.g3 : P.g0);
     }
@@ -569,7 +582,7 @@ for (let y = WATER.y0; y < WATER.y1; y++)
     for (let x = FIRE.x - 300; x < FIRE.x + 260; x += cell) {
       const v = flameField(x + 6, y + 6);
       const h = (FIRE.base - y) / 520;
-      const n = fbm(x * 0.03, y * 0.03, 61, 2);
+      const n = fbm(x * 0.03 + loop(1.5)[0], y * 0.03 + loop(1.5)[1], 61, 2);
       // Crown: white steps along the flame's outer edge, low down.
       if (((v > 0.12 && v < 0.3 && h > 0.12 && h < 0.6) || (v > 0.5 && h > 0.14 && h < 0.34)) && n > 0.52) {
         rect(x, y, cell, P.white);
@@ -584,16 +597,20 @@ for (let y = WATER.y0; y < WATER.y1; y++)
   for (const [x, y] of blobCells(FIRE.x + 46, FIRE.base - 330, 18, 46, 12, 63)) rect(x, y, 12, P.flatBlue);
   // Checker on the glow plume, thinning as it rises.
   const c2 = 14;
-  for (let s = 0; s < 1; s += 0.03) {
+  // Sparks rise one full column per loop and wrap, so the GIF is seamless.
+  // Frame 0 is exactly the still poster.
+  const SPAN = 1.02;
+  for (let id = 0; id < 1; id += 0.03) {
+    const s = (id + PHASE * SPAN) % SPAN;
     const px = FIRE.x - 40 + 130 * Math.sin(s * 2.2) - 80 * s;
     const py = FIRE.base - 380 - s * 520;
     for (let k = 0; k < 4; k++) {
-      if (hash(k, s * 999, 64) > 0.42 - s * 0.22) continue;
-      const x = Math.round((px + (hash(k, s * 999, 65) - 0.5) * (80 + 120 * s)) / c2) * c2;
-      const y = Math.round((py + (hash(k, s * 999, 66) - 0.5) * 30) / c2) * c2;
-      rect(x, y, c2, hash(k, s * 999, 67) < 0.86 ? P.white : P.flatBlue);
-      if (hash(k, s * 999, 68) < 0.6) rect(x + c2, y + c2, c2, P.white);
-      if (hash(k, s * 999, 69) < 0.3) rect(x - c2, y + c2, c2, P.white);
+      if (hash(k, id * 999, 64) > 0.42 - s * 0.22) continue;
+      const x = Math.round((px + (hash(k, id * 999, 65) - 0.5) * (80 + 120 * s)) / c2) * c2;
+      const y = Math.round((py + (hash(k, id * 999, 66) - 0.5) * 30) / c2) * c2;
+      rect(x, y, c2, hash(k, id * 999, 67) < 0.86 ? P.white : P.flatBlue);
+      if (hash(k, id * 999, 68) < 0.6) rect(x + c2, y + c2, c2, P.white);
+      if (hash(k, id * 999, 69) < 0.3) rect(x - c2, y + c2, c2, P.white);
     }
   }
 }
@@ -613,14 +630,15 @@ for (let y = WATER.y0; y < WATER.y1; y++)
   for (let k = 0; k < 40; k++) {
     const x = Math.round((FIRE.x - 260 + hash(k, 1, 83) * 520) / 5) * 5;
     const y = Math.round((FIRE.base - 10 + hash(k, 2, 83) * 50) / 5) * 5;
-    rect(x, y, 5, hash(k, 3, 83) < 0.5 ? P.yellow : P.orange, 0.9);
+    if (FRAMES && hash(k, FRAME, 84) < 0.25) continue;
+    rect(x, y, 5, hash(k, 3 + FRAME, 83) < 0.5 ? P.yellow : P.orange, 0.9);
   }
 }
 
 // Grain over everything, pixels included.
 for (let y = 0; y < H; y++)
   for (let x = 0; x < W; x++) {
-    const n = (hash(x, y, 99) + hash(x, y, 98) - 1) * 0.065;
+    const n = (hash(x, y, 99 + FRAME * 3) + hash(x, y, 98 + FRAME * 3) - 1) * 0.065;
     const i = (y * W + x) * 3;
     img[i] = clamp(img[i] + n);
     img[i + 1] = clamp(img[i + 1] + n);
