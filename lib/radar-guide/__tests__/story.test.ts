@@ -72,8 +72,8 @@ function apply(actions: ProgressAction[], from: GuideProgress = emptyProgress())
 }
 
 describe("story: host and dialogue", () => {
-  it("keeps the host in one constant with a placeholder name", () => {
-    expect(GUIDE_HOST.nameTh).toBe("พี่โฮสต์");
+  it("keeps the host, P'Seed, in one constant", () => {
+    expect(GUIDE_HOST.nameTh).toBe("P'Seed");
     expect(GUIDE_HOST.sprites.idle).toMatch(/^\/radar\/guides\//);
     expect(levelSceneSrc("cybersecurity", "mythos")).toBe("/radar/guides/cybersecurity/mythos.webp");
   });

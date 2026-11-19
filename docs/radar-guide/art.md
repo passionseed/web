@@ -13,7 +13,7 @@ All art lives in `public/radar/guides/` and is served as a static file.
 | Level scene, one per page | `<slug>/<pageKey>.webp` | 640 x 400 generated, 160 x 100 hand-made | Antigravity, or the pixel painter |
 | Level map background | `<slug>/map.webp` | 432 x 768 generated, 108 x 192 hand-made | Antigravity |
 | Profile card frame | `<slug>/frame.webp` | 108 x 135 | Pixel painter only |
-| Host sprite, idle / talk / wink / cheer | `host/host-{idle,talk,wink,cheer}.webp` | 64 x 64 | Pixel painter only |
+| Host sprite (P'Seed), idle / talk / wink / cheer / flick / blink | `host/host-{idle,talk,wink,cheer,flick,blink}.webp` | 64 x 64 | Pixel painter only |
 
 Rules every file keeps:
 

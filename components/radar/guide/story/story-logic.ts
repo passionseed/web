@@ -69,11 +69,38 @@ export function toBoxes(lines: readonly string[]): string[] {
 
 /**
  * Sprite for a mood and talking frame. "wow" holds the cheer frame and
- * "wink" the wink frame; the rest flap between idle and talk.
+ * "wink" the wink frame; the rest flap between idle and talk. A quiet host
+ * plays HOST_IDLE_LOOP: the flame flickers and the eyes blink.
  */
 export const HOST_CHEER_SRC = "/radar/guides/host/host-cheer.webp";
 export const HOST_WINK_SRC = "/radar/guides/host/host-wink.webp";
-export type HostFrameName = "idle" | "talk" | "wink" | "cheer";
+export const HOST_FLICK_SRC = "/radar/guides/host/host-flick.webp";
+export const HOST_BLINK_SRC = "/radar/guides/host/host-blink.webp";
+export type HostFrameName = "idle" | "talk" | "wink" | "cheer" | "flick" | "blink";
+export const HOST_FRAME_NAMES: readonly HostFrameName[] = ["idle", "talk", "wink", "cheer", "flick", "blink"];
+
+/** One step of an idle loop: a frame and how long it stays up. */
+export interface HostLoopStep {
+  frame: HostFrameName;
+  ms: number;
+}
+
+/**
+ * The quiet host, about 3.5s round: the flame sways between idle and flick,
+ * with one quick blink. Steps run in order and the loop repeats.
+ */
+export const HOST_IDLE_LOOP: readonly HostLoopStep[] = [
+  { frame: "idle", ms: 420 },
+  { frame: "flick", ms: 420 },
+  { frame: "idle", ms: 420 },
+  { frame: "flick", ms: 420 },
+  { frame: "idle", ms: 420 },
+  { frame: "flick", ms: 420 },
+  { frame: "idle", ms: 300 },
+  { frame: "blink", ms: 130 },
+  { frame: "idle", ms: 420 },
+  { frame: "flick", ms: 420 },
+];
 
 /** Moods that hold one frame instead of flapping. */
 export function hostHeldFrame(mood: HostMood | undefined): HostFrameName | null {
@@ -90,6 +117,8 @@ export function hostSpriteSrc(frame: HostFrameName): string {
   if (frame === "cheer") return GUIDE_HOST.sprites.wow ?? HOST_CHEER_SRC;
   if (frame === "wink") return GUIDE_HOST.sprites.wink ?? HOST_WINK_SRC;
   if (frame === "talk") return GUIDE_HOST.sprites.talk ?? GUIDE_HOST.sprites.idle;
+  if (frame === "flick") return HOST_FLICK_SRC;
+  if (frame === "blink") return HOST_BLINK_SRC;
   return GUIDE_HOST.sprites.idle;
 }
 

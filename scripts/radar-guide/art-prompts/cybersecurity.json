@@ -20,6 +20,8 @@
     {"id": "host-idle", "kind": "host", "out": "host/host-idle.webp", "size": [64, 64], "prompt": "the PassionSeed flame logo as a pixel game host: yellow flame body, black face, big white eyes, holding a small mic, transparent background", "source": "pixel"},
     {"id": "host-talk", "kind": "host", "out": "host/host-talk.webp", "size": [64, 64], "prompt": "the same flame host, mouth open mid-sentence, transparent background", "source": "pixel"},
     {"id": "host-wink", "kind": "host", "out": "host/host-wink.webp", "size": [64, 64], "prompt": "the same flame host winking, transparent background", "source": "pixel"},
+    {"id": "host-flick", "kind": "host", "out": "host/host-flick.webp", "size": [64, 64], "prompt": "the same flame host, flame tips swayed one pixel, transparent background", "source": "pixel"},
+    {"id": "host-blink", "kind": "host", "out": "host/host-blink.webp", "size": [64, 64], "prompt": "the same flame host with eyes shut mid blink, transparent background", "source": "pixel"},
     {"id": "host-cheer", "kind": "host", "out": "host/host-cheer.webp", "size": [64, 64], "prompt": "the same flame host cheering, eyes closed happily, wide grin, transparent background", "source": "pixel"}
   ]
 }

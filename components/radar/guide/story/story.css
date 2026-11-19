@@ -154,6 +154,82 @@
 .rgs-npc svg {
   display: block;
 }
+/* The body settles in, then hops on "wow" and leans on "wink". Moves are whole
+   cells (2px) in steps, so the pixels stay crisp. The flame glows warm and
+   flickers with it. */
+.rgs-npc__body {
+  position: absolute;
+  inset: 0;
+  animation:
+    rgs-npc-in 240ms steps(3, end) both,
+    rgs-flame-glow 840ms steps(1, end) infinite;
+}
+.rgs-npc[data-pose="cheer"] .rgs-npc__body {
+  animation:
+    rgs-npc-hop 640ms linear both,
+    rgs-flame-glow 420ms steps(1, end) infinite;
+}
+.rgs-npc[data-pose="wink"] .rgs-npc__body {
+  animation:
+    rgs-npc-lean 520ms linear both,
+    rgs-flame-glow 840ms steps(1, end) infinite;
+}
+.rgs-npc[data-still="true"] .rgs-npc__body,
+.rgs-npc[data-still="true"] {
+  animation: none;
+}
+@keyframes rgs-npc-in {
+  from {
+    transform: translateY(4px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes rgs-npc-hop {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+  }
+  12%,
+  36% {
+    transform: translateY(-4px);
+  }
+  24% {
+    transform: translateY(-8px);
+  }
+  72%,
+  88% {
+    transform: translateY(-2px);
+  }
+  80% {
+    transform: translateY(-4px);
+  }
+}
+@keyframes rgs-npc-lean {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  70% {
+    transform: translateX(2px) translateY(-2px);
+  }
+  40%,
+  55% {
+    transform: translateX(4px) translateY(-2px);
+  }
+}
+@keyframes rgs-flame-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 3px rgb(255 143 25 / 0.35));
+  }
+  50% {
+    filter: drop-shadow(0 0 5px rgb(255 195 62 / 0.55));
+  }
+}
 .rgs-npc--talking {
   animation: rgs-bob 480ms steps(2, jump-none) infinite;
 }
@@ -1029,6 +1105,7 @@ button.rgs-toast {
 
 @media (prefers-reduced-motion: reduce) {
   .rgs-npc--talking,
+  .rgs-npc__body,
   .rgs-dialogue__next,
   .rgs-map__node--current .rgs-map__btn,
   .rgs-toast {

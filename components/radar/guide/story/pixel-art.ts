@@ -320,12 +320,88 @@ const HOST_CHEER: PixelGrid = [
   "................................",
 ];
 
-/** Frames: idle and talk flap while the host speaks; wink and cheer are moods. */
+/** Eyes shut for a blink, between idle frames. */
+const HOST_BLINK: PixelGrid = [
+  "..................K...K.....K...",
+  ".................KFK.KYK...KYK..",
+  "...............KKKFYKYYK...KYYK.",
+  "..............KYYKKKYYYKKKK.KYYK",
+  "..........K...KYYYYYYYYYYBYKKYYK",
+  ".........KFK.KYYYBYYYYYBBFYKKYYK",
+  "........KFFK.KYYYBBYYYBBYYYYYYYK",
+  "........KFFYKYYYYYBBYYBBYYYYYYYK",
+  ".......KKFFYKYYYYYBBYYBBYYYYYYK.",
+  "......KYYFFYYYYYYYBBYYBBYBYYYK..",
+  "......KYYKFFYYYYYYBBYYYBBBYYK...",
+  ".....KYYKKKFYYYYYBBYYYYYYYKK....",
+  ".....KYYYYYYYYYYYYFYYYYYYYK.....",
+  ".....KYYYEYYYYYNNFYYYYYYYYK.KK..",
+  "..KKKKYYYYEEYNNNNNNYYYYYYYKKYYK.",
+  ".KgGGKYYYYYYENNNNNNEEYYYYYKKYYK.",
+  ".KGGgKYYYYYYNNNNNNNNYEYYYKKYYK..",
+  ".KgGGKKYYNNNNNNNNNNNNYYYYKYYK...",
+  "..KhK.KYEEEEENNNNNNNNNYYKYYK....",
+  "..KhKKKYYNNNNNNNNEEEEEYYYYK.....",
+  "..KhYYYYYYYYNNNNNNNNNNYKKK......",
+  "..KhYYYYYYYYNNNNNNNNNYYK........",
+  "..KhKKKKKYYYNNNNNNNYYYK.........",
+  "..KhK...KYYYYNNNNNYYYK..........",
+  "...K.....KYYYYYYYYYYK...........",
+  "..........KYYYYYYYYK............",
+  "...........KKYYYYKK.............",
+  "............KFKKKKFK............",
+  "............KFK..KFK............",
+  "...........KFFK..KFFK...........",
+  "............KK....KK............",
+  "................................",
+];
+/** The flame tips sway a cell: idle alternates with this so the flame burns. */
+const HOST_FLICK: PixelGrid = [
+  "...................K...K.....K..",
+  "..................KFK.KYK...KYK.",
+  "...............KKKFYKYYK...KYYK.",
+  "..............KYYKKKYYYKKKK.KYYK",
+  ".........K....KYYYYYYYYYYBYKKYYK",
+  "........KFK..KYYYBYYYYYBBFYKKYYK",
+  "........KFFK.KYYYBBYYYBBYYYYYYYK",
+  "........KFFYKYYYYYBBYYBBYYYYYYYK",
+  ".......KKFFYKYYYYYBBYYBBYYYYYYK.",
+  "......KYYFFYYYYYYYBBYYBBYBYYYK..",
+  "......KYYKFFYYYYYYBBYYYBBBYYK...",
+  ".....KYYKKKFYYYYYBBYYYYYYYKK....",
+  ".....KYYYYYYYYYYYYFYYYYYYYK.....",
+  ".....KYYYEYYYYYNNFYYYYYYYYK.KK..",
+  "..KKKKYYYYEEYNNNNNNYYYYYYYKKYYK.",
+  ".KgGGKYYYYYYENNNNNNEEYYYYYKKYYK.",
+  ".KGGgKYYYEEENNNNNNNNYEYYYKKYYK..",
+  ".KgGGKKYEENNENNNNNEEEYYYYKYYK...",
+  "..KhK.KYEENNENNNNEENNEYYKYYK....",
+  "..KhKKKYEEEEENNNNEENNEYYYYK.....",
+  "..KhYYYYYEEENNNNNEEEEEYKKK......",
+  "..KhYYYYYYYYNNNNNNEEEYYK........",
+  "..KhKKKKKYYYNNNNNNNYYYK.........",
+  "..KhK...KYYYYNNNNNYYYK..........",
+  "...K.....KYYYYYYYYYYK...........",
+  "..........KYYYYYYYYK............",
+  "...........KKYYYYKK.............",
+  "............KFKKKKFK............",
+  "............KFK..KFK............",
+  "...........KFFK..KFFK...........",
+  "............KK....KK............",
+  "................................",
+];
+
+/**
+ * Frames: idle and talk flap while the host speaks; wink and cheer are moods;
+ * flick and blink animate the idle host (HOST_IDLE_LOOP in story-logic.ts).
+ */
 export const HOST_GRIDS = {
   idle: HOST_IDLE,
   talk: HOST_TALK,
   wink: HOST_WINK,
   cheer: HOST_CHEER,
+  flick: HOST_FLICK,
+  blink: HOST_BLINK,
 } as const satisfies Record<string, PixelGrid>;
 export type HostFrame = keyof typeof HOST_GRIDS;
 

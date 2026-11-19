@@ -41,13 +41,12 @@ export interface GuideHost {
 
 /**
  * The founder on camera in the cutscenes; everywhere else the pixel NPC is
- * the PassionSeed flame (our logo) holding a mic.
- * TODO(founder): replace the placeholder display name. This is the only place
- * it is set.
+ * P'Seed: the PassionSeed flame (our logo) holding a mic. The name is a pun
+ * on "PSeed" with the Thai "พี่" (P'). This is the only place it is set.
  */
 export const GUIDE_HOST: GuideHost = {
-  nameTh: "พี่โฮสต์",
-  nameEn: "Host",
+  nameTh: "P'Seed",
+  nameEn: "P'Seed",
   roleTh: "ไกด์ประจำรัน",
   sprites: {
     idle: "/radar/guides/host/host-idle.webp",

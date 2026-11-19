@@ -55,6 +55,18 @@ describe("host sprite grids", () => {
     }
   });
 
+  it("flick sways only the flame tips and blink shuts only the eyes", () => {
+    const rows = (frame: "flick" | "blink") =>
+      HOST_GRIDS.idle.map((row, y) => (row === HOST_GRIDS[frame][y] ? null : y)).filter((y) => y !== null);
+    expect(rows("flick").length).toBeGreaterThan(0);
+    for (const y of rows("flick")) expect(y).toBeLessThanOrEqual(5);
+    expect(rows("blink").length).toBeGreaterThan(0);
+    for (const y of rows("blink")) {
+      expect(y).toBeGreaterThanOrEqual(16);
+      expect(y).toBeLessThanOrEqual(21);
+    }
+  });
+
   it.each(Object.keys(AVATAR_GRIDS) as (keyof typeof AVATAR_GRIDS)[])("avatar %s is 24x32", (frame) => {
     expect(gridSize(AVATAR_GRIDS[frame])).toEqual({ w: AVATAR_GRID.w, h: AVATAR_GRID.h });
   });
