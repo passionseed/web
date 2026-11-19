@@ -27,7 +27,9 @@ import sharp from "sharp";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const BG = join(ROOT, "public/hackathon/poster/elemental/bg/river-joana-abreu-unsplash.jpg");
-const OUT = join(ROOT, "public/hackathon/poster/elemental/plate-key.png");
+// --sky blue turns the overcast sky blue and writes plate-key-blue.png.
+const SKY_BLUE = process.argv.includes("--sky") && process.argv[process.argv.indexOf("--sky") + 1] === "blue";
+const OUT = join(ROOT, `public/hackathon/poster/elemental/plate-key${SKY_BLUE ? "-blue" : ""}.png`);
 const W = 1080;
 const H = 1350;
 
@@ -220,6 +222,37 @@ for (let i = 0; i < W * H; i++) {
   img[i * 3] = mix(l, r, 0.88) * 0.97 + 0.02;
   img[i * 3 + 1] = mix(l, g, 0.88) * 0.97 + 0.02;
   img[i * 3 + 2] = mix(l, b, 0.88) * 0.97 + 0.025;
+}
+
+// Blue sky (optional): recolour only the bright, grey sky above the hills,
+// keeping the photo's own tones and grain, then add a few soft clouds.
+if (SKY_BLUE) {
+  const top = hex("#5e8fb9");
+  const low = hex("#b9d1dc");
+  for (let y = 0; y < 820; y++)
+    for (let x = 0; x < W; x++) {
+      const c = get(x, y);
+      const l = lum(c);
+      const sat = Math.max(...c) - Math.min(...c);
+      const m = smooth(0.58, 0.7, l) * (1 - smooth(0.08, 0.16, sat)) * (1 - smooth(760, 820, y));
+      if (m <= 0) continue;
+      const t = Math.pow(y / 780, 1.15);
+      const g = top.map((v, k) => mix(v, low[k], t));
+      // Keep the photo's own variation in the new sky.
+      const sky = g.map((v) => clamp(v * (0.82 + (l - 0.78) * 1.6) + 0.04));
+      const cloud = smooth(0.56, 0.78, fbm(x * 0.0035, y * 0.009, 7, 5)) * (1 - t * 0.6) * 0.75;
+      put(x, y, sky.map((v) => mix(v, 0.95, cloud)), m);
+    }
+  // The river reflects the new sky.
+  const water = hex("#9fbfd0");
+  for (let y = 840; y < 1250; y++)
+    for (let x = 0; x < W; x++) {
+      const c = get(x, y);
+      const l = lum(c);
+      const sat = Math.max(...c) - Math.min(...c);
+      const m = smooth(0.4, 0.55, l) * (1 - smooth(0.1, 0.18, sat));
+      if (m > 0) put(x, y, water.map((v) => clamp(v * (0.7 + l * 0.45))), m * 0.6);
+    }
 }
 
 // AIR: a toxic smog over the hill, its own cloud, not the fire's smoke.

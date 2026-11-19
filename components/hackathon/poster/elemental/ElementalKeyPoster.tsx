@@ -23,7 +23,10 @@ const trirong = Trirong({
 
 export const W = 1080;
 export const H = 1350;
-const PLATE = "/hackathon/poster/elemental/plate-key.png";
+const PLATES = {
+  grey: "/hackathon/poster/elemental/plate-key.png",
+  blue: "/hackathon/poster/elemental/plate-key-blue.png",
+} as const;
 
 /** Serif capitals breaking out of the fire, as if it were made of text. */
 function fireLetters() {
@@ -54,13 +57,13 @@ function Detail({ tag, children }: { tag: string; children: ReactNode }) {
   );
 }
 
-export function ElementalKeyPoster({ id = "elemental-key" }: { id?: string }) {
+export function ElementalKeyPoster({ id = "elemental-key", sky = "grey" }: { id?: string; sky?: keyof typeof PLATES }) {
   // The order every Thai student says them: ดิน น้ำ ลม ไฟ.
   const thai = (["earth", "water", "air", "fire"] as const).map((k) => ELEMENTAL.elements.find((e) => e.key === k)?.th ?? "");
   return (
     <div id={id} className={`${trirong.variable} relative overflow-hidden`} style={{ width: W, height: H, backgroundColor: "#2a2b26" }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={PLATE} alt="" width={W} height={H} className="absolute inset-0 h-full w-full" />
+      <img src={PLATES[sky]} alt="" width={W} height={H} className="absolute inset-0 h-full w-full" />
 
       <svg className="absolute inset-0" width={W} height={H} viewBox={`0 0 ${W} ${H}`} aria-hidden="true">
         <defs>

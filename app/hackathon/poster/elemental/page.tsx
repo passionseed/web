@@ -31,6 +31,13 @@ export default async function ElementalPosterPage({ searchParams }: { searchPara
           alt: `${ELEMENTAL.series}: ${ELEMENTAL.edition}, a fire on open ground breaking into pixels, with the five elements marked`,
           live: <ElementalKeyPoster />,
         },
+        {
+          id: "elemental-key-blue",
+          width: W,
+          height: H,
+          alt: `${ELEMENTAL.series}: ${ELEMENTAL.edition}, the same scene under a blue sky`,
+          live: <ElementalKeyPoster id="elemental-key-blue" sky="blue" />,
+        },
       ]}
     />
   );
