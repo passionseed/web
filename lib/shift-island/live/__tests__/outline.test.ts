@@ -6,10 +6,10 @@ import { buildScene, type IslandPlot } from "@/bot/src/quests/island/scene";
 import { FakeContext, FakeImage } from "../__fixtures__/fakeCanvas";
 import { buildAtlasData, type AtlasRect } from "../atlas";
 import { motionAt, seaFrame } from "../clock";
-import { dirtyRects, paintLand, paintOverlay, redrawRect, sceneModel, seaRectsFor, type DrawFx, type Layers } from "../draw";
-import { treeFigures } from "../figures";
+import { actorRect, dirtyRects, paintLand, paintOverlay, redrawRect, sceneModel, seaRectsFor, type DrawFx, type Layers } from "../draw";
+import { hitFigure, hitSlop, treeFigures, type Figure } from "../figures";
 import type { Rect } from "../geometry";
-import { interactTargets, nearestTarget, plotKey, spotKey, type InteractTarget } from "../interact";
+import { REACH_PX, figureKey, holds, interactTargets, nearestTarget, plotKey, spotKey, type InteractTarget } from "../interact";
 import {
   OUTLINE_LIT_RGB,
   OUTLINE_RGB,
@@ -24,6 +24,7 @@ import {
   shapeVariants,
   silhouette,
   targetBox,
+  targetTight,
   withRing,
   type AlphaAtlas,
   type OutlineFrame,
@@ -393,7 +394,7 @@ describe("OutlineLayer", () => {
       outline.aim = aim;
       for (let t = 0; t < 600; t += 7) {
         const frame = frameAt(t);
-        const full = nearestTarget(targets, (target) => targetBox(target, frame), aim);
+        const full = nearestTarget(targets, (target) => targetBox(target, frame), aim, (target) => targetTight(target, frame));
         expect(outline.pick(frame)).toBe(full);
         if (full >= 0) picked++;
       }
@@ -431,5 +432,79 @@ describe("OutlineLayer", () => {
     // A pulse step repaints the ring's own box.
     const pulsing = [0, PULSE_TICKS].map((t) => outline.ring(frameAt(t)));
     expect(ringDirty(pulsing[0], pulsing[1])).toEqual([pulsing[0]!.box, pulsing[1]!.box]);
+  });
+});
+
+describe("the outline names what a click opens", () => {
+  /**
+   * A click as IslandViewport takes it: a person within its slop wins
+   * (figures.ts hitFigure), but over a plot's or the plaza's button only
+   * within TIGHT of itself (`hit.tight || !overButton`); else the button
+   * under the pointer. Null where nothing takes the click.
+   */
+  function clickAt(p: { x: number; y: number }, targets: readonly InteractTarget[], figures: readonly Figure[], boxes: readonly (Rect | null)[], scale: number) {
+    const under = targets.filter((t) => !t.person && t.box && holds(t.box, p));
+    const hit = hitFigure(figures, boxes, p, hitSlop(scale, false));
+    if (hit && (hit.tight || under.length === 0)) return { key: figureKey(hit.index), buttons: under.length };
+    return under.length ? { key: under[0].key, buttons: under.length } : null;
+  }
+
+  const plots = (n: number) => Array.from({ length: n }, (_, k) => plot(k + 1, { stage: 3 + (k % 5), visitor: k % 3 !== 2 }));
+  const hotspotsOf = (sc: ReturnType<typeof buildScene>) =>
+    sc.trees.map((t) => ({ slot: t.slot, x: (t.left / sc.width) * 100, y: (t.top / sc.height) * 100, w: (t.w / sc.width) * 100, h: (t.h / sc.height) * 100 }));
+
+  it.each([3, 12])("rings the person or the button a pointer click goes to, on every pixel of a %i-plot island", (n) => {
+    const scale = 2;
+    const sc = buildScene(plots(n), { festival: true });
+    const m = sceneModel(sc);
+    const pz = plazaWorld(sc, { festival, pins: ["active", "main"], campfire: { count: 3 }, prizes: true, visitors: { count: 6, team: 1, me: true } });
+    const figures: Figure[] = [...pz.figures, ...treeFigures(sc)];
+    const targets = interactTargets({ scene: sc, hotspots: hotspotsOf(sc), spots: pz.spots, figures, scale, whole: false });
+    const cast = pz.actors;
+    const sway = m.trees.map((t) => t.b != null);
+    const outline = new OutlineLayer<FakeImage>((words, w, h) => new FakeImage(w, h, new Uint8ClampedArray(words.buffer)));
+    outline.targets = targets;
+    let both = 0;
+    let figureOverButton = 0;
+    for (const tick of [0, 37]) {
+      const mo = Object.assign(motionAt(tick, { scene: sc, swaying: sway, actors: cast, ambient: false, still: false, lowDetail: false, night: false }), { tick });
+      const frame: OutlineFrame = { model: m, actors: cast, motion: mo, atlas: data, still: false };
+      const boxes = cast.map((a, i) => actorRect(a, mo.actors[i] ?? 0, data.rects));
+      for (let y = 0; y < sc.height; y++) {
+        for (let x = 0; x < sc.width; x++) {
+          const p = { x: x + 0.5, y: y + 0.5 };
+          const click = clickAt(p, targets, figures, boxes, scale);
+          if (!click) continue;
+          outline.aim = { ...p, reach: REACH_PX.pointer / scale };
+          const ring = outline.pick(frame);
+          if (ring < 0) continue;
+          // Two buttons overlapping: which one is on top is the page's to say; a person is never in question there.
+          if (click.buttons > 1 && !click.key.startsWith("figure:") && !targets[ring].person) continue;
+          both++;
+          if (click.key.startsWith("figure:") && click.buttons > 0) figureOverButton++;
+          if (targets[ring].key !== click.key) throw new Error(`at (${x}, ${y}): the ring names ${targets[ring].key}, a click opens ${click.key}`);
+        }
+      }
+    }
+    expect(both).toBeGreaterThan(1000);
+    // People do stand on buttons here (a tree's partner on its plot), and win there within TIGHT.
+    expect(figureOverButton).toBeGreaterThan(0);
+  });
+
+  it("over a plot's button, rings its partner only within TIGHT, as the click does", () => {
+    const sc = buildScene(plots(3), { festival: true });
+    const figures = treeFigures(sc);
+    const targets = interactTargets({ scene: sc, hotspots: hotspotsOf(sc), spots: [], figures, scale: 2, whole: false });
+    const partner = targets.find((t) => t.shape.kind === "partner")!;
+    const tree = sc.trees[(partner.shape as { tree: number }).tree];
+    const plotOf = targets.find((t) => t.key === plotKey(tree.slot))!;
+    const v = tree.visitor!;
+    const box = (t: InteractTarget) => t.box ?? null;
+    // On the partner: the partner. In its slop but past TIGHT, still on the plot's button: the plot.
+    expect(targets[nearestTarget(targets, box, { x: v.x + 5, y: v.y + 7, reach: 7 })]).toBe(partner);
+    const past = { x: v.x - 4, y: v.y + 7, reach: 7 };
+    expect(holds(partner.box!, past)).toBe(true);
+    expect(holds(plotOf.box!, past)).toBe(true);
+    expect(targets[nearestTarget(targets, box, past)]).toBe(plotOf);
   });
 });

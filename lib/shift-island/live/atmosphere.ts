@@ -84,10 +84,98 @@ function butterfly(wing: string, mark: string, body: string): Record<string, str
 
 const BLANK_16 = Array.from({ length: 16 }, () => ".".repeat(16));
 
+// ------------------------------------------------------------------ the open sea's looks
+
+/**
+ * The open sea's two tiles each carry the same three wave bumps in the same
+ * places, so a sea of them reads as wallpaper. The web keeps them and adds
+ * SEA_LOOKS - 1 more looks of each, made from them: every bump moved a few
+ * px (the same in all three frames, so it still rolls), flattened to a
+ * single ripple now and then, or left out, about a third of them. Each cell
+ * of open sea takes one look by a hash of its place (seaLook). Their outer
+ * ring stays the base tile's, so they mix with every other tile as the
+ * frames do. Web only: the bot's PNG and GIF keep the two tiles.
+ */
+export const SEA_LOOKS = 4;
+const OPEN_SEA = ["water_a", "water_b"] as const;
+/** The rows each bump lies in, in every frame (one bump per band), and how far a bump may move. */
+const BUMP_BANDS: readonly (readonly [number, number])[] = [
+  [1, 4],
+  [6, 9],
+  [11, 14],
+];
+const BUMP_LEFT_OUT = 0.3;
+const BUMP_FLAT = 0.25;
+
+/** A sea look's frame name: the base tile's own names for look 0. */
+export function seaLookName(kind: (typeof OPEN_SEA)[number], look: number, frame: number): string {
+  if (look === 0) return frame === 0 ? kind : `${kind}_${frame}`;
+  return `${kind}_look${look}_${frame}`;
+}
+
+/** The look of an open-sea cell at column `col`, row `row` (any, also past the island's edge). */
+export function seaLook(col: number, row: number): number {
+  return Math.floor(hash3(col, row, 61) * SEA_LOOKS);
+}
+
+function seaLookSprites(): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  for (const [k, kind] of OPEN_SEA.entries()) {
+    const frames = [0, 1, 2].map((f) => spriteRows(seaLookName(kind, 0, f)) ?? []);
+    for (let look = 1; look < SEA_LOOKS; look++) {
+      const grids = frames.map((rows) => rows.map((row) => [...row].map((ch) => (ch === "v" ? "w" : ch))));
+      BUMP_BANDS.forEach(([top, bottom], b) => {
+        const roll = hash3(look, b, 71 + k);
+        if (roll < BUMP_LEFT_OUT) return;
+        const flat = roll < BUMP_LEFT_OUT + BUMP_FLAT;
+        // The bump's pixels in every frame, so one move keeps it inside the tile's ring in all of them.
+        const cells = frames.map((rows) => {
+          const at: { x: number; y: number }[] = [];
+          for (let y = top; y <= bottom; y++) for (let x = 0; x < 16; x++) if (rows[y]?.[x] === "v") at.push({ x, y });
+          return at;
+        });
+        const all = cells.flat();
+        if (!all.length) return;
+        const lowest = Math.max(...all.map((p) => p.y));
+        const minX = Math.min(...all.map((p) => p.x));
+        const maxX = Math.max(...all.map((p) => p.x));
+        const minY = Math.min(...all.map((p) => p.y));
+        const dx = Math.max(1 - minX, Math.min(14 - maxX, Math.round((hash3(look, b, 81 + k) * 2 - 1) * 3)));
+        const dy = Math.max(1 - minY, Math.min(14 - lowest, Math.round((hash3(look, b, 91 + k) * 2 - 1) * 1)));
+        cells.forEach((at, f) => {
+          for (const p of at) {
+            // Flattened: only the bump's lower row, a single ripple.
+            if (flat && p.y !== lowest && !at.every((q) => q.y === p.y)) continue;
+            grids[f][p.y + dy][p.x + dx] = "v";
+          }
+        });
+      });
+      grids.forEach((g, f) => (out[seaLookName(kind, look, f)] = g.map((row) => row.join(""))));
+    }
+  }
+  return out;
+}
+
+const SEA_LOOK_SPRITES: Readonly<Record<string, string[]>> = seaLookSprites();
+
+/**
+ * The sea's atlas rects as draw.ts reads them (seaRectsFor), with each open
+ * sea kind's extra looks after its own three frames: frame f of look n at
+ * n * 3 + f, as the web's seaFrame hook (fx.ts) asks for them.
+ */
+export function webSeaRects<R>(base: (R | undefined)[][], rects: ReadonlyMap<string, R>): (R | undefined)[][] {
+  return base.map((frames, kind) => {
+    if (kind >= OPEN_SEA.length) return frames;
+    const more: (R | undefined)[] = [];
+    for (let look = 1; look < SEA_LOOKS; look++) for (let f = 0; f < 3; f++) more.push(rects.get(seaLookName(OPEN_SEA[kind], look, f)));
+    return [...frames, ...more];
+  });
+}
+
 /**
  * The web's sprite set: every island sprite, the breeze, the island's small
- * life, the plots' signposts, the foam round the merchant ship, and no dotted
- * lantern ring.
+ * life, the plots' signposts, the foam round the merchant ship, the open
+ * sea's extra looks, and no dotted lantern ring.
  */
 export function webSprites(): Record<string, string[]> {
   return {
@@ -96,6 +184,7 @@ export function webSprites(): Record<string, string[]> {
     ...LIFE_SPRITES,
     ...signSprites(),
     ...SHIP_WATER_SPRITES,
+    ...SEA_LOOK_SPRITES,
     lantern_glow_0: BLANK_16,
     lantern_glow_1: BLANK_16,
   };
@@ -164,6 +253,14 @@ function masks(): ShoreMask[] {
 /** Per shore kind (draw.ts numbering less 2: shore_n, shore_s, shore_e, shore_w), 16 x 16: the dry beach, sand in every frame and never wet. */
 export function dryShore(): readonly Uint8Array[] {
   return masks().map((m) => m.dry);
+}
+
+let shoreSandMasks: Uint8Array[] | null = null;
+
+/** The same, per shore kind: all the sand, wet or dry (sand in every frame), so 0 is water or foam in some frame. */
+export function shoreSand(): readonly Uint8Array[] {
+  shoreSandMasks ??= masks().map((m) => m.dry.map((v, i) => v | m.wet[i]));
+  return shoreSandMasks;
 }
 
 /**

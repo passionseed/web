@@ -29,9 +29,11 @@ import type { AtlasData, AtlasRect } from "./atlas";
 import { treeSpriteKey } from "./atlas";
 import type { Motion } from "./clock";
 import { actorAt, actorRect, type DrawContext, type DrawFx, type SceneModel } from "./draw";
+import { TIGHT } from "./figures";
 import { overlaps, union, type Rect } from "./geometry";
-import { NONE_NEAR, gapSquared, nearestOf, type Aim, type InteractTarget, type Nearest, type OutlineShape } from "./interact";
+import { NONE_NEAR, gapSquared, holds, nearestOf, settle, type Aim, type InteractTarget, type Nearest, type OutlineShape } from "./interact";
 import { idleName } from "./people";
+import { SHIP_WATERLINE, isShipSprite } from "./shipWater";
 import type { LiveActor } from "./types";
 
 /**
@@ -271,6 +273,11 @@ export function ringMask(parts: readonly Part[], atlas: AlphaAtlas): RingMask | 
     const x = k % w;
     if ((x > 0 && solid[k - 1]) || (x < w - 1 && solid[k + 1]) || (k >= w && solid[k - w]) || (k < (h - 1) * w && solid[k + w])) bits[k] = 1;
   }
+  // The merchant ship sits in the sea: its ring stops at the waterline, as the hull does (shipWater.ts).
+  for (const { p, a } of placed) {
+    if (!isShipSprite(p.name)) continue;
+    for (let y = Math.max(0, p.y + SHIP_WATERLINE - y0); y < h; y++) bits.fill(0, y * w + Math.max(0, p.x - 1 - x0), y * w + Math.min(w, p.x + a.w + 1 - x0));
+  }
   return { x: x0, y: y0, w, h, bits };
 }
 
@@ -346,6 +353,18 @@ export function targetBox(target: InteractTarget, frame: Pick<OutlineFrame, "act
 }
 
 /**
+ * Where a person counts even over a button (interact.ts settle): a
+ * partner's own tight box, or a walker's actors' boxes where they stand now
+ * grown by TIGHT. Null for anything else.
+ */
+export function targetTight(target: InteractTarget, frame: Pick<OutlineFrame, "actors" | "motion" | "atlas">): Rect | null {
+  if (!target.person) return null;
+  if (target.tight) return target.tight;
+  if (target.box) return null;
+  return targetBox({ ...target, slop: { x: TIGHT, y: TIGHT } }, frame);
+}
+
+/**
  * Everywhere a walker target can be over all its frames (the union of its
  * actors' boxes on each, grown by its slop): it can only come near an aim
  * that is near this. Null for a target with a box of its own.
@@ -371,10 +390,11 @@ interface Paths {
   targets: readonly InteractTarget[];
   actors: readonly LiveActor[];
   reach: (Rect | null)[];
-  /** The targets that move. */
+  /** The targets that move (people, all of them). */
   walkers: number[];
-  /** The rest: a box of their own (or nothing drawn). */
+  /** The rest, with a box of their own (or nothing drawn): the buttons, and the people who stand still (a tree's partner). */
   still: number[];
+  stillPeople: number[];
 }
 
 /** The ring's last frame, to hand back as it was while its shape stays the same. */
@@ -418,7 +438,8 @@ const sameParts = (a: readonly Part[], b: readonly Part[]) =>
  * Cheap per tick: the things that never move are searched once per aim, and
  * on each tick only the walkers whose path ever comes within its reach (none,
  * mostly). A ring whose shape did not change is the last one, its pulse step
- * aside.
+ * aside. The pick is nearestTarget's (interact.ts), the tap's rule between a
+ * person and a button included.
  */
 export class OutlineLayer<Img> {
   aim: Aim | null = null;
@@ -428,8 +449,8 @@ export class OutlineLayer<Img> {
   /** The thing whose shapes were made last (its key), so they are made once per pick. */
   private prepared: string | null = null;
   private paths: Paths | null = null;
-  /** For this aim: the nearest of the things that never move, and the walkers that can come near it. */
-  private plan: { aim: Aim; paths: Paths; fixed: Nearest; walkers: number[] } | null = null;
+  /** For this aim: the nearest of the buttons and of the people that never move, and the walkers that can come near it. */
+  private plan: { aim: Aim; paths: Paths; button: Nearest; person: Nearest; walkers: number[] } | null = null;
   private last: LastRing<Img> | null = null;
 
   /** The things that can be picked. New ones (the plaza changed): the picked thing's shapes are made again. */
@@ -459,8 +480,12 @@ export class OutlineLayer<Img> {
     const aim = this.aim;
     if (!aim) return -1;
     const plan = this.planFor(aim, frame);
-    if (plan.walkers.length === 0) return plan.fixed.index;
-    return nearestOf(targets, (t) => targetBox(t, frame), aim, plan.walkers, plan.fixed).index;
+    const person = plan.walkers.length ? nearestOf(targets, (t) => targetBox(t, frame), aim, plan.walkers, plan.person) : plan.person;
+    // Between a person and a button the aim is inside of, the tap's rule (interact.ts settle).
+    return settle(plan.button, person, (i) => {
+      const tight = targetTight(targets[i], frame);
+      return tight != null && holds(tight, aim);
+    });
   }
 
   /** The walkers' paths (once per targets and actors), then the plan for this aim (once per aim). */
@@ -471,16 +496,19 @@ export class OutlineLayer<Img> {
       const reach = targets.map((t) => walkerReach(t, frame.actors, frame.atlas.rects));
       const walkers: number[] = [];
       const still: number[] = [];
-      targets.forEach((t, i) => (t.box ? still : reach[i] ? walkers : still).push(i));
-      paths = this.paths = { targets, actors: frame.actors, reach, walkers, still };
+      const stillPeople: number[] = [];
+      targets.forEach((t, i) => (t.box ? (t.person ? stillPeople : still) : reach[i] ? walkers : t.person ? stillPeople : still).push(i));
+      paths = this.paths = { targets, actors: frame.actors, reach, walkers, still, stillPeople };
     }
     const kept = this.plan;
     if (kept && kept.paths === paths && kept.aim.x === aim.x && kept.aim.y === aim.y && kept.aim.reach === aim.reach) return kept;
     const r2 = aim.reach * aim.reach;
     const p = paths;
-    const fixed = p.still.length ? nearestOf(targets, (t) => t.box ?? null, aim, p.still) : NONE_NEAR;
+    const own = (t: InteractTarget) => t.box ?? null;
+    const button = p.still.length ? nearestOf(targets, own, aim, p.still) : NONE_NEAR;
+    const person = p.stillPeople.length ? nearestOf(targets, own, aim, p.stillPeople) : NONE_NEAR;
     const walkers = p.walkers.filter((i) => gapSquared(p.reach[i]!, aim) <= r2);
-    this.plan = { aim, paths: p, fixed, walkers };
+    this.plan = { aim, paths: p, button, person, walkers };
     return this.plan;
   }
 

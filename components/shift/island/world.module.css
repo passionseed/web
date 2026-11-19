@@ -155,11 +155,13 @@
 }
 
 /*
- * While the living island draws, a keyboard's focus shows as the interact
- * outline round the plot's tree or the plaza piece itself (lib/shift-island/
- * live/outline.ts), so the box steps aside. Over the PNG the box stays.
+ * While the living island draws close up, a keyboard's focus shows as the
+ * interact outline round the plot's tree or the plaza piece itself
+ * (lib/shift-island/live/outline.ts), at least 2 CSS px there, so the box
+ * steps aside. On the whole island the outline is 1 native px, a single
+ * device pixel on a phone, and over the PNG there is none: the box stays.
  */
-.world[data-live="true"] .hotspot:focus-visible:not(:active) {
+.world[data-live="true"]:not([data-whole="true"]) .hotspot:focus-visible:not(:active) {
   outline: none;
 }
 

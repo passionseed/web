@@ -25,8 +25,11 @@
  *
  * The merchant ship (shipWater.ts) sits in the water the same way: its
  * shadow and its lantern's pool on the sea are baked into the land layer
- * (transparent there, so the sea moves under them), and its foam and the
- * pool's glints step on the sea's beat, when the whole view repaints anyway.
+ * (transparent there, so the sea moves under them), and the pool's glints
+ * and the foam at its waterline (drawn over the hull's last plank, so it
+ * sits in the sea) step on the sea's beat, when the whole view repaints
+ * anyway. Its lantern glows like the plaza's lamps and warms the ship round
+ * it in the pools' soft steps, a recoloured copy of the ship's own pixels.
  */
 import { SPRITES } from "@/bot/assets/island/sprites";
 import type { IslandScene } from "@/bot/src/quests/island/scene";
@@ -57,6 +60,7 @@ import {
   lightSources,
   lightStrength,
   poolStep,
+  seaLook,
   shadowBox,
   smokeAt,
   smokeBounds,
@@ -79,15 +83,18 @@ import {
   SHIP_DIP,
   SHIP_FOAM_AT,
   SHIP_GLINT_RGB,
-  SHIP_LAMPLIT,
-  SHIP_LAMPLIT_ALPHA,
-  SHIP_POOL,
+  SHIP_GLOW_ALPHA,
+  SHIP_HALO,
+  SHIP_HALO_GAIN,
+  SHIP_LANTERN,
   SHIP_SHADOW,
+  SHIP_SHADOW_DEPTH,
   isShipSprite,
   shipFoamFrame,
   shipGlints,
+  shipGlowSteps,
   shipOf,
-  shipPoolInk,
+  shipPoolWords,
 } from "./shipWater";
 import type { Signpost } from "./signposts";
 import { inkColours, terrainFor, terrainSteps, type Terrain } from "./terrain";
@@ -197,8 +204,8 @@ interface LitAtlas {
 /** Firelit copies of the plaza's people, shared by every island on the page: a few, keyed by their sprite names. */
 const litAtlases = new Map<string, LitAtlas>();
 
-/** The merchant ship in its lantern's light (its stall and its board are drawn from it), shared, built on the first evening. */
-let shipLitAtlas: LitAtlas | null = null;
+/** The merchant ship's frames in its lantern's light, faded out round it (fx.ts shipLitFrames), shared, built on the first evening. */
+let shipLitFrames: ReadonlyMap<string, HTMLCanvasElement> | null = null;
 
 /** The fire's pool, one canvas per breath step (BREATH): the same pixels, brighter or dimmer. */
 interface FirePool {
@@ -227,7 +234,7 @@ export class IslandFx {
   private ship: { x: number; y: number } | null = null;
   private shipLight = 0;
   /** The ship in its lantern's light, while the lantern is lit. */
-  private shipLit: LitAtlas | null = null;
+  private shipLit: ReadonlyMap<string, HTMLCanvasElement> | null = null;
   /** The scene's terrain (terrain.ts), and its ink baked in the colours of one hour: the ground, and the pieces that stand. */
   private terrain: BakedTerrain | null = null;
   /** A new layout's terrain while prepare() builds it, a step per call. */
@@ -281,7 +288,7 @@ export class IslandFx {
     this.smokeFrom = smokeOrigin(actors);
     this.ship = shipOf(actors);
     this.shipLight = this.ship ? lightStrength(phase, "lantern") : 0;
-    this.shipLit = this.shipLight > 0 ? this.shipLitAtlas(actors) : null;
+    this.shipLit = this.shipLight > 0 ? this.shipLitFrames(actors) : null;
     this.glintSheet = null;
     this.shadows.clear();
     this.halos.clear();
@@ -474,9 +481,9 @@ export class IslandFx {
     covered: Rect[]
   ): void {
     const lean = SHADOW_LEAN[phase];
-    const stamp = (box: Rect | null) => {
+    const stamp = (box: Rect | null, depth = 1) => {
       if (!box) return;
-      land.drawImage(this.shadow(box.w, box.h), box.x, box.y);
+      land.drawImage(this.shadow(box.w, box.h, depth), box.x, box.y);
       covered.push(box);
     };
     const { scene } = model;
@@ -488,8 +495,8 @@ export class IslandFx {
       if (t.visitor) stamp(shadowBox("visitor", t.visitor.x, t.visitor.y, false, lean));
     }
     for (const post of posts) stamp({ ...post.shadow, x: post.shadow.x + lean * post.unit });
-    // The merchant ship's on the water, under its hull (it floats: the generic footprint would sit on its wake).
-    if (this.ship) stamp({ x: this.ship.x + SHIP_SHADOW.x + lean, y: this.ship.y + SHIP_SHADOW.y, w: SHIP_SHADOW.w, h: SHIP_SHADOW.h });
+    // The merchant ship's on the water, under its hull (it floats: the generic footprint would sit on its wake), deeper than a figure's.
+    if (this.ship) stamp({ x: this.ship.x + SHIP_SHADOW.x + lean, y: this.ship.y + SHIP_SHADOW.y, w: SHIP_SHADOW.w, h: SHIP_SHADOW.h }, SHIP_SHADOW_DEPTH);
     // The terrain's standing pieces (drawn over their shadows after this).
     for (const box of pieces) stamp({ ...box, x: box.x + lean });
     stamp(shadowBox("well", scene.well.x, scene.well.y, false, lean));
@@ -595,39 +602,17 @@ export class IslandFx {
 
   /**
    * The ship's lantern on the water: the plaza pools' soft steps (poolStep)
-   * at the lantern's strength of the hour, as warm streaks laid over the sea
-   * (shipWater.ts shipPoolInk), on open water only (never the beach or what
-   * stands on it).
+   * at the lantern's strength of the hour, as warm streaks over a warm wash
+   * (shipWater.ts shipPoolWords), on open water only (never the beach or
+   * what stands on it).
    * Into the land layer, which is transparent over the sea, so the sea's
    * ripples still move under it. None by day.
    */
   private bakeShipPool(land: Ctx, model: SceneModel): void {
-    const ship = this.ship;
-    const strength = this.shipLight;
-    if (!ship || strength <= 0) return;
+    if (!this.ship) return;
     const { scene } = model;
-    const cx = ship.x + SHIP_POOL.x;
-    const cy = ship.y + SHIP_POOL.y;
-    const { rx, ry } = SHIP_POOL;
-    const box = { x: cx - rx, y: cy - ry, w: 2 * rx, h: 2 * ry };
-    const words = new Uint32Array(box.w * box.h);
-    let any = false;
-    for (let j = 0; j < box.h; j++) {
-      const y = box.y + j;
-      for (let i = 0; i < box.w; i++) {
-        const x = box.x + i;
-        const col = Math.floor(x / scene.tile);
-        const row = Math.floor(y / scene.tile);
-        const inside = col >= 0 && col < scene.cols && row >= 0 && row < scene.rows;
-        // Open water only (sea kinds 0 and 1); off the scene the open sea goes on.
-        if (inside && !(model.sea[row * scene.cols + col] >= 0 && model.sea[row * scene.cols + col] < 2)) continue;
-        const ink = shipPoolInk(x, y, cy, poolStep(x, y, cx, cy, rx, ry));
-        if (!ink) continue;
-        words[j * box.w + i] = word(ink.rgb, ink.alpha * strength);
-        any = true;
-      }
-    }
-    if (any) land.drawImage(this.upload(words, box.w, box.h), box.x, box.y);
+    const pool = shipPoolWords({ sea: model.sea, cols: scene.cols, rows: scene.rows, tile: scene.tile }, this.ship, this.shipLight);
+    if (pool) land.drawImage(this.upload(pool.words, pool.box.w, pool.box.h), pool.box.x, pool.box.y);
   }
 
   private lampAtlas(light: "lamp" | "fire"): { rects: ReadonlyMap<string, AtlasRect>; image: HTMLCanvasElement } {
@@ -644,19 +629,34 @@ export class IslandFx {
     return entry;
   }
 
-  /** The ship's frames in its lantern's warm light (firelight's colours), once per page. */
-  private shipLitAtlas(actors: readonly LiveActor[]): LitAtlas | null {
-    if (shipLitAtlas) return shipLitAtlas;
+  /**
+   * The ship's frames in its lantern's warm light (firelight's colours),
+   * each pixel at the alpha of its step of that light (shipWater.ts
+   * shipGlowSteps): the stall, the board, the hull and the sail's foot
+   * nearest the lantern, fading out in the pools' soft steps. Once per page.
+   */
+  private shipLitFrames(actors: readonly LiveActor[]): ReadonlyMap<string, HTMLCanvasElement> | null {
+    if (shipLitFrames) return shipLitFrames;
     const ship = actors.find((a) => isShipSprite(a.frames[0] ?? ""));
     if (!ship) return null;
     const all = webSprites();
-    const sprites: Record<string, string[]> = {};
-    for (const name of ship.frames) if (all[name]) sprites[name] = all[name];
-    const data = buildAtlasData("night", sprites, [], (rgb) => firelight(rgb));
-    const image = this.kit.canvas(data.width, data.height);
-    this.kit.context(image).putImageData(new ImageData(new Uint8ClampedArray(data.data), data.width, data.height), 0, 0);
-    shipLitAtlas = { image, rects: data.rects, flipped: data.flipped };
-    return shipLitAtlas;
+    const out = new Map<string, HTMLCanvasElement>();
+    for (const name of new Set(ship.frames)) {
+      const rows = all[name];
+      if (!rows?.length) continue;
+      const w = rows[0].length;
+      const h = rows.length;
+      const steps = shipGlowSteps(rows, SHIP_DIP[name] ?? 0);
+      const words = new Uint32Array(w * h);
+      for (let k = 0; k < steps.length; k++) {
+        if (!steps[k]) continue;
+        const rgb = paletteRgb(rows[Math.floor(k / w)][k % w]);
+        if (rgb) words[k] = word(firelight(rgb), SHIP_GLOW_ALPHA[steps[k]]);
+      }
+      out.set(name, this.upload(words, w, h));
+    }
+    shipLitFrames = out;
+    return out;
   }
 
   /** Firelit copies of every sprite the plaza's actors show that can catch the light. */
@@ -689,14 +689,15 @@ export class IslandFx {
     return c;
   }
 
-  private shadow(w: number, h: number): HTMLCanvasElement {
-    const key = `${w}x${h}`;
+  /** A soft shadow w x h in the hour's ink; `depth` darkens it (the ship's hull in the water). */
+  private shadow(w: number, h: number, depth = 1): HTMLCanvasElement {
+    const key = `${w}x${h}x${depth}`;
     let c = this.shadows.get(key);
     if (!c) {
       const ink = SHADOW_INK[this.phase];
       const mask = ellipseMask(w, h);
       const words = new Uint32Array(w * h);
-      for (let i = 0; i < mask.length; i++) if (mask[i]) words[i] = word(ink.rgb, mask[i] === 2 ? ink.core : ink.rim);
+      for (let i = 0; i < mask.length; i++) if (mask[i]) words[i] = word(ink.rgb, Math.min(0.9, (mask[i] === 2 ? ink.core : ink.rim) * depth));
       c = this.upload(words, w, h);
       this.shadows.set(key, c);
     }
@@ -744,6 +745,36 @@ export class IslandFx {
       this.glintSheet = this.upload(words, 9, 3);
     }
     return this.glintSheet;
+  }
+
+  /**
+   * What goes over the merchant ship, drawn just after it: its own pixels
+   * warmed round the lantern and the lantern's small glow (while it is lit,
+   * at its strength of the hour), then the water at its waterline, the
+   * foam's frame for this sea step, so the hull sits in the sea. All inside
+   * the ship's own box, so whatever repaints the ship repaints these.
+   */
+  private shipOver(ctx: Ctx, layers: Layers<Img>, ship: { x: number; y: number }, step: number): (name: string, x: number, y: number) => void {
+    const foam = layers.rects.get(shipFoamFrame(step));
+    const lit = this.shipLit;
+    const strength = Math.min(1, this.shipLight);
+    return (name, x, y) => {
+      if (strength > 0) {
+        const warm = lit?.get(name);
+        if (warm) {
+          ctx.globalAlpha = strength;
+          ctx.drawImage(warm, 0, 0, warm.width, warm.height, x, y, warm.width, warm.height);
+          ctx.globalAlpha = 1;
+        }
+        const hx = x + SHIP_LANTERN.x - SHIP_HALO;
+        const hy = y + SHIP_LANTERN.y + (SHIP_DIP[name] ?? 0) - SHIP_HALO;
+        ctx.globalCompositeOperation = "lighter";
+        ctx.drawImage(this.halo(SHIP_HALO, strength * SHIP_HALO_GAIN, hx, hy), hx, hy);
+        ctx.globalCompositeOperation = "source-over";
+      }
+      // The water stays where it is while the ship rocks: the foam is placed by the mooring, not the frame.
+      if (foam) ctx.drawImage(layers.atlas, foam.x, foam.y, foam.w, foam.h, ship.x + SHIP_FOAM_AT.x, ship.y + SHIP_FOAM_AT.y, foam.w, foam.h);
+    };
   }
 
   /** An actor's shadow box relative to where it stands, cached by frame name and mirror (the sun's lean is the phase's). */
@@ -818,12 +849,9 @@ export class IslandFx {
     // The merchant ship's foam and its lantern's glints, on the sea's beat (none moving on a still island).
     const ship = this.ship;
     const shipStep = frozen ? 0 : seaStep;
-    const foam = ship ? layers.rects.get(shipFoamFrame(shipStep)) : undefined;
-    const foamAt = ship ? { x: ship.x + SHIP_FOAM_AT.x, y: ship.y + SHIP_FOAM_AT.y } : null;
     const glints = ship && this.shipLight > 0 ? shipGlints(shipStep, ship) : [];
     const glintAlpha = Math.min(1, 0.9 * this.shipLight);
-    const shipLit = this.shipLit;
-    const shipGlow = Math.min(1, SHIP_LAMPLIT_ALPHA * this.shipLight);
+    const overShip = ship ? this.shipOver(ctx, layers, ship, shipStep) : null;
     const drawCritter = (c: Critter | null, size: { w: number; h: number }, r: Rect) => {
       if (!c || c.x >= r.x + r.w || c.y >= r.y + r.h || c.x + size.w <= r.x || c.y + size.h <= r.y) return;
       const a = (c.flip ? layers.flipped : layers.rects).get(c.name);
@@ -836,10 +864,13 @@ export class IslandFx {
       beforeActor: undefined,
       // A tree's partner breathes and blinks on its own clock (people.ts); still, the visitor as drawn.
       partner: frozen ? undefined : (i) => partnerSprite(tick, model.trees[i]?.tree.slot ?? i),
+      // Each open-sea cell in its own look (atmosphere.ts seaLook: frames n * 3 on) and, moving, its own phase of the roll.
       seaFrame: frozen
-        ? undefined
+        ? (col, row, kind) => (kind < 2 ? seaLook(col, row) * 3 : 0)
         : (col, row, kind) =>
-            kind < 2 ? PING_PONG[(seaStep + Math.floor(hash3(col, row, 0) * 4)) & 3] : PING_PONG[(foamStep + ((col + row) & 3)) & 3],
+            kind < 2
+              ? seaLook(col, row) * 3 + PING_PONG[(seaStep + Math.floor(hash3(col, row, 0) * 4)) & 3]
+              : PING_PONG[(foamStep + ((col + row) & 3)) & 3],
       afterSea: lowDetail
         ? undefined
         : (r) => {
@@ -867,9 +898,9 @@ export class IslandFx {
             }
           },
       // The grass the gust bends; then the fire's pool, on the ground under everything, at this moment's breath;
-      // then the water lapping at the merchant ship and its lantern's glints, under the ship.
+      // then the merchant ship's lantern's glints on the water, under the ship.
       afterLand:
-        fire || bent.length || foam
+        fire || bent.length || glints.length
           ? (r) => {
               if (sway) {
                 for (const i of bent) {
@@ -879,9 +910,6 @@ export class IslandFx {
                 }
               }
               if (fire && overlaps(fire.box, r)) ctx.drawImage(fire.steps[breath], fire.box.x, fire.box.y);
-              if (foam && foamAt && overlaps({ x: foamAt.x, y: foamAt.y, w: foam.w, h: foam.h }, r)) {
-                ctx.drawImage(layers.atlas, foam.x, foam.y, foam.w, foam.h, foamAt.x, foamAt.y, foam.w, foam.h);
-              }
               if (glints.length) {
                 ctx.fillStyle = `rgb(${SHIP_GLINT_RGB[0]},${SHIP_GLINT_RGB[1]},${SHIP_GLINT_RGB[2]})`;
                 ctx.globalAlpha = glintAlpha;
@@ -904,18 +932,13 @@ export class IslandFx {
       beforeActors: (r) => {
         for (const box of shadows) if (overlaps(box, r)) ctx.drawImage(this.shadow(box.w, box.h), box.x, box.y);
       },
-      // The fire's warmth on whoever sits by it: their own sprite, recoloured, over them alone.
+      // The fire's warmth on whoever sits by it: their own sprite, recoloured, over them alone;
+      // and over the merchant ship, its lantern's light and the water at its waterline.
       afterActor:
-        (fire && lit && warm) || shipLit
+        (fire && lit && warm) || overShip
           ? (i, name, x, y, flip) => {
-              // The ship's stall and painted board in its lantern's light: its own pixels, warmed.
-              if (shipLit && isShipSprite(name)) {
-                const a = shipLit.rects.get(name);
-                if (!a) return;
-                const dip = SHIP_DIP[name] ?? 0;
-                ctx.globalAlpha = shipGlow;
-                for (const p of SHIP_LAMPLIT) ctx.drawImage(shipLit.image, a.x + p.x, a.y + p.y + dip, p.w, p.h, x + p.x, y + p.y + dip, p.w, p.h);
-                ctx.globalAlpha = 1;
+              if (overShip && isShipSprite(name)) {
+                overShip(name, x, y);
                 return;
               }
               if (!fire || !lit || !warm) return;

@@ -14,6 +14,7 @@ import island from "../island.module.css";
 import { PALETTE, WEB_SPRITES } from "../sprites";
 import { coinNumber, SHOP } from "./copy";
 import { MerchArtwork } from "./MerchArtwork";
+import { SHOP_ICONS, shopIcon } from "./shopIcons";
 import styles from "./player.module.css";
 import shopStyles from "./shop.module.css";
 
@@ -88,22 +89,6 @@ interface ShopListProps {
   /** Read the wallet again after a redeem or a cancel, whatever the answer. */
   onChanged: () => void;
 }
-
-/** A wooden crate, for a catalog item without artwork of its own. */
-const CRATE: string[] = [
-  "..oooooooooooo..",
-  ".oeeeeeeeeeeeeo.",
-  ".oeccccccccccco.",
-  ".oeoooooooooooo.",
-  ".oecbecbecbecbo.",
-  ".oecbecbecbecbo.",
-  ".oecbecbecbecbo.",
-  ".oeoooooooooooo.",
-  ".oecbecbecbecbo.",
-  ".oecbecbecbecbo.",
-  ".oecbecbecbecbo.",
-  ".oooooooooooooo.",
-];
 
 type CrateState = "out" | "locked" | "ready";
 
@@ -219,6 +204,8 @@ export function ShopList({ wallet, onChanged }: ShopListProps) {
         <ul className={shopStyles.shelf}>
           {items.map((item) => {
             const artwork = merchArtwork(item.name);
+            // An item without its own photo: a small picture of what it is (a crate only when nothing fits).
+            const icon = artwork ? null : shopIcon(item.name);
             const reason = lockReason(item, balance);
             const reasonId = `shop-lock-${item.id}`;
             const open = confirm?.itemId === item.id;
@@ -227,11 +214,11 @@ export function ShopList({ wallet, onChanged }: ShopListProps) {
             const state = crateState(item, reason);
             return (
               <li key={item.id} className={`${shopStyles.board} ${shopStyles.crate}`} data-state={state} data-open={open ? "true" : undefined}>
-                <div className={shopStyles.crateArt}>
+                <div className={shopStyles.crateArt} data-icon={icon ?? undefined}>
                   {artwork ? (
                     <MerchArtwork src={artwork.image} portrait={artwork.key === "stickers"} className={shopStyles.crateImage} />
                   ) : (
-                    <PixelIcon grid={CRATE} palette={PALETTE} scale={4} className={shopStyles.crateIcon} />
+                    <PixelIcon grid={[...SHOP_ICONS[icon ?? "crate"]]} palette={PALETTE} scale={4} className={shopStyles.crateIcon} />
                   )}
                 </div>
                 <div className={shopStyles.crateInfo}>

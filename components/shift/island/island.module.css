@@ -530,6 +530,8 @@
   font-size: 17px;
   line-height: 1.4;
   color: var(--gold);
+  /* No word left alone on the second line ("... อีก 5 / คน"): the number goes down with its noun. */
+  text-wrap: pretty;
 }
 
 /* The next-step card's one line under the headline: the mentor's words, where the quest stands, or which one it is. */

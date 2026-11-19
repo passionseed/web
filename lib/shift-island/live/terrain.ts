@@ -32,7 +32,7 @@ import { SPRITES } from "@/bot/assets/island/sprites";
 import { MOTION_SIZES, MOTION_SPRITES } from "@/bot/assets/island/motion-sprites";
 import { TILE_BY_CODE, tagRect, type IslandScene, type SceneTree } from "@/bot/src/quests/island/scene";
 
-import { dryShore, hash3 } from "./atmosphere";
+import { dryShore, hash3, shoreSand } from "./atmosphere";
 import { CROWD_LAYOUT } from "./crowd";
 import { lampRects, type SceneModel } from "./draw";
 import { FIGURE_H, FIGURE_W, hitSlop } from "./figures";
@@ -65,6 +65,10 @@ export const TERRAIN_INK: Readonly<Record<string, InkSpec>> = {
   E: { key: "h", mix: "c", t: 0.36 },
   // Sand in shade (under the turf's edge, and a path's track over the beach).
   S: { key: "s", mix: "d", t: 0.62 },
+  // Where the coast steps sideways: the shore's own water, foam and wet sand (paintCuts).
+  N: { key: "u" },
+  F: { key: "i" },
+  Z: { key: "s", mix: "d", t: 0.45 },
   // Rocks and pebbles: lit, mid, shade.
   K: { key: "a", mix: "i", t: 0.2 },
   L: { key: "t" },
@@ -705,6 +709,8 @@ function* buildTerrain(model: SceneModel): Generator<void, Terrain, void> {
   const rooms = scene.trees.map((tree) => plotRoom(tree, scene.glyph));
   const plaza = plazaRoom(model);
   const rnd: Rnd = (x, y, salt) => hash3(x - c.x, y - c.y, salt);
+  // The coast's sideways steps first: the water and foam they paint leave the beach, so nothing else lands on them.
+  paintCuts(scene, kinds, ground, rnd);
   yield;
   const tones = new Tones(W, H, c);
   paintGrass(scene, real, ground, tones, c);
@@ -858,6 +864,98 @@ function paintGrass(scene: IslandScene, real: Uint8Array, ground: Uint8Array, to
           if (thin && hash3(col - (c.x >> 4), r - (c.y >> 4), mark) >= MARKS_KEPT) ground[y * W + x] = tone || g;
         }
       }
+    }
+  }
+}
+
+/** Where the sea reaches past a cut, as a share of the 5 x 5 px round a pixel: the water itself, the foam at its edge, the wet sand behind. */
+const CUT_WATER = 0.6;
+const CUT_FOAM = 0.3;
+const CUT_WET = 0.14;
+/** How far the edge wanders, as a share added to that: a hash per few px, so no run of the edge is ruled. */
+const CUT_WANDER = 0.08;
+/** The share of a cut's edge pixels the water takes one px further in, in runs of 3 or 4 along it. */
+const CUT_BITE = 0.4;
+
+/**
+ * Where the coast steps sideways, a shore tile meets the sea along its own
+ * straight side (a shore_n's sand running into the open water beside it, or
+ * over a shore_e's wash): no foam, no wet sand, a ruled edge. Along every
+ * such cut (land in every frame on one side of a tile's edge, water on the
+ * other) the shore's own look: the water bites a pixel into the sand in
+ * runs, foam at the new edge, wet sand behind it, and the outside corners
+ * rounded off (a corner has the sea on two sides, so more of it round it).
+ * Only sand that stays sand in every frame: the shore tiles' moving foam is
+ * left as it is. The painted water and foam leave the beach (`base` and
+ * `real`), so nothing is placed or routed over them. Web only.
+ */
+function paintCuts(scene: IslandScene, kinds: Kinds, ground: Uint8Array, rnd: Rnd): void {
+  const W = scene.width;
+  const H = scene.height;
+  const t = scene.tile;
+  const sand = shoreSand();
+  // Per pixel: 1 land in every frame, 0 water (or foam) in some frame.
+  const land = new Uint8Array(W * H);
+  for (let r = 0; r < scene.rows; r++) {
+    for (let c = 0; c < scene.cols; c++) {
+      const name = TILE_BY_CODE[scene.tiles[r * scene.cols + c]];
+      const shore = SHORE_INDEX[name];
+      if (name === "water_a" || name === "water_b") continue;
+      for (let py = 0; py < t; py++) {
+        const row = (r * t + py) * W + c * t;
+        if (shore == null) land.fill(1, row, row + t);
+        else for (let px = 0; px < t; px++) land[row + px] = sand[shore][py * 16 + px];
+      }
+    }
+  }
+  const landAt = (x: number, y: number) => (x < 0 || y < 0 || x >= W || y >= H ? 0 : land[y * W + x]);
+  // The cuts: land pixels on a tile's edge with water just across it. Those the water bites into join it.
+  const water = new Uint8Array(W * H);
+  for (let i = 0; i < water.length; i++) water[i] = land[i] ? 0 : 1;
+  const cut: number[] = [];
+  for (let y = 0; y < H; y++) {
+    const top = y % t === 0;
+    const bottom = y % t === t - 1;
+    for (let x = 0; x < W; x++) {
+      if (!land[y * W + x]) continue;
+      const left = x % t === 0;
+      const right = x % t === t - 1;
+      if (!(top || bottom || left || right)) continue;
+      const across = (left && !landAt(x - 1, y)) || (right && !landAt(x + 1, y));
+      const down = (top && !landAt(x, y - 1)) || (bottom && !landAt(x, y + 1));
+      if (!across && !down) continue;
+      cut.push(y * W + x);
+      // Runs along the edge: down a side cut, across a top or bottom one.
+      const run = across ? rnd(x, Math.floor(y / 4), 43) : rnd(Math.floor(x / 4), y, 44);
+      if (run < CUT_BITE) water[y * W + x] = 1;
+    }
+  }
+  if (cut.length === 0) return;
+  // The pixels near a cut: what may change.
+  const near = new Uint8Array(W * H);
+  for (const k of cut) {
+    const cx = k % W;
+    const cy = Math.floor(k / W);
+    for (let y = Math.max(0, cy - 3); y <= Math.min(H - 1, cy + 3); y++) for (let x = Math.max(0, cx - 3); x <= Math.min(W - 1, cx + 3); x++) near[y * W + x] = 1;
+  }
+  const { N, F, Z } = INK_CODE;
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const k = y * W + x;
+      if (!near[k] || !land[k]) continue;
+      let sea = 0;
+      for (let dy = -2; dy <= 2; dy++) {
+        for (let dx = -2; dx <= 2; dx++) {
+          const nx = x + dx;
+          const ny = y + dy;
+          sea += nx < 0 || ny < 0 || nx >= W || ny >= H ? 1 : water[ny * W + nx];
+        }
+      }
+      const v = sea / 25 + (rnd(x >> 1, y >> 1, 45) - 0.5) * 2 * CUT_WANDER;
+      const ink = water[k] || v >= CUT_WATER ? N : v >= CUT_FOAM ? F : v >= CUT_WET ? Z : 0;
+      if (!ink) continue;
+      ground[k] = ink;
+      if (ink !== Z) kinds.base[k] = kinds.real[k] = SEA;
     }
   }
 }

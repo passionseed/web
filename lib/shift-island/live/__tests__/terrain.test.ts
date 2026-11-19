@@ -6,6 +6,7 @@ import { MOTION_SIZES, type MotionSpriteName } from "@/bot/assets/island/motion-
 import type { Festival } from "@/lib/shift-island/festival";
 
 import { BIRD, BUTTERFLY, FLUTTER, birdsAt, butterfliesAt, lifePlan } from "../ambient";
+import { shoreSand } from "../atmosphere";
 import { actorAt, lampRects, sceneModel } from "../draw";
 import { FIGURE_H, FIGURE_W, hitSlop, treeFigures } from "../figures";
 import { gradeKey, gradeRgb } from "../grade";
@@ -288,6 +289,99 @@ describe("terrain", () => {
     for (const [code, rgb] of day) {
       const dark = night.get(code)!;
       expect(dark[0] + dark[1] + dark[2]).toBeLessThan(rgb[0] + rgb[1] + rgb[2]);
+    }
+  });
+});
+
+describe("the coast's sideways steps", () => {
+  const SHORE: Readonly<Record<string, number>> = { shore_n: 0, shore_s: 1, shore_e: 2, shore_w: 3 };
+  const code = (ch: string) => ch.charCodeAt(0);
+
+  /** Land in every frame, per pixel, as the tiles draw it. */
+  function landOf(scene: IslandScene): Uint8Array {
+    const sand = shoreSand();
+    const t = scene.tile;
+    const land = new Uint8Array(scene.width * scene.height);
+    for (let r = 0; r < scene.rows; r++) {
+      for (let c = 0; c < scene.cols; c++) {
+        const name = TILE_BY_CODE[scene.tiles[r * scene.cols + c]];
+        if (name === "water_a" || name === "water_b") continue;
+        for (let py = 0; py < t; py++) {
+          for (let px = 0; px < t; px++) {
+            land[(r * t + py) * scene.width + c * t + px] = name in SHORE ? sand[SHORE[name]][py * 16 + px] : 1;
+          }
+        }
+      }
+    }
+    return land;
+  }
+
+  /**
+   * The ruled edges the tiles leave: land on a tile's edge with water
+   * straight across it for at least 3 px along it (the foam's curled tip
+   * touching the next tile at an inside corner is not one).
+   */
+  function cutsOf(scene: IslandScene, land: Uint8Array): { k: number; side: boolean }[] {
+    const W = scene.width;
+    const H = scene.height;
+    const t = scene.tile;
+    const at = (x: number, y: number) => (x < 0 || y < 0 || x >= W || y >= H ? 0 : land[y * W + x]);
+    const out: { k: number; side: boolean }[] = [];
+    const sea = (x: number, y: number, dx: number, dy: number) => !at(x + dx, y + dy) && !at(x + dx - dy, y + dy - dx) && !at(x + dx + dy, y + dy + dx);
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        if (!land[y * W + x]) continue;
+        const side = (x % t === 0 && sea(x, y, -1, 0)) || (x % t === t - 1 && sea(x, y, 1, 0));
+        const end = (y % t === 0 && sea(x, y, 0, -1)) || (y % t === t - 1 && sea(x, y, 0, 1));
+        if (side || end) out.push({ k: y * W + x, side });
+      }
+    }
+    return out;
+  }
+
+  it.each([3, 12, 40])("meet the sea in foam with the water biting in, never a bare ruled edge (%i plots)", (n) => {
+    const scene = buildScene(plots(n), { festival: true });
+    const terrain = terrainFor(sceneModel(scene));
+    const cuts = cutsOf(scene, landOf(scene));
+    // Every island has some: the coast steps sideways at its corners.
+    expect(cuts.filter((c) => c.side).length).toBeGreaterThan(8);
+    let bitten = 0;
+    const t = scene.tile;
+    const openSea = (x: number, y: number) => {
+      const name = TILE_BY_CODE[scene.tiles[Math.floor(y / t) * scene.cols + Math.floor(x / t)]];
+      return name == null || name === "water_a" || name === "water_b";
+    };
+    for (const { k, side } of cuts) {
+      const ink = terrain.ground[k];
+      const x = k % scene.width;
+      const y = Math.floor(k / scene.width);
+      // Facing the open sea: the water itself (it bit in) or the shore's foam. Where a shore's curled foam
+      // meets the next tile at an inside corner, wet sand will do. Never the beach's own dry sand.
+      const facing = side ? openSea(x % t === 0 ? x - 1 : x + 1, y) : openSea(x, y % t === 0 ? y - 1 : y + 1);
+      const allowed = facing ? ["N", "F"] : ["N", "F", "Z"];
+      expect([x, y, allowed.map(code).includes(ink)]).toEqual([x, y, true]);
+      if (ink === code("N")) bitten++;
+    }
+    // The edge wanders: the water takes some of it and leaves the rest, in runs.
+    expect(bitten / cuts.length).toBeGreaterThan(0.2);
+    expect(bitten / cuts.length).toBeLessThan(0.75);
+    // Wet sand behind the foam, as on the rest of the shore.
+    expect(terrain.ground.filter((v) => v === code("Z")).length).toBeGreaterThan(cuts.length / 2);
+  });
+
+  it("paints only sand that stays sand in every frame, and leaves its water and foam off the beach for pebbles and paths", () => {
+    const scene = buildScene(plots(12), { festival: true });
+    const terrain = terrainFor(sceneModel(scene));
+    const land = landOf(scene);
+    for (let k = 0; k < terrain.ground.length; k++) {
+      if (![code("N"), code("F"), code("Z")].includes(terrain.ground[k])) continue;
+      expect([k, land[k]]).toEqual([k, 1]);
+    }
+    const sea = new Set([code("N"), code("F")]);
+    for (const piece of terrain.pieces) {
+      for (let y = piece.rect.y; y < piece.rect.y + piece.rect.h; y++) {
+        for (let x = piece.rect.x; x < piece.rect.x + piece.rect.w; x++) expect([piece.kind, x, y, sea.has(terrain.ground[y * scene.width + x])]).toEqual([piece.kind, x, y, false]);
+      }
     }
   });
 });

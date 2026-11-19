@@ -20,6 +20,16 @@ interface NextStepCardProps {
   onTap: (step: NextStep) => void;
 }
 
+/**
+ * A number kept on one line with the word after it (a no-break space
+ * between them), so a wrapped title never leaves the noun alone on its
+ * second line ("... อีก 5 / คน"). For the eye only: the card's accessible
+ * name keeps the plain text.
+ */
+export function keepCounts(text: string): string {
+  return text.replace(/(\d) (?=\S)/g, "$1 ");
+}
+
 /** The headline: what to do next, in the student's words for it. */
 export function nextHeadline(step: NextStep): string {
   switch (step.kind) {
@@ -106,7 +116,7 @@ export function NextStepCard({ board, step, intended = null, pending = false, on
           <PixelIcon grid={grid} palette={PALETTE} scale={iconScale(grid, 32)} />
         </span>
         <span className={styles.keynoteText}>
-          <span className={styles.keynoteTitle}>{nextHeadline(step)}</span>
+          <span className={styles.keynoteTitle}>{keepCounts(nextHeadline(step))}</span>
           {line ? <span className={styles.keynoteLine}>{line}</span> : null}
         </span>
       </div>

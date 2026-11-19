@@ -7,6 +7,7 @@ import {
   LAMP_WARM,
   LIGHT_SIZE,
   POOL_ALPHA,
+  SEA_LOOKS,
   SHALLOW_LEVELS,
   SHALLOW_REACH,
   bayer,
@@ -29,7 +30,10 @@ import {
   smokeBounds,
   smokeOrigin,
   WET,
+  seaLook,
+  seaLookName,
   waterField,
+  webSeaRects,
   webSprites,
 } from "../atmosphere";
 import { overlaps } from "../geometry";
@@ -262,5 +266,64 @@ describe("glints on the sea", () => {
       }
     }
     expect(onPath).toBeGreaterThan(off * 3);
+  });
+});
+
+describe("the open sea's looks", () => {
+  const sprites = webSprites();
+  const KINDS = ["water_a", "water_b"] as const;
+
+  it("keeps each tile's ring and palette, so every look mixes with every tile and frame", () => {
+    for (const kind of KINDS) {
+      const base = sprites[seaLookName(kind, 0, 0)];
+      expect(base).toBe(sprites[kind]);
+      for (let look = 1; look < SEA_LOOKS; look++) {
+        for (let f = 0; f < 3; f++) {
+          const rows = sprites[seaLookName(kind, look, f)];
+          expect(rows).toHaveLength(16);
+          rows.forEach((row, y) => {
+            expect(row).toMatch(/^[wv]{16}$/);
+            if (y === 0 || y === 15) expect(row).toBe(base[y]);
+            else expect([kind, look, f, y, row[0], row[15]]).toEqual([kind, look, f, y, base[y][0], base[y][15]]);
+          });
+        }
+      }
+    }
+  });
+
+  it("moves, flattens or leaves out the bumps, so no two looks repeat, and keeps each look's roll", () => {
+    const seen = new Set<string>();
+    let fewer = 0;
+    for (const kind of KINDS) {
+      for (let look = 0; look < SEA_LOOKS; look++) {
+        const frames = [0, 1, 2].map((f) => sprites[seaLookName(kind, look, f)]);
+        seen.add(frames[0].join(""));
+        const count = (rows: string[]) => rows.join("").split("v").length - 1;
+        // The roll: each frame moves the same bumps, so they hold as many ripple pixels.
+        expect(count(frames[1])).toBe(count(frames[0]));
+        expect(count(frames[2])).toBe(count(frames[0]));
+        if (count(frames[0]) < count(sprites[kind])) fewer++;
+      }
+    }
+    expect(seen.size).toBe(2 * SEA_LOOKS);
+    expect(fewer).toBeGreaterThan(0);
+  });
+
+  it("gives each cell of sea a look by its place, every look in use, the same on every visit", () => {
+    const counts = new Array(SEA_LOOKS).fill(0);
+    for (let row = -20; row < 20; row++) for (let col = -20; col < 20; col++) counts[seaLook(col, row)]++;
+    for (const n of counts) expect(n).toBeGreaterThan(1600 / SEA_LOOKS / 2);
+    expect(seaLook(7, -3)).toBe(seaLook(7, -3));
+  });
+
+  it("lays each look's frames after the tile's own for the web's seaFrame hook, the shore kinds as they were", () => {
+    const rects = new Map(Object.keys(sprites).map((name, i) => [name, { name, i }]));
+    const base = [0, 1, 2, 3, 4, 5].map((kind) => [0, 1, 2].map((f) => ({ kind, f })));
+    const out = webSeaRects(base as unknown as ({ name: string; i: number } | undefined)[][], rects);
+    expect(out[0]).toHaveLength(3 * SEA_LOOKS);
+    expect(out[1]).toHaveLength(3 * SEA_LOOKS);
+    expect(out[0][3 * 2 + 1]).toEqual(rects.get(seaLookName("water_a", 2, 1)));
+    expect(out[1][3 * 3 + 2]).toEqual(rects.get(seaLookName("water_b", 3, 2)));
+    for (let kind = 2; kind < 6; kind++) expect(out[kind]).toBe(base[kind]);
   });
 });

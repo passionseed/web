@@ -47,7 +47,7 @@
 import type { IslandScene } from "@/bot/src/quests/island/scene";
 
 import { buildAtlasData, styleKey, stylesOf, type AtlasData } from "./atlas";
-import { webSprites } from "./atmosphere";
+import { webSeaRects, webSprites } from "./atmosphere";
 import { TICK_MS, motionAt, nextTickAt, type Motion } from "./clock";
 import {
   actorRect,
@@ -676,7 +676,8 @@ export class LiveIsland {
       atlas: atlas.image,
       rects: atlas.data.rects,
       flipped: atlas.data.flipped,
-      seaRects: seaRectsFor(atlas.data.rects),
+      // The open sea's extra looks after each tile's own frames (atmosphere.ts SEA_LOOKS), as fx.ts's seaFrame asks for them.
+      seaRects: webSeaRects(seaRectsFor(atlas.data.rects), atlas.data.rects),
       land: this.landCanvas,
       overlay: this.overlayCanvas ?? this.landCanvas,
     };

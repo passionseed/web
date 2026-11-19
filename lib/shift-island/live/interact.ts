@@ -16,11 +16,15 @@
  *   box, grown by the tap's slop (figures.ts hitSlop), outlining the person.
  *
  * Nothing here decides where a tap goes: the plots' and the plaza's buttons
- * and the figures' own hit test (figures.ts) do that, as before.
+ * and the figures' own hit test (figures.ts) do that, as before. The pick
+ * follows the tap's rule, though, so the outline never names one thing while
+ * a click opens another: over a plot's or the plaza's button a person counts
+ * only within TIGHT of itself (IslandViewport's figureHit), and anywhere
+ * else within its slop.
  */
 import type { IslandScene } from "@/bot/src/quests/island/scene";
 
-import { hitSlop, type Figure } from "./figures";
+import { TIGHT, hitSlop, type Figure } from "./figures";
 import type { Rect } from "./geometry";
 import type { PlazaSpot, PlazaSpotId } from "./plaza";
 
@@ -37,6 +41,10 @@ export interface InteractTarget {
   box?: Rect;
   /** Native px each way round a walker's box that still count as it (its tap's slop). */
   slop?: { x: number; y: number };
+  /** A person (a walker or a tree's partner): over a button, it counts only within TIGHT of itself, as a tap does. */
+  person?: true;
+  /** A partner's box grown by TIGHT alone (a walker's is its actors' box grown by TIGHT, outline.ts targetTight). */
+  tight?: Rect;
   shape: OutlineShape;
 }
 
@@ -114,13 +122,20 @@ export function interactTargets(input: TargetInput): InteractTarget[] {
   }
   const slop = hitSlop(scale, whole);
   input.figures.forEach((figure, i) => {
-    if (figure.actor != null) out.push({ key: figureKey(i), slop, shape: { kind: "actors", actors: [figure.actor] } });
+    if (figure.actor != null) out.push({ key: figureKey(i), slop, person: true, shape: { kind: "actors", actors: [figure.actor] } });
     else if (figure.box && figure.kind === "partner") {
       const tree = treeOf.get(figure.n);
-      if (tree != null) out.push({ key: figureKey(i), box: grown(figure.box, slop.x, slop.y), shape: { kind: "partner", tree } });
+      if (tree != null) {
+        out.push({ key: figureKey(i), box: grown(figure.box, slop.x, slop.y), person: true, tight: grown(figure.box, TIGHT, TIGHT), shape: { kind: "partner", tree } });
+      }
     }
   });
   return out;
+}
+
+/** A point inside a box, its right and bottom edges left out (figures.ts hitFigure measures a tap the same way). */
+export function holds(box: Rect, p: { x: number; y: number }): boolean {
+  return p.x >= box.x && p.x < box.x + box.w && p.y >= box.y && p.y < box.y + box.h;
 }
 
 /** How far a point lies outside a box, squared, native px (0 inside it). */
@@ -138,12 +153,41 @@ export function gapTo(box: Rect, p: { x: number; y: number }): number {
 /**
  * The target nearest the aim: of those whose box (boxOf; null: not drawn
  * now) lies within the reach, the one with the smallest gap, and between
- * two the aim is inside of (a person in front of the notice board), the one
- * whose box's middle is nearer. -1 when none is near. Every tick on a moving
- * island, so it compares squared distances.
+ * two the aim is inside of (two people, or two buttons), the one whose box's
+ * middle is nearer. Between a person and a button the aim is inside of, the
+ * tap's own rule (settle): the person only within TIGHT of itself (tightOf:
+ * its box grown by TIGHT; a partner's own `tight` by default). -1 when none
+ * is near. Every tick on a moving island, so it compares squared distances.
  */
-export function nearestTarget(targets: readonly InteractTarget[], boxOf: (target: InteractTarget, index: number) => Rect | null, aim: Aim): number {
-  return nearestOf(targets, boxOf, aim).index;
+export function nearestTarget(
+  targets: readonly InteractTarget[],
+  boxOf: (target: InteractTarget, index: number) => Rect | null,
+  aim: Aim,
+  tightOf: (target: InteractTarget, index: number) => Rect | null = (target) => target.tight ?? null
+): number {
+  const buttons: number[] = [];
+  const people: number[] = [];
+  targets.forEach((t, i) => (t.person ? people : buttons).push(i));
+  const button = nearestOf(targets, boxOf, aim, buttons);
+  const person = nearestOf(targets, boxOf, aim, people);
+  return settle(button, person, (i) => {
+    const tight = tightOf(targets[i], i);
+    return tight != null && holds(tight, aim);
+  });
+}
+
+/**
+ * The nearest button and the nearest person, settled the way a tap is
+ * (IslandViewport figureHit: `hit.tight || !overButton`): when the aim is
+ * inside both, the person only if it is within TIGHT of them (`tight`),
+ * else the button; otherwise the nearer of the two (the smaller gap, then
+ * the nearer middle; the button on a tie). -1 when neither is near.
+ */
+export function settle(button: Nearest, person: Nearest, tight: (index: number) => boolean): number {
+  if (person.index < 0) return button.index;
+  if (button.index < 0) return person.index;
+  if (person.gap === 0 && button.gap === 0) return tight(person.index) ? person.index : button.index;
+  return person.gap < button.gap || (person.gap === button.gap && person.mid < button.mid) ? person.index : button.index;
 }
 
 /** The nearest so far: its index (-1 for none), and its gap and middle's distance, squared. */

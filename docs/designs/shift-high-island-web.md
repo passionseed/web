@@ -894,7 +894,11 @@ that replaces the work, no lecturing.
   to a pale cream and back in quarter steps (a 3 s breath), each step on the
   sea's beat, when the whole view repaints anyway; a still island holds it
   halfway. Taps go where they went: the ring shows what is near, it never
-  moves a tap.
+  moves a tap, and it never names one thing while a click opens another:
+  over a plot's or the plaza's button a person counts only within 2 native
+  px of themselves, as a tap does (`interact.ts` `settle`). On the whole
+  island the ring is a single device pixel, so a focused button keeps its
+  own 2px box there too.
 - **Merchant ship** (the shop, #338; `lib/shift-island/live/ship.ts`,
   `shipWater.ts`): moored on the open water nearest the plaza, clear of every
   tree, tag, pin, the plaza and the rowing boat, and at least 40 native px
@@ -902,14 +906,31 @@ that replaces the work, no lecturing.
   phone the next-step card stands over the world's bottom, taller than its
   96px reserve). No word floats over it: the shop's sign is painted on its
   stern (a Passioncoin in a wooden frame), and its button's name says it is
-  the shop. It rocks a pixel every 1.1 s. On the web it sits in the water: a
-  soft shadow under the hull leaning with the sun, foam lapping at its
-  waterline (three frames on the sea's beat), and from dawn to night its
-  lantern's light at the lanterns' strength of the hour: a pool on the open
-  water by the stern in the plaza pools' own soft steps, laid as warm streaks
-  with a few glints that shift on the sea's beat, and its stall and painted
-  board warmed the way the fire warms the faces round it. The bot never draws
-  it. The shop sheet shows the same ship, foam included, in the hour's light.
+  the shop. It rocks a pixel every 1.1 s. Its sails are shaded (a lit luff, a
+  sand body, the belly in shade, a fold at the clew), so it sits below the
+  plaza's cream in value. On the web it sits in the water, not on it: the
+  sprite stops at its waterline, the foam laps over its last plank and the
+  water under it (three frames on the sea's beat), a deeper shadow than a
+  figure's lies under the hull leaning with the sun, and the interact ring
+  stops at the waterline. From dawn to night its lantern glows like the
+  plaza's lamps, at the lanterns' strength of the hour: the lamps' own small
+  glow round it, a pool on the open water round the stern in the plaza pools'
+  own soft steps (a warm wash with warm streaks on it and a few glints that
+  shift on the sea's beat), and the ship itself warmed round the lantern in
+  the same steps (the stall, its painted board, the hull and the main sail's
+  foot) the way the fire warms the faces round it. The bot never draws it.
+  The shop sheet shows the same ship in the water in the hour's light, on a
+  sea of the map's own looks, and each live item on its paper tag as a small
+  pixel picture of what it is (a sticker sheet, a bowl of matcha, a tee; a
+  lidded crate only for an item none of them fits), the merch as its photos.
+- **The sea's looks and the coast's steps** (web only): each cell of open
+  sea takes one of four looks of its tile (the base, and three with the wave
+  bumps moved, flattened or left out, the same in all three frames), so the
+  sea stops reading as wallpaper. Where the coast steps sideways and a shore
+  tile's sand meets the sea along its own straight side, the terrain lays the
+  shore's look along it: the water biting a pixel in, in runs, foam at the
+  edge, wet sand behind, the outside corners rounded off. Nothing is placed
+  or routed over that water and foam.
 - **Clock** (pure functions of elapsed ms, tick 125 ms): sea ping-pong 0-1-2-1
   every 3 ticks, foam every 4, boat 1 px per 2 ticks along `lanes.boatY`
   (the sprite faces left, so mirror it when sailing right; about 90 s across, wraps off-screen), 2 gulls 1 px

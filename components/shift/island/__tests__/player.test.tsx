@@ -1,10 +1,10 @@
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, renderHook, screen, waitFor, within } from "@testing-library/react";
 import type { ComponentProps } from "react";
 
 import { cancelRedemption, loadWallet, redeemItem } from "@/app/shift/island/wallet-actions";
 import { MOTION_SPRITES } from "@/bot/assets/island/motion-sprites";
 import { PALETTE as MAP_PALETTE } from "@/bot/assets/island/sprites";
-import { SHIP_WATER_SPRITES } from "@/lib/shift-island/live/shipWater";
+import { SHIP_FOAM_AT, SHIP_WATERLINE, SHIP_WATER_SPRITES } from "@/lib/shift-island/live/shipWater";
 import type { CharacterStats, IslandConsent, ShopItem, WalletDetail } from "@/lib/supabase/shift-quests/playerTypes";
 
 import { FOOTER, MENU, TREE } from "../copy";
@@ -14,8 +14,9 @@ import { CoinPill, showCoinPill } from "../player/CoinPill";
 import { CHARACTER, coinNumber, PLAYER, SHOP, WALLET } from "../player/copy";
 import { PixelAvatar } from "../player/PixelAvatar";
 import { markerBox } from "../player/PlotMarker";
+import { SHOP_ICONS, shopIcon } from "../player/shopIcons";
 import { lockReason, ShopList } from "../player/ShopList";
-import { hourPalette, ShopSheet, withFoam } from "../player/ShopSheet";
+import { hourPalette, SHADE_KEY, ShopSheet, useOpenedHour, withFoam } from "../player/ShopSheet";
 import { WalletSheet } from "../player/WalletSheet";
 
 jest.mock("@/app/shift/island/wallet-actions", () => ({
@@ -523,17 +524,45 @@ describe("ShopSheet", () => {
 });
 
 describe("the harbour's ship", () => {
-  it("lays the map's foam under the hull, never over the ship", () => {
+  it("sits the hull in the water as the map does: the foam over its last plank and the waterline, its shade under the lap", () => {
     const ship = MOTION_SPRITES.merchant_ship_0;
-    const deck = withFoam(ship, SHIP_WATER_SPRITES.ship_foam_0);
+    const foam = SHIP_WATER_SPRITES.ship_foam_0;
+    const deck = withFoam(ship, foam);
     expect(deck).toHaveLength(ship.length);
     deck.forEach((row, j) =>
       [...row].forEach((ch, i) => {
-        if (ship[j][i] !== ".") expect(ch).toBe(ship[j][i]);
+        const water = foam[j - SHIP_FOAM_AT.y]?.[i - SHIP_FOAM_AT.x];
+        // The water wins where there is any; above it, the ship as it is.
+        if (water && water !== ".") expect(ch).toBe(water);
+        else if (ship[j][i] !== ".") expect(ch).toBe(ship[j][i]);
       }),
     );
-    // The water laps under the keel (sprite row 37), where the ship itself leaves the rows empty.
-    expect(deck[37]).toMatch(/[iu]/);
+    // Above the foam, the ship untouched.
+    expect(deck.slice(0, SHIP_FOAM_AT.y)).toEqual(ship.slice(0, SHIP_FOAM_AT.y));
+    // The waterline laps the hull's length; the shade lies under it, in a key of its own.
+    expect(deck[SHIP_WATERLINE]).toMatch(/[iu]/);
+    expect(deck[SHIP_WATERLINE + 1]).toContain(SHADE_KEY);
+    expect(Object.keys(MAP_PALETTE)).not.toContain(SHADE_KEY);
+  });
+
+  it("keeps the hour the sheet opened in while it closes: no flash of day over a night island", () => {
+    // 21:00 in Bangkok, then the next morning while the closed sheet stays put.
+    const now = jest.spyOn(Date, "now").mockReturnValue(Date.parse("2026-11-19T14:00:00Z"));
+    try {
+      const { result, rerender } = renderHook(({ open }) => useOpenedHour(open), { initialProps: { open: false } });
+      expect(result.current).toBe("day");
+      rerender({ open: true });
+      expect(result.current).toBe("night");
+      now.mockReturnValue(Date.parse("2026-11-20T03:00:00Z"));
+      // Closing: the drawer still shows the harbour while it slides away, in the night it opened in.
+      rerender({ open: false });
+      expect(result.current).toBe("night");
+      // Opened again the next morning: the morning's light.
+      rerender({ open: true });
+      expect(result.current).toBe("day");
+    } finally {
+      now.mockRestore();
+    }
   });
 
   it("draws the harbour in the hour's light, the ship's lantern still lit after dark", () => {
@@ -563,6 +592,28 @@ describe("ShopList", () => {
     render(<ShopList wallet={data} onChanged={onChanged} />);
     return { onChanged };
   }
+
+  it("draws what each live item is on its tag: the sticker sheet, the matcha, the tee, a lidded crate only for the unknown", () => {
+    const { container } = render(
+      <ShopList
+        wallet={wallet({ shop: { ...wallet().shop, items: [...wallet().shop.items, item({ id: KEY, name: "ของลับจากเรือ" })] } })}
+        onChanged={jest.fn()}
+      />,
+    );
+    const icons = [...container.querySelectorAll("[data-icon]")].map((el) => el.getAttribute("data-icon"));
+    expect(icons).toEqual(["sticker", "matcha", "tee", "crate"]);
+    // No two different items share one picture.
+    expect(new Set(icons.slice(0, 3)).size).toBe(3);
+    expect(shopIcon("PassionSeed Builder Sticker Sheet")).toBe("sticker");
+    expect(shopIcon("Matcha set")).toBe("matcha");
+    for (const rows of Object.values(SHOP_ICONS)) {
+      expect(rows).toHaveLength(14);
+      for (const row of rows) {
+        expect(row).toHaveLength(16);
+        for (const ch of row) if (ch !== ".") expect(Object.keys(MAP_PALETTE)).toContain(ch);
+      }
+    }
+  });
 
   it("asks to confirm with the item and the cost, making the request key when the step opens", async () => {
     mockedRedeem.mockResolvedValue({ ok: true, data: { redemptionId: HELD, status: "reserved", duplicate: false, balance: 2000 } });

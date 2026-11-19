@@ -1,14 +1,15 @@
 "use client";
 
-import { useId, useMemo } from "react";
+import { useId, useMemo, useState } from "react";
 
 import { MOTION_SPRITES } from "@/bot/assets/island/motion-sprites";
 import { PALETTE as MAP_PALETTE, SPRITES } from "@/bot/assets/island/sprites";
 import { PixelIcon } from "@/components/shift/poster/pixel/PixelRects";
 import { litKeysOf } from "@/lib/shift-island/live/atlas";
+import { SEA_LOOKS, seaLookName, webSprites } from "@/lib/shift-island/live/atmosphere";
 import { gradeRgb, rgbHex } from "@/lib/shift-island/live/grade";
 import { bangkokPhase, paletteRgb } from "@/lib/shift-island/live/lighting";
-import { SHIP_FOAM_AT, SHIP_WATER_SPRITES } from "@/lib/shift-island/live/shipWater";
+import { SHIP_FOAM_AT, SHIP_WATER_SPRITES, SHIP_WATERLINE } from "@/lib/shift-island/live/shipWater";
 import type { LightPhase } from "@/lib/shift-island/live/types";
 import type { IslandConsent } from "@/lib/supabase/shift-quests/playerTypes";
 
@@ -24,18 +25,58 @@ import shop from "./shop.module.css";
 import { ShopList } from "./ShopList";
 import { useWallet } from "./useWallet";
 
-/** The sea tile, as rects for an SVG pattern (one tile, repeated under the ship). */
-const SEA_RUNS = pixelRuns(SPRITES.water_a);
+/**
+ * The sea under the ship, as rects for an SVG pattern: four of the map's
+ * open-sea looks two by two (atmosphere.ts SEA_LOOKS), so the ripples never
+ * line up in rows behind it.
+ */
+const SEA_GRID: string[] = (() => {
+  const all = webSprites();
+  const look = (n: number) => all[seaLookName("water_a", n % SEA_LOOKS, 0)] ?? SPRITES.water_a;
+  const [a, b, c, d] = [0, 1, 2, 3].map(look);
+  return [...a.map((row, y) => row + b[y]), ...c.map((row, y) => row + d[y])];
+})();
+const SEA_RUNS = pixelRuns(SEA_GRID);
 /** CSS px per native pixel on the deck: the ship at 3x reads as the map's ship, close up. */
 const DECK_SCALE = 3;
 
-/** A ship frame with the water lapping at its hull laid under it, as the map draws it (shipWater.ts). */
+/** The palette key the harbour paints the hull's shade on the water with (not one of the map's). */
+export const SHADE_KEY = "q";
+
+/** Where the hull's shade lies on the water, per row from the waterline down: [first, last] sprite columns, narrowing. */
+const SHADE_ROWS: readonly (readonly [number, number])[] = [
+  [8, 57],
+  [10, 55],
+  [14, 51],
+];
+
+/**
+ * A ship frame in the water, as the map draws it (shipWater.ts): the foam
+ * over the hull's last plank and the water under it, so the hull sits in
+ * the sea, and the hull's shade on the water (SHADE_KEY) under the lap.
+ */
 export function withFoam(ship: readonly string[], foam: readonly string[]): string[] {
   return ship.map((row, j) => {
     const lap = foam[j - SHIP_FOAM_AT.y];
-    if (!lap) return row;
-    return [...row].map((ch, i) => (ch === "." ? (lap[i - SHIP_FOAM_AT.x] ?? ".") : ch)).join("");
+    const shade = SHADE_ROWS[j - SHIP_WATERLINE];
+    return [...row]
+      .map((ch, i) => {
+        const water = lap?.[i - SHIP_FOAM_AT.x];
+        if (water && water !== ".") return water;
+        if (ch !== ".") return ch;
+        return shade && i >= shade[0] && i <= shade[1] ? SHADE_KEY : ".";
+      })
+      .join("");
   });
+}
+
+/** The hull's shade on the harbour's water: the sea, deepened toward the hour's shadow ink (fx.ts SHADOW_INK). */
+function shadeOf(sea: string, phase: LightPhase): string {
+  const ink: readonly [number, number, number] = phase === "night" ? [4, 8, 32] : phase === "dusk" ? [84, 40, 114] : phase === "dawn" ? [58, 62, 150] : [30, 60, 124];
+  const rgb = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i.exec(sea);
+  if (!rgb) return sea;
+  const mixed = [1, 2, 3].map((k, i) => Math.round(parseInt(rgb[k], 16) * 0.5 + ink[i] * 0.5)) as [number, number, number];
+  return rgbHex(mixed);
 }
 
 /** The ship at rest and dipped, each with its own lap of foam. */
@@ -60,7 +101,7 @@ export function hourPalette(phase: LightPhase, lit = ""): Record<string, string>
 /** The open sea behind the ship: the island's own water tile, tiled at the deck's scale. */
 function Sea({ palette }: { palette: Record<string, string> }) {
   const id = useId();
-  const tile = 16 * DECK_SCALE;
+  const tile = SEA_GRID.length * DECK_SCALE;
   return (
     <svg className={shop.sea} aria-hidden="true" shapeRendering="crispEdges">
       <defs>
@@ -86,7 +127,7 @@ function Sea({ palette }: { palette: Record<string, string> }) {
  */
 export function Harbour({ balance, phase = "day" }: { balance: number | null; phase?: LightPhase }) {
   const sea = useMemo(() => hourPalette(phase), [phase]);
-  const ship = useMemo(() => hourPalette(phase, litKeysOf("merchant_ship_0")), [phase]);
+  const ship = useMemo(() => ({ ...hourPalette(phase, litKeysOf("merchant_ship_0")), [SHADE_KEY]: shadeOf(sea.w, phase) }), [phase, sea]);
   return (
     <div className={shop.harbour} style={{ backgroundColor: sea.w }}>
       <Sea palette={sea} />
@@ -107,6 +148,19 @@ export function Harbour({ balance, phase = "day" }: { balance: number | null; ph
   );
 }
 
+/**
+ * Bangkok's hour when the sheet opened, as the island reads it, kept while
+ * it closes: the drawer and the dialog keep their content through the close
+ * animation, so the harbour stays in the light it opened in, never a flash
+ * of day over a night island.
+ */
+export function useOpenedHour(open: boolean): LightPhase {
+  const opened = useMemo(() => (open ? bangkokPhase(Date.now()) : null), [open]);
+  const [last, setLast] = useState<LightPhase>("day");
+  if (opened && opened !== last) setLast(opened);
+  return opened ?? last;
+}
+
 interface ShopSheetProps {
   open: boolean;
   onClose: () => void;
@@ -124,8 +178,7 @@ interface ShopSheetProps {
  */
 export function ShopSheet({ open, onClose, consent, onOpenConsent, onOpenWallet }: ShopSheetProps) {
   const { state, reload } = useWallet(open);
-  // Bangkok's hour when the sheet opens, as the island reads it.
-  const phase = useMemo(() => (open ? bangkokPhase(Date.now()) : "day"), [open]);
+  const phase = useOpenedHour(open);
   return (
     <IslandSheet
       open={open}

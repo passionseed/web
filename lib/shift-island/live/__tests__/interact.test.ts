@@ -4,7 +4,7 @@
 import { buildScene, type IslandPlot } from "@/bot/src/quests/island/scene";
 import type { Festival } from "@/lib/shift-island/festival";
 
-import { hitSlop, treeFigures, type Figure } from "../figures";
+import { TIGHT, hitSlop, treeFigures, type Figure } from "../figures";
 import type { Rect } from "../geometry";
 import {
   REACH_PX,
@@ -15,6 +15,7 @@ import {
   mapCentre,
   nearestTarget,
   plotKey,
+  settle,
   spotKey,
   toNative,
   type Aim,
@@ -119,6 +120,30 @@ describe("interactTargets", () => {
     const v = scene.trees[tree].visitor!;
     const slop = hitSlop(2, false);
     expect(target.box).toEqual({ x: v.x - slop.x, y: v.y - slop.y, w: 10 + 2 * slop.x, h: 14 + 2 * slop.y });
+    // Where it wins over its plot's button under it, as a tap does: within TIGHT of itself.
+    expect(target.person).toBe(true);
+    expect(target.tight).toEqual({ x: v.x - TIGHT, y: v.y - TIGHT, w: 10 + 2 * TIGHT, h: 14 + 2 * TIGHT });
+    expect(targets.filter((t) => t.person).map((t) => t.key)).toEqual(figures.map((_, i) => figureKey(i)));
+  });
+});
+
+describe("settle: a person and a button, as a tap takes them", () => {
+  const near = (index: number, gap: number, mid: number) => ({ index, gap, mid });
+  const none = { index: -1, gap: Infinity, mid: Infinity };
+
+  it("over both, the person only within TIGHT of itself, else the button", () => {
+    expect(settle(near(0, 0, 50), near(5, 0, 1), () => true)).toBe(5);
+    expect(settle(near(0, 0, 50), near(5, 0, 1), () => false)).toBe(0);
+  });
+
+  it("otherwise the nearer, the button on a tie, and whichever is there when one is missing", () => {
+    expect(settle(near(0, 4, 50), near(5, 0, 90), () => false)).toBe(5);
+    expect(settle(near(0, 0, 50), near(5, 9, 1), () => true)).toBe(0);
+    expect(settle(near(0, 4, 10), near(5, 4, 10), () => true)).toBe(0);
+    expect(settle(near(0, 4, 10), near(5, 4, 3), () => false)).toBe(5);
+    expect(settle(none, near(5, 0, 1), () => false)).toBe(5);
+    expect(settle(near(0, 0, 1), none, () => true)).toBe(0);
+    expect(settle(none, none, () => true)).toBe(-1);
   });
 });
 

@@ -7,7 +7,7 @@ import { REFLECTION_MIN_CHARS, REFLECTIONS_PER_DAY } from "@/lib/shift-island/ro
 import { IDS, makeBoard } from "../__fixtures__/board";
 import { DETAIL, NEXT_STEP, REFLECT, TODAY } from "../copy";
 import { DayIntention } from "../DayIntention";
-import { NextStepCard } from "../NextStepCard";
+import { keepCounts, NextStepCard } from "../NextStepCard";
 import type { NextStep } from "../nextStep";
 import { RootsLine } from "../RootsLine";
 import { DAY_INTENTION_KEY } from "../useDayIntention";
@@ -89,6 +89,15 @@ describe("NextStepCard", () => {
     render(<NextStepCard board={makeBoard()} step={step} onTap={jest.fn()} />);
     expect(screen.getByRole("region", { name: `ตอบพี่เลี้ยง: ${TITLE}` })).toHaveTextContent("พี่เลี้ยงบอกว่า: ขอรูปอีกนิด");
     expect(screen.getByRole("button", { name: NEXT_STEP.action.answer })).toBeInTheDocument();
+  });
+
+  it("keeps a number with its noun when the title wraps, the card's name still the plain words", () => {
+    const step: NextStep = { ...GO, kind: "answer", title: "ฟังเสียงจริงอีก 5 คน", feedback: null, checksIn: false };
+    render(<NextStepCard board={makeBoard()} step={step} onTap={jest.fn()} />);
+    const card = screen.getByRole("region", { name: "ตอบพี่เลี้ยง: ฟังเสียงจริงอีก 5 คน" });
+    expect(card.textContent).toContain("อีก 5 คน");
+    expect(keepCounts("ส่ง 3 รูป ภายใน 2 วัน")).toBe("ส่ง 3 รูป ภายใน 2 วัน");
+    expect(keepCounts("เควสต์ 12")).toBe("เควสต์ 12");
   });
 });
 
