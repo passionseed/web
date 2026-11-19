@@ -6,7 +6,7 @@ exports[`ai-engineer guide matches the Thai copy snapshot (diff this in the Thai
 dream.questionTh: AI ที่คนไทยใช้กัน ใครเป็นคนสร้าง
 dream.navLabelTh: AI ฝีมือคนไทย
 dream.og.headlineTh: AI ที่อ่านไทยออก คนไทยนี่แหละที่สร้าง
-dream.og.stat.th: นักเรียนกว่า 9,700 คนใน 74 จังหวัด ใช้แชตบอตติวสอบที่ทีมในไทยสร้าง
+dream.og.stat.th: นักเรียนกว่า 9,700 คน 74 จังหวัด ใช้แชตบอตติวสอบที่ทีมในไทยสร้าง
 dream.blocks[0].lines[0].text.th: เปิดรันสาย AI กัน ขอถามข้อเดียวก่อน
 dream.blocks[1].ask[0].text.th: AI ที่ฟังภาษาไทยรู้เรื่อง เธอว่าฝีมือใคร
 dream.blocks[1].options[0].labelTh: บริษัทใหญ่เมืองนอกชัวร์
