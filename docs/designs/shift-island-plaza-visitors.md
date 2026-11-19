@@ -119,7 +119,8 @@ eight are drawn, and the count they say is the whole day's (no "+N").
 ## Tap anyone (founder decision, 2026-11-18)
 
 Every walking or standing person on the web island can be tapped, and says
-one short, true line in a small speech bubble over their head (DRAFT copy,
+one short, true line in a small speech bubble over their head (copy reviewed
+by Gemini, Codex and Claude on 2026-11-19,
 `FIGURES` in `components/shift/island/copy.ts`). Today's visitors add the
 day's count on a second line, since the island prints none (decision 7): the
 viewer and strangers the island's (`VISITORS.count`), a teammate the team's
@@ -127,12 +128,12 @@ viewer and strangers the island's (`VISITORS.count`), a teammate the team's
 
 | Who | What they stand for | What they say |
 |---|---|---|
-| The viewer's own figure | They checked in today | นี่คือคุณ ... |
-| A teammate (team colour) | A teammate who checked in today | เพื่อนร่วมทีมของคุณ วันนี้เช็กอินแล้ว (3 variants) |
+| The viewer's own figure | They checked in today | นี่คุณเอง ... |
+| A teammate (team colour) | A teammate who checked in today | สวัสดี เพื่อนร่วมทีมของคุณเอง (3 variants) |
 | A stranger | Someone who checked in today | A friendly hello that they came (5 variants) |
-| The visitor beside a tree | The team passed main quest 3, its first partner (ได้พันธมิตรคนแรก) | ยืนแทนพันธมิตรคนแรกของทีมนี้ ... (ทีมคุณ by the viewer's own tree) |
+| The visitor beside a tree | The team passed main quest 3, its first partner (ได้พันธมิตรคนแรก) | ตัวแทนพันธมิตรคนแรก ที่ร่วมมือกับทีมนี้ (ทีมคุณ by the viewer's own tree) |
 | The story's builder | The team building real work | คนที่ลงมือสร้างงานจริง ทีละชิ้น |
-| The story's tester | Someone outside the team trying the work | คนนอกทีม มาลองงานที่ทำจริง |
+| The story's tester | Someone outside the team trying the work | คนนอกทีม มาลองใช้ของที่ทีมทำจริง |
 
 - **Same figure, same line.** A figure is a kind and a number only
   (`lib/shift-island/live/figures.ts`: figure order in the crowd, a tree's

@@ -97,24 +97,28 @@ export const WALLET_LABELS = {
 
 export const SHOP = {
   heading: "ร้านค้า",
-  /** DRAFT: the shop sheet's title; the shop is a merchant ship moored off the island. */
+  /** The shop sheet's title; the shop is a merchant ship moored off the island. */
   shipTitle: "เรือสินค้า",
-  /** DRAFT: the line under the ship in the shop sheet. */
-  shipLine: "เรือสินค้าแวะมาจอดที่เกาะ ของบนเรือแลกได้ด้วย Passioncoin จากงานที่ผ่านการตรวจ",
   /**
-   * DRAFT: the ship's tap target on the map. No words float over the ship: its
-   * painted coin board is part of the sprite, so this name is how it says it is the shop.
+   * The line under the ship in the shop sheet. It does not say where coins
+   * come from (more than reviewed work earns them): the wallet link does.
    */
-  shipSpot: "เรือสินค้า เปิดร้านค้า",
-  /** DRAFT: the balance on the shop's deck. */
-  balance: "coin ของคุณ",
-  /** DRAFT: the wallet's way to the shop. */
+  shipLine: "เรือแวะมาจอดที่เกาะแล้ว แลกของบนเรือได้ด้วย Passioncoin",
+  /**
+   * The ship's tap target on the map. No words float over the ship: its
+   * painted coin board is part of the sprite, so this name is how it says it is the shop.
+   * The comma is the screen reader's pause, as in WALLET's coinPill.
+   */
+  shipSpot: "เรือสินค้า, เปิดร้านค้า",
+  /** The balance on the shop's deck: the spendable balance, so the wallet's own label. */
+  balance: WALLET.balance,
+  /** The wallet's way to the shop. */
   toShip: "ไปที่เรือสินค้า",
-  /** DRAFT: the shop's way back to the wallet (how coins are earned, the ledger). */
+  /** The shop's way back to the wallet (how coins are earned, the ledger). */
   toWallet: "ดูว่าได้ coin จากอะไร",
-  /** DRAFT: a crate that can be redeemed now. */
+  /** A crate that can be redeemed now. */
   ready: "แลกได้เลย",
-  /** DRAFT: coins so far towards a price, under its meter. */
+  /** Coins so far towards a price, under its meter. */
   progress: (have: string, cost: string) => `มีแล้ว ${have} จาก ${cost} coin`,
   /** DRAFT: physical merch preview; price and stock are not promised. */
   comingSoon: "เร็วๆ นี้",
@@ -151,7 +155,7 @@ export const SHOP = {
   redeeming: "กำลังแลก",
   done: (item: string) => `แลก ${item} แล้ว ทีมงานจะแจ้งขั้นตอนรับของในกล่องข้อความของบอทใน Discord`,
   mineHeading: "ของที่แลกไว้",
-  /** DRAFT: the shop's rules, folded under the shelf. */
+  /** The shop's rules, folded under the shelf. */
   termsHeading: "อ่านกติกาการแลกของ",
   status: {
     reserved: "รอทีมงาน",

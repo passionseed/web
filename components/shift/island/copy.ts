@@ -732,46 +732,49 @@ export const VISITORS = {
 };
 
 /**
- * DRAFT: what a person on the island says when tapped, in a small bubble over
+ * What a person on the island says when tapped, in a small bubble over
  * them (live/FigureBubble.tsx). One short, true line each: never a name, and
  * nothing that points to a student. A figure is only a kind and a number
  * (lib/shift-island/live/figures.ts) and its line is picked from those, so
  * the same figure always says the same thing. Today's visitors add the day's
  * count under their line (VISITORS.count, a teammate VISITORS.team): the
- * island prints no count of its own. A new kind (the campfire's evening
- * guest) adds its lines here.
+ * island prints no count of its own. That count line owns "วันนี้" and
+ * "เช็กอิน", so the lines of the viewer, a teammate and anyone else say
+ * neither (read together, they would say it twice). A new kind (the
+ * campfire's evening guest) adds its lines here. Thai reviewed (Gemini,
+ * Codex, Claude), 2026-11-19.
  */
 export const FIGURES = {
   /** The viewer's own figure, drawn only once they checked in today. */
-  me: ["นี่คือคุณ วันนี้เช็กอินบนเกาะแล้ว"],
+  me: ["นี่คุณเอง มาถึงเกาะแล้ว"],
   /** A teammate who checked in today (the viewer's own team only, in the team's colour). */
   team: [
-    "เพื่อนร่วมทีมของคุณ วันนี้เช็กอินแล้ว",
-    "ทีมเดียวกับคุณ วันนี้แวะมาที่เกาะแล้ว",
-    "เพื่อนร่วมทีมของคุณ วันนี้มาที่เกาะแล้ว",
+    "สวัสดี เพื่อนร่วมทีมของคุณเอง",
+    "อยู่ทีมเดียวกับคุณ แวะมาที่เกาะแล้ว",
+    "เพื่อนร่วมทีมของคุณ มาที่เกาะแล้วนะ",
   ],
   /** Anyone else who checked in today: all the page knows is that they came. */
   crowd: [
-    "สวัสดี วันนี้แวะมาที่เกาะแล้ว",
-    "วันนี้เช็กอินแล้ว ขอให้วันนี้ไปได้ดี",
-    "อีกหนึ่งคนที่มาเกาะวันนี้",
-    "แวะมาทักทาย วันนี้เช็กอินแล้ว",
-    "สวัสดี เจอกันบนเกาะวันนี้",
+    "สวัสดี แวะมาที่เกาะแล้ว",
+    "มาถึงแล้ว ขอให้เป็นวันที่ดีนะ",
+    "อีกหนึ่งคนที่มาถึงเกาะแล้ว",
+    "ทักทายกันหน่อยนะ",
+    "ดีใจที่ได้เจอกันบนเกาะนะ",
   ],
   /** Beside another team's tree: the team passed main quest 3, its first partner (ได้พันธมิตรคนแรก). */
   partner: [
-    "ยืนแทนพันธมิตรคนแรกของทีมนี้ คนที่ยอมลงมือกับทีม",
-    "พันธมิตรคนแรกของทีมนี้ ตกลงทำขั้นต่อไปกับทีมแล้ว",
+    "ตัวแทนพันธมิตรคนแรก ที่ร่วมมือกับทีมนี้",
+    "ทีมนี้ได้พันธมิตรคนแรกแล้ว",
   ],
   /** The same, beside the viewer's own team's tree. */
   partnerMine: [
-    "ยืนแทนพันธมิตรคนแรกของทีมคุณ คนที่ยอมลงมือกับทีม",
-    "พันธมิตรคนแรกของทีมคุณ ตกลงทำขั้นต่อไปกับทีมแล้ว",
+    "ตัวแทนพันธมิตรคนแรก ที่ร่วมมือกับทีมคุณ",
+    "ยินดีด้วย ทีมคุณได้พันธมิตรคนแรกแล้ว",
   ],
   /** The story's builder, hammer in hand beside the young tree. */
   builder: ["คนที่ลงมือสร้างงานจริง ทีละชิ้น"],
   /** The story's tester, phone in hand beside the grown tree. */
-  tester: ["คนนอกทีม มาลองงานที่ทำจริง"],
+  tester: ["คนนอกทีม มาลองใช้ของที่ทีมทำจริง"],
   /** The plaza's people button (out of sight until a keyboard focuses it): each press greets the next of today's visitors. */
   turn: "ทักทายทีละคน",
   /** Its name without a day's count. */
@@ -957,7 +960,7 @@ export const QUEST_TERMS: Readonly<Record<string, readonly QuestTerm[]>> = {
     { term: "User interview", thai: "การคุยกับผู้ใช้", meaning: "ฟังเรื่องที่เกิดขึ้นจริงกับเขา ไม่ใช่ขอให้เขาชมไอเดีย" },
   ],
   "first-partner": [
-    { term: "Partner", thai: "พันธมิตร", meaning: "คนที่ยอมลงมือกับคุณ เช่น ให้ลองในร้าน ให้ข้อมูล หรือแนะนำคนต่อ" },
+    { term: "Partner", thai: "พันธมิตร", meaning: "คนที่ยอมลงมือทำกับคุณ เช่น ให้ลองในร้าน ให้ข้อมูล หรือแนะนำคนต่อ" },
   ],
   "in-their-hands": [
     { term: "Prototype", thai: "ต้นแบบ", meaning: "ชิ้นแรกที่หยาบแต่ลองได้จริง ทำมาเพื่อเรียนรู้ ไม่ใช่เพื่อให้สมบูรณ์" },
