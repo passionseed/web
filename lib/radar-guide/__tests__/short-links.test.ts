@@ -1,4 +1,4 @@
-import { GUIDE_INDEX, guidePageKeys } from "@/lib/radar-guides";
+import { GUIDE_INDEX, KNOWN_PUBLISHED_RADAR_SLUGS, guidePageKeys } from "@/lib/radar-guides";
 import {
   RADAR_LINK_ALIASES,
   guidePageForToken,
@@ -11,7 +11,9 @@ import {
   type ShortLinkRow,
 } from "../short-links";
 
-const PUBLISHED = new Set(Object.values(RADAR_LINK_ALIASES));
+/** Slugs with a live radar_fields row: the alias table plus every code guide's slug. */
+/** Published slugs: the deck pilots plus every code guide (guides.test keeps those in KNOWN_PUBLISHED_RADAR_SLUGS). */
+const PUBLISHED = new Set<string>([...Object.values(RADAR_LINK_ALIASES), ...KNOWN_PUBLISHED_RADAR_SLUGS]);
 const CYBER_PAGES = guidePageKeys("cybersecurity")!;
 
 /** Live guide pages per slug: cybersecurity from code, plus test-only pages. */

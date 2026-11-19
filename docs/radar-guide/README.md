@@ -29,6 +29,7 @@ by the page's `clip` slot (`ClipSlot`).
 | Thing | Where | Public? |
 |---|---|---|
 | Pages, copy, facts, clip slots, reel plans, demo scripts | `lib/radar-guides/<slug>/` | Yes, reviewed in a PR |
+| Story reel scripts (lines, scenes, captions, fact refs) and their scene art | `lib/radar-stories/scripts/`, `public/radar/stories/` | Yes, reviewed in a PR |
 | Recorded cutscenes (URLs, sha8, duration, script hash) | `lib/radar-guides/<slug>/clips.json` | Yes, written by `radar:clip` |
 | Captions | `lib/radar-guides/<slug>/clips/<page>.vtt` | Yes, written by `radar:clip`, editable in a PR |
 | mytcas snapshot | `lib/radar-guides/<slug>/tcas.json` | Yes, written by `radar:tcas` |
@@ -55,6 +56,8 @@ is missing, and checks before it starts encoding. Commands that upload have a
 | `pnpm radar:clip <slug> <page> <take.mov>` | ffmpeg, ffprobe, `B2_APPLICATION_KEY_ID`, `B2_APPLICATION_KEY`, `B2_BUCKET_NAME`; whisper-cli optional | Fails if the page has no `clip` slot or its script fails guide-lint. Tone-maps iPhone HLG to SDR, writes the clean 1080x1920 master, the 540x960 web clip (about 1.2 Mbps, faststart), a webp poster under 60KB, captions (whisper times, our script text) and the cut list. Uploads clip and poster to `radar/guide/<slug>/<page>.<sha8>.{mp4,webp}`, then writes `clips/<page>.vtt` and `clips.json` (sorted, 2-space JSON). No database. `--dry-run` skips B2 and writes the would-be `clips.json` and VTT to `<out>/dry-run/`, with copies of the web clip and poster. `--no-whisper`, `--out dir`, `--allow-lint-errors`. |
 | `pnpm radar:reel <slug>` | the studio server, ffmpeg, python3 + numpy (unless `--no-audio`), Playwright | Films reels into `~/Movies/radar-guide/<slug>/`. Motion (default): the Dusk City scene reel, "อาชีพนี้ใน 30 วินาที", built from the guide's fact-backed lines (dump cards are a fallback). `--page key` makes a one-level reel, `--compare other-slug` "เทียบ 2 อาชีพ", `--cover` saves the cover frame. `--format demo --page key` films the level itself being played (below). `--platform tt` swaps the end card. `--dry-run` writes the payload or plan and prints the timeline: no browser, no ffmpeg. Nothing is uploaded. |
 | `pnpm radar:art <slug>` | nothing (`--source agy`: the `agy` CLI) | Scene art for every level, the level map, the profile card frame and the host sprite, as webp of at most 120KB. Hand-made pixel art by default; `--source agy` asks Antigravity's image tool (normal permission prompts). No people, no text, no logos. `--dry-run`. |
+| `pnpm radar:story <id>` (or `--all`) | the studio server, ffmpeg, python3 + numpy (unless `--no-audio`), Playwright | Lints and films story reels (below) into `~/Movies/radar-guide/stories/`: `<id>.ig.mp4`, `<id>.tt.mp4`, `<id>.cover.webp`, `<id>.caption.txt`. `--platform ig\|tt` films one master, `--variant 1\|2` a Trial Reels hook, `--dry-run` prints the lint and the timeline only, `--allow-lint-errors` films a draft. |
+| `pnpm radar:story-art` | nothing | The generic story scenes as hand-made pixel art, `public/radar/stories/<scene>.webp` (108x192 cells, lossless). Deterministic. `--only scene,scene`, `--dry-run`. |
 | `pnpm radar:tcas <slug>` | network (local only) | Refreshes `tcas.json` from mytcas. Review the diff in a PR; the build never fetches it. |
 | `pnpm radar:dump <slug>` | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | DB deck careers: reads the published field, cards, sources, skills and start options with the anon key into `.cache/radar-guide/<slug>.json`. Fails on dashes in visible card copy. `--fixture` reads `lib/radar-guide/__fixtures__/<slug>.json` instead (offline). |
 | `pnpm radar:cover <slug> <scene>` | agy, ffprobe, B2 env | DB deck careers: one 1024x1024 background through agy (scenery only), uploaded to `radar/art/<slug>/<scene>.<sha8>.png`. `--dry-run` prints the prompt and the command. |
@@ -136,6 +139,111 @@ timers and animations land on the same frame every run.
 Start the studio server first: `scripts/studio-server.sh` (port 3010; it
 restarts any server already on that port), or point `--base` at another dev
 server.
+
+## Story reels
+
+Short vertical stories (20 to 40 seconds) for Instagram Reels and TikTok,
+told in Career Radar's pixel world: no founder on camera and no voice. A Thai
+high-school student (the profile card's pixel avatar) hits a real problem,
+P'Seed (the host, GuideNPC) shows up and helps, big Thai text lands the
+twist, and the end card asks for the comment. They are Radar's top of funnel.
+
+**The contract** is `StoryScript` in `lib/radar-stories/types.ts`: an id,
+a series (`lost`, `round1`, `career` with its `slug`), a hook of at most 28
+characters plus two Trial Reels variants, 6 to 10 beats (`who`, `lineTh` of at
+most 60 characters, `scene`, optional `mood` for P'Seed, `ms`, `big`), the end
+card CTA, the share line, both captions and `factRefs` for every number or
+factual claim. Characters are what the eye sees: a Thai vowel or tone mark
+counts with its letter.
+
+Scenes: `bedroom-night`, `classroom`, `dinner-table`, `school-gate`,
+`phone-feed` (scrolls), `radar` (the level map), or `career:<slug>/<page>`,
+which reuses `public/radar/guides/<slug>/<page>.webp`. Name tags: the student
+is "ฉัน", then "เพื่อน", "แม่" and P'Seed (`GUIDE_HOST`); `text` lines are
+narration with no speaker.
+
+**Adding scripts.** Put a file in `lib/radar-stories/scripts/<name>.ts` whose
+default export is an array of `StoryScript` (a JSON array pastes in as is),
+then add `import <name> from "./scripts/<name>"` and `<name>,` to
+`STORY_FILES` in `lib/radar-stories/index.ts`. `pnpm exec jest lib/radar-stories`
+fails until the file is registered, every id is unique, every script lints
+clean of errors and every scene has art. `pnpm radar:story <id> --dry-run`
+prints the lint, the timeline and the caption file.
+
+**The lint** (`lib/radar-stories/lint.ts`, run by Jest and before filming).
+Errors: hook over 28 characters or variants missing, a line over 60, fewer
+than 6 or more than 10 beats, unknown `who`, `mood` or scene (and missing art
+when filming), an em or en dash anywhere, "น้องๆ", a digit with no
+`factRefs`, a fact ref without a real URL, P'Seed's name said in a line, the
+global banned claims (lib/radar-guides/banned.ts), a "follow us" ask, a weekly
+release day, a promised admission or easy money, empty CTA, share line or
+captions, a non-kebab id or a duplicate. Warnings: a number no fact ref
+mentions, a `mood` on someone other than P'Seed, an `ms` shorter than the
+reading time, a price word, "หมดหวัง" and the like, a long CTA, a share line
+that does not start "ส่งให้เพื่อน", captions off the templates below, and a
+reel outside 20 to 40 seconds.
+
+**Timing** (`lib/radar-stories/timing.ts`, `components/radar/reel/story/storyTimeline.ts`,
+both pure and in whole frames at 30 fps). The hook card is on screen from
+frame 0 for its reading time, 1.5 to 2.5 s. A beat without `ms` lasts its
+reading time, about 14 characters a second plus 600 ms, clamped to 1.6 to 4 s.
+Lines type at 28 ms a character, finishing within 45% of the beat; `big`
+lines slam in whole. A pixel wipe covers each change of scene and the cut to
+the end card, centred on the boundary, so it adds no time. The end card is
+4.2 s. The same numbers make the cue sheet the soundtrack is scored from
+(dark until P'Seed arrives, light, full from the twist, the offer melody on
+the end card).
+
+**The frame** (`components/radar/reel/story/`). 432x768 CSS px filmed at
+deviceScaleFactor 2.5 (1080x1920). Scene art fills it (108x192 cells at 4x);
+the dialogue box, the hook and big lines sit between the top 12% and the
+bottom 35% that Instagram covers; characters stand with their feet on that
+line. Every frame is a pure function of its number: P'Seed runs on
+GuideNPC's `clock` prop (its moods, flicker, blink, mouth and hops set from
+the frame), so `radar:story` seeks and screenshots each frame without
+Chrome's virtual time, and two films of a script are identical. Instagram and
+TikTok masters share every frame up to the end card and are filmed in one
+pass: Instagram shows the CTA with RADAR lit up, TikTok the typeable link from
+the TikTok caption (else the career alias, else `passionseed.org/radar`).
+
+**Preview** a script at `/studio/radar-story/<id>` on the studio server: it
+plays in a loop with the safe zones drawn over it (click to restart).
+`?t=12.5` holds a moment, `?platform=tt` shows the TikTok end card, `?hook=1`
+a hook variant. `?render=1` is the filming mode. Not served in production.
+
+**Filming.**
+
+```bash
+scripts/studio-server.sh                # once; scripts/studio-server.sh --sync after edits
+pnpm radar:story lost-00-midnight       # one script: .ig.mp4, .tt.mp4, .cover.webp, .caption.txt
+pnpm radar:story --all                  # every script
+pnpm radar:story lost-00-midnight --variant 1   # Trial Reels hook: lost-00-midnight.v1.*
+```
+
+On a Linux machine whose own Chromium cannot start (missing libasound), run
+a Playwright browser server in Docker and point the command at it:
+
+```bash
+docker run -d --rm --network host --name radar-pw \
+  -v ~/.claude/skills/gstack/node_modules:/x/node_modules:ro \
+  mcr.microsoft.com/playwright:v1.58.2-jammy \
+  node -e "require('/x/node_modules/playwright').chromium.launchServer({port: 39321, wsPath: '/radar', host: '127.0.0.1'})"
+PLAYWRIGHT_WS_ENDPOINT=ws://127.0.0.1:39321/radar pnpm radar:story --all
+```
+
+The image's Playwright version must match the client's (1.58.2 here).
+`radar:reel` honours `PLAYWRIGHT_WS_ENDPOINT` too.
+
+**Posting.** `<id>.caption.txt` holds the Instagram caption, the comment to
+pin, the TikTok caption, the end card link, both Trial Reels hooks with the
+command that films each, and the sources. Captions follow the templates
+below; no "follow us", no weekly day, no price.
+
+**Scene art.** `pnpm radar:story-art` redraws `public/radar/stories/` from
+`scripts/radar-guide/story-art-pixel.ts`; a test fails if a committed webp no
+longer matches its painter. Scenery and objects only: no people, no text, no
+logos. A new generic scene changes the contract: add it to `Scene` and
+`GENERIC_SCENES` in `types.ts`, paint it, and tell the script writers.
 
 ## Caption templates
 

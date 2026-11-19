@@ -61,7 +61,9 @@
     "radar:cover": "dotenv -e .env.local -o -- tsx scripts/radar-guide/cover.ts",
     "radar:check": "tsx scripts/radar-guide/check.ts",
     "radar:tcas": "tsx scripts/radar-guide/tcas.ts",
-    "radar:art": "tsx scripts/radar-guide/art.ts"
+    "radar:art": "tsx scripts/radar-guide/art.ts",
+    "radar:story": "tsx scripts/radar-guide/story.ts",
+    "radar:story-art": "tsx scripts/radar-guide/story-art.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.38",

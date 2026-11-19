@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/usr/bin/env bash
 # Render-only dev server for the Marketing Studio, on :3010.
 #
 #   scripts/studio-server.sh          # sync a snapshot and (re)start it
@@ -9,9 +9,10 @@
 # one runs from a snapshot in .claude/worktrees/studio-render (gitignored),
 # with a dummy Supabase URL so rendering never touches a real database.
 # Turbopack root points at the repo so the snapshot reuses node_modules.
+# Plain bash (no zsh, no `sed -i`), so it runs on macOS and Linux alike.
 
 set -e
-REPO="${0:A:h:h}"
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 COPY="$REPO/.claude/worktrees/studio-render"
 PORT=3010
 
@@ -21,8 +22,15 @@ sync_copy() {
     --exclude node_modules --exclude .next --exclude output --exclude .claude --exclude .git \
     --exclude coverage --exclude scrape --exclude data --exclude artifacts \
     --exclude pnpm-lock.yaml --exclude pnpm-workspace.yaml --exclude '.env*' \
+    --exclude /next.config.mjs \
     "$REPO/" "$COPY/"
-  sed -i '' "s#    root: process.cwd(),#    root: \"$REPO\",#" "$COPY/next.config.mjs"
+  # The config is rewritten only when it changes: touching it restarts the server.
+  sed "s#    root: process.cwd(),#    root: \"$REPO\",#" "$REPO/next.config.mjs" > "$COPY/next.config.mjs.new"
+  if cmp -s "$COPY/next.config.mjs.new" "$COPY/next.config.mjs"; then
+    rm "$COPY/next.config.mjs.new"
+  else
+    mv "$COPY/next.config.mjs.new" "$COPY/next.config.mjs"
+  fi
 }
 
 sync_copy

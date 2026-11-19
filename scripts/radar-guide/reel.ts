@@ -24,109 +24,49 @@
  * Output: ~/Movies/radar-guide/<slug>/. --dry-run writes the payload or plan
  * and prints the timeline: no browser, no ffmpeg. Nothing is uploaded.
  *
+ * Story reels (lib/radar-stories) are filmed by `pnpm radar:story <id>`.
+ *
  * Needs: the studio server (scripts/studio-server.sh, :3010) or --base, ffmpeg,
  * python3 with numpy (unless --no-audio), and Playwright resolvable (set
- * SHIFT_PLAYWRIGHT_MODULE to a playwright/index.mjs if it is not installed).
+ * SHIFT_PLAYWRIGHT_MODULE to a playwright/index.mjs if it is not installed, or
+ * PLAYWRIGHT_WS_ENDPOINT to a running Playwright browser server).
  */
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { homedir, tmpdir } from "node:os";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
 
 import { buildDemoReelPlan, demoReelProblems, DEMO_FRAME, type DemoReelPlan } from "../../components/radar/reel/demoReel";
 import { buildRadarReelPayload, type RadarReelPlatform } from "../../components/radar/reel/payload";
 import { buildRadarReelTimeline } from "../../components/radar/reel/radarReel";
 import type { CareerGuide } from "../../lib/radar-guide/guide-types";
-import { assertSlug, fail, flagString, parseArgs, paths, REPO_ROOT, requireBinary, run, runMain } from "./lib/cli";
+import { assertSlug, fail, flagString, parseArgs, paths, run, runMain } from "./lib/cli";
 import { readDump, type RadarDump } from "./lib/dump";
+import {
+  advance,
+  ENCODE_ARGS,
+  FPS,
+  FRAME_TIMEOUT_MS,
+  loadChromium,
+  muxAudio,
+  pipeFrames,
+  requireEncoders,
+  requireStudio,
+  withTimeout,
+  type Browser,
+  type CdpSession,
+  type Page,
+} from "./lib/film";
 import { guideFacts, loadGuide } from "./lib/guides";
 
 const USAGE =
   "pnpm radar:reel <slug> [--page key] [--format motion|demo] [--platform ig|tt] [--compare other-slug] [--base url] [--out dir] [--cover] [--no-audio] [--realtime] [--dry-run]";
-const FPS = 30;
 const MOTION_ELEMENT = "#radar-reel";
-const AUDIO_SCRIPT = join(REPO_ROOT, "scripts/shift-reel-audio.py");
-const FRAME_TIMEOUT_MS = 15_000;
-
-/* eslint-disable @typescript-eslint/no-explicit-any -- Playwright is not a project dependency, so its types are not available. */
-type Browser = any;
-type Page = any;
-type CdpSession = any;
-/* eslint-enable @typescript-eslint/no-explicit-any */
-
-// Playwright is not a project dependency: same resolution chain as scripts/render-poster.mjs.
-async function loadChromium(): Promise<{ launch(): Promise<Browser> }> {
-  const candidates = [
-    "playwright",
-    process.env.SHIFT_PLAYWRIGHT_MODULE,
-    join(homedir(), ".claude/skills/gstack/node_modules/playwright/index.mjs"),
-  ].filter((c): c is string => Boolean(c));
-  for (const spec of candidates) {
-    try {
-      const mod = await import(spec.startsWith("/") ? pathToFileURL(spec).href : spec);
-      const chromium = mod.chromium ?? mod.default?.chromium;
-      if (chromium) return chromium;
-    } catch {
-      // try the next one
-    }
-  }
-  fail("Playwright not found. Set SHIFT_PLAYWRIGHT_MODULE to a playwright/index.mjs path, or `npm i playwright` in a scratch dir.");
-}
 
 function dumpIfAny(slug: string, guide: CareerGuide | null): RadarDump | null {
   if (existsSync(paths.dump(slug))) return readDump(slug);
   if (!guide) return readDump(slug); // fails with "Run: pnpm radar:dump <slug>"
   console.warn(`note: no dump for ${slug}; card-only scenes (AI score, day, reality) are left out. pnpm radar:dump ${slug} adds them.`);
   return null;
-}
-
-async function requireStudio(url: string, base: string): Promise<void> {
-  let status = 0;
-  try {
-    status = (await fetch(url, { signal: AbortSignal.timeout(60_000) })).status;
-  } catch {
-    fail(`The studio server is not reachable at ${base}. Start it with scripts/studio-server.sh (port 3010), or pass --base.`);
-  }
-  if (status !== 200) fail(`${url} answered ${status}. Is this branch synced into the studio server? scripts/studio-server.sh --sync`);
-}
-
-function requireEncoders(noAudio: boolean): void {
-  requireBinary("ffmpeg", "encoding the reel");
-  if (!noAudio) {
-    requireBinary("python3", "scoring the soundtrack (scripts/shift-reel-audio.py, needs numpy)");
-    if (!existsSync(AUDIO_SCRIPT)) fail(`${AUDIO_SCRIPT} is missing.`);
-  }
-}
-
-async function muxAudio(video: string, cues: unknown, work: string, out: string, noAudio: boolean): Promise<void> {
-  if (noAudio) {
-    await run("ffmpeg", ["-y", "-i", video, "-c:v", "copy", "-an", "-movflags", "+faststart", out]);
-    return;
-  }
-  const cuesPath = join(work, "cues.json");
-  writeFileSync(cuesPath, JSON.stringify(cues));
-  const audio = join(work, "audio.wav");
-  await run("python3", [AUDIO_SCRIPT, cuesPath, audio]);
-  await run("ffmpeg", [
-    "-y", "-i", video, "-i", audio,
-    "-c:v", "copy", "-af", "loudnorm=I=-16:TP=-1.5:LRA=11", "-ar", "48000", "-c:a", "aac", "-b:a", "192k",
-    "-shortest", "-movflags", "+faststart", out,
-  ]);
-}
-
-const ENCODE_ARGS = ["-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", "-preset", "slow"];
-
-async function pipeFrames(video: string, total: number, label: string, seconds: number, frame: (f: number) => Promise<Buffer>): Promise<void> {
-  await run("ffmpeg", ["-y", "-f", "image2pipe", "-framerate", String(FPS), "-i", "-", ...ENCODE_ARGS, video], {
-    stdin: async (stdin) => {
-      for (let f = 0; f < total; f++) {
-        const png = await frame(f);
-        if (!stdin.write(png)) await new Promise((r) => stdin.once("drain", r));
-        if (f % FPS === 0) process.stdout.write(`\r${label}: ${f / FPS}s / ${seconds.toFixed(1)}s`);
-      }
-      stdin.end();
-    },
-  });
 }
 
 // ---------------------------------------------------------------------------
@@ -222,24 +162,6 @@ async function filmMotion(opts: {
 // demo
 // ---------------------------------------------------------------------------
 
-function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
-  let timer: NodeJS.Timeout | undefined;
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) => {
-      timer = setTimeout(() => reject(new Error(message)), ms);
-    }),
-  ]).finally(() => clearTimeout(timer));
-}
-
-/** Lets `budget` ms of virtual time pass, then resolves. */
-function advance(cdp: CdpSession, budget: number): Promise<void> {
-  return new Promise((ok, reject) => {
-    cdp.once("Emulation.virtualTimeBudgetExpired", () => ok());
-    cdp.send("Emulation.setVirtualTimePolicy", { policy: "advance", budget }).catch(reject);
-  });
-}
-
 async function openDemoFrame(browser: Browser, url: string, video?: { dir: string }): Promise<{ context: Browser; tab: Page; openedAt: number }> {
   const context = await browser.newContext({
     viewport: { width: DEMO_FRAME.width, height: DEMO_FRAME.height },
@@ -329,6 +251,7 @@ async function main() {
     value: ["page", "format", "platform", "compare", "base", "out", "chapter"],
   });
   if (args.flags.chapter) fail("--chapter is gone: reels map to guide pages now. Use --page <key>.");
+  if (args.flags.format === "story") fail("Story reels have their own command: pnpm radar:story <id> (or --all).");
   const slug = assertSlug(args.positional[0], USAGE);
   const page = flagString(args, "page") ?? null;
   const platform = (flagString(args, "platform") ?? "ig") as RadarReelPlatform;

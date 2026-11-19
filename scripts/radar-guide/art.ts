@@ -1,5 +1,5 @@
 /**
- * pnpm exec tsx scripts/radar-guide/art.ts <slug> [--only id,id] [--source pixel|agy] [--dry-run]
+ * pnpm exec tsx scripts/radar-guide/art.ts <slug> [--only id,id] [--source pixel|agy|codex] [--dry-run]
  *
  * Writes the game-story art for a code guide into public/radar/guides/:
  * one scene per level (<slug>/<pageKey>.webp, 160x100), the level map
@@ -19,6 +19,9 @@
  *                   The host sprite and the card frame stay "pixel": the
  *                   host's frames must line up pixel for
  *                   pixel (mouth flap), which separate generations cannot.
+ *   --source codex  the same, through OpenAI Codex's image tool (`codex exec`),
+ *                   when Antigravity's image quota is used up. Same prompt,
+ *                   same crop and scale, same 640x400 output.
  *   --only          comma-separated asset ids from the prompts file
  *   --dry-run       print what would be written (and the agy prompts); write nothing
  *
@@ -26,7 +29,7 @@
  * logos: see docs/radar-guide/art.md before swapping any asset.
  */
 import { spawn } from "node:child_process";
-import { mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, relative } from "node:path";
 
@@ -38,12 +41,12 @@ import { renderFrame, renderHost, renderMap, renderScene, type Canvas } from "./
 import { mentionsPeople } from "./lib/art";
 import { assertSlug, fail, flagString, hasBinary, parseArgs, REPO_ROOT, runMain } from "./lib/cli";
 
-const USAGE = "pnpm exec tsx scripts/radar-guide/art.ts <slug> [--only id,id] [--source pixel|agy] [--dry-run]";
+const USAGE = "pnpm exec tsx scripts/radar-guide/art.ts <slug> [--only id,id] [--source pixel|agy|codex] [--dry-run]";
 export const MAX_ART_BYTES = 120 * 1024;
 /** Generated art is kept at this multiple of the native size (scenes 640x400, map 432x768). */
 export const AGY_SCALE = 4;
 
-export type ArtSource = "pixel" | "agy";
+export type ArtSource = "pixel" | "agy" | "codex";
 
 export interface ArtAsset {
   id: string;
@@ -101,6 +104,16 @@ export function agyImageArgs(imageName: string, prompt: string): string[] {
   ];
 }
 
+/** codex invocation for one image, saved to `outPath`. No sandbox-skipping flag. */
+export function codexImageArgs(outPath: string, prompt: string): string[] {
+  const safe = prompt.replace(/"/g, "'");
+  return [
+    "exec",
+    "--skip-git-repo-check",
+    `Use your image generation tool exactly once to make this image: "${safe}". Save it as ${outPath}. Do not run other commands or edit any other file. Reply only with the absolute path of the saved image file.`,
+  ];
+}
+
 /** The last absolute image path in agy's reply (it saves png or jpg). */
 export function parseImagePath(output: string): string | null {
   const all = output.match(/\/[^\s`'"()<>]+?\.(?:png|jpe?g|webp)\b/gi);
@@ -110,7 +123,7 @@ export function parseImagePath(output: string): string | null {
 /** Output size for an asset from a given source. */
 export function outputSize(asset: Pick<ArtAsset, "size">, source: ArtSource): [number, number] {
   const [w, h] = asset.size;
-  return source === "agy" ? [w * AGY_SCALE, h * AGY_SCALE] : [w, h];
+  return source === "pixel" ? [w, h] : [w * AGY_SCALE, h * AGY_SCALE];
 }
 
 /** Host and frame are always hand-made (see the header). */
@@ -119,15 +132,15 @@ export function sourceFor(asset: Pick<ArtAsset, "kind" | "source">, override?: A
   return override ?? asset.source ?? "pixel";
 }
 
-function runAgy(args: string[]): Promise<string> {
+function runAgy(args: string[], bin = "agy", cwd = tmpdir()): Promise<string> {
   return new Promise((ok, reject) => {
     // stdin stays attached so agy can ask for permission the normal way. It runs
     // outside the repo so its workspace holds nothing it could edit.
-    const child = spawn("agy", args, { cwd: tmpdir(), stdio: ["inherit", "pipe", "inherit"] });
+    const child = spawn(bin, args, { cwd, stdio: ["inherit", "pipe", "inherit"] });
     let out = "";
     child.stdout.on("data", (chunk: Buffer) => (out += chunk.toString("utf8")));
     child.on("error", reject);
-    child.on("close", (code) => (code === 0 ? ok(out) : reject(new Error(`agy exited with code ${code}`))));
+    child.on("close", (code) => (code === 0 ? ok(out) : reject(new Error(`${bin} exited with code ${code}`))));
   });
 }
 
@@ -173,7 +186,7 @@ async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2), { bool: ["dry-run"], value: ["only", "source"] });
   const slug = assertSlug(args.positional[0], USAGE);
   const sourceFlag = flagString(args, "source");
-  if (sourceFlag !== undefined && sourceFlag !== "pixel" && sourceFlag !== "agy") fail(`--source must be pixel or agy. ${USAGE}`);
+  if (sourceFlag !== undefined && !["pixel", "agy", "codex"].includes(sourceFlag)) fail(`--source must be pixel, agy or codex. ${USAGE}`);
   const override = sourceFlag as ArtSource | undefined;
   const dryRun = args.flags["dry-run"] === true;
   const entry = GUIDE_INDEX[slug];
@@ -185,6 +198,9 @@ async function main(): Promise<void> {
   if (assets.some((a) => sourceFor(a, override) === "agy") && !dryRun && !hasBinary("agy")) {
     fail("agy is not on PATH. Use --source pixel, or install Antigravity.");
   }
+  if (assets.some((a) => sourceFor(a, override) === "codex") && !dryRun && !hasBinary("codex")) {
+    fail("codex is not on PATH. Use --source pixel, or install the Codex CLI.");
+  }
 
   const outRoot = join(REPO_ROOT, "public/radar/guides");
   for (const asset of assets) {
@@ -192,6 +208,7 @@ async function main(): Promise<void> {
     const source = sourceFor(asset, override);
     if (dryRun) {
       console.log(`${asset.id} -> ${relative(REPO_ROOT, out)} (${outputSize(asset, source).join("x")}, ${source})`);
+      if (source === "codex") console.log(`  codex ${codexImageArgs("<tmp>.png", fullPrompt(prompts, asset)).map((a) => JSON.stringify(a)).join(" ")}`);
       if (source === "agy") console.log(`  agy ${agyImageArgs(`${slug}-${asset.id}`, fullPrompt(prompts, asset)).map((a) => JSON.stringify(a)).join(" ")}`);
       continue;
     }
@@ -202,10 +219,20 @@ async function main(): Promise<void> {
         fail(`${asset.id}: painter drew ${canvas.w}x${canvas.h}, prompts file says ${asset.size.join("x")}`);
       }
       webp = await canvasToWebp(canvas);
+    } else if (source === "codex") {
+      // Codex works in a throwaway directory: the repo is never its workspace.
+      const dir = mkdtempSync(join(tmpdir(), "radar-art-"));
+      const target = join(dir, `${slug}-${asset.id}.png`);
+      const output = await runAgy(codexImageArgs(target, fullPrompt(prompts, asset)), "codex", dir);
+      const saved = existsSync(target) ? target : parseImagePath(output);
+      if (!saved || !existsSync(saved)) fail(`${asset.id}: codex did not save an image. Re-run with --source pixel.`);
+      console.log(`${asset.id}: codex saved ${saved}`);
+      webp = await generatedToWebp(saved, outputSize(asset, "codex"));
     } else {
       const output = await runAgy(agyImageArgs(`${slug}-${asset.id}`, fullPrompt(prompts, asset)));
       const saved = parseImagePath(output);
-      if (!saved) fail(`${asset.id}: agy did not report a saved image. Re-run with --source pixel.`);
+      // agy sometimes names a path, then says nothing was saved: trust only a real file.
+      if (!saved || !existsSync(saved)) fail(`${asset.id}: agy did not report a saved image. Re-run with --source pixel.`);
       console.log(`${asset.id}: agy saved ${saved}`);
       webp = await generatedToWebp(saved, outputSize(asset, "agy"));
     }
