@@ -21,6 +21,7 @@ import type {
 import { trackableGames } from "@/lib/radar-guide/story";
 import { parseVtt, type VttCue } from "@/lib/radar-guide/vtt";
 import { aiEngineerGuide } from "./ai-engineer/guide";
+import { contentCreatorGuide } from "./content-creator/guide";
 import { cybersecurityGuide } from "./cybersecurity/guide";
 import { dataScientistGuide } from "./data-scientist/guide";
 import { softwareEngineerGuide } from "./software-engineer/guide";
@@ -32,6 +33,7 @@ const GUIDES = {
   "ai-engineer": aiEngineerGuide,
   "data-scientist": dataScientistGuide,
   "software-engineer": softwareEngineerGuide,
+  "content-creator": contentCreatorGuide,
 } satisfies Record<string, CareerGuide>;
 
 const GUIDES_DIR = path.join(process.cwd(), "lib", "radar-guides");
