@@ -201,17 +201,17 @@ tonight.blocks[4].lines[0].text.th: ช่องที่สำคัญสุ�
 tonight.blocks[4].lines[1].text.th: เพราะงานนักบัญชีจริงๆ คือหาสิ่งที่ตัวเลขไม่ได้บอกตรงๆ แหละ
 tonight.blocks[4].lines[2].text.th: ช่องสุดท้าย จะบอกเจ้าของเงินว่าอะไร เราว่าอย่าข้ามเลยนะ
 tonight.blocks[5].lines[0].text.th: ถ้าลองทำกับเงินชุมนุมยิ่งดีเลย ตารางกับสรุปนี้ใส่แฟ้มได้เลย
-tonight.blocks[6].text.th: TCAS70 มี 4 รอบ รอบแรกชื่อ Portfolio มหาลัยดูจากสิ่งที่เธอลงมือทำ งานแบบคืนนี้แหละ ใส่แฟ้มได้เลย
+tonight.blocks[6].text.th: TCAS70 มี 4 รอบ รอบแรกชื่อ Portfolio มหาลัยดูจากสิ่งที่เธอลงมือทำ งานแบบคืนนี้ เริ่มเป็นชิ้นแรกในแฟ้มได้เลย
 tonight.blocks[6].titleTh: รู้ไหม รอบ 1 ใช้ผลงานยื่นได้นะ
 tonight.blocks[7].ask[0].text.th: ว่าแต่เธอจะลองเมื่อไหร่ดี
 tonight.blocks[7].options[0].labelTh: คืนนี้เลยดิ
 tonight.blocks[7].options[0].reply[0].text.th: ชอบความไวนี้แฮะ
 tonight.blocks[7].options[0].reply[1].text.th: พอทำเสร็จ อาทิตย์หน้าลองจดทุกครั้งที่จ่าย แล้วเทียบกับที่จำได้
-tonight.blocks[7].options[1].labelTh: ขอเป็นวันหยุดละกัน
+tonight.blocks[7].options[1].labelTh: ขอเป็นวันหยุดแล้วกัน
 tonight.blocks[7].options[1].reply[0].text.th: ดีลเลย ปักลงปฏิทินไว้เลย จะได้ไม่ลืม
 tonight.blocks[7].options[2].labelTh: ยังไม่ชัวร์เลยว่าจะชอบไหม
 tonight.blocks[7].options[2].reply[0].text.th: ไม่ชัวร์ก็ลองดูก่อนได้นะ
-tonight.blocks[7].options[2].reply[1].text.th: ลองแล้วไม่สนุก ก็รู้ตัวก่อนเลือกคณะ ไม่เสียอะไรเลย",
+tonight.blocks[7].options[2].reply[1].text.th: ลองแล้วไม่สนุก ก็รู้ก่อนเลือกคณะ ไม่เสียอะไรเลย",
   "next.titleTh: แล้วเธอล่ะ
 next.questionTh: สายบัญชีใช่เธอไหม แล้วจะไปต่อทางไหน
 next.navLabelTh: แล้วเธอล่ะ
@@ -234,7 +234,7 @@ next.blocks[4].lines[0].text.th: ถ้าเริ่มสนใจ สิ่�
 next.blocks[4].lines[1].text.th: คือลองทำบัญชีอีกหนึ่งอาทิตย์ แล้วเขียนสรุปอีกหนึ่งชิ้นนะ
 next.blocks[5].text.th: ไม่ชอบงานละเอียด ไม่ชอบเช็กซ้ำ หรือไม่อยากเป็นคนบอกความจริงที่คนอื่นไม่อยากฟัง เพราะงานจริงคือไล่หาที่มาของเงินทุกก้อน แล้วพูดตรงๆ
 next.blocks[5].titleTh: สายนี้อาจไม่เหมาะ ถ้า...",
-  "round1.titleTh: รอบ 1 มีพื้นที่ให้ผลงานเธอ
+  "round1.titleTh: รอบ 1 มีที่ให้ผลงานของเธอ
 round1.questionTh: เข้ามหาลัยด้วยสิ่งที่ทำเอง ไม่ใช่แค่คะแนนสอบ จริงเหรอ
 round1.navLabelTh: รอบ 1
 round1.og.headlineTh: TCAS รอบ 1 ใช้ผลงานของเธอยื่นได้ เริ่มเก็บตั้งแต่ตอนนี้เลย
@@ -268,14 +268,12 @@ round1.blocks[3].blocks[1].answersTh[2]: เกียรติบัตร ร�
 round1.blocks[3].blocks[2].lines[0].text.th: เห็นไหม ของที่เธอลงมือทำเองนับได้จริง
 round1.blocks[3].blocks[2].lines[1].text.th: ไม่ต้องรอใครมาจัดค่าย หรือออกใบเกียรติบัตรให้ก่อนเลย
 round1.blocks[4].unlockLabelTh: แล้วตอนนี้ฉันอยู่ ม.ไหนล่ะ
-round1.blocks[4].blocks[0].lines[0].text.th: ถ้าอยู่ ม.6 รอบ 1 ปีนี้บางที่ยังเปิดรับอยู่ แต่ละคณะปิดไม่พร้อมกันนะ
+round1.blocks[4].blocks[0].lines[0].text.th: ถ้าอยู่ ม.6 รอบ 1 ปีนี้บางคณะยังเปิดรับอยู่ แต่ละคณะปิดไม่พร้อมกันนะ
 round1.blocks[4].blocks[0].lines[1].text.th: ถ้าอยู่ ม.5 เธอยังมีเวลาอีกเกือบปี ลองทำชิ้นแรกให้เสร็จก่อนเลย
 round1.blocks[4].blocks[0].lines[2].text.th: ถ้าอยู่ ม.4 เวลาเยอะสุด ลองได้หลายอย่างเลย ไม่ต้องรีบเลือก
-round1.blocks[4].blocks[1].text.th: อย่างเช่น สวนสุนันทาเปิดรับรอบ 1 ถึง 9 ก.พ. 2570
-round1.blocks[4].blocks[1].titleTh: ยังเปิดอยู่
-round1.blocks[4].blocks[2].text.th: รอบ 1 ไม่ได้ง่ายกว่ารอบอื่น แต่ละคณะมีเกณฑ์อย่างเกรดขั้นต่ำ เช็กประกาศของคณะที่สนใจทุกครั้งนะ
-round1.blocks[4].blocks[2].titleTh: พูดตรงๆ
-round1.blocks[4].blocks[3].labelTh: ดูหลักสูตร บัญชีกับบริหารธุรกิจ ใน mytcas
+round1.blocks[4].blocks[1].text.th: รอบ 1 ไม่ได้ง่ายกว่ารอบอื่น แต่ละคณะมีเกณฑ์ เช่น เกรดขั้นต่ำ เช็กประกาศของคณะที่สนใจทุกครั้งนะ
+round1.blocks[4].blocks[1].titleTh: พูดตรงๆ
+round1.blocks[4].blocks[2].labelTh: ดูหลักสูตร บัญชีกับบริหารธุรกิจ ใน mytcas
 round1.blocks[5].lines[0].text.th: ผลงานชิ้นแรกไม่ต้องใหญ่โตเลย
 round1.blocks[5].lines[1].text.th: ใน mytcas ปีนี้ มีหลักสูตรสายบัญชี 94 หลักสูตร ใน 56 มหาลัย
 round1.blocks[5].lines[2].text.th: อยากรู้ว่าเรียนต่อที่ไหน แล้วจบไปทำงานอะไรได้บ้างใช่ไหม

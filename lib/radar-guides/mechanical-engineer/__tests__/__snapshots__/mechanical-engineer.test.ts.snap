@@ -215,17 +215,17 @@ tonight.blocks[5].lines[0].text.th: ของที่มีค่าสุด�
 tonight.blocks[5].lines[1].text.th: เหมือนตอนทดสอบพัดลมแล้วจับจุดพังมาแก้เมื่อกี้เป๊ะ
 tonight.blocks[5].lines[2].text.th: ช่องสุดท้าย จะทดสอบยังไง ทีมเราว่าสำคัญสุดเลย อย่าข้ามนะ
 tonight.blocks[6].lines[0].text.th: เก็บไว้เลย รูปวาดกับบันทึกนี่แหละ ผลงานชิ้นแรกในแฟ้มของเธอ
-tonight.blocks[7].text.th: TCAS70 มี 4 รอบ รอบแรกชื่อ Portfolio มหาลัยดูจากสิ่งที่เธอลงมือทำ งานแบบคืนนี้แหละ ใส่แฟ้มได้เลย
+tonight.blocks[7].text.th: TCAS70 มี 4 รอบ รอบแรกชื่อ Portfolio มหาลัยดูจากสิ่งที่เธอลงมือทำ งานแบบคืนนี้ เริ่มเป็นชิ้นแรกในแฟ้มได้เลย
 tonight.blocks[7].titleTh: รู้ไหม รอบ 1 ใช้ผลงานยื่นได้นะ
 tonight.blocks[8].ask[0].text.th: ว่าแต่เธอจะลองเมื่อไหร่ดี
 tonight.blocks[8].options[0].labelTh: คืนนี้เลยดิ
 tonight.blocks[8].options[0].reply[0].text.th: ชอบความไวนี้แฮะ
 tonight.blocks[8].options[0].reply[1].text.th: ทำเสร็จแล้ว พรุ่งนี้ลองแกะอีกชิ้น แล้วเทียบกันดูว่ากลไกต่างกันยังไง
-tonight.blocks[8].options[1].labelTh: ขอเป็นวันหยุดละกัน
+tonight.blocks[8].options[1].labelTh: ขอเป็นวันหยุดแล้วกัน
 tonight.blocks[8].options[1].reply[0].text.th: ดีลเลย ปักลงปฏิทินไว้เลย จะได้ไม่ลืม
 tonight.blocks[8].options[2].labelTh: ยังไม่ชัวร์เลยว่าจะชอบไหม
 tonight.blocks[8].options[2].reply[0].text.th: ไม่ชัวร์ก็ลองดูก่อนได้นะ
-tonight.blocks[8].options[2].reply[1].text.th: ลองแล้วไม่สนุก ก็รู้ตัวก่อนเลือกคณะ ไม่เสียอะไรเลย",
+tonight.blocks[8].options[2].reply[1].text.th: ลองแล้วไม่สนุก ก็รู้ก่อนเลือกคณะ ไม่เสียอะไรเลย",
   "next.titleTh: แล้วเธอล่ะ
 next.questionTh: สายเครื่องกลใช่เธอไหม แล้วจะไปต่อทางไหน
 next.navLabelTh: แล้วเธอล่ะ
@@ -248,7 +248,7 @@ next.blocks[4].lines[0].text.th: ถ้าสนใจ สิ่งเดีย�
 next.blocks[4].lines[1].text.th: คือพรุ่งนี้แกะของอีกชิ้น แล้ววาดเวอร์ชันอัปเกรดของมัน
 next.blocks[5].text.th: ไม่ชอบทดสอบซ้ำแล้วจดตัวเลขละเอียด ไม่สนุกกับฟิสิกส์และคณิต หรือไม่อยากลงโรงงานที่ร้อนและเสียงดังเลย เพราะงานจริงคือคำนวณ ทดสอบ แล้วแก้ วนไปเรื่อยๆ
 next.blocks[5].titleTh: สายนี้อาจไม่เหมาะ ถ้า...",
-  "round1.titleTh: รอบ 1 มีพื้นที่ให้ผลงานเธอ
+  "round1.titleTh: รอบ 1 มีที่ให้ผลงานของเธอ
 round1.questionTh: เข้ามหาลัยด้วยสิ่งที่ทำเอง ไม่ใช่แค่คะแนนสอบ จริงเหรอ
 round1.navLabelTh: รอบ 1
 round1.og.headlineTh: TCAS รอบ 1 ใช้ผลงานของเธอยื่นได้ เริ่มเก็บตั้งแต่ตอนนี้เลย
@@ -282,16 +282,14 @@ round1.blocks[3].blocks[1].answersTh[2]: เกียรติบัตร ร�
 round1.blocks[3].blocks[2].lines[0].text.th: เห็นไหม ของที่เธอลงมือทำเองนับได้จริง
 round1.blocks[3].blocks[2].lines[1].text.th: ไม่ต้องรอใครมาจัดค่าย หรือออกใบเกียรติบัตรให้ก่อนเลย
 round1.blocks[4].unlockLabelTh: แล้วตอนนี้ฉันอยู่ ม.ไหนล่ะ
-round1.blocks[4].blocks[0].lines[0].text.th: ถ้าอยู่ ม.6 รอบ 1 ปีนี้บางที่ยังเปิดรับอยู่ แต่ละคณะปิดไม่พร้อมกันนะ
+round1.blocks[4].blocks[0].lines[0].text.th: ถ้าอยู่ ม.6 รอบ 1 ปีนี้บางคณะยังเปิดรับอยู่ แต่ละคณะปิดไม่พร้อมกันนะ
 round1.blocks[4].blocks[0].lines[1].text.th: ถ้าอยู่ ม.5 เธอยังมีเวลาอีกเกือบปี ลองทำชิ้นแรกให้เสร็จก่อนเลย
 round1.blocks[4].blocks[0].lines[2].text.th: ถ้าอยู่ ม.4 เวลาเยอะสุด ลองได้หลายอย่างเลย ไม่ต้องรีบเลือก
-round1.blocks[4].blocks[1].text.th: อย่างเช่น สวนสุนันทาเปิดรับรอบ 1 ถึง 9 ก.พ. 2570
-round1.blocks[4].blocks[1].titleTh: ยังเปิดอยู่
-round1.blocks[4].blocks[2].text.th: รอบ 1 ไม่ได้ง่ายกว่ารอบอื่น แต่ละคณะมีเกณฑ์อย่างเกรดขั้นต่ำ เช็กประกาศของคณะที่สนใจทุกครั้งนะ
-round1.blocks[4].blocks[2].titleTh: พูดตรงๆ
-round1.blocks[4].blocks[3].labelTh: ดูหลักสูตร วิศวะเครื่องกล ยานยนต์ หุ่นยนต์ เมคคาทรอนิกส์ ใน mytcas
+round1.blocks[4].blocks[1].text.th: รอบ 1 ไม่ได้ง่ายกว่ารอบอื่น แต่ละคณะมีเกณฑ์ เช่น เกรดขั้นต่ำ เช็กประกาศของคณะที่สนใจทุกครั้งนะ
+round1.blocks[4].blocks[1].titleTh: พูดตรงๆ
+round1.blocks[4].blocks[2].labelTh: ดูหลักสูตร วิศวะเครื่องกล ยานยนต์ หุ่นยนต์ เมคคาทรอนิกส์ ใน mytcas
 round1.blocks[5].lines[0].text.th: ผลงานชิ้นแรกไม่ต้องใหญ่โตเลย
-round1.blocks[5].lines[1].text.th: อยากรู้เรื่องเงินเดือนกับที่เรียนต่อใช่ไหม
+round1.blocks[5].lines[1].text.th: อยากรู้เรื่องที่เรียนต่อกับงานจริงของสายนี้อีกใช่ไหม
 round1.blocks[5].lines[2].text.th: กด แผนที่ด่าน ข้างล่าง ไปดูข้อมูลเต็มของสายนี้ได้เลย",
 ]
 `;

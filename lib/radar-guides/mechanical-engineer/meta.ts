@@ -34,7 +34,7 @@ export const MECHANICAL_ENGINEER_META = {
     badges: [
       { id: "dream", nameTh: "รู้แล้วว่าใครสร้าง", descTh: "เห็นแล้วว่าเครื่องจักรรอบตัว หลายอย่างทำในไทย", icon: "star", trigger: { on: "clear", pageKey: "dream" } },
       { id: "work", nameTh: "คนทดสอบพัดลม", descTh: "ทดสอบพัดลมห้องเรียนจนพร้อมผลิต", icon: "eye", trigger: { on: "clear", pageKey: "work" } },
-      { id: "round1", nameTh: "แฟ้มพร้อมยื่น", descTh: "รู้แล้วว่าผลงานแบบไหนใส่แฟ้มรอบ 1 ได้", icon: "map", trigger: { on: "clear", pageKey: "round1" } },
+      { id: "round1", nameTh: "เปิดแฟ้มแรก", descTh: "รู้แล้วว่าผลงานแบบไหนใส่แฟ้มรอบ 1 ได้", icon: "map", trigger: { on: "clear", pageKey: "round1" } },
       { id: "tonight", nameTh: "ภารกิจคืนนี้", descTh: "มีแผนแกะของชิ้นแรกแล้ว", icon: "flag", trigger: { on: "clear", pageKey: "tonight" } },
       { id: "next", nameTh: "จบรันแรก", descTh: "เล่นจนจบ Level 1", icon: "compass", trigger: { on: "clear", pageKey: "next" } },
       { id: "sharp-fix", nameTh: "แก้ตรงจุด", descTh: "เลือกวิธีแก้พัดลมถูกครบทุกข้อ", icon: "radar", trigger: { on: "game", game: "work:fantest", perfect: true } },

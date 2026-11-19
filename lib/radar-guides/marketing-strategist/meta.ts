@@ -35,7 +35,7 @@ export const MARKETING_STRATEGIST_META = {
     badges: [
       { id: "dream", nameTh: "แกะเบื้องหลังเป็น", descTh: "แกะเบื้องหลังหมีเนยมาแล้ว", icon: "star", trigger: { on: "clear", pageKey: "dream" } },
       { id: "work", nameTh: "คนวางแผน", descTh: "วางแผนให้ร้านปังปิ้งจนนับผลได้", icon: "eye", trigger: { on: "clear", pageKey: "work" } },
-      { id: "round1", nameTh: "แฟ้มพร้อมยื่น", descTh: "รู้แล้วว่าผลงานแบบไหนใส่แฟ้มรอบ 1 ได้", icon: "map", trigger: { on: "clear", pageKey: "round1" } },
+      { id: "round1", nameTh: "เปิดแฟ้มแรก", descTh: "รู้แล้วว่าผลงานแบบไหนใส่แฟ้มรอบ 1 ได้", icon: "map", trigger: { on: "clear", pageKey: "round1" } },
       { id: "tonight", nameTh: "ภารกิจคืนนี้", descTh: "มีแผนทำผลงานการตลาดชิ้นแรกแล้ว", icon: "flag", trigger: { on: "clear", pageKey: "tonight" } },
       { id: "next", nameTh: "จบรันแรก", descTh: "เล่นจนจบ Level 1", icon: "compass", trigger: { on: "clear", pageKey: "next" } },
       { id: "sharp-ideas", nameTh: "ตาแม่นตรงคน", descTh: "เลือกไอเดียตรงคน ตรงที่ ถูกครบทุกข้อ", icon: "radar", trigger: { on: "game", game: "work:ideas", perfect: true } },

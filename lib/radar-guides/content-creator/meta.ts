@@ -29,7 +29,7 @@ export const CONTENT_CREATOR_META = {
     badges: [
       { id: "dream", nameTh: "รู้แล้วไม่ใช่ดวง", descTh: "เห็นแล้วว่าหลังคลิปดัง มีคนวางแผนอยู่", icon: "star", trigger: { on: "clear", pageKey: "dream" } },
       { id: "work", nameTh: "ครีเอเตอร์มือใหม่", descTh: "ทำคลิปร้านโรตีจนโพสต์และอ่านผลได้", icon: "eye", trigger: { on: "clear", pageKey: "work" } },
-      { id: "round1", nameTh: "แฟ้มพร้อมยื่น", descTh: "รู้แล้วว่าผลงานแบบไหนใส่แฟ้มรอบ 1 ได้", icon: "map", trigger: { on: "clear", pageKey: "round1" } },
+      { id: "round1", nameTh: "เปิดแฟ้มแรก", descTh: "รู้แล้วว่าผลงานแบบไหนใส่แฟ้มรอบ 1 ได้", icon: "map", trigger: { on: "clear", pageKey: "round1" } },
       { id: "tonight", nameTh: "ภารกิจคืนนี้", descTh: "มีแผนถ่ายคลิปชิ้นแรกแล้ว", icon: "flag", trigger: { on: "clear", pageKey: "tonight" } },
       { id: "next", nameTh: "จบรันแรก", descTh: "เล่นจนจบ Level 1", icon: "compass", trigger: { on: "clear", pageKey: "next" } },
       { id: "sharp-cut", nameTh: "ตัดเป๊ะ", descTh: "คัดช็อตลงคลิปถูกครบทุกช็อต", icon: "radar", trigger: { on: "game", game: "work:shots", perfect: true } },

@@ -30,7 +30,7 @@ export const ACCOUNTANT_META = {
     badges: [
       { id: "dream", nameTh: "ตาไวเห็นพิรุธ", descTh: "รู้แล้วว่าทีมตรวจเจอรายการขายผิดปกติได้ยังไง", icon: "eye", trigger: { on: "clear", pageKey: "dream" } },
       { id: "work", nameTh: "มือเช็กบัญชี", descTh: "เช็กบัญชีร้านชานมจนครบทุกรายการ", icon: "coin", trigger: { on: "clear", pageKey: "work" } },
-      { id: "round1", nameTh: "แฟ้มพร้อมยื่น", descTh: "รู้แล้วว่าผลงานแบบไหนใส่แฟ้มรอบแรกได้", icon: "map", trigger: { on: "clear", pageKey: "round1" } },
+      { id: "round1", nameTh: "เปิดแฟ้มแรก", descTh: "รู้แล้วว่าผลงานแบบไหนใส่แฟ้มรอบแรกได้", icon: "map", trigger: { on: "clear", pageKey: "round1" } },
       { id: "tonight", nameTh: "ภารกิจคืนนี้", descTh: "มีแผนทำบัญชีเงินตัวเองแล้ว", icon: "flag", trigger: { on: "clear", pageKey: "tonight" } },
       { id: "next", nameTh: "จบรันแรก", descTh: "เล่นจนจบ Level 1", icon: "compass", trigger: { on: "clear", pageKey: "next" } },
       { id: "no-baht-lost", nameTh: "ไม่มีบาทไหนหลุด", descTh: "เช็กบัญชีร้านถูกทุกรายการ", icon: "key", trigger: { on: "game", game: "work:books", perfect: true } },
