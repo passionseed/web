@@ -85,17 +85,51 @@ export function typeFrames(line: string, beatF: number): number {
   return Math.max(1, Math.min(want, Math.floor(beatF * STORY_REEL_TIMING.typeMaxShare)));
 }
 
-function castFor(beats: StoryBeatCue[], segStartF: number): StoryCastMember[] {
+/** Scenes with no ground to stand on: nobody is drawn there (their lines still show, tagged). */
+export const FLOORLESS_SCENES: readonly Scene[] = ["phone-feed"];
+
+/** What the story has shown before a segment: who stood in each scene, and who last spoke to P'Seed. */
+interface CastHistory {
+  seenIn: Map<Scene, Set<CastWho>>;
+  lastGuest: CastWho | null;
+}
+
+/**
+ * Who is on stage in a segment: everyone who speaks in it; anyone who stood
+ * in this same scene earlier in the story (they did not leave); and, when the
+ * segment opens with P'Seed, whoever last spoke other than P'Seed (P'Seed is
+ * answering them, so they never vanish mid-answer). Nobody on a floorless
+ * scene.
+ */
+function castFor(beats: StoryBeatCue[], segStartF: number, scene: Scene, history: CastHistory): StoryCastMember[] {
+  if (FLOORLESS_SCENES.includes(scene)) return [];
   const firstLine = new Map<CastWho, number>();
   beats.forEach((b, i) => {
     if (b.beat.who !== "text" && !firstLine.has(b.beat.who)) firstLine.set(b.beat.who, i);
   });
-  return CAST_ORDER.filter((who) => firstLine.has(who)).map((who) => {
-    const i = firstLine.get(who)!;
+  const stays = new Set<CastWho>(history.seenIn.get(scene) ?? []);
+  const opener = beats.find((b) => b.beat.who !== "text")?.beat.who;
+  if (opener === "host" && history.lastGuest) stays.add(history.lastGuest);
+  stays.delete("host");
+  return CAST_ORDER.filter((who) => firstLine.has(who) || stays.has(who)).map((who) => {
+    const i = firstLine.get(who);
     // The host appears on its first line; everyone else is already there.
-    const enterF = who === "host" && i > 0 ? beats[i].startF : segStartF;
+    const enterF = who === "host" && i !== undefined && i > 0 ? beats[i].startF : segStartF;
     return { who, enterF };
   });
+}
+
+function castSegments(segments: StorySegment[], beats: StoryBeatCue[]): void {
+  const history: CastHistory = { seenIn: new Map(), lastGuest: null };
+  for (const s of segments) {
+    const own = s.beats.map((i) => beats[i]);
+    s.cast = castFor(own, s.startF, s.scene, history);
+    const seen = history.seenIn.get(s.scene) ?? new Set<CastWho>();
+    s.cast.forEach((c) => seen.add(c.who));
+    history.seenIn.set(s.scene, seen);
+    const guests = own.filter((b) => b.beat.who !== "text" && b.beat.who !== "host");
+    if (guests.length) history.lastGuest = guests[guests.length - 1].beat.who as CastWho;
+  }
 }
 
 export function buildStoryTimeline(script: Pick<StoryScript, "hookTh" | "beats">, hookTh: string = script.hookTh): StoryTimeline {
@@ -124,7 +158,7 @@ export function buildStoryTimeline(script: Pick<StoryScript, "hookTh" | "beats">
     }
     b.segment = segments.length - 1;
   }
-  for (const s of segments) s.cast = castFor(s.beats.map((i) => beats[i]), s.startF);
+  castSegments(segments, beats);
 
   const wipes = [...segments.slice(1).map((s) => s.startF), end.startF];
   return { fps: STORY_FPS, totalF, seconds: sec(totalF), hookTh, hook: { startF: 0, endF: lengths.hook }, beats, segments, end, wipes, cues: buildCues(beats, segments, end, totalF) };

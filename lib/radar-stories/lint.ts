@@ -7,7 +7,7 @@
 import { GLOBAL_BANNED } from "../radar-guides/banned";
 
 import { parseScene, storySceneSrc } from "./scenes";
-import { charCount, readMs, storySeconds, STORY_TIMING } from "./timing";
+import { charCount, phrases, readMs, storySeconds, STORY_TIMING } from "./timing";
 import { STORY_MOODS, STORY_SERIES, STORY_WHO, type StoryScript } from "./types";
 
 export const STORY_LIMITS = {
@@ -18,6 +18,12 @@ export const STORY_LIMITS = {
   endCardChars: 40,
   /** An explicit `ms` must be within this range. */
   beatMs: [800, 8000] as const,
+  /**
+   * The longest phrase (characters between spaces, timing.ts phrases) that
+   * fits its box at full size. Lines break only between phrases, so a longer
+   * one makes the whole text smaller: add a space between phrases.
+   */
+  phraseChars: { line: 24, big: 16, endCard: 16, share: 24 },
 } as const;
 
 export type StoryRule =
@@ -50,7 +56,8 @@ export type StoryRule =
   | "send-to-friend"
   | "caption-ig"
   | "caption-tt"
-  | "length";
+  | "length"
+  | "long-phrase";
 
 export interface StoryProblem {
   level: "error" | "warning";
@@ -218,6 +225,23 @@ export function lintStory(s: StoryScript, opts: StoryLintOptions = {}): StoryPro
   else if (!s.captionIgTh.includes("RADAR")) warn("caption-ig", "captionIgTh", "the Instagram template asks for the RADAR comment keyword");
   if (blank(s.captionTtTh)) error("caption-tt", "captionTtTh", "the TikTok caption is empty");
   else if (!/passionseed\.org\//.test(s.captionTtTh)) warn("caption-tt", "captionTtTh", "the TikTok template gives the typeable passionseed.org link");
+
+  // ---- phrases: the only places a line breaks
+  const P = STORY_LIMITS.phraseChars;
+  const phraseChecks: { path: string; text: string; max: number }[] = [
+    { path: "hookTh", text: hook, max: P.big },
+    ...(Array.isArray(s.hookVariantsTh) ? s.hookVariantsTh : []).map((t, i) => ({ path: `hookVariantsTh[${i}]`, text: t ?? "", max: P.big })),
+    ...beats.map((b, i) => ({ path: `beats[${i}].lineTh`, text: b?.lineTh ?? "", max: b?.big ? P.big : P.line })),
+    { path: "endCardTh", text: s.endCardTh ?? "", max: P.endCard },
+    { path: "sendToFriendTh", text: s.sendToFriendTh ?? "", max: P.share },
+  ];
+  for (const c of phraseChecks) {
+    if (typeof c.text !== "string") continue;
+    const long = phrases(c.text).filter((p) => charCount(p) > c.max);
+    if (long.length) {
+      warn("long-phrase", c.path, `"${long[0]}" is one ${charCount(long[0])}-character phrase; a line never breaks inside a phrase, so the text shrinks to fit (keep phrases to ${c.max}: add a space between phrases)`);
+    }
+  }
 
   // ---- length
   if (beats.length && beats.every((b) => b && typeof b.lineTh === "string")) {

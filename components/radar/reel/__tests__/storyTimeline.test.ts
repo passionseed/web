@@ -6,7 +6,7 @@ import { beatMs, defaultBeatMs, FRAME_MS, hookMs, STORY_FPS, toFrames } from "@/
 import type { StoryScript } from "@/lib/radar-stories/types";
 
 import { storyEndCard, storyTiktokUrl, splitKeyword } from "../story/endCard";
-import { buildStoryTimeline, phaseAt, segmentAt, typedAt, wipeAt, STORY_REEL_TIMING } from "../story/storyTimeline";
+import { buildStoryTimeline, FLOORLESS_SCENES, phaseAt, segmentAt, typedAt, wipeAt, STORY_REEL_TIMING } from "../story/storyTimeline";
 
 const lost = STORY_SCRIPTS.find((s) => s.series === "lost")!;
 const round1 = STORY_SCRIPTS.find((s) => s.series === "round1")!;
@@ -63,15 +63,20 @@ describe.each([lost, round1])("timeline for $id", (script: StoryScript) => {
     expect(wipeAt(t, t.wipes[0] - STORY_REEL_TIMING.wipeFrames)).toBeNull();
   });
 
-  it("puts every speaker on stage, and P'Seed enters on its first line", () => {
+  it("puts every speaker on stage (nobody on a floorless scene), and P'Seed enters on its first line", () => {
     for (const s of t.segments) {
-      const speakers = new Set(s.beats.map((i) => script.beats[i].who).filter((w) => w !== "text"));
-      expect(new Set(s.cast.map((c) => c.who))).toEqual(speakers);
+      const cast = new Set(s.cast.map((c) => c.who));
+      if (FLOORLESS_SCENES.includes(s.scene)) {
+        expect(cast.size).toBe(0);
+        continue;
+      }
+      for (const i of s.beats) if (script.beats[i].who !== "text") expect(cast).toContain(script.beats[i].who);
       const host = s.cast.find((c) => c.who === "host");
       if (host) {
         const first = s.beats.find((i) => script.beats[i].who === "host")!;
         expect(host.enterF).toBe(first === s.beats[0] ? s.startF : t.beats[first].startF);
       }
+      s.cast.filter((c) => c.who !== "host").forEach((c) => expect(c.enterF).toBe(s.startF));
     }
   });
 
@@ -111,6 +116,36 @@ describe.each([lost, round1])("timeline for $id", (script: StoryScript) => {
     expect(moods[0]).toEqual([0, "build"]);
     expect(moods[moods.length - 1][1]).toBe("offer");
     moods.slice(1).forEach((m, i) => expect(m[0]).toBeGreaterThan(moods[i][0]));
+  });
+});
+
+describe("cast continuity", () => {
+  const beat = (who: StoryScript["beats"][number]["who"], scene: StoryScript["beats"][number]["scene"]) => ({ who, scene, lineTh: "ลองดูก่อน" });
+  const castOf = (beats: StoryScript["beats"]) => buildStoryTimeline({ hookTh: "ทดสอบ", beats }).segments.map((s) => s.cast.map((c) => c.who));
+
+  it("keeps someone who stood in a scene on stage when the story comes back to it", () => {
+    // round1-02: the student asks in the bedroom, scrolls the feed, and is still there when P'Seed answers.
+    expect(castOf([beat("student", "bedroom-night"), beat("student", "phone-feed"), beat("host", "bedroom-night"), beat("text", "bedroom-night")])).toEqual([
+      ["student"],
+      [],
+      ["student", "host"],
+    ]);
+  });
+
+  it("keeps the one P'Seed is answering, across a change of scene", () => {
+    expect(castOf([beat("parent", "dinner-table"), beat("student", "dinner-table"), beat("host", "classroom"), beat("host", "radar")])).toEqual([
+      ["student", "parent"],
+      ["student", "host"],
+      ["student", "host"],
+    ]);
+  });
+
+  it("does not drag people into a scene someone else opens", () => {
+    expect(castOf([beat("parent", "dinner-table"), beat("student", "classroom"), beat("friend", "school-gate")])).toEqual([["parent"], ["student"], ["friend"]]);
+  });
+
+  it("draws nobody on the phone feed, where there is no floor", () => {
+    expect(castOf([beat("student", "phone-feed"), beat("host", "phone-feed")])).toEqual([[]]);
   });
 });
 

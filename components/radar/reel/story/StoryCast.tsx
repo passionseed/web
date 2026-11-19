@@ -1,19 +1,21 @@
 "use client";
 
 /**
- * The characters on the story stage. Student, friend and parent are the
- * avatar grid (PixelSprite, crisp SVG) with their own palettes; their mouths
- * flap while their line types and they bob a step. P'Seed is the guide's own
- * GuideNPC on a clock (its moods, flicker, blink and mouth set from the frame
- * number), kept mounted for the whole reel so its frames stay loaded, and
- * moved to its spot; it drops in with a sparkle on its first line in a scene.
+ * The characters on the story stage. Student, friend and mother are pixel
+ * sprites (PixelSprite, crisp SVG; cast.ts CAST_LOOK): their mouths flap
+ * while their line types, and everyone else breathes (a step up and down)
+ * and blinks on their own beat, so the stage is never frozen, the hook
+ * included. P'Seed is the guide's own GuideNPC on a clock (its moods,
+ * flicker, blink and mouth set from the frame number), kept mounted for the
+ * whole reel so its frames stay loaded, and moved to its spot; it drops in
+ * with a sparkle on its first line in a scene. All from the frame number.
  */
 import type { CSSProperties } from "react";
 
 import { GuideNPC } from "@/components/radar/guide/story/GuideNPC";
 import { MOUTH_FLAP_MS } from "@/components/radar/guide/story/GuideNPC";
 import { PixelSprite } from "@/components/radar/guide/story/PixelSprite";
-import { AVATAR_GRIDS, STORY_PALETTE } from "@/components/radar/guide/story/pixel-art";
+import { STORY_PALETTE } from "@/components/radar/guide/story/pixel-art";
 import type { HostMood } from "@/lib/radar-guide/story";
 import { FRAME_MS } from "@/lib/radar-stories/timing";
 
@@ -22,6 +24,26 @@ import { STORY_REEL_TIMING, type CastWho } from "./storyTimeline";
 
 /** Not speaking: a touch darker, so the eye finds the speaker. */
 const LISTENER_FILTER = "brightness(0.78) saturate(0.9)";
+/** P'Seed listening: barely dimmed, or the yellow flame turns olive. */
+export const HOST_LISTENER_FILTER = "brightness(0.95)";
+
+/** Each character breathes and blinks on its own beat (frames). */
+const IDLE_PHASE: Readonly<Record<CastWho, number>> = { student: 0, friend: 7, parent: 15, host: 0 };
+const BREATH_FRAMES = 14;
+const BLINK_EVERY = 78;
+const BLINK_AT = 10;
+const BLINK_FRAMES = 4;
+
+/** Idle breathing: up one step (2px) every other BREATH_FRAMES. */
+export function idleBob(f: number, who: CastWho): number {
+  return Math.floor((f + IDLE_PHASE[who]) / BREATH_FRAMES) % 2 === 1 ? -2 : 0;
+}
+
+/** Eyes shut for BLINK_FRAMES every BLINK_EVERY frames (the first blink within the hook). */
+export function blinking(f: number, who: CastWho): boolean {
+  const k = (((f - BLINK_AT - IDLE_PHASE[who]) % BLINK_EVERY) + BLINK_EVERY) % BLINK_EVERY;
+  return k < BLINK_FRAMES;
+}
 
 export interface CastPlacement {
   who: CastWho;
@@ -90,9 +112,11 @@ export function AvatarActor({
   talking: boolean;
 }) {
   const look = CAST_LOOK[who];
+  const frames = look.frames!;
   const { w, h } = spriteSize(who);
-  // A talking speaker bobs 2px every 240ms (the guide's rgs-bob).
-  const bob = talking && Math.floor((frame * FRAME_MS) / 240) % 2 === 1 ? -2 : 0;
+  // A talking speaker bobs 2px every 240ms (the guide's rgs-bob); everyone else breathes.
+  const bob = talking ? (Math.floor((frame * FRAME_MS) / 240) % 2 === 1 ? -2 : 0) : idleBob(frame, who);
+  const grid = talking ? frames.talk : blinking(frame, who) ? frames.blink : frames.idle;
   const style: CSSProperties = {
     left: Math.round(x - w / 2),
     top: STAGE_FLOOR - h + entranceOffset(frame, enterF) + bob,
@@ -100,7 +124,7 @@ export function AvatarActor({
   };
   return (
     <div className="absolute" style={style} data-who={who} data-speaking={speaking ? "true" : "false"}>
-      <PixelSprite grid={AVATAR_GRIDS[talking ? "talk" : "idle"]} palette={look.palette!} width={w} />
+      <PixelSprite grid={grid} palette={look.palette!} width={w} />
     </div>
   );
 }
@@ -140,7 +164,7 @@ export function HostActor({
           left: Math.round(x - size / 2),
           top,
           opacity: visible ? 1 : 0,
-          filter: visible && !speaking ? LISTENER_FILTER : undefined,
+          filter: visible && !speaking ? HOST_LISTENER_FILTER : undefined,
         }}
         data-who="host"
         data-speaking={speaking ? "true" : "false"}

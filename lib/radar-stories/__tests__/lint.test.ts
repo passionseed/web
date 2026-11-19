@@ -151,6 +151,18 @@ describe("lintStory", () => {
     expect(rules(lintStory(s), "warning")).toEqual(expect.arrayContaining(["caption-ig", "caption-tt"]));
   });
 
+  it("warns about a phrase too long for its box (lines break only at spaces)", () => {
+    expect(rules(lintStory(base()), "warning")).not.toContain("long-phrase");
+    const s = base();
+    s.beats[6].lineTh = "เริ่มได้คืนนี้เลยไม่ต้องรอใคร"; // a big line: one long phrase
+    s.sendToFriendTh = "ส่งให้เพื่อนที่ยังไม่รู้จะเลือกอะไรเหมือนกันเลยนะ";
+    const problems = lintStory(s).filter((p) => p.rule === "long-phrase");
+    expect(problems.map((p) => p.path)).toEqual(["beats[6].lineTh", "sendToFriendTh"]);
+    expect(problems.every((p) => p.level === "warning")).toBe(true);
+    s.beats[6].lineTh = "เริ่มได้คืนนี้ ไม่ต้องรอใคร";
+    expect(lintStory(s).filter((p) => p.rule === "long-phrase").map((p) => p.path)).toEqual(["sendToFriendTh"]);
+  });
+
   it("warns when the reel falls outside 20 to 40 seconds", () => {
     const s = base();
     s.beats = s.beats.map((b) => ({ ...b, ms: 6000 }));

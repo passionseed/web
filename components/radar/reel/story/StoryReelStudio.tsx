@@ -21,7 +21,7 @@ import { storySceneSrc } from "@/lib/radar-stories/scenes";
 import { FRAME_MS } from "@/lib/radar-stories/timing";
 import type { StoryScript } from "@/lib/radar-stories/types";
 
-import { STORY_FRAME } from "./cast";
+import { SAFE, STORY_FRAME } from "./cast";
 import { storyEndCard, type StoryPlatform } from "./endCard";
 import { STORY_FRAME_ID, StoryReel } from "./StoryReel";
 import { buildStoryTimeline } from "./storyTimeline";
@@ -81,15 +81,19 @@ function Warm({ script }: { script: StoryScript }) {
   );
 }
 
-/** Instagram's own UI: the top band, the bottom 35% and the right edge below 45%. Preview only. */
+/**
+ * The platforms' own UI (cast.ts SAFE): the top 14%, the right 12% rail and
+ * the bottom 20%, with the line readable copy stays above (65%). Preview only.
+ */
 function SafeZones() {
   const { width: w, height: h } = STORY_FRAME;
   const zone = "absolute border-dashed border-cyan-300/70 bg-cyan-300/10";
   return (
     <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-      <div className={`${zone} inset-x-0 top-0 border-b`} style={{ height: h * 0.12 }} />
-      <div className={`${zone} inset-x-0 bottom-0 border-t`} style={{ height: h * 0.35 }} />
-      <div className={`${zone} bottom-0 right-0 border-l`} style={{ width: w * 0.15, top: h * 0.45 }} />
+      <div className={`${zone} inset-x-0 top-0 border-b`} style={{ height: SAFE.top }} />
+      <div className={`${zone} inset-x-0 bottom-0 border-t`} style={{ height: h - SAFE.floor }} />
+      <div className={`${zone} right-0 border-l`} style={{ width: w - SAFE.right, top: SAFE.top, bottom: h - SAFE.floor }} />
+      <div className="absolute inset-x-0 border-t border-dashed border-cyan-300/40" style={{ top: SAFE.bottom }} />
     </div>
   );
 }
@@ -195,7 +199,7 @@ export function StoryReelStudio({
         {frameBox}
       </button>
       <p className="m-0 font-mono text-xs text-neutral-400">
-        {script.id} · {platform} · {seconds}s / {timeline.seconds.toFixed(1)}s · cyan = Instagram UI (preview only)
+        {script.id} · {platform} · {seconds}s / {timeline.seconds.toFixed(1)}s · cyan = platform UI (preview only)
       </p>
     </div>
   );

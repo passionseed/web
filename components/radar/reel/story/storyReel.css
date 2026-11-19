@@ -61,7 +61,6 @@
   font-size: 22px;
   font-weight: 600;
   line-height: 1.5;
-  overflow-wrap: anywhere;
   /* Even lines, so no word sits alone on the last one ("เลย", "นะ"). */
   text-wrap: balance;
 }
@@ -70,10 +69,12 @@
   color: transparent;
 }
 
-/* A phrase breaks inside only when it is wider than the box. */
+/* A phrase never breaks inside (a Thai word is never cut): lines break
+   between phrases only, and a phrase wider than its box makes the whole text
+   smaller instead (fit.ts). */
 .sr-phrase {
   display: inline-block;
-  max-width: 100%;
+  white-space: nowrap;
 }
 
 .sr-big {
@@ -81,5 +82,4 @@
   line-height: 1.3;
   text-align: center;
   text-wrap: balance;
-  overflow-wrap: anywhere;
 }

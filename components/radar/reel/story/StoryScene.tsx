@@ -51,7 +51,8 @@ export function PixelWipe({ progress, closing }: { progress: number; closing: bo
   for (let j = 0; j < rows; j++)
     for (let i = 0; i < cols; i++) {
       const d = (i + j) / max;
-      if (closing ? d < progress : d >= 1 - progress) blocks.push({ x: i * WIPE_BLOCK, y: j * WIPE_BLOCK });
+      // `<=` so the last (bottom right) block is in when the wipe is fully closed.
+      if (closing ? d <= progress : d >= 1 - progress) blocks.push({ x: i * WIPE_BLOCK, y: j * WIPE_BLOCK });
     }
   return (
     <div className="pointer-events-none absolute inset-0" aria-hidden="true">
