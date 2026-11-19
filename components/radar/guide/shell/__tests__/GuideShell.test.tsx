@@ -180,6 +180,46 @@ describe("GuideShellProvider", () => {
     expect(saved.visited).toContain("mythos");
   });
 
+  it("a choice: ต่อ steps aside until a pick, the pick is saved and tracked, then the reply reads on", () => {
+    const page: GuidePage = {
+      ...MYTHOS,
+      blocks: [
+        { kind: "dialogue", id: "intro", lines: [{ speaker: "host", text: { th: "สวัสดี มาเริ่มกัน" } }] },
+        {
+          kind: "choice",
+          id: "q",
+          ask: [{ speaker: "host", text: { th: "เธอว่าไง" } }],
+          options: [
+            { id: "a", labelTh: "แบบเอ", reply: [{ speaker: "host", text: { th: "ตอบเอ" } }] },
+            { id: "b", labelTh: "แบบบี", reply: [{ speaker: "host", text: { th: "ตอบบีนะ" } }] },
+          ],
+        },
+      ],
+    };
+    renderLevel(page);
+    fireEvent.click(screen.getByTestId("guide-next")); // reads the intro line
+    fireEvent.click(screen.getByTestId("guide-next")); // opens the choice
+
+    expect(screen.queryByTestId("guide-next")).toBeNull();
+    expect(screen.getByTestId("guide-next-hint")).toHaveTextContent("เลือกคำตอบ");
+    const box = screen.getByTestId("choice-q").querySelector<HTMLButtonElement>('[data-demo="dialogue"]')!;
+    fireEvent.click(box); // finishes the question
+    fireEvent.click(screen.getByTestId("choice-answer-b"));
+
+    expect(track).toHaveBeenCalledWith({ type: "interactive_tap", pageKey: "mythos", target: "mythos:q:b" });
+    const saved = JSON.parse(storage()["radar-guide:v1:cybersecurity"]);
+    expect(saved.choices["mythos:q"]).toBe("b");
+    expect(screen.getByTestId("choice-answer-b")).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByTestId("choice-answer-a")).toBeDisabled();
+    expect(screen.queryByTestId("guide-next-hint")).toBeNull();
+
+    fireEvent.click(screen.getByTestId("guide-next")); // reads the reply on
+    expect(screen.getAllByText("ตอบบีนะ").length).toBeGreaterThan(0);
+    expect(screen.queryByText("ตอบเอ")).toBeNull();
+    fireEvent.click(screen.getByTestId("guide-next"));
+    expect(push).toHaveBeenCalledWith("/radar/cybersecurity/doors");
+  });
+
   it("skipping a game fires <pageKey>:skip, shows the answers and records a skipped result", () => {
     renderLevel();
     fireEvent.click(screen.getByTestId("guide-next")); // reads the intro line

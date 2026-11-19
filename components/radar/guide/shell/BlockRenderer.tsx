@@ -6,6 +6,7 @@
 import type { CopyText, DialogueLine, Fact, GuideBlock } from "@/lib/radar-guide/guide-types";
 import { splitDialogue } from "@/lib/radar-guide/story";
 import { BespokeIsland } from "./BespokeIsland";
+import { ChoiceStep } from "./ChoiceStep";
 import { DialogueStep } from "./DialogueStep";
 import { FactChips } from "./FactChips";
 import { GameIsland } from "./GameIsland";
@@ -42,6 +43,13 @@ export function StepView({ step, pageKey, titleTh, clip }: StepViewProps) {
         <>
           <DialogueStep pageKey={pageKey} stepId={block.id} groups={dialogueGroups(linesOf(block))} />
           {textChips(block.lines.map((l) => l.text))}
+        </>
+      );
+    case "choice":
+      return (
+        <>
+          <ChoiceStep pageKey={pageKey} stepId={block.id} ask={block.ask} options={block.options} />
+          {textChips([...block.ask, ...block.options.flatMap((o) => o.reply)].map((l) => l.text))}
         </>
       );
     case "copy":

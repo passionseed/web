@@ -3,6 +3,7 @@
  * Pure data helpers: no React, no runtime state.
  */
 import type {
+  ChoiceOption,
   CopyLabel,
   CopyText,
   DialogueLine,
@@ -71,3 +72,16 @@ export function beat(id: string, unlockLabelTh: string, ...blocks: GuideBlock[])
 }
 
 export const CLIP: GuideBlock = { kind: "clip", id: "cutscene" };
+
+/**
+ * A dating-game choice: the host asks, the student picks one answer, the host
+ * replies to that answer. 2 to 3 answers; replies react, they never grade.
+ */
+export function choice(id: string, ask: DialogueLine | readonly DialogueLine[], ...options: ChoiceOption[]): GuideBlock {
+  return { kind: "choice", id, ask: Array.isArray(ask) ? ask : [ask as DialogueLine], options };
+}
+
+/** One answer for `choice`: what the student says, then the host's reply. */
+export function answer(id: string, labelTh: string, ...reply: DialogueLine[]): ChoiceOption {
+  return { id, labelTh, reply };
+}

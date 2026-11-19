@@ -6,7 +6,7 @@
  * question.
  */
 import type { GuidePage } from "@/lib/radar-guide/guide-types";
-import { beat, dialogue, host, item, sys } from "../../_shared/story";
+import { answer, beat, choice, dialogue, host, item, sys } from "../../_shared/story";
 
 const SCHOOLS = "f.ds-bma-schools" as const;
 const ORIGIN = "f.ds-dustboy-origin" as const;
@@ -30,7 +30,17 @@ export const dream: GuidePage = {
   blocks: [
     dialogue(
       "intro",
-      host("เช้านี้เธอเปิดแอปเช็กสีฝุ่นก่อนออกจากบ้านหรือยัง", { mood: "wow" }),
+      host("เริ่มลุยสายข้อมูลกัน ขอถามก่อนข้อนึงนะ", { mood: "wow" })
+    ),
+    choice(
+      "check-dust",
+      host("เช้านี้เธอเปิดแอปเช็กสีฝุ่นก่อนออกจากบ้านยัง"),
+      answer("daily", "เช็กทุกเช้าอยู่แล้ว", host("งั้นเธอก็ใช้งานสายข้อมูลทุกวันอยู่แล้วสิ", { mood: "wink" })),
+      answer("sky", "เช็กแค่วันที่ฟ้าขุ่นๆ อะ", host("ก็ไม่แปลก แต่วันฟ้าใส ตัวเลขก็แอบบอกสิ่งที่ตามองไม่เห็นได้นะ")),
+      answer("never", "ไม่อะ ไม่เคยเช็กเลย", host("ไม่เป็นไร จบด่านนี้เมื่อไหร่ เธออาจอยากเปิดเช็กขึ้นมาก็ได้", { mood: "wink" }))
+    ),
+    dialogue(
+      "behind",
       host("ส้ม แดง ม่วง เลขพวกนั้นไม่ได้โผล่มาเองนะ"),
       host("เบื้องหลังมีทั้งคนเก็บข้อมูล คนคำนวณ และคนตั้งคำถาม", { mood: "wink" })
     ),

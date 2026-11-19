@@ -11,7 +11,7 @@
  */
 import type { GuidePage } from "@/lib/radar-guide/guide-types";
 import { careerKindsBeat } from "../../_shared/kinds";
-import { beat, dialogue, host, me, sys } from "../../_shared/story";
+import { answer, beat, choice, dialogue, host, sys } from "../../_shared/story";
 
 const SIM = "sim.ai-helpbot" as const;
 const THAIEXAM = "f.ai-thaiexam" as const;
@@ -32,10 +32,25 @@ export const work: GuidePage = {
       "intro",
       host("ด่านนี้เธอได้งานแรกแล้วนะ", { mood: "wow" }),
       host("โรงเรียนอยากได้บอทตอบคำถามนักเรียน แล้วคนทำก็คือเธอนี่แหละ"),
-      me("ต้องสร้าง AI เองตั้งแต่ศูนย์เลยเหรอ"),
-      host("ไม่ต้องเลย งานส่วนใหญ่คือเอาโมเดลที่มีอยู่แล้ว มาทำให้ใช้ได้จริง", { mood: "wink" }),
-      host("ทำเป็นขั้นๆ: ป้อนข้อมูล ลองถาม แล้วแก้จุดที่พัง")
     ),
+    choice(
+      "how",
+      host("ก่อนเริ่ม เธอว่าวิศวกร AI ปั้นบอทแบบนี้ยังไง"),
+      answer(
+        "scratch",
+        "สร้าง AI ใหม่ตั้งแต่ศูนย์เลย",
+        host("หลายคนคิดงี้เลย แต่ส่วนใหญ่ไม่ต้องเริ่มจากศูนย์หรอก"),
+        host("งานส่วนใหญ่คือเอาโมเดลที่มีอยู่แล้ว มาทำให้ใช้ได้จริง", { mood: "wink" })
+      ),
+      answer("reuse", "เอา AI ที่มีอยู่แล้วมาจูน", host("ใช่เลย งานส่วนใหญ่คือเอาโมเดลที่มีอยู่แล้ว มาทำให้ใช้ได้จริง", { mood: "wow" })),
+      answer(
+        "prompt",
+        "แค่พิมพ์สั่ง AI ก็จบปะ",
+        host("ถ้าแค่นั้นก็ดีดิ แต่บอทที่ใช้จริงพังได้หลายแบบเลย", { mood: "wink" }),
+        host("ของจริงคือต้องทำให้มันตอบถูกทุกวัน กับคนทั้งโรงเรียน")
+      )
+    ),
+    dialogue("steps", host("ทำเป็นขั้นๆ: ป้อนข้อมูล ลองถาม แล้วแก้จุดที่พัง")),
     beat(
       "beat-docs",
       "ขั้นแรก: ป้อนข้อมูล",

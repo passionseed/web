@@ -9,33 +9,39 @@ dream.og.headlineTh: แอปที่คนใช้กว่า 10 ล้า�
 dream.og.stat.th: ViaBus มีคนใช้กว่า 10 ล้านคนแล้ว
 dream.blocks[0].lines[0].text.th: เริ่มรันสายโค้ดเลย ด่านแรกมีแค่เรื่องเดียว
 dream.blocks[0].lines[1].text.th: เรื่องของคนที่ตกรถบ่อยจนทนไม่ไหวแล้ว
-dream.blocks[0].lines[2].text.th: ตกรถมันเกี่ยวอะไรกับการเขียนโค้ด
-dream.blocks[1].text.th: นักศึกษาวิศวะจุฬาฯ ปี 1 ตกรถป๊อปในมหาวิทยาลัยบ่อยมาก เพราะไม่รู้ว่ารถจะมาถึงป้ายตอนไหน เลยทำแอปชื่อ Chula Pop Bus ไว้ใช้เอง
-dream.blocks[1].titleTh: จุดเริ่มต้น
-dream.blocks[2].lines[0].text.th: ไม่มีใครจ้าง ไม่มีใครสั่ง แค่เบื่อที่ต้องยืนรอแบบไม่รู้อะไรเลย
-dream.blocks[2].lines[1].text.th: ต่อมาเขากับเพื่อนอีก 2 คน ลุยทำต่อจนกลายเป็น ViaBus
-dream.blocks[2].lines[2].text.th: แอปที่บอกว่าตอนนี้รถเมล์คันที่เธอรออยู่ตรงไหนแล้ว
-dream.blocks[3].unlockLabelTh: ลองทาย
-dream.blocks[3].blocks[0].lines[0].text.th: ลองทายดู วันนี้แอปที่เริ่มจากคนตกรถคนเดียว มีคนใช้กี่คนแล้ว
-dream.blocks[3].blocks[1].game.data.promptTh: ตอนนี้ ViaBus มีคนใช้กี่คนแล้วนะ
-dream.blocks[3].blocks[1].game.data.chart.bars[0].labelTh: ยอดคนใช้ ViaBus (ข้อมูล ส.ค. 2569)
-dream.blocks[3].blocks[1].game.data.nearTh: เกือบเป๊ะ
-dream.blocks[3].blocks[1].game.data.overTh: เธอเดาสูงไป {d} คน
-dream.blocks[3].blocks[1].game.data.underTh: เธอเดาต่ำไป {d} คน
-dream.blocks[3].blocks[1].game.data.revealTh: เธอเดา {g} คน ของจริงคือกว่า 10,000,000 คน
-dream.blocks[3].blocks[1].answersTh[0]: ส.ค. 2569 มีรายงานว่า ViaBus มีคนใช้กว่า 10 ล้านคน (ตัวเลขจากบริษัทเอง)
-dream.blocks[3].blocks[1].answersTh[1]: แอปนี้เริ่มจาก Chula Pop Bus ที่นักศึกษาปี 1 ทำไว้แก้ปัญหาตกรถของตัวเอง
-dream.blocks[3].blocks[2].text.th: ViaBus บอกว่ามีคนใช้กว่า 10 ล้านคนแล้ว
-dream.blocks[3].blocks[2].titleTh: คนใช้วันนี้
-dream.blocks[3].blocks[2].metaTh: ส.ค. 2569
-dream.blocks[3].blocks[3].text.th: BTS เปิดให้เช็กรถไฟฟ้าสายสีเขียว สีเหลือง และสีชมพู แบบเรียลไทม์ในแอปนี้แล้ว
-dream.blocks[3].blocks[3].titleTh: อัปเดต
-dream.blocks[3].blocks[3].metaTh: 6 ส.ค. 2569
-dream.blocks[3].blocks[4].text.th: จากแอปดูรถป๊อปในมหาวิทยาลัย ตอนนี้เช็กได้ทั้งรถเมล์ เรือ รถไฟฟ้า มีในหลายจังหวัด แถมไปถึงอีก 3 ประเทศ ทั้งมาเลเซีย ลาว และฟิลิปปินส์
-dream.blocks[3].blocks[4].titleTh: ไปไกลแค่ไหน
-dream.blocks[4].lines[0].text.th: เขาไม่ได้เริ่มจากความเก่งโค้ด แต่เริ่มจากปัญหาที่เจอเองทุกวัน
-dream.blocks[4].lines[1].text.th: แล้วปัญหาที่เธอบ่นทุกวันล่ะ มีอะไรบ้าง
-dream.blocks[4].lines[2].text.th: ด่านต่อไป: งานจริงของคนสายนี้เป็นยังไงกันแน่
+dream.blocks[1].ask[0].text.th: ว่าแต่ตกรถบ่อยๆ มันเกี่ยวอะไรกับการเขียนโค้ดอะ
+dream.blocks[1].options[0].labelTh: ไม่น่าเกี่ยวกันเลยมั้ง
+dream.blocks[1].options[0].reply[0].text.th: ฟังให้จบก่อนสิ เรื่องนี้เกี่ยวเต็มๆ เลยนะ
+dream.blocks[1].options[1].labelTh: เลยเขียนแอปแก้เองเหรอ
+dream.blocks[1].options[1].reply[0].text.th: เดาแม่นแฮะ มาฟังต่อเลยว่าเขาทำยังไง
+dream.blocks[1].options[2].labelTh: บ่นจนมีคนมาแก้ให้มั้ง
+dream.blocks[1].options[2].reply[0].text.th: เกือบถูกแล้ว แต่คนที่ลงมือแก้คือเขาเองนี่แหละ
+dream.blocks[2].text.th: นักศึกษาวิศวะจุฬาฯ ปี 1 ตกรถป๊อปในมหาวิทยาลัยบ่อยมาก เพราะไม่รู้ว่ารถจะมาถึงป้ายตอนไหน เลยทำแอปชื่อ Chula Pop Bus ไว้ใช้เอง
+dream.blocks[2].titleTh: จุดเริ่มต้น
+dream.blocks[3].lines[0].text.th: ไม่มีใครจ้าง ไม่มีใครสั่ง แค่เบื่อที่ต้องยืนรอแบบไม่รู้อะไรเลย
+dream.blocks[3].lines[1].text.th: ต่อมาเขากับเพื่อนอีก 2 คน ลุยทำต่อจนกลายเป็น ViaBus
+dream.blocks[3].lines[2].text.th: แอปที่บอกว่าตอนนี้รถเมล์คันที่เธอรออยู่ตรงไหนแล้ว
+dream.blocks[4].unlockLabelTh: ลองทาย
+dream.blocks[4].blocks[0].lines[0].text.th: ลองทายดู วันนี้แอปที่เริ่มจากคนตกรถคนเดียว มีคนใช้กี่คนแล้ว
+dream.blocks[4].blocks[1].game.data.promptTh: ตอนนี้ ViaBus มีคนใช้กี่คนแล้วนะ
+dream.blocks[4].blocks[1].game.data.chart.bars[0].labelTh: ยอดคนใช้ ViaBus (ข้อมูล ส.ค. 2569)
+dream.blocks[4].blocks[1].game.data.nearTh: เกือบเป๊ะ
+dream.blocks[4].blocks[1].game.data.overTh: เธอเดาสูงไป {d} คน
+dream.blocks[4].blocks[1].game.data.underTh: เธอเดาต่ำไป {d} คน
+dream.blocks[4].blocks[1].game.data.revealTh: เธอเดา {g} คน ของจริงคือกว่า 10,000,000 คน
+dream.blocks[4].blocks[1].answersTh[0]: ส.ค. 2569 มีรายงานว่า ViaBus มีคนใช้กว่า 10 ล้านคน (ตัวเลขจากบริษัทเอง)
+dream.blocks[4].blocks[1].answersTh[1]: แอปนี้เริ่มจาก Chula Pop Bus ที่นักศึกษาปี 1 ทำไว้แก้ปัญหาตกรถของตัวเอง
+dream.blocks[4].blocks[2].text.th: ViaBus บอกว่ามีคนใช้กว่า 10 ล้านคนแล้ว
+dream.blocks[4].blocks[2].titleTh: คนใช้วันนี้
+dream.blocks[4].blocks[2].metaTh: ส.ค. 2569
+dream.blocks[4].blocks[3].text.th: BTS เปิดให้เช็กรถไฟฟ้าสายสีเขียว สีเหลือง และสีชมพู แบบเรียลไทม์ในแอปนี้แล้ว
+dream.blocks[4].blocks[3].titleTh: อัปเดต
+dream.blocks[4].blocks[3].metaTh: 6 ส.ค. 2569
+dream.blocks[4].blocks[4].text.th: จากแอปดูรถป๊อปในมหาวิทยาลัย ตอนนี้เช็กได้ทั้งรถเมล์ เรือ รถไฟฟ้า มีในหลายจังหวัด แถมไปถึงอีก 3 ประเทศ ทั้งมาเลเซีย ลาว และฟิลิปปินส์
+dream.blocks[4].blocks[4].titleTh: ไปไกลแค่ไหน
+dream.blocks[5].lines[0].text.th: เขาไม่ได้เริ่มจากความเก่งโค้ด แต่เริ่มจากปัญหาที่เจอเองทุกวัน
+dream.blocks[5].lines[1].text.th: แล้วปัญหาที่เธอบ่นทุกวันล่ะ มีอะไรบ้าง
+dream.blocks[5].lines[2].text.th: ด่านต่อไป: งานจริงของคนสายนี้เป็นยังไงกันแน่
 dream.reel.hook.th: แอปที่คนใช้กว่า 10 ล้านคน ดันเริ่มจากเด็กปี 1 ที่ตกรถบ่อย
 dream.reel.variantsTh[0]: ตกรถบ่อยจนต้องเขียนแอปใช้เอง
 dream.reel.variantsTh[1]: แอปในมือถือเธอ อาจเริ่มจากคนที่เจอปัญหาเดียวกับเธอก็ได้
@@ -93,8 +99,14 @@ work.blocks[2].blocks[1].answersTh[0]: แก้ก่อน: ส่งการ
 work.blocks[2].blocks[1].answersTh[1]: แก้ทีหลัง: ตัวหนังสือโหมดมืดอ่านยาก, รูปโปรไฟล์โหลดช้า
 work.blocks[2].blocks[1].answersTh[2]: ไม่ใช่บั๊ก: อยากได้สีชมพู, ปุ่มส่งงานหายเพราะครูปิดรับแล้ว (แต่แอปควรบอกให้ชัด)
 work.blocks[3].unlockLabelTh: แล้ว AI ล่ะ
-work.blocks[3].blocks[0].lines[0].text.th: ถ้า AI เขียนโค้ดได้แล้ว เรายังต้องใช้คนอีกเหรอ
-work.blocks[3].blocks[0].lines[1].text.th: ดูข้อความที่ 5 เมื่อกี้สิ AI เขียนไวมาก แต่ไม่มีใครลองกับเลข 100
+work.blocks[3].blocks[0].ask[0].text.th: ถ้า AI เขียนโค้ดได้แล้ว เธอว่ายังต้องใช้คนอีกไหม
+work.blocks[3].blocks[0].options[0].labelTh: ไม่ต้องใช้แล้วมั้ง
+work.blocks[3].blocks[0].options[0].reply[0].text.th: ดูข้อความที่ 5 เมื่อกี้สิ AI เขียนไวมาก แต่ไม่มีใครลองกับเลข 100
+work.blocks[3].blocks[0].options[1].labelTh: ยังไงก็ต้องใช้ดิ
+work.blocks[3].blocks[0].options[1].reply[0].text.th: ใช่ ดูข้อความที่ 5 เมื่อกี้ AI เขียนไวมาก แต่ไม่มีใครลองกับเลข 100
+work.blocks[3].blocks[0].options[2].labelTh: ใช้แหละ แต่น้อยลง
+work.blocks[3].blocks[0].options[2].reply[0].text.th: อาจจะนะ แต่ดูข้อความที่ 5 เมื่อกี้สิ
+work.blocks[3].blocks[0].options[2].reply[1].text.th: AI เขียนไวมาก แต่ไม่มีใครลองกับเลข 100
 work.blocks[3].blocks[1].text.th: ผลสำรวจนักพัฒนาทั่วโลกปี 2569: คนตอบ 73% ใช้ AI ช่วยเขียนโค้ดทุกวัน
 work.blocks[3].blocks[2].text.th: 48% บอกว่าไว้ใจ AI ได้เมื่อเช็กคำตอบเองได้ง่าย มีแค่ 16% ที่ไว้ใจมันกับงานส่วนใหญ่ที่ไม่ใช่เรื่องตัดสินใจสำคัญ
 work.blocks[3].blocks[3].lines[0].text.th: คนในวงการใช้ AI ทุกวันจริง แต่ไม่ได้เชื่อมันทุกบรรทัดหรอก
@@ -165,9 +177,16 @@ tonight.blocks[7].lines[2].text.th: ทีมเราคิดว่าช่�
 tonight.blocks[8].lines[0].text.th: write-up นี้คือโครงงานที่มีคนใช้จริงด้วยนะ
 tonight.blocks[9].text.th: TCAS70 มี 4 รอบ รอบแรกชื่อ Portfolio มหาลัยดูจากสิ่งที่เธอลงมือทำ งานแบบคืนนี้แหละ ใส่แฟ้มได้เลย
 tonight.blocks[9].titleTh: รู้ไหม รอบ 1 ใช้ผลงานยื่นได้นะ
-tonight.blocks[10].lines[0].text.th: ถ้าสนุก พรุ่งนี้แก้ตามที่เพื่อนบอกต่อเลย
-tonight.blocks[10].lines[1].text.th: ถ้าไม่สนุก ก็รู้ตัวก่อนเลือกคณะ ไม่เสียอะไร
-tonight.blocks[10].lines[2].text.th: ถ้าใช้โค้ดหรือรูปของคนอื่น แปะเครดิตไว้ในหน้าเว็บด้วย",
+tonight.blocks[10].ask[0].text.th: ว่าแต่เธอจะลองเมื่อไหร่ดี
+tonight.blocks[10].options[0].labelTh: คืนนี้เลยดิ
+tonight.blocks[10].options[0].reply[0].text.th: ชอบความไวนี้แฮะ
+tonight.blocks[10].options[0].reply[1].text.th: ทำเสร็จแล้ว พรุ่งนี้แก้ตามที่เพื่อนบอกต่อเลย
+tonight.blocks[10].options[1].labelTh: ขอเป็นวันหยุดละกัน
+tonight.blocks[10].options[1].reply[0].text.th: ดีลเลย ปักลงปฏิทินไว้เลย จะได้ไม่ลืม
+tonight.blocks[10].options[2].labelTh: ยังไม่ชัวร์เลยว่าจะชอบไหม
+tonight.blocks[10].options[2].reply[0].text.th: ไม่ชัวร์ก็ลองดูก่อนได้นะ
+tonight.blocks[10].options[2].reply[1].text.th: ลองแล้วไม่สนุก ก็รู้ตัวก่อนเลือกคณะ ไม่เสียอะไรเลย
+tonight.blocks[11].lines[0].text.th: ถ้าใช้โค้ดหรือรูปของคนอื่น แปะเครดิตไว้ในหน้าเว็บด้วย",
   "next.titleTh: แล้วเธอล่ะ
 next.questionTh: สายนี้ใช่ทางเธอไหม แล้วจะดูอะไรต่อดี
 next.navLabelTh: แล้วเธอล่ะ

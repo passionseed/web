@@ -6,7 +6,7 @@
  */
 import type { GuidePage } from "@/lib/radar-guide/guide-types";
 import { careerKindsBeat } from "../../_shared/kinds";
-import { beat, dialogue, host, item, me, sys } from "../../_shared/story";
+import { answer, beat, choice, dialogue, host, item, sys } from "../../_shared/story";
 
 const SIM = "sim.school-bugs" as const;
 const ONET = "f.onet-swdev" as const;
@@ -140,10 +140,25 @@ export const work: GuidePage = {
     beat(
       "beat-ai",
       "แล้ว AI ล่ะ",
-      dialogue(
+      choice(
         "ai-intro",
-        me("ถ้า AI เขียนโค้ดได้แล้ว เรายังต้องใช้คนอีกเหรอ"),
-        host("ดูข้อความที่ 5 เมื่อกี้สิ AI เขียนไวมาก แต่ไม่มีใครลองกับเลข 100", { facts: [SIM] })
+        host("ถ้า AI เขียนโค้ดได้แล้ว เธอว่ายังต้องใช้คนอีกไหม"),
+        answer(
+          "no",
+          "ไม่ต้องใช้แล้วมั้ง",
+          host("ดูข้อความที่ 5 เมื่อกี้สิ AI เขียนไวมาก แต่ไม่มีใครลองกับเลข 100", { facts: [SIM], mood: "wink" })
+        ),
+        answer(
+          "yes",
+          "ยังไงก็ต้องใช้ดิ",
+          host("ใช่ ดูข้อความที่ 5 เมื่อกี้ AI เขียนไวมาก แต่ไม่มีใครลองกับเลข 100", { facts: [SIM], mood: "wow" })
+        ),
+        answer(
+          "less",
+          "ใช้แหละ แต่น้อยลง",
+          host("อาจจะนะ แต่ดูข้อความที่ 5 เมื่อกี้สิ", { mood: "wink" }),
+          host("AI เขียนไวมาก แต่ไม่มีใครลองกับเลข 100", { facts: [SIM] })
+        )
       ),
       item("stat-ai-daily", "stat", "ผลสำรวจนักพัฒนาทั่วโลกปี 2569: คนตอบ 73% ใช้ AI ช่วยเขียนโค้ดทุกวัน", {
         title: "Stack Overflow",

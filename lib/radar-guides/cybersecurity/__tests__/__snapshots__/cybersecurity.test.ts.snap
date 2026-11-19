@@ -63,8 +63,17 @@ mythos.blocks[3].blocks[3].text.th: 9 พ.ย. 2569 รุ่นใหม่ Myt
 mythos.blocks[3].blocks[3].titleTh: อัปเดตล่าสุด
 mythos.blocks[3].blocks[4].text.th: ตัวเลขส่วนใหญ่มาจาก Anthropic เอง มีทีมวิจัยอื่นแย้งว่าโมเดลเล็กกว่าก็เจอบางบั๊กได้ ถ้ามีคนตัดเฉพาะโค้ดส่วนที่มีปัญหามาให้ดู
 mythos.blocks[3].blocks[4].titleTh: อีกฝั่งของเรื่อง
-mythos.blocks[3].blocks[5].lines[0].text.th: ถ้า AI หาช่องโหว่เก่งขนาดนี้
-mythos.blocks[3].blocks[5].lines[1].text.th: แล้วคนร้ายเอาไปเล่นงานใคร ด่านต่อไปดูกันในแชตบ้านเธอ
+mythos.blocks[3].blocks[5].ask[0].text.th: ถ้า AI หาช่องโหว่เก่งขนาดนี้ เธอว่าฝั่งไหนได้เปรียบ
+mythos.blocks[3].blocks[5].options[0].labelTh: ฝั่งป้องกันระบบสิ
+mythos.blocks[3].blocks[5].options[0].reply[0].text.th: ใช่เลย ทีมป้องกันใช้ AI หาช่องโหว่ดักหน้าคนร้ายได้
+mythos.blocks[3].blocks[5].options[0].reply[1].text.th: แต่คนร้ายก็หยิบเครื่องมือเดียวกันมาใช้ได้นะ
+mythos.blocks[3].blocks[5].options[1].labelTh: คนร้ายได้ไปเต็มๆ ดิ
+mythos.blocks[3].blocks[5].options[1].reply[0].text.th: คนร้ายก็ใช้เครื่องมือแบบนี้ได้จริง
+mythos.blocks[3].blocks[5].options[1].reply[1].text.th: แต่ทีมป้องกันก็ใช้ AI หาช่องโหว่ก่อนได้เหมือนกัน
+mythos.blocks[3].blocks[5].options[2].labelTh: ได้เปรียบทั้งคู่เลย
+mythos.blocks[3].blocks[5].options[2].reply[0].text.th: คิดถูกเลย เครื่องมือเดียวกัน ใช้ได้ทั้งสองฝั่ง
+mythos.blocks[3].blocks[5].options[2].reply[1].text.th: แข่งกันว่าใครเจอก่อน นี่แหละสนามจริงของสายนี้
+mythos.blocks[3].blocks[6].lines[0].text.th: แล้วคนร้ายเอาไปเล่นงานใคร ด่านต่อไปดูกันในแชตบ้านเธอ
 mythos.clip.hookTh: AI เจอบั๊กที่แก่กว่าเธอ
 mythos.clip.scriptLinesTh[0]: เมษาที่ผ่านมา Anthropic สร้าง AI ชื่อ Mythos
 mythos.clip.scriptLinesTh[1]: แล้วไม่ยอมปล่อยให้คนทั่วไปใช้ เพราะมันหาช่องโหว่เก่งเกินไป
@@ -154,21 +163,31 @@ scam.blocks[6].blocks[3].titleTh: เคสจริง: บัญชีม้�
 scam.blocks[6].blocks[4].lines[0].text.th: ห้ามให้ยืม ห้ามขาย ทั้งบัญชีและบัตรประชาชน
 scam.blocks[6].blocks[5].text.th: กระทรวงดิจิทัลฯ เตือนว่าปี 2569 จะเจอคลิปและเสียงปลอมด้วย AI ที่เลียนแบบญาติหรือเจ้าหน้าที่มากขึ้น
 scam.blocks[6].blocks[5].titleTh: เทรนด์ปีนี้
-scam.blocks[7].lines[0].text.th: ใครทำงานนี้: ทีมกันโกงของธนาคาร ค่ายมือถือ ศูนย์ AOC 1441
-scam.blocks[7].lines[1].text.th: บริษัทแอปเตือนเบอร์มิจฉาชีพ และตำรวจไซเบอร์ ทั้งหมดนี้คือสายไซเบอร์
-scam.blocks[8].unlockLabelTh: สายนี้มีกี่แบบ
-scam.blocks[8].blocks[0].lines[0].text.th: สายไซเบอร์ เป็นชื่อเรียกกว้างๆ นะ
-scam.blocks[8].blocks[0].lines[1].text.th: งานจริงแยกได้อีกหลายแบบ แต่ละแบบทำไม่เหมือนกันเลย
-scam.blocks[8].blocks[1].text.th: สายกันโกง: ดักจับข้อความหลอกลวงกับบัญชีม้า แบบทีมกันโกงของธนาคาร
+scam.blocks[7].ask[0].text.th: ถ้าเจอข้อความแบบนี้ในกลุ่มแชตบ้าน เธอจะทำไง
+scam.blocks[7].options[0].labelTh: ทักเตือนในกลุ่มเลย ว่าหลอก
+scam.blocks[7].options[0].reply[0].text.th: ดีเลย ที่บ้านจะได้ไม่เผลอมือลั่นกดลิงก์
+scam.blocks[7].options[0].reply[1].text.th: บอกด้วยว่าถ้าไม่แน่ใจ โทรถาม 1441 ได้
+scam.blocks[7].options[1].labelTh: แอบทักไปบอกคนส่งเบาๆ
+scam.blocks[7].options[1].reply[0].text.th: ละมุนดีนะ คนส่งก็อาจโดนหลอกมาอีกทีก็ได้
+scam.blocks[7].options[1].reply[1].text.th: ถ้าไม่แน่ใจ ชวนกันโทรเช็กที่ 1441
+scam.blocks[7].options[2].labelTh: ปล่อยผ่าน ไม่อยากยุ่งอะ
+scam.blocks[7].options[2].reply[0].text.th: เข้าใจเลยนะ แต่บางคนในกลุ่มอาจเผลอกดไปแล้วก็ได้
+scam.blocks[7].options[2].reply[1].text.th: แค่ทักสั้นๆ ว่าน่าสงสัย ก็ช่วยได้เยอะแล้วนะ
+scam.blocks[8].lines[0].text.th: ใครทำงานนี้: ทีมกันโกงของธนาคาร ค่ายมือถือ ศูนย์ AOC 1441
+scam.blocks[8].lines[1].text.th: บริษัทแอปเตือนเบอร์มิจฉาชีพ และตำรวจไซเบอร์ ทั้งหมดนี้คือสายไซเบอร์
+scam.blocks[9].unlockLabelTh: สายนี้มีกี่แบบ
+scam.blocks[9].blocks[0].lines[0].text.th: สายไซเบอร์ เป็นชื่อเรียกกว้างๆ นะ
+scam.blocks[9].blocks[0].lines[1].text.th: งานจริงแยกได้อีกหลายแบบ แต่ละแบบทำไม่เหมือนกันเลย
+scam.blocks[9].blocks[1].text.th: สายกันโกง: ดักจับข้อความหลอกลวงกับบัญชีม้า แบบทีมกันโกงของธนาคาร
 สายเฝ้าระบบ: เฝ้าระบบองค์กรทั้งวันทั้งคืน เจออะไรแปลกๆ ก็หยุดทันที
 สายทดสอบเจาะระบบ: ลองเจาะระบบที่เจ้าของอนุญาตแล้ว เพื่อหาช่องโหว่ก่อนคนร้าย
 สายสืบหลักฐาน: แกะรอยหลังโดนโจมตี ว่าเกิดอะไรขึ้น แล้วเข้ามาทางไหน
 สายวางกติกา: ดูแลกฎและความเสี่ยงของทั้งองค์กร รวมถึงบริษัทคู่ค้า
-scam.blocks[8].blocks[1].titleTh: สายไซเบอร์ มีหลายแบบ
-scam.blocks[8].blocks[2].lines[0].text.th: ที่เธอเพิ่งลองไป คือแบบแรก
-scam.blocks[8].blocks[2].lines[1].text.th: ยังไม่ต้องรีบเลือกตอนนี้ ค่อยๆ ลองไปทีละแบบก็ได้
-scam.blocks[9].text.th: เจอเรื่องแบบนี้ โทร 1441
-scam.blocks[9].titleTh: สายด่วน
+scam.blocks[9].blocks[1].titleTh: สายไซเบอร์ มีหลายแบบ
+scam.blocks[9].blocks[2].lines[0].text.th: ที่เธอเพิ่งลองไป คือแบบแรก
+scam.blocks[9].blocks[2].lines[1].text.th: ยังไม่ต้องรีบเลือกตอนนี้ ค่อยๆ ลองไปทีละแบบก็ได้
+scam.blocks[10].text.th: เจอเรื่องแบบนี้ โทร 1441
+scam.blocks[10].titleTh: สายด่วน
 scam.clip.hookTh: ข้อความไหนในแชตบ้านเธอคือมิจ
 scam.clip.scriptLinesTh[0]: ข่าวไซเบอร์ไม่ได้อยู่ไกลเลย
 scam.clip.scriptLinesTh[1]: เมื่อกันยาที่ผ่านมา มีคนอายุ 19 ถึง 22 สามคน
@@ -215,8 +234,16 @@ tonight.blocks[5].lines[2].text.th: ทีมเราคิดว่าข้�
 tonight.blocks[6].lines[0].text.th: write-up ชิ้นนี้แหละ คือผลงานแรกในแฟ้มเธอ
 tonight.blocks[7].text.th: TCAS70 มี 4 รอบ รอบแรกชื่อ Portfolio มหาลัยดูจากสิ่งที่เธอลงมือทำ งานแบบคืนนี้แหละ ใส่แฟ้มได้เลย
 tonight.blocks[7].titleTh: รู้ไหม รอบ 1 ใช้ผลงานยื่นได้นะ
-tonight.blocks[8].lines[0].text.th: ถ้าสนุก ทำห้องถัดไปพรุ่งนี้ ถ้าไม่สนุก ก็รู้ก่อนเลือกคณะ ไม่เสียอะไร
-tonight.blocks[8].lines[1].text.th: เช็กกติกาของห้องก่อนโพสต์ write-up สาธารณะ
+tonight.blocks[8].ask[0].text.th: ว่าแต่เธอจะลองเมื่อไหร่ดี
+tonight.blocks[8].options[0].labelTh: คืนนี้เลยดิ
+tonight.blocks[8].options[0].reply[0].text.th: ชอบความไวนี้แฮะ
+tonight.blocks[8].options[0].reply[1].text.th: ทำเสร็จแล้ว พรุ่งนี้ลองห้องถัดไปดู
+tonight.blocks[8].options[1].labelTh: ขอเป็นวันหยุดละกัน
+tonight.blocks[8].options[1].reply[0].text.th: ดีลเลย ปักลงปฏิทินไว้เลย จะได้ไม่ลืม
+tonight.blocks[8].options[2].labelTh: ยังไม่ชัวร์เลยว่าจะชอบไหม
+tonight.blocks[8].options[2].reply[0].text.th: ไม่ชัวร์ก็ลองดูก่อนได้นะ
+tonight.blocks[8].options[2].reply[1].text.th: ลองแล้วไม่สนุก ก็รู้ตัวก่อนเลือกคณะ ไม่เสียอะไรเลย
+tonight.blocks[9].lines[0].text.th: เช็กกติกาของห้องก่อนโพสต์ write-up สาธารณะ
 tonight.clip.hookTh: คืนนี้ ห้องเดียว ได้ผลงานชิ้นแรก
 tonight.clip.scriptLinesTh[0]: คืนนี้ลองแค่ห้องเดียว ฟรี
 tonight.clip.scriptLinesTh[1]: เปิด TryHackMe ห้อง Offensive Security Intro

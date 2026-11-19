@@ -410,6 +410,78 @@
   margin-left: 40px;
 }
 
+/* ── Choice (dating-game answers) ──────────────────────────────────────── */
+
+.rg-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rg-choice__answers {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-left: 40px;
+}
+
+.rg-choice__answer {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  background: var(--rg-ink-2);
+  color: var(--rg-cream);
+  font-family: var(--rg-thai);
+  font-size: 1.02rem;
+  line-height: 1.45;
+  text-align: left;
+  border: 0;
+  box-shadow: 0 0 0 var(--rg-px) var(--rg-ink-3);
+  cursor: pointer;
+}
+
+.rg-choice__cursor {
+  flex: none;
+  color: var(--rg-accent);
+  opacity: 0;
+}
+
+.rg-choice__answer:focus-visible {
+  outline: 2px solid var(--rg-cream);
+  outline-offset: 4px;
+}
+
+.rg-choice__answer:focus-visible .rg-choice__cursor,
+.rg-choice__answer[data-chosen="true"] .rg-choice__cursor {
+  opacity: 1;
+}
+
+@media (hover: hover) {
+  .rg-choice__answer:not(:disabled):hover {
+    box-shadow: 0 0 0 var(--rg-px) var(--rg-accent);
+  }
+  .rg-choice__answer:not(:disabled):hover .rg-choice__cursor {
+    opacity: 1;
+  }
+}
+
+.rg-choice__answer:not(:disabled):active {
+  transform: translateY(2px);
+}
+
+.rg-choice__answer[data-chosen="true"] {
+  box-shadow: 0 0 0 var(--rg-px) var(--rg-accent);
+  cursor: default;
+}
+
+.rg-choice__answer[data-dim="true"] {
+  opacity: 0.45;
+  cursor: default;
+}
+
 .rg-dialogue__static p {
   margin: 0 0 6px;
   line-height: 1.6;

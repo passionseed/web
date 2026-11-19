@@ -96,6 +96,34 @@ describe("guide-lint", () => {
     expect(formatIssues(lintErrors(issues))).toBe("");
   });
 
+  it("checks a choice: host asks, 2 to 3 short answers with unique ids, and its copy is linted", () => {
+    const say = (th: string) => ({ speaker: "host" as const, text: { th } });
+    const ok = run(guide([page({}, [
+      { kind: "dialogue", id: "intro", lines: [say("สวัสดี")] },
+      { kind: "choice", id: "q", ask: [say("เธอว่าไง")], options: [
+        { id: "a", labelTh: "แบบเอ", reply: [say("โอเค")] },
+        { id: "b", labelTh: "แบบบี", reply: [say("ได้เลย")] },
+      ] },
+    ])]));
+    expect(formatIssues(lintErrors(ok))).toBe("");
+
+    const bad = run(guide([page({}, [
+      { kind: "dialogue", id: "intro", lines: [say("สวัสดี")] },
+      { kind: "choice", id: "q", ask: [{ speaker: "player", text: { th: "ถามเอง" } }], options: [
+        { id: "a", labelTh: "ก".repeat(60), reply: [say("ตอบ — ผิดกฎ")] },
+      ] },
+      { kind: "choice", id: "r", ask: [say("อีกข้อ")], options: [
+        { id: "a", labelTh: "หนึ่ง", reply: [say("โอเค")] },
+        { id: "a", labelTh: "สอง", reply: [say("โอเค")] },
+      ] },
+    ])]));
+    expect(hasError(bad, "asked by the host")).toBe(true);
+    expect(hasError(bad, "2 or 3 answers")).toBe(true);
+    expect(hasError(bad, "keep it short")).toBe(true);
+    expect(hasError(bad, "used twice")).toBe(true);
+    expect(hasError(bad, "dash")).toBe(true);
+  });
+
   it("flags an em dash and น้องๆ", () => {
     const issues = run(guide([page({ questionTh: "AI เก่งแค่ไหน — จริงๆ" }, [
       { kind: "copy", id: "b", role: "body", text: { th: "สวัสดีน้องๆ ทุกคน" } },

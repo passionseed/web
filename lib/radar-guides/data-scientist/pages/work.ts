@@ -6,7 +6,7 @@
  */
 import type { GuidePage } from "@/lib/radar-guide/guide-types";
 import { careerKindsBeat } from "../../_shared/kinds";
-import { beat, dialogue, host, item, sys } from "../../_shared/story";
+import { answer, beat, choice, dialogue, host, item, sys } from "../../_shared/story";
 
 const SIM = "sim.ds-school-dust" as const;
 const ONET = "f.ds-onet-tasks" as const;
@@ -27,10 +27,26 @@ export const work: GuidePage = {
   blocks: [
     dialogue(
       "intro",
-      host("ในหนัง นักข้อมูลจิ้มปุ่มเดียว AI ก็ทำนายอนาคตได้แล้ว"),
-      host("แต่ของจริง กว่าจะได้กราฟสักรูป ต้องทำสองอย่างก่อน", { mood: "serious" }),
-      host("ตั้งคำถามให้ถูก แล้วเคลียร์ข้อมูลให้สะอาด", { mood: "wink" })
+      host("ด่านนี้มาส่องงานจริงของคนสายข้อมูลกัน", { mood: "wow" })
     ),
+    choice(
+      "guess-work",
+      host("เธอว่าคนสายข้อมูล หมดเวลาไปกับเรื่องไหนเยอะสุด"),
+      answer(
+        "predict",
+        "ปั้น AI ทำนายอนาคตชัวร์",
+        host("ในหนังก็ทรงนั้นเลย จิ้มปุ่มเดียวทำนายได้ปั๊บ", { mood: "wink" }),
+        host("แต่ของจริง กว่าจะได้กราฟสักรูป ต้องทำสองอย่างก่อน", { mood: "serious" })
+      ),
+      answer("charts", "นั่งทำกราฟสวยๆ มั้ง", host("กราฟน่ะตอนจบ แต่กว่าจะได้สักรูป ต้องทำอีกสองอย่างก่อนนะ")),
+      answer(
+        "clean",
+        "นั่งเคลียร์ข้อมูลรกๆ แหละ",
+        host("มองขาดเลย งานแบบนี้กินเวลากว่าที่คนคิดเยอะมาก", { mood: "wow" }),
+        host("กว่าจะได้กราฟสักรูป ต้องทำสองอย่างก่อน")
+      )
+    ),
+    dialogue("steps", host("ตั้งคำถามให้ถูก แล้วเคลียร์ข้อมูลให้สะอาด", { mood: "wink" })),
     item(
       "onet",
       "intel",

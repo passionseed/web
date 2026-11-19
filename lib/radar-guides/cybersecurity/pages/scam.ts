@@ -6,7 +6,7 @@
  */
 import type { GuidePage } from "@/lib/radar-guide/guide-types";
 import { careerKindsBeat } from "../../_shared/kinds";
-import { CLIP, beat, dialogue, host, item } from "./_story";
+import { CLIP, answer, beat, choice, dialogue, host, item } from "./_story";
 
 const SIM = "sim.scam-chat" as const;
 const POLICE = "f.fake-police" as const;
@@ -195,6 +195,28 @@ export const scam: GuidePage = {
         "notification",
         "กระทรวงดิจิทัลฯ เตือนว่าปี 2569 จะเจอคลิปและเสียงปลอมด้วย AI ที่เลียนแบบญาติหรือเจ้าหน้าที่มากขึ้น",
         { title: "เทรนด์ปีนี้", facts: ["f.de-trends"] }
+      )
+    ),
+    choice(
+      "family-chat",
+      host("ถ้าเจอข้อความแบบนี้ในกลุ่มแชตบ้าน เธอจะทำไง", { mood: "wink" }),
+      answer(
+        "warn",
+        "ทักเตือนในกลุ่มเลย ว่าหลอก",
+        host("ดีเลย ที่บ้านจะได้ไม่เผลอมือลั่นกดลิงก์", { mood: "wow" }),
+        host("บอกด้วยว่าถ้าไม่แน่ใจ โทรถาม 1441 ได้", { facts: ["f.aoc1441"] })
+      ),
+      answer(
+        "private",
+        "แอบทักไปบอกคนส่งเบาๆ",
+        host("ละมุนดีนะ คนส่งก็อาจโดนหลอกมาอีกทีก็ได้"),
+        host("ถ้าไม่แน่ใจ ชวนกันโทรเช็กที่ 1441", { facts: ["f.aoc1441"] })
+      ),
+      answer(
+        "ignore",
+        "ปล่อยผ่าน ไม่อยากยุ่งอะ",
+        host("เข้าใจเลยนะ แต่บางคนในกลุ่มอาจเผลอกดไปแล้วก็ได้", { mood: "serious" }),
+        host("แค่ทักสั้นๆ ว่าน่าสงสัย ก็ช่วยได้เยอะแล้วนะ")
       )
     ),
     dialogue(

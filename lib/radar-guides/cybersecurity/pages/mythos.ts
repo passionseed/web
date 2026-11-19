@@ -4,7 +4,7 @@
  * Firefox bar. Cutscene after the find-the-line beat.
  */
 import type { GuidePage } from "@/lib/radar-guide/guide-types";
-import { CLIP, beat, dialogue, host, item, sys } from "./_story";
+import { CLIP, answer, beat, choice, dialogue, host, item, sys } from "./_story";
 
 const GLASS = "f.glasswing-launch" as const;
 const FIREFOX = "f.firefox-mozilla" as const;
@@ -198,11 +198,29 @@ export const mythos: GuidePage = {
         "ตัวเลขส่วนใหญ่มาจาก Anthropic เอง มีทีมวิจัยอื่นแย้งว่าโมเดลเล็กกว่าก็เจอบางบั๊กได้ ถ้ามีคนตัดเฉพาะโค้ดส่วนที่มีปัญหามาให้ดู",
         { title: "อีกฝั่งของเรื่อง", facts: ["f.aisle-caveat", GLASS] }
       ),
-      dialogue(
-        "exit",
-        host("ถ้า AI หาช่องโหว่เก่งขนาดนี้", { mood: "serious" }),
-        sys("แล้วคนร้ายเอาไปเล่นงานใคร ด่านต่อไปดูกันในแชตบ้านเธอ")
-      )
+      choice(
+        "who-wins",
+        host("ถ้า AI หาช่องโหว่เก่งขนาดนี้ เธอว่าฝั่งไหนได้เปรียบ", { mood: "serious" }),
+        answer(
+          "defend",
+          "ฝั่งป้องกันระบบสิ",
+          host("ใช่เลย ทีมป้องกันใช้ AI หาช่องโหว่ดักหน้าคนร้ายได้"),
+          host("แต่คนร้ายก็หยิบเครื่องมือเดียวกันมาใช้ได้นะ", { mood: "serious" })
+        ),
+        answer(
+          "attack",
+          "คนร้ายได้ไปเต็มๆ ดิ",
+          host("คนร้ายก็ใช้เครื่องมือแบบนี้ได้จริง"),
+          host("แต่ทีมป้องกันก็ใช้ AI หาช่องโหว่ก่อนได้เหมือนกัน", { mood: "wink" })
+        ),
+        answer(
+          "both",
+          "ได้เปรียบทั้งคู่เลย",
+          host("คิดถูกเลย เครื่องมือเดียวกัน ใช้ได้ทั้งสองฝั่ง", { mood: "wow" }),
+          host("แข่งกันว่าใครเจอก่อน นี่แหละสนามจริงของสายนี้")
+        )
+      ),
+      dialogue("exit", sys("แล้วคนร้ายเอาไปเล่นงานใคร ด่านต่อไปดูกันในแชตบ้านเธอ"))
     ),
   ],
   clip: {

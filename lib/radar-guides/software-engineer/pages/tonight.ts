@@ -5,6 +5,7 @@
  * the age line from the brief is on the card. Free plans make the repository
  * public, so nothing personal goes on the page (pinned safety block).
  */
+import { whenChoice } from "../../_shared/choices";
 import { ROUND_ONE_FACT, roundOneTeaser } from "../../_shared/round1";
 import type { GuidePage } from "@/lib/radar-guide/guide-types";
 import { dialogue, host, item, sys } from "../../_shared/story";
@@ -121,10 +122,9 @@ export const tonight: GuidePage = {
       host("write-up นี้คือโครงงานที่มีคนใช้จริงด้วยนะ", { mood: "wink" })
     ),
     roundOneTeaser(),
+    whenChoice("ทำเสร็จแล้ว พรุ่งนี้แก้ตามที่เพื่อนบอกต่อเลย"),
     dialogue(
       "callback",
-      host("ถ้าสนุก พรุ่งนี้แก้ตามที่เพื่อนบอกต่อเลย"),
-      host("ถ้าไม่สนุก ก็รู้ตัวก่อนเลือกคณะ ไม่เสียอะไร"),
       sys("ถ้าใช้โค้ดหรือรูปของคนอื่น แปะเครดิตไว้ในหน้าเว็บด้วย")
     ),
   ],

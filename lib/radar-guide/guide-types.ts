@@ -127,6 +127,16 @@ export type CopyRole =
   | "caption";
 
 // ---------------------------------------------------------------- story (game layer)
+/** One answer in a choice block: what the student says, and the host's reply to it. */
+export interface ChoiceOption {
+  id: string;
+  /** The student's answer, as they'd say it: short, one line on a phone (CHOICE_LABEL_MAX_CHARS). */
+  labelTh: string;
+  reply: readonly DialogueLine[];
+}
+/** Answer buttons stay one or two short lines on a 360px phone. */
+export const CHOICE_LABEL_MAX_CHARS = 48;
+
 /** Who speaks in a dialogue box. `host` is GUIDE_HOST (story.ts). */
 export type DialogueSpeaker = "host" | "player" | "system";
 /** One dialogue box: at most about two lines on a 360px phone (DIALOGUE_BOX_MAX_CHARS). */
@@ -387,6 +397,14 @@ export type GuideBlock =
   | { kind: "outro"; id: string } // intent + request + share + follow + program + other careers
   /** Story beat: typewriter dialogue boxes, tap to advance. Each line is one box. */
   | { kind: "dialogue"; id: string; lines: readonly DialogueLine[] }
+  /**
+   * A dating-game choice: the host asks (`ask`, host lines), the student picks
+   * one of 2 to 3 answers, the host replies to that answer, and the level goes
+   * on. Replies react, they never grade: there is no score. The pick is saved
+   * as the choice `<pageKey>:<id>` (traits, recap) and tracked as
+   * `interactive_tap` `<pageKey>:<id>:<optionId>`.
+   */
+  | { kind: "choice"; id: string; ask: readonly DialogueLine[]; options: readonly ChoiceOption[] }
   /**
    * An in-world fact item (intel card, notification, terminal line, chat
    * bubble, stat). The sources chip lists `text.factIds`. `simulated` items

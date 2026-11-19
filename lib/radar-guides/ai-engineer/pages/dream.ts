@@ -5,7 +5,7 @@
  * projects to see who made each one.
  */
 import type { GuidePage } from "@/lib/radar-guide/guide-types";
-import { beat, dialogue, host, item, me, sys } from "../../_shared/story";
+import { answer, beat, choice, dialogue, host, item, me, sys } from "../../_shared/story";
 
 const RISA = "f.ai-risa" as const;
 const PATHUMMA = "f.ai-pathumma" as const;
@@ -28,10 +28,19 @@ export const dream: GuidePage = {
   blocks: [
     dialogue(
       "intro",
-      host("เปิดรันสาย AI กัน ขอถามข้อเดียวก่อน", { mood: "wow" }),
-      host("AI ที่ฟังภาษาไทยรู้เรื่อง เธอว่าใครสร้าง"),
-      me("ก็บริษัทใหญ่เมืองนอกมั้ง"),
-      host("บางตัวก็ใช่ แต่หลายตัวสร้างในไทยนี่แหละ", { mood: "wink" })
+      host("เปิดรันสาย AI กัน ขอถามข้อเดียวก่อน", { mood: "wow" })
+    ),
+    choice(
+      "who-built",
+      host("AI ที่ฟังภาษาไทยรู้เรื่อง เธอว่าฝีมือใคร"),
+      answer("abroad", "บริษัทใหญ่เมืองนอกชัวร์", host("บางตัวก็ใช่ แต่หลายตัวสร้างในไทยนี่แหละ", { mood: "wink" })),
+      answer("thai", "คนไทยก็ทำได้อยู่มั้ง", host("เซนส์ดีนะ หลายตัวสร้างในไทยนี่แหละ", { mood: "wow" })),
+      answer(
+        "never",
+        "ไม่เคยนึกเลยว่ามีคนสร้าง",
+        host("ไม่แปลกหรอก ใช้กันทุกวัน แต่ไม่ค่อยมีใครเห็นคนทำ"),
+        host("หลายตัวสร้างในไทยนี่แหละ ไปดูกัน", { mood: "wink" })
+      )
     ),
     item(
       "intel-typhoon",

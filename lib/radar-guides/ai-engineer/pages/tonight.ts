@@ -8,6 +8,7 @@
  * Minors: objects only, no faces; don't save to Google Drive (that needs a
  * Google account), download instead.
  */
+import { whenChoice } from "../../_shared/choices";
 import { ROUND_ONE_FACT, roundOneTeaser } from "../../_shared/round1";
 import type { GuidePage } from "@/lib/radar-guide/guide-types";
 import { dialogue, host, item } from "../../_shared/story";
@@ -104,10 +105,6 @@ export const tonight: GuidePage = {
       host("write-up กับรูปตารางผล นี่แหละผลงานชิ้นแรกในแฟ้มของเธอ", { mood: "wink" })
     ),
     roundOneTeaser(),
-    dialogue(
-      "callback",
-      host("ถ้าเริ่มสนุก พรุ่งนี้ลองสอนให้มันแยกเสียงต่อดูสิ"),
-      host("ถ้าไม่สนุก ก็แค่รู้ตัวก่อนเลือกคณะ ไม่เสียหายอะไรเลย")
-    ),
+    whenChoice("ทำเสร็จแล้ว พรุ่งนี้ลองสอนให้มันแยกเสียงต่อดูสิ"),
   ],
 };

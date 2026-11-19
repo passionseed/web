@@ -5,6 +5,7 @@
  * builder never leaves the device. Only the spreadsheet app may need an
  * account, so the age-check line is on the room card and the checklist.
  */
+import { whenChoice } from "../../_shared/choices";
 import { ROUND_ONE_FACT, roundOneTeaser } from "../../_shared/round1";
 import type { GuidePage } from "@/lib/radar-guide/guide-types";
 import { dialogue, host, item, sys } from "../../_shared/story";
@@ -96,10 +97,9 @@ export const tonight: GuidePage = {
       host("กราฟนี้กับ write-up คือผลงานชิ้นแรกในแฟ้มของเธอ")
     ),
     roundOneTeaser(),
+    whenChoice("ทำเสร็จแล้ว พรุ่งนี้ลองถามคำถามที่สองกับไฟล์เดิมดู"),
     dialogue(
       "callback-next",
-      host("ถ้าสนุก พรุ่งนี้ลองถามคำถามที่สองกับไฟล์เดิมดู"),
-      host("ถ้าไม่สนุก ก็ได้รู้ตัวก่อนเลือกคณะ ไม่เสียอะไรเลย"),
       sys("ถ้าจะเอาไปโพสต์ แปะที่มาของข้อมูลไว้ด้วยทุกครั้งนะ")
     ),
   ],

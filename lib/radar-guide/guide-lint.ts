@@ -15,13 +15,16 @@ import {
 } from "./types";
 import { parseVtt } from "./vtt";
 import {
+  CHOICE_LABEL_MAX_CHARS,
   GUIDE_PAGE_KEY_PATTERN,
   RESERVED_GUIDE_SLUGS,
   RESERVED_PAGE_KEYS,
   type BannedClaim,
   type CareerGuide,
+  type ChoiceOption,
   type ClipManifest,
   type CopyText,
+  type DialogueLine,
   type Fact,
   type FactId,
   type GuideBlock,
@@ -222,6 +225,7 @@ interface Collected {
   simulated: { path: string; ids: string[] }[];
   deadlines: { path: string; at: unknown }[];
   dialogues: { path: string; lines: number }[];
+  choices: { path: string; ask: readonly DialogueLine[]; options: readonly ChoiceOption[] }[];
 }
 
 function collectDeadlines(value: unknown, path: string, out: Collected["deadlines"]): void {
@@ -318,6 +322,16 @@ function collectBlocks(page: GuidePage, blocks: readonly GuideBlock[], base: str
         c.dialogues.push({ path, lines: block.lines.length });
         block.lines.forEach((line, j) => addCopy(line.text, `${path}.lines[${j}].text`));
         break;
+      case "choice":
+        c.dialogues.push({ path: `${path}.ask`, lines: block.ask.length });
+        block.ask.forEach((line, j) => addCopy(line.text, `${path}.ask[${j}].text`));
+        block.options.forEach((opt, j) => {
+          addString(opt.labelTh, `${path}.options[${j}].labelTh`, page.factIds);
+          c.dialogues.push({ path: `${path}.options[${j}].reply`, lines: opt.reply.length });
+          opt.reply.forEach((line, k) => addCopy(line.text, `${path}.options[${j}].reply[${k}].text`));
+        });
+        c.choices.push({ path, ask: block.ask, options: block.options });
+        break;
       case "item": {
         const simulated = Boolean(block.simulated);
         addCopy(block.text, `${path}.text`, simulated);
@@ -346,6 +360,7 @@ function collectPage(page: GuidePage): Collected {
     simulated: [],
     deadlines: [],
     dialogues: [],
+    choices: [],
   };
   const pageKey = page.key;
   const add = (text: string, path: string, scope: Scope, backing: readonly FactId[] | null, spelled: TextRef["spelled"] = "warn") =>
@@ -765,6 +780,7 @@ export function lintGuide(guide: CareerGuide, opts: GuideLintOptions = {}): Lint
     for (const d of c.dialogues) {
       if (d.lines === 0) issues.push({ level: "error", pageKey: page.key, path: d.path, message: "dialogue block has no lines" });
     }
+    for (const ch of c.choices) checkChoice(page.key, ch, issues);
   }
   texts.push(...checkStory(guide, issues));
 
@@ -772,7 +788,7 @@ export function lintGuide(guide: CareerGuide, opts: GuideLintOptions = {}): Lint
     checkTone(ref, issues);
     checkBanned(ref, banned, issues);
     checkNumbers(ref, facts, issues);
-    if (/\.lines\[\d+\]\.text\.th$/.test(ref.path) && ref.text.length > DIALOGUE_BOX_MAX_CHARS) {
+    if (/\.(lines|ask|reply)\[\d+\]\.text\.th$/.test(ref.path) && ref.text.length > DIALOGUE_BOX_MAX_CHARS) {
       issues.push({
         level: "warn",
         pageKey: ref.pageKey,
@@ -784,6 +800,32 @@ export function lintGuide(guide: CareerGuide, opts: GuideLintOptions = {}): Lint
 
   checkClips(guide, opts, issues);
   return issues;
+}
+
+/**
+ * A choice reads like a dating game: the host asks, 2 to 3 short answers, a
+ * reply to each. Answers are what the student says (short); the ask is the
+ * host's (the reply follows the student's line, so it can't open on the host
+ * repeating the question).
+ */
+function checkChoice(
+  pageKey: string,
+  ch: { path: string; ask: readonly DialogueLine[]; options: readonly ChoiceOption[] },
+  issues: LintIssue[]
+): void {
+  const err = (path: string, message: string) => issues.push({ level: "error", pageKey, path, message });
+  if (ch.ask.some((l) => l.speaker !== "host")) err(`${ch.path}.ask`, "a choice is asked by the host");
+  if (ch.options.length < 2 || ch.options.length > 3) err(`${ch.path}.options`, "a choice has 2 or 3 answers");
+  const ids = new Set<string>();
+  ch.options.forEach((opt, j) => {
+    const path = `${ch.path}.options[${j}]`;
+    if (!/^[a-z0-9][a-z0-9-]{0,23}$/.test(opt.id)) err(`${path}.id`, `answer id ${opt.id} must be [a-z0-9-], at most 24 chars`);
+    if (ids.has(opt.id)) err(`${path}.id`, `answer id ${opt.id} is used twice`);
+    ids.add(opt.id);
+    if (opt.labelTh.length > CHOICE_LABEL_MAX_CHARS) {
+      err(`${path}.labelTh`, `answer is ${opt.labelTh.length} chars (max ${CHOICE_LABEL_MAX_CHARS}): the student says it, keep it short`);
+    }
+  });
 }
 
 export function lintErrors(issues: readonly LintIssue[]): LintIssue[] {

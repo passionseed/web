@@ -15,7 +15,7 @@ import { BackGlyph, NextGlyph } from "./glyphs";
 import { useGuideShell } from "./shell-context";
 
 export function GuideStickyNav() {
-  const { slug, index, pageKey, advance, advanceLabelTh, readyToAdvance, gameWaiting } = useGuideShell();
+  const { slug, index, pageKey, advance, advanceLabelTh, readyToAdvance, gameWaiting, waitingHintTh } = useGuideShell();
   const prev = pageKey ? prevLevelKey(index.pages, pageKey) : null;
   const backHref = prev ? levelHref(slug, prev) : coverHref(slug);
   return (
@@ -26,7 +26,7 @@ export function GuideStickyNav() {
         </Link>
         {gameWaiting ? (
           <p className="rg-nav__hint" data-testid="guide-next-hint" aria-live="polite">
-            เล่นเกมด้านบนให้จบ แล้วไปต่อได้เลย
+            {waitingHintTh ?? "เล่นเกมด้านบนให้จบ แล้วไปต่อได้เลย"}
           </p>
         ) : (
         <button

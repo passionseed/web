@@ -4,7 +4,7 @@
  * people use it now, then see how far it went. No salaries, no market data.
  */
 import type { GuidePage } from "@/lib/radar-guide/guide-types";
-import { beat, dialogue, host, item, me, sys } from "../../_shared/story";
+import { answer, beat, choice, dialogue, host, item, sys } from "../../_shared/story";
 
 const ORIGIN = "f.viabus-origin" as const;
 const USERS = "f.viabus-users" as const;
@@ -27,8 +27,14 @@ export const dream: GuidePage = {
     dialogue(
       "intro",
       host("เริ่มรันสายโค้ดเลย ด่านแรกมีแค่เรื่องเดียว", { mood: "wow" }),
-      host("เรื่องของคนที่ตกรถบ่อยจนทนไม่ไหวแล้ว"),
-      me("ตกรถมันเกี่ยวอะไรกับการเขียนโค้ด")
+      host("เรื่องของคนที่ตกรถบ่อยจนทนไม่ไหวแล้ว")
+    ),
+    choice(
+      "bus",
+      host("ว่าแต่ตกรถบ่อยๆ มันเกี่ยวอะไรกับการเขียนโค้ดอะ", { mood: "wink" }),
+      answer("none", "ไม่น่าเกี่ยวกันเลยมั้ง", host("ฟังให้จบก่อนสิ เรื่องนี้เกี่ยวเต็มๆ เลยนะ", { mood: "wink" })),
+      answer("app", "เลยเขียนแอปแก้เองเหรอ", host("เดาแม่นแฮะ มาฟังต่อเลยว่าเขาทำยังไง", { mood: "wow" })),
+      answer("complain", "บ่นจนมีคนมาแก้ให้มั้ง", host("เกือบถูกแล้ว แต่คนที่ลงมือแก้คือเขาเองนี่แหละ", { mood: "wink" }))
     ),
     item(
       "intel-origin",

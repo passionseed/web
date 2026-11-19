@@ -4,6 +4,7 @@
  * the device. Required safety cutscene (founder face on screen). The fixed
  * legal line carries no section number until legal review.
  */
+import { whenChoice } from "../../_shared/choices";
 import { ROUND_ONE_FACT, roundOneTeaser } from "../../_shared/round1";
 import type { GuidePage } from "@/lib/radar-guide/guide-types";
 import { CLIP, dialogue, host, item, sys } from "./_story";
@@ -92,9 +93,9 @@ export const tonight: GuidePage = {
       host("write-up ชิ้นนี้แหละ คือผลงานแรกในแฟ้มเธอ", { mood: "wink" })
     ),
     roundOneTeaser(),
+    whenChoice("ทำเสร็จแล้ว พรุ่งนี้ลองห้องถัดไปดู"),
     dialogue(
       "callback",
-      host("ถ้าสนุก ทำห้องถัดไปพรุ่งนี้ ถ้าไม่สนุก ก็รู้ก่อนเลือกคณะ ไม่เสียอะไร"),
       sys("เช็กกติกาของห้องก่อนโพสต์ write-up สาธารณะ")
     ),
   ],

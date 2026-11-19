@@ -172,18 +172,22 @@ export function GuideShellProvider({
   const advanceLabelTh = advanceLabel(currentSteps, currentCursor, Boolean(nextKey));
 
   const currentStep = currentSteps[currentCursor];
-  const waits = currentStep && ["dialogue", "copy", "game", "bespoke", "clip"].includes(currentStep.kind);
+  const waits = currentStep && ["dialogue", "copy", "choice", "game", "bespoke", "clip"].includes(currentStep.kind);
   const readyToAdvance = !pageKey || !waits || Boolean(doneSteps[`${pageKey}:${currentStep.id}`]);
   // A game still being played moves on through its own button ("ล็อกคำตอบ",
-  // or "ข้ามเกม ดูเฉลย"), so "ต่อ" steps aside: one way forward, not two.
+  // or "ข้ามเกม ดูเฉลย"), and a choice through its answers, so "ต่อ" steps
+  // aside: one way forward, not two.
   const gameKey = pageKey && currentStep ? `${pageKey}:${currentStep.id}` : "";
   const gameWaiting =
     Boolean(gameKey) &&
     !demo &&
-    (currentStep?.kind === "game" || currentStep?.kind === "bespoke") &&
     !doneSteps[gameKey] &&
-    !progress.games[gameKey]?.done &&
-    !(cleared ?? []).includes(pageKey ?? "");
+    !(cleared ?? []).includes(pageKey ?? "") &&
+    (currentStep?.kind === "game" || currentStep?.kind === "bespoke"
+      ? !progress.games[gameKey]?.done
+      : currentStep?.kind === "choice" && progress.choices[gameKey] === undefined);
+  const waitingHintTh =
+    currentStep?.kind === "choice" ? "เลือกคำตอบด้านบนก่อน แล้วไปต่อได้เลย" : "เล่นเกมด้านบนให้จบ แล้วไปต่อได้เลย";
 
   const [advanceSeq, setAdvanceSeq] = useState(0);
   const [dialogueNudge, setDialogueNudge] = useState<{ key: string; seq: number } | null>(null);
@@ -200,7 +204,7 @@ export function GuideShellProvider({
     if (gameWaiting) return;
     const step = steps[cur];
     const levelCleared = (cleared ?? []).includes(pageKey);
-    if (step && !demo && !levelCleared && (step.kind === "dialogue" || step.kind === "copy")) {
+    if (step && !demo && !levelCleared && (step.kind === "dialogue" || step.kind === "copy" || step.kind === "choice")) {
       const key = `${pageKey}:${step.id}`;
       const count = nudges.current[key] ?? 0;
       if (!doneSteps[key] && count < MAX_DIALOGUE_NUDGES) {
@@ -256,6 +260,7 @@ export function GuideShellProvider({
       markStepDone,
       readyToAdvance,
       gameWaiting,
+      waitingHintTh,
       dialogueNudge,
       openMap,
       sources,
@@ -283,6 +288,7 @@ export function GuideShellProvider({
       markStepDone,
       readyToAdvance,
       gameWaiting,
+      waitingHintTh,
       dialogueNudge,
       openMap,
       sources,
