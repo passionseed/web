@@ -4,7 +4,27 @@ import { useEffect, useRef, type RefObject } from "react";
 
 import type { IslandScene } from "@/bot/src/quests/island/scene";
 import { LiveIsland, type LiveIslandProps } from "@/lib/shift-island/live/engine";
+import type { Rect } from "@/lib/shift-island/live/geometry";
+import type { Aim, InteractTarget } from "@/lib/shift-island/live/interact";
 import type { LightPhase, LiveActor } from "@/lib/shift-island/live/types";
+
+/**
+ * Reads where each actor stands on screen now (LiveIsland.actorBoxes), for
+ * taps on the people. Given the actors the caller's indexes point into, it
+ * answers null until the engine draws that same list.
+ */
+export type ActorBoxes = (actors?: readonly LiveActor[]) => readonly (Rect | null)[] | null;
+
+/**
+ * Steers the interact outline (LiveIsland.aim and focus): where the player
+ * aims, native px with its reach (null: nowhere), and the hotspot a keyboard
+ * focused (null: none). A call repaints at most the old and new rings, in
+ * the next frame, and never renders React.
+ */
+export interface IslandInteract {
+  aim: (aim: Aim | null) => void;
+  focus: (key: string | null) => void;
+}
 
 export interface IslandCanvasProps {
   scene: IslandScene;
@@ -33,9 +53,19 @@ export interface IslandCanvasProps {
   fit?: boolean;
   /** Gives the canvas role="img" with this name; without it the canvas is hidden from assistive tech. */
   label?: string;
+  /** Filled with a reader of the actors' boxes while the engine lives (null otherwise): taps hit-test the people with it. */
+  actorBoxes?: { current: ActorBoxes | null };
+  /** The slots whose signpost carries a name's board (PlotSigns hangs it there): close view only. */
+  signs?: readonly number[];
+  /** The clickable things the interact outline can pick (interact.ts interactTargets); absent: no outline. */
+  targets?: readonly InteractTarget[];
+  /** Filled with the outline's steering while the engine lives (null otherwise). */
+  interact?: { current: IslandInteract | null };
 }
 
 const NO_ACTORS: LiveActor[] = [];
+const NO_SIGNS: readonly number[] = [];
+const NO_TARGETS: readonly InteractTarget[] = [];
 
 /**
  * The living island: one pixelated canvas drawn from the scene (sea frames,
@@ -58,11 +88,16 @@ export default function IslandCanvas({
   scroller,
   fit = false,
   label,
+  actorBoxes,
+  signs = NO_SIGNS,
+  targets = NO_TARGETS,
+  interact,
 }: IslandCanvasProps) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const engine = useRef<LiveIsland | null>(null);
   const events = useRef({ onReady, onFail, onPhase });
   const cropKey = crop ? `${crop.x},${crop.y},${crop.w},${crop.h}` : "";
+  const signsKey = signs.join(",");
 
   const props = (): LiveIslandProps => ({
     scene,
@@ -74,6 +109,8 @@ export default function IslandCanvas({
     crop: crop ? { x: crop.x, y: crop.y, w: crop.w, h: crop.h } : null,
     fit,
     scroller: scroller?.current ?? null,
+    signs,
+    targets,
   });
   const latest = useRef(props);
 
@@ -91,16 +128,24 @@ export default function IslandCanvas({
       onPhase: (p, water) => events.current.onPhase?.(p, water),
     });
     engine.current = live;
+    const boxes = actorBoxes;
+    if (boxes) boxes.current = (actors) => live.actorBoxes(actors);
+    const steer = interact;
+    if (steer) steer.current = { aim: (aim) => live.aim(aim), focus: (key) => live.focus(key) };
     return () => {
       live.destroy();
       engine.current = null;
+      if (boxes) boxes.current = null;
+      if (steer) steer.current = null;
     };
+    // One engine per canvas; the reader's and the steering's holders are fixed for its life too.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     engine.current?.update(latest.current());
-    // cropKey stands for crop; the engine compares actors by value.
-  }, [scene, phase, paused, still, actors, ambient, cropKey, fit, scroller]);
+    // cropKey stands for crop and signsKey for signs; the engine compares actors by value.
+  }, [scene, phase, paused, still, actors, ambient, cropKey, fit, scroller, signsKey, targets]);
 
   return (
     <canvas

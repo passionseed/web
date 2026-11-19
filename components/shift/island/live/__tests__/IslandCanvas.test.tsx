@@ -2,9 +2,11 @@ import { act, render } from "@testing-library/react";
 
 import { buildScene, type IslandPlot } from "@/bot/src/quests/island/scene";
 
-import { waterColor } from "@/lib/shift-island/live/lighting";
+import { gradedWater } from "@/lib/shift-island/live/grade";
+import { plotKey, type InteractTarget } from "@/lib/shift-island/live/interact";
+import { PULSE } from "@/lib/shift-island/live/outline";
 
-import IslandCanvas from "../IslandCanvas";
+import IslandCanvas, { type ActorBoxes, type IslandInteract } from "../IslandCanvas";
 
 /** jsdom has no canvas: a context that records what it is asked to do. */
 function fakeContext() {
@@ -92,11 +94,24 @@ afterEach(() => {
   Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
 });
 
-/** Two animation frames: the build, then the first frame. */
-function firstFrame() {
+/** The most animation frames the build may take: the layers, the shallows, the terrain a slice at a time and its ink. */
+const BUILD_FRAMES = 30;
+
+/**
+ * Animation frames until the first frame is painted (the visible canvas's
+ * first transform): the build, a slice per frame, then the first frame.
+ * Returns how many frames that took; stops at BUILD_FRAMES if it never paints.
+ */
+function firstFrame(): number {
+  let frames = 0;
+  const painted = () => (contexts[0]?.setTransform.mock.calls.length ?? 0) > 0;
   act(() => {
-    jest.advanceTimersByTime(40);
+    while (!painted() && frames < BUILD_FRAMES) {
+      jest.advanceTimersByTime(16);
+      frames++;
+    }
   });
+  return frames;
 }
 
 const visible = (on: boolean) =>
@@ -142,7 +157,7 @@ describe("IslandCanvas", () => {
     expect(onReady).not.toHaveBeenCalled();
     firstFrame();
     expect(onReady).toHaveBeenCalledTimes(1);
-    expect(onPhase).toHaveBeenCalledWith("night", waterColor("night"));
+    expect(onPhase).toHaveBeenCalledWith("night", gradedWater("night"));
     const visibleCtx = contexts[0];
     expect(getContext.mock.calls[0][1]).toEqual({ alpha: false });
     expect(visibleCtx.imageSmoothingEnabled).toBe(false);
@@ -157,11 +172,26 @@ describe("IslandCanvas", () => {
     expect(jest.getTimerCount()).toBeGreaterThan(0);
   });
 
+  it("spreads the build over a few frames and paints nothing before its first frame", () => {
+    const onReady = jest.fn();
+    render(<IslandCanvas scene={scene} onReady={onReady} />);
+    act(() => {
+      jest.advanceTimersByTime(40);
+    });
+    // Two frames in: the layers and the shallows are built, the terrain is on its way, nothing is on screen yet.
+    expect(onReady).not.toHaveBeenCalled();
+    expect(contexts[0].setTransform).not.toHaveBeenCalled();
+    const frames = firstFrame();
+    expect(onReady).toHaveBeenCalledTimes(1);
+    expect(frames).toBeGreaterThan(0);
+    expect(frames).toBeLessThan(BUILD_FRAMES);
+  });
+
   it("takes a fixed light when given one", () => {
     const onPhase = jest.fn();
     render(<IslandCanvas scene={scene} phase="dusk" onPhase={onPhase} />);
     firstFrame();
-    expect(onPhase).toHaveBeenCalledWith("dusk", waterColor("dusk"));
+    expect(onPhase).toHaveBeenCalledWith("dusk", gradedWater("dusk"));
   });
 
   it("keeps zero timers while paused, and carries on after", () => {
@@ -230,13 +260,13 @@ describe("IslandCanvas", () => {
     const onPhase = jest.fn();
     const { rerender } = render(<IslandCanvas scene={scene} onPhase={onPhase} />);
     firstFrame();
-    expect(onPhase).toHaveBeenLastCalledWith("night", waterColor("night"));
+    expect(onPhase).toHaveBeenLastCalledWith("night", gradedWater("night"));
     const ctx = contexts[0];
     const drawn = ctx.drawImage.mock.calls.length;
     act(() => {
       jest.advanceTimersByTime(61_000);
     });
-    expect(onPhase).toHaveBeenLastCalledWith("dawn", waterColor("dawn"));
+    expect(onPhase).toHaveBeenLastCalledWith("dawn", gradedWater("dawn"));
     expect(ctx.drawImage.mock.calls.length).toBeGreaterThan(drawn);
     expect(jest.getTimerCount()).toBe(1);
 
@@ -270,12 +300,182 @@ describe("IslandCanvas", () => {
     expect(onFail).not.toHaveBeenCalled();
   });
 
+  describe("interact outline", () => {
+    const tree = scene.trees[0];
+    const targets: InteractTarget[] = [{ key: plotKey(tree.slot), box: { x: tree.left, y: tree.top, w: tree.w, h: tree.h }, shape: { kind: "tree", tree: 0 } }];
+    const onPlot = { x: tree.left + 6, y: tree.top + 6, reach: 4 };
+    /** The ring's draws: its gold half (from its image's top) and its cream half (from the bottom). */
+    const rings = (ctx: ReturnType<typeof fakeContext>) =>
+      ctx.drawImage.mock.calls.filter(
+        ([img, sx, sy, , sh]) => img instanceof HTMLCanvasElement && sx === 0 && img.height === 2 * sh && (sy === 0 || sy === sh)
+      );
+
+    it("draws the ring round the thing aimed at, in one frame, with no loop and no timer under reduced motion", () => {
+      reduced = true;
+      const holder: { current: IslandInteract | null } = { current: null };
+      render(<IslandCanvas scene={scene} targets={targets} interact={holder} />);
+      firstFrame();
+      const ctx = contexts[0];
+      expect(rings(ctx)).toHaveLength(0);
+      const timers = jest.getTimerCount();
+      act(() => {
+        holder.current!.aim(onPlot);
+        jest.advanceTimersByTime(16);
+      });
+      // Steady: the gold, and the cream halfway over it.
+      expect(rings(ctx).map(([, , sy]) => sy > 0)).toEqual(expect.arrayContaining([false, true]));
+      expect(jest.getTimerCount()).toBe(timers);
+      // The same aim again: nothing to repaint.
+      const calls = ctx.drawImage.mock.calls.length;
+      act(() => {
+        holder.current!.aim({ ...onPlot });
+        jest.advanceTimersByTime(5000);
+      });
+      expect(ctx.drawImage.mock.calls.length).toBe(calls);
+      // Aimed far away: the old ring's box repaints, without a ring.
+      const before = rings(ctx).length;
+      act(() => {
+        holder.current!.aim({ x: -400, y: -400, reach: 4 });
+        jest.advanceTimersByTime(16);
+      });
+      expect(ctx.drawImage.mock.calls.length).toBeGreaterThan(calls);
+      expect(rings(ctx)).toHaveLength(before);
+    });
+
+    it("shows the ring for the hotspot a keyboard focuses, whatever the aim, and lets it go on blur", () => {
+      reduced = true;
+      const holder: { current: IslandInteract | null } = { current: null };
+      render(<IslandCanvas scene={scene} targets={targets} interact={holder} />);
+      firstFrame();
+      const ctx = contexts[0];
+      act(() => {
+        holder.current!.focus(plotKey(tree.slot));
+        jest.advanceTimersByTime(16);
+      });
+      const shown = rings(ctx).length;
+      expect(shown).toBeGreaterThan(0);
+      act(() => {
+        holder.current!.focus(null);
+        jest.advanceTimersByTime(16);
+      });
+      expect(rings(ctx)).toHaveLength(shown);
+    });
+
+    it("pulses through its steps while the island moves", () => {
+      const holder: { current: IslandInteract | null } = { current: null };
+      render(<IslandCanvas scene={scene} targets={targets} interact={holder} phase="day" />);
+      firstFrame();
+      const ctx = contexts[0];
+      act(() => {
+        holder.current!.focus(plotKey(tree.slot));
+        jest.advanceTimersByTime(16);
+      });
+      // The cream's alpha at each of its draws, read as it is drawn.
+      const glows = new Set<number>();
+      ctx.drawImage.mockImplementation((img: unknown, sx: number, sy: number, sw: number, sh: number) => {
+        if (img instanceof HTMLCanvasElement && sx === 0 && sy > 0 && sy === sh && img.height === 2 * sh) glows.add(ctx.globalAlpha);
+      });
+      act(() => {
+        jest.advanceTimersByTime(4000);
+      });
+      // Every lit step of the pulse, and nothing but them.
+      expect([...glows].sort()).toEqual([...new Set(PULSE.filter((g) => g > 0))].sort());
+    });
+
+    it("never steers a canvas that is gone", () => {
+      const holder: { current: IslandInteract | null } = { current: null };
+      const { unmount } = render(<IslandCanvas scene={scene} targets={targets} interact={holder} />);
+      firstFrame();
+      expect(holder.current).not.toBeNull();
+      unmount();
+      expect(holder.current).toBeNull();
+    });
+  });
+
   it("names itself when given a label", () => {
     const { container } = render(<IslandCanvas scene={scene} label="เกาะ" still />);
     const canvas = container.querySelector("canvas")!;
     expect(canvas).toHaveAttribute("role", "img");
     expect(canvas).toHaveAttribute("aria-label", "เกาะ");
     expect(canvas).not.toHaveAttribute("aria-hidden");
+  });
+
+  it("lets taps read where its walkers stand, from the frame last painted, while it lives", () => {
+    // One native px a frame to the right, a frame every tick.
+    const walker = {
+      frames: ["crowd_walk0_of", "crowd_walk1_of", "crowd_walk2_of", "crowd_walk3_of"],
+      x: 40,
+      y: 50,
+      frameMs: 125,
+      steps: [0, 1, 2, 3].map((dx) => ({ dx, dy: 0 })),
+    };
+    const holder: { current: ActorBoxes | null } = { current: null };
+    const { unmount } = render(<IslandCanvas scene={scene} actors={[walker]} actorBoxes={holder} />);
+    // Nothing drawn yet: nobody to hit.
+    expect(holder.current?.()).toEqual([]);
+    firstFrame();
+    expect(holder.current?.()).toEqual([{ x: 40, y: 50, w: 10, h: 14 }]);
+    act(() => {
+      jest.advanceTimersByTime(260);
+    });
+    const [box] = holder.current!()!;
+    expect(box!.x).toBeGreaterThan(40);
+    expect(box).toMatchObject({ y: 50, w: 10, h: 14 });
+    unmount();
+    expect(holder.current).toBeNull();
+  });
+
+  it("hands a reader polling every frame the same boxes until the next paint, and nothing for actors it does not draw yet", () => {
+    const walker = {
+      frames: ["crowd_walk0_of", "crowd_walk1_of", "crowd_walk2_of", "crowd_walk3_of"],
+      x: 40,
+      y: 50,
+      frameMs: 125,
+      steps: [0, 1, 2, 3].map((dx) => ({ dx, dy: 0 })),
+    };
+    const actors = [walker];
+    const holder: { current: ActorBoxes | null } = { current: null };
+    const { rerender } = render(<IslandCanvas scene={scene} actors={actors} actorBoxes={holder} />);
+    firstFrame();
+    const first = holder.current!(actors);
+    // Nothing painted in between: the very same array, so a follower knows nobody moved.
+    expect(holder.current!(actors)).toBe(first);
+    expect(holder.current!()).toBe(first);
+    act(() => {
+      jest.advanceTimersByTime(130);
+    });
+    const next = holder.current!(actors);
+    expect(next).not.toBe(first);
+    expect(next![0]!.x).toBeGreaterThan(first![0]!.x);
+    // A new list the engine has not been handed yet: no answer, rather than the boxes of whoever stood at those indexes.
+    const more = [{ frames: ["crowd_stand_of"], x: 10, y: 10 }, walker];
+    expect(holder.current!(more)).toBeNull();
+    rerender(<IslandCanvas scene={scene} actors={more} actorBoxes={holder} />);
+    expect(holder.current!(more)).toHaveLength(2);
+    expect(holder.current!(actors)).toBeNull();
+  });
+
+  it("keeps a breathing, blinking sitter's and builder's boxes on their sprites, frame after frame", () => {
+    const sitter = { frames: ["sit_a_0", "sit_a_1"], x: 30, y: 40, frameMs: 1100 };
+    const builder = { frames: ["builder_0", "builder_1"], x: 60, y: 40, frameMs: 600, flip: true };
+    const actors = [sitter, builder];
+    const holder: { current: ActorBoxes | null } = { current: null };
+    render(<IslandCanvas scene={scene} actors={actors} actorBoxes={holder} />);
+    firstFrame();
+    const seen = new Set<unknown>();
+    for (let k = 0; k < 40; k++) {
+      const boxes = holder.current!(actors);
+      seen.add(boxes);
+      expect(boxes).toEqual([
+        { x: 30, y: 40, w: 8, h: 10 },
+        { x: 60, y: 40, w: 10, h: 14 },
+      ]);
+      act(() => {
+        jest.advanceTimersByTime(125);
+      });
+    }
+    // They were repainted as they breathed (a new list per painted frame), always on the same boxes.
+    expect(seen.size).toBeGreaterThan(1);
   });
 
   it("cleans up every timer when unmounted", () => {

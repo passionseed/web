@@ -3,7 +3,7 @@
  */
 import { MOTION_SIZES, MOTION_SPRITES, type MotionSpriteName } from "@/bot/assets/island/motion-sprites";
 import { PALETTE, SPRITES } from "@/bot/assets/island/sprites";
-import { buildScene, tagRect, type IslandPlot, type IslandScene } from "@/bot/src/quests/island/scene";
+import { buildScene, tagRect, type IslandPlot, type IslandScene, type SceneTree } from "@/bot/src/quests/island/scene";
 import type { Festival } from "@/lib/shift-island/festival";
 
 import { allSprites } from "../atlas";
@@ -20,11 +20,12 @@ import {
   crowdPlan,
   type VisitorsInput,
 } from "../crowd";
-import { CROWD_OUTFITS, CROWD_POSES, TEAM_SHIRTS, allOutfits, crowdSprite, crowdSprites, teamShirt } from "../crowdSprites";
+import { CROWD_OUTFITS, CROWD_POSES, TEAM_SHIRTS, WALK_CYCLE, allOutfits, crowdSprite, crowdSprites, teamShirt } from "../crowdSprites";
 import { actorAt, actorRect, lampRects, sceneModel } from "../draw";
 import { sinceFor } from "../engine";
 import { overlaps, union, type Rect } from "../geometry";
 import { MAX_SEATS, NO_PLAZA, plazaCentre, plazaCrowd, plazaWorld, type PlazaInput, type PlazaLabel, type PlazaWorld } from "../plaza";
+import { signpostFor, wholeUnit } from "../signposts";
 import type { LiveActor } from "../types";
 
 const SIZES = [1, 3, 8, 12, 20, 40, 80, 150];
@@ -85,6 +86,14 @@ interface Obstacle {
   rect: Rect;
 }
 
+/** The web's signpost for a tree in every view (close up, plain and with a board; the whole island), with its shadow at every lean. */
+function webSignposts(scene: IslandScene, tree: SceneTree): Rect[] {
+  return [signpostFor(tree, 1, false), signpostFor(tree, 1, true), signpostFor(tree, wholeUnit(scene), false)].flatMap((post) => [
+    post.rect,
+    { ...post.shadow, x: post.shadow.x - 2 * post.unit, w: post.shadow.w + 4 * post.unit },
+  ]);
+}
+
 /** What a person in the plaza must never stand on: the island's trees and their marks, the fixtures, the plaza's own pieces. */
 function obstacles(scene: IslandScene, world: PlazaWorld): Obstacle[] {
   const out: Obstacle[] = [];
@@ -95,6 +104,7 @@ function obstacles(scene: IslandScene, world: PlazaWorld): Obstacle[] {
     const tags = [scene.tags.find((t) => t.slot === slot)!, ...GLYPHS.map((g) => tagRect(slot, tree.left + Math.floor(tree.w / 2), tree.top + tree.h, g))];
     out.push({ what: `tree ${slot}`, rect: m.rect });
     tags.forEach((rect, i) => out.push({ what: `tag ${slot}.${i}`, rect }));
+    webSignposts(scene, tree).forEach((rect, i) => out.push({ what: `signpost ${slot}.${i}`, rect }));
     if (tree.key) out.push({ what: `key ${slot}`, rect: { x: tree.key.x, y: tree.key.y, w: 10, h: 16 } });
     if (tree.visitor) out.push({ what: `visitor ${slot}`, rect: { x: tree.visitor.x, y: tree.visitor.y, w: 10, h: 14 } });
     if (tree.lantern) out.push({ what: `lantern ${slot}`, rect: { x: tree.lantern.x, y: tree.lantern.y, w: 8, h: 14 } });
@@ -108,7 +118,7 @@ function obstacles(scene: IslandScene, world: PlazaWorld): Obstacle[] {
   out.push({ what: "well", rect: { x: scene.well.x, y: scene.well.y, w: 24, h: 24 } });
   lampRects(model).forEach((rect, i) => out.push({ what: `lamp ${i}`, rect }));
   if (scene.banner) out.push({ what: "banner", rect: { x: scene.banner.x, y: scene.banner.y, w: 48, h: 20 } });
-  // The plaza's own pieces (board, notes, stage, sign, prize board, campfire, its seats and flame).
+  // The plaza's own pieces (board, notes, countdown, stage, prize board, campfire, its seats and flame).
   for (const a of world.actors) {
     if (isCrowd(a)) continue;
     const [w, h] = MOTION_SIZES[a.frames[0] as MotionSpriteName];
@@ -129,18 +139,16 @@ function onLand(scene: IslandScene, r: Rect): boolean {
 }
 
 /**
- * A label's text box in native px (CSS px / 2 at the usual 2x), from its
- * longest text: the visitors' two lines up to 176px wide, the viewer's tag
- * (a 16px picture and คุณ) about 56px.
+/**
+ * A label's text box in native px (CSS px / 2 at the usual 2x), as drawn at
+ * 375px with room to spare: the viewer's small คุณ tag (11px text, about
+ * 32 x 17 CSS px). Nothing else is printed over the plaza.
  */
-const LABEL_SIZE: Partial<Record<PlazaLabel["id"], { w: number; h: number }>> = {
-  visitors: { w: 88, h: 20 },
-  me: { w: 28, h: 11 },
-  // The plaza's own, as drawn at 375px: the campfire's count.
-  campfireCount: { w: 66, h: 11 },
+const LABEL_SIZE: Record<PlazaLabel["id"], { w: number; h: number }> = {
+  me: { w: 20, h: 10 },
 };
 function labelBox(scene: IslandScene, label: PlazaLabel): Rect {
-  const { w, h } = LABEL_SIZE[label.id] ?? { w: 64, h: 20 };
+  const { w, h } = LABEL_SIZE[label.id];
   const x = (label.x / 100) * scene.width;
   const y = (label.y / 100) * scene.height;
   return label.anchor === "bottom" ? { x: x - w / 2, y: y - h, w, h } : { x, y: y - h / 2, w, h };
@@ -155,7 +163,7 @@ describe("crowdPlan", () => {
     for (const count of [0, -2, Number.NaN, Infinity]) expect(crowdPlan({ count, team: 3, me: true }, 8)).toBe(NO_CROWD);
   });
 
-  it("draws one figure per person up to eight, then +N", () => {
+  it("draws one figure per person up to eight, the rest only counted (more)", () => {
     for (let count = 1; count <= 60; count++) {
       const p = plan(count);
       const drawn = p.team + p.strollers + p.sitters + (p.me ? 1 : 0);
@@ -171,7 +179,7 @@ describe("crowdPlan", () => {
     expect(plan(1, 0, true)).toEqual({ me: true, team: 0, strollers: 0, sitters: 0, more: 0 });
     expect(plan(3, 2, true)).toEqual({ me: true, team: 2, strollers: 0, sitters: 0, more: 0 });
     expect(plan(4, 2, false)).toEqual({ me: false, team: 2, strollers: 2, sitters: 0, more: 0 });
-    // Teammates past three go to +N, they never become strangers.
+    // Teammates past three are only counted (more), they never become strangers.
     expect(plan(6, 5, true)).toEqual({ me: true, team: 3, strollers: 0, sitters: 0, more: 2 });
     // A team bigger than the island is cut to it.
     expect(plan(2, 9, true)).toEqual({ me: true, team: 1, strollers: 0, sitters: 0, more: 0 });
@@ -204,34 +212,35 @@ describe("the plaza's people in the world", () => {
     expect(plazaWorld(scene, { ...quiet, visitors: null })).toBe(NO_PLAZA);
     const world = plazaWorld(scene, { ...busy(scene), visitors: { count: 0, team: 0, me: false } });
     expect(crowd(world)).toEqual([]);
-    expect(world.labels.map((l) => l.id)).not.toContain("visitors");
+    expect(world.figures).toEqual([]);
   });
 
-  it("draws one stroller for one visitor on an otherwise empty plaza, with the day's label and no tag", () => {
+  it("draws one stroller for one visitor on an otherwise empty plaza, with no words: a tap on them says the day's count", () => {
     const world = plazaWorld(scene, { festival: null, pins: null, campfire: null, visitors: { count: 1, team: 0, me: false } });
     expect(world).not.toBe(NO_PLAZA);
     expect(crowd(world)).toHaveLength(1);
-    expect(world.labels.map((l) => [l.id, l.anchor])).toEqual([["visitors", "bottom"]]);
+    expect(world.figures.map((f) => f.kind)).toEqual(["crowd"]);
+    expect(world.labels).toEqual([]);
     expect(world.spots).toEqual([]);
   });
 
-  it("matches the plan: strollers, teammates, the viewer, guests in the campfire's empty seats, the labels", () => {
+  it("matches the plan: strollers, teammates, the viewer, guests in the campfire's empty seats, and only the viewer's tag in words", () => {
     const input = busy(scene);
     const world = plazaWorld(scene, input);
     const plan = plazaCrowd(input);
     expect(crowd(world)).toHaveLength(plan.strollers + plan.team + 1);
     // Three coworkers and two guests sit at the fire.
     expect(world.actors.filter((a) => a.frames[0].startsWith("sit_"))).toHaveLength(3 + plan.sitters);
-    // The counts say how many: no "+N" for figures not drawn.
-    expect(world.labels.map((l) => l.id)).toEqual(["campfireCount", "visitors", "me"]);
+    // No count anywhere (the day's, the campfire's, "+N"), no name over the notice board, no sign over the stage.
+    expect(world.labels.map((l) => l.id)).toEqual(["me"]);
   });
 
-  it("lights the fire's seats for guests even when the coworking room is empty, with no campfire count", () => {
+  it("lights the fire's seats for guests even when the coworking room is empty", () => {
     const world = plazaWorld(scene, { festival: null, pins: null, campfire: { count: 0 }, visitors: { count: 9, team: 0, me: false } });
     const order = world.actors.map((a) => a.frames[0]);
     expect(order.filter((n) => n.startsWith("sit_"))).toHaveLength(MAX_GUESTS);
     expect(order.filter((n) => n.startsWith("campfire_flame"))).toHaveLength(1);
-    expect(world.labels.map((l) => l.id)).not.toContain("campfireCount");
+    expect(world.labels).toEqual([]);
   });
 
   it("dresses teammates and the viewer in the team's shirt, and nobody else in it", () => {
@@ -331,7 +340,7 @@ describe("the plaza's people: placement on every island", () => {
     expect(problems).toEqual([]);
   });
 
-  it.each(cases)("the labels stay off trees and tags, and off each other ($n plots, mine $mine)", ({ n, mine, shift, decorated }) => {
+  it.each(cases)("the viewer's tag stays off trees and tags ($n plots, mine $mine)", ({ n, mine, shift, decorated }) => {
     const scene = buildScene(plots(n, mine, shift, decorated), { markMine: true, festival: true });
     const world = plazaWorld(scene, busy(scene));
     const model = sceneModel(scene);
@@ -344,8 +353,8 @@ describe("the plaza's people: placement on every island", () => {
         blocked.push({ what: `tag ${tree.slot}`, rect });
       }
     }
-    const ours = world.labels.filter((l) => l.id === "visitors" || l.id === "me");
-    expect(ours).toHaveLength(2);
+    const ours = world.labels.filter((l) => l.id === "me");
+    expect(ours).toHaveLength(1);
     const problems: string[] = [];
     for (const label of ours) {
       const box = labelBox(scene, label);
@@ -359,7 +368,7 @@ describe("the plaza's people: placement on every island", () => {
         const dy = Math.max(tag.rect.y - py, 0, py - (tag.rect.y + tag.rect.h));
         if (Math.hypot(dx, dy) < 40) problems.push(`${label.id} ${Math.round(Math.hypot(dx, dy))} px from ${tag.what}`);
       }
-      for (const other of ours) {
+      for (const other of world.labels) {
         if (other !== label && overlaps(box, labelBox(scene, other))) problems.push(`${label.id} over ${other.id}`);
       }
       // A tag over a teammate or stroller at home would hide them: the viewer's tag sits over their own head only.
@@ -374,7 +383,7 @@ describe("the plaza's people: placement on every island", () => {
   it.each(cases)("no figure ever walks under a plaza label ($n plots, mine $mine)", ({ n, mine, shift, decorated }) => {
     const scene = buildScene(plots(n, mine, shift, decorated), { markMine: true, festival: true });
     const problems: string[] = [];
-    // A full campfire too, so its "+N" shows.
+    // A full campfire too: more people than seats.
     for (const campfire of [{ count: 3 }, { count: 12 }]) {
       const world = plazaWorld(scene, { ...busy(scene), campfire });
       const people = world.actors.filter(isCrowd);
@@ -460,6 +469,78 @@ describe("the plaza's people: sprites and frames", () => {
       if (next.dx > s.dx) expect(next.flip).toBe(true);
       if (next.dx < s.dx) expect(next.flip).toBe(false);
     });
+  });
+
+  it("makes its walk from the visitor itself: the same head and shirt, the body a pixel lower on each step", () => {
+    const all = crowdSprites();
+    const outfit = CROWD_OUTFITS[2];
+    const visitor = SPRITES.visitor.map((row) => row.replace(/b/g, outfit.hair).replace(/a/g, outfit.shirt));
+    for (const pose of WALK_CYCLE) {
+      const rows = all[crowdSprite(pose, outfit)];
+      // Feet on the ground: the last row is the feet, where the shadow goes.
+      expect(rows[PERSON.h - 1]).toMatch(/o/);
+      if (pose === "walk0" || pose === "walk2") {
+        expect(rows[0]).toBe(".".repeat(PERSON.w));
+        expect(rows.slice(1, 8)).toEqual(visitor.slice(0, 7));
+      } else expect(rows.slice(0, 10)).toEqual(visitor.slice(0, 10));
+    }
+    // A breath is the standing figure settled a pixel; a blink closes its eye.
+    expect(all[crowdSprite("rest", outfit)].slice(1, 10)).toEqual(visitor.slice(0, 9));
+    expect(all[crowdSprite("rest", outfit)].slice(10)).toEqual(visitor.slice(10));
+    expect(all[crowdSprite("blink", outfit)][4]).toBe(visitor[4].slice(0, 4) + "k" + visitor[4].slice(5));
+  });
+
+  it("steps through the four walking frames in order, two ticks each, and never stands mid-walk", () => {
+    for (const arriving of [false, true]) {
+      const world = plazaWorld(scene, busy(scene, { arriving }));
+      for (const actor of world.actors.filter(isCrowd)) {
+        const n = actor.frames.length;
+        const steps = actor.steps!;
+        const moves = (i: number) => {
+          const a = steps[(i - 1 + n) % n];
+          const b = steps[i];
+          return a.dx !== b.dx || a.dy !== b.dy;
+        };
+        let walks = 0;
+        for (let i = 0; i < n; i++) {
+          // Where a walk begins (an arrival's first frame has no frame before it).
+          if (!moves(i) || moves((i - 1 + n) % n) || (actor.once && i === 0)) continue;
+          for (let k = 0; moves((i + k) % n) && k < n; k++) {
+            expect(actor.frames[(i + k) % n]).toBe(actor.frames[(i + k) % n].replace(/walk\d/, WALK_CYCLE[Math.floor(k / 2) % 4]));
+            expect(actor.frames[(i + k) % n]).toMatch(/^crowd_walk\d_/);
+          }
+          walks++;
+        }
+        // Everyone who goes anywhere walks there (teammates and the viewer at home stay put).
+        if (steps.some((s) => s.dx !== steps[0].dx || s.dy !== steps[0].dy)) expect(walks).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("breathes and blinks only standing in place, and a still island shows everyone plain", () => {
+    for (const arriving of [false, true]) {
+      const world = plazaWorld(scene, busy(scene, { arriving }));
+      for (const [k, actor] of world.actors.filter(isCrowd).entries()) {
+        const n = actor.frames.length;
+        expect(actor.frames[stillFrame(actor)]).not.toMatch(/^crowd_(rest|blink)_/);
+        actor.frames.forEach((name, i) => {
+          if (!/^crowd_(rest|blink)_/.test(name)) return;
+          // The arrival stands plain: it ends on one held frame.
+          expect(actor.once).toBeFalsy();
+          // Standing where the frame before it stood: never a step.
+          const before = actor.steps![(i - 1 + n) % n];
+          expect([k, before.dx, before.dy]).toEqual([k, actor.steps![i].dx, actor.steps![i].dy]);
+        });
+        // Breathing runs are a breath long, never a one-tick twitch.
+        const rest = actor.frames.map((f) => f.startsWith("crowd_rest_"));
+        rest.forEach((r, i) => {
+          if (!r || rest[(i - 1 + n) % n]) return;
+          let len = 0;
+          while (rest[(i + len) % n] && len < n) len++;
+          expect(len).toBeGreaterThanOrEqual(4);
+        });
+      }
+    }
   });
 });
 

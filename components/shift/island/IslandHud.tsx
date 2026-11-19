@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 
 import { PixelIcon } from "@/components/shift/poster/pixel/PixelRects";
 import type { ViewerCard } from "@/lib/supabase/shift-quests/types";
@@ -9,11 +9,41 @@ import { HUD, ISLAND } from "./copy";
 import island from "./island.module.css";
 import { PLAYER } from "./player/copy";
 import { PixelAvatar } from "./player/PixelAvatar";
-import { PALETTE, WEB_SPRITES, type WebIcon } from "./sprites";
+import { PALETTE, WEB_SPRITES } from "./sprites";
 import styles from "./world.module.css";
 
 /** Tree stages counted on the chip's meter. */
 const STAGES = 7;
+
+/** CSS px the HUD's bottom bar covers, from the screen's bottom edge: the world's scroll-padding reads it. */
+export const HUD_BOTTOM_VAR = "--isl-hud-bottom";
+
+/**
+ * Measures how much of the screen the bottom bar covers (the next-step card
+ * is taller than the world's fixed 96px reserve) into HUD_BOTTOM_VAR, so what
+ * the world scrolls to (a plot focused by keyboard, a person who speaks)
+ * lands above the card, not behind it.
+ */
+function useHudBottom(bar: RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    const element = bar.current;
+    if (!element) return;
+    const root = document.documentElement;
+    const read = () => {
+      const covered = Math.max(0, Math.round(window.innerHeight - element.getBoundingClientRect().top));
+      root.style.setProperty(HUD_BOTTOM_VAR, `${covered}px`);
+    };
+    read();
+    const observer = typeof ResizeObserver === "function" ? new ResizeObserver(read) : null;
+    observer?.observe(element);
+    window.addEventListener("resize", read);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", read);
+      root.style.removeProperty(HUD_BOTTOM_VAR);
+    };
+  }, [bar]);
+}
 
 /**
  * The HUD over the full-screen island: a top row (the chip on the left, round
@@ -32,6 +62,8 @@ export function Hud({
   buttons: ReactNode;
   bottom: ReactNode;
 }) {
+  const bar = useRef<HTMLDivElement>(null);
+  useHudBottom(bar);
   return (
     <div className={styles.hud}>
       <header className={styles.hudTop}>
@@ -42,7 +74,9 @@ export function Hud({
         </div>
         <div className={`${styles.hudButtons} ${island.hudButtonsTight}`}>{buttons}</div>
       </header>
-      <div className={styles.hudBottom}>{bottom}</div>
+      <div ref={bar} className={styles.hudBottom}>
+        {bottom}
+      </div>
     </div>
   );
 }
@@ -73,7 +107,7 @@ export function HudChip({
   return (
     <button
       type="button"
-      className={`${styles.chip} ${styles.glass} ${styles.press}`}
+      className={`${styles.chip} ${styles.wood} ${styles.press}`}
       aria-label={waiting ? `${label}, ${waiting}` : label}
       aria-haspopup="dialog"
       onClick={onOpen}
@@ -126,7 +160,7 @@ export function HudLabel({
   );
   if (!onOpen) {
     return (
-      <div className={`${styles.chip} ${styles.glass}`} data-static="true">
+      <div className={`${styles.chip} ${styles.wood}`} data-static="true">
         {face}
       </div>
     );
@@ -134,7 +168,7 @@ export function HudLabel({
   return (
     <button
       type="button"
-      className={`${styles.chip} ${styles.glass} ${styles.press}`}
+      className={`${styles.chip} ${styles.wood} ${styles.press}`}
       aria-label={label ? `${text}, ${label}` : text}
       aria-haspopup="dialog"
       onClick={onOpen}
@@ -153,7 +187,7 @@ export function BoardButton({ wide, concealed = false, onClick }: { wide: boolea
   return (
     <button
       type="button"
-      className={`${styles.boardButton} ${styles.glass} ${styles.press}${concealed ? ` ${island.concealed}` : ""}`}
+      className={`${styles.boardButton} ${styles.wood} ${styles.press}${concealed ? ` ${island.concealed}` : ""}`}
       data-wide={wide ? "true" : undefined}
       data-concealed={concealed ? "true" : undefined}
       aria-haspopup="dialog"
@@ -161,16 +195,6 @@ export function BoardButton({ wide, concealed = false, onClick }: { wide: boolea
     >
       <PixelIcon grid={WEB_SPRITES.scroll} palette={PALETTE} scale={2} />
       <span>{HUD.board}</span>
-    </button>
-  );
-}
-
-/** Under the next-step card: one quiet way to the whole quest board. */
-export function BoardLink({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <button type="button" className={`${styles.boardLink} ${styles.glass} ${styles.press}`} aria-haspopup="dialog" onClick={onClick}>
-      <PixelIcon grid={WEB_SPRITES.scroll} palette={PALETTE} scale={1} />
-      <span>{label}</span>
     </button>
   );
 }

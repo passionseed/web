@@ -1,68 +1,32 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 import { PixelIcon } from "@/components/shift/poster/pixel/PixelRects";
-import { loadWallet } from "@/app/shift/island/wallet-actions";
-import type { EarnRate, IslandConsent, WalletDetail } from "@/lib/supabase/shift-quests/playerTypes";
+import type { EarnRate, WalletDetail } from "@/lib/supabase/shift-quests/playerTypes";
 
-import { ConsentBanner } from "../consent/ConsentBanner";
 import { thaiShortDate } from "../copy";
 import island from "../island.module.css";
 import { IslandSheet } from "../IslandSheet";
 import { PALETTE, WEB_SPRITES } from "../sprites";
 import world from "../world.module.css";
-import { coinNumber, WALLET } from "./copy";
+import { coinNumber, SHOP, WALLET } from "./copy";
 import styles from "./player.module.css";
-import { ShopList } from "./ShopList";
-
-type WalletState = { status: "loading" } | { status: "error"; error: string } | { status: "ready"; data: WalletDetail };
-
-/**
- * The wallet, read when the sheet opens (and again after a redeem or a
- * cancel), never with the page. A newer read drops an older answer, and
- * nothing lands after unmount. While a read runs, the last answer stays.
- */
-function useWallet(open: boolean): { state: WalletState; reload: () => void } {
-  const [state, setState] = useState<WalletState>({ status: "loading" });
-  const round = useRef(0);
-  const reload = useCallback(() => {
-    const mine = ++round.current;
-    loadWallet().then(
-      (result) => {
-        if (mine !== round.current) return;
-        setState(result.ok ? { status: "ready", data: result.data } : { status: "error", error: result.error });
-      },
-      () => {
-        if (mine === round.current) setState({ status: "error", error: WALLET.error });
-      },
-    );
-  }, []);
-  useEffect(() => {
-    if (open) reload();
-  }, [open, reload]);
-  useEffect(
-    () => () => {
-      round.current++;
-    },
-    [],
-  );
-  return { state, reload };
-}
+import { useWallet } from "./useWallet";
 
 interface WalletSheetProps {
   open: boolean;
   onClose: () => void;
-  /** null or undefined: consent is not known, so nothing is gated in the UI (the database still is). */
-  consent?: IslandConsent | null;
-  onOpenConsent: () => void;
+  /** Opens the shop (the merchant ship's sheet). */
+  onOpenShop: () => void;
 }
 
 /**
  * "กระเป๋า Passioncoin": the balance, how coins are earned (approved work and
- * community value, never hours), the latest ledger lines and the shop.
+ * community value, never hours), the latest ledger lines, and the way to the
+ * shop (the merchant ship, ShopSheet).
  */
-export function WalletSheet({ open, onClose, consent, onOpenConsent }: WalletSheetProps) {
+export function WalletSheet({ open, onClose, onOpenShop }: WalletSheetProps) {
   const { state, reload } = useWallet(open);
   return (
     <IslandSheet
@@ -87,7 +51,7 @@ export function WalletSheet({ open, onClose, consent, onOpenConsent }: WalletShe
             </button>
           </div>
         ) : (
-          <WalletBody wallet={state.data} consent={consent} onOpenConsent={onOpenConsent} onChanged={reload} />
+          <WalletBody wallet={state.data} onOpenShop={onOpenShop} />
         )}
       </div>
     </IslandSheet>
@@ -109,17 +73,7 @@ function signed(amount: number): string {
 /** The newest entries shown before "ดูทั้งหมด". */
 const RECENT_FIRST = 3;
 
-function WalletBody({
-  wallet,
-  consent,
-  onOpenConsent,
-  onChanged,
-}: {
-  wallet: WalletDetail;
-  consent?: IslandConsent | null;
-  onOpenConsent: () => void;
-  onChanged: () => void;
-}) {
+function WalletBody({ wallet, onOpenShop }: { wallet: WalletDetail; onOpenShop: () => void }) {
   const rates = EARN_LINES.map(({ key, line }) => ({ key, line, rate: wallet.earn[key] })).filter(
     (row): row is { key: keyof WalletDetail["earn"]; line: (n: string) => string; rate: EarnRate } => row.rate != null,
   );
@@ -137,8 +91,9 @@ function WalletBody({
         {!wallet.live ? <p className={island.quiet}>{WALLET.off}</p> : null}
       </section>
 
-      {consent && !consent.ok ? <ConsentBanner consent={consent} onOpen={onOpenConsent} compact /> : null}
-      <ShopList wallet={wallet} onChanged={onChanged} />
+      <button type="button" className={`ei-button-dawn ${island.primary}`} aria-haspopup="dialog" onClick={onOpenShop}>
+        <span>{SHOP.toShip}</span>
+      </button>
 
       <section className={styles.section} aria-label={WALLET.earnHeading}>
         <h3 className={island.detailHeading}>{WALLET.earnHeading}</h3>

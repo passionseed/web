@@ -2,15 +2,23 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 
 import { buildScene } from "@/bot/src/quests/island/scene";
 import type { IslandCanvasProps } from "@/components/shift/island/live/IslandCanvas";
-import { waterColor } from "@/lib/shift-island/live/lighting";
+import { gradedWater } from "@/lib/shift-island/live/grade";
 import { plazaWorld, type PlazaInput, type PlazaSpotId } from "@/lib/shift-island/live/plaza";
+import { BOARD, boardInk, signpostFor } from "@/lib/shift-island/live/signposts";
 import type { IslandPicture } from "@/lib/shift-island/picture";
 
 import { ISLAND, PRE_STAGE, stageName } from "../copy";
 import { IslandViewport, hotspotLabel } from "../IslandViewport";
 
-/** The living island, mocked: jsdom has no canvas. "idle" never draws, "ready" draws at night, "fail" has no 2D context. */
-const mockLive: { mode: "idle" | "ready" | "fail"; props: IslandCanvasProps[] } = { mode: "idle", props: [] };
+/**
+ * The living island, mocked: jsdom has no canvas. "idle" never draws, "ready" draws at night, "fail" has no 2D context.
+ * `steer` records how the viewport steers the interact outline.
+ */
+const mockLive: {
+  mode: "idle" | "ready" | "fail";
+  props: IslandCanvasProps[];
+  steer: { aim: jest.Mock; focus: jest.Mock };
+} = { mode: "idle", props: [], steer: { aim: jest.fn(), focus: jest.fn() } };
 
 jest.mock("../live/IslandLive", () => {
   const { useEffect } = jest.requireActual<typeof import("react")>("react");
@@ -18,8 +26,17 @@ jest.mock("../live/IslandLive", () => {
     IslandLive: function MockIslandLive(props: IslandCanvasProps) {
       mockLive.props.push(props);
       useEffect(() => {
+        const holder = props.interact;
+        if (holder) holder.current = mockLive.steer;
+        return () => {
+          if (holder) holder.current = null;
+        };
+        // Once per mount, like the real canvas.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, []);
+      useEffect(() => {
         if (mockLive.mode === "ready") {
-          props.onPhase?.("night", waterColor("night"));
+          props.onPhase?.("night", gradedWater("night"));
           props.onReady?.();
         }
         if (mockLive.mode === "fail") props.onFail?.();
@@ -34,6 +51,7 @@ jest.mock("../live/IslandLive", () => {
 beforeEach(() => {
   mockLive.mode = "idle";
   mockLive.props = [];
+  mockLive.steer = { aim: jest.fn(), focus: jest.fn() };
 });
 
 const picture: IslandPicture = {
@@ -93,6 +111,41 @@ describe("IslandViewport", () => {
 
   it("drops the signs on the whole island, where plots sit too close", () => {
     render(<IslandViewport picture={picture} onPlot={jest.fn()} whole />);
+    expect(screen.queryByTestId("plot-signs")).toBeNull();
+  });
+
+  it("hangs each name from its plot's signpost once the living island draws, in the post's own wood", () => {
+    mockLive.mode = "ready";
+    render(<IslandViewport picture={live} onPlot={jest.fn()} />);
+    // The canvas stands the posts and the ropes: only the named plot's carries a board.
+    expect(mockLive.props.at(-1)?.signs).toEqual([4]);
+    const signs = screen.getByTestId("plot-signs");
+    expect(signs).toHaveAttribute("aria-hidden", "true");
+    expect(signs).toHaveAttribute("data-hung", "true");
+    const board = within(signs).getByText("สวนผักดาดฟ้า");
+    expect(board).toHaveAttribute("data-slot", "4");
+    // Under the ropes of plot 4's post, centred on it, in a strip as wide as the widest board.
+    const scene = live.scene!;
+    const post = signpostFor(scene.trees.find((t) => t.slot === 4)!, 1, true);
+    const pct = (v: number, of: number) => `${(v / of) * 100}%`;
+    expect(board.parentElement).toHaveStyle({
+      left: pct(post.hang!.cx - BOARD.maxW / 2, scene.width),
+      top: pct(post.hang!.y, scene.height),
+      width: pct(BOARD.maxW, scene.width),
+    });
+    // Wood and paint of the hour (the mock draws at night), measured in the island's own pixels.
+    const ink = boardInk("night");
+    expect(signs.style.getPropertyValue("--sign-face")).toBe(ink.face);
+    expect(signs.style.getPropertyValue("--sign-ink")).toBe(ink.ink);
+    expect(signs.style.getPropertyValue("--sign-px")).toBe("2px");
+    // The plot's name for screen readers is unchanged.
+    expect(screen.getByRole("button", { name: "แปลง #4, สวนผักดาดฟ้า" })).toBeInTheDocument();
+  });
+
+  it("hangs no boards on the whole island, where the names do not show", () => {
+    mockLive.mode = "ready";
+    render(<IslandViewport picture={live} onPlot={jest.fn()} whole />);
+    expect(mockLive.props.at(-1)?.signs).toEqual([]);
     expect(screen.queryByTestId("plot-signs")).toBeNull();
   });
 
@@ -168,12 +221,14 @@ describe("IslandViewport", () => {
     const { container } = render(<IslandViewport picture={live} onPlot={jest.fn()} />);
     const named = screen.getByRole("img", { name: "ภาพเกาะ SHIFT ที่มีต้นไม้ของแต่ละโปรเจกต์" });
     expect(named.tagName).toBe("SPAN");
-    expect(container.querySelector("img")).toHaveStyle({ visibility: "hidden" });
+    // The canvas fades in, and the PNG under it hides once that fade is over (world.module.css).
+    expect(container.querySelector("img")).toHaveAttribute("data-hidden", "true");
+    expect(container.querySelector("[data-ready]")).toHaveAttribute("data-ready", "true");
     // Plots still answer taps above the canvas.
     expect(screen.getByRole("button", { name: "แปลง #4, สวนผักดาดฟ้า" })).toBeInTheDocument();
     // The sea around the picture takes the light of the hour.
     const viewport = container.firstElementChild as HTMLElement;
-    const [r, g, b] = [1, 3, 5].map((i) => parseInt(waterColor("night").slice(i, i + 2), 16));
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(gradedWater("night").slice(i, i + 2), 16));
     expect(viewport.style.background).toBe(`rgb(${r}, ${g}, ${b})`);
     expect(viewport).toHaveAttribute("data-live", "true");
   });
@@ -318,7 +373,7 @@ describe("IslandViewport", () => {
   it("is in the server's light from the first paint, before the living island draws", () => {
     const { container } = render(<IslandViewport picture={live} onPlot={jest.fn()} initialPhase="night" />);
     const world = container.firstElementChild as HTMLElement;
-    const [r, g, b] = waterColor("night").match(/[0-9a-f]{2}/gi)!.map((h) => parseInt(h, 16));
+    const [r, g, b] = gradedWater("night").match(/[0-9a-f]{2}/gi)!.map((h) => parseInt(h, 16));
     expect(world.style.background).toBe(`rgb(${r}, ${g}, ${b})`);
     expect(container.querySelector("[data-phase]")).toHaveAttribute("data-phase", "night");
     // The daytime PNG takes the night's multiply until the canvas has drawn.
@@ -383,14 +438,18 @@ describe("IslandViewport", () => {
       campfire: { count: 11 },
       prizes: true,
     };
-    const labels = { campfireCount: "11 คนกำลังทำงานอยู่" };
+    // The only word the plaza prints; it shows only over the viewer's own figure (visiting below).
+    const labels = { me: "คุณ" };
     const names: Record<PlazaSpotId, string> = {
       notice: "กระดานเควสต์: ตั้งชื่อปัญหา",
       stage: "Demo Day 28 พ.ย. อีก 17 วัน",
       campfire: "ห้อง coworking, 11 คน",
       prizes: "ป้ายรางวัล Demo Day",
+      ship: "เรือสินค้า เปิดร้านค้า",
     };
     const plaza = (onSpot?: (id: PlazaSpotId) => void) => ({ input, labels, names, onSpot });
+    /** The same plaza with the viewer checked in today: their figure, and their คุณ tag over it. */
+    const visiting = () => ({ ...plaza(jest.fn()), input: { ...input, visitors: { count: 3, team: 0, me: true } } });
 
     it("hands the living island the plaza's sprites, and the same empty list without a plaza", () => {
       const { rerender } = render(<IslandViewport picture={live} onPlot={jest.fn()} />);
@@ -462,25 +521,27 @@ describe("IslandViewport", () => {
     });
 
     it("shows no labels before the living island draws (the PNG has no plaza)", () => {
-      const { container } = render(<IslandViewport picture={live} onPlot={jest.fn()} plaza={plaza(jest.fn())} />);
+      const { container } = render(<IslandViewport picture={live} onPlot={jest.fn()} plaza={visiting()} />);
       expect(container.querySelector("[data-label]")).toBeNull();
-      expect(screen.queryByText(labels.campfireCount)).toBeNull();
     });
 
-    it("labels the campfire over the living island, hidden from assistive tech", () => {
+    it("prints no words over the places, only the viewer's คุณ tag over their own figure, hidden from assistive tech", () => {
       mockLive.mode = "ready";
-      const { container, rerender } = render(<IslandViewport picture={live} onPlot={jest.fn()} plaza={plaza(jest.fn())} />);
+      const { container, rerender } = render(<IslandViewport picture={live} onPlot={jest.fn()} plaza={visiting()} />);
       const shown = [...container.querySelectorAll<HTMLElement>("[data-label]")];
-      expect(shown.map((el) => [el.dataset.label, el.dataset.anchor, el.textContent])).toEqual([
-        ["campfireCount", "bottom", labels.campfireCount],
-      ]);
-      const points = plazaWorld(live.scene!, input).labels;
+      expect(shown.map((el) => [el.dataset.label, el.dataset.anchor, el.textContent])).toEqual([["me", "bottom", "คุณ"]]);
+      // No words over the notice board, the stage (its countdown board draws the days), the prize board or the
+      // campfire (11 people, more than its seats): a tap opens each.
+      for (const id of ["notice", "stage", "prizes", "campfire"]) {
+        expect(container.querySelector(`[data-spot="${id}"]`)).toBeEmptyDOMElement();
+      }
+      const points = plazaWorld(live.scene!, visiting().input).labels;
       shown.forEach((el, i) => {
         expect(el.style.left).toBe(`${points[i].x}%`);
         expect(el.style.top).toBe(`${points[i].y}%`);
         expect(el.closest("[aria-hidden='true']")).not.toBeNull();
       });
-      rerender(<IslandViewport picture={live} onPlot={jest.fn()} plaza={plaza(jest.fn())} whole />);
+      rerender(<IslandViewport picture={live} onPlot={jest.fn()} plaza={visiting()} whole />);
       expect(container.querySelector("[data-label]")).toBeNull();
     });
 
@@ -582,6 +643,136 @@ describe("IslandViewport", () => {
       unmount();
       expect(onLiveChange).toHaveBeenLastCalledWith(false);
     });
+  });
+});
+
+describe("IslandViewport interact outline", () => {
+  /** Native px to CSS px in these tests: no screen is measured in jsdom, so the island is at its 2x. */
+  const S = 2;
+  const box = (el: Element, r: { left: number; top: number; width: number; height: number }) => {
+    el.getBoundingClientRect = () => ({ ...r, x: r.left, y: r.top, right: r.left + r.width, bottom: r.top + r.height, toJSON: () => r }) as DOMRect;
+  };
+  /** The picture's box over the canvas, at the page's top-left at 2x. */
+  function overlay(): HTMLElement {
+    const el = screen.getByRole("group", { name: "แปลงบนเกาะ" }).parentElement!;
+    box(el, { left: 0, top: 0, width: live.width * S, height: live.height * S });
+    return el;
+  }
+  const world = (container: HTMLElement) => container.querySelector<HTMLElement>('[data-live="true"]')!;
+  function pointer(target: Element, type: string, pointerType: string, x = 0, y = 0) {
+    const event = new MouseEvent(type, { bubbles: true, clientX: x, clientY: y });
+    Object.defineProperty(event, "pointerType", { value: pointerType });
+    act(() => {
+      target.dispatchEvent(event);
+    });
+  }
+  /** Lets the aim's animation frame run. */
+  const frame = () => act(() => new Promise((done) => setTimeout(done, 40)));
+
+  it("hands the living island every plot as a target once it draws, and none before", () => {
+    const { unmount } = render(<IslandViewport picture={live} onPlot={jest.fn()} />);
+    expect(mockLive.props.at(-1)?.targets).toEqual([]);
+    unmount();
+    mockLive.mode = "ready";
+    render(<IslandViewport picture={live} onPlot={jest.fn()} />);
+    expect(mockLive.props.at(-1)?.targets?.map((t) => t.key)).toEqual(["plot:3", "plot:4", "plot:9"]);
+    const scene = live.scene!;
+    expect(mockLive.props.at(-1)?.targets?.[1].shape).toEqual({ kind: "tree", tree: scene.trees.findIndex((t) => t.slot === 4) });
+  });
+
+  it("draws no outline on the island that takes no taps", () => {
+    mockLive.mode = "ready";
+    render(<IslandViewport picture={live} interactive={false} />);
+    expect(mockLive.props.at(-1)?.targets).toEqual([]);
+  });
+
+  it("aims at the middle of the room between the HUD bars on a touch screen, and follows a scroll", async () => {
+    mockLive.mode = "ready";
+    const { container } = render(<IslandViewport picture={live} onPlot={jest.fn()} />);
+    overlay();
+    const el = world(container);
+    box(el, { left: 0, top: 0, width: 375, height: 812 });
+    Object.defineProperty(el, "clientWidth", { configurable: true, value: 375 });
+    Object.defineProperty(el, "clientHeight", { configurable: true, value: 812 });
+    act(() => {
+      el.dispatchEvent(new Event("scroll"));
+    });
+    await frame();
+    const mid = (104 + 812 - 96) / 2;
+    expect(mockLive.steer.aim).toHaveBeenLastCalledWith({ x: 187.5 / S, y: mid / S, reach: 28 / S });
+    // Scrolled: the picture moved under the middle.
+    box(overlay(), { left: -100, top: -60, width: live.width * S, height: live.height * S });
+    act(() => {
+      el.dispatchEvent(new Event("scroll"));
+    });
+    await frame();
+    expect(mockLive.steer.aim).toHaveBeenLastCalledWith({ x: 287.5 / S, y: (mid + 60) / S, reach: 28 / S });
+  });
+
+  it("follows a mouse pointer on a desktop, closer in, and aims nowhere once it leaves", async () => {
+    mockLive.mode = "ready";
+    const { container } = render(<IslandViewport picture={live} onPlot={jest.fn()} />);
+    overlay();
+    const el = world(container);
+    pointer(el, "pointermove", "mouse", 120, 80);
+    await frame();
+    expect(mockLive.steer.aim).toHaveBeenLastCalledWith({ x: 60, y: 40, reach: 14 / S });
+    pointer(el, "pointerleave", "mouse");
+    await frame();
+    expect(mockLive.steer.aim).toHaveBeenLastCalledWith(null);
+  });
+
+  it("aims only with a mouse on the whole island, which never scrolls", async () => {
+    mockLive.mode = "ready";
+    const { container } = render(<IslandViewport picture={live} onPlot={jest.fn()} whole />);
+    overlay();
+    const el = world(container);
+    act(() => {
+      el.dispatchEvent(new Event("scroll"));
+    });
+    await frame();
+    expect(mockLive.steer.aim).toHaveBeenLastCalledWith(null);
+    pointer(el, "pointermove", "mouse", 120, 80);
+    await frame();
+    expect(mockLive.steer.aim).toHaveBeenLastCalledWith({ x: 60, y: 40, reach: 14 / S });
+  });
+
+  it("shows the outline round the plot a keyboard focuses, and not for a tap's focus", () => {
+    mockLive.mode = "ready";
+    render(<IslandViewport picture={live} onPlot={jest.fn()} />);
+    const four = screen.getByRole("button", { name: "แปลง #4, สวนผักดาดฟ้า" });
+    const real = Element.prototype.matches;
+    const matches = jest.spyOn(Element.prototype, "matches");
+    let keyboard = true;
+    matches.mockImplementation(function (this: Element, selector: string) {
+      return selector === ":focus-visible" ? keyboard : real.call(this, selector);
+    });
+    try {
+      act(() => four.focus());
+      expect(mockLive.steer.focus).toHaveBeenLastCalledWith("plot:4");
+      act(() => four.blur());
+      expect(mockLive.steer.focus).toHaveBeenLastCalledWith(null);
+      keyboard = false;
+      act(() => four.focus());
+      expect(mockLive.steer.focus).toHaveBeenLastCalledWith(null);
+    } finally {
+      matches.mockRestore();
+    }
+  });
+
+  it("keeps every tap where it went: a plot opens its own sheet whatever the outline shows", async () => {
+    mockLive.mode = "ready";
+    const onPlot = jest.fn();
+    const { container } = render(<IslandViewport picture={live} onPlot={onPlot} />);
+    overlay();
+    // The outline shows round plot 3 (the mouse is over it); the tap lands on plot 4's button.
+    const three = live.hotspots[0];
+    pointer(world(container), "pointermove", "mouse", ((three.x + three.w / 2) / 100) * live.width * S, ((three.y + three.h / 2) / 100) * live.height * S);
+    await frame();
+    expect(mockLive.steer.aim).toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "แปลง #4, สวนผักดาดฟ้า" }));
+    expect(onPlot).toHaveBeenCalledTimes(1);
+    expect(onPlot).toHaveBeenCalledWith(live.hotspots[1]);
   });
 });
 

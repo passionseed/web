@@ -38,43 +38,47 @@ describe("today's visitors: plazaProps", () => {
       const props = plazaProps(null, null, null, undefined, visitors);
       expect(props.input.visitors).toEqual(visitors);
       expect(props.labels).toEqual({});
+      expect(props.people).toBeUndefined();
     }
   });
 
-  it("labels the day's count; a viewer without a team gets no team line and no tag", () => {
+  it("prints no count: the day's count is only words for the people button, with no team line or tag for a viewer without a team", () => {
     const props = plazaProps(null, null, null, undefined, { count: 5, team: 0, me: false });
-    expect(props.labels).toEqual({ visitors: "วันนี้มีคนเช็กอินบนเกาะแล้ว 5 คน" });
+    expect(props.labels).toEqual({});
+    expect(props.people).toBe("วันนี้มีคนเช็กอินบนเกาะแล้ว 5 คน");
   });
 
-  it("adds the team's line and the viewer's tag for the viewer's own island", () => {
+  it("adds the team's line to those words, and draws the viewer's small tag, on the viewer's own island", () => {
     const props = plazaProps(null, null, null, undefined, { count: 5, team: 2, me: true, shirt: "l" });
-    expect(props.labels).toEqual({ visitors: "วันนี้มีคนเช็กอินบนเกาะแล้ว 5 คน\nวันนี้เพื่อนร่วมทีมเช็กอินแล้ว 2 คน", me: "คุณ" });
+    expect(props.labels).toEqual({ me: "คุณ" });
+    expect(props.people).toBe("วันนี้มีคนเช็กอินบนเกาะแล้ว 5 คน วันนี้เพื่อนร่วมทีมเช็กอินแล้ว 2 คน");
   });
 
-  it("says the whole count past the figures it can draw: no +N label", () => {
-    // 20 people, a campfire of 2: the viewer, 3 teammates, 2 strollers and 2 guests by the fire; the line says 20.
+  it("prints no +N and no campfire count past the figures it can draw: the day's count and the campfire's sheet say them", () => {
+    // 20 people, a campfire of 2: the viewer, 3 teammates, 2 strollers and 2 guests by the fire.
     const props = plazaProps(null, null, { count: 2, joinUrl: "" }, undefined, { count: 20, team: 4, me: true, shirt: "l" });
-    expect(Object.keys(props.labels).sort()).toEqual(["campfireCount", "me", "visitors"]);
-    expect(props.labels.visitors).toContain("20 คน");
+    expect(props.labels).toEqual({ me: "คุณ" });
+    expect(props.people).toBe("วันนี้มีคนเช็กอินบนเกาะแล้ว 20 คน วันนี้เพื่อนร่วมทีมเช็กอินแล้ว 4 คน");
   });
 });
 
 describe("today's visitors: PlazaLayer", () => {
   const props = plazaProps(null, null, null, undefined, { count: 3, team: 1, me: true, shirt: "l" });
 
-  it("puts the viewer's initial and คุณ over their own figure, and reads the day's line out once", () => {
+  it("puts only คุณ over the viewer's own figure, prints no count, and reads the day's line out once", () => {
     const world = plazaWorld(scene, props.input);
     const { container } = render(
-      <PlazaLayer world={world} labels={props.labels} names={{}} interactive={false} showLabels whole={false} me={{ name: "Mint", avatarUrl: null }} />,
+      <PlazaLayer world={world} labels={props.labels} names={{}} interactive={false} showLabels whole={false} people={props.people} />,
     );
     const tag = container.querySelector<HTMLElement>('[data-label="me"]')!;
-    expect(tag.textContent).toBe("Mคุณ");
+    expect(tag.textContent).toBe("คุณ");
     expect(tag.dataset.delayed).toBeUndefined();
-    expect(container.querySelector('[data-label="visitors"]')!.textContent).toBe("วันนี้มีคนเช็กอินบนเกาะแล้ว 3 คน\nวันนี้เพื่อนร่วมทีมเช็กอินแล้ว 1 คน");
-    // The labels are decoration; the line is said once, as one sentence.
+    // The tag is the only word floating over the plaza.
+    expect([...container.querySelectorAll<HTMLElement>("[data-label]")].map((el) => el.dataset.label)).toEqual(["me"]);
+    // Nobody can be greeted here (the island only shows the place): the line is said once, as one sentence, and never drawn.
     const said = container.querySelectorAll(".sr-only");
     expect([...said].map((el) => el.textContent)).toEqual(["วันนี้มีคนเช็กอินบนเกาะแล้ว 3 คน วันนี้เพื่อนร่วมทีมเช็กอินแล้ว 1 คน"]);
-    expect(screen.getAllByText(/วันนี้มีคนเช็กอินบนเกาะแล้ว 3 คน/)).toHaveLength(2);
+    expect(screen.getAllByText(/วันนี้มีคนเช็กอินบนเกาะแล้ว 3 คน/)).toHaveLength(1);
   });
 
   it("holds the tag back while the viewer walks in", () => {
@@ -87,7 +91,6 @@ describe("today's visitors: PlazaLayer", () => {
         interactive={false}
         showLabels
         whole={false}
-        me={{ name: "Mint", avatarUrl: null }}
       />,
     );
     const tag = container.querySelector<HTMLElement>('[data-label="me"]')!;
@@ -97,7 +100,7 @@ describe("today's visitors: PlazaLayer", () => {
 
   it("shows no labels and says nothing while the canvas is not the picture", () => {
     const { container } = render(
-      <PlazaLayer world={plazaWorld(scene, props.input)} labels={props.labels} names={{}} interactive={false} showLabels={false} whole={false} />,
+      <PlazaLayer world={plazaWorld(scene, props.input)} labels={props.labels} names={{}} interactive={false} showLabels={false} whole={false} people={props.people} />,
     );
     expect(container.querySelector("[data-label]")).toBeNull();
     expect(container.querySelector(".sr-only")).toBeNull();

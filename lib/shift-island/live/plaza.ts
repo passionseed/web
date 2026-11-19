@@ -1,8 +1,10 @@
 /**
  * The plaza as a place to gather: the quest notice board, the Demo Day
  * festival (the stage under its D-10 countdown, lantern string, booth flags and stars), the Demo
- * Day prize board and the voice campfire, as LiveActors the existing engine draws above the trees, plus
- * where the DOM tap targets and labels go. Pure and client-safe.
+ * Day prize board, the voice campfire and the merchant ship moored offshore (ship.ts), as LiveActors the existing engine draws above the trees, plus
+ * where the DOM tap targets go and the one label the island still prints
+ * (the viewer's small คุณ tag; the countdown board draws its own days). Pure
+ * and client-safe.
  *
  * Opt-in: with nothing to show it returns NO_PLAZA, so the canvas stays the
  * bot's PNG by day. Everything sits at fixed offsets from the plaza centre,
@@ -25,9 +27,11 @@ import type { Festival } from "@/lib/shift-island/festival";
 import type { NoticeKind } from "@/lib/shift-island/notice";
 
 import { ARRIVE_MS, CROWD_LAYOUT, crowdActors, crowdPlan, type CrowdPlan, type VisitorsInput } from "./crowd";
+import type { Figure } from "./figures";
+import { shipAnchor, SHIP_SIZE } from "./ship";
 import type { LiveActor } from "./types";
 
-/** Seats drawn round the campfire; the count label says how many are in the room. */
+/** Seats drawn round the campfire; the campfire's sheet counts everyone in the room. */
 export const MAX_SEATS = 8;
 
 export interface PlazaInput {
@@ -40,9 +44,11 @@ export interface PlazaInput {
   prizes?: boolean;
   /** Today's visitors (crowd.ts); null, absent or a count of 0 draws nobody. */
   visitors?: VisitorsInput | null;
+  /** true moors the merchant ship (the shop, ship.ts) off the coast nearest the plaza; it carries no data. */
+  ship?: boolean;
 }
 
-export type PlazaSpotId = "notice" | "stage" | "campfire" | "prizes";
+export type PlazaSpotId = "notice" | "stage" | "campfire" | "prizes" | "ship";
 
 /**
  * A tap target, percent (0..100) of the picture: x and y are its top-left
@@ -56,9 +62,29 @@ export interface PlazaSpot {
   y: number;
   w: number;
   h: number;
+  /**
+   * The actors that draw it, by index into PlazaWorld.actors: the shape the
+   * interact outline traces (interact.ts). The campfire's are its pit and
+   * flame, not the people sitting round it.
+   */
+  actors: number[];
 }
 
-export type PlazaLabelId = "campfireCount" | "visitors" | "me";
+/**
+ * The only word always on the island: the viewer's small คุณ tag (the Demo
+ * Day stage's countdown board is pixel art, with the days on its face).
+ * Everything else is said on a tap (founder, 2026-11-18, "dont clutter"): the
+ * notice board opens the board, the campfire its sheet with the count, and a
+ * person says the day's count.
+ */
+export type PlazaLabelId = "me";
+
+/**
+ * Labels out of sight while anyone's speech bubble is open (FigureBubble):
+ * the viewer's คุณ tag stands over their head, where a bubble opens, so a
+ * bubble never overlaps it. It comes back when the bubble closes.
+ */
+export const QUIET_WHILE_TALKING: ReadonlySet<PlazaLabelId> = new Set<PlazaLabelId>(["me"]);
 
 /** A DOM label's anchor point, percent of the picture. bottom = translate(-50%, -100%), left = translate(0, -50%). */
 export interface PlazaLabel {
@@ -74,10 +100,12 @@ export interface PlazaWorld {
   actors: LiveActor[];
   spots: PlazaSpot[];
   labels: PlazaLabel[];
+  /** The people among the actors, each with its actor's index: what a tap on one says (figures.ts). */
+  figures: Figure[];
 }
 
 /** Nothing on the plaza: one shared value, so the engine's actors never change. */
-export const NO_PLAZA: PlazaWorld = { actors: [], spots: [], labels: [] };
+export const NO_PLAZA: PlazaWorld = { actors: [], spots: [], labels: [], figures: [] };
 
 type Point = readonly [number, number];
 
@@ -104,8 +132,6 @@ export const PLAZA_LAYOUT = {
   /** In fill order: front pair, back pair, outer front pair, outer back pair. */
   seats: [[-52, 34], [-26, 34], [-50, 14], [-28, 14], [-66, 32], [-12, 32], [-64, 16], [-14, 16]] as readonly Point[],
   campfireSpot: { x: -71, y: 12, w: 72, h: 32 },
-  /** Over the fire, between the back seats and the notice board, clear of the well. */
-  campfireCount: [-44, 12] as Point,
   /** Front right of the plaza, under the stage, off the bottom right lamp. */
   prizeBoard: [50, 14] as Point,
   prizeSpot: { x: 47, y: 12, w: 24, h: 24 },
@@ -136,6 +162,8 @@ const FIRE_X = -35;
 const FRONT_Y = 25;
 const FLAME_MS = 250;
 const SIT_MS = 1100;
+/** The merchant ship rocks on its mooring, gently: 1.1 s each way. */
+const SHIP_MS = 1100;
 const SITTERS = [ACTOR_FRAMES.sitA, ACTOR_FRAMES.sitB, ACTOR_FRAMES.sitC, ACTOR_FRAMES.sitD] as const;
 const NOTES: Record<NoticeKind, MotionSpriteName> = {
   active: "notice_note_active",
@@ -166,7 +194,7 @@ export function plazaCentre(scene: IslandScene): { x: number; y: number } {
 }
 
 /** A native box as a percent spot, edges rounded (not sizes) so x + w lands on the right edge. */
-function spotOf(id: PlazaSpotId, box: SceneRect, scene: IslandScene): PlazaSpot {
+function spotOf(id: PlazaSpotId, box: SceneRect, scene: IslandScene, actors: number[]): PlazaSpot {
   const x0 = Math.max(0, box.x);
   const y0 = Math.max(0, box.y);
   const x1 = Math.min(scene.width, box.x + box.w);
@@ -175,7 +203,7 @@ function spotOf(id: PlazaSpotId, box: SceneRect, scene: IslandScene): PlazaSpot 
   const right = round4((x1 / scene.width) * 100);
   const top = round4((y0 / scene.height) * 100);
   const bottom = round4((y1 / scene.height) * 100);
-  return { id, x: left, y: top, w: round4(right - left), h: round4(bottom - top) };
+  return { id, x: left, y: top, w: round4(right - left), h: round4(bottom - top), actors };
 }
 
 function labelOf(id: PlazaLabelId, at: { x: number; y: number }, anchor: PlazaLabel["anchor"], scene: IslandScene): PlazaLabel {
@@ -202,18 +230,22 @@ export function boothFlagAt(tree: Pick<SceneTree, "left" | "top" | "mine">, scen
 
 /**
  * The plaza's actors, tap targets and label points for this scene. Actors are
- * in draw order: goal string, lit bulbs, countdown board and its glyphs, stage, notice board, notes,
+ * in draw order: the merchant ship, goal string, lit bulbs, countdown board and its glyphs, stage, notice board, notes,
  * booth flags, prize board, campfire pit, the seats behind the fire, the
  * flame, the seats in front, then today's visitors (crowd.ts: strollers,
- * teammates, the viewer). Spots: notice, stage, prizes, campfire. Labels:
- * the campfire count, the visitors' line, the viewer's tag.
+ * teammates, the viewer). Spots: ship, notice, stage, prizes, campfire (no
+ * word floats over the ship: its button's name says it is the shop, and the
+ * interact outline traces its sprite). Labels: the viewer's tag only (PlazaLabelId).
+ * Figures: today's visitors standing or walking (the campfire's sitters
+ * belong to the campfire's own tap target).
  */
 export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
   const { festival, pins, campfire } = input;
   const prizes = input.prizes === true;
   const crowd = plazaCrowd(input);
   const visitors = crowd.me || crowd.team + crowd.strollers + crowd.sitters + crowd.more > 0;
-  if (!festival && !pins && !campfire && !prizes && !visitors) return NO_PLAZA;
+  const ship = input.ship === true ? shipAnchor(scene, plazaCentre(scene)) : null;
+  if (!festival && !pins && !campfire && !prizes && !visitors && !ship) return NO_PLAZA;
 
   const c = plazaCentre(scene);
   const at = ([dx, dy]: Point) => ({ x: c.x + dx, y: c.y + dy });
@@ -224,7 +256,14 @@ export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
   const actors: LiveActor[] = [];
   const spots: PlazaSpot[] = [];
   const labels: PlazaLabel[] = [];
+  const figures: Figure[] = [];
   const L = PLAZA_LAYOUT;
+
+  // The merchant ship first: it floats on the sea, under everything on land.
+  if (ship) {
+    spots.push(spotOf("ship", { ...ship, ...SHIP_SIZE }, scene, [actors.length]));
+    actors.push({ frames: ACTOR_FRAMES.merchantShip, ...ship, frameMs: SHIP_MS });
+  }
 
   // The island goal, over the banner (the night festoon's own spot), lit bulb by bulb.
   if (festival?.lanterns && scene.banner) {
@@ -237,26 +276,36 @@ export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
     }
   }
 
+  /** The stage's actors: the countdown board, its glyphs and the stage. */
+  const stageParts: number[] = [];
   if (festival) {
     // The countdown first: the stage covers the foot of its posts.
     const board = at(L.countdown);
+    stageParts.push(actors.length);
     actors.push(still("fest_count", board));
     const glyphs = countdownGlyphs(festival.daysToDemo);
     const width = glyphs.length * GLYPH_W + Math.max(0, glyphs.length - 1) * GLYPH_GAP;
     const left = board.x + COUNT_FACE.x + Math.floor((COUNT_FACE.w - width) / 2);
     const top = board.y + COUNT_FACE.y + Math.floor((COUNT_FACE.h - GLYPH_H) / 2);
-    glyphs.forEach((glyph, i) => actors.push(still(glyph, { x: left + i * (GLYPH_W + GLYPH_GAP), y: top })));
+    glyphs.forEach((glyph, i) => {
+      stageParts.push(actors.length);
+      actors.push(still(glyph, { x: left + i * (GLYPH_W + GLYPH_GAP), y: top }));
+    });
     const step = count(festival.stageStep, STAGES.length - 1);
+    stageParts.push(actors.length);
     actors.push(still(STAGES[step], at(L.stage)));
   }
 
   if (pins) {
+    const board = [actors.length];
     actors.push(still("notice_board", at(L.noticeBoard)));
     pins.slice(0, MAX_NOTES).forEach((kind, i) => {
       const name = NOTES[kind];
-      if (name) actors.push(still(name, at(L.notes[i])));
+      if (!name) return;
+      board.push(actors.length);
+      actors.push(still(name, at(L.notes[i])));
     });
-    spots.push(spotOf("notice", box(L.noticeSpot), scene));
+    spots.push(spotOf("notice", box(L.noticeSpot), scene, board));
   }
 
   if (festival) {
@@ -267,17 +316,18 @@ export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
       if (!tree) continue;
       actors.push(still(booth.kind === "stage" ? "star_flag" : "booth_flag", boothFlagAt(tree, scene)));
     }
-    spots.push(spotOf("stage", box(L.stageSpot), scene));
+    spots.push(spotOf("stage", box(L.stageSpot), scene, stageParts));
   }
 
   if (prizes) {
+    spots.push(spotOf("prizes", box(L.prizeSpot), scene, [actors.length]));
     actors.push(still("prize_board", at(L.prizeBoard)));
-    spots.push(spotOf("prizes", box(L.prizeSpot), scene));
   }
 
   if (campfire) {
     const people = count(campfire.count);
     // The fire welcomes visitors even when Discord has no seated coworkers.
+    const fire = [actors.length];
     actors.push(still("campfire_pit", at(L.pit)));
     // Seats the coworking room leaves empty may take a few of today's visitors (crowd.sitters).
     const seated = Math.min(people, MAX_SEATS) + crowd.sitters;
@@ -290,32 +340,35 @@ export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
       };
       const order = Array.from({ length: seated }, (_, i) => i);
       for (const i of order) if (L.seats[i][1] < FRONT_Y) actors.push(seat(i));
+      fire.push(actors.length);
       actors.push({ frames: ACTOR_FRAMES.campfireFlame, ...at(L.flame), frameMs: FLAME_MS });
       for (const i of order) if (L.seats[i][1] >= FRONT_Y) actors.push(seat(i));
     } else {
+      fire.push(actors.length);
       actors.push({ frames: ACTOR_FRAMES.campfireFlame, ...at(L.flame), frameMs: FLAME_MS });
     }
-    if (people > 0) labels.push(labelOf("campfireCount", at(L.campfireCount), "bottom", scene));
-    spots.push(spotOf("campfire", box(L.campfireSpot), scene));
+    spots.push(spotOf("campfire", box(L.campfireSpot), scene, fire));
   }
 
   if (visitors) {
-    const C = CROWD_LAYOUT;
-    actors.push(...crowdActors(c, input.visitors!, crowd));
-    labels.push(labelOf("visitors", at(C.label), "bottom", scene));
+    const cast = crowdActors(c, input.visitors!, crowd);
+    const first = actors.length;
+    actors.push(...cast.actors);
+    figures.push(...cast.figures.map((f) => ({ ...f, actor: first + f.actor! })));
+    // The day's count is no label: a tap on anyone says it (figureLine.ts), and the people button names it.
     if (crowd.me) {
-      const tag = labelOf("me", at(C.meTag), "bottom", scene);
+      const tag = labelOf("me", at(CROWD_LAYOUT.meTag), "bottom", scene);
       labels.push(input.visitors?.arriving ? { ...tag, delayMs: ARRIVE_MS } : tag);
     }
   }
 
-  return { actors, spots, labels };
+  return { actors, spots, labels, figures };
 }
 
 /**
  * Who of today's visitors the plaza draws for this input: the campfire lends
- * its empty seats (none without a campfire). The page uses it too, for the
- * "+N" label's number.
+ * its empty seats (none without a campfire). The page uses it too, to know
+ * whether teammates stand in the plaza.
  */
 export function plazaCrowd(input: Pick<PlazaInput, "campfire" | "visitors">): CrowdPlan {
   const free = input.campfire ? MAX_SEATS - Math.min(count(input.campfire.count), MAX_SEATS) : 0;

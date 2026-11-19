@@ -1,7 +1,10 @@
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, renderHook, screen, waitFor, within } from "@testing-library/react";
 import type { ComponentProps } from "react";
 
 import { cancelRedemption, loadWallet, redeemItem } from "@/app/shift/island/wallet-actions";
+import { MOTION_SPRITES } from "@/bot/assets/island/motion-sprites";
+import { PALETTE as MAP_PALETTE } from "@/bot/assets/island/sprites";
+import { SHIP_FOAM_AT, SHIP_WATERLINE, SHIP_WATER_SPRITES } from "@/lib/shift-island/live/shipWater";
 import type { CharacterStats, IslandConsent, ShopItem, WalletDetail } from "@/lib/supabase/shift-quests/playerTypes";
 
 import { FOOTER, MENU, TREE } from "../copy";
@@ -11,7 +14,9 @@ import { CoinPill, showCoinPill } from "../player/CoinPill";
 import { CHARACTER, coinNumber, PLAYER, SHOP, WALLET } from "../player/copy";
 import { PixelAvatar } from "../player/PixelAvatar";
 import { markerBox } from "../player/PlotMarker";
+import { SHOP_ICONS, shopIcon } from "../player/shopIcons";
 import { lockReason, ShopList } from "../player/ShopList";
+import { hourPalette, SHADE_KEY, ShopSheet, useOpenedHour, withFoam } from "../player/ShopSheet";
 import { WalletSheet } from "../player/WalletSheet";
 
 jest.mock("@/app/shift/island/wallet-actions", () => ({
@@ -395,24 +400,24 @@ describe("lockReason", () => {
 
 describe("WalletSheet", () => {
   function open(props: Partial<ComponentProps<typeof WalletSheet>> = {}) {
-    const onOpenConsent = jest.fn();
-    render(<WalletSheet open onClose={jest.fn()} onOpenConsent={onOpenConsent} {...props} />);
-    return { onOpenConsent, dialog: screen.getByRole("dialog", { name: WALLET.title }) };
+    const onOpenShop = jest.fn();
+    render(<WalletSheet open onClose={jest.fn()} onOpenShop={onOpenShop} {...props} />);
+    return { onOpenShop, dialog: screen.getByRole("dialog", { name: WALLET.title }) };
   }
 
   it("reads the wallet when it opens, and not before", async () => {
     mockedLoad.mockResolvedValue({ ok: true, data: wallet() });
-    const { rerender } = render(<WalletSheet open={false} onClose={jest.fn()} onOpenConsent={jest.fn()} />);
+    const { rerender } = render(<WalletSheet open={false} onClose={jest.fn()} onOpenShop={jest.fn()} />);
     expect(mockedLoad).not.toHaveBeenCalled();
-    rerender(<WalletSheet open onClose={jest.fn()} onOpenConsent={jest.fn()} />);
+    rerender(<WalletSheet open onClose={jest.fn()} onOpenShop={jest.fn()} />);
     expect(screen.getByRole("status")).toHaveTextContent(WALLET.loading);
     expect(await screen.findByText(coinNumber(2300))).toBeInTheDocument();
     expect(mockedLoad).toHaveBeenCalledTimes(1);
   });
 
-  it("shows the balance, how coins are earned (never hours), recent lines and the shop", async () => {
+  it("shows the balance, how coins are earned (never hours), recent lines and the way to the ship", async () => {
     mockedLoad.mockResolvedValue({ ok: true, data: wallet() });
-    const { dialog } = open();
+    const { dialog, onOpenShop } = open();
     await within(dialog).findByText(coinNumber(2300));
     expect(within(dialog).getByText(WALLET.reserved("300"))).toBeInTheDocument();
     expect(within(dialog).getByText(WALLET.earnMain("300"))).toBeInTheDocument();
@@ -425,16 +430,13 @@ describe("WalletSheet", () => {
     expect(within(dialog).getByText("เควสต์หลักที่ผ่าน")).toBeInTheDocument();
     expect(within(dialog).getByText("+300")).toBeInTheDocument();
     expect(within(dialog).getByText("-300")).toBeInTheDocument();
-    const shop = within(dialog).getByRole("region", { name: SHOP.heading });
-    expect(within(shop).getByText("สติกเกอร์ SHIFT High", { selector: "p" })).toBeInTheDocument();
-    expect(within(shop).getByText(SHOP.lockStage(5))).toBeInTheDocument();
-    expect(within(shop).getByText(SHOP.lockStage(6))).toBeInTheDocument();
-    expect(within(shop).getByRole("button", { name: SHOP.redeemLabel("มัทฉะ") })).toBeDisabled();
-    expect(within(shop).getByRole("button", { name: SHOP.redeemLabel("มัทฉะ") })).toHaveAccessibleDescription(SHOP.lockStage(5));
-    expect(within(shop).getByRole("button", { name: SHOP.redeemLabel("สติกเกอร์ SHIFT High") })).toBeEnabled();
+    // The shop lives on the merchant ship now, one tap away.
+    expect(within(dialog).queryByRole("region", { name: SHOP.heading })).toBeNull();
+    fireEvent.click(within(dialog).getByRole("button", { name: SHOP.toShip }));
+    expect(onOpenShop).toHaveBeenCalledTimes(1);
   });
 
-  it("says coins are off this season and lists nothing while the shop is closed", async () => {
+  it("says coins are off this season", async () => {
     mockedLoad.mockResolvedValue({
       ok: true,
       data: wallet({ live: false, shopLive: false, balance: 0, reserved: 0, entries: [], shop: { live: false, terms: null, items: [], mine: [] } }),
@@ -442,7 +444,61 @@ describe("WalletSheet", () => {
     const { dialog } = open();
     expect(await within(dialog).findByText(WALLET.off)).toBeInTheDocument();
     expect(within(dialog).getByText(WALLET.recentEmpty)).toBeInTheDocument();
-    expect(within(dialog).getByText(SHOP.closed)).toBeInTheDocument();
+  });
+
+  it("shows the server's Thai error and reads again on retry", async () => {
+    mockedLoad.mockResolvedValueOnce({ ok: false, code: "unknown", error: "ระบบขัดข้อง" });
+    const { dialog } = open();
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent("ระบบขัดข้อง");
+    mockedLoad.mockResolvedValueOnce({ ok: true, data: wallet() });
+    fireEvent.click(within(dialog).getByRole("button", { name: WALLET.retry }));
+    expect(await within(dialog).findByText(coinNumber(2300))).toBeInTheDocument();
+  });
+});
+
+describe("ShopSheet", () => {
+  function open(props: Partial<ComponentProps<typeof ShopSheet>> = {}) {
+    const onOpenConsent = jest.fn();
+    const onOpenWallet = jest.fn();
+    render(<ShopSheet open onClose={jest.fn()} onOpenConsent={onOpenConsent} onOpenWallet={onOpenWallet} {...props} />);
+    return { onOpenConsent, onOpenWallet, dialog: screen.getByRole("dialog", { name: SHOP.shipTitle }) };
+  }
+
+  it("reads the wallet when it opens, and not before", async () => {
+    mockedLoad.mockResolvedValue({ ok: true, data: wallet() });
+    const { rerender } = render(<ShopSheet open={false} onClose={jest.fn()} onOpenConsent={jest.fn()} onOpenWallet={jest.fn()} />);
+    expect(mockedLoad).not.toHaveBeenCalled();
+    rerender(<ShopSheet open onClose={jest.fn()} onOpenConsent={jest.fn()} onOpenWallet={jest.fn()} />);
+    expect(screen.getByRole("status")).toHaveTextContent(WALLET.loading);
+    expect(await screen.findByText(coinNumber(2300))).toBeInTheDocument();
+    expect(mockedLoad).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows the balance on deck and every crate with its price and what it waits for", async () => {
+    mockedLoad.mockResolvedValue({ ok: true, data: wallet() });
+    const { dialog, onOpenWallet } = open();
+    await within(dialog).findByText(coinNumber(2300));
+    expect(within(dialog).getByText(SHOP.balance)).toBeInTheDocument();
+    expect(within(dialog).getByText(WALLET.reserved("300"))).toBeInTheDocument();
+    const shop = within(dialog).getByRole("region", { name: SHOP.heading });
+    expect(within(shop).getByText("สติกเกอร์ SHIFT High", { selector: "p" })).toBeInTheDocument();
+    expect(within(shop).getByText(SHOP.lockStage(5))).toBeInTheDocument();
+    expect(within(shop).getByText(SHOP.lockStage(6))).toBeInTheDocument();
+    expect(within(shop).getByRole("button", { name: SHOP.redeemLabel("มัทฉะ") })).toBeDisabled();
+    expect(within(shop).getByRole("button", { name: SHOP.redeemLabel("มัทฉะ") })).toHaveAccessibleDescription(SHOP.lockStage(5));
+    expect(within(shop).getByRole("button", { name: SHOP.redeemLabel("สติกเกอร์ SHIFT High") })).toBeEnabled();
+    expect(within(shop).getByText(SHOP.ready)).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("button", { name: SHOP.toWallet }));
+    expect(onOpenWallet).toHaveBeenCalledTimes(1);
+  });
+
+  it("lists nothing to redeem while the shop is closed", async () => {
+    mockedLoad.mockResolvedValue({
+      ok: true,
+      data: wallet({ live: false, shopLive: false, balance: 0, reserved: 0, entries: [], shop: { live: false, terms: null, items: [], mine: [] } }),
+    });
+    const { dialog } = open();
+    expect(await within(dialog).findByText(SHOP.closed)).toBeInTheDocument();
     expect(within(dialog).queryByRole("button", { name: /^แลก/ })).toBeNull();
   });
 
@@ -467,6 +523,57 @@ describe("WalletSheet", () => {
   });
 });
 
+describe("the harbour's ship", () => {
+  it("sits the hull in the water as the map does: the foam over its last plank and the waterline, its shade under the lap", () => {
+    const ship = MOTION_SPRITES.merchant_ship_0;
+    const foam = SHIP_WATER_SPRITES.ship_foam_0;
+    const deck = withFoam(ship, foam);
+    expect(deck).toHaveLength(ship.length);
+    deck.forEach((row, j) =>
+      [...row].forEach((ch, i) => {
+        const water = foam[j - SHIP_FOAM_AT.y]?.[i - SHIP_FOAM_AT.x];
+        // The water wins where there is any; above it, the ship as it is.
+        if (water && water !== ".") expect(ch).toBe(water);
+        else if (ship[j][i] !== ".") expect(ch).toBe(ship[j][i]);
+      }),
+    );
+    // Above the foam, the ship untouched.
+    expect(deck.slice(0, SHIP_FOAM_AT.y)).toEqual(ship.slice(0, SHIP_FOAM_AT.y));
+    // The waterline laps the hull's length; the shade lies under it, in a key of its own.
+    expect(deck[SHIP_WATERLINE]).toMatch(/[iu]/);
+    expect(deck[SHIP_WATERLINE + 1]).toContain(SHADE_KEY);
+    expect(Object.keys(MAP_PALETTE)).not.toContain(SHADE_KEY);
+  });
+
+  it("keeps the hour the sheet opened in while it closes: no flash of day over a night island", () => {
+    // 21:00 in Bangkok, then the next morning while the closed sheet stays put.
+    const now = jest.spyOn(Date, "now").mockReturnValue(Date.parse("2026-11-19T14:00:00Z"));
+    try {
+      const { result, rerender } = renderHook(({ open }) => useOpenedHour(open), { initialProps: { open: false } });
+      expect(result.current).toBe("day");
+      rerender({ open: true });
+      expect(result.current).toBe("night");
+      now.mockReturnValue(Date.parse("2026-11-20T03:00:00Z"));
+      // Closing: the drawer still shows the harbour while it slides away, in the night it opened in.
+      rerender({ open: false });
+      expect(result.current).toBe("night");
+      // Opened again the next morning: the morning's light.
+      rerender({ open: true });
+      expect(result.current).toBe("day");
+    } finally {
+      now.mockRestore();
+    }
+  });
+
+  it("draws the harbour in the hour's light, the ship's lantern still lit after dark", () => {
+    expect(hourPalette("day")).toBe(MAP_PALETTE);
+    const night = hourPalette("night", "y");
+    expect(night.y).toBe(MAP_PALETTE.y);
+    expect(night.w).not.toBe(MAP_PALETTE.w);
+    expect(hourPalette("night").y).not.toBe(MAP_PALETTE.y);
+  });
+});
+
 describe("ShopList", () => {
   const savedCrypto = globalThis.crypto;
   const randomUUID = jest.fn(() => KEY);
@@ -485,6 +592,28 @@ describe("ShopList", () => {
     render(<ShopList wallet={data} onChanged={onChanged} />);
     return { onChanged };
   }
+
+  it("draws what each live item is on its tag: the sticker sheet, the matcha, the tee, a lidded crate only for the unknown", () => {
+    const { container } = render(
+      <ShopList
+        wallet={wallet({ shop: { ...wallet().shop, items: [...wallet().shop.items, item({ id: KEY, name: "ของลับจากเรือ" })] } })}
+        onChanged={jest.fn()}
+      />,
+    );
+    const icons = [...container.querySelectorAll("[data-icon]")].map((el) => el.getAttribute("data-icon"));
+    expect(icons).toEqual(["sticker", "matcha", "tee", "crate"]);
+    // No two different items share one picture.
+    expect(new Set(icons.slice(0, 3)).size).toBe(3);
+    expect(shopIcon("PassionSeed Builder Sticker Sheet")).toBe("sticker");
+    expect(shopIcon("Matcha set")).toBe("matcha");
+    for (const rows of Object.values(SHOP_ICONS)) {
+      expect(rows).toHaveLength(14);
+      for (const row of rows) {
+        expect(row).toHaveLength(16);
+        for (const ch of row) if (ch !== ".") expect(Object.keys(MAP_PALETTE)).toContain(ch);
+      }
+    }
+  });
 
   it("asks to confirm with the item and the cost, making the request key when the step opens", async () => {
     mockedRedeem.mockResolvedValue({ ok: true, data: { redemptionId: HELD, status: "reserved", duplicate: false, balance: 2000 } });

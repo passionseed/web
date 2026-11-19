@@ -8,20 +8,25 @@
  * path when their check-in lands. Their teammates (a count from the
  * database, shown only to their own team) stand beside them in the team's
  * colour. Everyone else is anonymous: outfit, route and pose go by figure
- * order, never by person, and the actors carry no id, name or team.
+ * order, never by person, and the actors carry no id, name or team. A tap
+ * on any of them gets one short line (figures.ts), picked the same way.
  *
- * Life: strollers walk a short route, pause, wave or look at a phone, and
- * walk back, each out of step with the others; when the plaza is busy a few
+ * Life: strollers walk a short route (a four-frame step, the body bobbing a
+ * pixel), pause, wave or look at a phone, and walk back, each out of step
+ * with the others; whoever stands breathes and now and then blinks
+ * (people.ts), on a clock of their own; when the plaza is busy a few
  * sit by the campfire in seats the coworking room leaves empty (plaza.ts).
  * Under reduced motion everyone stands still where their first frame puts
- * them, and the viewer is already home.
+ * them (never mid-blink), and the viewer is already home.
  *
  * Plan: docs/designs/shift-island-plaza-visitors.md.
  */
-import { CROWD_OUTFITS, TEAM_HAIRS, crowdSprite, type CrowdPose, type Outfit } from "./crowdSprites";
+import { CROWD_OUTFITS, TEAM_HAIRS, WALK_CYCLE, crowdSprite, type CrowdPose, type Outfit } from "./crowdSprites";
+import type { Figure } from "./figures";
+import { idlePattern } from "./people";
 import type { LiveActor, LiveStep } from "./types";
 
-/** Figures drawn at most, the viewer and their teammates included; more people show as "+N". */
+/** Figures drawn at most, the viewer and their teammates included; the rest are only in the day's count. */
 export const MAX_VISITORS = 8;
 /** Teammates drawn beside the viewer at most. */
 export const MAX_TEAM = 3;
@@ -48,8 +53,8 @@ export const CROWD_LAYOUT = {
   /** Teammates, in fill order, to the viewer's right. */
   team: [[13, 34], [24, 34], [35, 34]] as readonly Point[],
   /**
-   * Strollers' routes, in fill order: from, to. Clear of the plaza's labels
-   * too (the campfire's count), so no figure walks under one.
+   * Strollers' routes, in fill order: from, to. Clear of the plaza's pieces
+   * and the viewer's คุณ tag, the one word the plaza prints.
    */
   routes: [
     // In front of the stage, short of the prize board.
@@ -63,9 +68,7 @@ export const CROWD_LAYOUT = {
     // Beside the notice board, between it and the well.
     [[-36, -31], [-36, -17]],
   ] as readonly (readonly [Point, Point])[],
-  /** The day's count (and the team's line), bottom anchored under the crowd. */
-  label: [50, 70] as Point,
-  /** The viewer's tag, bottom anchored over their head. */
+  /** The viewer's small คุณ tag, bottom anchored over their head. */
   meTag: [7, 33] as Point,
 } as const;
 
@@ -83,7 +86,7 @@ export interface VisitorsInput {
   shirt?: string | null;
 }
 
-/** How many of each kind are drawn, and how many are left over for "+N". */
+/** How many of each kind are drawn, and how many are left over (counted, not drawn). */
 export interface CrowdPlan {
   me: boolean;
   team: number;
@@ -103,7 +106,7 @@ const whole = (v: unknown): number => {
  * Who is drawn for this input, with `freeSeats` empty campfire seats: the
  * viewer first, then up to three teammates, then everyone else (strolling,
  * and from the fourth of them two sit by the fire when seats are free), at
- * most eight in all; the rest is "+N". Zero people: nothing at all.
+ * most eight in all; the rest is `more`. Zero people: nothing at all.
  */
 export function crowdPlan(input: VisitorsInput | null | undefined, freeSeats: number): CrowdPlan {
   if (!input) return NO_CROWD;
@@ -120,22 +123,59 @@ export function crowdPlan(input: VisitorsInput | null | undefined, freeSeats: nu
   return { me, team, strollers, sitters, more: count - mine - team - strollers - sitters };
 }
 
+/** Two ticks per frame of the walk cycle: a step every quarter second, 4 native px a stride. */
+const WALK_TICKS = 2;
+
+/** Poses that are a moment of standing (a breath, a blink), never the frame a still island shows. */
+const IDLE_POSES: ReadonlySet<CrowdPose> = new Set<CrowdPose>(["rest", "blink"]);
+
+/** A breath cut short by a walk or a wave settles for at least this many ticks, or not at all (no twitch). */
+const MIN_REST = 4;
+
+/** The poses with every settled run shorter than MIN_REST (the loop wraps round) stood up straight. */
+function calm(poses: CrowdPose[]): CrowdPose[] {
+  const n = poses.length;
+  const out = [...poses];
+  // Start just after a frame that is no rest, so no run is split by the loop's seam.
+  const first = poses.findIndex((pose) => pose !== "rest");
+  if (first < 0) return out;
+  let run: number[] = [];
+  for (let i = 1; i <= n; i++) {
+    const j = (first + i) % n;
+    if (poses[j] === "rest") {
+      run.push(j);
+      continue;
+    }
+    if (run.length < MIN_REST) for (const r of run) out[r] = "stand";
+    run = [];
+  }
+  return out;
+}
+
 /** Frames and steps, built one frame at a time. */
 class Script {
   frames: string[] = [];
   steps: LiveStep[] = [];
+  private poses: CrowdPose[] = [];
   private dx = 0;
   private dy = 0;
+  /**
+   * @param idle The seed of the figure's own breathing clock (people.ts
+   * idlePattern); null stands plain (an arrival, which ends on one held frame).
+   */
   constructor(
     private readonly outfit: Outfit,
     private flip: boolean,
+    private readonly idle: number | null = null,
   ) {}
 
   private push(pose: CrowdPose): void {
+    this.poses.push(pose);
     this.frames.push(crowdSprite(pose, this.outfit));
     this.steps.push({ dx: this.dx, dy: this.dy, flip: this.flip });
   }
 
+  /** Standing still (the breath and blinks come in rotated(), over the whole loop). */
   stand(n: number): this {
     for (let i = 0; i < n; i++) this.push("stand");
     return this;
@@ -147,7 +187,7 @@ class Script {
     return this;
   }
 
-  /** One native px a frame along a straight line, the stride every other pair of frames. */
+  /** One native px a frame along a straight line, through the walk cycle a frame every WALK_TICKS. */
   walkTo(dx: number, dy: number): this {
     const sx = Math.sign(dx - this.dx);
     const sy = Math.sign(dy - this.dy);
@@ -156,7 +196,7 @@ class Script {
     while (this.dx !== dx || this.dy !== dy) {
       if (this.dx !== dx) this.dx += sx;
       if (this.dy !== dy) this.dy += sy;
-      this.push(i % 4 < 2 ? "stride" : "stand");
+      this.push(WALK_CYCLE[Math.floor(i / WALK_TICKS) % WALK_CYCLE.length]);
       i++;
     }
     return this;
@@ -172,11 +212,21 @@ class Script {
     return this;
   }
 
-  /** Started `by` frames later: figures on the same script stay out of step. */
+  /**
+   * The whole loop, started `by` frames later (figures on the same script
+   * stay out of step), with the figure's breath and blinks on every frame it
+   * stands (people.ts idlePattern: whole breaths over the loop, so it closes
+   * without a hitch). It starts on the next frame that is no breath or
+   * blink, so a still island's one frame (the first) shows the figure plain.
+   */
   rotated(by: number): { frames: string[]; steps: LiveStep[] } {
     const n = this.frames.length;
-    const k = ((by % n) + n) % n;
-    return { frames: [...this.frames.slice(k), ...this.frames.slice(0, k)], steps: [...this.steps.slice(k), ...this.steps.slice(0, k)] };
+    const idle = this.idle == null ? null : idlePattern(n, this.idle);
+    const poses = calm(this.poses.map((pose, j) => (pose === "stand" && idle?.[j] ? idle[j] : pose)));
+    let k = ((by % n) + n) % n;
+    for (let tries = 0; tries < n && IDLE_POSES.has(poses[k]); tries++) k = (k + 1) % n;
+    const frames = poses.map((pose) => crowdSprite(pose, this.outfit));
+    return { frames: [...frames.slice(k), ...frames.slice(0, k)], steps: [...this.steps.slice(k), ...this.steps.slice(0, k)] };
   }
 }
 
@@ -194,7 +244,7 @@ function stroller(i: number, outfit: Outfit, at: (p: Point) => { x: number; y: n
   const [from, to] = CROWD_LAYOUT.routes[i];
   const dx = to[0] - from[0];
   const dy = to[1] - from[1];
-  const s = new Script(outfit, false).stand(8).walkTo(dx, dy).stand(6);
+  const s = new Script(outfit, false, i * 7 + 1).stand(8).walkTo(dx, dy).stand(6);
   if (i % 2 === 0) s.wave(8);
   else s.phone(16);
   s.stand(6).walkTo(0, 0).stand(12);
@@ -204,7 +254,7 @@ function stroller(i: number, outfit: Outfit, at: (p: Point) => { x: number; y: n
 /** A teammate in place: facing the viewer, a wave or a phone, a look round. */
 function teammate(i: number, outfit: Outfit, at: (p: Point) => { x: number; y: number }): LiveActor {
   // Teammates stand right of the viewer: they face left (unmirrored), towards them.
-  const s = new Script(outfit, false).stand(20 + i * 6);
+  const s = new Script(outfit, false, 20 + i * 5).stand(20 + i * 6);
   if (i % 2 === 0) s.phone(16);
   else s.wave(8);
   s.stand(24).turn().stand(12).turn().stand(16);
@@ -213,8 +263,8 @@ function teammate(i: number, outfit: Outfit, at: (p: Point) => { x: number; y: n
 
 /** The viewer at home: mostly still, a wave now and then (their tag stays over their head). */
 function meAtHome(outfit: Outfit, at: (p: Point) => { x: number; y: number }): LiveActor {
-  const s = new Script(outfit, true).stand(24).wave(8).stand(40).phone(16).stand(24);
-  return { ...at(CROWD_LAYOUT.home), frameMs: STEP_MS, frames: s.frames, steps: s.steps };
+  const s = new Script(outfit, true, 40).stand(24).wave(8).stand(40).phone(16).stand(24);
+  return { ...at(CROWD_LAYOUT.home), frameMs: STEP_MS, ...s.rotated(0) };
 }
 
 /** The viewer's arrival: up the path to home, a wave, then still at home (played once). */
@@ -231,28 +281,37 @@ export const ARRIVE_MS = (() => {
   return s.frames.length * STEP_MS;
 })();
 
-export interface CrowdActors {
+export interface CrowdCast {
   /** Strollers, teammates and the viewer, in draw order (back to front). */
   actors: LiveActor[];
-  plan: CrowdPlan;
+  /** Who each actor is, by the same index: a kind and a number, never a person (figures.ts). */
+  figures: Figure[];
 }
 
 /**
- * The crowd's actors for a plan, at `c` (the plaza centre, native px). The
- * campfire's sitters are plaza.ts's: they take the seats there.
+ * The crowd's actors for a plan, at `c` (the plaza centre, native px), and
+ * who each one stands for. The campfire's sitters are plaza.ts's: they take
+ * the seats there.
  */
-export function crowdActors(c: { x: number; y: number }, input: VisitorsInput, plan: CrowdPlan): LiveActor[] {
+export function crowdActors(c: { x: number; y: number }, input: VisitorsInput, plan: CrowdPlan): CrowdCast {
   const at = ([dx, dy]: Point) => ({ x: c.x + dx, y: c.y + dy });
   const outfits = crowdOutfits(input.shirt);
   const strollers = Array.from({ length: plan.strollers }, (_, i) => stroller(i, outfits[i % outfits.length], at));
-  // Back to front: the routes behind the well and the stage first, the meadow (route 0) with the team.
-  const back = strollers.slice(1);
-  const front = strollers.slice(0, 1);
   const shirt = input.shirt ?? null;
   const team = Array.from({ length: plan.team }, (_, i) =>
     teammate(i, shirt ? teamOutfit(shirt, i + 1) : outfits[(plan.strollers + i) % outfits.length], at),
   );
   const own = shirt ? teamOutfit(shirt, 0) : outfits[(plan.strollers + plan.team) % outfits.length];
   const me = plan.me ? [input.arriving ? meArriving(own, at) : meAtHome(own, at)] : [];
-  return [...back, ...front, ...team, ...me];
+  // Back to front: routes 1 to 4 first, then route 0 (in front of the stage) with the team and the viewer.
+  const cast: { actor: LiveActor; kind: Figure["kind"]; n: number }[] = [
+    ...strollers.slice(1).map((actor, i) => ({ actor, kind: "crowd" as const, n: i + 1 })),
+    ...strollers.slice(0, 1).map((actor) => ({ actor, kind: "crowd" as const, n: 0 })),
+    ...team.map((actor, n) => ({ actor, kind: "team" as const, n })),
+    ...me.map((actor) => ({ actor, kind: "me" as const, n: 0 })),
+  ];
+  return {
+    actors: cast.map((c) => c.actor),
+    figures: cast.map(({ kind, n }, actor) => ({ kind, n, actor })),
+  };
 }

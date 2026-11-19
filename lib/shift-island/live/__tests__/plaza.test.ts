@@ -9,17 +9,9 @@ import type { Festival } from "@/lib/shift-island/festival";
 import { allSprites } from "../atlas";
 import { lampRects, sceneModel } from "../draw";
 import { overlaps, union, type Rect } from "../geometry";
-import {
-  MAX_SEATS,
-  NO_PLAZA,
-  PLAZA_LAYOUT,
-  boothFlagAt,
-  plazaCentre,
-  plazaWorld,
-  type PlazaInput,
-  type PlazaLabel,
-  type PlazaWorld,
-} from "../plaza";
+import { CROWD_LAYOUT } from "../crowd";
+import { MAX_SEATS, NO_PLAZA, PLAZA_LAYOUT, boothFlagAt, plazaCentre, plazaWorld, type PlazaInput, type PlazaWorld } from "../plaza";
+import { signpostFor, wholeUnit } from "../signposts";
 import type { LiveActor } from "../types";
 
 const SIZES = [1, 3, 8, 12, 20, 40, 80, 150];
@@ -77,13 +69,6 @@ function nativeSpot(scene: IslandScene, spot: { x: number; y: number; w: number;
   return { x: x + 0.01, y: y + 0.01, w: (spot.w / 100) * scene.width - 0.02, h: (spot.h / 100) * scene.height - 0.02 };
 }
 
-/** A label's text box, conservatively: 64 native px wide (128 CSS px at 2x), two lines tall. */
-function labelBox(scene: IslandScene, label: PlazaLabel): Rect {
-  const x = (label.x / 100) * scene.width;
-  const y = (label.y / 100) * scene.height;
-  return label.anchor === "bottom" ? { x: x - 32, y: y - 20, w: 64, h: 20 } : { x, y: y - 10, w: 64, h: 20 };
-}
-
 function grow(r: Rect, min: number): Rect {
   const w = Math.max(min, r.w);
   const h = Math.max(min, r.h);
@@ -113,6 +98,11 @@ function obstacles(scene: IslandScene): Obstacle[] {
     out.push({ what: `tree ${slot}`, slot, rect: m.rect });
     const tags = tagsOf(scene, slot);
     tags.forEach((rect, i) => out.push({ what: `tag ${slot} (${i ? `glyph ${GLYPHS[i - 1]}` : "scene"})`, slot, rect }));
+    // The web's signposts in every view (close up, plain and with a board; the whole island), shadows at every lean.
+    for (const post of [signpostFor(tree, 1, false), signpostFor(tree, 1, true), signpostFor(tree, wholeUnit(scene), false)]) {
+      const shadow = { ...post.shadow, x: post.shadow.x - 2 * post.unit, w: post.shadow.w + 4 * post.unit };
+      out.push({ what: `signpost ${slot} (${post.sprite} x${post.unit})`, slot, rect: union(post.rect, shadow) });
+    }
     if (tree.key) out.push({ what: `key ${slot}`, slot, rect: { x: tree.key.x, y: tree.key.y, w: 10, h: 16 } });
     if (tree.visitor) out.push({ what: `visitor ${slot}`, slot, rect: { x: tree.visitor.x, y: tree.visitor.y, w: 10, h: 14 } });
     if (tree.lantern) out.push({ what: `lantern ${slot}`, slot, rect: { x: tree.lantern.x, y: tree.lantern.y, w: 8, h: 14 } });
@@ -201,21 +191,8 @@ describe("plazaWorld placement", () => {
       expect(spot.y + spot.h).toBeLessThanOrEqual(100 + 1e-9);
     }
 
-    const tags = list.filter((o) => o.what.startsWith("tag "));
-    const trees = list.filter((o) => o.what.startsWith("tree "));
-    for (const label of world.labels) {
-      const box = labelBox(scene, label);
-      const hit = hits(box, [...tags, ...trees]);
-      if (hit.length) problems.push(`label ${label.id}: ${hit.join(", ")}`);
-      // The point itself keeps about 40 native px from any tag.
-      const px = (label.x / 100) * scene.width;
-      const py = (label.y / 100) * scene.height;
-      for (const tag of tags) {
-        const dx = Math.max(tag.rect.x - px, 0, px - (tag.rect.x + tag.rect.w));
-        const dy = Math.max(tag.rect.y - py, 0, py - (tag.rect.y + tag.rect.h));
-        if (Math.hypot(dx, dy) < 40) problems.push(`label ${label.id} ${Math.round(Math.hypot(dx, dy))} px from ${tag.what}`);
-      }
-    }
+    // No words over a plaza without visitors: the countdown board draws its days, the rest is a tap away.
+    expect(world.labels).toEqual([]);
 
     expect(problems).toEqual([]);
   });
@@ -232,7 +209,7 @@ describe("plazaWorld placement", () => {
       ...obstacles(scene).filter((o) => o.what.startsWith("hotspot ") || o.what === "pin"),
     ];
     expect(others.filter((o) => overlaps(tap, o.rect)).map((o) => o.what)).toEqual([]);
-    // The board itself never covers another plaza sprite (notice board, stage, sign, flags, campfire, seats).
+    // The board itself never covers another plaza sprite (notice board, countdown, stage, flags, campfire, seats).
     const board = world.actors.find((a) => a.frames[0] === "prize_board")!;
     const covered = world.actors.filter((a) => a !== board && overlaps(actorRect(board), actorRect(a))).map((a) => a.frames[0]);
     expect(covered).toEqual([]);
@@ -260,7 +237,7 @@ describe("plazaWorld content", () => {
 
   it("is NO_PLAZA when there is nothing to show", () => {
     expect(plazaWorld(scene, { festival: null, pins: null, campfire: null })).toBe(NO_PLAZA);
-    expect(NO_PLAZA).toEqual({ actors: [], spots: [], labels: [] });
+    expect(NO_PLAZA).toEqual({ actors: [], spots: [], labels: [], figures: [] });
   });
 
   it("centres on the well", () => {
@@ -295,8 +272,8 @@ describe("plazaWorld content", () => {
       "sit_b_1",
     ]);
     expect(world.spots.map((s) => s.id)).toEqual(["notice", "stage", "campfire"]);
-    // The countdown board says the days itself: the only label is the campfire's count.
-    expect(world.labels.map((l) => [l.id, l.anchor])).toEqual([["campfireCount", "bottom"]]);
+    // No words: the countdown board draws its days, the notice board and the campfire are a tap away.
+    expect(world.labels).toEqual([]);
   });
 
   it("puts the board, notes, countdown, stage and campfire at their offsets from the plaza centre", () => {
@@ -324,7 +301,7 @@ describe("plazaWorld content", () => {
   });
 
   it("gives spots and labels as percentages of the picture, like the plot hotspots", () => {
-    const world = plazaWorld(scene, { festival: festival(), pins: [], campfire: { count: 9 } });
+    const world = plazaWorld(scene, { festival: festival(), pins: [], campfire: { count: 9 }, visitors: { count: 1, team: 0, me: true } });
     const pct = (v: number, of: number) => Math.round((v / of) * 100 * 10_000) / 10_000;
     const notice = world.spots.find((s) => s.id === "notice")!;
     const box = PLAZA_LAYOUT.noticeSpot;
@@ -333,8 +310,9 @@ describe("plazaWorld content", () => {
     expect(notice.w).toBeCloseTo(pct(box.w, scene.width), 3);
     expect(notice.h).toBeCloseTo(pct(box.h, scene.height), 3);
     for (const v of [notice.x, notice.y, notice.w, notice.h]) expect(Math.round(v * 10_000) / 10_000).toBe(v);
-    const count = world.labels.find((l) => l.id === "campfireCount")!;
-    expect(count).toEqual({ id: "campfireCount", x: pct(c.x - 44, scene.width), y: pct(c.y + 12, scene.height), anchor: "bottom" });
+    // The one label: the viewer's คุณ tag over their head.
+    const [tx, ty] = CROWD_LAYOUT.meTag;
+    expect(world.labels).toEqual([{ id: "me", x: pct(c.x + tx, scene.width), y: pct(c.y + ty, scene.height), anchor: "bottom" }]);
     // An empty board still stands and can be tapped.
     expect(names(world)).toContain("notice_board");
   });
@@ -401,6 +379,7 @@ describe("plazaWorld content", () => {
       const world = plazaWorld(scene, { festival: null, pins: [], campfire: null });
       expect(names(world).some((n) => n.startsWith("campfire") || n.startsWith("sit_"))).toBe(false);
       expect(world.spots.map((s) => s.id)).toEqual(["notice"]);
+      // The board is a tap away, with no name printed over it.
       expect(world.labels).toEqual([]);
     });
 
@@ -423,12 +402,13 @@ describe("plazaWorld content", () => {
       expect(names(one)).toContain("campfire_flame_0");
     });
 
-    it("seats one figure per person, at most eight; the count label says how many", () => {
+    it("seats one figure per person, at most eight, and prints no count (the campfire's sheet says it)", () => {
       for (const [count, drawn] of [[1, 1], [3, 3], [8, 8], [9, 8], [40, 8]]) {
         const world = plazaWorld(scene, { festival: null, pins: null, campfire: { count } });
-        expect(seats(world)).toHaveLength(drawn);
+        expect(seats(world)).toHaveLength(Math.min(drawn, MAX_SEATS));
         expect(world.actors.filter((a) => a.frames[0] === "campfire_flame_0")).toHaveLength(1);
-        expect(world.labels.map((l) => l.id)).toEqual(["campfireCount"]);
+        expect(world.labels).toEqual([]);
+        expect(world.spots.map((s) => s.id)).toEqual(["campfire"]);
       }
     });
 

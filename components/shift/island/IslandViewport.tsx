@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -8,24 +9,33 @@ import {
   useState,
   useSyncExternalStore,
   type CSSProperties,
+  type FocusEvent,
   type KeyboardEvent,
   type RefObject,
 } from "react";
 
 import type { IslandHotspot, IslandPicture } from "@/lib/shift-island/picture";
+import { hitFigure, hitSlop, treeFigures, type Figure } from "@/lib/shift-island/live/figures";
 import { pxPerNativeFor, type Rect } from "@/lib/shift-island/live/geometry";
-import { PHASE_TINT, waterColor } from "@/lib/shift-island/live/lighting";
+import { gradeMultiply, gradedWater } from "@/lib/shift-island/live/grade";
+import { hotspotKey, interactTargets, type InteractTarget } from "@/lib/shift-island/live/interact";
+import { waterColor } from "@/lib/shift-island/live/lighting";
 import { NO_PLAZA, plazaWorld, type PlazaInput, type PlazaLabelId, type PlazaSpotId } from "@/lib/shift-island/live/plaza";
 import type { LightPhase } from "@/lib/shift-island/live/types";
 import { HUD_RESERVE, scrollToCentre, worldLayout, type Insets } from "@/lib/shift-island/live/world";
 
-import { COMMON, HUD, ISLAND, treeStageName } from "./copy";
+import { COMMON, FIGURES, HUD, ISLAND, treeStageName } from "./copy";
 import islandStyles from "./island.module.css";
+import { FigureBubble, useFigureTalk } from "./live/FigureBubble";
+import type { Today } from "./live/figureLine";
+import type { ActorBoxes, IslandInteract } from "./live/IslandCanvas";
 import { IslandLive } from "./live/IslandLive";
 import liveStyles from "./live/live.module.css";
 import { PlazaLayer } from "./live/PlazaLayer";
+import { useInteractAim } from "./live/useInteractAim";
 import { PlotMarker } from "./player/PlotMarker";
-import { PlotSigns, signName } from "./PlotSigns";
+import { PlotSigns, signName, signedSlots } from "./PlotSigns";
+import { useReducedMotion } from "./useReducedMotion";
 import styles from "./world.module.css";
 
 interface IslandViewportProps {
@@ -46,13 +56,16 @@ interface IslandViewportProps {
   initialPhase?: LightPhase;
   /**
    * The plaza (notice board, Demo Day festival, campfire), drawn by the
-   * living island; labels are their DOM text, names the tap targets' aria-labels.
+   * living island; labels are its only DOM text (the viewer's คุณ tag),
+   * names the tap targets' aria-labels, people the day's count for the
+   * people button (plazaProps).
    */
   plaza?: {
     input: PlazaInput;
     labels: Partial<Record<PlazaLabelId, string>>;
     names: Partial<Record<PlazaSpotId, string>>;
     onSpot?: (id: PlazaSpotId) => void;
+    people?: string;
   };
   /** The living island became (true) or stopped being (false) the picture on screen. */
   onLiveChange?: (live: boolean) => void;
@@ -91,10 +104,21 @@ const DAY_SEA = waterColor("day");
 const DRAG_SLOP = 4;
 /** The tap hint steps aside after this long (its fade starts at 6s in world.module.css). */
 const HINT_MS = 6400;
+/** Nothing for the interact outline to pick: one shared value, so the canvas never sees a change. */
+const NO_TARGETS: readonly InteractTarget[] = [];
 
-/** The phase's light as a multiply colour: the PNG under it looks like the canvas's tinted land. */
+/** The element shows a keyboard's focus (a tap's focus does not move the outline). Old engines without :focus-visible count it. */
+function keyboardFocus(element: Element): boolean {
+  try {
+    return element.matches(":focus-visible");
+  } catch {
+    return true;
+  }
+}
+
+/** The phase's light as a multiply colour: the PNG under it comes close to the canvas's graded land. */
 function tintColor(phase: LightPhase): string {
-  const [r, g, b] = PHASE_TINT[phase].map((m) => Math.round(m * 255));
+  const [r, g, b] = gradeMultiply(phase);
   return `rgb(${r}, ${g}, ${b})`;
 }
 
@@ -236,6 +260,61 @@ function useMouseDragPan(world: RefObject<HTMLDivElement | null>) {
   }, [world]);
 }
 
+/** The point lies inside the element's box on screen. */
+function under(element: Element | null | undefined, x: number, y: number): boolean {
+  if (!element) return false;
+  const r = element.getBoundingClientRect();
+  return r.width > 0 && r.height > 0 && x >= r.left && x < r.right && y >= r.top && y < r.bottom;
+}
+
+/**
+ * A tap on a person (figures.ts) says their line instead of reaching what is
+ * under them; a tap on the open bubble closes it and goes no further (it
+ * covers whatever is under it); a tap anywhere else closes the bubble and
+ * goes on as before. Over a plot's or the plaza's own button only the figure
+ * itself counts, not its slop. A capture listener on the picture's box (the
+ * element itself, so a box mounted again after the picture failed and came
+ * back gets the listener too), so a mouse drag that panned (useMouseDragPan
+ * swallows its click first) never says anything, and a key press on a button
+ * (a click with no pointer, detail 0) is left alone.
+ */
+function useFigureTaps(
+  element: HTMLDivElement | null,
+  hitAt: (clientX: number, clientY: number, overButton: boolean) => number | null,
+  say: (index: number | null) => void,
+  on: boolean,
+) {
+  const latest = useRef({ hitAt, say });
+  useEffect(() => {
+    latest.current = { hitAt, say };
+  });
+  useEffect(() => {
+    if (!element || !on) return;
+    const click = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.detail === 0) return;
+      // The bubble takes no taps of its own (pointer-events: none), so this is where a tap on it is caught.
+      if (under(element.querySelector("[data-bubble] > *"), event.clientX, event.clientY)) {
+        event.preventDefault();
+        event.stopPropagation();
+        latest.current.say(null);
+        return;
+      }
+      const overButton = event.target instanceof Element && event.target.closest("button, a") != null;
+      const index = latest.current.hitAt(event.clientX, event.clientY, overButton);
+      if (index == null) {
+        // A button tapped while someone talks does its own thing (a sheet that opens closes the bubble).
+        if (!overButton) latest.current.say(null);
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      latest.current.say(index);
+    };
+    element.addEventListener("click", click, true);
+    return () => element.removeEventListener("click", click, true);
+  }, [element, on]);
+}
+
 const px = (r: Rect): CSSProperties => ({ left: r.x, top: r.y, width: r.w, height: r.h });
 
 /**
@@ -261,6 +340,17 @@ export function IslandViewport({
 }: IslandViewportProps) {
   const world = useRef<HTMLDivElement>(null);
   const probe = useRef<HTMLDivElement>(null);
+  /**
+   * The picture's box over the canvas: plots, the plaza and the people's taps.
+   * Kept as state: the box unmounts while the picture has failed and a new
+   * one mounts on retry, and the taps' listener must move to it.
+   */
+  const [overlay, setOverlay] = useState<HTMLDivElement | null>(null);
+  /** The living island's actor boxes, while it draws: where the walking people are now. */
+  const actorBoxes = useRef<ActorBoxes | null>(null);
+  /** The living island's interact outline, while it draws: where the player aims, and the keyboard's hotspot. */
+  const steer = useRef<IslandInteract | null>(null);
+  const reduced = useReducedMotion();
   const zoom = usePxPerNative();
   const box = useScreenBox(world, probe);
   useMouseDragPan(world);
@@ -272,7 +362,7 @@ export function IslandViewport({
   const [liveFailed, setLiveFailed] = useState(false);
   /** The light of the hour and the open sea's colour in it: the server's guess, then the living island's. */
   const [light, setLight] = useState<{ phase: LightPhase; sea: string } | null>(() =>
-    initialPhase ? { phase: initialPhase, sea: waterColor(initialPhase) } : null
+    initialPhase ? { phase: initialPhase, sea: gradedWater(initialPhase) } : null
   );
   /** The plot that holds the group's one tab stop, once the student has moved to one. */
   const [activeSlot, setActiveSlot] = useState<number | null>(null);
@@ -304,6 +394,28 @@ export function IslandViewport({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [scene, plazaKey]
   );
+
+  // The people to tap: the plaza's walkers while the canvas draws them, and each tree's partner (the PNG draws those too).
+  const figures = useMemo<Figure[]>(
+    () => [...(live ? plazaView.figures : []), ...treeFigures(scene)],
+    [live, plazaView, scene],
+  );
+  // The day's numbers, which today's visitors say when tapped: the island prints no count.
+  const dayCount = plazaInput?.visitors?.count ?? 0;
+  const dayTeam = plazaInput?.visitors?.team ?? 0;
+  const today = useMemo<Today | null>(() => (dayCount > 0 ? { count: dayCount, team: dayTeam } : null), [dayCount, dayTeam]);
+  const talk = useFigureTalk(figures, paused, today);
+  // The walkers' boxes for the actors these figures were counted from: null until the engine draws that same list.
+  const plazaActors = plazaView.actors;
+  const readBoxes = useCallback(() => {
+    const read = actorBoxes.current;
+    return read ? read(plazaActors) : [];
+  }, [plazaActors]);
+  // A tree's partner, for the keyboard: its plot's name says it stands there (a tap on it says its line).
+  const partnerSlots = useMemo(() => new Set(treeFigures(scene).map((figure) => figure.n)), [scene]);
+  // The plots whose signpost carries a name's board: close up only, where the names show.
+  const hotspotList = picture?.hotspots;
+  const signs = useMemo(() => (whole || !hotspotList ? [] : signedSlots(hotspotList)), [whole, hotspotList]);
 
   const liveChange = useRef(onLiveChange);
   useEffect(() => {
@@ -350,6 +462,38 @@ export function IslandViewport({
   const scale = layout?.scale ?? zoom;
   const mine = picture?.mine ?? null;
 
+  // The interact outline (interact.ts): every plot, plaza button and person the canvas draws can show it.
+  const onSpot = plaza?.onSpot;
+  const spotNames = plaza?.names;
+  const spotsOn = interactive && onSpot ? plazaView.spots.filter((spot) => spotNames?.[spot.id]) : [];
+  const spotsKey = spotsOn.map((spot) => spot.id).join(",");
+  const targets = useMemo(
+    () =>
+      live && interactive && scene && hotspotList
+        ? interactTargets({ scene, hotspots: hotspotList, spots: spotsOn, figures, scale, whole })
+        : NO_TARGETS,
+    // spotsKey stands for spotsOn, which is a new list on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [live, interactive, scene, hotspotList, plazaView, spotsKey, figures, scale, whole]
+  );
+  useInteractAim({
+    world,
+    overlay,
+    size: picture ? { width: picture.width, height: picture.height } : null,
+    scale,
+    whole,
+    safe: box?.safe ?? NO_INSETS,
+    steer,
+    on: targets.length > 0,
+    watch: `${scale}|${whole}|${layout?.world.w}x${layout?.world.h}`,
+  });
+  // A keyboard on a plot's or the plaza's button shows the same outline round what it stands for.
+  const onHotspotFocus = (event: FocusEvent<HTMLDivElement>) => {
+    const key = hotspotKey(event.target);
+    steer.current?.focus(key && keyboardFocus(event.target) ? key : null);
+  };
+  const onHotspotBlur = () => steer.current?.focus(null);
+
   // Start on the student's plot (or the island's middle) whenever the scale or the world changes.
   const centreKey = layout ? `${layout.scale}|${layout.world.w}x${layout.world.h}|${mine?.slot ?? "-"}` : null;
   useEffect(() => {
@@ -362,6 +506,17 @@ export function IslandViewport({
     // The key stands for the layout, the box and the plot.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [centreKey]);
+
+  // Taps on people: a fingertip-sized target round each one close up, the figure itself on the whole island.
+  const figureHit = (clientX: number, clientY: number, overButton: boolean): number | null => {
+    if (!overlay || !picture) return null;
+    const rect = overlay.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return null;
+    const point = { x: ((clientX - rect.left) / rect.width) * picture.width, y: ((clientY - rect.top) / rect.height) * picture.height };
+    const hit = hitFigure(figures, readBoxes() ?? [], point, hitSlop(scale, whole));
+    return hit && (hit.tight || !overButton) ? hit.index : null;
+  };
+  useFigureTaps(overlay, figureHit, talk.say, interactive && figures.length > 0);
 
   const sea = light?.sea ?? DAY_SEA;
   const shade = light?.phase;
@@ -441,14 +596,17 @@ export function IslandViewport({
               width={Math.round(picture.width * scale)}
               height={Math.round(picture.height * scale)}
               className={styles.image}
-              style={live ? { visibility: "hidden" } : undefined}
+              // Hidden once the canvas has faded in over it (world.module.css), so the swap never flashes;
+              // out of the accessibility tree at once (the canvas's label names the picture).
+              data-hidden={live ? "true" : undefined}
+              aria-hidden={live ? true : undefined}
               draggable={false}
               onError={() => setFailedSrc(pictureSrc)}
             />
             {pngTint ? <span className={styles.tint} style={{ background: pngTint }} aria-hidden="true" /> : null}
           </div>
           {liveOn && picture.scene ? (
-            <div className={styles.canvasBox} style={canvasRect}>
+            <div className={styles.canvasBox} style={canvasRect} data-ready={live ? "true" : undefined}>
               <IslandLive
                 scene={picture.scene}
                 paused={paused}
@@ -456,6 +614,10 @@ export function IslandViewport({
                 crop={layout?.frame}
                 scroller={world}
                 actors={plazaView.actors}
+                actorBoxes={actorBoxes}
+                signs={signs}
+                targets={targets}
+                interact={steer}
                 className={liveStyles.live}
                 onReady={() => setLiveReady(true)}
                 onFail={() => setLiveFailed(true)}
@@ -463,10 +625,24 @@ export function IslandViewport({
               />
             </div>
           ) : null}
-          <div className={styles.islandBox} style={islandRect}>
+          {/*
+            The air of the hour over the screen, keyed by it so a new light fades in instead of cutting.
+            It sits over the picture and under everything after it here (plot signs, labels, speech bubbles),
+            and the HUD outside the world stays above it.
+          */}
+          <div key={shade ?? "none"} className={styles.shade} data-phase={shade} aria-hidden="true" />
+          <div ref={setOverlay} className={styles.islandBox} style={islandRect} onFocus={onHotspotFocus} onBlur={onHotspotBlur}>
             {live ? <span role="img" aria-label={ISLAND.pictureAlt} className={liveStyles.label} /> : null}
-            {/* Project names under the trees; the whole island puts plots too close for a line of text. */}
-            {whole ? null : <PlotSigns hotspots={picture.hotspots} />}
+            {/*
+              Project names: boards hanging from the living island's signposts, or a line under the PNG's
+              tags; the whole island puts plots too close for a line of text.
+            */}
+            {whole ? null : (
+              <PlotSigns
+                hotspots={picture.hotspots}
+                posts={live && picture.scene ? { scene: picture.scene, phase: shade ?? "day", scale } : null}
+              />
+            )}
             {/* Your own picture over your own pin: decorative, never takes a tap. */}
             {me && mine ? <PlotMarker picture={picture} me={me} /> : null}
             {interactive ? (
@@ -489,7 +665,7 @@ export function IslandViewport({
                       width: whole ? `${hotspot.w}%` : `max(48px, ${hotspot.w}%)`,
                       height: whole ? `${hotspot.h}%` : `max(48px, ${hotspot.h}%)`,
                     }}
-                    aria-label={hotspotLabel(hotspot)}
+                    aria-label={partnerSlots.has(hotspot.slot) ? `${hotspotLabel(hotspot)}, ${FIGURES.plotPartner}` : hotspotLabel(hotspot)}
                     onClick={() => {
                       setHintGone(true);
                       onPlot?.(hotspot);
@@ -517,7 +693,7 @@ export function IslandViewport({
                 world={plazaView}
                 labels={plaza.labels}
                 names={plaza.names}
-                me={me}
+                people={plaza.people}
                 onSpot={
                   plaza.onSpot
                     ? (id) => {
@@ -530,12 +706,32 @@ export function IslandViewport({
                 interactive={interactive && liveOn}
                 showLabels={live && !whole}
                 whole={whole}
+                onPeople={interactive ? talk.turn : undefined}
+                // The viewer's คุณ tag steps aside while anyone talks, so their bubble never overlaps it.
+                talking={talk.said != null}
               />
+            ) : null}
+            {talk.said ? (
+              <FigureBubble
+                key={talk.said.key}
+                figure={figures[talk.said.index]}
+                view={{ x: 0, y: 0, w: picture.width, h: picture.height }}
+                read={readBoxes}
+                follow={!reduced && !paused}
+                reveal={talk.said.via === "turn"}
+                today={today}
+                onGone={() => talk.say(null)}
+              />
+            ) : null}
+            {/* What a person said, for screen readers: the bubble itself is decoration. */}
+            {interactive ? (
+              <p className="sr-only" aria-live="polite">
+                {talk.spoken}
+              </p>
             ) : null}
           </div>
         </div>
       </div>
-      <div className={styles.shade} data-phase={shade} aria-hidden="true" />
       {interactive && picture.hotspots.length > 0 && !hintGone ? (
         <p className={styles.tapHint} aria-hidden="true">
           {ISLAND.tapHint}
