@@ -157,11 +157,11 @@ const P = {
   ink: hex("#141312"),
   ash: hex("#5e5a54"),
   ashLight: hex("#d2cdc3"),
-  g0: hex("#132608"),
-  g1: hex("#2f5a14"),
-  g2: hex("#5f9a1f"),
-  g3: hex("#a9d84a"),
-  acid: hex("#9fe22b"),
+  g0: hex("#0e1d06"),
+  g1: hex("#244710"),
+  g2: hex("#4a7d1a"),
+  g3: hex("#8dbd3c"),
+  acid: hex("#84c424"),
   smogA: hex("#b39a48"),
   smogB: hex("#7a6a45"),
   mustard: hex("#cdb047"),
@@ -300,14 +300,14 @@ for (let y = WATER.y0; y < WATER.y1; y++)
     const m = waterMask[y * W + x];
     if (!m) continue;
     const l = lum(get(x, y));
-    const toxic = [0.1 + 0.34 * l, 0.22 + 0.58 * l, 0.04 + 0.16 * l];
+    const toxic = [0.07 + 0.27 * l, 0.17 + 0.47 * l, 0.03 + 0.13 * l];
     put(x, y, toxic, 0.82 * m);
   }
 // A faint green sheen on the bank above it.
 {
   const layer = new Float32Array(W * H * 4);
   for (let y = WATER.y0 - 40; y < WATER.y0 + 90; y++)
-    for (let x = 0; x < WATER.x1 - 120; x++) paint(layer, x, y, P.g2, 0.22 * (1 - Math.abs(y - WATER.y0 - 10) / 90));
+    for (let x = 0; x < WATER.x1 - 120; x++) paint(layer, x, y, P.g2, 0.15 * (1 - Math.abs(y - WATER.y0 - 10) / 90));
   drawLayer(await blurLayer(layer, 14), "screen");
 }
 
