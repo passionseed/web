@@ -510,6 +510,40 @@ counted from the progress journal at read time.
   because of it. Tested in `supabase/tests/shift_quests/roots.ts` and
   `bot/src/quests/__tests__/roots.test.ts`.
 
+### Campfire chime (Discord voice)
+
+As each 🔥 focus and 🌊 rest starts (`bot/src/quests/rounds.ts`) while someone
+sits at the fire, the bot joins the coworking voice channel, plays a short
+chime (`bot/assets/sounds/focus.ogg` rising, `rest.ogg` falling) and leaves
+(`bot/src/quests/chime.ts`, `@discordjs/voice`). Ogg Opus goes to Discord as
+is, so the image needs no encoder or ffmpeg. It chimes only within a minute of
+a phase starting, so a late arrival or a restart mid-round stays silent, and
+one chime plays at a time. The bot is never counted as a sitter. It says
+nothing; the round message's 🎯 ตั้งเป้ารอบนี้ carries the goal. Needs Connect
+and Speak in the channel (warns once without them). `SHIFT_ROUND_CHIME=off`
+mutes it.
+
+**Rest music.** About 80 s before each rest the bot joins; a minute before the
+rest it starts `rest-short.ogg` (or `rest-long.ogg`), which fades in over that
+minute, plays through the rest and fades out. As the next focus starts it
+stops the music, plays the focus chime on the same connection and leaves. It
+leaves at once when nobody is left at the fire or the rhythm changes. The
+music is synthesised by `bot/scripts/make-campfire-music.mjs` (pad, plucks,
+bass, a little crackle), so there is no licence to track. If the track cannot
+start within 10 s of its time (someone sat down late, a slow join), that rest
+has no music, since the track would be cut off at full volume; the chimes
+still play. `SHIFT_REST_MUSIC=off` mutes only the music.
+
+**Long rounds (⏳).** Every round message has ⏳ รอบยาว 50 นาที: anyone at the
+fire switches the whole fire to 50 minutes of focus and 10 of rest (one round
+an hour, :00 to :50), and 🔥 switches back. One rhythm for everyone, held in
+the bot's memory only; a restart, or the fire staying empty for 5 minutes,
+goes back to 25 and 5; a press while the fire is empty restarts those 5
+minutes. Each button names the rhythm it asks for, so two quick presses agree.
+Switching redraws the round message without a chime, unless the switch moves
+the fire into another phase: then that phase's chime plays (with no music for
+a rest begun this way).
+
 ### Quest card and campfire encounters (Discord)
 
 Phases 4 and 5 of
