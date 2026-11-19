@@ -4,11 +4,13 @@
  * every file in ./scripts is listed here). Safe for client and server: data
  * only.
  */
+import launch from "./scripts/launch";
 import samples from "./scripts/samples";
 import type { StoryScript } from "./types";
 
 export const STORY_FILES: Readonly<Record<string, readonly StoryScript[]>> = {
   samples,
+  launch,
 };
 
 export const STORY_SCRIPTS: readonly StoryScript[] = Object.values(STORY_FILES).flat();
