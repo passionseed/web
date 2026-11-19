@@ -23,7 +23,7 @@ export const dream: GuidePage = {
   factIds: [RISA, PATHUMMA, INSPECTRA, OCR],
   og: {
     headlineTh: "AI ที่อ่านไทยออก คนไทยนี่แหละที่สร้าง",
-    stat: { th: "นักเรียนกว่า 9,700 คนใน 74 จังหวัด ใช้แชตบอตติวสอบที่ทีมในไทยสร้าง", factIds: [RISA] },
+    stat: { th: "นักเรียนกว่า 9,700 คน 74 จังหวัด ใช้แชตบอตติวสอบที่ทีมในไทยสร้าง", factIds: [RISA] },
   },
   blocks: [
     dialogue(

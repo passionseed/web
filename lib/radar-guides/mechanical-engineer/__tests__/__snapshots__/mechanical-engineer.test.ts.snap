@@ -1,0 +1,296 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`mechanical-engineer guide matches the Thai copy snapshot (diff this in the Thai review) 1`] = `
+[
+  "dream.titleTh: รถไฟที่วิศวกรไทยออกแบบเอง
+dream.questionTh: เครื่องจักรที่เธอใช้ทุกวัน ใครเป็นคนออกแบบ
+dream.navLabelTh: รถไฟไทยทำ
+dream.og.headlineTh: รถไฟที่ทีมวิศวะไทยออกแบบเอง ต้องวิ่งทดสอบให้มั่นใจก่อนให้คนขึ้น
+dream.og.stat.th: รถไฟไทยทำ วิ่งทดสอบกว่า 10,000 กม. ก่อนส่งมอบให้การรถไฟ
+dream.blocks[0].lines[0].text.th: เปิดรันสายเครื่องกลกัน ขอถามข้อเดียวก่อนนะ
+dream.blocks[1].ask[0].text.th: รถไฟ รถยนต์ แอร์ ที่เธอใช้ทุกวัน เธอว่าใครออกแบบ
+dream.blocks[1].options[0].labelTh: ญี่ปุ่นกับจีนชัวร์
+dream.blocks[1].options[0].reply[0].text.th: บางอย่างก็ใช่ แต่ทีมในไทยออกแบบเองก็มีเยอะนะ
+dream.blocks[1].options[1].labelTh: คนไทยก็ทำได้อยู่มั้ง
+dream.blocks[1].options[1].reply[0].text.th: เซนส์ไม่ธรรมดาเลยนะ มาดูหลักฐานของจริงกัน
+dream.blocks[1].options[2].labelTh: ไม่เคยคิดเลยว่ามีคนออกแบบ
+dream.blocks[1].options[2].reply[0].text.th: ไม่แปลกเลย ของที่ใช้ทุกวัน เรามักไม่เห็นคนเบื้องหลังหรอก
+dream.blocks[1].options[2].reply[1].text.th: งั้นไปดูกันว่าใครทำ
+dream.blocks[2].text.th: ก.ค. 2569 ทีมวิจัยที่นำโดยวิศวะ สจล. ส่งมอบ รถไฟไทยทำ ตู้โดยสารต้นแบบที่ทีมออกแบบเอง ให้การรถไฟแห่งประเทศไทย
+dream.blocks[2].titleTh: แฟ้ม: รถไฟไทยทำ
+dream.blocks[3].unlockLabelTh: ลองทายดู
+dream.blocks[3].blocks[0].lines[0].text.th: ก่อนรับผู้โดยสาร ทีมต้องมั่นใจสุดๆ ว่าวิ่งจริงแล้วจะไม่พัง
+dream.blocks[3].blocks[0].lines[1].text.th: ลองทายดู ก่อนส่งมอบ ตู้นี้วิ่งทดสอบไปทั้งหมดกี่กิโล
+dream.blocks[3].blocks[1].game.data.promptTh: ก่อนส่งมอบ รถไฟไทยทำวิ่งทดสอบไปกี่กิโลเมตร
+dream.blocks[3].blocks[1].game.data.chart.bars[0].labelTh: ระยะวิ่งทดสอบ รถไฟไทยทำ (กม.)
+dream.blocks[3].blocks[1].game.data.nearTh: เกือบเป๊ะ
+dream.blocks[3].blocks[1].game.data.overTh: เธอเดาสูงไป {d} กม.
+dream.blocks[3].blocks[1].game.data.underTh: เธอเดาต่ำไป {d} กม.
+dream.blocks[3].blocks[1].game.data.revealTh: เธอเดา {g} กม. ของจริงคือกว่า 10,000 กม.
+dream.blocks[3].blocks[1].answersTh[0]: ก่อนส่งมอบเมื่อ ก.ค. 2569 รถไฟไทยทำวิ่งทดสอบไปกว่า 10,000 กม.
+dream.blocks[3].blocks[1].answersTh[1]: ตู้ยาว 24 เมตร มี 25 ที่นั่ง ชิ้นส่วนทำในไทย 44.1% (ตัวเลขจากทีมที่สร้าง)
+dream.blocks[3].blocks[2].text.th: วิ่งทดสอบกว่า 10,000 กม. ตัวถังเบาลงราว 22% ชิ้นส่วนทำในไทย 44.1%
+dream.blocks[3].blocks[2].titleTh: ตัวเลขจากทีมที่สร้าง
+dream.blocks[3].blocks[3].lines[0].text.th: ทั้งหมดนี้คือฝีมือทีมวิศวกรในไทย ที่ลงมือทำกันเองเลยนะ
+dream.blocks[3].blocks[3].lines[1].text.th: แปลว่าคนอย่างเรา ก็ทำของแบบนี้ได้เหรอ
+dream.blocks[3].blocks[3].lines[2].text.th: นั่นแหละโจทย์ของรันนี้
+dream.blocks[4].unlockLabelTh: ยังมีอีก
+dream.blocks[4].blocks[0].lines[0].text.th: ไม่ได้มีแค่รถไฟนะ พลิกดูว่ามีอะไรสร้างในไทยอีก
+dream.blocks[4].blocks[1].game.data.highlightTh: ในไทย
+dream.blocks[4].blocks[1].game.data.cards[0].frontTh: รถที่เด็กวิทยาลัยเทคนิคสร้างเอง ประหยัดเชื้อเพลิงได้ขนาดไหน
+dream.blocks[4].blocks[1].game.data.cards[0].backTh: ทีม Virgin วิทยาลัยเทคนิคสกลนคร ใช้เอทานอล 1 ลิตร คิดเป็นระยะทาง 1,867.8 กม. คว้าที่ 1 รุ่นรถต้นแบบ ทีมในไทยสร้าง
+dream.blocks[4].blocks[1].game.data.cards[0].dateTh: ก.ค. 2566
+dream.blocks[4].blocks[1].game.data.cards[1].frontTh: รถยนต์ที่วิ่งอยู่บนถนน มาจากไหน
+dream.blocks[4].blocks[1].game.data.cards[1].backTh: ปี 2568 โรงงานในไทยผลิตรถยนต์ได้ 1,455,569 คัน ทั้งขายในประเทศและส่งออก
+dream.blocks[4].blocks[1].game.data.cards[1].dateTh: ปี 2568
+dream.blocks[4].blocks[1].game.data.cards[2].frontTh: แอร์ติดผนังในห้องนอน มาจากไหน
+dream.blocks[4].blocks[1].game.data.cards[2].backTh: ปี 2567 แอร์ติดผนังที่ผลิตในไทย ส่งออกไปกว่า 21 ล้านเครื่อง อันดับ 3 ของโลก รองแค่จีนกับเม็กซิโก
+dream.blocks[4].blocks[1].game.data.cards[2].dateTh: ปี 2567
+dream.blocks[4].blocks[1].answersTh[0]: รถประหยัดพลังงาน: ทีม Virgin วิทยาลัยเทคนิคสกลนคร เอทานอล 1 ลิตร คิดเป็นระยะทาง 1,867.8 กม.
+dream.blocks[4].blocks[1].answersTh[1]: รถยนต์: ปี 2568 ไทยผลิตได้ 1,455,569 คัน
+dream.blocks[4].blocks[1].answersTh[2]: แอร์ติดผนัง: ปี 2567 ไทยส่งออกกว่า 21 ล้านเครื่อง อันดับ 3 ของโลก
+dream.blocks[4].blocks[2].text.th: ตัวเลขรถไฟไทยทำ ทีมที่สร้างแจ้งเองตอนส่งมอบ ส่วนรถประหยัดพลังงานเป็นรถต้นแบบที่สร้างมาแข่งในสนาม ไม่ใช่รถที่ขับบนถนนทุกวัน
+dream.blocks[4].blocks[2].titleTh: พูดตรงๆ
+dream.blocks[4].blocks[3].lines[0].text.th: แต่ของแบบนี้ไม่มีอันไหนดีตั้งแต่วันแรกนะ ต้องทดสอบแล้วแก้มาหลายรอบ
+dream.blocks[4].blocks[3].lines[1].text.th: ด่านต่อไป: ลองทำงานจริง ทำยังไงให้เครื่องไม่พัง
+dream.reel.hook.th: รถไฟที่ทีมวิศวะไทยออกแบบเอง วิ่งทดสอบกว่า 10,000 กม. ก่อนให้คนขึ้น
+dream.reel.variantsTh[0]: นักศึกษาเทคนิคไทยสร้างรถ ใช้เอทานอล 1 ลิตร คิดเป็นระยะทาง 1,867.8 กม.
+dream.reel.variantsTh[1]: รถไฟ รถยนต์ แอร์ ที่เธอใช้ทุกวัน มีทีมในไทยออกแบบอยู่
+dream.reel.sendToFriendTh: ส่งให้เพื่อนที่ชอบรถไฟ หรือชอบแกะของดูข้างใน
+dream.reel.visual[0]: ตู้รถไฟสีครีมแล่นออกจากสถานีตอนกลางคืน ป้าย สร้างในไทย ประทับลงมา
+dream.reel.visual[1]: ตัวนับระยะทางวิ่งถึง 10,000 กม. รางรถไฟคดเคี้ยวทั่วแผนที่ไทย
+dream.reel.visual[2]: การ์ดสามใบพลิกทีละใบ รถแข่งคันเล็ก รถยนต์ แอร์ คำว่า ในไทย สว่างขึ้นทุกใบ",
+  "work.titleTh: งานจริง คือทำให้เครื่องไม่พัง
+work.questionTh: วิศวกรเครื่องกลทำอะไรทั้งวัน แค่วาดแบบหรือเปล่า
+work.navLabelTh: ทดสอบพัดลม
+work.og.headlineTh: ทำพัดลมให้ห้องเรียน ใครก็วาดได้ แต่ทำให้มันไม่พังนี่สิของจริง
+work.blocks[0].lines[0].text.th: ด่านนี้เธอได้งานแรกแล้วนะ
+work.blocks[0].lines[1].text.th: โจทย์คือพัดลมตั้งโต๊ะใหม่ สำหรับห้องเรียนร้อนๆ คนทำคือเธอเลย
+work.blocks[1].ask[0].text.th: ก่อนเริ่ม เธอว่าวิศวกรเครื่องกลทำพัดลมใหม่ยังไง
+work.blocks[1].options[0].labelTh: วาดแบบสวยๆ แล้วส่งโรงงานเลย
+work.blocks[1].options[0].reply[0].text.th: ถ้าส่งเลย อาจได้พัดลมพังยกล็อตนะ
+work.blocks[1].options[0].reply[1].text.th: ของจริงคือปั้นต้นแบบขึ้นมาก่อน แล้วทดสอบให้ชัวร์
+work.blocks[1].options[1].labelTh: ทำมาตัวนึง แล้วแกล้งให้มันพังดู
+work.blocks[1].options[1].reply[0].text.th: เป๊ะเลย ยอมให้พังในห้องทดสอบตอนนี้ ดีกว่าไปพังในห้องเรียน
+work.blocks[1].options[2].labelTh: ซื้อของเจ้าอื่นมารื้อดูไส้ในก่อนดิ
+work.blocks[1].options[2].reply[0].text.th: วิศวกรทำแบบนั้นจริงนะ รื้อดูว่าเจ้าอื่นทำยังไง
+work.blocks[1].options[2].reply[1].text.th: แต่สุดท้ายก็ต้องทำต้นแบบเอง แล้วทดสอบอยู่ดี
+work.blocks[2].lines[0].text.th: ทำเป็นขั้นๆ: ตั้งโจทย์ ทำต้นแบบ ทดสอบ แล้วแก้จุดที่พัง
+work.blocks[3].unlockLabelTh: ขั้นแรก: ตั้งโจทย์
+work.blocks[3].blocks[0].lines[0].text.th: ลองฟังก่อนว่าห้องเรียนบ่นอะไรพัดลมตัวเก่าบ้าง
+work.blocks[3].blocks[0].lines[1].text.th: แต่ไม่ใช่ทุกอย่างที่ขอมา ต้องยัดใส่พัดลมตัวนี้นะ
+work.blocks[3].blocks[1].game.data.tagTh: ตั้งโจทย์
+work.blocks[3].blocks[1].game.data.goalTh: เลือกเรื่องที่พัดลมตัวใหม่ต้องแก้
+work.blocks[3].blocks[1].game.data.bins[0].labelTh: ต้องแก้
+work.blocks[3].blocks[1].game.data.bins[1].labelTh: ไว้ทีหลัง
+work.blocks[3].blocks[1].game.data.simulated.watermarkTh: ตัวอย่างจำลอง
+work.blocks[3].blocks[1].game.data.items[0].labelTh: เปิดแรงสุดแล้ว คนหลังห้องยังไม่ได้ลม
+work.blocks[3].blocks[1].game.data.items[0].revealTh: นี่คืองานหลักของพัดลมเลย ต้องแก้ก่อนเรื่องอื่น
+work.blocks[3].blocks[1].game.data.items[1].labelTh: เสียงดังจนครูต้องตะโกนแข่ง
+work.blocks[3].blocks[1].game.data.items[1].revealTh: ห้องเรียนต้องได้ยินกัน เสียงดังเลยเป็นเรื่องใหญ่
+work.blocks[3].blocks[1].game.data.items[2].labelTh: เดินชนนิดเดียวก็ล้ม
+work.blocks[3].blocks[1].game.data.items[2].revealTh: ล้มทีอาจพัง หรือใบพัดไปโดนคน เรื่องปลอดภัยต้องมาก่อน
+work.blocks[3].blocks[1].game.data.items[3].labelTh: ฝุ่นเกาะใบพัดหนา แต่ถอดตะแกรงล้างยาก
+work.blocks[3].blocks[1].game.data.items[3].revealTh: ล้างไม่ได้ ฝุ่นก็เกาะจนลมอ่อน ต้องออกแบบให้ถอดง่าย
+work.blocks[3].blocks[1].game.data.items[4].labelTh: อยากให้เปิดเพลงจากมือถือได้
+work.blocks[3].blocks[1].game.data.items[4].revealTh: ใส่ลำโพงก็เพิ่มชิ้นที่พังได้อีก ไม่ใช่งานหลักของพัดลม
+work.blocks[3].blocks[1].game.data.items[5].labelTh: อยากได้หลายสีให้เลือก
+work.blocks[3].blocks[1].game.data.items[5].revealTh: สีค่อยเพิ่มทีหลังได้ ทำให้ลมถึงทุกโต๊ะก่อนดีกว่า
+work.blocks[3].blocks[1].game.data.resultTh: เลือกถูก {score}/{total}
+work.blocks[3].blocks[1].answersTh[0]: ต้องแก้: ลมไม่ถึงหลังห้อง, เสียงดังจนครูต้องตะโกน, เดินชนแล้วล้ม, ถอดตะแกรงล้างยาก
+work.blocks[3].blocks[1].answersTh[1]: ไว้ทีหลัง: เปิดเพลงจากมือถือ, หลายสีให้เลือก
+work.blocks[3].blocks[2].lines[0].text.th: ยิ่งใส่ของเยอะ ก็ยิ่งมีชิ้นที่พังได้เยอะ
+work.blocks[3].blocks[2].lines[1].text.th: โจทย์ชัดแล้ว ไปทำต้นแบบกัน
+work.blocks[4].unlockLabelTh: ขั้นสอง: ทดสอบ แล้วแก้
+work.blocks[4].blocks[0].lines[0].text.th: ต้นแบบเสร็จแล้ว ทีนี้เอาไปทดสอบแบบจัดเต็มกันเลย
+work.blocks[4].blocks[0].lines[1].text.th: ข้อไหนผ่านก็ปล่อย ข้อไหนพัง เลือกว่าจะแก้รูปทรงหรือเปลี่ยนวัสดุ
+work.blocks[4].blocks[1].game.data.tagTh: ทดสอบ แล้วแก้
+work.blocks[4].blocks[1].game.data.goalTh: ดูผลทดสอบพัดลม แล้วเลือกวิธีแก้ทีละข้อ
+work.blocks[4].blocks[1].game.data.bins[0].labelTh: ผ่าน
+work.blocks[4].blocks[1].game.data.bins[1].labelTh: แก้รูปทรง
+work.blocks[4].blocks[1].game.data.bins[2].labelTh: เปลี่ยนวัสดุ
+work.blocks[4].blocks[1].game.data.simulated.watermarkTh: ตัวอย่างจำลอง
+work.blocks[4].blocks[1].game.data.items[0].labelTh: เปิดแรงสุดทั้งวัน
+work.blocks[4].blocks[1].game.data.items[0].meta.sender: ห้องทดสอบ
+work.blocks[4].blocks[1].game.data.items[0].detailTh: มอเตอร์อุ่นๆ แต่ไม่ร้อนเกินเกณฑ์ที่ตั้งไว้
+work.blocks[4].blocks[1].game.data.items[0].revealTh: อยู่ในเกณฑ์ที่ตั้งไว้ แบบนี้ผ่านเลย
+work.blocks[4].blocks[1].game.data.items[1].labelTh: หมุนต่อเนื่องหลายวัน
+work.blocks[4].blocks[1].game.data.items[1].meta.sender: ห้องทดสอบ
+work.blocks[4].blocks[1].game.data.items[1].detailTh: ใบพัดร้าว รอยร้าวเริ่มตรงมุมแหลมที่โคนใบ
+work.blocks[4].blocks[1].game.data.items[1].flags[0]: รอยร้าว
+work.blocks[4].blocks[1].game.data.items[1].nearTh.material: วัสดุแข็งขึ้นก็ช่วยได้บ้าง แต่ต้นเหตุคือมุมแหลมที่แรงไปกองรวมกัน
+work.blocks[4].blocks[1].game.data.items[1].revealTh: มุมแหลมทำให้แรงไปกองที่จุดเดียว ทำโคนใบให้โค้งมนและหนาขึ้น
+work.blocks[4].blocks[1].game.data.items[2].labelTh: วางริมหน้าต่าง โดนแดดทุกวัน
+work.blocks[4].blocks[1].game.data.items[2].meta.sender: ห้องทดสอบ
+work.blocks[4].blocks[1].game.data.items[2].detailTh: ผ่านไปหลายสัปดาห์ ใบพัดพลาสติกซีด แล้วเปราะหักง่าย
+work.blocks[4].blocks[1].game.data.items[2].flags[0]: แดดทำพลาสติกเสื่อม
+work.blocks[4].blocks[1].game.data.items[2].nearTh.shape: เปลี่ยนรูปทรงยังไง พลาสติกก็ยังเสื่อมเพราะแดดอยู่ดี
+work.blocks[4].blocks[1].game.data.items[2].revealTh: เปลี่ยนไปใช้พลาสติกที่ทนแดด รูปทรงเดิมใช้ต่อได้เลย
+work.blocks[4].blocks[1].game.data.items[3].labelTh: เดินชนที่ขาเบาๆ
+work.blocks[4].blocks[1].game.data.items[3].meta.sender: ห้องทดสอบ
+work.blocks[4].blocks[1].game.data.items[3].detailTh: พัดลมล้มทั้งตัว
+work.blocks[4].blocks[1].game.data.items[3].flags[0]: ล้มง่าย
+work.blocks[4].blocks[1].game.data.items[3].revealTh: ทำฐานให้กว้างขึ้น หรือถ่วงน้ำหนักไว้ที่ฐาน ให้ตั้งได้มั่นคง
+work.blocks[4].blocks[1].game.data.items[4].labelTh: แท่งทดสอบขนาดนิ้วเด็ก
+work.blocks[4].blocks[1].game.data.items[4].meta.sender: ห้องทดสอบ
+work.blocks[4].blocks[1].game.data.items[4].detailTh: ลอดช่องตะแกรงเข้าไปโดนใบพัดได้
+work.blocks[4].blocks[1].game.data.items[4].flags[0]: ความปลอดภัย
+work.blocks[4].blocks[1].game.data.items[4].nearTh.material: เปลี่ยนวัสดุ ช่องก็ยังกว้างอยู่ดี นิ้วก็ยังลอดได้
+work.blocks[4].blocks[1].game.data.items[4].revealTh: ทำช่องตะแกรงให้ถี่ขึ้นจนนิ้วลอดไม่ได้ ข้อนี้ต้องผ่านก่อนขาย
+work.blocks[4].blocks[1].game.data.items[5].labelTh: เช็ดด้วยผ้าเปียกทุกสัปดาห์
+work.blocks[4].blocks[1].game.data.items[5].meta.sender: ห้องทดสอบ
+work.blocks[4].blocks[1].game.data.items[5].detailTh: ตะแกรงเหล็กขึ้นจุดสนิม
+work.blocks[4].blocks[1].game.data.items[5].flags[0]: สนิม
+work.blocks[4].blocks[1].game.data.items[5].nearTh.shape: รูปทรงไหน เหล็กเปลือยก็ยังขึ้นสนิมอยู่ดี
+work.blocks[4].blocks[1].game.data.items[5].revealTh: เปลี่ยนเป็นสแตนเลส หรือเหล็กที่เคลือบกันสนิม
+work.blocks[4].blocks[1].game.data.items[6].labelTh: เปิดเบาสุดในห้องเงียบ
+work.blocks[4].blocks[1].game.data.items[6].meta.sender: ห้องทดสอบ
+work.blocks[4].blocks[1].game.data.items[6].detailTh: มีเสียงหึ่งเบาๆ เบากว่าเสียงคนคุยกัน
+work.blocks[4].blocks[1].game.data.items[6].nearTh.shape: จะให้เงียบสนิทต้องแลกกับของแพงขึ้น แค่นี้ไม่กวนใครแล้ว
+work.blocks[4].blocks[1].game.data.items[6].revealTh: ไม่ต้องเงียบสนิทก็ได้ แค่ไม่กวนห้องเรียนก็ผ่าน
+work.blocks[4].blocks[1].game.data.resultTh: แก้ถูก {score}/{total}
+work.blocks[4].blocks[1].answersTh[0]: ผ่าน: เปิดแรงสุดทั้งวัน, เสียงหึ่งเบาๆ ตอนเปิดเบาสุด
+work.blocks[4].blocks[1].answersTh[1]: แก้รูปทรง: ใบพัดร้าวที่มุมแหลม, เดินชนแล้วล้ม, นิ้วลอดช่องตะแกรง
+work.blocks[4].blocks[1].answersTh[2]: เปลี่ยนวัสดุ: ใบพัดเปราะเพราะแดด, ตะแกรงเหล็กขึ้นสนิม
+work.blocks[4].blocks[2].lines[0].text.th: ที่เธอเพิ่งทำ คืองานจริงของวิศวกรเครื่องกลเลยนะ
+work.blocks[4].blocks[2].lines[1].text.th: ตั้งโจทย์ ออกแบบ ทดสอบ แก้ แล้ววนจนผ่าน
+work.blocks[4].blocks[2].lines[2].text.th: ทีมรถไฟไทยทำก็ทำแบบนี้ วิ่งทดสอบกว่า 10,000 กม. ก่อนส่งมอบ
+work.blocks[4].blocks[2].lines[3].text.th: ขายออกไปแล้วก็ยังไม่จบนะ ต้องคอยตามแก้จุดที่พังตอนใช้จริง
+work.blocks[5].unlockLabelTh: สายนี้มีกี่แบบ
+work.blocks[5].blocks[0].lines[0].text.th: จริงๆ วิศวกรเครื่องกล เป็นชื่อเรียกกว้างๆ นะ ข้างในแยกได้อีกหลายสาย
+work.blocks[5].blocks[1].headTh: วิศวกรเครื่องกล มีสายไหนบ้าง
+work.blocks[5].blocks[1].tiles[0].titleTh: ทำความเย็น
+work.blocks[5].blocks[1].tiles[0].lineTh: แอร์ พัดลม ตู้เย็น เย็นฉ่ำแต่กินไฟน้อย แบบพัดลมเมื่อกี้
+work.blocks[5].blocks[1].tiles[1].titleTh: รถยนต์และ EV
+work.blocks[5].blocks[1].tiles[1].lineTh: ออกแบบรถยนต์กับรถ EV ที่โรงงานในไทยประกอบกันทุกวัน
+work.blocks[5].blocks[1].tiles[2].titleTh: โรงงานผลิต
+work.blocks[5].blocks[1].tiles[2].lineTh: คุมเครื่องจักรในโรงงาน ให้ผลิตทุกชิ้นตรงตามแบบเป๊ะ
+work.blocks[5].blocks[1].tiles[3].titleTh: หุ่นยนต์
+work.blocks[5].blocks[1].tiles[3].lineTh: สร้างแขนกลกับหุ่นยนต์ ที่ทำงานหนักหรืองานเสี่ยงแทนคน
+work.blocks[5].blocks[1].tiles[4].titleTh: พลังงาน
+work.blocks[5].blocks[1].tiles[4].lineTh: ดูแลโรงไฟฟ้า กังหัน ปั๊ม ให้เดินเครื่องได้ทุกวัน
+work.blocks[5].blocks[2].lines[0].text.th: ยังไม่ต้องรีบเลือกนะ ค่อยๆ ลองไปทีละสายก็ได้
+work.blocks[6].lines[0].text.th: ด่านต่อไป: คืนนี้ลุยเอง ลองแกะของใกล้ตัวในบ้านดู
+work.reel.hook.th: ทำพัดลมให้ห้องเรียน ใครก็วาดได้ แต่ทำให้มันไม่พังนี่สิของจริง
+work.reel.variantsTh[0]: วิศวกรเครื่องกลไม่ได้แค่วาดแบบ งานจริงคือนี่
+work.reel.variantsTh[1]: ให้มันพังในห้องทดสอบ ดีกว่าไปพังในห้องเรียน
+work.reel.sendToFriendTh: ส่งให้เพื่อนที่ชอบแกะของดูข้างใน
+work.reel.visual[0]: ข้อความบ่นเรื่องพัดลมเด้งขึ้น ป้าย ต้องแก้ กับ ไว้ทีหลัง ประทับลง ลำโพงถูกเด้งออก
+work.reel.visual[1]: พัดลมต้นแบบบนโต๊ะทดสอบ ผลทดสอบเด้งทีละข้อ ป้าย ผ่าน แก้รูปทรง เปลี่ยนวัสดุ ประทับลง
+work.reel.visual[2]: วงกลมหมุน ตั้งโจทย์ ออกแบบ ทดสอบ แก้ วนกลับมาที่เดิม",
+  "tonight.titleTh: คืนนี้ แกะของในบ้าน แล้วแก้ให้ดีขึ้น
+tonight.questionTh: คืนนี้ทำอะไรได้บ้าง ที่จบแล้วได้ผลงานชิ้นแรกใส่พอร์ตเลย
+tonight.navLabelTh: ภารกิจคืนนี้
+tonight.og.headlineTh: คืนนี้แกะปากกากดสักด้าม วาดว่ามันทำงานยังไง แล้วออกแบบให้ดีกว่าเดิม
+tonight.blocks[0].lines[0].text.th: ด่านนี้ไม่ได้เล่นในจอ เป็นภารกิจจริงคืนนี้
+tonight.blocks[0].lines[1].text.th: รื้อของในบ้านที่ขยับได้ วาดว่ามันทำงานยังไง แล้วอัปเกรดสักจุด
+tonight.blocks[1].text.th: ปากกากด ที่เย็บกระดาษ ไม้หนีบผ้า รถของเล่นแบบไขลาน ข้างในมีสปริง คาน กับเฟือง ซ่อนอยู่ทั้งนั้น
+tonight.blocks[1].titleTh: ของที่แกะได้
+tonight.blocks[2].lineTh: แกะเฉพาะของที่ไม่มีปลั๊กและไม่มีถ่าน พัดลมดูได้แค่ข้างนอกตอนถอดปลั๊กแล้ว ห้ามแกะตัวเครื่อง ถ้าไม่ใช่ของเธอ ขอเจ้าของก่อนนะ
+tonight.blocks[3].text.th: Excalidraw กระดานวาดรูปในเบราว์เซอร์ ฟรีและเปิดโค้ด เซฟงานไว้ในเบราว์เซอร์ แล้วโหลดเป็นรูปเก็บได้ หรือวาดบนกระดาษก็ได้เหมือนกัน
+tonight.blocks[3].titleTh: ที่วาดรูป: Excalidraw
+tonight.blocks[4].game.data.room.titleTh: Excalidraw · กระดานวาดรูป
+tonight.blocks[4].game.data.room.badgeTh: ฟรีและเปิดโค้ด ตามหน้า GitHub ของโปรแกรม ณ 19 พ.ย. 2569
+tonight.blocks[4].game.data.room.subTh: ไม่ใช้โปรแกรมก็ได้ วาดบนกระดาษแล้วถ่ายรูปเก็บไว้ ได้ผลงานเหมือนกัน
+tonight.blocks[4].game.data.checklistTh[0]: เลือกของที่ขยับได้ ไม่มีปลั๊ก ไม่มีถ่าน
+tonight.blocks[4].game.data.checklistTh[1]: ถ่ายรูปก่อนแกะ จะได้ประกอบกลับได้
+tonight.blocks[4].game.data.checklistTh[2]: แกะทีละชิ้น วางเรียงตามลำดับที่ถอดออกมา
+tonight.blocks[4].game.data.checklistTh[3]: วาดรูปแยกชิ้นส่วน ใส่ลูกศรว่าชิ้นไหนดันชิ้นไหน
+tonight.blocks[4].game.data.checklistTh[4]: เลือกจุดเดียวที่อยากแก้ วาดแบบใหม่ แล้วประกอบของเดิมกลับ
+tonight.blocks[4].game.data.fields[0].placeholderTh: แกะอะไร มันมีไว้ทำอะไร
+tonight.blocks[4].game.data.fields[1].placeholderTh: มันขยับยังไง ชิ้นไหนดันชิ้นไหน
+tonight.blocks[4].game.data.fields[2].placeholderTh: จุดไหนน่าจะพังก่อน หรือใช้แล้วหงุดหงิด
+tonight.blocks[4].game.data.fields[3].placeholderTh: จะแก้รูปทรงหรือเปลี่ยนวัสดุ เพราะอะไร
+tonight.blocks[4].game.data.fields[4].placeholderTh: จะทดสอบยังไง ว่าแบบใหม่ดีกว่าจริง
+tonight.blocks[4].game.data.fixedLinesTh[0]: แกะเฉพาะของที่ไม่มีปลั๊กและไม่มีถ่าน
+tonight.blocks[4].game.data.privacyTh: เก็บไว้ในเครื่องนี้เท่านั้น ไม่ส่งไปที่ไหน
+tonight.blocks[4].answersTh[0]: เลือกของในบ้านที่ขยับได้ ไม่มีปลั๊ก ไม่มีถ่าน เช่น ปากกากด
+tonight.blocks[4].answersTh[1]: ถ่ายรูปก่อนแกะ แกะทีละชิ้น แล้ววาดรูปแยกชิ้นส่วนพร้อมลูกศร
+tonight.blocks[4].answersTh[2]: หาจุดที่น่าจะพังก่อน วาดแบบแก้ (รูปทรงหรือวัสดุ) แล้วประกอบของเดิมกลับ
+tonight.blocks[4].answersTh[3]: เขียนสรุป: แกะอะไร มันขยับยังไง จุดอ่อนคืออะไร จะแก้ยังไง จะทดสอบยังไง
+tonight.blocks[4].demoScript[1].text: ปากกากด กดทีปากกาโผล่ กดอีกทีหดกลับ
+tonight.blocks[4].demoScript[2].text: เดือยพลาสติกที่ล็อกปลายปากกา สึกจนกดแล้วไม่ล็อก
+tonight.blocks[5].lines[0].text.th: ของที่มีค่าสุดคืนนี้ไม่ใช่รูปสวย แต่คือเหตุผลที่เธอเลือกแก้จุดนั้น
+tonight.blocks[5].lines[1].text.th: เหมือนตอนทดสอบพัดลมแล้วจับจุดพังมาแก้เมื่อกี้เป๊ะ
+tonight.blocks[5].lines[2].text.th: ทีมเราว่าช่องสุดท้าย จะทดสอบยังไง สำคัญสุดเลย อย่าข้ามนะ
+tonight.blocks[6].lines[0].text.th: เก็บไว้เลย รูปวาดกับ write-up นี่แหละ ผลงานชิ้นแรกในแฟ้มของเธอ
+tonight.blocks[7].text.th: TCAS70 มี 4 รอบ รอบแรกชื่อ Portfolio มหาลัยดูจากสิ่งที่เธอลงมือทำ งานแบบคืนนี้แหละ ใส่แฟ้มได้เลย
+tonight.blocks[7].titleTh: รู้ไหม รอบ 1 ใช้ผลงานยื่นได้นะ
+tonight.blocks[8].ask[0].text.th: ว่าแต่เธอจะลองเมื่อไหร่ดี
+tonight.blocks[8].options[0].labelTh: คืนนี้เลยดิ
+tonight.blocks[8].options[0].reply[0].text.th: ชอบความไวนี้แฮะ
+tonight.blocks[8].options[0].reply[1].text.th: ทำเสร็จแล้ว พรุ่งนี้ลองแกะอีกชิ้น แล้วเทียบกันดูว่ากลไกต่างกันยังไง
+tonight.blocks[8].options[1].labelTh: ขอเป็นวันหยุดละกัน
+tonight.blocks[8].options[1].reply[0].text.th: ดีลเลย ปักลงปฏิทินไว้เลย จะได้ไม่ลืม
+tonight.blocks[8].options[2].labelTh: ยังไม่ชัวร์เลยว่าจะชอบไหม
+tonight.blocks[8].options[2].reply[0].text.th: ไม่ชัวร์ก็ลองดูก่อนได้นะ
+tonight.blocks[8].options[2].reply[1].text.th: ลองแล้วไม่สนุก ก็รู้ตัวก่อนเลือกคณะ ไม่เสียอะไรเลย",
+  "next.titleTh: แล้วเธอล่ะ
+next.questionTh: สายเครื่องกลใช่เธอไหม แล้วจะไปต่อทางไหน
+next.navLabelTh: แล้วเธอล่ะ
+next.og.headlineTh: สายเครื่องกลใช่เธอไหม เล่นจนจบแล้วค่อยตัดสินใจ
+next.blocks[0].lines[0].text.th: มาถึงด่านสุดท้ายของ Level 1 แล้ว
+next.blocks[0].lines[1].text.th: เล่นมาทั้งหมด เธอชอบส่วนไหนที่สุด
+next.blocks[1].game.data.lines.dream: เดาระยะทดสอบรถไฟไทยทำไว้ {testrun} กม. || รู้จักรถไฟที่ทีมในไทยออกแบบเองแล้ว
+next.blocks[1].game.data.lines.work: ทำพัดลมห้องเรียน ตอบถูก {score}/{total} || ทดสอบพัดลมห้องเรียนจนพร้อมผลิต
+next.blocks[1].game.data.lines.tonight: มีแผนแกะของชิ้นแรกแล้ว
+next.blocks[1].game.data.favourites.dream: สายที่เธอเลือกเอง: สายยานยนต์และราง งานจริงคือออกแบบของใหญ่ที่คนขึ้นนั่ง แล้วทดสอบจนมั่นใจ
+next.blocks[1].game.data.favourites.work: สายที่เธอเลือกเอง: สายออกแบบเครื่องใช้ งานจริงคือทดสอบของที่คนใช้ทุกวัน แล้วแก้จนมันไม่พัง
+next.blocks[1].game.data.cardLineTh: นี่ไม่ใช่คำทำนาย มันคือจุดเริ่ม เธอตัดสินใจเอง
+next.blocks[1].answersTh[0]: เลือกด่านที่สนุกที่สุด แล้วดูว่ามันตรงกับงานจริงสายไหน
+next.blocks[1].answersTh[1]: สายยานยนต์และราง หรือสายออกแบบเครื่องใช้
+next.blocks[1].answersTh[2]: นี่ไม่ใช่คำทำนาย มันคือจุดเริ่ม เธอตัดสินใจเอง
+next.blocks[2].lines[0].text.th: กดบอกเราหน่อยว่าสายนี้ใช่เธอไหม เราจะได้รู้ว่าควรเจาะลึกต่อหรือเปล่า
+next.blocks[2].lines[1].text.th: ไม่ว่าจะกดอันไหน ถือว่าได้ข้อมูล
+next.blocks[2].lines[2].text.th: ลองแล้วรู้ว่าไม่ใช่ ก็ยังได้คำตอบไวกว่าคนที่ไม่เคยลอง
+next.blocks[4].lines[0].text.th: ถ้าสนใจ สิ่งเดียวที่ต้องทำต่อ
+next.blocks[4].lines[1].text.th: คือพรุ่งนี้รื้อของดูอีกชิ้น แล้ววาดเวอร์ชันอัปเกรดอีกแบบ
+next.blocks[5].text.th: ไม่ชอบทดสอบซ้ำแล้วจดตัวเลขละเอียด ไม่สนุกกับฟิสิกส์และคณิต หรือไม่อยากไปยืนในโรงงานที่ร้อนและเสียงดัง เพราะงานจริงคือคำนวณ ทดสอบ แล้วแก้ วนไปเรื่อยๆ
+next.blocks[5].titleTh: สายนี้อาจไม่เหมาะ ถ้า...",
+  "round1.titleTh: รอบ 1 มีพื้นที่ให้ผลงานเธอ
+round1.questionTh: เข้ามหาลัยด้วยสิ่งที่ทำเอง ไม่ใช่แค่คะแนนสอบ จริงเหรอ
+round1.navLabelTh: รอบ 1
+round1.og.headlineTh: TCAS รอบ 1 ใช้ผลงานของเธอยื่นได้ เริ่มเก็บตั้งแต่ตอนนี้เลย
+round1.og.stat.th: TCAS70 มี 4 รอบ รอบแรกคือ Portfolio
+round1.blocks[0].lines[0].text.th: ก่อนไปต่อ มีเรื่องหนึ่งที่แทบไม่มีใครเคยบอก
+round1.blocks[0].lines[1].text.th: เข้ามหาลัยไม่ได้มีแค่ทางสอบอย่างเดียวนะ
+round1.blocks[1].text.th: TCAS70 มี 4 รอบ รอบแรกชื่อ Portfolio มหาลัยดูจากสิ่งที่เธอทำมา
+round1.blocks[2].lines[0].text.th: ถ้าเธอเคยลองทำอะไรในสายเครื่องกล ด้วยตัวเอง นั่นแหละ เอาไปใส่ได้เลย
+round1.blocks[2].lines[1].text.th: ปีนี้ ทปอ. มีระบบ TCASfolio ให้ทำแฟ้มผลงานได้สูงสุด 40 รายการ
+round1.blocks[3].unlockLabelTh: ลองจัดแฟ้มดู
+round1.blocks[3].blocks[0].lines[0].text.th: ลองดูสิ ของพวกนี้ควรไปอยู่ช่องไหนในแฟ้ม
+round1.blocks[3].blocks[1].game.data.tagTh: จัดแฟ้มผลงาน
+round1.blocks[3].blocks[1].game.data.goalTh: จัดของใส่แฟ้ม TCASfolio
+round1.blocks[3].blocks[1].game.data.bins[0].labelTh: โครงงาน
+round1.blocks[3].blocks[1].game.data.bins[1].labelTh: กิจกรรม
+round1.blocks[3].blocks[1].game.data.bins[2].labelTh: เกียรติบัตร รางวัล
+round1.blocks[3].blocks[1].game.data.items[0].labelTh: แกะปากกากด วาดกลไก แล้วออกแบบให้กดได้นุ่มขึ้น พร้อมผลทดสอบ
+round1.blocks[3].blocks[1].game.data.items[0].revealTh: โครงงาน: เธอแกะเอง วาดเอง ทดสอบเอง ครบทุกขั้นแบบวิศวกร
+round1.blocks[3].blocks[1].game.data.items[1].labelTh: สร้างรถจากขวดพลาสติก ปรับล้อทีละอย่าง แล้วจดว่าวิ่งไกลขึ้นแค่ไหน
+round1.blocks[3].blocks[1].game.data.items[1].revealTh: โครงงาน: ตารางที่จดไว้ทุกรอบ คือหลักฐานว่าเธอทดสอบเป็น
+round1.blocks[3].blocks[1].game.data.items[2].labelTh: เข้าชุมนุมหุ่นยนต์ หรือช่วยซ่อมจักรยานของเพื่อนในชุมนุม
+round1.blocks[3].blocks[1].game.data.items[2].revealTh: กิจกรรม: เล่าด้วยว่าเธอลงมือทำส่วนไหน ไม่ใช่แค่ไปนั่งดู
+round1.blocks[3].blocks[1].game.data.items[3].labelTh: ไปค่ายวิศวะที่มหาลัยเปิดให้นักเรียน ม.ปลาย
+round1.blocks[3].blocks[1].game.data.items[3].revealTh: กิจกรรม: ใส่ได้ แต่ของที่เธอสร้างในค่ายสำคัญกว่าใบที่ได้กลับมา
+round1.blocks[3].blocks[1].game.data.items[4].labelTh: เกียรติบัตรจากเวทีแข่งหุ่นยนต์ หรือแข่งรถประหยัดพลังงาน
+round1.blocks[3].blocks[1].game.data.items[4].revealTh: เกียรติบัตร รางวัล: ใส่ได้นะ แต่ตัวผลงานที่ส่งแข่งสำคัญกว่าใบเกียรติบัตรเยอะ
+round1.blocks[3].blocks[1].game.data.resultTh: จัดถูก {score}/{total}
+round1.blocks[3].blocks[1].answersTh[0]: โครงงาน: แกะปากกากด วาดกลไก แล้วออกแบบให้กดได้นุ่มขึ้น พร้อมผลทดสอบ, สร้างรถจากขวดพลาสติก ปรับล้อทีละอย่าง แล้วจดว่าวิ่งไกลขึ้นแค่ไหน
+round1.blocks[3].blocks[1].answersTh[1]: กิจกรรม: เข้าชุมนุมหุ่นยนต์ หรือช่วยซ่อมจักรยานของเพื่อนในชุมนุม, ไปค่ายวิศวะที่มหาลัยเปิดให้นักเรียน ม.ปลาย
+round1.blocks[3].blocks[1].answersTh[2]: เกียรติบัตร รางวัล: เกียรติบัตรจากเวทีแข่งหุ่นยนต์ หรือแข่งรถประหยัดพลังงาน
+round1.blocks[3].blocks[2].lines[0].text.th: เห็นไหม ของที่เธอลงมือทำเองนับได้จริง
+round1.blocks[3].blocks[2].lines[1].text.th: ไม่ต้องรอใครมาจัดค่าย หรือออกใบเกียรติบัตรให้ก่อนเลย
+round1.blocks[4].unlockLabelTh: แล้วตอนนี้ฉันอยู่ ม.ไหนล่ะ
+round1.blocks[4].blocks[0].lines[0].text.th: ถ้าอยู่ ม.6 รอบ 1 ปีนี้บางที่ยังเปิดรับอยู่ แต่ละคณะปิดไม่พร้อมกันนะ
+round1.blocks[4].blocks[0].lines[1].text.th: ถ้าอยู่ ม.5 เธอยังมีเวลาอีกเกือบปี ลองทำชิ้นแรกให้เสร็จก่อนเลย
+round1.blocks[4].blocks[0].lines[2].text.th: ถ้าอยู่ ม.4 เวลาเยอะสุด ลองได้หลายอย่างเลย ไม่ต้องรีบเลือก
+round1.blocks[4].blocks[1].text.th: อย่างเช่น สวนสุนันทาเปิดรับรอบ 1 ถึง 9 ก.พ. 2570
+round1.blocks[4].blocks[1].titleTh: ยังเปิดอยู่
+round1.blocks[4].blocks[2].text.th: รอบ 1 ไม่ได้ง่ายกว่ารอบอื่น แต่ละคณะมีเกณฑ์อย่างเกรดขั้นต่ำ เช็กประกาศของคณะที่สนใจทุกครั้งนะ
+round1.blocks[4].blocks[2].titleTh: พูดตรงๆ
+round1.blocks[4].blocks[3].labelTh: ดูหลักสูตร วิศวะเครื่องกล ยานยนต์ หุ่นยนต์ เมคคาทรอนิกส์ ใน mytcas
+round1.blocks[5].lines[0].text.th: ผลงานชิ้นแรกไม่ต้องใหญ่โตเลย
+round1.blocks[5].lines[1].text.th: อยากรู้เรื่องเงินเดือนกับที่เรียนต่อใช่ไหม
+round1.blocks[5].lines[2].text.th: กด แผนที่ด่าน ข้างล่าง ไปดูข้อมูลเต็มของสายนี้ได้เลย",
+]
+`;

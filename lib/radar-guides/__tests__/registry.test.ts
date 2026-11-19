@@ -78,6 +78,11 @@ describe("radar guide registry", () => {
       "ai-engineer",
       "data-scientist",
       "software-engineer",
+      "medical-technologist",
+      "ux-design",
+      "mechanical-engineer",
+      "marketing-strategist",
+      "accountant",
     ]);
   });
 

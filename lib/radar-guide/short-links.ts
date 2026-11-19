@@ -38,6 +38,7 @@ export const RADAR_LINK_ALIASES = {
   ai: "ai-engineer",
   data: "data-scientist",
   dev: "software-engineer",
+  ux: "ux-design",
 } as const;
 export type RadarLinkAlias = keyof typeof RADAR_LINK_ALIASES;
 
