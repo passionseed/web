@@ -877,7 +877,7 @@ that replaces the work, no lecturing.
   `lib/shift-island/live/interact.ts` and `outline.ts`): every clickable
   thing (a plot's tree with its key flag and lantern, the notice board with
   its notes, the stage with its countdown, the prize board, the campfire's pit
-  and flame, and every person who can be tapped) can show a 1 px ring traced
+  and flame, the merchant ship, and every person who can be tapped) can show a 1 px ring traced
   round its silhouette in lamplight gold. Only one at a time: the one nearest
   the middle of the room between the HUD bars on a touch screen (within 28
   CSS px of its tap target's box, the plots' and plaza's 48px floor
@@ -895,6 +895,21 @@ that replaces the work, no lecturing.
   sea's beat, when the whole view repaints anyway; a still island holds it
   halfway. Taps go where they went: the ring shows what is near, it never
   moves a tap.
+- **Merchant ship** (the shop, #338; `lib/shift-island/live/ship.ts`,
+  `shipWater.ts`): moored on the open water nearest the plaza, clear of every
+  tree, tag, pin, the plaza and the rowing boat, and at least 40 native px
+  above the picture's bottom edge wherever the island has such water (on a
+  phone the next-step card stands over the world's bottom, taller than its
+  96px reserve). No word floats over it: the shop's sign is painted on its
+  stern (a Passioncoin in a wooden frame), and its button's name says it is
+  the shop. It rocks a pixel every 1.1 s. On the web it sits in the water: a
+  soft shadow under the hull leaning with the sun, foam lapping at its
+  waterline (three frames on the sea's beat), and from dawn to night its
+  lantern's light at the lanterns' strength of the hour: a pool on the open
+  water by the stern in the plaza pools' own soft steps, laid as warm streaks
+  with a few glints that shift on the sea's beat, and its stall and painted
+  board warmed the way the fire warms the faces round it. The bot never draws
+  it. The shop sheet shows the same ship, foam included, in the hour's light.
 - **Clock** (pure functions of elapsed ms, tick 125 ms): sea ping-pong 0-1-2-1
   every 3 ticks, foam every 4, boat 1 px per 2 ticks along `lanes.boatY`
   (the sprite faces left, so mirror it when sailing right; about 90 s across, wraps off-screen), 2 gulls 1 px

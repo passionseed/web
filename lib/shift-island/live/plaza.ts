@@ -162,8 +162,8 @@ const FIRE_X = -35;
 const FRONT_Y = 25;
 const FLAME_MS = 250;
 const SIT_MS = 1100;
-/** The merchant ship rocks on its mooring: one frame each way. */
-const SHIP_MS = 900;
+/** The merchant ship rocks on its mooring, gently: 1.1 s each way. */
+const SHIP_MS = 1100;
 const SITTERS = [ACTOR_FRAMES.sitA, ACTOR_FRAMES.sitB, ACTOR_FRAMES.sitC, ACTOR_FRAMES.sitD] as const;
 const NOTES: Record<NoticeKind, MotionSpriteName> = {
   active: "notice_note_active",

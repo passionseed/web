@@ -59,10 +59,15 @@ const LIT_KEYS: Readonly<Record<string, string>> = {
   campfire_pit: "yi",
   fest_stage_3: "y",
   fest_count: "f",
-  // The merchant ship's lantern, coin sign and portholes.
+  // The merchant ship's lantern, portholes and the coin painted on its stern.
   merchant_ship_0: "y",
   merchant_ship_1: "y",
 };
+
+/** The palette keys a sprite keeps untinted in every light (its lanterns, lamps and lit glyphs); "" for none. */
+export function litKeysOf(name: string): string {
+  return LIT_KEYS[name] ?? "";
+}
 
 /** Ground tiles are never mirrored. */
 const GROUND = /^(water|shore|sand|grass|path|plaza)/;

@@ -1,16 +1,59 @@
 /*
- * The shop on the merchant ship (ShopSheet, ShopList). Tokens (--isl-*,
- * --notch, --text-*) come from island.module.css's .sheet. Flat pixel
- * surfaces only: wood, cream and the island's sea, no gradients or glows.
+ * The shop on the merchant ship (ShopSheet, ShopList), in the HUD's crafted
+ * set: the island's wood as a frame with pixel-cut corners round a warm ink
+ * board (the team chip and the next-step card, world.module.css .hud), cream
+ * paper for each item's picture, and the painted green plank for the one
+ * action. Tokens (--isl-*, --notch, --text-*) come from island.module.css's
+ * .sheet; the wood set's own tokens are on .deck (the sheet portals out of
+ * the HUD, so it cannot read them there). Flat pixel surfaces only.
+ *
+ * Contrast on the ink board (#2d211b): cream 14:1, the price's lamp gold
+ * 9.7:1, the lock line's sand 12:1, the sub line's dim 6.1:1.
  */
+
+/* ---------------------------------------------------------------- the wood set */
+
+.deck {
+  /*
+   * The HUD's wood set, repeated from world.module.css .hud: --wood-frame is
+   * its 7x7 grid of 2px art pixels (a 9-slice border-image, slice 6, 6px
+   * wide): an ink outline with cut corners, a lit top row, wood, a shaded
+   * base row.
+   */
+  --wood-outline: #24160f;
+  --wood-board: #2d211b;
+  --wood-board-hi: #3a2b22;
+  --wood-frame: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' shape-rendering='crispEdges'%3E%3Crect x='2' y='0' width='10' height='2' fill='%2324160f'/%3E%3Crect x='0' y='2' width='2' height='2' fill='%2324160f'/%3E%3Crect x='2' y='2' width='10' height='2' fill='%23c89561'/%3E%3Crect x='12' y='2' width='2' height='2' fill='%2324160f'/%3E%3Crect x='0' y='4' width='2' height='2' fill='%2324160f'/%3E%3Crect x='2' y='4' width='10' height='2' fill='%238a6343'/%3E%3Crect x='12' y='4' width='2' height='2' fill='%2324160f'/%3E%3Crect x='0' y='6' width='2' height='2' fill='%2324160f'/%3E%3Crect x='2' y='6' width='4' height='2' fill='%238a6343'/%3E%3Crect x='8' y='6' width='4' height='2' fill='%238a6343'/%3E%3Crect x='12' y='6' width='2' height='2' fill='%2324160f'/%3E%3Crect x='0' y='8' width='2' height='2' fill='%2324160f'/%3E%3Crect x='2' y='8' width='10' height='2' fill='%238a6343'/%3E%3Crect x='12' y='8' width='2' height='2' fill='%2324160f'/%3E%3Crect x='0' y='10' width='2' height='2' fill='%2324160f'/%3E%3Crect x='2' y='10' width='10' height='2' fill='%235a3d2a'/%3E%3Crect x='12' y='10' width='2' height='2' fill='%2324160f'/%3E%3Crect x='2' y='12' width='10' height='2' fill='%2324160f'/%3E%3C/svg%3E");
+  /* A short contact shadow under each board: the sheet is already dark, so no wide drop. */
+  --wood-drop: 0 2px 3px rgba(8, 4, 2, 0.45);
+}
+
+/* A board in its wood frame: the board fills only inside it, so the cut corners stay open. */
+.board {
+  color: var(--isl-cream);
+  border: 6px solid transparent;
+  border-radius: 0;
+  border-image: var(--wood-frame) 6 / 6px stretch;
+  background: var(--wood-board) padding-box;
+  /* The frame's lip casts a 2px shade onto the board under it. */
+  box-shadow:
+    inset 0 2px 0 rgba(10, 4, 0, 0.32),
+    var(--wood-drop);
+}
 
 /* ---------------------------------------------------------------- harbour */
 
+/* The ship at its mooring, seen through a wooden window frame onto the island's sea. */
 .harbour {
   position: relative;
-  height: 150px;
+  height: 160px;
   overflow: hidden;
-  clip-path: var(--notch);
+  border: 6px solid transparent;
+  border-image: var(--wood-frame) 6 / 6px stretch;
+  background: var(--isl-water) padding-box;
+  box-shadow:
+    inset 0 2px 0 rgba(10, 4, 0, 0.32),
+    var(--wood-drop);
 }
 
 .sea {
@@ -20,10 +63,10 @@
   height: 100%;
 }
 
-/* The ship's two frames, stacked: frame B shows for the second half of each beat. */
+/* The ship's two frames, stacked: one shows at a time (the map's own gentle rock). */
 .ship {
   position: absolute;
-  left: 8px;
+  left: 6px;
   bottom: 0;
   display: block;
   line-height: 0;
@@ -33,48 +76,57 @@
   display: block;
 }
 
+.shipA,
+.shipB {
+  animation: 2.2s infinite steps(1, end);
+}
+
+.shipA {
+  animation-name: shipRestA;
+}
+
 .shipB {
   position: absolute;
   inset: 0;
   opacity: 0;
-  animation: shipRock 1.8s infinite;
+  animation-name: shipRestB;
 }
 
-@keyframes shipRock {
+@keyframes shipRestA {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes shipRestB {
   0% {
     opacity: 0;
-    animation-timing-function: steps(1, end);
   }
   50% {
     opacity: 1;
-    animation-timing-function: steps(1, end);
-  }
-  100% {
-    opacity: 1;
   }
 }
 
-/* The student's coins on a plank, top right of the harbour. */
+/* The student's coins on a small framed plank, top right of the harbour, like the chip. */
 .purse {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 6px;
+  right: 6px;
   display: grid;
   justify-items: end;
-  gap: 2px;
+  gap: 0;
   margin: 0;
-  padding: 6px 12px 8px;
-  color: var(--isl-cream);
-  background: var(--isl-wood);
-  box-shadow:
-    inset 0 2px 0 var(--isl-wood-hi),
-    inset 0 -3px 0 rgba(26, 16, 30, 0.35);
-  clip-path: var(--notch);
+  padding: 2px 8px 4px;
 }
 
 .purseLabel {
   font-size: 12px;
-  line-height: 1.3;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--isl-sand-hi);
 }
 
 .purseValue {
@@ -84,7 +136,7 @@
   font-family: var(--font-space-mono), monospace;
   font-size: 20px;
   font-weight: 700;
-  line-height: 1.1;
+  line-height: 1.15;
   color: var(--isl-lamp);
 }
 
@@ -109,36 +161,35 @@
   list-style: none;
 }
 
-/* A crate: the item's picture on cream, its name and price beside it, everything else below. */
+/* A crate: a framed board with the item's picture on a paper tag, its name and price beside it, everything else below. */
 .crate {
   display: grid;
-  grid-template-columns: 96px minmax(0, 1fr);
+  grid-template-columns: 84px minmax(0, 1fr);
   grid-template-areas:
     "art info"
     "more more";
-  gap: 12px 14px;
-  padding: 12px;
-  background: rgba(121, 88, 63, 0.3);
-  box-shadow:
-    inset 0 0 0 2px rgba(200, 149, 97, 0.45),
-    inset 0 4px 0 rgba(255, 241, 214, 0.06);
-  clip-path: var(--notch);
+  gap: 12px;
+  padding: 10px;
 }
 
-.crate[data-state="ready"] {
-  box-shadow:
-    inset 0 0 0 2px var(--isl-leaf-hi),
-    inset 0 4px 0 rgba(255, 241, 214, 0.06);
+/* Waiting on something: the same crate, the board a little deeper. */
+.crate[data-state="locked"] {
+  background-color: #261c17;
 }
 
 .crate[data-state="out"] .crateArt {
   opacity: 0.55;
 }
 
+/* Merch on its way: a preview, so the board sits back a little. */
 .crate[data-state="soon"] {
-  background: rgba(121, 88, 63, 0.18);
+  background-color: #261c17;
 }
 
+/*
+ * The paper tag the item's picture is on: cream paper with an ink edge and a
+ * 3px sand fold along its foot, pixel-cut corners.
+ */
 .crateArt {
   grid-area: art;
   display: grid;
@@ -146,6 +197,9 @@
   aspect-ratio: 1;
   overflow: hidden;
   background: var(--isl-cream);
+  box-shadow:
+    inset 0 0 0 2px var(--wood-outline),
+    inset 0 -5px 0 0 #e7cd92;
   clip-path: var(--notch);
 }
 
@@ -154,14 +208,15 @@
   place-items: center;
   width: 100%;
   height: 100%;
+  /* Inside the tag's ink edge and above its fold. */
+  padding: 4px 4px 7px;
 }
 
-/* The product shots are on white: multiplied onto the cream, they sit in the crate. */
+/* The product shots are on white: multiplied onto the cream, they sit on the paper. */
 .crateImage img {
   display: block;
   width: 100%;
   height: 100%;
-  padding: 4px;
   object-fit: contain;
   mix-blend-mode: multiply;
 }
@@ -184,7 +239,7 @@
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  line-height: 1.4;
+  line-height: 1.45;
   color: var(--text-hi);
   overflow-wrap: anywhere;
 }
@@ -192,7 +247,7 @@
 .crateSub {
   margin: 0;
   font-size: 12px;
-  line-height: 1.4;
+  line-height: 1.45;
   color: var(--text-dim);
   overflow-wrap: anywhere;
 }
@@ -209,23 +264,27 @@
   color: var(--isl-lamp);
 }
 
+/* A stamp painted on the board: flat, never rotated, with the frame's ink edge. */
 .stamp {
   margin-top: 2px;
-  padding: 2px 8px;
+  padding: 1px 8px 2px;
   font-size: 12px;
   font-weight: 700;
   line-height: 1.5;
+  box-shadow: inset 0 0 0 1px var(--wood-outline);
   clip-path: var(--notch);
 }
 
+/* Cream on the island's leaf green: 5.6:1. */
 .stamp[data-tone="ready"] {
   color: var(--isl-cream);
   background: var(--action);
 }
 
+/* Sand on a lit wood: 7.3:1. */
 .stamp[data-tone="soon"] {
-  color: var(--isl-stone-hi);
-  background: rgba(184, 199, 191, 0.16);
+  color: var(--isl-sand-hi);
+  background: #5a4334;
 }
 
 .crateMore {
@@ -242,52 +301,138 @@
 .crateText {
   margin: 0;
   font-size: 14px;
-  line-height: 1.55;
+  line-height: 1.6;
   color: var(--text);
 }
 
 .lock {
   margin: 0;
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 1.55;
   color: var(--isl-sand-hi);
 }
 
-/* Coins so far towards a price: pixel-flat, no ranking, never anyone else's number. */
+/* Coins so far towards a price: a groove cut into the board, filled with lamp gold. Never anyone else's number. */
 .meter {
   display: block;
-  height: 6px;
-  background: rgba(255, 241, 214, 0.1);
+  height: 8px;
+  background: rgba(10, 4, 0, 0.45);
+  box-shadow: inset 0 0 0 1px #8a6a50;
 }
 
 .meterFill {
   display: block;
   height: 100%;
   background: var(--isl-lamp);
+  box-shadow: inset 0 0 0 1px var(--wood-outline);
+}
+
+/*
+ * The crate's one action is the HUD's painted green plank (world.module.css,
+ * the next-step card's button): flat bands, the frame's ink outline, a lit
+ * top row and a shaded base, the lamp light warming its top row on hover
+ * (and on a touch screen, when it comes into view). Colours are literal: the
+ * glow's keyframes interpolate plain values.
+ */
+.crate :global(.ei-button-dawn) {
+  background: var(--action);
+  box-shadow:
+    inset 0 0 0 2px #24160f,
+    inset 0 4px 0 0 #7aa862,
+    inset 0 -6px 0 0 #284c33;
+}
+
+/*
+ * Only the glow (a module's animation names are its own, so the global
+ * lift's keyframes are out of reach here), and none under reduced motion.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .crate :global(.ei-button-dawn):hover:not(:disabled) {
+    animation: crateGlow 14000ms var(--ease-tension) forwards;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) and (hover: none) {
+  .crate :global(.ei-button-dawn.in-view) {
+    animation: crateGlow 14000ms var(--ease-tension) forwards;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crate :global(.ei-button-dawn),
+  .crate :global(.ei-button-dawn):hover:not(:disabled) {
+    animation: none;
+  }
+}
+
+.crate :global(.ei-button-dawn):active:not(:disabled) {
+  box-shadow:
+    inset 0 0 0 2px #24160f,
+    inset 0 4px 0 0 #284c33,
+    inset 0 -4px 0 0 #284c33;
+}
+
+.crate :global(.ei-button-dawn):focus-visible {
+  outline: 2px solid var(--isl-cream);
+  outline-offset: -6px;
+}
+
+@keyframes crateGlow {
+  0% {
+    filter: brightness(1);
+    box-shadow:
+      inset 0 0 0 2px #24160f,
+      inset 0 4px 0 0 #7aa862,
+      inset 0 -6px 0 0 #284c33;
+  }
+  100% {
+    filter: brightness(1.1);
+    box-shadow:
+      inset 0 0 0 2px #24160f,
+      inset 0 4px 0 0 rgba(246, 228, 181, 0.85),
+      inset 0 -6px 0 0 #284c33;
+  }
 }
 
 /* ---------------------------------------------------------------- orders */
 
+/* What the student has redeemed: the ship's ledger, a framed board like the crates. */
 .manifest {
   display: grid;
   gap: 8px;
-  padding: 12px 14px;
-  background: rgba(255, 241, 214, 0.04);
-  clip-path: var(--notch);
+  padding: 10px 12px 12px;
 }
 
+/*
+ * A line: what, its status and date, and its cancel button. On a phone the
+ * button drops under the words, right-aligned, rather than break its Thai
+ * phrase across two lines.
+ */
 .order {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px 12px;
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
+.order > :first-child {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.order > button {
+  flex: none;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* A rule between lines, cut into the board. */
 .order + .order {
   padding-top: 8px;
-  border-top: 1px dashed rgba(184, 199, 191, 0.25);
+  border-top: 1px solid rgba(138, 106, 80, 0.55);
 }
 
 .orderStatus {
@@ -298,6 +443,7 @@
   clip-path: var(--notch);
 }
 
+/* Each status on the board, against its own tint: lamp gold 6.6:1, sky 7.5:1, leaf 4.8:1, dim 5.2:1. */
 .orderStatus[data-status="reserved"] {
   color: var(--isl-lamp);
   background: rgba(244, 197, 106, 0.16);
@@ -324,13 +470,19 @@
 
 @media (min-width: 420px) {
   .crate {
-    grid-template-columns: 112px minmax(0, 1fr);
+    grid-template-columns: 104px minmax(0, 1fr);
+    gap: 12px 14px;
+    padding: 12px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .shipA,
   .shipB {
     animation: none;
+  }
+
+  .shipB {
     opacity: 0;
   }
 }

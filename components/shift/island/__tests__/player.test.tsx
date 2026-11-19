@@ -2,6 +2,9 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import type { ComponentProps } from "react";
 
 import { cancelRedemption, loadWallet, redeemItem } from "@/app/shift/island/wallet-actions";
+import { MOTION_SPRITES } from "@/bot/assets/island/motion-sprites";
+import { PALETTE as MAP_PALETTE } from "@/bot/assets/island/sprites";
+import { SHIP_WATER_SPRITES } from "@/lib/shift-island/live/shipWater";
 import type { CharacterStats, IslandConsent, ShopItem, WalletDetail } from "@/lib/supabase/shift-quests/playerTypes";
 
 import { FOOTER, MENU, TREE } from "../copy";
@@ -12,7 +15,7 @@ import { CHARACTER, coinNumber, PLAYER, SHOP, WALLET } from "../player/copy";
 import { PixelAvatar } from "../player/PixelAvatar";
 import { markerBox } from "../player/PlotMarker";
 import { lockReason, ShopList } from "../player/ShopList";
-import { ShopSheet } from "../player/ShopSheet";
+import { hourPalette, ShopSheet, withFoam } from "../player/ShopSheet";
 import { WalletSheet } from "../player/WalletSheet";
 
 jest.mock("@/app/shift/island/wallet-actions", () => ({
@@ -516,6 +519,29 @@ describe("ShopSheet", () => {
     expect(banner.compareDocumentPosition(shop) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     fireEvent.click(within(banner).getByRole("button"));
     expect(onOpenConsent).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("the harbour's ship", () => {
+  it("lays the map's foam under the hull, never over the ship", () => {
+    const ship = MOTION_SPRITES.merchant_ship_0;
+    const deck = withFoam(ship, SHIP_WATER_SPRITES.ship_foam_0);
+    expect(deck).toHaveLength(ship.length);
+    deck.forEach((row, j) =>
+      [...row].forEach((ch, i) => {
+        if (ship[j][i] !== ".") expect(ch).toBe(ship[j][i]);
+      }),
+    );
+    // The water laps under the keel (sprite row 37), where the ship itself leaves the rows empty.
+    expect(deck[37]).toMatch(/[iu]/);
+  });
+
+  it("draws the harbour in the hour's light, the ship's lantern still lit after dark", () => {
+    expect(hourPalette("day")).toBe(MAP_PALETTE);
+    const night = hourPalette("night", "y");
+    expect(night.y).toBe(MAP_PALETTE.y);
+    expect(night.w).not.toBe(MAP_PALETTE.w);
+    expect(hourPalette("night").y).not.toBe(MAP_PALETTE.y);
   });
 });
 

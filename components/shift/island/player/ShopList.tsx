@@ -226,7 +226,7 @@ export function ShopList({ wallet, onChanged }: ShopListProps) {
             const showMeter = !item.lock && item.inStock && balance < item.cost;
             const state = crateState(item, reason);
             return (
-              <li key={item.id} className={shopStyles.crate} data-state={state} data-open={open ? "true" : undefined}>
+              <li key={item.id} className={`${shopStyles.board} ${shopStyles.crate}`} data-state={state} data-open={open ? "true" : undefined}>
                 <div className={shopStyles.crateArt}>
                   {artwork ? (
                     <MerchArtwork src={artwork.image} portrait={artwork.key === "stickers"} className={shopStyles.crateImage} />
@@ -309,7 +309,7 @@ export function ShopList({ wallet, onChanged }: ShopListProps) {
             );
           })}
           {previews.map((product) => (
-            <li key={product.key} className={shopStyles.crate} data-state="soon">
+            <li key={product.key} className={`${shopStyles.board} ${shopStyles.crate}`} data-state="soon">
               <div className={shopStyles.crateArt}>
                 <MerchArtwork src={product.image} portrait={product.key === "stickers"} className={shopStyles.crateImage} />
               </div>
@@ -325,7 +325,7 @@ export function ShopList({ wallet, onChanged }: ShopListProps) {
       ) : null}
       {previews.length > 0 ? <p className={island.hint}>{SHOP.previewPrices}</p> : null}
       {shop.mine.length > 0 ? (
-        <div className={shopStyles.manifest}>
+        <div className={`${shopStyles.board} ${shopStyles.manifest}`}>
           <h4 className={island.detailHeading}>{SHOP.mineHeading}</h4>
           <ul className={styles.list}>
             {shop.mine.map((redemption) => (

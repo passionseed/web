@@ -1,10 +1,10 @@
 /** @jest-environment node */
-import { ACTOR_FRAMES, MOTION_SIZES } from "@/bot/assets/island/motion-sprites";
+import { ACTOR_FRAMES, MOTION_SIZES, MOTION_SPRITES } from "@/bot/assets/island/motion-sprites";
 import { buildScene, type IslandPlot, type SceneRect } from "@/bot/src/quests/island/scene";
 
 import { overlaps } from "../geometry";
 import { NO_PLAZA, plazaCentre, plazaWorld } from "../plaza";
-import { allWater, SHIP_HULL_TOP, SHIP_SIZE, shipAnchor, shipKeepOut } from "../ship";
+import { allWater, HUD_CLEAR, SHIP_HULL_TOP, SHIP_SIZE, shipAnchor, shipKeepOut } from "../ship";
 
 const SIZES = [1, 3, 8, 12, 20, 40, 80, 150];
 
@@ -43,6 +43,22 @@ describe("the merchant ship's mooring", () => {
     for (const tag of scene.tags) expect(overlaps(box, tag)).toBe(false);
   });
 
+  it.each(SIZES)("moors a %i-plot island's ship clear of the next-step card over the picture's bottom edge", (n) => {
+    const scene = buildScene(plots(n, 1), { markMine: true, festival: true });
+    const at = shipAnchor(scene, plazaCentre(scene))!;
+    expect(scene.height - (at.y + SHIP_SIZE.h)).toBeGreaterThanOrEqual(HUD_CLEAR);
+  });
+
+  it("falls back to the picture's bottom rows when only they have open water", () => {
+    const scene = buildScene(plots(12, 3), { markMine: true });
+    // Land everywhere but the last three rows of tiles.
+    const sea = (i: number) => Math.floor(i / scene.cols) >= scene.rows - 3;
+    const low = { ...scene, tiles: [...scene.tiles].map((t, i) => (sea(i) ? "a" : "1")).join("") };
+    const at = shipAnchor(low, plazaCentre(low));
+    expect(at).not.toBeNull();
+    expect(low.height - (at!.y + SHIP_SIZE.h)).toBeLessThan(HUD_CLEAR);
+  });
+
   it("always moors in the same place for the same island", () => {
     const scene = buildScene(plots(20, 3), { markMine: true });
     expect(shipAnchor(scene, plazaCentre(scene))).toEqual(shipAnchor(buildScene(plots(20, 3), { markMine: true }), plazaCentre(scene)));
@@ -65,11 +81,11 @@ describe("the merchant ship on the plaza", () => {
   it("rocks the ship first, under everything else, with its tap target and no word over it", () => {
     const world = plazaWorld(scene, { festival: null, pins: null, campfire: null, ship: true });
     const at = shipAnchor(scene, plazaCentre(scene))!;
-    expect(world.actors).toEqual([{ frames: ACTOR_FRAMES.merchantShip, x: at.x, y: at.y, frameMs: 900 }]);
+    expect(world.actors).toEqual([{ frames: ACTOR_FRAMES.merchantShip, x: at.x, y: at.y, frameMs: 1100 }]);
     const spot = world.spots.find((s) => s.id === "ship")!;
     expect(spot.x).toBeCloseTo((at.x / scene.width) * 100, 3);
     expect(spot.w).toBeCloseTo((SHIP_SIZE.w / scene.width) * 100, 3);
-    // No floating text on the map: the ship's button names the shop.
+    // Its shop sign is painted on its stern: nothing floats over the ship.
     expect(world.labels).toEqual([]);
   });
 
@@ -84,5 +100,14 @@ describe("the merchant ship on the plaza", () => {
     const world = plazaWorld(scene, { festival: null, pins: ["active"], campfire: { count: 2 }, prizes: true, ship: true });
     expect(world.actors[0].frames).toBe(ACTOR_FRAMES.merchantShip);
     expect(world.spots.map((s) => s.id)).toEqual(["ship", "notice", "prizes", "campfire"]);
+  });
+
+  it("leaves the sprite's last rows to the water: the web lays the foam and the shadow there", () => {
+    for (const name of ACTOR_FRAMES.merchantShip) {
+      const rows = MOTION_SPRITES[name];
+      // Frame 1 dips a px, so its keel is row 37; frame 0's row 36. Nothing below either.
+      for (const row of rows.slice(38)) expect(row).toMatch(/^\.+$/);
+    }
+    expect(MOTION_SPRITES.merchant_ship_0[37]).toMatch(/^\.+$/);
   });
 });

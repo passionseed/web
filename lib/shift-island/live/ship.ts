@@ -10,6 +10,13 @@
  * can be tapped is ever under them. Same scene, same answer, so the ship
  * never drifts between visits. An island with no such spot gets no ship
  * (the menu still opens the shop).
+ *
+ * On a phone the next-step card stands over the bottom of the world, taller
+ * than the room the world keeps under the island (world.ts HUD_RESERVE), so
+ * a ship in the last rows of the picture would sit behind it even scrolled
+ * all the way down. The ship moors at least HUD_CLEAR px above the
+ * picture's bottom edge wherever the island has such a spot, and only
+ * falls back to the bottom rows when it has none.
  */
 import { MOTION_SIZES } from "@/bot/assets/island/motion-sprites";
 import type { IslandScene, SceneRect } from "@/bot/src/quests/island/scene";
@@ -26,6 +33,12 @@ export const SHIP_HULL_TOP = 29;
 const CLEAR = 4;
 /** Candidate positions step this many native px. */
 const STEP = 2;
+/**
+ * Native px kept between the ship and the picture's bottom edge where it can
+ * be: what the next-step card covers past the world's bottom reserve (about
+ * 70 CSS px at 375 px wide, 2 CSS px per native px), and a little more.
+ */
+export const HUD_CLEAR = 40;
 /** The parked rowing boat's sprite (SPRITES.boat). */
 const BOAT = { w: 20, h: 12 } as const;
 /** Room for a tree's decorations (key, visitor, lantern) beside its sprite. */
@@ -88,14 +101,20 @@ export function shipKeepOut(scene: IslandScene): SceneRect[] {
 }
 
 /**
- * The ship's top-left corner, native px, or null when nowhere fits it.
+ * The ship's top-left corner, native px, or null when nowhere fits it: the
+ * nearest spot clear of the bottom HUD (HUD_CLEAR), else the nearest at all.
  * Ties go to the first spot found (top to bottom, left to right).
  */
 export function shipAnchor(scene: IslandScene, centre: { x: number; y: number }): { x: number; y: number } | null {
-  const { w, h } = SHIP_SIZE;
   const keepOut = shipKeepOut(scene);
+  return nearestMooring(scene, centre, keepOut, HUD_CLEAR) ?? nearestMooring(scene, centre, keepOut, 0);
+}
+
+/** The nearest spot whose box ends at least `bottom` px above the picture's bottom edge, or null. */
+function nearestMooring(scene: IslandScene, centre: { x: number; y: number }, keepOut: readonly SceneRect[], bottom: number): { x: number; y: number } | null {
+  const { w, h } = SHIP_SIZE;
   let best: { x: number; y: number; d: number } | null = null;
-  for (let y = 0; y + h <= scene.height; y += STEP) {
+  for (let y = 0; y + h <= scene.height - bottom; y += STEP) {
     for (let x = 0; x + w <= scene.width; x += STEP) {
       const d = (x + w / 2 - centre.x) ** 2 + (y + h / 2 - centre.y) ** 2;
       if (best && d >= best.d) continue;

@@ -13,6 +13,7 @@ import { allSprites } from "./atlas";
 import type { Span } from "./clock";
 import type { SceneModel } from "./draw";
 import type { Rect } from "./geometry";
+import { SHIP_WATER_SPRITES } from "./shipWater";
 import { signSprites } from "./signposts";
 import type { LightPhase, LiveActor } from "./types";
 
@@ -83,9 +84,21 @@ function butterfly(wing: string, mark: string, body: string): Record<string, str
 
 const BLANK_16 = Array.from({ length: 16 }, () => ".".repeat(16));
 
-/** The web's sprite set: every island sprite, the breeze, the island's small life, the plots' signposts, and no dotted lantern ring. */
+/**
+ * The web's sprite set: every island sprite, the breeze, the island's small
+ * life, the plots' signposts, the foam round the merchant ship, and no dotted
+ * lantern ring.
+ */
 export function webSprites(): Record<string, string[]> {
-  return { ...allSprites(), ...BREEZE_SPRITES, ...LIFE_SPRITES, ...signSprites(), lantern_glow_0: BLANK_16, lantern_glow_1: BLANK_16 };
+  return {
+    ...allSprites(),
+    ...BREEZE_SPRITES,
+    ...LIFE_SPRITES,
+    ...signSprites(),
+    ...SHIP_WATER_SPRITES,
+    lantern_glow_0: BLANK_16,
+    lantern_glow_1: BLANK_16,
+  };
 }
 
 // ------------------------------------------------------------------ water
@@ -365,8 +378,12 @@ export function footprint(rows: readonly string[]): { x0: number; x1: number; bo
   return x1 < 0 ? null : { x0, x1, bottom: bottom + 1 };
 }
 
-/** Actors that stand on the ground and cast a shadow (glyphs, bulbs, notes, the fire and its pit do not). */
-const NO_SHADOW = /^(count_|goal_|campfire_|notice_note|fest_count|lantern_glow|petal_|leaf_)/;
+/**
+ * Actors that stand on the ground and cast a shadow (glyphs, bulbs, notes,
+ * the fire and its pit do not; the merchant ship floats, and its shadow on
+ * the water is its own, shipWater.ts).
+ */
+const NO_SHADOW = /^(count_|goal_|campfire_|notice_note|fest_count|lantern_glow|petal_|leaf_|merchant_ship_|ship_foam_)/;
 
 export function castsShadow(name: string): boolean {
   return !NO_SHADOW.test(name);
@@ -491,8 +508,8 @@ export function breathAt(tick: number): number {
   return BREATH_WALK[Math.floor(tick / BREATH_TICKS) % BREATH_WALK.length];
 }
 
-/** Actors that never catch the fire's light: the flame itself, glyphs, bulbs, notes, boards. */
-const UNLIT = /^(campfire_flame|count_|goal_|notice_|fest_|prize_|petal_|leaf_)/;
+/** Actors that never catch the fire's light: the flame itself, glyphs, bulbs, notes, boards, the ship out at sea. */
+const UNLIT = /^(campfire_flame|count_|goal_|notice_|fest_|prize_|petal_|leaf_|merchant_ship_)/;
 
 export function catchesLight(name: string): boolean {
   return !UNLIT.test(name);
