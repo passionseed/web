@@ -157,7 +157,11 @@ export type KindIcon =
   | "monitor"
   | "bug"
   | "magnifier"
-  | "clipboard";
+  | "clipboard"
+  // content-creator
+  | "camera"
+  | "scissors"
+  | "mic";
 
 /** One tile in a career's job-select grid (the `kinds` block). */
 export interface CareerKindTile {
