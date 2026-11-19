@@ -139,8 +139,11 @@ function pack(sprites: Record<string, string[]>, styles: readonly TreeStyle[]): 
   return { placed, height: y + shelf };
 }
 
+/** How a colour looks in a phase: PHASE_TINT's multiply by default (the bot's GIF), or the web's own grade. */
+export type ColourGrade = (rgb: RGB, phase: LightPhase) => RGB;
+
 /** Palette colours by char code, as RGBA words (little-endian), tinted and as by day; 0 is transparent. */
-function colourTables(phase: LightPhase): { tinted: Uint32Array; day: Uint32Array } {
+function colourTables(phase: LightPhase, grade: ColourGrade): { tinted: Uint32Array; day: Uint32Array } {
   const tinted = new Uint32Array(128);
   const day = new Uint32Array(128);
   for (const key of Object.keys(PALETTE)) {
@@ -148,7 +151,7 @@ function colourTables(phase: LightPhase): { tinted: Uint32Array; day: Uint32Arra
     const code = key.charCodeAt(0);
     if (!rgb || key.length !== 1 || code >= 128) continue;
     day[code] = word(rgb);
-    tinted[code] = word(tint(rgb, phase));
+    tinted[code] = word(grade(rgb, phase));
   }
   return { tinted, day };
 }
@@ -160,15 +163,24 @@ function hexRgb(hex: string): RGB | null {
   return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : null;
 }
 
-/** The atlas for one phase. Day is the identity: its pixels are the palette's own. */
-export function buildAtlasData(phase: LightPhase, sprites: Record<string, string[]> = allSprites(), styles: readonly TreeStyle[] = []): AtlasData {
+/**
+ * The atlas for one phase. Day is the identity: its pixels are the palette's
+ * own. `grade` replaces PHASE_TINT's multiply (the web's per-phase look,
+ * grade.ts); the bot's GIF never passes it.
+ */
+export function buildAtlasData(
+  phase: LightPhase,
+  sprites: Record<string, string[]> = allSprites(),
+  styles: readonly TreeStyle[] = [],
+  grade: ColourGrade = tint
+): AtlasData {
   const { placed, height } = pack(sprites, styles);
   const width = ATLAS_WIDTH;
   const rowsTall = Math.max(1, height);
   const data = new Uint8ClampedArray(width * rowsTall * 4);
   // Uint32 writes are RGBA in memory on little-endian machines (every browser this runs on).
   const words = new Uint32Array(data.buffer);
-  const { tinted, day } = colourTables(phase);
+  const { tinted, day } = colourTables(phase, grade);
   const rects = new Map<string, AtlasRect>();
   const flipped = new Map<string, AtlasRect>();
   for (const item of placed) {
@@ -188,7 +200,7 @@ export function buildAtlasData(phase: LightPhase, sprites: Record<string, string
         const code = ch.charCodeAt(0);
         const override = item.style ? mapTreeColor(item.style, ch, j) : null;
         const rgb = override ? hexRgb(override) : null;
-        const v = rgb ? word(tint(rgb, phase)) : code < 128 ? table[code] : 0;
+        const v = rgb ? word(grade(rgb, phase)) : code < 128 ? table[code] : 0;
         if (v !== 0) words[base + i] = v;
       }
     }

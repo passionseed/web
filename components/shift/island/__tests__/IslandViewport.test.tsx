@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 
 import { buildScene } from "@/bot/src/quests/island/scene";
 import type { IslandCanvasProps } from "@/components/shift/island/live/IslandCanvas";
-import { waterColor } from "@/lib/shift-island/live/lighting";
+import { gradedWater } from "@/lib/shift-island/live/grade";
 import { plazaWorld, type PlazaInput, type PlazaSpotId } from "@/lib/shift-island/live/plaza";
 import type { IslandPicture } from "@/lib/shift-island/picture";
 
@@ -19,7 +19,7 @@ jest.mock("../live/IslandLive", () => {
       mockLive.props.push(props);
       useEffect(() => {
         if (mockLive.mode === "ready") {
-          props.onPhase?.("night", waterColor("night"));
+          props.onPhase?.("night", gradedWater("night"));
           props.onReady?.();
         }
         if (mockLive.mode === "fail") props.onFail?.();
@@ -168,12 +168,14 @@ describe("IslandViewport", () => {
     const { container } = render(<IslandViewport picture={live} onPlot={jest.fn()} />);
     const named = screen.getByRole("img", { name: "ภาพเกาะ SHIFT ที่มีต้นไม้ของแต่ละโปรเจกต์" });
     expect(named.tagName).toBe("SPAN");
-    expect(container.querySelector("img")).toHaveStyle({ visibility: "hidden" });
+    // The canvas fades in, and the PNG under it hides once that fade is over (world.module.css).
+    expect(container.querySelector("img")).toHaveAttribute("data-hidden", "true");
+    expect(container.querySelector("[data-ready]")).toHaveAttribute("data-ready", "true");
     // Plots still answer taps above the canvas.
     expect(screen.getByRole("button", { name: "แปลง #4, สวนผักดาดฟ้า" })).toBeInTheDocument();
     // The sea around the picture takes the light of the hour.
     const viewport = container.firstElementChild as HTMLElement;
-    const [r, g, b] = [1, 3, 5].map((i) => parseInt(waterColor("night").slice(i, i + 2), 16));
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(gradedWater("night").slice(i, i + 2), 16));
     expect(viewport.style.background).toBe(`rgb(${r}, ${g}, ${b})`);
     expect(viewport).toHaveAttribute("data-live", "true");
   });
@@ -318,7 +320,7 @@ describe("IslandViewport", () => {
   it("is in the server's light from the first paint, before the living island draws", () => {
     const { container } = render(<IslandViewport picture={live} onPlot={jest.fn()} initialPhase="night" />);
     const world = container.firstElementChild as HTMLElement;
-    const [r, g, b] = waterColor("night").match(/[0-9a-f]{2}/gi)!.map((h) => parseInt(h, 16));
+    const [r, g, b] = gradedWater("night").match(/[0-9a-f]{2}/gi)!.map((h) => parseInt(h, 16));
     expect(world.style.background).toBe(`rgb(${r}, ${g}, ${b})`);
     expect(container.querySelector("[data-phase]")).toHaveAttribute("data-phase", "night");
     // The daytime PNG takes the night's multiply until the canvas has drawn.

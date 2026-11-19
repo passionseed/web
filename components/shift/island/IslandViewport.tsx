@@ -16,7 +16,8 @@ import {
 import type { IslandHotspot, IslandPicture } from "@/lib/shift-island/picture";
 import { hitFigure, hitSlop, treeFigures, type Figure } from "@/lib/shift-island/live/figures";
 import { pxPerNativeFor, type Rect } from "@/lib/shift-island/live/geometry";
-import { PHASE_TINT, waterColor } from "@/lib/shift-island/live/lighting";
+import { gradeMultiply, gradedWater } from "@/lib/shift-island/live/grade";
+import { waterColor } from "@/lib/shift-island/live/lighting";
 import { NO_PLAZA, plazaWorld, type PlazaInput, type PlazaLabelId, type PlazaSpotId } from "@/lib/shift-island/live/plaza";
 import type { LightPhase } from "@/lib/shift-island/live/types";
 import { HUD_RESERVE, scrollToCentre, worldLayout, type Insets } from "@/lib/shift-island/live/world";
@@ -101,9 +102,9 @@ const DRAG_SLOP = 4;
 /** The tap hint steps aside after this long (its fade starts at 6s in world.module.css). */
 const HINT_MS = 6400;
 
-/** The phase's light as a multiply colour: the PNG under it looks like the canvas's tinted land. */
+/** The phase's light as a multiply colour: the PNG under it comes close to the canvas's graded land. */
 function tintColor(phase: LightPhase): string {
-  const [r, g, b] = PHASE_TINT[phase].map((m) => Math.round(m * 255));
+  const [r, g, b] = gradeMultiply(phase);
   return `rgb(${r}, ${g}, ${b})`;
 }
 
@@ -345,7 +346,7 @@ export function IslandViewport({
   const [liveFailed, setLiveFailed] = useState(false);
   /** The light of the hour and the open sea's colour in it: the server's guess, then the living island's. */
   const [light, setLight] = useState<{ phase: LightPhase; sea: string } | null>(() =>
-    initialPhase ? { phase: initialPhase, sea: waterColor(initialPhase) } : null
+    initialPhase ? { phase: initialPhase, sea: gradedWater(initialPhase) } : null
   );
   /** The plot that holds the group's one tab stop, once the student has moved to one. */
   const [activeSlot, setActiveSlot] = useState<number | null>(null);
@@ -544,14 +545,17 @@ export function IslandViewport({
               width={Math.round(picture.width * scale)}
               height={Math.round(picture.height * scale)}
               className={styles.image}
-              style={live ? { visibility: "hidden" } : undefined}
+              // Hidden once the canvas has faded in over it (world.module.css), so the swap never flashes;
+              // out of the accessibility tree at once (the canvas's label names the picture).
+              data-hidden={live ? "true" : undefined}
+              aria-hidden={live ? true : undefined}
               draggable={false}
               onError={() => setFailedSrc(pictureSrc)}
             />
             {pngTint ? <span className={styles.tint} style={{ background: pngTint }} aria-hidden="true" /> : null}
           </div>
           {liveOn && picture.scene ? (
-            <div className={styles.canvasBox} style={canvasRect}>
+            <div className={styles.canvasBox} style={canvasRect} data-ready={live ? "true" : undefined}>
               <IslandLive
                 scene={picture.scene}
                 paused={paused}
@@ -660,7 +664,8 @@ export function IslandViewport({
           </div>
         </div>
       </div>
-      <div className={styles.shade} data-phase={shade} aria-hidden="true" />
+      {/* Keyed by the hour, so a new light fades in over a few seconds instead of cutting. */}
+      <div key={shade ?? "none"} className={styles.shade} data-phase={shade} aria-hidden="true" />
       {interactive && picture.hotspots.length > 0 && !hintGone ? (
         <p className={styles.tapHint} aria-hidden="true">
           {ISLAND.tapHint}

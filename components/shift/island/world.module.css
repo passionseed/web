@@ -87,8 +87,31 @@
   position: absolute;
 }
 
+/* The living island fades in over the picture once its first frame is drawn. */
 .canvasBox {
   pointer-events: none;
+  opacity: 0;
+  transition: opacity 360ms ease-out;
+}
+
+.canvasBox[data-ready="true"] {
+  opacity: 1;
+}
+
+/* The picture under it hides only after that fade, and comes back at once if the canvas goes. */
+.image[data-hidden="true"] {
+  visibility: hidden;
+  transition: visibility 0s linear 380ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canvasBox {
+    transition: none;
+  }
+
+  .image[data-hidden="true"] {
+    transition: none;
+  }
 }
 
 .image {
@@ -410,24 +433,60 @@
   }
 }
 
-/* The light of the hour over the whole screen, on top of the tinted canvas. */
+/*
+ * The air of the hour over the whole screen, on top of the graded canvas:
+ * a sky haze at the top by day, a cool sky over a peach haze at dawn, amber
+ * over a violet edge at dusk, and at night a moonlit corner with a deep blue
+ * edge. A new hour fades in (the element is keyed by it); still under
+ * reduced motion.
+ */
 .shade {
   position: fixed;
   inset: 0;
   z-index: 1;
   pointer-events: none;
+  animation: shade-in 2.4s ease-out both;
+}
+
+@keyframes shade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shade {
+    animation: none;
+  }
+}
+
+.shade[data-phase="day"] {
+  background: linear-gradient(to bottom, rgba(236, 248, 255, 0.3) 0%, rgba(236, 248, 255, 0.1) 13%, rgba(236, 248, 255, 0) 28%);
 }
 
 .shade[data-phase="dawn"] {
-  background: linear-gradient(to bottom, rgba(236, 166, 178, 0.2) 0%, rgba(236, 166, 178, 0) 38%);
+  background: linear-gradient(
+    to bottom,
+    rgba(214, 232, 255, 0.34) 0%,
+    rgba(255, 220, 204, 0.16) 18%,
+    rgba(255, 220, 204, 0) 42%
+  );
 }
 
 .shade[data-phase="dusk"] {
-  background: linear-gradient(to bottom, rgba(222, 121, 108, 0.22) 0%, rgba(222, 121, 108, 0) 42%);
+  background:
+    linear-gradient(to bottom, rgba(255, 190, 128, 0.3) 0%, rgba(238, 140, 150, 0.12) 22%, rgba(238, 140, 150, 0) 46%),
+    radial-gradient(ellipse 90% 75% at 50% 45%, rgba(62, 30, 92, 0) 60%, rgba(62, 30, 92, 0.24) 100%);
 }
 
 .shade[data-phase="night"] {
-  background: radial-gradient(ellipse 80% 70% at 50% 48%, rgba(4, 6, 26, 0) 55%, rgba(4, 6, 26, 0.5) 100%);
+  background:
+    radial-gradient(circle at 84% 3%, rgba(196, 214, 255, 0.2) 0%, rgba(196, 214, 255, 0) 36%),
+    radial-gradient(ellipse 85% 72% at 50% 48%, rgba(8, 12, 40, 0) 58%, rgba(8, 12, 40, 0.42) 100%);
 }
 
 /* The picture failed: the sea stays, the line sits in the middle. */

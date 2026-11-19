@@ -176,15 +176,33 @@ export function paintLand<Img>(ctx: DrawContext<Img>, model: SceneModel, atlas: 
   if (scene.banner) blit(ctx, atlas, rects.get("banner"), scene.banner.x, scene.banner.y);
 }
 
-/** Paints the tags (dark box, white pixel digits) and the caller's pin, as the PNG does. */
-export function paintOverlay<Img>(ctx: DrawContext<Img>, model: SceneModel, atlas: Img, rects: ReadonlyMap<string, AtlasRect>): void {
+/** A tag's box and digit colours; the PNG's own by default. */
+export interface TagInk {
+  fill: string;
+  digit: string;
+}
+
+const PNG_INK: TagInk = { fill: TAG_FILL, digit: "#ffffff" };
+
+/**
+ * Paints the tags (dark box, white pixel digits) and the caller's pin, as the
+ * PNG does. `ink` recolours the tags (the web's light of the hour); the bot
+ * never passes it.
+ */
+export function paintOverlay<Img>(
+  ctx: DrawContext<Img>,
+  model: SceneModel,
+  atlas: Img,
+  rects: ReadonlyMap<string, AtlasRect>,
+  ink: TagInk = PNG_INK
+): void {
   const { scene } = model;
   const g = scene.glyph;
   ctx.imageSmoothingEnabled = false;
   for (const tag of scene.tags) {
-    ctx.fillStyle = TAG_FILL;
+    ctx.fillStyle = ink.fill;
     ctx.fillRect(tag.x, tag.y, tag.w, tag.h);
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = ink.digit;
     [...String(tag.slot)].forEach((d, k) => {
       const bits = DIGITS[Number(d)];
       for (let j = 0; j < 5; j++) {
@@ -195,11 +213,29 @@ export function paintOverlay<Img>(ctx: DrawContext<Img>, model: SceneModel, atla
   if (scene.marker) blit(ctx, atlas, rects.get("marker"), scene.marker.x, scene.marker.y, scene.marker.scale);
 }
 
+/**
+ * The web's extra layers (water light, contact shadows, light pools, the
+ * breeze), slotted into redrawRect's order. Each is called inside the rect's
+ * clip, with the same rect. The bot's GIF and the parity tests pass none, so
+ * their pixels never change.
+ */
+export interface DrawFx {
+  /** A sea cell's frame (0..2) instead of the island-wide one: ripples that roll instead of pulsing. */
+  seaFrame?: (col: number, row: number, kind: number) => number;
+  /** Over the sea and foam, under the land layer. */
+  afterSea?: (r: Rect) => void;
+  /** Under the plaza's actors, over everything before them. */
+  beforeActors?: (r: Rect) => void;
+  /** Over everything. */
+  last?: (r: Rect) => void;
+}
+
 /** What the frame shows, besides the scene. */
 export interface DrawState {
   motion: Motion;
   night: boolean;
   actors: readonly LiveActor[];
+  fx?: DrawFx;
 }
 
 /** A moving sprite's rectangle, from its atlas size. */
@@ -236,7 +272,7 @@ function drawMover<Img>(ctx: DrawContext<Img>, layers: Layers<Img>, m: Mover, r:
  */
 export function redrawRect<Img>(ctx: DrawContext<Img>, r: Rect, model: SceneModel, layers: Layers<Img>, state: DrawState): void {
   const { scene } = model;
-  const { motion, night } = state;
+  const { motion, night, fx } = state;
   const { atlas, rects } = layers;
   const t = scene.tile;
   ctx.save();
@@ -246,13 +282,16 @@ export function redrawRect<Img>(ctx: DrawContext<Img>, r: Rect, model: SceneMode
 
   // Sea and shore cells, then the land layer over them (only where the scene is).
   const cells = cellSpan(r, t);
+  const cellFrame = fx?.seaFrame;
   for (let row = cells.r0; row < cells.r1; row++) {
     for (let col = cells.c0; col < cells.c1; col++) {
       const kind = seaKindAt(model, col, row);
       if (kind < 0) continue;
-      blit(ctx, atlas, layers.seaRects[kind][kind < WATER_KINDS ? motion.sea : motion.foam], col * t, row * t);
+      const frame = cellFrame ? cellFrame(col, row, kind) : kind < WATER_KINDS ? motion.sea : motion.foam;
+      blit(ctx, atlas, layers.seaRects[kind][frame], col * t, row * t);
     }
   }
+  fx?.afterSea?.(r);
   const inScene = intersect(r, model.bounds);
   if (inScene) ctx.drawImage(layers.land, inScene.x, inScene.y, inScene.w, inScene.h, inScene.x, inScene.y, inScene.w, inScene.h);
 
@@ -284,6 +323,7 @@ export function redrawRect<Img>(ctx: DrawContext<Img>, r: Rect, model: SceneMode
 
   if (inScene) ctx.drawImage(layers.overlay, inScene.x, inScene.y, inScene.w, inScene.h, inScene.x, inScene.y, inScene.w, inScene.h);
 
+  fx?.beforeActors?.(r);
   state.actors.forEach((actor, i) => {
     const frame = motion.actors[i] ?? 0;
     const rect = actorRect(actor, frame, rects);
@@ -293,6 +333,7 @@ export function redrawRect<Img>(ctx: DrawContext<Img>, r: Rect, model: SceneMode
   });
 
   for (const g of motion.gulls) drawMover(ctx, layers, g, r);
+  fx?.last?.(r);
   ctx.restore();
 }
 

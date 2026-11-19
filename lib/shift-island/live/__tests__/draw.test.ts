@@ -271,3 +271,35 @@ describe("the open sea past the picture", () => {
     expect(Math.min(...Array.from({ length: 4000 }, (_, t) => motionAt(t, base).boat!.x))).toBeGreaterThan(-100);
   });
 });
+
+describe("the web's extra layers", () => {
+  it("are off unless asked for, and slot into the draw order when they are", () => {
+    const s = setup(buildScene(plots(6), { markMine: true, festival: true }), "day");
+    const motion = s.motion(7);
+    const full = { x: 0, y: 0, w: s.scene.width, h: s.scene.height };
+    const plain = FakeImage.opaque(s.scene.width, s.scene.height);
+    redrawRect(new FakeContext(plain), full, s.model, s.layers, { motion, night: false, actors: [] });
+    const order: string[] = [];
+    const frames = new Set<number>();
+    const hooked = FakeImage.opaque(s.scene.width, s.scene.height);
+    redrawRect(new FakeContext(hooked), full, s.model, s.layers, {
+      motion,
+      night: false,
+      actors: [],
+      fx: {
+        seaFrame: (col, row, kind) => {
+          const f = (col + row + kind) % 3;
+          frames.add(f);
+          return f;
+        },
+        afterSea: (r) => order.push(`sea ${r.w}`),
+        beforeActors: () => order.push("actors"),
+        last: () => order.push("last"),
+      },
+    });
+    expect(order).toEqual([`sea ${full.w}`, "actors", "last"]);
+    // The per-cell frames were used: the picture differs from the island-wide frame.
+    expect(frames.size).toBe(3);
+    expect(differingFrames(plain, hooked)).toBeGreaterThan(0);
+  });
+});

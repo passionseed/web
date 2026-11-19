@@ -18,11 +18,26 @@
  */
 import type { IslandScene } from "@/bot/src/quests/island/scene";
 
-import { allSprites, buildAtlasData, styleKey, stylesOf, type AtlasData } from "./atlas";
+import { buildAtlasData, styleKey, stylesOf, type AtlasData } from "./atlas";
+import { webSprites } from "./atmosphere";
 import { TICK_MS, motionAt, nextTickAt, type Motion } from "./clock";
-import { actorRect, dirtyRects, paintLand, paintOverlay, redrawRect, sceneModel, seaRectsFor, type DrawContext, type Layers, type SceneModel } from "./draw";
+import {
+  actorRect,
+  dirtyRects,
+  paintLand,
+  paintOverlay,
+  redrawRect,
+  sceneModel,
+  seaRectsFor,
+  type DrawContext,
+  type Layers,
+  type SceneModel,
+  type TagInk,
+} from "./draw";
+import { IslandFx, type FxMotion } from "./fx";
 import { area, exposed, intersect, visibleRect, type Rect } from "./geometry";
-import { bangkokPhase, waterColor } from "./lighting";
+import { gradeRgb, gradedWater } from "./grade";
+import { bangkokPhase } from "./lighting";
 import type { LightPhase, LiveActor } from "./types";
 
 export interface LiveIslandProps {
@@ -57,6 +72,20 @@ const PHASE_CHECK_MS = 60_000;
 const VIEW_MARGIN = 2;
 /** No actor boxes yet (nothing drawn), one shared value. */
 const NO_BOXES: readonly (Rect | null)[] = [];
+/** Native px added round each dirty rect: a figure's contact shadow reaches just past its sprite. */
+const SHADOW_PAD = 4;
+
+/**
+ * The plot tags in the hour's light: the PNG's own ink by day (the canvas
+ * matches the picture), softer by dawn and dusk, and at night a navy plaque
+ * with cream digits instead of the brightest white on the island.
+ */
+const TAG_INK: Readonly<Record<LightPhase, TagInk | undefined>> = {
+  day: undefined,
+  dawn: { fill: "rgba(34,38,60,0.86)", digit: "#fff6e6" },
+  dusk: { fill: "rgba(46,30,52,0.86)", digit: "#ffe9c8" },
+  night: { fill: "rgba(18,24,48,0.84)", digit: "#d9d6c6" },
+};
 
 type Img = CanvasImageSource;
 type Ctx = CanvasRenderingContext2D;
@@ -127,7 +156,9 @@ export class LiveIsland {
   private reduced = false;
   private stillShown = false;
   private view: Rect | null = null;
-  private drawn: Motion | null = null;
+  private drawn: FxMotion | null = null;
+  /** The atmosphere: water light, shadows, lamplight, glints and the breeze (web only). */
+  private readonly fx = new IslandFx({ canvas: newCanvas, context: (c) => context(c) });
   private lastTick = -1;
   private lowDetail = false;
   private nextPhaseCheck = 0;
@@ -184,6 +215,8 @@ export class LiveIsland {
         repaint = true;
       }
       if (next.phase !== prev.phase) this.checkPhase();
+      // The fire, the countdown board and the goal's bulbs light the ground round them.
+      if (actorsChanged && !sceneChanged && !cropChanged) this.buildLand();
       if (actorsChanged || next.ambient !== prev.ambient || next.fit !== prev.fit) {
         this.measure();
         repaint = true;
@@ -320,7 +353,7 @@ export class LiveIsland {
         this.stillShown = this.isStill();
         this.ready = true;
         this.events.onReady?.();
-        this.events.onPhase?.(this.phase, waterColor(this.phase));
+        this.events.onPhase?.(this.phase, gradedWater(this.phase));
         this.sync();
       });
     this.initRaf = requestAnimationFrame(first);
@@ -465,7 +498,7 @@ export class LiveIsland {
     this.phase = phase;
     this.buildLand();
     this.paintAll();
-    this.events.onPhase?.(phase, waterColor(phase));
+    this.events.onPhase?.(phase, gradedWater(phase));
   }
 
   // ------------------------------------------------------------- layers
@@ -476,7 +509,8 @@ export class LiveIsland {
     const cacheKey = `${phase}|${styles.map(styleKey).sort().join(";")}`;
     let entry = sharedAtlases.get(cacheKey);
     if (!entry) {
-      const data = buildAtlasData(phase, allSprites(), styles);
+      // The web's own sprite set (the breeze, no dotted lantern ring) in the web's grade of the hour.
+      const data = buildAtlasData(phase, webSprites(), styles, gradeRgb);
       const image = newCanvas(data.width, data.height);
       // Once per phase, never in the loop.
       context(image).putImageData(new ImageData(new Uint8ClampedArray(data.data), data.width, data.height), 0, 0);
@@ -495,11 +529,6 @@ export class LiveIsland {
     const frame = this.frameRect();
     if (this.canvas.width !== frame.w) this.canvas.width = frame.w;
     if (this.canvas.height !== frame.h) this.canvas.height = frame.h;
-    const atlas = this.atlas(this.phase);
-    this.overlayCanvas = this.sized(this.overlayCanvas, scene.width, scene.height);
-    const overlay = context(this.overlayCanvas);
-    overlay.clearRect(0, 0, scene.width, scene.height);
-    paintOverlay(overlay as DrawContext<Img>, this.model, atlas.image, atlas.data.rects);
     this.buildLand();
     this.measure();
   }
@@ -519,6 +548,12 @@ export class LiveIsland {
     const land = context(this.landCanvas);
     land.clearRect(0, 0, model.scene.width, model.scene.height);
     paintLand(land as DrawContext<Img>, model, atlas.image, atlas.data.rects);
+    this.fx.bakeLand(land, model, this.phase, this.props.actors, atlas.image, atlas.data.rects);
+    // Tags and the pin, the tags in the hour's light.
+    this.overlayCanvas = this.sized(this.overlayCanvas, model.scene.width, model.scene.height);
+    const overlay = context(this.overlayCanvas);
+    overlay.clearRect(0, 0, model.scene.width, model.scene.height);
+    paintOverlay(overlay as DrawContext<Img>, model, atlas.image, atlas.data.rects, TAG_INK[this.phase]);
     this.layers = {
       atlas: atlas.image,
       rects: atlas.data.rects,
@@ -564,9 +599,9 @@ export class LiveIsland {
     return { x, w: Math.max(this.props.scene.width, frame.x + frame.w) - x };
   }
 
-  private motion(tick: number): Motion {
+  private motion(tick: number): FxMotion {
     const model = this.model!;
-    return motionAt(tick, {
+    const motion: Motion = motionAt(tick, {
       span: this.span(),
       scene: model.scene,
       swaying: this.swaying,
@@ -577,6 +612,7 @@ export class LiveIsland {
       lowDetail: this.lowDetail,
       night: this.phase === "night",
     });
+    return Object.assign(motion, { tick });
   }
 
   private currentTick(): number {
@@ -584,7 +620,12 @@ export class LiveIsland {
     return Math.floor(this.elapsed(performance.now()) / (TICK_MS * step)) * step;
   }
 
-  private paint(rects: Rect[], motion: Motion): void {
+  /** What the atmosphere needs to know about this frame. */
+  private fxOptions() {
+    return { frozen: this.isStill() || this.lowDetail, lowDetail: this.lowDetail, span: this.span() };
+  }
+
+  private paint(rects: Rect[], motion: FxMotion): void {
     const ctx = this.ctx;
     const model = this.model;
     const layers = this.layers;
@@ -592,7 +633,9 @@ export class LiveIsland {
     const frame = this.frameRect();
     ctx.setTransform(1, 0, 0, 1, -frame.x, -frame.y);
     ctx.imageSmoothingEnabled = false;
-    const state = { motion, night: this.phase === "night", actors: this.props.actors };
+    const actors = this.props.actors;
+    const fx = this.fx.hooks(ctx, model, layers, motion, actors, this.fxOptions());
+    const state = { motion, night: this.phase === "night", actors, fx };
     for (const r of rects) {
       const clipped = intersect(r, frame);
       if (clipped) redrawRect(ctx as DrawContext<Img>, clipped, model, layers, state);
@@ -608,7 +651,7 @@ export class LiveIsland {
   }
 
   /** One tick: only what changed, only where it is on screen. */
-  private paintTick(motion: Motion): void {
+  private paintTick(motion: FxMotion): void {
     const model = this.model;
     const layers = this.layers;
     if (!model || !layers) return;
@@ -618,13 +661,17 @@ export class LiveIsland {
       this.drawn = motion;
       return;
     }
-    const dirty = dirtyRects(this.drawn, motion, model, layers.rects, this.props.actors);
+    const prev = this.drawn;
+    const dirty = dirtyRects(prev, motion, model, layers.rects, this.props.actors);
     this.drawn = motion;
-    if (dirty === "all") {
+    if (dirty === "all" || !prev) {
       this.paint([view], motion);
       return;
     }
-    const parts = dirty.map((r) => intersect(r, view)).filter((r): r is Rect => r != null);
+    // Petals on the breeze and the fire's glow; then a little room round everything for the figures' shadows.
+    const extra = this.fx.dirty(prev, motion, model.scene, layers, this.fxOptions());
+    const padded = [...dirty, ...extra].map((r) => ({ x: r.x - SHADOW_PAD, y: r.y - SHADOW_PAD, w: r.w + 2 * SHADOW_PAD, h: r.h + 2 * SHADOW_PAD }));
+    const parts = padded.map((r) => intersect(r, view)).filter((r): r is Rect => r != null);
     const total = parts.reduce((sum, r) => sum + area(r), 0);
     this.paint(parts.length > 24 || total > area(view) / 2 ? [view] : parts, motion);
   }

@@ -2,7 +2,7 @@ import { act, render } from "@testing-library/react";
 
 import { buildScene, type IslandPlot } from "@/bot/src/quests/island/scene";
 
-import { waterColor } from "@/lib/shift-island/live/lighting";
+import { gradedWater } from "@/lib/shift-island/live/grade";
 
 import IslandCanvas, { type ActorBoxes } from "../IslandCanvas";
 
@@ -142,7 +142,7 @@ describe("IslandCanvas", () => {
     expect(onReady).not.toHaveBeenCalled();
     firstFrame();
     expect(onReady).toHaveBeenCalledTimes(1);
-    expect(onPhase).toHaveBeenCalledWith("night", waterColor("night"));
+    expect(onPhase).toHaveBeenCalledWith("night", gradedWater("night"));
     const visibleCtx = contexts[0];
     expect(getContext.mock.calls[0][1]).toEqual({ alpha: false });
     expect(visibleCtx.imageSmoothingEnabled).toBe(false);
@@ -161,7 +161,7 @@ describe("IslandCanvas", () => {
     const onPhase = jest.fn();
     render(<IslandCanvas scene={scene} phase="dusk" onPhase={onPhase} />);
     firstFrame();
-    expect(onPhase).toHaveBeenCalledWith("dusk", waterColor("dusk"));
+    expect(onPhase).toHaveBeenCalledWith("dusk", gradedWater("dusk"));
   });
 
   it("keeps zero timers while paused, and carries on after", () => {
@@ -230,13 +230,13 @@ describe("IslandCanvas", () => {
     const onPhase = jest.fn();
     const { rerender } = render(<IslandCanvas scene={scene} onPhase={onPhase} />);
     firstFrame();
-    expect(onPhase).toHaveBeenLastCalledWith("night", waterColor("night"));
+    expect(onPhase).toHaveBeenLastCalledWith("night", gradedWater("night"));
     const ctx = contexts[0];
     const drawn = ctx.drawImage.mock.calls.length;
     act(() => {
       jest.advanceTimersByTime(61_000);
     });
-    expect(onPhase).toHaveBeenLastCalledWith("dawn", waterColor("dawn"));
+    expect(onPhase).toHaveBeenLastCalledWith("dawn", gradedWater("dawn"));
     expect(ctx.drawImage.mock.calls.length).toBeGreaterThan(drawn);
     expect(jest.getTimerCount()).toBe(1);
 
