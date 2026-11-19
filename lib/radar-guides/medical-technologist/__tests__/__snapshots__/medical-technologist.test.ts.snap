@@ -165,7 +165,7 @@ work.blocks[5].blocks[1].tiles[1].lineTh: ตรวจหาเชื้อใ�
 work.blocks[5].blocks[1].tiles[2].titleTh: ล่าเชื้อโรค
 work.blocks[5].blocks[1].tiles[2].lineTh: ตามล่าเชื้อตัวการ แบบแล็บที่พร้อมตรวจนิปาห์
 work.blocks[5].blocks[1].tiles[3].titleTh: แล็บยีน
-work.blocks[5].blocks[1].tiles[3].lineTh: อ่านสารพันธุกรรม สายที่สภาฯ บอกว่าต้องสร้างคนเพิ่ม
+work.blocks[5].blocks[1].tiles[3].lineTh: อ่านสารพันธุกรรม หนึ่งในสายอนาคตที่สภาฯ วางแผนไว้
 work.blocks[5].blocks[1].tiles[4].titleTh: สายเครื่องมือ
 work.blocks[5].blocks[1].tiles[4].lineTh: บริษัทเครื่องมือแพทย์ สอนแล็บใช้ แก้ให้เครื่องเดินได้
 work.blocks[5].blocks[2].lines[0].text.th: ยังไม่ต้องรีบเลือกนะ ค่อยๆ ลองไปทีละสายก็ได้

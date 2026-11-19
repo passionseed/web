@@ -253,7 +253,7 @@ export const work: GuidePage = {
         { id: "hospital", icon: "microscope", titleTh: "แล็บโรงพยาบาล", lineTh: "ตรวจเลือด ปัสสาวะ เช็กชัวร์ก่อนปล่อยผล แบบเวรเมื่อกี้", played: true },
         { id: "blood-bank", icon: "droplet", titleTh: "ธนาคารเลือด", lineTh: "ตรวจหาเชื้อในเลือดบริจาค ให้มั่นใจว่าทุกถุงปลอดภัย" },
         { id: "microbe", icon: "magnifier", titleTh: "ล่าเชื้อโรค", lineTh: "ตามล่าเชื้อตัวการ แบบแล็บที่พร้อมตรวจนิปาห์" },
-        { id: "genes", icon: "dna", titleTh: "แล็บยีน", lineTh: "อ่านสารพันธุกรรม สายที่สภาฯ บอกว่าต้องสร้างคนเพิ่ม" },
+        { id: "genes", icon: "dna", titleTh: "แล็บยีน", lineTh: "อ่านสารพันธุกรรม หนึ่งในสายอนาคตที่สภาฯ วางแผนไว้" },
         { id: "devices", icon: "chip", titleTh: "สายเครื่องมือ", lineTh: "บริษัทเครื่องมือแพทย์ สอนแล็บใช้ แก้ให้เครื่องเดินได้" },
       ],
     }),
