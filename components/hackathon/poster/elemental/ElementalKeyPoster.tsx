@@ -1,23 +1,21 @@
 import { Trirong } from "next/font/google";
 import type { ReactNode } from "react";
 
-import { type Band, type Cell, type Tongue, aetherCluster, pixelFire, reflection, scorch, smokePlume, toxicSpill } from "./art";
-import { BACKGROUND, EL, EL_FONT } from "./brand";
+import { EL, EL_FONT } from "./brand";
 import { ELEMENTAL, thaiDateLine } from "./facts";
 
 /**
- * The Next Decade: Elemental key visual, 1080x1350.
+ * Elemental Hackathon key visual, 1080x1350.
  *
- * A calm river valley on faded film: green hill, quiet water, a pale sky.
- * Nothing in the photo is damaged. The damage is all pixels: a fire bursts
- * out of the bank (Fire), its smoke stains the sky (Air), a toxic spill runs
- * down the river (Water), and the ground around it is scorched and cracked
- * (Earth). A few faint blocks in the sky are Aether. Rules: ./brand.ts.
- * Coordinates below are tied to the background photo's crop.
+ * The image is a plate built by scripts/render-elemental-plate.mjs: a calm
+ * river valley poisoned by four pixel elements, spread across the frame.
+ * Fire on the right bank (the hero), toxic green water on the left bank,
+ * a smog over the hill, and dumped waste on the mound. This component adds
+ * the letters breaking out of the fire and the type. Rules: ./brand.ts.
  */
 
 const trirong = Trirong({
-  weight: ["200", "300", "400"],
+  weight: ["200", "300", "600"],
   style: ["normal", "italic"],
   subsets: ["thai", "latin"],
   variable: "--font-trirong",
@@ -25,51 +23,28 @@ const trirong = Trirong({
 
 export const W = 1080;
 export const H = 1350;
-const ID = "el-key";
+const PLATE = "/hackathon/poster/elemental/plate-key.png";
 
-const FIRE_X = 522;
-const FIRE_Y = 900;
-
-const TONGUES: Tongue[] = [
-  { cx: FIRE_X, base: FIRE_Y, w: 230, h: 400, lean: -60 },
-  { cx: FIRE_X - 70, base: FIRE_Y, w: 130, h: 250, lean: -40 },
-  { cx: FIRE_X + 78, base: FIRE_Y, w: 140, h: 300, lean: -30 },
-  { cx: FIRE_X + 16, base: FIRE_Y, w: 110, h: 470, lean: -90 },
-  { cx: FIRE_X + 140, base: FIRE_Y + 6, w: 80, h: 150, lean: -10 },
-];
-
-/** River bands in the photo, in poster pixels. */
-const RIVER: Band[] = [
-  { y0: 1010, y1: 1044, x0: 0, x1: W },
-  { y0: 1092, y1: 1236, x0: 0, x1: W },
-  { y0: 952, y1: 994, x0: 640, x1: W },
-];
-
-const FIRE = pixelFire(TONGUES);
-const SMOKE = smokePlume(FIRE_X - 56, 476, -620, -110);
-const SPILL = toxicSpill(RIVER, FIRE_X);
-const REFLECTION = reflection(FIRE_X - 56, 1010, 120, 120);
-const EARTH: Cell[] = [
-  ...scorch(FIRE_X - 20, 914, 250, 34, 31, 6),
-  ...scorch(830, 842, 190, 16, 33, 1),
-];
-const AETHER: Cell[] = [
-  ...aetherCluster(760, 360, 34, 11, [EL.aetherGrey, EL.aetherOrange], 41),
-  ...aetherCluster(880, 560, 28, 7, [EL.aetherGrey], 42),
-  ...aetherCluster(120, 120, 26, 5, [EL.aetherGrey, EL.aetherOrange], 43),
-];
-
-function Cells({ cells }: { cells: Cell[] }) {
-  return (
-    <>
-      {cells.map((c, i) => (
-        <rect key={i} x={c.x} y={c.y} width={c.s} height={c.s} fill={c.fill} opacity={c.o} />
-      ))}
-    </>
-  );
+/** Serif capitals breaking out of the fire, as if it were made of text. */
+function fireLetters() {
+  let a = 1234567;
+  const r = () => {
+    a = (a * 1103515245 + 12345) % 2147483648;
+    return a / 2147483648;
+  };
+  const word = "ELEMENTALFIRE";
+  const colours = ["#f08a3c", "#f6e6c4", "#8a3a1c", "#8ecbe6", "#e2461b"];
+  return Array.from({ length: 24 }, (_, i) => ({
+    ch: word[i % word.length],
+    x: 712 + r() * 190,
+    y: 700 + r() * 200,
+    size: 22 + Math.round(r() * 22),
+    fill: colours[Math.floor(r() * colours.length)],
+    rotate: (r() - 0.5) * 16,
+  }));
 }
+const LETTERS = fireLetters();
 
-/** One item of the bottom strip: a small [Thai tag] over the value. */
 function Detail({ tag, children }: { tag: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-[2px]">
@@ -79,94 +54,56 @@ function Detail({ tag, children }: { tag: string; children: ReactNode }) {
   );
 }
 
-function name(key: (typeof ELEMENTAL.elements)[number]["key"]) {
-  const e = ELEMENTAL.elements.find((x) => x.key === key);
-  if (!e) throw new Error(`Unknown element ${key}`);
-  return e.th;
-}
-
 export function ElementalKeyPoster({ id = "elemental-key" }: { id?: string }) {
+  // The order every Thai student says them: ดิน น้ำ ลม ไฟ.
+  const thai = (["earth", "water", "air", "fire"] as const).map((k) => ELEMENTAL.elements.find((e) => e.key === k)?.th ?? "");
   return (
     <div id={id} className={`${trirong.variable} relative overflow-hidden`} style={{ width: W, height: H, backgroundColor: "#2a2b26" }}>
-      {/* The healthy place: a real photo, slightly faded */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={BACKGROUND.src}
-        alt=""
-        width={W}
-        height={H}
-        className="absolute inset-0 h-full w-full object-cover"
-        style={{ filter: "saturate(0.88) contrast(1.04)" }}
-      />
+      <img src={PLATE} alt="" width={W} height={H} className="absolute inset-0 h-full w-full" />
 
       <svg className="absolute inset-0" width={W} height={H} viewBox={`0 0 ${W} ${H}`} aria-hidden="true">
         <defs>
-          <radialGradient id={`${ID}-glow`}>
-            <stop offset="0" stopColor={EL.flameLight} stopOpacity="0.62" />
-            <stop offset="0.4" stopColor={EL.flame} stopOpacity="0.22" />
-            <stop offset="1" stopColor={EL.flame} stopOpacity="0" />
-          </radialGradient>
-          <linearGradient id={`${ID}-foot`} x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id="el-key-foot" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor="#0f0f0d" stopOpacity="0" />
-            <stop offset="1" stopColor="#0f0f0d" stopOpacity="0.72" />
+            <stop offset="1" stopColor="#0f0f0d" stopOpacity="0.7" />
           </linearGradient>
-          <filter id={`${ID}-soft`} x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="1.4" />
-          </filter>
-          <filter id={`${ID}-grain`} x="0" y="0" width="100%" height="100%">
-            <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="4" stitchTiles="stitch" />
+          <filter id="el-key-grain" x="0" y="0" width="100%" height="100%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="4" stitchTiles="stitch" />
             <feColorMatrix type="saturate" values="0" />
           </filter>
         </defs>
-
-        {/* Aether: faint blocks in the clean sky */}
-        <g filter={`url(#${ID}-soft)`}>
-          <Cells cells={AETHER} />
-        </g>
-
-        {/* Firelight thrown on the valley */}
-        <ellipse cx={FIRE_X} cy={FIRE_Y - 90} rx={380} ry={300} fill={`url(#${ID}-glow)`} style={{ mixBlendMode: "screen" }} />
-
-        <g shapeRendering="crispEdges">
-          {/* Air: smoke staining the sky */}
-          <Cells cells={SMOKE} />
-          {/* Water: the spill down the river, and the fire on the water */}
-          <Cells cells={SPILL} />
-          <Cells cells={REFLECTION} />
-          {/* Earth: scorched, cracked ground */}
-          <Cells cells={EARTH} />
-          {/* Fire: the hero */}
-          <Cells cells={FIRE} />
-        </g>
-
-        <rect y={1150} width={W} height={H - 1150} fill={`url(#${ID}-foot)`} />
-        <rect width={W} height={H} filter={`url(#${ID}-grain)`} opacity="0.16" style={{ mixBlendMode: "overlay" }} />
+        {LETTERS.map((l, i) => (
+          <text
+            key={i}
+            x={l.x}
+            y={l.y}
+            fill={l.fill}
+            fontFamily={EL_FONT.display}
+            fontWeight={600}
+            fontSize={l.size}
+            opacity={0.95}
+            transform={`rotate(${l.rotate} ${l.x} ${l.y})`}
+          >
+            {l.ch}
+          </text>
+        ))}
+        <rect y={1160} width={W} height={H - 1160} fill="url(#el-key-foot)" />
       </svg>
 
-      {/* Top line */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/hackathon/HackLogo.png"
-        alt={ELEMENTAL.series}
-        width={140}
-        height={56}
-        className="absolute left-[52px] top-[44px]"
-        style={{ filter: "brightness(0)", opacity: 0.78 }}
-      />
-      <div
-        className="absolute right-[56px] top-[58px]"
-        style={{ fontFamily: EL_FONT.mono, fontSize: 15, letterSpacing: "0.16em", color: EL.inkSoft }}
-      >
-        HACKATHON · {ELEMENTAL.days} DAYS
-      </div>
-
       {/* Title */}
-      <div className="absolute inset-x-0 top-[112px] flex flex-col items-center text-center" style={{ color: EL.ink }}>
-        <h1 className="m-0" style={{ fontFamily: EL_FONT.display, fontWeight: 200, fontSize: 124, lineHeight: 1.28, letterSpacing: "0.01em" }}>
-          {name("earth")} {name("water")} {name("air")} {name("fire")}
+      <div className="absolute left-[56px] top-[62px]" style={{ color: EL.ink }}>
+        <h1 className="m-0" style={{ fontFamily: EL_FONT.display, lineHeight: 1.02, letterSpacing: "-0.01em" }}>
+          <span className="block" style={{ fontWeight: 200, fontSize: 124 }}>
+            {ELEMENTAL.edition}
+          </span>
+          <span className="block" style={{ fontWeight: 300, fontStyle: "italic", fontSize: 124 }}>
+            Hackathon
+          </span>
         </h1>
-        <div style={{ fontFamily: EL_FONT.display, fontWeight: 300, fontStyle: "italic", fontSize: 40, lineHeight: "48px", color: EL.inkSoft }}>
-          {ELEMENTAL.series} : {ELEMENTAL.edition}
+        <div className="mt-[14px] flex items-baseline gap-4" style={{ color: EL.inkSoft }}>
+          <span style={{ fontFamily: EL_FONT.mono, fontSize: 15, letterSpacing: "0.16em" }}>{ELEMENTAL.series.toUpperCase()}</span>
+          <span style={{ fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 28 }}>{thai.join(" · ")}</span>
         </div>
       </div>
 
@@ -178,6 +115,11 @@ export function ElementalKeyPoster({ id = "elemental-key" }: { id?: string }) {
         </Detail>
         <Detail tag="[สมัคร]">{ELEMENTAL.url}</Detail>
       </div>
+
+      {/* Grain over the type too, so it sits in the same film */}
+      <svg className="pointer-events-none absolute inset-0" width={W} height={H} aria-hidden="true">
+        <rect width={W} height={H} filter="url(#el-key-grain)" opacity="0.1" style={{ mixBlendMode: "overlay" }} />
+      </svg>
     </div>
   );
 }
