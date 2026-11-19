@@ -447,4 +447,35 @@ export const KIND_GLYPHS: Readonly<Record<KindIcon, PixelGrid>> = {
     "..########..",
     "............",
   ],
+  // accountant
+  // A calculator: keeping a business's books.
+  calculator: [
+    "..########..",
+    "..#oooooo#..",
+    "..#wwwwww#..",
+    "..#oooooo#..",
+    "..#o#o#o##..",
+    "..#oooooo#..",
+    "..#o#o#o##..",
+    "..#oooooo#..",
+    "..#o#o#ww#..",
+    "..#oooooo#..",
+    "..########..",
+    "............",
+  ],
+  // A receipt with a torn edge: tax.
+  receipt: [
+    "............",
+    "..########..",
+    "..#oooooo#..",
+    "..#o####o#..",
+    "..#oooooo#..",
+    "..#o###oo#..",
+    "..#oooooo#..",
+    "..#o###oo#..",
+    "..#oooooo#..",
+    "..#oo#www#..",
+    "..#oooooo#..",
+    "..##.##.##..",
+  ],
 };
