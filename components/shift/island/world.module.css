@@ -470,7 +470,8 @@
   font-size: 14px;
   line-height: 1.4;
   color: var(--isl-cream);
-  background: rgba(52, 68, 71, 0.8);
+  /* The HUD's warm ink board (--wood-board), a little see-through: the hint passes. */
+  background: rgba(45, 33, 27, 0.86);
   clip-path: var(--notch);
   transform: translateX(-50%);
   pointer-events: none;
@@ -487,6 +488,28 @@
 /* ---------------------------------------------------------------- HUD */
 
 .hud {
+  /*
+   * The HUD's crafted set, in the island's own wood: a frame with pixel-cut
+   * corners round a warm ink board, set down on the world with a soft shadow.
+   * The frame is a 9-slice border-image (slice 6, 6px wide), not a clip-path,
+   * so the shadow is not clipped away. --wood-frame is this 7x7 grid of 2px
+   * art pixels; its middle row and column stretch:
+   *
+   *   . O O O O O .    O ink outline   #24160f
+   *   O H H H H H O    H lit wood      #c89561 (the island's wood-hi)
+   *   O W W W W W O    W wood          #8a6343
+   *   O W W . W W O    L shaded wood   #5a3d2a
+   *   O W W W W W O    . open: the cut corners, and the board inside
+   *   O L L L L L O
+   *   . O O O O O .
+   */
+  --wood-outline: #24160f;
+  --wood-board: #2d211b;
+  --wood-board-hi: #3a2b22;
+  --wood-frame: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' shape-rendering='crispEdges'%3E%3Crect x='2' y='0' width='10' height='2' fill='%2324160f'/%3E%3Crect x='0' y='2' width='2' height='2' fill='%2324160f'/%3E%3Crect x='2' y='2' width='10' height='2' fill='%23c89561'/%3E%3Crect x='12' y='2' width='2' height='2' fill='%2324160f'/%3E%3Crect x='0' y='4' width='2' height='2' fill='%2324160f'/%3E%3Crect x='2' y='4' width='10' height='2' fill='%238a6343'/%3E%3Crect x='12' y='4' width='2' height='2' fill='%2324160f'/%3E%3Crect x='0' y='6' width='2' height='2' fill='%2324160f'/%3E%3Crect x='2' y='6' width='4' height='2' fill='%238a6343'/%3E%3Crect x='8' y='6' width='4' height='2' fill='%238a6343'/%3E%3Crect x='12' y='6' width='2' height='2' fill='%2324160f'/%3E%3Crect x='0' y='8' width='2' height='2' fill='%2324160f'/%3E%3Crect x='2' y='8' width='10' height='2' fill='%238a6343'/%3E%3Crect x='12' y='8' width='2' height='2' fill='%2324160f'/%3E%3Crect x='0' y='10' width='2' height='2' fill='%2324160f'/%3E%3Crect x='2' y='10' width='10' height='2' fill='%235a3d2a'/%3E%3Crect x='12' y='10' width='2' height='2' fill='%2324160f'/%3E%3Crect x='2' y='12' width='10' height='2' fill='%2324160f'/%3E%3C/svg%3E");
+  /* A soft drop onto the ground: a short contact shadow and a wide, faint one, both falling down. */
+  --wood-drop: 0 2px 3px rgba(26, 14, 8, 0.32), 0 8px 18px -4px rgba(26, 14, 8, 0.42);
+
   position: fixed;
   inset: 0;
   z-index: 10;
@@ -559,6 +582,24 @@
   backdrop-filter: blur(6px);
 }
 
+/*
+ * The wood set (tokens on .hud): the team chip, the bottom board button and
+ * the next-step card. The board fills only inside the frame, so the frame's
+ * cut corners stay open to the world; hover changes background-color only.
+ */
+.wood,
+.hudBottom :global(.dawn-keynote) {
+  color: var(--isl-cream);
+  border: 6px solid transparent;
+  border-radius: 0;
+  border-image: var(--wood-frame) 6 / 6px stretch;
+  background: var(--wood-board) padding-box;
+  /* The frame's lip casts a 2px shade onto the board under it. */
+  box-shadow:
+    inset 0 2px 0 rgba(10, 4, 0, 0.32),
+    var(--wood-drop);
+}
+
 .press {
   transition: transform var(--press) var(--ease-snap), background-color var(--snap) var(--ease-snap);
 }
@@ -567,7 +608,7 @@
   transform: translateY(1px);
 }
 
-/* Top left: the project and its tree. */
+/* Top left: the project and its tree. The 6px frame is the old 6px inset; the picture sits in it like a portrait. */
 .chip {
   display: flex;
   align-items: center;
@@ -575,11 +616,9 @@
   min-width: 0;
   max-width: min(64vw, 340px);
   min-height: 48px;
-  padding: 6px 14px 6px 6px;
+  padding: 0 8px 0 0;
   font: inherit;
   text-align: left;
-  border: 0;
-  clip-path: var(--notch);
   cursor: pointer;
 }
 
@@ -592,6 +631,9 @@
  * still open: one lamp-gold pixel over its corner.
  */
 .chipFace {
+  /* The picture's own ink frame (PixelAvatar) in the wood set's warm outline. */
+  --isl-ink: var(--wood-outline);
+
   position: relative;
   flex: none;
   display: grid;
@@ -607,7 +649,7 @@
   width: 8px;
   height: 8px;
   background: var(--isl-lamp);
-  box-shadow: 0 0 0 2px var(--isl-ink);
+  box-shadow: 0 0 0 2px var(--wood-outline);
 }
 
 .chipText {
@@ -632,16 +674,17 @@
   gap: 2px;
 }
 
+/* The tree's seven stages as cells cut into the board: empty ones a lit wood rim (3.2:1 on the board), grown ones leaf. */
 .chipCell {
   width: 10px;
   height: 6px;
-  background: rgba(255, 255, 255, 0.12);
-  box-shadow: inset 0 0 0 1px rgba(98, 111, 115, 0.9);
+  background: rgba(255, 241, 214, 0.08);
+  box-shadow: inset 0 0 0 1px #8a6a50;
 }
 
 .chipCell[data-filled="true"] {
   background: var(--isl-leaf-hi);
-  box-shadow: inset 0 0 0 1px var(--isl-ink);
+  box-shadow: inset 0 0 0 1px var(--wood-outline);
 }
 
 /* Top right: round pixel buttons (stepped corners, not a smooth circle). */
@@ -710,7 +753,7 @@
 
   .chip {
     gap: 8px;
-    padding-right: 10px;
+    padding-right: 4px;
   }
 
   .chipCell {
@@ -719,21 +762,30 @@
 }
 
 /*
- * Every HUD control clips itself to its notch, which would clip an outline
- * drawn outside the box: the focus ring goes inside, clear of the corners.
+ * A round button clips itself to its stepped corners, which would clip an
+ * outline drawn outside the box: its focus ring goes inside. The wood set
+ * clips nothing, so its ring hugs the frame's ink outline from outside: cream
+ * against ink on any ground, sand or sea.
  */
-.chip:focus-visible,
-.round:focus-visible,
-.boardButton:focus-visible {
+.round:focus-visible {
   outline: 2px solid var(--isl-cream);
   outline-offset: -4px;
 }
 
+.chip:focus-visible,
+.boardButton:focus-visible {
+  outline: 2px solid var(--isl-cream);
+  outline-offset: 0;
+}
+
 @media (hover: hover) {
-  .round:hover,
+  .round:hover {
+    background: rgba(40, 32, 38, 0.86);
+  }
+
   .chip:not([data-static="true"]):hover,
   .boardButton:hover {
-    background: rgba(40, 32, 38, 0.86);
+    background-color: var(--wood-board-hi);
   }
 }
 
@@ -755,15 +807,20 @@
   clip-path: var(--notch);
 }
 
-/* Bottom: the next quest (the one gold element) and the quest board. */
+/*
+ * Bottom: the next quest (the one gold element, its headline) and the quest
+ * board, as wood boards (.wood above). The frame stands in for the old inset,
+ * so the words keep their width; the gold left bar gives way to the frame.
+ */
 .hudBottom :global(.dawn-keynote) {
   flex: 1;
   min-width: 0;
   min-height: 64px;
-  padding: 10px 12px 10px 14px;
-  background: linear-gradient(135deg, rgba(58, 44, 20, 0.92) 0%, rgba(30, 22, 18, 0.92) 55%, rgba(20, 16, 24, 0.92) 100%);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
+  padding: 6px 8px;
+}
+
+.hudBottom :global(.dawn-keynote)::before {
+  content: none;
 }
 
 .boardButton {
@@ -774,15 +831,75 @@
   gap: 2px;
   width: 76px;
   min-height: 64px;
-  padding: 6px 4px;
+  padding: 0;
   font: inherit;
   font-size: 14px;
   font-weight: 600;
   line-height: 1.25;
   text-align: center;
-  border: 0;
-  clip-path: var(--notch);
   cursor: pointer;
+}
+
+/*
+ * The green action in the bottom bar (the card's button, the claim button
+ * before a plot) is a painted plank of the same set: flat pixel bands instead
+ * of a smooth gradient, the frame's ink outline, a lit top row and a 4px
+ * shaded base. The doubled .hud beats island.module.css in any load order.
+ * Its colours are literal (the outline is --wood-outline): the glow's
+ * keyframes interpolate plain values, never custom properties, every frame.
+ */
+.hud .hudBottom :global(.ei-button-dawn) {
+  background: var(--action);
+  box-shadow:
+    inset 0 0 0 2px #24160f,
+    inset 0 4px 0 0 #7aa862,
+    inset 0 -6px 0 0 #284c33;
+}
+
+.hud .hudBottom :global(.ei-button-dawn):hover:not(:disabled) {
+  animation:
+    dawn-btn-rise 10000ms var(--ease-tension) forwards,
+    plankGlow 14000ms var(--ease-tension) forwards;
+}
+
+@media (hover: none) {
+  .hud .hudBottom :global(.ei-button-dawn.in-view) {
+    animation:
+      dawn-btn-rise 10000ms var(--ease-tension) forwards,
+      plankGlow 14000ms var(--ease-tension) forwards;
+  }
+}
+
+/* Pressed into the board: the lit row goes dark and the base thins. */
+.hud .hudBottom :global(.ei-button-dawn):active:not(:disabled) {
+  box-shadow:
+    inset 0 0 0 2px #24160f,
+    inset 0 4px 0 0 #284c33,
+    inset 0 -4px 0 0 #284c33;
+}
+
+/* The plank clips itself to its notch: its focus ring goes inside, clear of the outline. */
+.hud .hudBottom :global(.ei-button-dawn):focus-visible {
+  outline: 2px solid var(--isl-cream);
+  outline-offset: -6px;
+}
+
+/* Lamp light warms the plank's top row: the glow animates its shadows and its filter together. */
+@keyframes plankGlow {
+  0% {
+    filter: brightness(1);
+    box-shadow:
+      inset 0 0 0 2px #24160f,
+      inset 0 4px 0 0 #7aa862,
+      inset 0 -6px 0 0 #284c33;
+  }
+  100% {
+    filter: brightness(1.1);
+    box-shadow:
+      inset 0 0 0 2px #24160f,
+      inset 0 4px 0 0 rgba(246, 228, 181, 0.85),
+      inset 0 -6px 0 0 #284c33;
+  }
 }
 
 /* No quest to point at: the board is the bottom action. */
@@ -802,6 +919,15 @@
 .claim {
   flex: 1;
   min-height: 56px;
+}
+
+/*
+ * Before a plot the plank stands alone on the world: its bar casts the soft
+ * drop, because the plank clips itself to its notch and a filter of its own
+ * would be clipped with it.
+ */
+.hudBottom:has(> .claim) {
+  filter: drop-shadow(0 2px 2px rgba(26, 14, 8, 0.3)) drop-shadow(0 6px 10px rgba(26, 14, 8, 0.32));
 }
 
 /* ---------------------------------------------------------------- sheets opened from the HUD */

@@ -107,7 +107,7 @@ export function HudChip({
   return (
     <button
       type="button"
-      className={`${styles.chip} ${styles.glass} ${styles.press}`}
+      className={`${styles.chip} ${styles.wood} ${styles.press}`}
       aria-label={waiting ? `${label}, ${waiting}` : label}
       aria-haspopup="dialog"
       onClick={onOpen}
@@ -160,7 +160,7 @@ export function HudLabel({
   );
   if (!onOpen) {
     return (
-      <div className={`${styles.chip} ${styles.glass}`} data-static="true">
+      <div className={`${styles.chip} ${styles.wood}`} data-static="true">
         {face}
       </div>
     );
@@ -168,7 +168,7 @@ export function HudLabel({
   return (
     <button
       type="button"
-      className={`${styles.chip} ${styles.glass} ${styles.press}`}
+      className={`${styles.chip} ${styles.wood} ${styles.press}`}
       aria-label={label ? `${text}, ${label}` : text}
       aria-haspopup="dialog"
       onClick={onOpen}
@@ -187,7 +187,7 @@ export function BoardButton({ wide, concealed = false, onClick }: { wide: boolea
   return (
     <button
       type="button"
-      className={`${styles.boardButton} ${styles.glass} ${styles.press}${concealed ? ` ${island.concealed}` : ""}`}
+      className={`${styles.boardButton} ${styles.wood} ${styles.press}${concealed ? ` ${island.concealed}` : ""}`}
       data-wide={wide ? "true" : undefined}
       data-concealed={concealed ? "true" : undefined}
       aria-haspopup="dialog"

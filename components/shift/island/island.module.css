@@ -497,14 +497,17 @@
   transition: clip-path var(--snap) var(--ease-snap), opacity var(--snap) var(--ease-snap), filter var(--snap) var(--ease-snap);
 }
 
+/* The quest's icon on a cream paper note pinned to the board: an ink edge and a 2px sand fold along its foot. */
 .keynoteIcon {
   flex: none;
   width: 48px;
   height: 48px;
   display: grid;
   place-items: center;
-  background: var(--isl-sand);
-  box-shadow: inset 0 0 0 2px var(--isl-ink);
+  background: var(--isl-sand-hi);
+  box-shadow:
+    inset 0 0 0 2px var(--wood-outline, var(--isl-ink)),
+    inset 0 -4px 0 0 var(--isl-sand);
   clip-path: var(--notch);
 }
 
