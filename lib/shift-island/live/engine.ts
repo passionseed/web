@@ -345,10 +345,14 @@ export class LiveIsland {
     this.initRaf = 0;
     this.phase = this.wantedPhase();
     this.nextPhaseCheck = performance.now() + PHASE_CHECK_MS;
+    // The shallows' distance field waits for the first frame's turn, so neither frame carries it all.
+    this.fx.deferWater = true;
     this.prepareScene();
+    this.fx.deferWater = false;
     const first = () =>
       this.guard(() => {
         this.initRaf = 0;
+        if (this.fx.waterPending) this.buildLand();
         this.paintAll();
         this.stillShown = this.isStill();
         this.ready = true;
@@ -622,7 +626,7 @@ export class LiveIsland {
 
   /** What the atmosphere needs to know about this frame. */
   private fxOptions() {
-    return { frozen: this.isStill() || this.lowDetail, lowDetail: this.lowDetail, span: this.span() };
+    return { frozen: this.isStill() || this.lowDetail, lowDetail: this.lowDetail, span: this.span(), sparse: this.props.fit };
   }
 
   private paint(rects: Rect[], motion: FxMotion): void {

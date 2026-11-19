@@ -117,11 +117,21 @@ function masks(): ShoreMask[] {
 /** The water round the island, per pixel of `rect` (scene px). */
 export interface WaterField {
   rect: Rect;
-  /** 0 none, 1..3 shallower: the band a water pixel is in. */
-  shallow: Uint8Array;
-  /** 1 for wet sand at the waterline. */
-  wet: Uint8Array;
+  /** Blocks of WATER_BLOCK x WATER_BLOCK px across the rect. */
+  gw: number;
+  gh: number;
+  /** Per block of open-water cells: 0 none, 1..3 shallower. 0 on land and shore cells. */
+  blocks: Uint8Array;
+  /** Per pixel of shore cells only: 1..3 the band of open water there, WET for wet sand; 0 elsewhere. */
+  edge: Uint8Array;
+  /** Shore cells in the rect, as their top-left pixel index into `edge`: the bake walks only these. */
+  shoreCells: number[];
 }
+
+/** The distance runs on blocks this many px square: a quarter of the work, bands that step in 2 px. */
+export const WATER_BLOCK = 2;
+/** `edge` value for wet sand. */
+export const WET = 4;
 
 /** The shallows' bands by distance from the waterline: clean contours, rounded by the distance itself. */
 export function shallowLevel(distance: number): number {
@@ -152,7 +162,7 @@ export function waterField(scene: IslandScene, sea: Int8Array): WaterField {
     c1 = Math.max(c1, c);
     r1 = Math.max(r1, r);
   }
-  if (c1 < 0) return { rect: { x: 0, y: 0, w: 0, h: 0 }, shallow: new Uint8Array(0), wet: new Uint8Array(0) };
+  if (c1 < 0) return { rect: { x: 0, y: 0, w: 0, h: 0 }, gw: 0, gh: 0, blocks: new Uint8Array(0), edge: new Uint8Array(0), shoreCells: [] };
   const pad = Math.ceil(SHALLOW_REACH / t);
   c0 = Math.max(0, c0 - pad);
   r0 = Math.max(0, r0 - pad);
@@ -161,14 +171,14 @@ export function waterField(scene: IslandScene, sea: Int8Array): WaterField {
   const rect = { x: c0 * t, y: r0 * t, w: (c1 - c0 + 1) * t, h: (r1 - r0 + 1) * t };
   const { w, h } = rect;
   const shore = masks();
-  // The distance runs on 2 x 2 px blocks (a quarter of the work; the bands step in
-  // 2 px, which suits the art), in thirds of a block, capped just past the reach.
-  const B = 2;
+  // Distances in thirds of a block, capped just past the reach.
+  const B = WATER_BLOCK;
   const gw = w / B;
   const gh = h / B;
   const FAR = Math.ceil((SHALLOW_REACH / B) * 3) + 4;
   const dist = new Uint16Array(gw * gh);
-  const wet = new Uint8Array(w * h);
+  const edge = new Uint8Array(w * h);
+  const shoreCells: number[] = [];
   const per = t / B;
   // Cell by cell: land blocks stay 0, open water is FAR; a shore block is water only if all of it is.
   for (let r = r0; r <= r1; r++) {
@@ -187,8 +197,7 @@ export function waterField(scene: IslandScene, sea: Int8Array): WaterField {
           if (m.water[p] && m.water[p + 1] && m.water[p + 16] && m.water[p + 17]) dist[gbase + by * gw + bx] = FAR;
         }
       }
-      const base = (r - r0) * t * w + (c - c0) * t;
-      for (let py = 0; py < t; py++) for (let px = 0; px < t; px++) wet[base + py * w + px] = m.wet[py * 16 + px];
+      shoreCells.push((r - r0) * t * w + (c - c0) * t);
     }
   }
   // Chamfer 3-4, two passes; land (0) is skipped, so the island's inside costs nothing.
@@ -228,26 +237,32 @@ export function waterField(scene: IslandScene, sea: Int8Array): WaterField {
       if (d < FAR) level[i] = shallowLevel((d / 3) * B);
     }
   }
-  // Each water pixel takes its block's band (a shore cell's only where it is open water in every frame).
-  const shallow = new Uint8Array(w * h);
+  // Open-water cells keep their blocks' bands; land and shore cells' blocks are cleared, and a
+  // shore cell's own pixels take their block's band where they are open water in every frame.
   for (let r = r0; r <= r1; r++) {
     for (let c = c0; c <= c1; c++) {
       const kind = sea[r * scene.cols + c];
-      if (kind < 0) continue;
-      const m = kind >= 2 ? shore[kind - 2] : null;
-      const x0 = (c - c0) * t;
-      const y0 = (r - r0) * t;
-      for (let py = 0; py < t; py++) {
-        const grow = ((y0 + py) >> 1) * gw;
-        const row = (y0 + py) * w + x0;
-        for (let px = 0; px < t; px++) {
-          if (m && !m.water[py * 16 + px]) continue;
-          shallow[row + px] = level[grow + ((x0 + px) >> 1)];
+      if (kind === 0 || kind === 1) continue;
+      const gx0 = (c - c0) * per;
+      const gy0 = (r - r0) * per;
+      if (kind >= 2) {
+        const m = shore[kind - 2];
+        const x0 = (c - c0) * t;
+        const y0 = (r - r0) * t;
+        for (let py = 0; py < t; py++) {
+          const row = (y0 + py) * w + x0;
+          const grow = (gy0 + Math.floor(py / B)) * gw + gx0;
+          for (let px = 0; px < t; px++) {
+            const p = py * 16 + px;
+            if (m.water[p]) edge[row + px] = level[grow + Math.floor(px / B)];
+            else if (m.wet[p]) edge[row + px] = WET;
+          }
         }
       }
+      for (let by = 0; by < per; by++) level.fill(0, (gy0 + by) * gw + gx0, (gy0 + by) * gw + gx0 + per);
     }
   }
-  return { rect, shallow, wet };
+  return { rect, gw, gh, blocks: level, edge, shoreCells };
 }
 
 // ------------------------------------------------------------------ shadows
@@ -435,13 +450,14 @@ export function glintAt(
   step: number,
   phase: LightPhase,
   path: { x: number; w: number },
-  tile: number
+  tile: number,
+  density = 1
 ): { x: number; y: number; frame: GlintFrame } | null {
   const life = Math.floor(step / 2);
   const roll = hash3(col, row, life);
   const cx = col * tile + 8;
   const near = Math.max(0, 1 - Math.abs(cx - path.x) / (path.w / 2));
-  const chance = GLINT_BASE[phase] + GLINT_PATH[phase] * near;
+  const chance = (GLINT_BASE[phase] + GLINT_PATH[phase] * near) * density;
   if (roll >= chance) return null;
   const h = hash3(col, row, life + 7919);
   const x = col * tile + 2 + Math.floor(h * 12);

@@ -28,6 +28,7 @@ import {
   lightSources,
   lightStrength,
   shadowBox,
+  WET,
   waterField,
   type Drift,
   type GlintFrame,
@@ -52,8 +53,22 @@ export interface FxCanvasKit {
   context: (c: HTMLCanvasElement) => Ctx;
 }
 
+/** What the atmosphere needs to know about a frame. */
+export interface FxOptions {
+  /** Still, or too small to move: sea frame 0 everywhere, nothing drifting, lights steady. */
+  frozen: boolean;
+  /** Too small to read glints, petals or gull shadows. */
+  lowDetail: boolean;
+  /** Where the breeze crosses (the engine's span). */
+  span: Span;
+  /** The whole island fitted to the screen: fewer glints, so the wide sea does not fizz. */
+  sparse?: boolean;
+}
+
 /** Sea and foam play their three frames as 0-1-2-1 (clock.ts). */
 const PING_PONG = [0, 1, 2, 1] as const;
+/** Glints left on the whole-island view. */
+const SPARSE_GLINTS = 0.3;
 
 /** Soft shadows: blue by day, lavender at dawn, violet at dusk, faint at night. */
 const SHADOW_INK: Readonly<Record<LightPhase, { rgb: RGB; core: number; rim: number }>> = {
@@ -143,6 +158,9 @@ export class IslandFx {
   private readonly feet = new Map<string, Rect | null>();
   /** The flame's actor index, for its flicker; -1 without a campfire. */
   private flame = -1;
+  /** While set, a scene's first bake leaves the water out (the engine's build frame); waterPending then says so. */
+  deferWater = false;
+  waterPending = false;
 
   constructor(private readonly kit: FxCanvasKit) {}
 
@@ -167,18 +185,46 @@ export class IslandFx {
   }
 
   private bakeWater(land: Ctx, model: SceneModel, phase: LightPhase): void {
-    if (!this.water || this.water.scene !== model.scene) this.water = { scene: model.scene, field: waterField(model.scene, model.sea) };
-    const { rect, shallow, wet } = this.water.field;
-    if (rect.w <= 0 || rect.h <= 0) return;
-    const words = new Uint32Array(rect.w * rect.h);
-    const colour = SHALLOW_INK.map(([key, a]) => word(gradeKey(key, phase), a));
-    const wetWord = word(gradeKey("d", phase), WET_ALPHA);
-    for (let i = 0; i < words.length; i++) {
-      const s = shallow[i];
-      if (s) words[i] = colour[s];
-      else if (wet[i]) words[i] = wetWord;
+    if (!this.water || this.water.scene !== model.scene) {
+      // The first build of a scene leaves the water for the next frame (waterPending), so no frame does it all.
+      if (this.deferWater) {
+        this.waterPending = true;
+        return;
+      }
+      this.water = { scene: model.scene, field: waterField(model.scene, model.sea) };
     }
-    land.drawImage(this.upload(words, rect.w, rect.h), rect.x, rect.y);
+    this.waterPending = false;
+    const { rect, gw, gh, blocks, edge, shoreCells } = this.water.field;
+    if (rect.w <= 0 || rect.h <= 0) return;
+    const colour = SHALLOW_INK.map(([key, a]) => word(gradeKey(key, phase), a));
+    colour[WET] = word(gradeKey("d", phase), WET_ALPHA);
+    // Open water: one block per 2 x 2 px, stretched back to size (crisp: smoothing is off).
+    const half = new Uint32Array(gw * gh);
+    for (let i = 0; i < half.length; i++) if (blocks[i]) half[i] = colour[blocks[i]];
+    land.drawImage(this.upload(half, gw, gh), 0, 0, gw, gh, rect.x, rect.y, rect.w, rect.h);
+    // Shore cells pixel by pixel (the wash moves there): packed in a strip, then stamped in place.
+    if (shoreCells.length === 0) return;
+    const t = model.scene.tile;
+    const perRow = Math.min(shoreCells.length, 64);
+    const sheetW = perRow * t;
+    const sheetH = Math.ceil(shoreCells.length / perRow) * t;
+    const words = new Uint32Array(sheetW * sheetH);
+    shoreCells.forEach((base, k) => {
+      const sx = (k % perRow) * t;
+      const sy = Math.floor(k / perRow) * t;
+      for (let py = 0; py < t; py++) {
+        for (let px = 0; px < t; px++) {
+          const v = edge[base + py * rect.w + px];
+          if (v) words[(sy + py) * sheetW + sx + px] = colour[v];
+        }
+      }
+    });
+    const sheet = this.upload(words, sheetW, sheetH);
+    shoreCells.forEach((base, k) => {
+      const x = rect.x + (base % rect.w);
+      const y = rect.y + Math.floor(base / rect.w);
+      land.drawImage(sheet, (k % perRow) * t, Math.floor(k / perRow) * t, t, t, x, y, t, t);
+    });
   }
 
   private bakeShadows(land: Ctx, model: SceneModel, phase: LightPhase, atlas: Img, rects: ReadonlyMap<string, AtlasRect>): void {
@@ -337,9 +383,9 @@ export class IslandFx {
     layers: Layers<Img>,
     motion: FxMotion,
     actors: readonly LiveActor[],
-    opts: { frozen: boolean; lowDetail: boolean; span: Span }
+    opts: FxOptions
   ): DrawFx {
-    const { frozen, lowDetail, span } = opts;
+    const { frozen, lowDetail, span, sparse } = opts;
     const { scene } = model;
     const phase = this.phase;
     const tick = motion.tick;
@@ -348,6 +394,14 @@ export class IslandFx {
     const foamStep = Math.floor(tick / 4);
     const path = glintPath(scene);
     const breeze: Drift[] = frozen || lowDetail ? [] : breezeAt(tick, scene, span, phase);
+    // The figures' shadows for this frame, once (each repainted rect only checks which it meets).
+    const shadows: Rect[] = [];
+    actors.forEach((actor, i) => {
+      const frame = motion.actors[i] ?? 0;
+      const at = actorAt(actor, frame);
+      const foot = this.foot(actor.frames[frame] ?? actor.frames[0], at.flip, lean);
+      if (foot) shadows.push({ x: at.x + foot.x, y: at.y + foot.y, w: foot.w, h: foot.h });
+    });
     return {
       seaFrame: frozen
         ? undefined
@@ -364,7 +418,7 @@ export class IslandFx {
                 const inside = col >= 0 && col < scene.cols && row >= 0 && row < scene.rows;
                 const kind = inside ? model.sea[row * scene.cols + col] : 0;
                 if (kind < 0 || kind > 1) continue;
-                const g = glintAt(col, row, step, phase, path, scene.tile);
+                const g = glintAt(col, row, step, phase, path, scene.tile, sparse ? SPARSE_GLINTS : 1);
                 if (!g) continue;
                 const [sx, sy, w, h] = GLINT_RECTS[g.frame];
                 const dx = g.x - (w >> 1);
@@ -380,15 +434,7 @@ export class IslandFx {
             }
           },
       beforeActors: (r) => {
-        actors.forEach((actor, i) => {
-          const frame = motion.actors[i] ?? 0;
-          const name = actor.frames[frame] ?? actor.frames[0];
-          const at = actorAt(actor, frame);
-          const foot = this.foot(name, at.flip, lean);
-          if (!foot) return;
-          const box = { x: at.x + foot.x, y: at.y + foot.y, w: foot.w, h: foot.h };
-          if (overlaps(box, r)) ctx.drawImage(this.shadow(box.w, box.h), box.x, box.y);
-        });
+        for (const box of shadows) if (overlaps(box, r)) ctx.drawImage(this.shadow(box.w, box.h), box.x, box.y);
       },
       last: (r) => {
         for (const d of breeze) {
@@ -419,7 +465,7 @@ export class IslandFx {
    * beat, when the whole view repaints anyway; shadows move inside their
    * actors' padded boxes.)
    */
-  dirty(prev: FxMotion, next: FxMotion, scene: IslandScene, layers: Layers<Img>, opts: { frozen: boolean; lowDetail: boolean; span: Span }): Rect[] {
+  dirty(prev: FxMotion, next: FxMotion, scene: IslandScene, layers: Layers<Img>, opts: FxOptions): Rect[] {
     const out: Rect[] = [];
     if (opts.lowDetail) return out;
     for (let i = 0; i < Math.max(prev.gulls.length, next.gulls.length); i++) {

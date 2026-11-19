@@ -87,10 +87,16 @@ function formula(rgb: readonly [number, number, number], p: GradeParams): RGB {
   }) as RGB;
 }
 
-/** Palette colours by phase, after the grade (overrides first): built once. */
-const byPhase = new Map<LightPhase, Map<string, RGB>>();
+/**
+ * Graded colours by phase, keyed by 0xRRGGBB: the palette (overrides first)
+ * up front, any other colour (a tree style's) as it is first asked for. The
+ * atlas asks once per pixel, so this stays a number lookup.
+ */
+const byPhase = new Map<LightPhase, Map<number, RGB>>();
 
-function paletteGrade(phase: Exclude<LightPhase, "day">): Map<string, RGB> {
+const rgbKey = (rgb: readonly [number, number, number]) => (rgb[0] << 16) | (rgb[1] << 8) | rgb[2];
+
+function phaseTable(phase: Exclude<LightPhase, "day">): Map<number, RGB> {
   let table = byPhase.get(phase);
   if (!table) {
     table = new Map();
@@ -98,7 +104,7 @@ function paletteGrade(phase: Exclude<LightPhase, "day">): Map<string, RGB> {
       const rgb = paletteRgb(key);
       if (!rgb) continue;
       const hex = OVERRIDES[phase][key];
-      table.set(rgb.join(","), hex ? hexRgb(hex) : formula(rgb, PARAMS[phase]));
+      table.set(rgbKey(rgb), hex ? hexRgb(hex) : formula(rgb, PARAMS[phase]));
     }
     byPhase.set(phase, table);
   }
@@ -108,7 +114,14 @@ function paletteGrade(phase: Exclude<LightPhase, "day">): Map<string, RGB> {
 /** A colour under a phase's grade. Day is the identity; a palette colour takes its hand-picked value. */
 export function gradeRgb(rgb: readonly [number, number, number], phase: LightPhase): RGB {
   if (phase === "day") return [rgb[0], rgb[1], rgb[2]];
-  return paletteGrade(phase).get(rgb.join(",")) ?? formula(rgb, PARAMS[phase]);
+  const table = phaseTable(phase);
+  const key = rgbKey(rgb);
+  let out = table.get(key);
+  if (!out) {
+    out = formula(rgb, PARAMS[phase]);
+    table.set(key, out);
+  }
+  return out;
 }
 
 /** A palette key under a phase's grade. */

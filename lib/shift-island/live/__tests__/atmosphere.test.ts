@@ -11,6 +11,8 @@ import {
   lightSources,
   shadowBox,
   shallowLevel,
+  WATER_BLOCK,
+  WET,
   waterField,
   webSprites,
 } from "../atmosphere";
@@ -25,17 +27,31 @@ const model = sceneModel(scene);
 
 describe("the water round the island", () => {
   const field = waterField(scene, model.sea);
-  const { rect, shallow, wet } = field;
+  const { rect, gw, blocks, edge, shoreCells } = field;
   const at = (x: number, y: number) => (y - rect.y) * rect.w + (x - rect.x);
+  const block = (x: number, y: number) => Math.floor((y - rect.y) / WATER_BLOCK) * gw + Math.floor((x - rect.x) / WATER_BLOCK);
 
-  it("tints only water: never a land cell", () => {
+  it("tints only water: never a land cell, and on a shore cell only what stays open water", () => {
+    let shoreSeen = 0;
     for (let k = 0; k < model.sea.length; k++) {
-      if (model.sea[k] !== -1) continue;
+      const kind = model.sea[k];
       const x = (k % scene.cols) * scene.tile;
       const y = Math.floor(k / scene.cols) * scene.tile;
       if (x < rect.x || y < rect.y || x >= rect.x + rect.w || y >= rect.y + rect.h) continue;
-      for (let dy = 0; dy < scene.tile; dy++) for (let dx = 0; dx < scene.tile; dx++) expect(shallow[at(x + dx, y + dy)]).toBe(0);
+      if (kind === 0 || kind === 1) {
+        for (let dy = 0; dy < scene.tile; dy++) for (let dx = 0; dx < scene.tile; dx++) expect(edge[at(x + dx, y + dy)]).toBe(0);
+        continue;
+      }
+      for (let dy = 0; dy < scene.tile; dy += WATER_BLOCK) for (let dx = 0; dx < scene.tile; dx += WATER_BLOCK) expect(blocks[block(x + dx, y + dy)]).toBe(0);
+      if (kind === -1) {
+        for (let dy = 0; dy < scene.tile; dy++) for (let dx = 0; dx < scene.tile; dx++) expect(edge[at(x + dx, y + dy)]).toBe(0);
+      } else {
+        shoreSeen++;
+        // shore_n: sand at the bottom row is never tinted as water.
+        if (kind === 2) expect([0, WET]).toContain(edge[at(x + 8, y + 15)]);
+      }
     }
+    expect(shoreSeen).toBe(shoreCells.length);
   });
 
   it("is shallowest at the waterline and fades out with the reach", () => {
@@ -43,13 +59,13 @@ describe("the water round the island", () => {
     expect(shallowLevel(10)).toBe(2);
     expect(shallowLevel(20)).toBe(1);
     expect(shallowLevel(40)).toBe(0);
-    expect(shallow.some((v) => v === 3)).toBe(true);
-    expect(shallow.some((v) => v === 1)).toBe(true);
-    expect(wet.some((v) => v === 1)).toBe(true);
+    expect(blocks.some((v) => v === 3)).toBe(true);
+    expect(blocks.some((v) => v === 1)).toBe(true);
+    expect(edge.some((v) => v === WET)).toBe(true);
   });
 
   it("is the same for the same scene", () => {
-    expect(waterField(scene, model.sea).shallow).toEqual(shallow);
+    expect(waterField(scene, model.sea).blocks).toEqual(blocks);
   });
 });
 
