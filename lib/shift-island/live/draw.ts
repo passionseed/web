@@ -176,15 +176,30 @@ export function paintLand<Img>(ctx: DrawContext<Img>, model: SceneModel, atlas: 
   if (scene.banner) blit(ctx, atlas, rects.get("banner"), scene.banner.x, scene.banner.y);
 }
 
-/** Paints the tags (dark box, white pixel digits) and the caller's pin, as the PNG does. */
-export function paintOverlay<Img>(ctx: DrawContext<Img>, model: SceneModel, atlas: Img, rects: ReadonlyMap<string, AtlasRect>): void {
+/** A tag's box and digit colours. */
+export interface TagStyle {
+  fill: string;
+  ink: string;
+}
+
+/** The PNG's tags: a dark box with white digits. */
+export const PNG_TAGS: TagStyle = { fill: TAG_FILL, ink: "#ffffff" };
+
+/** Paints the tags (dark box, white pixel digits, unless a style says otherwise) and the caller's pin, as the PNG does. */
+export function paintOverlay<Img>(
+  ctx: DrawContext<Img>,
+  model: SceneModel,
+  atlas: Img,
+  rects: ReadonlyMap<string, AtlasRect>,
+  style: TagStyle = PNG_TAGS
+): void {
   const { scene } = model;
   const g = scene.glyph;
   ctx.imageSmoothingEnabled = false;
   for (const tag of scene.tags) {
-    ctx.fillStyle = TAG_FILL;
+    ctx.fillStyle = style.fill;
     ctx.fillRect(tag.x, tag.y, tag.w, tag.h);
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = style.ink;
     [...String(tag.slot)].forEach((d, k) => {
       const bits = DIGITS[Number(d)];
       for (let j = 0; j < 5; j++) {
@@ -200,6 +215,10 @@ export interface DrawState {
   motion: Motion;
   night: boolean;
   actors: readonly LiveActor[];
+  /** The earned lantern's dotted night ring (default true). The web's living island lights its lanterns itself (glow.ts). */
+  glowRing?: boolean;
+  /** Web only: called inside the clip after the tags, just before the actors (their contact shadows). The GIF passes none. */
+  underActors?: (r: Rect) => void;
 }
 
 /** A moving sprite's rectangle, from its atlas size. */
@@ -267,7 +286,7 @@ export function redrawRect<Img>(ctx: DrawContext<Img>, r: Rect, model: SceneMode
     if (tree.key) blit(ctx, atlas, rects.get("key_flag"), tree.key.x, tree.key.y);
     if (tree.visitor) blit(ctx, atlas, rects.get("visitor"), tree.visitor.x, tree.visitor.y);
     // Only an earned lantern glows, and only at night: behind the lantern, over the tree.
-    if (night && m.glow) blit(ctx, atlas, rects.get(motion.glow[i] ? "lantern_glow_1" : "lantern_glow_0"), m.glow.x, m.glow.y);
+    if (night && m.glow && state.glowRing !== false) blit(ctx, atlas, rects.get(motion.glow[i] ? "lantern_glow_1" : "lantern_glow_0"), m.glow.x, m.glow.y);
     if (tree.lantern) blit(ctx, atlas, rects.get("lantern"), tree.lantern.x, tree.lantern.y);
   });
 
@@ -284,6 +303,7 @@ export function redrawRect<Img>(ctx: DrawContext<Img>, r: Rect, model: SceneMode
 
   if (inScene) ctx.drawImage(layers.overlay, inScene.x, inScene.y, inScene.w, inScene.h, inScene.x, inScene.y, inScene.w, inScene.h);
 
+  state.underActors?.(r);
   state.actors.forEach((actor, i) => {
     const frame = motion.actors[i] ?? 0;
     const rect = actorRect(actor, frame, rects);

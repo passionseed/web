@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 
 import { buildScene } from "@/bot/src/quests/island/scene";
 import type { IslandCanvasProps } from "@/components/shift/island/live/IslandCanvas";
+import { gradedWater } from "@/lib/shift-island/live/grade";
 import { waterColor } from "@/lib/shift-island/live/lighting";
 import { plazaWorld, type PlazaInput, type PlazaSpotId } from "@/lib/shift-island/live/plaza";
 import type { IslandPicture } from "@/lib/shift-island/picture";
@@ -318,7 +319,8 @@ describe("IslandViewport", () => {
   it("is in the server's light from the first paint, before the living island draws", () => {
     const { container } = render(<IslandViewport picture={live} onPlot={jest.fn()} initialPhase="night" />);
     const world = container.firstElementChild as HTMLElement;
-    const [r, g, b] = waterColor("night").match(/[0-9a-f]{2}/gi)!.map((h) => parseInt(h, 16));
+    // The web's graded sea (grade.ts), the colour the living island's own night uses.
+    const [r, g, b] = gradedWater("night").match(/[0-9a-f]{2}/gi)!.map((h) => parseInt(h, 16));
     expect(world.style.background).toBe(`rgb(${r}, ${g}, ${b})`);
     expect(container.querySelector("[data-phase]")).toHaveAttribute("data-phase", "night");
     // The daytime PNG takes the night's multiply until the canvas has drawn.

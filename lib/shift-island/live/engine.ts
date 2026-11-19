@@ -9,9 +9,14 @@
  *   screen is ever repainted on a tick (what a scroll reveals is painted as it
  *   appears);
  * - no getImageData or putImageData in the loop, no filters, shadows or
- *   full-canvas blends, no React state per frame;
+ *   full-canvas blends, no React state per frame (the light pools blend
+ *   only their own small sprites, fx.ts);
  * - zero timers while off-screen, in a hidden tab, paused (a sheet is open),
  *   still, or under prefers-reduced-motion (then one still frame is drawn).
+ *
+ * The web grades the palette per light (grade.ts) and adds its atmosphere
+ * (fx.ts: light pools, contact shadows, smoke, fireflies, sea glints); the
+ * bot's PNG and GIF draw neither.
  *
  * The clock counts running time only: after a pause the island carries on
  * where it stopped and never replays missed ticks.
@@ -19,10 +24,25 @@
 import type { IslandScene } from "@/bot/src/quests/island/scene";
 
 import { allSprites, buildAtlasData, styleKey, stylesOf, type AtlasData } from "./atlas";
-import { TICK_MS, motionAt, nextTickAt, type Motion } from "./clock";
-import { actorRect, dirtyRects, paintLand, paintOverlay, redrawRect, sceneModel, seaRectsFor, type DrawContext, type Layers, type SceneModel } from "./draw";
+import { SLOW_GUST, TICK_MS, motionAt, nextTickAt, type Motion } from "./clock";
+import {
+  actorRect,
+  dirtyRects,
+  moverRect,
+  paintLand,
+  paintOverlay,
+  redrawRect,
+  sceneModel,
+  seaRectsFor,
+  type DrawContext,
+  type DrawState,
+  type Layers,
+  type SceneModel,
+} from "./draw";
+import { IslandFx, type FxFrame } from "./fx";
 import { area, exposed, intersect, visibleRect, type Rect } from "./geometry";
-import { bangkokPhase, waterColor } from "./lighting";
+import { TAG_LIGHT, atlasGrade, gradedWater } from "./grade";
+import { bangkokPhase } from "./lighting";
 import type { LightPhase, LiveActor } from "./types";
 
 export interface LiveIslandProps {
@@ -128,6 +148,9 @@ export class LiveIsland {
   private stillShown = false;
   private view: Rect | null = null;
   private drawn: Motion | null = null;
+  /** The atmosphere of the frame last painted (light flicker, smoke, fireflies, glints). */
+  private drawnFx: FxFrame | null = null;
+  private readonly fx = new IslandFx((w, h) => newCanvas(w, h));
   private lastTick = -1;
   private lowDetail = false;
   private nextPhaseCheck = 0;
@@ -185,6 +208,8 @@ export class LiveIsland {
       }
       if (next.phase !== prev.phase) this.checkPhase();
       if (actorsChanged || next.ambient !== prev.ambient || next.fit !== prev.fit) {
+        // The plaza's lights (the fire, bulbs, the countdown) come with its actors.
+        if (actorsChanged) this.lightUp();
         this.measure();
         repaint = true;
       }
@@ -307,20 +332,21 @@ export class LiveIsland {
     this.scrollerCleanup = () => scroller.removeEventListener("scroll", onScroll);
   }
 
-  /** First build: atlas and layers in one animation frame, the first frame in the next (each well under 16 ms). */
+  /** First build: atlas and layers in one animation frame; the atmosphere's bake and the first frame in the next. */
   private init(): void {
     this.initRaf = 0;
     this.phase = this.wantedPhase();
     this.nextPhaseCheck = performance.now() + PHASE_CHECK_MS;
-    this.prepareScene();
+    this.prepareScene(false);
     const first = () =>
       this.guard(() => {
         this.initRaf = 0;
+        this.bakeFx();
         this.paintAll();
         this.stillShown = this.isStill();
         this.ready = true;
         this.events.onReady?.();
-        this.events.onPhase?.(this.phase, waterColor(this.phase));
+        this.events.onPhase?.(this.phase, gradedWater(this.phase));
         this.sync();
       });
     this.initRaf = requestAnimationFrame(first);
@@ -394,6 +420,7 @@ export class LiveIsland {
     this.checkPhase();
     // Repaint the view on the next frame: it may show an older moment.
     this.drawn = null;
+    this.drawnFx = null;
     this.lastTick = -1;
     this.raf = requestAnimationFrame(() => this.guard(() => this.frame()));
   }
@@ -445,7 +472,7 @@ export class LiveIsland {
     const tick = Math.floor(this.elapsed(now) / (TICK_MS * step)) * step;
     if (tick !== this.lastTick) {
       this.lastTick = tick;
-      this.paintTick(this.motion(tick));
+      this.paintTick(tick, this.motion(tick));
     }
     this.schedule();
   }
@@ -465,7 +492,7 @@ export class LiveIsland {
     this.phase = phase;
     this.buildLand();
     this.paintAll();
-    this.events.onPhase?.(phase, waterColor(phase));
+    this.events.onPhase?.(phase, gradedWater(phase));
   }
 
   // ------------------------------------------------------------- layers
@@ -473,10 +500,10 @@ export class LiveIsland {
   private atlas(phase: LightPhase): { data: AtlasData; image: HTMLCanvasElement } {
     // One atlas per phase and set of tree styles; a few at most, so the oldest is dropped past 6.
     const styles = stylesOf(this.props.scene.trees);
-    const cacheKey = `${phase}|${styles.map(styleKey).sort().join(";")}`;
+    const cacheKey = `${phase}|graded|${styles.map(styleKey).sort().join(";")}`;
     let entry = sharedAtlases.get(cacheKey);
     if (!entry) {
-      const data = buildAtlasData(phase, allSprites(), styles);
+      const data = buildAtlasData(phase, allSprites(), styles, atlasGrade(phase));
       const image = newCanvas(data.width, data.height);
       // Once per phase, never in the loop.
       context(image).putImageData(new ImageData(new Uint8ClampedArray(data.data), data.width, data.height), 0, 0);
@@ -488,20 +515,29 @@ export class LiveIsland {
   }
 
   /** The scene's model, the canvas size, the land layer and the tag overlay. */
-  private prepareScene(): void {
+  private prepareScene(withFx = true): void {
     const { scene } = this.props;
     this.model = sceneModel(scene);
     this.swaying = this.model.trees.map((t) => t.b != null);
     const frame = this.frameRect();
     if (this.canvas.width !== frame.w) this.canvas.width = frame.w;
     if (this.canvas.height !== frame.h) this.canvas.height = frame.h;
-    const atlas = this.atlas(this.phase);
-    this.overlayCanvas = this.sized(this.overlayCanvas, scene.width, scene.height);
-    const overlay = context(this.overlayCanvas);
-    overlay.clearRect(0, 0, scene.width, scene.height);
-    paintOverlay(overlay as DrawContext<Img>, this.model, atlas.image, atlas.data.rects);
-    this.buildLand();
+    this.buildLand(withFx);
     this.measure();
+  }
+
+  /** The atmosphere's lights and life for the scene, plaza and phase (fx.ts). */
+  private lightUp(): void {
+    if (this.model) this.fx.set(this.model, this.props.actors, this.phase);
+    this.drawnFx = null;
+  }
+
+  /** The atmosphere's one-time work: its lights, then the shallows and contact shadows baked into the land layer. */
+  private bakeFx(): void {
+    const { model, landCanvas, layers } = this;
+    if (!model || !landCanvas || !layers) return;
+    this.lightUp();
+    this.fx.bakeLand(context(landCanvas), model, layers.atlas as CanvasImageSource, layers.rects);
   }
 
   private sized(c: HTMLCanvasElement | null, w: number, h: number): HTMLCanvasElement {
@@ -511,14 +547,25 @@ export class LiveIsland {
     return c;
   }
 
-  private buildLand(): void {
+  /**
+   * The land layer and the tags in the phase's light, then (withFx) the
+   * atmosphere baked over it. Once per scene or phase; on the first build the
+   * atmosphere waits for the first frame's animation frame (init), so the
+   * one-time work is split over the two.
+   */
+  private buildLand(withFx = true): void {
     const model = this.model;
     if (!model) return;
+    const { scene } = model;
     const atlas = this.atlas(this.phase);
-    this.landCanvas = this.sized(this.landCanvas, model.scene.width, model.scene.height);
+    this.landCanvas = this.sized(this.landCanvas, scene.width, scene.height);
     const land = context(this.landCanvas);
-    land.clearRect(0, 0, model.scene.width, model.scene.height);
+    land.clearRect(0, 0, scene.width, scene.height);
     paintLand(land as DrawContext<Img>, model, atlas.image, atlas.data.rects);
+    this.overlayCanvas = this.sized(this.overlayCanvas, scene.width, scene.height);
+    const overlay = context(this.overlayCanvas);
+    overlay.clearRect(0, 0, scene.width, scene.height);
+    paintOverlay(overlay as DrawContext<Img>, model, atlas.image, atlas.data.rects, TAG_LIGHT[this.phase]);
     this.layers = {
       atlas: atlas.image,
       rects: atlas.data.rects,
@@ -527,6 +574,7 @@ export class LiveIsland {
       land: this.landCanvas,
       overlay: this.overlayCanvas ?? this.landCanvas,
     };
+    if (withFx) this.bakeFx();
   }
 
   /** What the canvas shows, in scene px: the crop inside the scene, or the whole scene. */
@@ -576,6 +624,7 @@ export class LiveIsland {
       still: this.isStill(),
       lowDetail: this.lowDetail,
       night: this.phase === "night",
+      gust: SLOW_GUST,
     });
   }
 
@@ -584,7 +633,12 @@ export class LiveIsland {
     return Math.floor(this.elapsed(performance.now()) / (TICK_MS * step)) * step;
   }
 
-  private paint(rects: Rect[], motion: Motion): void {
+  /** The atmosphere at a tick: steady light and no smoke or fireflies when still or tiny. */
+  private fxAt(tick: number, motion: Motion): FxFrame {
+    return this.fx.frame(tick, motion, this.isStill() || this.lowDetail);
+  }
+
+  private paint(rects: Rect[], motion: Motion, fx: FxFrame): void {
     const ctx = this.ctx;
     const model = this.model;
     const layers = this.layers;
@@ -592,41 +646,60 @@ export class LiveIsland {
     const frame = this.frameRect();
     ctx.setTransform(1, 0, 0, 1, -frame.x, -frame.y);
     ctx.imageSmoothingEnabled = false;
-    const state = { motion, night: this.phase === "night", actors: this.props.actors };
+    const actors = this.props.actors;
+    const ovals = this.fx.actorOvals(actors, motion, layers.rects);
+    const state: DrawState = {
+      motion,
+      night: this.phase === "night",
+      actors,
+      // The lanterns throw their own light (fx.ts) instead of the PNG's dotted ring.
+      glowRing: false,
+      underActors: (r) => this.fx.underActors(ctx, r, ovals),
+    };
+    const boat = motion.boat ? moverRect(motion.boat, layers.rects) : null;
     for (const r of rects) {
       const clipped = intersect(r, frame);
-      if (clipped) redrawRect(ctx as DrawContext<Img>, clipped, model, layers, state);
+      if (!clipped) continue;
+      redrawRect(ctx as DrawContext<Img>, clipped, model, layers, state);
+      this.fx.paint(ctx, clipped, fx, boat);
     }
   }
 
   /** The whole canvas, at the current moment. */
   private paintAll(): void {
     if (!this.model) return;
-    const motion = this.motion(this.currentTick());
-    this.paint([this.frameRect()], motion);
+    const tick = this.currentTick();
+    const motion = this.motion(tick);
+    const fx = this.fxAt(tick, motion);
+    this.paint([this.frameRect()], motion, fx);
     this.drawn = motion;
+    this.drawnFx = fx;
   }
 
   /** One tick: only what changed, only where it is on screen. */
-  private paintTick(motion: Motion): void {
+  private paintTick(tick: number, motion: Motion): void {
     const model = this.model;
     const layers = this.layers;
     if (!model || !layers) return;
     const view = this.view;
+    const fx = this.fxAt(tick, motion);
     if (!view) {
       // Nothing on screen: the next reveal paints it fresh.
       this.drawn = motion;
+      this.drawnFx = fx;
       return;
     }
     const dirty = dirtyRects(this.drawn, motion, model, layers.rects, this.props.actors);
+    const fxDirty = this.fx.dirty(this.drawnFx, fx);
     this.drawn = motion;
-    if (dirty === "all") {
-      this.paint([view], motion);
+    this.drawnFx = fx;
+    if (dirty === "all" || fxDirty === "all") {
+      this.paint([view], motion, fx);
       return;
     }
-    const parts = dirty.map((r) => intersect(r, view)).filter((r): r is Rect => r != null);
+    const parts = [...dirty, ...fxDirty].map((r) => intersect(r, view)).filter((r): r is Rect => r != null);
     const total = parts.reduce((sum, r) => sum + area(r), 0);
-    this.paint(parts.length > 24 || total > area(view) / 2 ? [view] : parts, motion);
+    this.paint(parts.length > 24 || total > area(view) / 2 ? [view] : parts, motion, fx);
   }
 
   /** After a scroll or resize: paint what just came on screen, at the moment last drawn. One frame, no loop. */
@@ -641,13 +714,16 @@ export class LiveIsland {
         this.measure();
         const after = this.view;
         if (!after) return;
-        const motion = this.drawn ?? this.motion(this.currentTick());
+        const tick = this.currentTick();
+        const motion = this.drawn ?? this.motion(tick);
+        const fx = this.drawnFx ?? this.fxAt(tick, motion);
         if (wasLow !== this.lowDetail && this.running) {
           this.drawn = null;
+          this.drawnFx = null;
           return;
         }
         if (this.isStill() && this.stillShown) return;
-        this.paint(exposed(before, after), motion);
+        this.paint(exposed(before, after), motion, fx);
       })
     );
   }

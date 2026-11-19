@@ -110,8 +110,25 @@ export function cloudsAt(tick: number, scene: Pick<IslandScene, "width" | "heigh
   });
 }
 
+/** The shape of the wind, ms: how often a gust comes (with jitter), how long it lasts, how fast the leaves flip, how long it takes to cross the island. */
+export interface Gust {
+  period: number;
+  jitter: number;
+  first: number;
+  length: number;
+  flip: number;
+  spread: number;
+}
+
 /** Wind gusts: one every 6 to 8 s, 1.6 s of A/B flips at 400 ms, reaching trees left to right over 600 ms. */
 export const GUST = { period: 7000, jitter: 1000, first: 2500, length: 1600, flip: 400, spread: 600 } as const;
+
+/**
+ * The web's gentler wind (the living island's lantern-glow look): a slow
+ * lean every 7 to 9 s, each flip held 750 ms, rolling across the island
+ * over a second. The GIF keeps GUST.
+ */
+export const SLOW_GUST: Gust = { period: 8000, jitter: 1200, first: 2500, length: 3000, flip: 750, spread: 1100 };
 
 /** A fixed pseudo-random 0..1 for gust k, so the gusts are irregular but the same every run. */
 function gustNoise(k: number): number {
@@ -122,23 +139,23 @@ function gustNoise(k: number): number {
 }
 
 /** When gust k starts, in ms of running time. Consecutive gusts are 6 to 8 s apart. */
-export function gustStart(k: number): number {
-  return GUST.first + k * GUST.period + Math.round((gustNoise(k) - 0.5) * GUST.jitter);
+export function gustStart(k: number, gust: Gust = GUST): number {
+  return gust.first + k * gust.period + Math.round((gustNoise(k) - 0.5) * gust.jitter);
 }
 
 /** A tree's gust delay: trees further right feel the wind later. */
-export function swayDelay(left: number, width: number): number {
-  return Math.round((Math.max(0, left) / Math.max(1, width)) * GUST.spread);
+export function swayDelay(left: number, width: number, gust: Gust = GUST): number {
+  return Math.round((Math.max(0, left) / Math.max(1, width)) * gust.spread);
 }
 
 /** True while a tree shows its sway frame B. */
-export function swayB(ms: number, delay: number): boolean {
+export function swayB(ms: number, delay: number, gust: Gust = GUST): boolean {
   const t = ms - delay;
-  const k = Math.floor((t - GUST.first + GUST.jitter / 2) / GUST.period);
+  const k = Math.floor((t - gust.first + gust.jitter / 2) / gust.period);
   for (const j of [k, k - 1]) {
     if (j < 0) continue;
-    const local = t - gustStart(j);
-    if (local >= 0 && local < GUST.length) return Math.floor(local / GUST.flip) % 2 === 0;
+    const local = t - gustStart(j, gust);
+    if (local >= 0 && local < gust.length) return Math.floor(local / gust.flip) % 2 === 0;
   }
   return false;
 }
@@ -202,6 +219,8 @@ export interface MotionInput {
   night: boolean;
   /** Where the boat, gulls and clouds travel; default the scene's width. */
   span?: Span;
+  /** The wind; default GUST. */
+  gust?: Gust;
 }
 
 /** The island at one tick. */
@@ -214,7 +233,7 @@ export function motionAt(tick: number, input: MotionInput): Motion {
   const glow = new Uint8Array(scene.trees.length);
   if (!frozen) {
     scene.trees.forEach((tree, i) => {
-      if (input.swaying[i] && swayB(ms, swayDelay(tree.left, scene.width))) sway[i] = 1;
+      if (input.swaying[i] && swayB(ms, swayDelay(tree.left, scene.width, input.gust), input.gust)) sway[i] = 1;
       if (night && tree.lantern) glow[i] = glowFrame(tick, tree.slot);
     });
   }

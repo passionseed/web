@@ -16,7 +16,7 @@ import {
 import type { IslandHotspot, IslandPicture } from "@/lib/shift-island/picture";
 import { hitFigure, hitSlop, treeFigures, type Figure } from "@/lib/shift-island/live/figures";
 import { pxPerNativeFor, type Rect } from "@/lib/shift-island/live/geometry";
-import { PHASE_TINT, waterColor } from "@/lib/shift-island/live/lighting";
+import { gradeMultiply, gradedWater } from "@/lib/shift-island/live/grade";
 import { NO_PLAZA, plazaWorld, type PlazaInput, type PlazaLabelId, type PlazaSpotId } from "@/lib/shift-island/live/plaza";
 import type { LightPhase } from "@/lib/shift-island/live/types";
 import { HUD_RESERVE, scrollToCentre, worldLayout, type Insets } from "@/lib/shift-island/live/world";
@@ -95,16 +95,19 @@ export function hotspotLabel(hotspot: IslandHotspot): string {
 const SERVER_ZOOM = 2;
 const NO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
 /** The open sea in daylight: the world's colour until the living island says otherwise. */
-const DAY_SEA = waterColor("day");
+const DAY_SEA = gradedWater("day");
 /** A mouse drag shorter than this is still a click on a plot. */
 const DRAG_SLOP = 4;
 /** The tap hint steps aside after this long (its fade starts at 6s in world.module.css). */
 const HINT_MS = 6400;
+/** The living island fades in over the PNG this long (world.module.css .canvasBox); the PNG hides after it. */
+const LIVE_FADE_MS = 420;
+/** The screen's light layers (world.module.css .shade), one per phase, crossfading when the hour turns. */
+const SHADES: readonly LightPhase[] = ["dawn", "day", "dusk", "night"];
 
-/** The phase's light as a multiply colour: the PNG under it looks like the canvas's tinted land. */
+/** The phase's light as a multiply colour: the PNG under it looks like the canvas's graded land. */
 function tintColor(phase: LightPhase): string {
-  const [r, g, b] = PHASE_TINT[phase].map((m) => Math.round(m * 255));
-  return `rgb(${r}, ${g}, ${b})`;
+  return gradeMultiply(phase);
 }
 
 /** Arrow keys move between plots in their order on the island; Home and End go to either end. */
@@ -345,7 +348,7 @@ export function IslandViewport({
   const [liveFailed, setLiveFailed] = useState(false);
   /** The light of the hour and the open sea's colour in it: the server's guess, then the living island's. */
   const [light, setLight] = useState<{ phase: LightPhase; sea: string } | null>(() =>
-    initialPhase ? { phase: initialPhase, sea: waterColor(initialPhase) } : null
+    initialPhase ? { phase: initialPhase, sea: gradedWater(initialPhase) } : null
   );
   /** The plot that holds the group's one tab stop, once the student has moved to one. */
   const [activeSlot, setActiveSlot] = useState<number | null>(null);
@@ -544,14 +547,15 @@ export function IslandViewport({
               width={Math.round(picture.width * scale)}
               height={Math.round(picture.height * scale)}
               className={styles.image}
-              style={live ? { visibility: "hidden" } : undefined}
+              // Hidden once the canvas has faded in over it (the transition holds it until then).
+              style={live ? { visibility: "hidden", transition: `visibility 0s linear ${LIVE_FADE_MS}ms` } : undefined}
               draggable={false}
               onError={() => setFailedSrc(pictureSrc)}
             />
             {pngTint ? <span className={styles.tint} style={{ background: pngTint }} aria-hidden="true" /> : null}
           </div>
           {liveOn && picture.scene ? (
-            <div className={styles.canvasBox} style={canvasRect}>
+            <div className={styles.canvasBox} style={canvasRect} data-ready={live ? "true" : undefined}>
               <IslandLive
                 scene={picture.scene}
                 paused={paused}
@@ -660,7 +664,11 @@ export function IslandViewport({
           </div>
         </div>
       </div>
-      <div className={styles.shade} data-phase={shade} aria-hidden="true" />
+      <div className={styles.shade} data-phase={shade} aria-hidden="true">
+        {SHADES.map((p) => (
+          <span key={p} data-light={p} />
+        ))}
+      </div>
       {interactive && picture.hotspots.length > 0 && !hintGone ? (
         <p className={styles.tapHint} aria-hidden="true">
           {ISLAND.tapHint}
