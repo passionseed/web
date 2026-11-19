@@ -12,6 +12,7 @@ import {
 } from "../short-links";
 
 /** Slugs with a live radar_fields row: the alias table plus every code guide's slug. */
+/** Published slugs: the deck pilots plus every code guide (guides.test keeps those in KNOWN_PUBLISHED_RADAR_SLUGS). */
 const PUBLISHED = new Set<string>([...Object.values(RADAR_LINK_ALIASES), ...KNOWN_PUBLISHED_RADAR_SLUGS]);
 const CYBER_PAGES = guidePageKeys("cybersecurity")!;
 

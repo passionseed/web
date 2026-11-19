@@ -9,6 +9,7 @@
 import type { GuideIndexEntry, GuideIndexPage } from "@/lib/radar-guide/guide-types";
 import { ACCOUNTANT_META } from "./accountant/meta";
 import { AI_ENGINEER_META } from "./ai-engineer/meta";
+import { CONTENT_CREATOR_META } from "./content-creator/meta";
 import { CYBERSECURITY_META } from "./cybersecurity/meta";
 import { DATA_SCIENTIST_META } from "./data-scientist/meta";
 import { MEDICAL_TECHNOLOGIST_META } from "./medical-technologist/meta";
@@ -27,6 +28,7 @@ export const GUIDE_INDEX: Readonly<Record<string, GuideIndexEntry>> = {
   "mechanical-engineer": MECHANICAL_ENGINEER_META,
   "marketing-strategist": MARKETING_STRATEGIST_META,
   accountant: ACCOUNTANT_META,
+  "content-creator": CONTENT_CREATOR_META,
 };
 
 /** Every slug with a code guide, any status. */
@@ -98,4 +100,5 @@ export const KNOWN_PUBLISHED_RADAR_SLUGS: readonly string[] = [
   "mechanical-engineer",
   "marketing-strategist",
   "accountant",
+  "content-creator",
 ];

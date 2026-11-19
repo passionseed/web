@@ -1,0 +1,51 @@
+# Content Creator (นักสร้างสรรค์คอนเทนต์): fact sheet for Level 1
+
+- Guide: `lib/radar-guides/content-creator/` (draft, as of 2026-11-20). Alias `creator`, accent `#ff6b6b`.
+- Level 1: dream (Moo Deng and her keeper), work (a 15-second clip for the roti shop in front of school), tonight (plan and shoot a 15-second clip with a phone), next. Round 1 opens Level 2, then the DB deck.
+- Built from the DB deck research (field row, cards, 15 sources) and fresh research. Every URL below was opened on 2026-11-19 or 2026-11-20 (Bangkok).
+
+Grades: **A** primary source we read, exact wording. **B** secondary source with a date, or a dated listing. **C** our estimate, a seller's blog, or no source. **X** do not say.
+
+## Claims used in Level 1
+
+| Fact id | Claim (as used) | Where | Source | Grade | Note |
+|---|---|---|---|---|---|
+| `f.cc-moodeng-keeper` | The keeper (พี่เบนซ์) posted clips of the animals he looks after for about 5 years before Moo Deng's fame; admin of the page ขาหมู แอนด์ เดอะแก๊ง; said he'd make the coming baby pygmy hippo famous | dream: intel card, plan dialogue, reel hook | [AP via PBS NewsHour, 2024-09-19](https://www.pbs.org/newshour/world/thailands-adorable-baby-hippo-moo-deng-has-the-kind-of-face-that-launches-a-thousand-memes); [Thai PBS, 2024-09-18](https://www.thaipbs.or.th/news/content/344334) | A | AP: "has been posting cute moments of the animals in his care for about five years". Thai PBS: "เบนซ์บอกเดี๋ยวจะปั้นลูกฮิปโปแคระที่กำลังจะเกิดให้ดังให้ได้". "About five years" is as of Sep 2024, so copy says ก่อนหมูเด้งจะดัง. |
+| `f.cc-moodeng-visitors` | Weekday visitors from about 800 to over 4,000; weekends from about 3,000 to over 10,000 (Sep 2024) | dream: guess game, stat card, og stat | AP via PBS NewsHour (above); [AP via CBS News](https://www.cbsnews.com/news/moo-deng-baby-hippo-thailand-zoo-bouncy-pork-goes-viral) | B, vendor badge | The zoo director's own counts, quoted by AP. No Thai outlet we found prints the 800 baseline. |
+| `f.cc-moodeng-award` | TikTok Awards, Video of the year, to the keeper, 2 Nov 2024 | dream: flip card | [Thai PBS, 2024-11-03](https://www.thaipbs.or.th/news/content/345912) | A | Thai PBS does not say "TikTok Awards Thailand" explicitly; copy says TikTok Awards only. The same article gives 299,819 zoo visitors in Oct 2024 (not used). |
+| `f.cc-moodeng-brand` | The zoo started copyrighting and trademarking "Moo Deng"; a 24-hour live feed for fans who can't come | dream: flip cards | AP via PBS NewsHour (above); [AP via Local 12, 2024-09-22](https://local12.com/news/offbeat/plans-to-start-24-hour-live-feed-of-thailands-adorable-pygmy-hippo-moo-deng-watch-clips-famous-tiktok-celebrity-animal-meme-famous-megastar-cute-big-small-zoo) | A | |
+| `f.cc-moodeng-birthday` | 2nd birthday event, Moo Deng HAPPY Deng DAY, 10 to 12 Jul 2026 | dream: flip card | [กรุงเทพธุรกิจ, Jul 2026](https://www.bangkokbiznews.com/news/news-update/1241866) | B | The page shows no publication date; images are dated Jul 2026. |
+| `f.cc-moodeng-fade` | Mid-2025: about 2,000 weekday visitors, about half the peak; the keeper already had other baby animals lined up | dream: honesty card | [AP via KSAT, 2025-07-10](https://www.ksat.com/news/weird-news/2025/07/10/thousands-celebrate-baby-hippo-moo-dengs-first-birthday-at-thailand-zoo/); Thai PBS 2024-09-18 (above) | B, vendor badge | The keeper's plan predates the drop; copy says "บอกไว้ตั้งแต่แรก", not that he reacted to it. |
+| `f.cc-roles` | Content work includes articles, video, podcasts; a social media manager plans posts, replies to followers, uses analytics | work: steps line, kinds grid | [TruePlookpanya, 2025-01-03](https://www.trueplookpanya.com/knowledge/content/95674-careeroverview-careerdevelopment-) | B | A Thai education portal article, not a labour survey. Backs the shape of the work, no numbers. |
+| `f.cc-live-host` | A live commerce host presents products live, answers questions, prepares with the team, and follows results to improve | work: kinds grid (พิธีกรไลฟ์) | [jobbkk listing "MC LIVE / Live Commerce Host", posted 2026-11-17](https://jobbkk.com/jobs/detail/247473/1397872) | B | One real listing, cited to show the job exists. Salary not printed. |
+| `f.cc-yt-retention` | The back end shows where viewers skip or leave | work: feedback intro | [YouTube Help (Thai)](https://support.google.com/youtube/answer/9314415?hl=th) | A | "ช่วงที่ลดลงหมายความว่าผู้ชมกดข้ามหรือออกจากวิดีโอในช่วงดังกล่าว". |
+| `sim.cc-roti-clip` | The roti shop job: 15-second clip, 6 shots, a 10-second walk, a drop at second 9, the comments | work games; tonight's 15-second length | Simulated | n/a | Invented for the game, watermarked "ตัวอย่างจำลอง". |
+| `f.cc-phone-trim` | Trim a clip in the phone's own photo app: iPhone Photos (Edit, drag the sliders), Android Google Photos (drag the trim handle) | tonight: tool card, EvidenceMaker room, link | [Apple Support (Thai), published 2026-05-06](https://support.apple.com/th-th/104968); [Google Photos Help (Thai)](https://support.google.com/photos/answer/10729480?hl=th&co=GENIE.Platform%3DAndroid) | A | Neither page lists a new account for trimming; copy never says "free" or "no account". Google notes some non-Pixel Android 9 phones can't edit video in Google Photos. |
+
+Round 1 faculties (`round1.ts`): checked in the mytcas course feed (`courses.json`, TCAS70) on 2026-11-20. นิเทศศาสตร์: 104 programmes at 43 universities; วารสารศาสตร์: 4 at 3; สื่อสารมวลชน: 28 at 15. The counts are not printed. course.mytcas.com has no search URL (search runs on its home page), so the link opens the home page, like the other careers.
+
+## Deck claims dropped, and why
+
+| Claim (deck) | Why it is out | Grade |
+|---|---|---|
+| Thai creator market 45,000 ล้านบาท, growing 20-30% a year, 2 million Thais full-time (Tellscore via BrandBuffet, 2024) | An industry seller's estimate with no method; "2 million full-time" is implausible. Banned. | C |
+| Salaries 15k-40k / 40k-80k / 80k-300k; Adecco 20,000-40,000 (via Scribd) | Level 1 shows no pay. The Adecco PDFs are third-party uploads on Scribd, not read at the source. Level 2 only, after checking. Banned on Level 1. | C |
+| Influencer rate card 5,000-30,000 baht per post (ConvertCake) | An agency blog's price list; prices are out for minors. Banned. | C |
+| UGC USD 150-212 per clip (Influee) | US prices. Banned. | X |
+| "AI speeds production up to 66%"; "86% of creators use AI" (Forbes) | No traceable source for 66%; 86% is global and unchecked. Banned. | C |
+| JobsDB 451 openings / "1,500+ openings" | Old keyword snapshot and the deck's own estimate. Banned. | C |
+| Zbing z. 15 million subscribers, Farose 800k+ | Undated snapshots; real people's follower counts change. Banned. | C |
+| "One Moo Deng clip topped 20 million views" | Seen only in a search summary, not in the AP text we read. Banned. | X |
+| Mar 2026: a man got into Moo Deng's enclosure | PPTV (2026-03-18) does not confirm he did it to film. Not used; banned as a clip-for-views story. | X |
+
+## Safety and tone
+
+- Students are minors. The work game teaches: cut a stranger's face from a clip; never answer a stranger asking for your school or phone number, and tell an adult you trust. Tonight: film objects, hands or places; ask anyone before filming them; no school name, name tag, house number or location; no need to post; talk to a parent before posting one day.
+- No promise of fame or money (banned patterns). The dream's honest card says fame rises and falls; the ending's "may not suit you if" names redoing clips, numbers that say a clip flopped, and harsh comments.
+- No tool sign-up: tonight uses the phone's camera and photo app only.
+
+## Not verified, or open
+
+- The 800 to 4,000 visitor figures come only from AP (the zoo's counts); no Thai outlet repeats the baseline.
+- TikTok Awards edition: Thai PBS says "TikTok Awards" with no country.
+- The birthday article's exact publication date.
