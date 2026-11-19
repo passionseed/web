@@ -400,7 +400,7 @@ review**; it lives in `components/shift/island/copy.ts` and must pass
 
 1. **Top bar** (56px, sticky): เกาะ SHIFT, the project name, a small avatar.
 2. **Season strip** (48px, only when `island.season` is set): "{season name} · Demo Day {d MMM} · อีก {n} วัน" and a 7-cell pixel meter of `stage_at_cutoff`, with a small flag at `table_bar` and `stage_bar`. Tap opens a sheet: โต๊ะโชว์งานเมื่อนับได้ {table_bar} ขั้น / ขึ้นเวทีเมื่อนับได้ {stage_bar} ขั้น / เป้าหมายของทั้งเกาะ {count}/{target} / ของปลดล็อก (list). No ranking, no names.
-3. **Island viewport** (about 45svh): the PNG at 2x (`image-rendering: pixelated`), horizontally pannable, scrolled so the student's plot is centred. Transparent button hotspots at least 48px: own plot aria-label "แปลงของคุณ #{n}, {stage name}"; others "แปลง #{n}"; a named plot adds ", {name}". In the close view a named plot also gets a sign under its number tag: the project name in DOM text (one line, ends in "…"), only when the database returned the name, so never more than the sheet shows and never a student's name. Tapping another plot opens a small sheet with only what the database returned: แปลง #{n}, stage name unless plain, ป้าย: {name} when named. Never a member, a profile or a contact path. Toggle "ดูทั้งเกาะ" fits to width.
+3. **Island viewport** (about 45svh): the PNG at 2x (`image-rendering: pixelated`), horizontally pannable, scrolled so the student's plot is centred. Transparent button hotspots at least 48px: own plot aria-label "แปลงของคุณ #{n}, {stage name}"; others "แปลง #{n}"; a named plot adds ", {name}". In the close view a named plot also gets a sign under its number tag: the project name in DOM text (one line, ends in "…"), only when the database returned the name, so never more than the sheet shows and never a student's name. The living island (web only; the PNG and the bot keep their tags) stands a small wooden signpost in front of each plot instead of the tag, the number painted cream on a dark plank (`lib/shift-island/live/signposts.ts`), and the name hangs from it on two ropes as a small board in the same wood under the hour's light (still DOM text, pinned to the post). Tapping another plot opens a small sheet with only what the database returned: แปลง #{n}, stage name unless plain, ป้าย: {name} when named. Never a member, a profile or a contact path. Toggle "ดูทั้งเกาะ" fits to width.
 4. **Today card** (below the keynote card): before the tap, a quiet button เช็กอินวันนี้ (min-h-12) and quiet buttons ติด and ขอพัก. After the tap (optimistic): วันนี้คุณลงมือแล้ว and a link เพิ่มโน้ตสั้นๆ (เห็นแค่คุณ, max 300). Resting: กำลังพัก ต้นไม้ไม่เหี่ยว ไม่มีอะไรหาย with button กลับมาแล้ว. No counts of days, no streaks, no heatmap.
 5. **Keynote card** (the one gold element, above the Today card): the caller's open quest that needs them most (clarification first, then active, then paused, then submitted), "ทำต่อ: {title}" and its state chip ("รอพี่เลี้ยงดู: {title}" for a submitted one). With none open, the lowest available main quest: "เริ่มที่: {title}".
 6. **Quest board**: a notice board that fits a phone, not a long scroll. A row of four lane buttons (a plain `role=group` of `aria-pressed` toggles, not tabs: เควสต์หลัก with "ผ่าน x/7", เควสต์เสริม, ของฉัน, ทั้งเกาะ) over a wooden board whose lanes the student swipes between with scroll snap, one lane per swipe. Each lane scrolls down on its own and is a 2-column grid of flat pinned cards (icon, two-line title, state stamp; 3 columns in the desktop dialog). Every lane stays in the DOM and the accessibility tree. The board opens on the keynote's lane, and the lane and route chip survive closing the sheet.
@@ -845,6 +845,92 @@ that replaces the work, no lecturing.
   and lantern, lantern glow at night (earned lanterns only), plaza lamp posts at
   night, festoon in festival, cloud shadows (`cloud_a/b` at globalAlpha 0.14),
   tags and marker (untinted), gulls.
+- **Terrain** (web only, `lib/shift-island/live/terrain.ts`): baked into the
+  land layer once per layout and hour, never per frame. Grass in two extra
+  tones with fewer repeating marks, a turf edge that steps down to the beach,
+  worn footpaths from each plot's signpost to the plaza (in the helper path's
+  earth, whose edges it softens to match), and a sparse scatter of tufts,
+  flower patches, rocks, a few low hedges and fence pieces, and pebbles, shells
+  and driftwood on the beach. Seeded by place relative to the plaza centre, so
+  it depends only on the layout (never a stage, a flag, the viewer or the day)
+  and never jumps between visits. No piece stands on a plot, its signpost or
+  name board, a tap target (with the 48px floor and a figure's slop at the
+  smallest close-up scale), a plaza piece, a lamp, a walk the plaza's people
+  take, a helper path or a footpath. A new layout is built a slice per frame
+  before the first frame, so no frame carries it all.
+- **Small life** (web only, `lib/shift-island/live/ambient.ts`), few and slow:
+  two sparrows (three on a very wide island) that each visit about every two
+  minutes, flying in from the nearer shore over their shadow, resting by three
+  tufts or flower patches in turn (standing, pecking, a hop, a turn) and
+  flying off; one to three butterflies (by day only) that rest on a flower
+  patch's bloom, fan their wings now and then and flutter to a nearby patch
+  and back; and the tufts and flower patches lean one pixel downwind as each
+  gust reaches them, with the trees, so a wave crosses the grass. Birds come
+  at dawn, by day and at dusk; nothing new at night (only the campfire's
+  smoke and the lights: no ambient fireflies, which the campfire guest
+  brings). Everything rests on the terrain's own pieces, so it keeps off
+  plots, tap targets, the plaza and its people. Pure functions of the tick;
+  only the boxes that change repaint, a piece in a shadow or a pool of light
+  stays still, and a still island (reduced motion, or too small to read)
+  shows none of it.
+- **Interact outline** (web only, founder ask 2026-11-19;
+  `lib/shift-island/live/interact.ts` and `outline.ts`): every clickable
+  thing (a plot's tree with its key flag and lantern, the notice board with
+  its notes, the stage with its countdown, the prize board, the campfire's pit
+  and flame, the merchant ship, and every person who can be tapped) can show a 1 px ring traced
+  round its silhouette in lamplight gold. Only one at a time: the one nearest
+  the middle of the room between the HUD bars on a touch screen (within 28
+  CSS px of its tap target's box, the plots' and plaza's 48px floor
+  included), or nearest the mouse pointer on a desktop (within 14 CSS px),
+  and nothing when nothing is that near, or when the pointer leaves the map.
+  On the whole island only a mouse aims. A keyboard's focus on a plot or a
+  plaza button shows the same ring, whatever the aim, in place of the
+  button's box ring. The ring is the pixels just outside the shape that
+  touch it side on, from the sprites' alpha in the atlas (a hole inside
+  stays empty), made once for every shape the picked thing can take (walk,
+  flame and sway frames) and kept. It is drawn in the thing's own layer,
+  just under it, so whatever stands in front still covers it and it never
+  paints over the thing. Without reduced motion it pulses gently, brightening
+  to a pale cream and back in quarter steps (a 3 s breath), each step on the
+  sea's beat, when the whole view repaints anyway; a still island holds it
+  halfway. Taps go where they went: the ring shows what is near, it never
+  moves a tap, and it never names one thing while a click opens another:
+  over a plot's or the plaza's button a person counts only within 2 native
+  px of themselves, as a tap does (`interact.ts` `settle`). On the whole
+  island the ring is a single device pixel, so a focused button keeps its
+  own 2px box there too.
+- **Merchant ship** (the shop, #338; `lib/shift-island/live/ship.ts`,
+  `shipWater.ts`): moored on the open water nearest the plaza, clear of every
+  tree, tag, pin, the plaza and the rowing boat, and at least 40 native px
+  above the picture's bottom edge wherever the island has such water (on a
+  phone the next-step card stands over the world's bottom, taller than its
+  96px reserve). No word floats over it: the shop's sign is painted on its
+  stern (a Passioncoin in a wooden frame), and its button's name says it is
+  the shop. It rocks a pixel every 1.1 s. Its sails are shaded (a lit luff, a
+  sand body, the belly in shade, a fold at the clew), so it sits below the
+  plaza's cream in value. On the web it sits in the water, not on it: the
+  sprite stops at its waterline, the foam laps over its last plank and the
+  water under it (three frames on the sea's beat), a deeper shadow than a
+  figure's lies under the hull leaning with the sun, and the interact ring
+  stops at the waterline. From dawn to night its lantern glows like the
+  plaza's lamps, at the lanterns' strength of the hour: the lamps' own small
+  glow round it, a pool on the open water round the stern in the plaza pools'
+  own soft steps (a warm wash with warm streaks on it and a few glints that
+  shift on the sea's beat), and the ship itself warmed round the lantern in
+  the same steps (the stall, its painted board, the hull and the main sail's
+  foot) the way the fire warms the faces round it. The bot never draws it.
+  The shop sheet shows the same ship in the water in the hour's light, on a
+  sea of the map's own looks, and each live item on its paper tag as a small
+  pixel picture of what it is (a sticker sheet, a bowl of matcha, a tee; a
+  lidded crate only for an item none of them fits), the merch as its photos.
+- **The sea's looks and the coast's steps** (web only): each cell of open
+  sea takes one of four looks of its tile (the base, and three with the wave
+  bumps moved, flattened or left out, the same in all three frames), so the
+  sea stops reading as wallpaper. Where the coast steps sideways and a shore
+  tile's sand meets the sea along its own straight side, the terrain lays the
+  shore's look along it: the water biting a pixel in, in runs, foam at the
+  edge, wet sand behind, the outside corners rounded off. Nothing is placed
+  or routed over that water and foam.
 - **Clock** (pure functions of elapsed ms, tick 125 ms): sea ping-pong 0-1-2-1
   every 3 ticks, foam every 4, boat 1 px per 2 ticks along `lanes.boatY`
   (the sprite faces left, so mirror it when sailing right; about 90 s across, wraps off-screen), 2 gulls 1 px
@@ -863,7 +949,8 @@ that replaces the work, no lecturing.
   ticks/s, at most 2 ms per redraw, init under 16 ms for the pilot island.
 - **Pauses** with zero timers when off-screen (IntersectionObserver), tab
   hidden, `paused` prop (any sheet open) or reduced motion (one still frame:
-  frame 0 sea, sway A, boat at `boatStill`, no gulls or clouds).
+  frame 0 sea, sway A, boat at `boatStill`, no gulls, clouds, birds or
+  butterflies, and the grass upright).
 - **Fallback**: the SSR `<img>` stays as first paint and is hidden only after
   the first canvas frame; any failure keeps it. Hotspots and the check-in puff
   stay above the canvas (`pointer-events: none` on the canvas).
@@ -1177,7 +1264,14 @@ on Demo Day; the server's `days_to_demo` stands until then and when
   moves. Everyday pieces stand left of the well (notice board at the back,
   campfire at the front), Demo Day's right of it (the stage under its
   countdown at the back, the prize board at the front). Offsets live in
-  `PLAZA_LAYOUT` (`lib/shift-island/live/plaza.ts`).
+  `PLAZA_LAYOUT` (`lib/shift-island/live/plaza.ts`). No words float over the
+  plaza but the small คุณ over the viewer's own figure ("dont clutter",
+  [shift-island-plaza-visitors.md](shift-island-plaza-visitors.md) decision
+  7): the notice board, the stage, the prize board and the campfire are named
+  in their buttons and a tap opens each, and a tapped person says the day's
+  count. Today's visitors stand and stroll at fixed offsets too
+  (`CROWD_LAYOUT`, `lib/shift-island/live/crowd.ts`); a tap on any of them is
+  tested against where the living island drew them on its last frame.
 - **Countdown** over the stage: a pixel marquee as wide as the stage (44x20,
   eight lights) reading "D-17" in the plot tags' digits drawn 2x, "D-DAY" on
   the day, blank after it (`countdownGlyphs`). Lights and glyphs stay lit at
@@ -1215,8 +1309,9 @@ on Demo Day; the server's `days_to_demo` stands until then and when
 
 - A campfire (pit 14x10, flame 3 frames) on the plaza's front left. One sitting
   figure (4 variants, 2 frames) per person in the SHIFT coworking voice
-  channel, seats filled in a fixed order, at most 8. Above the fire a DOM
-  label "3 คนกำลังทำงานอยู่" with the room's whole count (no "+N"). Zero people: an unlit pit, no label.
+  channel, seats filled in a fixed order, at most 8. No words over the fire
+  (2026-11-18, "dont clutter"): the room's whole count (no "+N") is in the
+  campfire's button name and at the top of its sheet ("3 คนกำลังทำงานอยู่").
   Channel unset or campfire data missing: nothing at all.
 - Tap: the campfire sheet, title "ห้อง coworking", body "ทำงานไปด้วยกันในห้องเสียงของ
   SHIFT", the names as Discord shows them in the server, a button "เข้าห้อง"

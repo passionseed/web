@@ -7,11 +7,16 @@ import { ISLAND_MERCH, merchArtwork } from "@/lib/content/shift-island-merch";
 import { MERCH_PRICES_DRAFT } from "@/lib/content/shift-island-economy";
 import type { MyRedemption, ShopItem, WalletDetail } from "@/lib/supabase/shift-quests/playerTypes";
 
+import { PixelIcon } from "@/components/shift/poster/pixel/PixelRects";
+
 import { thaiShortDate } from "../copy";
 import island from "../island.module.css";
+import { PALETTE, WEB_SPRITES } from "../sprites";
 import { coinNumber, SHOP } from "./copy";
-import styles from "./player.module.css";
 import { MerchArtwork } from "./MerchArtwork";
+import { SHOP_ICONS, shopIcon } from "./shopIcons";
+import styles from "./player.module.css";
+import shopStyles from "./shop.module.css";
 
 /** A fresh idempotency key for one confirm step (a v4 UUID, as redeemItem expects). */
 export function newRequestKey(): string {
@@ -85,8 +90,43 @@ interface ShopListProps {
   onChanged: () => void;
 }
 
+type CrateState = "out" | "locked" | "ready";
+
+/** How a live item's crate reads: sold out, waiting on something, or ready to redeem. */
+function crateState(item: ShopItem, reason: string | null): CrateState {
+  if (!item.inStock) return "out";
+  if (reason) return "locked";
+  return "ready";
+}
+
+function Coin() {
+  return <PixelIcon grid={WEB_SPRITES.coin} palette={PALETTE} scale={1} className={shopStyles.coin} />;
+}
+
+/** A crate's price: the coin, then the amount as its own text. */
+function Price({ cost }: { cost: number }) {
+  return (
+    <p className={shopStyles.price}>
+      <Coin />
+      <span>{SHOP.cost(coinNumber(cost))}</span>
+    </p>
+  );
+}
+
+/** How far the balance has come towards a price, for the eye only (the lock line says it in words). */
+function Meter({ balance, cost }: { balance: number; cost: number }) {
+  const share = cost > 0 ? Math.min(1, Math.max(0, balance / cost)) : 1;
+  return (
+    <span className={shopStyles.meter} aria-hidden="true">
+      <span className={shopStyles.meterFill} style={{ width: `${Math.round(share * 100)}%` }} />
+    </span>
+  );
+}
+
 /**
- * The island shop: each item with its price and, when it cannot be redeemed
+ * The shop on the merchant ship: one crate per item on a shelf, live catalog
+ * items first, then the merch still on its way (preview prices, nothing to
+ * redeem). Each live item shows its price and, when it cannot be redeemed
  * yet, the reason (consent, tree stage, community quest, stock, coins). A
  * confirm step names the item and the cost; its idempotency key is made when
  * the step opens, so a double tap or a retry is one request. Every refusal
@@ -102,6 +142,7 @@ export function ShopList({ wallet, onChanged }: ShopListProps) {
   const previews = ISLAND_MERCH.filter(
     (product) => !shop.live || !shop.items.some((item) => merchArtwork(item.name)?.key === product.key),
   ).sort((a, b) => MERCH_PRICES_DRAFT[a.key] - MERCH_PRICES_DRAFT[b.key]);
+  const items = shop.live ? shop.items : [];
   const confirmYes = useRef<HTMLButtonElement>(null);
   const redeemButtons = useRef(new Map<string, HTMLButtonElement>());
   /** The item whose "แลก" gets focus back after "ยังไม่แลก". */
@@ -148,28 +189,7 @@ export function ShopList({ wallet, onChanged }: ShopListProps) {
   }
 
   return (
-    <section className={styles.section} aria-label={SHOP.heading}>
-      <h3 className={island.detailHeading}>{SHOP.heading}</h3>
-      {previews.length > 0 ? <p className={island.hint}>{SHOP.previewPrices}</p> : null}
-      {previews.length > 0 ? (
-        <ul className={styles.merchPreviews}>
-          {previews.map((product) => (
-            <li key={product.key} className={styles.merchPreview}>
-              <MerchArtwork src={product.image} portrait={product.key === "stickers"} />
-              <div className={styles.merchCaption}>
-                <div>
-                  <p className={styles.itemName}>{SHOP.merch[product.key]}</p>
-                  <p className={styles.itemText}>{product.catalogName}</p>
-                </div>
-                <div className={styles.merchOffer}>
-                  <span className={styles.amount}>{SHOP.cost(coinNumber(MERCH_PRICES_DRAFT[product.key]))}</span>
-                  <span className={styles.merchStatus}>{SHOP.comingSoon}</span>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      ) : null}
+    <section className={shopStyles.shop} aria-label={SHOP.heading}>
       {message ? (
         <p className={styles.message} data-tone={message.tone} role={message.tone === "error" ? "alert" : "status"}>
           {message.text}
@@ -177,101 +197,133 @@ export function ShopList({ wallet, onChanged }: ShopListProps) {
       ) : null}
       {!shop.live ? (
         <p className={island.hint}>{SHOP.closed}</p>
-      ) : shop.items.length === 0 && previews.length === 0 ? (
+      ) : items.length === 0 && previews.length === 0 ? (
         <p className={island.hint}>{SHOP.empty}</p>
-      ) : shop.items.length > 0 ? (
-        <ul className={styles.list}>
-          {shop.items.map((item) => {
+      ) : null}
+      {items.length + previews.length > 0 ? (
+        <ul className={shopStyles.shelf}>
+          {items.map((item) => {
             const artwork = merchArtwork(item.name);
+            // An item without its own photo: a small picture of what it is (a crate only when nothing fits).
+            const icon = artwork ? null : shopIcon(item.name);
             const reason = lockReason(item, balance);
             const reasonId = `shop-lock-${item.id}`;
             const open = confirm?.itemId === item.id;
             const needs = requirements(item, wallet);
+            const showMeter = !item.lock && item.inStock && balance < item.cost;
+            const state = crateState(item, reason);
             return (
-              <li key={item.id} className={styles.item}>
-                {artwork ? <MerchArtwork src={artwork.image} portrait={artwork.key === "stickers"} /> : null}
-                <div className={styles.itemHead}>
-                  <p className={styles.itemName}>{item.name}</p>
-                  <span className={styles.amount}>{SHOP.cost(coinNumber(item.cost))}</span>
+              <li key={item.id} className={`${shopStyles.board} ${shopStyles.crate}`} data-state={state} data-open={open ? "true" : undefined}>
+                <div className={shopStyles.crateArt} data-icon={icon ?? undefined}>
+                  {artwork ? (
+                    <MerchArtwork src={artwork.image} portrait={artwork.key === "stickers"} className={shopStyles.crateImage} />
+                  ) : (
+                    <PixelIcon grid={[...SHOP_ICONS[icon ?? "crate"]]} palette={PALETTE} scale={4} className={shopStyles.crateIcon} />
+                  )}
                 </div>
-                {item.description ? <p className={styles.itemText}>{item.description}</p> : null}
-                {reason ? (
-                  <p id={reasonId} className={styles.lock}>
-                    {reason}
-                  </p>
-                ) : null}
-                {/* A gated item shows its whole path at once, not only the first gate left. */}
-                {item.lock && item.inStock ? (
-                  <ul className={styles.needs} aria-label={SHOP.needsLabel}>
-                    {needs.map((need) => (
-                      <li key={need.key} className={styles.need} data-met={need.met ? "true" : undefined}>
-                        <span className={styles.needMark} aria-hidden="true" />
-                        <span>{need.text}</span>
-                        <span className="sr-only">{need.met ? SHOP.met : SHOP.notYet}</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-                {open && confirm ? (
-                  <div className={styles.confirm}>
-                    <p>{SHOP.confirm(item.name, coinNumber(item.cost))}</p>
-                    <div className={styles.buttons}>
-                      <button
-                        ref={confirmYes}
-                        type="button"
-                        className={`ei-button-dawn ${island.primary}`}
-                        disabled={busy}
-                        onClick={() => redeem(item, confirm.key)}
-                      >
-                        <span>{busy ? SHOP.redeeming : SHOP.confirmYes}</span>
-                      </button>
-                      <button
-                        type="button"
-                        className={island.quietButton}
-                        disabled={busy}
-                        onClick={() => {
-                          setConfirm(null);
-                          setRefocus(item.id);
-                        }}
-                      >
-                        {SHOP.confirmNo}
-                      </button>
+                <div className={shopStyles.crateInfo}>
+                  <p className={shopStyles.crateName}>{item.name}</p>
+                  <Price cost={item.cost} />
+                  {state === "ready" ? <span className={shopStyles.stamp} data-tone="ready">{SHOP.ready}</span> : null}
+                </div>
+                <div className={shopStyles.crateMore}>
+                  {item.description ? <p className={shopStyles.crateText}>{item.description}</p> : null}
+                  {reason ? (
+                    <p id={reasonId} className={shopStyles.lock}>
+                      {reason}
+                    </p>
+                  ) : null}
+                  {showMeter ? <Meter balance={balance} cost={item.cost} /> : null}
+                  {/* A gated item shows its whole path at once, not only the first gate left. */}
+                  {item.lock && item.inStock ? (
+                    <ul className={styles.needs} aria-label={SHOP.needsLabel}>
+                      {needs.map((need) => (
+                        <li key={need.key} className={styles.need} data-met={need.met ? "true" : undefined}>
+                          <span className={styles.needMark} aria-hidden="true" />
+                          <span>{need.text}</span>
+                          <span className="sr-only">{need.met ? SHOP.met : SHOP.notYet}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  {open && confirm ? (
+                    <div className={styles.confirm}>
+                      <p>{SHOP.confirm(item.name, coinNumber(item.cost))}</p>
+                      <div className={styles.buttons}>
+                        <button
+                          ref={confirmYes}
+                          type="button"
+                          className={`ei-button-dawn ${island.primary}`}
+                          disabled={busy}
+                          onClick={() => redeem(item, confirm.key)}
+                        >
+                          <span>{busy ? SHOP.redeeming : SHOP.confirmYes}</span>
+                        </button>
+                        <button
+                          type="button"
+                          className={island.quietButton}
+                          disabled={busy}
+                          onClick={() => {
+                            setConfirm(null);
+                            setRefocus(item.id);
+                          }}
+                        >
+                          {SHOP.confirmNo}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <button
-                    ref={(node) => {
-                      if (node) redeemButtons.current.set(item.id, node);
-                      else redeemButtons.current.delete(item.id);
-                    }}
-                    type="button"
-                    className={island.quietButton}
-                    disabled={!!reason || busy}
-                    aria-label={SHOP.redeemLabel(item.name)}
-                    aria-describedby={reason ? reasonId : undefined}
-                    onClick={() => {
-                      setMessage(null);
-                      setConfirm({ itemId: item.id, key: newRequestKey() });
-                    }}
-                  >
-                    {SHOP.redeem}
-                  </button>
-                )}
+                  ) : (
+                    <button
+                      ref={(node) => {
+                        if (node) redeemButtons.current.set(item.id, node);
+                        else redeemButtons.current.delete(item.id);
+                      }}
+                      type="button"
+                      className={reason ? island.quietButton : `ei-button-dawn ${island.primary}`}
+                      disabled={!!reason || busy}
+                      aria-label={SHOP.redeemLabel(item.name)}
+                      aria-describedby={reason ? reasonId : undefined}
+                      onClick={() => {
+                        setMessage(null);
+                        setConfirm({ itemId: item.id, key: newRequestKey() });
+                      }}
+                    >
+                      <span>{SHOP.redeem}</span>
+                    </button>
+                  )}
+                </div>
               </li>
             );
           })}
+          {previews.map((product) => (
+            <li key={product.key} className={`${shopStyles.board} ${shopStyles.crate}`} data-state="soon">
+              <div className={shopStyles.crateArt}>
+                <MerchArtwork src={product.image} portrait={product.key === "stickers"} className={shopStyles.crateImage} />
+              </div>
+              <div className={shopStyles.crateInfo}>
+                <p className={shopStyles.crateName}>{SHOP.merch[product.key]}</p>
+                <p className={shopStyles.crateSub}>{product.catalogName}</p>
+                <Price cost={MERCH_PRICES_DRAFT[product.key]} />
+                <span className={shopStyles.stamp} data-tone="soon">{SHOP.comingSoon}</span>
+              </div>
+            </li>
+          ))}
         </ul>
       ) : null}
+      {previews.length > 0 ? <p className={island.hint}>{SHOP.previewPrices}</p> : null}
       {shop.mine.length > 0 ? (
-        <div className={styles.section}>
+        <div className={`${shopStyles.board} ${shopStyles.manifest}`}>
           <h4 className={island.detailHeading}>{SHOP.mineHeading}</h4>
           <ul className={styles.list}>
             {shop.mine.map((redemption) => (
-              <li key={redemption.id} className={styles.row}>
+              <li key={redemption.id} className={shopStyles.order}>
                 <span className={styles.rowText}>
                   <span>{redemption.item}</span>
                   <span className={styles.rowSub}>
-                    {SHOP.status[redemption.status]} · {thaiShortDate(redemption.at)} · {SHOP.cost(coinNumber(redemption.cost))}
+                    <span className={shopStyles.orderStatus} data-status={redemption.status}>
+                      {SHOP.status[redemption.status]}
+                    </span>{" "}
+                    {thaiShortDate(redemption.at)} · {SHOP.cost(coinNumber(redemption.cost))}
                   </span>
                 </span>
                 {redemption.cancellable ? (
@@ -290,7 +342,12 @@ export function ShopList({ wallet, onChanged }: ShopListProps) {
           </ul>
         </div>
       ) : null}
-      {shop.live && shop.terms ? <p className={styles.terms}>{shop.terms}</p> : null}
+      {shop.live && shop.terms ? (
+        <details className={shopStyles.terms}>
+          <summary className={island.linkButton}>{SHOP.termsHeading}</summary>
+          <p className={styles.terms}>{shop.terms}</p>
+        </details>
+      ) : null}
     </section>
   );
 }

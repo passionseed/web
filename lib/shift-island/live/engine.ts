@@ -13,16 +13,62 @@
  * - zero timers while off-screen, in a hidden tab, paused (a sheet is open),
  *   still, or under prefers-reduced-motion (then one still frame is drawn).
  *
+ * People idle (people.ts): whoever stands or sits breathes and now and then
+ * blinks, each new frame inside its own sprite's box, so a quiet island
+ * repaints a few small rects a second for them (about 18 x 22 native px each,
+ * with the shadow's margin). A new frame that draws the same sprite in the
+ * same place repaints nothing (draw.ts dirtyRects), so standing between
+ * breaths costs nothing. Reduced motion and a still island draw everyone
+ * plain and repaint nothing for them.
+ *
+ * The island's small life (ambient.ts, through fx.ts) by day: a sparrow or
+ * two and a few butterflies repaint only their own boxes (a bird high over
+ * its shadow repaints the two apart) on the ticks they move, and a gust
+ * repaints each tuft or flower patch it bends, a few px each, as it crosses.
+ * Their state is worked out once per tick. None of it at night, on a still
+ * or tiny island or under reduced motion.
+ *
+ * The interact outline (outline.ts): the one clickable thing nearest the
+ * player's aim, or the hotspot a keyboard focused, gets a 1 px ring round its
+ * silhouette. The rings are made from the atlas's alpha when a thing is
+ * picked (every shape it can take, once) and kept; a tick only works out
+ * which thing is nearest (the things that never move are searched once per
+ * aim, the walkers whose path comes near it on each tick) and repaints the
+ * old and new rings' boxes when the pick changes. A walker, the fire's flame
+ * or a swaying tree that carries its ring along repaints it in its own
+ * padded box, and the pulse steps on the sea's beat, when the whole view
+ * repaints anyway, so neither adds a repaint. An aim or focus that moves
+ * repaints the old and new rings in one frame, also on a still island
+ * (reduced motion), where the ring holds steady.
+ *
  * The clock counts running time only: after a pause the island carries on
  * where it stopped and never replays missed ticks.
  */
 import type { IslandScene } from "@/bot/src/quests/island/scene";
 
-import { allSprites, buildAtlasData, styleKey, stylesOf, type AtlasData } from "./atlas";
+import { buildAtlasData, styleKey, stylesOf, type AtlasData } from "./atlas";
+import { webSeaRects, webSprites } from "./atmosphere";
 import { TICK_MS, motionAt, nextTickAt, type Motion } from "./clock";
-import { dirtyRects, paintLand, paintOverlay, redrawRect, sceneModel, seaRectsFor, type DrawContext, type Layers, type SceneModel } from "./draw";
+import {
+  actorRect,
+  dirtyRects,
+  paintLand,
+  paintMarker,
+  redrawRect,
+  sceneModel,
+  seaRectsFor,
+  type DrawContext,
+  type Layers,
+  type SceneModel,
+} from "./draw";
+import { IslandFx, type FxMotion } from "./fx";
 import { area, exposed, intersect, visibleRect, type Rect } from "./geometry";
-import { bangkokPhase, waterColor } from "./lighting";
+import { gradeRgb, gradedWater } from "./grade";
+import type { Aim, InteractTarget } from "./interact";
+import { bangkokPhase } from "./lighting";
+import { OutlineLayer, ringDirty, ringTickDirty, withRing, type Ring } from "./outline";
+import { livelyActors, partnerSprite } from "./people";
+import { paintSignposts, signposts, wholeUnit, type Signpost } from "./signposts";
 import type { LightPhase, LiveActor } from "./types";
 
 export interface LiveIslandProps {
@@ -42,6 +88,17 @@ export interface LiveIslandProps {
   fit: boolean;
   /** The element that scrolls the picture, to repaint only what is on screen; null repaints the whole canvas. */
   scroller: HTMLElement | null;
+  /**
+   * The slots whose sign shows a name: their signpost carries the ropes its
+   * board hangs from (the board itself is DOM, PlotSigns). Close view only;
+   * absent is none.
+   */
+  signs?: readonly number[];
+  /**
+   * The clickable things the interact outline can pick (interact.ts), their
+   * actor indexes pointing into `actors`. Absent or empty: no outline.
+   */
+  targets?: readonly InteractTarget[];
 }
 
 export interface LiveIslandEvents {
@@ -55,6 +112,10 @@ export interface LiveIslandEvents {
 const PHASE_CHECK_MS = 60_000;
 /** Native px added around the visible part, so rounding never leaves a seam. */
 const VIEW_MARGIN = 2;
+/** No actor boxes yet (nothing drawn), one shared value. */
+const NO_BOXES: readonly (Rect | null)[] = [];
+/** Native px added round each dirty rect: a figure's contact shadow reaches just past its sprite. */
+const SHADOW_PAD = 4;
 
 type Img = CanvasImageSource;
 type Ctx = CanvasRenderingContext2D;
@@ -74,6 +135,8 @@ function context(c: HTMLCanvasElement, alpha = true): Ctx {
 }
 
 const actorsKey = (actors: readonly LiveActor[]) => JSON.stringify(actors);
+const signsKey = (signs: readonly number[] | undefined) => (signs ?? []).join(",");
+const cropKey = (crop: Rect | null) => JSON.stringify(crop);
 
 /**
  * The tick each new actor appeared on: an actor equal to one already shown
@@ -125,14 +188,39 @@ export class LiveIsland {
   private reduced = false;
   private stillShown = false;
   private view: Rect | null = null;
-  private drawn: Motion | null = null;
+  /** The crop the layers were last built for (cropKey). */
+  private builtCrop = "";
+  private drawn: FxMotion | null = null;
+  /** The atmosphere: water light, shadows, lamplight, glints and the breeze (web only). */
+  private readonly fx = new IslandFx({ canvas: newCanvas, context: (c) => context(c) });
   private lastTick = -1;
   private lowDetail = false;
   private nextPhaseCheck = 0;
   private swaying: boolean[] = [];
   private actorsKey: string;
+  /**
+   * The actors as drawn: props.actors with the people's idle loops
+   * (people.ts livelyActors), index for index, so a tap's index and a box
+   * still name the same actor.
+   */
+  private cast: readonly LiveActor[];
+  /** The actor boxes last read (actorBoxes), with the frame, actors and atlas they were read from. */
+  private boxes: { at: Motion | number; actors: readonly LiveActor[]; rects: Layers<Img>["rects"]; list: readonly (Rect | null)[] } | null = null;
   /** Per actor, the tick it appeared on: a `once` actor (an arrival) plays from there. */
   private actorsSince: number[];
+  /** The interact outline: which thing is picked, and its rings (made from the atlas's alpha, kept). */
+  private readonly outline = new OutlineLayer<HTMLCanvasElement>((words, w, h) => {
+    const c = newCanvas(w, h);
+    // Once per shape of a newly picked thing, never per frame.
+    context(c).putImageData(new ImageData(new Uint8ClampedArray(words.buffer, words.byteOffset, words.byteLength), w, h), 0, 0);
+    return c;
+  });
+  /** The ring on the canvas now (null: none). */
+  private ring: Ring<HTMLCanvasElement> | null = null;
+  /** The atlas the layers were built with: its alpha is what the rings trace. */
+  private atlasData: AtlasData | null = null;
+  /** A ring repaint request after the aim or the focus moved. */
+  private ringRaf = 0;
   private readonly cleanup: (() => void)[] = [];
   private scrollerCleanup: (() => void) | null = null;
 
@@ -143,7 +231,9 @@ export class LiveIsland {
   ) {
     this.props = props;
     this.actorsKey = actorsKey(props.actors);
+    this.cast = livelyActors(props.actors);
     this.actorsSince = props.actors.map(() => 0);
+    this.outline.targets = props.targets ?? [];
     let ctx: Ctx | null = null;
     try {
       ctx = canvas.getContext("2d", { alpha: false });
@@ -169,9 +259,14 @@ export class LiveIsland {
       const key = actorsKey(next.actors);
       const actorsChanged = key !== this.actorsKey;
       this.actorsKey = key;
-      if (actorsChanged) this.actorsSince = sinceFor(prev.actors, this.actorsSince, next.actors, this.currentTick());
+      if (actorsChanged) {
+        this.actorsSince = sinceFor(prev.actors, this.actorsSince, next.actors, this.currentTick());
+        this.cast = livelyActors(next.actors);
+      }
+      const targetsChanged = next.targets !== prev.targets;
+      if (targetsChanged) this.outline.targets = next.targets ?? [];
       if (!this.ready) return;
-      const cropChanged = JSON.stringify(next.crop) !== JSON.stringify(prev.crop);
+      const cropChanged = cropKey(next.crop) !== cropKey(prev.crop);
       // A refreshed page sends an equal scene as a new object: only a real change rebuilds.
       const sceneChanged = next.scene !== prev.scene && JSON.stringify(next.scene) !== JSON.stringify(prev.scene);
       let repaint = false;
@@ -180,13 +275,67 @@ export class LiveIsland {
         repaint = true;
       }
       if (next.phase !== prev.phase) this.checkPhase();
+      // The fire, the countdown board and the goal's bulbs light the ground round them; the
+      // signposts follow the view (bigger on the whole island) and the names hung on them.
+      const postsChanged = next.fit !== prev.fit || signsKey(next.signs) !== signsKey(prev.signs);
+      if ((actorsChanged || postsChanged) && !sceneChanged && !cropChanged) {
+        this.buildLand();
+        repaint = true;
+      }
       if (actorsChanged || next.ambient !== prev.ambient || next.fit !== prev.fit) {
         this.measure();
         repaint = true;
       }
       if (repaint) this.paintAll();
+      else if (targetsChanged) this.reRing();
       this.sync();
     });
+  }
+
+  /**
+   * Where the player is aiming, native px (the middle of the visible map, or
+   * the mouse pointer), with how far from a thing still counts as near; null
+   * when nowhere (a mouse off the map). The ring follows in the next frame.
+   */
+  aim(aim: Aim | null): void {
+    const was = this.outline.aim;
+    if (was === aim || (was && aim && was.x === aim.x && was.y === aim.y && was.reach === aim.reach)) return;
+    this.outline.aim = aim;
+    this.reRing();
+  }
+
+  /** The hotspot a keyboard has focused (interact.ts plotKey or spotKey), or null: it shows the ring whatever the aim. */
+  focus(key: string | null): void {
+    if (this.outline.focused === key) return;
+    this.outline.focused = key;
+    this.reRing();
+  }
+
+  /**
+   * Where each actor stands on screen now, native px: the frame last painted,
+   * so a tap meets what the eye sees. Null for an actor not drawn; empty
+   * before the first frame and after a failure. A read, never a repaint.
+   * The same array comes back until another frame is painted or the actors
+   * change, so a reader polling every frame (a bubble following a walker)
+   * allocates nothing and can tell that nobody moved.
+   *
+   * `actors` is the list the caller's indexes point into. React hands the
+   * engine a new list only after the caller's layout effects have run; until
+   * then the answer is null (ask again next frame), never the boxes of
+   * whoever stood at that index before.
+   */
+  actorBoxes(actors?: readonly LiveActor[]): readonly (Rect | null)[] | null {
+    if (actors && actors !== this.props.actors) return null;
+    const layers = this.layers;
+    if (!this.ready || this.failed || this.destroyed || !this.model || !layers) return NO_BOXES;
+    // The frame on the canvas, or (before the loop's first frame) the tick it is about to paint.
+    const at = this.drawn ?? this.currentTick();
+    const kept = this.boxes;
+    if (kept && kept.at === at && kept.actors === this.props.actors && kept.rects === layers.rects) return kept.list;
+    const motion = typeof at === "number" ? this.motion(at) : at;
+    const list = this.cast.map((actor, i) => actorRect(actor, motion.actors[i] ?? 0, layers.rects));
+    this.boxes = { at, actors: this.props.actors, rects: layers.rects, list };
+    return list;
   }
 
   destroy(): void {
@@ -276,20 +425,37 @@ export class LiveIsland {
     this.scrollerCleanup = () => scroller.removeEventListener("scroll", onScroll);
   }
 
-  /** First build: atlas and layers in one animation frame, the first frame in the next (each well under 16 ms). */
+  /**
+   * First build: atlas and layers in one animation frame; then the heavy
+   * part (the shallows' distance field, the terrain) a slice per frame; then
+   * the bake and the first frame. Each frame stays short; the picture under
+   * the canvas shows until the first frame is drawn.
+   */
   private init(): void {
     this.initRaf = 0;
     this.phase = this.wantedPhase();
     this.nextPhaseCheck = performance.now() + PHASE_CHECK_MS;
+    this.fx.defer = true;
     this.prepareScene();
+    this.fx.defer = false;
     const first = () =>
       this.guard(() => {
         this.initRaf = 0;
+        const model = this.model;
+        if (model && this.fx.pending && this.fx.prepare(model, this.phase)) {
+          this.initRaf = requestAnimationFrame(first);
+          return;
+        }
+        // A scene or crop that really changed while it built (update() waits for ready) is built now, at once.
+        const scene = this.props.scene;
+        const moved = !model || (scene !== model.scene && JSON.stringify(scene) !== JSON.stringify(model.scene));
+        if (moved || cropKey(this.props.crop) !== this.builtCrop) this.prepareScene();
+        else if (this.fx.pending) this.buildLand();
         this.paintAll();
         this.stillShown = this.isStill();
         this.ready = true;
         this.events.onReady?.();
-        this.events.onPhase?.(this.phase, waterColor(this.phase));
+        this.events.onPhase?.(this.phase, gradedWater(this.phase));
         this.sync();
       });
     this.initRaf = requestAnimationFrame(first);
@@ -383,8 +549,10 @@ export class LiveIsland {
     this.clearPhaseTimer();
     if (this.initRaf) cancelAnimationFrame(this.initRaf);
     if (this.eventRaf) cancelAnimationFrame(this.eventRaf);
+    if (this.ringRaf) cancelAnimationFrame(this.ringRaf);
     this.initRaf = 0;
     this.eventRaf = 0;
+    this.ringRaf = 0;
   }
 
   private elapsed(now: number): number {
@@ -434,7 +602,7 @@ export class LiveIsland {
     this.phase = phase;
     this.buildLand();
     this.paintAll();
-    this.events.onPhase?.(phase, waterColor(phase));
+    this.events.onPhase?.(phase, gradedWater(phase));
   }
 
   // ------------------------------------------------------------- layers
@@ -445,7 +613,8 @@ export class LiveIsland {
     const cacheKey = `${phase}|${styles.map(styleKey).sort().join(";")}`;
     let entry = sharedAtlases.get(cacheKey);
     if (!entry) {
-      const data = buildAtlasData(phase, allSprites(), styles);
+      // The web's own sprite set (the breeze, no dotted lantern ring) in the web's grade of the hour.
+      const data = buildAtlasData(phase, webSprites(), styles, gradeRgb);
       const image = newCanvas(data.width, data.height);
       // Once per phase, never in the loop.
       context(image).putImageData(new ImageData(new Uint8ClampedArray(data.data), data.width, data.height), 0, 0);
@@ -460,15 +629,11 @@ export class LiveIsland {
   private prepareScene(): void {
     const { scene } = this.props;
     this.model = sceneModel(scene);
+    this.builtCrop = cropKey(this.props.crop);
     this.swaying = this.model.trees.map((t) => t.b != null);
     const frame = this.frameRect();
     if (this.canvas.width !== frame.w) this.canvas.width = frame.w;
     if (this.canvas.height !== frame.h) this.canvas.height = frame.h;
-    const atlas = this.atlas(this.phase);
-    this.overlayCanvas = this.sized(this.overlayCanvas, scene.width, scene.height);
-    const overlay = context(this.overlayCanvas);
-    overlay.clearRect(0, 0, scene.width, scene.height);
-    paintOverlay(overlay as DrawContext<Img>, this.model, atlas.image, atlas.data.rects);
     this.buildLand();
     this.measure();
   }
@@ -480,19 +645,39 @@ export class LiveIsland {
     return c;
   }
 
+  /**
+   * Each plot's signpost: sprite-sized close up, bigger on the whole island
+   * (wholeUnit: about as big as the bot's tags, so the numbers still read),
+   * with the ropes for a name's board only close up, where the names show.
+   */
+  private posts(model: SceneModel): Signpost[] {
+    const fit = this.props.fit;
+    return signposts(model.scene, { unit: fit ? wholeUnit(model.scene) : 1, hung: fit ? [] : this.props.signs });
+  }
+
   private buildLand(): void {
     const model = this.model;
     if (!model) return;
     const atlas = this.atlas(this.phase);
+    this.atlasData = atlas.data;
+    const posts = this.posts(model);
     this.landCanvas = this.sized(this.landCanvas, model.scene.width, model.scene.height);
     const land = context(this.landCanvas);
     land.clearRect(0, 0, model.scene.width, model.scene.height);
     paintLand(land as DrawContext<Img>, model, atlas.image, atlas.data.rects);
+    this.fx.bakeLand(land, model, this.phase, this.cast, atlas.image, atlas.data.rects, posts);
+    // The signposts and the pin, in front of the trees and behind the plaza's people.
+    this.overlayCanvas = this.sized(this.overlayCanvas, model.scene.width, model.scene.height);
+    const overlay = context(this.overlayCanvas);
+    overlay.clearRect(0, 0, model.scene.width, model.scene.height);
+    paintSignposts(overlay as DrawContext<Img>, posts, atlas.image, atlas.data.rects);
+    paintMarker(overlay as DrawContext<Img>, model, atlas.image, atlas.data.rects);
     this.layers = {
       atlas: atlas.image,
       rects: atlas.data.rects,
       flipped: atlas.data.flipped,
-      seaRects: seaRectsFor(atlas.data.rects),
+      // The open sea's extra looks after each tile's own frames (atmosphere.ts SEA_LOOKS), as fx.ts's seaFrame asks for them.
+      seaRects: webSeaRects(seaRectsFor(atlas.data.rects), atlas.data.rects),
       land: this.landCanvas,
       overlay: this.overlayCanvas ?? this.landCanvas,
     };
@@ -533,19 +718,20 @@ export class LiveIsland {
     return { x, w: Math.max(this.props.scene.width, frame.x + frame.w) - x };
   }
 
-  private motion(tick: number): Motion {
+  private motion(tick: number): FxMotion {
     const model = this.model!;
-    return motionAt(tick, {
+    const motion: Motion = motionAt(tick, {
       span: this.span(),
       scene: model.scene,
       swaying: this.swaying,
-      actors: this.props.actors,
+      actors: this.cast,
       actorsSince: this.actorsSince,
       ambient: this.props.ambient,
       still: this.isStill(),
       lowDetail: this.lowDetail,
       night: this.phase === "night",
     });
+    return Object.assign(motion, { tick });
   }
 
   private currentTick(): number {
@@ -553,7 +739,12 @@ export class LiveIsland {
     return Math.floor(this.elapsed(performance.now()) / (TICK_MS * step)) * step;
   }
 
-  private paint(rects: Rect[], motion: Motion): void {
+  /** What the atmosphere needs to know about this frame. */
+  private fxOptions() {
+    return { frozen: this.isStill() || this.lowDetail, lowDetail: this.lowDetail, span: this.span(), sparse: this.props.fit };
+  }
+
+  private paint(rects: Rect[], motion: FxMotion): void {
     const ctx = this.ctx;
     const model = this.model;
     const layers = this.layers;
@@ -561,7 +752,9 @@ export class LiveIsland {
     const frame = this.frameRect();
     ctx.setTransform(1, 0, 0, 1, -frame.x, -frame.y);
     ctx.imageSmoothingEnabled = false;
-    const state = { motion, night: this.phase === "night", actors: this.props.actors };
+    const actors = this.cast;
+    const fx = withRing(this.fx.hooks(ctx, model, layers, motion, actors, this.fxOptions()), ctx as DrawContext<Img>, this.ring);
+    const state = { motion, night: this.phase === "night", actors, fx };
     for (const r of rects) {
       const clipped = intersect(r, frame);
       if (clipped) redrawRect(ctx as DrawContext<Img>, clipped, model, layers, state);
@@ -572,12 +765,52 @@ export class LiveIsland {
   private paintAll(): void {
     if (!this.model) return;
     const motion = this.motion(this.currentTick());
+    this.ring = this.ringAt(motion);
     this.paint([this.frameRect()], motion);
     this.drawn = motion;
   }
 
+  /** The interact outline's ring on a frame (outline.ts), or null. */
+  private ringAt(motion: FxMotion): Ring<HTMLCanvasElement> | null {
+    const model = this.model;
+    const atlas = this.atlasData;
+    if (!model || !atlas || this.outline.targets.length === 0) return null;
+    const frozen = this.isStill() || this.lowDetail;
+    const tick = motion.tick;
+    return this.outline.ring({
+      model,
+      actors: this.cast,
+      motion,
+      atlas,
+      // The partner beside a tree as fx draws it: breathing and blinking, or plain when still.
+      partner: frozen ? undefined : (i) => partnerSprite(tick, model.trees[i]?.tree.slot ?? i),
+      still: frozen,
+    });
+  }
+
+  /**
+   * The aim, the focus or the targets moved: in the next frame, repaint the
+   * old ring's box and the new one's at the moment on the canvas. Also on a
+   * still island: it answers the player, it is not motion. While the loop
+   * waits for its first frame, that frame draws the ring.
+   */
+  private reRing(): void {
+    if (this.ringRaf || this.destroyed || this.failed) return;
+    this.ringRaf = requestAnimationFrame(() =>
+      this.guard(() => {
+        this.ringRaf = 0;
+        const motion = this.drawn;
+        if (!this.ready || !motion) return;
+        const next = this.ringAt(motion);
+        const rects = ringDirty(this.ring, next);
+        this.ring = next;
+        if (rects.length) this.paint(rects, motion);
+      })
+    );
+  }
+
   /** One tick: only what changed, only where it is on screen. */
-  private paintTick(motion: Motion): void {
+  private paintTick(motion: FxMotion): void {
     const model = this.model;
     const layers = this.layers;
     if (!model || !layers) return;
@@ -587,13 +820,21 @@ export class LiveIsland {
       this.drawn = motion;
       return;
     }
-    const dirty = dirtyRects(this.drawn, motion, model, layers.rects, this.props.actors);
+    const prev = this.drawn;
+    const dirty = dirtyRects(prev, motion, model, layers.rects, this.cast);
     this.drawn = motion;
-    if (dirty === "all") {
+    // The interact outline: the nearest thing may have walked in or out of reach, or the ring takes its next pulse step.
+    const wasRing = this.ring;
+    this.ring = this.ringAt(motion);
+    if (dirty === "all" || !prev) {
       this.paint([view], motion);
       return;
     }
-    const parts = dirty.map((r) => intersect(r, view)).filter((r): r is Rect => r != null);
+    // Petals on the breeze and the fire's glow, the ring; then a little room round everything for the figures' shadows.
+    const extra = this.fx.dirty(prev, motion, model.scene, layers, this.fxOptions());
+    extra.push(...ringTickDirty(wasRing, this.ring));
+    const padded = [...dirty, ...extra].map((r) => ({ x: r.x - SHADOW_PAD, y: r.y - SHADOW_PAD, w: r.w + 2 * SHADOW_PAD, h: r.h + 2 * SHADOW_PAD }));
+    const parts = padded.map((r) => intersect(r, view)).filter((r): r is Rect => r != null);
     const total = parts.reduce((sum, r) => sum + area(r), 0);
     this.paint(parts.length > 24 || total > area(view) / 2 ? [view] : parts, motion);
   }

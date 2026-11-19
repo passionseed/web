@@ -2,9 +2,9 @@
 
 import type { CSSProperties } from "react";
 
-import type { PlazaLabel, PlazaLabelId, PlazaSpotId, PlazaWorld } from "@/lib/shift-island/live/plaza";
+import { QUIET_WHILE_TALKING, type PlazaLabel, type PlazaLabelId, type PlazaSpotId, type PlazaWorld } from "@/lib/shift-island/live/plaza";
 
-import { PixelAvatar } from "../player/PixelAvatar";
+import { FIGURES } from "../copy";
 import styles from "../world.module.css";
 
 /** The plaza's tap targets as a group, apart from the plots' own (and their arrow keys). */
@@ -12,7 +12,7 @@ const PLAZA_GROUP = "ลานกลางเกาะ";
 
 export interface PlazaLayerProps {
   world: PlazaWorld;
-  /** Label text by id; a label without text is not shown. The sign's text has a "\n" between its two lines. */
+  /** Label text by id (the viewer's คุณ tag); a label without text is not shown. */
   labels: Partial<Record<PlazaLabelId, string>>;
   /** Accessible names by spot; a spot without a name has no button. */
   names: Partial<Record<PlazaSpotId, string>>;
@@ -24,39 +24,58 @@ export interface PlazaLayerProps {
   /** The whole island: exact boxes, no 48px floor, as for the plots. */
   whole: boolean;
   /**
-   * The viewer, for their picture beside the "คุณ" tag over their own figure.
-   * Only the viewer's own island passes it (IslandViewport's `me`); without
-   * it the tag shows its text alone.
+   * The people on the island can talk (FigureBubble): each call has the next
+   * one say their line. Its button waits out of sight until a keyboard
+   * focuses it.
    */
-  me?: { name: string; avatarUrl: string | null };
+  onPeople?: () => void;
+  /** The day's count in words (plazaProps): the people button's name, never drawn on the island. */
+  people?: string;
+  /** Someone's speech bubble is open (FigureBubble): the labels in QUIET_WHILE_TALKING (the viewer's คุณ tag) step out of sight. */
+  talking?: boolean;
+}
+
+/**
+ * Placed at its point in the picture. A quiet label keeps its place, only out
+ * of sight, so it comes back at once when the bubble closes, without waiting
+ * out the arrival walk again (display: none would replay its fade in).
+ */
+function labelStyle(label: PlazaLabel, quiet: boolean): CSSProperties {
+  const style: CSSProperties = { left: `${label.x}%`, top: `${label.y}%` };
+  // The viewer's tag waits for their arrival walk (CSS shows it at once under reduced motion).
+  if (label.delayMs) style.animationDelay = `${label.delayMs}ms`;
+  if (quiet) style.visibility = "hidden";
+  return style;
 }
 
 const round4 = (v: number) => Math.round(v * 10_000) / 10_000;
 
-function labelStyle(label: PlazaLabel): CSSProperties {
-  const style: CSSProperties = { left: `${label.x}%`, top: `${label.y}%` };
-  // The viewer's tag waits for their arrival walk (CSS shows it at once under reduced motion).
-  if (label.delayMs) style.animationDelay = `${label.delayMs}ms`;
-  return style;
-}
-
 /**
  * The plaza's DOM over the living island, inside the picture's box: one
- * transparent button per tap target (the notice board, the stage, the
- * campfire) and the short labels the canvas cannot draw crisply (the Demo Day
- * sign, how many people are at the campfire, today's visitors, the viewer's
- * own tag). Labels are decoration for sighted users only: each button
- * carries the same words in its name, and the visitors' line is read out once.
+ * transparent button per tap target (the notice board, the stage, the prize
+ * board, the campfire) and the only word the plaza prints: the viewer's small
+ * คุณ tag. Nothing else floats (founder, 2026-11-18, "dont clutter"): the
+ * stage's countdown board draws its days in pixels, and the notice board, the
+ * campfire's count and the day's count are a tap away. The tag is decoration
+ * for sighted users only; each button carries its place's words in its name.
+ * Where the people can talk (`onPeople`), a button out of sight until a
+ * keyboard focuses it is the keyboard's and screen reader's way to what a tap
+ * on a person says, named with the day's count. Where they cannot, the day's
+ * count is read out once while the figures show. While anyone's speech
+ * bubble is open (`talking`), the คุณ tag steps out of sight so the bubble
+ * never overlaps it, and comes back when the bubble closes.
  */
-export function PlazaLayer({ world, labels, names, onSpot, interactive, showLabels, whole, me }: PlazaLayerProps) {
+export function PlazaLayer({ world, labels, names, onSpot, interactive, showLabels, whole, onPeople, people, talking = false }: PlazaLayerProps) {
   const spots = interactive && onSpot ? world.spots.filter((spot) => names[spot.id]) : [];
+  const turn = interactive ? onPeople : undefined;
   const shown = showLabels ? world.labels.filter((label) => labels[label.id]) : [];
-  // Today's visitors have no tap target: their line is said once, for screen readers, while the figures show.
-  const visitorsLine = shown.some((label) => label.id === "visitors") ? labels.visitors : null;
+  const quiet = (label: PlazaLabel) => talking && QUIET_WHILE_TALKING.has(label.id);
+  // Nobody to greet: the day's count is said once, for screen readers, while the figures show.
+  const peopleLine = people && !turn && showLabels ? people : null;
 
   return (
     <>
-      {spots.length > 0 ? (
+      {spots.length > 0 || turn ? (
         <div role="group" aria-label={PLAZA_GROUP} className={styles.plaza}>
           {spots.map((spot) => (
             <button
@@ -75,6 +94,11 @@ export function PlazaLayer({ world, labels, names, onSpot, interactive, showLabe
               onClick={() => onSpot?.(spot.id)}
             />
           ))}
+          {turn ? (
+            <button type="button" className={styles.peopleHidden} onClick={turn}>
+              {`${people ?? FIGURES.people}, ${FIGURES.turn}`}
+            </button>
+          ) : null}
         </div>
       ) : null}
       {shown.length > 0 ? (
@@ -86,17 +110,14 @@ export function PlazaLayer({ world, labels, names, onSpot, interactive, showLabe
               data-label={label.id}
               data-anchor={label.anchor}
               data-delayed={label.delayMs ? "true" : undefined}
-              style={labelStyle(label)}
+              style={labelStyle(label, quiet(label))}
             >
-              {label.id === "me" && me ? (
-                <PixelAvatar name={me.name} url={me.avatarUrl} size={16} decorative className={styles.plazaTagAvatar} />
-              ) : null}
               {labels[label.id]}
             </span>
           ))}
         </div>
       ) : null}
-      {visitorsLine ? <p className="sr-only">{visitorsLine.replace("\n", " ")}</p> : null}
+      {peopleLine ? <p className="sr-only">{peopleLine}</p> : null}
     </>
   );
 }

@@ -97,6 +97,29 @@ export const WALLET_LABELS = {
 
 export const SHOP = {
   heading: "ร้านค้า",
+  /** The shop sheet's title; the shop is a merchant ship moored off the island. */
+  shipTitle: "เรือสินค้า",
+  /**
+   * The line under the ship in the shop sheet. It does not say where coins
+   * come from (more than reviewed work earns them): the wallet link does.
+   */
+  shipLine: "เรือแวะมาจอดที่เกาะแล้ว แลกของบนเรือได้ด้วย Passioncoin",
+  /**
+   * The ship's tap target on the map. No words float over the ship: its
+   * painted coin board is part of the sprite, so this name is how it says it is the shop.
+   * The comma is the screen reader's pause, as in WALLET's coinPill.
+   */
+  shipSpot: "เรือสินค้า, เปิดร้านค้า",
+  /** The balance on the shop's deck: the spendable balance, so the wallet's own label. */
+  balance: WALLET.balance,
+  /** The wallet's way to the shop. */
+  toShip: "ไปที่เรือสินค้า",
+  /** The shop's way back to the wallet (how coins are earned, the ledger). */
+  toWallet: "ดูว่าได้ coin จากอะไร",
+  /** A crate that can be redeemed now. */
+  ready: "แลกได้เลย",
+  /** Coins so far towards a price, under its meter. */
+  progress: (have: string, cost: string) => `มีแล้ว ${have} จาก ${cost} coin`,
   /** DRAFT: physical merch preview; price and stock are not promised. */
   comingSoon: "เร็วๆ นี้",
   /** DRAFT: display prices only, never an offer to redeem unconfirmed stock. */
@@ -132,6 +155,8 @@ export const SHOP = {
   redeeming: "กำลังแลก",
   done: (item: string) => `แลก ${item} แล้ว ทีมงานจะแจ้งขั้นตอนรับของในกล่องข้อความของบอทใน Discord`,
   mineHeading: "ของที่แลกไว้",
+  /** The shop's rules, folded under the shelf. */
+  termsHeading: "อ่านกติกาการแลกของ",
   status: {
     reserved: "รอทีมงาน",
     processing: "ทีมงานกำลังจัดส่ง",

@@ -4,7 +4,7 @@
  *
  *   sea and shore cells (animated frames) -> land layer (one blit) -> boat ->
  *   trees with roots, key, visitor, night glow and lantern -> night lamp posts ->
- *   festival festoon -> cloud shadows -> tags and pin (one blit, untinted) ->
+ *   festival festoon -> cloud shadows -> tags (the web: signposts) and pin (one blit) ->
  *   story actors -> gulls
  *
  * Every call is clipped to its rectangle and repaints all of it, so any part
@@ -148,7 +148,7 @@ export interface Layers<Img> {
   seaRects: (AtlasRect | undefined)[][];
   /** Land, paths, well and bunting at scene size, transparent over the sea and shore. */
   land: Img;
-  /** Tags and the pin at scene size, untinted, transparent elsewhere. */
+  /** The tags (the web: signposts) and the pin at scene size, transparent elsewhere. */
   overlay: Img;
 }
 
@@ -161,22 +161,40 @@ function blit<Img>(ctx: DrawContext<Img>, atlas: Img, a: AtlasRect | undefined, 
   ctx.drawImage(atlas, a.x, a.y, a.w, a.h, Math.round(x), Math.round(y), a.w * scale, a.h * scale);
 }
 
-/** Paints the land layer: every land tile, then helper paths, the well and the bunting, as the PNG does. */
-export function paintLand<Img>(ctx: DrawContext<Img>, model: SceneModel, atlas: Img, rects: ReadonlyMap<string, AtlasRect>): void {
+/**
+ * Paints the land layer: every land tile, then helper paths, the well and the
+ * bunting, as the PNG does. `within` (web only) paints just the cells that
+ * meet that rect, for a small lit copy of the ground; the bot never passes it.
+ */
+export function paintLand<Img>(ctx: DrawContext<Img>, model: SceneModel, atlas: Img, rects: ReadonlyMap<string, AtlasRect>, within?: Rect): void {
   const { scene, sea } = model;
   const t = scene.tile;
   ctx.imageSmoothingEnabled = false;
-  for (let k = 0; k < sea.length; k++) {
-    if (sea[k] >= 0) continue;
-    blit(ctx, atlas, rects.get(TILE_BY_CODE[scene.tiles[k]]), (k % scene.cols) * t, Math.floor(k / scene.cols) * t);
+  const span = within ? cellSpan(within, t) : { c0: 0, r0: 0, c1: scene.cols, r1: scene.rows };
+  const c0 = Math.max(0, span.c0);
+  const c1 = Math.min(scene.cols, span.c1);
+  for (let row = Math.max(0, span.r0); row < Math.min(scene.rows, span.r1); row++) {
+    for (let col = c0; col < c1; col++) {
+      const k = row * scene.cols + col;
+      if (sea[k] >= 0) continue;
+      blit(ctx, atlas, rects.get(TILE_BY_CODE[scene.tiles[k]]), col * t, row * t);
+    }
   }
   // A path over a shore cell lands here too, above the animated foam.
-  for (const cell of scene.paths) blit(ctx, atlas, rects.get("path"), (cell % scene.cols) * t, Math.floor(cell / scene.cols) * t);
+  for (const cell of scene.paths) {
+    const x = (cell % scene.cols) * t;
+    const y = Math.floor(cell / scene.cols) * t;
+    if (!within || overlaps({ x, y, w: t, h: t }, within)) blit(ctx, atlas, rects.get("path"), x, y);
+  }
   blit(ctx, atlas, rects.get("well"), scene.well.x, scene.well.y);
   if (scene.banner) blit(ctx, atlas, rects.get("banner"), scene.banner.x, scene.banner.y);
 }
 
-/** Paints the tags (dark box, white pixel digits) and the caller's pin, as the PNG does. */
+/**
+ * Paints the tags (dark box, white pixel digits) and the caller's pin, as the
+ * PNG does: the bot's GIF overlay. The web stands a signpost by each plot
+ * instead (signposts.ts) and draws the same pin (paintMarker).
+ */
 export function paintOverlay<Img>(ctx: DrawContext<Img>, model: SceneModel, atlas: Img, rects: ReadonlyMap<string, AtlasRect>): void {
   const { scene } = model;
   const g = scene.glyph;
@@ -192,7 +210,58 @@ export function paintOverlay<Img>(ctx: DrawContext<Img>, model: SceneModel, atla
       }
     });
   }
-  if (scene.marker) blit(ctx, atlas, rects.get("marker"), scene.marker.x, scene.marker.y, scene.marker.scale);
+  paintMarker(ctx, model, atlas, rects);
+}
+
+/** The caller's pin over their tree, as the PNG draws it (untinted in every atlas). */
+export function paintMarker<Img>(ctx: DrawContext<Img>, model: SceneModel, atlas: Img, rects: ReadonlyMap<string, AtlasRect>): void {
+  const { marker } = model.scene;
+  ctx.imageSmoothingEnabled = false;
+  if (marker) blit(ctx, atlas, rects.get("marker"), marker.x, marker.y, marker.scale);
+}
+
+/**
+ * The web's extra layers (water light, contact shadows, light pools, the
+ * breeze), slotted into redrawRect's order. Each is called inside the rect's
+ * clip, with the same rect. The bot's GIF and the parity tests pass none, so
+ * their pixels never change.
+ */
+export interface DrawFx {
+  /** A sea cell's frame (0..2) instead of the island-wide one: ripples that roll instead of pulsing. */
+  seaFrame?: (col: number, row: number, kind: number) => number;
+  /** The sprite of scene tree `index`'s partner this frame (the visitor breathing or blinking); absent, "visitor". */
+  partner?: (index: number) => string;
+  /** Over the sea and foam, under the land layer. */
+  afterSea?: (r: Rect) => void;
+  /** Over the land layer, under everything that stands on it (light that moves on the ground). */
+  afterLand?: (r: Rect) => void;
+  /**
+   * Something drawn just before one scene tree, and just after one tree with
+   * its partner, key and lantern, whether or not that tree meets the rect
+   * (the interact outline's ring reaches a pixel past it).
+   */
+  beforeTree?: DrawAt;
+  afterTree?: DrawAt;
+  /** Over the trees, lamps and clouds, under the tags or signposts and the plaza's actors (the glow round a light). */
+  beforeTags?: (r: Rect) => void;
+  /** Under the plaza's actors, over everything before them. */
+  beforeActors?: (r: Rect) => void;
+  /** Something drawn just before one actor, whether or not that actor meets the rect. */
+  beforeActor?: DrawAt;
+  /** Just after actor `index` is drawn at (x, y) with sprite `name`, before the next one (light on that actor alone). */
+  afterActor?: (index: number, name: string, x: number, y: number, flip: boolean) => void;
+  /** Over everything. */
+  last?: (r: Rect) => void;
+}
+
+/**
+ * Something drawn at one tree's or actor's place in the order: its index,
+ * and the drawing. One index, so the loop only compares (no call per tree
+ * or actor).
+ */
+export interface DrawAt {
+  index: number;
+  draw: (r: Rect) => void;
 }
 
 /** What the frame shows, besides the scene. */
@@ -200,6 +269,7 @@ export interface DrawState {
   motion: Motion;
   night: boolean;
   actors: readonly LiveActor[];
+  fx?: DrawFx;
 }
 
 /** A moving sprite's rectangle, from its atlas size. */
@@ -236,7 +306,7 @@ function drawMover<Img>(ctx: DrawContext<Img>, layers: Layers<Img>, m: Mover, r:
  */
 export function redrawRect<Img>(ctx: DrawContext<Img>, r: Rect, model: SceneModel, layers: Layers<Img>, state: DrawState): void {
   const { scene } = model;
-  const { motion, night } = state;
+  const { motion, night, fx } = state;
   const { atlas, rects } = layers;
   const t = scene.tile;
   ctx.save();
@@ -246,29 +316,38 @@ export function redrawRect<Img>(ctx: DrawContext<Img>, r: Rect, model: SceneMode
 
   // Sea and shore cells, then the land layer over them (only where the scene is).
   const cells = cellSpan(r, t);
+  const cellFrame = fx?.seaFrame;
   for (let row = cells.r0; row < cells.r1; row++) {
     for (let col = cells.c0; col < cells.c1; col++) {
       const kind = seaKindAt(model, col, row);
       if (kind < 0) continue;
-      blit(ctx, atlas, layers.seaRects[kind][kind < WATER_KINDS ? motion.sea : motion.foam], col * t, row * t);
+      const frame = cellFrame ? cellFrame(col, row, kind) : kind < WATER_KINDS ? motion.sea : motion.foam;
+      blit(ctx, atlas, layers.seaRects[kind][frame], col * t, row * t);
     }
   }
+  fx?.afterSea?.(r);
   const inScene = intersect(r, model.bounds);
   if (inScene) ctx.drawImage(layers.land, inScene.x, inScene.y, inScene.w, inScene.h, inScene.x, inScene.y, inScene.w, inScene.h);
+  fx?.afterLand?.(r);
 
   if (motion.boat) drawMover(ctx, layers, motion.boat, r);
 
+  const beforeTree = fx?.beforeTree;
+  const afterTree = fx?.afterTree;
   model.trees.forEach((m, i) => {
-    if (!overlaps(m.bounds, r)) return;
-    const { tree } = m;
-    blit(ctx, atlas, rects.get(treeSpriteKey(motion.sway[i] && m.b ? m.b : tree.sprite, tree.style)), tree.left, tree.top);
-    // Roots sit on the soil, inside the tree's rect: a sway repaint redraws them too.
-    if (tree.roots) blit(ctx, atlas, rects.get(tree.roots.sprite), tree.roots.x, tree.roots.y);
-    if (tree.key) blit(ctx, atlas, rects.get("key_flag"), tree.key.x, tree.key.y);
-    if (tree.visitor) blit(ctx, atlas, rects.get("visitor"), tree.visitor.x, tree.visitor.y);
-    // Only an earned lantern glows, and only at night: behind the lantern, over the tree.
-    if (night && m.glow) blit(ctx, atlas, rects.get(motion.glow[i] ? "lantern_glow_1" : "lantern_glow_0"), m.glow.x, m.glow.y);
-    if (tree.lantern) blit(ctx, atlas, rects.get("lantern"), tree.lantern.x, tree.lantern.y);
+    if (beforeTree?.index === i) beforeTree.draw(r);
+    if (overlaps(m.bounds, r)) {
+      const { tree } = m;
+      blit(ctx, atlas, rects.get(treeSpriteKey(motion.sway[i] && m.b ? m.b : tree.sprite, tree.style)), tree.left, tree.top);
+      // Roots sit on the soil, inside the tree's rect: a sway repaint redraws them too.
+      if (tree.roots) blit(ctx, atlas, rects.get(tree.roots.sprite), tree.roots.x, tree.roots.y);
+      if (tree.key) blit(ctx, atlas, rects.get("key_flag"), tree.key.x, tree.key.y);
+      if (tree.visitor) blit(ctx, atlas, rects.get(fx?.partner?.(i) ?? "visitor"), tree.visitor.x, tree.visitor.y);
+      // Only an earned lantern glows, and only at night: behind the lantern, over the tree.
+      if (night && m.glow) blit(ctx, atlas, rects.get(motion.glow[i] ? "lantern_glow_1" : "lantern_glow_0"), m.glow.x, m.glow.y);
+      if (tree.lantern) blit(ctx, atlas, rects.get("lantern"), tree.lantern.x, tree.lantern.y);
+    }
+    if (afterTree?.index === i) afterTree.draw(r);
   });
 
   if (night) {
@@ -282,17 +361,25 @@ export function redrawRect<Img>(ctx: DrawContext<Img>, r: Rect, model: SceneMode
     ctx.globalAlpha = 1;
   }
 
+  fx?.beforeTags?.(r);
   if (inScene) ctx.drawImage(layers.overlay, inScene.x, inScene.y, inScene.w, inScene.h, inScene.x, inScene.y, inScene.w, inScene.h);
 
+  fx?.beforeActors?.(r);
+  const beforeActor = fx?.beforeActor;
+  const afterActor = fx?.afterActor;
   state.actors.forEach((actor, i) => {
+    if (beforeActor?.index === i) beforeActor.draw(r);
     const frame = motion.actors[i] ?? 0;
     const rect = actorRect(actor, frame, rects);
     if (!rect || !overlaps(rect, r)) return;
     const name = actor.frames[frame] ?? actor.frames[0];
-    blit(ctx, atlas, (actorAt(actor, frame).flip ? layers.flipped : rects).get(name), rect.x, rect.y);
+    const flip = actorAt(actor, frame).flip;
+    blit(ctx, atlas, (flip ? layers.flipped : rects).get(name), rect.x, rect.y);
+    afterActor?.(i, name, rect.x, rect.y, flip);
   });
 
   for (const g of motion.gulls) drawMover(ctx, layers, g, r);
+  fx?.last?.(r);
   ctx.restore();
 }
 
@@ -324,10 +411,20 @@ export function dirtyRects(
     if (m.glow && prev.glow[i] !== next.glow[i]) out.push(m.glow);
   });
   actors.forEach((actor, i) => {
-    if (prev.actors[i] === next.actors[i]) return;
-    const a = actorRect(actor, prev.actors[i] ?? 0, rects);
-    const b = actorRect(actor, next.actors[i] ?? 0, rects);
-    if (a && b) out.push(union(a, b));
+    const fa = prev.actors[i] ?? 0;
+    const fb = next.actors[i] ?? 0;
+    if (fa === fb) return;
+    const a = actorRect(actor, fa, rects);
+    const b = actorRect(actor, fb, rects);
+    if (!a || !b) return;
+    // A new frame that draws the very same sprite in the same place (a figure standing between breaths): nothing to repaint.
+    if (a.x === b.x && a.y === b.y && sameSprite(actor, fa, fb)) return;
+    out.push(union(a, b));
   });
   return out;
+}
+
+/** Two frames of an actor draw the same pixels: the same sprite, the same way round. */
+function sameSprite(actor: LiveActor, fa: number, fb: number): boolean {
+  return (actor.frames[fa] ?? actor.frames[0]) === (actor.frames[fb] ?? actor.frames[0]) && actorAt(actor, fa).flip === actorAt(actor, fb).flip;
 }

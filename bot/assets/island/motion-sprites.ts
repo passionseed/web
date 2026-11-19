@@ -20,7 +20,8 @@ export type MotionSpriteName =
   | "count_d" | "count_dash" | "count_a" | "count_y"
   | "goal_string" | "goal_bulb" | "booth_flag" | "star_flag"
   | "campfire_pit" | "campfire_pit_cold" | "campfire_flame_0" | "campfire_flame_1" | "campfire_flame_2"
-  | "sit_a_0" | "sit_a_1" | "sit_b_0" | "sit_b_1" | "sit_c_0" | "sit_c_1" | "sit_d_0" | "sit_d_1";
+  | "sit_a_0" | "sit_a_1" | "sit_b_0" | "sit_b_1" | "sit_c_0" | "sit_c_1" | "sit_d_0" | "sit_d_1"
+  | "merchant_ship_0" | "merchant_ship_1";
 
 const TILE: [number, number] = [16, 16];
 const TREE: [number, number] = [32, 40];
@@ -31,6 +32,7 @@ const FLAG: [number, number] = [7, 12];
 const FLAME: [number, number] = [10, 10];
 const GLYPH: [number, number] = [6, 10];
 const SITTER: [number, number] = [8, 10];
+const MERCHANT_SHIP: [number, number] = [64, 40];
 
 /** [width, height] in native pixels. */
 export const MOTION_SIZES: Record<MotionSpriteName, [number, number]> = {
@@ -50,6 +52,7 @@ export const MOTION_SIZES: Record<MotionSpriteName, [number, number]> = {
   count_0: GLYPH, count_1: GLYPH, count_2: GLYPH, count_3: GLYPH, count_4: GLYPH,
   count_5: GLYPH, count_6: GLYPH, count_7: GLYPH, count_8: GLYPH, count_9: GLYPH,
   count_d: GLYPH, count_dash: GLYPH, count_a: GLYPH, count_y: GLYPH,
+  merchant_ship_0: MERCHANT_SHIP, merchant_ship_1: MERCHANT_SHIP,
 };
 
 export const MOTION_SPRITES: Record<MotionSpriteName, string[]> = {
@@ -1178,6 +1181,97 @@ export const MOTION_SPRITES: Record<MotionSpriteName, string[]> = {
     "owwo.owo",
     ".ooooooo",
   ],
+  // The merchant ship (the island shop), moored off the coast: a jib, a sprout on the main sail, a striped
+  // stall on its stern deck with a hanging lantern, a counter and its goods, portholes along the hull, and the
+  // shop's sign painted on the stern's side: a Passioncoin in a wooden frame, no words. Its sails are shaded:
+  // a lit luff (f), a sand body (i), the belly in shade toward the leech (s), a fold at the clew (d). It sits
+  // in the sea: from row 35 down (shipWater.ts SHIP_WATERLINE) it is under water and stays empty, and the web
+  // draws the water at its waterline over its last plank, and its shadow on the sea (fx.ts). Frame 1 dips the
+  // ship 1 px into the same water and waves the pennant; the sea stays. Web only: the bot never draws it.
+  merchant_ship_0: [
+    "...........................orrrrrrr.............................",
+    "...........................orrrrr...............................",
+    "...........................orrr.................................",
+    "...........................o....................................",
+    "...........................o....................................",
+    "...........................o....................................",
+    "..............ooooooooooooooooooooooooooo.......................",
+    "...............offiiiiiiiiiiiiiiiiiissio........................",
+    "..............offiiiiiiiiiiiiiiiiiiiissio.......................",
+    "..............offiiiiiiiiiiiiiiiiiiiisssio......................",
+    "..............offiiiiiinniiiiinniiiiisssio......................",
+    ".............ooffiiiiimnmmiiimmnmiiiiisssi......................",
+    ".............ooffiiiiiimmmmbmmmmiiiiissssi......................",
+    "............ofoffiiiiiiiiiibiiiiiiiiissssi......................",
+    "...........ofioffiiiiiiiiiibiiiiiiiiissssi......................",
+    "...........ofioffiiiiiiiiiibiiiiiiiiissssi......................",
+    "..........ofiioffiiiiiiiiiibiiiiiiiiissssi......................",
+    "..........ofiioffiiiiiiiiiibiiiiiiiiissssi......................",
+    ".........ofiisoffiiiiiiiiiiiiiiiiiiiissssi......................",
+    "........ofiiisoffiiiiiiiiiiiiiiiiiiisssiiooooooooooooooooooooo..",
+    "........ofssssorrrrrrrrrrrrrrrrrrrrrrrrrrrrrrfffrrrfffrrrfffro..",
+    ".......ofiiiisorrrrrrrrrrrrrrrrrrrrrrrrrrorrrfffrrrfffrrrfffro..",
+    "......ofiiiiisoffiiiiiiiiiiiiiisiiiisssiiorrrfffrrrfffrrrfffro..",
+    "......ofiiiiisoffiiiiiiiiiiiiiiisiiisssio.orbffbrrbffbrroofboo..",
+    ".o...ofiiiiiisossssssssssssssssssdsssssso.obobbbbkkbbubbeebbbo..",
+    "..o..ossssssssooooooooooooooooooooooooooo.oooobooooooooooooooo..",
+    "...ooffffffffff.......ooo..b..............ooyoboeeeeeeeeeeeeeo..",
+    "...oooooooooooo.......oeo..b..............ooyoboeeeeeeeeeeeeeo..",
+    "oo...o................oco..b..............ooooboeeeeeeeeeeeeeo..",
+    ".ooooooooooooooooooooooooooooooooooooooooooooobbbbbbbbbbbbooooo.",
+    "..oeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeebfffoooofffbeeeeo.",
+    "...occcccccccoyyoccccccoyyoccccccoyyocccccccccbffofyyyoffbcccco.",
+    "....occccccccoyyoccccccoyyoccccccoyyocccccccccbffoyyeyoffbccco..",
+    ".....orrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrbffoyyeeoffbrro...",
+    ".......occccccccccccccccccccccccccccccccccccccbfffoooofffbco....",
+    "................................................................",
+    "................................................................",
+    "................................................................",
+    "................................................................",
+    "................................................................",
+  ],
+  merchant_ship_1: [
+    "................................................................",
+    "...........................orrrrrr..............................",
+    "...........................orrrrrrrr............................",
+    "...........................orrr.................................",
+    "...........................o....................................",
+    "...........................o....................................",
+    "...........................o....................................",
+    "..............ooooooooooooooooooooooooooo.......................",
+    "...............offiiiiiiiiiiiiiiiiiissio........................",
+    "..............offiiiiiiiiiiiiiiiiiiiissio.......................",
+    "..............offiiiiiiiiiiiiiiiiiiiisssio......................",
+    "..............offiiiiiinniiiiinniiiiisssio......................",
+    ".............ooffiiiiimnmmiiimmnmiiiiisssi......................",
+    ".............ooffiiiiiimmmmbmmmmiiiiissssi......................",
+    "............ofoffiiiiiiiiiibiiiiiiiiissssi......................",
+    "...........ofioffiiiiiiiiiibiiiiiiiiissssi......................",
+    "...........ofioffiiiiiiiiiibiiiiiiiiissssi......................",
+    "..........ofiioffiiiiiiiiiibiiiiiiiiissssi......................",
+    "..........ofiioffiiiiiiiiiibiiiiiiiiissssi......................",
+    ".........ofiisoffiiiiiiiiiiiiiiiiiiiissssi......................",
+    "........ofiiisoffiiiiiiiiiiiiiiiiiiisssiiooooooooooooooooooooo..",
+    "........ofssssorrrrrrrrrrrrrrrrrrrrrrrrrrrrrrfffrrrfffrrrfffro..",
+    ".......ofiiiisorrrrrrrrrrrrrrrrrrrrrrrrrrorrrfffrrrfffrrrfffro..",
+    "......ofiiiiisoffiiiiiiiiiiiiiisiiiisssiiorrrfffrrrfffrrrfffro..",
+    "......ofiiiiisoffiiiiiiiiiiiiiiisiiisssio.orbffbrrbffbrroofboo..",
+    ".o...ofiiiiiisossssssssssssssssssdsssssso.obobbbbkkbbubbeebbbo..",
+    "..o..ossssssssooooooooooooooooooooooooooo.oooobooooooooooooooo..",
+    "...ooffffffffff.......ooo..b..............ooyoboeeeeeeeeeeeeeo..",
+    "...oooooooooooo.......oeo..b..............ooyoboeeeeeeeeeeeeeo..",
+    "oo...o................oco..b..............ooooboeeeeeeeeeeeeeo..",
+    ".ooooooooooooooooooooooooooooooooooooooooooooobbbbbbbbbbbbooooo.",
+    "..oeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeebfffoooofffbeeeeo.",
+    "...occcccccccoyyoccccccoyyoccccccoyyocccccccccbffofyyyoffbcccco.",
+    "....occccccccoyyoccccccoyyoccccccoyyocccccccccbffoyyeyoffbccco..",
+    ".....orrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrbffoyyeeoffbrro...",
+    "................................................................",
+    "................................................................",
+    "................................................................",
+    "................................................................",
+    "................................................................",
+  ],
 };
 
 /** Ping-pong order 0-1-2-1: [base name in SPRITES, frame 1, frame 2]. */
@@ -1216,6 +1310,7 @@ export const ACTOR_FRAMES = {
   sitB: ["sit_b_0", "sit_b_1"],
   sitC: ["sit_c_0", "sit_c_1"],
   sitD: ["sit_d_0", "sit_d_1"],
+  merchantShip: ["merchant_ship_0", "merchant_ship_1"],
 } as const;
 
 /** Top-left of each lit `goal_bulb` relative to `goal_string`, left to right. Each lit bulb

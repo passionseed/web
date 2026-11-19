@@ -1,10 +1,14 @@
 "use client";
 
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type RefObject } from "react";
 
+import { BUBBLE_MS, FigureBubble } from "@/components/shift/island/live/FigureBubble";
+import { figureLine } from "@/components/shift/island/live/figureLine";
 import { IslandLive } from "@/components/shift/island/live/IslandLive";
 import { PixelIcon } from "@/components/shift/poster/pixel/PixelRects";
+import { hitFigure, hitSlop, type Figure } from "@/lib/shift-island/live/figures";
+import type { Rect } from "@/lib/shift-island/live/geometry";
 
 import { PALETTE, treeGrid } from "../sprites";
 import { STORY, storyLine, type StoryCta } from "./copy";
@@ -40,7 +44,9 @@ export interface StoryOverlayProps {
  * The four-panel story: a full-screen Dawn dialog with one pixel panel, one
  * line, four dots and a skip button. Panels hold PANEL_MS and then cut hard
  * (no slide, no zoom); a tap goes to the next one; the last one waits for its
- * button. Reduced motion: still frames, no auto-advance, a "next" button.
+ * button. A tap on a person (the builder, the tester, a tree's partner) has
+ * them say what they stand for instead, and the panel holds while they do.
+ * Reduced motion: still frames, no auto-advance, a "next" button.
  */
 export function StoryOverlay({ open, demoDay, cta, onClose, onCloseAutoFocus }: StoryOverlayProps) {
   const content = useRef<HTMLDivElement>(null);
@@ -80,6 +86,9 @@ function StoryBody({
   const panels = useMemo(() => storyPanels(), []);
   const last = panels.length - 1;
   const [index, setIndex] = useState(0);
+  /** A person talking on the current panel: their index among the people its crop shows, and a key per tap. */
+  const [talk, setTalk] = useState<{ panel: number; figure: number; key: number } | null>(null);
+  const frame = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState<ReadonlySet<number>>(() => new Set());
   const reduced = useReducedMotion();
   const visible = usePageVisible();
@@ -88,17 +97,48 @@ function StoryBody({
   const foot = useRef<HTMLDivElement>(null);
   const box = useStageBox(column, head, foot);
   const fits = useMemo(() => panels.map((p) => fitPanel(p.view, p.focus, box, box.dpr)), [panels, box]);
+  // Only the people the panel's crop shows can be tapped or are described: a narrow screen may cut one off.
+  const people = useMemo(() => panels.map((p, i) => p.figures.filter((figure) => inCrop(figure, fits[i].crop))), [panels, fits]);
   // One height for every panel, so the line under the picture never moves on a cut.
   const stageHeight = Math.max(...fits.map((fit) => fit.height));
 
-  // One timer for the panel on screen; a tap restarts it. Reduced motion and a hidden tab never advance.
+  const talking = talk && talk.panel === index ? talk : null;
+
+  // One timer for the panel on screen; a tap restarts it. Reduced motion, a hidden tab and a person talking never advance.
   useEffect(() => {
-    if (reduced || !visible || index >= last) return;
+    if (reduced || !visible || index >= last || talking) return;
     const timer = window.setTimeout(() => setIndex((i) => Math.min(i + 1, last)), PANEL_MS);
     return () => window.clearTimeout(timer);
-  }, [index, last, reduced, visible]);
+  }, [index, last, reduced, visible, talking]);
+
+  // A line stays up as long as on the island, then the panel carries on.
+  useEffect(() => {
+    if (!talking) return;
+    const timer = window.setTimeout(() => setTalk(null), BUBBLE_MS);
+    return () => window.clearTimeout(timer);
+  }, [talking]);
 
   const advance = () => setIndex((i) => Math.min(i + 1, last));
+
+  /** A tap on the picture: a person says their line, anything else goes to the next panel. */
+  const onStage = (event: MouseEvent<HTMLDivElement>) => {
+    const panel = panels[index];
+    const box = frame.current?.getBoundingClientRect();
+    const crop = fits[index].crop;
+    // Only people the canvas drew can talk: a panel showing its fallback tree just moves on.
+    const drawn = panel.scene !== null && !failed.has(index);
+    const shown = people[index];
+    if (event.detail !== 0 && drawn && shown.length > 0 && box && box.width > 0 && box.height > 0) {
+      const point = { x: crop.x + ((event.clientX - box.left) / box.width) * crop.w, y: crop.y + ((event.clientY - box.top) / box.height) * crop.h };
+      const hit = hitFigure(shown, [], point, hitSlop(box.width / crop.w, false));
+      if (hit) {
+        setTalk({ panel: index, figure: hit.index, key: Date.now() });
+        return;
+      }
+    }
+    setTalk(null);
+    advance();
+  };
   const fail = (i: number) => setFailed((current) => new Set(current).add(i));
 
   // On the dialog itself, not a child: it holds focus when the story opens. Right is next, left is back.
@@ -130,7 +170,7 @@ function StoryBody({
         className={styles.stage}
         style={{ height: `${stageHeight}px` }}
         data-last={index === last}
-        onClick={advance}
+        onClick={onStage}
       >
         {panels.map((panel, i) =>
           // The panel on screen and the next one (drawn ahead, paused), so a cut never waits.
@@ -143,9 +183,14 @@ function StoryBody({
               still={reduced}
               failed={failed.has(i) || panel.scene === null}
               onFail={() => fail(i)}
+              frameRef={i === index ? frame : undefined}
+              speaker={i === index && talking ? { figure: people[i][talking.figure], key: talking.key } : null}
+              onQuiet={() => setTalk(null)}
             />
           ) : null,
         )}
+        {/* Who is in the picture, for screen readers: what a tap on each person says. */}
+        {people[index].length > 0 ? <p className="sr-only">{people[index].map((figure) => figureLine(figure)).join(" · ")}</p> : null}
       </div>
 
       <div ref={foot} className={styles.foot}>
@@ -183,12 +228,18 @@ interface PanelProps {
   still: boolean;
   failed: boolean;
   onFail: () => void;
+  /** The current panel's box: taps are measured against it. */
+  frameRef?: RefObject<HTMLDivElement | null>;
+  /** A person on this panel says their line (a key per tap). */
+  speaker?: { figure: Figure | undefined; key: number } | null;
+  onQuiet?: () => void;
 }
 
-function Panel({ panel, fit, current, still, failed, onFail }: PanelProps) {
+function Panel({ panel, fit, current, still, failed, onFail, frameRef, speaker = null, onQuiet }: PanelProps) {
   const size: CSSProperties = { width: `${fit.width}px`, height: `${fit.height}px` };
+  const figure = speaker?.figure;
   return (
-    <div className={styles.frame} style={size} data-phase={panel.phase} aria-hidden={current ? undefined : true}>
+    <div ref={frameRef} className={styles.frame} style={size} data-phase={panel.phase} aria-hidden={current ? undefined : true}>
       {failed || !panel.scene ? (
         <PixelIcon
           grid={treeGrid(panel.fallback)}
@@ -210,8 +261,19 @@ function Panel({ panel, fit, current, still, failed, onFail }: PanelProps) {
           onFail={onFail}
         />
       )}
+      {figure && speaker && !failed ? (
+        <FigureBubble key={speaker.key} figure={figure} view={fit.crop} follow={false} onGone={() => onQuiet?.()} />
+      ) : null}
     </div>
   );
+}
+
+/** The panel shows this person: the middle of their box is inside its crop. */
+function inCrop(figure: Figure, crop: Rect): boolean {
+  if (!figure.box) return false;
+  const x = figure.box.x + figure.box.w / 2;
+  const y = figure.box.y + figure.box.h / 2;
+  return x >= crop.x && x < crop.x + crop.w && y >= crop.y && y < crop.y + crop.h;
 }
 
 /** The fallback tree fills about two thirds of the panel's height, in whole CSS pixels per sprite pixel. */

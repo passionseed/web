@@ -6,6 +6,7 @@
  */
 import { ACTOR_FRAMES, MOTION_SIZES } from "@/bot/assets/island/motion-sprites";
 import { buildScene, spriteSize, type IslandScene, type SceneTree } from "@/bot/src/quests/island/scene";
+import { treeFigures, type Figure } from "@/lib/shift-island/live/figures";
 import type { LightPhase, LiveActor } from "@/lib/shift-island/live/types";
 
 type IslandPlot = Parameters<typeof buildScene>[0][number];
@@ -36,6 +37,8 @@ export interface StoryPanel {
   focus: PixelPoint;
   /** People drawn above the trees, in the scene's native pixels. */
   actors: LiveActor[];
+  /** Everyone a tap can ask (figures.ts): the builder, the tester and the trees' partners, each in its box. */
+  figures: Figure[];
   /** The tree stage (SPRITES stage_N, through PixelIcon) the panel shows when the canvas cannot draw. */
   fallback: number;
 }
@@ -149,10 +152,15 @@ function treePanel(n: number, stage: number, people: "builder" | "builder_and_te
   const tree = scene?.trees[0] ?? null;
   const view = scene && tree ? treeView(scene, tree) : wholeScene(scene);
   const actors: LiveActor[] = [];
+  const figures: Figure[] = [];
+  const person = (kind: "builder" | "tester", frames: readonly string[], at: PixelPoint) => {
+    actors.push(actor(frames, at, false));
+    figures.push({ kind, n: 0, box: { x: at.x, y: at.y, w: ACTOR_W, h: ACTOR_H } });
+  };
   if (tree) {
     // Both face the tree as drawn: the builder's hammer is on its right, the tester's phone on its left.
-    actors.push(actor(ACTOR_FRAMES.builder, leftOf(tree), false));
-    if (people === "builder_and_tester") actors.push(actor(ACTOR_FRAMES.tester, rightOf(tree), false));
+    person("builder", ACTOR_FRAMES.builder, leftOf(tree));
+    if (people === "builder_and_tester") person("tester", ACTOR_FRAMES.tester, rightOf(tree));
   }
   return {
     n,
@@ -162,6 +170,7 @@ function treePanel(n: number, stage: number, people: "builder" | "builder_and_te
     view,
     focus: tree ? { x: tree.left + Math.floor(tree.w / 2), y: tree.top + Math.floor(tree.h / 2) } : centre(view),
     actors,
+    figures,
     fallback: stage,
   };
 }
@@ -187,6 +196,7 @@ export function storyPanels(): StoryPanel[] {
       view: emptyView,
       focus: empty ? plazaCentre(empty) : centre(emptyView),
       actors: [],
+      figures: [],
       fallback: 0,
     },
     treePanel(2, 2, "builder"),
@@ -199,6 +209,8 @@ export function storyPanels(): StoryPanel[] {
       view: festivalRect,
       focus: festival ? plazaCentre(festival) : centre(festivalRect),
       actors: [],
+      // The made-up teams' first partners stand by their trees, as on the island.
+      figures: treeFigures(festival),
       fallback: 7,
     },
   ];
