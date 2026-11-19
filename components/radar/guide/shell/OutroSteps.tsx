@@ -14,7 +14,7 @@ import { recordFieldIntent } from "@/lib/radar/record-intent";
 import { detectUaApp } from "@/lib/radar-guide/attribution";
 import { radarProfileShortLink } from "@/lib/radar-guide/social";
 import { buildProfileCard } from "@/lib/radar-guide/story";
-import { levelTwoPages, levelTwoTarget, pageTier } from "@/lib/radar-guide/tiers";
+import { levelTwoTarget, pageTier } from "@/lib/radar-guide/tiers";
 import { GuideIntentButton, GuideLevelTwoDoor, GuideOutro, GuideProgramLine } from "../GuideOutro";
 import { MidShareCard } from "../MidShareCard";
 import { deckHref, levelHref } from "./guide-routes";
@@ -78,7 +78,6 @@ export function GuideOutroStep() {
         tracker={tracker}
         kind={target.kind}
         href={target.kind === "pages" ? levelHref(slug, target.firstKey) : deckHref(slug)}
-        levels={levelTwoPages(index.pages).length}
       />
     );
   return (

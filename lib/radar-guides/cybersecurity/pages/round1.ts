@@ -1,18 +1,20 @@
 /**
- * Level 3 · round1 (Level 1). The shared "TCAS round 1 is for you" level
+ * Level 2 · round1, just before tcas (where to apply). The shared "TCAS round 1 is for you" level
  * (lib/radar-guides/_shared/round1.ts) with cybersecurity examples to sort
  * into the TCASfolio bins. Every example is legal: practice rooms, the
  * student's own home network with a parent's OK, and a real competition.
  */
+import { host, sys } from "../../_shared/story";
 import { roundOnePage } from "../../_shared/round1";
 
 export const round1 = roundOnePage({
-  order: 3,
+  order: 10,
   asOf: "2026-11-17",
   careerTh: "สายไซเบอร์",
   facultiesTh: "ไซเบอร์ วิศวะคอม วิทย์คอม",
   mytcasHref: "https://course.mytcas.com",
   extraFactIds: ["f.tctt", "f.thm-free"],
+  bridge: [sys("ผลงานชิ้นแรกไม่ต้องใหญ่โตเลย"), host("ด่านต่อไป มาดูกันว่าที่ไหนเปิดรับสายไซเบอร์บ้าง", { mood: "wow" })],
   items: [
     {
       id: "writeup",

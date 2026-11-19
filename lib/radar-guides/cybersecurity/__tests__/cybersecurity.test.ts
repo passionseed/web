@@ -38,7 +38,7 @@ function thaiStrings(value: unknown, at: string, out: string[] = []): string[] {
 }
 
 describe("cybersecurity guide", () => {
-  it("is live with 12 levels in order (Level 1: 5, Level 2: 7), and a live guide never requires an unrecorded clip", () => {
+  it("is live with 12 levels in order (Level 1: 4, Level 2: 8, round 1 just before tcas), and a live guide never requires an unrecorded clip", () => {
     // `pnpm radar:check` fails a live guide whose required clip is missing.
     expect(guide.meta.status).toBe("live");
     const recorded = clips as Record<string, unknown>;
@@ -48,7 +48,6 @@ describe("cybersecurity guide", () => {
     expect(tiers).toEqual([
       "mythos:1",
       "scam:1",
-      "round1:1",
       "tonight:1",
       "next:1",
       "doors:2",
@@ -56,6 +55,7 @@ describe("cybersecurity guide", () => {
       "firstjob:2",
       "money:2",
       "fit:2",
+      "round1:2",
       "tcas:2",
       "terminal:2",
     ]);

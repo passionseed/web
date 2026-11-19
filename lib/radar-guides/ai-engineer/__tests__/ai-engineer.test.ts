@@ -55,11 +55,11 @@ describe("ai-engineer guide", () => {
     expect(formatIssues(lintFactIdsUnique(lists))).toBe("");
   });
 
-  it("is a draft Level 1 run: dream, work, round1, tonight, next", () => {
+  it("is a draft: Level 1 is dream, work, tonight, next; round 1 opens Level 2", () => {
     expect(guide.meta.status).toBe("draft");
-    expect(guide.pages.map((p) => p.key)).toEqual(["dream", "work", "round1", "tonight", "next"]);
+    expect(guide.pages.map((p) => p.key)).toEqual(["dream", "work", "tonight", "next", "round1"]);
     expect(guide.pages.map((p) => p.order)).toEqual([1, 2, 3, 4, 5]);
-    for (const p of guide.meta.pages) expect(p.tier).toBe(1);
+    expect(guide.meta.pages.map((p) => p.tier)).toEqual([1, 1, 1, 1, 2]);
     expect(guide.meta.shareCardAfter).toBe("work");
     const work = guide.pages.find((p) => p.key === "work");
     expect(work && pageBlocks(work).some((b) => b.kind === "shareCard" && b.id === "share-work")).toBe(true);

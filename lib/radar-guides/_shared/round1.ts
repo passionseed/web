@@ -1,5 +1,10 @@
 /**
- * Level 1 · round1, shared by every career: "TCAS round 1 is for you".
+ * Level 2 · round1, shared by every career: "TCAS round 1 is for you".
+ *
+ * It sits in Level 2 (opt-in), not Level 1: the same level in every career
+ * would repeat for a student trying several, and admissions rules right after
+ * the dream breaks it. Level 1's tonight level carries the one-line version
+ * (`roundOneTeaser`).
  *
  * For the student who doesn't know round 1 exists, or thinks university only
  * means exam scores. The level says it plainly (a round where what you've
@@ -10,7 +15,7 @@
  * round 3 is hopeless. Each career passes its own examples; the frame and
  * facts are the same everywhere.
  */
-import type { FactId, GuidePage, SortItem } from "@/lib/radar-guide/guide-types";
+import type { DialogueLine, FactId, GuideBlock, GuidePage, SortItem } from "@/lib/radar-guide/guide-types";
 import { ROUND_ONE_MINUTES, ROUND_ONE_NAV_TH, ROUND_ONE_TITLE_TH } from "./round1-meta";
 import { beat, dialogue, host, item, sys } from "./story";
 
@@ -46,6 +51,26 @@ export interface RoundOneOptions {
   facultiesTh: string;
   /** Career facts behind the items (a named competition, a practice site), listed in the sources sheet. */
   extraFactIds?: readonly FactId[];
+  /**
+   * The level's last lines, pointing where the student goes next. Default: the
+   * level map, where Level 2 continues to the career's full deck.
+   */
+  bridge?: readonly DialogueLine[];
+}
+
+/**
+ * Level 1's one-line version, for the tonight level: what the student makes
+ * tonight is the kind of thing a round 1 portfolio holds. Add ROUND_ONE_FACT
+ * to the page's factIds.
+ */
+export const ROUND_ONE_FACT = ROUNDS;
+export function roundOneTeaser(): GuideBlock {
+  return item(
+    "round1-teaser",
+    "intel",
+    "TCAS70 มี 4 รอบ รอบแรกชื่อ Portfolio มหาลัยดูจากสิ่งที่เธอลงมือทำ งานแบบคืนนี้แหละ ใส่แฟ้มได้เลย",
+    { title: "รู้ไหม รอบ 1 ใช้ผลงานยื่นได้นะ", facts: [ROUNDS] }
+  );
 }
 
 export function roundOnePage(opts: RoundOneOptions): GuidePage {
@@ -144,8 +169,11 @@ export function roundOnePage(opts: RoundOneOptions): GuidePage {
       ),
       dialogue(
         "bridge",
-        sys("ผลงานชิ้นแรกไม่ต้องใหญ่โตเลย"),
-        host("ด่านต่อไป เริ่มลุยได้คืนนี้เลย", { mood: "wow" })
+        ...(opts.bridge ?? [
+          sys("ผลงานชิ้นแรกไม่ต้องใหญ่โตเลย"),
+          host("อยากรู้เรื่องเงินเดือนกับที่เรียนต่อใช่ไหม", { mood: "wow" }),
+          host("กด แผนที่ด่าน ข้างล่าง ไปดูข้อมูลเต็มของสายนี้ได้เลย"),
+        ])
       ),
     ],
   };

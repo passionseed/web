@@ -16,7 +16,7 @@ import { work } from "./pages/work";
 
 export const aiEngineerGuide: CareerGuide = {
   meta: AI_ENGINEER_META,
-  pages: [dream, work, round1, tonight, next],
+  pages: [dream, work, tonight, next, round1],
   facts: AI_ENGINEER_FACTS,
   banned: AI_ENGINEER_BANNED,
 };

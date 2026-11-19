@@ -34,6 +34,8 @@ describe("TieredLevelMap", () => {
       "/radar/cybersecurity/next",
       "/radar/cybersecurity/doors",
       "/radar/cybersecurity/money",
+      // Level 2 ends in the career's full deck.
+      "/radar/cybersecurity?view=deck",
     ]);
     expect(links[2]).toHaveAccessibleName(/ด่าน 1:/);
     expect(links.filter((l) => l.getAttribute("aria-current") === "step")).toEqual([links[2]]);
@@ -60,8 +62,8 @@ describe("GuideLevelTwoDoor", () => {
       track: jest.fn(),
       submitCareerRequest: jest.fn(async () => "ok" as const),
     };
-    render(<GuideLevelTwoDoor tracker={tracker} kind="pages" levels={7} href="/radar/cybersecurity/doors" pageKey="next" />);
-    expect(screen.getByText(/อีก 7 ด่าน/)).toBeInTheDocument();
+    render(<GuideLevelTwoDoor tracker={tracker} kind="pages" href="/radar/cybersecurity/doors" pageKey="next" />);
+    expect(screen.getByText(/รอบ 1 Portfolio/)).toBeInTheDocument();
     const link = screen.getByRole("link", { name: /Level 2/ });
     expect(link).toHaveAttribute("href", "/radar/cybersecurity/doors");
     fireEvent.click(link);

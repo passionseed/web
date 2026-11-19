@@ -5,6 +5,7 @@
  * simulated support inbox for a made-up school app.
  */
 import type { GuidePage } from "@/lib/radar-guide/guide-types";
+import { careerKindsBeat } from "../../_shared/kinds";
 import { beat, dialogue, host, item, me, sys } from "../../_shared/story";
 
 const SIM = "sim.school-bugs" as const;
@@ -164,11 +165,21 @@ export const work: GuidePage = {
         labels: ["usOnly"],
       })
     ),
+    careerKindsBeat({
+      nameTh: "นักพัฒนาซอฟต์แวร์",
+      kinds: [
+        { titleTh: "สายเว็บและแอป", bodyTh: "ทำของที่คนเปิดใช้ทุกวัน แล้วแก้ตามที่คนใช้บอก แบบแอปโรงเรียนเมื่อกี้" },
+        { titleTh: "สายหลังบ้าน", bodyTh: "ทำระบบเบื้องหลังคอยเก็บและส่งข้อมูล เช่น ให้แอปรู้ว่ารถเมล์อยู่ตรงไหน" },
+        { titleTh: "สายเกม", bodyTh: "สร้างเกม ตั้งแต่ระบบการเล่นยันฉากในเกม" },
+        { titleTh: "สายอุปกรณ์", bodyTh: "เขียนโค้ดฝังในเครื่องใช้ไฟฟ้า รถยนต์ หรือหุ่นยนต์" },
+        { titleTh: "สายดูแลระบบ", bodyTh: "กันเว็บกับแอปไม่ให้ล่ม ต่อให้คนแห่เข้าพร้อมกันเยอะแค่ไหน" },
+      ],
+    }),
     dialogue(
       "exit",
       host("ถ้าเธอชอบจัดลำดับว่าอะไรสำคัญ แถมอยากรู้ว่าทำไมของมันพัง"),
       host("สายนี้มีที่ให้เธอ", { mood: "wink" }),
-      sys("ด่านต่อไป: ทางเข้ามหาวิทยาลัยที่หลายคนยังไม่รู้")
+      sys("ด่านต่อไป: คืนนี้ลองทำเว็บหน้าแรกของเธอเอง")
     ),
   ],
   reel: {

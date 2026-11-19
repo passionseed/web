@@ -1,12 +1,17 @@
 /**
- * Level 2 · work. What the job feels like: before a school help-bot goes live,
- * check its answers against the school's documents and sort each one into
- * ใช้ได้ / ผิด / ต้องให้คนตรวจ. That is an eval set, the core of the real work.
- * Then the real-world versions: ThaiExam (Thai exams as an AI test) and an
- * X-ray AI built to support doctors, not replace them.
+ * Level 1 · work. What the job feels like: the student builds the school's
+ * help-bot the way applied AI engineers in Thailand mostly work, on top of a
+ * model that already exists. Two steps of the loop, as two quick sorts:
+ * 1. choose what the bot may read (this year's calendar, yes; classmates'
+ *    grades, never; last year's calendar, no: more data isn't better data);
+ * 2. try it on real questions and pick the fix for each answer: ship it, give
+ *    the bot the missing data, or hand it to a person.
+ * Testing (eval) is one step of the loop, not the whole job. Then the kinds of
+ * AI engineer, with this one first.
  */
 import type { GuidePage } from "@/lib/radar-guide/guide-types";
-import { beat, dialogue, host, item, me, sys } from "../../_shared/story";
+import { careerKindsBeat } from "../../_shared/kinds";
+import { beat, dialogue, host, me, sys } from "../../_shared/story";
 
 const SIM = "sim.ai-helpbot" as const;
 const THAIEXAM = "f.ai-thaiexam" as const;
@@ -15,29 +20,108 @@ const INSPECTRA = "f.ai-inspectra" as const;
 export const work: GuidePage = {
   key: "work",
   order: 2,
-  titleTh: "งานจริง คือสอบ AI ก่อนปล่อย",
-  questionTh: "นอกจากสร้าง AI วิศวกร AI ทำอะไรทั้งวัน",
-  navLabelTh: "สอบ AI",
-  asOf: "2026-11-18",
-  minutes: 2,
+  titleTh: "งานจริง คือทำให้ AI ใช้ได้จริง",
+  questionTh: "วิศวกร AI ต้องสร้าง AI เองตั้งแต่ศูนย์เลยไหม แล้วทั้งวันทำอะไร",
+  navLabelTh: "ทำบอทโรงเรียน",
+  asOf: "2026-11-19",
+  minutes: 2.5,
   factIds: [SIM, THAIEXAM, INSPECTRA],
-  og: { headlineTh: "บอทตอบมั่นมาก แต่ดันผิด เธอจับได้ไหม" },
+  og: { headlineTh: "ทำบอทให้โรงเรียน ใครก็ทำได้ แต่ทำให้มันตอบถูกนี่สิของจริง" },
   blocks: [
     dialogue(
       "intro",
       host("ด่านนี้เธอได้งานแรกแล้วนะ", { mood: "wow" }),
-      host("โรงเรียนหนึ่งทำบอทตอบคำถามนักเรียน จะเปิดใช้สัปดาห์หน้า"),
-      host("งานของเธอคือตรวจคำตอบบอท ก่อนปล่อยให้ทุกคนใช้", { mood: "serious" }),
-      me("แค่อ่านว่าถูกไหม ง่ายจะตาย"),
-      host("ลองดูก่อน บางข้อหลอกตากว่าที่คิด", { mood: "wink" })
+      host("โรงเรียนอยากได้บอทตอบคำถามนักเรียน แล้วคนทำก็คือเธอนี่แหละ"),
+      me("ต้องสร้าง AI เองตั้งแต่ศูนย์เลยเหรอ"),
+      host("ไม่ต้องเลย งานส่วนใหญ่คือเอาโมเดลที่มีอยู่แล้ว มาทำให้ใช้ได้จริง", { mood: "wink" }),
+      host("ทำเป็นขั้นๆ: ป้อนข้อมูล ลองถาม แล้วแก้จุดที่พัง")
     ),
     beat(
-      "beat-check",
-      "เริ่มตรวจ",
+      "beat-docs",
+      "ขั้นแรก: ป้อนข้อมูล",
       dialogue(
-        "check-intro",
-        host("แตะคำถาม แล้วเทียบคำตอบบอทกับเอกสารโรงเรียน", { facts: [SIM] }),
-        host("แล้วเลือกว่า ใช้ได้ ผิด หรือต้องให้คนตรวจ")
+        "docs-intro",
+        host("บอทจะตอบได้แค่จากเอกสารที่เธอให้มันอ่านเท่านั้น", { facts: [SIM] }),
+        host("คัดให้ดี บางอย่างห้ามให้บอทเห็นเด็ดขาด", { mood: "serious" })
+      ),
+      {
+        kind: "game",
+        id: "docs",
+        game: {
+          engine: "SortGame",
+          data: {
+            layout: "cards",
+            tagTh: "เลือกข้อมูลให้บอท",
+            goalTh: "เลือกเอกสารที่บอทโรงเรียนควรอ่าน",
+            bins: [
+              { id: "feed", labelTh: "ให้บอทอ่าน" },
+              { id: "keep", labelTh: "ไม่ให้อ่าน" },
+            ],
+            simulated: { factId: SIM, watermarkTh: "ตัวอย่างจำลอง" },
+            items: [
+              {
+                id: "doc-calendar",
+                labelTh: "ปฏิทินโรงเรียนปีนี้",
+                answer: "feed",
+                revealTh: "วันสอบ วันหยุด นักเรียนถามเรื่องพวกนี้บ่อยสุด",
+              },
+              {
+                id: "doc-handbook",
+                labelTh: "คู่มือนักเรียน",
+                answer: "feed",
+                revealTh: "กฎการแต่งกาย การส่งงาน เวลาห้องสมุด อยู่ในนี้หมด",
+              },
+              {
+                id: "doc-grades",
+                labelTh: "เกรดของนักเรียนทุกคน",
+                answer: "keep",
+                revealTh: "ข้อมูลส่วนตัว ถ้าบอทอ่านได้ แค่ใครมาถามดีๆ ก็อาจหลุดออกไปได้นะ",
+              },
+              {
+                id: "doc-old",
+                labelTh: "ปฏิทินโรงเรียนปีที่แล้ว",
+                answer: "keep",
+                revealTh: "ของเก่าทำให้บอทตอบวันผิด ข้อมูลเยอะไม่ได้แปลว่าดีเสมอ",
+              },
+              {
+                id: "doc-phones",
+                labelTh: "เบอร์โทรผู้ปกครอง",
+                answer: "keep",
+                revealTh: "ข้อมูลส่วนตัวเหมือนกัน บอทตอบคำถามได้โดยไม่ต้องรู้เลย",
+              },
+              {
+                id: "doc-teachers",
+                labelTh: "แชตกลุ่มครู",
+                answer: "keep",
+                revealTh: "เรื่องภายในของครู ไม่ใช่ข้อมูลที่จะเอาไปตอบนักเรียน",
+              },
+            ],
+            resultTh: "เลือกถูก {score}/{total}",
+          },
+        },
+        track: { done: "work:docs", value: "score" },
+        answersTh: [
+          "ให้บอทอ่าน: ปฏิทินโรงเรียนปีนี้, คู่มือนักเรียน",
+          "ไม่ให้อ่าน: เกรดของนักเรียนทุกคน, ปฏิทินปีที่แล้ว, เบอร์โทรผู้ปกครอง, แชตกลุ่มครู",
+        ],
+        demoScript: [
+          { at: 600, action: "tap", target: "docs.item-doc-grades-bin-keep" },
+          { at: 2400, action: "wait" },
+        ],
+      },
+      dialogue(
+        "docs-after",
+        host("คัดข้อมูลให้ถูก สำคัญกว่าโยนข้อมูลให้เยอะๆ", { mood: "wink" }),
+        host("บอทพร้อมแล้ว ลองไปถามมันดูกัน")
+      )
+    ),
+    beat(
+      "beat-test",
+      "ขั้นสอง: ลองถาม แล้วแก้",
+      dialogue(
+        "test-intro",
+        host("ลองยิงคำถามที่นักเรียนถามจริงดู ว่าข้อไหนพัง", { facts: [SIM] }),
+        host("ข้อไหนดีก็ปล่อยผ่าน ข้อไหนพังค่อยเลือกว่าจะแก้ยังไง")
       ),
       {
         kind: "game",
@@ -46,11 +130,12 @@ export const work: GuidePage = {
           engine: "SortGame",
           data: {
             layout: "queue",
-            goalTh: "ตรวจคำตอบบอทโรงเรียน ก่อนเปิดให้นักเรียนใช้",
+            tagTh: "ลองถาม แล้วแก้",
+            goalTh: "ลองถามบอทโรงเรียน แล้วเลือกวิธีแก้ทีละข้อ",
             bins: [
-              { id: "ok", labelTh: "ใช้ได้" },
-              { id: "wrong", labelTh: "ผิด" },
-              { id: "human", labelTh: "ต้องให้คนตรวจ" },
+              { id: "ok", labelTh: "ปล่อยได้" },
+              { id: "data", labelTh: "เพิ่มข้อมูลให้บอท" },
+              { id: "human", labelTh: "ส่งต่อให้คน" },
             ],
             simulated: { factId: SIM, watermarkTh: "ตัวอย่างจำลอง" },
             items: [
@@ -58,28 +143,29 @@ export const work: GuidePage = {
                 id: "library",
                 labelTh: "ห้องสมุดเปิดถึงกี่โมง",
                 meta: { sender: "นักเรียน ม.4" },
-                detailTh: "บอท: เปิด 7:30 ถึง 16:30 ค่ะ · คู่มือโรงเรียน: ห้องสมุดเปิด 7:30 ถึง 16:30",
+                detailTh: "บอท: เปิด 7:30 ถึง 16:30 ค่ะ · คู่มือนักเรียน: ห้องสมุดเปิด 7:30 ถึง 16:30",
                 answer: "ok",
-                revealTh: "ตรงคู่มือทุกตัว แบบนี้ปล่อยได้",
+                revealTh: "ตรงคู่มือทุกตัว แบบนี้ปล่อยได้เลย",
               },
               {
-                id: "exam",
-                labelTh: "สอบกลางภาควันไหน",
-                meta: { sender: "นักเรียน ม.5" },
-                detailTh: "บอท: วันที่ 12 ธ.ค. ค่ะ · ปฏิทินโรงเรียน: สอบกลางภาค 15 ถึง 19 ธ.ค.",
-                answer: "wrong",
-                flags: ["ตอบมั่นใจ แต่ไม่ตรงเอกสาร"],
-                revealTh: "บอทตอบมั่นมาก แต่ไม่ตรงปฏิทิน ถ้าไม่มีใครจับ นักเรียนทั้งโรงเรียนจำวันสอบผิดแน่",
+                id: "bus",
+                labelTh: "รถโรงเรียนออกกี่โมง",
+                meta: { sender: "ผู้ปกครอง" },
+                detailTh: "บอท: ออก 16:30 ค่ะ · เอกสารที่บอทอ่าน: ไม่มีเรื่องรถโรงเรียนเลย",
+                answer: "data",
+                flags: ["แต่งคำตอบขึ้นมาเอง"],
+                revealTh:
+                  "เอกสารไม่มีเรื่องนี้ บอทเลยมั่วขึ้นมา แก้โดยเติมตารางรถให้มัน แล้วสั่งให้ตอบว่าไม่รู้ ถ้าหาในเอกสารไม่เจอ",
               },
               {
                 id: "isan",
                 labelTh: "ห้องน้ำอยู่ไส",
                 meta: { sender: "นักเรียน ม.1" },
-                detailTh: "บอท: ขอโทษค่ะ ไม่เข้าใจคำถาม · คู่มือโรงเรียน: ห้องน้ำอยู่ชั้น 1 อาคาร 2",
-                answer: "wrong",
-                nearTh: { human: "ส่งให้คนตอบก็ได้ แต่ข้อนี้บอทพลาดเอง ต้องเอาไปสอนเพิ่ม" },
+                detailTh: "บอท: ขอโทษค่ะ ไม่เข้าใจคำถาม · คู่มือนักเรียน: ห้องน้ำอยู่ชั้น 1 อาคาร 2",
+                answer: "data",
+                nearTh: { human: "ส่งให้คนตอบก็ได้ แต่คำถามแบบนี้มาทุกวัน สอนบอทให้เข้าใจเองดีกว่า" },
                 flags: ["ไม่เข้าใจภาษาถิ่น"],
-                revealTh: "ภาษาอีสานก็เป็นคำถามจริง AI ภาษาไทยต้องเข้าใจคนทั้งประเทศ ไม่ใช่แค่คนกรุงเทพฯ",
+                revealTh: "เพิ่มตัวอย่างคำถามภาษาอีสานให้มัน AI ภาษาไทยต้องเข้าใจคนทั้งประเทศ ไม่ใช่แค่คนกรุงเทพฯ",
               },
               {
                 id: "grades",
@@ -87,7 +173,7 @@ export const work: GuidePage = {
                 meta: { sender: "นักเรียน ม.6" },
                 detailTh: "บอท: ดูเกรดคนอื่นไม่ได้นะ ถ้าอยากรู้เกรดตัวเอง ถามครูประจำชั้นได้เลย",
                 answer: "ok",
-                revealTh: "ปฏิเสธก็เป็นคำตอบที่ถูกได้ เกรดเพื่อนเป็นข้อมูลส่วนตัว",
+                revealTh: "ปฏิเสธก็เป็นคำตอบที่ถูกได้ และบอทไม่มีเกรดใครให้หลุดอยู่แล้ว เพราะเธอไม่ได้ให้มันอ่าน",
               },
               {
                 id: "bullied",
@@ -95,7 +181,7 @@ export const work: GuidePage = {
                 meta: { sender: "นักเรียน ม.2" },
                 detailTh: "บอท: ลองคิดบวกนะคะ เดี๋ยวทุกอย่างก็ดีขึ้นเอง",
                 answer: "human",
-                nearTh: { wrong: "ตอบแบบนี้แย่จริง แต่ที่สำคัญกว่าคือเรื่องนี้ต้องถึงมือครู" },
+                nearTh: { data: "เพิ่มข้อมูลก็ไม่พอ เรื่องนี้ต้องถึงมือครู" },
                 flags: ["เรื่องความรู้สึกและความปลอดภัย"],
                 revealTh: "เรื่องนี้บอทไม่ควรตอบเอง ต้องส่งต่อให้ครูแนะแนวหรือครูที่ดูแลนักเรียน",
               },
@@ -105,18 +191,9 @@ export const work: GuidePage = {
                 meta: { sender: "นักเรียน ม.3" },
                 detailTh: "บอท: กินได้เลย 2 เม็ดค่ะ",
                 answer: "human",
-                nearTh: { wrong: "เกือบได้แล้ว แต่เรื่องยา ต่อให้บอทตอบถูก ก็ต้องให้คนตอบอยู่ดี" },
+                nearTh: { data: "ต่อให้บอทรู้คำตอบ เรื่องยาก็ต้องให้คนตอบอยู่ดี" },
                 flags: ["เรื่องสุขภาพ"],
                 revealTh: "เรื่องยาให้ห้องพยาบาลหรือผู้ใหญ่ตอบ บอทที่ดีต้องรู้ว่าข้อไหนไม่ใช่งานตัวเอง",
-              },
-              {
-                id: "fee",
-                labelTh: "ค่าบำรุงการศึกษาเทอมนี้เท่าไหร่",
-                meta: { sender: "ผู้ปกครอง" },
-                detailTh: "บอท: 3,500 บาทค่ะ · เอกสารที่บอทอ่านได้: ไม่มีเรื่องค่าบำรุงเลย",
-                answer: "wrong",
-                flags: ["แต่งตัวเลขขึ้นมาเอง"],
-                revealTh: "เอกสารไม่มีข้อมูลนี้ แต่บอทมั่วตัวเลขขึ้นมาเอง ที่ถูกคือตอบว่าไม่รู้ แล้วส่งไปถามฝ่ายการเงิน",
               },
               {
                 id: "late",
@@ -127,18 +204,18 @@ export const work: GuidePage = {
                 revealTh: "ตรงตามคู่มือ แถมบอกขั้นตอนต่อให้ด้วย แบบนี้ผ่านเลย",
               },
             ],
-            resultTh: "ตรวจถูก {score}/{total}",
+            resultTh: "แก้ถูก {score}/{total}",
           },
         },
         track: { done: "work:done", value: "score" },
         answersTh: [
-          "ใช้ได้: เวลาห้องสมุด, ปฏิเสธไม่ให้ดูเกรดเพื่อน, กติกาส่งงานช้า",
-          "ผิด: วันสอบไม่ตรงปฏิทิน, ไม่เข้าใจภาษาอีสาน, แต่งค่าบำรุงขึ้นมาเอง",
-          "ต้องให้คนตรวจ: โดนเพื่อนแกล้ง, เรื่องยา",
+          "ปล่อยได้: เวลาห้องสมุด, ปฏิเสธไม่ให้ดูเกรดเพื่อน, กติกาส่งงานช้า",
+          "เพิ่มข้อมูลให้บอท: ตารางรถโรงเรียน, ตัวอย่างคำถามภาษาอีสาน",
+          "ส่งต่อให้คน: โดนเพื่อนแกล้ง, เรื่องยา",
         ],
         demoScript: [
-          { at: 600, action: "tap", target: "helpbot.item-exam" },
-          { at: 1600, action: "tap", target: "helpbot.item-exam-bin-wrong" },
+          { at: 600, action: "tap", target: "helpbot.item-bus" },
+          { at: 1600, action: "tap", target: "helpbot.item-bus-bin-data" },
           { at: 3200, action: "tap", target: "helpbot.item-bullied" },
           { at: 4200, action: "tap", target: "helpbot.item-bullied-bin-human" },
           { at: 6000, action: "wait" },
@@ -146,43 +223,35 @@ export const work: GuidePage = {
       },
       dialogue(
         "debrief",
-        host("ที่เธอเพิ่งทำไป ทีม AI เรียกว่า eval หรือชุดสอบ AI", { mood: "wow" }),
-        host("demo สวยๆ ใครก็ทำได้ แต่ของที่จะใช้จริงทุกวันต้องผ่านชุดสอบก่อน"),
-        host("บอทที่มั่วแบบมั่นใจ อันตรายกว่าบอทที่ยอมรับว่าไม่รู้", { mood: "serious" })
+        host("ที่เธอเพิ่งทำ คืองานจริงของวิศวกร AI เลยนะ", { mood: "wow" }),
+        host("ป้อนข้อมูล ลองถาม แก้จุดพัง แล้ววนลูปจนใช้ได้จริง"),
+        host("ขั้นลองถาม ทีม AI เรียกว่า eval แต่นี่แค่ส่วนหนึ่งของงาน"),
+        host("เปิดใช้แล้วก็ยังต้องคอยเช็ก ว่ามีคนถามอะไรที่บอทยังตอบไม่ได้", { mood: "serious" })
       ),
       { kind: "shareCard", id: "share-work" }
     ),
-    beat(
-      "beat-real",
-      "ทีมจริงสอบ AI ยังไง",
-      item(
-        "intel-thaiexam",
-        "intel",
-        "ทีม Typhoon วัดว่า AI เข้าใจภาษาไทยจริงไหม ด้วยข้อสอบที่เธอคุ้นอย่าง O-NET TGAT A-Level ชุดนี้ชื่อ ThaiExam และ Stanford ก็ใช้จัดอันดับด้วย",
-        { title: "ชุดสอบ AI จากข้อสอบไทย", facts: [THAIEXAM] }
-      ),
-      item(
-        "intel-human",
-        "intel",
-        "อย่าง Inspectra CXR ที่ช่วยอ่านเอกซเรย์ปอด ทีมสร้างก็ย้ำชัดว่าทำมาช่วยหมอ ไม่ได้มาแทนหมอ",
-        { title: "ช่อง ต้องให้คนตรวจ ในโลกจริง", facts: [INSPECTRA] }
-      ),
-      dialogue(
-        "exit",
-        host("งานสายนี้ไม่ได้มีแค่สร้าง แต่ต้องพิสูจน์ให้ได้ด้วยว่าใช้ได้จริง"),
-        sys("ด่านต่อไป: ผลงานแบบนี้ เอาไปยื่นเข้ามหาลัยได้ไหม")
-      )
-    ),
+    careerKindsBeat({
+      nameTh: "วิศวกร AI",
+      facts: [THAIEXAM, INSPECTRA],
+      kinds: [
+        { titleTh: "สายสร้างแอป AI", bodyTh: "หยิบโมเดลที่มีอยู่ มาทำเป็นของที่คนใช้จริง แบบบอทโรงเรียนเมื่อกี้" },
+        { titleTh: "สายโมเดลภาษา", bodyTh: "สอนโมเดลให้เก่งภาษาไทย แล้ววัดผลด้วยข้อสอบอย่าง O-NET แบบทีม Typhoon" },
+        { titleTh: "สายภาพ", bodyTh: "สอน AI ให้ดูรูปเป็น แบบ Inspectra ที่ช่วยหมออ่านเอกซเรย์ปอด" },
+        { titleTh: "สายระบบ", bodyTh: "คุมให้ AI รันลื่นทุกวัน คนใช้เยอะแค่ไหนก็ไม่ล่ม" },
+        { titleTh: "สายวิจัย", bodyTh: "คิดวิธีใหม่ๆ ให้ AI เก่งขึ้น ในแล็บมหาลัยหรือบริษัทใหญ่" },
+      ],
+    }),
+    dialogue("exit", sys("ด่านต่อไป: คืนนี้มาลองสอน AI ตัวแรกของเธอเอง")),
   ],
   reel: {
     format: "motion",
-    hook: { th: "บอทตอบมั่นมาก แต่ดันผิด เธอจับได้ไหม" },
-    variantsTh: ["งานจริงของวิศวกร AI คือสอบ AI ก่อนปล่อย", "บอทยอมรับว่าไม่รู้ ดีกว่าบอทที่แต่งเรื่องมาตอบ"],
-    sendToFriendTh: "ส่งให้เพื่อนที่ชอบจับผิด",
+    hook: { th: "ทำบอทให้โรงเรียน ใครก็ทำได้ แต่ทำให้มันตอบถูกนี่สิของจริง" },
+    variantsTh: ["วิศวกร AI ไม่ได้สร้าง AI จากศูนย์ทุกครั้ง งานจริงคือนี่", "บอทยอมรับว่าไม่รู้ ดีกว่าบอทที่แต่งเรื่องมาตอบ"],
+    sendToFriendTh: "ส่งให้เพื่อนที่อยากทำ AI",
     visual: [
-      "หน้าจอแชตบอทโรงเรียน คำตอบเด้งขึ้นทีละข้อ",
-      "ป้าย ใช้ได้ ผิด ต้องให้คนตรวจ ประทับลงบนแต่ละคำตอบ",
-      "ตัวเลขค่าบำรุงที่บอทแต่งขึ้น แตกเป็นเสี่ยง",
+      "การ์ดเอกสารบินเข้ากล่องบอท เกรดเพื่อนถูกเด้งออก",
+      "คำถามนักเรียนเด้งขึ้นทีละข้อ ป้าย ปล่อยได้ เพิ่มข้อมูล ส่งต่อให้คน ประทับลง",
+      "วงกลมหมุน ป้อนข้อมูล ลองถาม แก้ วนกลับมาที่เดิม",
     ],
   },
 };

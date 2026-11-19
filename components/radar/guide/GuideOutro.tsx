@@ -476,7 +476,7 @@ export function GuideProgramLine({ tracker, lineTh, linkLabelTh, href, pageKey, 
 // ---------------------------------------------------------------------------
 
 export const LEVEL_TWO_DOOR_HEADING_TH = "ลุยต่อ Level 2";
-export const LEVEL_TWO_DOOR_PAGES_TH = "เจาะลึกทั้งงานจริง เงินเดือน และที่เรียน";
+export const LEVEL_TWO_DOOR_PAGES_TH = "เจาะลึกต่อเลย ทั้งรอบ 1 Portfolio เงินเดือน และที่เรียน";
 export const LEVEL_TWO_DOOR_DECK_TH = "ข้อมูลจัดเต็มของสายนี้ ทั้งเงินเดือน ตลาดงาน และทางเรียน";
 export const LEVEL_TWO_DOOR_CTA_TH = "ไป Level 2";
 
@@ -486,21 +486,17 @@ export interface GuideLevelTwoDoorProps {
   href: string;
   /** Level 2 is more levels of the guide, or the career's full deck. */
   kind: "pages" | "deck";
-  /** Number of Level 2 levels, when kind is "pages". */
-  levels?: number;
   pageKey?: string | null;
   look?: FunnelLook;
 }
 
 /** The door from the end of Level 1 to Level 2. Sends `cta_click` `level-two`. */
-export function GuideLevelTwoDoor({ tracker, href, kind, levels, pageKey, look: lookProp }: GuideLevelTwoDoorProps) {
+export function GuideLevelTwoDoor({ tracker, href, kind, pageKey, look: lookProp }: GuideLevelTwoDoorProps) {
   const { look, shellPageKey } = useFunnelContext(lookProp);
   const eventPage = pageKey ?? shellPageKey;
   const pixel = look === "pixel";
-  const lineTh =
-    kind === "pages"
-      ? `${LEVEL_TWO_DOOR_PAGES_TH}${levels ? ` อีก ${levels} ด่าน` : ""}`
-      : LEVEL_TWO_DOOR_DECK_TH;
+  // No level count: Level 2 also ends in the career's full deck.
+  const lineTh = kind === "pages" ? LEVEL_TWO_DOOR_PAGES_TH : LEVEL_TWO_DOOR_DECK_TH;
   return (
     <div className={pixel ? "rgf rgf-program" : "radar-guide-program"} data-testid="level-two-door">
       <p className={pixel ? "rgf-heading" : "radar-guide-outro__heading"}>{LEVEL_TWO_DOOR_HEADING_TH}</p>

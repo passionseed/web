@@ -20,9 +20,9 @@ export const SOFTWARE_ENGINEER_META = {
   pages: [
     { key: "dream", order: 1, titleTh: "แอปที่เริ่มจากคนตกรถ", navLabelTh: "คนตกรถ", minutes: 1.5, tier: 1 },
     { key: "work", order: 2, titleTh: "งานจริง คือฟังคนใช้ แล้วแก้ที่พัง", navLabelTh: "งานจริง", minutes: 1.5, tier: 1 },
-    { key: "round1", order: 3, titleTh: ROUND_ONE_TITLE_TH, navLabelTh: ROUND_ONE_NAV_TH, minutes: ROUND_ONE_MINUTES, tier: 1 },
-    { key: "tonight", order: 4, titleTh: "คืนนี้ ทำเว็บหน้าเดียวให้เพื่อนใช้", navLabelTh: "ภารกิจคืนนี้", minutes: 1, tier: 1 },
-    { key: "next", order: 5, titleTh: "แล้วเธอล่ะ", navLabelTh: "แล้วเธอล่ะ", minutes: 1, tier: 1 },
+        { key: "tonight", order: 3, titleTh: "คืนนี้ ทำเว็บหน้าเดียวให้เพื่อนใช้", navLabelTh: "ภารกิจคืนนี้", minutes: 1, tier: 1 },
+    { key: "next", order: 4, titleTh: "แล้วเธอล่ะ", navLabelTh: "แล้วเธอล่ะ", minutes: 1, tier: 1 },
+    { key: "round1", order: 5, titleTh: ROUND_ONE_TITLE_TH, navLabelTh: ROUND_ONE_NAV_TH, minutes: ROUND_ONE_MINUTES, tier: 2 },
   ],
   story: {
     profileTitleTh: "โปรไฟล์สายโค้ดของฉัน",

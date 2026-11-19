@@ -9,7 +9,7 @@ import { dialogue, host, item } from "../../_shared/story";
 
 export const next: GuidePage = {
   key: "next",
-  order: 5,
+  order: 4,
   titleTh: "แล้วเธอล่ะ",
   questionTh: "สายข้อมูลใช่ทางเธอไหม แล้วจะไปต่อทางไหนดี",
   navLabelTh: "แล้วเธอล่ะ",
@@ -32,7 +32,6 @@ export const next: GuidePage = {
           lines: {
             dream: "ทายไว้ว่าโรงเรียนปิดเพราะฝุ่น {schools} แห่ง || รู้แล้วว่าตัวเลขฝุ่นเริ่มจากคำถาม",
             work: "จัดการข้อมูลถูก {score}/{total}",
-            round1: "จัดแฟ้มถูก {score}/{total}",
             tonight: "เตรียม write-up งานข้อมูลชิ้นแรกไว้แล้ว",
           },
           favourites: {

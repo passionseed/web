@@ -521,6 +521,7 @@
 .rg-item__body {
   font-size: 1.02rem;
   line-height: 1.55;
+  white-space: pre-line;
 }
 
 .rg-item--notification {

@@ -19,7 +19,7 @@ import { work } from "./pages/work";
 
 export const dataScientistGuide: CareerGuide = {
   meta: DATA_SCIENTIST_META,
-  pages: [dream, work, round1, tonight, next],
+  pages: [dream, work, tonight, next, round1],
   facts: DATA_SCIENTIST_FACTS,
   banned: DATA_SCIENTIST_BANNED,
 };

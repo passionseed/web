@@ -109,7 +109,7 @@ describe("radar guide registry", () => {
   });
 
   it("answers light index questions without content", () => {
-    expect(index.guidePageKeys("cybersecurity")?.slice(0, 3)).toEqual(["mythos", "scam", "round1"]);
+    expect(index.guidePageKeys("cybersecurity")?.slice(0, 3)).toEqual(["mythos", "scam", "tonight"]);
     expect(index.guidePageKeys("product-designer")).toBeNull();
     expect(index.isGuidePageKey("cybersecurity", "tcas")).toBe(true);
     expect(index.isGuidePageKey("cybersecurity", "toString")).toBe(false);

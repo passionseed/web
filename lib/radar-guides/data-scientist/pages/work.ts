@@ -5,6 +5,7 @@
  * Mid-guide share card after the clean-up.
  */
 import type { GuidePage } from "@/lib/radar-guide/guide-types";
+import { careerKindsBeat } from "../../_shared/kinds";
 import { beat, dialogue, host, item, sys } from "../../_shared/story";
 
 const SIM = "sim.ds-school-dust" as const;
@@ -223,10 +224,19 @@ export const work: GuidePage = {
       ),
       { kind: "shareCard", id: "share-work" }
     ),
+    careerKindsBeat({
+      nameTh: "สายข้อมูล",
+      kinds: [
+        { titleTh: "นักวิเคราะห์ข้อมูล", bodyTh: "ตั้งคำถาม เคลียร์ตาราง แล้วทำกราฟให้คนตัดสินใจ แบบที่เธอเพิ่งทำ" },
+        { titleTh: "นักวิทยาศาสตร์ข้อมูล", bodyTh: "สร้างโมเดลทำนาย เช่น พรุ่งนี้ฝุ่นจะสูงไหม" },
+        { titleTh: "วิศวกรข้อมูล", bodyTh: "วางระบบให้ข้อมูลจากเครื่องวัดฝุ่นทุกเครื่อง ไหลมาครบและสะอาดทุกวัน" },
+        { titleTh: "วิศวกร ML", bodyTh: "เอาโมเดลไปใช้จริงในแอปหรือเว็บ ให้คนเปิดดูได้ทุกวัน" },
+      ],
+    }),
     dialogue(
       "bridge",
       host("งานแบบที่เธอเพิ่งทำ เริ่มได้เลยตั้งแต่ ม.ปลาย"),
-      sys("แถมเอาใส่แฟ้มผลงานได้ด้วย ด่านต่อไปจะเล่าให้ฟัง")
+      sys("ด่านต่อไป: คืนนี้ลองทำกราฟจากข้อมูลฝุ่นจริงเอง")
     ),
   ],
   reel: {

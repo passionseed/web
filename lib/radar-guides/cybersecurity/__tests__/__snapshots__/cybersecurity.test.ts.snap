@@ -156,8 +156,19 @@ scam.blocks[6].blocks[5].text.th: กระทรวงดิจิทัลฯ 
 scam.blocks[6].blocks[5].titleTh: เทรนด์ปีนี้
 scam.blocks[7].lines[0].text.th: ใครทำงานนี้: ทีมกันโกงของธนาคาร ค่ายมือถือ ศูนย์ AOC 1441
 scam.blocks[7].lines[1].text.th: บริษัทแอปเตือนเบอร์มิจฉาชีพ และตำรวจไซเบอร์ ทั้งหมดนี้คือสายไซเบอร์
-scam.blocks[8].text.th: เจอเรื่องแบบนี้ โทร 1441
-scam.blocks[8].titleTh: สายด่วน
+scam.blocks[8].unlockLabelTh: สายนี้มีกี่แบบ
+scam.blocks[8].blocks[0].lines[0].text.th: สายไซเบอร์ เป็นชื่อเรียกกว้างๆ นะ
+scam.blocks[8].blocks[0].lines[1].text.th: งานจริงแยกได้อีกหลายแบบ แต่ละแบบทำไม่เหมือนกันเลย
+scam.blocks[8].blocks[1].text.th: สายกันโกง: ดักจับข้อความหลอกลวงกับบัญชีม้า แบบทีมกันโกงของธนาคาร
+สายเฝ้าระบบ: เฝ้าระบบองค์กรทั้งวันทั้งคืน เจออะไรแปลกๆ ก็หยุดทันที
+สายทดสอบเจาะระบบ: ลองเจาะระบบที่เจ้าของอนุญาตแล้ว เพื่อหาช่องโหว่ก่อนคนร้าย
+สายสืบหลักฐาน: แกะรอยหลังโดนโจมตี ว่าเกิดอะไรขึ้น แล้วเข้ามาทางไหน
+สายวางกติกา: ดูแลกฎและความเสี่ยงของทั้งองค์กร รวมถึงบริษัทคู่ค้า
+scam.blocks[8].blocks[1].titleTh: สายไซเบอร์ มีหลายแบบ
+scam.blocks[8].blocks[2].lines[0].text.th: ที่เธอเพิ่งลองไป คือแบบแรก
+scam.blocks[8].blocks[2].lines[1].text.th: ยังไม่ต้องรีบเลือกตอนนี้ ค่อยๆ ลองไปทีละแบบก็ได้
+scam.blocks[9].text.th: เจอเรื่องแบบนี้ โทร 1441
+scam.blocks[9].titleTh: สายด่วน
 scam.clip.hookTh: ข้อความไหนในแชตบ้านเธอคือมิจ
 scam.clip.scriptLinesTh[0]: ข่าวไซเบอร์ไม่ได้อยู่ไกลเลย
 scam.clip.scriptLinesTh[1]: เมื่อกันยาที่ผ่านมา มีคนอายุ 19 ถึง 22 สามคน
@@ -171,48 +182,6 @@ scam.reel.variantsTh[1]: ทุนเรียนต่อปลอม หลอ
 scam.reel.sendToFriendTh: ส่งให้แม่
 scam.reel.visual[0]: ฟองแชตเด้งขึ้นทีละอัน ป้ายธงแดงประทับลงบนคำ
 scam.reel.visual[1]: หมุดแผนที่ที่กรุงเทพฯ กับการ์ดข่าวสามใบมีวันที่ตกลงมา",
-  "round1.titleTh: รอบ 1 มีพื้นที่ให้ผลงานเธอ
-round1.questionTh: เข้ามหาลัยด้วยสิ่งที่ทำเอง ไม่ใช่แค่คะแนนสอบ จริงเหรอ
-round1.navLabelTh: รอบ 1
-round1.og.headlineTh: TCAS รอบ 1 ใช้ผลงานของเธอยื่นได้ เริ่มเก็บตั้งแต่ตอนนี้เลย
-round1.og.stat.th: TCAS70 มี 4 รอบ รอบแรกคือ Portfolio
-round1.blocks[0].lines[0].text.th: ก่อนไปต่อ มีเรื่องหนึ่งที่แทบไม่มีใครเคยบอก
-round1.blocks[0].lines[1].text.th: เข้ามหาลัยไม่ได้มีแค่ทางสอบอย่างเดียวนะ
-round1.blocks[1].text.th: TCAS70 มี 4 รอบ รอบแรกชื่อ Portfolio มหาลัยดูจากสิ่งที่เธอทำมา
-round1.blocks[2].lines[0].text.th: ถ้าเธอเคยลองทำอะไรในสายไซเบอร์ ด้วยตัวเอง นั่นแหละ เอาไปใส่ได้เลย
-round1.blocks[2].lines[1].text.th: ปีนี้ ทปอ. มีระบบ TCASfolio ให้ทำแฟ้มผลงานได้สูงสุด 40 รายการ
-round1.blocks[3].unlockLabelTh: ลองจัดแฟ้มดู
-round1.blocks[3].blocks[0].lines[0].text.th: ลองดูสิ ของพวกนี้ควรไปอยู่ช่องไหนในแฟ้ม
-round1.blocks[3].blocks[1].game.data.tagTh: จัดแฟ้มผลงาน
-round1.blocks[3].blocks[1].game.data.goalTh: จัดของใส่แฟ้ม TCASfolio
-round1.blocks[3].blocks[1].game.data.bins[0].labelTh: โครงงาน
-round1.blocks[3].blocks[1].game.data.bins[1].labelTh: กิจกรรม
-round1.blocks[3].blocks[1].game.data.bins[2].labelTh: เกียรติบัตร รางวัล
-round1.blocks[3].blocks[1].game.data.items[0].labelTh: write-up จากห้องฝึก TryHackMe ที่ทำจบเอง
-round1.blocks[3].blocks[1].game.data.items[0].revealTh: ลงมือเองแล้วเล่าได้ว่าทำอะไรไป นี่แหละโครงงาน
-round1.blocks[3].blocks[1].game.data.items[1].labelTh: เช็กรหัสเราเตอร์ที่บ้าน (ขอผู้ปกครองก่อนนะ) แล้วเขียนวิธีแก้ให้ที่บ้าน
-round1.blocks[3].blocks[1].game.data.items[1].revealTh: เจอปัญหาจริง แก้ให้คนจริง บนเครื่องบ้านตัวเอง นับเป็นโครงงานได้เต็มปาก
-round1.blocks[3].blocks[1].game.data.items[2].labelTh: ลงแข่ง Thailand Cyber Top Talent รุ่น Junior กับเพื่อน
-round1.blocks[3].blocks[1].game.data.items[2].revealTh: แค่ลงแข่งนับเป็นกิจกรรม ถ้าคว้ารางวัลค่อยย้ายไปช่องรางวัล
-round1.blocks[3].blocks[1].game.data.items[3].labelTh: เกียรติบัตรจากงานแข่งตอบปัญหาไซเบอร์
-round1.blocks[3].blocks[1].game.data.items[3].revealTh: เกียรติบัตรใส่ได้นะ แต่ถ้าเล่าได้ว่าเรียนรู้อะไรจากมัน จะยิ่งมีน้ำหนัก
-round1.blocks[3].blocks[1].game.data.resultTh: จัดถูก {score}/{total}
-round1.blocks[3].blocks[1].answersTh[0]: โครงงาน: write-up จากห้องฝึก TryHackMe ที่ทำจบเอง, เช็กรหัสเราเตอร์ที่บ้าน (ขอผู้ปกครองก่อนนะ) แล้วเขียนวิธีแก้ให้ที่บ้าน
-round1.blocks[3].blocks[1].answersTh[1]: กิจกรรม: ลงแข่ง Thailand Cyber Top Talent รุ่น Junior กับเพื่อน
-round1.blocks[3].blocks[1].answersTh[2]: เกียรติบัตร รางวัล: เกียรติบัตรจากงานแข่งตอบปัญหาไซเบอร์
-round1.blocks[3].blocks[2].lines[0].text.th: เห็นไหม ของที่เธอลงมือทำเองนับได้จริง
-round1.blocks[3].blocks[2].lines[1].text.th: ไม่ต้องรอใครมาจัดค่าย หรือออกใบเกียรติบัตรให้ก่อนเลย
-round1.blocks[4].unlockLabelTh: แล้วตอนนี้ฉันอยู่ ม.ไหนล่ะ
-round1.blocks[4].blocks[0].lines[0].text.th: ถ้าอยู่ ม.6 รอบ 1 ปีนี้บางที่ยังเปิดรับอยู่ แต่ละคณะปิดไม่พร้อมกันนะ
-round1.blocks[4].blocks[0].lines[1].text.th: ถ้าอยู่ ม.5 เธอยังมีเวลาอีกเกือบปี ลองทำชิ้นแรกให้เสร็จก่อนเลย
-round1.blocks[4].blocks[0].lines[2].text.th: ถ้าอยู่ ม.4 เวลาเยอะสุด ลองได้หลายอย่างเลย ไม่ต้องรีบเลือก
-round1.blocks[4].blocks[1].text.th: อย่างเช่น สวนสุนันทาเปิดรับรอบ 1 ถึง 9 ก.พ. 2570
-round1.blocks[4].blocks[1].titleTh: ยังเปิดอยู่
-round1.blocks[4].blocks[2].text.th: รอบ 1 ไม่ได้ง่ายกว่ารอบอื่น แต่ละคณะมีเกณฑ์อย่างเกรดขั้นต่ำ เช็กประกาศของคณะที่สนใจทุกครั้งนะ
-round1.blocks[4].blocks[2].titleTh: พูดตรงๆ
-round1.blocks[4].blocks[3].labelTh: ดูหลักสูตร ไซเบอร์ วิศวะคอม วิทย์คอม ใน mytcas
-round1.blocks[5].lines[0].text.th: ผลงานชิ้นแรกไม่ต้องใหญ่โตเลย
-round1.blocks[5].lines[1].text.th: ด่านต่อไป เริ่มลุยได้คืนนี้เลย",
   "tonight.titleTh: คืนนี้ ห้องเดียว ได้ผลงานชิ้นแรก
 tonight.questionTh: คืนนี้ทำอะไรได้เลย ที่จบด้วยของจริงในพอร์ต
 tonight.navLabelTh: ภารกิจคืนนี้
@@ -243,10 +212,11 @@ tonight.blocks[4].demoScript[2].text: ถ้าเป็นเจ้าของ
 tonight.blocks[5].lines[0].text.th: ที่สำคัญกว่าทำจบ คือเขียนสรุปสั้นๆ ว่าลองอะไรไปบ้าง อะไรไม่เวิร์ก
 tonight.blocks[5].lines[1].text.th: และถ้าเป็นเจ้าของระบบ จะแก้ยังไง
 tonight.blocks[5].lines[2].text.th: ทีมเราคิดว่าข้อสุดท้ายมีค่าที่สุด อย่าข้ามนะ
-tonight.blocks[6].lines[0].text.th: จำรอบ 1 ได้ไหม ของที่เธอลงมือทำเองนับเป็นโครงงานได้นะ
-tonight.blocks[6].lines[1].text.th: write-up ชิ้นนี้แหละ คือผลงานแรกในแฟ้มเธอ
-tonight.blocks[6].lines[2].text.th: ถ้าสนุก ทำห้องถัดไปพรุ่งนี้ ถ้าไม่สนุก ก็รู้ก่อนเลือกคณะ ไม่เสียอะไร
-tonight.blocks[6].lines[3].text.th: เช็กกติกาของห้องก่อนโพสต์ write-up สาธารณะ
+tonight.blocks[6].lines[0].text.th: write-up ชิ้นนี้แหละ คือผลงานแรกในแฟ้มเธอ
+tonight.blocks[7].text.th: TCAS70 มี 4 รอบ รอบแรกชื่อ Portfolio มหาลัยดูจากสิ่งที่เธอลงมือทำ งานแบบคืนนี้แหละ ใส่แฟ้มได้เลย
+tonight.blocks[7].titleTh: รู้ไหม รอบ 1 ใช้ผลงานยื่นได้นะ
+tonight.blocks[8].lines[0].text.th: ถ้าสนุก ทำห้องถัดไปพรุ่งนี้ ถ้าไม่สนุก ก็รู้ก่อนเลือกคณะ ไม่เสียอะไร
+tonight.blocks[8].lines[1].text.th: เช็กกติกาของห้องก่อนโพสต์ write-up สาธารณะ
 tonight.clip.hookTh: คืนนี้ ห้องเดียว ได้ผลงานชิ้นแรก
 tonight.clip.scriptLinesTh[0]: คืนนี้ลองแค่ห้องเดียว ฟรี
 tonight.clip.scriptLinesTh[1]: เปิด TryHackMe ห้อง Offensive Security Intro
@@ -641,6 +611,48 @@ fit.reel.variantsTh[1]: เลือกคณะจากคะแนนอย�
 fit.reel.sendToFriendTh: ส่งให้เพื่อนที่ยังเลือกคณะไม่ได้
 fit.reel.visual[0]: การ์ดคู่พลิกซ้ายขวา
 fit.reel.visual[1]: ป้ายบอกทางสามป้าย ไซเบอร์ตรง คอมกว้าง หมอ แล้วป้ายหนึ่งสว่างขึ้น",
+  "round1.titleTh: รอบ 1 มีพื้นที่ให้ผลงานเธอ
+round1.questionTh: เข้ามหาลัยด้วยสิ่งที่ทำเอง ไม่ใช่แค่คะแนนสอบ จริงเหรอ
+round1.navLabelTh: รอบ 1
+round1.og.headlineTh: TCAS รอบ 1 ใช้ผลงานของเธอยื่นได้ เริ่มเก็บตั้งแต่ตอนนี้เลย
+round1.og.stat.th: TCAS70 มี 4 รอบ รอบแรกคือ Portfolio
+round1.blocks[0].lines[0].text.th: ก่อนไปต่อ มีเรื่องหนึ่งที่แทบไม่มีใครเคยบอก
+round1.blocks[0].lines[1].text.th: เข้ามหาลัยไม่ได้มีแค่ทางสอบอย่างเดียวนะ
+round1.blocks[1].text.th: TCAS70 มี 4 รอบ รอบแรกชื่อ Portfolio มหาลัยดูจากสิ่งที่เธอทำมา
+round1.blocks[2].lines[0].text.th: ถ้าเธอเคยลองทำอะไรในสายไซเบอร์ ด้วยตัวเอง นั่นแหละ เอาไปใส่ได้เลย
+round1.blocks[2].lines[1].text.th: ปีนี้ ทปอ. มีระบบ TCASfolio ให้ทำแฟ้มผลงานได้สูงสุด 40 รายการ
+round1.blocks[3].unlockLabelTh: ลองจัดแฟ้มดู
+round1.blocks[3].blocks[0].lines[0].text.th: ลองดูสิ ของพวกนี้ควรไปอยู่ช่องไหนในแฟ้ม
+round1.blocks[3].blocks[1].game.data.tagTh: จัดแฟ้มผลงาน
+round1.blocks[3].blocks[1].game.data.goalTh: จัดของใส่แฟ้ม TCASfolio
+round1.blocks[3].blocks[1].game.data.bins[0].labelTh: โครงงาน
+round1.blocks[3].blocks[1].game.data.bins[1].labelTh: กิจกรรม
+round1.blocks[3].blocks[1].game.data.bins[2].labelTh: เกียรติบัตร รางวัล
+round1.blocks[3].blocks[1].game.data.items[0].labelTh: write-up จากห้องฝึก TryHackMe ที่ทำจบเอง
+round1.blocks[3].blocks[1].game.data.items[0].revealTh: ลงมือเองแล้วเล่าได้ว่าทำอะไรไป นี่แหละโครงงาน
+round1.blocks[3].blocks[1].game.data.items[1].labelTh: เช็กรหัสเราเตอร์ที่บ้าน (ขอผู้ปกครองก่อนนะ) แล้วเขียนวิธีแก้ให้ที่บ้าน
+round1.blocks[3].blocks[1].game.data.items[1].revealTh: เจอปัญหาจริง แก้ให้คนจริง บนเครื่องบ้านตัวเอง นับเป็นโครงงานได้เต็มปาก
+round1.blocks[3].blocks[1].game.data.items[2].labelTh: ลงแข่ง Thailand Cyber Top Talent รุ่น Junior กับเพื่อน
+round1.blocks[3].blocks[1].game.data.items[2].revealTh: แค่ลงแข่งนับเป็นกิจกรรม ถ้าคว้ารางวัลค่อยย้ายไปช่องรางวัล
+round1.blocks[3].blocks[1].game.data.items[3].labelTh: เกียรติบัตรจากงานแข่งตอบปัญหาไซเบอร์
+round1.blocks[3].blocks[1].game.data.items[3].revealTh: เกียรติบัตรใส่ได้นะ แต่ถ้าเล่าได้ว่าเรียนรู้อะไรจากมัน จะยิ่งมีน้ำหนัก
+round1.blocks[3].blocks[1].game.data.resultTh: จัดถูก {score}/{total}
+round1.blocks[3].blocks[1].answersTh[0]: โครงงาน: write-up จากห้องฝึก TryHackMe ที่ทำจบเอง, เช็กรหัสเราเตอร์ที่บ้าน (ขอผู้ปกครองก่อนนะ) แล้วเขียนวิธีแก้ให้ที่บ้าน
+round1.blocks[3].blocks[1].answersTh[1]: กิจกรรม: ลงแข่ง Thailand Cyber Top Talent รุ่น Junior กับเพื่อน
+round1.blocks[3].blocks[1].answersTh[2]: เกียรติบัตร รางวัล: เกียรติบัตรจากงานแข่งตอบปัญหาไซเบอร์
+round1.blocks[3].blocks[2].lines[0].text.th: เห็นไหม ของที่เธอลงมือทำเองนับได้จริง
+round1.blocks[3].blocks[2].lines[1].text.th: ไม่ต้องรอใครมาจัดค่าย หรือออกใบเกียรติบัตรให้ก่อนเลย
+round1.blocks[4].unlockLabelTh: แล้วตอนนี้ฉันอยู่ ม.ไหนล่ะ
+round1.blocks[4].blocks[0].lines[0].text.th: ถ้าอยู่ ม.6 รอบ 1 ปีนี้บางที่ยังเปิดรับอยู่ แต่ละคณะปิดไม่พร้อมกันนะ
+round1.blocks[4].blocks[0].lines[1].text.th: ถ้าอยู่ ม.5 เธอยังมีเวลาอีกเกือบปี ลองทำชิ้นแรกให้เสร็จก่อนเลย
+round1.blocks[4].blocks[0].lines[2].text.th: ถ้าอยู่ ม.4 เวลาเยอะสุด ลองได้หลายอย่างเลย ไม่ต้องรีบเลือก
+round1.blocks[4].blocks[1].text.th: อย่างเช่น สวนสุนันทาเปิดรับรอบ 1 ถึง 9 ก.พ. 2570
+round1.blocks[4].blocks[1].titleTh: ยังเปิดอยู่
+round1.blocks[4].blocks[2].text.th: รอบ 1 ไม่ได้ง่ายกว่ารอบอื่น แต่ละคณะมีเกณฑ์อย่างเกรดขั้นต่ำ เช็กประกาศของคณะที่สนใจทุกครั้งนะ
+round1.blocks[4].blocks[2].titleTh: พูดตรงๆ
+round1.blocks[4].blocks[3].labelTh: ดูหลักสูตร ไซเบอร์ วิศวะคอม วิทย์คอม ใน mytcas
+round1.blocks[5].lines[0].text.th: ผลงานชิ้นแรกไม่ต้องใหญ่โตเลย
+round1.blocks[5].lines[1].text.th: ด่านต่อไป มาดูกันว่าที่ไหนเปิดรับสายไซเบอร์บ้าง",
   "tcas.titleTh: สมัครที่ไหน เมื่อไหร่
 tcas.questionTh: ถ้าจะไปทางนี้ ต้องยื่นที่ไหน รอบไหน ภายในวันไหน
 tcas.navLabelTh: สมัครที่ไหน

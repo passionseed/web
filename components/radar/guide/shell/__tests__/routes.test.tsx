@@ -144,7 +144,7 @@ describe("/radar/[slug] cover or deck", () => {
   it("cover metadata comes from code with an absolute title", async () => {
     process.env.VERCEL_ENV = "preview";
     const md = await fieldRoute.generateMetadata({ params: Promise.resolve({ slug: "cybersecurity" }) });
-    expect(md.title).toEqual({ absolute: "ไซเบอร์ซีเคียวริตี้ ลองเล่น 5 ด่าน | Career Radar" });
+    expect(md.title).toEqual({ absolute: "ไซเบอร์ซีเคียวริตี้ ลองเล่น 4 ด่าน | Career Radar" });
     expect(md.alternates.canonical).toBe("/radar/cybersecurity");
     expect(getCachedPublishedRadarField).not.toHaveBeenCalled();
   });

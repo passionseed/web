@@ -8,27 +8,28 @@
  * Minors: objects only, no faces; don't save to Google Drive (that needs a
  * Google account), download instead.
  */
+import { ROUND_ONE_FACT, roundOneTeaser } from "../../_shared/round1";
 import type { GuidePage } from "@/lib/radar-guide/guide-types";
-import { dialogue, host, item, sys } from "../../_shared/story";
+import { dialogue, host, item } from "../../_shared/story";
 
 const TM = "f.ai-teachable-machine" as const;
 const TM_URL = "https://teachablemachine.withgoogle.com/train" as const;
 
 export const tonight: GuidePage = {
   key: "tonight",
-  order: 4,
+  order: 3,
   titleTh: "คืนนี้ สอน AI แล้วสอบมัน",
   questionTh: "คืนนี้ทำอะไรได้บ้าง ที่จบแล้วได้ผลงานชิ้นแรกใส่พอร์ตเลย",
   navLabelTh: "ภารกิจคืนนี้",
   asOf: "2026-11-18",
   minutes: 1,
-  factIds: [TM],
+  factIds: [TM, ROUND_ONE_FACT],
   og: { headlineTh: "คืนนี้มาสอน AI แยกของ แล้วจับผิดให้ได้ว่ามันพลาดตรงไหน" },
   blocks: [
     dialogue(
       "intro",
       host("ด่านนี้ไม่ได้เล่นในจอ เป็นภารกิจจริงคืนนี้", { mood: "wow" }),
-      host("สอน AI แยกของ แล้วสอบมันแบบที่เธอเพิ่งตรวจบอทไปเลย")
+      host("สอน AI แยกของ แล้วลองหาจุดที่มันพัง แบบตอนทำบอทเลย")
     ),
     item(
       "tool",
@@ -95,14 +96,18 @@ export const tonight: GuidePage = {
     dialogue(
       "writeup-why",
       host("ของที่มีค่าที่สุดคืนนี้ไม่ใช่โมเดล แต่คือตารางว่ามันพลาดตรงไหน"),
-      host("เพราะนั่นคืองานเดียวกับที่เธอเพิ่งลุยไปในด่านตรวจบอทเลย", { mood: "wink" }),
+      host("เพราะนั่นคือขั้นลองถามกับแก้จุดที่พัง แบบตอนทำบอทโรงเรียนเลย", { mood: "wink" }),
       host("ทีมเราว่าช่องสุดท้าย จะแก้ยังไง สำคัญสุดเลย อย่าข้ามนะ", { labels: ["teamView"] })
     ),
     dialogue(
+      "folio",
+      host("write-up กับรูปตารางผล นี่แหละผลงานชิ้นแรกในแฟ้มของเธอ", { mood: "wink" })
+    ),
+    roundOneTeaser(),
+    dialogue(
       "callback",
       host("ถ้าเริ่มสนุก พรุ่งนี้ลองสอนให้มันแยกเสียงต่อดูสิ"),
-      host("ถ้าไม่สนุก ก็แค่รู้ตัวก่อนเลือกคณะ ไม่เสียหายอะไรเลย"),
-      sys("เก็บ write-up กับรูปตารางผลใส่แฟ้มผลงานได้เลย")
+      host("ถ้าไม่สนุก ก็แค่รู้ตัวก่อนเลือกคณะ ไม่เสียหายอะไรเลย")
     ),
   ],
 };

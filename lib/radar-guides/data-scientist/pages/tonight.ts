@@ -5,6 +5,7 @@
  * builder never leaves the device. Only the spreadsheet app may need an
  * account, so the age-check line is on the room card and the checklist.
  */
+import { ROUND_ONE_FACT, roundOneTeaser } from "../../_shared/round1";
 import type { GuidePage } from "@/lib/radar-guide/guide-types";
 import { dialogue, host, item, sys } from "../../_shared/story";
 
@@ -13,13 +14,13 @@ const DATASET_URL = "https://data.go.th/dataset/nont-pm2-5" as const;
 
 export const tonight: GuidePage = {
   key: "tonight",
-  order: 4,
+  order: 3,
   titleTh: "คืนนี้ ข้อมูลฝุ่นจริง หนึ่งกราฟ หนึ่งข้อค้นพบ",
   questionTh: "คืนนี้ทำอะไรได้เลย ที่จบด้วยผลงานจริงในแฟ้ม",
   navLabelTh: "ภารกิจคืนนี้",
   asOf: "2026-11-18",
   minutes: 1,
-  factIds: [NONT],
+  factIds: [NONT, ROUND_ONE_FACT],
   og: { headlineTh: "คืนนี้ลองเปิดข้อมูลฝุ่นจริงของรัฐ แล้วเธอจะได้งานข้อมูลชิ้นแรก" },
   blocks: [
     dialogue(
@@ -92,7 +93,11 @@ export const tonight: GuidePage = {
     dialogue(
       "callback",
       host("จำการ์ดเชียงใหม่ได้ไหม ทุกอย่างเริ่มจากคำถามเดียวเลย", { mood: "wink" }),
-      host("กราฟนี้กับ write-up คือผลงานชิ้นแรกในแฟ้มของเธอ"),
+      host("กราฟนี้กับ write-up คือผลงานชิ้นแรกในแฟ้มของเธอ")
+    ),
+    roundOneTeaser(),
+    dialogue(
+      "callback-next",
       host("ถ้าสนุก พรุ่งนี้ลองถามคำถามที่สองกับไฟล์เดิมดู"),
       host("ถ้าไม่สนุก ก็ได้รู้ตัวก่อนเลือกคณะ ไม่เสียอะไรเลย"),
       sys("ถ้าจะเอาไปโพสต์ แปะที่มาของข้อมูลไว้ด้วยทุกครั้งนะ")

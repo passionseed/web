@@ -22,9 +22,9 @@ export const DATA_SCIENTIST_META = {
   pages: [
     { key: "dream", order: 1, titleTh: "ตัวเลขฝุ่นทุกเช้า มีคนทำขึ้นมา", navLabelTh: "ตัวเลขฝุ่น", minutes: 2, tier: 1 },
     { key: "work", order: 2, titleTh: "งานจริง เริ่มจากตารางรกๆ", navLabelTh: "ตารางรก", minutes: 2, tier: 1 },
-    { key: "round1", order: 3, titleTh: ROUND_ONE_TITLE_TH, navLabelTh: ROUND_ONE_NAV_TH, minutes: ROUND_ONE_MINUTES, tier: 1 },
-    { key: "tonight", order: 4, titleTh: "คืนนี้ ข้อมูลฝุ่นจริง หนึ่งกราฟ หนึ่งข้อค้นพบ", navLabelTh: "ภารกิจคืนนี้", minutes: 1, tier: 1 },
-    { key: "next", order: 5, titleTh: "แล้วเธอล่ะ", navLabelTh: "แล้วเธอล่ะ", minutes: 1, tier: 1 },
+        { key: "tonight", order: 3, titleTh: "คืนนี้ ข้อมูลฝุ่นจริง หนึ่งกราฟ หนึ่งข้อค้นพบ", navLabelTh: "ภารกิจคืนนี้", minutes: 1, tier: 1 },
+    { key: "next", order: 4, titleTh: "แล้วเธอล่ะ", navLabelTh: "แล้วเธอล่ะ", minutes: 1, tier: 1 },
+    { key: "round1", order: 5, titleTh: ROUND_ONE_TITLE_TH, navLabelTh: ROUND_ONE_NAV_TH, minutes: ROUND_ONE_MINUTES, tier: 2 },
   ],
   story: {
     profileTitleTh: "โปรไฟล์สายข้อมูลของฉัน",

@@ -62,11 +62,11 @@ describe("software engineer guide", () => {
     expect(formatIssues(lintFactIdsUnique({ _shared: SHARED_FACTS, [guide.meta.slug]: guide.facts }))).toBe("");
   });
 
-  it("is a Level 1 draft with 5 levels in order", () => {
+  it("is a draft: Level 1 is dream, work, tonight, next; round 1 opens Level 2", () => {
     expect(guide.meta.status).toBe("draft");
-    expect(guide.pages.map((p) => p.key)).toEqual(["dream", "work", "round1", "tonight", "next"]);
+    expect(guide.pages.map((p) => p.key)).toEqual(["dream", "work", "tonight", "next", "round1"]);
     expect(guide.pages.map((p) => p.order)).toEqual([1, 2, 3, 4, 5]);
-    for (const p of guide.meta.pages) expect(p.tier).toBe(1);
+    expect(guide.meta.pages.map((p) => p.tier)).toEqual([1, 1, 1, 1, 2]);
   });
 
   it("puts the mid-guide share card on the work level", () => {

@@ -6,7 +6,7 @@
 import { roundOnePage } from "../../_shared/round1";
 
 export const round1 = roundOnePage({
-  order: 3,
+  order: 5,
   asOf: "2026-11-18",
   careerTh: "สายข้อมูล",
   facultiesTh: "สถิติ วิทยาการข้อมูล วิทย์คอม",

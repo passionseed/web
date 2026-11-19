@@ -60,84 +60,170 @@ dream.reel.sendToFriendTh: ส่งให้เพื่อนที่คิ�
 dream.reel.visual[0]: ฟองแชตภาษาไทยเด้งขึ้น แล้วป้าย สร้างในไทย ประทับลงมา
 dream.reel.visual[1]: ตัวนับวิ่งถึง 9,700 แล้วหมุดกระจายเต็มแผนที่ไทย
 dream.reel.visual[2]: การ์ดสี่ใบพลิกทีละใบ คำว่า ทีมในไทยสร้าง สว่างขึ้นทุกใบ",
-  "work.titleTh: งานจริง คือสอบ AI ก่อนปล่อย
-work.questionTh: นอกจากสร้าง AI วิศวกร AI ทำอะไรทั้งวัน
-work.navLabelTh: สอบ AI
-work.og.headlineTh: บอทตอบมั่นมาก แต่ดันผิด เธอจับได้ไหม
+  "work.titleTh: งานจริง คือทำให้ AI ใช้ได้จริง
+work.questionTh: วิศวกร AI ต้องสร้าง AI เองตั้งแต่ศูนย์เลยไหม แล้วทั้งวันทำอะไร
+work.navLabelTh: ทำบอทโรงเรียน
+work.og.headlineTh: ทำบอทให้โรงเรียน ใครก็ทำได้ แต่ทำให้มันตอบถูกนี่สิของจริง
 work.blocks[0].lines[0].text.th: ด่านนี้เธอได้งานแรกแล้วนะ
-work.blocks[0].lines[1].text.th: โรงเรียนหนึ่งทำบอทตอบคำถามนักเรียน จะเปิดใช้สัปดาห์หน้า
-work.blocks[0].lines[2].text.th: งานของเธอคือตรวจคำตอบบอท ก่อนปล่อยให้ทุกคนใช้
-work.blocks[0].lines[3].text.th: แค่อ่านว่าถูกไหม ง่ายจะตาย
-work.blocks[0].lines[4].text.th: ลองดูก่อน บางข้อหลอกตากว่าที่คิด
-work.blocks[1].unlockLabelTh: เริ่มตรวจ
-work.blocks[1].blocks[0].lines[0].text.th: แตะคำถาม แล้วเทียบคำตอบบอทกับเอกสารโรงเรียน
-work.blocks[1].blocks[0].lines[1].text.th: แล้วเลือกว่า ใช้ได้ ผิด หรือต้องให้คนตรวจ
-work.blocks[1].blocks[1].game.data.goalTh: ตรวจคำตอบบอทโรงเรียน ก่อนเปิดให้นักเรียนใช้
-work.blocks[1].blocks[1].game.data.bins[0].labelTh: ใช้ได้
-work.blocks[1].blocks[1].game.data.bins[1].labelTh: ผิด
-work.blocks[1].blocks[1].game.data.bins[2].labelTh: ต้องให้คนตรวจ
+work.blocks[0].lines[1].text.th: โรงเรียนอยากได้บอทตอบคำถามนักเรียน แล้วคนทำก็คือเธอนี่แหละ
+work.blocks[0].lines[2].text.th: ต้องสร้าง AI เองตั้งแต่ศูนย์เลยเหรอ
+work.blocks[0].lines[3].text.th: ไม่ต้องเลย งานส่วนใหญ่คือเอาโมเดลที่มีอยู่แล้ว มาทำให้ใช้ได้จริง
+work.blocks[0].lines[4].text.th: ทำเป็นขั้นๆ: ป้อนข้อมูล ลองถาม แล้วแก้จุดที่พัง
+work.blocks[1].unlockLabelTh: ขั้นแรก: ป้อนข้อมูล
+work.blocks[1].blocks[0].lines[0].text.th: บอทจะตอบได้แค่จากเอกสารที่เธอให้มันอ่านเท่านั้น
+work.blocks[1].blocks[0].lines[1].text.th: คัดให้ดี บางอย่างห้ามให้บอทเห็นเด็ดขาด
+work.blocks[1].blocks[1].game.data.tagTh: เลือกข้อมูลให้บอท
+work.blocks[1].blocks[1].game.data.goalTh: เลือกเอกสารที่บอทโรงเรียนควรอ่าน
+work.blocks[1].blocks[1].game.data.bins[0].labelTh: ให้บอทอ่าน
+work.blocks[1].blocks[1].game.data.bins[1].labelTh: ไม่ให้อ่าน
 work.blocks[1].blocks[1].game.data.simulated.watermarkTh: ตัวอย่างจำลอง
-work.blocks[1].blocks[1].game.data.items[0].labelTh: ห้องสมุดเปิดถึงกี่โมง
-work.blocks[1].blocks[1].game.data.items[0].meta.sender: นักเรียน ม.4
-work.blocks[1].blocks[1].game.data.items[0].detailTh: บอท: เปิด 7:30 ถึง 16:30 ค่ะ · คู่มือโรงเรียน: ห้องสมุดเปิด 7:30 ถึง 16:30
-work.blocks[1].blocks[1].game.data.items[0].revealTh: ตรงคู่มือทุกตัว แบบนี้ปล่อยได้
-work.blocks[1].blocks[1].game.data.items[1].labelTh: สอบกลางภาควันไหน
-work.blocks[1].blocks[1].game.data.items[1].meta.sender: นักเรียน ม.5
-work.blocks[1].blocks[1].game.data.items[1].detailTh: บอท: วันที่ 12 ธ.ค. ค่ะ · ปฏิทินโรงเรียน: สอบกลางภาค 15 ถึง 19 ธ.ค.
-work.blocks[1].blocks[1].game.data.items[1].flags[0]: ตอบมั่นใจ แต่ไม่ตรงเอกสาร
-work.blocks[1].blocks[1].game.data.items[1].revealTh: บอทตอบมั่นมาก แต่ไม่ตรงปฏิทิน ถ้าไม่มีใครจับ นักเรียนทั้งโรงเรียนจำวันสอบผิดแน่
-work.blocks[1].blocks[1].game.data.items[2].labelTh: ห้องน้ำอยู่ไส
-work.blocks[1].blocks[1].game.data.items[2].meta.sender: นักเรียน ม.1
-work.blocks[1].blocks[1].game.data.items[2].detailTh: บอท: ขอโทษค่ะ ไม่เข้าใจคำถาม · คู่มือโรงเรียน: ห้องน้ำอยู่ชั้น 1 อาคาร 2
-work.blocks[1].blocks[1].game.data.items[2].nearTh.human: ส่งให้คนตอบก็ได้ แต่ข้อนี้บอทพลาดเอง ต้องเอาไปสอนเพิ่ม
-work.blocks[1].blocks[1].game.data.items[2].flags[0]: ไม่เข้าใจภาษาถิ่น
-work.blocks[1].blocks[1].game.data.items[2].revealTh: ภาษาอีสานก็เป็นคำถามจริง AI ภาษาไทยต้องเข้าใจคนทั้งประเทศ ไม่ใช่แค่คนกรุงเทพฯ
-work.blocks[1].blocks[1].game.data.items[3].labelTh: ขอดูเกรดของเพื่อนในห้องได้ไหม
-work.blocks[1].blocks[1].game.data.items[3].meta.sender: นักเรียน ม.6
-work.blocks[1].blocks[1].game.data.items[3].detailTh: บอท: ดูเกรดคนอื่นไม่ได้นะ ถ้าอยากรู้เกรดตัวเอง ถามครูประจำชั้นได้เลย
-work.blocks[1].blocks[1].game.data.items[3].revealTh: ปฏิเสธก็เป็นคำตอบที่ถูกได้ เกรดเพื่อนเป็นข้อมูลส่วนตัว
-work.blocks[1].blocks[1].game.data.items[4].labelTh: โดนเพื่อนแกล้งทุกวัน ไม่อยากมาโรงเรียนแล้ว
-work.blocks[1].blocks[1].game.data.items[4].meta.sender: นักเรียน ม.2
-work.blocks[1].blocks[1].game.data.items[4].detailTh: บอท: ลองคิดบวกนะคะ เดี๋ยวทุกอย่างก็ดีขึ้นเอง
-work.blocks[1].blocks[1].game.data.items[4].nearTh.wrong: ตอบแบบนี้แย่จริง แต่ที่สำคัญกว่าคือเรื่องนี้ต้องถึงมือครู
-work.blocks[1].blocks[1].game.data.items[4].flags[0]: เรื่องความรู้สึกและความปลอดภัย
-work.blocks[1].blocks[1].game.data.items[4].revealTh: เรื่องนี้บอทไม่ควรตอบเอง ต้องส่งต่อให้ครูแนะแนวหรือครูที่ดูแลนักเรียน
-work.blocks[1].blocks[1].game.data.items[5].labelTh: ปวดหัว กินยาพาราได้กี่เม็ด
-work.blocks[1].blocks[1].game.data.items[5].meta.sender: นักเรียน ม.3
-work.blocks[1].blocks[1].game.data.items[5].detailTh: บอท: กินได้เลย 2 เม็ดค่ะ
-work.blocks[1].blocks[1].game.data.items[5].nearTh.wrong: เกือบได้แล้ว แต่เรื่องยา ต่อให้บอทตอบถูก ก็ต้องให้คนตอบอยู่ดี
-work.blocks[1].blocks[1].game.data.items[5].flags[0]: เรื่องสุขภาพ
-work.blocks[1].blocks[1].game.data.items[5].revealTh: เรื่องยาให้ห้องพยาบาลหรือผู้ใหญ่ตอบ บอทที่ดีต้องรู้ว่าข้อไหนไม่ใช่งานตัวเอง
-work.blocks[1].blocks[1].game.data.items[6].labelTh: ค่าบำรุงการศึกษาเทอมนี้เท่าไหร่
-work.blocks[1].blocks[1].game.data.items[6].meta.sender: ผู้ปกครอง
-work.blocks[1].blocks[1].game.data.items[6].detailTh: บอท: 3,500 บาทค่ะ · เอกสารที่บอทอ่านได้: ไม่มีเรื่องค่าบำรุงเลย
-work.blocks[1].blocks[1].game.data.items[6].flags[0]: แต่งตัวเลขขึ้นมาเอง
-work.blocks[1].blocks[1].game.data.items[6].revealTh: เอกสารไม่มีข้อมูลนี้ แต่บอทมั่วตัวเลขขึ้นมาเอง ที่ถูกคือตอบว่าไม่รู้ แล้วส่งไปถามฝ่ายการเงิน
-work.blocks[1].blocks[1].game.data.items[7].labelTh: ส่งงานช้าได้ไหม
-work.blocks[1].blocks[1].game.data.items[7].meta.sender: นักเรียน ม.4
-work.blocks[1].blocks[1].game.data.items[7].detailTh: บอท: ส่งช้าได้ไม่เกิน 3 วัน แต่ต้องแจ้งครูประจำวิชาก่อนค่ะ · คู่มือ: ส่งช้าได้ไม่เกิน 3 วัน ต้องแจ้งครูประจำวิชา
-work.blocks[1].blocks[1].game.data.items[7].revealTh: ตรงตามคู่มือ แถมบอกขั้นตอนต่อให้ด้วย แบบนี้ผ่านเลย
-work.blocks[1].blocks[1].game.data.resultTh: ตรวจถูก {score}/{total}
-work.blocks[1].blocks[1].answersTh[0]: ใช้ได้: เวลาห้องสมุด, ปฏิเสธไม่ให้ดูเกรดเพื่อน, กติกาส่งงานช้า
-work.blocks[1].blocks[1].answersTh[1]: ผิด: วันสอบไม่ตรงปฏิทิน, ไม่เข้าใจภาษาอีสาน, แต่งค่าบำรุงขึ้นมาเอง
-work.blocks[1].blocks[1].answersTh[2]: ต้องให้คนตรวจ: โดนเพื่อนแกล้ง, เรื่องยา
-work.blocks[1].blocks[2].lines[0].text.th: ที่เธอเพิ่งทำไป ทีม AI เรียกว่า eval หรือชุดสอบ AI
-work.blocks[1].blocks[2].lines[1].text.th: demo สวยๆ ใครก็ทำได้ แต่ของที่จะใช้จริงทุกวันต้องผ่านชุดสอบก่อน
-work.blocks[1].blocks[2].lines[2].text.th: บอทที่มั่วแบบมั่นใจ อันตรายกว่าบอทที่ยอมรับว่าไม่รู้
-work.blocks[2].unlockLabelTh: ทีมจริงสอบ AI ยังไง
-work.blocks[2].blocks[0].text.th: ทีม Typhoon วัดว่า AI เข้าใจภาษาไทยจริงไหม ด้วยข้อสอบที่เธอคุ้นอย่าง O-NET TGAT A-Level ชุดนี้ชื่อ ThaiExam และ Stanford ก็ใช้จัดอันดับด้วย
-work.blocks[2].blocks[0].titleTh: ชุดสอบ AI จากข้อสอบไทย
-work.blocks[2].blocks[1].text.th: อย่าง Inspectra CXR ที่ช่วยอ่านเอกซเรย์ปอด ทีมสร้างก็ย้ำชัดว่าทำมาช่วยหมอ ไม่ได้มาแทนหมอ
-work.blocks[2].blocks[1].titleTh: ช่อง ต้องให้คนตรวจ ในโลกจริง
-work.blocks[2].blocks[2].lines[0].text.th: งานสายนี้ไม่ได้มีแค่สร้าง แต่ต้องพิสูจน์ให้ได้ด้วยว่าใช้ได้จริง
-work.blocks[2].blocks[2].lines[1].text.th: ด่านต่อไป: ผลงานแบบนี้ เอาไปยื่นเข้ามหาลัยได้ไหม
-work.reel.hook.th: บอทตอบมั่นมาก แต่ดันผิด เธอจับได้ไหม
-work.reel.variantsTh[0]: งานจริงของวิศวกร AI คือสอบ AI ก่อนปล่อย
+work.blocks[1].blocks[1].game.data.items[0].labelTh: ปฏิทินโรงเรียนปีนี้
+work.blocks[1].blocks[1].game.data.items[0].revealTh: วันสอบ วันหยุด นักเรียนถามเรื่องพวกนี้บ่อยสุด
+work.blocks[1].blocks[1].game.data.items[1].labelTh: คู่มือนักเรียน
+work.blocks[1].blocks[1].game.data.items[1].revealTh: กฎการแต่งกาย การส่งงาน เวลาห้องสมุด อยู่ในนี้หมด
+work.blocks[1].blocks[1].game.data.items[2].labelTh: เกรดของนักเรียนทุกคน
+work.blocks[1].blocks[1].game.data.items[2].revealTh: ข้อมูลส่วนตัว ถ้าบอทอ่านได้ แค่ใครมาถามดีๆ ก็อาจหลุดออกไปได้นะ
+work.blocks[1].blocks[1].game.data.items[3].labelTh: ปฏิทินโรงเรียนปีที่แล้ว
+work.blocks[1].blocks[1].game.data.items[3].revealTh: ของเก่าทำให้บอทตอบวันผิด ข้อมูลเยอะไม่ได้แปลว่าดีเสมอ
+work.blocks[1].blocks[1].game.data.items[4].labelTh: เบอร์โทรผู้ปกครอง
+work.blocks[1].blocks[1].game.data.items[4].revealTh: ข้อมูลส่วนตัวเหมือนกัน บอทตอบคำถามได้โดยไม่ต้องรู้เลย
+work.blocks[1].blocks[1].game.data.items[5].labelTh: แชตกลุ่มครู
+work.blocks[1].blocks[1].game.data.items[5].revealTh: เรื่องภายในของครู ไม่ใช่ข้อมูลที่จะเอาไปตอบนักเรียน
+work.blocks[1].blocks[1].game.data.resultTh: เลือกถูก {score}/{total}
+work.blocks[1].blocks[1].answersTh[0]: ให้บอทอ่าน: ปฏิทินโรงเรียนปีนี้, คู่มือนักเรียน
+work.blocks[1].blocks[1].answersTh[1]: ไม่ให้อ่าน: เกรดของนักเรียนทุกคน, ปฏิทินปีที่แล้ว, เบอร์โทรผู้ปกครอง, แชตกลุ่มครู
+work.blocks[1].blocks[2].lines[0].text.th: คัดข้อมูลให้ถูก สำคัญกว่าโยนข้อมูลให้เยอะๆ
+work.blocks[1].blocks[2].lines[1].text.th: บอทพร้อมแล้ว ลองไปถามมันดูกัน
+work.blocks[2].unlockLabelTh: ขั้นสอง: ลองถาม แล้วแก้
+work.blocks[2].blocks[0].lines[0].text.th: ลองยิงคำถามที่นักเรียนถามจริงดู ว่าข้อไหนพัง
+work.blocks[2].blocks[0].lines[1].text.th: ข้อไหนดีก็ปล่อยผ่าน ข้อไหนพังค่อยเลือกว่าจะแก้ยังไง
+work.blocks[2].blocks[1].game.data.tagTh: ลองถาม แล้วแก้
+work.blocks[2].blocks[1].game.data.goalTh: ลองถามบอทโรงเรียน แล้วเลือกวิธีแก้ทีละข้อ
+work.blocks[2].blocks[1].game.data.bins[0].labelTh: ปล่อยได้
+work.blocks[2].blocks[1].game.data.bins[1].labelTh: เพิ่มข้อมูลให้บอท
+work.blocks[2].blocks[1].game.data.bins[2].labelTh: ส่งต่อให้คน
+work.blocks[2].blocks[1].game.data.simulated.watermarkTh: ตัวอย่างจำลอง
+work.blocks[2].blocks[1].game.data.items[0].labelTh: ห้องสมุดเปิดถึงกี่โมง
+work.blocks[2].blocks[1].game.data.items[0].meta.sender: นักเรียน ม.4
+work.blocks[2].blocks[1].game.data.items[0].detailTh: บอท: เปิด 7:30 ถึง 16:30 ค่ะ · คู่มือนักเรียน: ห้องสมุดเปิด 7:30 ถึง 16:30
+work.blocks[2].blocks[1].game.data.items[0].revealTh: ตรงคู่มือทุกตัว แบบนี้ปล่อยได้เลย
+work.blocks[2].blocks[1].game.data.items[1].labelTh: รถโรงเรียนออกกี่โมง
+work.blocks[2].blocks[1].game.data.items[1].meta.sender: ผู้ปกครอง
+work.blocks[2].blocks[1].game.data.items[1].detailTh: บอท: ออก 16:30 ค่ะ · เอกสารที่บอทอ่าน: ไม่มีเรื่องรถโรงเรียนเลย
+work.blocks[2].blocks[1].game.data.items[1].flags[0]: แต่งคำตอบขึ้นมาเอง
+work.blocks[2].blocks[1].game.data.items[1].revealTh: เอกสารไม่มีเรื่องนี้ บอทเลยมั่วขึ้นมา แก้โดยเติมตารางรถให้มัน แล้วสั่งให้ตอบว่าไม่รู้ ถ้าหาในเอกสารไม่เจอ
+work.blocks[2].blocks[1].game.data.items[2].labelTh: ห้องน้ำอยู่ไส
+work.blocks[2].blocks[1].game.data.items[2].meta.sender: นักเรียน ม.1
+work.blocks[2].blocks[1].game.data.items[2].detailTh: บอท: ขอโทษค่ะ ไม่เข้าใจคำถาม · คู่มือนักเรียน: ห้องน้ำอยู่ชั้น 1 อาคาร 2
+work.blocks[2].blocks[1].game.data.items[2].nearTh.human: ส่งให้คนตอบก็ได้ แต่คำถามแบบนี้มาทุกวัน สอนบอทให้เข้าใจเองดีกว่า
+work.blocks[2].blocks[1].game.data.items[2].flags[0]: ไม่เข้าใจภาษาถิ่น
+work.blocks[2].blocks[1].game.data.items[2].revealTh: เพิ่มตัวอย่างคำถามภาษาอีสานให้มัน AI ภาษาไทยต้องเข้าใจคนทั้งประเทศ ไม่ใช่แค่คนกรุงเทพฯ
+work.blocks[2].blocks[1].game.data.items[3].labelTh: ขอดูเกรดของเพื่อนในห้องได้ไหม
+work.blocks[2].blocks[1].game.data.items[3].meta.sender: นักเรียน ม.6
+work.blocks[2].blocks[1].game.data.items[3].detailTh: บอท: ดูเกรดคนอื่นไม่ได้นะ ถ้าอยากรู้เกรดตัวเอง ถามครูประจำชั้นได้เลย
+work.blocks[2].blocks[1].game.data.items[3].revealTh: ปฏิเสธก็เป็นคำตอบที่ถูกได้ และบอทไม่มีเกรดใครให้หลุดอยู่แล้ว เพราะเธอไม่ได้ให้มันอ่าน
+work.blocks[2].blocks[1].game.data.items[4].labelTh: โดนเพื่อนแกล้งทุกวัน ไม่อยากมาโรงเรียนแล้ว
+work.blocks[2].blocks[1].game.data.items[4].meta.sender: นักเรียน ม.2
+work.blocks[2].blocks[1].game.data.items[4].detailTh: บอท: ลองคิดบวกนะคะ เดี๋ยวทุกอย่างก็ดีขึ้นเอง
+work.blocks[2].blocks[1].game.data.items[4].nearTh.data: เพิ่มข้อมูลก็ไม่พอ เรื่องนี้ต้องถึงมือครู
+work.blocks[2].blocks[1].game.data.items[4].flags[0]: เรื่องความรู้สึกและความปลอดภัย
+work.blocks[2].blocks[1].game.data.items[4].revealTh: เรื่องนี้บอทไม่ควรตอบเอง ต้องส่งต่อให้ครูแนะแนวหรือครูที่ดูแลนักเรียน
+work.blocks[2].blocks[1].game.data.items[5].labelTh: ปวดหัว กินยาพาราได้กี่เม็ด
+work.blocks[2].blocks[1].game.data.items[5].meta.sender: นักเรียน ม.3
+work.blocks[2].blocks[1].game.data.items[5].detailTh: บอท: กินได้เลย 2 เม็ดค่ะ
+work.blocks[2].blocks[1].game.data.items[5].nearTh.data: ต่อให้บอทรู้คำตอบ เรื่องยาก็ต้องให้คนตอบอยู่ดี
+work.blocks[2].blocks[1].game.data.items[5].flags[0]: เรื่องสุขภาพ
+work.blocks[2].blocks[1].game.data.items[5].revealTh: เรื่องยาให้ห้องพยาบาลหรือผู้ใหญ่ตอบ บอทที่ดีต้องรู้ว่าข้อไหนไม่ใช่งานตัวเอง
+work.blocks[2].blocks[1].game.data.items[6].labelTh: ส่งงานช้าได้ไหม
+work.blocks[2].blocks[1].game.data.items[6].meta.sender: นักเรียน ม.4
+work.blocks[2].blocks[1].game.data.items[6].detailTh: บอท: ส่งช้าได้ไม่เกิน 3 วัน แต่ต้องแจ้งครูประจำวิชาก่อนค่ะ · คู่มือ: ส่งช้าได้ไม่เกิน 3 วัน ต้องแจ้งครูประจำวิชา
+work.blocks[2].blocks[1].game.data.items[6].revealTh: ตรงตามคู่มือ แถมบอกขั้นตอนต่อให้ด้วย แบบนี้ผ่านเลย
+work.blocks[2].blocks[1].game.data.resultTh: แก้ถูก {score}/{total}
+work.blocks[2].blocks[1].answersTh[0]: ปล่อยได้: เวลาห้องสมุด, ปฏิเสธไม่ให้ดูเกรดเพื่อน, กติกาส่งงานช้า
+work.blocks[2].blocks[1].answersTh[1]: เพิ่มข้อมูลให้บอท: ตารางรถโรงเรียน, ตัวอย่างคำถามภาษาอีสาน
+work.blocks[2].blocks[1].answersTh[2]: ส่งต่อให้คน: โดนเพื่อนแกล้ง, เรื่องยา
+work.blocks[2].blocks[2].lines[0].text.th: ที่เธอเพิ่งทำ คืองานจริงของวิศวกร AI เลยนะ
+work.blocks[2].blocks[2].lines[1].text.th: ป้อนข้อมูล ลองถาม แก้จุดพัง แล้ววนลูปจนใช้ได้จริง
+work.blocks[2].blocks[2].lines[2].text.th: ขั้นลองถาม ทีม AI เรียกว่า eval แต่นี่แค่ส่วนหนึ่งของงาน
+work.blocks[2].blocks[2].lines[3].text.th: เปิดใช้แล้วก็ยังต้องคอยเช็ก ว่ามีคนถามอะไรที่บอทยังตอบไม่ได้
+work.blocks[3].unlockLabelTh: สายนี้มีกี่แบบ
+work.blocks[3].blocks[0].lines[0].text.th: วิศวกร AI เป็นชื่อเรียกกว้างๆ นะ
+work.blocks[3].blocks[0].lines[1].text.th: งานจริงแยกได้อีกหลายแบบ แต่ละแบบทำไม่เหมือนกันเลย
+work.blocks[3].blocks[1].text.th: สายสร้างแอป AI: หยิบโมเดลที่มีอยู่ มาทำเป็นของที่คนใช้จริง แบบบอทโรงเรียนเมื่อกี้
+สายโมเดลภาษา: สอนโมเดลให้เก่งภาษาไทย แล้ววัดผลด้วยข้อสอบอย่าง O-NET แบบทีม Typhoon
+สายภาพ: สอน AI ให้ดูรูปเป็น แบบ Inspectra ที่ช่วยหมออ่านเอกซเรย์ปอด
+สายระบบ: คุมให้ AI รันลื่นทุกวัน คนใช้เยอะแค่ไหนก็ไม่ล่ม
+สายวิจัย: คิดวิธีใหม่ๆ ให้ AI เก่งขึ้น ในแล็บมหาลัยหรือบริษัทใหญ่
+work.blocks[3].blocks[1].titleTh: วิศวกร AI มีหลายแบบ
+work.blocks[3].blocks[2].lines[0].text.th: ที่เธอเพิ่งลองไป คือแบบแรก
+work.blocks[3].blocks[2].lines[1].text.th: ยังไม่ต้องรีบเลือกตอนนี้ ค่อยๆ ลองไปทีละแบบก็ได้
+work.blocks[4].lines[0].text.th: ด่านต่อไป: คืนนี้มาลองสอน AI ตัวแรกของเธอเอง
+work.reel.hook.th: ทำบอทให้โรงเรียน ใครก็ทำได้ แต่ทำให้มันตอบถูกนี่สิของจริง
+work.reel.variantsTh[0]: วิศวกร AI ไม่ได้สร้าง AI จากศูนย์ทุกครั้ง งานจริงคือนี่
 work.reel.variantsTh[1]: บอทยอมรับว่าไม่รู้ ดีกว่าบอทที่แต่งเรื่องมาตอบ
-work.reel.sendToFriendTh: ส่งให้เพื่อนที่ชอบจับผิด
-work.reel.visual[0]: หน้าจอแชตบอทโรงเรียน คำตอบเด้งขึ้นทีละข้อ
-work.reel.visual[1]: ป้าย ใช้ได้ ผิด ต้องให้คนตรวจ ประทับลงบนแต่ละคำตอบ
-work.reel.visual[2]: ตัวเลขค่าบำรุงที่บอทแต่งขึ้น แตกเป็นเสี่ยง",
+work.reel.sendToFriendTh: ส่งให้เพื่อนที่อยากทำ AI
+work.reel.visual[0]: การ์ดเอกสารบินเข้ากล่องบอท เกรดเพื่อนถูกเด้งออก
+work.reel.visual[1]: คำถามนักเรียนเด้งขึ้นทีละข้อ ป้าย ปล่อยได้ เพิ่มข้อมูล ส่งต่อให้คน ประทับลง
+work.reel.visual[2]: วงกลมหมุน ป้อนข้อมูล ลองถาม แก้ วนกลับมาที่เดิม",
+  "tonight.titleTh: คืนนี้ สอน AI แล้วสอบมัน
+tonight.questionTh: คืนนี้ทำอะไรได้บ้าง ที่จบแล้วได้ผลงานชิ้นแรกใส่พอร์ตเลย
+tonight.navLabelTh: ภารกิจคืนนี้
+tonight.og.headlineTh: คืนนี้มาสอน AI แยกของ แล้วจับผิดให้ได้ว่ามันพลาดตรงไหน
+tonight.blocks[0].lines[0].text.th: ด่านนี้ไม่ได้เล่นในจอ เป็นภารกิจจริงคืนนี้
+tonight.blocks[0].lines[1].text.th: สอน AI แยกของ แล้วลองหาจุดที่มันพัง แบบตอนทำบอทเลย
+tonight.blocks[1].text.th: Teachable Machine ของ Google สอน AI แยกรูป เสียง หรือท่าทางได้ในเบราว์เซอร์ ไม่ต้องเขียนโค้ด ไม่ต้องสร้างบัญชี มีหน้าภาษาไทยด้วย
+tonight.blocks[1].titleTh: เครื่องมือ: Teachable Machine
+tonight.blocks[2].lineTh: ถ่ายเฉพาะรูปสิ่งของนะ ไม่ถ่ายหน้าตัวเองหรือเพื่อน แล้วไม่ต้องกดเซฟลง Google Drive ถ้าอยากเก็บไว้ให้ดาวน์โหลดลงเครื่องเลย
+tonight.blocks[3].game.data.room.badgeTh: ไม่ต้องสร้างบัญชี ตาม FAQ ของ Google ณ 18 พ.ย. 2569
+tonight.blocks[3].game.data.room.subTh: ตอนสอน รูปทั้งหมดจะอยู่แค่ในเบราว์เซอร์ของเธอ ไม่ถูกส่งขึ้นเซิร์ฟเวอร์
+tonight.blocks[3].game.data.checklistTh[0]: ลองเลือกของที่หน้าตาคล้ายๆ กัน เช่น ขวดพลาสติกกับกระป๋อง
+tonight.blocks[3].game.data.checklistTh[1]: ถ่ายรูปของแต่ละอย่างมาสอน (ถ่ายแค่ของ ไม่เอาหน้าคนนะ)
+tonight.blocks[3].game.data.checklistTh[2]: กด Train แล้วเอาของชิ้นใหม่ที่มันไม่เคยเห็นมาลองทายดู
+tonight.blocks[3].game.data.checklistTh[3]: ลองเปลี่ยนพื้นหลัง แสง มุม หรือให้เพื่อนถือของมาให้ทาย แล้วจดว่าถูกหรือพลาด
+tonight.blocks[3].game.data.checklistTh[4]: เขียนสรุปสั้นๆ
+tonight.blocks[3].game.data.fields[0].placeholderTh: สอนให้แยกอะไรบ้าง
+tonight.blocks[3].game.data.fields[1].placeholderTh: เก็บรูปแบบไหนมาสอน
+tonight.blocks[3].game.data.fields[2].placeholderTh: สอบด้วยรูปใหม่ ถูกกี่รูป จากกี่รูป
+tonight.blocks[3].game.data.fields[3].placeholderTh: พลาดตอนไหน (พื้นหลัง แสง มุม)
+tonight.blocks[3].game.data.fields[4].placeholderTh: ถ้าจะทำให้ดีขึ้น จะเพิ่มรูปแบบไหน
+tonight.blocks[3].game.data.fixedLinesTh[0]: ใช้รูปสิ่งของเท่านั้น ไม่มีหน้าคน
+tonight.blocks[3].game.data.privacyTh: เก็บไว้ในเครื่องนี้เท่านั้น ไม่ส่งไปที่ไหน
+tonight.blocks[3].answersTh[0]: เปิด Teachable Machine แล้วเลือก Image Project (ไม่ต้องสร้างบัญชี)
+tonight.blocks[3].answersTh[1]: สอนให้แยกของที่หน้าตาคล้ายกัน ใช้รูปสิ่งของเท่านั้น
+tonight.blocks[3].answersTh[2]: สอบด้วยรูปใหม่ เปลี่ยนพื้นหลัง แสง มุม แล้วจดว่าถูกหรือพลาด
+tonight.blocks[3].answersTh[3]: เขียนสรุป: สอนอะไร เก็บรูปแบบไหน สอบได้เท่าไหร่ พลาดตอนไหน จะแก้ยังไง
+tonight.blocks[3].demoScript[1].text: แยกขวดพลาสติกกับกระป๋อง
+tonight.blocks[3].demoScript[2].text: พอวางบนโต๊ะสีเข้ม มันทายผิดเกือบหมด
+tonight.blocks[4].lines[0].text.th: ของที่มีค่าที่สุดคืนนี้ไม่ใช่โมเดล แต่คือตารางว่ามันพลาดตรงไหน
+tonight.blocks[4].lines[1].text.th: เพราะนั่นคือขั้นลองถามกับแก้จุดที่พัง แบบตอนทำบอทโรงเรียนเลย
+tonight.blocks[4].lines[2].text.th: ทีมเราว่าช่องสุดท้าย จะแก้ยังไง สำคัญสุดเลย อย่าข้ามนะ
+tonight.blocks[5].lines[0].text.th: write-up กับรูปตารางผล นี่แหละผลงานชิ้นแรกในแฟ้มของเธอ
+tonight.blocks[6].text.th: TCAS70 มี 4 รอบ รอบแรกชื่อ Portfolio มหาลัยดูจากสิ่งที่เธอลงมือทำ งานแบบคืนนี้แหละ ใส่แฟ้มได้เลย
+tonight.blocks[6].titleTh: รู้ไหม รอบ 1 ใช้ผลงานยื่นได้นะ
+tonight.blocks[7].lines[0].text.th: ถ้าเริ่มสนุก พรุ่งนี้ลองสอนให้มันแยกเสียงต่อดูสิ
+tonight.blocks[7].lines[1].text.th: ถ้าไม่สนุก ก็แค่รู้ตัวก่อนเลือกคณะ ไม่เสียหายอะไรเลย",
+  "next.titleTh: แล้วเธอล่ะ
+next.questionTh: สาย AI ใช่เธอไหม แล้วจะไปต่อทางไหน
+next.navLabelTh: แล้วเธอล่ะ
+next.og.headlineTh: สาย AI ใช่เธอไหม เล่นจนจบแล้วค่อยตัดสินใจ
+next.blocks[0].lines[0].text.th: มาถึงด่านสุดท้ายของ Level 1 แล้ว
+next.blocks[0].lines[1].text.th: เล่นมาทั้งหมด เธอชอบส่วนไหนที่สุด
+next.blocks[1].game.data.lines.dream: เดาจำนวนนักเรียนที่ใช้ RISA ไว้ {risa} คน || รู้จัก AI ฝีมือทีมในไทยแล้ว
+next.blocks[1].game.data.lines.work: ทำบอทโรงเรียน ทำถูก {score}/{total} || ทำบอทโรงเรียนจนพร้อมเปิดใช้
+next.blocks[1].game.data.lines.tonight: เตรียม write-up ชิ้นแรกแล้ว
+next.blocks[1].game.data.favourites.dream: สายที่เธอเลือกเอง: สายโมเดลภาษา งานจริงคือสอน AI ให้เก่งภาษาไทย แล้วเอาไปให้คนใช้ได้จริง
+next.blocks[1].game.data.favourites.work: สายที่เธอเลือกเอง: สายสร้างแอป AI งานจริงคือเอาโมเดลมาทำเป็นของที่คนใช้ แล้วแก้จนมันตอบถูก
+next.blocks[1].game.data.cardLineTh: นี่ไม่ใช่คำทำนาย มันคือจุดเริ่ม เธอตัดสินใจเอง
+next.blocks[1].answersTh[0]: เลือกด่านที่สนุกที่สุด แล้วดูว่ามันตรงกับงานจริงสายไหน
+next.blocks[1].answersTh[1]: สายโมเดลภาษา หรือสายสร้างแอป AI
+next.blocks[1].answersTh[2]: นี่ไม่ใช่คำทำนาย มันคือจุดเริ่ม เธอตัดสินใจเอง
+next.blocks[2].lines[0].text.th: กดบอกเราหน่อยว่าสายนี้ใช่เธอไหม เราจะได้รู้ว่าควรเจาะลึกต่อหรือเปล่า
+next.blocks[2].lines[1].text.th: ไม่ว่าจะกดอันไหน ถือว่าได้ข้อมูล
+next.blocks[2].lines[2].text.th: ลองแล้วรู้ว่าไม่ใช่ ก็ยังได้คำตอบไวกว่าคนที่ไม่เคยลอง
+next.blocks[4].lines[0].text.th: ถ้าสนใจ สิ่งเดียวที่ต้องทำต่อ
+next.blocks[4].lines[1].text.th: คือสอนโมเดลอีกตัวพรุ่งนี้ กับเขียน write-up อีกหนึ่งชิ้น
+next.blocks[5].text.th: ไม่ชอบลองซ้ำแล้วจดผลละเอียด ไม่ชอบตามเครื่องมือใหม่ที่เปลี่ยนไวมาก หรือไม่อยากอ่านคู่มือภาษาอังกฤษ เพราะงานจริงคือทดสอบ แก้ แล้วทดสอบใหม่ วนไปเรื่อยๆ
+next.blocks[5].titleTh: สายนี้อาจไม่เหมาะ ถ้า...",
   "round1.titleTh: รอบ 1 มีพื้นที่ให้ผลงานเธอ
 round1.questionTh: เข้ามหาลัยด้วยสิ่งที่ทำเอง ไม่ใช่แค่คะแนนสอบ จริงเหรอ
 round1.navLabelTh: รอบ 1
@@ -181,64 +267,7 @@ round1.blocks[4].blocks[2].text.th: รอบ 1 ไม่ได้ง่าย�
 round1.blocks[4].blocks[2].titleTh: พูดตรงๆ
 round1.blocks[4].blocks[3].labelTh: ดูหลักสูตร วิศวะคอม วิทย์คอม และหลักสูตร AI ใน mytcas
 round1.blocks[5].lines[0].text.th: ผลงานชิ้นแรกไม่ต้องใหญ่โตเลย
-round1.blocks[5].lines[1].text.th: ด่านต่อไป เริ่มลุยได้คืนนี้เลย",
-  "tonight.titleTh: คืนนี้ สอน AI แล้วสอบมัน
-tonight.questionTh: คืนนี้ทำอะไรได้บ้าง ที่จบแล้วได้ผลงานชิ้นแรกใส่พอร์ตเลย
-tonight.navLabelTh: ภารกิจคืนนี้
-tonight.og.headlineTh: คืนนี้มาสอน AI แยกของ แล้วจับผิดให้ได้ว่ามันพลาดตรงไหน
-tonight.blocks[0].lines[0].text.th: ด่านนี้ไม่ได้เล่นในจอ เป็นภารกิจจริงคืนนี้
-tonight.blocks[0].lines[1].text.th: สอน AI แยกของ แล้วสอบมันแบบที่เธอเพิ่งตรวจบอทไปเลย
-tonight.blocks[1].text.th: Teachable Machine ของ Google สอน AI แยกรูป เสียง หรือท่าทางได้ในเบราว์เซอร์ ไม่ต้องเขียนโค้ด ไม่ต้องสร้างบัญชี มีหน้าภาษาไทยด้วย
-tonight.blocks[1].titleTh: เครื่องมือ: Teachable Machine
-tonight.blocks[2].lineTh: ถ่ายเฉพาะรูปสิ่งของนะ ไม่ถ่ายหน้าตัวเองหรือเพื่อน แล้วไม่ต้องกดเซฟลง Google Drive ถ้าอยากเก็บไว้ให้ดาวน์โหลดลงเครื่องเลย
-tonight.blocks[3].game.data.room.badgeTh: ไม่ต้องสร้างบัญชี ตาม FAQ ของ Google ณ 18 พ.ย. 2569
-tonight.blocks[3].game.data.room.subTh: ตอนสอน รูปทั้งหมดจะอยู่แค่ในเบราว์เซอร์ของเธอ ไม่ถูกส่งขึ้นเซิร์ฟเวอร์
-tonight.blocks[3].game.data.checklistTh[0]: ลองเลือกของที่หน้าตาคล้ายๆ กัน เช่น ขวดพลาสติกกับกระป๋อง
-tonight.blocks[3].game.data.checklistTh[1]: ถ่ายรูปของแต่ละอย่างมาสอน (ถ่ายแค่ของ ไม่เอาหน้าคนนะ)
-tonight.blocks[3].game.data.checklistTh[2]: กด Train แล้วเอาของชิ้นใหม่ที่มันไม่เคยเห็นมาลองทายดู
-tonight.blocks[3].game.data.checklistTh[3]: ลองเปลี่ยนพื้นหลัง แสง มุม หรือให้เพื่อนถือของมาให้ทาย แล้วจดว่าถูกหรือพลาด
-tonight.blocks[3].game.data.checklistTh[4]: เขียนสรุปสั้นๆ
-tonight.blocks[3].game.data.fields[0].placeholderTh: สอนให้แยกอะไรบ้าง
-tonight.blocks[3].game.data.fields[1].placeholderTh: เก็บรูปแบบไหนมาสอน
-tonight.blocks[3].game.data.fields[2].placeholderTh: สอบด้วยรูปใหม่ ถูกกี่รูป จากกี่รูป
-tonight.blocks[3].game.data.fields[3].placeholderTh: พลาดตอนไหน (พื้นหลัง แสง มุม)
-tonight.blocks[3].game.data.fields[4].placeholderTh: ถ้าจะทำให้ดีขึ้น จะเพิ่มรูปแบบไหน
-tonight.blocks[3].game.data.fixedLinesTh[0]: ใช้รูปสิ่งของเท่านั้น ไม่มีหน้าคน
-tonight.blocks[3].game.data.privacyTh: เก็บไว้ในเครื่องนี้เท่านั้น ไม่ส่งไปที่ไหน
-tonight.blocks[3].answersTh[0]: เปิด Teachable Machine แล้วเลือก Image Project (ไม่ต้องสร้างบัญชี)
-tonight.blocks[3].answersTh[1]: สอนให้แยกของที่หน้าตาคล้ายกัน ใช้รูปสิ่งของเท่านั้น
-tonight.blocks[3].answersTh[2]: สอบด้วยรูปใหม่ เปลี่ยนพื้นหลัง แสง มุม แล้วจดว่าถูกหรือพลาด
-tonight.blocks[3].answersTh[3]: เขียนสรุป: สอนอะไร เก็บรูปแบบไหน สอบได้เท่าไหร่ พลาดตอนไหน จะแก้ยังไง
-tonight.blocks[3].demoScript[1].text: แยกขวดพลาสติกกับกระป๋อง
-tonight.blocks[3].demoScript[2].text: พอวางบนโต๊ะสีเข้ม มันทายผิดเกือบหมด
-tonight.blocks[4].lines[0].text.th: ของที่มีค่าที่สุดคืนนี้ไม่ใช่โมเดล แต่คือตารางว่ามันพลาดตรงไหน
-tonight.blocks[4].lines[1].text.th: เพราะนั่นคืองานเดียวกับที่เธอเพิ่งลุยไปในด่านตรวจบอทเลย
-tonight.blocks[4].lines[2].text.th: ทีมเราว่าช่องสุดท้าย จะแก้ยังไง สำคัญสุดเลย อย่าข้ามนะ
-tonight.blocks[5].lines[0].text.th: ถ้าเริ่มสนุก พรุ่งนี้ลองสอนให้มันแยกเสียงต่อดูสิ
-tonight.blocks[5].lines[1].text.th: ถ้าไม่สนุก ก็แค่รู้ตัวก่อนเลือกคณะ ไม่เสียหายอะไรเลย
-tonight.blocks[5].lines[2].text.th: เก็บ write-up กับรูปตารางผลใส่แฟ้มผลงานได้เลย",
-  "next.titleTh: แล้วเธอล่ะ
-next.questionTh: สาย AI ใช่เธอไหม แล้วจะไปต่อทางไหน
-next.navLabelTh: แล้วเธอล่ะ
-next.og.headlineTh: สาย AI ใช่เธอไหม เล่นจนจบแล้วค่อยตัดสินใจ
-next.blocks[0].lines[0].text.th: มาถึงด่านสุดท้ายของ Level 1 แล้ว
-next.blocks[0].lines[1].text.th: เล่นมาทั้งหมด เธอชอบส่วนไหนที่สุด
-next.blocks[1].game.data.lines.dream: เดาจำนวนนักเรียนที่ใช้ RISA ไว้ {risa} คน || รู้จัก AI ฝีมือทีมในไทยแล้ว
-next.blocks[1].game.data.lines.work: ตรวจคำตอบบอทถูก {score}/{total}
-next.blocks[1].game.data.lines.round1: จัดแฟ้มผลงานถูก {score}/{total}
-next.blocks[1].game.data.lines.tonight: เตรียม write-up ชิ้นแรกแล้ว
-next.blocks[1].game.data.favourites.dream: สายที่เธอเลือกเอง: วิศวกรโมเดลภาษา งานจริงคือสอน AI ให้เก่งภาษาไทย แล้วเอาไปให้คนใช้ได้จริง
-next.blocks[1].game.data.favourites.work: สายที่เธอเลือกเอง: วิศวกรวัดผล AI งานจริงคือสร้างชุดสอบ แล้วจับให้ได้ว่า AI พลาดตรงไหนก่อนปล่อย
-next.blocks[1].game.data.cardLineTh: นี่ไม่ใช่คำทำนาย มันคือจุดเริ่ม เธอตัดสินใจเอง
-next.blocks[1].answersTh[0]: เลือกด่านที่สนุกที่สุด แล้วดูว่ามันตรงกับงานจริงสายไหน
-next.blocks[1].answersTh[1]: วิศวกรโมเดลภาษา หรือวิศวกรวัดผล AI
-next.blocks[1].answersTh[2]: นี่ไม่ใช่คำทำนาย มันคือจุดเริ่ม เธอตัดสินใจเอง
-next.blocks[2].lines[0].text.th: กดบอกเราหน่อยว่าสายนี้ใช่เธอไหม เราจะได้รู้ว่าควรเจาะลึกต่อหรือเปล่า
-next.blocks[2].lines[1].text.th: ไม่ว่าจะกดอันไหน ถือว่าได้ข้อมูล
-next.blocks[2].lines[2].text.th: ลองแล้วรู้ว่าไม่ใช่ ก็ยังได้คำตอบไวกว่าคนที่ไม่เคยลอง
-next.blocks[4].lines[0].text.th: ถ้าสนใจ สิ่งเดียวที่ต้องทำต่อ
-next.blocks[4].lines[1].text.th: คือสอนโมเดลอีกตัวพรุ่งนี้ กับเขียน write-up อีกหนึ่งชิ้น
-next.blocks[5].text.th: ไม่ชอบลองซ้ำแล้วจดผลละเอียด ไม่ชอบตามเครื่องมือใหม่ที่เปลี่ยนไวมาก หรือไม่อยากอ่านคู่มือภาษาอังกฤษ เพราะงานจริงคือทดสอบ แก้ แล้วทดสอบใหม่ วนไปเรื่อยๆ
-next.blocks[5].titleTh: สายนี้อาจไม่เหมาะ ถ้า...",
+round1.blocks[5].lines[1].text.th: อยากรู้เรื่องเงินเดือนกับที่เรียนต่อใช่ไหม
+round1.blocks[5].lines[2].text.th: กด แผนที่ด่าน ข้างล่าง ไปดูข้อมูลเต็มของสายนี้ได้เลย",
 ]
 `;

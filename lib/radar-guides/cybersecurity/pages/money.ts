@@ -12,7 +12,7 @@ const ADECCO = "f.adecco" as const;
 
 export const money: GuidePage = {
   key: "money",
-  order: 9,
+  order: 8,
   titleTh: "เงินเดือนจริงในไทย",
   questionTh: "ทำสายนี้ในไทย ได้เท่าไหร่ ตั้งแต่เริ่มจนเก๋า",
   navLabelTh: "เงินเดือน",

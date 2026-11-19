@@ -10,7 +10,7 @@ import { dialogue, host, item } from "./_story";
 
 export const next: GuidePage = {
   key: "next",
-  order: 5,
+  order: 4,
   titleTh: "แล้วเธอล่ะ",
   questionTh: "สายนี้ใช่เธอไหม แล้วจะดูอะไรต่อ",
   navLabelTh: "แล้วเธอล่ะ",

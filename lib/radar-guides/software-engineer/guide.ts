@@ -19,7 +19,7 @@ import { work } from "./pages/work";
 
 export const softwareEngineerGuide: CareerGuide = {
   meta: SOFTWARE_ENGINEER_META,
-  pages: [dream, work, round1, tonight, next],
+  pages: [dream, work, tonight, next, round1],
   facts: SOFTWARE_ENGINEER_FACTS,
   banned: SOFTWARE_ENGINEER_BANNED,
 };

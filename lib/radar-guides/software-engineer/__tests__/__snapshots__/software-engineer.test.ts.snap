@@ -102,9 +102,20 @@ work.blocks[3].blocks[3].lines[1].text.th: งานของคนเลยย�
 work.blocks[3].blocks[3].lines[2].text.th: เหมือนที่เธอเพิ่งทำในกล่องข้อความเมื่อกี้เลย
 work.blocks[3].blocks[4].text.th: 71% ของคนสายนี้ในสหรัฐฯ บอกว่าการทำงานเป็นทีม สำคัญอย่างยิ่ง
 work.blocks[3].blocks[4].titleTh: ไม่ได้ลุยคนเดียวหรอก
-work.blocks[4].lines[0].text.th: ถ้าเธอชอบจัดลำดับว่าอะไรสำคัญ แถมอยากรู้ว่าทำไมของมันพัง
-work.blocks[4].lines[1].text.th: สายนี้มีที่ให้เธอ
-work.blocks[4].lines[2].text.th: ด่านต่อไป: ทางเข้ามหาวิทยาลัยที่หลายคนยังไม่รู้
+work.blocks[4].unlockLabelTh: สายนี้มีกี่แบบ
+work.blocks[4].blocks[0].lines[0].text.th: นักพัฒนาซอฟต์แวร์ เป็นชื่อเรียกกว้างๆ นะ
+work.blocks[4].blocks[0].lines[1].text.th: งานจริงแยกได้อีกหลายแบบ แต่ละแบบทำไม่เหมือนกันเลย
+work.blocks[4].blocks[1].text.th: สายเว็บและแอป: ทำของที่คนเปิดใช้ทุกวัน แล้วแก้ตามที่คนใช้บอก แบบแอปโรงเรียนเมื่อกี้
+สายหลังบ้าน: ทำระบบเบื้องหลังคอยเก็บและส่งข้อมูล เช่น ให้แอปรู้ว่ารถเมล์อยู่ตรงไหน
+สายเกม: สร้างเกม ตั้งแต่ระบบการเล่นยันฉากในเกม
+สายอุปกรณ์: เขียนโค้ดฝังในเครื่องใช้ไฟฟ้า รถยนต์ หรือหุ่นยนต์
+สายดูแลระบบ: กันเว็บกับแอปไม่ให้ล่ม ต่อให้คนแห่เข้าพร้อมกันเยอะแค่ไหน
+work.blocks[4].blocks[1].titleTh: นักพัฒนาซอฟต์แวร์ มีหลายแบบ
+work.blocks[4].blocks[2].lines[0].text.th: ที่เธอเพิ่งลองไป คือแบบแรก
+work.blocks[4].blocks[2].lines[1].text.th: ยังไม่ต้องรีบเลือกตอนนี้ ค่อยๆ ลองไปทีละแบบก็ได้
+work.blocks[5].lines[0].text.th: ถ้าเธอชอบจัดลำดับว่าอะไรสำคัญ แถมอยากรู้ว่าทำไมของมันพัง
+work.blocks[5].lines[1].text.th: สายนี้มีที่ให้เธอ
+work.blocks[5].lines[2].text.th: ด่านต่อไป: คืนนี้ลองทำเว็บหน้าแรกของเธอเอง
 work.reel.hook.th: ปัญหาเด้งเข้ามา 7 ข้อความ เธอจะแก้อันไหนก่อน
 work.reel.variantsTh[0]: โปรแกรมเมอร์ไม่ได้นั่งพิมพ์โค้ดทั้งวัน งานจริงคือนี่ต่างหาก
 work.reel.variantsTh[1]: AI เขียนโค้ดเร็ว แต่ใครเป็นคนลอง
@@ -112,6 +123,73 @@ work.reel.sendToFriendTh: ส่งให้เพื่อนที่คิด
 work.reel.visual[0]: หน้าจอแชตแจ้งปัญหาเด้งขึ้นทีละข้อความ
 work.reel.visual[1]: ข้อความแต่ละอันบินลงช่อง แก้ก่อน แก้ทีหลัง ไม่ใช่บั๊ก
 work.reel.visual[2]: ตาราง 95, 80, 100 สลับกลับเป็น 100, 95, 80",
+  "tonight.titleTh: คืนนี้ ทำเว็บหน้าเดียวให้เพื่อนใช้
+tonight.questionTh: คืนนี้ลองทำอะไรสักอย่าง ที่จบแล้วมีของจริงใส่พอร์ตได้เลย
+tonight.navLabelTh: ภารกิจคืนนี้
+tonight.og.headlineTh: คืนนี้ทำเว็บหน้าเดียวที่เพื่อนใช้ได้จริง แล้วเธอจะมีผลงานสายโค้ดชิ้นแรกเลย
+tonight.blocks[0].lines[0].text.th: ด่านนี้ไม่ได้เล่นในจอ เป็นภารกิจจริงคืนนี้
+tonight.blocks[0].lines[1].text.th: ทำเว็บหน้าเดียวไว้ช่วยแก้ปัญหาเล็กๆ ให้เพื่อนสักคน
+tonight.blocks[0].lines[2].text.th: เหมือนคนตกรถในด่านแรกนั่นแหละ เริ่มจากปัญหาที่เจอจริง
+tonight.blocks[1].text.th: หน้ารวมลิงก์ที่ห้องเธอหาไม่เคยเจอ ตารางสอบห้อง สูตรที่เพื่อนถามซ้ำทุกคาบ หรือลิสต์ว่าใครยืมอะไรไป
+tonight.blocks[1].titleTh: ไอเดียตั้งต้น
+tonight.blocks[2].lineTh: เว็บนี้ใครในอินเทอร์เน็ตก็เปิดดูได้ อย่าใส่ชื่อจริง เบอร์โทร รูป หรือข้อมูลส่วนตัวของเธอและเพื่อนลงไป
+tonight.blocks[3].text.th: GitHub Pages เอาไฟล์ index.html ของเธอขึ้นเป็นเว็บจริงได้ฟรี ถ้าเก็บโค้ดแบบสาธารณะ แก้แล้วอาจรอถึง 10 นาทีกว่าเว็บจะอัปเดต
+tonight.blocks[3].titleTh: ที่ฝากเว็บ: GitHub Pages
+tonight.blocks[4].game.data.room.titleTh: GitHub Pages · คู่มือเริ่มใช้
+tonight.blocks[4].game.data.room.badgeTh: ฟรีตามคู่มือของ GitHub ณ 18 พ.ย. 2569 เช็กอีกครั้งก่อนสมัคร
+tonight.blocks[4].game.data.room.subTh: GitHub รับคนอายุ 13 ปีขึ้นไป เช็กเกณฑ์อายุของเว็บก่อน ถ้าต้องมีผู้ปกครอง ให้สมัครด้วยกัน
+tonight.blocks[4].game.data.checklistTh[0]: หยิบปัญหาเล็กๆ ที่เพื่อนเจอจริง
+tonight.blocks[4].game.data.checklistTh[1]: เขียนเว็บหน้าเดียว ตั้งชื่อไฟล์ index.html
+tonight.blocks[4].game.data.checklistTh[2]: อัปขึ้น GitHub Pages ตามคู่มือ
+tonight.blocks[4].game.data.checklistTh[3]: ส่งลิงก์ให้เพื่อนลองใช้ แล้วนั่งดูเขาใช้จริง
+tonight.blocks[4].game.data.checklistTh[4]: จดไว้ว่าเพื่อนพูดอะไร ติดตรงไหน
+tonight.blocks[4].game.data.fields[0].placeholderTh: ปัญหาคืออะไร ใครเจอ
+tonight.blocks[4].game.data.fields[1].placeholderTh: สิ่งที่ฉันทำออกมา (ลิงก์)
+tonight.blocks[4].game.data.fields[2].placeholderTh: เพื่อนว่ายังไงบ้าง ติดตรงไหน
+tonight.blocks[4].game.data.fields[3].placeholderTh: รอบหน้าจะแก้อะไรเป็นอย่างแรก เพราะอะไร
+tonight.blocks[4].game.data.fields[4].placeholderTh: ส่วนไหนเขียนเอง ส่วนไหนให้คนหรือเครื่องมือช่วย
+tonight.blocks[4].game.data.fixedLinesTh[0]: บนหน้าเว็บไม่มีข้อมูลส่วนตัวของใคร
+tonight.blocks[4].game.data.privacyTh: เก็บไว้ในเครื่องนี้เท่านั้น ไม่ส่งไปที่ไหน
+tonight.blocks[4].answersTh[0]: เลือกปัญหาเล็กๆ ที่เพื่อนเจอจริง แล้วเขียนหน้าเว็บหน้าเดียว (index.html)
+tonight.blocks[4].answersTh[1]: เอาขึ้น GitHub Pages ตามคู่มือ (เช็กเกณฑ์อายุของเว็บก่อน ถ้าต้องมีผู้ปกครอง ให้สมัครด้วยกัน)
+tonight.blocks[4].answersTh[2]: ส่งลิงก์ให้เพื่อนลองใช้ แล้วเขียนสรุป: ปัญหาอะไร ทำอะไรออกมา เพื่อนว่ายังไง รอบหน้าจะแก้อะไร
+tonight.blocks[4].demoScript[1].text: เพื่อนในห้องหาลิงก์ส่งงานแต่ละวิชาไม่เจอ
+tonight.blocks[4].demoScript[2].text: เพื่อนบอกว่าปุ่มเล็กไป กดบนมือถือยาก
+tonight.blocks[5].labelTh: ไม่เคยเขียน HTML มาก่อน เริ่มที่คู่มือนี้เลย (ภาษาอังกฤษ ไม่ต้องสมัคร)
+tonight.blocks[6].lines[0].text.th: ไม่อยากสมัครอะไรเลยก็ยังได้นะ
+tonight.blocks[6].lines[1].text.th: เขียนไฟล์ไว้ในเครื่อง แล้วเปิดให้เพื่อนลองบนเครื่องเธอเลย
+tonight.blocks[6].lines[2].text.th: จุดสำคัญคือมีคนจริงได้ลองใช้ ไม่ใช่ว่าเว็บอยู่ที่ไหน
+tonight.blocks[7].lines[0].text.th: ที่มีค่ากว่าตัวเว็บ คือสิ่งที่เพื่อนพูดตอนลองใช้
+tonight.blocks[7].lines[1].text.th: จำด่านงานจริงได้ไหม งานสายนี้คือฟังคนใช้ แล้วตามแก้จุดที่พัง
+tonight.blocks[7].lines[2].text.th: ทีมเราคิดว่าช่องรอบหน้าจะแก้อะไรก่อน มีค่าที่สุด อย่าข้ามนะ
+tonight.blocks[8].lines[0].text.th: write-up นี้คือโครงงานที่มีคนใช้จริงด้วยนะ
+tonight.blocks[9].text.th: TCAS70 มี 4 รอบ รอบแรกชื่อ Portfolio มหาลัยดูจากสิ่งที่เธอลงมือทำ งานแบบคืนนี้แหละ ใส่แฟ้มได้เลย
+tonight.blocks[9].titleTh: รู้ไหม รอบ 1 ใช้ผลงานยื่นได้นะ
+tonight.blocks[10].lines[0].text.th: ถ้าสนุก พรุ่งนี้แก้ตามที่เพื่อนบอกต่อเลย
+tonight.blocks[10].lines[1].text.th: ถ้าไม่สนุก ก็รู้ตัวก่อนเลือกคณะ ไม่เสียอะไร
+tonight.blocks[10].lines[2].text.th: ถ้าใช้โค้ดหรือรูปของคนอื่น แปะเครดิตไว้ในหน้าเว็บด้วย",
+  "next.titleTh: แล้วเธอล่ะ
+next.questionTh: สายนี้ใช่ทางเธอไหม แล้วจะดูอะไรต่อดี
+next.navLabelTh: แล้วเธอล่ะ
+next.og.headlineTh: สายโค้ดใช่ทางเธอไหม เล่นให้จบแล้วค่อยตัดสินใจ
+next.blocks[0].lines[0].text.th: มาถึงด่านสุดท้ายของ Level 1 แล้ว
+next.blocks[0].lines[1].text.th: เล่นมาทั้งหมด เธอชอบส่วนไหนที่สุด
+next.blocks[1].game.data.lines.dream: เห็นแล้วนะว่าแอปที่คนใช้ทั้งเมือง เริ่มจากคนตกรถแค่คนเดียว
+next.blocks[1].game.data.lines.work: จัดลำดับแจ้งปัญหาถูก {score}/{total}
+next.blocks[1].game.data.lines.tonight: เตรียม write-up ชิ้นแรกไว้แล้ว
+next.blocks[1].game.data.favourites.dream: สายที่เธอเลือกเอง: นักพัฒนาแอป งานจริงคือเจอปัญหาของคน แล้วสร้างของมาแก้มัน
+next.blocks[1].game.data.favourites.work: สายที่เธอเลือกเอง: วิศวกรทดสอบซอฟต์แวร์ (QA) งานจริงคือจับจุดพังให้เจอก่อนคนใช้ รวมถึงโค้ดที่ AI เขียน
+next.blocks[1].game.data.cardLineTh: นี่ไม่ใช่คำทำนาย มันคือจุดเริ่ม เธอตัดสินใจเอง
+next.blocks[1].answersTh[0]: เลือกเกมที่สนุกที่สุด แล้วดูว่ามันตรงกับงานจริงสายไหน
+next.blocks[1].answersTh[1]: นักพัฒนาแอป หรือวิศวกรทดสอบซอฟต์แวร์ (QA)
+next.blocks[1].answersTh[2]: นี่ไม่ใช่คำทำนาย มันคือจุดเริ่ม เธอตัดสินใจเอง
+next.blocks[2].lines[0].text.th: กดบอกเราหน่อยว่าสายนี้ใช่ไหม เราจะได้รู้ว่าควรทำสายนี้ให้ลึกขึ้นไหม
+next.blocks[2].lines[1].text.th: ไม่ว่าจะกดอันไหน ถือว่าได้ข้อมูล
+next.blocks[2].lines[2].text.th: ลองแล้วรู้ว่าไม่ใช่ ก็ได้คำตอบเร็วกว่าคนที่ไม่เคยลอง
+next.blocks[4].lines[0].text.th: ถ้าสนใจ มีแค่อย่างเดียวที่ต้องทำต่อ
+next.blocks[4].lines[1].text.th: คือแก้เว็บตามที่เพื่อนบอก แล้วเอาไปให้เขาลองอีกรอบ
+next.blocks[5].text.th: ไม่ชอบนั่งไล่หาว่าของพังเพราะอะไร ไม่ชอบเรียนเครื่องมือใหม่เรื่อยๆ หรือไม่อยากคุยกับคนใช้ เพราะงานส่วนใหญ่คือฟังเขาแล้วแก้ซ้ำหลายรอบ
+next.blocks[5].titleTh: สายนี้อาจไม่ใช่ทาง ถ้า...",
   "round1.titleTh: รอบ 1 มีพื้นที่ให้ผลงานเธอ
 round1.questionTh: เข้ามหาลัยด้วยสิ่งที่ทำเอง ไม่ใช่แค่คะแนนสอบ จริงเหรอ
 round1.navLabelTh: รอบ 1
@@ -155,72 +233,7 @@ round1.blocks[4].blocks[2].text.th: รอบ 1 ไม่ได้ง่าย�
 round1.blocks[4].blocks[2].titleTh: พูดตรงๆ
 round1.blocks[4].blocks[3].labelTh: ดูหลักสูตร วิศวะคอม วิทย์คอม ใน mytcas
 round1.blocks[5].lines[0].text.th: ผลงานชิ้นแรกไม่ต้องใหญ่โตเลย
-round1.blocks[5].lines[1].text.th: ด่านต่อไป เริ่มลุยได้คืนนี้เลย",
-  "tonight.titleTh: คืนนี้ ทำเว็บหน้าเดียวให้เพื่อนใช้
-tonight.questionTh: คืนนี้ลองทำอะไรสักอย่าง ที่จบแล้วมีของจริงใส่พอร์ตได้เลย
-tonight.navLabelTh: ภารกิจคืนนี้
-tonight.og.headlineTh: คืนนี้ทำเว็บหน้าเดียวที่เพื่อนใช้ได้จริง แล้วเธอจะมีผลงานสายโค้ดชิ้นแรกเลย
-tonight.blocks[0].lines[0].text.th: ด่านนี้ไม่ได้เล่นในจอ เป็นภารกิจจริงคืนนี้
-tonight.blocks[0].lines[1].text.th: ทำเว็บหน้าเดียวไว้ช่วยแก้ปัญหาเล็กๆ ให้เพื่อนสักคน
-tonight.blocks[0].lines[2].text.th: เหมือนคนตกรถในด่านแรกนั่นแหละ เริ่มจากปัญหาที่เจอจริง
-tonight.blocks[1].text.th: หน้ารวมลิงก์ที่ห้องเธอหาไม่เคยเจอ ตารางสอบห้อง สูตรที่เพื่อนถามซ้ำทุกคาบ หรือลิสต์ว่าใครยืมอะไรไป
-tonight.blocks[1].titleTh: ไอเดียตั้งต้น
-tonight.blocks[2].lineTh: เว็บนี้ใครในอินเทอร์เน็ตก็เปิดดูได้ อย่าใส่ชื่อจริง เบอร์โทร รูป หรือข้อมูลส่วนตัวของเธอและเพื่อนลงไป
-tonight.blocks[3].text.th: GitHub Pages เอาไฟล์ index.html ของเธอขึ้นเป็นเว็บจริงได้ฟรี ถ้าเก็บโค้ดแบบสาธารณะ แก้แล้วอาจรอถึง 10 นาทีกว่าเว็บจะอัปเดต
-tonight.blocks[3].titleTh: ที่ฝากเว็บ: GitHub Pages
-tonight.blocks[4].game.data.room.titleTh: GitHub Pages · คู่มือเริ่มใช้
-tonight.blocks[4].game.data.room.badgeTh: ฟรีตามคู่มือของ GitHub ณ 18 พ.ย. 2569 เช็กอีกครั้งก่อนสมัคร
-tonight.blocks[4].game.data.room.subTh: GitHub รับคนอายุ 13 ปีขึ้นไป เช็กเกณฑ์อายุของเว็บก่อน ถ้าต้องมีผู้ปกครอง ให้สมัครด้วยกัน
-tonight.blocks[4].game.data.checklistTh[0]: หยิบปัญหาเล็กๆ ที่เพื่อนเจอจริง
-tonight.blocks[4].game.data.checklistTh[1]: เขียนเว็บหน้าเดียว ตั้งชื่อไฟล์ index.html
-tonight.blocks[4].game.data.checklistTh[2]: อัปขึ้น GitHub Pages ตามคู่มือ
-tonight.blocks[4].game.data.checklistTh[3]: ส่งลิงก์ให้เพื่อนลองใช้ แล้วนั่งดูเขาใช้จริง
-tonight.blocks[4].game.data.checklistTh[4]: จดไว้ว่าเพื่อนพูดอะไร ติดตรงไหน
-tonight.blocks[4].game.data.fields[0].placeholderTh: ปัญหาคืออะไร ใครเจอ
-tonight.blocks[4].game.data.fields[1].placeholderTh: สิ่งที่ฉันทำออกมา (ลิงก์)
-tonight.blocks[4].game.data.fields[2].placeholderTh: เพื่อนว่ายังไงบ้าง ติดตรงไหน
-tonight.blocks[4].game.data.fields[3].placeholderTh: รอบหน้าจะแก้อะไรเป็นอย่างแรก เพราะอะไร
-tonight.blocks[4].game.data.fields[4].placeholderTh: ส่วนไหนเขียนเอง ส่วนไหนให้คนหรือเครื่องมือช่วย
-tonight.blocks[4].game.data.fixedLinesTh[0]: บนหน้าเว็บไม่มีข้อมูลส่วนตัวของใคร
-tonight.blocks[4].game.data.privacyTh: เก็บไว้ในเครื่องนี้เท่านั้น ไม่ส่งไปที่ไหน
-tonight.blocks[4].answersTh[0]: เลือกปัญหาเล็กๆ ที่เพื่อนเจอจริง แล้วเขียนหน้าเว็บหน้าเดียว (index.html)
-tonight.blocks[4].answersTh[1]: เอาขึ้น GitHub Pages ตามคู่มือ (เช็กเกณฑ์อายุของเว็บก่อน ถ้าต้องมีผู้ปกครอง ให้สมัครด้วยกัน)
-tonight.blocks[4].answersTh[2]: ส่งลิงก์ให้เพื่อนลองใช้ แล้วเขียนสรุป: ปัญหาอะไร ทำอะไรออกมา เพื่อนว่ายังไง รอบหน้าจะแก้อะไร
-tonight.blocks[4].demoScript[1].text: เพื่อนในห้องหาลิงก์ส่งงานแต่ละวิชาไม่เจอ
-tonight.blocks[4].demoScript[2].text: เพื่อนบอกว่าปุ่มเล็กไป กดบนมือถือยาก
-tonight.blocks[5].labelTh: ไม่เคยเขียน HTML มาก่อน เริ่มที่คู่มือนี้เลย (ภาษาอังกฤษ ไม่ต้องสมัคร)
-tonight.blocks[6].lines[0].text.th: ไม่อยากสมัครอะไรเลยก็ยังได้นะ
-tonight.blocks[6].lines[1].text.th: เขียนไฟล์ไว้ในเครื่อง แล้วเปิดให้เพื่อนลองบนเครื่องเธอเลย
-tonight.blocks[6].lines[2].text.th: จุดสำคัญคือมีคนจริงได้ลองใช้ ไม่ใช่ว่าเว็บอยู่ที่ไหน
-tonight.blocks[7].lines[0].text.th: ที่มีค่ากว่าตัวเว็บ คือสิ่งที่เพื่อนพูดตอนลองใช้
-tonight.blocks[7].lines[1].text.th: จำด่านงานจริงได้ไหม งานสายนี้คือฟังคนใช้ แล้วตามแก้จุดที่พัง
-tonight.blocks[7].lines[2].text.th: ทีมเราคิดว่าช่องรอบหน้าจะแก้อะไรก่อน มีค่าที่สุด อย่าข้ามนะ
-tonight.blocks[8].lines[0].text.th: write-up นี้ใส่แฟ้มรอบ 1 ได้เลย เป็นโครงงานที่มีคนใช้จริง
-tonight.blocks[8].lines[1].text.th: ถ้าสนุก พรุ่งนี้แก้ตามที่เพื่อนบอกต่อเลย
-tonight.blocks[8].lines[2].text.th: ถ้าไม่สนุก ก็รู้ตัวก่อนเลือกคณะ ไม่เสียอะไร
-tonight.blocks[8].lines[3].text.th: ถ้าใช้โค้ดหรือรูปของคนอื่น แปะเครดิตไว้ในหน้าเว็บด้วย",
-  "next.titleTh: แล้วเธอล่ะ
-next.questionTh: สายนี้ใช่ทางเธอไหม แล้วจะดูอะไรต่อดี
-next.navLabelTh: แล้วเธอล่ะ
-next.og.headlineTh: สายโค้ดใช่ทางเธอไหม เล่นให้จบแล้วค่อยตัดสินใจ
-next.blocks[0].lines[0].text.th: มาถึงด่านสุดท้ายของ Level 1 แล้ว
-next.blocks[0].lines[1].text.th: เล่นมาทั้งหมด เธอชอบส่วนไหนที่สุด
-next.blocks[1].game.data.lines.dream: เห็นแล้วนะว่าแอปที่คนใช้ทั้งเมือง เริ่มจากคนตกรถแค่คนเดียว
-next.blocks[1].game.data.lines.work: จัดลำดับแจ้งปัญหาถูก {score}/{total}
-next.blocks[1].game.data.lines.round1: จัดแฟ้มรอบ 1 ถูก {score}/{total}
-next.blocks[1].game.data.lines.tonight: เตรียม write-up ชิ้นแรกไว้แล้ว
-next.blocks[1].game.data.favourites.dream: สายที่เธอเลือกเอง: นักพัฒนาแอป งานจริงคือเจอปัญหาของคน แล้วสร้างของมาแก้มัน
-next.blocks[1].game.data.favourites.work: สายที่เธอเลือกเอง: วิศวกรทดสอบซอฟต์แวร์ (QA) งานจริงคือจับจุดพังให้เจอก่อนคนใช้ รวมถึงโค้ดที่ AI เขียน
-next.blocks[1].game.data.cardLineTh: นี่ไม่ใช่คำทำนาย มันคือจุดเริ่ม เธอตัดสินใจเอง
-next.blocks[1].answersTh[0]: เลือกเกมที่สนุกที่สุด แล้วดูว่ามันตรงกับงานจริงสายไหน
-next.blocks[1].answersTh[1]: นักพัฒนาแอป หรือวิศวกรทดสอบซอฟต์แวร์ (QA)
-next.blocks[1].answersTh[2]: นี่ไม่ใช่คำทำนาย มันคือจุดเริ่ม เธอตัดสินใจเอง
-next.blocks[2].lines[0].text.th: กดบอกเราหน่อยว่าสายนี้ใช่ไหม เราจะได้รู้ว่าควรทำสายนี้ให้ลึกขึ้นไหม
-next.blocks[2].lines[1].text.th: ไม่ว่าจะกดอันไหน ถือว่าได้ข้อมูล
-next.blocks[2].lines[2].text.th: ลองแล้วรู้ว่าไม่ใช่ ก็ได้คำตอบเร็วกว่าคนที่ไม่เคยลอง
-next.blocks[4].lines[0].text.th: ถ้าสนใจ มีแค่อย่างเดียวที่ต้องทำต่อ
-next.blocks[4].lines[1].text.th: คือแก้เว็บตามที่เพื่อนบอก แล้วเอาไปให้เขาลองอีกรอบ
-next.blocks[5].text.th: ไม่ชอบนั่งไล่หาว่าของพังเพราะอะไร ไม่ชอบเรียนเครื่องมือใหม่เรื่อยๆ หรือไม่อยากคุยกับคนใช้ เพราะงานส่วนใหญ่คือฟังเขาแล้วแก้ซ้ำหลายรอบ
-next.blocks[5].titleTh: สายนี้อาจไม่ใช่ทาง ถ้า...",
+round1.blocks[5].lines[1].text.th: อยากรู้เรื่องเงินเดือนกับที่เรียนต่อใช่ไหม
+round1.blocks[5].lines[2].text.th: กด แผนที่ด่าน ข้างล่าง ไปดูข้อมูลเต็มของสายนี้ได้เลย",
 ]
 `;

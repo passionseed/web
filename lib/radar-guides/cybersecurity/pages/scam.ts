@@ -5,6 +5,7 @@
  * who does this work.
  */
 import type { GuidePage } from "@/lib/radar-guide/guide-types";
+import { careerKindsBeat } from "../../_shared/kinds";
 import { CLIP, beat, dialogue, host, item } from "./_story";
 
 const SIM = "sim.scam-chat" as const;
@@ -201,6 +202,16 @@ export const scam: GuidePage = {
       host("ใครทำงานนี้: ทีมกันโกงของธนาคาร ค่ายมือถือ ศูนย์ AOC 1441", { facts: ["f.aoc1441"] }),
       host("บริษัทแอปเตือนเบอร์มิจฉาชีพ และตำรวจไซเบอร์ ทั้งหมดนี้คือสายไซเบอร์")
     ),
+    careerKindsBeat({
+      nameTh: "สายไซเบอร์",
+      kinds: [
+        { titleTh: "สายกันโกง", bodyTh: "ดักจับข้อความหลอกลวงกับบัญชีม้า แบบทีมกันโกงของธนาคาร" },
+        { titleTh: "สายเฝ้าระบบ", bodyTh: "เฝ้าระบบองค์กรทั้งวันทั้งคืน เจออะไรแปลกๆ ก็หยุดทันที" },
+        { titleTh: "สายทดสอบเจาะระบบ", bodyTh: "ลองเจาะระบบที่เจ้าของอนุญาตแล้ว เพื่อหาช่องโหว่ก่อนคนร้าย" },
+        { titleTh: "สายสืบหลักฐาน", bodyTh: "แกะรอยหลังโดนโจมตี ว่าเกิดอะไรขึ้น แล้วเข้ามาทางไหน" },
+        { titleTh: "สายวางกติกา", bodyTh: "ดูแลกฎและความเสี่ยงของทั้งองค์กร รวมถึงบริษัทคู่ค้า" },
+      ],
+    }),
     item("help-1441", "notification", "เจอเรื่องแบบนี้ โทร 1441", { title: "สายด่วน", facts: ["f.aoc1441"] }),
   ],
   clip: {

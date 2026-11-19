@@ -5,6 +5,7 @@
  * the age line from the brief is on the card. Free plans make the repository
  * public, so nothing personal goes on the page (pinned safety block).
  */
+import { ROUND_ONE_FACT, roundOneTeaser } from "../../_shared/round1";
 import type { GuidePage } from "@/lib/radar-guide/guide-types";
 import { dialogue, host, item, sys } from "../../_shared/story";
 
@@ -14,13 +15,13 @@ const QUICKSTART_URL = "https://docs.github.com/en/pages/quickstart" as const;
 
 export const tonight: GuidePage = {
   key: "tonight",
-  order: 4,
+  order: 3,
   titleTh: "คืนนี้ ทำเว็บหน้าเดียวให้เพื่อนใช้",
   questionTh: "คืนนี้ลองทำอะไรสักอย่าง ที่จบแล้วมีของจริงใส่พอร์ตได้เลย",
   navLabelTh: "ภารกิจคืนนี้",
   asOf: "2026-11-18",
   minutes: 1,
-  factIds: [GH, MDN],
+  factIds: [GH, MDN, ROUND_ONE_FACT],
   og: { headlineTh: "คืนนี้ทำเว็บหน้าเดียวที่เพื่อนใช้ได้จริง แล้วเธอจะมีผลงานสายโค้ดชิ้นแรกเลย" },
   blocks: [
     dialogue(
@@ -116,8 +117,12 @@ export const tonight: GuidePage = {
       host("ทีมเราคิดว่าช่องรอบหน้าจะแก้อะไรก่อน มีค่าที่สุด อย่าข้ามนะ", { labels: ["teamView"] })
     ),
     dialogue(
+      "folio",
+      host("write-up นี้คือโครงงานที่มีคนใช้จริงด้วยนะ", { mood: "wink" })
+    ),
+    roundOneTeaser(),
+    dialogue(
       "callback",
-      host("write-up นี้ใส่แฟ้มรอบ 1 ได้เลย เป็นโครงงานที่มีคนใช้จริง", { mood: "wink" }),
       host("ถ้าสนุก พรุ่งนี้แก้ตามที่เพื่อนบอกต่อเลย"),
       host("ถ้าไม่สนุก ก็รู้ตัวก่อนเลือกคณะ ไม่เสียอะไร"),
       sys("ถ้าใช้โค้ดหรือรูปของคนอื่น แปะเครดิตไว้ในหน้าเว็บด้วย")

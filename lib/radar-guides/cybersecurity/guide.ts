@@ -28,7 +28,7 @@ import { triage } from "./pages/triage";
 
 export const cybersecurityGuide: CareerGuide = {
   meta: CYBERSECURITY_META,
-  pages: [mythos, scam, round1, tonight, next, doors, triage, firstjob, money, fit, tcas, terminal],
+  pages: [mythos, scam, tonight, next, doors, triage, firstjob, money, fit, round1, tcas, terminal],
   facts: CYBERSECURITY_FACTS,
   banned: CYBERSECURITY_BANNED,
 };

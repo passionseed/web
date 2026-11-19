@@ -97,7 +97,7 @@ export const AI_ENGINEER_FACTS: readonly Fact[] = [
   {
     id: "sim.ai-helpbot",
     claimEn:
-      "Simulated: a school help-bot's answers to 8 student questions, checked against the (made-up) school handbook. Questions, answers and documents are invented for the game, based on common chatbot failures: wrong facts stated confidently, made-up numbers, not understanding regional Thai, and questions about health or wellbeing that a person must handle.",
+      "Simulated: building a school help-bot on an existing model. First the student picks which of 6 documents the bot may read (this year's calendar and the handbook yes; classmates' grades, parents' phone numbers, the teachers' group chat and last year's calendar no). Then they try it on 7 student questions and pick a fix for each answer: ship it, give the bot the missing data, or hand it to a person. Documents, questions and answers are invented for the game, based on common chatbot failures: made-up answers when the documents are silent, not understanding regional Thai, and health or wellbeing questions a person must handle.",
     sources: [],
     asOf: AS_OF,
     badge: "simulated",
