@@ -161,17 +161,31 @@ function blit<Img>(ctx: DrawContext<Img>, atlas: Img, a: AtlasRect | undefined, 
   ctx.drawImage(atlas, a.x, a.y, a.w, a.h, Math.round(x), Math.round(y), a.w * scale, a.h * scale);
 }
 
-/** Paints the land layer: every land tile, then helper paths, the well and the bunting, as the PNG does. */
-export function paintLand<Img>(ctx: DrawContext<Img>, model: SceneModel, atlas: Img, rects: ReadonlyMap<string, AtlasRect>): void {
+/**
+ * Paints the land layer: every land tile, then helper paths, the well and the
+ * bunting, as the PNG does. `within` (web only) paints just the cells that
+ * meet that rect, for a small lit copy of the ground; the bot never passes it.
+ */
+export function paintLand<Img>(ctx: DrawContext<Img>, model: SceneModel, atlas: Img, rects: ReadonlyMap<string, AtlasRect>, within?: Rect): void {
   const { scene, sea } = model;
   const t = scene.tile;
   ctx.imageSmoothingEnabled = false;
-  for (let k = 0; k < sea.length; k++) {
-    if (sea[k] >= 0) continue;
-    blit(ctx, atlas, rects.get(TILE_BY_CODE[scene.tiles[k]]), (k % scene.cols) * t, Math.floor(k / scene.cols) * t);
+  const span = within ? cellSpan(within, t) : { c0: 0, r0: 0, c1: scene.cols, r1: scene.rows };
+  const c0 = Math.max(0, span.c0);
+  const c1 = Math.min(scene.cols, span.c1);
+  for (let row = Math.max(0, span.r0); row < Math.min(scene.rows, span.r1); row++) {
+    for (let col = c0; col < c1; col++) {
+      const k = row * scene.cols + col;
+      if (sea[k] >= 0) continue;
+      blit(ctx, atlas, rects.get(TILE_BY_CODE[scene.tiles[k]]), col * t, row * t);
+    }
   }
   // A path over a shore cell lands here too, above the animated foam.
-  for (const cell of scene.paths) blit(ctx, atlas, rects.get("path"), (cell % scene.cols) * t, Math.floor(cell / scene.cols) * t);
+  for (const cell of scene.paths) {
+    const x = (cell % scene.cols) * t;
+    const y = Math.floor(cell / scene.cols) * t;
+    if (!within || overlaps({ x, y, w: t, h: t }, within)) blit(ctx, atlas, rects.get("path"), x, y);
+  }
   blit(ctx, atlas, rects.get("well"), scene.well.x, scene.well.y);
   if (scene.banner) blit(ctx, atlas, rects.get("banner"), scene.banner.x, scene.banner.y);
 }
@@ -224,8 +238,14 @@ export interface DrawFx {
   seaFrame?: (col: number, row: number, kind: number) => number;
   /** Over the sea and foam, under the land layer. */
   afterSea?: (r: Rect) => void;
+  /** Over the land layer, under everything that stands on it (light that moves on the ground). */
+  afterLand?: (r: Rect) => void;
+  /** Over the trees, lamps and clouds, under the tags and the plaza's actors (the glow round a light). */
+  beforeTags?: (r: Rect) => void;
   /** Under the plaza's actors, over everything before them. */
   beforeActors?: (r: Rect) => void;
+  /** Just after actor `index` is drawn at (x, y) with sprite `name`, before the next one (light on that actor alone). */
+  afterActor?: (index: number, name: string, x: number, y: number, flip: boolean) => void;
   /** Over everything. */
   last?: (r: Rect) => void;
 }
@@ -294,6 +314,7 @@ export function redrawRect<Img>(ctx: DrawContext<Img>, r: Rect, model: SceneMode
   fx?.afterSea?.(r);
   const inScene = intersect(r, model.bounds);
   if (inScene) ctx.drawImage(layers.land, inScene.x, inScene.y, inScene.w, inScene.h, inScene.x, inScene.y, inScene.w, inScene.h);
+  fx?.afterLand?.(r);
 
   if (motion.boat) drawMover(ctx, layers, motion.boat, r);
 
@@ -321,15 +342,19 @@ export function redrawRect<Img>(ctx: DrawContext<Img>, r: Rect, model: SceneMode
     ctx.globalAlpha = 1;
   }
 
+  fx?.beforeTags?.(r);
   if (inScene) ctx.drawImage(layers.overlay, inScene.x, inScene.y, inScene.w, inScene.h, inScene.x, inScene.y, inScene.w, inScene.h);
 
   fx?.beforeActors?.(r);
+  const afterActor = fx?.afterActor;
   state.actors.forEach((actor, i) => {
     const frame = motion.actors[i] ?? 0;
     const rect = actorRect(actor, frame, rects);
     if (!rect || !overlaps(rect, r)) return;
     const name = actor.frames[frame] ?? actor.frames[0];
-    blit(ctx, atlas, (actorAt(actor, frame).flip ? layers.flipped : rects).get(name), rect.x, rect.y);
+    const flip = actorAt(actor, frame).flip;
+    blit(ctx, atlas, (flip ? layers.flipped : rects).get(name), rect.x, rect.y);
+    afterActor?.(i, name, rect.x, rect.y, flip);
   });
 
   for (const g of motion.gulls) drawMover(ctx, layers, g, r);

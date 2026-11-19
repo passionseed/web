@@ -1,9 +1,9 @@
 /**
  * The web island's atmosphere, as data: shallow water round the coast, wet
- * sand at the waterline, contact shadows, where light falls at night, the
- * petals and leaves the breeze carries, and the glints on the sea. Pure and
- * client-safe; fx.ts turns it into pixels. Nothing here reaches the bot's PNG
- * or GIF.
+ * sand at the waterline, contact shadows, where light falls at dawn, dusk and
+ * night and how it breathes, the campfire's smoke, the petals and leaves the
+ * breeze carries, and the glints on the sea. Pure and client-safe; fx.ts
+ * turns it into pixels. Nothing here reaches the bot's PNG or GIF.
  */
 import { MOTION_SPRITES, SHORE_FRAMES } from "@/bot/assets/island/motion-sprites";
 import { SPRITES } from "@/bot/assets/island/sprites";
@@ -33,6 +33,10 @@ const SHORE_KINDS = ["shore_n", "shore_s", "shore_e", "shore_w"] as const;
 const spriteRows = (name: string): string[] | undefined =>
   (SPRITES as Record<string, string[]>)[name] ?? (MOTION_SPRITES as Record<string, string[]>)[name];
 
+/** Every sprite by name (the plaza's crowd included), read once: the sprites never change. */
+let everySprite: Record<string, string[]> | null = null;
+const anySpriteRows = (name: string): string[] | undefined => spriteRows(name) ?? (everySprite ??= allSprites())[name];
+
 /**
  * The breeze's petals and leaves (palette keys, so they take the hour's
  * grade), and the lantern's dotted ring blanked: on the web a lantern's light
@@ -60,7 +64,7 @@ export function webSprites(): Record<string, string[]> {
 // ------------------------------------------------------------------ water
 
 /** How far the shallows reach from the waterline, in native px. */
-export const SHALLOW_REACH = 26;
+export const SHALLOW_REACH = 24;
 /** Sand this close (px) to where the water can reach stays wet. */
 const WET_REACH = 3;
 
@@ -114,33 +118,45 @@ function masks(): ShoreMask[] {
   return shoreMasks;
 }
 
-/** The water round the island, per pixel of `rect` (scene px). */
+/**
+ * The water round the island, per pixel of `rect` (scene px): a level of
+ * shallows (1..SHALLOW_LEVELS, deeper to shallower) or WET sand, and the
+ * cells that hold any of it, so a bake only walks those.
+ */
 export interface WaterField {
   rect: Rect;
-  /** Blocks of WATER_BLOCK x WATER_BLOCK px across the rect. */
-  gw: number;
-  gh: number;
-  /** Per block of open-water cells: 0 none, 1..3 shallower. 0 on land and shore cells. */
-  blocks: Uint8Array;
-  /** Per pixel of shore cells only: 1..3 the band of open water there, WET for wet sand; 0 elsewhere. */
-  edge: Uint8Array;
-  /** Shore cells in the rect, as their top-left pixel index into `edge`: the bake walks only these. */
-  shoreCells: number[];
+  /** Per pixel of the rect: 0 none, 1..SHALLOW_LEVELS the shallows (dithered), WET for wet sand. */
+  level: Uint8Array;
+  /** Cells with any shallows or wet sand, as their top-left pixel index into `level`. */
+  cells: number[];
 }
 
-/** The distance runs on blocks this many px square: a quarter of the work, bands that step in 2 px. */
+/** The distance runs on blocks this many px square: a quarter of the work; the dither hides the 2 px steps. */
 export const WATER_BLOCK = 2;
-/** `edge` value for wet sand. */
-export const WET = 4;
+/** Levels of shallows, the deepest first. */
+export const SHALLOW_LEVELS = 4;
+/** `level` value for wet sand. */
+export const WET = 7;
 
-/** The shallows' bands by distance from the waterline: clean contours, rounded by the distance itself. */
-export function shallowLevel(distance: number): number {
-  const l = 1 - distance / SHALLOW_REACH;
-  if (l > 0.78) return 3;
-  if (l > 0.5) return 2;
-  if (l > 0.12) return 1;
-  return 0;
+/** 4 x 4 ordered dither thresholds, 0..1, by world pixel: the pattern never moves with what it shades. */
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => (v + 0.5) / 16);
+
+export function bayer(x: number, y: number): number {
+  return BAYER[(y & 3) * 4 + (x & 3)];
 }
+
+/**
+ * The shallows at a world pixel `distance` px from the waterline: a smooth
+ * falloff, dithered between levels in world space, so the band follows the
+ * coast with no contour lines (0 past the reach).
+ */
+export function shallowLevel(distance: number, x: number, y: number): number {
+  const f = 1 - distance / SHALLOW_REACH;
+  if (f <= 0) return 0;
+  return Math.min(SHALLOW_LEVELS, Math.floor(f ** 1.5 * SHALLOW_LEVELS + bayer(x, y)));
+}
+
+const NO_WATER: WaterField = { rect: { x: 0, y: 0, w: 0, h: 0 }, level: new Uint8Array(0), cells: [] };
 
 /**
  * Shallows and wet sand for a scene: a chamfer distance from every land
@@ -162,7 +178,7 @@ export function waterField(scene: IslandScene, sea: Int8Array): WaterField {
     c1 = Math.max(c1, c);
     r1 = Math.max(r1, r);
   }
-  if (c1 < 0) return { rect: { x: 0, y: 0, w: 0, h: 0 }, gw: 0, gh: 0, blocks: new Uint8Array(0), edge: new Uint8Array(0), shoreCells: [] };
+  if (c1 < 0) return NO_WATER;
   const pad = Math.ceil(SHALLOW_REACH / t);
   c0 = Math.max(0, c0 - pad);
   r0 = Math.max(0, r0 - pad);
@@ -177,8 +193,6 @@ export function waterField(scene: IslandScene, sea: Int8Array): WaterField {
   const gh = h / B;
   const FAR = Math.ceil((SHALLOW_REACH / B) * 3) + 4;
   const dist = new Uint16Array(gw * gh);
-  const edge = new Uint8Array(w * h);
-  const shoreCells: number[] = [];
   const per = t / B;
   // Cell by cell: land blocks stay 0, open water is FAR; a shore block is water only if all of it is.
   for (let r = r0; r <= r1; r++) {
@@ -197,7 +211,6 @@ export function waterField(scene: IslandScene, sea: Int8Array): WaterField {
           if (m.water[p] && m.water[p + 1] && m.water[p + 16] && m.water[p + 17]) dist[gbase + by * gw + bx] = FAR;
         }
       }
-      shoreCells.push((r - r0) * t * w + (c - c0) * t);
     }
   }
   // Chamfer 3-4, two passes; land (0) is skipped, so the island's inside costs nothing.
@@ -216,16 +229,11 @@ export function waterField(scene: IslandScene, sea: Int8Array): WaterField {
       dist[i] = d;
     }
   }
-  const level = new Uint8Array(gw * gh);
   for (let y = gh - 1; y >= 0; y--) {
     for (let x = gw - 1; x >= 0; x--) {
       const i = y * gw + x;
       let d = dist[i];
-      if (d === 0) {
-        // A block the land touches: its water pixels sit right at the waterline.
-        level[i] = shallowLevel(0);
-        continue;
-      }
+      if (d === 0) continue;
       let n: number;
       if (x < gw - 1 && (n = dist[i + 1] + 3) < d) d = n;
       if (y < gh - 1) {
@@ -234,35 +242,53 @@ export function waterField(scene: IslandScene, sea: Int8Array): WaterField {
         if (x > 0 && (n = dist[i + gw - 1] + 4) < d) d = n;
       }
       dist[i] = d;
-      if (d < FAR) level[i] = shallowLevel((d / 3) * B);
     }
   }
-  // Open-water cells keep their blocks' bands; land and shore cells' blocks are cleared, and a
-  // shore cell's own pixels take their block's band where they are open water in every frame.
+  // Per pixel, cell by cell: open water takes its block's distance (a block the land touches sits
+  // at the waterline); a shore cell only where it is open water in every frame, plus its wet sand.
+  const level = new Uint8Array(w * h);
+  const cells: number[] = [];
+  const reach = (SHALLOW_REACH / B) * 3;
   for (let r = r0; r <= r1; r++) {
     for (let c = c0; c <= c1; c++) {
       const kind = sea[r * scene.cols + c];
-      if (kind === 0 || kind === 1) continue;
+      if (kind < 0) continue;
+      const m = kind >= 2 ? shore[kind - 2] : null;
+      const x0 = (c - c0) * t;
+      const y0 = (r - r0) * t;
       const gx0 = (c - c0) * per;
       const gy0 = (r - r0) * per;
-      if (kind >= 2) {
-        const m = shore[kind - 2];
-        const x0 = (c - c0) * t;
-        const y0 = (r - r0) * t;
-        for (let py = 0; py < t; py++) {
-          const row = (y0 + py) * w + x0;
-          const grow = (gy0 + Math.floor(py / B)) * gw + gx0;
-          for (let px = 0; px < t; px++) {
-            const p = py * 16 + px;
-            if (m.water[p]) edge[row + px] = level[grow + Math.floor(px / B)];
-            else if (m.wet[p]) edge[row + px] = WET;
+      if (!m) {
+        // Open water past the reach (most of the sea): no pixel to look at.
+        let near = false;
+        for (let by = 0; by < per && !near; by++) for (let bx = 0; bx < per; bx++) if (dist[(gy0 + by) * gw + gx0 + bx] < reach) near = true;
+        if (!near) continue;
+      }
+      let any = false;
+      for (let py = 0; py < t; py++) {
+        const row = (y0 + py) * w + x0;
+        const grow = (gy0 + (py >> 1)) * gw + gx0;
+        for (let px = 0; px < t; px++) {
+          const p = py * 16 + px;
+          if (m && !m.water[p]) {
+            if (m.wet[p]) {
+              level[row + px] = WET;
+              any = true;
+            }
+            continue;
           }
+          const d = dist[grow + (px >> 1)];
+          if (d >= reach) continue;
+          const v = shallowLevel((d / 3) * B, rect.x + x0 + px, rect.y + y0 + py);
+          if (v === 0) continue;
+          level[row + px] = v;
+          any = true;
         }
       }
-      for (let by = 0; by < per; by++) level.fill(0, (gy0 + by) * gw + gx0, (gy0 + by) * gw + gx0 + per);
+      if (any) cells.push(y0 * w + x0);
     }
   }
-  return { rect, gw, gh, blocks: level, edge, shoreCells };
+  return { rect, level, cells };
 }
 
 // ------------------------------------------------------------------ shadows
@@ -313,7 +339,7 @@ export function castsShadow(name: string): boolean {
 
 /** A shadow under a sprite at (x, y): its ellipse's box in scene px, or null. `lean` shifts it with the sun. */
 export function shadowBox(name: string, x: number, y: number, flip: boolean, lean: number): Rect | null {
-  const rows = spriteRows(name) ?? allSprites()[name];
+  const rows = anySpriteRows(name);
   if (!rows?.length) return null;
   const foot = footprint(rows);
   if (!foot) return null;
@@ -343,21 +369,98 @@ export interface LightSource {
   gy: number | null;
 }
 
-/** Halo and pool sizes (radius x, radius y) per kind. */
+/**
+ * Per kind: the small glow round the light itself (radius; 0 for none) and
+ * its pool on the ground (radius x, radius y). The fire and the countdown
+ * board have no glow: the fire lights the faces round it instead, and a glow
+ * over the board would paint over the stall.
+ */
 export const LIGHT_SIZE: Readonly<Record<LightKind, { halo: number; pool: [number, number] | null }>> = {
-  lamp: { halo: 9, pool: [20, 12] },
-  lantern: { halo: 10, pool: [16, 10] },
+  lamp: { halo: 7, pool: [22, 13] },
+  lantern: { halo: 6, pool: [18, 11] },
   festoon: { halo: 0, pool: [30, 13] },
-  fire: { halo: 24, pool: [36, 22] },
-  board: { halo: 14, pool: [24, 11] },
-  bulb: { halo: 4, pool: null },
+  fire: { halo: 0, pool: [42, 26] },
+  board: { halo: 0, pool: [24, 10] },
+  bulb: { halo: 3, pool: null },
 };
 
-/** How strong the hour's lights are: full at night, the fire and lanterns a little at dusk. */
+/**
+ * How strong the hour's lights are: none by day, faint at dawn and dusk (the
+ * fire and the lanterns only), full at night.
+ */
+const STRENGTH: Readonly<Record<LightPhase, Readonly<Record<LightKind, number>>>> = {
+  day: { lamp: 0, lantern: 0, festoon: 0, fire: 0, board: 0, bulb: 0 },
+  dawn: { lamp: 0, lantern: 0.22, festoon: 0, fire: 0.3, board: 0, bulb: 0 },
+  dusk: { lamp: 0, lantern: 0.3, festoon: 0, fire: 0.42, board: 0, bulb: 0 },
+  // The fire is the heart of the night; lamps and lanterns light a little less ground.
+  night: { lamp: 0.8, lantern: 0.85, festoon: 0.8, fire: 1, board: 0.6, bulb: 1 },
+};
+
 export function lightStrength(phase: LightPhase, kind: LightKind): number {
-  if (phase === "night") return 1;
-  if (phase === "dusk") return kind === "fire" ? 0.6 : kind === "lantern" ? 0.4 : 0;
-  return 0;
+  return STRENGTH[phase][kind];
+}
+
+/** A pool's light at each of its steps (0 none, 3 the heart), at full strength. */
+export const POOL_ALPHA = [0, 0.26, 0.45, 0.62] as const;
+/** Where each step begins, as the share of the radius left to the rim: the rim, the middle, the heart. */
+const POOL_EDGES = [0.03, 0.27, 0.56] as const;
+/** How wide (as a share of the radius) the dither blends each step into the next: a few px of soft edge. */
+const POOL_SOFT = 0.14;
+
+/**
+ * The step of a pool's light at world pixel (x, y), for a pool centred at
+ * (cx, cy) with radii rx, ry: three steps from the rim to the heart, each
+ * edge dithered over a few px in world space, so the pool reads soft and
+ * never shimmers when its brightness changes.
+ */
+export function poolStep(x: number, y: number, cx: number, cy: number, rx: number, ry: number): number {
+  const nx = (x + 0.5 - cx) / rx;
+  const ny = (y + 0.5 - cy) / ry;
+  const r = Math.sqrt(nx * nx + ny * ny);
+  if (r >= 1) return 0;
+  const t = 1 - r + (bayer(x, y) - 0.5) * POOL_SOFT;
+  return t > POOL_EDGES[2] ? 3 : t > POOL_EDGES[1] ? 2 : t > POOL_EDGES[0] ? 1 : 0;
+}
+
+/** A lamp's light: a soft amber. */
+export const LAMP_WARM = [1.1, 0.93, 0.68] as const;
+/** The fire's: deeper and more orange, so its pool still reads warm where it thins out over the moonlit stone. */
+export const FIRE_WARM = [1.24, 0.85, 0.5] as const;
+
+/**
+ * The ground under a warm lamp, from its daytime colour: the colour itself in
+ * an amber light, then eased a little toward grey, so lit grass reads as warm
+ * grass and lit stone as warm stone rather than mustard paint. Warm enough
+ * that a soft blend over the moonlit blue still reads warm.
+ */
+export function lamplight(rgb: readonly [number, number, number], warm: readonly number[] = LAMP_WARM): [number, number, number] {
+  const lit = [0, 1, 2].map((i) => rgb[i] * warm[i]);
+  const luma = 0.299 * lit[0] + 0.587 * lit[1] + 0.114 * lit[2];
+  return lit.map((v) => Math.min(255, Math.round(luma + 0.78 * (v - luma)))) as [number, number, number];
+}
+
+/** A sprite in the fire's light (faces, shirts, the pit's stones), from its daytime colour. */
+export function firelight(rgb: readonly [number, number, number]): [number, number, number] {
+  const warm = [1.04, 0.8, 0.58];
+  return [0, 1, 2].map((i) => Math.min(255, Math.round(rgb[i] * warm[i]))) as [number, number, number];
+}
+
+/** How bright the fire's light is per step of its breath; the middle one when still. */
+export const BREATH = [0.86, 1, 1.12] as const;
+/** The breath's slow walk between its steps, one entry per BREATH_TICKS. */
+const BREATH_WALK = [1, 1, 2, 1, 0, 1, 2, 2, 1, 0, 0, 1, 2, 1] as const;
+const BREATH_TICKS = 3;
+
+/** The fire's breath step at a tick (an index into BREATH): it changes at most every BREATH_TICKS ticks. */
+export function breathAt(tick: number): number {
+  return BREATH_WALK[Math.floor(tick / BREATH_TICKS) % BREATH_WALK.length];
+}
+
+/** Actors that never catch the fire's light: the flame itself, glyphs, bulbs, notes, boards. */
+const UNLIT = /^(campfire_flame|count_|goal_|notice_|fest_|prize_|petal_|leaf_)/;
+
+export function catchesLight(name: string): boolean {
+  return !UNLIT.test(name);
 }
 
 /** Every light on the island in a phase: lamps, lanterns and the festoon (night), the fire, the countdown board, the lit bulbs. */
@@ -384,8 +487,60 @@ export function lightSources(model: SceneModel, actors: readonly LiveActor[], ph
   return out;
 }
 
-/** The fire's flicker: its halo's radius change for each of the flame's frames. */
-export const FIRE_FLICKER = [0, -2, 1] as const;
+// ------------------------------------------------------------------ smoke
+
+export interface Puff {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  /** 0..1 */
+  alpha: number;
+}
+
+/**
+ * Smoke rises 1 px per step; a step is 3 ticks (under 3 a second): slow and
+ * soft, and on the sea's own beat, so it moves only on frames that repaint
+ * the whole view anyway.
+ */
+const SMOKE_STEP_TICKS = 3;
+const SMOKE_LIFE = 26;
+const SMOKE_PUFFS = 5;
+
+/** The smoke's colour in each light: pale grey by day, lilac at dawn, rose at dusk, moonlit blue at night. */
+export const SMOKE_RGB: Readonly<Record<LightPhase, readonly [number, number, number]>> = {
+  day: [222, 224, 228],
+  dawn: [222, 214, 230],
+  dusk: [214, 190, 204],
+  night: [150, 154, 190],
+};
+
+/** Where the smoke starts: the top of the campfire's flame, or null without a fire. */
+export function smokeOrigin(actors: readonly LiveActor[]): { x: number; y: number } | null {
+  const flame = actors.find((a) => (a.frames[0] ?? "").startsWith("campfire_flame"));
+  return flame ? { x: Math.round(flame.x) + 5, y: Math.round(flame.y) } : null;
+}
+
+/** The box every puff stays in (for repaints). */
+export function smokeBounds(origin: { x: number; y: number }): Rect {
+  return { x: origin.x - 4, y: origin.y - SMOKE_LIFE - 4, w: 14, h: SMOKE_LIFE + 5 };
+}
+
+/** The smoke step a tick shows: the puffs change only when it does. */
+export const smokeStep = (tick: number) => Math.floor(tick / SMOKE_STEP_TICKS);
+
+/** The puffs at one smoke step: born small at the flame, drifting a little east, fading as they rise. */
+export function smokeAt(step: number, origin: { x: number; y: number }): Puff[] {
+  const out: Puff[] = [];
+  for (let k = 0; k < SMOKE_PUFFS; k++) {
+    const a = (step + Math.round((k * SMOKE_LIFE) / SMOKE_PUFFS)) % SMOKE_LIFE;
+    const sway = Math.round(Math.sin(a * 0.38 + k * 1.7) * Math.min(2, a / 6));
+    const size = a < 4 ? 2 : a < 10 ? 3 : a < 18 ? 4 : 5;
+    const alpha = a < 2 ? 0.4 : a < 12 ? 0.5 : a < 19 ? 0.34 : 0.16;
+    out.push({ x: origin.x - 1 + sway + Math.floor(a / 9), y: origin.y - 2 - a, w: size, h: size - (a < 4 ? 0 : 1), alpha });
+  }
+  return out;
+}
 
 // ------------------------------------------------------------------ breeze
 

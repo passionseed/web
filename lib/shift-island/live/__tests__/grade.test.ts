@@ -35,6 +35,28 @@ describe("the web's grade of the hour", () => {
     expect(gradeKey("w", "dawn")[1]).toBeGreaterThan(gradeKey("w", "dusk")[1]);
   });
 
+  it("keeps a floor at night: soil outlines and leaves stay apart from the moonlit grass", () => {
+    const lin = (c: number) => ((c /= 255) <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+    const lum = ([r, g, b]: readonly number[]) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+    const contrast = (a: readonly number[], b: readonly number[]) => {
+      const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+      return (hi + 0.05) / (lo + 0.05);
+    };
+    const grass = gradeKey("g", "night");
+    // The mound's outline and the tree's darkest leaves: at least twice and 1.8 times the grass's contrast.
+    expect(contrast(gradeKey("b", "night"), grass)).toBeGreaterThan(2);
+    expect(contrast(gradeKey("l", "night"), grass)).toBeGreaterThan(1.8);
+    // The soil stays warmer than the grass (mauve against teal), not the same grey-blue.
+    const [sr, , sb] = gradeKey("c", "night");
+    const [gr, , gb] = grass;
+    expect(sr - sb).toBeGreaterThan(gr - gb);
+  });
+
+  it("gives dusk a dusty rose sand rather than a strong orange-peach", () => {
+    const sat = ([r, g, b]: readonly number[]) => (Math.max(r, g, b) - Math.min(r, g, b)) / Math.max(r, g, b);
+    for (const key of ["s", "d", "i"]) expect([key, sat(gradeKey(key, "dusk")) < 0.34]).toEqual([key, true]);
+  });
+
   it("is a pure function of the colour and the hour", () => {
     expect(gradeRgb([120, 80, 40], "dusk")).toEqual(gradeRgb([120, 80, 40], "dusk"));
     expect(gradedWater("night")).toMatch(/^#[0-9a-f]{6}$/);

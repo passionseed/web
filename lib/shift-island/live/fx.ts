@@ -1,42 +1,65 @@
 /**
  * The web island's atmosphere, drawn: the colour of the hour, shallow water
- * and wet sand, soft blue contact shadows, pools of lamplight at night, the
- * sea's glints and the breeze's petals. Browser only (it makes canvases);
- * the engine owns one per island.
+ * and wet sand, soft blue contact shadows, pools of warm light at dawn, dusk
+ * and night, the faces the fire lights, its smoke, the sea's glints and the
+ * breeze's petals. Browser only (it makes canvases); the engine owns one per
+ * island.
  *
  * Same contract as the engine: everything static is baked once per phase,
  * scene or light change (into the land layer, or small sprite canvases);
- * per frame there are only small drawImage calls, inside the rect being
- * repainted. No getImageData, no filters or shadows, and the one blend
- * ("lighter", for the glow on faces near a light) covers only the lights'
- * own small boxes.
+ * per frame there are only small drawImage and fillRect calls, inside the
+ * rect being repainted. No getImageData, no filters or shadows; the one
+ * blend ("lighter", for the small glow round a lamp's or lantern's head)
+ * covers only those lights' own boxes, under the tags and the plaza's people.
+ *
+ * Light never paints over an object: the pools lie on the ground under every
+ * sprite (baked into the land, or the fire's drawn just after it), and the
+ * fire's warmth on the people round it is a recoloured copy of their own
+ * sprite, so it touches only their pixels. Every dither is fixed in world
+ * space; the fire breathes by stepping its brightness, never its shape.
  */
 import { SPRITES } from "@/bot/assets/island/sprites";
 import type { IslandScene } from "@/bot/src/quests/island/scene";
 
 import { buildAtlasData, type AtlasRect } from "./atlas";
 import {
-  FIRE_FLICKER,
+  BREATH,
+  FIRE_WARM,
+  LAMP_WARM,
   LIGHT_SIZE,
+  POOL_ALPHA,
   SHADOW_LEAN,
+  SHALLOW_LEVELS,
+  SMOKE_RGB,
+  WET,
+  bayer,
+  breathAt,
   breezeAt,
   castsShadow,
+  catchesLight,
   ellipseMask,
+  firelight,
   glintAt,
   glintPath,
   hash3,
+  lamplight,
   lightSources,
   lightStrength,
+  poolStep,
   shadowBox,
-  WET,
+  smokeAt,
+  smokeBounds,
+  smokeOrigin,
+  smokeStep,
   waterField,
+  webSprites,
   type Drift,
   type GlintFrame,
   type LightSource,
   type WaterField,
 } from "./atmosphere";
 import type { Motion, Span } from "./clock";
-import { actorAt, paintLand, type DrawContext, type DrawFx, type Layers, type SceneModel } from "./draw";
+import { actorAt, actorRect, paintLand, type DrawContext, type DrawFx, type Layers, type SceneModel } from "./draw";
 import { cellSpan, overlaps, union, type Rect } from "./geometry";
 import { gradeKey } from "./grade";
 import type { RGB } from "./lighting";
@@ -105,29 +128,28 @@ const GLINT_RECTS: Readonly<Record<GlintFrame, [number, number, number, number]>
   cross: [6, 0, 3, 3],
 };
 
-/** Shallows over the sea: [palette key, alpha] per band 1..3. */
-const SHALLOW_INK: readonly (readonly [string, number])[] = [
-  ["v", 0],
-  ["v", 0.22],
-  ["v", 0.42],
-  ["u", 0.4],
+/**
+ * Shallows over the sea, per level 1..SHALLOW_LEVELS (deep to shallow): the
+ * colour by day, the sea's own lighter blue in the other hours (so dusk's
+ * shallows are violet, not green), and the alpha. Never near white, so the
+ * whole island never wears a pale ring.
+ */
+const SHALLOW_INK: readonly { day: RGB; key: string; alpha: number }[] = [
+  { day: [0, 0, 0], key: "v", alpha: 0 },
+  { day: [89, 169, 190], key: "v", alpha: 0.16 },
+  { day: [96, 186, 194], key: "v", alpha: 0.26 },
+  { day: [108, 200, 198], key: "u", alpha: 0.3 },
+  { day: [126, 210, 204], key: "u", alpha: 0.38 },
 ];
+/** The shallows' strength in each light: clearest by day, a hint at night, so the dark sea never wears a pale ring. */
+const SHALLOW_PHASE: Readonly<Record<LightPhase, number>> = { day: 1, dawn: 0.9, dusk: 0.8, night: 0.5 };
 const WET_ALPHA = 0.42;
 
-/**
- * Lamplight on the ground: the land's daytime colours under a warm lamp,
- * half its own hue and half the lamp's amber, so lit grass reads warm
- * instead of olive.
- */
-const LAMP_HUE: RGB = [1.06, 0.78, 0.47];
-const LAMP_TINT: RGB = [1, 0.74, 0.44];
-const lamplight = (rgb: RGB): RGB => {
-  const luma = 0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2];
-  return rgb.map((v, i) => Math.min(255, Math.round(0.6 * luma * LAMP_HUE[i] + 0.4 * v * LAMP_TINT[i]))) as RGB;
-};
-/** The glow on sprites near a light, added ("lighter"). */
-const HALO_RGB: RGB = [255, 168, 80];
-const HALO_PEAK = 0.24;
+/** The fire's warmth on a sprite near it, per step of its pool (0 none). */
+const FACE_ALPHA = [0, 0.3, 0.44, 0.58] as const;
+/** The glow round a lamp's or lantern's head: added ("lighter"), its heart at this much, in two dithered steps. */
+const HALO_RGB: RGB = [255, 196, 120];
+const HALO_PEAK = 0.2;
 
 /** What paintLand draws: the lamplight atlas needs only these. */
 const GROUND_SPRITES = ["grass_a", "grass_b", "grass_c", "sand", "sand_b", "plaza", "path", "well", "banner"];
@@ -135,29 +157,41 @@ const GROUND_SPRITES = ["grass_a", "grass_b", "grass_c", "sand", "sand_b", "plaz
 /** The tree's soil mound, shared by every stage sprite: its contact shadow, relative to the tree's corner. */
 const MOUND_SHADOW = { x: 0, y: 29, w: 32, h: 12 } as const;
 
-/** Banded ellipse alpha (pixel-art light: three hard steps, no smooth gradient). */
-function bandAlpha(nx: number, ny: number): number {
-  const r = nx * nx + ny * ny;
-  if (r < 0.28) return 1;
-  if (r < 0.6) return 0.6;
-  if (r < 1) return 0.26;
-  return 0;
+/** The ground in a lamp's and in the fire's light (ground tiles only, a few KB each): built on the first evening, shared. */
+const lampAtlases = new Map<"lamp" | "fire", { rects: ReadonlyMap<string, AtlasRect>; image: HTMLCanvasElement }>();
+
+interface LitAtlas {
+  image: HTMLCanvasElement;
+  rects: ReadonlyMap<string, AtlasRect>;
+  flipped: ReadonlyMap<string, AtlasRect>;
 }
 
-/** One shared lamplight atlas (ground tiles only, a few KB): built on the first night. */
-let lampAtlas: { rects: ReadonlyMap<string, AtlasRect>; image: HTMLCanvasElement } | null = null;
+/** Firelit copies of the plaza's people, shared by every island on the page: a few, keyed by their sprite names. */
+const litAtlases = new Map<string, LitAtlas>();
+
+/** The fire's pool, one canvas per breath step (BREATH): the same pixels, brighter or dimmer. */
+interface FirePool {
+  light: LightSource;
+  rx: number;
+  ry: number;
+  strength: number;
+  box: Rect;
+  steps: HTMLCanvasElement[];
+}
 
 export class IslandFx {
   private water: { scene: IslandScene; field: WaterField } | null = null;
   private phase: LightPhase = "day";
   private lights: LightSource[] = [];
+  private actors: readonly LiveActor[] = [];
   private readonly shadows = new Map<string, HTMLCanvasElement>();
   private readonly halos = new Map<string, HTMLCanvasElement>();
   private glintSheet: HTMLCanvasElement | null = null;
   /** Per actor frame name and mirror: its shadow's box relative to where the actor stands. */
-  private readonly feet = new Map<string, Rect | null>();
-  /** The flame's actor index, for its flicker; -1 without a campfire. */
-  private flame = -1;
+  private readonly feet = new Map<string, [Rect | null, Rect | null]>();
+  private fire: FirePool | null = null;
+  private lit: LitAtlas | null = null;
+  private smokeFrom: { x: number; y: number } | null = null;
   /** While set, a scene's first bake leaves the water out (the engine's build frame); waterPending then says so. */
   deferWater = false;
   waterPending = false;
@@ -169,19 +203,23 @@ export class IslandFx {
   /**
    * Everything static, into the land layer (already painted with the phase's
    * atlas): shallows and wet sand over the sea's edge, contact shadows under
-   * trees, lanterns, flags and the well, and at dusk and night the pools of
-   * lamplight. Once per phase, scene or set of lights.
+   * trees, lanterns, flags and the well, and the pools of warm light that do
+   * not move; plus the fire's breathing pool and its firelit sprites, ready
+   * for the loop. Once per phase, scene or set of lights.
    */
   bakeLand(land: Ctx, model: SceneModel, phase: LightPhase, actors: readonly LiveActor[], atlas: Img, rects: ReadonlyMap<string, AtlasRect>): void {
+    // The figures' shadows lean with the sun of the hour.
+    if (phase !== this.phase) this.feet.clear();
     this.phase = phase;
+    this.actors = actors;
     this.lights = lightSources(model, actors, phase);
-    this.flame = actors.findIndex((a) => (a.frames[0] ?? "").startsWith("campfire_flame"));
+    this.smokeFrom = smokeOrigin(actors);
     this.glintSheet = null;
     this.shadows.clear();
     this.halos.clear();
     this.bakeWater(land, model, phase);
     this.bakeShadows(land, model, phase, atlas, rects);
-    this.bakePools(land, model, phase);
+    this.bakePools(land, model);
   }
 
   private bakeWater(land: Ctx, model: SceneModel, phase: LightPhase): void {
@@ -194,33 +232,34 @@ export class IslandFx {
       this.water = { scene: model.scene, field: waterField(model.scene, model.sea) };
     }
     this.waterPending = false;
-    const { rect, gw, gh, blocks, edge, shoreCells } = this.water.field;
-    if (rect.w <= 0 || rect.h <= 0) return;
-    const colour = SHALLOW_INK.map(([key, a]) => word(gradeKey(key, phase), a));
+    const { rect, level, cells } = this.water.field;
+    if (cells.length === 0) return;
+    const colour = new Uint32Array(WET + 1);
+    for (let k = 1; k <= SHALLOW_LEVELS; k++) {
+      const ink = SHALLOW_INK[k];
+      colour[k] = word(phase === "day" ? ink.day : gradeKey(ink.key, phase), ink.alpha * SHALLOW_PHASE[phase]);
+    }
     colour[WET] = word(gradeKey("d", phase), WET_ALPHA);
-    // Open water: one block per 2 x 2 px, stretched back to size (crisp: smoothing is off).
-    const half = new Uint32Array(gw * gh);
-    for (let i = 0; i < half.length; i++) if (blocks[i]) half[i] = colour[blocks[i]];
-    land.drawImage(this.upload(half, gw, gh), 0, 0, gw, gh, rect.x, rect.y, rect.w, rect.h);
-    // Shore cells pixel by pixel (the wash moves there): packed in a strip, then stamped in place.
-    if (shoreCells.length === 0) return;
+    // Only the cells that hold any: packed in a strip, then stamped in place.
     const t = model.scene.tile;
-    const perRow = Math.min(shoreCells.length, 64);
+    const perRow = Math.min(cells.length, 64);
     const sheetW = perRow * t;
-    const sheetH = Math.ceil(shoreCells.length / perRow) * t;
+    const sheetH = Math.ceil(cells.length / perRow) * t;
     const words = new Uint32Array(sheetW * sheetH);
-    shoreCells.forEach((base, k) => {
+    cells.forEach((base, k) => {
       const sx = (k % perRow) * t;
       const sy = Math.floor(k / perRow) * t;
       for (let py = 0; py < t; py++) {
+        const from = base + py * rect.w;
+        const to = (sy + py) * sheetW + sx;
         for (let px = 0; px < t; px++) {
-          const v = edge[base + py * rect.w + px];
-          if (v) words[(sy + py) * sheetW + sx + px] = colour[v];
+          const v = level[from + px];
+          if (v) words[to + px] = colour[v];
         }
       }
     });
     const sheet = this.upload(words, sheetW, sheetH);
-    shoreCells.forEach((base, k) => {
+    cells.forEach((base, k) => {
       const x = rect.x + (base % rect.w);
       const y = rect.y + Math.floor(base / rect.w);
       land.drawImage(sheet, (k % perRow) * t, Math.floor(k / perRow) * t, t, t, x, y, t, t);
@@ -241,6 +280,13 @@ export class IslandFx {
       if (t.visitor) stamp(shadowBox("visitor", t.visitor.x, t.visitor.y, false, lean));
     }
     stamp(shadowBox("well", scene.well.x, scene.well.y, false, lean));
+    // The plaza's props and seated people never move: their shadows go in the land too, and only walkers' are drawn per frame.
+    for (const actor of this.actors) {
+      if (actor.steps) continue;
+      const at = actorAt(actor, 0);
+      const foot = this.foot(actor.frames[0], at.flip, lean);
+      if (foot) stamp({ x: at.x + foot.x, y: at.y + foot.y, w: foot.w, h: foot.h });
+    }
     // The well (and the bunting over its row) back on top of their shadow.
     const well = rects.get("well");
     if (well) land.drawImage(atlas, well.x, well.y, well.w, well.h, scene.well.x, scene.well.y, well.w, well.h);
@@ -248,65 +294,116 @@ export class IslandFx {
     if (banner && scene.banner) land.drawImage(atlas, banner.x, banner.y, banner.w, banner.h, scene.banner.x, scene.banner.y, banner.w, banner.h);
   }
 
-  /** Lamplit ground: the land in a warm lamp's colours, through banded pools round each light. */
-  private bakePools(land: Ctx, model: SceneModel, phase: LightPhase): void {
-    const pools = this.lights.filter((l) => LIGHT_SIZE[l.kind].pool && l.gx != null && l.gy != null);
-    if (pools.length === 0) return;
-    const boxes = pools.map((l) => {
-      const [rx, ry] = LIGHT_SIZE[l.kind].pool!;
-      return { light: l, rx, ry, box: { x: l.gx! - rx, y: l.gy! - ry, w: 2 * rx, h: 2 * ry } };
-    });
-    let bbox = boxes[0].box;
-    for (const b of boxes) bbox = union(bbox, b.box);
-    bbox = {
-      x: Math.max(0, bbox.x),
-      y: Math.max(0, bbox.y),
-      w: Math.min(model.scene.width, bbox.x + bbox.w) - Math.max(0, bbox.x),
-      h: Math.min(model.scene.height, bbox.y + bbox.h) - Math.max(0, bbox.y),
-    };
-    if (bbox.w <= 0 || bbox.h <= 0) return;
+  /**
+   * The pools of warm light: every light but the fire baked into the land
+   * (they never change), the fire's made once per breath step for the loop,
+   * and the firelit copies of the sprites that can sit in its light.
+   */
+  private bakePools(land: Ctx, model: SceneModel): void {
+    const still = this.lights.filter((l) => l.kind !== "fire");
+    const baked = this.poolSprites(model, still, [1]);
+    if (baked) land.drawImage(baked.canvases[0], baked.box.x, baked.box.y);
+    const fire = this.lights.find((l) => l.kind === "fire" && l.gx != null && l.gy != null);
+    this.fire = null;
+    this.lit = null;
+    if (!fire) return;
+    const [rx, ry] = LIGHT_SIZE.fire.pool!;
+    const sprites = this.poolSprites(model, [fire], BREATH);
+    if (!sprites) return;
+    this.fire = { light: fire, rx, ry, strength: lightStrength(this.phase, "fire"), box: sprites.box, steps: sprites.canvases };
+    this.lit = this.litAtlas();
+  }
+
+  /**
+   * Lamplit ground for a set of lights, one canvas per gain: the land in a
+   * warm lamp's colours (painted once), through each pool's soft steps (the
+   * strongest pool wins where two meet) at that brightness. Null when none of
+   * them has a pool.
+   */
+  private poolSprites(model: SceneModel, lights: readonly LightSource[], gains: readonly number[]): { canvases: HTMLCanvasElement[]; box: Rect } | null {
+    const pools = lights
+      .filter((l) => LIGHT_SIZE[l.kind].pool && l.gx != null && l.gy != null)
+      .map((light) => {
+        const [rx, ry] = LIGHT_SIZE[light.kind].pool!;
+        return { light, rx, ry, strength: lightStrength(this.phase, light.kind), box: { x: light.gx! - rx, y: light.gy! - ry, w: 2 * rx, h: 2 * ry } };
+      });
+    if (pools.length === 0) return null;
+    let bbox = pools[0].box;
+    for (const p of pools) bbox = union(bbox, p.box);
+    const x0 = Math.max(0, bbox.x);
+    const y0 = Math.max(0, bbox.y);
+    const box = { x: x0, y: y0, w: Math.min(model.scene.width, bbox.x + bbox.w) - x0, h: Math.min(model.scene.height, bbox.y + bbox.h) - y0 };
+    if (box.w <= 0 || box.h <= 0) return null;
     // The mask: per pixel, the strongest pool there.
-    const alpha = new Float32Array(bbox.w * bbox.h);
-    for (const { light, rx, ry, box } of boxes) {
-      const strength = lightStrength(phase, light.kind);
-      for (let y = Math.max(box.y, bbox.y); y < Math.min(box.y + box.h, bbox.y + bbox.h); y++) {
-        for (let x = Math.max(box.x, bbox.x); x < Math.min(box.x + box.w, bbox.x + bbox.w); x++) {
-          const a = bandAlpha((x + 0.5 - light.gx!) / rx, (y + 0.5 - light.gy!) / ry) * strength;
-          const i = (y - bbox.y) * bbox.w + (x - bbox.x);
+    const alpha = new Float32Array(box.w * box.h);
+    for (const { light, rx, ry, strength, box: b } of pools) {
+      for (let y = Math.max(b.y, box.y); y < Math.min(b.y + b.h, box.y + box.h); y++) {
+        for (let x = Math.max(b.x, box.x); x < Math.min(b.x + b.w, box.x + box.w); x++) {
+          const a = POOL_ALPHA[poolStep(x, y, light.gx!, light.gy!, rx, ry)] * strength;
+          const i = (y - box.y) * box.w + (x - box.x);
           if (a > alpha[i]) alpha[i] = a;
         }
       }
     }
-    const words = new Uint32Array(alpha.length);
-    for (let i = 0; i < alpha.length; i++) if (alpha[i] > 0) words[i] = word([255, 255, 255], alpha[i]);
-    const mask = this.upload(words, bbox.w, bbox.h);
-    const lamp = this.lampAtlas();
-    const lit = this.kit.canvas(bbox.w, bbox.h);
-    const ctx = this.kit.context(lit);
-    ctx.setTransform(1, 0, 0, 1, -bbox.x, -bbox.y);
-    paintLand(ctx as DrawContext<Img>, model, lamp.image, lamp.rects);
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.globalCompositeOperation = "destination-in";
-    ctx.drawImage(mask, 0, 0);
-    ctx.globalCompositeOperation = "source-over";
-    land.drawImage(lit, bbox.x, bbox.y);
+    // The ground in the lamp's light, just the cells the pools touch.
+    const lamp = this.lampAtlas(pools.some((p) => p.light.kind === "fire") ? "fire" : "lamp");
+    const ground = this.kit.canvas(box.w, box.h);
+    const gctx = this.kit.context(ground);
+    gctx.setTransform(1, 0, 0, 1, -box.x, -box.y);
+    paintLand(gctx as DrawContext<Img>, model, lamp.image, lamp.rects, box);
+    const canvases = gains.map((gain) => {
+      const words = new Uint32Array(alpha.length);
+      for (let i = 0; i < alpha.length; i++) if (alpha[i] > 0) words[i] = word([255, 255, 255], alpha[i] * gain);
+      const canvas = this.kit.canvas(box.w, box.h);
+      const ctx = this.kit.context(canvas);
+      ctx.drawImage(ground, 0, 0);
+      ctx.globalCompositeOperation = "destination-in";
+      ctx.drawImage(this.upload(words, box.w, box.h), 0, 0);
+      ctx.globalCompositeOperation = "source-over";
+      return canvas;
+    });
+    return { canvases, box };
   }
 
-  private lampAtlas(): { rects: ReadonlyMap<string, AtlasRect>; image: HTMLCanvasElement } {
-    if (lampAtlas) return lampAtlas;
+  private lampAtlas(light: "lamp" | "fire"): { rects: ReadonlyMap<string, AtlasRect>; image: HTMLCanvasElement } {
+    let entry = lampAtlases.get(light);
+    if (entry) return entry;
     const all: Record<string, string[]> = {};
     for (const name of GROUND_SPRITES) if (SPRITES[name]) all[name] = SPRITES[name];
-    const data = buildAtlasData("day", all, [], (rgb) => lamplight(rgb));
+    const warm = light === "fire" ? FIRE_WARM : LAMP_WARM;
+    const data = buildAtlasData("day", all, [], (rgb) => lamplight(rgb, warm));
     const image = this.kit.canvas(data.width, data.height);
     this.kit.context(image).putImageData(new ImageData(new Uint8ClampedArray(data.data), data.width, data.height), 0, 0);
-    lampAtlas = { rects: data.rects, image };
-    return lampAtlas;
+    entry = { rects: data.rects, image };
+    lampAtlases.set(light, entry);
+    return entry;
+  }
+
+  /** Firelit copies of every sprite the plaza's actors show that can catch the light. */
+  private litAtlas(): LitAtlas | null {
+    const names = new Set<string>();
+    for (const a of this.actors) for (const name of a.frames) if (catchesLight(name)) names.add(name);
+    if (names.size === 0) return null;
+    const key = [...names].sort().join(",");
+    let entry = litAtlases.get(key);
+    if (!entry) {
+      const all = webSprites();
+      const sprites: Record<string, string[]> = {};
+      for (const name of names) if (all[name]) sprites[name] = all[name];
+      const data = buildAtlasData("night", sprites, [], (rgb) => firelight(rgb));
+      const image = this.kit.canvas(data.width, data.height);
+      this.kit.context(image).putImageData(new ImageData(new Uint8ClampedArray(data.data), data.width, data.height), 0, 0);
+      entry = { image, rects: data.rects, flipped: data.flipped };
+      if (litAtlases.size >= 4) litAtlases.delete(litAtlases.keys().next().value as string);
+      litAtlases.set(key, entry);
+    }
+    return entry;
   }
 
   // ----------------------------------------------------------- sprites
 
-  /** RGBA words to a canvas: once, while baking. */
-  private upload(words: Uint32Array, w: number, h: number): HTMLCanvasElement {
+  /** RGBA words to a canvas: once, while baking. The words always own a plain ArrayBuffer (never shared). */
+  private upload(words: Uint32Array<ArrayBuffer>, w: number, h: number): HTMLCanvasElement {
     const c = this.kit.canvas(w, h);
     this.kit.context(c).putImageData(new ImageData(new Uint8ClampedArray(words.buffer, words.byteOffset, words.byteLength), w, h), 0, 0);
     return c;
@@ -326,16 +423,22 @@ export class IslandFx {
     return c;
   }
 
-  private halo(radius: number, strength: number): HTMLCanvasElement {
-    const key = `${radius}|${strength}`;
+  /** A light's small glow, its dither keyed to where it stands so the pattern sits still in the world. */
+  private halo(radius: number, strength: number, x: number, y: number): HTMLCanvasElement {
+    const key = `${radius}|${strength}|${x & 3}|${y & 3}`;
     let c = this.halos.get(key);
     if (!c) {
       const size = radius * 2;
       const words = new Uint32Array(size * size);
-      for (let y = 0; y < size; y++) {
-        for (let x = 0; x < size; x++) {
-          const a = bandAlpha((x + 0.5 - radius) / radius, (y + 0.5 - radius) / (radius * 0.8)) * HALO_PEAK * strength;
-          if (a > 0) words[y * size + x] = word(HALO_RGB, a);
+      for (let j = 0; j < size; j++) {
+        for (let i = 0; i < size; i++) {
+          const nx = (i + 0.5 - radius) / radius;
+          const ny = (j + 0.5 - radius) / (radius * 0.85);
+          const r = Math.sqrt(nx * nx + ny * ny);
+          if (r >= 1) continue;
+          const step = Math.min(2, Math.floor((1 - r) * 2 + 0.4 + (bayer(x + i, y + j) - 0.5) * 0.6));
+          if (step <= 0) continue;
+          words[j * size + i] = word(HALO_RGB, (step / 2) * HALO_PEAK * strength);
         }
       }
       c = this.upload(words, size, size);
@@ -363,19 +466,34 @@ export class IslandFx {
     return this.glintSheet;
   }
 
-  /** An actor's shadow box relative to where it stands, cached by frame name and mirror. */
+  /** An actor's shadow box relative to where it stands, cached by frame name and mirror (the sun's lean is the phase's). */
   private foot(name: string, flip: boolean, lean: number): Rect | null {
-    const key = `${name}|${flip ? 1 : 0}|${lean}`;
-    if (!this.feet.has(key)) this.feet.set(key, castsShadow(name) ? shadowBox(name, 0, 0, flip, lean) : null);
-    return this.feet.get(key) ?? null;
+    let pair = this.feet.get(name);
+    if (!pair) {
+      pair = castsShadow(name) ? [shadowBox(name, 0, 0, false, lean), shadowBox(name, 0, 0, true, lean)] : [null, null];
+      this.feet.set(name, pair);
+    }
+    return pair[flip ? 1 : 0];
+  }
+
+  /** The fire's warmth on actor sprite `name` standing at (x, y): an alpha for its firelit copy, 0 for none. */
+  private warmth(name: string, x: number, y: number, breath: number): number {
+    const fire = this.fire;
+    const lit = this.lit;
+    if (!fire || !lit || !catchesLight(name)) return 0;
+    const a = lit.rects.get(name);
+    if (!a) return 0;
+    // Where the light meets the figure: a little below its middle (a face and a lap, round the fire).
+    const step = poolStep(x + (a.w >> 1), y + Math.round(a.h * 0.6), fire.light.gx!, fire.light.gy!, fire.rx, fire.ry);
+    return FACE_ALPHA[step] * fire.strength * BREATH[breath];
   }
 
   // ----------------------------------------------------------- per frame
 
   /**
    * The hooks for one paint. `frozen`: still or too small to move (sea frame
-   * 0 everywhere, nothing drifting, lights steady); `lowDetail` also drops
-   * the glints, too small to read.
+   * 0 everywhere, nothing drifting, the fire's light steady, no smoke);
+   * `lowDetail` also drops the glints, too small to read.
    */
   hooks(
     ctx: Ctx,
@@ -394,14 +512,23 @@ export class IslandFx {
     const foamStep = Math.floor(tick / 4);
     const path = glintPath(scene);
     const breeze: Drift[] = frozen || lowDetail ? [] : breezeAt(tick, scene, span, phase);
-    // The figures' shadows for this frame, once (each repainted rect only checks which it meets).
+    const breath = frozen ? 1 : breathAt(tick);
+    const fire = this.fire;
+    const lit = this.lit;
+    const smoke = !frozen && this.smokeFrom ? smokeAt(smokeStep(tick), this.smokeFrom) : null;
+    const smokeBox = this.smokeFrom ? smokeBounds(this.smokeFrom) : null;
+    // The walkers' shadows for this frame, once (each repainted rect only checks which it meets); the still ones are in the land.
     const shadows: Rect[] = [];
     actors.forEach((actor, i) => {
+      if (!actor.steps) return;
       const frame = motion.actors[i] ?? 0;
       const at = actorAt(actor, frame);
       const foot = this.foot(actor.frames[frame] ?? actor.frames[0], at.flip, lean);
       if (foot) shadows.push({ x: at.x + foot.x, y: at.y + foot.y, w: foot.w, h: foot.h });
     });
+    const halos = this.lights.filter((l) => LIGHT_SIZE[l.kind].halo > 0);
+    // Each actor's warmth from the fire this frame, worked out the first time a rect draws it (NaN: not yet).
+    const warm = fire && lit ? new Float32Array(actors.length).fill(NaN) : null;
     return {
       seaFrame: frozen
         ? undefined
@@ -433,37 +560,70 @@ export class IslandFx {
               if (overlaps(box, r)) ctx.drawImage(this.shadow(box.w, box.h), box.x, box.y);
             }
           },
+      // The fire's pool, on the ground under everything, at this moment's breath.
+      afterLand: fire
+        ? (r) => {
+            if (overlaps(fire.box, r)) ctx.drawImage(fire.steps[breath], fire.box.x, fire.box.y);
+          }
+        : undefined,
+      beforeTags: halos.length
+        ? (r) => {
+            ctx.globalCompositeOperation = "lighter";
+            for (const l of halos) {
+              const radius = LIGHT_SIZE[l.kind].halo;
+              const box = { x: l.hx - radius, y: l.hy - radius, w: radius * 2, h: radius * 2 };
+              if (overlaps(box, r)) ctx.drawImage(this.halo(radius, lightStrength(phase, l.kind), box.x, box.y), box.x, box.y);
+            }
+            ctx.globalCompositeOperation = "source-over";
+          }
+        : undefined,
       beforeActors: (r) => {
         for (const box of shadows) if (overlaps(box, r)) ctx.drawImage(this.shadow(box.w, box.h), box.x, box.y);
       },
+      // The fire's warmth on whoever sits by it: their own sprite, recoloured, over them alone.
+      afterActor:
+        fire && lit && warm
+          ? (i, name, x, y, flip) => {
+              let alpha = warm[i];
+              if (Number.isNaN(alpha)) alpha = warm[i] = this.warmth(name, x, y, breath);
+              const a = alpha > 0 ? (flip ? lit.flipped : lit.rects).get(name) : undefined;
+              if (!a) return;
+              ctx.globalAlpha = alpha;
+              ctx.drawImage(lit.image, a.x, a.y, a.w, a.h, x, y, a.w, a.h);
+              ctx.globalAlpha = 1;
+            }
+          : undefined,
       last: (r) => {
         for (const d of breeze) {
           const a = layers.rects.get(d.name);
           if (!a || !overlaps({ x: d.x, y: d.y, w: a.w, h: a.h }, r)) continue;
           ctx.drawImage(layers.atlas, a.x, a.y, a.w, a.h, d.x, d.y, a.w, a.h);
         }
-        if (this.lights.length === 0) return;
-        const flicker = !frozen && this.flame >= 0 ? FIRE_FLICKER[motion.actors[this.flame] % FIRE_FLICKER.length] : 0;
-        ctx.globalCompositeOperation = "lighter";
-        for (const l of this.lights) {
-          const base = LIGHT_SIZE[l.kind].halo;
-          if (base <= 0) continue;
-          const radius = l.kind === "fire" ? base + flicker : base;
-          const box = { x: l.hx - radius, y: l.hy - radius, w: radius * 2, h: radius * 2 };
-          if (!overlaps(box, r)) continue;
-          ctx.drawImage(this.halo(radius, lightStrength(phase, l.kind)), box.x, box.y);
+        if (smoke && smokeBox && overlaps(smokeBox, r)) {
+          const [sr, sg, sb] = SMOKE_RGB[phase];
+          ctx.fillStyle = `rgb(${sr},${sg},${sb})`;
+          for (const p of smoke) {
+            ctx.globalAlpha = p.alpha;
+            // A soft square: its corners left out once it is 3 px or more.
+            if (p.w < 3) ctx.fillRect(p.x, p.y, p.w, p.h);
+            else {
+              ctx.fillRect(p.x + 1, p.y, p.w - 2, p.h);
+              ctx.fillRect(p.x, p.y + 1, p.w, Math.max(1, p.h - 2));
+            }
+          }
+          ctx.globalAlpha = 1;
         }
-        ctx.globalCompositeOperation = "source-over";
       },
     };
   }
 
   /**
    * What the atmosphere changes between two frames that redrawRect's own
-   * dirty list does not know about: the drifting petals, and the fire's
-   * flickering glow. (Glints and the sea's frames change only on the sea's
-   * beat, when the whole view repaints anyway; shadows move inside their
-   * actors' padded boxes.)
+   * dirty list does not know about: the drifting petals, the gulls' shadows,
+   * the fire's breath (its pool and the people it lights) and its smoke.
+   * (Glints and the sea's frames change only on the sea's beat, when the
+   * whole view repaints anyway; shadows move inside their actors' padded
+   * boxes.)
    */
   dirty(prev: FxMotion, next: FxMotion, scene: IslandScene, layers: Layers<Img>, opts: FxOptions): Rect[] {
     const out: Rect[] = [];
@@ -485,13 +645,17 @@ export class IslandFx {
       if (a[k].x === b[k].x && a[k].y === b[k].y && a[k].name === b[k].name) continue;
       out.push(union({ x: a[k].x, y: a[k].y, w: ra.w, h: ra.h }, { x: b[k].x, y: b[k].y, w: rb.w, h: rb.h }));
     }
-    if (this.flame >= 0 && prev.actors[this.flame] !== next.actors[this.flame]) {
-      for (const l of this.lights) {
-        if (l.kind !== "fire") continue;
-        const radius = LIGHT_SIZE.fire.halo + Math.max(...FIRE_FLICKER);
-        out.push({ x: l.hx - radius, y: l.hy - radius, w: radius * 2, h: radius * 2 });
-      }
+    const fire = this.fire;
+    if (fire && breathAt(prev.tick) !== breathAt(next.tick)) {
+      // One rect: the pool and the people it lights (they reach above it).
+      let box = fire.box;
+      this.actors.forEach((actor, i) => {
+        const rect = actorRect(actor, next.actors[i] ?? 0, layers.rects);
+        if (rect && overlaps(rect, fire.box)) box = union(box, rect);
+      });
+      out.push(box);
     }
+    if (this.smokeFrom && smokeStep(prev.tick) !== smokeStep(next.tick)) out.push(smokeBounds(this.smokeFrom));
     return out;
   }
 }
@@ -502,8 +666,7 @@ function gullShadow(g: { x: number; y: number }): Rect {
 }
 
 /** RGBA as a little-endian word (as the atlas stores it), alpha 0..1. */
-function word(rgb: RGB, a: number): number {
+function word(rgb: readonly number[], a: number): number {
   const alpha = Math.round(Math.min(1, Math.max(0, a)) * 255);
   return ((alpha << 24) | (rgb[2] << 16) | (rgb[1] << 8) | rgb[0]) >>> 0;
 }
-

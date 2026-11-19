@@ -571,6 +571,12 @@ export function IslandViewport({
               />
             </div>
           ) : null}
+          {/*
+            The air of the hour over the screen, keyed by it so a new light fades in instead of cutting.
+            It sits over the picture and under everything after it here (plot signs, labels, speech bubbles),
+            and the HUD outside the world stays above it.
+          */}
+          <div key={shade ?? "none"} className={styles.shade} data-phase={shade} aria-hidden="true" />
           <div ref={setOverlay} className={styles.islandBox} style={islandRect}>
             {live ? <span role="img" aria-label={ISLAND.pictureAlt} className={liveStyles.label} /> : null}
             {/* Project names under the trees; the whole island puts plots too close for a line of text. */}
@@ -664,8 +670,6 @@ export function IslandViewport({
           </div>
         </div>
       </div>
-      {/* Keyed by the hour, so a new light fades in over a few seconds instead of cutting. */}
-      <div key={shade ?? "none"} className={styles.shade} data-phase={shade} aria-hidden="true" />
       {interactive && picture.hotspots.length > 0 && !hintGone ? (
         <p className={styles.tapHint} aria-hidden="true">
           {ISLAND.tapHint}

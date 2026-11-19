@@ -282,10 +282,15 @@ describe("the web's extra layers", () => {
     const order: string[] = [];
     const frames = new Set<number>();
     const hooked = FakeImage.opaque(s.scene.width, s.scene.height);
+    // Two people on the island, so the per-actor hook has someone to follow.
+    const people: LiveActor[] = [
+      { frames: ["visitor"], x: 40, y: 40 },
+      { frames: ["visitor"], x: 70, y: 40, flip: true },
+    ];
     redrawRect(new FakeContext(hooked), full, s.model, s.layers, {
-      motion,
+      motion: s.motion(7, { actors: people }),
       night: false,
-      actors: [],
+      actors: people,
       fx: {
         seaFrame: (col, row, kind) => {
           const f = (col + row + kind) % 3;
@@ -293,11 +298,14 @@ describe("the web's extra layers", () => {
           return f;
         },
         afterSea: (r) => order.push(`sea ${r.w}`),
+        afterLand: () => order.push("land"),
+        beforeTags: () => order.push("tags"),
         beforeActors: () => order.push("actors"),
+        afterActor: (i, name, x, y, flip) => order.push(`actor ${i} ${name} ${x},${y}${flip ? " flipped" : ""}`),
         last: () => order.push("last"),
       },
     });
-    expect(order).toEqual([`sea ${full.w}`, "actors", "last"]);
+    expect(order).toEqual([`sea ${full.w}`, "land", "tags", "actors", "actor 0 visitor 40,40", "actor 1 visitor 70,40 flipped", "last"]);
     // The per-cell frames were used: the picture differs from the island-wide frame.
     expect(frames.size).toBe(3);
     expect(differingFrames(plain, hooked)).toBeGreaterThan(0);

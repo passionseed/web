@@ -5,7 +5,7 @@
  * canvas still matches the bot's picture pixel for pixel.
  *
  * Dawn: clear morning light, soft blue shadows, a pale mint sea.
- * Dusk: golden highlights, violet shadows, a rose-violet sea.
+ * Dusk: golden highlights, violet shadows, a rose-violet sea, dusty rose sand.
  * Night: moonlit blue with its colour kept (teal grass, lilac sand, deep blue
  * sea), darks lifted so it reads as a calm evening, never murky; lanterns,
  * lamps and fire stay untinted and carry the warmth.
@@ -49,14 +49,17 @@ const OVERRIDES: Readonly<Record<Exclude<LightPhase, "day">, Readonly<Record<str
     s: "#F5D3B5",
     d: "#DDB59A",
   },
+  // Golden light on a dusty rose sand, not a strong orange-peach.
   dusk: {
     w: "#5A72A4",
     v: "#7D8FBC",
     u: "#C4A9C4",
-    i: "#FFDDB4",
-    s: "#F0BE8C",
-    d: "#D29C72",
+    i: "#F4DAC4",
+    s: "#E2BDA0",
+    d: "#C39C84",
   },
+  // The soil keeps a warm, darker mauve and the leaves a deeper blue-green, so mounds, sprouts and
+  // trees stay apart from the moonlit grass at phone size.
   night: {
     w: "#26406E",
     v: "#355A8E",
@@ -66,6 +69,10 @@ const OVERRIDES: Readonly<Record<Exclude<LightPhase, "day">, Readonly<Record<str
     d: "#5F6790",
     a: "#66789F",
     t: "#4F5D86",
+    b: "#36304C",
+    c: "#5A4F69",
+    e: "#71667C",
+    l: "#22405C",
   },
 };
 
