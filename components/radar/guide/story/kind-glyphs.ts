@@ -354,6 +354,7 @@ export const KIND_GLYPHS: Readonly<Record<KindIcon, PixelGrid>> = {
     ".....##.....",
     ".....##.....",
     "...######...",
+  ],
   // mechanical-engineer
   // A car from the side, headlight lit: cars and EVs.
   car: [
