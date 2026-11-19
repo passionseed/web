@@ -80,6 +80,7 @@ describe("radar guide registry", () => {
       "software-engineer",
       "medical-technologist",
       "ux-design",
+      "mechanical-engineer",
     ]);
   });
 

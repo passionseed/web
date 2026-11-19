@@ -11,6 +11,7 @@ import { AI_ENGINEER_META } from "./ai-engineer/meta";
 import { CYBERSECURITY_META } from "./cybersecurity/meta";
 import { DATA_SCIENTIST_META } from "./data-scientist/meta";
 import { MEDICAL_TECHNOLOGIST_META } from "./medical-technologist/meta";
+import { MECHANICAL_ENGINEER_META } from "./mechanical-engineer/meta";
 import { SOFTWARE_ENGINEER_META } from "./software-engineer/meta";
 import { UX_DESIGN_META } from "./ux-design/meta";
 
@@ -21,6 +22,7 @@ export const GUIDE_INDEX: Readonly<Record<string, GuideIndexEntry>> = {
   "software-engineer": SOFTWARE_ENGINEER_META,
   "medical-technologist": MEDICAL_TECHNOLOGIST_META,
   "ux-design": UX_DESIGN_META,
+  "mechanical-engineer": MECHANICAL_ENGINEER_META,
 };
 
 /** Every slug with a code guide, any status. */
@@ -89,4 +91,5 @@ export const KNOWN_PUBLISHED_RADAR_SLUGS: readonly string[] = [
   "data-scientist",
   "medical-technologist",
   "ux-design",
+  "mechanical-engineer",
 ];
