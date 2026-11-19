@@ -55,11 +55,37 @@ export const BREEZE_SPRITES: Readonly<Record<string, string[]>> = {
   leaf_3: ["j", "n", "n"],
 };
 
+/**
+ * The island's small daytime life (ambient.ts), in palette keys so it takes
+ * the hour's grade: a sparrow facing right (standing, pecking, wings up and
+ * down) and butterflies in three colours (wings open, half, closed; from
+ * above), each its own original sprite.
+ */
+export const LIFE_SPRITES: Readonly<Record<string, string[]>> = {
+  bird_stand: ["....bb.", "...bcoy", ".bbccf.", "bbcccf.", "..z.z.."],
+  bird_peck: [".......", ".......", ".bbcbb.", "bbcccbo", "..z.z.y"],
+  bird_fly_0: ["..b....", "..bb...", "bbccoy.", "..cf...", "......."],
+  bird_fly_1: [".......", "..bcoy.", "bbcb...", "..b....", "......."],
+  ...butterfly("y", "y", "o"),
+  ...butterfly("f", "z", "o"),
+  ...butterfly("r", "k", "o"),
+};
+
+/** A butterfly's three frames, `wing` with `mark` on the forewings round an `body` body: butterfly_<wing>_0..2. */
+function butterfly(wing: string, mark: string, body: string): Record<string, string[]> {
+  const rows = (r: string[]) => r.map((row) => row.replace(/W/g, wing).replace(/M/g, mark).replace(/B/g, body));
+  return {
+    [`butterfly_${wing}_0`]: rows(["WW.WW", "WMBMW", ".WBW."]),
+    [`butterfly_${wing}_1`]: rows([".W.W.", ".WBW.", "..B.."]),
+    [`butterfly_${wing}_2`]: rows(["..W..", "..B..", "..B.."]),
+  };
+}
+
 const BLANK_16 = Array.from({ length: 16 }, () => ".".repeat(16));
 
-/** The web's sprite set: every island sprite, the breeze, the plots' signposts, and no dotted lantern ring. */
+/** The web's sprite set: every island sprite, the breeze, the island's small life, the plots' signposts, and no dotted lantern ring. */
 export function webSprites(): Record<string, string[]> {
-  return { ...allSprites(), ...BREEZE_SPRITES, ...signSprites(), lantern_glow_0: BLANK_16, lantern_glow_1: BLANK_16 };
+  return { ...allSprites(), ...BREEZE_SPRITES, ...LIFE_SPRITES, ...signSprites(), lantern_glow_0: BLANK_16, lantern_glow_1: BLANK_16 };
 }
 
 // ------------------------------------------------------------------ water

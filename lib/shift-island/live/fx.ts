@@ -1,9 +1,10 @@
 /**
  * The web island's atmosphere, drawn: the colour of the hour, shallow water
  * and wet sand, soft blue contact shadows, pools of warm light at dawn, dusk
- * and night, the faces the fire lights, its smoke, the sea's glints and the
- * breeze's petals. Browser only (it makes canvases); the engine owns one per
- * island.
+ * and night, the faces the fire lights, its smoke, the sea's glints, the
+ * breeze's petals and the island's small life (ambient.ts: birds,
+ * butterflies, the grass the gusts bend). Browser only (it makes canvases);
+ * the engine owns one per island.
  *
  * Same contract as the engine: everything static is baked once per phase,
  * scene or light change (into the land layer, or small sprite canvases);
@@ -17,10 +18,15 @@
  * fire's warmth on the people round it is a recoloured copy of their own
  * sprite, so it touches only their pixels. Every dither is fixed in world
  * space; the fire breathes by stepping its brightness, never its shape.
+ *
+ * A bent tuft or flower patch is a small baked patch (the tiles under it and
+ * its leaning ink) drawn over the land while it leans; a piece under a
+ * shadow or a pool of light stays still, so a patch never paints over either.
  */
 import { SPRITES } from "@/bot/assets/island/sprites";
 import type { IslandScene } from "@/bot/src/quests/island/scene";
 
+import { BIRD, BUTTERFLY, bentAt, birdsAt, butterfliesAt, critterDirty, lifePlan, type Critter, type LifePlan } from "./ambient";
 import { buildAtlasData, type AtlasRect } from "./atlas";
 import {
   BREATH,
@@ -199,6 +205,16 @@ export class IslandFx {
   private terrain: BakedTerrain | null = null;
   /** A new layout's terrain while prepare() builds it, a step per call. */
   private building: { scene: IslandScene; steps: Generator<void, Terrain, void> } | null = null;
+  /** The island's small life (ambient.ts), worked out from the terrain it rests on. */
+  private life: { data: Terrain; plan: LifePlan } | null = null;
+  /**
+   * The breeze's bent tufts and flowers for the terrain and the hour baked
+   * last: one small sheet, and each piece's place in it (null: the piece
+   * lies in a shadow or a pool of light, so it stays still).
+   */
+  private sway: { data: Terrain; sheet: HTMLCanvasElement; slots: ({ sx: number; sy: number } | null)[] } | null = null;
+  /** The life at the last few ticks: a tick's paint and its repaint list ask for the same ones. */
+  private readonly lifeFrames: LifeFrame[] = [];
   /**
    * While set, a new scene's bake leaves out the shallows and the terrain
    * (the heavy part); `pending` then says so, and prepare() builds them a
@@ -243,10 +259,70 @@ export class IslandFx {
     this.bakeWater(land, model, phase);
     // The terrain: its ground under every shadow, its hedges, fences, rocks and driftwood over their own.
     const terrain = this.terrainOf(model, phase);
+    // The breeze's bent grass and flowers, over the land as it lies before the terrain's ground goes on it.
+    const sway = terrain ? this.bakeSway(land, terrain.data, phase) : null;
     if (terrain?.ground) land.drawImage(terrain.ground.canvas, terrain.ground.box.x, terrain.ground.box.y);
-    this.bakeShadows(land, model, phase, atlas, rects, posts, terrain?.data.shadows ?? []);
+    // Whatever darkens or lights the ground over a piece keeps that piece still (its bent frame would paint over it).
+    const covered: Rect[] = [];
+    this.bakeShadows(land, model, phase, atlas, rects, posts, terrain?.data.shadows ?? [], covered);
     if (terrain?.props) land.drawImage(terrain.props.canvas, terrain.props.box.x, terrain.props.box.y);
-    this.bakePools(land, model);
+    this.bakePools(land, model, covered);
+    this.sway =
+      terrain && sway
+        ? { data: terrain.data, sheet: sway.sheet, slots: terrain.data.sway.map((p, i) => (covered.some((r) => overlaps(r, p.box)) ? null : sway.slots[i])) }
+        : null;
+  }
+
+  /**
+   * The breeze's bent tufts and flower patches (terrain.ts SwayPiece), each
+   * over a copy of the land under it (the tiles, before the terrain is laid
+   * on them), packed in one small sheet in the hour's colours. Once per bake;
+   * none at night, when the grass is still.
+   */
+  private bakeSway(land: Ctx, data: Terrain, phase: LightPhase): { sheet: HTMLCanvasElement; slots: { sx: number; sy: number }[] } | null {
+    const pieces = data.sway;
+    if (phase === "night" || pieces.length === 0) return null;
+    let cellW = 1;
+    let cellH = 1;
+    for (const p of pieces) {
+      cellW = Math.max(cellW, p.box.w);
+      cellH = Math.max(cellH, p.box.h);
+    }
+    const perRow = Math.min(pieces.length, 32);
+    const sheetW = perRow * cellW;
+    const sheetH = Math.ceil(pieces.length / perRow) * cellH;
+    const sheet = this.kit.canvas(sheetW, sheetH);
+    const ctx = this.kit.context(sheet);
+    const table = inkTable(
+      inkColours(
+        (key) => gradeKey(key, phase),
+        (rgb) => gradeRgb(rgb, phase)
+      )
+    );
+    const words = new Uint32Array(sheetW * sheetH);
+    const slots = pieces.map((p, k) => {
+      const sx = (k % perRow) * cellW;
+      const sy = Math.floor(k / perRow) * cellH;
+      const { box } = p;
+      ctx.drawImage(land.canvas, box.x, box.y, box.w, box.h, sx, sy, box.w, box.h);
+      for (let j = 0; j < box.h; j++) {
+        for (let i = 0; i < box.w; i++) {
+          const v = p.bent[j * box.w + i];
+          if (v) words[(sy + j) * sheetW + sx + i] = table[v];
+        }
+      }
+      return { sx, sy };
+    });
+    ctx.drawImage(this.upload(words, sheetW, sheetH), 0, 0);
+    return { sheet, slots };
+  }
+
+  /** The island's small life for this scene, from its terrain (null until the terrain is built). */
+  private lifeOf(scene: IslandScene): LifePlan | null {
+    const t = this.terrain;
+    if (!t || t.scene !== scene) return null;
+    if (this.life?.data !== t.data) this.life = { data: t.data, plan: lifePlan(t.data, scene) };
+    return this.life.plan;
   }
 
   /**
@@ -363,11 +439,14 @@ export class IslandFx {
     atlas: Img,
     rects: ReadonlyMap<string, AtlasRect>,
     posts: readonly Signpost[],
-    pieces: readonly Rect[]
+    pieces: readonly Rect[],
+    covered: Rect[]
   ): void {
     const lean = SHADOW_LEAN[phase];
     const stamp = (box: Rect | null) => {
-      if (box) land.drawImage(this.shadow(box.w, box.h), box.x, box.y);
+      if (!box) return;
+      land.drawImage(this.shadow(box.w, box.h), box.x, box.y);
+      covered.push(box);
     };
     const { scene } = model;
     for (const m of model.trees) {
@@ -400,7 +479,11 @@ export class IslandFx {
    * (they never change), the fire's made once per breath step for the loop,
    * and the firelit copies of the sprites that can sit in its light.
    */
-  private bakePools(land: Ctx, model: SceneModel): void {
+  private bakePools(land: Ctx, model: SceneModel, covered: Rect[]): void {
+    for (const l of this.lights) {
+      const pool = LIGHT_SIZE[l.kind].pool;
+      if (pool && l.gx != null && l.gy != null) covered.push({ x: l.gx - pool[0], y: l.gy - pool[1], w: 2 * pool[0], h: 2 * pool[1] });
+    }
     const still = this.lights.filter((l) => l.kind !== "fire");
     const baked = this.poolSprites(model, still, [1]);
     if (baked) land.drawImage(baked.canvases[0], baked.box.x, baked.box.y);
@@ -641,6 +724,17 @@ export class IslandFx {
     const halos = this.lights.filter((l) => LIGHT_SIZE[l.kind].halo > 0);
     // Each actor's warmth from the fire this frame, worked out the first time a rect draws it (NaN: not yet).
     const warm = fire && lit ? new Float32Array(actors.length).fill(NaN) : null;
+    // The island's small life (ambient.ts): none on a still or tiny island.
+    const life = frozen || lowDetail ? null : this.lifeOf(scene);
+    const now = life ? this.lifeFrame(tick, life, span) : NO_LIFE;
+    const sway = life && this.sway?.data === this.life?.data ? this.sway : null;
+    const bent = sway ? now.bent : NO_LIFE.bent;
+    const { birds, butterflies } = now;
+    const drawCritter = (c: Critter | null, size: { w: number; h: number }, r: Rect) => {
+      if (!c || c.x >= r.x + r.w || c.y >= r.y + r.h || c.x + size.w <= r.x || c.y + size.h <= r.y) return;
+      const a = (c.flip ? layers.flipped : layers.rects).get(c.name);
+      if (a) ctx.drawImage(layers.atlas, a.x, a.y, a.w, a.h, c.x, c.y, a.w, a.h);
+    };
     return {
       // A tree's partner breathes and blinks on its own clock (people.ts); still, the visitor as drawn.
       partner: frozen ? undefined : (i) => partnerSprite(tick, model.trees[i]?.tree.slot ?? i),
@@ -674,12 +768,20 @@ export class IslandFx {
               if (overlaps(box, r)) ctx.drawImage(this.shadow(box.w, box.h), box.x, box.y);
             }
           },
-      // The fire's pool, on the ground under everything, at this moment's breath.
-      afterLand: fire
-        ? (r) => {
-            if (overlaps(fire.box, r)) ctx.drawImage(fire.steps[breath], fire.box.x, fire.box.y);
-          }
-        : undefined,
+      // The grass the gust bends; then the fire's pool, on the ground under everything, at this moment's breath.
+      afterLand:
+        fire || bent.length
+          ? (r) => {
+              if (sway) {
+                for (const i of bent) {
+                  const slot = sway.slots[i];
+                  const box = sway.data.sway[i].box;
+                  if (slot && overlaps(box, r)) ctx.drawImage(sway.sheet, slot.sx, slot.sy, box.w, box.h, box.x, box.y, box.w, box.h);
+                }
+              }
+              if (fire && overlaps(fire.box, r)) ctx.drawImage(fire.steps[breath], fire.box.x, fire.box.y);
+            }
+          : undefined,
       beforeTags: halos.length
         ? (r) => {
             ctx.globalCompositeOperation = "lighter";
@@ -708,6 +810,10 @@ export class IslandFx {
             }
           : undefined,
       last: (r) => {
+        // The birds over their shadows (on the ground, or below them in flight), then the butterflies.
+        for (const b of birds) if (b?.shadow && overlaps(b.shadow, r)) ctx.drawImage(this.shadow(b.shadow.w, b.shadow.h), b.shadow.x, b.shadow.y);
+        for (const b of birds) drawCritter(b, BIRD, r);
+        for (const b of butterflies) drawCritter(b, BUTTERFLY, r);
         for (const d of breeze) {
           const a = layers.rects.get(d.name);
           if (!a || !overlaps({ x: d.x, y: d.y, w: a.w, h: a.h }, r)) continue;
@@ -772,9 +878,72 @@ export class IslandFx {
       out.push(box);
     }
     if (this.smokeFrom && smokeStep(prev.tick) !== smokeStep(next.tick)) out.push(smokeBounds(this.smokeFrom));
+    this.lifeDirty(prev, next, scene, opts, out);
     return out;
   }
+
+  /** The island's small life between two frames: each bent piece that rose or fell, and each bird and butterfly that moved. */
+  private lifeDirty(prev: FxMotion, next: FxMotion, scene: IslandScene, opts: FxOptions, out: Rect[]): void {
+    const life = this.lifeOf(scene);
+    if (!life) return;
+    const a = this.lifeFrame(prev.tick, life, opts.span);
+    const b = this.lifeFrame(next.tick, life, opts.span);
+    const sway = this.sway?.data === this.life?.data ? this.sway : null;
+    if (sway) {
+      // Both lists are in index order: walk them together, and repaint what is in only one.
+      let i = 0;
+      let j = 0;
+      while (i < a.bent.length || j < b.bent.length) {
+        const x = i < a.bent.length ? a.bent[i] : Infinity;
+        const y = j < b.bent.length ? b.bent[j] : Infinity;
+        if (x === y) {
+          i++;
+          j++;
+          continue;
+        }
+        const k = Math.min(x, y);
+        if (x === k) i++;
+        else j++;
+        if (sway.slots[k]) out.push(sway.data.sway[k].box);
+      }
+    }
+    critterDirty(a.birds, b.birds, BIRD, out);
+    critterDirty(a.butterflies, b.butterflies, BUTTERFLY, out);
+  }
+
+  /** The life at a tick in this hour over this span, worked out once (the last few are kept). */
+  private lifeFrame(tick: number, plan: LifePlan, span: Span): LifeFrame {
+    const phase = this.phase;
+    for (const f of this.lifeFrames) if (f.tick === tick && f.plan === plan && f.phase === phase && f.spanX === span.x && f.spanW === span.w) return f;
+    const frame: LifeFrame = {
+      tick,
+      plan,
+      phase,
+      spanX: span.x,
+      spanW: span.w,
+      bent: bentAt(tick, plan, phase),
+      birds: birdsAt(tick, plan, span, phase),
+      butterflies: butterfliesAt(tick, plan, phase),
+    };
+    if (this.lifeFrames.length >= 3) this.lifeFrames.shift();
+    this.lifeFrames.push(frame);
+    return frame;
+  }
 }
+
+/** The island's small life at one tick (ambient.ts), with what it was worked out for. */
+interface LifeFrame {
+  tick: number;
+  plan: LifePlan | null;
+  phase: LightPhase;
+  spanX: number;
+  spanW: number;
+  bent: readonly number[];
+  birds: readonly (Critter | null)[];
+  butterflies: readonly (Critter | null)[];
+}
+
+const NO_LIFE: LifeFrame = { tick: -1, plan: null, phase: "day", spanX: 0, spanW: 0, bent: [], birds: [], butterflies: [] };
 
 /** The terrain of a scene, with its ink baked for one phase (each layer null when it has none). */
 interface BakedTerrain {
@@ -785,10 +954,16 @@ interface BakedTerrain {
   props: { canvas: HTMLCanvasElement; box: Rect } | null;
 }
 
-/** RGBA words for the terrain's ink inside `box` (later layers over earlier ones), in these colours. */
-function inkWords(data: Terrain, layers: readonly ("ground" | "props")[], box: Rect, colours: ReadonlyMap<number, RGB>): Uint32Array<ArrayBuffer> {
+/** The terrain's colours as RGBA words, by ink code. */
+function inkTable(colours: ReadonlyMap<number, RGB>): Uint32Array {
   const table = new Uint32Array(128);
   for (const [code, rgb] of colours) if (code < 128) table[code] = word(rgb, 1);
+  return table;
+}
+
+/** RGBA words for the terrain's ink inside `box` (later layers over earlier ones), in these colours. */
+function inkWords(data: Terrain, layers: readonly ("ground" | "props")[], box: Rect, colours: ReadonlyMap<number, RGB>): Uint32Array<ArrayBuffer> {
+  const table = inkTable(colours);
   const words = new Uint32Array(box.w * box.h);
   const W = data.width;
   for (const layer of layers) {

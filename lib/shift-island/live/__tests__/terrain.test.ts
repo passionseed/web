@@ -5,6 +5,7 @@ import { buildScene, plotBoxes, tagRect, TILE_BY_CODE, type IslandPlot, type Isl
 import { MOTION_SIZES, type MotionSpriteName } from "@/bot/assets/island/motion-sprites";
 import type { Festival } from "@/lib/shift-island/festival";
 
+import { BIRD, BUTTERFLY, FLUTTER, birdsAt, butterfliesAt, lifePlan } from "../ambient";
 import { actorAt, lampRects, sceneModel } from "../draw";
 import { FIGURE_H, FIGURE_W, hitSlop, treeFigures } from "../figures";
 import { gradeKey, gradeRgb } from "../grade";
@@ -165,6 +166,29 @@ describe("terrain", () => {
     const clashes: string[] = [];
     for (const piece of terrain.pieces) for (const k of keep) if (overlaps(piece.rect, k.rect)) clashes.push(`${piece.kind} ${JSON.stringify(piece.rect)} on ${k.what}`);
     expect(clashes).toEqual([]);
+  });
+
+  it.each(SIZES)("rests its birds and butterflies off plots, tap targets, plaza spots, lamps and people too (%i plots)", (n) => {
+    const scene = buildScene(plots(n), { markMine: true, festival: true });
+    const plan = lifePlan(terrainOf(scene), scene);
+    const keep = keepOut(scene, n);
+    const span = { x: 0, w: scene.width };
+    const clashes = new Set<string>();
+    // A butterfly at rest: the first and third parts of its round (it flutters over anything between).
+    const settled = (k: number, tick: number) => {
+      const u = (tick + plan.butterflies[k].offset) % FLUTTER.cycle;
+      return u < FLUTTER.rest || (u >= FLUTTER.rest + FLUTTER.fly && u < 2 * FLUTTER.rest + FLUTTER.fly);
+    };
+    for (let tick = 0; tick < 2 * 960; tick += 2) {
+      const birds = birdsAt(tick, plan, span, "day").filter((b) => b && /stand|peck/.test(b.name));
+      const flies = butterfliesAt(tick, plan, "day").filter((_, k) => settled(k, tick));
+      for (const c of [...birds, ...flies]) {
+        const size = c!.name.startsWith("bird") ? BIRD : BUTTERFLY;
+        const box = { x: c!.x, y: c!.y, w: size.w, h: size.h };
+        for (const k of keep) if (overlaps(box, k.rect)) clashes.add(`${c!.name} ${JSON.stringify(box)} on ${k.what}`);
+      }
+    }
+    expect([...clashes]).toEqual([]);
   });
 
   it.each(SIZES)("keeps pieces on their own ground, off the paths and apart (%i plots)", (n) => {

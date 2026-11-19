@@ -858,6 +858,21 @@ that replaces the work, no lecturing.
   smallest close-up scale), a plaza piece, a lamp, a walk the plaza's people
   take, a helper path or a footpath. A new layout is built a slice per frame
   before the first frame, so no frame carries it all.
+- **Small life** (web only, `lib/shift-island/live/ambient.ts`), few and slow:
+  two sparrows (three on a very wide island) that each visit about every two
+  minutes, flying in from the nearer shore over their shadow, resting by three
+  tufts or flower patches in turn (standing, pecking, a hop, a turn) and
+  flying off; one to three butterflies (by day only) that rest on a flower
+  patch's bloom, fan their wings now and then and flutter to a nearby patch
+  and back; and the tufts and flower patches lean one pixel downwind as each
+  gust reaches them, with the trees, so a wave crosses the grass. Birds come
+  at dawn, by day and at dusk; nothing new at night (only the campfire's
+  smoke and the lights: no ambient fireflies, which the campfire guest
+  brings). Everything rests on the terrain's own pieces, so it keeps off
+  plots, tap targets, the plaza and its people. Pure functions of the tick;
+  only the boxes that change repaint, a piece in a shadow or a pool of light
+  stays still, and a still island (reduced motion, or too small to read)
+  shows none of it.
 - **Clock** (pure functions of elapsed ms, tick 125 ms): sea ping-pong 0-1-2-1
   every 3 ticks, foam every 4, boat 1 px per 2 ticks along `lanes.boatY`
   (the sprite faces left, so mirror it when sailing right; about 90 s across, wraps off-screen), 2 gulls 1 px
@@ -876,7 +891,8 @@ that replaces the work, no lecturing.
   ticks/s, at most 2 ms per redraw, init under 16 ms for the pilot island.
 - **Pauses** with zero timers when off-screen (IntersectionObserver), tab
   hidden, `paused` prop (any sheet open) or reduced motion (one still frame:
-  frame 0 sea, sway A, boat at `boatStill`, no gulls or clouds).
+  frame 0 sea, sway A, boat at `boatStill`, no gulls, clouds, birds or
+  butterflies, and the grass upright).
 - **Fallback**: the SSR `<img>` stays as first paint and is hidden only after
   the first canvas frame; any failure keeps it. Hotspots and the check-in puff
   stay above the canvas (`pointer-events: none` on the canvas).

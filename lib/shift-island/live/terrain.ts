@@ -23,7 +23,10 @@
  * Pure and client-safe: it returns ink, per pixel, in the keys of a small
  * palette blended from the island's own colours; fx.ts grades it for the
  * hour (and the lamps' light) and bakes it into the land layer once per scene
- * and light. Nothing here runs per frame.
+ * and light. Nothing here runs per frame. Each tuft and flower patch also
+ * keeps a bent frame (its tips one px downwind, over the ground it lies on)
+ * for the breeze (ambient.ts), and the patches' bloom hearts for the
+ * butterflies.
  */
 import { SPRITES } from "@/bot/assets/island/sprites";
 import { MOTION_SIZES, MOTION_SPRITES } from "@/bot/assets/island/motion-sprites";
@@ -171,6 +174,26 @@ export interface TerrainPiece {
   rect: Rect;
 }
 
+/**
+ * A tuft or flower patch the breeze can bend (ambient.ts): its tips (a
+ * tuft's light blades, a patch's blooms) lean one pixel downwind, to the
+ * right, the way the gusts cross the island.
+ */
+export interface SwayPiece {
+  kind: "tuft" | "flowers";
+  /** The piece as it lies, scene px. */
+  rect: Rect;
+  /** The bent frame's box: the piece's, one px wider. */
+  box: Rect;
+  /**
+   * Per pixel of `box`, the ink of the bent frame (TERRAIN_INK codes; 0: the
+   * tile's own pixel), with the ground the piece lies on where its tips left.
+   */
+  bent: Uint8Array;
+  /** A flower patch's bloom hearts, scene px (where a butterfly settles); none for a tuft. */
+  hearts: { x: number; y: number }[];
+}
+
 export interface Terrain {
   width: number;
   height: number;
@@ -184,6 +207,8 @@ export interface Terrain {
   /** Contact shadows under the standing pieces, before the sun's lean. */
   shadows: Rect[];
   pieces: TerrainPiece[];
+  /** The tufts and flower patches on the grass, with their bent frames: the breeze's (ambient.ts). */
+  sway: SwayPiece[];
   /** Each footpath's centre line, scene px. */
   trails: { x: number; y: number }[][];
   /** Per pixel, 1 on a footpath or its trodden edge. */
@@ -706,11 +731,14 @@ function* buildTerrain(model: SceneModel): Generator<void, Terrain, void> {
   };
   const kept = pieces.filter((p) => !onPath(p.rect));
   const shadows: Rect[] = [];
+  const sway: SwayPiece[] = [];
   let propsBox: Rect | null = null;
   for (const p of kept) {
     const standing = STANDING.has(p.kind);
     const layer = standing ? props : ground;
     const rows = pieceRows(p, rnd);
+    // A tuft or a flower patch keeps a bent frame, over the ground it is about to cover (pieces never share that ground).
+    if (p.kind === "tuft" || p.kind === "flowers") sway.push(swayPiece(p.kind, p.rect, rows, pieceVariant(p, rnd), ground, W));
     for (let j = 0; j < rows.length; j++) {
       for (let i = 0; i < rows[j].length; i++) {
         const ch = rows[j][i];
@@ -732,6 +760,7 @@ function* buildTerrain(model: SceneModel): Generator<void, Terrain, void> {
     propsBox,
     shadows,
     pieces: kept,
+    sway,
     trails: trails.lines,
     paths: trails.mask,
   };
@@ -744,13 +773,47 @@ function shadowUnder(r: Rect): Rect {
   return { x: r.x + Math.floor((r.w - w) / 2), y: r.y + r.h - h + 2, w, h };
 }
 
+/** A piece's variant of its kind's sprites (a flower patch's still in 1 and 2). */
+function pieceVariant(p: TerrainPiece, rnd: Rnd): readonly string[] {
+  const variants = PIECES[p.kind];
+  return variants[Math.floor(rnd(p.rect.x, p.rect.y, 101) * variants.length) % variants.length];
+}
+
 /** The rows a piece is drawn with: its variant, a flower patch in its colours. */
 function pieceRows(p: TerrainPiece, rnd: Rnd): readonly string[] {
-  const variants = PIECES[p.kind];
-  const rows = variants[Math.floor(rnd(p.rect.x, p.rect.y, 101) * variants.length) % variants.length];
+  const rows = pieceVariant(p, rnd);
   if (p.kind !== "flowers") return rows;
   const [bloom, heart] = BLOOMS[Math.floor(rnd(p.rect.x, p.rect.y, 103) * BLOOMS.length) % BLOOMS.length];
   return rows.map((row) => row.replace(/1/g, bloom).replace(/2/g, heart));
+}
+
+/**
+ * A piece's rows bent downwind, one column wider than the piece: a tuft's
+ * top row (its blades' tips) and a flower patch's blooms move one px to the
+ * right, over whatever they meet; the rest (the blades' feet, the stems)
+ * stays, so the piece leans rather than slides.
+ */
+export function bentRows(kind: SwayPiece["kind"], rows: readonly string[]): string[] {
+  const tip = (ch: string, j: number) => ch !== "." && (kind === "tuft" ? j === 0 : ch !== "T" && ch !== "U");
+  return rows.map((row, j) => {
+    const out = [...row, "."];
+    for (let i = 0; i < row.length; i++) if (tip(row[i], j)) out[i] = ".";
+    for (let i = 0; i < row.length; i++) if (tip(row[i], j)) out[i + 1] = row[i];
+    return out.join("");
+  });
+}
+
+/** A tuft's or a flower patch's bent frame, over the ground under it (read before the piece is laid on it). */
+function swayPiece(kind: SwayPiece["kind"], rect: Rect, rows: readonly string[], variant: readonly string[], ground: Uint8Array, W: number): SwayPiece {
+  const box = { x: rect.x, y: rect.y, w: rect.w + 1, h: rect.h };
+  const bent = new Uint8Array(box.w * box.h);
+  for (let j = 0; j < box.h; j++) bent.set(ground.subarray((box.y + j) * W + box.x, (box.y + j) * W + box.x + box.w), j * box.w);
+  bentRows(kind, rows).forEach((row, j) => {
+    for (let i = 0; i < row.length; i++) if (row[i] !== ".") bent[j * box.w + i] = INK_CODE[row[i]];
+  });
+  const hearts: { x: number; y: number }[] = [];
+  if (kind === "flowers") variant.forEach((row, j) => [...row].forEach((ch, i) => ch === "2" && hearts.push({ x: rect.x + i, y: rect.y + j })));
+  return { kind, rect, box, bent, hearts };
 }
 
 // ------------------------------------------------------------------ grass

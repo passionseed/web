@@ -21,6 +21,13 @@
  * breaths costs nothing. Reduced motion and a still island draw everyone
  * plain and repaint nothing for them.
  *
+ * The island's small life (ambient.ts, through fx.ts) by day: a sparrow or
+ * two and a few butterflies repaint only their own boxes (a bird high over
+ * its shadow repaints the two apart) on the ticks they move, and a gust
+ * repaints each tuft or flower patch it bends, a few px each, as it crosses.
+ * Their state is worked out once per tick. None of it at night, on a still
+ * or tiny island or under reduced motion.
+ *
  * The clock counts running time only: after a pause the island carries on
  * where it stopped and never replays missed ticks.
  */
