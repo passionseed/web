@@ -46,6 +46,11 @@ export interface GuideShellValue {
   /** The current step is done (or needs nothing), so "ต่อ" is highlighted. */
   readyToAdvance: boolean;
   /**
+   * The current step is a game not yet finished: it moves on through its own
+   * button, so the sticky "ต่อ" is swapped for a hint and does nothing.
+   */
+  gameWaiting?: boolean;
+  /**
    * "ต่อ" pressed while the current dialogue is still being read: the dialogue
    * with this `<pageKey>:<stepId>` key finishes its line or opens its next box
    * (as a tap on the box would) instead of the level skipping past it.

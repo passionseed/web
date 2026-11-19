@@ -174,6 +174,16 @@ export function GuideShellProvider({
   const currentStep = currentSteps[currentCursor];
   const waits = currentStep && ["dialogue", "copy", "game", "bespoke", "clip"].includes(currentStep.kind);
   const readyToAdvance = !pageKey || !waits || Boolean(doneSteps[`${pageKey}:${currentStep.id}`]);
+  // A game still being played moves on through its own button ("ล็อกคำตอบ",
+  // or "ข้ามเกม ดูเฉลย"), so "ต่อ" steps aside: one way forward, not two.
+  const gameKey = pageKey && currentStep ? `${pageKey}:${currentStep.id}` : "";
+  const gameWaiting =
+    Boolean(gameKey) &&
+    !demo &&
+    (currentStep?.kind === "game" || currentStep?.kind === "bespoke") &&
+    !doneSteps[gameKey] &&
+    !progress.games[gameKey]?.done &&
+    !(cleared ?? []).includes(pageKey ?? "");
 
   const [advanceSeq, setAdvanceSeq] = useState(0);
   const [dialogueNudge, setDialogueNudge] = useState<{ key: string; seq: number } | null>(null);
@@ -187,6 +197,7 @@ export function GuideShellProvider({
     // A cleared level is already read: its dialogues open complete, so "ต่อ"
     // goes straight to the next level (doneSteps is memory only, so it would
     // otherwise eat presses after a reload).
+    if (gameWaiting) return;
     const step = steps[cur];
     const levelCleared = (cleared ?? []).includes(pageKey);
     if (step && !demo && !levelCleared && (step.kind === "dialogue" || step.kind === "copy")) {
@@ -209,7 +220,7 @@ export function GuideShellProvider({
     dispatch({ type: "clear", pageKey });
     if (nextKey) router.push(levelHref(slug, nextKey));
     else setMapOpen(true);
-  }, [pageKey, stepsByPage, cursorFor, demo, cleared, doneSteps, dispatch, nextKey, router, slug]);
+  }, [pageKey, stepsByPage, cursorFor, gameWaiting, demo, cleared, doneSteps, dispatch, nextKey, router, slug]);
 
   // ------------------------------------------------------------ sources sheet
   const [sources, setSources] = useState<{ open: boolean; focus: readonly FactId[] }>({ open: false, focus: [] });
@@ -244,6 +255,7 @@ export function GuideShellProvider({
       advanceLabelTh,
       markStepDone,
       readyToAdvance,
+      gameWaiting,
       dialogueNudge,
       openMap,
       sources,
@@ -270,6 +282,7 @@ export function GuideShellProvider({
       advanceLabelTh,
       markStepDone,
       readyToAdvance,
+      gameWaiting,
       dialogueNudge,
       openMap,
       sources,

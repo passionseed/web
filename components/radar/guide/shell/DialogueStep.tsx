@@ -11,8 +11,9 @@
  * already read: every speaker group shows at once, typed, on its last box,
  * and the step counts as done straight away.
  */
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { DialogueBox } from "@/components/radar/guide/story";
+import { scrollToMiddle } from "./follow-scroll";
 import type { DialogueGroup } from "./level-steps";
 import { useGuideShell } from "./shell-context";
 
@@ -31,6 +32,18 @@ export function DialogueStep({ pageKey, stepId, groups }: DialogueStepProps) {
   // Demo mode (filming) and read levels: every box at once, already typed.
   const last = demo || read ? groups.length - 1 : shown;
 
+  // A new speaker's box opened: bring it to the middle of the screen, so a
+  // long conversation never runs on below the "ต่อ" bar.
+  const rowsRef = useRef<HTMLDivElement>(null);
+  const prevShown = useRef(shown);
+  useEffect(() => {
+    if (shown <= prevShown.current) return;
+    prevShown.current = shown;
+    if (demo || read) return;
+    const row = rowsRef.current?.querySelectorAll<HTMLElement>(":scope > .rg-dialogue__row")[shown];
+    if (row) scrollToMiddle(row, reducedMotion);
+  }, [shown, demo, read, reducedMotion]);
+
   const onGroupDone = useCallback(
     (i: number) => {
       if (i < groups.length - 1) setShown((n) => Math.max(n, i + 1));
@@ -41,7 +54,7 @@ export function DialogueStep({ pageKey, stepId, groups }: DialogueStepProps) {
 
   if (!groups.length) return null;
   return (
-    <div className="rg-dialogue">
+    <div ref={rowsRef} className="rg-dialogue">
       {groups.slice(0, last + 1).map((group, i) => (
         // The key remounts each box when the level turns out to be read
         // (progress loads from storage after the first render).

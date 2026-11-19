@@ -165,9 +165,15 @@ describe("GuideShellProvider", () => {
 
     fireEvent.click(next);
     expect(screen.getByTestId("step-find")).toHaveAttribute("data-state", "shown");
-    expect(next).toHaveTextContent("ด่านต่อไป");
 
-    fireEvent.click(next);
+    // The game moves on through its own button: "ต่อ" gives way to a hint.
+    expect(screen.queryByTestId("guide-next")).toBeNull();
+    expect(screen.getByTestId("guide-next-hint")).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("game-skip"));
+    expect(screen.queryByTestId("guide-next-hint")).toBeNull();
+    expect(screen.getByTestId("guide-next")).toHaveTextContent("ด่านต่อไป");
+
+    fireEvent.click(screen.getByTestId("guide-next"));
     expect(push).toHaveBeenCalledWith("/radar/cybersecurity/doors");
     const saved = JSON.parse(storage()["radar-guide:v1:cybersecurity"]);
     expect(saved.cleared).toContain("mythos");

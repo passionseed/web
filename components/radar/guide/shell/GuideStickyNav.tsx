@@ -4,6 +4,9 @@
  * Sticky bottom bar: back arrow (previous level, or the cover from level 1)
  * and "ต่อ ▶", which reveals the next step or clears the level and moves on.
  * Buttons only: no edge swipes (Instagram uses them for "back").
+ *
+ * While a game is being played it moves on through its own button, so "ต่อ"
+ * gives way to a hint pointing back up at the game: one way forward.
  */
 import Link from "next/link";
 import { prevLevelKey } from "@/lib/radar-guide/story";
@@ -12,7 +15,7 @@ import { BackGlyph, NextGlyph } from "./glyphs";
 import { useGuideShell } from "./shell-context";
 
 export function GuideStickyNav() {
-  const { slug, index, pageKey, advance, advanceLabelTh, readyToAdvance } = useGuideShell();
+  const { slug, index, pageKey, advance, advanceLabelTh, readyToAdvance, gameWaiting } = useGuideShell();
   const prev = pageKey ? prevLevelKey(index.pages, pageKey) : null;
   const backHref = prev ? levelHref(slug, prev) : coverHref(slug);
   return (
@@ -21,6 +24,11 @@ export function GuideStickyNav() {
         <Link href={backHref} className="rg-pixel-btn rg-nav__back" aria-label={prev ? "ย้อนกลับด่านก่อนหน้า" : "กลับหน้าปก"}>
           <BackGlyph />
         </Link>
+        {gameWaiting ? (
+          <p className="rg-nav__hint" data-testid="guide-next-hint" aria-live="polite">
+            เล่นเกมด้านบนให้จบ แล้วไปต่อได้เลย
+          </p>
+        ) : (
         <button
           type="button"
           className="rg-pixel-btn rg-pixel-btn--accent rg-nav__next"
@@ -33,6 +41,7 @@ export function GuideStickyNav() {
           <span>{advanceLabelTh}</span>
           <NextGlyph />
         </button>
+        )}
       </div>
     </nav>
   );
