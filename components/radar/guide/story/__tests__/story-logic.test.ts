@@ -90,17 +90,19 @@ describe("toBoxes", () => {
 });
 
 describe("host sprite", () => {
-  it("flaps between idle and talk, cheers on wow", () => {
+  it("flaps between idle and talk, cheers on wow, winks on wink", () => {
     expect(hostFrame("idle", false)).toBe("idle");
     expect(hostFrame("talk", true)).toBe("talk");
     expect(hostFrame("serious", true)).toBe("talk");
     expect(hostFrame("wow", false)).toBe("cheer");
+    expect(hostFrame("wink", true)).toBe("wink");
   });
 
   it("maps frames to GUIDE_HOST sprites with fallbacks", () => {
     expect(hostSpriteSrc("idle")).toBe(GUIDE_HOST.sprites.idle);
     expect(hostSpriteSrc("talk")).toBe(GUIDE_HOST.sprites.talk ?? GUIDE_HOST.sprites.idle);
     expect(hostSpriteSrc("cheer")).toBe(GUIDE_HOST.sprites.wow ?? HOST_CHEER_SRC);
+    expect(hostSpriteSrc("wink")).toBe("/radar/guides/host/host-wink.webp");
   });
 
   it("names the speakers", () => {

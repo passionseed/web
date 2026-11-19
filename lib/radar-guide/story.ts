@@ -30,7 +30,7 @@ export interface GuideHost {
   roleTh: string;
   /**
    * Pixel sprite sheet per mood (public paths, crisp with image-rendering:
-   * pixelated). A generic pixel character, never a likeness of a real person.
+   * pixelated). The PassionSeed flame, never a likeness of a real person.
    * A missing mood falls back to `idle`; a missing file falls back to the CSS
    * sprite in the shell.
    */
@@ -40,7 +40,8 @@ export interface GuideHost {
 }
 
 /**
- * The founder, on camera in the cutscenes and as a pixel NPC everywhere else.
+ * The founder on camera in the cutscenes; everywhere else the pixel NPC is
+ * the PassionSeed flame (our logo) holding a mic.
  * TODO(founder): replace the placeholder display name. This is the only place
  * it is set.
  */
@@ -51,8 +52,10 @@ export const GUIDE_HOST: GuideHost = {
   sprites: {
     idle: "/radar/guides/host/host-idle.webp",
     talk: "/radar/guides/host/host-talk.webp",
+    wink: "/radar/guides/host/host-wink.webp",
+    wow: "/radar/guides/host/host-cheer.webp",
   },
-  spriteSize: { w: 48, h: 64 },
+  spriteSize: { w: 64, h: 64 },
 };
 
 /** Default scene art for a level. Override per page with GuideIndexPage.scene. */

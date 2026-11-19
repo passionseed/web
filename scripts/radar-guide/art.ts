@@ -4,7 +4,7 @@
  * Writes the game-story art for a code guide into public/radar/guides/:
  * one scene per level (<slug>/<pageKey>.webp, 160x100), the level map
  * background (<slug>/map.webp), the profile card frame (<slug>/frame.webp)
- * and the shared host sprite (host/host-{idle,talk,cheer}.webp, 48x64).
+ * and the shared host sprite (host/host-{idle,talk,wink,cheer}.webp, 64x64).
  * Prompts and sizes: scripts/radar-guide/art-prompts/<slug>.json.
  *
  *   (no --source)   each asset uses the `source` recorded in the prompts file
@@ -17,7 +17,7 @@
  *                   native size, so the browser can still draw it with
  *                   image-rendering: pixelated at a whole-ish scale.
  *                   The host sprite and the card frame stay "pixel": the
- *                   host's idle/talk/cheer frames must line up pixel for
+ *                   host's idle/talk/wink/cheer frames must line up pixel for
  *                   pixel (mouth flap), which separate generations cannot.
  *   --only          comma-separated asset ids from the prompts file
  *   --dry-run       print what would be written (and the agy prompts); write nothing
@@ -33,6 +33,7 @@ import { dirname, join, relative } from "node:path";
 import sharp from "sharp";
 
 import { GUIDE_INDEX } from "../../lib/radar-guides/index";
+import { HOST_GRIDS } from "../../components/radar/guide/story/pixel-art";
 import { renderFrame, renderHost, renderMap, renderScene, type Canvas } from "./art-pixel";
 import { mentionsPeople } from "./lib/art";
 import { assertSlug, fail, flagString, hasBinary, parseArgs, REPO_ROOT, runMain } from "./lib/cli";
@@ -140,8 +141,8 @@ function drawPixel(asset: ArtAsset, accent: string): Canvas {
       return renderFrame(accent);
     case "host": {
       const frame = asset.id.replace(/^host-/, "");
-      if (frame !== "idle" && frame !== "talk" && frame !== "cheer") fail(`unknown host frame "${asset.id}"`);
-      return renderHost(frame);
+      if (!Object.prototype.hasOwnProperty.call(HOST_GRIDS, frame)) fail(`unknown host frame "${asset.id}"`);
+      return renderHost(frame as keyof typeof HOST_GRIDS);
     }
   }
 }

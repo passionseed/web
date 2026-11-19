@@ -13,13 +13,14 @@ All art lives in `public/radar/guides/` and is served as a static file.
 | Level scene, one per page | `<slug>/<pageKey>.webp` | 640 x 400 generated, 160 x 100 hand-made | Antigravity, or the pixel painter |
 | Level map background | `<slug>/map.webp` | 432 x 768 generated, 108 x 192 hand-made | Antigravity |
 | Profile card frame | `<slug>/frame.webp` | 108 x 135 | Pixel painter only |
-| Host sprite, idle / talk / cheer | `host/host-{idle,talk,cheer}.webp` | 48 x 64 | Pixel painter only |
+| Host sprite, idle / talk / wink / cheer | `host/host-{idle,talk,wink,cheer}.webp` | 64 x 64 | Pixel painter only |
 
 Rules every file keeps:
 
 - webp, at most 120 KB (checked by `scripts/radar-guide/__tests__/art.test.ts`).
 - Scenes are places and objects only: no people, no faces, no text or numbers,
-  no real company logos, no currency symbols.
+  no real company logos (the host is our own logo, see below), no currency
+  symbols.
 - Nothing from skills/key-art-poster/SKILL.md section 6: no sunburst rays,
   perspective floor grids, random glowing particles, scanlines or grain.
 - Night palette from `company-brain/reels-style.md`: plum black, deep plum,
@@ -31,13 +32,16 @@ Rules every file keeps:
 
 ## The host is hand-made on purpose
 
-The host NPC (`GUIDE_HOST` in `lib/radar-guide/story.ts`) is a generic pixel
-character, not a likeness of the founder. Its frames are drawn from the grids in
-`components/radar/guide/story/pixel-art.ts`, so the idle and talk frames line up
-pixel for pixel and the mouth flap does not jitter. Separate image generations
-cannot promise that, and they cannot give a transparent background, so the
-script never sends the host or the card frame to Antigravity. The profile card
-avatar uses the same grid recoloured with the career accent.
+The host NPC (`GUIDE_HOST` in `lib/radar-guide/story.ts`) is the PassionSeed
+flame, our own logo, holding a mic: the founder's 32x32 pixel logo with the
+plum disc taken off, plus arms, feet and the mic. Its frames are drawn from the
+grids in `components/radar/guide/story/pixel-art.ts`, so the idle and talk
+frames line up pixel for pixel and the mouth flap does not jitter. "wow" holds
+the cheer frame and "wink" the wink frame. Separate image generations cannot
+promise that, and they cannot give a transparent background, so the script
+never sends the host or the card frame to Antigravity. The profile card avatar
+is the first host (a generic pixel character in a hoodie), recoloured with the
+career accent.
 
 ## Making the art again
 

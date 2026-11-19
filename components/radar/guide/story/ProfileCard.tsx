@@ -21,7 +21,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ProfileCard as ProfileCardData } from "@/lib/radar-guide/story";
 import { PixelIcon, PixelSprite } from "./PixelSprite";
-import { avatarPalette, HOST_GRIDS } from "./pixel-art";
+import { AVATAR_GRIDS, avatarPalette } from "./pixel-art";
 import { profileFileName, profileSaveRoute, profileShareRoute, xpSegments, type ProfileShareRoute } from "./story-logic";
 import "./story.css";
 
@@ -200,7 +200,7 @@ export function ProfileCard({ card, accent, shareUrl, shareLabel, frameSrc, onSh
         <div className="rgs-profile__inner">
           <p className="rgs-profile__title">{card.titleTh}</p>
           <div className="rgs-profile__hero">
-            <PixelSprite grid={HOST_GRIDS.cheer} palette={avatarPalette(accent)} width={96} className="rgs-profile__avatar" />
+            <PixelSprite grid={AVATAR_GRIDS.cheer} palette={avatarPalette(accent)} width={96} className="rgs-profile__avatar" />
             <div className="rgs-profile__stats">
               <span className="rgs-profile__xp">
                 XP {card.xp}

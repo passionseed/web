@@ -67,17 +67,28 @@ export function toBoxes(lines: readonly string[]): string[] {
   return lines.flatMap((line) => splitDialogue(line));
 }
 
-/** Sprite for a mood and talking frame. "wow" uses the cheer frame; others fall back to idle. */
+/**
+ * Sprite for a mood and talking frame. "wow" holds the cheer frame and
+ * "wink" the wink frame; the rest flap between idle and talk.
+ */
 export const HOST_CHEER_SRC = "/radar/guides/host/host-cheer.webp";
-export type HostFrameName = "idle" | "talk" | "cheer";
+export const HOST_WINK_SRC = "/radar/guides/host/host-wink.webp";
+export type HostFrameName = "idle" | "talk" | "wink" | "cheer";
+
+/** Moods that hold one frame instead of flapping. */
+export function hostHeldFrame(mood: HostMood | undefined): HostFrameName | null {
+  if (mood === "wow") return "cheer";
+  if (mood === "wink") return "wink";
+  return null;
+}
 
 export function hostFrame(mood: HostMood | undefined, mouthOpen: boolean): HostFrameName {
-  if (mood === "wow") return "cheer";
-  return mouthOpen ? "talk" : "idle";
+  return hostHeldFrame(mood) ?? (mouthOpen ? "talk" : "idle");
 }
 
 export function hostSpriteSrc(frame: HostFrameName): string {
   if (frame === "cheer") return GUIDE_HOST.sprites.wow ?? HOST_CHEER_SRC;
+  if (frame === "wink") return GUIDE_HOST.sprites.wink ?? HOST_WINK_SRC;
   if (frame === "talk") return GUIDE_HOST.sprites.talk ?? GUIDE_HOST.sprites.idle;
   return GUIDE_HOST.sprites.idle;
 }

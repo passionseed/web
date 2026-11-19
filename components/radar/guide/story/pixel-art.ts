@@ -1,13 +1,14 @@
 /**
- * Pixel data for the game-story layer: the host NPC (idle, talk, cheer), the
- * player avatar on the profile card, and the badge glyphs. Pure data plus a
+ * Pixel data for the game-story layer: the host NPC (idle, talk, wink, cheer),
+ * the player avatar on the profile card, and the badge glyphs. Pure data plus a
  * run-length helper, shared by:
  * - the React components (inline SVG fallback when a webp fails, badge icons),
  * - scripts/radar-guide/art.ts, which rasterises the same grids into
  *   public/radar/guides/host/*.webp so the image and the fallback match.
  *
- * The host is a generic pixel character (hoodie, headset), never a likeness of
- * a real person. No text and no logos in any grid.
+ * The host is the PassionSeed flame, our own logo, holding a mic. The player
+ * avatar is a generic pixel character (hoodie), never a likeness of a real
+ * person. No text and no other logos in any grid.
  */
 import type { BadgeIcon } from "@/lib/radar-guide/story";
 
@@ -39,10 +40,14 @@ export type PixelGrid = readonly string[];
 /** Grid character -> CSS colour. Characters missing from the map (and ".") are transparent. */
 export type PixelPalette = Readonly<Record<string, string>>;
 
-/** Native host grid size; the webp is this grid scaled 2x (GUIDE_HOST.spriteSize 48x64). */
-export const HOST_GRID = { w: 24, h: 32 } as const;
+/** Native host grid size; the webp is this grid scaled 2x (GUIDE_HOST.spriteSize 64x64). */
+export const HOST_GRID = { w: 32, h: 32 } as const;
+
+/** Native avatar grid size (the profile card's player). */
+export const AVATAR_GRID = { w: 24, h: 32 } as const;
 
 /*
+ * The player avatar (it was the first host).
  * Legend: K outline, H hair, S skin, s skin shade, R blush, W eye light,
  * M mouth, O headset cups, m mic boom (drawn over the face), J hoodie,
  * j hoodie shade, P trousers.
@@ -134,14 +139,13 @@ const MOUTH_CHEER: PixelGrid = [
   ".....KSSSSKKKKSSSSK.....",
 ];
 
-export const HOST_GRIDS = {
+export const AVATAR_GRIDS = {
   idle: hostGrid(HOST_EYES_OPEN, MOUTH_IDLE, HOST_BODY),
   talk: hostGrid(HOST_EYES_OPEN, MOUTH_TALK, HOST_BODY),
   cheer: hostGrid(HOST_EYES_HAPPY, MOUTH_CHEER, HOST_BODY_CHEER),
 } as const satisfies Record<string, PixelGrid>;
-export type HostFrame = keyof typeof HOST_GRIDS;
 
-export const HOST_PALETTE: PixelPalette = {
+const AVATAR_BASE_PALETTE: PixelPalette = {
   K: STORY_PALETTE.ink,
   H: STORY_PALETTE.hair,
   S: STORY_PALETTE.skin,
@@ -157,13 +161,13 @@ export const HOST_PALETTE: PixelPalette = {
 };
 
 /**
- * Player avatar for the profile card: the same body without the headset,
+ * Player avatar for the profile card: the first host's body without the headset,
  * a different hair colour, and the hoodie in the career accent. Generic, no
  * name, no face details beyond eyes and smile.
  */
 export function avatarPalette(accent: string, shade?: string): PixelPalette {
   return {
-    ...HOST_PALETTE,
+    ...AVATAR_BASE_PALETTE,
     H: "#6b3a2a",
     O: "transparent",
     m: STORY_PALETTE.skin,
@@ -171,6 +175,173 @@ export function avatarPalette(accent: string, shade?: string): PixelPalette {
     j: shade ?? STORY_PALETTE.violetDeep,
   };
 }
+
+// ---------------------------------------------------------------- host (32x32)
+/**
+ * The host: the PassionSeed flame (our own logo) holding a mic, drawn from
+ * the founder's 32x32 pixel logo with the plum disc taken off. 32x32 cells.
+ * Legend: K outline, Y flame, B flame light, F flame orange (and feet),
+ * N face, E eyes and brows, M mouth, G mic head, g mic shade, h mic handle.
+ */
+const HOST_IDLE: PixelGrid = [
+  "..................K...K.....K...",
+  ".................KFK.KYK...KYK..",
+  "...............KKKFYKYYK...KYYK.",
+  "..............KYYKKKYYYKKKK.KYYK",
+  "..........K...KYYYYYYYYYYBYKKYYK",
+  ".........KFK.KYYYBYYYYYBBFYKKYYK",
+  "........KFFK.KYYYBBYYYBBYYYYYYYK",
+  "........KFFYKYYYYYBBYYBBYYYYYYYK",
+  ".......KKFFYKYYYYYBBYYBBYYYYYYK.",
+  "......KYYFFYYYYYYYBBYYBBYBYYYK..",
+  "......KYYKFFYYYYYYBBYYYBBBYYK...",
+  ".....KYYKKKFYYYYYBBYYYYYYYKK....",
+  ".....KYYYYYYYYYYYYFYYYYYYYK.....",
+  ".....KYYYEYYYYYNNFYYYYYYYYK.KK..",
+  "..KKKKYYYYEEYNNNNNNYYYYYYYKKYYK.",
+  ".KgGGKYYYYYYENNNNNNEEYYYYYKKYYK.",
+  ".KGGgKYYYEEENNNNNNNNYEYYYKKYYK..",
+  ".KgGGKKYEENNENNNNNEEEYYYYKYYK...",
+  "..KhK.KYEENNENNNNEENNEYYKYYK....",
+  "..KhKKKYEEEEENNNNEENNEYYYYK.....",
+  "..KhYYYYYEEENNNNNEEEEEYKKK......",
+  "..KhYYYYYYYYNNNNNNEEEYYK........",
+  "..KhKKKKKYYYNNNNNNNYYYK.........",
+  "..KhK...KYYYYNNNNNYYYK..........",
+  "...K.....KYYYYYYYYYYK...........",
+  "..........KYYYYYYYYK............",
+  "...........KKYYYYKK.............",
+  "............KFKKKKFK............",
+  "............KFK..KFK............",
+  "...........KFFK..KFFK...........",
+  "............KK....KK............",
+  "................................",
+];
+const HOST_TALK: PixelGrid = [
+  "..................K...K.....K...",
+  ".................KFK.KYK...KYK..",
+  "...............KKKFYKYYK...KYYK.",
+  "..............KYYKKKYYYKKKK.KYYK",
+  "..........K...KYYYYYYYYYYBYKKYYK",
+  ".........KFK.KYYYBYYYYYBBFYKKYYK",
+  "........KFFK.KYYYBBYYYBBYYYYYYYK",
+  "........KFFYKYYYYYBBYYBBYYYYYYYK",
+  ".......KKFFYKYYYYYBBYYBBYYYYYYK.",
+  "......KYYFFYYYYYYYBBYYBBYBYYYK..",
+  "......KYYKFFYYYYYYBBYYYBBBYYK...",
+  ".....KYYKKKFYYYYYBBYYYYYYYKK....",
+  ".....KYYYYYYYYYYYYFYYYYYYYK.....",
+  ".....KYYYEYYYYYNNFYYYYYYYYK.KK..",
+  "..KKKKYYYYEEYNNNNNNYYYYYYYKKYYK.",
+  ".KgGGKYYYYYYENNNNNNEEYYYYYKKYYK.",
+  ".KGGgKYYYEEENNNNNNNNYEYYYKKYYK..",
+  ".KgGGKKYEENNENNNNNEEEYYYYKYYK...",
+  "..KhK.KYEENNENNNNEENNEYYKYYK....",
+  "..KhKKKYEEEEENNNNEENNEYYYYK.....",
+  "..KhYYYYYEEENNNNNEEEEEYKKK......",
+  "..KhYYYYYYYYNNNNNNEEEYYK........",
+  "..KhKKKKKYYYNNMMMNNYYYK.........",
+  "..KhK...KYYYYNNMNNYYYK..........",
+  "...K.....KYYYYYYYYYYK...........",
+  "..........KYYYYYYYYK............",
+  "...........KKYYYYKK.............",
+  "............KFKKKKFK............",
+  "............KFK..KFK............",
+  "...........KFFK..KFFK...........",
+  "............KK....KK............",
+  "................................",
+];
+const HOST_WINK: PixelGrid = [
+  "..................K...K.....K...",
+  ".................KFK.KYK...KYK..",
+  "...............KKKFYKYYK...KYYK.",
+  "..............KYYKKKYYYKKKK.KYYK",
+  "..........K...KYYYYYYYYYYBYKKYYK",
+  ".........KFK.KYYYBYYYYYBBFYKKYYK",
+  "........KFFK.KYYYBBYYYBBYYYYYYYK",
+  "........KFFYKYYYYYBBYYBBYYYYYYYK",
+  ".......KKFFYKYYYYYBBYYBBYYYYYYK.",
+  "......KYYFFYYYYYYYBBYYBBYBYYYK..",
+  "......KYYKFFYYYYYYBBYYYBBBYYK...",
+  ".....KYYKKKFYYYYYBBYYYYYYYKK....",
+  ".....KYYYYYYYYYYYYFYYYYYYYK.....",
+  ".....KYYYEYYYYYNNFYYYYYYYYK.KK..",
+  "..KKKKYYYYEEYNNNNNNYYYYYYYKKYYK.",
+  ".KgGGKYYYYYYENNNNNNEEYYYYYKKYYK.",
+  ".KGGgKYYYEEENNNNNNNNYEYYYKKYYK..",
+  ".KgGGKKYEENNENNNNNNNNYYYYKYYK...",
+  "..KhK.KYEENNENNNNNEEENYYKYYK....",
+  "..KhKKKYEEEEENNNNENNNEYYYYK.....",
+  "..KhYYYYYEEENNNNNENNNEYKKK......",
+  "..KhYYYYYYYYNNNNNNNNNYYK........",
+  "..KhKKKKKYYYNNNNNNNYYYK.........",
+  "..KhK...KYYYYNNNNNYYYK..........",
+  "...K.....KYYYYYYYYYYK...........",
+  "..........KYYYYYYYYK............",
+  "...........KKYYYYKK.............",
+  "............KFKKKKFK............",
+  "............KFK..KFK............",
+  "...........KFFK..KFFK...........",
+  "............KK....KK............",
+  "................................",
+];
+const HOST_CHEER: PixelGrid = [
+  "..................K...K.....K...",
+  ".................KFK.KYK...KYK..",
+  "...............KKKFYKYYK...KYYK.",
+  "..............KYYKKKYYYKKKK.KYYK",
+  "..........K...KYYYYYYYYYYBYKKYYK",
+  ".........KFK.KYYYBYYYYYBBFYKKYYK",
+  "........KFFK.KYYYBBYYYBBYYYYYYYK",
+  "........KFFYKYYYYYBBYYBBYYYYYYYK",
+  ".......KKFFYKYYYYYBBYYBBYYYYYYK.",
+  "......KYYFFYYYYYYYBBYYBBYBYYYK..",
+  "......KYYKFFYYYYYYBBYYYBBBYYK...",
+  ".....KYYKKKFYYYYYBBYYYYYYYKK....",
+  ".....KYYYYYYYYYYYYFYYYYYYYK.....",
+  ".....KYYYEYYYYYNNFYYYYYYYYK.KK..",
+  "..KKKKYYYYEEYNNNNNNYYYYYYYKKYYK.",
+  ".KgGGKYYYYYYENNNNNNEEYYYYYKKYYK.",
+  ".KGGgKYYYNNNNNNNNNNNYEYYYKKYYK..",
+  ".KgGGKKYNEEENNNNNNNNNYYYYKYYK...",
+  "..KhK.KYENNNENNNNNEEENYYKYYK....",
+  "..KhKKKYENNNENNNNENNNEYYYYK.....",
+  "..KhYYYYYNNNNNNNNENNNEYKKK......",
+  "..KhYYYYYYYYNNNNNNNNNYYK........",
+  "..KhKKKKKYYYNMMMMMNYYYK.........",
+  "..KhK...KYYYYNMMMNYYYK..........",
+  "...K.....KYYYYYYYYYYK...........",
+  "..........KYYYYYYYYK............",
+  "...........KKYYYYKK.............",
+  "............KFKKKKFK............",
+  "............KFK..KFK............",
+  "...........KFFK..KFFK...........",
+  "............KK....KK............",
+  "................................",
+];
+
+/** Frames: idle and talk flap while the host speaks; wink and cheer are moods. */
+export const HOST_GRIDS = {
+  idle: HOST_IDLE,
+  talk: HOST_TALK,
+  wink: HOST_WINK,
+  cheer: HOST_CHEER,
+} as const satisfies Record<string, PixelGrid>;
+export type HostFrame = keyof typeof HOST_GRIDS;
+
+/** The logo's own colours, plus a mic. */
+export const HOST_PALETTE: PixelPalette = {
+  K: "#2a0d18",
+  Y: "#ffc33e",
+  B: "#ffe31e",
+  F: "#ff8f19",
+  N: "#000000",
+  E: "#ffffff",
+  M: "#ff6a3d",
+  G: "#ece6ee",
+  g: "#9a8fa0",
+  h: "#5a4a60",
+};
 
 // ---------------------------------------------------------------- badge glyphs (8x8)
 /** `#` main colour, `o` second colour. */

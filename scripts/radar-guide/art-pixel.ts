@@ -12,7 +12,7 @@
  * accent for screens. Banned per skills/key-art-poster/SKILL.md: sunburst
  * rays, perspective floor grids, random glowing particles, scanlines, grain.
  */
-import { HOST_GRIDS, HOST_PALETTE, STORY_PALETTE as C, type PixelGrid, type PixelPalette } from "../../components/radar/guide/story/pixel-art";
+import { HOST_GRID, HOST_GRIDS, HOST_PALETTE, STORY_PALETTE as C, type PixelGrid, type PixelPalette } from "../../components/radar/guide/story/pixel-art";
 
 export const SCENE_SIZE = { w: 160, h: 100 } as const;
 export const MAP_SIZE = { w: 108, h: 192 } as const;
@@ -626,9 +626,9 @@ export function renderFrame(accent: string): Canvas {
   return c;
 }
 
-/** The host sprite frame at 2x (48x64, GUIDE_HOST.spriteSize), transparent background. */
+/** The host sprite frame at 2x (64x64, GUIDE_HOST.spriteSize), transparent background. */
 export function renderHost(frame: keyof typeof HOST_GRIDS): Canvas {
-  const c = createCanvas(48, 64);
+  const c = createCanvas(HOST_GRID.w * 2, HOST_GRID.h * 2);
   blit(c, HOST_GRIDS[frame], HOST_PALETTE, 0, 0, 2);
   return c;
 }
