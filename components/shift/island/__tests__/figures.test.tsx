@@ -6,6 +6,7 @@ import type { Festival } from "@/lib/shift-island/festival";
 import { CROWD_LAYOUT } from "@/lib/shift-island/live/crowd";
 import { TIGHT } from "@/lib/shift-island/live/figures";
 import type { Rect } from "@/lib/shift-island/live/geometry";
+import { figureKey, plotKey, type InteractTarget } from "@/lib/shift-island/live/interact";
 import type { LiveActor } from "@/lib/shift-island/live/types";
 import type { NoticePin } from "@/lib/shift-island/notice";
 import { plazaCentre, plazaWorld, type PlazaInput, type PlazaSpotId } from "@/lib/shift-island/live/plaza";
@@ -24,7 +25,14 @@ import { plazaProps } from "../plazaProps";
  * stand. Like the real engine it is handed new actors in a passive effect,
  * after every layout effect, and answers null for a list it does not draw yet.
  */
-const mockLive: { boxes: (Rect | null)[] | null; drawn: readonly LiveActor[]; mode: "ready" | "fail" } = { boxes: [], drawn: [], mode: "ready" };
+const mockLive: {
+  boxes: (Rect | null)[] | null;
+  drawn: readonly LiveActor[];
+  mode: "ready" | "fail";
+  /** The interact outline's targets as last handed over, and the steering the viewport gave it. */
+  targets: readonly InteractTarget[];
+  steer: { aim: jest.Mock; focus: jest.Mock };
+} = { boxes: [], drawn: [], mode: "ready", targets: [], steer: { aim: jest.fn(), focus: jest.fn() } };
 
 jest.mock("../live/IslandLive", () => {
   const { useEffect } = jest.requireActual<typeof import("react")>("react");
@@ -33,6 +41,18 @@ jest.mock("../live/IslandLive", () => {
       useEffect(() => {
         mockLive.drawn = props.actors ?? [];
       }, [props.actors]);
+      useEffect(() => {
+        mockLive.targets = props.targets ?? [];
+      }, [props.targets]);
+      useEffect(() => {
+        const holder = props.interact;
+        if (holder) holder.current = mockLive.steer;
+        return () => {
+          if (holder) holder.current = null;
+        };
+        // Once per mount, like the real canvas.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, []);
       useEffect(() => {
         const holder = props.actorBoxes;
         if (holder) {
@@ -112,6 +132,8 @@ beforeEach(() => {
   mockLive.boxes = [];
   mockLive.drawn = [];
   mockLive.mode = "ready";
+  mockLive.targets = [];
+  mockLive.steer = { aim: jest.fn(), focus: jest.fn() };
 });
 
 describe("figure lines", () => {
@@ -218,6 +240,24 @@ describe("tapping people on the island", () => {
     tap(partner.x + 5, partner.y + 7, plotButton);
     expect(onPlot).toHaveBeenCalledTimes(2);
     expect(bubble()).not.toBeNull();
+  });
+
+  it("keeps taps where they went with the interact outline on: every person can show it, and a tap still picks as before", () => {
+    const onPlot = jest.fn();
+    render(<IslandViewport picture={picture} onPlot={onPlot} />);
+    // The partners are targets of their own, beside their plots.
+    const keys = mockLive.targets.map((t) => t.key);
+    expect(keys).toEqual(expect.arrayContaining([plotKey(1), plotKey(2), figureKey(0), figureKey(1)]));
+    const plotButton = screen.getByRole("button", { name: `แปลง #1, ${FIGURES.plotPartner}` });
+    // Whatever the outline shows (here the plot, from the keyboard), the plot's own button opens the plot...
+    act(() => plotButton.focus());
+    tap(partner.x - 5, partner.y + 7, plotButton);
+    expect(onPlot).toHaveBeenCalledTimes(1);
+    expect(bubble()).toBeNull();
+    // ...and a tap on the person beside it has them say their line, the plot never hearing of it.
+    tap(partner.x + 5, partner.y + 7, plotButton);
+    expect(onPlot).toHaveBeenCalledTimes(1);
+    expect(bubble()).toHaveAttribute("data-bubble", "partner");
   });
 
   it("closes on Escape, after a while, and when a sheet covers the island", () => {

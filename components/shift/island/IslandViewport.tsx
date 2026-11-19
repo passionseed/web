@@ -9,6 +9,7 @@ import {
   useState,
   useSyncExternalStore,
   type CSSProperties,
+  type FocusEvent,
   type KeyboardEvent,
   type RefObject,
 } from "react";
@@ -17,6 +18,7 @@ import type { IslandHotspot, IslandPicture } from "@/lib/shift-island/picture";
 import { hitFigure, hitSlop, treeFigures, type Figure } from "@/lib/shift-island/live/figures";
 import { pxPerNativeFor, type Rect } from "@/lib/shift-island/live/geometry";
 import { gradeMultiply, gradedWater } from "@/lib/shift-island/live/grade";
+import { hotspotKey, interactTargets, type InteractTarget } from "@/lib/shift-island/live/interact";
 import { waterColor } from "@/lib/shift-island/live/lighting";
 import { NO_PLAZA, plazaWorld, type PlazaInput, type PlazaLabelId, type PlazaSpotId } from "@/lib/shift-island/live/plaza";
 import type { LightPhase } from "@/lib/shift-island/live/types";
@@ -26,10 +28,11 @@ import { COMMON, FIGURES, HUD, ISLAND, treeStageName } from "./copy";
 import islandStyles from "./island.module.css";
 import { FigureBubble, useFigureTalk } from "./live/FigureBubble";
 import type { Today } from "./live/figureLine";
-import type { ActorBoxes } from "./live/IslandCanvas";
+import type { ActorBoxes, IslandInteract } from "./live/IslandCanvas";
 import { IslandLive } from "./live/IslandLive";
 import liveStyles from "./live/live.module.css";
 import { PlazaLayer } from "./live/PlazaLayer";
+import { useInteractAim } from "./live/useInteractAim";
 import { PlotMarker } from "./player/PlotMarker";
 import { PlotSigns, signName, signedSlots } from "./PlotSigns";
 import { useReducedMotion } from "./useReducedMotion";
@@ -101,6 +104,17 @@ const DAY_SEA = waterColor("day");
 const DRAG_SLOP = 4;
 /** The tap hint steps aside after this long (its fade starts at 6s in world.module.css). */
 const HINT_MS = 6400;
+/** Nothing for the interact outline to pick: one shared value, so the canvas never sees a change. */
+const NO_TARGETS: readonly InteractTarget[] = [];
+
+/** The element shows a keyboard's focus (a tap's focus does not move the outline). Old engines without :focus-visible count it. */
+function keyboardFocus(element: Element): boolean {
+  try {
+    return element.matches(":focus-visible");
+  } catch {
+    return true;
+  }
+}
 
 /** The phase's light as a multiply colour: the PNG under it comes close to the canvas's graded land. */
 function tintColor(phase: LightPhase): string {
@@ -334,6 +348,8 @@ export function IslandViewport({
   const [overlay, setOverlay] = useState<HTMLDivElement | null>(null);
   /** The living island's actor boxes, while it draws: where the walking people are now. */
   const actorBoxes = useRef<ActorBoxes | null>(null);
+  /** The living island's interact outline, while it draws: where the player aims, and the keyboard's hotspot. */
+  const steer = useRef<IslandInteract | null>(null);
   const reduced = useReducedMotion();
   const zoom = usePxPerNative();
   const box = useScreenBox(world, probe);
@@ -445,6 +461,38 @@ export function IslandViewport({
       : null;
   const scale = layout?.scale ?? zoom;
   const mine = picture?.mine ?? null;
+
+  // The interact outline (interact.ts): every plot, plaza button and person the canvas draws can show it.
+  const onSpot = plaza?.onSpot;
+  const spotNames = plaza?.names;
+  const spotsOn = interactive && onSpot ? plazaView.spots.filter((spot) => spotNames?.[spot.id]) : [];
+  const spotsKey = spotsOn.map((spot) => spot.id).join(",");
+  const targets = useMemo(
+    () =>
+      live && interactive && scene && hotspotList
+        ? interactTargets({ scene, hotspots: hotspotList, spots: spotsOn, figures, scale, whole })
+        : NO_TARGETS,
+    // spotsKey stands for spotsOn, which is a new list on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [live, interactive, scene, hotspotList, plazaView, spotsKey, figures, scale, whole]
+  );
+  useInteractAim({
+    world,
+    overlay,
+    size: picture ? { width: picture.width, height: picture.height } : null,
+    scale,
+    whole,
+    safe: box?.safe ?? NO_INSETS,
+    steer,
+    on: targets.length > 0,
+    watch: `${scale}|${whole}|${layout?.world.w}x${layout?.world.h}`,
+  });
+  // A keyboard on a plot's or the plaza's button shows the same outline round what it stands for.
+  const onHotspotFocus = (event: FocusEvent<HTMLDivElement>) => {
+    const key = hotspotKey(event.target);
+    steer.current?.focus(key && keyboardFocus(event.target) ? key : null);
+  };
+  const onHotspotBlur = () => steer.current?.focus(null);
 
   // Start on the student's plot (or the island's middle) whenever the scale or the world changes.
   const centreKey = layout ? `${layout.scale}|${layout.world.w}x${layout.world.h}|${mine?.slot ?? "-"}` : null;
@@ -568,6 +616,8 @@ export function IslandViewport({
                 actors={plazaView.actors}
                 actorBoxes={actorBoxes}
                 signs={signs}
+                targets={targets}
+                interact={steer}
                 className={liveStyles.live}
                 onReady={() => setLiveReady(true)}
                 onFail={() => setLiveFailed(true)}
@@ -581,7 +631,7 @@ export function IslandViewport({
             and the HUD outside the world stays above it.
           */}
           <div key={shade ?? "none"} className={styles.shade} data-phase={shade} aria-hidden="true" />
-          <div ref={setOverlay} className={styles.islandBox} style={islandRect}>
+          <div ref={setOverlay} className={styles.islandBox} style={islandRect} onFocus={onHotspotFocus} onBlur={onHotspotBlur}>
             {live ? <span role="img" aria-label={ISLAND.pictureAlt} className={liveStyles.label} /> : null}
             {/*
               Project names: boards hanging from the living island's signposts, or a line under the PNG's

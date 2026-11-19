@@ -59,6 +59,12 @@ export interface PlazaSpot {
   y: number;
   w: number;
   h: number;
+  /**
+   * The actors that draw it, by index into PlazaWorld.actors: the shape the
+   * interact outline traces (interact.ts). The campfire's are its pit and
+   * flame, not the people sitting round it.
+   */
+  actors: number[];
 }
 
 /**
@@ -183,7 +189,7 @@ export function plazaCentre(scene: IslandScene): { x: number; y: number } {
 }
 
 /** A native box as a percent spot, edges rounded (not sizes) so x + w lands on the right edge. */
-function spotOf(id: PlazaSpotId, box: SceneRect, scene: IslandScene): PlazaSpot {
+function spotOf(id: PlazaSpotId, box: SceneRect, scene: IslandScene, actors: number[]): PlazaSpot {
   const x0 = Math.max(0, box.x);
   const y0 = Math.max(0, box.y);
   const x1 = Math.min(scene.width, box.x + box.w);
@@ -192,7 +198,7 @@ function spotOf(id: PlazaSpotId, box: SceneRect, scene: IslandScene): PlazaSpot 
   const right = round4((x1 / scene.width) * 100);
   const top = round4((y0 / scene.height) * 100);
   const bottom = round4((y1 / scene.height) * 100);
-  return { id, x: left, y: top, w: round4(right - left), h: round4(bottom - top) };
+  return { id, x: left, y: top, w: round4(right - left), h: round4(bottom - top), actors };
 }
 
 function labelOf(id: PlazaLabelId, at: { x: number; y: number }, anchor: PlazaLabel["anchor"], scene: IslandScene): PlazaLabel {
@@ -256,26 +262,36 @@ export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
     }
   }
 
+  /** The stage's actors: the countdown board, its glyphs and the stage. */
+  const stageParts: number[] = [];
   if (festival) {
     // The countdown first: the stage covers the foot of its posts.
     const board = at(L.countdown);
+    stageParts.push(actors.length);
     actors.push(still("fest_count", board));
     const glyphs = countdownGlyphs(festival.daysToDemo);
     const width = glyphs.length * GLYPH_W + Math.max(0, glyphs.length - 1) * GLYPH_GAP;
     const left = board.x + COUNT_FACE.x + Math.floor((COUNT_FACE.w - width) / 2);
     const top = board.y + COUNT_FACE.y + Math.floor((COUNT_FACE.h - GLYPH_H) / 2);
-    glyphs.forEach((glyph, i) => actors.push(still(glyph, { x: left + i * (GLYPH_W + GLYPH_GAP), y: top })));
+    glyphs.forEach((glyph, i) => {
+      stageParts.push(actors.length);
+      actors.push(still(glyph, { x: left + i * (GLYPH_W + GLYPH_GAP), y: top }));
+    });
     const step = count(festival.stageStep, STAGES.length - 1);
+    stageParts.push(actors.length);
     actors.push(still(STAGES[step], at(L.stage)));
   }
 
   if (pins) {
+    const board = [actors.length];
     actors.push(still("notice_board", at(L.noticeBoard)));
     pins.slice(0, MAX_NOTES).forEach((kind, i) => {
       const name = NOTES[kind];
-      if (name) actors.push(still(name, at(L.notes[i])));
+      if (!name) return;
+      board.push(actors.length);
+      actors.push(still(name, at(L.notes[i])));
     });
-    spots.push(spotOf("notice", box(L.noticeSpot), scene));
+    spots.push(spotOf("notice", box(L.noticeSpot), scene, board));
   }
 
   if (festival) {
@@ -286,17 +302,18 @@ export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
       if (!tree) continue;
       actors.push(still(booth.kind === "stage" ? "star_flag" : "booth_flag", boothFlagAt(tree, scene)));
     }
-    spots.push(spotOf("stage", box(L.stageSpot), scene));
+    spots.push(spotOf("stage", box(L.stageSpot), scene, stageParts));
   }
 
   if (prizes) {
+    spots.push(spotOf("prizes", box(L.prizeSpot), scene, [actors.length]));
     actors.push(still("prize_board", at(L.prizeBoard)));
-    spots.push(spotOf("prizes", box(L.prizeSpot), scene));
   }
 
   if (campfire) {
     const people = count(campfire.count);
     // The fire welcomes visitors even when Discord has no seated coworkers.
+    const fire = [actors.length];
     actors.push(still("campfire_pit", at(L.pit)));
     // Seats the coworking room leaves empty may take a few of today's visitors (crowd.sitters).
     const seated = Math.min(people, MAX_SEATS) + crowd.sitters;
@@ -309,12 +326,14 @@ export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
       };
       const order = Array.from({ length: seated }, (_, i) => i);
       for (const i of order) if (L.seats[i][1] < FRONT_Y) actors.push(seat(i));
+      fire.push(actors.length);
       actors.push({ frames: ACTOR_FRAMES.campfireFlame, ...at(L.flame), frameMs: FLAME_MS });
       for (const i of order) if (L.seats[i][1] >= FRONT_Y) actors.push(seat(i));
     } else {
+      fire.push(actors.length);
       actors.push({ frames: ACTOR_FRAMES.campfireFlame, ...at(L.flame), frameMs: FLAME_MS });
     }
-    spots.push(spotOf("campfire", box(L.campfireSpot), scene));
+    spots.push(spotOf("campfire", box(L.campfireSpot), scene, fire));
   }
 
   if (visitors) {

@@ -154,6 +154,15 @@
   outline-offset: 0;
 }
 
+/*
+ * While the living island draws, a keyboard's focus shows as the interact
+ * outline round the plot's tree or the plaza piece itself (lib/shift-island/
+ * live/outline.ts), so the box steps aside. Over the PNG the box stays.
+ */
+.world[data-live="true"] .hotspot:focus-visible:not(:active) {
+  outline: none;
+}
+
 /* The student's own plot needs no box of its own: the island already draws its pin. */
 
 /* Check-in: a 400ms puff of pixel dust at the tree's base. The tree does not change. */

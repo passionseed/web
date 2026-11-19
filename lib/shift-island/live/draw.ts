@@ -235,14 +235,33 @@ export interface DrawFx {
   afterSea?: (r: Rect) => void;
   /** Over the land layer, under everything that stands on it (light that moves on the ground). */
   afterLand?: (r: Rect) => void;
+  /**
+   * Something drawn just before one scene tree, and just after one tree with
+   * its partner, key and lantern, whether or not that tree meets the rect
+   * (the interact outline's ring reaches a pixel past it).
+   */
+  beforeTree?: DrawAt;
+  afterTree?: DrawAt;
   /** Over the trees, lamps and clouds, under the tags or signposts and the plaza's actors (the glow round a light). */
   beforeTags?: (r: Rect) => void;
   /** Under the plaza's actors, over everything before them. */
   beforeActors?: (r: Rect) => void;
+  /** Something drawn just before one actor, whether or not that actor meets the rect. */
+  beforeActor?: DrawAt;
   /** Just after actor `index` is drawn at (x, y) with sprite `name`, before the next one (light on that actor alone). */
   afterActor?: (index: number, name: string, x: number, y: number, flip: boolean) => void;
   /** Over everything. */
   last?: (r: Rect) => void;
+}
+
+/**
+ * Something drawn at one tree's or actor's place in the order: its index,
+ * and the drawing. One index, so the loop only compares (no call per tree
+ * or actor).
+ */
+export interface DrawAt {
+  index: number;
+  draw: (r: Rect) => void;
 }
 
 /** What the frame shows, besides the scene. */
@@ -313,17 +332,22 @@ export function redrawRect<Img>(ctx: DrawContext<Img>, r: Rect, model: SceneMode
 
   if (motion.boat) drawMover(ctx, layers, motion.boat, r);
 
+  const beforeTree = fx?.beforeTree;
+  const afterTree = fx?.afterTree;
   model.trees.forEach((m, i) => {
-    if (!overlaps(m.bounds, r)) return;
-    const { tree } = m;
-    blit(ctx, atlas, rects.get(treeSpriteKey(motion.sway[i] && m.b ? m.b : tree.sprite, tree.style)), tree.left, tree.top);
-    // Roots sit on the soil, inside the tree's rect: a sway repaint redraws them too.
-    if (tree.roots) blit(ctx, atlas, rects.get(tree.roots.sprite), tree.roots.x, tree.roots.y);
-    if (tree.key) blit(ctx, atlas, rects.get("key_flag"), tree.key.x, tree.key.y);
-    if (tree.visitor) blit(ctx, atlas, rects.get(fx?.partner?.(i) ?? "visitor"), tree.visitor.x, tree.visitor.y);
-    // Only an earned lantern glows, and only at night: behind the lantern, over the tree.
-    if (night && m.glow) blit(ctx, atlas, rects.get(motion.glow[i] ? "lantern_glow_1" : "lantern_glow_0"), m.glow.x, m.glow.y);
-    if (tree.lantern) blit(ctx, atlas, rects.get("lantern"), tree.lantern.x, tree.lantern.y);
+    if (beforeTree?.index === i) beforeTree.draw(r);
+    if (overlaps(m.bounds, r)) {
+      const { tree } = m;
+      blit(ctx, atlas, rects.get(treeSpriteKey(motion.sway[i] && m.b ? m.b : tree.sprite, tree.style)), tree.left, tree.top);
+      // Roots sit on the soil, inside the tree's rect: a sway repaint redraws them too.
+      if (tree.roots) blit(ctx, atlas, rects.get(tree.roots.sprite), tree.roots.x, tree.roots.y);
+      if (tree.key) blit(ctx, atlas, rects.get("key_flag"), tree.key.x, tree.key.y);
+      if (tree.visitor) blit(ctx, atlas, rects.get(fx?.partner?.(i) ?? "visitor"), tree.visitor.x, tree.visitor.y);
+      // Only an earned lantern glows, and only at night: behind the lantern, over the tree.
+      if (night && m.glow) blit(ctx, atlas, rects.get(motion.glow[i] ? "lantern_glow_1" : "lantern_glow_0"), m.glow.x, m.glow.y);
+      if (tree.lantern) blit(ctx, atlas, rects.get("lantern"), tree.lantern.x, tree.lantern.y);
+    }
+    if (afterTree?.index === i) afterTree.draw(r);
   });
 
   if (night) {
@@ -341,8 +365,10 @@ export function redrawRect<Img>(ctx: DrawContext<Img>, r: Rect, model: SceneMode
   if (inScene) ctx.drawImage(layers.overlay, inScene.x, inScene.y, inScene.w, inScene.h, inScene.x, inScene.y, inScene.w, inScene.h);
 
   fx?.beforeActors?.(r);
+  const beforeActor = fx?.beforeActor;
   const afterActor = fx?.afterActor;
   state.actors.forEach((actor, i) => {
+    if (beforeActor?.index === i) beforeActor.draw(r);
     const frame = motion.actors[i] ?? 0;
     const rect = actorRect(actor, frame, rects);
     if (!rect || !overlaps(rect, r)) return;

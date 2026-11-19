@@ -5,6 +5,7 @@ import { useEffect, useRef, type RefObject } from "react";
 import type { IslandScene } from "@/bot/src/quests/island/scene";
 import { LiveIsland, type LiveIslandProps } from "@/lib/shift-island/live/engine";
 import type { Rect } from "@/lib/shift-island/live/geometry";
+import type { Aim, InteractTarget } from "@/lib/shift-island/live/interact";
 import type { LightPhase, LiveActor } from "@/lib/shift-island/live/types";
 
 /**
@@ -13,6 +14,17 @@ import type { LightPhase, LiveActor } from "@/lib/shift-island/live/types";
  * answers null until the engine draws that same list.
  */
 export type ActorBoxes = (actors?: readonly LiveActor[]) => readonly (Rect | null)[] | null;
+
+/**
+ * Steers the interact outline (LiveIsland.aim and focus): where the player
+ * aims, native px with its reach (null: nowhere), and the hotspot a keyboard
+ * focused (null: none). A call repaints at most the old and new rings, in
+ * the next frame, and never renders React.
+ */
+export interface IslandInteract {
+  aim: (aim: Aim | null) => void;
+  focus: (key: string | null) => void;
+}
 
 export interface IslandCanvasProps {
   scene: IslandScene;
@@ -45,10 +57,15 @@ export interface IslandCanvasProps {
   actorBoxes?: { current: ActorBoxes | null };
   /** The slots whose signpost carries a name's board (PlotSigns hangs it there): close view only. */
   signs?: readonly number[];
+  /** The clickable things the interact outline can pick (interact.ts interactTargets); absent: no outline. */
+  targets?: readonly InteractTarget[];
+  /** Filled with the outline's steering while the engine lives (null otherwise). */
+  interact?: { current: IslandInteract | null };
 }
 
 const NO_ACTORS: LiveActor[] = [];
 const NO_SIGNS: readonly number[] = [];
+const NO_TARGETS: readonly InteractTarget[] = [];
 
 /**
  * The living island: one pixelated canvas drawn from the scene (sea frames,
@@ -73,6 +90,8 @@ export default function IslandCanvas({
   label,
   actorBoxes,
   signs = NO_SIGNS,
+  targets = NO_TARGETS,
+  interact,
 }: IslandCanvasProps) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const engine = useRef<LiveIsland | null>(null);
@@ -91,6 +110,7 @@ export default function IslandCanvas({
     fit,
     scroller: scroller?.current ?? null,
     signs,
+    targets,
   });
   const latest = useRef(props);
 
@@ -110,19 +130,22 @@ export default function IslandCanvas({
     engine.current = live;
     const boxes = actorBoxes;
     if (boxes) boxes.current = (actors) => live.actorBoxes(actors);
+    const steer = interact;
+    if (steer) steer.current = { aim: (aim) => live.aim(aim), focus: (key) => live.focus(key) };
     return () => {
       live.destroy();
       engine.current = null;
       if (boxes) boxes.current = null;
+      if (steer) steer.current = null;
     };
-    // One engine per canvas; the reader's holder is fixed for its life too.
+    // One engine per canvas; the reader's and the steering's holders are fixed for its life too.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     engine.current?.update(latest.current());
     // cropKey stands for crop and signsKey for signs; the engine compares actors by value.
-  },[scene, phase, paused, still, actors, ambient, cropKey, fit, scroller, signsKey]);
+  }, [scene, phase, paused, still, actors, ambient, cropKey, fit, scroller, signsKey, targets]);
 
   return (
     <canvas

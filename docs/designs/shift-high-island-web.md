@@ -873,6 +873,28 @@ that replaces the work, no lecturing.
   only the boxes that change repaint, a piece in a shadow or a pool of light
   stays still, and a still island (reduced motion, or too small to read)
   shows none of it.
+- **Interact outline** (web only, founder ask 2026-11-19;
+  `lib/shift-island/live/interact.ts` and `outline.ts`): every clickable
+  thing (a plot's tree with its key flag and lantern, the notice board with
+  its notes, the stage with its countdown, the prize board, the campfire's pit
+  and flame, and every person who can be tapped) can show a 1 px ring traced
+  round its silhouette in lamplight gold. Only one at a time: the one nearest
+  the middle of the room between the HUD bars on a touch screen (within 28
+  CSS px of its tap target's box, the plots' and plaza's 48px floor
+  included), or nearest the mouse pointer on a desktop (within 14 CSS px),
+  and nothing when nothing is that near, or when the pointer leaves the map.
+  On the whole island only a mouse aims. A keyboard's focus on a plot or a
+  plaza button shows the same ring, whatever the aim, in place of the
+  button's box ring. The ring is the pixels just outside the shape that
+  touch it side on, from the sprites' alpha in the atlas (a hole inside
+  stays empty), made once for every shape the picked thing can take (walk,
+  flame and sway frames) and kept. It is drawn in the thing's own layer,
+  just under it, so whatever stands in front still covers it and it never
+  paints over the thing. Without reduced motion it pulses gently, brightening
+  to a pale cream and back in quarter steps (a 3 s breath), each step on the
+  sea's beat, when the whole view repaints anyway; a still island holds it
+  halfway. Taps go where they went: the ring shows what is near, it never
+  moves a tap.
 - **Clock** (pure functions of elapsed ms, tick 125 ms): sea ping-pong 0-1-2-1
   every 3 ticks, foam every 4, boat 1 px per 2 ticks along `lanes.boatY`
   (the sprite faces left, so mirror it when sailing right; about 90 s across, wraps off-screen), 2 gulls 1 px

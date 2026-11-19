@@ -3,8 +3,10 @@ import { act, render } from "@testing-library/react";
 import { buildScene, type IslandPlot } from "@/bot/src/quests/island/scene";
 
 import { gradedWater } from "@/lib/shift-island/live/grade";
+import { plotKey, type InteractTarget } from "@/lib/shift-island/live/interact";
+import { PULSE } from "@/lib/shift-island/live/outline";
 
-import IslandCanvas, { type ActorBoxes } from "../IslandCanvas";
+import IslandCanvas, { type ActorBoxes, type IslandInteract } from "../IslandCanvas";
 
 /** jsdom has no canvas: a context that records what it is asked to do. */
 function fakeContext() {
@@ -296,6 +298,98 @@ describe("IslandCanvas", () => {
     const onFail = jest.fn();
     rerender(<IslandCanvas scene={next} crop={crop} still onFail={onFail} />);
     expect(onFail).not.toHaveBeenCalled();
+  });
+
+  describe("interact outline", () => {
+    const tree = scene.trees[0];
+    const targets: InteractTarget[] = [{ key: plotKey(tree.slot), box: { x: tree.left, y: tree.top, w: tree.w, h: tree.h }, shape: { kind: "tree", tree: 0 } }];
+    const onPlot = { x: tree.left + 6, y: tree.top + 6, reach: 4 };
+    /** The ring's draws: its gold half (from its image's top) and its cream half (from the bottom). */
+    const rings = (ctx: ReturnType<typeof fakeContext>) =>
+      ctx.drawImage.mock.calls.filter(
+        ([img, sx, sy, , sh]) => img instanceof HTMLCanvasElement && sx === 0 && img.height === 2 * sh && (sy === 0 || sy === sh)
+      );
+
+    it("draws the ring round the thing aimed at, in one frame, with no loop and no timer under reduced motion", () => {
+      reduced = true;
+      const holder: { current: IslandInteract | null } = { current: null };
+      render(<IslandCanvas scene={scene} targets={targets} interact={holder} />);
+      firstFrame();
+      const ctx = contexts[0];
+      expect(rings(ctx)).toHaveLength(0);
+      const timers = jest.getTimerCount();
+      act(() => {
+        holder.current!.aim(onPlot);
+        jest.advanceTimersByTime(16);
+      });
+      // Steady: the gold, and the cream halfway over it.
+      expect(rings(ctx).map(([, , sy]) => sy > 0)).toEqual(expect.arrayContaining([false, true]));
+      expect(jest.getTimerCount()).toBe(timers);
+      // The same aim again: nothing to repaint.
+      const calls = ctx.drawImage.mock.calls.length;
+      act(() => {
+        holder.current!.aim({ ...onPlot });
+        jest.advanceTimersByTime(5000);
+      });
+      expect(ctx.drawImage.mock.calls.length).toBe(calls);
+      // Aimed far away: the old ring's box repaints, without a ring.
+      const before = rings(ctx).length;
+      act(() => {
+        holder.current!.aim({ x: -400, y: -400, reach: 4 });
+        jest.advanceTimersByTime(16);
+      });
+      expect(ctx.drawImage.mock.calls.length).toBeGreaterThan(calls);
+      expect(rings(ctx)).toHaveLength(before);
+    });
+
+    it("shows the ring for the hotspot a keyboard focuses, whatever the aim, and lets it go on blur", () => {
+      reduced = true;
+      const holder: { current: IslandInteract | null } = { current: null };
+      render(<IslandCanvas scene={scene} targets={targets} interact={holder} />);
+      firstFrame();
+      const ctx = contexts[0];
+      act(() => {
+        holder.current!.focus(plotKey(tree.slot));
+        jest.advanceTimersByTime(16);
+      });
+      const shown = rings(ctx).length;
+      expect(shown).toBeGreaterThan(0);
+      act(() => {
+        holder.current!.focus(null);
+        jest.advanceTimersByTime(16);
+      });
+      expect(rings(ctx)).toHaveLength(shown);
+    });
+
+    it("pulses through its steps while the island moves", () => {
+      const holder: { current: IslandInteract | null } = { current: null };
+      render(<IslandCanvas scene={scene} targets={targets} interact={holder} phase="day" />);
+      firstFrame();
+      const ctx = contexts[0];
+      act(() => {
+        holder.current!.focus(plotKey(tree.slot));
+        jest.advanceTimersByTime(16);
+      });
+      // The cream's alpha at each of its draws, read as it is drawn.
+      const glows = new Set<number>();
+      ctx.drawImage.mockImplementation((img: unknown, sx: number, sy: number, sw: number, sh: number) => {
+        if (img instanceof HTMLCanvasElement && sx === 0 && sy > 0 && sy === sh && img.height === 2 * sh) glows.add(ctx.globalAlpha);
+      });
+      act(() => {
+        jest.advanceTimersByTime(4000);
+      });
+      // Every lit step of the pulse, and nothing but them.
+      expect([...glows].sort()).toEqual([...new Set(PULSE.filter((g) => g > 0))].sort());
+    });
+
+    it("never steers a canvas that is gone", () => {
+      const holder: { current: IslandInteract | null } = { current: null };
+      const { unmount } = render(<IslandCanvas scene={scene} targets={targets} interact={holder} />);
+      firstFrame();
+      expect(holder.current).not.toBeNull();
+      unmount();
+      expect(holder.current).toBeNull();
+    });
   });
 
   it("names itself when given a label", () => {

@@ -10,14 +10,30 @@ import type { IslandPicture } from "@/lib/shift-island/picture";
 import { ISLAND, PRE_STAGE, stageName } from "../copy";
 import { IslandViewport, hotspotLabel } from "../IslandViewport";
 
-/** The living island, mocked: jsdom has no canvas. "idle" never draws, "ready" draws at night, "fail" has no 2D context. */
-const mockLive: { mode: "idle" | "ready" | "fail"; props: IslandCanvasProps[] } = { mode: "idle", props: [] };
+/**
+ * The living island, mocked: jsdom has no canvas. "idle" never draws, "ready" draws at night, "fail" has no 2D context.
+ * `steer` records how the viewport steers the interact outline.
+ */
+const mockLive: {
+  mode: "idle" | "ready" | "fail";
+  props: IslandCanvasProps[];
+  steer: { aim: jest.Mock; focus: jest.Mock };
+} = { mode: "idle", props: [], steer: { aim: jest.fn(), focus: jest.fn() } };
 
 jest.mock("../live/IslandLive", () => {
   const { useEffect } = jest.requireActual<typeof import("react")>("react");
   return {
     IslandLive: function MockIslandLive(props: IslandCanvasProps) {
       mockLive.props.push(props);
+      useEffect(() => {
+        const holder = props.interact;
+        if (holder) holder.current = mockLive.steer;
+        return () => {
+          if (holder) holder.current = null;
+        };
+        // Once per mount, like the real canvas.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, []);
       useEffect(() => {
         if (mockLive.mode === "ready") {
           props.onPhase?.("night", gradedWater("night"));
@@ -35,6 +51,7 @@ jest.mock("../live/IslandLive", () => {
 beforeEach(() => {
   mockLive.mode = "idle";
   mockLive.props = [];
+  mockLive.steer = { aim: jest.fn(), focus: jest.fn() };
 });
 
 const picture: IslandPicture = {
@@ -625,6 +642,136 @@ describe("IslandViewport", () => {
       unmount();
       expect(onLiveChange).toHaveBeenLastCalledWith(false);
     });
+  });
+});
+
+describe("IslandViewport interact outline", () => {
+  /** Native px to CSS px in these tests: no screen is measured in jsdom, so the island is at its 2x. */
+  const S = 2;
+  const box = (el: Element, r: { left: number; top: number; width: number; height: number }) => {
+    el.getBoundingClientRect = () => ({ ...r, x: r.left, y: r.top, right: r.left + r.width, bottom: r.top + r.height, toJSON: () => r }) as DOMRect;
+  };
+  /** The picture's box over the canvas, at the page's top-left at 2x. */
+  function overlay(): HTMLElement {
+    const el = screen.getByRole("group", { name: "แปลงบนเกาะ" }).parentElement!;
+    box(el, { left: 0, top: 0, width: live.width * S, height: live.height * S });
+    return el;
+  }
+  const world = (container: HTMLElement) => container.querySelector<HTMLElement>('[data-live="true"]')!;
+  function pointer(target: Element, type: string, pointerType: string, x = 0, y = 0) {
+    const event = new MouseEvent(type, { bubbles: true, clientX: x, clientY: y });
+    Object.defineProperty(event, "pointerType", { value: pointerType });
+    act(() => {
+      target.dispatchEvent(event);
+    });
+  }
+  /** Lets the aim's animation frame run. */
+  const frame = () => act(() => new Promise((done) => setTimeout(done, 40)));
+
+  it("hands the living island every plot as a target once it draws, and none before", () => {
+    const { unmount } = render(<IslandViewport picture={live} onPlot={jest.fn()} />);
+    expect(mockLive.props.at(-1)?.targets).toEqual([]);
+    unmount();
+    mockLive.mode = "ready";
+    render(<IslandViewport picture={live} onPlot={jest.fn()} />);
+    expect(mockLive.props.at(-1)?.targets?.map((t) => t.key)).toEqual(["plot:3", "plot:4", "plot:9"]);
+    const scene = live.scene!;
+    expect(mockLive.props.at(-1)?.targets?.[1].shape).toEqual({ kind: "tree", tree: scene.trees.findIndex((t) => t.slot === 4) });
+  });
+
+  it("draws no outline on the island that takes no taps", () => {
+    mockLive.mode = "ready";
+    render(<IslandViewport picture={live} interactive={false} />);
+    expect(mockLive.props.at(-1)?.targets).toEqual([]);
+  });
+
+  it("aims at the middle of the room between the HUD bars on a touch screen, and follows a scroll", async () => {
+    mockLive.mode = "ready";
+    const { container } = render(<IslandViewport picture={live} onPlot={jest.fn()} />);
+    overlay();
+    const el = world(container);
+    box(el, { left: 0, top: 0, width: 375, height: 812 });
+    Object.defineProperty(el, "clientWidth", { configurable: true, value: 375 });
+    Object.defineProperty(el, "clientHeight", { configurable: true, value: 812 });
+    act(() => {
+      el.dispatchEvent(new Event("scroll"));
+    });
+    await frame();
+    const mid = (104 + 812 - 96) / 2;
+    expect(mockLive.steer.aim).toHaveBeenLastCalledWith({ x: 187.5 / S, y: mid / S, reach: 28 / S });
+    // Scrolled: the picture moved under the middle.
+    box(overlay(), { left: -100, top: -60, width: live.width * S, height: live.height * S });
+    act(() => {
+      el.dispatchEvent(new Event("scroll"));
+    });
+    await frame();
+    expect(mockLive.steer.aim).toHaveBeenLastCalledWith({ x: 287.5 / S, y: (mid + 60) / S, reach: 28 / S });
+  });
+
+  it("follows a mouse pointer on a desktop, closer in, and aims nowhere once it leaves", async () => {
+    mockLive.mode = "ready";
+    const { container } = render(<IslandViewport picture={live} onPlot={jest.fn()} />);
+    overlay();
+    const el = world(container);
+    pointer(el, "pointermove", "mouse", 120, 80);
+    await frame();
+    expect(mockLive.steer.aim).toHaveBeenLastCalledWith({ x: 60, y: 40, reach: 14 / S });
+    pointer(el, "pointerleave", "mouse");
+    await frame();
+    expect(mockLive.steer.aim).toHaveBeenLastCalledWith(null);
+  });
+
+  it("aims only with a mouse on the whole island, which never scrolls", async () => {
+    mockLive.mode = "ready";
+    const { container } = render(<IslandViewport picture={live} onPlot={jest.fn()} whole />);
+    overlay();
+    const el = world(container);
+    act(() => {
+      el.dispatchEvent(new Event("scroll"));
+    });
+    await frame();
+    expect(mockLive.steer.aim).toHaveBeenLastCalledWith(null);
+    pointer(el, "pointermove", "mouse", 120, 80);
+    await frame();
+    expect(mockLive.steer.aim).toHaveBeenLastCalledWith({ x: 60, y: 40, reach: 14 / S });
+  });
+
+  it("shows the outline round the plot a keyboard focuses, and not for a tap's focus", () => {
+    mockLive.mode = "ready";
+    render(<IslandViewport picture={live} onPlot={jest.fn()} />);
+    const four = screen.getByRole("button", { name: "แปลง #4, สวนผักดาดฟ้า" });
+    const real = Element.prototype.matches;
+    const matches = jest.spyOn(Element.prototype, "matches");
+    let keyboard = true;
+    matches.mockImplementation(function (this: Element, selector: string) {
+      return selector === ":focus-visible" ? keyboard : real.call(this, selector);
+    });
+    try {
+      act(() => four.focus());
+      expect(mockLive.steer.focus).toHaveBeenLastCalledWith("plot:4");
+      act(() => four.blur());
+      expect(mockLive.steer.focus).toHaveBeenLastCalledWith(null);
+      keyboard = false;
+      act(() => four.focus());
+      expect(mockLive.steer.focus).toHaveBeenLastCalledWith(null);
+    } finally {
+      matches.mockRestore();
+    }
+  });
+
+  it("keeps every tap where it went: a plot opens its own sheet whatever the outline shows", async () => {
+    mockLive.mode = "ready";
+    const onPlot = jest.fn();
+    const { container } = render(<IslandViewport picture={live} onPlot={onPlot} />);
+    overlay();
+    // The outline shows round plot 3 (the mouse is over it); the tap lands on plot 4's button.
+    const three = live.hotspots[0];
+    pointer(world(container), "pointermove", "mouse", ((three.x + three.w / 2) / 100) * live.width * S, ((three.y + three.h / 2) / 100) * live.height * S);
+    await frame();
+    expect(mockLive.steer.aim).toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "แปลง #4, สวนผักดาดฟ้า" }));
+    expect(onPlot).toHaveBeenCalledTimes(1);
+    expect(onPlot).toHaveBeenCalledWith(live.hotspots[1]);
   });
 });
 

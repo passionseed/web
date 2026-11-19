@@ -736,6 +736,10 @@ export class IslandFx {
       if (a) ctx.drawImage(layers.atlas, a.x, a.y, a.w, a.h, c.x, c.y, a.w, a.h);
     };
     return {
+      // The interact outline's slots (outline.ts withRing fills one): always here, so every paint's hooks have one shape.
+      beforeTree: undefined,
+      afterTree: undefined,
+      beforeActor: undefined,
       // A tree's partner breathes and blinks on its own clock (people.ts); still, the visitor as drawn.
       partner: frozen ? undefined : (i) => partnerSprite(tick, model.trees[i]?.tree.slot ?? i),
       seaFrame: frozen
