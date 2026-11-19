@@ -159,9 +159,9 @@ work.blocks[4].blocks[2].lines[3].text.th: ขายออกไปแล้ว�
 work.blocks[5].unlockLabelTh: สายนี้มีกี่แบบ
 work.blocks[5].blocks[0].lines[0].text.th: จริงๆ วิศวกรเครื่องกล เป็นชื่อเรียกกว้างๆ นะ ข้างในแยกได้อีกหลายสาย
 work.blocks[5].blocks[1].headTh: วิศวกรเครื่องกล มีสายไหนบ้าง
-work.blocks[5].blocks[1].tiles[0].titleTh: ระบบความเย็น
+work.blocks[5].blocks[1].tiles[0].titleTh: ทำความเย็น
 work.blocks[5].blocks[1].tiles[0].lineTh: แอร์ พัดลม ตู้เย็น เย็นฉ่ำแต่กินไฟน้อย แบบพัดลมเมื่อกี้
-work.blocks[5].blocks[1].tiles[1].titleTh: ยานยนต์และ EV
+work.blocks[5].blocks[1].tiles[1].titleTh: รถยนต์และ EV
 work.blocks[5].blocks[1].tiles[1].lineTh: ออกแบบรถยนต์กับรถ EV ที่โรงงานในไทยประกอบกันทุกวัน
 work.blocks[5].blocks[1].tiles[2].titleTh: โรงงานผลิต
 work.blocks[5].blocks[1].tiles[2].lineTh: คุมเครื่องจักรในโรงงาน ให้ผลิตทุกชิ้นตรงตามแบบเป๊ะ
@@ -232,7 +232,7 @@ next.og.headlineTh: สายเครื่องกลใช่เธอไห
 next.blocks[0].lines[0].text.th: มาถึงด่านสุดท้ายของ Level 1 แล้ว
 next.blocks[0].lines[1].text.th: เล่นมาทั้งหมด เธอชอบส่วนไหนที่สุด
 next.blocks[1].game.data.lines.dream: เดาระยะทดสอบรถไฟไทยทำไว้ {testrun} กม. || รู้จักรถไฟที่ทีมในไทยออกแบบเองแล้ว
-next.blocks[1].game.data.lines.work: ทดสอบพัดลมห้องเรียน แก้ถูก {score}/{total} || ทดสอบพัดลมห้องเรียนจนพร้อมผลิต
+next.blocks[1].game.data.lines.work: ทำพัดลมห้องเรียน ตอบถูก {score}/{total} || ทดสอบพัดลมห้องเรียนจนพร้อมผลิต
 next.blocks[1].game.data.lines.tonight: มีแผนแกะของชิ้นแรกแล้ว
 next.blocks[1].game.data.favourites.dream: สายที่เธอเลือกเอง: สายยานยนต์และราง งานจริงคือออกแบบของใหญ่ที่คนขึ้นนั่ง แล้วทดสอบจนมั่นใจ
 next.blocks[1].game.data.favourites.work: สายที่เธอเลือกเอง: สายออกแบบเครื่องใช้ งานจริงคือทดสอบของที่คนใช้ทุกวัน แล้วแก้จนมันไม่พัง

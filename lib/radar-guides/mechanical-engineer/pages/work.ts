@@ -251,8 +251,8 @@ export const work: GuidePage = {
       nameTh: "วิศวกรเครื่องกล",
       facts: [CARS, AIRCON],
       tiles: [
-        { id: "cooling", icon: "fan", titleTh: "ระบบความเย็น", lineTh: "แอร์ พัดลม ตู้เย็น เย็นฉ่ำแต่กินไฟน้อย แบบพัดลมเมื่อกี้", played: true },
-        { id: "auto", icon: "car", titleTh: "ยานยนต์และ EV", lineTh: "ออกแบบรถยนต์กับรถ EV ที่โรงงานในไทยประกอบกันทุกวัน" },
+        { id: "cooling", icon: "fan", titleTh: "ทำความเย็น", lineTh: "แอร์ พัดลม ตู้เย็น เย็นฉ่ำแต่กินไฟน้อย แบบพัดลมเมื่อกี้", played: true },
+        { id: "auto", icon: "car", titleTh: "รถยนต์และ EV", lineTh: "ออกแบบรถยนต์กับรถ EV ที่โรงงานในไทยประกอบกันทุกวัน" },
         { id: "factory", icon: "gear", titleTh: "โรงงานผลิต", lineTh: "คุมเครื่องจักรในโรงงาน ให้ผลิตทุกชิ้นตรงตามแบบเป๊ะ" },
         { id: "robot", icon: "robot", titleTh: "หุ่นยนต์", lineTh: "สร้างแขนกลกับหุ่นยนต์ ที่ทำงานหนักหรืองานเสี่ยงแทนคน" },
         { id: "energy", icon: "bolt", titleTh: "พลังงาน", lineTh: "ดูแลโรงไฟฟ้า กังหัน ปั๊ม ให้เดินเครื่องได้ทุกวัน" },
