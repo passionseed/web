@@ -28,25 +28,36 @@ const PLATES = {
   blue: "/hackathon/poster/elemental/plate-key-blue.png",
 } as const;
 
-/** Serif capitals breaking out of the fire, as if it were made of text. */
-function fireLetters() {
-  let a = 1234567;
+/**
+ * Serif capitals breaking out of each element, as if it were made of text:
+ * the element's own name, in its own colours, scattered inside its area.
+ */
+function elementLetters(word: string, box: [number, number, number, number], colours: string[], count: number, seed: number) {
+  let a = seed;
   const r = () => {
     a = (a * 1103515245 + 12345) % 2147483648;
     return a / 2147483648;
   };
-  const word = "ELEMENTALFIRE";
-  const colours = ["#f08a3c", "#f6e6c4", "#8a3a1c", "#8ecbe6", "#e2461b"];
-  return Array.from({ length: 24 }, (_, i) => ({
+  const [x0, y0, w, h] = box;
+  return Array.from({ length: count }, (_, i) => ({
     ch: word[i % word.length],
-    x: 712 + r() * 190,
-    y: 700 + r() * 200,
+    x: x0 + r() * w,
+    y: y0 + r() * h,
     size: 22 + Math.round(r() * 22),
     fill: colours[Math.floor(r() * colours.length)],
     rotate: (r() - 0.5) * 16,
   }));
 }
-const LETTERS = fireLetters();
+const LETTERS = [
+  // Fire: in the flame.
+  ...elementLetters("ELEMENTALFIRE", [712, 700, 190, 200], ["#f08a3c", "#f6e6c4", "#8a3a1c", "#8ecbe6", "#e2461b"], 24, 1234567),
+  // Air: in the smog over the ridge.
+  ...elementLetters("AIRAIRELEMENTAL", [200, 470, 360, 170], ["#efe7c4", "#a89155", "#5f4f33", "#d8cb9c"], 18, 7654321),
+  // Earth: in the waste on the bank.
+  ...elementLetters("EARTHEARTH", [100, 880, 480, 100], ["#f3efe6", "#9c4a1f", "#2b2824", "#c9c3b8"], 16, 2468135),
+  // Water: in the toxic green.
+  ...elementLetters("WATERWATER", [40, 1040, 380, 110], ["#e9f6d4", "#c8ee64", "#1f3d12", "#9fe22b"], 16, 1357913),
+];
 
 /**
  * One of the three facts at the bottom: a small line, the big number, a
