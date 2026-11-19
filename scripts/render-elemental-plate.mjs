@@ -269,7 +269,7 @@ const smogField = (x, y) => {
   const thick = smooth(-110, 10, above) * (1 - smooth(20, 210 + 80 * n, above));
   const reach = 1 - smooth(380, 700, x + (n - 0.5) * 220);
   // Kept below the title block.
-  const belowTitle = smooth(390, 470, y + (n - 0.5) * 60);
+  const belowTitle = smooth(425, 500, y + (n - 0.5) * 60);
   return clamp(thick * reach * belowTitle * (0.45 + 0.7 * n));
 };
 // A faint haze behind it, so the pixels sit in the air.
@@ -444,7 +444,7 @@ for (let y = WATER.y0; y < WATER.y1; y++)
     const x = Math.round((hash(k, 1, 93) * 600) / 6) * 6;
     const base = hillY(x) - 120 - hash(k, 2, 93) * 230;
     const y = Math.round(base / 6) * 6;
-    if (y < 430) continue;
+    if (y < 460) continue;
     rect(x, y, 6, hash(k, 3, 93) < 0.6 ? hex("#8a7748") : hex("#5a4b31"), 0.8);
   }
 }

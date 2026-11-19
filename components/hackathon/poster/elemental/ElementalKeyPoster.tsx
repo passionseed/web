@@ -102,11 +102,19 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey" }: { id?
       </svg>
 
       {/* Title lockup: series above, English title, the Thai elements as its second half */}
-      <div className="absolute left-[56px] top-[54px]" style={{ color: EL.ink }}>
-        <div style={{ fontFamily: EL_FONT.mono, fontSize: 17, letterSpacing: "0.22em", color: EL.inkSoft, marginLeft: 4 }}>
-          {ELEMENTAL.series.toUpperCase()}
+      <div className="absolute left-[56px] top-[46px]" style={{ color: EL.ink }}>
+        {/* Co-brand lockup: The Next Decade × PassionSeed */}
+        <div className="flex items-center gap-[18px]" style={{ marginLeft: 4 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/hackathon/HackLogo.png" alt={ELEMENTAL.series} width={125} height={50} style={{ filter: "brightness(0)", opacity: 0.85 }} />
+          <span style={{ fontFamily: EL_FONT.mono, fontSize: 20, color: EL.inkSoft }}>×</span>
+          <span className="flex items-center gap-[10px]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/passion-seed-logo.png" alt="" width={50} height={50} />
+            <span style={{ fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 28, color: EL.ink }}>PassionSeed</span>
+          </span>
         </div>
-        <h1 className="m-0 mt-[6px]" style={{ fontFamily: EL_FONT.display, lineHeight: 1.02, letterSpacing: "-0.01em" }}>
+        <h1 className="m-0 mt-[10px]" style={{ fontFamily: EL_FONT.display, lineHeight: 1.02, letterSpacing: "-0.01em" }}>
           <span className="block" style={{ fontWeight: 200, fontSize: 124 }}>
             {ELEMENTAL.edition}
           </span>
