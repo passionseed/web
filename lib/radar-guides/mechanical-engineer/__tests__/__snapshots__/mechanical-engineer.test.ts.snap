@@ -19,7 +19,7 @@ dream.blocks[1].options[2].reply[1].text.th: งั้นไปดูกัน�
 dream.blocks[2].text.th: ก.ค. 2569 ทีมวิจัยจาก สจล. กับพันธมิตรรัฐและเอกชน ส่งมอบ รถไฟไทยทำ ตู้โดยสารต้นแบบที่ทีมวิจัยออกแบบตัวรถเอง ให้การรถไฟแห่งประเทศไทย
 dream.blocks[2].titleTh: แฟ้ม: รถไฟไทยทำ
 dream.blocks[3].unlockLabelTh: ลองทายดู
-dream.blocks[3].blocks[0].lines[0].text.th: ก่อนรับผู้โดยสาร ทีมต้องมั่นใจสุดๆ ว่าวิ่งจริงแล้วจะไม่พัง
+dream.blocks[3].blocks[0].lines[0].text.th: ก่อนส่งมอบ ทีมต้องมั่นใจสุดๆ ว่าวิ่งจริงแล้วจะไม่พัง
 dream.blocks[3].blocks[0].lines[1].text.th: ลองทายดู ก่อนส่งมอบ ตู้นี้วิ่งทดสอบไปทั้งหมดกี่กิโล
 dream.blocks[3].blocks[1].game.data.promptTh: ก่อนส่งมอบ รถไฟไทยทำวิ่งทดสอบไปกี่กิโลเมตร
 dream.blocks[3].blocks[1].game.data.chart.bars[0].labelTh: ระยะวิ่งทดสอบ รถไฟไทยทำ (กม.)
