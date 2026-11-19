@@ -5,6 +5,10 @@
  */
 import { FOCUS_MINUTES, REFLECTION_MIN_CHARS, REFLECTIONS_PER_DAY, REST_MINUTES } from "@/lib/shift-island/rounds-rules";
 
+/** The long rhythm (rounds.ts LONG_FOCUS_MIN, LONG_REST_MIN); here so the copy has no import cycle. */
+const LONG_FOCUS = 50;
+const LONG_REST = 10;
+
 export const R = {
   focusTitle: `🔥 รอบโฟกัส ${FOCUS_MINUTES} นาที`,
   focus: (end: number) => `ตั้งเป้าไว้หนึ่งอย่าง แล้วลงมือเลย\nพักตอน <t:${end}:t> (<t:${end}:R>)`,
@@ -29,6 +33,14 @@ export const R = {
     "ล้างหน้า ล้างมือ",
   ],
   btnAim: "🎯 ตั้งเป้ารอบนี้",
+  /** The long rhythm: one switch for the whole fire (handlers/rounds.ts rd_long). */
+  focusTitleLong: `🔥 รอบยาว ${LONG_FOCUS} นาที`,
+  restTitleLong: `🌊 พัก ${LONG_REST} นาที`,
+  btnLong: `⏳ รอบยาว ${LONG_FOCUS} นาที`,
+  btnShort: `🔥 กลับเป็นรอบ ${FOCUS_MINUTES} นาที`,
+  longFine: `ตอนนี้กองไฟใช้รอบยาว ${LONG_FOCUS} นาที พัก ${LONG_REST} นาที ทุกคนใช้จังหวะเดียวกัน`,
+  longOn: `เปลี่ยนเป็นรอบยาว ${LONG_FOCUS} นาทีแล้ว ทุกคนที่กองไฟจะได้จังหวะนี้ด้วยกัน`,
+  longOff: `กลับเป็นรอบ ${FOCUS_MINUTES} นาที พัก ${REST_MINUTES} นาทีแล้ว`,
   btnClose: "✍️ ปิดรอบ",
 
   aimTitle: "🎯 รอบนี้จะทำอะไร",

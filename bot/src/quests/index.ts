@@ -24,6 +24,7 @@ import { digestFor, startDigestPost } from "./digest";
 import { liveFor, startLivePost } from "./live";
 import { newsFor, startNewsPost } from "./news";
 import { startRounds } from "./rounds";
+import { chimeEnabled, createCampfireVoice, restMusicEnabled } from "./chime";
 import { warmStory } from "./story";
 import { commandIdMap, setCommandIds, showError } from "./ui";
 import { startOutbox } from "./outbox";
@@ -236,7 +237,16 @@ export async function registerShiftQuests(client: Client, env: ShiftQuestsEnv): 
   /** The 18:50 campfire call; the rounds read tonight's evening guest from it. */
   let call: CallLoop | null = null;
   // Focus and rest rounds in the campfire's chat, only while someone sits at it (rounds.ts).
-  const roundLoop = campfire ? startRounds(client, campfire, { evening: (nowMs) => call?.evening(nowMs) ?? null }) : null;
+  // Sound in the voice channel (chime.ts): a chime as each focus starts, and
+  // music that fades in before each rest. SHIFT_ROUND_CHIME=off mutes all of
+  // it, SHIFT_REST_MUSIC=off only the music.
+  const voice = chimeEnabled() ? createCampfireVoice(client, { music: restMusicEnabled() }) : null;
+  const roundLoop = campfire
+    ? startRounds(client, campfire, {
+        evening: (nowMs) => call?.evening(nowMs) ?? null,
+        ...(voice ? { chime: voice.chime, restMusic: voice.restMusic } : {}),
+      })
+    : null;
   // The campfire call in the news channel and the evening guest (schema 21): one call a day, one role ping at most.
   // Started with the campfire; below schema 21 it only reads the version again each check.
   call = campfire ? startCall(client, api, { guildId: env.guildId, connected: () => connected, campfire, schema: version }) : null;
