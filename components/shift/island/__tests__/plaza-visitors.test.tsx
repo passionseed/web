@@ -5,6 +5,7 @@ import { ARRIVE_MS } from "@/lib/shift-island/live/crowd";
 import { plazaWorld } from "@/lib/shift-island/live/plaza";
 
 import { VISITORS } from "../copy";
+import { SHOP } from "../player/copy";
 import { plazaProps } from "../plazaProps";
 import { PlazaLayer } from "../live/PlazaLayer";
 
@@ -37,24 +38,24 @@ describe("today's visitors: plazaProps", () => {
     for (const visitors of [null, { count: 0, team: 0, me: false }]) {
       const props = plazaProps(null, null, null, undefined, visitors);
       expect(props.input.visitors).toEqual(visitors);
-      expect(props.labels).toEqual({});
+      expect(props.labels).toEqual({ ship: SHOP.shipSign });
     }
   });
 
   it("labels the day's count; a viewer without a team gets no team line and no tag", () => {
     const props = plazaProps(null, null, null, undefined, { count: 5, team: 0, me: false });
-    expect(props.labels).toEqual({ visitors: "วันนี้มีคนเช็กอินบนเกาะแล้ว 5 คน" });
+    expect(props.labels).toEqual({ visitors: "วันนี้มีคนเช็กอินบนเกาะแล้ว 5 คน", ship: SHOP.shipSign });
   });
 
   it("adds the team's line and the viewer's tag for the viewer's own island", () => {
     const props = plazaProps(null, null, null, undefined, { count: 5, team: 2, me: true, shirt: "l" });
-    expect(props.labels).toEqual({ visitors: "วันนี้มีคนเช็กอินบนเกาะแล้ว 5 คน\nวันนี้เพื่อนร่วมทีมเช็กอินแล้ว 2 คน", me: "คุณ" });
+    expect(props.labels).toEqual({ visitors: "วันนี้มีคนเช็กอินบนเกาะแล้ว 5 คน\nวันนี้เพื่อนร่วมทีมเช็กอินแล้ว 2 คน", me: "คุณ", ship: SHOP.shipSign });
   });
 
   it("says the whole count past the figures it can draw: no +N label", () => {
     // 20 people, a campfire of 2: the viewer, 3 teammates, 2 strollers and 2 guests by the fire; the line says 20.
     const props = plazaProps(null, null, { count: 2, joinUrl: "" }, undefined, { count: 20, team: 4, me: true, shirt: "l" });
-    expect(Object.keys(props.labels).sort()).toEqual(["campfireCount", "me", "visitors"]);
+    expect(Object.keys(props.labels).sort()).toEqual(["campfireCount", "me", "ship", "visitors"]);
     expect(props.labels.visitors).toContain("20 คน");
   });
 });

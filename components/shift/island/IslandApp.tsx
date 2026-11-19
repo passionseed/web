@@ -28,6 +28,7 @@ import { BoardSheet, MenuFoot, MenuSheet, type MenuItem } from "./HudSheets";
 import { NewsSheet } from "./news/NewsSheet";
 import { CharacterSheet } from "./player/CharacterSheet";
 import { showCoinPill } from "./player/CoinPill";
+import { ShopSheet } from "./player/ShopSheet";
 import { WalletSheet } from "./player/WalletSheet";
 import { NEWS } from "./news/copy";
 import { PRIZES_UI } from "./prizes/copy";
@@ -94,14 +95,15 @@ type Panel =
   | "campfire"
   | "character"
   | "wallet"
+  | "shop"
   | "prizes"
   | "news"
   | "consent"
   | "tree"
   | null;
 
-/** The sheets a student without a plot can open: the menu and what it leads to, and the wallet. */
-type UnclaimedPanel = Extract<Panel, "admin" | "menu" | "wallet" | "prizes" | "news" | "consent"> | null;
+/** The sheets a student without a plot can open: the menu and what it leads to, the wallet and the shop. */
+type UnclaimedPanel = Extract<Panel, "admin" | "menu" | "wallet" | "shop" | "prizes" | "news" | "consent"> | null;
 
 /**
  * A consent step waits: consent is not on file, or it is but the AI news line
@@ -140,7 +142,7 @@ function sharedItems(page: IslandPageData, onPanel: (panel: Panel) => void, stor
 } {
   const admin: MenuItem[] = page.me.admin ? [{ id: "admin", icon: "eye", label: MENU.admin, onClick: () => onPanel("admin") }] : [];
   const places: MenuItem[] = [
-    { id: "shop", icon: "coin", label: SHOP.heading, onClick: () => onPanel("wallet") },
+    { id: "shop", icon: "coin", label: SHOP.heading, onClick: () => onPanel("shop") },
     { id: "guide", icon: "signpost", label: MENU.guide, href: "/shift/island/guide" },
     { id: "story", icon: "book", label: MENU.story, onClick: story },
   ];
@@ -159,7 +161,7 @@ function sharedItems(page: IslandPageData, onPanel: (panel: Panel) => void, stor
 }
 
 /**
- * The sheets both islands share: the wallet and shop, the Demo Day prizes,
+ * The sheets both islands share: the wallet, the shop (the merchant ship), the Demo Day prizes,
  * the island news (only with news on the page) and consent (only when the
  * page knows the viewer's consent).
  */
@@ -169,7 +171,14 @@ function PlayerSheets({ page, panel, onPanel }: { page: IslandPageData; panel: P
   return (
     <>
       {page.me.admin ? <AdminOverview open={panel === "admin"} onClose={close} data={page.adminOverview ?? null} /> : null}
-      <WalletSheet open={panel === "wallet"} onClose={close} consent={page.consent} onOpenConsent={() => onPanel("consent")} />
+      <WalletSheet open={panel === "wallet"} onClose={close} onOpenShop={() => onPanel("shop")} />
+      <ShopSheet
+        open={panel === "shop"}
+        onClose={close}
+        consent={page.consent}
+        onOpenConsent={() => onPanel("consent")}
+        onOpenWallet={() => onPanel("wallet")}
+      />
       <PrizeSheet
         open={panel === "prizes"}
         onClose={close}
@@ -452,6 +461,7 @@ function IslandHome({
       if (id === "notice") setPanel("board");
       else if (id === "stage") setPanel("festival");
       else if (id === "prizes") setPanel("prizes");
+      else if (id === "ship") setPanel("shop");
       else {
         setPanel("campfire");
         loadNames();

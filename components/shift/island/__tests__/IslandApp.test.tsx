@@ -805,13 +805,15 @@ describe("IslandApp: the plaza", () => {
     expect(input.pins).toEqual(pins.map((pin) => pin.kind));
     expect(input.campfire).toEqual({ count: 3 });
     expect(input.prizes).toBe(true);
+    expect(input.ship).toBe(true);
     // The countdown board over the stage draws the days itself; the stage's name says them in words.
-    expect(labels).toEqual({ campfireCount: "3 คนกำลังทำงานอยู่" });
+    expect(labels).toEqual({ campfireCount: "3 คนกำลังทำงานอยู่", ship: SHOP.shipSign });
     expect(names).toEqual({
       notice: `กระดานเควสต์: ${pins.map((pin) => pin.title).join(" · ")}`,
       stage: "เวที Demo Day: 28 พ.ย. · อีก 17 วัน",
       campfire: "กองไฟ: ห้อง coworking มี 3 คน",
       prizes: PRIZES_UI.spot,
+      ship: SHOP.shipSpot,
     });
   });
 
@@ -856,7 +858,7 @@ describe("IslandApp: the plaza", () => {
 
   it("draws eight at the fire and its count says how many are in the room", () => {
     render(<IslandApp page={festive({ campfire: { count: 11, joinUrl: JOIN } })} picture={null} />);
-    expect(plaza().labels).toEqual({ campfireCount: "11 คนกำลังทำงานอยู่" });
+    expect(plaza().labels).toEqual({ campfireCount: "11 คนกำลังทำงานอยู่", ship: SHOP.shipSign });
   });
 
   it("draws no campfire and no stage when there is no coworking room and no season", () => {
@@ -864,11 +866,13 @@ describe("IslandApp: the plaza", () => {
     const { input, labels, names } = plaza();
     expect(input.festival).toBeNull();
     expect(input.campfire).toBeNull();
-    expect(labels).toEqual({});
-    // The Demo Day prize board always stands in the plaza.
-    expect(Object.keys(names)).toEqual(["notice", "prizes"]);
+    expect(labels).toEqual({ ship: SHOP.shipSign });
+    // The Demo Day prize board always stands in the plaza, and the merchant ship always waits offshore.
+    expect(Object.keys(names)).toEqual(["notice", "prizes", "ship"]);
     expect(input.prizes).toBe(true);
+    expect(input.ship).toBe(true);
   });
+
 
   it("opens the prizes from the prize board", () => {
     render(<IslandApp page={festive()} picture={null} />);
@@ -979,6 +983,24 @@ describe("IslandApp: the player", () => {
 
   beforeEach(() => {
     mockedLoadWallet.mockReset().mockResolvedValue({ ok: true, data: wallet });
+  });
+
+  it("opens the shop from the merchant ship on the map, reading the wallet only then", async () => {
+    render(<IslandApp page={page({ character: stats() })} picture={null} />);
+    expect(mockedLoadWallet).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: SHOP.shipSpot }));
+    const sheet = screen.getByRole("dialog", { name: SHOP.shipTitle });
+    expect(mockedLoadWallet).toHaveBeenCalledTimes(1);
+    expect(await within(sheet).findByRole("region", { name: SHOP.heading })).toBeInTheDocument();
+  });
+
+  it("goes from the shop to the wallet and back", async () => {
+    render(<IslandApp page={page({ character: stats() })} picture={null} />);
+    fireEvent.click(screen.getByRole("button", { name: SHOP.shipSpot }));
+    fireEvent.click(await within(screen.getByRole("dialog", { name: SHOP.shipTitle })).findByRole("button", { name: SHOP.toWallet }));
+    const walletSheet = screen.getByRole("dialog", { name: WALLET.title });
+    fireEvent.click(await within(walletSheet).findByRole("button", { name: SHOP.toShip }));
+    expect(screen.getByRole("dialog", { name: SHOP.shipTitle })).toBeInTheDocument();
   });
 
   it("names the chip after the student, the project and its tree as the level, and opens the character sheet", () => {

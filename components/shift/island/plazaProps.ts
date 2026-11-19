@@ -5,6 +5,7 @@ import type { NoticePin } from "@/lib/shift-island/notice";
 import type { CampfireSummary } from "@/lib/supabase/shift-quests/types";
 
 import { CAMPFIRE, FESTIVAL, NOTICE, SEASON, VISITORS, thaiShortDate } from "./copy";
+import { SHOP } from "./player/copy";
 import { PRIZES_UI } from "./prizes/copy";
 
 /** The plaza in the world: what it draws, its labels and its tap targets (IslandViewport's `plaza`). */
@@ -18,7 +19,7 @@ export interface PlazaProps {
 /**
  * The plaza for the world: the Demo Day festival, the notice board's pins
  * (null: no board), the campfire's count and today's visitors (null: none
- * drawn). Labels over the canvas are aria-hidden; each spot's accessible
+ * drawn), and the merchant ship (the shop), always moored off the coast. Labels over the canvas are aria-hidden; each spot's accessible
  * name carries the same words, and PlazaLayer reads the visitors' line out.
  * Without `onSpot` there is nothing to tap, so no names either.
  */
@@ -39,16 +40,18 @@ export function plazaProps(
     labels.visitors = `${VISITORS.count(visitors.count)}${team}`;
   }
   if (crowd.me) labels.me = VISITORS.me;
+  labels.ship = SHOP.shipSign;
   const names: PlazaProps["names"] = {};
   if (onSpot) {
     if (pins) names.notice = pins.length > 0 ? NOTICE.pinned(pins.map((pin) => pin.title)) : NOTICE.board;
     if (festival) names.stage = FESTIVAL.stage(`${date} · ${SEASON.daysLeft(festival.daysToDemo)}`);
     if (campfire) names.campfire = CAMPFIRE.spot(count);
     names.prizes = PRIZES_UI.spot;
+    names.ship = SHOP.shipSpot;
   }
   return {
-    // The Demo Day prize board always stands in the plaza.
-    input: { festival, pins: pins ? pins.map((pin) => pin.kind) : null, campfire: campfire ? { count } : null, prizes: true, visitors },
+    // The Demo Day prize board always stands in the plaza, and the merchant ship always waits offshore.
+    input: { festival, pins: pins ? pins.map((pin) => pin.kind) : null, campfire: campfire ? { count } : null, prizes: true, visitors, ship: true },
     labels,
     names,
     onSpot,

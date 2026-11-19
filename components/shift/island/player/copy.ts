@@ -97,6 +97,24 @@ export const WALLET_LABELS = {
 
 export const SHOP = {
   heading: "ร้านค้า",
+  /** DRAFT: the shop sheet's title; the shop is a merchant ship moored off the island. */
+  shipTitle: "เรือสินค้า",
+  /** DRAFT: the line under the ship in the shop sheet. */
+  shipLine: "เรือสินค้าแวะมาจอดที่เกาะ ของบนเรือแลกได้ด้วย Passioncoin จากงานที่ผ่านการตรวจ",
+  /** DRAFT: the sign over the ship on the map (aria-hidden; the tap target says shipSpot). */
+  shipSign: "ร้านค้า",
+  /** DRAFT: the ship's tap target on the map. */
+  shipSpot: "เรือสินค้า เปิดร้านค้า",
+  /** DRAFT: the balance on the shop's deck. */
+  balance: "coin ของคุณ",
+  /** DRAFT: the wallet's way to the shop. */
+  toShip: "ไปที่เรือสินค้า",
+  /** DRAFT: the shop's way back to the wallet (how coins are earned, the ledger). */
+  toWallet: "ดูว่าได้ coin จากอะไร",
+  /** DRAFT: a crate that can be redeemed now. */
+  ready: "แลกได้เลย",
+  /** DRAFT: coins so far towards a price, under its meter. */
+  progress: (have: string, cost: string) => `มีแล้ว ${have} จาก ${cost} coin`,
   /** DRAFT: physical merch preview; price and stock are not promised. */
   comingSoon: "เร็วๆ นี้",
   /** DRAFT: display prices only, never an offer to redeem unconfirmed stock. */
@@ -132,6 +150,8 @@ export const SHOP = {
   redeeming: "กำลังแลก",
   done: (item: string) => `แลก ${item} แล้ว ทีมงานจะแจ้งขั้นตอนรับของในกล่องข้อความของบอทใน Discord`,
   mineHeading: "ของที่แลกไว้",
+  /** DRAFT: the shop's rules, folded under the shelf. */
+  termsHeading: "อ่านกติกาการแลกของ",
   status: {
     reserved: "รอทีมงาน",
     processing: "ทีมงานกำลังจัดส่ง",

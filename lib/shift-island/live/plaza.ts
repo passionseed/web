@@ -25,6 +25,7 @@ import type { Festival } from "@/lib/shift-island/festival";
 import type { NoticeKind } from "@/lib/shift-island/notice";
 
 import { ARRIVE_MS, CROWD_LAYOUT, crowdActors, crowdPlan, type CrowdPlan, type VisitorsInput } from "./crowd";
+import { shipAnchor, SHIP_SIZE } from "./ship";
 import type { LiveActor } from "./types";
 
 /** Seats drawn round the campfire; the count label says how many are in the room. */
@@ -40,9 +41,11 @@ export interface PlazaInput {
   prizes?: boolean;
   /** Today's visitors (crowd.ts); null, absent or a count of 0 draws nobody. */
   visitors?: VisitorsInput | null;
+  /** true moors the merchant ship (the shop, ship.ts) off the coast nearest the plaza; it carries no data. */
+  ship?: boolean;
 }
 
-export type PlazaSpotId = "notice" | "stage" | "campfire" | "prizes";
+export type PlazaSpotId = "notice" | "stage" | "campfire" | "prizes" | "ship";
 
 /**
  * A tap target, percent (0..100) of the picture: x and y are its top-left
@@ -58,7 +61,7 @@ export interface PlazaSpot {
   h: number;
 }
 
-export type PlazaLabelId = "campfireCount" | "visitors" | "me";
+export type PlazaLabelId = "campfireCount" | "visitors" | "me" | "ship";
 
 /** A DOM label's anchor point, percent of the picture. bottom = translate(-50%, -100%), left = translate(0, -50%). */
 export interface PlazaLabel {
@@ -136,6 +139,10 @@ const FIRE_X = -35;
 const FRONT_Y = 25;
 const FLAME_MS = 250;
 const SIT_MS = 1100;
+/** The merchant ship rocks on its mooring: one frame each way. */
+const SHIP_MS = 900;
+/** The ship's sign sits over its main mast's pennant (sprite column 27), this far above the sprite. */
+const SHIP_SIGN = { x: 31, y: -2 } as const;
 const SITTERS = [ACTOR_FRAMES.sitA, ACTOR_FRAMES.sitB, ACTOR_FRAMES.sitC, ACTOR_FRAMES.sitD] as const;
 const NOTES: Record<NoticeKind, MotionSpriteName> = {
   active: "notice_note_active",
@@ -202,18 +209,19 @@ export function boothFlagAt(tree: Pick<SceneTree, "left" | "top" | "mine">, scen
 
 /**
  * The plaza's actors, tap targets and label points for this scene. Actors are
- * in draw order: goal string, lit bulbs, countdown board and its glyphs, stage, notice board, notes,
+ * in draw order: the merchant ship, goal string, lit bulbs, countdown board and its glyphs, stage, notice board, notes,
  * booth flags, prize board, campfire pit, the seats behind the fire, the
  * flame, the seats in front, then today's visitors (crowd.ts: strollers,
- * teammates, the viewer). Spots: notice, stage, prizes, campfire. Labels:
- * the campfire count, the visitors' line, the viewer's tag.
+ * teammates, the viewer). Spots: ship, notice, stage, prizes, campfire.
+ * Labels: the ship's sign, the campfire count, the visitors' line, the viewer's tag.
  */
 export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
   const { festival, pins, campfire } = input;
   const prizes = input.prizes === true;
   const crowd = plazaCrowd(input);
   const visitors = crowd.me || crowd.team + crowd.strollers + crowd.sitters + crowd.more > 0;
-  if (!festival && !pins && !campfire && !prizes && !visitors) return NO_PLAZA;
+  const ship = input.ship === true ? shipAnchor(scene, plazaCentre(scene)) : null;
+  if (!festival && !pins && !campfire && !prizes && !visitors && !ship) return NO_PLAZA;
 
   const c = plazaCentre(scene);
   const at = ([dx, dy]: Point) => ({ x: c.x + dx, y: c.y + dy });
@@ -225,6 +233,13 @@ export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
   const spots: PlazaSpot[] = [];
   const labels: PlazaLabel[] = [];
   const L = PLAZA_LAYOUT;
+
+  // The merchant ship first: it floats on the sea, under everything on land.
+  if (ship) {
+    actors.push({ frames: ACTOR_FRAMES.merchantShip, ...ship, frameMs: SHIP_MS });
+    spots.push(spotOf("ship", { ...ship, ...SHIP_SIZE }, scene));
+    labels.push(labelOf("ship", { x: ship.x + SHIP_SIGN.x, y: ship.y + SHIP_SIGN.y }, "bottom", scene));
+  }
 
   // The island goal, over the banner (the night festoon's own spot), lit bulb by bulb.
   if (festival?.lanterns && scene.banner) {

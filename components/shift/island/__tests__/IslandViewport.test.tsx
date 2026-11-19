@@ -389,6 +389,7 @@ describe("IslandViewport", () => {
       stage: "Demo Day 28 พ.ย. อีก 17 วัน",
       campfire: "ห้อง coworking, 11 คน",
       prizes: "ป้ายรางวัล Demo Day",
+      ship: "เรือสินค้า เปิดร้านค้า",
     };
     const plaza = (onSpot?: (id: PlazaSpotId) => void) => ({ input, labels, names, onSpot });
 

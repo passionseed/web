@@ -1,0 +1,336 @@
+/*
+ * The shop on the merchant ship (ShopSheet, ShopList). Tokens (--isl-*,
+ * --notch, --text-*) come from island.module.css's .sheet. Flat pixel
+ * surfaces only: wood, cream and the island's sea, no gradients or glows.
+ */
+
+/* ---------------------------------------------------------------- harbour */
+
+.harbour {
+  position: relative;
+  height: 150px;
+  overflow: hidden;
+  clip-path: var(--notch);
+}
+
+.sea {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* The ship's two frames, stacked: frame B shows for the second half of each beat. */
+.ship {
+  position: absolute;
+  left: 8px;
+  bottom: 0;
+  display: block;
+  line-height: 0;
+}
+
+.ship svg {
+  display: block;
+}
+
+.shipB {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  animation: shipRock 1.8s infinite;
+}
+
+@keyframes shipRock {
+  0% {
+    opacity: 0;
+    animation-timing-function: steps(1, end);
+  }
+  50% {
+    opacity: 1;
+    animation-timing-function: steps(1, end);
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* The student's coins on a plank, top right of the harbour. */
+.purse {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  margin: 0;
+  padding: 6px 12px 8px;
+  color: var(--isl-cream);
+  background: var(--isl-wood);
+  box-shadow:
+    inset 0 2px 0 var(--isl-wood-hi),
+    inset 0 -3px 0 rgba(26, 16, 30, 0.35);
+  clip-path: var(--notch);
+}
+
+.purseLabel {
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.purseValue {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-space-mono), monospace;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--isl-lamp);
+}
+
+.coin {
+  flex: none;
+  image-rendering: pixelated;
+}
+
+/* ---------------------------------------------------------------- shelf */
+
+.shop {
+  display: grid;
+  gap: 14px;
+}
+
+.shelf {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A crate: the item's picture on cream, its name and price beside it, everything else below. */
+.crate {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  grid-template-areas:
+    "art info"
+    "more more";
+  gap: 12px 14px;
+  padding: 12px;
+  background: rgba(121, 88, 63, 0.3);
+  box-shadow:
+    inset 0 0 0 2px rgba(200, 149, 97, 0.45),
+    inset 0 4px 0 rgba(255, 241, 214, 0.06);
+  clip-path: var(--notch);
+}
+
+.crate[data-state="ready"] {
+  box-shadow:
+    inset 0 0 0 2px var(--isl-leaf-hi),
+    inset 0 4px 0 rgba(255, 241, 214, 0.06);
+}
+
+.crate[data-state="out"] .crateArt {
+  opacity: 0.55;
+}
+
+.crate[data-state="soon"] {
+  background: rgba(121, 88, 63, 0.18);
+}
+
+.crateArt {
+  grid-area: art;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: var(--isl-cream);
+  clip-path: var(--notch);
+}
+
+.crateImage {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* The product shots are on white: multiplied onto the cream, they sit in the crate. */
+.crateImage img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 4px;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+}
+
+.crateIcon {
+  image-rendering: pixelated;
+}
+
+.crateInfo {
+  grid-area: info;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.crateName {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text-hi);
+  overflow-wrap: anywhere;
+}
+
+.crateSub {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-dim);
+  overflow-wrap: anywhere;
+}
+
+.price {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-family: var(--font-space-mono), monospace;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--isl-lamp);
+}
+
+.stamp {
+  margin-top: 2px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+  clip-path: var(--notch);
+}
+
+.stamp[data-tone="ready"] {
+  color: var(--isl-cream);
+  background: var(--action);
+}
+
+.stamp[data-tone="soon"] {
+  color: var(--isl-stone-hi);
+  background: rgba(184, 199, 191, 0.16);
+}
+
+.crateMore {
+  grid-area: more;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.crateMore:empty {
+  display: none;
+}
+
+.crateText {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.lock {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--isl-sand-hi);
+}
+
+/* Coins so far towards a price: pixel-flat, no ranking, never anyone else's number. */
+.meter {
+  display: block;
+  height: 6px;
+  background: rgba(255, 241, 214, 0.1);
+}
+
+.meterFill {
+  display: block;
+  height: 100%;
+  background: var(--isl-lamp);
+}
+
+/* ---------------------------------------------------------------- orders */
+
+.manifest {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  background: rgba(255, 241, 214, 0.04);
+  clip-path: var(--notch);
+}
+
+.order {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.order + .order {
+  padding-top: 8px;
+  border-top: 1px dashed rgba(184, 199, 191, 0.25);
+}
+
+.orderStatus {
+  display: inline-block;
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+  clip-path: var(--notch);
+}
+
+.orderStatus[data-status="reserved"] {
+  color: var(--isl-lamp);
+  background: rgba(244, 197, 106, 0.16);
+}
+
+.orderStatus[data-status="processing"] {
+  color: #bfe3ef;
+  background: rgba(67, 142, 172, 0.32);
+}
+
+.orderStatus[data-status="completed"] {
+  color: var(--isl-leaf-hi);
+  background: rgba(120, 184, 128, 0.18);
+}
+
+.orderStatus[data-status="cancelled"] {
+  color: var(--text-dim);
+  background: rgba(255, 241, 214, 0.06);
+}
+
+.terms {
+  margin: 0;
+}
+
+@media (min-width: 420px) {
+  .crate {
+    grid-template-columns: 112px minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shipB {
+    animation: none;
+    opacity: 0;
+  }
+}
