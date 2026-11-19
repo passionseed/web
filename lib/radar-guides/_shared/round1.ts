@@ -68,7 +68,7 @@ export function roundOneTeaser(): GuideBlock {
   return item(
     "round1-teaser",
     "intel",
-    "TCAS70 มี 4 รอบ รอบแรกชื่อ Portfolio มหาลัยดูจากสิ่งที่เธอลงมือทำ งานแบบคืนนี้แหละ ใส่แฟ้มได้เลย",
+    "TCAS70 มี 4 รอบ รอบแรกชื่อ Portfolio มหาลัยดูจากสิ่งที่เธอลงมือทำ งานแบบคืนนี้ เริ่มเป็นชิ้นแรกในแฟ้มได้เลย",
     { title: "รู้ไหม รอบ 1 ใช้ผลงานยื่นได้นะ", facts: [ROUNDS] }
   );
 }
@@ -83,7 +83,7 @@ export function roundOnePage(opts: RoundOneOptions): GuidePage {
     navLabelTh: ROUND_ONE_NAV_TH,
     asOf: opts.asOf,
     minutes: ROUND_ONE_MINUTES,
-    factIds: [ROUNDS, FOLIO, "f.ssru-r1", ...(opts.extraFactIds ?? [])],
+    factIds: [ROUNDS, FOLIO, ...(opts.extraFactIds ?? [])],
     og: {
       headlineTh: "TCAS รอบ 1 ใช้ผลงานของเธอยื่นได้ เริ่มเก็บตั้งแต่ตอนนี้เลย",
       stat: { th: "TCAS70 มี 4 รอบ รอบแรกคือ Portfolio", factIds: [ROUNDS] },
@@ -128,7 +128,9 @@ export function roundOnePage(opts: RoundOneOptions): GuidePage {
             `เกียรติบัตร รางวัล: ${opts.items.filter((i) => i.answer === "award").map((i) => i.labelTh).join(", ")}`,
           ],
           demoScript: [
-            { at: 600, action: "tap", target: `folio.item-${opts.items[0].id}-bin-${opts.items[0].answer}` },
+            // Cards layout: tap the card, then its bin (SortGame's demo targets).
+            { at: 600, action: "tap", target: `folio.item-${opts.items[0].id}` },
+            { at: 1300, action: "tap", target: `folio.bin-${opts.items[0].answer}` },
             { at: 2400, action: "wait" },
           ],
         },
@@ -143,20 +145,14 @@ export function roundOnePage(opts: RoundOneOptions): GuidePage {
         "แล้วตอนนี้ฉันอยู่ ม.ไหนล่ะ",
         dialogue(
           "grade",
-          host("ถ้าอยู่ ม.6 รอบ 1 ปีนี้บางที่ยังเปิดรับอยู่ แต่ละคณะปิดไม่พร้อมกันนะ", { facts: [ROUNDS] }),
+          host("ถ้าอยู่ ม.6 รอบ 1 ปีนี้บางคณะยังเปิดรับอยู่ แต่ละคณะปิดไม่พร้อมกันนะ", { facts: [ROUNDS] }),
           host("ถ้าอยู่ ม.5 เธอยังมีเวลาอีกเกือบปี ลองทำชิ้นแรกให้เสร็จก่อนเลย"),
           host("ถ้าอยู่ ม.4 เวลาเยอะสุด ลองได้หลายอย่างเลย ไม่ต้องรีบเลือก", { mood: "wink" })
         ),
         item(
-          "ssru",
-          "notification",
-          "อย่างเช่น สวนสุนันทาเปิดรับรอบ 1 ถึง 9 ก.พ. 2570",
-          { title: "ยังเปิดอยู่", meta: "Eduzones", facts: ["f.ssru-r1"], badge: "pending" }
-        ),
-        item(
           "honesty",
           "intel",
-          "รอบ 1 ไม่ได้ง่ายกว่ารอบอื่น แต่ละคณะมีเกณฑ์อย่างเกรดขั้นต่ำ เช็กประกาศของคณะที่สนใจทุกครั้งนะ",
+          "รอบ 1 ไม่ได้ง่ายกว่ารอบอื่น แต่ละคณะมีเกณฑ์ เช่น เกรดขั้นต่ำ เช็กประกาศของคณะที่สนใจทุกครั้งนะ",
           { title: "พูดตรงๆ" }
         ),
         {
@@ -171,7 +167,7 @@ export function roundOnePage(opts: RoundOneOptions): GuidePage {
         "bridge",
         ...(opts.bridge ?? [
           sys("ผลงานชิ้นแรกไม่ต้องใหญ่โตเลย"),
-          host("อยากรู้เรื่องเงินเดือนกับที่เรียนต่อใช่ไหม", { mood: "wow" }),
+          host("อยากรู้เรื่องที่เรียนต่อกับงานจริงของสายนี้อีกใช่ไหม", { mood: "wow" }),
           host("กด แผนที่ด่าน ข้างล่าง ไปดูข้อมูลเต็มของสายนี้ได้เลย"),
         ])
       ),
