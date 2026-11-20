@@ -284,13 +284,13 @@ const MISSION_ICONS: IconName[] = ["magnifier", "person", "sprout"];
  * company-profile-past-events (events.md, history.md, numbers.md; Angpao,
  * 2026-11-20), not merged into main yet.
  */
-const HISTORY: [string, string, string][] = [
-  ["2568", "ค่าย TechSeed", "ค่ายลงมือทำโปรเจกต์ 4 รุ่น (TechSeed #2–#5)"],
-  ["ก.ย. 2568", "COE PSU Open House", "ร่วมกับมหาวิทยาลัยสงขลานครินทร์ เวิร์กช็อปออนไลน์ 300 ที่นั่ง"],
-  ["2568", "BizSeed", "ร่วมกับ CSII"],
-  ["ก.พ.–มิ.ย. 2569", "The Next Decade ครั้งแรก", "แฮกกาธอนด้านสุขภาพ ผู้เข้าร่วม 800 คน"],
-  ["ก.ย. 2569", "ค่าย SHIFT", "ค่าย 7 วัน ลงมือทำโปรเจกต์ให้คนจริงใช้"],
-  ["ธ.ค. 2569", "Elemental Hackathon", "The Next Decade ครั้งที่ 2"],
+const HISTORY: [string, string, string, string | null][] = [
+  ["2568", "ค่าย TechSeed", "ค่ายลงมือทำโปรเจกต์ 4 รุ่น (TechSeed #2–#5)", null],
+  ["ก.ย. 2568", "COE PSU Open House", "ร่วมกับมหาวิทยาลัยสงขลานครินทร์ เวิร์กช็อปออนไลน์ 300 ที่นั่ง", "/hackathon/elemental/sponsor/past-coe-psu.webp"],
+  ["2568", "BizSeed", "ร่วมกับ CSII", "/hackathon/elemental/sponsor/past-bizseed.webp"],
+  ["ก.พ.–มิ.ย. 2569", "The Next Decade ครั้งแรก", "แฮกกาธอนด้านสุขภาพ ผู้เข้าร่วม 800 คน", "/hackathon/elemental/sponsor/past-next-decade.webp"],
+  ["ก.ย. 2569", "ค่าย SHIFT", "ค่าย 7 วัน ลงมือทำโปรเจกต์ให้คนจริงใช้", "/hackathon/elemental/sponsor/past-shift.webp"],
+  ["ธ.ค. 2569", "Elemental Hackathon", "The Next Decade ครั้งที่ 2", "/hackathon/poster/elemental/sheets/elemental-key.webp"],
 ];
 
 /**
@@ -469,7 +469,7 @@ export function SponsorDeck() {
         <Tag n="03 SCALE" light />
         <H2>ขนาดโครงการและผลงานที่ได้</H2>
         <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-[1fr_1.1fr]">
-          <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+          <div className="grid grid-cols-2 gap-x-8 gap-y-6 md:grid-cols-4 lg:grid-cols-2">
             <Stat light big={`${TARGET}+`} label="ผู้เข้าร่วม (เป้าหมาย)" />
             <Stat light big="5" label="หัวข้อการแข่งขัน" />
             <Stat light big={ELEMENTAL.days} label="วัน ช่วงวันหยุดยาว" />
@@ -521,8 +521,8 @@ export function SponsorDeck() {
       <Section id="program">
         <Tag n="04 PROGRAM" />
         <H2>กำหนดการโครงการ</H2>
-        <div className="mt-8 grid grid-cols-1 gap-3 lg:grid-cols-[150px_repeat(4,1fr)_170px]" style={{ fontFamily: EL_FONT.display }}>
-          <div className="border-l-2 py-1 pl-3" style={{ borderColor: LINE_DARK }}>
+        <div className="mt-8 grid grid-cols-1 gap-3 md:grid-cols-4 lg:grid-cols-[150px_repeat(4,1fr)_170px]" style={{ fontFamily: EL_FONT.display }}>
+          <div className="border-l-2 py-1 pl-3 md:col-span-4 lg:col-span-1" style={{ borderColor: LINE_DARK }}>
             <p className="m-0 text-[15px]" style={{ color: EL.creamSoft }}>
               ตั้งแต่ 23 พ.ย.
             </p>
@@ -548,19 +548,19 @@ export function SponsorDeck() {
               ))}
             </div>
           ))}
-          <div className="border-l-2 py-1 pl-3" style={{ borderColor: LINE_DARK }}>
+          <div className="flex items-center gap-3 rounded-[3px] px-3 py-2 md:col-span-3 md:col-start-2 lg:col-span-3 lg:col-start-3" style={{ background: "rgba(56,201,194,0.14)" }}>
+            <PixelIcon name="bubble" color={EL.toxicCyan} size={22} />
+            <span className="text-[15px]" style={{ fontWeight: 300 }}>
+              ตลอด 3 วัน มีแหล่งเรียนรู้ให้ศึกษาด้วยตัวเอง และฟอรัมถาม-ตอบเมื่อติดปัญหา
+            </span>
+          </div>
+          <div className="border-l-2 py-1 pl-3 md:col-span-4 lg:col-span-1 lg:col-start-6 lg:row-start-1" style={{ borderColor: LINE_DARK }}>
             <p className="m-0 text-[15px]" style={{ color: EL.creamSoft }}>
               ศุกร์ 11 ธ.ค.
             </p>
             <p className="m-0 mt-1 text-[16px] leading-[1.5]" style={{ fontWeight: 300 }}>
               เปิดรับสมัคร Request for Winners: บ่มเพาะ 4 สัปดาห์ จบด้วย Demo Day
             </p>
-          </div>
-          <div className="flex items-center gap-3 rounded-[3px] px-3 py-2 lg:col-span-3 lg:col-start-3" style={{ background: "rgba(56,201,194,0.14)" }}>
-            <PixelIcon name="bubble" color={EL.toxicCyan} size={22} />
-            <span className="text-[15px]" style={{ fontWeight: 300 }}>
-              ตลอด 3 วัน มีแหล่งเรียนรู้ให้ศึกษาด้วยตัวเอง และฟอรัมถาม-ตอบเมื่อติดปัญหา
-            </span>
           </div>
         </div>
         <div className="mt-6 flex flex-wrap gap-5 text-[14px]" style={{ fontFamily: EL_FONT.display, color: EL.creamSoft }}>
@@ -658,9 +658,9 @@ export function SponsorDeck() {
           PassionSeed ก่อตั้งในปี 2568 จัดค่ายระยะสั้นที่นักเรียนมัธยมปลายลงมือทำโปรเจกต์จริงและนำไปใช้กับคนจริง พันธกิจของเราคือช่วยให้นักเรียนได้เลือกทางของตัวเอง
           ทำได้จริง และมีคนรอบตัวที่สนับสนุน (ตามทฤษฎี Self-Determination) เพื่อให้ใช้ชีวิตได้อย่างมีความหมาย
         </Body>
-        <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-3">
+        <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-3">
           <Stat light
-            big="~800"
+            big={<span className="text-[34px] sm:text-[44px]">~800</span>}
             label={
               <>
                 นักเรียนที่เข้าค่าย Seed Camp และ TechSeed
@@ -668,13 +668,20 @@ export function SponsorDeck() {
               </>
             }
           />
-          <Stat light big="800" label="ผู้เข้าร่วม The Next Decade ครั้งแรก (2569)" />
-          <Stat light big="HK Tech 300" label="ผู้ร่วมก่อตั้ง Bunyasit Fang ชนะการแข่งขัน HK Tech 300 Southeast Asia Start-up Competition ปี 2567 ในฐานะ CEO ของ Portex Innovation" />
+          <Stat light big={<span className="text-[34px] sm:text-[44px]">800</span>} label="ผู้เข้าร่วม The Next Decade ครั้งแรก (2569)" />
+          <Stat light big={<span className="whitespace-nowrap text-[30px] sm:text-[36px]">HK Tech 300</span>} label="ผู้ร่วมก่อตั้ง Bunyasit Fang ชนะ HK Tech 300 Southeast Asia Start-up Competition (2567) ในฐานะ CEO ของ Portex Innovation" />
         </div>
-        <ol className="relative m-0 mt-10 grid list-none grid-cols-2 gap-x-4 gap-y-6 p-0 lg:grid-cols-6" style={{ fontFamily: EL_FONT.display }}>
-          <span aria-hidden="true" className="absolute left-0 right-0 top-[5px] hidden h-[2px] lg:block" style={{ background: LINE_LIGHT }} />
-          {HISTORY.map(([when, what, detail], i) => (
+        <ol className="relative m-0 mt-8 grid list-none grid-cols-2 gap-x-4 gap-y-6 p-0 md:grid-cols-6" style={{ fontFamily: EL_FONT.display }}>
+          {HISTORY.map(([when, what, detail, img], i) => (
             <li key={what} className="relative">
+              <div className="deck-history-pic mb-3 flex aspect-[4/5] max-h-[100px] lg:max-h-[130px] w-full items-center justify-center overflow-hidden rounded-[3px]" style={{ background: "rgba(29,33,31,0.07)" }}>
+                {img ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={img} alt={what} className="h-full w-full object-cover object-top" />
+                ) : (
+                  <PixelIcon name="sprout" color={EL.toxicGreen} size={40} />
+                )}
+              </div>
               <span className="relative block h-3 w-3" style={{ background: i === HISTORY.length - 1 ? EL.flame : EL.ink }} />
               <p className="m-0 mt-3 text-[13px]" style={{ color: EL.inkSoft }}>
                 {when}
@@ -899,6 +906,7 @@ const PRINT_CSS = `
   .elemental-deck #tracks img { aspect-ratio: 16 / 10; }
   /* Four package cards fill the page: a smaller heading keeps it on one. */
   .elemental-deck #packages h2 { font-size: 40px; }
+  .elemental-deck #about .deck-history-pic { max-height: 96px; }
   .elemental-deck .deck-page:last-child { break-after: auto; page-break-after: auto; }
   .elemental-deck .deck-no-print { display: none !important; }
 }
