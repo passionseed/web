@@ -57,7 +57,7 @@ export default async function GalleryPage({
             height: "64px",
           }}
         >
-          <Link href="/hackathon" style={{ display: "inline-flex", alignItems: "center", lineHeight: 0 }}>
+          <Link href="/hackathon/past/healthcare" style={{ display: "inline-flex", alignItems: "center", lineHeight: 0 }}>
             <img
               src="/hackathon/HackLogo.png"
               alt="The Next Decade Hackathon"

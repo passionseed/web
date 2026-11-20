@@ -1,27 +1,23 @@
-import { cookies } from "next/headers";
-import { getSessionParticipant } from "@/lib/hackathon/db";
-import { SESSION_COOKIE } from "@/lib/hackathon/auth";
-import LandingPage from "@/components/hackathon/LandingPage";
-import { Metadata } from "next";
+import type { Metadata } from "next";
+
+import { ElementalLanding } from "@/components/hackathon/elemental/ElementalLanding";
+import { ELEMENTAL, prizeTotal, thaiDateLine } from "@/components/hackathon/poster/elemental/facts";
+import { elementalRegistrationOpen, normalizeSource } from "@/lib/hackathon/elemental/registration";
 
 export const metadata: Metadata = {
-  title: "Hackathon 2026 | The Next Decade",
-  description: "Join the Next Decade Hackathon to build the future of Preventive & Predictive Healthcare and Mental Health.",
+  title: `${ELEMENTAL.edition} Hackathon | ${ELEMENTAL.series}`,
+  description: `${ELEMENTAL.edition} Hackathon: ดิน น้ำ ลม ไฟ ${thaiDateLine()} รางวัลรวม ${prizeTotal()} บาท สมัครคนเดียว ฿${ELEMENTAL.priceBaht} มากับเพื่อน ฿${ELEMENTAL.groupPriceBaht} ต่อคน`,
 };
 
-export default async function HackathonPage() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE)?.value;
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-  let isLoggedIn = false;
-  if (token) {
-    try {
-      const participant = await getSessionParticipant(token);
-      isLoggedIn = !!participant;
-    } catch {
-      isLoggedIn = false;
-    }
-  }
+const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
-  return <LandingPage isLoggedIn={isLoggedIn} />;
+/** The current hackathon. Past ones live at /hackathon/past. */
+export default async function HackathonPage({ searchParams }: { searchParams: SearchParams }) {
+  const params = await searchParams;
+  // Keep the tracked link (?src=ig, or utm_source) through to the sign-up form.
+  const src = normalizeSource(first(params.src) ?? first(params.utm_source));
+  const joinHref = src ? `/hackathon/join?src=${src}` : "/hackathon/join";
+  return <ElementalLanding joinHref={joinHref} open={elementalRegistrationOpen()} />;
 }

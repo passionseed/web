@@ -64,7 +64,7 @@ function LandingPageInner({ isLoggedIn }: LandingPageProps) {
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                        page_path: "/hackathon",
+                        page_path: "/hackathon/past/healthcare",
                         referrer: document.referrer || null,
                     }),
                 });

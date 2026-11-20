@@ -42,7 +42,7 @@ const PAGES: Record<string, PosterCopy> = {
   "/radar": { title: "RADAR", subtitle: "สำรวจเส้นทาง ค้นพบสิ่งที่อยากลอง", label: "FIND YOUR DIRECTION" },
   "/faculty-radar": { title: "FACULTY RADAR", subtitle: "สำรวจคณะและเส้นทางที่อยากไป", label: "EXPLORE YOUR OPTIONS" },
   "/direction-finder": { title: "FIND YOUR WAY", subtitle: "เริ่มจากตัวคุณ แล้วค่อยเลือกก้าวต่อไป", label: "DIRECTION FINDER" },
-  "/hackathon": { title: "HACKATHON", subtitle: "รวมทีม ลงมือสร้าง แก้ปัญหาจริง", label: "THE NEXT DECADE", theme: "bloom" },
+  "/hackathon": { title: "ELEMENTAL", subtitle: "ดิน น้ำ ลม ไฟ รวมทีมสร้างทางแก้ของจริง", label: "THE NEXT DECADE / HACKATHON", theme: "bloom" },
   "/hackathon/gallery": { title: "BUILT BY US", subtitle: "ไอเดียของนักเรียน ที่กลายเป็นผลงานจริง", label: "HACKATHON / GALLERY", theme: "bloom" },
   "/seeds": { title: "PLANT A SEED", subtitle: "เลือกสิ่งที่อยากลอง แล้วเริ่มลงมือทำ", label: "EXPLORE / LEARN / BUILD" },
   "/map": { title: "YOUR NEXT STEP", subtitle: "ทุกก้าวที่ลงมือทำ พาคุณไปข้างหน้า", label: "LEARNING MAPS" },
