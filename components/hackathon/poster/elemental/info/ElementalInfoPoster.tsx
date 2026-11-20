@@ -24,6 +24,10 @@ const trirong = Trirong({
 export const W = 1080;
 export const H = 1350;
 const PAD = 72;
+/** Slide 1's picture with no type, so the carousel reads as one piece. */
+const PLATE = "/hackathon/poster/elemental/plate-key.png";
+/** How much of the dark ground covers the picture (1 hides it). */
+const VEIL = 0.8;
 const YEAR_TH = Number(ELEMENTAL.startDate.slice(0, 4)) + 543;
 
 /** 9x9 pixel shapes, one per element. */
@@ -83,6 +87,11 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
       className={`${trirong.variable} relative overflow-hidden`}
       style={{ width: W, height: H, backgroundColor: EL.char, color: EL.cream, padding: PAD, boxSizing: "border-box", display: "flex", flexDirection: "column" }}
     >
+      {/* Slide 1's picture, behind a see-through dark veil so the type stays readable. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={PLATE} alt="" width={W} height={H} className="absolute inset-0 h-full w-full" />
+      <div className="absolute inset-0" style={{ backgroundColor: EL.char, opacity: VEIL }} />
+
       {/* Grain, like the key visual's film. */}
       <svg className="pointer-events-none absolute inset-0" width={W} height={H} aria-hidden="true" style={{ opacity: 0.16, mixBlendMode: "screen" }}>
         <filter id={`${id}-grain`}>
