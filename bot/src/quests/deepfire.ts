@@ -249,6 +249,21 @@ function sayDone(done: Done): void {
   if (said.length > 0) console.log(`[shift-quests] deep fire: ${said.join(", ")}`);
 }
 
+/**
+ * The running module's way to read the lobby setting now (the pattern of
+ * rounds.ts's refreshRounds). Null while no module runs.
+ */
+let refreshHook: (() => Promise<void>) | null = null;
+
+/**
+ * Reads the lobby setting and checks the lobby at once, instead of at the next
+ * minute's heartbeat: /admin channel kind:deepfire calls it right after the
+ * save, so someone who joins the lobby a moment later gets a room. Never throws.
+ */
+export function refreshDeepFire(): Promise<void> {
+  return refreshHook ? refreshHook() : Promise.resolve();
+}
+
 export function startDeepFire(client: Client, api: QuestApi, options: DeepFireOptions): DeepFire {
   const { guildId } = options;
   const cap = options.cap ?? MAX_ROOMS;
@@ -708,6 +723,13 @@ export function startDeepFire(client: Client, api: QuestApi, options: DeepFireOp
     return run;
   }
 
+  /** A heartbeat that starts after any running one, which may have read the setting before it changed. */
+  async function refresh(): Promise<void> {
+    if (ticking) await ticking;
+    await poll();
+  }
+  refreshHook = refresh;
+
   if ((options.schema ?? 0) >= DEEPFIRE_SCHEMA) turnOn(options.schema ?? DEEPFIRE_SCHEMA);
   const timer = setInterval(() => void poll(), BEAT_MS);
   timer.unref?.();
@@ -722,6 +744,7 @@ export function startDeepFire(client: Client, api: QuestApi, options: DeepFireOp
     },
     async stop() {
       stopped = true;
+      if (refreshHook === refresh) refreshHook = null;
       clearInterval(timer);
       if (retryTimer !== undefined) clearTimeout(retryTimer);
       client.off(Events.VoiceStateUpdate, onVoice);

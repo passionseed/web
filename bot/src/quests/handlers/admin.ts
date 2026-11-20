@@ -10,7 +10,7 @@ import { QuestDbError, QuestError } from "../api";
 import { openToStudents } from "../campfire";
 import { requireStaff, type Ctx } from "../context";
 import { BLOCKER, STAFF_AWARD_LABEL, T, bkkDate, safe } from "../copy";
-import { DEEPFIRE_SCHEMA, lobbyProblem, type LobbyGuild } from "../deepfire";
+import { DEEPFIRE_SCHEMA, lobbyProblem, refreshDeepFire, type LobbyGuild } from "../deepfire";
 import { DEEPFIRE_ADMIN } from "../deepfireCopy";
 import { cid, isUuid } from "../ids";
 import { I, stageBar } from "../island/copy";
@@ -558,6 +558,9 @@ export const admin: HandlerSet = {
         if (!botCanKeepLivePost(i, chosen.id)) throw new GateError(T.adminNewsBotPerms);
       }
       const status = await ctx.api.call<Status>("shift_quest_admin_set", ctx.userId, `${kind}_channel`, chosen?.id ?? "");
+      // The deep fire reads its lobby on a one-minute heartbeat: read it now, so the next join gets a room. Not
+      // awaited: the reply never waits for the database.
+      if (kind === "deepfire") void refreshDeepFire();
       await show(i, statusView(status, true));
     },
 

@@ -9,7 +9,7 @@ import { COMMAND_HANDLERS, registerShiftQuests } from "..";
 import { QuestDbError, type QuestApi, type Session } from "../api";
 import { questCommands } from "../commands";
 import type { Ctx } from "../context";
-import { DEEPFIRE_SCHEMA, lobbyProblem, startDeepFire } from "../deepfire";
+import { DEEPFIRE_SCHEMA, lobbyProblem, refreshDeepFire, startDeepFire } from "../deepfire";
 import { CHAT_DENY, MEMBER, OWNER_ALLOW, ROLE, ROOM_BITS, roomOverwrites, type Overwrite } from "../deepfire-state";
 import { DEEPFIRE, DEEPFIRE_ADMIN } from "../deepfireCopy";
 import { statusView } from "../handlers/admin";
@@ -625,6 +625,27 @@ describe("startDeepFire", () => {
     await s.deepfire.stop();
   });
 
+  it("reads a lobby just set by /admin at once and gives whoever already waits there a room, before the next heartbeat", async () => {
+    const s = await started({ lobby: null, before: (w) => w.seat(A, LOBBY) });
+    expect(s.guild.channels.create).not.toHaveBeenCalled();
+    s.setting.lobby = LOBBY;
+    await refreshDeepFire();
+    await settle();
+    expect(s.deepfire.status()).toEqual({ on: true, lobby: LOBBY, ready: true });
+    expect(s.guild.channels.create).toHaveBeenCalledTimes(1);
+    expect(s.where(A)).toBe(s.rooms()[0].id);
+    await s.deepfire.stop();
+  });
+
+  it("a refresh after stop does nothing", async () => {
+    const s = await started();
+    await s.deepfire.stop();
+    const before = s.calls.length;
+    await refreshDeepFire();
+    await settle();
+    expect(s.calls.length).toBe(before);
+  });
+
   it("with the lobby cleared, builds nothing and says not ready", async () => {
     const s = await started({ lobby: null });
     expect(s.beats()).toEqual([false]);
@@ -1122,6 +1143,28 @@ describe("/admin channel kind:deepfire", () => {
     expect(saved(c)).toEqual([["shift_quest_admin_set", ACTOR, "deepfire_channel", LOBBY]]);
     const reply = r.sent[0] as { flags?: number };
     expect((reply.flags ?? 0) & MessageFlags.Ephemeral).toBe(MessageFlags.Ephemeral);
+  });
+
+  it("wakes the deep fire right after saving, so the next join gets a room without waiting for its heartbeat", async () => {
+    const logs = jest.spyOn(console, "log").mockImplementation(() => undefined);
+    const world = fakeWorld();
+    const db = fakeApi({ lobby: null });
+    const deepfire = startDeepFire(world.asClient, db.api, { guildId: GUILD, connected: () => true, schema: DEEPFIRE_SCHEMA });
+    try {
+      await settle();
+      expect(deepfire.status().lobby).toBeNull();
+      db.setting.lobby = LOBBY;
+      const c = ctx();
+      const { lobby, guild } = guildWith();
+      await run(c, lobby, guild).done;
+      await settle();
+      expect(saved(c)).toHaveLength(1);
+      // No timer advanced: the save itself made the module read the lobby.
+      expect(deepfire.status()).toEqual({ on: true, lobby: LOBBY, ready: true });
+    } finally {
+      await deepfire.stop();
+      logs.mockRestore();
+    }
   });
 
   it("clears it like every other kind", async () => {

@@ -72,6 +72,8 @@ below that the founder did not make is marked as the builder's.
   gateway is connected, the lobby is a cached voice channel in a category,
   the bot has the four permissions on both (and the room permissions on
   the category), and Discord has not refused a room since the last beat.
+  `/admin channel kind:deepfire` also runs a heartbeat right after it saves,
+  so a new lobby takes effect at once, not up to a minute later.
   The answer is the lobby's id; a changed lobby is checked at once and
   beaten again when its readiness differs. The heartbeat runs beside the
   work on the rooms, never in front of it, and gives up on a database that
