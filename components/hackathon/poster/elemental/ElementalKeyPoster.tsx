@@ -48,7 +48,7 @@ function fireLetters() {
 }
 const LETTERS = fireLetters();
 
-/** A pixel trophy: flame-orange cup, a light glint, ember base. */
+/** A pixel trophy in black and white: ink cup and base, a white glint (Angpao, 2026-11-20). */
 const TROPHY = [
   "###########",
   "#.#h#####.#",
@@ -61,7 +61,7 @@ const TROPHY = [
   "...bbbbb...",
   "..bbbbbbb..",
 ];
-const TROPHY_FILL: Record<string, string> = { "#": EL.flame, h: EL.flameCore, b: EL.ember };
+const TROPHY_FILL: Record<string, string> = { "#": EL.ink, h: "#ffffff", b: EL.ink };
 
 function PixelTrophy({ cell }: { cell: number }) {
   const w = TROPHY[0].length;
