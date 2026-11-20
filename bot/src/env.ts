@@ -9,9 +9,9 @@
  * "shift-voice"). Each module checks only the variables it needs.
  */
 
-export type BotModule = "shift-voice" | "shift-quests" | "projectseed";
+export type BotModule = "shift-voice" | "shift-quests" | "projectseed" | "hackathon-ops";
 
-const KNOWN_MODULES: BotModule[] = ["shift-voice", "shift-quests", "projectseed"];
+const KNOWN_MODULES: BotModule[] = ["shift-voice", "shift-quests", "projectseed", "hackathon-ops"];
 
 export interface CoreEnv {
   discordToken: string;
@@ -50,11 +50,29 @@ export interface ShiftQuestsEnv {
   databaseUrl: string;
 }
 
+/** The staff operations board (/ops and the morning post) in one staff server. */
+export interface HackathonOpsEnv {
+  /** The only server /ops answers in and is registered to. */
+  guildId: string;
+  /** The only channel the morning post goes to, and the only one with public replies. */
+  channelId: string;
+  /** Only members holding this role may use /ops. */
+  staffRoleId: string;
+  /**
+   * Postgres URL for the least-privilege hackathon_ops_bot role, through the
+   * Supavisor pooler. Never the service role key: see migration 20261120100000.
+   */
+  databaseUrl: string;
+  /** Which board's rows to read: the seed script's --board. */
+  board: string;
+}
+
 export interface LoadedEnv {
   core: CoreEnv;
   projectseed: BotEnv | null;
   shiftVoice: ShiftVoiceEnv | null;
   shiftQuests: ShiftQuestsEnv | null;
+  hackathonOps: HackathonOpsEnv | null;
 }
 
 function optional(name: string): string | undefined {
@@ -65,6 +83,26 @@ function required(name: string): string {
   const value = optional(name);
   if (!value) {
     throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+}
+
+/** A Discord ID from the environment: digits only, so a pasted name or URL fails at startup. */
+function snowflake(name: string): string {
+  const value = required(name);
+  if (!/^\d{17,20}$/.test(value)) {
+    throw new Error(`${name} must be a Discord ID (17 to 20 digits)`);
+  }
+  return value;
+}
+
+/** The board key the seed script writes and the bot reads (same rule as the database). */
+export const DEFAULT_OPS_BOARD = "hackathon";
+
+function opsBoard(): string {
+  const value = optional("HACKATHON_OPS_BOARD") ?? DEFAULT_OPS_BOARD;
+  if (!/^[a-z0-9][a-z0-9-]{0,63}$/.test(value)) {
+    throw new Error("HACKATHON_OPS_BOARD must be lowercase letters, digits and dashes");
   }
   return value;
 }
@@ -98,7 +136,10 @@ function resolveToken(modules: Set<BotModule>): string {
       "DISCORD_SHIFT_BOT_TOKEN and DISCORD_BOT_TOKEN are different bots; run the SHIFT modules and projectseed as separate processes"
     );
   }
-  const token = usesShift ? shift : shared;
+  let token = usesShift ? shift : shared;
+  // hackathon-ops has no token of its own: it rides on whichever bot the
+  // process already runs as, and alone it prefers the shared token.
+  if (!token && modules.has("hackathon-ops")) token = shift;
   if (!token) {
     throw new Error(
       usesShift
@@ -139,5 +180,17 @@ export function loadEnv(): LoadedEnv {
     ? { guildId: required("DISCORD_SHIFT_GUILD_ID"), databaseUrl: required("SHIFT_QUEST_DATABASE_URL") }
     : null;
 
-  return { core, projectseed, shiftVoice, shiftQuests };
+  // Every value is required: nothing posts and no command answers unless the
+  // server, the channel, the staff role and the database login are all set.
+  const hackathonOps: HackathonOpsEnv | null = modules.has("hackathon-ops")
+    ? {
+        guildId: snowflake("HACKATHON_OPS_GUILD_ID"),
+        channelId: snowflake("HACKATHON_OPS_CHANNEL_ID"),
+        staffRoleId: snowflake("HACKATHON_OPS_STAFF_ROLE_ID"),
+        databaseUrl: required("HACKATHON_OPS_DATABASE_URL"),
+        board: opsBoard(),
+      }
+    : null;
+
+  return { core, projectseed, shiftVoice, shiftQuests, hackathonOps };
 }

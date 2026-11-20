@@ -36,12 +36,15 @@ export async function registerCommands(env: BotEnv): Promise<void> {
     id: string;
   };
 
-  await rest.put(
-    Routes.applicationGuildCommands(application.id, env.guildId),
-    { body: COMMANDS }
-  );
+  // One upsert per command (a POST creates or updates a command by name).
+  // Never a PUT: that replaces the guild's whole list and would delete the
+  // commands other modules registered there with the same bot (SHIFT High's,
+  // /ops on the team server).
+  for (const command of COMMANDS) {
+    await rest.post(Routes.applicationGuildCommands(application.id, env.guildId), { body: command });
+  }
 
-  console.log(`Registered ${COMMANDS.length} command(s) to guild ${env.guildId}`);
+  console.log(`Registered ${COMMANDS.length} command(s) to guild ${env.guildId}; other commands left alone`);
 }
 
 function formatHours(seconds: number): string {
