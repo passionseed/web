@@ -48,6 +48,33 @@ function fireLetters() {
 }
 const LETTERS = fireLetters();
 
+/** A pixel trophy: flame-orange cup, a light glint, ember base. */
+const TROPHY = [
+  "###########",
+  "#.#h#####.#",
+  "#.#h#####.#",
+  ".#.h####.#.",
+  "...#####...",
+  "....###....",
+  ".....#.....",
+  ".....#.....",
+  "...bbbbb...",
+  "..bbbbbbb..",
+];
+const TROPHY_FILL: Record<string, string> = { "#": EL.flame, h: EL.flameCore, b: EL.ember };
+
+function PixelTrophy({ cell }: { cell: number }) {
+  const w = TROPHY[0].length;
+  const h = TROPHY.length;
+  return (
+    <svg width={w * cell} height={h * cell} viewBox={`0 0 ${w} ${h}`} shapeRendering="crispEdges" aria-hidden="true" style={{ display: "block", flex: "none" }}>
+      {TROPHY.flatMap((row, y) =>
+        Array.from(row).map((c, x) => (TROPHY_FILL[c] ? <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill={TROPHY_FILL[c]} /> : null)),
+      )}
+    </svg>
+  );
+}
+
 /**
  * One of the three facts at the bottom: a small line, the big number, a
  * small line. Three facts, three sizes, so the eye knows what leads.
@@ -64,8 +91,6 @@ function Fact({ above, big, below, align = "left" }: { above?: ReactNode; big: R
 }
 
 export function ElementalKeyPoster({ id = "elemental-key", sky = "grey" }: { id?: string; sky?: keyof typeof PLATES }) {
-  // The order every Thai student says them: ดิน น้ำ ลม ไฟ.
-  const thai = (["earth", "water", "air", "fire"] as const).map((k) => ELEMENTAL.elements.find((e) => e.key === k)?.th ?? "");
   return (
     <div id={id} className={`${trirong.variable} relative overflow-hidden`} style={{ width: W, height: H, backgroundColor: "#2a2b26" }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -122,12 +147,10 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey" }: { id?
             Hackathon
           </span>
         </h1>
-        <div className="mt-[8px]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 42, lineHeight: "56px", marginLeft: 4 }}>
-          {thai.join(" · ")}
-        </div>
-        {/* What it is, in one line (Angpao, 2026-11-20). */}
-        <div className="mt-[6px]" style={{ fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 32, lineHeight: "44px", marginLeft: 4, color: EL.ink }}>
-          แข่งขันแก้ปัญหาสภาพแวดล้อม
+        {/* What it is, in one line, with a pixel trophy (Angpao, 2026-11-20). */}
+        <div className="mt-[8px] flex items-center gap-[16px]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 42, lineHeight: "56px", marginLeft: 4 }}>
+          <span>แข่งขันแก้ปัญหาสภาพแวดล้อม</span>
+          <PixelTrophy cell={4} />
         </div>
       </div>
 
