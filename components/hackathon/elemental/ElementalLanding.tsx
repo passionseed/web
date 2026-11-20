@@ -81,11 +81,11 @@ export function ElementalLanding({ joinHref, open }: { joinHref: string; open: b
           </p>
           <p className="mt-6 max-w-lg text-lg leading-relaxed">
             ปัญหาสิ่งแวดล้อมส่วนใหญ่ไม่ได้เกิดขึ้นเอง มีคนทำให้มันเกิด รวมทีมมาสร้างทางแก้ของจริง
-            ตลอดวันหยุดยาว {ELEMENTAL.days} วัน
+            ตลอดวันหยุดยาว {ELEMENTAL.days} วัน {ELEMENTAL.venueTh} อยู่ที่ไหนก็ร่วมได้
           </p>
 
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Fact label="วันที่" value={thaiDateLine()} note={`หยุดยาว ${ELEMENTAL.days} วัน`} />
+            <Fact label="วันที่" value={thaiDateLine()} note={`หยุดยาว ${ELEMENTAL.days} วัน · ${ELEMENTAL.venueTh}`} />
             <Fact label="รางวัลรวม" value={`${prizeTotal()} บาท`} />
             <Fact
               label="ค่าสมัคร"
