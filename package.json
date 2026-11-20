@@ -146,7 +146,7 @@
     "fast-blurhash": "^1.2.0",
     "framer-motion": "^12.34.0",
     "gifenc": "1.0.3",
-    "googleapis": "^172.0.0",
+    "googleapis": "^190.0.0",
     "groq-sdk": "^1.1.1",
     "gsap": "^3.14.2",
     "heic2any": "^0.0.4",
