@@ -10,6 +10,8 @@ import { formatThaiDate } from "@/lib/content/shift-cohort";
  * - Elements and theme: private/hackathon-december-2026.md (PR #87) and
  *   Angpao, 2026-11-19 (Aether is the fifth element).
  * - Prize total: told by Angpao, 2026-11-19 (not yet in company-brain).
+ * - Sign-up closes Thu 3 Dec 2026 (hackathon-ops registration.md); a group
+ *   is 2 or more people (Big's draft there) and pays on one slip.
  * Change a fact here, never in a poster.
  */
 export const ELEMENTAL = {
@@ -25,6 +27,12 @@ export const ELEMENTAL = {
   prizeTotalBaht: 20000,
   theme: "Environmental negligence",
   url: "passionseed.org/hackathon",
+  /** Database key for registrations. */
+  slug: "elemental-2026",
+  /** Last day to sign up, Bangkok time (inclusive). */
+  registrationClosesOn: "2026-12-03",
+  /** Largest group on one sign-up. */
+  maxGroupSize: 5,
   elements: [
     { key: "water", en: "Water", th: "น้ำ" },
     { key: "earth", en: "Earth", th: "ดิน" },

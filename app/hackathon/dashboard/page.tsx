@@ -692,7 +692,7 @@ export default function HackathonDashboardPage() {
                 variant="outline"
                 className="w-full bg-[#1a2530]/40 hover:bg-[#1a2530]/80 border-[#4a6b82]/30 hover:border-[#7aa4c4]/60 text-gray-300 hover:text-white transition-all py-5 font-[family-name:var(--font-mitr)]"
               >
-                <Link href="/hackathon" className="flex flex-col items-center gap-1.5 h-auto">
+                <Link href="/hackathon/past/healthcare" className="flex flex-col items-center gap-1.5 h-auto">
                   <Home className="h-4 w-4 text-[#7aa4c4]" />
                   <span className="text-xs">หน้าแรก</span>
                 </Link>

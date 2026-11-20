@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 /** /admin/hackathon itself only redirects to Activities, so it has no tab. */
 export const HACKATHON_ITEMS = [
+  { href: "/admin/hackathon/registrations", label: "Elemental sign-ups" },
   { href: "/admin/hackathon/activities", label: "Activities" },
   { href: "/admin/hackathon/participants", label: "Participants" },
   { href: "/admin/hackathon/teams", label: "Teams" },
