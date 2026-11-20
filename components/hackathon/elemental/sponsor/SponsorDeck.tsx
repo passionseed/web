@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL, prizeTotal, thaiDayRange } from "@/components/hackathon/poster/elemental/facts";
 
+import { DeckEditor } from "./DeckEditor";
 import { PrintButton } from "./PrintButton";
 
 /**
@@ -28,6 +29,11 @@ import { PrintButton } from "./PrintButton";
  * - <Draft> is something written down but not decided, or Claude's proposal.
  * Both print, so a PDF with gaps can't go out by accident. Remove them only
  * when a person confirms the line.
+ *
+ * Editing: on `next dev`, open the page with ?edit (or the button at the
+ * bottom right), click any text and type, then Save. DeckEditor.tsx and
+ * deck-edits.ts write the change into this file. Keep deck text as plain
+ * strings and JSX text so it stays editable there.
  */
 
 const trirong = Trirong({
@@ -49,6 +55,7 @@ const YEAR_TH = Number(ELEMENTAL.startDate.slice(0, 4)) + 543;
 function Fill({ children }: { children: ReactNode }) {
   return (
     <mark
+      data-deck-fill
       className="rounded-[2px] px-[6px] py-[1px]"
       style={{ background: EL.toxicYellow, color: EL.ink, fontFamily: EL_FONT.mono, fontSize: "min(0.72em, 16px)", letterSpacing: "0.02em", verticalAlign: "middle" }}
     >
@@ -61,6 +68,7 @@ function Fill({ children }: { children: ReactNode }) {
 function Draft({ children = "ร่าง" }: { children?: ReactNode }) {
   return (
     <span
+      data-deck-draft
       className="ml-2 inline-block rounded-[2px] px-[5px] py-[1px] align-middle"
       style={{ background: EL.toxicCyan, color: EL.ink, fontFamily: EL_FONT.mono, fontSize: 11, letterSpacing: "0.04em", lineHeight: "16px" }}
     >
@@ -690,6 +698,9 @@ export function SponsorDeck() {
           <PrintButton />
         </div>
       </Section>
+
+      {/* Local edit mode: `next dev` only, never on the site. */}
+      {process.env.NODE_ENV === "development" ? <DeckEditor /> : null}
     </main>
   );
 }
