@@ -10,15 +10,17 @@ import { PrintButton } from "./PrintButton";
  * Elemental Hackathon sponsor deck: one scrollable page that also prints as
  * an A4 landscape PDF, one section per page.
  *
- * Order: cover with the ask, project overview, sponsor benefits, past
- * event, brand safety, sponsorship packages, timeline, competition details,
- * contact. Headings use the words Thai sponsorship proposals use
- * (ข้อมูลโครงการ, สิทธิประโยชน์, รูปแบบการสนับสนุน, กำหนดการ), not translations.
+ * Order: cover, then six pages on the hackathon itself (vision and
+ * mission, tracks, scale and deliverables, program, why it's different,
+ * about PassionSeed), then what a sponsor gets: benefits, past event, brand
+ * safety, packages, contact. Angpao set this order on 2026-11-20. Headings
+ * use the words Thai sponsorship proposals use, not translations.
  *
  * Sources: passionseed/company-brain on main, 2026-11-20:
  * private/hackathon-december-2026.md, private/hackathon-elemental-theme-and-rules.md,
  * private/hackathon-december-2026-rules.md, private/hackathon-december-2026-judging.md
- * and decisions/log.md. Event facts come from facts.ts. Last edition's
+ * and decisions/log.md. About PassionSeed: company.md, history.md, team.md and
+ * numbers.md. Contact: told by Angpao, 2026-11-20. Event facts come from facts.ts. Last edition's
  * sponsors and partners: the live /hackathon page (components/hackathon/LandingPage.tsx).
  *
  * Two markers keep this honest until a person fills it in:
@@ -67,7 +69,7 @@ function Draft({ children = "ร่าง" }: { children?: ReactNode }) {
   );
 }
 
-function Tag({ n, light = false }: { n: string; children?: ReactNode; light?: boolean }) {
+function Tag({ n, light = false }: { n: string; light?: boolean }) {
   return (
     <p className="m-0 mb-4 text-[13px] sm:text-[14px]" style={{ fontFamily: EL_FONT.mono, color: light ? EL.inkSoft : EL.creamSoft }}>
       <span style={{ letterSpacing: "0.12em" }}>[{n}]</span>
@@ -132,7 +134,7 @@ function Stat({ big, label, light = false }: { big: ReactNode; label: ReactNode;
 
 function Package({ name, en, slots, price, items, accent, draft }: { name: string; en: string; slots: ReactNode; price: ReactNode; items: ReactNode[]; accent: string; draft?: ReactNode }) {
   return (
-    <div className="flex flex-col border p-5 sm:p-6" style={{ borderColor: LINE_LIGHT, background: "rgba(255,255,255,0.4)" }}>
+    <div className="flex flex-col border p-5 sm:p-6" style={{ borderColor: LINE_LIGHT, background: PAPER, color: EL.ink }}>
       <span className="mb-4 block h-[6px] w-12" style={{ background: accent }} />
       <p className="m-0 text-[12px]" style={{ fontFamily: EL_FONT.mono, color: EL.inkSoft }}>
         <span style={{ letterSpacing: "0.12em" }}>{en.toUpperCase()}</span>
@@ -185,6 +187,62 @@ const LAST_PARTNERS = [
   { src: "/hackathon/StemLike.png", alt: "STEM Like Her" },
 ];
 
+/** Participant target: at least 350 (Big, 2026-11-19, company-brain). */
+const TARGET = 350;
+
+/** Claude's draft from the concept page; nobody has decided it. */
+const MISSION: [string, string][] = [
+  ["ทำความเข้าใจปัญหาจริง", `ชวนนักเรียน ${TARGET} คนขึ้นไป มาศึกษาปัญหาสิ่งแวดล้อมจริงใน 5 หัวข้อ`],
+  ["ลงมือแก้ให้คนจริง", "ทุกทีมพัฒนาผลงานที่ช่วยคนจริงอย่างน้อย 1 คน และทดสอบกับคนจริง"],
+  ["ต่อยอดหลังการแข่งขัน", "ผลงานที่ดีที่สุดได้ต่อยอดในโครงการ Request for Winners"],
+];
+
+/** What each team hands in (Claude's draft in private/hackathon-december-2026.md). */
+const DELIVERABLES = [
+  "ปัญหาและคนที่เจอปัญหา สรุปใน 1 ย่อหน้า",
+  "หลักฐานจากคนนอกทีมอย่างน้อย 3 คน ว่าได้ลองใช้และพูดว่าอะไร",
+  "ต้นแบบที่ใช้งานได้ หรือการสาธิตบริการที่ชัดเจน",
+  "คลิปนำเสนอ 90 วินาที",
+  "แผนสิ่งที่จะทำต่อใน 4 สัปดาห์ถัดไป",
+];
+
+/**
+ * Program outline. Decided: the dates, the optional Friday 19:00
+ * orientation (Big, 2026-11-20) and Request for Winners from 11 December.
+ * The rest is the draft schedule, marked true.
+ */
+const PROGRAM: [string, string, boolean][] = [
+  ["ตั้งแต่ 23 พ.ย.", "เปิดรับสมัครและประชาสัมพันธ์ พร้อมโลโก้ผู้สนับสนุน", true],
+  ["ศุกร์ 4 ธ.ค.", "ปฐมนิเทศ 19:00 น. ไม่บังคับ มีบันทึกย้อนหลัง ผู้สมัครเดี่ยวเริ่มจับคู่ทีม", false],
+  ["เสาร์ 5 ธ.ค.", "เปิดงาน 13:00 น. เลือกธาตุ ตั้งทีม และหาคนจริงที่เจอปัญหา แล้วเริ่มพัฒนาผลงาน พร้อมเวิร์กช็อปและพี่เลี้ยงประจำแต่ละธาตุ", true],
+  ["อาทิตย์ 6 ธ.ค.", "พัฒนาและทดสอบผลงานกับคนจริง เวิร์กช็อปการนำเสนอใน 90 วินาที", true],
+  ["จันทร์ 7 ธ.ค.", "ส่งผลงาน 09:00 น. กรรมการตัดสิน รอบชิงชนะเลิศและประกาศผล 18:00 น.", true],
+  ["ศุกร์ 11 ธ.ค.", "เปิดรับสมัครโครงการ Request for Winners: บ่มเพาะ 4 สัปดาห์ จบด้วย Demo Day", false],
+];
+
+/** Why this hackathon is different. true = Claude's draft. */
+const WHY: [string, string, boolean][] = [
+  ["แก้ปัญหาให้คนจริง", "ทุกทีมเริ่มจากคนจริง 1 คนที่เจอปัญหา และต้องทดสอบผลงานกับคนนอกทีมอย่างน้อย 3 คน คะแนนส่วนที่มากที่สุด (30%) มาจากหลักฐานนี้", true],
+  ["หัวข้อที่นักเรียนเห็นอยู่ทุกวัน", "ดิน น้ำ ลม ไฟ เป็นปัญหาที่นักเรียนเห็นในข่าว ส่วนธาตุที่ 5 เช่น ข่าวปลอมและการอ้างว่ารักษ์โลกเกินจริง อยู่ในฟีดของนักเรียนเองทุกวัน", true],
+  ["ไม่จบที่วันประกาศผล", "ผู้ชนะได้เข้าโครงการ Request for Winners บ่มเพาะ 4 สัปดาห์ เพื่อต่อยอดผลงานเป็นธุรกิจจริง จบด้วย Demo Day", false],
+  ["ใช้วิธีเดียวกับค่าย SHIFT", "ใช้วิธีที่ PassionSeed ใช้ในค่าย SHIFT: เริ่มจากคนจริง พัฒนาเร็ว ทดสอบกับคนจริง และเก็บหลักฐาน", true],
+];
+
+/** true = draft (PR #87), not decided. */
+const SAFETY: [string, string, boolean][] = [
+  ["ไม่ระบุชื่อบริษัทหรือคดีใด", "สื่อของงานไม่ระบุชื่อบริษัทหรือคดีใด ผู้เข้าร่วมพัฒนาผลงานเพื่อแก้ปัญหา ไม่ใช่เพื่อกล่าวโทษผู้ใด", false],
+  ["คัดเลือกผู้สนับสนุนที่สอดคล้องกับหัวข้อ", "ผู้สนับสนุนทุกรายผ่านการพิจารณาว่าสอดคล้องกับหัวข้อของงาน", true],
+  ["ไม่ส่งต่อข้อมูลผู้เข้าร่วม", "ผู้สนับสนุนจะไม่ได้รับรายชื่อหรือข้อมูลติดต่อของผู้เข้าร่วม การสื่อสารทั้งหมดผ่าน PassionSeed ในช่องทางสาธารณะ", false],
+  ["ดูแลความปลอดภัยของนักเรียน", "ไม่มีช่องทางสื่อสารส่วนตัวระหว่างผู้ใหญ่กับนักเรียน ขอความยินยอมจากผู้ปกครองก่อนเผยแพร่ภาพนักเรียน และผลการตัดสินเป็นของคณะกรรมการเท่านั้น", false],
+];
+
+/** The sponsor contact (told by Angpao, 2026-11-20). */
+const CONTACT = {
+  name: "นายเศรษฐ์ฐคุณ อมรรัตนศริ",
+  role: "ผู้ร่วมก่อตั้ง PassionSeed",
+  phone: "095-413-9393",
+};
+
 export function SponsorDeck() {
   const el = (k: string) => ELEMENTAL.elements.find((e) => e.key === k)!;
   return (
@@ -234,9 +292,8 @@ export function SponsorDeck() {
               <div className="text-[24px] font-light sm:text-[28px]">{prizeTotal()} บาท</div>
             </div>
             <div>
-              <div className="text-[15px]" style={{ color: EL.inkSoft }}>ยืนยันการสนับสนุนภายใน</div>
-              <div className="text-[24px] font-light sm:text-[28px]">26 พ.ย. {YEAR_TH}</div>
-              <Draft />
+              <div className="text-[15px]" style={{ color: EL.inkSoft }}>ผู้เข้าร่วม (เป้าหมาย)</div>
+              <div className="text-[24px] font-light sm:text-[28px]">{TARGET}+ คน</div>
             </div>
           </div>
         </div>
@@ -246,118 +303,147 @@ export function SponsorDeck() {
         </div>
       </section>
 
-      {/* 01 Project overview */}
-      <Section id="overview" tone="paper">
-        <Tag n="01 OVERVIEW" light>
-          ข้อมูลโครงการ
-        </Tag>
-        <H2>ข้อมูลโครงการ</H2>
-        <div className="mt-6 border-b" style={{ borderColor: LINE_LIGHT }}>
-          <Row light label="ชื่อโครงการ">
-            {ELEMENTAL.edition} Hackathon
-          </Row>
+      {/* 01 Vision and mission */}
+      <Section id="vision" tone="paper">
+        <Tag n="01 VISION" light />
+        <H2>วิสัยทัศน์และพันธกิจ</H2>
+        <p className="m-0 mt-6 max-w-[980px] text-[26px] leading-[1.5] sm:text-[34px]" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>
+          ให้นักเรียนมัธยมปลายเห็นว่า ปัญหาสิ่งแวดล้อมใกล้ตัวแก้ได้ และพวกเขาลงมือแก้ได้เอง
+          <Draft>วิสัยทัศน์และพันธกิจ: Claude ร่าง</Draft>
+        </p>
+        <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-3">
+          {MISSION.map(([title, text], i) => (
+            <div key={title} className="border-t pt-4" style={{ borderColor: LINE_LIGHT }}>
+              <p className="m-0 text-[13px]" style={{ fontFamily: EL_FONT.mono, color: EL.inkSoft }}>
+                พันธกิจ {i + 1}
+              </p>
+              <h3 className="m-0 mt-2 text-[21px] leading-[1.4]" style={{ fontFamily: EL_FONT.display, fontWeight: 400 }}>
+                {title}
+              </h3>
+              <p className="m-0 mt-2 text-[16px] leading-[1.65]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, color: EL.inkSoft }}>
+                {text}
+              </p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-8 grid grid-cols-1 gap-x-10 border-b sm:grid-cols-2" style={{ borderColor: LINE_LIGHT }}>
           <Row light label="ผู้จัด">
             {ELEMENTAL.series} และ PassionSeed
           </Row>
           <Row light label="วันจัดงาน">
             {thaiDayRange()} {YEAR_TH} ({ELEMENTAL.days} วัน ช่วงวันหยุดยาว)
           </Row>
-          <Row light label="รูปแบบ">
-            การแข่งขันพัฒนาผลงานเป็นทีม ทำงานผ่าน Discord และ whiteboard ของ PassionSeed
-          </Row>
           <Row light label="ผู้เข้าร่วม">
-            นักเรียนมัธยมศึกษาตอนปลาย ม.4–ม.6 เป้าหมาย 350 คนขึ้นไป
-            <Draft>ม.4–ม.6 ร่าง</Draft>
+            นักเรียน ม.4–ม.6 ทั่วประเทศ
+            <Draft />
           </Row>
-          <Row light label="หัวข้อการแข่งขัน">
-            ปัญหาสิ่งแวดล้อม แบ่งเป็น 5 หัวข้อ เรียกว่า 5 ธาตุ: ดิน น้ำ ลม ไฟ และธาตุที่ 5 (ผลกระทบที่มองไม่เห็น) รายละเอียดอยู่ในหน้า 07
-          </Row>
-          <Row light label="เงินรางวัลรวม">
-            {prizeTotal()} บาท
-          </Row>
-          <Row light label="แพ็กเกจการสนับสนุน">
-            เริ่มต้น <Fill>lowest price</Fill>
-          </Row>
-          <Row light label="ผู้ประสานงาน">
-            <Fill>contact person and channel</Fill>
+          <Row light label="รูปแบบ">
+            ออนไลน์ ผ่าน Discord และ whiteboard ของ PassionSeed
+            <Draft />
           </Row>
         </div>
       </Section>
 
-      {/* 02 Benefits */}
-      <Section id="benefits">
-        <Tag n="02 BENEFITS">สิทธิประโยชน์</Tag>
-        <H2>สิทธิประโยชน์ของผู้สนับสนุน</H2>
-        <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-3">
-          <Stat big={<Fill>reach</Fill>} label="ยอดการมองเห็นบน Instagram ของ PassionSeed ช่วงประชาสัมพันธ์" />
-          <Stat big="350+" label="ผู้เข้าร่วมที่เห็นโลโก้ผู้สนับสนุนตลอด 3 วัน (เป้าหมาย)" />
-          <Stat big={<Fill>posts</Fill>} label="โพสต์ประชาสัมพันธ์ที่มีโลโก้ผู้สนับสนุน บน Instagram ของ PassionSeed และ The Next Decade" />
+      {/* 02 Tracks */}
+      <Section id="tracks">
+        <Tag n="02 TRACKS" />
+        <H2>หัวข้อการแข่งขัน: 5 ธาตุ</H2>
+        <Body>
+          หัวข้อหลักคือ Environmental negligence: ธุรกิจที่ทำร้ายสิ่งแวดล้อมเพื่อลดต้นทุนหรือเพิ่มกำไร เราแบ่งปัญหาออกเป็น 5 ธาตุ แต่ละทีมเลือกธาตุเดียวหรือหลายธาตุก็ได้
+          แล้วพัฒนาผลงานที่ช่วยคนจริงอย่างน้อย 1 คน
+        </Body>
+        <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-5">
+          {ELEMENTS.map(({ key, topic }) => {
+            const e = el(key);
+            return (
+              <div key={key}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={`/hackathon/elemental/sponsor/el-${key}.webp`} alt="" className="aspect-square w-full object-cover" style={{ imageRendering: "pixelated" }} />
+                <p className="m-0 mt-3 text-[22px]" style={{ fontFamily: EL_FONT.display, fontWeight: 400 }}>
+                  {e.th}
+                  <span className="ml-2 text-[13px]" style={{ fontFamily: EL_FONT.mono, color: EL.creamSoft }}>
+                    {e.en.toUpperCase()}
+                  </span>
+                </p>
+                <p className="m-0 mt-1 text-[14px] leading-[1.55]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, color: EL.creamSoft }}>
+                  {topic}
+                </p>
+              </div>
+            );
+          })}
         </div>
-        <div className="mt-8 border-b" style={{ borderColor: LINE_DARK }}>
-          <Row label="ก่อนงาน">
-            โลโก้บนโปสเตอร์ โพสต์ประชาสัมพันธ์ และหน้ารับสมัคร
-            <Draft>Claude ร่าง</Draft>
-          </Row>
-          <Row label="ระหว่างงาน">โลโก้บนหัวข้อที่สนับสนุนและในช่อง Discord ของงาน กล่าวขอบคุณบนเวทีรอบชิงชนะเลิศ</Row>
-          <Row label="หลังงาน">
-            รายงานสรุปผลโครงการ: จำนวนผู้สมัคร ทีม ผลงาน และยอดการมองเห็นของโพสต์ พร้อมภาพและคลิปบรรยากาศที่ได้รับความยินยอมแล้ว
-            <Draft>Claude ร่าง</Draft>
-          </Row>
-        </div>
-      </Section>
-
-      {/* 03 Past event */}
-      <Section id="past" tone="paper">
-        <Tag n="03 PAST EVENT" light>
-          ผลงานที่ผ่านมา
-        </Tag>
-        <H2>{ELEMENTAL.series} ครั้งที่ผ่านมา</H2>
-        <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-3">
-          <Stat light big={<Fill>participants</Fill>} label="ผู้เข้าร่วม" />
-          <Stat light big={<Fill>teams</Fill>} label="ทีมที่ส่งผลงาน" />
-          <Stat light big={<Fill>sign-ups so far</Fill>} label="ผู้สมัครครั้งนี้ ณ ปัจจุบัน" />
-        </div>
-        <p className="m-0 mt-10 text-[15px]" style={{ fontFamily: EL_FONT.display, color: EL.inkSoft }}>
-          ผู้สนับสนุนครั้งที่ผ่านมา
-          <Draft>ยืนยันการใช้โลโก้</Draft>
+        <p className="m-0 mt-6 text-[14px]" style={{ fontFamily: EL_FONT.display, color: EL.creamSoft }}>
+          สื่อและผลงานของงานไม่ระบุชื่อบริษัทหรือคดีใด ผู้เข้าร่วมแก้ปัญหา ไม่ได้กล่าวโทษผู้ใด
         </p>
-        <div className="mt-4 flex flex-wrap items-center gap-x-8 gap-y-5">
-          {LAST_SPONSORS.map((s) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img key={s.alt} src={s.src} alt={s.alt} className="h-10 w-auto object-contain sm:h-12" />
-          ))}
-        </div>
-        <p className="m-0 mt-8 text-[15px]" style={{ fontFamily: EL_FONT.display, color: EL.inkSoft }}>
-          พันธมิตรครั้งที่ผ่านมา
-        </p>
-        <div className="mt-4 flex flex-wrap items-center gap-x-8 gap-y-5">
-          {LAST_PARTNERS.map((s) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img key={s.alt} src={s.src} alt={s.alt} className="h-14 w-auto object-contain sm:h-16" />
-          ))}
+      </Section>
+
+      {/* 03 Scale and deliverables */}
+      <Section id="scale" tone="paper">
+        <Tag n="03 SCALE" light />
+        <H2>ขนาดโครงการและผลงานที่ได้</H2>
+        <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-[1fr_1.1fr]">
+          <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+            <Stat light big={`${TARGET}+`} label="ผู้เข้าร่วม (เป้าหมาย)" />
+            <Stat light big="5" label="หัวข้อการแข่งขัน" />
+            <Stat light big={ELEMENTAL.days} label="วัน ช่วงวันหยุดยาว" />
+            <Stat light big={prizeTotal()} label="บาท เงินรางวัลรวม" />
+          </div>
+          <div>
+            <p className="m-0 text-[17px]" style={{ fontFamily: EL_FONT.display, fontWeight: 400 }}>
+              ผลงานที่ทุกทีมต้องส่ง
+              <Draft />
+            </p>
+            <ol className="m-0 mt-3 list-none border-b p-0" style={{ borderColor: LINE_LIGHT, fontFamily: EL_FONT.display }}>
+              {DELIVERABLES.map((d, i) => (
+                <li key={d} className="grid grid-cols-[32px_1fr] border-t py-[10px] text-[16px] leading-[1.55]" style={{ borderColor: LINE_LIGHT, fontWeight: 300 }}>
+                  <span style={{ fontFamily: EL_FONT.mono, color: EL.inkSoft }}>{i + 1}</span>
+                  <span>{d}</span>
+                </li>
+              ))}
+            </ol>
+            <p className="m-0 mt-4 text-[15px] leading-[1.6]" style={{ fontFamily: EL_FONT.display, color: EL.inkSoft }}>
+              ทีมละ 2–4 คน ผู้สมัครเดี่ยวจะได้รับการจับคู่เข้าทีม ค่าสมัคร {ELEMENTAL.priceBaht} บาทต่อคน หรือ {ELEMENTAL.groupPriceBaht} บาทต่อคนเมื่อสมัครพร้อมเพื่อน
+              <Draft>ขนาดทีม ร่าง</Draft>
+            </p>
+          </div>
         </div>
       </Section>
 
-      {/* 04 Brand safety */}
-      <Section id="safety">
-        <Tag n="04 BRAND SAFETY">ความปลอดภัยของแบรนด์</Tag>
-        <H2>แนวทางดูแลแบรนด์ผู้สนับสนุน</H2>
-        <Body>หัวข้อของงานเป็นเรื่องสิ่งแวดล้อม เราจึงวางแนวทางไว้ชัดเจน เพื่อให้ผู้สนับสนุนมั่นใจได้</Body>
-        <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          {(
-            [
-              ["ไม่ระบุชื่อบริษัทหรือคดีใด", "สื่อของงานไม่ระบุชื่อบริษัทหรือคดีใด ผู้เข้าร่วมพัฒนาผลงานเพื่อแก้ปัญหา ไม่ใช่เพื่อกล่าวโทษผู้ใด", false],
-              ["คัดเลือกผู้สนับสนุนที่สอดคล้องกับหัวข้อ", "ผู้สนับสนุนทุกรายผ่านการพิจารณาว่าสอดคล้องกับหัวข้อของงาน", true],
-              ["ไม่ส่งต่อข้อมูลผู้เข้าร่วม", "ผู้สนับสนุนจะไม่ได้รับรายชื่อหรือข้อมูลติดต่อของผู้เข้าร่วม การสื่อสารทั้งหมดผ่าน PassionSeed ในช่องทางสาธารณะ", false],
-              ["ดูแลความปลอดภัยของนักเรียน", "ไม่มีช่องทางสื่อสารส่วนตัวระหว่างผู้ใหญ่กับนักเรียน ขอความยินยอมจากผู้ปกครองก่อนเผยแพร่ภาพนักเรียน และผลการตัดสินเป็นของคณะกรรมการเท่านั้น", false],
-            ] as const
-          ).map(([title, text, draft]) => (
-            <div key={title} className="border-t pt-5" style={{ borderColor: LINE_DARK }}>
-              <h3 className="m-0 text-[20px] leading-[1.4]" style={{ fontFamily: EL_FONT.display, fontWeight: 400 }}>
+      {/* 04 Program outline */}
+      <Section id="program">
+        <Tag n="04 PROGRAM" />
+        <H2>กำหนดการโครงการ</H2>
+        <ol className="m-0 mt-8 list-none border-b p-0" style={{ borderColor: LINE_DARK, fontFamily: EL_FONT.display }}>
+          {PROGRAM.map(([when, what, draft], i) => (
+            <li key={i} className="grid grid-cols-[120px_1fr] gap-4 border-t py-3 sm:grid-cols-[190px_1fr]" style={{ borderColor: LINE_DARK }}>
+              <span className="text-[18px]" style={{ fontWeight: 400 }}>
+                {when}
+              </span>
+              <span className="text-[17px] leading-[1.6]" style={{ fontWeight: 300, color: EL.creamSoft }}>
+                {what}
+                {draft ? <Draft /> : null}
+              </span>
+            </li>
+          ))}
+        </ol>
+        <p className="m-0 mt-5 text-[15px] leading-[1.6]" style={{ fontFamily: EL_FONT.display, color: EL.creamSoft }}>
+          การตัดสิน: กรรมการ 2 คนพิจารณาทุกทีม 8 ทีมสุดท้ายนำเสนอสดต่อกรรมการ 3 คน และมีรางวัลขวัญใจผู้เข้าร่วม
+          <Draft />
+        </p>
+      </Section>
+
+      {/* 05 Why this hackathon */}
+      <Section id="why" tone="paper">
+        <Tag n="05 WHY US" light />
+        <H2>จุดเด่นของโครงการ</H2>
+        <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2">
+          {WHY.map(([title, text, draft]) => (
+            <div key={title} className="border-t pt-5" style={{ borderColor: LINE_LIGHT }}>
+              <h3 className="m-0 text-[22px] leading-[1.4]" style={{ fontFamily: EL_FONT.display, fontWeight: 400 }}>
                 {title}
                 {draft ? <Draft /> : null}
               </h3>
-              <p className="m-0 mt-3 text-[16px] leading-[1.7]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, color: EL.creamSoft }}>
+              <p className="m-0 mt-3 text-[16px] leading-[1.7]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, color: EL.inkSoft }}>
                 {text}
               </p>
             </div>
@@ -365,17 +451,121 @@ export function SponsorDeck() {
         </div>
       </Section>
 
-      {/* 05 Packages */}
-      <Section id="packages" tone="paper">
-        <Tag n="05 PACKAGES" light>
-          รูปแบบการสนับสนุน
-        </Tag>
+      {/* 06 About PassionSeed */}
+      <Section id="about">
+        <Tag n="06 ABOUT US" />
+        <H2>เกี่ยวกับ PassionSeed</H2>
+        <Body>
+          PassionSeed ก่อตั้งในปี 2568 จัดค่ายระยะสั้นที่นักเรียนมัธยมปลายลงมือทำโปรเจกต์จริงและนำไปใช้กับคนจริง พันธกิจของเราคือช่วยให้นักเรียนได้เลือกทางของตัวเอง
+          ทำได้จริง และมีคนรอบตัวที่สนับสนุน (ตามทฤษฎี Self-Determination) เพื่อให้ใช้ชีวิตได้อย่างมีความหมาย
+        </Body>
+        <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-3">
+          <Stat
+            big="~800"
+            label={
+              <>
+                นักเรียนที่เข้าค่าย Seed Camp และ TechSeed
+                <Draft>ยืนยันตัวเลข</Draft>
+              </>
+            }
+          />
+          <Stat big={<Fill>how many</Fill>} label="รุ่นของค่าย SHIFT ค่าย 7 วันที่นักเรียนพัฒนาโปรเจกต์ให้คนจริงใช้" />
+          <Stat big="HK Tech 300" label="ผู้ร่วมก่อตั้ง Bunyasit Fang ชนะการแข่งขัน HK Tech 300 Southeast Asia Start-up Competition ปี 2567 ในฐานะ CEO ของ Portex Innovation" />
+        </div>
+        <div className="mt-8 border-b" style={{ borderColor: LINE_DARK }}>
+          <Row label="ผลงานอื่น">
+            <Fill>other achievements to show sponsors</Fill>
+          </Row>
+        </div>
+      </Section>
+
+      {/* 07 Benefits */}
+      <Section id="benefits" tone="paper">
+        <Tag n="07 BENEFITS" light />
+        <H2>สิทธิประโยชน์ของผู้สนับสนุน</H2>
+        <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-3">
+          <Stat light big={<Fill>reach</Fill>} label="ยอดการมองเห็นบน Instagram ของ PassionSeed ช่วงประชาสัมพันธ์" />
+          <Stat light big={`${TARGET}+`} label="ผู้เข้าร่วมที่เห็นโลโก้ผู้สนับสนุนตลอด 3 วัน (เป้าหมาย)" />
+          <Stat light big={<Fill>posts</Fill>} label="โพสต์ประชาสัมพันธ์ที่มีโลโก้ผู้สนับสนุน บน Instagram ของ PassionSeed และ The Next Decade" />
+        </div>
+        <div className="mt-8 border-b" style={{ borderColor: LINE_LIGHT }}>
+          <Row light label="ก่อนงาน">
+            โลโก้บนโปสเตอร์ โพสต์ประชาสัมพันธ์ และหน้ารับสมัคร
+            <Draft>Claude ร่าง</Draft>
+          </Row>
+          <Row light label="ระหว่างงาน">
+            โลโก้บนหัวข้อที่สนับสนุนและในช่อง Discord ของงาน กล่าวขอบคุณบนเวทีรอบชิงชนะเลิศ
+          </Row>
+          <Row light label="หลังงาน">
+            รายงานสรุปผลโครงการ: จำนวนผู้สมัคร ทีม ผลงาน และยอดการมองเห็นของโพสต์ พร้อมภาพและคลิปบรรยากาศที่ได้รับความยินยอมแล้ว
+            <Draft>Claude ร่าง</Draft>
+          </Row>
+        </div>
+      </Section>
+
+      {/* 08 Past event */}
+      <Section id="past">
+        <Tag n="08 PAST EVENT" />
+        <H2>{ELEMENTAL.series} ครั้งที่ผ่านมา</H2>
+        <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-3">
+          <Stat big={<Fill>participants</Fill>} label="ผู้เข้าร่วม" />
+          <Stat big={<Fill>teams</Fill>} label="ทีมที่ส่งผลงาน" />
+          <Stat big={<Fill>sign-ups so far</Fill>} label="ผู้สมัครครั้งนี้ ณ ปัจจุบัน" />
+        </div>
+        <p className="m-0 mt-10 text-[15px]" style={{ fontFamily: EL_FONT.display, color: EL.creamSoft }}>
+          ผู้สนับสนุนครั้งที่ผ่านมา
+          <Draft>ยืนยันการใช้โลโก้</Draft>
+        </p>
+        <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-4">
+          {LAST_SPONSORS.map((s) => (
+            <span key={s.alt} className="inline-flex items-center rounded-[3px] bg-white px-4 py-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={s.src} alt={s.alt} className="h-9 w-auto object-contain sm:h-10" />
+            </span>
+          ))}
+        </div>
+        <p className="m-0 mt-8 text-[15px]" style={{ fontFamily: EL_FONT.display, color: EL.creamSoft }}>
+          พันธมิตรครั้งที่ผ่านมา
+        </p>
+        <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-4">
+          {LAST_PARTNERS.map((s) => (
+            <span key={s.alt} className="inline-flex items-center rounded-[3px] bg-white px-4 py-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={s.src} alt={s.alt} className="h-12 w-auto object-contain sm:h-14" />
+            </span>
+          ))}
+        </div>
+      </Section>
+
+      {/* 09 Brand safety */}
+      <Section id="safety" tone="paper">
+        <Tag n="09 BRAND SAFETY" light />
+        <H2>แนวทางดูแลแบรนด์ผู้สนับสนุน</H2>
+        <Body light>หัวข้อของงานเป็นเรื่องสิ่งแวดล้อม เราจึงวางแนวทางไว้ชัดเจน เพื่อให้ผู้สนับสนุนมั่นใจได้</Body>
+        <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          {SAFETY.map(([title, text, draft]) => (
+            <div key={title} className="border-t pt-5" style={{ borderColor: LINE_LIGHT }}>
+              <h3 className="m-0 text-[20px] leading-[1.4]" style={{ fontFamily: EL_FONT.display, fontWeight: 400 }}>
+                {title}
+                {draft ? <Draft /> : null}
+              </h3>
+              <p className="m-0 mt-3 text-[16px] leading-[1.7]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, color: EL.inkSoft }}>
+                {text}
+              </p>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      {/* 10 Packages */}
+      <Section id="packages">
+        <Tag n="10 PACKAGES" />
         <H2>รูปแบบการสนับสนุน</H2>
-        <p className="m-0 mt-3 text-[15px]" style={{ fontFamily: EL_FONT.display, color: EL.inkSoft }}>
+        <p className="m-0 mt-3 text-[15px]" style={{ fontFamily: EL_FONT.display, color: EL.creamSoft }}>
           ผู้สนับสนุนแต่ละรายมีกรรมการได้ไม่เกิน 1 ใน 3 ที่นั่งในรอบชิงชนะเลิศ และไม่มีส่วนในการเปลี่ยนแปลงผลการตัดสิน
           <Draft>แพ็กเกจ: Claude ร่าง</Draft>
         </p>
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" style={{ color: EL.ink }}>
           <Package
             name="ผู้สนับสนุนเงินรางวัล"
             en="Prize sponsor"
@@ -426,98 +616,26 @@ export function SponsorDeck() {
         </div>
       </Section>
 
-      {/* 06 Timeline */}
-      <Section id="timeline">
-        <Tag n="06 TIMELINE">กำหนดการ</Tag>
-        <H2>กำหนดการสำหรับผู้สนับสนุน</H2>
-        <ol className="m-0 mt-8 list-none border-b p-0" style={{ borderColor: LINE_DARK, fontFamily: EL_FONT.display }}>
-          {(
-            [
-              [`ภายใน 26 พ.ย.`, "ยืนยันการสนับสนุนและส่งโลโก้", true],
-              ["ถึง 4 ธ.ค.", "ประชาสัมพันธ์งาน พร้อมโลโก้ผู้สนับสนุน", true],
-              ["ศุกร์ 4 ธ.ค.", "ปฐมนิเทศผู้เข้าร่วม 19:00 น. (ไม่บังคับ)", false],
-              [`${thaiDayRange()}`, `การแข่งขัน ${ELEMENTAL.days} วัน`, false],
-              ["จันทร์ 7 ธ.ค.", "รอบชิงชนะเลิศ", true],
-              ["11 ธ.ค.", "เปิดรับสมัครโครงการ Request for Winners (บ่มเพาะ 4 สัปดาห์ และ Demo Day)", false],
-              [null, "ส่งรายงานสรุปผลโครงการให้ผู้สนับสนุน", false],
-            ] as const
-          ).map(([when, what, draft], i) => (
-            <li key={i} className="grid grid-cols-[130px_1fr] gap-4 border-t py-3 sm:grid-cols-[200px_1fr]" style={{ borderColor: LINE_DARK }}>
-              <span className="text-[18px]" style={{ fontWeight: 400 }}>
-                {when ?? <Fill>report date</Fill>}
-              </span>
-              <span className="text-[17px] leading-[1.6]" style={{ fontWeight: 300, color: EL.creamSoft }}>
-                {what}
-                {draft ? <Draft /> : null}
-              </span>
-            </li>
-          ))}
-        </ol>
-      </Section>
-
-      {/* 07 Competition details */}
-      <Section id="details" tone="paper">
-        <Tag n="07 DETAILS" light>
-          รายละเอียดการแข่งขัน
-        </Tag>
-        <H2>5 ธาตุ คือ 5 หัวข้อการแข่งขัน</H2>
-        <Body light>
-          หัวข้อหลักคือ Environmental negligence: ธุรกิจที่สร้างผลกระทบต่อสิ่งแวดล้อมเพื่อลดต้นทุนหรือเพิ่มกำไร แต่ละทีมเลือกหัวข้อ แล้วพัฒนาผลงานที่ช่วยแก้ปัญหาให้คนจริงอย่างน้อย 1 คน
-        </Body>
-        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-5">
-          {ELEMENTS.map(({ key, topic }) => {
-            const e = el(key);
-            return (
-              <div key={key}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`/hackathon/elemental/sponsor/el-${key}.webp`} alt="" className="aspect-square w-full object-cover" style={{ imageRendering: "pixelated" }} />
-                <p className="m-0 mt-3 text-[22px]" style={{ fontFamily: EL_FONT.display, fontWeight: 400 }}>
-                  {e.th}
-                </p>
-                <p className="m-0 mt-1 text-[14px] leading-[1.55]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, color: EL.inkSoft }}>
-                  {topic}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-        <div className="mt-6 grid grid-cols-1 gap-x-10 border-b sm:grid-cols-2" style={{ borderColor: LINE_LIGHT }}>
-          <Row light label="ทีม">
-            ทีมละ 2–4 คน ผู้สมัครเดี่ยวจะได้รับการจับคู่เข้าทีม
-            <Draft />
-          </Row>
-          <Row light label="ค่าสมัคร">
-            {ELEMENTAL.priceBaht} บาทต่อคน หรือ {ELEMENTAL.groupPriceBaht} บาทต่อคนเมื่อสมัครพร้อมเพื่อน
-          </Row>
-          <Row light label="การตัดสิน">
-            กรรมการ 2 คนพิจารณาทุกทีม 8 ทีมสุดท้ายนำเสนอต่อกรรมการ 3 คนในรอบชิงชนะเลิศ
-            <Draft />
-          </Row>
-          <Row light label="หลังการแข่งขัน">ผู้ชนะสมัครเข้าโครงการ Request for Winners ได้</Row>
-        </div>
-      </Section>
-
-      {/* 08 Contact */}
-      <Section id="contact">
-        <Tag n="08 CONTACT">ติดต่อ</Tag>
+      {/* 11 Contact */}
+      <Section id="contact" tone="paper">
+        <Tag n="11 CONTACT" light />
         <H2>ติดต่อสอบถาม</H2>
-        <div className="mt-8 border-b" style={{ borderColor: LINE_DARK }}>
-          <Row label="ผู้ประสานงาน">
-            <Fill>contact person and channel</Fill>
+        <div className="mt-8 border-b" style={{ borderColor: LINE_LIGHT }}>
+          <Row light label="ผู้ประสานงาน">
+            {CONTACT.name}
+            <Draft>ตรวจตัวสะกด</Draft>
           </Row>
-          <Row label="ยืนยันการสนับสนุนภายใน">
-            26 พ.ย. {YEAR_TH}
-            <Draft />
+          <Row light label="ตำแหน่ง">
+            {CONTACT.role}
           </Row>
-          <Row label="เอกสาร">
-            <Fill>quotation, invoice, receipt or tax invoice: what PassionSeed can issue</Fill>
-          </Row>
-          <Row label="การชำระเงิน">
-            <Fill>how and when sponsors pay</Fill>
+          <Row light label="โทร">
+            <a href={`tel:${CONTACT.phone.replace(/-/g, "")}`} className="underline-offset-4 hover:underline">
+              {CONTACT.phone}
+            </a>
           </Row>
         </div>
         <div className="deck-no-print mt-10">
-          <PrintButton />
+          <PrintButton light />
         </div>
       </Section>
     </main>
@@ -543,8 +661,8 @@ const PRINT_CSS = `
   }
   .elemental-deck .deck-cover { padding: 0; display: grid; grid-template-columns: 1.05fr 1fr; }
   .elemental-deck .deck-cover > div:first-child { padding: 11mm 14mm; }
-  /* The details page holds the most; shorter element crops keep it on one page. */
-  .elemental-deck #details img { aspect-ratio: 16 / 10; }
+  /* The tracks page holds the most; shorter element crops keep it on one page. */
+  .elemental-deck #tracks img { aspect-ratio: 16 / 10; }
   .elemental-deck .deck-page:last-child { break-after: auto; page-break-after: auto; }
   .elemental-deck .deck-no-print { display: none !important; }
 }
