@@ -60,6 +60,9 @@ const ELEMENTS: { key: keyof typeof SHAPES; color: string; line: ReactNode }[] =
   },
 ];
 
+/** This slide calls Aether "อีเธอร์" (Angpao, 2026-11-20); facts.ts still says "ธาตุที่ 5" elsewhere. */
+const NAME_TH: Partial<Record<keyof typeof SHAPES, string>> = { aether: "อีเธอร์" };
+
 const SLOT_COLOR = { open: EL.ash, workshop: EL.toxicCyan, due: EL.flame } as const;
 
 function Pixels({ rows, color, size }: { rows: readonly string[]; color: string; size: number }) {
@@ -173,7 +176,7 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
             {ELEMENTS.map(({ key, color, line }) => (
               <div key={key}>
                 {key === "aether" ? <AetherPixels rows={SHAPES[key]} size={48} id={`${id}-aether`} /> : <Pixels rows={SHAPES[key]} color={color} size={48} />}
-                <p style={{ margin: "10px 0 0", fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 32, lineHeight: "40px" }}>{el(key)?.th}</p>
+                <p style={{ margin: "10px 0 0", fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 32, lineHeight: "40px" }}>{NAME_TH[key] ?? el(key)?.th}</p>
                 <p style={{ margin: "4px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 21, lineHeight: "30px", color: EL.creamSoft }}>{line}</p>
               </div>
             ))}
