@@ -40,24 +40,12 @@ const SHAPES = {
 } as const;
 
 /** What each element covers, in the words students use. */
-const ELEMENTS: { key: keyof typeof SHAPES; color: string; line: ReactNode }[] = [
+const ELEMENTS: { key: keyof typeof SHAPES; color: string; line: string }[] = [
   { key: "earth", color: EL.toxicRust, line: "ขยะและสารพิษ" },
   { key: "water", color: EL.toxicCyan, line: "น้ำเสีย สารเคมีในน้ำ" },
   { key: "air", color: EL.toxicYellow, line: "ฝุ่น PM2.5 ควันพิษ" },
   { key: "fire", color: EL.flame, line: "อัคคีภัย การเผา" },
-  {
-    key: "aether",
-    color: EL.aetherViolet,
-    line: (
-      <>
-        ข่าวปลอม
-        <br />
-        พลังงานที่แอป
-        <br />
-        และ AI ใช้
-      </>
-    ),
-  },
+  { key: "aether", color: EL.aetherViolet, line: "ภัยที่มองไม่เห็น" },
 ];
 
 /** This slide calls Aether "อีเธอร์" (Angpao, 2026-11-20); facts.ts still says "ธาตุที่ 5" elsewhere. */
