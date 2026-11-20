@@ -52,7 +52,8 @@ const LINE_DARK = "rgba(243,239,230,0.25)";
 const LINE_LIGHT = "rgba(29,33,31,0.22)";
 const YEAR_TH = Number(ELEMENTAL.startDate.slice(0, 4)) + 543;
 
-/** A fact nobody has told us yet. Highlighted so it can't ship by accident. */
+/** A fact nobody has told us yet. Highlighted so it can't ship by accident. Unused while every gap is filled. */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function Fill({ children }: { children: ReactNode }) {
   return (
     <mark
@@ -136,65 +137,6 @@ function Stat({ big, label, light = false }: { big: ReactNode; label: ReactNode;
       </div>
       <div className="mt-3 text-[15px] leading-[1.6] sm:text-[16px]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, color: light ? EL.inkSoft : EL.creamSoft }}>
         {label}
-      </div>
-    </div>
-  );
-}
-
-/** The most a package is worth, in baht: the price bars are drawn against it. */
-const BAR_MAX = 10000;
-
-function Package({
-  name,
-  en,
-  slots,
-  price,
-  value,
-  items,
-  accent,
-  draft,
-}: {
-  name: string;
-  en: string;
-  slots: ReactNode;
-  price: ReactNode;
-  /** Cash and credit in baht, for the bar. */
-  value?: { cash: number; credit: number };
-  items: ReactNode[];
-  accent: string;
-  draft?: ReactNode;
-}) {
-  return (
-    <div className="flex flex-col border p-4 lg:p-5" style={{ borderColor: LINE_LIGHT, background: PAPER, color: EL.ink }}>
-      <span className="mb-4 block h-[6px] w-12" style={{ background: accent }} />
-      <p className="m-0 text-[12px]" style={{ fontFamily: EL_FONT.mono, color: EL.inkSoft }}>
-        <span style={{ letterSpacing: "0.12em" }}>{en.toUpperCase()}</span>
-        {draft}
-      </p>
-      <h3 className="m-0 mt-2 text-[20px] leading-[1.3] lg:text-[22px]" style={{ fontFamily: EL_FONT.display, fontWeight: 400 }}>
-        {name}
-      </h3>
-      <p className="m-0 mt-1 text-[15px]" style={{ fontFamily: EL_FONT.display, color: EL.inkSoft }}>
-        {slots}
-      </p>
-      <ul className="m-0 mt-3 flex-1 list-none space-y-[6px] p-0 text-[14px] leading-[1.5] lg:text-[15px]" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>
-        {items.map((item, i) => (
-          <li key={i} className="flex gap-3">
-            <span aria-hidden="true" className="mt-[9px] block h-[5px] w-[5px] shrink-0" style={{ background: EL.ink }} />
-            <span>{item}</span>
-          </li>
-        ))}
-      </ul>
-      <div className="mt-5 border-t pt-3" style={{ borderColor: LINE_LIGHT }}>
-        {value ? (
-          <div className="mb-2 flex h-[10px] w-full" style={{ background: "rgba(29,33,31,0.08)" }} aria-hidden="true">
-            <span style={{ width: `${(value.cash / BAR_MAX) * 100}%`, background: accent }} />
-            <span style={{ width: `${(value.credit / BAR_MAX) * 100}%`, background: accent, opacity: 0.4 }} />
-          </div>
-        ) : null}
-        <p className="m-0 text-[15px] leading-[1.45] lg:text-[17px]" style={{ fontFamily: EL_FONT.display }}>
-          {price}
-        </p>
       </div>
     </div>
   );
@@ -305,13 +247,45 @@ const LAST_PROJECTS: [string, string][] = [
   ["WeBloom", "รับมือภาวะหมดไฟของนักศึกษาจากวัฒนธรรม toxic productivity"],
 ];
 
-/** true = draft (PR #87), not decided. */
-const SAFETY: [string, string, boolean][] = [
-  ["ไม่ระบุชื่อบริษัทหรือคดีใด", "สื่อของงานไม่ระบุชื่อบริษัทหรือคดีใด ผู้เข้าร่วมพัฒนาผลงานเพื่อแก้ปัญหา ไม่ใช่เพื่อกล่าวโทษผู้ใด", false],
-  ["คัดเลือกผู้สนับสนุนที่สอดคล้องกับหัวข้อ", "ผู้สนับสนุนทุกรายผ่านการพิจารณาว่าสอดคล้องกับหัวข้อของงาน", true],
-  ["ไม่ส่งต่อข้อมูลผู้เข้าร่วม", "ผู้สนับสนุนจะไม่ได้รับรายชื่อหรือข้อมูลติดต่อของผู้เข้าร่วม การสื่อสารทั้งหมดผ่าน PassionSeed ในช่องทางสาธารณะ", false],
-  ["ดูแลความปลอดภัยของนักเรียน", "ไม่มีช่องทางสื่อสารส่วนตัวระหว่างผู้ใหญ่กับนักเรียน ขอความยินยอมจากผู้ปกครองก่อนเผยแพร่ภาพนักเรียน และผลการตัดสินเป็นของคณะกรรมการเท่านั้น", false],
+/**
+ * Sponsorship packages: three prices told by Angpao, 2026-11-20. Which
+ * benefit goes in which package is Claude's draft, modelled on last
+ * edition's sponsor table (Diamond to Silver).
+ */
+const TIERS = [
+  { price: "10,000", color: EL.flame },
+  { price: "5,000", color: EL.toxicGreen },
+  { price: "1,000", color: EL.toxicCyan },
 ];
+const PACKAGE_ROWS: [string, [string, [boolean, boolean, boolean]][]][] = [
+  ["ระดับความร่วมมือ", [["ผู้สนับสนุนหลักของงาน (Exclusive Partner)", [true, false, false]]]],
+  [
+    "สื่อออนไลน์",
+    [
+      ["ร่วมในคลิปโปรโมตงาน", [true, false, false]],
+      ["สินค้าหรือบริการของผู้สนับสนุนในสตอรี่ Instagram", [true, true, false]],
+      ["โลโก้บนทุกโพสต์ของงาน", [true, true, false]],
+      ["โพสต์แนะนำผู้สนับสนุน", [true, true, true]],
+      ["โพสต์ขอบคุณผู้สนับสนุน", [true, true, true]],
+    ],
+  ],
+  [
+    "ระหว่างงาน",
+    [
+      ["กล่าวขอบคุณในพิธีเปิด", [true, true, false]],
+      ["กล่าวขอบคุณระหว่างเวิร์กช็อป", [true, true, true]],
+      ["โลโก้บนพื้นหลังและสไลด์ของงาน", [true, true, true]],
+    ],
+  ],
+  ["เกียรติบัตร", [["โลโก้บนเกียรติบัตรของผู้เข้าร่วม", [true, true, true]]]],
+];
+
+/**
+ * passion_seed.th on Instagram, from the Meta connector on 2026-11-20 for
+ * 21 October to 19 November 2026 (30 days). A dated snapshot for sponsors:
+ * read them fresh and update the date before sending a new version.
+ */
+const IG = { followers: "3,406", reach: "236,221", views: "464,454", range: "21 ต.ค.–19 พ.ย. 2569" };
 
 /** The sponsor contact (told by Angpao, 2026-11-20). */
 const CONTACT = {
@@ -761,18 +735,22 @@ export function SponsorDeck() {
       <Section id="benefits" tone="paper">
         <Tag n="09 BENEFITS" light />
         <H2>สิทธิประโยชน์ของผู้สนับสนุน</H2>
-        <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-3">
-          <Stat light big={<Fill>reach</Fill>} label="ยอดการมองเห็นบน Instagram ของ PassionSeed ช่วงประชาสัมพันธ์" />
+        <div className="mt-8 grid grid-cols-2 gap-6 md:grid-cols-4">
+          <Stat light big={IG.followers} label="ผู้ติดตาม Instagram ของ PassionSeed" />
+          <Stat light big={IG.reach} label="บัญชีที่เห็นโพสต์ของเราใน 30 วัน" />
+          <Stat light big={IG.views} label="ยอดเข้าชมโพสต์และคลิปใน 30 วัน" />
           <Stat light big={`${TARGET}+`} label="ผู้เข้าร่วมที่เห็นโลโก้ผู้สนับสนุนตลอด 3 วัน (เป้าหมาย)" />
-          <Stat light big={<Fill>posts</Fill>} label="โพสต์ประชาสัมพันธ์ที่มีโลโก้ผู้สนับสนุน บน Instagram ของ PassionSeed และ The Next Decade" />
         </div>
-        <div className="mt-8 border-b" style={{ borderColor: LINE_LIGHT }}>
+        <p className="m-0 mt-3 text-[13px]" style={{ fontFamily: EL_FONT.display, color: EL.inkSoft }}>
+          ข้อมูล Instagram @passion_seed.th จาก Meta ช่วง {IG.range}
+        </p>
+        <div className="mt-6 border-b" style={{ borderColor: LINE_LIGHT }}>
           <Row light label="ก่อนงาน">
             โลโก้บนโปสเตอร์ โพสต์ประชาสัมพันธ์ และหน้ารับสมัคร
             <Draft>Claude ร่าง</Draft>
           </Row>
           <Row light label="ระหว่างงาน">
-            โลโก้บนหัวข้อที่สนับสนุนและในช่อง Discord ของงาน กล่าวขอบคุณบนเวทีรอบชิงชนะเลิศ
+            โลโก้บนพื้นหลังและสไลด์ของงาน กล่าวขอบคุณในพิธีเปิดและระหว่างเวิร์กช็อป
           </Row>
           <Row light label="หลังงาน">
             รายงานสรุปผลโครงการ: จำนวนผู้สมัคร ทีม ผลงาน และยอดการมองเห็นของโพสต์ พร้อมภาพและคลิปบรรยากาศที่ได้รับความยินยอมแล้ว
@@ -781,113 +759,87 @@ export function SponsorDeck() {
         </div>
       </Section>
 
-      {/* 10 Brand safety */}
-      <Section id="safety">
-        <Tag n="10 BRAND SAFETY" />
-        <H2>แนวทางดูแลแบรนด์ผู้สนับสนุน</H2>
-        <Body>หัวข้อของงานเป็นเรื่องสิ่งแวดล้อม เราจึงวางแนวทางไว้ชัดเจน เพื่อให้ผู้สนับสนุนมั่นใจได้</Body>
-        <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          {SAFETY.map(([title, text, draft]) => (
-            <div key={title} className="border-t pt-5" style={{ borderColor: LINE_DARK }}>
-              <h3 className="m-0 text-[20px] leading-[1.4]" style={{ fontFamily: EL_FONT.display, fontWeight: 400 }}>
-                {title}
-                {draft ? <Draft /> : null}
-              </h3>
-              <p className="m-0 mt-3 text-[16px] leading-[1.7]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, color: EL.creamSoft }}>
-                {text}
-              </p>
-            </div>
-          ))}
-        </div>
-      </Section>
-
-      {/* 11 Packages */}
-      <Section id="packages" tone="paper">
-        <Tag n="11 PACKAGES" light />
+      {/* 10 Packages */}
+      <Section id="packages">
+        <Tag n="10 PACKAGES" />
         <H2>รูปแบบการสนับสนุน</H2>
-        <p className="m-0 mt-3 text-[15px]" style={{ fontFamily: EL_FONT.display, color: EL.inkSoft }}>
-          ผู้สนับสนุนแต่ละรายมีกรรมการได้ไม่เกิน 1 ใน 3 ที่นั่งในรอบชิงชนะเลิศ และไม่มีส่วนในการเปลี่ยนแปลงผลการตัดสิน
-          <Draft>สิทธิประโยชน์: Claude ร่าง</Draft>
-        </p>
-        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4" style={{ color: EL.ink }}>
-          <Package
-            name="ผู้สนับสนุนเงินรางวัล"
-            en="Prize sponsor"
-            slots="1 ราย"
-            accent={EL.flame}
-            items={[
-              `ชื่อผู้สนับสนุนบนเงินรางวัลรวม ${prizeTotal()} บาท`,
-              "กล่าวบนเวทีรอบชิงชนะเลิศ 60 วินาที",
-              "กรรมการรอบชิงชนะเลิศ 1 ที่นั่ง",
-              <>
-                ทุนค่าสมัครสำหรับนักเรียน <Fill>how many</Fill> ที่นั่ง
-              </>,
-              "ได้รับเชิญร่วมงาน Demo Day ของโครงการ Request for Winners",
-            ]}
-            value={{ cash: 7000, credit: 3000 }}
-            price="7,000 บาท + เครดิต Claude มูลค่า 3,000 บาท"
-          />
-          <Package
-            name="ผู้สนับสนุนรายธาตุ"
-            en="Element sponsor"
-            slots="5 ราย ธาตุละ 1 ราย"
-            accent={EL.toxicGreen}
-            items={[
-              "ชื่อผู้สนับสนุนบนหัวข้อ (ธาตุ) ที่เลือก ในโจทย์และโพสต์ของหัวข้อนั้น",
-              <>
-                ทุนค่าสมัครสำหรับนักเรียน <Fill>how many</Fill> ที่นั่ง
-              </>,
-              "ได้รับเชิญร่วมงาน Demo Day ของโครงการ Request for Winners",
-            ]}
-            value={{ cash: 3000, credit: 3000 }}
-            price="3,000 บาท + เครดิตมูลค่า 3,000 บาท"
-          />
-          <Package
-            name="ผู้สนับสนุนโจทย์"
-            en="Challenge sponsor"
-            slots={<Fill>how many</Fill>}
-            accent={EL.toxicCyan}
-            draft={<Draft>ยังไม่ได้ตัดสินใจ</Draft>}
-            items={["ตั้งโจทย์จากปัญหาจริงขององค์กร ภายใต้หัวข้อที่เลือก", "ผู้เชี่ยวชาญขององค์กรร่วมให้ข้อมูลหรือเป็นกรรมการ", "ได้รับผลงานทุกชิ้นที่ทีมพัฒนาจากโจทย์ขององค์กร"]}
-            value={{ cash: 0, credit: 3000 }}
-            price={
-              <>
-                เครดิตมูลค่า 3,000 บาท
-                <Draft>ตรวจ: ราคาแพ็กเกจที่ 3</Draft>
-              </>
-            }
-          />
-          <Package
-            name="ผู้สนับสนุนสิ่งของหรือบริการ"
-            en="In-kind sponsor"
-            slots={<Fill>how many</Fill>}
-            accent={EL.aetherGrey}
-            items={["สถานที่จัดรอบชิงชนะเลิศ", "เครดิตซอฟต์แวร์หรือเครื่องมือสำหรับผู้เข้าร่วม", "ของรางวัลเพิ่มเติม"]}
-            price={<Fill>what we accept</Fill>}
-          />
+        <div className="relative mt-6 overflow-x-auto">
+          <table className="w-full min-w-[640px] border-collapse text-left" style={{ fontFamily: EL_FONT.display }}>
+            <thead>
+              <tr>
+                <th className="py-3 pr-4 align-bottom text-[15px] font-normal" style={{ color: EL.creamSoft }} colSpan={2}>
+                  สิทธิประโยชน์
+                  <Draft>แบ่งตามแพ็กเกจ: Claude ร่าง</Draft>
+                </th>
+                {TIERS.map((t) => (
+                  <th key={t.price} className="w-[120px] px-2 py-3 text-center font-normal sm:w-[150px]" style={{ borderTop: `6px solid ${t.color}`, background: "rgba(243,239,230,0.07)" }}>
+                    <span className="block text-[24px] leading-tight sm:text-[28px]" style={{ fontWeight: 300 }}>
+                      {t.price}
+                    </span>
+                    <span className="block text-[14px]" style={{ color: EL.creamSoft }}>
+                      บาท
+                    </span>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {PACKAGE_ROWS.flatMap(([group, rows]) =>
+                rows.map(([benefit, has], r) => (
+                  <tr key={benefit} style={{ borderTop: `1px solid ${r === 0 ? EL.creamSoft : LINE_DARK}` }}>
+                    {r === 0 ? (
+                      <td rowSpan={rows.length} className="w-[150px] py-2 pr-4 align-top text-[15px]" style={{ color: EL.creamSoft }}>
+                        {group}
+                      </td>
+                    ) : null}
+                    <td className="py-2 pr-4 text-[16px] leading-[1.45]" style={{ fontWeight: 300 }}>
+                      {benefit}
+                    </td>
+                    {has.map((yes, k) => (
+                      <td key={k} className="py-2 text-center" style={{ background: "rgba(243,239,230,0.07)" }}>
+                        {yes ? (
+                          <span className="inline-block align-middle">
+                            <PixelIcon name="check" color={TIERS[k].color} size={22} />
+                          </span>
+                        ) : (
+                          <span className="sr-only">ไม่มี</span>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                )),
+              )}
+            </tbody>
+          </table>
         </div>
+        <p className="m-0 mt-5 text-[16px] leading-[1.6]" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>
+          * การสนับสนุนเป็นเงินสด หรือสินค้าที่มีมูลค่าเท่ากับแพ็กเกจก็ได้
+          <span className="ml-2 italic" style={{ color: EL.creamSoft }}>
+            Sponsorship may come in cash or merchandise worth the value of the package.
+          </span>
+        </p>
       </Section>
 
-      {/* 12 Contact */}
-      <Section id="contact">
-        <Tag n="12 CONTACT" />
+      {/* 11 Contact */}
+      <Section id="contact" tone="paper">
+        <Tag n="11 CONTACT" light />
         <H2>ติดต่อสอบถาม</H2>
-        <div className="mt-8 border-b" style={{ borderColor: LINE_DARK }}>
-          <Row label="ผู้ประสานงาน">
+        <div className="mt-8 border-b" style={{ borderColor: LINE_LIGHT }}>
+          <Row light label="ผู้ประสานงาน">
             {CONTACT.name}
             <Draft>ตรวจตัวสะกด</Draft>
           </Row>
-          <Row label="ตำแหน่ง">
+          <Row light label="ตำแหน่ง">
             {CONTACT.role}
           </Row>
-          <Row label="โทร">
+          <Row light label="โทร">
             <a href={`tel:${CONTACT.phone.replace(/-/g, "")}`} className="underline-offset-4 hover:underline">
               {CONTACT.phone}
             </a>
           </Row>
         </div>
         <div className="deck-no-print mt-10">
-          <PrintButton />
+          <PrintButton light />
         </div>
       </Section>
 
@@ -918,8 +870,6 @@ const PRINT_CSS = `
   .elemental-deck .deck-cover > div:first-child { padding: 11mm 14mm; }
   /* The tracks page holds the most; shorter element crops keep it on one page. */
   .elemental-deck #tracks img { aspect-ratio: 16 / 10; }
-  /* Four package cards fill the page: a smaller heading keeps it on one. */
-  .elemental-deck #packages h2 { font-size: 40px; }
   .elemental-deck #about .deck-history-pic { max-width: 76px; }
   .elemental-deck .deck-page:last-child { break-after: auto; page-break-after: auto; }
   .elemental-deck .deck-no-print { display: none !important; }
