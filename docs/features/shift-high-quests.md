@@ -743,9 +743,12 @@ Later files added the tree style, the admin's own reset and island overview,
 photos and the web review page, the peer check and project invitations. From
 schema 17 (`20261118100000_shift_quest_web_everything.sql`, below) it also
 runs the inbox, settings, sharing, data rights, review, help, fulfillment and
-admin functions: the website does every flow but Discord's. Never: a helper
+admin functions: the website does every flow but Discord's. Schema 18 added
+`_island_visitors` and schema 22 `_deepfire` (the deep fire's lobby link and
+whether the bot is ready). Never: a helper
 (`shift_quest__*`), a raw function that takes someone else's Discord id, the
-outbox, the live and digest posts, voice presence or the campfire rounds.
+outbox, the live and digest posts, voice presence, the campfire rounds or the
+deep fire's heartbeat (`shift_quest_deepfire_beat`).
 Each migration grants by full signature and stops if one is missing; the
 early ones revoked every `shift_quest_*` function from the role first, later
 ones grant only. `run-local.sh` (`check_privileges`), `web_board.ts`,
@@ -1143,6 +1146,79 @@ ledger. Design and the founder's decisions:
 [`docs/designs/shift-island-campfire-call.md`](../designs/shift-island-campfire-call.md).
 Tested in `supabase/tests/shift_quests/campfire_call.ts`,
 `bot/src/quests/__tests__/call.test.ts` and `rounds.test.ts`.
+
+### The deep fire (schema 22)
+
+`20261120120000_shift_quest_deep_fire.sql` (not applied yet; after schema 21
+and the bot deploy, on the founder's go) adds กองไฟโฟกัส: a voice room built
+for one person to work alone, locked so nobody else can stay in it. Join to
+create: staff set one voice channel inside a category as the lobby
+(`/admin channel kind:deepfire`, `settings.deepfire_channel_id`); whoever
+joins it gets a new voice channel of their own in the same category, named
+"🔥 กองไฟโฟกัส" (never their name), and is moved in
+(`bot/src/quests/deepfire.ts`). The room is deleted the moment it is empty;
+joining the lobby while your room still stands moves you back into it. At
+most 40 rooms at once; at the cap people stay in the lobby.
+
+- **Locked but visible.** A room copies the lobby's role overwrites
+  (`@everyone` included) with only View Channel kept, so everyone who can see
+  the lobby sees the room and who sits in it: the rules card's "ไม่มีห้องลับ"
+  stays true. Connect and the room's text chat (messages, threads, voice
+  messages, polls, reactions) are denied to every role and to `@everyone`;
+  the only member overwrites are the owner's and the bot's; user limit 1.
+- **The bot is the lock.** Administrators, the server owner and moderators
+  with Move Members get past overwrites, so on every voice update (straight
+  away, never waiting behind a build or the heartbeat) and every reconcile
+  the bot disconnects anyone in a room other than its owner and itself
+  (other bots too), never moving them elsewhere. When Discord will not
+  disconnect someone, the bot deletes the room, which disconnects everyone
+  in it; it never moves an owner back into a room someone else is in. An
+  adult and a student never stay alone in a locked room.
+- **Fail closed.** Rooms are built only while the bot holds View Channel,
+  Connect, Manage Channels and Move Members on the lobby and on its
+  category, plus every permission a room sets on the category (Speak, Video,
+  Use Voice Activity and the chat permissions), from the gateway cache
+  (unknown is no). Otherwise nothing is built, the lobby is an ordinary
+  shared voice channel, and the heartbeat says not ready; a Discord
+  "missing permissions" makes the next heartbeat say not ready too. `/admin
+  channel kind:deepfire` refuses the same cases, a lobby students cannot see
+  and join (rooms copy its visibility), the campfire's coworking channel
+  (and `kind:coworking` refuses the lobby), and a database below schema 22.
+- **Nothing per person.** No table of rooms, no times, no member or Discord
+  ids. The bot knows its rooms from the rooms themselves, in any category (a
+  voice channel, never a lobby, user limit 1, a member overwrite for the bot
+  allowing exactly View Channel, Connect, Manage Channels and Move Members,
+  and `@everyone` denied Connect; the owner is the one other member
+  overwrite allowing Connect), so a room stays guarded after the lobby moves,
+  changes or is cleared, across restarts. It reconciles on ready, resume, a
+  lobby change and every 5 minutes; the heartbeat runs beside that work,
+  bounded, so a slow database never holds up the lock. The database keeps the lobby setting
+  and one heartbeat row, `shift_quest_deepfire_state` (guild, lobby, ready,
+  beat time; RLS on, no policies, service role only).
+- **Silent.** No rounds, chimes, music or bot messages in a room, and the
+  rooms never count for the evening guest. In SHIFT cohort weeks the
+  separate shift-voice tracker records voice time in every channel, rooms
+  included; the island's fine print says so only then (`cohortWeek`, from
+  `roundsInSession`).
+- **Functions.** Bot-only `shift_quest_deepfire_beat(guild, ready)` records
+  the heartbeat and returns `{channel_id}` (a changed lobby tells the bot to
+  switch). Website-only `shift_quest_deepfire(actor)` (same gate as
+  `shift_quest_campfire`) returns `{channel_id, guild_id, live}`: `live`
+  only when the lobby is set, the last beat named that lobby, said ready,
+  and is under 3 minutes old. The bot re-reads the version every 60 seconds
+  below 22, so it starts by itself after the migration.
+- **On the island.** A small one-person fire on the grass off the plaza's
+  front right, shown only while a lobby is set (`deepfireOf`, which fails
+  soft: before the migration the place simply does not appear). Tapping it
+  opens `DeepFireSheet`: one button, จุดไฟ, to the lobby in a new tab; drawn
+  cold with the button greyed while the bot is not ready. No count, no
+  names.
+
+Design and decisions:
+[`docs/designs/shift-island-deep-fire.md`](../designs/shift-island-deep-fire.md).
+Tested in `supabase/tests/shift_quests/deepfire.ts`,
+`bot/src/quests/__tests__/deepfire.test.ts`, `deepfire-state.test.ts` and
+`lib/supabase/shift-quests/__tests__/deepfire.test.ts`.
 
 ## Admin: reset my own island (testing)
 

@@ -79,5 +79,11 @@ describe("tints", () => {
     check("lamp_post", "yif");
     check("stage_5", "none");
     check("water_a", "none");
+    // The deep fire (schema 22): its flame and embers stay warm at night like the campfire's; its cold ring dims.
+    check("campfire_flame_0", "all");
+    check("campfire_pit", "yi");
+    for (const frame of ["deepfire_flame_0", "deepfire_flame_1", "deepfire_flame_2"]) check(frame, "all");
+    check("deepfire_pit", "yi");
+    check("deepfire_pit_cold", "none");
   });
 });

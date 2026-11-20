@@ -137,6 +137,27 @@ describe("light of the hour", () => {
     expect(lightSources(model, [fire], "day")).toEqual([]);
   });
 
+  it("lights the deep fire's small flame like a lantern (a still, small pool), never a second breathing fire, and nothing when it sleeps", () => {
+    const deep: LiveActor = { frames: ["deepfire_flame_0", "deepfire_flame_1"], x: 300, y: 120 };
+    const ring: LiveActor = { frames: ["deepfire_pit"], x: 297, y: 126 };
+    const night = lightSources(model, [fire, ring, deep], "night");
+    expect(night.filter((l) => l.kind === "fire")).toHaveLength(1);
+    const own = night.filter((l) => l.hx === 303 && l.hy === 124);
+    expect(own).toEqual([{ kind: "lantern", hx: 303, hy: 124, gx: 303, gy: 129 }]);
+    // Smaller than the campfire's pool: one person's fire.
+    expect(LIGHT_SIZE.lantern.pool![0]).toBeLessThan(LIGHT_SIZE.fire.pool![0]);
+    expect(lightSources(model, [deep], "day")).toEqual([]);
+    // Asleep: only the cold ring, which gives no light.
+    const asleep = lightSources(model, [{ frames: ["deepfire_pit_cold"], x: 297, y: 126 }], "night");
+    expect(asleep.some((l) => l.hx === 303)).toBe(false);
+    // Flat on the ground and lit by itself: no shadow, and its flame never catches another light.
+    expect(castsShadow("deepfire_pit")).toBe(false);
+    expect(castsShadow("deepfire_flame_0")).toBe(false);
+    expect(catchesLight("deepfire_flame_0")).toBe(false);
+    // The smoke stays the campfire's.
+    expect(smokeOrigin([deep])).toBeNull();
+  });
+
   it("gives the fire and the countdown board no glow of their own: nothing is painted over the stall or the people", () => {
     expect(LIGHT_SIZE.fire.halo).toBe(0);
     expect(LIGHT_SIZE.board.halo).toBe(0);

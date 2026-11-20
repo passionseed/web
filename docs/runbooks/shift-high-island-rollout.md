@@ -128,7 +128,7 @@ these files. The migrations are additive and idempotent.
       supabase db query --linked -o table -f docs/runbooks/shift-high-island-checks.sql
       ```
 
-      Expect **no rows**. It checks: `shift_quest_schema_version()` is 20
+      Expect **no rows**. It checks: `shift_quest_schema_version()` is 22
       (every migration on `main`; before the last one is applied it prints
       the version it found, which is expected until then);
       both logins exist, `NOINHERIT`, connection limits 5 (bot) and 20
@@ -301,7 +301,7 @@ The bot runs on its own host (`bot/deploy.sh`), not on Vercel.
       ssh <bot host> docker logs --tail 50 passionseed-discord-bot | grep shift-quests
       ```
 
-      Expect `[shift-quests] database schema 20 (bot needs 2)` once every
+      Expect `[shift-quests] database schema 22 (bot needs 2)` once every
       migration is applied. From 8 the bot runs the live post, from 9 the
       island news post, from 10 it draws roots, from 19 it posts the nightly
       island news card, from 20 it sends the staff channel a note when that
@@ -313,7 +313,9 @@ The bot runs on its own host (`bot/deploy.sh`), not on Vercel.
       fails the note's kind permanently); the running bot reads the version
       again every 5 minutes and logs
       `[shift-quests] nightly island news: missed-night staff note on (schema 20)`,
-      no restart needed.
+      no restart needed. Schema 22 (the deep fire) works the same way: the
+      bot reads the version every 60 seconds and logs
+      `[shift-quests] deep fire on (schema 22)`, no restart needed.
 - [ ] Register the slash commands (REST calls only; it never starts a second
       bot):
 
@@ -475,6 +477,38 @@ The bot runs on its own host (`bot/deploy.sh`), not on Vercel.
       (the same call, no ping). The guest's rolls of earlier nights are deleted by
       pg_cron's 5-minute voice purge, so a rollback to an older bot keeps the
       "deleted the next day" promise.
+- [ ] The deep fire, กองไฟโฟกัส (schema 22,
+      `20261120120000_shift_quest_deep_fire`; design in
+      `docs/designs/shift-island-deep-fire.md`). Order: merge, deploy the
+      bot, then the migration on the founder's go, after schema 21 is in
+      production. The bot re-reads the version every 60 seconds, so no
+      restart; the island shows no deep fire until a lobby is set. Register
+      the slash commands again (above) so `/admin channel` offers
+      `deepfire`. Then, in Discord:
+      - Make a voice channel inside a category (one with at least 40 free
+        channel slots), e.g. "🔥 จุดกองไฟโฟกัส", that students can see and
+        join.
+      - Give the quest bot, on that category: View Channel, Connect, Manage
+        Channels, Move Members, and every permission a room sets: Speak,
+        Video, Use Voice Activity, Send Messages, Send Messages in Threads,
+        Create Public Threads, Create Private Threads, Send Voice Messages,
+        Create Polls and Add Reactions. On the lobby itself: View Channel,
+        Connect, Manage Channels and Move Members.
+      - `/admin channel kind:deepfire channel:<the lobby>`. It refuses a
+        channel that is not a plain voice channel, one with no category, one
+        where the bot lacks those permissions, one students cannot see and
+        join, and the campfire's coworking channel.
+      Within a minute the bot log has `[shift-quests] deep fire ready`, and
+      the island shows the small fire lit (asleep and greyed while the bot
+      is not ready). Smoke test with two accounts: joining the lobby builds
+      "🔥 กองไฟโฟกัส" and moves you in; the second account sees the room and
+      who is in it but cannot connect; a staff account with Move Members
+      that drags itself in is disconnected at once (log `... removed from a
+      room`); leaving deletes the room. Off without a deploy:
+      `/admin channel kind:deepfire` with no channel clears the lobby: the
+      island place disappears on the next page load, no new rooms are built
+      (within a minute), and a room still in use stays guarded until its
+      owner leaves, then is deleted.
 - [ ] Island invitation RSVPs: every RSVP should lead to the Discord role
       `SHIFT high`. Nothing grants it automatically yet: until it does, staff
       read the new RSVPs (`shift_island_rsvps`, newest first, in the SQL

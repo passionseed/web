@@ -51,6 +51,7 @@ const plaza = plazaWorld(scene, {
   pins: ["active", "main"],
   campfire: { count: 3 },
   prizes: true,
+  deepfire: { lit: true },
   visitors: { count: 4, team: 1, me: true },
 });
 const near = (x: number, y: number, reach = 4): Aim => ({ x, y, reach });
@@ -64,7 +65,7 @@ describe("interactTargets", () => {
     const keys = targets.map((t) => t.key);
     expect(new Set(keys).size).toBe(keys.length);
     expect(keys.filter((k) => k.startsWith("plot:"))).toEqual(scene.trees.map((t) => plotKey(t.slot)));
-    expect(keys.filter((k) => k.startsWith("spot:")).sort()).toEqual(["campfire", "notice", "prizes", "stage"].map((id) => spotKey(id as never)).sort());
+    expect(keys.filter((k) => k.startsWith("spot:")).sort()).toEqual(["campfire", "deepfire", "notice", "prizes", "stage"].map((id) => spotKey(id as never)).sort());
     expect(keys.filter((k) => k.startsWith("figure:"))).toEqual(figures.map((_, i) => figureKey(i)));
   });
 
@@ -101,6 +102,13 @@ describe("interactTargets", () => {
     expect(names("stage").slice(1, -1).every((n) => n.startsWith("count_"))).toBe(true);
     expect(names("prizes")).toEqual(["prize_board"]);
     expect(names("campfire")).toEqual(["campfire_pit", "campfire_flame_0"]);
+    // The deep fire: its ring with the log and its small flame; asleep, the cold ring alone.
+    expect(names("deepfire")).toEqual(["deepfire_pit", "deepfire_flame_0"]);
+    const asleep = plazaWorld(scene, { festival: null, pins: null, campfire: null, deepfire: { lit: false } });
+    const cold = interactTargets({ scene, hotspots: [], spots: asleep.spots, figures: [], scale: 2, whole: false });
+    expect(cold.map((t) => [t.key, (t.shape as { kind: "actors"; actors: number[] }).actors.map((i) => asleep.actors[i].frames[0])])).toEqual([
+      [spotKey("deepfire"), ["deepfire_pit_cold"]],
+    ]);
   });
 
   it("leaves out a plaza button with no actors, and reaches a walker by its own box and tap slop", () => {

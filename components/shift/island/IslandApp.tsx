@@ -23,6 +23,7 @@ import { CampfireSheet } from "./CampfireSheet";
 import { CanvasLinkSheet } from "./canvas";
 import { ConsentSheet } from "./consent/ConsentSheet";
 import { CAMPFIRE, COMMON, GATE, HUD, MENU, NO_PROJECT, RESULTS, TODAY } from "./copy";
+import { DeepFireSheet } from "./DeepFireSheet";
 import { FestivalSheet } from "./FestivalSheet";
 import { BoardSheet, MenuFoot, MenuSheet, type MenuItem } from "./HudSheets";
 import { NewsSheet } from "./news/NewsSheet";
@@ -93,6 +94,7 @@ type Panel =
   | "menu"
   | "festival"
   | "campfire"
+  | "deepfire"
   | "character"
   | "wallet"
   | "shop"
@@ -260,7 +262,11 @@ function Unclaimed({ page, picture, initialPhase, demoDay, voyage: forcedVoyage 
   const campfire = useCampfire(page.campfire ?? null, !paused);
   // Today's visitors, anonymous: without a plot the viewer has no check-in and no team of their own.
   const visitors = useMemo(() => visitorsNow(page.visitors, { me: false, counted: false }), [page.visitors]);
-  const plaza = useMemo(() => plazaProps(festival, null, campfire.summary, undefined, visitors), [festival, campfire.summary, visitors]);
+  const deepfire = page.deepfire ?? null;
+  const plaza = useMemo(
+    () => plazaProps(festival, null, campfire.summary, undefined, visitors, deepfire),
+    [festival, campfire.summary, visitors, deepfire],
+  );
   const shared = sharedItems(page, onPanel, () => {
     setPanel(null);
     setStoryKey((key) => key + 1);
@@ -456,15 +462,33 @@ function IslandHome({
   );
   const campfire = useCampfire(page.campfire ?? null, !paused);
   const { loadNames } = campfire;
+  // The deep fire (schema 22): the lobby's link and whether its keeper, the bot, is there. Null: none drawn.
+  const deepfire = page.deepfire ?? null;
+  // The lobby went away (cleared by staff, or a read that failed on a refresh) while its sheet was open: the sheet
+  // closes with its place, so the island never stays paused behind a sheet that is gone.
+  if (!deepfire && panel === "deepfire") setPanel(null);
   const openSpot = useCallback(
     (id: PlazaSpotId) => {
-      if (id === "notice") setPanel("board");
-      else if (id === "stage") setPanel("festival");
-      else if (id === "prizes") setPanel("prizes");
-      else if (id === "ship") setPanel("shop");
-      else {
-        setPanel("campfire");
-        loadNames();
+      switch (id) {
+        case "notice":
+          return setPanel("board");
+        case "stage":
+          return setPanel("festival");
+        case "prizes":
+          return setPanel("prizes");
+        case "ship":
+          return setPanel("shop");
+        case "deepfire":
+          return setPanel("deepfire");
+        case "campfire":
+          setPanel("campfire");
+          loadNames();
+          return;
+        default: {
+          // Every spot has its own branch above: a new PlazaSpotId fails to compile here until it has one.
+          const unhandled: never = id;
+          return unhandled;
+        }
       }
     },
     [loadNames],
@@ -478,8 +502,8 @@ function IslandHome({
     return now ? { ...now, arriving: arrival === "walking", shirt } : null;
   }, [page.visitors, meHere, counted, arrival, shirt]);
   const plaza = useMemo(
-    () => plazaProps(festival, pins, campfire.summary, openSpot, visitors),
-    [festival, pins, campfire.summary, openSpot, visitors],
+    () => plazaProps(festival, pins, campfire.summary, openSpot, visitors, deepfire),
+    [festival, pins, campfire.summary, openSpot, visitors, deepfire],
   );
 
   /** The team's tree up close. */
@@ -600,8 +624,8 @@ function IslandHome({
   }
 
   // The menu's lines, at the foot of the chip's sheet: only what has no place on the island. The tree is
-  // the team's plot (and a line in the same sheet), the prizes, the campfire and Demo Day stand in the
-  // plaza, and the canvas opens from a quest.
+  // the team's plot (and a line in the same sheet), the prizes, the campfire, the deep fire and Demo Day
+  // stand in the plaza, and the canvas opens from a quest.
   const shared = sharedItems(page, setPanel, () => {
     setPanel(null);
     setStoryKey((key) => key + 1);
@@ -760,6 +784,14 @@ function IslandHome({
           onClose={() => setPanel(null)}
           summary={campfire.summary}
           names={campfire.names}
+        />
+      ) : null}
+      {deepfire ? (
+        <DeepFireSheet
+          open={panel === "deepfire"}
+          onClose={() => setPanel(null)}
+          deepfire={deepfire}
+          cohortWeek={page.cohortWeek === true}
         />
       ) : null}
 

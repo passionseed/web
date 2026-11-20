@@ -162,6 +162,10 @@ describe("island copy", () => {
     expect(copy.ISLAND.title).toBe(copy.PLACES.island);
     expect(copy.HUD.board).toBe(copy.PLACES.board);
     expect(copy.CAMPFIRE.title).toBe(copy.PLACES.campfire);
+    expect(copy.DEEPFIRE.title).toBe(copy.PLACES.deepfire);
+    // The deep fire's button is named after its place, lit or asleep.
+    expect(copy.DEEPFIRE.spot.startsWith(`${copy.PLACES.deepfire}: `)).toBe(true);
+    expect(copy.DEEPFIRE.spotAsleep.startsWith(`${copy.PLACES.deepfire}: `)).toBe(true);
     expect(copy.FESTIVAL.title).toBe(copy.PLACES.stage);
   });
 

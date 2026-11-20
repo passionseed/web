@@ -36,7 +36,7 @@ const D = "640000000000000004"; // no project; invited to project one but has no
 const NOBODY = "649999999999999999";
 const NAMES: Record<string, string> = { [A]: "Canvas Aye", [B]: "Canvas Bee", [C]: "Canvas Cee", [D]: "Canvas Dee" };
 
-/** The full web allowlist after 20261118100000 (regprocedure text), as in web_board.ts. */
+/** The full web allowlist after 20261120120000 (regprocedure text), as in web_board.ts. */
 const WEB_ALLOWLIST = [
   "shift_quest_board(text)",
   "shift_quest_campfire(text,boolean)",
@@ -165,6 +165,8 @@ const WEB_ALLOWLIST = [
   "shift_quest_admin_erase(text,uuid)",
   // 20261118110000_shift_quest_island_visitors.
   "shift_quest_island_visitors(text)",
+  // 20261120120000_shift_quest_deep_fire.
+  "shift_quest_deepfire(text)",
 ];
 
 let failures = 0;

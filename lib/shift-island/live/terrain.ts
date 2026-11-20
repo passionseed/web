@@ -424,7 +424,11 @@ export function plotRoom(tree: Pick<SceneTree, "slot" | "left" | "top" | "w" | "
   return { slot: tree.slot, body, all, door };
 }
 
-/** The plaza's own room: its stone, lamps, bunting, every piece and tap target, and its people's walks. */
+/**
+ * The plaza's own room: its stone, lamps, bunting, every piece and tap
+ * target (the deep fire's on the grass too, set or not, so the ground never
+ * moves when its lobby is set), and its people's walks.
+ */
 export function plazaRoom(model: SceneModel): { stone: Rect | null; trail: Rect[]; props: Rect[] } {
   const { scene } = model;
   const c = plazaCentre(scene);
@@ -442,15 +446,26 @@ export function plazaRoom(model: SceneModel): { stone: Rect | null; trail: Rect[
     { x: bunting.x + bw - 5, y: bunting.y, w: 6, h: bh },
   ];
   const size = (name: keyof typeof MOTION_SIZES, p: readonly [number, number]) => at(p[0], p[1], MOTION_SIZES[name][0], MOTION_SIZES[name][1]);
+  // The deep fire stands on the grass, off the stone: its button's 48px floor at the smallest scale is kept too.
+  const deep = box(L.deepfireSpot);
+  const deepTap = {
+    x: Math.min(deep.x, Math.floor(deep.x + deep.w / 2 - PLOT_TAP / 2)),
+    y: Math.min(deep.y, Math.floor(deep.y + deep.h / 2 - PLOT_TAP / 2)),
+    w: Math.max(deep.w, PLOT_TAP) + 1,
+    h: Math.max(deep.h, PLOT_TAP) + 1,
+  };
   const pieces: Rect[] = [
     box(L.noticeSpot),
     box(L.stageSpot),
     box(L.campfireSpot),
     box(L.prizeSpot),
+    deepTap,
     size("fest_count", L.countdown),
     size("fest_stage_0", L.stage),
     size("notice_board", L.noticeBoard),
     size("prize_board", L.prizeBoard),
+    size("deepfire_pit", L.deepPit),
+    size("deepfire_flame_0", L.deepFlame),
     ...lampRects(model).map((r) => grow(r, 2)),
   ];
   // The walks: every frame of every route, with a fingertip's slop and the shadow under the feet.

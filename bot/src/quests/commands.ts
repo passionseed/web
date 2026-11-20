@@ -7,6 +7,8 @@ import {
   type RESTPostAPIChatInputApplicationCommandsJSONBody,
 } from "discord.js";
 
+import { DEEPFIRE_ADMIN } from "./deepfireCopy";
+
 /**
  * SHIFT High quest slash commands, registered per guild. Staff commands are
  * hidden from members without Manage Server by default; a server admin can
@@ -141,12 +143,15 @@ export function questCommands(): RESTPostAPIChatInputApplicationCommandsJSONBody
               { name: "live (โพสต์เกาะสด บอทแก้โพสต์เดียว)", value: "live" },
               { name: "suggest (ฟอรัมเสนอไอเดีย แจ้งบั๊ก)", value: "suggest" },
               // DRAFT for the Thai review: the nightly island news card (news.ts, schema 19).
-              { name: "news (ข่าวเกาะทุกคืน 2 ทุ่ม ห้องประกาศได้)", value: "news" }
+              { name: "news (ข่าวเกาะทุกคืน 2 ทุ่ม ห้องประกาศได้)", value: "news" },
+              // Schema 22: the deep fire's lobby (deepfire.ts). DRAFT for the Thai review.
+              { name: DEEPFIRE_ADMIN.choice, value: "deepfire" }
             )
         )
         // coworking may be a voice channel: its people sit at the island's campfire, and intention posts land in its text chat.
         // suggest may be a forum: the web island's ⋯ menu links to it. news may be an announcement channel (students
-        // read, only the bot posts; never published to other servers). The handler checks each kind's type.
+        // read, only the bot posts; never published to other servers). deepfire must be a voice channel in a category
+        // (the lobby: joining it builds a room of one's own). The handler checks each kind's type.
         .addChannelOption((o) =>
           o
             .setName("channel")

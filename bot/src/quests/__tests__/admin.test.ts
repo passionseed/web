@@ -8,6 +8,7 @@ import type { QuestApi, Session } from "../api";
 import { questCommands } from "../commands";
 import type { Ctx } from "../context";
 import { BLOCKER, T } from "../copy";
+import { DEEPFIRE_ADMIN } from "../deepfireCopy";
 import { reportView, seasonView, statusView } from "../handlers/admin";
 import { LIMITS, TONE_COLORS, renderView } from "../ui";
 import { accentColor, bodyText, componentCount, customIds, textLength, viewText } from "../test-helpers/view";
@@ -265,6 +266,12 @@ describe("admin status card", () => {
       expect((c.api.call as jest.Mock).mock.calls.at(-1)).toEqual(["shift_quest_admin_set", "1111111111", "coworking_channel", ""]);
     });
 
+    it("refuses the deep fire's lobby as the coworking channel, after the students check", async () => {
+      const c = ctx(() => status({ settings: { ...status().settings, deepfire_channel_id: "804" } }));
+      await expect(COMMAND_HANDLERS.get("admin channel")!(set("coworking", voice(["555"])).i, c)).rejects.toThrow(DEEPFIRE_ADMIN.notCampfire);
+      expect((c.api.call as jest.Mock).mock.calls.filter(([fn]) => fn === "shift_quest_admin_set")).toEqual([]);
+    });
+
     it("checks @everyone while no student role is set", async () => {
       const c = ctx(() => status());
       c.session.settings.student_role_ids = [];
@@ -385,6 +392,7 @@ describe("admin status card", () => {
         "live",
         "suggest",
         "news",
+        "deepfire",
       ]);
       expect(sub.options?.find((o) => o.name === "channel")?.channel_types).toContain(ChannelType.GuildForum);
       expect(sub.options?.find((o) => o.name === "channel")?.channel_types).toContain(ChannelType.GuildAnnouncement);

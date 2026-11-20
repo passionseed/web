@@ -10,6 +10,8 @@ import { QuestDbError, QuestError } from "../api";
 import { openToStudents } from "../campfire";
 import { requireStaff, type Ctx } from "../context";
 import { BLOCKER, STAFF_AWARD_LABEL, T, bkkDate, safe } from "../copy";
+import { DEEPFIRE_SCHEMA, lobbyProblem, refreshDeepFire, type LobbyGuild } from "../deepfire";
+import { DEEPFIRE_ADMIN } from "../deepfireCopy";
 import { cid, isUuid } from "../ids";
 import { I, stageBar } from "../island/copy";
 import { ButtonStyle, GateError, button, buttonRows, modal, parseDate, selectRow, show, textValue, type Block, type View } from "../ui";
@@ -135,6 +137,8 @@ const CHANNELS: { key: string; label: string; hint?: string; optional?: boolean 
   { key: "suggest_channel_id", label: "ห้องเสนอไอเดีย", hint: "ฟอรัมได้ ลิงก์อยู่ในเมนู ⋯ บนเว็บ", optional: true },
   // Schema 19: the nightly island news card (../news.ts). DRAFT hint for the Thai review.
   { key: "news_channel_id", label: "ห้องข่าวเกาะ", hint: "โพสต์ทุกคืน 2 ทุ่ม ห้องประกาศได้", optional: true },
+  // Schema 22: the deep fire's lobby (../deepfire.ts). DRAFT label and hint for the Thai review.
+  { key: "deepfire_channel_id", label: DEEPFIRE_ADMIN.label, hint: DEEPFIRE_ADMIN.hint, optional: true },
 ];
 
 /**
@@ -162,6 +166,54 @@ function botCanKeepLivePost(i: ChatInputCommandInteraction, channelId: string): 
     | undefined;
   if (!me || typeof channel?.permissionsFor !== "function") return true;
   return channel.permissionsFor(me)?.has(LIVE_PERMISSIONS) ?? false;
+}
+
+/**
+ * The database's island schema, read on every /admin channel kind:deepfire
+ * (not cached: the setting works as soon as the migration is applied, with no
+ * restart). A database without the version function is 0.
+ */
+async function schemaNow(ctx: Ctx): Promise<number> {
+  try {
+    return Number(await ctx.api.call<number>("shift_quest_schema_version"));
+  } catch (error) {
+    if (error instanceof QuestDbError && error.sqlstate === "42883") return 0;
+    throw error;
+  }
+}
+
+/** One saved setting as the database has it now (shift_quest_admin_status). */
+async function settingNow(ctx: Ctx, key: string): Promise<unknown> {
+  return (await ctx.api.call<Status>("shift_quest_admin_status", ctx.userId)).settings[key];
+}
+
+/**
+ * /admin channel kind:deepfire: the lobby must be a plain voice channel in a
+ * category where the bot can build rooms (lobbyProblem: View Channel,
+ * Connect, Manage Channels and Move Members on the channel and its category,
+ * and every permission a room sets on the category). Unknown (not cached) is
+ * refused: unlike the live post, the deep fire fails closed. Students must
+ * see and join it (openToStudents, as for coworking): the rooms copy the
+ * lobby's visibility, so a lobby students cannot see would build rooms only
+ * staff see, and the island's button would lead nowhere. It is never the
+ * campfire's coworking channel. Setting or clearing needs schema 22.
+ */
+async function checkDeepfire(i: ChatInputCommandInteraction, ctx: Ctx, chosen: { id: string; type: ChannelType } | null): Promise<void> {
+  if (chosen) {
+    if (chosen.type !== ChannelType.GuildVoice) throw new GateError(DEEPFIRE_ADMIN.notVoice);
+    const problem = lobbyProblem(i.guild as unknown as LobbyGuild | null, chosen.id);
+    if (problem === "no_category") throw new GateError(DEEPFIRE_ADMIN.noCategory);
+    if (problem === "bot_perms") throw new GateError(DEEPFIRE_ADMIN.botPerms);
+    if (problem === "not_voice") throw new GateError(DEEPFIRE_ADMIN.notVoice);
+    if (problem) throw new GateError(DEEPFIRE_ADMIN.unknown);
+    const full = i.guild?.channels.cache.get(chosen.id);
+    if (!openToStudents(full as never, ctx.session.settings.student_role_ids, i.guildId ?? "")) {
+      throw new GateError(DEEPFIRE_ADMIN.lobbyPrivate);
+    }
+  }
+  if (!((await schemaNow(ctx)) >= DEEPFIRE_SCHEMA)) throw new GateError(DEEPFIRE_ADMIN.needsSchema);
+  // Everyone who joins the lobby is moved into a room of their own: the campfire would never have anyone at it.
+  if (chosen && (await settingNow(ctx, "coworking_channel_id")) === chosen.id) throw new GateError(DEEPFIRE_ADMIN.notCampfire);
 }
 
 /**
@@ -457,6 +509,8 @@ export const admin: HandlerSet = {
       requireStaff(ctx, ADMIN);
       const kind = i.options.getString("kind", true);
       const chosen = i.options.getChannel("channel");
+      // The deep fire's lobby: a voice channel in a category the bot can build rooms in (checked first, on its own).
+      if (kind === "deepfire") await checkDeepfire(i, ctx, chosen);
       if (chosen && chosen.type === ChannelType.GuildAnnouncement && kind !== "news") {
         // Only news may be an announcement channel: students cannot post there, which the other kinds need.
         throw new GateError(T.adminAnnouncementNewsOnly);
@@ -465,14 +519,16 @@ export const admin: HandlerSet = {
         // Only suggest may be a forum: the bot never posts there, the web only links to it.
         throw new GateError(T.adminForumSuggestOnly);
       }
-      if (chosen && chosen.type === ChannelType.GuildVoice) {
-        // Only coworking may be voice: its people sit at the island's campfire.
+      if (chosen && chosen.type === ChannelType.GuildVoice && kind !== "deepfire") {
+        // Only coworking (and the deep fire's lobby, checked above) may be voice: its people sit at the island's campfire.
         if (kind !== "coworking") throw new GateError(T.adminVoiceCoworkingOnly);
         // A private voice room is nobody's island news: refuse it before anyone sits at the campfire.
         const full = i.guild?.channels.cache.get(chosen.id) ?? chosen;
         if (!openToStudents(full as never, ctx.session.settings.student_role_ids, i.guildId ?? "")) {
           throw new GateError(T.adminCoworkingPrivate);
         }
+        // The deep fire's lobby moves everyone who joins into a room of their own: never the campfire's channel too.
+        if ((await settingNow(ctx, "deepfire_channel_id")) === chosen.id) throw new GateError(DEEPFIRE_ADMIN.notCampfire);
       }
       if (chosen && kind === "suggest") {
         if (chosen.type !== ChannelType.GuildForum && chosen.type !== ChannelType.GuildText) throw new GateError(T.adminSuggestType);
@@ -502,6 +558,9 @@ export const admin: HandlerSet = {
         if (!botCanKeepLivePost(i, chosen.id)) throw new GateError(T.adminNewsBotPerms);
       }
       const status = await ctx.api.call<Status>("shift_quest_admin_set", ctx.userId, `${kind}_channel`, chosen?.id ?? "");
+      // The deep fire reads its lobby on a one-minute heartbeat: read it now, so the next join gets a room. Not
+      // awaited: the reply never waits for the database.
+      if (kind === "deepfire") void refreshDeepFire();
       await show(i, statusView(status, true));
     },
 

@@ -21,6 +21,7 @@ export type MotionSpriteName =
   | "goal_string" | "goal_bulb" | "booth_flag" | "star_flag"
   | "campfire_pit" | "campfire_pit_cold" | "campfire_flame_0" | "campfire_flame_1" | "campfire_flame_2"
   | "sit_a_0" | "sit_a_1" | "sit_b_0" | "sit_b_1" | "sit_c_0" | "sit_c_1" | "sit_d_0" | "sit_d_1"
+  | "deepfire_pit" | "deepfire_pit_cold" | "deepfire_flame_0" | "deepfire_flame_1" | "deepfire_flame_2"
   | "merchant_ship_0" | "merchant_ship_1";
 
 const TILE: [number, number] = [16, 16];
@@ -32,6 +33,8 @@ const FLAG: [number, number] = [7, 12];
 const FLAME: [number, number] = [10, 10];
 const GLYPH: [number, number] = [6, 10];
 const SITTER: [number, number] = [8, 10];
+const DEEPFIRE_PIT: [number, number] = [19, 7];
+const DEEPFIRE_FLAME: [number, number] = [6, 8];
 const MERCHANT_SHIP: [number, number] = [64, 40];
 
 /** [width, height] in native pixels. */
@@ -49,6 +52,8 @@ export const MOTION_SIZES: Record<MotionSpriteName, [number, number]> = {
   campfire_pit: [14, 10], campfire_pit_cold: [14, 10], campfire_flame_0: FLAME, campfire_flame_1: FLAME, campfire_flame_2: FLAME,
   sit_a_0: SITTER, sit_a_1: SITTER, sit_b_0: SITTER, sit_b_1: SITTER,
   sit_c_0: SITTER, sit_c_1: SITTER, sit_d_0: SITTER, sit_d_1: SITTER,
+  deepfire_pit: DEEPFIRE_PIT, deepfire_pit_cold: DEEPFIRE_PIT,
+  deepfire_flame_0: DEEPFIRE_FLAME, deepfire_flame_1: DEEPFIRE_FLAME, deepfire_flame_2: DEEPFIRE_FLAME,
   count_0: GLYPH, count_1: GLYPH, count_2: GLYPH, count_3: GLYPH, count_4: GLYPH,
   count_5: GLYPH, count_6: GLYPH, count_7: GLYPH, count_8: GLYPH, count_9: GLYPH,
   count_d: GLYPH, count_dash: GLYPH, count_a: GLYPH, count_y: GLYPH,
@@ -1181,6 +1186,60 @@ export const MOTION_SPRITES: Record<MotionSpriteName, string[]> = {
     "owwo.owo",
     ".ooooooo",
   ],
+  // The deep fire (กองไฟโฟกัส): a small one-person fire on the grass at the plaza's front right, with one log
+  // to sit on and nobody drawn on it. The campfire's stones, embers and flame keys, only smaller: a 12 px ring
+  // (embers y, i over coals b, c) with the log on its right, the cut end (e) facing the fire. The flame sits on
+  // the ring's back rim, 3 px in and 6 px up (lib/shift-island/live/plaza.ts PLAZA_LAYOUT.deepFlame).
+  deepfire_pit: [
+    "...oooooo..........",
+    ".ootaattaoo........",
+    "otaoyiiyoato.......",
+    "ozaocbbcoazo.ooooo.",
+    ".otaoccoato.oecccbo",
+    "..ootaatoo..oebcbbo",
+    "....oooo.....ooooo.",
+  ],
+  // Asleep (the fire keeper is away): the same stones over grey ash, no embers, no flame.
+  deepfire_pit_cold: [
+    "...oooooo..........",
+    ".ootaattaoo........",
+    "otaobccboato.......",
+    "ozaocbbcoazo.ooooo.",
+    ".otaoccoato.oecccbo",
+    "..ootaatoo..oebcbbo",
+    "....oooo.....ooooo.",
+  ],
+  // Its flame, the campfire's keys (r, y, f, i) at a third of the size: upright, leaning right, leaning left.
+  deepfire_flame_0: [
+    "..r...",
+    "..rr..",
+    ".ryr..",
+    ".ryyr.",
+    "ryyiyr",
+    "ryfiyr",
+    "ryffyr",
+    ".ryyr.",
+  ],
+  deepfire_flame_1: [
+    "...r..",
+    "...rr.",
+    "..ryr.",
+    ".ryyr.",
+    ".ryiyr",
+    "ryifyr",
+    "ryffyr",
+    ".ryyr.",
+  ],
+  deepfire_flame_2: [
+    ".r....",
+    ".rr...",
+    ".ryr..",
+    "ryyr..",
+    "ryiyr.",
+    "ryfiyr",
+    "ryffyr",
+    ".ryyr.",
+  ],
   // The merchant ship (the island shop), moored off the coast: a jib, a sprout on the main sail, a striped
   // stall on its stern deck with a hanging lantern, a counter and its goods, portholes along the hull, and the
   // shop's sign painted on the stern's side: a Passioncoin in a wooden frame, no words. Its sails are shaded:
@@ -1310,6 +1369,7 @@ export const ACTOR_FRAMES = {
   sitB: ["sit_b_0", "sit_b_1"],
   sitC: ["sit_c_0", "sit_c_1"],
   sitD: ["sit_d_0", "sit_d_1"],
+  deepfireFlame: ["deepfire_flame_0", "deepfire_flame_1", "deepfire_flame_2", "deepfire_flame_1"],
   merchantShip: ["merchant_ship_0", "merchant_ship_1"],
 } as const;
 

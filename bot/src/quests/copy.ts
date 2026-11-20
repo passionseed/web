@@ -93,9 +93,9 @@ export const T = {
   pilotClosed: "ตอนนี้ SHIFT High quests ยังไม่เปิดให้ใช้",
   notStarted: "เริ่มด้วย /start ก่อนนะ ใช้เวลาไม่ถึงนาที",
   staffOnly: "คำสั่งนี้สำหรับทีมพี่เลี้ยงที่ได้รับสิทธิ์เท่านั้น",
-  /** News added with schema 19. */
+  /** News added with schema 19; deepfire (the deep fire's lobby, schema 22) is DRAFT for the Thai review. */
   adminVoiceCoworkingOnly:
-    "ใช้ห้องเสียงได้แค่ coworking ส่วน help, staff, celebrate, live และ news ต้องเป็นห้องข้อความ (news ใช้ห้องประกาศได้) และ suggest ต้องเป็นฟอรัมหรือห้องข้อความ",
+    "ใช้ห้องเสียงได้แค่ coworking และ deepfire ส่วน help, staff, celebrate, live และ news ต้องเป็นห้องข้อความ (news ใช้ห้องประกาศได้) และ suggest ต้องเป็นฟอรัมหรือห้องข้อความ",
   adminCoworkingPrivate:
     "นักเรียนยังมองไม่เห็นหรือเข้าห้องเสียงนี้ไม่ได้ เลือกห้องที่นักเรียนเข้าได้ กองไฟบนเกาะจะได้ไม่โชว์คนในห้องส่วนตัว",
   /** /admin channel kind:live: the bot keeps one post there, so it must be a plain text channel. */
