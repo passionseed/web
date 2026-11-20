@@ -10,6 +10,8 @@ import { formatThaiDate } from "@/lib/content/shift-cohort";
  * - Elements and theme: private/hackathon-december-2026.md (PR #87) and
  *   Angpao, 2026-11-19 (Aether is the fifth element).
  * - Prize total: told by Angpao, 2026-11-19 (not yet in company-brain).
+ * No registration link yet: passionseed.org/hackathon still shows the
+ *   earlier healthcare hackathon (checked 2026-11-20).
  * Change a fact here, never in a poster.
  */
 export const ELEMENTAL = {
@@ -24,7 +26,6 @@ export const ELEMENTAL = {
   groupPriceBaht: 149,
   prizeTotalBaht: 20000,
   theme: "Environmental negligence",
-  url: "passionseed.org/hackathon",
   elements: [
     { key: "water", en: "Water", th: "น้ำ" },
     { key: "earth", en: "Earth", th: "ดิน" },
