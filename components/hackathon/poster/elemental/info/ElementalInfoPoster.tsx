@@ -24,8 +24,8 @@ const trirong = Trirong({
 export const W = 1080;
 export const H = 1350;
 const PAD = 72;
-/** Slide 1's picture with no type, so the carousel reads as one piece. */
-const PLATE = "/hackathon/poster/elemental/plate-key.png";
+/** Slide 1's picture (the blue sky, the main one: Angpao, 2026-11-20) with no type, so the carousel reads as one piece. */
+const PLATE = "/hackathon/poster/elemental/plate-key-blue.png";
 /** How much of the dark ground covers the picture (1 hides it). */
 const VEIL = 0.8;
 const YEAR_TH = Number(ELEMENTAL.startDate.slice(0, 4)) + 543;
