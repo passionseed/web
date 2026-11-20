@@ -253,8 +253,10 @@ export const LIVE = {
   join: "🔥 เข้ากองไฟ",
   suggest: "💡 เสนอไอเดีย",
   updated: (unix: number) => `อัปเดตล่าสุด <t:${unix}:R>`,
-  /** Also how the bot finds its own pinned post again: keep it unique to this post. */
-  marker: "🏝️ โพสต์นี้อัปเดตเองทุก 10 นาที",
+  /** Also how the bot finds its own pinned post again: keep it unique to this post. DRAFT (2026-11-21): edits only when the island changes. */
+  marker: "🏝️ โพสต์นี้อัปเดตเองเมื่อเกาะเปลี่ยน",
+  /** Markers earlier releases put on the post: still recognised, so the bot never posts a second one. */
+  earlierMarkers: ["🏝️ โพสต์นี้อัปเดตเองทุก 10 นาที"],
   pictureFailed: "🖼️ รูปเกาะวาดไม่ขึ้นรอบนี้ ตัวเลขด้านบนยังเป็นปัจจุบัน",
 };
 

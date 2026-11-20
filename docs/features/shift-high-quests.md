@@ -698,8 +698,9 @@ reads and writes through `20261111090900_shift_quests_board.sql` and
     refuses both keys with `bad_input`.
   - **The live post** (`bot/src/quests/live.ts`): one message in the live
     channel that the bot edits in place, about 5 seconds after every gateway
-    ready, then when something shown changes (checked once a minute) or
-    every 10 minutes. It shows the same outsider view of the island as the
+    ready, then only when something real changes on the island (checked once
+    a minute): never on a timer, and not for a new light of the hour. Every
+    10 minutes it reads the post (no edit) so one staff deleted comes back. It shows the same outsider view of the island as the
     weekly post (names and stages only for fully consented plots), tree and
     goal counts, the Demo Day countdown, and the campfire as a count only.
     The picture is a looping GIF in the light of the Bangkok hour
