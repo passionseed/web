@@ -1,7 +1,7 @@
 import { Doto, Trirong } from "next/font/google";
 import type { ReactNode } from "react";
 
-import { ELEMENTAL, thaiDateLine } from "../facts";
+import { ELEMENTAL, prizeTotal, thaiDateLine } from "../facts";
 
 /**
  * Elemental Hackathon A4 poster (1240x1754, A4 at 150 dpi).
@@ -121,7 +121,7 @@ export function ElementalA4Poster({ id = "elemental-a4" }: { id?: string }) {
           <br />
           มากับเพื่อน ฿{ELEMENTAL.groupPriceBaht} / คน
         </Info>
-        <Info tag="[สมัคร]">{ELEMENTAL.url}</Info>
+        <Info tag="[รางวัล]">รางวัลรวมมูลค่า {prizeTotal()} บาท</Info>
         <Info tag="[ธีม]">{ELEMENTAL.theme}</Info>
         <Info tag="[โจทย์]">ดิน น้ำ ลม ไฟ และธาตุที่ 5</Info>
         <Info tag="[จัดโดย]">PassionSeed · {ELEMENTAL.series}</Info>
