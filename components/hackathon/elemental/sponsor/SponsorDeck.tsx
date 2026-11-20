@@ -225,9 +225,8 @@ const CRITERIA_COLOR = [EL.flame, EL.toxicGreen, EL.toxicCyan, EL.toxicYellow];
 const MISSION_ICONS: IconName[] = ["magnifier", "person", "sprout"];
 
 /**
- * PassionSeed's work so far. Source: company-brain branch
- * company-profile-past-events (events.md, history.md, numbers.md; Angpao,
- * 2026-11-20), not merged into main yet.
+ * PassionSeed's work so far. Source: company-brain main (events.md,
+ * history.md, numbers.md "Past events"; Angpao, 2026-11-20).
  */
 const HISTORY: [string, string, string, string | null][] = [
   ["2568", "ค่าย TechSeed", "ค่ายลงมือทำโปรเจกต์ 4 รุ่น (TechSeed #2–#5)", null],
