@@ -7,6 +7,10 @@ jest.mock("../db", () => ({
   questApi: () => ({ call, rows: jest.fn() }),
 }));
 
+// The SHIFT cohort calendar (shift-voice's): no round in session unless a test says so.
+const mockRounds = { live: new Set<string>() };
+jest.mock("@/lib/shift/voiceWindow", () => ({ roundsInSession: () => mockRounds.live }));
+
 // The SHIFT application lookup (service-role Supabase) behind consentOf: nothing new on file.
 const importShiftConsent = jest.fn();
 jest.mock("@/lib/shift-island/consent/shiftImport", () => ({
@@ -160,6 +164,8 @@ describe("getIslandPage", () => {
       ["shift_quest_island_news", [ACTOR]],
       // Roots (schema 10): the version first; this database does not answer it, so no roots are read.
       ["shift_quest_schema_version", []],
+      // The deep fire (schema 22): read straight away (no version check); unanswered here, so none.
+      ["shift_quest_deepfire", [ACTOR]],
       // Tree styles (schema 13): the same unanswered version read, retried by each optional reader.
       ["shift_quest_schema_version", []],
       // Photos (schema 14): asked once more; unanswered, so no photos.
@@ -175,6 +181,8 @@ describe("getIslandPage", () => {
     expect(page.photos).toBe(false);
     expect(page.peer).toBe(false);
     expect(page.campfire).toEqual({ count: 2, joinUrl: JOIN_URL });
+    expect(page.deepfire).toBeNull();
+    expect(page.cohortWeek).toBe(false);
     expect(page.suggestUrl).toBe(SUGGEST_URL);
     expect(page.character).toEqual(CHARACTER);
     expect(page.consent).toEqual(CONSENT);
@@ -344,6 +352,70 @@ describe("getIslandPage", () => {
       expect(Object.keys(page.campfire ?? {}).sort()).toEqual(["count", "joinUrl"]);
       const json = JSON.stringify(page.campfire);
       for (const secret of ["Mint", "ครูพลอย", "333333333333333333", ACTOR]) expect(json).not.toContain(secret);
+    });
+  });
+
+  describe("deep fire", () => {
+    const board = { project: { id: "p1", route: "software", stage: 1, milestones_done: [] }, main: [], side: [], proposed: [], help_open: [] };
+    const LOBBY = "666666666666666666";
+    const DEEP = { channel_id: LOBBY, guild_id: GUILD, live: true };
+    const withProject = {
+      shift_quest_island: { project, milestones: [], taps_today: 0, resting: false, season: null },
+      shift_quest_island_map: map,
+      shift_quest_board: board,
+      shift_quest_canvas_get: null,
+      shift_quest_campfire: FIRE,
+    };
+    const noProject = {
+      shift_quest_island: { project: null, milestones: [], taps_today: 0, resting: false, season: null },
+      shift_quest_island_map: map,
+      shift_quest_project_list: [],
+      shift_quest_campfire: FIRE,
+    };
+
+    afterEach(() => {
+      mockRounds.live = new Set();
+    });
+
+    it.each([
+      ["with a project", withProject],
+      ["without a project", noProject],
+    ])("carries the lobby's link and whether its keeper is there %s, and nothing else", async (_label, base) => {
+      respond({ ...base, shift_quest_deepfire: { ...DEEP, member_id: "m9", discord_user_id: "333333333333333333" } });
+      const page = await getIslandPage(viewer);
+      expect(call).toHaveBeenCalledWith("shift_quest_deepfire", ACTOR);
+      expect(page.deepfire).toEqual({ joinUrl: `https://discord.com/channels/${GUILD}/${LOBBY}`, live: true });
+      const json = JSON.stringify(page.deepfire);
+      for (const secret of ["m9", "333333333333333333", ACTOR]) expect(json).not.toContain(secret);
+    });
+
+    it("keeps the fire, asleep, while the bot is away", async () => {
+      respond({ ...withProject, shift_quest_deepfire: { ...DEEP, live: false } });
+      expect((await getIslandPage(viewer)).deepfire).toEqual({ joinUrl: `https://discord.com/channels/${GUILD}/${LOBBY}`, live: false });
+    });
+
+    it("is null when no lobby is set", async () => {
+      respond({ ...withProject, shift_quest_deepfire: { channel_id: null, guild_id: null, live: false } });
+      expect((await getIslandPage(viewer)).deepfire).toBeNull();
+    });
+
+    it.each([
+      ["the function missing (before the migration)", new QuestDbError("shift_quest_deepfire", "42883")],
+      ["a refusal", new QuestError("not_started")],
+      ["malformed data", "not an object"],
+    ])("is null on %s, and the rest of the page still loads", async (_label, failure) => {
+      respond({ ...withProject, shift_quest_deepfire: failure });
+      const page = await getIslandPage(viewer);
+      expect(page.deepfire).toBeNull();
+      expect(page.board).toEqual(board);
+      expect(page.campfire).toEqual({ count: 2, joinUrl: JOIN_URL });
+    });
+
+    it("says whether a SHIFT cohort round is in session (shift-voice records voice time that week)", async () => {
+      respond({ ...withProject, shift_quest_deepfire: DEEP });
+      expect((await getIslandPage(viewer)).cohortWeek).toBe(false);
+      mockRounds.live = new Set(["SHIFT[3]"]);
+      expect((await getIslandPage(viewer)).cohortWeek).toBe(true);
     });
   });
 

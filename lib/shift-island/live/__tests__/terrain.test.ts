@@ -93,6 +93,8 @@ function keepOut(scene: IslandScene, n: number): { what: string; rect: Rect }[] 
     pins: ["active", "main", "side"],
     campfire: { count: 12 },
     prizes: true,
+    // The deep fire stands on the grass, off the stone: the ground keeps its spot (with the 48px floor) clear.
+    deepfire: { lit: true },
     visitors: { count: 20, team: 3, me: true },
   });
   for (const spot of world.spots) {

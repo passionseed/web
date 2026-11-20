@@ -437,6 +437,7 @@ describe("IslandViewport", () => {
       pins: ["active", "main"],
       campfire: { count: 11 },
       prizes: true,
+      deepfire: { lit: true },
     };
     // The only word the plaza prints; it shows only over the viewer's own figure (visiting below).
     const labels = { me: "คุณ" };
@@ -446,6 +447,7 @@ describe("IslandViewport", () => {
       campfire: "ห้อง coworking, 11 คน",
       prizes: "ป้ายรางวัล Demo Day",
       ship: "เรือสินค้า เปิดร้านค้า",
+      deepfire: "กองไฟโฟกัส: ห้องเงียบของคุณคนเดียว",
     };
     const plaza = (onSpot?: (id: PlazaSpotId) => void) => ({ input, labels, names, onSpot });
     /** The same plaza with the viewer checked in today: their figure, and their คุณ tag over it. */
@@ -500,7 +502,8 @@ describe("IslandViewport", () => {
       }
       fireEvent.click(screen.getByRole("button", { name: names.notice }));
       fireEvent.click(screen.getByRole("button", { name: names.campfire }));
-      expect(onSpot.mock.calls).toEqual([["notice"], ["campfire"]]);
+      fireEvent.click(screen.getByRole("button", { name: names.deepfire }));
+      expect(onSpot.mock.calls).toEqual([["notice"], ["campfire"], ["deepfire"]]);
     });
 
     it("uses the exact boxes on the whole island, and skips spots without a name", () => {
@@ -530,9 +533,9 @@ describe("IslandViewport", () => {
       const { container, rerender } = render(<IslandViewport picture={live} onPlot={jest.fn()} plaza={visiting()} />);
       const shown = [...container.querySelectorAll<HTMLElement>("[data-label]")];
       expect(shown.map((el) => [el.dataset.label, el.dataset.anchor, el.textContent])).toEqual([["me", "bottom", "คุณ"]]);
-      // No words over the notice board, the stage (its countdown board draws the days), the prize board or the
-      // campfire (11 people, more than its seats): a tap opens each.
-      for (const id of ["notice", "stage", "prizes", "campfire"]) {
+      // No words over the notice board, the stage (its countdown board draws the days), the prize board, the
+      // campfire (11 people, more than its seats) or the deep fire: a tap opens each.
+      for (const id of ["notice", "stage", "prizes", "campfire", "deepfire"]) {
         expect(container.querySelector(`[data-spot="${id}"]`)).toBeEmptyDOMElement();
       }
       const points = plazaWorld(live.scene!, visiting().input).labels;

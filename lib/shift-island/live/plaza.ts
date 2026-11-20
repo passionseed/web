@@ -1,7 +1,8 @@
 /**
  * The plaza as a place to gather: the quest notice board, the Demo Day
  * festival (the stage under its D-10 countdown, lantern string, booth flags and stars), the Demo
- * Day prize board, the voice campfire and the merchant ship moored offshore (ship.ts), as LiveActors the existing engine draws above the trees, plus
+ * Day prize board, the voice campfire, the deep fire (กองไฟโฟกัส, a small
+ * one-person fire on the grass at the plaza's front right) and the merchant ship moored offshore (ship.ts), as LiveActors the existing engine draws above the trees, plus
  * where the DOM tap targets go and the one label the island still prints
  * (the viewer's small คุณ tag; the countdown board draws its own days). Pure
  * and client-safe.
@@ -17,9 +18,12 @@
  * Today's visitors (crowd.ts) are anonymous figures except the viewer's own
  * and, for the viewer's team only, their teammates; when the plaza is busy a
  * few of them sit in the campfire seats the coworking room leaves empty.
+ * Nobody ever sits at the deep fire: its one log stays empty, and it shows
+ * no count and no name, only whether its keeper (the bot) is there to light it.
  *
  * Plan: docs/designs/shift-high-island-web.md, "Festival, notice board, voice
- * campfire, canvas link", and docs/designs/shift-island-plaza-visitors.md.
+ * campfire, canvas link", docs/designs/shift-island-plaza-visitors.md and
+ * docs/designs/shift-island-deep-fire.md.
  */
 import { ACTOR_FRAMES, GOAL_BULB_SPOTS, MOTION_SIZES, type MotionSpriteName } from "@/bot/assets/island/motion-sprites";
 import type { IslandScene, SceneRect, SceneTree } from "@/bot/src/quests/island/scene";
@@ -46,9 +50,16 @@ export interface PlazaInput {
   visitors?: VisitorsInput | null;
   /** true moors the merchant ship (the shop, ship.ts) off the coast nearest the plaza; it carries no data. */
   ship?: boolean;
+  /**
+   * The deep fire (กองไฟโฟกัส) and its tap target; null or absent draws
+   * neither (no lobby set, or no data). `lit` false draws it asleep: the cold
+   * ring, no flame (the bot that builds the rooms is not there). No count,
+   * no names: nobody is ever drawn at it.
+   */
+  deepfire?: { lit: boolean } | null;
 }
 
-export type PlazaSpotId = "notice" | "stage" | "campfire" | "prizes" | "ship";
+export type PlazaSpotId = "notice" | "stage" | "campfire" | "prizes" | "ship" | "deepfire";
 
 /**
  * A tap target, percent (0..100) of the picture: x and y are its top-left
@@ -65,7 +76,8 @@ export interface PlazaSpot {
   /**
    * The actors that draw it, by index into PlazaWorld.actors: the shape the
    * interact outline traces (interact.ts). The campfire's are its pit and
-   * flame, not the people sitting round it.
+   * flame, not the people sitting round it; the deep fire's its ring and
+   * log, and its flame while lit.
    */
   actors: number[];
 }
@@ -135,6 +147,16 @@ export const PLAZA_LAYOUT = {
   /** Front right of the plaza, under the stage, off the bottom right lamp. */
   prizeBoard: [50, 14] as Point,
   prizeSpot: { x: 47, y: 12, w: 24, h: 24 },
+  /**
+   * The deep fire, a short walk from the campfire and a little apart: on the
+   * grass just off the plaza's front edge, under the teammates' row, clear of
+   * the helper paths, the plots below and the pin over any of them. Its ring
+   * with the log on its right (19 x 7), the flame on the ring's back rim
+   * (6 x 8), and a spot round both (terrain.ts keeps its 48px floor clear).
+   */
+  deepPit: [45, 56] as Point,
+  deepFlame: [48, 50] as Point,
+  deepfireSpot: { x: 41, y: 48, w: 24, h: 16 },
 } as const;
 
 /** The countdown's glyphs stand on the board's dark face: 40 x 12 px from (2, 2), glyphs 6 x 10 with 2 px between. */
@@ -232,8 +254,8 @@ export function boothFlagAt(tree: Pick<SceneTree, "left" | "top" | "mine">, scen
  * The plaza's actors, tap targets and label points for this scene. Actors are
  * in draw order: the merchant ship, goal string, lit bulbs, countdown board and its glyphs, stage, notice board, notes,
  * booth flags, prize board, campfire pit, the seats behind the fire, the
- * flame, the seats in front, then today's visitors (crowd.ts: strollers,
- * teammates, the viewer). Spots: ship, notice, stage, prizes, campfire (no
+ * flame, the seats in front, the deep fire's ring and its flame, then today's visitors (crowd.ts: strollers,
+ * teammates, the viewer). Spots: ship, notice, stage, prizes, campfire, deepfire (no
  * word floats over the ship: its button's name says it is the shop, and the
  * interact outline traces its sprite). Labels: the viewer's tag only (PlazaLabelId).
  * Figures: today's visitors standing or walking (the campfire's sitters
@@ -245,7 +267,8 @@ export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
   const crowd = plazaCrowd(input);
   const visitors = crowd.me || crowd.team + crowd.strollers + crowd.sitters + crowd.more > 0;
   const ship = input.ship === true ? shipAnchor(scene, plazaCentre(scene)) : null;
-  if (!festival && !pins && !campfire && !prizes && !visitors && !ship) return NO_PLAZA;
+  const deepfire = input.deepfire ? { lit: input.deepfire.lit === true } : null;
+  if (!festival && !pins && !campfire && !prizes && !visitors && !ship && !deepfire) return NO_PLAZA;
 
   const c = plazaCentre(scene);
   const at = ([dx, dy]: Point) => ({ x: c.x + dx, y: c.y + dy });
@@ -348,6 +371,17 @@ export function plazaWorld(scene: IslandScene, input: PlazaInput): PlazaWorld {
       actors.push({ frames: ACTOR_FRAMES.campfireFlame, ...at(L.flame), frameMs: FLAME_MS });
     }
     spots.push(spotOf("campfire", box(L.campfireSpot), scene, fire));
+  }
+
+  if (deepfire) {
+    // The ring and its log, still; while lit, the small flame on its back rim (the campfire's beat).
+    const parts = [actors.length];
+    actors.push(still(deepfire.lit ? "deepfire_pit" : "deepfire_pit_cold", at(L.deepPit)));
+    if (deepfire.lit) {
+      parts.push(actors.length);
+      actors.push({ frames: ACTOR_FRAMES.deepfireFlame, ...at(L.deepFlame), frameMs: FLAME_MS });
+    }
+    spots.push(spotOf("deepfire", box(L.deepfireSpot), scene, parts));
   }
 
   if (visitors) {

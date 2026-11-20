@@ -11,7 +11,7 @@ import type { BoardRef } from "@/lib/supabase/shift-quests/board";
 import type { IslandPageData, MyTree } from "@/lib/supabase/shift-quests/types";
 
 import { IDS, MAIN_TITLES, makeBoard } from "../__fixtures__/board";
-import { HUD, MENU, NEXT_STEP, PLOT, RESULTS, TODAY, TREE } from "../copy";
+import { DEEPFIRE, HUD, MENU, NEXT_STEP, PLOT, RESULTS, TODAY, TREE } from "../copy";
 import { IslandApp } from "../IslandApp";
 import type { IslandViewport } from "../IslandViewport";
 import { CHARACTER as CHARACTER_COPY, PLAYER, PLAYER_MENU, SHOP, WALLET } from "../player/copy";
@@ -918,6 +918,72 @@ describe("IslandApp: the plaza", () => {
     // The count the island no longer prints over the fire (here the room's newest, as loaded).
     expect(within(sheet).getByText(/^\d+ คนกำลังทำงานอยู่$/)).toBeInTheDocument();
     expect(within(sheet).getByRole("link", { name: "เข้าห้อง" })).toHaveAttribute("href", JOIN);
+  });
+
+  describe("the deep fire", () => {
+    const LOBBY = "https://discord.com/channels/111111111111111111/666666666666666666";
+
+    it("draws none without a lobby, with no button", () => {
+      render(<IslandApp page={festive()} picture={null} />);
+      expect(plaza().input.deepfire).toBeNull();
+      expect(plaza().names).not.toHaveProperty("deepfire");
+    });
+
+    it("lights it while its keeper is there, names its button, and opens its sheet (never the campfire's)", () => {
+      render(<IslandApp page={festive({ deepfire: { joinUrl: LOBBY, live: true } })} picture={null} />);
+      expect(plaza().input.deepfire).toEqual({ lit: true });
+      expect(plaza().names.deepfire).toBe(DEEPFIRE.spot);
+      // No words drawn over it: its button carries its name.
+      expect(plaza().labels).toEqual({});
+      fireEvent.click(screen.getByRole("button", { name: DEEPFIRE.spot }));
+      const sheet = screen.getByRole("dialog", { name: "กองไฟโฟกัส" });
+      expect(within(sheet).getByRole("link", { name: "จุดไฟ" })).toHaveAttribute("href", LOBBY);
+      expect(screen.queryByRole("dialog", { name: "กองไฟ" })).toBeNull();
+      expect(mockedLoadCampfire).not.toHaveBeenCalled();
+      expect(viewport()).toHaveAttribute("data-paused", "true");
+      // Outside a cohort week nothing is said about recorded time.
+      expect(within(sheet).queryByText(DEEPFIRE.cohort)).toBeNull();
+      fireEvent.keyDown(sheet, { key: "Escape" });
+      expect(screen.queryByRole("dialog", { name: "กองไฟโฟกัส" })).toBeNull();
+    });
+
+    it("draws it asleep while the bot is away, and its sheet greys the button", () => {
+      render(<IslandApp page={festive({ deepfire: { joinUrl: LOBBY, live: false } })} picture={null} />);
+      expect(plaza().input.deepfire).toEqual({ lit: false });
+      fireEvent.click(screen.getByRole("button", { name: DEEPFIRE.spotAsleep }));
+      const sheet = screen.getByRole("dialog", { name: "กองไฟโฟกัส" });
+      expect(within(sheet).queryByRole("link")).toBeNull();
+      expect(within(sheet).getByRole("button", { name: "จุดไฟ" })).toBeDisabled();
+      expect(within(sheet).getByText(DEEPFIRE.asleep)).toBeInTheDocument();
+    });
+
+    it("closes its sheet when the lobby goes away on a refresh, so the island never stays paused", () => {
+      const { rerender } = render(<IslandApp page={festive({ deepfire: { joinUrl: LOBBY, live: true } })} picture={null} />);
+      fireEvent.click(screen.getByRole("button", { name: DEEPFIRE.spot }));
+      expect(screen.getByRole("dialog", { name: "กองไฟโฟกัส" })).toBeInTheDocument();
+      expect(viewport()).toHaveAttribute("data-paused", "true");
+      // Staff cleared the lobby (or its read failed) while the student was in Discord.
+      rerender(<IslandApp page={festive()} picture={null} />);
+      expect(screen.queryByRole("dialog", { name: "กองไฟโฟกัส" })).toBeNull();
+      expect(viewport()).toHaveAttribute("data-paused", "false");
+      // When it comes back, its sheet waits for a tap.
+      rerender(<IslandApp page={festive({ deepfire: { joinUrl: LOBBY, live: true } })} picture={null} />);
+      expect(screen.queryByRole("dialog", { name: "กองไฟโฟกัส" })).toBeNull();
+      expect(viewport()).toHaveAttribute("data-paused", "false");
+    });
+
+    it("says in a SHIFT cohort week that shift-voice records time in this room too", () => {
+      render(<IslandApp page={festive({ deepfire: { joinUrl: LOBBY, live: true }, cohortWeek: true })} picture={null} />);
+      fireEvent.click(screen.getByRole("button", { name: DEEPFIRE.spot }));
+      expect(within(screen.getByRole("dialog", { name: "กองไฟโฟกัส" })).getByText(DEEPFIRE.cohort)).toBeInTheDocument();
+    });
+
+    it("stands in a student's plaza before they have a plot too, with nothing to tap", () => {
+      render(<IslandApp page={unclaimed({ island: { ...page().island, project: null }, deepfire: { joinUrl: LOBBY, live: true } })} picture={null} />);
+      expect(plaza().input.deepfire).toEqual({ lit: true });
+      expect(plaza().onSpot).toBeUndefined();
+      expect(plaza().names).toEqual({});
+    });
   });
 
   it("keeps the whole board off home: the plaza's notice board opens it, and the chip sheet's first line", () => {

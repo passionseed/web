@@ -71,6 +71,14 @@
 #             day and on erasure); the private check; whether the call pings;
 #             /data's tree gifts; the grants: the bot's, never the
 #             website's), with consent off
+#   deepfire  every migration applied twice, then deepfire.ts (schema 22,
+#             20261120120000: the deep fire's lobby setting through
+#             /admin channel kind:deepfire, admins only, set and cleared; the
+#             bot's heartbeat; the website's read, refused before /start, live
+#             only while the lobby is set, the last beat named it, said ready
+#             and is under 3 minutes old; one state row with no person in it;
+#             the grants: the beat the bot's, the read the website's), with
+#             consent off
 #
 #   supabase/tests/shift_quests/run-local.sh       # or: pnpm test:db:quests
 #   PG_BIN=/usr/lib/postgresql/15/bin supabase/tests/shift_quests/run-local.sh
@@ -219,11 +227,13 @@ SQL
 # shift_quest_enqueue_news_missed) and the campfire call's and evening
 # guest's seven (20261118150000: shift_quest_call_today, _call_claim,
 # _call_mark, _call_pings, shift_quest_campfire_seen, _campfire_drop,
-# shift_quest_guest_status) are the bot's like every other entry point, and
+# shift_quest_guest_status) and the deep fire's heartbeat (20261120120000,
+# shift_quest_deepfire_beat) are the bot's like every other entry point, and
 # never the website's (their helpers, shift_quest__news_*, __call_* and
-# __guest_*, are nobody's).
+# __guest_*, are nobody's). The deep fire's read (20261120120000,
+# shift_quest_deepfire) is the website's only.
 # And the web allowlist (20261111090900, 091000, 091100, 091200, 093000, 094000, and every later file
-# that grants shift_quest_web, up to 20261118100000's website-does-everything allowlist): shift_quest_web executes exactly the
+# that grants shift_quest_web, up to 20261118100000's website-does-everything allowlist and 20261120120000's deep fire read): shift_quest_web executes exactly the
 # functions listed below (nothing before that file is applied), never a
 # helper, and holds no privilege on any table or sequence. The list repeats
 # the migration's on purpose: a new grant must change both.
@@ -256,7 +266,9 @@ WITH fns0 AS (
         'shift_quest_admin_member_recognize', 'shift_quest_admin_member_award',
         'shift_quest_admin_member_consent_reset', 'shift_quest_admin_seasons')
       -- 20261118110000_shift_quest_island_visitors: the plaza's visitors are the website's.
-      OR p.proname = 'shift_quest_island_visitors' AS web_only
+      OR p.proname = 'shift_quest_island_visitors'
+      -- 20261120120000_shift_quest_deep_fire: the island's read of the deep fire.
+      OR p.proname = 'shift_quest_deepfire' AS web_only
   FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
   WHERE n.nspname = 'public' AND p.proname LIKE 'shift\_quest\_%'
 ), fns AS (
@@ -395,7 +407,9 @@ web_allow(sig) AS (VALUES
   ('shift_quest_admin_data_close(text,uuid,boolean)'),
   ('shift_quest_admin_erase(text,uuid)'),
   -- 20261118110000_shift_quest_island_visitors.
-  ('shift_quest_island_visitors(text)')
+  ('shift_quest_island_visitors(text)'),
+  -- 20261120120000_shift_quest_deep_fire.
+  ('shift_quest_deepfire(text)')
 ), web_applied AS (
   SELECT to_regprocedure('public.shift_quest_board(text)') IS NOT NULL AS yes
 )
@@ -458,7 +472,7 @@ echo "# migrations"
 for f in "${MIGRATIONS[@]}"; do echo "apply $(basename "$f")"; done
 new_db once
 apply once "single pass" "${MIGRATIONS[@]}"
-for DB in rules island flows islandflows board canvas campfire live player roots tree reset evidence peer treepost webeverything visitors news newsmissed campfirecall; do
+for DB in rules island flows islandflows board canvas campfire live player roots tree reset evidence peer treepost webeverything visitors news newsmissed campfirecall deepfire; do
   new_db "$DB"
   apply "$DB" "first pass" "${MIGRATIONS[@]}"
   apply "$DB" "second pass" "${MIGRATIONS[@]}"
@@ -552,6 +566,7 @@ suite "plaza visitors" visitors visitors.ts
 suite "island news daily" news news.ts
 suite "island news missed-night note" newsmissed news_missed.ts
 suite "campfire call and evening guest" campfirecall campfire_call.ts
+suite "deep fire" deepfire deepfire.ts
 # island_rules.ts runs against wave 1 alone once it knows to skip season cases.
 if [ "${#WAVE1[@]}" -lt "${#MIGRATIONS[@]}" ] && grep -q SHIFT_QUESTS_WAVE "$HERE/island_rules.ts"; then
   export SHIFT_QUESTS_WAVE=1

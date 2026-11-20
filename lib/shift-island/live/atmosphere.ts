@@ -477,10 +477,10 @@ export function footprint(rows: readonly string[]): { x0: number; x1: number; bo
 
 /**
  * Actors that stand on the ground and cast a shadow (glyphs, bulbs, notes,
- * the fire and its pit do not; the merchant ship floats, and its shadow on
+ * the fires and their pits do not; the merchant ship floats, and its shadow on
  * the water is its own, shipWater.ts).
  */
-const NO_SHADOW = /^(count_|goal_|campfire_|notice_note|fest_count|lantern_glow|petal_|leaf_|merchant_ship_|ship_foam_)/;
+const NO_SHADOW = /^(count_|goal_|campfire_|deepfire_|notice_note|fest_count|lantern_glow|petal_|leaf_|merchant_ship_|ship_foam_)/;
 
 export function castsShadow(name: string): boolean {
   return !NO_SHADOW.test(name);
@@ -605,14 +605,20 @@ export function breathAt(tick: number): number {
   return BREATH_WALK[Math.floor(tick / BREATH_TICKS) % BREATH_WALK.length];
 }
 
-/** Actors that never catch the fire's light: the flame itself, glyphs, bulbs, notes, boards, the ship out at sea. */
-const UNLIT = /^(campfire_flame|count_|goal_|notice_|fest_|prize_|petal_|leaf_|merchant_ship_)/;
+/** Actors that never catch the fire's light: the flames themselves, glyphs, bulbs, notes, boards, the ship out at sea. */
+const UNLIT = /^(campfire_flame|deepfire_flame|count_|goal_|notice_|fest_|prize_|petal_|leaf_|merchant_ship_)/;
 
 export function catchesLight(name: string): boolean {
   return !UNLIT.test(name);
 }
 
-/** Every light on the island in a phase: lamps, lanterns and the festoon (night), the fire, the countdown board, the lit bulbs. */
+/**
+ * Every light on the island in a phase: lamps, lanterns and the festoon
+ * (night), the fire, the countdown board, the lit bulbs. The deep fire's
+ * small flame lights like a lantern: a still pool the size of one person's
+ * fire (the breathing pool is the campfire's alone, fx.ts), faint at dawn
+ * and dusk; asleep it has no flame and no light.
+ */
 export function lightSources(model: SceneModel, actors: readonly LiveActor[], phase: LightPhase): LightSource[] {
   const out: LightSource[] = [];
   const add = (s: LightSource) => {
@@ -630,6 +636,7 @@ export function lightSources(model: SceneModel, actors: readonly LiveActor[], ph
   for (const a of actors) {
     const name = a.frames[0] ?? "";
     if (name.startsWith("campfire_flame")) add({ kind: "fire", hx: Math.round(a.x) + 5, hy: Math.round(a.y) + 5, gx: Math.round(a.x) + 5, gy: Math.round(a.y) + 8 });
+    else if (name.startsWith("deepfire_flame")) add({ kind: "lantern", hx: Math.round(a.x) + 3, hy: Math.round(a.y) + 4, gx: Math.round(a.x) + 3, gy: Math.round(a.y) + 9 });
     else if (name === "fest_count") add({ kind: "board", hx: Math.round(a.x) + 22, hy: Math.round(a.y) + 9, gx: Math.round(a.x) + 22, gy: Math.round(a.y) + 24 });
     else if (name === "goal_bulb") add({ kind: "bulb", hx: Math.round(a.x) + 1, hy: Math.round(a.y) + 1, gx: null, gy: null });
   }

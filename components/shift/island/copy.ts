@@ -38,6 +38,8 @@ export const PLACES = {
   plaza: "ลานกลางเกาะ",
   board: "กระดานเควสต์",
   campfire: "กองไฟ",
+  /** DRAFT (2026-11-20): the small one-person fire; the bot builds a locked voice room for whoever lights it. */
+  deepfire: "กองไฟโฟกัส",
   stage: "เวที Demo Day",
 };
 
@@ -713,6 +715,33 @@ export const CAMPFIRE = {
    * reviewed (Gemini, Codex, Claude), 2026-11-18.
    */
   fine: "กองไฟบนเกาะเก็บแค่ว่าใครอยู่ในห้องตอนนี้ และลบทันทีเมื่อออก ส่วนตอนแขกแวะมาที่กองไฟ ระบบจะเก็บว่าทีมไหนมีคนนั่งช่วงพักนั้นและผลลุ้นของทีม แล้วลบในวันถัดไป ไม่เก็บว่าใครในทีมนั่งหรือนั่งตอนไหน (ถ้าทีมมีคุณคนเดียว ข้อมูลของทีมก็คือของคุณ) ลุคที่ทีมได้จะเป็นของขวัญของทีม เก็บไว้พร้อมวันที่ได้",
+};
+
+/**
+ * DRAFT (2026-11-20, needs the three-model Thai review): the deep fire, a
+ * small one-person fire on the plaza (docs/designs/shift-island-deep-fire.md).
+ * Its button opens the Discord lobby; joining it builds a voice room for that
+ * person alone, locked, visible to everyone who can see the lobby, deleted
+ * when they leave. No count and no names anywhere. Never "nobody counts your
+ * time": in a SHIFT cohort week shift-voice records voice time in every
+ * voice channel, so the sheet says so then (cohortWeek).
+ */
+export const DEEPFIRE = {
+  /** DRAFT: the fire's accessible name on the island while its keeper (the bot) is there. */
+  spot: `${PLACES.deepfire}: ห้องเงียบของคุณคนเดียว`,
+  /** DRAFT: the same while the bot is away (the fire drawn cold). */
+  spotAsleep: `${PLACES.deepfire}: ตอนนี้ไฟยังไม่ติด`,
+  title: PLACES.deepfire,
+  /** DRAFT: what happens, in one line. */
+  body: "กดจุดไฟ แล้วเข้าห้องเสียงใน Discord บอทจะสร้างห้องให้คุณคนเดียว ล็อกไว้ ไม่มีใครเข้ามาได้",
+  /** DRAFT: the one button. */
+  join: "จุดไฟ",
+  /** DRAFT: the bot is not beating ready; the button is greyed. Never a promise of when. */
+  asleep: "ตอนนี้คนดูแลไฟไม่อยู่ ลองใหม่อีกสักพัก",
+  /** DRAFT: who sees what, and what is kept (nothing). */
+  fine: "คนอื่นในเซิร์ฟเวอร์เห็นห้องนี้และเห็นว่าใครอยู่ข้างใน แต่ไม่มีใครเข้ามาได้ ห้องหายไปเมื่อคุณออก และเกาะไม่เก็บอะไรเกี่ยวกับห้องนี้เลย",
+  /** DRAFT: only in a SHIFT cohort week (lib/shift/voiceWindow.ts roundsInSession). */
+  cohort: "สัปดาห์นี้มีรอบ SHIFT ระบบของ SHIFT บันทึกเวลาในห้องเสียงทุกห้องของผู้เรียนรอบนี้ ห้องนี้ด้วย",
 };
 
 /**

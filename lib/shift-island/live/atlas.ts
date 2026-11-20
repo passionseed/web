@@ -39,7 +39,7 @@ export interface AtlasData {
   flipped: ReadonlyMap<string, AtlasRect>;
 }
 
-/** Drawn as is in every phase: the pin, glows, the campfire's flame and the goal's lit bulbs. */
+/** Drawn as is in every phase: the pin, glows, both fires' flames and the goal's lit bulbs. */
 const UNTINTED = new Set([
   "marker",
   "lantern_glow_0",
@@ -47,6 +47,10 @@ const UNTINTED = new Set([
   "campfire_flame_0",
   "campfire_flame_1",
   "campfire_flame_2",
+  // The deep fire's small flame (schema 22): warm at night like the campfire's.
+  "deepfire_flame_0",
+  "deepfire_flame_1",
+  "deepfire_flame_2",
   "goal_bulb",
   // The Demo Day countdown's glyphs: lit like the marquee's lights.
   ...["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "d", "dash", "a", "y"].map((g) => `count_${g}`),
@@ -57,6 +61,8 @@ const LIT_KEYS: Readonly<Record<string, string>> = {
   lamp_post: "yif",
   festoon: "yifrp",
   campfire_pit: "yi",
+  // The deep fire's embers. Its cold ring (deepfire_pit_cold) has none, so it dims like the ground.
+  deepfire_pit: "yi",
   fest_stage_3: "y",
   fest_count: "f",
   // The merchant ship's lantern, portholes and the coin painted on its stern.
