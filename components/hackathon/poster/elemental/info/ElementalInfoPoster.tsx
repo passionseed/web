@@ -40,12 +40,24 @@ const SHAPES = {
 } as const;
 
 /** What each element covers, in the words students use. */
-const ELEMENTS: { key: keyof typeof SHAPES; color: string; line: string }[] = [
+const ELEMENTS: { key: keyof typeof SHAPES; color: string; line: ReactNode }[] = [
   { key: "earth", color: EL.toxicRust, line: "ขยะและสารพิษ" },
   { key: "water", color: EL.toxicCyan, line: "น้ำเสีย สารเคมีในน้ำ" },
   { key: "air", color: EL.toxicYellow, line: "ฝุ่น PM2.5 ควันพิษ" },
   { key: "fire", color: EL.flame, line: "อัคคีภัย การเผา" },
-  { key: "aether", color: EL.ash, line: "ภัยที่มองไม่เห็น เช่น ข่าวปลอม" },
+  {
+    key: "aether",
+    color: EL.aetherViolet,
+    line: (
+      <>
+        ข่าวปลอม
+        <br />
+        พลังงานที่แอป
+        <br />
+        และ AI ใช้
+      </>
+    ),
+  },
 ];
 
 const SLOT_COLOR = { open: EL.ash, workshop: EL.toxicCyan, due: EL.flame } as const;
@@ -54,6 +66,36 @@ function Pixels({ rows, color, size }: { rows: readonly string[]; color: string;
   return (
     <svg width={size} height={size} viewBox="0 0 9 9" shapeRendering="crispEdges" aria-hidden="true" style={{ display: "block" }}>
       {rows.flatMap((row, y) => Array.from(row).map((c, x) => (c === "#" ? <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill={color} /> : null)))}
+    </svg>
+  );
+}
+
+/**
+ * Aether: the same scattered pixels, but glowing and half there. Lilac and
+ * violet at uneven strengths over a violet aura, so it reads as something
+ * you can't quite see.
+ */
+function AetherPixels({ rows, size, id }: { rows: readonly string[]; size: number; id: string }) {
+  const cells = rows.flatMap((row, y) => Array.from(row).flatMap((c, x) => (c === "#" ? [{ x, y }] : [])));
+  return (
+    <svg width={size} height={size} viewBox="0 0 9 9" aria-hidden="true" style={{ display: "block", overflow: "visible" }}>
+      <filter id={`${id}-aura`} x="-1" y="-1" width="3" height="3">
+        <feGaussianBlur stdDeviation="2.2" />
+      </filter>
+      <filter id={`${id}-glow`} x="-1" y="-1" width="3" height="3">
+        <feGaussianBlur stdDeviation="0.9" />
+      </filter>
+      <rect x={-1} y={-1} width={11} height={11} fill={EL.aetherViolet} opacity={0.35} filter={`url(#${id}-aura)`} />
+      <g filter={`url(#${id}-glow)`}>
+        {cells.map(({ x, y }) => (
+          <rect key={`g${x}-${y}`} x={x - 0.3} y={y - 0.3} width={1.6} height={1.6} fill={EL.aetherViolet} />
+        ))}
+      </g>
+      <g shapeRendering="crispEdges">
+        {cells.map(({ x, y }, i) => (
+          <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill={i % 3 === 0 ? EL.aetherLilac : EL.aetherViolet} opacity={[1, 0.55, 0.8, 0.4][i % 4]} />
+        ))}
+      </g>
     </svg>
   );
 }
@@ -130,7 +172,7 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
           <div style={{ marginTop: 18, display: "grid", gridTemplateColumns: "repeat(5, 1fr)", columnGap: 22 }}>
             {ELEMENTS.map(({ key, color, line }) => (
               <div key={key}>
-                <Pixels rows={SHAPES[key]} color={color} size={48} />
+                {key === "aether" ? <AetherPixels rows={SHAPES[key]} size={48} id={`${id}-aether`} /> : <Pixels rows={SHAPES[key]} color={color} size={48} />}
                 <p style={{ margin: "10px 0 0", fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 32, lineHeight: "40px" }}>{el(key)?.th}</p>
                 <p style={{ margin: "4px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 21, lineHeight: "30px", color: EL.creamSoft }}>{line}</p>
               </div>
