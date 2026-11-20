@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL, prizeTotal, thaiDayRange } from "@/components/hackathon/poster/elemental/facts";
 
+import { PixelArrow, PixelIcon, type IconName } from "./DeckArt";
 import { DeckEditor } from "./DeckEditor";
 import { PrintButton } from "./PrintButton";
 
@@ -140,7 +141,29 @@ function Stat({ big, label, light = false }: { big: ReactNode; label: ReactNode;
   );
 }
 
-function Package({ name, en, slots, price, items, accent, draft }: { name: string; en: string; slots: ReactNode; price: ReactNode; items: ReactNode[]; accent: string; draft?: ReactNode }) {
+/** The most a package is worth, in baht: the price bars are drawn against it. */
+const BAR_MAX = 10000;
+
+function Package({
+  name,
+  en,
+  slots,
+  price,
+  value,
+  items,
+  accent,
+  draft,
+}: {
+  name: string;
+  en: string;
+  slots: ReactNode;
+  price: ReactNode;
+  /** Cash and credit in baht, for the bar. */
+  value?: { cash: number; credit: number };
+  items: ReactNode[];
+  accent: string;
+  draft?: ReactNode;
+}) {
   return (
     <div className="flex flex-col border p-5 sm:p-6" style={{ borderColor: LINE_LIGHT, background: PAPER, color: EL.ink }}>
       <span className="mb-4 block h-[6px] w-12" style={{ background: accent }} />
@@ -162,9 +185,17 @@ function Package({ name, en, slots, price, items, accent, draft }: { name: strin
           </li>
         ))}
       </ul>
-      <p className="m-0 mt-5 border-t pt-3 text-[17px]" style={{ borderColor: LINE_LIGHT, fontFamily: EL_FONT.display }}>
-        {price}
-      </p>
+      <div className="mt-5 border-t pt-3" style={{ borderColor: LINE_LIGHT }}>
+        {value ? (
+          <div className="mb-2 flex h-[10px] w-full" style={{ background: "rgba(29,33,31,0.08)" }} aria-hidden="true">
+            <span style={{ width: `${(value.cash / BAR_MAX) * 100}%`, background: accent }} />
+            <span style={{ width: `${(value.credit / BAR_MAX) * 100}%`, background: accent, opacity: 0.4 }} />
+          </div>
+        ) : null}
+        <p className="m-0 text-[17px] leading-[1.45]" style={{ fontFamily: EL_FONT.display }}>
+          {price}
+        </p>
+      </div>
     </div>
   );
 }
@@ -206,33 +237,24 @@ const MISSION: [string, string][] = [
 ];
 
 /** What the video shows (Angpao, 2026-11-20: teams send a video; the list is Claude's draft). */
-const DELIVERABLES = [
-  "ปัญหา และใครคือคนที่เจอปัญหา",
-  "หลักฐานจากคนจริง: สัมภาษณ์และให้คนนอกทีมอย่างน้อย 3 คนลองใช้",
-  "สาธิตผลงานที่ใช้งานได้",
-  "แผนสิ่งที่จะทำต่อใน 4 สัปดาห์ถัดไป",
-];
+const DELIVERABLES = ["ปัญหาและคนที่เจอปัญหา", "หลักฐานจากคนจริงอย่างน้อย 3 คน", "สาธิตผลงานที่ใช้งานได้", "แผน 4 สัปดาห์ถัดไป"];
+const STRIP = [EL.toxicCyan, EL.toxicGreen, EL.flame, EL.toxicYellow];
 
-/**
- * Program outline: told by Angpao, 2026-11-20, except the sign-up date
- * (draft) and Request for Winners from 11 December (decided 2026-11-19).
- */
-const PROGRAM: [string, ReactNode, boolean][] = [
-  ["ตั้งแต่ 23 พ.ย.", "เปิดรับสมัครและประชาสัมพันธ์ พร้อมโลโก้ผู้สนับสนุน", true],
-  ["ศุกร์ 4 ธ.ค.", "19:00 น. พิธีเปิดและปฐมนิเทศ", false],
-  [
-    "เสาร์ 5 ธ.ค.",
-    <>
-      10:00–11:00 น. เวิร์กช็อป: การสัมภาษณ์และการหากลุ่มลูกค้าเป้าหมาย
-      <br />
-      19:00–20:00 น. เวิร์กช็อป: การพัฒนาผลงาน
-    </>,
-    false,
-  ],
-  ["อาทิตย์ 6 ธ.ค.", "19:00–20:00 น. เวิร์กช็อป: การนำเสนอผลงาน", false],
-  ["จันทร์ 7 ธ.ค.", "23:00 น. หมดเขตส่งคลิปผลงาน", false],
-  ["ศุกร์ 11 ธ.ค.", "เปิดรับสมัครโครงการ Request for Winners: บ่มเพาะ 4 สัปดาห์ จบด้วย Demo Day", false],
+/** Program, told by Angpao, 2026-11-20. */
+type Slot = "open" | "workshop" | "deadline";
+const DAYS: { day: string; events: [string, string, Slot][] }[] = [
+  { day: "ศุกร์ 4 ธ.ค.", events: [["19:00 น.", "พิธีเปิดและปฐมนิเทศ", "open"]] },
+  {
+    day: "เสาร์ 5 ธ.ค.",
+    events: [
+      ["10:00–11:00 น.", "เวิร์กช็อป: การสัมภาษณ์และการหากลุ่มลูกค้าเป้าหมาย", "workshop"],
+      ["19:00–20:00 น.", "เวิร์กช็อป: การพัฒนาผลงาน", "workshop"],
+    ],
+  },
+  { day: "อาทิตย์ 6 ธ.ค.", events: [["19:00–20:00 น.", "เวิร์กช็อป: การนำเสนอผลงาน", "workshop"]] },
+  { day: "จันทร์ 7 ธ.ค.", events: [["23:00 น.", "หมดเขตส่งคลิปผลงาน", "deadline"]] },
 ];
+const SLOT_COLOR: Record<Slot, string> = { open: EL.aetherGrey, workshop: EL.toxicCyan, deadline: EL.flame };
 
 /** Why this hackathon is different (Angpao, 2026-11-20, except Request for Winners: Big, 2026-11-19). */
 const WHY: [string, string, boolean][] = [
@@ -248,11 +270,41 @@ const WHY: [string, string, boolean][] = [
  * what we teach is what we score.
  */
 const CRITERIA: [string, number, string, string][] = [
+  ["ผลงานใช้งานได้", 35, "สาธิตในคลิปว่าใช้งานได้จริง ใช้เครื่องมืออะไรก็ได้ และมีคนอยากใช้ต่อหลังจบงาน", "การพัฒนาเว็บ"],
   ["หลักฐานจากคนจริง", 30, "สัมภาษณ์และให้คนนอกทีมอย่างน้อย 3 คนลองใช้ บอกได้ว่าเขาพูดอะไร และผลงานช่วยเขาได้จริงไหม", "การสัมภาษณ์"],
-  ["ผลงานใช้งานได้", 25, "สาธิตในคลิปว่าใช้งานได้จริง ใช้เครื่องมืออะไรก็ได้", "การพัฒนาเว็บ"],
-  ["เข้าใจปัญหาและลูกค้า", 20, "บอกได้ว่าใครเจอปัญหา เจอบ่อยแค่ไหน และทำไมยังไม่มีใครแก้", "การหากลุ่มลูกค้า"],
-  ["ไปต่อได้", 15, "ใครจะใช้หรือยอมจ่ายต่อหลังจบงาน และแผน 4 สัปดาห์ถัดไป", "การหากลุ่มลูกค้า"],
+  ["เข้าใจปัญหา", 25, "บอกได้ว่าใครเจอปัญหา เจอบ่อยแค่ไหน ทำไมยังไม่มีใครแก้ และจะทำอะไรต่อใน 4 สัปดาห์ถัดไป", "การหากลุ่มลูกค้า"],
   ["การนำเสนอ", 10, "เล่าได้ชัดเจนภายในเวลาที่กำหนด", "การนำเสนอผลงาน"],
+];
+const CRITERIA_COLOR = [EL.flame, EL.toxicGreen, EL.toxicCyan, EL.toxicYellow];
+const WHY_ICONS: IconName[] = ["stairs", "board", "bubble", "rocket"];
+const MISSION_ICONS: IconName[] = ["magnifier", "person", "sprout"];
+
+/**
+ * PassionSeed's work so far. Source: company-brain branch
+ * company-profile-past-events (events.md, history.md, numbers.md; Angpao,
+ * 2026-11-20), not merged into main yet.
+ */
+const HISTORY: [string, string, string][] = [
+  ["2568", "ค่าย TechSeed", "ค่ายลงมือทำโปรเจกต์ 4 รุ่น (TechSeed #2–#5)"],
+  ["ก.ย. 2568", "COE PSU Open House", "ร่วมกับมหาวิทยาลัยสงขลานครินทร์ เวิร์กช็อปออนไลน์ 300 ที่นั่ง"],
+  ["2568", "BizSeed", "ร่วมกับ CSII"],
+  ["ก.พ.–มิ.ย. 2569", "The Next Decade ครั้งแรก", "แฮกกาธอนด้านสุขภาพ ผู้เข้าร่วม 800 คน"],
+  ["ก.ย. 2569", "ค่าย SHIFT", "ค่าย 7 วัน ลงมือทำโปรเจกต์ให้คนจริงใช้"],
+  ["ธ.ค. 2569", "Elemental Hackathon", "The Next Decade ครั้งที่ 2"],
+];
+
+/**
+ * Projects from last edition, from the public gallery at
+ * passionseed.org/hackathon/gallery (read 2026-11-20). Product names only,
+ * never team or member names. One-line summaries are Claude's.
+ */
+const LAST_PROJECTS: [string, string][] = [
+  ["FreshTrack", "ติดตามอายุอาหารในตู้เย็น ไม่ต้องทิ้งเพราะไม่แน่ใจว่ายังกินได้"],
+  ["FitFiew", "ช่วยคนทำงานออกกำลังกายด้วยท่าที่ถูกต้อง ลดการบาดเจ็บ"],
+  ["KOKORO", "พื้นที่รับฟังสำหรับคนที่แบกความเครียดไว้คนเดียว"],
+  ["Aun Jai Wai Kao", "ลดความเหงาของผู้สูงอายุหลังเกษียณในจังหวัดนครปฐม"],
+  ["Pipo Care", "ลดความเสี่ยงตาแห้งจากการใช้หน้าจอเป็นเวลานาน"],
+  ["WeBloom", "รับมือภาวะหมดไฟของนักศึกษาจากวัฒนธรรม toxic productivity"],
 ];
 
 /** true = draft (PR #87), not decided. */
@@ -338,20 +390,28 @@ export function SponsorDeck() {
           ให้นักเรียนมัธยมปลายเห็นว่า ปัญหาสิ่งแวดล้อมใกล้ตัวแก้ได้ และพวกเขาลงมือแก้ได้เอง
           <Draft>วิสัยทัศน์และพันธกิจ: Claude ร่าง</Draft>
         </p>
-        <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-3">
-          {MISSION.map(([title, text], i) => (
-            <div key={title} className="border-t pt-4" style={{ borderColor: LINE_LIGHT }}>
-              <p className="m-0 text-[13px]" style={{ fontFamily: EL_FONT.mono, color: EL.inkSoft }}>
-                พันธกิจ {i + 1}
-              </p>
-              <h3 className="m-0 mt-2 text-[21px] leading-[1.4]" style={{ fontFamily: EL_FONT.display, fontWeight: 400 }}>
+        <div className="mt-8 grid grid-cols-1 items-start gap-6 sm:grid-cols-[1fr_auto_1fr_auto_1fr]">
+          {MISSION.flatMap(([title, text], i) => [
+            i > 0 ? (
+              <div key={`arrow-${i}`} className="hidden pt-3 sm:block">
+                <PixelArrow color={EL.inkSoft} />
+              </div>
+            ) : null,
+            <div key={title}>
+              <div className="flex items-center gap-3">
+                <PixelIcon name={MISSION_ICONS[i]} color={EL.ink} size={34} />
+                <p className="m-0 text-[13px]" style={{ fontFamily: EL_FONT.mono, color: EL.inkSoft }}>
+                  พันธกิจ {i + 1}
+                </p>
+              </div>
+              <h3 className="m-0 mt-3 text-[21px] leading-[1.4]" style={{ fontFamily: EL_FONT.display, fontWeight: 400 }}>
                 {title}
               </h3>
               <p className="m-0 mt-2 text-[16px] leading-[1.65]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, color: EL.inkSoft }}>
                 {text}
               </p>
-            </div>
-          ))}
+            </div>,
+          ])}
         </div>
         <div className="mt-8 grid grid-cols-1 gap-x-10 border-b sm:grid-cols-2" style={{ borderColor: LINE_LIGHT }}>
           <Row light label="ผู้จัด">
@@ -417,20 +477,41 @@ export function SponsorDeck() {
           </div>
           <div>
             <p className="m-0 text-[17px]" style={{ fontFamily: EL_FONT.display, fontWeight: 400 }}>
-              ทุกทีมส่งผลงานเป็นคลิปวิดีโอ 1 คลิป ความยาวไม่เกิน 3 นาที ที่เล่า
+              ทุกทีมส่งผลงานเป็นคลิปวิดีโอ 1 คลิป ความยาวไม่เกิน 3 นาที
               <Draft>ความยาว: ร่าง</Draft>
             </p>
-            <ol className="m-0 mt-3 list-none border-b p-0" style={{ borderColor: LINE_LIGHT, fontFamily: EL_FONT.display }}>
+            <div className="mt-4 rounded-[6px] p-3" style={{ background: EL.ink }} aria-hidden="true">
+              <div className="grid grid-cols-4 gap-[3px]">
+                {STRIP.map((c, i) => (
+                  <div key={i} className="flex aspect-[4/3] items-end p-2" style={{ background: c }}>
+                    <span className="text-[13px]" style={{ fontFamily: EL_FONT.mono, color: EL.ink }}>
+                      {i + 1}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 flex items-center gap-3">
+                <svg width="14" height="14" viewBox="0 0 7 7" shapeRendering="crispEdges">
+                  <path d="M1 0h1v1h1v1h1v1h1v1h-1v1h-1v1h-1v1h-1z" fill={EL.cream} />
+                </svg>
+                <span className="block h-[3px] flex-1" style={{ background: EL.creamSoft }} />
+                <span className="text-[12px]" style={{ fontFamily: EL_FONT.mono, color: EL.creamSoft }}>
+                  3:00
+                </span>
+              </div>
+            </div>
+            <ol className="m-0 mt-3 grid list-none grid-cols-2 gap-x-3 gap-y-2 p-0 sm:grid-cols-4" style={{ fontFamily: EL_FONT.display }}>
               {DELIVERABLES.map((d, i) => (
-                <li key={d} className="grid grid-cols-[32px_1fr] border-t py-[10px] text-[16px] leading-[1.55]" style={{ borderColor: LINE_LIGHT, fontWeight: 300 }}>
-                  <span style={{ fontFamily: EL_FONT.mono, color: EL.inkSoft }}>{i + 1}</span>
-                  <span>{d}</span>
+                <li key={d} className="text-[15px] leading-[1.45]" style={{ fontWeight: 300 }}>
+                  <span className="mr-1" style={{ fontFamily: EL_FONT.mono, color: EL.inkSoft }}>
+                    {i + 1}
+                  </span>
+                  {d}
                 </li>
               ))}
             </ol>
-            <p className="m-0 mt-4 text-[15px] leading-[1.6]" style={{ fontFamily: EL_FONT.display, color: EL.inkSoft }}>
-              ทีมละ 2–4 คน ผู้สมัครเดี่ยวจะได้รับการจับคู่เข้าทีม ค่าสมัคร {ELEMENTAL.priceBaht} บาทต่อคน หรือ {ELEMENTAL.groupPriceBaht} บาทต่อคนเมื่อสมัครพร้อมเพื่อน
-              <Draft>ขนาดทีม ร่าง</Draft>
+            <p className="m-0 mt-5 text-[15px] leading-[1.6]" style={{ fontFamily: EL_FONT.display, color: EL.inkSoft }}>
+              ทีมละ 2–5 คน ผู้สมัครเดี่ยวจะได้รับการจับคู่เข้าทีม ค่าสมัคร {ELEMENTAL.priceBaht} บาทต่อคน หรือ {ELEMENTAL.groupPriceBaht} บาทต่อคนเมื่อสมัครพร้อมเพื่อน
             </p>
           </div>
         </div>
@@ -440,22 +521,62 @@ export function SponsorDeck() {
       <Section id="program">
         <Tag n="04 PROGRAM" />
         <H2>กำหนดการโครงการ</H2>
-        <ol className="m-0 mt-8 list-none border-b p-0" style={{ borderColor: LINE_DARK, fontFamily: EL_FONT.display }}>
-          {PROGRAM.map(([when, what, draft], i) => (
-            <li key={i} className="grid grid-cols-[120px_1fr] gap-4 border-t py-3 sm:grid-cols-[190px_1fr]" style={{ borderColor: LINE_DARK }}>
-              <span className="text-[18px]" style={{ fontWeight: 400 }}>
-                {when}
-              </span>
-              <span className="text-[17px] leading-[1.6]" style={{ fontWeight: 300, color: EL.creamSoft }}>
-                {what}
-                {draft ? <Draft /> : null}
-              </span>
-            </li>
+        <div className="mt-8 grid grid-cols-1 gap-3 lg:grid-cols-[150px_repeat(4,1fr)_170px]" style={{ fontFamily: EL_FONT.display }}>
+          <div className="border-l-2 py-1 pl-3" style={{ borderColor: LINE_DARK }}>
+            <p className="m-0 text-[15px]" style={{ color: EL.creamSoft }}>
+              ตั้งแต่ 23 พ.ย.
+            </p>
+            <p className="m-0 mt-1 text-[16px] leading-[1.5]" style={{ fontWeight: 300 }}>
+              เปิดรับสมัคร
+              <Draft />
+            </p>
+          </div>
+          {DAYS.map(({ day, events }) => (
+            <div key={day} className="flex flex-col gap-2 border-t-2 pt-3" style={{ borderColor: EL.cream }}>
+              <p className="m-0 text-[18px]" style={{ fontWeight: 400 }}>
+                {day}
+              </p>
+              {events.map(([time, what, kind]) => (
+                <div key={what} className="rounded-[3px] p-3" style={{ background: "rgba(243,239,230,0.07)", borderLeft: `4px solid ${SLOT_COLOR[kind]}` }}>
+                  <p className="m-0 text-[14px]" style={{ color: SLOT_COLOR[kind] }}>
+                    {time}
+                  </p>
+                  <p className="m-0 mt-1 text-[15px] leading-[1.5]" style={{ fontWeight: 300 }}>
+                    {what}
+                  </p>
+                </div>
+              ))}
+            </div>
           ))}
-        </ol>
-        <p className="m-0 mt-5 text-[15px] leading-[1.6]" style={{ fontFamily: EL_FONT.display, color: EL.creamSoft }}>
-          ตลอด 3 วัน มีแหล่งเรียนรู้ให้ศึกษาด้วยตัวเอง และฟอรัมถาม-ตอบเมื่อติดปัญหา
-        </p>
+          <div className="border-l-2 py-1 pl-3" style={{ borderColor: LINE_DARK }}>
+            <p className="m-0 text-[15px]" style={{ color: EL.creamSoft }}>
+              ศุกร์ 11 ธ.ค.
+            </p>
+            <p className="m-0 mt-1 text-[16px] leading-[1.5]" style={{ fontWeight: 300 }}>
+              เปิดรับสมัคร Request for Winners: บ่มเพาะ 4 สัปดาห์ จบด้วย Demo Day
+            </p>
+          </div>
+          <div className="flex items-center gap-3 rounded-[3px] px-3 py-2 lg:col-span-3 lg:col-start-3" style={{ background: "rgba(56,201,194,0.14)" }}>
+            <PixelIcon name="bubble" color={EL.toxicCyan} size={22} />
+            <span className="text-[15px]" style={{ fontWeight: 300 }}>
+              ตลอด 3 วัน มีแหล่งเรียนรู้ให้ศึกษาด้วยตัวเอง และฟอรัมถาม-ตอบเมื่อติดปัญหา
+            </span>
+          </div>
+        </div>
+        <div className="mt-6 flex flex-wrap gap-5 text-[14px]" style={{ fontFamily: EL_FONT.display, color: EL.creamSoft }}>
+          {(
+            [
+              ["workshop", "เวิร์กช็อปสด"],
+              ["deadline", "กำหนดส่ง"],
+              ["open", "พิธีเปิด"],
+            ] as const
+          ).map(([k, label]) => (
+            <span key={k} className="flex items-center gap-2">
+              <span className="block h-3 w-3" style={{ background: SLOT_COLOR[k] }} />
+              {label}
+            </span>
+          ))}
+        </div>
       </Section>
 
       {/* 05 Judging */}
@@ -466,6 +587,24 @@ export function SponsorDeck() {
           ทุกทีมส่งคลิปวิดีโอภายในจันทร์ 7 ธ.ค. 23:00 น. แต่ละเกณฑ์ตรงกับสิ่งที่สอนในเวิร์กช็อป มือใหม่จึงรู้ว่าต้องทำอะไรเพื่อให้ได้คะแนน
           <Draft>เกณฑ์: Claude ร่าง</Draft>
         </p>
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-stretch" style={{ fontFamily: EL_FONT.display }}>
+          <div className="flex items-center gap-3 rounded-[3px] border px-4 py-2 sm:w-[210px]" style={{ borderColor: LINE_LIGHT }}>
+            <span className="text-[15px] leading-[1.4]">ด่านแรก: ตรงหัวข้อและส่งทันเวลา</span>
+          </div>
+          <div className="hidden items-center sm:flex">
+            <PixelArrow color={EL.inkSoft} />
+          </div>
+          <div className="flex min-h-[64px] flex-1 overflow-hidden rounded-[3px]">
+            {CRITERIA.map(([name, weight], i) => (
+              <div key={name} className="flex flex-col justify-center px-3 py-2" style={{ width: `${weight}%`, background: CRITERIA_COLOR[i], color: EL.ink }}>
+                <span className="text-[22px] leading-none" style={{ fontWeight: 300 }}>
+                  {weight}%
+                </span>
+                <span className="mt-1 text-[13px] leading-[1.3]">{name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
         <div className="mt-6 border-b" style={{ borderColor: LINE_LIGHT, fontFamily: EL_FONT.display }}>
           <div className="grid grid-cols-[1fr_auto] gap-4 border-t py-3 sm:grid-cols-[230px_70px_1fr_170px]" style={{ borderColor: LINE_LIGHT }}>
             <span className="text-[17px]" style={{ fontWeight: 400 }}>ตรงหัวข้อและส่งทันเวลา</span>
@@ -475,9 +614,12 @@ export function SponsorDeck() {
             </span>
             <span className="hidden sm:block" />
           </div>
-          {CRITERIA.map(([name, weight, what, workshop]) => (
+          {CRITERIA.map(([name, weight, what, workshop], i) => (
             <div key={name} className="grid grid-cols-[1fr_auto] gap-4 border-t py-3 sm:grid-cols-[230px_70px_1fr_170px]" style={{ borderColor: LINE_LIGHT }}>
-              <span className="text-[17px]" style={{ fontWeight: 400 }}>{name}</span>
+              <span className="flex items-center gap-2 text-[17px]" style={{ fontWeight: 400 }}>
+                <span className="block h-3 w-3 shrink-0" style={{ background: CRITERIA_COLOR[i] }} />
+                {name}
+              </span>
               <span className="text-[22px] leading-none" style={{ fontWeight: 300 }}>{weight}%</span>
               <span className="col-span-2 text-[15px] leading-[1.55] sm:col-span-1" style={{ fontWeight: 300 }}>{what}</span>
               <span className="col-span-2 text-[14px] sm:col-span-1" style={{ color: EL.inkSoft }}>
@@ -486,10 +628,6 @@ export function SponsorDeck() {
             </div>
           ))}
         </div>
-        <p className="m-0 mt-5 max-w-[960px] text-[15px] leading-[1.6]" style={{ fontFamily: EL_FONT.display, color: EL.inkSoft }}>
-          กรรมการ 2 คนให้คะแนนแต่ละทีมแยกกัน โดยไม่เห็นชื่อนักเรียนหรือโรงเรียน คะแนนปรับตามความเข้มงวดของกรรมการแต่ละคน ถ้าคะแนนต่างกันมาก กรรมการคนที่ 3 พิจารณาเพิ่ม ทุกทีมได้รับคะแนนและคำแนะนำ 1 ข้อ
-          รอบชิงชนะเลิศ <Fill>live final or video only, and results date</Fill>
-        </p>
       </Section>
 
       {/* 06 Why this hackathon */}
@@ -497,9 +635,10 @@ export function SponsorDeck() {
         <Tag n="06 WHY US" />
         <H2>จุดเด่นของโครงการ</H2>
         <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2">
-          {WHY.map(([title, text, draft]) => (
+          {WHY.map(([title, text, draft], i) => (
             <div key={title} className="border-t pt-5" style={{ borderColor: LINE_DARK }}>
-              <h3 className="m-0 text-[22px] leading-[1.4]" style={{ fontFamily: EL_FONT.display, fontWeight: 400 }}>
+              <PixelIcon name={WHY_ICONS[i]} color={EL.toxicCyan} size={40} />
+              <h3 className="m-0 mt-4 text-[22px] leading-[1.4]" style={{ fontFamily: EL_FONT.display, fontWeight: 400 }}>
                 {title}
                 {draft ? <Draft /> : null}
               </h3>
@@ -529,14 +668,26 @@ export function SponsorDeck() {
               </>
             }
           />
-          <Stat light big={<Fill>how many</Fill>} label="รุ่นของค่าย SHIFT ค่าย 7 วันที่นักเรียนพัฒนาโปรเจกต์ให้คนจริงใช้" />
+          <Stat light big="800" label="ผู้เข้าร่วม The Next Decade ครั้งแรก (2569)" />
           <Stat light big="HK Tech 300" label="ผู้ร่วมก่อตั้ง Bunyasit Fang ชนะการแข่งขัน HK Tech 300 Southeast Asia Start-up Competition ปี 2567 ในฐานะ CEO ของ Portex Innovation" />
         </div>
-        <div className="mt-8 border-b" style={{ borderColor: LINE_LIGHT }}>
-          <Row light label="ผลงานอื่น">
-            <Fill>other achievements to show sponsors</Fill>
-          </Row>
-        </div>
+        <ol className="relative m-0 mt-10 grid list-none grid-cols-2 gap-x-4 gap-y-6 p-0 lg:grid-cols-6" style={{ fontFamily: EL_FONT.display }}>
+          <span aria-hidden="true" className="absolute left-0 right-0 top-[5px] hidden h-[2px] lg:block" style={{ background: LINE_LIGHT }} />
+          {HISTORY.map(([when, what, detail], i) => (
+            <li key={what} className="relative">
+              <span className="relative block h-3 w-3" style={{ background: i === HISTORY.length - 1 ? EL.flame : EL.ink }} />
+              <p className="m-0 mt-3 text-[13px]" style={{ color: EL.inkSoft }}>
+                {when}
+              </p>
+              <p className="m-0 mt-1 text-[17px] leading-[1.35]" style={{ fontWeight: 400 }}>
+                {what}
+              </p>
+              <p className="m-0 mt-1 text-[14px] leading-[1.5]" style={{ fontWeight: 300, color: EL.inkSoft }}>
+                {detail}
+              </p>
+            </li>
+          ))}
+        </ol>
       </Section>
 
       {/* 08 Benefits */}
@@ -567,31 +718,43 @@ export function SponsorDeck() {
       <Section id="past" tone="paper">
         <Tag n="09 PAST EVENT" light />
         <H2>{ELEMENTAL.series} ครั้งที่ผ่านมา</H2>
-        <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-3">
-          <Stat light big={<Fill>participants</Fill>} label="ผู้เข้าร่วม" />
-          <Stat light big={<Fill>teams</Fill>} label="ทีมที่ส่งผลงาน" />
-          <Stat light big={<Fill>sign-ups so far</Fill>} label="ผู้สมัครครั้งนี้ ณ ปัจจุบัน" />
-        </div>
-        <p className="m-0 mt-10 text-[15px]" style={{ fontFamily: EL_FONT.display, color: EL.inkSoft }}>
-          ผู้สนับสนุนครั้งที่ผ่านมา
-          <Draft>ยืนยันการใช้โลโก้</Draft>
+        <p className="m-0 mt-2 text-[16px]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, color: EL.inkSoft }}>
+          หัวข้อ Preventive &amp; Predictive Healthcare · นักเรียนมัธยมปลายและนักศึกษา · ก.พ.–มิ.ย. 2569
         </p>
-        <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-4">
-          {LAST_SPONSORS.map((s) => (
-            <span key={s.alt} className="inline-flex items-center rounded-[3px] bg-white px-4 py-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={s.src} alt={s.alt} className="h-9 w-auto object-contain sm:h-10" />
-            </span>
+        <div className="mt-6 grid grid-cols-2 gap-6 sm:grid-cols-4">
+          <Stat light big="800" label="ผู้เข้าร่วม" />
+          <Stat light big="229" label="ทีมที่ลงทะเบียน" />
+          <Stat light big="3" label="เดือนที่ทีมพัฒนาผลงาน" />
+          <Stat light big="7" label="ผลงานในแกลเลอรีบน passionseed.org" />
+        </div>
+        <p className="m-0 mt-8 text-[15px]" style={{ fontFamily: EL_FONT.display, color: EL.inkSoft }}>
+          ตัวอย่างผลงาน
+          <Draft>สรุปโดย Claude</Draft>
+        </p>
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3" style={{ fontFamily: EL_FONT.display }}>
+          {LAST_PROJECTS.map(([name, what]) => (
+            <div key={name} className="flex gap-3 rounded-[3px] p-3" style={{ background: "rgba(29,33,31,0.05)" }}>
+              <PixelIcon name="sprout" color={EL.toxicGreen} size={22} />
+              <div>
+                <p className="m-0 text-[16px]" style={{ fontWeight: 400 }}>
+                  {name}
+                </p>
+                <p className="m-0 mt-1 text-[14px] leading-[1.45]" style={{ fontWeight: 300, color: EL.inkSoft }}>
+                  {what}
+                </p>
+              </div>
+            </div>
           ))}
         </div>
         <p className="m-0 mt-8 text-[15px]" style={{ fontFamily: EL_FONT.display, color: EL.inkSoft }}>
-          พันธมิตรครั้งที่ผ่านมา
+          ผู้สนับสนุนและพันธมิตรครั้งที่ผ่านมา
+          <Draft>ยืนยันการใช้โลโก้</Draft>
         </p>
-        <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-4">
-          {LAST_PARTNERS.map((s) => (
-            <span key={s.alt} className="inline-flex items-center rounded-[3px] bg-white px-4 py-2">
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-3">
+          {[...LAST_SPONSORS, ...LAST_PARTNERS].map((s) => (
+            <span key={s.alt} className="inline-flex h-12 items-center rounded-[3px] bg-white px-3 py-1">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={s.src} alt={s.alt} className="h-12 w-auto object-contain sm:h-14" />
+              <img src={s.src} alt={s.alt} className="h-8 w-auto object-contain" />
             </span>
           ))}
         </div>
@@ -623,7 +786,7 @@ export function SponsorDeck() {
         <H2>รูปแบบการสนับสนุน</H2>
         <p className="m-0 mt-3 text-[15px]" style={{ fontFamily: EL_FONT.display, color: EL.inkSoft }}>
           ผู้สนับสนุนแต่ละรายมีกรรมการได้ไม่เกิน 1 ใน 3 ที่นั่งในรอบชิงชนะเลิศ และไม่มีส่วนในการเปลี่ยนแปลงผลการตัดสิน
-          <Draft>แพ็กเกจ: Claude ร่าง</Draft>
+          <Draft>สิทธิประโยชน์: Claude ร่าง</Draft>
         </p>
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" style={{ color: EL.ink }}>
           <Package
@@ -640,7 +803,8 @@ export function SponsorDeck() {
               </>,
               "ได้รับเชิญร่วมงาน Demo Day ของโครงการ Request for Winners",
             ]}
-            price={<Fill>price</Fill>}
+            value={{ cash: 7000, credit: 3000 }}
+            price="7,000 บาท + เครดิต Claude มูลค่า 3,000 บาท"
           />
           <Package
             name="ผู้สนับสนุนรายธาตุ"
@@ -654,7 +818,8 @@ export function SponsorDeck() {
               </>,
               "ได้รับเชิญร่วมงาน Demo Day ของโครงการ Request for Winners",
             ]}
-            price={<Fill>price, and whether Fire costs more</Fill>}
+            value={{ cash: 3000, credit: 3000 }}
+            price="3,000 บาท + เครดิตมูลค่า 3,000 บาท"
           />
           <Package
             name="ผู้สนับสนุนโจทย์"
@@ -663,7 +828,13 @@ export function SponsorDeck() {
             accent={EL.toxicCyan}
             draft={<Draft>ยังไม่ได้ตัดสินใจ</Draft>}
             items={["ตั้งโจทย์จากปัญหาจริงขององค์กร ภายใต้หัวข้อที่เลือก", "ผู้เชี่ยวชาญขององค์กรร่วมให้ข้อมูลหรือเป็นกรรมการ", "ได้รับผลงานทุกชิ้นที่ทีมพัฒนาจากโจทย์ขององค์กร"]}
-            price={<Fill>price</Fill>}
+            value={{ cash: 0, credit: 3000 }}
+            price={
+              <>
+                เครดิตมูลค่า 3,000 บาท
+                <Draft>ตรวจ: ราคาแพ็กเกจที่ 3</Draft>
+              </>
+            }
           />
           <Package
             name="ผู้สนับสนุนสิ่งของหรือบริการ"
@@ -726,6 +897,8 @@ const PRINT_CSS = `
   .elemental-deck .deck-cover > div:first-child { padding: 11mm 14mm; }
   /* The tracks page holds the most; shorter element crops keep it on one page. */
   .elemental-deck #tracks img { aspect-ratio: 16 / 10; }
+  /* Four package cards fill the page: a smaller heading keeps it on one. */
+  .elemental-deck #packages h2 { font-size: 40px; }
   .elemental-deck .deck-page:last-child { break-after: auto; page-break-after: auto; }
   .elemental-deck .deck-no-print { display: none !important; }
 }
