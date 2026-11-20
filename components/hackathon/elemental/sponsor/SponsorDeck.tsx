@@ -26,10 +26,11 @@ import { PrintButton } from "./PrintButton";
  * sponsors and partners: the live /hackathon page (components/hackathon/LandingPage.tsx).
  *
  * Two markers keep this honest until a person fills it in:
- * - <Fill> is a fact nobody has told us yet.
+ * - <Fill> is a fact nobody has told us yet. It prints, so a PDF with gaps
+ *   can't go out by accident.
  * - <Draft> is something written down but not decided, or Claude's proposal.
- * Both print, so a PDF with gaps can't go out by accident. Remove them only
- * when a person confirms the line.
+ *   It prints nothing (Angpao, 2026-11-20); it stays in the source as a note.
+ * Remove a marker only when a person confirms the line.
  *
  * Editing: on `next dev`, open the page with ?edit (or the button at the
  * bottom right), click any text and type, then Save. DeckEditor.tsx and
@@ -66,17 +67,15 @@ function Fill({ children }: { children: ReactNode }) {
   );
 }
 
-/** Written down but not decided yet, or Claude's proposal. */
+/**
+ * Marks a line that's written down but not decided yet, or Claude's proposal.
+ * It prints nothing: Angpao asked for a clean deck to send to the team
+ * (2026-11-20). The markers stay in the source as a list of what nobody has
+ * confirmed yet; search for <Draft to find them.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function Draft({ children = "ร่าง" }: { children?: ReactNode }) {
-  return (
-    <span
-      data-deck-draft
-      className="ml-2 inline-block rounded-[2px] px-[5px] py-[1px] align-middle"
-      style={{ background: EL.toxicCyan, color: EL.ink, fontFamily: EL_FONT.mono, fontSize: 11, letterSpacing: "0.04em", lineHeight: "16px" }}
-    >
-      [{children}]
-    </span>
-  );
+  return null;
 }
 
 function Tag({ n, light = false }: { n: string; light?: boolean }) {
