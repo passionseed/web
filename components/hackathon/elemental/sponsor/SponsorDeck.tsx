@@ -165,19 +165,19 @@ function Package({
   draft?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col border p-5 sm:p-6" style={{ borderColor: LINE_LIGHT, background: PAPER, color: EL.ink }}>
+    <div className="flex flex-col border p-4 lg:p-5" style={{ borderColor: LINE_LIGHT, background: PAPER, color: EL.ink }}>
       <span className="mb-4 block h-[6px] w-12" style={{ background: accent }} />
       <p className="m-0 text-[12px]" style={{ fontFamily: EL_FONT.mono, color: EL.inkSoft }}>
         <span style={{ letterSpacing: "0.12em" }}>{en.toUpperCase()}</span>
         {draft}
       </p>
-      <h3 className="m-0 mt-2 text-[23px] leading-[1.3]" style={{ fontFamily: EL_FONT.display, fontWeight: 400 }}>
+      <h3 className="m-0 mt-2 text-[20px] leading-[1.3] lg:text-[22px]" style={{ fontFamily: EL_FONT.display, fontWeight: 400 }}>
         {name}
       </h3>
       <p className="m-0 mt-1 text-[15px]" style={{ fontFamily: EL_FONT.display, color: EL.inkSoft }}>
         {slots}
       </p>
-      <ul className="m-0 mt-4 flex-1 list-none space-y-2 p-0 text-[15px] leading-[1.55]" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>
+      <ul className="m-0 mt-3 flex-1 list-none space-y-[6px] p-0 text-[14px] leading-[1.5] lg:text-[15px]" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>
         {items.map((item, i) => (
           <li key={i} className="flex gap-3">
             <span aria-hidden="true" className="mt-[9px] block h-[5px] w-[5px] shrink-0" style={{ background: EL.ink }} />
@@ -192,7 +192,7 @@ function Package({
             <span style={{ width: `${(value.credit / BAR_MAX) * 100}%`, background: accent, opacity: 0.4 }} />
           </div>
         ) : null}
-        <p className="m-0 text-[17px] leading-[1.45]" style={{ fontFamily: EL_FONT.display }}>
+        <p className="m-0 text-[15px] leading-[1.45] lg:text-[17px]" style={{ fontFamily: EL_FONT.display }}>
           {price}
         </p>
       </div>
@@ -256,12 +256,11 @@ const DAYS: { day: string; events: [string, string, Slot][] }[] = [
 ];
 const SLOT_COLOR: Record<Slot, string> = { open: EL.aetherGrey, workshop: EL.toxicCyan, deadline: EL.flame };
 
-/** Why this hackathon is different (Angpao, 2026-11-20, except Request for Winners: Big, 2026-11-19). */
-const WHY: [string, string, boolean][] = [
-  ["มือใหม่ก็ร่วมได้", "ไม่ต้องมีพื้นฐานมาก่อน แม้ยังไม่เคยหา insight หรือพัฒนาผลงาน เราสอนให้ตั้งแต่ต้น", false],
-  ["เวิร์กช็อป 4 หัวข้อ", "การสัมภาษณ์ การหากลุ่มลูกค้า การพัฒนาเว็บ และการนำเสนอผลงาน สอนสดระหว่างการแข่งขัน", false],
-  ["เรียนเองได้ และมีคนช่วยตอบ", "มีแหล่งเรียนรู้ให้ศึกษาด้วยตัวเอง และฟอรัมถาม-ตอบเมื่อติดปัญหา", false],
-  ["ไม่จบที่วันประกาศผล", "ผู้ชนะได้เข้าโครงการ Request for Winners บ่มเพาะ 4 สัปดาห์ เพื่อต่อยอดผลงานเป็นธุรกิจจริง จบด้วย Demo Day", false],
+/** Why this hackathon is different: told by Angpao, 2026-11-20. */
+const SUPPORTS: [IconName, string, string][] = [
+  ["board", "เวิร์กช็อปสด 4 หัวข้อ", "การสัมภาษณ์ การหากลุ่มลูกค้า การพัฒนาเว็บ และการนำเสนอผลงาน สอนสดระหว่างการแข่งขัน"],
+  ["book", "แหล่งเรียนรู้ด้วยตัวเอง", "มีแหล่งเรียนรู้ให้ศึกษาด้วยตัวเองได้ตลอดการแข่งขัน"],
+  ["bubble", "ฟอรัมถาม-ตอบ", "มีฟอรัมให้ถาม-ตอบเมื่อติดปัญหาและต้องการความช่วยเหลือ"],
 ];
 
 /**
@@ -276,7 +275,6 @@ const CRITERIA: [string, number, string, string][] = [
   ["การนำเสนอ", 10, "เล่าได้ชัดเจนภายในเวลาที่กำหนด", "การนำเสนอผลงาน"],
 ];
 const CRITERIA_COLOR = [EL.flame, EL.toxicGreen, EL.toxicCyan, EL.toxicYellow];
-const WHY_ICONS: IconName[] = ["stairs", "board", "bubble", "rocket"];
 const MISSION_ICONS: IconName[] = ["magnifier", "person", "sprout"];
 
 /**
@@ -634,19 +632,37 @@ export function SponsorDeck() {
       <Section id="why">
         <Tag n="06 WHY US" />
         <H2>จุดเด่นของโครงการ</H2>
-        <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2">
-          {WHY.map(([title, text, draft], i) => (
-            <div key={title} className="border-t pt-5" style={{ borderColor: LINE_DARK }}>
-              <PixelIcon name={WHY_ICONS[i]} color={EL.toxicCyan} size={40} />
-              <h3 className="m-0 mt-4 text-[22px] leading-[1.4]" style={{ fontFamily: EL_FONT.display, fontWeight: 400 }}>
-                {title}
-                {draft ? <Draft /> : null}
-              </h3>
-              <p className="m-0 mt-3 text-[16px] leading-[1.7]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, color: EL.creamSoft }}>
-                {text}
-              </p>
+        <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-[0.85fr_1.6fr]" style={{ fontFamily: EL_FONT.display }}>
+          <div>
+            <PixelIcon name="stairs" color={EL.toxicCyan} size={56} />
+            <h3 className="m-0 mt-5 text-[34px] leading-[1.15] sm:text-[42px]" style={{ fontWeight: 300 }}>
+              Beginner Support
+            </h3>
+            <p className="m-0 mt-2 text-[22px]" style={{ fontWeight: 400 }}>
+              มือใหม่ก็ร่วมได้
+            </p>
+            <p className="m-0 mt-3 text-[17px] leading-[1.7]" style={{ fontWeight: 300, color: EL.creamSoft }}>
+              ไม่ต้องมีพื้นฐานมาก่อน แม้ยังไม่เคยหา insight หรือพัฒนาผลงาน เราสอนให้ตั้งแต่ต้น
+            </p>
+          </div>
+          <div>
+            <p className="m-0 text-[15px]" style={{ color: EL.creamSoft }}>
+              สิ่งที่เราช่วยผู้เข้าร่วม
+            </p>
+            <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
+              {SUPPORTS.map(([icon, title, text]) => (
+                <div key={title} className="rounded-[3px] p-5" style={{ background: "rgba(243,239,230,0.07)" }}>
+                  <PixelIcon name={icon} color={EL.toxicCyan} size={36} />
+                  <h4 className="m-0 mt-4 text-[20px] leading-[1.35]" style={{ fontWeight: 400 }}>
+                    {title}
+                  </h4>
+                  <p className="m-0 mt-2 text-[15px] leading-[1.65]" style={{ fontWeight: 300, color: EL.creamSoft }}>
+                    {text}
+                  </p>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       </Section>
 
@@ -674,13 +690,11 @@ export function SponsorDeck() {
         <ol className="relative m-0 mt-8 grid list-none grid-cols-2 gap-x-4 gap-y-6 p-0 md:grid-cols-6" style={{ fontFamily: EL_FONT.display }}>
           {HISTORY.map(([when, what, detail, img], i) => (
             <li key={what} className="relative">
-              <div className="deck-history-pic mb-3 flex aspect-[4/5] max-h-[100px] lg:max-h-[130px] w-full items-center justify-center overflow-hidden rounded-[3px]" style={{ background: "rgba(29,33,31,0.07)" }}>
+              <div className="deck-history-pic mb-3 aspect-[4/5] w-full max-w-[96px] lg:max-w-[112px]">
                 {img ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={img} alt={what} className="h-full w-full object-cover object-top" />
-                ) : (
-                  <PixelIcon name="sprout" color={EL.toxicGreen} size={40} />
-                )}
+                  <img src={img} alt={what} className="h-full w-full rounded-[3px] object-contain object-left-bottom" />
+                ) : null}
               </div>
               <span className="relative block h-3 w-3" style={{ background: i === HISTORY.length - 1 ? EL.flame : EL.ink }} />
               <p className="m-0 mt-3 text-[13px]" style={{ color: EL.inkSoft }}>
@@ -697,63 +711,39 @@ export function SponsorDeck() {
         </ol>
       </Section>
 
-      {/* 08 Benefits */}
-      <Section id="benefits">
-        <Tag n="08 BENEFITS" />
-        <H2>สิทธิประโยชน์ของผู้สนับสนุน</H2>
-        <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-3">
-          <Stat big={<Fill>reach</Fill>} label="ยอดการมองเห็นบน Instagram ของ PassionSeed ช่วงประชาสัมพันธ์" />
-          <Stat big={`${TARGET}+`} label="ผู้เข้าร่วมที่เห็นโลโก้ผู้สนับสนุนตลอด 3 วัน (เป้าหมาย)" />
-          <Stat big={<Fill>posts</Fill>} label="โพสต์ประชาสัมพันธ์ที่มีโลโก้ผู้สนับสนุน บน Instagram ของ PassionSeed และ The Next Decade" />
-        </div>
-        <div className="mt-8 border-b" style={{ borderColor: LINE_DARK }}>
-          <Row label="ก่อนงาน">
-            โลโก้บนโปสเตอร์ โพสต์ประชาสัมพันธ์ และหน้ารับสมัคร
-            <Draft>Claude ร่าง</Draft>
-          </Row>
-          <Row label="ระหว่างงาน">
-            โลโก้บนหัวข้อที่สนับสนุนและในช่อง Discord ของงาน กล่าวขอบคุณบนเวทีรอบชิงชนะเลิศ
-          </Row>
-          <Row label="หลังงาน">
-            รายงานสรุปผลโครงการ: จำนวนผู้สมัคร ทีม ผลงาน และยอดการมองเห็นของโพสต์ พร้อมภาพและคลิปบรรยากาศที่ได้รับความยินยอมแล้ว
-            <Draft>Claude ร่าง</Draft>
-          </Row>
-        </div>
-      </Section>
-
-      {/* 09 Past event */}
-      <Section id="past" tone="paper">
-        <Tag n="09 PAST EVENT" light />
+      {/* 08 Past event */}
+      <Section id="past">
+        <Tag n="08 PAST EVENT" />
         <H2>{ELEMENTAL.series} ครั้งที่ผ่านมา</H2>
-        <p className="m-0 mt-2 text-[16px]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, color: EL.inkSoft }}>
+        <p className="m-0 mt-2 text-[16px]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, color: EL.creamSoft }}>
           หัวข้อ Preventive &amp; Predictive Healthcare · นักเรียนมัธยมปลายและนักศึกษา · ก.พ.–มิ.ย. 2569
         </p>
         <div className="mt-6 grid grid-cols-2 gap-6 sm:grid-cols-4">
-          <Stat light big="800" label="ผู้เข้าร่วม" />
-          <Stat light big="229" label="ทีมที่ลงทะเบียน" />
-          <Stat light big="3" label="เดือนที่ทีมพัฒนาผลงาน" />
-          <Stat light big="7" label="ผลงานในแกลเลอรีบน passionseed.org" />
+          <Stat big="800" label="ผู้เข้าร่วม" />
+          <Stat big="229" label="ทีมที่ลงทะเบียน" />
+          <Stat big="3" label="เดือนที่ทีมพัฒนาผลงาน" />
+          <Stat big="7" label="ผลงานในแกลเลอรีบน passionseed.org" />
         </div>
-        <p className="m-0 mt-8 text-[15px]" style={{ fontFamily: EL_FONT.display, color: EL.inkSoft }}>
+        <p className="m-0 mt-8 text-[15px]" style={{ fontFamily: EL_FONT.display, color: EL.creamSoft }}>
           ตัวอย่างผลงาน
           <Draft>สรุปโดย Claude</Draft>
         </p>
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3" style={{ fontFamily: EL_FONT.display }}>
           {LAST_PROJECTS.map(([name, what]) => (
-            <div key={name} className="flex gap-3 rounded-[3px] p-3" style={{ background: "rgba(29,33,31,0.05)" }}>
+            <div key={name} className="flex gap-3 rounded-[3px] p-3" style={{ background: "rgba(243,239,230,0.07)" }}>
               <PixelIcon name="sprout" color={EL.toxicGreen} size={22} />
               <div>
                 <p className="m-0 text-[16px]" style={{ fontWeight: 400 }}>
                   {name}
                 </p>
-                <p className="m-0 mt-1 text-[14px] leading-[1.45]" style={{ fontWeight: 300, color: EL.inkSoft }}>
+                <p className="m-0 mt-1 text-[14px] leading-[1.45]" style={{ fontWeight: 300, color: EL.creamSoft }}>
                   {what}
                 </p>
               </div>
             </div>
           ))}
         </div>
-        <p className="m-0 mt-8 text-[15px]" style={{ fontFamily: EL_FONT.display, color: EL.inkSoft }}>
+        <p className="m-0 mt-8 text-[15px]" style={{ fontFamily: EL_FONT.display, color: EL.creamSoft }}>
           ผู้สนับสนุนและพันธมิตรครั้งที่ผ่านมา
           <Draft>ยืนยันการใช้โลโก้</Draft>
         </p>
@@ -764,6 +754,30 @@ export function SponsorDeck() {
               <img src={s.src} alt={s.alt} className="h-8 w-auto object-contain" />
             </span>
           ))}
+        </div>
+      </Section>
+
+      {/* 09 Benefits */}
+      <Section id="benefits" tone="paper">
+        <Tag n="09 BENEFITS" light />
+        <H2>สิทธิประโยชน์ของผู้สนับสนุน</H2>
+        <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-3">
+          <Stat light big={<Fill>reach</Fill>} label="ยอดการมองเห็นบน Instagram ของ PassionSeed ช่วงประชาสัมพันธ์" />
+          <Stat light big={`${TARGET}+`} label="ผู้เข้าร่วมที่เห็นโลโก้ผู้สนับสนุนตลอด 3 วัน (เป้าหมาย)" />
+          <Stat light big={<Fill>posts</Fill>} label="โพสต์ประชาสัมพันธ์ที่มีโลโก้ผู้สนับสนุน บน Instagram ของ PassionSeed และ The Next Decade" />
+        </div>
+        <div className="mt-8 border-b" style={{ borderColor: LINE_LIGHT }}>
+          <Row light label="ก่อนงาน">
+            โลโก้บนโปสเตอร์ โพสต์ประชาสัมพันธ์ และหน้ารับสมัคร
+            <Draft>Claude ร่าง</Draft>
+          </Row>
+          <Row light label="ระหว่างงาน">
+            โลโก้บนหัวข้อที่สนับสนุนและในช่อง Discord ของงาน กล่าวขอบคุณบนเวทีรอบชิงชนะเลิศ
+          </Row>
+          <Row light label="หลังงาน">
+            รายงานสรุปผลโครงการ: จำนวนผู้สมัคร ทีม ผลงาน และยอดการมองเห็นของโพสต์ พร้อมภาพและคลิปบรรยากาศที่ได้รับความยินยอมแล้ว
+            <Draft>Claude ร่าง</Draft>
+          </Row>
         </div>
       </Section>
 
@@ -795,7 +809,7 @@ export function SponsorDeck() {
           ผู้สนับสนุนแต่ละรายมีกรรมการได้ไม่เกิน 1 ใน 3 ที่นั่งในรอบชิงชนะเลิศ และไม่มีส่วนในการเปลี่ยนแปลงผลการตัดสิน
           <Draft>สิทธิประโยชน์: Claude ร่าง</Draft>
         </p>
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" style={{ color: EL.ink }}>
+        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4" style={{ color: EL.ink }}>
           <Package
             name="ผู้สนับสนุนเงินรางวัล"
             en="Prize sponsor"
@@ -906,7 +920,7 @@ const PRINT_CSS = `
   .elemental-deck #tracks img { aspect-ratio: 16 / 10; }
   /* Four package cards fill the page: a smaller heading keeps it on one. */
   .elemental-deck #packages h2 { font-size: 40px; }
-  .elemental-deck #about .deck-history-pic { max-height: 96px; }
+  .elemental-deck #about .deck-history-pic { max-width: 76px; }
   .elemental-deck .deck-page:last-child { break-after: auto; page-break-after: auto; }
   .elemental-deck .deck-no-print { display: none !important; }
 }
