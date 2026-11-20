@@ -337,6 +337,11 @@ function fakeChannel(id: string) {
       delete: jest.fn(async (mid: string) => {
         if (!store.delete(mid)) throw unknownMessage();
       }),
+      fetch: jest.fn(async (o: { message: string; force?: boolean }) => {
+        const m = store.get(o.message);
+        if (!m) throw unknownMessage();
+        return m;
+      }),
       fetchPins: jest.fn(async (_options?: unknown) => ({
         hasMore: false,
         items: [...store.values()].filter((m) => m.pinned).map((m) => ({ message: m })),
@@ -525,7 +530,7 @@ describe("startLivePost", () => {
     expect(linkUrls(edits.mock.calls[1][1])).toEqual([WEB, `https://discord.com/channels/${GUILD}/${ROOM}`]);
   });
 
-  it("edits again only when something shown changed, or every 10 minutes", async () => {
+  it("edits again only when something real changed on the island, never on a timer or a new light", async () => {
     const w = make();
     await ready(w);
     const edits = w.live.channel.messages.edit;
@@ -540,14 +545,32 @@ describe("startLivePost", () => {
     expect(edits).toHaveBeenCalledTimes(1);
     expect(bodyText(edits.mock.calls[0][1])).toContain("🔥 กองไฟตอนนี้ **3** คน");
 
-    // Nothing changes: the next edit is 10 minutes after the last one, with the new time.
-    await minutes(9);
+    // Nothing changes for 12 hours, from noon through dusk into the night: no edit, only reads that the post is there.
+    const reads = w.live.channel.messages.fetch;
+    await minutes(12 * 60);
     expect(edits).toHaveBeenCalledTimes(1);
+    expect(reads.mock.calls.length).toBeGreaterThanOrEqual(12 * 6 - 1);
+    expect(reads.mock.calls.every(([o]) => o.force === true)).toBe(true);
+    expect(w.live.channel.send).toHaveBeenCalledTimes(1);
+
+    // The next real change edits within the minute again.
+    w.db.data = data({ campfire: { live: true, count: 4 } });
     await minutes(1);
     expect(edits).toHaveBeenCalledTimes(2);
-    const stamp = (n: number) => Number(/<t:(\d+):R>/.exec(bodyText(edits.mock.calls[n][1]))?.[1]);
-    expect(stamp(1) - stamp(0)).toBe(10 * 60);
+  });
+
+  it("puts the card back about 10 minutes after staff delete it, with nothing changed on the island", async () => {
+    const w = make();
+    await ready(w);
+    const first = [...w.live.store.keys()][0];
+    w.live.store.delete(first);
+    await minutes(9);
     expect(w.live.channel.send).toHaveBeenCalledTimes(1);
+    // The first minute tick at least 10 minutes after the last look.
+    await minutes(2);
+    expect(w.live.channel.send).toHaveBeenCalledTimes(2);
+    expect(w.live.store.size).toBe(1);
+    expect(w.db.stored.message).not.toBe(first);
   });
 
   it("draws each shown tree in its team's look from schema 13, and a new look edits the post", async () => {
@@ -714,6 +737,15 @@ describe("startLivePost", () => {
     expect(w.live.channel.send).not.toHaveBeenCalled();
     expect(marks(w)).toEqual([["shift_quest_live_mark", LIVE_CH, "500000000000000009", null]]);
     expect(w.live.channel.messages.edit.mock.calls.map((c) => c[0])).toEqual(["500000000000000009"]);
+    expect(w.db.stored.message).toBe("500000000000000009");
+  });
+
+  it("adopts its own pinned post carrying an earlier release's marker, so the new marker never doubles the post", async () => {
+    const w = make();
+    const earlier = JSON.parse(JSON.stringify(card(data()).components).split(LIVE.marker).join(LIVE.earlierMarkers[0]));
+    w.live.message("500000000000000009", BOT, earlier, true);
+    await ready(w);
+    expect(w.live.channel.send).not.toHaveBeenCalled();
     expect(w.db.stored.message).toBe("500000000000000009");
   });
 

@@ -344,16 +344,19 @@ The short version for whoever runs the bot:
   polite "not yet", and someone in the pilot who has not started gets the
   /start story. The post is edited about 5 seconds after every gateway
   ready (so a new release puts its buttons on the existing post right away),
-  then within a minute of anything shown changing, and at least every 10
-  minutes; at most one edit a minute. It is not gated on sharing: setting the channel turns it
+  then only within a minute of something real changing on the island
+  (approvals, new plots, opt-ins, roots and looks, the goal, the campfire
+  count, the day count); never on a timer, and not for a new light of the
+  hour. At most one edit a minute. It is not gated on sharing: setting the channel turns it
   on, clearing it stops the edits and leaves the last message as it is.
   - Finding its message after a restart: the message id is stored in the
     database (`shift_quest_live_state`) with its channel, written with a
     compare-and-set (`shift_quest_live_mark`), so two overlapping processes
     during a deploy never leave two posts (the loser deletes its own). When
-    the stored message is gone (staff deleted it; noticed at the next edit,
-    within 10 minutes) or no id was stored, the bot first adopts its own
-    pinned message carrying the "🏝️ โพสต์นี้อัปเดตเองทุก 10 นาที" line, and only
+    the stored message is gone (staff deleted it; the bot reads, never
+    edits, the post every 10 minutes to notice) or no id was stored, the bot
+    first adopts its own pinned message carrying the "🏝️ โพสต์นี้อัปเดตเองเมื่อเกาะเปลี่ยน"
+    line (or an earlier release's "🏝️ โพสต์นี้อัปเดตเองทุก 10 นาที"), and only
     then posts and pins a new one. Moving the live channel posts once in the
     new channel and leaves the old message alone. A send or edit refused
     because of the picture (the bot lost Attach Files, Discord 50013, or the
