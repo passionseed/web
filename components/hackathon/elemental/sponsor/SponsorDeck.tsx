@@ -146,12 +146,18 @@ function Stat({ big, label, light = false }: { big: ReactNode; label: ReactNode;
  * The five elements, each the topic of one challenge. Cropped from the key
  * visual (the plate built by scripts/render-elemental-plate.mjs).
  */
-const ELEMENTS: { key: "water" | "earth" | "air" | "fire" | "aether"; topic: string }[] = [
-  { key: "earth", topic: "ขยะและสารพิษที่ถูกฝังกลบ หรือหายไปโดยไม่มีใครตรวจสอบ" },
-  { key: "water", topic: "มลพิษในแหล่งน้ำที่คนใช้อุปโภคและทำเกษตร" },
-  { key: "air", topic: "มลพิษทางอากาศใกล้ที่อยู่อาศัย" },
-  { key: "fire", topic: "ไฟไหม้ในพื้นที่เก็บสารเคมีและการเผา" },
-  { key: "aether", topic: "ผลกระทบที่มองไม่เห็น เช่น ข้อมูลเท็จ ร่องรอยที่ไม่มีใครบันทึก และ digital footprint" },
+/**
+ * Each element is a kind of harm, with examples to start from, not a fixed
+ * list: teams pick any problem of that kind (Angpao, 2026-11-20: e.g. fire
+ * covers fire hazards in a factory or a bar). Kinds of harm and most examples:
+ * private/hackathon-elemental-theme-and-rules.md.
+ */
+const ELEMENTS: { key: "water" | "earth" | "air" | "fire" | "aether"; kind: string; examples: string }[] = [
+  { key: "earth", kind: "ภัยจากขยะ ดิน และสารพิษ", examples: "เช่น ขยะอิเล็กทรอนิกส์ การลักลอบทิ้งหรือฝังกลบขยะ สารเคมีตกค้างในพื้นที่เกษตร ขยะที่ไม่ได้คัดแยก" },
+  { key: "water", kind: "ภัยในแหล่งน้ำ", examples: "เช่น น้ำเสียจากโรงงาน สารปนเปื้อนในแม่น้ำ ไมโครพลาสติก น้ำที่คนใช้ดื่มและทำเกษตร" },
+  { key: "air", kind: "ภัยในอากาศที่เราหายใจ", examples: "เช่น ฝุ่น PM2.5 ควันจากการเผาในที่โล่ง ไอเสียจากโรงงานใกล้บ้าน การปล่อยคาร์บอน" },
+  { key: "fire", kind: "ภัยจากไฟและความร้อน", examples: "เช่น อัคคีภัยในโรงงาน ผับบาร์ หรืออาคาร โกดังเก็บสารเคมี การเผาไร่และป่า" },
+  { key: "aether", kind: "ภัยที่มองไม่เห็น", examples: "เช่น ข่าวปลอม การอ้างว่ารักษ์โลกเกินจริง ขยะที่ไม่มีใครบันทึกว่าไปที่ไหน พลังงานที่แอปและ AI ใช้" },
 ];
 
 /** The Next Decade's last edition, as the live /hackathon page lists them. */
@@ -408,11 +414,11 @@ export function SponsorDeck() {
         <Tag n="02 TRACKS" />
         <H2>หัวข้อการแข่งขัน: 5 ธาตุ</H2>
         <Body>
-          หัวข้อหลักคือ Environmental negligence: ธุรกิจที่ทำร้ายสิ่งแวดล้อมเพื่อลดต้นทุนหรือเพิ่มกำไร เราแบ่งปัญหาออกเป็น 5 ธาตุ แต่ละทีมเลือกธาตุเดียวหรือหลายธาตุก็ได้
-          แล้วพัฒนาผลงานที่ช่วยคนจริงอย่างน้อย 1 คน
+          หัวข้อหลักคือ Environmental negligence: ธุรกิจที่ละเลยจนทำร้ายสิ่งแวดล้อมและผู้คน เราแบ่งปัญหาออกเป็น 5 ธาตุ ตัวอย่างด้านล่างเป็นแค่จุดเริ่มต้น
+          ทีมเลือกปัญหาใดก็ได้ในธาตุนั้น หรือรวมหลายธาตุ แล้วพัฒนาผลงานที่ช่วยคนจริงอย่างน้อย 1 คน
         </Body>
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-5">
-          {ELEMENTS.map(({ key, topic }) => {
+          {ELEMENTS.map(({ key, kind, examples }) => {
             const e = el(key);
             return (
               <div key={key}>
@@ -424,8 +430,11 @@ export function SponsorDeck() {
                     {e.en.toUpperCase()}
                   </span>
                 </p>
+                <p className="m-0 mt-1 text-[15px] leading-[1.45]" style={{ fontFamily: EL_FONT.display, fontWeight: 400 }}>
+                  {kind}
+                </p>
                 <p className="m-0 mt-1 text-[14px] leading-[1.55]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, color: EL.creamSoft }}>
-                  {topic}
+                  {examples}
                 </p>
               </div>
             );
