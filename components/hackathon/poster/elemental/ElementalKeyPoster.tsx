@@ -125,6 +125,10 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey" }: { id?
         <div className="mt-[8px]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 42, lineHeight: "56px", marginLeft: 4 }}>
           {thai.join(" · ")}
         </div>
+        {/* What it is, in one line (Angpao, 2026-11-20). */}
+        <div className="mt-[6px]" style={{ fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 32, lineHeight: "44px", marginLeft: 4, color: EL.ink }}>
+          แข่งขันแก้ปัญหาสภาพแวดล้อม
+        </div>
       </div>
 
       {/* Three facts: when, the prize, the price with the friend deal leading */}
