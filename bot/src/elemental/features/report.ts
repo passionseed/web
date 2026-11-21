@@ -171,7 +171,14 @@ async function postReport(ctx: ElCtx, input: ReportPostInput): Promise<PostOutco
     await ctx.api.call("elemental_bot_post_mark", ctx.guildId, REPORT_POST_KIND, input.reportId, "failed", null);
     return "failed";
   }
-  await ctx.api.call("elemental_bot_post_mark", ctx.guildId, REPORT_POST_KIND, input.reportId, "sent", messageId);
+  try {
+    await ctx.api.call("elemental_bot_post_mark", ctx.guildId, REPORT_POST_KIND, input.reportId, "sent", messageId);
+  } catch (error) {
+    // The post is already in #reports: the reporter must hear "received", not
+    // "try again" (a retry after the lease would post the report twice).
+    const e = error as { code?: string; sqlstate?: string; name?: string };
+    console.error(`[elemental] report posted but not marked sent: ${e?.code ?? e?.sqlstate ?? e?.name ?? "error"}`);
+  }
   return "posted";
 }
 

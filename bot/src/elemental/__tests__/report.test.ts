@@ -282,6 +282,34 @@ describe("/report from anyone", () => {
     expect(retry.sent).toContainEqual(expect.objectContaining({ content: REPORT.received }));
   });
 
+  test("a Discord 429 on the #reports post is retried and posts once", async () => {
+    const limited = Object.assign(new Error("rate limited"), { status: 429, rawError: { retry_after: 0 } });
+    const post = jest.fn().mockRejectedValueOnce(limited).mockResolvedValue({ id: MESSAGE_ID });
+    const { rt, posts } = setup({}, post);
+    const { i, sent } = interaction("modal");
+    await handleElementalInteraction(rt, i as never);
+    expect(post).toHaveBeenCalledTimes(2);
+    expect(post.mock.calls.every((c) => c[0] === Routes.channelMessages(CHANNEL.reports))).toBe(true);
+    expect(posts.get(`${REPORT_POST_KIND}:${REPORT_ID}`)).toBe("sent");
+    expect(sent).toContainEqual(expect.objectContaining({ content: REPORT.received }));
+  });
+
+  test("a post that went out but could not be marked sent still tells the reporter it was received", async () => {
+    const { rt, api, post } = setup();
+    const call = api.call as jest.Mock;
+    const original = call.getMockImplementation()!;
+    call.mockImplementation(async (fn: string, ...args: unknown[]) => {
+      if (fn === "elemental_bot_post_mark") throw new ElementalError("busy");
+      return original(fn, ...args);
+    });
+    const { i, sent } = interaction("modal");
+    await handleElementalInteraction(rt, i as never);
+    expect(post).toHaveBeenCalledTimes(1);
+    expect(sent).toContainEqual(expect.objectContaining({ content: REPORT.received }));
+    expect(sent).not.toContainEqual(expect.objectContaining({ content: COMMON.failed }));
+    expect(json(errorSpy.mock.calls)).not.toContain(TEXT);
+  });
+
   test("with no #reports channel in settings the report is saved and never posted anywhere", async () => {
     const { rt, post, calls } = setup({ settings: rawSettings({ channels: { start_here: CHANNEL.start_here, news: CHANNEL.news } }) });
     const { i, sent } = interaction("modal");
@@ -359,6 +387,18 @@ describe("Handled button", () => {
     await handleElementalInteraction(rt, i as never);
     expect(i.editReply.mock.calls[0][0].content).toBeUndefined();
     expect(i.followUp).toHaveBeenCalledWith(expect.objectContaining({ content: REPORT.alreadyHandled, flags: MessageFlags.Ephemeral }));
+  });
+
+  test("a report the database does not know answers privately and leaves the post alone", async () => {
+    const { rt } = setup({
+      handled: () => {
+        throw new ElementalError("report_not_found");
+      },
+    });
+    const { i } = button([ROLE.safety]);
+    await handleElementalInteraction(rt, i as never);
+    expect(i.editReply).not.toHaveBeenCalled();
+    expect(i.followUp).toHaveBeenCalledWith(expect.objectContaining({ content: REPORT.notFound, flags: MessageFlags.Ephemeral }));
   });
 
   test("a forged id never reaches the database", async () => {
