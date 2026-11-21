@@ -48,7 +48,7 @@ function publicReg(status: RegistrationStatus): PublicRegistration {
     teamName: "Test Team",
     memberCount: 3,
     amountBaht: 1500,
-    memberNicknames: ["Mint", "Pond", "Ice"],
+    memberNicknames: ["River", "Stone", "Cloud"],
   };
 }
 
@@ -93,11 +93,11 @@ describe("paid page claim codes", () => {
 
     expect(mockCodes).toHaveBeenCalledWith(REG_ID);
     expect(screen.getByTestId("discord-claim")).toBeInTheDocument();
-    expect(within(rowFor("Mint")).getByTestId("claim-command")).toHaveTextContent("/join code:ABCD-EFGH");
-    expect(within(rowFor("Pond")).getByTestId("claim-command")).toHaveTextContent("/join code:JKLM-NPQR");
-    expect(within(rowFor("Ice")).getByTestId("claim-command")).toHaveTextContent("/join code:STUV-WXYZ");
-    expect(rowFor("Mint")).toHaveAttribute("data-position", "1");
-    expect(rowFor("Ice")).toHaveAttribute("data-position", "3");
+    expect(within(rowFor("River")).getByTestId("claim-command")).toHaveTextContent("/join code:ABCD-EFGH");
+    expect(within(rowFor("Stone")).getByTestId("claim-command")).toHaveTextContent("/join code:JKLM-NPQR");
+    expect(within(rowFor("Cloud")).getByTestId("claim-command")).toHaveTextContent("/join code:STUV-WXYZ");
+    expect(rowFor("River")).toHaveAttribute("data-position", "1");
+    expect(rowFor("Cloud")).toHaveAttribute("data-position", "3");
     // The paid message is still there: the block is additive.
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("ได้ที่นั่งแล้ว");
   });
@@ -124,7 +124,7 @@ describe("paid page claim codes", () => {
 
 describe("DiscordClaim", () => {
   it("says codes are coming when none were issued", () => {
-    render(<DiscordClaim memberNames={["Mint"]} codes={[]} />);
+    render(<DiscordClaim memberNames={["River"]} codes={[]} />);
     expect(screen.getByTestId("discord-claim")).toBeInTheDocument();
     expect(screen.queryByTestId("claim-command")).not.toBeInTheDocument();
   });
