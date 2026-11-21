@@ -60,8 +60,15 @@ const RETRYABLE_SQLSTATES = new Set(["40P01", "40001", "55P03", "57014"]);
 
 const RAISED = /^(?:el:)?([a-z][a-z0-9_]*)$/;
 
+/** node-postgres' message when query_timeout fires (the connection is then dropped). */
+const READ_TIMEOUT = "Query read timeout";
+
 export function toElementalError(error: unknown, fn: string): Error {
   const err = error as { message?: string; detail?: string; code?: string };
+  if (err?.message === READ_TIMEOUT) {
+    console.error(`[elemental] ${fn} busy (no answer in time)`);
+    return new ElementalError("busy", undefined, fn);
+  }
   const match = RAISED.exec((err?.message ?? "").trim());
   if (match) return new ElementalError(match[1], err.detail, fn);
   if (err?.code && RETRYABLE_SQLSTATES.has(err.code)) {
@@ -75,10 +82,20 @@ export function toElementalError(error: unknown, fn: string): Error {
 /** The pool's one method this layer uses, so tests pass a fake. */
 export type Queryable = Pick<pg.Pool, "query">;
 
-export function createElementalApi(pool: Queryable): ElementalApi {
+/**
+ * How long one call may wait for its answer. A database that stops answering
+ * must not leave a deferred reply "thinking" for Discord's whole 15 minutes:
+ * after this the person sees the "busy" line and may try again, so a write
+ * that did land late must be safe to repeat (the SQL contract for every
+ * elemental_bot_* write). pg-pool drops that connection.
+ */
+export const QUERY_TIMEOUT_MS = 15_000;
+
+export function createElementalApi(pool: Queryable, opts: { queryTimeoutMs?: number } = {}): ElementalApi {
+  const timeout = opts.queryTimeoutMs ?? QUERY_TIMEOUT_MS;
   async function query(fn: string, sql: string, args: unknown[]): Promise<pg.QueryResult> {
     try {
-      return await pool.query(sql, args);
+      return await pool.query({ text: sql, values: args, query_timeout: timeout } as pg.QueryConfig);
     } catch (error) {
       throw toElementalError(error, fn);
     }

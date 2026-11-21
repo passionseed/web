@@ -171,18 +171,24 @@ export function createSettingsCache(api: ElementalApi, opts: { ttlMs?: number; n
   const now = opts.now ?? Date.now;
   const cache = new Map<string, { value: ElementalSettings | null; at: number }>();
   const inflight = new Map<string, Promise<ElementalSettings | null>>();
+  // Bumped by invalidate, so a read that started before a settings change can
+  // neither be reused nor cache the old row over the new one.
+  let generation = 0;
 
   function refresh(guildId: string): Promise<ElementalSettings | null> {
     const running = inflight.get(guildId);
     if (running) return running;
-    const next = api
+    const started = generation;
+    const next: Promise<ElementalSettings | null> = api
       .call<unknown>(SETTINGS_FN, guildId)
       .then((raw) => {
         const value = normalizeSettings(raw, guildId);
-        cache.set(guildId, { value, at: now() });
+        if (started === generation) cache.set(guildId, { value, at: now() });
         return value;
       })
-      .finally(() => inflight.delete(guildId));
+      .finally(() => {
+        if (inflight.get(guildId) === next) inflight.delete(guildId);
+      });
     inflight.set(guildId, next);
     return next;
   }
@@ -196,8 +202,14 @@ export function createSettingsCache(api: ElementalApi, opts: { ttlMs?: number; n
     },
     refresh,
     invalidate(guildId) {
-      if (guildId === undefined) cache.clear();
-      else cache.delete(guildId);
+      generation += 1;
+      if (guildId === undefined) {
+        cache.clear();
+        inflight.clear();
+      } else {
+        cache.delete(guildId);
+        inflight.delete(guildId);
+      }
     },
   };
 }
@@ -398,11 +410,18 @@ export async function say(i: RepliableInteraction, payload: Payload): Promise<vo
   await i.reply({ ...options, flags: MessageFlags.Ephemeral } as InteractionReplyOptions);
 }
 
-/** A private line to the person: a refusal, an error, a confirmation after an update ack. */
+/**
+ * A private line to the person: a refusal, an error, a confirmation after an
+ * update ack. After a "public" ack it never fills the channel-visible
+ * placeholder: that is removed and the line goes as an ephemeral follow-up.
+ */
 export async function notify(i: RepliableInteraction, text: string): Promise<void> {
   const options = { content: text, allowedMentions: NO_MENTIONS };
   const ack = ACKS.get(i);
   if (i.replied || (i.deferred && ack === "update")) {
+    await i.followUp({ ...options, flags: MessageFlags.Ephemeral });
+  } else if (i.deferred && ack === "public") {
+    await i.deleteReply().catch(() => undefined);
     await i.followUp({ ...options, flags: MessageFlags.Ephemeral });
   } else if (i.deferred) {
     await i.editReply(options);

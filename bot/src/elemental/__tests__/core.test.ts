@@ -9,8 +9,9 @@ import { InteractionContextType, MessageFlags, type Client } from "discord.js";
 
 import { upsertGuildCommands, type CommandRest } from "../../commands";
 import { loadEnv } from "../../env";
-import { ElementalDbError, ElementalError, createElementalApi, type ElementalApi } from "../api";
+import { ElementalDbError, ElementalError, QUERY_TIMEOUT_MS, createElementalApi, type ElementalApi } from "../api";
 import {
+  createSettingsCache,
   normalizeSettings,
   runWithAck,
   type ElementalFeature,
@@ -110,13 +111,19 @@ function interaction(kind: Kind, over: Record<string, unknown> = {}, log: string
       i.replied = true;
       sent.push(p);
     }),
+    // Like discord.js: editReply and followUp mark the interaction replied.
     editReply: jest.fn(async (p: unknown) => {
       log.push("editReply");
+      i.replied = true;
       sent.push(p);
     }),
     followUp: jest.fn(async (p: unknown) => {
       log.push("followUp");
+      i.replied = true;
       sent.push(p);
+    }),
+    deleteReply: jest.fn(async () => {
+      log.push("deleteReply");
     }),
     respond: jest.fn(async () => undefined),
     ...over,
@@ -246,18 +253,25 @@ describe("api", () => {
         .mockRejectedValueOnce(Object.assign(new Error("el:island_full"), { code: "P0001" }))
         .mockRejectedValueOnce(Object.assign(new Error("code_used"), { code: "P0001" }))
         .mockRejectedValueOnce(Object.assign(new Error("deadlock detected"), { code: "40P01" }))
-        .mockRejectedValueOnce(Object.assign(new Error("relation x does not exist"), { code: "42P01" })),
+        .mockRejectedValueOnce(Object.assign(new Error("relation x does not exist"), { code: "42P01" }))
+        .mockRejectedValueOnce(new Error("Query read timeout")),
     };
     const spy = jest.spyOn(console, "error").mockImplementation(() => undefined);
     const api = createElementalApi(pool as never);
     await expect(api.call("elemental_bot_claim", GUILD, "CODE", USER)).resolves.toEqual({ ok: true });
-    expect(pool.query).toHaveBeenCalledWith("select public.elemental_bot_claim($1, $2, $3) as r", [GUILD, "CODE", USER]);
+    expect(pool.query).toHaveBeenCalledWith({
+      text: "select public.elemental_bot_claim($1, $2, $3) as r",
+      values: [GUILD, "CODE", USER],
+      query_timeout: QUERY_TIMEOUT_MS,
+    });
     await expect(api.call("elemental_bot_team_accept")).rejects.toMatchObject({ code: "island_full", fn: "elemental_bot_team_accept" });
     await expect(api.call("elemental_bot_claim")).rejects.toMatchObject({ code: "code_used" });
     await expect(api.call("elemental_bot_claim")).rejects.toMatchObject({ code: "busy" });
     const db: unknown = await api.call("elemental_bot_claim").catch((e: unknown) => e);
     expect(db).toBeInstanceOf(ElementalDbError);
     expect((db as ElementalDbError).sqlstate).toBe("42P01");
+    // A database that stops answering ends in "busy", not a reply left thinking.
+    await expect(api.call("elemental_bot_claim")).rejects.toMatchObject({ code: "busy" });
     // Logs carry the function name and SQLSTATE, never the message.
     expect(spy.mock.calls.flat().join(" ")).not.toContain("does not exist");
     spy.mockRestore();
@@ -508,6 +522,16 @@ describe("defer wrapper", () => {
     spy.mockRestore();
   });
 
+  test("a 'public' ack never shows a refusal to the channel", async () => {
+    const { api } = fakeApi();
+    const { i, log } = interaction("command", { member: { roles: [ROLE.paid] } });
+    await runWithAck(runtime(api), i, { ack: "public", gate: ["helper"] }, "/el x", async () => undefined);
+    expect(i.deferReply).toHaveBeenCalledWith({});
+    expect(i.editReply).not.toHaveBeenCalled();
+    expect(log).toEqual(["deferReply", "deleteReply", "followUp"]);
+    expect(i.followUp).toHaveBeenCalledWith(expect.objectContaining({ content: COMMON.staffOnly, flags: MessageFlags.Ephemeral }));
+  });
+
   test("an 'update' ack on a button sends errors as an ephemeral follow-up, not over the message", async () => {
     const { api } = fakeApi();
     const spy = jest.spyOn(console, "error").mockImplementation(() => undefined);
@@ -541,6 +565,27 @@ describe("settings and roles", () => {
     expect(normalizeSettings(null, GUILD)).toBeNull();
     expect(normalizeSettings({ roles: {} }, GUILD)).toBeNull();
     expect(normalizeSettings(rawSettings(REHEARSAL), REHEARSAL)!.editionKind).toBe("rehearsal");
+  });
+
+  test("invalidate wins over a read that started before the change", async () => {
+    let edition = "old-edition";
+    const releases: (() => void)[] = [];
+    const { api } = fakeApi(async () => {
+      const value = { ...rawSettings(), edition };
+      await new Promise<void>((resolve) => releases.push(resolve));
+      return value;
+    });
+    const cache = createSettingsCache(api);
+    const stale = cache.get(GUILD);
+    edition = "new-edition";
+    cache.invalidate(GUILD);
+    const fresh = cache.get(GUILD);
+    expect(releases).toHaveLength(2); // the change was not answered by the read already running
+    releases[1]();
+    expect((await fresh)?.edition).toBe("new-edition");
+    releases[0]();
+    expect((await stale)?.edition).toBe("old-edition");
+    expect(cache.peek(GUILD)?.edition).toBe("new-edition");
   });
 
   test("Host passes every gate; Judge only where listed; element from roles", () => {
