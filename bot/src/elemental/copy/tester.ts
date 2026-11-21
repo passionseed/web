@@ -63,8 +63,6 @@ export const TESTER = {
   tooLong: (field: string, max: number) => `ช่อง "${field}" ยาวเกิน ${max} ตัวอักษร กดปุ่มด้านล่างเพื่อแก้`,
   // [TH-REVIEW] the button that re-opens the form (max 80 characters).
   fixButton: "แก้แล้วส่งอีกครั้ง",
-  // [TH-REVIEW] the form timed out from memory (bot restart): start again.
-  draftGone: "ฟอร์มนี้หมดเวลาแล้ว ใช้ /tester อีกครั้ง",
 
   // [TH-REVIEW] where /tester and /checkin work.
   notTeamChannel: "ใช้คำสั่งนี้ได้เฉพาะในช่องของทีมคุณ",
@@ -104,6 +102,7 @@ export const TESTER = {
   // --- The staff mirror (Host, Helper, Mentor only). Never the logger. ---
   // [TH-REVIEW] one thread per element in the mirror channel (max 100 characters).
   threadName: (element: ElementKey) => `ผู้ทดสอบ ${el(element)} (${element})`,
+  // [TH-REVIEW] the mirror post's head line and status words.
   mirrorHead: (slot: number | null, element: string | null, projectName: string | null) =>
     `**แปลง ${slot ? plot(slot) : "?"} · ${el(element)} · ${projectName ? project(projectName) : "-"}**`,
   mirrorCounted: "นับแล้ว",

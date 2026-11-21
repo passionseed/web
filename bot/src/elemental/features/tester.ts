@@ -92,6 +92,12 @@ export const MEMORY_TTL_MS = 30 * 60_000;
 /** The canvas sweep: first run after start, then this often. */
 export const SWEEP_START_MS = 30_000;
 export const SWEEP_INTERVAL_MS = 5 * 60_000;
+/**
+ * Rows the sweep reads per guild (SQL's maximum). Notes the sweep has given up
+ * on stay in SQL's oldest-first list, so a small page could fill with them and
+ * hide newer notes that still need writing.
+ */
+export const SWEEP_LIMIT = 500;
 
 const MIRROR_RETRY: RetryOptions = { maxAttempts: 4, baseDelayMs: 1_000, maxDelayMs: 10_000 };
 
@@ -631,8 +637,11 @@ async function submitEdit(i: ComponentOrModal, ctx: ElCtx, args: string[]): Prom
   const pending = edited.rewrite ? TESTER.canvasPending : edited.canvas_status === "none" ? TESTER.canvasNotLinked : null;
   await sayQuietly(i, editedView(edited, pending));
   const mirror = postMirror(ctx.rt, ctx.settings, edited, { edited: true });
+  // force: a write that read the old text just before this edit may have
+  // landed after it and marked the entry 'written'; the edit always rewrites
+  // from the saved copy (one version up), so the board shows the new text.
   const canvas = edited.rewrite
-    ? writeEntry(ctx.rt, ctx.guildId, edited.id).then((outcome) => sayQuietly(i, editedView(edited, canvasLine(outcome))))
+    ? writeEntry(ctx.rt, ctx.guildId, edited.id, { force: true }).then((outcome) => sayQuietly(i, editedView(edited, canvasLine(outcome))))
     : Promise.resolve();
   await Promise.allSettled([mirror, canvas]);
 }
@@ -669,7 +678,7 @@ export async function sweepCanvas(rt: ElementalRuntime): Promise<void> {
     try {
       const settings = await rt.settings.get(guildId);
       if (!settings) continue;
-      await resyncPending(rt, guildId, { auto: true });
+      await resyncPending(rt, guildId, { auto: true, limit: SWEEP_LIMIT });
     } catch (error) {
       console.error(`[elemental] canvas sweep failed: ${errStatus(error)}`);
     }

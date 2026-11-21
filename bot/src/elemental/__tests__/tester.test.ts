@@ -302,9 +302,20 @@ function fakeClient(log: string[], threads: ThreadRow[] = []) {
 
 type Kind = "command" | "button" | "modal";
 
+/** The fake's spied methods, typed as mocks (RepliableInteraction is a union, so an index signature does not narrow them). */
+interface FakeMocks {
+  showModal: jest.Mock;
+  deferReply: jest.Mock;
+  deferUpdate: jest.Mock;
+  reply: jest.Mock;
+  editReply: jest.Mock;
+  followUp: jest.Mock;
+  deleteReply: jest.Mock;
+}
+
 function interaction(kind: Kind, log: string[], over: Record<string, unknown> = {}) {
   const sent: Record<string, unknown>[] = [];
-  const values = (over.values as Record<string, string> | undefined) ?? GOOD;
+  const values: Record<string, string> = (over.values as Record<string, string> | undefined) ?? GOOD;
   const i: Record<string, unknown> = {
     guildId: GUILD,
     channelId: FIRE_CHANNEL,
@@ -358,7 +369,7 @@ function interaction(kind: Kind, log: string[], over: Record<string, unknown> = 
     ...over,
   };
   delete i.values;
-  return { i: i as unknown as RepliableInteraction & Record<string, jest.Mock>, sent };
+  return { i: i as unknown as RepliableInteraction & FakeMocks, sent };
 }
 
 function setup(dbOpts: FakeDbOptions = {}, threads: ThreadRow[] = [{ id: FIRE_THREAD, parent_id: MIRROR, name: TESTER.threadName("fire") }]) {
@@ -758,6 +769,27 @@ describe("/tester-edit", () => {
     expect(patch.mock.calls[0][0]).toMatch(new RegExp(`^/channels/${FIRE_THREAD}/messages/\\d+$`));
     expect(json(patch.mock.calls[0][1])).toContain("found the canteen this time");
     expect(post).toHaveBeenCalledTimes(1);
+  });
+
+  test("an edit still rewrites when an older write marked the entry written in the meantime", async () => {
+    // The first write read the old text, then landed after the edit and set 'written'.
+    let race = false;
+    const s = setup({
+      beforeTarget: () => {
+        if (race) for (const e of s.entries.values()) e.canvas_status = "written";
+      },
+    });
+    await s.run("modal").done;
+    const [entry] = [...s.entries.values()];
+    race = true;
+    const save = s.run("modal", { customId: `el|${ACTIONS.save}|${entry.id}`, values: { ...GOOD, tried: "found the canteen this time" } });
+    await save.done;
+    const writes = s.calls.filter((c) => c.fn === "elemental_bot_canvas_write");
+    expect(writes).toHaveLength(2);
+    const note = JSON.parse(String(writes[1].args[2])) as Note;
+    expect(note.map((el) => el.version)).toEqual([2, 2]);
+    expect(note[1].originalText).toBe(noteText({ ...GOOD, tried: "found the canteen this time" }));
+    expect(last(save.sent)).toBe(`${TESTER.edited}\n${TESTER.canvasWritten}`);
   });
 
   test("contacts in an edit are refused before the call; the fix button re-opens the edit form", async () => {
