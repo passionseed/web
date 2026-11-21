@@ -225,6 +225,7 @@ describe("parseCanvasUrl", () => {
     ["Discord's <...> wrapper", `<${GOOD_URL}>`],
     ["other query keys and a hash", `https://passionseed.org/whiteboard/${BOARD}?template=x&focus=${FRAME}#top`],
     ["Excalidraw's copy-link ?element=", `https://passionseed.org/whiteboard/${BOARD}?element=${FRAME}`],
+    ["an empty ?focus= beside ?element=", `https://passionseed.org/whiteboard/${BOARD}?focus=&element=${FRAME}`],
     ["an uppercase board id", `https://passionseed.org/whiteboard/${BOARD.toUpperCase()}?focus=${FRAME}`],
     ["words around it", `here is ours ${GOOD_URL} thanks`],
     ["http", `http://passionseed.org/whiteboard/${BOARD}?focus=${FRAME}`],
@@ -507,6 +508,18 @@ describe("/canvas link: success and the pin", () => {
     again.rt.events.on("canvas.linked", (p) => void none.push(p));
     await handleElementalInteraction(again.rt, interaction().i as never);
     expect(none).toEqual([]);
+  });
+
+  test("'canvas.linked' is still emitted when the reply cannot be sent (the link is committed)", async () => {
+    const seen: unknown[] = [];
+    const { rt } = setup();
+    rt.events.on("canvas.linked", (p) => void seen.push(p));
+    const { i } = interaction();
+    (i.editReply as unknown as jest.Mock).mockImplementationOnce(async () => {
+      throw Object.assign(new Error("Unknown interaction"), { status: 404 });
+    });
+    await handleElementalInteraction(rt, i as never);
+    expect(seen).toHaveLength(1);
   });
 
   test("two links in a row in one channel end with exactly one canvas pin, the last one", async () => {

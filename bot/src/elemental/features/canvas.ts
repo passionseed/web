@@ -84,7 +84,7 @@ export function parseCanvasUrl(input: unknown): ParsedCanvasUrl {
   if (parts[1] === "join") return fail("invite");
   if (parts.length !== 2 || !BOARD_ID.test(parts[1])) return fail("not_board");
 
-  const frameId = url.searchParams.get("focus") ?? url.searchParams.get(EXCALIDRAW_LINK_KEY);
+  const frameId = url.searchParams.get("focus") || url.searchParams.get(EXCALIDRAW_LINK_KEY);
   if (frameId === null || frameId === "") return fail("missing_focus");
   if (!FRAME_ID.test(frameId)) return fail("bad_focus");
   return { ok: true, boardId: parts[1].toLowerCase(), frameId };
@@ -339,19 +339,23 @@ async function runLink(i: ChatInputCommandInteraction, ctx: ElCtx): Promise<void
   const lines = result.already
     ? [CANVAS.alreadyLinked, `<${url}>`, PIN_LINE[pin], CANVAS.reload]
     : [CANVAS.linked(slot), `<${url}>`, ...(result.replaced ? [CANVAS.replaced] : []), PIN_LINE[pin], CANVAS.reload];
-  await say(i, lines.join("\n"));
-
-  if (!result.already) {
-    await ctx.rt.events.emit("canvas.linked", {
-      guildId: ctx.guildId,
-      edition: ctx.settings.edition,
-      teamId: result.team_id,
-      slot,
-      boardId,
-      frameId,
-      replaced: result.replaced ? { boardId: result.replaced.board_id, frameId: result.replaced.frame_id } : null,
-      via: result.via === "staff" ? "staff" : "member",
-    });
+  try {
+    await say(i, lines.join("\n"));
+  } finally {
+    // The link is already committed in SQL (entries marked 'pending'): the
+    // canvas writer must hear about it even if the reply could not be sent.
+    if (!result.already) {
+      await ctx.rt.events.emit("canvas.linked", {
+        guildId: ctx.guildId,
+        edition: ctx.settings.edition,
+        teamId: result.team_id,
+        slot,
+        boardId,
+        frameId,
+        replaced: result.replaced ? { boardId: result.replaced.board_id, frameId: result.replaced.frame_id } : null,
+        via: result.via === "staff" ? "staff" : "member",
+      });
+    }
   }
 }
 
