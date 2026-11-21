@@ -94,10 +94,10 @@ export const ELEMENT_CHAPTERS: readonly ElementChapter[] = [
   {
     key: "aether",
     en: "Aether",
-    th: "อีเธอร์",
-    subtitleTh: "ภัยที่มองไม่เห็น",
+    th: "ธาตุที่มองไม่เห็น",
+    subtitleTh: "AI โซเชียล และเทคที่ทำร้ายเราแบบไม่รู้ตัว",
     whatHappensTh: "ดาต้าเซ็นเตอร์ขนาดยักษ์ผุดขึ้น ดึงไฟจากสายส่งจนแสงสีม่วงแล่นผ่านและทุ่งนาแห้งเหือด",
-    examplesTh: "พลังงานที่แอปและ AI ใช้ · การฟอกเขียว · ข่าวปลอม · ขยะที่ไร้ปลายทาง",
+    examplesTh: "แอปที่ออกแบบให้เลื่อนไม่หยุด · ข่าวปลอมและคลิป AI · ดีปเฟก · พลังงานที่ AI ใช้",
     color: EL.aetherViolet,
     video: "/hackathon/elemental/media/elements/aether.mp4",
     before: "/hackathon/elemental/media/elements/aether-before.webp",
