@@ -37,6 +37,8 @@
     "test:db:race": "tsx supabase/tests/race/shift_round_race.ts",
     "test:db:quests": "supabase/tests/shift_quests/run-local.sh",
     "test:whiteboard-sql": "tsx scripts/whiteboard-sql-check.ts",
+    "test:db:elemental": "tsx scripts/elemental-sql-check.ts",
+    "test:elemental:integration": "jest --config jest.elemental-int.config.js",
     "shift:seed": "tsx scripts/shift-round-seed.ts",
     "shift:role-passwords": "tsx scripts/shift-quests-set-role-passwords.ts",
     "test:load": "tsx scripts/test-concurrent-jobs.ts",
