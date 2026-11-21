@@ -153,7 +153,11 @@ type RoleOutcome = "ok" | "missing_role" | "forbidden" | "failed";
 async function reportRoleProblem(ctx: ElCtx, outcome: RoleOutcome, key: RoleKey, where: string): Promise<void> {
   if (outcome === "forbidden") await staffAlert(ctx, "roles_forbidden", JOIN.staffRoleForbidden);
   else if (outcome === "missing_role") await staffAlert(ctx, `role_missing_${key}`, JOIN.staffRoleMissing(key));
-  else if (outcome === "failed") console.error(`[elemental] ${where}: role change failed`);
+  else if (outcome === "failed") {
+    // The student is told staff know, so staff must hear about it too.
+    console.error(`[elemental] ${where}: role change failed`);
+    await staffAlert(ctx, "roles_failed", JOIN.staffRoleFailed);
+  }
 }
 
 async function roleCall(task: () => Promise<void>): Promise<RoleOutcome> {
@@ -173,19 +177,66 @@ async function ensurePaid(ctx: ElCtx): Promise<RoleOutcome> {
   return roleCall(() => addRole(ctx.rt, ctx.guildId, ctx.userId, paid));
 }
 
+// The member's role list comes from the interaction payload, a snapshot taken
+// when the button was clicked. Two quick clicks (fire, then water) would both
+// see the roles from before either ran, and leave both element roles on (or,
+// fire-water-fire, none). So clicks run one at a time per member, and the
+// element roles the bot itself just set override the stale snapshot for a
+// short while.
+
+/** How long the bot's own element-role change outranks the interaction's snapshot. */
+const RECENT_SWAP_MS = 60_000;
+const PICK_LOCKS = new WeakMap<ElementalRuntime, Map<string, Promise<void>>>();
+const RECENT_SWAPS = new WeakMap<ElementalRuntime, Map<string, { at: number; held: string }>>();
+
+function perRuntime<V>(store: WeakMap<ElementalRuntime, Map<string, V>>, rt: ElementalRuntime): Map<string, V> {
+  const map = store.get(rt) ?? new Map<string, V>();
+  store.set(rt, map);
+  return map;
+}
+
+/** Runs task after every earlier task with the same key has settled. */
+async function oneAtATime(rt: ElementalRuntime, key: string, task: () => Promise<void>): Promise<void> {
+  const locks = perRuntime(PICK_LOCKS, rt);
+  const run = (locks.get(key) ?? Promise.resolve()).then(task);
+  const tail = run.then(
+    () => undefined,
+    () => undefined
+  );
+  locks.set(key, tail);
+  try {
+    await run;
+  } finally {
+    if (locks.get(key) === tail) locks.delete(key);
+  }
+}
+
+/** Element role ids the member holds: the bot's own recent change if any, else the snapshot. */
+function heldElementRoles(ctx: ElCtx, now: number): Set<string> {
+  const recent = perRuntime(RECENT_SWAPS, ctx.rt).get(`${ctx.guildId}:${ctx.userId}`);
+  if (recent && now - recent.at < RECENT_SWAP_MS) return new Set([recent.held]);
+  return new Set(elementRoleIds(ctx.settings).filter((e) => ctx.memberRoleIds.includes(e.roleId)).map((e) => e.roleId));
+}
+
 /** Adds element's role, then removes every other element role the member holds. */
-async function swapElementRole(ctx: ElCtx, element: ElementKey): Promise<RoleOutcome> {
+async function swapElementRole(ctx: ElCtx, element: ElementKey, now: () => number = Date.now): Promise<RoleOutcome> {
   const target = roleId(ctx.settings, element);
   if (!target) return "missing_role";
-  if (!ctx.memberRoleIds.includes(target)) {
+  const recent = perRuntime(RECENT_SWAPS, ctx.rt);
+  const key = `${ctx.guildId}:${ctx.userId}`;
+  const held = heldElementRoles(ctx, now());
+  // Until this swap finishes cleanly, nothing is known for sure: fall back to the snapshot.
+  recent.delete(key);
+  if (!held.has(target)) {
     const added = await roleCall(() => addRole(ctx.rt, ctx.guildId, ctx.userId, target));
     if (added !== "ok") return added;
   }
   for (const other of elementRoleIds(ctx.settings)) {
-    if (other.element === element || !ctx.memberRoleIds.includes(other.roleId)) continue;
+    if (other.element === element || !held.has(other.roleId)) continue;
     const removed = await roleCall(() => removeRole(ctx.rt, ctx.guildId, ctx.userId, other.roleId));
     if (removed !== "ok") return removed;
   }
+  recent.set(key, { at: now(), held: target });
   return "ok";
 }
 
@@ -297,6 +348,12 @@ async function runPick(i: RepliableInteraction, ctx: ElCtx, args: string[]): Pro
     await notify(i, COMMON.failed);
     return;
   }
+  // The database write and the role swap run as one step per member, so the
+  // last click wins in both places.
+  await oneAtATime(ctx.rt, `${ctx.guildId}:${ctx.userId}`, () => pickElement(i, ctx, element));
+}
+
+async function pickElement(i: RepliableInteraction, ctx: ElCtx, element: ElementKey): Promise<void> {
   try {
     await ctx.api.call(SET_ELEMENT_FN, ctx.guildId, ctx.userId, element);
   } catch (error) {

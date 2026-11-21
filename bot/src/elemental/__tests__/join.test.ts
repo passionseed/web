@@ -431,6 +431,35 @@ describe("element picker", () => {
     expect(ctx.discord.ops).toEqual([`+${ROLE.paid}`, `+${ROLE.fire}`, `+${ROLE.water}`, `-${ROLE.fire}`]);
   });
 
+  test("two quick clicks (fire, water) with the same stale role list leave only water", async () => {
+    const ctx = setup();
+    await join(ctx, "ABCDEFGH");
+    const stale = [...ctx.discord.held(GUILD, USER_A)];
+    await Promise.all([pick(ctx, "fire", { roles: stale }), pick(ctx, "water", { roles: stale })]);
+    expect([...ctx.discord.held(GUILD, USER_A)].sort()).toEqual([ROLE.paid, ROLE.water].sort());
+    expect(ctx.db.members.get(`elemental-2026:${USER_A}`)?.element_pick).toBe("water");
+  });
+
+  test("fire, water, fire with a stale role list still ends on fire alone", async () => {
+    const ctx = setup();
+    await join(ctx, "ABCDEFGH");
+    const stale = [...ctx.discord.held(GUILD, USER_A)];
+    await pick(ctx, "fire", { roles: stale });
+    await pick(ctx, "water", { roles: [...stale, ROLE.fire] });
+    await pick(ctx, "fire", { roles: [...stale, ROLE.fire] }); // snapshot from before water landed
+    expect([...ctx.discord.held(GUILD, USER_A)].sort()).toEqual([ROLE.paid, ROLE.fire].sort());
+  });
+
+  test("a non-403 role failure still tells staff, since the student is told staff know", async () => {
+    const ctx = setup();
+    await join(ctx, "ABCDEFGH");
+    ctx.discord.failRolesWith(404);
+    expect((await pick(ctx, "earth")).answer()).toEqual([JOIN.pickRolePending("earth")]);
+    expect(ctx.discord.posts).toEqual([
+      { channelId: MIRROR, body: { content: JOIN.staffRoleFailed, allowed_mentions: { parse: [] } } },
+    ]);
+  });
+
   test("a stray second element role is cleaned up, and picking the held element changes nothing", async () => {
     const ctx = setup();
     await join(ctx, "ABCDEFGH");

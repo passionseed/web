@@ -70,6 +70,8 @@ export const JOIN = {
   // [TH-REVIEW] staff alert: Discord refused a role change (role hierarchy, 403).
   staffRoleForbidden:
     "บอทเพิ่มหรือถอด role ให้สมาชิกไม่ได้ (Discord ตอบ 403) ย้าย role ของบอทให้อยู่เหนือ Paid และ role ธาตุทั้ง 5 ใน Server Settings > Roles และให้สิทธิ์ Manage Roles",
+  // [TH-REVIEW] staff alert: Discord refused a role change for another reason (after retries).
+  staffRoleFailed: "บอทเพิ่มหรือถอด role ให้สมาชิกไม่สำเร็จ (Discord ขัดข้อง) ตรวจ role ของสมาชิกที่เพิ่งใช้ /join หรือกดเลือกธาตุ แล้วแก้ใน Server Settings",
   // [TH-REVIEW] staff alert: a role id is missing from elemental_settings.
   staffRoleMissing: (key: string) => `ยังไม่ได้ตั้ง role "${key}" ใน elemental_settings บอทจึงให้ role นี้กับสมาชิกไม่ได้`,
 } as const;
