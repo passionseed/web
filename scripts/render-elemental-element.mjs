@@ -4,6 +4,12 @@
  * by that element's pollution in pixels made from the photo itself.
  *
  *   node scripts/render-elemental-element.mjs --element water|earth|air|fire|aether [--out file]
+ *        [--frames n --frame f]
+ *
+ * With --frames, draws frame f of a seamless loop (scripts/render-elemental-
+ * element-gif.mjs builds the GIF and MP4 from them). Motion is directional,
+ * like the key visual's: water flows, smoke and dust drift, flames and
+ * sparks rise, Aether's pixels float up. Frame 0 is the still poster.
  *
  * Writes public/hackathon/poster/elemental/elements/plate-<element>.png
  * (1080x1350). The type is added by ElementalElementPoster. Rules:
@@ -32,6 +38,27 @@ if (!PHOTOS[ELEMENT]) {
 const OUT = arg("--out") ?? join(ROOT, `public/hackathon/poster/elemental/elements/plate-${ELEMENT}.png`);
 const W = 1080;
 const H = 1350;
+const FRAMES = Number(arg("--frames") ?? 0);
+const FRAME = Number(arg("--frame") ?? 0);
+const PHASE = FRAMES ? FRAME / FRAMES : 0;
+/**
+ * Straight-line motion that loops (from the key visual's plate script):
+ * sample the pattern moved by v * phase and by v * (phase - 1) and
+ * crossfade, so the end of the loop matches its start without a jump.
+ */
+const flow = (f, vx, vy) => {
+  if (!FRAMES) return f(0, 0);
+  const a = f(-vx * PHASE, -vy * PHASE);
+  const b = f(-vx * (PHASE - 1), -vy * (PHASE - 1));
+  const n = (1 - PHASE) * a + PHASE * b;
+  return 0.5 + (n - 0.5) / Math.hypot(1 - PHASE, PHASE);
+};
+/** The same for loose pixels: draw each at two places, crossfaded. */
+const drift = (x, y, vx, vy, draw) => {
+  if (!FRAMES) return draw(x, y, 1);
+  draw(x + vx * PHASE, y + vy * PHASE, 1 - PHASE);
+  draw(x + vx * (PHASE - 1), y + vy * (PHASE - 1), PHASE);
+};
 
 // ---------- small maths ----------
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
@@ -202,7 +229,7 @@ async function water() {
   for (let y = 852; y < H - 4; y += cell)
     for (let x = 0; x < W; x += cell) {
       if (mask[(y + 6) * W + Math.min(x + 6, W - 1)] < 0.5) continue;
-      if (fbm(x * 0.012, y * 0.03, 31, 3) < 0.5) continue;
+      if (flow((dx, dy) => fbm((x + dx) * 0.012, (y + dy) * 0.03, 31, 3), -70, 20) < 0.5) continue;
       rect(x, y, cell, greens[clamp(Math.floor(cellLum(x, y, cell) * 4.2 - 0.5), 0, 3)]);
     }
   // Dead fish? No: Angpao kept that undecided. Acid slicks and bubbles instead.
@@ -215,6 +242,8 @@ async function water() {
     const x = Math.round((hash(k, 1, 35) * 620) / 6) * 6;
     const y = Math.round((870 + hash(k, 2, 35) * 470) / 6) * 6;
     if (mask[Math.min(y, H - 1) * W + x] < 0.5) continue;
+    // Bubbles pop and come back.
+    if (FRAMES && hash(k, FRAME, 36) < 0.3) continue;
     rect(x, y, 6, P.g3);
     if (hash(k, 3, 35) < 0.5) rect(x + 6, y - 6, 6, P.white);
   }
@@ -339,7 +368,7 @@ function earth() {
     [880, 1150, 110, 22, 52],
   ])
     for (const [x, y] of blobCells(cx, cy, rx, ry, 8, s, 0.7)) {
-      const n = fbm(x * 0.03, y * 0.06, s, 2);
+      const n = flow((dx, dy) => fbm((x + dx) * 0.03, (y + dy) * 0.06, s, 2), 40, 0);
       rect(x, y, 8, n > 0.76 ? SLUDGE[3] : n > 0.66 ? SLUDGE[2] : n > 0.5 ? SLUDGE[1] : SLUDGE[0], 0.95);
     }
 }
@@ -384,7 +413,7 @@ async function air() {
   for (let y = 600; y < 1100; y += cell)
     for (let x = 0; x < W; x += cell) {
       const t = smooth(610, 760, y) * (1 - smooth(950, 1100, y));
-      const n = fbm(x * 0.004, y * 0.02, 95, 4);
+      const n = flow((dx, dy) => fbm((x + dx) * 0.004, (y + dy) * 0.02, 95, 4), 140, 0);
       const dens = t * (n * 2 - 0.5);
       if (dens + (bayer(x / cell, y / cell) - 0.5) * 0.9 < 0.45) continue;
       const l = cellLum(x, y, cell);
@@ -393,9 +422,10 @@ async function air() {
     }
   // 4. PM2.5: fine particles everywhere below the type.
   for (let k = 0; k < 360; k++) {
-    const x = Math.round((hash(k, 1, 93) * W) / 4) * 4;
-    const y = Math.round((640 + hash(k, 2, 93) * 690) / 4) * 4;
-    rect(x, y, hash(k, 4, 93) < 0.2 ? 6 : 4, hash(k, 3, 93) < 0.6 ? hex("#5e574e") : hex("#2b2723"), 0.85);
+    const size = hash(k, 4, 93) < 0.2 ? 6 : 4;
+    const c = hash(k, 3, 93) < 0.6 ? hex("#5e574e") : hex("#2b2723");
+    // Dust drifts with the wind.
+    drift(hash(k, 1, 93) * W, 640 + hash(k, 2, 93) * 690, 90, -20, (x, y, a) => rect(Math.round(x / 4) * 4, Math.round(y / 4) * 4, size, c, 0.85 * a));
   }
 }
 
@@ -429,7 +459,8 @@ async function fire() {
       const t = (F.base - y) / g.h;
       if (t < -0.08 || t > 1) continue;
       const tt = Math.max(t, 0);
-      const wob = 46 * (fbm(x * 0.012, y * 0.02 + 3, 5, 3) - 0.5) * (0.3 + tt);
+      // The licks rise: the wobble travels up the flame.
+      const wob = 46 * (flow((dx, dy) => fbm((x + dx) * 0.012, (y + dy) * 0.02 + 3, 5, 3), 0, -240) - 0.5) * (0.3 + tt);
       const c = g.cx + g.lean * Math.pow(tt, 1.6) + wob;
       const hw = (g.w / 2) * Math.pow(1 - tt, 0.7) * (t < 0 ? 1 + t * 6 : 1);
       const d = Math.abs(x - c) / Math.max(hw, 1);
@@ -482,7 +513,7 @@ async function fire() {
       if (v > 0.02 && y < F.base - 40) paint(halo, x, y, P.orange, 0.5 * smooth(0.02, 0.3, v));
       if (v < 0.1) continue;
       const h = clamp((F.base - y) / 540);
-      const lick = v * (0.62 + 0.7 * fbm(x * 0.07, y * 0.009 + 9, 71, 3)) * (1 - 0.25 * h);
+      const lick = v * (0.62 + 0.7 * flow((dx, dy) => fbm((x + dx) * 0.07, (y + dy) * 0.009 + 9, 71, 3), 0, -320)) * (1 - 0.25 * h);
       const a = smooth(0.1, 0.42, lick) * (1 - 0.35 * h);
       if (a < 0.98 && a < bayer(x >> 1, y >> 1)) continue;
       paint(flame, x, y, colour(lick), 1);
@@ -497,22 +528,25 @@ async function fire() {
     for (let x = F.x - 400; x < Math.min(W, F.x + 360); x += cell) {
       const v = field(x + 6, y + 6);
       const h = (F.base - y) / 540;
-      const n = fbm(x * 0.03, y * 0.03, 61, 2);
+      const n = flow((dx, dy) => fbm((x + dx) * 0.03, (y + dy) * 0.03, 61, 2), 0, -260);
       if (((v > 0.12 && v < 0.3 && h > 0.12 && h < 0.6) || (v > 0.5 && h > 0.14 && h < 0.34)) && n > 0.52) rect(x, y, cell, P.white);
       else if (v > 0.16 && n < 0.05 + h * 0.85) rect(x, y, cell, lv[clamp(Math.floor(v * 4.2), 0, 3)]);
     }
   for (const [x, y] of blobCells(F.x - 20, F.base - 240, 36, 66, 14, 62)) rect(x, y, 14, P.flatRed);
   for (const [x, y] of blobCells(F.x + 70, F.base - 350, 18, 46, 12, 63)) rect(x, y, 12, P.flatBlue);
   const c2 = 14;
-  for (let id = 0; id < 1; id += 0.03) {
+  // Sparks rise one full column per loop and wrap, so the GIF is seamless.
+  const SPAN = 1.02;
+  for (let id0 = 0; id0 < 1; id0 += 0.03) {
+    const id = (id0 + PHASE * SPAN) % SPAN;
     const sx = F.x + 40 + 200 * id + 50 * Math.sin(id * 5);
     const sy = F.base - 430 - id * 330;
     for (let k = 0; k < 4; k++) {
-      if (hash(k, id * 999, 64) > 0.42 - id * 0.2) continue;
-      const x = Math.round((sx + (hash(k, id * 999, 65) - 0.5) * (90 + 140 * id)) / c2) * c2;
-      const y = Math.round((sy + (hash(k, id * 999, 66) - 0.5) * 30) / c2) * c2;
-      rect(x, y, c2, hash(k, id * 999, 67) < 0.86 ? P.white : P.flatBlue);
-      if (hash(k, id * 999, 68) < 0.6) rect(x + c2, y + c2, c2, P.white);
+      if (hash(k, id0 * 999, 64) > 0.42 - id * 0.2) continue;
+      const x = Math.round((sx + (hash(k, id0 * 999, 65) - 0.5) * (90 + 140 * id)) / c2) * c2;
+      const y = Math.round((sy + (hash(k, id0 * 999, 66) - 0.5) * 30) / c2) * c2;
+      rect(x, y, c2, hash(k, id0 * 999, 67) < 0.86 ? P.white : P.flatBlue);
+      if (hash(k, id0 * 999, 68) < 0.6) rect(x + c2, y + c2, c2, P.white);
     }
   }
   // The trees burn in their own shapes: only tree pixels (dark green in the
@@ -528,7 +562,7 @@ async function fire() {
   for (let y = 840; y < 1080; y += tc)
     for (let x = 100; x < W; x += tc) {
       if (!isTree(x + 3, y + 3)) continue;
-      const heat = clamp(1 - Math.abs(x - F.x) / 520 + 0.5 * (fbm(x * 0.01, y * 0.02, 151, 3) - 0.5));
+      const heat = clamp(1 - Math.abs(x - F.x) / 520 + 0.5 * (flow((dx, dy) => fbm((x + dx) * 0.01, (y + dy) * 0.02, 151, 3), 0, -90) - 0.5));
       if (heat <= 0.05 || heat < bayer(x / tc, y / tc) * 0.7) continue;
       const up = clamp((1080 - y) / 200);
       const l = clamp((origCellLum(x, y, tc) - 0.08) / 0.32);
@@ -598,12 +632,14 @@ async function fire() {
   for (let k = 0; k < 30; k++) {
     const x = Math.round((F.x - 260 + hash(k, 1, 85) * 520) / 5) * 5;
     const y = Math.round((F.base - 20 + hash(k, 2, 85) * 36) / 5) * 5;
+    if (FRAMES && hash(k, FRAME, 86) < 0.3) continue;
     rect(x, y, 5, hash(k, 3, 85) < 0.5 ? P.yellow : P.orange, 0.9);
   }
   // Embers drifting onto the meadow.
   for (let k = 0; k < 60; k++) {
     const x = Math.round((F.x - 420 + hash(k, 1, 83) * 760) / 5) * 5;
     const y = Math.round((F.base + 100 + hash(k, 2, 83) * 160) / 5) * 5;
+    if (FRAMES && hash(k, FRAME, 84) < 0.25) continue;
     rect(x, y, 5, hash(k, 3, 83) < 0.5 ? P.yellow : P.orange, 0.9);
   }
 }
@@ -632,7 +668,7 @@ async function aether() {
   const glow = new Float32Array(W * H * 4);
   for (let y = 520; y < H; y++)
     for (let x = 0; x < W; x++) {
-      const n = fbm(x * 0.004, y * 0.006, 130, 4);
+      const n = flow((dx, dy) => fbm((x + dx) * 0.004, (y + dy) * 0.006, 130, 4), 0, -80);
       paint(glow, x, y, P.violet, 0.3 * smooth(0.45, 0.75, n));
     }
   drawLayer(await blurLayer(glow, 30), "screen", P.violet);
@@ -649,9 +685,16 @@ async function aether() {
     if (fbm(x * 0.004, y * 0.004, 132, 3) < 0.45) continue;
     pts.push([Math.round(x / s) * s, Math.round(y / s) * s, s, a, hash(k, 5, 131) < 0.4]);
   }
-  for (const [x, y, s, a] of pts) for (let yy = -s; yy < 2 * s; yy++) for (let xx = -s; xx < 2 * s; xx++) paint(sparks, x + xx, y + yy, P.violet, a * 0.25);
+  // They float up: each is drawn at two places along its path, crossfaded.
+  const UP = -110;
+  for (const [x0, y0, s, a] of pts)
+    drift(x0, y0, 0, UP, (x, y, m) => {
+      const gx = Math.round(x / s) * s;
+      const gy = Math.round(y / s) * s;
+      for (let yy = -s; yy < 2 * s; yy++) for (let xx = -s; xx < 2 * s; xx++) paint(sparks, gx + xx, gy + yy, P.violet, a * 0.25 * m);
+    });
   drawLayer(await blurLayer(sparks, 10), "screen", P.violet);
-  for (const [x, y, s, a, light] of pts) rect(x, y, s, light ? P.lilac : P.violet, a);
+  for (const [x0, y0, s, a, light] of pts) drift(x0, y0, 0, UP, (x, y, m) => rect(Math.round(x / s) * s, Math.round(y / s) * s, s, light ? P.lilac : P.violet, a * m));
   // A few flat stepped violet shapes, half-erased by the Bayer pattern.
   for (const [cx, cy, rx, ry, seed] of [
     [260, 900, 70, 40, 140],
@@ -666,7 +709,7 @@ await { water, earth, air, fire, aether }[ELEMENT]();
 // Grain over everything, pixels included.
 for (let y = 0; y < H; y++)
   for (let x = 0; x < W; x++) {
-    const n = (hash(x, y, 99) + hash(x, y, 98) - 1) * 0.065;
+    const n = (hash(x, y, 99 + FRAME * 3) + hash(x, y, 98 + FRAME * 3) - 1) * 0.065;
     const i = (y * W + x) * 3;
     for (let k = 0; k < 3; k++) img[i + k] = clamp(img[i + k] + n);
   }
