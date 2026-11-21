@@ -461,7 +461,7 @@ async function fire() {
       const r = Math.sqrt(dx * dx + dy * dy);
       if (r < 1) put(x, y, P.orange, 0.36 * Math.pow(1 - r, 1.6));
       const gx = (x - F.x) / 480;
-      const gy = (y - (F.base + 120)) / 170;
+      const gy = (y - (F.base + 40)) / 120;
       const gr = Math.sqrt(gx * gx + gy * gy);
       if (gr < 1) screen(x, y, P.yellow, 0.28 * Math.pow(1 - gr, 1.3));
     }
@@ -538,52 +538,60 @@ async function fire() {
   // Charred logs across the fire's base, from the key visual: a dot matrix
   // of the photo over black, in front of the flames, so their bottom isn't
   // a flat cut-off line.
-  // A ragged skyline of char, not a bar: its top rises and dips, it breaks
-  // into pieces, and its edges dither, so the flames' base is broken up.
+  // Char like the key visual's: wide, low burnt logs lying flat on the
+  // ground across the fire's base, overlapping front to back, in a dot
+  // matrix of the photo over black. The ground around them catches the
+  // fire's light, so they sit on the meadow, not on the picture.
+  for (let y = F.base - 30; y < F.base + 70; y++)
+    for (let x = F.x - 460; x < F.x + 420; x++) {
+      const gx = (x - F.x + 20) / 420;
+      const gy = (y - (F.base + 18)) / 48;
+      const gr = Math.sqrt(gx * gx + gy * gy);
+      if (gr < 1) screen(x, y, P.yellow, 0.55 * Math.pow(1 - gr, 1.3));
+    }
+  // Firelight spilling onto the grass in front, warm and soft.
   {
-    const cc = 10;
-    for (let x = F.x - 340; x < F.x + 340; x += cc) {
-      // Wherever the flames reach the ground, the char is unbroken and runs
-      // below their flat bottom edge; elsewhere it breaks into pieces.
-      let flameHere = 0;
-      for (let y = F.base - 30; y < F.base + 24; y += 6) flameHere = Math.max(flameHere, field(x + 5, y));
-      const n = fbm(x * 0.012, 4.2, 88, 3);
-      if (flameHere < 0.05 && n < 0.45) continue;
-      const rough = fbm(x * 0.05, 9.1, 89, 2);
-      // A jagged top: stumps and heaps of different heights, cell by cell.
-      const spike = hash(Math.floor(x / 20), 5, 93);
-      const topY = F.base + 2 - 44 * Math.pow(spike, 2.2) * (0.5 + rough) - 20 * smooth(0.45, 0.8, n);
-      // A ragged bottom: steps up and down in 20px runs, plus noise, so it isn't a ruler line.
-      const botY = F.base + 14 + 30 * hash(Math.floor(x / 20), 6, 93) + 14 * (fbm(x * 0.03, 2.2, 90, 2) - 0.5);
-      for (let y = Math.floor(topY / cc) * cc; y < botY; y += cc) {
-        // Messy edges: dithered top, and the bottom frays into the grass.
-        const fromTop = (y - topY) / 14;
-        const fromBot = (botY - y) / 18;
-        if (fromTop < 1 && bayer(x / cc, y / cc) > fromTop) continue;
-        if (fromBot < 1 && hash(x, y, 91) > fromBot) continue;
-        for (let yy = y; yy < y + cc; yy++)
-          for (let xx = x; xx < x + cc; xx++) {
-            const l = lum(origAt(xx, yy));
-            put(xx, yy, xx % 3 < 2 && yy % 3 < 2 ? [0.25 + l * 0.6, 0.22 + l * 0.5, 0.2 + l * 0.45].map((v) => clamp(v)) : P.ink);
-          }
+    const spill = new Float32Array(W * H * 4);
+    for (let y = F.base; y < F.base + 110; y++)
+      for (let x = F.x - 420; x < F.x + 380; x++) {
+        const gx = (x - F.x + 20) / 400;
+        const gy = (y - F.base) / 110;
+        const d = gx * gx + gy * gy;
+        if (d < 1) paint(spill, x, y, P.orange, 0.5 * (1 - d));
       }
-      // Up the slope: char thins out into the burning trees, densest just
-      // above the line, so the black climbs the hill like the key visual's.
-      for (let y = Math.floor((topY - 160) / cc) * cc; y < topY; y += cc) {
-        const t = (topY - y) / 160;
-        const c = origAt(x + 5, y + 5);
-        if (!(c[1] > c[2] + 0.01)) continue;
-        if (bayer(x / cc, y / cc) * 1.15 + fbm(x * 0.03, y * 0.03, 94, 2) * 0.5 < 1 - t) {
-          for (let yy = y; yy < y + cc; yy++)
-            for (let xx = x; xx < x + cc; xx++) {
-              const l = lum(origAt(xx, yy));
-              put(xx, yy, xx % 3 < 2 && yy % 3 < 2 ? [0.25 + l * 0.6, 0.22 + l * 0.5, 0.2 + l * 0.45].map((v) => clamp(v)) : P.ink, 0.92);
-            }
+    drawLayer(await blurLayer(spill, 14), "normal", P.orange);
+  }
+  // Separate logs, each lying on the ground: a soft shadow under it, its
+  // top edge lit by the fire, its body a dot matrix of the photo over black.
+  const logs = [
+    [F.x - 40, F.base - 4, 130, 16, 69],
+    [F.x - 260, F.base + 8, 80, 14, 82],
+    [F.x + 200, F.base + 4, 95, 15, 81],
+    [F.x + 40, F.base + 22, 90, 14, 83],
+    [F.x - 160, F.base + 26, 60, 12, 84],
+  ];
+  const shadow = new Float32Array(W * H * 4);
+  for (const [cx, cy, rx, ry] of logs)
+    for (let y = cy; y < cy + ry * 2 + 10; y++)
+      for (let x = cx - rx - 10; x < cx + rx + 30; x++) {
+        const dx = (x - cx - 12) / (rx + 16);
+        const dy = (y - (cy + ry)) / (ry + 6);
+        const d = dx * dx + dy * dy;
+        if (d < 1) paint(shadow, x, y, [0.04, 0.03, 0.02], 0.6 * (1 - d));
+      }
+  drawLayer(await blurLayer(shadow, 5), "normal", [0.04, 0.03, 0.02]);
+  for (const [cx, cy, rx, ry, seed] of logs) {
+    const cells = blobCells(cx, cy, rx, ry, 8, seed, 0.75);
+    const set = new Set(cells.map(([x, y]) => `${x},${y}`));
+    for (const [x0, y0] of cells) {
+      const rim = !set.has(`${x0},${y0 - 8}`);
+      for (let y = y0; y < y0 + 8; y++)
+        for (let x = x0; x < x0 + 8; x++) {
+          const l = lum(origAt(x, y));
+          const dot = x % 3 < 2 && y % 3 < 2;
+          const body = [0.22 + l * 0.5, 0.18 + l * 0.42, 0.16 + l * 0.36].map((v) => clamp(v));
+          put(x, y, rim ? (dot ? P.yellow : P.orange) : dot ? body : P.ink);
         }
-      }
-      // Stray char cells kicked up above and below the line.
-      if (hash(x, 1, 92) < 0.35) rect(x, Math.round((topY - 10 - hash(x, 2, 92) * 30) / cc) * cc, cc, P.ink, 0.9);
-      if (hash(x, 3, 92) < 0.15) rect(x, Math.round((botY + hash(x, 4, 92) * 10) / cc) * cc, cc, P.ink, 0.85);
     }
   }
   // A few embers glowing on the logs.
