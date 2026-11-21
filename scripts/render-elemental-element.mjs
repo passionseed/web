@@ -224,194 +224,194 @@ async function water() {
   drawLayer(await blurLayer(layer, 20), "screen");
 }
 
-// ---------- EARTH: an e-waste and rubbish dump grows out of the field ----------
+// ---------- EARTH: dumped drums leak into the field and the soil dies ----------
 function earth() {
-  const C4 = 4;
-  const px = (x, y, c, a = 1) => rect(Math.round(x / C4) * C4, Math.round(y / C4) * C4, C4, c, a);
-  const heaps = [
-    { cx: 380, cy: 1040, rx: 230, ry: 120, seed: 41 },
-    { cx: 760, cy: 1120, rx: 170, ry: 95, seed: 42 },
-    { cx: 600, cy: 935, rx: 110, ry: 40, seed: 43 },
-  ];
-  const inHeap = (x, y, h) => {
-    const dx = (x - h.cx) / h.rx;
-    const dy = (y - h.cy) / h.ry;
-    const top = dy < 0 ? dx * dx + dy * dy : dx * dx + dy * dy * 0.35;
-    return top + 0.4 * (fbm(x * 0.03, y * 0.03, h.seed, 2) - 0.5) < 1;
+  const C = { x: 530, y: 1070, rx: 440, ry: 160 };
+  const deadAt = (x, y) => {
+    const dx = (x - C.x) / C.rx;
+    const dy = (y - C.y) / C.ry;
+    return Math.sqrt(dx * dx + dy * dy) + 0.85 * (fbm(x * 0.006, y * 0.014, 44, 5) - 0.5);
   };
-  // The soil dies around the heaps: grass turns brown-grey, in a dithered ring.
-  for (let y = 830; y < H; y++)
+  // Dead soil: the grass turns to grey-brown dirt; yellowing grass at its dithered edge.
+  for (let y = 840; y < H; y++)
     for (let x = 0; x < W; x++) {
-      let d = 9;
-      for (const h of heaps) {
-        const dx = (x - h.cx) / (h.rx * 1.7);
-        const dy = (y - h.cy) / (h.ry * 2.4);
-        d = Math.min(d, Math.sqrt(dx * dx + dy * dy));
+      const t = 1 - smooth(0.7, 1.05, deadAt(x, y));
+      if (t <= 0) continue;
+      const c = get(x, y);
+      if (t < 0.95 && t < bayer(x >> 1, y >> 1)) {
+        put(x, y, [clamp(c[0] * 1.15 + 0.06), c[1] * 0.85, c[2] * 0.55], 0.55 * t + 0.2);
+        continue;
       }
-      const dead = 1 - smooth(0.55, 1.05, d + 0.35 * (fbm(x * 0.01, y * 0.02, 44, 3) - 0.5));
-      if (dead <= 0) continue;
-      if (dead < 0.9 && dead < bayer(x >> 1, y >> 1)) continue;
-      const l = lum(get(x, y));
-      put(x, y, [0.2 + l * 0.6, 0.17 + l * 0.45, 0.1 + l * 0.3], 0.8);
+      const l = lum(c);
+      const dirt = [0.26 + l * 0.35, 0.21 + l * 0.27, 0.15 + l * 0.18];
+      put(x, y, x % 4 < 3 && y % 4 < 3 ? dirt : dirt.map((v) => v * 0.62), 0.95);
     }
-  // Shadows, then the dot-screen underlay that keeps the photo's light.
-  for (const h of heaps)
-    for (let y = h.cy; y < h.cy + h.ry + 24; y++)
-      for (let x = h.cx - h.rx - 24; x < h.cx + h.rx + 24; x++) {
-        const dx = (x - h.cx) / (h.rx + 24);
-        const dy = (y - (h.cy + h.ry * 0.6)) / 30;
-        const d = dx * dx + dy * dy;
-        if (d < 1) put(x, y, [0.05, 0.05, 0.04], 0.4 * (1 - d));
-      }
-  for (const h of heaps)
-    for (let y = h.cy - h.ry; y < h.cy + h.ry; y++)
-      for (let x = h.cx - h.rx; x < h.cx + h.rx; x++) {
-        if (!inHeap(x, y, h)) continue;
-        const l = lum(get(x, y));
-        // Soil-brown dot screen, lit from the top of the mound.
-        const lit = 1 - 0.5 * clamp((y - (h.cy - h.ry)) / (h.ry * 2));
-        put(x, y, x % 3 < 2 && y % 3 < 2 ? [(0.3 + l * 0.5) * lit, (0.25 + l * 0.4) * lit, (0.18 + l * 0.3) * lit] : [0.22 * lit, 0.18 * lit, 0.13 * lit], 0.95);
-      }
-  const PCB = hex("#33603e");
-  const TRACE = hex("#7aa266");
-  const GOLD = hex("#d2a63a");
-  const CHIP = hex("#141414");
-  const SCREEN = hex("#0f1418");
-  const GLASS = hex("#9fb6c4");
-  const PLASTIC = [hex("#c9c4b8"), hex("#8f8a80"), hex("#d9d4c6"), hex("#5c5a55")];
-  const BAGS = [hex("#e8e6de"), hex("#3a6fb0"), hex("#c23a2a"), hex("#d8b23a"), hex("#2a2a2a")];
-  const WIRES = [hex("#141414"), hex("#c23a2a"), hex("#2f5fa8"), hex("#d8b23a")];
-  const r = (k, i) => hash(k, i, 111);
-  const items = [];
-  for (let k = 0; k < 420; k++) {
-    const h = heaps[k % 5 === 0 ? 2 : k % 2];
-    const x = h.cx + (r(k, 1) - 0.5) * 2 * h.rx * 0.92;
-    const y = h.cy + (r(k, 2) - 0.6) * 2 * h.ry * 0.92;
-    if (!inHeap(x, y, h)) continue;
-    items.push({ k, x, y, h, roll: r(k, 3) });
-  }
-  items.sort((a, b) => a.y - b.y);
-  for (const { k, x, y, h, roll } of items) {
-    const shade = (yy) => clamp((yy - (h.cy - h.ry)) / (h.ry * 2));
-    const dot = (xx, yy, c) => inHeap(xx, yy, h) && px(xx, yy, c.map((v) => v * (1 - 0.45 * shade(yy))));
-    if (roll < 0.16) {
-      // Circuit board.
-      const w = 10 + Math.floor(r(k, 4) * 8);
-      const hh = 5 + Math.floor(r(k, 5) * 5);
-      for (let j = 0; j < hh; j++)
-        for (let i = 0; i < w; i++) {
-          let c = i % 5 === 2 || j === Math.floor(hh / 2) ? TRACE : PCB;
-          if ((i * 3 + j * 5) % 11 === 0) c = GOLD;
-          if (i > w / 2 - 2 && i < w / 2 + 2 && j > 0 && j < hh - 1) c = CHIP;
-          dot(x + (i - w / 2) * C4, y + (j - hh / 2) * C4, c);
-        }
-    } else if (roll < 0.42) {
-      // A plastic bag or bottle: a soft lump in one flat colour with a highlight.
-      const c = BAGS[Math.floor(r(k, 6) * BAGS.length)];
-      for (const [bx, by] of blobCells(x, y, 10 + r(k, 7) * 12, 7 + r(k, 8) * 8, C4, k, 0.7)) dot(bx, by, (bx + by) % 12 === 0 ? P.white : c);
-    } else if (roll < 0.55) {
-      // Cracked phone.
-      for (let j = 0; j < 10; j++)
-        for (let i = 0; i < 6; i++) {
-          const edge = i === 0 || j === 0 || i === 5 || j === 9;
-          const crack = Math.abs(i - (j * 0.6 + 1)) < 0.6;
-          dot(x + i * C4, y + j * C4 * 0.7, edge ? PLASTIC[3] : crack ? GLASS : SCREEN);
-        }
-    } else if (roll < 0.7) {
-      // A loop of cable.
-      const c = WIRES[Math.floor(r(k, 9) * WIRES.length)];
-      const rad = 8 + r(k, 10) * 14;
-      for (let t = 0; t < Math.PI * 1.7; t += 0.12) dot(x + Math.cos(t + k) * rad, y + Math.sin(t + k) * rad * 0.45, c);
-    } else {
-      // A monitor or casing.
-      const w = 9 + Math.floor(r(k, 11) * 6);
-      const hh = 6 + Math.floor(r(k, 12) * 4);
-      const shell = PLASTIC[Math.floor(r(k, 13) * 4)];
-      for (let j = 0; j < hh; j++)
-        for (let i = 0; i < w; i++) {
-          const inner = i > 0 && j > 0 && i < w - 1 && j < hh - 1;
-          dot(x + i * C4, y + j * C4, inner && i === j + 1 ? GLASS : inner ? SCREEN : shell);
-        }
+  // Cracks wander across the dead soil.
+  for (let k = 0; k < 46; k++) {
+    let x = C.x + (hash(k, 1, 48) - 0.5) * C.rx * 1.6;
+    let y = C.y + (hash(k, 2, 48) - 0.5) * C.ry * 1.4;
+    let a = hash(k, 3, 48) * Math.PI * 2;
+    for (let i = 0; i < 34; i++) {
+      if (deadAt(x, y) > 0.78) break;
+      rect(Math.round(x / 3) * 3, Math.round(y / 3) * 3, 3, [0.09, 0.08, 0.06], 0.9);
+      a += (hash(k, 10 + i, 48) - 0.5) * 1.1;
+      x += Math.cos(a) * 4;
+      y += Math.sin(a) * 2.2;
     }
   }
-  // Loose rubbish blown across the field, in flat pixels.
-  for (let k = 0; k < 70; k++) {
-    const x = Math.round((hash(k, 1, 47) * W) / 8) * 8;
-    const y = Math.round((900 + Math.pow(hash(k, 2, 47), 0.8) * 440) / 8) * 8;
+  // Sludge pools: black with a sick green surface, flat pixels.
+  // Mostly black oil; a sick yellow-green only where it catches the light.
+  const SLUDGE = [hex("#0c0d09"), hex("#1b2010"), hex("#4a5a18"), hex("#a6b832")];
+  for (const [cx, cy, rx, ry, s] of [
+    [450, 1175, 190, 40, 51],
+    [770, 1100, 110, 26, 52],
+    [300, 1050, 90, 20, 53],
+  ])
+    for (const [x, y] of blobCells(cx, cy, rx, ry, 8, s, 0.7)) {
+      const n = fbm(x * 0.03, y * 0.06, s, 2);
+      rect(x, y, 8, n > 0.76 ? SLUDGE[3] : n > 0.66 ? SLUDGE[2] : n > 0.5 ? SLUDGE[1] : SLUDGE[0], 0.95);
+    }
+  // Chemical drums, smaller further back. Two lie on their side, leaking.
+  const drums = [
+    { x: 250, y: 990, c: "#c76a2a" },
+    { x: 330, y: 1005, c: "#3a6fb0" },
+    { x: 560, y: 1120, c: "#d8b23a", tipped: true },
+    { x: 780, y: 1035, c: "#b8301a" },
+    { x: 860, y: 1070, c: "#5c5a55", tipped: true },
+    { x: 690, y: 1000, c: "#3a6fb0" },
+  ].sort((a, b) => a.y - b.y);
+  for (const d of drums) {
+    const cell = Math.round(6 + (d.y - 960) / 28);
+    const base = hex(d.c);
+    const cols = d.tipped ? 13 : 9;
+    const rows = d.tipped ? 8 : 12;
+    const x0 = Math.round(d.x - (cols * cell) / 2);
+    const y0 = Math.round(d.y - rows * cell);
+    // Shadow on the ground.
+    for (const [sx, sy] of blobCells(d.x + cell * 2, d.y, (cols * cell) / 1.6, cell * 2, 4, 60, 0.3)) rect(sx, sy, 4, [0.06, 0.05, 0.04], 0.5);
+    for (let j = 0; j < rows; j++)
+      for (let i = 0; i < cols; i++) {
+        const u = i / (cols - 1);
+        const v = j / (rows - 1);
+        // Round body: lit on the left, dark on the right; ribs across it.
+        const light = d.tipped ? 1.15 - 0.6 * Math.abs(v - 0.3) : 1.2 - 0.7 * u;
+        let c = base.map((k) => clamp(k * light));
+        const rib = d.tipped ? i === 3 || i === 9 : j === 3 || j === 8;
+        if (rib) c = c.map((k) => k * 0.6);
+        if (!d.tipped && j === 0) c = base.map((k) => clamp(k * 1.35));
+        // Rust in dithered spots.
+        if (fbm((x0 + i * cell) * 0.08, (y0 + j * cell) * 0.08, 61, 2) > 0.62) c = hex("#6b3a1c");
+        // Hazard label: a white panel with a black mark.
+        const label = d.tipped ? i >= 5 && i <= 7 && j >= 2 && j <= 5 : i >= 3 && i <= 5 && j >= 4 && j <= 6;
+        if (label) c = (i + j) % 2 ? P.white : P.ink;
+        // The tipped drum's open end is dark.
+        if (d.tipped && i === cols - 1) c = P.ink;
+        rect(x0 + i * cell, y0 + j * cell, cell, c);
+      }
+  }
+  // A small heap of dumped rubbish behind the drums, and bags snagged in the grass.
+  const BAGS = [hex("#e8e6de"), hex("#3a6fb0"), hex("#c23a2a"), hex("#d8b23a"), hex("#2a2a2a"), hex("#8f8a80")];
+  for (let k = 0; k < 120; k++) {
+    const x = 380 + (hash(k, 1, 49) - 0.5) * 300;
+    const y = 940 + hash(k, 2, 49) * 40 - Math.abs(x - 380) * 0.08;
+    rect(Math.round(x / 6) * 6, Math.round(y / 6) * 6, 6, BAGS[Math.floor(hash(k, 3, 49) * BAGS.length)], 0.95);
+  }
+  for (let k = 0; k < 50; k++) {
+    const x = Math.round((hash(k, 1, 47) * W) / 6) * 6;
+    const y = Math.round((880 + Math.pow(hash(k, 2, 47), 0.8) * 460) / 6) * 6;
     const c = BAGS[Math.floor(hash(k, 3, 47) * BAGS.length)];
-    rect(x, y, 8, c, 0.95);
-    if (hash(k, 4, 47) < 0.5) rect(x + 8, y, 8, c, 0.95);
+    rect(x, y, 6, c, 0.95);
+    if (hash(k, 4, 47) < 0.5) rect(x + 6, y - 6, 6, c, 0.95);
   }
 }
 
-// ---------- AIR: smog rolls over the hill and fills the sky ----------
+// ---------- AIR: a toxic haze swallows the valley ----------
 async function air() {
-  // The hill's skyline, read from the photo: the first dark pixel per column.
   const sky = new Int32Array(W);
   for (let x = 0; x < W; x++) {
     let y = 0;
-    // Sky is blue over green; the hill is green over blue.
     while (y < H - 1 && get(x, y)[2] - get(x, y)[1] > 0.02) y++;
     sky[x] = y;
   }
-  const field = (x, y) => {
-    const above = sky[clamp(Math.round(x), 0, W - 1)] - y;
-    const n = fbm(x * 0.004, y * 0.01, 92, 5);
-    const puffs = fbm(x * 0.009, y * 0.012, 94, 3);
-    // Billows rolling over the ridge from the left, rising in uneven heads.
-    const top = 120 + 360 * puffs + 180 * (1 - x / W);
-    const thick = smooth(-60, 20, above) * (1 - smooth(top * 0.55, top, above));
-    const belowType = smooth(520, 640, y + (n - 0.5) * 70);
-    return clamp(thick * belowType * (0.4 + 0.8 * n));
-  };
-  const haze = new Float32Array(W * H * 4);
-  for (let y = 300; y < 1000; y++) for (let x = 0; x < W; x++) if (field(x, y) > 0.05) paint(haze, x, y, P.smogA, 0.35 * field(x, y));
-  drawLayer(await blurLayer(haze, 22), "normal", P.smogA);
+  const SMOG = hex("#a8925a");
+  // 1. The veil: the sky sours to a yellow-grey toward the horizon and the
+  // hills fade into it, the way real haze eats distance.
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      const top = 560 + 70 * (fbm(x * 0.003, 0.5, 91, 3) - 0.5);
+      let a;
+      if (y < sky[x]) a = 0.78 * smooth(top, sky[x] + 40, y);
+      else a = 0.62 * (1 - smooth(sky[x], sky[x] + 520, y)) + 0.12;
+      if (a <= 0) continue;
+      const l = lum(get(x, y));
+      put(x, y, SMOG.map((v) => clamp(v * (0.75 + 0.5 * l))), a);
+    }
+  // 2. A dim sun, a flat orange disc seen through the smog.
+  const SUN = { x: 790, y: 640, r: 44 };
+  const glow = new Float32Array(W * H * 4);
+  for (let y = SUN.y - 160; y < SUN.y + 160; y++)
+    for (let x = SUN.x - 160; x < SUN.x + 160; x++) {
+      const d = Math.hypot(x - SUN.x, y - SUN.y) / 160;
+      if (d < 1) paint(glow, x, y, hex("#e8a35a"), 0.5 * Math.pow(1 - d, 2));
+    }
+  drawLayer(await blurLayer(glow, 12), "screen", hex("#e8a35a"));
+  for (let y = SUN.y - SUN.r; y < SUN.y + SUN.r; y += 6)
+    for (let x = SUN.x - SUN.r; x < SUN.x + SUN.r; x += 6) {
+      if (Math.hypot(x + 3 - SUN.x, y + 3 - SUN.y) > SUN.r) continue;
+      // Smog bands cross the disc.
+      if (fbm(x * 0.01, y * 0.06, 97, 2) > 0.62) continue;
+      rect(x, y, 6, hex("#f0b26a"), 0.85);
+    }
+  // 3. Pixel strata: long horizontal smog bands in an ordered dither.
   const cell = 8;
   const tones = [hex("#d8cb9c"), hex("#a89155"), hex("#6f5d3c")];
-  for (let y = 300; y < 1000; y += cell)
+  for (let y = 520; y < 1040; y += cell)
     for (let x = 0; x < W; x += cell) {
-      const d = field(x + 4, y + 4) * 2.6 + (bayer(x / cell, y / cell) - 0.5) * 1.1;
-      if (d < 0.75) continue;
-      rect(x, y, cell, tones[clamp(Math.floor(d - 0.75), 0, 2)], 0.92);
+      const t = smooth(540, 760, y) * (1 - smooth(860, 1040, y));
+      const n = fbm(x * 0.0035, y * 0.035, 95, 4);
+      const d = t * (n * 2.2 - 0.55) + (bayer(x / cell, y / cell) - 0.5) * 0.9;
+      if (d < 0.55) continue;
+      rect(x, y, cell, tones[clamp(Math.floor((d - 0.55) * 2.2), 0, 2)], 0.88);
     }
-  // The haze settles on the hill too: its grass goes dull and yellow.
-  for (let y = 650; y < H; y++)
-    for (let x = 0; x < W; x++) {
-      if (y < sky[x]) continue;
-      const a = 0.22 * (1 - smooth(sky[x], sky[x] + 420, y));
-      put(x, y, hex("#6f5d3c"), a);
-    }
-  // PM2.5: fine dust specks drifting everywhere below the type.
-  for (let k = 0; k < 140; k++) {
-    const x = Math.round((hash(k, 1, 93) * W) / 6) * 6;
-    const y = Math.round((560 + hash(k, 2, 93) * 700) / 6) * 6;
-    rect(x, y, hash(k, 4, 93) < 0.3 ? 6 : 4, hash(k, 3, 93) < 0.6 ? hex("#8a7748") : hex("#5a4b31"), 0.8);
+  // 4. PM2.5: dust everywhere below the type.
+  for (let k = 0; k < 220; k++) {
+    const x = Math.round((hash(k, 1, 93) * W) / 4) * 4;
+    const y = Math.round((560 + hash(k, 2, 93) * 760) / 4) * 4;
+    rect(x, y, hash(k, 4, 93) < 0.25 ? 6 : 4, hash(k, 3, 93) < 0.6 ? hex("#8a7748") : hex("#4f4230"), 0.85);
   }
 }
 
-// ---------- FIRE: fire breaks out of the treeline ----------
+// ---------- FIRE: the forest burns along its whole edge ----------
 async function fire() {
-  const F = { x: 640, base: 1004 };
+  // Flame sources along the treeline: x, base, height. Tallest to the right, away from the type.
+  const SRC = [
+    [240, 905, 190],
+    [340, 895, 260],
+    [455, 888, 300],
+    [565, 882, 360],
+    [680, 876, 450],
+    [790, 872, 380],
+    [900, 868, 330],
+    [1015, 870, 260],
+  ];
   const field = (x, y) => {
-    const tongues = [
-      { cx: F.x, w: 300, h: 470, lean: -30 },
-      { cx: F.x - 120, w: 170, h: 300, lean: -40 },
-      { cx: F.x + 110, w: 180, h: 340, lean: -10 },
-      { cx: F.x + 20, w: 130, h: 560, lean: -60 },
-      { cx: F.x + 250, w: 120, h: 200, lean: -10 },
-    ];
     let best = 0;
-    for (const g of tongues) {
-      const t = (F.base - y) / g.h;
-      if (t < -0.08 || t > 1) continue;
-      const tt = Math.max(t, 0);
-      const wob = 46 * (fbm(x * 0.012, y * 0.02 + 3, 5, 3) - 0.5) * (0.3 + tt);
-      const c = g.cx + g.lean * Math.pow(tt, 1.6) + wob;
-      const hw = (g.w / 2) * Math.pow(1 - tt, 0.7) * (t < 0 ? 1 + t * 6 : 1);
-      const d = Math.abs(x - c) / Math.max(hw, 1);
-      if (d < 1) best = Math.max(best, (1 - d * d) * Math.pow(1 - tt, 0.45));
-    }
+    for (const [i, [sx, base, h]] of SRC.entries())
+      for (const [ox, wf, hf, lean] of [
+        [0, 1, 1, -20],
+        [-38, 0.6, 0.62, -30],
+        [42, 0.55, 0.7, 10],
+      ]) {
+        const gh = h * hf;
+        const t = (base - y) / gh;
+        if (t < -0.15 || t > 1) continue;
+        const tt = Math.max(t, 0);
+        const wob = 34 * (fbm(x * 0.014, y * 0.022 + i, 5, 3) - 0.5) * (0.3 + tt);
+        const c = sx + ox + lean * Math.pow(tt, 1.6) + wob;
+        const hw = ((110 * wf) / 2) * Math.pow(1 - tt, 0.7) * (t < 0 ? 1 + t * 5 : 1);
+        const d = Math.abs(x - c) / Math.max(hw, 1);
+        if (d < 1) best = Math.max(best, (1 - d * d) * Math.pow(1 - tt, 0.45));
+      }
     return best;
   };
   const colour = (v) => {
@@ -430,77 +430,81 @@ async function fire() {
       }
     return P.white;
   };
-  // Glow over the sky, the trees and the meadow.
+  // Smoke: a thick brown-grey wall rising off the whole treeline, drifting up and right.
+  const SMOKE = hex("#3b3430");
+  const smoke = new Float32Array(W * H * 4);
+  for (let y = 120; y < 900; y++)
+    for (let x = 0; x < W; x++) {
+      const rise = 880 - y;
+      const lean = x - rise * 0.55; // where along the treeline this smoke came from
+      if (lean < 150) continue;
+      const n = fbm(x * 0.004, y * 0.006, 150, 5);
+      const body = smooth(150, 320, lean) * (1 - smooth(260 + 320 * n, 700, rise));
+      // Keep the type clear: thin out over the top left.
+      const clear = smooth(380, 620, x + (y - 420) * 0.6);
+      const a = clamp(body * clear * (0.35 + 0.9 * n));
+      if (a > 0.02) paint(smoke, x, y, SMOKE, 0.9 * a);
+    }
+  drawLayer(await blurLayer(smoke, 10), "normal", SMOKE);
+  // The sky and the trees glow orange; the meadow catches the light.
   for (let y = 0; y < H; y++)
     for (let x = 0; x < W; x++) {
-      const dx = (x - F.x) / 460;
-      const dy = (y - (F.base - 160)) / 420;
-      const r = Math.sqrt(dx * dx + dy * dy);
-      if (r < 1) put(x, y, P.orange, 0.42 * Math.pow(1 - r, 1.6));
-      const gx = (x - F.x) / 420;
-      const gy = (y - (F.base + 40)) / 110;
-      const gr = Math.sqrt(gx * gx + gy * gy);
-      if (gr < 1) screen(x, y, P.yellow, 0.5 * Math.pow(1 - gr, 1.3));
+      const along = smooth(120, 300, x);
+      const dy = (y - 860) / 300;
+      if (Math.abs(dy) < 1) put(x, y, P.orange, 0.34 * along * Math.pow(1 - Math.abs(dy), 1.8));
+      const gy = (y - 1010) / 120;
+      if (Math.abs(gy) < 1) screen(x, y, P.yellow, 0.4 * along * Math.pow(1 - Math.abs(gy), 1.4));
     }
-  // A dark smoke column leaning left, kept below the type.
-  const smoke = new Float32Array(W * H * 4);
-  for (let s = 0; s < 1; s += 0.003) {
-    const cx = F.x - 40 - 260 * s + 60 * Math.sin(s * 4);
-    const cy = F.base - 420 - s * 260;
-    const w = 70 + 160 * s;
-    for (let k = 0; k < 40; k++) paint(smoke, Math.round(cx + (hash(k, s * 1000, 3) - 0.5) * w * 2), Math.round(cy + (hash(k, s * 1000, 4) - 0.5) * 40), hex("#3a3330"), 0.1);
-  }
-  drawLayer(await blurLayer(smoke, 24), "normal", hex("#3a3330"));
+  // The canopy chars: blackened crowns with an orange rim, in a dot pattern.
+  for (let y = 820; y < 1010; y += 6)
+    for (let x = 160; x < W; x += 6) {
+      const c = get(x, y);
+      const tree = c[1] > c[2] && lum(c) < 0.5; // green, not sky or mountain haze
+      if (!tree) continue;
+      const n = fbm(x * 0.02, y * 0.03, 152, 3);
+      if (n < 0.45) continue;
+      rect(x, y, 6, n > 0.62 ? P.ink : [0.42, 0.14, 0.05], 0.85);
+      if (n > 0.7 && hash(x, y, 153) < 0.3) rect(x, y, 3, P.orange);
+    }
+  // The flames.
   const halo = new Float32Array(W * H * 4);
   const flame = new Float32Array(W * H * 4);
-  for (let y = F.base - 620; y < F.base + 30; y++)
-    for (let x = F.x - 360; x < F.x + 400; x++) {
+  for (let y = 380; y < 940; y++)
+    for (let x = 140; x < W; x++) {
       const v = field(x, y);
       if (v > 0.02) paint(halo, x, y, P.orange, 0.55 * smooth(0.02, 0.3, v));
       if (v < 0.1) continue;
-      const h = clamp((F.base - y) / 560);
+      const h = clamp((900 - y) / 450);
       const lick = v * (0.62 + 0.7 * fbm(x * 0.07, y * 0.009 + 9, 71, 3)) * (1 - 0.25 * h);
       const a = smooth(0.1, 0.42, lick) * (1 - 0.35 * h);
       if (a < 0.98 && a < bayer(x >> 1, y >> 1)) continue;
       paint(flame, x, y, colour(lick), 1);
     }
-  drawLayer(await blurLayer(halo, 28), "normal", P.orange);
+  drawLayer(await blurLayer(halo, 26), "normal", P.orange);
   drawLayer(await blurLayer(flame, 0.8), "normal");
-  // Pixel passes: mosaic and a white stepped crown, flat shapes, sparks, char.
+  // Pixel passes: mosaic tops, a white stepped crown, sparks drifting with the smoke.
   const cell = 10;
   const levels = [P.red, P.orange, P.cream, P.white];
-  for (let y = F.base - 640; y < F.base - 50; y += cell)
-    for (let x = F.x - 360; x < F.x + 400; x += cell) {
+  for (let y = 380; y < 880; y += cell)
+    for (let x = 140; x < W; x += cell) {
       const v = field(x + 6, y + 6);
-      const h = (F.base - y) / 560;
+      const h = (900 - y) / 450;
       const n = fbm(x * 0.03, y * 0.03, 61, 2);
-      if (((v > 0.12 && v < 0.3 && h > 0.12 && h < 0.6) || (v > 0.5 && h > 0.14 && h < 0.34)) && n > 0.52) rect(x, y, cell, P.white);
+      if (v > 0.12 && v < 0.3 && h > 0.15 && h < 0.6 && n > 0.55) rect(x, y, cell, P.white);
       else if (v > 0.16 && n < 0.05 + h * 0.85) rect(x, y, cell, levels[clamp(Math.floor(v * 4.2), 0, 3)]);
     }
-  for (const [x, y] of blobCells(F.x - 30, F.base - 240, 36, 66, 14, 62)) rect(x, y, 14, P.flatRed);
-  for (const [x, y] of blobCells(F.x + 60, F.base - 350, 18, 46, 12, 63)) rect(x, y, 12, P.flatBlue);
-  const c2 = 14;
-  for (let id = 0; id < 1; id += 0.025) {
-    const sx = F.x - 40 - 200 * id + 80 * Math.sin(id * 3);
-    const sy = F.base - 420 - id * 300;
-    for (let k = 0; k < 4; k++) {
-      if (hash(k, id * 999, 64) > 0.45 - id * 0.2) continue;
-      const x = Math.round((sx + (hash(k, id * 999, 65) - 0.5) * (90 + 140 * id)) / c2) * c2;
-      const y = Math.round((sy + (hash(k, id * 999, 66) - 0.5) * 30) / c2) * c2;
-      rect(x, y, c2, hash(k, id * 999, 67) < 0.86 ? P.white : P.flatBlue);
-      if (hash(k, id * 999, 68) < 0.6) rect(x + c2, y + c2, c2, P.white);
-    }
+  const c2 = 12;
+  for (let k = 0; k < 90; k++) {
+    const t = hash(k, 1, 160);
+    const x = Math.round((300 + hash(k, 2, 160) * 760 + t * 120) / c2) * c2;
+    const y = Math.round((860 - t * 520) / c2) * c2;
+    if (x < 420 && y < 560) continue;
+    rect(x, y, c2, hash(k, 3, 160) < 0.75 ? P.yellow : P.white, 0.9 - t * 0.5);
   }
-  // Burnt ground spreading into the meadow, as a dot matrix.
-  for (const [x0, y0] of blobCells(F.x + 40, F.base + 34, 300, 44, 10, 81, 1.4))
-    for (let y = y0; y < y0 + 10; y++)
-      for (let x = x0; x < x0 + 10; x++) {
-        const l = lum(get(x, y));
-        put(x, y, x % 3 < 2 && y % 3 < 2 ? [0.2 + l * 0.5, 0.15 + l * 0.35, 0.1 + l * 0.25] : P.ink, 0.92);
-      }
+  // Embers in the meadow.
   for (let k = 0; k < 70; k++) {
-    const x = Math.round((F.x - 380 + hash(k, 1, 83) * 760) / 5) * 5;
-    const y = Math.round((F.base + hash(k, 2, 83) * 110) / 5) * 5;
+    const x = Math.round((200 + hash(k, 1, 83) * 880) / 5) * 5;
+    const y = Math.round((1000 + hash(k, 2, 83) * 140) / 5) * 5;
     rect(x, y, 5, hash(k, 3, 83) < 0.5 ? P.yellow : P.orange, 0.9);
   }
 }
