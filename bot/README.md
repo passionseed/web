@@ -170,7 +170,7 @@ env, Discord setup, smoke test, rollback) is
 | `ELEMENTAL_GUILD_IDS` | elemental | Comma-separated server IDs: the real hackathon server and the rehearsal server. Every other server is ignored. No edition variable: each server's `elemental_settings` row names its edition |
 | `ELEMENTAL_DATABASE_URL` | elemental | The `elemental_bot` login through the session pooler: `postgresql://elemental_bot.<project ref>:<password>@<pooler host>:5432/postgres`. Any other login name refuses to start. TLS is verified against `bot/supabase-ca.pem` |
 | `ELEMENTAL_CARD_URL` | elemental | Optional. The web 9:16 card endpoint (https); without it the nightly card is the pixel card |
-| `ELEMENTAL_CARD_SECRET` | elemental | Required when `ELEMENTAL_CARD_URL` is set; sent as a header to it |
+| `ELEMENTAL_CARD_SECRET` | elemental | Required when `ELEMENTAL_CARD_URL` is set; sent as the `x-elemental-card-secret` header (and `Authorization: Bearer`) on `GET <url>?edition=<edition>&day=<YYYY-MM-DD>` |
 
 Both modules in one process need the same token; with two different bots,
 run two processes.
@@ -202,6 +202,24 @@ run two processes.
   roles itself.
 - **No DMs, ever.** A test fails if `createDM` or `user.send` appears under
   `bot/src/elemental`. Students reach staff with `/report`.
+- **Scheduled posts** (`features/schedule.ts`, legend in `legend.ts`): every
+  30 seconds each server's `elemental_settings.schedule` (Bangkok "HH:MM" per
+  day) is checked. `opening_at`: the news post with the island and the /join
+  and picker steps. `call_at`: the news call with the campfire voice link,
+  then the island PNG and the legend (`NN · element · project`, one line per
+  live team; a `legend.txt` past 6 messages) in the campfire voice channel's
+  chat; not sent more than an hour late. `card_at`: the nightly card in news
+  (that day's `/el card-override` image, else `ELEMENTAL_CARD_URL` with a
+  10-second timeout, else the pixel card), totals in the caption. Each post
+  and each of its messages is claimed with `elemental_bot_post_claim`, so two
+  bots or a restart never post twice. A post still unsent 15 minutes after
+  its time gets one staff note (mirror channel, else #reports, pinging Host).
+  A day with no schedule entry posts nothing. Host tools: `/el post-now
+  kind:` and `/el card-override image: day:` (no image clears it; the image is
+  kept as a message in the staff channel, so set a staff channel first). The
+  bot needs View Channel, Send Messages and Attach Files in news, the campfire
+  voice channel's chat and the staff channel, plus Read Message History in
+  the staff channel.
 - **Features** live in `bot/src/elemental/features/*.ts`, one file each, from
   a fixed list in `registry.ts`. A feature that fails to start is turned off
   alone; the module keeps running.
