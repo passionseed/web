@@ -7,11 +7,16 @@
  *
  * The process runs modules chosen by BOT_MODULES (comma-separated, default
  * "shift-voice"). Each module checks only the variables it needs.
+ * "elemental" (the hackathon module) runs alone in its own container.
  */
 
-export type BotModule = "shift-voice" | "shift-quests" | "projectseed";
+import { assertElementalAlone, elementalToken, parseElementalEnv, type ElementalEnv } from "./elemental/env";
 
-const KNOWN_MODULES: BotModule[] = ["shift-voice", "shift-quests", "projectseed"];
+export type { ElementalEnv } from "./elemental/env";
+
+export type BotModule = "shift-voice" | "shift-quests" | "projectseed" | "elemental";
+
+const KNOWN_MODULES: BotModule[] = ["shift-voice", "shift-quests", "projectseed", "elemental"];
 
 export interface CoreEnv {
   discordToken: string;
@@ -55,6 +60,8 @@ export interface LoadedEnv {
   projectseed: BotEnv | null;
   shiftVoice: ShiftVoiceEnv | null;
   shiftQuests: ShiftQuestsEnv | null;
+  /** The Elemental hackathon module (bot/src/elemental): only ever alone in its process. */
+  elemental: ElementalEnv | null;
 }
 
 function optional(name: string): string | undefined {
@@ -74,6 +81,8 @@ function parseModules(raw: string | undefined): Set<BotModule> {
     .split(",")
     .map((name) => name.trim())
     .filter(Boolean);
+  // Before the unknown-name check, so "elemental,hackathon-ops" names the real problem.
+  assertElementalAlone(names);
   for (const name of names) {
     if (!KNOWN_MODULES.includes(name as BotModule)) {
       throw new Error(`Unknown BOT_MODULES entry "${name}". Known: ${KNOWN_MODULES.join(", ")}`);
@@ -89,6 +98,8 @@ function parseModules(raw: string | undefined): Set<BotModule> {
  * the bot that hands out SHIFT roles is the bot that watches SHIFT voice.
  */
 function resolveToken(modules: Set<BotModule>): string {
+  // Elemental runs alone (parseModules), with its own Discord application.
+  if (modules.has("elemental")) return elementalToken();
   const shared = optional("DISCORD_BOT_TOKEN");
   const shift = optional("DISCORD_SHIFT_BOT_TOKEN") ?? shared;
   const usesShift = modules.has("shift-voice") || modules.has("shift-quests");
@@ -139,5 +150,7 @@ export function loadEnv(): LoadedEnv {
     ? { guildId: required("DISCORD_SHIFT_GUILD_ID"), databaseUrl: required("SHIFT_QUEST_DATABASE_URL") }
     : null;
 
-  return { core, projectseed, shiftVoice, shiftQuests };
+  const elemental: ElementalEnv | null = modules.has("elemental") ? parseElementalEnv() : null;
+
+  return { core, projectseed, shiftVoice, shiftQuests, elemental };
 }

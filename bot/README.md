@@ -1,6 +1,6 @@
 # PassionSeed Discord bot
 
-One long-running process with three modules, chosen by `BOT_MODULES`:
+One long-running process with up to four modules, chosen by `BOT_MODULES`:
 
 - **`shift-voice`** (default): records SHIFT students' voice participation in
   the SHIFT server (time in voice, mic open, screen share, camera, joins) and
@@ -11,6 +11,11 @@ One long-running process with three modules, chosen by `BOT_MODULES`:
   [`docs/features/shift-high-quests.md`](../docs/features/shift-high-quests.md).
 - **`projectseed`**: records who was in voice, reminds people about the hours
   they declared, and answers `/stats`. Linear: PS-213.
+- **`elemental`**: the Elemental hackathon (December 2026) in its own
+  container, `passionseed-discord-bot-elemental`, with its own Discord
+  application. It always runs alone: `BOT_MODULES=elemental` with
+  `shift-voice`, `shift-quests`, `projectseed` or `hackathon-ops` refuses to
+  start. See "Elemental hackathon" below.
 
 It is a gateway client, not a webhook or a serverless function. Discord sends
 voice state only over the gateway, a WebSocket the bot keeps open, so it needs
@@ -25,7 +30,7 @@ so the host never holds the service role key. projectseed still uses
 ```bash
 pnpm bot:dev        # local, reads .env.local
 pnpm bot:start      # production
-pnpm bot:register   # projectseed and shift-quests: once, and after changing any slash command
+pnpm bot:register   # projectseed, shift-quests and elemental: once, and after changing any slash command
 pnpm bot:smoke      # loads every module and draws a tiny island: no Discord, no database
 ```
 
@@ -160,9 +165,46 @@ env, Discord setup, smoke test, rollback) is
 | `PSEED_COHORT_SLUG` | projectseed | Defaults to `alumni-mvp` |
 | `PSEED_VOICE_CHANNEL_IDS` | projectseed | Comma-separated. Empty means every voice channel |
 | `PSEED_REMINDER_INTERVAL_MS` | projectseed | Defaults to 60000 |
+| `BOT_MODULES=elemental` | elemental | Alone. Any other module next to it refuses to start, so the default `shift-voice` never rides along |
+| `ELEMENTAL_BOT_TOKEN` | elemental | The Elemental Discord application's token (its own rate limit). Falls back to `DISCORD_BOT_TOKEN` |
+| `ELEMENTAL_GUILD_IDS` | elemental | Comma-separated server IDs: the real hackathon server and the rehearsal server. Every other server is ignored. No edition variable: each server's `elemental_settings` row names its edition |
+| `ELEMENTAL_DATABASE_URL` | elemental | The `elemental_bot` login through the session pooler: `postgresql://elemental_bot.<project ref>:<password>@<pooler host>:5432/postgres`. Any other login name refuses to start. TLS is verified against `bot/supabase-ca.pem` |
+| `ELEMENTAL_CARD_URL` | elemental | Optional. The web 9:16 card endpoint (https); without it the nightly card is the pixel card |
+| `ELEMENTAL_CARD_SECRET` | elemental | Required when `ELEMENTAL_CARD_URL` is set; sent as a header to it |
 
 Both modules in one process need the same token; with two different bots,
 run two processes.
+
+## Elemental hackathon
+
+`bot/src/elemental`, started by `BOT_MODULES=elemental` in its own container.
+
+- **Database.** Only `public.elemental_bot_*` functions, as the `elemental_bot`
+  login, which may execute those and read no table. The bot refuses any other
+  function name before it reaches the network.
+- **Servers.** It answers only in `ELEMENTAL_GUILD_IDS`. The edition, role
+  IDs, channel IDs, element categories and schedule come from each server's
+  `elemental_settings` row (`elemental_bot_settings_get`), so the rehearsal
+  server can never write into the real event.
+- **Health.** Every 60 seconds it reads each server's settings; when every
+  read reaches the database while the gateway is connected, it touches
+  `/tmp/shift-voice-healthy`, the file the image's `HEALTHCHECK` reads.
+  `pnpm bot:smoke --env` reports `health=file` for it.
+- **Every interaction is acknowledged first** (`deferReply`, ephemeral by
+  default) before any database call, so a slow night never shows "The
+  application did not respond". Channel creation and canvas writes run on
+  keyed queues that wait out a 429's `retry_after`.
+- **Registering** (`--register-commands`) POSTs each command to each server
+  in `ELEMENTAL_GUILD_IDS`, one command at a time; it never PUTs, so nothing
+  else is deleted. Staff tools are subcommands of `/el`, hidden from members
+  without Manage Server until a server admin shows `/el` to the Helper,
+  Mentor and Safety roles (Server Settings > Integrations). Every tool checks
+  roles itself.
+- **No DMs, ever.** A test fails if `createDM` or `user.send` appears under
+  `bot/src/elemental`. Students reach staff with `/report`.
+- **Features** live in `bot/src/elemental/features/*.ts`, one file each, from
+  a fixed list in `registry.ts`. A feature that fails to start is turned off
+  alone; the module keeps running.
 
 ## Discord setup
 
