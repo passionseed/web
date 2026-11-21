@@ -166,6 +166,8 @@ describe("getIslandPage", () => {
       ["shift_quest_schema_version", []],
       // The deep fire (schema 22): read straight away (no version check); unanswered here, so none.
       ["shift_quest_deepfire", [ACTOR]],
+      // The away state (schema 23): read straight away too; unanswered here, so none.
+      ["shift_quest_away_state", [ACTOR]],
       // Tree styles (schema 13): the same unanswered version read, retried by each optional reader.
       ["shift_quest_schema_version", []],
       // Photos (schema 14): asked once more; unanswered, so no photos.
@@ -182,6 +184,7 @@ describe("getIslandPage", () => {
     expect(page.peer).toBe(false);
     expect(page.campfire).toEqual({ count: 2, joinUrl: JOIN_URL });
     expect(page.deepfire).toBeNull();
+    expect(page.away).toBeNull();
     expect(page.cohortWeek).toBe(false);
     expect(page.suggestUrl).toBe(SUGGEST_URL);
     expect(page.character).toEqual(CHARACTER);
@@ -416,6 +419,48 @@ describe("getIslandPage", () => {
       expect((await getIslandPage(viewer)).cohortWeek).toBe(false);
       mockRounds.live = new Set(["SHIFT[3]"]);
       expect((await getIslandPage(viewer)).cohortWeek).toBe(true);
+    });
+  });
+
+  describe("away (the come-back DM and the return card)", () => {
+    const board = { project: { id: "p1", route: "software", stage: 1, milestones_done: [] }, main: [], side: [], proposed: [], help_open: [] };
+    const withProject = {
+      shift_quest_island: { project, milestones: [], taps_today: 0, resting: false, season: null },
+      shift_quest_island_map: map,
+      shift_quest_board: board,
+      shift_quest_canvas_get: null,
+      shift_quest_campfire: FIRE,
+    };
+    const noProject = {
+      shift_quest_island: { project: null, milestones: [], taps_today: 0, resting: false, season: null },
+      shift_quest_island_map: map,
+      shift_quest_project_list: [],
+      shift_quest_campfire: FIRE,
+    };
+    const STATE = { enabled: true, days: 7, dm: null, ask_consent: true, ask_return: { gap_from: "2026-11-10" } };
+
+    it.each([
+      ["with a project", withProject],
+      ["without a project", noProject],
+    ])("carries the switch, the choice and what to ask %s, and nothing else", async (_label, base) => {
+      respond({ ...base, shift_quest_away_state: { ...STATE, member_id: "m9", last_active: "2026-11-10T08:00:00Z" } });
+      const page = await getIslandPage(viewer);
+      expect(call).toHaveBeenCalledWith("shift_quest_away_state", ACTOR);
+      expect(page.away).toEqual({ enabled: true, days: 7, dm: null, askConsent: true, askReturn: { gapFrom: "2026-11-10" } });
+      const json = JSON.stringify(page.away);
+      for (const secret of ["m9", "08:00", ACTOR]) expect(json).not.toContain(secret);
+    });
+
+    it.each([
+      ["the function missing (before the migration)", new QuestDbError("shift_quest_away_state", "42883")],
+      ["a refusal", new QuestError("not_started")],
+      ["malformed data", "not an object"],
+    ])("is null on %s, and the rest of the page still loads", async (_label, failure) => {
+      respond({ ...withProject, shift_quest_away_state: failure });
+      const page = await getIslandPage(viewer);
+      expect(page.away).toBeNull();
+      expect(page.board).toEqual(board);
+      expect(page.campfire).toEqual({ count: 2, joinUrl: JOIN_URL });
     });
   });
 

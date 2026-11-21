@@ -34,6 +34,9 @@ const FEATURES = [
   // Schema 21: the 18:50 campfire call in #island-news, and its one role ping. Both on by default.
   { name: "campfire_call (เรียกรวมกองไฟ 18:50)", value: "campfire_call" },
   { name: "campfire_call_ping (แท็กนักเรียนตอนเรียกรวม)", value: "campfire_call_ping" },
+  // Schema 23: the come-back DM and the island's return card. Off by default; below 23 the database refuses it.
+  // DRAFT for the Thai review.
+  { name: "away (ชวนกลับเกาะ: DM และการ์ดตอนกลับมา)", value: "away" },
 ];
 
 export function questCommands(): RESTPostAPIChatInputApplicationCommandsJSONBody[] {

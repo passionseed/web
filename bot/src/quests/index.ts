@@ -137,6 +137,11 @@ export async function handleInteraction(api: QuestApi, guildId: string, i: Inter
  * channel where joining builds a locked room of one's own; also optional:
  * below 22 the module only reads the version again each heartbeat and starts
  * by itself once the migration is applied (DEEPFIRE_SCHEMA in deepfire.ts).
+ * 23 (20261121090000_shift_quest_away) adds the come-back DM (outbox kind
+ * 'away') and its /settings line; also optional: below 23 the delivery loop
+ * only reads the version again each minute and starts queueing by itself once
+ * the migration is applied, and /settings shows no come-back line
+ * (AWAY_SCHEMA in away.ts).
  */
 export const REQUIRED_SCHEMA = 2;
 

@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type RefObject } from "react";
 import { toast } from "sonner";
 
 import { checkIn, setResting } from "@/app/shift/island/actions";
+import { loadAwayReport, revealAwayAnswer } from "@/app/shift/island/admin-actions";
 
 import { festivalOf } from "@/lib/shift-island/festival";
 import { ARRIVE_MS } from "@/lib/shift-island/live/crowd";
@@ -18,11 +19,14 @@ import type { IslandPageData } from "@/lib/supabase/shift-quests/types";
 
 import { IslandAutoRefresh } from "./IslandRefresh";
 import { AdminOverview } from "./AdminOverview";
+import { ReturnSheet } from "./away/ReturnSheet";
+import { useAwayDm, type AwayDm } from "./away/useAwayDm";
+import { useReturnCard } from "./away/useReturnArrival";
 import { useCampfireSound, type CampfireSoundState } from "./CampfireSound";
 import { CampfireSheet } from "./CampfireSheet";
 import { CanvasLinkSheet } from "./canvas";
 import { ConsentSheet } from "./consent/ConsentSheet";
-import { CAMPFIRE, COMMON, GATE, HUD, MENU, NO_PROJECT, RESULTS, TODAY } from "./copy";
+import { AWAY, CAMPFIRE, COMMON, GATE, HUD, MENU, NO_PROJECT, RESULTS, TODAY } from "./copy";
 import { DeepFireSheet } from "./DeepFireSheet";
 import { FestivalSheet } from "./FestivalSheet";
 import { BoardSheet, MenuFoot, MenuSheet, type MenuItem } from "./HudSheets";
@@ -102,10 +106,12 @@ type Panel =
   | "news"
   | "consent"
   | "tree"
+  /** The return card (schema 23): opened once on arrival after a stretch away, never from a menu. */
+  | "return"
   | null;
 
-/** The sheets a student without a plot can open: the menu and what it leads to, the wallet and the shop. */
-type UnclaimedPanel = Extract<Panel, "admin" | "menu" | "wallet" | "shop" | "prizes" | "news" | "consent"> | null;
+/** The sheets a student without a plot can open: the menu and what it leads to, the wallet and the shop, and the return card. */
+type UnclaimedPanel = Extract<Panel, "admin" | "menu" | "wallet" | "shop" | "prizes" | "news" | "consent" | "return"> | null;
 
 /**
  * A consent step waits: consent is not on file, or it is but the AI news line
@@ -135,9 +141,16 @@ function consentPending(page: IslandPageData): boolean {
 /**
  * The menu's lines both islands share, for what has no place on the island:
  * the admin overview (admins), then the guide, the story again, the island
- * news (while the digest is on) and the campfire's sound.
+ * news (while the digest is on), and in the ตั้งค่า fold the campfire's sound
+ * and the come-back DM switch (a student, while the feature is on).
  */
-function sharedItems(page: IslandPageData, onPanel: (panel: Panel) => void, story: () => void, sound: CampfireSoundState): {
+function sharedItems(
+  page: IslandPageData,
+  onPanel: (panel: Panel) => void,
+  story: () => void,
+  sound: CampfireSoundState,
+  away: AwayDm,
+): {
   admin: MenuItem[];
   places: MenuItem[];
   settings: MenuItem[];
@@ -159,6 +172,17 @@ function sharedItems(page: IslandPageData, onPanel: (panel: Panel) => void, stor
     disabled: sound.pending,
     onClick: sound.toggle,
   }];
+  if (away.shown) {
+    settings.push({
+      id: "away",
+      icon: "mail",
+      label: AWAY.setting,
+      state: away.dm === true ? MENU.on : MENU.off,
+      pressed: away.dm === true,
+      disabled: away.pending,
+      onClick: () => away.set(away.dm !== true),
+    });
+  }
   return { admin, places, settings };
 }
 
@@ -172,7 +196,15 @@ function PlayerSheets({ page, panel, onPanel }: { page: IslandPageData; panel: P
   const openConsent = page.consent ? () => onPanel("consent") : undefined;
   return (
     <>
-      {page.me.admin ? <AdminOverview open={panel === "admin"} onClose={close} data={page.adminOverview ?? null} /> : null}
+      {page.me.admin ? (
+        <AdminOverview
+          open={panel === "admin"}
+          onClose={close}
+          data={page.adminOverview ?? null}
+          // The come-back section (schema 23) only once the away state reads; the database checks the role again.
+          away={page.away ? { state: page.away, load: loadAwayReport, reveal: revealAwayAnswer } : null}
+        />
+      ) : null}
       <WalletSheet open={panel === "wallet"} onClose={close} onOpenShop={() => onPanel("shop")} />
       <ShopSheet
         open={panel === "shop"}
@@ -201,10 +233,22 @@ function PlayerSheets({ page, panel, onPanel }: { page: IslandPageData; panel: P
  * island, which stays in view, dimmed and still, behind it.
  */
 export function IslandApp({ page, picture, initialPhase, discordUrl, initialPanel, voyage }: IslandAppProps) {
+  // The return card's "decided for this page" (opened or passed), kept here: a claim swaps the no-plot
+  // island for the claimed one, and a card passed before the claim must not open over the new plot.
+  const returnDecided = useRef(false);
   const project = page.island.project;
   const demoDay = page.island.season?.demo_day ?? null;
   if (!project) {
-    return <Unclaimed page={page} picture={picture} initialPhase={initialPhase} demoDay={demoDay} voyage={voyage} />;
+    return (
+      <Unclaimed
+        page={page}
+        picture={picture}
+        initialPhase={initialPhase}
+        demoDay={demoDay}
+        voyage={voyage}
+        returnDecided={returnDecided}
+      />
+    );
   }
   if (!page.board) {
     return <GateCard heading={GATE.unavailable.heading} body={GATE.unavailable.body} />;
@@ -219,6 +263,7 @@ export function IslandApp({ page, picture, initialPhase, discordUrl, initialPane
       discordUrl={discordUrl}
       initialPanel={initialPanel}
       voyage={voyage}
+      returnDecided={returnDecided}
     />
   );
 }
@@ -237,13 +282,24 @@ function Crossing({ page, voyage }: { page: IslandPageData; voyage: Voyage }) {
   );
 }
 
+/** The return card's latch for the page, shared by both islands (IslandApp holds it). */
+type ReturnLatch = { returnDecided?: RefObject<boolean> };
+
 /** No project yet: the island to look at, and one action, claiming a plot (or answering an invite). */
-function Unclaimed({ page, picture, initialPhase, demoDay, voyage: forcedVoyage = false }: IslandAppProps & { demoDay: string | null }) {
+function Unclaimed({
+  page,
+  picture,
+  initialPhase,
+  demoDay,
+  voyage: forcedVoyage = false,
+  returnDecided,
+}: IslandAppProps & ReturnLatch & { demoDay: string | null }) {
   const voyage = useVoyage(forcedVoyage);
   const [storyOpen, setStoryOpen] = useState(false);
   // The menu's เรื่องเล่า line plays the story again.
   const [storyKey, setStoryKey] = useState(0);
   const sound = useCampfireSound();
+  const awayDm = useAwayDm(page.away, page.me.staff);
   const [claiming, setClaiming] = useState(false);
   const [panel, setPanel] = useState<UnclaimedPanel>(null);
   const [whole, setWhole] = useState(page.me.admin === true);
@@ -252,6 +308,16 @@ function Unclaimed({ page, picture, initialPhase, demoDay, voyage: forcedVoyage 
   const invites = page.invites.length;
   const paused = storyOpen || claiming || panel != null || voyage.holding;
   const onPanel = (next: Panel) => setPanel(next as UnclaimedPanel);
+  // The return card (schema 23) here too, for a student back without a plot (a team archived meanwhile, say).
+  const returnFrom = useReturnCard({
+    away: page.away,
+    staff: page.me.staff,
+    voyageOpen: voyage.open,
+    storyOpen,
+    busy: claiming || (panel != null && panel !== "return"),
+    onOpen: () => setPanel("return"),
+    decided: returnDecided,
+  });
   const pending = consentPending(page);
   // The plaza to look at: the festival and the campfire, no notice board and nothing to tap.
   const today = useBangkokDay();
@@ -270,7 +336,7 @@ function Unclaimed({ page, picture, initialPhase, demoDay, voyage: forcedVoyage 
   const shared = sharedItems(page, onPanel, () => {
     setPanel(null);
     setStoryKey((key) => key + 1);
-  }, sound);
+  }, sound, awayDm);
   // Nothing on this island is tapped yet (no plot, no plaza spots), so the coins and the prizes are lines here.
   const unclaimedItems: MenuItem[] = [
     ...shared.admin,
@@ -350,6 +416,16 @@ function Unclaimed({ page, picture, initialPhase, demoDay, voyage: forcedVoyage 
         {...consentRow(page, onPanel)}
       />
       <PlayerSheets page={page} panel={panel} onPanel={onPanel} />
+      {returnFrom ? (
+        // No StuckSheet and no ขอพัก without a plot: "ติดอยู่" and "อยากพัก" thank and close here.
+        <ReturnSheet
+          open={panel === "return"}
+          gapFrom={returnFrom}
+          due={page.away?.askReturn?.gapFrom === returnFrom}
+          onClose={() => setPanel(null)}
+          suggestUrl={page.suggestUrl ?? null}
+        />
+      ) : null}
       <Crossing page={page} voyage={voyage} />
     </>
   );
@@ -364,7 +440,8 @@ function IslandHome({
   discordUrl,
   initialPanel,
   voyage: forcedVoyage = false,
-}: IslandAppProps & {
+  returnDecided,
+}: IslandAppProps & ReturnLatch & {
   board: NonNullable<IslandPageData["board"]>;
   project: NonNullable<IslandPageData["island"]["project"]>;
 }) {
@@ -396,6 +473,7 @@ function IslandHome({
   // The menu's เรื่องเล่า line plays the story again.
   const [storyKey, setStoryKey] = useState(0);
   const sound = useCampfireSound();
+  const awayDm = useAwayDm(page.away, page.me.staff);
   const [panel, setPanel] = useState<Panel>(initialPanel === "board" ? "board" : null);
   // ช่วยเพื่อนเช็ก (schema 15) opens over the board, so the board stays where it was.
   const [peerOpen, setPeerOpen] = useState(false);
@@ -429,6 +507,27 @@ function IslandHome({
   const [relinkRef, setRelinkRef] = useState<BoardRef | null>(null);
   const [storyOpen, setStoryOpen] = useState(false);
   const [whole, setWhole] = useState(page.me.admin === true);
+  // The return card (schema 23), once on arrival: the stretch it opened for, kept while it slides closed.
+  const returnFrom = useReturnCard({
+    away: page.away,
+    staff: page.me.staff,
+    voyageOpen: voyage.open,
+    storyOpen,
+    // Anything opened or tapped first (the check-in included, and a quest the card's เริ่มเลย is
+    // still starting) passes the card for this page.
+    busy:
+      quest.pending ||
+      (panel != null && panel !== "return") ||
+      detail != null ||
+      stuck.open ||
+      proposing ||
+      plot != null ||
+      linking ||
+      peerOpen ||
+      tappedHere,
+    onOpen: () => setPanel("return"),
+    decided: returnDecided,
+  });
   const season = page.island.season;
   const goal = season?.goal ?? page.map.goal ?? null;
   // Any sheet or the story over the island stops its animation: nobody is looking at it.
@@ -629,7 +728,7 @@ function IslandHome({
   const shared = sharedItems(page, setPanel, () => {
     setPanel(null);
     setStoryKey((key) => key + 1);
-  }, sound);
+  }, sound, awayDm);
   // Consent itself has its banner at the top of the sheet; only the AI news line needs a line here.
   const consent = consentRow(page, setPanel);
   const aiConsent: MenuItem[] =
@@ -638,12 +737,14 @@ function IslandHome({
   // quest board heads it: off home since the next-step card is home's one action, and in the plaza too.
   const boardItem: MenuItem = { id: "board", icon: "scroll", label: MENU.board, onClick: () => setPanel("board") };
   const homeItems: MenuItem[] = [boardItem, ...aiConsent, ...shared.places];
-  // The chip's lamp dot: consent waits, a mentor's result is new, something waits at the tree, or the bot left notices.
+  // The chip's lamp dot: consent waits, a mentor's result is new, something waits at the tree, the bot left
+  // notices, or (last) the come-back DM's one-time ask waits in the sheet.
   const chipWaiting =
     (consentPending(page) ? HUD.menuConsent : null) ??
     (fresh > 0 ? RESULTS.hud(fresh) : null) ??
     (tree ? treeWaiting(tree) : null) ??
-    (page.unread > 0 ? RESULTS.discord(page.unread) : null);
+    (page.unread > 0 ? RESULTS.discord(page.unread) : null) ??
+    (awayDm.ask ? AWAY.chip : null);
 
   return (
     <>
@@ -743,6 +844,7 @@ function IslandHome({
         showName={project}
         onOpenAdmin={page.me.admin ? () => setPanel("admin") : undefined}
         onRest={page.island.resting ? undefined : () => rest(true)}
+        away={awayDm.ask ? { days: awayDm.days, pending: awayDm.pending, onAnswer: awayDm.set } : null}
         results={
           <ResultsList
             results={results}
@@ -818,6 +920,19 @@ function IslandHome({
         next={nextWork}
         viewerKey={memberId}
       />
+      {returnFrom ? (
+        <ReturnSheet
+          open={panel === "return"}
+          gapFrom={returnFrom}
+          due={page.away?.askReturn?.gapFrom === returnFrom}
+          onClose={() => setPanel(null)}
+          // "อยากพัก" points to ขอพัก in the team sheet (always there while the card is due: resting students are never asked).
+          canRest={!page.island.resting}
+          // "ติดอยู่": the group help, filed under the day's quest when the student has one open.
+          onStuck={() => openStuck({ instanceId: dayQuest?.instanceId ?? null, title: dayQuest?.instanceId ? dayQuest.title : null })}
+          suggestUrl={page.suggestUrl ?? null}
+        />
+      ) : null}
       <StuckSheet
         open={stuck.open}
         target={stuck.target}

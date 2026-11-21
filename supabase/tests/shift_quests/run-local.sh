@@ -79,6 +79,19 @@
 #             and is under 3 minutes old; one state row with no person in it;
 #             the grants: the beat the bot's, the read the website's), with
 #             consent off
+#   away      every migration applied twice, then away.ts (schema 23,
+#             20261121090000: the come-back DM and the return card, at fixed
+#             times: consent never asked by default, notify_dm alone never
+#             counts; the queue only at away_hour, with the switch on and in
+#             a season, one DM per stretch and per 14 days, none to resting,
+#             waiting, staff, erased or unstarted members; the claim's hours
+#             and its still-away check; opting out drops queued DMs; the
+#             state's ask_consent and ask_return (never between seasons, a
+#             fresh stretch when a mentor decides or a rest ends, a team's
+#             milestone holds the teammates too); the answer's checks; the
+#             admin report's counts, "1-2" floors and nameless lines; the
+#             audited reveal; erasure, /data and the admin reset; 90-day
+#             lines; the grants), with consent off
 #
 #   supabase/tests/shift_quests/run-local.sh       # or: pnpm test:db:quests
 #   PG_BIN=/usr/lib/postgresql/15/bin supabase/tests/shift_quests/run-local.sh
@@ -228,12 +241,17 @@ SQL
 # guest's seven (20261118150000: shift_quest_call_today, _call_claim,
 # _call_mark, _call_pings, shift_quest_campfire_seen, _campfire_drop,
 # shift_quest_guest_status) and the deep fire's heartbeat (20261120120000,
-# shift_quest_deepfire_beat) are the bot's like every other entry point, and
-# never the website's (their helpers, shift_quest__news_*, __call_* and
-# __guest_*, are nobody's). The deep fire's read (20261120120000,
-# shift_quest_deepfire) is the website's only.
+# shift_quest_deepfire_beat) and the come-back DM queue (20261121090000,
+# shift_quest_enqueue_away) are the bot's like every other entry point, and
+# never the website's (their helpers, shift_quest__news_*, __call_*,
+# __guest_* and __away_*, are nobody's). The deep fire's read (20261120120000,
+# shift_quest_deepfire) and the return card's answer and the come-back admin
+# report and reveal (20261121090000, shift_quest_away_answer,
+# shift_quest_admin_away, shift_quest_admin_away_reveal) are the website's
+# only; the come-back state and choice (shift_quest_away_state, _away_set)
+# are both's.
 # And the web allowlist (20261111090900, 091000, 091100, 091200, 093000, 094000, and every later file
-# that grants shift_quest_web, up to 20261118100000's website-does-everything allowlist and 20261120120000's deep fire read): shift_quest_web executes exactly the
+# that grants shift_quest_web, up to 20261118100000's website-does-everything allowlist, 20261120120000's deep fire read and 20261121090000's come-back functions): shift_quest_web executes exactly the
 # functions listed below (nothing before that file is applied), never a
 # helper, and holds no privilege on any table or sequence. The list repeats
 # the migration's on purpose: a new grant must change both.
@@ -268,7 +286,9 @@ WITH fns0 AS (
       -- 20261118110000_shift_quest_island_visitors: the plaza's visitors are the website's.
       OR p.proname = 'shift_quest_island_visitors'
       -- 20261120120000_shift_quest_deep_fire: the island's read of the deep fire.
-      OR p.proname = 'shift_quest_deepfire' AS web_only
+      OR p.proname = 'shift_quest_deepfire'
+      -- 20261121090000_shift_quest_away: the return card's answer, the admin report and its reveal.
+      OR p.proname IN ('shift_quest_away_answer', 'shift_quest_admin_away', 'shift_quest_admin_away_reveal') AS web_only
   FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
   WHERE n.nspname = 'public' AND p.proname LIKE 'shift\_quest\_%'
 ), fns AS (
@@ -409,7 +429,13 @@ web_allow(sig) AS (VALUES
   -- 20261118110000_shift_quest_island_visitors.
   ('shift_quest_island_visitors(text)'),
   -- 20261120120000_shift_quest_deep_fire.
-  ('shift_quest_deepfire(text)')
+  ('shift_quest_deepfire(text)'),
+  -- 20261121090000_shift_quest_away.
+  ('shift_quest_away_state(text)'),
+  ('shift_quest_away_set(text,boolean)'),
+  ('shift_quest_away_answer(text,date,text,text)'),
+  ('shift_quest_admin_away(text)'),
+  ('shift_quest_admin_away_reveal(text,uuid)')
 ), web_applied AS (
   SELECT to_regprocedure('public.shift_quest_board(text)') IS NOT NULL AS yes
 )
@@ -472,7 +498,7 @@ echo "# migrations"
 for f in "${MIGRATIONS[@]}"; do echo "apply $(basename "$f")"; done
 new_db once
 apply once "single pass" "${MIGRATIONS[@]}"
-for DB in rules island flows islandflows board canvas campfire live player roots tree reset evidence peer treepost webeverything visitors news newsmissed campfirecall deepfire; do
+for DB in rules island flows islandflows board canvas campfire live player roots tree reset evidence peer treepost webeverything visitors news newsmissed campfirecall deepfire away; do
   new_db "$DB"
   apply "$DB" "first pass" "${MIGRATIONS[@]}"
   apply "$DB" "second pass" "${MIGRATIONS[@]}"
@@ -567,6 +593,7 @@ suite "island news daily" news news.ts
 suite "island news missed-night note" newsmissed news_missed.ts
 suite "campfire call and evening guest" campfirecall campfire_call.ts
 suite "deep fire" deepfire deepfire.ts
+suite "come-back DM and return card" away away.ts
 # island_rules.ts runs against wave 1 alone once it knows to skip season cases.
 if [ "${#WAVE1[@]}" -lt "${#MIGRATIONS[@]}" ] && grep -q SHIFT_QUESTS_WAVE "$HERE/island_rules.ts"; then
   export SHIFT_QUESTS_WAVE=1

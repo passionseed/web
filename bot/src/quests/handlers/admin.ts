@@ -229,6 +229,9 @@ const FEATURES: { key: string; label: string; setting: string; optional?: boolea
   // 20261118150000_shift_quest_campfire_call (schema 21). Thai reviewed (Gemini, Codex, Claude), 2026-11-18.
   { key: "campfire_call", label: "เรียกรวมกองไฟ 18:50", setting: "campfire_call_enabled", optional: true },
   { key: "campfire_call_ping", label: "แท็กนักเรียนตอนเรียกรวม", setting: "campfire_call_ping", optional: true },
+  // 20261121090000_shift_quest_away (schema 23): the island's DM consent strip and settings line, the return card, and
+  // the come-back DM, all at once. Off by default. DRAFT for the Thai review.
+  { key: "away", label: "ชวนกลับเกาะ (DM และการ์ดตอนกลับมา)", setting: "away_enabled", optional: true },
 ];
 
 /**

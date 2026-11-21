@@ -25,11 +25,13 @@ import {
   type CanvasChoice,
   type QuestCanvasContext,
 } from "@/lib/shift-island/quest-canvas";
+import { answerAwaySchema, awayStateFrom, setAwayDmSchema } from "@/lib/supabase/shift-quests/away";
 import type { BoardRef } from "@/lib/supabase/shift-quests/board";
 import { CAMPFIRE_NONE, campfireRead } from "@/lib/supabase/shift-quests/campfire";
 import * as canvas from "@/lib/supabase/shift-quests/canvas";
 import { buildContext, buildSnapshot, canvasNotes, pickNotes, type CanvasLinkRow } from "@/lib/supabase/shift-quests/canvas-snapshot";
 import { questApi } from "@/lib/supabase/shift-quests/db";
+import type { AwayReason, AwayState } from "@/lib/supabase/shift-quests/playerTypes";
 import {
   TEXT_LIMITS,
   type CampfireNames,
@@ -262,6 +264,37 @@ export async function setResting(input: { on: boolean }): Promise<IslandActionRe
   return withReadyViewer("setResting", setRestingSchema, input, async ({ actor }, v) => {
     const row = await questApi().call<{ paused: number; resumed: number }>("shift_quest_rest", actor, v.on);
     return { paused: Number(row.paused) || 0, resumed: Number(row.resumed) || 0 };
+  });
+}
+
+/**
+ * The come-back DM (schema 23): whether the bot may send this student one
+ * short link DM after a stretch away. Students only (the database refuses
+ * staff); answers the new away state, or null when its shape is off (the
+ * choice is saved either way, and the refreshed page carries it). Turning it
+ * off drops any DM still waiting in the bot's outbox.
+ */
+export async function setAwayDm(on: boolean): Promise<IslandActionResult<AwayState | null>> {
+  return withReadyViewer("setAwayDm", setAwayDmSchema, { on }, async ({ actor }, v) =>
+    awayStateFrom(await questApi().call<unknown>("shift_quest_away_set", actor, v.on)),
+  );
+}
+
+/**
+ * The return card's answer (schema 23): one of six reasons and an optional
+ * line, or reason null for a closed card (a skip, saved so the card never
+ * reopens for that stretch). The database checks the stretch is the one due
+ * (not_found otherwise) and keeps the first answer only (saved: false after).
+ * The line never goes to a log.
+ */
+export async function answerAway(input: {
+  gapFrom: string;
+  reason: AwayReason | null;
+  line: string | null;
+}): Promise<IslandActionResult<{ saved: boolean }>> {
+  return withReadyViewer("answerAway", answerAwaySchema, input, async ({ actor }, v) => {
+    const row = await questApi().call<{ saved?: unknown } | null>("shift_quest_away_answer", actor, v.gapFrom, v.reason, v.line);
+    return { saved: row?.saved === true };
   });
 }
 
