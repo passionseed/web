@@ -15,7 +15,8 @@
  * Options:
  *   --teams 15,25,35      project canvases per board
  *   --editors 40,70,120   editors saving on that board at the same time
- *   --pairs               run teams[i] with editors[i] only, not every combination
+ *   --matrix              run every teams x editors combination; by default teams[i] runs with
+ *                         editors[i] (15/40, 25/70, 35/120: about 3 editors per team)
  *   --editors-per-team 3  how many of a team's 2-5 members save at once, to pick which scenario
  *                         judges each team count for the recommendation
  *   --seconds 20          how long each scenario runs
@@ -30,6 +31,12 @@
  *                         (initdb in a temp folder, Unix socket only, no TCP port)
  *
  * It measures the database only, not Supabase Realtime or the API route around the merge.
+ *
+ * Reading the result: one merge costs time in proportion to the board's size (about 85 ms per MB
+ * on a laptop on 2026-11-22), whatever the number of teams, so a board takes at most
+ * 1000 / merge-ms saves a second ("board max saves/s"). Once editors and the bot ask for more,
+ * the lock wait grows without limit. Teams per board matter because more teams make a bigger
+ * board and more editors.
  *
  * SAFETY: it only ever connects to a Postgres it started itself and removes it at the end. It
  * takes no connection string; one given with --db-url or WHITEBOARD_LOAD_DB_URL is refused and the
@@ -467,6 +474,10 @@ async function save(pool: Pool, boardId: string, elements: El[], tally: Tally): 
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/** Wait out the rest of the interval, but never past the end of the scenario (that would stretch it). */
+const untilNext = (started: number, everyMs: number, until: number) =>
+  Math.max(0, Math.min(everyMs - (performance.now() - started), until - performance.now()));
+
 /** One editor: change one or two of their notes, save, wait out the rest of the interval, repeat. */
 async function editorLoop(
   pool: Pool,
@@ -493,7 +504,7 @@ async function editorLoop(
       }
     }
     await save(pool, board.id, stampAuthor(changed, editor), tally);
-    await sleep(Math.max(0, everyMs - (performance.now() - started)));
+    await sleep(untilNext(started, everyMs, until));
   }
 }
 
@@ -541,7 +552,7 @@ async function testerLoop(pool: Pool, board: Board, until: number, rand: () => n
       customData: {},
     };
     await save(pool, board.id, stampAuthor([rect, text], board.owner), tally);
-    await sleep(Math.max(0, TESTER_INTERVAL_MS - (performance.now() - started)));
+    await sleep(untilNext(started, TESTER_INTERVAL_MS, until));
   }
 }
 
@@ -610,7 +621,7 @@ function summarise(
 const ms = (v: number) => (Number.isNaN(v) ? "-" : `${Math.round(v)}`);
 
 function printTable(results: Result[]): void {
-  const head = ["teams/board", "editors", "board MB", "saves/s want", "saves/s done", "p50 merge ms", "p95 merge ms", "p50 lock ms", "p95 lock ms", "p95 total ms", "board max saves/s", "errors", "dropped", "ok"];
+  const head = ["teams/board", "editors", "board MB", "saves/s want", "saves/s done", "p50 merge ms", "p95 merge ms", "p50 lock ms", "p95 lock ms", "p95 pool ms", "p95 total ms", "board max saves/s", "errors", "dropped", "ok"];
   const rows = results.map((r) => [
     String(r.teams),
     String(r.editors),
@@ -621,6 +632,7 @@ function printTable(results: Result[]): void {
     ms(r.p95Merge),
     ms(r.p50Lock),
     ms(r.p95Lock),
+    ms(r.p95Pool),
     ms(r.p95Total),
     Number.isNaN(r.capacity) ? "-" : r.capacity.toFixed(1),
     String(r.errors),
@@ -696,14 +708,18 @@ async function main(): Promise<number> {
   const everyMs = Number(flag(argv, "save-every", String(SAVE_DEBOUNCE_MS / 1000))) * 1000;
   const poolFlag = flag(argv, "pool", "");
   const engine = flag(argv, "engine", "auto");
-  const pairs = argv.includes("--pairs");
+  const pairs = !argv.includes("--matrix");
   const editorsPerTeam = Number(flag(argv, "editors-per-team", "3"));
   if (!teamsList.length || !editorsList.length || !(seconds > 0) || !(boardMb > 0) || !(editorsPerTeam > 0) || !(everyMs > 0) || !(kbPerTeam >= 0)) {
     console.error("Bad options. Example: --teams 15,25,35 --editors 40,70,120 --seconds 20 --board-mb 2");
     return 2;
   }
+  if (seconds * 1000 < everyMs * 3) {
+    console.error("--seconds should cover at least 3 save intervals, or the save rate is not measured.");
+    return 2;
+  }
   if (pairs && teamsList.length !== editorsList.length) {
-    console.error("--pairs needs as many --teams as --editors values.");
+    console.error("Give as many --teams as --editors values, or add --matrix.");
     return 2;
   }
   const scenarios = pairs
