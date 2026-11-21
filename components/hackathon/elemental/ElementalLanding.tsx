@@ -6,6 +6,7 @@ import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL, prizeTotal, thaiDateLine } from "@/components/hackathon/poster/elemental/facts";
 import { formatThaiDate } from "@/lib/content/shift-cohort";
 
+import { ANY_PROBLEM_NOTE, ELEMENT_CHALLENGES } from "./challenges";
 import { trirong } from "./fonts";
 
 /**
@@ -13,15 +14,6 @@ import { trirong } from "./fonts";
  * people decide on (when, prize, price), how paying works, then sign up.
  * Facts come from ../poster/elemental/facts.ts only.
  */
-
-const ELEMENT_LINES: Record<string, string> = {
-  earth: "ขยะและดินที่ปนเปื้อน",
-  water: "น้ำเสียที่ไหลลงแม่น้ำ",
-  air: "ฝุ่นและควันที่ลอยอยู่ในอากาศ",
-  fire: "การเผาที่ลุกลามจนคุมไม่อยู่",
-};
-
-const ORDER = ["earth", "water", "air", "fire", "aether"] as const;
 
 function Fact({ label, value, note }: { label: string; value: string; note?: string }) {
   return (
@@ -125,27 +117,46 @@ export function ElementalLanding({ joinHref, open }: { joinHref: string; open: b
           <h2 className="mt-2 text-4xl sm:text-5xl" style={{ fontFamily: EL_FONT.display, fontWeight: 200 }}>
             ห้าธาตุ ที่มีคนทำพัง
           </h2>
-          <ul className="mt-10 grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-5">
-            {ORDER.map((key) => {
-              const el = ELEMENTAL.elements.find((e) => e.key === key);
+          <ul className="mt-10">
+            {ELEMENT_CHALLENGES.map((c) => {
+              const el = ELEMENTAL.elements.find((e) => e.key === c.key);
               if (!el) return null;
               return (
-                <li key={key}>
-                  <p className="text-xs" style={{ fontFamily: EL_FONT.mono, color: EL.flameLight }}>
-                    {el.en}
-                  </p>
-                  <p className="mt-1 text-3xl" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>
-                    {el.th}
-                  </p>
-                  {ELEMENT_LINES[key] && (
-                    <p className="mt-1 text-sm" style={{ color: EL.creamSoft }}>
-                      {ELEMENT_LINES[key]}
+                <li
+                  key={c.key}
+                  className="grid gap-4 border-t py-6 md:grid-cols-[minmax(0,14rem)_1fr_1fr] md:gap-8"
+                  style={{ borderColor: "rgba(243,239,230,0.2)" }}
+                >
+                  <div>
+                    <p className="text-xs" style={{ fontFamily: EL_FONT.mono, color: EL.flameLight }}>
+                      {el.en}
                     </p>
-                  )}
+                    <p className="mt-1 text-3xl" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>
+                      {el.th}
+                    </p>
+                    <p className="mt-1 text-sm" style={{ color: EL.creamSoft }}>
+                      {c.kind}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs" style={{ fontFamily: EL_FONT.mono, color: EL.creamSoft }}>
+                      [ตัวอย่าง]
+                    </p>
+                    <p className="mt-1 leading-relaxed">{c.example}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs" style={{ fontFamily: EL_FONT.mono, color: EL.creamSoft }}>
+                      [ผลที่ตามมา]
+                    </p>
+                    <p className="mt-1 leading-relaxed">{c.effect}</p>
+                  </div>
                 </li>
               );
             })}
           </ul>
+          <p className="border-t pt-6 text-sm" style={{ borderColor: "rgba(243,239,230,0.2)", color: EL.creamSoft }}>
+            {ANY_PROBLEM_NOTE}
+          </p>
         </div>
       </section>
 
